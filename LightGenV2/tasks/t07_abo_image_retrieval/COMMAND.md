@@ -942,3 +942,29 @@ python -m LightGenV2.tasks.t07_abo_image_retrieval.standalone.generalization_que
 
 缓存的`final_report.json/reuse`记录精确复用/新增/未入新池数量。旧原图、缓存与模型不被覆盖。
 两组新拟合的`teacher_feature_alignment.pt`仅用于训练解释与复现，不是相位权重、也不是部署依赖。
+
+## 34. 最终线性读出64→256维（没有新增光学层或分支）
+
+从固定78.75%线性64维权重转换，新192维初始化为零；所有非读出权重原样保留。
+教师使用已有2048维训练缓存的前256维，不需要再加载或运行Qwen。与第33节refit250相同12×250步。
+教师矩阵重新拟合为256×256，仅使用原训练图；因此不要传旧64维`--teacher-alignment`。
+
+```bash
+T07=LightGenV2/tasks/t07_abo_image_retrieval
+ASSETS=$T07/runs/simulation/standalone_assets_20260910
+TARGET=/DATA/DATA1/guest3/2026OpticsMoE/data/abo_similarity10_data
+ABO=/DATA/DATA1/guest3/2026OpticsMoE/data/abo
+BEST=$T07/runs/simulation/verify_teacher_first_ep11_20260912_gpu4/best.pt
+CACHE=$T07/runs/smoke/domain_distillation_20260912/build_teacher_cache/artifacts/cache.pt
+POOL=$T07/runs/simulation/domain_pool250_20260912
+python -m LightGenV2.tasks.t07_abo_image_retrieval.standalone.generalization_queue \
+  --gpu GPU-6dcca91a-8e08-1a50-9aa6-81defeaed50b --assets "$ASSETS" --checkpoint "$BEST" \
+  --target "$TARGET" --abo "$ABO" --pool "$POOL" --teacher-cache "$CACHE" \
+  --profiles domain_distill_readout256 --epochs 12 --steps 250 \
+  --output "$T07/runs/simulation/domain_readout256_20260912_gpu2" \
+  --after-queue "$T07/runs/simulation/domain_teacher_continue_softgt_20260912_gpu2/status.json"
+```
+
+`model_audit`应为descriptor_dimension=256、trainable_parameters=2856405、六次捕获、Top2且无TF/attention。
+只以新权重实际复测结果决定是否采用，不能继承64维权重成绩充当训练收益。
+本候选训练使用上述入口，旧通用`cli finetune`的64维train_targets不能直接用于256维模型。

@@ -148,7 +148,7 @@ def run_stage(args,stage,output,initial_checkpoint=None):
         model.to(device)
         from transformers import AutoProcessor
         processor=AutoProcessor.from_pretrained(str(args.assets/'processor'),local_files_only=True)
-        head=CategoryProxies(len(groups)).to(device)
+        head=CategoryProxies(len(groups),dimension=model.readout.output_dimension).to(device)
         if high:head.optical=optical_heads(len(groups)).to(device)
         if auxiliary_payload is not None:
             restore_auxiliary_head(head,auxiliary_payload,sha256(start),cfg_all['restore_auxiliary_source_sha256'])

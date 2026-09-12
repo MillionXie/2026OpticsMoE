@@ -104,11 +104,12 @@ class Modality(nn.Module):
 class RetrievalHead(nn.Module):
     def __init__(self, kind='linear64'):
         super().__init__()
-        if kind not in ('linear64','relu128'):
+        if kind not in ('linear64','relu128','linear256'):
             raise ValueError('Unknown retrieval head contract')
         self.kind=kind
+        self.output_dimension=256 if kind=='linear256' else 64
         self.norm = nn.LayerNorm(384)
-        self.projection = (nn.Linear(384,64) if kind=='linear64' else
+        self.projection = (nn.Linear(384,self.output_dimension) if kind in ('linear64','linear256') else
                            nn.Sequential(nn.Linear(384,128),nn.ReLU(),nn.Linear(128,64)))
 
     def forward(self, latent):
@@ -183,5 +184,6 @@ class OpticalRetrieval(nn.Module):
                 'training_phase_dropout':self.metadata.get('phase_dropout',{}),
                 'electronic_context_kernels':kernels,
                 'retrieval_head':self.readout.kind,
+                'descriptor_dimension':self.readout.output_dimension,
                 'alpha':{m:[float(alpha_value(getattr(getattr(self,m),f'block{i}_optical_fusion_logit'),getattr(self,m).alpha_bounds)) for i in (1,2)] for m in ('vision','language')},
                 'ccd_postprocessing':'mean -> clip12 -> log1p -> adaptive_avg_pool (see ccd_readout_modes) -> rowLN -> ReLU -> Linear192'}

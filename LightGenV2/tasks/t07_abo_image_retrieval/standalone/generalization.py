@@ -16,7 +16,7 @@ REFIT_TEACHER_PROFILES = ('domain_distill_refit250', 'domain_distill_refit500')
 PROFILES = ('preserve_adam', 'preserve_sam', 'preserve_fullfield_sam', 'preserve_fullfield_both_sam',
             'regularized_control', 'regularized_phase05', 'domain_mixed', 'domain_curriculum', 'domain_target_control',
             'domain_refine_control', 'domain_refine_wide', 'domain_refine_views', 'domain_refine_pool500_mix13', 'domain_refine_context7', 'domain_refine_balanced',
-            'domain_distill_light', 'domain_distill_strong', 'domain_distill_stronger', 'domain_distill_resumeaux', 'domain_distill_resumeaux_full', 'domain_distill_sharpteacher', 'domain_distill_teacher_agreement', 'domain_distill_aligned_feature', 'domain_distill_feature_mlp', 'domain_distill_teacher_first', 'domain_distill_bounded_aspect', 'domain_distill_position_jitter', *PINNED_TEACHER_PROFILES, *REFIT_TEACHER_PROFILES)
+            'domain_distill_light', 'domain_distill_strong', 'domain_distill_stronger', 'domain_distill_resumeaux', 'domain_distill_resumeaux_full', 'domain_distill_sharpteacher', 'domain_distill_teacher_agreement', 'domain_distill_aligned_feature', 'domain_distill_feature_mlp', 'domain_distill_teacher_first', 'domain_distill_bounded_aspect', 'domain_distill_position_jitter', 'domain_distill_readout256', *PINNED_TEACHER_PROFILES, *REFIT_TEACHER_PROFILES)
 
 
 def learning_rate_multiplier(config):
@@ -80,6 +80,11 @@ def restore_auxiliary_head(head, payload, actual_sha256, expected_sha256):
 
 
 def overlay_config(config, profile):
+    if profile == 'domain_distill_readout256':
+        config=overlay_config(config,'domain_distill_refit250')
+        overlay=json.loads(Path(__file__).with_name('domain_distillation.json').read_text(encoding='utf-8'))
+        config.update(overlay['profiles'][profile])
+        return config
     if profile in REFIT_TEACHER_PROFILES:
         config=overlay_config(config,'domain_distill_teacher_continue')
         # Fit both controls against the same original1440 train images and
@@ -145,15 +150,28 @@ def expand_retrieval_head(payload, kind):
     Already-converted checkpoints are retained, never reinitialized on reload.
     """
     previous=payload['metadata'].get('retrieval_head','linear64')
-    if kind not in ('linear64','relu128') or previous not in ('linear64','relu128'):
+    if kind not in ('linear64','relu128','linear256') or previous not in ('linear64','relu128','linear256'):
         raise ValueError('Unknown retrieval head contract')
     if previous==kind:return payload
-    if previous!='linear64' or kind!='relu128':
-        raise ValueError('Only linear64 to relu128 readout expansion supported')
+    if previous!='linear64' or kind not in ('relu128','linear256'):
+        raise ValueError('Only linear64 to relu128/linear256 readout expansion supported')
     state=dict(payload['state_dict'])
     w=state.pop('readout.projection.weight');b=state.pop('readout.projection.bias')
     if w.shape!=(64,384) or b.shape!=(64,) or not torch.isfinite(w).all() or not torch.isfinite(b).all():
         raise ValueError('Invalid source linear readout')
+    if kind=='linear256':
+        # z -> [z,0] preserves cosine geometry before training; never duplicate
+        # optical features or route around the existing optical computation.
+        state['readout.projection.weight']=torch.cat((w,w.new_zeros(192,384)))
+        state['readout.projection.bias']=torch.cat((b,b.new_zeros(192)))
+        result=dict(payload,metadata=dict(payload['metadata'],retrieval_head=kind),state_dict=state)
+        if 'auxiliary_training_head' in payload:
+            auxiliary=dict(payload['auxiliary_training_head']);proxy=auxiliary['weight']
+            if proxy.ndim!=2 or proxy.shape[1]!=64 or not torch.isfinite(proxy).all():
+                raise ValueError('Invalid training category proxy for descriptor expansion')
+            auxiliary['weight']=torch.cat((proxy,proxy.new_zeros(len(proxy),192)),dim=1)
+            result['auxiliary_training_head']=auxiliary
+        return result
     eye=torch.eye(64,dtype=w.dtype,device=w.device)
     state.update({'readout.projection.0.weight':torch.cat((w,-w)),
                   'readout.projection.0.bias':torch.cat((b,-b)),

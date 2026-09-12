@@ -11,6 +11,10 @@
     "domain_distill_light": {"relation_teacher_weight": 0.10},
     "domain_distill_strong": {"relation_teacher_weight": 0.30},
     "domain_distill_stronger": {"relation_teacher_weight": 0.60},
+    "domain_distill_readout256": {
+      "retrieval_head": "linear256",
+      "protocol": "Same source/pool/losses/12x250 recipe as refit250, but final LN384/Linear64/L2 becomes LN384/Linear256/L2. Initialize [old64,zeros192] and extend training category proxies with zeros, preserving initial cosine geometry algebraically; independently recheck floating-point behavior. Use corresponding frozen teacher prefix256 and fit its basis on original1440 training rows only. Adds73920 inference parameters, no branch/attention/Transformer, no change to optics, Top2, alpha>0.4 or original480-query/120-gallery. Descriptor and teacher supervision dimension change together; not a pure inference-dimension ablation."
+    },
     "domain_distill_refit250": {
       "expected_pool_products_per_category": 250,
       "protocol": "Cap250 paired dataset control from fixed78.75% live source with all training auxiliaries restored. Refit training-only orthogonal teacher64 basis using original1440 train/student features at this source, NOT the old77.9167% basis. Teacher cosine2/GT1, quarter learning rates,12x250, no SAM or FP32-gallery variant. Use250 updates to match cap500 coverage; not the shorter128-step continuation. Compare with refit500; unchanged input, inference, optics, Top2, alpha>0.4 and original480-query/120-gallery."

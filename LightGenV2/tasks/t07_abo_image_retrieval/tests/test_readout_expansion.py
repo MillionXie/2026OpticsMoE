@@ -5,6 +5,42 @@ from LightGenV2.tasks.t07_abo_image_retrieval.standalone.generalization import e
 
 
 class ReadoutExpansionTests(unittest.TestCase):
+    def test_linear256_preserves_cosine_and_auxiliary_scores(self):
+        torch.manual_seed(1729)
+        old=RetrievalHead().eval()
+        state={'readout.'+k:v.clone() for k,v in old.state_dict().items()}
+        state['vision.optics.phase_raw']=torch.randn(224,224)
+        proxy=torch.randn(10,64)
+        auxiliary={'weight':proxy,'optical.vision.weight':torch.randn(10,384)}
+        payload={'metadata':{},'state_dict':state,'auxiliary_training_head':auxiliary}
+        expanded=expand_retrieval_head(payload,'linear256')
+        new=RetrievalHead('linear256').eval()
+        new.load_state_dict({k[len('readout.'):]:v for k,v in expanded['state_dict'].items() if k.startswith('readout.')})
+        latent=torch.randn(4,77,192)
+        a=old(latent);b=new(latent)
+        self.assertEqual(b.shape,(4,256))
+        torch.testing.assert_close(a,b[:,:64],atol=2e-7,rtol=2e-6)
+        self.assertTrue(torch.equal(b[:,64:],torch.zeros_like(b[:,64:])))
+        torch.testing.assert_close(a@a.T,b@b.T,atol=3e-7,rtol=2e-6)
+        p=torch.nn.functional.normalize(proxy,dim=-1)
+        extended_p=torch.nn.functional.normalize(expanded['auxiliary_training_head']['weight'],dim=-1)
+        torch.testing.assert_close(a@p.T,b@extended_p.T,atol=3e-7,rtol=2e-6)
+        self.assertIs(expanded['auxiliary_training_head']['optical.vision.weight'],auxiliary['optical.vision.weight'])
+        self.assertIs(expanded['state_dict']['vision.optics.phase_raw'],state['vision.optics.phase_raw'])
+        self.assertEqual(sum(p.numel() for p in new.parameters())-sum(p.numel() for p in old.parameters()),73920)
+        loss=(b-torch.randn_like(b)).square().sum();loss.backward()
+        self.assertGreater(float(new.projection.weight.grad[64:].abs().sum()),0.)
+        self.assertTrue(torch.isfinite(new.projection.weight.grad).all())
+        self.assertIs(expand_retrieval_head(expanded,'linear256'),expanded)
+        with self.assertRaises(ValueError):expand_retrieval_head(expanded,'linear64')
+
+    def test_linear256_profile_only_changes_readout_and_teacher_dimension(self):
+        a=overlay_config({},'domain_distill_refit250');b=overlay_config({},'domain_distill_readout256')
+        self.assertEqual(b.pop('retrieval_head'),'linear256')
+        a.pop('protocol');b.pop('protocol')
+        self.assertEqual(a,b)
+        self.assertNotIn('teacher_alignment_sha256',b)
+
     def test_signed_relu_preserves_outputs_and_all_other_weights(self):
         torch.manual_seed(42)
         old=RetrievalHead().eval()

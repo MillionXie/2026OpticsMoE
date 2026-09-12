@@ -81,6 +81,8 @@ def finetune(model, processor, train, test, device, args, output):
     if cache['ids'] != [s.sample_id for s in train] or cache['manifest_sha256']!=sha256(args.data/'data/abo_similarity10_manifest.csv'):
         raise ValueError('Teacher train identity mismatch')
     targets = F.normalize(cache['vectors'].float(),dim=-1).to(device)
+    if targets.shape[-1]!=model.readout.output_dimension:
+        raise ValueError('Teacher target dimension differs from readout; use matching targets or the documented broad_transfer profile')
     labels = torch.tensor([s.category_id for s in train],device=device)
     anchors = torch.stack([F.normalize(targets[labels==c].mean(0),dim=0) for c in range(10)])
     groups = {}
