@@ -38,6 +38,12 @@
       "sam_warmup_epochs": 3,
       "protocol": "Matched teacher_continue control: same pinned78.75% live source, all restored training auxiliaries, fixed training-only teacher alignment, full cap250, quarter learning rates and12x128 updates. Only use two-pass SAM with global L2 rho0.02 warmed over3 epochs, then AdamW; replay stochastic optical noise, restore perturbed weights before the base step. Same inference/optics/Top2/alpha>0.4 and original480-query/120-gallery; approximately twice forward/backward work, not a compute-matched control."
     },
+    "domain_distill_vision_patch": {
+      "vision_patch_teacher_weight": 0.2,
+      "vision_patch_teacher_every": 4,
+      "vision_patch_teacher_warmup_epochs": 3,
+      "protocol": "Pinned78.75% linear64 source and same recipe as teacher_continue, with one training-only addition: clean contain_white image -> existing student V path/merger -> cosine to frozen Qwen visual49x2048 cache. Every4steps run an extra V-only forward with the current optical noise mode, weight0.8 after3epoch warmup (=mean0.2 per step). No augmented/translated token correspondence. Preserve primary forward router statistics. Cache builder alone loads a frozen vision Transformer, never student training/inference. Full cap250, original global teacher cosine2/GT1, fixed64D alignment, restored auxiliaries, quarter learning rates, planned16x128. No new inference layer/branch/parameter, unchanged optics/ROI/Top2/alpha>0.4 and480-query/120-gallery. Extra training compute and optical RNG draws are explicit."
+    },
     "domain_distill_joint_curriculum": {
       "relation_teacher_weight": 0.30,
       "learning_rate_multiplier": 1.0,

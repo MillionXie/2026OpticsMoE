@@ -13,7 +13,7 @@ import sys
 import time
 
 # Keep the supervisor torch-free: profile names only, no model module import.
-PINNED_TEACHER_PROFILES = ('domain_distill_teacher_continue', 'domain_distill_teacher_continue_sam', 'domain_distill_teacher_continue_softgt', 'domain_distill_teacher_continue_fp32gallery', 'domain_distill_joint_curriculum')
+PINNED_TEACHER_PROFILES = ('domain_distill_teacher_continue', 'domain_distill_teacher_continue_sam', 'domain_distill_teacher_continue_softgt', 'domain_distill_teacher_continue_fp32gallery', 'domain_distill_joint_curriculum', 'domain_distill_vision_patch')
 
 
 def dependency_state(path, expected_gpu):
@@ -45,13 +45,14 @@ def main():
     parser.add_argument('--pool', type=Path)
     parser.add_argument('--teacher-cache', type=Path, help='Existing or dependency-produced train-only cache')
     parser.add_argument('--teacher-alignment', type=Path, help='Pinned train-only teacher basis for teacher_continue')
-    parser.add_argument('--teacher-model', type=Path, help='Pinned local Qwen snapshot, only for build_teacher_cache')
+    parser.add_argument('--teacher-model', type=Path, help='Pinned local Qwen snapshot, only for separate cache builder processes')
+    parser.add_argument('--vision-teacher-cache',type=Path,help='Complete training-only visual-token cache')
     parser.add_argument('--reuse-teacher-cache',type=Path,help='Optional pinned older training cache for builder only')
     parser.add_argument('--reuse-teacher-cache-sha256')
     parser.add_argument('--output', type=Path, required=True)
     parser.add_argument('--epochs', type=int, default=30)
     parser.add_argument('--steps', type=int, default=64)
-    parser.add_argument('--profiles', nargs='+', choices=['preserve_adam','preserve_sam','preserve_fullfield_sam','preserve_fullfield_both_sam','regularized_control','regularized_phase05','domain_mixed','domain_curriculum','domain_target_control','domain_refine_control','domain_refine_wide','domain_refine_views','domain_refine_pool500_mix13','domain_refine_context7','domain_refine_balanced','build_teacher_cache','domain_distill_light','domain_distill_strong','domain_distill_stronger','domain_distill_resumeaux','domain_distill_resumeaux_full','domain_distill_sharpteacher','domain_distill_teacher_agreement','domain_distill_aligned_feature','domain_distill_feature_mlp','domain_distill_teacher_first','domain_distill_bounded_aspect','domain_distill_readout_ridge','domain_distill_position_jitter','domain_distill_refit250','domain_distill_refit500','domain_distill_readout256',*PINNED_TEACHER_PROFILES],
+    parser.add_argument('--profiles', nargs='+', choices=['preserve_adam','preserve_sam','preserve_fullfield_sam','preserve_fullfield_both_sam','regularized_control','regularized_phase05','domain_mixed','domain_curriculum','domain_target_control','domain_refine_control','domain_refine_wide','domain_refine_views','domain_refine_pool500_mix13','domain_refine_context7','domain_refine_balanced','build_teacher_cache','build_vision_teacher_cache','domain_distill_light','domain_distill_strong','domain_distill_stronger','domain_distill_resumeaux','domain_distill_resumeaux_full','domain_distill_sharpteacher','domain_distill_teacher_agreement','domain_distill_aligned_feature','domain_distill_feature_mlp','domain_distill_teacher_first','domain_distill_bounded_aspect','domain_distill_readout_ridge','domain_distill_position_jitter','domain_distill_refit250','domain_distill_refit500','domain_distill_readout256',*PINNED_TEACHER_PROFILES],
                         default=['preserve_sam','preserve_adam','preserve_fullfield_sam'])
     parser.add_argument('--after-queue', type=Path, help='Existing status.json; wait without a CUDA context until this queue completes')
     args = parser.parse_args()
@@ -65,6 +66,13 @@ def main():
     if 'build_teacher_cache' in args.profiles:
         if args.teacher_model is None or args.abo is None or args.pool is None:parser.error('Teacher builder requires --teacher-model, --abo and --pool')
         if args.profiles[0]!='build_teacher_cache':parser.error('Teacher cache build must precede training')
+    if 'build_vision_teacher_cache' in args.profiles:
+        if args.teacher_model is None or args.abo is None or args.pool is None:parser.error('Visual teacher builder requires --teacher-model, --abo and --pool')
+        if args.profiles[0]!='build_vision_teacher_cache':parser.error('Visual cache builder must be first; use existing global teacher cache')
+    if 'domain_distill_vision_patch' in args.profiles and args.vision_teacher_cache is None and 'build_vision_teacher_cache' not in args.profiles:
+        parser.error('Visual distillation requires --vision-teacher-cache or a preceding visual cache builder')
+    if args.vision_teacher_cache is not None and 'domain_distill_vision_patch' not in args.profiles:
+        parser.error('--vision-teacher-cache is only used by domain_distill_vision_patch')
     if any(p.startswith('domain_distill_') for p in args.profiles) and args.teacher_cache is None and 'build_teacher_cache' not in args.profiles:
         parser.error('Distillation requires --teacher-cache or a preceding build_teacher_cache job')
     if args.after_queue is not None and not args.after_queue.is_file():parser.error('--after-queue must be an existing status.json')
@@ -102,10 +110,15 @@ def main():
                     '--output',str(run/'artifacts')]
                 if args.reuse_teacher_cache is not None:
                     command+=['--reuse-cache',str(args.reuse_teacher_cache),'--reuse-cache-sha256',args.reuse_teacher_cache_sha256]
+            elif profile=='build_vision_teacher_cache':
+                command=[sys.executable,'-u','-m','LightGenV2.tasks.t07_abo_image_retrieval.standalone.vision_teacher',
+                    '--target',str(args.target),'--abo',str(args.abo),'--pool',str(args.pool),'--model',str(args.teacher_model),
+                    '--assets',str(args.assets),'--batch-size','4','--output',str(run/'artifacts')]
             elif profile.startswith('domain_distill_'):
                 command+=['--teacher-cache',str(args.teacher_cache)]
                 if profile in PINNED_TEACHER_PROFILES:
                     command+=['--teacher-alignment',str(args.teacher_alignment)]
+                if profile=='domain_distill_vision_patch':command+=['--vision-teacher-cache',str(args.vision_teacher_cache)]
             if profile=='domain_distill_readout_ridge':
                 command=[sys.executable,'-u','-m','LightGenV2.tasks.t07_abo_image_retrieval.standalone.readout_distill',
                     '--assets',str(args.assets),'--checkpoint',str(args.checkpoint),'--target',str(args.target),
@@ -123,6 +136,12 @@ def main():
             if profile=='build_teacher_cache':
                 args.teacher_cache=run/'artifacts/cache.pt'
                 status['completed'].append(dict(profile=profile,cache=str(args.teacher_cache),cache_sha256=report['cache_sha256'],
+                    training_images=report['training_images'],teacher_trainable_parameters=report['teacher_trainable_parameters']))
+            elif profile=='build_vision_teacher_cache':
+                if report.get('kind')!='vision_patch_teacher_cache' or report.get('complete_training_pool') is not True:
+                    raise RuntimeError('Visual cache builder did not produce the complete training pool')
+                args.vision_teacher_cache=run/'artifacts/cache.pt'
+                status['completed'].append(dict(profile=profile,cache=str(args.vision_teacher_cache),cache_sha256=report['cache_sha256'],
                     training_images=report['training_images'],teacher_trainable_parameters=report['teacher_trainable_parameters']))
             else:
                 status['completed'].append(dict(profile=profile,hit1=report['metrics']['hit_at_1'],

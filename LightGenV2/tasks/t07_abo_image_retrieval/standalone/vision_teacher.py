@@ -7,6 +7,7 @@ the student coordinate system; do not pair these tokens with augmented crops.
 import argparse
 import hashlib
 import json
+import math
 import os
 from pathlib import Path
 import sys
@@ -75,10 +76,20 @@ def patch_cosine_loss(student, teacher):
     return (1-F.cosine_similarity(student.float(),teacher.detach().float(),dim=-1)).mean()
 
 
+def patch_step_weight(config, epoch, step):
+    """Periodic auxiliary update, period-scaled to retain the mean loss weight."""
+    weight=config.get('vision_patch_teacher_weight',0.)
+    every=config.get('vision_patch_teacher_every',4);warm=config.get('vision_patch_teacher_warmup_epochs',3)
+    if not math.isfinite(weight) or weight<0 or any(type(x) is not int or x<1 for x in (every,warm,epoch)) or type(step) is not int or step<0:
+        raise ValueError('Invalid visual teacher schedule')
+    return weight*min(1.,epoch/warm)*every if step%every==0 else 0.
+
+
 def build(args):
     """Standalone teacher-vision extraction, no language decoder weights loaded."""
     from safetensors import safe_open
     from transformers import AutoProcessor
+    from transformers import __version__ as transformers_version
     from transformers.models.qwen3_vl.configuration_qwen3_vl import Qwen3VLVisionConfig
     from transformers.models.qwen3_vl.modeling_qwen3_vl import Qwen3VLVisionModel
     from .data import _load_contract
@@ -129,6 +140,8 @@ def build(args):
     report={k:v for k,v in cache.items() if k not in ('features','ids','image_sha256')}
     report.update(status='complete',command=sys.argv,pid=os.getpid(),device=str(device),torch=torch.__version__,
         cache_sha256=sha256(args.output/'cache.pt'),training_images=len(samples),storage_bytes=cache['features'].numel()*2,
+        python=sys.version,transformers=transformers_version,teacher_attention_implementation='sdpa',
+        gpu=torch.cuda.get_device_name(device) if device.type=='cuda' else None,
         teacher_in_student_inference=False)
     write_json(args.output/'final_report.json',report)
     print(json.dumps(report,indent=2),flush=True)

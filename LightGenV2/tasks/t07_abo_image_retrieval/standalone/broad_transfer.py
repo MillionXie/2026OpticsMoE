@@ -133,6 +133,14 @@ def run_stage(args,stage,output,initial_checkpoint=None):
             selection_audit=dict(policy='keep all original train; external teacher nearest-other-product agrees',
                 before_images=len(selection_rows),after_images=len(samples),original_train_retained=target_count,
                 selection_sha256=sha256(output/'training_selection.csv'),labels_modified=False,source_files_deleted=False)
+        vision_targets=None;vision_audit=None
+        if cfg_all.get('vision_patch_teacher_weight',0):
+            from .vision_teacher import load_cache,merged_vision,patch_cosine_loss,patch_step_weight
+            if stage!='adapt' or not domain or getattr(args,'vision_teacher_cache',None) is None:
+                raise ValueError('Visual patch teacher requires domain adapt and --vision-teacher-cache')
+            if cfg_all.get('input_preprocessing')!='contain_white':raise ValueError('Visual targets require clean contain_white coordinates')
+            patch_step_weight(cfg_all,1,0)
+            vision_targets,vision_audit=load_cache(args.vision_teacher_cache,samples,args.target,args.pool,args.assets,device)
         groups=make_groups(samples)
         if len(groups)<cfg['classes_per_batch'] or min(len(g) for g in groups.values())<cfg['products_per_class']:
             raise ValueError('Not enough distinct products/classes for sampling')
@@ -184,6 +192,7 @@ def run_stage(args,stage,output,initial_checkpoint=None):
                 gallery_products=len({s.product_id for s in target_train}),test_products=len({s.product_id for s in target_test}),
                 eval_protocol='Original gallery and test unchanged; expanded products never enter eval gallery')
         execution['training_only_teacher']=teacher_audit
+        execution['training_only_vision_teacher']=vision_audit
         execution['training_selection']=selection_audit
         execution['protected_optics_source_sha256']=sha256(Path(__file__).with_name('optics.py'))
         write_json(output/'execution.json',execution)
@@ -274,6 +283,8 @@ def run_stage(args,stage,output,initial_checkpoint=None):
                 frozen=(warm and g['kind'] in ('electronic','adapter')) or (polish and g['kind'] not in ('readout','auxiliary'))
                 g['lr']=0. if frozen else g['initial_lr']*scale
             totals=dict(loss=0.,ce=0.,supcon=0.,correct=0.,optical_auxiliary=0.,gallery_nll=0.,gallery_margin=0.,train_gallery_hit1=0.,sam_loss_gap=0.,view_consistency=0.,relation_kd=0.,teacher_correct_fraction=0.,teacher_confidence=0.,aligned_feature_kd=0.,feature_teacher_correct_fraction=0.);seen=set();paired_seen=set();clean_batches=0
+            vision_updates=0;vision_weight_sum=0.
+            if vision_targets is not None:totals['vision_patch_kd']=0.
             feature_weight=cfg_all.get('teacher_feature_weight',0.)*min(1.,epoch/max(1,cfg_all.get('teacher_feature_warmup_epochs',3)))
             gt_scale=supervised_loss_scale(epoch,cfg_all)
             view_weight=cfg_all.get('view_consistency_weight',0.)*min(1.,epoch/max(1,cfg_all.get('view_consistency_warmup_epochs',1)))
@@ -302,6 +313,14 @@ def run_stage(args,stage,output,initial_checkpoint=None):
                     if stage=='pretrain':im=ImageEnhance.Brightness(im).enhance(rng.uniform(.9,1.1))
                     images.append(im)
                 batch=inputs(processor,images,device)
+                vision_batch=None;vision_weight=0.
+                if vision_targets is not None:
+                    vision_weight=patch_step_weight(cfg_all,epoch,step)
+                    if vision_weight:
+                        # Matching clean coordinate view, not the augmented main
+                        # images. Existing optical noise mode is intentionally kept.
+                        vision_batch=inputs(processor,[picture(samples[i].image_path,'contain_white') for i in indices],device)
+                        vision_updates+=1;vision_weight_sum+=vision_weight
                 paired_batch=None
                 if view_weight:
                     pair_ids=paired_view_indices(samples,groups,indices,pair_rng)
@@ -337,6 +356,11 @@ def run_stage(args,stage,output,initial_checkpoint=None):
                             result.update(aligned_feature_kd=kd.detach(),feature_teacher_correct_fraction=correct_fraction)
                     # Preserve primary-view router statistics before alternate-view forward.
                     result['selected']={m:getattr(model,m).optics.router.last['selected_mask'].detach().sum(0) for m in counts}
+                    if vision_batch is not None:
+                        with autocast(device):visual=merged_vision(model,vision_batch)
+                        patch_loss=patch_cosine_loss(visual,vision_targets[indices])
+                        loss=loss+vision_weight*patch_loss
+                        result['vision_patch_kd']=patch_loss.detach()
                     if paired_batch is not None:
                         with autocast(device):paired_features=model(paired_batch)
                         alignment=view_consistency_loss(z,paired_features)
@@ -364,6 +388,11 @@ def run_stage(args,stage,output,initial_checkpoint=None):
                      unique_images=len(seen),paired_unique_images=len(paired_seen),view_consistency_weight=view_weight,relation_teacher_weight=teacher_weight,teacher_feature_weight=feature_weight,supervised_loss_scale=gt_scale,
                      clean_batches=clean_batches,alpha=model.audit()['alpha'],sam_rho=rho,sam_rho_target=cfg_all.get('sam_rho',0.),
                      router_selected_fraction={m:(c/(epoch_steps*cfg['classes_per_batch']*cfg['products_per_class'])).cpu().tolist() for m,c in counts.items()})
+            if vision_targets is not None:
+                row['vision_patch_supervision']=dict(updates=vision_updates,
+                    mean_loss_on_updates=totals['vision_patch_kd']/max(1,vision_updates),
+                    mean_weight_per_step=vision_weight_sum/epoch_steps,
+                    extra_forward='existing V only, clean image with current optical noise mode; no inference change')
             if domain:
                 row['data_coverage']=dict(domain_phase=domain_phase,steps=epoch_steps,
                     mixed_target_products_per_class=cfg_all.get('domain_target_products_per_class',2),
@@ -403,6 +432,7 @@ def run_stage(args,stage,output,initial_checkpoint=None):
                     auxiliary_head_at_inference=False,test_selected=stage=='adapt',
                     selection_note='best EMA snapshot indexed by live training loss' if stage=='pretrain' else 'target test Hit@1 then mAP; accepted best included')
         report.update(training_only_teacher=teacher_audit,teacher_at_inference=False,training_selection=selection_audit,
+                      training_only_vision_teacher=vision_audit,
                       teacher_feature_alignment=feature_alignment_audit,
                       protected_optics_source_sha256=execution['protected_optics_source_sha256'])
         if high:report['selection_note']='Only alpha>=0.4 candidates, including converted initial checkpoint; low-alpha 70.21% is NOT a fallback'
@@ -444,9 +474,12 @@ def main():
     p.add_argument('--checkpoint',type=Path);p.add_argument('--device',default='cuda',choices=['cuda','cpu'])
     p.add_argument('--teacher-cache',type=Path,help='Training-only frozen teacher vectors; not loaded for other profiles or inference')
     p.add_argument('--teacher-alignment',type=Path,help='Pinned training-only teacher basis for teacher_continue')
+    p.add_argument('--vision-teacher-cache',type=Path,help='Complete train-only clean visual-token cache, only for vision_patch profile')
     p.add_argument('--pretrain-epochs',type=int);p.add_argument('--adapt-epochs',type=int);p.add_argument('--steps',type=int)
     p.add_argument('--batch-size',type=int,default=4)
     args=p.parse_args();verify_assets(args.assets)
+    if (args.profile=='domain_distill_vision_patch')!=(args.vision_teacher_cache is not None):
+        p.error('--vision-teacher-cache is required only for domain_distill_vision_patch')
     if (args.profile in PINNED_TEACHER_PROFILES) != (args.teacher_alignment is not None):
         p.error('--teacher-alignment is required only for pinned teacher continuation profiles')
     if (args.profile.startswith('high_alpha') or args.profile in PROFILES) and args.mode!='adapt':p.error('High-alpha/generalization profiles support target adapt only')

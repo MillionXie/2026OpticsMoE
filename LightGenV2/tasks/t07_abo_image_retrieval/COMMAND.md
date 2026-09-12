@@ -995,11 +995,11 @@ python -m LightGenV2.tasks.t07_abo_image_retrieval.standalone.generalization_que
 测试仍480查询/120商品图库，live/EMA周期test选best，最终同权重去光，best/last而非周期PT。
 启动和排队不是涨分证据；看该run的history/final_report后，再决定是否固定新高做独立复评。
 
-## 36. 逐位置视觉教师缓存接口检查（尚未接入训练）
+## 36. 逐位置视觉教师缓存接口检查（4图CPU smoke）
 
 仅离线教师使用Qwen视觉Transformer，学生推理结构完全不变。本命令只在CPU生成4张训练图的smoke缓存；
 不会抢占第四张GPU。它标为不完整，正式训练加载器会拒绝，不能冒充全量训练缓存。
-真实全量缓存约1.04GiB；待该方案确定接入后，在预算内空闲GPU去掉`--max-images`再生成，不要现在额外抢卡。
+真实全量缓存约1.04GiB，正式生成与训练使用第37节的单卡队列，不要额外抢卡。
 
 ```bash
 ROOT=/DATA/DATA1/guest3/2026OpticsMoE
@@ -1017,3 +1017,32 @@ python -m LightGenV2.tasks.t07_abo_image_retrieval.standalone.vision_teacher \
 输出`cache.pt`和`final_report.json`；已经存在的输出目录会拒绝覆盖。
 输入必须是与学生一致的干净完整图，不能将位置教师直接用于随机裁剪/翻转后的图。
 缓存只含训练图片的49×2048 FP16单位向量，不含教师网络、语言decoder或测试图片；不进入部署模型。
+
+## 37. 训练期逐位置视觉监督（部署仍为原六次光计算）
+
+与普通teacher_continue配方相同，另外每4步对干净对应图做一次V-only教师监督。
+光学噪声沿用当步状态；主训练仍有增强，不把增强图错误地与干净位置特征匹配。
+本轮从原78.75%的64维best开始，不用256维候选；原480-query/120-gallery完全保持。
+先等GPU2的读出扩维实验结束，再生成完整5556图视觉缓存，然后退出教师进程、在同卡开始学生训练。
+
+```bash
+ROOT=/DATA/DATA1/guest3/2026OpticsMoE
+T07=$ROOT/LightGenV2/tasks/t07_abo_image_retrieval
+QWEN=/DATA/DATA1/guest3/.cache/huggingface/hub/models--Qwen--Qwen3-VL-Embedding-2B/snapshots/9f2f7e710d6d81056aa5c0a4f04764fec6bb7bda
+python -m LightGenV2.tasks.t07_abo_image_retrieval.standalone.generalization_queue \
+  --gpu GPU-6dcca91a-8e08-1a50-9aa6-81defeaed50b \
+  --assets "$T07/runs/simulation/standalone_assets_20260910" \
+  --checkpoint "$T07/runs/simulation/verify_teacher_first_ep11_20260912_gpu4/best.pt" \
+  --target "$ROOT/data/abo_similarity10_data" --abo "$ROOT/data/abo" \
+  --pool "$T07/runs/simulation/domain_pool250_20260912" --teacher-model "$QWEN" \
+  --teacher-cache "$T07/runs/smoke/domain_distillation_20260912/build_teacher_cache/artifacts/cache.pt" \
+  --teacher-alignment "$T07/runs/simulation/domain_teacher_first_20260912_gpu4/domain_distill_teacher_first/artifacts/teacher_feature_alignment.pt" \
+  --profiles build_vision_teacher_cache domain_distill_vision_patch --epochs 16 --steps 128 \
+  --output "$T07/runs/simulation/domain_vision_patch_20260912_gpu2" \
+  --after-queue "$T07/runs/simulation/domain_readout256_20260912_gpu2/status.json"
+```
+
+这两个cache不是同一个：原`--teacher-cache`是最终2048维检索教师；新视觉cache是49×2048位置特征。
+队列自动向学生传递完整视觉cache。单独续训时需`--vision-teacher-cache`指向完整cache.pt，4图smoke缓存会被拒绝。
+训练日志`vision_patch_supervision`在128步中应有32次更新；第3轮后全步平均权重0.2（实际每次辅助更新0.8）。
+教师仅生成缓存时加载，不出现在学生训练/推理模块。最终只保留best/last，同权重正常/去光及原协议指标均要报告。
