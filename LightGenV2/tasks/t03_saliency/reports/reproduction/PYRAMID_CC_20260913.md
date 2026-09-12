@@ -47,4 +47,23 @@ python -u -m LightGenV2.tasks.t03_saliency.run --profile main_dc20 --phase all -
 发现NaN、相位不更新、alpha越界、专家只固定一对等则先诊断；不得以修改评价或增大电子网络绕过。
 新候选必须重载best、独立全5000复算CC，并做同权重去光对照后才可替代正式候选。
 
-本文件创建时尚未启动，不表示已经取得新的分数。
+## 启动证据
+
+源码`b21b59c629a3c3be8addab2a2a5a60423cdb7daa`通过247项CPU测试（48.46秒，13条既有警告），
+并已推送GitHub `experiment/salicon-pyramid-20260913`。真实四张训练图的SAM单步报告为
+`runs/smoke/pyramid_cc_20260913/report.json`：patch/位置编码3933184参数逐项不变且无梯度，
+原生24个Transformer block前向调用0；六张相位梯度有限且更新非零，head85412、光参数479364。
+router raw RMS更新1.2757e-5；四专家/global约1.95e-4至1.98e-4。alpha=.43072152/.44106668。
+这些仅为训练短检查，不能将四图CC=.9058写成全测试成绩。
+
+UTC 2026-09-12 18:22:45（北京时间09-13 02:22）确认两张卡没有计算进程后启动：
+
+|组|PID/PGID|GPU UUID|
+|---|---:|---|
+|fullgrid|529390|GPU-4d8bfdb9-8777-05a6-3811-ab18ff4eadfd（GPU3/4090）|
+|pyramid|529392|GPU-d53ce4c8-272d-c2fb-dc09-f182d586c4eb（GPU5/3090）|
+
+环境CUDA_DEVICE_ORDER=PCI_BUS_ID、按UUID单卡选择、HF/Transformers离线、OMP/MKL各4线程。
+两组固定工作树`.worktrees/t03_baseline50_20260912`；运行中不得checkout或修改源码。
+各run的`launch_record.json`和`console.log`记录完整命令与进程身份；GPU型号不同，不做速度对比。
+本节记录启动，不表示已完成30轮或取得新性能。
