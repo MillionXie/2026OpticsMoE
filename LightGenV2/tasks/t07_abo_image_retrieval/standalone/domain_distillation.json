@@ -11,6 +11,18 @@
     "domain_distill_light": {"relation_teacher_weight": 0.10},
     "domain_distill_strong": {"relation_teacher_weight": 0.30},
     "domain_distill_stronger": {"relation_teacher_weight": 0.60},
+    "domain_distill_teacher_continue": {
+      "relation_teacher_weight": 0.0,
+      "teacher_feature_weight": 2.0,
+      "teacher_feature_warmup_epochs": 1,
+      "learning_rate_multiplier": 0.25,
+      "restore_auxiliary_source_sha256": "67a9c71d321720e5735afc9dc5214dbeeee017b6e4135912f92ed8fdabe3f3df",
+      "preserve_restored_category_proxies": true,
+      "teacher_alignment_sha256": "6c1fc98c3f666a550a3b2131aac3ede9ebb9db4aab1b6e7914936f25bfd6b74f",
+      "teacher_alignment_origin_checkpoint_sha256": "4fafe41ec23fcf0cb917f275ddab3be5c1686705c549ca1f58d68aa3c4829d3e",
+      "test_every": 1,
+      "protocol": "Continue pinned verified78.75% live epoch11. Restore all same-label training auxiliary heads, retain category proxies, reuse SHA-pinned original training-only teacher rotation instead of refitting. Teacher cosine2/GT1 throughout, all base learning rates multiplied0.25, fresh AdamW and cosine schedule (not an exact optimizer/RNG resume). Full cap250, original contain_white/linear64/physical optics/Top2/alpha>0.4 unchanged. No new inference modules; best/last only, original480-query/120-gallery."
+    },
     "domain_distill_position_jitter": {
       "relation_teacher_weight": 0.30,
       "test_every": 1,

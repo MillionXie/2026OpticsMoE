@@ -15,6 +15,30 @@ from .domain_data import combine_training
 from .io import sha256, write_json, source_commit
 
 
+def load_feature_alignment(path, expected_sha256, sample_ids, teacher_cache_sha256,
+                           source_checkpoint_sha256, dimension=64):
+    """Reuse a pinned TRAIN teacher basis, not rotate an already trained student."""
+    if not expected_sha256 or sha256(path) != expected_sha256:
+        raise ValueError('Teacher alignment file SHA mismatch')
+    payload = torch.load(path, map_location='cpu', weights_only=True)
+    if (payload.get('teacher_only') is not True or
+        payload.get('fit_sample_ids') != sample_ids or
+        payload.get('teacher_cache_sha256') != teacher_cache_sha256 or
+        payload.get('source_checkpoint_sha256') != source_checkpoint_sha256 or
+        payload.get('teacher_prefix_dimensions') != dimension):
+        raise ValueError('Teacher alignment training identity changed')
+    rotation = payload.get('rotation')
+    if (not isinstance(rotation, torch.Tensor) or rotation.shape != (dimension, dimension)
+        or not torch.isfinite(rotation).all()):
+        raise ValueError('Invalid teacher alignment matrix')
+    rotation = rotation.detach().float()
+    if not torch.allclose(rotation.T@rotation, torch.eye(dimension), atol=1e-5, rtol=1e-5):
+        raise ValueError('Teacher alignment must remain orthogonal')
+    if sha256(path) != expected_sha256:
+        raise ValueError('Teacher alignment changed while loading')
+    return dict(payload, rotation=rotation)
+
+
 @torch.no_grad()
 def fit_feature_alignment(teacher, student):
     """Rotate TRAIN teacher coordinates into the existing student basis.

@@ -799,3 +799,29 @@ python -m LightGenV2.tasks.t07_abo_image_retrieval.standalone.generalization_que
   --output "$T07/runs/simulation/domain_position_jitter_20260912_gpu2" \
   --after-queue "$T07/runs/simulation/domain_readout_ridge_20260912_gpu2/status.json"
 ```
+
+## 29. 从已核验78.75%稳态续训（保留训练辅助头/教师目标）
+
+只接受下列固定第11轮live副本和已记录SHA的教师坐标矩阵；传错checkpoint/矩阵会拒绝运行。
+矩阵来自训练特征，非光相位的k空间变换；部署不依赖它或辅助头。优化器重新建立，不声称精确恢复旧训练状态。
+
+```bash
+T07=LightGenV2/tasks/t07_abo_image_retrieval
+ASSETS=$T07/runs/simulation/standalone_assets_20260910
+TARGET=/DATA/DATA1/guest3/2026OpticsMoE/data/abo_similarity10_data
+ABO=/DATA/DATA1/guest3/2026OpticsMoE/data/abo
+BEST=$T07/runs/simulation/verify_teacher_first_ep11_20260912_gpu4/best.pt
+CACHE=$T07/runs/smoke/domain_distillation_20260912/build_teacher_cache/artifacts/cache.pt
+POOL=$T07/runs/simulation/domain_pool250_20260912
+ALIGNMENT=$T07/runs/simulation/domain_teacher_first_20260912_gpu4/domain_distill_teacher_first/artifacts/teacher_feature_alignment.pt
+python -m LightGenV2.tasks.t07_abo_image_retrieval.standalone.generalization_queue \
+  --gpu GPU-1b963983-7909-af6e-0528-f0f0661ab549 --assets "$ASSETS" --checkpoint "$BEST" \
+  --target "$TARGET" --abo "$ABO" --pool "$POOL" --teacher-cache "$CACHE" --teacher-alignment "$ALIGNMENT" \
+  --profiles domain_distill_teacher_continue --epochs 12 --steps 128 \
+  --output "$T07/runs/simulation/domain_teacher_continue_20260912_gpu4" \
+  --after-queue "$T07/runs/simulation/domain_teacher_first_20260912_gpu4/status.json"
+```
+
+`execution.json`记录辅助头恢复、category proxy保留和教师矩阵来源；每轮记录实际监督系数与正常test。
+训练结束再重载best完成正常/去光复评，不是每轮都测去光。
+该组没有新增网络层或改变光学传播。未超过当前best时不替换正式候选。

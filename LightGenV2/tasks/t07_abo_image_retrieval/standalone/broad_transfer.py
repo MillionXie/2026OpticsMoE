@@ -25,6 +25,7 @@ from .cli import autocast,encode,evaluate,supcon,regularization,preview
 from .curriculum import parameter_kind
 from .prepare_broad_abo import safe_image
 from .generalization import PROFILES, overlay_config, apply_contract, backward_with_sam, parameter_decay, restore_auxiliary_head, initialize_category_proxies, supervised_loss_scale
+from .generalization import learning_rate_multiplier
 from .learning_curves import write_learning_curves
 from .domain_data import combine_training, epoch_batches, paired_view_indices, view_consistency_loss
 
@@ -91,6 +92,7 @@ def run_stage(args,stage,output,initial_checkpoint=None):
             if isinstance(value,dict):cfg_all[key].update(value)
             else:cfg_all[key]=value
     if general:cfg_all=overlay_config(cfg_all,args.profile)
+    lr_multiplier=learning_rate_multiplier(cfg_all)
     track_clean=cfg_all.get('track_clean_train',False)
     cfg=cfg_all[stage].copy()
     cfg['epochs']=getattr(args,stage+'_epochs') or cfg['epochs'];cfg['steps']=args.steps or cfg['steps']
@@ -158,14 +160,14 @@ def run_stage(args,stage,output,initial_checkpoint=None):
         optgroups=[]
         for name,p in trainables:
             kind=group_kind(name) if high else parameter_kind(name)
-            rate=cfg[kind+'_lr'] if high or kind!='alpha' else 0.
+            rate=(cfg[kind+'_lr'] if high or kind!='alpha' else 0.)*lr_multiplier
             optgroups.append(dict(params=[p],lr=rate,initial_lr=rate,kind=kind,
                                   weight_decay=parameter_decay(name,p,kind,cfg_all.get('electronic_weight_decay',0.))))
         if cfg_all.get('electronic_weight_decay',0.):
             for name,p in head.named_parameters():
-                optgroups.append(dict(params=[p],lr=cfg['auxiliary_lr'],initial_lr=cfg['auxiliary_lr'],kind='auxiliary',
+                optgroups.append(dict(params=[p],lr=cfg['auxiliary_lr']*lr_multiplier,initial_lr=cfg['auxiliary_lr']*lr_multiplier,kind='auxiliary',
                                       weight_decay=parameter_decay(name,p,'auxiliary',cfg_all['electronic_weight_decay'])))
-        else:optgroups.append(dict(params=list(head.parameters()),lr=cfg['auxiliary_lr'],initial_lr=cfg['auxiliary_lr'],kind='auxiliary'))
+        else:optgroups.append(dict(params=list(head.parameters()),lr=cfg['auxiliary_lr']*lr_multiplier,initial_lr=cfg['auxiliary_lr']*lr_multiplier,kind='auxiliary'))
         optimizer=torch.optim.AdamW(optgroups,weight_decay=0)
         ema={n:p.detach().clone() for n,p in trainables}
         execution=dict(source_commit=source_commit(),command=sys.argv,pid=os.getpid(),python=sys.version,torch=torch.__version__,
@@ -210,18 +212,35 @@ def run_stage(args,stage,output,initial_checkpoint=None):
                 proxy_initialization=initialize_category_proxies(head,features,initial_labels,
                     cfg_all.get('preserve_restored_category_proxies',False))
                 if cfg_all.get('teacher_feature_weight',0):
-                    from .teacher_relations import fit_feature_alignment,aligned_feature_loss
+                    from .teacher_relations import fit_feature_alignment,aligned_feature_loss,load_feature_alignment
                     teacher64=F.normalize(teacher_vectors[:,:features.shape[1]].float(),dim=-1)
-                    rotation=fit_feature_alignment(teacher64[:target_count],features)
-                    feature_targets=F.normalize(teacher64@rotation,dim=-1).detach()
                     alignment_file=output/'teacher_feature_alignment.pt'
-                    torch.save(dict(rotation=rotation.cpu(),fit_sample_ids=[s.sample_id for s in target_train],
-                        source_checkpoint_sha256=execution['initial_checkpoint_sha256'],
-                        teacher_cache_sha256=teacher_audit['cache_sha256'],teacher_prefix_dimensions=features.shape[1],
-                        teacher_only=True),alignment_file)
+                    reused=bool(cfg_all.get('teacher_alignment_sha256'))
+                    if reused:
+                        if getattr(args,'teacher_alignment',None) is None:
+                            raise ValueError('Continuation requires --teacher-alignment')
+                        alignment=load_feature_alignment(args.teacher_alignment,cfg_all['teacher_alignment_sha256'],
+                            [s.sample_id for s in target_train],teacher_audit['cache_sha256'],
+                            cfg_all['teacher_alignment_origin_checkpoint_sha256'],features.shape[1])
+                        rotation=alignment['rotation'].to(device)
+                    else:
+                        rotation=fit_feature_alignment(teacher64[:target_count],features)
+                        alignment=dict(rotation=rotation.cpu(),fit_sample_ids=[s.sample_id for s in target_train],
+                            source_checkpoint_sha256=execution['initial_checkpoint_sha256'],
+                            teacher_cache_sha256=teacher_audit['cache_sha256'],teacher_prefix_dimensions=features.shape[1],
+                            teacher_only=True)
+                    feature_targets=F.normalize(teacher64@rotation,dim=-1).detach()
+                    torch.save(alignment,alignment_file)
                     feature_alignment_audit=dict(fit_scope='original train only',fit_images=target_count,
-                        prefix_dimensions=features.shape[1],fit_mean_cosine=float((feature_targets[:target_count]*features).sum(1).mean()),
+                        prefix_dimensions=features.shape[1],
                         artifact_sha256=sha256(alignment_file),student_weights_rotated=False,at_inference=False)
+                    current_cosine=float((feature_targets[:target_count]*features).sum(1).mean())
+                    if reused:
+                        feature_alignment_audit.update(alignment_reused=True,
+                            source_artifact_sha256=cfg_all['teacher_alignment_sha256'],
+                            original_fit_checkpoint_sha256=alignment['source_checkpoint_sha256'],
+                            current_start_mean_cosine=current_cosine)
+                    else:feature_alignment_audit['fit_mean_cosine']=current_cosine
             execution['category_proxy_initialization']=proxy_initialization
             execution['teacher_feature_alignment']=feature_alignment_audit
             write_json(output/'execution.json',execution)
@@ -423,9 +442,12 @@ def main():
     p.add_argument('--abo',type=Path);p.add_argument('--pool',type=Path);p.add_argument('--output',type=Path,required=True)
     p.add_argument('--checkpoint',type=Path);p.add_argument('--device',default='cuda',choices=['cuda','cpu'])
     p.add_argument('--teacher-cache',type=Path,help='Training-only frozen teacher vectors; not loaded for other profiles or inference')
+    p.add_argument('--teacher-alignment',type=Path,help='Pinned training-only teacher basis for teacher_continue')
     p.add_argument('--pretrain-epochs',type=int);p.add_argument('--adapt-epochs',type=int);p.add_argument('--steps',type=int)
     p.add_argument('--batch-size',type=int,default=4)
     args=p.parse_args();verify_assets(args.assets)
+    if (args.profile=='domain_distill_teacher_continue') != (args.teacher_alignment is not None):
+        p.error('--teacher-alignment is required only for domain_distill_teacher_continue')
     if (args.profile.startswith('high_alpha') or args.profile in PROFILES) and args.mode!='adapt':p.error('High-alpha/generalization profiles support target adapt only')
     if args.mode in ('pretrain','chain') and (args.abo is None or args.pool is None):p.error('--abo and --pool required')
     if args.profile.startswith('domain_') and (args.abo is None or args.pool is None):p.error('Domain expansion requires --abo and --pool')

@@ -13,7 +13,14 @@ import torch
 PROFILES = ('preserve_adam', 'preserve_sam', 'preserve_fullfield_sam', 'preserve_fullfield_both_sam',
             'regularized_control', 'regularized_phase05', 'domain_mixed', 'domain_curriculum', 'domain_target_control',
             'domain_refine_control', 'domain_refine_wide', 'domain_refine_views', 'domain_refine_pool500_mix13', 'domain_refine_context7', 'domain_refine_balanced',
-            'domain_distill_light', 'domain_distill_strong', 'domain_distill_stronger', 'domain_distill_resumeaux', 'domain_distill_resumeaux_full', 'domain_distill_sharpteacher', 'domain_distill_teacher_agreement', 'domain_distill_aligned_feature', 'domain_distill_feature_mlp', 'domain_distill_teacher_first', 'domain_distill_bounded_aspect', 'domain_distill_position_jitter')
+            'domain_distill_light', 'domain_distill_strong', 'domain_distill_stronger', 'domain_distill_resumeaux', 'domain_distill_resumeaux_full', 'domain_distill_sharpteacher', 'domain_distill_teacher_agreement', 'domain_distill_aligned_feature', 'domain_distill_feature_mlp', 'domain_distill_teacher_first', 'domain_distill_bounded_aspect', 'domain_distill_position_jitter', 'domain_distill_teacher_continue')
+
+
+def learning_rate_multiplier(config):
+    value=config.get('learning_rate_multiplier',1.)
+    if not math.isfinite(value) or not 0<value<=1:
+        raise ValueError('Continuation learning-rate multiplier must be in (0,1]')
+    return float(value)
 
 
 def supervised_loss_scale(epoch, config):
