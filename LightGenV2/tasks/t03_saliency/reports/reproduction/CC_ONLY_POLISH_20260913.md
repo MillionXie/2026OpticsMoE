@@ -57,3 +57,7 @@ CPU真实8图SAM单步通过；它不是正式batch32实验成绩。
 因此UTC2026-09-12 20:32:22停止PID622725及全部五个子进程，保留best/last、不删除run。
 `manual_stop_report.json`确认全部退出；不是完成20轮，也没有新的性能提升。
 本轮不采用CC-only目标，不因主指标目标改变而隐瞒失败。
+CPU重载检查core/head均为有限值；实际best第0轮（初始化）、last第10轮。
+best文件SHA `bf93ba1f31b00b5dc3fe33b70f81cfd6459ddd583eedfa76f7d016c5ac1cf529`，
+last文件SHA `f10f9ecf97ae53eaa0e6324d140657df02679406c14ccb5059134630e52aa975`。
+初始化权重重新封装导致文件SHA不同，不能据此声称它有训练提升。
