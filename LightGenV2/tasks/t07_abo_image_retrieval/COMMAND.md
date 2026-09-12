@@ -1221,9 +1221,10 @@ python -m LightGenV2.tasks.t07_abo_image_retrieval.standalone.generalization_que
 
 等待阶段不占CUDA；依赖失败或GPU被其他人使用则停止，不抢占或杀其它任务。只保存best/last。
 
-## 44. 按类别边际概率蒸馏，不强制同类内部商品排序（运行中，不要重复启动）
+## 44. 按类别边际概率蒸馏，不强制同类内部商品排序（已完成、无提升；仅供复现）
 
 已完成训练集诊断及170项两端测试，确认GPU2空闲后用1b052415启动，监督3039650/学生3039658。
+16轮完成，最终选择初始权重（epoch=-1），正常79.375%、去光62.9167%，不采用此改动。GPU2已释放。
 诊断仅说明原训练bank中同类内部项占关系KL的16.69%，不证明性能会改善。此配方从第40节79.375%起点出发，
 将训练商品关系KL改成类别概率之和上的KL，聚合softmax/logsumexp使用FP32。
 仍保留原商品Top1门控和置信度、排除自身商品、教师特征余弦2及GT课程；前端保持冻结。
@@ -1285,6 +1286,7 @@ python -m LightGenV2.tasks.t07_abo_image_retrieval.standalone.generalization_que
 不要与第45节相位平移混用；这是原始79.375%相位初始化的单独训练顺序对照。
 先核对GPU4空闲；最多3张卡，不能挤占其他人的任务。正式执行前源码必须测试并push GitHub。
 已用d1b5c6cf启动，监督3227016/学生3227019；两端180项测试通过，完整初始评估79.375%。
+首轮权重已核验：12份相位更新，所有非相位及辅助头逐值不变；证据见该run的`artifacts/phase_only_freeze_verification.json`。
 
 ```bash
 T07=/DATA/DATA1/guest3/2026OpticsMoE/LightGenV2/tasks/t07_abo_image_retrieval
