@@ -51,6 +51,30 @@ class PrunedTemporalReadout(TemporalReadout):
         self.output[4] = nn.Linear(hidden_width, 1)
 
 
+class _FactorizedLinear(nn.Module):
+    """Two ordinary linear maps replacing one post-optical dense matrix."""
+
+    def __init__(self, input_width: int, output_width: int, rank: int) -> None:
+        super().__init__()
+        self.reduce = nn.Linear(input_width, rank, bias=False)
+        self.expand = nn.Linear(rank, output_width, bias=True)
+
+    def forward(self, value: torch.Tensor) -> torch.Tensor:
+        return self.expand(self.reduce(value))
+
+
+class LowRankTemporalReadout(TemporalReadout):
+    """SVD-compress only the largest post-optical Temporal output matrix."""
+
+    def __init__(self, settings: MultiVideoSettings) -> None:
+        super().__init__(settings)
+        self.output[1] = _FactorizedLinear(
+            settings.head_width * 8,
+            settings.head_width * 2,
+            settings.temporal_readout_rank,
+        )
+
+
 def _slotwise_routing_statistics(
     probabilities: torch.Tensor, selected: torch.Tensor
 ) -> dict[str, torch.Tensor]:
@@ -708,11 +732,12 @@ class MultiVideo9x4OpticalVQA(nn.Module):
         )
         nn.init.normal_(self.frame_position, std=0.02)
         nn.init.normal_(self.sequence_position, std=0.02)
-        self.readout = (
-            TemporalReadout(settings)
-            if settings.temporal_readout_mode == "dense"
-            else PrunedTemporalReadout(settings)
-        )
+        if settings.temporal_readout_mode == "dense":
+            self.readout = TemporalReadout(settings)
+        elif settings.temporal_readout_mode == "pruned":
+            self.readout = PrunedTemporalReadout(settings)
+        else:
+            self.readout = LowRankTemporalReadout(settings)
         self.register_buffer("target_mean", torch.tensor(0.0))
         self.register_buffer("target_std", torch.tensor(1.0))
 
@@ -934,4 +959,9 @@ def build_model(settings: MultiVideoSettings) -> MultiVideo9x4OpticalVQA:
     return model
 
 
-__all__ = ["MultiVideo9x4OpticalVQA", "PrunedTemporalReadout", "build_model"]
+__all__ = [
+    "LowRankTemporalReadout",
+    "MultiVideo9x4OpticalVQA",
+    "PrunedTemporalReadout",
+    "build_model",
+]

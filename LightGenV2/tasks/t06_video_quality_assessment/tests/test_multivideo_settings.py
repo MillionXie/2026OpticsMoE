@@ -69,6 +69,18 @@ class MultiVideoSettingsTest(unittest.TestCase):
         self.assertEqual(settings.temporal_readout_hidden_width, 512)
         self.assertIn("readout_h512", settings.architecture_label)
 
+    def test_low_rank_temporal_readout_is_explicitly_versioned(self) -> None:
+        path = (
+            Path(__file__).parents[1]
+            / "configs"
+            / "lightgen"
+            / "temporal_multivideo16x4_readout_rank384_s174.yaml"
+        )
+        settings = load_settings(path)
+        self.assertEqual(settings.temporal_readout_mode, "low_rank")
+        self.assertEqual(settings.temporal_readout_rank, 384)
+        self.assertIn("readout_r384", settings.architecture_label)
+
 
 if __name__ == "__main__":
     unittest.main()
