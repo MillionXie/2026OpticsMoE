@@ -1190,3 +1190,24 @@ last SHA256 `52a5e3051486b41856baa7201d3e2a4b0db45d5d2b4a7273248ea45101d5bb6b`�
 两组ASAM已全部停止并释放自有资源，正式独立CC仍为.8620496019，.87目标未达到。
 后续若允许微调现有Qwen patch输入投影，必须作为改变冻结前端训练口径的独立对照；
 目前仅向用户询问，尚未解冻、实现或启动该方案，不能宣称已获授权。
+
+## 冻结前端下的小批次SAM备选（2026-09-13）
+
+用户已确认前端继续冻结；不实施patch微调。高相位LR的refine_reheat及联合reheat均已有历史试验，
+不将重复加热重新包装为新方法。下一备选仅用既有SAM代码改变训练批次，暂不启动额外电子结构。
+依据[Andriushchenko与Flammarion，ICML2022](https://proceedings.mlr.press/v162/andriushchenko22a.html)
+关于随机小批次sharpness对SAM隐式偏置的分析，检验batch32改8是否能提高泛化。
+这是本项目的AdamW光电子子空间SAM超参数试验，**不是micro-batch-averaged mSAM实现或论文复现**。
+
+配置`moe_alpha40_sam_batch8_20260913.yaml`从正式87ad出发，原GT+KD2、SAM.05、光路、alpha、
+冻结前端和head全部不变。20轮预算，16轮起精修；关闭前一试验的金字塔监督，未改变推理。
+每轮10000张由313步变为1250步；学习率全部降到原1/4，EMA改成`.995**.25`以大致保持按图像计的记忆长度。
+Adam的矩估计仍按步更新，因此不是相同优化轨迹或严格单变量实验；不声称等计算量或等训练时间。
+不改变测试batch48/全部5000图、不增加测试增强、只留best/last。小batch的路由统计方差可能增大，
+必须继续看跨完整测试的专家分布，不能仅凭单batch判断坍缩。
+
+```bash
+python -m LightGenV2.tasks.t03_saliency.run --profile main_dc20 --phase all --config LightGenV2/tasks/t03_saliency/configs/moe_alpha40_sam_batch8_20260913.yaml
+```
+
+只在原有任务停止且自有GPU显存释放后启动，默认单卡，不超两卡总预算；此处为备选配置，不表示已有提升。

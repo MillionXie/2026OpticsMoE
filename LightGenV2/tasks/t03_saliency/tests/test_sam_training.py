@@ -164,3 +164,22 @@ def test_asam_profile_preserves_model_and_serializes_training_only(tmp_path, suf
         assert getattr(base,k)==getattr(trial,k)
     trial.output_dir=tmp_path;save_resolved_config(trial)
     assert yaml.safe_load((tmp_path/'resolved_config.yaml').read_text())['training']['asam']==trial.asam
+
+
+def test_small_batch_sam_keeps_frontend_and_physics_with_image_scaled_updates():
+    root = Path(__file__).resolve().parents[1] / 'configs'
+    a = load_settings(root/'moe_alpha40_extra_control.yaml')
+    b = load_settings(root/'moe_alpha40_sam_batch8_20260913.yaml')
+    assert a.student_batch_size == 32 and b.student_batch_size == 8
+    assert b.student_epochs == 20 and b.staged_polish_start == 16
+    assert architecture_label(a) == architecture_label(b)
+    assert b.ema_decay**4 == pytest.approx(a.ema_decay, abs=1e-12)
+    for k in ['student_learning_rate','phase_learning_rate','router_learning_rate',
+              'dense_readout_learning_rate','dense_head_learning_rate','ffn_spatial_learning_rate']:
+        assert getattr(b,k)*4 == pytest.approx(getattr(a,k))
+    for k in ['initialization_checkpoint_sha256','inference_batch_size','sam_rho',
+              'distillation_initial_weight','distillation_final_weight','fusion_alpha_min',
+              'router_backend','top_k','language_optical_phase_zero_order_intensity_min',
+              'language_optical_phase_zero_order_intensity_max']:
+        assert getattr(a,k) == getattr(b,k)
+    assert not b.pyramid_cc and not b.asam and not b.augmentation_enabled
