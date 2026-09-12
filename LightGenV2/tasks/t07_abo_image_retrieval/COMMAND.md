@@ -1509,3 +1509,27 @@ python -m LightGenV2.tasks.t07_abo_image_retrieval.standalone.generalization_que
 ```
 
 仅best/last，独立正常与去光复评后才能采用；扩大电子感受野的收益不能全部归于光。
+
+## 54. 仅训练时随机缩减近纯白留边（新候选）
+
+原V3/L5/MLP384、光路/Top2/α>0.4和测试预处理均不变，起点为未校准79.375%权重。
+50%概率尝试保守白边裁框/等比放大，另一半不做本项变换；具体阈值见README和`white_margin_box`。
+任一通道<254的像素须全部保留在裁框内；不是物体分割器，不处理CCD，不改标签/样本/测试/图库。
+先测试、同步GitHub，审计真实训练224图和梯度，再确认GPU5空闲启动。本助手加本组共两张GPU，不干预其他任务。
+
+```bash
+T07=/DATA/DATA1/guest3/2026OpticsMoE/LightGenV2/tasks/t07_abo_image_retrieval
+python -m LightGenV2.tasks.t07_abo_image_retrieval.standalone.generalization_queue \
+  --gpu GPU-d53ce4c8-272d-c2fb-dc09-f182d586c4eb \
+  --assets "$T07/runs/simulation/standalone_assets_20260910" \
+  --checkpoint "$T07/runs/simulation/verify_joint_ep8_20260912_gpu1/best.pt" \
+  --target /DATA/DATA1/guest3/2026OpticsMoE/data/abo_similarity10_data \
+  --abo /DATA/DATA1/guest3/2026OpticsMoE/data/abo \
+  --pool "$T07/runs/simulation/domain_pool250_20260912" \
+  --teacher-cache "$T07/runs/smoke/domain_distillation_20260912/build_teacher_cache/artifacts/cache.pt" \
+  --teacher-alignment "$T07/runs/simulation/domain_teacher_first_20260912_gpu4/domain_distill_teacher_first/artifacts/teacher_feature_alignment.pt" \
+  --profiles domain_distill_joint_whitezoom --epochs 16 --steps 128 --seed 42 \
+  --output "$T07/runs/simulation/domain_joint_whitezoom_20260913_gpu5"
+```
+
+不叠加第53节，初始和最终评估仍从原测试/图库图像重新编码；只存best/last，新高单独4090正常/去光复核。
