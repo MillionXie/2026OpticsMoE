@@ -147,7 +147,14 @@ def task_saliency_loss(logits, target, fixation, settings, *, teacher_logits=Non
             reference = objectives.kl_divergence(objectives.density_from_logits(logits),
                                                 objectives.density_from_logits(teacher_logits))
     pieces.update(map_kd=kd, map_kd_kl_reference=reference)
-    return base + float(settings.map_kd_weight)*kd, pieces
+    total = base + float(settings.map_kd_weight)*kd
+    options = getattr(settings, 'hard_example_cc', {})
+    if options:
+        from .hard_example_cc import loss as hard_cc_loss
+        extra, extra_pieces = hard_cc_loss(logits, target, options)
+        total = total + options['weight']*extra
+        pieces.update(extra_pieces)
+    return total, pieces
 
 
 class TrainTeacherMaps:
