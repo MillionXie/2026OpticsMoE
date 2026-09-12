@@ -28,6 +28,8 @@ def main():
     p.add_argument('--full-field',action='store_true',help='Gray sweep only: illuminate entire amplitude panel')
     p.add_argument('--wait-ms',type=float,default=200,help='Scout/gray diagnostic wait, not a recommended formal value')
     p.add_argument('--timing-exposure-us',type=float,help='Timing scan only: override camera exposure for this run')
+    p.add_argument('--delays-ms',type=float,nargs='+',default=[0,20,50,100,200,400])
+    p.add_argument('--repeats',type=int,default=2)
     args=p.parse_args();c=json.loads(Path(args.config).read_text(encoding='utf-8-sig'))
     if args.timing_exposure_us is not None:
         if args.mode!='timing':raise ValueError('timing-exposure-us requires timing mode')
@@ -35,6 +37,8 @@ def main():
     if len(args.exposures_us)>5:raise ValueError('At most 5 scout exposures')
     if not 0<=args.wait_ms<=1000:raise ValueError('Diagnostic wait must be 0..1000 ms')
     if args.full_field and args.mode!='gray':raise ValueError('Full field is only for gray sweep')
+    if not 1<=args.repeats<=10 or len(args.delays_ms)*args.repeats*2>60:raise ValueError('At most 60 timing frames')
+    if any(not 0<=v<=1000 for v in args.delays_ms):raise ValueError('Delays must be 0..1000 ms')
     args.out.mkdir(parents=True,exist_ok=False);patterns=args.out/'patterns';patterns.mkdir()
     # Same 8.126 mm support as ABO; large asymmetric halves identify swapped/old frames.
     paths={}
@@ -91,11 +95,11 @@ def main():
                 if not report['reference_check']['passed']:
                     raise ValueError('Cannot resolve SLM input changes; timing scan stopped, no recommended wait')
                 # Alternation prevents accidentally validating a stale identical pattern.
-                for delay in (0,20,50,100,200,400):
+                for delay in args.delays_ms:
                     c['settle_delay_ms']=delay
-                    for rep in range(2):
+                    for rep in range(args.repeats):
                         for name in ('left','right'):
-                            a,row=grab(name,f'd{delay}_r{rep}')
+                            a,row=grab(name,f'd{delay:g}_r{rep}')
                             row['same_reference']=compare(a,refs[name])
                             row['opposite_reference']=compare(a,refs['right' if name=='left' else 'left'])
                             save_json(args.out/'report.json',report)
