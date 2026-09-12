@@ -30,3 +30,22 @@ python -m LightGenV2.tasks.t03_saliency.run --profile main_dc20 --phase all --co
 保留best/last，必须注明实际完成/提前停止轮数；保留公开测试反复选模偏差说明。
 先通过CPU测试、真实图像更新检查并push源码，再启动；同一助手最多两张GPU。
 当前是备选配置，不表示已有新成绩，也不改变冻结Qwen50轮baseline的.87483830记录。
+
+## 实际验证与启动
+
+最初配置仍继承spatial_cc蒸馏模式，被“必须有活跃教师”的配置检查拒绝，未启动正式训练。
+修复只把无教师模式选回普通loss路径`distillation.loss: kl`、教师权重仍0；没有放宽保护条件。
+最终源码`8dc9be8b44ac4fd6cbfafdd1a7cd85c5c493fd60`通过253项CPU测试（44.95秒，13条既有警告），
+已推送GitHub `experiment/salicon-cc-only-20260913`。
+
+CPU真实8图SAM单步通过；它不是正式batch32实验成绩。
+冻结前端3933184参数逐值未变、无梯度，原生Transformer调用0；读出头85412参数。
+六张相位有有限非零梯度及更新；alpha .43072152/.44106668；教师缓存未加载、KD项0。
+保留的正则系数：soft balance .08、hard .1、importance .02、phase DC .005、CCD工作点 .02。
+证据`runs/smoke/cc_only_20260913/report.json`含实际学习率、样本ID及各相位更新幅度。
+
+于UTC2026-09-12 20:10:06启动PID/PGID622725，GPU1 UUID
+`GPU-e8837b85-d55b-8e81-aaa5-ec1ac326932d`，固定worktree `.worktrees/t03_balance`，运行中不得checkout。
+与GPU3/PID601787的cross-sample组并行，总计两张自有GPU。
+产物`runs/simulation/moe_alpha40_cc_only_polish_20260913_seed42`，
+`launch_record.json`记录完整命令、源码与配置SHA；当前是已启动状态，不是完成20轮或新最佳。

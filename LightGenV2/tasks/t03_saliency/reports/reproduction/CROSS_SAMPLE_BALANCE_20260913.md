@@ -66,3 +66,10 @@ run为`runs/simulation/moe_alpha40_sam_batch8_crosssample_20260913_seed42`，
 首轮完整5000图测试CC=.8624925288200378，live训练记录alpha=.43065083/.44102651；
 这不是独立复评数值，也不把live alpha当作EMA权重审计。需继续看第5/10轮趋势，
 不得因辅助loss值更低（估计方式改变）就直接与旧组的总loss比较优劣。
+
+第5轮回落至约.8619，尚未显示持续收益，继续观察第10轮。
+`midrun_state_audit.json`读取的仍为epoch1 EMA，SHA
+`036bc8caedcde4d6dabce276b1a2e4af15d960d88620098b19e1c198849b8bfe`。
+alpha=.43068659/.44104557，同规格Qwen decoder核对通过，85412头参数、479364光参数、
+六张相位尺寸和原光路合同未变。router物理相位较87ad的RMS变化7.95e-5 rad，
+其余约.001463至.001561 rad；这不是完全未训练，但状态检查不能代替完整独立测试。
