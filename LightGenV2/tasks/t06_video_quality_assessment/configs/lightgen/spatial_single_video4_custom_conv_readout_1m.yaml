@@ -5,6 +5,16 @@ status: formal_compressed_calibrated_srcc067_candidate_20260913
 backend:
   package: experiments.qwen3_vl_2b_lgvq_single_metric_o2_16frame_54
   config: experiments/qwen3_vl_2b_lgvq_single_metric_o2_16frame_54/configs/release/spatial_readout_1m_srcc067.yaml
+  config_sha256: 809bd67581971b47201de285f2f047b03213db7ff46ccffe9ea893aaf07acd3d
+  lab_guide: experiments/qwen3_vl_2b_lgvq_single_metric_o2_16frame_54/LAB_SPATIAL4_GUIDE.md
+  source_sha256:
+    modeling.py: d6b09c803e814e4fda79019c5b1ee2d45fe790310f195bb8e7a52a2b4c6f5a09c
+    settings.py: bfc27ce1da1d33695d0a5afcb37ff66ee0d42bee0f3afed096457e7cb9fcf887
+    training.py: 23a7bd6f432a214ea2e098f5e1ec8392ffb7688aed6eeb343545c4580d9d3763
+    run.py: c12c320e848e68041a32c8a74f38c0deba65d8f03f486f71c9695305960c9b72
+    data.py: a4c24eab04ff20651e094fda4bc72fe2032eb5835da33ab4c77ac86a527e4b39
+    hardware_bridge.py: 9b36ab6f202014be200d2d27cd0730a0651b7aa5429147c8ffcc12ceb165219b
+    export_hardware_masks.py: 049a74dbab71c84325edf9979602a303d120b9e5b1f6a3b8aa946ed8cc072ff9
 
 artifacts:
   checkpoint: LightGenV2/tasks/t06_video_quality_assessment/runs/simulation/spatial_readout_1m_srcc067/best_checkpoint.pt
