@@ -23,7 +23,7 @@ def compare(a,b):
 def main():
     p=argparse.ArgumentParser(description=__doc__)
     p.add_argument('--config',default='LAB.local.json');p.add_argument('--out',required=True,type=Path)
-    p.add_argument('--mode',choices=['scout','timing'],default='scout')
+    p.add_argument('--mode',choices=['scout','gray','timing'],default='scout')
     p.add_argument('--exposures-us',nargs='+',type=float,default=[50,200,1000])
     args=p.parse_args();c=json.loads(Path(args.config).read_text(encoding='utf-8-sig'))
     if len(args.exposures_us)>5:raise ValueError('At most 5 scout exposures')
@@ -36,6 +36,10 @@ def main():
         if name=='right':a[32:1048,960:1468]=255
         if name=='active':a[32:1048,452:1468]=255
         paths[name]=patterns/(name+'.bmp');Image.fromarray(a).save(paths[name])
+    if args.mode=='gray':
+        for gray in (0,64,128,192,255):
+            a=np.zeros((1080,1920),np.uint8);a[32:1048,452:1468]=gray
+            name=f'gray{gray:03d}';paths[name]=patterns/(name+'.bmp');Image.fromarray(a).save(paths[name])
     report={'config':c,'mode':args.mode,'phase':'operator-loaded uniform black, not changed by software',
             'frames':[],'complete':False,'camera_restored':False,'postprocessing':'raw Mono8; none'}
     source=Path(__file__).resolve().parent/'CODE_MANIFEST.json'
@@ -51,12 +55,13 @@ def main():
             print(label,name,'mean',meta['mean'],'p99',meta['p99'],'sat',meta['saturation_fraction'],flush=True)
             return frame,meta
         try:
-            if args.mode=='scout':
+            if args.mode in ('scout','gray'):
                 for exposure in args.exposures_us:
                     hw.camera.stop();hw.camera.set('ExposureTime',exposure);hw.camera.start()
                     hw.camera_settings=snapshot(hw.camera)
                     c['settle_delay_ms']=200
-                    for name in paths:grab(name,f'e{exposure:g}')
+                    names=paths if args.mode=='scout' else [n for n in paths if n.startswith('gray')]
+                    for name in names:grab(name,f'e{exposure:g}')
             else:
                 refs={};c['settle_delay_ms']=400
                 for name in ('left','right'):refs[name]=grab(name,'reference')[0]

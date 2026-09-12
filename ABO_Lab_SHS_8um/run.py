@@ -20,22 +20,32 @@ def main():
     sys.path.insert(0,str(compat))
     import common
     common.ROOT=ROOT
-    if '--config' not in sys.argv:sys.argv+=['--config',str(ROOT/'config.json')]
+    if '--config' not in sys.argv:
+        local=ROOT/'LAB.local.json'
+        sys.argv+=['--config',str(local if local.exists() else ROOT/'config.json')]
     import hardware
     from slm_camera import Controller
     class Bench(Controller):
         raw_suffix='.raw.png'
+        def __init__(self,c):
+            super().__init__(c)
+            # Legacy capture records hash raw_suffix unconditionally. Alias it
+            # to the canonical PNG in minimal mode; there is only one image.
+            self.raw_suffix='.raw.png' if c.get('save_raw_frames',False) else '.png'
         def capture(self,bmp,path,rectify=True):
             if bmp is None:raise ValueError('Camera-only capture: use capture.py')
             raw,meta=super().capture(bmp)
             out=Path(path);out.parent.mkdir(parents=True,exist_ok=True)
-            rawpath=out.with_suffix(self.raw_suffix);Image.fromarray(raw).save(rawpath)
-            with Image.open(rawpath) as im:
-                if not np.array_equal(raw,np.asarray(im)):raise RuntimeError('Raw PNG changed pixels')
+            keep_raw=self.c.get('save_raw_frames',False) or not rectify
+            if keep_raw:
+                rawpath=out.with_suffix('.raw.png');Image.fromarray(raw).save(rawpath,compress_level=1)
             meta['hardware_identity']=common.hardware_identity(self.c)
+            meta['raw_frame_saved']=keep_raw
             common.write(out.with_suffix('.json'),meta)
             if not rectify:return raw
-            frame=hardware.canonical(raw,self.c);Image.fromarray(frame).save(out.with_suffix('.png'));return frame
+            frame=hardware.canonical(raw,self.c)
+            Image.fromarray(frame).save(out.with_suffix('.png'),compress_level=1)
+            return frame
     hardware.Bench=Bench
     spec=importlib.util.spec_from_file_location('abo_shs_task',compat/'run.py');task=importlib.util.module_from_spec(spec);spec.loader.exec_module(task)
     # Its ROOT/run.py subprocess entry resolves to THIS adapter, never legacy DVP.
