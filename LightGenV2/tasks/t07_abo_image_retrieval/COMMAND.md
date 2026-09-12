@@ -1305,11 +1305,12 @@ python -m LightGenV2.tasks.t07_abo_image_retrieval.standalone.generalization_que
 
 只保存best/last；history中的`phase_only_warmup`记录阶段。正式采用前要独立复核新高与同权重去光结果。
 
-## 47. 更强的逐图特征蒸馏（候选；已有run不重复启动）
+## 47. 更强的逐图特征蒸馏（运行中；不要重复启动）
 
 从第40节固定79.375%权重开始，只把教师64维余弦损失权重2改成8，其余同joint_restart。
 没有新增推理网络或改变光路，也不叠加第45/46节。先确认GPU2空闲，不挤占他人任务；最多3张GPU。
 源码必须通过测试并同步GitHub。新高必须独立4090复评正常/去光，不能把蒸馏强度当作光贡献占比。
+已用18c4e400启动，监督3308242/学生3308245；两端181项测试通过，完整初始评估79.375%，只改变教师余弦权重。
 
 ```bash
 T07=/DATA/DATA1/guest3/2026OpticsMoE/LightGenV2/tasks/t07_abo_image_retrieval
