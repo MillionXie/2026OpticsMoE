@@ -1710,3 +1710,33 @@ python -m LightGenV2.tasks.t07_abo_image_retrieval.standalone.retrieval_screen p
 
 每次启动前重新检查指定GPU为空闲；COIL当时用GPU0不代表该卡现在仍空闲。运行完检查自己的PID和CUDA已释放，不杀其他任务。
 数据文件变动/缺图/重复SHA会报错，先调查，不强行放宽校验生成漂亮结果。预留训练不代表已经训练完成。
+
+## 61. Grocery81短程光电适配（完整命令）
+
+数据协议已由第60节固定；不改数据划分，不加载完整Qwen，不改光路。先进入包含本提交的干净Git工作树，使用xml环境。
+下面GPU4仅是本次运行设备，重跑前必须用nvidia-smi确认空闲；已有run目录不得覆盖，新复跑应换明确run_id。
+训练每批16图，`--batch-size 4`仅控制评估；测试每5轮选best，存在选模偏差，不称独立测试。
+
+```bash
+cd /DATA/DATA1/guest3/2026OpticsMoE/.worktrees/t07_screen_20260913
+T07=/DATA/DATA1/guest3/2026OpticsMoE/LightGenV2/tasks/t07_abo_image_retrieval
+export HF_HUB_OFFLINE=1 TRANSFORMERS_OFFLINE=1 OMP_NUM_THREADS=4 MKL_NUM_THREADS=4
+nvidia-smi
+CUDA_VISIBLE_DEVICES=GPU-1b963983-7909-af6e-0528-f0f0661ab549 \
+/home/guest3/miniconda3/envs/xml/bin/python -u -m LightGenV2.tasks.t07_abo_image_retrieval.standalone.grocery_transfer \
+  --data /DATA/DATA1/guest3/2026OpticsMoE/data/GroceryStoreDataset/dataset \
+  --manifest "$T07/runs/simulation/grocery81_protocol_20260913/protocol.json" \
+  --assets "$T07/runs/simulation/standalone_assets_20260910" \
+  --checkpoint "$T07/runs/simulation/readout_subspace_20260912/best.pt" \
+  --expected-checkpoint-sha256 50a8607eec392c00cf3675533490cb8ef953245af6f5d9cfbc9d616bf7d22701 \
+  --output "$T07/runs/simulation/grocery81_adapt_20260913" \
+  --epochs 20 --steps 100 --eval-every 5 --classes-per-batch 8 --batch-size 4
+```
+
+首次CUDA检查使用同一完整命令，仅把epochs/steps改成1/2、output改为`$T07/runs/smoke/grocery81_adapt_20260913`；
+它依然全量评估，但仅2次梯度更新，不当作正式成绩。成功且PID释放后再执行正式命令。
+`history.json`记录每轮loss/batch检索及周期全量train/test；最终`final_report.json`含best的正常/去光，`phase_masks.png`用于浏览。
+`phase_update_last.json`和`phase_update_best.json`分别量化最后/最佳相位相对起点的圆周RMS，不混称best一定学动。
+只保留best/last；其中last含优化器/EMA供审计，当前入口是fresh continuation，不宣称自动精确断点恢复。
+公开标准图库参与训练拟合；测试自然照片只用于定期选模，没有在训练批中使用。干净训练检索与测试检索使用相同81图图库。
+Qwen64基准71.9517%来自`grocery81_qwen64_20260913`，不是ABO的94.375%；当前还没有宣称适配达标。
