@@ -55,6 +55,10 @@ Router使用最短角差EMA，避免跨0/2π时raw平均变成π；专家/global
 异常恢复raw并终止该run，不在临时弧度状态执行前向或保存；边界截断误差小于约8e-7 rad。
 同79.375%起点、cap250二视角、教师余弦2/KL0.3、GT课程及16×128seed42；不叠加46/47节。
 这是改善饱和raw参数可训练性的候选，不等于已证明Router是性能瓶颈，尚无性能提升结论。命令第48节。
+源码a28a8438已同步GitHub，两端187项测试通过。真实4张原训练图CPU/BF16的一步Router-only检查通过：
+V/L相位圆周RMS更新约0.0001866/0.0001170 rad，只变两个Router，更新后前向有限，磁盘原权重不变且未占CUDA。
+该检查使用描述子smoke损失，不是完整训练或性能测试；证据为固定最佳`evaluation/diagnostics/router_radian_cpu_step.json`。
+队列监督3357893已启动，等待GPU1的routerorigin结束；等待阶段没有学生子进程或CUDA上下文，不占第四张卡。
 
 损失强度候选`domain_distill_joint_feature8`：从固定79.375%起点，仅将已有逐图64维教师余弦权重2提高至8。
 教师坐标/正确性门控、关系KL0.3、GT课程、数据、基础LR和16×128seed42保持原joint_restart设置。
