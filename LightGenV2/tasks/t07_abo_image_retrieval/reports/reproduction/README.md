@@ -4,7 +4,9 @@
 
 用户指定冻结Qwen64作为基准，停止追加ABO。研究候选、两组配对初筛结果与边界见[DATASET_SCREENING.md](DATASET_SCREENING.md)。
 Grocery81短程适配源码`bc110024`，本地/服务器267项测试通过；两步CUDA检查完成，12份相位更新非零，GPU进程570024退出。
-正式20轮run=`runs/simulation/grocery81_adapt_20260913`，启动PID574285，GPU4 RTX4090；启动记录不代表完成，以status/history/final_report为准。
+正式20轮run=`runs/simulation/grocery81_adapt_20260913`已完成，PID574285退出；epoch20 live测试24.6278%、训练62.8788%、去光7.5654%。
+Qwen64同协议71.9517%，差47.324个百分点，不达标。旧报告去光router统计误读历史缓存，必须忽略；不影响检索分数，勘误见DATASET_SCREENING。
+COIL将以身份互斥的60训练/40测试物体做专门训练对照，统一入口`standalone.retrieval_adapt`，命令第62节，不改变原数据协议或光学结构。
 完整命令见COMMAND第61节。保留原六次光捕获、Top2、α>0.4、64维头，没有新增TF/attention。
 原ABO最佳及下文证据全部保留，不把新协议与旧分数合并。
 

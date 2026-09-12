@@ -92,6 +92,10 @@ def retrieval_loss(z, labels, bank, natural_count, bank_labels=None):
 @torch.no_grad()
 def encode_rows(model, processor, rows, root, device, batch_size, routing=False):
     model.eval()
+    # remove_optical skips the router entirely; its .last belongs to a previous
+    # normal batch and must never be reported as a fresh routing measurement.
+    routing_requested = routing
+    routing = routing and not (model.vision.remove_optical or model.language.remove_optical)
     vectors, selections = [], {m: [] for m in ('vision', 'language')}
     for start in range(0, len(rows), batch_size):
         images = [picture(root / r['image_path'], model.metadata['input_preprocessing'])
@@ -101,7 +105,7 @@ def encode_rows(model, processor, rows, root, device, batch_size, routing=False)
         if routing:
             for m in selections:
                 selections[m].append(getattr(model, m).optics.router.last['selected_mask'].detach().cpu())
-    audit = {}
+    audit = {} if not routing_requested or routing else {'executed': False, 'reason': 'optical path removed; no fresh router observations'}
     if routing:
         for m, chunks in selections.items():
             masks = torch.cat(chunks).float()

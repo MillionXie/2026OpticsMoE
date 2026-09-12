@@ -75,3 +75,20 @@ def test_multi_reference_loss_uses_all_positives_not_only_first():
     assert hit == 1 and loss < .01
     with pytest.raises(ValueError, match='without'):
         retrieval_loss(z, labels, bank, 2, torch.tensor([0, 0, 0, 0]))
+
+
+def test_removed_optics_never_reports_stale_router_cache(monkeypatch, tmp_path):
+    from types import SimpleNamespace
+    from LightGenV2.tasks.t07_abo_image_retrieval.standalone import retrieval_adapt as m
+    class Removed(torch.nn.Module):
+        def __init__(self):
+            super().__init__()
+            self.vision = self.language = SimpleNamespace(remove_optical=True)
+            self.metadata = {'input_preprocessing': 'contain_white'}
+        def forward(self, batch):
+            return torch.ones(len(batch), 64)
+    monkeypatch.setattr(m, 'picture', lambda *a: None)
+    monkeypatch.setattr(m, 'inputs', lambda p, images, d: images)
+    z, audit = m.encode_rows(Removed(), None, [dict(image_path='a')] * 3, tmp_path, torch.device('cpu'), 2, routing=True)
+    assert z.shape == (3, 64)
+    assert audit['executed'] is False and 'vision' not in audit
