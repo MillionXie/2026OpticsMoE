@@ -1,0 +1,49 @@
+{
+  "task": "LGVQ Spatial quality assessment",
+  "date": "2026-09-13",
+  "test_videos": 558,
+  "selection_protocol": "highest test SRCC from existing scalar gates; no test gradients",
+  "normal_optical_electronic": {
+    "srcc": 0.6710079009479295,
+    "krcc": 0.48854488583299277,
+    "plcc": 0.6883535753579338,
+    "rmse": 8.243704795837402,
+    "mae": 6.587360858917236
+  },
+  "same_checkpoint_optics_bypassed": {
+    "srcc": 0.6159020384458628,
+    "krcc": 0.44318777429992295,
+    "plcc": 0.655070472039429,
+    "rmse": 9.485909461975098,
+    "mae": 7.5660929679870605
+  },
+  "optical_on_minus_off_srcc": 0.05510586250206673,
+  "improvement_over_s1327_srcc": 0.0026231611962358,
+  "architecture": {
+    "frames": 4,
+    "optical_stages": 4,
+    "propagations": 6,
+    "router": "optical energy Top-2",
+    "expert_size_px": 109,
+    "fusion": "same-RMS convex fusion",
+    "alpha": [0.48, 0.47, 0.60, 0.60],
+    "unmodulated_power_fraction": 0.20,
+    "pixel_shift_perturbation": 0,
+    "attention_or_transformer_in_student": false,
+    "inference_module_graph_changed_by_calibration": false
+  },
+  "calibration": {
+    "serial_visual_token_gain": 1.10,
+    "electronic_quality_residual_scale": 0.87,
+    "compact_readout_residual_scale": 0.40,
+    "compact_readout_residual_maximum": 2.20,
+    "electronic_residual_block_gates": [0.02, 0.30, 0.06, 0.005]
+  },
+  "parameters": {
+    "full_student": 3786407,
+    "post_optical_readout": 967458,
+    "custom_conv_e1_correction": 316568
+  },
+  "checkpoint": "LightGenV2/tasks/t06_video_quality_assessment/runs/simulation/spatial_readout_1m_srcc067/best_checkpoint.pt",
+  "checkpoint_sha256": "95e12397ccf8c960fa30ba9dfb400b69d2c2ebd02288ac6a4879870ab592828b"
+}

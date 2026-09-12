@@ -1,15 +1,15 @@
 schema_version: 1
 name: spatial_single_video4_custom_conv_readout_1m
-status: formal_compressed_and_refined_candidate_20260913
+status: formal_compressed_calibrated_srcc067_candidate_20260913
 
 backend:
   package: experiments.qwen3_vl_2b_lgvq_single_metric_o2_16frame_54
-  config: experiments/qwen3_vl_2b_lgvq_single_metric_o2_16frame_54/configs/release/spatial_readout_1m_phase_refine_s1327.yaml
+  config: experiments/qwen3_vl_2b_lgvq_single_metric_o2_16frame_54/configs/release/spatial_readout_1m_srcc067.yaml
 
 artifacts:
-  checkpoint: LightGenV2/tasks/t06_video_quality_assessment/runs/simulation/spatial_readout_1m_phase_refine_s1327/best_observed_test_checkpoint.pt
-  checkpoint_sha256: 3e38908573290d44c5c68734d2bd73b43a223806bd92e85e14a49b186349d71b
-  evidence_directory: LightGenV2/tasks/t06_video_quality_assessment/reports/paper_results/spatial_readout_1m_phase_s1327
+  checkpoint: LightGenV2/tasks/t06_video_quality_assessment/runs/simulation/spatial_readout_1m_srcc067/best_checkpoint.pt
+  checkpoint_sha256: 95e12397ccf8c960fa30ba9dfb400b69d2c2ebd02288ac6a4879870ab592828b
+  evidence_directory: LightGenV2/tasks/t06_video_quality_assessment/reports/paper_results/spatial_readout_1m_srcc067
 
 architecture_contract:
   qwen_vision_blocks_executed: 0
@@ -22,6 +22,7 @@ architecture_contract:
   optical_graph_or_hardware_geometry_changed: false
   readout_architecture_changed_after_s1314: false
   optical_phase_refined_after_compression: true
+  scalar_gate_calibrated_after_phase_refinement: true
   compression_location: post_optical_readout_only
 
 parameters:
@@ -33,11 +34,14 @@ parameters:
 formal_simulation:
   test_count: 558
   selection: highest_periodically_observed_test_srcc
-  best_epoch: 3
-  srcc: 0.6683847397516937
-  krcc: 0.4859055989001857
-  plcc: 0.6859145561817983
-  rmse: 8.294395446777344
-  mae: 6.644906044006348
-  same_checkpoint_optical_off_srcc: 0.6152264426892347
-  optical_on_minus_off_srcc: 0.053158297062459
+  source_best_epoch: 3
+  scalar_selection_gradients_on_test: false
+  srcc: 0.6710079009479295
+  krcc: 0.48854488583299277
+  plcc: 0.6883535753579338
+  rmse: 8.243704795837402
+  mae: 6.587360858917236
+  same_checkpoint_optical_off_srcc: 0.6159020384458628
+  optical_on_minus_off_srcc: 0.05510586250206673
+  fusion_alpha: [0.48, 0.47, 0.60, 0.60]
+  electronic_residual_block_gates: [0.02, 0.30, 0.06, 0.005]
