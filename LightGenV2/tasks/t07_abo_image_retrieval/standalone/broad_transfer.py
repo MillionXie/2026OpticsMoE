@@ -363,7 +363,7 @@ def run_stage(args,stage,output,initial_checkpoint=None):
                         if teacher_vectors is not None and teacher_weight:
                             kd,kd_audit=gallery_relation_loss(z,product_ids[indices],labels[indices],bank,bank_labels,
                                 teacher_vectors[indices],teacher_bank,cfg_all['relation_teacher_temperature'],
-                                cfg_all.get('relation_teacher_target_temperature'))
+                                cfg_all.get('relation_teacher_target_temperature'),level=cfg_all.get('teacher_relation_level','product'))
                             loss=loss+teacher_weight*kd
                             result.update(relation_kd=kd.detach(),**kd_audit)
                         if feature_targets is not None:

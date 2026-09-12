@@ -151,12 +151,13 @@ def load_teacher_cache(path, samples, target, pool, device):
     return F.normalize(vectors,dim=-1).to(device),audit
 
 
-def gallery_relation_loss(query, own, labels, bank, bank_labels, teacher_query, teacher_bank, temperature=.10, teacher_temperature=None):
+def gallery_relation_loss(query, own, labels, bank, bank_labels, teacher_query, teacher_bank, temperature=.10, teacher_temperature=None, level='product'):
     """Match distributions over other TRAIN products, only when teacher top1 is correct.
 
     Bases/dimensions may differ (student64, teacher2048); compare similarities,
     not coordinate vectors. Never train on test predictions or restrict test gallery.
     """
+    if level not in ('product','category'):raise ValueError('Unknown teacher relation level')
     teacher_temperature=temperature if teacher_temperature is None else teacher_temperature
     if not all(math.isfinite(t) and t>0 for t in (temperature,teacher_temperature)):
         raise ValueError('Positive finite distillation temperatures required')
@@ -169,7 +170,20 @@ def gallery_relation_loss(query, own, labels, bank, bank_labels, teacher_query, 
         correct=bank_labels[target.argmax(-1)].eq(labels)
         positive=bank_labels[None].eq(labels[:,None])&valid
         confidence=(target.mul(positive).sum(-1)-positive.float().sum(-1)/valid.sum(-1)).clamp_min(0)*correct
-    divergence=F.kl_div(student.masked_fill(~valid,-1e4).log_softmax(-1),target,reduction='none').sum(-1)
+    student_logp=student.masked_fill(~valid,-1e4).log_softmax(-1)
+    if level=='category':
+        # Marginalize the SAME product distributions. Do not introduce class
+        # balancing, new temperatures, a new gate or a classification head.
+        # This discards within-category KL while retaining category-mass KL.
+        # FP32 softmax/reduction avoids BF16 category masses losing normalization.
+        # Product similarities and the original correctness/confidence gate above
+        # remain unchanged. Legacy product-level KL retains its exact path.
+        student_logp=student.float().masked_fill(~valid,-1e4).log_softmax(-1)
+        target=teacher.float().masked_fill(~valid,-1e4).softmax(-1)
+        masks=[bank_labels.eq(c) for c in torch.unique(bank_labels,sorted=True)]
+        student_logp=torch.stack([torch.logsumexp(student_logp[:,m],dim=-1) for m in masks],dim=-1)
+        target=torch.stack([target[:,m].sum(-1) for m in masks],dim=-1)
+    divergence=F.kl_div(student_logp,target,reduction='none').sum(-1)
     loss=(divergence*confidence).sum()/confidence.sum().clamp_min(1.)
     return loss,dict(teacher_correct_fraction=correct.float().mean().detach(),teacher_confidence=confidence.mean().detach())
 
