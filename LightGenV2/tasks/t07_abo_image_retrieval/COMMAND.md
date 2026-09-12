@@ -555,21 +555,21 @@ python -m LightGenV2.tasks.t07_abo_image_retrieval.standalone.generalization_que
 默认`evaluate --assets ...`仍读assets/best.pt；要评训练目录中的新best，必须同时传checkpoint及其SHA。
 这两个新参数仅用于evaluate，不会覆盖assets、修改模型或启动训练。读取前后再次核对SHA，
 运行中的best若刚好被更新会拒绝评估；先确认新的epoch/SHA，再另建结果目录，不绕过校验。
-下面明确复评已固定并独立核验的teacher_first第11轮live候选（78.75%），不是旧assets权重。
-完整16轮训练仍在继续，使用固定副本，不读取会变化的训练best。
-GPU4须先确认资源允许，不终止别人的进程；输出目录须尚不存在。
+下面明确复评已固定并独立核验的joint_curriculum第8轮live候选（79.375%），不是旧assets权重。
+完整16轮联合课程仍在继续，使用固定副本，不读取会变化的训练best。
+GPU1须先确认资源允许，不终止别人的进程；输出目录须尚不存在。也可选择另一张已获准且空闲的GPU。
 
 ```bash
 T07=LightGenV2/tasks/t07_abo_image_retrieval
-T07_GPU=GPU-1b963983-7909-af6e-0528-f0f0661ab549
+T07_GPU=GPU-e8837b85-d55b-8e81-aaa5-ec1ac326932d
 nvidia-smi -i "$T07_GPU" --query-gpu=memory.used,memory.free,utilization.gpu --format=csv
 CUDA_VISIBLE_DEVICES="$T07_GPU" HF_HUB_OFFLINE=1 TRANSFORMERS_OFFLINE=1 \
 python -m LightGenV2.tasks.t07_abo_image_retrieval.standalone.cli evaluate \
   --assets "$T07/runs/simulation/standalone_assets_20260910" \
-  --checkpoint "$T07/runs/simulation/verify_teacher_first_ep11_20260912_gpu4/best.pt" \
-  --expected-checkpoint-sha256 67a9c71d321720e5735afc9dc5214dbeeee017b6e4135912f92ed8fdabe3f3df \
+  --checkpoint "$T07/runs/simulation/verify_joint_ep8_20260912_gpu1/best.pt" \
+  --expected-checkpoint-sha256 7c7bc601b1048be13316a9e4863780fa5d49cf2f66b3bf3e3d68ced2d8f172f4 \
   --data /DATA/DATA1/guest3/2026OpticsMoE/data/abo_similarity10_data \
-  --device cuda --batch-size 4 --output "$T07/runs/simulation/recheck_teacher_first_ep11_20260912_gpu4"
+  --device cuda --batch-size 4 --output "$T07/runs/simulation/recheck_joint_ep8_20260912_gpu1"
 ```
 
 复评重新从原图生成120商品图库、查询全部480测试图，再同权重去光；输出逐图预测/特征、
