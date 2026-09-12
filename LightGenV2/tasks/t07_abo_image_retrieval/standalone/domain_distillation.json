@@ -38,6 +38,14 @@
       "sam_warmup_epochs": 3,
       "protocol": "Matched teacher_continue control: same pinned78.75% live source, all restored training auxiliaries, fixed training-only teacher alignment, full cap250, quarter learning rates and12x128 updates. Only use two-pass SAM with global L2 rho0.02 warmed over3 epochs, then AdamW; replay stochastic optical noise, restore perturbed weights before the base step. Same inference/optics/Top2/alpha>0.4 and original480-query/120-gallery; approximately twice forward/backward work, not a compute-matched control."
     },
+    "domain_distill_joint_curriculum": {
+      "relation_teacher_weight": 0.30,
+      "learning_rate_multiplier": 1.0,
+      "supervised_warmup_epochs": 4,
+      "supervised_recovery_epochs": 4,
+      "supervised_warmup_scale": 0.2,
+      "protocol": "Joint training-only teacher curriculum from pinned verified78.75% live source; restore all auxiliaries and original64D teacher alignment. Feature cosine2 plus full2048 teacher product-relation KL0.3 (3epoch KL warmup). Final GT losses0.2 for4epochs, then0.4/0.6/0.8/1 and1 thereafter; optical auxiliary/regularizers unchanged. Return to original base learning rates, fresh AdamW/EMA/cosine, planned16x128 updates. This is a combined optimization recipe, NOT a single-factor ablation. Same cap250, linear64 readout, frozen compact frontend, optical propagation/ROI/phase geometry, Top2 and alpha>0.4. No inference teacher/attention/TF; original480 queries/120 gallery."
+    },
     "domain_distill_teacher_continue": {
       "relation_teacher_weight": 0.0,
       "teacher_feature_weight": 2.0,

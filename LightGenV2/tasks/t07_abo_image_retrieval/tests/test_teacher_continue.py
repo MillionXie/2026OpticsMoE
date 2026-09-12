@@ -82,6 +82,19 @@ def test_fp32_gallery_profile_is_only_loss_precision_change():
     assert {k:v for k,v in plain.items() if k not in ignored}=={k:v for k,v in fp32.items() if k not in ignored}
 
 
+def test_joint_curriculum_changes_training_recipe_not_inference_contract():
+    plain=overlay_config({},'domain_distill_teacher_continue')
+    joint=overlay_config({},'domain_distill_joint_curriculum')
+    ignored={'relation_teacher_weight','learning_rate_multiplier','supervised_warmup_epochs',
+             'supervised_recovery_epochs','supervised_warmup_scale','protocol'}
+    assert {k:v for k,v in plain.items() if k not in ignored}=={k:v for k,v in joint.items() if k not in ignored}
+    assert joint['teacher_feature_weight']==2 and joint['relation_teacher_weight']==.3
+    assert joint['relation_teacher_warmup_epochs']==3 and learning_rate_multiplier(joint)==1.
+    expected=[.2]*4+[.4,.6,.8,1.]+[1.]*8
+    assert [supervised_loss_scale(i,joint) for i in range(1,17)]==pytest.approx(expected)
+    assert joint['sam_rho']==0 and joint.get('retrieval_head','linear64')=='linear64'
+
+
 @pytest.mark.parametrize('balanced',[False,True])
 def test_fp32_gallery_matches_reference_inside_autocast(balanced):
     from LightGenV2.tasks.t07_abo_image_retrieval.standalone.retrieval_training import gallery_loss

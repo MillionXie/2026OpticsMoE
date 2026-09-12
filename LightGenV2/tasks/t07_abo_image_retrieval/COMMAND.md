@@ -968,3 +968,29 @@ python -m LightGenV2.tasks.t07_abo_image_retrieval.standalone.generalization_que
 `model_audit`应为descriptor_dimension=256、trainable_parameters=2856405、六次捕获、Top2且无TF/attention。
 只以新权重实际复测结果决定是否采用，不能继承64维权重成绩充当训练收益。
 本候选训练使用上述入口，旧通用`cli finetune`的64维train_targets不能直接用于256维模型。
+
+## 35. 联合教师课程（仅训练方法，不扩维、不加推理结构）
+
+固定78.75%线性64维起点；完整cap250，逐图教师余弦2＋商品关系KL0.3，GT先减弱后恢复。
+恢复原教师矩阵/辅助头；学习率为base，16×128步。它不是第34节256维读出的叠加版本。
+队列等待GPU1扩充池结束再检查显卡空闲，不抢占他人进程、不额外使用第四张卡。
+
+```bash
+T07=LightGenV2/tasks/t07_abo_image_retrieval
+ASSETS=$T07/runs/simulation/standalone_assets_20260910
+TARGET=/DATA/DATA1/guest3/2026OpticsMoE/data/abo_similarity10_data
+ABO=/DATA/DATA1/guest3/2026OpticsMoE/data/abo
+BEST=$T07/runs/simulation/verify_teacher_first_ep11_20260912_gpu4/best.pt
+CACHE=$T07/runs/smoke/domain_distillation_20260912/build_teacher_cache/artifacts/cache.pt
+POOL=$T07/runs/simulation/domain_pool250_20260912
+ALIGN=$T07/runs/simulation/domain_teacher_first_20260912_gpu4/domain_distill_teacher_first/artifacts/teacher_feature_alignment.pt
+python -m LightGenV2.tasks.t07_abo_image_retrieval.standalone.generalization_queue \
+  --gpu GPU-e8837b85-d55b-8e81-aaa5-ec1ac326932d --assets "$ASSETS" --checkpoint "$BEST" \
+  --target "$TARGET" --abo "$ABO" --pool "$POOL" --teacher-cache "$CACHE" --teacher-alignment "$ALIGN" \
+  --profiles domain_distill_joint_curriculum --epochs 16 --steps 128 \
+  --output "$T07/runs/simulation/domain_joint_curriculum_20260912_gpu1" \
+  --after-queue "$T07/runs/simulation/domain_refit500_20260912_gpu1/status.json"
+```
+
+测试仍480查询/120商品图库，live/EMA周期test选best，最终同权重去光，best/last而非周期PT。
+启动和排队不是涨分证据；看该run的history/final_report后，再决定是否固定新高做独立复评。
