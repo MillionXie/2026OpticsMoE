@@ -62,3 +62,13 @@ def test_sam_continuation_changes_only_training_update():
     assert sam['sam_rho']==.02 and sam['sam_warmup_epochs']==3
     ignored={'sam_rho','sam_warmup_epochs','protocol'}
     assert {k:v for k,v in plain.items() if k not in ignored}=={k:v for k,v in sam.items() if k not in ignored}
+
+
+def test_softgt_continuation_changes_only_final_label_loss_scale():
+    plain=overlay_config({},'domain_distill_teacher_continue')
+    soft=overlay_config({},'domain_distill_teacher_continue_softgt')
+    ignored={'supervised_warmup_epochs','supervised_recovery_epochs','supervised_warmup_scale','protocol'}
+    assert {k:v for k,v in plain.items() if k not in ignored}=={k:v for k,v in soft.items() if k not in ignored}
+    assert [supervised_loss_scale(i,soft) for i in range(1,13)]==[.5]*12
+    assert supervised_loss_scale(13,soft)==1.
+    assert soft['sam_rho']==0 and soft['teacher_feature_weight']==2.

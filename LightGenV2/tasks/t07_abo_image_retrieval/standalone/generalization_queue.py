@@ -13,7 +13,7 @@ import sys
 import time
 
 # Keep the supervisor torch-free: profile names only, no model module import.
-PINNED_TEACHER_PROFILES = ('domain_distill_teacher_continue', 'domain_distill_teacher_continue_sam')
+PINNED_TEACHER_PROFILES = ('domain_distill_teacher_continue', 'domain_distill_teacher_continue_sam', 'domain_distill_teacher_continue_softgt')
 
 
 def dependency_state(path, expected_gpu):

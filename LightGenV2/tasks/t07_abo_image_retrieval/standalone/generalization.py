@@ -10,7 +10,7 @@ import json
 import math
 import torch
 
-PINNED_TEACHER_PROFILES = ('domain_distill_teacher_continue', 'domain_distill_teacher_continue_sam')
+PINNED_TEACHER_PROFILES = ('domain_distill_teacher_continue', 'domain_distill_teacher_continue_sam', 'domain_distill_teacher_continue_softgt')
 
 PROFILES = ('preserve_adam', 'preserve_sam', 'preserve_fullfield_sam', 'preserve_fullfield_both_sam',
             'regularized_control', 'regularized_phase05', 'domain_mixed', 'domain_curriculum', 'domain_target_control',
@@ -79,7 +79,7 @@ def restore_auxiliary_head(head, payload, actual_sha256, expected_sha256):
 
 
 def overlay_config(config, profile):
-    if profile == 'domain_distill_teacher_continue_sam':
+    if profile in PINNED_TEACHER_PROFILES and profile != 'domain_distill_teacher_continue':
         config=overlay_config(config,'domain_distill_teacher_continue')
         overlay=json.loads(Path(__file__).with_name('domain_distillation.json').read_text(encoding='utf-8'))
         config.update(overlay['profiles'][profile])

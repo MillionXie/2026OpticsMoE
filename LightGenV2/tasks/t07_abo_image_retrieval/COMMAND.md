@@ -852,3 +852,28 @@ python -m LightGenV2.tasks.t07_abo_image_retrieval.standalone.generalization_que
 
 等待阶段不占CUDA，前序退出后再次检查GPU空闲；被别人使用时停止队列，不抢占。
 `history.json`中的`sam_rho`和`sam_loss_gap`确认实际执行；正式结论仍需固定best独立复评。
+
+## 31. 同起点降低硬标签损失（不叠加SAM）
+
+对应第29节的配对训练对照：前12轮仅最终CE/SupCon/图库NLL和margin乘0.5；
+教师余弦仍2、光学辅助及正则不变。不改变样本、标签、评估图库或光路。不要自行扩大epochs冒充相同日程。
+
+```bash
+T07=LightGenV2/tasks/t07_abo_image_retrieval
+ASSETS=$T07/runs/simulation/standalone_assets_20260910
+TARGET=/DATA/DATA1/guest3/2026OpticsMoE/data/abo_similarity10_data
+ABO=/DATA/DATA1/guest3/2026OpticsMoE/data/abo
+BEST=$T07/runs/simulation/verify_teacher_first_ep11_20260912_gpu4/best.pt
+CACHE=$T07/runs/smoke/domain_distillation_20260912/build_teacher_cache/artifacts/cache.pt
+POOL=$T07/runs/simulation/domain_pool250_20260912
+ALIGNMENT=$T07/runs/simulation/domain_teacher_first_20260912_gpu4/domain_distill_teacher_first/artifacts/teacher_feature_alignment.pt
+python -m LightGenV2.tasks.t07_abo_image_retrieval.standalone.generalization_queue \
+  --gpu GPU-6dcca91a-8e08-1a50-9aa6-81defeaed50b --assets "$ASSETS" --checkpoint "$BEST" \
+  --target "$TARGET" --abo "$ABO" --pool "$POOL" --teacher-cache "$CACHE" --teacher-alignment "$ALIGNMENT" \
+  --profiles domain_distill_teacher_continue_softgt --epochs 12 --steps 128 \
+  --output "$T07/runs/simulation/domain_teacher_continue_softgt_20260912_gpu2" \
+  --after-queue "$T07/runs/simulation/domain_position_jitter_20260912_gpu2/status.json"
+```
+
+比较第29/30/31节时均从固定78.75%权重开始，不串接彼此best。GPU型号不同，若出现新高，
+须固定权重SHA后按第20节在同一RTX4090、batch4进行独立复评，不将小幅硬件数值波动记作突破。

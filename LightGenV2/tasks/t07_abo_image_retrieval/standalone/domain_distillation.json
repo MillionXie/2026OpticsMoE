@@ -11,6 +11,12 @@
     "domain_distill_light": {"relation_teacher_weight": 0.10},
     "domain_distill_strong": {"relation_teacher_weight": 0.30},
     "domain_distill_stronger": {"relation_teacher_weight": 0.60},
+    "domain_distill_teacher_continue_softgt": {
+      "supervised_warmup_epochs": 12,
+      "supervised_recovery_epochs": 0,
+      "supervised_warmup_scale": 0.5,
+      "protocol": "Matched teacher_continue control, fixed verified78.75% source and original train-only teacher alignment/auxiliaries. For all12 planned epochs multiply ONLY final proxy CE, SupCon and training-gallery NLL/margin by0.5. Preserve teacher cosine2, optical auxiliary and physical regularizers; same quarter learning rates, full cap250,128 updates per epoch. No SAM, relabeling, sample filtering, new layers or optical change. Original480-query/120-gallery; test-selected best/last. If explicitly extended beyond12epochs the existing schedule restores GT scale1."
+    },
     "domain_distill_teacher_continue_sam": {
       "sam_rho": 0.02,
       "sam_warmup_epochs": 3,
