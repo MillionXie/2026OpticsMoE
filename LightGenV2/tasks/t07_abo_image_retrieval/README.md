@@ -52,7 +52,11 @@
 均值、比例、坐标与训练身份保存在teacher-only PT，不加入学生checkpoint参数或推理路径。
 旧raw教师坐标加载器明确拒绝带centering的artifact；该profile禁止传旧`--teacher-alignment`，不绕过SHA检查。
 新方法同时改变目标中心与坐标拟合，不能当成纯去均值单因素消融；训练梯度更一致不等于泛化一定改善。
-它与光学DC、CCD背景/归一化无关，原optics.py/ROI/相位几何/Top2/alpha边界均不改。本地163项测试通过。
+它与光学DC、CCD背景/归一化无关，原optics.py/ROI/相位几何/Top2/alpha边界均不改。
+源码0ad91cf8已同步GitHub，本地/服务器163项测试通过。完整5556×64训练目标CPU检查成功，均值仅拟合1440行。
+另用4张真实训练图CPU反传新目标，V/L global及router相位均获有限非零梯度，学生权重未更新、CUDA未初始化。
+证据`verify_joint_ep8_20260912_gpu1/evaluation/diagnostics/centerhalf_cpu_backward.json`；
+仅4图、teacher gate=0.75、原120训练商品bank作检查，不等同正式全2178训练商品bank训练或性能验收。
 先等待当前三组正式结果，再决定执行COMMAND第42节；没有本组涨分或启动声明。
 
 四视角扩充训练池已准备（f695014b）：`runs/simulation/domain_pool250_views4_20260912`，
