@@ -82,6 +82,28 @@ def test_fp32_gallery_profile_is_only_loss_precision_change():
     assert {k:v for k,v in plain.items() if k not in ignored}=={k:v for k,v in fp32.items() if k not in ignored}
 
 
+def test_joint_restart_pins_new_best_without_relaxing_old_contract():
+    old=overlay_config({},'domain_distill_joint_curriculum')
+    new=overlay_config({},'domain_distill_joint_restart')
+    assert new['restore_auxiliary_source_sha256']=='7c7bc601b1048be13316a9e4863780fa5d49cf2f66b3bf3e3d68ced2d8f172f4'
+    assert old['restore_auxiliary_source_sha256']=='67a9c71d321720e5735afc9dc5214dbeeee017b6e4135912f92ed8fdabe3f3df'
+    for cfg in (old,new):
+        cfg.pop('restore_auxiliary_source_sha256');cfg.pop('protocol')
+    assert old==new
+
+
+def test_joint_restart_softgt_only_changes_planned_supervision_schedule():
+    from LightGenV2.tasks.t07_abo_image_retrieval.standalone.generalization import supervised_loss_scale
+    normal=overlay_config({},'domain_distill_joint_restart')
+    soft=overlay_config({},'domain_distill_joint_restart_softgt')
+    assert all(supervised_loss_scale(e,soft)==.2 for e in range(1,17))
+    assert supervised_loss_scale(17,soft)==1.
+    assert supervised_loss_scale(8,normal)==1.
+    for cfg in (normal,soft):
+        for key in ('supervised_warmup_epochs','supervised_recovery_epochs','protocol'):cfg.pop(key)
+    assert normal==soft
+
+
 def test_joint_curriculum_changes_training_recipe_not_inference_contract():
     plain=overlay_config({},'domain_distill_teacher_continue')
     joint=overlay_config({},'domain_distill_joint_curriculum')

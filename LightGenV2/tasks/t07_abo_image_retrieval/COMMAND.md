@@ -1116,7 +1116,8 @@ GPU1原队列完成且资源允许才接续；等待不占CUDA。只保存best/l
 
 这是第二次16×128 warm restart：恢复当前最佳模型和训练辅助头，复用原教师坐标，
 重新创建AdamW/余弦学习率调度及GT课程。仍使用旧cap250二视角池，不叠加第39节数据变化。
-源码f695014b，seed42；等待GPU4的seed123对照结束，检查空闲才启动，不抢占其他用户。
+使用新增`domain_distill_joint_restart`，明确绑定下面79.375%权重SHA；旧第35节profile绑定78.75%，不能混用。
+seed42；等待GPU4的seed123对照结束，检查空闲才启动，不抢占其他用户。
 新增训练预算不保证提升；480-query/120-gallery、六次光捕获和全部光学几何不变。
 
 ```bash
@@ -1130,10 +1131,36 @@ python -m LightGenV2.tasks.t07_abo_image_retrieval.standalone.generalization_que
   --pool "$T07/runs/simulation/domain_pool250_20260912" \
   --teacher-cache "$T07/runs/smoke/domain_distillation_20260912/build_teacher_cache/artifacts/cache.pt" \
   --teacher-alignment "$T07/runs/simulation/domain_teacher_first_20260912_gpu4/domain_distill_teacher_first/artifacts/teacher_feature_alignment.pt" \
-  --profiles domain_distill_joint_curriculum --epochs 16 --steps 128 --seed 42 \
-  --output "$T07/runs/simulation/domain_joint_restart_20260912_gpu4" \
+  --profiles domain_distill_joint_restart --epochs 16 --steps 128 --seed 42 \
+  --output "$T07/runs/simulation/domain_joint_best_restart_20260912_gpu4" \
   --after-queue "$T07/runs/simulation/domain_teacher_first_seed123_20260912_gpu4/status.json"
 ```
 
 起点SHA=`7c7bc601b1048be13316a9e4863780fa5d49cf2f66b3bf3e3d68ced2d8f172f4`。
 该run已排队时不要再次执行；查看其status.json及子目录history/final_report。
+
+旧`domain_joint_restart_20260912_gpu4`队列因源SHA不匹配，在等待阶段主动取消，未训练；不要重用这个目录。
+
+## 41. 同起点联合蒸馏、全程较弱GT（训练方法对照）
+
+与第40节相同起点/原cap250二视角池/教师坐标/基础学习率；唯一区别是最终GT损失整个16轮乘0.2。
+教师余弦2、关系KL0.3、光学辅助与物理正则不变。第17轮若延长则恢复GT1；这里仅16×128，seed42。
+原测试/图库不改，不移除类别或困难样本。3090训练若超过最佳，需在4090固定权重核验。
+
+```bash
+T07=/DATA/DATA1/guest3/2026OpticsMoE/LightGenV2/tasks/t07_abo_image_retrieval
+python -m LightGenV2.tasks.t07_abo_image_retrieval.standalone.generalization_queue \
+  --gpu GPU-6dcca91a-8e08-1a50-9aa6-81defeaed50b \
+  --assets "$T07/runs/simulation/standalone_assets_20260910" \
+  --checkpoint "$T07/runs/simulation/verify_joint_ep8_20260912_gpu1/best.pt" \
+  --target /DATA/DATA1/guest3/2026OpticsMoE/data/abo_similarity10_data \
+  --abo /DATA/DATA1/guest3/2026OpticsMoE/data/abo \
+  --pool "$T07/runs/simulation/domain_pool250_20260912" \
+  --teacher-cache "$T07/runs/smoke/domain_distillation_20260912/build_teacher_cache/artifacts/cache.pt" \
+  --teacher-alignment "$T07/runs/simulation/domain_teacher_first_20260912_gpu4/domain_distill_teacher_first/artifacts/teacher_feature_alignment.pt" \
+  --profiles domain_distill_joint_restart_softgt --epochs 16 --steps 128 --seed 42 \
+  --output "$T07/runs/simulation/domain_joint_softgt_20260912_gpu2" \
+  --after-queue "$T07/runs/simulation/domain_vision_patch_20260912_gpu2/status.json"
+```
+
+等待不占CUDA，依赖失败则不启动；不重用已有输出目录。只保存best/last，无周期PT。
