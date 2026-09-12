@@ -92,3 +92,15 @@ def test_removed_optics_never_reports_stale_router_cache(monkeypatch, tmp_path):
     z, audit = m.encode_rows(Removed(), None, [dict(image_path='a')] * 3, tmp_path, torch.device('cpu'), 2, routing=True)
     assert z.shape == (3, 64)
     assert audit['executed'] is False and 'vision' not in audit
+
+
+def test_assessment_preserves_manifest_gallery_tie_order(monkeypatch, tmp_path):
+    from types import SimpleNamespace
+    from LightGenV2.tasks.t07_abo_image_retrieval.standalone import retrieval_adapt as m
+    g = dict(gallery=[dict(sample_id='gb', product_id='b', split='gallery'),
+                      dict(sample_id='ga', product_id='a', split='gallery')],
+             query=[dict(sample_id='qb', product_id='b', split='query')],
+             train=[dict(sample_id='tb', product_id='b', split='train')])
+    monkeypatch.setattr(m, 'encode_rows', lambda model, processor, rows, *a, **k: (torch.ones(len(rows), 64), {}))
+    result = m.assessment(None, None, g, SimpleNamespace(data=tmp_path, batch_size=4), torch.device('cpu'))
+    assert result['test']['hit_at_1'] == 1  # manifest b-first, not sorted a-first

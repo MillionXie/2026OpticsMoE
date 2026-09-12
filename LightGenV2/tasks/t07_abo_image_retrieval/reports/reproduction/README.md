@@ -8,7 +8,9 @@ Grocery81短程适配源码`bc110024`，本地/服务器267项测试通过；两
 Qwen64同协议71.9517%，差47.324个百分点，不达标。旧报告去光router统计误读历史缓存，必须忽略；不影响检索分数，勘误见DATASET_SCREENING。
 COIL以身份互斥的60训练/40测试物体做专门训练对照，统一入口`standalone.retrieval_adapt`，命令第62节，不改变原数据协议或光学结构。
 本地/服务器270项测试与2步CUDA检查通过；源码ceba06e6，正式`runs/simulation/coil100_adapt_20260913`启动PID599950，GPU4 RTX4090。
-这是启动记录，不是完成声明，按status/history/final_report读取最新状态。Grocery原源码与新COIL源码不混称。
+该20轮现已完成，PID599950退出；epoch10 live测试88.75%、训练98.6765%、去光85.3125%，比Qwen64低10.625个百分点，尚未达标。
+最佳权重SHA=`a220f144d6fd7d18bb25e11c647cdaea3b04f4cc964959de7f1d476e7f3f202e`。语言expert2测试未被选择，均衡仍有问题。
+独立复评另存该run的verification；具体勘误/限制看DATASET_SCREENING。Grocery原源码与新COIL源码不混称。
 完整命令见COMMAND第61节。保留原六次光捕获、Top2、α>0.4、64维头，没有新增TF/attention。
 原ABO最佳及下文证据全部保留，不把新协议与旧分数合并。
 

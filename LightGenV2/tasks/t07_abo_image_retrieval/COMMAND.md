@@ -1771,3 +1771,20 @@ CUDA_VISIBLE_DEVICES=GPU-1b963983-7909-af6e-0528-f0f0661ab549 \
 首次CUDA检查把epochs/steps改1/2、output改为`$T07/runs/smoke/coil100_adapt_20260913`，不当正式成绩。
 `fitting_manifest.json`记录训练query/参考图身份与SHA；COIL参考图source_split必须为train。
 只存best/last，最终正常/同权重去光、路由和相位变化。Qwen64同协议基准99.375%。
+
+COIL20轮结束后，独立新进程复核已固定的epoch10最佳权重（仍需先确认指定GPU空闲）：
+
+```bash
+T07=/DATA/DATA1/guest3/2026OpticsMoE/LightGenV2/tasks/t07_abo_image_retrieval
+CUDA_VISIBLE_DEVICES=GPU-1b963983-7909-af6e-0528-f0f0661ab549 \
+/home/guest3/miniconda3/envs/xml/bin/python -u -m LightGenV2.tasks.t07_abo_image_retrieval.standalone.retrieval_screen optical \
+  --data /DATA/DATA1/guest3/2026OpticsMoE/data/coil100_source \
+  --manifest "$T07/runs/simulation/coil100_protocol_20260913/protocol.json" \
+  --assets "$T07/runs/simulation/standalone_assets_20260910" \
+  --checkpoint "$T07/runs/simulation/coil100_adapt_20260913/best.pt" \
+  --expected-checkpoint-sha256 a220f144d6fd7d18bb25e11c647cdaea3b04f4cc964959de7f1d476e7f3f202e \
+  --output "$T07/runs/simulation/coil100_adapt_20260913/verification" --batch-size 4
+```
+
+新评估入口读取checkpoint训练历史：该权重是本协议训练/test-selected，并非旧ABO直接迁移。
+只做固定权重推理，不再次训练；manifest顺序与冻结Qwen一致。目录存在时不覆盖原结果。

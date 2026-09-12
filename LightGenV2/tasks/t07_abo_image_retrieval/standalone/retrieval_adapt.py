@@ -118,7 +118,9 @@ def encode_rows(model, processor, rows, root, device, batch_size, routing=False)
 
 @torch.no_grad()
 def assessment(model, processor, groups, args, device, output=None, fit=None):
-    gallery = sorted(groups['gallery'], key=lambda r: r['product_id'])
+    # Same manifest order as frozen Qwen and retrieval_screen, including ties.
+    # Training-bank sorting is separate and must not reorder the TEST gallery.
+    gallery = groups['gallery']
     rows = gallery + groups['query']
     z, router = encode_rows(model, processor, rows, args.data, device, args.batch_size, routing=True)
     test, predictions = rank_instances(z, rows)

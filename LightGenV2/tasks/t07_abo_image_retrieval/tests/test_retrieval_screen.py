@@ -4,6 +4,16 @@ import torch
 from LightGenV2.tasks.t07_abo_image_retrieval.standalone.retrieval_screen import coil_records, validate_rows, rank_instances, grocery_records
 
 
+def test_trained_checkpoint_history_is_not_mislabeled_as_untrained_transfer():
+    from LightGenV2.tasks.t07_abo_image_retrieval.standalone.retrieval_screen import checkpoint_history
+    payload = dict(manifest_sha256='coil', epoch=10, variant='live', test_selected=True)
+    assert checkpoint_history(payload, 'coil')['fitted_on_this_dataset']
+    assert checkpoint_history(payload, 'coil')['test_selected']
+    assert not checkpoint_history(payload, 'grocery')['fitted_on_this_dataset']
+    fallback = checkpoint_history(dict(payload, epoch=0, variant='initial'), 'coil')
+    assert not fallback['fitted_on_this_dataset'] and fallback['test_selected']
+
+
 def test_coil_fixed_complete_split_and_angular_gap():
     rows = coil_records()
     assert rows == coil_records()

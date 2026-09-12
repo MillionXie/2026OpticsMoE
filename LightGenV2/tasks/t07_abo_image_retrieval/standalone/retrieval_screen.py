@@ -200,6 +200,20 @@ def rank_instances(vectors, rows):
     return report, predictions
 
 
+def checkpoint_history(payload, manifest_sha):
+    """Do not label a newly trained checkpoint as an untrained transfer screen."""
+    trained_manifest = payload.get('manifest_sha256')
+    same_protocol = trained_manifest == manifest_sha
+    updated = same_protocol and int(payload.get('epoch', 0)) > 0 and payload.get('variant') != 'initial'
+    selected = same_protocol and bool(payload.get('test_selected', False))
+    return dict(fitted_on_this_dataset=updated, test_selected=selected,
+        checkpoint_training_manifest_sha256=trained_manifest,
+        checkpoint_epoch=payload.get('epoch'), checkpoint_variant=payload.get('variant'),
+        checkpoint_origin=('Current-protocol adaptation; fixed-weight reevaluation, no new fitting in this command'
+                           if updated else 'Transferred or initial-fallback checkpoint; no current-protocol weight updates established'),
+        history_note='test_selected refers to current protocol; other-dataset training/selection is not ruled out')
+
+
 @torch.inference_mode()
 def evaluate(args):
     from PIL import Image, ImageOps
@@ -242,7 +256,7 @@ def evaluate(args):
             if audit['alpha_bounds'][0] <= .4 or audit['descriptor_dimension'] != 64:
                 raise ValueError('Require original high-alpha 64D architecture')
             identity.update(checkpoint_sha256=digest, model_audit=audit, protected_optics_sha256=OPTICS_SHA256,
-                            checkpoint_origin='ABO trained and ABO-test-selected; no current-screen fitting or selection')
+                            **checkpoint_history(payload, manifest_sha))
             processor = AutoProcessor.from_pretrained(str(args.assets / 'processor'), local_files_only=True)
         else:
             # Baseline only: the student command never imports/loads full Qwen.
