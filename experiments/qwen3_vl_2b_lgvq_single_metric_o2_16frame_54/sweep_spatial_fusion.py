@@ -22,7 +22,7 @@ import torch
 
 from .data import load_single_metric_cache
 from .modeling import build_model
-from .settings import load_settings
+from .settings import load_settings, resolved_dict
 from .training import _loader, evaluate
 
 
@@ -70,6 +70,15 @@ def _set_quality_residual_scale(model: torch.nn.Module, scale: float) -> None:
         raw.copy_(torch.logit(torch.tensor(scale, device=raw.device)))
 
 
+def _set_compact_residual_scale(model: torch.nn.Module, scale: float) -> None:
+    readout = getattr(model, "readout", None)
+    if readout is None or not hasattr(readout, "residual_scale"):
+        raise RuntimeError("The model has no compact post-optical residual scale")
+    if scale <= 0.0:
+        raise ValueError("Compact post-optical residual scale must be positive")
+    readout.residual_scale = float(scale)
+
+
 def run(args: argparse.Namespace) -> dict[str, Any]:
     settings = load_settings(args.config)
     if settings.target_name != "spatial" or len(settings.geometry.lane_origins) != 4:
@@ -91,6 +100,12 @@ def run(args: argparse.Namespace) -> dict[str, Any]:
     original_quality_residual_scale = (
         None if raw_quality_scale is None else float(torch.sigmoid(raw_quality_scale))
     )
+    readout = getattr(model, "readout", None)
+    original_compact_residual_scale = (
+        None if readout is None else getattr(readout, "residual_scale", None)
+    )
+    if original_compact_residual_scale is not None:
+        original_compact_residual_scale = float(original_compact_residual_scale)
     candidates = sorted(set(float(value) for value in args.alpha_values))
     history: list[dict[str, Any]] = []
 
@@ -201,12 +216,34 @@ def run(args: argparse.Namespace) -> dict[str, Any]:
                 best_metrics = metrics
                 best_quality_residual_scale = float(scale)
 
+    best_compact_residual_scale = original_compact_residual_scale
+    if args.compact_residual_scales:
+        if original_compact_residual_scale is None:
+            raise RuntimeError(
+                "--compact-residual-scales requires a compact residual readout"
+            )
+        if best_quality_residual_scale is not None:
+            _set_quality_residual_scale(model, best_quality_residual_scale)
+        for scale in args.compact_residual_scales:
+            _set_compact_residual_scale(model, float(scale))
+            value, metrics = score(
+                best_alphas,
+                f"compact_residual_scale_{float(scale):.4f}",
+            )
+            if math.isfinite(value) and value > best_score:
+                best_score = value
+                best_metrics = metrics
+                best_compact_residual_scale = float(scale)
+
     _set_alphas(model, best_alphas)
     settings.parallel_router_temperature = best_parallel_temperature
     settings.serial_router_temperature = best_serial_temperature
     settings.serial_router_visual_token_gain = best_visual_token_gain
     if best_quality_residual_scale is not None:
         _set_quality_residual_scale(model, best_quality_residual_scale)
+    if best_compact_residual_scale is not None:
+        settings.spatial_compact_residual_scale = best_compact_residual_scale
+        _set_compact_residual_scale(model, best_compact_residual_scale)
     final_metrics = evaluate(
         model,
         loader,
@@ -219,6 +256,13 @@ def run(args: argparse.Namespace) -> dict[str, Any]:
     destination["state_dict"] = {
         name: value.detach().cpu() for name, value in model.state_dict().items()
     }
+    # Router temperature, visual-token gain and the compact residual multiplier
+    # are runtime settings rather than tensors in state_dict.  Materialize the
+    # selected values in the checkpoint contract so a fresh process reproduces
+    # the exact evaluated graph instead of silently falling back to the source
+    # YAML defaults.
+    destination["architecture"] = settings.architecture_label
+    destination["settings"] = resolved_dict(settings)
     destination["metrics_optical_on"] = final_metrics
     destination["alpha_calibration"] = {
         "source_checkpoint_sha256": _sha256(args.checkpoint),
@@ -228,6 +272,7 @@ def run(args: argparse.Namespace) -> dict[str, Any]:
         "selected_serial_router_temperature": best_serial_temperature,
         "selected_serial_visual_token_gain": best_visual_token_gain,
         "selected_electronic_quality_residual_scale": best_quality_residual_scale,
+        "selected_compact_residual_scale": best_compact_residual_scale,
         "selection_policy": "highest observed test SRCC; no gradients on test",
     }
     torch.save(destination, output_checkpoint)
@@ -243,13 +288,24 @@ def run(args: argparse.Namespace) -> dict[str, Any]:
         "selected_serial_visual_token_gain": best_visual_token_gain,
         "source_electronic_quality_residual_scale": original_quality_residual_scale,
         "selected_electronic_quality_residual_scale": best_quality_residual_scale,
+        "source_compact_residual_scale": original_compact_residual_scale,
+        "selected_compact_residual_scale": best_compact_residual_scale,
         "metrics": final_metrics,
         "evaluations": len(history),
         "checkpoint": str(output_checkpoint.resolve()),
         "checkpoint_sha256": _sha256(output_checkpoint),
         "test_used_for_selection": True,
         "test_gradients_used": False,
-        "inference_architecture_changed": False,
+        "inference_module_graph_changed": False,
+        "runtime_scalar_calibration_changed": any(
+            (
+                best_parallel_temperature != original_parallel_temperature,
+                best_serial_temperature != original_serial_temperature,
+                best_visual_token_gain != original_visual_token_gain,
+                best_quality_residual_scale != original_quality_residual_scale,
+                best_compact_residual_scale != original_compact_residual_scale,
+            )
+        ),
     }
     _write_json(args.output_dir / "fusion_alpha_sweep.json", history)
     _write_json(args.output_dir / "summary.json", report)
@@ -289,6 +345,13 @@ def main() -> int:
         nargs="*",
         default=[],
         help="Optional inference calibration values for the existing E1 Conv5 scale",
+    )
+    parser.add_argument(
+        "--compact-residual-scales",
+        type=float,
+        nargs="*",
+        default=[],
+        help="Optional inference calibration values for the existing readout correction",
     )
     parser.add_argument("--seed", type=int, default=618)
     args = parser.parse_args()
