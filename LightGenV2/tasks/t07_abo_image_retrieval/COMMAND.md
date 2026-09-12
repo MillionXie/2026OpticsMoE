@@ -1563,3 +1563,27 @@ python -m LightGenV2.tasks.t07_abo_image_retrieval.standalone.generalization_que
 ```
 
 初始完整复评必做；参数量/alpha/光路SHA须核验，最终报告正常和同权重去光；只保留best/last。
+
+## 56. Language CCD全幅电子汇聚（待测试提交）
+
+原mask/光路/ROI/Top2/alpha不变；仅language专家和global的CCD电子池化直接输出77×224，不再取前77/224行。
+不新增参数、层或分支；这是电子读出接口变化，需重新测初始化成绩。Vision不改，不与第54/55节叠加。
+起点是未校准79.375%版本，不是第52节；原辅助头和教师坐标保持固定。源码先测试、推送GitHub，再独立worktree运行。
+下面GPU2须在启动前重新确认空闲，最多三张属于本任务的GPU；不终止其他人的进程。目录存在禁止覆盖。
+
+```bash
+T07=/DATA/DATA1/guest3/2026OpticsMoE/LightGenV2/tasks/t07_abo_image_retrieval
+python -m LightGenV2.tasks.t07_abo_image_retrieval.standalone.generalization_queue \
+  --gpu GPU-6dcca91a-8e08-1a50-9aa6-81defeaed50b \
+  --assets "$T07/runs/simulation/standalone_assets_20260910" \
+  --checkpoint "$T07/runs/simulation/verify_joint_ep8_20260912_gpu1/best.pt" \
+  --target /DATA/DATA1/guest3/2026OpticsMoE/data/abo_similarity10_data \
+  --abo /DATA/DATA1/guest3/2026OpticsMoE/data/abo \
+  --pool "$T07/runs/simulation/domain_pool250_20260912" \
+  --teacher-cache "$T07/runs/smoke/domain_distillation_20260912/build_teacher_cache/artifacts/cache.pt" \
+  --teacher-alignment "$T07/runs/simulation/domain_teacher_first_20260912_gpu4/domain_distill_teacher_first/artifacts/teacher_feature_alignment.pt" \
+  --profiles domain_distill_joint_languagefull --epochs 16 --steps 128 --seed 42 \
+  --output "$T07/runs/simulation/domain_joint_languagefull_20260913_gpu2"
+```
+
+初始、最终均重新编码原480测试和120商品图库，记录干净训练性能与同权重去光；只留best/last。
