@@ -51,7 +51,9 @@ Router步长对照`domain_distill_joint_routerradian_fast`：在第48节弧度�
 仍从固定79.375%起点开始，原384宽MLP、原教师坐标/损失/GT课程、cap250二视角、16×128seed42。
 前向/保存依然raw-sigmoid，角度EMA、原传播/ROI/Top2/alpha>0.4及480-query/120-gallery不变，无新增推理层。
 `execution.json`记录各参数组实际初始学习率，避免只看名义配置；新倍率默认1，不影响旧训练。
-本地200项测试通过；需同步GitHub、服务器回归及真实输入检查后，接续GPU1第48节，不占第四张卡。
+源码e78dab7a已同步GitHub，两端200项测试通过，真实4图CPU一步检查仅改变两个Router、更新后输出有限。
+步长0.002时V/L圆周相位RMS约0.001857/0.001172 rad；证据为固定最佳`evaluation/diagnostics/router_radian_fast_cpu_step.json`。
+监督3567958已排队等待GPU1第48节，尚无学生/CUDA上下文，不占第四张卡。
 命令第51节，尚无训练结果，不替换最佳。
 
 训练随机性对照`domain_joint_seed123_20260912_gpu2`：使用已有`domain_distill_joint_restart`，
@@ -60,7 +62,7 @@ Router步长对照`domain_distill_joint_routerradian_fast`：在第48节弧度�
 这会改变训练批次、增强、dropout/噪声等随机实现，不改变标签；不是换数据集或按查询选模型。
 同一配置也曾在seed42下完成且无新高；此处检验训练路径差异，不预设一定能提高分数。
 源码abb36acd已在GitHub，两端191项测试通过。强教师组已完成并释放GPU2，监督3488475接续学生3517887。
-已核实其CUDA上下文只在GPU2，seed=123；完整初始评估尚待核验，不能直接继承79.375%。
+已核实其CUDA上下文只在GPU2，seed=123；完整初始原协议重新计算为79.375%，并非直接继承。
 此前seed123的teacher_first采用不同起点/课程，不能作为本次同起点配对结果；命令第50节。
 仍按周期test及跨run择优，存在选择偏差；单次seed123不支持统计显著性结论，不替换原最佳。
 

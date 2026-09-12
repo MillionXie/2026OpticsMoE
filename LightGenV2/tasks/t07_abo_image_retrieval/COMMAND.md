@@ -1410,12 +1410,13 @@ python -m LightGenV2.tasks.t07_abo_image_retrieval.standalone.generalization_que
 
 新高需在4090独立复核正常及同权重去光；保留跨run/test选模偏差说明，不把不同seed的最佳值当作均值。
 
-## 51. 仅提高Router弧度优化步长（待服务器验证/排队）
+## 51. 仅提高Router弧度优化步长（已排队，不重复启动）
 
 相对第48节仅提高两个Router的初始学习率0.0002→0.002；不是提高专家/global或电子学习率。
 仍用原79.375%起点、384宽MLP、原教师坐标和16×128seed42；无推理/光路变化，不叠加第49节。
 先同步已测试源码并做真实输入检查，再排到第48节之后；等待不占CUDA，不重复启动同名run。
 完整初始分数要重新计算，实际学习率见`execution.json/optimizer_initial_rates_by_kind`。
+源码e78dab7a，两端200项测试及真实4图CPU一步检查通过；监督3567958等待第48节完成，不占CUDA。
 
 ```bash
 T07=/DATA/DATA1/guest3/2026OpticsMoE/LightGenV2/tasks/t07_abo_image_retrieval
