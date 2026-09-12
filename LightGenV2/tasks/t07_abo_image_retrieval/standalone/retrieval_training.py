@@ -19,12 +19,19 @@ def product_bank(features, samples):
     return torch.stack(centers),torch.tensor(labels,device=features.device),ids
 
 
-def gallery_loss(query, labels, own_product, bank, bank_labels, temperature=.10, margin=.08, class_balance=False):
+def gallery_loss(query, labels, own_product, bank, bank_labels, temperature=.10, margin=.08, class_balance=False, full_precision=False):
     """Multi-positive retrieval NLL and top-negative margin, excluding own product.
 
     All other same-category products are relevant, never just the same SKU.
     The bank is detached and refreshed by the caller; test labels never enter it.
     """
+    if full_precision:
+        # Training loss only: do not change model/evaluation precision or optics.
+        # .float() outside a disabled-autocast scope alone would still permit
+        # the matrix multiplication to be cast back to BF16 by the outer scope.
+        with torch.autocast(device_type=query.device.type, enabled=False):
+            return gallery_loss(query.float(),labels,own_product,bank.float(),bank_labels,
+                                temperature,margin,class_balance)
     query=F.normalize(query.float(),dim=-1)
     score=query@bank.detach().float().T
     valid=torch.arange(len(bank),device=query.device)[None]!=own_product[:,None]

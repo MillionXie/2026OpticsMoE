@@ -10,7 +10,7 @@ import json
 import math
 import torch
 
-PINNED_TEACHER_PROFILES = ('domain_distill_teacher_continue', 'domain_distill_teacher_continue_sam', 'domain_distill_teacher_continue_softgt')
+PINNED_TEACHER_PROFILES = ('domain_distill_teacher_continue', 'domain_distill_teacher_continue_sam', 'domain_distill_teacher_continue_softgt', 'domain_distill_teacher_continue_fp32gallery')
 
 PROFILES = ('preserve_adam', 'preserve_sam', 'preserve_fullfield_sam', 'preserve_fullfield_both_sam',
             'regularized_control', 'regularized_phase05', 'domain_mixed', 'domain_curriculum', 'domain_target_control',

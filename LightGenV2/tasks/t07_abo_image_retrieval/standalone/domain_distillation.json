@@ -11,6 +11,10 @@
     "domain_distill_light": {"relation_teacher_weight": 0.10},
     "domain_distill_strong": {"relation_teacher_weight": 0.30},
     "domain_distill_stronger": {"relation_teacher_weight": 0.60},
+    "domain_distill_teacher_continue_fp32gallery": {
+      "gallery_loss_full_precision": true,
+      "protocol": "Matched teacher_continue control: same pinned78.75% source, teacher alignment/auxiliaries, data, losses, quarter learning rates and12x128 updates. Disable autocast ONLY inside training product-gallery similarity/NLL/margin/hit calculation; convert query and detached bank toFP32 while retaining query gradients. Model/optics/teacher-loss forward and evaluation remain unchanged. No SAM or GT rescaling, no new inference network. Original480-query/120-gallery, best/last only."
+    },
     "domain_distill_teacher_continue_softgt": {
       "supervised_warmup_epochs": 12,
       "supervised_recovery_epochs": 0,

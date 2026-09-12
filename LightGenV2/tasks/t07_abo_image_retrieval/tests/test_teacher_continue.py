@@ -72,3 +72,35 @@ def test_softgt_continuation_changes_only_final_label_loss_scale():
     assert [supervised_loss_scale(i,soft) for i in range(1,13)]==[.5]*12
     assert supervised_loss_scale(13,soft)==1.
     assert soft['sam_rho']==0 and soft['teacher_feature_weight']==2.
+
+
+def test_fp32_gallery_profile_is_only_loss_precision_change():
+    plain=overlay_config({},'domain_distill_teacher_continue')
+    fp32=overlay_config({},'domain_distill_teacher_continue_fp32gallery')
+    assert fp32['gallery_loss_full_precision'] is True
+    ignored={'gallery_loss_full_precision','protocol'}
+    assert {k:v for k,v in plain.items() if k not in ignored}=={k:v for k,v in fp32.items() if k not in ignored}
+
+
+@pytest.mark.parametrize('balanced',[False,True])
+def test_fp32_gallery_matches_reference_inside_autocast(balanced):
+    from LightGenV2.tasks.t07_abo_image_retrieval.standalone.retrieval_training import gallery_loss
+    torch.manual_seed(1729)
+    source=torch.randn(8,64)
+    bank=torch.nn.functional.normalize(torch.randn(12,64),dim=-1).requires_grad_(True)
+    bank_labels=torch.arange(12)//4
+    own=torch.arange(8);labels=bank_labels[own]
+    q=source.clone().requires_grad_(True)
+    reference=gallery_loss(q,labels,own,bank,bank_labels,class_balance=balanced)
+    sum(reference[:2]).backward();expected_gradient=q.grad.clone()
+    q=source.clone().requires_grad_(True)
+    with torch.autocast('cpu',dtype=torch.bfloat16):
+        actual=gallery_loss(q,labels,own,bank,bank_labels,class_balance=balanced,full_precision=True)
+        legacy=gallery_loss(q,labels,own,bank,bank_labels,class_balance=balanced)
+        # Class-count correction already promotes the old NLL to FP32, but
+        # its similarity matrix was still multiplied in BF16 beforehand.
+        assert legacy[0].dtype==(torch.float32 if balanced else torch.bfloat16)
+    sum(actual[:2]).backward()
+    assert actual[0].dtype==torch.float32 and bank.grad is None
+    for a,b in zip(actual,reference):torch.testing.assert_close(a,b,atol=0,rtol=0)
+    torch.testing.assert_close(q.grad,expected_gradient,atol=0,rtol=0)

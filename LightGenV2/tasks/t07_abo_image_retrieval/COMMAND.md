@@ -877,3 +877,29 @@ python -m LightGenV2.tasks.t07_abo_image_retrieval.standalone.generalization_que
 
 比较第29/30/31节时均从固定78.75%权重开始，不串接彼此best。GPU型号不同，若出现新高，
 须固定权重SHA后按第20节在同一RTX4090、batch4进行独立复评，不将小幅硬件数值波动记作突破。
+
+## 32. 训练检索损失FP32对照（模型前向与推理精度不变）
+
+与第29节相同起点/数据/损失系数/更新次数，仅关闭训练商品图库loss内部autocast。
+单纯写`query.float()`不足以阻止外层autocast将矩阵乘法重新转成BF16，因此本组显式限定精度作用域。
+不包含SAM、标签减半、教师去均值或任何网络结构变化。
+
+```bash
+T07=LightGenV2/tasks/t07_abo_image_retrieval
+ASSETS=$T07/runs/simulation/standalone_assets_20260910
+TARGET=/DATA/DATA1/guest3/2026OpticsMoE/data/abo_similarity10_data
+ABO=/DATA/DATA1/guest3/2026OpticsMoE/data/abo
+BEST=$T07/runs/simulation/verify_teacher_first_ep11_20260912_gpu4/best.pt
+CACHE=$T07/runs/smoke/domain_distillation_20260912/build_teacher_cache/artifacts/cache.pt
+POOL=$T07/runs/simulation/domain_pool250_20260912
+ALIGNMENT=$T07/runs/simulation/domain_teacher_first_20260912_gpu4/domain_distill_teacher_first/artifacts/teacher_feature_alignment.pt
+python -m LightGenV2.tasks.t07_abo_image_retrieval.standalone.generalization_queue \
+  --gpu GPU-1b963983-7909-af6e-0528-f0f0661ab549 --assets "$ASSETS" --checkpoint "$BEST" \
+  --target "$TARGET" --abo "$ABO" --pool "$POOL" --teacher-cache "$CACHE" --teacher-alignment "$ALIGNMENT" \
+  --profiles domain_distill_teacher_continue_fp32gallery --epochs 12 --steps 128 \
+  --output "$T07/runs/simulation/domain_teacher_continue_fp32gallery_20260912_gpu4" \
+  --after-queue "$T07/runs/simulation/domain_teacher_continue_20260912_gpu4/status.json"
+```
+
+原方法保持可复现。检查`execution.json/common_config/gallery_loss_full_precision=true`，
+不要将此设置描述为提高光学仿真精度或修改部署；它仅改变训练图库损失的数值计算。

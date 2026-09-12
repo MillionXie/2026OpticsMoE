@@ -320,7 +320,8 @@ def run_stage(args,stage,output,initial_checkpoint=None):
                         result=dict(ce=ce.detach(),supcon=con.detach(),correct=logits.argmax(-1).eq(labels[indices]).float().mean().detach(),optical_auxiliary=optical_aux.detach())
                         if rank:
                             nll,margin,hit=gallery_loss(z,labels[indices],product_ids[indices],bank,bank_labels,
-                                class_balance=cfg_all.get('gallery_class_balance',False))
+                                class_balance=cfg_all.get('gallery_class_balance',False),
+                                full_precision=cfg_all.get('gallery_loss_full_precision',False))
                             loss=loss+(gt_scale*cfg['gallery_nll_weight'])*nll+(gt_scale*cfg['gallery_margin_weight'])*margin
                             result.update(gallery_nll=nll.detach(),gallery_margin=margin.detach(),train_gallery_hit1=hit.detach())
                         if teacher_vectors is not None and teacher_weight:
