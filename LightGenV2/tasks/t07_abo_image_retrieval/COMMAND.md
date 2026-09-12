@@ -1592,17 +1592,20 @@ python -m LightGenV2.tasks.t07_abo_image_retrieval.standalone.generalization_que
 
 初始、最终均重新编码原480测试和120商品图库，记录干净训练性能与同权重去光；只留best/last。
 
-## 57. 仅降低原商品重复采样（待测试提交）
+## 57. 仅降低原商品重复采样（运行中，不重复启动）
 
+源码888d08d6已同步GitHub，两端247项测试、实际5556训练图SHA/配额/产品覆盖检查通过；监督494597/学生494600在GPU0 RTX4090运行。
+执行审计确认原光学、参数量、前端冻结、Top2/alpha及原prefix CCD读出不变，未叠加其它对照。
+初始化完整复评79.375%，与起点一致；后续训练成绩仍待实际产生。
 保持原prefix CCD读出及全部光路，不与全幅读出/梯度投影/白边增强叠加。起点仍为未校准79.375%及原辅助头/教师坐标。
 每batch40图从每类2原+2外改成1原+3外；成员/标签/测试/图库不变，原训练干净评估仍用全部1440图。
 先测试、同步GitHub，并检查实际池的每类配额/产品覆盖；只在GPU空闲、且本任务不超过三卡时启动。
-命令中GPU4只是计划目标，不能据此判断它当前空闲；旧输出不覆盖。
+实际选择启动前空闲的GPU0；以后复跑仍必须重新检查，不能据此判断它一直空闲；旧输出不覆盖。
 
 ```bash
 T07=/DATA/DATA1/guest3/2026OpticsMoE/LightGenV2/tasks/t07_abo_image_retrieval
 python -m LightGenV2.tasks.t07_abo_image_retrieval.standalone.generalization_queue \
-  --gpu GPU-1b963983-7909-af6e-0528-f0f0661ab549 \
+  --gpu GPU-afc19890-6209-ee4d-622d-e619da5bd5b2 \
   --assets "$T07/runs/simulation/standalone_assets_20260910" \
   --checkpoint "$T07/runs/simulation/verify_joint_ep8_20260912_gpu1/best.pt" \
   --target /DATA/DATA1/guest3/2026OpticsMoE/data/abo_similarity10_data \
@@ -1611,7 +1614,7 @@ python -m LightGenV2.tasks.t07_abo_image_retrieval.standalone.generalization_que
   --teacher-cache "$T07/runs/smoke/domain_distillation_20260912/build_teacher_cache/artifacts/cache.pt" \
   --teacher-alignment "$T07/runs/simulation/domain_teacher_first_20260912_gpu4/domain_distill_teacher_first/artifacts/teacher_feature_alignment.pt" \
   --profiles domain_distill_joint_mix13 --epochs 16 --steps 128 --seed 42 \
-  --output "$T07/runs/simulation/domain_joint_mix13_20260913_gpu4"
+  --output "$T07/runs/simulation/domain_joint_mix13_20260913_gpu0"
 ```
 
 只存best/last；有新高也先独立正常/同权重去光复核，不能用训练提升或类别路由指标替代原Hit@1。
