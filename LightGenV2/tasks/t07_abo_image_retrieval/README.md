@@ -53,7 +53,10 @@
 纯9维投影反而78.9583%。已用TEST缓存比较过保留率，明确存在超参数选择偏差，不称独立测试。
 **缓存预测不是正式成绩**：折叠后的FP32权重/BF16推理需独立重算正常与同权重去光；当前正式最佳仍79.375%。
 只拟合TRAIN字段；校验缓存/原权重/数据manifest SHA及1440个train ID；不继承旧分数或旧辅助头，避免坐标不匹配续训。
-代码`standalone/readout_calibration.py`，本地207项测试通过（含折叠等价性及只改两个读出张量）；命令第52节。
+代码`standalone/readout_calibration.py`，源码bbb9876d已同步GitHub，两端207项测试通过；命令第52节。
+服务器CPU拟合完成：`runs/simulation/readout_subspace_20260912/best.pt`，状态仍`fitted_not_evaluated`。
+SHA=`50a8607eec392c00cf3675533490cb8ef953245af6f5d9cfbc9d616bf7d22701`；实际只改变原读出weight/bias。
+待GPU4的MLP组完成并释放后独立评估，不提前登记为新最佳。
 
 Router步长对照`domain_distill_joint_routerradian_fast`：在第48节弧度优化的基础上，
 仅将两个Router初始Adam学习率0.0002→0.002（10倍），专家/global、电子、alpha及辅助头的学习率不变。
@@ -63,7 +66,8 @@ Router步长对照`domain_distill_joint_routerradian_fast`：在第48节弧度�
 `execution.json`记录各参数组实际初始学习率，避免只看名义配置；新倍率默认1，不影响旧训练。
 源码e78dab7a已同步GitHub，两端200项测试通过，真实4图CPU一步检查仅改变两个Router、更新后输出有限。
 步长0.002时V/L圆周相位RMS约0.001857/0.001172 rad；证据为固定最佳`evaluation/diagnostics/router_radian_fast_cpu_step.json`。
-监督3567958已排队等待GPU1第48节，尚无学生/CUDA上下文，不占第四张卡。
+第48节已完成且释放GPU1，监督3567958已接续学生3595623；完整初始重新计算为79.375%。
+execution核验实际router初始LR=0.002、phase=0.001，其余组保持原值，受保护optics.py SHA与原版相同。
 命令第51节，尚无训练结果，不替换最佳。
 
 训练随机性对照`domain_joint_seed123_20260912_gpu2`：使用已有`domain_distill_joint_restart`，
@@ -108,6 +112,8 @@ V/L相位圆周RMS更新约0.0001866/0.0001170 rad，只变两个Router，更新
 首轮实际last只读检查：V/L有输入区域的圆周相位RMS约0.001250/0.001086 rad，无输入区域为0；
 raw差值RMS约7.28/4.25主要受0/2π跨界影响，不能当作物理相位大幅变化。
 证据在该run的`artifacts/router_radian_training_update_check.json`，记录epoch=1及当次last SHA，不复制周期PT。
+本组16轮已完成：selected_epoch=-1，正常79.375%、去光62.9167%，仍选择初始权重；第16轮EMA78.125%、live78.75%。
+没有新高，不采用；监督3357893/学生3378938退出且释放CUDA，GPU1由第51节10倍步长对照接续。
 
 损失强度候选`domain_distill_joint_feature8`：从固定79.375%起点，仅将已有逐图64维教师余弦权重2提高至8。
 教师坐标/正确性门控、关系KL0.3、GT课程、数据、基础LR和16×128seed42保持原joint_restart设置。
