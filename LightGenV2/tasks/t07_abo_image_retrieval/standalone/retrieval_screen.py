@@ -270,6 +270,8 @@ def evaluate(args):
                 mrl='last valid token, first 64 dimensions, L2 normalization',
                 preprocessing='EXIF RGB, native aspect, min=max pixels 50176')
         model.to(device).eval().requires_grad_(False)
+        status.update(identity)
+        write_json(args.output / 'status.json', status)
         write_json(args.output / 'execution.json', identity)
         results = {}
         for removed in ([False, True] if args.mode == 'optical' else [False]):
@@ -316,6 +318,7 @@ def evaluate(args):
         status.update(status='failed_or_interrupted', error=repr(exc))
         raise
     finally:
+        status.update(identity)
         write_json(args.output / 'status.json', status)
         del model
         if device.type == 'cuda':
