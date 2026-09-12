@@ -13,6 +13,7 @@ import torch
 PINNED_TEACHER_PROFILES = ('domain_distill_teacher_continue', 'domain_distill_teacher_continue_sam', 'domain_distill_teacher_continue_softgt', 'domain_distill_teacher_continue_fp32gallery', 'domain_distill_joint_curriculum', 'domain_distill_vision_patch', 'domain_distill_joint_restart', 'domain_distill_joint_restart_softgt', 'domain_distill_joint_merger', 'domain_distill_joint_categorykd', 'domain_distill_joint_routerorigin', 'domain_distill_joint_phasefirst', 'domain_distill_joint_feature8', 'domain_distill_joint_routerradian', 'domain_distill_joint_mlp768')
 PINNED_TEACHER_PROFILES += ('domain_distill_joint_routerradian_fast',)
 PINNED_TEACHER_PROFILES += ('domain_distill_joint_vision13',)
+PINNED_TEACHER_PROFILES += ('domain_distill_joint_whitezoom',)
 REFIT_TEACHER_PROFILES = ('domain_distill_refit250', 'domain_distill_refit500')
 
 PROFILES = ('preserve_adam', 'preserve_sam', 'preserve_fullfield_sam', 'preserve_fullfield_both_sam',
@@ -103,6 +104,12 @@ def restore_auxiliary_head(head, payload, actual_sha256, expected_sha256):
 
 
 def overlay_config(config, profile):
+    if profile=='domain_distill_joint_whitezoom':
+        config=overlay_config(config,'domain_distill_joint_restart')
+        overlay=json.loads(Path(__file__).with_name('domain_distillation.json').read_text(encoding='utf-8'))['profiles'][profile]
+        config['augmentation'].update(overlay['augmentation'])
+        config['protocol']=overlay['protocol']
+        return config
     if profile=='domain_distill_joint_vision13':
         config=overlay_config(config,'domain_distill_joint_restart')
         overlay=json.loads(Path(__file__).with_name('domain_distillation.json').read_text(encoding='utf-8'))

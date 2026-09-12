@@ -39,7 +39,43 @@ def optical_classification_loss(model,heads,labels):
     return torch.stack(losses).mean()
 
 
+def white_margin_box(image):
+    """Training-only conservative near-white margin detection, no labels.
+
+    Every RGB pixel with any channel <254 remains inside the crop. This is a
+    threshold guarantee, NOT a semantic guarantee about white object parts.
+    Keep a2% guard, trim at most20% per side, and reject tiny/ambiguous objects.
+    """
+    import numpy as np
+    if image.mode!='RGB' or image.size!=(224,224):
+        raise ValueError('White margin augmentation expects RGB224 input')
+    a=np.asarray(image);white=np.all(a>=254,axis=2)
+    full=(0,0,224,224)
+    border=np.concatenate((white[0],white[-1],white[:,0],white[:,-1]))
+    ys,xs=np.nonzero(~white)
+    if border.mean()<=.9 or not len(xs):return full
+    x0,x1,y0,y1=int(xs.min()),int(xs.max()+1),int(ys.min()),int(ys.max()+1)
+    if (x1-x0)*(y1-y0)<.15*224*224 or min(x1-x0,y1-y0)<8:return full
+    margin=4;cap=44
+    box=(min(max(x0-margin,0),cap),min(max(y0-margin,0),cap),
+         max(min(x1+margin,224),224-cap),max(min(y1+margin,224),224-cap))
+    return box if 224/max(box[2]-box[0],box[3]-box[1])>=1.05 else full
+
+
 def augment(image,rng,cfg):
+    probability=cfg.get('white_margin_zoom_probability',0.)
+    if isinstance(probability,bool) or not isinstance(probability,(int,float)) or not math.isfinite(probability) or not 0<=probability<=1:
+        raise ValueError('Invalid white margin zoom probability')
+    if probability:
+        if cfg['minimum_crop_side_fraction']!=1 or cfg['rotation_degrees']!=0 or 'contain_jitter_min_scale' in cfg:
+            raise ValueError('White margin zoom cannot combine with arbitrary crop/rotation/placement jitter')
+        if rng.random()<probability:
+            box=white_margin_box(image)
+            if box!=(0,0,224,224):
+                resized=ImageOps.contain(image.crop(box),(224,224),Image.Resampling.BICUBIC)
+                canvas=Image.new('RGB',(224,224),'white')
+                canvas.paste(resized,((224-resized.width)//2,(224-resized.height)//2))
+                image=canvas
     if 'contain_jitter_min_scale' in cfg:
         minimum=cfg['contain_jitter_min_scale']
         if not 0<minimum<=1 or cfg['minimum_crop_side_fraction']!=1 or cfg['rotation_degrees']!=0:
