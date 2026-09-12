@@ -82,3 +82,29 @@ test IDs SHA均为`625dec6bc15b2d737d39bc252cfa0c354de217fec0266dcda568913f4a349
 
 两目录均在本任务`runs/simulation/`下，保存实际命令、配置、源码及环境；
 未删除先前失败目录，未更改正式训练best/last。公开测试选模偏差与标准clean-eval边界仍适用。
+
+## 2026-09-13：batch8候选同权重旁路
+
+run `moe_alpha40_sam_batch8_20260913_seed42`的epoch1 EMA已独立复评，
+SHA `e4930c1264442d7056fd0451385cf8fb301e83dd580200e15c6b7a7fe934725c`。
+训练在last第11轮停止，并非完成20轮。以下结果不覆盖上面的87ad历史消融。
+
+|指标|正常光电|同权重去光，无重训|
+|---|---:|---:|
+|独立float64 CC|.8623960523|.8423025094|
+|KLD|.11422249|.13743438|
+|SIM|.82427605|.80846425|
+|NSS|.96467616|.94043377|
+|AUC-Judd|.76998876|.76592108|
+|MAE|.08168397|.08534979|
+
+CC绝对下降.02009354，相对下降2.32997%；3744/5000张正常光电CC更高。
+alpha=.43068656/.44104564不是上述性能下降百分比，也不能解释为独立可加的贡献比例。
+两份逐图CSV完整身份及checkpoint SHA一致，test IDs SHA仍为上文625dec6b…3496d0。
+batch48、固定权重独立进程，无重训练；标准eval关闭随机光扰动，不是实测硬件结果。
+
+在该run中查阅`candidate_recheck/reproduction.json`与`candidate_remove_optical/reproduction.json`，
+以及各自`per_image_cc.csv`；摘要`candidate_summary.json`。
+完整专家分布审计位于`candidate_selected_evaluation/selected_checkpoint_test_evaluation.json`：
+2343/2629/2313/2715次、份额23.43/26.29/23.13/27.15%，有效专家数3.98050，无闲置专家。
+源码fa4647d7；复评PID/PGID604876、606813及各自子进程均已退出，GPU1释放。

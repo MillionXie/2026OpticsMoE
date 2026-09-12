@@ -62,3 +62,7 @@ SHA `224db722d59d7a4d046348701ca0195702a7513e703bc26c217e4d9c49399611`，CPU重�
 run为`runs/simulation/moe_alpha40_sam_batch8_crosssample_20260913_seed42`，
 完整命令、配置SHA与来源在`launch_record.json`，日志`console.log`。
 此处为已启动、待完整测试状态，不是目标达成或新最佳。
+
+首轮完整5000图测试CC=.8624925288200378，live训练记录alpha=.43065083/.44102651；
+这不是独立复评数值，也不把live alpha当作EMA权重审计。需继续看第5/10轮趋势，
+不得因辅助loss值更低（估计方式改变）就直接与旧组的总loss比较优劣。
