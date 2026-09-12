@@ -18,6 +18,7 @@ from .modeling import load_vision_backbone, sha256_file
 from .settings import load_settings, save_resolved_config
 from .run import _seed
 from .training import _write_json, _write_csv, staged_epoch
+from .training_support import use_spawn_workers
 
 
 class AlignedReadout(nn.Module):
@@ -60,6 +61,10 @@ def main():
     head = AlignedReadout(s.vision_hidden_size).to(loaded.device)
     model = FrozenQwenVisionTeacher(loaded, head)
     train_loader, test_loader = legacy.build_loaders(bundle, s, training=True)
+    # The backbone has already initialized CUDA. Fork workers must not inherit
+    # that context (and must not leave phantom GPU allocations after this run).
+    use_spawn_workers(train_loader)
+    use_spawn_workers(test_loader)
     optim = torch.optim.AdamW([
         {"params": [*head.input_adapter.parameters(), *head.input_norm.parameters()], "name": "electronic", "lr": s.student_learning_rate},
         {"params": list(head.decoder.parameters()), "name": "saliency_head", "lr": s.dense_head_learning_rate},
@@ -69,6 +74,9 @@ def main():
                 "parameter_audit": head.parameter_audit(), "seed": args.seed,
                 "torch": torch.__version__, "gpu": torch.cuda.get_device_name() if torch.cuda.is_available() else "CPU",
                 "qwen_frozen": True, "training_scope": "only adapter and decoder",
+                "head_initialization": "random; no previous trained head loaded",
+                "epochs_budget": s.student_epochs,
+                "dataset_counts": {"train": len(bundle.train_records), "test": len(bundle.validation_records)},
                 "selection_biased": True, "selection": "public test CC at epoch1/every5/final",
                 "note": "Both systems have the same 197184-parameter adapter and 85412-parameter decoder; adapter appears before the optical body but after the frozen Qwen body. This is not an identical full-network/train-history ablation."}
     _write_json(s.output_dir / "run_manifest.json", manifest)

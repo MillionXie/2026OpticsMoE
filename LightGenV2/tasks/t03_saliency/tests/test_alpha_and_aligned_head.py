@@ -5,6 +5,7 @@ import pytest
 import torch
 
 from LightGenV2.tasks.t03_saliency.aligned_baseline import AlignedReadout
+from experiments.vision2_hybrid_dense.modeling import SaliencyDensityDecoder
 from LightGenV2.tasks.t03_saliency.settings import load_settings
 from LightGenV2.tasks.t03_saliency.modeling import architecture_label, initialize_student
 from LightGenV2.tasks.t03_saliency.training import staged_epoch, phase_change_report
@@ -41,6 +42,22 @@ def test_aligned_head_counts_and_forward():
     assert head.parameter_audit() == {"adapter": 197184, "decoder": 85412, "total": 282596}
     with torch.no_grad():
         assert head(torch.randn(1, 1024, 14, 14)).shape == (1, 1, 224, 224)
+
+
+def test_fresh_fifty_epoch_baseline_contract():
+    s = load_settings(TASK / "configs/qwen_aligned_head_50.yaml")
+    assert s.student_epochs == 50
+    assert s.initialization_checkpoint is None
+    assert not s.augmentation_enabled
+    assert s.staged_warmup_epochs == 5 and s.staged_polish_start == 36
+    assert s.student_learning_rate == pytest.approx(1e-4)
+    assert s.dense_head_learning_rate == pytest.approx(3e-4)
+    assert s.map_kd_weight == 0
+    assert s.validation_limit is None
+    optical = SaliencyDensityDecoder(192, 224)
+    qwen = AlignedReadout().decoder
+    assert {k: tuple(v.shape) for k, v in optical.state_dict().items()} == {
+        k: tuple(v.shape) for k, v in qwen.state_dict().items()}
 
 
 def test_phase_movement_report(tmp_path):
