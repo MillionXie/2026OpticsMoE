@@ -16,6 +16,12 @@
 
 ## 依赖与命令
 
+### 手动GUI对照补测（2026-09-12）
+
+用户在Blink GUI分别保持同一32px周期横向光栅和纯黑，两次均不启动本地相位SDK；远端显示同一中心振幅块，150 μs、Gain_X4、100 fps、200 ms等待。光斑质心差0.0440 px，固定ROI `[760,470,1000,710]` 的原始强度PCC为0.997624，没有看到明确偏转。此结果不能单独归因于SDK，也不能据此认定相位SLM损坏或完全无相位调制；下一步核对实际显示输出、光束覆盖、偏振和相位LUT。保持所有方向/相位验收标记为false。
+
+证据见 `reports/phase_manual_20260912/comparison.json` 与同目录 `comparison.png`（共同0～255显示范围，不做逐图拉伸）。原图保留在本地与师弟电脑 `results/manual_phase_gx_20260912_01`、`results/manual_phase_flat_20260912_01`。两次桌面作业均正常完成并释放相机，独立result.json终态回执已实测通过。
+
 本地Python需要numpy、Pillow、paramiko；测试环境 `C:\ProgramData\anaconda3\python.exe`。相位使用原厂Blink 1920 HDMI SDK，不是高速PCIe SDK，不改VCom或pre/post ramp。
 
 ```powershell
