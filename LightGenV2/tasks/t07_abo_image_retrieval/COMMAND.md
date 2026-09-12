@@ -1566,8 +1566,10 @@ python -m LightGenV2.tasks.t07_abo_image_retrieval.standalone.generalization_que
 
 初始完整复评必做；参数量/alpha/光路SHA须核验，最终报告正常和同权重去光；只保留best/last。
 
-## 56. Language CCD全幅电子汇聚（运行中，不重复启动）
+## 56. Language CCD全幅电子汇聚（已完成，未采用；以下为历史复现命令）
 
+16轮完成，选中第14轮EMA正常71.4583%、同权重去光63.75%，干净TRAIN99.3056%；低于第52节正式最佳，不采用。
+最终报告在下面run的`domain_distill_joint_languagefull/artifacts/final_report.json`。监督487163/学生487166已退出并确认CUDA释放；不重复启动原输出目录。
 源码24858b7b已同步GitHub，两端245项测试及真实4图CPU前后向检查通过；监督487163/学生487166已在GPU2 RTX3090启动。
 12份相位梯度有效，权重没有在CPU检查中被修改；执行审计确认参数量/前端冻结/Top2/alpha及光学源码SHA不变。
 初始完整复评57.7083%（277/480）、干净TRAIN留商品外79.0972%；旧权重对新池化有明显失配，需要重新适配，不是最终成绩。
@@ -1623,9 +1625,11 @@ python -m LightGenV2.tasks.t07_abo_image_retrieval.standalone.generalization_que
 ## 58. 轻量适配已有patch输入卷积（运行中，不重复启动）
 
 源码b69785ab已同步GitHub，两端256项测试通过；真实4图CPU初始化/梯度/patch单步更新检查通过。
-监督517418/学生517421已在GPU1 RTX4090启动；当前GPU0/1/2三组，不能额外启动第四卡。
+监督517418/学生517421已在GPU1 RTX4090启动；启动时GPU0/1/2三组，第56节完成后GPU2已释放，不自动补满资源。
 执行审计确认patch基础LR7.5e-7、原光学源码SHA/Top2/alpha、4356373训练参数和27578368冻结参数。
 GPU完整初始化复评79.375%，与未校准起点一致；正式训练新成绩仍待产生。
+实际第4轮last的CPU审计证实12份相位、patch weight/bias均更新，其余9份前端张量逐位未变；这不是性能通过条件。
+证据为本run的`artifacts/patch_training_update_check.json`，记录被读取last的SHA；没有额外周期PT或CUDA进程。
 只解冻已有patch Conv3d的两个参数，不增加推理层/分支。其它前端冻结；相位正常参与原训练，光学源码/ROI/Top2/alpha不变。
 1573888参数从冻结转为训练；总参数量不变。FP32主权重、原BF16计算接口，patch基础LR7.5e-7。
 原未校准79.375%起点和joint_restart原2:2采样/损失，单独对照，不叠加第55–57节。

@@ -57,6 +57,11 @@
 
 ## 持续目标与不可变约束（2026-09-12）
 
+2026-09-13重新核对服务器`frozen_qwen_20260912/baseline_report.json`：冻结Qwen、0训练参数，原生2048维95.2083%（457/480），原生64维94.375%（453/480）。
+原480查询/120训练商品图库、同类别相关的Hit@1协议；与当前独立光电最佳79.5833%分别差15.625和14.7917个百分点。
+若以完整Qwen为参照，差距不超过10/4个百分点分别要求光电至少85.2083%/91.2083%；原81%目标并不满足这两个差距门槛。
+用户提出考虑替代数据集；目前尚未变更数据成员、划分、标签或图库，也不以删除困难测试类别缩小差距。替代数据必须两模型同协议实测，不能预先保证达标。
+
 运行中`domain_distill_joint_patch`：只在原学生训练参数之外，放开**已有**Qwen patch Conv3d的weight/bias。
 不是加入新卷积或Qwen Transformer；输入仍224图→196×1024，6次光采集、光路/ROI/Top2/α>0.4、原prefix读出全不变。
 1573888个原冻结参数改为可训练，总参数量不变：训练4356373、冻结27578368。位置编码、文本embedding、merger仍冻结。
@@ -70,6 +75,9 @@ patch基础学习率为电子LR的0.05，即7.5e-7，跟随原余弦；其余joi
 证据在`verify_joint_ep8_20260912_gpu1/evaluation/diagnostics/patch_cpu_probe.json`。
 监督517418/学生517421已在空闲GPU1 RTX4090启动，连同GPU0/2合计三张；执行审计确认patch基础LR7.5e-7、原光学源码SHA6490c6ee…及其余合同不变。
 GPU完整初始化复评79.375%，与未校准源权重一致；不能把这个初始化成绩当作输入头微调的提升。
+第4轮实际`last.pt`只读CPU更新审计通过：12份相位圆周RMS变化0.001656–0.027088 rad；patch weight/bias主权重均改变，BF16计算值分别有526115/5项改变。
+其余9份前端张量逐位不变、所有state张量形状不变；证明训练范围生效，不代表测试性能改善。
+证据`domain_joint_patch_20260913_gpu1/domain_distill_joint_patch/artifacts/patch_training_update_check.json`，记录所读取last的SHA，不额外保留周期PT、未创建CUDA。
 
 源码历史衔接：本地共享分支rebase后，`8fb1f876`与已发布`0cd1d7f0`全仓文件树相同但历史不同。
 已在独立整合分支用普通merge形成`faabdc40`，确认合并没有任何文件内容差异，并快进本地与GitHub；未强推。
@@ -91,13 +99,18 @@ GPU完整初始化复评79.375%，与未校准源权重一致；不能把这个�
 TRAIN图/商品类内协方差各用0.1/0.5收缩估计，再构造9D判别方向投影并保留其它方向0.5；四组缓存最高79.375%，不采用。
 未改权重/光路，无GPU；矩阵只用TRAIN拟合，但候选比较使用TEST，不能声称独立测试或把缓存结果当实际前向复评。
 
-新增运行中`domain_distill_joint_languagefull`：仅将language两次CCD电子解码从“全幅汇聚224×224后取前77行”
+已完成、未采用`domain_distill_joint_languagefull`：仅将language两次CCD电子解码从“全幅汇聚224×224后取前77行”
 改成“全幅直接汇聚77×224”；Vision保持前196行。复用已有`fullfield_rows`，不修改`optics.py`。
 CCD强度归一化、clip12/log1p、行LN/ReLU/Linear192不变，所有权重张量形状和光学传播/ROI/Top2/α>0.4不变。
 这**确实改变了推理时的电子读出合同**，不是只改训练；全幅汇聚仍可能损失高频细节，不保证更好。
 从未校准79.375%源权重恢复原辅助头/教师坐标，初始化输出不再等价，必须重测初始成绩，不能继承79.375%。
 与joint_restart相同的16×128/seed42/教师2+KL0.3/GT课程/原数据，不叠加SAM、梯度投影或白边增强。
 旧低性能来源的fullfield实验不是这组的配对对照；命令见第56节。
+16轮完成，选中第14轮EMA：正常71.4583%（343/480）、同权重去光63.75%（306/480），下降7.7083个百分点；干净TRAIN留商品外99.3056%。
+这是新读出合同内从57.7083%初始化适配后的成绩，但低于原79.5833%正式最佳，不替换原版；不是源权重回退。
+完整证据`domain_joint_languagefull_20260913_gpu2/domain_distill_joint_languagefull/artifacts/final_report.json`；12份相位均更新，光学源码SHA仍6490c6ee…。
+该run的best.pt SHA=`c8fae23f54ddd78b13107ab8753f1fc3b57778842f9ada83f80400b45354b77e`，训练源码24858b7b；未另行开展正式候选独立复评。
+监督487163/学生487166已退出，队列记录complete和GPU释放，现场ps及nvidia-smi均确认PID消失；GPU2不自动接续新任务。
 源码24858b7b已同步GitHub，两端245项测试通过；真实4类TRAIN图CPU检查12份相位梯度均有限且非零，全部权重比特不变。
 检查只用训练图，不用TEST；输出相对旧prefix余弦0.63–0.84，明确不是等价初始化，不预报新成绩。
 证据`verify_joint_ep8_20260912_gpu1/evaluation/diagnostics/languagefull_cpu_probe.json`；原光学源码SHA6490c6ee…不变。
