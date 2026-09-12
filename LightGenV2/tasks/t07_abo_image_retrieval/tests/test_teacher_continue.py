@@ -93,6 +93,16 @@ def test_joint_restart_pins_new_best_without_relaxing_old_contract():
     assert old==new
 
 
+def test_feature8_changes_only_training_cosine_weight():
+    base=overlay_config({},'domain_distill_joint_restart')
+    candidate=overlay_config({},'domain_distill_joint_feature8')
+    assert base.pop('teacher_feature_weight')==2.
+    assert candidate.pop('teacher_feature_weight')==8.
+    for cfg in (base,candidate):cfg.pop('protocol')
+    assert base==candidate
+    assert 'frontend_training' not in candidate and 'phase_only_warmup_epochs' not in candidate
+
+
 def test_centerhalf_only_changes_teacher_targets_and_refits_basis():
     from LightGenV2.tasks.t07_abo_image_retrieval.standalone.generalization import PROFILES,PINNED_TEACHER_PROFILES
     name='domain_distill_joint_centerhalf'

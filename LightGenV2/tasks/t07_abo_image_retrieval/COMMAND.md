@@ -1304,3 +1304,24 @@ python -m LightGenV2.tasks.t07_abo_image_retrieval.standalone.generalization_que
 ```
 
 只保存best/last；history中的`phase_only_warmup`记录阶段。正式采用前要独立复核新高与同权重去光结果。
+
+## 47. 更强的逐图特征蒸馏（候选；已有run不重复启动）
+
+从第40节固定79.375%权重开始，只把教师64维余弦损失权重2改成8，其余同joint_restart。
+没有新增推理网络或改变光路，也不叠加第45/46节。先确认GPU2空闲，不挤占他人任务；最多3张GPU。
+源码必须通过测试并同步GitHub。新高必须独立4090复评正常/去光，不能把蒸馏强度当作光贡献占比。
+
+```bash
+T07=/DATA/DATA1/guest3/2026OpticsMoE/LightGenV2/tasks/t07_abo_image_retrieval
+python -m LightGenV2.tasks.t07_abo_image_retrieval.standalone.generalization_queue \
+  --gpu GPU-6dcca91a-8e08-1a50-9aa6-81defeaed50b \
+  --assets "$T07/runs/simulation/standalone_assets_20260910" \
+  --checkpoint "$T07/runs/simulation/verify_joint_ep8_20260912_gpu1/best.pt" \
+  --target /DATA/DATA1/guest3/2026OpticsMoE/data/abo_similarity10_data \
+  --abo /DATA/DATA1/guest3/2026OpticsMoE/data/abo \
+  --pool "$T07/runs/simulation/domain_pool250_20260912" \
+  --teacher-cache "$T07/runs/smoke/domain_distillation_20260912/build_teacher_cache/artifacts/cache.pt" \
+  --teacher-alignment "$T07/runs/simulation/domain_teacher_first_20260912_gpu4/domain_distill_teacher_first/artifacts/teacher_feature_alignment.pt" \
+  --profiles domain_distill_joint_feature8 --epochs 16 --steps 128 --seed 42 \
+  --output "$T07/runs/simulation/domain_joint_feature8_20260912_gpu2"
+```
