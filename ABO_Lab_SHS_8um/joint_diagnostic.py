@@ -65,6 +65,15 @@ def main():
             else:
                 refs={};c['settle_delay_ms']=400
                 for name in ('left','right'):refs[name]=grab(name,'reference')[0]
+                repeats={name:grab(name,'reference_repeat')[0] for name in ('left','right')}
+                separation=float(np.mean(np.abs(refs['left'].astype(float)-refs['right'])))
+                noise=max(float(np.mean(np.abs(refs[n].astype(float)-repeats[n]))) for n in refs)
+                report['reference_check']={'mean_absolute_difference':separation,
+                    'repeat_difference':noise,'required_ratio':5,
+                    'passed':separation>5*max(noise,.1)}
+                save_json(args.out/'report.json',report)
+                if not report['reference_check']['passed']:
+                    raise ValueError('Cannot resolve SLM input changes; timing scan stopped, no recommended wait')
                 # Alternation prevents accidentally validating a stale identical pattern.
                 for delay in (0,20,50,100,200,400):
                     c['settle_delay_ms']=delay
