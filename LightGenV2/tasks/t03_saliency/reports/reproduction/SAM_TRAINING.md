@@ -1230,3 +1230,13 @@ epoch1 EMA SHA `e4930c1264442d7056fd0451385cf8fb301e83dd580200e15c6b7a7fe934725c
 run子目录`candidate_recheck`、日志`candidate_recheck_console.log`，命令和预启动SHA在
 `candidate_recheck_launch.json`。读取PT字节后绑定SHA，不因之后best被训练刷新而失去溯源。
 本段只记录启动，最终结果以`candidate_recheck/reproduction.json`为准，未达到.87。
+
+独立复评已完成：实际加载epoch1 EMA SHA e4930c12…934725c，与首轮审计一致；5000唯一测试身份
+SHA `625dec6bc15b2d737d39bc252cfa0c354de217fec0266dcda568913f4a3496d0`，与原正式模型一致。
+legacy CC=.8623960669517517、独立float64 CC=.8623960523192796，算法差1.46e-8；
+KLD=.11422249、SIM=.82427605、NSS=.96467616、AUC=.76998876、MAE=.08168397，不声称所有指标均改善。
+相对同身份原正式87ad的逐图复评，平均CC变化+.00034647、中位数+.00036030，2854/5000张改善。
+2000次成对重采样的条件95%区间[.00018823,.00047558]；这不校正反复public-test选模偏差，
+不能据此宣称独立未见数据泛化保证。计算记录在`candidate_recheck/paired_vs_accepted.json`。
+复评父572007与同PGID子进程均退出，GPU5不再有本任务分配；当前仅GPU3继续20轮训练。
+小幅正向结果值得继续观察，但目标.87尚未达到，也未宣称完成20轮或替换交付候选。
