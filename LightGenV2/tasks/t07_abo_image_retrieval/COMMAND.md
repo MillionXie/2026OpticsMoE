@@ -1362,7 +1362,9 @@ python -m LightGenV2.tasks.t07_abo_image_retrieval.standalone.generalization_que
 
 部署不需要新的训练优化器：checkpoint仍是FP32 raw-sigmoid相位。仅保留best/last，新高独立复核正常/去光。
 
-## 49. 仅扩宽现有电子残差MLP（运行中，不重复启动）
+## 49. 仅扩宽现有电子残差MLP（完成无新高，仅供复现）
+
+16轮完成，selected_epoch=-1，正常79.375%、去光62.9167%；末轮EMA/live77.9167%。旧PID/CUDA释放，不采用。
 
 现有四个192→384→192 MLP改为192→768→192，新增591360电子参数，无新增层/分支或光学尺寸。
 复制隐藏单元并平分输出权重作保函数初始化，但必须重算完整初始评估，不能继承79.375%。
@@ -1387,7 +1389,9 @@ python -m LightGenV2.tasks.t07_abo_image_retrieval.standalone.generalization_que
   --after-queue "$T07/runs/simulation/domain_joint_phasefirst_20260912_gpu4/status.json"
 ```
 
-## 50. 原结构联合续训的seed123对照（运行中，不重复启动）
+## 50. 原结构联合续训的seed123对照（完成无新高，仅供复现）
+
+16轮完成，selected_epoch=-1，正常79.375%、去光62.9167%；末轮EMA76.0417%、live76.6667%。旧PID/CUDA释放，不采用。
 
 只改变第40节joint_restart的训练seed，保持原384宽MLP、原raw Router优化器、固定79.375%起点及原协议。
 监督3488475使用已发布源码abb36acd，第47节完成并释放GPU2后已接续学生3517887，不启动第四张卡。
@@ -1412,7 +1416,9 @@ python -m LightGenV2.tasks.t07_abo_image_retrieval.standalone.generalization_que
 
 新高需在4090独立复核正常及同权重去光；保留跨run/test选模偏差说明，不把不同seed的最佳值当作均值。
 
-## 51. 仅提高Router弧度优化步长（运行中，不重复启动）
+## 51. 仅提高Router弧度优化步长（完成无新高，仅供复现）
+
+16轮完成，selected_epoch=-1，正常79.375%、去光62.9167%；末轮EMA77.9167%、live78.75%。旧PID/CUDA释放，不采用。
 
 相对第48节仅提高两个Router的初始学习率0.0002→0.002；不是提高专家/global或电子学习率。
 仍用原79.375%起点、384宽MLP、原教师坐标和16×128seed42；无推理/光路变化，不叠加第49节。
@@ -1439,7 +1445,10 @@ python -m LightGenV2.tasks.t07_abo_image_retrieval.standalone.generalization_que
 
 只存best/last，新高需独立正常/去光复评；大步长导致性能下降也必须保留记录，不覆盖原最佳。
 
-## 52. 将TRAIN类别子空间校准折叠进现有读出（CPU拟合完成，待独立复评）
+## 52. 将TRAIN类别子空间校准折叠进现有读出（已独立复评79.5833%）
+
+源码bbb9876d，独立RTX4090/batch4正常79.5833%、mAP@10=0.7685648975、同权重去光62.7083%。
+复评PID393380已退出且释放CUDA；下面完整命令保留供复现，已有输出不覆盖。当前目标81%未达到。
 
 仅改原线性读出的weight/bias，其他张量包括所有相位不变；不是新增推理层或类别候选筛选。
 0.5保留率已经通过TEST缓存探索选择，需披露该偏差。缓存382/480不能作为实际BF16前向成绩。
@@ -1458,7 +1467,7 @@ python -m LightGenV2.tasks.t07_abo_image_retrieval.standalone.readout_calibratio
 ```
 
 拟合报告状态为`fitted_not_evaluated`，不代表完整训练/评估成功。
-**先等GPU4训练结束且确认空闲，再执行下面完整复评；仍最多3张卡。**此时不能与第49节并发占同一张卡。
+**复跑前重新确认指定GPU空闲；原复评已结束，不能假定GPU4仍空闲。**仍最多3张卡，不挤占其它任务。
 
 ```bash
 T07=/DATA/DATA1/guest3/2026OpticsMoE/LightGenV2/tasks/t07_abo_image_retrieval
@@ -1472,4 +1481,28 @@ python -m LightGenV2.tasks.t07_abo_image_retrieval.standalone.cli evaluate \
   --device cuda --batch-size 4 --output "$T07/runs/simulation/readout_subspace_20260912/evaluation"
 ```
 
-复评原480-query/120-gallery及同权重去光，禁止先覆盖原最佳或将缓存分数填进正式表格。
+复评原480-query/120-gallery及同权重去光；只有独立final_report是真实前向结果，缓存预测不替代复评。
+
+## 53. 仅扩大既有视觉残差卷积感受野（新候选）
+
+V的两个depthwise卷积3×3→13×13，L仍causal5、MLP仍384；新外圈补零，新增61440电子参数而不加层/分支。
+从**未校准79.375%**起点恢复辅助头/教师坐标，不套用第52节校准后的权重。光学传播/ROI/Top2/α>0.4不变。
+先完成测试、GitHub同步与真实输入CPU检查，再检查GPU2空闲启动；所有初始指标重新计算，不继承旧成绩。
+原cap250二视角、教师2/KL0.3/GT课程/基础LR/raw Router、16×128seed42。旧context7不算同起点配对对照。
+
+```bash
+T07=/DATA/DATA1/guest3/2026OpticsMoE/LightGenV2/tasks/t07_abo_image_retrieval
+python -m LightGenV2.tasks.t07_abo_image_retrieval.standalone.generalization_queue \
+  --gpu GPU-6dcca91a-8e08-1a50-9aa6-81defeaed50b \
+  --assets "$T07/runs/simulation/standalone_assets_20260910" \
+  --checkpoint "$T07/runs/simulation/verify_joint_ep8_20260912_gpu1/best.pt" \
+  --target /DATA/DATA1/guest3/2026OpticsMoE/data/abo_similarity10_data \
+  --abo /DATA/DATA1/guest3/2026OpticsMoE/data/abo \
+  --pool "$T07/runs/simulation/domain_pool250_20260912" \
+  --teacher-cache "$T07/runs/smoke/domain_distillation_20260912/build_teacher_cache/artifacts/cache.pt" \
+  --teacher-alignment "$T07/runs/simulation/domain_teacher_first_20260912_gpu4/domain_distill_teacher_first/artifacts/teacher_feature_alignment.pt" \
+  --profiles domain_distill_joint_vision13 --epochs 16 --steps 128 --seed 42 \
+  --output "$T07/runs/simulation/domain_joint_vision13_20260913_gpu2"
+```
+
+仅best/last，独立正常与去光复评后才能采用；扩大电子感受野的收益不能全部归于光。

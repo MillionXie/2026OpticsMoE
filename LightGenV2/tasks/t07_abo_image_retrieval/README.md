@@ -1,6 +1,17 @@
 # T07 ABO 商品图搜图：独立光电工程
 
-> **找当前最佳看这里**：独立固定权重复评79.375%（381/480），去光62.9167%；目标≥389/480，还差8个命中。
+> **找当前最佳看这里**：独立固定权重复评 **79.5833%（382/480）**，同权重去光 **62.7083%**；目标≥389/480，还差7个命中。
+> 固定权重：`runs/simulation/readout_subspace_20260912/best.pt`，完整报告、逐图结果和相位图在其`evaluation/`。
+> SHA=`50a8607eec392c00cf3675533490cb8ef953245af6f5d9cfbc9d616bf7d22701`；拟合/独立复评源码bbb9876d，RTX4090/batch4。
+> mAP@10=0.7685648975；去光下降16.875个百分点；干净原训练99.9306%。复评PID393380已退出、CUDA释放。
+> 原79.375%权重仅校准现有线性读出weight/bias；所有相位、光路、前端、Top2和α不变，无额外推理层/参数/TF/attention。
+> α V=[0.4374556,0.4402898]，L=[0.4295430,0.4281099]。这1个查询的改善不是新相位训练成果，不宣称统计显著。
+> 校准矩阵仅用TRAIN拟合，但保留率经TEST缓存比较选择；加上原周期TEST/跨run择优，明确存在选择偏差。
+> 复现与指标口径见[复现入口](reports/reproduction/README.md)，完整命令见[COMMAND第52节](COMMAND.md)。
+
+### 上一最佳79.375%（保留历史证据及未校准续训起点）
+
+> 独立固定权重复评79.375%（381/480），去光62.9167%；当时距目标还差8个命中。
 > 固定权重：`runs/simulation/verify_joint_ep8_20260912_gpu1/best.pt`，报告/逐查询/分类别结果和相位图在`evaluation/`。
 > 来源为`domain_joint_curriculum_20260912_gpu1/domain_distill_joint_curriculum`第8轮live，训练9e0d9544，独立复评f695014b。
 > SHA=`7c7bc601b1048be13316a9e4863780fa5d49cf2f66b3bf3e3d68ced2d8f172f4`；RTX4090/batch4，复评PID2564306退出且CUDA释放。
@@ -45,18 +56,25 @@
 
 ## 持续目标与不可变约束（2026-09-12）
 
-读出校准候选（尚未正式复评）：仅用原1440训练图的64维单位描述子与TRAIN类别，求10个类别均值，
+读出校准候选（独立复评已完成，见页首）：仅用原1440训练图的64维单位描述子与TRAIN类别，求10个类别均值，
 用其中心化均值的9维子空间投影P构造`T=P+0.5*(I-P)`；**推理描述子不减均值**，所有64方向仍保留。
 把T折叠为原Linear384→64的`W'=TW,b'=Tb`，最终L2不变，无新增推理层/参数/类别筛选/重排。
 光学相位、前端、ROI、Top2和alpha完全不变；这一步只校准电子读出，不能宣称又训练了光学mask。
 原固定最佳缓存诊断：0.5或0.75保留率均382/480=79.5833%，0.5的mAP@10=0.76841617；
 纯9维投影反而78.9583%。已用TEST缓存比较过保留率，明确存在超参数选择偏差，不称独立测试。
-**缓存预测不是正式成绩**：折叠后的FP32权重/BF16推理需独立重算正常与同权重去光；当前正式最佳仍79.375%。
+**缓存预测不是正式成绩**：完整原图BF16前向已独立重算，正常79.5833%、mAP@10=0.7685648975、去光62.7083%。
 只拟合TRAIN字段；校验缓存/原权重/数据manifest SHA及1440个train ID；不继承旧分数或旧辅助头，避免坐标不匹配续训。
 代码`standalone/readout_calibration.py`，源码bbb9876d已同步GitHub，两端207项测试通过；命令第52节。
-服务器CPU拟合完成：`runs/simulation/readout_subspace_20260912/best.pt`，状态仍`fitted_not_evaluated`。
+服务器CPU拟合：`runs/simulation/readout_subspace_20260912/best.pt`，拟合报告保留`fitted_not_evaluated`；独立`evaluation/final_report.json`为complete。
 SHA=`50a8607eec392c00cf3675533490cb8ef953245af6f5d9cfbc9d616bf7d22701`；实际只改变原读出weight/bias。
-待GPU4的MLP组完成并释放后独立评估，不提前登记为新最佳。
+MLP组完成释放后已用GPU4独立复评，PID393380退出；当前GPU4的其它任务不属于本T07助手，不得终止。
+
+视觉感受野候选`domain_distill_joint_vision13`：仅扩大两个现有V电子残差的depthwise卷积3×3→13×13，
+L仍causal5、MLP仍384，旧3×3系数居中、外圈补零作保函数初始化。新增61440电子参数，总训练2843925、冻结29152256。
+没有增加层/分支/TF/attention，原14×14 token网格、光学192维接口、传播/ROI/Top2/α>0.4及64维头不变。
+从**未校准79.375%**权重恢复原辅助头/教师坐标，保持joint_restart教师2/KL0.3/GT课程/基础LR/raw Router/cap250二视角/16×128seed42。
+不把79.5833%读出校准权重或成绩混作起点。旧context7的起点/课程不同，不能视为严格配对消融。
+完整初始复评仍必需；大感受野是待检验的假设，不能提前声称瓶颈已定位。命令第53节。
 
 Router步长对照`domain_distill_joint_routerradian_fast`：在第48节弧度优化的基础上，
 仅将两个Router初始Adam学习率0.0002→0.002（10倍），专家/global、电子、alpha及辅助头的学习率不变。
@@ -68,7 +86,7 @@ Router步长对照`domain_distill_joint_routerradian_fast`：在第48节弧度�
 步长0.002时V/L圆周相位RMS约0.001857/0.001172 rad；证据为固定最佳`evaluation/diagnostics/router_radian_fast_cpu_step.json`。
 第48节已完成且释放GPU1，监督3567958已接续学生3595623；完整初始重新计算为79.375%。
 execution核验实际router初始LR=0.002、phase=0.001，其余组保持原值，受保护optics.py SHA与原版相同。
-命令第51节，尚无训练结果，不替换最佳。
+命令第51节，16轮已结束，selected_epoch=-1：正常79.375%、去光62.9167%；末轮EMA77.9167%、live78.75%。无新高，不采用，旧PID/CUDA均释放。
 
 训练随机性对照`domain_joint_seed123_20260912_gpu2`：使用已有`domain_distill_joint_restart`，
 仅把学生训练seed42改为123；同固定79.375%起点、原384宽MLP、原raw Router优化器、cap250二视角、
@@ -78,7 +96,8 @@ execution核验实际router初始LR=0.002、phase=0.001，其余组保持原值�
 源码abb36acd已在GitHub，两端191项测试通过。强教师组已完成并释放GPU2，监督3488475接续学生3517887。
 已核实其CUDA上下文只在GPU2，seed=123；完整初始原协议重新计算为79.375%，并非直接继承。
 此前seed123的teacher_first采用不同起点/课程，不能作为本次同起点配对结果；命令第50节。
-仍按周期test及跨run择优，存在选择偏差；单次seed123不支持统计显著性结论，不替换原最佳。
+16轮已完成，selected_epoch=-1：正常79.375%、去光62.9167%；末轮EMA76.0417%、live76.6667%。无新高、不采用，旧PID/CUDA释放。
+仍按周期test及跨run择优，存在选择偏差；单次seed123不支持统计显著性结论。
 
 电子容量候选`domain_distill_joint_mlp768`：仅将V/L共四个现有电子残差MLP从192→384→192扩为192→768→192。
 没有新增层数、分支、TF/attention或光学维度；仅多591360个电子参数，总训练参数3373845、冻结29152256。
@@ -91,7 +110,8 @@ execution核验实际router初始LR=0.002、phase=0.001，其余组保持原值�
 光学张量不变、扩宽层梯度有限且非零，证据为固定最佳`evaluation/diagnostics/mlp768_cpu_probe.json`。
 相位优先组正常完成并释放CUDA后，监督3444725已接续学生3456323，只使用GPU4。
 完整480-query/120-gallery初始重算Hit@1仍79.375%，mAP@10=0.76163360；不能据此宣称所有排序逐值相同。
-尚未有训练后提升，不替换正式最佳；命令第49节，不要重复启动。
+16轮已完成，selected_epoch=-1：正常79.375%、去光62.9167%，为扩宽初始fallback而非训练提升；末轮EMA/live均77.9167%。
+不采用扩宽结构，旧PID/CUDA释放；命令第49节，不要重复启动。
 
 训练优化器候选`domain_distill_joint_routerradian`：只将两个Router的Adam坐标由raw改成物理相位弧度。
 前向仍用原`2π*sigmoid(raw)`；反传后按链式法则将raw梯度除以`2π*s*(1-s)`，临时在弧度坐标执行
