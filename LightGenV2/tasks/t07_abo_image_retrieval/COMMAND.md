@@ -1332,7 +1332,7 @@ python -m LightGenV2.tasks.t07_abo_image_retrieval.standalone.generalization_que
   --output "$T07/runs/simulation/domain_joint_feature8_20260912_gpu2"
 ```
 
-## 48. Router按物理相位弧度做Adam更新（运行中，不重复启动）
+## 48. Router按物理相位弧度做Adam更新（完成无新高，仅供复现）
 
 训练前向、光路、ROI、Top2、alpha及保存格式不变；仅两个Router采用弧度坐标Adam及角度EMA。
 只在backward和optimizer.step之间临时转换，不能在该上下文内前向或保存。
@@ -1341,6 +1341,8 @@ python -m LightGenV2.tasks.t07_abo_image_retrieval.standalone.generalization_que
 已用a28a8438启动监督3357893等待依赖；两端187项测试及真实4图CPU一步检查通过，不要重复排队。
 第45节已正常完成并释放GPU1，当前学生3378938已接续，execution确认radians配置；不占第四张卡。
 完整初始原协议评估79.375%；等待训练后成绩，不把该初始值报成训练提升。
+16轮已完成，selected_epoch=-1，正常79.375%、去光62.9167%，未产生新高，不采用。
+监督3357893/学生3378938退出且释放CUDA，第51节已接续GPU1；不要重启此目录。
 
 ```bash
 T07=/DATA/DATA1/guest3/2026OpticsMoE/LightGenV2/tasks/t07_abo_image_retrieval
@@ -1410,13 +1412,14 @@ python -m LightGenV2.tasks.t07_abo_image_retrieval.standalone.generalization_que
 
 新高需在4090独立复核正常及同权重去光；保留跨run/test选模偏差说明，不把不同seed的最佳值当作均值。
 
-## 51. 仅提高Router弧度优化步长（已排队，不重复启动）
+## 51. 仅提高Router弧度优化步长（运行中，不重复启动）
 
 相对第48节仅提高两个Router的初始学习率0.0002→0.002；不是提高专家/global或电子学习率。
 仍用原79.375%起点、384宽MLP、原教师坐标和16×128seed42；无推理/光路变化，不叠加第49节。
 先同步已测试源码并做真实输入检查，再排到第48节之后；等待不占CUDA，不重复启动同名run。
 完整初始分数要重新计算，实际学习率见`execution.json/optimizer_initial_rates_by_kind`。
 源码e78dab7a，两端200项测试及真实4图CPU一步检查通过；监督3567958等待第48节完成，不占CUDA。
+第48节已正常完成并释放显存，学生3595623已接续GPU1。完整初始评估79.375%，实际Router初始LR=0.002已核验。
 
 ```bash
 T07=/DATA/DATA1/guest3/2026OpticsMoE/LightGenV2/tasks/t07_abo_image_retrieval
@@ -1436,11 +1439,12 @@ python -m LightGenV2.tasks.t07_abo_image_retrieval.standalone.generalization_que
 
 只存best/last，新高需独立正常/去光复评；大步长导致性能下降也必须保留记录，不覆盖原最佳。
 
-## 52. 将TRAIN类别子空间校准折叠进现有读出（待独立复评）
+## 52. 将TRAIN类别子空间校准折叠进现有读出（CPU拟合完成，待独立复评）
 
 仅改原线性读出的weight/bias，其他张量包括所有相位不变；不是新增推理层或类别候选筛选。
 0.5保留率已经通过TEST缓存探索选择，需披露该偏差。缓存382/480不能作为实际BF16前向成绩。
 拟合只占CPU，源码先测试并同步GitHub；输出目录存在时禁止覆盖。旧辅助头不继承，不直接套用旧的恢复辅助头训练profile。
+已用bbb9876d完成CPU拟合，两端207项测试通过；下面拟合命令仅供复现，当前目录已存在，不要重复运行。
 
 ```bash
 T07=/DATA/DATA1/guest3/2026OpticsMoE/LightGenV2/tasks/t07_abo_image_retrieval
