@@ -1,0 +1,13 @@
+# Second-stage compression starts from the already trained 1.565M readout,
+# reconstructs each logical dense map, and applies a smaller SVD.  This better
+# preserves the deployed function than re-compressing the older 2.123M source.
+base_config: spatial_custom_conv_readout_lowrank1550k_s1291.yaml
+output_dir: ../../runs/lgvq_spatial_readout_from1550k_to1m_s1311
+random_seed: 1311
+
+model:
+  spatial_compact_head_width: 128
+  spatial_low_rank_frame_rank: 256
+  spatial_low_rank_language_rank: 160
+  spatial_low_rank_compact_frame_rank: 32
+  spatial_low_rank_compact_head_rank: 32
