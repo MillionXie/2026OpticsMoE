@@ -149,6 +149,44 @@ def gallery_relation_loss(query, own, labels, bank, bank_labels, teacher_query, 
     return loss,dict(teacher_correct_fraction=correct.float().mean().detach(),teacher_confidence=confidence.mean().detach())
 
 
+def reusable_training_vectors(path, expected_sha256, samples, target_sha256, model, prompt):
+    """Reuse only image-verified intersections of a pinned train-only cache.
+
+    A larger pool may choose different views of the same products. Missing old
+    rows are reported, not appended into the new training manifest. No GPU use.
+    """
+    if not expected_sha256 or sha256(path)!=expected_sha256:
+        raise ValueError('Reuse teacher cache SHA mismatch')
+    cache=torch.load(path,map_location='cpu',weights_only=True)
+    if (cache.get('schema')!=1 or cache.get('frozen_teacher') is not True or
+        cache.get('teacher_trainable_parameters')!=0 or
+        cache.get('target_manifest_sha256')!=target_sha256 or
+        cache.get('model')!=model or cache.get('prompt')!=prompt or
+        cache.get('preprocessing')!='EXIF RGB; native aspect; processor min=max pixels 50176' or
+        cache.get('excluded_splits')!=['val','test'] or
+        cache.get('student_inference_teacher_required') is not False):
+        raise ValueError('Reuse teacher model/preprocessing/training identity changed')
+    ids=cache.get('ids',[]);hashes=cache.get('image_sha256',[]);vectors=cache.get('vectors')
+    if (not ids or len(set(ids))!=len(ids) or len(hashes)!=len(ids) or
+        not isinstance(vectors,torch.Tensor) or vectors.shape!=(len(ids),2048) or
+        vectors.dtype!=torch.float16 or not torch.isfinite(vectors).all() or
+        not (vectors.float().norm(dim=-1)>0).all()):
+        raise ValueError('Invalid reusable teacher vectors')
+    if len({s.sample_id for s in samples})!=len(samples) or any(s.split!='train' for s in samples):
+        raise ValueError('New teacher cache must use unique training-only samples')
+    positions={sid:i for i,sid in enumerate(ids)};reused={}
+    for sample in samples:
+        i=positions.get(sample.sample_id)
+        if i is None:continue
+        if sha256(sample.image_path)!=hashes[i]:
+            raise ValueError('Reusable teacher image content changed')
+        reused[sample.sample_id]=vectors[i].detach().clone()
+    if sha256(path)!=expected_sha256:raise ValueError('Reuse cache changed while reading')
+    return reused,dict(source_cache_sha256=expected_sha256,source_pool_manifest_sha256=cache['pool_manifest_sha256'],
+                       reused_images=len(reused),source_images_not_in_new_pool=len(ids)-len(reused),
+                       new_teacher_forwards=len(samples)-len(reused))
+
+
 def build(args):
     # Full model dependencies are intentionally imported ONLY in the builder CLI.
     from ..legacy_run import load_settings, load_backbone, _inputs, move_inputs, teacher_embeddings, INSTRUCTION
@@ -159,6 +197,10 @@ def build(args):
     external,pool_report=load_pool(args.pool,args.abo,args.target)
     if not pool_report.get('target_types_only'):raise ValueError('Teacher requires target-mapped training pool')
     samples,_=combine_training(target,external)
+    reused={};reuse_audit=None
+    if getattr(args,'reuse_cache',None) is not None:
+        reused,reuse_audit=reusable_training_vectors(args.reuse_cache,args.reuse_cache_sha256,samples,
+            sha256(args.target/'data/abo_similarity10_manifest.csv'),str(args.model.resolve()),INSTRUCTION)
     args.output.mkdir(parents=True)
     torch.set_num_threads(4)
     settings=load_settings(args.config);settings.model_id=str(args.model.resolve());settings.instruction=INSTRUCTION
@@ -169,9 +211,11 @@ def build(args):
     vectors=[]
     with torch.inference_mode():
         for i,sample in enumerate(samples):
-            with Image.open(sample.image_path) as source:picture=ImageOps.exif_transpose(source).convert('RGB')
-            batch=move_inputs(_inputs(loaded.processor,picture),loaded.device)
-            vectors.append(teacher_embeddings(loaded.model,batch,2048)[0].cpu().to(torch.float16))
+            if sample.sample_id in reused:vectors.append(reused[sample.sample_id])
+            else:
+                with Image.open(sample.image_path) as source:picture=ImageOps.exif_transpose(source).convert('RGB')
+                batch=move_inputs(_inputs(loaded.processor,picture),loaded.device)
+                vectors.append(teacher_embeddings(loaded.model,batch,2048)[0].cpu().to(torch.float16))
             if (i+1)%120==0:print(f'train-only teacher {i+1}/{len(samples)}',flush=True)
     cache=dict(schema=1,frozen_teacher=True,teacher_trainable_parameters=sum(p.numel() for p in loaded.model.parameters() if p.requires_grad),
                source_commit=source_commit(),model=str(args.model.resolve()),prompt=INSTRUCTION,
@@ -179,13 +223,13 @@ def build(args):
                pool_manifest_sha256=sha256(args.pool/'manifest.csv'),ids=[s.sample_id for s in samples],vectors=torch.stack(vectors),
                image_sha256=[sha256(s.image_path) for s in samples],
                preprocessing='EXIF RGB; native aspect; processor min=max pixels 50176',
-               excluded_splits=['val','test'],student_inference_teacher_required=False)
+               excluded_splits=['val','test'],student_inference_teacher_required=False,reuse= reuse_audit)
     torch.save(cache,args.output/'cache.pt')
     write_json(args.output/'final_report.json',dict(status='complete',kind='train_only_teacher_cache',source_commit=source_commit(),
         command=sys.argv,training_images=len(samples),training_products=len({s.product_id for s in samples}),
         teacher_trainable_parameters=cache['teacher_trainable_parameters'],cache_sha256=sha256(args.output/'cache.pt'),
         target_manifest_sha256=cache['target_manifest_sha256'],pool_manifest_sha256=cache['pool_manifest_sha256'],
-        excluded_splits=cache['excluded_splits'],gpu=torch.cuda.get_device_name(),model=cache['model'],python=sys.version,torch=torch.__version__))
+        excluded_splits=cache['excluded_splits'],reuse=reuse_audit,gpu=torch.cuda.get_device_name(),model=cache['model'],python=sys.version,torch=torch.__version__))
     del loaded
     torch.cuda.empty_cache()
 
@@ -196,7 +240,11 @@ def main():
     p.add_argument('--abo',type=Path,required=True);p.add_argument('--model',type=Path,required=True)
     p.add_argument('--config',type=Path,default=Path(__file__).resolve().parents[1]/'configs/optical_top2_dc20.yaml')
     p.add_argument('--output',type=Path,required=True)
-    build(p.parse_args())
+    p.add_argument('--reuse-cache',type=Path)
+    p.add_argument('--reuse-cache-sha256')
+    args=p.parse_args()
+    if (args.reuse_cache is None)!=(args.reuse_cache_sha256 is None):p.error('Supply reuse cache and SHA together')
+    build(args)
 
 
 if __name__=='__main__':main()

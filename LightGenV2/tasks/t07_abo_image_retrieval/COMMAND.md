@@ -903,3 +903,42 @@ python -m LightGenV2.tasks.t07_abo_image_retrieval.standalone.generalization_que
 
 原方法保持可复现。检查`execution.json/common_config/gallery_loss_full_precision=true`，
 不要将此设置描述为提高光学仿真精度或修改部署；它仅改变训练图库损失的数值计算。
+
+## 33. 扩充训练池＋逐图教师监督（250/500配对）
+
+两组均从固定78.75%开始、12轮×250步，使用原1440训练图重拟合教师坐标，不传第29节的旧矩阵。
+500池每轮至少250步才能覆盖外部商品；控制组也用250步，避免把更多更新次数当作数据收益。
+仅缓存生成进程加载完整冻结Qwen；不进入学生推理。原测试/图库、输入和六次光计算均不变。
+
+```bash
+T07=LightGenV2/tasks/t07_abo_image_retrieval
+ASSETS=$T07/runs/simulation/standalone_assets_20260910
+TARGET=/DATA/DATA1/guest3/2026OpticsMoE/data/abo_similarity10_data
+ABO=/DATA/DATA1/guest3/2026OpticsMoE/data/abo
+BEST=$T07/runs/simulation/verify_teacher_first_ep11_20260912_gpu4/best.pt
+CACHE=$T07/runs/smoke/domain_distillation_20260912/build_teacher_cache/artifacts/cache.pt
+POOL250=$T07/runs/simulation/domain_pool250_20260912
+POOL500=$T07/runs/simulation/domain_pool500_20260912
+QWEN=/DATA/DATA1/guest3/.cache/huggingface/hub/models--Qwen--Qwen3-VL-Embedding-2B/snapshots/9f2f7e710d6d81056aa5c0a4f04764fec6bb7bda
+
+# GPU1：等SAM完成，再生成500池缓存（复用5551图），随后同卡训练。
+python -m LightGenV2.tasks.t07_abo_image_retrieval.standalone.generalization_queue \
+  --gpu GPU-e8837b85-d55b-8e81-aaa5-ec1ac326932d --assets "$ASSETS" --checkpoint "$BEST" \
+  --target "$TARGET" --abo "$ABO" --pool "$POOL500" --teacher-model "$QWEN" \
+  --reuse-teacher-cache "$CACHE" \
+  --reuse-teacher-cache-sha256 aa5a5a952c0a96836b4b035d7905ca600f9082dc0bd26b5396cdab4cea36f2db \
+  --profiles build_teacher_cache domain_distill_refit500 --epochs 12 --steps 250 \
+  --output "$T07/runs/simulation/domain_refit500_20260912_gpu1" \
+  --after-queue "$T07/runs/simulation/domain_teacher_continue_sam_20260912_gpu1/status.json"
+
+# GPU4：另一个终端运行，同样先等待该卡前序结束；控制组复用已有250池教师缓存。
+python -m LightGenV2.tasks.t07_abo_image_retrieval.standalone.generalization_queue \
+  --gpu GPU-1b963983-7909-af6e-0528-f0f0661ab549 --assets "$ASSETS" --checkpoint "$BEST" \
+  --target "$TARGET" --abo "$ABO" --pool "$POOL250" --teacher-cache "$CACHE" \
+  --profiles domain_distill_refit250 --epochs 12 --steps 250 \
+  --output "$T07/runs/simulation/domain_refit250_20260912_gpu4" \
+  --after-queue "$T07/runs/simulation/domain_teacher_continue_fp32gallery_20260912_gpu4/status.json"
+```
+
+缓存的`final_report.json/reuse`记录精确复用/新增/未入新池数量。旧原图、缓存与模型不被覆盖。
+两组新拟合的`teacher_feature_alignment.pt`仅用于训练解释与复现，不是相位权重、也不是部署依赖。

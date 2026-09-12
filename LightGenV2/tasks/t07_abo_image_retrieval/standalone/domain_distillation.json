@@ -11,6 +11,14 @@
     "domain_distill_light": {"relation_teacher_weight": 0.10},
     "domain_distill_strong": {"relation_teacher_weight": 0.30},
     "domain_distill_stronger": {"relation_teacher_weight": 0.60},
+    "domain_distill_refit250": {
+      "expected_pool_products_per_category": 250,
+      "protocol": "Cap250 paired dataset control from fixed78.75% live source with all training auxiliaries restored. Refit training-only orthogonal teacher64 basis using original1440 train/student features at this source, NOT the old77.9167% basis. Teacher cosine2/GT1, quarter learning rates,12x250, no SAM or FP32-gallery variant. Use250 updates to match cap500 coverage; not the shorter128-step continuation. Compare with refit500; unchanged input, inference, optics, Top2, alpha>0.4 and original480-query/120-gallery."
+    },
+    "domain_distill_refit500": {
+      "expected_pool_products_per_category": 500,
+      "protocol": "Cap500 paired dataset expansion from fixed78.75% live source; same recipe as refit250, but3390 external products/6780 images plus original120 products/1440 images. Use separately validated train-only teacher cache; refit teacher64 basis on original1440 train features only, not expanded/test rows. Teacher cosine2/GT1, quarter learning rates,12x250, no SAM/FP32-gallery change.250 updates cover500 external products with2 external products/class/batch; paired250 control also uses250. Test/gallery, input, inference and all optical contracts unchanged; expanded products never enter evaluation gallery."
+    },
     "domain_distill_teacher_continue_fp32gallery": {
       "gallery_loss_full_precision": true,
       "protocol": "Matched teacher_continue control: same pinned78.75% source, teacher alignment/auxiliaries, data, losses, quarter learning rates and12x128 updates. Disable autocast ONLY inside training product-gallery similarity/NLL/margin/hit calculation; convert query and detached bank toFP32 while retaining query gradients. Model/optics/teacher-loss forward and evaluation remain unchanged. No SAM or GT rescaling, no new inference network. Original480-query/120-gallery, best/last only."
