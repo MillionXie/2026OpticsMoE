@@ -180,6 +180,9 @@ class MultiVideoSettings:
     quality_feature_cache_path: Path | None = None
     raw_frame_cache_path: Path | None = None
     vgg_feature_cache_path: Path | None = None
+    resnet_feature_cache_path: Path | None = None
+    mobilenet_feature_cache_path: Path | None = None
+    mobilenet_feature_width: int = 64
     qwen_model_path: Path | None = None
     # Compatibility with the shared cache loader.  The formal 16x4 model uses
     # one frozen Qwen/quality view; these remain empty unless a separately
