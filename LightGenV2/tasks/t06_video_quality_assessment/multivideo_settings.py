@@ -181,6 +181,13 @@ class MultiVideoSettings:
     raw_frame_cache_path: Path | None = None
     vgg_feature_cache_path: Path | None = None
     qwen_model_path: Path | None = None
+    # Compatibility with the shared cache loader.  The formal 16x4 model uses
+    # one frozen Qwen/quality view; these remain empty unless a separately
+    # named temporal-sampling study supplies additional views.
+    vision_cache_view_paths: tuple[Path, ...] = ()
+    quality_feature_cache_view_paths: tuple[Path, ...] = ()
+    raw_frame_cache_view_paths: tuple[Path, ...] = ()
+    training_view_probabilities: tuple[float, ...] = ()
     geometry: MultiVideoGeometry = field(default_factory=MultiVideoGeometry)
     target_name: str = "temporal"
     prompt: str = TEMPORAL_PROMPT
