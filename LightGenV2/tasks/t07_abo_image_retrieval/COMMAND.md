@@ -1245,3 +1245,30 @@ python -m LightGenV2.tasks.t07_abo_image_retrieval.standalone.generalization_que
 ```
 
 GPU2为空才开始，不挤占他人任务；3090上出现新高需4090固定权重复核。已存在该run时不要重复执行。
+
+## 45. Router整幅相位平移π/2的初始化对照（准备，先检查）
+
+仅给V/L两个router的整幅224×224相位加π/2取模，存成原格式raw sigmoid参数。
+目的是减少约一半像素处于sigmoid边界的情况；不是改传播、ROI、相位编码或增加网络。
+理想CCD有全局相位不变性，但含未调制/bypass光时不等价；保留现有训练噪声，并明确这项初始化差异。
+必须重新计算完整原协议初始分数，不能因为理论近似不变就抄用79.375%。
+从固定原权重启动，恢复同一教师坐标和辅助头；前端冻结，不叠加去均值、merger或类别KL。
+
+```bash
+T07=/DATA/DATA1/guest3/2026OpticsMoE/LightGenV2/tasks/t07_abo_image_retrieval
+python -m LightGenV2.tasks.t07_abo_image_retrieval.standalone.generalization_queue \
+  --gpu GPU-e8837b85-d55b-8e81-aaa5-ec1ac326932d \
+  --assets "$T07/runs/simulation/standalone_assets_20260910" \
+  --checkpoint "$T07/runs/simulation/verify_joint_ep8_20260912_gpu1/best.pt" \
+  --target /DATA/DATA1/guest3/2026OpticsMoE/data/abo_similarity10_data \
+  --abo /DATA/DATA1/guest3/2026OpticsMoE/data/abo \
+  --pool "$T07/runs/simulation/domain_pool250_20260912" \
+  --teacher-cache "$T07/runs/smoke/domain_distillation_20260912/build_teacher_cache/artifacts/cache.pt" \
+  --teacher-alignment "$T07/runs/simulation/domain_teacher_first_20260912_gpu4/domain_distill_teacher_first/artifacts/teacher_feature_alignment.pt" \
+  --profiles domain_distill_joint_routerorigin --epochs 16 --steps 128 --seed 42 \
+  --output "$T07/runs/simulation/domain_joint_routerorigin_20260912_gpu1" \
+  --after-queue "$T07/runs/simulation/domain_joint_centerhalf_20260912_gpu1/status.json"
+```
+
+只有第42节完成并确认GPU1空闲后才能接续；不要修改正在训练的源worktree，不覆盖原权重/输出。
+使用包含该新profile的已发布源码；正常与去光评估仍固定480查询/120图库，best/last之外不存周期PT。

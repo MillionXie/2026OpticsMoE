@@ -10,7 +10,7 @@ import json
 import math
 import torch
 
-PINNED_TEACHER_PROFILES = ('domain_distill_teacher_continue', 'domain_distill_teacher_continue_sam', 'domain_distill_teacher_continue_softgt', 'domain_distill_teacher_continue_fp32gallery', 'domain_distill_joint_curriculum', 'domain_distill_vision_patch', 'domain_distill_joint_restart', 'domain_distill_joint_restart_softgt', 'domain_distill_joint_merger', 'domain_distill_joint_categorykd')
+PINNED_TEACHER_PROFILES = ('domain_distill_teacher_continue', 'domain_distill_teacher_continue_sam', 'domain_distill_teacher_continue_softgt', 'domain_distill_teacher_continue_fp32gallery', 'domain_distill_joint_curriculum', 'domain_distill_vision_patch', 'domain_distill_joint_restart', 'domain_distill_joint_restart_softgt', 'domain_distill_joint_merger', 'domain_distill_joint_categorykd', 'domain_distill_joint_routerorigin')
 REFIT_TEACHER_PROFILES = ('domain_distill_refit250', 'domain_distill_refit500')
 
 PROFILES = ('preserve_adam', 'preserve_sam', 'preserve_fullfield_sam', 'preserve_fullfield_both_sam',
@@ -94,7 +94,7 @@ def overlay_config(config, profile):
         overlay=json.loads(Path(__file__).with_name('domain_distillation.json').read_text(encoding='utf-8'))
         config.update(overlay['profiles'][profile])
         return config
-    if profile in ('domain_distill_joint_restart', 'domain_distill_joint_restart_softgt', 'domain_distill_joint_merger', 'domain_distill_joint_categorykd'):
+    if profile in ('domain_distill_joint_restart', 'domain_distill_joint_restart_softgt', 'domain_distill_joint_merger', 'domain_distill_joint_categorykd', 'domain_distill_joint_routerorigin'):
         parent='domain_distill_joint_curriculum' if profile=='domain_distill_joint_restart' else 'domain_distill_joint_restart'
         config=overlay_config(config,parent)
         overlay=json.loads(Path(__file__).with_name('domain_distillation.json').read_text(encoding='utf-8'))
@@ -164,7 +164,36 @@ def apply_contract(payload, config):
         result=expand_electronic_context(result,config['electronic_context_kernels'])
     if 'retrieval_head' in config:
         result=expand_retrieval_head(result,config['retrieval_head'])
+    if 'router_initial_phase_offset_turns' in config:
+        result=shift_router_phase_origin(result,config['router_initial_phase_offset_turns'])
     return result
+
+
+def shift_router_phase_origin(payload, turns):
+    """One-time warmstart only, preserving the physical optical implementation.
+
+    Uniform phase over the illuminated router aperture cancels in ideal CCD
+    intensity. It is NOT invariant relative to unmodulated/bypassed light;
+    retain that explicit training-noise difference and re-evaluate initialization.
+    Export ordinary raw sigmoid parameters; add no inference parametrization.
+    """
+    if isinstance(turns,bool) or not isinstance(turns,(int,float)) or not math.isfinite(turns) or not 0<turns<1:
+        raise ValueError('Router origin offset must be a finite fraction of one turn')
+    metadata=dict(payload['metadata']);previous=metadata.get('router_initial_phase_offset_turns')
+    if previous is not None:
+        if previous!=turns:raise ValueError('Refuse to stack different router initialization offsets')
+        return payload
+    state=dict(payload['state_dict'])
+    for modality in ('vision','language'):
+        name=modality+'.optics.router.raw_router_phase';raw=state.get(name)
+        if not isinstance(raw,torch.Tensor) or raw.shape!=(224,224) or raw.dtype!=torch.float32 or not torch.isfinite(raw).all():
+            raise ValueError('Expected finite FP32 224x224 router phase')
+        # First sigmoid matches existing FP32 forward; double precision is only
+        # used for the one-time wrap/inverse and never the optical propagation.
+        phase_turns=torch.remainder(raw.detach().sigmoid().double()+turns,1.)
+        state[name]=phase_turns.clamp(1e-7,1-1e-7).logit().float()
+    metadata['router_initial_phase_offset_turns']=float(turns)
+    return dict(payload,metadata=metadata,state_dict=state)
 
 
 def expand_retrieval_head(payload, kind):

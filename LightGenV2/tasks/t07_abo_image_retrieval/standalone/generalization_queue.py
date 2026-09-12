@@ -14,7 +14,7 @@ import time
 from .randomness import training_seed
 
 # Keep the supervisor torch-free: profile names only, no model module import.
-PINNED_TEACHER_PROFILES = ('domain_distill_teacher_continue', 'domain_distill_teacher_continue_sam', 'domain_distill_teacher_continue_softgt', 'domain_distill_teacher_continue_fp32gallery', 'domain_distill_joint_curriculum', 'domain_distill_vision_patch', 'domain_distill_joint_restart', 'domain_distill_joint_restart_softgt', 'domain_distill_joint_merger', 'domain_distill_joint_categorykd')
+PINNED_TEACHER_PROFILES = ('domain_distill_teacher_continue', 'domain_distill_teacher_continue_sam', 'domain_distill_teacher_continue_softgt', 'domain_distill_teacher_continue_fp32gallery', 'domain_distill_joint_curriculum', 'domain_distill_vision_patch', 'domain_distill_joint_restart', 'domain_distill_joint_restart_softgt', 'domain_distill_joint_merger', 'domain_distill_joint_categorykd', 'domain_distill_joint_routerorigin')
 
 
 def dependency_state(path, expected_gpu):
