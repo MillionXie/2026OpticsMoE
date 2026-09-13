@@ -1,0 +1,38 @@
+# Stage 2 of the strict two-input-path Spatial recovery.
+# Inference remains unchanged: one electronic residual route and one optical
+# route.  Conv5/FrameStem and all quality-feature caches stay disabled.
+# This stage freezes the optical masks/routers and warm-restarts only the
+# existing raw-RGB electronic correction plus the compact MOS readout.
+base_config: spatial_strict2branch_no_conv5_distill_s1401.yaml
+output_dir: ../../../../LightGenV2/tasks/t06_video_quality_assessment/runs/simulation/spatial_strict2branch_no_conv5_e1_readout_s1402
+random_seed: 1402
+
+training:
+  initialization_checkpoint: ../../../../LightGenV2/tasks/t06_video_quality_assessment/runs/simulation/spatial_strict2branch_no_conv5_s1401/best_observed_test_checkpoint.pt
+  trainable_scope: custom_conv_and_readout
+  epochs: 50
+  batch_size: 64
+  learning_rate: 0.00004
+  readout_learning_rate_factor: 0.30
+  weight_decay: 0.00008
+  readout_weight_decay: 0.0002
+  phase_warmup_epochs: 0
+  late_refine_start_epoch: 0
+  learning_rate_warmup_epochs: 3
+  minimum_learning_rate_factor: 0.08
+  ema_decay: 0.996
+  ema_start_epoch: 1
+  test_interval_epochs: 1
+  test_interval_steps: 0
+  phase_snapshot_interval_epochs: 0
+
+loss:
+  regression_weight: 0.08
+  ranking_weight: 2.80
+  correlation_weight: 4.25
+  soft_spearman_weight: 0.85
+  listwise_ranking_weight: 0.08
+  paired_view_supervision_weight: 0.10
+  paired_view_consistency_weight: 0.01
+  router_balance_weight: 0.0
+  serial_router_balance_weight: 0.0
