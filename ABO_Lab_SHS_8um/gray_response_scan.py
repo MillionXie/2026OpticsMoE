@@ -119,18 +119,18 @@ def run(link_path,source_config,out):
     if not phase.exists():raise FileNotFoundError(phase)
     gray=[int(v) for v in np.rint(np.linspace(0,255,13))]
     for g in gray:Image.fromarray(uniform(c,g)).save(generated/f'g{g:03d}.bmp')
-    for d in [0,1]:
-        p=ROOT/'generated/phase_inverted/cal'/f'A_DIGIT_{d}.bmp'
-        if not p.exists():
-            with Remote(link) as remote:remote.download(f'generated/phase_inverted/cal/A_DIGIT_{d}.bmp',p)
+    # Freeze the installed bench's digit assets into this run's own namespace.
+    # Do not assume an older local generated/ file has the same geometry/hash.
+    with Remote(link) as remote:
+        for d in [0,1]:remote.download(f'generated/phase_inverted/cal/A_DIGIT_{d}.bmp',generated/f'A_DIGIT_{d}.bmp')
     rows=[]
     def add(name,path,**info):rows.append(dict(name=name,amplitude=str(path),amplitude_sha256=sha(path),phase=str(phase),phase_sha256=sha(phase),**info))
     for repeat,values in enumerate([gray,gray[::-1],np.random.default_rng(20260913).permutation(gray)]):
         for g in values:add(f'g{g:03d}_r{repeat}',generated/f'g{g:03d}.bmp',kind='gray',gray=int(g))
     for d in [0,1]:
-        for i in range(3):add(f'ref_d{d}_{i}',ROOT/'generated/phase_inverted/cal'/f'A_DIGIT_{d}.bmp',kind='reference',digit=d,hold_index=i)
+        for i in range(3):add(f'ref_d{d}_{i}',generated/f'A_DIGIT_{d}.bmp',kind='reference',digit=d,hold_index=i)
     for i in range(40):
-        d=i%2;add(f'test{i:02d}_d{d}',ROOT/'generated/phase_inverted/cal'/f'A_DIGIT_{d}.bmp',kind='timing',digit=d)
+        d=i%2;add(f'test{i:02d}_d{d}',generated/f'A_DIGIT_{d}.bmp',kind='timing',digit=d)
     write(out/'manifest.json',dict(kind='uniform gray response and pattern timing; not MNIST accuracy',gray_values=gray,rows=rows,aperture_xy_size=aperture(c),config=cfg))
     capture_run(out/'manifest.json',link_path,out/'capture',batch=True,config_rel=cfg)
     analyze(out)
