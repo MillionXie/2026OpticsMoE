@@ -2170,3 +2170,20 @@ python -m LightGenV2.tasks.t07_abo_image_retrieval.standalone.prepare_spin_abo \
 之后才安排外部→目标训练：沿用`retrieval_adapt`的`--external-pool`、`--external-root data/abo`及报告SHA参数，
 从当前协议最佳权重开始，禁止加载旧类别协议权重。新增数据训练尚未启动；等待教师配对结果后确定profile和正式命令，
 不额外抢占其GPU。目标1600图库/800查询及冻结Qwen64=85.125%全程保持不变。
+
+已ready的40图数据池可先验证CUDA外部→目标切换。以下仅1+1轮、各1步；不是正式性能训练。
+先确认GPU0空闲。本次命令从原78.125%轻量模型开始，没有电子扩容或教师缓存，source为5b06f747。
+
+```bash
+export HF_HUB_OFFLINE=1 TRANSFORMERS_OFFLINE=1 OMP_NUM_THREADS=4 MKL_NUM_THREADS=4
+CUDA_VISIBLE_DEVICES=GPU-afc19890-6209-ee4d-622d-e619da5bd5b2 python -m LightGenV2.tasks.t07_abo_image_retrieval.standalone.retrieval_adapt \
+  --data /DATA/DATA1/guest3/2026OpticsMoE/data/abo_similarity10_data \
+  --manifest "$R/abo200_enrolled_protocol_20260913/protocol.json" --assets "$R/standalone_assets_20260910" \
+  --checkpoint "$R/abo200_route_distill_20260913/best.pt" \
+  --expected-checkpoint-sha256 d11f3428efa67c7c5084eb9056d991c4692d36a3d177cd82b4601238357d444a \
+  --external-pool "$T07/runs/smoke/abo_spin_pool_20260913" --external-root /DATA/DATA1/guest3/2026OpticsMoE/data/abo \
+  --expected-external-sha256 22a36f45f65795ca6081fbe6390c85a2815efec2517f707bc06c29dc748afdfb \
+  --external-pretrain-epochs 1 --multi-view --refine-profile sku_capacity_control \
+  --lr-scale .2 --epochs 1 --steps 1 --eval-every 1 --batch-size 4 --bank-batch-size 16 \
+  --output "$T07/runs/smoke/abo_spin_curriculum_20260913"
+```
