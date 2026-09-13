@@ -340,7 +340,8 @@ def run(args):
             warming = phase_epoch <= profile['warmup'] and not external
             for name, p in params:
                 p.requires_grad_(not warming or name.endswith('raw_router_phase'))
-            bank, _ = encode_rows(model, processor, gallery, args.data, device, args.batch_size)
+            bank, _ = encode_rows(model, processor, gallery, args.data, device,
+                                  getattr(args, 'bank_batch_size', None) or args.batch_size)
             bank = bank.to(device)
             rng = random.Random(args.seed + epoch)
             factor = min(1., phase_epoch / 2) * (.1 + .9 * .5 * (1 + math.cos(math.pi * (phase_epoch - 1) / max(1, phase_epochs - 1))))
@@ -460,6 +461,7 @@ def main():
     p.add_argument('--eval-every', type=int, default=5)
     p.add_argument('--classes-per-batch', type=int, default=8)
     p.add_argument('--batch-size', type=int, default=4, help='Evaluation batch size, training batch is 2*classes-per-batch')
+    p.add_argument('--bank-batch-size', type=int, help='Optional independent TRAIN-bank encoding batch; TEST always uses --batch-size')
     p.add_argument('--seed', type=int, default=42)
     p.add_argument('--multi-view', action='store_true', help='All TRAIN views in bank, distinct-photo pairs, self excluded; enrolled protocols only')
     p.add_argument('--fresh-trainable', action='store_true', help='Reset all trainable weights, load packaged frozen frontend only')
@@ -482,6 +484,8 @@ def main():
         p.error('Warmup epochs cannot be negative')
     if args.external_pretrain_epochs < 0 or (args.external_pretrain_epochs and not all((args.external_pool, args.external_root, args.expected_external_sha256))):
         p.error('External pretraining requires nonnegative epochs and pool/root/SHA')
+    if args.bank_batch_size is not None and args.bank_batch_size < 1:
+        p.error('bank-batch-size must be positive')
     run(args)
 
 
