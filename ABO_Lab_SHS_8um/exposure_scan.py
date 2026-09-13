@@ -35,7 +35,7 @@ def plot_report(out,report):
     fig.suptitle('Fixed gain/frame rate; raw sensor ROI BEFORE warp; sampled network inputs only')
     fig.savefig(out/'exposure_range.png',dpi=150);plt.close(fig)
 
-def run(link_path,config_rel,session,out,exposures):
+def run(link_path,config_rel,session,out,exposures,stages=None,test_wait_ms=200):
     if not re.fullmatch('[A-Za-z0-9_-]{1,80}',session):raise ValueError('Invalid source session')
     out=Path(out).resolve()
     if not out.is_relative_to(ROOT/'results'):raise ValueError('Output outside results')
@@ -58,7 +58,7 @@ def run(link_path,config_rel,session,out,exposures):
                 remote.download(rel,local);timing.append(dict(id=f'digit{d}',bmp=rel,sha256=sha(local)))
             prev=None
             with PhaseOwner(link,flat,flat) as owner:
-                for stage in STAGES:
+                for stage in (stages or STAGES):
                     mf=remote.read(f'sessions/{session}/play/{stage}/manifest.json')
                     phase=out/(stage+'.bmp');remote.download(mf['phase_file'].replace('\\','/'),phase)
                     receipt=owner.show(phase,mf['phase_sha256'])
@@ -68,7 +68,7 @@ def run(link_path,config_rel,session,out,exposures):
                         phase_sha256=mf['phase_sha256'],probe=probe,probe_exposure_us=150,
                         exposure_rows=[dict(id=e['id'],bmp=f"sessions/{session}/play/{stage}/{e['bmp']}",sha256=e['sha256']) for e in selected],
                         exposures_us=exposures,repeats=2,timing_repeats=5 if stage=='vision_global' else 0,
-                        timing_rows=timing,test_wait_ms=200)
+                        timing_rows=timing,test_wait_ms=test_wait_ms)
                     remote.job(spec)
                     local=out/stage;local.mkdir();remote.download(dest+'/report.json',local/'report.json')
                     data=read(local/'report.json')
@@ -94,5 +94,6 @@ def run(link_path,config_rel,session,out,exposures):
 if __name__=='__main__':
     p=argparse.ArgumentParser();p.add_argument('--link-config',type=Path,required=True);p.add_argument('--remote-config',required=True)
     p.add_argument('--source-session',required=True);p.add_argument('--out',type=Path,required=True)
-    p.add_argument('--exposures-us',type=float,nargs='+',default=[150,300,450,600,900]);a=p.parse_args()
-    run(a.link_config,a.remote_config,a.source_session,a.out,a.exposures_us)
+    p.add_argument('--exposures-us',type=float,nargs='+',default=[150,300,450,600,900])
+    p.add_argument('--stages',nargs='+',choices=STAGES);p.add_argument('--test-wait-ms',type=float,choices=[200,300,400],default=200);a=p.parse_args()
+    run(a.link_config,a.remote_config,a.source_session,a.out,a.exposures_us,a.stages,a.test_wait_ms)

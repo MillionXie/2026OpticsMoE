@@ -14,7 +14,8 @@ ROOT=Path(__file__).resolve().parent
 
 def main():
     p=argparse.ArgumentParser();p.add_argument('--assets',type=Path,required=True);p.add_argument('--input-manifest',type=Path,required=True)
-    p.add_argument('--link',type=Path,required=True);p.add_argument('--out',type=Path,required=True);a=p.parse_args()
+    p.add_argument('--link',type=Path,required=True);p.add_argument('--out',type=Path,required=True)
+    p.add_argument('--remote-config',default='LAB.local.json');a=p.parse_args()
     a.out=a.out.resolve()
     if not a.out.is_relative_to(ROOT/'results'):raise ValueError('Output outside results')
     a.out.mkdir(exist_ok=False);m=read(a.input_manifest);ref=read(a.assets/'paired/pair_reference.json')
@@ -26,7 +27,7 @@ def main():
         assert sha(phase)==expected['sha256'];mm=json.loads(json.dumps(m))
         for r in mm['rows']:r.update(phase=str(phase),phase_sha256=sha(phase),variant=arm)
         manifest=a.out/(arm+'_manifest.json');manifest.write_text(json.dumps(mm,indent=2))
-        dest=a.out/arm;capture_run(manifest,a.link,dest,batch=True)
+        dest=a.out/arm;capture_run(manifest,a.link,dest,batch=True,config_rel=a.remote_config)
         report=read(dest/'report.json');rows=[];arrays={};H=np.array(m['H'])
         for r in report['rows']:
             assert sha(dest/(r['name']+'.png'))==r['raw_sha256']

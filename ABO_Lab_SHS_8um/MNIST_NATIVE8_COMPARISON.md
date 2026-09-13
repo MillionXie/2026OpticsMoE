@@ -57,9 +57,19 @@ RMS约2.05135e-5，单步相位最大变化0.015707rad，确认相位真的更�
 
 A的完整原生8μm仿真评估已完成：validation **85.0505%**，test **86.5528%**（4157张）。
 这不是实测准确率；之前40张实测60%、40张旧网格仿真95%是另外的口径。
-B正在训练，不能用早期validation冒充最终test结果。
+B的60epoch已全部完成，按validation选中第10epoch：validation **88.6465%**，
+完整同一4157张test **88.7659%**，相比A **+2.2131个百分点**。不是实测提升。
+最后epoch相位每轮变化RMS仍为0.024846rad，phase标准差1.156117rad；不是mask未更新。
 
-服务器：guest3@202.120.62.181:24096，仅GPU1（RTX4090）。启动PID1253612。
+本地完整结果与best权重：`assets/mnist_native8_completed_20260913/`。
+`TRANSFER_MANIFEST.json`逐文件校验服务器数据；`training_and_test.png`、`phase_comparison.png`、
+`paired_simulated_CCD.png`可直接查看，后者按每类首个预定held-out输入绘制，共用线性显示尺度。
+实际投影文件是该目录中的`A_old_fixed_native8_xy_inverse.bmp`和`B_native8_best_xy_inverse.bmp`，
+均1920×1200，预览PNG不能用于投影。B BMP SHA256：
+`9a5db11329f1fe397d7bed40f348651321850e1a11309e4ecf0a79690aa9aa54`。
+第10轮best与第60轮last仍留在服务器原run，只有best下载用于实验。
+
+服务器：guest3@202.120.62.181:24096，训练使用GPU1（RTX4090），已完成退出。历史启动PID1253612。
 run：`/DATA/DATA1/guest3/2026OpticsMoE/ABO_Lab_SHS_8um/runs/simulation/mnist_native8_20260913/`。
 启动日志是同级`mnist_native8_20260913.launcher.log`。
 
@@ -67,8 +77,8 @@ run：`/DATA/DATA1/guest3/2026OpticsMoE/ABO_Lab_SHS_8um/runs/simulation/mnist_na
 - baseline_A.json：A的validation/test以及BMP哈希。
 - history.json、best.json：B的逐epoch损失、准确率、梯度、相位变化。
 - best_checkpoint.pt / last_checkpoint.pt：字典中的model_state_dict.raw_phase是1016×1016 FP32。
-- result.json：**仅在全部60epoch完成、best重新test后才产生**。
-- A_old_fixed_native8_xy_inverse.bmp / B_native8_best_xy_inverse.bmp：后者训练完成后生成。
+- result.json：**全部60epoch完成、best重新test后已产生**。
+- A_old_fixed_native8_xy_inverse.bmp / B_native8_best_xy_inverse.bmp：两者均已生成。
 - 对应`*_phase_rad.npy`保存未翻转的逻辑物理相位（弧度），不要再把BMP反推为训练相位。
 
 ## 可复现命令

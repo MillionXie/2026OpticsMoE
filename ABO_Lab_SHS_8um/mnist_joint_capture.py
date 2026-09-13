@@ -14,7 +14,7 @@ ROOT=Path(__file__).resolve().parent
 def sha(p): return hashlib.sha256(Path(p).read_bytes()).hexdigest()
 def read(p): return json.loads(Path(p).read_text(encoding='utf-8-sig'))
 
-def run(manifest, link_path, out, batch=False):
+def run(manifest, link_path, out, batch=False, config_rel='LAB.local.json'):
     m=read(manifest);link=read(link_path)
     rows=m['rows']
     if batch and len({r['phase_sha256'] for r in rows})!=1:raise ValueError('Batch needs exactly one fixed phase')
@@ -35,13 +35,13 @@ def run(manifest, link_path, out, batch=False):
     out.mkdir(parents=True,exist_ok=False)
     report={'complete':False,'kind':'MNIST raw diagnostic, not full dataset accuracy',
             'manifest':m,'manifest_sha256':sha(manifest),'code_commit':subprocess.check_output(['git','rev-parse','HEAD'],text=True).strip(),
-            'camera_config':'LAB.local.json','rows':[]}
+            'camera_config':config_rel,'rows':[]}
     def save(): (out/'report.json').write_text(json.dumps(report,indent=2),encoding='utf-8')
     save()
     try:
         with Remote(link) as remote:
             remote.ps("$busy=Get-Process | Where-Object {$_.ProcessName -match 'FastStream|Slideshow|python|Viewer'};if($busy){throw 'Remote hardware busy'}")
-            report['remote_config_snapshot']=remote.read('LAB.local.json');save()
+            report['remote_config_snapshot']=remote.read(config_rel);save()
             # Native BMPs are highly compressible. Transfer one data-only ZIP,
             # never regenerate/rescale or send source files through this path.
             assets={Path(r['amplitude']).resolve().relative_to(ROOT).as_posix():r['amplitude_sha256'] for r in rows}
@@ -80,13 +80,13 @@ foreach($entry in $hashes.PSObject.Properties){{
                 if batch:
                     receipt=owner.show(rows[0]['phase'],rows[0]['phase_sha256'])
                     batch_dest=out.relative_to(ROOT).as_posix()+'/batch'
-                    remote.job({'action':'mnist_batch','out':batch_dest,'phase_receipt':receipt,'mnist_rows':[
+                    remote.job({'action':'mnist_batch','config':config_rel,'out':batch_dest,'phase_receipt':receipt,'mnist_rows':[
                         dict(name=r['name'],bmp=Path(r['amplitude']).resolve().relative_to(ROOT).as_posix(),sha256=r['amplitude_sha256'],phase_sha256=r['phase_sha256']) for r in rows]})
                 for row in rows:
                     dest=out.relative_to(ROOT).as_posix()+('/batch/' if batch else '/')+row['name']
                     if not batch:
                         receipt=owner.show(row['phase'],row['phase_sha256'])
-                        remote.job({'action':'probe','bmp':Path(row['amplitude']).resolve().relative_to(ROOT).as_posix(),
+                        remote.job({'action':'probe','config':config_rel,'bmp':Path(row['amplitude']).resolve().relative_to(ROOT).as_posix(),
                                     'out':dest,'phase_receipt':receipt})
                     remote.download(dest+'/raw.png',out/(row['name']+'.png'))
                     remote.download(dest+'/capture.json',out/(row['name']+'.json'))
@@ -103,4 +103,5 @@ if __name__=='__main__':
     p=argparse.ArgumentParser(description=__doc__);p.add_argument('--manifest',type=Path,required=True)
     p.add_argument('--link',type=Path,default=ROOT/'dual.local.json');p.add_argument('--out',type=Path,required=True)
     p.add_argument('--batch',action='store_true',help='One fixed phase; open hardware once for all inputs')
-    a=p.parse_args();run(a.manifest,a.link,a.out,a.batch)
+    p.add_argument('--remote-config',default='LAB.local.json')
+    a=p.parse_args();run(a.manifest,a.link,a.out,a.batch,a.remote_config)
