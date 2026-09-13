@@ -35,7 +35,8 @@ def recommend(rows):
         if min(r['stats']['p99'] for r in group)<16:reasons.append('weak_signal')
         if min(r['stats']['dynamic_range'] for r in group)<8:reasons.append('weak_dynamic_range')
         if min(r.get('repeat_pcc',1) for r in group)<.97:reasons.append('unstable_repeat')
-        candidates.append(dict(exposure_us=e,passed=not reasons,reasons=reasons,n=len(group)))
+        candidates.append(dict(exposure_us=e,passed=not reasons,
+            photometric_passed=not any(r!='unstable_repeat' for r in reasons),reasons=reasons,n=len(group)))
     good=[r['exposure_us'] for r in candidates if r['passed']]
     return dict(recommended_exposure_us=max(good) if good else None,candidates=candidates,
         scope='Sampled BMPs only; not full-data guarantee or photometric calibration',
