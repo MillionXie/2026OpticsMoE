@@ -2411,7 +2411,11 @@ CUDA_VISIBLE_DEVICES=GPU-4d8bfdb9-8777-05a6-3811-ab18ff4eadfd python -m LightGen
 增强组完整CUDA冒烟424.37秒完成，PID2344061退出，12相位更新且梯度有限；
 最终选回初始78.125%/去光74.75%、路由合格。正式增强已启动PID2350345/GPU1 RTX4090，
 run=`abo200_augmentation_only_20260914`，工作树`.worktrees/t07_view_audit_20260914`固定该源码。
-Dropout组尚未启动，需等GPU1正式增强结束、核查显存释放，再做对应冒烟和正式训练；没有自动排队进程。
+Dropout组尚未启动，需等GPU1正式增强结束、核查显存释放，再做正式训练；没有自动排队进程。
+本次省略重复的全图库dropout冒烟：已核对`abo200_sam_control_20260913/final_report.json`，
+同一个受保护光学实现SHA=`6490c6ee0ccc7501572fbae722aafbd7d4a016425d21af454019e7b60625433d`、
+同样3%相位dropout已经在RTX4090完成CUDA训练；本次只拆分profile，不新增dropout算子，369回归通过。
+这不是声称旧组合试验已证明dropout有效；新独立20轮仍需正式测试和同权重去光。
 
 两组均从原d11f3428权重开始，分别与已完成`abo200_capacity_control_20260913`比较。
 固定全部1600训练图库/800查询、20轮×100步、每5轮评估live/EMA；TEST参与选模，存在选择偏差。
@@ -2422,7 +2426,8 @@ Dropout组尚未启动，需等GPU1正式增强结束、核查显存释放，再
 二者均不改六次10cm传播/ROI/Top2/alpha/电子容量/64维头/损失/AdamW；不额外加SAM。
 从新代码所在的**空闲工作树**执行，不更新第77节运行中的工作树。只使用一张额外空闲卡，
 先增强，结束并检查PID/显存释放后再运行dropout，合计至多两张我们的卡，不抢占他人任务。
-先用对应profile执行epochs1、steps2、eval-every1、独立smoke输出，核对正常/去光/有限梯度后再正式训练。
+新环境或首次修改算子时，先用对应profile执行epochs1、steps2、eval-every1、独立smoke输出，
+核对正常/去光/有限梯度后再正式训练。本次dropout沿用已验证算子，采用上面的减少重复测试安排。
 
 ```bash
 T07=/DATA/DATA1/guest3/2026OpticsMoE/LightGenV2/tasks/t07_abo_image_retrieval
