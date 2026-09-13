@@ -2325,9 +2325,12 @@ CUDA_VISIBLE_DEVICES='' python -m LightGenV2.tasks.t07_abo_image_retrieval.analy
 
 完整CUDA冒烟已完成并释放PID2301761：两步后选epoch1 EMA，正常78.125%、去光74.875%，
 路由合格，梯度6.05466有限，12份相位均更新；这不是新正式成绩。
-正式`abo200_retrieval_only_20260914`已在GPU1启动，PID2307838，20轮×100步。
+正式`abo200_retrieval_only_20260914`已完成20轮×100步，PID2307838退出、GPU1释放。
+最终epoch20 EMA正常78.375%、TRAIN96.5625%、去光76.375%，下降2pp、路由合格；
+12相位均更新，best SHA=`869dd91c3e1b2ef1c578e88977e7c0e3ae6e40a6fb41492a7c65fe5273824585`。
+较原参照只多2张查询，光学去除降幅也更小，不当作明显突破，不覆盖原权重。
 源码`686a585f6467b6b4f93f9e86530fb7ec0bd8c4e0`，本地/服务器360测试通过，已推GitHub；
-工作树`.worktrees/t07_view_audit_20260914`在进程退出前保持固定。以下是复现命令，不要重复启动。
+训练时工作树`.worktrees/t07_view_audit_20260914`保持固定。以下是复现命令，不要覆盖已有run重复启动。
 
 `sku_retrieval_only`与`sku_capacity_control`相比仅关闭两个把同SKU不同视角拉近的辅助项：
 live SupCon权重从.5到0，all-view log-probability权重从.1到0。
