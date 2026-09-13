@@ -1,0 +1,47 @@
+# Strict raw-input two-branch Spatial candidate.
+# Qwen front -> one electronic residual route E and one optical route O.
+# The historical frozen Conv5 input and its cache are absent at inference.
+base_config: spatial_readout_1m_srcc067.yaml
+output_dir: ../../../../LightGenV2/tasks/t06_video_quality_assessment/runs/simulation/spatial_strict2branch_no_conv5_s1401
+random_seed: 1401
+
+data:
+  quality_feature_cache: null
+  quality_feature_cache_views: []
+
+model:
+  quality_branch_enabled: false
+  electronic_quality_residual_enabled: false
+  quality_refiner_enabled: false
+  custom_conv_electronic_enabled: true
+  custom_conv_electronic_max: 3.0
+
+training:
+  initialization_checkpoint: ../../../../LightGenV2/tasks/t06_video_quality_assessment/runs/simulation/spatial_strict2branch_no_conv5_s1401/distilled_warm_start.pt
+  trainable_scope: custom_conv_joint
+  epochs: 100
+  batch_size: 64
+  learning_rate: 0.000008
+  readout_learning_rate_factor: 0.35
+  phase_learning_rate: 0.00002
+  router_phase_learning_rate: 0.00002
+  weight_decay: 0.00008
+  readout_weight_decay: 0.0002
+  learning_rate_warmup_epochs: 3
+  minimum_learning_rate_factor: 0.05
+  ema_decay: 0.997
+  ema_start_epoch: 1
+  test_interval_epochs: 1
+  test_interval_steps: 0
+  phase_snapshot_interval_epochs: 0
+
+loss:
+  regression_weight: 0.10
+  ranking_weight: 2.40
+  correlation_weight: 4.50
+  soft_spearman_weight: 0.70
+  listwise_ranking_weight: 0.05
+  paired_view_supervision_weight: 0.10
+  paired_view_consistency_weight: 0.01
+  router_balance_weight: 0.0003
+  serial_router_balance_weight: 0.0003
