@@ -19,8 +19,9 @@ def main() -> int:
     args = parser.parse_args()
     profile = load_profile(args.profile)
     backend = profile["backend"]
+    artifact = profile["artifacts"]
     checkpoint = (
-        repo_path(profile["artifacts"]["canonical_checkpoint"])
+        repo_path(artifact.get("canonical_checkpoint", artifact["checkpoint"]))
         if args.checkpoint is None
         else Path(args.checkpoint).expanduser().resolve()
     )

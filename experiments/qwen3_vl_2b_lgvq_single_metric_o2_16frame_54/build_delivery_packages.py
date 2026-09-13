@@ -49,6 +49,7 @@ _LAB_RUNTIME_FILES = {
     "__init__.py",
     "__main__.py",
     "data.py",
+    "evaluate_last_phase_ablation.py",
     "export_hardware_masks.py",
     "hardware_bridge.py",
     "hardware_contract.py",
@@ -102,7 +103,12 @@ def _project_code(
             selected[path.relative_to(root).as_posix()] = path
     if runtime_only:
         _add_config_chain(selected, root, config)
-        deployment = base / "configs/deployment/spatial4_custom_conv_lab.yaml"
+        deployment_name = (
+            "spatial4_readout_1m_lab.yaml"
+            if config.stem == "spatial_readout_1m_srcc067"
+            else "spatial4_custom_conv_lab.yaml"
+        )
+        deployment = base / "configs/deployment" / deployment_name
         if deployment.is_file():
             _add_config_chain(selected, root, deployment)
     else:
@@ -262,6 +268,26 @@ def build_lab(root: Path, config: Path, checkpoint: Path, output: Path, guide: P
         for path in result_root.glob("*"):
             if path.is_file():
                 selected[f"documentation/formal_result/{path.name}"] = path
+        if config.stem == "spatial_readout_1m_srcc067":
+            compact_architecture = (
+                root
+                / "LightGenV2/tasks/t06_video_quality_assessment/"
+                "SPATIAL_COMPACT_READOUT.md"
+            )
+            compact_result_root = (
+                root
+                / "LightGenV2/tasks/t06_video_quality_assessment/reports/"
+                "paper_results/spatial_readout_1m_srcc067"
+            )
+            if compact_architecture.is_file():
+                selected[
+                    "documentation/SPATIAL_COMPACT_READOUT.md"
+                ] = compact_architecture
+            for path in compact_result_root.glob("*"):
+                if path.is_file():
+                    selected[
+                        f"documentation/spatial_readout_1m_srcc067/{path.name}"
+                    ] = path
     study_document = root / PROJECT / "TEMPORAL_16_36_SPEED_QUALITY_STUDY.md"
     if settings.target_name == "temporal" and study_document.is_file():
         selected[study_document.relative_to(root).as_posix()] = study_document
