@@ -1,0 +1,13 @@
+base_config: moe_alpha40_sam_batch8_crosssample_20260913.yaml
+# User requested: prioritize optical adaptation, slow EVERY electronic group.
+# No MixUp, no architecture changes; source is independently verified .86249251.
+training:
+  initialization_checkpoint: ../runs/simulation/moe_alpha40_sam_batch8_crosssample_20260913_seed42/best_checkpoint.pt
+  initialization_checkpoint_sha256: 036bc8caedcde4d6dabce276b1a2e4af15d960d88620098b19e1c198849b8bfe
+  student_learning_rate: 0.00000025
+  phase_learning_rate: 0.002
+  router_learning_rate: 0.0001
+  dense_readout_learning_rate: 0.0000005
+  dense_head_learning_rate: 0.0000005
+  ffn_spatial_learning_rate: 0.00000125
+output_dir: ../runs/simulation/moe_alpha40_optical_lr_priority_20260913_seed42
