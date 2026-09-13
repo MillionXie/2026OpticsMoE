@@ -35,3 +35,12 @@ def configure_generated(c):
     for name in ('patterns','dual_patterns','fresnel'):
         if name in sys.modules and hasattr(sys.modules[name],'generated_root'):
             sys.modules[name].generated_root=isolated
+
+def select_queries(all_samples,indices,limit):
+    """Fixed declared indices, not outcome-based cherry-picking; keep all titles."""
+    if not isinstance(indices,list) or not 1<=len(indices)<=8 or len(indices)!=limit:
+        raise ValueError('Diagnostic query count must match --limit (1..8)')
+    images=[s for s in all_samples if s['kind']=='image'];titles=[s for s in all_samples if s['kind']=='title']
+    if len(titles)!=100 or len(indices)!=len(set(indices)) or any(type(i) is not int or not 0<=i<len(images) for i in indices):
+        raise ValueError('Invalid query indices or candidate count')
+    return titles+[images[i] for i in indices]

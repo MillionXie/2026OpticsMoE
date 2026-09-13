@@ -42,6 +42,13 @@ class Remote:
         dest.write_bytes(data)
 
 class SmokeTests(unittest.TestCase):
+    def test_declared_query_indices_keep_all_titles(self):
+        from diagnostic_config import select_queries
+        samples=[{'kind':'title','id':i} for i in range(100)]+[{'kind':'image','id':i} for i in range(2400)]
+        selected=select_queries(samples,[0,600,1200,1800],4)
+        self.assertEqual(len(selected),104);self.assertEqual([s['id'] for s in selected[100:]],[0,600,1200,1800])
+        for indices,limit in [([0,0],2),([-1],1),([2400],1),([0],4)]:
+            with self.assertRaises(ValueError):select_queries(samples,indices,limit)
     def test_all_six_and_100_titles_kept(self):
         c={'diagnostic_only':True,'diagnostic_session':'smoke_fixture','geometry_confirmed':True,
            'geometry_evidence':{'method':'measured_markers_with_asymmetric_check','report_sha256':'fixture'},

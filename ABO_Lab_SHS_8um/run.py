@@ -68,6 +68,10 @@ def main():
                                 common.hardware_identity(self.c),rectify)
     hardware.Bench=Bench
     spec=importlib.util.spec_from_file_location('abo_shs_task',compat/'run.py');task=importlib.util.module_from_spec(spec);spec.loader.exec_module(task)
+    if cfg.get('diagnostic_only') and 'diagnostic_query_indices' in cfg:
+        from diagnostic_config import select_queries
+        original_samples=task.samples
+        task.samples=lambda limit:select_queries(original_samples(0),cfg['diagnostic_query_indices'],limit)
     original_load=task.load_session
     def guarded_load(name,c):
         root,state=original_load(name,c)

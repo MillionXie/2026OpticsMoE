@@ -26,6 +26,8 @@ python smoke_six.py --link-config results/smoke_configs/link.json `
 一次执行生成、采集六层并评估；只允许新会话，已有数据不覆盖。
 
 六层依次为 vision_router、vision_expert、vision_global、language_router、language_expert、language_global。
+可在新诊断配置声明 `diagnostic_query_indices: [0,600,1200,1800]`，按固定间隔取4张，
+避免默认前4张恰好同一类别；索引必须在采集前确定，不能依据检索结果挑样本。
 4张查询的采集量依次为4/4/4/104/104/104，共324张，后3层包含全部100个标题。
 每层另拍平相位挑战、目标相位两次重复、采后复查；PCC和亮度漂移不通过即停止，不继续推理。
 这些检查证明响应改变和重复稳定，**并不独立证明完整灰度—相位曲线正确**。
