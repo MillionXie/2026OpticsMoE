@@ -34,7 +34,15 @@ def run(remote,link,c,config_rel,out,limit=4):
         job({'action':'init','session':session,'limit':limit})
         base='generated/'+session
         flat=out/'flat.bmp';remote.download(base+'/cal/P_ZERO.bmp',flat)
-        probe_remote=base+'/cal/A_CHECK_64.bmp'
+        probe_remote=c.get('diagnostic_probe_bmp',base+'/cal/A_CHECK_64.bmp')
+        if 'diagnostic_probe_bmp' in c:
+            p=Path(probe_remote)
+            if p.is_absolute() or '..' in p.parts or not p.parts or p.parts[0]!='results':
+                raise ValueError('Diagnostic probe must be a relative results artifact')
+            probe_file=out/'diagnostic_probe.bmp';remote.download(probe_remote,probe_file)
+            if sha(probe_file)!=c.get('diagnostic_probe_sha256'):raise ValueError('Probe SHA mismatch')
+            with Image.open(probe_file) as im:
+                if im.size!=(1920,1080) or im.mode!='L' or im.format!='BMP':raise ValueError('Probe must be native Mono8 amplitude BMP')
         actual=None
         def probe(receipt,label):
             nonlocal actual

@@ -11,6 +11,9 @@
    固定曝光、显式增益、[0,255]存储尺度；相位翻转与反灰度必须基于当前设备实测，不能照搬。
 4. 本地独立link配置中设置 `phase_startup_cycles=0`、`phase_retry_cycles=2`、
    `phase_display_align_top=true`、`phase_settle_s=1`。临时对齐只改变相位屏Y位置，结束恢复。
+   曝光须按真实网络输入检查，不能只按满亮棋盘格决定。如果较高曝光让探针饱和，
+   可在配置指定经实测的 `diagnostic_probe_bmp`（results下的原尺寸振幅BMP）及
+   `diagnostic_probe_sha256`，例如减小棋盘格亮块灰度。只改变排障探针，绝不改变网络输入或CCD存储尺度。
 5. 本地运行（Python需numpy/Pillow/paramiko/pywin32；相位SDK和LUT路径沿用本机link配置）：
 
 ```powershell
