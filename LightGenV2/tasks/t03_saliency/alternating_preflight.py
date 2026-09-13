@@ -38,7 +38,8 @@ def main():
     teacher = TrainTeacherMaps(s,bundle.train_records)
     native_calls = []
     handles = [block.register_forward_hook(lambda *args: native_calls.append(1))
-               for block in loaded.model.visual.blocks] if hasattr(loaded.model,'visual') else []
+               for block in model.original_blocks]
+    assert len(handles) == 24
     rows = []
     s.map_kd_weight = s.distillation_initial_weight
     try:
