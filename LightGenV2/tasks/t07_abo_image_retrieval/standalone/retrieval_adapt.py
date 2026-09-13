@@ -27,7 +27,7 @@ from .retrieval_refine import (PROFILES, validate_continuation, route_objective,
     all_view_loss, load_train_teacher, relational_loss, selection_score, router_acceptable,
     optical_parameter, set_parameter_scope, update_trainable_ema, non_optical_digest,
     prepare_capacity_payload)
-from .enrolled_regularization import load_external_pool, load_external_relations, augment_whole_object, curriculum_epoch, curriculum_loss_weights
+from .enrolled_regularization import load_external_pool, load_external_relations, augment_whole_object, curriculum_epoch, curriculum_loss_weights, fitting_bank_diagnostics
 from .generalization import backward_with_sam
 
 
@@ -364,6 +364,7 @@ def run(args):
             bank, _ = encode_rows(model, processor, gallery, args.data, device,
                                   getattr(args, 'bank_batch_size', None) or args.batch_size)
             bank = bank.to(device)
+            bank_metrics = fitting_bank_diagnostics(bank, bank_labels, gallery_ids) if args.multi_view else None
             rng = random.Random(args.seed + epoch)
             factor = min(1., phase_epoch / 2) * (.1 + .9 * .5 * (1 + math.cos(math.pi * (phase_epoch - 1) / max(1, phase_epochs - 1))))
             for g in optimizer.param_groups:
@@ -419,6 +420,7 @@ def run(args):
                 totals['sam_loss_gap'] += sam['loss_gap']
             row = dict(epoch=epoch, phase='optical_only' if optical_only else 'external_pretrain' if external else 'target_finetune', phase_epoch=phase_epoch, router_only_warmup=warming,
                 active_trainable_parameters=sum(p.numel() for _,p in params if p.requires_grad),
+                fitting_bank_epoch_start=bank_metrics,
                 **{k: v / args.steps for k, v in totals.items()}, last_gradient_norm=float(norm))
             if optical_only and non_optical_digest(model) != fixed_electronics_sha:
                 raise RuntimeError('Frozen electronic parameter changed in optical-only training')
@@ -442,9 +444,10 @@ def run(args):
                     for n, p in params:
                         p.copy_(live[n])
             row['elapsed_seconds'] = time.time() - started
+            row['phase_rms_change_from_run_start_rad'] = phase_delta(model, initial)
             history.append(row)
             write_json(args.output / 'history.json', history)
-            write_json(args.output / 'phase_update_last.json', phase_delta(model, initial))
+            write_json(args.output / 'phase_update_last.json', row['phase_rms_change_from_run_start_rad'])
             status.update(epoch=epoch, phase=row['phase'], phase_epoch=phase_epoch)
             write_json(args.output / 'status.json', status)
             print(json.dumps(row), flush=True)

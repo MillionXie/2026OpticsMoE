@@ -2187,3 +2187,43 @@ CUDA_VISIBLE_DEVICES=GPU-afc19890-6209-ee4d-622d-e619da5bd5b2 python -m LightGen
   --lr-scale .2 --epochs 1 --steps 1 --eval-every 1 --batch-size 4 --bank-batch-size 16 \
   --output "$T07/runs/smoke/abo_spin_curriculum_20260913"
 ```
+
+## 72. 转台预训练与目标微调：原轻量网络，不增加教师/电子参数
+
+先完成第71节正式数据准备：`report.json`必须ready，`status.json`必须complete；
+训练加载器还会逐图重验SHA、目标协议和SKU/spin隔离。失败或尚未生成报告时不要启动。
+只使用当前200-SKU协议的78.125%起点，不加载旧类别检索权重，不改1600 TRAIN/gallery和800 QUERY。
+外部12轮→目标20轮，各100步；外部不用TEST选模，末状态进入目标阶段时重置Adam动量/EMA。
+目标每5轮评估live/EMA，保持原best回退、同权重去光、路由资格约束；TEST参与选模的偏差照常披露。
+与已完成的`abo200_capacity_control_20260913`目标20轮相比多12轮外部计算，**不是等计算预算比较**。
+
+`sku_capacity_control`：原电子结构/64维头，光学Top2、六次10cm、alpha>0.4不变。
+无教师loss，温和亮度/对比度增强、EMA、电子decay=.01，原噪声/DC作用于10%训练batch。
+训练batch=8商品×2张不同视图=16；下面batch-size4仅控制完整评估，bank16仅TRAIN编码。
+每轮`fitting_bank_epoch_start`是已有干净bank的排除自身检索，不是训练batch命中率，也不是轮末权重。
+`phase_rms_change_from_run_start_rad`保留12份相位逐轮变化；仍只存best/last两份模型。
+
+先在已ready的40图冒烟池使用1外部轮+1目标轮、各1步、eval-every1，
+output设`runs/smoke/abo_spin_diagnostics_20260913`，确认新增诊断和完整评估正常后再正式执行。
+数据预备工作树可能仍在运行；训练使用另一个固定GitHub commit的干净工作树，不在运行源码上更新。
+
+```bash
+T07=/DATA/DATA1/guest3/2026OpticsMoE/LightGenV2/tasks/t07_abo_image_retrieval
+R="$T07/runs/simulation"
+# 激活xml，进入已同步GitHub的干净源码工作树；先检查指定GPU确实空闲。
+export HF_HUB_OFFLINE=1 TRANSFORMERS_OFFLINE=1 OMP_NUM_THREADS=4 MKL_NUM_THREADS=4
+SPIN_POOL_SHA=$(python -c "import json; from pathlib import Path; p=Path('$R/abo_spin_pool50_views12_20260913'); r=json.loads((p/'report.json').read_text()); s=json.loads((p/'status.json').read_text()); assert r['status']=='ready' and s['status']=='complete'; print(r['manifest_sha256'])")
+nvidia-smi
+CUDA_VISIBLE_DEVICES=GPU-afc19890-6209-ee4d-622d-e619da5bd5b2 python -m LightGenV2.tasks.t07_abo_image_retrieval.standalone.retrieval_adapt \
+  --data /DATA/DATA1/guest3/2026OpticsMoE/data/abo_similarity10_data \
+  --manifest "$R/abo200_enrolled_protocol_20260913/protocol.json" --assets "$R/standalone_assets_20260910" \
+  --checkpoint "$R/abo200_route_distill_20260913/best.pt" \
+  --expected-checkpoint-sha256 d11f3428efa67c7c5084eb9056d991c4692d36a3d177cd82b4601238357d444a \
+  --external-pool "$R/abo_spin_pool50_views12_20260913" --external-root /DATA/DATA1/guest3/2026OpticsMoE/data/abo \
+  --expected-external-sha256 "$SPIN_POOL_SHA" \
+  --external-pretrain-epochs 12 --multi-view --refine-profile sku_capacity_control \
+  --lr-scale .2 --epochs 20 --steps 100 --eval-every 5 --batch-size 4 --bank-batch-size 16 \
+  --output "$R/abo200_spin_pretrain_20260913"
+```
+
+上面是正式计划命令，不代表已启动或达标；实际source/PID/数据数量以README及run记录为准。

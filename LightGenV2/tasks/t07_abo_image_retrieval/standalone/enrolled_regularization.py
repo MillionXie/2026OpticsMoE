@@ -152,3 +152,41 @@ def curriculum_epoch(epoch, pretrain_epochs, target_epochs):
         raise ValueError('Epoch outside curriculum')
     external = epoch <= pretrain_epochs
     return external, epoch if external else epoch-pretrain_epochs, pretrain_epochs if external else target_epochs
+
+
+@torch.no_grad()
+def fitting_bank_diagnostics(vectors, labels, sample_ids, chunk_size=256):
+    """Read-only TRAIN bank retrieval, excluding the exact same photograph.
+
+    This reuses epoch-start clean encodings, not post-update TEST encodings.
+    Chunked on the bank's existing device; no extra model forward or RNG calls.
+    """
+    n = len(sample_ids)
+    if (vectors.ndim != 2 or len(vectors) != n or n < 4 or labels.shape != (n,)
+            or len(set(sample_ids)) != n or chunk_size < 1
+            or not torch.isfinite(vectors).all() or (vectors.float().norm(dim=1) == 0).any()):
+        raise ValueError('Invalid clean fitting bank or duplicate image identity')
+    labels = labels.to(vectors.device)
+    _, counts = labels.unique(return_counts=True)
+    if len(counts) < 2 or counts.min() < 2:
+        raise ValueError('Each fitting SKU needs a distinct positive and a negative SKU')
+    z = F.normalize(vectors.detach().float(), dim=1)
+    hits, margins = [], []
+    columns = torch.arange(n, device=z.device)
+    for start in range(0, n, chunk_size):
+        stop = min(start + chunk_size, n)
+        similarity = z[start:stop] @ z.T
+        same = labels[start:stop, None] == labels[None]
+        self_mask = torch.arange(start, stop, device=z.device)[:, None] == columns[None]
+        similarity = similarity.masked_fill(self_mask, -torch.inf)
+        hits.append(labels[similarity.argmax(1)] == labels[start:stop])
+        best_positive = similarity.masked_fill(~same, -torch.inf).max(1).values
+        best_negative = similarity.masked_fill(same, -torch.inf).max(1).values
+        margins.append(best_positive - best_negative)
+    margin = torch.cat(margins)
+    return dict(hit_at_1=float(torch.cat(hits).float().mean()),
+        median_best_positive_minus_negative_cosine=float(margin.quantile(.5)),
+        mean_best_positive_minus_negative_cosine=float(margin.mean()),
+        query_count=n, candidates_per_query=n-1, product_count=len(counts),
+        timing='Epoch start, clean current-live TRAIN bank; NOT post-epoch or TEST accuracy',
+        same_image_excluded=True, used_for_checkpoint_selection=False)

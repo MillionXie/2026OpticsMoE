@@ -10,6 +10,35 @@ from LightGenV2.tasks.t07_abo_image_retrieval.standalone.enrolled_regularization
     load_external_pool, load_external_relations, augment_whole_object, curriculum_epoch, curriculum_loss_weights)
 from LightGenV2.tasks.t07_abo_image_retrieval.standalone.io import sha256
 from LightGenV2.tasks.t07_abo_image_retrieval.standalone.retrieval_adapt import training_pairs
+from LightGenV2.tasks.t07_abo_image_retrieval.standalone.enrolled_regularization import fitting_bank_diagnostics
+
+
+def test_bank_metric_excludes_self_and_is_read_only_chunk_independent():
+    z = torch.tensor([[1., 0.], [-1., 0.], [0., 1.], [0., -1.]], requires_grad=True)
+    labels = torch.tensor([0, 0, 1, 1])
+    ids = ['a', 'b', 'c', 'd']
+    before = z.detach().clone(); rng = torch.get_rng_state().clone()
+    a = fitting_bank_diagnostics(z, labels, ids, 1)
+    b = fitting_bank_diagnostics(z, labels, ids, 4)
+    assert a == b and a['hit_at_1'] == 0.
+    assert a['median_best_positive_minus_negative_cosine'] == -1.
+    assert a['candidates_per_query'] == 3 and a['query_count'] == 4
+    assert a['used_for_checkpoint_selection'] is False
+    assert torch.equal(z, before) and z.grad is None and torch.equal(rng, torch.get_rng_state())
+    good = fitting_bank_diagnostics(torch.tensor([[1.,0.],[1.,0.],[0.,1.],[0.,1.]]), labels, ids, 3)
+    assert good['hit_at_1'] == 1. and good['product_count'] == 2
+
+
+@pytest.mark.parametrize('bad', ['duplicate', 'zero', 'nan', 'singleton', 'single_sku', 'chunk'])
+def test_bank_metric_rejects_invalid_self_retrieval_inputs(bad):
+    z = torch.ones(4, 2); labels = torch.tensor([0, 0, 1, 1]); ids = list('abcd'); chunk = 2
+    if bad == 'duplicate': ids[-1] = ids[0]
+    if bad == 'zero': z[0] = 0
+    if bad == 'nan': z[0, 0] = float('nan')
+    if bad == 'singleton': labels[-1] = 2
+    if bad == 'single_sku': labels[:] = 0
+    if bad == 'chunk': chunk = 0
+    with pytest.raises(ValueError): fitting_bank_diagnostics(z, labels, ids, chunk)
 
 
 def external_fixture(tmp_path):
