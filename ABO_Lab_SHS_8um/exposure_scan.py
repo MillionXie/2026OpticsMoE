@@ -35,7 +35,9 @@ def plot_report(out,report):
     fig.suptitle('Fixed gain/frame rate; raw sensor ROI BEFORE warp; sampled network inputs only')
     fig.savefig(out/'exposure_range.png',dpi=150);plt.close(fig)
 
-def run(link_path,config_rel,session,out,exposures,stages=None,test_wait_ms=200):
+def run(link_path,config_rel,session,out,exposures,stages=None,test_wait_ms=200,capture_wait_ms=None):
+    for wait in [test_wait_ms,capture_wait_ms]:
+        if wait is not None and (not np.isfinite(wait) or not 200<=wait<=1000):raise ValueError('Audit wait must be200..1000ms')
     if not re.fullmatch('[A-Za-z0-9_-]{1,80}',session):raise ValueError('Invalid source session')
     out=Path(out).resolve()
     if not out.is_relative_to(ROOT/'results'):raise ValueError('Output outside results')
@@ -68,7 +70,7 @@ def run(link_path,config_rel,session,out,exposures,stages=None,test_wait_ms=200)
                         phase_sha256=mf['phase_sha256'],probe=probe,probe_exposure_us=150,
                         exposure_rows=[dict(id=e['id'],bmp=f"sessions/{session}/play/{stage}/{e['bmp']}",sha256=e['sha256']) for e in selected],
                         exposures_us=exposures,repeats=2,timing_repeats=5 if stage=='vision_global' else 0,
-                        timing_rows=timing,test_wait_ms=test_wait_ms)
+                        timing_rows=timing,test_wait_ms=test_wait_ms,capture_wait_ms=capture_wait_ms)
                     remote.job(spec)
                     local=out/stage;local.mkdir();remote.download(dest+'/report.json',local/'report.json')
                     data=read(local/'report.json')
@@ -96,5 +98,6 @@ if __name__=='__main__':
     p=argparse.ArgumentParser();p.add_argument('--link-config',type=Path,required=True);p.add_argument('--remote-config',required=True)
     p.add_argument('--source-session',required=True);p.add_argument('--out',type=Path,required=True)
     p.add_argument('--exposures-us',type=float,nargs='+',default=[150,300,450,600,900])
-    p.add_argument('--stages',nargs='+',choices=STAGES);p.add_argument('--test-wait-ms',type=float,choices=[200,300,400],default=200);a=p.parse_args()
-    run(a.link_config,a.remote_config,a.source_session,a.out,a.exposures_us,a.stages,a.test_wait_ms)
+    p.add_argument('--stages',nargs='+',choices=STAGES);p.add_argument('--test-wait-ms',type=float,default=200)
+    p.add_argument('--capture-wait-ms',type=float,help='Diagnostic replay only; no source session/config mutation');a=p.parse_args()
+    run(a.link_config,a.remote_config,a.source_session,a.out,a.exposures_us,a.stages,a.test_wait_ms,a.capture_wait_ms)

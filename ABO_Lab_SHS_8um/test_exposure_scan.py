@@ -1,9 +1,15 @@
 import unittest
 import numpy as np
-from exposure_batch import image_stats,recommend
+from exposure_batch import image_stats,recommend,run
+from pathlib import Path
 from exposure_scan import select_entries
 
 class ExposureTests(unittest.TestCase):
+    def test_invalid_wait_does_not_mutate_source(self):
+        c={'settle_delay_ms':200}
+        for value in [float('nan'),0,1001]:
+            with self.assertRaises(ValueError):run({'capture_wait_ms':value},c,Path('unused'))
+        self.assertEqual(c,{'settle_delay_ms':200})
     def test_raw_before_interpolation(self):
         a=np.zeros((10,10),np.uint8);a[0,0]=255;s=image_stats(a,np.ones_like(a,bool))
         self.assertEqual(s['saturation_fraction'],.01)

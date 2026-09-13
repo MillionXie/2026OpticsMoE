@@ -43,6 +43,11 @@ def recommend(rows):
         thresholds=dict(maximum_saturation_fraction=.001,maximum_p999=245,minimum_p99=16,minimum_dynamic_range=8))
 
 def run(spec,c,out):
+    source_config=json.loads(json.dumps(c));c=json.loads(json.dumps(c))
+    wait=spec.get('capture_wait_ms')
+    if wait is not None:
+        if not np.isfinite(wait) or not 200<=wait<=1000:raise ValueError('Audit capture wait must be200..1000ms')
+        c['settle_delay_ms']=float(wait)
     rows=spec['exposure_rows'];exposures=spec['exposures_us'];repeats=int(spec.get('repeats',2))
     if not 1<=len(rows)<=16 or not 1<=len(exposures)<=10 or not 2<=repeats<=4:raise ValueError('Bounded scan only')
     if any(not np.isfinite(e) or not 1<=e<1e6/c['camera']['frame_rate_hz'] for e in exposures):raise ValueError('Exposure outside frame period')
@@ -56,7 +61,7 @@ def run(spec,c,out):
     points=[c['logical_corners_full_sensor_xy'][k] for k in ('top_left','top_right','bottom_right','bottom_left')]
     im=Image.new('1',(1920,1080));ImageDraw.Draw(im).polygon([tuple(v) for v in points],fill=1);mask=np.asarray(im,dtype=bool)
     bbox=im.getbbox();out.mkdir(parents=True,exist_ok=False)
-    report=dict(status='running',config=c,source_spec=spec,rows=[],probe=[],timing=[],
+    report=dict(status='running',config=c,source_config=source_config,source_spec=spec,rows=[],probe=[],timing=[],
         input_scope='Frozen prior six-stage inputs; no regenerated downstream features and no retraining',
         raw_roi_before_warp=True,source_sha256=sha(__file__))
     def save():write(out/'report.json',report)
