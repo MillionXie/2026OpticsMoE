@@ -2190,6 +2190,10 @@ CUDA_VISIBLE_DEVICES=GPU-afc19890-6209-ee4d-622d-e619da5bd5b2 python -m LightGen
 
 ## 72. 转台预训练与目标微调：原轻量网络，不增加教师/电子参数
 
+本轮已经启动：source `b9a1bb4b850dd328dfd7e400c8fe7f2ee5c3e91e`，物理GPU3 RTX4090（GPU0已有他人任务），PID2271973。
+数据已ready并重载检查：453商品/5436图，SHA=`68fd35b6a2308f13e01963eb1233545c44eb07f5caa48ff655dc6fc302b1ed8f`。
+不要在已有output上重复执行；以下保留复现命令。
+
 先完成第71节正式数据准备：`report.json`必须ready，`status.json`必须complete；
 训练加载器还会逐图重验SHA、目标协议和SKU/spin隔离。失败或尚未生成报告时不要启动。
 只使用当前200-SKU协议的78.125%起点，不加载旧类别检索权重，不改1600 TRAIN/gallery和800 QUERY。
@@ -2212,9 +2216,9 @@ T07=/DATA/DATA1/guest3/2026OpticsMoE/LightGenV2/tasks/t07_abo_image_retrieval
 R="$T07/runs/simulation"
 # 激活xml，进入已同步GitHub的干净源码工作树；先检查指定GPU确实空闲。
 export HF_HUB_OFFLINE=1 TRANSFORMERS_OFFLINE=1 OMP_NUM_THREADS=4 MKL_NUM_THREADS=4
-SPIN_POOL_SHA=$(python -c "import json; from pathlib import Path; p=Path('$R/abo_spin_pool50_views12_20260913'); r=json.loads((p/'report.json').read_text()); s=json.loads((p/'status.json').read_text()); assert r['status']=='ready' and s['status']=='complete'; print(r['manifest_sha256'])")
+SPIN_POOL_SHA=68fd35b6a2308f13e01963eb1233545c44eb07f5caa48ff655dc6fc302b1ed8f
 nvidia-smi
-CUDA_VISIBLE_DEVICES=GPU-afc19890-6209-ee4d-622d-e619da5bd5b2 python -m LightGenV2.tasks.t07_abo_image_retrieval.standalone.retrieval_adapt \
+CUDA_VISIBLE_DEVICES=GPU-4d8bfdb9-8777-05a6-3811-ab18ff4eadfd python -m LightGenV2.tasks.t07_abo_image_retrieval.standalone.retrieval_adapt \
   --data /DATA/DATA1/guest3/2026OpticsMoE/data/abo_similarity10_data \
   --manifest "$R/abo200_enrolled_protocol_20260913/protocol.json" --assets "$R/standalone_assets_20260910" \
   --checkpoint "$R/abo200_route_distill_20260913/best.pt" \
@@ -2226,7 +2230,7 @@ CUDA_VISIBLE_DEVICES=GPU-afc19890-6209-ee4d-622d-e619da5bd5b2 python -m LightGen
   --output "$R/abo200_spin_pretrain_20260913"
 ```
 
-上面是正式计划命令，不代表已启动或达标；实际source/PID/数据数量以README及run记录为准。
+上面对应已启动命令，不代表达标；实际完成状态与结果以README及run记录为准。
 
 ## 73. 小幅保留空间布局的末端读出对照（不改光路）
 
@@ -2278,7 +2282,7 @@ CUDA_VISIBLE_DEVICES=GPU-e8837b85-d55b-8e81-aaa5-ec1ac326932d python -m LightGen
 T07=/DATA/DATA1/guest3/2026OpticsMoE/LightGenV2/tasks/t07_abo_image_retrieval
 R="$T07/runs/simulation"
 export HF_HUB_OFFLINE=1 TRANSFORMERS_OFFLINE=1 OMP_NUM_THREADS=4 MKL_NUM_THREADS=4
-# 先确认GPU1空闲；GPU0留给第72节转台预训练，只使用自己的进程。
+# 先确认GPU1空闲；第72节正在使用GPU3，不抢占他人的GPU0。
 nvidia-smi
 CUDA_VISIBLE_DEVICES=GPU-e8837b85-d55b-8e81-aaa5-ec1ac326932d python -m LightGenV2.tasks.t07_abo_image_retrieval.standalone.retrieval_adapt \
   --data /DATA/DATA1/guest3/2026OpticsMoE/data/abo_similarity10_data \

@@ -216,3 +216,14 @@ manifest SHA=`22a36f45f65795ca6081fbe6390c85a2815efec2517f707bc06c29dc748afdfb`�
 本地只保留原图审查副本，未裁剪改图。两张文件SHA分别为
 `44b1c1592849025ddbc8f672995109c0e6ab5361c577ce97dc3647afe72832dc`、
 `9eb3f424f3778559cbdc4bb21250d0c10f25ab6d3303cb0e530857eb40631918`。
+
+### 正式外部spin池与预训练身份
+
+`abo_spin_pool50_views12_20260913`已ready，准备source5b06f747，PID2209204退出。
+453 SKU/5436图，每SKU12视角；HOME_MIRROR23、VASE30、其余8类型各50，下载894427859字节（含未采纳的候选图）。
+完整manifest SHA=`68fd35b6a2308f13e01963eb1233545c44eb07f5caa48ff655dc6fc302b1ed8f`；加载器重新核对全部文件SHA、目标协议、SKU/spin交集均通过。
+排除目标身份记录200、共享spin别名4、目标精确/近重复候选539、下载/内容异常候选2；保守dHash并非语义独立性的证明。
+实际训练`abo200_spin_pretrain_20260913`已在物理GPU3 RTX4090启动，PID2271973、source b9a1bb4b，命令第72节。
+先固定12轮外部同SKU预训练，再20轮目标微调；各100步、原轻量头/残差/光路，教师关闭。
+多了外部计算，不是相对旧20轮对照的等预算比较。目标1600 TRAIN/gallery、800 QUERY与冻结Qwen64=85.125%均不变。
+完整L-CCD读出冒烟另在GPU1，source相同但单独profile；其新合同初始67.375%，不得用旧模式78.125%替代。
