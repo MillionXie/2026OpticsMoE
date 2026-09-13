@@ -1,6 +1,51 @@
 # T07 复现说明入口
 
-## 当前方向：替代图检索数据集（2026-09-13）
+## 当前协议：ABO已登记200商品，多视角图搜图（2026-09-14）
+
+**先看本节；下方480查询/类别检索及替代数据集均是历史协议，不能把分数混到本表。**
+当前光优先候选目标第5轮EMA已测得**81.25%=650/800**，干净TRAIN93.875%；
+它仍在训练，最终best的正常/同权重去光复评未结束，因此不是已完成的交付成绩。
+阶段alpha约.445～.448，V/L分别覆盖6/5种Top2组合，路由检查合格。
+完整最新状态以[任务README](../../README.md)及下列run日志为准，不以文件夹名称推测完成。
+
+### 数据与比较口径
+
+- 200个SKU，每个SKU有12张同一转台序列的不同视角；按固定哈希选8张TRAIN/gallery、4张QUERY。
+  全部1600图库/800查询保留。正确答案是**同一个SKU**，不是同一物体类别。
+  TEST商品都已登记，测试是未参与训练的视角，不宣称未见商品或独立拍摄场景泛化。
+- `runs/simulation/abo200_enrolled_protocol_20260913/protocol.json`，SHA
+  `f1749d5fc22d2dfee6a1333ce2b35e9fa600a070f949eba8420b4def41906dde`。
+  TRAIN自检排除查询照片本身、保留同SKU其他7张；每个TEST查询有8张正确图库图。
+- 冻结Qwen前64维、L2归一化、余弦检索的R@1=**85.125%=681/800**，未微调。
+  原报告`runs/simulation/abo200_enrolled_qwen64_20260913/final_report.json`，源码
+  `5f731fae979ef81a09770c1dd721b5cecd8b3392`；manifest与学生一致，不能替换为旧94.375%类别检索。
+- 周期TEST选best、跨run选择均存在选择偏差；无单独validation，不能称独立无偏测试。
+  此处R@1指Top1是否命中任一正确图库图，不是内部按8个正例计数的`positive_recall_at_1`。
+
+### 当前光优先训练与文件入口
+
+服务器根目录：`/DATA/DATA1/guest3/2026OpticsMoE`。下列run均相对
+`LightGenV2/tasks/t07_abo_image_retrieval/`，没有另建一份复制网络。
+
+- 主run：`runs/simulation/abo200_optical_pretrain_20260914/`。
+  训练源码`cf32e92939f23927dc717255c4849ab38549e819`，完整命令见[COMMAND第77节](../../COMMAND.md)。
+  从原`abo200_route_distill_20260913/best.pt`继续，不是从头训练；起点SHA
+  `d11f3428efa67c7c5084eb9056d991c4692d36a3d177cd82b4601238357d444a`。
+- 外部池`abo_spin_pool50_views12_20260913`含453个额外SKU/5436图，manifest SHA
+  `68fd35b6a2308f13e01963eb1233545c44eb07f5caa48ff655dc6fc302b1ed8f`。
+  排除目标SKU/spin及筛出的目标精确/近重复图；不把目标QUERY用于loss。
+- 外部36轮×100步仅训12份相位（958728参数）；电子、alpha、读出冻结，每轮SHA已核对不变。
+  进入目标集后重置Adam/EMA，计划20轮×100步联合微调；每5轮评估live/EMA，按路由合格再R@1/mAP选best。
+  一轮是100次采样更新，不等于遍历全部数据一遍。没有在这轮加入教师loss或扩容电子网络。
+- 仍为`standalone/model.py`、`frontend.py`和`optics.py`的原独立六次光计算：
+  V router/expert/global + L router/expert/global、10cm/原ROI、Top2、同尺度融合alpha边界[.4001,.8]。
+  推理无native Transformer/attention，原64维线性头；可训练2782485、冻结29152256，冻结前端没有解冻。
+  受保护`optics.py` SHA=`6490c6ee0ccc7501572fbae722aafbd7d4a016425d21af454019e7b60625433d`。
+- `best.pt`/`last.pt`是仅有的模型PT；`history.json`记录TRAIN/TEST和每轮相位变化，
+  `execution.json`记录真实配置/命令/环境/commit/数据SHA。**`final_report.json`未完成前，不把阶段结果当最终结果。**
+  增强单因素未提高（新训练最高77.375%），独立dropout正在运行，状态/命令见第78节。
+
+## 历史：替代图检索数据集筛选（2026-09-13，非当前方向）
 
 用户指定冻结Qwen64作为基准，停止追加ABO。研究候选、两组配对初筛结果与边界见[DATASET_SCREENING.md](DATASET_SCREENING.md)。
 Grocery81短程适配源码`bc110024`，本地/服务器267项测试通过；两步CUDA检查完成，12份相位更新非零，GPU进程570024退出。
@@ -15,7 +60,7 @@ COIL以身份互斥的60训练/40测试物体做专门训练对照，统一入�
 完整命令见COMMAND第61节。保留原六次光捕获、Top2、α>0.4、64维头，没有新增TF/attention。
 原ABO最佳及下文证据全部保留，不把新协议与旧分数合并。
 
-## 当前最佳：独立复评79.5833%，尚未达到81%（2026-09-13）
+## 历史480查询协议最佳：独立复评79.5833%（2026-09-13）
 
 原480-query/120训练商品中心图库，382/480，目标389/480还差7个命中。
 固定权重`runs/simulation/readout_subspace_20260912/best.pt`，SHA256
