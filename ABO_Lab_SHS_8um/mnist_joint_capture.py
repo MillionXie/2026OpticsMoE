@@ -51,7 +51,11 @@ def run(manifest, link_path, out, batch=False):
             relzip=out.relative_to(ROOT).as_posix()+'/amplitude_transfer.zip'
             remote.ps(f"New-Item -ItemType Directory -Force -Path '{remote.root}/{out.relative_to(ROOT).as_posix()}' | Out-Null")
             remote.sftp.put(str(zpath),remote.root+'/'+relzip)
-            checks='\n'.join(f"if((Get-FileHash -LiteralPath '{remote.root}/{rel}').Hash.ToLower() -ne '{digest}'){{throw 'BMP mismatch'}}" for rel,digest in assets.items())
+            # A hash manifest avoids Windows' encoded-command length limit
+            # when validating dozens of BMPs. The manifest itself is pinned.
+            hashfile=out/'amplitude_hashes.json';hashfile.write_text(json.dumps(assets),encoding='utf-8')
+            relhash=out.relative_to(ROOT).as_posix()+'/amplitude_hashes.json'
+            remote.sftp.put(str(hashfile),remote.root+'/'+relhash)
             # Every entry is from validated project-local files generated for
             # this run; extraction rejects overwrites and escaping entries.
             remote.ps(f"""$ErrorActionPreference='Stop'
@@ -64,7 +68,11 @@ try{{foreach($e in $z.Entries){{
  New-Item -ItemType Directory -Force -Path (Split-Path $p) | Out-Null
  if(-not (Test-Path -LiteralPath $p)){{[IO.Compression.ZipFileExtensions]::ExtractToFile($e,$p,$false)}}
 }}}}finally{{$z.Dispose()}}
-{checks}
+if((Get-FileHash -LiteralPath '{remote.root}/{relhash}').Hash.ToLower() -ne '{sha(hashfile)}'){{throw 'Hash manifest mismatch'}}
+$hashes=Get-Content -LiteralPath '{remote.root}/{relhash}' -Raw | ConvertFrom-Json
+foreach($entry in $hashes.PSObject.Properties){{
+ if((Get-FileHash -LiteralPath (Join-Path '{remote.root}' $entry.Name)).Hash.ToLower() -ne $entry.Value){{throw 'BMP mismatch'}}
+}}
 """)
             flat=ROOT/'generated/phase_response_strong_20260913/P_flat_0.bmp'
             lens=ROOT/'generated/phase_response_strong_20260913/P_lens_10cm_inverse.bmp'
