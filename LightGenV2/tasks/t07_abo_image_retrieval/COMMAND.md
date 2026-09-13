@@ -2358,12 +2358,14 @@ CUDA_VISIBLE_DEVICES=GPU-e8837b85-d55b-8e81-aaa5-ec1ac326932d python -m LightGen
   --output "$R/abo200_retrieval_only_20260914"
 ```
 
-## 77. 外部先只训练光，目标集再联合微调（待CUDA验证）
+## 77. 外部先只训练光，目标集再联合微调
 
 source `cf32e92939f23927dc717255c4849ab38549e819`已推GitHub，本地/服务器367测试通过。
-1外部轮+1目标轮、各1步的完整CUDA冒烟已在GPU3启动，PID2317638，
-输出`runs/smoke/abo_optical_pretrain_20260914`；工作树`.worktrees/t07_spin_training_20260913`固定此commit。
-此前该工作树的两个旧训练PID均退出才更新源码。正式36+20轮尚未启动，先验证冻结/解冻合同。
+1外部轮+1目标轮、各1步的完整CUDA冒烟已完成并退出PID2317638，
+输出`runs/smoke/abo_optical_pretrain_20260914`：外部非光参数SHA未变，目标阶段恢复91份非光张量的实际更新，
+frontend始终未变、103个Adam状态step均为1；12相位更新。最终选回初始78.125%/去光74.75%、路由合格，非新成绩。
+正式36+20轮已在确认GPU3空闲后启动，PID2324757，`runs/simulation/abo200_optical_pretrain_20260914`。
+工作树`.worktrees/t07_spin_training_20260913`固定上述commit，不在运行时更新。以下只供复现，不要重复启动。
 
 第72节的外部12轮是12×100步，不是12遍全数据。每步16张输入含8查询和8不同照片参考，
 总呈现量19200张，约等于5436图的3.53遍；随机采样，并非每张图恰好出现相同次数。
