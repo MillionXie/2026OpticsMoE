@@ -2266,6 +2266,10 @@ CUDA_VISIBLE_DEVICES=GPU-e8837b85-d55b-8e81-aaa5-ec1ac326932d python -m LightGen
 
 ## 74. 语言侧完整CCD读出：零新增参数的当前SKU协议对照
 
+正式已启动：source `b9a1bb4b850dd328dfd7e400c8fe7f2ee5c3e91e`，GPU1 RTX4090，PID2276631。
+冒烟已完成并释放PID2269583；新模式初始67.375%，两步后67.5%，不是与原模式的等价迁移。
+以下为本轮复现命令，不要覆盖已有输出重复运行。
+
 只把L expert/global的`readout_mode`从`prefix_rows`改为`fullfield_rows`。
 旧：原强度处理→pool224×224→前77行；新：相同强度处理→整场pool77×224。
 后续row LayerNorm/ReLU/Linear192不变，V端不动；router探测器读出及478光场/传播/相位/Top2完全不动。
