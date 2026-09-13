@@ -2449,3 +2449,39 @@ CUDA_VISIBLE_DEVICES=GPU-e8837b85-d55b-8e81-aaa5-ec1ac326932d python -m LightGen
   --epochs 20 --steps 100 --eval-every 5 --batch-size 4 --bank-batch-size 16 \
   --output "$R/$RUN"
 ```
+
+## 79. 单模型权重平均候选（不是预测集成，不占新训练卡）
+
+只准备一个预先固定的50:50候选：外部联合预训练best（78.75%）与纯检索目标best（78.375%）。
+二者均由原d11f3428继续训练，已在CPU核对metadata、状态键和冻结frontend完全一致，目标manifest相同。
+全部可训练权重（包括原始相位参数）平均成一个普通模型；不拼接描述子，不平均两个预测，
+不加推理分支/参数/拍摄次数，冻结前端保持逐位相同。原alpha边界、光学实现和ROI不改。
+父权重已经用TEST选模，因此派生候选仍记录训练与选模历史；不冒充未训练迁移或独立验证。
+平均权重没有继承任一父模型的准确率，必须重新完整正常/去光测试及路由检查。
+先CPU构建；等现有GPU任务结束并确认释放后再运行复评，不额外占第三张卡。
+
+```bash
+T07=/DATA/DATA1/guest3/2026OpticsMoE/LightGenV2/tasks/t07_abo_image_retrieval
+R="$T07/runs/simulation"
+AVG="$R/abo200_average_spin_retrieval_20260914"
+export OMP_NUM_THREADS=4 MKL_NUM_THREADS=4 HF_HUB_OFFLINE=1 TRANSFORMERS_OFFLINE=1
+CUDA_VISIBLE_DEVICES='' python -m LightGenV2.tasks.t07_abo_image_retrieval.standalone.weight_average \
+  --left "$R/abo200_spin_pretrain_20260913/best.pt" \
+  --left-sha256 76ad086eba5114068b01e20b7926da0fcd2416ca54e99f64b273f289deee1d9b \
+  --right "$R/abo200_retrieval_only_20260914/best.pt" \
+  --right-sha256 869dd91c3e1b2ef1c578e88977e7c0e3ae6e40a6fb41492a7c65fe5273824585 \
+  --right-weight .5 --output "$AVG"
+
+# 从构建报告读取预先记录的SHA，不手抄；只在GPU1已空闲时执行，不覆盖已有evaluation。
+SHA=$(python -c 'import json,sys; print(json.load(open(sys.argv[1]))["checkpoint_sha256"])' "$AVG/average_report.json")
+nvidia-smi
+CUDA_VISIBLE_DEVICES=GPU-e8837b85-d55b-8e81-aaa5-ec1ac326932d python -m LightGenV2.tasks.t07_abo_image_retrieval.standalone.retrieval_screen optical \
+  --data /DATA/DATA1/guest3/2026OpticsMoE/data/abo_similarity10_data \
+  --manifest "$R/abo200_enrolled_protocol_20260913/protocol.json" --assets "$R/standalone_assets_20260910" \
+  --checkpoint "$AVG/best.pt" --expected-checkpoint-sha256 "$SHA" \
+  --batch-size 4 --output "$AVG/evaluation"
+```
+
+源码对平均时的数据来源增加核对：两父权重manifest不一致或仅一份缺失时拒绝；
+保留父训练epoch/variant/来源commit及TEST选模标记，不继承分数、优化器或辅助头。
+相位仍为`2*pi*sigmoid(raw)`；只保存这个候选的best.pt，未重新训练所以没有last.pt。

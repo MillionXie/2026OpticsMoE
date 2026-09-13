@@ -18,6 +18,16 @@ def average_payloads(left, right, right_weight=.5):
         raise ValueError('Cannot average different model/optical/input contracts')
     if left['metadata'].get('fusion_alpha_min', 0) <= .4:
         raise ValueError('This experiment requires alpha strictly above .4')
+    manifest = left.get('manifest_sha256')
+    if manifest != right.get('manifest_sha256'):
+        raise ValueError('Cannot average mismatched or partially missing training protocols')
+    if manifest is not None and (not isinstance(manifest, str) or not manifest):
+        raise ValueError('Invalid training protocol identity')
+    lineage = [dict(manifest_sha256=p.get('manifest_sha256'), epoch=p.get('epoch'),
+                    variant=p.get('variant'), source_commit=p.get('source_commit'),
+                    test_selected=bool(p.get('test_selected', False)),
+                    fitted=bool(manifest and ((int(p.get('epoch', 0)) > 0 and p.get('variant') != 'initial')
+                                or p.get('derived_from_fitted_checkpoint', False)))) for p in (left, right)]
     a, b = left['state_dict'], right['state_dict']
     if a.keys() != b.keys():
         raise ValueError('State keys differ')
@@ -34,11 +44,16 @@ def average_payloads(left, right, right_weight=.5):
             result[name] = value.clone()
         else:
             result[name] = torch.lerp(value.double(), other.double(), right_weight).to(value.dtype)
-    # Never inherit either parent's test score, optimizer, or auxiliary head.
+    # Never inherit a score/optimizer/head, but retain training/selection provenance:
+    # averaging already-fitted models is NOT an untrained/frozen baseline.
     return dict(metadata=copy.deepcopy(left['metadata']), state_dict=result,
                 epoch=-1, stage='weight_average', selection_variant='unevaluated',
+                manifest_sha256=manifest,
+                derived_from_fitted_checkpoint=any(p['fitted'] for p in lineage),
+                test_selected=any(p['test_selected'] for p in lineage),
                 weight_average=dict(right_weight=right_weight, prediction_ensemble=False,
                                     phase_space='raw; physical phase remains 2*pi*sigmoid(raw)',
+                                    parent_training_history=lineage,
                                     teacher_at_inference=False))
 
 
@@ -64,6 +79,7 @@ def main():
     if audit['attention_modules'] or audit['native_transformer_modules'] or audit['capture_count'] != 6 or audit['top_k'] != 2:
         raise RuntimeError('Inference architecture contract violated')
     result['weight_average']['sources'] = [dict(path=str(path), sha256=digest) for path, digest in paths]
+    result['source_commit'] = source_commit()
     args.output.mkdir(parents=True, exist_ok=False)
     target = args.output/'best.pt'
     torch.save(result, target)

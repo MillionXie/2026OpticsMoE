@@ -42,6 +42,34 @@ class WeightAverageTests(unittest.TestCase):
         for weight in (0, 1, -1, float('nan')):
             with self.assertRaises(ValueError): average_payloads(a, a, weight)
 
+    def test_preserves_fitted_protocol_and_selection_not_scores(self):
+        from standalone.retrieval_screen import checkpoint_history
+        a=dict(self.payload(),manifest_sha256='enrolled',epoch=32,variant='ema',test_selected=True)
+        b=dict(self.payload(),manifest_sha256='enrolled',epoch=20,variant='ema',test_selected=True)
+        c=average_payloads(a,b)
+        self.assertEqual(c['epoch'],-1)
+        self.assertNotIn('selection_score',c)
+        self.assertEqual(c['manifest_sha256'],'enrolled')
+        audit=checkpoint_history(c,'enrolled')
+        self.assertTrue(audit['fitted_on_this_dataset'] and audit['test_selected'])
+        self.assertIn('Weight-averaged',audit['checkpoint_origin'])
+        self.assertFalse(checkpoint_history(c,'other')['fitted_on_this_dataset'])
+        nested=average_payloads(c,a)
+        self.assertTrue(checkpoint_history(nested,'enrolled')['fitted_on_this_dataset'])
+
+    def test_protocol_mismatch_or_partial_provenance_is_rejected(self):
+        a=dict(self.payload(),manifest_sha256='enrolled')
+        for b in (self.payload(),dict(self.payload(),manifest_sha256='other')):
+            with self.assertRaises(ValueError):average_payloads(a,b)
+
+    def test_averaging_initial_fallbacks_does_not_invent_training(self):
+        from standalone.retrieval_screen import checkpoint_history
+        a=dict(self.payload(),manifest_sha256='enrolled',epoch=0,variant='initial',test_selected=True)
+        c=average_payloads(a,a)
+        audit=checkpoint_history(c,'enrolled')
+        self.assertFalse(audit['fitted_on_this_dataset'])
+        self.assertTrue(audit['test_selected'])
+
 
 if __name__ == '__main__':
     unittest.main()
