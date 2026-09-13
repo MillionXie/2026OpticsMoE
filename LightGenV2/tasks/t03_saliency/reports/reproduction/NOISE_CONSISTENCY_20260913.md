@@ -63,4 +63,24 @@ GPU1 UUID `GPU-e8837b85-d55b-8e81-aaa5-ec1ac326932d`；启动前25MiB、0%利用
 固定工作树`.worktrees/t03_balance`在运行中不得checkout；仅此一个训练任务，不占第二张卡。
 配置SHA `394c179921ee0c2cecb419780e39e000e4b390de39ae2d5c62091cdb34c0044cf`。
 run `runs/simulation/moe_alpha40_noise_consistency_20260913_seed42`内`launch_record.json`
-包含命令、源码、配置身份与20轮预算。当前为已启动，不表示已有新测试性能或目标完成。
+包含命令、源码、配置身份与20轮预算。
+
+## 完成结果（2026-09-13）
+
+实际完成20/20轮，`training_report.json`记载`stop_reason=epoch_budget`，不是手动停在第10轮。
+第1/5/10/15/20轮CC分别为.86221387/.86201863/.86170977/.86177762/.86177492。
+best第1轮EMA，完整5000张重载CC **.8622138746261596**；该组未另做float64独立复评，
+不可与当前cross-sample候选的独立复评身份混淆。未超过.86249251，也未达到.87，不替换当前候选。
+KLD .11394143、SIM .82424832、NSS .96540980、AUC-Judd .76998186、
+peak-normalized map MAE .08036840；部分其他指标改善，不能声称所有指标都变差。
+alpha .43068770/.44104984；Top2计数2346/2629/2306/2719，有效专家数3.97995，无未使用专家。
+
+权重身份：
+
+- best epoch1 SHA256：`9480c2a33f1441495d1f8c44dc3e0ea85ab5f11de385c6a28f607db900bd4676`
+- last epoch20 SHA256：`fdc646082105bea14008993d1ad4832664eddd18f611104caf0e3f74cd600bdd`
+
+`completed_checkpoint_integrity.json`确认两者core/head有限值与空的同组进程列表；
+`selected_checkpoint_test_evaluation.json`保存完整测试、路由和相位变化。
+SSH连接中断时原PID仍在运行，没有重启或重复启动任务；随后原作业正常完成。
+再次核查PID/PGID689744无同组残留，GPU计算进程为空；保留全部证据，不删run。

@@ -105,3 +105,14 @@ alpha .4306865931/.4410455823；Top2计数2346/2629/2312/2713（共10000次选�
 `best_visualization/best_phase_overview.png`及16组`saliency_examples`用于可视化，
 是圆周相位残差图与归一化展示，不是SLM灰度BMP，也不从展示截图计算指标。
 该报告SHA再次确认036bc8ca未变化；指标与独立重评对应同一权重。
+
+## 本地证据镜像（2026-09-13）
+
+服务器与本地均保留任务内同名`runs/simulation/moe_alpha40_sam_batch8_crosssample_20260913_seed42`。
+本地根目录为`C:\Users\Xml12\OneDrive\2026OpticsMoE`。
+已传输并逐文件核对57个原文件（57,725,262字节），另附`transfer_manifest_20260913.json`。
+包括best/last、配置/训练记录、独立正常与去光复评、完整路由审计、相位图和首16张固定顺序样例。
+清单SHA256：`9347dbca9f01f3de856373fff84ff09804507bd5fe1d70c9b5f83c5b46e0896a`；
+传输归档33,942,097字节，SHA256：`8f284177bc5aef78b8ca9abe2f5e72f234328443c66a3fee2941c97a9f4d56a8`。
+归档路径和文件类型先检查，再解压到此前不存在的同名目录；未覆盖旧run。
+这是候选证据镜像，**不是硬件就绪ZIP**；本任务仍需任务专用实验室打包/设备闭环验证后才能交付实测。
