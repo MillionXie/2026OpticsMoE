@@ -1873,7 +1873,8 @@ python -m LightGenV2.tasks.t07_abo_image_retrieval.standalone.catalog_view_audit
 ## 64. 已登记ABO重新训练、SHAPE全视角与OFF扩展审计
 
 从GitHub已同步commit的干净工作树执行，使用xml环境。以下输出是本轮固定run ID，重跑必须换新ID，不覆盖结果。
-最多4卡是用户授权上限，不自动占满；本轮计划GPU0 ABO、GPU1 SHAPE、GPU2冻结Qwen，启动前必须检查该卡确实空闲。
+最多4卡是用户授权上限，不自动占满；本轮GPU0 ABO、GPU1 SHAPE、GPU3冻结Qwen，启动前必须检查该卡确实空闲。
+CUDA数字枚举可能不等于nvidia-smi物理序号，正式命令使用GPU UUID（下面对应0/1/3）避免选错卡。
 ABO所有200商品每个8张训练、4张查询，同SKU判分；原val40商品也纳入新协议，无验证集。所有视图保留，不挑容易商品。
 周期TEST选best/live/EMA属于test-selected结果；原数据多数来自同一spin序列，因此不得声称独立拍摄场景泛化。
 
@@ -1884,8 +1885,8 @@ python -m LightGenV2.tasks.t07_abo_image_retrieval.standalone.enrolled_abo \
   --data /DATA/DATA1/guest3/2026OpticsMoE/data/abo_similarity10_data \
   --output "$T07/runs/simulation/abo200_enrolled_protocol_20260913"
 nvidia-smi
-# 以下0/1/2只在确认空闲后使用；不是允许挤占其他人的任务。
-CUDA_VISIBLE_DEVICES=0 python -m LightGenV2.tasks.t07_abo_image_retrieval.standalone.retrieval_adapt \
+# 以下UUID只在确认空闲后使用；不是允许挤占其他人的任务。
+CUDA_VISIBLE_DEVICES=GPU-afc19890-6209-ee4d-622d-e619da5bd5b2 python -m LightGenV2.tasks.t07_abo_image_retrieval.standalone.retrieval_adapt \
   --data /DATA/DATA1/guest3/2026OpticsMoE/data/abo_similarity10_data \
   --manifest "$T07/runs/simulation/abo200_enrolled_protocol_20260913/protocol.json" \
   --assets "$T07/runs/simulation/standalone_assets_20260910" \
@@ -1895,7 +1896,7 @@ CUDA_VISIBLE_DEVICES=0 python -m LightGenV2.tasks.t07_abo_image_retrieval.standa
   --output "$T07/runs/simulation/abo200_enrolled_fresh_20260913"
 # checkpoint只提供明确的结构配置；--fresh-trainable不载入其任何参数。
 # 仅从经manifest校验的assets/best.pt加载冻结Qwen前端，其余构造初始化。所有相位从raw0开始。
-CUDA_VISIBLE_DEVICES=1 python -m LightGenV2.tasks.t07_abo_image_retrieval.standalone.retrieval_adapt \
+CUDA_VISIBLE_DEVICES=GPU-e8837b85-d55b-8e81-aaa5-ec1ac326932d python -m LightGenV2.tasks.t07_abo_image_retrieval.standalone.retrieval_adapt \
   --data /DATA/DATA1/guest3/2026OpticsMoE/data/shape_source \
   --manifest "$T07/runs/simulation/shape8_protocol_20260913/protocol.json" \
   --assets "$T07/runs/simulation/standalone_assets_20260910" \
@@ -1903,13 +1904,15 @@ CUDA_VISIBLE_DEVICES=1 python -m LightGenV2.tasks.t07_abo_image_retrieval.standa
   --expected-checkpoint-sha256 05d2b8d5738c2ec5e9ca6febea8cd145c9e276a0169aae7d5b57d7f3b4a1cf07 \
   --multi-view --lr-scale .5 --epochs 20 --steps 100 --eval-every 5 --batch-size 4 \
   --output "$T07/runs/simulation/shape8_multiview_20260913"
-CUDA_VISIBLE_DEVICES=2 python -m LightGenV2.tasks.t07_abo_image_retrieval.standalone.retrieval_screen qwen64 \
+CUDA_VISIBLE_DEVICES=GPU-4d8bfdb9-8777-05a6-3811-ab18ff4eadfd python -m LightGenV2.tasks.t07_abo_image_retrieval.standalone.retrieval_screen qwen64 \
   --data /DATA/DATA1/guest3/2026OpticsMoE/data/abo_similarity10_data \
   --manifest "$T07/runs/simulation/abo200_enrolled_protocol_20260913/protocol.json" \
   --model /DATA/DATA1/guest3/.cache/huggingface/hub/models--Qwen--Qwen3-VL-Embedding-2B/snapshots/9f2f7e710d6d81056aa5c0a4f04764fec6bb7bda \
   --output "$T07/runs/simulation/abo200_enrolled_qwen64_20260913" --batch-size 4
 python -m LightGenV2.tasks.t07_abo_image_retrieval.standalone.retail_sources review-off-batch \
   --data "$T07/runs/smoke/off_feasibility_20260913" \
+  --output "$T07/runs/smoke/off_review20_20260913"
+python -m LightGenV2.tasks.t07_abo_image_retrieval.standalone.retail_sources render-off-review \
   --output "$T07/runs/smoke/off_review20_20260913"
 ```
 

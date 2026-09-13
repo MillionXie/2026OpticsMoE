@@ -250,12 +250,45 @@ def review_off_batch(root, output):
         license='Image CC BY-SA and metadata ODbL notices retained; individual uploader/third-party rights need review'))
 
 
+def render_off_review(root):
+    """Scientific audit contact sheets; source JPEGs remain byte-identical."""
+    import matplotlib
+    matplotlib.use('Agg')
+    import matplotlib.pyplot as plt
+    from PIL import Image
+    report = json.loads((root/'report.json').read_text(encoding='utf-8'))
+    codes = list(dict.fromkeys(r['code'] for r in report['rows']))
+    for page, start in enumerate(range(0,len(codes),5),1):
+        path = root / f'review_sheet_{page:02d}.png'
+        if path.exists():
+            raise FileExistsError(path)
+        selected=codes[start:start+5]
+        fig,axes=plt.subplots(len(selected),3,figsize=(9,3*len(selected)),squeeze=False)
+        for i,code in enumerate(selected):
+            rows=[r for r in report['rows'] if r['code']==code]
+            for j,ax in enumerate(axes[i]):
+                ax.axis('off')
+                if j>=len(rows):continue
+                row=rows[j]
+                ax.set_title(f"{code} / {row['image_id']}",fontsize=9)
+                if row['status']=='downloaded':
+                    file=(root/row['path']).resolve()
+                    if not file.is_relative_to(root.resolve()) or sha256(file)!=row['sha256']:
+                        raise ValueError('Photo identity changed')
+                    with Image.open(file) as im:ax.imshow(im.convert('RGB'))
+                else:ax.text(.1,.5,row['status'])
+        fig.tight_layout();fig.savefig(path,dpi=120);plt.close(fig)
+
+
 def main():
     p = argparse.ArgumentParser(description=__doc__)
-    p.add_argument('mode', choices=['prepare-shape', 'audit-off', 'preview-off', 'review-off-batch'])
+    p.add_argument('mode', choices=['prepare-shape', 'audit-off', 'preview-off', 'review-off-batch', 'render-off-review'])
     p.add_argument('--data', type=Path)
     p.add_argument('--output', type=Path, required=True)
     args = p.parse_args()
+    if args.mode=='render-off-review':
+        render_off_review(args.output)
+        return
     if args.mode == 'prepare-shape':
         if args.data is None:
             p.error('SHAPE requires --data containing author archives')
