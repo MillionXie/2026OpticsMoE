@@ -1,6 +1,6 @@
 """One persistent, message-pumped vendor SDK owner. NOT an optical acknowledgement.
 
-Native Mono8 retained buffer, repeated on the owner/message-pump thread.
+Vendor-example RGBA retained buffer, repeated on owner/message-pump thread.
 No explicit VCom/ramp/firmware calls; Create_SDK itself has vendor side effects.
 """
 import ctypes as C
@@ -56,7 +56,8 @@ class PhaseOwner:
         current=None
         try:
             pump=message_pump()
-            with PhaseHDMI(self.link['phase_sdk'],self.link['phase_lut'],self.link.get('phase_settle_s',1)) as phase:
+            with PhaseHDMI(self.link['phase_sdk'],self.link['phase_lut'],self.link.get('phase_settle_s',1),
+                           pixel_format=self.link.get('phase_pixel_format','rgba')) as phase:
                 last=0;current_path=self.black
                 def show(path,expected=None):
                     nonlocal last,current_path
@@ -79,7 +80,7 @@ class PhaseOwner:
                                 if self.stop.is_set():raise RuntimeError('Recovery cancelled')
                                 result.append(show(current_path))
                                 if (i+1)%10==0:print(f'Phase startup/recovery {i+1}/{arg}',flush=True)
-                            self.audit.append({'kind':'reassert_current_mono8','writes':result})
+                            self.audit.append({'kind':'reassert_current_retained_buffer','writes':result})
                         else:raise ValueError('Unknown SDK command')
                         current.set_result(result);current=None
                 finally:

@@ -20,9 +20,11 @@ def load_native(path,expected_sha=None):
         return np.asarray(im).copy()
 
 class PhaseHDMI:
-    def __init__(self,sdk,lut,settle_s=1.0,strict_write_ack=True):
+    def __init__(self,sdk,lut,settle_s=1.0,strict_write_ack=True,pixel_format='rgba'):
         self.sdk=Path(sdk).resolve();self.lut=Path(lut).resolve();self.settle_s=float(settle_s)
         self.strict_write_ack=strict_write_ack
+        if pixel_format not in ('rgba','mono8'):raise ValueError('Phase transfer format must be rgba or mono8')
+        self.pixel_format=pixel_format;self.is_8_bit=int(pixel_format=='mono8')
         if not .5<=self.settle_s<=10:raise ValueError('Phase settle must be 0.5..10 seconds')
         self.dll=None;self.created=False;self.dir=None;self.pixels=None
     def __enter__(self):
@@ -51,9 +53,9 @@ class PhaseHDMI:
             return self
         except BaseException:self.close();raise
     def repeat(self):
-        """Reassert retained native Mono8 bytes; never a camera acknowledgement."""
+        """Reassert retained bytes; never a camera acknowledgement."""
         if self.pixels is None:raise RuntimeError('No phase buffer to repeat')
-        result=int(self.dll.Write_image(self.pixels.ctypes.data_as(C.POINTER(C.c_ubyte)),1))
+        result=int(self.dll.Write_image(self.pixels.ctypes.data_as(C.POINTER(C.c_ubyte)),self.is_8_bit))
         # This exact vendor wrapper initializes a local return byte to zero,
         # calls void HdmiDisplay::LoadImg and returns the unchanged byte.
         # Header says bool success, but this build cannot acknowledge success.
@@ -63,8 +65,14 @@ class PhaseHDMI:
         return result,known_zero
     def show(self,path,expected_sha=None,pump=None):
         # Keep the buffer alive through subsequent writes and Delete_SDK.
-        # Native Mono8 was optically tested; no channel roundtrip/RGBA conversion.
-        self.pixels=np.ascontiguousarray(load_native(path,expected_sha))
+        # The native Mono8 path intermittently returned an unchanged optical
+        # field. Same-connection comparison recovered with vendor-example RGBA.
+        # Replication changes packing only, never phase gray/orientation.
+        a=np.ascontiguousarray(load_native(path,expected_sha))
+        if self.pixel_format=='rgba':
+            self.pixels=np.empty((*a.shape,4),np.uint8)
+            self.pixels[:,:,:3]=a[:,:,None];self.pixels[:,:,3]=255
+        else:self.pixels=a
         t=time.perf_counter();result,known_zero=self.repeat();written=time.perf_counter()
         until=time.monotonic()+self.settle_s
         while time.monotonic()<until:
@@ -74,7 +82,8 @@ class PhaseHDMI:
             'write_call_ms':(written-t)*1000,'settle_s':self.settle_s,'sdk_ack_only':True,
             'write_return':result,'write_ack_success':result>0,'strict_write_ack':self.strict_write_ack,
             'known_vendor_constant_zero_return':known_zero,'optical_display_verified_by_this_call':False,
-            'no_extra_flip_or_inversion':True,'panel':self.info,'is_8_bit':1,'persistent_buffer':True}
+            'no_extra_flip_or_inversion':True,'panel':self.info,'is_8_bit':self.is_8_bit,
+            'pixel_format':self.pixel_format,'persistent_buffer':True}
         return self.current
     def close(self):
         if self.created:self.dll.Delete_SDK();self.created=False

@@ -6,6 +6,7 @@
   "phase_sdk": "C:/Users/Xml12/OneDrive/2026OpticsMoE/ABO_Lab_SHS_8um/vendor/phase_hdmi",
   "phase_lut": "C:/Users/Xml12/OneDrive/2026OpticsMoE/ABO_Lab_SHS_8um/vendor/phase_hdmi/19x12_8bit_linearVoltage.lut",
   "phase_settle_s": 1.0,
+  "phase_pixel_format": "rgba",
   "phase_startup_cycles": 0,
   "phase_retry_cycles": 2,
   "phase_display_align_top": false,

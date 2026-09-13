@@ -10,7 +10,10 @@
    `geometry_confirmed=true` 在此仅表示实测映射已通过**诊断**检查，必须在证据里声明尚未正式标定。
    固定曝光、显式增益、[0,255]存储尺度；相位翻转与反灰度必须基于当前设备实测，不能照搬。
 4. 本地独立link配置中设置 `phase_startup_cycles=0`、`phase_retry_cycles=2`、
-   `phase_display_align_top=true`、`phase_settle_s=1`。临时对齐只改变相位屏Y位置，结束恢复。
+   `phase_display_align_top=true`、`phase_settle_s=1`、`phase_pixel_format=rgba`。
+   源BMP仍是1920×1200的8位灰度；厂商RGBA打包为[R=g,G=g,B=g,A=255]，is_8_bit=0，
+   整个持有期间保留数组。Mono8直接接口本轮出现不响应，只保留作诊断选项。
+   临时对齐只改变相位屏Y位置，结束恢复。
    曝光须按真实网络输入检查，不能只按满亮棋盘格决定。如果较高曝光让探针饱和，
    可在配置指定经实测的 `diagnostic_probe_bmp`（results下的原尺寸振幅BMP）及
    `diagnostic_probe_sha256`，例如减小棋盘格亮块灰度。只改变排障探针，绝不改变网络输入或CCD存储尺度。

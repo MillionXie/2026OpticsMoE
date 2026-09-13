@@ -20,7 +20,7 @@ class PhaseTests(unittest.TestCase):
     def test_retained_native_mono8_and_repeat(self):
         with tempfile.TemporaryDirectory() as d:
             p=Path(d)/'a.bmp';a=np.arange(1200*1920,dtype=np.uint8).reshape(1200,1920);Image.fromarray(a).save(p)
-            s=PhaseHDMI(d,p);s.settle_s=0;s.wrapper_sha='unknown';s.info={};calls=[]
+            s=PhaseHDMI(d,p,pixel_format='mono8');s.settle_s=0;s.wrapper_sha='unknown';s.info={};calls=[]
             def write(ptr,mode):
                 calls.append((np.ctypeslib.as_array(ptr,shape=(a.size,)).copy(),mode));return 1
             s.dll=SimpleNamespace(Write_image=write)
@@ -29,6 +29,15 @@ class PhaseTests(unittest.TestCase):
             np.testing.assert_array_equal(s.pixels,a);np.testing.assert_array_equal(calls[1][0],a.ravel())
             s.dll.Write_image=lambda *args:0
             with self.assertRaises(RuntimeError):s.repeat()
+    def test_default_rgba_replicates_gray_without_flips(self):
+        with tempfile.TemporaryDirectory() as d:
+            p=Path(d)/'a.bmp';a=np.zeros((1200,1920),np.uint8);a[14,23]=171;Image.fromarray(a).save(p)
+            s=PhaseHDMI(d,p);s.settle_s=0;s.wrapper_sha='unknown';s.info={};calls=[]
+            s.dll=SimpleNamespace(Write_image=lambda ptr,mode:calls.append(mode) or 1)
+            receipt=s.show(p);s.repeat();self.assertEqual(calls,[0,0])
+            self.assertEqual(receipt['pixel_format'],'rgba')
+            for k in range(3):np.testing.assert_array_equal(s.pixels[:,:,k],a)
+            self.assertTrue((s.pixels[:,:,3]==255).all())
     def test_display_target_restrictions(self):
         r=dict(ids=['MONITOR\\FNR0002\\x'],flags=1,width=1920,height=1200,hz=60)
         self.assertEqual(choose_panel([r]),r)
