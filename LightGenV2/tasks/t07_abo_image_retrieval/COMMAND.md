@@ -1925,7 +1925,7 @@ OFF最多60张400px，仅用官方AWS、串行，不因AWS缺图回退轰炸主�
 结构说明见`reports/reproduction/ABO_ENROLLED_ARCHITECTURE.md`。不改光路、ROI、Top2、64维、电子参数量。
 ABO从本协议35 EMA继续，不使用旧类别检索权重；程序检查checkpoint的manifest身份，禁止旧协议权重泄漏。
 40轮配对只差TRAIN-only关系蒸馏，前3轮router-only后联合训练；SHAPE20轮无独立预热。
-最多4卡的用户预算仍有效，本轮最多3卡（物理0/1/3），按UUID检查空闲，不占他人卡。
+最多4卡的用户预算仍有效，本轮最多3卡（物理0/4/3），按UUID检查空闲，不占他人卡；GPU1已有其他任务，蒸馏组改用GPU4。
 
 ```bash
 T07=/DATA/DATA1/guest3/2026OpticsMoE/LightGenV2/tasks/t07_abo_image_retrieval
@@ -1939,7 +1939,7 @@ CUDA_VISIBLE_DEVICES=GPU-afc19890-6209-ee4d-622d-e619da5bd5b2 python -m LightGen
   --expected-checkpoint-sha256 918956321fe865d74408611716a420330a53cb760e827636d787f6e9a3abfade \
   --multi-view --refine-profile route_repair --lr-scale .5 --epochs 40 --steps 100 --eval-every 5 --batch-size 4 \
   --output "$T07/runs/simulation/abo200_route_repair_20260913"
-CUDA_VISIBLE_DEVICES=GPU-e8837b85-d55b-8e81-aaa5-ec1ac326932d python -m LightGenV2.tasks.t07_abo_image_retrieval.standalone.retrieval_adapt \
+CUDA_VISIBLE_DEVICES=GPU-1b963983-7909-af6e-0528-f0f0661ab549 python -m LightGenV2.tasks.t07_abo_image_retrieval.standalone.retrieval_adapt \
   --data /DATA/DATA1/guest3/2026OpticsMoE/data/abo_similarity10_data \
   --manifest "$T07/runs/simulation/abo200_enrolled_protocol_20260913/protocol.json" \
   --assets "$T07/runs/simulation/standalone_assets_20260910" \
