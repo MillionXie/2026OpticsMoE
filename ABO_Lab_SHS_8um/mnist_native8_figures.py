@@ -41,5 +41,44 @@ def run(root):
     fig.suptitle('First held-out input per class, not selected by outcome; shared linear CCD display scale')
     fig.savefig(root/'paired_simulated_CCD.png',dpi=150);plt.close(fig)
 
+def hardware(root, captured):
+    """Fixed first held-out digit per class; display scaling never changes metrics."""
+    report=json.loads((captured/'comparison.json').read_text())
+    if not report.get('complete'):raise ValueError('Both capture arms must be complete')
+    ref=json.loads((root/'paired/pair_reference.json').read_text())
+    with np.load(root/'paired/pair_reference.npz') as sim:
+        selected={arm:[next(r for r in report['arms'][arm]['rows']
+            if r['label']==k and not r['repeat_of']) for k in range(4)] for arm in ['A','B']}
+        vmax=max(float(sim['ccd_'+arm][r['reference_index']].max())
+                 for arm in ['A','B'] for r in selected[arm])
+        fig,axes=plt.subplots(4,4,figsize=(12,12),constrained_layout=True)
+        for arm,start in [('A',0),('B',2)]:
+            with np.load(captured/arm/'canonical.npz') as measured:
+                for row,r in enumerate(selected[arm]):
+                    axes[row,start].imshow(sim['ccd_'+arm][r['reference_index']],cmap='gray',vmin=0,vmax=vmax)
+                    axes[row,start].set_title(f"{arm} sim: digit {r['label']}, pred {r['simulation_prediction']}")
+                    axes[row,start+1].imshow(measured[r['name']],cmap='gray',vmin=0,vmax=255)
+                    axes[row,start+1].set_title(f"{arm} CCD: pred {r['prediction']}, PCC {r['pcc']:.3f}")
+                    for ax in axes[row,start:start+2]:
+                        for k,(x0,y0,x1,y1) in enumerate(ref['detector_bounds']):
+                            ax.add_patch(Rectangle((x0,y0),x1-x0,y1-y0,fill=False,edgecolor='red',lw=.7))
+                            ax.text(x0,y0,str(k),color='red',fontsize=8)
+                        ax.set_axis_off()
+        fig.suptitle('First predeclared held-out sample per class; no outcome selection\n'
+                     'Simulation: shared linear scale | measured: fixed 0-255, no contrast normalization')
+        fig.savefig(captured/'paired_hardware_CCD.png',dpi=150);plt.close(fig)
+    fig,ax=plt.subplots(figsize=(7,4),constrained_layout=True)
+    for offset,key,label in [(-.18,'simulation_accuracy','Simulation on these 40'),(.18,'accuracy','Fresh hardware captures')]:
+        values=[report['arms'][arm][key]*100 for arm in ['A','B']]
+        bars=ax.bar(np.arange(2)+offset,values,.36,label=label)
+        ax.bar_label(bars,fmt='%.1f%%',padding=3)
+    ax.set_xticks([0,1],['A old resampled mask','B native 8 um mask']);ax.set_ylim(0,110)
+    ax.set_ylabel('Accuracy (%)');ax.legend(loc='lower right')
+    ax.set_title('Same 40 fixed inputs; not full-test hardware accuracy')
+    fig.savefig(captured/'paired_accuracy.png',dpi=150);plt.close(fig)
+
 if __name__=='__main__':
-    p=argparse.ArgumentParser();p.add_argument('--run',type=Path,required=True);a=p.parse_args();run(a.run)
+    p=argparse.ArgumentParser();p.add_argument('--run',type=Path,required=True)
+    p.add_argument('--hardware-run',type=Path);a=p.parse_args()
+    if a.hardware_run:hardware(a.run,a.hardware_run)
+    else:run(a.run)
