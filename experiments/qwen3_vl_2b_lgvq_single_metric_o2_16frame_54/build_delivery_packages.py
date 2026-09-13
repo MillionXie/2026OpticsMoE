@@ -383,6 +383,11 @@ def build_adaptation_handoff(
     for relative in (
         "experiments/qwen3_vl_2b_lgvq_spatiotemporal_optical_router_vqa/__init__.py",
         "experiments/qwen3_vl_2b_lgvq_spatiotemporal_optical_router_vqa/prepare_manifest.py",
+        # Importing the package executes ``__init__``, which exposes these
+        # settings symbols before Python loads ``prepare_manifest``.  Omitting
+        # this small file made the otherwise self-contained Qwen cache command
+        # fail at import time in a clean extraction.
+        "experiments/qwen3_vl_2b_lgvq_spatiotemporal_optical_router_vqa/settings.py",
     ):
         path = root / relative
         selected[relative] = path
