@@ -60,3 +60,13 @@ def test_whole_object_augmentation_is_deterministic_and_keeps_corners():
     # Uncropped complete black rectangle is contained strictly inside white canvas.
     assert a.getpixel((0,0))[0]>200
     assert a.getpixel((112,112))[0]<30
+
+
+def test_mild_ablation_only_differs_by_sam_and_has_no_geometry():
+    from LightGenV2.tasks.t07_abo_image_retrieval.standalone.retrieval_refine import PROFILES
+    a=dict(PROFILES['sku_mild_adamw']);b=dict(PROFILES['sku_mild_sam'])
+    assert a.pop('sam_rho')==0 and b.pop('sam_rho')==.002 and a==b
+    image=Image.new('RGB',(224,224),'black')
+    image.putpixel((0,0),(255,255,255))
+    out=augment_whole_object(image,random.Random(42),mild=True)
+    assert out.getpixel((0,0))[0]>200 and out.getpixel((1,1))[0]<30

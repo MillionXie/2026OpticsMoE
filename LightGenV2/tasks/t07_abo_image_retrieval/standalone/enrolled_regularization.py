@@ -50,9 +50,12 @@ def load_external_pool(pool, root, protocol, groups, expected_sha):
     return fit, audit
 
 
-def augment_whole_object(image, rng):
+def augment_whole_object(image, rng, mild=False):
     """Scale down into white canvas, never crop/flip/remove object parts."""
     image = image.convert('RGB')
+    if mild:
+        image = ImageEnhance.Brightness(image).enhance(rng.uniform(.95, 1.05))
+        return ImageEnhance.Contrast(image).enhance(rng.uniform(.95, 1.05))
     side = image.width
     size = max(1, round(side * rng.uniform(.85, 1.)))
     canvas = Image.new('RGB', image.size, 'white')

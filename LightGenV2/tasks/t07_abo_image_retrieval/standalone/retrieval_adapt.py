@@ -233,7 +233,7 @@ def run(args):
             raise ValueError('Router warmup override requires a refinement profile')
         profile['warmup'] = args.router_warmup_epochs
     refined = args.refine_profile != 'standard'
-    regularized = args.refine_profile == 'sku_regularized'
+    regularized = 'sam_rho' in profile
     external_fit, external_audit = None, None
     pretrain_epochs = getattr(args, 'external_pretrain_epochs', 0)
     if pretrain_epochs:
@@ -286,8 +286,8 @@ def run(args):
         refinement=profile,
         external_curriculum=external_audit,
         curriculum_note='Continue verified current-protocol best -> external instance pretraining (last state, no TEST selection) -> target fine-tune. Initial best retained; not from-scratch pretraining' if external_fit else None,
-        noise='Original metadata noise on25% joint-training batches; refined profiles keep router noise disabled. Warmup clean. No pixel shift/k filter/8bit STE; clean evaluation',
-        augmentation='Whole-object .85..1 scale into white canvas, bounded placement, brightness/contrast .85..1.15,15% mild blur; no crop/flip' if regularized else 'Whole-object contain_white; brightness/contrast .9..1.1; no crop/rotation/flip',
+        noise=f"Original metadata noise on {profile.get('noise_probability', .25):.0%} joint-training batches; refined profiles keep router noise disabled. Warmup clean. No pixel shift/k filter/8bit STE; clean evaluation",
+        augmentation=('Brightness/contrast .95..1.05 only; no geometric augmentation or blur' if profile.get('mild_augmentation') else 'Whole-object .85..1 scale into white canvas, bounded placement, brightness/contrast .85..1.15,15% mild blur; no crop/flip') if regularized else 'Whole-object contain_white; brightness/contrast .9..1.1; no crop/rotation/flip',
         loss='query->detached entire FITTING gallery multi-positive NLL(temp .1) + .5 live query/reference SupCon + existing optical regularization')
     write_json(args.output / 'fitting_manifest.json', dict(parent_manifest_sha256=identity['manifest_sha256'],
         note=fit['note'], train=fit['train'], references=fit['gallery']))
@@ -350,7 +350,7 @@ def run(args):
             totals = dict(loss=0., batch_natural_hit_at_1=0., route_aux=0., teacher_loss=0., all_view_loss=0., sam_loss_gap=0.)
             for step in range(args.steps):
                 model.train(not warming)
-                noisy = rng.random() < .25 and not warming
+                noisy = rng.random() < profile.get('noise_probability', .25) and not warming
                 for m in (model.vision, model.language):
                     m.optics.set_training_noise(noisy)
                     if refined:
@@ -360,7 +360,7 @@ def run(args):
                 for r in rows:
                     im = picture(args.data / r['image_path'], model.metadata['input_preprocessing'])
                     if regularized:
-                        images.append(augment_whole_object(im, rng))
+                        images.append(augment_whole_object(im, rng, mild=profile.get('mild_augmentation', False)))
                         continue
                     im = ImageEnhance.Brightness(im).enhance(rng.uniform(.9, 1.1))
                     images.append(ImageEnhance.Contrast(im).enhance(rng.uniform(.9, 1.1)))
@@ -378,7 +378,7 @@ def run(args):
                         tq = torch.stack([teacher[r['sample_id']] for r in rows[:args.classes_per_batch]]).to(device)
                         kd = relational_loss(z, bank, tq, teacher_bank, excluded)
                     taper = max(0., 1 - phase_epoch / max(1., phase_epochs*.8))
-                    loss = route if warming else data_loss + regularization(model) + (.03+.17*taper)*route + profile['positive_weight']*all_views + profile['teacher_weight']*taper*kd
+                    loss = route if warming else data_loss + regularization(model) + profile.get('route_scale', 1.)*(.03+.17*taper)*route + profile['positive_weight']*all_views + profile['teacher_weight']*taper*kd
                   return dict(loss=loss, hit=hit.detach(), route=route.detach(), kd=kd.detach(), all_views=all_views.detach())
                 result, sam = backward_with_sam(closure, optimizer, 0. if warming else profile.get('sam_rho', 0.))
                 norm = torch.nn.utils.clip_grad_norm_([p for _, p in params], 1., error_if_nonfinite=True)

@@ -2007,3 +2007,36 @@ CUDA_VISIBLE_DEVICES=GPU-e8837b85-d55b-8e81-aaa5-ec1ac326932d python -m LightGen
 初始CUDA冒烟使用eval/bank16，原权重评出78.000%而非batch4的78.125%（1/800数值差异）；冒烟只验流程，不报作新精度。正式命令拆分batch参数消除这个口径变化。
 history的epoch为全程编号；phase_epoch为阶段内轮数。外部阶段只记录TRAIN batch命中/loss，不测试选模；目标阶段记录完整train_clean和TEST。
 只写best/last，初始best也参与比较，若最终仍选epoch0则无提升。目标阶段对已均衡router继续施加温和均衡损失，最后报告同权重正常/去光与mask变化。
+
+## 67. 强正则退化后的温和配对：仅SAM开关不同
+
+保持原200商品协议、冻结前端、64维、光路/alpha/Top2；不采用缓存白化或线性度量诊断中的变换。
+两组均从78.125%原best开始，不从退化的last继续。各20轮×100步，TEST batch4、bank16。
+没有几何增强或额外phase dropout；只做亮度/对比度.95..1.05。原硬件噪声配置不变，仅训练启用概率从25%降至10%，router噪声关闭。
+LR为原基础值的.1，电子weight decay=.01、route辅助系数乘.25；两个profile唯一差别为SAM rho=0/.002。
+先对弱SAM做1轮×2步CUDA冒烟（output换到runs/smoke/abo_mild_sam_20260913）；确认后运行以下正式任务，不覆盖旧run。
+
+```bash
+T07=/DATA/DATA1/guest3/2026OpticsMoE/LightGenV2/tasks/t07_abo_image_retrieval
+R="$T07/runs/simulation"
+export HF_HUB_OFFLINE=1 TRANSFORMERS_OFFLINE=1 OMP_NUM_THREADS=4 MKL_NUM_THREADS=4
+nvidia-smi
+# 物理GPU0，仅确认旧对照PID1665320退出且卡空闲后使用
+CUDA_VISIBLE_DEVICES=GPU-afc19890-6209-ee4d-622d-e619da5bd5b2 python -m LightGenV2.tasks.t07_abo_image_retrieval.standalone.retrieval_adapt \
+  --data /DATA/DATA1/guest3/2026OpticsMoE/data/abo_similarity10_data \
+  --manifest "$R/abo200_enrolled_protocol_20260913/protocol.json" --assets "$R/standalone_assets_20260910" \
+  --checkpoint "$R/abo200_route_distill_20260913/best.pt" \
+  --expected-checkpoint-sha256 d11f3428efa67c7c5084eb9056d991c4692d36a3d177cd82b4601238357d444a \
+  --multi-view --refine-profile sku_mild_adamw --lr-scale .1 --epochs 20 --steps 100 --eval-every 5 --batch-size 4 --bank-batch-size 16 \
+  --output "$R/abo200_mild_adamw_20260913"
+# 物理GPU3；不动GPU1上尚在运行的外部预训练组，不抢占其他任务
+CUDA_VISIBLE_DEVICES=GPU-4d8bfdb9-8777-05a6-3811-ab18ff4eadfd python -m LightGenV2.tasks.t07_abo_image_retrieval.standalone.retrieval_adapt \
+  --data /DATA/DATA1/guest3/2026OpticsMoE/data/abo_similarity10_data \
+  --manifest "$R/abo200_enrolled_protocol_20260913/protocol.json" --assets "$R/standalone_assets_20260910" \
+  --checkpoint "$R/abo200_route_distill_20260913/best.pt" \
+  --expected-checkpoint-sha256 d11f3428efa67c7c5084eb9056d991c4692d36a3d177cd82b4601238357d444a \
+  --multi-view --refine-profile sku_mild_sam --lr-scale .1 --epochs 20 --steps 100 --eval-every 5 --batch-size 4 --bank-batch-size 16 \
+  --output "$R/abo200_mild_sam_20260913"
+```
+
+本轮最多两张新增训练卡，连同尚未结束的外部组最多三张，在用户最多4卡授权内；结束逐PID核验显存释放。

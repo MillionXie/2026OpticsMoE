@@ -9,6 +9,8 @@ PROFILES = {
     'route_distill': dict(warmup=3, category_probability=.5, positive_weight=.1, teacher_weight=.2),
     'shape_views': dict(warmup=0, category_probability=.5, positive_weight=.1, teacher_weight=0.),
     'sku_regularized': dict(warmup=0, category_probability=.5, positive_weight=.1, teacher_weight=0., sam_rho=.015, weight_decay=.03, phase_dropout=.03),
+    'sku_mild_adamw': dict(warmup=0, category_probability=.5, positive_weight=.1, teacher_weight=0., sam_rho=0., weight_decay=.01, phase_dropout=0., mild_augmentation=True, route_scale=.25, noise_probability=.1),
+    'sku_mild_sam': dict(warmup=0, category_probability=.5, positive_weight=.1, teacher_weight=0., sam_rho=.002, weight_decay=.01, phase_dropout=0., mild_augmentation=True, route_scale=.25, noise_probability=.1),
 }
 
 
