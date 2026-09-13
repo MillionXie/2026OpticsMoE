@@ -1,5 +1,27 @@
 # ABO + SHS 高速相机 / 8 μm SLM
 
+## 日常只看一个文件夹
+
+本地：`C:\Users\Xml12\OneDrive\2026OpticsMoE\ABO_Lab_SHS_8um\reports\00_current`。
+师弟电脑：`E:\code\guest\2026OpticsMoE\ABO_Lab_SHS_8um\reports\00_current`。
+打开`01_summary.html`看汇总和图片，`00_READ_ME.md`看文字；不需要逐个翻results。
+每次完成工作必须更新此入口并告知绝对目录及打开命令；只发单张图片链接不算完成交接。
+
+新增同批实验放在一个`results/<日期_任务>/`父目录，各参数组放子目录，父目录保存suite.json和日志。
+旧结果因配置/脚本/文档有引用，未经依赖检查不移动；保留真实失败帧作为排障证据。
+只删除可再生成且确认不再被使用的传输ZIP/构建包/无采集的临时BMP，并记录精确路径和释放大小。
+模型、ROI、LUT、正式会话及原始CCD不在清理范围。目录分类与清理清单放固定入口，不再散建说明。
+
+当前三组测试的单命令（在本地项目根目录运行；需要新输出目录）：
+
+```powershell
+python trial_suite.py --link results/smoke_configs/link_smoke_abo_newroi_20260913_161905.json --source-config results/smoke_configs/smoke_abo_newroi_20260913_161905.json --out results/20260913_timing_matrix
+```
+
+顺序400μs/250ms、350μs/200ms、350μs/250ms；每组85帧，不并行争用设备。
+各组.log在同一父目录，随时可以`Get-Content <日志路径> -Tail 20 -Wait`。图案测试失败仍记录并完成其余组，
+硬件异常则停止，不伪造通过或偷偷修改参数。
+
 最新固定400μs+200ms均匀灰度扫描见 [EXPOSURE_ANALYSIS.md](EXPOSURE_ANALYSIS.md)：
 13档×3帧、原始ROI统计完成；灰度255饱和约46.46%，40次数字切换39次正确，
 一次明确旧帧（错误参考PCC0.99939）。不能将该组合批准为全量可靠参数；14700帧尚未启动。

@@ -15,6 +15,11 @@ from phase_fingerprint import pcc
 ROOT=Path(__file__).resolve().parent
 
 
+def validate_settings(exposure_us,wait_ms):
+    if not np.isfinite(exposure_us) or not 1<=exposure_us<=2000:raise ValueError('Exposure must be1..2000us')
+    if not np.isfinite(wait_ms) or not 200<=wait_ms<=1000:raise ValueError('Wait must be200..1000ms')
+
+
 def aperture(c):
     pitch=float(c['amplitude_slm']['pixel_pitch_um'])
     n=int(round(c['model_active_pixels']*c['model_pitch_um']/pitch))
@@ -40,8 +45,8 @@ def analyze(out):
         if sha(path)!=r['raw_sha256']:raise ValueError('CCD hash mismatch')
         a=np.asarray(Image.open(path));meta=read(path.with_suffix('.json'))
         cam=meta['camera']
-        if abs(float(cam['ExposureTime']['value'])-400)>1 or cam['Gain']['value']!='Gain_X4' or float(cam['AcquisitionFrameRate']['value'])!=100 or meta['settle_delay_ms']!=200:
-            raise ValueError('Actual exposure/gain/fps/wait differs from fixed400us/200ms protocol')
+        if abs(float(cam['ExposureTime']['value'])-c['camera']['exposure_us'])>1 or cam['Gain']['value']!='Gain_X4' or float(cam['AcquisitionFrameRate']['value'])!=100 or meta['settle_delay_ms']!=c['settle_delay_ms']:
+            raise ValueError('Actual exposure/gain/fps/wait differs from this run protocol')
         v=a[mask].astype(np.float32);raws[r['name']]=v;metas[r['name']]=meta
         data.append(dict(name=r['name'],kind=r['kind'],gray=r.get('gray'),digit=r.get('digit'),stats=image_stats(a,mask)))
         if r['kind']=='reference' and r['hold_index']==2:references[r['digit']]=v
@@ -88,7 +93,7 @@ def plot(out,r):
     ax[1].plot(x,[s['p99'] for s in rows],'o-',label='max p99');ax[1].plot(x,[s['p999'] for s in rows],'o-',label='max p99.9');ax[1].axhline(255,ls='--',color='red');ax[1].set_ylim(0,260);ax[1].legend()
     ax[2].plot(x,[s['saturation_fraction']*100 for s in rows],'o-');ax[2].set_ylabel('Raw pixels equal to 255 (%)')
     for a in ax:a.set_xlabel('Amplitude SLM gray');a.grid(alpha=.2)
-    fig.suptitle('Uniform 1016-pixel aperture | 400 us, Gain X4, 100 fps, 200 ms wait | flat phase')
+    fig.suptitle(f"Uniform 1016-pixel aperture | {r['config']['camera']['exposure_us']:g} us, Gain X4, 100 fps, {r['config']['settle_delay_ms']:g} ms wait | flat phase")
     fig.savefig(out/'gray_response.png',dpi=150);plt.close(fig)
     selected=[0,64,128,191,255];fig,axes=plt.subplots(1,5,figsize=(15,4),constrained_layout=True)
     c=r['config'];pts=np.array([c['logical_corners_full_sensor_xy'][k] for k in ['top_left','top_right','bottom_right','bottom_left','top_left']])
@@ -98,22 +103,25 @@ def plot(out,r):
     fig.savefig(out/'gray_previews.png',dpi=150);plt.close(fig)
 
 
-def run(link_path,source_config,out):
+def run(link_path,source_config,out,exposure_us=400,wait_ms=200):
+    validate_settings(exposure_us,wait_ms)
     out=Path(out).resolve()
     if not out.is_relative_to(ROOT/'results'):raise ValueError('Output outside results')
     if not out.name.replace('_','').isalnum() or len(out.name)>55:raise ValueError('Use short safe run name')
-    out.mkdir(exist_ok=False);link=read(link_path)
+    run_id='_'.join(out.relative_to(ROOT/'results').parts)
+    if len(run_id)>60:raise ValueError('Combined run id too long')
+    out.mkdir(parents=True,exist_ok=False);link=read(link_path)
     with Remote(link) as remote:
         remote.ps("$busy=Get-Process | Where-Object {$_.ProcessName -match 'FastStream|Slideshow|python|Viewer'};if($busy){throw 'Remote hardware busy; close GUIs first'}")
         c=remote.read(source_config);require_geometry(c)
-        c.update(diagnostic_only=True,diagnostic_session='smoke_'+out.name,settle_delay_ms=200)
-        c.pop('diagnostic_query_indices',None);c['camera'].update(exposure_us=400,gain='Gain_X4',frame_rate_hz=100)
+        c.update(diagnostic_only=True,diagnostic_session='smoke_'+run_id,settle_delay_ms=wait_ms)
+        c.pop('diagnostic_query_indices',None);c['camera'].update(exposure_us=exposure_us,gain='Gain_X4',frame_rate_hz=100)
         c['source_commit']=subprocess.check_output(['git','rev-parse','HEAD'],text=True).strip()
-        c['exposure_selection']='Fixed 400us uniform-gray and200ms timing diagnostic; no full-run approval'
+        c['exposure_selection']=f'Fixed {exposure_us:g}us uniform-gray and{wait_ms:g}ms timing diagnostic; no full-run approval'
         cfg=f"results/smoke_configs/{c['diagnostic_session']}.json"
         if remote.exists(cfg):raise FileExistsError('Config exists')
         write(ROOT/cfg,c);remote.putjson(cfg,c)
-    generated=ROOT/'generated'/out.name;generated.mkdir(exist_ok=False)
+    generated=ROOT/'generated'/run_id;generated.mkdir(exist_ok=False)
     # Already-exported uniform phase uses the current 255-g convention exactly once.
     phase=ROOT/'results/pre_full_400us_200ms_20260913/flat.bmp'
     if not phase.exists():raise FileNotFoundError(phase)
@@ -138,6 +146,7 @@ def run(link_path,source_config,out):
 
 if __name__=='__main__':
     p=argparse.ArgumentParser();p.add_argument('--link',type=Path,required=True);p.add_argument('--source-config',required=True);p.add_argument('--out',type=Path,required=True)
+    p.add_argument('--exposure-us',type=float,default=400);p.add_argument('--wait-ms',type=float,default=200)
     p.add_argument('--analyze-only',action='store_true');a=p.parse_args()
     if a.analyze_only:analyze(a.out)
-    else:run(a.link,a.source_config,a.out)
+    else:run(a.link,a.source_config,a.out,a.exposure_us,a.wait_ms)
