@@ -39,6 +39,13 @@ python smoke_six.py --link-config results/smoke_configs/link.json `
 从下一层继续；保留原停止报告和协议变更记录，不修改已采像素。其他不完整层不允许这样跳过。
 正式 `dual_run.py` 的参考库、亮度门限和审批规则不受此诊断选项影响。
 
+若满亮检查棋盘格和网络输入亮度差异过大，可在本地link配置单独声明
+`diagnostic_probe_config`、`diagnostic_probe_bmp`、`diagnostic_probe_sha256`。
+探针配置只允许相机曝光与网络配置不同（其余字段逐项hash比较），例如探针150μs、
+网络600μs。每次SDK开流都会设置并回读相应曝光；探针图不送进模型。
+探针均值/形状只与同曝光探针比较，网络6层的曝光不因此改变。
+尚未开始采集的preparing阶段也可断点重试，但必须核对该层没有任何已采CCD。
+
 `generated/smoke_<日期>/` 是独立相位/标定BMP目录，`sessions/smoke_<日期>/` 保留
 真实canonical CCD、身份/文件SHA、路由与最终结果。默认只保留478×478 PNG及必要JSON，
 24张全幅排障探针另外保存在results，不为每张正式输入保存大幅原图。

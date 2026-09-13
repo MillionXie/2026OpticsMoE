@@ -33,7 +33,16 @@ def run(remote,link,c,config_rel,out,limit=4,resume=False,brightness_warning_onl
         report=read(out/'report.json');state=remote.read(f'sessions/{session}/session.json')
         if report['session']!=session or report['queries']!=limit or digest(state['hardware_config'])!=digest(c):raise ValueError('Resume identity mismatch')
         write(out/('report_before_resume_'+time.strftime('%Y%m%d_%H%M%S')+'.json'),report)
-        for row in report['stages']:
+        for row in list(report['stages']):
+            if row['status']=='preparing':
+                # No camera capture for this stage has started. Retain the
+                # failed preflight evidence but allow deterministic reprepare.
+                for s in state['samples']:
+                    prefix=f"sessions/{session}/ccd/{s['id']}/{row['stage']}"
+                    if any(remote.exists(prefix+ext) for ext in ('.png','.raw.png','.record.json','.capture.json')):
+                        raise ValueError('Preflight resume found capture files; audit them instead')
+                report.setdefault('incomplete_preflight_attempts',[]).append(row)
+                report['stages'].remove(row);continue
             if row['status']=='rejected_postcheck' and brightness_warning_only and row.get('post_pcc',-1)>=.97:
                 row.update(original_status='rejected_postcheck',status='real_capture_complete_photometric_warning')
             if not row['status'].startswith('real_capture_complete'):
@@ -56,20 +65,30 @@ def run(remote,link,c,config_rel,out,limit=4,resume=False,brightness_warning_onl
         if not resume:job({'action':'init','session':session,'limit':limit})
         base='generated/'+session
         flat=out/'flat.bmp';remote.download(base+'/cal/P_ZERO.bmp',flat)
-        probe_remote=c.get('diagnostic_probe_bmp',base+'/cal/A_CHECK_64.bmp')
-        if 'diagnostic_probe_bmp' in c:
+        probe_remote=link.get('diagnostic_probe_bmp',c.get('diagnostic_probe_bmp',base+'/cal/A_CHECK_64.bmp'))
+        probe_config=link.get('diagnostic_probe_config',config_rel)
+        if probe_config!=config_rel:
+            pc=remote.read(probe_config);validate(pc)
+            cc=json.loads(json.dumps(c));cc['camera']['exposure_us']=pc['camera']['exposure_us']
+            if digest(cc)!=digest(pc):raise ValueError('Separate probe config may ONLY differ in camera.exposure_us')
+        if 'diagnostic_probe_bmp' in c or 'diagnostic_probe_bmp' in link:
             p=Path(probe_remote)
-            if p.is_absolute() or '..' in p.parts or not p.parts or p.parts[0]!='results':
-                raise ValueError('Diagnostic probe must be a relative results artifact')
-            probe_file=out/'diagnostic_probe.bmp';remote.download(probe_remote,probe_file)
-            if sha(probe_file)!=c.get('diagnostic_probe_sha256'):raise ValueError('Probe SHA mismatch')
+            if p.is_absolute() or '..' in p.parts or not p.parts or p.parts[0] not in ('results','generated'):
+                raise ValueError('Diagnostic probe must be a relative results/generated artifact')
+            expected_probe=link.get('diagnostic_probe_sha256',c.get('diagnostic_probe_sha256'))
+            if not isinstance(expected_probe,str) or len(expected_probe)!=64:raise ValueError('Probe SHA required')
+            probe_file=out/('diagnostic_probe_'+expected_probe[:12]+'.bmp');remote.download(probe_remote,probe_file)
+            if sha(probe_file)!=expected_probe:raise ValueError('Probe SHA mismatch')
             with Image.open(probe_file) as im:
                 if im.size!=(1920,1080) or im.mode!='L' or im.format!='BMP':raise ValueError('Probe must be native Mono8 amplitude BMP')
+        report['probe_protocol']={'config':probe_config,'bmp':probe_remote,'network_config':config_rel,
+            'separate_exposure':probe_config!=config_rel,'probe_only_never_used_as_model_feature':True};save()
         actual=None
         def probe(receipt,label):
             nonlocal actual
+            if resume:label+='_resume'+str(len(report['protocol_amendments']))
             dest=f'results/smoke_checks/{session}/{label}'
-            job({'action':'probe','bmp':probe_remote,'out':dest,'phase_receipt':receipt})
+            remote.job({'action':'probe','config':probe_config,'bmp':probe_remote,'out':dest,'phase_receipt':receipt})
             path=out/(label+'.png');remote.download(dest+'/raw.png',path);remote.download(dest+'/capture.json',path.with_suffix('.json'))
             a=np.array(Image.open(path));meta=read(path.with_suffix('.json'));now=settings_signature(meta)
             if actual is not None and actual!=now:raise RuntimeError('Camera settings drift')
