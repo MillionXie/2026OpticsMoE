@@ -2,6 +2,8 @@
 
 本包对应正式仿真 checkpoint：Spatial SRCC `0.671008`。只包含这一份正常加光权重，不包含随机相位、去光或逐 epoch checkpoint。去光与最后相位随机对照仅作为 JSON/Markdown 数值证据随包提供。
 
+> **交接包边界：**这是给师姐及其 AI 做工程适配的轻量源码/权重包，不是携带 LGVQ 数据的离线复现包。数据集、四帧 RGB 缓存、Qwen 图像/文本前端缓存以及厂商 SDK 二进制均被有意排除。下面的命令描述适配完成后的目标流程；在师姐的 AI 补齐或重建 `configs/deployment/spatial4_readout_1m_lab.yaml` 所列输入之前，不要直接执行 preflight 或全量微调。
+
 模型固定为 4 帧 `2x2` 并行、109×109 光学专家、光学 Top-2 Router、四次同 RMS O/E 融合、532 nm、17 μm 振幅 SLM、8 μm 相位 SLM、10 cm 和 478×478 有效光场。学生推理不执行 Qwen Transformer/Attention block；冻结的 Qwen 图像 patch/位置前端和文本 tokenizer/embedding 已离线缓存。
 
 ## 0. 解压、校验与固定变量
