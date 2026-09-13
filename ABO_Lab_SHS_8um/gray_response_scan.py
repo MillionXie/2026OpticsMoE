@@ -106,6 +106,24 @@ def plot(out,r):
         raw=Image.open(out/'capture'/f'g{g:03d}_r0.png');ax.imshow(raw,cmap='gray',vmin=0,vmax=255)
         ax.plot(pts[:,0],pts[:,1],color='red',lw=.7);ax.set_title(f'gray={g}; fixed 0-255');ax.axis('off')
     fig.savefig(out/'gray_previews.png',dpi=150);plt.close(fig)
+    if r.get('timing_ms'):
+        tm=r['timing_ms'];keys=list(tm);labels=['BMP check','SLM upload','Show to Visible','Drain/settle','Final fresh frame','Total raw-ready']
+        fig,ax=plt.subplots(figsize=(9,4),constrained_layout=True)
+        ax.barh(labels,[tm[k]['mean'] for k in keys]);ax.invert_yaxis();ax.set_xlabel('Mean host elapsed time (ms)')
+        for i,k in enumerate(keys):ax.text(tm[k]['mean']+2,i,f"{tm[k]['mean']:.2f}",va='center')
+        ax.set_xlim(0,max(v['mean'] for v in tm.values())*1.2)
+        ax.set_title('Prepared BMP to raw frame; no inference / disk / SSH; total is not an extra step')
+        fig.savefig(out/'timing_components.png',dpi=150);plt.close(fig)
+    failures=[t for t in r['timing']['rows'] if t['digit']!=t['prediction']]
+    if failures:
+        t=failures[0];target=t['digit'];other=t['prediction'];bbox=(int(pts[:,0].min()),int(pts[:,1].min()),int(pts[:,0].max())+1,int(pts[:,1].max())+1)
+        samples=[(f'ref_d{target}_2',f'Expected: digit {target}'),(t['name'],f"Actual: {t['name']}"),(f'ref_d{other}_2',f'Previous input: digit {other}')]
+        fig,axes=plt.subplots(1,3,figsize=(10,4),constrained_layout=True)
+        for ax,(name,title) in zip(axes,samples):
+            ax.imshow(Image.open(out/'capture'/(name+'.png')).crop(bbox),cmap='gray',vmin=0,vmax=255);ax.set_title(title);ax.axis('off')
+        scores=t['scores'];get=lambda d:scores.get(d,scores.get(str(d)))
+        fig.suptitle(f"Original ROI, fixed0..255 | PCC expected={get(target):.6f}; previous={get(other):.6f}")
+        fig.savefig(out/'timing_failure.png',dpi=150);plt.close(fig)
 
 
 def run(link_path,source_config,out,exposure_us=400,wait_ms=200,switch_count=40):

@@ -2,6 +2,10 @@
 
 ## 日常只看一个文件夹
 
+当前最新：**300μs+220ms未通过**。80次数字切换79次正确，`test65_d1`拍到上一张0
+（对0 PCC=0.998968，对目标1=0.206798）。完整125帧保留，六层配置未改、全量未启动。
+本轮记录`results/20260913_candidate300`，下方三组是此前对照，不是最新推荐。
+
 本地：`C:\Users\Xml12\OneDrive\2026OpticsMoE\ABO_Lab_SHS_8um\reports\00_current`。
 师弟电脑：`E:\code\guest\2026OpticsMoE\ABO_Lab_SHS_8um\reports\00_current`。
 打开`01_summary.html`看汇总和图片，`00_READ_ME.md`看文字；不需要逐个翻results。
@@ -17,6 +21,9 @@
 ```powershell
 python trial_suite.py --link results/smoke_configs/link_smoke_abo_newroi_20260913_161905.json --source-config results/smoke_configs/smoke_abo_newroi_20260913_161905.json --out results/20260913_timing_matrix
 ```
+
+自定义候选：同一命令使用新`--out`，加`--trial 300 220 --switch-count 80`。
+曝光单位μs、等待单位ms；最多80次换图以保持诊断总量≤128帧。汇总还包含周期分解和首个错帧对照。
 
 顺序400μs/250ms、350μs/200ms、350μs/250ms；每组85帧，不并行争用设备。
 各组.log在同一父目录，随时可以`Get-Content <日志路径> -Tail 20 -Wait`。图案测试失败仍记录并完成其余组，
