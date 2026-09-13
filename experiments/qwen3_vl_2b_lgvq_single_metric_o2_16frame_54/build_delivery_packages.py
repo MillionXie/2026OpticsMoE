@@ -12,6 +12,7 @@ from pathlib import Path
 from typing import Iterable
 
 import yaml
+import torch
 
 from .export_hardware_masks import export_hardware_masks
 from .settings import load_settings
@@ -62,6 +63,13 @@ _LAB_RUNTIME_FILES = {
     "settings.py",
     "training.py",
     "VERIFY_BUNDLE.py",
+}
+
+_ADAPTATION_PREPROCESS_FILES = {
+    "cache_quality_stem.py",
+    "cache_qwen_front.py",
+    "cache_raw_frame_view.py",
+    "prepare_manifest.py",
 }
 
 
@@ -365,6 +373,19 @@ def build_adaptation_handoff(
     checkpoint = checkpoint.resolve()
     selected: dict[str, Path] = {}
     _project_code(selected, root, config=config, runtime_only=True)
+    project_root = root / PROJECT
+    for name in _ADAPTATION_PREPROCESS_FILES:
+        path = project_root / name
+        selected[path.relative_to(root).as_posix()] = path
+    # ``prepare_manifest.py`` intentionally shares the audited, path-keyed
+    # LGVQ splitter.  Include that tiny source dependency so the receiver can
+    # regenerate inputs from raw videos without cloning the historical tree.
+    for relative in (
+        "experiments/qwen3_vl_2b_lgvq_spatiotemporal_optical_router_vqa/__init__.py",
+        "experiments/qwen3_vl_2b_lgvq_spatiotemporal_optical_router_vqa/prepare_manifest.py",
+    ):
+        path = root / relative
+        selected[relative] = path
     _add_tree(
         selected,
         root,
@@ -383,6 +404,9 @@ def build_adaptation_handoff(
     documents = {
         "documentation/ARCHITECTURE.md": root / PROJECT / "ARCHITECTURE.md",
         "documentation/LAB_SPATIAL4_READOUT_1M_GUIDE.md": guide,
+        "documentation/DATA_ADAPTER_CONTRACT.md": (
+            root / PROJECT / "DATA_ADAPTER_CONTRACT.md"
+        ),
         "documentation/SPATIAL_COMPACT_READOUT.md": (
             root
             / "LightGenV2/tasks/t06_video_quality_assessment/"
@@ -402,7 +426,8 @@ def build_adaptation_handoff(
             selected[arcname] = path
 
     with tempfile.TemporaryDirectory(prefix="lgvq_handoff_masks_") as temporary:
-        mask_root = Path(temporary) / "hardware_masks"
+        temporary_root = Path(temporary)
+        mask_root = temporary_root / "hardware_masks"
         export_hardware_masks(settings, checkpoint, mask_root)
         for path in mask_root.rglob("*"):
             if path.is_file():
@@ -410,6 +435,54 @@ def build_adaptation_handoff(
                     f"{PROJECT}/deployment/hardware_masks/"
                     f"{path.relative_to(mask_root).as_posix()}"
                 ] = path
+        quality_cache = Path(settings.quality_feature_cache_path)
+        if not quality_cache.is_file():
+            raise FileNotFoundError(
+                "The canonical Conv5 cache is required to identify its frozen "
+                f"preprocessing weights: {quality_cache}"
+            )
+        try:
+            quality_payload = torch.load(
+                quality_cache, map_location="cpu", weights_only=False, mmap=True
+            )
+        except TypeError:
+            quality_payload = torch.load(
+                quality_cache, map_location="cpu", weights_only=False
+            )
+        source_checkpoint = Path(str(quality_payload["source_checkpoint"]))
+        if not source_checkpoint.is_file():
+            raise FileNotFoundError(source_checkpoint)
+        source_payload = torch.load(
+            source_checkpoint, map_location="cpu", weights_only=False
+        )
+        source_state = source_payload.get(
+            "state_dict", source_payload.get("model", source_payload)
+        )
+        stem_state = {
+            name.removeprefix("frame_stem."): value
+            for name, value in source_state.items()
+            if name.startswith("frame_stem.")
+        }
+        if not stem_state:
+            raise RuntimeError("Source checkpoint contains no FrameStem weights")
+        stem_asset = temporary_root / "quality_stem_state.pth"
+        torch.save(
+            {
+                "schema_version": 1,
+                "contract": "lgvq_quality_conv5_stem_state_v1",
+                "state_dict": stem_state,
+                "source_checkpoint_sha256": sha256(source_checkpoint),
+                "source_quality_cache_sha256": sha256(quality_cache),
+                "role": (
+                    "Frozen auxiliary input transform for electronic residual E1; "
+                    "not an alternate prediction checkpoint"
+                ),
+            },
+            stem_asset,
+        )
+        selected[
+            f"{PROJECT}/deployment/preprocessing/quality_stem_state.pth"
+        ] = stem_asset
         report = _write_zip(
             selected,
             output,

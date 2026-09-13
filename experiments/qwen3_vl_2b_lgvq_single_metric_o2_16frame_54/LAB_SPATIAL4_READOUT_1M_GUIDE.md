@@ -6,6 +6,14 @@
 
 模型固定为 4 帧 `2x2` 并行、109×109 光学专家、光学 Top-2 Router、四次同 RMS O/E 融合、532 nm、17 μm 振幅 SLM、8 μm 相位 SLM、10 cm 和 478×478 有效光场。学生推理不执行 Qwen Transformer/Attention block；冻结的 Qwen 图像 patch/位置前端和文本 tokenizer/embedding 已离线缓存。
 
+> **更新后的交付边界（以此段为准）：**轻量包仍不携带 LGVQ 原始数据、约
+> 6.6 GiB 的派生缓存或厂商 SDK 二进制，但已经包含从原始 LGVQ 重建四帧 RGB、
+> Qwen 图像/文本前端及冻结 Conv5 输入所需的代码，并随包携带本项目专用的
+> 339,312 参数 Conv5 预处理资产。接收方已有 LGVQ 和官方 Qwen3-VL-2B
+> 本地权重即可按 `documentation/DATA_ADAPTER_CONTRACT.md` 重建缓存并推理。
+> `quality_stem_state.pth` 不是第二个模型版本，而是第一层电子残差所需的冻结
+> 输入变换。
+
 ## 0. 解压、校验与固定变量
 
 在 ZIP 解压根目录打开 PowerShell：
