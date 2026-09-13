@@ -1817,9 +1817,30 @@ SHAPE作者数据：https://figshare.com/articles/dataset/24100704 ，CC BY4.0�
 python -m LightGenV2.tasks.t07_abo_image_retrieval.standalone.retail_sources prepare-shape \
   --data /DATA/DATA1/guest3/2026OpticsMoE/data/shape_source \
   --output "$T07/runs/simulation/shape8_protocol_20260913"
-# 用第59节optical/qwen64完整参数，替换data/manifest/output为shape_source与shape8协议。
-# 适配沿用第61节retrieval_adapt：data/manifest/output换SHAPE，20轮×100步，8个SKU/批。
-# 仅多TRAIN视图SKU参与配对训练，评估图库和查询仍完整保留；不是过滤难测试SKU。
+# 下列GPU命令需逐个确认空闲卡，再设置CUDA_VISIBLE_DEVICES；本轮最多同时4卡。
+# 目录已经存在时不会覆盖。复现请换新的output，不删除现有结果。
+python -m LightGenV2.tasks.t07_abo_image_retrieval.standalone.retrieval_screen qwen64 \
+  --data /DATA/DATA1/guest3/2026OpticsMoE/data/shape_source \
+  --manifest "$T07/runs/simulation/shape8_protocol_20260913/protocol.json" \
+  --model /DATA/DATA1/guest3/.cache/huggingface/hub/models--Qwen--Qwen3-VL-Embedding-2B/snapshots/9f2f7e710d6d81056aa5c0a4f04764fec6bb7bda \
+  --output "$T07/runs/simulation/shape8_qwen64_20260913" --batch-size 4
+python -m LightGenV2.tasks.t07_abo_image_retrieval.standalone.retrieval_adapt \
+  --data /DATA/DATA1/guest3/2026OpticsMoE/data/shape_source \
+  --manifest "$T07/runs/simulation/shape8_protocol_20260913/protocol.json" \
+  --assets "$T07/runs/simulation/standalone_assets_20260910" \
+  --checkpoint "$T07/runs/simulation/readout_subspace_20260912/best.pt" \
+  --expected-checkpoint-sha256 50a8607eec392c00cf3675533490cb8ef953245af6f5d9cfbc9d616bf7d22701 \
+  --output "$T07/runs/simulation/shape8_adapt_20260913" \
+  --epochs 20 --steps 100 --eval-every 5 --classes-per-batch 8 --batch-size 4
+# 仅多TRAIN视图SKU参与配对训练，评估图库和查询完整保留；不是过滤难测试SKU。
+# 固定最佳权重独立复评（本轮已完成，不重新训练）：
+python -m LightGenV2.tasks.t07_abo_image_retrieval.standalone.retrieval_screen optical \
+  --data /DATA/DATA1/guest3/2026OpticsMoE/data/shape_source \
+  --manifest "$T07/runs/simulation/shape8_protocol_20260913/protocol.json" \
+  --assets "$T07/runs/simulation/standalone_assets_20260910" \
+  --checkpoint "$T07/runs/simulation/shape8_adapt_20260913/best.pt" \
+  --expected-checkpoint-sha256 05d2b8d5738c2ec5e9ca6febea8cd145c9e276a0169aae7d5b57d7f3b4a1cf07 \
+  --output "$T07/runs/simulation/shape8_adapt_20260913/verification" --batch-size 4
 python -m LightGenV2.tasks.t07_abo_image_retrieval.standalone.retail_sources audit-off \
   --output "$T07/runs/smoke/off_feasibility_20260913"
 ```
