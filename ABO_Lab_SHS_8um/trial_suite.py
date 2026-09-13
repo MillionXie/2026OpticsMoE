@@ -7,9 +7,19 @@ CURRENT=ROOT/'reports/00_current'
 TRIALS=[('01_400us_250ms',400,250),('02_350us_200ms',350,200),('03_350us_250ms',350,250)]
 
 
+def write_report(path,value):
+    # Windows/OneDrive may briefly hold the destination during atomic replace.
+    for attempt in range(10):
+        try:
+            write(path,value);return
+        except PermissionError:
+            if attempt==9:raise
+            time.sleep(.2*(attempt+1))
+
+
 def publish(out,state):
     CURRENT.mkdir(parents=True,exist_ok=True)
-    write(CURRENT/'02_summary.json',state)
+    write_report(CURRENT/'02_summary.json',state)
     lines=['# 本次结果：只看这个文件夹即可','',f"状态：{state['status']}；当前：{state.get('active','—')}",
            '',f'原始数据相对工程目录：`{out.relative_to(ROOT)}`','',
            '|曝光μs|等待ms|数字正确数|最低目标PCC|灰度255饱和比例|状态|',
@@ -58,12 +68,23 @@ def run(a):
     if not out.is_relative_to(ROOT/'results'):raise ValueError('Suite outside results')
     if a.publish_only:
         publish(out,read(out/'suite.json'));return
-    out.mkdir(parents=True,exist_ok=False)
-    state=dict(status='running',started=time.strftime('%Y-%m-%dT%H:%M:%S'),source_commit=subprocess.check_output(['git','rev-parse','HEAD'],text=True).strip(),
-        trials=[dict(name=n,exposure_us=e,wait_ms=w,status='pending') for n,e,w in TRIALS],full_dataset_qualified=False)
-    def save():write(out/'suite.json',state);publish(out,state)
+    if a.resume:
+        state=read(out/'suite.json')
+        if [(t['name'],t['exposure_us'],t['wait_ms']) for t in state['trials']]!=TRIALS:raise ValueError('Trial contract mismatch')
+        for t in state['trials']:
+            if t['status']=='complete':
+                if not (out/t['name']/'analysis.json').is_file():raise ValueError('Completed trial data missing')
+            elif (out/t['name']).exists() or (out/(t['name']+'.log')).exists():
+                raise ValueError('Partial trial exists; inspect it, never automatically overwrite/reacquire')
+        state.update(status='running',resumed=time.strftime('%Y-%m-%dT%H:%M:%S'))
+    else:
+        out.mkdir(parents=True,exist_ok=False)
+        state=dict(status='running',started=time.strftime('%Y-%m-%dT%H:%M:%S'),source_commit=subprocess.check_output(['git','rev-parse','HEAD'],text=True).strip(),
+            trials=[dict(name=n,exposure_us=e,wait_ms=w,status='pending') for n,e,w in TRIALS],full_dataset_qualified=False)
+    def save():write_report(out/'suite.json',state);publish(out,state)
     save()
     for t in state['trials']:
+        if t['status']=='complete':continue
         t['status']='running';state['active']=t['name'];save()
         cmd=[sys.executable,'-u',str(ROOT/'gray_response_scan.py'),'--link',str(a.link.resolve()),'--source-config',a.source_config,
              '--out',str(out/t['name']),'--exposure-us',str(t['exposure_us']),'--wait-ms',str(t['wait_ms'])]
@@ -81,4 +102,4 @@ def run(a):
 
 if __name__=='__main__':
     p=argparse.ArgumentParser();p.add_argument('--link',type=Path,required=True);p.add_argument('--source-config',required=True)
-    p.add_argument('--out',type=Path,required=True);p.add_argument('--publish-only',action='store_true');run(p.parse_args())
+    p.add_argument('--out',type=Path,required=True);p.add_argument('--publish-only',action='store_true');p.add_argument('--resume',action='store_true');run(p.parse_args())
