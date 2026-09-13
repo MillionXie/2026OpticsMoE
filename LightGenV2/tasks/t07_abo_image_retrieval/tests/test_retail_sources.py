@@ -61,3 +61,13 @@ def test_recovery_pair_only_changes_sam_and_description():
     b = overlay_config(copy.deepcopy(base), 'recovery_phase05_sam')
     assert a.pop('sam_rho') == 0 and b.pop('sam_rho') == .03
     assert a == b and a['track_clean_train'] and a['independent_phase_dropout']
+
+
+def test_enrollment_view_counts_nested_without_dropping_products():
+    from types import SimpleNamespace
+    from LightGenV2.tasks.t07_abo_image_retrieval.standalone.catalog_view_audit import view_indices
+    samples = [SimpleNamespace(product_id=p, sample_id=f'{p}-{i}') for p in ('a', 'b') for i in range(12)]
+    selected = [view_indices(samples, k) for k in (1, 3, 12)]
+    assert set(selected[0]) <= set(selected[1]) <= set(selected[2])
+    assert [len(x) for x in selected] == [2, 6, 24]
+    assert all({samples[i].product_id for i in indices} == {'a', 'b'} for indices in selected)

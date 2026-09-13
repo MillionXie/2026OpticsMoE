@@ -1,0 +1,82 @@
+"""CPU-only paired ABO gallery-view-count audit using pinned feature caches.
+
+All120 products/all480 queries remain. One/three/twelve enrollment photos per
+product are selected by hash BEFORE scoring. This is a NEW acquisition-budget
+condition, not an improvement to the original12-view result or new training.
+"""
+import argparse
+import hashlib
+from pathlib import Path
+import torch
+from torch.nn import functional as F
+from .data import _load_contract, _gallery_centroids, _evaluate, _category_prototypes
+from .io import sha256, source_commit, write_json, write_csv
+
+
+def view_indices(samples, count):
+    if count not in (1, 3, 12):
+        raise ValueError('Only predeclared 1/3/12 views supported')
+    groups = {}
+    for i, s in enumerate(samples):
+        groups.setdefault(s.product_id, []).append(i)
+    selected = []
+    for key in sorted(groups):
+        indices = groups[key]
+        if len(indices) != 12:
+            raise ValueError('Require original12 views per TRAIN product')
+        order = sorted(indices, key=lambda i: hashlib.sha256(
+            ('abo-enrollment42:' + samples[i].sample_id).encode()).hexdigest())
+        selected.extend(order[:count])
+    return selected
+
+
+def run(args):
+    if args.output.exists():
+        raise FileExistsError(args.output)
+    torch.set_num_threads(4)
+    samples, _ = _load_contract(args.data)
+    train = [s for s in samples if s.split == 'train']
+    test = [s for s in samples if s.split == 'test']
+    optical = torch.load(args.optical_cache, map_location='cpu', weights_only=True)
+    qwen = torch.load(args.qwen_cache, map_location='cpu', weights_only=True)
+    ids = [s.sample_id for s in train + test]
+    if optical['train_ids'] + optical['test_ids'] != ids or qwen['identity']['ids'] != ids:
+        raise ValueError('Cache image identity/order mismatch')
+    manifest_sha = sha256(args.data / 'data/abo_similarity10_manifest.csv')
+    if qwen['identity']['manifest_sha256'] != manifest_sha:
+        raise ValueError('Qwen cache has another data contract')
+    # Native-aspect frozen Qwen64, not a fitted PCA or weaker baseline head.
+    vectors = dict(optical=torch.cat([optical['train'], optical['test']]), qwen64=qwen['native'][:, :64])
+    for z in vectors.values():
+        if z.shape != (1920, 64) or not torch.isfinite(z).all() or (z.norm(dim=1) < 1e-8).any():
+            raise ValueError('Invalid64D feature cache')
+    args.output.mkdir(parents=True)
+    results, enrollment = {}, {}
+    for count in (12, 3, 1):
+        indices = view_indices(train, count)
+        enrollment[str(count)] = [train[i].sample_id for i in indices]
+        results[str(count)] = {}
+        for name, z in vectors.items():
+            z = F.normalize(z.float(), dim=1)
+            gallery, metadata = _gallery_centroids([train[i] for i in indices], z[indices])
+            metrics, predictions, _ = _evaluate(z[len(train):], test, gallery, metadata, _category_prototypes(gallery, metadata))
+            results[str(count)][name] = metrics
+            write_csv(args.output / f'{name}_views{count}_predictions.csv', predictions)
+        results[str(count)]['gap_pp'] = 100 * (results[str(count)]['qwen64']['hit_at_1'] - results[str(count)]['optical']['hit_at_1'])
+    write_json(args.output / 'report.json', dict(source_commit=source_commit(), status='complete',
+        purpose=__doc__, train_manifest_sha256=manifest_sha, training=False, gpu=False,
+        optical_cache_sha256=sha256(args.optical_cache), qwen_cache_sha256=sha256(args.qwen_cache),
+        selection='Nested hash-selected1/3/12 gallery images; all120 products/all480 queries; no class filtering',
+        caveat='Optical model was trained/selected under original12-view protocol; caches preserve each model original preprocessing. New gallery budget conditions must not replace original metric.',
+        enrollment=enrollment, results=results))
+
+
+def main():
+    p = argparse.ArgumentParser(description=__doc__)
+    for key in ('data', 'optical-cache', 'qwen-cache', 'output'):
+        p.add_argument('--' + key, type=Path, required=True)
+    run(p.parse_args())
+
+
+if __name__ == '__main__':
+    main()
