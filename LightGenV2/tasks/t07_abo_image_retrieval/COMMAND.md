@@ -2029,8 +2029,8 @@ CUDA_VISIBLE_DEVICES=GPU-afc19890-6209-ee4d-622d-e619da5bd5b2 python -m LightGen
   --expected-checkpoint-sha256 d11f3428efa67c7c5084eb9056d991c4692d36a3d177cd82b4601238357d444a \
   --multi-view --refine-profile sku_mild_adamw --lr-scale .1 --epochs 20 --steps 100 --eval-every 5 --batch-size 4 --bank-batch-size 16 \
   --output "$R/abo200_mild_adamw_20260913"
-# 物理GPU3；不动GPU1上尚在运行的外部预训练组，不抢占其他任务
-CUDA_VISIBLE_DEVICES=GPU-4d8bfdb9-8777-05a6-3811-ab18ff4eadfd python -m LightGenV2.tasks.t07_abo_image_retrieval.standalone.retrieval_adapt \
+# 物理GPU1：先确认外部组PID1665328正常结束、卡空闲，再运行；GPU3已有其他任务，不使用
+CUDA_VISIBLE_DEVICES=GPU-e8837b85-d55b-8e81-aaa5-ec1ac326932d python -m LightGenV2.tasks.t07_abo_image_retrieval.standalone.retrieval_adapt \
   --data /DATA/DATA1/guest3/2026OpticsMoE/data/abo_similarity10_data \
   --manifest "$R/abo200_enrolled_protocol_20260913/protocol.json" --assets "$R/standalone_assets_20260910" \
   --checkpoint "$R/abo200_route_distill_20260913/best.pt" \
@@ -2039,4 +2039,4 @@ CUDA_VISIBLE_DEVICES=GPU-4d8bfdb9-8777-05a6-3811-ab18ff4eadfd python -m LightGen
   --output "$R/abo200_mild_sam_20260913"
 ```
 
-本轮最多两张新增训练卡，连同尚未结束的外部组最多三张，在用户最多4卡授权内；结束逐PID核验显存释放。
+本轮串接复用物理GPU0/1两张RTX4090，不抢占其他任务；结束逐PID核验显存释放。
