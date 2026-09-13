@@ -98,10 +98,11 @@ def load_screen(manifest, root):
     if data.get('schema') != 1:
         raise ValueError('Unknown screen schema')
     if data.get('protocol') not in ('heldout40_objects_four_gallery_views_eight_queries_v1',
+                                    'abo200_enrolled_sku_hash8train4query_v1',
                                     'shape_hash8_categories_official_train_gallery_v1',
                                     'grocery81_official_test_to_iconic_v1'):
         raise ValueError('Unknown predeclared retrieval protocol')
-    if data['protocol'] == 'shape_hash8_categories_official_train_gallery_v1':
+    if data['protocol'] in ('shape_hash8_categories_official_train_gallery_v1', 'abo200_enrolled_sku_hash8train4query_v1'):
         from .retail_sources import shape_groups
         groups = shape_groups(data['rows'])
     else:
@@ -178,7 +179,7 @@ def prepare_grocery(root, output):
         source_commit=source_commit(), rows=rows))
 
 
-def rank_instances(vectors, rows):
+def rank_instances(vectors, rows, *, exclude_self=False):
     if vectors.shape != (len(rows), 64) or not torch.isfinite(vectors).all():
         raise ValueError('Expected finite 64D vectors in manifest row order')
     if bool((vectors.float().norm(dim=-1) < 1e-8).any()):
@@ -189,8 +190,15 @@ def rank_instances(vectors, rows):
         raise ValueError('Missing query/gallery')
     z = F.normalize(vectors.float().cpu(), dim=-1)
     # Stable tie ordering, no label-dependent ranking or gallery filtering.
-    ranking = (z[query] @ z[gallery].T).argsort(dim=1, descending=True, stable=True)
+    similarity = z[query] @ z[gallery].T
+    self_mask = torch.tensor([[rows[i]['sample_id'] == rows[j]['sample_id'] for j in gallery] for i in query])
+    if self_mask.any() and not exclude_self:
+        raise ValueError('Query image is in gallery; explicitly exclude_self for TRAIN diagnostics only')
+    if exclude_self:
+        similarity.masked_fill_(self_mask, -torch.inf)
+    ranking = similarity.argsort(dim=1, descending=True, stable=True)
     relevant = torch.tensor([[rows[gallery[j]]['product_id'] == rows[i]['product_id']
+                             and not (exclude_self and rows[gallery[j]]['sample_id'] == rows[i]['sample_id'])
                              for j in order.tolist()] for i, order in zip(query, ranking)])
     if not bool(relevant.any(1).all()):
         raise ValueError('Query with no positive gallery image')

@@ -25,8 +25,8 @@ from .model import OpticalRetrieval
 from .retrieval_screen import load_screen, rank_instances, OPTICS_SHA256, GALLERY_ANGLES
 
 
-def fitting_groups(protocol, groups):
-    if protocol['protocol'] == 'shape_hash8_categories_official_train_gallery_v1':
+def fitting_groups(protocol, groups, multi_view=False):
+    if protocol['protocol'] in ('shape_hash8_categories_official_train_gallery_v1', 'abo200_enrolled_sku_hash8train4query_v1'):
         by_id = {}
         for r in groups['train']:
             by_id.setdefault(r['product_id'], []).append(r)
@@ -35,12 +35,14 @@ def fitting_groups(protocol, groups):
             images = sorted(by_id[key], key=lambda r: r['sample_id'])
             if len(images) < 2:
                 continue  # Training-pair eligibility only; TEST/full gallery unchanged.
-            references.append(dict(images[0], split='gallery', source_split='train'))
-            natural.extend(images[1:])
+            references.extend(dict(r, split='gallery', source_split='train') for r in (images if multi_view else images[:1]))
+            natural.extend(images if multi_view else images[1:])
         if len(references) < 2:
             raise ValueError('Insufficient SHAPE multi-view TRAIN identities')
         return dict(train=natural, gallery=references,
-            note='TRAIN-only first lexical image/SKU as reference, remaining as queries; singleton TRAIN SKUs not sampled. TEST retains ALL official selected training images as gallery and ALL selected test queries; enrolled SKU, not unseen SKU')
+            exclude_self=multi_view,
+            note=('TRAIN-only all views as reference and query; different photos paired and identical query excluded from bank/clean TRAIN ranking. ' if multi_view else 'TRAIN-only first lexical image/SKU as reference, remaining as queries; ')
+            + 'Singleton TRAIN SKUs not sampled. TEST retains ALL selected training images as gallery and ALL selected test queries; enrolled SKU, not unseen SKU')
     if protocol['protocol'] == 'grocery81_official_test_to_iconic_v1':
         return dict(train=groups['train'], gallery=groups['gallery'],
             note='Natural TRAIN -> same81 public iconic images; shared fine classes, NOT unseen SKU')
@@ -79,11 +81,18 @@ def training_pairs(groups, rng, classes_per_batch):
         raise ValueError('Invalid class pool or batch size')
     labels = {key: i for i, key in enumerate(sorted(iconic))}
     selected = rng.sample(sorted(natural), classes_per_batch)
-    rows = [rng.choice(natural[k]) for k in selected] + [iconic[k][0] if len(iconic[k]) == 1 else rng.choice(iconic[k]) for k in selected]
+    queries = [rng.choice(natural[k]) for k in selected]
+    references = []
+    for k, query in zip(selected, queries):
+        candidates = [r for r in iconic[k] if r['sample_id'] != query['sample_id']]
+        if not candidates:
+            raise ValueError('Training pair requires independently identified photos')
+        references.append(candidates[0] if len(candidates)==1 else rng.choice(candidates))
+    rows = queries + references
     return rows, torch.tensor([labels[r['product_id']] for r in rows])
 
 
-def retrieval_loss(z, labels, bank, natural_count, bank_labels=None):
+def retrieval_loss(z, labels, bank, natural_count, bank_labels=None, excluded=None):
     """Whole fitting-gallery NLL; multiple references of an object are positives."""
     z = F.normalize(z.float(), dim=-1)
     if len(z) != 2 * natural_count or len(labels) != len(z):
@@ -94,10 +103,19 @@ def retrieval_loss(z, labels, bank, natural_count, bank_labels=None):
     bank_labels = bank_labels.to(z.device)
     if len(bank_labels) != len(bank):
         raise ValueError('Bank identity length mismatch')
+    if excluded is not None:
+        if excluded.shape != logits.shape or excluded.dtype != torch.bool:
+            raise ValueError('Invalid self exclusion mask')
+        positive = labels[:natural_count, None].eq(bank_labels[None]) & ~excluded
+        if not positive.any(1).all():
+            raise ValueError('No nonself fitting positive')
+        logits = logits.masked_fill(excluded, -torch.inf)
     if torch.equal(bank_labels, torch.arange(len(bank), device=z.device)):
         ce = F.cross_entropy(logits, labels[:natural_count])
     else:
         positive = labels[:natural_count, None].eq(bank_labels[None])
+        if excluded is not None:
+            positive = positive & ~excluded
         if not positive.any(1).all():
             raise ValueError('Query without fitting-gallery positive')
         ce = (logits.logsumexp(1) - logits.masked_fill(~positive, -torch.inf).logsumexp(1)).mean()
@@ -142,7 +160,7 @@ def assessment(model, processor, groups, args, device, output=None, fit=None):
     fit = fit or dict(train=groups['train'], gallery=gallery, note='Natural TRAIN -> same81 iconic images')
     train_rows = sorted(fit['gallery'], key=lambda r: r['product_id']) + [dict(r, split='query') for r in fit['train']]
     train_z, _ = encode_rows(model, processor, train_rows, args.data, device, args.batch_size)
-    train, _ = rank_instances(train_z, train_rows)
+    train, _ = rank_instances(train_z, train_rows, exclude_self=fit.get('exclude_self', False))
     if output:
         write_csv(output / 'predictions.csv', predictions)
         torch.save(dict(manifest_sha256=sha256(args.manifest), ids=[r['sample_id'] for r in rows], vectors=z), output / 'features.pt')
@@ -161,13 +179,37 @@ def phase_delta(model, initial):
             for n, p in phase_snapshot(model).items()}
 
 
+def load_initial_weights(model, payload, assets, fresh):
+    """Fresh protocol must not inherit ANY ABO-trained parameter/buffer."""
+    if not fresh:
+        model.load_state_dict(payload['state_dict'], strict=True)
+        return 'Warm start from pinned checkpoint'
+    packaged = torch.load(assets / 'best.pt', map_location='cpu', weights_only=True)
+    front = {n.removeprefix('frontend.'): t for n, t in packaged['state_dict'].items() if n.startswith('frontend.')}
+    model.frontend.load_state_dict(front, strict=True)
+    with torch.no_grad():
+        for m in (model.vision, model.language):
+            low, high = m.alpha_bounds
+            if not low < .45 < high:
+                raise ValueError('Fresh profile requires alpha=.45 inside bounds')
+            raw = math.log((.45-low)/(high-.45))
+            m.block1_optical_fusion_logit.fill_(raw)
+            m.block2_optical_fusion_logit.fill_(raw)
+    # Everything outside frontend remains constructor initialization (raw phase0 => pi).
+    return 'All trainable parameters freshly initialized (alpha=.45, raw phases0 => pi); only verified packaged pretrained Qwen frontend tensors loaded; old ABO trained state ignored'
+
+
 def run(args):
     from PIL import ImageEnhance
     from transformers import AutoProcessor
     if args.output.exists():
         raise FileExistsError(args.output)
     protocol, groups = load_screen(args.manifest, args.data)
-    fit = fitting_groups(protocol, groups)
+    if args.multi_view and protocol['protocol'] not in ('shape_hash8_categories_official_train_gallery_v1', 'abo200_enrolled_sku_hash8train4query_v1'):
+        raise ValueError('Multi-view fitting is restricted to explicitly enrolled-SKU protocols')
+    if protocol['protocol'] == 'abo200_enrolled_sku_hash8train4query_v1' and not args.fresh_trainable:
+        raise ValueError('New ABO split requires --fresh-trainable to prevent old-photo training leakage')
+    fit = fitting_groups(protocol, groups, args.multi_view)
     training_pairs(fit, random.Random(42), args.classes_per_batch)
     verify_assets(args.assets)
     path, digest = evaluation_checkpoint(args.assets, args.checkpoint, args.expected_checkpoint_sha256)
@@ -181,7 +223,7 @@ def run(args):
     torch.manual_seed(args.seed)
     random.seed(args.seed)
     model = OpticalRetrieval(copy.deepcopy(payload['metadata']))
-    model.load_state_dict(payload['state_dict'], strict=True)
+    initialization = load_initial_weights(model, payload, args.assets, args.fresh_trainable)
     audit = model.audit()
     if audit['alpha_bounds'][0] <= .4 or audit['descriptor_dimension'] != 64 or audit['frontend_trainable_parameters']:
         raise ValueError('Require frozen compact frontend, high-alpha 64D model')
@@ -196,6 +238,7 @@ def run(args):
         cuda_visible_devices=os.environ.get('CUDA_VISIBLE_DEVICES'),
         gpu=torch.cuda.get_device_name() if device.type == 'cuda' else None,
         protocol=protocol['protocol'], fitted_on_this_dataset=True,
+        initialization=initialization,
         fitting_roles=fit['note'],
         selection='Periodic full TEST Hit@1 then mAP@10; initial/live/EMA candidates. TEST selected, not unbiased',
         teacher=False, extra_inference_parameters=0,
@@ -219,7 +262,7 @@ def run(args):
         for n, p in params:
             phase = 'optics.experts.' in n or n.endswith('optics.global_phase')
             router = n.endswith('raw_router_phase')
-            rate = .002 if phase else .0003 if router or n.startswith('readout.') else .0001
+            rate = (.002 if phase else .0003 if router or n.startswith('readout.') else .0001) * args.lr_scale
             decay = .01 if not (phase or router) and p.ndim > 1 else 0.
             optgroups.append(dict(params=[p], lr=rate, initial_lr=rate, weight_decay=decay))
         optimizer = torch.optim.AdamW(optgroups)
@@ -237,6 +280,7 @@ def run(args):
         gallery = sorted(fit['gallery'], key=lambda r: r['product_id'])
         label_map = {k: i for i, k in enumerate(sorted({r['product_id'] for r in gallery}))}
         bank_labels = torch.tensor([label_map[r['product_id']] for r in gallery], device=device)
+        gallery_ids = [r['sample_id'] for r in gallery]
         for epoch in range(1, args.epochs + 1):
             bank, _ = encode_rows(model, processor, gallery, args.data, device, args.batch_size)
             bank = bank.to(device)
@@ -259,7 +303,9 @@ def run(args):
                 optimizer.zero_grad(set_to_none=True)
                 with autocast(device):
                     z = model(inputs(processor, images, device))
-                    data_loss, hit = retrieval_loss(z, labels.to(device), bank, args.classes_per_batch, bank_labels)
+                    excluded = (torch.tensor([[r['sample_id'] == sid for sid in gallery_ids]
+                        for r in rows[:args.classes_per_batch]], device=device) if args.multi_view else None)
+                    data_loss, hit = retrieval_loss(z, labels.to(device), bank, args.classes_per_batch, bank_labels, excluded)
                     loss = data_loss + regularization(model)
                 if not torch.isfinite(loss):
                     raise RuntimeError('Nonfinite training loss')
@@ -337,10 +383,15 @@ def main():
     p.add_argument('--classes-per-batch', type=int, default=8)
     p.add_argument('--batch-size', type=int, default=4, help='Evaluation batch size, training batch is 2*classes-per-batch')
     p.add_argument('--seed', type=int, default=42)
+    p.add_argument('--multi-view', action='store_true', help='All TRAIN views in bank, distinct-photo pairs, self excluded; enrolled protocols only')
+    p.add_argument('--fresh-trainable', action='store_true', help='Reset all trainable weights, load packaged frozen frontend only')
+    p.add_argument('--lr-scale', type=float, default=1.)
     p.add_argument('--device', choices=['cuda', 'cpu'], default='cuda')
     args = p.parse_args()
     if min(args.epochs, args.steps, args.eval_every, args.batch_size) < 1:
         p.error('Epochs/steps/eval interval/batch must be positive')
+    if not 0 < args.lr_scale <= 10:
+        p.error('lr-scale must be in (0,10]')
     run(args)
 
 

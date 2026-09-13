@@ -36,6 +36,54 @@ def test_training_loss_updates_both_domains_but_detaches_gallery_bank():
         retrieval_loss(z, labels, bank, 3)
 
 
+def test_multi_view_bank_masks_self_and_has_finite_gradients():
+    z = torch.randn(4,64,requires_grad=True)
+    bank = torch.randn(4,64)
+    labels = torch.tensor([0,1,0,1])
+    bank_labels = torch.tensor([0,0,1,1])
+    excluded = torch.tensor([[True,False,False,False],[False,False,True,False]])
+    loss,_ = retrieval_loss(z,labels,bank,2,bank_labels,excluded)
+    loss.backward()
+    assert torch.isfinite(z.grad).all()
+    with pytest.raises(ValueError,match='nonself'):
+        retrieval_loss(z,labels,bank,2,bank_labels,torch.ones(2,4,dtype=torch.bool))
+
+
+def test_clean_train_ranking_excludes_identical_photo():
+    from LightGenV2.tasks.t07_abo_image_retrieval.standalone.retrieval_screen import rank_instances
+    rows = [dict(sample_id='a', product_id='x',split='gallery'),
+            dict(sample_id='b', product_id='x',split='gallery'),
+            dict(sample_id='c', product_id='y',split='gallery'),
+            dict(sample_id='a', product_id='x',split='query')]
+    z = torch.zeros(4,64); z[0,0]=z[3,0]=1; z[1,1]=1; z[2,0]=.9;z[2,1]=.1
+    with pytest.raises(ValueError,match='Query image'):
+        rank_instances(z,rows)
+    metrics,predictions=rank_instances(z,rows,exclude_self=True)
+    assert metrics['hit_at_1']==0 and predictions[0]['top1_sample_id']=='c'
+
+
+def test_fresh_initialization_never_copies_old_trainable_state(tmp_path):
+    from LightGenV2.tasks.t07_abo_image_retrieval.standalone.retrieval_adapt import load_initial_weights
+    class Tiny(torch.nn.Module):
+        def __init__(self):
+            super().__init__()
+            self.frontend = torch.nn.Linear(1,1)
+            for name in ('vision','language'):
+                m=torch.nn.Module();m.alpha_bounds=(.401,.95)
+                m.block1_optical_fusion_logit=torch.nn.Parameter(torch.zeros(()))
+                m.block2_optical_fusion_logit=torch.nn.Parameter(torch.zeros(()))
+                setattr(self,name,m)
+            self.readout=torch.nn.Linear(1,1)
+    m=Tiny();original=m.readout.weight.detach().clone()
+    torch.save({'state_dict': {'frontend.weight': torch.ones(1,1)*.123,
+                              'frontend.bias': torch.zeros(1)}},tmp_path/'best.pt')
+    poisoned={'state_dict': {n: torch.full_like(p,999) for n,p in m.state_dict().items()}}
+    load_initial_weights(m,poisoned,tmp_path,True)
+    assert torch.equal(m.readout.weight,original)
+    assert torch.allclose(m.frontend.weight,torch.tensor([[.123]]))
+    assert abs(float(.401+(.95-.401)*m.vision.block1_optical_fusion_logit.sigmoid())-.45)<1e-6
+
+
 def test_phase_report_includes_router_experts_global_and_is_circular():
     class Tiny(torch.nn.Module):
         def named_parameters(self):

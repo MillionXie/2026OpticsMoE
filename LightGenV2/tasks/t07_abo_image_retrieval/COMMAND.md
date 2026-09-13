@@ -1869,3 +1869,50 @@ python -m LightGenV2.tasks.t07_abo_image_retrieval.standalone.catalog_view_audit
 
 该CPU审计还单独报告同SKU实例检索：保留全部40个TEST商品，每个商品12图按sha256(abo-instance42:<sample_id>)固定前4图库、后8查询，共160图库/320查询。
 这是新任务定义（找同一SKU，不是找同类别不同商品），不作原ABO精度提升；未重新训练，也不根据特征/成绩选图。
+
+## 64. 已登记ABO重新训练、SHAPE全视角与OFF扩展审计
+
+从GitHub已同步commit的干净工作树执行，使用xml环境。以下输出是本轮固定run ID，重跑必须换新ID，不覆盖结果。
+最多4卡是用户授权上限，不自动占满；本轮计划GPU0 ABO、GPU1 SHAPE、GPU2冻结Qwen，启动前必须检查该卡确实空闲。
+ABO所有200商品每个8张训练、4张查询，同SKU判分；原val40商品也纳入新协议，无验证集。所有视图保留，不挑容易商品。
+周期TEST选best/live/EMA属于test-selected结果；原数据多数来自同一spin序列，因此不得声称独立拍摄场景泛化。
+
+```bash
+T07=/DATA/DATA1/guest3/2026OpticsMoE/LightGenV2/tasks/t07_abo_image_retrieval
+export HF_HUB_OFFLINE=1 TRANSFORMERS_OFFLINE=1 OMP_NUM_THREADS=4 MKL_NUM_THREADS=4
+python -m LightGenV2.tasks.t07_abo_image_retrieval.standalone.enrolled_abo \
+  --data /DATA/DATA1/guest3/2026OpticsMoE/data/abo_similarity10_data \
+  --output "$T07/runs/simulation/abo200_enrolled_protocol_20260913"
+nvidia-smi
+# 以下0/1/2只在确认空闲后使用；不是允许挤占其他人的任务。
+CUDA_VISIBLE_DEVICES=0 python -m LightGenV2.tasks.t07_abo_image_retrieval.standalone.retrieval_adapt \
+  --data /DATA/DATA1/guest3/2026OpticsMoE/data/abo_similarity10_data \
+  --manifest "$T07/runs/simulation/abo200_enrolled_protocol_20260913/protocol.json" \
+  --assets "$T07/runs/simulation/standalone_assets_20260910" \
+  --checkpoint "$T07/runs/simulation/readout_subspace_20260912/best.pt" \
+  --expected-checkpoint-sha256 50a8607eec392c00cf3675533490cb8ef953245af6f5d9cfbc9d616bf7d22701 \
+  --fresh-trainable --multi-view --epochs 40 --steps 100 --eval-every 5 --batch-size 4 \
+  --output "$T07/runs/simulation/abo200_enrolled_fresh_20260913"
+# checkpoint只提供明确的结构配置；--fresh-trainable不载入其任何参数。
+# 仅从经manifest校验的assets/best.pt加载冻结Qwen前端，其余构造初始化。所有相位从raw0开始。
+CUDA_VISIBLE_DEVICES=1 python -m LightGenV2.tasks.t07_abo_image_retrieval.standalone.retrieval_adapt \
+  --data /DATA/DATA1/guest3/2026OpticsMoE/data/shape_source \
+  --manifest "$T07/runs/simulation/shape8_protocol_20260913/protocol.json" \
+  --assets "$T07/runs/simulation/standalone_assets_20260910" \
+  --checkpoint "$T07/runs/simulation/shape8_adapt_20260913/best.pt" \
+  --expected-checkpoint-sha256 05d2b8d5738c2ec5e9ca6febea8cd145c9e276a0169aae7d5b57d7f3b4a1cf07 \
+  --multi-view --lr-scale .5 --epochs 20 --steps 100 --eval-every 5 --batch-size 4 \
+  --output "$T07/runs/simulation/shape8_multiview_20260913"
+CUDA_VISIBLE_DEVICES=2 python -m LightGenV2.tasks.t07_abo_image_retrieval.standalone.retrieval_screen qwen64 \
+  --data /DATA/DATA1/guest3/2026OpticsMoE/data/abo_similarity10_data \
+  --manifest "$T07/runs/simulation/abo200_enrolled_protocol_20260913/protocol.json" \
+  --model /DATA/DATA1/guest3/.cache/huggingface/hub/models--Qwen--Qwen3-VL-Embedding-2B/snapshots/9f2f7e710d6d81056aa5c0a4f04764fec6bb7bda \
+  --output "$T07/runs/simulation/abo200_enrolled_qwen64_20260913" --batch-size 4
+python -m LightGenV2.tasks.t07_abo_image_retrieval.standalone.retail_sources review-off-batch \
+  --data "$T07/runs/smoke/off_feasibility_20260913" \
+  --output "$T07/runs/smoke/off_review20_20260913"
+```
+
+先做CUDA冒烟：相同参数改`--epochs 1 --steps 2`、output改`runs/smoke/abo200_enrolled_20260913`或`shape8_multiview_20260913`，确认完成释放后再正式训练。
+OFF最多60张400px，仅用官方AWS、串行，不因AWS缺图回退轰炸主站；report记录所有下载失败，不静默删商品或配对。
+训练只存best/last、执行身份、phase_update、正常/去光、路由和train/test历史。终止时只针对自己的精确PID，结束后检查CUDA占用。

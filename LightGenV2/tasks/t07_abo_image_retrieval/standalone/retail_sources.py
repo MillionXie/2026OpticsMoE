@@ -203,9 +203,56 @@ def preview_off(root, output):
         license='Images CC BY-SA; source URLs retained, metadata database ODbL; not a complete attribution clearance', rows=rows))
 
 
+def review_off_batch(root, output):
+    """Fixed20 products x3 candidate photos via official AWS, not a benchmark."""
+    if output.exists():
+        raise FileExistsError(output)
+    from PIL import Image
+    import numpy as np
+    raw_path = root / 'api_response.json'
+    raw = json.loads(raw_path.read_text(encoding='utf-8'))
+    candidates = [r for r in off_inventory(raw['products'])
+        if len(r['independent_selected_front_ids']) >= 3 and len(r['code'])==13 and r['code'].isdigit()]
+    candidates.sort(key=lambda r: hashlib.sha256(('off-review42:' + r['code']).encode()).hexdigest())
+    output.mkdir(parents=True)
+    rows, comparisons = [], []
+    for candidate in candidates[:20]:
+        code = candidate['code']
+        folder = '/'.join([code[:3],code[3:6],code[6:9],code[9:]])
+        decoded = []
+        ids = sorted(candidate['independent_selected_front_ids'], key=lambda x: hashlib.sha256(
+            ('off-photo42:' + code + ':' + x).encode()).hexdigest())[:3]
+        for image_id in ids:
+            url = f'https://openfoodfacts-images.s3.eu-west-3.amazonaws.com/data/{folder}/{image_id}.400.jpg'
+            row = dict(code=code,image_id=image_id,url=url,review='pending')
+            try:
+                data = fetch(url,maximum=5_000_000)
+                path = output / f'{code}_{image_id}.jpg'
+                path.write_bytes(data)
+                with Image.open(path) as im:
+                    im.load()
+                    pixels = np.asarray(im.convert('RGB').resize((32,32)),dtype=np.float32)/255
+                row.update(status='downloaded',path=path.name,sha256=sha256(path))
+                for other, previous in decoded:
+                    comparisons.append(dict(code=code,image_a=other['image_id'],image_b=image_id,
+                        identical_bytes=other['sha256']==row['sha256'],
+                        thumbnail_mae=float(np.abs(pixels-previous).mean()),
+                        note='Diagnostic only, NOT an automatic independent-photo or exclusion decision'))
+                decoded.append((row,pixels))
+            except Exception as exc:
+                row.update(status='failed',error=repr(exc))
+            rows.append(row)
+    write_json(output / 'report.json',dict(status='review_required',source_commit=source_commit(),
+        metadata_sha256=sha256(raw_path),rows=rows,comparisons=comparisons,
+        selection='20 products with >=3 distinct front imgids, fixed by off-review42 hash;3 imgids by off-photo42 hash. No model scores.',
+        split='NOT assigned; require independent capture, correct side, consistent packaging-version audit first',
+        download_policy='Official AWS only, bounded60 requests, serial, no main-server fallback',
+        license='Image CC BY-SA and metadata ODbL notices retained; individual uploader/third-party rights need review'))
+
+
 def main():
     p = argparse.ArgumentParser(description=__doc__)
-    p.add_argument('mode', choices=['prepare-shape', 'audit-off', 'preview-off'])
+    p.add_argument('mode', choices=['prepare-shape', 'audit-off', 'preview-off', 'review-off-batch'])
     p.add_argument('--data', type=Path)
     p.add_argument('--output', type=Path, required=True)
     args = p.parse_args()
@@ -213,10 +260,10 @@ def main():
         if args.data is None:
             p.error('SHAPE requires --data containing author archives')
         prepare_shape(args.data, args.output)
-    elif args.mode == 'preview-off':
+    elif args.mode in ('preview-off', 'review-off-batch'):
         if args.data is None:
             p.error('OFF preview requires --data containing api_response.json')
-        preview_off(args.data, args.output)
+        (preview_off if args.mode=='preview-off' else review_off_batch)(args.data, args.output)
     else:
         audit_off(args.output)
 

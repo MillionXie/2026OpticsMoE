@@ -101,3 +101,31 @@ def test_instance_protocol_retains_all_products_but_no_same_photo():
     assert len(gallery) == 160 and len(query) == 320
     assert {r['product_id'] for r in gallery} == {r['product_id'] for r in query}
     assert not {r['sample_id'] for r in gallery} & {r['sample_id'] for r in query}
+
+
+def test_enrolled_abo_all_products_seen_but_photos_disjoint(tmp_path):
+    from types import SimpleNamespace
+    from LightGenV2.tasks.t07_abo_image_retrieval.standalone.enrolled_abo import split_products
+    samples = []
+    for p in ('a', 'b'):
+        for i in range(12):
+            path = tmp_path / f'{p}{i}.jpg'
+            path.write_bytes(f'{p}{i}'.encode())
+            samples.append(SimpleNamespace(product_id=p, sample_id=f'{p}{i}', image_path=path,
+                category_id=0, split='train' if p=='a' else 'test'))
+    rows = split_products(samples, tmp_path)
+    assert rows == split_products(list(reversed(samples)), tmp_path)
+    g = shape_groups(rows)
+    assert len(g['train']) == 16 and len(g['query']) == 8
+    assert {r['product_id'] for r in g['train']} == {r['product_id'] for r in g['query']}
+    assert not {r['sample_id'] for r in g['train']} & {r['sample_id'] for r in g['query']}
+
+
+def test_multi_view_pairs_never_use_same_photo_and_keep_test_out():
+    g = shape_groups(fixture_rows())
+    f = fitting_groups({'protocol': SHAPE_PROTOCOL}, g, multi_view=True)
+    assert len(f['train']) == len(f['gallery']) == 6 and f['exclude_self']
+    for seed in range(10):
+        rows, labels = training_pairs(f, random.Random(seed), 2)
+        assert all(a['sample_id'] != b['sample_id'] for a,b in zip(rows[:2],rows[2:]))
+        assert all(r['sample_id'] not in {q['sample_id'] for q in g['query']} for r in rows)
