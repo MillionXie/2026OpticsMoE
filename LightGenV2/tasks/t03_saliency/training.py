@@ -410,6 +410,17 @@ def train(loaded: Any, bundle: Any, settings: Any) -> dict[str, Any]:
                 **({'training_only_mgd': masked_targets.state_dict()} if masked_targets is not None else {}),
                 **({'training_only_first_stage': first_stage.state_dict()} if first_stage is not None else {}),
             )
+            if alternating is not None and alternating.is_stage_end(epoch):
+                from .modeling import sha256_file
+                # Render the live handoff, not a possibly unchanged selected best.
+                # No extra checkpoint is retained at a stage boundary.
+                diagnostic_dir = settings.output_dir/'stage_diagnostics'/f"epoch_{epoch:03d}_{stage_report['stage']}"
+                render(settings.output_dir/'last_checkpoint.pt', diagnostic_dir)
+                _write_json(diagnostic_dir/'source_contract.json', {
+                    'epoch': epoch, 'stage': stage_report['stage'], 'weight_kind': 'live',
+                    'checkpoint_sha256_at_render': sha256_file(settings.output_dir/'last_checkpoint.pt'),
+                    'not_selected_best': True, 'extra_pt_saved': False,
+                })
             if not settings.staged_training:
                 scheduler.step()
             suffix = "" if test_metrics is None else f" test_CC={test_metrics['cc']:.4f}"

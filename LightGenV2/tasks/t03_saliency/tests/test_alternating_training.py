@@ -95,6 +95,7 @@ def test_stage_handoff_does_not_revert_live_optics_to_initialization_or_ema():
     assert not torch.equal(initial, live) and not torch.equal(ema.shadow['core']['p'], live)
     schedule.begin_epoch(11)
     assert torch.equal(model.core.p, live) and torch.equal(ema.shadow['core']['p'], live)
+    assert [i for i in range(1,31) if schedule.is_stage_end(i)] == [10,25,30]
     hook.remove()
 
 

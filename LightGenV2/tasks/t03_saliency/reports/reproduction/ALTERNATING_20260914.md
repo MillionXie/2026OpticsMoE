@@ -48,6 +48,8 @@ python -m LightGenV2.tasks.t03_saliency.run --profile main_dc20 --phase all --co
 其训练CC不是新测试性能。重复预检拒绝覆盖既有report。
 正式`metrics/training_history.csv`记录stage、每组LR、冻结核验、每轮raw更新RMS、alpha与CC；
 `metrics/alternating_phase_progress.json`记录每张相位相对本run初始的圆周RMS和相量距离。
+第10/25/30轮自动将当时live相位图保存到`stage_diagnostics/epoch_NNN_stage/`，
+附当时last的SHA和live标识；不保留额外PT、不把这张图冒充test best。
 `best_visualization/`始终展示所选best，不能把best退回初始化时的图当成末轮mask。
 `last_checkpoint.pt`保留live末轮和EMA状态，解释图片前须明确选的是哪个权重。
 模型执行/训练命令/环境/源码由run_manifest与launch_record记录，resolved_config固定实际配置。

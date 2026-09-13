@@ -116,6 +116,11 @@ class AlternatingSchedule:
         self.frozen, self.before = [], {}
         return result
 
+    def is_stage_end(self, epoch):
+        o = self.options
+        return epoch in (o['optics_epochs'], o['optics_epochs'] + o['electronics_epochs'],
+                         self.settings.student_epochs)
+
 
 def effective_sam_rho(settings, optimizer):
     """Disable SAM's *electronic* perturbation only when electronics are frozen.
