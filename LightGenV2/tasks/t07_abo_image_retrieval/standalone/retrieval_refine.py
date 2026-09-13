@@ -24,11 +24,32 @@ PROFILES['sku_capacity_control'] = dict(PROFILES['sku_mild_adamw'], router_lr_mu
 PROFILES['sku_conv_teacher'] = dict(PROFILES['sku_capacity_control'],
     electronic_expansion=dict(kernels=dict(vision=7, language=7), mlp_width=768))
 PROFILES['sku_spatial_readout'] = dict(PROFILES['sku_capacity_control'], head_expansion='spatial2x2_64')
+PROFILES['sku_fullfield_language'] = dict(PROFILES['sku_capacity_control'],
+    ccd_readout_modes=dict(vision='prefix_rows',language='fullfield_rows'))
 
 
 def prepare_capacity_payload(payload, profile, protocol, fresh=False):
     expansion = profile.get('electronic_expansion')
     head = profile.get('head_expansion')
+    modes = profile.get('ccd_readout_modes')
+    if modes:
+        if (expansion or head or fresh or profile.get('optical_only')
+                or protocol != 'abo200_enrolled_sku_hash8train4query_v1'):
+            raise ValueError('CCD readout ablation requires isolated enrolled continuation')
+        if (modes != dict(vision='prefix_rows',language='fullfield_rows')
+                or payload['metadata'].get('ccd_readout_modes',dict(vision='prefix_rows',language='prefix_rows'))
+                != dict(vision='prefix_rows',language='prefix_rows')
+                or payload['metadata'].get('retrieval_head','linear64') != 'linear64'):
+            raise ValueError('CCD ablation must begin with original prefix readout and linear64 head')
+        from .generalization import apply_contract
+        converted = apply_contract(payload,dict(input_preprocessing=payload['metadata']['input_preprocessing'],
+                                                ccd_readout_modes=modes))
+        if converted['state_dict'] is not payload['state_dict']:
+            raise ValueError('CCD mode conversion must not change any weights')
+        return converted, dict(expanded=False,extra_parameters=0,role='Electronic CCD pooling ablation, not a new optical geometry',
+            source_readout_modes=dict(vision='prefix_rows',language='prefix_rows'),target_readout_modes=modes,
+            function_preserving=False,
+            initialization='Reuse all tensors but re-evaluate fullfield L readout; old-contract score is NOT fallback in this run')
     if head:
         if expansion or fresh or protocol != 'abo200_enrolled_sku_hash8train4query_v1' or profile.get('optical_only'):
             raise ValueError('Bounded spatial readout requires enrolled continuation, no simultaneous teacher expansion')

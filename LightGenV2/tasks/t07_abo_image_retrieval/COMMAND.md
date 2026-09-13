@@ -2259,3 +2259,33 @@ CUDA_VISIBLE_DEVICES=GPU-e8837b85-d55b-8e81-aaa5-ec1ac326932d python -m LightGen
   --epochs 20 --steps 100 --eval-every 5 --batch-size 4 --bank-batch-size 16 \
   --output "$R/abo200_spatial_readout_20260913"
 ```
+
+## 74. 语言侧完整CCD读出：零新增参数的当前SKU协议对照
+
+只把L expert/global的`readout_mode`从`prefix_rows`改为`fullfield_rows`。
+旧：原强度处理→pool224×224→前77行；新：相同强度处理→整场pool77×224。
+后续row LayerNorm/ReLU/Linear192不变，V端不动；router探测器读出及478光场/传播/相位/Top2完全不动。
+这会改变数值函数；新run仅在新读出合同内选best，禁止回退旧模式并继续引用旧指标。
+旧任务的fullfield结果只作历史证据，这次固定当前1600 TRAIN/gallery+800 QUERY和原d11f3428权重。
+原linear64读出和全部电子残差保留，不叠加第73节空间头/卷积教师，也不叠加外部预训练。
+同一20轮×100步、每5轮live/EMA、lr-scale=.2；原光学噪声/DC、专家资格约束、alpha>0.4保留。
+强度汇聚仍有信息损失；不把未取的行数比例当作损失光能的比例，不声称该修改一定提高精度。
+
+先epochs1、steps2、eval-every1，output=`$T07/runs/smoke/abo_fullfield_language_20260914`验证完整CUDA流程。
+确认结束、相位/梯度有限和GPU释放后，才执行正式20轮。
+
+```bash
+T07=/DATA/DATA1/guest3/2026OpticsMoE/LightGenV2/tasks/t07_abo_image_retrieval
+R="$T07/runs/simulation"
+export HF_HUB_OFFLINE=1 TRANSFORMERS_OFFLINE=1 OMP_NUM_THREADS=4 MKL_NUM_THREADS=4
+# 先确认GPU1空闲；GPU0留给第72节转台预训练，只使用自己的进程。
+nvidia-smi
+CUDA_VISIBLE_DEVICES=GPU-e8837b85-d55b-8e81-aaa5-ec1ac326932d python -m LightGenV2.tasks.t07_abo_image_retrieval.standalone.retrieval_adapt \
+  --data /DATA/DATA1/guest3/2026OpticsMoE/data/abo_similarity10_data \
+  --manifest "$R/abo200_enrolled_protocol_20260913/protocol.json" --assets "$R/standalone_assets_20260910" \
+  --checkpoint "$R/abo200_route_distill_20260913/best.pt" \
+  --expected-checkpoint-sha256 d11f3428efa67c7c5084eb9056d991c4692d36a3d177cd82b4601238357d444a \
+  --multi-view --refine-profile sku_fullfield_language --lr-scale .2 \
+  --epochs 20 --steps 100 --eval-every 5 --batch-size 4 --bank-batch-size 16 \
+  --output "$R/abo200_fullfield_language_20260914"
+```
