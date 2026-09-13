@@ -138,3 +138,23 @@ SHAPE当前best=15 EMA，74.6479%，去光61.9718%，两个模态均使用6种To
 全部非光学参数初始/最终SHA均为`2a4edb97bf226d14bfcd227af703ffe6b04d9aa6204a19f515a2ea618f24e68e`。
 这证明相位可被优化，但不证明泛化获益；不因原模型已经训过的相位继续更新失败而声称原光学未训练。
 后续有限容量教师与轻量对照均保留原最佳作为起点，继续协同训练，教师结果与最终压缩学生分开报告。
+
+## 更贴近目标的外部预训练数据：转台序列清点（尚未训练）
+
+2026-09-13只读清点：服务器`data/abo`目前只有listings和small catalog images，没有完整spins图片目录。
+之前1986 SKU/7944图池是listing展示图，不应称为转台预训练。
+从官方`spins/metadata/spins.csv.gz`（7737458字节）读取元数据，与本地listings中的`spin_id`关联，
+排除当前200目标SKU及其全部spin_id，并要求每序列至少12个不同角度索引，得到8011 SKU/8009唯一序列。
+这里只确认元数据，不代表这些图片已下载、可读或已经完成重复图审查；共享spin的SKU还需合并/排除，避免误作负例。
+
+同10种product_type的候选SKU数：BED141、CHAIR1139、HOME_MIRROR89、LIGHT_FIXTURE360、PILLOW251、
+RUG783、SOFA790、STOOL_SEATING317、VASE30、WALL_ART575。该清点不改变目标划分或查询。
+后续可先按稳定哈希、每类至多50商品（预计最多480）取每物体均匀12视角，
+逐图核对SHA、排除目标图及近重复，再做外部→目标训练。比旧池更贴近旋转视角，是待检验假设，不是已证实收益。
+不下载40GB整包，可按官方对象路径单图获取；新训练不能绕过固定协议/目标身份隔离。
+
+来源：[ABO官方主页](https://amazon-berkeley-objects.s3.us-east-1.amazonaws.com/index.html)、
+[官方spins说明](https://amazon-berkeley-objects.s3.us-east-1.amazonaws.com/spins/README.md)。
+许可记录存在需复核的差异：官网/当前spins README写CC BY4.0，而
+[AWS登记页](https://registry.opendata.aws/amazon-berkeley-objects/)写CC BY-NC4.0。
+保留实际下载包许可及来源；对外数据再分发/论文图片使用前应向权利方核实，不作“必定符合某期刊”的保证。
