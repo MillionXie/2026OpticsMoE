@@ -71,3 +71,20 @@ def test_enrollment_view_counts_nested_without_dropping_products():
     assert set(selected[0]) <= set(selected[1]) <= set(selected[2])
     assert [len(x) for x in selected] == [2, 6, 24]
     assert all({samples[i].product_id for i in indices} == {'a', 'b'} for indices in selected)
+
+
+def test_budget_centroids_matches_original12_but_supports1_and3():
+    import torch
+    from types import SimpleNamespace
+    from LightGenV2.tasks.t07_abo_image_retrieval.standalone.data import _gallery_centroids
+    from LightGenV2.tasks.t07_abo_image_retrieval.standalone.catalog_view_audit import budget_centroids
+    samples = [SimpleNamespace(product_id='a', category_id=0, category_name='a') for _ in range(12)]
+    z = torch.nn.functional.normalize(torch.arange(1, 769).reshape(12, 64).float(), dim=1)
+    a, _ = budget_centroids(samples, z, 12)
+    b, _ = _gallery_centroids(samples, z)
+    assert torch.equal(a, b)
+    for count in (1, 3):
+        result, meta = budget_centroids(samples[:count], z[:count], count)
+        assert result.shape == (1, 64) and meta[0].view_count == count
+    with pytest.raises(RuntimeError):
+        _gallery_centroids(samples[:1], z[:1])

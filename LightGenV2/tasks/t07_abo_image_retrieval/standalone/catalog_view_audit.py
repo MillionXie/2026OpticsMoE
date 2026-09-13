@@ -9,7 +9,7 @@ import hashlib
 from pathlib import Path
 import torch
 from torch.nn import functional as F
-from .data import _load_contract, _gallery_centroids, _evaluate, _category_prototypes
+from .data import _load_contract, GalleryItem, _evaluate, _category_prototypes
 from .io import sha256, source_commit, write_json, write_csv
 
 
@@ -28,6 +28,24 @@ def view_indices(samples, count):
             ('abo-enrollment42:' + samples[i].sample_id).encode()).hexdigest())
         selected.extend(order[:count])
     return selected
+
+
+def budget_centroids(samples, vectors, count):
+    """Separate new-budget aggregator: NEVER relax original12-view contract."""
+    groups = {}
+    if len(samples) != len(vectors):
+        raise ValueError('Sample/vector count mismatch')
+    for sample, vector in zip(samples, vectors):
+        groups.setdefault(sample.product_id, []).append((sample, vector))
+    centers, metadata = [], []
+    for key in sorted(groups):
+        values = groups[key]
+        first = values[0][0]
+        if len(values) != count or any(s.category_id != first.category_id for s, _ in values):
+            raise ValueError('Wrong view budget or conflicting category')
+        centers.append(F.normalize(torch.stack([v.float() for _, v in values]).mean(0), dim=0))
+        metadata.append(GalleryItem(key, first.category_id, first.category_name, count))
+    return F.normalize(torch.stack(centers), dim=1), metadata
 
 
 def run(args):
@@ -58,7 +76,7 @@ def run(args):
         results[str(count)] = {}
         for name, z in vectors.items():
             z = F.normalize(z.float(), dim=1)
-            gallery, metadata = _gallery_centroids([train[i] for i in indices], z[indices])
+            gallery, metadata = budget_centroids([train[i] for i in indices], z[indices], count)
             metrics, predictions, _ = _evaluate(z[len(train):], test, gallery, metadata, _category_prototypes(gallery, metadata))
             results[str(count)][name] = metrics
             write_csv(args.output / f'{name}_views{count}_predictions.csv', predictions)

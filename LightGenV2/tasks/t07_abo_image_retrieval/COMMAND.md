@@ -1827,3 +1827,21 @@ python -m LightGenV2.tasks.t07_abo_image_retrieval.standalone.retail_sources aud
 OFF官方API只查一页100条，记录原始JSON/SHA；这是热门商品可行性检查，不是代表性采样/正式benchmark。
 同一imgid的front_en/front_fr不算两张，numeric原图可能是营养表/条码；未经照片内容和重复上传审计不启动训练。
 图片CC BY-SA、数据库ODbL分别遵守；不能把许可证当所有包装/肖像权保证。大量图片按官方建议使用AWS，不并发轰炸主站。
+
+OFF小样本可视审计（最多10张400像素原照片，按ID哈希选5商品，串行下载，不生成检索成绩）：
+
+```bash
+python -m LightGenV2.tasks.t07_abo_image_retrieval.standalone.retail_sources preview-off \
+  --data "$T07/runs/smoke/off_feasibility_20260913" \
+  --output "$T07/runs/smoke/off_photo_review_20260913"
+```
+
+ABO登记照片预算CPU审计：1/3/12张均按sample_id哈希固定，保留所有120图库商品/480查询，报告所有档位，不把新协议替代原12视角成绩。使用原生冻结Qwen64，不拟合降维器，不按测试表现选择视角。
+
+```bash
+python -m LightGenV2.tasks.t07_abo_image_retrieval.standalone.catalog_view_audit \
+  --data /DATA/DATA1/guest3/2026OpticsMoE/data/abo_similarity10_data \
+  --optical-cache "$T07/runs/simulation/readout_subspace_20260912/evaluation/retrieval_features.pt" \
+  --qwen-cache "$T07/runs/simulation/frozen_qwen_20260912/features.pt" \
+  --output "$T07/runs/simulation/catalog_view_budget_20260913"
+```

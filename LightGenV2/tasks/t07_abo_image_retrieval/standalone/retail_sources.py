@@ -168,9 +168,44 @@ def audit_off(output):
         raise
 
 
+def preview_off(root, output):
+    """At most10 serial400px photos for HUMAN review, never auto-label a split."""
+    if output.exists():
+        raise FileExistsError(output)
+    raw_path = root / 'api_response.json'
+    raw = json.loads(raw_path.read_text(encoding='utf-8'))
+    products = {str(p['code']): p for p in raw['products']}
+    candidates = [r for r in off_inventory(raw['products']) if r['potential_front_pair']
+                  and len(r['code']) == 13 and r['code'].isdigit()]
+    candidates.sort(key=lambda r: hashlib.sha256(('off-preview42:' + r['code']).encode()).hexdigest())
+    output.mkdir(parents=True)
+    rows = []
+    for r in candidates[:5]:
+        code = r['code']
+        folder = '/'.join([code[:3], code[3:6], code[6:9], code[9:]])
+        for image_id in r['independent_selected_front_ids'][:2]:
+            info = products[code]['images'].get(image_id, {})
+            if '400' not in info.get('sizes', {}):
+                rows.append(dict(code=code, image_id=image_id, status='missing400')); continue
+            url = f'https://images.openfoodfacts.org/images/products/{folder}/{image_id}.400.jpg'
+            row = dict(code=code, image_id=image_id, url=url)
+            try:
+                data = fetch(url, maximum=5_000_000)
+                path = output / f'{code}_{image_id}.jpg'
+                path.write_bytes(data)
+                row.update(status='downloaded', path=path.name, sha256=sha256(path))
+            except Exception as exc:
+                row.update(status='failed', error=repr(exc))
+            rows.append(row)
+    write_json(output / 'report.json', dict(status='review_required', source_commit=source_commit(),
+        metadata_sha256=sha256(raw_path), selection='First5 eligible13-digit products by sha256(off-preview42:<code>),2 distinct selected-front raw imgids each. No model scores used.',
+        purpose='Feasibility review ONLY. Different imgids may still be reuploads, packaging changes, or localization errors. Do not train or count retrieval accuracy without independent-image audit.',
+        license='Images CC BY-SA; source URLs retained, metadata database ODbL; not a complete attribution clearance', rows=rows))
+
+
 def main():
     p = argparse.ArgumentParser(description=__doc__)
-    p.add_argument('mode', choices=['prepare-shape', 'audit-off'])
+    p.add_argument('mode', choices=['prepare-shape', 'audit-off', 'preview-off'])
     p.add_argument('--data', type=Path)
     p.add_argument('--output', type=Path, required=True)
     args = p.parse_args()
@@ -178,6 +213,10 @@ def main():
         if args.data is None:
             p.error('SHAPE requires --data containing author archives')
         prepare_shape(args.data, args.output)
+    elif args.mode == 'preview-off':
+        if args.data is None:
+            p.error('OFF preview requires --data containing api_response.json')
+        preview_off(args.data, args.output)
     else:
         audit_off(args.output)
 
