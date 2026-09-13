@@ -2297,3 +2297,23 @@ CUDA_VISIBLE_DEVICES=GPU-e8837b85-d55b-8e81-aaa5-ec1ac326932d python -m LightGen
   --epochs 20 --steps 100 --eval-every 5 --batch-size 4 --bank-batch-size 16 \
   --output "$R/abo200_fullfield_language_20260914"
 ```
+
+## 75. 固定200商品协议的视角错误审计（CPU，不重新训练）
+
+仅重读两个既有64维缓存，核对相同manifest SHA和全部2400个样本ID，按协议图库顺序稳定排序。
+保留全部1600图库/800查询；按类别、原始spin索引和最近同SKU训练视角间隔统计，不拟合变换、不改标签。
+索引周期72，不是角度数值；不同商品的相同索引也不保证语义上的正面/侧面一致。
+分析使用TEST结果，不能当独立验证或据此删困难查询。输出只含JSON指标和逐查询预测，不产生权重。
+
+```bash
+T07=/DATA/DATA1/guest3/2026OpticsMoE/LightGenV2/tasks/t07_abo_image_retrieval
+R="$T07/runs/simulation"
+# 使用包含本审计代码的GitHub commit；不要切换运行中训练所用的工作树。
+CUDA_VISIBLE_DEVICES='' python -m LightGenV2.tasks.t07_abo_image_retrieval.analysis.enrolled_views \
+  --manifest "$R/abo200_enrolled_protocol_20260913/protocol.json" \
+  --optical-cache "$R/abo200_route_distill_20260913/features.pt" \
+  --qwen-cache "$R/abo200_enrolled_qwen64_20260913/normal_features.pt" \
+  --output "$R/abo200_view_audit_20260914"
+```
+
+已有输出时命令拒绝覆盖；新的模型缓存应使用新的有意义run ID，不能覆盖这次基准审计。
