@@ -230,6 +230,41 @@ def checkpoint_history(payload, manifest_sha):
         history_note='test_selected refers to current protocol; other-dataset training/selection is not ruled out')
 
 
+def split_routing_report(selected, rows, *, removed=False):
+    """Read-only per-split Top2 audit; pooled TRAIN must not hide QUERY collapse."""
+    if removed:
+        if selected is not None:
+            raise ValueError('Removed optical path cannot supply fresh router masks')
+        return dict(executed=False, reason='Optical path removed; no fresh router observations')
+    if not isinstance(selected, dict) or set(selected) != {'vision', 'language'} or not rows:
+        raise ValueError('Require two optical routers and nonempty rows')
+    if any(r['split'] not in ('gallery', 'query') for r in rows):
+        raise ValueError('Unknown routing row split')
+    masks = {}
+    for mode, mask in selected.items():
+        if (not isinstance(mask, torch.Tensor) or mask.shape != (len(rows), 4) or not torch.isfinite(mask).all()
+                or not ((mask == 0) | (mask == 1)).all() or not (mask.sum(1) == 2).all()):
+            raise ValueError('Require finite binary Top2 masks aligned with all rows')
+        masks[mode] = mask.detach().float().cpu()
+    result = dict(executed=True, denominator='Two selection events per sample; shares sum to one',
+                  thresholds=dict(minimum_share=.05, maximum_pair_fraction=.8, minimum_unique_pairs=3), splits={})
+    for split in ('gallery', 'query'):
+        indices = [i for i, r in enumerate(rows) if r['split'] == split]
+        if not indices:
+            raise ValueError('Both gallery and query routing scopes are required')
+        scope = dict(sample_count=len(indices), modalities={}, eligible=True)
+        for mode, mask in masks.items():
+            value = mask[indices]
+            _, counts = torch.unique(value, dim=0, return_counts=True)
+            share = value.sum(0) / value.sum()
+            maximum = float(counts.max() / len(value))
+            scope['modalities'][mode] = dict(selection_share=share.tolist(), selected_counts=value.sum(0).tolist(),
+                unique_top2_sets=len(counts), most_common_top2_fraction=maximum)
+            scope['eligible'] &= bool(share.min() >= .05 and maximum <= .8 and len(counts) >= 3)
+        result['splits'][split] = scope
+    return result
+
+
 @torch.inference_mode()
 def evaluate(args):
     from PIL import Image, ImageOps
@@ -289,11 +324,12 @@ def evaluate(args):
         status.update(identity)
         write_json(args.output / 'status.json', status)
         write_json(args.output / 'execution.json', identity)
-        results = {}
+        results, routing = {}, {}
         for removed in ([False, True] if args.mode == 'optical' else [False]):
             if args.mode == 'optical':
                 model.set_remove_optical(removed)
             vectors = []
+            selections = {m: [] for m in ('vision', 'language')}
             for start in range(0, len(rows), args.batch_size):
                 images = []
                 for row in rows[start:start + args.batch_size]:
@@ -313,16 +349,25 @@ def evaluate(args):
                         position = torch.arange(mask.shape[1], device=device)[None].expand_as(mask).masked_fill(~mask, -1).amax(1)
                         vector = F.normalize(hidden[torch.arange(len(mask), device=device), position, :64].float(), dim=-1)
                 vectors.append(vector.float().cpu())
+                if args.mode == 'optical' and not removed:
+                    for mode in selections:
+                        selections[mode].append(getattr(model, mode).optics.router.last['selected_mask'].detach().cpu())
                 print(f'{args.mode} remove={removed}: {min(start+args.batch_size,len(rows))}/{len(rows)}', flush=True)
             values = torch.cat(vectors)
             metrics, predictions = rank_instances(values, rows)
             name = 'remove_optical' if removed else 'normal'
             results[name] = metrics
-            torch.save(dict(manifest_sha256=manifest_sha, ids=[r['sample_id'] for r in rows], vectors=values), args.output / f'{name}_features.pt')
+            cache = dict(manifest_sha256=manifest_sha, ids=[r['sample_id'] for r in rows], vectors=values)
+            if args.mode == 'optical':
+                masks = None if removed else {m: torch.cat(v) for m, v in selections.items()}
+                routing[name] = split_routing_report(masks, rows, removed=removed)
+                if not removed:
+                    cache['router_selected_mask'] = masks
+            torch.save(cache, args.output / f'{name}_features.pt')
             write_csv(args.output / f'{name}_predictions.csv', predictions)
         if sha256(args.manifest) != manifest_sha:
             raise ValueError('Manifest changed during evaluation')
-        report = dict(identity, status='complete', metrics=results,
+        report = dict(identity, status='complete', metrics=results, routing=routing,
                       elapsed_seconds=time.time()-args.started,
                       timing_and_power='Not benchmarked; elapsed includes loading and artifact I/O')
         if 'remove_optical' in results:

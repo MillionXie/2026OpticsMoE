@@ -2488,3 +2488,31 @@ CUDA_VISIBLE_DEVICES=GPU-e8837b85-d55b-8e81-aaa5-ec1ac326932d python -m LightGen
 源码对平均时的数据来源增加核对：两父权重manifest不一致或仅一份缺失时拒绝；
 保留父训练epoch/variant/来源commit及TEST选模标记，不继承分数、优化器或辅助头。
 相位仍为`2*pi*sigmoid(raw)`；只保存这个候选的best.pt，未重新训练所以没有last.pt。
+
+## 80. 光优先最终best独立复评（须等训练结束）
+
+训练阶段`normal.router`统计包含1600图库+800查询；最终核验不能仅凭合并统计判断测试侧均衡。
+本复评从原图分别重建正常/同权重去光特征，正常捕获每张图的离散Top2，按gallery/query分别汇总。
+`final_report.json`的`routing.normal.splits.query`是800张TEST自身统计；`gallery`是1600图库。
+每侧至少3种组合、最大组合份额≤80%、每专家选择份额≥5%，沿用现有阈值但分开核查。
+份额分母是两次选择×样本数，合计1；不是每样本激活概率（后者合计2）。
+`routing.remove_optical.executed=false`，绝不拿移除前的router缓存冒充新的观测。
+`normal_features.pt`额外存`router_selected_mask`，可逐样本复核；无额外前向、无随机数或模型参数改变。
+
+```bash
+T07=/DATA/DATA1/guest3/2026OpticsMoE/LightGenV2/tasks/t07_abo_image_retrieval
+R="$T07/runs/simulation"
+RUN="$R/abo200_optical_pretrain_20260914"
+export OMP_NUM_THREADS=4 MKL_NUM_THREADS=4 HF_HUB_OFFLINE=1 TRANSFORMERS_OFFLINE=1
+# 先确认原训练PID退出、GPU3空闲，不能边改best文件边复评。
+nvidia-smi
+SHA=$(python -c 'import json,sys; r=json.load(open(sys.argv[1])); assert r["status"]=="complete"; print(r["best_sha256"])' "$RUN/final_report.json")
+CUDA_VISIBLE_DEVICES=GPU-4d8bfdb9-8777-05a6-3811-ab18ff4eadfd python -m LightGenV2.tasks.t07_abo_image_retrieval.standalone.retrieval_screen optical \
+  --data /DATA/DATA1/guest3/2026OpticsMoE/data/abo_similarity10_data \
+  --manifest "$R/abo200_enrolled_protocol_20260913/protocol.json" --assets "$R/standalone_assets_20260910" \
+  --checkpoint "$RUN/best.pt" --expected-checkpoint-sha256 "$SHA" \
+  --batch-size 4 --output "$RUN/verification"
+```
+
+已有verification时拒绝覆盖；这是固定权重复评，不是重新训练，也不是新的独立测试集。
+完整parent训练/TEST选模偏差仍需披露。未出报告前不能声称本复评已完成。

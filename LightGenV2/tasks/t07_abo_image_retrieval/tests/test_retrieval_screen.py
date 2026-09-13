@@ -14,6 +14,40 @@ def test_trained_checkpoint_history_is_not_mislabeled_as_untrained_transfer():
     assert not fallback['fitted_on_this_dataset'] and fallback['test_selected']
 
 
+def test_query_routing_collapse_cannot_be_hidden_by_gallery():
+    from itertools import combinations
+    from LightGenV2.tasks.t07_abo_image_retrieval.standalone.retrieval_screen import split_routing_report
+    gallery=torch.zeros(12,4)
+    for i,pair in enumerate(list(combinations(range(4),2))*2):gallery[i,list(pair)]=1
+    query=torch.tensor([[1.,1.,0.,0.]]*6)
+    masks=torch.cat([gallery,query]);original=masks.clone();rng=torch.random.get_rng_state()
+    rows=[dict(split='gallery')]*12+[dict(split='query')]*6
+    result=split_routing_report(dict(vision=masks,language=masks),rows)
+    assert result['splits']['gallery']['eligible']
+    assert not result['splits']['query']['eligible']
+    assert result['splits']['query']['modalities']['vision']['selection_share']==[.5,.5,0.,0.]
+    assert torch.equal(masks,original) and torch.equal(rng,torch.random.get_rng_state())
+    balanced=torch.cat([gallery,gallery])
+    result=split_routing_report(dict(vision=balanced,language=balanced),[dict(split='gallery')]*12+[dict(split='query')]*12)
+    assert result['splits']['query']['eligible'] and result['splits']['gallery']['eligible']
+
+
+def test_removed_routing_never_reports_stale_masks():
+    from LightGenV2.tasks.t07_abo_image_retrieval.standalone.retrieval_screen import split_routing_report
+    assert not split_routing_report(None,[],removed=True)['executed']
+    with pytest.raises(ValueError):split_routing_report({},[],removed=True)
+
+
+@pytest.mark.parametrize('bad',['shape','soft','top1'])
+def test_routing_masks_require_exact_top2_and_row_alignment(bad):
+    from LightGenV2.tasks.t07_abo_image_retrieval.standalone.retrieval_screen import split_routing_report
+    x=torch.tensor([[1.,1.,0.,0.],[0.,0.,1.,1.]])
+    if bad=='shape':x=x[:1]
+    elif bad=='soft':x[0]=.5
+    else:x[0,1]=0
+    with pytest.raises(ValueError):split_routing_report(dict(vision=x,language=x),[dict(split='gallery'),dict(split='query')])
+
+
 def test_coil_fixed_complete_split_and_angular_gap():
     rows = coil_records()
     assert rows == coil_records()
