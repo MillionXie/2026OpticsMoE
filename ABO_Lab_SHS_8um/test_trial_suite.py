@@ -1,9 +1,20 @@
-import tempfile,unittest
+import tempfile,unittest,json
+from types import SimpleNamespace
 from pathlib import Path
 from unittest.mock import patch
 import trial_suite
 
 class SuiteTests(unittest.TestCase):
+    def test_append_requires_completed_suite_and_same_count(self):
+        with tempfile.TemporaryDirectory() as d:
+            root=Path(d);out=root/'results/run01';out.mkdir(parents=True)
+            a=SimpleNamespace(out=out,trial=None,append_trial=(300,240),resume=False,publish_only=False,switch_count=80)
+            with patch.object(trial_suite,'ROOT',root):
+                for state in [dict(status='running',trials=[]),dict(status='complete',trials=[],switch_count=40)]:
+                    (out/'suite.json').write_text(json.dumps(state),encoding='utf-8')
+                    with self.assertRaises(ValueError):trial_suite.run(a)
+                    self.assertEqual(json.loads((out/'suite.json').read_text()),state)
+
     def test_report_transient_lock_retry(self):
         with patch.object(trial_suite,'write',side_effect=[PermissionError('busy'),None]) as w, patch.object(trial_suite.time,'sleep'):
             trial_suite.write_report(Path('report.json'),{})

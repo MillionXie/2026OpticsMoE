@@ -41,8 +41,10 @@ def publish(out,state):
             body.append('<h2>实际周期耗时</h2><pre>'+html.escape('\n'.join(parts))+'</pre><p>不含模型推理、PNG保存、SSH回传和跨层相位切换；100fps是相机流帧率，不是网络每秒处理100张。</p>')
         for f in tim['rows']:
             if f['digit']!=f['prediction']:body.append('<p>错帧：'+html.escape(json.dumps(f,ensure_ascii=False))+'</p>')
-    if any(t['status']=='complete' and not t['timing']['pattern_timing_passed'] for t in state['trials']):
-        lines+=['','本轮存在明确错帧：不改正式曝光/等待配置，不启动六层全量；先解决取帧对应性。']
+    if state['trials'] and state['trials'][-1]['status']=='complete' and not state['trials'][-1]['timing']['pattern_timing_passed']:
+        lines+=['','最新候选存在明确错帧：不改正式曝光/等待配置，不启动六层全量；先解决取帧对应性。']
+    elif any(t['status']=='complete' and not t['timing']['pattern_timing_passed'] for t in state['trials']):
+        lines+=['','同批较早候选有明确错帧，不能把整批都视为通过。最新候选的图案短测与六层网络曝光复核分开判断。']
     lines+=['',f"口径：每组13灰度×3帧、{state.get('switch_count',40)}次数字切换及6张独立参考。固定ROI/增益X4/100fps/平相位。",
             '图案时序通过不代表没有饱和，更不代表六层全量已获批准；失败帧不删除、不按准确率挑样本。',
             '饱和比例取同档3帧的最大值；数字正确数是显示/取帧对应性，不是MNIST识别准确率。',
@@ -55,8 +57,13 @@ def publish(out,state):
     network=out/'02_network_scan/report.json'
     if network.exists():
         nr=read(network);lines+=['','## 六层实际输入曝光复核','',f"状态：{nr['status']}；已记录阶段：{len(nr.get('stages',[]))}/6"]
+        lines+=['','|阶段|最暗样本p99|最低重复PCC|300μs是否通过|','|---|---:|---:|---|']
         for s in nr.get('stages',[]):
-            d=s['data'];lines.append(f"- {s['stage']}：{json.dumps(d['recommendation'],ensure_ascii=False)}；同相位原始ROI PCC={d['phase_hold_pcc']:.6f}")
+            d=s['data'];rr=d['rows'];ok=d['recommendation']['recommended_exposure_us'] is not None
+            lines.append(f"|{s['stage']}|{min(v['stats']['p99'] for v in rr):.0f}|{min(v.get('repeat_pcc',1) for v in rr):.6f}|{'通过' if ok else '未通过，见analysis/report原始原因'}|")
+        if nr['status']=='complete' and nr['recommendation']['recommended_exposure_us'] is None:
+            lines+=['','六层实际输入没有同时通过曝光/重复性检查：正式配置未更改，六层全量推理未启动。',
+                    '图案时序通过与弱光细节重复性通过不是同一件事；不能靠放宽阈值把两者混为通过。']
         if nr.get('error'):lines+=['',nr['error']]
         if (network.parent/'exposure_range.png').exists():
             shutil.copy2(network.parent/'exposure_range.png',CURRENT/'07_network_exposure.png')
