@@ -24,6 +24,7 @@ class Remote:
         self.phase_sha=hashlib.sha256(self.bmp).hexdigest()
         rng=np.random.default_rng(1);self.a=png(rng.integers(20,120,(1080,1920),dtype=np.uint8));self.b=png(rng.integers(20,120,(1080,1920),dtype=np.uint8))
     def exists(self,path):return False
+    def putjson(self,path,obj):self.files[path]=json.dumps(obj).encode()
     def job(self,s):
         self.jobs.append(s)
         if s['action']=='prepare':
@@ -42,6 +43,12 @@ class Remote:
         dest.write_bytes(data)
 
 class SmokeTests(unittest.TestCase):
+    def test_brightness_warning_never_accepts_wrong_shape(self):
+        from smoke_six import post_state
+        self.assertEqual(post_state(.999,.22),'rejected_postcheck')
+        self.assertEqual(post_state(.999,.22,True),'real_capture_complete_photometric_warning')
+        self.assertEqual(post_state(.90,.05,True),'rejected_postcheck')
+        self.assertEqual(post_state(.999,.05,True),'real_capture_complete')
     def test_declared_query_indices_keep_all_titles(self):
         from diagnostic_config import select_queries
         samples=[{'kind':'title','id':i} for i in range(100)]+[{'kind':'image','id':i} for i in range(2400)]

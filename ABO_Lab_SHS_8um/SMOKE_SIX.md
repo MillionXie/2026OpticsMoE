@@ -32,6 +32,13 @@ python smoke_six.py --link-config results/smoke_configs/link.json `
 每层另拍平相位挑战、目标相位两次重复、采后复查；PCC和亮度漂移不通过即停止，不继续推理。
 这些检查证明响应改变和重复稳定，**并不独立证明完整灰度—相位曲线正确**。
 
+仅为了排查六层数据流，可显式加 `--brightness-warning-only`：PCC仍需≥0.97，
+不足信号/饱和/相机设置改变仍停止，但>20%的整体亮度漂移单独标为警告，
+结果 `photometric_stability_passed=false`，**不能据此批准正式实验**。
+若只因这项亮度漂移停下，且该层所有图已采完并保存采后PCC，可加 `--resume`
+从下一层继续；保留原停止报告和协议变更记录，不修改已采像素。其他不完整层不允许这样跳过。
+正式 `dual_run.py` 的参考库、亮度门限和审批规则不受此诊断选项影响。
+
 `generated/smoke_<日期>/` 是独立相位/标定BMP目录，`sessions/smoke_<日期>/` 保留
 真实canonical CCD、身份/文件SHA、路由与最终结果。默认只保留478×478 PNG及必要JSON，
 24张全幅排障探针另外保存在results，不为每张正式输入保存大幅原图。
