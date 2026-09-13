@@ -10,6 +10,7 @@ data:
   quality_feature_cache_views: []
 
 model:
+  quality_input_width: 14
   quality_branch_enabled: false
   electronic_quality_residual_enabled: false
   quality_refiner_enabled: false
