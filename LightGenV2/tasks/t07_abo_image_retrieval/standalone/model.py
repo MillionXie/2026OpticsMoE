@@ -108,17 +108,31 @@ class Modality(nn.Module):
 class RetrievalHead(nn.Module):
     def __init__(self, kind='linear64'):
         super().__init__()
-        if kind not in ('linear64','relu128','linear256'):
+        if kind not in ('linear64','relu128','linear256','spatial2x2_64'):
             raise ValueError('Unknown retrieval head contract')
         self.kind=kind
         self.output_dimension=256 if kind=='linear256' else 64
         self.norm = nn.LayerNorm(384)
-        self.projection = (nn.Linear(384,self.output_dimension) if kind in ('linear64','linear256') else
+        self.projection = (nn.Linear(1152,64) if kind=='spatial2x2_64' else
+                           nn.Linear(384,self.output_dimension) if kind in ('linear64','linear256') else
                            nn.Sequential(nn.Linear(384,128),nn.ReLU(),nn.Linear(128,64)))
 
-    def forward(self, latent):
+    def forward(self, latent, image_positions=None):
         pooled = torch.stack([torch.cat((row.mean(0),row.amax(0))) for row in latent])
-        return F.normalize(self.projection(self.norm(pooled.float())),p=2,dim=-1)
+        features = self.norm(pooled.float())
+        if self.kind == 'spatial2x2_64':
+            # These are image-token POSITIONS AFTER the entire L optical/electronic
+            # path, not raw RGB, Qwen TF features, or an additional bypass branch.
+            if (image_positions is None or image_positions.dtype != torch.bool
+                    or image_positions.shape != latent.shape[:2]
+                    or not (image_positions.sum(1) == 49).all()):
+                raise ValueError('Spatial head requires49 ordered image-token positions per sample')
+            grid = latent[image_positions].float().reshape(len(latent),7,7,192).permute(0,3,1,2)
+            local = F.adaptive_avg_pool2d(grid,(2,2)).permute(0,2,3,1)
+            # Fixed per-cell channel normalization; no new affine parameters.
+            local = F.layer_norm(local,(192,)).reshape(len(latent),768)
+            features = torch.cat((features,local),dim=1)
+        return F.normalize(self.projection(features),p=2,dim=-1)
 
 
 class OpticalRetrieval(nn.Module):
@@ -176,7 +190,7 @@ class OpticalRetrieval(nn.Module):
         if image_features.numel() != int(image_mask.sum()):
             raise ValueError('Image token count mismatch')
         embeddings = embeddings.masked_scatter(image_mask,image_features.to(embeddings.dtype))
-        return self.readout(self.language(embeddings))
+        return self.readout(self.language(embeddings), ids.eq(self.metadata['image_token_id']))
 
     def audit(self):
         forbidden = [name for name,module in self.named_modules()
@@ -200,6 +214,7 @@ class OpticalRetrieval(nn.Module):
                 'electronic_context_kernels':kernels,
                 'electronic_mlp_width':self.vision.blocks[0].mlp_width,
                 'retrieval_head':self.readout.kind,
+                'retrieval_pooling':('Global all-token mean/max plus fixed2x2 average of49 image-token positions AFTER L; single linear64 projection, no attention' if self.readout.kind=='spatial2x2_64' else 'Global all-token mean/max'),
                 'descriptor_dimension':self.readout.output_dimension,
                 'alpha':{m:[float(alpha_value(getattr(getattr(self,m),f'block{i}_optical_fusion_logit'),getattr(self,m).alpha_bounds)) for i in (1,2)] for m in ('vision','language')},
                 'ccd_postprocessing':'mean -> clip12 -> log1p -> adaptive_avg_pool (see ccd_readout_modes) -> rowLN -> ReLU -> Linear192'}

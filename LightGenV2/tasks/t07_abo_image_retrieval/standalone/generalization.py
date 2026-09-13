@@ -301,15 +301,20 @@ def expand_retrieval_head(payload, kind):
     Already-converted checkpoints are retained, never reinitialized on reload.
     """
     previous=payload['metadata'].get('retrieval_head','linear64')
-    if kind not in ('linear64','relu128','linear256') or previous not in ('linear64','relu128','linear256'):
+    if kind not in ('linear64','relu128','linear256','spatial2x2_64') or previous not in ('linear64','relu128','linear256','spatial2x2_64'):
         raise ValueError('Unknown retrieval head contract')
     if previous==kind:return payload
-    if previous!='linear64' or kind not in ('relu128','linear256'):
-        raise ValueError('Only linear64 to relu128/linear256 readout expansion supported')
+    if previous!='linear64' or kind not in ('relu128','linear256','spatial2x2_64'):
+        raise ValueError('Readout expansion requires linear64 source')
     state=dict(payload['state_dict'])
     w=state.pop('readout.projection.weight');b=state.pop('readout.projection.bias')
     if w.shape!=(64,384) or b.shape!=(64,) or not torch.isfinite(w).all() or not torch.isfinite(b).all():
         raise ValueError('Invalid source linear readout')
+    if kind=='spatial2x2_64':
+        # Added local features initially have zero weight; old global LN is kept.
+        state['readout.projection.weight']=torch.cat((w,w.new_zeros(64,768)),dim=1)
+        state['readout.projection.bias']=b
+        return dict(payload,metadata=dict(payload['metadata'],retrieval_head=kind),state_dict=state)
     if kind=='linear256':
         # z -> [z,0] preserves cosine geometry before training; never duplicate
         # optical features or route around the existing optical computation.

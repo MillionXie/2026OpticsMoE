@@ -2227,3 +2227,35 @@ CUDA_VISIBLE_DEVICES=GPU-afc19890-6209-ee4d-622d-e619da5bd5b2 python -m LightGen
 ```
 
 上面是正式计划命令，不代表已启动或达标；实际source/PID/数据数量以README及run记录为准。
+
+## 73. 小幅保留空间布局的末端读出对照（不改光路）
+
+`sku_spatial_readout`与已完成的`sku_capacity_control`只有读出头不同：
+旧全token mean/max（384维、原LayerNorm）+ L最终输出的49个图像位置固定2×2均值（768维）
+→ 拼成1152维 → **同一个Linear64** → L2。每格192通道作固定无仿射LayerNorm。
+7×7到2×2使用adaptive average pooling，中心行/列会被相邻池化格共享；不是四块互不重叠的CCD探测器。
+它处理的是完整L光电计算之后的特征，不能把这些位置称为未经混合的原始像素/CCD。
+文本仍通过L路径和全token池化参与输出；无新的原图分支、TF或attention。
+原Linear权重放前384列，后768列初始化0；新增49152参数，训练后真实推理也需要，不冒充零成本。
+原光相位、六次10cm、478有效场、Top2、CCD读出、alpha>0.4和电子残差均不变。
+本轮没有外部预训练/教师损失，单独隔离读出变化；不把它与转台方案混作一个对照。
+
+先将下面命令改为epochs1、steps2、eval-every1，output改为`$T07/runs/smoke/abo_spatial_readout_20260913`。
+CPU测试及完整CUDA初始化、反向、正常/去光评估通过后，才启动下面20轮正式命令。
+训练批16、评估批4、TRAIN bank批16；只存best/last，测试选模偏差仍需披露。
+
+```bash
+T07=/DATA/DATA1/guest3/2026OpticsMoE/LightGenV2/tasks/t07_abo_image_retrieval
+R="$T07/runs/simulation"
+export HF_HUB_OFFLINE=1 TRANSFORMERS_OFFLINE=1 OMP_NUM_THREADS=4 MKL_NUM_THREADS=4
+# 先确认物理GPU1没有其他任务；不得抢占。不修改任何运行中的源码工作树。
+nvidia-smi
+CUDA_VISIBLE_DEVICES=GPU-e8837b85-d55b-8e81-aaa5-ec1ac326932d python -m LightGenV2.tasks.t07_abo_image_retrieval.standalone.retrieval_adapt \
+  --data /DATA/DATA1/guest3/2026OpticsMoE/data/abo_similarity10_data \
+  --manifest "$R/abo200_enrolled_protocol_20260913/protocol.json" --assets "$R/standalone_assets_20260910" \
+  --checkpoint "$R/abo200_route_distill_20260913/best.pt" \
+  --expected-checkpoint-sha256 d11f3428efa67c7c5084eb9056d991c4692d36a3d177cd82b4601238357d444a \
+  --multi-view --refine-profile sku_spatial_readout --lr-scale .2 \
+  --epochs 20 --steps 100 --eval-every 5 --batch-size 4 --bank-batch-size 16 \
+  --output "$R/abo200_spatial_readout_20260913"
+```

@@ -23,10 +23,30 @@ PROFILES = {
 PROFILES['sku_capacity_control'] = dict(PROFILES['sku_mild_adamw'], router_lr_multiplier=.1)
 PROFILES['sku_conv_teacher'] = dict(PROFILES['sku_capacity_control'],
     electronic_expansion=dict(kernels=dict(vision=7, language=7), mlp_width=768))
+PROFILES['sku_spatial_readout'] = dict(PROFILES['sku_capacity_control'], head_expansion='spatial2x2_64')
 
 
 def prepare_capacity_payload(payload, profile, protocol, fresh=False):
     expansion = profile.get('electronic_expansion')
+    head = profile.get('head_expansion')
+    if head:
+        if expansion or fresh or protocol != 'abo200_enrolled_sku_hash8train4query_v1' or profile.get('optical_only'):
+            raise ValueError('Bounded spatial readout requires enrolled continuation, no simultaneous teacher expansion')
+        if head != 'spatial2x2_64' or payload['metadata'].get('retrieval_head','linear64') != 'linear64':
+            raise ValueError('Spatial ablation must begin from original linear64 head')
+        from .generalization import expand_retrieval_head
+        converted = expand_retrieval_head(payload,head)
+        before, after = payload['state_dict'], converted['state_dict']
+        if before.keys() != after.keys() or any(not torch.equal(old,after[name]) for name,old in before.items()
+                                                if name!='readout.projection.weight'):
+            raise ValueError('Readout conversion modified protected weights')
+        extra = after['readout.projection.weight'].numel()-before['readout.projection.weight'].numel()
+        if extra != 49152:
+            raise ValueError('Unexpected spatial readout parameter increase')
+        return converted, dict(expanded=True,extra_parameters=extra,role='Bounded final readout candidate; not teacher distillation',
+            changed_tensor_shapes=['readout.projection.weight'],
+            initialization='Append768 zero-weight fixed spatial features to original384 normalized global features; finite precision must be re-evaluated',
+            optical_frontend_alpha_electronic_residuals_unchanged_at_conversion=True)
     if expansion is None:
         return payload, dict(expanded=False, extra_parameters=0)
     if fresh or protocol != 'abo200_enrolled_sku_hash8train4query_v1' or profile.get('optical_only'):
