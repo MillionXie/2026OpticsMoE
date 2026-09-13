@@ -17,6 +17,45 @@ PROFILES = {
     'phase_only_hot': dict(warmup=0, category_probability=.5, positive_weight=.1, teacher_weight=0., sam_rho=0., weight_decay=.01, phase_dropout=0., mild_augmentation=True, route_scale=.25, noise_probability=.1, optical_only=True, phase_lr_multiplier=3., router_lr_multiplier=.1),
 }
 
+# An optional larger *optical-electronic* teacher, not a Qwen/attention teacher.
+# Keep a matched unexpanded control. A teacher result is not a compact-student
+# result; compression/distillation is a separate, subsequently verified stage.
+PROFILES['sku_capacity_control'] = dict(PROFILES['sku_mild_adamw'], router_lr_multiplier=.1)
+PROFILES['sku_conv_teacher'] = dict(PROFILES['sku_capacity_control'],
+    electronic_expansion=dict(kernels=dict(vision=7, language=7), mlp_width=768))
+
+
+def prepare_capacity_payload(payload, profile, protocol, fresh=False):
+    expansion = profile.get('electronic_expansion')
+    if expansion is None:
+        return payload, dict(expanded=False, extra_parameters=0)
+    if fresh or protocol != 'abo200_enrolled_sku_hash8train4query_v1' or profile.get('optical_only'):
+        raise ValueError('Capacity teacher requires current enrolled-SKU continuation, not fresh/phase-only training')
+    from .generalization import expand_electronic_context, expand_electronic_mlp
+    converted = expand_electronic_mlp(
+        expand_electronic_context(payload, expansion['kernels']), expansion['mlp_width'])
+    before, after = payload['state_dict'], converted['state_dict']
+    if before.keys() != after.keys():
+        raise ValueError('Capacity conversion must not add branches or change tensor identities')
+    changed = []
+    for name, old in before.items():
+        allowed = any(name.startswith(f'{m}.blocks.{i}.')
+                      for m in ('vision', 'language') for i in (0, 1)) and (
+            name.endswith('token_depthwise.weight') or any(
+                name.endswith('mlp.' + suffix) for suffix in ('0.weight', '0.bias', '3.weight')))
+        if not allowed and not torch.equal(old, after[name]):
+            raise ValueError(f'Capacity conversion changed protected tensor: {name}')
+        if old.shape != after[name].shape:
+            changed.append(name)
+    extra = sum(x.numel() for x in after.values()) - sum(x.numel() for x in before.values())
+    return converted, dict(expanded=True, extra_parameters=extra, changed_tensor_shapes=changed,
+        source_kernels=payload['metadata'].get('electronic_context_kernels', dict(vision=3, language=5)),
+        target_kernels=expansion['kernels'], source_mlp_width=payload['metadata'].get('electronic_mlp_width', 384),
+        target_mlp_width=expansion['mlp_width'],
+        role='Larger optical-electronic teacher candidate; not the final compressed student',
+        initialization='Zero-padded depthwise kernels and duplicated/halved MLP neurons preserve eval function algebraically; finite-precision initialization must be re-evaluated',
+        optical_frontend_alpha_head_unchanged_at_conversion=True)
+
 
 def optical_parameter(name):
     return '.optics.experts.' in name or name.endswith('optics.global_phase') or name.endswith('raw_router_phase')

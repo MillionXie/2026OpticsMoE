@@ -25,7 +25,8 @@ from .model import OpticalRetrieval
 from .retrieval_screen import load_screen, rank_instances, OPTICS_SHA256, GALLERY_ANGLES
 from .retrieval_refine import (PROFILES, validate_continuation, route_objective,
     all_view_loss, load_train_teacher, relational_loss, selection_score, router_acceptable,
-    optical_parameter, set_parameter_scope, update_trainable_ema, non_optical_digest)
+    optical_parameter, set_parameter_scope, update_trainable_ema, non_optical_digest,
+    prepare_capacity_payload)
 from .enrolled_regularization import load_external_pool, load_external_relations, augment_whole_object, curriculum_epoch, curriculum_loss_weights
 from .generalization import backward_with_sam
 
@@ -271,6 +272,7 @@ def run(args):
     torch.set_num_threads(4)
     torch.manual_seed(args.seed)
     random.seed(args.seed)
+    payload, capacity_audit = prepare_capacity_payload(payload, profile, protocol['protocol'], args.fresh_trainable)
     model = OpticalRetrieval(copy.deepcopy(payload['metadata']))
     initialization = load_initial_weights(model, payload, args.assets, args.fresh_trainable)
     fixed_electronics_sha = non_optical_digest(model) if optical_only else None
@@ -296,7 +298,8 @@ def run(args):
         fitting_roles=fit['note'],
         selection=('Router eligibility first (min share5%,max pair80%,at least3 pairs per modality), then TEST Hit@1/mAP@10; ' if refined else '')+'Periodic full TEST; initial/live/EMA candidates. TEST selected, not unbiased',
         teacher=bool(teacher), teacher_sha256=args.expected_teacher_sha256,
-        teacher_train_ids=sorted(teacher) if teacher else [], extra_inference_parameters=0,
+        teacher_train_ids=sorted(teacher) if teacher else [], extra_inference_parameters=capacity_audit['extra_parameters'],
+        capacity_conversion=capacity_audit,
         refinement=profile,
         training_scope='Only12 optical phase tensors; all electronics/frontend/alpha frozen' if optical_only else 'Profile curriculum',
         non_optical_parameters_initial_sha256=fixed_electronics_sha,

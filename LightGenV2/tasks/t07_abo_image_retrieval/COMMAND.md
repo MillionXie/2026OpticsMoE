@@ -2102,3 +2102,38 @@ CUDA_VISIBLE_DEVICES=GPU-e8837b85-d55b-8e81-aaa5-ec1ac326932d python -m LightGen
   --multi-view --refine-profile phase_only_hot --lr-scale 1 --epochs 12 --steps 100 --eval-every 3 --batch-size 4 --bank-batch-size 16 \
   --output "$R/abo200_phase_only_hot_20260913"
 ```
+
+## 70. 相位阶段之后：适度扩容卷积教师与轻量对照
+
+先确认第69节两个任务结束，并记录TRAIN/TEST、相位变化、电子SHA和同权重去光。
+不要中断它们抢卡。教师只有原电子残差内部V核7×7/L因果核7、MLP隐藏768；
+六次光路及相位形状、alpha>0.4、64维输出不变，无新增分支/attention，冻结前端不解冻。
+教师增加607488可训练参数（总3389973），不是已经压缩的部署学生。当前先实现教师/对照，后续蒸馏另做验证。
+仅从当前协议最佳继续，绝不加载旧类别协议的训练权重。若纯相位未产生更好候选，保留下面78.125%起点。
+两组各20轮×100步，每5轮完整TEST选模（有选择偏差），LR-scale=.2，其余相同；
+仍只存best/last，最终同权重去光。原最佳不覆盖。
+
+先把下面教师命令的`--epochs 20 --steps 100 --eval-every 5`改为`--epochs 1 --steps 2 --eval-every 1`，
+output改为`$T07/runs/smoke/abo_conv_teacher_20260913`，完成CUDA初始化/反向/正常去光验证并检查PID退出后才正式运行。
+必须先检查所指定GPU空闲；命令假定已激活xml并进入GitHub已同步源码工作树，不能原地改运行中的源码。
+
+```bash
+T07=/DATA/DATA1/guest3/2026OpticsMoE/LightGenV2/tasks/t07_abo_image_retrieval
+R="$T07/runs/simulation"
+export HF_HUB_OFFLINE=1 TRANSFORMERS_OFFLINE=1 OMP_NUM_THREADS=4 MKL_NUM_THREADS=4
+nvidia-smi
+CUDA_VISIBLE_DEVICES=GPU-afc19890-6209-ee4d-622d-e619da5bd5b2 python -m LightGenV2.tasks.t07_abo_image_retrieval.standalone.retrieval_adapt \
+  --data /DATA/DATA1/guest3/2026OpticsMoE/data/abo_similarity10_data \
+  --manifest "$R/abo200_enrolled_protocol_20260913/protocol.json" --assets "$R/standalone_assets_20260910" \
+  --checkpoint "$R/abo200_route_distill_20260913/best.pt" \
+  --expected-checkpoint-sha256 d11f3428efa67c7c5084eb9056d991c4692d36a3d177cd82b4601238357d444a \
+  --multi-view --refine-profile sku_conv_teacher --lr-scale .2 --epochs 20 --steps 100 --eval-every 5 --batch-size 4 --bank-batch-size 16 \
+  --output "$R/abo200_conv_teacher_20260913"
+CUDA_VISIBLE_DEVICES=GPU-e8837b85-d55b-8e81-aaa5-ec1ac326932d python -m LightGenV2.tasks.t07_abo_image_retrieval.standalone.retrieval_adapt \
+  --data /DATA/DATA1/guest3/2026OpticsMoE/data/abo_similarity10_data \
+  --manifest "$R/abo200_enrolled_protocol_20260913/protocol.json" --assets "$R/standalone_assets_20260910" \
+  --checkpoint "$R/abo200_route_distill_20260913/best.pt" \
+  --expected-checkpoint-sha256 d11f3428efa67c7c5084eb9056d991c4692d36a3d177cd82b4601238357d444a \
+  --multi-view --refine-profile sku_capacity_control --lr-scale .2 --epochs 20 --steps 100 --eval-every 5 --batch-size 4 --bank-batch-size 16 \
+  --output "$R/abo200_capacity_control_20260913"
+```
