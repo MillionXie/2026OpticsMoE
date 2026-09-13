@@ -4,7 +4,7 @@ Local phase owner + remote logged-in desktop amplitude/camera. Manifest pins
 each native BMP and its phase. Existing camera configuration is recorded, never
 silently replaced; numeric analysis is a separate operation on immutable PNGs.
 """
-import argparse, hashlib, json, subprocess
+import argparse, hashlib, json, subprocess,zipfile
 from pathlib import Path
 from PIL import Image
 from phase_owner import PhaseOwner
@@ -41,13 +41,30 @@ def run(manifest, link_path, out):
         with Remote(link) as remote:
             remote.ps("$busy=Get-Process | Where-Object {$_.ProcessName -match 'FastStream|Slideshow|python|Viewer'};if($busy){throw 'Remote hardware busy'}")
             report['remote_config_snapshot']=remote.read('LAB.local.json');save()
-            for row in rows:
-                p=Path(row['amplitude']).resolve();rel=p.relative_to(ROOT).as_posix()
-                parent=(remote.root+'/'+rel).rsplit('/',1)[0]
-                remote.ps(f"New-Item -ItemType Directory -Force -Path '{parent}' | Out-Null")
-                remote.sftp.put(str(p),remote.root+'/'+rel)
-                with remote.sftp.open(remote.root+'/'+rel,'rb') as f:
-                    if hashlib.sha256(f.read()).hexdigest()!=row['amplitude_sha256']: raise ValueError('Uploaded BMP corrupted')
+            # Native BMPs are highly compressible. Transfer one data-only ZIP,
+            # never regenerate/rescale or send source files through this path.
+            assets={Path(r['amplitude']).resolve().relative_to(ROOT).as_posix():r['amplitude_sha256'] for r in rows}
+            zpath=out/'amplitude_transfer.zip'
+            with zipfile.ZipFile(zpath,'x',zipfile.ZIP_DEFLATED) as z:
+                for rel in assets:z.write(ROOT/rel,rel)
+            relzip=out.relative_to(ROOT).as_posix()+'/amplitude_transfer.zip'
+            remote.ps(f"New-Item -ItemType Directory -Force -Path '{remote.root}/{out.relative_to(ROOT).as_posix()}' | Out-Null")
+            remote.sftp.put(str(zpath),remote.root+'/'+relzip)
+            checks='\n'.join(f"if((Get-FileHash -LiteralPath '{remote.root}/{rel}').Hash.ToLower() -ne '{digest}'){{throw 'BMP mismatch'}}" for rel,digest in assets.items())
+            # Every entry is from validated project-local files generated for
+            # this run; extraction rejects overwrites and escaping entries.
+            remote.ps(f"""$ErrorActionPreference='Stop'
+if((Get-FileHash -LiteralPath '{remote.root}/{relzip}').Hash.ToLower() -ne '{sha(zpath)}'){{throw 'ZIP mismatch'}}
+Add-Type -AssemblyName System.IO.Compression.FileSystem
+$z=[IO.Compression.ZipFile]::OpenRead('{remote.root}/{relzip}')
+try{{foreach($e in $z.Entries){{
+ if($e.FullName.Contains('..') -or $e.FullName.Contains(':') -or $e.FullName.StartsWith('/')){{throw 'Unsafe data entry'}}
+ $p=Join-Path '{remote.root}' $e.FullName
+ New-Item -ItemType Directory -Force -Path (Split-Path $p) | Out-Null
+ if(-not (Test-Path -LiteralPath $p)){{[IO.Compression.ZipFileExtensions]::ExtractToFile($e,$p,$false)}}
+}}}}finally{{$z.Dispose()}}
+{checks}
+""")
             flat=ROOT/'generated/phase_response_strong_20260913/P_flat_0.bmp'
             lens=ROOT/'generated/phase_response_strong_20260913/P_lens_10cm_inverse.bmp'
             with PhaseOwner(link,flat,lens) as owner:
