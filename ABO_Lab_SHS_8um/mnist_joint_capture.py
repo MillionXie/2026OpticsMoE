@@ -14,9 +14,10 @@ ROOT=Path(__file__).resolve().parent
 def sha(p): return hashlib.sha256(Path(p).read_bytes()).hexdigest()
 def read(p): return json.loads(Path(p).read_text(encoding='utf-8-sig'))
 
-def run(manifest, link_path, out):
+def run(manifest, link_path, out, batch=False):
     m=read(manifest);link=read(link_path)
     rows=m['rows']
+    if batch and len({r['phase_sha256'] for r in rows})!=1:raise ValueError('Batch needs exactly one fixed phase')
     if not 1<=len(rows)<=128: raise ValueError('Bounded diagnostic requires 1..128 captures')
     if len({r['name'] for r in rows})!=len(rows): raise ValueError('Duplicate capture identity')
     import re
@@ -68,11 +69,17 @@ try{{foreach($e in $z.Entries){{
             flat=ROOT/'generated/phase_response_strong_20260913/P_flat_0.bmp'
             lens=ROOT/'generated/phase_response_strong_20260913/P_lens_10cm_inverse.bmp'
             with PhaseOwner(link,flat,lens) as owner:
+                if batch:
+                    receipt=owner.show(rows[0]['phase'],rows[0]['phase_sha256'])
+                    batch_dest=out.relative_to(ROOT).as_posix()+'/batch'
+                    remote.job({'action':'mnist_batch','out':batch_dest,'phase_receipt':receipt,'mnist_rows':[
+                        dict(name=r['name'],bmp=Path(r['amplitude']).resolve().relative_to(ROOT).as_posix(),sha256=r['amplitude_sha256'],phase_sha256=r['phase_sha256']) for r in rows]})
                 for row in rows:
-                    receipt=owner.show(row['phase'],row['phase_sha256'])
-                    dest=out.relative_to(ROOT).as_posix()+'/'+row['name']
-                    remote.job({'action':'probe','bmp':Path(row['amplitude']).resolve().relative_to(ROOT).as_posix(),
-                                'out':dest,'phase_receipt':receipt})
+                    dest=out.relative_to(ROOT).as_posix()+('/batch/' if batch else '/')+row['name']
+                    if not batch:
+                        receipt=owner.show(row['phase'],row['phase_sha256'])
+                        remote.job({'action':'probe','bmp':Path(row['amplitude']).resolve().relative_to(ROOT).as_posix(),
+                                    'out':dest,'phase_receipt':receipt})
                     remote.download(dest+'/raw.png',out/(row['name']+'.png'))
                     remote.download(dest+'/capture.json',out/(row['name']+'.json'))
                     report['rows'].append(dict(row,receipt=receipt,raw_sha256=sha(out/(row['name']+'.png'))))
@@ -87,4 +94,5 @@ try{{foreach($e in $z.Entries){{
 if __name__=='__main__':
     p=argparse.ArgumentParser(description=__doc__);p.add_argument('--manifest',type=Path,required=True)
     p.add_argument('--link',type=Path,default=ROOT/'dual.local.json');p.add_argument('--out',type=Path,required=True)
-    a=p.parse_args();run(a.manifest,a.link,a.out)
+    p.add_argument('--batch',action='store_true',help='One fixed phase; open hardware once for all inputs')
+    a=p.parse_args();run(a.manifest,a.link,a.out,a.batch)
