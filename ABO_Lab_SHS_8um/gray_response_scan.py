@@ -72,9 +72,14 @@ def analyze(out):
     correct=sum(t['prediction']==t['digit'] for t in tests)
     minimum=min(t['scores'][t['digit']] for t in tests)
     timing_passed=signal and separation<.95 and min(holds.values())>=400 and correct==len(tests) and minimum>=.97
+    timing_ms={}
+    for key in ['bmp_validate_ms','slm_preload_ms','slm_show_to_visible_ms','settle_actual_ms','final_fresh_ms','capture_total_ms']:
+        values=[metas[t['name']][key] for t in tests]
+        timing_ms[key]=dict(mean=float(np.mean(values)),p95=float(np.percentile(values,95)),maximum=float(np.max(values)))
     result=dict(status='complete',config=c,sweep=sweep,frames=data,timing=dict(n=len(tests),correct=correct,
         minimum_target_pcc=minimum,reference_pair_pcc=separation,reference_hold_ms=holds,
         valid_reference_signal=signal,pattern_timing_passed=timing_passed,rows=tests),
+        timing_ms=timing_ms,timing_scope='Prepared BMP to raw host frame; excludes inference, PNG save, SSH and phase switching. Decode overlaps acquisition; do not sum it twice.',
         raw_polygon_roi_before_warp=True,full_dataset_qualified=False,
         note='Uniform-gray response is not sufficient to certify focused network CCDs or fit a phase/amplitude LUT.')
     write(out/'analysis.json',result);plot(out,result)
@@ -103,8 +108,9 @@ def plot(out,r):
     fig.savefig(out/'gray_previews.png',dpi=150);plt.close(fig)
 
 
-def run(link_path,source_config,out,exposure_us=400,wait_ms=200):
+def run(link_path,source_config,out,exposure_us=400,wait_ms=200,switch_count=40):
     validate_settings(exposure_us,wait_ms)
+    if not 40<=switch_count<=80:raise ValueError('40..80 switches; total stays within 128-capture diagnostic bound')
     out=Path(out).resolve()
     if not out.is_relative_to(ROOT/'results'):raise ValueError('Output outside results')
     if not out.name.replace('_','').isalnum() or len(out.name)>55:raise ValueError('Use short safe run name')
@@ -137,9 +143,9 @@ def run(link_path,source_config,out,exposure_us=400,wait_ms=200):
         for g in values:add(f'g{g:03d}_r{repeat}',generated/f'g{g:03d}.bmp',kind='gray',gray=int(g))
     for d in [0,1]:
         for i in range(3):add(f'ref_d{d}_{i}',generated/f'A_DIGIT_{d}.bmp',kind='reference',digit=d,hold_index=i)
-    for i in range(40):
+    for i in range(switch_count):
         d=i%2;add(f'test{i:02d}_d{d}',generated/f'A_DIGIT_{d}.bmp',kind='timing',digit=d)
-    write(out/'manifest.json',dict(kind='uniform gray response and pattern timing; not MNIST accuracy',gray_values=gray,rows=rows,aperture_xy_size=aperture(c),config=cfg))
+    write(out/'manifest.json',dict(kind='uniform gray response and pattern timing; not MNIST accuracy',gray_values=gray,switch_count=switch_count,rows=rows,aperture_xy_size=aperture(c),config=cfg))
     capture_run(out/'manifest.json',link_path,out/'capture',batch=True,config_rel=cfg)
     analyze(out)
 
@@ -147,6 +153,7 @@ def run(link_path,source_config,out,exposure_us=400,wait_ms=200):
 if __name__=='__main__':
     p=argparse.ArgumentParser();p.add_argument('--link',type=Path,required=True);p.add_argument('--source-config',required=True);p.add_argument('--out',type=Path,required=True)
     p.add_argument('--exposure-us',type=float,default=400);p.add_argument('--wait-ms',type=float,default=200)
+    p.add_argument('--switch-count',type=int,default=40)
     p.add_argument('--analyze-only',action='store_true');a=p.parse_args()
     if a.analyze_only:analyze(a.out)
-    else:run(a.link,a.source_config,a.out,a.exposure_us,a.wait_ms)
+    else:run(a.link,a.source_config,a.out,a.exposure_us,a.wait_ms,a.switch_count)

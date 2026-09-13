@@ -33,7 +33,7 @@ def publish(out,state):
         for src,label in [('gray_response.png','灰度曲线'),('gray_previews.png','原始ROI预览')]:
             filename=f"{i+3:02d}_{t['name']}_{src}";shutil.copy2(out/t['name']/src,CURRENT/filename)
             body.append(f'<h2>{html.escape(t["name"])}：{label}</h2><img style="max-width:100%" src="{filename}">')
-    lines+=['','口径：每组13灰度×3帧、40次数字切换及6张独立参考。固定ROI/增益X4/100fps/平相位。',
+    lines+=['',f"口径：每组13灰度×3帧、{state.get('switch_count',40)}次数字切换及6张独立参考。固定ROI/增益X4/100fps/平相位。",
             '图案时序通过不代表没有饱和，更不代表六层全量已获批准；失败帧不删除、不按准确率挑样本。',
             '饱和比例取同档3帧的最大值；数字正确数是显示/取帧对应性，不是MNIST识别准确率。',
             '200ms此前出现过明确旧帧，不能因为本轮40次通过就推翻旧证据；250ms也只是短测候选。',
@@ -67,12 +67,13 @@ def publish(out,state):
 
 def run(a):
     out=a.out.resolve()
+    trials=TRIALS if not a.trial else [(f'{i:02d}_{e:g}us_{w:g}ms',e,w) for i,(e,w) in enumerate(a.trial,1)]
     if not out.is_relative_to(ROOT/'results'):raise ValueError('Suite outside results')
     if a.publish_only:
         publish(out,read(out/'suite.json'));return
     if a.resume:
         state=read(out/'suite.json')
-        if [(t['name'],t['exposure_us'],t['wait_ms']) for t in state['trials']]!=TRIALS:raise ValueError('Trial contract mismatch')
+        if [(t['name'],t['exposure_us'],t['wait_ms']) for t in state['trials']]!=trials or state.get('switch_count',40)!=a.switch_count:raise ValueError('Trial contract mismatch')
         for t in state['trials']:
             if t['status']=='complete':
                 if not (out/t['name']/'analysis.json').is_file():raise ValueError('Completed trial data missing')
@@ -82,14 +83,14 @@ def run(a):
     else:
         out.mkdir(parents=True,exist_ok=False)
         state=dict(status='running',started=time.strftime('%Y-%m-%dT%H:%M:%S'),source_commit=subprocess.check_output(['git','rev-parse','HEAD'],text=True).strip(),
-            trials=[dict(name=n,exposure_us=e,wait_ms=w,status='pending') for n,e,w in TRIALS],full_dataset_qualified=False)
+            trials=[dict(name=n,exposure_us=e,wait_ms=w,status='pending') for n,e,w in trials],switch_count=a.switch_count,full_dataset_qualified=False)
     def save():write_report(out/'suite.json',state);publish(out,state)
     save()
     for t in state['trials']:
         if t['status']=='complete':continue
         t['status']='running';state['active']=t['name'];save()
         cmd=[sys.executable,'-u',str(ROOT/'gray_response_scan.py'),'--link',str(a.link.resolve()),'--source-config',a.source_config,
-             '--out',str(out/t['name']),'--exposure-us',str(t['exposure_us']),'--wait-ms',str(t['wait_ms'])]
+             '--out',str(out/t['name']),'--exposure-us',str(t['exposure_us']),'--wait-ms',str(t['wait_ms']),'--switch-count',str(a.switch_count)]
         t['command']=cmd;t['log']=str(out/(t['name']+'.log'));save()
         print('START',t['name'],'LOG',t['log'],flush=True)
         with Path(t['log']).open('x',encoding='utf-8') as log:
@@ -104,4 +105,6 @@ def run(a):
 
 if __name__=='__main__':
     p=argparse.ArgumentParser();p.add_argument('--link',type=Path,required=True);p.add_argument('--source-config',required=True)
+    p.add_argument('--trial',type=float,nargs=2,action='append',metavar=('EXPOSURE_US','WAIT_MS'))
+    p.add_argument('--switch-count',type=int,default=40)
     p.add_argument('--out',type=Path,required=True);p.add_argument('--publish-only',action='store_true');p.add_argument('--resume',action='store_true');run(p.parse_args())

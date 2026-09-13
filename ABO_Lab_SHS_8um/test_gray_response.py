@@ -4,7 +4,7 @@ from gray_response_scan import aperture,uniform,validate_settings
 
 class GrayResponseTests(unittest.TestCase):
     def test_requested_settings(self):
-        for e,w in [(400,250),(350,200),(350,250)]:validate_settings(e,w)
+        for e,w in [(400,250),(350,200),(350,250),(300,220)]:validate_settings(e,w)
         for e,w in [(float('nan'),200),(400,float('nan')),(400,10),(10000,200)]:
             with self.assertRaises(ValueError):validate_settings(e,w)
     def test_physical_aperture_and_fixed_background(self):
