@@ -12,6 +12,12 @@ ROOT=Path(__file__).resolve().parent
 
 def sha(p):return hashlib.sha256(Path(p).read_bytes()).hexdigest()
 
+def validate_launch_visibility(flags,show):
+    """The SLM itself is a display window, not a headless background service."""
+    if int(flags)&1 and int(show)==0:
+        raise RuntimeError('Phase SDK cannot run with STARTF_USESHOWWINDOW/SW_HIDE. Use launch_six.py; do not launch the SDK host with -WindowStyle Hidden.')
+    return {'dwFlags':int(flags),'wShowWindow':int(show)}
+
 def load_native(path,expected_sha=None):
     if expected_sha and sha(path)!=expected_sha:raise ValueError('Phase SHA mismatch')
     with Image.open(path) as im:
@@ -30,6 +36,9 @@ class PhaseHDMI:
     def __enter__(self):
         if os.name!='nt':raise RuntimeError('Windows x64 required')
         if not self.lut.is_file():raise FileNotFoundError(self.lut)
+        import win32process
+        startup=win32process.GetStartupInfo()
+        launch=validate_launch_visibility(startup.dwFlags,startup.wShowWindow)
         # SDK requires per-monitor DPI awareness for unscaled native addressing.
         C.windll.shcore.SetProcessDpiAwareness(2)
         self.dir=os.add_dll_directory(str(self.sdk))
@@ -48,7 +57,7 @@ class PhaseHDMI:
                 raise RuntimeError('Unexpected phase panel: '+str(self.info))
             if not self.info['SLMFound'] or not self.info['COMFound']:raise RuntimeError('Phase display/USB controller not found')
             if self.dll.Load_lut(str(self.lut).encode('mbcs'))<=0:raise RuntimeError('Phase LUT load failed')
-            self.info.update(lut_sha256=sha(self.lut),lut=str(self.lut),lut_scope='linear voltage; NOT verified linear phase',wrapper_sha256=self.wrapper_sha)
+            self.info.update(lut_sha256=sha(self.lut),lut=str(self.lut),lut_scope='linear voltage; NOT verified linear phase',wrapper_sha256=self.wrapper_sha,startup=launch)
             print('Phase SDK connected: '+json.dumps(self.info),flush=True)
             return self
         except BaseException:self.close();raise

@@ -22,6 +22,13 @@ def post_state(post,ratio,brightness_warning_only=False):
     if ratio>.2:return 'real_capture_complete_photometric_warning' if brightness_warning_only else 'rejected_postcheck'
     return 'real_capture_complete'
 
+def validate_prepared_manifest(mf,state,stage):
+    ids=[s['id'] for s in state['samples'] if not (stage.startswith('vision') and s['kind']=='title')]
+    if (mf.get('hardware_identity')!=state['hardware_identity'] or mf.get('stage')!=stage or
+        [e['id'] for e in mf['entries']]!=ids):
+        raise ValueError('Prepared manifest cannot be reused: identity or sample order mismatch')
+    return ids
+
 def run(remote,link,c,config_rel,out,limit=4,resume=False,brightness_warning_only=False,full_dataset=False):
     validate(c);roi=require_geometry(c);session=c['diagnostic_session']
     if full_dataset:
@@ -41,7 +48,7 @@ def run(remote,link,c,config_rel,out,limit=4,resume=False,brightness_warning_onl
             if row['status']=='preparing':
                 # No camera capture for this stage has started. Retain the
                 # failed preflight evidence but allow deterministic reprepare.
-                for s in state['samples']:
+                for s in (state['samples'] if remote.exists(f'sessions/{session}/ccd') else []):
                     prefix=f"sessions/{session}/ccd/{s['id']}/{row['stage']}"
                     if any(remote.exists(prefix+ext) for ext in ('.png','.raw.png','.record.json','.capture.json')):
                         raise ValueError('Preflight resume found capture files; audit them instead')
@@ -109,7 +116,19 @@ def run(remote,link,c,config_rel,out,limit=4,resume=False,brightness_warning_onl
                     if not prior[0]['status'].startswith('real_capture_complete'):raise ValueError('Incomplete prior stage')
                     print('RETAIN completed measured stage',stage,prior[0]['status'],flush=True);continue
                 started=time.monotonic();row={'stage':stage,'status':'preparing'};report['stages'].append(row);save()
-                job({'action':'prepare','session':session,'stage':stage})
+                mf_rel=f'sessions/{session}/play/{stage}/manifest.json'
+                if resume and remote.exists(mf_rel):
+                    existing_mf=remote.read(mf_rel)
+                    expected_ids=validate_prepared_manifest(existing_mf,state,stage)
+                    # Hash every existing BMP locally on the remote host. No re-generation.
+                    remote.ps(f"$ErrorActionPreference='Stop';$base='{remote.root}';"
+                        f"$m=Get-Content -LiteralPath ($base+'/{mf_rel}') -Raw | ConvertFrom-Json;"
+                        f"foreach($e in $m.entries){{if($e.bmp -notmatch '^\\d+\\.bmp$'){{throw 'Unsafe BMP name'}};"
+                        f"$p=$base+'/sessions/{session}/play/{stage}/'+$e.bmp;"
+                        "if((Get-FileHash -LiteralPath $p -Algorithm SHA256).Hash.ToLower() -ne $e.sha256){throw 'Prepared BMP hash mismatch'}}")
+                    row['reused_prepared_bmps']=True
+                    print('REUSE verified prepared BMPs',stage,len(expected_ids),flush=True)
+                else:job({'action':'prepare','session':session,'stage':stage})
                 mf=remote.read(f'sessions/{session}/play/{stage}/manifest.json')
                 if len(mf['entries'])!=report['expected_stage_counts'][index]:raise ValueError('Unexpected sample count')
                 phase=out/(stage+'.bmp');remote.download(mf['phase_file'].replace('\\','/'),phase)

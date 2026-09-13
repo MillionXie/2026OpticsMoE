@@ -44,6 +44,14 @@ class Remote:
         dest.write_bytes(data)
 
 class SmokeTests(unittest.TestCase):
+    def test_reuse_requires_exact_identity_sample_order_and_stage(self):
+        from smoke_six import validate_prepared_manifest
+        state={'hardware_identity':'fixed','samples':[{'id':'t','kind':'title'},{'id':'a','kind':'image'},{'id':'b','kind':'image'}]}
+        m={'hardware_identity':'fixed','stage':'vision_router','entries':[{'id':'a'},{'id':'b'}]}
+        self.assertEqual(validate_prepared_manifest(m,state,'vision_router'),['a','b'])
+        for change in [{'hardware_identity':'wrong'},{'stage':'language_router'},{'entries':[{'id':'b'},{'id':'a'}]},{'entries':[{'id':'a'}]}]:
+            with self.assertRaises(ValueError):validate_prepared_manifest(dict(m,**change),state,'vision_router')
+
     def test_full_requires_explicit_dataset_and_no_selection(self):
         c={'diagnostic_only':True,'diagnostic_session':'smoke_fixture','geometry_confirmed':True,
            'geometry_evidence':{'method':'measured_markers_with_asymmetric_check','report_sha256':'fixture'},

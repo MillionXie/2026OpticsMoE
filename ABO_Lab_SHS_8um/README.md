@@ -2,6 +2,26 @@
 
 ## 日常只看一个文件夹
 
+### 相位协调器不能隐藏显示窗口
+
+2026-09-13全量首次启动使用PowerShell `Start-Process -WindowStyle Hidden`，三次相位挑战均失败；
+文件与成功短测完全一致。直接启动后，固定输入平相位/Router往返PCC约0.872，恢复可区分变化。
+Windows启动显示状态可影响SDK创建的首个显示窗口，因此禁止将相位SDK宿主当无界面服务隐藏。
+这是已发现的启动方式风险，并不证明此前所有间歇性故障都只有这一个原因。
+现在入口会在调用Create_SDK之前拒绝SW_HIDE；用pythonw启动去掉控制台，但保留相位输出窗口。
+
+本地自动后台续跑（密码只放当前终端SHS_SSH_PASSWORD，不写入配置）：
+```powershell
+& 'C:\ProgramData\anaconda3\python.exe' launch_six.py --link-config results/20260913_400us240ms/link_full.json --remote-config results/smoke_configs/smoke_abo_full400us240ms_20260913.json --out results/20260913_400us240ms/inference --full-dataset --limit 0 --resume
+```
+
+启动器打印PID、独立续跑日志和状态路径，不覆盖首次失败日志。
+同时启动只读监督器，每15秒更新 `reports/00_current/03_live.html`，显示实际进程是否存活、
+本层状态及师弟电脑最新作业日志；退出后显示终态，不一直挂着“已启动”。监督器不操作硬件，
+不自动放宽阈值、不自动重启失败采集，也不是聊天消息推送。
+仅在未开始采集的阶段，按会话身份、完整样本顺序、每张BMP的SHA256校验后复用准备结果。
+相位检查失败或部分采集不自动跳过；全量诊断不代替正式相位LUT验收。
+
 当前正在复核 **400μs曝光 + 240ms等待**，最新实时事实看 `reports/00_current`。
 上一轮300μs的“弱信号”结论属于保守原始像素筛查，不直接等于归一化网络特征不可用；
 仿真和实测专家/全局CCD均经同一个均值归一化、限幅、log读出。不得仅凭暗图否决结果。

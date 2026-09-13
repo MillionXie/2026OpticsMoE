@@ -7,6 +7,12 @@ from types import SimpleNamespace
 from phase_display import choose_panel
 
 class PhaseTests(unittest.TestCase):
+    def test_hidden_startup_is_rejected_before_sdk(self):
+        from phase_hdmi import validate_launch_visibility
+        for flags in [1,257]:
+            with self.assertRaisesRegex(RuntimeError,'SW_HIDE'):validate_launch_visibility(flags,0)
+        for flags,show in [(0,0),(256,0),(1,1),(257,5)]:
+            self.assertEqual(validate_launch_visibility(flags,show)['dwFlags'],flags)
     def test_exact_no_transform(self):
         with tempfile.TemporaryDirectory() as d:
             p=Path(d)/'a.bmp';a=np.zeros((1200,1920),np.uint8);a[12,20]=123
