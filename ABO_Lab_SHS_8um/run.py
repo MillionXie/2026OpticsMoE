@@ -99,7 +99,8 @@ def main():
     if cfg.get('diagnostic_only') and len(sys.argv)>1 and sys.argv[1]=='evaluate':
         p=ROOT/'sessions'/cfg['diagnostic_session']/'results/metrics.json'
         r=common.read(p);r.update(mode='diagnostic_real_six_stage',production_qualified=False,
-            interpretation='Small-sample flow check using provisional measured geometry; NOT a dataset accuracy result.',
+            interpretation=('Full fixed dataset real-capture evaluation; no sample selection; geometry/phase LUT not production certified.'
+                if cfg.get('diagnostic_full_dataset') else 'Small-sample flow check using provisional measured geometry; NOT a dataset accuracy result.'),
             geometry_evidence=cfg['geometry_evidence'])
         common.write(p,r)
 

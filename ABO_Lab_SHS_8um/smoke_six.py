@@ -22,16 +22,20 @@ def post_state(post,ratio,brightness_warning_only=False):
     if ratio>.2:return 'real_capture_complete_photometric_warning' if brightness_warning_only else 'rejected_postcheck'
     return 'real_capture_complete'
 
-def run(remote,link,c,config_rel,out,limit=4,resume=False,brightness_warning_only=False):
+def run(remote,link,c,config_rel,out,limit=4,resume=False,brightness_warning_only=False,full_dataset=False):
     validate(c);roi=require_geometry(c);session=c['diagnostic_session']
-    if not 1<=limit<=8:raise ValueError('Smoke only: 1..8 queries; all 100 titles retained')
+    if full_dataset:
+        if limit!=0 or c.get('diagnostic_full_dataset') is not True or 'diagnostic_query_indices' in c:
+            raise ValueError('Full diagnostic requires --limit 0, declared full dataset, and no query selection')
+    elif not 1<=limit<=8:raise ValueError('Smoke only: 1..8 queries; all 100 titles retained')
+    query_count=2400 if full_dataset else limit
     if not c['camera'].get('gain'):raise ValueError('Explicit camera gain required')
     existing=remote.exists(f'sessions/{session}/session.json')
     if existing and not resume:raise ValueError('Fresh diagnostic session required; old data not overwritten')
     if resume:
         if not existing or not out.exists():raise ValueError('Both local journal and remote session required to resume')
         report=read(out/'report.json');state=remote.read(f'sessions/{session}/session.json')
-        if report['session']!=session or report['queries']!=limit or digest(state['hardware_config'])!=digest(c):raise ValueError('Resume identity mismatch')
+        if report['session']!=session or report['queries']!=query_count or digest(state['hardware_config'])!=digest(c):raise ValueError('Resume identity mismatch')
         write(out/('report_before_resume_'+time.strftime('%Y%m%d_%H%M%S')+'.json'),report)
         for row in list(report['stages']):
             if row['status']=='preparing':
@@ -53,9 +57,12 @@ def run(remote,link,c,config_rel,out,limit=4,resume=False,brightness_warning_onl
     else:
         if out.exists():raise FileExistsError(out)
         out.mkdir(parents=True)
-        report={'status':'running','production_qualified':False,'session':session,'queries':limit,'candidates':100,
-        'expected_stage_counts':[limit]*3+[100+limit]*3,'stages':[],
-          'geometry_evidence':c['geometry_evidence'],'note':'Small-sample REAL flow check. Provisional geometry, phase LUT not certified.'}
+        report={'status':'running','production_qualified':False,'session':session,'queries':query_count,'candidates':100,
+        'expected_stage_counts':[query_count]*3+[100+query_count]*3,'stages':[],
+          'full_dataset':full_dataset,'source_commit':c.get('source_commit'),
+          'geometry_evidence':c['geometry_evidence'],
+          'note':('Full fixed 2400-query REAL diagnostic evaluation; no sample selection. ' if full_dataset else 'Small-sample REAL flow check. ')
+                 +'Provisional geometry, phase LUT not certified. Phase checks before/after each stage, not per-frame acknowledgement.'}
     report['brightness_warning_only']=brightness_warning_only
     report['coordinator_source_sha256']=sha(__file__)
     def save():write(out/'report.json',report)
@@ -131,9 +138,16 @@ def run(remote,link,c,config_rel,out,limit=4,resume=False,brightness_warning_onl
                 if result_state=='rejected_postcheck':
                     row['status']='rejected_postcheck';save();raise RuntimeError('Stage drift; no subsequent preparation/evaluation')
                 # Capture creates a record only after raw/route/file checks pass.
-                for e in mf['entries']:
-                    record=remote.read(f"sessions/{session}/ccd/{e['id']}/{stage}.record.json")
-                    if record['phase_sha256']!=mf['phase_sha256'] or record['capture_mode']!='real':raise ValueError('Capture record mismatch')
+                if full_dataset:
+                    # Verify ALL records on their host, not thousands of SSH round trips.
+                    remote.ps(f"$ErrorActionPreference='Stop'; $base='{remote.root}/sessions/{session}'; "
+                        f"$m=Get-Content -LiteralPath ($base+'/play/{stage}/manifest.json') -Raw | ConvertFrom-Json; "
+                        f"foreach($e in $m.entries){{$r=Get-Content -LiteralPath ($base+'/ccd/'+$e.id+'/{stage}.record.json') -Raw | ConvertFrom-Json; "
+                        f"if($r.phase_sha256 -ne '{mf['phase_sha256']}' -or $r.capture_mode -ne 'real'){{throw 'Capture record mismatch'}}}}")
+                else:
+                    for e in mf['entries']:
+                        record=remote.read(f"sessions/{session}/ccd/{e['id']}/{stage}.record.json")
+                        if record['phase_sha256']!=mf['phase_sha256'] or record['capture_mode']!='real':raise ValueError('Capture record mismatch')
                 row['status']=result_state;save();print('COMPLETED',stage,row,flush=True)
             job({'action':'evaluate','session':session})
             remote.download(f'sessions/{session}/results/metrics.json',out/'metrics.json')
@@ -154,10 +168,11 @@ def main():
     p=argparse.ArgumentParser(description=__doc__);p.add_argument('--link-config',type=Path,required=True)
     p.add_argument('--remote-config',required=True);p.add_argument('--limit',type=int,default=4);p.add_argument('--out',type=Path,required=True)
     p.add_argument('--resume',action='store_true',help='Only completed stages with passing shape postchecks; never arbitrary partial capture')
+    p.add_argument('--full-dataset',action='store_true',help='Explicit full 2400-query diagnostic evaluation, requires --limit 0; NOT production/LUT certification')
     p.add_argument('--brightness-warning-only',action='store_true',help='Diagnostic flow only: retain >20%% brightness-drift warning, never certify photometric stability')
     a=p.parse_args();link=read(a.link_config)
     with Remote(link) as remote:
         c=remote.read(a.remote_config)
-        run(remote,link,c,a.remote_config,a.out,a.limit,a.resume,a.brightness_warning_only)
+        run(remote,link,c,a.remote_config,a.out,a.limit,a.resume,a.brightness_warning_only,a.full_dataset)
 
 if __name__=='__main__':main()

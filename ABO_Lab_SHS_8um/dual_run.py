@@ -41,6 +41,7 @@ class Remote:
         if any(x in self.root for x in "'<>\r\n"):raise ValueError('Invalid remote project path')
         self.ps(f"New-Item -ItemType Directory -Force -Path '{self.root}/results/dual_jobs' | Out-Null")
         self.putjson(rel+'.json',spec);self.heartbeat(rel);self.active=(name,rel)
+        print('REMOTE_LOG',self.root+'/'+rel+'.log',flush=True)
         exe=self.root+'/.venv_gpu/Scripts/pythonw.exe'
         script=f'''$ErrorActionPreference='Stop'
 $sid=[Security.Principal.WindowsIdentity]::GetCurrent().User.Value

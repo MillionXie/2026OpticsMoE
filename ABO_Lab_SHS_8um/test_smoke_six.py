@@ -44,6 +44,34 @@ class Remote:
         dest.write_bytes(data)
 
 class SmokeTests(unittest.TestCase):
+    def test_full_requires_explicit_dataset_and_no_selection(self):
+        c={'diagnostic_only':True,'diagnostic_session':'smoke_fixture','geometry_confirmed':True,
+           'geometry_evidence':{'method':'measured_markers_with_asymmetric_check','report_sha256':'fixture'},
+           'camera':{'gain':'Gain_X4'},'logical_corners_full_sensor_xy':dict(zip(['top_left','top_right','bottom_right','bottom_left'],[[100,100],[1500,100],[1500,900],[100,900]]))}
+        with tempfile.TemporaryDirectory() as d:
+            for extra,limit in [({},0),({'diagnostic_full_dataset':True},4),({'diagnostic_full_dataset':True,'diagnostic_query_indices':[0]},0)]:
+                with self.assertRaisesRegex(ValueError,'Full diagnostic requires'):
+                    run(Remote(),{},dict(c,**extra),'fixture.json',Path(d)/'out',limit,full_dataset=True)
+
+    def test_full_counts_preserve_2400_queries_and_100_titles(self):
+        c={'diagnostic_only':True,'diagnostic_full_dataset':True,'diagnostic_session':'smoke_fixture','geometry_confirmed':True,
+           'geometry_evidence':{'method':'measured_markers_with_asymmetric_check','report_sha256':'fixture'},
+           'camera':{'gain':'Gain_X4'},'logical_corners_full_sensor_xy':dict(zip(['top_left','top_right','bottom_right','bottom_left'],[[100,100],[1500,100],[1500,900],[100,900]]))}
+        remote=Remote()
+        def stop_after_init(spec):
+            remote.jobs.append(spec)
+            raise RuntimeError('fixture stop before hardware')
+        remote.job=stop_after_init
+        with tempfile.TemporaryDirectory() as d:
+            out=Path(d)/'out'
+            with self.assertRaisesRegex(RuntimeError,'fixture stop'):
+                run(remote,{},c,'fixture.json',out,0,full_dataset=True)
+            r=json.loads((out/'report.json').read_text())
+            self.assertEqual(sum(r['expected_stage_counts']),14700)
+            self.assertEqual(r['queries'],2400)
+            self.assertFalse(r['production_qualified'])
+            self.assertEqual(remote.jobs[0]['limit'],0)
+
     def test_stuck_phase_stops_after_three_attempts_without_capture(self):
         c={'diagnostic_only':True,'diagnostic_session':'smoke_fixture','geometry_confirmed':True,
            'geometry_evidence':{'method':'measured_markers_with_asymmetric_check','report_sha256':'fixture'},
