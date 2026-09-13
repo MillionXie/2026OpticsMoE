@@ -81,6 +81,9 @@ def run(spec,c,out):
             raw,meta=capture(spec['probe']['bmp']);before=raw[mask].astype(np.float32)
             report['probe'].append(dict(which='before',stats=image_stats(raw,mask),meta=meta))
             preview(raw,'probe_before.png');save()
+            ps=report['probe'][0]['stats']
+            if ps['p99']<16 or ps['std']<2 or ps['saturation_fraction']>.01:
+                raise RuntimeError('Fixed checker probe has insufficient signal or clipping; no exposure scan: '+str(ps))
             rng=np.random.default_rng(20260913)
             for e in exposures:
                 set_exposure(e);last={}
