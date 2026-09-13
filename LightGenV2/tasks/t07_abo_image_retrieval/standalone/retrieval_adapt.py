@@ -24,7 +24,8 @@ from .io import inputs, picture, verify_assets, evaluation_checkpoint, sha256, s
 from .model import OpticalRetrieval
 from .retrieval_screen import load_screen, rank_instances, OPTICS_SHA256, GALLERY_ANGLES
 from .retrieval_refine import (PROFILES, validate_continuation, route_objective,
-    all_view_loss, load_train_teacher, relational_loss, selection_score, router_acceptable)
+    all_view_loss, load_train_teacher, relational_loss, selection_score, router_acceptable,
+    optical_parameter, set_parameter_scope, update_trainable_ema, non_optical_digest)
 from .enrolled_regularization import load_external_pool, load_external_relations, augment_whole_object, curriculum_epoch, curriculum_loss_weights
 from .generalization import backward_with_sam
 
@@ -234,6 +235,9 @@ def run(args):
         profile['warmup'] = args.router_warmup_epochs
     refined = args.refine_profile != 'standard'
     regularized = 'sam_rho' in profile
+    optical_only = profile.get('optical_only', False)
+    if optical_only and (profile['warmup'] or getattr(args, 'external_pretrain_epochs', 0)):
+        raise ValueError('Optical-only audit is a separate stage, not router-only/external curriculum')
     external_fit, external_audit = None, None
     pretrain_epochs = getattr(args, 'external_pretrain_epochs', 0)
     if pretrain_epochs:
@@ -269,6 +273,7 @@ def run(args):
     random.seed(args.seed)
     model = OpticalRetrieval(copy.deepcopy(payload['metadata']))
     initialization = load_initial_weights(model, payload, args.assets, args.fresh_trainable)
+    fixed_electronics_sha = non_optical_digest(model) if optical_only else None
     if regularized:
         model.metadata['phase_dropout'] = dict(expert_global_probability=profile['phase_dropout'], router_probability=0., block_size=8)
         for m in (model.vision, model.language):
@@ -293,6 +298,8 @@ def run(args):
         teacher=bool(teacher), teacher_sha256=args.expected_teacher_sha256,
         teacher_train_ids=sorted(teacher) if teacher else [], extra_inference_parameters=0,
         refinement=profile,
+        training_scope='Only12 optical phase tensors; all electronics/frontend/alpha frozen' if optical_only else 'Profile curriculum',
+        non_optical_parameters_initial_sha256=fixed_electronics_sha,
         external_curriculum=external_audit,
         external_teacher=external_teacher_audit,
         curriculum_note='Continue verified current-protocol best -> external instance pretraining (last state, no TEST selection) -> target fine-tune. Initial best retained; not from-scratch pretraining' if external_fit else None,
@@ -350,18 +357,22 @@ def run(args):
             active_teacher = external_teacher if external else teacher
             teacher_bank = torch.stack([active_teacher[sid] for sid in gallery_ids]).to(device) if active_teacher else None
             warming = phase_epoch <= profile['warmup'] and not external
-            for name, p in params:
-                p.requires_grad_(not warming or name.endswith('raw_router_phase'))
+            set_parameter_scope(params, router_only=warming, optical_only=optical_only)
             bank, _ = encode_rows(model, processor, gallery, args.data, device,
                                   getattr(args, 'bank_batch_size', None) or args.batch_size)
             bank = bank.to(device)
             rng = random.Random(args.seed + epoch)
             factor = min(1., phase_epoch / 2) * (.1 + .9 * .5 * (1 + math.cos(math.pi * (phase_epoch - 1) / max(1, phase_epochs - 1))))
             for g in optimizer.param_groups:
-                g['lr'] = (.01 if g['name'].endswith('raw_router_phase') else 0.) if warming else g['initial_lr'] * factor * (5 if refined and g['name'].endswith('raw_router_phase') else 1)
+                multiplier = profile.get('router_lr_multiplier', 5 if refined else 1) if g['name'].endswith('raw_router_phase') else profile.get('phase_lr_multiplier', 1.) if optical_parameter(g['name']) else 1.
+                g['lr'] = (.01 if g['name'].endswith('raw_router_phase') else 0.) if warming else g['initial_lr'] * factor * multiplier
             totals = dict(loss=0., batch_natural_hit_at_1=0., route_aux=0., teacher_loss=0., all_view_loss=0., sam_loss_gap=0.)
             for step in range(args.steps):
-                model.train(not warming)
+                model.train(not (warming or optical_only))
+                if optical_only:
+                    # Fixed electronics are deterministic; retain existing optical
+                    # noise/DC injection during optical training, router noise off.
+                    model.vision.optics.train(); model.language.optics.train()
                 noisy = rng.random() < profile.get('noise_probability', .25) and not warming
                 for m in (model.vision, model.language):
                     m.optics.set_training_noise(noisy)
@@ -396,16 +407,18 @@ def run(args):
                 result, sam = backward_with_sam(closure, optimizer, 0. if warming else profile.get('sam_rho', 0.))
                 norm = torch.nn.utils.clip_grad_norm_([p for _, p in params], 1., error_if_nonfinite=True)
                 optimizer.step()
-                with torch.no_grad():
-                    for n, p in params:
-                        ema[n].mul_(.99).add_(p, alpha=.01)
+                update_trainable_ema(params, ema)
                 totals['loss'] += float(result['loss'].detach())
                 totals['batch_natural_hit_at_1'] += float(result['hit'])
                 totals['route_aux'] += float(result['route'])
                 totals['teacher_loss'] += float(result['kd'])
                 totals['all_view_loss'] += float(result['all_views'])
                 totals['sam_loss_gap'] += sam['loss_gap']
-            row = dict(epoch=epoch, phase='external_pretrain' if external else 'target_finetune', phase_epoch=phase_epoch, router_only_warmup=warming, **{k: v / args.steps for k, v in totals.items()}, last_gradient_norm=float(norm))
+            row = dict(epoch=epoch, phase='optical_only' if optical_only else 'external_pretrain' if external else 'target_finetune', phase_epoch=phase_epoch, router_only_warmup=warming,
+                active_trainable_parameters=sum(p.numel() for _,p in params if p.requires_grad),
+                **{k: v / args.steps for k, v in totals.items()}, last_gradient_norm=float(norm))
+            if optical_only and non_optical_digest(model) != fixed_electronics_sha:
+                raise RuntimeError('Frozen electronic parameter changed in optical-only training')
             torch.save(dict(metadata=model.metadata, state_dict=model.state_dict(), epoch=epoch,
                 optimizer=optimizer.state_dict(), ema=ema, source_commit=identity['source_commit'],
                 manifest_sha256=identity['manifest_sha256']), args.output / 'last.pt')
@@ -436,6 +449,9 @@ def run(args):
             p.requires_grad_(True)
         selected = torch.load(args.output / 'best.pt', map_location='cpu', weights_only=True)
         model.load_state_dict(selected['state_dict'], strict=True)
+        final_electronics_sha = non_optical_digest(model) if optical_only else None
+        if optical_only and final_electronics_sha != fixed_electronics_sha:
+            raise RuntimeError('Selected EMA/best changed frozen electronic parameters')
         normal = assessment(model, processor, groups, args, device, args.output, fit=fit)
         model.set_remove_optical(True)
         removed = assessment(model, processor, groups, args, device, fit=fit)
@@ -449,6 +465,7 @@ def run(args):
             best_sha256=sha256(args.output / 'best.pt'), last_sha256=sha256(args.output / 'last.pt'),
             normal=normal, remove_optical=removed, model_audit_final=model.audit(),
             router_eligible=router_acceptable(normal),
+            non_optical_parameters_final_sha256=final_electronics_sha,
             optical_removal_drop_percentage_points=100*(normal['test']['hit_at_1']-removed['test']['hit_at_1']),
             elapsed_seconds=time.time()-started)
         write_json(args.output / 'final_report.json', report)

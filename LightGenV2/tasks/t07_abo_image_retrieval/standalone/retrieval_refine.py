@@ -1,4 +1,5 @@
 """Training-only repair objectives; no optical forward/inference changes."""
+import hashlib
 import torch
 from torch.nn import functional as F
 from .io import sha256
@@ -12,7 +13,38 @@ PROFILES = {
     'sku_mild_adamw': dict(warmup=0, category_probability=.5, positive_weight=.1, teacher_weight=0., sam_rho=0., weight_decay=.01, phase_dropout=0., mild_augmentation=True, route_scale=.25, noise_probability=.1),
     'sku_mild_sam': dict(warmup=0, category_probability=.5, positive_weight=.1, teacher_weight=0., sam_rho=.002, weight_decay=.01, phase_dropout=0., mild_augmentation=True, route_scale=.25, noise_probability=.1),
     'sku_external_relations': dict(warmup=0, category_probability=.5, positive_weight=.1, teacher_weight=0., sam_rho=0., weight_decay=.01, phase_dropout=0., mild_augmentation=True, route_scale=.25, noise_probability=.1, external_teacher_weight=1., external_instance_weight=0.),
+    'phase_only': dict(warmup=0, category_probability=.5, positive_weight=.1, teacher_weight=0., sam_rho=0., weight_decay=.01, phase_dropout=0., mild_augmentation=True, route_scale=.25, noise_probability=.1, optical_only=True, phase_lr_multiplier=1., router_lr_multiplier=.1),
+    'phase_only_hot': dict(warmup=0, category_probability=.5, positive_weight=.1, teacher_weight=0., sam_rho=0., weight_decay=.01, phase_dropout=0., mild_augmentation=True, route_scale=.25, noise_probability=.1, optical_only=True, phase_lr_multiplier=3., router_lr_multiplier=.1),
 }
+
+
+def optical_parameter(name):
+    return '.optics.experts.' in name or name.endswith('optics.global_phase') or name.endswith('raw_router_phase')
+
+
+def set_parameter_scope(params, router_only=False, optical_only=False):
+    if router_only and optical_only:
+        raise ValueError('Cannot combine router-only and all-optical-only scopes')
+    for name, p in params:
+        p.requires_grad_(name.endswith('raw_router_phase') if router_only else optical_parameter(name) if optical_only else True)
+
+
+@torch.no_grad()
+def update_trainable_ema(params, ema, decay=.99):
+    # Updating an unchanged float as decay*x+(1-decay)*x may round by an ULP.
+    # Frozen electronic parameters must remain BITWISE identical in phase-only runs.
+    for name, p in params:
+        if p.requires_grad:
+            ema[name].mul_(decay).add_(p, alpha=1-decay)
+
+
+def non_optical_digest(model):
+    digest = hashlib.sha256()
+    for name, p in model.named_parameters():
+        if not optical_parameter(name):
+            digest.update(f'{name}|{p.dtype}|{tuple(p.shape)}'.encode())
+            digest.update(p.detach().cpu().contiguous().reshape(-1).view(torch.uint8).numpy().tobytes())
+    return digest.hexdigest()
 
 
 def validate_continuation(protocol, payload, manifest_sha, fresh):

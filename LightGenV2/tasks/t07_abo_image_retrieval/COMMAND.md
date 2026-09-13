@@ -2043,6 +2043,8 @@ CUDA_VISIBLE_DEVICES=GPU-e8837b85-d55b-8e81-aaa5-ec1ac326932d python -m LightGen
 
 ## 68. 外部软关系预训练，再恢复目标SKU监督
 
+**最新指令：本节正式训练暂不启动，先执行第69节纯相位优化。代码/流程验证保留，不代表已训练取得新结果。**
+
 只改训练，不改光路/输入尺寸/描述子/电子网络。使用同一78.125%起点，不继承旧类别任务学生权重。
 外部12轮只做冻结Qwen64关系KL及原光学/路由约束；不做外部SKU NLL、SupCon或全正例聚合。
 目标20轮恢复原GT检索损失，教师完全关闭。轻微色彩增强、无SAM/额外相位dropout。
@@ -2069,4 +2071,34 @@ CUDA_VISIBLE_DEVICES=GPU-d53ce4c8-272d-c2fb-dc09-f182d586c4eb python -m LightGen
   --external-pretrain-epochs 12 --multi-view --refine-profile sku_external_relations \
   --lr-scale .1 --epochs 20 --steps 100 --eval-every 5 --batch-size 4 --bank-batch-size 16 \
   --output "$R/abo200_external_relations_20260913"
+```
+
+## 69. 先固定电子，验证光学相位的实际贡献
+
+两组从同一78.125%权重各训练12轮，不加载任何教师。电子投影/残差、alpha、读出、冻结Qwen前端全部逐参数保持不变，只有12份光相位更新。
+`phase_only`专家/global基准LR=.002；`phase_only_hot`=.006；router均=.00003，再乘相同预热/余弦调度。不是改变传播距离、像素或相位精度。
+继续10%batch的既有光学噪声/DC，关闭router人工噪声及电子dropout。每轮SHA核验电子不变；EMA不得更新冻结参数。
+只存best/last；每3轮评估完整TRAIN/TEST、检查专家分散性，最后同权重去光。若电子真的不变，去光结果应与起点一致；不把相位变化或alpha当准确率贡献。
+先用热相位组做1轮×2步CUDA冒烟（output改`runs/smoke/abo_phase_only_20260913`），验证有限梯度、12相位变化、电子SHA及正常/去光流程；然后才正式启动。
+复用当前温和配对结束后释放的GPU0/1，不能在旧PID1986961/2008216仍运行时叠加或杀掉其他任务。
+
+```bash
+T07=/DATA/DATA1/guest3/2026OpticsMoE/LightGenV2/tasks/t07_abo_image_retrieval
+R="$T07/runs/simulation"
+export HF_HUB_OFFLINE=1 TRANSFORMERS_OFFLINE=1 OMP_NUM_THREADS=4 MKL_NUM_THREADS=4
+nvidia-smi
+CUDA_VISIBLE_DEVICES=GPU-afc19890-6209-ee4d-622d-e619da5bd5b2 python -m LightGenV2.tasks.t07_abo_image_retrieval.standalone.retrieval_adapt \
+  --data /DATA/DATA1/guest3/2026OpticsMoE/data/abo_similarity10_data \
+  --manifest "$R/abo200_enrolled_protocol_20260913/protocol.json" --assets "$R/standalone_assets_20260910" \
+  --checkpoint "$R/abo200_route_distill_20260913/best.pt" \
+  --expected-checkpoint-sha256 d11f3428efa67c7c5084eb9056d991c4692d36a3d177cd82b4601238357d444a \
+  --multi-view --refine-profile phase_only --lr-scale 1 --epochs 12 --steps 100 --eval-every 3 --batch-size 4 --bank-batch-size 16 \
+  --output "$R/abo200_phase_only_20260913"
+CUDA_VISIBLE_DEVICES=GPU-e8837b85-d55b-8e81-aaa5-ec1ac326932d python -m LightGenV2.tasks.t07_abo_image_retrieval.standalone.retrieval_adapt \
+  --data /DATA/DATA1/guest3/2026OpticsMoE/data/abo_similarity10_data \
+  --manifest "$R/abo200_enrolled_protocol_20260913/protocol.json" --assets "$R/standalone_assets_20260910" \
+  --checkpoint "$R/abo200_route_distill_20260913/best.pt" \
+  --expected-checkpoint-sha256 d11f3428efa67c7c5084eb9056d991c4692d36a3d177cd82b4601238357d444a \
+  --multi-view --refine-profile phase_only_hot --lr-scale 1 --epochs 12 --steps 100 --eval-every 3 --batch-size 4 --bank-batch-size 16 \
+  --output "$R/abo200_phase_only_hot_20260913"
 ```
