@@ -411,6 +411,21 @@ def load_settings(path: str | Path) -> Any:
         or settings.fusion_alpha_min < .4 or settings.top_k != 2 or settings.router_backend != 'optical'
     ):
         raise ValueError('Noise consistency requires isolated optical SAM GT+CC-KD training')
+    from .mixup_training import validate as validate_mixup
+    settings.mixup = validate_mixup(d('training.mixup', {}))
+    settings.mixup_active = False  # Enabled explicitly by the training epoch loop, never eval.
+    if settings.mixup and (
+        settings.sam_rho <= 0 or settings.asam or settings.gsam_coefficient or settings.noise_consistency_weight
+        or settings.pyramid_cc or settings.distillation_loss != 'spatial_cc' or settings.teacher_only_epochs
+        or settings.augmentation_enabled or settings.fixed_crop_distillation
+        or settings.hard_example_cc or settings.teacher_reliability
+        or settings.first_stage_supervision or settings.masked_distillation or settings.relational_distillation
+        or settings.feature_pretraining or settings.feature_hint_initial_weight
+        or settings.unlabeled_weight or settings.semantic_weight
+        or settings.fusion_alpha_min < .4 or settings.top_k != 2 or settings.router_backend != 'optical'
+        or settings.mixup['end_epoch'] >= settings.student_epochs
+    ):
+        raise ValueError('MixUp requires isolated optical SAM GT+CC-KD and a final unmixed stage')
     return settings
 
 
@@ -460,6 +475,7 @@ def save_resolved_config(settings: Any) -> None:
         asam=settings.asam,
         gsam_coefficient=settings.gsam_coefficient,
         noise_consistency_weight=settings.noise_consistency_weight,
+        mixup=settings.mixup,
         initialization_checkpoint=str(settings.initialization_checkpoint) if settings.initialization_checkpoint else None,
         initialization_checkpoint_sha256=settings.initialization_checkpoint_sha256,
         reset_fusion_on_warmstart=settings.reset_fusion_on_warmstart,

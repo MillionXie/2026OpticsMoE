@@ -159,13 +159,16 @@ def train_sam_epoch(model,loader,loaded,settings,optimizer,teacher_cache=None,re
         fixation=batch['fixation'].to(loaded.device,non_blocking=True)
         inputs=legacy.preprocess_vision(loaded.processor,batch['images'],loaded.device)
         teacher_logits=teacher_cache.get(batch['sample_ids'],loaded.device) if teacher_cache is not None else None
+        from .mixup_training import prepare as prepare_mixup, paired_loss
+        inputs, mix = prepare_mixup(inputs, batch['sample_ids'], getattr(settings,'mixup',{}),
+                                   enabled=getattr(settings,'mixup_active',False))
         def single_view():
             with legacy._autocast(settings,loaded.device):
                 active_first = first_stage is not None and settings.first_stage_current_weight > 0
                 with (first_stage.capture(model) if active_first else nullcontext([])) as captured:
                     outputs=model(inputs['pixel_values'],inputs['image_grid_thw'])
                 logits=outputs[0]
-                task,pieces=task_saliency_loss(logits,density,fixation,settings,teacher_logits=teacher_logits)
+                task,pieces=paired_loss(task_saliency_loss,logits,density,fixation,settings,teacher_logits,mix)
                 balance,importance=model.router_losses()
                 operating=model.operating_loss() if hasattr(model,'operating_loss') else logits.new_zeros(())
                 dc=legacy.phase_dc_loss(model) if settings.phase_dc_weight>0 else logits.new_zeros(())
@@ -197,6 +200,9 @@ def train_sam_epoch(model,loader,loaded,settings,optimizer,teacher_cache=None,re
                                  gsam_coefficient=getattr(settings,'gsam_coefficient',0.))
         count=len(batch['sample_ids']);totals['samples']+=count
         values['sam_loss_increase']=increase
+        if getattr(settings,'mixup',{}):
+            values['mixup_applied']=float(mix is not None)
+            values['mixup_minor_fraction']=0. if mix is None else 1-mix[0]
         for key,value in values.items():totals[key]+=float(value)*count
         if batch_index%settings.log_interval_batches==0 or batch_index==len(loader):
             print(f"[student {'ASAM' if asam else 'SAM'}] batch={batch_index}/{len(loader)} loss={totals['loss']/totals['samples']:.5f} "

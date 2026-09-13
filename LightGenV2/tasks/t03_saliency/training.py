@@ -247,6 +247,7 @@ def train(loaded: Any, bundle: Any, settings: Any) -> dict[str, Any]:
             _write_json(settings.output_dir / "warmstart_evaluation.json", initial_metrics)
             print(f"[T03] warmstart CC={best_cc:.6f}", flush=True)
         for epoch in range(1, int(settings.student_epochs) + 1):
+            settings.mixup_active = bool(getattr(settings,'mixup',{})) and epoch <= settings.mixup['end_epoch']
             stage_report = {}
             if aligned_weak:
                 train_loader.enabled = settings.augmentation_end_epoch == 0 or epoch <= settings.augmentation_end_epoch
