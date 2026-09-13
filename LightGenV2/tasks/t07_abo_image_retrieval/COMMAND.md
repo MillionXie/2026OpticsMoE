@@ -1963,3 +1963,46 @@ CUDA冒烟：ABO蒸馏组同参数改`--epochs 3 --steps 2 --router-warmup-epoch
 SHAPE冒烟改`--epochs 1 --steps 2`及`runs/smoke/shape8_view_refine_20260913`，保留所有正式测试图，不拿冒烟分数当新成绩。
 读取normal_features.pt后按manifest匹配，只保留1600 TRAIN向量供损失使用；800 QUERY不参与蒸馏，不加载完整Qwen/TF到学生进程。
 新增最优选模先检查router资格（每专家≥5%、最高Top2组合≤80%、至少3组合），再比R@1/mAP；目标还需R@1≥80.125%。不合格会明确标router_eligible=false。
+
+## 66. 已登记ABO：实例大池预训练后微调，对照SAM抗过拟合
+
+本轮保持200商品/1600训练图库/800查询、冻结Qwen64=85.125%不变。两组都从同一78.125%权重继续。
+使用既有`domain_pool250_views4_20260912`的1986商品/7944照片，按同SKU而非同category作正例；不导入旧类别任务训练权重。
+加载时核验pool SHA、原200商品排除合同、每张照片SHA、全目标商品ID及文件哈希零交集。原近重复筛查为启发式，不保证所有语义近似商品独立。
+这是listing图片（可能含局部/包装），不能把全部称为同商品纯转台角度。目标测试仍原封不动。
+SAM两次forward使用相同随机噪声/dropout状态；只增加训练成本，没有额外推理层、TF、attention。3%phase dropout只用于专家/global，router关闭，部署关闭。
+先运行CUDA冒烟：B命令的`--external-pretrain-epochs 12 --epochs 30 --steps 100`改成`--external-pretrain-epochs 1 --epochs 1 --steps 2`，output改`runs/smoke/abo_external_sam_20260913`；完整池/完整TEST仍保留，覆盖两个阶段及正常/去光评估。
+GPU0/1仅为本服务器本轮分配，运行前检查空闲；不终止其他人任务。最多两张，本轮不追加SHAPE作业。
+
+```bash
+T07=/DATA/DATA1/guest3/2026OpticsMoE/LightGenV2/tasks/t07_abo_image_retrieval
+R="$T07/runs/simulation"
+export HF_HUB_OFFLINE=1 TRANSFORMERS_OFFLINE=1 OMP_NUM_THREADS=4 MKL_NUM_THREADS=4
+nvidia-smi
+# A: 目标集抗过拟合对照
+CUDA_VISIBLE_DEVICES=GPU-afc19890-6209-ee4d-622d-e619da5bd5b2 python -m LightGenV2.tasks.t07_abo_image_retrieval.standalone.retrieval_adapt \
+  --data /DATA/DATA1/guest3/2026OpticsMoE/data/abo_similarity10_data \
+  --manifest "$R/abo200_enrolled_protocol_20260913/protocol.json" \
+  --assets "$R/standalone_assets_20260910" \
+  --checkpoint "$R/abo200_route_distill_20260913/best.pt" \
+  --expected-checkpoint-sha256 d11f3428efa67c7c5084eb9056d991c4692d36a3d177cd82b4601238357d444a \
+  --multi-view --refine-profile sku_regularized --lr-scale .5 --epochs 30 --steps 100 --eval-every 5 --batch-size 16 \
+  --output "$R/abo200_sam_control_20260913"
+# B: 外部12轮 -> 目标30轮；命令串行完成两个阶段，无需手工换权重
+CUDA_VISIBLE_DEVICES=GPU-e8837b85-d55b-8e81-aaa5-ec1ac326932d python -m LightGenV2.tasks.t07_abo_image_retrieval.standalone.retrieval_adapt \
+  --data /DATA/DATA1/guest3/2026OpticsMoE/data/abo_similarity10_data \
+  --manifest "$R/abo200_enrolled_protocol_20260913/protocol.json" \
+  --assets "$R/standalone_assets_20260910" \
+  --checkpoint "$R/abo200_route_distill_20260913/best.pt" \
+  --expected-checkpoint-sha256 d11f3428efa67c7c5084eb9056d991c4692d36a3d177cd82b4601238357d444a \
+  --external-pool "$R/domain_pool250_views4_20260912" \
+  --external-root /DATA/DATA1/guest3/2026OpticsMoE/data/abo \
+  --expected-external-sha256 e6cf6b923ccdfb7c4c04dcf6b033455dd1d49db737d2a9ebca941849d6c28e315 \
+  --external-pretrain-epochs 12 --multi-view --refine-profile sku_regularized \
+  --lr-scale .5 --epochs 30 --steps 100 --eval-every 5 --batch-size 16 \
+  --output "$R/abo200_external_sam_20260913"
+```
+
+batch-size16只控制评估/训练bank编码；训练为8个SKU各2张，共16图。微调阶段不混外部图库；测试候选始终1600图。
+history的epoch为全程编号；phase_epoch为阶段内轮数。外部阶段只记录TRAIN batch命中/loss，不测试选模；目标阶段记录完整train_clean和TEST。
+只写best/last，初始best也参与比较，若最终仍选epoch0则无提升。目标阶段对已均衡router继续施加温和均衡损失，最后报告同权重正常/去光与mask变化。

@@ -25,6 +25,8 @@ from .model import OpticalRetrieval
 from .retrieval_screen import load_screen, rank_instances, OPTICS_SHA256, GALLERY_ANGLES
 from .retrieval_refine import (PROFILES, validate_continuation, route_objective,
     all_view_loss, load_train_teacher, relational_loss, selection_score, router_acceptable)
+from .enrolled_regularization import load_external_pool, augment_whole_object, curriculum_epoch
+from .generalization import backward_with_sam
 
 
 def fitting_groups(protocol, groups, multi_view=False):
@@ -231,6 +233,16 @@ def run(args):
             raise ValueError('Router warmup override requires a refinement profile')
         profile['warmup'] = args.router_warmup_epochs
     refined = args.refine_profile != 'standard'
+    regularized = args.refine_profile == 'sku_regularized'
+    external_fit, external_audit = None, None
+    pretrain_epochs = getattr(args, 'external_pretrain_epochs', 0)
+    if pretrain_epochs:
+        if not regularized or not args.multi_view or protocol['protocol'] != 'abo200_enrolled_sku_hash8train4query_v1':
+            raise ValueError('External curriculum requires enrolled ABO multi-view sku_regularized profile')
+        external_fit, external_audit = load_external_pool(args.external_pool, args.external_root,
+            protocol, groups, args.expected_external_sha256)
+    elif getattr(args, 'external_pool', None) is not None:
+        raise ValueError('External pool supplied but no external pretraining epochs')
     teacher = None
     if profile['teacher_weight']:
         if args.teacher_features is None:
@@ -248,6 +260,10 @@ def run(args):
     random.seed(args.seed)
     model = OpticalRetrieval(copy.deepcopy(payload['metadata']))
     initialization = load_initial_weights(model, payload, args.assets, args.fresh_trainable)
+    if regularized:
+        model.metadata['phase_dropout'] = dict(expert_global_probability=profile['phase_dropout'], router_probability=0., block_size=8)
+        for m in (model.vision, model.language):
+            m.optics.configure_phase_dropout(model.metadata['phase_dropout'])
     audit = model.audit()
     if audit['alpha_bounds'][0] <= .4 or audit['descriptor_dimension'] != 64 or audit['frontend_trainable_parameters']:
         raise ValueError('Require frozen compact frontend, high-alpha 64D model')
@@ -268,11 +284,15 @@ def run(args):
         teacher=bool(teacher), teacher_sha256=args.expected_teacher_sha256,
         teacher_train_ids=sorted(teacher) if teacher else [], extra_inference_parameters=0,
         refinement=profile,
+        external_curriculum=external_audit,
+        curriculum_note='Continue verified current-protocol best -> external instance pretraining (last state, no TEST selection) -> target fine-tune. Initial best retained; not from-scratch pretraining' if external_fit else None,
         noise='Original metadata noise on25% joint-training batches; refined profiles keep router noise disabled. Warmup clean. No pixel shift/k filter/8bit STE; clean evaluation',
-        augmentation='Whole-object contain_white; brightness/contrast .9..1.1; no crop/rotation/flip',
+        augmentation='Whole-object .85..1 scale into white canvas, bounded placement, brightness/contrast .85..1.15,15% mild blur; no crop/flip' if regularized else 'Whole-object contain_white; brightness/contrast .9..1.1; no crop/rotation/flip',
         loss='query->detached entire FITTING gallery multi-positive NLL(temp .1) + .5 live query/reference SupCon + existing optical regularization')
     write_json(args.output / 'fitting_manifest.json', dict(parent_manifest_sha256=identity['manifest_sha256'],
         note=fit['note'], train=fit['train'], references=fit['gallery']))
+    if external_fit:
+        write_json(args.output / 'external_fitting_manifest.json', dict(audit=external_audit, train=external_fit['train']))
     write_json(args.output / 'execution.json', identity)
     status = dict(status='running', pid=os.getpid(), source_commit=identity['source_commit'])
     write_json(args.output / 'status.json', status)
@@ -289,7 +309,7 @@ def run(args):
             phase = 'optics.experts.' in n or n.endswith('optics.global_phase')
             router = n.endswith('raw_router_phase')
             rate = (.002 if phase else .0003 if router or n.startswith('readout.') else .0001) * args.lr_scale
-            decay = .01 if not (phase or router) and p.ndim > 1 else 0.
+            decay = profile.get('weight_decay', .01) if not (phase or router) and p.ndim > 1 else 0.
             optgroups.append(dict(params=[p], lr=rate, initial_lr=rate, weight_decay=decay, name=n))
         optimizer = torch.optim.AdamW(optgroups)
         ema = {n: p.detach().clone() for n, p in params}
@@ -297,28 +317,36 @@ def run(args):
         best = selection_score(base, refined)
         def save_best(epoch, kind, metrics):
             torch.save(dict(metadata=model.metadata, state_dict=model.state_dict(), epoch=epoch,
+                target_epoch=max(0, epoch-pretrain_epochs),
                 variant=kind, metrics=metrics, test_selected=True, manifest_sha256=identity['manifest_sha256'],
                 source_commit=identity['source_commit']), args.output / 'best.pt')
         save_best(0, 'initial', base)
         history.append(dict(epoch=0, initial=base))
         write_json(args.output / 'history.json', history)
         print(json.dumps(history[-1]), flush=True)
-        gallery = sorted(fit['gallery'], key=lambda r: r['product_id'])
-        label_map = {k: i for i, k in enumerate(sorted({r['product_id'] for r in gallery}))}
-        bank_labels = torch.tensor([label_map[r['product_id']] for r in gallery], device=device)
-        gallery_ids = [r['sample_id'] for r in gallery]
-        teacher_bank = torch.stack([teacher[sid] for sid in gallery_ids]).to(device) if teacher else None
-        for epoch in range(1, args.epochs + 1):
-            warming = epoch <= profile['warmup']
+        for epoch in range(1, args.epochs + pretrain_epochs + 1):
+            external, phase_epoch, phase_epochs = curriculum_epoch(epoch, pretrain_epochs, args.epochs)
+            if pretrain_epochs and not external and phase_epoch == 1:
+                optimizer.state.clear()  # Do not carry external Adam moments into target fitting.
+                with torch.no_grad():
+                    for n, p in params:
+                        ema[n].copy_(p)
+            active_fit = external_fit if external else fit
+            gallery = sorted(active_fit['gallery'], key=lambda r: r['product_id'])
+            label_map = {k: i for i, k in enumerate(sorted({r['product_id'] for r in gallery}))}
+            bank_labels = torch.tensor([label_map[r['product_id']] for r in gallery], device=device)
+            gallery_ids = [r['sample_id'] for r in gallery]
+            teacher_bank = torch.stack([teacher[sid] for sid in gallery_ids]).to(device) if teacher else None
+            warming = phase_epoch <= profile['warmup'] and not external
             for name, p in params:
                 p.requires_grad_(not warming or name.endswith('raw_router_phase'))
             bank, _ = encode_rows(model, processor, gallery, args.data, device, args.batch_size)
             bank = bank.to(device)
             rng = random.Random(args.seed + epoch)
-            factor = min(1., epoch / 2) * (.1 + .9 * .5 * (1 + math.cos(math.pi * (epoch - 1) / max(1, args.epochs - 1))))
+            factor = min(1., phase_epoch / 2) * (.1 + .9 * .5 * (1 + math.cos(math.pi * (phase_epoch - 1) / max(1, phase_epochs - 1))))
             for g in optimizer.param_groups:
                 g['lr'] = (.01 if g['name'].endswith('raw_router_phase') else 0.) if warming else g['initial_lr'] * factor * (5 if refined and g['name'].endswith('raw_router_phase') else 1)
-            totals = dict(loss=0., batch_natural_hit_at_1=0., route_aux=0., teacher_loss=0., all_view_loss=0.)
+            totals = dict(loss=0., batch_natural_hit_at_1=0., route_aux=0., teacher_loss=0., all_view_loss=0., sam_loss_gap=0.)
             for step in range(args.steps):
                 model.train(not warming)
                 noisy = rng.random() < .25 and not warming
@@ -326,15 +354,19 @@ def run(args):
                     m.optics.set_training_noise(noisy)
                     if refined:
                         m.optics.router.noise_enabled = False
-                rows, labels = training_pairs(fit, rng, args.classes_per_batch, profile['category_probability'])
+                rows, labels = training_pairs(active_fit, rng, args.classes_per_batch, profile['category_probability'])
                 images = []
                 for r in rows:
                     im = picture(args.data / r['image_path'], model.metadata['input_preprocessing'])
+                    if regularized:
+                        images.append(augment_whole_object(im, rng))
+                        continue
                     im = ImageEnhance.Brightness(im).enhance(rng.uniform(.9, 1.1))
                     images.append(ImageEnhance.Contrast(im).enhance(rng.uniform(.9, 1.1)))
-                optimizer.zero_grad(set_to_none=True)
-                with autocast(device):
-                    z = model(inputs(processor, images, device))
+                batch_inputs = inputs(processor, images, device)
+                def closure():
+                  with autocast(device):
+                    z = model(batch_inputs)
                     excluded = (torch.tensor([[r['sample_id'] == sid for sid in gallery_ids]
                         for r in rows[:args.classes_per_batch]], device=device) if args.multi_view else None)
                     data_loss, hit = retrieval_loss(z, labels.to(device), bank, args.classes_per_batch, bank_labels, excluded)
@@ -344,26 +376,26 @@ def run(args):
                     if teacher and not warming:
                         tq = torch.stack([teacher[r['sample_id']] for r in rows[:args.classes_per_batch]]).to(device)
                         kd = relational_loss(z, bank, tq, teacher_bank, excluded)
-                    taper = max(0., 1 - epoch / max(1., args.epochs*.8))
+                    taper = max(0., 1 - phase_epoch / max(1., phase_epochs*.8))
                     loss = route if warming else data_loss + regularization(model) + (.03+.17*taper)*route + profile['positive_weight']*all_views + profile['teacher_weight']*taper*kd
-                if not torch.isfinite(loss):
-                    raise RuntimeError('Nonfinite training loss')
-                loss.backward()
+                  return dict(loss=loss, hit=hit.detach(), route=route.detach(), kd=kd.detach(), all_views=all_views.detach())
+                result, sam = backward_with_sam(closure, optimizer, 0. if warming else profile.get('sam_rho', 0.))
                 norm = torch.nn.utils.clip_grad_norm_([p for _, p in params], 1., error_if_nonfinite=True)
                 optimizer.step()
                 with torch.no_grad():
                     for n, p in params:
                         ema[n].mul_(.99).add_(p, alpha=.01)
-                totals['loss'] += float(loss.detach())
-                totals['batch_natural_hit_at_1'] += float(hit.detach())
-                totals['route_aux'] += float(route.detach())
-                totals['teacher_loss'] += float(kd.detach())
-                totals['all_view_loss'] += float(all_views.detach())
-            row = dict(epoch=epoch, router_only_warmup=warming, **{k: v / args.steps for k, v in totals.items()}, last_gradient_norm=float(norm))
+                totals['loss'] += float(result['loss'].detach())
+                totals['batch_natural_hit_at_1'] += float(result['hit'])
+                totals['route_aux'] += float(result['route'])
+                totals['teacher_loss'] += float(result['kd'])
+                totals['all_view_loss'] += float(result['all_views'])
+                totals['sam_loss_gap'] += sam['loss_gap']
+            row = dict(epoch=epoch, phase='external_pretrain' if external else 'target_finetune', phase_epoch=phase_epoch, router_only_warmup=warming, **{k: v / args.steps for k, v in totals.items()}, last_gradient_norm=float(norm))
             torch.save(dict(metadata=model.metadata, state_dict=model.state_dict(), epoch=epoch,
                 optimizer=optimizer.state_dict(), ema=ema, source_commit=identity['source_commit'],
                 manifest_sha256=identity['manifest_sha256']), args.output / 'last.pt')
-            if epoch % args.eval_every == 0 or epoch == args.epochs:
+            if not external and (phase_epoch % args.eval_every == 0 or phase_epoch == args.epochs):
                 live = {n: p.detach().clone() for n, p in params}
                 for kind in ('live', 'ema'):
                     if kind == 'ema':
@@ -383,7 +415,7 @@ def run(args):
             history.append(row)
             write_json(args.output / 'history.json', history)
             write_json(args.output / 'phase_update_last.json', phase_delta(model, initial))
-            status.update(epoch=epoch)
+            status.update(epoch=epoch, phase=row['phase'], phase_epoch=phase_epoch)
             write_json(args.output / 'status.json', status)
             print(json.dumps(row), flush=True)
         for _, p in params:
@@ -399,6 +431,7 @@ def run(args):
         if sha256(args.manifest) != identity['manifest_sha256']:
             raise ValueError('Manifest changed during run')
         report = dict(identity, status='complete', selected_epoch=selected['epoch'], selected_variant=selected['variant'],
+            selected_target_epoch=selected.get('target_epoch', selected['epoch']),
             best_sha256=sha256(args.output / 'best.pt'), last_sha256=sha256(args.output / 'last.pt'),
             normal=normal, remove_optical=removed, model_audit_final=model.audit(),
             router_eligible=router_acceptable(normal),
@@ -435,6 +468,10 @@ def main():
     p.add_argument('--teacher-features', type=Path)
     p.add_argument('--expected-teacher-sha256')
     p.add_argument('--router-warmup-epochs', type=int, help='Optional explicit curriculum override; default comes from profile')
+    p.add_argument('--external-pool', type=Path)
+    p.add_argument('--external-root', type=Path)
+    p.add_argument('--expected-external-sha256')
+    p.add_argument('--external-pretrain-epochs', type=int, default=0, help='Additional external epochs before --epochs target fine-tuning; same-SKU positives, no TEST selection in this phase')
     p.add_argument('--device', choices=['cuda', 'cpu'], default='cuda')
     args = p.parse_args()
     if min(args.epochs, args.steps, args.eval_every, args.batch_size) < 1:
@@ -443,6 +480,8 @@ def main():
         p.error('lr-scale must be in (0,10]')
     if args.router_warmup_epochs is not None and args.router_warmup_epochs < 0:
         p.error('Warmup epochs cannot be negative')
+    if args.external_pretrain_epochs < 0 or (args.external_pretrain_epochs and not all((args.external_pool, args.external_root, args.expected_external_sha256))):
+        p.error('External pretraining requires nonnegative epochs and pool/root/SHA')
     run(args)
 
 

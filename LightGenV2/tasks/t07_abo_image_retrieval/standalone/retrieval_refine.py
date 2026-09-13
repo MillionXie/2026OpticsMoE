@@ -8,6 +8,7 @@ PROFILES = {
     'route_repair': dict(warmup=3, category_probability=.5, positive_weight=.1, teacher_weight=0.),
     'route_distill': dict(warmup=3, category_probability=.5, positive_weight=.1, teacher_weight=.2),
     'shape_views': dict(warmup=0, category_probability=.5, positive_weight=.1, teacher_weight=0.),
+    'sku_regularized': dict(warmup=0, category_probability=.5, positive_weight=.1, teacher_weight=0., sam_rho=.015, weight_decay=.03, phase_dropout=.03),
 }
 
 
