@@ -30,3 +30,23 @@ python -m LightGenV2.tasks.t03_saliency.run --profile main_dc20 --phase all --co
 若第5/10轮连续明显恶化或出现非有限值/明显专家集中，则保留best/last后停止该作业，不影响MixUp或他人。
 最多两张自有GPU；同一5000张public-test选best的偏差继续披露，标准eval随机光扰动关闭，非硬件成绩。
 完成后对真正改善的best做独立完整复评及同权重去光；不挪用旧权重的去光数字。
+
+## 实际单步验证
+
+源码`fd19b5a0d78f01042443607002a814962eb81655`通过284项CPU回归（49.79秒，13条既有警告）。
+在相同036bc8ca起点、相同8张训练图、相同随机种子下分别运行旧LR与本次LR的一步SAM/AdamW，
+`runs/smoke/optical_lr_priority_20260913/report.json`证实原始参数更新RMS比值：
+专家/全局40.0000、router19.9929、电子主体.10008、CCD读出.09990、最终头.09996、空间FFN.09951。
+物理圆周相位更新RMS：专家/全局从约7.3e-5～7.7e-5 rad增至.00292～.00309 rad，
+router从4.92e-6增至9.84e-5 rad；这是实际更新，不是仅修改配置显示。
+冻结前端3933184参数逐值不变、native Transformer调用0、头85412，六张相位有限非零梯度。
+8次零级混合调用全部保留振幅与相位DC20–30%。两组更新前loss相同，不能把该训练子集CC .89252当成新测试结果。
+
+## 正式启动
+
+源码测试与GitHub push完成后，于UTC2026-09-13 15:47:25启动PID/PGID2245038，
+GPU0 UUID `GPU-afc19890-6209-ee4d-622d-e619da5bd5b2`；启动前15MiB、0%利用率、无计算进程。
+此前MixUp已完成20轮、PID773450及同组退出；本次仅一张自有卡，不占用他人的GPU1/3/4作业。
+固定worktree`.worktrees/t03_baseline50_20260912`运行中禁止checkout；20轮预算，不覆盖已有run。
+配置SHA256 `0819025936b5563f3622ca61a19737c3c2095b114dd32e0eac0b5555066d6dc4`。
+完整启动命令、源码与PID见本run的`launch_record.json`，实际结果以训练/独立复评为准。
