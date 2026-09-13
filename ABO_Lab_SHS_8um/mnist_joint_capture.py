@@ -33,7 +33,7 @@ def run(manifest, link_path, out, batch=False, config_rel='LAB.local.json'):
     out=Path(out).resolve()
     if not out.is_relative_to(ROOT/'results'): raise ValueError('Output outside results')
     out.mkdir(parents=True,exist_ok=False)
-    report={'complete':False,'kind':'MNIST raw diagnostic, not full dataset accuracy',
+    report={'complete':False,'kind':m.get('kind','MNIST raw diagnostic, not full dataset accuracy'),
             'manifest':m,'manifest_sha256':sha(manifest),'code_commit':subprocess.check_output(['git','rev-parse','HEAD'],text=True).strip(),
             'camera_config':config_rel,'rows':[]}
     def save(): (out/'report.json').write_text(json.dumps(report,indent=2),encoding='utf-8')
