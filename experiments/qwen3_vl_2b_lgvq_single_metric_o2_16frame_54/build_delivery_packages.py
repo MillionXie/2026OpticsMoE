@@ -356,9 +356,81 @@ def build_evolution(root: Path, config: Path, checkpoint: Path, snapshots: Path,
     )
 
 
+def build_adaptation_handoff(
+    root: Path, config: Path, checkpoint: Path, output: Path, guide: Path
+) -> dict:
+    """Build a source/weight handoff without datasets or feature caches."""
+
+    settings = load_settings(config)
+    checkpoint = checkpoint.resolve()
+    selected: dict[str, Path] = {}
+    _project_code(selected, root, config=config, runtime_only=True)
+    _add_tree(
+        selected,
+        root,
+        "experiments/hardware_sdk",
+        {"__pycache__", "artifacts", "generated", "vendor_sdk"},
+    )
+    _add_tree(
+        selected,
+        root,
+        "experiments/lab_lgvq",
+        {"__pycache__", "generated", "work", "results", "sessions"},
+    )
+    selected[
+        f"{PROJECT}/deployment/checkpoints/best_observed_test_checkpoint.pt"
+    ] = checkpoint
+    documents = {
+        "documentation/ARCHITECTURE.md": root / PROJECT / "ARCHITECTURE.md",
+        "documentation/LAB_SPATIAL4_READOUT_1M_GUIDE.md": guide,
+        "documentation/SPATIAL_COMPACT_READOUT.md": (
+            root
+            / "LightGenV2/tasks/t06_video_quality_assessment/"
+            "SPATIAL_COMPACT_READOUT.md"
+        ),
+    }
+    report_root = (
+        root
+        / "LightGenV2/tasks/t06_video_quality_assessment/reports/"
+        "paper_results/spatial_readout_1m_srcc067"
+    )
+    for path in report_root.glob("*"):
+        if path.is_file():
+            documents[f"documentation/formal_result/{path.name}"] = path
+    for arcname, path in documents.items():
+        if path.is_file():
+            selected[arcname] = path
+
+    with tempfile.TemporaryDirectory(prefix="lgvq_handoff_masks_") as temporary:
+        mask_root = Path(temporary) / "hardware_masks"
+        export_hardware_masks(settings, checkpoint, mask_root)
+        for path in mask_root.rglob("*"):
+            if path.is_file():
+                selected[
+                    f"{PROJECT}/deployment/hardware_masks/"
+                    f"{path.relative_to(mask_root).as_posix()}"
+                ] = path
+        report = _write_zip(
+            selected,
+            output,
+            purpose=(
+                f"{settings.target_name} normal-optics source, one best "
+                "checkpoint and hardware-mask adaptation handoff"
+            ),
+            checkpoint_sha256=sha256(checkpoint),
+            root_readme=guide,
+        )
+    pt_files = [row for row in report["files"] if row["path"].endswith(".pt")]
+    if len(pt_files) != 1:
+        raise RuntimeError(
+            f"Adaptation handoff must contain exactly one PT, found {len(pt_files)}"
+        )
+    return report
+
+
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("kind", choices=("lab", "evolution"))
+    parser.add_argument("kind", choices=("lab", "evolution", "adaptation"))
     parser.add_argument("--repo-root", default=".")
     parser.add_argument("--config", required=True)
     parser.add_argument("--checkpoint", required=True)
@@ -369,10 +441,18 @@ def main() -> int:
     root = Path(args.repo_root).resolve()
     if args.kind == "lab":
         report = build_lab(root, Path(args.config), Path(args.checkpoint), Path(args.output), Path(args.guide))
-    else:
+    elif args.kind == "evolution":
         if args.snapshot_dir is None:
             parser.error("evolution requires --snapshot-dir")
         report = build_evolution(root, Path(args.config), Path(args.checkpoint), Path(args.snapshot_dir), Path(args.output))
+    else:
+        report = build_adaptation_handoff(
+            root,
+            Path(args.config),
+            Path(args.checkpoint),
+            Path(args.output),
+            Path(args.guide),
+        )
     print(json.dumps(report, ensure_ascii=False, indent=2))
     return 0
 
