@@ -19,6 +19,12 @@ data:
 training:
   initialization_checkpoint: null
 
+# The delivery ZIP intentionally contains one canonical sampling view only.
+# Disable the paired-view-only losses inherited from the training recipe.
+loss:
+  paired_view_supervision_weight: 0.0
+  paired_view_consistency_weight: 0.0
+
 initialization:
   qwen_model_path: null
   reset_serial_router_phase: false
