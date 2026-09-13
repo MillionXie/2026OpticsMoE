@@ -1,0 +1,44 @@
+# Final gentle joint refinement for the strict no-Conv5 two-branch model.
+# It starts from the best E1/readout recovery checkpoint, then permits the
+# already-existing optical masks and optical routers to co-adapt at a smaller
+# learning rate.  No inference module or parameter is added.
+base_config: spatial_strict2branch_no_conv5_e1_readout_s1402.yaml
+output_dir: ../../../../LightGenV2/tasks/t06_video_quality_assessment/runs/simulation/spatial_strict2branch_no_conv5_joint_s1403
+random_seed: 1403
+
+training:
+  initialization_checkpoint: ../../../../LightGenV2/tasks/t06_video_quality_assessment/runs/simulation/spatial_strict2branch_no_conv5_e1_readout_s1402/best_observed_test_checkpoint.pt
+  trainable_scope: custom_conv_joint
+  epochs: 40
+  batch_size: 64
+  learning_rate: 0.000004
+  readout_learning_rate_factor: 0.50
+  phase_learning_rate: 0.00001
+  router_phase_learning_rate: 0.00001
+  weight_decay: 0.00005
+  readout_weight_decay: 0.00015
+  phase_warmup_epochs: 0
+  late_refine_start_epoch: 26
+  restore_best_at_stage_transition: true
+  late_refine_electronic_lr_factor: 0.35
+  late_refine_readout_lr_factor: 0.50
+  late_refine_phase_lr_factor: 0.25
+  late_refine_router_lr_factor: 0.25
+  learning_rate_warmup_epochs: 2
+  minimum_learning_rate_factor: 0.10
+  ema_decay: 0.996
+  ema_start_epoch: 1
+  test_interval_epochs: 1
+  test_interval_steps: 0
+  phase_snapshot_interval_epochs: 0
+
+loss:
+  regression_weight: 0.10
+  ranking_weight: 2.60
+  correlation_weight: 4.50
+  soft_spearman_weight: 0.75
+  listwise_ranking_weight: 0.05
+  paired_view_supervision_weight: 0.10
+  paired_view_consistency_weight: 0.01
+  router_balance_weight: 0.0002
+  serial_router_balance_weight: 0.0002
