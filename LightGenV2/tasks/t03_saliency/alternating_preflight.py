@@ -25,9 +25,8 @@ def main():
     s.resolve_architecture(loaded.model)
     model = build_student(loaded, s)
     initialize_student(model,s)
+    s.num_workers = 0  # Configure before DataLoader construction, never mutate it.
     train_loader, _ = legacy.build_loaders(bundle,s,training=True)
-    train_loader.num_workers = 0
-    train_loader.persistent_workers = False
     batch = next(iter(train_loader))
     assert len(batch['sample_ids']) == 8
     opt = optimizer(model,s)
