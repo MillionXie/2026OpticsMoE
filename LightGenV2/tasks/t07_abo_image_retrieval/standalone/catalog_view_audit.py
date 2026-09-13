@@ -48,6 +48,24 @@ def budget_centroids(samples, vectors, count):
     return F.normalize(torch.stack(centers), dim=1), metadata
 
 
+def instance_rows(samples):
+    """Different task: same-SKU heldout product retrieval, all40 products retained."""
+    groups = {}
+    for i, s in enumerate(samples):
+        groups.setdefault(s.product_id, []).append(i)
+    rows, indices = [], []
+    for key in sorted(groups):
+        if len(groups[key]) != 12:
+            raise ValueError('Expected12 views per heldout product')
+        order = sorted(groups[key], key=lambda i: hashlib.sha256(
+            ('abo-instance42:' + samples[i].sample_id).encode()).hexdigest())
+        for rank, i in enumerate(order):
+            indices.append(i)
+            rows.append(dict(sample_id=samples[i].sample_id, product_id=key,
+                             split='gallery' if rank < 4 else 'query'))
+    return rows, indices
+
+
 def run(args):
     if args.output.exists():
         raise FileExistsError(args.output)
@@ -81,12 +99,20 @@ def run(args):
             results[str(count)][name] = metrics
             write_csv(args.output / f'{name}_views{count}_predictions.csv', predictions)
         results[str(count)]['gap_pp'] = 100 * (results[str(count)]['qwen64']['hit_at_1'] - results[str(count)]['optical']['hit_at_1'])
+    from .retrieval_screen import rank_instances
+    rows, indices = instance_rows(test)
+    instance = {}
+    for name, z in vectors.items():
+        instance[name], predictions = rank_instances(z[len(train):][indices], rows)
+        write_csv(args.output / f'{name}_same_sku_predictions.csv', predictions)
+    instance['gap_pp'] = 100 * (instance['qwen64']['hit_at_1'] - instance['optical']['hit_at_1'])
     write_json(args.output / 'report.json', dict(source_commit=source_commit(), status='complete',
         purpose=__doc__, train_manifest_sha256=manifest_sha, training=False, gpu=False,
         optical_cache_sha256=sha256(args.optical_cache), qwen_cache_sha256=sha256(args.qwen_cache),
         selection='Nested hash-selected1/3/12 gallery images; all120 products/all480 queries; no class filtering',
         caveat='Optical model was trained/selected under original12-view protocol; caches preserve each model original preprocessing. New gallery budget conditions must not replace original metric.',
-        enrollment=enrollment, results=results))
+        enrollment=enrollment, results=results, same_sku_instance=instance, instance_rows=rows,
+        instance_note='Separate task:40 heldout products,4 gallery+8 query photos/product fixed by sha256(abo-instance42:<sample_id>),160-gallery/320-query. Same SKU relevant, not same category. All products retained, no score-based selection, no new training. Does not replace original task.'))
 
 
 def main():

@@ -2,6 +2,47 @@
 
 ## 决策与比较基准
 
+### 2026-09-13后续指令（覆盖下方旧方向）
+
+用户重新允许ABO抗过拟合配对，并授权最多4张GPU；COIL不再追加。新数据优先SHAPE，OFF先做图片身份审计。
+ABO训练源码4734b1f9：`recovery_phase05_adam_20260913`与`recovery_phase05_sam_20260913`，同一SHA50a8607e…的79.5833%起点，15轮×64步。
+两组全物体增强、独立相位dropout专家5%/router2%、相同LR/AdamW/EMA；唯一算法差异SAM rho0/.03。不是修改推理光路或新增TF/attention。
+干净训练99.9306%已排除自身整个商品，测试79.5833%；泛化缺口显著，不能解释成查询自匹配。训练与测试仍不同商品，不能证明差距仅有一个原因。
+
+新增图库照片预算审计（源码1f16420c，CPU、固定特征，无再训练），全部120商品/480查询/64维保留，按sample_id哈希嵌套选1/3/12张：
+
+| 每商品图库照片数 | 光电 | 冻结Qwen64 | 差距 |
+|---|---:|---:|---:|
+| 12（原协议复核） | 79.5833% | 94.3750% | 14.7917pp |
+| 3 | 78.7500% | 92.9167% | 14.1667pp |
+| 1 | 78.3333% | 92.5000% | 14.1667pp |
+
+证据`catalog_view_budget_verified_20260913/report.json`及六份逐查询CSV。**减少登记图并未缩到10pp，不选择性报道。**
+首次`catalog_view_budget_20260913`只完成12图后被原12视图合同正确拒绝；补充独立预算聚合器后新目录复跑，未放松原data.py合同、未覆盖部分旧结果。
+
+SHAPE作者[数据页](https://figshare.com/articles/dataset/SHAPE_-_SHelf_mAnagement_Product_datasEt/24100704)/[检索代码](https://github.com/rokopi-byte/shelf_management)；发布API明确CC BY4.0。
+官方training_set.zip MD5=8ef579b891b8cc7c973351e0dde8d960，SHA256=862578f0bbfe14a5111b1f195164b1892219bbdc587e0abbf422f58c228cf4a5；
+test_set.zip MD5=dec0463dd1846cdd707e497106db6619，SHA256=19e2df579c7af7402dac51b3532a412eec81b55721fe92a07aa88ffc8f6b7734。
+服务器直连403；本地从同一官方URL下载后校验，再SCP数据，源码只走Git。完整存档计数45277TRAIN/813TEST，与发布页近似数字区分。
+8类按sha256(shape-category42:<category>)选择33,23,26,53,22,11,52,49；3132张TRAIN图库、71张TEST查询。
+这是小型可行性试验，不是全数据最终结论；约1.408pp/查询，必须扩大验证才能声称稳定接近baseline。
+所有选中图库/测试图保留；训练配对只用有至少2张TRAIN图的SKU，一张TRAIN参考、其余TRAIN查询；不使用TEST作训练样本。
+固定Qwen64=87.3239%（62/71），证据`shape8_qwen64_20260913`；光电20轮适配`shape8_adapt_20260913`，训练源码4734b1f9。
+官方已裁商品图做检索，不能称完整货架检测系统；train/test共享登记SKU，不冒充未见商品泛化。
+
+OFF官方[元数据API](https://openfoodfacts.github.io/openfoodfacts-server/api/)/[图片身份文档](https://openfoodfacts.github.io/openfoodfacts-server/api/how-to-download-images/)。
+`off_feasibility_20260913`一页热门100商品中66条至少2个不同front原图imgid；不具代表性，不是训练/测试划分。
+本地`off_photo_review_local_20260913`按固定哈希选5商品×2原图，已逐图检查：
+
+- 3017620425035：现场照片与标准商品图，非相同原图缩放。
+- 5010477348678：可见包装设计变化，不应未经定义即称同外观视角变化。
+- 5449000147417：一张为背面营养表、一张正面，说明front字段不足以保证图像语义。
+- 6111266962187：不同语言包装面，必须先确定任务是否接受跨包装面检索。
+- 7300400481588：包装设计/语言有变化，不是干净的重复拍摄对。
+
+因此本轮不自动生成OFF准确率；先建立独立拍摄、包装版本、正背面、重复上传的审计标签，再固定SKU划分。
+元数据ODbL、图片CC BY-SA分别保留许可证/来源/署名；下载许可不代替包装图案等第三方权利核查，也不保证任何Nature期刊接受。
+
 用户决定不再追加 ABO 优化，改查替代数据集，以**完全冻结的 Qwen3-VL-Embedding-2B、64维 MRL 输出**为基准。
 原 ABO 79.5833%保留，不作为新协议成绩。原 Qwen64=94.375%，差14.7917个百分点；原81%目标没有达成，不宣称完成。
 新数据集目标是同协议下差距≤10个百分点、争取≤4个百分点，并兼顾光电绝对性能；未经实测不能承诺。

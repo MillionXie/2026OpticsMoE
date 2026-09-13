@@ -14,7 +14,7 @@
 | T04 | 语义交互 | OpenMoji（可替换） | DC20 仿真三组协议完成；Qwen 待5090D | `tasks/t04_semantic_interaction` |
 | T05 | 视频分类 | 未确定 | 规划中 | `tasks/t05_video_classification` |
 | T06 | 视频质量评价 | LGVQ（可替换） | **当前主任务** | `tasks/t06_video_quality_assessment` |
-| T07 | 商品图搜图 | ABO/替代数据筛选 | ABO保留79.5833%；按用户要求转COIL/Grocery筛选与适配，统一冻结Qwen64对比 | `tasks/t07_abo_image_retrieval` |
+| T07 | 商品图搜图 | ABO/SHAPE/OFF | ABO抗过拟合配对与SHAPE适配；OFF图片身份审计，COIL停止追加；详见任务README | `tasks/t07_abo_image_retrieval` |
 | T08 | 商品图搜文 | ABO easy100 | 光仿真与冻结 Qwen baseline 已完成 | `tasks/t08_abo_image_text_retrieval` |
 
 目录名按任务而非数据集命名，因此以后更换可公开发表的数据集时，不需要重命名工程。

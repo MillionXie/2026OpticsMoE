@@ -1843,5 +1843,8 @@ python -m LightGenV2.tasks.t07_abo_image_retrieval.standalone.catalog_view_audit
   --data /DATA/DATA1/guest3/2026OpticsMoE/data/abo_similarity10_data \
   --optical-cache "$T07/runs/simulation/readout_subspace_20260912/evaluation/retrieval_features.pt" \
   --qwen-cache "$T07/runs/simulation/frozen_qwen_20260912/features.pt" \
-  --output "$T07/runs/simulation/catalog_view_budget_20260913"
+  --output "$T07/runs/simulation/catalog_protocols_20260913"
 ```
+
+该CPU审计还单独报告同SKU实例检索：保留全部40个TEST商品，每个商品12图按sha256(abo-instance42:<sample_id>)固定前4图库、后8查询，共160图库/320查询。
+这是新任务定义（找同一SKU，不是找同类别不同商品），不作原ABO精度提升；未重新训练，也不根据特征/成绩选图。

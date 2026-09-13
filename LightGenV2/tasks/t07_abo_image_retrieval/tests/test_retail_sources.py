@@ -88,3 +88,16 @@ def test_budget_centroids_matches_original12_but_supports1_and3():
         assert result.shape == (1, 64) and meta[0].view_count == count
     with pytest.raises(RuntimeError):
         _gallery_centroids(samples[:1], z[:1])
+
+
+def test_instance_protocol_retains_all_products_but_no_same_photo():
+    from types import SimpleNamespace
+    from LightGenV2.tasks.t07_abo_image_retrieval.standalone.catalog_view_audit import instance_rows
+    samples = [SimpleNamespace(product_id=str(p), sample_id=f'{p}-{i}') for p in range(40) for i in range(12)]
+    rows, indices = instance_rows(samples)
+    assert sorted(indices) == list(range(480))
+    gallery = [r for r in rows if r['split'] == 'gallery']
+    query = [r for r in rows if r['split'] == 'query']
+    assert len(gallery) == 160 and len(query) == 320
+    assert {r['product_id'] for r in gallery} == {r['product_id'] for r in query}
+    assert not {r['sample_id'] for r in gallery} & {r['sample_id'] for r in query}
