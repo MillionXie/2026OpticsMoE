@@ -2407,6 +2407,12 @@ CUDA_VISIBLE_DEVICES=GPU-4d8bfdb9-8777-05a6-3811-ab18ff4eadfd python -m LightGen
 
 ## 78. 分开验证数据增强和相位dropout（不叠加SAM）
 
+源码`4185ee926fdfe030ecac4979c02145a7995eb843`已推GitHub，本地/服务器369测试通过。
+增强组完整CUDA冒烟424.37秒完成，PID2344061退出，12相位更新且梯度有限；
+最终选回初始78.125%/去光74.75%、路由合格。正式增强已启动PID2350345/GPU1 RTX4090，
+run=`abo200_augmentation_only_20260914`，工作树`.worktrees/t07_view_audit_20260914`固定该源码。
+Dropout组尚未启动，需等GPU1正式增强结束、核查显存释放，再做对应冒烟和正式训练；没有自动排队进程。
+
 两组均从原d11f3428权重开始，分别与已完成`abo200_capacity_control_20260913`比较。
 固定全部1600训练图库/800查询、20轮×100步、每5轮评估live/EMA；TEST参与选模，存在选择偏差。
 `sku_augmentation_only`只改变增强：完整物体缩小至85%～100%并在白色画布内平移，
