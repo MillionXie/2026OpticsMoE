@@ -2190,7 +2190,9 @@ CUDA_VISIBLE_DEVICES=GPU-afc19890-6209-ee4d-622d-e619da5bd5b2 python -m LightGen
 
 ## 72. 转台预训练与目标微调：原轻量网络，不增加教师/电子参数
 
-本轮已经启动：source `b9a1bb4b850dd328dfd7e400c8fe7f2ee5c3e91e`，物理GPU3 RTX4090（GPU0已有他人任务），PID2271973。
+本轮已完成：source `b9a1bb4b850dd328dfd7e400c8fe7f2ee5c3e91e`，原物理GPU3 RTX4090，PID2271973已退出。
+最终目标epoch20 EMA正常78.75%、TRAIN97.125%、去光78.125%，仅下降.625pp，路由合格。
+准确率小幅提高但光学贡献变弱，不直接替换原78.125%部署参照。后续光优先阶段训练见第77节。
 数据已ready并重载检查：453商品/5436图，SHA=`68fd35b6a2308f13e01963eb1233545c44eb07f5caa48ff655dc6fc302b1ed8f`。
 不要在已有output上重复执行；以下保留复现命令。
 
@@ -2266,7 +2268,8 @@ CUDA_VISIBLE_DEVICES=GPU-e8837b85-d55b-8e81-aaa5-ec1ac326932d python -m LightGen
 
 ## 74. 语言侧完整CCD读出：零新增参数的当前SKU协议对照
 
-正式已启动：source `b9a1bb4b850dd328dfd7e400c8fe7f2ee5c3e91e`，GPU1 RTX4090，PID2276631。
+正式已完成：source `b9a1bb4b850dd328dfd7e400c8fe7f2ee5c3e91e`，原GPU1 RTX4090，PID2276631已退出。
+最终epoch20 live正常76.75%/去光76.625%、TRAIN94.8125%，路由合格；不采用此候选。
 冒烟已完成并释放PID2269583；新模式初始67.375%，两步后67.5%，不是与原模式的等价迁移。
 以下为本轮复现命令，不要覆盖已有输出重复运行。
 
@@ -2356,6 +2359,11 @@ CUDA_VISIBLE_DEVICES=GPU-e8837b85-d55b-8e81-aaa5-ec1ac326932d python -m LightGen
 ```
 
 ## 77. 外部先只训练光，目标集再联合微调（待CUDA验证）
+
+source `cf32e92939f23927dc717255c4849ab38549e819`已推GitHub，本地/服务器367测试通过。
+1外部轮+1目标轮、各1步的完整CUDA冒烟已在GPU3启动，PID2317638，
+输出`runs/smoke/abo_optical_pretrain_20260914`；工作树`.worktrees/t07_spin_training_20260913`固定此commit。
+此前该工作树的两个旧训练PID均退出才更新源码。正式36+20轮尚未启动，先验证冻结/解冻合同。
 
 第72节的外部12轮是12×100步，不是12遍全数据。每步16张输入含8查询和8不同照片参考，
 总呈现量19200张，约等于5436图的3.53遍；随机采样，并非每张图恰好出现相同次数。
