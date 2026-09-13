@@ -97,6 +97,20 @@ class PhaseOwner:
     def recover(self,cycles=4):
         if not 0<=cycles<=30:raise ValueError('Recovery cycles must be 0..30')
         return self._call('recover',cycles,180)
+    def restart(self):
+        """Bounded caller-controlled SDK reconnect; retain monitor origin/lock.
+
+        This repeats vendor Create_SDK, with its normal internal side effects.
+        No explicit channel/VCom/ramp/firmware writes. Not an optical proof.
+        """
+        self.stop.set()
+        if self.thread:self.thread.join(timeout=30)
+        if self.thread and self.thread.is_alive():raise RuntimeError('Old SDK owner did not stop; no second owner started')
+        self.audit.append({'kind':'sdk_reconnect_without_display_layout_change','previous_error':str(self.error) if self.error else None})
+        self.stop=threading.Event();self.q=queue.Queue();self.ready=Future();self.error=None
+        time.sleep(1)
+        self.thread=threading.Thread(target=self._loop,daemon=True);self.thread.start()
+        self.info=self.ready.result(timeout=60)
     def close(self):
         self.stop.set()
         if self.thread:self.thread.join(timeout=30)

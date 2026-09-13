@@ -45,6 +45,10 @@ python smoke_six.py --link-config results/smoke_configs/link.json `
 网络600μs。每次SDK开流都会设置并回读相应曝光；探针图不送进模型。
 探针均值/形状只与同曝光探针比较，网络6层的曝光不因此改变。
 尚未开始采集的preparing阶段也可断点重试，但必须核对该层没有任何已采CCD。
+若平相位与目标相位几乎一样，排障入口最多尝试3轮，每轮保留对照图。
+重试只重新建立SDK owner线程/连接，保留相位屏Y=0和独占锁，不切换通道、
+不写VCom/斜坡/固件。Create_SDK本身会重新发送厂商内部初始化状态。
+三轮仍不通过就停止，绝不把重复同一张旧图的高PCC当成换层成功。
 
 `generated/smoke_<日期>/` 是独立相位/标定BMP目录，`sessions/smoke_<日期>/` 保留
 真实canonical CCD、身份/文件SHA、路由与最终结果。默认只保留478×478 PNG及必要JSON，

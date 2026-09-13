@@ -107,13 +107,19 @@ def run(remote,link,c,config_rel,out,limit=4,resume=False,brightness_warning_onl
                 if len(mf['entries'])!=report['expected_stage_counts'][index]:raise ValueError('Unexpected sample count')
                 phase=out/(stage+'.bmp');remote.download(mf['phase_file'].replace('\\','/'),phase)
                 if sha(phase)!=mf['phase_sha256']:raise ValueError('Phase hash mismatch')
-                v0,_=probe(owner.show(flat),stage+'_flat')
-                receipt=owner.show(phase,mf['phase_sha256']);v1,s1=probe(receipt,stage+'_before')
-                receipt=owner.show(phase,mf['phase_sha256']);v2,s2=probe(receipt,stage+'_repeat')
-                repeat=pcc(v1,v2);challenge=pcc(v0,v2)
-                row.update(phase_sha256=mf['phase_sha256'],count=len(mf['entries']),repeat_pcc=repeat,flat_pcc=challenge)
-                save()
-                if repeat<.97 or repeat-challenge<.01:raise RuntimeError('Phase repeat/challenge check failed: '+str(row))
+                row['preflight_attempts']=[]
+                for attempt in range(3):
+                    tag=stage+f'_try{attempt+1}'
+                    v0,_=probe(owner.show(flat),tag+'_flat')
+                    receipt=owner.show(phase,mf['phase_sha256']);v1,s1=probe(receipt,tag+'_before')
+                    receipt=owner.show(phase,mf['phase_sha256']);v2,s2=probe(receipt,tag+'_repeat')
+                    repeat=pcc(v1,v2);challenge=pcc(v0,v2)
+                    row.update(phase_sha256=mf['phase_sha256'],count=len(mf['entries']),repeat_pcc=repeat,flat_pcc=challenge)
+                    row['preflight_attempts'].append({'attempt':attempt+1,'repeat_pcc':repeat,'flat_pcc':challenge});save()
+                    if repeat>=.97 and repeat-challenge>=.01:break
+                    if attempt==2:raise RuntimeError('Phase repeat/challenge failed after 3 attempts; no data capture: '+str(row))
+                    print('Phase challenge failed; reconnect SDK, keeping display origin fixed.',flush=True)
+                    owner.restart()
                 row['status']='capturing';save()
                 # This is deliberately NOT a fabricated approved-bank receipt.
                 receipt['diagnostic_probe']={'repeat_pcc':repeat,'flat_pcc':challenge,'production_verified':False}
@@ -139,6 +145,7 @@ def run(remote,link,c,config_rel,out,limit=4,resume=False,brightness_warning_onl
             metrics['photometric_warning_stages']=[r['stage'] for r in report['stages'] if r['status'].endswith('photometric_warning')]
             write(out/'metrics.json',metrics)
         report['display_audit']=owner.display.audit;save()
+        report['sdk_audit']=owner.audit;save()
         remote.putjson(f'sessions/{session}/results/smoke_validation.json',report)
     except BaseException as e:
         report.update(status='stopped',error=str(e));save();raise

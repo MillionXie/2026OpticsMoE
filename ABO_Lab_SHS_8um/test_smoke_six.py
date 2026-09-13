@@ -11,10 +11,11 @@ def png(a,fmt='PNG'):
     b=io.BytesIO();Image.fromarray(a).save(b,format=fmt);return b.getvalue()
 
 class Owner:
-    def __init__(self,*args):self.display=type('Display',(),{'audit':{}})()
+    def __init__(self,*args):self.display=type('Display',(),{'audit':{}})();self.audit=[]
     def __enter__(self):return self
     def __exit__(self,*args):pass
     def show(self,path,expected=None):return {'phase_sha256':sha(path)}
+    def restart(self):self.audit.append('restart')
 
 class Remote:
     def __init__(self):
@@ -43,6 +44,16 @@ class Remote:
         dest.write_bytes(data)
 
 class SmokeTests(unittest.TestCase):
+    def test_stuck_phase_stops_after_three_attempts_without_capture(self):
+        c={'diagnostic_only':True,'diagnostic_session':'smoke_fixture','geometry_confirmed':True,
+           'geometry_evidence':{'method':'measured_markers_with_asymmetric_check','report_sha256':'fixture'},
+           'camera':{'gain':'Gain_X4'},'logical_corners_full_sensor_xy':dict(zip(['top_left','top_right','bottom_right','bottom_left'],[[100,100],[1500,100],[1500,900],[100,900]]))}
+        remote=Remote();remote.a=remote.b
+        with tempfile.TemporaryDirectory() as d,patch('smoke_six.PhaseOwner',Owner):
+            out=Path(d)/'out'
+            with self.assertRaisesRegex(RuntimeError,'after 3 attempts'):run(remote,{},c,'fixture.json',out,4)
+            r=json.loads((out/'report.json').read_text());self.assertEqual(len(r['stages'][0]['preflight_attempts']),3)
+        self.assertFalse(any(j['action']=='capture' for j in remote.jobs))
     def test_brightness_warning_never_accepts_wrong_shape(self):
         from smoke_six import post_state
         self.assertEqual(post_state(.999,.22),'rejected_postcheck')
