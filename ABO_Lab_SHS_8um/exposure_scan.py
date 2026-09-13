@@ -83,9 +83,10 @@ def run(link_path,config_rel,session,out,exposures,stages=None,test_wait_ms=200)
             report.update(status='complete',recommendation=recommend(allrows),phase_sdk_audit=owner.audit)
             timingrows=[r for s in report['stages'] for r in s['data']['timing']]
             report['timing_summary']=dict(n=len(timingrows),correct=sum(r['correct'] for r in timingrows),
+                test_wait_ms=test_wait_ms,
                 minimum_target_pcc=min((r['scores'][r['id']] for r in timingrows),default=None),
                 all_references_discriminative=all(r['valid_reference'] for r in timingrows),
-                note='Small-sample 200ms recheck against independent400ms references; no hard-trigger guarantee')
+                note='Small-sample configured-wait recheck against independent400ms references; no hard-trigger guarantee')
             write(out/'report.json',report);plot_report(out,report)
     except BaseException as e:
         report.update(status='failed',error=str(e));write(out/'report.json',report);raise
