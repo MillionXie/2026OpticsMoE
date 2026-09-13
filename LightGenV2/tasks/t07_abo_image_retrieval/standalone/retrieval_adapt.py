@@ -26,7 +26,7 @@ from .retrieval_screen import load_screen, rank_instances, OPTICS_SHA256, GALLER
 from .retrieval_refine import (PROFILES, validate_continuation, route_objective,
     all_view_loss, load_train_teacher, relational_loss, selection_score, router_acceptable,
     optical_parameter, set_parameter_scope, update_trainable_ema, non_optical_digest,
-    prepare_capacity_payload)
+    prepare_capacity_payload, optical_curriculum_scope, learning_rate_multiplier)
 from .enrolled_regularization import load_external_pool, load_external_relations, augment_whole_object, curriculum_epoch, curriculum_loss_weights, fitting_bank_diagnostics
 from .generalization import backward_with_sam
 
@@ -244,6 +244,7 @@ def run(args):
         raise ValueError('Optical-only audit is a separate stage, not router-only/external curriculum')
     external_fit, external_audit = None, None
     pretrain_epochs = getattr(args, 'external_pretrain_epochs', 0)
+    optical_curriculum_scope(profile, False, pretrain_epochs)  # Validate before creating artifacts.
     if pretrain_epochs:
         if not regularized or not args.multi_view or protocol['protocol'] != 'abo200_enrolled_sku_hash8train4query_v1':
             raise ValueError('External curriculum requires enrolled ABO multi-view sku_regularized profile')
@@ -278,7 +279,7 @@ def run(args):
     payload, capacity_audit = prepare_capacity_payload(payload, profile, protocol['protocol'], args.fresh_trainable)
     model = OpticalRetrieval(copy.deepcopy(payload['metadata']))
     initialization = load_initial_weights(model, payload, args.assets, args.fresh_trainable)
-    fixed_electronics_sha = non_optical_digest(model) if optical_only else None
+    fixed_electronics_sha = non_optical_digest(model) if optical_only or profile.get('external_optical_only') else None
     if regularized:
         model.metadata['phase_dropout'] = dict(expert_global_probability=profile['phase_dropout'], router_probability=0., block_size=8)
         for m in (model.vision, model.language):
@@ -304,7 +305,9 @@ def run(args):
         teacher_train_ids=sorted(teacher) if teacher else [], extra_inference_parameters=capacity_audit['extra_parameters'],
         capacity_conversion=capacity_audit,
         refinement=profile,
-        training_scope='Only12 optical phase tensors; all electronics/frontend/alpha frozen' if optical_only else 'Profile curriculum',
+        training_scope=('External: only12 phases, bitwise frozen electronics/alpha; target: joint trainable parameters'
+                        if profile.get('external_optical_only') else
+                        'Only12 optical phase tensors; all electronics/frontend/alpha frozen' if optical_only else 'Profile curriculum'),
         non_optical_parameters_initial_sha256=fixed_electronics_sha,
         external_curriculum=external_audit,
         external_teacher=external_teacher_audit,
@@ -363,7 +366,8 @@ def run(args):
             active_teacher = external_teacher if external else teacher
             teacher_bank = torch.stack([active_teacher[sid] for sid in gallery_ids]).to(device) if active_teacher else None
             warming = phase_epoch <= profile['warmup'] and not external
-            set_parameter_scope(params, router_only=warming, optical_only=optical_only)
+            current_optical_only = optical_curriculum_scope(profile, external, pretrain_epochs)
+            set_parameter_scope(params, router_only=warming, optical_only=current_optical_only)
             bank, _ = encode_rows(model, processor, gallery, args.data, device,
                                   getattr(args, 'bank_batch_size', None) or args.batch_size)
             bank = bank.to(device)
@@ -371,12 +375,12 @@ def run(args):
             rng = random.Random(args.seed + epoch)
             factor = min(1., phase_epoch / 2) * (.1 + .9 * .5 * (1 + math.cos(math.pi * (phase_epoch - 1) / max(1, phase_epochs - 1))))
             for g in optimizer.param_groups:
-                multiplier = profile.get('router_lr_multiplier', 5 if refined else 1) if g['name'].endswith('raw_router_phase') else profile.get('phase_lr_multiplier', 1.) if optical_parameter(g['name']) else 1.
+                multiplier = learning_rate_multiplier(profile, g['name'], external, refined)
                 g['lr'] = (.01 if g['name'].endswith('raw_router_phase') else 0.) if warming else g['initial_lr'] * factor * multiplier
             totals = dict(loss=0., batch_natural_hit_at_1=0., route_aux=0., teacher_loss=0., all_view_loss=0., sam_loss_gap=0.)
             for step in range(args.steps):
-                model.train(not (warming or optical_only))
-                if optical_only:
+                model.train(not (warming or current_optical_only))
+                if current_optical_only:
                     # Fixed electronics are deterministic; retain existing optical
                     # noise/DC injection during optical training, router noise off.
                     model.vision.optics.train(); model.language.optics.train()
@@ -423,11 +427,14 @@ def run(args):
                 totals['all_view_loss'] += float(result['all_views'])
                 totals['sam_loss_gap'] += sam['loss_gap']
             row = dict(epoch=epoch, phase='optical_only' if optical_only else 'external_pretrain' if external else 'target_finetune', phase_epoch=phase_epoch, router_only_warmup=warming,
+                optical_only_scope=current_optical_only,
                 active_trainable_parameters=sum(p.numel() for _,p in params if p.requires_grad),
                 fitting_bank_epoch_start=bank_metrics,
                 **{k: v / args.steps for k, v in totals.items()}, last_gradient_norm=float(norm))
-            if optical_only and non_optical_digest(model) != fixed_electronics_sha:
-                raise RuntimeError('Frozen electronic parameter changed in optical-only training')
+            if current_optical_only:
+                row['non_optical_parameters_sha256'] = non_optical_digest(model)
+                if row['non_optical_parameters_sha256'] != fixed_electronics_sha:
+                    raise RuntimeError('Frozen electronic parameter changed in optical-only training')
             torch.save(dict(metadata=model.metadata, state_dict=model.state_dict(), epoch=epoch,
                 optimizer=optimizer.state_dict(), ema=ema, source_commit=identity['source_commit'],
                 manifest_sha256=identity['manifest_sha256']), args.output / 'last.pt')
@@ -459,7 +466,7 @@ def run(args):
             p.requires_grad_(True)
         selected = torch.load(args.output / 'best.pt', map_location='cpu', weights_only=True)
         model.load_state_dict(selected['state_dict'], strict=True)
-        final_electronics_sha = non_optical_digest(model) if optical_only else None
+        final_electronics_sha = non_optical_digest(model) if fixed_electronics_sha else None
         if optical_only and final_electronics_sha != fixed_electronics_sha:
             raise RuntimeError('Selected EMA/best changed frozen electronic parameters')
         normal = assessment(model, processor, groups, args, device, args.output, fit=fit)
@@ -476,6 +483,8 @@ def run(args):
             normal=normal, remove_optical=removed, model_audit_final=model.audit(),
             router_eligible=router_acceptable(normal),
             non_optical_parameters_final_sha256=final_electronics_sha,
+            external_frozen_electronics_verified=(all(row.get('non_optical_parameters_sha256') == fixed_electronics_sha
+                for row in history if row.get('phase') == 'external_pretrain') if profile.get('external_optical_only') else None),
             optical_removal_drop_percentage_points=100*(normal['test']['hit_at_1']-removed['test']['hit_at_1']),
             elapsed_seconds=time.time()-started)
         write_json(args.output / 'final_report.json', report)

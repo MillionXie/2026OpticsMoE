@@ -2318,7 +2318,13 @@ CUDA_VISIBLE_DEVICES='' python -m LightGenV2.tasks.t07_abo_image_retrieval.analy
 
 已有输出时命令拒绝覆盖；新的模型缓存应使用新的有意义run ID，不能覆盖这次基准审计。
 
-## 76. 只保留全图库检索数据目标的训练对照（待CUDA验证）
+## 76. 只保留全图库检索数据目标的训练对照
+
+完整CUDA冒烟已完成并释放PID2301761：两步后选epoch1 EMA，正常78.125%、去光74.875%，
+路由合格，梯度6.05466有限，12份相位均更新；这不是新正式成绩。
+正式`abo200_retrieval_only_20260914`已在GPU1启动，PID2307838，20轮×100步。
+源码`686a585f6467b6b4f93f9e86530fb7ec0bd8c4e0`，本地/服务器360测试通过，已推GitHub；
+工作树`.worktrees/t07_view_audit_20260914`在进程退出前保持固定。以下是复现命令，不要重复启动。
 
 `sku_retrieval_only`与`sku_capacity_control`相比仅关闭两个把同SKU不同视角拉近的辅助项：
 live SupCon权重从.5到0，all-view log-probability权重从.1到0。
@@ -2329,7 +2335,7 @@ live SupCon权重从.5到0，all-view log-probability权重从.1到0。
 批次构成仍8查询+8独立参考图；新数据损失只反传8查询，另8参考图不再贡献SupCon，
 但仍经过模型参与同批路由辅助项。记录此差别，不冒充16个检索查询。
 
-当前仅准备代码；先确认已有任务退出/显存释放，再将下方改为epochs1、steps2、eval-every1，
+复现时先确认已有任务退出/显存释放，再将下方改为epochs1、steps2、eval-every1，
 output=`$T07/runs/smoke/abo_retrieval_only_20260914`做完整初始化/反向/正常去光验证。
 通过且进程已结束后才执行正式命令。不得因为准备了命令就声称已启动。
 
@@ -2347,4 +2353,41 @@ CUDA_VISIBLE_DEVICES=GPU-e8837b85-d55b-8e81-aaa5-ec1ac326932d python -m LightGen
   --multi-view --refine-profile sku_retrieval_only --lr-scale .2 \
   --epochs 20 --steps 100 --eval-every 5 --batch-size 4 --bank-batch-size 16 \
   --output "$R/abo200_retrieval_only_20260914"
+```
+
+## 77. 外部先只训练光，目标集再联合微调（待CUDA验证）
+
+第72节的外部12轮是12×100步，不是12遍全数据。每步16张输入含8查询和8不同照片参考，
+总呈现量19200张，约等于5436图的3.53遍；随机采样，并非每张图恰好出现相同次数。
+联合预训练最终78.75%但去光78.125%，光学下降仅.625个百分点，因此**没有启动延长原联合预训练**。
+新的`sku_optical_pretrain`先在外部只更新12份光学相位，电子残差、投影、读出、alpha全部冻结，
+每轮核对非光参数SHA严格不变，电子dropout处于eval；原光噪声/DC仍按10%批次启用。
+外部36×100步，总输入呈现量57600（约10.60遍）；expert/global相位基础LR=.002，router基础LR=.000006，
+均再乘原warmup/余弦系数。这同时改变外部阶段参数范围、相位LR和预算，不宣称单因素归因。
+进入目标集后恢复全部原可训练参数、清空Adam动量并重置EMA，仍20×100步；
+expert/global基础LR恢复.0004，普通电子.00002、原读出.00006，router仍.000006。
+冻结的Qwen紧凑前端始终不解冻。原轻量推理结构不变，不叠加第76节纯检索损失，不加教师或电子参数。
+同一原78.125%起点，同一453-SKU外部池及1600/800目标协议；不是拿目标最后权重再次预训练。
+这是光优先的阶段训练实验，余弦调度按36外部轮展开，不能声称等计算量。
+外部不执行TEST选模；目标阶段重置Adam/EMA、每5轮择优并最终正常/去光复评。
+GPU3为候选，必须确认第72节全部结束、进程退出和显存释放后再用，不抢占。
+先使用第71节40图冒烟池及其SHA、外部1轮+目标1轮、各1步、eval-every1，
+output=`$T07/runs/smoke/abo_optical_pretrain_20260914`验证：外部仅958728可训练参数、
+非光SHA不变、目标恢复2782485参数、完整正常/去光与路由评估。通过并退出后才启动正式命令。
+
+```bash
+T07=/DATA/DATA1/guest3/2026OpticsMoE/LightGenV2/tasks/t07_abo_image_retrieval
+R="$T07/runs/simulation"
+export HF_HUB_OFFLINE=1 TRANSFORMERS_OFFLINE=1 OMP_NUM_THREADS=4 MKL_NUM_THREADS=4
+nvidia-smi
+CUDA_VISIBLE_DEVICES=GPU-4d8bfdb9-8777-05a6-3811-ab18ff4eadfd python -m LightGenV2.tasks.t07_abo_image_retrieval.standalone.retrieval_adapt \
+  --data /DATA/DATA1/guest3/2026OpticsMoE/data/abo_similarity10_data \
+  --manifest "$R/abo200_enrolled_protocol_20260913/protocol.json" --assets "$R/standalone_assets_20260910" \
+  --checkpoint "$R/abo200_route_distill_20260913/best.pt" \
+  --expected-checkpoint-sha256 d11f3428efa67c7c5084eb9056d991c4692d36a3d177cd82b4601238357d444a \
+  --external-pool "$R/abo_spin_pool50_views12_20260913" --external-root /DATA/DATA1/guest3/2026OpticsMoE/data/abo \
+  --expected-external-sha256 68fd35b6a2308f13e01963eb1233545c44eb07f5caa48ff655dc6fc302b1ed8f \
+  --external-pretrain-epochs 36 --multi-view --refine-profile sku_optical_pretrain \
+  --lr-scale .2 --epochs 20 --steps 100 --eval-every 5 --batch-size 4 --bank-batch-size 16 \
+  --output "$R/abo200_optical_pretrain_20260914"
 ```

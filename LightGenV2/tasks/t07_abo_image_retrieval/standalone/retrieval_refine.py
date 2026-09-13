@@ -23,6 +23,8 @@ PROFILES = {
 PROFILES['sku_capacity_control'] = dict(PROFILES['sku_mild_adamw'], router_lr_multiplier=.1)
 PROFILES['sku_retrieval_only'] = dict(PROFILES['sku_capacity_control'],
     positive_weight=0., supcon_weight=0.)
+PROFILES['sku_optical_pretrain'] = dict(PROFILES['sku_capacity_control'],
+    external_optical_only=True, external_phase_lr_multiplier=5.)
 PROFILES['sku_conv_teacher'] = dict(PROFILES['sku_capacity_control'],
     electronic_expansion=dict(kernels=dict(vision=7, language=7), mlp_width=768))
 PROFILES['sku_spatial_readout'] = dict(PROFILES['sku_capacity_control'], head_expansion='spatial2x2_64')
@@ -109,6 +111,24 @@ def set_parameter_scope(params, router_only=False, optical_only=False):
         raise ValueError('Cannot combine router-only and all-optical-only scopes')
     for name, p in params:
         p.requires_grad_(name.endswith('raw_router_phase') if router_only else optical_parameter(name) if optical_only else True)
+
+
+def optical_curriculum_scope(profile, external, pretrain_epochs):
+    """An external optical-only stage followed by normal joint target fitting."""
+    staged = profile.get('external_optical_only', False)
+    if staged and (pretrain_epochs <= 0 or profile.get('optical_only') or profile.get('warmup')
+                   or profile.get('teacher_weight') or profile.get('external_teacher_weight')
+                   or any(profile.get(k) for k in ('electronic_expansion', 'head_expansion', 'ccd_readout_modes'))):
+        raise ValueError('Optical pretraining requires a separate external stage without teacher/capacity/readout changes')
+    return bool(profile.get('optical_only') or (staged and external))
+
+
+def learning_rate_multiplier(profile, name, external, refined):
+    if name.endswith('raw_router_phase'):
+        return profile.get('router_lr_multiplier', 5 if refined else 1)
+    if optical_parameter(name):
+        return profile.get('external_phase_lr_multiplier', profile.get('phase_lr_multiplier', 1.)) if external else profile.get('phase_lr_multiplier', 1.)
+    return 1.
 
 
 @torch.no_grad()
