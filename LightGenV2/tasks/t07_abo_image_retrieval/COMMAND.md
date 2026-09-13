@@ -2367,8 +2367,10 @@ source `cf32e92939f23927dc717255c4849ab38549e819`已推GitHub，本地/服务器
 1外部轮+1目标轮、各1步的完整CUDA冒烟已完成并退出PID2317638，
 输出`runs/smoke/abo_optical_pretrain_20260914`：外部非光参数SHA未变，目标阶段恢复91份非光张量的实际更新，
 frontend始终未变、103个Adam状态step均为1；12相位更新。最终选回初始78.125%/去光74.75%、路由合格，非新成绩。
-正式36+20轮已在确认GPU3空闲后启动，PID2324757，`runs/simulation/abo200_optical_pretrain_20260914`。
-工作树`.worktrees/t07_spin_training_20260913`固定上述commit，不在运行时更新。以下只供复现，不要重复启动。
+正式36+20轮已经完成，PID2324757退出，`runs/simulation/abo200_optical_pretrain_20260914`。
+最终epoch41=目标第5轮EMA正常81.25%、TRAIN93.875%、同权重去光75.875%；第80节固定best复评一致。
+best SHA=`dcf768878abddd91558533757e404d9ee788cffbc5e0f0162a6f07d8a197eb1d`，GPU已释放。
+工作树`.worktrees/t07_spin_training_20260913`运行时固定上述commit。以下只供复现，不要重复启动或覆盖已有run。
 
 第72节的外部12轮是12×100步，不是12遍全数据。每步16张输入含8查询和8不同照片参考，
 总呈现量19200张，约等于5436图的3.53遍；随机采样，并非每张图恰好出现相同次数。
@@ -2412,12 +2414,14 @@ CUDA_VISIBLE_DEVICES=GPU-4d8bfdb9-8777-05a6-3811-ab18ff4eadfd python -m LightGen
 最终选回初始78.125%/去光74.75%、路由合格。正式增强20轮也已完成，PID2350345退出、GPU1释放，
 run=`abo200_augmentation_only_20260914`新候选最高77.375%，最终仍选初始78.125%/去光74.75%，不采用。
 best SHA=`e945bff953c284b7a82a77408c1d88607841107cf1df4762684f146d56949c53`，不是新训练成绩。
-独立Dropout已在确认GPU1空闲后正式启动PID2377609，run=`abo200_dropout_only_20260914`，
-工作树`.worktrees/t07_view_audit_20260914`固定上述4185ee92源码；20轮×100步，没有自动排队进程。
+独立Dropout已完成20轮×100步，PID2377609退出、GPU1释放，run=`abo200_dropout_only_20260914`。
+新训练最高epoch20 EMA77.125%、TRAIN95.5625%；最终选回初始78.125%/去光74.75%，不采用。
+best SHA=`1bcfa1784c75e1b5856e5ee3925f64ea0fc306d2f56866a61af87d7743726694`为初始状态重存。
+工作树`.worktrees/t07_view_audit_20260914`运行时固定上述4185ee92源码，没有自动排队进程。
 本次省略重复的全图库dropout冒烟：已核对`abo200_sam_control_20260913/final_report.json`，
 同一个受保护光学实现SHA=`6490c6ee0ccc7501572fbae722aafbd7d4a016425d21af454019e7b60625433d`、
 同样3%相位dropout已经在RTX4090完成CUDA训练；本次只拆分profile，不新增dropout算子，369回归通过。
-这不是声称旧组合试验已证明dropout有效；新独立20轮仍需正式测试和同权重去光。
+这不是声称旧组合试验已证明dropout有效；新独立20轮及同权重去光也已完成，结果见上方。
 
 两组均从原d11f3428权重开始，分别与已完成`abo200_capacity_control_20260913`比较。
 固定全部1600训练图库/800查询、20轮×100步、每5轮评估live/EMA；TEST参与选模，存在选择偏差。
@@ -2489,7 +2493,12 @@ CUDA_VISIBLE_DEVICES=GPU-e8837b85-d55b-8e81-aaa5-ec1ac326932d python -m LightGen
 保留父训练epoch/variant/来源commit及TEST选模标记，不继承分数、优化器或辅助头。
 相位仍为`2*pi*sigmoid(raw)`；只保存这个候选的best.pt，未重新训练所以没有last.pt。
 
-## 80. 光优先最终best独立复评（须等训练结束）
+## 80. 光优先最终best独立复评（已完成）
+
+实际执行源码`2ee704e1cffbb54c6052afe83c0f131fdce5a47e`，本地/服务器377项回归通过。
+PID2399537已退出、GPU3释放；`verification/final_report.json`状态complete，正常81.25%、去光75.875%，
+800 TEST和1600 gallery分别通过路由检查，与主训练报告精确一致。best SHA为第77节的dcf76887全文。
+报告SHA=`f28c7f71240079e2bb7479a6603f5102cd54b1076e9f1bf82a4cb6cba0bdf65c`。
 
 训练阶段`normal.router`统计包含1600图库+800查询；最终核验不能仅凭合并统计判断测试侧均衡。
 本复评从原图分别重建正常/同权重去光特征，正常捕获每张图的离散Top2，按gallery/query分别汇总。
@@ -2515,4 +2524,4 @@ CUDA_VISIBLE_DEVICES=GPU-4d8bfdb9-8777-05a6-3811-ab18ff4eadfd python -m LightGen
 ```
 
 已有verification时拒绝覆盖；这是固定权重复评，不是重新训练，也不是新的独立测试集。
-完整parent训练/TEST选模偏差仍需披露。未出报告前不能声称本复评已完成。
+完整parent训练/TEST选模偏差仍需披露。重新执行请使用新的空output，不能覆盖这次已完成的证据。

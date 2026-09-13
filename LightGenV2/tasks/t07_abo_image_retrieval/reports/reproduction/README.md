@@ -3,10 +3,12 @@
 ## 当前协议：ABO已登记200商品，多视角图搜图（2026-09-14）
 
 **先看本节；下方480查询/类别检索及替代数据集均是历史协议，不能把分数混到本表。**
-当前光优先候选目标第5轮EMA已测得**81.25%=650/800**，干净TRAIN93.875%；
-它仍在训练，最终best的正常/同权重去光复评未结束，因此不是已完成的交付成绩。
-阶段alpha约.445～.448；图库+查询合并统计中V/L覆盖6/5种Top2组合、检查合格。
-最终须按[COMMAND第80节](../../COMMAND.md)单独核对800张TEST的路由分布，不能只看合并值。
+**正式仿真候选已完成：正常81.25%=650/800、同权重去光75.875%=607/800，下降5.375个百分点。**
+固定best独立复评精确复现以上数值，冻结Qwen64为85.125%，差距3.875个百分点。
+干净TRAIN93.875%，仍有12.625个百分点的训练—测试差距，不宣称过拟合已消失。
+800张TEST单独路由合格：V份额[26.750%,26.3125%,22.500%,24.4375%]、6组合、最大组合36.125%；
+L份额[13.875%,30.5625%,26.8125%,28.750%]、5组合、最大组合32.125%。份额分母为每图两次选择。
+alpha V=[.4477030933,.4471307099]、L=[.4449214339,.4451110065]，不等于性能或光功率贡献比例。
 完整最新状态以[任务README](../../README.md)及下列run日志为准，不以文件夹名称推测完成。
 
 ### 数据与比较口径
@@ -36,15 +38,34 @@
   `68fd35b6a2308f13e01963eb1233545c44eb07f5caa48ff655dc6fc302b1ed8f`。
   排除目标SKU/spin及筛出的目标精确/近重复图；不把目标QUERY用于loss。
 - 外部36轮×100步仅训12份相位（958728参数）；电子、alpha、读出冻结，每轮SHA已核对不变。
-  进入目标集后重置Adam/EMA，计划20轮×100步联合微调；每5轮评估live/EMA，按路由合格再R@1/mAP选best。
+  进入目标集后重置Adam/EMA，完成20轮×100步联合微调；每5轮评估live/EMA，按路由合格再R@1/mAP选best。
   一轮是100次采样更新，不等于遍历全部数据一遍。没有在这轮加入教师loss或扩容电子网络。
+  外部expert/global基础LR=.002（原.0004的5倍）、36轮预算也不同；不能把提升单独归因于冻结电子。
 - 仍为`standalone/model.py`、`frontend.py`和`optics.py`的原独立六次光计算：
   V router/expert/global + L router/expert/global、10cm/原ROI、Top2、同尺度融合alpha边界[.4001,.8]。
   推理无native Transformer/attention，原64维线性头；可训练2782485、冻结29152256，冻结前端没有解冻。
   受保护`optics.py` SHA=`6490c6ee0ccc7501572fbae722aafbd7d4a016425d21af454019e7b60625433d`。
 - `best.pt`/`last.pt`是仅有的模型PT；`history.json`记录TRAIN/TEST和每轮相位变化，
-  `execution.json`记录真实配置/命令/环境/commit/数据SHA。**`final_report.json`未完成前，不把阶段结果当最终结果。**
-  增强单因素未提高（新训练最高77.375%），独立dropout正在运行，状态/命令见第78节。
+  `execution.json`记录真实配置/命令/环境/commit/数据SHA；两个最终报告均已complete。
+  增强单因素未提高（新训练最高77.375%），独立3%相位dropout也未提高（77.125%），都选回初始78.125%。
+  命令见第78节，未将初始保底分数作为新训练成果。主训练/独立复评/dropout进程均退出，GPU1/3释放。
+
+### 最佳权重与独立复评证据
+
+- 最终选总epoch41=目标epoch5 EMA，不是最后一轮。best SHA256：
+  `dcf768878abddd91558533757e404d9ee788cffbc5e0f0162a6f07d8a197eb1d`。
+- 独立复评源码`2ee704e1cffbb54c6052afe83c0f131fdce5a47e`，Python3.11.15、torch2.6.0+cu124、
+  RTX4090、batch4，完整命令见[COMMAND第80节](../../COMMAND.md)。无需下载完整Qwen模型执行学生。
+  `verification/final_report.json` SHA=`f28c7f71240079e2bb7479a6603f5102cd54b1076e9f1bf82a4cb6cba0bdf65c`。
+- 正常Hit@5=.91625、Hit@10=.95375、mAP@10=.7200305679563492、NDCG@10=.7788583475781425。
+  去光mAP@10=.5263419518849206；无去光单独训练。独立复评不是新的独立测试集，仍披露TEST选模偏差。
+- `verification/normal_predictions.csv`和`remove_optical_predictions.csv`保留全部800条预测，
+  `normal_features.pt`含按ids对齐的V/L离散Top2掩码。正常与去光在原图上分别编码，不使用旧router状态。
+- best的12份相位相对本run起点均改变：expert/global RMS=.1011～.1518 rad，router约.000742/.000310 rad。
+  `phase_masks.png`为best相位可视化；没有用生成式图像替代真实权重。原光路/ROI/FP32相位保持不变。
+- 本地最佳权重和报告镜像位于原项目根目录
+  `LightGenV2/tasks/t07_abo_image_retrieval/runs/simulation/abo200_optical_pretrain_20260914/`；
+  源码通过Git独立工作树与GitHub分支`experiment/t07-domain-refinement-20260912`同步，未覆盖其他任务源码。
 
 ## 历史：替代图检索数据集筛选（2026-09-13，非当前方向）
 
