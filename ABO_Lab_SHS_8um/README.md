@@ -1,5 +1,15 @@
 # ABO + SHS 高速相机 / 8 μm SLM
 
+2026-09-13 更新：相位 owner 使用持久 Mono8 缓冲、同线程消息泵及每秒重发当前图；
+不再进行 RGBA/红绿通道切换或黑图—透镜交替预热。`phase_display_align_top=true`
+仅在 owner 存活期间将识别到的非主屏 FNR0002 顶部设为 Y=0，退出恢复原屏幕位置，
+不改分辨率/刷新率/主屏/LUT/电压，不写注册表。该修正的依据是显示原点对照实测，
+不是仅凭 SDK 返回值。需本地 `pywin32`，师弟电脑不负责相位显示。
+
+六层少量实测排障入口为 `smoke_six.py`，操作和边界见 [SMOKE_SIX.md](SMOKE_SIX.md)。
+其配置、相位 BMP、会话与正式流程隔离；保留全部100个候选标题；结果明确标为
+`diagnostic_real_six_stage`，不等于正式 ROI/LUT 验收或完整数据集准确率。
+
 自动六层流程先读 [START_HERE.md](START_HERE.md)：本地SDK换相位，师弟电脑振幅/SHS/GPU；相机参考验证、有限重试和失败批次隔离。首次仍需人工确认方向、四角ROI和六层参考图，不能把代码就绪当成实测验收通过。
 旧单设备/手动流程见 [COMMAND.md](COMMAND.md)。本工程保留 ABO 六阶段的模型/几何约定，**不改变光路**。
 最新联合测试与 RTX4060 推理证据见 [JOINT_RESULTS.md](JOINT_RESULTS.md)。

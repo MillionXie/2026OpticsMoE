@@ -24,7 +24,7 @@ class PhaseHDMI:
         self.sdk=Path(sdk).resolve();self.lut=Path(lut).resolve();self.settle_s=float(settle_s)
         self.strict_write_ack=strict_write_ack
         if not .5<=self.settle_s<=10:raise ValueError('Phase settle must be 0.5..10 seconds')
-        self.dll=None;self.created=False;self.dir=None
+        self.dll=None;self.created=False;self.dir=None;self.pixels=None
     def __enter__(self):
         if os.name!='nt':raise RuntimeError('Windows x64 required')
         if not self.lut.is_file():raise FileNotFoundError(self.lut)
@@ -50,28 +50,35 @@ class PhaseHDMI:
             print('Phase SDK connected: '+json.dumps(self.info),flush=True)
             return self
         except BaseException:self.close();raise
-    def show(self,path,expected_sha=None):
-        a=np.ascontiguousarray(load_native(path,expected_sha))
-        # Match the vendor's RGBA example. Replicate gray exactly; alpha opaque.
-        rgba=np.empty((*a.shape,4),np.uint8);rgba[:,:,:3]=a[:,:,None];rgba[:,:,3]=255
-        t=time.perf_counter()
-        result=int(self.dll.Write_image(rgba.ctypes.data_as(C.POINTER(C.c_ubyte)),0))
-        print(f'Phase Write_image returned {result}: {path}',flush=True)
+    def repeat(self):
+        """Reassert retained native Mono8 bytes; never a camera acknowledgement."""
+        if self.pixels is None:raise RuntimeError('No phase buffer to repeat')
+        result=int(self.dll.Write_image(self.pixels.ctypes.data_as(C.POINTER(C.c_ubyte)),1))
         # This exact vendor wrapper initializes a local return byte to zero,
         # calls void HdmiDisplay::LoadImg and returns the unchanged byte.
         # Header says bool success, but this build cannot acknowledge success.
         # RVA 0x2690..0x283a; never extend this exception to unknown DLL builds.
         known_zero=self.wrapper_sha=='0d3cc283165bb62ed60a4c8b1c1a256af9441e6342654511fd1f80dbe46ce225' and result==0
         if result<=0 and not known_zero and self.strict_write_ack:raise RuntimeError('Write_image failed')
-        written=time.perf_counter();time.sleep(self.settle_s)
+        return result,known_zero
+    def show(self,path,expected_sha=None,pump=None):
+        # Keep the buffer alive through subsequent writes and Delete_SDK.
+        # Native Mono8 was optically tested; no channel roundtrip/RGBA conversion.
+        self.pixels=np.ascontiguousarray(load_native(path,expected_sha))
+        t=time.perf_counter();result,known_zero=self.repeat();written=time.perf_counter()
+        until=time.monotonic()+self.settle_s
+        while time.monotonic()<until:
+            if pump:pump()
+            time.sleep(.01)
         self.current={'phase_file':str(Path(path).resolve()),'phase_sha256':sha(path),
             'write_call_ms':(written-t)*1000,'settle_s':self.settle_s,'sdk_ack_only':True,
             'write_return':result,'write_ack_success':result>0,'strict_write_ack':self.strict_write_ack,
             'known_vendor_constant_zero_return':known_zero,'optical_display_verified_by_this_call':False,
-            'no_extra_flip_or_inversion':True,'panel':self.info}
+            'no_extra_flip_or_inversion':True,'panel':self.info,'is_8_bit':1,'persistent_buffer':True}
         return self.current
     def close(self):
         if self.created:self.dll.Delete_SDK();self.created=False
+        self.pixels=None
         if self.dir:self.dir.close();self.dir=None
     def __exit__(self,*args):self.close()
 

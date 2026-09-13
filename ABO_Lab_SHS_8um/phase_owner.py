@@ -1,6 +1,6 @@
 """One persistent, message-pumped vendor SDK owner. NOT an optical acknowledgement.
 
-Explicit documented channel roundtrips are a recovery candidate, not a proven fix.
+Native Mono8 retained buffer, repeated on the owner/message-pump thread.
 No explicit VCom/ramp/firmware calls; Create_SDK itself has vendor side effects.
 """
 import ctypes as C
@@ -13,6 +13,7 @@ import subprocess
 import os
 from pathlib import Path
 from phase_hdmi import PhaseHDMI, load_native
+from phase_display import DisplayOrigin
 
 
 def message_pump():
@@ -34,7 +35,7 @@ class PhaseOwner:
         self.link=link;self.black=Path(black);self.lens=Path(lens)
         self.q=queue.Queue();self.ready=Future();self.stop=threading.Event();self.error=None
         self.audit=[];self.thread=None
-        self.lock=None
+        self.lock=None;self.display=DisplayOrigin(bool(link.get('phase_display_align_top',False)))
     def __enter__(self):
         load_native(self.black);load_native(self.lens)
         tasks=subprocess.check_output(['tasklist','/FI','IMAGENAME eq BlinkHdmi.exe','/FO','CSV'],text=True)
@@ -44,10 +45,11 @@ class PhaseOwner:
         try:os.write(fd,str(os.getpid()).encode())
         finally:os.close(fd)
         self.lock=lock
-        self.thread=threading.Thread(target=self._loop,daemon=True);self.thread.start()
         try:
+            self.display.__enter__()
+            self.thread=threading.Thread(target=self._loop,daemon=True);self.thread.start()
             self.info=self.ready.result(timeout=60)
-            self.recover(int(self.link.get('phase_startup_cycles',30)))
+            self.recover(int(self.link.get('phase_startup_cycles',0)))
             return self
         except BaseException:self.close();raise
     def _loop(self):
@@ -55,23 +57,19 @@ class PhaseOwner:
         try:
             pump=message_pump()
             with PhaseHDMI(self.link['phase_sdk'],self.link['phase_lut'],self.link.get('phase_settle_s',1)) as phase:
-                fn=phase.dll.Set_channel;fn.argtypes=[C.c_int];fn.restype=C.c_int
-                def channels():
-                    calls=[]
-                    for ch in (1,0):
-                        ack=int(fn(ch));calls.append({'channel':ch,'return':ack})
-                        if ack<=0:raise RuntimeError('Channel switch not acknowledged')
-                        until=time.monotonic()+.5
-                        while time.monotonic()<until:pump();time.sleep(.01)
-                    return calls
+                last=0;current_path=self.black
                 def show(path,expected=None):
-                    result=phase.show(path,expected);result['channel_roundtrip']=channels();pump()
+                    nonlocal last,current_path
+                    result=phase.show(path,expected,pump=pump);last=time.monotonic();current_path=path
                     result['optical_display_verified_by_this_call']=False
+                    result['repeat_interval_s']=1
                     return result
                 self.ready.set_result(phase.info)
                 try:
                     while not self.stop.is_set():
                         pump()
+                        if phase.pixels is not None and time.monotonic()-last>=1:
+                            phase.repeat();last=time.monotonic()
                         try:kind,arg,current=self.q.get(timeout=.01)
                         except queue.Empty:continue
                         if kind=='show':result=show(*arg)
@@ -79,16 +77,13 @@ class PhaseOwner:
                             result=[]
                             for i in range(arg):
                                 if self.stop.is_set():raise RuntimeError('Recovery cancelled')
-                                result.append(show(self.lens if i%2 else self.black))
+                                result.append(show(current_path))
                                 if (i+1)%10==0:print(f'Phase startup/recovery {i+1}/{arg}',flush=True)
-                            self.audit.append({'kind':'recovery','writes':result})
+                            self.audit.append({'kind':'reassert_current_mono8','writes':result})
                         else:raise ValueError('Unknown SDK command')
                         current.set_result(result);current=None
                 finally:
-                    # Attempt both restoration operations even if one fails.
-                    ack=int(fn(0));self.audit.append({'kind':'restore_red','return':ack})
-                    phase.show(self.black)
-                    if ack<=0:raise RuntimeError('Restore red channel failed')
+                    self.audit.append({'kind':'final_flat_write','receipt':show(self.black)})
         except BaseException as e:
             self.error=e
             if not self.ready.done():self.ready.set_exception(e)
@@ -106,6 +101,8 @@ class PhaseOwner:
         self.stop.set()
         if self.thread:self.thread.join(timeout=30)
         if self.thread and self.thread.is_alive():raise RuntimeError('SDK owner did not exit; do not start another owner')
-        if self.lock:self.lock.unlink(missing_ok=True);self.lock=None
+        try:self.display.close()
+        finally:
+            if self.lock:self.lock.unlink(missing_ok=True);self.lock=None
         if self.error:raise self.error
     def __exit__(self,*args):self.close()

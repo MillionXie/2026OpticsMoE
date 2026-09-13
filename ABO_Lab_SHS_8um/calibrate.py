@@ -21,7 +21,10 @@ def main():
     p.add_argument('--phases',action='store_true',help='Also export the six fixed ABO phase NPYs from assets/phases')
     a=p.parse_args();c=json.loads(Path(a.config).read_text(encoding='utf-8-sig'))
     if c['model_active_pixels']!=478 or c['model_pitch_um']!=17:raise ValueError('Fixed ABO checkpoint requires 478 x 17 um physical aperture')
-    patterns,dual=helpers();patterns.calibration(c);dual.generate(c)
+    patterns,dual=helpers()
+    from diagnostic_config import configure_generated
+    configure_generated(c)
+    patterns.calibration(c);dual.generate(c)
     if a.phases:patterns.export(c)
     print('Phase LUT direction:',c['phase_slm']['gray_encoding'],'; amplitude is NOT inverted.')
 

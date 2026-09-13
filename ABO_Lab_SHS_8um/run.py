@@ -44,6 +44,14 @@ def main():
     if '--config' not in sys.argv:
         local=ROOT/'LAB.local.json'
         sys.argv+=['--config',str(local if local.exists() else ROOT/'config.json')]
+    config_path=Path(sys.argv[sys.argv.index('--config')+1])
+    cfg=json.loads(config_path.read_text(encoding='utf-8-sig'))
+    from diagnostic_config import configure_generated,validate
+    if cfg.get('diagnostic_only'):
+        validate(cfg)
+        if '--session' not in sys.argv or sys.argv[sys.argv.index('--session')+1]!=cfg['diagnostic_session']:
+            raise ValueError('Diagnostic session/config mismatch')
+        configure_generated(cfg)
     import hardware
     from slm_camera import Controller
     class Bench(Controller):
@@ -84,6 +92,12 @@ def main():
     if len(sys.argv)>1 and sys.argv[1] in ('probe','exposure'):
         raise ValueError('Use capture.py for standalone camera tests; optical exposure scan is not validated yet')
     task.main()
+    if cfg.get('diagnostic_only') and len(sys.argv)>1 and sys.argv[1]=='evaluate':
+        p=ROOT/'sessions'/cfg['diagnostic_session']/'results/metrics.json'
+        r=common.read(p);r.update(mode='diagnostic_real_six_stage',production_qualified=False,
+            interpretation='Small-sample flow check using provisional measured geometry; NOT a dataset accuracy result.',
+            geometry_evidence=cfg['geometry_evidence'])
+        common.write(p,r)
 
 
 if __name__=='__main__':main()

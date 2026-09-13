@@ -17,8 +17,10 @@ def write(p,d):
 
 def command(spec):
     action=spec['action']
+    from diagnostic_config import job_config
+    cfg=job_config(spec)
     if action=='calibrate':
-        return [sys.executable,str(ROOT/'calibrate.py'),'--config','LAB.local.json','--phases']
+        return [sys.executable,str(ROOT/'calibrate.py'),'--config',cfg,'--phases']
     if action in ('capture_batch','quarantine_batch','accept_batch'):
         if not re.fullmatch('[A-Za-z0-9_-]{1,80}',spec['session']) or not re.fullmatch('[0-9a-f]{32}',spec['batch_id']):raise ValueError('Invalid guarded batch identity')
         job=(ROOT/spec['_job_path']).resolve()
@@ -29,10 +31,10 @@ def command(spec):
         if not bmp.is_relative_to(ROOT):raise ValueError('BMP path escape')
         out=(ROOT/spec['out']).resolve()
         if not out.is_relative_to(ROOT/'results'):raise ValueError('Diagnostic output must be under results')
-        return [sys.executable,str(ROOT/'slm_camera.py'),'--config','LAB.local.json','--bmp',str(bmp),'--out',spec['out']]
+        return [sys.executable,str(ROOT/'slm_camera.py'),'--config',cfg,'--bmp',str(bmp),'--out',spec['out']]
     if action not in ('init','prepare','capture','evaluate'):raise ValueError('Action not allowed')
     if not re.fullmatch('[A-Za-z0-9_-]{1,80}',spec['session']):raise ValueError('Invalid session')
-    cmd=[sys.executable,str(ROOT/'run.py'),action,'--session',spec['session'],'--config','LAB.local.json']
+    cmd=[sys.executable,str(ROOT/'run.py'),action,'--session',spec['session'],'--config',cfg]
     if action in ('prepare','capture'):
         stages=['vision_router','vision_expert','vision_global','language_router','language_expert','language_global']
         if spec['stage'] not in stages:raise ValueError('Invalid stage')
