@@ -8,6 +8,8 @@ import csv
 import json
 from collections import Counter
 
+import torch
+from torch.nn import functional as F
 from PIL import Image, ImageEnhance, ImageFilter
 
 from .io import sha256
@@ -48,6 +50,58 @@ def load_external_pool(pool, root, protocol, groups, expected_sha):
                  original_hamming_threshold=report.get('hamming_threshold'),
                  limitation='Rechecked all file SHA and product IDs; original near-duplicate heuristic retained, not proof of semantic variant independence')
     return fit, audit
+
+
+def load_external_relations(path, expected_sha, fit, protocol, pool_sha):
+    """Reuse frozen Qwen cache, retaining ONLY revalidated external images.
+
+    Historical cache also contains old target TRAIN images (some are now QUERY).
+    None of those rows survive. No trained projection/old student is imported.
+    """
+    if not expected_sha or sha256(path) != expected_sha:
+        raise ValueError('External teacher cache SHA mismatch')
+    cache = torch.load(path, map_location='cpu', weights_only=True)
+    if (cache.get('schema') != 1 or cache.get('frozen_teacher') is not True
+        or cache.get('teacher_trainable_parameters') != 0
+        or cache.get('target_manifest_sha256') != protocol['parent_manifest_sha256']
+        or cache.get('pool_manifest_sha256') != pool_sha
+        or cache.get('prompt') != 'Represent this catalog product image for category-aware visual similarity retrieval.'
+        or cache.get('preprocessing') != 'EXIF RGB; native aspect; processor min=max pixels 50176'
+        or not str(cache.get('model', '')).endswith('/snapshots/9f2f7e710d6d81056aa5c0a4f04764fec6bb7bda')):
+        raise ValueError('External frozen teacher identity mismatch')
+    ids, hashes, vectors = cache.get('ids', []), cache.get('image_sha256', []), cache.get('vectors')
+    if (not ids or len(set(ids)) != len(ids) or len(hashes) != len(ids)
+        or not isinstance(vectors, torch.Tensor) or vectors.shape != (len(ids), 2048)
+        or vectors.dtype != torch.float16 or not torch.isfinite(vectors).all()):
+        raise ValueError('Invalid external teacher vectors')
+    index = {sid: i for i, sid in enumerate(ids)}
+    protected = protocol.get('rows', [])
+    blocked_ids = {r['sample_id'] for r in protected}
+    blocked_products = {r['product_id'] for r in protected}
+    blocked_hashes = {r['image_sha256'] for r in protected}
+    kept = {}
+    for row in fit['train']:
+        sid = row['sample_id']
+        if sid in blocked_ids or row['product_id'] in blocked_products or row['image_sha256'] in blocked_hashes:
+            raise ValueError('Target image/product in external teacher fitting rows')
+        if row['split'] != 'train' or sid not in index or hashes[index[sid]] != row['image_sha256']:
+            raise ValueError('Missing/changed external teacher TRAIN image')
+        vector = vectors[index[sid], :64].float().clone()
+        if vector.norm() <= 0:
+            raise ValueError('Zero external 64D teacher vector')
+        kept[sid] = F.normalize(vector, dim=0)
+    if set(kept) != {r['sample_id'] for r in fit['gallery']} or not kept:
+        raise ValueError('External teacher gallery mismatch')
+    return kept, dict(cache_sha256=expected_sha, retained_external_images=len(kept),
+        discarded_other_cache_rows=len(ids)-len(kept), teacher_trainable_parameters=0,
+        representation='Frozen2048 first64 then L2; external only, no target rows retained',
+        prompt=cache['prompt'], preprocessing=cache['preprocessing'], model=cache['model'])
+
+
+def curriculum_loss_weights(profile, external, taper):
+    """External soft relations may replace SKU NLL; target ALWAYS retains NLL."""
+    return ((profile.get('external_instance_weight', 1.), profile.get('external_teacher_weight', 0.))
+            if external else (1., profile['teacher_weight']*taper))
 
 
 def augment_whole_object(image, rng, mild=False):

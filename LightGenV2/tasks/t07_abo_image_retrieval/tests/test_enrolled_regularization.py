@@ -3,10 +3,11 @@ import json
 import random
 
 import pytest
+import torch
 from PIL import Image
 
 from LightGenV2.tasks.t07_abo_image_retrieval.standalone.enrolled_regularization import (
-    load_external_pool, augment_whole_object, curriculum_epoch)
+    load_external_pool, load_external_relations, augment_whole_object, curriculum_epoch, curriculum_loss_weights)
 from LightGenV2.tasks.t07_abo_image_retrieval.standalone.io import sha256
 from LightGenV2.tasks.t07_abo_image_retrieval.standalone.retrieval_adapt import training_pairs
 
@@ -70,3 +71,51 @@ def test_mild_ablation_only_differs_by_sam_and_has_no_geometry():
     image.putpixel((0,0),(255,255,255))
     out=augment_whole_object(image,random.Random(42),mild=True)
     assert out.getpixel((0,0))[0]>200 and out.getpixel((1,1))[0]<30
+
+
+def teacher_fixture(tmp_path):
+    digest,protocol,groups,rows=external_fixture(tmp_path)
+    fit,_=load_external_pool(tmp_path,tmp_path,protocol,groups,digest)
+    protocol['rows']=[dict(sample_id='old_target_now_query',product_id='target',image_sha256='protected')]
+    cache=dict(schema=1,frozen_teacher=True,teacher_trainable_parameters=0,
+        target_manifest_sha256='parent',pool_manifest_sha256=digest,
+        model='/models/snapshots/9f2f7e710d6d81056aa5c0a4f04764fec6bb7bda',
+        prompt='Represent this catalog product image for category-aware visual similarity retrieval.',
+        preprocessing='EXIF RGB; native aspect; processor min=max pixels 50176',
+        ids=['old_target_now_query']+[r['sample_id'] for r in rows],
+        image_sha256=['protected']+[r['image_sha256'] for r in rows],
+        vectors=torch.randn(5,2048,dtype=torch.float16))
+    path=tmp_path/'teacher.pt';torch.save(cache,path)
+    return path,cache,fit,protocol,digest
+
+
+def test_external_teacher_drops_all_target_rows_and_uses_first64(tmp_path):
+    path,cache,fit,protocol,pool_sha=teacher_fixture(tmp_path)
+    kept,audit=load_external_relations(path,sha256(path),fit,protocol,pool_sha)
+    assert set(kept)=={'0','1','2','3'} and audit['discarded_other_cache_rows']==1
+    assert torch.allclose(kept['0'],torch.nn.functional.normalize(cache['vectors'][1,:64].float(),dim=0))
+    assert all(not v.requires_grad and v.shape==(64,) for v in kept.values())
+
+
+@pytest.mark.parametrize('bad',['sha','pool','trainable','prompt','hash','zero','duplicate','target'])
+def test_external_teacher_rejects_bad_identity_or_target_fitting(tmp_path,bad):
+    path,cache,fit,protocol,pool_sha=teacher_fixture(tmp_path)
+    if bad=='pool':cache['pool_manifest_sha256']='wrong'
+    if bad=='trainable':cache['teacher_trainable_parameters']=1
+    if bad=='prompt':cache['prompt']='other task'
+    if bad=='hash':cache['image_sha256'][1]='wrong'
+    if bad=='zero':cache['vectors'][1,:64]=0
+    if bad=='duplicate':cache['ids'][0]=cache['ids'][1]
+    if bad=='target':fit['train'][0]['product_id']='target'
+    torch.save(cache,path)
+    with pytest.raises(ValueError):
+        load_external_relations(path,'wrong' if bad=='sha' else sha256(path),fit,protocol,pool_sha)
+
+
+def test_external_soft_pretraining_never_replaces_target_supervision():
+    from LightGenV2.tasks.t07_abo_image_retrieval.standalone.retrieval_refine import PROFILES
+    p=PROFILES['sku_external_relations']
+    for taper in (0.,.5,1.):
+        assert curriculum_loss_weights(p,True,taper)==(0.,1.)
+        assert curriculum_loss_weights(p,False,taper)==(1.,0.)
+    assert p['sam_rho']==0 and p['phase_dropout']==0

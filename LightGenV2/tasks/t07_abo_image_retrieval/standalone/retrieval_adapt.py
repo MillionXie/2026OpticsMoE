@@ -25,7 +25,7 @@ from .model import OpticalRetrieval
 from .retrieval_screen import load_screen, rank_instances, OPTICS_SHA256, GALLERY_ANGLES
 from .retrieval_refine import (PROFILES, validate_continuation, route_objective,
     all_view_loss, load_train_teacher, relational_loss, selection_score, router_acceptable)
-from .enrolled_regularization import load_external_pool, augment_whole_object, curriculum_epoch
+from .enrolled_regularization import load_external_pool, load_external_relations, augment_whole_object, curriculum_epoch, curriculum_loss_weights
 from .generalization import backward_with_sam
 
 
@@ -250,6 +250,15 @@ def run(args):
         teacher = load_train_teacher(args.teacher_features, args.expected_teacher_sha256, sha256(args.manifest), groups, fit)
     elif args.teacher_features is not None:
         raise ValueError('Teacher cache supplied to a no-teacher profile')
+    external_teacher, external_teacher_audit = None, None
+    if profile.get('external_teacher_weight', 0):
+        if external_fit is None or getattr(args, 'external_teacher_cache', None) is None:
+            raise ValueError('External relations profile requires pretraining pool and pinned teacher cache')
+        external_teacher, external_teacher_audit = load_external_relations(
+            args.external_teacher_cache, args.expected_external_teacher_sha256,
+            external_fit, protocol, args.expected_external_sha256)
+    elif getattr(args, 'external_teacher_cache', None) is not None:
+        raise ValueError('External teacher supplied to a profile without external distillation')
     if sha256(path) != digest or sha256(Path(__file__).with_name('optics.py')) != OPTICS_SHA256:
         raise ValueError('Checkpoint or protected physical source changed')
     device = torch.device(args.device)
@@ -285,10 +294,12 @@ def run(args):
         teacher_train_ids=sorted(teacher) if teacher else [], extra_inference_parameters=0,
         refinement=profile,
         external_curriculum=external_audit,
+        external_teacher=external_teacher_audit,
         curriculum_note='Continue verified current-protocol best -> external instance pretraining (last state, no TEST selection) -> target fine-tune. Initial best retained; not from-scratch pretraining' if external_fit else None,
         noise=f"Original metadata noise on {profile.get('noise_probability', .25):.0%} joint-training batches; refined profiles keep router noise disabled. Warmup clean. No pixel shift/k filter/8bit STE; clean evaluation",
         augmentation=('Brightness/contrast .95..1.05 only; no geometric augmentation or blur' if profile.get('mild_augmentation') else 'Whole-object .85..1 scale into white canvas, bounded placement, brightness/contrast .85..1.15,15% mild blur; no crop/flip') if regularized else 'Whole-object contain_white; brightness/contrast .9..1.1; no crop/rotation/flip',
-        loss='query->detached entire FITTING gallery multi-positive NLL(temp .1) + .5 live query/reference SupCon + existing optical regularization')
+        loss='query->detached entire FITTING gallery multi-positive NLL(temp .1) + .5 live query/reference SupCon + existing optical regularization',
+        external_loss_override=('External: frozen64 teacher relation KL(temp .1), no SKU NLL/SupCon/all-positive loss; target: original GT retrieval loss, teacher disabled' if external_teacher else None))
     write_json(args.output / 'fitting_manifest.json', dict(parent_manifest_sha256=identity['manifest_sha256'],
         note=fit['note'], train=fit['train'], references=fit['gallery']))
     if external_fit:
@@ -336,7 +347,8 @@ def run(args):
             label_map = {k: i for i, k in enumerate(sorted({r['product_id'] for r in gallery}))}
             bank_labels = torch.tensor([label_map[r['product_id']] for r in gallery], device=device)
             gallery_ids = [r['sample_id'] for r in gallery]
-            teacher_bank = torch.stack([teacher[sid] for sid in gallery_ids]).to(device) if teacher else None
+            active_teacher = external_teacher if external else teacher
+            teacher_bank = torch.stack([active_teacher[sid] for sid in gallery_ids]).to(device) if active_teacher else None
             warming = phase_epoch <= profile['warmup'] and not external
             for name, p in params:
                 p.requires_grad_(not warming or name.endswith('raw_router_phase'))
@@ -374,11 +386,12 @@ def run(args):
                     route = route_objective(model) if refined else z.new_zeros(())
                     all_views = all_view_loss(z, labels.to(device), bank, bank_labels, args.classes_per_batch, excluded) if profile['positive_weight'] else z.new_zeros(())
                     kd = z.new_zeros(())
-                    if teacher and not warming:
-                        tq = torch.stack([teacher[r['sample_id']] for r in rows[:args.classes_per_batch]]).to(device)
+                    if active_teacher and not warming:
+                        tq = torch.stack([active_teacher[r['sample_id']] for r in rows[:args.classes_per_batch]]).to(device)
                         kd = relational_loss(z, bank, tq, teacher_bank, excluded)
                     taper = max(0., 1 - phase_epoch / max(1., phase_epochs*.8))
-                    loss = route if warming else data_loss + regularization(model) + profile.get('route_scale', 1.)*(.03+.17*taper)*route + profile['positive_weight']*all_views + profile['teacher_weight']*taper*kd
+                    instance_scale, kd_scale = curriculum_loss_weights(profile, external, taper)
+                    loss = route if warming else instance_scale*(data_loss + profile['positive_weight']*all_views) + regularization(model) + profile.get('route_scale', 1.)*(.03+.17*taper)*route + kd_scale*kd
                   return dict(loss=loss, hit=hit.detach(), route=route.detach(), kd=kd.detach(), all_views=all_views.detach())
                 result, sam = backward_with_sam(closure, optimizer, 0. if warming else profile.get('sam_rho', 0.))
                 norm = torch.nn.utils.clip_grad_norm_([p for _, p in params], 1., error_if_nonfinite=True)
@@ -473,6 +486,8 @@ def main():
     p.add_argument('--external-pool', type=Path)
     p.add_argument('--external-root', type=Path)
     p.add_argument('--expected-external-sha256')
+    p.add_argument('--external-teacher-cache', type=Path, help='External-only frozen teacher relations; no target cache rows retained')
+    p.add_argument('--expected-external-teacher-sha256')
     p.add_argument('--external-pretrain-epochs', type=int, default=0, help='Additional external epochs before --epochs target fine-tuning; same-SKU positives, no TEST selection in this phase')
     p.add_argument('--device', choices=['cuda', 'cpu'], default='cuda')
     args = p.parse_args()

@@ -2040,3 +2040,33 @@ CUDA_VISIBLE_DEVICES=GPU-e8837b85-d55b-8e81-aaa5-ec1ac326932d python -m LightGen
 ```
 
 本轮串接复用物理GPU0/1两张RTX4090，不抢占其他任务；结束逐PID核验显存释放。
+
+## 68. 外部软关系预训练，再恢复目标SKU监督
+
+只改训练，不改光路/输入尺寸/描述子/电子网络。使用同一78.125%起点，不继承旧类别任务学生权重。
+外部12轮只做冻结Qwen64关系KL及原光学/路由约束；不做外部SKU NLL、SupCon或全正例聚合。
+目标20轮恢复原GT检索损失，教师完全关闭。轻微色彩增强、无SAM/额外相位dropout。
+旧缓存包含旧目标TRAIN图片，程序只保留外部清单的7944行并逐图核对SHA；所有目标商品/图像行拒绝进入外部损失。
+目标800 QUERY/1600图库保持固定，外部阶段不按TEST选模。只保存best/last，含初始最佳回退。
+
+以下命令的GPU为示例，必须先确认空闲；当前0/1有温和配对任务，不中断它们。
+先CUDA冒烟：改`--external-pretrain-epochs 1 --epochs 1 --steps 1 --eval-every 1`，output为`runs/smoke/abo_external_relations_20260913`；完成后释放并检查PID，正式启动另行记录。
+
+```bash
+T07=/DATA/DATA1/guest3/2026OpticsMoE/LightGenV2/tasks/t07_abo_image_retrieval
+R="$T07/runs/simulation"
+export HF_HUB_OFFLINE=1 TRANSFORMERS_OFFLINE=1 OMP_NUM_THREADS=4 MKL_NUM_THREADS=4
+nvidia-smi
+CUDA_VISIBLE_DEVICES=GPU-d53ce4c8-272d-c2fb-dc09-f182d586c4eb python -m LightGenV2.tasks.t07_abo_image_retrieval.standalone.retrieval_adapt \
+  --data /DATA/DATA1/guest3/2026OpticsMoE/data/abo_similarity10_data \
+  --manifest "$R/abo200_enrolled_protocol_20260913/protocol.json" --assets "$R/standalone_assets_20260910" \
+  --checkpoint "$R/abo200_route_distill_20260913/best.pt" \
+  --expected-checkpoint-sha256 d11f3428efa67c7c5084eb9056d991c4692d36a3d177cd82b4601238357d444a \
+  --external-pool "$R/domain_pool250_views4_20260912" --external-root /DATA/DATA1/guest3/2026OpticsMoE/data/abo \
+  --expected-external-sha256 e6cf6b923ccdfb7c4c04dcf6b033455d1d49db737d2a9ebca941849d6c28e315 \
+  --external-teacher-cache "$R/domain_teacher_first_views4_20260912_gpu1/build_teacher_cache/artifacts/cache.pt" \
+  --expected-external-teacher-sha256 7e17b59c36b64ec0a0f2a0ca52399c4b3dfc00dfab0dbd138db617ba79c6a87e \
+  --external-pretrain-epochs 12 --multi-view --refine-profile sku_external_relations \
+  --lr-scale .1 --epochs 20 --steps 100 --eval-every 5 --batch-size 4 --bank-batch-size 16 \
+  --output "$R/abo200_external_relations_20260913"
+```
