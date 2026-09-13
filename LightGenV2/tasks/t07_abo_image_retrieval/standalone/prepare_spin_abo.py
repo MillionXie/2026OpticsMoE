@@ -31,6 +31,12 @@ METADATA_SHA = '0da9f44c7f684aee1a43dc0eb05dbe2d3941e376dc9400d2663242dfd67e5132
 TYPES = ('BED', 'CHAIR', 'HOME_MIRROR', 'LIGHT_FIXTURE', 'PILLOW', 'RUG', 'SOFA', 'STOOL_SEATING', 'VASE', 'WALL_ART')
 
 
+def sha256_argument(value):
+    if not re.fullmatch('[0-9a-fA-F]{64}', value):
+        raise argparse.ArgumentTypeError(f'SHA256 must be exactly 64 hex characters; received {len(value)}')
+    return value.lower()
+
+
 class BudgetExceeded(RuntimeError):
     pass
 
@@ -248,7 +254,7 @@ def main():
     p.add_argument('--abo-root', type=Path, required=True)
     p.add_argument('--target-root', type=Path, required=True)
     p.add_argument('--target-manifest', type=Path, required=True)
-    p.add_argument('--expected-target-sha256', required=True)
+    p.add_argument('--expected-target-sha256', type=sha256_argument, required=True)
     p.add_argument('--output', type=Path, required=True)
     p.add_argument('--products-per-type', type=int, default=50)
     p.add_argument('--minimum-products', type=int, default=10)

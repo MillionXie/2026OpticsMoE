@@ -2161,7 +2161,7 @@ python -m LightGenV2.tasks.t07_abo_image_retrieval.standalone.prepare_spin_abo \
   --abo-root /DATA/DATA1/guest3/2026OpticsMoE/data/abo \
   --target-root /DATA/DATA1/guest3/2026OpticsMoE/data/abo_similarity10_data \
   --target-manifest "$R/abo200_enrolled_protocol_20260913/protocol.json" \
-  --expected-target-sha256 f1749d5fc22d2dfee6a1333ce2b35e9fa600a070f949eba88420b4def41906dde \
+  --expected-target-sha256 f1749d5fc22d2dfee6a1333ce2b35e9fa600a070f949eba8420b4def41906dde \
   --products-per-type 50 --minimum-products 10 --views 12 --workers 4 --max-download-mib 1024 \
   --output "$R/abo_spin_pool50_views12_20260913"
 ```

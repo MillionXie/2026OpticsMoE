@@ -1,4 +1,5 @@
 import csv
+import argparse
 import hashlib
 import io
 import json
@@ -9,6 +10,15 @@ from PIL import Image
 from LightGenV2.tasks.t07_abo_image_retrieval.standalone import prepare_spin_abo as spin
 from LightGenV2.tasks.t07_abo_image_retrieval.standalone.enrolled_regularization import load_external_pool, spin_target_identity
 from LightGenV2.tasks.t07_abo_image_retrieval.standalone.io import sha256
+
+
+def test_documented_target_and_metadata_sha_are_valid_64hex():
+    digest = 'f1749d5fc22d2dfee6a1333ce2b35e9fa600a070f949eba8420b4def41906dde'
+    assert spin.sha256_argument(digest) == digest
+    assert spin.sha256_argument(digest.upper()) == digest
+    assert spin.sha256_argument(spin.METADATA_SHA) == spin.METADATA_SHA
+    for bad in (digest + 'e', digest[:-1], 'z' * 64, digest + '\n'):
+        with pytest.raises(argparse.ArgumentTypeError): spin.sha256_argument(bad)
 
 
 def test_uniform_views_use_actual_sequence_not_random_image_duplicates():
