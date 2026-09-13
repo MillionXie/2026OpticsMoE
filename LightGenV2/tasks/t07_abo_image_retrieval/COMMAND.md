@@ -1919,3 +1919,47 @@ python -m LightGenV2.tasks.t07_abo_image_retrieval.standalone.retail_sources ren
 先做CUDA冒烟：相同参数改`--epochs 1 --steps 2`、output改`runs/smoke/abo200_enrolled_20260913`或`shape8_multiview_20260913`，确认完成释放后再正式训练。
 OFF最多60张400px，仅用官方AWS、串行，不因AWS缺图回退轰炸主站；report记录所有下载失败，不静默删商品或配对。
 训练只存best/last、执行身份、phase_update、正常/去光、路由和train/test历史。终止时只针对自己的精确PID，结束后检查CUDA占用。
+
+## 65. ABO五个百分点差距主线：路由修复/蒸馏配对，SHAPE备选
+
+结构说明见`reports/reproduction/ABO_ENROLLED_ARCHITECTURE.md`。不改光路、ROI、Top2、64维、电子参数量。
+ABO从本协议35 EMA继续，不使用旧类别检索权重；程序检查checkpoint的manifest身份，禁止旧协议权重泄漏。
+40轮配对只差TRAIN-only关系蒸馏，前3轮router-only后联合训练；SHAPE20轮无独立预热。
+最多4卡的用户预算仍有效，本轮最多3卡（物理0/1/3），按UUID检查空闲，不占他人卡。
+
+```bash
+T07=/DATA/DATA1/guest3/2026OpticsMoE/LightGenV2/tasks/t07_abo_image_retrieval
+export HF_HUB_OFFLINE=1 TRANSFORMERS_OFFLINE=1 OMP_NUM_THREADS=4 MKL_NUM_THREADS=4
+nvidia-smi
+CUDA_VISIBLE_DEVICES=GPU-afc19890-6209-ee4d-622d-e619da5bd5b2 python -m LightGenV2.tasks.t07_abo_image_retrieval.standalone.retrieval_adapt \
+  --data /DATA/DATA1/guest3/2026OpticsMoE/data/abo_similarity10_data \
+  --manifest "$T07/runs/simulation/abo200_enrolled_protocol_20260913/protocol.json" \
+  --assets "$T07/runs/simulation/standalone_assets_20260910" \
+  --checkpoint "$T07/runs/simulation/abo200_enrolled_fresh_20260913/best.pt" \
+  --expected-checkpoint-sha256 918956321fe865d74408611716a420330a53cb760e827636d787f6e9a3abfade \
+  --multi-view --refine-profile route_repair --lr-scale .5 --epochs 40 --steps 100 --eval-every 5 --batch-size 4 \
+  --output "$T07/runs/simulation/abo200_route_repair_20260913"
+CUDA_VISIBLE_DEVICES=GPU-e8837b85-d55b-8e81-aaa5-ec1ac326932d python -m LightGenV2.tasks.t07_abo_image_retrieval.standalone.retrieval_adapt \
+  --data /DATA/DATA1/guest3/2026OpticsMoE/data/abo_similarity10_data \
+  --manifest "$T07/runs/simulation/abo200_enrolled_protocol_20260913/protocol.json" \
+  --assets "$T07/runs/simulation/standalone_assets_20260910" \
+  --checkpoint "$T07/runs/simulation/abo200_enrolled_fresh_20260913/best.pt" \
+  --expected-checkpoint-sha256 918956321fe865d74408611716a420330a53cb760e827636d787f6e9a3abfade \
+  --multi-view --refine-profile route_distill --lr-scale .5 --epochs 40 --steps 100 --eval-every 5 --batch-size 4 \
+  --teacher-features "$T07/runs/simulation/abo200_enrolled_qwen64_20260913/normal_features.pt" \
+  --expected-teacher-sha256 c6eb631c268d2446a2f7783854c86d8493cdbcaa04c0669148b16d9785016d8d7 \
+  --output "$T07/runs/simulation/abo200_route_distill_20260913"
+CUDA_VISIBLE_DEVICES=GPU-4d8bfdb9-8777-05a6-3811-ab18ff4eadfd python -m LightGenV2.tasks.t07_abo_image_retrieval.standalone.retrieval_adapt \
+  --data /DATA/DATA1/guest3/2026OpticsMoE/data/shape_source \
+  --manifest "$T07/runs/simulation/shape8_protocol_20260913/protocol.json" \
+  --assets "$T07/runs/simulation/standalone_assets_20260910" \
+  --checkpoint "$T07/runs/simulation/shape8_multiview_20260913/best.pt" \
+  --expected-checkpoint-sha256 077e58ef3bd650b3ff9bd834fb2489bac0cf6c40dc680d8ffadaba5c3fd1189d \
+  --multi-view --refine-profile shape_views --lr-scale .5 --epochs 20 --steps 100 --eval-every 5 --batch-size 4 \
+  --output "$T07/runs/simulation/shape8_view_refine_20260913"
+```
+
+CUDA冒烟：ABO蒸馏组同参数改`--epochs 2 --steps 2 --router-warmup-epochs 1 --eval-every 2`，output改`runs/smoke/abo200_route_distill_20260913`；覆盖router-only及联合/蒸馏两种反向。
+SHAPE冒烟改`--epochs 1 --steps 2`及`runs/smoke/shape8_view_refine_20260913`，保留所有正式测试图，不拿冒烟分数当新成绩。
+读取normal_features.pt后按manifest匹配，只保留1600 TRAIN向量供损失使用；800 QUERY不参与蒸馏，不加载完整Qwen/TF到学生进程。
+新增最优选模先检查router资格（每专家≥5%、最高Top2组合≤80%、至少3组合），再比R@1/mAP；目标还需R@1≥80.125%。不合格会明确标router_eligible=false。
