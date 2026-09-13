@@ -2409,9 +2409,11 @@ CUDA_VISIBLE_DEVICES=GPU-4d8bfdb9-8777-05a6-3811-ab18ff4eadfd python -m LightGen
 
 源码`4185ee926fdfe030ecac4979c02145a7995eb843`已推GitHub，本地/服务器369测试通过。
 增强组完整CUDA冒烟424.37秒完成，PID2344061退出，12相位更新且梯度有限；
-最终选回初始78.125%/去光74.75%、路由合格。正式增强已启动PID2350345/GPU1 RTX4090，
-run=`abo200_augmentation_only_20260914`，工作树`.worktrees/t07_view_audit_20260914`固定该源码。
-Dropout组尚未启动，需等GPU1正式增强结束、核查显存释放，再做正式训练；没有自动排队进程。
+最终选回初始78.125%/去光74.75%、路由合格。正式增强20轮也已完成，PID2350345退出、GPU1释放，
+run=`abo200_augmentation_only_20260914`新候选最高77.375%，最终仍选初始78.125%/去光74.75%，不采用。
+best SHA=`e945bff953c284b7a82a77408c1d88607841107cf1df4762684f146d56949c53`，不是新训练成绩。
+独立Dropout已在确认GPU1空闲后正式启动PID2377609，run=`abo200_dropout_only_20260914`，
+工作树`.worktrees/t07_view_audit_20260914`固定上述4185ee92源码；20轮×100步，没有自动排队进程。
 本次省略重复的全图库dropout冒烟：已核对`abo200_sam_control_20260913/final_report.json`，
 同一个受保护光学实现SHA=`6490c6ee0ccc7501572fbae722aafbd7d4a016425d21af454019e7b60625433d`、
 同样3%相位dropout已经在RTX4090完成CUDA训练；本次只拆分profile，不新增dropout算子，369回归通过。
