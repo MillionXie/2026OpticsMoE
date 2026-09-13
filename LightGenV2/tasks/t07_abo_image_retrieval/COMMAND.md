@@ -2137,3 +2137,36 @@ CUDA_VISIBLE_DEVICES=GPU-e8837b85-d55b-8e81-aaa5-ec1ac326932d python -m LightGen
   --multi-view --refine-profile sku_capacity_control --lr-scale .2 --epochs 20 --steps 100 --eval-every 5 --batch-size 4 --bank-batch-size 16 \
   --output "$R/abo200_capacity_control_20260913"
 ```
+
+## 71. 外部转台视角池：先准备数据，不占GPU、不改测试集
+
+原外部池是listing展示图；本节使用官方真实spin视角。原目标200商品（含全部未用于训练的视角所在spin）
+都排除，不能给目标商品追加训练照片后仍声称原8/4划分未变。
+共享spin的不同SKU也排除；各商品均匀选12角度，按稳定SKU哈希次序，每个固定product_type最多50商品。
+VASE原候选只有30，因此未筛重前上限约480商品/5760图。实际数量以ready报告为准，不能填计划数量。
+逐图SHA、目标dHash近重复检查只是保守防重，不证明所有近似款式不存在。
+
+原图及官方元数据缓存在`data/abo/spins`；run只有清单、状态和报告。默认网络总下载上限1GiB、4线程，
+不下载40GB整包，不覆盖已有文件。超限/缺少最低类型覆盖会失败，不生成ready报告；原始缓存保留供审计/重用。
+官网/实际spins README写CC BY4.0，AWS登记页写CC BY-NC4.0，已记录差异，对外使用前需核实，不给期刊许可保证。
+
+先用`--products-per-type 1 --minimum-products 1 --views 4 --max-download-mib 64`，
+output改为`$T07/runs/smoke/abo_spin_pool_20260913`做真实下载/身份排除/加载验证。数据准备不使用CUDA。
+正式命令如下；输出目录不得已存在，失败时不直接覆盖旧run。
+
+```bash
+T07=/DATA/DATA1/guest3/2026OpticsMoE/LightGenV2/tasks/t07_abo_image_retrieval
+R="$T07/runs/simulation"
+python -m LightGenV2.tasks.t07_abo_image_retrieval.standalone.prepare_spin_abo \
+  --abo-root /DATA/DATA1/guest3/2026OpticsMoE/data/abo \
+  --target-root /DATA/DATA1/guest3/2026OpticsMoE/data/abo_similarity10_data \
+  --target-manifest "$R/abo200_enrolled_protocol_20260913/protocol.json" \
+  --expected-target-sha256 f1749d5fc22d2dfee6a1333ce2b35e9fa600a070f949eba88420b4def41906dde \
+  --products-per-type 50 --minimum-products 10 --views 12 --workers 4 --max-download-mib 1024 \
+  --output "$R/abo_spin_pool50_views12_20260913"
+```
+
+确认`report.json`的status=ready及`manifest_sha256`，再用`enrolled_regularization.load_external_pool`重新加载验证。
+之后才安排外部→目标训练：沿用`retrieval_adapt`的`--external-pool`、`--external-root data/abo`及报告SHA参数，
+从当前协议最佳权重开始，禁止加载旧类别协议权重。新增数据训练尚未启动；等待教师配对结果后确定profile和正式命令，
+不额外抢占其GPU。目标1600图库/800查询及冻结Qwen64=85.125%全程保持不变。

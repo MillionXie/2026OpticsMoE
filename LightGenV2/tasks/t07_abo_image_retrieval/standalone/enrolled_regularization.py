@@ -6,6 +6,7 @@ detail views: same item_id is the positive label, not a claim of pure rotation.
 """
 import csv
 import json
+import hashlib
 from collections import Counter
 
 import torch
@@ -16,6 +17,10 @@ from .io import sha256
 from .prepare_broad_abo import safe_image
 
 
+def spin_target_identity(protocol):
+    return hashlib.sha256(json.dumps(protocol['rows'], sort_keys=True, separators=(',', ':')).encode()).hexdigest()
+
+
 def load_external_pool(pool, root, protocol, groups, expected_sha):
     manifest = pool / 'manifest.csv'
     report = json.loads((pool / 'report.json').read_text())
@@ -24,11 +29,28 @@ def load_external_pool(pool, root, protocol, groups, expected_sha):
     if report['target_manifest_sha256'] != protocol['parent_manifest_sha256']:
         raise ValueError('External pool target-exclusion contract mismatch')
     protected = groups['train'] + groups['query']
+    spin_pool = report.get('pool_kind') == 'abo_spin_pretrain_v1'
+    if spin_pool and (report.get('status') != 'ready'
+                      or protocol.get('protocol') != 'abo200_enrolled_sku_hash8train4query_v1'
+                      or report.get('enrolled_rows_sha256') != spin_target_identity(protocol)):
+        raise ValueError('External spin pool current target partition mismatch')
+    blocked_spins = {r.get('spin_id') for r in protected} - {None, ''}
+    spin_owners, spin_angles, product_spins = {}, {}, {}
+    if spin_pool and (type(report.get('views_per_product')) is not int or report['views_per_product'] < 2):
+        raise ValueError('Invalid external spin view requirement')
     blocked_products = {r['product_id'] for r in protected}
     blocked_hashes = {r['image_sha256'] for r in protected}
     rows, ids, hashes = [], set(), set()
     with manifest.open(encoding='utf-8', newline='') as stream:
         for row in csv.DictReader(stream):
+            if spin_pool:
+                sid = row.get('spin_id')
+                if (not sid or sid in blocked_spins or spin_owners.get(sid, row['product_id']) != row['product_id']
+                        or product_spins.get(row['product_id'], sid) != sid):
+                    raise ValueError('Target/shared spin in external pool')
+                spin_owners[sid] = row['product_id']
+                product_spins[row['product_id']] = sid
+                spin_angles.setdefault(row['product_id'], set()).add(int(row['azimuth']))
             path = safe_image(root, row['image_path'])
             digest = sha256(path)
             if digest != row['image_sha256']:
@@ -40,11 +62,14 @@ def load_external_pool(pool, root, protocol, groups, expected_sha):
             ids.add(row['sample_id']); hashes.add(digest)
             rows.append(dict(row, image_path=str(path), split='train', category_id=int(row['category_id'])))
     counts = Counter(r['product_id'] for r in rows)
+    if spin_pool and any(len(spin_angles[k]) != report['views_per_product'] or count != report['views_per_product'] for k, count in counts.items()):
+        raise ValueError('External spin view count mismatch')
     if len(rows) != report['selected_images'] or len(counts) != report['selected_products'] or not counts or min(counts.values()) < 2:
         raise ValueError('Invalid external counts or single-view SKU')
     fit = dict(train=rows, gallery=[dict(r, split='gallery') for r in rows], exclude_self=True,
                note='External SKU instance positives, ALL pool photos, self excluded; no target images')
     audit = dict(manifest_sha256=expected_sha, products=len(counts), images=len(rows),
+                 pool_kind=report.get('pool_kind', 'abo_listing_pool'), target_spin_overlap=0 if spin_pool else None,
                  protected_products=len(blocked_products), target_product_overlap=0, target_sha_overlap=0,
                  original_duplicate_screen=report.get('duplicate_screen'),
                  original_hamming_threshold=report.get('hamming_threshold'),
