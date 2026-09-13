@@ -1,0 +1,186 @@
+"""Official SHAPE preparation and bounded OFF feasibility audit, no GPU.
+
+Dataset archives/metadata are artifacts, not executable source. Never executes
+archive members. OFF audit is NOT a retrieval benchmark or a rights clearance.
+"""
+import argparse
+from collections import Counter
+import hashlib
+import json
+from pathlib import Path, PurePosixPath
+import urllib.request
+from zipfile import ZipFile
+
+from .io import sha256, source_commit, write_json
+
+SHAPE_PROTOCOL = 'shape_hash8_categories_official_train_gallery_v1'
+SHAPE_API = 'https://api.figshare.com/v2/articles/24100704'
+OFF_URL = ('https://world.openfoodfacts.org/api/v2/search?page_size=100&page=1'
+           '&sort_by=unique_scans_n&fields=code,images,categories_tags')
+UA = 'LightGenV2-RetrievalResearch/1.0 (https://github.com/MillionXie/2026OpticsMoE)'
+
+
+def fetch(url, maximum=8_000_000):
+    request = urllib.request.Request(url, headers={'User-Agent': UA})
+    with urllib.request.urlopen(request, timeout=30) as response:
+        data = response.read(maximum + 1)
+    if len(data) > maximum:
+        raise ValueError('Response exceeds bounded audit size')
+    return data
+
+
+def selected_categories(categories):
+    """Eight categories chosen by identifiers, BEFORE looking at model scores."""
+    return sorted(set(categories), key=lambda c: hashlib.sha256(
+        ('shape-category42:' + c).encode()).hexdigest())[:8]
+
+
+def image_members(names, split):
+    rows = []
+    for name in sorted(names):
+        p = PurePosixPath(name)
+        if p.suffix.lower() not in ('.jpg', '.jpeg', '.png', '.bmp'):
+            continue
+        if p.is_absolute() or '..' in p.parts or '\\' in name:
+            raise ValueError('Unsafe archive image path')
+        parts = p.parts
+        if len(parts) == 4 and parts[0] in ('training_set', 'test_set'):
+            parts = parts[1:]
+        if len(parts) != 3 or not parts[0].isdigit() or not parts[1].isdigit():
+            raise ValueError(f'Unexpected SHAPE category/SKU/image layout: {name}')
+        category, sku, filename = parts
+        relative = '/'.join([split, category, sku, filename])
+        rows.append(dict(sample_id=relative, image_path=relative, archive_member=name,
+            product_id=category + '/' + sku, category_id=category,
+            split='train' if split == 'training_set' else 'query'))
+    if len({r['sample_id'] for r in rows}) != len(rows):
+        raise ValueError('Duplicate archive image path')
+    return rows
+
+
+def shape_groups(rows):
+    if len({r['sample_id'] for r in rows}) != len(rows) or len({r['image_path'] for r in rows}) != len(rows):
+        raise ValueError('Duplicate SHAPE row/path')
+    if any(r['split'] not in ('train', 'query') for r in rows):
+        raise ValueError('Unexpected SHAPE row role')
+    train = [r for r in rows if r['split'] == 'train']
+    query = [r for r in rows if r['split'] == 'query']
+    if not train or not query or not {r['product_id'] for r in query} <= {r['product_id'] for r in train}:
+        raise ValueError('Missing SHAPE reference positives; do not silently drop queries')
+    if {r['image_sha256'] for r in train} & {r['image_sha256'] for r in query}:
+        raise ValueError('Exact duplicate across official train/test; audit before benchmarking')
+    # Shared enrolled SKU protocol, as in the authors' recognition test. Do not
+    # store duplicate train/gallery paths in the parent manifest.
+    return dict(train=train, query=query,
+        gallery=[dict(r, split='gallery', source_split='train') for r in train])
+
+
+def prepare_shape(root, output):
+    if output.exists():
+        raise FileExistsError(output)
+    root = root.resolve()
+    metadata_path = root / 'figshare_metadata.json'
+    raw = fetch(SHAPE_API) if not metadata_path.exists() else metadata_path.read_bytes()
+    metadata = json.loads(raw)
+    if metadata['license']['name'] != 'CC BY 4.0':
+        raise ValueError('SHAPE license changed; re-audit')
+    files = {f['name']: f for f in metadata['files']}
+    archives, all_rows = {}, []
+    for split in ('training_set', 'test_set'):
+        archive = root / (split + '.zip')
+        expected = files[archive.name]
+        if archive.stat().st_size != expected['size']:
+            raise ValueError('Archive incomplete')
+        md5 = hashlib.md5()
+        with archive.open('rb') as f:
+            for chunk in iter(lambda: f.read(8 * 1024 * 1024), b''):
+                md5.update(chunk)
+        if md5.hexdigest() != expected['computed_md5']:
+            raise ValueError('Archive differs from author-published checksum')
+        archives[split] = dict(sha256=sha256(archive), md5=md5.hexdigest(), size=archive.stat().st_size)
+        with ZipFile(archive) as z:
+            all_rows += image_members(z.namelist(), split)
+    selected = selected_categories(r['category_id'] for r in all_rows)
+    rows = [r for r in all_rows if r['category_id'] in selected]
+    for split in ('training_set', 'test_set'):
+        with ZipFile(root / (split + '.zip')) as z:
+            for row in rows:
+                if not row['image_path'].startswith(split + '/'):
+                    continue
+                info = z.getinfo(row['archive_member'])
+                if info.file_size > 32_000_000:
+                    raise ValueError('Unexpected large image member')
+                data = z.read(info)  # CRC validated, no extractall or executable members.
+                path = (root / row['image_path']).resolve()
+                if not path.is_relative_to(root):
+                    raise ValueError('Extraction escaped root')
+                if path.exists() and path.read_bytes() != data:
+                    raise ValueError('Existing extracted image differs')
+                if not path.exists():
+                    path.parent.mkdir(parents=True, exist_ok=True)
+                    path.write_bytes(data)
+                row['image_sha256'] = hashlib.sha256(data).hexdigest()
+    groups = shape_groups(rows)
+    output.mkdir(parents=True)
+    if not metadata_path.exists():
+        metadata_path.write_bytes(raw)
+    write_json(output / 'protocol.json', dict(schema=1, protocol=SHAPE_PROTOCOL, dataset='SHAPE',
+        source_commit=source_commit(), source_url=SHAPE_API, archives=archives,
+        license='CC BY 4.0; attribution required; not a blanket third-party rights guarantee',
+        metadata_sha256=sha256(metadata_path), selected_categories=selected,
+        selection='First8 categories by sha256(shape-category42:<category>); no model-dependent selection',
+        counts={k: len(v) for k, v in groups.items()}, all_archive_counts=dict(Counter(r['split'] for r in all_rows)),
+        relevance='Same anonymized category/SKU pair; ALL selected official training images form gallery; all selected official test images are queries. Enrolled SKU, NOT unseen SKU. Pre-cropped product retrieval, not shelf detection.',
+        validation=False, rows=rows))
+
+
+def off_inventory(products):
+    rows = []
+    for p in products:
+        images = p.get('images', {})
+        raw = sorted(k for k in images if str(k).isdigit())
+        front = sorted({str(v['imgid']) for k, v in images.items()
+                        if k.startswith('front_') and isinstance(v, dict) and 'imgid' in v})
+        rows.append(dict(code=str(p.get('code', '')), raw_image_ids=raw,
+            independent_selected_front_ids=front, potential_front_pair=len(front) >= 2,
+            note='Distinct imgid is necessary, NOT sufficient: inspect duplicated uploads, packaging versions and view semantics'))
+    return rows
+
+
+def audit_off(output):
+    if output.exists():
+        raise FileExistsError(output)
+    output.mkdir(parents=True)
+    try:
+        raw = fetch(OFF_URL)
+        (output / 'api_response.json').write_bytes(raw)
+        response = json.loads(raw)
+        rows = off_inventory(response.get('products', []))
+        write_json(output / 'report.json', dict(status='complete', source_commit=source_commit(),
+            source_url=OFF_URL, response_sha256=hashlib.sha256(raw).hexdigest(),
+            sample='Single popularity-sorted page100; feasibility only, NOT representative and NOT evaluation split',
+            products=len(rows), potential_front_pairs=sum(r['potential_front_pair'] for r in rows),
+            license='Images CC BY-SA; database ODbL. Keep separate notices. Packaging may involve third-party rights.',
+            decision='No training/test protocol established; never pair a raw photo with its resized/cropped version', rows=rows))
+    except Exception as exc:
+        write_json(output / 'report.json', dict(status='failed', source_url=OFF_URL,
+            source_commit=source_commit(), error=repr(exc)))
+        raise
+
+
+def main():
+    p = argparse.ArgumentParser(description=__doc__)
+    p.add_argument('mode', choices=['prepare-shape', 'audit-off'])
+    p.add_argument('--data', type=Path)
+    p.add_argument('--output', type=Path, required=True)
+    args = p.parse_args()
+    if args.mode == 'prepare-shape':
+        if args.data is None:
+            p.error('SHAPE requires --data containing author archives')
+        prepare_shape(args.data, args.output)
+    else:
+        audit_off(args.output)
+
+
+if __name__ == '__main__':
+    main()

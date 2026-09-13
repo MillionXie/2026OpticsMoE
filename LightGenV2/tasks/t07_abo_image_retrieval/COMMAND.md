@@ -1788,3 +1788,42 @@ CUDA_VISIBLE_DEVICES=GPU-1b963983-7909-af6e-0528-f0f0661ab549 \
 
 新评估入口读取checkpoint训练历史：该权重是本协议训练/test-selected，并非旧ABO直接迁移。
 只做固定权重推理，不再次训练；manifest顺序与冻结Qwen一致。目录存在时不覆盖原结果。
+
+## 63. ABO配对抗过拟合、SHAPE与OFF（2026-09-13）
+
+本轮最多4张卡，不代表必须占4张。COIL不追加；原ABO/Grocery失败证据不删除。
+ABO两组共同15轮×64步、seed42、原64维/Top2/alpha>0.4/6次采集。全物体增强、独立专家相位dropout5%/router2%，相同AdamW超参；SAM组rho=.03，第一轮后生效。
+不把新数据/低清测试当原协议成绩，不挑测试样本降低Qwen。两组都记录干净train/test；TEST选模有偏差。只best/last。
+
+```bash
+T07=/DATA/DATA1/guest3/2026OpticsMoE/LightGenV2/tasks/t07_abo_image_retrieval
+export HF_HUB_OFFLINE=1 TRANSFORMERS_OFFLINE=1 OMP_NUM_THREADS=4 MKL_NUM_THREADS=4
+# 从已测试、已推GitHub的干净工作树执行。先nvidia-smi选空闲卡，再设置CUDA_VISIBLE_DEVICES。
+python -m LightGenV2.tasks.t07_abo_image_retrieval.standalone.broad_transfer \
+  --mode adapt --profile recovery_phase05_adam \
+  --assets "$T07/runs/simulation/standalone_assets_20260910" \
+  --target /DATA/DATA1/guest3/2026OpticsMoE/data/abo_similarity10_data \
+  --checkpoint "$T07/runs/simulation/readout_subspace_20260912/best.pt" \
+  --output "$T07/runs/simulation/recovery_phase05_adam_20260913" \
+  --adapt-epochs 15 --steps 64 --batch-size 4
+# 配对只改profile为recovery_phase05_sam、output为recovery_phase05_sam_20260913。
+```
+
+SHAPE作者数据：https://figshare.com/articles/dataset/24100704 ，CC BY4.0；匿名category/SKU均作为标签，不输入文本。
+官方文件training_set.zip/test_set.zip放data/shape_source；准备时强制作者MD5/size匹配、安全解压、跨train/test重复SHA检查。
+初筛8类按sha256(shape-category42:<category>)固定，不根据成绩选择；全选中TRAIN图库/TEST查询，不是未见SKU或端到端货架识别。
+
+```bash
+python -m LightGenV2.tasks.t07_abo_image_retrieval.standalone.retail_sources prepare-shape \
+  --data /DATA/DATA1/guest3/2026OpticsMoE/data/shape_source \
+  --output "$T07/runs/simulation/shape8_protocol_20260913"
+# 用第59节optical/qwen64完整参数，替换data/manifest/output为shape_source与shape8协议。
+# 适配沿用第61节retrieval_adapt：data/manifest/output换SHAPE，20轮×100步，8个SKU/批。
+# 仅多TRAIN视图SKU参与配对训练，评估图库和查询仍完整保留；不是过滤难测试SKU。
+python -m LightGenV2.tasks.t07_abo_image_retrieval.standalone.retail_sources audit-off \
+  --output "$T07/runs/smoke/off_feasibility_20260913"
+```
+
+OFF官方API只查一页100条，记录原始JSON/SHA；这是热门商品可行性检查，不是代表性采样/正式benchmark。
+同一imgid的front_en/front_fr不算两张，numeric原图可能是营养表/条码；未经照片内容和重复上传审计不启动训练。
+图片CC BY-SA、数据库ODbL分别遵守；不能把许可证当所有包装/肖像权保证。大量图片按官方建议使用AWS，不并发轰炸主站。

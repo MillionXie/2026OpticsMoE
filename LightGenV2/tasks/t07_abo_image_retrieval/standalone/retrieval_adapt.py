@@ -26,6 +26,21 @@ from .retrieval_screen import load_screen, rank_instances, OPTICS_SHA256, GALLER
 
 
 def fitting_groups(protocol, groups):
+    if protocol['protocol'] == 'shape_hash8_categories_official_train_gallery_v1':
+        by_id = {}
+        for r in groups['train']:
+            by_id.setdefault(r['product_id'], []).append(r)
+        natural, references = [], []
+        for key in sorted(by_id):
+            images = sorted(by_id[key], key=lambda r: r['sample_id'])
+            if len(images) < 2:
+                continue  # Training-pair eligibility only; TEST/full gallery unchanged.
+            references.append(dict(images[0], split='gallery', source_split='train'))
+            natural.extend(images[1:])
+        if len(references) < 2:
+            raise ValueError('Insufficient SHAPE multi-view TRAIN identities')
+        return dict(train=natural, gallery=references,
+            note='TRAIN-only first lexical image/SKU as reference, remaining as queries; singleton TRAIN SKUs not sampled. TEST retains ALL official selected training images as gallery and ALL selected test queries; enrolled SKU, not unseen SKU')
     if protocol['protocol'] == 'grocery81_official_test_to_iconic_v1':
         return dict(train=groups['train'], gallery=groups['gallery'],
             note='Natural TRAIN -> same81 public iconic images; shared fine classes, NOT unseen SKU')

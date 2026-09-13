@@ -21,6 +21,7 @@ PINNED_TEACHER_PROFILES += ('domain_distill_joint_patch',)
 REFIT_TEACHER_PROFILES = ('domain_distill_refit250', 'domain_distill_refit500')
 
 PROFILES = ('preserve_adam', 'preserve_sam', 'preserve_fullfield_sam', 'preserve_fullfield_both_sam',
+            'recovery_phase05_adam', 'recovery_phase05_sam',
             'regularized_control', 'regularized_phase05', 'domain_mixed', 'domain_curriculum', 'domain_target_control',
             'domain_refine_control', 'domain_refine_wide', 'domain_refine_views', 'domain_refine_pool500_mix13', 'domain_refine_context7', 'domain_refine_balanced',
             'domain_distill_light', 'domain_distill_strong', 'domain_distill_stronger', 'domain_distill_resumeaux', 'domain_distill_resumeaux_full', 'domain_distill_sharpteacher', 'domain_distill_teacher_agreement', 'domain_distill_aligned_feature', 'domain_distill_feature_mlp', 'domain_distill_teacher_first', 'domain_distill_bounded_aspect', 'domain_distill_position_jitter', 'domain_distill_readout256', 'domain_distill_joint_centerhalf', *PINNED_TEACHER_PROFILES, *REFIT_TEACHER_PROFILES)
@@ -115,6 +116,11 @@ def restore_auxiliary_head(head, payload, actual_sha256, expected_sha256):
 
 
 def overlay_config(config, profile):
+    if profile in ('recovery_phase05_adam', 'recovery_phase05_sam'):
+        config = overlay_config(config, 'regularized_phase05')
+        config.update(sam_rho=.03 if profile.endswith('_sam') else 0.,
+            protocol='20260913 paired recovery from identical 79.5833% checkpoint; original ABO split, 64D, Top2, alpha>0.4; whole-object augmentation and independent phase dropout; only SAM differs. Test-selected, not unbiased.')
+        return config
     if profile=='domain_distill_joint_patch':
         config=overlay_config(config,'domain_distill_joint_restart')
         overlay=json.loads(Path(__file__).with_name('domain_distillation.json').read_text(encoding='utf-8'))

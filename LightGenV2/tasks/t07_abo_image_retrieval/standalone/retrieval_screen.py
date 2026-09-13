@@ -98,9 +98,14 @@ def load_screen(manifest, root):
     if data.get('schema') != 1:
         raise ValueError('Unknown screen schema')
     if data.get('protocol') not in ('heldout40_objects_four_gallery_views_eight_queries_v1',
+                                    'shape_hash8_categories_official_train_gallery_v1',
                                     'grocery81_official_test_to_iconic_v1'):
         raise ValueError('Unknown predeclared retrieval protocol')
-    groups = validate_rows(data['rows'], disjoint_products=data['protocol'] != 'grocery81_official_test_to_iconic_v1')
+    if data['protocol'] == 'shape_hash8_categories_official_train_gallery_v1':
+        from .retail_sources import shape_groups
+        groups = shape_groups(data['rows'])
+    else:
+        groups = validate_rows(data['rows'], disjoint_products=data['protocol'] != 'grocery81_official_test_to_iconic_v1')
     # No target images are used for fitting. Check every declared image identity.
     root = root.resolve()
     for row in data['rows']:
