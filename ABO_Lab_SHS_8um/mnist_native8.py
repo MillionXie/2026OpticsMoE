@@ -105,7 +105,12 @@ def main():
         write(a.out/'smoke.json',dict(passed=True,old_model_max_abs_error=err,gradient_rms=grad,phase_delta_max_rad=delta,memory_peak_mib=torch.cuda.max_memory_allocated()/2**20));print('SMOKE PASSED',flush=True);return
     eval_loaders={k:torch.utils.data.DataLoader(getattr(dataset,k),batch_size=a.microbatch,num_workers=4,pin_memory=True) for k in ['validation','test']}
     # Evaluate fixed A under the SAME native8 propagator and physical detectors.
-    model.raw_phase.data.copy_(model.old_to_native(raw));model.raw_phase.requires_grad_(False)
+    # Match the already-tested A BMP exactly: old export flips the LOGICAL
+    # phase before physical rasterization. Undo the native display flip here
+    # to simulate those same physical pixels. Exact half-open bin ties mean
+    # "raster then flip" and "flip then raster" do not always commute.
+    mapped=torch.flip(model.old_to_native(torch.flip(raw,(-2,-1))),(-2,-1))
+    model.raw_phase.data.copy_(mapped);model.raw_phase.requires_grad_(False)
     baseline={k:evaluate(model,l,device) for k,l in eval_loaders.items()};baseline['export']=export(model,a.out,'A_old_fixed_native8')
     write(a.out/'baseline_A.json',baseline);print('BASELINE A',json.dumps(baseline),flush=True)
     model.raw_phase.data.zero_();model.raw_phase.requires_grad_(True)
