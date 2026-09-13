@@ -426,6 +426,8 @@ def load_settings(path: str | Path) -> Any:
         or settings.mixup['end_epoch'] >= settings.student_epochs
     ):
         raise ValueError('MixUp requires isolated optical SAM GT+CC-KD and a final unmixed stage')
+    from .alternating_training import validate as validate_alternating
+    settings.alternating = validate_alternating(d('training.alternating', {}), settings)
     return settings
 
 
@@ -476,6 +478,7 @@ def save_resolved_config(settings: Any) -> None:
         gsam_coefficient=settings.gsam_coefficient,
         noise_consistency_weight=settings.noise_consistency_weight,
         mixup=settings.mixup,
+        alternating=settings.alternating,
         initialization_checkpoint=str(settings.initialization_checkpoint) if settings.initialization_checkpoint else None,
         initialization_checkpoint_sha256=settings.initialization_checkpoint_sha256,
         reset_fusion_on_warmstart=settings.reset_fusion_on_warmstart,

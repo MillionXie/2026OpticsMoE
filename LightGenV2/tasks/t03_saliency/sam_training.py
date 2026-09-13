@@ -195,7 +195,8 @@ def train_sam_epoch(model,loader,loaded,settings,optimizer,teacher_cache=None,re
                               **({'first_stage_loss':first_loss, 'first_stage_cc':first_cc} if first_stage is not None else {})),logits
         def closure():
             return noise_consistent_closure(single_view,getattr(settings,'noise_consistency_weight',0.))
-        values,increase=sam_step(optimizer,closure,settings.sam_rho,loaded.device,settings.gradient_clip_norm,
+        from .alternating_training import effective_sam_rho
+        values,increase=sam_step(optimizer,closure,effective_sam_rho(settings,optimizer),loaded.device,settings.gradient_clip_norm,
                                  asam=asam,weight_parameter_ids=weight_ids,
                                  gsam_coefficient=getattr(settings,'gsam_coefficient',0.))
         count=len(batch['sample_ids']);totals['samples']+=count

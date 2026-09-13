@@ -172,6 +172,15 @@ def train(loaded: Any, bundle: Any, settings: Any) -> dict[str, Any]:
                     configure_router_path_optimizer(model, optim, settings))
     ema = ModelEMA(model, settings.ema_decay) if settings.ema_decay else None
     ema_hook = optim.register_step_post_hook(ema.update) if ema else None
+    alternating = None
+    phase_reference = {}
+    phase_history = []
+    if getattr(settings, 'alternating', {}):
+        from .alternating_training import AlternatingSchedule
+        alternating = AlternatingSchedule(optim, settings, ema)
+        phase_reference = {k: v.detach().cpu().double().sigmoid() * (2*math.pi)
+                           for k, v in model.core.state_dict().items()
+                           if k.endswith(('raw_phase', 'raw_router_phase'))}
     teacher = TrainTeacherMaps(settings, bundle.train_records) if settings.distillation_initial_weight else None
     hints = None
     if settings.feature_hint_initial_weight > 0:
@@ -256,7 +265,12 @@ def train(loaded: Any, bundle: Any, settings: Any) -> dict[str, Any]:
                 train_loader.enabled = epoch <= settings.fixed_crop_distillation['end_epoch']
                 stage_report['augmentation_active'] = train_loader.enabled
                 stage_report['fixed_crop_teacher_mode'] = settings.fixed_crop_distillation['mode']
-            if settings.staged_training:
+            if alternating is not None:
+                stage_report.update(alternating.begin_epoch(epoch))
+                settings.alternating_stage = stage_report['stage']
+                model._router_hard_weight = stage_report['hard_balance_weight']
+                print(f"[T03 alternating] {json.dumps(stage_report)}", flush=True)
+            elif settings.staged_training:
                 stage_report.update(staged_epoch(optim, settings, epoch))
                 model._router_hard_weight = stage_report["hard_balance_weight"]
                 if controller is not None:
@@ -322,6 +336,21 @@ def train(loaded: Any, bundle: Any, settings: Any) -> dict[str, Any]:
                 stage_report['feature_hint_weight'] = settings.feature_hint_current_weight
                 train_metrics = train_hint_epoch(model,train_loader,loaded,settings,optim,
                     teacher if settings.map_kd_weight > 0 else None,hints)
+            if alternating is not None:
+                stage_report.update(alternating.end_epoch())
+                phase_change = {}
+                for key, value in model.core.state_dict().items():
+                    if key not in phase_reference:
+                        continue
+                    phase = value.detach().cpu().double().sigmoid() * (2*math.pi)
+                    delta = phase - phase_reference[key]
+                    wrapped = torch.atan2(delta.sin(), delta.cos())
+                    phase_change[key] = {'circular_rms_rad': float(wrapped.square().mean().sqrt()),
+                                         'phasor_distance_mean': float((2-2*delta.cos()).clamp_min(0).sqrt().mean())}
+                phase_history.append({'epoch': epoch, 'stage': stage_report['stage'],
+                                      'weight_kind': 'live', 'against': 'run_initialization',
+                                      'phases': phase_change})
+                _write_json(settings.output_dir/'metrics'/'alternating_phase_progress.json', phase_history)
             if aligned_weak or fixed_crop:
                 stage_report["augmentation_images"] = train_loader.epoch_augmented_images
                 stage_report["augmentation_total_images"] = train_loader.epoch_images

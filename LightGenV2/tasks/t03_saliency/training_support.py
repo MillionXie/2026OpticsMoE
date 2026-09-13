@@ -50,6 +50,13 @@ class ModelEMA:
                        for k, m in self.modules.items()}
 
     @torch.no_grad()
+    def sync_to_live(self):
+        """Stage handoff without restoring a test-selected checkpoint."""
+        for key, module in self.modules.items():
+            for name, value in module.state_dict().items():
+                self.shadow[key][name].copy_(value.detach())
+
+    @torch.no_grad()
     def update(self, *_):
         for k, module in self.modules.items():
             for name, value in module.state_dict().items():
