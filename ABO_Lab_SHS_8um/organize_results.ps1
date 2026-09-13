@@ -42,6 +42,13 @@ foreach ($d in Get-ChildItem -LiteralPath $results -Directory) {
   }
   $rows+=[pscustomobject]$row
 }
+if (Test-Path -LiteralPath $history) {
+  foreach ($d in Get-ChildItem -LiteralPath $history -Directory) {
+    if (@($rows | Where-Object name -eq $d.Name).Count) {continue}
+    $files=@(Get-ChildItem -LiteralPath $d.FullName -File -Recurse)
+    $rows+=[pscustomobject]@{name=$d.Name;files=$files.Count;bytes=($files|Measure-Object Length -Sum).Sum;action='archived';references=@();path='results/90_history/'+$d.Name}
+  }
+}
 $mode=if($Apply){'applied'}else{'preview'}
 $journal=[ordered]@{time=(Get-Date).ToString('s');mode=$mode;root=$root;deleted_files=0;freed_bytes=0;moves=$moves;directories=$rows}
 $file=Join-Path $reportDir $(if($Apply){'04_storage_applied_'+(Get-Date -Format yyyyMMdd_HHmmss)+'.json'}else{'04_storage_preview.json'})
