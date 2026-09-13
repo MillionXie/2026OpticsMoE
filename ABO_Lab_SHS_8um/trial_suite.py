@@ -35,6 +35,8 @@ def publish(out,state):
             body.append(f'<h2>{html.escape(t["name"])}：{label}</h2><img style="max-width:100%" src="{filename}">')
     lines+=['','口径：每组13灰度×3帧、40次数字切换及6张独立参考。固定ROI/增益X4/100fps/平相位。',
             '图案时序通过不代表没有饱和，更不代表六层全量已获批准；失败帧不删除、不按准确率挑样本。',
+            '饱和比例取同档3帧的最大值；数字正确数是显示/取帧对应性，不是MNIST识别准确率。',
+            '200ms此前出现过明确旧帧，不能因为本轮40次通过就推翻旧证据；250ms也只是短测候选。',
             '', '## 已有重要结果','',
             '- MNIST：旧mask实测24/40，原生8μm实测37/40；不是全量准确率。原记录 results/mnist_pair_wait400_20260913。',
             '- ABO：仅4查询六层流程完成；2400查询全量尚未启动。原记录 results/smoke_runs/smoke_abo_newroi_20260913_161905。',
