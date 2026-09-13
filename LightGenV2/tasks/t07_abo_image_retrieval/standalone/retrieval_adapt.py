@@ -108,8 +108,10 @@ def training_pairs(groups, rng, classes_per_batch, category_probability=0.):
     return rows, torch.tensor([labels[r['product_id']] for r in rows])
 
 
-def retrieval_loss(z, labels, bank, natural_count, bank_labels=None, excluded=None):
+def retrieval_loss(z, labels, bank, natural_count, bank_labels=None, excluded=None, *, supcon_weight=.5):
     """Whole fitting-gallery NLL; multiple references of an object are positives."""
+    if not math.isfinite(supcon_weight) or supcon_weight < 0:
+        raise ValueError('SupCon weight must be finite and nonnegative')
     z = F.normalize(z.float(), dim=-1)
     if len(z) != 2 * natural_count or len(labels) != len(z):
         raise ValueError('Expected paired natural/iconic batch')
@@ -135,7 +137,8 @@ def retrieval_loss(z, labels, bank, natural_count, bank_labels=None, excluded=No
         if not positive.any(1).all():
             raise ValueError('Query without fitting-gallery positive')
         ce = (logits.logsumexp(1) - logits.masked_fill(~positive, -torch.inf).logsumexp(1)).mean()
-    return ce + .5 * supcon(z, labels), (bank_labels[logits.argmax(1)] == labels[:natural_count]).float().mean()
+    loss = ce + supcon_weight * supcon(z, labels) if supcon_weight else ce
+    return loss, (bank_labels[logits.argmax(1)] == labels[:natural_count]).float().mean()
 
 
 @torch.no_grad()
@@ -308,7 +311,7 @@ def run(args):
         curriculum_note='Continue verified current-protocol best -> external instance pretraining (last state, no TEST selection) -> target fine-tune. Initial best retained; not from-scratch pretraining' if external_fit else None,
         noise=f"Original metadata noise on {profile.get('noise_probability', .25):.0%} joint-training batches; refined profiles keep router noise disabled. Warmup clean. No pixel shift/k filter/8bit STE; clean evaluation",
         augmentation=('Brightness/contrast .95..1.05 only; no geometric augmentation or blur' if profile.get('mild_augmentation') else 'Whole-object .85..1 scale into white canvas, bounded placement, brightness/contrast .85..1.15,15% mild blur; no crop/flip') if regularized else 'Whole-object contain_white; brightness/contrast .9..1.1; no crop/rotation/flip',
-        loss='query->detached entire FITTING gallery multi-positive NLL(temp .1) + .5 live query/reference SupCon + existing optical regularization',
+        loss=f"query->detached entire FITTING gallery multi-positive NLL(temp .1) + {profile.get('supcon_weight', .5)} live query/reference SupCon + {profile['positive_weight']} all-positive log-probability loss + existing optical regularization/router auxiliary",
         external_loss_override=('External: frozen64 teacher relation KL(temp .1), no SKU NLL/SupCon/all-positive loss; target: original GT retrieval loss, teacher disabled' if external_teacher else None))
     write_json(args.output / 'fitting_manifest.json', dict(parent_manifest_sha256=identity['manifest_sha256'],
         note=fit['note'], train=fit['train'], references=fit['gallery']))
@@ -397,7 +400,8 @@ def run(args):
                     z = model(batch_inputs)
                     excluded = (torch.tensor([[r['sample_id'] == sid for sid in gallery_ids]
                         for r in rows[:args.classes_per_batch]], device=device) if args.multi_view else None)
-                    data_loss, hit = retrieval_loss(z, labels.to(device), bank, args.classes_per_batch, bank_labels, excluded)
+                    data_loss, hit = retrieval_loss(z, labels.to(device), bank, args.classes_per_batch, bank_labels, excluded,
+                        supcon_weight=profile.get('supcon_weight', .5))
                     route = route_objective(model) if refined else z.new_zeros(())
                     all_views = all_view_loss(z, labels.to(device), bank, bank_labels, args.classes_per_batch, excluded) if profile['positive_weight'] else z.new_zeros(())
                     kd = z.new_zeros(())

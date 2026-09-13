@@ -2317,3 +2317,34 @@ CUDA_VISIBLE_DEVICES='' python -m LightGenV2.tasks.t07_abo_image_retrieval.analy
 ```
 
 已有输出时命令拒绝覆盖；新的模型缓存应使用新的有意义run ID，不能覆盖这次基准审计。
+
+## 76. 只保留全图库检索数据目标的训练对照（待CUDA验证）
+
+`sku_retrieval_only`与`sku_capacity_control`相比仅关闭两个把同SKU不同视角拉近的辅助项：
+live SupCon权重从.5到0，all-view log-probability权重从.1到0。
+保留温度.1的全TRAIN图库多正例NLL，正例仍是相同SKU且排除查询自身，负例仍是全部其他SKU。
+它鼓励分配概率给正确SKU的图库图，但不要求每个同SKU视角获得相近概率；不改变检索标签。
+原光正则、Top2均衡、alpha>0.4、六次10cm/ROI/电子结构/linear64、EMA及温和增强均不变。
+不加教师，不结合fullfield或分区头，仍从原78.125%权重出发、20轮×100步，与已完成轻量对照比较。
+批次构成仍8查询+8独立参考图；新数据损失只反传8查询，另8参考图不再贡献SupCon，
+但仍经过模型参与同批路由辅助项。记录此差别，不冒充16个检索查询。
+
+当前仅准备代码；先确认已有任务退出/显存释放，再将下方改为epochs1、steps2、eval-every1，
+output=`$T07/runs/smoke/abo_retrieval_only_20260914`做完整初始化/反向/正常去光验证。
+通过且进程已结束后才执行正式命令。不得因为准备了命令就声称已启动。
+
+```bash
+T07=/DATA/DATA1/guest3/2026OpticsMoE/LightGenV2/tasks/t07_abo_image_retrieval
+R="$T07/runs/simulation"
+export HF_HUB_OFFLINE=1 TRANSFORMERS_OFFLINE=1 OMP_NUM_THREADS=4 MKL_NUM_THREADS=4
+# GPU1只是候选；先检查无其他进程。与现有任务合计保持至多两卡。
+nvidia-smi
+CUDA_VISIBLE_DEVICES=GPU-e8837b85-d55b-8e81-aaa5-ec1ac326932d python -m LightGenV2.tasks.t07_abo_image_retrieval.standalone.retrieval_adapt \
+  --data /DATA/DATA1/guest3/2026OpticsMoE/data/abo_similarity10_data \
+  --manifest "$R/abo200_enrolled_protocol_20260913/protocol.json" --assets "$R/standalone_assets_20260910" \
+  --checkpoint "$R/abo200_route_distill_20260913/best.pt" \
+  --expected-checkpoint-sha256 d11f3428efa67c7c5084eb9056d991c4692d36a3d177cd82b4601238357d444a \
+  --multi-view --refine-profile sku_retrieval_only --lr-scale .2 \
+  --epochs 20 --steps 100 --eval-every 5 --batch-size 4 --bank-batch-size 16 \
+  --output "$R/abo200_retrieval_only_20260914"
+```

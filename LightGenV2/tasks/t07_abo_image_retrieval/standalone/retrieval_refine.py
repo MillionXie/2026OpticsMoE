@@ -21,6 +21,8 @@ PROFILES = {
 # Keep a matched unexpanded control. A teacher result is not a compact-student
 # result; compression/distillation is a separate, subsequently verified stage.
 PROFILES['sku_capacity_control'] = dict(PROFILES['sku_mild_adamw'], router_lr_multiplier=.1)
+PROFILES['sku_retrieval_only'] = dict(PROFILES['sku_capacity_control'],
+    positive_weight=0., supcon_weight=0.)
 PROFILES['sku_conv_teacher'] = dict(PROFILES['sku_capacity_control'],
     electronic_expansion=dict(kernels=dict(vision=7, language=7), mlp_width=768))
 PROFILES['sku_spatial_readout'] = dict(PROFILES['sku_capacity_control'], head_expansion='spatial2x2_64')
