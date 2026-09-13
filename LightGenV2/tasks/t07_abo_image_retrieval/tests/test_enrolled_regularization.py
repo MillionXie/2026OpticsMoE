@@ -102,6 +102,21 @@ def test_mild_ablation_only_differs_by_sam_and_has_no_geometry():
     assert out.getpixel((0,0))[0]>200 and out.getpixel((1,1))[0]<30
 
 
+@pytest.mark.parametrize('name,key,value', [
+    ('sku_augmentation_only', 'mild_augmentation', False),
+    ('sku_phase_dropout_only', 'phase_dropout', .03),
+])
+def test_isolated_regularization_profiles_change_one_setting(name,key,value):
+    from LightGenV2.tasks.t07_abo_image_retrieval.standalone.retrieval_refine import PROFILES
+    base=PROFILES['sku_capacity_control']
+    candidate=PROFILES[name]
+    assert candidate is not base
+    assert {k for k in base.keys() | candidate.keys() if base.get(k)!=candidate.get(k)}=={key}
+    assert candidate[key]==value
+    assert candidate['sam_rho']==0 and candidate['teacher_weight']==0
+    assert 'electronic_expansion' not in candidate and 'head_expansion' not in candidate
+
+
 def teacher_fixture(tmp_path):
     digest,protocol,groups,rows=external_fixture(tmp_path)
     fit,_=load_external_pool(tmp_path,tmp_path,protocol,groups,digest)

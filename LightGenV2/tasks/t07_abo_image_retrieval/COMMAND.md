@@ -2404,3 +2404,35 @@ CUDA_VISIBLE_DEVICES=GPU-4d8bfdb9-8777-05a6-3811-ab18ff4eadfd python -m LightGen
   --lr-scale .2 --epochs 20 --steps 100 --eval-every 5 --batch-size 4 --bank-batch-size 16 \
   --output "$R/abo200_optical_pretrain_20260914"
 ```
+
+## 78. 分开验证数据增强和相位dropout（不叠加SAM）
+
+两组均从原d11f3428权重开始，分别与已完成`abo200_capacity_control_20260913`比较。
+固定全部1600训练图库/800查询、20轮×100步、每5轮评估live/EMA；TEST参与选模，存在选择偏差。
+`sku_augmentation_only`只改变增强：完整物体缩小至85%～100%并在白色画布内平移，
+亮度/对比度85%～115%，15%概率轻微高斯模糊；无裁剪、旋转或翻转，不丢物体部件。
+`sku_phase_dropout_only`保持原95%～105%亮度/对比度，只增加expert/global训练相位3%的8×8块随机绕过；
+不丢整专家、不置零振幅、不使用inverted-dropout增益、不对router施加dropout；eval关闭。
+二者均不改六次10cm传播/ROI/Top2/alpha/电子容量/64维头/损失/AdamW；不额外加SAM。
+从新代码所在的**空闲工作树**执行，不更新第77节运行中的工作树。只使用一张额外空闲卡，
+先增强，结束并检查PID/显存释放后再运行dropout，合计至多两张我们的卡，不抢占他人任务。
+先用对应profile执行epochs1、steps2、eval-every1、独立smoke输出，核对正常/去光/有限梯度后再正式训练。
+
+```bash
+T07=/DATA/DATA1/guest3/2026OpticsMoE/LightGenV2/tasks/t07_abo_image_retrieval
+R="$T07/runs/simulation"
+export HF_HUB_OFFLINE=1 TRANSFORMERS_OFFLINE=1 OMP_NUM_THREADS=4 MKL_NUM_THREADS=4
+nvidia-smi
+# 第二组只把下面PROFILE改为sku_phase_dropout_only，RUN改为abo200_dropout_only_20260914。
+# 不要覆盖已存在的run；这里准备命令不等于实验已启动或已完成。
+PROFILE=sku_augmentation_only
+RUN=abo200_augmentation_only_20260914
+CUDA_VISIBLE_DEVICES=GPU-e8837b85-d55b-8e81-aaa5-ec1ac326932d python -m LightGenV2.tasks.t07_abo_image_retrieval.standalone.retrieval_adapt \
+  --data /DATA/DATA1/guest3/2026OpticsMoE/data/abo_similarity10_data \
+  --manifest "$R/abo200_enrolled_protocol_20260913/protocol.json" --assets "$R/standalone_assets_20260910" \
+  --checkpoint "$R/abo200_route_distill_20260913/best.pt" \
+  --expected-checkpoint-sha256 d11f3428efa67c7c5084eb9056d991c4692d36a3d177cd82b4601238357d444a \
+  --multi-view --refine-profile "$PROFILE" --lr-scale .2 \
+  --epochs 20 --steps 100 --eval-every 5 --batch-size 4 --bank-batch-size 16 \
+  --output "$R/$RUN"
+```

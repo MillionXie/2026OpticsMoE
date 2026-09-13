@@ -21,6 +21,10 @@ PROFILES = {
 # Keep a matched unexpanded control. A teacher result is not a compact-student
 # result; compression/distillation is a separate, subsequently verified stage.
 PROFILES['sku_capacity_control'] = dict(PROFILES['sku_mild_adamw'], router_lr_multiplier=.1)
+# Isolate training regularizers: identical loss, optimizer, capacity and optics.
+# Do not infer separate augmentation/dropout effects from the old combined SAM run.
+PROFILES['sku_augmentation_only'] = dict(PROFILES['sku_capacity_control'], mild_augmentation=False)
+PROFILES['sku_phase_dropout_only'] = dict(PROFILES['sku_capacity_control'], phase_dropout=.03)
 PROFILES['sku_retrieval_only'] = dict(PROFILES['sku_capacity_control'],
     positive_weight=0., supcon_weight=0.)
 PROFILES['sku_optical_pretrain'] = dict(PROFILES['sku_capacity_control'],
