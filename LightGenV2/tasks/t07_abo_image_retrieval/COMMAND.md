@@ -1947,7 +1947,7 @@ CUDA_VISIBLE_DEVICES=GPU-e8837b85-d55b-8e81-aaa5-ec1ac326932d python -m LightGen
   --expected-checkpoint-sha256 918956321fe865d74408611716a420330a53cb760e827636d787f6e9a3abfade \
   --multi-view --refine-profile route_distill --lr-scale .5 --epochs 40 --steps 100 --eval-every 5 --batch-size 4 \
   --teacher-features "$T07/runs/simulation/abo200_enrolled_qwen64_20260913/normal_features.pt" \
-  --expected-teacher-sha256 c6eb631c268d2446a2f7783854c86d8493cdbcaa04c0669148b16d9785016d8d7 \
+  --expected-teacher-sha256 c6eb631c268d2446a2f783854c86d8493cdbcaa04c0669148b16d9785016d8d7 \
   --output "$T07/runs/simulation/abo200_route_distill_20260913"
 CUDA_VISIBLE_DEVICES=GPU-4d8bfdb9-8777-05a6-3811-ab18ff4eadfd python -m LightGenV2.tasks.t07_abo_image_retrieval.standalone.retrieval_adapt \
   --data /DATA/DATA1/guest3/2026OpticsMoE/data/shape_source \
@@ -1959,7 +1959,7 @@ CUDA_VISIBLE_DEVICES=GPU-4d8bfdb9-8777-05a6-3811-ab18ff4eadfd python -m LightGen
   --output "$T07/runs/simulation/shape8_view_refine_20260913"
 ```
 
-CUDA冒烟：ABO蒸馏组同参数改`--epochs 2 --steps 2 --router-warmup-epochs 1 --eval-every 2`，output改`runs/smoke/abo200_route_distill_20260913`；覆盖router-only及联合/蒸馏两种反向。
+CUDA冒烟：ABO蒸馏组同参数改`--epochs 3 --steps 2 --router-warmup-epochs 1 --eval-every 3`，output改`runs/smoke/abo200_route_distill_checked_20260913`；覆盖router-only及非零蒸馏权重的联合反向。旧冒烟因文档教师SHA多抄一个字符而被身份校验拦截，未训练；不得绕过校验。
 SHAPE冒烟改`--epochs 1 --steps 2`及`runs/smoke/shape8_view_refine_20260913`，保留所有正式测试图，不拿冒烟分数当新成绩。
 读取normal_features.pt后按manifest匹配，只保留1600 TRAIN向量供损失使用；800 QUERY不参与蒸馏，不加载完整Qwen/TF到学生进程。
 新增最优选模先检查router资格（每专家≥5%、最高Top2组合≤80%、至少3组合），再比R@1/mAP；目标还需R@1≥80.125%。不合格会明确标router_eligible=false。
