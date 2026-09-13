@@ -19,10 +19,11 @@ def command(spec):
     action=spec['action']
     from diagnostic_config import job_config
     cfg=job_config(spec)
-    if action=='mnist_batch':
+    if action in ('mnist_batch','exposure_batch'):
         job=(ROOT/spec['_job_path']).resolve()
         if not job.is_relative_to(ROOT/'results/dual_jobs'):raise ValueError('MNIST job path escape')
-        return [sys.executable,str(ROOT/'mnist_raw_batch.py'),'--spec',str(job),'--config',cfg]
+        script='mnist_raw_batch.py' if action=='mnist_batch' else 'exposure_batch.py'
+        return [sys.executable,str(ROOT/script),'--spec',str(job),'--config',cfg]
     if action=='calibrate':
         return [sys.executable,str(ROOT/'calibrate.py'),'--config',cfg,'--phases']
     if action in ('capture_batch','quarantine_batch','accept_batch'):
