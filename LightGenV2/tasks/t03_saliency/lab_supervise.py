@@ -9,6 +9,8 @@ from pathlib import Path
 import subprocess
 import sys
 import time
+import uuid
+import html
 from LightGenV2.tasks.t06_video_quality_assessment.lab_runtime import read,write
 
 STAGES=('vision_router','vision_expert','vision_global')
@@ -20,7 +22,8 @@ def start_keep_awake(remote,project,session):
     Generated job artifact, like the phase coordinator's desktop command.
     Does not modify persistent power plans, display mode, camera or SLM state.
     """
-    helper=f'''import ctypes,json,os,time
+    name='SALICON_Awake_'+uuid.uuid4().hex
+    helper=f'''import ctypes,json,os,time,subprocess
 from pathlib import Path
 p=Path({project!r})/'sessions'/{session!r}
 status=p/'keep_awake.json';lease=p/'keep_awake.lock'
@@ -42,14 +45,18 @@ finally:
  kernel.SetThreadExecutionState(0x80000000)
  record.update(state='released',finished=time.time());status.write_text(json.dumps(record,indent=2),encoding='utf-8')
  lease.unlink(missing_ok=True)
+ subprocess.run(['powershell','-NoProfile','-Command',"Unregister-ScheduledTask -TaskName '{name}' -Confirm:$false"],capture_output=True,creationflags=subprocess.CREATE_NO_WINDOW)
 '''
     child=base64.b64encode(helper.encode()).decode()
-    launcher=f"import subprocess; p=subprocess.Popen([{remote.root+'/.venv_gpu/Scripts/pythonw.exe'!r},'-c',\"import base64;exec(base64.b64decode('{child}'))\"],stdin=subprocess.DEVNULL,stdout=subprocess.DEVNULL,stderr=subprocess.DEVNULL,creationflags=subprocess.CREATE_NO_WINDOW);print(p.pid)"
-    encoded=base64.b64encode(launcher.encode()).decode()
-    _,out,err=remote.ssh.exec_command(remote.root+'/.venv_gpu/Scripts/python.exe -c "import base64;exec(base64.b64decode(\''+encoded+'\'))"',timeout=30)
-    pid=out.read().decode().strip();errors=err.read().decode()
-    if out.channel.recv_exit_status():raise RuntimeError(errors)
-    return int(pid)
+    arguments='-c "import base64;exec(base64.b64decode(\''+child+'\'))"'
+    path=project+'/sessions/'+session+'/'+name+'.task.xml'
+    xml=f'<Task version="1.2" xmlns="http://schemas.microsoft.com/windows/2004/02/mit/task"><Principals><Principal id="Author"><UserId>PS</UserId><LogonType>InteractiveToken</LogonType><RunLevel>LeastPrivilege</RunLevel></Principal></Principals><Settings><ExecutionTimeLimit>PT5H</ExecutionTimeLimit></Settings><Actions Context="Author"><Exec><Command>{html.escape(remote.root+"/.venv_gpu/Scripts/pythonw.exe")}</Command><Arguments>{html.escape(arguments)}</Arguments><WorkingDirectory>{html.escape(project)}</WorkingDirectory></Exec></Actions></Task>'
+    with remote.sftp.open(path,'w') as f:f.write(xml.encode('utf-8'))
+    remote.ps("$ErrorActionPreference='Stop'; $sid=[Security.Principal.WindowsIdentity]::GetCurrent().User.Value; "
+              +f"$xml=Get-Content -LiteralPath '{path}' -Raw -Encoding UTF8; "
+              +"$xml=$xml.Replace('<UserId>PS</UserId>',('<UserId>'+$sid+'</UserId>')); "
+              +f"Register-ScheduledTask -TaskName '{name}' -Xml $xml | Out-Null; Start-ScheduledTask -TaskName '{name}'")
+    return dict(task_name=name,task_xml=path)
 
 
 def run(a):
@@ -62,7 +69,7 @@ def run(a):
     save()
     try:
         with Remote(read(a.link_config)) as r:
-            report['remote_keep_awake_pid']=start_keep_awake(r,a.project,a.session);save()
+            report['remote_keep_awake']=start_keep_awake(r,a.project,a.session);save()
         for i,stage in enumerate(STAGES,1):
             if (out/'STOP').exists():raise RuntimeError('STOP requested before next stage')
             folder=out/f'{i:02d}_{stage}'
