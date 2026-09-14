@@ -291,6 +291,8 @@ def evaluate(args):
     status = dict(identity, status='running')
     write_json(args.output / 'status.json', status)
     model = None
+    readout_hook = None
+    readout_inputs = []
     try:
         if args.mode == 'optical':
             from .model import OpticalRetrieval
@@ -306,6 +308,15 @@ def evaluate(args):
             audit = model.audit()
             if audit['alpha_bounds'][0] <= .4 or audit['descriptor_dimension'] != 64:
                 raise ValueError('Require original high-alpha 64D architecture')
+            if getattr(args, 'cache_readout_input', False):
+                if model.readout.kind != 'linear64':
+                    raise ValueError('Readout input caching requires linear64')
+                def capture_readout_input(module, values):
+                    value = values[0].detach().float().cpu().clone()
+                    if value.ndim != 2 or value.shape[1] != 384 or not torch.isfinite(value).all():
+                        raise ValueError('Invalid original linear64 input')
+                    readout_inputs.append(value)
+                readout_hook = model.readout.projection.register_forward_pre_hook(capture_readout_input)
             identity.update(checkpoint_sha256=digest, model_audit=audit, protected_optics_sha256=OPTICS_SHA256,
                             **checkpoint_history(payload, manifest_sha))
             processor = AutoProcessor.from_pretrained(str(args.assets / 'processor'), local_files_only=True)
@@ -326,6 +337,7 @@ def evaluate(args):
         write_json(args.output / 'execution.json', identity)
         results, routing = {}, {}
         for removed in ([False, True] if args.mode == 'optical' else [False]):
+            readout_inputs.clear()
             if args.mode == 'optical':
                 model.set_remove_optical(removed)
             vectors = []
@@ -358,6 +370,12 @@ def evaluate(args):
             name = 'remove_optical' if removed else 'normal'
             results[name] = metrics
             cache = dict(manifest_sha256=manifest_sha, ids=[r['sample_id'] for r in rows], vectors=values)
+            if readout_hook is not None:
+                cache['readout_inputs'] = torch.cat(readout_inputs)
+                if cache['readout_inputs'].shape != (len(rows), 384):
+                    raise ValueError('Readout inputs must align with every descriptor')
+                cache['checkpoint_sha256'] = digest
+                cache['readout_input_location'] = 'Post readout.norm; immediately before original Linear(384,64)'
             if args.mode == 'optical':
                 masks = None if removed else {m: torch.cat(v) for m, v in selections.items()}
                 routing[name] = split_routing_report(masks, rows, removed=removed)
@@ -379,6 +397,8 @@ def evaluate(args):
         status.update(status='failed_or_interrupted', error=repr(exc))
         raise
     finally:
+        if readout_hook is not None:
+            readout_hook.remove()
         status.update(identity)
         write_json(args.output / 'status.json', status)
         del model
@@ -399,8 +419,11 @@ def main():
     p.add_argument('--model', type=Path)
     p.add_argument('--batch-size', type=int, default=4)
     p.add_argument('--device', choices=['cuda', 'cpu'], default='cuda')
+    p.add_argument('--cache-readout-input', action='store_true', help='Optical linear64 only: save its original 384D input without altering forward')
     args = p.parse_args()
     args.started = time.time()
+    if args.cache_readout_input and args.mode != 'optical':
+        p.error('Readout input caching is optical-only')
     if args.mode == 'prepare-grocery':
         prepare_grocery(args.data, args.output)
     elif args.mode == 'prepare-coil':

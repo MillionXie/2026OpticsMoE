@@ -2719,3 +2719,36 @@ CUDA_VISIBLE_DEVICES=GPU-1b963983-7909-af6e-0528-f0f0661ab549 OMP_NUM_THREADS=4 
 ```
 
 该output已经存在，再现时请用空的新目录，禁止覆盖已完成报告。完整指标/原始向量/路由都在成功目录。
+
+## 86. 冻结光电主干，直接校准原384→64读出（零新增推理参数）
+
+第85节的A只在已投影的64维子空间内调整。本对照直接拟合已有Linear的weight/bias，
+可重新选择384维中的方向；LayerNorm、前端、全部光/电残差、alpha、Top2不变。
+不是新增384维检索输出：最终仍为L2归一化64维、逐图余弦排序。仍不使用query拟合。
+先从81.875%的固定权重原图前向，通过只读hook记录原head归一化之后、Linear之前的384维输入。
+同一缓存目录同时包含正常/去光输入、64维输出、图像ID、checkpoint/manifest SHA与路由。
+缓存hook不改变推理；正式提升仍需从原图独立复评，不以FP32缓存分数代替BF16原图分数。
+
+在GitHub已同步的干净源码worktree运行，不能更新正在训练的worktree。先核验第85节METRIC_SHA，
+并设置T07/R。GPU UUID是本次自有GPU4；其他机器需要先查看空闲卡再替换，禁止占用别人的卡。
+
+```bash
+CUDA_VISIBLE_DEVICES=GPU-1b963983-7909-af6e-0528-f0f0661ab549 OMP_NUM_THREADS=4 MKL_NUM_THREADS=4 HF_HUB_OFFLINE=1 TRANSFORMERS_OFFLINE=1 python -m LightGenV2.tasks.t07_abo_image_retrieval.standalone.retrieval_screen optical \
+  --data /DATA/DATA1/guest3/2026OpticsMoE/data/abo_similarity10_data \
+  --manifest "$R/abo200_enrolled_protocol_20260913/protocol.json" --assets "$R/standalone_assets_20260910" \
+  --checkpoint "$R/abo200_metric_weak_anchor_20260914/best.pt" --expected-checkpoint-sha256 "$METRIC_SHA" \
+  --batch-size 4 --cache-readout-input --output "$R/abo200_readout384_cache_20260914"
+
+CUDA_VISIBLE_DEVICES='' OMP_NUM_THREADS=4 MKL_NUM_THREADS=4 python -m LightGenV2.tasks.t07_abo_image_retrieval.standalone.metric_readout \
+  --source-run "$R/abo200_metric_weak_anchor_20260914" --verification-dir "$R/abo200_readout384_cache_20260914" \
+  --manifest "$R/abo200_enrolled_protocol_20260913/protocol.json" \
+  --data /DATA/DATA1/guest3/2026OpticsMoE/data/abo_similarity10_data \
+  --expected-checkpoint-sha256 "$METRIC_SHA" --expected-hit .81875 \
+  --fit-space projection384 --steps 800 --eval-every 50 --batch-size 128 --lr .0001 --anchor 1 \
+  --output "$R/abo200_direct_readout_20260914"
+```
+
+CPU只拟合1600 TRAIN、self-excluded同SKU多正例NLL(temp=.1)，另加相对起点权重的平方偏离约束：
+`(||W-W0||²+||b-b0||²)/(||W0||²+||b0||²)`，系数1。每50步按TEST Hit@1/mAP选择，有选择偏差。
+仅保存best.pt/last.pt两份完整模型；记录TRAIN命中率。部署时不用缓存、A或其他额外计算层。
+成功候选按第85节原图复评入口核验正常/去光、TRAIN、专家均衡和alpha之后才能晋升。
