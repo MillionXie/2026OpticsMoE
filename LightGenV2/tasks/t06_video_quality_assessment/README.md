@@ -2,6 +2,12 @@
 
 ## 原训练集2250条六层实采与读出头适配（20260914）
 
+**20260915用户撤回自动换层授权：当前必须人工通知才换相位。**
+单层入口`lab_manual_stage --single-write-phase --capture-only --verify-phase-optically --phase-reference-dir ...`：
+只写一次所指定相位并保持，三次参考拍摄和采完复查不再切flat或重复写相位。
+本层完成后状态为`stage_complete_wait_for_user`，不生成下一层、不换mask、不启动微调。
+此前自动采集的可疑router CCD隔离保留，重采不跳过这些旧PNG。停止仅作用于本任务拥有的进程/租约。
+
 20260915相位复核：用户发现language CCD疑似默认文字，原2250会话的语言层与微调队列已暂停，
 不可仅凭SDK返回值、BMP SHA或亮度合格验收。`lab_supervise --verify-phase-optically`在同一相位SDK
 持有进程中，先固定全白振幅、150μs诊断曝光，执行flat→target→flat→target，要求同状态重复PCC≥0.95、

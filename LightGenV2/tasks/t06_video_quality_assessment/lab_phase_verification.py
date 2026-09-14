@@ -83,7 +83,7 @@ def probe(a,link,sdk,pump,out,label):
  worker=threading.Thread(target=capture);worker.start();last=time.monotonic()
  while worker.is_alive():
   pump()
-  if time.monotonic()-last>=1:sdk.repeat();last=time.monotonic()
+  if not getattr(a,'single_write_phase',False) and time.monotonic()-last>=1:sdk.repeat();last=time.monotonic()
   time.sleep(.01)
  worker.join()
  if errors:raise errors[0]
@@ -118,3 +118,23 @@ def postflight(a,link,sdk,pump,out,reference):
  report=dict(row,pcc_to_preflight=pcc,passed=pcc>=.95,minimum_pcc=.95)
  write(Path(out)/'postflight.json',report)
  if not report['passed']:raise ValueError('Phase postflight changed; stage requires review/recapture')
+
+def held_preflight(a,link,sdk,pump,out):
+ """Verify a manually requested phase without issuing ANY phase write."""
+ from PIL import Image
+ if not getattr(a,'phase_reference_dir',None):raise ValueError('Single-write verification requires an enrolled optical reference')
+ out=Path(out);out.mkdir(parents=True,exist_ok=False)
+ bank=Path(a.phase_reference_dir);entry=read(bank/'manifest.json')['stages'][a.stage];path=bank/entry['roi_file']
+ if entry['phase_sha256']!=sha(a.phase) or entry['exposure_us']!=150. or sha(path)!=entry['roi_sha256']:raise ValueError('Reference identity mismatch')
+ reference=np.array(Image.open(path),np.float32);frames=[];rows=[]
+ for i in range(3):
+  if (a.out/'RELEASE').exists():raise RuntimeError('Stopped before capture')
+  row=probe(a,link,sdk,pump,out,str(i));frames.append(row.pop('image'));rows.append(row)
+ checks=[reference_match(im,reference) for im in frames]
+ repeats=[compare(frames[0],im) for im in frames[1:]]
+ report=dict(passed=all(c['passed'] for c in checks) and min(repeats)>=.95,
+             phase_sha256=sha(a.phase),reference_checks=checks,repeat_pcc=repeats,rows=rows,
+             phase_writes_during_check=0,automatic_phase_switching=False)
+ write(out/'report.json',report)
+ if not report['passed']:raise ValueError('Held phase optical check failed; capture not started')
+ return frames[-1]

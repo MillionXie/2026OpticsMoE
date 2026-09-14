@@ -8,7 +8,7 @@ from pathlib import Path
 from .lab_runtime import STAGES,read,write,sha
 
 
-def desktop_code(project,bench,session,config,stage,stem,stages=STAGES):
+def desktop_code(project,bench,session,config,stage,stem,stages=STAGES,capture_only=False):
     """Fixed CLI only; phase release first cancels this job's child tree."""
     return f'''import json,subprocess,time,sys
 from pathlib import Path
@@ -16,7 +16,7 @@ p=Path({project!r});stem=Path({stem!r});py={bench!r}+'/.venv_gpu/Scripts/pythonw
 status=stem.with_suffix('.json');heartbeat=stem.with_suffix('.heartbeat')
 commands=[['capture','--stage',{stage!r},'--phase-ready']]
 stages={list(stages)!r};i=stages.index({stage!r})
-commands.append(['prepare','--stage',stages[i+1],'--device','cuda'] if i<len(stages)-1 else ['evaluate','--device','cuda'])
+if not {capture_only!r}:commands.append(['prepare','--stage',stages[i+1],'--device','cuda'] if i<len(stages)-1 else ['evaluate','--device','cuda'])
 child=None
 def save(data):status.write_text(json.dumps(data,indent=2),encoding='utf-8')
 try:
@@ -67,9 +67,10 @@ def run(a):
                 report['receipt']=sdk.show(a.phase,mf['phase_sha256'],pump=pump);report['status']='holding_phase';save()
                 phase_reference=None
                 if getattr(a,'verify_phase_optically',False):
-                    from .lab_phase_verification import preflight,postflight
+                    from .lab_phase_verification import preflight,postflight,held_preflight
                     report['status']='verifying_optical_phase';save()
-                    phase_reference=preflight(a,link,sdk,pump,out/'phase_verification')
+                    check=held_preflight if getattr(a,'single_write_phase',False) else preflight
+                    phase_reference=check(a,link,sdk,pump,out/'phase_verification')
                     report['optical_preflight']=str(out/'phase_verification/report.json');save()
                 def work():
                     name='LGVQ_'+uuid.uuid4().hex
@@ -80,7 +81,7 @@ def run(a):
                             def heartbeat():
                                 with r.sftp.open(stem+'.heartbeat','w') as f:f.write('phase_owner_alive')
                             heartbeat()
-                            payload=base64.b64encode(desktop_code(a.project,r.root,a.session,a.config,a.stage,stem,stages).encode()).decode()
+                            payload=base64.b64encode(desktop_code(a.project,r.root,a.session,a.config,a.stage,stem,stages,getattr(a,'capture_only',False)).encode()).decode()
                             arguments='-u -c "import base64;exec(base64.b64decode(\''+payload+'\'))"'
                             import html
                             xml=f'<Task version="1.2" xmlns="http://schemas.microsoft.com/windows/2004/02/mit/task"><Principals><Principal id="Author"><UserId>PS</UserId><LogonType>InteractiveToken</LogonType><RunLevel>LeastPrivilege</RunLevel></Principal></Principals><Settings><ExecutionTimeLimit>PT1H</ExecutionTimeLimit></Settings><Actions Context="Author"><Exec><Command>{html.escape(r.root+"/.venv_gpu/Scripts/pythonw.exe")}</Command><Arguments>{html.escape(arguments)}</Arguments><WorkingDirectory>{html.escape(a.project)}</WorkingDirectory></Exec></Actions></Task>'
@@ -117,14 +118,14 @@ def run(a):
                 worker=threading.Thread(target=work,daemon=False);worker.start();last=time.monotonic();checked=False
                 while not release.exists() or not done.is_set():
                     pump()
-                    if time.monotonic()-last>=1:sdk.repeat();last=time.monotonic()
+                    if not getattr(a,'single_write_phase',False) and time.monotonic()-last>=1:sdk.repeat();last=time.monotonic()
                     if done.is_set() and not checked and report['status']=='remote_complete_pending_phase_check':
                         checked=True
                         try:
                             if phase_reference is not None:
                                 report['status']='verifying_optical_phase_after_capture';save()
                                 postflight(a,link,sdk,pump,out/'phase_verification',phase_reference)
-                            report['status']='next_inputs_ready_wait_for_user' if a.stage!=stages[-1] else 'evaluation_complete';save()
+                            report['status']=('stage_complete_wait_for_user' if getattr(a,'capture_only',False) else ('next_inputs_ready_wait_for_user' if a.stage!=stages[-1] else 'evaluation_complete'));save()
                         except BaseException as e:report.update(status='failed_holding_phase',error=str(e));save()
                     time.sleep(.01)
                 report['phase_released']=True;save()
@@ -144,6 +145,8 @@ def main():
     p.add_argument('--verify-phase-optically',action='store_true',help='Fixed-input flat/target repeat test before capture and same-phase check after')
     p.add_argument('--phase-reference-dir',type=Path,help='Optional SHA-checked expected optical response bank')
     p.add_argument('--log-file',type=Path,help='Python-level logging without Win32 standard-handle redirection')
+    p.add_argument('--single-write-phase',action='store_true',help='Load once and hold; no automatic re-writes or flat/target switching')
+    p.add_argument('--capture-only',action='store_true',help='Capture this stage only; do not prepare next stage or evaluate')
     p.add_argument('--stage',choices=STAGES,required=True);a=p.parse_args()
     if a.log_file:
         import contextlib
