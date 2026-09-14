@@ -16,7 +16,7 @@ class LabRuntimeTests(unittest.TestCase):
         torch.manual_seed(123)
         cls.model=CachedStudent(settings).eval()
         cls.model.core.set_phase_dropout_active(False)
-        cls.batch={'tokens':torch.randn(256,1024),'grid':torch.tensor([[1,16,16]])}
+        cls.batch={'tokens':torch.randn(196,1024),'grid':torch.tensor([[1,14,14]])}
 
     def test_three_detectors_and_replay(self):
         with torch.inference_mode(): expected=self.model(self.batch)
