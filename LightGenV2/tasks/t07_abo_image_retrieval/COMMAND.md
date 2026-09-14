@@ -2950,3 +2950,13 @@ CUDA_VISIBLE_DEVICES=GPU-1b963983-7909-af6e-0528-f0f0661ab549 OMP_NUM_THREADS=4 
   --checkpoint "$R/abo200_readout_top1_20260915/best.pt" --expected-checkpoint-sha256 "$TOP1_SHA" \
   --batch-size 4 --cache-readout-input --output "$R/abo200_readout_top1_20260915/verification"
 ```
+
+### 第90节固定种子复核（不是集成）
+
+预先固定补充seed17/73，保留原seed42结果；均从第86节相同b1e205c7权重/缓存开始，
+不是从本节新10925d29权重递进。其他800步、lr.00005、anchor.1、dropout.1、batch128设置不变。
+在第90节CPU拟合命令加`--seed 17`或`--seed 73`，output分别改为
+`abo200_readout_top1_seed17_20260915`和`abo200_readout_top1_seed73_20260915`，按顺序运行，不占GPU。
+每组均只TRAIN参与梯度；保留best/last/完整history，不能隐去不理想的种子。
+先看完整三组缓存结果，再对候选原图复评；不得将三个模型预测合并或平均成推理集成。
+这些种子共享已择优的预训练起点，不能当成从头独立三次训练，也不能用其中最好值冒充均值。
