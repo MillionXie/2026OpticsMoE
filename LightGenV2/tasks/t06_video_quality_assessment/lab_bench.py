@@ -15,10 +15,10 @@ from .lab_runtime import PINS,STAGES,read,write,sha
 
 def identity(value):return hashlib.sha256(json.dumps(value,sort_keys=True).encode()).hexdigest()
 
-def stage_config(c,stage):
+def stage_config(c,stage,stages=STAGES):
  """Resolve explicit stage exposure without mutating the frozen session config."""
  d=json.loads(json.dumps(c));overrides=d.pop('camera_exposure_us_by_stage',{})
- if set(overrides)-set(STAGES):raise ValueError('Unknown exposure stage')
+ if set(overrides)-set(stages):raise ValueError('Unknown exposure stage')
  for value in overrides.values():
   if not math.isfinite(float(value)) or float(value)<=0:raise ValueError('Invalid stage exposure')
  d['camera']['exposure_us']=float(overrides.get(stage,d['camera']['exposure_us']))
@@ -119,10 +119,15 @@ def prepare(a):
  print('READY',a.stage,len(entries),'Load and KEEP phase:',phase,flush=True)
 
 def capture(a):
+ return capture_staged(a,open_session,STAGES)
+
+
+def capture_staged(a,opener,stages):
+ """Shared device capture; task supplies its checked session and stage order."""
  import cv2
- root,s,state,c,release=open_session(a);idx=STAGES.index(a.stage);mf=read(s/'play'/a.stage/'manifest.json')
- if state['measured_stages']==list(STAGES[:idx+1]):print('Stage already complete');return
- if state['measured_stages']!=list(STAGES[:idx]):raise ValueError('Non-contiguous capture')
+ root,s,state,c,release=opener(a);idx=stages.index(a.stage);mf=read(s/'play'/a.stage/'manifest.json')
+ if state['measured_stages']==list(stages[:idx+1]):print('Stage already complete');return
+ if state['measured_stages']!=list(stages[:idx]):raise ValueError('Non-contiguous capture')
  if mf['hardware_sha256']!=state['hardware_sha256'] or mf['release_sha256']!=state['release_sha256']:raise ValueError('Stale manifest')
  phase=s/mf['phase_file']
  if sha(phase)!=mf['phase_sha256']:raise ValueError('Phase BMP changed')
@@ -135,7 +140,7 @@ def capture(a):
  fd=os.open(lock,os.O_CREAT|os.O_EXCL|os.O_WRONLY);os.write(fd,str(os.getpid()).encode());os.close(fd)
  try:
   pts=np.float32([c['logical_corners_full_sensor_xy'][k] for k in ('top_left','top_right','bottom_right','bottom_left')]);H=cv2.getPerspectiveTransform(pts,np.float32([[-.5,-.5],[477.5,-.5],[477.5,477.5],[-.5,477.5]]))
-  with Controller(stage_config(c,a.stage)) as hw:
+  with Controller(stage_config(c,a.stage,stages)) as hw:
    for i,e in enumerate(mf['entries'],1):
     p=s/'ccd'/a.stage/(e['key']+'.png');record=p.with_suffix('.record.json')
     if record.exists():
@@ -155,7 +160,7 @@ def capture(a):
     p.parent.mkdir(parents=True,exist_ok=True);Image.fromarray(im).save(p,compress_level=1)
     write(record,dict(sha256=sha(p),amplitude_sha256=e['sha256'],phase_sha256=mf['phase_sha256'],upstream_ccd_sha256=e['upstream_ccd_sha256'],hardware_sha256=state['hardware_sha256'],quality=q,camera=meta,phase_confirmation='explicit_flag_not_optical_verification',raw_saved=False))
     write(s/'status.json',dict(status='capturing',stage=a.stage,completed=i,total=len(mf['entries']),quality=q));print('Captured',a.stage,i,'/',len(mf['entries']),q,flush=True)
-  state['measured_stages']=list(STAGES[:idx+1]);write(s/'session.json',state)
+  state['measured_stages']=list(stages[:idx+1]);write(s/'session.json',state)
   write(s/'status.json',dict(status='stage_complete_wait_for_user_phase_change',stage=a.stage,completed=len(mf['entries'])))
  finally:lock.unlink(missing_ok=True)
 

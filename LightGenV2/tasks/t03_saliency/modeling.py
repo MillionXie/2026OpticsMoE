@@ -124,6 +124,25 @@ class MeanOnlyCCDNormalizer(nn.Module):
         return value / value.mean((-2, -1), keepdim=True).clamp_min(1e-6)
 
 
+def build_dense_core(settings: Any, device: Any) -> nn.Module:
+    """The identical task body, usable with frozen-stem caches on the bench."""
+    core = LightGenDenseVision2Core(settings.vision_hidden_size, settings).to(device)
+    configure_spatial_kernel(core.hybrid, getattr(settings, "electronic_spatial_kernel_size", 3))
+    if getattr(settings, "electronic_grn", False):
+        configure_grn(core.hybrid)
+    if getattr(settings, "electronic_ffn_spatial_dilation", 0):
+        configure_spatial_ffn(core.hybrid, settings.electronic_ffn_spatial_dilation)
+    if getattr(settings, "electronic_global_rank", 0):
+        configure_global_mixing(core.hybrid, settings.electronic_global_rank)
+    if getattr(settings, "electronic_ffn_hidden_width", 384) == 576:
+        configure_wide_ffn(core.hybrid)
+    if getattr(settings, "electronic_ffn_groups", 0) == 64:
+        configure_grouped_ffn(core.hybrid)
+    if getattr(settings, "exact_fusion_backward", False):
+        enable_exact_fusion_backward(core.hybrid)
+    return core
+
+
 class LightGenVision2SaliencyStudent(RobustVision2PoseStudent):
     def __init__(self, loaded: Any, settings: Any) -> None:
         nn.Module.__init__(self)
@@ -133,22 +152,7 @@ class LightGenVision2SaliencyStudent(RobustVision2PoseStudent):
             int(value)
             for value in getattr(self.visual, "deepstack_visual_indexes", ())
         )
-        self.core = LightGenDenseVision2Core(
-            settings.vision_hidden_size, settings
-        ).to(loaded.device)
-        configure_spatial_kernel(self.core.hybrid, getattr(settings, "electronic_spatial_kernel_size", 3))
-        if getattr(settings, "electronic_grn", False):
-            configure_grn(self.core.hybrid)
-        if getattr(settings, "electronic_ffn_spatial_dilation", 0):
-            configure_spatial_ffn(self.core.hybrid, settings.electronic_ffn_spatial_dilation)
-        if getattr(settings, "electronic_global_rank", 0):
-            configure_global_mixing(self.core.hybrid, settings.electronic_global_rank)
-        if getattr(settings, "electronic_ffn_hidden_width", 384) == 576:
-            configure_wide_ffn(self.core.hybrid)
-        if getattr(settings, "electronic_ffn_groups", 0) == 64:
-            configure_grouped_ffn(self.core.hybrid)
-        if getattr(settings, "exact_fusion_backward", False):
-            enable_exact_fusion_backward(self.core.hybrid)
+        self.core = build_dense_core(settings, loaded.device)
         self.capture_block = _RobustCaptureBlock(self.core)
         self.student_blocks = nn.ModuleList(
             [self.capture_block]

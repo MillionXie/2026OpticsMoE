@@ -8,15 +8,15 @@ from pathlib import Path
 from .lab_runtime import STAGES,read,write,sha
 
 
-def desktop_code(project,bench,session,config,stage,stem):
+def desktop_code(project,bench,session,config,stage,stem,stages=STAGES):
     """Fixed CLI only; phase release first cancels this job's child tree."""
     return f'''import json,subprocess,time,sys
 from pathlib import Path
 p=Path({project!r});stem=Path({stem!r});py={bench!r}+'/.venv_gpu/Scripts/pythonw.exe'
 status=stem.with_suffix('.json');heartbeat=stem.with_suffix('.heartbeat')
 commands=[['capture','--stage',{stage!r},'--phase-ready']]
-stages={list(STAGES)!r};i=stages.index({stage!r})
-commands.append(['prepare','--stage',stages[i+1],'--device','cuda'] if i<5 else ['evaluate','--device','cuda'])
+stages={list(stages)!r};i=stages.index({stage!r})
+commands.append(['prepare','--stage',stages[i+1],'--device','cuda'] if i<len(stages)-1 else ['evaluate','--device','cuda'])
 child=None
 def save(data):status.write_text(json.dumps(data,indent=2),encoding='utf-8')
 try:
@@ -39,6 +39,10 @@ except BaseException as e:
 
 
 def run(a):
+    stages=STAGES
+    if getattr(a,'task','lgvq')=='salicon':
+        stages=('vision_router','vision_expert','vision_global')
+    if a.stage not in stages:raise ValueError('Stage not part of this task')
     sys.path.insert(0,str(a.bench_root.resolve()))
     from dual_run import Remote
     from phase_hdmi import PhaseHDMI,load_native
@@ -70,7 +74,7 @@ def run(a):
                             def heartbeat():
                                 with r.sftp.open(stem+'.heartbeat','w') as f:f.write('phase_owner_alive')
                             heartbeat()
-                            payload=base64.b64encode(desktop_code(a.project,r.root,a.session,a.config,a.stage,stem).encode()).decode()
+                            payload=base64.b64encode(desktop_code(a.project,r.root,a.session,a.config,a.stage,stem,stages).encode()).decode()
                             arguments='-u -c "import base64;exec(base64.b64decode(\''+payload+'\'))"'
                             import html
                             xml=f'<Task version="1.2" xmlns="http://schemas.microsoft.com/windows/2004/02/mit/task"><Principals><Principal id="Author"><UserId>PS</UserId><LogonType>InteractiveToken</LogonType><RunLevel>LeastPrivilege</RunLevel></Principal></Principals><Settings><ExecutionTimeLimit>PT1H</ExecutionTimeLimit></Settings><Actions Context="Author"><Exec><Command>{html.escape(r.root+"/.venv_gpu/Scripts/pythonw.exe")}</Command><Arguments>{html.escape(arguments)}</Arguments><WorkingDirectory>{html.escape(a.project)}</WorkingDirectory></Exec></Actions></Task>'
@@ -92,7 +96,7 @@ def run(a):
                                     if status.get('state') in ('done','failed'):
                                         report['remote_result']=status
                                         if status['state']=='failed':raise RuntimeError(str(status))
-                                        report['status']='next_inputs_ready_wait_for_user' if a.stage!=STAGES[-1] else 'evaluation_complete';save();break
+                                        report['status']='next_inputs_ready_wait_for_user' if a.stage!=stages[-1] else 'evaluation_complete';save();break
                                     if time.monotonic()-started>3600:raise TimeoutError('One-stage job exceeded one hour')
                                     time.sleep(2)
                             finally:
@@ -115,5 +119,6 @@ def main():
     p=argparse.ArgumentParser(description=__doc__)
     for name in ['bench-root','link-config','phase','out']:p.add_argument('--'+name,type=Path,required=True)
     for name in ['project','session','config']:p.add_argument('--'+name,required=True)
+    p.add_argument('--task',choices=['lgvq','salicon'],default='lgvq')
     p.add_argument('--stage',choices=STAGES,required=True);run(p.parse_args())
 if __name__=='__main__':main()

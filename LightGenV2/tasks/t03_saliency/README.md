@@ -1,5 +1,18 @@
 # T03 显著性分析（SALICON）
 
+## SHS 光路部署（2026-09-14）
+
+用户指定 CC 四舍五入为0.8625的版本，固定为
+`moe_alpha40_sam_batch8_crosssample_20260913_seed42` 的 best；独立CC64为
+`0.8624925081777596`，checkpoint SHA256为
+`036bc8caedcde4d6dabce276b1a2e4af15d960d88620098b19e1c198849b8bfe`。
+不会随其他训练更新而替换该权重。
+
+入口：[COMMAND_SHS.md](COMMAND_SHS.md)。当前在移植/回放验证，**尚未产生SALICON实测指标**。
+只执行 Router、Expert、Global 三次光传播，无语言阶段。冻结Qwen前端缓存保留原精度；
+两层电子/光学融合和原显著性头仍在实验电脑实时执行。全测试5000图，需要15000次采集。
+任务专属输出集中到 `runs/hardware/salicon_08625_shs_20260914/`。
+
 ## 最新检查点（2026-09-14，本段优先于下方历史启动记录）
 
 光优先LR组已完成20轮，best仍是初始化CC=.86249253，末轮CC=.86201740；
