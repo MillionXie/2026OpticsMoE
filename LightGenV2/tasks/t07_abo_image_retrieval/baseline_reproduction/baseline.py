@@ -49,6 +49,21 @@ def write_json(path, data):
     Path(path).write_text(json.dumps(data, ensure_ascii=False, indent=2), encoding='utf-8')
 
 
+def source_identity(script):
+    script = Path(script).resolve()
+    package = script.parent/'PACKAGE_MANIFEST.json'
+    if package.is_file():
+        info = json.loads(package.read_text(encoding='utf-8'))
+        if info['files'][script.name]['sha256'] != sha256(script):
+            raise ValueError('Packaged evaluator changed; preserve original reproduction source')
+        return info['source_commit']
+    try:
+        return subprocess.check_output(['git', 'rev-parse', 'HEAD'], cwd=script.parent,
+            stderr=subprocess.DEVNULL, text=True).strip()
+    except (OSError, subprocess.CalledProcessError):
+        return 'unavailable; identify evaluator by its SHA256'
+
+
 def validate_parent(rows):
     if len(rows) != 2400 or len({r['sample_id'] for r in rows}) != 2400:
         raise ValueError('Require all 2400 unique images')
@@ -284,8 +299,7 @@ def main():
     if args.output.exists(): raise FileExistsError('Choose a NEW output; never overwrite evidence')
     torch.set_num_threads(4); torch.manual_seed(42)
     rows = load_rows(args.manifest, args.protocol, args.enrolled_manifest, args.data if args.mode == 'infer' else None)
-    try: commit = subprocess.check_output(['git', 'rev-parse', 'HEAD'], cwd=Path(__file__).parent, stderr=subprocess.DEVNULL, text=True).strip()
-    except (OSError, subprocess.CalledProcessError): commit = 'standalone archive; see PACKAGE_MANIFEST.json'
+    commit = source_identity(__file__)
     identity = dict(protocol=args.protocol, mode=args.mode, preprocessing=args.preprocessing, prompt=PROMPT,
         parent_manifest_sha256=PARENT_SHA, manifest_sha256=ENROLLED_SHA if args.protocol == 'enrolled_sku' else PARENT_SHA,
         frozen=True, trainable_parameters=0, optimizer=None, epochs=0, test_selected=False,

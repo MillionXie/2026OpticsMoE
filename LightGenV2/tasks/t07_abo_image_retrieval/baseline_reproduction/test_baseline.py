@@ -1,5 +1,6 @@
 import ast
 import tempfile
+import json
 import unittest
 from pathlib import Path
 import torch
@@ -76,6 +77,15 @@ class BaselineTests(unittest.TestCase):
                 self.assertFalse((node.module or '').startswith(('LightGenV2', 'experiments')))
             if isinstance(node, ast.Call) and isinstance(node.func, ast.Attribute):
                 self.assertNotIn(node.func.attr, ['backward', 'step'])
+
+    def test_package_source_not_unrelated_enclosing_git(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            script = Path(tmp)/'baseline.py'; script.write_text('# evaluator', encoding='utf-8')
+            (Path(tmp)/'PACKAGE_MANIFEST.json').write_text(json.dumps(dict(source_commit='pinned-source',
+                files={'baseline.py':dict(sha256=b.sha256(script))})), encoding='utf-8')
+            self.assertEqual(b.source_identity(script), 'pinned-source')
+            script.write_text('# changed', encoding='utf-8')
+            with self.assertRaises(ValueError): b.source_identity(script)
 
 
 if __name__ == '__main__': unittest.main()

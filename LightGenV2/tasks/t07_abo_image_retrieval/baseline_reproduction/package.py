@@ -30,12 +30,24 @@ def main():
         'evidence/enrolled/features.pt': args.runs/'abo200_enrolled_qwen64_20260913/normal_features.pt',
         'evidence/enrolled/final_report.json': args.runs/'abo200_enrolled_qwen64_20260913/final_report.json',
     }
-    # These optional independently rerun reports are evidence, not alternative cached scores.
+    # Require the actual full-image runs, not just a successful cache audit.
     for protocol in ['legacy_category', 'enrolled_sku']:
         run = args.runs/f'baseline_reproduction_20260914_{protocol}'
+        report = json.loads((run/'report.json').read_text())
+        expected = .94375 if protocol == 'legacy_category' else .85125
+        if report['status'] != 'complete' or report['mode'] != 'infer' or report['metrics_by_dimension']['64']['hit_at_1'] != expected:
+            raise ValueError('Independent reproduction incomplete/different: '+protocol)
         for name in ['report.json','predictions_64d.csv','predictions_2048d.csv']:
-            if (run/name).is_file(): paths[f'evidence/independent/{protocol}/{name}'] = run/name
+            paths[f'evidence/independent/{protocol}/{name}'] = run/name
     for name,path in paths.items(): files[name] = path.read_bytes()
+    pinned = {
+        'evidence/abo_similarity10_manifest.csv': '2949a4035150a9f8718f2a6cace164c17394613d24fb9d0234c553bee8d77c97',
+        'evidence/enrolled_protocol.json': 'f1749d5fc22d2dfee6a1333ce2b35e9fa600a070f949eba8420b4def41906dde',
+        'evidence/legacy/features.pt': '38f77637e48cf28fb7b1e077119bcf4c1ea37dd3480cbd1b6ce5707f05b38324',
+        'evidence/enrolled/features.pt': 'c6eb631c268d2446a2f783854c86d8493cdbcaa04c0669148b16d9785016d8d7',
+    }
+    for name,expected in pinned.items():
+        if hashlib.sha256(files[name]).hexdigest() != expected: raise ValueError('Source artifact SHA mismatch: '+name)
     manifest = dict(source_commit=commit, scope='Frozen baseline reproduction only; NOT a hardware package',
         exclusions=['ABO images','Qwen model weights','optical model','hardware credentials'],
         files={name:dict(bytes=len(value),sha256=hashlib.sha256(value).hexdigest()) for name,value in files.items()})
