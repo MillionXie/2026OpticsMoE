@@ -3,9 +3,24 @@
 冻结Qwen两个协议的说明、独立代码和复现命令：[baseline_reproduction/README.md](baseline_reproduction/README.md)。
 94.375%（旧同类别检索）与85.125%（新同SKU检索）不是同一任务难度对照，不能据此解释为Qwen被微调过拟合。
 
-## 当前正式仿真候选（2026-09-14；已完成独立复评）
+## 当前正式仿真候选（2026-09-15；已完成独立复评）
 
-**最新已验证：82.50%=660/800；同权重去光76.25%=610/800，下降6.25个百分点。**
+**最新Hit@1仍82.50%=660/800；同分按既定mAP择优，当前推荐`abo200_readout_top1_20260915`。**
+原图mAP@10=.7304591394、NDCG@10=.7873025540；同best去光75.875%=607/800，下降6.625pp。
+TRAIN自图排除1520/1600=95.00%，差距12.50pp，过拟合没有消失。Qwen64差距仍2.625pp，83%尚差4张。
+只改变原384→64读出的TRAIN损失：最近正确SKU相似度应超过最近错误SKU，softplus、余弦margin .02、温度.1；
+dropout .1/锚定.1/lr .00005、800步、batch128、每50步TEST择优，best为第450步。
+相位、电子残差、前端、alpha和metadata逐项不变，正常/去光原图复评68.76秒，非速度基准。
+best SHA `10925d290c732b600fb7976a9202339b59d63fd9cc1fed9fd50256f58bb01b26`；
+`verification/final_report.json` SHA `d1635300d5cd5ae5708855767501621cc31999e3d798ee23b53eab79b8cbc5db`。
+`verification/weight_train_audit.json`核验只改head weight/bias，图库与查询分别路由合格；alpha范围.4449–.4477。
+源码`737f9303da192413ec92d45415d4e5cc8224ebaf`，本地/服务器406测试；命令见COMMAND90节。
+缓存82.625%高于实际原图82.50%，只引用原图。单seed周期TEST选模有选择偏差；不是新光学相位收益。
+CPU PID1789346/复评GPU4 PID1791190均已退出；仅GPU0相位+头12轮训练继续运行。
+
+### 上一82.50%：NLL弱锚定（保留作为上述排序训练起点）
+
+**此前已验证：82.50%=660/800；同权重去光76.25%=610/800，下降6.25个百分点。**
 Run：`runs/simulation/abo200_direct_readout_dropout_weak_20260914/`，best SHA
 `b1e205c70505de9df77ea52bed9c962bebacd3171e9f7b55b0569ec25f9fafd6`。
 在原81.875%起点冻结全部主干，仅训练原384→64读出；TRAIN时10%独立特征dropout，

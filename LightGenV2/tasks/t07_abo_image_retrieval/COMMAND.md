@@ -2935,3 +2935,18 @@ CUDA_VISIBLE_DEVICES='' OMP_NUM_THREADS=4 MKL_NUM_THREADS=4 python -m LightGenV2
 入口先核验2400个缓存ID/固定manifest/源权重SHA/已完成原图报告；仅前1600 TRAIN张量进loss。
 缓存候选不算正式结果；只有重新原图编码并通过正常/去光/路由/alpha/权重变更审计后才可晋升。
 本对照不影响第89节单GPU相位训练，结束后不保留CPU后台任务。
+
+实际已完成：源码737f9303，本地/服务器各406测试。缓存best第450步82.625%，原图复评只有82.50%，
+仍未达到83%；mAP=.7304591394、NDCG=.7873025540，Hit同分按mAP优于第86节候选。
+TRAIN自图排除95.00%，去光75.875%，下降6.625pp；12份相位/alpha/电子主干均不改变，
+只head两张量更新，gallery/query路由分别合格。CPU PID1789346和GPU复评PID1791190均退出释放。
+完整原图复评命令（先确认GPU空闲；以下output已用，重现请换新output）：
+
+```bash
+TOP1_SHA=$(python -c 'import pathlib,json,hashlib,sys; p=pathlib.Path(sys.argv[1]); s=json.loads((p/"final_report.json").read_text())["best_sha256"]; assert hashlib.sha256((p/"best.pt").read_bytes()).hexdigest()==s; print(s)' "$R/abo200_readout_top1_20260915")
+CUDA_VISIBLE_DEVICES=GPU-1b963983-7909-af6e-0528-f0f0661ab549 OMP_NUM_THREADS=4 MKL_NUM_THREADS=4 HF_HUB_OFFLINE=1 TRANSFORMERS_OFFLINE=1 python -m LightGenV2.tasks.t07_abo_image_retrieval.standalone.retrieval_screen optical \
+  --data /DATA/DATA1/guest3/2026OpticsMoE/data/abo_similarity10_data \
+  --manifest "$R/abo200_enrolled_protocol_20260913/protocol.json" --assets "$R/standalone_assets_20260910" \
+  --checkpoint "$R/abo200_readout_top1_20260915/best.pt" --expected-checkpoint-sha256 "$TOP1_SHA" \
+  --batch-size 4 --cache-readout-input --output "$R/abo200_readout_top1_20260915/verification"
+```
