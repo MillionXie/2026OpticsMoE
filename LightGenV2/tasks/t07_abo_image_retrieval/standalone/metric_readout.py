@@ -73,14 +73,22 @@ def replace_projection(payload, weight, bias):
     return result
 
 
-def projection_loss(weight, bias, train_inputs, train_labels, indices, reference, anchor):
+def projection_loss(weight, bias, train_inputs, train_labels, indices, reference, anchor, input_dropout=0.):
     """Only detached TRAIN inputs; all gallery rows receive parameter gradients."""
     if train_inputs.requires_grad or train_inputs.ndim != 2 or train_inputs.shape[1] != 384:
         raise ValueError('Only detached 384D TRAIN inputs may be fitted')
     if not math.isfinite(anchor) or anchor < 0:
         raise ValueError('Invalid projection anchor')
-    z = F.normalize(F.linear(train_inputs, weight, bias), dim=-1)
-    logits = z[indices] @ z.T / .1
+    if not math.isfinite(input_dropout) or not 0 <= input_dropout < 1:
+        raise ValueError('Invalid train-only input dropout')
+    if input_dropout:
+        # Independent query/gallery masks, TRAIN only. No inference module added.
+        z = F.normalize(F.linear(F.dropout(train_inputs, p=input_dropout, training=True), weight, bias), dim=-1)
+        q = F.normalize(F.linear(F.dropout(train_inputs[indices], p=input_dropout, training=True), weight, bias), dim=-1)
+    else:
+        z = F.normalize(F.linear(train_inputs, weight, bias), dim=-1)
+        q = z[indices]
+    logits = q @ z.T / .1
     excluded = indices[:, None].eq(torch.arange(len(z))[None])
     positive = train_labels[indices, None].eq(train_labels[None]) & ~excluded
     if not positive.any(1).all():
@@ -188,7 +196,7 @@ def run(args):
                 optimizer.param_groups[0]['lr'] = args.lr * (.1 + .9 * .5 * (1 + math.cos(math.pi * step / args.steps)))
                 idx = torch.randperm(1600)[:args.batch_size]
                 optimizer.zero_grad(set_to_none=True)
-                loss = (projection_loss(weight, bias, train_inputs, train_labels, idx, reference, args.anchor)
+                loss = (projection_loss(weight, bias, train_inputs, train_labels, idx, reference, args.anchor, args.input_dropout)
                         if projection else metric_loss(matrix, train_z, train_labels, idx, args.anchor))
                 loss.backward()
                 torch.nn.utils.clip_grad_norm_(parameters, 1., error_if_nonfinite=True)
@@ -244,6 +252,7 @@ def main():
     p.add_argument('--expected-checkpoint-sha256', required=True)
     p.add_argument('--verification-dir', type=Path, help='Completed source raw verification directory (default source-run/verification)')
     p.add_argument('--fit-space', choices=['metric64', 'projection384'], default='metric64')
+    p.add_argument('--input-dropout', type=float, default=0., help='TRAIN-only independent query/gallery feature dropout for projection384; never used in evaluation')
     p.add_argument('--expected-hit', type=float, required=True)
     p.add_argument('--steps', type=int, default=800)
     p.add_argument('--eval-every', type=int, default=50)
@@ -254,6 +263,8 @@ def main():
     args = p.parse_args()
     if args.steps < 1 or args.eval_every < 1 or not 2 <= args.batch_size <= 1600 or not math.isfinite(args.lr) or args.lr <= 0 or not math.isfinite(args.anchor) or args.anchor < 0:
         p.error('Invalid training bounds')
+    if not math.isfinite(args.input_dropout) or not 0 <= args.input_dropout < 1 or (args.input_dropout and args.fit_space != 'projection384'):
+        p.error('Input dropout must be in [0,1), supported only with projection384')
     run(args)
 
 

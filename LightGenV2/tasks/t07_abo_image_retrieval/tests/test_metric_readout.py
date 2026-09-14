@@ -103,3 +103,21 @@ def test_linear_input_hook_is_passive_and_captures_post_norm():
     actual=h(x); hook.remove()
     assert torch.equal(actual,expected) and captured[0].shape==(3,384)
     assert torch.equal(actual,F.normalize(h.projection(captured[0]),dim=-1))
+
+
+def test_projection_input_dropout_is_train_only_and_does_not_mutate_inputs():
+    torch.manual_seed(12)
+    x=torch.randn(8,384); original=x.clone(); y=torch.arange(4).repeat_interleave(2)
+    w=torch.randn(64,384,requires_grad=True); b=torch.zeros(64,requires_grad=True)
+    ref=(w.detach().clone(),b.detach().clone()); idx=torch.arange(8)
+    clean=projection_loss(w,b,x,y,idx,ref,1.)
+    assert torch.equal(clean,projection_loss(w,b,x,y,idx,ref,1.,0.))
+    first=projection_loss(w,b,x,y,idx,ref,1.,.1)
+    second=projection_loss(w,b,x,y,idx,ref,1.,.1)
+    assert first!=second and torch.equal(original,x)
+    first.backward()
+    assert torch.isfinite(w.grad).all() and w.grad.norm()>0 and x.grad is None
+    assert torch.equal(clean,projection_loss(w,b,x,y,idx,ref,1.))
+    for invalid in [-.1,1.,float('nan')]:
+        with pytest.raises(ValueError,match='dropout'):
+            projection_loss(w,b,x,y,idx,ref,1.,invalid)
