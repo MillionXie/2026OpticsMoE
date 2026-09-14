@@ -140,5 +140,6 @@ def main():
     for name in ['project','session','config']:p.add_argument('--'+name,required=True)
     p.add_argument('--task',choices=['lgvq','salicon'],default='lgvq')
     p.add_argument('--verify-phase-optically',action='store_true',help='Fixed-input flat/target repeat test before capture and same-phase check after')
+    p.add_argument('--phase-reference-dir',type=Path,help='Optional SHA-checked expected optical response bank')
     p.add_argument('--stage',choices=STAGES,required=True);run(p.parse_args())
 if __name__=='__main__':main()

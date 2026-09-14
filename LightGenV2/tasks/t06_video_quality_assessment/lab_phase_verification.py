@@ -73,6 +73,15 @@ def preflight(a,link,sdk,pump,out):
   row=probe(a,link,sdk,pump,out,str(i));frames.append(row.pop('image'));evidence.append(dict(row,receipt=receipt))
  report=dict(assess(frames),exposure_us=150.,phase_sha256=sha(a.phase),rows=evidence,
              scope='Repeatable optical switching only; not exact phase fidelity certification')
+ if getattr(a,'phase_reference_dir',None):
+  bank=Path(a.phase_reference_dir);entry=read(bank/'manifest.json')['stages'][a.stage]
+  if entry['phase_sha256']!=sha(a.phase) or entry['exposure_us']!=150.:raise ValueError('Phase reference identity mismatch')
+  expected=bank/entry['roi_file']
+  if sha(expected)!=entry['roi_sha256']:raise ValueError('Phase reference image changed')
+  reference=np.array(Image.open(expected),np.float32)
+  report['reference_pcc']=[compare(frames[i],reference) for i in (1,3)]
+  report['reference_manifest_sha256']=sha(bank/'manifest.json')
+  report['passed']=report['passed'] and min(report['reference_pcc'])>=.95
  write(out/'report.json',report)
  if not report['passed']:raise ValueError('Optical phase transition preflight failed; production prohibited')
  return frames[-1]

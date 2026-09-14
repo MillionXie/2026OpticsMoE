@@ -10,6 +10,7 @@ def main():
     for name in ('project','session','config'):p.add_argument('--'+name,required=True)
     p.add_argument('--resume-completed',action='store_true')
     p.add_argument('--verify-phase-optically',action='store_true')
+    p.add_argument('--phase-reference-dir',type=Path)
     a=p.parse_args();a.task='lgvq';run(a)
 
 

@@ -112,6 +112,7 @@ def run(a):
                      '--phase',str(phase),'--out',str(folder),'--project',a.project,'--session',a.session,
                      '--config',a.config,'--stage',stage]
             if getattr(a,'verify_phase_optically',False):command.append('--verify-phase-optically')
+            if getattr(a,'phase_reference_dir',None):command.extend(['--phase-reference-dir',str(a.phase_reference_dir)])
             si=subprocess.STARTUPINFO();si.dwFlags=0
             with (out/f'{i:02d}_{stage}.log').open('x',encoding='utf-8') as log:
                 child=subprocess.Popen(command,cwd=Path(__file__).resolve().parents[3],stdin=subprocess.DEVNULL,
@@ -153,6 +154,7 @@ def main():
     p.add_argument('--task',choices=['salicon','lgvq'],default='salicon')
     p.add_argument('--resume-completed',action='store_true',help='Audit and skip completed stages in the same immutable session')
     p.add_argument('--verify-phase-optically',action='store_true')
+    p.add_argument('--phase-reference-dir',type=Path)
     run(p.parse_args())
 
 if __name__=='__main__':main()
