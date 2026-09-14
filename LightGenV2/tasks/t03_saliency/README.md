@@ -8,10 +8,16 @@
 `036bc8caedcde4d6dabce276b1a2e4af15d960d88620098b19e1c198849b8bfe`。
 不会随其他训练更新而替换该权重。
 
-入口：[COMMAND_SHS.md](COMMAND_SHS.md)。当前在移植/回放验证，**尚未产生SALICON实测指标**。
+入口：[COMMAND_SHS.md](COMMAND_SHS.md)。移植后5000图仿真CC64仍为`0.8624925081777596`。
+四图三阶段pilot已实采通过：CC64=`0.895756157666349`，同四图仿真=`0.8936875899402579`。
+**pilot仅用于流程诊断，不是全量测试指标**；当前正在准备完整5000图实采。
 只执行 Router、Expert、Global 三次光传播，无语言阶段。冻结Qwen前端缓存保留原精度；
 两层电子/光学融合和原显著性头仍在实验电脑实时执行。全测试5000图，需要15000次采集。
 任务专属输出集中到 `runs/hardware/salicon_08625_shs_20260914/`。
+实验电脑工程：`E:\code\guest\2026OpticsMoE\SALICON_Lab_SHS_8um`；当前配置
+`LAB.20260914.json`，400µs曝光、240ms等待、当天ROI；相位BMP已按实验台配置翻转和反灰度。
+ZIP源码commit=`3dabf3bd33f3a16f3666c03491e4e6bb29a3dc80`，SHA256=
+`7d5facece811f8e34c230965936e9c31bd254adb9f7543d4b734095beb209dfe`。
 
 ## 最新检查点（2026-09-14，本段优先于下方历史启动记录）
 
