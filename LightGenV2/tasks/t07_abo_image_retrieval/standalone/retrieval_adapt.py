@@ -168,6 +168,25 @@ def encode_rows(model, processor, rows, root, device, batch_size, routing=False)
     return torch.cat(vectors), audit
 
 
+def paired_bank_loss(z, labels, bank, count, bank_labels, excluded, *, symmetric=False, supcon_weight=.5):
+    """Average two query directions, retaining the original total loss scale.
+
+    With symmetric=True every live TRAIN view must exclude its own bank entry.
+    The bank remains detached; the second view formerly received only live
+    SupCon gradients, now also receives full-gallery instance supervision.
+    """
+    if symmetric and (excluded is None or excluded.shape != (2 * count, len(bank))):
+        raise ValueError('Symmetric bank loss requires self exclusion for BOTH views')
+    left = retrieval_loss(z, labels, bank, count, bank_labels,
+        excluded[:count] if excluded is not None else None, supcon_weight=supcon_weight)
+    if not symmetric:
+        return left
+    right = retrieval_loss(torch.cat((z[count:], z[:count])),
+        torch.cat((labels[count:], labels[:count])), bank, count, bank_labels,
+        excluded[count:], supcon_weight=supcon_weight)
+    return tuple((a + b) * .5 for a, b in zip(left, right))
+
+
 @torch.no_grad()
 def assessment(model, processor, groups, args, device, output=None, fit=None):
     # Same manifest order as frozen Qwen and retrieval_screen, including ties.
@@ -240,6 +259,8 @@ def run(args):
     payload = torch.load(path, map_location='cpu', weights_only=True)
     validate_continuation(protocol['protocol'], payload, sha256(args.manifest), args.fresh_trainable)
     profile = dict(PROFILES[args.refine_profile])
+    if profile.get('symmetric_bank') and not args.multi_view:
+        raise ValueError('Symmetric TRAIN bank supervision requires --multi-view')
     if args.router_warmup_epochs is not None:
         if args.refine_profile == 'standard':
             raise ValueError('Router warmup override requires a refinement profile')
@@ -323,7 +344,7 @@ def run(args):
         curriculum_note='Continue verified current-protocol best -> external instance pretraining (last state, no TEST selection) -> target fine-tune. Initial best retained; not from-scratch pretraining' if external_fit else None,
         noise=f"Original metadata noise on {profile.get('noise_probability', .25):.0%} joint-training batches; refined profiles keep router noise disabled. Warmup clean. No pixel shift/k filter/8bit STE; clean evaluation",
         augmentation=('Brightness/contrast .95..1.05 only; no geometric augmentation or blur' if profile.get('mild_augmentation') else 'Whole-object .85..1 scale into white canvas, bounded placement, brightness/contrast .85..1.15,15% mild blur; no crop/flip') if regularized else 'Whole-object contain_white; brightness/contrast .9..1.1; no crop/rotation/flip',
-        loss=f"query->detached entire FITTING gallery multi-positive NLL(temp .1) + {profile.get('supcon_weight', .5)} live query/reference SupCon + {profile['positive_weight']} all-positive log-probability loss + existing optical regularization/router auxiliary",
+        loss=f"{'Both TRAIN views' if profile.get('symmetric_bank') else 'Query'}->detached entire FITTING gallery multi-positive NLL(temp .1, mean reduction) + {profile.get('supcon_weight', .5)} live query/reference SupCon + {profile['positive_weight']} all-positive log-probability loss + existing optical regularization/router auxiliary",
         external_loss_override=('External: frozen64 teacher relation KL(temp .1), no SKU NLL/SupCon/all-positive loss; target: original GT retrieval loss, teacher disabled' if external_teacher else None))
     write_json(args.output / 'fitting_manifest.json', dict(parent_manifest_sha256=identity['manifest_sha256'],
         note=fit['note'], train=fit['train'], references=fit['gallery']))
@@ -417,15 +438,17 @@ def run(args):
                     im = ImageEnhance.Brightness(im).enhance(rng.uniform(.9, 1.1))
                     images.append(ImageEnhance.Contrast(im).enhance(rng.uniform(.9, 1.1)))
                 batch_inputs = inputs(processor, images, device)
+                supervised_count = len(rows) if profile.get('symmetric_bank') else args.classes_per_batch
                 def closure():
                   with autocast(device):
                     z = model(batch_inputs)
                     excluded = (torch.tensor([[r['sample_id'] == sid for sid in gallery_ids]
-                        for r in rows[:args.classes_per_batch]], device=device) if args.multi_view else None)
-                    data_loss, hit = retrieval_loss(z, labels.to(device), bank, args.classes_per_batch, bank_labels, excluded,
+                        for r in rows[:supervised_count]], device=device) if args.multi_view else None)
+                    data_loss, hit = paired_bank_loss(z, labels.to(device), bank, args.classes_per_batch, bank_labels, excluded,
+                        symmetric=profile.get('symmetric_bank', False),
                         supcon_weight=profile.get('supcon_weight', .5))
                     route = route_objective(model) if refined else z.new_zeros(())
-                    all_views = all_view_loss(z, labels.to(device), bank, bank_labels, args.classes_per_batch, excluded) if profile['positive_weight'] else z.new_zeros(())
+                    all_views = all_view_loss(z, labels.to(device), bank, bank_labels, supervised_count, excluded) if profile['positive_weight'] else z.new_zeros(())
                     kd = z.new_zeros(())
                     if active_teacher and not warming:
                         tq = torch.stack([active_teacher[r['sample_id']] for r in rows[:args.classes_per_batch]]).to(device)

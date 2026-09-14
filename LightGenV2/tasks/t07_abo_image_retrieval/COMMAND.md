@@ -2623,3 +2623,47 @@ CUDA_VISIBLE_DEVICES=GPU-e8837b85-d55b-8e81-aaa5-ec1ac326932d python -m LightGen
 
 完成后检查`status.json`、`final_report.json`的正常/同权重去光、TRAIN和专家分布；
 若best选回epoch0，则没有获得新训练提升。检查自身PID退出并确认GPU释放，不以历史启动PID当运行状态。
+
+## 84. ABO固定协议冲刺83%：阶段再训练与双向图库监督
+
+2026-09-14：第83节两组已结束。ABO仍81.25%，SHAPE80.2817%。
+下面两组都从原ABO81.25%开始，不采用未改善的last。最多两卡；启动前检查空闲，
+示例GPU4 RTX4090及GPU5 RTX3090。不得抢占别人的GPU0–3。
+源码必须先测试、GitHub同步。正常推理仍原六次传播/光Top2/alpha>=.4001/64维，
+无新增电子参数。仅best/last，不周期保存mask。目标83%不是保证。
+
+先对B运行CUDA冒烟：改为`--epochs 1 --steps 2 --eval-every 1 --bank-refresh-steps 1`，
+output改`$T07/runs/smoke/abo_symmetric_bank_20260914`。确认两方向自排除、有限梯度和
+完整正常/去光评估，然后确认进程退出再启动正式B，不另占第三卡。
+
+```bash
+T07=/DATA/DATA1/guest3/2026OpticsMoE/LightGenV2/tasks/t07_abo_image_retrieval
+R="$T07/runs/simulation"
+export HF_HUB_OFFLINE=1 TRANSFORMERS_OFFLINE=1 OMP_NUM_THREADS=4 MKL_NUM_THREADS=4
+nvidia-smi
+# A：同一已审计外部池，24轮只训光；接着目标10轮联合微调，每轮评估live/EMA。
+CUDA_VISIBLE_DEVICES=GPU-1b963983-7909-af6e-0528-f0f0661ab549 python -m LightGenV2.tasks.t07_abo_image_retrieval.standalone.retrieval_adapt \
+  --data /DATA/DATA1/guest3/2026OpticsMoE/data/abo_similarity10_data \
+  --manifest "$R/abo200_enrolled_protocol_20260913/protocol.json" --assets "$R/standalone_assets_20260910" \
+  --checkpoint "$R/abo200_optical_pretrain_20260914/best.pt" \
+  --expected-checkpoint-sha256 dcf768878abddd91558533757e404d9ee788cffbc5e0f0162a6f07d8a197eb1d \
+  --external-pool "$R/abo_spin_pool50_views12_20260913" --external-root /DATA/DATA1/guest3/2026OpticsMoE/data/abo \
+  --expected-external-sha256 68fd35b6a2308f13e01963eb1233545c44eb07f5caa48ff655dc6fc302b1ed8f \
+  --external-pretrain-epochs 24 --multi-view --refine-profile sku_optical_pretrain \
+  --lr-scale .2 --epochs 10 --steps 100 --eval-every 1 --batch-size 4 --bank-batch-size 16 \
+  --output "$R/abo200_optical_reheat_20260914"
+# B：两个TRAIN视角都作为图库查询，保留mean损失尺度；目标20轮，每轮评估。
+CUDA_VISIBLE_DEVICES=GPU-d53ce4c8-272d-c2fb-dc09-f182d586c4eb python -m LightGenV2.tasks.t07_abo_image_retrieval.standalone.retrieval_adapt \
+  --data /DATA/DATA1/guest3/2026OpticsMoE/data/abo_similarity10_data \
+  --manifest "$R/abo200_enrolled_protocol_20260913/protocol.json" --assets "$R/standalone_assets_20260910" \
+  --checkpoint "$R/abo200_optical_pretrain_20260914/best.pt" \
+  --expected-checkpoint-sha256 dcf768878abddd91558533757e404d9ee788cffbc5e0f0162a6f07d8a197eb1d \
+  --multi-view --refine-profile sku_symmetric_bank --lr-scale .1 \
+  --epochs 20 --steps 100 --eval-every 1 --batch-size 4 --bank-batch-size 16 --bank-refresh-steps 25 \
+  --output "$R/abo200_symmetric_bank_20260914"
+```
+
+A沿用原逐轮图库，不叠加B的双向损失；B与第83节同起点/学习率/刷新间隔，
+但预算20而非15轮、评估频率1而非5轮，所以最终最佳差异不能完全归因于损失。
+`batch_natural_hit_at_1`在B为两方向均值（训练诊断，不是TEST）。
+TEST定期选模按用户约定，须明确不是独立无偏测试。失败保留81.25%，不覆盖原正式权重。

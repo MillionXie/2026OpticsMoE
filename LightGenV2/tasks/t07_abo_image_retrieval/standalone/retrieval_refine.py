@@ -21,6 +21,9 @@ PROFILES = {
 # Keep a matched unexpanded control. A teacher result is not a compact-student
 # result; compression/distillation is a separate, subsequently verified stage.
 PROFILES['sku_capacity_control'] = dict(PROFILES['sku_mild_adamw'], router_lr_multiplier=.1)
+# Training-only: both already encoded views query the detached TRAIN gallery.
+# No extra forward, inference parameters, optical geometry or TEST supervision.
+PROFILES['sku_symmetric_bank'] = dict(PROFILES['sku_capacity_control'], symmetric_bank=True)
 # Isolate training regularizers: identical loss, optimizer, capacity and optics.
 # Do not infer separate augmentation/dropout effects from the old combined SAM run.
 PROFILES['sku_augmentation_only'] = dict(PROFILES['sku_capacity_control'], mild_augmentation=False)
