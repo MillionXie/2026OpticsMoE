@@ -2763,3 +2763,39 @@ TRAIN由94.75%升至95.5625%。没有改善主指标，保留原81.875%正式权
 output改为`abo200_direct_readout_dropout_20260914`，其余800步/lr.0001/anchor1保持一致。
 query与gallery各自随机屏蔽10%输入维度，只作用于TRAIN loss；评估、保存模型和原图推理无dropout。
 它是电子读出训练正则，不是更改CCD/相位，也不能仅由该项宣称物理鲁棒性增强。
+
+### 第86节实际结果与当前82.50%复评命令
+
+所有对照均同一81.875%起点/同一缓存、800步、每50步TEST选模、batch128、seed42。
+源码`3c0ff5455014d7f51c70abf40cbdd806f015829f`，本地/服务器400测试通过。
+改变拟合命令中的output及下表参数即可复现；每个run都有完整execution.json、history.json、best/last。
+
+| run后缀（前缀abo200_direct_readout） | dropout | anchor | lr | 缓存最高Hit@1 | 原图正常/去光 |
+|---|---:|---:|---:|---:|---|
+| _20260914 |0|1|.0001|81.875%|未晋升、不重复复评|
+| _dropout_20260914 |.1|1|.0001|82.25%|82.25%/76.25%|
+| _dropout20_20260914 |.2|1|.0001|81.875%|未晋升|
+| _dropout_weak_20260914 |.1|.1|.0001|82.375%|**82.50%/76.25%**|
+| _dropout_lr2_20260914 |.1|.1|.0002|82.25%|未超过现有最佳、不复评|
+
+所有CPU拟合均已完成退出；只有一组完整光学再加热训练仍在GPU4。
+双向bank旧组完成10轮后因连续9轮未改善主动停止，GPU5释放，记录在该run的early_stop_report.json，
+不伪称完整20轮训练，不覆盖原训练器的failed_or_interrupted状态。
+
+当前best是weak组第450步：SHA `b1e205c70505de9df77ea52bed9c962bebacd3171e9f7b55b0569ec25f9fafd6`。
+自动取SHA并做完整原图复评（output已存在，重现须使用新的空output目录）：
+
+```bash
+RUN="$R/abo200_direct_readout_dropout_weak_20260914"
+WEAK_SHA=$(python -c 'import json,sys,pathlib,hashlib; p=pathlib.Path(sys.argv[1]); s=json.loads((p/"final_report.json").read_text())["best_sha256"]; assert len(s)==64 and hashlib.sha256((p/"best.pt").read_bytes()).hexdigest()==s; print(s)' "$RUN")
+CUDA_VISIBLE_DEVICES=GPU-1b963983-7909-af6e-0528-f0f0661ab549 OMP_NUM_THREADS=4 MKL_NUM_THREADS=4 HF_HUB_OFFLINE=1 TRANSFORMERS_OFFLINE=1 python -m LightGenV2.tasks.t07_abo_image_retrieval.standalone.retrieval_screen optical \
+  --data /DATA/DATA1/guest3/2026OpticsMoE/data/abo_similarity10_data \
+  --manifest "$R/abo200_enrolled_protocol_20260913/protocol.json" --assets "$R/standalone_assets_20260910" \
+  --checkpoint "$RUN/best.pt" --expected-checkpoint-sha256 "$WEAK_SHA" \
+  --batch-size 4 --cache-readout-input --output "$RUN/verification"
+```
+
+完整报告SHA `eb0901a854f6ac9bddefcfeae00ea4f15a52d94a1f7046c645173d191ee0cafc`，
+weight_train_audit.json记录只有head weight/bias改变、原图TRAIN94.375%(1510/1600，自图排除)、
+alpha与gallery/query分别合格的Top2路由；原图正常660/800、去光610/800，尚差4张达到83%。
+400/450是优化step不是原图epoch。全部是TEST择优的单seed结果，不能宣称独立验证或统计显著。
