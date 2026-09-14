@@ -57,7 +57,7 @@ wait_lane() {
   done
   echo "running_on_physical_gpu=$gpu" >"$state_file"
   if CUDA_VISIBLE_DEVICES="$gpu" P14_PHYSICAL_GPU="$gpu" \
-      "$SCRIPT_PATH" lane "$lane" "$lanes"; then
+      bash "$SCRIPT_PATH" lane "$lane" "$lanes"; then
     echo "finished_physical_gpu=$gpu" >"$state_file"
   else
     local code="$?"
@@ -96,14 +96,14 @@ launch() {
       P14_PHYSICAL_GPU="$gpu" \
       P14_REPO_ROOT="$REPO_ROOT" P14_PYTHON_BIN="$PYTHON_BIN" \
       P14_CONFIG="$CONFIG" P14_OUTPUT_ROOT="$OUTPUT_ROOT" P14_SEED="$SEED" \
-      "$SCRIPT_PATH" lane "$lane" "${#gpus[@]}" \
+      bash "$SCRIPT_PATH" lane "$lane" "${#gpus[@]}" \
       >"$LOG_ROOT/lane_${lane}.log" 2>&1 &
     echo "$!" >"$LOG_ROOT/lane_${lane}.pid"
     echo "launched lane=$lane physical_gpu=$gpu pid=$!"
   done
   nohup env P14_REPO_ROOT="$REPO_ROOT" P14_PYTHON_BIN="$PYTHON_BIN" \
     P14_CONFIG="$CONFIG" P14_OUTPUT_ROOT="$OUTPUT_ROOT" P14_SEED="$SEED" \
-    "$SCRIPT_PATH" monitor >"$LOG_ROOT/monitor.log" 2>&1 &
+    bash "$SCRIPT_PATH" monitor >"$LOG_ROOT/monitor.log" 2>&1 &
   echo "$!" >"$LOG_ROOT/monitor.pid"
 }
 
@@ -131,14 +131,14 @@ launch_deferred() {
     gpu="${gpus[$lane]}"
     nohup env P14_REPO_ROOT="$REPO_ROOT" P14_PYTHON_BIN="$PYTHON_BIN" \
       P14_CONFIG="$CONFIG" P14_OUTPUT_ROOT="$OUTPUT_ROOT" P14_SEED="$SEED" \
-      "$SCRIPT_PATH" wait-lane "$lane" "${#gpus[@]}" "$gpu" \
+      bash "$SCRIPT_PATH" wait-lane "$lane" "${#gpus[@]}" "$gpu" \
       >"$LOG_ROOT/lane_${lane}.log" 2>&1 &
     echo "$!" >"$LOG_ROOT/lane_${lane}.pid"
     echo "supervising lane=$lane physical_gpu=$gpu pid=$!"
   done
   nohup env P14_REPO_ROOT="$REPO_ROOT" P14_PYTHON_BIN="$PYTHON_BIN" \
     P14_CONFIG="$CONFIG" P14_OUTPUT_ROOT="$OUTPUT_ROOT" P14_SEED="$SEED" \
-    "$SCRIPT_PATH" monitor >"$LOG_ROOT/monitor.log" 2>&1 &
+    bash "$SCRIPT_PATH" monitor >"$LOG_ROOT/monitor.log" 2>&1 &
   echo "$!" >"$LOG_ROOT/monitor.pid"
 }
 

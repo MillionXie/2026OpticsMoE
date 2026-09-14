@@ -51,3 +51,8 @@ completed VTAB result.
   the initially selected cards between data preparation and launch. Each
   supervisor waits without CUDA until its assigned card has no compute PID,
   then runs its two-task lane and exits; failed lanes receive an explicit marker.
+- The first deferred invocation created no CUDA process because the tracked
+  shell file has mode `100644` and its background self-invocation therefore
+  returned `Permission denied`. All self-invocations now call `bash` explicitly,
+  so correctness no longer depends on the executable bit. Stopped PID files are
+  checked before the clean relaunch.
