@@ -44,6 +44,8 @@ def run(a):
                 if child.poll() is not None:raise RuntimeError('Phase owner exited unexpectedly')
                 try:state=read(folder/'report.json')
                 except (FileNotFoundError,ValueError):state={}
+                report['progress']=state.get('capture_progress')
+                report['remote_action']=state.get('remote_action');save()
                 if state.get('status')=='failed_holding_phase':raise RuntimeError(str(state.get('error')))
                 if state.get('status') in ('next_inputs_ready_wait_for_user','evaluation_complete'):break
                 if time.monotonic()-started>3900:raise TimeoutError('Stage exceeded supervision limit; phase retained')

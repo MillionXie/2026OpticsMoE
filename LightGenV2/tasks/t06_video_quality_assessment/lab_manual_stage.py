@@ -86,13 +86,18 @@ def run(a):
                                  +"$xml=$xml.Replace('<UserId>PS</UserId>',('<UserId>'+$sid+'</UserId>')); "
                                  +f"Register-ScheduledTask -TaskName '{name}' -Xml $xml | Out-Null; Start-ScheduledTask -TaskName '{name}'")
                             report.update(status='capturing',remote_log=stem+'.log',remote_job_status=stem+'.json');save()
-                            started=time.monotonic()
+                            started=time.monotonic();last_progress=0
                             try:
                                 while True:
                                     if not release.exists():heartbeat()
                                     try:
                                         with r.sftp.open(stem+'.json','rb') as f:status=json.loads(f.read().decode('utf-8'))
                                     except (FileNotFoundError,json.JSONDecodeError):status={}
+                                    if time.monotonic()-last_progress>10:
+                                        try:
+                                            with r.sftp.open(a.project+'/sessions/'+a.session+'/status.json','rb') as f:report['capture_progress']=json.loads(f.read().decode('utf-8'))
+                                        except (FileNotFoundError,json.JSONDecodeError):pass
+                                        report['remote_action']=status.get('action');save();last_progress=time.monotonic()
                                     if status.get('state') in ('done','failed'):
                                         report['remote_result']=status
                                         if status['state']=='failed':raise RuntimeError(str(status))
