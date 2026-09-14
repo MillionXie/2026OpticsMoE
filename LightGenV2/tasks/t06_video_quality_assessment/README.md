@@ -2,13 +2,27 @@
 
 ## 当前SHS实验台迁移（2026-09-14）
 
-新入口 `lab_bundle.py` / `lab_bench.py` **仅绑定** Temporal `multivideo16x4_rank_s163`
+打包入口 `build_lab_package.py --bench shs`、运行入口 `lab_bench.py` **仅绑定** Temporal `multivideo16x4_rank_s163`
 （SRCC 0.8044、16视频×4帧）与 Spatial `spatial_readout_1m_srcc067`（SRCC 0.6710、
 单视频4帧），均校验正式checkpoint SHA256。它直接复用模型原始forward的六次传播边界，
 避免旧hardware_contract遗漏最新电子残差或标量门控。构建时检查原模型与六层仿真CCD回填
 一致性；全558条缓存交付还必须通过目标SRCC复评。未通过不得声称已迁移完成。
 硬件操作与两台电脑分工见 [COMMAND_SHS.md](hardware/COMMAND_SHS.md)。严格逐层，只有用户
 通知后才换相位并开始下一层capture，不自动连跑六层。ABO数据与会话不受影响。
+
+本轮两个完整558条test离线包位于任务的 `releases/20260914_shs_temporal08044.zip`
+和 `releases/20260914_shs_spatial06710.zip`。固定权重复评分别为 SRCC
+**0.8043868643** 和 **0.6710968960**；空间历史参考为 **0.6710079009**，两次差约
+0.000089，不能把复评值假写成历史值。权重SHA与原候选一致，六层浮点CCD回填一致性检查
+通过；这些是仿真检查，不代表实测精度或8μm重采样后的物理精度。
+
+师弟电脑部署目标为 `E:\code\guest\2026OpticsMoE\LGVQ_Temporal_Lab_SHS_8um`
+和同级 `LGVQ_Spatial_Lab_SHS_8um`，复用同级ABO工程已有驱动和GPU环境。部署是否完成
+以本地 `runs/hardware/shs_20260914/<temporal|spatial>/deployment.json` 为准；相位BMP
+复制在该目录的 `phase/`。每项任务初始 `pilot01` 只准备4幅场（时间64视频、空间4视频）；
+完整时间35幅场×6层=210次采集，完整空间558幅场×6层=3348次采集，不含补拍。
+当前包是固定权重实测推理/评估包，只带test缓存，不宣称含完整微调训练数据。
+400μs曝光、240ms等待继承自当前ABO配置，仍须对LGVQ各层检查暗场/饱和；部署不启动硬件。
 
 > 2026-09-10 架构审计：`spatial_single_video4_srcc06665` 含冻结预训练
 > ResNet18 前端，现已降级为“非合规性能上界”，不能作为正式方案引用或部署。

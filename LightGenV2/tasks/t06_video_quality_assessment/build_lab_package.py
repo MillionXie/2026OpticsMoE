@@ -16,7 +16,18 @@ def main() -> int:
     parser.add_argument("--profile", default=CURRENT_PROFILE)
     parser.add_argument("--checkpoint", default=None)
     parser.add_argument("--output", default=None)
+    parser.add_argument("--bench", choices=("legacy", "shs"), default="legacy")
+    parser.add_argument("--target", choices=("spatial", "temporal"))
+    parser.add_argument("--source-root", default=str(REPO_ROOT))
+    parser.add_argument("--device", default="cuda")
+    parser.add_argument("--max-fields", type=int, default=0)
     args = parser.parse_args()
+    if args.bench == "shs":
+        if args.target is None or args.output is None:
+            parser.error("SHS requires --target and --output (new directory; ZIP is adjacent)")
+        from .lab_bundle import build
+        build(args)
+        return 0
     profile = load_profile(args.profile)
     backend = profile["backend"]
     artifact = profile["artifacts"]

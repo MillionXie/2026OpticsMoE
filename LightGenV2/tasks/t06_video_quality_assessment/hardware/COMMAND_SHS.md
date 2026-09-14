@@ -1,5 +1,14 @@
 # LGVQ 当前实验台：逐层操作
 
+维护者在已同步Git commit的训练服务器构建：
+
+```bash
+python -m LightGenV2.tasks.t06_video_quality_assessment.build_lab_package \
+  --bench shs --target temporal --source-root /path/to/source_repo \
+  --output /path/to/T06/releases/20260914_shs_temporal08044
+# Spatial把target改为spatial，输出另一个目录；默认包含558条完整test。
+```
+
 此包只用于其 `release.json` 指定的一个任务，禁止互换权重或CCD。
 Temporal固定SRCC参考0.8044：16个视频×4帧，一幅场输出16个独立时间MOS；Spatial固定参考0.6710：一个视频×4帧，一幅场输出一个空间MOS。两者各有6张相位，不能用单视频36帧模型替代Temporal。
 
