@@ -90,7 +90,7 @@ COCO train2017含4376张当前SALICON测试图，必须先排除；新数据预�
 [早期起点与论文依据的轻量电子残差试验](EARLY_LIGHTWEIGHT_RESIDUAL.md)：包括ConvNeXt/GRN借鉴范围、
 五组对照、权重迁移、参数预算及完整命令；不改变本页baseline的历史含义。
 
-[Baseline方法与复现说明](BASELINE_METHODS.md)：冻结Qwen与同规格读出头的训练、数据和评价步骤（2026-09-09）。
+[Baseline 复现说明](BASELINE_METHODS.md)：按最新表格指标核对的论文式技术正文（2026-09-15）。
 
 ## 口径（先读）
 
