@@ -126,7 +126,7 @@ smoke() {
   gpu_is_idle "$gpu" || { echo "GPU $gpu is not idle" >&2; exit 3; }
   local smoke_root
   smoke_root="$(mktemp -d /tmp/p14_vtab_smoke.XXXXXX)"
-  trap 'rm -rf -- "$smoke_root"' EXIT
+  trap "rm -rf -- '$smoke_root'" EXIT
   CUDA_VISIBLE_DEVICES="$gpu" P14_PHYSICAL_GPU="$gpu" "$PYTHON_BIN" -m "$MODULE" \
     --config "$CONFIG" --task cifar100 --method noft --seed 2026 \
     --output-root "$smoke_root" --smoke

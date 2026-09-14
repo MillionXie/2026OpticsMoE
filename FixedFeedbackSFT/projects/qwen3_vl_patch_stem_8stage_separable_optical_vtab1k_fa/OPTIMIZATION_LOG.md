@@ -30,3 +30,19 @@ Pending entries in this file must record the archive SHA-256, local/server test
 results, launch commit, physical GPU ids, process ids, completion counts and the
 first six-task result table. Intermediate accuracy must not be reported as a
 completed VTAB result.
+
+## 2026-09-14: server qualification
+
+- Git implementation commit: `a909bbb6f43a55983e984412a2786fcfcef18a73`.
+- Server worktree: `/DATA/DATA1/guest3/2026OpticsMoE/.worktrees/fa_vtab_20260914`.
+- Extracted 152,219 files for the six selected tasks. Server and local archive
+  SHA-256 both matched the pinned digest above.
+- Server Python tests: `4 passed`; shell syntax and public `experiments.*` CLI
+  import passed.
+- CUDA smoke on physical GPU 5 completed one NoFT epoch and one BP epoch over
+  eight samples. BP phase mean absolute displacement was `0.00123 rad`, proving
+  that the optical phase path received an update.
+- The first smoke exposed an `EXIT` trap referencing a function-local temporary
+  path under `set -u`. Training itself completed, but the cleanup produced exit
+  code 1. The trap now captures the resolved `mktemp` path at registration time;
+  a clean exit is required before formal launch.
