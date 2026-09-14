@@ -1,6 +1,6 @@
 import unittest
 import numpy as np
-from .adapt_measured_readout import split_indices, metrics, replay_audit
+from .adapt_measured_readout import split_indices, metrics, replay_audit, trainable_readout_names
 
 
 class AdaptationTests(unittest.TestCase):
@@ -25,6 +25,11 @@ class AdaptationTests(unittest.TestCase):
         self.assertTrue(replay_audit([1.001,2.001,3.001],[1,2,3],[1,2,3])['passed'])
         self.assertFalse(replay_audit([1.1,2.1,3.1],[1,2,3],[1,2,3])['passed'])
         self.assertFalse(replay_audit([1.002,1.001,3],[1.001,1.002,3],[1,2,3])['passed'])
+
+    def test_terminal_scope(self):
+        expected={'output.4.weight','output.4.bias','compact_output.4.weight','compact_output.4.bias'}
+        self.assertEqual(trainable_readout_names(expected|{'token_norm.weight'},'terminal'),expected)
+        with self.assertRaises(ValueError):trainable_readout_names({'unexpected.weight'},'terminal')
 
 
 if __name__=='__main__':unittest.main()

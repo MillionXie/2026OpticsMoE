@@ -71,6 +71,14 @@ def replay_audit(prediction, reference, targets):
                 srcc_delta=srcc_delta,rmse_delta=rmse_delta,current=current,original=original)
 
 
+def trainable_readout_names(names,scope):
+    if scope=='head':return set(names)
+    if scope!='terminal':raise ValueError('Unknown training scope')
+    allowed={'output.4.weight','output.4.bias','compact_output.4.weight','compact_output.4.bias'}
+    if not allowed.issubset(set(names)):raise ValueError('Original terminal readout structure changed')
+    return allowed
+
+
 def extract(a):
     import torch
     from .lab_bench import verified_ccd, identity
@@ -183,12 +191,15 @@ def train(a):
               holdout=[data['video_ids'][i] for i in hold_idx],selection='train_srcc' if fraction==1 else 'holdout_srcc',
               untouched_test=False,description='same-data adaptation' if fraction==1 else 'fixed holdout, used for checkpoint selection'))
         head=copy.deepcopy(model.readout).to(a.device).requires_grad_(True)
+        scope=getattr(a,'scope','head')
+        allowed=trainable_readout_names(dict(head.named_parameters()),scope)
+        for name,param in head.named_parameters():param.requires_grad_(name in allowed)
         initial={k:v.detach().cpu().clone() for k,v in head.state_dict().items()}
         anchor_strength=float(getattr(a,'anchor',0.))
-        anchor={k:v.detach().clone() for k,v in head.named_parameters()}
+        anchor={k:v.detach().clone() for k,v in head.named_parameters() if v.requires_grad}
         ema_decay=float(getattr(a,'ema',0.))
         ema=copy.deepcopy(head).requires_grad_(False).eval() if ema_decay else None
-        optimizer=torch.optim.AdamW(head.parameters(),lr=a.lr,weight_decay=1e-4)
+        optimizer=torch.optim.AdamW([v for v in head.parameters() if v.requires_grad],lr=a.lr,weight_decay=1e-4)
         scheduler=torch.optim.lr_scheduler.CosineAnnealingLR(optimizer,a.epochs,eta_min=a.lr*.1)
         def inputs(idx):return tuple(data[k][idx].to(a.device) for k in ('vision','language','mask'))
         def evaluate(candidate=None):
@@ -218,7 +229,7 @@ def train(a):
                 correlation=1-(pc*yc).sum()/(pc.square().sum().sqrt()*yc.square().sum().sqrt()).clamp_min(1e-6)
                 loss=reg+.2*rank+.1*correlation
                 if anchor_strength:
-                    loss=loss+anchor_strength*sum((v-anchor[k]).square().sum() for k,v in head.named_parameters())
+                    loss=loss+anchor_strength*sum((v-anchor[k]).square().sum() for k,v in head.named_parameters() if v.requires_grad)
                 if not torch.isfinite(loss): raise ValueError('Nonfinite loss')
                 optimizer.zero_grad(set_to_none=True);loss.backward()
                 torch.nn.utils.clip_grad_norm_(head.parameters(),1.);optimizer.step();losses.append(float(loss.detach()))
@@ -240,13 +251,15 @@ def train(a):
             if epoch==1 or epoch%10==0: print(tag,epoch,'select SRCC',m['selection']['srcc'],'best',best_metrics['selection']['srcc'],flush=True)
         last_state={k:v.detach().cpu().clone() for k,v in head.state_dict().items()}
         for label,weights,ep in [('best',best_state,best_epoch),('last',last_state,a.epochs)]:
+            if any(not torch.equal(v,initial[k]) for k,v in weights.items() if k not in allowed):
+                raise ValueError('Frozen readout tensor changed')
             merged=dict(source);merged['state_dict']=dict(source['state_dict'])
             merged['state_dict'].update({'readout.'+k:v for k,v in weights.items()})
             if frozen_digest(merged['state_dict'])!=source_frozen:raise ValueError('Frozen parameters changed')
             merged['hardware_adaptation']=dict(arm=tag,epoch=ep,variant=best_variant if label=='best' else 'raw',source_checkpoint_sha256=sha(a.checkpoint),cache_sha256=sha(a.cache),selection_uses_holdout=fraction<1,independent_test=False,commit=commit)
             torch.save(merged,folder/(label+'_checkpoint.pt'))
         changed=[k for k,v in best_state.items() if not torch.equal(v,initial[k])]
-        result=dict(arm=tag,best_epoch=best_epoch,best_variant=best_variant,before=base_metrics,after=best_metrics,changed_readout_tensors=changed,
+        result=dict(arm=tag,best_epoch=best_epoch,best_variant=best_variant,scope=scope,trainable_names=sorted(allowed),trainable_parameters=sum(v.numel() for v in head.parameters() if v.requires_grad),before=base_metrics,after=best_metrics,changed_readout_tensors=changed,
                     frozen_parameters_unchanged=True,frozen_sha256=source_frozen,
                     best_checkpoint_sha256=sha(folder/'best_checkpoint.pt'),independent_test=False,
                     rows=[dict(video=v,target=float(targets[i]),before=float(baseline[i]),after=float(best_pred[i]),partition='train' if i in train_idx else 'holdout') for i,v in enumerate(data['video_ids'])])
@@ -265,6 +278,7 @@ def main():
     t.add_argument('--train-fraction',type=float,choices=[.8,1.],default=None)
     t.add_argument('--ema',type=float,default=0.,help='EMA parameter decay per optimizer step; zero disables')
     t.add_argument('--anchor',type=float,default=0.,help='L2-SP coefficient on sum squared deviation from original readout')
+    t.add_argument('--scope',choices=['head','terminal'],default='head')
     for p in (e,t):p.add_argument('--output',required=True);p.add_argument('--device',default='cuda')
     q=sub.add_parser('queue',help='Wait for the verified measurement archive, extract, and train both arms')
     q.add_argument('--archive',required=True);q.add_argument('--archive-sha256',required=True)
