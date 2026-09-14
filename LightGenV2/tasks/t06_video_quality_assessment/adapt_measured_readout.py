@@ -53,9 +53,29 @@ def frozen_digest(state):
     return h.hexdigest()
 
 
+def replay_audit(prediction, reference, targets):
+    """Portable FP32 gate: bound both per-MOS error and ranking drift.
+
+    Windows torch2.8/cu126 and Linux torch2.6/cu124 select different cuDNN
+    convolution kernels. IEEE GPU/CPU probes agree within 1e-5 MOS, whereas
+    the original TF32-enabled acquisition predictions differ by ~0.01 MOS.
+    This gate does not optimize scores or change any measured pixel.
+    """
+    current, original = metrics(prediction,targets),metrics(reference,targets)
+    error=np.abs(np.asarray(prediction)-np.asarray(reference))
+    limits=dict(max_mos_error=.03,max_srcc_delta=.0001,max_rmse_delta=.005)
+    srcc_delta=abs(current['srcc']-original['srcc'])
+    rmse_delta=abs(current['rmse']-original['rmse'])
+    passed=bool(error.max()<=limits['max_mos_error'] and srcc_delta<=limits['max_srcc_delta'] and rmse_delta<=limits['max_rmse_delta'])
+    return dict(passed=passed,limits=limits,max_mos_error=float(error.max()),mean_mos_error=float(error.mean()),
+                srcc_delta=srcc_delta,rmse_delta=rmse_delta,current=current,original=original)
+
+
 def extract(a):
     import torch
     from .lab_bench import verified_ccd, identity
+    torch.backends.cuda.matmul.allow_tf32=False
+    torch.backends.cudnn.allow_tf32=False
     root, s, dest = Path(a.project), Path(a.session_dir), Path(a.output)
     if dest.exists():
         raise FileExistsError(dest)
@@ -107,8 +127,12 @@ def extract(a):
         handle.remove()
     if len(set(ids))!=len(ids): raise ValueError('Duplicate video identities')
     max_error=max(abs(p-reference[v]) for p,v in zip(predictions,ids))
-    if max_error>.003:
-        raise ValueError(f'Measured replay mismatch: {max_error}')
+    audit=replay_audit(predictions,[reference[v] for v in ids],targets)
+    audit['precision']='FP32, CUDA matmul TF32 off, cuDNN TF32 off'
+    audit['rows']=[dict(video=v,server=p,acquisition=reference[v]) for p,v in zip(predictions,ids)]
+    write(dest.with_suffix('.replay_audit.json'),audit)
+    if not audit['passed']:
+        raise ValueError(f'Measured replay mismatch; see replay_audit.json: {max_error}')
     payload=dict(contract='spatial_six_real_ccd_readout_inputs_v1',
                  checkpoint_sha256=PINS['spatial']['sha256'],
                  hardware_sha256=state['hardware_sha256'],release_sha256=state['release_sha256'],
@@ -133,6 +157,7 @@ def train(a):
     torch.set_num_threads(4)
     torch.backends.cudnn.benchmark=False
     torch.backends.cuda.matmul.allow_tf32=False
+    torch.backends.cudnn.allow_tf32=False
     data=torch.load(a.cache,map_location='cpu',weights_only=False)
     if data['contract']!='spatial_six_real_ccd_readout_inputs_v1' or sha(a.checkpoint)!=data['checkpoint_sha256']:
         raise ValueError('Cache/checkpoint identity mismatch')

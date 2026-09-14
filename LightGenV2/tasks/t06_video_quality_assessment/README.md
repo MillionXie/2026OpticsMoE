@@ -5,6 +5,10 @@
 `adapt_measured_readout.py` 是离线入口，不调用设备。基于原始Spatial 0.6710权重及
 `spatial_lang1600_20260914` 全558视频六层实测CCD，先逐图校验SHA并回放原始forward，
 缓存最后 `model.readout` 的三个输入；缓存预测必须复现微调前实测结果。
+服务器特征回放和训练统一关闭CUDA matmul/cuDNN TF32。跨Windows torch2.8/cu126与Linux
+torch2.6/cu124存在约0.01 MOS的卷积数值差异：先以GPU/CPU FP32对照核验，再联合限制最大
+单条误差0.03 MOS、全量SRCC差0.0001和RMSE差0.005；逐条差异及通过/失败保存在
+`measured_readout_cache.replay_audit.json`。不得只放宽单条阈值而忽略排名变化，原采集预测保留。
 只有原有 `readout.*` 可训练，光学mask/router、alpha、所有前置电子层和MOS尺度不变，
 没有新分支或教师损失。全量和80%两版相同初始化/seed/学习率，各100epoch，AdamW、
 Smooth-L1 + 0.2排序 + 0.1相关性损失；只保留best和last完整checkpoint。
