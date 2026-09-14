@@ -3,7 +3,8 @@ import argparse,os,sys,time,subprocess
 from pathlib import Path
 
 def main():
- p=argparse.ArgumentParser(description=__doc__);p.add_argument('--bmp',type=Path,required=True);p.add_argument('--bench-root',type=Path,required=True);p.add_argument('--link-config',type=Path,required=True);a=p.parse_args()
+ p=argparse.ArgumentParser(description=__doc__);p.add_argument('--bmp',type=Path,required=True);p.add_argument('--bench-root',type=Path,required=True);p.add_argument('--link-config',type=Path,required=True);p.add_argument('--release-file',type=Path);a=p.parse_args()
+ if a.release_file and a.release_file.exists():raise ValueError('Release file already exists')
  sys.path.insert(0,str(a.bench_root.resolve()))
  from guarded_workflow import read
  from phase_hdmi import PhaseHDMI,load_native
@@ -17,7 +18,7 @@ def main():
    pump=message_pump()
    with PhaseHDMI(c['phase_sdk'],c['phase_lut'],c.get('phase_settle_s',1),pixel_format=c.get('phase_pixel_format','rgba')) as sdk:
     receipt=sdk.show(a.bmp,pump=pump);print('HOLDING',a.bmp,'SHA256',receipt['phase_sha256'],'PID',os.getpid(),flush=True);last=time.monotonic()
-    while True:
+    while not (a.release_file and a.release_file.exists()):
      pump()
      if time.monotonic()-last>=1:sdk.repeat();last=time.monotonic()
      time.sleep(.01)
