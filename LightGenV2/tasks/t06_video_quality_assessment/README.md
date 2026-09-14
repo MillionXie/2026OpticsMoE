@@ -38,6 +38,14 @@ python -m LightGenV2.tasks.t06_video_quality_assessment.adapt_measured_readout t
 SRCC 0.6177597→0.6271390（best epoch1），之后过拟合；该权重全558条SRCC 0.6330451。
 原始未适配结果不变，详见[实测读出头适配报告](reports/reproduction/SPATIAL_SHS_READOUT_ADAPT_20260914.md)。
 
+后续仅训练手段优化入口为 `tune_measured_readout.py`，固定配置
+`configs/spatial_hardware_readout_tuning.json`：三组低学习率/L2-SP原权重约束/EMA，单GPU顺序执行，
+每组100epoch。保持原446/112视频身份不变，启动前逐ID核对旧`split.json`；不训练全量版，不引入新网络。
+EMA只作为一个候选参数状态，推理不增加分支；以112条留出SRCC选epoch和试验，不能将多次选择后的数值
+当独立test。每组只保留best/last，原先best也纳入最终候选比较，不强行替换为更差的新权重。
+调用时提供 `--cache --checkpoint --reference-split --reference-result --output`，分别对应上一轮特征缓存、
+原始固定权重、上一轮80%版split/results、任务下新run目录。只在`runs/hardware/`保存新产物。
+
 ## 当前SHS实验台迁移（2026-09-14）
 
 打包入口 `build_lab_package.py --bench shs`、运行入口 `lab_bench.py` **仅绑定** Temporal `multivideo16x4_rank_s163`

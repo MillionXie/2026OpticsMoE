@@ -172,7 +172,8 @@ def train(a):
           mean=data['target_mean'],std=data['target_std'],seed=a.seed))
     targets=data['targets']; n=len(targets); all_idx=np.arange(n)
     results={}
-    for fraction in (1.,.8):
+    fractions=(a.train_fraction,) if getattr(a,'train_fraction',None) is not None else (1.,.8)
+    for fraction in fractions:
         random.seed(a.seed);np.random.seed(a.seed);torch.manual_seed(a.seed)
         if torch.cuda.is_available():torch.cuda.manual_seed_all(a.seed)
         tag='full100' if fraction==1 else 'split80';folder=out/tag;folder.mkdir()
@@ -183,14 +184,19 @@ def train(a):
               untouched_test=False,description='same-data adaptation' if fraction==1 else 'fixed holdout, used for checkpoint selection'))
         head=copy.deepcopy(model.readout).to(a.device).requires_grad_(True)
         initial={k:v.detach().cpu().clone() for k,v in head.state_dict().items()}
+        anchor_strength=float(getattr(a,'anchor',0.))
+        anchor={k:v.detach().clone() for k,v in head.named_parameters()}
+        ema_decay=float(getattr(a,'ema',0.))
+        ema=copy.deepcopy(head).requires_grad_(False).eval() if ema_decay else None
         optimizer=torch.optim.AdamW(head.parameters(),lr=a.lr,weight_decay=1e-4)
         scheduler=torch.optim.lr_scheduler.CosineAnnealingLR(optimizer,a.epochs,eta_min=a.lr*.1)
         def inputs(idx):return tuple(data[k][idx].to(a.device) for k in ('vision','language','mask'))
-        def evaluate():
-            head.eval();scores=[]
+        def evaluate(candidate=None):
+            candidate=head if candidate is None else candidate
+            candidate.eval();scores=[]
             with torch.no_grad():
                 for start in range(0,n,a.batch_size):
-                    scores.append((head(*inputs(all_idx[start:start+a.batch_size]))*data['target_std']+data['target_mean']).cpu())
+                    scores.append((candidate(*inputs(all_idx[start:start+a.batch_size]))*data['target_std']+data['target_mean']).cpu())
             p=torch.cat(scores).numpy()
             return p,dict(all=metrics(p,targets.numpy()),train=metrics(p[train_idx],targets.numpy()[train_idx]),
                           selection=metrics(p[select_idx],targets.numpy()[select_idx]))
@@ -198,7 +204,7 @@ def train(a):
         if np.max(np.abs(baseline-data['original_prediction'].numpy()))>.005:
             raise ValueError('Cached head replay differs from full measured forward')
         write(folder/'before.json',base_metrics)
-        best_metrics=base_metrics;best_epoch=0;best_state=copy.deepcopy(initial);best_pred=baseline.copy()
+        best_metrics=base_metrics;best_epoch=0;best_state=copy.deepcopy(initial);best_pred=baseline.copy();best_variant='initial'
         history=[]
         for epoch in range(1,a.epochs+1):
             head.train();order=np.random.permutation(train_idx);losses=[]
@@ -211,13 +217,24 @@ def train(a):
                 pc=p-p.mean();yc=y-y.mean()
                 correlation=1-(pc*yc).sum()/(pc.square().sum().sqrt()*yc.square().sum().sqrt()).clamp_min(1e-6)
                 loss=reg+.2*rank+.1*correlation
+                if anchor_strength:
+                    loss=loss+anchor_strength*sum((v-anchor[k]).square().sum() for k,v in head.named_parameters())
                 if not torch.isfinite(loss): raise ValueError('Nonfinite loss')
                 optimizer.zero_grad(set_to_none=True);loss.backward()
                 torch.nn.utils.clip_grad_norm_(head.parameters(),1.);optimizer.step();losses.append(float(loss.detach()))
-            scheduler.step();pred,m=evaluate()
-            if (m['selection']['srcc'],-m['selection']['rmse'])>(best_metrics['selection']['srcc'],-best_metrics['selection']['rmse']):
-                best_epoch=epoch;best_metrics=m;best_state={k:v.detach().cpu().clone() for k,v in head.state_dict().items()};best_pred=pred.copy()
-            row=dict(epoch=epoch,loss=float(np.mean(losses)),metrics=m,best_epoch=best_epoch)
+                if ema is not None:
+                    with torch.no_grad():
+                        for ep,hp in zip(ema.parameters(),head.parameters()):ep.lerp_(hp,1-ema_decay)
+                        for eb,hb in zip(ema.buffers(),head.buffers()):eb.copy_(hb)
+            scheduler.step();pred,m=evaluate();variants={'raw':m}
+            candidates=[('raw',head,pred,m)]
+            if ema is not None:
+                ema_pred,ema_metrics=evaluate(ema);variants['ema']=ema_metrics
+                candidates.append(('ema',ema,ema_pred,ema_metrics))
+            for variant,candidate,cp,cm in candidates:
+                if (cm['selection']['srcc'],-cm['selection']['rmse'])>(best_metrics['selection']['srcc'],-best_metrics['selection']['rmse']):
+                    best_epoch=epoch;best_metrics=cm;best_state={k:v.detach().cpu().clone() for k,v in candidate.state_dict().items()};best_pred=cp.copy();best_variant=variant
+            row=dict(epoch=epoch,loss=float(np.mean(losses)),metrics=m,variants=variants,best_epoch=best_epoch,best_variant=best_variant)
             history.append(row);write(folder/'history.json',history)
             write(out/'status.json',dict(state='training',arm=tag,epoch=epoch,epochs=a.epochs,best_epoch=best_epoch,best_metrics=best_metrics,updated=time.strftime('%Y-%m-%dT%H:%M:%S')))
             if epoch==1 or epoch%10==0: print(tag,epoch,'select SRCC',m['selection']['srcc'],'best',best_metrics['selection']['srcc'],flush=True)
@@ -226,10 +243,10 @@ def train(a):
             merged=dict(source);merged['state_dict']=dict(source['state_dict'])
             merged['state_dict'].update({'readout.'+k:v for k,v in weights.items()})
             if frozen_digest(merged['state_dict'])!=source_frozen:raise ValueError('Frozen parameters changed')
-            merged['hardware_adaptation']=dict(arm=tag,epoch=ep,source_checkpoint_sha256=sha(a.checkpoint),cache_sha256=sha(a.cache),selection_uses_holdout=fraction<1,independent_test=False,commit=commit)
+            merged['hardware_adaptation']=dict(arm=tag,epoch=ep,variant=best_variant if label=='best' else 'raw',source_checkpoint_sha256=sha(a.checkpoint),cache_sha256=sha(a.cache),selection_uses_holdout=fraction<1,independent_test=False,commit=commit)
             torch.save(merged,folder/(label+'_checkpoint.pt'))
         changed=[k for k,v in best_state.items() if not torch.equal(v,initial[k])]
-        result=dict(arm=tag,best_epoch=best_epoch,before=base_metrics,after=best_metrics,changed_readout_tensors=changed,
+        result=dict(arm=tag,best_epoch=best_epoch,best_variant=best_variant,before=base_metrics,after=best_metrics,changed_readout_tensors=changed,
                     frozen_parameters_unchanged=True,frozen_sha256=source_frozen,
                     best_checkpoint_sha256=sha(folder/'best_checkpoint.pt'),independent_test=False,
                     rows=[dict(video=v,target=float(targets[i]),before=float(baseline[i]),after=float(best_pred[i]),partition='train' if i in train_idx else 'holdout') for i,v in enumerate(data['video_ids'])])
@@ -245,6 +262,9 @@ def main():
     t=sub.add_parser('train');t.add_argument('--cache',required=True);t.add_argument('--checkpoint',required=True)
     t.add_argument('--epochs',type=int,default=100);t.add_argument('--lr',type=float,default=1e-4)
     t.add_argument('--batch-size',type=int,default=32);t.add_argument('--seed',type=int,default=20260914)
+    t.add_argument('--train-fraction',type=float,choices=[.8,1.],default=None)
+    t.add_argument('--ema',type=float,default=0.,help='EMA parameter decay per optimizer step; zero disables')
+    t.add_argument('--anchor',type=float,default=0.,help='L2-SP coefficient on sum squared deviation from original readout')
     for p in (e,t):p.add_argument('--output',required=True);p.add_argument('--device',default='cuda')
     q=sub.add_parser('queue',help='Wait for the verified measurement archive, extract, and train both arms')
     q.add_argument('--archive',required=True);q.add_argument('--archive-sha256',required=True)
@@ -253,7 +273,9 @@ def main():
     q.add_argument('--epochs',type=int,default=100);q.add_argument('--lr',type=float,default=1e-4)
     q.add_argument('--batch-size',type=int,default=32);q.add_argument('--seed',type=int,default=20260914)
     q.add_argument('--resume-verified',action='store_true',help='Reuse extracted data only after rechecking archive and every file SHA; no training overwrite')
-    a=parser.parse_args();globals()[a.action](a)
+    a=parser.parse_args()
+    if a.action=='train' and (not 0<=a.ema<1 or a.anchor<0):parser.error('Require 0 <= EMA < 1 and anchor >= 0')
+    globals()[a.action](a)
 
 
 def queue(a):
