@@ -16,6 +16,23 @@ from LightGenV2.tasks.t06_video_quality_assessment.lab_runtime import read,write
 STAGES=('vision_router','vision_expert','vision_global')
 
 
+def completed_prefix(stages,measured):
+    if measured!=list(stages[:len(measured)]) or len(measured)>len(stages):
+        raise ValueError('Measured stages are not a contiguous prefix')
+    return len(measured)
+
+
+def audit_stage(r,a,stage,index,out):
+    code=f"import subprocess;raise SystemExit(subprocess.call([{r.root+'/.venv_gpu/Scripts/python.exe'!r},'run.py','audit','--stage',{stage!r},'--session',{a.session!r},'--config',{a.config!r}],cwd={a.project!r}))"
+    payload=base64.b64encode(code.encode()).decode()
+    _,stdout,stderr=r.ssh.exec_command(r.root+'/.venv_gpu/Scripts/python.exe -c "import base64;exec(base64.b64decode(\''+payload+'\'))"',timeout=300)
+    text=stdout.read().decode(errors='replace');errors=stderr.read().decode(errors='replace')
+    (out/f'{index:02d}_{stage}_audit.log').write_text(text+'\n'+errors,encoding='utf-8')
+    if stdout.channel.recv_exit_status():raise RuntimeError('Complete-stage audit failed: '+stage)
+    remote=a.project+'/sessions/'+a.session
+    r.sftp.get(remote+'/audits/'+stage+'.json',str(out/f'{index:02d}_{stage}_audit.json'))
+
+
 def start_keep_awake(remote,project,session):
     """Temporary Windows power request, scoped to this leased hardware run.
 
@@ -72,9 +89,20 @@ def run(a):
         report['updated_at']=time.strftime('%Y-%m-%dT%H:%M:%S');write(out/'status.json',report)
     save()
     try:
+        skip=0
         with Remote(read(a.link_config)) as r:
+            if getattr(a,'resume_completed',False):
+                import json
+                with r.sftp.open(a.project+'/sessions/'+a.session+'/session.json','rb') as f:session=json.loads(f.read().decode('utf-8'))
+                skip=completed_prefix(stages,session['measured_stages'])
+                if skip==len(stages):raise ValueError('All stages already captured; run audit/evaluate rather than restarting phase supervision')
+                for index,stage in enumerate(stages[:skip],1):
+                    report.update(status='auditing_completed_stage',stage=stage);save()
+                    audit_stage(r,a,stage,index,out)
+                    report['completed'].append(stage);save()
             report['remote_keep_awake']=start_keep_awake(r,a.project,a.session);save()
         for i,stage in enumerate(stages,1):
+            if i<=skip:continue
             if (out/'STOP').exists():raise RuntimeError('STOP requested before next stage')
             folder=out/f'{i:02d}_{stage}'
             phase=a.phases/f'{i:02d}_{stage}.bmp'
@@ -103,14 +131,8 @@ def run(a):
                 time.sleep(5)
             # The audit runs without camera/SLM access and checks every SHA.
             with Remote(read(a.link_config)) as r:
-                code=f"import subprocess;raise SystemExit(subprocess.call([{r.root+'/.venv_gpu/Scripts/python.exe'!r},'run.py','audit','--stage',{stage!r},'--session',{a.session!r},'--config',{a.config!r}],cwd={a.project!r}))"
-                payload=base64.b64encode(code.encode()).decode()
-                _,stdout,stderr=r.ssh.exec_command(r.root+'/.venv_gpu/Scripts/python.exe -c "import base64;exec(base64.b64decode(\''+payload+'\'))"',timeout=180)
-                text=stdout.read().decode(errors='replace');errors=stderr.read().decode(errors='replace')
-                (out/f'{i:02d}_{stage}_audit.log').write_text(text+'\n'+errors,encoding='utf-8')
-                if stdout.channel.recv_exit_status():raise RuntimeError('Complete-stage audit failed')
+                audit_stage(r,a,stage,i,out)
                 remote=a.project+'/sessions/'+a.session
-                r.sftp.get(remote+'/audits/'+stage+'.json',str(out/f'{i:02d}_{stage}_audit.json'))
                 if i==len(stages):r.sftp.get(remote+'/results.json',str(out/'results.json'))
             report['completed'].append(stage);save()
             if i<len(stages):
@@ -128,6 +150,7 @@ def main():
     for name in ('bench-root','link-config','phases','out'):p.add_argument('--'+name,type=Path,required=True)
     for name in ('project','session','config'):p.add_argument('--'+name,required=True)
     p.add_argument('--task',choices=['salicon','lgvq'],default='salicon')
+    p.add_argument('--resume-completed',action='store_true',help='Audit and skip completed stages in the same immutable session')
     run(p.parse_args())
 
 if __name__=='__main__':main()

@@ -75,6 +75,13 @@ python -m LightGenV2.tasks.t06_video_quality_assessment.lab_phase `
 
 ## 查看结果与恢复
 
+对于明确授权自动换层的任务，本地协调器为`lab_supervise`。若它中断而当前单层已完成，
+先确认旧相位持有器的`report.json`是`next_inputs_ready_wait_for_user`且远端采集进程结束，
+再在该持有器目录创建`RELEASE`，等其退出。用新的监督输出目录执行原supervisor命令并加
+`--resume-completed`：它重新审计已有层的PNG/相位/输入/上游SHA链，只从第一个未采集层继续，
+不清空CCD、不改曝光、不重建session。新的监督状态在新目录的`status.json`。
+JSON读取遇到临时Windows/OneDrive共享访问拒绝会有限重试，持续拒绝仍明确报错，不伪装成功。
+
 - 每个会话只有一个入口：`sessions\pilot01\status.json`。
 - 本层输入：`sessions\pilot01\play\<stage>\*.bmp`。
 - 正式CCD：`sessions\pilot01\ccd\<stage>\field_*.png`，478×478、ROI透视校正，固定0–255，无逐张对比度拉伸。只保存PNG及小型记录，不保存TIFF。

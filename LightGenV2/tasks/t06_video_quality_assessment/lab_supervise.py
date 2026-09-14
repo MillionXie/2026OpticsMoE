@@ -8,6 +8,7 @@ def main():
     p=argparse.ArgumentParser(description=__doc__)
     for name in ('bench-root','link-config','phases','out'):p.add_argument('--'+name,type=Path,required=True)
     for name in ('project','session','config'):p.add_argument('--'+name,required=True)
+    p.add_argument('--resume-completed',action='store_true')
     a=p.parse_args();a.task='lgvq';run(a)
 
 

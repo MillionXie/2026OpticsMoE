@@ -26,7 +26,14 @@ def sha(path):
   for b in iter(lambda:f.read(1024*1024),b''):h.update(b)
  return h.hexdigest()
 
-def read(path):return json.loads(Path(path).read_text(encoding='utf-8-sig'))
+def read(path):
+ # Windows/OneDrive may briefly lock a JSON while another process replaces it.
+ # Retry only sharing/permission failures; never accept corrupt or stale JSON.
+ for attempt in range(61):
+  try:return json.loads(Path(path).read_text(encoding='utf-8-sig'))
+  except PermissionError:
+   if attempt==60:raise
+   time.sleep(.05)
 
 def write(path,value):
  p=Path(path);p.parent.mkdir(parents=True,exist_ok=True);tmp=p.with_suffix(p.suffix+'.tmp')
