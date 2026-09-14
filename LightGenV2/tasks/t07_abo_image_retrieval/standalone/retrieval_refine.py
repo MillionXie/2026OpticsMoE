@@ -24,6 +24,8 @@ PROFILES['sku_capacity_control'] = dict(PROFILES['sku_mild_adamw'], router_lr_mu
 # Training-only: both already encoded views query the detached TRAIN gallery.
 # No extra forward, inference parameters, optical geometry or TEST supervision.
 PROFILES['sku_symmetric_bank'] = dict(PROFILES['sku_capacity_control'], symmetric_bank=True)
+PROFILES['sku_phase_head'] = dict(PROFILES['sku_capacity_control'],
+    phase_head_only=True, readout_input_dropout=.1, head_lr_multiplier=3.)
 # Isolate training regularizers: identical loss, optimizer, capacity and optics.
 # Do not infer separate augmentation/dropout effects from the old combined SAM run.
 PROFILES['sku_augmentation_only'] = dict(PROFILES['sku_capacity_control'], mild_augmentation=False)
@@ -113,6 +115,29 @@ def optical_parameter(name):
     return '.optics.experts.' in name or name.endswith('optics.global_phase') or name.endswith('raw_router_phase')
 
 
+def projection_parameter(name):
+    return name in ('readout.projection.weight', 'readout.projection.bias')
+
+
+def configure_phase_head_scope(model):
+    if model.readout.kind != 'linear64':
+        raise ValueError('Phase/head-only fitting requires original linear64')
+    for name, parameter in model.named_parameters():
+        parameter.requires_grad_(optical_parameter(name) or projection_parameter(name))
+    return non_optical_digest(model, exclude_projection=True)
+
+
+def attach_train_readout_dropout(model, probability):
+    """A training hook only: checkpoint has no new layer or inference behavior."""
+    if model.readout.kind != 'linear64' or not 0 <= probability < 1:
+        raise ValueError('Invalid original-head training dropout')
+    def hook(module, values):
+        if module.training and probability:
+            return (F.dropout(values[0], probability, training=True),)
+        return None
+    return model.readout.projection.register_forward_pre_hook(hook)
+
+
 def set_parameter_scope(params, router_only=False, optical_only=False):
     if router_only and optical_only:
         raise ValueError('Cannot combine router-only and all-optical-only scopes')
@@ -131,6 +156,8 @@ def optical_curriculum_scope(profile, external, pretrain_epochs):
 
 
 def learning_rate_multiplier(profile, name, external, refined):
+    if projection_parameter(name):
+        return profile.get('head_lr_multiplier', 1.)
     if name.endswith('raw_router_phase'):
         return profile.get('router_lr_multiplier', 5 if refined else 1)
     if optical_parameter(name):
@@ -147,10 +174,10 @@ def update_trainable_ema(params, ema, decay=.99):
             ema[name].mul_(decay).add_(p, alpha=1-decay)
 
 
-def non_optical_digest(model):
+def non_optical_digest(model, exclude_projection=False):
     digest = hashlib.sha256()
     for name, p in model.named_parameters():
-        if not optical_parameter(name):
+        if not optical_parameter(name) and not (exclude_projection and projection_parameter(name)):
             digest.update(f'{name}|{p.dtype}|{tuple(p.shape)}'.encode())
             digest.update(p.detach().cpu().contiguous().reshape(-1).view(torch.uint8).numpy().tobytes())
     return digest.hexdigest()

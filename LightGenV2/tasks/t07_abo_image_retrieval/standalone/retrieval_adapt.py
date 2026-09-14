@@ -26,7 +26,8 @@ from .retrieval_screen import load_screen, rank_instances, OPTICS_SHA256, GALLER
 from .retrieval_refine import (PROFILES, validate_continuation, route_objective,
     all_view_loss, load_train_teacher, relational_loss, selection_score, router_acceptable,
     optical_parameter, set_parameter_scope, update_trainable_ema, non_optical_digest,
-    prepare_capacity_payload, optical_curriculum_scope, learning_rate_multiplier)
+    prepare_capacity_payload, optical_curriculum_scope, learning_rate_multiplier,
+    configure_phase_head_scope, attach_train_readout_dropout)
 from .enrolled_regularization import load_external_pool, load_external_relations, augment_whole_object, curriculum_epoch, curriculum_loss_weights, fitting_bank_diagnostics
 from .generalization import backward_with_sam
 
@@ -268,6 +269,10 @@ def run(args):
     refined = args.refine_profile != 'standard'
     regularized = 'sam_rho' in profile
     optical_only = profile.get('optical_only', False)
+    phase_head_only = profile.get('phase_head_only', False)
+    if phase_head_only and (optical_only or profile.get('warmup') or getattr(args, 'external_pretrain_epochs', 0)
+            or args.fresh_trainable or not args.multi_view or protocol['protocol'] != 'abo200_enrolled_sku_hash8train4query_v1'):
+        raise ValueError('Phase/head-only requires existing enrolled ABO multi-view weights without another curriculum')
     if optical_only and (profile['warmup'] or getattr(args, 'external_pretrain_epochs', 0)):
         raise ValueError('Optical-only audit is a separate stage, not router-only/external curriculum')
     external_fit, external_audit = None, None
@@ -307,6 +312,8 @@ def run(args):
     payload, capacity_audit = prepare_capacity_payload(payload, profile, protocol['protocol'], args.fresh_trainable)
     model = OpticalRetrieval(copy.deepcopy(payload['metadata']))
     initialization = load_initial_weights(model, payload, args.assets, args.fresh_trainable)
+    fixed_phase_head_sha = configure_phase_head_scope(model) if phase_head_only else None
+    readout_hook = attach_train_readout_dropout(model, profile['readout_input_dropout']) if phase_head_only else None
     fixed_electronics_sha = non_optical_digest(model) if optical_only or profile.get('external_optical_only') else None
     if regularized:
         model.metadata['phase_dropout'] = dict(expert_global_probability=profile['phase_dropout'], router_probability=0., block_size=8)
@@ -335,10 +342,12 @@ def run(args):
         refinement=profile,
         bank_refresh_steps=getattr(args, 'bank_refresh_steps', 0),
         bank_refresh_note='TRAIN reference features only; full deterministic re-encode with current live weights. No gradients/TEST rows; no change to inference.',
-        training_scope=('External: only12 phases, bitwise frozen electronics/alpha; target: joint trainable parameters'
+        training_scope=('Only12 phases and original Linear384->64 weight/bias; frontend, electronic residuals, alpha and head LayerNorm bitwise frozen'
+                        if phase_head_only else 'External: only12 phases, bitwise frozen electronics/alpha; target: joint trainable parameters'
                         if profile.get('external_optical_only') else
                         'Only12 optical phase tensors; all electronics/frontend/alpha frozen' if optical_only else 'Profile curriculum'),
         non_optical_parameters_initial_sha256=fixed_electronics_sha,
+        frozen_except_phase_projection_initial_sha256=fixed_phase_head_sha,
         external_curriculum=external_audit,
         external_teacher=external_teacher_audit,
         curriculum_note='Continue verified current-protocol best -> external instance pretraining (last state, no TEST selection) -> target fine-tune. Initial best retained; not from-scratch pretraining' if external_fit else None,
@@ -418,11 +427,13 @@ def run(args):
                         mean_cosine_to_previous=float(F.cosine_similarity(refreshed.float(), bank.float(), dim=-1).mean()),
                         reference_count=len(gallery), requires_grad=refreshed.requires_grad))
                     bank = refreshed
-                model.train(not (warming or current_optical_only))
-                if current_optical_only:
+                model.train(not (warming or current_optical_only or phase_head_only))
+                if current_optical_only or phase_head_only:
                     # Fixed electronics are deterministic; retain existing optical
                     # noise/DC injection during optical training, router noise off.
                     model.vision.optics.train(); model.language.optics.train()
+                if phase_head_only:
+                    model.readout.projection.train()  # Enable only training input dropout; fixed E stays eval.
                 noisy = rng.random() < profile.get('noise_probability', .25) and not warming
                 for m in (model.vision, model.language):
                     m.optics.set_training_noise(noisy)
@@ -467,7 +478,7 @@ def run(args):
                 totals['teacher_loss'] += float(result['kd'])
                 totals['all_view_loss'] += float(result['all_views'])
                 totals['sam_loss_gap'] += sam['loss_gap']
-            row = dict(epoch=epoch, phase='optical_only' if optical_only else 'external_pretrain' if external else 'target_finetune', phase_epoch=phase_epoch, router_only_warmup=warming,
+            row = dict(epoch=epoch, phase='phase_head_only' if phase_head_only else 'optical_only' if optical_only else 'external_pretrain' if external else 'target_finetune', phase_epoch=phase_epoch, router_only_warmup=warming,
                 optical_only_scope=current_optical_only,
                 bank_refreshes=bank_refresh_audit,
                 active_trainable_parameters=sum(p.numel() for _,p in params if p.requires_grad),
@@ -477,6 +488,10 @@ def run(args):
                 row['non_optical_parameters_sha256'] = non_optical_digest(model)
                 if row['non_optical_parameters_sha256'] != fixed_electronics_sha:
                     raise RuntimeError('Frozen electronic parameter changed in optical-only training')
+            if phase_head_only:
+                row['frozen_except_phase_projection_sha256'] = non_optical_digest(model, exclude_projection=True)
+                if row['frozen_except_phase_projection_sha256'] != fixed_phase_head_sha:
+                    raise RuntimeError('Phase/head-only changed a frozen parameter')
             torch.save(dict(metadata=model.metadata, state_dict=model.state_dict(), epoch=epoch,
                 optimizer=optimizer.state_dict(), ema=ema, source_commit=identity['source_commit'],
                 manifest_sha256=identity['manifest_sha256']), args.output / 'last.pt')
@@ -509,6 +524,9 @@ def run(args):
         selected = torch.load(args.output / 'best.pt', map_location='cpu', weights_only=True)
         model.load_state_dict(selected['state_dict'], strict=True)
         final_electronics_sha = non_optical_digest(model) if fixed_electronics_sha else None
+        final_phase_head_sha = non_optical_digest(model, exclude_projection=True) if phase_head_only else None
+        if phase_head_only and final_phase_head_sha != fixed_phase_head_sha:
+            raise RuntimeError('Selected phase/head EMA changed a frozen parameter')
         if optical_only and final_electronics_sha != fixed_electronics_sha:
             raise RuntimeError('Selected EMA/best changed frozen electronic parameters')
         normal = assessment(model, processor, groups, args, device, args.output, fit=fit)
@@ -525,6 +543,7 @@ def run(args):
             normal=normal, remove_optical=removed, model_audit_final=model.audit(),
             router_eligible=router_acceptable(normal),
             non_optical_parameters_final_sha256=final_electronics_sha,
+            frozen_except_phase_projection_final_sha256=final_phase_head_sha,
             external_frozen_electronics_verified=(all(row.get('non_optical_parameters_sha256') == fixed_electronics_sha
                 for row in history if row.get('phase') == 'external_pretrain') if profile.get('external_optical_only') else None),
             optical_removal_drop_percentage_points=100*(normal['test']['hit_at_1']-removed['test']['hit_at_1']),
@@ -536,6 +555,8 @@ def run(args):
         status.update(status='failed_or_interrupted', error=repr(exc))
         raise
     finally:
+        if readout_hook is not None:
+            readout_hook.remove()
         write_json(args.output / 'status.json', status)
         del model
         if device.type == 'cuda':

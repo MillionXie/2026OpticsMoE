@@ -2799,3 +2799,98 @@ CUDA_VISIBLE_DEVICES=GPU-1b963983-7909-af6e-0528-f0f0661ab549 OMP_NUM_THREADS=4 
 weight_train_audit.json记录只有head weight/bias改变、原图TRAIN94.375%(1510/1600，自图排除)、
 alpha与gallery/query分别合格的Top2路由；原图正常660/800、去光610/800，尚差4张达到83%。
 400/450是优化step不是原图epoch。全部是TEST择优的单seed结果，不能宣称独立验证或统计显著。
+
+## 87. 完成光学再加热后，固定新主干校准读出（2026-09-15）
+
+`abo200_optical_reheat_20260914`已完整结束24外部+10目标轮，源码efd7dd55；
+最佳总epoch29（目标第5轮EMA），正常82.125%/去光76.00%、TRAIN94.4375%，
+external_frozen_electronics_verified=true；PID1361629已退出、CUDA释放。
+该组不是当前82.50%的替换版；下面验证新相位是否能与第86节有效的读出正则结合。
+仍是同一200SKU/1600图库/800查询、6次10cm、光Top2、alpha>.4；不增加推理层。
+原GPU4后来被别人占用，以下实际改用空闲GPU0的RTX4090，不干扰其他进程；仅短暂原图缓存占GPU。
+
+```bash
+REHEAT_SHA=$(python -c 'import pathlib,json,hashlib,sys; p=pathlib.Path(sys.argv[1]); r=json.loads((p/"final_report.json").read_text()); s=r["best_sha256"]; assert r["status"]=="complete" and len(s)==64 and hashlib.sha256((p/"best.pt").read_bytes()).hexdigest()==s; print(s)' "$R/abo200_optical_reheat_20260914")
+CUDA_VISIBLE_DEVICES=GPU-afc19890-6209-ee4d-622d-e619da5bd5b2 OMP_NUM_THREADS=4 MKL_NUM_THREADS=4 HF_HUB_OFFLINE=1 TRANSFORMERS_OFFLINE=1 python -m LightGenV2.tasks.t07_abo_image_retrieval.standalone.retrieval_screen optical \
+  --data /DATA/DATA1/guest3/2026OpticsMoE/data/abo_similarity10_data \
+  --manifest "$R/abo200_enrolled_protocol_20260913/protocol.json" --assets "$R/standalone_assets_20260910" \
+  --checkpoint "$R/abo200_optical_reheat_20260914/best.pt" --expected-checkpoint-sha256 "$REHEAT_SHA" \
+  --batch-size 4 --cache-readout-input --output "$R/abo200_reheat_readout_cache_20260915"
+
+CUDA_VISIBLE_DEVICES='' OMP_NUM_THREADS=4 MKL_NUM_THREADS=4 python -m LightGenV2.tasks.t07_abo_image_retrieval.standalone.metric_readout \
+  --source-run "$R/abo200_optical_reheat_20260914" --verification-dir "$R/abo200_reheat_readout_cache_20260915" \
+  --manifest "$R/abo200_enrolled_protocol_20260913/protocol.json" \
+  --data /DATA/DATA1/guest3/2026OpticsMoE/data/abo_similarity10_data \
+  --expected-checkpoint-sha256 "$REHEAT_SHA" --expected-hit .82125 \
+  --fit-space projection384 --steps 800 --eval-every 50 --batch-size 128 --lr .0001 --anchor .1 --input-dropout .1 \
+  --output "$R/abo200_reheat_readout_dropout_20260915"
+```
+
+起点SHA `ae0d8c9214c5f8d70070ea9fe94202266f583fe05611b26e9b2c760941f55525`；
+新GPU0已从原图复现正常82.125%/去光76.00%，缓存PID1737263退出。
+读出拟合使用GitHub已有源码3c0ff545（400测试），只使用TRAIN；候选必须重新读取原图正常/去光复核。
+
+实际完成：800步缓存最佳82.50%，在同一GPU0重新读取原图后仍82.50%/去光76.25%。
+候选SHA `a7fae6bfe41f3d27e3e47bf0fb6d63f5ab5d46e0841d41e2f3c58c27f55adcb9`；
+原图报告在`abo200_reheat_readout_dropout_20260915/verification/`，GPU复评PID1744107退出。
+与旧相位的82.50%并列，不宣称已经达到83%。补充旧相位dropout=.05/anchor=.1对照缓存82.375%，未晋升。
+
+## 88. 两个近邻checkpoint离线平均成单个模型（不是推理集成）
+
+两个父模型共享同一光优先训练起点、冻结前端、网络metadata和原200SKU协议；
+一个为旧相位+读出dropout弱锚定，另一个为再加热相位+同类读出校准，原图均82.50%。
+先固定50/50，所有可训练浮点参数（含raw phase和alpha参数）离线平均；
+冻结前端要求逐值相同，不做平均。相位仍由2*pi*sigmoid(raw)产生，同一6次10cm光路。
+最终只加载一份best.pt，推理计算量/Top2/64维输出不变；这是已有模型权重的派生，非未训练baseline。
+仍有TEST选模偏差。不得将父模型各跑一遍再融合预测而冒称该方案。
+
+```bash
+REHEAT_HEAD_SHA=$(python -c 'import pathlib,json,hashlib,sys; p=pathlib.Path(sys.argv[1]); s=json.loads((p/"final_report.json").read_text())["best_sha256"]; assert len(s)==64 and hashlib.sha256((p/"best.pt").read_bytes()).hexdigest()==s; print(s)' "$R/abo200_reheat_readout_dropout_20260915")
+# WEAK_SHA是第86节旧相位82.50%模型的SHA，不是81.875%起点的METRIC_SHA。
+CUDA_VISIBLE_DEVICES='' OMP_NUM_THREADS=4 MKL_NUM_THREADS=4 python -m LightGenV2.tasks.t07_abo_image_retrieval.standalone.weight_average \
+  --left "$R/abo200_direct_readout_dropout_weak_20260914/best.pt" --left-sha256 "$WEAK_SHA" \
+  --right "$R/abo200_reheat_readout_dropout_20260915/best.pt" --right-sha256 "$REHEAT_HEAD_SHA" \
+  --right-weight .5 --output "$R/abo200_reheat_readout_average_20260915"
+
+AVERAGE_SHA=$(python -c 'import pathlib,json,hashlib,sys; p=pathlib.Path(sys.argv[1]); s=json.loads((p/"average_report.json").read_text())["checkpoint_sha256"]; assert len(s)==64 and hashlib.sha256((p/"best.pt").read_bytes()).hexdigest()==s; print(s)' "$R/abo200_reheat_readout_average_20260915")
+CUDA_VISIBLE_DEVICES=GPU-afc19890-6209-ee4d-622d-e619da5bd5b2 OMP_NUM_THREADS=4 MKL_NUM_THREADS=4 HF_HUB_OFFLINE=1 TRANSFORMERS_OFFLINE=1 python -m LightGenV2.tasks.t07_abo_image_retrieval.standalone.retrieval_screen optical \
+  --data /DATA/DATA1/guest3/2026OpticsMoE/data/abo_similarity10_data \
+  --manifest "$R/abo200_enrolled_protocol_20260913/protocol.json" --assets "$R/standalone_assets_20260910" \
+  --checkpoint "$R/abo200_reheat_readout_average_20260915/best.pt" --expected-checkpoint-sha256 "$AVERAGE_SHA" \
+  --batch-size 4 --cache-readout-input --output "$R/abo200_reheat_readout_average_20260915/verification"
+```
+
+构建源码3c0ff545，average_report.json记录两个父权重SHA、派生口径和结构审计；
+原图normal/remove、TRAIN自图排除、gallery/query分开路由和alpha审计全部通过后才能晋升。
+
+50/50实际原图81.875%/去光76.25%，未超过两个82.50%父模型，不采用。
+补充只读诊断：旧82.50%模型TRAIN均值向量范数.0988，平均向量范数3.839；
+按TRAIN均值进行部分/全部去中心化均未改善缓存82.375%，未产生新模型；这不是CCD暗背景校正。
+
+## 89. 只训相位+原线性读出，冻结其他电子（403项本地测试）
+
+新profile `sku_phase_head`从第86节原图82.50%权重继续，绝不从冒烟last继续正式训练。
+仅12份相位与readout.projection.weight/bias共14张量、983368参数参与优化；
+frontend、所有电子残差、alpha、head LayerNorm全部冻结，并每轮/最终SHA断言。
+固定电子保持eval模式，不添加电子dropout；只在Linear输入上采用训练期10%dropout，推理关闭且无新增层。
+完整forward仍经过原光学router和专家/global，光正则、路由均衡、TRAIN-bank NLL/SupCon/all-view loss不变。
+沿用10%训练batch的原metadata噪声/DC（router不加噪声）、微弱亮度/对比度增强，不增加像素扰动。
+本方案是相位+读出联合训练，不是外部预训练，也不是完全冻结相位的缓存拟合。
+
+先在确认空闲的GPU上做两步完整冒烟（启动前查看nvidia-smi，下面GPU0仅为本次机器）：
+
+```bash
+CUDA_VISIBLE_DEVICES=GPU-afc19890-6209-ee4d-622d-e619da5bd5b2 OMP_NUM_THREADS=4 MKL_NUM_THREADS=4 HF_HUB_OFFLINE=1 TRANSFORMERS_OFFLINE=1 python -m LightGenV2.tasks.t07_abo_image_retrieval.standalone.retrieval_adapt \
+  --data /DATA/DATA1/guest3/2026OpticsMoE/data/abo_similarity10_data \
+  --manifest "$R/abo200_enrolled_protocol_20260913/protocol.json" --assets "$R/standalone_assets_20260910" \
+  --checkpoint "$R/abo200_direct_readout_dropout_weak_20260914/best.pt" --expected-checkpoint-sha256 "$WEAK_SHA" \
+  --multi-view --refine-profile sku_phase_head --lr-scale .1 \
+  --epochs 1 --steps 2 --eval-every 1 --batch-size 4 --bank-batch-size 16 \
+  --output "$T07/runs/smoke/abo_phase_head_20260915"
+```
+
+必须确认冒烟complete、frozen_except_phase_projection初末SHA相同、14张量真实更新、正常/去光/路由评估通过，
+且冒烟进程已退出释放显存，再用同一命令将epochs改12、steps改100、添加`--bank-refresh-steps 25`，
+output改`$R/abo200_phase_head_20260915`启动正式对照。其他设置与起点保持一致。
+最大学习率：expert/global .0002、router .000003、readout .00009；仍2轮warm-in与余弦衰减、EMA .99。
+每轮评估TRAIN/TEST并按既定TEST+路由门槛保存best/last，只有普通单模型，目标83%未自动保证。
