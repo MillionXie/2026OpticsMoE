@@ -21,7 +21,26 @@ def main() -> int:
     parser.add_argument("--source-root", default=str(REPO_ROOT))
     parser.add_argument("--device", default="cuda")
     parser.add_argument("--max-fields", type=int, default=0)
+    parser.add_argument("--shs-code-update", action="store_true", help="Small SHA-checked runtime update; no weights or data")
     args = parser.parse_args()
+    if args.shs_code_update:
+        import hashlib,json,zipfile
+        if not args.output:parser.error('Code update requires --output ZIP')
+        commit=subprocess.check_output(['git','rev-parse','HEAD'],cwd=REPO_ROOT,text=True).strip()
+        base='8e869473787f4ffceb2a6a77f4430b94c206f459'
+        prefix='LightGenV2/tasks/t06_video_quality_assessment/'
+        files={};manifest={'source_commit':commit,'base_runtime_commit':base,'files':{}}
+        for name in ['lab_bench.py','lab_exposure_session.py']:
+            path=prefix+name;data=subprocess.check_output(['git','show',commit+':'+path],cwd=REPO_ROOT)
+            old=subprocess.run(['git','show',base+':'+path],cwd=REPO_ROOT,capture_output=True)
+            dest='runtime/'+path;files[dest]=data
+            manifest['files'][dest]={'sha256':hashlib.sha256(data).hexdigest(),'base_sha256':hashlib.sha256(old.stdout).hexdigest() if old.returncode==0 else None}
+        output=Path(args.output);output.parent.mkdir(parents=True,exist_ok=True)
+        with zipfile.ZipFile(output,'x',zipfile.ZIP_DEFLATED) as z:
+            for name,data in files.items():z.writestr(name,data)
+            z.writestr('runtime_update.json',json.dumps(manifest,indent=2))
+        print(json.dumps({'path':str(output),'sha256':hashlib.sha256(output.read_bytes()).hexdigest(),'source_commit':commit}))
+        return 0
     if args.bench == "shs":
         if args.target is None or args.output is None:
             parser.error("SHS requires --target and --output (new directory; ZIP is adjacent)")
