@@ -11,6 +11,7 @@ import json
 import math
 from pathlib import Path
 import types
+import time
 import numpy as np
 
 STAGES = ('vision_router','vision_expert','vision_global','language_router','language_expert','language_global')
@@ -29,7 +30,15 @@ def read(path):return json.loads(Path(path).read_text(encoding='utf-8-sig'))
 
 def write(path,value):
  p=Path(path);p.parent.mkdir(parents=True,exist_ok=True);tmp=p.with_suffix(p.suffix+'.tmp')
- tmp.write_text(json.dumps(value,ensure_ascii=False,indent=2,default=str,allow_nan=False),encoding='utf-8');tmp.replace(p)
+ tmp.write_text(json.dumps(value,ensure_ascii=False,indent=2,default=str,allow_nan=False),encoding='utf-8')
+ # Windows SFTP/Explorer readers can briefly deny FILE_SHARE_DELETE. Keep the
+ # previous complete JSON visible and retry the atomic replacement, not a
+ # truncate-in-place fallback. Persistent permission failures still raise.
+ for attempt in range(61):
+  try:tmp.replace(p);return
+  except PermissionError:
+   if attempt==60:raise
+   time.sleep(.05)
 
 def restore_settings(target, values):
  if target=='temporal':

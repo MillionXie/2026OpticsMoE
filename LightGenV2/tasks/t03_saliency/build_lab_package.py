@@ -139,10 +139,25 @@ def main():
     for key in ('config','checkpoint','output'):p.add_argument('--'+key,type=Path)
     p.add_argument('--refresh-runtime',type=Path,help='Verified completed export: repackage control-code-only update without regenerating caches')
     p.add_argument('--archive',type=Path)
+    p.add_argument('--atomic-writer-update',action='store_true',help='Small control-only ZIP for already deployed releases')
     p.add_argument('--data-root',type=Path);p.add_argument('--cache-dir',type=Path)
     p.add_argument('--max-fields',type=int,default=0);p.add_argument('--batch-size',type=int,default=48)
     p.add_argument('--device',default='cuda');a=p.parse_args()
-    if a.refresh_runtime:
+    if a.atomic_writer_update:
+        if not a.archive:p.error('A new --archive ZIP is required')
+        root=Path(__file__).resolve().parents[3]
+        commit=subprocess.check_output(['git','rev-parse','HEAD'],cwd=root,text=True).strip()
+        rel='LightGenV2/tasks/t06_video_quality_assessment/lab_runtime.py'
+        base='3dabf3bd33f3a16f3666c03491e4e6bb29a3dc80'
+        old=subprocess.check_output(['git','show',base+':'+rel],cwd=root)
+        new=subprocess.check_output(['git','show',commit+':'+rel],cwd=root)
+        manifest=dict(source_commit=commit,base_commit=base,change='bounded retry for Windows atomic JSON replacement only; inference/hardware unchanged',
+                      files={'runtime/'+rel:dict(base_sha256=hashlib.sha256(old).hexdigest(),sha256=hashlib.sha256(new).hexdigest())})
+        a.archive.parent.mkdir(parents=True,exist_ok=True)
+        with zipfile.ZipFile(a.archive,'x',zipfile.ZIP_DEFLATED) as z:
+            z.writestr('runtime/'+rel,new);z.writestr('runtime_update.json',json.dumps(manifest,indent=2))
+        write(a.archive.with_suffix('.delivery.json'),dict(zip=str(a.archive.resolve()),sha256=sha(a.archive),bytes=a.archive.stat().st_size,source_commit=commit))
+    elif a.refresh_runtime:
         if not a.archive:p.error('--refresh-runtime requires a NEW --archive')
         refresh_runtime(a.refresh_runtime,a.archive)
     else:
