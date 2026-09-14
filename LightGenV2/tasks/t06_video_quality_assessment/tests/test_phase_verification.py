@@ -1,6 +1,6 @@
 import unittest
 import numpy as np
-from LightGenV2.tasks.t06_video_quality_assessment.lab_phase_verification import assess,compare
+from LightGenV2.tasks.t06_video_quality_assessment.lab_phase_verification import assess,compare,probe_config
 from LightGenV2.tasks.t06_video_quality_assessment.lab_exposure_session import retained_stages
 from LightGenV2.tasks.t06_video_quality_assessment.lab_runtime import STAGES
 
@@ -22,3 +22,12 @@ class OpticalVerificationTests(unittest.TestCase):
   for n in (0,6,7):
    with self.assertRaises(ValueError):retained_stages(list(STAGES[:5]),n)
   with self.assertRaises(ValueError):retained_stages([STAGES[1]],1)
+ def test_probe_config_preserves_evidence_and_formal_exposure(self):
+  formal=dict(camera={'exposure_us':1600},amplitude_slm={'driver':'holoeye'},settle_delay_ms=240,logical_corners_full_sensor_xy={'new':1})
+  approved=dict(geometry_evidence={'original_report':'abc'},logical_corners_full_sensor_xy={'old':1})
+  c=probe_config(formal,approved,'test')
+  self.assertEqual(c['diagnostic_session'],'smoke_phase_guard_test')
+  self.assertEqual(c['camera']['exposure_us'],150)
+  self.assertEqual(formal['camera']['exposure_us'],1600)
+  self.assertEqual(c['geometry_evidence'],approved['geometry_evidence'])
+  self.assertEqual(c['logical_corners_full_sensor_xy'],{'old':1})

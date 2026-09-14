@@ -6,9 +6,23 @@ repeatable response, not exact per-pixel phase calibration or optical fidelity.
 No production images are replaced. Run in the SAME SDK owner as capture.
 """
 import threading,time,uuid
+import copy
 from pathlib import Path
 import numpy as np
 from .lab_runtime import read,write,sha
+
+def probe_config(formal,approved,token):
+ """Keep historical diagnostic geometry intact; use only its RAW sensor output.
+
+ Current formal ROI is applied separately below, never forged into old evidence.
+ """
+ c=copy.deepcopy(approved)
+ c['camera']=copy.deepcopy(formal['camera']);c['camera']['exposure_us']=150.
+ c['amplitude_slm']=copy.deepcopy(formal['amplitude_slm'])
+ c['settle_delay_ms']=formal['settle_delay_ms']
+ c.update(diagnostic_only=True,diagnostic_session='smoke_phase_guard_'+token)
+ c.pop('camera_exposure_us_by_stage',None)
+ return c
 
 def compare(a,b):
  valid=(a<250)&(b<250)
@@ -39,13 +53,13 @@ def probe(a,link,sdk,pump,out,label):
     with r.sftp.open(a.project+'/'+a.config,'rb') as f:
      import json
      c=json.loads(f.read().decode('utf-8'))
-    c['camera']['exposure_us']=150.;c['diagnostic_only']=True
-    c.pop('camera_exposure_us_by_stage',None)
+    base=link.get('phase_probe_config','results/smoke_configs/smoke_abo_full400us240ms_20260913.json')
+    diagnostic=probe_config(c,r.read(base),token)
     image=out/(label+'_amplitude.bmp')
     Image.fromarray(raster(np.ones((478,478),np.float32),c['amplitude_slm'],'amplitude')).save(image)
     r.ps(f"New-Item -ItemType Directory -Force -Path '{r.root}/{case}' | Out-Null")
     r.sftp.put(str(image),r.root+'/'+case+'/uniform.bmp')
-    config='results/smoke_configs/phase_guard_'+token+'.json';r.putjson(config,c)
+    config='results/smoke_configs/phase_guard_'+token+'.json';r.putjson(config,diagnostic)
     r.job(dict(action='probe',config=config,bmp=case+'/uniform.bmp',out=case+'/capture'))
     path=out/(label+'_raw.png');r.sftp.get(r.root+'/'+case+'/capture/raw.png',str(path))
     H=cv2.getPerspectiveTransform(np.float32([c['logical_corners_full_sensor_xy'][k] for k in ['top_left','top_right','bottom_right','bottom_left']]),np.float32([[-.5,-.5],[477.5,-.5],[477.5,477.5],[-.5,477.5]]))
