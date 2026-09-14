@@ -43,6 +43,10 @@ SRCC 0.6177597→0.6271390（best epoch1），之后过拟合；该权重全558�
 每组100epoch。保持原446/112视频身份不变，启动前逐ID核对旧`split.json`；不训练全量版，不引入新网络。
 EMA只作为一个候选参数状态，推理不增加分支；以112条留出SRCC选epoch和试验，不能将多次选择后的数值
 当独立test。每组只保留best/last，原先best也纳入最终候选比较，不强行替换为更差的新权重。
+三组与额外“仅末端402参数”对照现均完成100epoch，最好为lr1e-5/L2-SP0.1/EMA0.98的epoch64：
+同一112条留出SRCC **0.6281555452**、RMSE9.0845031880；较此前SRCC0.6271390仅小幅改善。
+最佳权重已下载到同一run的`regularized/low_lr_ema/split80/best_checkpoint.pt`并校验，尚未部署。
+完整对照表和限制仍在上述同一实测读出头适配报告，不把混合训练/留出的全558条分数当test。
 调用时提供 `--cache --checkpoint --reference-split --reference-result --output`，分别对应上一轮特征缓存、
 原始固定权重、上一轮80%版split/results、任务下新run目录。只在`runs/hardware/`保存新产物。
 

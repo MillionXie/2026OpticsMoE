@@ -40,3 +40,30 @@ GPU/CPU IEEE FP32对照与逐视频回放差异保存在run中；不把数值差
 - 完整checkpoint/cache SHA、设备和原始命令在`adaptation/launch.json`及每版`results.json`。
 
 这两版均不能称为独立测试结果；后续部署需适配checkpoint身份校验，不能直接覆盖原固定SHA实验包。
+
+## 追加训练手段对照（同一446/112划分）
+
+三组正则化入口`tune_measured_readout.py`（commit `b8a5c022`），参数由
+`configs/spatial_hardware_readout_tuning.json`冻结；均从原始checkpoint开始，100epoch，单卡顺序运行。
+L2-SP约束相对原始读出参数的平方差之和；EMA只保存为单个模型状态，不增加推理分支。
+终端层对照commit `3035597a`，同一缓存/seed/划分，`train --train-fraction .8 --scope terminal --lr .0003 --ema .98 --anchor .1 --batch-size 64 --epochs 100`，只更新原有两处最后评分Linear，402参数、4个状态张量。
+
+| 设置 | 最佳epoch/状态 | 留出112条SRCC | 留出RMSE |
+|---|---|---:|---:|
+| 未适配原头 | 0 | 0.6177596779 | 9.4048645147 |
+| 上一轮常规微调 | 1/raw | 0.6271390224 | 9.4108581851 |
+| lr1e-5、L2-SP0.1、EMA0.98、batch64 | 64/EMA | **0.6281555452** | **9.0845031880** |
+| lr3e-5、L2-SP1、EMA0.98、batch64 | 6/EMA | 0.6223681992 | 9.2870552934 |
+| lr3e-6、L2-SP1、EMA0.95、batch32 | 13/EMA | 0.6223767414 | 9.2776284760 |
+| 仅末端402参数 | 3/raw | 0.6186096276 | 9.3514222897 |
+
+最佳为`regularized/low_lr_ema/split80/best_checkpoint.pt`，SHA256
+`ddd194175bd9eb637fdd4e2e74abf7dbb7c2d376b878007227368ac14619484f`；完整权重约36.45MB已下载本地并校验。
+最佳留出PLCC0.6665443087、MAE7.3611434358；相比上一轮SRCC仅+0.0010165，PLCC略降，不能宣称显著提升。
+该模型全558条SRCC0.7089853062包含446条训练样本，不作为测试精度。112条用于epoch和超参数选择，
+搜索后的分数也不是独立最终test；每组具体划分已核对完全相同，逐视频SRCC独立复算一致。
+全部前置/光学参数保持不变，所有训练进程与GPU显存已释放。未改动原CCD或向硬件部署任何候选。
+
+本地/服务器产物统一仍在`runs/hardware/spatial_readout_adapt_20260914`：三组位于`regularized/`，
+402参数对照位于`terminal_only/`；无需浏览其他runs。后续更完整验证应使用原训练集实测CCD做适配，
+再用原测试集前向推理，不能把已用于训练的原test视频重新叫独立test。
