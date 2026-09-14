@@ -23,6 +23,17 @@ gpu_is_idle() {
   [[ -z "$pids" ]]
 }
 
+gpu_uuid() {
+  local gpu="$1"
+  local uuid
+  uuid="$(nvidia-smi --id="$gpu" --query-gpu=uuid --format=csv,noheader 2>/dev/null | head -n 1 | xargs)"
+  [[ "$uuid" == GPU-* ]] || {
+    echo "Could not resolve physical GPU $gpu to a UUID" >&2
+    return 1
+  }
+  echo "$uuid"
+}
+
 run_one() {
   local task="$1"
   local method="$2"
@@ -51,12 +62,14 @@ wait_lane() {
   local lanes="$2"
   local gpu="$3"
   local state_file="$LOG_ROOT/lane_${lane}.state"
+  local uuid
   echo "waiting_for_physical_gpu=$gpu" >"$state_file"
   while ! gpu_is_idle "$gpu"; do
     sleep 20
   done
-  echo "running_on_physical_gpu=$gpu" >"$state_file"
-  if CUDA_VISIBLE_DEVICES="$gpu" P14_PHYSICAL_GPU="$gpu" \
+  uuid="$(gpu_uuid "$gpu")"
+  echo "running_on_physical_gpu=$gpu uuid=$uuid" >"$state_file"
+  if CUDA_VISIBLE_DEVICES="$uuid" P14_PHYSICAL_GPU="$gpu" P14_GPU_UUID="$uuid" \
       bash "$SCRIPT_PATH" lane "$lane" "$lanes"; then
     echo "finished_physical_gpu=$gpu" >"$state_file"
   else
@@ -74,7 +87,7 @@ launch() {
     exit 2
   fi
   mkdir -p "$LOG_ROOT"
-  local lane gpu existing
+  local lane gpu existing uuid
   for lane in "${!gpus[@]}"; do
     gpu="${gpus[$lane]}"
     if ! gpu_is_idle "$gpu"; then
@@ -92,8 +105,9 @@ launch() {
   rm -f "$LOG_ROOT"/lane_*.done
   for lane in "${!gpus[@]}"; do
     gpu="${gpus[$lane]}"
-    nohup env CUDA_VISIBLE_DEVICES="$gpu" \
-      P14_PHYSICAL_GPU="$gpu" \
+    uuid="$(gpu_uuid "$gpu")"
+    nohup env CUDA_VISIBLE_DEVICES="$uuid" \
+      P14_PHYSICAL_GPU="$gpu" P14_GPU_UUID="$uuid" \
       P14_REPO_ROOT="$REPO_ROOT" P14_PYTHON_BIN="$PYTHON_BIN" \
       P14_CONFIG="$CONFIG" P14_OUTPUT_ROOT="$OUTPUT_ROOT" P14_SEED="$SEED" \
       bash "$SCRIPT_PATH" lane "$lane" "${#gpus[@]}" \
@@ -186,13 +200,17 @@ smoke() {
   IFS=',' read -r -a gpus <<< "$GPU_LIST"
   local gpu="${gpus[0]}"
   gpu_is_idle "$gpu" || { echo "GPU $gpu is not idle" >&2; exit 3; }
+  local uuid
+  uuid="$(gpu_uuid "$gpu")"
   local smoke_root
   smoke_root="$(mktemp -d /tmp/p14_vtab_smoke.XXXXXX)"
   trap "rm -rf -- '$smoke_root'" EXIT
-  CUDA_VISIBLE_DEVICES="$gpu" P14_PHYSICAL_GPU="$gpu" "$PYTHON_BIN" -m "$MODULE" \
+  CUDA_VISIBLE_DEVICES="$uuid" P14_PHYSICAL_GPU="$gpu" P14_GPU_UUID="$uuid" \
+    "$PYTHON_BIN" -m "$MODULE" \
     --config "$CONFIG" --task cifar100 --method noft --seed 2026 \
     --output-root "$smoke_root" --smoke
-  CUDA_VISIBLE_DEVICES="$gpu" P14_PHYSICAL_GPU="$gpu" "$PYTHON_BIN" -m "$MODULE" \
+  CUDA_VISIBLE_DEVICES="$uuid" P14_PHYSICAL_GPU="$gpu" P14_GPU_UUID="$uuid" \
+    "$PYTHON_BIN" -m "$MODULE" \
     --config "$CONFIG" --task cifar100 --method bp --seed 2026 \
     --output-root "$smoke_root" --smoke
   echo "P14 smoke passed on physical GPU $gpu"

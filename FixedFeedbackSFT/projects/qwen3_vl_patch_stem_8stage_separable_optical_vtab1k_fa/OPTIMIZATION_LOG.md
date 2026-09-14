@@ -56,3 +56,9 @@ completed VTAB result.
   returned `Permission denied`. All self-invocations now call `bash` explicitly,
   so correctness no longer depends on the executable bit. Stopped PID files are
   checked before the clean relaunch.
+- A second qualification caught that this heterogeneous host's CUDA ordinal
+  order differs from its `nvidia-smi` indices: numeric selector `6` reached
+  physical GPU 5. All P14 processes were terminated by verified PID tree, and
+  the partial NoFT directory was moved (not deleted) under `_quarantine/`.
+  Launch and smoke now resolve the authorized physical index to a stable GPU
+  UUID and use that UUID in `CUDA_VISIBLE_DEVICES`; results record both values.

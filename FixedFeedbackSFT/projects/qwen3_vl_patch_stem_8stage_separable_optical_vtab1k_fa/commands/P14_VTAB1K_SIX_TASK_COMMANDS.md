@@ -51,5 +51,8 @@ When three GPUs are authorized but not simultaneously free, `launch-deferred`
 starts one CPU-only supervisor per requested GPU; each lane waits until its own
 GPU has no compute PID, runs there, and releases it when its two-task queue
 finishes. At most three GPUs are occupied and no busy GPU is overlapped.
+Physical `nvidia-smi` indices are resolved to GPU UUIDs before setting
+`CUDA_VISIBLE_DEVICES`; this avoids CUDA ordinal reordering on heterogeneous
+4090/3090/A100 hosts.
 The monitor writes `summary.json`, `summary.csv`, and a post-completion GPU
 snapshot; no persistent CUDA service remains.

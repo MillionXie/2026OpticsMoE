@@ -393,6 +393,7 @@ def run_experiment(settings: Settings, *, resume: bool = True) -> dict[str, Any]
         "data_manifest": data_manifest,
         "git_commit": git_commit(),
         "physical_gpu": os.environ.get("P14_PHYSICAL_GPU", "unrecorded"),
+        "physical_gpu_uuid": os.environ.get("P14_GPU_UUID", "unrecorded"),
         "cuda_visible_devices": os.environ.get("CUDA_VISIBLE_DEVICES", "unrestricted"),
         "cuda_device_name": (
             torch.cuda.get_device_name(device) if device.type == "cuda" else "cpu"
