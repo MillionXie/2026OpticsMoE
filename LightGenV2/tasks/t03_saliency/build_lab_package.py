@@ -86,9 +86,13 @@ def build(a):
                         restored,_ = replay(cached,data,tap.detectors)
                         error = float((native-restored).abs().max())
                         single_delta = float((native-logits[i:i+1]).abs().max())
-                        if error>1e-4 or single_delta>2e-4 or tuple(tap.amplitudes)!=STAGES:
-                            raise RuntimeError(f'Three-CCD replay audit failed: {error}, {single_delta}')
-                        audits.append(dict(key=key,three_ccd_max_abs=error,single_vs_batch_max_abs=single_delta,stem_max_abs=delta))
+                        density_delta=float((density_from_logits(native)-density_from_logits(logits[i:i+1])).abs().max())
+                        single_cc=float(independent_cc(density_from_logits(native).cpu().numpy(),data['density'].numpy())[0])
+                        cc_delta=abs(single_cc-float(cc[i]))
+                        if error>1e-4 or density_delta>1e-6 or cc_delta>1e-5 or tuple(tap.amplitudes)!=STAGES:
+                            raise RuntimeError(f'Three-CCD replay audit failed: {error}, logits {single_delta}, density {density_delta}, CC {cc_delta}')
+                        audits.append(dict(key=key,three_ccd_max_abs=error,single_vs_batch_max_abs=single_delta,stem_max_abs=delta,
+                                           single_vs_batch_density_max_abs=density_delta,single_vs_batch_cc_abs=cc_delta))
                         from PIL import Image
                         folder=out/'previews';folder.mkdir(exist_ok=True)
                         batch['images'][i].save(folder/(key+'_input.png'))
