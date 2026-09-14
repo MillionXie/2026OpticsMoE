@@ -14,6 +14,44 @@ from LightGenV2.tasks.t06_video_quality_assessment.lab_runtime import read,write
 STAGES=('vision_router','vision_expert','vision_global')
 
 
+def start_keep_awake(remote,project,session):
+    """Temporary Windows power request, scoped to this leased hardware run.
+
+    Generated job artifact, like the phase coordinator's desktop command.
+    Does not modify persistent power plans, display mode, camera or SLM state.
+    """
+    helper=f'''import ctypes,json,os,time
+from pathlib import Path
+p=Path({project!r})/'sessions'/{session!r}
+status=p/'keep_awake.json';lease=p/'keep_awake.lock'
+fd=os.open(lease,os.O_CREAT|os.O_EXCL|os.O_WRONLY);os.write(fd,str(os.getpid()).encode());os.close(fd)
+kernel=ctypes.windll.kernel32
+record=dict(pid=os.getpid(),started=time.time(),state='requested',persistent_power_plan_changed=False)
+try:
+ if not kernel.SetThreadExecutionState(0x80000003):raise RuntimeError('Windows power request failed')
+ status.write_text(json.dumps(record,indent=2),encoding='utf-8')
+ deadline=time.monotonic()+4*3600
+ while time.monotonic()<deadline:
+  if (p/'results.json').exists():record['reason']='evaluation_complete';break
+  beats=list((p/'logs').glob('*.heartbeat'))
+  newest=max((f.stat().st_mtime for f in beats),default=record['started'])
+  if time.time()-newest>240:record['reason']='no_phase_lease_for_four_minutes';break
+  time.sleep(10)
+ else:record['reason']='four_hour_limit'
+finally:
+ kernel.SetThreadExecutionState(0x80000000)
+ record.update(state='released',finished=time.time());status.write_text(json.dumps(record,indent=2),encoding='utf-8')
+ lease.unlink(missing_ok=True)
+'''
+    child=base64.b64encode(helper.encode()).decode()
+    launcher=f"import subprocess; p=subprocess.Popen([{remote.root+'/.venv_gpu/Scripts/pythonw.exe'!r},'-c',\"import base64;exec(base64.b64decode('{child}'))\"],stdin=subprocess.DEVNULL,stdout=subprocess.DEVNULL,stderr=subprocess.DEVNULL,creationflags=subprocess.CREATE_NO_WINDOW);print(p.pid)"
+    encoded=base64.b64encode(launcher.encode()).decode()
+    _,out,err=remote.ssh.exec_command(remote.root+'/.venv_gpu/Scripts/python.exe -c "import base64;exec(base64.b64decode(\''+encoded+'\'))"',timeout=30)
+    pid=out.read().decode().strip();errors=err.read().decode()
+    if out.channel.recv_exit_status():raise RuntimeError(errors)
+    return int(pid)
+
+
 def run(a):
     sys.path.insert(0,str(a.bench_root.resolve()))
     from dual_run import Remote
@@ -23,6 +61,8 @@ def run(a):
         report['updated_at']=time.strftime('%Y-%m-%dT%H:%M:%S');write(out/'status.json',report)
     save()
     try:
+        with Remote(read(a.link_config)) as r:
+            report['remote_keep_awake_pid']=start_keep_awake(r,a.project,a.session);save()
         for i,stage in enumerate(STAGES,1):
             if (out/'STOP').exists():raise RuntimeError('STOP requested before next stage')
             folder=out/f'{i:02d}_{stage}'
