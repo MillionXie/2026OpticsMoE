@@ -23,6 +23,7 @@ def main() -> int:
     parser.add_argument("--max-fields", type=int, default=0)
     parser.add_argument("--split", choices=("train", "test"), default="test")
     parser.add_argument("--shs-code-update", action="store_true", help="Small SHA-checked runtime update; no weights or data")
+    parser.add_argument("--base-manifest", help="SHA256.json of the exact installed release for a checked runtime update")
     args = parser.parse_args()
     if args.shs_code_update:
         import hashlib,json,zipfile
@@ -31,11 +32,16 @@ def main() -> int:
         base='8e869473787f4ffceb2a6a77f4430b94c206f459'
         prefix='LightGenV2/tasks/t06_video_quality_assessment/'
         files={};manifest={'source_commit':commit,'base_runtime_commit':base,'files':{}}
-        for name in ['lab_bench.py','lab_exposure_session.py']:
+        baseline=json.loads(Path(args.base_manifest).read_text(encoding='utf-8')) if args.base_manifest else None
+        if baseline is not None:
+            manifest['base_manifest_sha256']=hashlib.sha256(Path(args.base_manifest).read_bytes()).hexdigest()
+            manifest['base_runtime_commit']=None
+        for name in ['lab_bench.py','lab_exposure_session.py','lab_runtime.py']:
             path=prefix+name;data=subprocess.check_output(['git','show',commit+':'+path],cwd=REPO_ROOT)
             old=subprocess.run(['git','show',base+':'+path],cwd=REPO_ROOT,capture_output=True)
             dest='runtime/'+path;files[dest]=data
-            manifest['files'][dest]={'sha256':hashlib.sha256(data).hexdigest(),'base_sha256':hashlib.sha256(old.stdout).hexdigest() if old.returncode==0 else None}
+            old_digest=baseline.get(dest) if baseline is not None else (hashlib.sha256(old.stdout).hexdigest() if old.returncode==0 else None)
+            manifest['files'][dest]={'sha256':hashlib.sha256(data).hexdigest(),'base_sha256':old_digest}
         output=Path(args.output);output.parent.mkdir(parents=True,exist_ok=True)
         with zipfile.ZipFile(output,'x',zipfile.ZIP_DEFLATED) as z:
             for name,data in files.items():z.writestr(name,data)
