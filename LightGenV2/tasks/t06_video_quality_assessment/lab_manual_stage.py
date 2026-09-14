@@ -128,6 +128,8 @@ def run(a):
                         except BaseException as e:report.update(status='failed_holding_phase',error=str(e));save()
                     time.sleep(.01)
                 report['phase_released']=True;save()
+    except BaseException as e:
+        report.update(status='failed_phase_owner',error=str(e));save();raise
     finally:
         release.touch()
         if worker:worker.join(timeout=50)
@@ -141,5 +143,10 @@ def main():
     p.add_argument('--task',choices=['lgvq','salicon'],default='lgvq')
     p.add_argument('--verify-phase-optically',action='store_true',help='Fixed-input flat/target repeat test before capture and same-phase check after')
     p.add_argument('--phase-reference-dir',type=Path,help='Optional SHA-checked expected optical response bank')
-    p.add_argument('--stage',choices=STAGES,required=True);run(p.parse_args())
+    p.add_argument('--log-file',type=Path,help='Python-level logging without Win32 standard-handle redirection')
+    p.add_argument('--stage',choices=STAGES,required=True);a=p.parse_args()
+    if a.log_file:
+        import contextlib
+        with a.log_file.open('x',encoding='utf-8',buffering=1) as log,contextlib.redirect_stdout(log),contextlib.redirect_stderr(log):run(a)
+    else:run(a)
 if __name__=='__main__':main()

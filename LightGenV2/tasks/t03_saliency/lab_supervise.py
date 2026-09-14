@@ -110,13 +110,15 @@ def run(a):
                      'LightGenV2.tasks.t06_video_quality_assessment.lab_manual_stage',
                      '--task',task,'--bench-root',str(a.bench_root),'--link-config',str(a.link_config),
                      '--phase',str(phase),'--out',str(folder),'--project',a.project,'--session',a.session,
-                     '--config',a.config,'--stage',stage]
+                     '--config',a.config,'--stage',stage,'--log-file',str(out/f'{i:02d}_{stage}.log')]
             if getattr(a,'verify_phase_optically',False):command.append('--verify-phase-optically')
             if getattr(a,'phase_reference_dir',None):command.extend(['--phase-reference-dir',str(a.phase_reference_dir)])
             si=subprocess.STARTUPINFO();si.dwFlags=0
-            with (out/f'{i:02d}_{stage}.log').open('x',encoding='utf-8') as log:
-                child=subprocess.Popen(command,cwd=Path(__file__).resolve().parents[3],stdin=subprocess.DEVNULL,
-                     stdout=log,stderr=log,startupinfo=si,creationflags=subprocess.CREATE_NEW_PROCESS_GROUP,close_fds=True)
+            # Do not redirect Win32 standard handles into the SDK owner.
+            # Logging is redirected at Python level inside that process instead.
+            # Optical preflight, not this launch change alone, decides validity.
+            child=subprocess.Popen(command,cwd=Path(__file__).resolve().parents[3],
+                 startupinfo=si,creationflags=subprocess.CREATE_NEW_PROCESS_GROUP,close_fds=True)
             report.update(status='running_stage',stage=stage,phase_pid=child.pid,stage_report=str(folder/'report.json'));save()
             started=time.monotonic()
             while True:
