@@ -1,5 +1,15 @@
 # T06 视频质量评价
 
+## 当前SHS实验台迁移（2026-09-14）
+
+新入口 `lab_bundle.py` / `lab_bench.py` **仅绑定** Temporal `multivideo16x4_rank_s163`
+（SRCC 0.8044、16视频×4帧）与 Spatial `spatial_readout_1m_srcc067`（SRCC 0.6710、
+单视频4帧），均校验正式checkpoint SHA256。它直接复用模型原始forward的六次传播边界，
+避免旧hardware_contract遗漏最新电子残差或标量门控。构建时检查原模型与六层仿真CCD回填
+一致性；全558条缓存交付还必须通过目标SRCC复评。未通过不得声称已迁移完成。
+硬件操作与两台电脑分工见 [COMMAND_SHS.md](hardware/COMMAND_SHS.md)。严格逐层，只有用户
+通知后才换相位并开始下一层capture，不自动连跑六层。ABO数据与会话不受影响。
+
 > 2026-09-10 架构审计：`spatial_single_video4_srcc06665` 含冻结预训练
 > ResNet18 前端，现已降级为“非合规性能上界”，不能作为正式方案引用或部署。
 > 当前正式自研卷积候选为 `spatial_single_video4_custom_conv`：不含命名预训练
