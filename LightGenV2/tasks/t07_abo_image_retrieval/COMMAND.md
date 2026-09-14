@@ -2556,3 +2556,62 @@ python "$B/package.py" --runs "$R" --data "$DATA" --output "$T07/releases/abo_qw
 本次已从原图顺序重跑完成（推理源码91b2d02d，GPU0 RTX4090）：
 旧native64=94.375%、2048=95.2083%；新native64=85.125%、2048=85.625%。
 新64维同一排名按同类别判定为98.75%，仅为诊断。PID3428835/3438359已退出，禁止用此诊断替换同SKU主指标。
+
+## 82. Vision外层跳连和V/L光贡献：固定权重诊断
+
+从已提交/推送的本任务代码所在工作树执行，先激活xml并确认GPU0空闲；下方命令不是运行成功声明。
+正常81.25%必须首先重现，否则脚本停止，不解释后续消融。不会生成或修改模型权重。
+保留原始相位/光路/ROI，所有干预仅在诊断进程临时hook中生效，结束自动清除。
+`skip_only`只去掉Vision光电更新，Language光电仍在；该诊断不是单独训练的纯电子baseline。
+同时重新计算图库和查询，报告TRAIN图库/TEST查询各自的特征RMS统计；不把特征幅值当光能。
+
+```bash
+T07=/DATA/DATA1/guest3/2026OpticsMoE/LightGenV2/tasks/t07_abo_image_retrieval
+R="$T07/runs/simulation"
+export HF_HUB_OFFLINE=1 TRANSFORMERS_OFFLINE=1 OMP_NUM_THREADS=4 MKL_NUM_THREADS=4
+nvidia-smi
+CUDA_VISIBLE_DEVICES=GPU-afc19890-6209-ee4d-622d-e619da5bd5b2 python -m LightGenV2.tasks.t07_abo_image_retrieval.standalone.outer_skip_audit \
+  --data /DATA/DATA1/guest3/2026OpticsMoE/data/abo_similarity10_data \
+  --manifest "$R/abo200_enrolled_protocol_20260913/protocol.json" --assets "$R/standalone_assets_20260910" \
+  --checkpoint "$R/abo200_optical_pretrain_20260914/best.pt" \
+  --expected-checkpoint-sha256 dcf768878abddd91558533757e404d9ee788cffbc5e0f0162a6f07d8a197eb1d \
+  --expected-hit-at-1 .8125 --batch-size 4 --output "$R/abo200_outer_skip_audit_20260914"
+```
+
+## 83. 更频繁刷新训练图库：ABO主线＋SHAPE备选
+
+先做CUDA冒烟：把ABO下方输出改为`$T07/runs/smoke/abo_bank_refresh_20260914`，
+设置`--epochs 1 --steps 2 --eval-every 1 --bank-refresh-steps 1`，其余参数不变。
+确认`history.json`记录一次requires_grad=false的刷新、梯度有限、完整正常/去光评估完成。
+正式运行重新从原best开始，不从冒烟best开始。禁止覆盖已有输出。
+
+`--batch-size 4`是评估batch；训练为8商品×2张不同TRAIN照片＝16张。
+`--bank-batch-size 16`只影响训练图库编码；`--bank-refresh-steps 25`不表示加入新图或测试图。
+两条命令可分别在已确认空闲的GPU0/1运行，最多两张；没有空闲卡则等待，不终止他人进程。
+使用短程低学习率续训；不声称与历史run构成单一图库刷新因素的严格对照。
+
+```bash
+T07=/DATA/DATA1/guest3/2026OpticsMoE/LightGenV2/tasks/t07_abo_image_retrieval
+R="$T07/runs/simulation"
+export HF_HUB_OFFLINE=1 TRANSFORMERS_OFFLINE=1 OMP_NUM_THREADS=4 MKL_NUM_THREADS=4
+nvidia-smi
+CUDA_VISIBLE_DEVICES=GPU-afc19890-6209-ee4d-622d-e619da5bd5b2 python -m LightGenV2.tasks.t07_abo_image_retrieval.standalone.retrieval_adapt \
+  --data /DATA/DATA1/guest3/2026OpticsMoE/data/abo_similarity10_data \
+  --manifest "$R/abo200_enrolled_protocol_20260913/protocol.json" --assets "$R/standalone_assets_20260910" \
+  --checkpoint "$R/abo200_optical_pretrain_20260914/best.pt" \
+  --expected-checkpoint-sha256 dcf768878abddd91558533757e404d9ee788cffbc5e0f0162a6f07d8a197eb1d \
+  --multi-view --refine-profile sku_capacity_control --lr-scale .1 \
+  --epochs 15 --steps 100 --eval-every 5 --batch-size 4 --bank-batch-size 16 --bank-refresh-steps 25 \
+  --output "$R/abo200_bank_refresh_20260914"
+CUDA_VISIBLE_DEVICES=GPU-e8837b85-d55b-8e81-aaa5-ec1ac326932d python -m LightGenV2.tasks.t07_abo_image_retrieval.standalone.retrieval_adapt \
+  --data /DATA/DATA1/guest3/2026OpticsMoE/data/shape_source \
+  --manifest "$R/shape8_protocol_20260913/protocol.json" --assets "$R/standalone_assets_20260910" \
+  --checkpoint "$R/shape8_view_refine_20260913/best.pt" \
+  --expected-checkpoint-sha256 45fcfae4a970e2a14d518b9ecebaf4d5e927c5f48f653181abf87c398487c324 \
+  --multi-view --refine-profile shape_views --lr-scale .25 \
+  --epochs 15 --steps 100 --eval-every 5 --batch-size 4 --bank-batch-size 16 --bank-refresh-steps 25 \
+  --output "$R/shape8_bank_refresh_20260914"
+```
+
+完成后检查`status.json`、`final_report.json`的正常/同权重去光、TRAIN和专家分布；
+若best选回epoch0，则没有获得新训练提升。检查自身PID退出并确认GPU释放，不以历史启动PID当运行状态。

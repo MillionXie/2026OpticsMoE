@@ -198,6 +198,13 @@ def phase_delta(model, initial):
             for n, p in phase_snapshot(model).items()}
 
 
+def refresh_bank_before_step(step, interval):
+    """Zero-based optimizer step; epoch-start bank already exists at step zero."""
+    if type(step) is not int or step < 0 or type(interval) is not int or interval < 0:
+        raise ValueError('Bank refresh step/interval must be nonnegative integers')
+    return interval > 0 and step > 0 and step % interval == 0
+
+
 def load_initial_weights(model, payload, assets, fresh):
     """Fresh protocol must not inherit ANY ABO-trained parameter/buffer."""
     if not fresh:
@@ -305,6 +312,8 @@ def run(args):
         teacher_train_ids=sorted(teacher) if teacher else [], extra_inference_parameters=capacity_audit['extra_parameters'],
         capacity_conversion=capacity_audit,
         refinement=profile,
+        bank_refresh_steps=getattr(args, 'bank_refresh_steps', 0),
+        bank_refresh_note='TRAIN reference features only; full deterministic re-encode with current live weights. No gradients/TEST rows; no change to inference.',
         training_scope=('External: only12 phases, bitwise frozen electronics/alpha; target: joint trainable parameters'
                         if profile.get('external_optical_only') else
                         'Only12 optical phase tensors; all electronics/frontend/alpha frozen' if optical_only else 'Profile curriculum'),
@@ -378,7 +387,16 @@ def run(args):
                 multiplier = learning_rate_multiplier(profile, g['name'], external, refined)
                 g['lr'] = (.01 if g['name'].endswith('raw_router_phase') else 0.) if warming else g['initial_lr'] * factor * multiplier
             totals = dict(loss=0., batch_natural_hit_at_1=0., route_aux=0., teacher_loss=0., all_view_loss=0., sam_loss_gap=0.)
+            bank_refresh_audit = []
             for step in range(args.steps):
+                if refresh_bank_before_step(step, getattr(args, 'bank_refresh_steps', 0)):
+                    refreshed, _ = encode_rows(model, processor, gallery, args.data, device,
+                        getattr(args, 'bank_batch_size', None) or args.batch_size)
+                    refreshed = refreshed.to(device)
+                    bank_refresh_audit.append(dict(before_step=step,
+                        mean_cosine_to_previous=float(F.cosine_similarity(refreshed.float(), bank.float(), dim=-1).mean()),
+                        reference_count=len(gallery), requires_grad=refreshed.requires_grad))
+                    bank = refreshed
                 model.train(not (warming or current_optical_only))
                 if current_optical_only:
                     # Fixed electronics are deterministic; retain existing optical
@@ -428,6 +446,7 @@ def run(args):
                 totals['sam_loss_gap'] += sam['loss_gap']
             row = dict(epoch=epoch, phase='optical_only' if optical_only else 'external_pretrain' if external else 'target_finetune', phase_epoch=phase_epoch, router_only_warmup=warming,
                 optical_only_scope=current_optical_only,
+                bank_refreshes=bank_refresh_audit,
                 active_trainable_parameters=sum(p.numel() for _,p in params if p.requires_grad),
                 fitting_bank_epoch_start=bank_metrics,
                 **{k: v / args.steps for k, v in totals.items()}, last_gradient_norm=float(norm))
@@ -511,6 +530,8 @@ def main():
     p.add_argument('--classes-per-batch', type=int, default=8)
     p.add_argument('--batch-size', type=int, default=4, help='Evaluation batch size, training batch is 2*classes-per-batch')
     p.add_argument('--bank-batch-size', type=int, help='Optional independent TRAIN-bank encoding batch; TEST always uses --batch-size')
+    p.add_argument('--bank-refresh-steps', type=int, default=0,
+                   help='Re-encode TRAIN bank every N optimizer steps within epoch; 0 preserves epoch-only baseline. No TEST or extra inference layer.')
     p.add_argument('--seed', type=int, default=42)
     p.add_argument('--multi-view', action='store_true', help='All TRAIN views in bank, distinct-photo pairs, self excluded; enrolled protocols only')
     p.add_argument('--fresh-trainable', action='store_true', help='Reset all trainable weights, load packaged frozen frontend only')
@@ -537,6 +558,8 @@ def main():
         p.error('External pretraining requires nonnegative epochs and pool/root/SHA')
     if args.bank_batch_size is not None and args.bank_batch_size < 1:
         p.error('bank-batch-size must be positive')
+    if args.bank_refresh_steps < 0:
+        p.error('bank-refresh-steps must be nonnegative')
     run(args)
 
 
