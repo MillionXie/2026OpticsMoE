@@ -2972,3 +2972,7 @@ CPU PID1799262/1800500和复评GPU4 PID1802144/1804390均退出，不再占GPU�
 SHA自动核验上述b14a34ea权重，expected-hit改`.8275`、lr改`.00001`、anchor改`1`、seed固定42，
 output为`abo200_readout_top1_polish_20260915`；其他配置保持800步/dropout.1/排序损失/batch128。
 此为从新的已验证起点继续训练，不计入前述三种子重复实验；未原图复评前仍不是正式新成绩。
+
+抛光组已完成并复评：原图82.75%/去光76.50%，mAP=.7295324281、NDCG=.7867065295，
+未超过seed73的同Hit与更高mAP，故不替换。CPU PID1808391与复评GPU4 PID1811287均已退出。
+原图证据在该run的verification/final_report.json；不把缓存mAP的提升当成完整模型提升。
