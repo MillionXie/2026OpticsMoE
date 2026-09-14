@@ -3030,3 +3030,35 @@ CUDA_VISIBLE_DEVICES=GPU-1b963983-7909-af6e-0528-f0f0661ab549 OMP_NUM_THREADS=4 
 output改`$R/abo200_phase_head_top1_20260915`；不得从冒烟last续训。
 最大lr：phase .0001、router .0000015、head .000045；2轮warm-in+cosine，EMA.99；只best/last。
 共享GPU预算最多两张，旧12轮组完成后及时核验进程/显存；未验证的新候选不覆盖正式82.75%。
+
+### 第92节实际结果与83%权重复现
+
+实际两步训练已选第1轮EMA，训练器最终原图83.00%/去光76.375%，独立原图重跑一致。
+故原计划8轮没有启动；不能把本结果写成8轮训练收益。固定起点为第90节seed73，不是随机初始化。
+best SHA `538477e0168c90cb7e0952d7c32ef5f3c4391568839a2865f86a21febf0b27b2`；源码d111dd91，410测试通过。
+scope_audit确认best/last只有12份相位+原Linear两张量变化，其他张量及metadata完全不变；
+EMA相位变化非常小（约2e-6 rad），不能夸大成重新学到大幅不同的光场。
+TRAIN自图排除94.875%；mAP=.7297231523、NDCG=.7873187667，gallery/query路由各自合格。
+周期TEST/EMA/跨run选模有偏差，比82.75%仅多2张，不能称统计显著或实验室准确率。
+原12轮NLL对照也完成，最佳第1轮live82.50%/去光76.50%，未采用。
+训练PID1772832/1827319、复评PID1836668均已退出，GPU已释放。
+
+为便于查找，完整候选已按逐文件SHA复制到
+`$R/abo200_phase_head_top1_verified_20260915`，源短程run保留不移动；
+`promotion_manifest.json`记录来历、所有文件校验及不是8轮训练这一事实。
+里面的execution/command原路径保留，是实验溯源记录，不要误当成复制失败。
+复现训练：checkout源码d111dd91，按本节两步命令、同起点和配置运行到一个新空目录。
+复现固定权重：设置T07/R（第89节），使用下面命令；不需要重新训练，output必须是新的空目录。
+
+```bash
+P="$R/abo200_phase_head_top1_verified_20260915"
+NEW_SHA=$(python -c 'import pathlib,json,hashlib,sys; p=pathlib.Path(sys.argv[1]); s=json.loads((p/"final_report.json").read_text())["best_sha256"]; assert hashlib.sha256((p/"best.pt").read_bytes()).hexdigest()==s; print(s)' "$P")
+CUDA_VISIBLE_DEVICES=GPU-1b963983-7909-af6e-0528-f0f0661ab549 OMP_NUM_THREADS=4 MKL_NUM_THREADS=4 HF_HUB_OFFLINE=1 TRANSFORMERS_OFFLINE=1 python -m LightGenV2.tasks.t07_abo_image_retrieval.standalone.retrieval_screen optical \
+  --data /DATA/DATA1/guest3/2026OpticsMoE/data/abo_similarity10_data \
+  --manifest "$R/abo200_enrolled_protocol_20260913/protocol.json" --assets "$R/standalone_assets_20260910" \
+  --checkpoint "$P/best.pt" --expected-checkpoint-sha256 "$NEW_SHA" \
+  --batch-size 4 --cache-readout-input --output "$P/verification_repeat"
+```
+
+已完成的独立复评目录为`verification`；上面`verification_repeat`供下一位同学重新验证。
+GPU编号仅示例，必须先确认空闲。phase_masks.png是相位可视化；best.pt是推理/续训权重，last.pt保留末步训练状态。
