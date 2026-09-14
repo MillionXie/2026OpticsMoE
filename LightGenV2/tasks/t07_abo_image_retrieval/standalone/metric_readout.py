@@ -17,6 +17,7 @@ from torch.nn import functional as F
 
 from .io import sha256, source_commit, write_json
 from .retrieval_screen import load_screen, rank_instances, split_routing_report
+from .retrieval_refine import train_ranking_loss
 
 
 def fold_metric(payload, matrix):
@@ -71,34 +72,6 @@ def replace_projection(payload, weight, bias):
             raise ValueError('Existing projection shape mismatch')
         result['state_dict'][key] = value.detach().clone().to(payload['state_dict'][key].dtype)
     return result
-
-
-def train_ranking_loss(logits, positive, excluded, kind='nll'):
-    """TRAIN nearest-positive/negative surrogate, never a test-time reranker.
-
-    Logits are cosine/.1. The .2 logit margin means .02 cosine margin.
-    Top1 needs *one* correct SKU view before every wrong SKU, not every
-    positive ahead of every negative. Self matches participate in neither set.
-    """
-    positive = positive & ~excluded
-    negative = ~positive & ~excluded
-    if not positive.any(1).all() or not negative.any(1).all():
-        raise ValueError('Require nonself TRAIN positives and different-SKU negatives')
-    valid = logits.masked_fill(excluded, -torch.inf)
-    pos = logits.masked_fill(~positive | excluded, -torch.inf)
-    if kind == 'nll':
-        return (valid.logsumexp(1) - pos.logsumexp(1)).mean()
-    if kind == 'top1_softplus':
-        neg = logits.masked_fill(~negative, -torch.inf)
-        return F.softplus(neg.amax(1) - pos.amax(1) + .2).mean()
-    if kind == 'hybrid_nll_top1':
-        # Fixed equal mixture: improve nearest-SKU ordering without discarding
-        # the original all-gallery multi-positive probability objective.
-        nll = (valid.logsumexp(1) - pos.logsumexp(1)).mean()
-        neg = logits.masked_fill(~negative, -torch.inf)
-        top1 = F.softplus(neg.amax(1) - pos.amax(1) + .2).mean()
-        return .5 * (nll + top1)
-    raise ValueError('Unknown TRAIN ranking loss')
 
 
 def projection_loss(weight, bias, train_inputs, train_labels, indices, reference, anchor, input_dropout=0., ranking_loss='nll'):

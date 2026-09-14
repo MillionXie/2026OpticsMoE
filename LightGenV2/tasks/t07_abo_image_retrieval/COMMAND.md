@@ -2999,3 +2999,34 @@ CUDA_VISIBLE_DEVICES='' OMP_NUM_THREADS=4 MKL_NUM_THREADS=4 python -m LightGenV2
 
 仍只有TRAIN参与loss，周期TEST/跨run选模存在偏差；缓存候选必须按90节原图入口复评后才可晋升。
 不能更新正在进行12轮相位训练的ff5b44e3工作树；CPU目录无活跃进程后才能切换到已推GitHub的新源码。
+
+实际混合损失已完成800步，选回step0原权重，末期缓存82.00%；未改善，不做重复GPU复评。
+CPU PID1819040已退出。保持82.75%的seed73正式候选，不把新PT文件名视为性能提升。
+
+## 92. 原图相位+读出接受Top1排序监督
+
+第89节仍按原配置完成，不能在线修改。新`sku_phase_head_top1`从已验证82.75%的b14a34ea权重开始，
+只更新12份相位+原Linear两张量；电子残差、frontend、alpha、head LayerNorm全冻结，逐轮/最终SHA检查。
+两张TRAIN视角分别以完整1600张detached TRAIN bank为参考，排除自身；两个方向的Top1 softplus取平均。
+温度.1、余弦margin .02，关闭该组SupCon和全正样本项（权重均0）；原光学正则与路由均衡仍保留。
+原10% batch噪声/DC、10%训练读出dropout、轻微亮度/对比度增强不变；推理无新增层/分支/集成。
+这是一组训练配方对照，不将效果归因于某个单独因素。公用损失函数位于retrieval_refine，
+CPU和原图训练共用同一实现，默认旧NLL行为保持不变。
+
+先在确认空闲GPU上执行两步冒烟（以下GPU4是本服务器空闲卡；禁止占用他人GPU）：
+
+```bash
+CUDA_VISIBLE_DEVICES=GPU-1b963983-7909-af6e-0528-f0f0661ab549 OMP_NUM_THREADS=4 MKL_NUM_THREADS=4 HF_HUB_OFFLINE=1 TRANSFORMERS_OFFLINE=1 python -m LightGenV2.tasks.t07_abo_image_retrieval.standalone.retrieval_adapt \
+  --data /DATA/DATA1/guest3/2026OpticsMoE/data/abo_similarity10_data \
+  --manifest "$R/abo200_enrolled_protocol_20260913/protocol.json" --assets "$R/standalone_assets_20260910" \
+  --checkpoint "$R/abo200_readout_top1_seed73_20260915/best.pt" --expected-checkpoint-sha256 "$S73_SHA" \
+  --multi-view --refine-profile sku_phase_head_top1 --lr-scale .05 \
+  --epochs 1 --steps 2 --eval-every 1 --batch-size 4 --bank-batch-size 16 \
+  --output "$T07/runs/smoke/abo_phase_head_top1_20260915"
+```
+
+确认complete、冻结SHA不变、12份相位及head均更新、正常/去光/路由检查通过后，且冒烟进程已退出，
+再从同一原b14a34ea权重启动8轮×100步，添加`--bank-refresh-steps 25`，
+output改`$R/abo200_phase_head_top1_20260915`；不得从冒烟last续训。
+最大lr：phase .0001、router .0000015、head .000045；2轮warm-in+cosine，EMA.99；只best/last。
+共享GPU预算最多两张，旧12轮组完成后及时核验进程/显存；未验证的新候选不覆盖正式82.75%。

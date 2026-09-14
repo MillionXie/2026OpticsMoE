@@ -26,6 +26,9 @@ PROFILES['sku_capacity_control'] = dict(PROFILES['sku_mild_adamw'], router_lr_mu
 PROFILES['sku_symmetric_bank'] = dict(PROFILES['sku_capacity_control'], symmetric_bank=True)
 PROFILES['sku_phase_head'] = dict(PROFILES['sku_capacity_control'],
     phase_head_only=True, readout_input_dropout=.1, head_lr_multiplier=3.)
+PROFILES['sku_phase_head_top1'] = dict(PROFILES['sku_phase_head'],
+    ranking_loss='top1_softplus', symmetric_bank=True,
+    supcon_weight=0., positive_weight=0.)
 # Isolate training regularizers: identical loss, optimizer, capacity and optics.
 # Do not infer separate augmentation/dropout effects from the old combined SAM run.
 PROFILES['sku_augmentation_only'] = dict(PROFILES['sku_capacity_control'], mild_augmentation=False)
@@ -109,6 +112,34 @@ def prepare_capacity_payload(payload, profile, protocol, fresh=False):
         role='Larger optical-electronic teacher candidate; not the final compressed student',
         initialization='Zero-padded depthwise kernels and duplicated/halved MLP neurons preserve eval function algebraically; finite-precision initialization must be re-evaluated',
         optical_frontend_alpha_head_unchanged_at_conversion=True)
+
+
+def train_ranking_loss(logits, positive, excluded, kind='nll'):
+    """TRAIN nearest-positive/negative surrogate, never a test-time reranker.
+
+    Logits are cosine/.1. The .2 logit margin means .02 cosine margin.
+    Top1 needs *one* correct SKU view before every wrong SKU, not every
+    positive ahead of every negative. Self matches participate in neither set.
+    """
+    positive = positive & ~excluded
+    negative = ~positive & ~excluded
+    if not positive.any(1).all() or not negative.any(1).all():
+        raise ValueError('Require nonself TRAIN positives and different-SKU negatives')
+    valid = logits.masked_fill(excluded, -torch.inf)
+    pos = logits.masked_fill(~positive | excluded, -torch.inf)
+    if kind == 'nll':
+        return (valid.logsumexp(1) - pos.logsumexp(1)).mean()
+    if kind == 'top1_softplus':
+        neg = logits.masked_fill(~negative, -torch.inf)
+        return F.softplus(neg.amax(1) - pos.amax(1) + .2).mean()
+    if kind == 'hybrid_nll_top1':
+        # Fixed equal mixture: improve nearest-SKU ordering without discarding
+        # the original all-gallery multi-positive probability objective.
+        nll = (valid.logsumexp(1) - pos.logsumexp(1)).mean()
+        neg = logits.masked_fill(~negative, -torch.inf)
+        top1 = F.softplus(neg.amax(1) - pos.amax(1) + .2).mean()
+        return .5 * (nll + top1)
+    raise ValueError('Unknown TRAIN ranking loss')
 
 
 def optical_parameter(name):

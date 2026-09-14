@@ -93,3 +93,11 @@ def test_phase_head_profile_lr_has_no_inference_expansion():
     assert learning_rate_multiplier(p,'readout.norm.weight',False,True)==1
     assert learning_rate_multiplier(p,'vision.optics.experts.0',False,True)==1
     assert learning_rate_multiplier(p,'vision.optics.router.raw_router_phase',False,True)==.1
+
+
+def test_phase_head_top1_changes_only_training_objective_recipe():
+    p=dict(PROFILES['sku_phase_head_top1'])
+    assert p.pop('ranking_loss')=='top1_softplus' and p.pop('symmetric_bank') is True
+    assert p['supcon_weight']==0 and p['positive_weight']==0
+    p.pop('supcon_weight'); p['positive_weight']=.1
+    assert p==PROFILES['sku_phase_head']

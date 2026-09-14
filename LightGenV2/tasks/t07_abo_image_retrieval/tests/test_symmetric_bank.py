@@ -51,3 +51,26 @@ def test_profile_changes_training_only():
     p = dict(PROFILES['sku_symmetric_bank'])
     assert p.pop('symmetric_bank') is True
     assert p == PROFILES['sku_capacity_control']
+
+
+def test_top1_online_matches_shared_objective_both_views_and_frozen_bank():
+    from torch.nn import functional as F
+    from LightGenV2.tasks.t07_abo_image_retrieval.standalone.retrieval_refine import train_ranking_loss
+    z, labels, bank, bl, ex=fixture()
+    sim=F.normalize(z.float(),dim=1)@F.normalize(bank.detach().float(),dim=1).T/.1
+    pos=labels[:,None].eq(bl[None]) & ~ex
+    expected=train_ranking_loss(sim,pos,ex,'top1_softplus')
+    loss,hit=paired_bank_loss(z,labels,bank,2,bl,ex,symmetric=True,supcon_weight=0,ranking_loss='top1_softplus')
+    assert torch.allclose(loss,expected) and 0<=hit<=1
+    loss.backward()
+    assert torch.isfinite(z.grad).all() and (z.grad.norm(dim=1)>0).all()
+    assert bank.grad is None
+
+
+def test_online_top1_rejects_missing_positive_or_unknown_objective():
+    z,labels,bank,bl,ex=fixture()
+    with pytest.raises(ValueError,match='Unknown'):
+        paired_bank_loss(z,labels,bank,2,bl,ex,symmetric=True,ranking_loss='bad')
+    ex[3]=True
+    with pytest.raises(ValueError,match='nonself'):
+        paired_bank_loss(z,labels,bank,2,bl,ex,symmetric=True,ranking_loss='top1_softplus')

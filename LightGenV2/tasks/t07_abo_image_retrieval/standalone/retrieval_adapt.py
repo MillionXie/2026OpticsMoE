@@ -27,7 +27,7 @@ from .retrieval_refine import (PROFILES, validate_continuation, route_objective,
     all_view_loss, load_train_teacher, relational_loss, selection_score, router_acceptable,
     optical_parameter, set_parameter_scope, update_trainable_ema, non_optical_digest,
     prepare_capacity_payload, optical_curriculum_scope, learning_rate_multiplier,
-    configure_phase_head_scope, attach_train_readout_dropout)
+    configure_phase_head_scope, attach_train_readout_dropout, train_ranking_loss)
 from .enrolled_regularization import load_external_pool, load_external_relations, augment_whole_object, curriculum_epoch, curriculum_loss_weights, fitting_bank_diagnostics
 from .generalization import backward_with_sam
 
@@ -109,7 +109,7 @@ def training_pairs(groups, rng, classes_per_batch, category_probability=0.):
     return rows, torch.tensor([labels[r['product_id']] for r in rows])
 
 
-def retrieval_loss(z, labels, bank, natural_count, bank_labels=None, excluded=None, *, supcon_weight=.5):
+def retrieval_loss(z, labels, bank, natural_count, bank_labels=None, excluded=None, *, supcon_weight=.5, ranking_loss='nll'):
     """Whole fitting-gallery NLL; multiple references of an object are positives."""
     if not math.isfinite(supcon_weight) or supcon_weight < 0:
         raise ValueError('SupCon weight must be finite and nonnegative')
@@ -129,7 +129,11 @@ def retrieval_loss(z, labels, bank, natural_count, bank_labels=None, excluded=No
         if not positive.any(1).all():
             raise ValueError('No nonself fitting positive')
         logits = logits.masked_fill(excluded, -torch.inf)
-    if torch.equal(bank_labels, torch.arange(len(bank), device=z.device)):
+    if ranking_loss != 'nll':
+        exclusion = excluded if excluded is not None else torch.zeros_like(logits, dtype=torch.bool)
+        positive = labels[:natural_count, None].eq(bank_labels[None]) & ~exclusion
+        ce = train_ranking_loss(logits, positive, exclusion, ranking_loss)
+    elif torch.equal(bank_labels, torch.arange(len(bank), device=z.device)):
         ce = F.cross_entropy(logits, labels[:natural_count])
     else:
         positive = labels[:natural_count, None].eq(bank_labels[None])
@@ -169,7 +173,7 @@ def encode_rows(model, processor, rows, root, device, batch_size, routing=False)
     return torch.cat(vectors), audit
 
 
-def paired_bank_loss(z, labels, bank, count, bank_labels, excluded, *, symmetric=False, supcon_weight=.5):
+def paired_bank_loss(z, labels, bank, count, bank_labels, excluded, *, symmetric=False, supcon_weight=.5, ranking_loss='nll'):
     """Average two query directions, retaining the original total loss scale.
 
     With symmetric=True every live TRAIN view must exclude its own bank entry.
@@ -179,12 +183,12 @@ def paired_bank_loss(z, labels, bank, count, bank_labels, excluded, *, symmetric
     if symmetric and (excluded is None or excluded.shape != (2 * count, len(bank))):
         raise ValueError('Symmetric bank loss requires self exclusion for BOTH views')
     left = retrieval_loss(z, labels, bank, count, bank_labels,
-        excluded[:count] if excluded is not None else None, supcon_weight=supcon_weight)
+        excluded[:count] if excluded is not None else None, supcon_weight=supcon_weight, ranking_loss=ranking_loss)
     if not symmetric:
         return left
     right = retrieval_loss(torch.cat((z[count:], z[:count])),
         torch.cat((labels[count:], labels[:count])), bank, count, bank_labels,
-        excluded[count:], supcon_weight=supcon_weight)
+        excluded[count:], supcon_weight=supcon_weight, ranking_loss=ranking_loss)
     return tuple((a + b) * .5 for a, b in zip(left, right))
 
 
@@ -340,6 +344,7 @@ def run(args):
         teacher_train_ids=sorted(teacher) if teacher else [], extra_inference_parameters=capacity_audit['extra_parameters'],
         capacity_conversion=capacity_audit,
         refinement=profile,
+        bank_ranking_objective=profile.get('ranking_loss', 'nll'),
         bank_refresh_steps=getattr(args, 'bank_refresh_steps', 0),
         bank_refresh_note='TRAIN reference features only; full deterministic re-encode with current live weights. No gradients/TEST rows; no change to inference.',
         training_scope=('Only12 phases and original Linear384->64 weight/bias; frontend, electronic residuals, alpha and head LayerNorm bitwise frozen'
@@ -353,7 +358,7 @@ def run(args):
         curriculum_note='Continue verified current-protocol best -> external instance pretraining (last state, no TEST selection) -> target fine-tune. Initial best retained; not from-scratch pretraining' if external_fit else None,
         noise=f"Original metadata noise on {profile.get('noise_probability', .25):.0%} joint-training batches; refined profiles keep router noise disabled. Warmup clean. No pixel shift/k filter/8bit STE; clean evaluation",
         augmentation=('Brightness/contrast .95..1.05 only; no geometric augmentation or blur' if profile.get('mild_augmentation') else 'Whole-object .85..1 scale into white canvas, bounded placement, brightness/contrast .85..1.15,15% mild blur; no crop/flip') if regularized else 'Whole-object contain_white; brightness/contrast .9..1.1; no crop/rotation/flip',
-        loss=f"{'Both TRAIN views' if profile.get('symmetric_bank') else 'Query'}->detached entire FITTING gallery multi-positive NLL(temp .1, mean reduction) + {profile.get('supcon_weight', .5)} live query/reference SupCon + {profile['positive_weight']} all-positive log-probability loss + existing optical regularization/router auxiliary",
+        loss=f"{'Both TRAIN views' if profile.get('symmetric_bank') else 'Query'}->detached entire FITTING gallery {profile.get('ranking_loss', 'nll')}(temp .1, mean reduction; top1 cosine margin .02 when enabled) + {profile.get('supcon_weight', .5)} live query/reference SupCon + {profile['positive_weight']} all-positive log-probability loss + existing optical regularization/router auxiliary",
         external_loss_override=('External: frozen64 teacher relation KL(temp .1), no SKU NLL/SupCon/all-positive loss; target: original GT retrieval loss, teacher disabled' if external_teacher else None))
     write_json(args.output / 'fitting_manifest.json', dict(parent_manifest_sha256=identity['manifest_sha256'],
         note=fit['note'], train=fit['train'], references=fit['gallery']))
@@ -457,7 +462,7 @@ def run(args):
                         for r in rows[:supervised_count]], device=device) if args.multi_view else None)
                     data_loss, hit = paired_bank_loss(z, labels.to(device), bank, args.classes_per_batch, bank_labels, excluded,
                         symmetric=profile.get('symmetric_bank', False),
-                        supcon_weight=profile.get('supcon_weight', .5))
+                        supcon_weight=profile.get('supcon_weight', .5), ranking_loss=profile.get('ranking_loss', 'nll'))
                     route = route_objective(model) if refined else z.new_zeros(())
                     all_views = all_view_loss(z, labels.to(device), bank, bank_labels, supervised_count, excluded) if profile['positive_weight'] else z.new_zeros(())
                     kd = z.new_zeros(())
