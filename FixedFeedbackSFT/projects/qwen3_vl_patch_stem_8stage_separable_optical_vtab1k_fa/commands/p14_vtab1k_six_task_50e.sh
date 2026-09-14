@@ -46,6 +46,27 @@ run_lane() {
   touch "$LOG_ROOT/lane_${lane}.done"
 }
 
+wait_lane() {
+  local lane="$1"
+  local lanes="$2"
+  local gpu="$3"
+  local state_file="$LOG_ROOT/lane_${lane}.state"
+  echo "waiting_for_physical_gpu=$gpu" >"$state_file"
+  while ! gpu_is_idle "$gpu"; do
+    sleep 20
+  done
+  echo "running_on_physical_gpu=$gpu" >"$state_file"
+  if CUDA_VISIBLE_DEVICES="$gpu" P14_PHYSICAL_GPU="$gpu" \
+      "$SCRIPT_PATH" lane "$lane" "$lanes"; then
+    echo "finished_physical_gpu=$gpu" >"$state_file"
+  else
+    local code="$?"
+    echo "failed_physical_gpu=$gpu exit_code=$code" >"$state_file"
+    touch "$LOG_ROOT/lane_${lane}.failed"
+    return "$code"
+  fi
+}
+
 launch() {
   IFS=',' read -r -a gpus <<< "$GPU_LIST"
   if [[ "${#gpus[@]}" -ne 3 ]]; then
@@ -86,6 +107,41 @@ launch() {
   echo "$!" >"$LOG_ROOT/monitor.pid"
 }
 
+launch_deferred() {
+  IFS=',' read -r -a gpus <<< "$GPU_LIST"
+  if [[ "${#gpus[@]}" -ne 3 ]]; then
+    echo "P14 deferred launch requires exactly three GPU ids; got $GPU_LIST" >&2
+    exit 2
+  fi
+  mkdir -p "$LOG_ROOT"
+  local lane gpu existing
+  for lane in "${!gpus[@]}"; do
+    if [[ -f "$LOG_ROOT/lane_${lane}.pid" ]]; then
+      existing="$(cat "$LOG_ROOT/lane_${lane}.pid")"
+      if kill -0 "$existing" 2>/dev/null; then
+        echo "Lane $lane is already alive as PID $existing" >&2
+        exit 4
+      fi
+    fi
+  done
+  rm -f "$LOG_ROOT"/lane_*.done "$LOG_ROOT"/lane_*.failed \
+    "$LOG_ROOT"/lane_*.state "$LOG_ROOT"/all_lanes_finished \
+    "$LOG_ROOT"/one_or_more_lanes_failed
+  for lane in "${!gpus[@]}"; do
+    gpu="${gpus[$lane]}"
+    nohup env P14_REPO_ROOT="$REPO_ROOT" P14_PYTHON_BIN="$PYTHON_BIN" \
+      P14_CONFIG="$CONFIG" P14_OUTPUT_ROOT="$OUTPUT_ROOT" P14_SEED="$SEED" \
+      "$SCRIPT_PATH" wait-lane "$lane" "${#gpus[@]}" "$gpu" \
+      >"$LOG_ROOT/lane_${lane}.log" 2>&1 &
+    echo "$!" >"$LOG_ROOT/lane_${lane}.pid"
+    echo "supervising lane=$lane physical_gpu=$gpu pid=$!"
+  done
+  nohup env P14_REPO_ROOT="$REPO_ROOT" P14_PYTHON_BIN="$PYTHON_BIN" \
+    P14_CONFIG="$CONFIG" P14_OUTPUT_ROOT="$OUTPUT_ROOT" P14_SEED="$SEED" \
+    "$SCRIPT_PATH" monitor >"$LOG_ROOT/monitor.log" 2>&1 &
+  echo "$!" >"$LOG_ROOT/monitor.pid"
+}
+
 monitor() {
   local any pid_file pid
   while true; do
@@ -103,7 +159,11 @@ monitor() {
   "$PYTHON_BIN" -m "$MODULE.summarize" --root "$OUTPUT_ROOT"
   nvidia-smi --query-gpu=index,memory.used,utilization.gpu --format=csv,noheader \
     >"$LOG_ROOT/gpu_after_completion.csv"
-  touch "$LOG_ROOT/all_lanes_finished"
+  if compgen -G "$LOG_ROOT/lane_*.failed" >/dev/null; then
+    touch "$LOG_ROOT/one_or_more_lanes_failed"
+  else
+    touch "$LOG_ROOT/all_lanes_finished"
+  fi
 }
 
 status() {
@@ -114,7 +174,9 @@ status() {
     pid="$(cat "$pid_file")"
     state="stopped"
     kill -0 "$pid" 2>/dev/null && state="running"
-    echo "$(basename "$pid_file" .pid): pid=$pid state=$state"
+    detail=""
+    [[ -f "${pid_file%.pid}.state" ]] && detail=" $(cat "${pid_file%.pid}.state")"
+    echo "$(basename "$pid_file" .pid): pid=$pid state=$state$detail"
   done
   find "$OUTPUT_ROOT" -path '*/result.json' -type f | wc -l | awk '{print "result_files=" $1}'
   "$PYTHON_BIN" -m "$MODULE.summarize" --root "$OUTPUT_ROOT"
@@ -138,9 +200,11 @@ smoke() {
 
 case "${1:-status}" in
   launch) launch ;;
+  launch-deferred) launch_deferred ;;
   lane) run_lane "$2" "$3" ;;
+  wait-lane) wait_lane "$2" "$3" "$4" ;;
   monitor) monitor ;;
   status) status ;;
   smoke) smoke ;;
-  *) echo "usage: $0 {launch|status|smoke}" >&2; exit 2 ;;
+  *) echo "usage: $0 {launch|launch-deferred|status|smoke}" >&2; exit 2 ;;
 esac

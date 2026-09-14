@@ -40,11 +40,16 @@ cd "$P14_REPO_ROOT"
 cd "$P14_REPO_ROOT"
 bash FixedFeedbackSFT/projects/qwen3_vl_patch_stem_8stage_separable_optical_vtab1k_fa/commands/p14_vtab1k_six_task_50e.sh smoke
 bash FixedFeedbackSFT/projects/qwen3_vl_patch_stem_8stage_separable_optical_vtab1k_fa/commands/p14_vtab1k_six_task_50e.sh launch
+bash FixedFeedbackSFT/projects/qwen3_vl_patch_stem_8stage_separable_optical_vtab1k_fa/commands/p14_vtab1k_six_task_50e.sh launch-deferred
 bash FixedFeedbackSFT/projects/qwen3_vl_patch_stem_8stage_separable_optical_vtab1k_fa/commands/p14_vtab1k_six_task_50e.sh status
 ```
 
 The launcher requires exactly three idle GPU ids and refuses to overlap an
 existing compute process. It assigns two datasets to each GPU lane, runs NoFT
 before the three updating methods, and exits each lane after its work is done.
+When three GPUs are authorized but not simultaneously free, `launch-deferred`
+starts one CPU-only supervisor per requested GPU; each lane waits until its own
+GPU has no compute PID, runs there, and releases it when its two-task queue
+finishes. At most three GPUs are occupied and no busy GPU is overlapped.
 The monitor writes `summary.json`, `summary.csv`, and a post-completion GPU
 snapshot; no persistent CUDA service remains.

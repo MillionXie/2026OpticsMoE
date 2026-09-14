@@ -46,3 +46,8 @@ completed VTAB result.
   path under `set -u`. Training itself completed, but the cleanup produced exit
   code 1. The trap now captures the resolved `mktemp` path at registration time;
   a clean exit is required before formal launch.
+- The corrected smoke completed NoFT and BP and exited with code 0 on physical
+  GPU 1. A deferred three-lane launcher was added because other users occupied
+  the initially selected cards between data preparation and launch. Each
+  supervisor waits without CUDA until its assigned card has no compute PID,
+  then runs its two-task lane and exits; failed lanes receive an explicit marker.
