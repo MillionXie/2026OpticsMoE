@@ -77,7 +77,10 @@ def run(a):
                             # Avoid cmd.exe's 8191-character command limit. This
                             # generated task definition is an audited run artifact.
                             with r.sftp.open(stem+'.task.xml','w') as f:f.write(xml.encode('utf-8'))
-                            r.ps(f"$xml=Get-Content -LiteralPath '{stem}.task.xml' -Raw -Encoding UTF8; Register-ScheduledTask -TaskName '{name}' -Xml $xml | Out-Null; Start-ScheduledTask -TaskName '{name}'")
+                            r.ps("$ErrorActionPreference='Stop'; $sid=[Security.Principal.WindowsIdentity]::GetCurrent().User.Value; "
+                                 +f"$xml=Get-Content -LiteralPath '{stem}.task.xml' -Raw -Encoding UTF8; "
+                                 +"$xml=$xml.Replace('<UserId>PS</UserId>',('<UserId>'+$sid+'</UserId>')); "
+                                 +f"Register-ScheduledTask -TaskName '{name}' -Xml $xml | Out-Null; Start-ScheduledTask -TaskName '{name}'")
                             report.update(status='capturing',remote_log=stem+'.log',remote_job_status=stem+'.json');save()
                             started=time.monotonic()
                             try:
