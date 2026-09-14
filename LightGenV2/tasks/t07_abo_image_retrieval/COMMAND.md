@@ -2960,3 +2960,15 @@ CUDA_VISIBLE_DEVICES=GPU-1b963983-7909-af6e-0528-f0f0661ab549 OMP_NUM_THREADS=4 
 每组均只TRAIN参与梯度；保留best/last/完整history，不能隐去不理想的种子。
 先看完整三组缓存结果，再对候选原图复评；不得将三个模型预测合并或平均成推理集成。
 这些种子共享已择优的预训练起点，不能当成从头独立三次训练，也不能用其中最好值冒充均值。
+
+两组已完整结束并原图复评：seed17缓存82.75%/原图82.625%/去光76.625%/TRAIN94.6875%，
+seed73缓存82.75%/原图82.75%/去光76.50%/TRAIN94.75%。seed42原图82.50%，三组算术均值82.625%。
+seed73 best第150步，SHA b14a34ea12aad01a305d27596e4e47edade5610fae2e24190f452c7034b68cbe，
+原图报告SHA b632cd9e4b32ca2af1994082ffea20085b7ce82f452761233a7604b01deb34b2c。
+两组weight_train_audit.json均确认只有原head两张量变化，所有其他参数/metadata相同；分split路由合格。
+CPU PID1799262/1800500和复评GPU4 PID1802144/1804390均退出，不再占GPU；83%尚差2张。
+
+后续仅一组低步长抛光：仍用第90节CPU命令，source-run改为`abo200_readout_top1_seed73_20260915`，
+SHA自动核验上述b14a34ea权重，expected-hit改`.8275`、lr改`.00001`、anchor改`1`、seed固定42，
+output为`abo200_readout_top1_polish_20260915`；其他配置保持800步/dropout.1/排序损失/batch128。
+此为从新的已验证起点继续训练，不计入前述三种子重复实验；未原图复评前仍不是正式新成绩。
