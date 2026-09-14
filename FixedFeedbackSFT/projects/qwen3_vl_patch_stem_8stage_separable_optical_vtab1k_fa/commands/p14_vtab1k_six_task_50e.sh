@@ -192,7 +192,8 @@ status() {
     [[ -f "${pid_file%.pid}.state" ]] && detail=" $(cat "${pid_file%.pid}.state")"
     echo "$(basename "$pid_file" .pid): pid=$pid state=$state$detail"
   done
-  find "$OUTPUT_ROOT" -path '*/result.json' -type f | wc -l | awk '{print "result_files=" $1}'
+  find "$OUTPUT_ROOT" -mindepth 4 -maxdepth 4 -name result.json -type f \
+    | wc -l | awk '{print "result_files=" $1}'
   "$PYTHON_BIN" -m "$MODULE.summarize" --root "$OUTPUT_ROOT"
 }
 

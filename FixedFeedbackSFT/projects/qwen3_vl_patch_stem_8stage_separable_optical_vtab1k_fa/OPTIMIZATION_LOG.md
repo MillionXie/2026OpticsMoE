@@ -62,3 +62,21 @@ completed VTAB result.
   the partial NoFT directory was moved (not deleted) under `_quarantine/`.
   Launch and smoke now resolve the authorized physical index to a stable GPU
   UUID and use that UUID in `CUDA_VISIBLE_DEVICES`; results record both values.
+
+## 2026-09-14: seed-2026 formal matrix launch
+
+- Immutable run commit: `a2e6096fbe6ce43e6bbbc55b88f8ceb95aa4fd8b`.
+- Central output: `/DATA/DATA1/guest3/2026OpticsMoE/FixedFeedbackSFT/runs/`
+  `qwen3_vl_patch_stem_8stage_separable_optical_vtab1k_fa/`
+  `p14_vtab1k_six_task_50e`.
+- Deferred supervisors: lane 0 PID 1520114 / physical GPU 6; lane 1 PID
+  1520115 / physical GPU 4; lane 2 PID 1520116 / physical GPU 5. Lane 0
+  immediately acquired the idle A100; lanes 1/2 wait without CUDA for the two
+  occupied cards. The launcher never uses more than three GPUs.
+- First completed task, CIFAR-100 Top-1: NoFT `23.13%`, BP `24.24%`,
+  FA-source `24.21%`, FA-random `24.20%`. This supports matched BP-level
+  performance on this task but does not separate source from random feedback.
+  Final phase mean absolute displacement was BP `0.026665`, FA-source
+  `0.026655`, and FA-random `0.026767 rad`.
+- Formal conclusions remain pending until all 24 task/method cells finish. The
+  status counter now excludes the recoverable `_quarantine/` directory.
