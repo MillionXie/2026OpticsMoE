@@ -162,6 +162,20 @@ def refresh_runtime(out,archive):
         dest.write_bytes(subprocess.check_output(['git','show',commit+':'+rel],cwd=root))
     release=read(out/'release.json');release['control_runtime_commit']=commit
     write(out/'release.json',release)
+    code="""import sys,json,torch
+from pathlib import Path
+p=Path(sys.argv[1]);sys.path.insert(0,str(p/'runtime'))
+from LightGenV2.tasks.t03_saliency.lab_runtime import load_model,replay,read
+from LightGenV2.tasks.t03_saliency.reproduce_baseline import independent_cc
+from experiments.qwen3_vl_embedding_2b_salicon_vision_optical_saliency.objectives import density_from_logits
+torch.set_num_threads(4)
+r=read(p/'release.json');item=r['fields'][0]
+m=load_model(p,'cpu');b=torch.load(p/item['file'],map_location='cpu',weights_only=False)
+y,tap=replay(m,b);cc=float(independent_cc(density_from_logits(y).numpy(),b['density'].numpy())[0])
+assert abs(cc-item['simulation_cc'])<1e-4,(cc,item['simulation_cc'])
+print('ISOLATED_CPU_PACKAGE_REPLAY',cc,flush=True)
+"""
+    subprocess.run([sys.executable,'-I','-c',code,str(out)],cwd=out,check=True)
     write(out/'SHA256.json',{p.relative_to(out).as_posix():sha(p) for p in out.rglob('*') if p.is_file() and p.name!='SHA256.json'})
     with zipfile.ZipFile(archive,'x',zipfile.ZIP_DEFLATED,compresslevel=1) as z:
         for p in out.rglob('*'):
