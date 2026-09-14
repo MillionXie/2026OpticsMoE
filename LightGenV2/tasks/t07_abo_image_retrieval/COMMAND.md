@@ -2698,6 +2698,24 @@ CUDA_VISIBLE_DEVICES='' OMP_NUM_THREADS=4 MKL_NUM_THREADS=4 python -m LightGenV2
 已完成补充对照：同一命令仅改`--anchor .1`及
 `--output "$R/abo200_metric_weak_anchor_20260914"`，缓存最佳81.875%，原anchor1为81.75%。
 两组均complete、CPU进程已退出，没有新占GPU。弱锚定best SHA
-`a579413726de92c22000f3379c185df83e6604860990e57010a5bb39259aeb482`，仍待第80节4090完整复评。
+`a579413726de92c22000f3379c185df83e604860990e57010a5bb39259aeb482`，后续完整复评见下方。
 此工具PT的`stage=readout_metric_fit`、`epoch`记录优化step，不能解释为350轮原图训练；
-phase/alpha/前端全冻结，确实只改变原head的weight/bias。正式结果仍81.25%。
+phase/alpha/前端全冻结，确实只改变原head的weight/bias；初筛时尚未晋升正式结果。
+
+弱锚定候选随后已完成原图4090复评：81.875%、去光75.50%，以下为实际成功命令。
+GPU4当时只有自有训练占约2.1GB/24GB，故添加只读batch4复评共享同卡，不占第三卡；
+不把并发运行用时作为基准。复评期间不写训练run，不改其源码/权重。
+第一次手抄SHA长度有误而失败于加载前，`verification/`保留；成功目录为`verification_4090/`。
+下例从完成报告读取SHA并核对实际文件，不需要人工复制长串，也不跳过校验。
+
+```bash
+RUN="$R/abo200_metric_weak_anchor_20260914"
+METRIC_SHA=$(python -c 'import json,sys,pathlib,hashlib; p=pathlib.Path(sys.argv[1]); s=json.loads((p/"final_report.json").read_text())["best_sha256"]; assert len(s)==64 and hashlib.sha256((p/"best.pt").read_bytes()).hexdigest()==s; print(s)' "$RUN")
+CUDA_VISIBLE_DEVICES=GPU-1b963983-7909-af6e-0528-f0f0661ab549 OMP_NUM_THREADS=4 MKL_NUM_THREADS=4 HF_HUB_OFFLINE=1 TRANSFORMERS_OFFLINE=1 python -m LightGenV2.tasks.t07_abo_image_retrieval.standalone.retrieval_screen optical \
+  --data /DATA/DATA1/guest3/2026OpticsMoE/data/abo_similarity10_data \
+  --manifest "$R/abo200_enrolled_protocol_20260913/protocol.json" --assets "$R/standalone_assets_20260910" \
+  --checkpoint "$RUN/best.pt" --expected-checkpoint-sha256 "$METRIC_SHA" \
+  --batch-size 4 --output "$RUN/verification_4090"
+```
+
+该output已经存在，再现时请用空的新目录，禁止覆盖已完成报告。完整指标/原始向量/路由都在成功目录。
