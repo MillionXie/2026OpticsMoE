@@ -7,8 +7,9 @@
 单视频4帧），均校验正式checkpoint SHA256。它直接复用模型原始forward的六次传播边界，
 避免旧hardware_contract遗漏最新电子残差或标量门控。构建时检查原模型与六层仿真CCD回填
 一致性；全558条缓存交付还必须通过目标SRCC复评。未通过不得声称已迁移完成。
-硬件操作与两台电脑分工见 [COMMAND_SHS.md](hardware/COMMAND_SHS.md)。严格逐层，只有用户
-通知后才换相位并开始下一层capture，不自动连跑六层。ABO数据与会话不受影响。
+硬件操作与两台电脑分工见 [COMMAND_SHS.md](hardware/COMMAND_SHS.md)。默认严格逐层，只有用户
+通知后才换相位并开始下一层capture。2026-09-14这轮用户另行明确授权AI监督并换完全部层，
+因此按每层检查后换层执行；这不是后续所有实验的默认授权。ABO数据与会话不受影响。
 
 本轮两个完整558条test离线包位于任务的 `releases/20260914_shs_temporal08044.zip`
 和 `releases/20260914_shs_spatial06710.zip`。固定权重复评分别为 SRCC
@@ -30,7 +31,10 @@
 `lab_manual_stage.py`：主线程持有指定相位，带心跳的师弟电脑桌面任务只capture当前层、
 prepare下一层输入，然后停止等待人工换层；第六层后才evaluate。它不自动切相位。
 本轮入口与质量统计在 `runs/hardware/temporal_full_20260914/00_查看这里.md`；
-SDK回执不等于光学正确，最终SRCC必须等六层全部实采才可报告。
+六层已完成210/210张正式CCD、558个完整test视频，SRCC **0.7977138739**、PLCC **0.8091420696**。
+完整数据已下载本地并逐文件校验SHA256，逐视频结果已独立复算，无筛选或剔除视频。
+第五层信号弱但两次复拍可重复；第一层光场与仿真仍有明显差异，不能将最终相关性接近仿真
+当成光学完全匹配或光学贡献证明。源码、指标和限制见 [本轮实测报告](reports/reproduction/TEMPORAL_SHS_20260914.md)。
 
 > 2026-09-10 架构审计：`spatial_single_video4_srcc06665` 含冻结预训练
 > ResNet18 前端，现已降级为“非合规性能上界”，不能作为正式方案引用或部署。
