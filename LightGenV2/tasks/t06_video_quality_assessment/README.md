@@ -1,5 +1,36 @@
 # T06 视频质量评价
 
+## 20260914：空间实测读出头适配
+
+`adapt_measured_readout.py` 是离线入口，不调用设备。基于原始Spatial 0.6710权重及
+`spatial_lang1600_20260914` 全558视频六层实测CCD，先逐图校验SHA并回放原始forward，
+缓存最后 `model.readout` 的三个输入；缓存预测必须复现微调前实测结果。
+只有原有 `readout.*` 可训练，光学mask/router、alpha、所有前置电子层和MOS尺度不变，
+没有新分支或教师损失。全量和80%两版相同初始化/seed/学习率，各100epoch，AdamW、
+Smooth-L1 + 0.2排序 + 0.1相关性损失；只保留best和last完整checkpoint。
+
+- `full100`：558条全部反向传播，以同集SRCC选best；这是适配集重代入指标，**不是独立test**。
+- `split80`：固定seed 20260914，446条训练、112条不反向传播，以112条SRCC选best；
+  该留出集仍参与选模，**不是完全未触碰的最终test**。保存具体视频身份，不能把两版不同分母直接作公平性能比较。
+- 原实测SRCC 0.5786364901保留不变；适配权重不覆盖原固定权重、不重新生成采集输入。
+- best包括epoch0原始头，若没有改善不会强行交付更差权重；保存冻结参数SHA与实际变动张量清单。
+
+服务器工作目录切到对应Git commit后：
+
+```bash
+python -m LightGenV2.tasks.t06_video_quality_assessment.adapt_measured_readout extract \
+  --project /absolute/path/original_spatial_lab_package \
+  --session-dir /absolute/path/spatial_lang1600_20260914 \
+  --output /absolute/path/run/measured_readout_cache.pt --device cuda
+python -m LightGenV2.tasks.t06_video_quality_assessment.adapt_measured_readout train \
+  --cache /absolute/path/run/measured_readout_cache.pt \
+  --checkpoint /absolute/path/original_spatial_lab_package/weights/best_checkpoint.pt \
+  --output /absolute/path/run/adaptation --device cuda --epochs 100
+```
+
+新产物位于 `runs/hardware/spatial_readout_adapt_20260914`，不覆盖原会话；适配后checkpoint含
+`hardware_adaptation`来源信息，不能直接冒充原SHA固定推理包，需要另行经过适配权重部署验证。
+
 ## 当前SHS实验台迁移（2026-09-14）
 
 打包入口 `build_lab_package.py --bench shs`、运行入口 `lab_bench.py` **仅绑定** Temporal `multivideo16x4_rank_s163`
