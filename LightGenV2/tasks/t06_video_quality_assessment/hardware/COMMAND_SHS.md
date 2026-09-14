@@ -89,3 +89,21 @@ python -m LightGenV2.tasks.t06_video_quality_assessment.lab_phase `
 训练含20%名义未调制光；这里不在实测CCD上再人为叠加20%直流，也不把复数调制的模乘进振幅第二次。
 CCD先固定转换DN/255，再由原网络执行其训练时的归一化/对数读出。可在新硬件会话中显式设置 `detector_intensity_scale` 的六层增益用于光度标定，不能拿每张理论结果拟合其增益。相机响应、LUT、对齐和物理直流差异意味着**仿真参考SRCC不保证实测达到同值**。
 目前400μs+240ms是ABO条件下的起始设置，不代表已通过LGVQ曝光扫描。首轮应先核对各层亮度，不盲目跑全部。
+
+## 下游层曝光不足时
+
+`camera_exposure_us_by_stage`可显式指定某一层的曝光；未指定层仍用`camera.exposure_us`。
+先做独立曝光诊断，保持增益和等待不变。改变曝光后新建配置、新建会话，不能直接改正在采集的旧配置。
+若第四层从400μs改1600μs，显式设`camera_exposure_us_by_stage.language_router=1600`，
+同时设`detector_intensity_scale.language_router=1/(255*4)`作曝光倍率补偿。此线性补偿不是暗场标定，不能恢复弱信号SNR。
+
+已有前三层可用`lab_exposure_session`在新会话中继承：它必须逐层验证有效曝光、ROI、LUT、方向、读出尺度等完全相同，
+验证原CCD、输入、相位和上游SHA。保留原会话；新记录附原记录SHA及原采集硬件身份，不能宣称重新采过继承层。
+
+```powershell
+# 在含该模块的已校验Git版本/更新包runtime上运行；参数仅为示例。
+$env:PYTHONPATH=(Resolve-Path .\runtime)
+& $py -m LightGenV2.tasks.t06_video_quality_assessment.lab_exposure_session `
+  --source-session spatial_full_20260914 --new-session spatial_lr1600_20260914 --config LAB.lr1600.json
+& $py run.py prepare --session spatial_lr1600_20260914 --stage language_router --device cuda --config LAB.lr1600.json
+```

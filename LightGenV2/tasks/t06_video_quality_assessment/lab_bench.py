@@ -15,6 +15,20 @@ from .lab_runtime import PINS,STAGES,read,write,sha
 
 def identity(value):return hashlib.sha256(json.dumps(value,sort_keys=True).encode()).hexdigest()
 
+def stage_config(c,stage):
+ """Resolve explicit stage exposure without mutating the frozen session config."""
+ d=json.loads(json.dumps(c));overrides=d.pop('camera_exposure_us_by_stage',{})
+ if set(overrides)-set(STAGES):raise ValueError('Unknown exposure stage')
+ for value in overrides.values():
+  if not math.isfinite(float(value)) or float(value)<=0:raise ValueError('Invalid stage exposure')
+ d['camera']['exposure_us']=float(overrides.get(stage,d['camera']['exposure_us']))
+ return d
+
+def effective_stage_identity(c,stage):
+ d=stage_config(c,stage)
+ d['detector_intensity_scale']={stage:float(d.get('detector_intensity_scale',{}).get(stage,1/255))}
+ return identity(d)
+
 def raster(active,device,kind):
  """Resample physical pitch once, then apply explicit device orientation once."""
  a=np.asarray(active,np.float32)
@@ -121,7 +135,7 @@ def capture(a):
  fd=os.open(lock,os.O_CREAT|os.O_EXCL|os.O_WRONLY);os.write(fd,str(os.getpid()).encode());os.close(fd)
  try:
   pts=np.float32([c['logical_corners_full_sensor_xy'][k] for k in ('top_left','top_right','bottom_right','bottom_left')]);H=cv2.getPerspectiveTransform(pts,np.float32([[-.5,-.5],[477.5,-.5],[477.5,477.5],[-.5,477.5]]))
-  with Controller(c) as hw:
+  with Controller(stage_config(c,a.stage)) as hw:
    for i,e in enumerate(mf['entries'],1):
     p=s/'ccd'/a.stage/(e['key']+'.png');record=p.with_suffix('.record.json')
     if record.exists():
