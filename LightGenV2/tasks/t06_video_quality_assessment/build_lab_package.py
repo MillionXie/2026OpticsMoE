@@ -21,6 +21,7 @@ def main() -> int:
     parser.add_argument("--source-root", default=str(REPO_ROOT))
     parser.add_argument("--device", default="cuda")
     parser.add_argument("--max-fields", type=int, default=0)
+    parser.add_argument("--split", choices=("train", "test"), default="test")
     parser.add_argument("--shs-code-update", action="store_true", help="Small SHA-checked runtime update; no weights or data")
     args = parser.parse_args()
     if args.shs_code_update:

@@ -164,6 +164,27 @@ def capture_staged(a,opener,stages):
   write(s/'status.json',dict(status='stage_complete_wait_for_user_phase_change',stage=a.stage,completed=len(mf['entries'])))
  finally:lock.unlink(missing_ok=True)
 
+def audit(a):
+ """Audit every current-stage PNG and its immutable upstream SHA chain."""
+ root,s,state,c,release=open_session(a);idx=STAGES.index(a.stage)
+ if state['measured_stages'][:idx+1]!=list(STAGES[:idx+1]):raise ValueError('Stage incomplete')
+ mf=read(s/'play'/a.stage/'manifest.json');expected={x['key'] for x in state['fields']}
+ if len(mf['entries'])!=len(expected) or {x['key'] for x in mf['entries']}!=expected:raise ValueError('Sample identity mismatch')
+ if mf['hardware_sha256']!=state['hardware_sha256'] or mf['release_sha256']!=state['release_sha256']:raise ValueError('Manifest identity mismatch')
+ if sha(s/mf['phase_file'])!=mf['phase_sha256']:raise ValueError('Phase identity mismatch')
+ rows=[]
+ for e in mf['entries']:
+  p,r=verified_ccd(s,a.stage,e['key'])
+  if r['hardware_sha256']!=state['hardware_sha256'] or r['phase_sha256']!=mf['phase_sha256'] or r['amplitude_sha256']!=e['sha256'] or r['upstream_ccd_sha256']!=e['upstream_ccd_sha256']:raise ValueError('Capture identity mismatch: '+e['key'])
+  if r['camera'].get('incomplete',False):raise ValueError('Incomplete camera frame')
+  for previous,digest in e['upstream_ccd_sha256'].items():
+   _,old=verified_ccd(s,previous,e['key'])
+   if old['sha256']!=digest:raise ValueError('Upstream CCD changed')
+  rows.append(dict(key=e['key'],**r['quality']))
+ report=dict(stage=a.stage,count=len(rows),status='passed',hardware_sha256=state['hardware_sha256'],phase_sha256=mf['phase_sha256'],minimum_p99=min(x['p99'] for x in rows),maximum_saturation=max(x['saturation'] for x in rows),rows=rows)
+ write(s/'audits'/(a.stage+'.json'),report);print('AUDIT PASSED',a.stage,len(rows),flush=True)
+
+
 def evaluate(a):
  import torch
  from .lab_runtime import load_model,replay
@@ -171,24 +192,26 @@ def evaluate(a):
  root,s,state,c,release=open_session(a)
  if state['measured_stages']!=list(STAGES):raise ValueError('All SIX measured CCD stages required; no simulated fallback')
  model,_=load_model(release['target'],root/'weights/best_checkpoint.pt',a.device);pred=[];labels=[];rows=[]
- for item in state['fields']:
+ for index,item in enumerate(state['fields']):
   batch=torch.load(root/item['file'],map_location='cpu',weights_only=False);measure={}
   for stage in STAGES:
    p,_=verified_ccd(s,stage,item['key']);measure[stage]=torch.from_numpy(np.array(Image.open(p),dtype=np.float32))[None]*float(c.get('detector_intensity_scale',{}).get(stage,1/255))
   result,_=replay(model,release['target'],batch,measure);scores=result['prediction'].detach().cpu().reshape(-1).tolist()
   for slot,(score,valid) in enumerate(zip(scores,item['valid'])):
    if valid:rows.append(dict(field=item['key'],slot=slot,video=item['sample_ids'][slot],prediction=score,target=item['targets'][slot]));pred.append(score);labels.append(item['targets'][slot])
+  if index%100==0:print('Evaluated',index+1,'/',len(state['fields']),flush=True)
  metrics=regression_metrics(torch.tensor(pred),torch.tensor(labels),release['target']) if len(labels)>2 else None
- write(s/'results.json',dict(status='real_six_pass_evaluation',target=release['target'],metrics=metrics,count=len(labels),full_test=len(labels)==558,rows=rows,simulation_reference=PINS[release['target']]['srcc']))
+ split=release.get('dataset_split','test')
+ write(s/'results.json',dict(status='real_six_pass_evaluation',target=release['target'],dataset_split=split,metrics=metrics,count=len(labels),full_test=split=='test' and len(labels)==558,rows=rows,simulation_reference=PINS[release['target']]['srcc'] if split=='test' else None))
  print('RESULT',s/'results.json',metrics,flush=True)
 
 def main():
- p=argparse.ArgumentParser(description=__doc__);p.add_argument('action',choices=['init','prepare','capture','evaluate'])
+ p=argparse.ArgumentParser(description=__doc__);p.add_argument('action',choices=['init','prepare','capture','evaluate','audit'])
  p.add_argument('--project',default='.');p.add_argument('--config',default='LAB.local.json');p.add_argument('--session',required=True)
  p.add_argument('--stage',choices=STAGES);p.add_argument('--fields',type=int,default=4,help='0=all packaged fields; temporal field=16 videos, spatial field=1 video')
  p.add_argument('--device',default='cuda');p.add_argument('--bench-root',default='../ABO_Lab_SHS_8um');p.add_argument('--phase-ready',action='store_true')
  a=p.parse_args()
- if a.action in ('prepare','capture') and not a.stage:p.error('--stage is required')
+ if a.action in ('prepare','capture','audit') and not a.stage:p.error('--stage is required')
  if a.fields<0:p.error('--fields must be nonnegative')
  globals()[{'init':'initialize'}.get(a.action,a.action)](a)
 

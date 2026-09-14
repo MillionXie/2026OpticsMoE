@@ -79,6 +79,18 @@ def trainable_readout_names(names,scope):
     return allowed
 
 
+def official_partitions(training, evaluation):
+    """Original train/test identities, not a random split of measured test data."""
+    tr,te=training['video_ids'],evaluation['video_ids']
+    if training.get('dataset_split')!='train' or evaluation.get('dataset_split','test')!='test':
+        raise ValueError('Require original training and test caches')
+    if len(tr)!=2250 or len(te)!=558 or len(set(tr))!=2250 or len(set(te))!=558 or set(tr)&set(te):
+        raise ValueError('Expected disjoint original 2250/558 video identities')
+    for key in ('contract','checkpoint_sha256','target_mean','target_std'):
+        if training[key]!=evaluation[key]:raise ValueError('Train/test cache contract differs: '+key)
+    return np.arange(2250),np.arange(2250,2808)
+
+
 def extract(a):
     import torch
     from .lab_bench import verified_ccd, identity
@@ -95,8 +107,10 @@ def extract(a):
     c=state['hardware_config']
     if state['hardware_sha256'] != identity(c):
         raise ValueError('Hardware identity mismatch')
-    if len(state['fields']) != 558:
-        raise ValueError('Expected the entire 558-video measured dataset')
+    dataset_split=release.get('dataset_split','test')
+    expected=2250 if dataset_split=='train' else 558
+    if len(state['fields']) != expected:
+        raise ValueError(f'Expected the entire {expected}-video measured {dataset_split} dataset')
     model, _ = load_model('spatial',root/'weights/best_checkpoint.pt',a.device)
     model.requires_grad_(False)
     if model.late_input_correction is not None:
@@ -130,7 +144,7 @@ def extract(a):
             score=float(result['prediction'].item())
             predictions.append(score); targets.append(item['targets'][0]); ids.append(item['sample_ids'][0])
             evidence.append(dict(field=item['key'],input_sha256=item['sha256'],ccd_sha256=digests))
-            if (i+1)%50==0: print('EXTRACT',i+1,'/558',flush=True)
+            if (i+1)%50==0: print('EXTRACT',i+1,'/',expected,flush=True)
     finally:
         handle.remove()
     if len(set(ids))!=len(ids): raise ValueError('Duplicate video identities')
@@ -141,7 +155,7 @@ def extract(a):
     write(dest.with_suffix('.replay_audit.json'),audit)
     if not audit['passed']:
         raise ValueError(f'Measured replay mismatch; see replay_audit.json: {max_error}')
-    payload=dict(contract='spatial_six_real_ccd_readout_inputs_v1',
+    payload=dict(contract='spatial_six_real_ccd_readout_inputs_v1',dataset_split=dataset_split,
                  checkpoint_sha256=PINS['spatial']['sha256'],
                  hardware_sha256=state['hardware_sha256'],release_sha256=state['release_sha256'],
                  vision=torch.cat(features[0]),language=torch.cat(features[1]),mask=torch.cat(features[2]),
@@ -169,27 +183,38 @@ def train(a):
     data=torch.load(a.cache,map_location='cpu',weights_only=False)
     if data['contract']!='spatial_six_real_ccd_readout_inputs_v1' or sha(a.checkpoint)!=data['checkpoint_sha256']:
         raise ValueError('Cache/checkpoint identity mismatch')
+    eval_cache=getattr(a,'eval_cache',None)
+    official=bool(eval_cache)
+    if official:
+        evaluation=torch.load(eval_cache,map_location='cpu',weights_only=False)
+        official_train,official_test=official_partitions(data,evaluation)
+        data=dict(data)
+        for key in ('vision','language','mask','targets','original_prediction'):
+            data[key]=torch.cat([data[key],evaluation[key]])
+        data['video_ids']=data['video_ids']+evaluation['video_ids']
     source=torch.load(a.checkpoint,map_location='cpu',weights_only=False)
     model,_=load_model('spatial',a.checkpoint,'cpu');model.requires_grad_(False)
     source_frozen=frozen_digest(source['state_dict'])
-    commit=subprocess.check_output(['git','rev-parse','HEAD'],text=True).strip()
+    # Standalone lab packages are not Git worktrees; their pinned release is canonical.
+    release_path=Path(a.checkpoint).resolve().parent.parent/'release.json'
+    commit=read(release_path)['source_commit'] if release_path.exists() else subprocess.check_output(['git','rev-parse','HEAD'],text=True).strip()
     write(out/'launch.json',dict(arguments=vars(a),command=sys.argv,commit=commit,
-          cache_sha256=sha(a.cache),checkpoint_sha256=sha(a.checkpoint),
+          cache_sha256=sha(a.cache),eval_cache_sha256=sha(eval_cache) if official else None,checkpoint_sha256=sha(a.checkpoint),
           torch=torch.__version__,device=a.device,gpu=torch.cuda.get_device_name() if a.device.startswith('cuda') else None,
           training_scope='existing readout.* only; no hardware, no new modules',
           mean=data['target_mean'],std=data['target_std'],seed=a.seed))
     targets=data['targets']; n=len(targets); all_idx=np.arange(n)
     results={}
-    fractions=(a.train_fraction,) if getattr(a,'train_fraction',None) is not None else (1.,.8)
+    fractions=(1.,) if official else ((a.train_fraction,) if getattr(a,'train_fraction',None) is not None else (1.,.8))
     for fraction in fractions:
         random.seed(a.seed);np.random.seed(a.seed);torch.manual_seed(a.seed)
         if torch.cuda.is_available():torch.cuda.manual_seed_all(a.seed)
-        tag='full100' if fraction==1 else 'split80';folder=out/tag;folder.mkdir()
-        train_idx,hold_idx=split_indices(n,fraction,a.seed)
-        select_idx=train_idx if fraction==1 else hold_idx
+        tag='original_train2250_test558' if official else ('full100' if fraction==1 else 'split80');folder=out/tag;folder.mkdir()
+        train_idx,hold_idx=(official_train,official_test) if official else split_indices(n,fraction,a.seed)
+        select_idx=hold_idx if official else (train_idx if fraction==1 else hold_idx)
         write(folder/'split.json',dict(seed=a.seed,train=[data['video_ids'][i] for i in train_idx],
-              holdout=[data['video_ids'][i] for i in hold_idx],selection='train_srcc' if fraction==1 else 'holdout_srcc',
-              untouched_test=False,description='same-data adaptation' if fraction==1 else 'fixed holdout, used for checkpoint selection'))
+              holdout=[data['video_ids'][i] for i in hold_idx],selection='original_test_srcc' if official else ('train_srcc' if fraction==1 else 'holdout_srcc'),
+              untouched_test=False,test_samples_in_gradient=0 if official else None,description='original 2250 train only; periodic 558 test selection, not untouched test' if official else ('same-data adaptation' if fraction==1 else 'fixed holdout, used for checkpoint selection')))
         head=copy.deepcopy(model.readout).to(a.device).requires_grad_(True)
         scope=getattr(a,'scope','head')
         allowed=trainable_readout_names(dict(head.named_parameters()),scope)
@@ -256,13 +281,13 @@ def train(a):
             merged=dict(source);merged['state_dict']=dict(source['state_dict'])
             merged['state_dict'].update({'readout.'+k:v for k,v in weights.items()})
             if frozen_digest(merged['state_dict'])!=source_frozen:raise ValueError('Frozen parameters changed')
-            merged['hardware_adaptation']=dict(arm=tag,epoch=ep,variant=best_variant if label=='best' else 'raw',source_checkpoint_sha256=sha(a.checkpoint),cache_sha256=sha(a.cache),selection_uses_holdout=fraction<1,independent_test=False,commit=commit)
+            merged['hardware_adaptation']=dict(arm=tag,epoch=ep,variant=best_variant if label=='best' else 'raw',source_checkpoint_sha256=sha(a.checkpoint),cache_sha256=sha(a.cache),eval_cache_sha256=sha(eval_cache) if official else None,selection_uses_holdout=official or fraction<1,test_samples_in_gradient=0 if official else None,independent_test=False,commit=commit)
             torch.save(merged,folder/(label+'_checkpoint.pt'))
         changed=[k for k,v in best_state.items() if not torch.equal(v,initial[k])]
         result=dict(arm=tag,best_epoch=best_epoch,best_variant=best_variant,scope=scope,trainable_names=sorted(allowed),trainable_parameters=sum(v.numel() for v in head.parameters() if v.requires_grad),before=base_metrics,after=best_metrics,changed_readout_tensors=changed,
                     frozen_parameters_unchanged=True,frozen_sha256=source_frozen,
                     best_checkpoint_sha256=sha(folder/'best_checkpoint.pt'),independent_test=False,
-                    rows=[dict(video=v,target=float(targets[i]),before=float(baseline[i]),after=float(best_pred[i]),partition='train' if i in train_idx else 'holdout') for i,v in enumerate(data['video_ids'])])
+                    rows=[dict(video=v,target=float(targets[i]),before=float(baseline[i]),after=float(best_pred[i]),partition='train' if i in train_idx else ('test' if official else 'holdout')) for i,v in enumerate(data['video_ids'])])
         write(folder/'results.json',result);results[tag]={k:v for k,v in result.items() if k!='rows'}
         del head,optimizer;torch.cuda.empty_cache()
     write(out/'results.json',results);write(out/'status.json',dict(state='complete',results=results))
@@ -273,6 +298,7 @@ def main():
     parser=argparse.ArgumentParser(description=__doc__);sub=parser.add_subparsers(dest='action',required=True)
     e=sub.add_parser('extract');e.add_argument('--project',required=True);e.add_argument('--session-dir',required=True)
     t=sub.add_parser('train');t.add_argument('--cache',required=True);t.add_argument('--checkpoint',required=True)
+    t.add_argument('--eval-cache',help='Original 558-video test cache; requires original 2250 training cache, never backpropagates test')
     t.add_argument('--epochs',type=int,default=100);t.add_argument('--lr',type=float,default=1e-4)
     t.add_argument('--batch-size',type=int,default=32);t.add_argument('--seed',type=int,default=20260914)
     t.add_argument('--train-fraction',type=float,choices=[.8,1.],default=None)
@@ -287,9 +313,50 @@ def main():
     q.add_argument('--epochs',type=int,default=100);q.add_argument('--lr',type=float,default=1e-4)
     q.add_argument('--batch-size',type=int,default=32);q.add_argument('--seed',type=int,default=20260914)
     q.add_argument('--resume-verified',action='store_true',help='Reuse extracted data only after rechecking archive and every file SHA; no training overwrite')
+    o=sub.add_parser('official_queue',help='Wait for six-stage training acquisition, extract and adapt original 2250 train only')
+    for name in ('project','session-dir','output','eval-cache'):o.add_argument('--'+name,required=True)
+    o.add_argument('--device',default='cuda');o.add_argument('--epochs',type=int,default=100)
     a=parser.parse_args()
     if a.action=='train' and (not 0<=a.ema<1 or a.anchor<0):parser.error('Require 0 <= EMA < 1 and anchor >= 0')
     globals()[a.action](a)
+
+
+def official_queue(a):
+    from types import SimpleNamespace
+    out=Path(a.output);out.mkdir(parents=True,exist_ok=False)
+    root,s=Path(a.project),Path(a.session_dir)
+    def status(state,**extra):write(out/'queue_status.json',dict(state=state,updated=time.strftime('%Y-%m-%dT%H:%M:%S'),**extra))
+    try:
+        release=read(root/'release.json')
+        if release.get('dataset_split')!='train' or release.get('train_videos_in_package')!=2250:raise ValueError('Not the original training handoff')
+        # Verify immutable test cache before waiting; never download substituted labels.
+        assets=read(root/'SHA256.json');relative=Path(a.eval_cache).resolve().relative_to(root.resolve()).as_posix()
+        if sha(a.eval_cache)!=assets[relative]:raise ValueError('Test cache manifest mismatch')
+        status('waiting_for_all_six_training_stages')
+        deadline=time.monotonic()+12*3600
+        while not (s/'results.json').exists():
+            if (out/'STOP').exists():raise RuntimeError('STOP requested')
+            if time.monotonic()>deadline:raise TimeoutError('Acquisition did not finish in 12 hours')
+            time.sleep(10)
+        results=read(s/'results.json')
+        if results.get('dataset_split')!='train' or results.get('count')!=2250:raise ValueError('Wrong acquisition results')
+        # Final evaluator may finish just before the supervisor's last SHA audit.
+        while not all((s/'audits'/(stage+'.json')).exists() for stage in STAGES):
+            if time.monotonic()>deadline:raise TimeoutError('Stage audits missing')
+            time.sleep(5)
+        for stage in STAGES:
+            audit=read(s/'audits'/(stage+'.json'))
+            if audit['status']!='passed' or audit['count']!=2250:raise ValueError('Incomplete stage audit')
+        status('extracting_measured_training_readout_features')
+        cache=out/'train_readout_cache.pt'
+        extract(SimpleNamespace(project=str(root),session_dir=str(s),output=str(cache),device=a.device))
+        status('finetuning_original_train2250',epochs=a.epochs,test_videos=558,test_samples_in_gradient=0)
+        train(SimpleNamespace(cache=str(cache),eval_cache=a.eval_cache,checkpoint=str(root/'weights/best_checkpoint.pt'),
+            output=str(out/'adaptation'),device=a.device,epochs=a.epochs,lr=1e-5,batch_size=64,seed=20260914,
+            train_fraction=None,scope='head',anchor=.1,ema=.98))
+        status('complete',results=str(out/'adaptation/results.json'))
+    except BaseException as e:
+        status('failed',error=repr(e));raise
 
 
 def queue(a):

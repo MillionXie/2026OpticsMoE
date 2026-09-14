@@ -1,9 +1,19 @@
 import unittest
 import numpy as np
-from .adapt_measured_readout import split_indices, metrics, replay_audit, trainable_readout_names
+from .adapt_measured_readout import split_indices, metrics, replay_audit, trainable_readout_names, official_partitions
 
 
 class AdaptationTests(unittest.TestCase):
+    def test_original_train_test(self):
+        shared=dict(contract='test',checkpoint_sha256='same',target_mean=50.,target_std=10.)
+        tr=dict(shared,dataset_split='train',video_ids=[f'train{i}' for i in range(2250)])
+        te=dict(shared,video_ids=[f'test{i}' for i in range(558)])
+        a,b=official_partitions(tr,te)
+        self.assertEqual((len(a),len(b)),(2250,558))
+        self.assertFalse(set(a)&set(b))
+        te['video_ids'][0]=tr['video_ids'][0]
+        with self.assertRaises(ValueError):official_partitions(tr,te)
+
     def test_full(self):
         train, holdout = split_indices(558, 1., 123)
         self.assertEqual(len(train), 558)

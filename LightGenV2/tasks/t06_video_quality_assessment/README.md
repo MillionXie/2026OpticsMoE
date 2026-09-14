@@ -1,5 +1,24 @@
 # T06 视频质量评价
 
+## 原训练集2250条六层实采与读出头适配（20260914）
+
+本轮用户授权自动换完六层。`build_lab_package.py --bench shs --target spatial --split train`
+导出原Spatial 0.6710权重对应的2250条原训练视频，每条4帧、一幅场，共13500次采集。
+新会话独立，不覆盖既有558条test CCD。曝光沿用已验证的400μs，语言router/expert为1600μs，
+240ms等待；两层曝光补偿、ROI、方向及相位255-g编码均继承已验证合同。
+`lab_supervise.py`调用共享相位持有器：当前层采集、下一层prepare和逐文件SHA审计都成功才换层；
+黑场/饱和/身份错误停止，不跳过样本。状态在指定run的`supervision/status.json`，放`STOP`可停采集。
+
+训练包包含原558条test的实测读出特征（不是模拟CCD），以及`adapt.py`。
+启动`adapt.py official_queue --project . --session-dir sessions/train2250_20260914
+--output sessions/train2250_20260914/readout_adaptation --eval-cache evaluation/test558_readout_cache.pt
+--device cuda --epochs 100`，会等待全部六层与审计完成，再提取训练特征并在实验电脑GPU训练。
+仅更新原有readout，lr1e-5、batch64、L2-SP0.1、EMA0.98、100epoch；不加载之前用test微调的权重。
+训练2250/test558身份必须不重叠，test不反传；每epoch按test SRCC选best，故不是未触碰测试集。
+保留best/last，冻结张量哈希必须相同。`readout_adaptation/queue_status.json`为后处理状态，
+最终查看`readout_adaptation/adaptation/original_train2250_test558/results.json`。
+该命令不操作设备，不会与等待期间的采集争用GPU；真正训练在实采评估完成后才启动。
+
 ## 20260914：空间实测读出头适配
 
 `adapt_measured_readout.py` 是离线入口，不调用设备。基于原始Spatial 0.6710权重及

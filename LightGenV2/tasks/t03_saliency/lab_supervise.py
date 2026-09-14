@@ -60,23 +60,27 @@ finally:
 
 
 def run(a):
+    stages=STAGES
+    task=getattr(a,'task','salicon')
+    if task=='lgvq':
+        from LightGenV2.tasks.t06_video_quality_assessment.lab_runtime import STAGES as stages
     sys.path.insert(0,str(a.bench_root.resolve()))
     from dual_run import Remote
     out=a.out.resolve();out.mkdir(parents=True,exist_ok=False)
-    report=dict(status='starting',session=a.session,project=a.project,stages=list(STAGES),completed=[],pid=__import__('os').getpid())
+    report=dict(status='starting',task=task,session=a.session,project=a.project,stages=list(stages),completed=[],pid=__import__('os').getpid())
     def save():
         report['updated_at']=time.strftime('%Y-%m-%dT%H:%M:%S');write(out/'status.json',report)
     save()
     try:
         with Remote(read(a.link_config)) as r:
             report['remote_keep_awake']=start_keep_awake(r,a.project,a.session);save()
-        for i,stage in enumerate(STAGES,1):
+        for i,stage in enumerate(stages,1):
             if (out/'STOP').exists():raise RuntimeError('STOP requested before next stage')
             folder=out/f'{i:02d}_{stage}'
             phase=a.phases/f'{i:02d}_{stage}.bmp'
             command=[str(Path(sys.executable).with_name('pythonw.exe')),'-u','-m',
                      'LightGenV2.tasks.t06_video_quality_assessment.lab_manual_stage',
-                     '--task','salicon','--bench-root',str(a.bench_root),'--link-config',str(a.link_config),
+                     '--task',task,'--bench-root',str(a.bench_root),'--link-config',str(a.link_config),
                      '--phase',str(phase),'--out',str(folder),'--project',a.project,'--session',a.session,
                      '--config',a.config,'--stage',stage]
             si=subprocess.STARTUPINFO();si.dwFlags=0
@@ -107,9 +111,9 @@ def run(a):
                 if stdout.channel.recv_exit_status():raise RuntimeError('Complete-stage audit failed')
                 remote=a.project+'/sessions/'+a.session
                 r.sftp.get(remote+'/audits/'+stage+'.json',str(out/f'{i:02d}_{stage}_audit.json'))
-                if i==len(STAGES):r.sftp.get(remote+'/results.json',str(out/'results.json'))
+                if i==len(stages):r.sftp.get(remote+'/results.json',str(out/'results.json'))
             report['completed'].append(stage);save()
-            if i<len(STAGES):
+            if i<len(stages):
                 (folder/'RELEASE').touch()
                 child.wait(timeout=60)
                 if child.returncode:raise RuntimeError('Phase release returned error')
@@ -123,6 +127,7 @@ def main():
     p=argparse.ArgumentParser(description=__doc__)
     for name in ('bench-root','link-config','phases','out'):p.add_argument('--'+name,type=Path,required=True)
     for name in ('project','session','config'):p.add_argument('--'+name,required=True)
+    p.add_argument('--task',choices=['salicon','lgvq'],default='salicon')
     run(p.parse_args())
 
 if __name__=='__main__':main()

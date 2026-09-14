@@ -23,7 +23,9 @@ def build(a):
  payload=load_single_metric_cache(settings)
  if out.exists():raise FileExistsError('Use a new release output, not overwrite')
  out.mkdir(parents=True);(out/'weights').mkdir();shutil.copy2(checkpoint,out/'weights/best_checkpoint.pt')
- count=PINS[a.target]['videos_per_field'];indices=[i for i,split in enumerate(payload['splits']) if split=='test'];all_indices=list(indices)
+ dataset_split=getattr(a,'split','test')
+ count=PINS[a.target]['videos_per_field'];indices=[i for i,split in enumerate(payload['splits']) if split==dataset_split];all_indices=list(indices)
+ if dataset_split=='train' and (a.target!='spatial' or len(indices)!=2250):raise ValueError('Training handoff is pinned to Spatial original 2250-video train split')
  valid=[True]*len(indices)
  if len(indices)%count:
   padding=count-len(indices)%count;indices+=indices[:padding];valid += [False]*padding
@@ -54,12 +56,23 @@ def build(a):
   if index%20==0:print('PACKED',a.target,index+1,'/',len(groups),flush=True)
  from experiments.qwen3_vl_2b_lgvq_single_metric_o2_16frame_54.metrics import regression_metrics
  metrics=regression_metrics(torch.tensor(pred),torch.tensor(labels),a.target) if len(pred)>2 else None
- full=len(pred)==558
+ full=dataset_split=='test' and len(pred)==558
  if full and abs(metrics['srcc']-PINS[a.target]['srcc'])>0.00015:raise RuntimeError('Pinned model simulation did not reproduce requested SRCC: '+str(metrics))
  # Copy committed runtime only, never a dirty server optimization worktree.
  paths=['LightGenV2/__init__.py','LightGenV2/tasks/__init__.py','LightGenV2/tasks/t06_video_quality_assessment/__init__.py','LightGenV2/tasks/t06_video_quality_assessment/project.py','LightGenV2/tasks/t06_video_quality_assessment/models/__init__.py','LightGenV2/tasks/t06_video_quality_assessment/models/multivideo9x4.py','LightGenV2/tasks/t06_video_quality_assessment/multivideo_settings.py','LightGenV2/tasks/t06_video_quality_assessment/lab_runtime.py','LightGenV2/tasks/t06_video_quality_assessment/lab_bench.py','LightGenV2/tasks/t06_video_quality_assessment/lab_phase.py','experiments/__init__.py']
  backend='experiments/qwen3_vl_2b_lgvq_single_metric_o2_16frame_54'
  paths += [backend+'/'+name for name in ('__init__.py','modeling.py','settings.py','metrics.py')]
+ if dataset_split=='train':
+  paths.append('LightGenV2/tasks/t06_video_quality_assessment/adapt_measured_readout.py')
+  test_cache=source/'LightGenV2/tasks/t06_video_quality_assessment/runs/hardware/spatial_readout_adapt_20260914/measured_readout_cache.pt'
+  test=torch.load(test_cache,map_location='cpu',weights_only=False)
+  from .adapt_measured_readout import official_partitions
+  training=dict(test,dataset_split='train',video_ids=[payload['sample_ids'][i] for i in all_indices])
+  official_partitions(training,test)
+  if test['checkpoint_sha256']!=sha(checkpoint):raise ValueError('Test readout cache has different weights')
+  (out/'evaluation').mkdir();shutil.copy2(test_cache,out/'evaluation/test558_readout_cache.pt')
+  del test
+  shutil.copy2(root/'LightGenV2/tasks/t06_video_quality_assessment/hardware/adapt_lab.py',out/'adapt.py')
  for rel in paths:
   src=root/rel
   if not src.exists() and src.name=='__init__.py':continue
@@ -69,8 +82,9 @@ def build(a):
  # Do not accidentally borrow dependencies from the source checkout/PYTHONPATH.
  import sys
  subprocess.run([sys.executable,'-I',str(out/'run.py'),'--help'],cwd=out,check=True,stdout=subprocess.DEVNULL)
+ if dataset_split=='train':subprocess.run([sys.executable,'-I',str(out/'adapt.py'),'--help'],cwd=out,check=True,stdout=subprocess.DEVNULL)
  commit=subprocess.check_output(['git','rev-parse','HEAD'],cwd=root,text=True).strip()
- release=dict(schema_version=1,target=a.target,reference_srcc=PINS[a.target]['srcc'],checkpoint_sha256=sha(checkpoint),source_checkpoint=str(checkpoint),source_commit=commit,field_video_count=count,frame_count=4,test_videos_in_package=len(pred),full_test=full,simulation_metrics=metrics,six_pass_replay=audit,fields=entries,automatic_phase_switching=False,physical_geometry=dict(model_pitch_um=17,device_pitch_um=8,active_pixels=478,distance_m=.1),feature_source=dict(manifest_sha256=payload['manifest_sha256'],vision_cache_path=str(settings.vision_cache_path),language_cache_path=str(settings.language_cache_path)))
+ release=dict(schema_version=1,target=a.target,dataset_split=dataset_split,videos_in_package=len(pred),train_videos_in_package=len(pred) if dataset_split=='train' else 0,reference_srcc=PINS[a.target]['srcc'],checkpoint_sha256=sha(checkpoint),source_checkpoint=str(checkpoint),source_commit=commit,field_video_count=count,frame_count=4,test_videos_in_package=len(pred) if dataset_split=='test' else 0,full_test=full,simulation_metrics=metrics,six_pass_replay=audit,fields=entries,automatic_phase_switching=False,physical_geometry=dict(model_pitch_um=17,device_pitch_um=8,active_pixels=478,distance_m=.1),feature_source=dict(manifest_sha256=payload['manifest_sha256'],vision_cache_path=str(settings.vision_cache_path),language_cache_path=str(settings.language_cache_path)))
  write(out/'release.json',release)
  assets={str(p.relative_to(out)).replace('\\','/'):sha(p) for p in out.rglob('*') if p.is_file()};write(out/'SHA256.json',assets)
  zip_path=out.with_suffix('.zip')
@@ -83,5 +97,6 @@ def build(a):
 
 def main():
  p=argparse.ArgumentParser(description=__doc__);p.add_argument('--target',choices=PINS,required=True);p.add_argument('--source-root',required=True);p.add_argument('--output',required=True);p.add_argument('--device',default='cuda');p.add_argument('--max-fields',type=int,default=0)
+ p.add_argument('--split',choices=['train','test'],default='test')
  build(p.parse_args())
 if __name__=='__main__':main()
