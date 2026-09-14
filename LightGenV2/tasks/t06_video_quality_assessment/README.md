@@ -34,6 +34,9 @@ python -m LightGenV2.tasks.t06_video_quality_assessment.adapt_measured_readout t
 
 新产物位于 `runs/hardware/spatial_readout_adapt_20260914`，不覆盖原会话；适配后checkpoint含
 `hardware_adaptation`来源信息，不能直接冒充原SHA固定推理包，需要另行经过适配权重部署验证。
+两版已各完成100epoch：全量同集SRCC 0.9987881（epoch97，不是test）；80%版留出112条
+SRCC 0.6177597→0.6271390（best epoch1），之后过拟合；该权重全558条SRCC 0.6330451。
+原始未适配结果不变，详见[实测读出头适配报告](reports/reproduction/SPATIAL_SHS_READOUT_ADAPT_20260914.md)。
 
 ## 当前SHS实验台迁移（2026-09-14）
 
