@@ -64,6 +64,8 @@ def run(a):
         with DisplayOrigin(bool(link.get('phase_display_align_top',False))):
             pump=message_pump()
             with PhaseHDMI(link['phase_sdk'],link['phase_lut'],link.get('phase_settle_s',1),pixel_format=link.get('phase_pixel_format','rgba')) as sdk:
+                if getattr(a,'phase_reset_image',None):
+                    report['startup_clear_receipt']=sdk.show(a.phase_reset_image,pump=pump);save()
                 report['receipt']=sdk.show(a.phase,mf['phase_sha256'],pump=pump);report['status']='holding_phase';save()
                 for _ in range(getattr(a,'phase_load_attempts',1)-1):
                     report['receipt']=sdk.show(a.phase,mf['phase_sha256'],pump=pump)
@@ -151,6 +153,7 @@ def main():
     p.add_argument('--single-write-phase',action='store_true',help='Load once and hold; no automatic re-writes or flat/target switching')
     p.add_argument('--capture-only',action='store_true',help='Capture this stage only; do not prepare next stage or evaluate')
     p.add_argument('--phase-load-attempts',type=int,choices=range(1,6),default=1,help='Bounded initial writes of the SAME requested phase, before checking; never changes layers')
+    p.add_argument('--phase-reset-image',type=Path,help='Explicit startup-only blank frame, before requested layer; never used during capture')
     p.add_argument('--stage',choices=STAGES,required=True);a=p.parse_args()
     if a.log_file:
         import contextlib
