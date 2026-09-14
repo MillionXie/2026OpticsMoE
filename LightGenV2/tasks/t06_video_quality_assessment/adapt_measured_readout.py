@@ -221,7 +221,48 @@ def main():
     t.add_argument('--epochs',type=int,default=100);t.add_argument('--lr',type=float,default=1e-4)
     t.add_argument('--batch-size',type=int,default=32);t.add_argument('--seed',type=int,default=20260914)
     for p in (e,t):p.add_argument('--output',required=True);p.add_argument('--device',default='cuda')
+    q=sub.add_parser('queue',help='Wait for the verified measurement archive, extract, and train both arms')
+    q.add_argument('--archive',required=True);q.add_argument('--archive-sha256',required=True)
+    q.add_argument('--archive-bytes',required=True,type=int);q.add_argument('--project',required=True)
+    q.add_argument('--output',required=True);q.add_argument('--device',default='cuda')
+    q.add_argument('--epochs',type=int,default=100);q.add_argument('--lr',type=float,default=1e-4)
+    q.add_argument('--batch-size',type=int,default=32);q.add_argument('--seed',type=int,default=20260914)
     a=parser.parse_args();globals()[a.action](a)
+
+
+def queue(a):
+    import zipfile
+    from types import SimpleNamespace
+    out=Path(a.output);out.mkdir(parents=True,exist_ok=True)
+    archive=Path(a.archive);started=time.monotonic()
+    try:
+        while not archive.exists() or archive.stat().st_size<a.archive_bytes:
+            if time.monotonic()-started>7200: raise TimeoutError('Measurement archive transfer timeout')
+            write(out/'queue_status.json',dict(state='waiting_for_data',bytes=archive.stat().st_size if archive.exists() else 0,total=a.archive_bytes))
+            time.sleep(10)
+        if archive.stat().st_size!=a.archive_bytes or sha(archive)!=a.archive_sha256:
+            raise ValueError('Transferred archive does not match the acquisition SHA256')
+        dest=out/'verified_measurement'
+        if dest.exists(): raise FileExistsError(dest)
+        dest.mkdir()
+        with zipfile.ZipFile(archive) as z:
+            for name in z.namelist():
+                if not (dest/name).resolve().is_relative_to(dest.resolve()):
+                    raise ValueError('Unsafe archive member')
+            z.extractall(dest)
+        catalog=read(dest/'measurement_SHA256.json')
+        for name,digest in catalog.items():
+            if not (dest/name).resolve().is_relative_to(dest.resolve()) or sha(dest/name)!=digest:
+                raise ValueError('Measurement manifest mismatch: '+name)
+        write(out/'queue_status.json',dict(state='extracting_readout_features',archive_sha256=a.archive_sha256))
+        extract(SimpleNamespace(project=a.project,session_dir=str(dest),output=str(out/'measured_readout_cache.pt'),device=a.device))
+        write(out/'queue_status.json',dict(state='training_both_arms'))
+        train(SimpleNamespace(cache=str(out/'measured_readout_cache.pt'),checkpoint=str(Path(a.project)/'weights/best_checkpoint.pt'),
+              output=str(out/'adaptation'),device=a.device,epochs=a.epochs,lr=a.lr,batch_size=a.batch_size,seed=a.seed))
+        write(out/'queue_status.json',dict(state='complete',results=str(out/'adaptation/results.json')))
+    except Exception as e:
+        write(out/'queue_status.json',dict(state='failed',error=repr(e)))
+        raise
 
 
 if __name__=='__main__':main()
