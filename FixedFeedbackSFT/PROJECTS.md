@@ -33,10 +33,11 @@
 | P11 | [`qwen3_vl_patch_stem_8stage_separable_optical_imagenet_backbone`](projects/qwen3_vl_patch_stem_8stage_separable_optical_imagenet_backbone/) | 光学能否交替承担 token-axis 与 feature-axis mixing | 当前 source backbone；best epoch 88 Top-1/Top-5 `51.348/75.552%`，相对 P09 `+1.536 pp` Top-1 |
 | P12 | [`qwen3_vl_patch_stem_8stage_separable_optical_downstream_fa`](projects/qwen3_vl_patch_stem_8stage_separable_optical_downstream_fa/) | P11 的 source operator 能否在分类、分割、姿态中复用为固定反馈 | 3 tasks × 4 methods × 3 seeds 的正式迁移已完成，并补 No-ImageNet body、phase-only、梯度和 P/E/H 机制面板 |
 | P13 | [`qwen3_vl_patch_stem_progressive_64stage_optical_imagenet_backbone`](projects/qwen3_vl_patch_stem_progressive_64stage_optical_imagenet_backbone/) | 能否保持电子参数近似恒定，把光学主体扩至 16/32/64/100 stages | 64/100-stage 全深度 CUDA 反传审计已完成；8→16 ImageNet growth 已完整收口，best epoch 19 Top-1/Top-5 `51.428/75.752%`，相对同 run 的 8-stage 起点仅 `+0.082/+0.192 pp` |
+| P14 | [`qwen3_vl_patch_stem_8stage_separable_optical_vtab1k_fa`](projects/qwen3_vl_patch_stem_8stage_separable_optical_vtab1k_fa/) | P11/FA 是否能在标准 1,000-label 迁移协议中跨自然、专门和结构化域泛化 | 六任务 × 四方法首轮 seed-2026；统一 50 epoch、固定 recipe、测试集只在终态评估；正式结果待三卡矩阵完成 |
 
 表中结果用于定位项目，不替代正式 source data。P09/P10/P11 只有一个独立 ImageNet pretraining seed，不能据此写统计显著性；P13 虽已完成终态审计，但尚缺同预算 8-stage continuation，不能把 `+0.082 pp` 归因为有效深度收益。
 
-## P08–P13 的架构继承关系
+## P08–P14 的架构继承关系
 
 ### P08：公共输入与部署接口
 
@@ -82,6 +83,10 @@ P12 不再增加 ImageNet 架构。每个任务只保留 NoFT/head-only、BP-cur
 P13 用 `y=x+alpha(Stage(x)-x)` 从 P11 渐进扩深。8 个 P11 anchor 保留 mixer；新增 stage 使用无参数 identity electronic skip，只增加 phase 和融合标量。因此 64/100 stage 分别有约 `9.63M/15.05M` phase 参数，而电子 body 仍约 `0.965M`。
 
 当前已证明的是：迁移等价、全深度 feedback connector、64/100-stage CUDA 梯度覆盖，以及 16-stage ImageNet 训练可完整收口。16 层 best 只比同 run 的 8-stage 起点高 `0.082 pp` Top-1；仍需 8-stage matched continuation 和新增层 drop/reset 才能判断深度是否带来可归因的语义增益。
+
+### P14：标准化少样本跨域迁移
+
+P14 不改变 P11 架构，只把 P12 的四方法协议扩展到 VTAB-1k 代表性面板：CIFAR-100、Flowers102、EuroSAT、PatchCamelyon、dSprites orientation 和 SmallNORB azimuth。每个任务使用公开的 `train800/val200/train800val200/test` 清单；首轮使用固定超参数在 1,000-example union 上拟合，避免按方法单独调参，并将 test 保留到终态一次评估。它检验的是跨自然、专门和结构化视觉域的可迁移性，不是新增 backbone 架构比较。
 
 ## 仍保留在根 `experiments/` 的共享依赖
 

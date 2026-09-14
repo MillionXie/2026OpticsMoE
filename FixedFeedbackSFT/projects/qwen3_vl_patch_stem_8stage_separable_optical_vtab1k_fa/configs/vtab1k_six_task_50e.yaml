@@ -1,0 +1,34 @@
+selection:
+  task: cifar100
+  method: bp
+  seed: 2026
+
+paths:
+  source_backbone: FixedFeedbackSFT/runs/qwen3_vl_patch_stem_8stage_separable_optical_imagenet_backbone/p11_imagenet1k_pretrain_bs96_90e/checkpoints/backbone.pt
+  source_backbone_sha256: c3ad0b780dfbb3e5f8e1f7b7850c06fcb5c6d977e106f351b4602fcaadf210d2
+  stem_checkpoint: FixedFeedbackSFT/projects/qwen3_vl_patch_stem_8stage_optical_imagenet_backbone/assets/qwen3_vl_static_stem_224.pt
+  data_root: data/vtab-1k
+  output_root: FixedFeedbackSFT/runs/qwen3_vl_patch_stem_8stage_separable_optical_vtab1k_fa/p14_vtab1k_six_task_50e
+
+model:
+  head_hidden_dim: 256
+
+optimizer:
+  phase_learning_rate: 3.0e-3
+  adapter_learning_rate: 2.0e-4
+  residual_learning_rate: 2.0e-4
+  head_learning_rate: 1.0e-3
+  electronic_weight_decay: 5.0e-4
+  warmup_epochs: 5
+  minimum_learning_rate_ratio: 0.05
+
+training:
+  head_only_epochs: 50
+  adaptation_epochs: 50
+  use_amp: true
+  checkpoint_interval_epochs: 50
+
+dataloader:
+  train_batch_size: 64
+  evaluation_batch_size: 128
+  num_workers: 8

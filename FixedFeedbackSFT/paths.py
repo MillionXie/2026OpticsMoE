@@ -20,6 +20,7 @@ PROJECT_NAMES = (
     "qwen3_vl_patch_stem_8stage_separable_optical_imagenet_backbone",
     "qwen3_vl_patch_stem_8stage_separable_optical_downstream_fa",
     "qwen3_vl_patch_stem_progressive_64stage_optical_imagenet_backbone",
+    "qwen3_vl_patch_stem_8stage_separable_optical_vtab1k_fa",
 )
 
 

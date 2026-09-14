@@ -29,7 +29,7 @@ FixedFeedbackSFT/
 └── paths.py                   # 不依赖父目录层数的仓库路径发现
 ```
 
-九个主线工程的完整目录映射见 [`PROJECTS.md`](PROJECTS.md)。最重要的 P08–P13 关系是：
+十个主线工程的完整目录映射见 [`PROJECTS.md`](PROJECTS.md)。最重要的 P08–P14 关系是：
 
 ```text
 P08 冻结 Qwen Patch/Position Stem + 8-stage 基线
@@ -37,7 +37,8 @@ P08 冻结 Qwen Patch/Position Stem + 8-stage 基线
       ├─ P10 局部/全局双尺度光学传播
       └─ P11 token/feature 交替轴向光学传播（当前 source backbone）
           ├─ P12 分类/分割/姿态的四组 FA 下游迁移
-          └─ P13 8→16→32→64→100 函数保持式扩深
+          ├─ P13 8→16→32→64→100 函数保持式扩深
+          └─ P14 VTAB-1k 自然/专门/结构化六任务迁移
 ```
 
 ## 路径变了，但 Python 接口不变
