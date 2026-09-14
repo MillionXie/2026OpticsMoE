@@ -2559,6 +2559,10 @@ python "$B/package.py" --runs "$R" --data "$DATA" --output "$T07/releases/abo_qw
 
 ## 82. Vision外层跳连和V/L光贡献：固定权重诊断
 
+已执行完成，源码025f3223，PID1059479退出。正常81.25%、去外层skip53.50%、仅skip67.125%、
+去V光74.875%、去L光77.625%、全去光75.875%。报告SHA
+`104540e3b6d4cbf002adccc6ea192edb1848e3ab9e530971b7b05eaf8c178e40`；再次执行须换一个不存在的output。
+
 从已提交/推送的本任务代码所在工作树执行，先激活xml并确认GPU0空闲；下方命令不是运行成功声明。
 正常81.25%必须首先重现，否则脚本停止，不解释后续消融。不会生成或修改模型权重。
 保留原始相位/光路/ROI，所有干预仅在诊断进程临时hook中生效，结束自动清除。
@@ -2579,6 +2583,10 @@ CUDA_VISIBLE_DEVICES=GPU-afc19890-6209-ee4d-622d-e619da5bd5b2 python -m LightGen
 ```
 
 ## 83. 更频繁刷新训练图库：ABO主线＋SHAPE备选
+
+本轮已启动（025f3223；本地/服务器385测试）：ABO GPU0 PID1100080，SHAPE GPU1 PID1100081。
+两组各15×100，尚无新性能；正常最佳仍分别81.25%/78.8732%。先前CUDA冒烟已complete，
+PID1060863退出并释放GPU1。不要重复执行下方命令覆盖正在运行的目录；它们用于身份追溯或新目录复现。
 
 先做CUDA冒烟：把ABO下方输出改为`$T07/runs/smoke/abo_bank_refresh_20260914`，
 设置`--epochs 1 --steps 2 --eval-every 1 --bank-refresh-steps 1`，其余参数不变。
