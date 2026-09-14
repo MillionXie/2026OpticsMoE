@@ -2694,3 +2694,10 @@ CUDA_VISIBLE_DEVICES='' OMP_NUM_THREADS=4 MKL_NUM_THREADS=4 python -m LightGenV2
 `final_report.json`只记录cached_candidate，不是部署精度；只有候选优于原值才进一步用
 第80节完整原图评估入口验证（换checkpoint、实际SHA和新的output，不覆盖原verification）。
 即使缓存达到83%，也不得直接宣布目标完成。核对合并前后除readout.projection两张量外全部相同。
+
+已完成补充对照：同一命令仅改`--anchor .1`及
+`--output "$R/abo200_metric_weak_anchor_20260914"`，缓存最佳81.875%，原anchor1为81.75%。
+两组均complete、CPU进程已退出，没有新占GPU。弱锚定best SHA
+`a579413726de92c22000f3379c185df83e6604860990e57010a5bb39259aeb482`，仍待第80节4090完整复评。
+此工具PT的`stage=readout_metric_fit`、`epoch`记录优化step，不能解释为350轮原图训练；
+phase/alpha/前端全冻结，确实只改变原head的weight/bias。正式结果仍81.25%。

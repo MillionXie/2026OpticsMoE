@@ -47,6 +47,16 @@ CPU备选读出校准（COMMAND第85节）：仅对已验证的64维缓存拟合
 有差异，所以结果仅为cached_candidate，必须4090原图重编码、去光及路由复核后才可晋升。
 正规则未能超过81.25%时保留原best，不把缓存分数当完整模型结果。GPU两任务不受此CPU实验影响。
 
+CPU读出两组已完成（源码`a4ff9ebb857bd2fc4e4ca1fecc55ed32c7f5b5ed`，本地/服务器395项回归）：
+`abo200_metric_readout_20260914`，anchor1：缓存81.75%，缓存去光75.50%，26.33秒；
+`abo200_metric_weak_anchor_20260914`，anchor.1：缓存81.875%=655/800、TRAIN94.75%、
+缓存去光75.375%，26.29秒，第350步最佳。两者均800步，CPU PID1505237/1512088退出。
+弱锚定best SHA=`a579413726de92c22000f3379c185df83e6604860990e57010a5bb39259aeb482`。
+逐张量核对弱锚定与原best仅`readout.projection.weight/bias`改变，metadata相同。
+在`stage=readout_metric_fit`的PT中epoch字段记录优化步数（350不是350个数据epoch），
+真实训练/评估步数查history.step。未改图库排序/标签定义。
+这两组**尚未原图GPU复评**，不晋升正式结果；等现有两卡训练完成释放后，优先复评弱锚定候选。
+
 ### 外层跳连核验及后续优化（2026-09-14）
 
 Vision外层确实是`原patch + sigmoid(gate)*Linear1024(光电输出)`，当前gate=.510195；
