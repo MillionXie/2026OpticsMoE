@@ -2667,3 +2667,30 @@ A沿用原逐轮图库，不叠加B的双向损失；B与第83节同起点/学�
 但预算20而非15轮、评估频率1而非5轮，所以最终最佳差异不能完全归因于损失。
 `batch_natural_hit_at_1`在B为两方向均值（训练诊断，不是TEST）。
 TEST定期选模按用户约定，须明确不是独立无偏测试。失败保留81.25%，不覆盖原正式权重。
+
+## 85. CPU校准现有64维读出（必须完整GPU复核后才能报告提升）
+
+不更新正在训练的worktree。采用另一个干净、已同步GitHub的源码worktree运行；
+仅CPU4线程，不额外占卡。输入为第80节完成独立复评的原81.25%模型及其normal/remove缓存。
+校验原图清单SHA、缓存ID顺序和source checkpoint；800查询从不进入优化函数。
+训练一个64x64临时矩阵A：同SKU多正例NLL(temp=.1)+1.0*||A-I||F²/64，
+batch128、800步，lr=.001余弦衰减，每50步按缓存TEST Hit@1/mAP择优。
+这是用户接受的TEST择优实验，不是独立测试。gallery与query仍按原余弦逐图排序，不改SKU相关性定义。
+最终A合并进既有384→64权重和bias，不引入新的推理层。best.pt/last.pt均为合并后的完整模型。
+光学参数不改，因此此项不能宣称增加了光学学习；同权重去光必须用同一个A，不能另拟合。
+
+```bash
+T07=/DATA/DATA1/guest3/2026OpticsMoE/LightGenV2/tasks/t07_abo_image_retrieval
+R="$T07/runs/simulation"
+CUDA_VISIBLE_DEVICES='' OMP_NUM_THREADS=4 MKL_NUM_THREADS=4 python -m LightGenV2.tasks.t07_abo_image_retrieval.standalone.metric_readout \
+  --source-run "$R/abo200_optical_pretrain_20260914" \
+  --manifest "$R/abo200_enrolled_protocol_20260913/protocol.json" \
+  --data /DATA/DATA1/guest3/2026OpticsMoE/data/abo_similarity10_data \
+  --expected-checkpoint-sha256 dcf768878abddd91558533757e404d9ee788cffbc5e0f0162a6f07d8a197eb1d \
+  --expected-hit .8125 --steps 800 --eval-every 50 --batch-size 128 --lr .001 --anchor 1 \
+  --output "$R/abo200_metric_readout_20260914"
+```
+
+`final_report.json`只记录cached_candidate，不是部署精度；只有候选优于原值才进一步用
+第80节完整原图评估入口验证（换checkpoint、实际SHA和新的output，不覆盖原verification）。
+即使缓存达到83%，也不得直接宣布目标完成。核对合并前后除readout.projection两张量外全部相同。
