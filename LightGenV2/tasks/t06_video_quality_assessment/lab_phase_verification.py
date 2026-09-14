@@ -38,6 +38,19 @@ def assess(frames):
              repeat_pcc=repeats,cross_pcc=cross,minimum_repeat_pcc=.95,
              maximum_cross_pcc=.98,minimum_separation=.02)
 
+def reference_match(current,reference):
+ """Cross-time reference: reject wrong patterns without amplifying speckle drift.
+
+ Keep raw evidence and a raw floor; a fixed sigma=1 ROI-pixel filter checks the
+ stable structure. This filtering NEVER touches production CCD tensors.
+ Same-sequence switching and repeatability still use unfiltered PCC.
+ """
+ import cv2
+ raw=compare(current,reference)
+ smooth=compare(cv2.GaussianBlur(current,(0,0),1),cv2.GaussianBlur(reference,(0,0),1))
+ return dict(raw_pcc=raw,structure_pcc=smooth,minimum_raw_pcc=.90,
+             minimum_structure_pcc=.98,diagnostic_gaussian_sigma_px=1.,passed=raw>=.90 and smooth>=.98)
+
 def probe(a,link,sdk,pump,out,label):
  """Worker owns only remote camera I/O; caller pumps phase SDK main thread."""
  import cv2
@@ -93,9 +106,9 @@ def preflight(a,link,sdk,pump,out):
   expected=bank/entry['roi_file']
   if sha(expected)!=entry['roi_sha256']:raise ValueError('Phase reference image changed')
   reference=np.array(Image.open(expected),np.float32)
-  report['reference_pcc']=[compare(frames[i],reference) for i in (1,3)]
+  report['reference_checks']=[reference_match(frames[i],reference) for i in (1,3)]
   report['reference_manifest_sha256']=sha(bank/'manifest.json')
-  report['passed']=report['passed'] and min(report['reference_pcc'])>=.95
+  report['passed']=report['passed'] and all(x['passed'] for x in report['reference_checks'])
  write(out/'report.json',report)
  if not report['passed']:raise ValueError('Optical phase transition preflight failed; production prohibited')
  return frames[-1]
