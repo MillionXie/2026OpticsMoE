@@ -1,0 +1,8 @@
+# Python 3.11. CUDA torch must match the destination GPU/driver.
+# Tested server: torch 2.6.0+cu124 on RTX 4090. CPU cached audit also works.
+torch>=2.6
+transformers==4.57.3
+tokenizers==0.22.2
+safetensors==0.8.0
+numpy==1.26.4
+Pillow==12.2.0

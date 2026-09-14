@@ -1,5 +1,8 @@
 # T07｜ABO相似商品图搜图：baseline复现说明
 
+> 本文只保留2026-09-09的历史说明。两个当前核验基准（旧native64=94.375%、新SKU64=85.125%）
+> 请使用[独立baseline复现入口](../../baseline_reproduction/README.md)，不要将本文square预处理当作native配置。
+
 整理日期：2026-09-09。本文对应服务器独立分支的 **ABO similarity-10冻结Qwen baseline**；不是T08的图像到标题检索。该实现尚未完整整合进当前本地任务入口，源码身份和证据见[审查说明](CHECK_20260908.md)。
 
 ## 数据与模型

@@ -2525,3 +2525,30 @@ CUDA_VISIBLE_DEVICES=GPU-4d8bfdb9-8777-05a6-3811-ab18ff4eadfd python -m LightGen
 
 已有verification时拒绝覆盖；这是固定权重复评，不是重新训练，也不是新的独立测试集。
 完整parent训练/TEST选模偏差仍需披露。重新执行请使用新的空output，不能覆盖这次已完成的证据。
+
+## 81. 给老师/同学的两个冻结Qwen baseline复现
+
+说明及解压后可独立运行的命令见[baseline_reproduction/README.md](baseline_reproduction/README.md)。
+旧版是480查询/120商品中心的同类别检索；新版是800查询/1600单图的同SKU检索，不能把分数下降称为微调过拟合。
+两个模式均零训练参数、无光学/旧工程依赖，先用CPU核算固定缓存，再在一张空闲GPU上顺序从原图复评。
+实际本轮run为`baseline_reproduction_20260914_legacy_category`和`baseline_reproduction_20260914_enrolled_sku`，
+再次执行必须另选output。源码与说明通过Git同步，不SCP覆盖工程源码。
+
+```bash
+T07=/DATA/DATA1/guest3/2026OpticsMoE/LightGenV2/tasks/t07_abo_image_retrieval
+R="$T07/runs/simulation"
+B=LightGenV2/tasks/t07_abo_image_retrieval/baseline_reproduction
+DATA=/DATA/DATA1/guest3/2026OpticsMoE/data/abo_similarity10_data
+MODEL=/DATA/DATA1/guest3/.cache/huggingface/hub/models--Qwen--Qwen3-VL-Embedding-2B/snapshots/9f2f7e710d6d81056aa5c0a4f04764fec6bb7bda
+export HF_HUB_OFFLINE=1 TRANSFORMERS_OFFLINE=1 OMP_NUM_THREADS=4 MKL_NUM_THREADS=4
+python "$B/baseline.py" audit --protocol legacy_category --manifest "$DATA/data/abo_similarity10_manifest.csv" --features "$R/frozen_qwen_20260912/features.pt" --expected-features-sha256 38f77637e48cf28fb7b1e077119bcf4c1ea37dd3480cbd1b6ce5707f05b38324 --output "$T07/runs/smoke/baseline_legacy_cache_20260914"
+python "$B/baseline.py" audit --protocol enrolled_sku --manifest "$DATA/data/abo_similarity10_manifest.csv" --enrolled-manifest "$R/abo200_enrolled_protocol_20260913/protocol.json" --features "$R/abo200_enrolled_qwen64_20260913/normal_features.pt" --expected-features-sha256 c6eb631c268d2446a2f783854c86d8493cdbcaa04c0669148b16d9785016d8d7 --output "$T07/runs/smoke/baseline_enrolled_cache_20260914"
+nvidia-smi
+# 仅当GPU0空闲才使用；否则选另一张真正空闲的GPU。
+CUDA_VISIBLE_DEVICES=0 python "$B/baseline.py" infer --protocol legacy_category --manifest "$DATA/data/abo_similarity10_manifest.csv" --data "$DATA" --model "$MODEL" --output "$R/baseline_reproduction_20260914_legacy_category"
+CUDA_VISIBLE_DEVICES=0 python "$B/baseline.py" infer --protocol enrolled_sku --manifest "$DATA/data/abo_similarity10_manifest.csv" --enrolled-manifest "$R/abo200_enrolled_protocol_20260913/protocol.json" --data "$DATA" --model "$MODEL" --output "$R/baseline_reproduction_20260914_enrolled_sku"
+python "$B/package.py" --runs "$R" --data "$DATA" --output "$T07/releases/abo_qwen_baseline_reproduction_20260914.zip"
+```
+
+此小ZIP只含独立源码、说明、原始特征/名单/报告及可用的本次独立复评结果，不含图像、4.26GB Qwen模型或硬件功能。
+打包器白名单读取Git已提交源码；`PACKAGE_MANIFEST.json`记录逐文件SHA。原图和模型按说明另行提供。
