@@ -2778,7 +2778,7 @@ query与gallery各自随机屏蔽10%输入维度，只作用于TRAIN loss；评�
 | _dropout_weak_20260914 |.1|.1|.0001|82.375%|**82.50%/76.25%**|
 | _dropout_lr2_20260914 |.1|.1|.0002|82.25%|未超过现有最佳、不复评|
 
-所有CPU拟合均已完成退出；只有一组完整光学再加热训练仍在GPU4。
+所有CPU拟合均已完成退出；光学再加热后续完成，结果见第87节，GPU4已释放。
 双向bank旧组完成10轮后因连续9轮未改善主动停止，GPU5释放，记录在该run的early_stop_report.json，
 不伪称完整20轮训练，不覆盖原训练器的failed_or_interrupted状态。
 
@@ -2894,3 +2894,19 @@ CUDA_VISIBLE_DEVICES=GPU-afc19890-6209-ee4d-622d-e619da5bd5b2 OMP_NUM_THREADS=4 
 output改`$R/abo200_phase_head_20260915`启动正式对照。其他设置与起点保持一致。
 最大学习率：expert/global .0002、router .000003、readout .00009；仍2轮warm-in与余弦衰减、EMA .99。
 每轮评估TRAIN/TEST并按既定TEST+路由门槛保存best/last，只有普通单模型，目标83%未自动保证。
+
+实际GPU冒烟已complete（389.22秒），scope_audit.json核验14张量更新、其余参数逐值不变、
+冻结初始/每轮/最终SHA一致；梯度范数4.6033，12份相位均有非零变化。
+两步后的best选回epoch0（82.50%/去光76.25%），不是新的训练收益。
+PID1763945已退出释放CUDA后，正式12轮从原b1e205c7权重启动，源码固定ff5b44e3；
+仅使用GPU0 RTX4090。完整正式命令（目录已使用，复现实验请换新的空output）：
+
+```bash
+CUDA_VISIBLE_DEVICES=GPU-afc19890-6209-ee4d-622d-e619da5bd5b2 OMP_NUM_THREADS=4 MKL_NUM_THREADS=4 HF_HUB_OFFLINE=1 TRANSFORMERS_OFFLINE=1 python -m LightGenV2.tasks.t07_abo_image_retrieval.standalone.retrieval_adapt \
+  --data /DATA/DATA1/guest3/2026OpticsMoE/data/abo_similarity10_data \
+  --manifest "$R/abo200_enrolled_protocol_20260913/protocol.json" --assets "$R/standalone_assets_20260910" \
+  --checkpoint "$R/abo200_direct_readout_dropout_weak_20260914/best.pt" --expected-checkpoint-sha256 "$WEAK_SHA" \
+  --multi-view --refine-profile sku_phase_head --lr-scale .1 \
+  --epochs 12 --steps 100 --eval-every 1 --batch-size 4 --bank-batch-size 16 --bank-refresh-steps 25 \
+  --output "$R/abo200_phase_head_20260915"
+```
