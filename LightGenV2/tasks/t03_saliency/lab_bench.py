@@ -88,6 +88,32 @@ def capture(a):
     return capture_staged(a,open_session,STAGES)
 
 
+def audit(a):
+    """Read-only complete-stage audit, used before releasing the phase owner."""
+    root,s,state,c,release=open_session(a)
+    idx=STAGES.index(a.stage)
+    if state['measured_stages'][:idx+1]!=list(STAGES[:idx+1]):raise ValueError('Stage incomplete')
+    mf=read(s/'play'/a.stage/'manifest.json')
+    expected={item['key'] for item in state['fields']}
+    if len(mf['entries'])!=len(expected) or {e['key'] for e in mf['entries']}!=expected:raise ValueError('Manifest sample mismatch')
+    if sha(s/mf['phase_file'])!=mf['phase_sha256']:raise ValueError('Phase changed')
+    rows=[]
+    for e in mf['entries']:
+        p,r=verified_ccd(s,a.stage,e['key'])
+        if r['hardware_sha256']!=state['hardware_sha256'] or r['phase_sha256']!=mf['phase_sha256'] or r['amplitude_sha256']!=e['sha256'] or r['upstream_ccd_sha256']!=e['upstream_ccd_sha256']:
+            raise ValueError('Capture identity mismatch: '+e['key'])
+        if r['camera'].get('incomplete',False):raise ValueError('Incomplete camera frame')
+        for stage,digest in e['upstream_ccd_sha256'].items():
+            _,previous=verified_ccd(s,stage,e['key'])
+            if previous['sha256']!=digest:raise ValueError('Upstream image changed')
+        rows.append(dict(key=e['key'],**r['quality']))
+    report=dict(stage=a.stage,count=len(rows),status='passed',hardware_sha256=state['hardware_sha256'],
+                phase_sha256=mf['phase_sha256'],minimum_p99=min(r['p99'] for r in rows),
+                maximum_saturation=max(r['saturation'] for r in rows),rows=rows)
+    write(s/'audits'/(a.stage+'.json'),report)
+    print('AUDIT PASSED',a.stage,len(rows),'min_p99',report['minimum_p99'],flush=True)
+
+
 def evaluate(a):
     import torch
     from .lab_runtime import load_model,replay,REFERENCE_CC
@@ -123,12 +149,12 @@ def evaluate(a):
 
 def main():
     p=argparse.ArgumentParser(description=__doc__)
-    p.add_argument('action',choices=['init','prepare','capture','evaluate']);p.add_argument('--project',default='.')
+    p.add_argument('action',choices=['init','prepare','capture','evaluate','audit']);p.add_argument('--project',default='.')
     p.add_argument('--config',default='LAB.20260914.json');p.add_argument('--session',required=True)
     p.add_argument('--stage',choices=STAGES);p.add_argument('--fields',type=int,default=4)
     p.add_argument('--device',default='cuda');p.add_argument('--bench-root',default='../ABO_Lab_SHS_8um')
     p.add_argument('--phase-ready',action='store_true');a=p.parse_args()
-    if a.fields<0 or (a.action in ('prepare','capture') and not a.stage):p.error('Invalid fields/stage')
+    if a.fields<0 or (a.action in ('prepare','capture','audit') and not a.stage):p.error('Invalid fields/stage')
     globals()[{'init':'initialize'}.get(a.action,a.action)](a)
 
 if __name__=='__main__':main()

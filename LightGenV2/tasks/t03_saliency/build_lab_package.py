@@ -132,9 +132,42 @@ def build(a):
 
 def main():
     p=argparse.ArgumentParser(description=__doc__)
-    for key in ('config','checkpoint','output'):p.add_argument('--'+key,type=Path,required=True)
+    for key in ('config','checkpoint','output'):p.add_argument('--'+key,type=Path)
+    p.add_argument('--refresh-runtime',type=Path,help='Verified completed export: repackage control-code-only update without regenerating caches')
+    p.add_argument('--archive',type=Path)
     p.add_argument('--data-root',type=Path);p.add_argument('--cache-dir',type=Path)
     p.add_argument('--max-fields',type=int,default=0);p.add_argument('--batch-size',type=int,default=48)
-    p.add_argument('--device',default='cuda');build(p.parse_args())
+    p.add_argument('--device',default='cuda');a=p.parse_args()
+    if a.refresh_runtime:
+        if not a.archive:p.error('--refresh-runtime requires a NEW --archive')
+        refresh_runtime(a.refresh_runtime,a.archive)
+    else:
+        if not all((a.config,a.checkpoint,a.output)):p.error('config/checkpoint/output required')
+        build(a)
+
+
+def refresh_runtime(out,archive):
+    from .lab_runtime import read
+    out=out.resolve();archive=archive.resolve()
+    if archive.exists():raise FileExistsError(archive)
+    manifest=read(out/'SHA256.json')
+    for name,digest in manifest.items():
+        if sha(out/name)!=digest:raise ValueError('Existing export changed: '+name)
+    root=Path(__file__).resolve().parents[3]
+    commit=subprocess.check_output(['git','rev-parse','HEAD'],cwd=root,text=True).strip()
+    # This whitelist changes only capture auditing/supervision, never model/cache.
+    for name in ('lab_bench.py','lab_supervise.py'):
+        rel='LightGenV2/tasks/t03_saliency/'+name
+        dest=out/'runtime'/rel
+        dest.write_bytes(subprocess.check_output(['git','show',commit+':'+rel],cwd=root))
+    release=read(out/'release.json');release['control_runtime_commit']=commit
+    write(out/'release.json',release)
+    write(out/'SHA256.json',{p.relative_to(out).as_posix():sha(p) for p in out.rglob('*') if p.is_file() and p.name!='SHA256.json'})
+    with zipfile.ZipFile(archive,'x',zipfile.ZIP_DEFLATED,compresslevel=1) as z:
+        for p in out.rglob('*'):
+            if p.is_file():z.write(p,p.relative_to(out).as_posix())
+    write(archive.with_suffix('.delivery.json'),dict(zip=str(archive),sha256=sha(archive),bytes=archive.stat().st_size,
+           source_commit=release['source_commit'],control_runtime_commit=commit,simulation_cc_float64=release['simulation_cc_float64']))
+    print('REPACKAGED',archive,flush=True)
 
 if __name__=='__main__':main()
