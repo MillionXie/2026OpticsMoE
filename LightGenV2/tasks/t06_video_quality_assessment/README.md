@@ -2,6 +2,15 @@
 
 ## 原训练集2250条六层实采与读出头适配（20260914）
 
+20260915相位复核：用户发现language CCD疑似默认文字，原2250会话的语言层与微调队列已暂停，
+不可仅凭SDK返回值、BMP SHA或亮度合格验收。`lab_supervise --verify-phase-optically`在同一相位SDK
+持有进程中，先固定全白振幅、150μs诊断曝光，执行flat→target→flat→target，要求同状态重复PCC≥0.95、
+异状态PCC≤0.98且两者分离≥0.02；采完当前层再用相同探针检查PCC≥0.95。探针不进入数据集，
+诊断曝光不改变正式采集配置。该检查证明可重复的切换响应，不证明相位逐像素准确，也不证明整批每一帧都正确。
+失败即停止，不自动放宽阈值。原始证据保留于对应run，旧test CCD也需复核后才能重新启动适配。
+`lab_exposure_session --retain-prefix 3`可在新会话仅继承SHA及有效设置核验通过的前三层，
+不复制可疑语言CCD、下游BMP或推理输出；第四层起必须重生成和重采。原会话不覆盖。
+
 本轮用户授权自动换完六层。`build_lab_package.py --bench shs --target spatial --split train`
 导出原Spatial 0.6710权重对应的2250条原训练视频，每条4帧、一幅场，共13500次采集。
 新会话独立，不覆盖既有558条test CCD。曝光沿用已验证的400μs，语言router/expert为1600μs，

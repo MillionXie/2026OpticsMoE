@@ -65,6 +65,12 @@ def run(a):
             pump=message_pump()
             with PhaseHDMI(link['phase_sdk'],link['phase_lut'],link.get('phase_settle_s',1),pixel_format=link.get('phase_pixel_format','rgba')) as sdk:
                 report['receipt']=sdk.show(a.phase,mf['phase_sha256'],pump=pump);report['status']='holding_phase';save()
+                phase_reference=None
+                if getattr(a,'verify_phase_optically',False):
+                    from .lab_phase_verification import preflight,postflight
+                    report['status']='verifying_optical_phase';save()
+                    phase_reference=preflight(a,link,sdk,pump,out/'phase_verification')
+                    report['optical_preflight']=str(out/'phase_verification/report.json');save()
                 def work():
                     name='LGVQ_'+uuid.uuid4().hex
                     try:
@@ -101,17 +107,25 @@ def run(a):
                                     if status.get('state') in ('done','failed'):
                                         report['remote_result']=status
                                         if status['state']=='failed':raise RuntimeError(str(status))
-                                        report['status']='next_inputs_ready_wait_for_user' if a.stage!=stages[-1] else 'evaluation_complete';save();break
+                                        report['status']='remote_complete_pending_phase_check';save();break
                                     if time.monotonic()-started>3600:raise TimeoutError('One-stage job exceeded one hour')
                                     time.sleep(2)
                             finally:
                                 r.ps(f"Unregister-ScheduledTask -TaskName '{name}' -Confirm:$false")
                     except BaseException as e:report.update(status='failed_holding_phase',error=str(e));save()
                     finally:done.set()
-                worker=threading.Thread(target=work,daemon=False);worker.start();last=time.monotonic()
+                worker=threading.Thread(target=work,daemon=False);worker.start();last=time.monotonic();checked=False
                 while not release.exists() or not done.is_set():
                     pump()
                     if time.monotonic()-last>=1:sdk.repeat();last=time.monotonic()
+                    if done.is_set() and not checked and report['status']=='remote_complete_pending_phase_check':
+                        checked=True
+                        try:
+                            if phase_reference is not None:
+                                report['status']='verifying_optical_phase_after_capture';save()
+                                postflight(a,link,sdk,pump,out/'phase_verification',phase_reference)
+                            report['status']='next_inputs_ready_wait_for_user' if a.stage!=stages[-1] else 'evaluation_complete';save()
+                        except BaseException as e:report.update(status='failed_holding_phase',error=str(e));save()
                     time.sleep(.01)
                 report['phase_released']=True;save()
     finally:
@@ -125,5 +139,6 @@ def main():
     for name in ['bench-root','link-config','phase','out']:p.add_argument('--'+name,type=Path,required=True)
     for name in ['project','session','config']:p.add_argument('--'+name,required=True)
     p.add_argument('--task',choices=['lgvq','salicon'],default='lgvq')
+    p.add_argument('--verify-phase-optically',action='store_true',help='Fixed-input flat/target repeat test before capture and same-phase check after')
     p.add_argument('--stage',choices=STAGES,required=True);run(p.parse_args())
 if __name__=='__main__':main()

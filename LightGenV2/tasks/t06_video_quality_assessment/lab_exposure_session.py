@@ -9,10 +9,15 @@ from types import SimpleNamespace
 from .lab_runtime import STAGES,read,write,sha
 from .lab_bench import config,session,initialize,identity,effective_stage_identity
 
-def rebase(root,source_name,new_name,new_config):
+def retained_stages(measured,retain_prefix=None):
+ if not measured or measured!=list(STAGES[:len(measured)]):raise ValueError('Expected contiguous source stages')
+ n=len(measured) if retain_prefix is None else retain_prefix
+ if not 1<=n<=len(measured) or n>=len(STAGES):raise ValueError('Retained prefix must be 1..5 and already complete')
+ return measured[:n]
+
+def rebase(root,source_name,new_name,new_config,retain_prefix=None):
  root=Path(root).resolve();old=session(root,source_name);dest=session(root,new_name)
- state=read(old/'session.json');c=config(new_config);stages=state['measured_stages']
- if not stages or stages!=list(STAGES[:len(stages)]) or len(stages)==6:raise ValueError('Expected incomplete contiguous source stages')
+ state=read(old/'session.json');c=config(new_config);stages=retained_stages(state['measured_stages'],retain_prefix)
  if state['release_sha256']!=sha(root/'release.json'):raise ValueError('Release changed')
  if state['hardware_sha256']!=identity(state['hardware_config']):raise ValueError('Source configuration identity invalid')
  for stage in stages:
@@ -38,10 +43,10 @@ def rebase(root,source_name,new_name,new_config):
    oldrec=old/'ccd'/stage/(e['key']+'.record.json');r=read(oldrec)
    r['inherited_acquisition']=dict(source_session=source_name,original_record_sha256=sha(oldrec),original_hardware_sha256=r['hardware_sha256'],effective_stage_identity=effective_stage_identity(c,stage))
    r['hardware_sha256']=new['hardware_sha256'];write(dest/'ccd'/stage/oldrec.name,r)
- new['measured_stages']=stages;new['inheritance']=dict(source_session=source_name,source_session_sha256=sha(old/'session.json'),reason='Only downstream exposure changed; effective settings of inherited stages verified equal')
+ new['measured_stages']=stages;new['inheritance']=dict(source_session=source_name,source_session_sha256=sha(old/'session.json'),retained_prefix=len(stages),excluded_source_stages=state['measured_stages'][len(stages):],reason='Explicit verified prefix reuse; all downstream inputs and CCDs must be regenerated; effective inherited settings unchanged')
  write(dest/'session.json',new);write(dest/'status.json',dict(status='inherited_verified_stages',stages=stages))
  print('REBASED',dest,stages,flush=True)
 
 def main():
- p=argparse.ArgumentParser(description=__doc__);p.add_argument('--project',default='.');p.add_argument('--source-session',required=True);p.add_argument('--new-session',required=True);p.add_argument('--config',required=True);a=p.parse_args();rebase(a.project,a.source_session,a.new_session,a.config)
+ p=argparse.ArgumentParser(description=__doc__);p.add_argument('--project',default='.');p.add_argument('--source-session',required=True);p.add_argument('--new-session',required=True);p.add_argument('--config',required=True);p.add_argument('--retain-prefix',type=int,help='Keep only this many verified leading stages; never copies downstream data');a=p.parse_args();rebase(a.project,a.source_session,a.new_session,a.config,a.retain_prefix)
 if __name__=='__main__':main()

@@ -111,6 +111,7 @@ def run(a):
                      '--task',task,'--bench-root',str(a.bench_root),'--link-config',str(a.link_config),
                      '--phase',str(phase),'--out',str(folder),'--project',a.project,'--session',a.session,
                      '--config',a.config,'--stage',stage]
+            if getattr(a,'verify_phase_optically',False):command.append('--verify-phase-optically')
             si=subprocess.STARTUPINFO();si.dwFlags=0
             with (out/f'{i:02d}_{stage}.log').open('x',encoding='utf-8') as log:
                 child=subprocess.Popen(command,cwd=Path(__file__).resolve().parents[3],stdin=subprocess.DEVNULL,
@@ -151,6 +152,7 @@ def main():
     for name in ('project','session','config'):p.add_argument('--'+name,required=True)
     p.add_argument('--task',choices=['salicon','lgvq'],default='salicon')
     p.add_argument('--resume-completed',action='store_true',help='Audit and skip completed stages in the same immutable session')
+    p.add_argument('--verify-phase-optically',action='store_true')
     run(p.parse_args())
 
 if __name__=='__main__':main()
