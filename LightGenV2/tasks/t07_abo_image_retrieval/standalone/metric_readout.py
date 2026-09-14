@@ -91,6 +91,13 @@ def train_ranking_loss(logits, positive, excluded, kind='nll'):
     if kind == 'top1_softplus':
         neg = logits.masked_fill(~negative, -torch.inf)
         return F.softplus(neg.amax(1) - pos.amax(1) + .2).mean()
+    if kind == 'hybrid_nll_top1':
+        # Fixed equal mixture: improve nearest-SKU ordering without discarding
+        # the original all-gallery multi-positive probability objective.
+        nll = (valid.logsumexp(1) - pos.logsumexp(1)).mean()
+        neg = logits.masked_fill(~negative, -torch.inf)
+        top1 = F.softplus(neg.amax(1) - pos.amax(1) + .2).mean()
+        return .5 * (nll + top1)
     raise ValueError('Unknown TRAIN ranking loss')
 
 
@@ -197,8 +204,11 @@ def run(args):
         extra_inference_parameters=0, inference=('Same original Linear(384,64), direct weight/bias fitting' if projection else 'Same linear64 layer, Wnew=A@W, bnew=A@b'),
         status='cached_candidate_only', raw_gpu_verification_required=True,
         optical_weights_changed=False, training_note='Only TRAIN gallery labels/vectors enter loss; QUERY used for periodic selection')
-    identity['ranking_objective'] = ('softplus((nearest_wrong_cosine-nearest_correct_cosine+.02)/.1), mean over TRAIN queries, self excluded'
-        if args.ranking_loss == 'top1_softplus' else 'Original all-gallery multi-positive NLL, temperature .1')
+    identity['ranking_objective'] = {
+        'nll': 'Original all-gallery multi-positive NLL, temperature .1',
+        'top1_softplus': 'softplus((nearest_wrong_cosine-nearest_correct_cosine+.02)/.1), mean over TRAIN queries, self excluded',
+        'hybrid_nll_top1': 'Fixed .5 original multi-positive NLL + .5 nearest-SKU softplus, temperature .1, top1 cosine margin .02; TRAIN self excluded',
+    }[args.ranking_loss]
     write_json(args.output / 'execution.json', identity)
     status = dict(status='running', pid=os.getpid(), source_commit=identity['source_commit'])
     history, best_score = [], (-1., -1.)
@@ -275,8 +285,8 @@ def main():
     p.add_argument('--verification-dir', type=Path, help='Completed source raw verification directory (default source-run/verification)')
     p.add_argument('--fit-space', choices=['metric64', 'projection384'], default='metric64')
     p.add_argument('--input-dropout', type=float, default=0., help='TRAIN-only independent query/gallery feature dropout for projection384; never used in evaluation')
-    p.add_argument('--ranking-loss', choices=['nll', 'top1_softplus'], default='nll',
-        help='TRAIN objective only; top1_softplus compares nearest positive vs negative with .02 cosine margin, temperature .1; projection384 only')
+    p.add_argument('--ranking-loss', choices=['nll', 'top1_softplus', 'hybrid_nll_top1'], default='nll',
+        help='TRAIN objective only; top1_softplus uses nearest positive/negative, cosine margin .02, temperature .1; hybrid equally mixes original NLL and top1. Alternatives require projection384')
     p.add_argument('--expected-hit', type=float, required=True)
     p.add_argument('--steps', type=int, default=800)
     p.add_argument('--eval-every', type=int, default=50)

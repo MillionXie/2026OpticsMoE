@@ -156,3 +156,16 @@ def test_top1_projection_has_only_original_head_gradients():
     loss.backward()
     assert torch.isfinite(w.grad).all() and w.grad.norm()>0 and b.grad.norm()>0
     assert x.grad is None and ref[0].grad is None and ref[1].grad is None
+
+
+def test_hybrid_is_fixed_equal_mixture_with_no_self_gradient():
+    logits=torch.tensor([[100.,8.,4.,7.,1.]],requires_grad=True)
+    positive=torch.tensor([[False,True,True,False,False]])
+    excluded=torch.tensor([[True,False,False,False,False]])
+    hybrid=train_ranking_loss(logits,positive,excluded,'hybrid_nll_top1')
+    expected=.5*(train_ranking_loss(logits,positive,excluded,'nll')+
+                 train_ranking_loss(logits,positive,excluded,'top1_softplus'))
+    assert torch.equal(hybrid,expected)
+    hybrid.backward()
+    assert torch.isfinite(logits.grad).all() and logits.grad[0,0]==0
+    assert logits.grad[0,1]<0 and logits.grad[0,2]<0 and logits.grad[0,3]>0

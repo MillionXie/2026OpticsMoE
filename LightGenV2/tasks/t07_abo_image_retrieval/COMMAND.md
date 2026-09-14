@@ -2976,3 +2976,26 @@ output为`abo200_readout_top1_polish_20260915`；其他配置保持800步/dropou
 抛光组已完成并复评：原图82.75%/去光76.50%，mAP=.7295324281、NDCG=.7867065295，
 未超过seed73的同Hit与更高mAP，故不替换。CPU PID1808391与复评GPU4 PID1811287均已退出。
 原图证据在该run的verification/final_report.json；不把缓存mAP的提升当成完整模型提升。
+
+## 91. 固定混合TRAIN损失，不增加读出参数
+
+从当前原图82.75%的seed73权重继续，原head的TRAIN目标改为固定
+`0.5 * 多正样本NLL + 0.5 * 最近正确/错误SKU softplus`，不搜索混合系数。
+两项都使用同一独立dropout后的TRAIN query/gallery，温度.1，Top1余弦margin .02，自图排除。
+冻结原光学/电子主干，原384→64头尺寸不变。只做一组800步/seed42/lr.000025/anchor.1；
+此为后续目标微调，不算前一节的固定种子复核。
+
+```bash
+S73_SHA=$(python -c 'import pathlib,json,hashlib,sys; p=pathlib.Path(sys.argv[1]); s=json.loads((p/"final_report.json").read_text())["best_sha256"]; assert hashlib.sha256((p/"best.pt").read_bytes()).hexdigest()==s; print(s)' "$R/abo200_readout_top1_seed73_20260915")
+CUDA_VISIBLE_DEVICES='' OMP_NUM_THREADS=4 MKL_NUM_THREADS=4 python -m LightGenV2.tasks.t07_abo_image_retrieval.standalone.metric_readout \
+  --source-run "$R/abo200_readout_top1_seed73_20260915" \
+  --manifest "$R/abo200_enrolled_protocol_20260913/protocol.json" \
+  --data /DATA/DATA1/guest3/2026OpticsMoE/data/abo_similarity10_data \
+  --expected-checkpoint-sha256 "$S73_SHA" --expected-hit .8275 \
+  --fit-space projection384 --ranking-loss hybrid_nll_top1 --input-dropout .1 \
+  --steps 800 --eval-every 50 --batch-size 128 --lr .000025 --anchor .1 --seed 42 \
+  --output "$R/abo200_readout_hybrid_20260915"
+```
+
+仍只有TRAIN参与loss，周期TEST/跨run选模存在偏差；缓存候选必须按90节原图入口复评后才可晋升。
+不能更新正在进行12轮相位训练的ff5b44e3工作树；CPU目录无活跃进程后才能切换到已推GitHub的新源码。
