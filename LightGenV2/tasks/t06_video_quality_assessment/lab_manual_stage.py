@@ -74,8 +74,10 @@ def run(a):
                             arguments='-u -c "import base64;exec(base64.b64decode(\''+payload+'\'))"'
                             import html
                             xml=f'<Task version="1.2" xmlns="http://schemas.microsoft.com/windows/2004/02/mit/task"><Principals><Principal id="Author"><UserId>PS</UserId><LogonType>InteractiveToken</LogonType><RunLevel>LeastPrivilege</RunLevel></Principal></Principals><Settings><ExecutionTimeLimit>PT1H</ExecutionTimeLimit></Settings><Actions Context="Author"><Exec><Command>{html.escape(r.root+"/.venv_gpu/Scripts/pythonw.exe")}</Command><Arguments>{html.escape(arguments)}</Arguments><WorkingDirectory>{html.escape(a.project)}</WorkingDirectory></Exec></Actions></Task>'
-                            enc=base64.b64encode(xml.encode('utf-8')).decode()
-                            r.ps(f"$xml=[Text.Encoding]::UTF8.GetString([Convert]::FromBase64String('{enc}')); Register-ScheduledTask -TaskName '{name}' -Xml $xml | Out-Null; Start-ScheduledTask -TaskName '{name}'")
+                            # Avoid cmd.exe's 8191-character command limit. This
+                            # generated task definition is an audited run artifact.
+                            with r.sftp.open(stem+'.task.xml','w') as f:f.write(xml.encode('utf-8'))
+                            r.ps(f"$xml=Get-Content -LiteralPath '{stem}.task.xml' -Raw -Encoding UTF8; Register-ScheduledTask -TaskName '{name}' -Xml $xml | Out-Null; Start-ScheduledTask -TaskName '{name}'")
                             report.update(status='capturing',remote_log=stem+'.log',remote_job_status=stem+'.json');save()
                             started=time.monotonic()
                             try:
