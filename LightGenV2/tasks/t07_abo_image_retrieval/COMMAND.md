@@ -2910,3 +2910,28 @@ CUDA_VISIBLE_DEVICES=GPU-afc19890-6209-ee4d-622d-e619da5bd5b2 OMP_NUM_THREADS=4 
   --epochs 12 --steps 100 --eval-every 1 --batch-size 4 --bank-batch-size 16 --bank-refresh-steps 25 \
   --output "$R/abo200_phase_head_20260915"
 ```
+
+## 90. TRAIN最近正确/错误商品排序损失（CPU读出对照）
+
+保持原384→64 Linear、六次光传播、Top2、alpha和全部主干。只改变TRAIN拟合目标：
+`mean(softplus((max_wrong_cosine - max_correct_cosine + .02)/.1))`。
+正确集为同SKU的其他7张TRAIN图；错误集为不同SKU的TRAIN图；自身从两者排除。
+优化最近正确图排在最近错误图之前，仍加原权重相对平方偏离约束.1和10%独立TRAIN特征dropout。
+这不是测试时按标签重排，也不是增加检索头层数；QUERY仅每50步评估选模（有选择偏差）。
+从已验证82.50%权重开始，先只做一组800步、lr .00005、batch128、seed42。
+必须在独立、已经同步GitHub的新worktree运行，不能更新第89节正在训练的ff5b44e3 worktree。
+
+```bash
+CUDA_VISIBLE_DEVICES='' OMP_NUM_THREADS=4 MKL_NUM_THREADS=4 python -m LightGenV2.tasks.t07_abo_image_retrieval.standalone.metric_readout \
+  --source-run "$R/abo200_direct_readout_dropout_weak_20260914" \
+  --manifest "$R/abo200_enrolled_protocol_20260913/protocol.json" \
+  --data /DATA/DATA1/guest3/2026OpticsMoE/data/abo_similarity10_data \
+  --expected-checkpoint-sha256 "$WEAK_SHA" --expected-hit .825 \
+  --fit-space projection384 --ranking-loss top1_softplus --input-dropout .1 \
+  --steps 800 --eval-every 50 --batch-size 128 --lr .00005 --anchor .1 \
+  --output "$R/abo200_readout_top1_20260915"
+```
+
+入口先核验2400个缓存ID/固定manifest/源权重SHA/已完成原图报告；仅前1600 TRAIN张量进loss。
+缓存候选不算正式结果；只有重新原图编码并通过正常/去光/路由/alpha/权重变更审计后才可晋升。
+本对照不影响第89节单GPU相位训练，结束后不保留CPU后台任务。

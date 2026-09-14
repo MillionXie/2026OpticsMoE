@@ -4,7 +4,7 @@ import torch
 from torch.nn import functional as F
 from LightGenV2.tasks.t07_abo_image_retrieval.standalone.metric_readout import (
     fold_metric, metric_loss, validate_cache, replace_projection,
-    projection_loss, validate_projection_cache)
+    projection_loss, validate_projection_cache, train_ranking_loss)
 
 
 def test_fold_preserves_exact_algebra_and_all_other_tensors():
@@ -121,3 +121,38 @@ def test_projection_input_dropout_is_train_only_and_does_not_mutate_inputs():
     for invalid in [-.1,1.,float('nan')]:
         with pytest.raises(ValueError,match='dropout'):
             projection_loss(w,b,x,y,idx,ref,1.,invalid)
+
+
+def test_top1_surrogate_uses_nearest_correct_and_incorrect_not_self():
+    logits=torch.tensor([[100.,8.,4.,7.,1.]],requires_grad=True)
+    positive=torch.tensor([[False,True,True,False,False]])
+    excluded=torch.tensor([[True,False,False,False,False]])
+    loss=train_ranking_loss(logits,positive,excluded,'top1_softplus')
+    assert torch.allclose(loss,F.softplus(torch.tensor(-.8)))
+    loss.backward()
+    assert logits.grad[0,0]==0 and logits.grad[0,2]==0 and logits.grad[0,4]==0
+    assert logits.grad[0,1]<0 and logits.grad[0,3]>0
+    stronger=logits.detach().clone(); stronger[0,1]+=1
+    assert train_ranking_loss(stronger,positive,excluded,'top1_softplus')<loss
+
+
+def test_ranking_nll_preserves_original_and_rejects_invalid_sets():
+    logits=torch.tensor([[10.,3.,2.,1.]])
+    pos=torch.tensor([[False,True,True,False]]); exc=torch.tensor([[True,False,False,False]])
+    expected=logits.masked_fill(exc,-torch.inf).logsumexp(1)-logits.masked_fill(~pos,-torch.inf).logsumexp(1)
+    assert torch.equal(train_ranking_loss(logits,pos,exc),expected.mean())
+    for kind in ['nll','top1_softplus']:
+        with pytest.raises(ValueError): train_ranking_loss(logits,torch.zeros_like(pos),exc,kind)
+        with pytest.raises(ValueError): train_ranking_loss(logits,~exc,exc,kind)
+    with pytest.raises(ValueError): train_ranking_loss(logits,pos,exc,'test_rerank')
+
+
+def test_top1_projection_has_only_original_head_gradients():
+    torch.manual_seed(48)
+    x=torch.randn(8,384); y=torch.arange(4).repeat_interleave(2)
+    w=torch.randn(64,384,requires_grad=True); b=torch.zeros(64,requires_grad=True)
+    ref=(w.detach().clone(),b.detach().clone())
+    loss=projection_loss(w,b,x,y,torch.arange(8),ref,.1,.1,'top1_softplus')
+    loss.backward()
+    assert torch.isfinite(w.grad).all() and w.grad.norm()>0 and b.grad.norm()>0
+    assert x.grad is None and ref[0].grad is None and ref[1].grad is None

@@ -73,7 +73,28 @@ def replace_projection(payload, weight, bias):
     return result
 
 
-def projection_loss(weight, bias, train_inputs, train_labels, indices, reference, anchor, input_dropout=0.):
+def train_ranking_loss(logits, positive, excluded, kind='nll'):
+    """TRAIN nearest-positive/negative surrogate, never a test-time reranker.
+
+    Logits are cosine/.1. The .2 logit margin means .02 cosine margin.
+    Top1 needs *one* correct SKU view before every wrong SKU, not every
+    positive ahead of every negative. Self matches participate in neither set.
+    """
+    positive = positive & ~excluded
+    negative = ~positive & ~excluded
+    if not positive.any(1).all() or not negative.any(1).all():
+        raise ValueError('Require nonself TRAIN positives and different-SKU negatives')
+    valid = logits.masked_fill(excluded, -torch.inf)
+    pos = logits.masked_fill(~positive | excluded, -torch.inf)
+    if kind == 'nll':
+        return (valid.logsumexp(1) - pos.logsumexp(1)).mean()
+    if kind == 'top1_softplus':
+        neg = logits.masked_fill(~negative, -torch.inf)
+        return F.softplus(neg.amax(1) - pos.amax(1) + .2).mean()
+    raise ValueError('Unknown TRAIN ranking loss')
+
+
+def projection_loss(weight, bias, train_inputs, train_labels, indices, reference, anchor, input_dropout=0., ranking_loss='nll'):
     """Only detached TRAIN inputs; all gallery rows receive parameter gradients."""
     if train_inputs.requires_grad or train_inputs.ndim != 2 or train_inputs.shape[1] != 384:
         raise ValueError('Only detached 384D TRAIN inputs may be fitted')
@@ -93,8 +114,7 @@ def projection_loss(weight, bias, train_inputs, train_labels, indices, reference
     positive = train_labels[indices, None].eq(train_labels[None]) & ~excluded
     if not positive.any(1).all():
         raise ValueError('Missing nonself TRAIN positive')
-    logits = logits.masked_fill(excluded, -torch.inf)
-    nll = (logits.logsumexp(1)-logits.masked_fill(~positive, -torch.inf).logsumexp(1)).mean()
+    nll = train_ranking_loss(logits, positive, excluded, ranking_loss)
     w0, b0 = reference
     if w0.requires_grad or b0.requires_grad:
         raise ValueError('Anchor reference must remain frozen')
@@ -177,6 +197,8 @@ def run(args):
         extra_inference_parameters=0, inference=('Same original Linear(384,64), direct weight/bias fitting' if projection else 'Same linear64 layer, Wnew=A@W, bnew=A@b'),
         status='cached_candidate_only', raw_gpu_verification_required=True,
         optical_weights_changed=False, training_note='Only TRAIN gallery labels/vectors enter loss; QUERY used for periodic selection')
+    identity['ranking_objective'] = ('softplus((nearest_wrong_cosine-nearest_correct_cosine+.02)/.1), mean over TRAIN queries, self excluded'
+        if args.ranking_loss == 'top1_softplus' else 'Original all-gallery multi-positive NLL, temperature .1')
     write_json(args.output / 'execution.json', identity)
     status = dict(status='running', pid=os.getpid(), source_commit=identity['source_commit'])
     history, best_score = [], (-1., -1.)
@@ -196,7 +218,7 @@ def run(args):
                 optimizer.param_groups[0]['lr'] = args.lr * (.1 + .9 * .5 * (1 + math.cos(math.pi * step / args.steps)))
                 idx = torch.randperm(1600)[:args.batch_size]
                 optimizer.zero_grad(set_to_none=True)
-                loss = (projection_loss(weight, bias, train_inputs, train_labels, idx, reference, args.anchor, args.input_dropout)
+                loss = (projection_loss(weight, bias, train_inputs, train_labels, idx, reference, args.anchor, args.input_dropout, args.ranking_loss)
                         if projection else metric_loss(matrix, train_z, train_labels, idx, args.anchor))
                 loss.backward()
                 torch.nn.utils.clip_grad_norm_(parameters, 1., error_if_nonfinite=True)
@@ -253,6 +275,8 @@ def main():
     p.add_argument('--verification-dir', type=Path, help='Completed source raw verification directory (default source-run/verification)')
     p.add_argument('--fit-space', choices=['metric64', 'projection384'], default='metric64')
     p.add_argument('--input-dropout', type=float, default=0., help='TRAIN-only independent query/gallery feature dropout for projection384; never used in evaluation')
+    p.add_argument('--ranking-loss', choices=['nll', 'top1_softplus'], default='nll',
+        help='TRAIN objective only; top1_softplus compares nearest positive vs negative with .02 cosine margin, temperature .1; projection384 only')
     p.add_argument('--expected-hit', type=float, required=True)
     p.add_argument('--steps', type=int, default=800)
     p.add_argument('--eval-every', type=int, default=50)
@@ -265,6 +289,8 @@ def main():
         p.error('Invalid training bounds')
     if not math.isfinite(args.input_dropout) or not 0 <= args.input_dropout < 1 or (args.input_dropout and args.fit_space != 'projection384'):
         p.error('Input dropout must be in [0,1), supported only with projection384')
+    if args.ranking_loss != 'nll' and args.fit_space != 'projection384':
+        p.error('Alternative ranking loss requires projection384')
     run(args)
 
 
