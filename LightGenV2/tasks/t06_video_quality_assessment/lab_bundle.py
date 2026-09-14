@@ -57,7 +57,7 @@ def build(a):
  full=len(pred)==558
  if full and abs(metrics['srcc']-PINS[a.target]['srcc'])>0.00015:raise RuntimeError('Pinned model simulation did not reproduce requested SRCC: '+str(metrics))
  # Copy committed runtime only, never a dirty server optimization worktree.
- paths=['LightGenV2/__init__.py','LightGenV2/tasks/__init__.py','LightGenV2/tasks/t06_video_quality_assessment/__init__.py','LightGenV2/tasks/t06_video_quality_assessment/models/__init__.py','LightGenV2/tasks/t06_video_quality_assessment/models/multivideo9x4.py','LightGenV2/tasks/t06_video_quality_assessment/multivideo_settings.py','LightGenV2/tasks/t06_video_quality_assessment/lab_runtime.py','LightGenV2/tasks/t06_video_quality_assessment/lab_bench.py','LightGenV2/tasks/t06_video_quality_assessment/lab_phase.py','experiments/__init__.py']
+ paths=['LightGenV2/__init__.py','LightGenV2/tasks/__init__.py','LightGenV2/tasks/t06_video_quality_assessment/__init__.py','LightGenV2/tasks/t06_video_quality_assessment/project.py','LightGenV2/tasks/t06_video_quality_assessment/models/__init__.py','LightGenV2/tasks/t06_video_quality_assessment/models/multivideo9x4.py','LightGenV2/tasks/t06_video_quality_assessment/multivideo_settings.py','LightGenV2/tasks/t06_video_quality_assessment/lab_runtime.py','LightGenV2/tasks/t06_video_quality_assessment/lab_bench.py','LightGenV2/tasks/t06_video_quality_assessment/lab_phase.py','experiments/__init__.py']
  backend='experiments/qwen3_vl_2b_lgvq_single_metric_o2_16frame_54'
  paths += [backend+'/'+name for name in ('__init__.py','modeling.py','settings.py','metrics.py')]
  for rel in paths:
@@ -66,6 +66,9 @@ def build(a):
   dst=out/'runtime'/rel;dst.parent.mkdir(parents=True,exist_ok=True);shutil.copy2(src,dst)
  for name in ('run_lab.py','COMMAND_SHS.md'):
   shutil.copy2(root/'LightGenV2/tasks/t06_video_quality_assessment/hardware'/name,out/('run.py' if name=='run_lab.py' else name))
+ # Do not accidentally borrow dependencies from the source checkout/PYTHONPATH.
+ import sys
+ subprocess.run([sys.executable,'-I',str(out/'run.py'),'--help'],cwd=out,check=True,stdout=subprocess.DEVNULL)
  commit=subprocess.check_output(['git','rev-parse','HEAD'],cwd=root,text=True).strip()
  release=dict(schema_version=1,target=a.target,reference_srcc=PINS[a.target]['srcc'],checkpoint_sha256=sha(checkpoint),source_checkpoint=str(checkpoint),source_commit=commit,field_video_count=count,frame_count=4,test_videos_in_package=len(pred),full_test=full,simulation_metrics=metrics,six_pass_replay=audit,fields=entries,automatic_phase_switching=False,physical_geometry=dict(model_pitch_um=17,device_pitch_um=8,active_pixels=478,distance_m=.1),feature_source=dict(manifest_sha256=payload['manifest_sha256'],vision_cache_path=str(settings.vision_cache_path),language_cache_path=str(settings.language_cache_path)))
  write(out/'release.json',release)
