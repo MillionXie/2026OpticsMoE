@@ -252,6 +252,7 @@ def main():
     q.add_argument('--output',required=True);q.add_argument('--device',default='cuda')
     q.add_argument('--epochs',type=int,default=100);q.add_argument('--lr',type=float,default=1e-4)
     q.add_argument('--batch-size',type=int,default=32);q.add_argument('--seed',type=int,default=20260914)
+    q.add_argument('--resume-verified',action='store_true',help='Reuse extracted data only after rechecking archive and every file SHA; no training overwrite')
     a=parser.parse_args();globals()[a.action](a)
 
 
@@ -268,13 +269,15 @@ def queue(a):
         if archive.stat().st_size!=a.archive_bytes or sha(archive)!=a.archive_sha256:
             raise ValueError('Transferred archive does not match the acquisition SHA256')
         dest=out/'verified_measurement'
-        if dest.exists(): raise FileExistsError(dest)
-        dest.mkdir()
-        with zipfile.ZipFile(archive) as z:
-            for name in z.namelist():
-                if not (dest/name).resolve().is_relative_to(dest.resolve()):
-                    raise ValueError('Unsafe archive member')
-            z.extractall(dest)
+        if dest.exists():
+            if not a.resume_verified:raise FileExistsError(dest)
+        else:
+            dest.mkdir()
+            with zipfile.ZipFile(archive) as z:
+                for name in z.namelist():
+                    if not (dest/name).resolve().is_relative_to(dest.resolve()):
+                        raise ValueError('Unsafe archive member')
+                z.extractall(dest)
         catalog=read(dest/'measurement_SHA256.json')
         for name,digest in catalog.items():
             if not (dest/name).resolve().is_relative_to(dest.resolve()) or sha(dest/name)!=digest:
