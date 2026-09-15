@@ -3272,3 +3272,25 @@ CUDA_VISIBLE_DEVICES=GPU-1b963983-7909-af6e-0528-f0f0661ab549 OMP_NUM_THREADS=4 
 `abo200_readout_active_margin_dropout10_20260915`；其他参数、起点、种子相同。
 检验干净TRAIN间隔优化是否缺少增强，不同时改学习率/锚定，不增加推理dropout。
 任何新候选均须正常/去光原图复评、TRAIN与路由审计，保留原83%权重。
+
+第98节10% dropout匹配组800步已完成，新训练最高82.625%、末期81.875%，未超过83%起点。
+短程收尾`abo200_readout_active_margin_micro_20260915`保持10% dropout，只改lr.0000025、
+50步/每5步评估，最高83%、末期82.875%。PID2410499/2412167均已退出，不晋升；
+源码08f5309c（只更新文档，训练实现与a817887c相同）。这些都是TEST择优，不是无偏独立实验。
+
+## 99. 从已验证83%权重极短相位/原头续训
+
+第93节每20步评估的相位+头续训未提升；这里只检验更早的2步状态，仍不改原电子残差和alpha。
+该设置对应第92节短程训练配方，但起点为83%而非82.75%；不把历史结果当成本次结果。
+保留best/last，按原live/EMA和路由条件选择，之后还须独立原图复评。
+光学相位的微小更新不能自动解释为宏观的光贡献提高；性能结论只引用真实全量结果。
+
+```bash
+CUDA_VISIBLE_DEVICES=GPU-1b963983-7909-af6e-0528-f0f0661ab549 OMP_NUM_THREADS=4 MKL_NUM_THREADS=4 python -m LightGenV2.tasks.t07_abo_image_retrieval.standalone.retrieval_adapt \
+  --data /DATA/DATA1/guest3/2026OpticsMoE/data/abo_similarity10_data \
+  --manifest "$R/abo200_enrolled_protocol_20260913/protocol.json" --assets "$R/standalone_assets_20260910" \
+  --checkpoint "$START83/best.pt" --expected-checkpoint-sha256 "$START83_SHA" \
+  --multi-view --refine-profile sku_phase_head_top1 --lr-scale .05 \
+  --epochs 1 --steps 2 --eval-every 1 --batch-size 4 --bank-batch-size 16 --seed 42 \
+  --output "$R/abo200_phase_head_micro_after83_20260915"
+```
