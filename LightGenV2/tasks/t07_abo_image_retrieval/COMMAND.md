@@ -3384,3 +3384,29 @@ CUDA_VISIBLE_DEVICES=GPU-1b963983-7909-af6e-0528-f0f0661ab549 OMP_NUM_THREADS=4 
   --epochs 3 --steps 20 --eval-every 1 --batch-size 4 --bank-batch-size 16 --bank-refresh-steps 10 --seed 42 \
   --output "$R/abo200_alpha_only_20260915"
 ```
+
+## 102. 完整TRAIN的L-BFGS原读出优化（待当前alpha任务结束）
+
+此前随机小批次Adam/SAM、多种排序损失及bias校准没有超过83%。此对照只改优化方式：
+原384→64 Linear的W/b使用完整1600张TRAIN，非自身同SKU7张正例的平滑NLL，原锚定权重1。
+L-BFGS使用10份曲率历史，每个外层step做一次拟牛顿迭代，strong-Wolfe线搜索可多次评估TRAIN closure。
+没有dropout、SAM、中心化或随机小批次；不裁剪梯度，以免线搜索拿到的梯度与目标函数不符。
+检查loss/梯度/参数有限；若试探闭包失败，先恢复该步前的参数再报错退出。
+不添加网络层、TF、attention或推理算子；光学、alpha、前端、电子残差和metadata不变。
+
+固定20个外层step、LR1（线搜索决定实际步长，不等同Adam的LR1）、每step评估，
+仍用原CUDA BF16 batch4 head重放、起点逐值检查。记录每步closure次数，不能把20步写成20epoch。
+QUERY不参与closure/线搜索/曲率更新；周期TEST和跨run择优的偏差仍存在。
+
+```bash
+CUDA_VISIBLE_DEVICES=GPU-1b963983-7909-af6e-0528-f0f0661ab549 OMP_NUM_THREADS=4 MKL_NUM_THREADS=4 python -m LightGenV2.tasks.t07_abo_image_retrieval.standalone.metric_readout \
+  --source-run "$START83" --manifest "$R/abo200_enrolled_protocol_20260913/protocol.json" \
+  --data /DATA/DATA1/guest3/2026OpticsMoE/data/abo_similarity10_data \
+  --expected-checkpoint-sha256 "$START83_SHA" --expected-hit .83 \
+  --fit-space projection384 --optimizer lbfgs --batch-size 1600 --ranking-loss nll \
+  --input-dropout 0 --sam-rho 0 --train-center 0 --steps 20 --eval-every 1 --lr 1 --anchor 1 --seed 42 \
+  --selection-precision cuda_bf16 --output "$R/abo200_readout_fullbatch_lbfgs_20260915"
+```
+
+默认仍Adam原路径；LBFGS模式拒绝非完整batch、非平滑排序loss和随机dropout/SAM，
+不与当前GPU训练重叠启动。候选必须独立原图复评达标后才可替换原83%引用。

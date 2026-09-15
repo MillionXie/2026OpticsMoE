@@ -68,6 +68,9 @@ scope_audit.json确认last恰好只改4个alpha，所有其他state和metadata�
 `abo200_alpha_only_20260915`已在GPU4从原83%启动3轮×20步，仍仅4个参数，尚无新提升结论。
 该校准用干净CCD、eval电子层和轻微训练亮度增强，
 不把它解释为新噪声鲁棒mask训练，后续仍须全量原图/去光/路由核验。
+第102节另准备完整TRAIN的L-BFGS读出优化（待仅alpha任务结束）：只改原Linear W/b，
+不改光/电残差/alpha；平滑NLL、1600 TRAIN全batch、无线搜索TEST参与、无dropout/SAM。
+默认Adam路径保持不变，本地431项测试通过；这是待运行的训练方法对照，不是新的性能。
 
 ### 上一82.75%（本次短程训练起点）
 

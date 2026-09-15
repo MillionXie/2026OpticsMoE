@@ -27,6 +27,37 @@ def fit_step(loss_closure, optimizer, parameters, sam_rho=0.):
     Uses the task's existing SAM implementation. Nothing is added to the saved
     model, and detached TRAIN inputs/anchor references remain outside optimizer.
     """
+    if isinstance(optimizer, torch.optim.LBFGS):
+        if sam_rho:
+            raise ValueError('LBFGS requires deterministic full TRAIN closure, without SAM')
+        original = [p.detach().clone() for p in parameters]
+        audit = dict(rho=0., loss_gap=0., perturbation_norm=0.,
+                     optimizer='lbfgs', closure_calls=0)
+        def closure():
+            optimizer.zero_grad(set_to_none=True)
+            loss = loss_closure()
+            if loss.ndim != 0 or not torch.isfinite(loss):
+                raise ValueError('LBFGS requires a finite scalar TRAIN loss')
+            loss.backward()
+            grads = [p.grad for p in parameters if p.grad is not None]
+            if not grads or any(not torch.isfinite(g).all() for g in grads):
+                raise ValueError('LBFGS encountered invalid TRAIN gradients')
+            # Do not clip: strong-Wolfe search needs the objective's true gradient.
+            audit['gradient_norm'] = float(torch.sqrt(sum(g.detach().square().sum() for g in grads)))
+            if not math.isfinite(audit['gradient_norm']):
+                raise ValueError('LBFGS gradient norm is nonfinite')
+            audit['closure_calls'] += 1
+            return loss
+        try:
+            loss = optimizer.step(closure)
+            if any(not torch.isfinite(p).all() for p in parameters):
+                raise ValueError('LBFGS produced nonfinite parameters')
+        except BaseException:
+            with torch.no_grad():
+                for p, old in zip(parameters, original):
+                    p.copy_(old)
+            raise
+        return loss.detach(), audit
     result, sam = backward_with_sam(lambda: dict(loss=loss_closure()), optimizer, sam_rho)
     norm = torch.nn.utils.clip_grad_norm_(parameters, 1., error_if_nonfinite=True)
     optimizer.step()
@@ -165,7 +196,19 @@ def validate_projection_cache(cache, checkpoint_sha, payload):
         raise ValueError('Projection inputs do not reproduce source descriptors within BF16 tolerance')
 
 
+def validate_optimizer_recipe(args):
+    kind = getattr(args, 'optimizer', 'adam')
+    if kind not in ('adam', 'lbfgs'):
+        raise ValueError('Unknown readout optimizer')
+    if kind == 'lbfgs' and (args.fit_space != 'projection384' or args.batch_size != 1600
+            or args.ranking_loss != 'nll' or args.input_dropout or args.sam_rho
+            or getattr(args, 'train_center', 0.) or args.steps < 1):
+        raise ValueError('LBFGS requires original projection, full1600 TRAIN, smooth NLL, no dropout/SAM/centering')
+    return kind
+
+
 def run(args):
+    optimizer_kind = validate_optimizer_recipe(args)
     torch.set_num_threads(4)
     torch.manual_seed(args.seed)
     if args.output.exists():
@@ -232,7 +275,9 @@ def run(args):
             # Only the already detached 1600 TRAIN inputs enter this statistic.
             # Source raw replay above occurs BEFORE calibration.
             bias.copy_(centered_projection_bias(weight, bias, train_inputs, center_strength))
-    optimizer = torch.optim.Adam(parameters, lr=args.lr)
+    optimizer = (torch.optim.LBFGS(parameters, lr=args.lr, max_iter=1, history_size=10,
+        line_search_fn='strong_wolfe') if optimizer_kind == 'lbfgs'
+        else torch.optim.Adam(parameters, lr=args.lr))
     args.output.mkdir(parents=True)
     identity = dict(source_commit=source_commit(), command=sys.argv, pid=os.getpid(),
         source_checkpoint_sha256=sha256(checkpoint), manifest_sha256=manifest_sha,
@@ -243,6 +288,8 @@ def run(args):
         status='cached_candidate_only', raw_gpu_verification_required=True,
         optical_weights_changed=False, training_note='Only TRAIN gallery labels/vectors enter loss; QUERY used for periodic selection')
     identity['selection_precision'] = args.selection_precision
+    identity['optimizer_recipe'] = dict(kind=optimizer_kind,
+        note='Full TRAIN smooth NLL; one quasi-Newton iteration per outer step, strong-Wolfe TRAIN-only line search, history10, constant LR, no gradient clipping; query never enters closure' if optimizer_kind == 'lbfgs' else 'Original minibatch Adam/SAM, cosine LR and gradient norm clip1')
     identity['train_center'] = dict(strength=center_strength, rows=1600,
         note='Existing bias only: b_new=b-strength*mean_TRAIN(Wx+b), pre L2. QUERY excluded. Zero steps means calibration only, not SGD training.')
     identity['selection_gpu'] = torch.cuda.get_device_name() if args.selection_precision == 'cuda_bf16' else None
@@ -272,8 +319,9 @@ def run(args):
     try:
         for step in range(args.steps + 1):
             if step:
-                optimizer.param_groups[0]['lr'] = args.lr * (.1 + .9 * .5 * (1 + math.cos(math.pi * step / args.steps)))
-                idx = torch.randperm(1600)[:args.batch_size]
+                optimizer.param_groups[0]['lr'] = (args.lr if optimizer_kind == 'lbfgs'
+                    else args.lr * (.1 + .9 * .5 * (1 + math.cos(math.pi * step / args.steps))))
+                idx = torch.arange(1600) if optimizer_kind == 'lbfgs' else torch.randperm(1600)[:args.batch_size]
                 def loss_closure():
                     return (projection_loss(weight, bias, train_inputs, train_labels, idx, reference, args.anchor, args.input_dropout, args.ranking_loss)
                             if projection else metric_loss(matrix, train_z, train_labels, idx, args.anchor))
@@ -339,6 +387,8 @@ def main():
     p.add_argument('--eval-every', type=int, default=50)
     p.add_argument('--batch-size', type=int, default=128)
     p.add_argument('--lr', type=float, default=.001)
+    p.add_argument('--optimizer', choices=['adam','lbfgs'], default='adam',
+        help='LBFGS requires projection384, batch1600, NLL, no dropout/SAM/centering; deterministic full-TRAIN closure, constant LR, no new inference layers.')
     p.add_argument('--anchor', type=float, default=1.)
     p.add_argument('--sam-rho', type=float, default=0., help='TRAIN-only SAM radius on existing fitted head; zero preserves ordinary Adam')
     p.add_argument('--selection-precision', choices=['cpu_fp32','cuda_bf16'], default='cpu_fp32',

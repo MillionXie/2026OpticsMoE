@@ -1,10 +1,12 @@
 import copy
+import types
 import pytest
 import torch
 from torch.nn import functional as F
 from LightGenV2.tasks.t07_abo_image_retrieval.standalone.metric_readout import (
     fold_metric, metric_loss, validate_cache, replace_projection,
-    projection_loss, validate_projection_cache, train_ranking_loss, fit_step, projection_vectors, centered_projection_bias)
+    projection_loss, validate_projection_cache, train_ranking_loss, fit_step, projection_vectors, centered_projection_bias,
+    validate_optimizer_recipe)
 
 
 def test_fold_preserves_exact_algebra_and_all_other_tensors():
@@ -318,3 +320,51 @@ def test_train_centering_rejects_grad_inputs_invalid_geometry_and_nonfinite():
     for invalid in [train.clone().requires_grad_(),train[:0],train[:,:383],torch.full_like(train,float('nan'))]:
         with pytest.raises(ValueError): centered_projection_bias(w,b,invalid,1.)
     with pytest.raises(ValueError): centered_projection_bias(w[:63],b,train,1.)
+
+
+def test_lbfgs_train_closure_converges_without_changing_reference():
+    p=torch.nn.Parameter(torch.tensor([3.,-2.])); target=torch.tensor([.5,1.])
+    opt=torch.optim.LBFGS([p],lr=1.,max_iter=1,history_size=10,line_search_fn='strong_wolfe')
+    for _ in range(4):
+        loss,audit=fit_step(lambda:(p-target).square().mean(),opt,[p])
+        assert torch.isfinite(loss) and audit['closure_calls']>=1
+        assert audit['optimizer']=='lbfgs' and audit['gradient_norm']>=0
+    assert torch.allclose(p,target,atol=1e-5) and target.grad is None
+
+
+def test_lbfgs_restores_weights_if_line_search_closure_fails():
+    p=torch.nn.Parameter(torch.tensor([3.,-2.])); original=p.detach().clone(); calls=[]
+    opt=torch.optim.LBFGS([p],lr=1.,max_iter=1,line_search_fn='strong_wolfe')
+    def closure():
+        calls.append(1)
+        if len(calls)>1: raise RuntimeError('intentional failed TRAIN trial')
+        return p.square().sum()
+    with pytest.raises(RuntimeError,match='intentional'):
+        fit_step(closure,opt,[p])
+    assert len(calls)>1 and torch.equal(p,original)
+    with pytest.raises(ValueError,match='without SAM'):
+        fit_step(lambda:p.square().sum(),opt,[p],.1)
+
+
+def test_lbfgs_full_train_projection_keeps_inputs_and_anchor_detached():
+    torch.manual_seed(65)
+    x=torch.randn(12,384); labels=torch.arange(4).repeat_interleave(3)
+    w=torch.nn.Parameter(torch.randn(64,384)); b=torch.nn.Parameter(torch.zeros(64))
+    ref=(w.detach().clone(),b.detach().clone()); indices=torch.arange(12)
+    closure=lambda:projection_loss(w,b,x,labels,indices,ref,1.)
+    before=float(closure().detach())
+    opt=torch.optim.LBFGS([w,b],lr=1.,max_iter=1,history_size=10,line_search_fn='strong_wolfe')
+    for _ in range(3): fit_step(closure,opt,[w,b])
+    assert float(closure().detach())<before
+    assert x.grad is None and ref[0].grad is None and ref[1].grad is None
+
+
+def test_lbfgs_recipe_rejects_stochastic_or_nonfull_training():
+    base=dict(optimizer='lbfgs',fit_space='projection384',batch_size=1600,ranking_loss='nll',
+              input_dropout=0.,sam_rho=0.,train_center=0.,steps=20)
+    assert validate_optimizer_recipe(types.SimpleNamespace(**base))=='lbfgs'
+    for key,value in [('fit_space','metric64'),('batch_size',128),('ranking_loss','top1_softplus'),
+                      ('input_dropout',.1),('sam_rho',.01),('train_center',.5),('steps',0)]:
+        config=dict(base); config[key]=value
+        with pytest.raises(ValueError,match='LBFGS requires'):
+            validate_optimizer_recipe(types.SimpleNamespace(**config))
