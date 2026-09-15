@@ -6,7 +6,70 @@ from torch.nn import functional as F
 from LightGenV2.tasks.t07_abo_image_retrieval.standalone.metric_readout import (
     fold_metric, metric_loss, validate_cache, replace_projection,
     projection_loss, validate_projection_cache, train_ranking_loss, fit_step, projection_vectors, centered_projection_bias,
-    validate_optimizer_recipe, bounded_diagonal_projection)
+    validate_optimizer_recipe, bounded_diagonal_projection, initialize_relu_projection,
+    replace_relu_projection, module_projection_vectors, nonlinear_projection_loss)
+
+
+def relu_fixture():
+    torch.manual_seed(75)
+    return dict(metadata={'retrieval_head':'linear64'},state_dict={
+        'readout.projection.weight':torch.randn(64,384)*.1,
+        'readout.projection.bias':torch.randn(64)*.01,
+        'vision.optics.experts.0':torch.randn(4,4)})
+
+
+def test_relu_conversion_reuses_existing_head_and_preserves_initial_function():
+    p=relu_fixture(); saved=copy.deepcopy(p)
+    converted,head=initialize_relu_projection(p)
+    assert converted['metadata']['retrieval_head']=='relu128'
+    assert sum(t.numel() for t in head.parameters())==57536
+    x=torch.randn(12,384)
+    source=F.normalize(F.linear(x,p['state_dict']['readout.projection.weight'],
+                                  p['state_dict']['readout.projection.bias']),dim=1)
+    assert torch.allclose(module_projection_vectors(x,head),source,atol=1e-6)
+    assert converted['state_dict']['vision.optics.experts.0'] is p['state_dict']['vision.optics.experts.0']
+    assert p['metadata']==saved['metadata']
+    assert all(torch.equal(v,saved['state_dict'][k]) for k,v in p['state_dict'].items())
+
+
+def test_relu_loss_trains_only_head_and_replays_after_serialization():
+    p=relu_fixture(); converted,head=initialize_relu_projection(p)
+    ref=[v.detach().clone() for v in head.parameters()]
+    x=torch.randn(12,384); labels=torch.arange(4).repeat_interleave(3)
+    optimizer=torch.optim.Adam(head.parameters(),lr=1e-4)
+    def closure():
+        return nonlinear_projection_loss(head,x,labels,torch.arange(12),ref,1.,.1,'top1_softplus')
+    for _ in range(2):
+        loss,_=fit_step(closure,optimizer,list(head.parameters()),.002)
+        assert torch.isfinite(loss)
+    assert any(not torch.equal(a,b) for a,b in zip(head.parameters(),ref))
+    assert x.grad is None and all(r.grad is None for r in ref)
+    result=replace_relu_projection(converted,head)
+    assert result['state_dict'].keys()==converted['state_dict'].keys()
+    assert result['state_dict']['vision.optics.experts.0'] is p['state_dict']['vision.optics.experts.0']
+    loaded=copy.deepcopy(head)
+    loaded.load_state_dict({k.removeprefix('readout.projection.'):v for k,v in result['state_dict'].items()
+                           if k.startswith('readout.projection.')},strict=True)
+    assert torch.equal(module_projection_vectors(x,head),module_projection_vectors(x,loaded))
+
+
+def test_relu_loss_rejects_self_only_positives_and_bad_fitting_inputs():
+    _,head=initialize_relu_projection(relu_fixture())
+    ref=[v.detach().clone() for v in head.parameters()]
+    x=torch.randn(8,384); labels=torch.arange(4).repeat_interleave(2)
+    with pytest.raises(ValueError):
+        nonlinear_projection_loss(head,x,torch.arange(8),torch.arange(8),ref,1.)
+    with pytest.raises(ValueError):
+        nonlinear_projection_loss(head,x.requires_grad_(),labels,torch.arange(8),ref,1.)
+    with pytest.raises(ValueError):
+        nonlinear_projection_loss(head,x.detach(),labels,torch.arange(8),list(head.parameters()),1.)
+
+
+def test_relu_saved_head_rejects_undeclared_architecture_or_shape_changes():
+    p=relu_fixture(); converted,head=initialize_relu_projection(p)
+    with pytest.raises(ValueError): replace_relu_projection(p,head)
+    bad=copy.deepcopy(head); bad[2]=torch.nn.Linear(128,32)
+    with pytest.raises(ValueError): replace_relu_projection(converted,bad)
 
 
 def test_diagonal_gain_identity_bounds_and_existing_parameter_shapes():

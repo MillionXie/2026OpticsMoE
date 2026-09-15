@@ -3474,3 +3474,40 @@ CUDA_VISIBLE_DEVICES=GPU-1b963983-7909-af6e-0528-f0f0661ab549 OMP_NUM_THREADS=4 
 log-gain的LR不能与原W的LR直接比较（还经过tanh和.1缩放）；记录实际增益范围。
 TRAIN图库排除自身；不使用QUERY拟合，不做检索重排或多模型集成。原83%保底不覆盖。
 达到665/800后还须全量原图独立复评、同best去光/路由/冻结参数核验，不能只引用缓存。
+
+第103节正式混合增强组已完成，最高新权重82.875%，最终原83%/去光76.375%，
+冻结SHA通过、best逐值等于起点；PID2597753退出。第104节源码ede1c4b1，本地/服务器444项测试。
+Top1版本400步、匹配`--ranking-loss nll`版本（输出`abo200_readout_diagonal64_nll_20260915`）
+均最高83%；NLL仅改`--eval-every 5`的密集选模重放（输出`abo200_readout_diagonal64_nll_dense_20260915`）
+仍最高83%。PID2663877/2670087/2677915均退出。密集选模增加TEST选择偏差，不是独立泛化证据。
+
+## 105. 有明确参数增量的小ReLU读出（不改光路）
+
+不是继续微调原线性头：本项复用已支持的`relu128`，最终电子读出变为
+`原LayerNorm384 → Linear384×128 → ReLU → Linear128×64 → L2`。
+原Linear参数24640，新读出57536，**净增加32896推理参数**；不加TF、attention、电子旁路或光传播。
+前面所有光学相位/router、电子残差、Qwen紧凑前端、alpha、LayerNorm均冻结。
+使用原83%权重已有的相位，不宣称此次mask训动或有新的相位收益。
+
+初始化沿用generalization.expand_retrieval_head：第一层[W;-W],[b;-b]，第二层[I,-I],0，
+数学上等于原Wx+b；CUDA舍入误差可能不同，因此step0实际重算，不能直接抄83%。
+原线性83%候选在外部保留；本run的best只在新结构内部选择，若最终不达标不晋升。
+TRAIN只用1600张原光电主干读出输入，QUERY只选模；训练时独立输入dropout .1，
+原六次10cm/Top2/alpha>=.4/64维输出不变。CPU拟合，GPU4按原BF16 batch4重放；
+序列读出被如实写入metadata/state_dict，实验室不需要猜测结构。
+
+先进行2步启动与序列化检查：
+
+```bash
+CUDA_VISIBLE_DEVICES=GPU-1b963983-7909-af6e-0528-f0f0661ab549 OMP_NUM_THREADS=4 MKL_NUM_THREADS=4 python -m LightGenV2.tasks.t07_abo_image_retrieval.standalone.metric_readout \
+  --source-run "$START83" --manifest "$R/abo200_enrolled_protocol_20260913/protocol.json" \
+  --data /DATA/DATA1/guest3/2026OpticsMoE/data/abo_similarity10_data \
+  --expected-checkpoint-sha256 "$START83_SHA" --expected-hit .83 \
+  --fit-space relu128 --ranking-loss top1_softplus --input-dropout .1 \
+  --steps 2 --eval-every 1 --lr .00005 --anchor 1 --seed 42 --selection-precision cuda_bf16 \
+  --output "$R/abo200_readout_relu128_scope_20260915"
+```
+
+scope通过后，从原83%重新初始化做400步/每25步选模，其他配方不改，
+输出`abo200_readout_relu128_20260915`；只保留best/last，不额外逐步保存模型。
+只有完成全量原图、同best去光、TRAIN和分split路由核验的结果才能正式引用。
