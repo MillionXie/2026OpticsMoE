@@ -1,5 +1,14 @@
 # OpenMoji 单电脑六层光路
 
+## 当前实验方式更新：2026-09-15
+
+全量`test1000_02`当前不使用`auto`接管相位：用户在Blink GUI手动加载各层最终BMP并保持，振幅/相机GUI关闭。
+语言Router的1000张已采完并审计；后续每层先`run.py prepare --session test1000_02 --stage 阶段名 --device cuda`，
+等待用户确认对应`phase/序号_阶段名.bmp`后执行`run.py capture --session test1000_02 --stage 阶段名 --phase-ready`。
+采完后`run.py audit --session test1000_02 --stage 阶段名`，再生成下一层。`--phase-ready`是人工确认，不是SDK验证。
+全部六层采完才执行`run.py evaluate --session test1000_02 --device cuda`；请勿在Blink GUI开启时同时启动相位SDK。
+下文`auto/probe`保留为之前的自动控制实现说明，不代表当前全量正在采用该模式。
+
 仅用于 routerfill_shared 原共享头 epoch40：仿真修改格准确率87.15%，整场景69%；不是旧98%版本。
 模型、数据与词嵌入来自已核验独立仿真包，不需要联网下载Qwen、不执行语言Transformer。
 这次只迁移硬件，不训练权重。原数据标签只供评价；source_grid参与最后保留区域合成，协议与仿真一致。
