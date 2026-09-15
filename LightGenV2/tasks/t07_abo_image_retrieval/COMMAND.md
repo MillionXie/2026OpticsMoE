@@ -3182,3 +3182,28 @@ CUDA_VISIBLE_DEVICES=GPU-1b963983-7909-af6e-0528-f0f0661ab549 OMP_NUM_THREADS=4 
 
 固定seed17/73两组均完成200步，最高仍83%，没有达到665/800。
 PID2371881/2372427和父队列2371880均已退出，GPU上下文释放；不替换原83%权重。
+
+## 96. 同商品两张TRAIN照片的排序约束
+
+不继续重复第95节的小学习率/dropout组合。训练损失增加可选`two_view_softplus`：
+对每张TRAIN query，在其余7张同SKU训练图里选择相似度最高的两张不同照片，
+取二者余弦均值，与最相近的错误SKU照片作softplus margin比较，温度.1、余弦margin .02。
+两个正例都有梯度；排除query自身。该损失约束的是二者均值，并不保证两张分别都超过负例，
+也不按相机角度筛图、不声称两张必定是大角度差。实际检索仍只需Top1同SKU正确。
+它与光学router的Top2是两回事：推理阶段没有新投票、原型平均或标签筛选。
+
+从固定83%权重开始，只训练原384→64 Linear，冻结光学、电子残差、alpha与输入前端。
+其余配置严格匹配95节首组：800步、lr.000025、dropout.1、anchor1、seed42，不加SAM。
+选模按CUDA BF16原head重放，每50步TEST择优；起点逐值检查、最后原图复评要求不变。
+
+```bash
+CUDA_VISIBLE_DEVICES=GPU-1b963983-7909-af6e-0528-f0f0661ab549 OMP_NUM_THREADS=4 MKL_NUM_THREADS=4 python -m LightGenV2.tasks.t07_abo_image_retrieval.standalone.metric_readout \
+  --source-run "$START83" --manifest "$R/abo200_enrolled_protocol_20260913/protocol.json" \
+  --data /DATA/DATA1/guest3/2026OpticsMoE/data/abo_similarity10_data \
+  --expected-checkpoint-sha256 "$START83_SHA" --expected-hit .83 \
+  --fit-space projection384 --ranking-loss two_view_softplus --input-dropout .1 \
+  --steps 800 --eval-every 50 --batch-size 128 --lr .000025 --anchor 1 --seed 42 \
+  --selection-precision cuda_bf16 --output "$R/abo200_readout_two_view_20260915"
+```
+
+仅TRAIN进入梯度，QUERY参与周期选模的偏差仍存在；不能将该对照当成独立测试或新数据划分。

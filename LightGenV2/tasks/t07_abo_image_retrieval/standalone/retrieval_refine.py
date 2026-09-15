@@ -132,6 +132,14 @@ def train_ranking_loss(logits, positive, excluded, kind='nll'):
     if kind == 'top1_softplus':
         neg = logits.masked_fill(~negative, -torch.inf)
         return F.softplus(neg.amax(1) - pos.amax(1) + .2).mean()
+    if kind == 'two_view_softplus':
+        # TRAIN only: two distinct nonself photos of this SKU contribute.
+        # Do not force all seven views together or change inference relevance.
+        if (positive.sum(1) < 2).any():
+            raise ValueError('Two-view objective requires two distinct nonself TRAIN positives')
+        neg = logits.masked_fill(~negative, -torch.inf)
+        best_two = pos.topk(2, dim=1).values
+        return F.softplus(neg.amax(1) - best_two.mean(1) + .2).mean()
     if kind == 'hybrid_nll_top1':
         # Fixed equal mixture: improve nearest-SKU ordering without discarding
         # the original all-gallery multi-positive probability objective.

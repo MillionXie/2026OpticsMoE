@@ -233,3 +233,29 @@ def test_cuda_selection_fails_closed_without_gpu(monkeypatch):
     monkeypatch.setattr(torch.cuda,'is_available',lambda:False)
     with pytest.raises(RuntimeError,match='requires'):
         projection_vectors(torch.randn(4,384),torch.randn(64,384),torch.zeros(64),'cuda_bf16')
+
+
+def test_two_view_loss_uses_two_distinct_nonself_positive_photos():
+    logits=torch.tensor([[100.,8.,6.,4.,7.5,1.]],requires_grad=True)
+    positive=torch.tensor([[False,True,True,True,False,False]])
+    excluded=torch.tensor([[True,False,False,False,False,False]])
+    loss=train_ranking_loss(logits,positive,excluded,'two_view_softplus')
+    assert torch.allclose(loss,F.softplus(torch.tensor(.7)))
+    loss.backward()
+    assert logits.grad[0,0]==0 and logits.grad[0,3]==0 and logits.grad[0,5]==0
+    assert logits.grad[0,1]<0 and torch.equal(logits.grad[0,1],logits.grad[0,2])
+    assert logits.grad[0,4]>0
+    positive[0,2:4]=False
+    with pytest.raises(ValueError,match='two distinct'):
+        train_ranking_loss(logits,positive,excluded,'two_view_softplus')
+
+
+def test_two_view_projection_keeps_training_inputs_and_reference_frozen():
+    torch.manual_seed(52)
+    x=torch.randn(12,384); y=torch.arange(4).repeat_interleave(3)
+    w=torch.randn(64,384,requires_grad=True); b=torch.zeros(64,requires_grad=True)
+    reference=(w.detach().clone(),b.detach().clone())
+    loss=projection_loss(w,b,x,y,torch.arange(12),reference,1.,.1,'two_view_softplus')
+    loss.backward()
+    assert torch.isfinite(w.grad).all() and w.grad.norm()>0 and b.grad.norm()>0
+    assert x.grad is None and reference[0].grad is None and reference[1].grad is None
