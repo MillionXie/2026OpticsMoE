@@ -1,6 +1,7 @@
 # t08_abo_image_text_retrieval 复现说明入口
 
 [Baseline 复现说明](BASELINE_METHODS.md)：按最新表格指标核对的论文式技术正文（2026-09-15）。
+[Baseline 代码交接包](../../../../reports/20260915_baseline_methods/CODE_HANDOFF.md)：对应版本源码、配置、运行入口及哈希清单。
 
 本目录集中保存baseline及主方法的可复现性证据；本次只建立入口，**尚未进行本任务的新一轮复现**。
 当前任务结构和已有结果见 [任务README](../../README.md)。不得因为存在本文件就声称已复现。

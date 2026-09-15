@@ -8,6 +8,7 @@
 范围、身份与权重见[读出微调报告](SPATIAL_SHS_READOUT_ADAPT_20260914.md)顶部；下述旧采集成绩保留作历史记录。
 
 [Baseline 复现说明](BASELINE_METHODS.md)：按最新表格指标核对的论文式技术正文（2026-09-15）。
+[Baseline 代码交接包](../../../../reports/20260915_baseline_methods/CODE_HANDOFF.md)：对应版本源码、配置、运行入口及哈希清单。
 
 本目录集中保存baseline及主方法的可复现性证据。2026-09-14已完成固定Temporal权重的六层SHS实测：
 558个测试视频、210张正式CCD，SRCC 0.7977138739；详见 [本轮实测报告](TEMPORAL_SHS_20260914.md)。

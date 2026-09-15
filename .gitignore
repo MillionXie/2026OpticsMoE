@@ -138,3 +138,6 @@ hardware_sessions
 !/LightGenV2/tasks/*/reports/figures/**
 # T04 reproducible generated scenes/caches, not source code.
 LightGenV2/tasks/t04_semantic_interaction/dataset/openmoji_grid_v2/
+
+# Rebuildable baseline source handoffs; track the exporter and specification.
+/LightGenV2/reports/20260915_baseline_methods/code_packages/

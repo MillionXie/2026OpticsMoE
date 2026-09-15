@@ -98,6 +98,7 @@ COCO train2017含4376张当前SALICON测试图，必须先排除；新数据预�
 五组对照、权重迁移、参数预算及完整命令；不改变本页baseline的历史含义。
 
 [Baseline 复现说明](BASELINE_METHODS.md)：按最新表格指标核对的论文式技术正文（2026-09-15）。
+[Baseline 代码交接包](../../../../reports/20260915_baseline_methods/CODE_HANDOFF.md)：对应版本源码、配置、运行入口及哈希清单。
 
 ## 口径（先读）
 

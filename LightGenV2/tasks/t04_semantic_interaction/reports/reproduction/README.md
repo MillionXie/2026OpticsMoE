@@ -4,6 +4,7 @@
 在师弟电脑联控两块SLM和高速相机。当前处于部署/硬件短测阶段，实测指标未产生，不与下方历史98%混用。
 
 [Baseline 复现说明](BASELINE_METHODS.md)：按最新表格指标核对的论文式技术正文（2026-09-15）。
+[Baseline 代码交接包](../../../../reports/20260915_baseline_methods/CODE_HANDOFF.md)：对应版本源码、配置、运行入口及哈希清单。
 
 最新修复与公平baseline：[Router短条带修复、同一个两组卷积读出头](ROUTER_SHARED_HEAD.md)。
 

@@ -1,0 +1,186 @@
+{
+  "schema_version": 1,
+  "requirements": "torch==2.6.0\ntransformers==4.57.3\nnumpy\nscipy\nPillow\nPyYAML\nopencv-python\nmatplotlib\ntqdm\nsafetensors\nhuggingface-hub\nrequests\neinops\n",
+  "tasks": [
+    {
+      "directory": "01_lgvq",
+      "title": "01 视频质量评价 · LGVQ",
+      "metric": "Temporal SRCC 0.7663；Spatial SRCC 0.6908",
+      "commit": "4b24e9ad4df027db3bac92a7721ae8cf052a6f50",
+      "task": "t06_video_quality_assessment",
+      "actions": {
+        "prepare": [
+          "experiments.qwen3_vl_2b_lgvq_spatiotemporal_optical_router_vqa.prepare_manifest"
+        ],
+        "temporal": [
+          "LightGenV2.tasks.t06_video_quality_assessment.quality_token_resolution",
+          "--config",
+          "LightGenV2/tasks/t06_video_quality_assessment/configs/baselines/qwen3vl_quality_tokens_r448_a100.yaml",
+          "--frames",
+          "4"
+        ],
+        "spatial": [
+          "LightGenV2.tasks.t06_video_quality_assessment.quality_token_resolution",
+          "--config",
+          "LightGenV2/tasks/t06_video_quality_assessment/configs/baselines/qwen3vl_spatial_quality_tokens_4f_r448_a100.yaml",
+          "--frames",
+          "4"
+        ]
+      },
+      "files": [
+        "LightGenV2/tasks/t06_video_quality_assessment/quality_token_extract.py",
+        "LightGenV2/tasks/t06_video_quality_assessment/quality_token_train.py",
+        "LightGenV2/tasks/t06_video_quality_assessment/quality_token_common.py",
+        "LightGenV2/tasks/t06_video_quality_assessment/quality_token_dataset_once.py",
+        "LightGenV2/tasks/t06_video_quality_assessment/configs/baselines/qwen3vl_quality_tokens_r448_a100.yaml",
+        "LightGenV2/tasks/t06_video_quality_assessment/configs/baselines/qwen3vl_spatial_quality_tokens_4f_r448_a100.yaml"
+      ],
+      "assets": "准备 LGVQ 原视频、MOS.txt、prompt_cls.json，以及 Qwen3-VL-2B-Instruct snapshot `89644892e4d85e24eaac8bacfd4f463576704203`。清单中的视频路径需要指向当前机器。",
+      "instructions": "```bash\npython run_baseline.py prepare -- --dataset-root /path/to/LGVQ --output /path/to/lgvq_split.csv --seed 42\npython run_baseline.py temporal -- --phase all --model /path/to/Qwen3-VL-2B-Instruct --manifest /path/to/lgvq_split.csv --run-dir LightGenV2/tasks/t06_video_quality_assessment/runs/simulation/handoff_temporal\npython run_baseline.py spatial -- --phase all --model /path/to/Qwen3-VL-2B-Instruct --manifest /path/to/lgvq_split.csv --run-dir LightGenV2/tasks/t06_video_quality_assessment/runs/simulation/handoff_spatial\n```\n`all` 依次提取特征、训练评分头、完整测试；也可分别指定 `--phase extract/train/benchmark`。两个入口固定四帧。仅固定权重复评时，将对应 best_checkpoint.pt 放入新 run 的 `checkpoints/frames4/` 后执行 `--phase benchmark`，不执行训练。A100 配置的 GPU 名称检查位于 `timing.gpu`，更换硬件须明确修改该项并重新报告。",
+      "identities": "时间头 SHA256：`e102adc6a7b33335c8f49ae1cbeea3302a1a10017d282da8d6091a640276d0d2`；空间头 SHA256：`9155ec7a45a19e14ac87661021b44599317d5efb16475df77707d70e866ad913`。\n原 LGVQ manifest SHA256：`607c50d20662a47795c23cd2038081b30368ed108ba9be8a1bb8a9d250f8e7fc`（改写绝对路径后文件哈希会改变，需另存新哈希并保留样本和划分）。",
+      "methods": "LightGenV2/tasks/t06_video_quality_assessment/reports/reproduction/BASELINE_METHODS.md"
+    },
+    {
+      "directory": "02_abo_image_text",
+      "title": "02 商品检索 · ABO 图搜文",
+      "metric": "R@1 0.7358",
+      "commit": "b9a4be689f198f55ee0caaf4e5bcddd4dfc80200",
+      "task": "t08_abo_image_text_retrieval",
+      "actions": {
+        "evaluate": [
+          "LightGenV2.tasks.t08_abo_image_text_retrieval.baseline_5090d",
+          "--expected-gpu",
+          "NVIDIA A100-PCIE-40GB"
+        ]
+      },
+      "files": [],
+      "assets": "准备 ABO easy100 数据目录：`manifest.csv`、`train.csv`、`test.csv`、`titles.csv` 和清单对应图像；100 商品、4,800/2,400 图像。准备 Qwen3-VL-Embedding-2B snapshot `9f2f7e710d6d81056aa5c0a4f04764fec6bb7bda`。该基线无需任务头权重。",
+      "instructions": "```bash\npython run_baseline.py evaluate -- --model /path/to/Qwen3-VL-Embedding-2B --data-root /path/to/abo_easy100 --run-dir LightGenV2/tasks/t08_abo_image_text_retrieval/runs/simulation/handoff_qwen\n```\n该入口直接编码完整 2,400 张测试图和 100 条标题，无训练阶段。保留动态长宽、2,048 维和原始 prompt。不同 GPU 可显式传入 `--expected-gpu`；计时附加结果属于该次运行。",
+      "identities": "模型 safetensors SHA256：`c73fa9caeddeb3ff831d46c085a7a5708343248ca777e90f2d486964464509c1`。\n测试清单 SHA256：`4ca5834abf4bb4d614b41f05b5b2481b3d41720dd78c1c37b05923c97657dfb8`；标题表 SHA256：`c97e8da3c6c608a706f2cc0d284aeafb873fc6cc17d04a7c9f9f66b2135846c1`。",
+      "methods": "LightGenV2/tasks/t08_abo_image_text_retrieval/reports/reproduction/BASELINE_METHODS.md"
+    },
+    {
+      "directory": "03_abo_image_image",
+      "title": "03 商品检索 · ABO 图搜图",
+      "metric": "R@1 0.85125（表中 0.8513）",
+      "commit": "5f731fae979ef81a09770c1dd721b5cecd8b3392",
+      "task": "t07_abo_image_retrieval",
+      "actions": {
+        "prepare": [
+          "LightGenV2.tasks.t07_abo_image_retrieval.standalone.enrolled_abo"
+        ],
+        "evaluate": [
+          "LightGenV2.tasks.t07_abo_image_retrieval.standalone.retrieval_screen",
+          "qwen64",
+          "--batch-size",
+          "4"
+        ]
+      },
+      "files": [],
+      "assets": "准备 ABO similarity10 原始 200 商品、2,400 张图及 `data/abo_similarity10_manifest.csv`，清单路径相对于数据目录；随后生成每 SKU 八图库/四查询的新划分。准备与图搜文相同的 Qwen3-VL-Embedding-2B snapshot。无任务头权重。",
+      "instructions": "```bash\npython run_baseline.py prepare -- --data /path/to/abo_similarity10_data --output /path/to/enrolled_protocol\npython run_baseline.py evaluate -- --data /path/to/abo_similarity10_data --manifest /path/to/enrolled_protocol/protocol.json --model /path/to/Qwen3-VL-Embedding-2B --output LightGenV2/tasks/t07_abo_image_retrieval/runs/simulation/handoff_qwen64\n```\n仅运行 `qwen64`：完整冻结模型、前 64 维、native aspect、1,600 图库/800 查询。原结果在 RTX 4090、batch 4 上完整评价，A100 汇总沿用该性能；这里不将计时复测称为重新得到该完整测试指标。",
+      "identities": "协议 manifest SHA256：`f1749d5fc22d2dfee6a1333ce2b35e9fa600a070f949eba8420b4def41906dde`。重新生成协议时 provenance 字段可能改变；样本顺序、每 SKU 8/4 划分和图片身份应一致。模型 safetensors SHA256：`c73fa9caeddeb3ff831d46c085a7a5708343248ca777e90f2d486964464509c1`。",
+      "methods": "LightGenV2/tasks/t07_abo_image_retrieval/reports/reproduction/BASELINE_METHODS.md"
+    },
+    {
+      "directory": "04_lsp",
+      "title": "04 关键点检测 · LSP",
+      "metric": "PCK@0.2 0.7226",
+      "commit": "bcec3a5977ccf00c71c6b5e8c00bf436cc3e305e",
+      "task": "t02_keypoint_detection",
+      "actions": {
+        "train": [
+          "experiments.qwen3_vl_embedding_2b_lsp_pose_optical_moe16.run",
+          "--phase",
+          "teacher_train"
+        ],
+        "evaluate": [
+          "LightGenV2.tasks.t02_keypoint_detection.baseline_5090d",
+          "--expected-gpu",
+          "NVIDIA A100-PCIE-40GB",
+          "--performance-batch-size",
+          "1"
+        ]
+      },
+      "files": [
+        "experiments/qwen3_vl_embedding_2b_lsp_pose_optical_moe16/configs/lsp_pose_opt2.yaml"
+      ],
+      "assets": "准备 LSP 2,000 张图与 joints.mat；从头训练还需 HR-LSPET 9,428 张及标注。模型为 Qwen3-VL-Embedding-2B，snapshot 与 ABO 相同。固定权重复评需要原姿态头 `teacher_best_train_loss.pt`。",
+      "instructions": "在 `source/experiments/qwen3_vl_embedding_2b_lsp_pose_optical_moe16/configs/lsp_pose_opt2.yaml` 中补充当前机器的 `dataset.data_root`、`qwen.model_id`（本地模型目录）、`qwen.local_files_only: true` 和新的 `output_dir`，保留原 base_config。\n\n```bash\npython run_baseline.py train -- --config experiments/qwen3_vl_embedding_2b_lsp_pose_optical_moe16/configs/lsp_pose_opt2.yaml\npython run_baseline.py evaluate -- --model /path/to/Qwen3-VL-Embedding-2B --data-root /path/to/lsp_pose --config experiments/qwen3_vl_embedding_2b_lsp_pose_optical_moe16/configs/lsp_pose_opt2.yaml --checkpoint /path/to/teacher_best_train_loss.pt --run-dir LightGenV2/tasks/t02_keypoint_detection/runs/simulation/handoff_qwen\n```\n仅 `teacher_train` 属于此基线，训练 40 轮并按训练损失选头。所固定 commit 是指标复评版本；原历史训练启动 commit 尚未从记录中确定，因此不声称从头训练必定精确返回该小数。",
+      "identities": "原头 SHA256：`0a4569f288f6de424b1b412452fa804a96e58d8f7e8655efaa23f461ab8cc735`。",
+      "methods": "LightGenV2/tasks/t02_keypoint_detection/reports/reproduction/BASELINE_METHODS.md"
+    },
+    {
+      "directory": "05_salicon",
+      "title": "05 显著性分析 · SALICON",
+      "metric": "CC 0.8748",
+      "commit": "d8653fa6057f96b52d53259999343ff2117c1526",
+      "task": "t03_saliency",
+      "actions": {
+        "train": [
+          "LightGenV2.tasks.t03_saliency.aligned_baseline",
+          "--config",
+          "LightGenV2/tasks/t03_saliency/configs/qwen_aligned_head_50.yaml",
+          "--seed",
+          "42"
+        ],
+        "evaluate": [
+          "LightGenV2.tasks.t03_saliency.recheck_aligned",
+          "--system",
+          "qwen",
+          "--config",
+          "LightGenV2/tasks/t03_saliency/configs/qwen_aligned_head_50.yaml",
+          "--batch-size",
+          "96"
+        ]
+      },
+      "files": [
+        "LightGenV2/tasks/t03_saliency/configs/qwen_aligned_head_50.yaml"
+      ],
+      "assets": "准备 SALICON 2015r1 train/val 图像与 fixations_train2014.json、fixations_val2014.json。模型为 Qwen3-VL-Embedding-2B。固定权重复评另需 50 轮基线选中的 best_checkpoint.pt。",
+      "instructions": "在 `source/LightGenV2/tasks/t03_saliency/configs/qwen_aligned_head_50.yaml` 中补充 `dataset.data_root`、`qwen.model_id`（本地模型目录）、`qwen.local_files_only: true`，保留原配置其余内容。\n\n```bash\npython run_baseline.py train -- --run-dir LightGenV2/tasks/t03_saliency/runs/simulation/handoff_head50\npython run_baseline.py evaluate -- --checkpoint /path/to/best_checkpoint.pt --run-dir LightGenV2/tasks/t03_saliency/runs/simulation/handoff_recheck\n```\n冻结主干，仅训练 282,596 参数的适配器及密度头，预算 50 轮、无增强；固定权重评价保持 batch 96。训练和复评使用不同的新输出目录。",
+      "identities": "原 best SHA256：`689d086b5a390c399df109d07b73185575cd2245998b7bd427f6ccea5b0fe019`；选中 epoch 45。",
+      "methods": "LightGenV2/tasks/t03_saliency/reports/reproduction/BASELINE_METHODS.md"
+    },
+    {
+      "directory": "06_openmoji",
+      "title": "06 语义交互 · OpenMoji",
+      "metric": "修改格准确率 0.8420",
+      "commit": "966f407000c5ecef4c7c6415d8995065aeed7484",
+      "task": "t04_semantic_interaction",
+      "actions": {
+        "prepare": [
+          "LightGenV2.tasks.t04_semantic_interaction.run",
+          "--profile",
+          "qwen_shared",
+          "--phase",
+          "prepare"
+        ],
+        "train": [
+          "LightGenV2.tasks.t04_semantic_interaction.run",
+          "--profile",
+          "qwen_shared",
+          "--phase",
+          "train"
+        ],
+        "evaluate": [
+          "LightGenV2.tasks.t04_semantic_interaction.run",
+          "--profile",
+          "qwen_shared",
+          "--phase",
+          "evaluate"
+        ]
+      },
+      "files": [
+        "LightGenV2/tasks/t04_semantic_interaction/configs/qwen_shared.yaml",
+        "LightGenV2/tasks/t04_semantic_interaction/qwen_shared.py",
+        "LightGenV2/tasks/t04_semantic_interaction/shared_readout.py",
+        "LightGenV2/tasks/t04_semantic_interaction/embedding_data.py"
+      ],
+      "assets": "准备 OpenMoji 17.0.0 彩色 72px 图标素材和 Qwen3-VL-2B-Instruct snapshot `89644892e4d85e24eaac8bacfd4f463576704203`。可由 prepare 生成 seed 73 的 v2 数据（5,000/1,000），也可提供原完整 v2 数据和清单。固定权重复评需要 qwen_shared_s73 的 best_checkpoint.pt。",
+      "instructions": "在 `source/LightGenV2/tasks/t04_semantic_interaction/configs/qwen_shared.yaml` 中补充 `dataset.data_dir`（v2 数据目录）、`dataset.asset_dir`（图标目录）、`qwen.checkpoint`（本地模型目录），使用绝对路径并保留原 base_config。\n\n```bash\npython run_baseline.py prepare -- --device cuda\npython run_baseline.py train -- --device cuda --run-dir LightGenV2/tasks/t04_semantic_interaction/runs/simulation/handoff_qwen_shared\npython run_baseline.py evaluate -- --device cuda --checkpoint /path/to/best_checkpoint.pt --run-dir LightGenV2/tasks/t04_semantic_interaction/runs/simulation/handoff_recheck\n```\n完整冻结图文主干，训练同结构网格头和适配器 100 轮。固定权重入口不重新训练；必须配套 v2 场景及真实 source_grid。",
+      "identities": "原 run：`qwen_shared_s73`，选中 epoch 25 EMA，训练 manifest 记录的恢复版本为上述 commit。权重 SHA256 见 `REFERENCE.json`（若原记录未提供则保留 null，不推测）。",
+      "methods": "LightGenV2/tasks/t04_semantic_interaction/reports/reproduction/BASELINE_METHODS.md"
+    }
+  ]
+}
