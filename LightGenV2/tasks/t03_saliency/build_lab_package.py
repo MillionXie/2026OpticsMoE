@@ -138,12 +138,16 @@ def main():
     p=argparse.ArgumentParser(description=__doc__)
     for key in ('config','checkpoint','output'):p.add_argument('--'+key,type=Path)
     p.add_argument('--refresh-runtime',type=Path,help='Verified completed export: repackage control-code-only update without regenerating caches')
+    p.add_argument('--handoff-export',type=Path,help='Verified fixed export: add portable commands and explicit hardware/training limits in a NEW ZIP')
     p.add_argument('--archive',type=Path)
     p.add_argument('--atomic-writer-update',action='store_true',help='Small control-only ZIP for already deployed releases')
     p.add_argument('--data-root',type=Path);p.add_argument('--cache-dir',type=Path)
     p.add_argument('--max-fields',type=int,default=0);p.add_argument('--batch-size',type=int,default=48)
     p.add_argument('--device',default='cuda');a=p.parse_args()
-    if a.atomic_writer_update:
+    if a.handoff_export:
+        if not a.archive:p.error('--handoff-export requires a NEW --archive')
+        handoff_export(a.handoff_export,a.archive)
+    elif a.atomic_writer_update:
         if not a.archive:p.error('A new --archive ZIP is required')
         root=Path(__file__).resolve().parents[3]
         commit=subprocess.check_output(['git','rev-parse','HEAD'],cwd=root,text=True).strip()
@@ -202,5 +206,69 @@ print('ISOLATED_CPU_PACKAGE_REPLAY',cc,flush=True)
     write(archive.with_suffix('.delivery.json'),dict(zip=str(archive),sha256=sha(archive),bytes=archive.stat().st_size,
            source_commit=release['source_commit'],control_runtime_commit=commit,simulation_cc_float64=release['simulation_cc_float64']))
     print('REPACKAGED',archive,flush=True)
+
+def handoff_export(out,archive):
+    """Repackage exact cached inference without touching the source export."""
+    import tempfile
+    out=out.resolve();archive=archive.resolve()
+    if archive.exists():raise FileExistsError(archive)
+    root=Path(__file__).resolve().parents[3]
+    commit=subprocess.check_output(['git','rev-parse','HEAD'],cwd=root,text=True).strip()
+    release=json.loads((out/'release.json').read_text())
+    if release['checkpoint_sha256']!=CHECKPOINT_SHA or sha(out/'weights/best_checkpoint.pt')!=CHECKPOINT_SHA:
+        raise ValueError('Wrong selected checkpoint')
+    if release['test_samples']!=5000 or release['test_ids_sha256']!=TEST_IDS_SHA:
+        raise ValueError('Not the complete verified test export')
+    manifest=json.loads((out/'SHA256.json').read_text())
+    for name,digest in manifest.items():
+        path=(out/name).resolve()
+        if not path.is_relative_to(out) or sha(path)!=digest:raise ValueError('Export integrity failed: '+name)
+    base=release['source_commit']
+    additions={}
+    def git_bytes(ref,name):return subprocess.check_output(['git','show',ref+':'+name],cwd=root)
+    additions['handoff.py']=git_bytes(commit,'LightGenV2/tasks/t03_saliency/handoff_cli.py')
+    additions['00_START_HERE.md']=git_bytes(commit,'LightGenV2/tasks/t03_saliency/HANDOFF_08625.md')
+    additions['requirements-reference.txt']=git_bytes(base,'ABO_Lab_SHS_8um/requirements-gpu-tested.txt')
+    paths=subprocess.check_output(['git','ls-tree','-r','--name-only',base,'LightGenV2','experiments'],cwd=root,text=True).splitlines()
+    for rel in paths:
+        if any(x in Path(rel).parts for x in ('runs','data','vendor_sdk','releases')):continue
+        if rel.endswith(('.yaml','.yml')):additions['source_configs/'+rel]=git_bytes(base,rel)
+        elif rel in ('LightGenV2/AI_RULES.md','LightGenV2/tasks/t03_saliency/reports/reproduction/README.md',
+                     'LightGenV2/tasks/t03_saliency/reports/reproduction/CROSS_SAMPLE_BALANCE_20260913.md'):
+            additions['source_notes/'+rel]=git_bytes(base,rel)
+    # Apply only the already audited Windows atomic-write retry patch; preserve
+    # the inference model/runtime of the verified export byte-for-byte.
+    writer='runtime/LightGenV2/tasks/t06_video_quality_assessment/lab_runtime.py'
+    additions[writer]=git_bytes('55df4f53',writer.removeprefix('runtime/'))
+    information=dict(package_kind='fixed_weight_experiment_handoff',source_commit=commit,
+                     original_model_runtime_commit=base,checkpoint_sha256=CHECKPOINT_SHA,
+                     reference_cc=release['simulation_cc_float64'],test_fields=5000,train_fields=0,
+                     hardware_binding='SHS adapter requires existing bench; Meadowlark/TUCam adaptation pending',
+                     one_command_measured_finetuning_included=False,
+                     control_patch_commit='55df4f53',hardware_settings_from_other_lab_included=False)
+    additions['handoff.json']=(json.dumps(information,indent=2)+'\n').encode()
+    archive.parent.mkdir(parents=True,exist_ok=True)
+    # Test the delivered CLI in an isolated temporary tree (no source mutation).
+    with tempfile.TemporaryDirectory(prefix='salicon_handoff_',dir=archive.parent) as tmp:
+        staged=Path(tmp)
+        for name in manifest:
+            if '__pycache__' in Path(name).parts:continue
+            dest=staged/name;dest.parent.mkdir(parents=True,exist_ok=True)
+            shutil.copy2(out/name,dest)
+        for name,value in additions.items():
+            dest=staged/name;dest.parent.mkdir(parents=True,exist_ok=True);dest.write_bytes(value)
+        for profile in ('meadowlark17','shs8'):
+            subprocess.run([sys.executable,'-I',str(staged/'handoff.py'),'export-reference-bmp',
+                            '--profile',profile,'--fields','4','--device','cpu'],cwd=staged,check=True)
+        actual={p.relative_to(staged).as_posix():sha(p) for p in staged.rglob('*')
+                if p.is_file() and p.name!='SHA256.json' and '__pycache__' not in p.parts}
+        write(staged/'SHA256.json',actual)
+        subprocess.run([sys.executable,'-I',str(staged/'handoff.py'),'verify'],cwd=staged,check=True)
+        with zipfile.ZipFile(archive,'x',zipfile.ZIP_DEFLATED,compresslevel=1) as z:
+            for name in [*actual,'SHA256.json']:z.write(staged/name,name)
+    write(archive.with_suffix('.delivery.json'),dict(zip=str(archive),sha256=sha(archive),bytes=archive.stat().st_size,
+          source_commit=commit,checkpoint_sha256=CHECKPOINT_SHA,simulation_cc_float64=release['simulation_cc_float64']))
+    print('HANDOFF_READY',archive,flush=True)
+
 
 if __name__=='__main__':main()
