@@ -3140,3 +3140,31 @@ CUDA_VISIBLE_DEVICES='' OMP_NUM_THREADS=4 MKL_NUM_THREADS=4 python -m LightGenV2
 
 必须先通过本地/服务器回归并推GitHub，再在无活跃任务的worktree切换新commit执行。
 新候选仍需原图正常/同权重去光复评、逐张量保护与TRAIN/路由审计；缓存分数不代表达标。
+
+该SAM组已完成800步，选回step0，缓存新训练最高82.75%，未超过起点82.875%。
+源ccdc87f2，本地/服务器413测试通过；CPU PID2361120退出，没有晋升。
+
+## 95. 对齐选模精度，仍以完整原图验收
+
+只读诊断`abo200_phase_head_top1_verified_20260915/verification/head_precision_audit.json`发现：
+同一538477e0权重及冻结head输入，CPU FP32读出为82.875%，而CUDA BF16 autocast、batch4读出为83.00%，
+后者与完整原图缓存**逐值相等，max error=0**。因此旧CPU选模有可能选错临界权重。
+不能把该差别直接计为新训练收益，也不能更换原图评估口径。
+
+新可选`--selection-precision cuda_bf16`仅在每50步评估时重放原有Linear及L2归一化，
+使用相同batch4与GPU autocast；起点须与源原图缓存逐值一致，否则拒绝运行。
+梯度训练仍只使用CPU FP32 TRAIN1600张；QUERY评估装饰no_grad，不参与梯度。
+冻结的光电主干不变，部署代码不变；所选best最终仍完整原图重跑normal/remove并核验。
+先与93节首组严格匹配：相同83%起点、seed42、lr.000025、anchor1、dropout.1、800步，不加SAM。
+
+```bash
+CUDA_VISIBLE_DEVICES=GPU-1b963983-7909-af6e-0528-f0f0661ab549 OMP_NUM_THREADS=4 MKL_NUM_THREADS=4 python -m LightGenV2.tasks.t07_abo_image_retrieval.standalone.metric_readout \
+  --source-run "$START83" --manifest "$R/abo200_enrolled_protocol_20260913/protocol.json" \
+  --data /DATA/DATA1/guest3/2026OpticsMoE/data/abo_similarity10_data \
+  --expected-checkpoint-sha256 "$START83_SHA" --expected-hit .83 \
+  --fit-space projection384 --ranking-loss top1_softplus --input-dropout .1 \
+  --steps 800 --eval-every 50 --batch-size 128 --lr .000025 --anchor 1 --seed 42 \
+  --selection-precision cuda_bf16 --output "$R/abo200_readout_cuda_select_20260915"
+```
+
+这组虽在CPU训练，也会因选模占用一张GPU，须计入同一预算，结束核验PID/显存释放。

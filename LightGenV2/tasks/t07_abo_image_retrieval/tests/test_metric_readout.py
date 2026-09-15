@@ -4,7 +4,7 @@ import torch
 from torch.nn import functional as F
 from LightGenV2.tasks.t07_abo_image_retrieval.standalone.metric_readout import (
     fold_metric, metric_loss, validate_cache, replace_projection,
-    projection_loss, validate_projection_cache, train_ranking_loss, fit_step)
+    projection_loss, validate_projection_cache, train_ranking_loss, fit_step, projection_vectors)
 
 
 def test_fold_preserves_exact_algebra_and_all_other_tensors():
@@ -217,3 +217,19 @@ def test_fit_step_sam_exception_restores_head_and_does_not_step():
     with pytest.raises(RuntimeError,match='second-pass failure'):
         fit_step(closure,optimizer,[w],.01)
     assert torch.equal(w,initial) and not optimizer.state
+
+
+def test_selection_cpu_is_exact_legacy_and_cannot_backpropagate_query():
+    x=torch.randn(12,384,requires_grad=True); w=torch.randn(64,384,requires_grad=True)
+    b=torch.randn(64,requires_grad=True)
+    actual=projection_vectors(x,w,b)
+    assert torch.equal(actual,F.normalize(F.linear(x,w,b),dim=-1))
+    assert not actual.requires_grad and x.grad is None and w.grad is None
+    with pytest.raises(ValueError,match='precision'):
+        projection_vectors(x,w,b,'change_inference')
+
+
+def test_cuda_selection_fails_closed_without_gpu(monkeypatch):
+    monkeypatch.setattr(torch.cuda,'is_available',lambda:False)
+    with pytest.raises(RuntimeError,match='requires'):
+        projection_vectors(torch.randn(4,384),torch.randn(64,384),torch.zeros(64),'cuda_bf16')

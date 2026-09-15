@@ -33,6 +33,28 @@ def fit_step(loss_closure, optimizer, parameters, sam_rho=0.):
     return result['loss'].detach(), dict(sam, gradient_norm=float(norm))
 
 
+@torch.no_grad()
+def projection_vectors(inputs, weight, bias, precision='cpu_fp32'):
+    """Selection only: replay the unchanged original head, not a new inference head.
+
+    CUDA batch4 matches the raw verification contract. Optical/electronic
+    backbone inputs are frozen, but final raw-image verification is still required.
+    """
+    if precision == 'cpu_fp32':
+        return F.normalize(F.linear(inputs, weight, bias), dim=-1)
+    if precision != 'cuda_bf16':
+        raise ValueError('Unknown selection precision')
+    if not torch.cuda.is_available():
+        raise RuntimeError('CUDA selection requires an explicitly available GPU')
+    w, b = weight.detach().cuda(), bias.detach().cuda()
+    values = []
+    for start in range(0, len(inputs), 4):
+        with torch.autocast('cuda', dtype=torch.bfloat16):
+            vector = F.normalize(F.linear(inputs[start:start+4].cuda(), w, b), p=2, dim=-1)
+        values.append(vector.float().cpu())
+    return torch.cat(values)
+
+
 def fold_metric(payload, matrix):
     if payload['metadata'].get('retrieval_head', 'linear64') != 'linear64':
         raise ValueError('Metric folding requires the existing linear64 head')
@@ -169,6 +191,8 @@ def run(args):
         raise ValueError('Cached baseline did not reproduce the expected score')
     matrix = torch.nn.Parameter(torch.eye(64))
     projection = args.fit_space == 'projection384'
+    if args.selection_precision != 'cpu_fp32' and not projection:
+        raise ValueError('CUDA head replay requires direct original projection fitting')
     if projection:
         for cache in caches.values():
             validate_projection_cache(cache, args.expected_checkpoint_sha256, payload)
@@ -178,6 +202,10 @@ def run(args):
         bias = torch.nn.Parameter(payload['state_dict']['readout.projection.bias'].float().clone())
         reference = (weight.detach().clone(), bias.detach().clone())
         parameters = [weight, bias]
+        if args.selection_precision == 'cuda_bf16':
+            replay = projection_vectors(input_vectors, weight, bias, args.selection_precision)
+            if not torch.equal(replay, caches['normal']['vectors']):
+                raise ValueError('Initial CUDA head replay must be BITWISE equal to this source raw verification; do not silently change GPU/batch/precision')
     else:
         parameters = [matrix]
     optimizer = torch.optim.Adam(parameters, lr=args.lr)
@@ -190,6 +218,9 @@ def run(args):
         extra_inference_parameters=0, inference=('Same original Linear(384,64), direct weight/bias fitting' if projection else 'Same linear64 layer, Wnew=A@W, bnew=A@b'),
         status='cached_candidate_only', raw_gpu_verification_required=True,
         optical_weights_changed=False, training_note='Only TRAIN gallery labels/vectors enter loss; QUERY used for periodic selection')
+    identity['selection_precision'] = args.selection_precision
+    identity['selection_gpu'] = torch.cuda.get_device_name() if args.selection_precision == 'cuda_bf16' else None
+    identity['selection_note'] = 'Original head CUDA autocast BF16, batch4, source raw replay bitwise checked; CPU FP32 TRAIN gradients; final raw verification required' if args.selection_precision == 'cuda_bf16' else 'Legacy CPU FP32 projection scoring; may differ from raw autocast inference'
     identity['ranking_objective'] = {
         'nll': 'Original all-gallery multi-positive NLL, temperature .1',
         'top1_softplus': 'softplus((nearest_wrong_cosine-nearest_correct_cosine+.02)/.1), mean over TRAIN queries, self excluded',
@@ -221,7 +252,7 @@ def run(args):
                 loss, step_audit = fit_step(loss_closure, optimizer, parameters, args.sam_rho)
             if step % args.eval_every == 0 or step == args.steps:
                 with torch.no_grad():
-                    vectors = (F.normalize(F.linear(input_vectors, weight, bias), dim=-1)
+                    vectors = (projection_vectors(input_vectors, weight, bias, args.selection_precision)
                                if projection else F.normalize(z @ matrix.T, dim=-1))
                     metrics, _ = rank_instances(vectors, rows)
                     sim = vectors[:1600] @ vectors[:1600].T
@@ -245,9 +276,9 @@ def run(args):
                 print(json.dumps(entry), flush=True)
         if projection:
             best_payload = torch.load(args.output / 'best.pt', map_location='cpu', weights_only=True)
-            removal_vectors = F.normalize(F.linear(caches['remove_optical']['readout_inputs'].float(),
+            removal_vectors = projection_vectors(caches['remove_optical']['readout_inputs'].float(),
                 best_payload['state_dict']['readout.projection.weight'].float(),
-                best_payload['state_dict']['readout.projection.bias'].float()), dim=-1)
+                best_payload['state_dict']['readout.projection.bias'].float(), args.selection_precision)
         else:
             removal_vectors = F.normalize(caches['remove_optical']['vectors'].float() @ best_matrix.T, dim=-1)
         removal, _ = rank_instances(removal_vectors, rows)
@@ -281,6 +312,8 @@ def main():
     p.add_argument('--lr', type=float, default=.001)
     p.add_argument('--anchor', type=float, default=1.)
     p.add_argument('--sam-rho', type=float, default=0., help='TRAIN-only SAM radius on existing fitted head; zero preserves ordinary Adam')
+    p.add_argument('--selection-precision', choices=['cpu_fp32','cuda_bf16'], default='cpu_fp32',
+        help='Selection-only original head replay; CUDA uses raw batch4 autocast and requires bitwise source reproduction. Training remains CPU FP32.')
     p.add_argument('--seed', type=int, default=42)
     args = p.parse_args()
     if args.steps < 1 or args.eval_every < 1 or not 2 <= args.batch_size <= 1600 or not math.isfinite(args.lr) or args.lr <= 0 or not math.isfinite(args.anchor) or args.anchor < 0:
