@@ -4,7 +4,7 @@ import torch
 from torch.nn import functional as F
 from LightGenV2.tasks.t07_abo_image_retrieval.standalone.metric_readout import (
     fold_metric, metric_loss, validate_cache, replace_projection,
-    projection_loss, validate_projection_cache, train_ranking_loss, fit_step, projection_vectors)
+    projection_loss, validate_projection_cache, train_ranking_loss, fit_step, projection_vectors, centered_projection_bias)
 
 
 def test_fold_preserves_exact_algebra_and_all_other_tensors():
@@ -292,3 +292,29 @@ def test_squared_hinge_projection_only_trains_existing_head():
     loss.backward()
     assert torch.isfinite(w.grad).all() and w.grad.norm()>0 and b.grad.norm()>0
     assert x.grad is None and reference[0].grad is None and reference[1].grad is None
+
+
+def test_train_centering_folds_mean_into_bias_without_mutation_or_gradients():
+    torch.manual_seed(54)
+    w=torch.randn(64,384,dtype=torch.float64,requires_grad=True)
+    b=torch.randn(64,dtype=torch.float64,requires_grad=True)
+    train=torch.randn(30,384,dtype=torch.float64)
+    oldw=w.detach().clone(); oldb=b.detach().clone(); oldx=train.clone()
+    raw=F.linear(train,w,b).detach()
+    centered=centered_projection_bias(w,b,train,1.)
+    assert torch.allclose(F.linear(train,w,centered),raw-raw.mean(0),atol=1e-12,rtol=1e-12)
+    assert F.linear(train,w,centered).mean(0).abs().max()<1e-12
+    half=centered_projection_bias(w,b,train,.5)
+    assert torch.allclose(F.linear(train,w,half),raw-.5*raw.mean(0),atol=1e-12,rtol=1e-12)
+    assert torch.equal(centered_projection_bias(w,b,train,0.),b)
+    assert not centered.requires_grad and w.grad is None and b.grad is None
+    assert torch.equal(w,oldw) and torch.equal(b,oldb) and torch.equal(train,oldx)
+
+
+def test_train_centering_rejects_grad_inputs_invalid_geometry_and_nonfinite():
+    w=torch.randn(64,384); b=torch.randn(64); train=torch.randn(8,384)
+    for strength in [-.1,1.1,float('nan')]:
+        with pytest.raises(ValueError): centered_projection_bias(w,b,train,strength)
+    for invalid in [train.clone().requires_grad_(),train[:0],train[:,:383],torch.full_like(train,float('nan'))]:
+        with pytest.raises(ValueError): centered_projection_bias(w,b,invalid,1.)
+    with pytest.raises(ValueError): centered_projection_bias(w[:63],b,train,1.)

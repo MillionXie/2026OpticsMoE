@@ -3301,3 +3301,28 @@ seed42已完成，live82.50%/EMA83%，最终选择epoch0原权重：正常83%、
 `abo200_phase_head_micro_seed17_20260915`/`abo200_phase_head_micro_seed73_20260915`。
 各自从原83%开始、一次只跑一组；若某组达到目标则先独立原图复评，不为凑组数继续占GPU。
 它们是同一训练起点的短程种子对照，不是从头三次训练；TEST/live/EMA跨组择优偏差必须披露。
+
+## 100. 仅TRAIN统计量的原读出bias中心化（待运行）
+
+第99节seed17 run的`train_readout_geometry.json`只检查原83%起点的1600张TRAIN：
+pre-L2均值范数.23505、单图范数中位数3.77127，归一化特征均值范数.05741；
+线性权重条件数5.04，不据此声称存在严重退化或中心化一定有效。
+可检验训练数据中的公共偏置是否影响检索，且不加新分支、层、推理算子：
+令`mu=mean_TRAIN(Wx+b)`，直接将现有bias改为`b-mu`。
+统计量只来自TRAIN，QUERY/标签不参与估计；去光时也使用同一个校准后的bias，不能另估计一份。
+W、光学相位、前端、电子残差、alpha和metadata都不改。推理仍原Linear64+L2+cosine。
+此项是一次解析的bias校准，不是训练了更多epoch，也不宣称光学mask发生新学习。
+先固定完整中心化strength=1，不扫描测试图片或设定按商品的偏置。
+
+```bash
+CUDA_VISIBLE_DEVICES=GPU-1b963983-7909-af6e-0528-f0f0661ab549 OMP_NUM_THREADS=4 MKL_NUM_THREADS=4 python -m LightGenV2.tasks.t07_abo_image_retrieval.standalone.metric_readout \
+  --source-run "$START83" --manifest "$R/abo200_enrolled_protocol_20260913/protocol.json" \
+  --data /DATA/DATA1/guest3/2026OpticsMoE/data/abo_similarity10_data \
+  --expected-checkpoint-sha256 "$START83_SHA" --expected-hit .83 \
+  --fit-space projection384 --train-center 1 --steps 0 --selection-precision cuda_bf16 \
+  --output "$R/abo200_train_centered_bias_20260915"
+```
+
+开始前原83%权重的CUDA重放必须逐值一致；中心化后正常/去光采用同精度head重放。
+只有候选达到目标后，再从完整原图独立确认；不能用缓存分数直接替代正式结果。
+默认train-center=0严格保持原数值路径；仅显式正strength允许steps=0，避免误把空训练当作成功。

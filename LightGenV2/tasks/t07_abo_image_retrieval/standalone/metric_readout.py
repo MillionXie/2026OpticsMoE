@@ -109,6 +109,22 @@ def replace_projection(payload, weight, bias):
     return result
 
 
+@torch.no_grad()
+def centered_projection_bias(weight, bias, train_inputs, strength):
+    """Fold TRAIN pre-L2 centering into the existing bias; never an extra layer."""
+    if (not math.isfinite(strength) or not 0 <= strength <= 1
+            or train_inputs.requires_grad or train_inputs.ndim != 2
+            or train_inputs.shape[1] != 384 or not len(train_inputs)
+            or weight.shape != (64,384) or bias.shape != (64,)):
+        raise ValueError('Invalid TRAIN projection centering inputs')
+    if not all(torch.isfinite(t).all() for t in (weight,bias,train_inputs)):
+        raise ValueError('Nonfinite TRAIN projection centering inputs')
+    if strength == 0:
+        return bias.detach().clone()
+    mean = F.linear(train_inputs,weight,bias).mean(0)
+    return bias.detach() - strength * mean
+
+
 def projection_loss(weight, bias, train_inputs, train_labels, indices, reference, anchor, input_dropout=0., ranking_loss='nll'):
     """Only detached TRAIN inputs; all gallery rows receive parameter gradients."""
     if train_inputs.requires_grad or train_inputs.ndim != 2 or train_inputs.shape[1] != 384:
@@ -208,6 +224,14 @@ def run(args):
                 raise ValueError('Initial CUDA head replay must be BITWISE equal to this source raw verification; do not silently change GPU/batch/precision')
     else:
         parameters = [matrix]
+    center_strength = getattr(args, 'train_center', 0.)
+    if center_strength:
+        if not projection:
+            raise ValueError('TRAIN centering requires original projection384')
+        with torch.no_grad():
+            # Only the already detached 1600 TRAIN inputs enter this statistic.
+            # Source raw replay above occurs BEFORE calibration.
+            bias.copy_(centered_projection_bias(weight, bias, train_inputs, center_strength))
     optimizer = torch.optim.Adam(parameters, lr=args.lr)
     args.output.mkdir(parents=True)
     identity = dict(source_commit=source_commit(), command=sys.argv, pid=os.getpid(),
@@ -219,6 +243,8 @@ def run(args):
         status='cached_candidate_only', raw_gpu_verification_required=True,
         optical_weights_changed=False, training_note='Only TRAIN gallery labels/vectors enter loss; QUERY used for periodic selection')
     identity['selection_precision'] = args.selection_precision
+    identity['train_center'] = dict(strength=center_strength, rows=1600,
+        note='Existing bias only: b_new=b-strength*mean_TRAIN(Wx+b), pre L2. QUERY excluded. Zero steps means calibration only, not SGD training.')
     identity['selection_gpu'] = torch.cuda.get_device_name() if args.selection_precision == 'cuda_bf16' else None
     identity['selection_note'] = 'Original head CUDA autocast BF16, batch4, source raw replay bitwise checked; CPU FP32 TRAIN gradients; final raw verification required' if args.selection_precision == 'cuda_bf16' else 'Legacy CPU FP32 projection scoring; may differ from raw autocast inference'
     identity['ranking_objective'] = {
@@ -305,6 +331,7 @@ def main():
     p.add_argument('--verification-dir', type=Path, help='Completed source raw verification directory (default source-run/verification)')
     p.add_argument('--fit-space', choices=['metric64', 'projection384'], default='metric64')
     p.add_argument('--input-dropout', type=float, default=0., help='TRAIN-only independent query/gallery feature dropout for projection384; never used in evaluation')
+    p.add_argument('--train-center', type=float, default=0., help='Fold TRAIN pre-L2 feature mean subtraction into existing bias, strength [0,1]; projection384 only. With positive strength, --steps 0 permits calibration without SGD.')
     p.add_argument('--ranking-loss', choices=['nll', 'top1_softplus', 'hybrid_nll_top1', 'two_view_softplus', 'top1_squared_hinge'], default='nll',
         help='TRAIN objective only; top1_softplus uses nearest positive/negative, cosine margin .02, temperature .1; hybrid equally mixes original NLL and top1. Alternatives require projection384')
     p.add_argument('--expected-hit', type=float, required=True)
@@ -318,7 +345,9 @@ def main():
         help='Selection-only original head replay; CUDA uses raw batch4 autocast and requires bitwise source reproduction. Training remains CPU FP32.')
     p.add_argument('--seed', type=int, default=42)
     args = p.parse_args()
-    if args.steps < 1 or args.eval_every < 1 or not 2 <= args.batch_size <= 1600 or not math.isfinite(args.lr) or args.lr <= 0 or not math.isfinite(args.anchor) or args.anchor < 0:
+    if not math.isfinite(args.train_center) or not 0 <= args.train_center <= 1 or (args.train_center and args.fit_space != 'projection384'):
+        p.error('TRAIN centering requires strength [0,1] and projection384')
+    if args.steps < 0 or (args.steps == 0 and not args.train_center) or args.eval_every < 1 or not 2 <= args.batch_size <= 1600 or not math.isfinite(args.lr) or args.lr <= 0 or not math.isfinite(args.anchor) or args.anchor < 0:
         p.error('Invalid training bounds')
     if not math.isfinite(args.input_dropout) or not 0 <= args.input_dropout < 1 or (args.input_dropout and args.fit_space != 'projection384'):
         p.error('Input dropout must be in [0,1), supported only with projection384')
