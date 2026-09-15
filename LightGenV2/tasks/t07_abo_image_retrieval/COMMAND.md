@@ -3326,3 +3326,12 @@ CUDA_VISIBLE_DEVICES=GPU-1b963983-7909-af6e-0528-f0f0661ab549 OMP_NUM_THREADS=4 
 开始前原83%权重的CUDA重放必须逐值一致；中心化后正常/去光采用同精度head重放。
 只有候选达到目标后，再从完整原图独立确认；不能用缓存分数直接替代正式结果。
 默认train-center=0严格保持原数值路径；仅显式正strength允许steps=0，避免误把空训练当作成功。
+
+实际结果（源码f9d25bff，本地/服务器424项测试通过）：完整校准82.75%、
+`--train-center .5`的`abo200_train_half_centered_bias_20260915`为83%；
+`--train-center .25`的`abo200_train_quarter_centered_bias_20260915`为82.875%，均没有新提升。
+另外`abo200_train_half_centered_refine_20260915`从原83%先半量校准再训练：
+`--train-center .5 --steps 200 --eval-every 25 --ranking-loss top1_softplus --input-dropout .1 --lr .000005 --anchor 1 --seed 42`，
+其他参数同本节，最高仍83%，未晋升。PID2428479/2429193/2430031/2430936均退出。
+未扫描更多校准强度，也未将微小mAP提升当作Hit@1达到目标。
+第99节seed17也已正常结束，最终原83%/去光76.375%；PID2422424退出，seed73按原约定单独继续。
