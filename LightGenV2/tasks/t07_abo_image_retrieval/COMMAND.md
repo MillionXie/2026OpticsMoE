@@ -3294,3 +3294,10 @@ CUDA_VISIBLE_DEVICES=GPU-1b963983-7909-af6e-0528-f0f0661ab549 OMP_NUM_THREADS=4 
   --epochs 1 --steps 2 --eval-every 1 --batch-size 4 --bank-batch-size 16 --seed 42 \
   --output "$R/abo200_phase_head_micro_after83_20260915"
 ```
+
+seed42已完成，live82.50%/EMA83%，最终选择epoch0原权重：正常83%、去光76.375%，
+冻结SHA和路由检查通过，PID2413377已退出。正式成绩未提高，不晋升。
+固定补充seed17/73的同配方控制，分别将`--seed`改为17/73、output改为
+`abo200_phase_head_micro_seed17_20260915`/`abo200_phase_head_micro_seed73_20260915`。
+各自从原83%开始、一次只跑一组；若某组达到目标则先独立原图复评，不为凑组数继续占GPU。
+它们是同一训练起点的短程种子对照，不是从头三次训练；TEST/live/EMA跨组择优偏差必须披露。
