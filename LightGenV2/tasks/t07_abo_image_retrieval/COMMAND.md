@@ -3653,3 +3653,56 @@ python -m LightGenV2.tasks.t07_abo_image_retrieval.standalone.metric_readout \
 
 `execution.json.within_sku_whiten`保存类内协方差特征值、实际度量增益范围与TRAIN身份。
 最终仍需独立原图验证；没有达到665/800不替换原83%。
+
+## 110. 当前83.125%正式候选：拟合、独立复评及同环境旧权重对照
+
+固定源码`67566b888d56a1b1913e956012ac3567d7dd54f7`，本地/服务器463项回归通过。
+第109节收缩.05/.1/.02分别82.875%/82.625%/83.125%；不使用失败的teacher ridge或ReLU头。
+下面是实际执行命令。**输出目录已生成，重新复现时仅将RUN末尾改为
+`abo200_readout_within_sku_repro_01`，不要删除或覆盖现有结果。**
+
+```bash
+conda activate xml
+# 在上述commit对应的干净Git工作树根目录执行；先确认指定GPU空闲。
+nvidia-smi --query-compute-apps=gpu_uuid,pid,used_gpu_memory --format=csv,noheader
+export CUDA_VISIBLE_DEVICES=GPU-1b963983-7909-af6e-0528-f0f0661ab549
+export OMP_NUM_THREADS=4 MKL_NUM_THREADS=4
+T07=/DATA/DATA1/guest3/2026OpticsMoE/LightGenV2/tasks/t07_abo_image_retrieval
+R=$T07/runs/simulation
+START83=$R/abo200_phase_head_top1_verified_20260915
+START83_SHA=538477e0168c90cb7e0952d7c32ef5f3c4391568839a2865f86a21febf0b27b2
+RUN=$R/abo200_readout_within_sku_verified_20260915
+
+python -m LightGenV2.tasks.t07_abo_image_retrieval.standalone.metric_readout \
+  --source-run "$START83" --manifest "$R/abo200_enrolled_protocol_20260913/protocol.json" \
+  --data /DATA/DATA1/guest3/2026OpticsMoE/data/abo_similarity10_data \
+  --expected-checkpoint-sha256 "$START83_SHA" --expected-hit .83 --fit-space projection384 \
+  --within-sku-whiten .02 --steps 0 --selection-precision cuda_bf16 --output "$RUN"
+
+# 新文件的SHA由实际文件读取；不同序列化文件不能照抄别人的SHA。
+BEST_SHA=$(sha256sum "$RUN/best.pt" | cut -d ' ' -f1)
+python -m LightGenV2.tasks.t07_abo_image_retrieval.standalone.retrieval_screen optical \
+  --data /DATA/DATA1/guest3/2026OpticsMoE/data/abo_similarity10_data \
+  --manifest "$R/abo200_enrolled_protocol_20260913/protocol.json" \
+  --assets "$R/standalone_assets_20260910" --checkpoint "$RUN/best.pt" \
+  --expected-checkpoint-sha256 "$BEST_SHA" --batch-size 4 --device cuda \
+  --cache-readout-input --output "$RUN/verification"
+
+python -m LightGenV2.tasks.t07_abo_image_retrieval.standalone.retrieval_screen optical \
+  --data /DATA/DATA1/guest3/2026OpticsMoE/data/abo_similarity10_data \
+  --manifest "$R/abo200_enrolled_protocol_20260913/protocol.json" \
+  --assets "$R/standalone_assets_20260910" --checkpoint "$START83/best.pt" \
+  --expected-checkpoint-sha256 "$START83_SHA" --batch-size 4 --device cuda \
+  --cache-readout-input --output "$RUN/source83_control"
+```
+
+两次新候选独立原图均665/800；同环境旧权重664/800。
+正式best SHA `c9926cbaaa1ef066d9657a8028dffc130a33915aa9f392551573dc79894192d0`；
+原图报告SHA `63f8ce8d545c230838c96b183d84b3ff85380ea9b164697b3d95c7b72a4fe432`。
+`verification/weight_train_audit.json`核验：只改W/b、全部metadata/相位不变、同环境读出前特征逐值一致；
+TRAIN1514/1600、QUERY665/800、去光611/800、配对恰好1张错变对且0张对变错。
+与早期83缓存有1张QUERY中间特征不逐位一致（原因未定），但TRAIN统计完全一致，
+补跑的同环境旧权重对照复现83%，与新模型上游特征完全一致；不忽略这一审计发现。
+源码修复了0个SGD step的统计校准履历，未更改光/电推理图；初始e5803db5的旧来源误标报告保留但不正式引用。
+无新的相位更新，不能把单张收益称为新的光学学习或显著泛化改善。
+全部自有拟合/复评进程结束、GPU已释放；`artifact_manifest.json`列出交付文件逐项SHA。
