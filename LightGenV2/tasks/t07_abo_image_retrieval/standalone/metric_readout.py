@@ -156,6 +156,21 @@ def centered_projection_bias(weight, bias, train_inputs, strength):
     return bias.detach() - strength * mean
 
 
+def bounded_diagonal_projection(raw_gain, reference):
+    """TRAIN 64 degrees of freedom, folded into existing W/b for inference.
+
+    Positive gains exp(.1*tanh(raw)) stay within exp(+/- .1); raw=0 exactly
+    preserves the source parameters. No rotations, offsets or new head layers.
+    """
+    weight, bias = reference
+    if (raw_gain.shape != (64,) or weight.shape != (64, 384) or bias.shape != (64,)
+            or weight.requires_grad or bias.requires_grad
+            or any(not torch.isfinite(t).all() for t in (raw_gain, weight, bias))):
+        raise ValueError('Diagonal fit requires 64 finite gains and detached original W/b')
+    gain = (.1 * raw_gain.tanh()).exp()
+    return gain[:, None] * weight, gain * bias
+
+
 def projection_loss(weight, bias, train_inputs, train_labels, indices, reference, anchor, input_dropout=0., ranking_loss='nll'):
     """Only detached TRAIN inputs; all gallery rows receive parameter gradients."""
     if train_inputs.requires_grad or train_inputs.ndim != 2 or train_inputs.shape[1] != 384:
@@ -209,6 +224,9 @@ def validate_optimizer_recipe(args):
 
 def run(args):
     optimizer_kind = validate_optimizer_recipe(args)
+    diagonal = args.fit_space == 'diagonal64'
+    if diagonal and getattr(args, 'train_center', 0.):
+        raise ValueError('Diagonal fit cannot also calibrate the source bias')
     torch.set_num_threads(4)
     torch.manual_seed(args.seed)
     if args.output.exists():
@@ -249,7 +267,7 @@ def run(args):
     if abs(baseline['hit_at_1'] - args.expected_hit) > 1e-9:
         raise ValueError('Cached baseline did not reproduce the expected score')
     matrix = torch.nn.Parameter(torch.eye(64))
-    projection = args.fit_space == 'projection384'
+    projection = args.fit_space in ('projection384', 'diagonal64')
     if args.selection_precision != 'cpu_fp32' and not projection:
         raise ValueError('CUDA head replay requires direct original projection fitting')
     if projection:
@@ -261,6 +279,10 @@ def run(args):
         bias = torch.nn.Parameter(payload['state_dict']['readout.projection.bias'].float().clone())
         reference = (weight.detach().clone(), bias.detach().clone())
         parameters = [weight, bias]
+        if diagonal:
+            raw_gain = torch.nn.Parameter(torch.zeros(64))
+            parameters = [raw_gain]
+            weight, bias = bounded_diagonal_projection(raw_gain, reference)
         if args.selection_precision == 'cuda_bf16':
             replay = projection_vectors(input_vectors, weight, bias, args.selection_precision)
             if not torch.equal(replay, caches['normal']['vectors']):
@@ -284,10 +306,13 @@ def run(args):
         cache_sha256={k: sha256(verification / f'{k}_features.pt') for k in caches},
         config={k: str(v) if isinstance(v, Path) else v for k, v in vars(args).items()},
         device='cpu', training_rows=1600, query_rows=800, test_selected=True,
-        extra_inference_parameters=0, inference=('Same original Linear(384,64), direct weight/bias fitting' if projection else 'Same linear64 layer, Wnew=A@W, bnew=A@b'),
+        extra_inference_parameters=0, inference=('Same original Linear(384,64); 64 bounded positive gains folded rowwise into original W/b' if diagonal else 'Same original Linear(384,64), direct weight/bias fitting' if projection else 'Same linear64 layer, Wnew=A@W, bnew=A@b'),
         status='cached_candidate_only', raw_gpu_verification_required=True,
         optical_weights_changed=False, training_note='Only TRAIN gallery labels/vectors enter loss; QUERY used for periodic selection')
     identity['selection_precision'] = args.selection_precision
+    identity['fitted_parameter_count'] = sum(p.numel() for p in parameters)
+    identity['diagonal_constraint'] = dict(enabled=diagonal, gain_bounds=[math.exp(-.1), math.exp(.1)],
+        note='g=exp(.1*tanh(raw64)); W_new=g[:,None]*W_source, b_new=g*b_source; no new inference tensor')
     identity['optimizer_recipe'] = dict(kind=optimizer_kind,
         note='Full TRAIN smooth NLL; one quasi-Newton iteration per outer step, strong-Wolfe TRAIN-only line search, history10, constant LR, no gradient clipping; query never enters closure' if optimizer_kind == 'lbfgs' else 'Original minibatch Adam/SAM, cosine LR and gradient norm clip1')
     identity['train_center'] = dict(strength=center_strength, rows=1600,
@@ -323,11 +348,17 @@ def run(args):
                     else args.lr * (.1 + .9 * .5 * (1 + math.cos(math.pi * step / args.steps))))
                 idx = torch.arange(1600) if optimizer_kind == 'lbfgs' else torch.randperm(1600)[:args.batch_size]
                 def loss_closure():
+                    if diagonal:
+                        w, b = bounded_diagonal_projection(raw_gain, reference)
+                        return projection_loss(w, b, train_inputs, train_labels, idx, reference,
+                            args.anchor, args.input_dropout, args.ranking_loss)
                     return (projection_loss(weight, bias, train_inputs, train_labels, idx, reference, args.anchor, args.input_dropout, args.ranking_loss)
                             if projection else metric_loss(matrix, train_z, train_labels, idx, args.anchor))
                 loss, step_audit = fit_step(loss_closure, optimizer, parameters, args.sam_rho)
             if step % args.eval_every == 0 or step == args.steps:
                 with torch.no_grad():
+                    if diagonal:
+                        weight, bias = bounded_diagonal_projection(raw_gain, reference)
                     vectors = (projection_vectors(input_vectors, weight, bias, args.selection_precision)
                                if projection else F.normalize(z @ matrix.T, dim=-1))
                     metrics, _ = rank_instances(vectors, rows)
@@ -340,6 +371,9 @@ def run(args):
                         if projection else float((matrix.detach()-torch.eye(64)).norm())),
                     loss=float(loss.detach()) if step else None)
                 entry['optimizer_audit'] = step_audit if step else None
+                if diagonal:
+                    gain = (.1 * raw_gain.detach().tanh()).exp()
+                    entry['diagonal_gain_range'] = [float(gain.min()), float(gain.max())]
                 score = (metrics['hit_at_1'], metrics['map_at_10'])
                 if score > best_score:
                     best_score, best_matrix = score, matrix.detach().clone()
@@ -377,11 +411,12 @@ def main():
         p.add_argument('--'+name, type=Path, required=True)
     p.add_argument('--expected-checkpoint-sha256', required=True)
     p.add_argument('--verification-dir', type=Path, help='Completed source raw verification directory (default source-run/verification)')
-    p.add_argument('--fit-space', choices=['metric64', 'projection384'], default='metric64')
-    p.add_argument('--input-dropout', type=float, default=0., help='TRAIN-only independent query/gallery feature dropout for projection384; never used in evaluation')
+    p.add_argument('--fit-space', choices=['metric64', 'projection384', 'diagonal64'], default='metric64',
+        help='diagonal64 fits only64 bounded positive output gains folded into existing original projection W/b; no new inference layer')
+    p.add_argument('--input-dropout', type=float, default=0., help='TRAIN-only independent query/gallery feature dropout for projection384/diagonal64; never used in evaluation')
     p.add_argument('--train-center', type=float, default=0., help='Fold TRAIN pre-L2 feature mean subtraction into existing bias, strength [0,1]; projection384 only. With positive strength, --steps 0 permits calibration without SGD.')
     p.add_argument('--ranking-loss', choices=['nll', 'top1_softplus', 'hybrid_nll_top1', 'two_view_softplus', 'top1_squared_hinge'], default='nll',
-        help='TRAIN objective only; top1_softplus uses nearest positive/negative, cosine margin .02, temperature .1; hybrid equally mixes original NLL and top1. Alternatives require projection384')
+        help='TRAIN objective only; top1_softplus uses nearest positive/negative, cosine margin .02, temperature .1; hybrid equally mixes original NLL and top1. Alternatives require projection384/diagonal64')
     p.add_argument('--expected-hit', type=float, required=True)
     p.add_argument('--steps', type=int, default=800)
     p.add_argument('--eval-every', type=int, default=50)
@@ -399,10 +434,10 @@ def main():
         p.error('TRAIN centering requires strength [0,1] and projection384')
     if args.steps < 0 or (args.steps == 0 and not args.train_center) or args.eval_every < 1 or not 2 <= args.batch_size <= 1600 or not math.isfinite(args.lr) or args.lr <= 0 or not math.isfinite(args.anchor) or args.anchor < 0:
         p.error('Invalid training bounds')
-    if not math.isfinite(args.input_dropout) or not 0 <= args.input_dropout < 1 or (args.input_dropout and args.fit_space != 'projection384'):
-        p.error('Input dropout must be in [0,1), supported only with projection384')
-    if args.ranking_loss != 'nll' and args.fit_space != 'projection384':
-        p.error('Alternative ranking loss requires projection384')
+    if not math.isfinite(args.input_dropout) or not 0 <= args.input_dropout < 1 or (args.input_dropout and args.fit_space not in ('projection384', 'diagonal64')):
+        p.error('Input dropout must be in [0,1), supported only with projection384/diagonal64')
+    if args.ranking_loss != 'nll' and args.fit_space not in ('projection384', 'diagonal64'):
+        p.error('Alternative ranking loss requires projection384/diagonal64')
     if not math.isfinite(args.sam_rho) or args.sam_rho < 0:
         p.error('SAM radius must be finite and nonnegative')
     run(args)

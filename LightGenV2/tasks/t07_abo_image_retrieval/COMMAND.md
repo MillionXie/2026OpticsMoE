@@ -3448,3 +3448,29 @@ scope通过且未达目标时，从同一原83%重新做3轮×50步，`--bank-re
 32次训练输入中18次混合，次图平均9.859%、范围5.025%–14.666%；PID2567972已退出。
 主指标未增加，不替换原83%正式候选。3轮×50步按上述配方已启动，PID2597753、GPU4 RTX4090；
 只占一张GPU，仍同源码5f561138。完成后核验PID退出和显存释放，不触碰其他任务。
+
+## 104. 64自由度受限对角读出训练（备用；不新增推理层）
+
+原来的完整Linear微调可调整24640个参数。此对照只学习64个`raw_gain`：
+`g=exp(.1*tanh(raw_gain))`，范围约[.9048,1.1052]，零初始化准确恢复原权重。
+前向及保存时折叠成`W_new=g[:,None]*W_source, b_new=g*b_source`；只改变原W/b数值，
+checkpoint没有新层/新tensor，最终仍Linear64、L2、cosine，六次光路及所有相位/alpha不变。
+这不是光学mask新训练，也不是引入64×64自由矩阵；它是更低自由度的训练正则限制。
+TRAIN使用原384维读出输入，不用量化后的64维描述子反推；原CUDA batch4重放须逐值一致。
+每次优化closure重新构建增益计算图，支持既有SAM重放但本次先不使用SAM。
+
+待第103节任务正常退出、确认GPU4空闲、切换已通过测试且已在GitHub的源码后运行：
+
+```bash
+CUDA_VISIBLE_DEVICES=GPU-1b963983-7909-af6e-0528-f0f0661ab549 OMP_NUM_THREADS=4 MKL_NUM_THREADS=4 python -m LightGenV2.tasks.t07_abo_image_retrieval.standalone.metric_readout \
+  --source-run "$START83" --manifest "$R/abo200_enrolled_protocol_20260913/protocol.json" \
+  --data /DATA/DATA1/guest3/2026OpticsMoE/data/abo_similarity10_data \
+  --expected-checkpoint-sha256 "$START83_SHA" --expected-hit .83 \
+  --fit-space diagonal64 --ranking-loss top1_softplus --input-dropout .1 \
+  --steps 400 --eval-every 25 --lr .01 --anchor 1 --seed 42 --selection-precision cuda_bf16 \
+  --output "$R/abo200_readout_diagonal64_20260915"
+```
+
+log-gain的LR不能与原W的LR直接比较（还经过tanh和.1缩放）；记录实际增益范围。
+TRAIN图库排除自身；不使用QUERY拟合，不做检索重排或多模型集成。原83%保底不覆盖。
+达到665/800后还须全量原图独立复评、同best去光/路由/冻结参数核验，不能只引用缓存。

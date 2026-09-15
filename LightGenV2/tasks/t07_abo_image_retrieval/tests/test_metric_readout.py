@@ -6,7 +6,59 @@ from torch.nn import functional as F
 from LightGenV2.tasks.t07_abo_image_retrieval.standalone.metric_readout import (
     fold_metric, metric_loss, validate_cache, replace_projection,
     projection_loss, validate_projection_cache, train_ranking_loss, fit_step, projection_vectors, centered_projection_bias,
-    validate_optimizer_recipe)
+    validate_optimizer_recipe, bounded_diagonal_projection)
+
+
+def test_diagonal_gain_identity_bounds_and_existing_parameter_shapes():
+    torch.manual_seed(60)
+    reference = (torch.randn(64,384), torch.randn(64))
+    w, b = bounded_diagonal_projection(torch.zeros(64), reference)
+    assert torch.equal(w, reference[0]) and torch.equal(b, reference[1])
+    raw = torch.linspace(-100.,100.,64)
+    w, b = bounded_diagonal_projection(raw, reference)
+    gains = (.1 * raw.tanh()).exp()
+    assert gains.min() >= torch.exp(torch.tensor(-.1))
+    assert gains.max() <= torch.exp(torch.tensor(.1))
+    assert torch.equal(w, reference[0]*gains[:,None]) and torch.equal(b,reference[1]*gains)
+
+
+def test_diagonal_fit_has_only64_gradients_and_folds_without_extra_keys():
+    torch.manual_seed(61)
+    reference=(torch.randn(64,384),torch.randn(64))
+    raw=torch.zeros(64,requires_grad=True)
+    x=torch.randn(12,384); labels=torch.arange(4).repeat_interleave(3)
+    w,b=bounded_diagonal_projection(raw,reference)
+    loss=projection_loss(w,b,x,labels,torch.arange(12),reference,1.,ranking_loss='top1_softplus')
+    loss.backward()
+    assert raw.numel()==64 and torch.isfinite(raw.grad).all() and raw.grad.norm()>0
+    assert reference[0].grad is None and reference[1].grad is None and x.grad is None
+    payload=dict(metadata={},state_dict={'readout.projection.weight':reference[0],
+        'readout.projection.bias':reference[1],'phase':torch.randn(3,3)})
+    candidate=replace_projection(payload,w,b)
+    assert candidate['state_dict'].keys()==payload['state_dict'].keys()
+    assert candidate['state_dict']['phase'] is payload['state_dict']['phase']
+
+
+def test_diagonal_fit_rebuilds_autograd_for_multiple_adam_sam_steps():
+    torch.manual_seed(62)
+    reference=(torch.randn(64,384),torch.randn(64))
+    raw=torch.nn.Parameter(torch.zeros(64)); optimizer=torch.optim.Adam([raw],lr=.01)
+    x=torch.randn(12,384); labels=torch.arange(4).repeat_interleave(3)
+    def closure():
+        w,b=bounded_diagonal_projection(raw,reference)
+        return projection_loss(w,b,x,labels,torch.arange(12),reference,1.,.1)
+    for _ in range(3):
+        loss,audit=fit_step(closure,optimizer,[raw],.002)
+        assert torch.isfinite(loss) and audit['gradient_norm']>0
+    assert raw.detach().norm()>0 and x.grad is None
+
+
+def test_diagonal_fit_rejects_trainable_source_or_invalid_gain():
+    ref=(torch.randn(64,384),torch.randn(64))
+    for raw in [torch.zeros(63),torch.full((64,),float('nan'))]:
+        with pytest.raises(ValueError): bounded_diagonal_projection(raw,ref)
+    with pytest.raises(ValueError):
+        bounded_diagonal_projection(torch.zeros(64),(ref[0].requires_grad_(),ref[1]))
 
 
 def test_fold_preserves_exact_algebra_and_all_other_tensors():
