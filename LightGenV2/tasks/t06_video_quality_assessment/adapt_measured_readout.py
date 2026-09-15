@@ -115,6 +115,21 @@ def official_partitions(training, evaluation):
     return np.arange(2250),np.arange(2250,2808)
 
 
+def partial_test_indices(original_train, original_test, fraction, seed):
+    """Explicit deployment adaptation, never relabel adapted test IDs as unseen."""
+    if not np.isfinite(fraction) or not 0<=fraction<1:
+        raise ValueError('Test adaptation fraction must be in [0,1)')
+    original_train=np.asarray(original_train,dtype=np.int64)
+    original_test=np.asarray(original_test,dtype=np.int64)
+    if len(set(original_train)&set(original_test)):
+        raise ValueError('Original partitions overlap')
+    count=int(np.ceil(len(original_test)*fraction))
+    if len(original_test)-count<3:raise ValueError('At least three held-out videos required')
+    shuffled=np.random.default_rng(seed).permutation(original_test)
+    adapted=np.sort(shuffled[:count]);holdout=np.sort(shuffled[count:])
+    return np.sort(np.concatenate((original_train,adapted))),holdout,adapted
+
+
 def extract(a):
     import torch
     from .lab_bench import verified_ccd, identity
@@ -199,6 +214,11 @@ def train(a):
     import torch.nn.functional as F
     reg_weight,rank_weight,corr_weight=loss_weights(a)
     batch_order=getattr(a,'batch_order','random')
+    test_adapt_fraction=float(getattr(a,'test_adapt_fraction',0.))
+    if not np.isfinite(test_adapt_fraction) or not 0<=test_adapt_fraction<1:
+        raise ValueError('Test adaptation fraction must be in [0,1)')
+    if test_adapt_fraction and not getattr(a,'eval_cache',None):
+        raise ValueError('Partial test adaptation requires both original train and test caches')
     out=Path(a.output)
     if out.exists(): raise FileExistsError(out)
     out.mkdir(parents=True)
@@ -224,7 +244,7 @@ def train(a):
     # Standalone lab packages are not Git worktrees; their pinned release is canonical.
     release_path=Path(a.checkpoint).resolve().parent.parent/'release.json'
     commit=read(release_path)['source_commit'] if release_path.exists() else subprocess.check_output(['git','rev-parse','HEAD'],text=True).strip()
-    write(out/'launch.json',dict(arguments=vars(a),command=sys.argv,commit=commit,
+    write(out/'launch.json',dict(arguments=vars(a),command=sys.argv,commit=commit,adaptation_source_sha256=sha(__file__),
           cache_sha256=sha(a.cache),eval_cache_sha256=sha(eval_cache) if official else None,checkpoint_sha256=sha(a.checkpoint),
           torch=torch.__version__,device=a.device,gpu=torch.cuda.get_device_name() if a.device.startswith('cuda') else None,
           training_scope='existing readout.* only; no hardware, no new modules',
@@ -235,12 +255,23 @@ def train(a):
     for fraction in fractions:
         random.seed(a.seed);np.random.seed(a.seed);torch.manual_seed(a.seed)
         if torch.cuda.is_available():torch.cuda.manual_seed_all(a.seed)
-        tag='original_train2250_test558' if official else ('full100' if fraction==1 else 'split80');folder=out/tag;folder.mkdir()
-        train_idx,hold_idx=(official_train,official_test) if official else split_indices(n,fraction,a.seed)
+        adapted_idx=np.empty(0,dtype=np.int64)
+        if official:train_idx,hold_idx,adapted_idx=partial_test_indices(official_train,official_test,test_adapt_fraction,a.seed)
+        else:train_idx,hold_idx=split_indices(n,fraction,a.seed)
+        mixed=bool(len(adapted_idx))
+        tag=(f'train2250_plus_test{len(adapted_idx)}_holdout{len(hold_idx)}' if mixed else
+             ('original_train2250_test558' if official else ('full100' if fraction==1 else 'split80')))
+        folder=out/tag;folder.mkdir()
         select_idx=hold_idx if official else (train_idx if fraction==1 else hold_idx)
+        protocol=('partial original-test deployment adaptation; select on remaining holdout; full 558 is mixed seen/unseen' if mixed else
+                  ('original 2250 train only; periodic 558 test selection, not untouched test' if official else
+                   ('same-data adaptation' if fraction==1 else 'fixed holdout, used for checkpoint selection')))
         write(folder/'split.json',dict(seed=a.seed,train=[data['video_ids'][i] for i in train_idx],
-              holdout=[data['video_ids'][i] for i in hold_idx],selection='original_test_srcc' if official else ('train_srcc' if fraction==1 else 'holdout_srcc'),
-              untouched_test=False,test_samples_in_gradient=0 if official else None,description='original 2250 train only; periodic 558 test selection, not untouched test' if official else ('same-data adaptation' if fraction==1 else 'fixed holdout, used for checkpoint selection')))
+              holdout=[data['video_ids'][i] for i in hold_idx],selection='remaining_test_holdout_srcc' if mixed else ('original_test_srcc' if official else ('train_srcc' if fraction==1 else 'holdout_srcc')),
+              original_train=[data['video_ids'][i] for i in official_train] if official else None,
+              original_test=[data['video_ids'][i] for i in official_test] if official else None,
+              test_adaptation=[data['video_ids'][i] for i in adapted_idx],test_adapt_fraction=test_adapt_fraction,
+              untouched_test=False,test_samples_in_gradient=len(adapted_idx) if official else None,description=protocol))
         head=copy.deepcopy(model.readout).to(a.device).requires_grad_(True)
         scope=getattr(a,'scope','head')
         allowed=trainable_readout_names(dict(head.named_parameters()),scope)
@@ -260,8 +291,13 @@ def train(a):
                 for start in range(0,n,a.batch_size):
                     scores.append((candidate(*inputs(all_idx[start:start+a.batch_size]))*data['target_std']+data['target_mean']).cpu())
             p=torch.cat(scores).numpy()
-            return p,dict(all=metrics(p,targets.numpy()),train=metrics(p[train_idx],targets.numpy()[train_idx]),
-                          selection=metrics(p[select_idx],targets.numpy()[select_idx]))
+            values=dict(all=metrics(p,targets.numpy()),train=metrics(p[train_idx],targets.numpy()[train_idx]),
+                        selection=metrics(p[select_idx],targets.numpy()[select_idx]))
+            if mixed:
+                for label,idx in [('original_train',official_train),('test_adaptation',adapted_idx),
+                                  ('test_holdout_selection',hold_idx),('original_test_all_mixed',official_test)]:
+                    values[label]=metrics(p[idx],targets.numpy()[idx])
+            return p,values
         baseline,base_metrics=evaluate()
         if np.max(np.abs(baseline-data['original_prediction'].numpy()))>.005:
             raise ValueError('Cached head replay differs from full measured forward')
@@ -307,13 +343,14 @@ def train(a):
             merged=dict(source);merged['state_dict']=dict(source['state_dict'])
             merged['state_dict'].update({'readout.'+k:v for k,v in weights.items()})
             if frozen_digest(merged['state_dict'])!=source_frozen:raise ValueError('Frozen parameters changed')
-            merged['hardware_adaptation']=dict(arm=tag,epoch=ep,variant=best_variant if label=='best' else 'raw',source_checkpoint_sha256=sha(a.checkpoint),cache_sha256=sha(a.cache),eval_cache_sha256=sha(eval_cache) if official else None,selection_uses_holdout=official or fraction<1,test_samples_in_gradient=0 if official else None,independent_test=False,commit=commit)
+            merged['hardware_adaptation']=dict(arm=tag,epoch=ep,variant=best_variant if label=='best' else 'raw',source_checkpoint_sha256=sha(a.checkpoint),cache_sha256=sha(a.cache),eval_cache_sha256=sha(eval_cache) if official else None,selection_uses_holdout=official or fraction<1,test_samples_in_gradient=len(adapted_idx) if official else None,test_adapt_fraction=test_adapt_fraction,protocol=protocol,split_sha256=sha(folder/'split.json'),independent_test=False,commit=commit,adaptation_source_sha256=sha(__file__))
             torch.save(merged,folder/(label+'_checkpoint.pt'))
         changed=[k for k,v in best_state.items() if not torch.equal(v,initial[k])]
         result=dict(arm=tag,best_epoch=best_epoch,best_variant=best_variant,scope=scope,trainable_names=sorted(allowed),trainable_parameters=sum(v.numel() for v in head.parameters() if v.requires_grad),before=base_metrics,after=best_metrics,changed_readout_tensors=changed,
                     frozen_parameters_unchanged=True,frozen_sha256=source_frozen,
-                    best_checkpoint_sha256=sha(folder/'best_checkpoint.pt'),independent_test=False,
-                    rows=[dict(video=v,target=float(targets[i]),before=float(baseline[i]),after=float(best_pred[i]),partition='train' if i in train_idx else ('test' if official else 'holdout')) for i,v in enumerate(data['video_ids'])])
+                    best_checkpoint_sha256=sha(folder/'best_checkpoint.pt'),independent_test=False,protocol=protocol,
+                    test_samples_in_gradient=len(adapted_idx) if official else None,
+                    rows=[dict(video=v,target=float(targets[i]),before=float(baseline[i]),after=float(best_pred[i]),partition=(('original_train' if i in official_train else ('test_adaptation' if i in adapted_idx else 'test_holdout')) if mixed else ('train' if i in train_idx else ('test' if official else 'holdout')))) for i,v in enumerate(data['video_ids'])])
         write(folder/'results.json',result);results[tag]={k:v for k,v in result.items() if k!='rows'}
         del head,optimizer;torch.cuda.empty_cache()
     write(out/'results.json',results);write(out/'status.json',dict(state='complete',results=results))
@@ -324,7 +361,8 @@ def main():
     parser=argparse.ArgumentParser(description=__doc__);sub=parser.add_subparsers(dest='action',required=True)
     e=sub.add_parser('extract');e.add_argument('--project',required=True);e.add_argument('--session-dir',required=True)
     t=sub.add_parser('train');t.add_argument('--cache',required=True);t.add_argument('--checkpoint',required=True)
-    t.add_argument('--eval-cache',help='Original 558-video test cache; requires original 2250 training cache, never backpropagates test')
+    t.add_argument('--eval-cache',help='Original 558-video test cache; no test backpropagation unless explicit --test-adapt-fraction is positive')
+    t.add_argument('--test-adapt-fraction',type=float,default=0.,help='Explicitly repurpose a fixed random fraction of original test for deployment adaptation; select on remaining holdout and label full-test results as mixed')
     t.add_argument('--epochs',type=int,default=100);t.add_argument('--lr',type=float,default=1e-4)
     t.add_argument('--batch-size',type=int,default=32);t.add_argument('--seed',type=int,default=20260914)
     t.add_argument('--train-fraction',type=float,choices=[.8,1.],default=None)

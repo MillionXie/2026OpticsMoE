@@ -1,10 +1,34 @@
 import unittest
 import numpy as np
 from types import SimpleNamespace
-from .adapt_measured_readout import split_indices, metrics, replay_audit, trainable_readout_names, official_partitions, training_order, loss_weights
+from .adapt_measured_readout import split_indices, metrics, replay_audit, trainable_readout_names, official_partitions, training_order, loss_weights, partial_test_indices
 
 
 class AdaptationTests(unittest.TestCase):
+    def test_partial_test_adaptation_is_fixed_disjoint_and_explicit(self):
+        original=np.arange(2250);test=np.arange(2250,2808)
+        train,held,adapted=partial_test_indices(original,test,.2,20260914)
+        self.assertEqual((len(train),len(held),len(adapted)),(2362,446,112))
+        self.assertEqual(set(train),set(original)|set(adapted))
+        self.assertFalse(set(train)&set(held))
+        self.assertEqual(set(adapted)|set(held),set(test))
+        self.assertEqual(len(np.unique(np.concatenate([train,held]))),2808)
+        for x,y in zip((train,held,adapted),partial_test_indices(original,test,.2,20260914)):
+            np.testing.assert_array_equal(x,y)
+        # Identity selection does not advance the training/dropout random stream.
+        np.random.seed(2);expected=np.random.random()
+        np.random.seed(2);partial_test_indices(original,test,.2,20260914)
+        self.assertEqual(np.random.random(),expected)
+
+    def test_no_test_adaptation_default_and_invalid_fractions(self):
+        original=np.arange(2250);test=np.arange(2250,2808)
+        tr,te,adapted=partial_test_indices(original,test,0,42)
+        np.testing.assert_array_equal(tr,original);np.testing.assert_array_equal(te,test)
+        self.assertEqual(len(adapted),0)
+        for fraction in [-.1,1,2,float('nan'),.999]:
+            with self.assertRaises(ValueError):partial_test_indices(original,test,fraction,42)
+        with self.assertRaises(ValueError):partial_test_indices(original,original,.2,42)
+
     def test_training_order_exact_train_only(self):
         idx=np.arange(2250);targets=np.arange(2808)
         np.random.seed(8);order=training_order(idx,targets,'mos_stratified')
