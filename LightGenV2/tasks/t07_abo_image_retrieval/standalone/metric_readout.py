@@ -225,6 +225,7 @@ def run(args):
         'nll': 'Original all-gallery multi-positive NLL, temperature .1',
         'top1_softplus': 'softplus((nearest_wrong_cosine-nearest_correct_cosine+.02)/.1), mean over TRAIN queries, self excluded',
         'two_view_softplus': 'softplus((nearest_wrong_cosine-mean_two_nearest_correct_photo_cosines+.02)/.1), TRAIN only, two distinct nonself positive images; no inference reranking',
+        'top1_squared_hinge': '.5*relu((nearest_wrong_cosine-nearest_correct_cosine+.02)/.1)^2, TRAIN nonself only; zero ranking gradient after margin is satisfied, shared parameter updates may still change predictions',
         'hybrid_nll_top1': 'Fixed .5 original multi-positive NLL + .5 nearest-SKU softplus, temperature .1, top1 cosine margin .02; TRAIN self excluded',
     }[args.ranking_loss]
     identity['sam'] = dict(rho=args.sam_rho,
@@ -304,7 +305,7 @@ def main():
     p.add_argument('--verification-dir', type=Path, help='Completed source raw verification directory (default source-run/verification)')
     p.add_argument('--fit-space', choices=['metric64', 'projection384'], default='metric64')
     p.add_argument('--input-dropout', type=float, default=0., help='TRAIN-only independent query/gallery feature dropout for projection384; never used in evaluation')
-    p.add_argument('--ranking-loss', choices=['nll', 'top1_softplus', 'hybrid_nll_top1', 'two_view_softplus'], default='nll',
+    p.add_argument('--ranking-loss', choices=['nll', 'top1_softplus', 'hybrid_nll_top1', 'two_view_softplus', 'top1_squared_hinge'], default='nll',
         help='TRAIN objective only; top1_softplus uses nearest positive/negative, cosine margin .02, temperature .1; hybrid equally mixes original NLL and top1. Alternatives require projection384')
     p.add_argument('--expected-hit', type=float, required=True)
     p.add_argument('--steps', type=int, default=800)

@@ -3235,3 +3235,33 @@ CUDA_VISIBLE_DEVICES=GPU-1b963983-7909-af6e-0528-f0f0661ab549 OMP_NUM_THREADS=4 
 ```
 
 不得在本任务运行期间在线切换其worktree源码。默认只使用一张空闲4090，运行结束确认自己PID释放。
+
+## 98. TRAIN间隔满足后停止排序梯度（待第97节结束后执行）
+
+起点仍是独立原图确认的83%权重，不用第97节低于起点的中间权重。
+依据第97节run的`train_margin_diagnostic.json`：原83%模型在1600张TRAIN自图排除检索中，
+1518张正确，1493张最近正确/错误余弦间隔已大于.02；82张错误中77张错到同大类其他SKU。
+这里只检查TRAIN，不按QUERY错例选样或改变标签。
+
+新增`top1_squared_hinge`目标为`.5*relu((s_wrong-s_correct+.02)/.1)^2`。
+满足间隔的TRAIN query排序梯度为0；其他样本及参数共享、锚定约束仍可能改变其预测，
+不能保证旧正确图片一张不掉。它和softplus的区别是有限间隔后停止继续推开简单样本。
+只训练原384→64 Linear，所有光学、前端、电子残差和alpha冻结；无新推理参数。
+先用无dropout的干净TRAIN间隔检验该假设，800步、lr.000025、anchor1、seed42、每50步评估。
+仍按CUDA BF16 batch4重放选模，不能直接把CPU FP32缓存分数当成正式原图成绩。
+
+**第97节仍运行时不得切换其worktree或占用第二张GPU。**确认其PID已退出且GPU空闲，
+再切到包含本节代码、已通过测试且已推GitHub的commit，运行：
+
+```bash
+CUDA_VISIBLE_DEVICES=GPU-1b963983-7909-af6e-0528-f0f0661ab549 OMP_NUM_THREADS=4 MKL_NUM_THREADS=4 python -m LightGenV2.tasks.t07_abo_image_retrieval.standalone.metric_readout \
+  --source-run "$START83" --manifest "$R/abo200_enrolled_protocol_20260913/protocol.json" \
+  --data /DATA/DATA1/guest3/2026OpticsMoE/data/abo_similarity10_data \
+  --expected-checkpoint-sha256 "$START83_SHA" --expected-hit .83 \
+  --fit-space projection384 --ranking-loss top1_squared_hinge --input-dropout 0 \
+  --steps 800 --eval-every 50 --batch-size 128 --lr .000025 --anchor 1 --seed 42 \
+  --selection-precision cuda_bf16 --output "$R/abo200_readout_active_margin_20260915"
+```
+
+当前本节是已实现的待运行对照，不是新的性能结果。若第97节先达到目标并独立复评通过，
+无需为此追加训练。任何新候选均须正常/去光原图复评、TRAIN与路由审计，保留原83%权重。

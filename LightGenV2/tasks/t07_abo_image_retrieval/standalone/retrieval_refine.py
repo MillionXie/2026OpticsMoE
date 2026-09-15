@@ -134,6 +134,13 @@ def train_ranking_loss(logits, positive, excluded, kind='nll'):
     if kind == 'top1_softplus':
         neg = logits.masked_fill(~negative, -torch.inf)
         return F.softplus(neg.amax(1) - pos.amax(1) + .2).mean()
+    if kind == 'top1_squared_hinge':
+        # TRAIN-only active-margin refinement: already satisfied queries have
+        # zero ranking gradient. Shared weight updates may still move them;
+        # this is not a guarantee of preserving every previous prediction.
+        neg = logits.masked_fill(~negative, -torch.inf)
+        violation = F.relu(neg.amax(1) - pos.amax(1) + .2)
+        return .5 * violation.square().mean()
     if kind == 'two_view_softplus':
         # TRAIN only: two distinct nonself photos of this SKU contribute.
         # Do not force all seven views together or change inference relevance.

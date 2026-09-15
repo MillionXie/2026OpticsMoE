@@ -141,7 +141,7 @@ def test_ranking_nll_preserves_original_and_rejects_invalid_sets():
     pos=torch.tensor([[False,True,True,False]]); exc=torch.tensor([[True,False,False,False]])
     expected=logits.masked_fill(exc,-torch.inf).logsumexp(1)-logits.masked_fill(~pos,-torch.inf).logsumexp(1)
     assert torch.equal(train_ranking_loss(logits,pos,exc),expected.mean())
-    for kind in ['nll','top1_softplus']:
+    for kind in ['nll','top1_softplus','top1_squared_hinge']:
         with pytest.raises(ValueError): train_ranking_loss(logits,torch.zeros_like(pos),exc,kind)
         with pytest.raises(ValueError): train_ranking_loss(logits,~exc,exc,kind)
     with pytest.raises(ValueError): train_ranking_loss(logits,pos,exc,'test_rerank')
@@ -256,6 +256,39 @@ def test_two_view_projection_keeps_training_inputs_and_reference_frozen():
     w=torch.randn(64,384,requires_grad=True); b=torch.zeros(64,requires_grad=True)
     reference=(w.detach().clone(),b.detach().clone())
     loss=projection_loss(w,b,x,y,torch.arange(12),reference,1.,.1,'two_view_softplus')
+    loss.backward()
+    assert torch.isfinite(w.grad).all() and w.grad.norm()>0 and b.grad.norm()>0
+    assert x.grad is None and reference[0].grad is None and reference[1].grad is None
+
+
+def test_squared_hinge_zero_gradient_for_margin_satisfied_queries():
+    logits=torch.tensor([[100.,8.,4.,7.,1.]],requires_grad=True)
+    positive=torch.tensor([[False,True,True,False,False]])
+    excluded=torch.tensor([[True,False,False,False,False]])
+    loss=train_ranking_loss(logits,positive,excluded,'top1_squared_hinge')
+    assert loss.item()==0
+    loss.backward()
+    assert torch.equal(logits.grad,torch.zeros_like(logits))
+
+
+def test_squared_hinge_has_expected_margin_and_nonself_gradients():
+    logits=torch.tensor([[100.,6.,4.,7.,1.]],requires_grad=True)
+    positive=torch.tensor([[False,True,True,False,False]])
+    excluded=torch.tensor([[True,False,False,False,False]])
+    loss=train_ranking_loss(logits,positive,excluded,'top1_squared_hinge')
+    assert torch.allclose(loss,torch.tensor(.72))
+    loss.backward()
+    assert torch.allclose(logits.grad,torch.tensor([[0.,-1.2,0.,1.2,0.]]))
+    stronger=logits.detach().clone(); stronger[0,1]+=1
+    assert train_ranking_loss(stronger,positive,excluded,'top1_squared_hinge')<loss
+
+
+def test_squared_hinge_projection_only_trains_existing_head():
+    torch.manual_seed(53)
+    x=torch.randn(12,384); y=torch.arange(4).repeat_interleave(3)
+    w=torch.randn(64,384,requires_grad=True); b=torch.zeros(64,requires_grad=True)
+    reference=(w.detach().clone(),b.detach().clone())
+    loss=projection_loss(w,b,x,y,torch.arange(12),reference,1.,0.,'top1_squared_hinge')
     loss.backward()
     assert torch.isfinite(w.grad).all() and w.grad.norm()>0 and b.grad.norm()>0
     assert x.grad is None and reference[0].grad is None and reference[1].grad is None
