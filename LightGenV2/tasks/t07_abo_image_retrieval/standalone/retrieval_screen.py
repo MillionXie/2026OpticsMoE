@@ -219,12 +219,18 @@ def checkpoint_history(payload, manifest_sha):
     same_protocol = trained_manifest == manifest_sha
     updated = same_protocol and int(payload.get('epoch', 0)) > 0 and payload.get('variant') != 'initial'
     derived = same_protocol and payload.get('stage') == 'weight_average' and bool(payload.get('derived_from_fitted_checkpoint', False))
-    updated = updated or derived
+    calibration = payload.get('readout_calibration') or {}
+    calibrated = (same_protocol and payload.get('stage') == 'readout_metric_fit'
+        and calibration.get('fitted_on_training_data') is True
+        and calibration.get('method') in ('within_sku_covariance','teacher_ridge','train_mean_center')
+        and int(calibration.get('training_rows',0)) > 0 and float(calibration.get('strength',0)) > 0)
+    updated = updated or derived or calibrated
     selected = same_protocol and bool(payload.get('test_selected', False))
     return dict(fitted_on_this_dataset=updated, test_selected=selected,
         checkpoint_training_manifest_sha256=trained_manifest,
         checkpoint_epoch=payload.get('epoch'), checkpoint_variant=payload.get('variant'),
-        checkpoint_origin=('Weight-averaged current-protocol fitted checkpoints; no new fitting in this command'
+        checkpoint_origin=('Current-protocol TRAIN-statistic readout calibration; zero SGD iterations does not mean unfitted; fixed-weight reevaluation'
+                           if calibrated else 'Weight-averaged current-protocol fitted checkpoints; no new fitting in this command'
                            if derived else 'Current-protocol adaptation; fixed-weight reevaluation, no new fitting in this command'
                            if updated else 'Transferred or initial-fallback checkpoint; no current-protocol weight updates established'),
         history_note='test_selected refers to current protocol; other-dataset training/selection is not ruled out')

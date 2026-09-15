@@ -45,3 +45,16 @@ def test_whitening_rejects_missing_positive_and_degenerate_vectors():
         within_sku_whiten_projection(torch.ones_like(z),y,w,b,.1)
     with pytest.raises(ValueError):
         within_sku_whiten_projection(z.requires_grad_(),y,w,b,.1)
+
+
+def test_closed_form_epoch_zero_is_reported_as_fitted_not_untrained():
+    from LightGenV2.tasks.t07_abo_image_retrieval.standalone.retrieval_screen import checkpoint_history
+    payload=dict(manifest_sha256='abo',epoch=0,variant='metric',stage='readout_metric_fit',test_selected=True,
+        readout_calibration=dict(method='within_sku_covariance',fitted_on_training_data=True,
+                                 training_rows=1600,strength=.02))
+    report=checkpoint_history(payload,'abo')
+    assert report['fitted_on_this_dataset'] and report['test_selected']
+    assert 'TRAIN-statistic' in report['checkpoint_origin']
+    assert not checkpoint_history(payload,'other')['fitted_on_this_dataset']
+    payload['readout_calibration']['strength']=0.
+    assert not checkpoint_history(payload,'abo')['fitted_on_this_dataset']

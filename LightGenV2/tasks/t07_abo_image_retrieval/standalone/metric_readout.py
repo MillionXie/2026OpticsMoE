@@ -678,6 +678,14 @@ def run(args):
         candidate.update(source_commit=identity['source_commit'], epoch=step, variant='metric',
             stage='readout_metric_fit', test_selected=True, manifest_sha256=manifest_sha,
             cached_candidate_only=True, source_checkpoint_sha256=identity['source_checkpoint_sha256'])
+        if whiten_audit or ridge_audit:
+            calibration = whiten_audit or ridge_audit
+            candidate['readout_calibration'] = dict(calibration,
+                fitted_on_training_data=calibration['strength'] > 0,
+                method='within_sku_covariance' if whiten_audit else 'teacher_ridge')
+        elif center_strength:
+            candidate['readout_calibration'] = dict(fitted_on_training_data=True,
+                method='train_mean_center',training_rows=1600,strength=center_strength)
         torch.save(candidate, args.output / name)
 
     try:
