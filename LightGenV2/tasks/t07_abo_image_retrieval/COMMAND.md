@@ -3511,3 +3511,13 @@ CUDA_VISIBLE_DEVICES=GPU-1b963983-7909-af6e-0528-f0f0661ab549 OMP_NUM_THREADS=4 
 scope通过后，从原83%重新初始化做400步/每25步选模，其他配方不改，
 输出`abo200_readout_relu128_20260915`；只保留best/last，不额外逐步保存模型。
 只有完成全量原图、同best去光、TRAIN和分split路由核验的结果才能正式引用。
+
+第105节实际结果：源码9a72315e，本地/服务器各448项测试。scope实际起点83%、两步后82.625%，
+scope_audit.json核验所有非projection张量相同、metadata只改retrieval_head。PID2710938已退出。
+400步正式读出对照最高仍step0=83%，末期82%；TRAIN末期95.375%。PID2715765已退出。
+不采用此新结构，正式候选仍原Linear64的83%权重。以上实验均未达到665/800。
+
+后续只读TRAIN教师审计位于原83%run的`verification/train_teacher_relation_audit.json`：
+学生1518/1600，冻结Qwen教师1349/1600；教师对/学生错23，学生对/教师错192。
+使用相同协议的冻结Qwen64缓存，不读取QUERY标签进行这项分析。
+这说明直接全面蒸馏有冲突风险，尚未启动新的关系蒸馏训练；下一步需实现TRAIN真值一致性门控。
