@@ -3599,3 +3599,31 @@ CUDA_VISIBLE_DEVICES=GPU-1b963983-7909-af6e-0528-f0f0661ab549 OMP_NUM_THREADS=4 
 输出`abo200_readout_consistent_teacher_strong_20260915`，源码仍5e9259e2。
 400步末期82.375%/TRAIN94.5625%，最高仍原83%，PID2806807退出。
 KL下降不等于检索提升；上述方法均未达到665/800，不替换当前正式候选或改变推理部署结构。
+
+## 108. TRAIN教师目标的强正则闭式线性拟合
+
+仅在原83%候选的384维读出输入上拟合：1349个教师同SKU检索正确的TRAIN行，
+先将教师64维向量中心化并用相似变换对齐原读出坐标，再求带ridge的W/b残差更新。
+QUERY不参与目标、对齐或求解。中心平移后不承诺保持教师余弦排名，这不是直接复制Qwen预测。
+所有相位、电子主干、alpha和metadata冻结；最终仍原Linear384→64，无额外推理参数。
+原83%在独立目录保留。以下单次校准不运行SGD；GPU4只用于原BF16/batch4同精度评分。
+
+```bash
+T07=/DATA/DATA1/guest3/2026OpticsMoE/LightGenV2/tasks/t07_abo_image_retrieval
+R=$T07/runs/simulation
+START83=$R/abo200_phase_head_top1_verified_20260915
+START83_SHA=538477e0168c90cb7e0952d7c32ef5f3c4391568839a2865f86a21febf0b27b2
+TEACHER=$R/abo200_enrolled_qwen64_20260913/normal_features.pt
+TEACHER_SHA=c6eb631c268d2446a2f783854c86d8493cdbcaa04c0669148b16d9785016d8d7
+CUDA_VISIBLE_DEVICES=GPU-1b963983-7909-af6e-0528-f0f0661ab549 OMP_NUM_THREADS=4 MKL_NUM_THREADS=4 \
+python -m LightGenV2.tasks.t07_abo_image_retrieval.standalone.metric_readout \
+  --source-run "$START83" --manifest "$R/abo200_enrolled_protocol_20260913/protocol.json" \
+  --data /DATA/DATA1/guest3/2026OpticsMoE/data/abo_similarity10_data \
+  --expected-checkpoint-sha256 "$START83_SHA" --expected-hit .83 --fit-space projection384 \
+  --teacher-cache "$TEACHER" --expected-teacher-sha256 "$TEACHER_SHA" \
+  --teacher-ridge .1 --teacher-ridge-strength .1 --steps 0 --selection-precision cuda_bf16 \
+  --output "$R/abo200_readout_teacher_ridge_20260915"
+```
+
+`execution.json.teacher_ridge`记录TRAIN行数、ridge系数、旋转正交误差、方程残差和参数变化。
+只保存best/last；缓存达到665/800后仍必须按第92节独立从原图复评，不能直接晋升。

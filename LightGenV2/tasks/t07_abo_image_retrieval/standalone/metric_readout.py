@@ -193,7 +193,8 @@ def entropy_matched_teacher_temperature(teacher, reference, eligible):
         fitted_to_test=False, changes_teacher_rankings=False)
 
 
-def load_consistent_teacher(path, expected_sha, rows, manifest_sha, labels, min_margin=0., reference=None):
+def load_consistent_teacher(path, expected_sha, rows, manifest_sha, labels, min_margin=0., reference=None,
+                            return_train_vectors=False):
     if sha256(path) != expected_sha:
         raise ValueError('Teacher cache SHA mismatch')
     report_path = path.parent / 'final_report.json'
@@ -214,12 +215,13 @@ def load_consistent_teacher(path, expected_sha, rows, manifest_sha, labels, min_
     if reference is not None:
         temperature, entropy_audit = entropy_matched_teacher_temperature(train_teacher, reference, eligible)
         targets, eligible = consistent_teacher_targets(train_teacher, labels, min_margin, temperature)
-    return targets, eligible, dict(cache_sha256=expected_sha, report_sha256=sha256(report_path),
+    result = targets, eligible, dict(cache_sha256=expected_sha, report_sha256=sha256(report_path),
         source_commit=report.get('source_commit'), training_rows=n, eligible_rows=int(eligible.sum()),
         min_correct_minus_wrong_margin=min_margin, teacher_temperature=temperature, student_temperature=.1,
         entropy_calibration=entropy_audit, query_excluded=True,
         inference_teacher_required=False, gate='TRAIN best same-SKU cosine > best wrong-SKU cosine + min_margin; self excluded',
         loss='KL(teacher TRAIN-gallery probability || student clean TRAIN-gallery probability), mean over eligible sampled TRAIN rows only; no temperature-square multiplier')
+    return (*result, train_teacher) if return_train_vectors else result
 
 
 def teacher_relation_loss(student, targets, eligible, indices):
@@ -251,6 +253,56 @@ def replace_projection(payload, weight, bias):
             raise ValueError('Existing projection shape mismatch')
         result['state_dict'][key] = value.detach().clone().to(payload['state_dict'][key].dtype)
     return result
+
+
+@torch.no_grad()
+def ridge_teacher_projection(inputs, teacher, eligible, weight, bias, ridge, strength):
+    """TRAIN-only centered Procrustes target + anchored ridge residual fit.
+
+    All fitting is CPU float64. Translation does NOT preserve teacher cosine
+    rankings after L2; this is a regularized training target, not a Qwen replay.
+    The update is folded into the existing W/b; no extra inference operation.
+    """
+    if (inputs.ndim != 2 or inputs.shape[1] != 384 or teacher.shape != (len(inputs),64)
+            or eligible.shape != (len(inputs),) or eligible.dtype != torch.bool
+            or int(eligible.sum()) < 65 or weight.shape != (64,384) or bias.shape != (64,)
+            or not math.isfinite(ridge) or ridge <= 0
+            or not math.isfinite(strength) or not 0 <= strength <= 1
+            or any(t.requires_grad or t.device.type != 'cpu' or not torch.isfinite(t).all()
+                   for t in (inputs,teacher,weight,bias))):
+        raise ValueError('Ridge requires detached finite TRAIN384/teacher64, >=65 eligible rows and valid bounds')
+    x = inputs[eligible].double()
+    t = F.normalize(teacher[eligible].double(), dim=1)
+    old = torch.cat([weight.double().T, bias.double()[None]],0)
+    design = torch.cat([x,torch.ones(len(x),1,dtype=torch.float64)],1)
+    raw = design @ old
+    tc, pc = t-t.mean(0), raw-raw.mean(0)
+    if tc.square().sum() < 1e-12 or pc.square().sum() < 1e-12:
+        raise ValueError('Degenerate centered TRAIN teacher or source features')
+    u, singular, vh = torch.linalg.svd(tc.T @ pc, full_matrices=False)
+    rotation = u @ vh
+    scale = singular.sum() / tc.square().sum()
+    target = scale * tc @ rotation + raw.mean(0)
+    gram = design.T @ design
+    lam = ridge * gram.trace() / gram.shape[0]
+    system = gram + lam * torch.eye(gram.shape[0],dtype=torch.float64)
+    residual = target-raw
+    delta = torch.linalg.solve(system,design.T @ residual)
+    if not torch.isfinite(delta).all():
+        raise ValueError('Nonfinite ridge solution')
+    updated = old + strength * delta
+    audit = dict(training_rows=len(inputs), eligible_rows=len(x), fitted_to_query=False,
+        relative_ridge=ridge, ridge_lambda=float(lam), strength=strength,
+        procrustes_scale=float(scale), rotation_orthogonality_error=float(
+            (rotation.T@rotation-torch.eye(64,dtype=torch.float64)).abs().max()),
+        normal_equation_relative_residual=float((system@delta-design.T@residual).norm()
+            / (design.T@residual).norm().clamp_min(1e-12)),
+        source_target_rmse=float(residual.square().mean().sqrt()),
+        updated_target_rmse=float((target-design@updated).square().mean().sqrt()),
+        parameter_delta_frobenius=float((strength*delta).norm()),
+        extra_inference_parameters=0,
+        recipe='Eligible TRAIN rows only; centered teacher-to-source similarity Procrustes; ridge on residual W and bias; convex-strength parameter update; no QUERY fit')
+    return updated[:-1].T.to(weight.dtype), updated[-1].to(bias.dtype), audit
 
 
 @torch.no_grad()
@@ -407,11 +459,19 @@ def run(args):
     teacher_sha = getattr(args, 'expected_teacher_sha256', None)
     teacher_margin = getattr(args, 'teacher_min_margin', 0.)
     teacher_match_entropy = getattr(args, 'teacher_match_entropy', False)
+    teacher_ridge = getattr(args, 'teacher_ridge', 0.)
+    ridge_strength = getattr(args, 'teacher_ridge_strength', .1)
+    teacher_active = bool(teacher_weight or teacher_ridge)
+    if (not math.isfinite(teacher_ridge) or teacher_ridge < 0
+            or not math.isfinite(ridge_strength) or not 0 <= ridge_strength <= 1
+            or (teacher_ridge and (teacher_weight or teacher_match_entropy or args.steps
+                                  or args.input_dropout or args.sam_rho))):
+        raise ValueError('Closed-form ridge requires nonnegative ridge, strength[0,1], steps0, no SGD KD/dropout/SAM/entropy calibration')
     if (not math.isfinite(teacher_weight) or not 0 <= teacher_weight <= 1
             or not math.isfinite(teacher_margin) or teacher_margin < 0
-            or bool(teacher_weight) != bool(teacher_path) or bool(teacher_weight) != bool(teacher_sha)
+            or teacher_active != bool(teacher_path) or teacher_active != bool(teacher_sha)
             or (teacher_match_entropy and not teacher_weight)
-            or (teacher_weight and (args.fit_space != 'projection384'
+            or (teacher_active and (args.fit_space != 'projection384'
                                    or getattr(args, 'train_center', 0.) or optimizer_kind != 'adam'))):
         raise ValueError('Teacher relations require pinned cache, weight in(0,1], original projection384 Adam, no centering')
     diagonal = args.fit_space == 'diagonal64'
@@ -455,10 +515,14 @@ def run(args):
         raise ValueError('Require 200 training SKUs')
     train_labels = torch.tensor([names.index(r['product_id']) for r in groups['gallery']])
     teacher_audit = None
-    if teacher_weight:
-        teacher_targets, teacher_eligible, teacher_audit = load_consistent_teacher(
+    if teacher_active:
+        teacher_result = load_consistent_teacher(
             teacher_path, teacher_sha, rows, manifest_sha, train_labels, teacher_margin,
-            reference=train_z if teacher_match_entropy else None)
+            reference=train_z if teacher_match_entropy else None,
+            return_train_vectors=bool(teacher_ridge))
+        teacher_targets, teacher_eligible, teacher_audit = teacher_result[:3]
+        if teacher_ridge:
+            train_teacher = teacher_result[3]
     baseline, _ = rank_instances(z, rows)
     if abs(baseline['hit_at_1'] - args.expected_hit) > 1e-9:
         raise ValueError('Cached baseline did not reproduce the expected score')
@@ -489,6 +553,13 @@ def run(args):
             head_reference = [p.detach().clone() for p in parameters]
     else:
         parameters = [matrix]
+    ridge_audit = None
+    if teacher_ridge:
+        fitted_w, fitted_b, ridge_audit = ridge_teacher_projection(train_inputs,train_teacher,
+            teacher_eligible,reference[0],reference[1],teacher_ridge,ridge_strength)
+        with torch.no_grad():
+            weight.copy_(fitted_w)
+            bias.copy_(fitted_b)
     center_strength = getattr(args, 'train_center', 0.)
     if center_strength:
         if not projection:
@@ -512,6 +583,7 @@ def run(args):
         optical_weights_changed=False, training_note='Only TRAIN gallery labels/vectors enter loss; QUERY used for periodic selection')
     identity['selection_precision'] = args.selection_precision
     identity['teacher_relations'] = dict(enabled=bool(teacher_weight), weight=teacher_weight, audit=teacher_audit)
+    identity['teacher_ridge'] = ridge_audit
     identity['fitted_parameter_count'] = sum(p.numel() for p in parameters)
     identity['nonlinear_conversion'] = dict(enabled=nonlinear,
         initialization='First layer [W;-W],[b;-b]; second layer [I,-I],0: algebraically source preserving, finite precision must be evaluated separately',
@@ -521,6 +593,8 @@ def run(args):
         note='g=exp(.1*tanh(raw64)); W_new=g[:,None]*W_source, b_new=g*b_source; no new inference tensor')
     identity['optimizer_recipe'] = dict(kind=optimizer_kind,
         note='Full TRAIN smooth NLL; one quasi-Newton iteration per outer step, strong-Wolfe TRAIN-only line search, history10, constant LR, no gradient clipping; query never enters closure' if optimizer_kind == 'lbfgs' else 'Original minibatch Adam/SAM, cosine LR and gradient norm clip1')
+    if teacher_ridge:
+        identity['optimizer_recipe'] = dict(kind='closed_form_ridge', note=ridge_audit['recipe'])
     identity['train_center'] = dict(strength=center_strength, rows=1600,
         note='Existing bias only: b_new=b-strength*mean_TRAIN(Wx+b), pre L2. QUERY excluded. Zero steps means calibration only, not SGD training.')
     identity['selection_gpu'] = torch.cuda.get_device_name() if args.selection_precision == 'cuda_bf16' else None
@@ -670,10 +744,12 @@ def main():
     p.add_argument('--teacher-weight', type=float, default=0., help='TRAIN-only GT-consistent relation KL weight; zero leaves original training unchanged')
     p.add_argument('--teacher-min-margin', type=float, default=0., help='Teacher same-SKU vs wrong-SKU TRAIN cosine margin must exceed this value; ties rejected')
     p.add_argument('--teacher-match-entropy', action='store_true', help='TRAIN-only temperature calibration matches source-student relation entropy on GT-consistent teacher rows; inference unchanged')
+    p.add_argument('--teacher-ridge', type=float, default=0., help='Positive relative ridge enables TRAIN-only closed-form teacher fitting; requires steps0, pinned teacher, projection384; no SGD KD/dropout/SAM/centering')
+    p.add_argument('--teacher-ridge-strength', type=float, default=.1, help='Fraction [0,1] of closed-form residual parameter update; not prediction ensembling')
     args = p.parse_args()
     if not math.isfinite(args.train_center) or not 0 <= args.train_center <= 1 or (args.train_center and args.fit_space != 'projection384'):
         p.error('TRAIN centering requires strength [0,1] and projection384')
-    if args.steps < 0 or (args.steps == 0 and not args.train_center) or args.eval_every < 1 or not 2 <= args.batch_size <= 1600 or not math.isfinite(args.lr) or args.lr <= 0 or not math.isfinite(args.anchor) or args.anchor < 0:
+    if args.steps < 0 or (args.steps == 0 and not (args.train_center or args.teacher_ridge)) or args.eval_every < 1 or not 2 <= args.batch_size <= 1600 or not math.isfinite(args.lr) or args.lr <= 0 or not math.isfinite(args.anchor) or args.anchor < 0:
         p.error('Invalid training bounds')
     if not math.isfinite(args.input_dropout) or not 0 <= args.input_dropout < 1 or (args.input_dropout and args.fit_space not in ('projection384', 'diagonal64', 'relu128')):
         p.error('Input dropout must be in [0,1), supported only with projection384/diagonal64/relu128')
