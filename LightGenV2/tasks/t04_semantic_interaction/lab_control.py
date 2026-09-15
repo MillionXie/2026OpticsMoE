@@ -64,12 +64,21 @@ def phase_check(owner,hw,H,white,flat,target,folder,reference=None):
     exposure=hw.camera.get('ExposureTime')
     rows=[]; images=[]
     try:
-        hw.camera.set('ExposureTime',150.0)
+        probe_us=float(hw.c.get('phase_probe_exposure_us',150.0))
+        if not 20<=probe_us<=1600:raise ValueError('Probe exposure must be 20..1600 us')
+        hw.camera.set('ExposureTime',probe_us)
         hw.camera_settings=snapshot(hw.camera)
         for i,path in enumerate((flat,target,target)):
             receipt=owner.show(path,sha(path))
             time.sleep(1)
-            im,meta=get_roi(hw,white,H)
+            if hw.c.get('diagnostic_save_sensor',False):
+                import cv2
+                raw,meta=hw.capture(white)
+                Image.fromarray(raw).save(folder/f'{i}_sensor.png')
+                meta['full_sensor_quality']=quality(raw)
+                im=np.rint(np.clip(cv2.warpPerspective(raw.astype(np.float32),H,(478,478)),0,255)).astype(np.uint8)
+            else:
+                im,meta=get_roi(hw,white,H)
             Image.fromarray(im).save(folder/f'{i}.png')
             rows.append(dict(phase=receipt,camera=meta,quality=quality(im)))
             images.append(im)
@@ -113,7 +122,9 @@ def run(a):
         write(out/'status.json',dict(status='starting_sdk',pid=os.getpid()))
         with PhaseOwner(phase_cfg,flat,lens) as owner:
             write(out/'phase_devices.json',dict(phase=owner.info,display=owner.display.audit))
-            with Controller(c) as hw:
+            probe_c=dict(c)
+            if a.action=='probe':probe_c['diagnostic_save_sensor']=True
+            with Controller(probe_c) as hw:
                 _,report=phase_check(owner,hw,H,white,flat,lens,out/'checks/startup')
                 write(out/'devices.json',dict(phase=owner.info,amplitude_camera=hw.info,display=owner.display.audit))
             if a.action=='probe':
