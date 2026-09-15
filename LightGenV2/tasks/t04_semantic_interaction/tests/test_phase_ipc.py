@@ -42,3 +42,21 @@ def test_phase_process_failure_is_not_ack(owner_class):
         with pytest.raises(RuntimeError,match='mock write rejected'):
             owner.show('bad')
     assert owner.process.poll()!=0
+
+
+def test_phase_wait_drains_before_ack_and_after():
+    import threading,time
+    from concurrent.futures import ThreadPoolExecutor
+    from types import SimpleNamespace
+    source=Path(__file__).parents[1]/'lab_control.py'
+    node=next(n for n in ast.parse(source.read_text(encoding='utf-8')).body
+              if isinstance(n,ast.FunctionDef) and n.name=='show_while_draining')
+    ns=dict(ThreadPoolExecutor=ThreadPoolExecutor,time=time,sha=lambda p:'digest')
+    exec(compile(ast.Module(body=[node],type_ignores=[]),str(source),'exec'),ns)
+    drained=threading.Event();counter=[]
+    def grab():counter.append(1);drained.set();time.sleep(.005)
+    def show(path,digest):
+        assert drained.wait(timeout=1),'Camera was not drained during phase wait'
+        return {'test':True}
+    result=ns['show_while_draining'](SimpleNamespace(show=show),SimpleNamespace(camera=SimpleNamespace(grab=grab)),'mask')
+    assert result['camera_drain_during_phase_wait']['frames']==len(counter)>1
