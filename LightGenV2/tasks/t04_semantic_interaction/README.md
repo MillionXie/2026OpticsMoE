@@ -171,3 +171,12 @@ add 0.224、replace 0.336、move 0.650、remove 0.980。该结果没有 LoRA、�
 
 因此该结果满足“物理光 Router、Top-2”的结构要求，但不能宣称四专家完全均衡；D2NN 的
 主指标高 0.95 个百分点。机器可读结果和可视化见 `reports/dc20_comparison/`；其Qwen pending行为早期快照，不代表后来的baseline未运行。
+# 2026-09-15 SHS六层小样本实采状态
+
+师弟电脑`E:\code\guest\2026OpticsMoE\OpenMoji_Lab_SHS_8um`的`pilot01`已完成4条×6层=24张CCD及末端推理。
+六层相位前后物理对照通过；关键控制修正是换相位等待期间持续清理相机过渡帧，保留独立相位SDK进程。
+4条分别为add/replace/move/remove：修改格准确率0.75，整场景0.25；仅流程验证，不是1000test性能。
+固定权重1000test仿真在4060复评为0.8700/0.6880（原归档0.8715/0.6900）。
+语言Expert/Global实采p99约9～10/255，需分层曝光/信噪比复核；没有启动1000条全量。
+证据统一在`runs/hardware/shs_single_pc_20260915/00_查看这里.md`及其`sessions/pilot01/results.json`。
+部署控制源码`1917cda3`，含说明与传输回归测试的完整覆盖包`6ff44e8b`，已同步GitHub。
