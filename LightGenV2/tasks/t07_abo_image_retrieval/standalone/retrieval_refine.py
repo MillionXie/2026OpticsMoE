@@ -24,6 +24,8 @@ PROFILES['sku_capacity_control'] = dict(PROFILES['sku_mild_adamw'], router_lr_mu
 # Training-only: both already encoded views query the detached TRAIN gallery.
 # No extra forward, inference parameters, optical geometry or TEST supervision.
 PROFILES['sku_symmetric_bank'] = dict(PROFILES['sku_capacity_control'], symmetric_bank=True)
+PROFILES['sku_two_view_joint'] = dict(PROFILES['sku_capacity_control'], symmetric_bank=True,
+    ranking_loss='two_view_softplus', supcon_weight=0., positive_weight=0.)
 PROFILES['sku_phase_head'] = dict(PROFILES['sku_capacity_control'],
     phase_head_only=True, readout_input_dropout=.1, head_lr_multiplier=3.)
 PROFILES['sku_phase_head_top1'] = dict(PROFILES['sku_phase_head'],

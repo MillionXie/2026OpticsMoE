@@ -3207,3 +3207,31 @@ CUDA_VISIBLE_DEVICES=GPU-1b963983-7909-af6e-0528-f0f0661ab549 OMP_NUM_THREADS=4 
 ```
 
 仅TRAIN进入梯度，QUERY参与周期选模的偏差仍存在；不能将该对照当成独立测试或新数据划分。
+
+第96节仅读出对照已完成800步，最高仍起点83%，末期82.875%，未晋升；PID2380918退出。
+
+## 97. 原光电主干联合学习两正视图目标
+
+只优化现有读出多轮未提升，接下来让同一目标同时更新原光学和原电子残差。
+`sku_two_view_joint`继承原`sku_capacity_control`，只换TRAIN目标为第96节的两正照片softplus，
+启用两张已有TRAIN视角分别查询完整detached训练图库；SupCon/全正例附加loss权重均0。
+没有扩核、扩宽、额外头或分支；六次10cm、光Top2、478ROI、64D检索输出保持原样。
+Qwen紧凑前端冻结；alpha可在原[.4001,.8]内更新，不把它误写成固定alpha实验。
+原电子dropout、轻微亮度/对比度增强、10% batch噪声/DC及router均衡保留；像素位移/8-bit相位STE不新增。
+
+从原83%权重开始，6轮×100步，lr-scale .05、每25步刷新TRAIN图库，每轮评估live/EMA与TRAIN。
+峰值lr为expert/global .0001、router .0000015、原head .000015、其余原电子 .000005，另有原warm-in/cosine。
+这是联合微调，活动参数约278万，不是此前约98万的相位+头冻结电子对照。
+只保留best/last；沿用初始83%保底。必须监控首轮梯度、相位变化、alpha界限、专家分布及最终去光。
+
+```bash
+CUDA_VISIBLE_DEVICES=GPU-1b963983-7909-af6e-0528-f0f0661ab549 OMP_NUM_THREADS=4 MKL_NUM_THREADS=4 HF_HUB_OFFLINE=1 TRANSFORMERS_OFFLINE=1 python -m LightGenV2.tasks.t07_abo_image_retrieval.standalone.retrieval_adapt \
+  --data /DATA/DATA1/guest3/2026OpticsMoE/data/abo_similarity10_data \
+  --manifest "$R/abo200_enrolled_protocol_20260913/protocol.json" --assets "$R/standalone_assets_20260910" \
+  --checkpoint "$START83/best.pt" --expected-checkpoint-sha256 "$START83_SHA" \
+  --multi-view --refine-profile sku_two_view_joint --lr-scale .05 \
+  --epochs 6 --steps 100 --eval-every 1 --batch-size 4 --bank-batch-size 16 --bank-refresh-steps 25 --seed 42 \
+  --output "$R/abo200_two_view_joint_20260915"
+```
+
+不得在本任务运行期间在线切换其worktree源码。默认只使用一张空闲4090，运行结束确认自己PID释放。

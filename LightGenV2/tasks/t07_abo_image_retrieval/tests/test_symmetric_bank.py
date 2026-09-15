@@ -74,3 +74,27 @@ def test_online_top1_rejects_missing_positive_or_unknown_objective():
     ex[3]=True
     with pytest.raises(ValueError,match='nonself'):
         paired_bank_loss(z,labels,bank,2,bl,ex,symmetric=True,ranking_loss='top1_softplus')
+
+
+def test_two_view_joint_profile_has_no_inference_expansion():
+    p=dict(PROFILES['sku_two_view_joint'])
+    assert p.pop('ranking_loss')=='two_view_softplus'
+    assert p.pop('symmetric_bank') is True and p.pop('supcon_weight')==0
+    assert p['positive_weight']==0
+    p['positive_weight']=.1
+    assert p==PROFILES['sku_capacity_control']
+
+
+def test_two_view_online_both_query_views_match_shared_loss():
+    from torch.nn import functional as F
+    from LightGenV2.tasks.t07_abo_image_retrieval.standalone.retrieval_refine import train_ranking_loss
+    torch.manual_seed(58)
+    z=torch.randn(4,8,requires_grad=True); bank=torch.randn(6,8,requires_grad=True)
+    labels=torch.tensor([0,1,0,1]); bl=torch.tensor([0,0,0,1,1,1])
+    ex=torch.eye(6,dtype=torch.bool)[[0,3,1,4]]
+    sim=F.normalize(z,dim=1)@F.normalize(bank.detach(),dim=1).T/.1
+    expected=train_ranking_loss(sim,labels[:,None].eq(bl[None]),ex,'two_view_softplus')
+    loss,_=paired_bank_loss(z,labels,bank,2,bl,ex,symmetric=True,supcon_weight=0,ranking_loss='two_view_softplus')
+    assert torch.allclose(loss,expected)
+    loss.backward()
+    assert bank.grad is None and (z.grad.norm(dim=1)>0).all() and torch.isfinite(z.grad).all()
