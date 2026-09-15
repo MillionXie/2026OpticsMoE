@@ -60,10 +60,12 @@ def get_roi(hw,bmp,H):
 def phase_check(owner,hw,H,white,flat,target,folder,reference=None):
     """Physical repeated-image test, not mere SDK SHA/return acknowledgement."""
     folder.mkdir(parents=True,exist_ok=True)
+    from capture import snapshot
     exposure=hw.camera.get('ExposureTime')
     rows=[]; images=[]
     try:
         hw.camera.set('ExposureTime',150.0)
+        hw.camera_settings=snapshot(hw.camera)
         for i,path in enumerate((flat,target,target)):
             receipt=owner.show(path,sha(path))
             time.sleep(1)
@@ -83,11 +85,16 @@ def phase_check(owner,hw,H,white,flat,target,folder,reference=None):
         return images[2],report
     finally:
         hw.camera.set('ExposureTime',float(exposure))
+        hw.camera_settings=snapshot(hw.camera)
 
 
 def run(a):
     root=Path(a.project).resolve(); c=bench.config(a.config)
     out=bench.session(root,a.session)
+    if a.action=='auto' and (out/'status.json').exists():
+        prior=read(out/'status.json')
+        if prior.get('status')=='stopped' and list((out/'ccd').rglob('*.record.json')):
+            raise RuntimeError('Stopped session contains CCDs: audit/quarantine suspect last batch before resuming; no automatic acceptance')
     if a.action=='auto' and not out.exists():bench.initialize(a)
     if a.action=='probe':out.mkdir(parents=True,exist_ok=True)
     phase_cfg=read(a.phase_config)
@@ -105,6 +112,7 @@ def run(a):
     try:
         write(out/'status.json',dict(status='starting_sdk',pid=os.getpid()))
         with PhaseOwner(phase_cfg,flat,lens) as owner:
+            write(out/'phase_devices.json',dict(phase=owner.info,display=owner.display.audit))
             with Controller(c) as hw:
                 _,report=phase_check(owner,hw,H,white,flat,lens,out/'checks/startup')
                 write(out/'devices.json',dict(phase=owner.info,amplitude_camera=hw.info,display=owner.display.audit))
