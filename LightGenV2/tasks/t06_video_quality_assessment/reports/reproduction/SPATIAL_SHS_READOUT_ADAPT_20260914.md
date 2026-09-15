@@ -1,6 +1,56 @@
 # Spatial SHS：仅最后电子读出头适配
 
-## 最新：原训练2250 / 测试558，100 epoch完成（2026-09-15）
+## 最新：追加四组训练策略，best SRCC 0.620022，未达到0.64（2026-09-15）
+
+沿用下节完全相同的2250原训练/558原测试实测特征和原始checkpoint。所有四组各100epoch，
+每epoch在完整558条test上比较raw/EMA、按SRCC选best（RMSE同分裁决）。test不反传，但参与epoch与超参数选择，**不是独立最终测试**。
+不重采、不删样本、不改CCD归一化，也不新增网络；只更新原有readout的967458个参数。
+数据、原权重、非readout冻结张量SHA与下节一致。RTX4060单卡顺序执行；完成后训练进程已退出。
+
+| 方案 | LR / batch / L2-SP | 损失(reg/rank/corr) | best轮/状态 | test SRCC | PLCC | RMSE |
+|---|---|---|---|---:|---:|---:|
+| 上一轮 | 1e-5 / 64 / 0.1 | 1 / 0.2 / 0.1 | 19/raw | 0.6172733980 | 0.6452928605 | 8.88392553 |
+| strong_anchor | 1e-5 / 64 / 1 | 1 / 0.2 / 0.1 | 41/EMA | 0.6083081391 | 0.6411158990 | 8.84157453 |
+| large_batch | 1e-5 / 256 / 0.1 | 1 / 0.2 / 0.1 | 37/raw | 0.6182121456 | 0.6459189361 | 8.86024949 |
+| slow_weak_anchor | 3e-6 / 128 / 0.01 | 1 / 0.2 / 0.1 | 90/EMA | 0.6185425359 | 0.6452125124 | 8.82475295 |
+| rank_stratified | 1e-5 / 128 / 0.03 | 0.5 / 1 / 0.5 | **32/EMA** | **0.6200222298** | 0.6415857913 | 8.87796508 |
+
+所有组seed=20260914、EMA=0.98、AdamW weight_decay=1e-4、cosine末LR=初始的0.1、grad clip=1。
+最后一组新增训练集MOS十个分位组交错的batch排列，每epoch每条训练视频恰好出现一次，保留尾batch；
+其他组仍随机打乱。排序/相关性损失并不直接等价于SRCC，实测是否提高仍由完整558条预测决定。
+本轮SRCC增量只有0.0027488317，PLCC反而比上一轮略低，不能称为显著提升或达到0.64；旧best保留。
+训练曲线显示前期改善、后期平台/回落，不能据此断言模型绝对上限，但不支持单纯继续增加epoch。
+
+结果唯一目录：`runs/hardware/spatial_train2250_20260914/readout_tuning064/`。
+各组有launch、100轮history、split、before、results及原始log；实验电脑各组仅保留best/last PT。
+本地下载SRCC最高组的best/last（`rank_stratified/original_train2250_test558/`），其他三组保留小型对照记录。
+最终best SHA256：`37e87189e59dc7aa74374f4863bfd3bd75f6aa98ff179c58b0328c45b8d9cb0d`。
+`independent_comparison.json`独立复算558条指标并检查100轮最大值、划分与冻结身份；
+`checkpoint_replay_check.json`重新加载磁盘PT，严格加载state_dict并回放558条head输入，最大预测差1.52587890625e-5 MOS、SRCC完全一致。
+`selected_download_SHA256.json`为下载核验；曲线在`training_comparison.png`。未覆盖实验包原始固定SHA权重，不能直接覆盖后绕过身份检查。
+
+排序训练源码commit：`cb2c9aa6341dd4de003683b4789a2d38d268a991`，已push GitHub；
+原模型release仍为`d89223b7`，不能把release字段误认作本次适配代码版本。
+builder生成readout-only ZIP并逐文件核验后更新实验电脑；manifest在`readout_update/installed.json`。
+ZIP SHA256：`991d97c010b3161e10f66cd046118858e4fdde8dc91bf776ad025fd570e9fb53`。
+新适配源码SHA256：`59210981114c4a87cc987087ecac496b73a643157639a4247f3250c2118f3326`；前三组的源码SHA256：
+`5fa9b372000719eb62c0d381b00cb3de5c20e9a89e84e6a49ac9967626f05b99`。本地及实验电脑各9项测试通过。
+全部训练与回放为torch2.8.0+cu126、IEEE FP32（CUDA matmul/cuDNN TF32关闭），无需相机或SLM。
+
+排序组完整复现命令（先安装上述代码版本，已存在output会拒绝覆盖；复跑时改成新output）：
+
+```powershell
+Set-Location E:\code\guest\2026OpticsMoE\LGVQ_Spatial_Train_Lab_SHS_8um
+$py = '..\ABO_Lab_SHS_8um\.venv_gpu\Scripts\python.exe'
+$fit = 'sessions\train2250_language_verified_20260915\readout_adaptation'
+$testCache = '..\LGVQ_Spatial_Lab_SHS_8um\sessions\test558_language_verified_20260915\test_readout_cache.pt'
+& $py adapt.py train --cache "$fit\train_readout_cache.pt" --eval-cache $testCache --checkpoint weights\best_checkpoint.pt --output "$fit\tuning064_20260915\rank_stratified" --device cuda --epochs 100 --lr 0.00001 --batch-size 128 --seed 20260914 --anchor 0.03 --ema 0.98 --scope head --reg-weight 0.5 --rank-weight 1.0 --corr-weight 0.5 --batch-order mos_stratified
+```
+
+下一步候选（尚未执行）：原读出头内部的分阶段解冻、仅训练集特征的轻量扰动增强，分别对照，不增加推理网络。
+这些只能作为后续实验方向，不能承诺一定达到0.64；不使用挑选测试样本、测试反传或更改标签来凑指标。
+
+## 上一轮：原训练2250 / 测试558，100 epoch完成（2026-09-15）
 
 正式run：`runs/hardware/spatial_train2250_20260914/readout_final`。
 2250条原训练视频反传，558条原test只用于逐epoch选模、不反传；没有新增验证集，明确不是untouched test。

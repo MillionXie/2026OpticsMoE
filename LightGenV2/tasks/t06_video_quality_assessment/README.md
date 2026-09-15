@@ -4,7 +4,8 @@
 
 2250条原训练视频及558条原测试视频的六层采集已完成，本轮优化不再调用硬件。
 只调整原有readout，所有光学/前置电子张量冻结；每epoch按完整558条test SRCC选best，test不反传，但不是独立最终测试。
-已有学习率/batch/权重约束对照统一放在 `runs/hardware/spatial_train2250_20260914/readout_tuning064/`。
+四组各100轮已完成，SRCC最佳第32轮EMA=0.6200222298（PLCC=0.6415857913），尚未达到0.64；上一轮SRCC=0.6172733980保留。
+所有学习率/batch/权重约束/排序对照统一放在 `runs/hardware/spatial_train2250_20260914/readout_tuning064/`，最佳权重位于其 `rank_stratified/original_train2250_test558/`。
 `adapt.py train` 新增 `--reg-weight / --rank-weight / --corr-weight / --batch-order`，默认仍为原先1/0.2/0.1及随机打乱，保持旧训练行为。
 `mos_stratified`仅按训练集MOS的10个分位组交错排列，每epoch所有训练视频各出现一次，不重采样、不读取测试标签来组batch。
 排序对照配置为 `configs/spatial_measured_readout_rank.json`：100轮、lr1e-5、batch128、L2-SP0.03、EMA0.98、损失权重0.5/1/0.5。
