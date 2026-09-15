@@ -257,6 +257,7 @@ def handoff_export(out,archive):
             shutil.copy2(out/name,dest)
         for name,value in additions.items():
             dest=staged/name;dest.parent.mkdir(parents=True,exist_ok=True);dest.write_bytes(value)
+        write(staged/'SHA256.json',manifest)  # CLI reads identity before exporting.
         for profile in ('meadowlark17','shs8'):
             subprocess.run([sys.executable,'-I',str(staged/'handoff.py'),'export-reference-bmp',
                             '--profile',profile,'--fields','4','--device','cpu'],cwd=staged,check=True)
