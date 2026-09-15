@@ -3369,3 +3369,18 @@ scope/原图/冻结SHA检查全部通过后，若未达目标，再独立从原8
 第99节最后的seed73已完成（source f9d25bff）：live/EMA82.875%，最终原83%/去光76.375%，
 PID2431884已退出。第101节源码c546791f已推GitHub，本地/服务器427项测试通过，
 真实原图scope检查已在GPU4启动；不得在线切换活动worktree源码。
+
+scope检查已完成，最终原83%/去光76.375%、路由合格，PID2437446退出。
+`scope_audit.json`核验last只改四个fusion logit；所有非alpha state和metadata逐值等于原83%，
+best所有张量等于原83%起点。冻结参数初始/最终SHA相等。
+后续3轮正式训练已启动，使用同一已测试源码c546791f：
+
+```bash
+CUDA_VISIBLE_DEVICES=GPU-1b963983-7909-af6e-0528-f0f0661ab549 OMP_NUM_THREADS=4 MKL_NUM_THREADS=4 python -m LightGenV2.tasks.t07_abo_image_retrieval.standalone.retrieval_adapt \
+  --data /DATA/DATA1/guest3/2026OpticsMoE/data/abo_similarity10_data \
+  --manifest "$R/abo200_enrolled_protocol_20260913/protocol.json" --assets "$R/standalone_assets_20260910" \
+  --checkpoint "$START83/best.pt" --expected-checkpoint-sha256 "$START83_SHA" \
+  --multi-view --refine-profile sku_alpha_only --lr-scale 1 \
+  --epochs 3 --steps 20 --eval-every 1 --batch-size 4 --bank-batch-size 16 --bank-refresh-steps 10 --seed 42 \
+  --output "$R/abo200_alpha_only_20260915"
+```
