@@ -9,6 +9,9 @@
 `configs/spatial_measured_partial_test20.json` 定义两个100轮训练策略，固定名单、不按误差筛选视频；
 仍只更新原读出头，光学与前置电子张量冻结，不重新采集。目标0.65优先指446条留出选模指标，达标前不得宣称完成。
 本轮集中到原空间训练run下 `readout_partial_test20/`；结果保存确切身份、反传test数量、原数据SHA、代码SHA和best/last。
+额外训练权重对照在 `configs/spatial_measured_partial_test20_weighted.json`：相同112条适配样本的损失权重为5（原train为1），
+全epoch总权重占比约19.9%；不是加入更多test或重复采样，每条视频仍每epoch一次。回归、排序对和相关性均按权重计算，
+评估始终不加权。`--test-adapt-weight`默认1，非1必须同时显式启用partial-test适配；推理架构不变。
 
 ## 20260915：实测读出头训练策略对照
 

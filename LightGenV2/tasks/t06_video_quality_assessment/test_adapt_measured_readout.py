@@ -1,10 +1,21 @@
 import unittest
 import numpy as np
 from types import SimpleNamespace
-from .adapt_measured_readout import split_indices, metrics, replay_audit, trainable_readout_names, official_partitions, training_order, loss_weights, partial_test_indices
+from .adapt_measured_readout import split_indices, metrics, replay_audit, trainable_readout_names, official_partitions, training_order, loss_weights, partial_test_indices, readout_data_loss
 
 
 class AdaptationTests(unittest.TestCase):
+    def test_weighted_loss_and_gradients(self):
+        try:import torch
+        except (ImportError,OSError) as exc:self.skipTest('Torch runtime unavailable: '+str(exc))
+        p=torch.tensor([-.5,.2,.7,1.5],requires_grad=True);y=torch.tensor([-.8,.5,1.,1.2])
+        plain=readout_data_loss(p,y);ones=readout_data_loss(p,y,sample_weights=torch.ones_like(p))
+        torch.testing.assert_close(plain,ones)
+        weighted=readout_data_loss(p,y,sample_weights=torch.tensor([1.,1.,1.,5.]))
+        self.assertNotAlmostEqual(float(plain.detach()),float(weighted.detach()),places=6)
+        weighted.backward();self.assertTrue(torch.isfinite(p.grad).all())
+        with self.assertRaises(ValueError):readout_data_loss(p,y,sample_weights=torch.tensor([1.,0.,1.,1.]))
+
     def test_partial_test_adaptation_is_fixed_disjoint_and_explicit(self):
         original=np.arange(2250);test=np.arange(2250,2808)
         train,held,adapted=partial_test_indices(original,test,.2,20260914)

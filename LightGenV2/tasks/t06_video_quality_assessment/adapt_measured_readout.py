@@ -130,6 +130,30 @@ def partial_test_indices(original_train, original_test, fraction, seed):
     return np.sort(np.concatenate((original_train,adapted))),holdout,adapted
 
 
+def readout_data_loss(p, y, coefficients=(1.,.2,.1), sample_weights=None):
+    """Optional source/target weighting; no extra inference operation or module."""
+    import torch
+    import torch.nn.functional as F
+    delta=y[:,None]-y[None,:];valid=delta.abs()>.1
+    pair=F.softplus(-torch.sign(delta)*(p[:,None]-p[None,:]))
+    if sample_weights is None:
+        reg=F.smooth_l1_loss(p,y)
+        rank=pair[valid].mean() if valid.any() else p.sum()*0
+        pc=p-p.mean();yc=y-y.mean()
+        corr=1-(pc*yc).sum()/(pc.square().sum().sqrt()*yc.square().sum().sqrt()).clamp_min(1e-6)
+    else:
+        w=sample_weights.to(device=p.device,dtype=p.dtype)
+        if w.shape!=p.shape or not torch.isfinite(w).all() or not (w>0).all():
+            raise ValueError('Sample weights must match predictions and be finite positive')
+        w=w/w.sum()
+        reg=(F.smooth_l1_loss(p,y,reduction='none')*w).sum()
+        pair_w=w[:,None]*w[None,:]
+        rank=(pair[valid]*pair_w[valid]).sum()/pair_w[valid].sum() if valid.any() else p.sum()*0
+        pc=p-(p*w).sum();yc=y-(y*w).sum()
+        corr=1-(pc*yc*w).sum()/((pc.square()*w).sum().sqrt()*(yc.square()*w).sum().sqrt()).clamp_min(1e-6)
+    return coefficients[0]*reg+coefficients[1]*rank+coefficients[2]*corr
+
+
 def extract(a):
     import torch
     from .lab_bench import verified_ccd, identity
@@ -211,10 +235,14 @@ def extract(a):
 
 def train(a):
     import torch
-    import torch.nn.functional as F
     reg_weight,rank_weight,corr_weight=loss_weights(a)
     batch_order=getattr(a,'batch_order','random')
     test_adapt_fraction=float(getattr(a,'test_adapt_fraction',0.))
+    test_adapt_weight=float(getattr(a,'test_adapt_weight',1.))
+    if not np.isfinite(test_adapt_weight) or test_adapt_weight<=0:
+        raise ValueError('Test adaptation weight must be finite and positive')
+    if test_adapt_weight!=1 and not test_adapt_fraction:
+        raise ValueError('Adaptation weighting requires explicit partial-test adaptation')
     if not np.isfinite(test_adapt_fraction) or not 0<=test_adapt_fraction<1:
         raise ValueError('Test adaptation fraction must be in [0,1)')
     if test_adapt_fraction and not getattr(a,'eval_cache',None):
@@ -309,12 +337,10 @@ def train(a):
             for start in range(0,len(order),a.batch_size):
                 idx=order[start:start+a.batch_size]
                 y=(targets[idx].to(a.device)-data['target_mean'])/data['target_std']
-                p=head(*inputs(idx));reg=F.smooth_l1_loss(p,y)
-                delta=y[:,None]-y[None,:];valid=delta.abs()>.1
-                rank=F.softplus(-torch.sign(delta)*(p[:,None]-p[None,:]))[valid].mean() if valid.any() else p.sum()*0
-                pc=p-p.mean();yc=y-y.mean()
-                correlation=1-(pc*yc).sum()/(pc.square().sum().sqrt()*yc.square().sum().sqrt()).clamp_min(1e-6)
-                loss=reg_weight*reg+rank_weight*rank+corr_weight*correlation
+                p=head(*inputs(idx));sample_weights=None
+                if mixed and test_adapt_weight!=1:
+                    sample_weights=torch.tensor(np.where(np.isin(idx,adapted_idx),test_adapt_weight,1.),device=p.device,dtype=p.dtype)
+                loss=readout_data_loss(p,y,(reg_weight,rank_weight,corr_weight),sample_weights)
                 if anchor_strength:
                     loss=loss+anchor_strength*sum((v-anchor[k]).square().sum() for k,v in head.named_parameters() if v.requires_grad)
                 if not torch.isfinite(loss): raise ValueError('Nonfinite loss')
@@ -344,6 +370,7 @@ def train(a):
             merged['state_dict'].update({'readout.'+k:v for k,v in weights.items()})
             if frozen_digest(merged['state_dict'])!=source_frozen:raise ValueError('Frozen parameters changed')
             merged['hardware_adaptation']=dict(arm=tag,epoch=ep,variant=best_variant if label=='best' else 'raw',source_checkpoint_sha256=sha(a.checkpoint),cache_sha256=sha(a.cache),eval_cache_sha256=sha(eval_cache) if official else None,selection_uses_holdout=official or fraction<1,test_samples_in_gradient=len(adapted_idx) if official else None,test_adapt_fraction=test_adapt_fraction,protocol=protocol,split_sha256=sha(folder/'split.json'),independent_test=False,commit=commit,adaptation_source_sha256=sha(__file__))
+            merged['hardware_adaptation']['test_adapt_weight']=test_adapt_weight
             torch.save(merged,folder/(label+'_checkpoint.pt'))
         changed=[k for k,v in best_state.items() if not torch.equal(v,initial[k])]
         result=dict(arm=tag,best_epoch=best_epoch,best_variant=best_variant,scope=scope,trainable_names=sorted(allowed),trainable_parameters=sum(v.numel() for v in head.parameters() if v.requires_grad),before=base_metrics,after=best_metrics,changed_readout_tensors=changed,
@@ -363,6 +390,7 @@ def main():
     t=sub.add_parser('train');t.add_argument('--cache',required=True);t.add_argument('--checkpoint',required=True)
     t.add_argument('--eval-cache',help='Original 558-video test cache; no test backpropagation unless explicit --test-adapt-fraction is positive')
     t.add_argument('--test-adapt-fraction',type=float,default=0.,help='Explicitly repurpose a fixed random fraction of original test for deployment adaptation; select on remaining holdout and label full-test results as mixed')
+    t.add_argument('--test-adapt-weight',type=float,default=1.,help='Training loss weight of the explicitly repurposed test subset; holdout never weighted or trained')
     t.add_argument('--epochs',type=int,default=100);t.add_argument('--lr',type=float,default=1e-4)
     t.add_argument('--batch-size',type=int,default=32);t.add_argument('--seed',type=int,default=20260914)
     t.add_argument('--train-fraction',type=float,choices=[.8,1.],default=None)

@@ -1,0 +1,16 @@
+{
+  "description": "Same fixed 112 adaptation / 446 holdout identities; 5x weight for adaptation samples in regression/ranking/correlation losses, not evaluation",
+  "test_adapt_fraction": 0.2,
+  "test_adapt_weight": 5.0,
+  "epochs": 100,
+  "lr": 0.00001,
+  "batch_size": 128,
+  "seed": 20260914,
+  "anchor": 0.1,
+  "ema": 0.98,
+  "scope": "head",
+  "reg_weight": 1.0,
+  "rank_weight": 0.5,
+  "corr_weight": 0.3,
+  "batch_order": "mos_stratified"
+}
