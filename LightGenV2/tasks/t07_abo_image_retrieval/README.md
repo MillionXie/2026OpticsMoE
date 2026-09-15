@@ -103,7 +103,7 @@ metadata只改retrieval_head；PID2710938退出。随后`abo200_readout_relu128_
 `verification/train_teacher_relation_audit.json`只分析1600张TRAIN、自图排除：
 学生1518正确，冻结Qwen64教师1349正确；教师对/学生错23张，学生对/教师错192张。
 教师cache为`abo200_enrolled_qwen64_20260913/normal_features.pt`，SHA
-`c6eb631c268d2446a2f783854c86d8493cdbcaa04c06699148b16d9785016d8d7`，协议与当前完全一致。
+`c6eb631c268d2446a2f783854c86d8493cdbcaa04c0669148b16d9785016d8d7`，协议与当前完全一致。
 证据不支持直接用教师替换真值；若继续蒸馏，应限定TRAIN真值一致的教师关系且使用弱约束，
 QUERY不参与训练。这里只是已完成审计与下一方向，不是已经运行该蒸馏实验。
 
