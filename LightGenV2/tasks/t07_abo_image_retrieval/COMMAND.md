@@ -3101,3 +3101,42 @@ CUDA_VISIBLE_DEVICES=GPU-1b963983-7909-af6e-0528-f0f0661ab549 OMP_NUM_THREADS=4 
   --epochs 3 --steps 20 --eval-every 1 --batch-size 4 --bank-batch-size 16 --seed 42 \
   --output "$R/abo200_phase_head_after83_20260915"
 ```
+
+相位组进行期间，补充一个CPU收尾对照：仅将上面读出命令的`--input-dropout .1`改`0`，
+output改`abo200_readout_after83_nodrop_20260915`，其他设置及原83%起点不变。
+实际800步完成，选回step0；TRAIN缓存约94.75%→95.75%，TEST缓存82.875%→81.875%，不采用。
+没有把训练集改善解释成泛化改善；PID2349563退出，不为相同起点重复占GPU评估。
+
+再补充训练读出dropout=.2对照：同一CPU命令只改`--input-dropout .2`，
+output为`abo200_readout_after83_dropout20_20260915`。800步完成，缓存最高仍82.875%、末期82.50%；
+没有明显收益，保留完整history，不把更大正则化默认认定为有效。PID2351547已退出。
+
+原dropout=.1配方另做预先固定seed17/73（非集成），output分别为
+`abo200_readout_after83_seed17_20260915`和`abo200_readout_after83_seed73_20260915`。
+两组800步均未超过step0缓存82.875%，停止该配方种子重复；不把较低结果隐去。
+
+3轮相位组已完整结束：第1轮live82.375%/EMA82.75%，第2轮均82.50%，
+最终best选回epoch0原83%（同权重去光76.375%）；冻结SHA通过，PID2344101退出释放GPU。
+这不是新增83%训练收益，不替换第92节的538477e0原权重。
+
+## 94. 原读出SAM平坦化对照（无新增推理层）
+
+第93节的关闭dropout、增加dropout及两种子复核没有提升。这里保持83%起点、原Linear和TRAIN-only数据，
+只将CPU优化改成已有SAM+Adam：第一次反传后在原head weight/bias上沿梯度做L2半径.01扰动，
+第二次反传使用相同TRAIN batch、相同dropout；恢复权重后裁剪梯度并Adam更新。
+异常时也恢复。默认`--sam-rho 0`逐值保持旧Adam更新及随机数状态，单元测试覆盖。
+冻结全部前端/电子残差/光学相位/alpha，不向checkpoint增加任何推理模块；原8-bit导出/光路不变。
+每个记录点附SAM loss gap/gradient norm，仅训练诊断，不是测试指标。先运行同一个800步、固定seed42对照。
+
+```bash
+CUDA_VISIBLE_DEVICES='' OMP_NUM_THREADS=4 MKL_NUM_THREADS=4 python -m LightGenV2.tasks.t07_abo_image_retrieval.standalone.metric_readout \
+  --source-run "$START83" --manifest "$R/abo200_enrolled_protocol_20260913/protocol.json" \
+  --data /DATA/DATA1/guest3/2026OpticsMoE/data/abo_similarity10_data \
+  --expected-checkpoint-sha256 "$START83_SHA" --expected-hit .83 \
+  --fit-space projection384 --ranking-loss top1_softplus --input-dropout .1 \
+  --steps 800 --eval-every 50 --batch-size 128 --lr .000025 --anchor 1 --seed 42 --sam-rho .01 \
+  --output "$R/abo200_readout_sam_after83_20260915"
+```
+
+必须先通过本地/服务器回归并推GitHub，再在无活跃任务的worktree切换新commit执行。
+新候选仍需原图正常/同权重去光复评、逐张量保护与TRAIN/路由审计；缓存分数不代表达标。

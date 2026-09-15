@@ -4,7 +4,7 @@ import torch
 from torch.nn import functional as F
 from LightGenV2.tasks.t07_abo_image_retrieval.standalone.metric_readout import (
     fold_metric, metric_loss, validate_cache, replace_projection,
-    projection_loss, validate_projection_cache, train_ranking_loss)
+    projection_loss, validate_projection_cache, train_ranking_loss, fit_step)
 
 
 def test_fold_preserves_exact_algebra_and_all_other_tensors():
@@ -169,3 +169,51 @@ def test_hybrid_is_fixed_equal_mixture_with_no_self_gradient():
     hybrid.backward()
     assert torch.isfinite(logits.grad).all() and logits.grad[0,0]==0
     assert logits.grad[0,1]<0 and logits.grad[0,2]<0 and logits.grad[0,3]>0
+
+
+def test_fit_step_zero_sam_exactly_preserves_adam_and_random_stream():
+    torch.manual_seed(41)
+    x=torch.randn(8,384); y=torch.arange(4).repeat_interleave(2); idx=torch.arange(8)
+    w=torch.nn.Parameter(torch.randn(64,384)); b=torch.nn.Parameter(torch.zeros(64))
+    ref=(w.detach().clone(),b.detach().clone())
+    w2=torch.nn.Parameter(w.detach().clone()); b2=torch.nn.Parameter(b.detach().clone())
+    old=torch.optim.Adam([w,b],lr=.0001); new=torch.optim.Adam([w2,b2],lr=.0001)
+    rng=torch.get_rng_state()
+    old.zero_grad(set_to_none=True)
+    expected=projection_loss(w,b,x,y,idx,ref,1.,.1,'top1_softplus')
+    expected.backward(); torch.nn.utils.clip_grad_norm_([w,b],1.,error_if_nonfinite=True); old.step()
+    expected_rng=torch.get_rng_state()
+    torch.set_rng_state(rng)
+    loss,audit=fit_step(lambda:projection_loss(w2,b2,x,y,idx,ref,1.,.1,'top1_softplus'),new,[w2,b2])
+    assert torch.equal(loss,expected.detach()) and torch.equal(w,w2) and torch.equal(b,b2)
+    assert torch.equal(torch.get_rng_state(),expected_rng) and audit['rho']==0
+
+
+def test_fit_step_sam_replays_dropout_and_keeps_inputs_frozen():
+    torch.manual_seed(43)
+    x=torch.randn(8,384); x0=x.clone(); y=torch.arange(4).repeat_interleave(2); idx=torch.arange(8)
+    w=torch.nn.Parameter(torch.randn(64,384)); b=torch.nn.Parameter(torch.zeros(64))
+    ref=(w.detach().clone(),b.detach().clone()); states=[]
+    optimizer=torch.optim.Adam([w,b],lr=.0001)
+    def closure():
+        states.append(torch.get_rng_state().clone())
+        return projection_loss(w,b,x,y,idx,ref,1.,.1,'top1_softplus')
+    loss,audit=fit_step(closure,optimizer,[w,b],.01)
+    assert len(states)==2 and torch.equal(states[0],states[1])
+    assert torch.isfinite(loss) and audit['rho']==.01 and audit['gradient_norm']>0
+    assert torch.equal(x,x0) and x.grad is None and ref[0].grad is None
+    assert not torch.equal(w,ref[0]) and torch.isfinite(w).all()
+
+
+def test_fit_step_sam_exception_restores_head_and_does_not_step():
+    w=torch.nn.Parameter(torch.randn(3)); initial=w.detach().clone(); count=0
+    optimizer=torch.optim.Adam([w],lr=.001)
+    def closure():
+        nonlocal count
+        count+=1
+        if count==2:
+            raise RuntimeError('second-pass failure')
+        return w.square().sum()
+    with pytest.raises(RuntimeError,match='second-pass failure'):
+        fit_step(closure,optimizer,[w],.01)
+    assert torch.equal(w,initial) and not optimizer.state

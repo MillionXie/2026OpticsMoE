@@ -18,6 +18,19 @@ from torch.nn import functional as F
 from .io import sha256, source_commit, write_json
 from .retrieval_screen import load_screen, rank_instances, split_routing_report
 from .retrieval_refine import train_ranking_loss
+from .generalization import backward_with_sam
+
+
+def fit_step(loss_closure, optimizer, parameters, sam_rho=0.):
+    """TRAIN-only update; SAM replays dropout and restores weights before Adam.
+
+    Uses the task's existing SAM implementation. Nothing is added to the saved
+    model, and detached TRAIN inputs/anchor references remain outside optimizer.
+    """
+    result, sam = backward_with_sam(lambda: dict(loss=loss_closure()), optimizer, sam_rho)
+    norm = torch.nn.utils.clip_grad_norm_(parameters, 1., error_if_nonfinite=True)
+    optimizer.step()
+    return result['loss'].detach(), dict(sam, gradient_norm=float(norm))
 
 
 def fold_metric(payload, matrix):
@@ -182,6 +195,8 @@ def run(args):
         'top1_softplus': 'softplus((nearest_wrong_cosine-nearest_correct_cosine+.02)/.1), mean over TRAIN queries, self excluded',
         'hybrid_nll_top1': 'Fixed .5 original multi-positive NLL + .5 nearest-SKU softplus, temperature .1, top1 cosine margin .02; TRAIN self excluded',
     }[args.ranking_loss]
+    identity['sam'] = dict(rho=args.sam_rho,
+        note='TRAIN-only existing SAM; same sampled indices and dropout in both passes; restore before Adam; no inference changes')
     write_json(args.output / 'execution.json', identity)
     status = dict(status='running', pid=os.getpid(), source_commit=identity['source_commit'])
     history, best_score = [], (-1., -1.)
@@ -200,12 +215,10 @@ def run(args):
             if step:
                 optimizer.param_groups[0]['lr'] = args.lr * (.1 + .9 * .5 * (1 + math.cos(math.pi * step / args.steps)))
                 idx = torch.randperm(1600)[:args.batch_size]
-                optimizer.zero_grad(set_to_none=True)
-                loss = (projection_loss(weight, bias, train_inputs, train_labels, idx, reference, args.anchor, args.input_dropout, args.ranking_loss)
-                        if projection else metric_loss(matrix, train_z, train_labels, idx, args.anchor))
-                loss.backward()
-                torch.nn.utils.clip_grad_norm_(parameters, 1., error_if_nonfinite=True)
-                optimizer.step()
+                def loss_closure():
+                    return (projection_loss(weight, bias, train_inputs, train_labels, idx, reference, args.anchor, args.input_dropout, args.ranking_loss)
+                            if projection else metric_loss(matrix, train_z, train_labels, idx, args.anchor))
+                loss, step_audit = fit_step(loss_closure, optimizer, parameters, args.sam_rho)
             if step % args.eval_every == 0 or step == args.steps:
                 with torch.no_grad():
                     vectors = (F.normalize(F.linear(input_vectors, weight, bias), dim=-1)
@@ -219,6 +232,7 @@ def run(args):
                     parameter_delta_frobenius=(float(torch.sqrt((weight.detach()-reference[0]).square().sum()+(bias.detach()-reference[1]).square().sum()))
                         if projection else float((matrix.detach()-torch.eye(64)).norm())),
                     loss=float(loss.detach()) if step else None)
+                entry['optimizer_audit'] = step_audit if step else None
                 score = (metrics['hit_at_1'], metrics['map_at_10'])
                 if score > best_score:
                     best_score, best_matrix = score, matrix.detach().clone()
@@ -266,6 +280,7 @@ def main():
     p.add_argument('--batch-size', type=int, default=128)
     p.add_argument('--lr', type=float, default=.001)
     p.add_argument('--anchor', type=float, default=1.)
+    p.add_argument('--sam-rho', type=float, default=0., help='TRAIN-only SAM radius on existing fitted head; zero preserves ordinary Adam')
     p.add_argument('--seed', type=int, default=42)
     args = p.parse_args()
     if args.steps < 1 or args.eval_every < 1 or not 2 <= args.batch_size <= 1600 or not math.isfinite(args.lr) or args.lr <= 0 or not math.isfinite(args.anchor) or args.anchor < 0:
@@ -274,6 +289,8 @@ def main():
         p.error('Input dropout must be in [0,1), supported only with projection384')
     if args.ranking_loss != 'nll' and args.fit_space != 'projection384':
         p.error('Alternative ranking loss requires projection384')
+    if not math.isfinite(args.sam_rho) or args.sam_rho < 0:
+        p.error('SAM radius must be finite and nonnegative')
     run(args)
 
 
