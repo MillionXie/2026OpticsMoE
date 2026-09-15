@@ -15,8 +15,8 @@
 
 - 时间：`results.json`，SRCC **0.7977138739203681**，PLCC **0.8091420695614706**；558条测试视频、210幅CCD。本地 `measured_data/ccd/` 可直接看。
 - 空间训练：`train2250_six_stage_results.json`，训练集SRCC **0.7483952940287332**，PLCC **0.7760516566063294**。这不是测试集结果，也不是微调后的结果。
-- 空间测试修复：`test558_repair_progress.json`；完成后才有 `repaired_results.json`。原 `results.json` 对应旧采集，语言相位存在异常疑点，不能用它评价新微调模型。
-- 空间微调：训练run的 `readout_progress.json`、`readout_finetune.log`；完成后 `readout_final/original_train2250_test558/results.json`、`best_checkpoint.pt`、`last_checkpoint.pt`。
+- 空间测试修复：已完成六层558条；`repaired_results.json`是统一FP32的新结果。原 `results.json` 对应旧采集，不用于评价新微调模型。
+- 空间微调：100轮已完成，第19轮best，test SRCC **0.6172733980**、PLCC **0.6452928605**。位置为训练run下 `readout_final/original_train2250_test558/`，包含结果、best和last；完整协议见[读出微调报告](SPATIAL_SHS_READOUT_ADAPT_20260914.md)。实时/下载状态看 `readout_progress.json`。
 - 显著性：`full01_retry01/results.json` 是5000图全量结果，CC **0.8597739692151547**，对应仿真CC **0.8624925081777596**；`pilot01`不是论文成绩。
 
 ## 微调和硬件边界

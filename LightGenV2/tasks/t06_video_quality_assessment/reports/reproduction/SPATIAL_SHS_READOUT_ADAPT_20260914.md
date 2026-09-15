@@ -1,5 +1,39 @@
 # Spatial SHS：仅最后电子读出头适配
 
+## 最新：原训练2250 / 测试558，100 epoch完成（2026-09-15）
+
+正式run：`runs/hardware/spatial_train2250_20260914/readout_final`。
+2250条原训练视频反传，558条原test只用于逐epoch选模、不反传；没有新增验证集，明确不是untouched test。
+测试数据会话 `test558_language_verified_20260915`：保留视觉三层，三个语言阶段重采并通过采前/采后光场检查及文件审计。
+最后一层558/558，采后PCC=0.9909695977。全部采集在11:12完成，硬件已释放。
+
+| 558条test指标 | 微调前（统一FP32） | best（第19轮，raw） |
+|---|---:|---:|
+| SRCC | 0.5785539874874497 | 0.6172733980275069 |
+| PLCC | 0.6152875846288357 | 0.6452928605479216 |
+| RMSE | 8.937013012683929 | 8.88392553087357 |
+| MAE | 7.207465527305466 | 7.122434592161555 |
+
+SRCC绝对增加0.03871941，但仍未达到仿真约0.6710。训练集best SRCC=0.84512004，不能当作test成绩。
+只更新原有readout的967458参数，不加网络；非readout权重SHA核验保持不变。
+100 epoch均完成，AdamW lr=1e-5、batch=64、seed=20260914、L2-SP=0.1、EMA=0.98；best是raw分支而非EMA。
+损失为SmoothL1+0.2排序+0.1相关性，cosine学习率；完整命令及环境在 `readout_final/launch.json`。
+环境：RTX4060，torch2.8.0+cu126。保留best与last两个完整checkpoint及100轮history和逐视频预测。
+
+训练前曾因默认TF32评估和IEEE FP32特征重放不一致而停止（SRCC差0.00015219）。
+修复方式是重新用同一FP32设置评估并提取，而非放宽检查阈值或修改CCD；旧结果与失败审计保留在测试会话 `precision_alignment_evidence/`。
+任务release commit为`d89223b7`，采集runtime更新和本地协调来源分别记录在run安装清单及阶段report中；FP32恢复命令为哈希记录的run artifact，不改变模型源码。
+
+- 原权重SHA256：`95e12397ccf8c960fa30ba9dfb400b69d2c2ebd02288ac6a4879870ab592828b`。
+- 新best SHA256：`dbde77832b34a6475198ea00dec9e857aa696e6c1b2bb74057a5a881d57116ba`。
+- 训练缓存SHA256：`968e0e5445fb67198ef30c871631877ac458210987c754770f2681630f54955b`。
+- 测试缓存SHA256：`82079950bc19c3e9d333beb626c07d06510138471ebcc7ccef3d39ea115726a2`。
+
+本地 `readout_final/independent_result_check.json` 为全部558条逐视频预测的独立SciPy指标复算；
+`download_SHA256.json`为下载校验，`original_train2250_test558/split.json`记录训练/测试身份与0条test反传。
+
+## 以下为历史的test自身适配诊断，不与上述2250训练协议混用
+
 运行：`runs/hardware/spatial_readout_adapt_20260914/adaptation`，源码commit `e0cd757c`。
 服务器位于 `/DATA/DATA1/guest3/2026OpticsMoE/LightGenV2/tasks/t06_video_quality_assessment/` 下同一run相对目录。
 原实测为 `spatial_lang1600_20260914`，558条视频、六层CCD全部回填；没有挑选或删样本。
