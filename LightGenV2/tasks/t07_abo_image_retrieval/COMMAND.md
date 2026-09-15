@@ -3385,7 +3385,9 @@ CUDA_VISIBLE_DEVICES=GPU-1b963983-7909-af6e-0528-f0f0661ab549 OMP_NUM_THREADS=4 
   --output "$R/abo200_alpha_only_20260915"
 ```
 
-## 102. 完整TRAIN的L-BFGS原读出优化（待当前alpha任务结束）
+第101节3轮×20步已完成：最终仍选原83%/去光76.375%，其他参数SHA不变；PID2458206已退出。
+
+## 102. 完整TRAIN的L-BFGS原读出优化（已完成，无新提升）
 
 此前随机小批次Adam/SAM、多种排序损失及bias校准没有超过83%。此对照只改优化方式：
 原384→64 Linear的W/b使用完整1600张TRAIN，非自身同SKU7张正例的平滑NLL，原锚定权重1。
@@ -3410,3 +3412,33 @@ CUDA_VISIBLE_DEVICES=GPU-1b963983-7909-af6e-0528-f0f0661ab549 OMP_NUM_THREADS=4 
 
 默认仍Adam原路径；LBFGS模式拒绝非完整batch、非平滑排序loss和随机dropout/SAM，
 不与当前GPU训练重叠启动。候选必须独立原图复评达标后才可替换原83%引用。
+
+实际20步完成，源码f09de056、本地/服务器431项测试；最好step0=83%，末期81.50%。
+TRAIN自图排除94.875%→95.4375%，说明训练拟合变好而TEST未改善。PID2522705已退出。
+
+## 103. TRAIN同商品双照片轻量混合（推理结构不变）
+
+`sku_phase_head_viewblend`继承原相位+Linear top1配方；每张TRAIN图30%概率混入配对同SKU
+另一张照片的5%–15%。图像仍含至少85%原图；这是重影式正则增强，不是物理渲染的新视角。
+混合来源必须为TRAIN中不同sample_id和image_path；图库loss排除两张来源（剩6张同SKU正例），
+不混合时仅排除自身（剩7张）。QUERY不参与生成，测试/图库评估均使用原图。
+增强在优化闭包外生成一次，SAM回放不改变输入；history记录实际混合数/次图权重范围。
+仅原12相位+384→64 Linear W/b可训练；不增加推理参数，不更改六次10cm/Top2/alpha。
+
+先执行1轮2步scope检查（确保前面任务已退出，GPU4仍空闲）：
+
+```bash
+START83="$R/abo200_phase_head_top1_verified_20260915"
+START83_SHA=$(sha256sum "$START83/best.pt" | cut -d ' ' -f1)
+CUDA_VISIBLE_DEVICES=GPU-1b963983-7909-af6e-0528-f0f0661ab549 OMP_NUM_THREADS=4 MKL_NUM_THREADS=4 python -m LightGenV2.tasks.t07_abo_image_retrieval.standalone.retrieval_adapt \
+  --data /DATA/DATA1/guest3/2026OpticsMoE/data/abo_similarity10_data \
+  --manifest "$R/abo200_enrolled_protocol_20260913/protocol.json" --assets "$R/standalone_assets_20260910" \
+  --checkpoint "$START83/best.pt" --expected-checkpoint-sha256 "$START83_SHA" \
+  --multi-view --refine-profile sku_phase_head_viewblend --lr-scale .025 \
+  --epochs 1 --steps 2 --eval-every 1 --batch-size 4 --bank-batch-size 16 --seed 42 \
+  --output "$R/abo200_phase_head_viewblend_scope_20260915"
+```
+
+scope通过且未达目标时，从同一原83%重新做3轮×50步，`--bank-refresh-steps 25`，
+输出`abo200_phase_head_viewblend_20260915`；不是从scope的last接力。不得重复覆盖已存在run。
+每轮完整TRAIN/TEST/live/EMA，保持原83%保底；候选达到665/800后再完整原图独立复评。

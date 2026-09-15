@@ -31,6 +31,8 @@ PROFILES['sku_phase_head'] = dict(PROFILES['sku_capacity_control'],
 PROFILES['sku_phase_head_top1'] = dict(PROFILES['sku_phase_head'],
     ranking_loss='top1_softplus', symmetric_bank=True,
     supcon_weight=0., positive_weight=0.)
+PROFILES['sku_phase_head_viewblend'] = dict(PROFILES['sku_phase_head_top1'],
+    same_sku_blend_probability=.3, same_sku_blend_range=(.05, .15))
 PROFILES['sku_alpha_only'] = dict(PROFILES['sku_capacity_control'],
     alpha_only=True, alpha_lr_multiplier=100., noise_probability=0.,
     ranking_loss='top1_softplus', symmetric_bank=True,
@@ -48,6 +50,54 @@ PROFILES['sku_conv_teacher'] = dict(PROFILES['sku_capacity_control'],
 PROFILES['sku_spatial_readout'] = dict(PROFILES['sku_capacity_control'], head_expansion='spatial2x2_64')
 PROFILES['sku_fullfield_language'] = dict(PROFILES['sku_capacity_control'],
     ccd_readout_modes=dict(vision='prefix_rows',language='fullfield_rows'))
+
+
+def blend_train_pairs(images, rows, count, rng, probability=.3, weight_range=(.05, .15)):
+    """Mild TRAIN-only same-SKU pixel blend; not a rendered physical new view.
+
+    Returns per-query source identities for exclusion from the detached TRAIN
+    gallery. Prepare once outside optimizer closures, including SAM replay.
+    No input image/row is mutated; probability zero consumes no RNG.
+    """
+    import math
+    from PIL import Image
+    low, high = weight_range
+    if (not math.isfinite(probability) or not 0 <= probability <= 1
+            or not 0 < low <= high < .5 or count < 2
+            or len(rows) != 2 * count or len(images) != len(rows)):
+        raise ValueError('Invalid TRAIN pair blend configuration')
+    for i, row in enumerate(rows):
+        partner = rows[(i + count) % len(rows)]
+        for r in (row, partner):
+            if not (r['split'] == 'train' or
+                    (r['split'] == 'gallery' and r.get('source_split') == 'train')):
+                raise ValueError('Blend requires TRAIN-only source photos')
+        if (row['product_id'] != partner['product_id']
+                or row['sample_id'] == partner['sample_id']
+                or row['image_path'] == partner['image_path']):
+            raise ValueError('Blend needs two distinct photos of the same SKU')
+        other = images[(i + count) % len(rows)]
+        if images[i].size != other.size or images[i].mode != other.mode:
+            raise ValueError('Blend image size/mode mismatch')
+    output, sources, weights = [], [], []
+    for i, (im, row) in enumerate(zip(images, rows)):
+        j = (i + count) % len(rows)
+        weight = rng.uniform(low, high) if probability and rng.random() < probability else 0.
+        output.append(Image.blend(im, images[j], weight) if weight else im)
+        sources.append((row['sample_id'], rows[j]['sample_id']) if weight else (row['sample_id'],))
+        weights.append(weight)
+    return output, sources, weights
+
+
+def training_source_exclusion(sources, gallery_ids, device=None):
+    """Exclude every image used to construct a TRAIN query, not only its label."""
+    if not sources or len(set(gallery_ids)) != len(gallery_ids):
+        raise ValueError('Invalid TRAIN gallery/source identities')
+    known = set(gallery_ids)
+    if any(not s or len(set(s)) != len(s) or not set(s) <= known for s in sources):
+        raise ValueError('TRAIN source missing from gallery or repeated')
+    return torch.tensor([[sid in source for sid in gallery_ids] for source in sources],
+                        dtype=torch.bool, device=device)
 
 
 def prepare_capacity_payload(payload, profile, protocol, fresh=False):

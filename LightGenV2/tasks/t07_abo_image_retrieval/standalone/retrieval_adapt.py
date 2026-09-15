@@ -28,7 +28,7 @@ from .retrieval_refine import (PROFILES, validate_continuation, route_objective,
     optical_parameter, set_parameter_scope, update_trainable_ema, non_optical_digest,
     prepare_capacity_payload, optical_curriculum_scope, learning_rate_multiplier,
     configure_phase_head_scope, attach_train_readout_dropout, train_ranking_loss,
-    configure_alpha_scope, frozen_except_alpha_digest)
+    configure_alpha_scope, frozen_except_alpha_digest, blend_train_pairs, training_source_exclusion)
 from .enrolled_regularization import load_external_pool, load_external_relations, augment_whole_object, curriculum_epoch, curriculum_loss_weights, fitting_bank_diagnostics
 from .generalization import backward_with_sam
 
@@ -276,6 +276,10 @@ def run(args):
     optical_only = profile.get('optical_only', False)
     phase_head_only = profile.get('phase_head_only', False)
     alpha_only = profile.get('alpha_only', False)
+    view_blend = profile.get('same_sku_blend_probability', 0.)
+    if view_blend and (not phase_head_only or not profile.get('symmetric_bank')
+            or profile.get('teacher_weight') or profile.get('supcon_weight') or profile.get('positive_weight')):
+        raise ValueError('View blend requires isolated phase/head symmetric TRAIN ranking')
     if alpha_only and (phase_head_only or optical_only or profile.get('warmup')
             or getattr(args, 'external_pretrain_epochs', 0) or args.fresh_trainable
             or not args.multi_view or protocol['protocol'] != 'abo200_enrolled_sku_hash8train4query_v1'
@@ -368,6 +372,9 @@ def run(args):
         curriculum_note='Continue verified current-protocol best -> external instance pretraining (last state, no TEST selection) -> target fine-tune. Initial best retained; not from-scratch pretraining' if external_fit else None,
         noise=f"Original metadata noise on {profile.get('noise_probability', .25):.0%} joint-training batches; refined profiles keep router noise disabled. Warmup clean. No pixel shift/k filter/8bit STE; clean evaluation",
         augmentation=('Brightness/contrast .95..1.05 only; no geometric augmentation or blur' if profile.get('mild_augmentation') else 'Whole-object .85..1 scale into white canvas, bounded placement, brightness/contrast .85..1.15,15% mild blur; no crop/flip') if regularized else 'Whole-object contain_white; brightness/contrast .9..1.1; no crop/rotation/flip',
+        same_sku_view_blend=(dict(probability=view_blend, secondary_weight_range=profile['same_sku_blend_range'],
+            sources='Two distinct TRAIN photos of identical SKU; both excluded from TRAIN gallery loss',
+            semantics='Pixel blend regularization, NOT a physically rendered new view; never applied to evaluation') if view_blend else None),
         loss=f"{'Both TRAIN views' if profile.get('symmetric_bank') else 'Query'}->detached entire FITTING gallery {profile.get('ranking_loss', 'nll')}(temp .1, mean reduction; top1 cosine margin .02 when enabled) + {profile.get('supcon_weight', .5)} live query/reference SupCon + {profile['positive_weight']} all-positive log-probability loss + existing optical regularization/router auxiliary",
         external_loss_override=('External: frozen64 teacher relation KL(temp .1), no SKU NLL/SupCon/all-positive loss; target: original GT retrieval loss, teacher disabled' if external_teacher else None))
     write_json(args.output / 'fitting_manifest.json', dict(parent_manifest_sha256=identity['manifest_sha256'],
@@ -433,6 +440,7 @@ def run(args):
                 g['lr'] = (.01 if g['name'].endswith('raw_router_phase') else 0.) if warming else g['initial_lr'] * factor * multiplier
             totals = dict(loss=0., batch_natural_hit_at_1=0., route_aux=0., teacher_loss=0., all_view_loss=0., sam_loss_gap=0.)
             bank_refresh_audit = []
+            blend_weights = []
             for step in range(args.steps):
                 if refresh_bank_before_step(step, getattr(args, 'bank_refresh_steps', 0)):
                     refreshed, _ = encode_rows(model, processor, gallery, args.data, device,
@@ -463,13 +471,20 @@ def run(args):
                         continue
                     im = ImageEnhance.Brightness(im).enhance(rng.uniform(.9, 1.1))
                     images.append(ImageEnhance.Contrast(im).enhance(rng.uniform(.9, 1.1)))
+                blended_sources = None
+                if view_blend:
+                    images, blended_sources, weights = blend_train_pairs(images, rows, args.classes_per_batch,
+                        rng, view_blend, profile['same_sku_blend_range'])
+                    blend_weights.extend(weights)
                 batch_inputs = inputs(processor, images, device)
                 supervised_count = len(rows) if profile.get('symmetric_bank') else args.classes_per_batch
+                excluded = (training_source_exclusion(blended_sources[:supervised_count], gallery_ids, device)
+                    if blended_sources is not None else
+                    torch.tensor([[r['sample_id'] == sid for sid in gallery_ids]
+                        for r in rows[:supervised_count]], device=device) if args.multi_view else None)
                 def closure():
                   with autocast(device):
                     z = model(batch_inputs)
-                    excluded = (torch.tensor([[r['sample_id'] == sid for sid in gallery_ids]
-                        for r in rows[:supervised_count]], device=device) if args.multi_view else None)
                     data_loss, hit = paired_bank_loss(z, labels.to(device), bank, args.classes_per_batch, bank_labels, excluded,
                         symmetric=profile.get('symmetric_bank', False),
                         supcon_weight=profile.get('supcon_weight', .5), ranking_loss=profile.get('ranking_loss', 'nll'))
@@ -499,6 +514,12 @@ def run(args):
                 active_trainable_parameters=sum(p.numel() for _,p in params if p.requires_grad),
                 fitting_bank_epoch_start=bank_metrics,
                 **{k: v / args.steps for k, v in totals.items()}, last_gradient_norm=float(norm))
+            if view_blend:
+                nonzero = [w for w in blend_weights if w > 0]
+                row['view_blend_audit'] = dict(train_images_seen=len(blend_weights), mixed_images=len(nonzero),
+                    mean_secondary_weight=sum(nonzero) / max(1, len(nonzero)),
+                    min_secondary_weight=min(nonzero, default=0.), max_secondary_weight=max(nonzero, default=0.),
+                    mixed_queries_exclude_two_sources=True, evaluation_unmixed=True)
             if current_optical_only:
                 row['non_optical_parameters_sha256'] = non_optical_digest(model)
                 if row['non_optical_parameters_sha256'] != fixed_electronics_sha:
