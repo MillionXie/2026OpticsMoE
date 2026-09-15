@@ -256,6 +256,48 @@ def replace_projection(payload, weight, bias):
 
 
 @torch.no_grad()
+def within_sku_whiten_projection(vectors, labels, weight, bias, strength):
+    """TRAIN-only shrinkage metric on same-SKU residuals, folded into W/b.
+
+    C is within-SKU covariance normalized to mean eigenvalue1. The metric is
+    A=((1-strength)I+strength*C)^(-1/2). Strength<1 keeps it positive definite;
+    strength0 is exactly identity. No test rows or test labels enter estimation.
+    """
+    if (vectors.ndim != 2 or vectors.shape[1] != 64 or labels.shape != (len(vectors),)
+            or labels.dtype != torch.int64 or weight.shape != (64,384) or bias.shape != (64,)
+            or not math.isfinite(strength) or not 0 <= strength < 1
+            or any(t.requires_grad or t.device.type != 'cpu' or not torch.isfinite(t).all()
+                   for t in (vectors,weight,bias))):
+        raise ValueError('Require detached TRAIN64 vectors, int64 labels, original W/b, strength[0,1)')
+    if (vectors.norm(dim=1)<1e-8).any():
+        raise ValueError('Zero TRAIN descriptor')
+    z = F.normalize(vectors.double(),dim=1)
+    classes, inverse, counts = labels.unique(return_inverse=True,return_counts=True)
+    if len(classes)<2 or (counts<2).any():
+        raise ValueError('Within-SKU covariance needs >=2 classes and >=2 photos per SKU')
+    means = torch.zeros(len(classes),64,dtype=torch.float64)
+    means.index_add_(0,inverse,z)
+    means /= counts[:,None]
+    residual = z-means[inverse]
+    covariance = residual.T@residual/(len(z)-len(classes))
+    if covariance.trace()<1e-12:
+        raise ValueError('Degenerate within-SKU covariance')
+    covariance *= 64/covariance.trace()
+    eigenvalues,eigenvectors = torch.linalg.eigh(covariance)
+    gains = ((1-strength)+strength*eigenvalues.clamp_min(0)).rsqrt()
+    matrix = (eigenvectors*gains[None])@eigenvectors.T
+    new_w,new_b = matrix@weight.double(),matrix@bias.double()
+    if strength == 0:
+        new_w,new_b = weight.clone(),bias.clone()
+    audit = dict(training_rows=len(z),classes=len(classes),fitted_to_query=False,
+        strength=strength, covariance_eigenvalue_range=[float(eigenvalues.min()),float(eigenvalues.max())],
+        metric_gain_range=[float(gains.min()),float(gains.max())],
+        extra_inference_parameters=0,
+        recipe='TRAIN normalized descriptors minus same-SKU TRAIN centroid; within-SKU covariance shrunk toward identity; inverse sqrt metric folded into original W/b; no inference centering or extra layer')
+    return new_w.to(weight.dtype),new_b.to(bias.dtype),audit
+
+
+@torch.no_grad()
 def ridge_teacher_projection(inputs, teacher, eligible, weight, bias, ridge, strength):
     """TRAIN-only centered Procrustes target + anchored ridge residual fit.
 
@@ -462,6 +504,12 @@ def run(args):
     teacher_ridge = getattr(args, 'teacher_ridge', 0.)
     ridge_strength = getattr(args, 'teacher_ridge_strength', .1)
     teacher_active = bool(teacher_weight or teacher_ridge)
+    whiten_strength = getattr(args, 'within_sku_whiten', 0.)
+    if (not math.isfinite(whiten_strength) or not 0 <= whiten_strength < 1
+            or (whiten_strength and (teacher_active or args.steps or args.input_dropout
+                or args.sam_rho or getattr(args,'train_center',0.)
+                or args.fit_space != 'projection384'))):
+        raise ValueError('Within-SKU whitening requires projection384, steps0, strength[0,1), no teacher/centering/dropout/SAM')
     if (not math.isfinite(teacher_ridge) or teacher_ridge < 0
             or not math.isfinite(ridge_strength) or not 0 <= ridge_strength <= 1
             or (teacher_ridge and (teacher_weight or teacher_match_entropy or args.steps
@@ -560,6 +608,13 @@ def run(args):
         with torch.no_grad():
             weight.copy_(fitted_w)
             bias.copy_(fitted_b)
+    whiten_audit = None
+    if whiten_strength:
+        fitted_w,fitted_b,whiten_audit = within_sku_whiten_projection(train_z,train_labels,
+            reference[0],reference[1],whiten_strength)
+        with torch.no_grad():
+            weight.copy_(fitted_w)
+            bias.copy_(fitted_b)
     center_strength = getattr(args, 'train_center', 0.)
     if center_strength:
         if not projection:
@@ -584,6 +639,7 @@ def run(args):
     identity['selection_precision'] = args.selection_precision
     identity['teacher_relations'] = dict(enabled=bool(teacher_weight), weight=teacher_weight, audit=teacher_audit)
     identity['teacher_ridge'] = ridge_audit
+    identity['within_sku_whiten'] = whiten_audit
     identity['fitted_parameter_count'] = sum(p.numel() for p in parameters)
     identity['nonlinear_conversion'] = dict(enabled=nonlinear,
         initialization='First layer [W;-W],[b;-b]; second layer [I,-I],0: algebraically source preserving, finite precision must be evaluated separately',
@@ -595,6 +651,8 @@ def run(args):
         note='Full TRAIN smooth NLL; one quasi-Newton iteration per outer step, strong-Wolfe TRAIN-only line search, history10, constant LR, no gradient clipping; query never enters closure' if optimizer_kind == 'lbfgs' else 'Original minibatch Adam/SAM, cosine LR and gradient norm clip1')
     if teacher_ridge:
         identity['optimizer_recipe'] = dict(kind='closed_form_ridge', note=ridge_audit['recipe'])
+    if whiten_strength:
+        identity['optimizer_recipe'] = dict(kind='closed_form_within_sku_covariance', note=whiten_audit['recipe'])
     identity['train_center'] = dict(strength=center_strength, rows=1600,
         note='Existing bias only: b_new=b-strength*mean_TRAIN(Wx+b), pre L2. QUERY excluded. Zero steps means calibration only, not SGD training.')
     identity['selection_gpu'] = torch.cuda.get_device_name() if args.selection_precision == 'cuda_bf16' else None
@@ -746,10 +804,11 @@ def main():
     p.add_argument('--teacher-match-entropy', action='store_true', help='TRAIN-only temperature calibration matches source-student relation entropy on GT-consistent teacher rows; inference unchanged')
     p.add_argument('--teacher-ridge', type=float, default=0., help='Positive relative ridge enables TRAIN-only closed-form teacher fitting; requires steps0, pinned teacher, projection384; no SGD KD/dropout/SAM/centering')
     p.add_argument('--teacher-ridge-strength', type=float, default=.1, help='Fraction [0,1] of closed-form residual parameter update; not prediction ensembling')
+    p.add_argument('--within-sku-whiten', type=float, default=0., help='TRAIN same-SKU residual covariance metric, shrinkage strength[0,1); folded into original W/b. Requires steps0/projection384, no teacher or other calibration.')
     args = p.parse_args()
     if not math.isfinite(args.train_center) or not 0 <= args.train_center <= 1 or (args.train_center and args.fit_space != 'projection384'):
         p.error('TRAIN centering requires strength [0,1] and projection384')
-    if args.steps < 0 or (args.steps == 0 and not (args.train_center or args.teacher_ridge)) or args.eval_every < 1 or not 2 <= args.batch_size <= 1600 or not math.isfinite(args.lr) or args.lr <= 0 or not math.isfinite(args.anchor) or args.anchor < 0:
+    if args.steps < 0 or (args.steps == 0 and not (args.train_center or args.teacher_ridge or args.within_sku_whiten)) or args.eval_every < 1 or not 2 <= args.batch_size <= 1600 or not math.isfinite(args.lr) or args.lr <= 0 or not math.isfinite(args.anchor) or args.anchor < 0:
         p.error('Invalid training bounds')
     if not math.isfinite(args.input_dropout) or not 0 <= args.input_dropout < 1 or (args.input_dropout and args.fit_space not in ('projection384', 'diagonal64', 'relu128')):
         p.error('Input dropout must be in [0,1), supported only with projection384/diagonal64/relu128')

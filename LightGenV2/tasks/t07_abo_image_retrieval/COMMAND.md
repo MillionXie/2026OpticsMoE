@@ -3627,3 +3627,29 @@ python -m LightGenV2.tasks.t07_abo_image_retrieval.standalone.metric_readout \
 
 `execution.json.teacher_ridge`记录TRAIN行数、ridge系数、旋转正交误差、方程残差和参数变化。
 只保存best/last；缓存达到665/800后仍必须按第92节独立从原图复评，不能直接晋升。
+
+第108节四档已完成：源码4f5c143c，459项本地/服务器测试；ridge=.1不变，
+strength=.1（上述目录）/.2（后缀`_s20_20260915`）/.05（`_s05_20260915`）/.025（`_s025_20260915`），
+对应83%/82.5%/83%/82.875%，均未晋升。scope_audit确认只改原W/b、metadata不变。
+
+## 109. TRAIN同SKU内协方差收缩（原64维输出，不加层）
+
+不使用教师。1600 TRAIN归一化描述子减去各自商品的TRAIN均值，估计类内协方差C，
+归一化到平均特征值1，再取`A=((1-s)I+sC)^(-1/2)`；把A乘入原W/b。
+这不是推理时减去商品均值（推理不知道标签），也不把QUERY参与统计；
+只是训练得到一个全局固定线性度量。同SKU内变化也可能包含有用信息，因此只做轻量收缩对照。
+
+在第108节相同根目录和变量定义下执行：
+
+```bash
+CUDA_VISIBLE_DEVICES=GPU-1b963983-7909-af6e-0528-f0f0661ab549 OMP_NUM_THREADS=4 MKL_NUM_THREADS=4 \
+python -m LightGenV2.tasks.t07_abo_image_retrieval.standalone.metric_readout \
+  --source-run "$START83" --manifest "$R/abo200_enrolled_protocol_20260913/protocol.json" \
+  --data /DATA/DATA1/guest3/2026OpticsMoE/data/abo_similarity10_data \
+  --expected-checkpoint-sha256 "$START83_SHA" --expected-hit .83 --fit-space projection384 \
+  --within-sku-whiten .05 --steps 0 --selection-precision cuda_bf16 \
+  --output "$R/abo200_readout_within_sku_whiten_20260915"
+```
+
+`execution.json.within_sku_whiten`保存类内协方差特征值、实际度量增益范围与TRAIN身份。
+最终仍需独立原图验证；没有达到665/800不替换原83%。
