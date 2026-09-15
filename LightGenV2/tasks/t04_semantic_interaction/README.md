@@ -1,5 +1,17 @@
 # T04 语义交互（OpenMoji）
 
+## 2026-09-15：SHS单电脑六层部署
+
+新增 [COMMAND_SHS.md](COMMAND_SHS.md)：师弟电脑同时连接Holoeye振幅、Meadowlark HDMI相位和SHS相机。
+固定主版本 `routerfill_shared` epoch40（修改格87.15%，整场景69%），不使用旧98%模型。
+权重SHA `a69ddcee827749fb9202f9aef11ea45011e433d8b2f0151be2eec3db7dbff9eb`。
+实际层序是语言router/expert/global在前、视觉router/expert/global在后；每层后续输入来自上游真实CCD。
+`build_lab_package.py --shs-base 原独立仿真ZIP --shs-output 新overlay.zip` 构建Git固定源码包，
+`install_shs.py`核验两包与文件SHA后只安装到新目录。`run.py export`必须通过原1000test复评及六边界回放。
+`run.py probe/auto`在登录桌面使用持久相位SDK；阶段前后与每50张进行物理变化/重复PCC检查。
+目前是部署验证中，尚无新的OpenMoji实测性能；状态集中在 `runs/hardware/shs_single_pc_20260915/`。
+任务不改变权重、不增加TF/attention；相位沿用物理尺寸重采样、方向及反灰度编码，新硬件拓扑使用新session。
+
 ## 对外分享：独立 OURS 原头复现包
 
 打包入口为 `build_lab_package.py`，交付文件存放在本任务 `releases/`；只含 OURS 原头 epoch40 best，

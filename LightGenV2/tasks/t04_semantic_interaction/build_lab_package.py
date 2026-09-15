@@ -155,8 +155,17 @@ def build(run, data, output):
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
-    parser.add_argument('--run-dir', type=Path, required=True)
-    parser.add_argument('--data-dir', type=Path, required=True)
-    parser.add_argument('--output-dir', type=Path, required=True)
+    parser.add_argument('--run-dir', type=Path)
+    parser.add_argument('--data-dir', type=Path)
+    parser.add_argument('--output-dir', type=Path)
+    parser.add_argument('--shs-base', type=Path, help='Verified simulation ZIP; build hardware overlay')
+    parser.add_argument('--shs-output', type=Path)
     args = parser.parse_args()
-    print(json.dumps(build(args.run_dir, args.data_dir, args.output_dir), indent=2))
+    if args.shs_base:
+        if not args.shs_output:parser.error('--shs-output required')
+        from LightGenV2.tasks.t04_semantic_interaction.shs_package import build_shs
+        result=build_shs(args.shs_base,args.shs_output)
+    else:
+        if not all((args.run_dir,args.data_dir,args.output_dir)):parser.error('run-dir/data-dir/output-dir required')
+        result=build(args.run_dir,args.data_dir,args.output_dir)
+    print(json.dumps(result, indent=2))
