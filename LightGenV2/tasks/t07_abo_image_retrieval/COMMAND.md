@@ -3521,3 +3521,37 @@ scope_audit.json核验所有非projection张量相同、metadata只改retrieval_
 学生1518/1600，冻结Qwen教师1349/1600；教师对/学生错23，学生对/教师错192。
 使用相同协议的冻结Qwen64缓存，不读取QUERY标签进行这项分析。
 这说明直接全面蒸馏有冲突风险，尚未启动新的关系蒸馏训练；下一步需实现TRAIN真值一致性门控。
+
+## 106. TRAIN真值一致性门控的弱教师关系约束
+
+只用固定ABO200协议下冻结Qwen64已有缓存，无需再加载完整Qwen。缓存SHA和旁边冻结基线报告
+均须验证；仅前1600 TRAIN/gallery行用于目标，后800 QUERY只做身份检查，不参与训练目标。
+教师每张TRAIN图：排除自身，最近同SKU余弦必须严格超过最近异SKU（`--teacher-min-margin 0`）；
+错例和平局不蒸馏。通过门控的query行使用全部TRAIN图库的softmax关系分布（温度.1），
+不增加测试重排、类别规则或推理教师；目标商品标签仍是原同SKU标签。
+
+Loss=原Top1排序loss（TRAIN输入dropout .1）+原W/b锚定1+.05×关系KL。
+KL在干净TRAIN输入上匹配冻结教师，按采样批中通过门控的query行平均，无额外温度平方乘数。
+只训练原Linear384→64的W/b；光、alpha、电子主干、LayerNorm逐值保留，新增推理参数0。
+若某批没有符合条件的教师行，KL严格为0；不会退回错误教师监督。
+
+短程2步启动/保存检查：
+
+```bash
+TEACHER="$R/abo200_enrolled_qwen64_20260913/normal_features.pt"
+TEACHER_SHA=c6eb631c268d2446a2f783854c86d8493cdbcaa04c0669148b16d9785016d8d7
+CUDA_VISIBLE_DEVICES=GPU-1b963983-7909-af6e-0528-f0f0661ab549 OMP_NUM_THREADS=4 MKL_NUM_THREADS=4 python -m LightGenV2.tasks.t07_abo_image_retrieval.standalone.metric_readout \
+  --source-run "$START83" --manifest "$R/abo200_enrolled_protocol_20260913/protocol.json" \
+  --data /DATA/DATA1/guest3/2026OpticsMoE/data/abo_similarity10_data \
+  --expected-checkpoint-sha256 "$START83_SHA" --expected-hit .83 \
+  --fit-space projection384 --ranking-loss top1_softplus --input-dropout .1 \
+  --teacher-cache "$TEACHER" --expected-teacher-sha256 "$TEACHER_SHA" --teacher-weight .05 --teacher-min-margin 0 \
+  --steps 2 --eval-every 1 --lr .00005 --anchor 1 --seed 42 --selection-precision cuda_bf16 \
+  --output "$R/abo200_readout_consistent_teacher_scope_20260915"
+```
+
+scope通过后从同一原83%开始400步/每25步，输出`abo200_readout_consistent_teacher_20260915`。
+匹配无教师对照为同配方去掉三个teacher参数，输出`abo200_readout_teacher_control_20260915`；
+两个任务串行，仍只用GPU4。记录门控行数、teacher cache/report SHA和每次评估的干净TRAIN KL。
+无教师默认路径保持原样；本选项暂时只允许原projection384 Adam、不能同时改头/中心化/用LBFGS。
+仍需独立原图复评达到665/800，再核验同best去光/TRAIN/路由并晋升；周期TEST选模偏差必须披露。

@@ -129,6 +129,69 @@ def validate_cache(cache, rows, manifest_sha):
         raise ValueError('Zero cached descriptor')
 
 
+@torch.no_grad()
+def consistent_teacher_targets(vectors, labels, min_margin=0.):
+    """Only TRAIN-to-TRAIN relations; GT decides whether to trust each teacher row."""
+    if (vectors.requires_grad or vectors.ndim != 2 or len(vectors) != len(labels)
+            or labels.ndim != 1 or not torch.isfinite(vectors).all()
+            or not math.isfinite(min_margin) or min_margin < 0
+            or len(vectors) < 2 or (vectors.float().norm(dim=1) < 1e-8).any()):
+        raise ValueError('Require detached finite TRAIN teacher vectors and valid labels/margin')
+    z = F.normalize(vectors.float(), dim=-1)
+    excluded = torch.eye(len(z), dtype=torch.bool)
+    positive = labels[:,None].eq(labels[None]) & ~excluded
+    negative = ~positive & ~excluded
+    if not positive.any(1).all() or not negative.any(1).all():
+        raise ValueError('Each TRAIN row needs nonself same-SKU and different-SKU references')
+    similarity = z @ z.T
+    pos = similarity.masked_fill(~positive, -torch.inf).amax(1)
+    neg = similarity.masked_fill(~negative, -torch.inf).amax(1)
+    eligible = pos - neg > min_margin  # Reject ties and wrong-SKU teacher retrievals.
+    # Finite masking avoids 0 * -inf in KL; self has exactly zero probability.
+    targets = (similarity / .1).masked_fill(excluded, -1e4).softmax(1)
+    return targets.detach(), eligible.detach()
+
+
+def load_consistent_teacher(path, expected_sha, rows, manifest_sha, labels, min_margin=0.):
+    if sha256(path) != expected_sha:
+        raise ValueError('Teacher cache SHA mismatch')
+    report_path = path.parent / 'final_report.json'
+    report = json.loads(report_path.read_text())
+    if (report.get('status') != 'complete' or report.get('model_kind') != 'qwen64'
+            or report.get('frozen') is not True or report.get('trainable_parameters') != 0
+            or report.get('manifest_sha256') != manifest_sha):
+        raise ValueError('Require verified frozen Qwen64 on exactly this protocol')
+    cache = torch.load(path, map_location='cpu', weights_only=True)
+    validate_cache(cache, rows, manifest_sha)
+    n = len(labels)
+    if n != 1600 or len(rows) != 2400 or any(r['split'] != 'gallery' for r in rows[:n]) or any(r['split'] != 'query' for r in rows[n:]):
+        raise ValueError('Teacher fitting requires fixed1600 TRAIN/gallery before800 QUERY')
+    # Only TRAIN copies survive this loader. QUERY values/labels never enter a target.
+    targets, eligible = consistent_teacher_targets(cache['vectors'][:n].float().detach().clone(), labels, min_margin)
+    return targets, eligible, dict(cache_sha256=expected_sha, report_sha256=sha256(report_path),
+        source_commit=report.get('source_commit'), training_rows=n, eligible_rows=int(eligible.sum()),
+        min_correct_minus_wrong_margin=min_margin, temperature=.1, query_excluded=True,
+        inference_teacher_required=False, gate='TRAIN best same-SKU cosine > best wrong-SKU cosine + min_margin; self excluded',
+        loss='KL(teacher TRAIN-gallery probability || student clean TRAIN-gallery probability), mean over eligible sampled TRAIN rows only; no temperature-square multiplier')
+
+
+def teacher_relation_loss(student, targets, eligible, indices):
+    n = len(student)
+    if (student.ndim != 2 or targets.shape != (n,n) or targets.requires_grad
+            or eligible.shape != (n,) or eligible.dtype != torch.bool
+            or indices.ndim != 1 or not torch.isfinite(student).all()
+            or not torch.isfinite(targets).all() or (targets < 0).any()):
+        raise ValueError('Invalid detached TRAIN relation target or student shape')
+    selected = indices[eligible[indices]]
+    if not len(selected):
+        return student.sum() * 0.
+    z = F.normalize(student.float(), dim=-1)
+    logits = z[selected] @ z.T / .1
+    excluded = selected[:,None].eq(torch.arange(n)[None])
+    log_prob = logits.masked_fill(excluded, -1e4).log_softmax(1)
+    return F.kl_div(log_prob, targets[selected], reduction='batchmean')
+
+
 def replace_projection(payload, weight, bias):
     if payload['metadata'].get('retrieval_head', 'linear64') != 'linear64':
         raise ValueError('Require the original linear64 head')
@@ -292,6 +355,16 @@ def validate_optimizer_recipe(args):
 
 def run(args):
     optimizer_kind = validate_optimizer_recipe(args)
+    teacher_weight = getattr(args, 'teacher_weight', 0.)
+    teacher_path = getattr(args, 'teacher_cache', None)
+    teacher_sha = getattr(args, 'expected_teacher_sha256', None)
+    teacher_margin = getattr(args, 'teacher_min_margin', 0.)
+    if (not math.isfinite(teacher_weight) or not 0 <= teacher_weight <= 1
+            or not math.isfinite(teacher_margin) or teacher_margin < 0
+            or bool(teacher_weight) != bool(teacher_path) or bool(teacher_weight) != bool(teacher_sha)
+            or (teacher_weight and (args.fit_space != 'projection384'
+                                   or getattr(args, 'train_center', 0.) or optimizer_kind != 'adam'))):
+        raise ValueError('Teacher relations require pinned cache, weight in(0,1], original projection384 Adam, no centering')
     diagonal = args.fit_space == 'diagonal64'
     nonlinear = args.fit_space == 'relu128'
     if (diagonal or nonlinear) and getattr(args, 'train_center', 0.):
@@ -332,6 +405,10 @@ def run(args):
     if len(names) != 200:
         raise ValueError('Require 200 training SKUs')
     train_labels = torch.tensor([names.index(r['product_id']) for r in groups['gallery']])
+    teacher_audit = None
+    if teacher_weight:
+        teacher_targets, teacher_eligible, teacher_audit = load_consistent_teacher(
+            teacher_path, teacher_sha, rows, manifest_sha, train_labels, teacher_margin)
     baseline, _ = rank_instances(z, rows)
     if abs(baseline['hit_at_1'] - args.expected_hit) > 1e-9:
         raise ValueError('Cached baseline did not reproduce the expected score')
@@ -384,6 +461,7 @@ def run(args):
         status='cached_candidate_only', raw_gpu_verification_required=True,
         optical_weights_changed=False, training_note='Only TRAIN gallery labels/vectors enter loss; QUERY used for periodic selection')
     identity['selection_precision'] = args.selection_precision
+    identity['teacher_relations'] = dict(enabled=bool(teacher_weight), weight=teacher_weight, audit=teacher_audit)
     identity['fitted_parameter_count'] = sum(p.numel() for p in parameters)
     identity['nonlinear_conversion'] = dict(enabled=nonlinear,
         initialization='First layer [W;-W],[b;-b]; second layer [I,-I],0: algebraically source preserving, finite precision must be evaluated separately',
@@ -427,6 +505,14 @@ def run(args):
                     else args.lr * (.1 + .9 * .5 * (1 + math.cos(math.pi * step / args.steps))))
                 idx = torch.arange(1600) if optimizer_kind == 'lbfgs' else torch.randperm(1600)[:args.batch_size]
                 def loss_closure():
+                    if teacher_weight:
+                        supervised = projection_loss(weight, bias, train_inputs, train_labels, idx,
+                            reference, args.anchor, args.input_dropout, args.ranking_loss)
+                        # Clean TRAIN view for matching the frozen teacher cache;
+                        # GT loss retains its configured independent dropout.
+                        student = F.linear(train_inputs, weight, bias)
+                        kd = teacher_relation_loss(student, teacher_targets, teacher_eligible, idx)
+                        return supervised + teacher_weight * kd
                     if nonlinear:
                         return nonlinear_projection_loss(head, train_inputs, train_labels, idx,
                             head_reference, args.anchor, args.input_dropout, args.ranking_loss)
@@ -461,6 +547,11 @@ def run(args):
                     parameter_delta_frobenius=delta,
                     loss=float(loss.detach()) if step else None)
                 entry['optimizer_audit'] = step_audit if step else None
+                if teacher_weight:
+                    with torch.no_grad():
+                        entry['clean_train_teacher_kl'] = float(teacher_relation_loss(
+                            F.linear(train_inputs, weight, bias), teacher_targets, teacher_eligible,
+                            torch.arange(1600)))
                 if diagonal:
                     gain = (.1 * raw_gain.detach().tanh()).exp()
                     entry['diagonal_gain_range'] = [float(gain.min()), float(gain.max())]
@@ -524,6 +615,10 @@ def main():
     p.add_argument('--selection-precision', choices=['cpu_fp32','cuda_bf16'], default='cpu_fp32',
         help='Selection-only original head replay; CUDA uses raw batch4 autocast and requires bitwise source reproduction. Training remains CPU FP32.')
     p.add_argument('--seed', type=int, default=42)
+    p.add_argument('--teacher-cache', type=Path, help='Optional pinned frozen Qwen64 cache; only first1600 TRAIN/gallery rows enter relation targets')
+    p.add_argument('--expected-teacher-sha256')
+    p.add_argument('--teacher-weight', type=float, default=0., help='TRAIN-only GT-consistent relation KL weight; zero leaves original training unchanged')
+    p.add_argument('--teacher-min-margin', type=float, default=0., help='Teacher same-SKU vs wrong-SKU TRAIN cosine margin must exceed this value; ties rejected')
     args = p.parse_args()
     if not math.isfinite(args.train_center) or not 0 <= args.train_center <= 1 or (args.train_center and args.fit_space != 'projection384'):
         p.error('TRAIN centering requires strength [0,1] and projection384')
