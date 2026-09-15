@@ -3236,7 +3236,10 @@ CUDA_VISIBLE_DEVICES=GPU-1b963983-7909-af6e-0528-f0f0661ab549 OMP_NUM_THREADS=4 
 
 不得在本任务运行期间在线切换其worktree源码。默认只使用一张空闲4090，运行结束确认自己PID释放。
 
-## 98. TRAIN间隔满足后停止排序梯度（待第97节结束后执行）
+第97节于3轮结束后提前停止，3轮EMA为82.50%、82.00%、81.375%；
+`early_stop_report.json`记录原因、best/last SHA和原83%权重逐值相同验证。PID2388019已退出，未晋升。
+
+## 98. TRAIN间隔满足后停止排序梯度
 
 起点仍是独立原图确认的83%权重，不用第97节低于起点的中间权重。
 依据第97节run的`train_margin_diagnostic.json`：原83%模型在1600张TRAIN自图排除检索中，
@@ -3263,5 +3266,9 @@ CUDA_VISIBLE_DEVICES=GPU-1b963983-7909-af6e-0528-f0f0661ab549 OMP_NUM_THREADS=4 
   --selection-precision cuda_bf16 --output "$R/abo200_readout_active_margin_20260915"
 ```
 
-当前本节是已实现的待运行对照，不是新的性能结果。若第97节先达到目标并独立复评通过，
-无需为此追加训练。任何新候选均须正常/去光原图复评、TRAIN与路由审计，保留原83%权重。
+无dropout对照已完成800步：最高仍起点83%，新训练最高82.25%，最后81.50%；PID2407635已退出。
+源码a817887c，本地/服务器422项测试通过。原图权重不替换，不对原83%重复宣布新提升。
+匹配对照仅将上述命令改为`--input-dropout .1`，输出改为
+`abo200_readout_active_margin_dropout10_20260915`；其他参数、起点、种子相同。
+检验干净TRAIN间隔优化是否缺少增强，不同时改学习率/锚定，不增加推理dropout。
+任何新候选均须正常/去光原图复评、TRAIN与路由审计，保留原83%权重。
