@@ -51,9 +51,10 @@ PNG预览按99.5百分位做显示拉伸，数值处理使用NPY/CCD DN，不使
 包内**没有借用别人ROI、400µs曝光、相位翻转或反灰度当作你的配置**。
 若设备正是SHS，请使用本机已验证控制工程，通过 `--bench-root` 指定目录，建立本机LAB JSON；
 每次 `init/prepare/capture/evaluate` 都显式传 `--config 本机LAB.json`，详细顺序见COMMAND_SHS。
-若是Meadowlark/TUCam，先复用你现有的LGVQ硬件包做LUT、曝光、四角ROI和时序标定；
-需要把该设备采集适配到 `lab_bench.measured_prefix` / `lab_runtime.OpticalBoundary` 的3阶段合同。
-**未完成这一适配前，不能声称本包可以一条命令直接控制Meadowlark/TUCam。**
+**本次确认设备为17µm Meadowlark＋8µm手动相位＋TUCam，请只按 `COMMAND_MEADOWLARK.md` 操作。**
+新增 `meadowlark.py` 复用原生hardware_sdk采集，已接入3阶段实测上游合同与SHA审计。
+先复用已有LGVQ硬件包做LUT、曝光、四角ROI和时序标定，再绑定本机formal_hardware.yaml。
+它通过离线回放及模拟采集日志回归；尚未在收件方实际硬件上验证，不冒充实采测试。
 不要用现有run.py默认SHS capture去打开另一种设备，也不要让服务器远程控制未知相位/相机。
 
 ## 微调边界，不要把测试缓存当训练数据

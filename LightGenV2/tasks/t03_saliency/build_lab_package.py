@@ -228,6 +228,8 @@ def handoff_export(out,archive):
     def git_bytes(ref,name):return subprocess.check_output(['git','show',ref+':'+name],cwd=root)
     additions['handoff.py']=git_bytes(commit,'LightGenV2/tasks/t03_saliency/handoff_cli.py')
     additions['00_START_HERE.md']=git_bytes(commit,'LightGenV2/tasks/t03_saliency/HANDOFF_08625.md')
+    additions['meadowlark.py']=git_bytes(commit,'LightGenV2/tasks/t03_saliency/meadowlark_cli.py')
+    additions['COMMAND_MEADOWLARK.md']=git_bytes(commit,'LightGenV2/tasks/t03_saliency/COMMAND_MEADOWLARK.md')
     additions['requirements-reference.txt']=git_bytes(base,'ABO_Lab_SHS_8um/requirements-gpu-tested.txt')
     paths=subprocess.check_output(['git','ls-tree','-r','--name-only',base,'LightGenV2','experiments'],cwd=root,text=True).splitlines()
     for rel in paths:
@@ -243,7 +245,8 @@ def handoff_export(out,archive):
     information=dict(package_kind='fixed_weight_experiment_handoff',source_commit=commit,
                      original_model_runtime_commit=base,checkpoint_sha256=CHECKPOINT_SHA,
                      reference_cc=release['simulation_cc_float64'],test_fields=5000,train_fields=0,
-                     hardware_binding='SHS adapter requires existing bench; Meadowlark/TUCam adaptation pending',
+                     hardware_binding='meadowlark.py: Meadowlark17/manual phase8/TUCam; existing calibrated native SDK config required',
+                     meadowlark_adapter_validation='mock regression and offline replay; real hardware validation pending on recipient Windows machine',
                      one_command_measured_finetuning_included=False,
                      control_patch_commit='55df4f53',hardware_settings_from_other_lab_included=False)
     additions['handoff.json']=(json.dumps(information,indent=2)+'\n').encode()
@@ -258,6 +261,7 @@ def handoff_export(out,archive):
         for name,value in additions.items():
             dest=staged/name;dest.parent.mkdir(parents=True,exist_ok=True);dest.write_bytes(value)
         write(staged/'SHA256.json',manifest)  # CLI reads identity before exporting.
+        subprocess.run([sys.executable,'-I',str(staged/'meadowlark.py'),'--help'],cwd=staged,check=True)
         for profile in ('meadowlark17','shs8'):
             subprocess.run([sys.executable,'-I',str(staged/'handoff.py'),'export-reference-bmp',
                             '--profile',profile,'--fields','4','--device','cpu'],cwd=staged,check=True)
