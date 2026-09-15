@@ -1,0 +1,8 @@
+{
+  "approved": true,
+  "request": "再追加一个这个数据集上的实验，实验步骤和之前保持一致",
+  "dataset": "EuroSAT optical/SAR",
+  "reference": "completed CORe50 four-model experiment",
+  "four_fixed_checkpoints_both_domains": true,
+  "no_test_based_tuning": true
+}

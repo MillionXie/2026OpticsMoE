@@ -1,0 +1,38 @@
+# v3: ordinary quadratic Fresnel phase with matched square amplitude pupils.
+# This is a new payload and never overwrites the historical v2 ROI-vertex set.
+output_dir: ../generated/fresnel_square_aperture_array_532nm_17um_8um_v3
+
+wavelength_nm: 532.0
+propagation_cm: 10.0
+array_counts: [1, 4, 9]
+
+amplitude_slm:
+  size_wh: [1024, 1024]
+  pixel_pitch_um: 17.0
+  center_xy: [512.0, 512.0]
+  open_uint8: 255
+  closed_uint8: 0
+
+phase_slm:
+  size_wh: [1920, 1200]
+  pixel_pitch_um: 8.0
+  center_xy: [980.0, 590.0]
+  flip_vertical: true
+  flip_horizontal: false
+
+shared_optical_support:
+  # Exact ROI width: 478*17 um = 8126 um = 1015.75 phase pixels.
+  amplitude_active_size_px: 478
+
+# Requested square-pupil widths on the 8 um phase grid. The actual pupil is
+# quantized on the 17 um amplitude SLM and recorded in the manifest.
+# Smaller pupils produce wider sinc-cross PSFs but transmit less light.
+aperture_widths_phase_px: [48, 64, 96, 128]
+
+simulation:
+  # Holds the complete 1920x1200 phase panel and the 13.312 mm camera field.
+  pad_size: 2048
+  camera_size_wh: [2048, 2048]
+  camera_pixel_pitch_um: 6.5
+  assumed_lateral_magnification: 1.0
+  log_floor_db: -50.0

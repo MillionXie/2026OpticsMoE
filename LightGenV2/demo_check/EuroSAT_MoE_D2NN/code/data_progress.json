@@ -1,0 +1,19 @@
+{
+  "state": "complete",
+  "images": 53784,
+  "pairs": 26892,
+  "counts": {
+    "A": {
+      "train": 15998,
+      "validation": 5465,
+      "test": 5429
+    },
+    "B": {
+      "train": 15998,
+      "validation": 5465,
+      "test": 5429
+    }
+  },
+  "elapsed_sec": 188.59576559066772,
+  "updated_at": 1789226650.2895467
+}

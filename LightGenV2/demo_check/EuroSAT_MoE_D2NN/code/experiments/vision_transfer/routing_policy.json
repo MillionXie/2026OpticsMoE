@@ -1,0 +1,73 @@
+{
+  "version": "vision_only_rows_20260909",
+  "seed": 42,
+  "restart_A_from_task_initialization": true,
+  "epochs": {
+    "A": 60,
+    "B": 40
+  },
+  "loss": {
+    "target_group_probability": 0.7,
+    "target_kl_weight": 0.1,
+    "capture_weight": 0.01,
+    "clean_logit_kd_weight": 0.2,
+    "clean_logit_kd_temperature": 2.0,
+    "clean_route_kd_weight": 0.0
+  },
+  "guidance": {
+    "initial_fraction": 0.0,
+    "minimum_guided_epochs": 5,
+    "healthy_epochs_before_reduction": 2,
+    "fraction_decrement": 0.25,
+    "automatic_epochs_before_selection": 3,
+    "unhealthy_automatic_epochs_before_recovery": 3,
+    "recovery_fraction": 0.0,
+    "maximum_recoveries": 0,
+    "guidance_deadline_epoch": {
+      "A": 50,
+      "B": 20
+    }
+  },
+  "probe": {
+    "every_steps": 50,
+    "maximum_batches_per_epoch": 8,
+    "minimum_samples_per_domain": 120,
+    "minimum_ce_gradient_l2": 1e-10,
+    "A": {
+      "minimum_group_power": 0.8,
+      "minimum_expert_power": 0.1
+    },
+    "B": {
+      "minimum_group_power": 0.4,
+      "minimum_expert_power": 0.1
+    }
+  },
+  "selection": {
+    "maximum_clean_drop": 0.02
+  },
+  "data_root": "/root/autodl-tmp/data/cifar10_transfer_v2_seed42",
+  "official_corrupted_root": "/root/autodl-tmp/data/CIFAR-10-C",
+  "official_download_marker": "/root/autodl-tmp/data/cifar10c_download.json",
+  "output_relative_directory": "runs/vision_only_rows_seed42",
+  "routing_mode": "dense_all_four",
+  "modalities": [
+    "vision"
+  ],
+  "expert_groups": {
+    "A": [
+      0,
+      1
+    ],
+    "B": [
+      2,
+      3
+    ]
+  },
+  "spatial_order": [
+    "top_left",
+    "top_right",
+    "bottom_left",
+    "bottom_right"
+  ],
+  "ema_enabled": false
+}

@@ -1,0 +1,4 @@
+numpy>=1.19
+Pillow>=8.0
+PyYAML>=5.4
+matplotlib>=3.3

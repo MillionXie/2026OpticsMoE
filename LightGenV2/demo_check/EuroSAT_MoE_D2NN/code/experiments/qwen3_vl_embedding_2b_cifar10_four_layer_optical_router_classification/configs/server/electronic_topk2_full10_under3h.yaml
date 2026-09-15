@@ -1,0 +1,44 @@
+base_config: ../../../qwen3_vl_embedding_2b_caltech101_four_layer_optical_router_retrieval/configs/release/electronic_power_topk2.yaml
+
+dataset:
+  dataset_root: /root/autodl-tmp/data/cifar10
+  download: true
+
+qwen:
+  cache_dir: /root/autodl-tmp/huggingface-cache
+  instruction: Represent this image for CIFAR-10 object classification.
+
+training:
+  epochs: 10
+  learning_rate: 0.0002
+  adapter_learning_rate: 0.0002
+  readout_learning_rate: 0.001
+  phase_learning_rate: 0.006
+  router_learning_rate: 0.0002
+  weight_decay: 0.0
+
+batching:
+  batch_size: 30
+  pk_skus_per_batch: 10
+  pk_images_per_sku: 3
+  inference_batch_size: 30
+  optimizer_steps_per_epoch: null
+
+classification:
+  initialization: random
+  num_classes: 10
+  split_seed: 42
+  validation_samples_per_class: 100
+  test_samples_per_class: null
+  train_augmentation: true
+  num_workers: 4
+  head_seed: 1042
+  head_learning_rate: 0.001
+  # 1,634 steps cover all 49,000 training images in every epoch.
+  max_train_steps_per_epoch: null
+  eval_every_epochs: 1
+  log_every_steps: 50
+  early_stopping_patience: 0
+  run_final_test: true
+
+output_dir: /root/autodl-tmp/runs/qwen3_vl_cifar10_router_classification/electronic_topk2_full10_under3h_random

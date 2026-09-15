@@ -1,0 +1,10 @@
+base_config: ../qwen3_vl_embedding_2b_cifar10_four_layer_optical_router_classification/configs/server/optical_topk2_full50_b60_random.yaml
+classification:
+  validation_samples_per_class: 500
+  log_every_steps: 50
+  early_stopping_patience: 0
+  run_final_test: false
+output_dir: runs/vision_only_rows_seed42
+
+router_experiment:
+  top_k: 4

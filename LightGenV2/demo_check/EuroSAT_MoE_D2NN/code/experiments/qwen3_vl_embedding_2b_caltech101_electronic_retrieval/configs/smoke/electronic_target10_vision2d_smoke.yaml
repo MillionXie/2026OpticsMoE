@@ -1,0 +1,19 @@
+base_config: ../release/caltech101_target10_electronic_vision2d.yaml
+
+dataset:
+  train_limit_per_sku: 2
+  test_limit_per_sku: 2
+
+batching:
+  batch_size: 20
+  pk_skus_per_batch: 10
+  pk_images_per_sku: 2
+  inference_batch_size: 4
+  num_workers: 0
+  optimizer_steps_per_epoch: 1
+
+training:
+  epochs: 1
+  log_interval_batches: 1
+
+output_dir: ../../runs/smoke_target10_electronic_vision2d_no_deepstack

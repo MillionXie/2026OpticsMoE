@@ -1,0 +1,10 @@
+# Full local four-stage Qwen fine-tuning. Install a CUDA build of PyTorch
+# separately so this file never replaces a working RTX 5060 torch build.
+numpy>=1.24,<3
+Pillow>=10,<13
+PyYAML>=6,<7
+matplotlib>=3.8,<4
+transformers>=4.57,<5
+accelerate>=1.0,<2
+safetensors>=0.4,<1
+qwen-vl-utils>=0.0.14

@@ -1,0 +1,11 @@
+base_config: stage2_joint_sealed_test.yaml
+
+# Four-point detector homography labels the measured optical corners as model
+# top-left/top-right/bottom-right/bottom-left.  Its 478x478 output is already in
+# simulation coordinates, so the model loader must not rotate it a second time.
+hardware:
+  ccd:
+    flip_vertical: false
+    flip_horizontal: false
+
+output_dir: ../../runs/caltech101_warmstart5_stage2_joint_hardware_canonical_ccd

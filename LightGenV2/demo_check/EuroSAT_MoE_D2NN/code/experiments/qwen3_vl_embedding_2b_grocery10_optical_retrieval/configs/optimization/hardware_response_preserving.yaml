@@ -1,0 +1,8 @@
+base_config: ../release/hardware_moe4.yaml
+
+# Current highest-observed MoE4 software checkpoint. It uses the same physical
+# 2x2 panel and BMP sizes as the canonical release, but its OEO processing must
+# use the response-preserving model config below.
+model_config: response_preserving_stage2_grocery10.yaml
+checkpoint: ../../runs/optimization_moe4_response_grocery10_epoch40/ema_best_observed_test_checkpoint.pt
+output_dir: ../../hardware_sessions/optimization_moe4_response_epoch28

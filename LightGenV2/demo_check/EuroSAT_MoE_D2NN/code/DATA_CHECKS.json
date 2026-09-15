@@ -1,0 +1,470 @@
+{
+  "passed": true,
+  "images": 53784,
+  "pairs": 26892,
+  "source_pairs": 27000,
+  "split_sha256": "46e42dad5f19bff7ad638d13a359f118348ccd3e6eab4d76dc4b97be0340dc59",
+  "paired_split_consistent": true,
+  "spatial_groups_disjoint": true,
+  "cross_split_minimum_center_distance_m": 3023.2192934034274,
+  "cross_split_or_label_duplicates": [],
+  "within_partition_duplicates": [],
+  "excluded_pairs": [
+    {
+      "pair_id": "AnnualCrop_1435",
+      "reason": "identical_pixels_conflicting_labels"
+    },
+    {
+      "pair_id": "AnnualCrop_2004",
+      "reason": "identical_pixels_conflicting_labels"
+    },
+    {
+      "pair_id": "AnnualCrop_297",
+      "reason": "identical_pixels_conflicting_labels"
+    },
+    {
+      "pair_id": "AnnualCrop_346",
+      "reason": "identical_pixels_conflicting_labels"
+    },
+    {
+      "pair_id": "AnnualCrop_44",
+      "reason": "identical_pixels_conflicting_labels"
+    },
+    {
+      "pair_id": "AnnualCrop_80",
+      "reason": "identical_pixels_conflicting_labels"
+    },
+    {
+      "pair_id": "Forest_119",
+      "reason": "identical_pixels_conflicting_labels"
+    },
+    {
+      "pair_id": "Forest_1497",
+      "reason": "identical_pixels_conflicting_labels"
+    },
+    {
+      "pair_id": "Forest_1607",
+      "reason": "identical_pixels_conflicting_labels"
+    },
+    {
+      "pair_id": "Forest_1705",
+      "reason": "identical_pixels_conflicting_labels"
+    },
+    {
+      "pair_id": "Forest_1717",
+      "reason": "identical_pixels_conflicting_labels"
+    },
+    {
+      "pair_id": "Forest_1891",
+      "reason": "identical_pixels_conflicting_labels"
+    },
+    {
+      "pair_id": "Forest_1909",
+      "reason": "identical_pixels_conflicting_labels"
+    },
+    {
+      "pair_id": "Forest_2103",
+      "reason": "identical_pixels_conflicting_labels"
+    },
+    {
+      "pair_id": "Forest_2163",
+      "reason": "identical_pixels_conflicting_labels"
+    },
+    {
+      "pair_id": "Forest_2212",
+      "reason": "identical_pixels_conflicting_labels"
+    },
+    {
+      "pair_id": "Forest_2382",
+      "reason": "identical_pixels_conflicting_labels"
+    },
+    {
+      "pair_id": "Forest_2437",
+      "reason": "identical_pixels_conflicting_labels"
+    },
+    {
+      "pair_id": "Forest_2548",
+      "reason": "identical_pixels_conflicting_labels"
+    },
+    {
+      "pair_id": "Forest_2751",
+      "reason": "identical_pixels_conflicting_labels"
+    },
+    {
+      "pair_id": "Forest_2800",
+      "reason": "identical_pixels_conflicting_labels"
+    },
+    {
+      "pair_id": "Forest_592",
+      "reason": "identical_pixels_conflicting_labels"
+    },
+    {
+      "pair_id": "Forest_620",
+      "reason": "identical_pixels_conflicting_labels"
+    },
+    {
+      "pair_id": "Forest_657",
+      "reason": "identical_pixels_conflicting_labels"
+    },
+    {
+      "pair_id": "Forest_774",
+      "reason": "identical_pixels_conflicting_labels"
+    },
+    {
+      "pair_id": "HerbaceousVegetation_1027",
+      "reason": "identical_pixels_conflicting_labels"
+    },
+    {
+      "pair_id": "HerbaceousVegetation_1170",
+      "reason": "identical_pixels_conflicting_labels"
+    },
+    {
+      "pair_id": "HerbaceousVegetation_1238",
+      "reason": "identical_pixels_conflicting_labels"
+    },
+    {
+      "pair_id": "HerbaceousVegetation_144",
+      "reason": "identical_pixels_conflicting_labels"
+    },
+    {
+      "pair_id": "HerbaceousVegetation_171",
+      "reason": "identical_pixels_conflicting_labels"
+    },
+    {
+      "pair_id": "HerbaceousVegetation_1807",
+      "reason": "identical_pixels_conflicting_labels"
+    },
+    {
+      "pair_id": "HerbaceousVegetation_1918",
+      "reason": "identical_pixels_conflicting_labels"
+    },
+    {
+      "pair_id": "HerbaceousVegetation_1920",
+      "reason": "identical_pixels_conflicting_labels"
+    },
+    {
+      "pair_id": "HerbaceousVegetation_1934",
+      "reason": "identical_pixels_conflicting_labels"
+    },
+    {
+      "pair_id": "HerbaceousVegetation_2011",
+      "reason": "identical_pixels_conflicting_labels"
+    },
+    {
+      "pair_id": "HerbaceousVegetation_215",
+      "reason": "identical_pixels_conflicting_labels"
+    },
+    {
+      "pair_id": "HerbaceousVegetation_662",
+      "reason": "identical_pixels_conflicting_labels"
+    },
+    {
+      "pair_id": "HerbaceousVegetation_812",
+      "reason": "identical_pixels_conflicting_labels"
+    },
+    {
+      "pair_id": "HerbaceousVegetation_87",
+      "reason": "identical_pixels_conflicting_labels"
+    },
+    {
+      "pair_id": "Highway_1065",
+      "reason": "identical_pixels_conflicting_labels"
+    },
+    {
+      "pair_id": "Highway_1118",
+      "reason": "identical_pixels_conflicting_labels"
+    },
+    {
+      "pair_id": "Highway_1140",
+      "reason": "identical_pixels_conflicting_labels"
+    },
+    {
+      "pair_id": "Highway_1316",
+      "reason": "identical_pixels_conflicting_labels"
+    },
+    {
+      "pair_id": "Highway_1909",
+      "reason": "identical_pixels_conflicting_labels"
+    },
+    {
+      "pair_id": "Highway_1974",
+      "reason": "identical_pixels_conflicting_labels"
+    },
+    {
+      "pair_id": "Highway_537",
+      "reason": "identical_pixels_conflicting_labels"
+    },
+    {
+      "pair_id": "Industrial_1049",
+      "reason": "identical_pixels_conflicting_labels"
+    },
+    {
+      "pair_id": "Industrial_1348",
+      "reason": "identical_pixels_conflicting_labels"
+    },
+    {
+      "pair_id": "Industrial_1355",
+      "reason": "identical_pixels_conflicting_labels"
+    },
+    {
+      "pair_id": "Industrial_1552",
+      "reason": "identical_pixels_conflicting_labels"
+    },
+    {
+      "pair_id": "Industrial_1663",
+      "reason": "identical_pixels_conflicting_labels"
+    },
+    {
+      "pair_id": "Industrial_191",
+      "reason": "identical_pixels_conflicting_labels"
+    },
+    {
+      "pair_id": "Industrial_1963",
+      "reason": "identical_pixels_conflicting_labels"
+    },
+    {
+      "pair_id": "Industrial_1975",
+      "reason": "identical_pixels_conflicting_labels"
+    },
+    {
+      "pair_id": "Industrial_2090",
+      "reason": "identical_pixels_conflicting_labels"
+    },
+    {
+      "pair_id": "Industrial_374",
+      "reason": "identical_pixels_conflicting_labels"
+    },
+    {
+      "pair_id": "Industrial_517",
+      "reason": "identical_pixels_conflicting_labels"
+    },
+    {
+      "pair_id": "Industrial_528",
+      "reason": "identical_pixels_conflicting_labels"
+    },
+    {
+      "pair_id": "Industrial_548",
+      "reason": "identical_pixels_conflicting_labels"
+    },
+    {
+      "pair_id": "Industrial_650",
+      "reason": "identical_pixels_conflicting_labels"
+    },
+    {
+      "pair_id": "Industrial_754",
+      "reason": "identical_pixels_conflicting_labels"
+    },
+    {
+      "pair_id": "Industrial_766",
+      "reason": "identical_pixels_conflicting_labels"
+    },
+    {
+      "pair_id": "Industrial_825",
+      "reason": "identical_pixels_conflicting_labels"
+    },
+    {
+      "pair_id": "Pasture_1103",
+      "reason": "identical_pixels_conflicting_labels"
+    },
+    {
+      "pair_id": "Pasture_1113",
+      "reason": "identical_pixels_conflicting_labels"
+    },
+    {
+      "pair_id": "Pasture_1248",
+      "reason": "identical_pixels_conflicting_labels"
+    },
+    {
+      "pair_id": "Pasture_325",
+      "reason": "identical_pixels_conflicting_labels"
+    },
+    {
+      "pair_id": "Pasture_352",
+      "reason": "identical_pixels_conflicting_labels"
+    },
+    {
+      "pair_id": "Pasture_964",
+      "reason": "identical_pixels_conflicting_labels"
+    },
+    {
+      "pair_id": "PermanentCrop_1008",
+      "reason": "identical_pixels_conflicting_labels"
+    },
+    {
+      "pair_id": "PermanentCrop_1050",
+      "reason": "identical_pixels_conflicting_labels"
+    },
+    {
+      "pair_id": "PermanentCrop_1126",
+      "reason": "identical_pixels_conflicting_labels"
+    },
+    {
+      "pair_id": "PermanentCrop_1390",
+      "reason": "identical_pixels_conflicting_labels"
+    },
+    {
+      "pair_id": "PermanentCrop_1438",
+      "reason": "identical_pixels_conflicting_labels"
+    },
+    {
+      "pair_id": "PermanentCrop_166",
+      "reason": "identical_pixels_conflicting_labels"
+    },
+    {
+      "pair_id": "PermanentCrop_180",
+      "reason": "identical_pixels_conflicting_labels"
+    },
+    {
+      "pair_id": "PermanentCrop_1851",
+      "reason": "identical_pixels_conflicting_labels"
+    },
+    {
+      "pair_id": "PermanentCrop_1954",
+      "reason": "identical_pixels_conflicting_labels"
+    },
+    {
+      "pair_id": "PermanentCrop_2101",
+      "reason": "identical_pixels_conflicting_labels"
+    },
+    {
+      "pair_id": "PermanentCrop_2120",
+      "reason": "identical_pixels_conflicting_labels"
+    },
+    {
+      "pair_id": "PermanentCrop_216",
+      "reason": "identical_pixels_conflicting_labels"
+    },
+    {
+      "pair_id": "PermanentCrop_2485",
+      "reason": "identical_pixels_conflicting_labels"
+    },
+    {
+      "pair_id": "PermanentCrop_34",
+      "reason": "identical_pixels_conflicting_labels"
+    },
+    {
+      "pair_id": "PermanentCrop_418",
+      "reason": "identical_pixels_conflicting_labels"
+    },
+    {
+      "pair_id": "PermanentCrop_453",
+      "reason": "identical_pixels_conflicting_labels"
+    },
+    {
+      "pair_id": "PermanentCrop_456",
+      "reason": "identical_pixels_conflicting_labels"
+    },
+    {
+      "pair_id": "PermanentCrop_495",
+      "reason": "identical_pixels_conflicting_labels"
+    },
+    {
+      "pair_id": "PermanentCrop_917",
+      "reason": "identical_pixels_conflicting_labels"
+    },
+    {
+      "pair_id": "PermanentCrop_950",
+      "reason": "identical_pixels_conflicting_labels"
+    },
+    {
+      "pair_id": "Residential_1989",
+      "reason": "identical_pixels_conflicting_labels"
+    },
+    {
+      "pair_id": "Residential_2093",
+      "reason": "identical_pixels_conflicting_labels"
+    },
+    {
+      "pair_id": "Residential_2131",
+      "reason": "identical_pixels_conflicting_labels"
+    },
+    {
+      "pair_id": "Residential_2248",
+      "reason": "identical_pixels_conflicting_labels"
+    },
+    {
+      "pair_id": "Residential_2847",
+      "reason": "identical_pixels_conflicting_labels"
+    },
+    {
+      "pair_id": "Residential_291",
+      "reason": "identical_pixels_conflicting_labels"
+    },
+    {
+      "pair_id": "Residential_914",
+      "reason": "identical_pixels_conflicting_labels"
+    },
+    {
+      "pair_id": "Residential_929",
+      "reason": "identical_pixels_conflicting_labels"
+    },
+    {
+      "pair_id": "River_1825",
+      "reason": "identical_pixels_conflicting_labels"
+    },
+    {
+      "pair_id": "River_1899",
+      "reason": "identical_pixels_conflicting_labels"
+    },
+    {
+      "pair_id": "River_247",
+      "reason": "identical_pixels_conflicting_labels"
+    },
+    {
+      "pair_id": "River_637",
+      "reason": "identical_pixels_conflicting_labels"
+    },
+    {
+      "pair_id": "River_70",
+      "reason": "identical_pixels_conflicting_labels"
+    },
+    {
+      "pair_id": "SeaLake_1233",
+      "reason": "identical_pixels_conflicting_labels"
+    },
+    {
+      "pair_id": "SeaLake_1273",
+      "reason": "identical_pixels_conflicting_labels"
+    },
+    {
+      "pair_id": "SeaLake_2072",
+      "reason": "identical_pixels_conflicting_labels"
+    },
+    {
+      "pair_id": "SeaLake_2916",
+      "reason": "identical_pixels_conflicting_labels"
+    },
+    {
+      "pair_id": "SeaLake_500",
+      "reason": "identical_pixels_conflicting_labels"
+    },
+    {
+      "pair_id": "SeaLake_571",
+      "reason": "identical_pixels_conflicting_labels"
+    }
+  ],
+  "archive_checksums": {
+    "rgb": {
+      "url": "https://zenodo.org/records/7711810/files/EuroSAT_RGB.zip?download=1",
+      "bytes": 94658721,
+      "algorithm": "md5",
+      "checksum": "f46e308c4d50d4bf32fedad2d3d62f3b",
+      "sha256": "b4f5b234ecb7d7ff9c6cddb046543b4717c53fd6e9815be6c0e80cc614f51b90"
+    },
+    "ms": {
+      "url": "https://zenodo.org/records/7711810/files/EuroSAT_MS.zip?download=1",
+      "bytes": 2065402329,
+      "algorithm": "md5",
+      "checksum": "091174add3c8e680a49244acf185b9f0",
+      "sha256": "eb0cf47380b0ff0dba68726bcb9184f8b261efcbb818d3d2b00b557ab0835b33"
+    },
+    "sar": {
+      "url": "https://huggingface.co/datasets/wangyi111/EuroSAT-SAR/resolve/main/EuroSAT-SAR.zip?download=true",
+      "bytes": 922267666,
+      "algorithm": "sha256",
+      "checksum": "3ffad1e8bb3c2b0c2941ed60b978d78f43a77c9b3bddd6fe35c34ab655459c10",
+      "sha256": "3ffad1e8bb3c2b0c2941ed60b978d78f43a77c9b3bddd6fe35c34ab655459c10"
+    }
+  },
+  "elapsed_sec": 188.3942883014679
+}

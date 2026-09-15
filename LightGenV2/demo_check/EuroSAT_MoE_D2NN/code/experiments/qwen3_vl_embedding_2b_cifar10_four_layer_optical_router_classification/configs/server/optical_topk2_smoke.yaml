@@ -1,0 +1,34 @@
+base_config: ../../../qwen3_vl_embedding_2b_caltech101_four_layer_optical_router_retrieval/configs/release/optical_power_topk2.yaml
+
+dataset:
+  dataset_root: /root/autodl-tmp/data/cifar10
+  download: true
+
+qwen:
+  cache_dir: /root/autodl-tmp/huggingface-cache
+  instruction: Represent this image for CIFAR-10 object classification.
+
+training:
+  epochs: 1
+  readout_learning_rate: 0.001
+
+batching:
+  batch_size: 2
+  pk_skus_per_batch: 1
+  pk_images_per_sku: 2
+  inference_batch_size: 2
+  optimizer_steps_per_epoch: 1
+
+classification:
+  initialization: random
+  num_classes: 10
+  split_seed: 42
+  validation_samples_per_class: 1
+  test_samples_per_class: 1
+  num_workers: 0
+  head_seed: 1042
+  head_learning_rate: 0.001
+  max_train_steps_per_epoch: 1
+  run_final_test: false
+
+output_dir: /root/autodl-tmp/runs/qwen3_vl_cifar10_router_classification/smoke_optical_topk2

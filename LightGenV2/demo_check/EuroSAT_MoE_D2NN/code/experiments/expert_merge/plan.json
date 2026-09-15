@@ -1,0 +1,22 @@
+{
+  "version": "office_home_expert_merge_v1_20260909",
+  "seed": 42,
+  "stages": ["shared", "expert_A", "expert_B", "router"],
+  "epochs": {"shared": 40, "expert_A": 15, "expert_B": 15, "router": 15},
+  "shared_warmup_epochs": 4,
+  "batch_size": 60,
+  "shared_route_training": "alternate domain-isolated groups and uniform all-four batches",
+  "expert_training": "A upper E0/E1 only; B lower E2/E3 only; equal within-group power",
+  "final_inference": "one checkpoint, fixed phases, automatic dense four-way routing, no domain ID",
+  "route_kl_weight": 0.02,
+  "route_group_probability": 0.7,
+  "capture_weight": 0.005,
+  "teacher_kd_weight": 0.2,
+  "teacher_temperature": 2.0,
+  "label_smoothing": 0.05,
+  "targets": {"minimum_isolated_accuracy": 0.6, "maximum_merge_drop": 0.03},
+  "test_sealed": true,
+  "experiment_type": "supervised domain-expert pretraining and merging; shared layers see A+B",
+  "after_completion": "complete_waiting_user",
+  "d1_authorized": false
+}

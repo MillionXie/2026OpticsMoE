@@ -1,0 +1,11 @@
+base_config: common.yaml
+
+router_experiment:
+  backend: electronic
+  top_k: 2
+  protocol: legacy_anchor
+  reset_router_parameters: false
+  weight_normalization: legacy_l1
+  straight_through: false
+
+output_dir: ../../runs/electronic_legacy_topk2_anchor

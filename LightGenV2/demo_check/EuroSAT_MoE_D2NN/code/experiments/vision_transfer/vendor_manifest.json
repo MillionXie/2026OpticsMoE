@@ -1,0 +1,19 @@
+{
+  "source": "https://raw.githubusercontent.com/hendrycks/robustness/master/ImageNet-C/create_c/make_cifar_c.py",
+  "sha256": "f865ae91dffb2b4834292ce05c876bf3d77f36417f70075a2b5259348b0c83a5",
+  "assets": {
+    "frost1.png": "ff9f907860bd7a835d459e32f9d588062b7f61ee267343cc7222b56753a14755",
+    "frost2.png": "fe211a89b336999c207a852ce05818d4545d0b57c5beadd824b4cc9d9a9b6137",
+    "frost3.png": "2d0d50b4a9bb213f38b024ef7768731bb83cc08d2f26b5766bbc167cdfa0e504",
+    "frost4.jpg": "3f8b91ca1a9fa7167b09e773da53f5ae60d0a1fd88f02a783f6e328a72887f6e",
+    "frost5.jpg": "5fc6a19df4a429ba68abdcc8f8a4278d4c9f81c9ccafd2c92ab0c8cf8992ebd2",
+    "frost6.jpg": "1f92b2f48408748085b68dd81d816ef239f42cef3029c25d041fcb6760fb4f25"
+  },
+  "compatibility_changes": [
+    "skimage multichannel to channel_axis",
+    "numpy float64/frombuffer API",
+    "explicit deterministic random_noise RNG",
+    "package-relative frost textures",
+    "remove dataset generation at import"
+  ]
+}

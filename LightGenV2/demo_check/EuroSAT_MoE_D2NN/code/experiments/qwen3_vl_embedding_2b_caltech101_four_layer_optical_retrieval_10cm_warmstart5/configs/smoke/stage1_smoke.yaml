@@ -1,0 +1,20 @@
+base_config: ../release/stage1_optical_calibration.yaml
+
+dataset:
+  gallery_images_per_sku: 1
+  train_limit_per_sku: 3
+  test_limit_per_sku: 1
+  reserve_test_before_train: true
+
+training:
+  epochs: 1
+  phase_focus: {enabled: false, warmup_epochs: 0, interval_epochs: 1}
+
+batching:
+  batch_size: 20
+  pk_skus_per_batch: 10
+  pk_images_per_sku: 2
+  optimizer_steps_per_epoch: 1
+  num_workers: 0
+
+output_dir: ../../runs/smoke_warmstart5_stage1

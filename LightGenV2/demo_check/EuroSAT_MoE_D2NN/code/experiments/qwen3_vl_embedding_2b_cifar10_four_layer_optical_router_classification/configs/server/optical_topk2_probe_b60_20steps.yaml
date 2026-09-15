@@ -1,0 +1,43 @@
+base_config: ../../../qwen3_vl_embedding_2b_caltech101_four_layer_optical_router_retrieval/configs/release/optical_power_topk2.yaml
+
+dataset:
+  dataset_root: /root/autodl-tmp/data/cifar10
+  download: true
+
+qwen:
+  cache_dir: /root/autodl-tmp/huggingface-cache
+  instruction: Represent this image for CIFAR-10 object classification.
+
+training:
+  epochs: 1
+  learning_rate: 0.0002
+  adapter_learning_rate: 0.0002
+  readout_learning_rate: 0.001
+  phase_learning_rate: 0.006
+  router_learning_rate: 0.01
+  weight_decay: 0.0
+
+batching:
+  batch_size: 60
+  pk_skus_per_batch: 10
+  pk_images_per_sku: 6
+  inference_batch_size: 60
+  optimizer_steps_per_epoch: 20
+
+classification:
+  initialization: random
+  num_classes: 10
+  split_seed: 42
+  validation_samples_per_class: 100
+  test_samples_per_class: null
+  train_augmentation: true
+  num_workers: 4
+  head_seed: 1042
+  head_learning_rate: 0.001
+  max_train_steps_per_epoch: 20
+  eval_every_epochs: 1
+  log_every_steps: 5
+  early_stopping_patience: 0
+  run_final_test: false
+
+output_dir: /root/autodl-tmp/runs/qwen3_vl_cifar10_router_classification/probe_optical_b60_20steps

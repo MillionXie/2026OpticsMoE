@@ -1,0 +1,40 @@
+{
+  "verified": true,
+  "dataset_licenses": {
+    "EuroSAT": "MIT",
+    "EuroSAT-SAR": "MIT"
+  },
+  "additional_terms": "Copernicus Sentinel data legal notice",
+  "source_snapshots": {
+    "EuroSAT_README.md": {
+      "url": "https://raw.githubusercontent.com/phelber/EuroSAT/master/README.md",
+      "sha256": "e9c4e82e7edc2d9fe47b023bbdc450f341694f94aac6bcef5c5e47b71c49859f",
+      "retrieved_at": 1789226045.5930693
+    },
+    "EuroSAT_MIT_LICENSE.txt": {
+      "url": "https://raw.githubusercontent.com/phelber/EuroSAT/master/LICENSE",
+      "sha256": "73b8c5d100ff46a84845702b9e78d76ddb1effaacdb386b91dc07061c6123362",
+      "retrieved_at": 1789226044.5944383
+    },
+    "EuroSAT_SAR_README.md": {
+      "url": "https://huggingface.co/datasets/wangyi111/EuroSAT-SAR/raw/main/README.md",
+      "sha256": "60fbf85cf189ca843f8bcf193cd5b0d4e8599edd6a8e461555570f6f35edec46",
+      "retrieved_at": 1789226045.533066
+    },
+    "SENTINEL_LEGAL_NOTICE.html": {
+      "url": "https://cds.climate.copernicus.eu/licences/ec-sentinel",
+      "sha256": "bfad1b992eb79fb9a0a665cc9737ef9d3cee521eb16484b6bc3a2115531dfd37",
+      "retrieved_at": 1789226045.3169904
+    },
+    "SAR_preprocessing_reference.py": {
+      "url": "https://raw.githubusercontent.com/zhu-xlab/FGMAE/main/src/transfer_classification/datasets/EuroSat/eurosat_dataset_s1.py",
+      "sha256": "b6828d8bc517e308d6e79a34c30b3e5b4eaaeceacc6a96cce9b7e6467645a318",
+      "retrieved_at": 1789226044.5790162
+    },
+    "FGMAE_APACHE_LICENSE.txt": {
+      "url": "https://raw.githubusercontent.com/zhu-xlab/FGMAE/main/LICENSE",
+      "sha256": "50e6751797c50dedd75ef1b8a0d9e42f5f8472e9fbce91f34718e9f97b0c780a",
+      "retrieved_at": 1789226044.613188
+    }
+  }
+}

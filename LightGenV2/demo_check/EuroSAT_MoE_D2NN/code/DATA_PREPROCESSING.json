@@ -1,0 +1,49 @@
+{
+  "archives": {
+    "rgb": {
+      "url": "https://zenodo.org/records/7711810/files/EuroSAT_RGB.zip?download=1",
+      "bytes": 94658721,
+      "algorithm": "md5",
+      "checksum": "f46e308c4d50d4bf32fedad2d3d62f3b",
+      "sha256": "b4f5b234ecb7d7ff9c6cddb046543b4717c53fd6e9815be6c0e80cc614f51b90"
+    },
+    "ms": {
+      "url": "https://zenodo.org/records/7711810/files/EuroSAT_MS.zip?download=1",
+      "bytes": 2065402329,
+      "algorithm": "md5",
+      "checksum": "091174add3c8e680a49244acf185b9f0",
+      "sha256": "eb0cf47380b0ff0dba68726bcb9184f8b261efcbb818d3d2b00b557ab0835b33"
+    },
+    "sar": {
+      "url": "https://huggingface.co/datasets/wangyi111/EuroSAT-SAR/resolve/main/EuroSAT-SAR.zip?download=true",
+      "bytes": 922267666,
+      "algorithm": "sha256",
+      "checksum": "3ffad1e8bb3c2b0c2941ed60b978d78f43a77c9b3bddd6fe35c34ab655459c10",
+      "sha256": "3ffad1e8bb3c2b0c2941ed60b978d78f43a77c9b3bddd6fe35c34ab655459c10"
+    }
+  },
+  "encoding": {
+    "A": "official EuroSAT RGB JPEG64x64, fixed common center56x56 crop",
+    "B": "VV/VH dB reprojected to the paired optical center56x56 grid, original-author 1/99 percentile clip and fixed mean+-2std scaling; RGB=(VV,VH,mean(VV,VH))",
+    "resize": "same224 bicubic padding",
+    "augmentation": "same horizontal flip and ColorJitter(.1,.1,.1,.02) for all models and domains"
+  },
+  "sar_band_order": [
+    "VV",
+    "VH"
+  ],
+  "sar_db_statistics": {
+    "mean": [
+      -12.59,
+      -20.26
+    ],
+    "std": [
+      5.26,
+      5.91
+    ]
+  },
+  "sar_reference": "https://github.com/zhu-xlab/FGMAE/blob/main/src/transfer_classification/datasets/EuroSat/eurosat_dataset_s1.py",
+  "calibration_uses_test_data": false,
+  "spatial_alignment": "Both modalities use the optical center56x56 geographic region; SAR bilinear reproject to exactly that grid. Fixed crop removes mismatched source borders; no change to model optics.",
+  "rasterio_version": "1.4.4"
+}

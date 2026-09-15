@@ -1,0 +1,44 @@
+base_config: caltech101_four_layer_optical_joint.yaml
+
+# New 4F hardware: the amplitude SLM is native 17 um and the phase SLM remains
+# native 8 um. The learned tensors stay 478x478; only physical sampling and the
+# phase export raster change.
+training:
+  phase_learning_rate: 0.0005
+  router_learning_rate: 0.0002
+  lambda_router_balance: 0.02
+  lambda_router_importance: 0.005
+
+language_optical:
+  pixel_pitch_um: 17.0
+  perturbation:
+    # Up to 204 um logical displacement in every optical boundary. This is
+    # intentionally stronger than the previous +/-8 pixel vaccination.
+    max_shift_pixels: 12
+    phase_shift_pixels: 12
+    ccd_shift_pixels: 12
+
+hardware:
+  amplitude_slm:
+    width: 1024
+    height: 1024
+    pixel_pitch_um: 17.0
+    center_x: 512.0
+    center_y: 512.0
+  phase_mask:
+    width: 1920
+    height: 1200
+    pixel_pitch_um: 8.0
+    center_x: 980.0
+    center_y: 590.0
+    # Preserve the calibrated orientation of the original optical path.
+    flip_vertical: true
+    flip_horizontal: false
+  ccd:
+    flip_vertical: true
+    flip_horizontal: true
+    physical_binning_factor: 1
+    target_size: 478
+    transport_size: 478
+
+output_dir: ../../runs/caltech101_four_layer_moe4_joint_17um

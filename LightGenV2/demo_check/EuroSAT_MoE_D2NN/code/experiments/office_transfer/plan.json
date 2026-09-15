@@ -1,0 +1,17 @@
+{
+  "version": "office_home_rows_v1_20260909",
+  "data_root": "/root/autodl-tmp/data/office_home",
+  "classes": ["Alarm_Clock", "Backpack", "Bike", "Bottle", "Chair", "Keyboard", "Laptop", "Mug", "Sneakers", "Telephone"],
+  "domains": ["Product", "Real_World"],
+  "split_seed": 20260909,
+  "split_ratios": [0.6, 0.2, 0.2],
+  "near_duplicate_phash_distance": 4,
+  "pilot": {"seeds": [42], "source_epochs": 12, "transfer_epochs": 12, "warmup_epochs": 3, "phase_end_epoch": 9},
+  "full": {"seeds": [42, 43, 44], "source_epochs": 40, "transfer_epochs": 30, "warmup_epochs": 4, "phase_end_epoch": 28},
+  "batch_size": 60,
+  "loss": {"label_smoothing": 0.05, "kd_weight": 0.2, "kd_temperature": 2.0, "route_kl_initial": 0.02, "route_kl_final": 0.005, "group_probability": 0.6, "capture_weight": 0.005},
+  "targets": {"maximum_forgetting": 0.03, "maximum_b_baseline_gap": 0.05, "minimum_b_gain": 0.0},
+  "pilot_gate": {"single_domain_validation_accuracy": 0.6, "minimum_b_gain": 0.0},
+  "inference": "fixed checkpoint and phases, image-only inputs, no domain ID, all four experts active",
+  "test_sealed_during_pilot": true
+}

@@ -1,0 +1,11 @@
+base_config: electronic_target10_smoke.yaml
+
+training:
+  teacher_enabled: true
+  lambda_kd: 1.0
+
+teacher_cache:
+  directory: ../../cache/smoke_target10_mlp_teacher
+  derive_from: ../../../qwen3_vl_embedding_2b_caltech101_robust_hybrid_retrieval/cache/caltech101_target10_seed42_g3_train30_test20
+
+output_dir: ../../runs/smoke_target10_mlp_teacher

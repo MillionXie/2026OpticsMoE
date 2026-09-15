@@ -1,0 +1,54 @@
+base_config: ../../../qwen3_vl_embedding_2b_caltech101_robust_hybrid_retrieval/configs/release/caltech101_target10_finetune.yaml
+
+# Direct target-10 training. No all-101 student checkpoint is loaded.
+dataset:
+  train_limit_per_sku: null
+  test_limit_per_sku: 20
+  reserve_test_before_train: true
+
+training:
+  epochs: 60
+  learning_rate: 0.00015
+  adapter_learning_rate: 0.0001
+  readout_learning_rate: 0.0002
+  router_learning_rate: 0.0
+  phase_learning_rate: 0.0
+  weight_decay: 0.01
+  lambda_kd: 0.0
+  lambda_relational_kd: 0.0
+  lambda_ret: 1.0
+  lambda_gallery: 1.0
+  lambda_teacher_gallery: 0.0
+  lambda_router_balance: 0.0
+  lambda_router_importance: 0.0
+  phase_focus: {enabled: false, warmup_epochs: 0, interval_epochs: 1}
+  gradient_clip_norm: 1.0
+  ema_decay: 0.995
+  resume_optimizer_state: false
+  evaluate_test_each_epoch: true
+  log_interval_batches: 5
+  episodic_prototype_loss: true
+  learning_rate_schedule: cosine
+  learning_rate_warmup_ratio: 0.05
+
+batching:
+  batch_size: 30
+  pk_skus_per_batch: 10
+  pk_images_per_sku: 3
+  optimizer_steps_per_epoch: null
+
+augmentation:
+  enabled: true
+  crop_scale_min: 0.80
+  brightness_jitter: 0.15
+  contrast_jitter: 0.15
+  rotation_degrees: 10.0
+
+electronic:
+  width: 128
+  layers: 2
+  expansion: 2.0
+  dropout: 0.10
+  initial_residual_weight: 0.10
+
+output_dir: ../../runs/caltech101_target10_mlp_all_data

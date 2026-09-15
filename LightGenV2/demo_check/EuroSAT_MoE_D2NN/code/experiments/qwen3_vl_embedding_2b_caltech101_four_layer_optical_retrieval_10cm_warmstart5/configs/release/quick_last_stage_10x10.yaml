@@ -1,0 +1,9 @@
+base_config: stage2_joint_sealed_test.yaml
+
+dataset:
+  gallery_images_per_sku: 1
+  train_limit_per_sku: 10
+  test_limit_per_sku: 10
+  reserve_test_before_train: true
+
+output_dir: ../../runs/caltech101_warmstart5_quick_last_stage_metadata

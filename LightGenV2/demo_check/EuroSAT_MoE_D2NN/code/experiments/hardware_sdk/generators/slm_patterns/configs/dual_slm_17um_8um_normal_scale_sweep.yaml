@@ -1,0 +1,43 @@
+output_dir: ../generated/dual_slm_17um_8um_normal_large_blocks_k0p1
+
+logical:
+  active_size: 478
+  pixel_pitch_um: 17.0
+  grating_period_px: 8
+
+amplitude_slm:
+  size_wh: [1024, 1024]
+  pixel_pitch_um: 17.0
+  center_xy: [512.0, 512.0]
+  # Corrected hardware polarity: command 255 is white/bright/transmissive.
+  invert_before_export: false
+
+phase_slm:
+  size_wh: [1920, 1200]
+  pixel_pitch_um: 8.0
+  center_xy: [980.0, 590.0]
+  flip_vertical: true
+  flip_horizontal: false
+
+phase_scale_sweep:
+  absolute_deltas:
+    - 0.0005
+    - 0.0010
+    - 0.0015
+    - 0.0020
+    - 0.0025
+    - 0.0030
+    - 0.0035
+    - 0.0040
+    - 0.0045
+    - 0.0050
+    - 0.0100
+    - 0.0200
+    - 0.0300
+    - 0.0400
+    - 0.0500
+    - 0.0600
+    - 0.0700
+    - 0.0800
+    - 0.0900
+    - 0.1000

@@ -1,0 +1,10 @@
+base_config: optical_topk2_probe_b60_20steps.yaml
+
+batching:
+  optimizer_steps_per_epoch: 100
+
+classification:
+  max_train_steps_per_epoch: 100
+  log_every_steps: 25
+
+output_dir: /root/autodl-tmp/runs/qwen3_vl_cifar10_router_classification/probe_optical_b60_prefetch_100steps

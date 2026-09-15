@@ -1,0 +1,42 @@
+{
+  "reasons": {
+    "identical_pixels_conflicting_labels": 108
+  },
+  "duplicate_groups": [
+    {
+      "domain": "B",
+      "sha256": "2a42ca28eb429bd56b07dea2293db3db180e700ab1502402e6c9c45437f2a5da",
+      "count": 108,
+      "examples": [
+        {
+          "pair_id": "AnnualCrop_1435",
+          "minimum": 0,
+          "maximum": 0,
+          "unique_values": 1,
+          "std": 0.0
+        },
+        {
+          "pair_id": "AnnualCrop_2004",
+          "minimum": 0,
+          "maximum": 0,
+          "unique_values": 1,
+          "std": 0.0
+        },
+        {
+          "pair_id": "AnnualCrop_297",
+          "minimum": 0,
+          "maximum": 0,
+          "unique_values": 1,
+          "std": 0.0
+        },
+        {
+          "pair_id": "AnnualCrop_346",
+          "minimum": 0,
+          "maximum": 0,
+          "unique_values": 1,
+          "std": 0.0
+        }
+      ]
+    }
+  ]
+}

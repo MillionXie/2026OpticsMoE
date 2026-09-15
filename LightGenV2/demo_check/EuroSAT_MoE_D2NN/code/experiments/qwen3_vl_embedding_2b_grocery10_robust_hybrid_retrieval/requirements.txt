@@ -1,0 +1,1 @@
+-r ../qwen3_vl_embedding_2b_grocery10_optical_retrieval/requirements.txt

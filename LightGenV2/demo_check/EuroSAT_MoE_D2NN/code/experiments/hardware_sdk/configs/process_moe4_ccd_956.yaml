@@ -1,0 +1,20 @@
+# Paths are relative to this YAML file unless overridden on the command line.
+input_dir: ../data/ccd_captured_raw
+output_dir: ../data/ccd_captured_moe4_956
+
+# Set this to the approximate 2x2-expert active region in every raw CCD frame.
+# The selected rectangle is resized as a whole; it is never center-cropped.
+roi_xywh: null
+target_size_wh: [956, 956]
+
+# Fixed radiometric conversion only: no background estimation or subtraction.
+# The current laboratory captures are 16-bit PNG. Keep one fixed mapping for
+# every frame; adjust this only when the camera's calibrated range changes.
+intensity:
+  mode: fixed_range
+  black_level: 0
+  white_level: 65535
+
+# Flips intentionally belong to the experiment's hardware.ccd settings.
+flip_vertical: false
+flip_horizontal: false

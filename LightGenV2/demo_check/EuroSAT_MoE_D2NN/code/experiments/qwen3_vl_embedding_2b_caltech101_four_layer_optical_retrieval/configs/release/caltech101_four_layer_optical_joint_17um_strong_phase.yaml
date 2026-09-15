@@ -1,0 +1,23 @@
+base_config: caltech101_four_layer_optical_joint_17um.yaml
+
+# Strong-phase ablation.  This starts from scratch like the normal joint run;
+# it does not load the previous 17 um checkpoint.  The optical fusion is raised
+# enough that the task loss reaches the phase planes, while periodic phase-only
+# epochs stop the electronic path from absorbing every useful update.
+hybrid:
+  initial_fusion: 0.15
+
+training:
+  epochs: 60
+  phase_learning_rate: 0.004
+  router_learning_rate: 0.0002
+  lambda_router_balance: 0.02
+  lambda_router_importance: 0.005
+  phase_focus: {enabled: true, warmup_epochs: 5, interval_epochs: 3}
+  phase_diagnostics:
+    gradient_measure_interval_batches: 10
+    motion_warning_epoch: 5
+    motion_warning_threshold_rad: 0.05
+    preview_interval_epochs: 5
+
+output_dir: ../../runs/caltech101_four_layer_moe4_joint_17um_strong_phase

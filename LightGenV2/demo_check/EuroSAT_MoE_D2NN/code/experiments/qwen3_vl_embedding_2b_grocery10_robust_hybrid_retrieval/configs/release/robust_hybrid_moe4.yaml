@@ -1,0 +1,72 @@
+base_config: ../../../qwen3_vl_embedding_2b_grocery10_optical_retrieval/configs/release/model_moe4.yaml
+
+# Train a new checkpoint: the enhanced readout and residual fusers intentionally
+# change the state dict and are not strict-load compatible with the release run.
+training:
+  epochs: 100
+  learning_rate: 0.0003
+  adapter_learning_rate: 0.0002
+  readout_learning_rate: 0.0003
+  router_learning_rate: 0.0001
+  # 40x below the release from-scratch phase LR (4e-3).
+  phase_learning_rate: 0.0001
+  phase_focus: {enabled: false, warmup_epochs: 0, interval_epochs: 2}
+  lambda_kd: 8.0
+  lambda_relational_kd: 0.25
+  lambda_ret: 1.0
+  lambda_gallery: 0.5
+  lambda_teacher_gallery: 0.25
+  lambda_router_balance: 0.02
+  lambda_router_importance: 0.005
+  ema_decay: 0.995
+
+optical:
+  # This fixed transformer-level skip remains off. The new optical-segment
+  # residuals below are learnable convex mixtures and avoid a double bypass.
+  residual_enabled: false
+  phase:
+    parameterization: sigmoid
+    init: small_normal
+    init_std: 0.02
+    dropout_mode: block_phase_bypass
+    dropout_p: 0.05
+    dropout_block_size: 8
+    dropout_batch_shared: true
+  k_space: {enabled: true, theta_max_deg: 0.65}
+  oeo:
+    enabled: true
+    per_expert_enabled: true
+    elementwise_affine: false
+    hard_route_mask: true
+    reapply_routing_weights: true
+    preserve_response_amplitude: true
+    response_gain_min: 0.5
+    response_gain_max: 2.0
+    detector_integration_factor: 2
+    layernorm_eps: 1.0e-5
+    nonlinearity: relu
+
+robust_hybrid:
+  residual:
+    # sigmoid parameter, learned independently after expert/global optics and
+    # independently in vision/language (four scalar gates in total).
+    initial_input_weight: 0.80
+  electronic_refiner:
+    # Parameter count is independent of the 224x224 CCD resolution.
+    width: 16
+    second_dilation: 2
+    dropout: 0.05
+  embedding_head:
+    bottleneck_dim: 96
+    dropout: 0.10
+  alignment:
+    enabled: true
+    apply_during_eval: false
+    # Simulation pixels are 16 um; 12 logical pixels correspond to 24 pixels
+    # on the exported 8 um SLM/CCD coordinate system.
+    input_shift_max_logical_px: 12
+    phase_shift_max_logical_px: 12
+    ccd_shift_max_logical_px: 12
+    batch_shared: true
+
+output_dir: ../../runs/robust_hybrid_moe4_from_scratch

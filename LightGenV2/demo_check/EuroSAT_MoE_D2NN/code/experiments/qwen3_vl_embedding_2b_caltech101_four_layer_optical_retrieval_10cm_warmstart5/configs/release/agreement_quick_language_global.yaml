@@ -1,0 +1,18 @@
+base_config: quick_last_stage_10x10_canonical_ccd.yaml
+
+# This file does not train or alter the checkpoint.  It only controls a
+# deterministic sim-to-real diagnostic export for the quick last-stage path.
+agreement:
+  # Two sealed test inputs per class: 20 independent model probes.
+  task_test_per_class: 2
+  # The first two SHA-sorted task probes are each captured three times total.
+  repeat_task_keys: 2
+  repeats_per_key: 3
+  probe_seed: 42
+  batch_size: 5
+
+  # Must match RobustCCDNormalizer in the trained 10 cm model.
+  relative_clip: 12.0
+  log_compression: 1.0
+  signal_energy_fraction: 0.99
+  bootstrap_samples: 2000

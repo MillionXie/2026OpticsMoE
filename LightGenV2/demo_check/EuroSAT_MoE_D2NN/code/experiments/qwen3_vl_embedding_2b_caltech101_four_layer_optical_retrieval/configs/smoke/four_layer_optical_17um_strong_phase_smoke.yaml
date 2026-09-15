@@ -1,0 +1,21 @@
+base_config: ../release/caltech101_four_layer_optical_joint_17um_strong_phase.yaml
+
+dataset:
+  train_limit_per_sku: 3
+  test_limit_per_sku: 1
+
+training:
+  epochs: 1
+  # Force the one smoke epoch into phase-only mode so this checks the strongest
+  # optimizer path before the formal run starts.
+  phase_focus: {enabled: true, warmup_epochs: 0, interval_epochs: 1}
+  evaluate_test_each_epoch: true
+  log_interval_batches: 1
+
+batching:
+  batch_size: 4
+  pk_skus_per_batch: 2
+  pk_images_per_sku: 2
+  optimizer_steps_per_epoch: 1
+
+output_dir: ../../runs/smoke_caltech101_four_layer_moe4_joint_17um_strong_phase
