@@ -23,6 +23,7 @@ def main() -> int:
     parser.add_argument("--max-fields", type=int, default=0)
     parser.add_argument("--split", choices=("train", "test"), default="test")
     parser.add_argument("--shs-code-update", action="store_true", help="Small SHA-checked runtime update; no weights or data")
+    parser.add_argument("--update-scope", choices=("hardware", "readout"), default="hardware", help="Readout updates contain only offline adaptation code/tests, never drivers")
     parser.add_argument("--base-manifest", help="SHA256.json of the exact installed release for a checked runtime update")
     args = parser.parse_args()
     if args.shs_code_update:
@@ -36,7 +37,10 @@ def main() -> int:
         if baseline is not None:
             manifest['base_manifest_sha256']=hashlib.sha256(Path(args.base_manifest).read_bytes()).hexdigest()
             manifest['base_runtime_commit']=None
-        for name in ['lab_bench.py','lab_exposure_session.py','lab_runtime.py']:
+        names=(['adapt_measured_readout.py','test_adapt_measured_readout.py'] if args.update_scope=='readout'
+               else ['lab_bench.py','lab_exposure_session.py','lab_runtime.py'])
+        manifest['scope']=args.update_scope
+        for name in names:
             path=prefix+name;data=subprocess.check_output(['git','show',commit+':'+path],cwd=REPO_ROOT)
             old=subprocess.run(['git','show',base+':'+path],cwd=REPO_ROOT,capture_output=True)
             dest='runtime/'+path;files[dest]=data

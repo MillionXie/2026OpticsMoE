@@ -1,9 +1,32 @@
 import unittest
 import numpy as np
-from .adapt_measured_readout import split_indices, metrics, replay_audit, trainable_readout_names, official_partitions
+from types import SimpleNamespace
+from .adapt_measured_readout import split_indices, metrics, replay_audit, trainable_readout_names, official_partitions, training_order, loss_weights
 
 
 class AdaptationTests(unittest.TestCase):
+    def test_training_order_exact_train_only(self):
+        idx=np.arange(2250);targets=np.arange(2808)
+        np.random.seed(8);order=training_order(idx,targets,'mos_stratified')
+        self.assertEqual(set(order),set(idx));self.assertEqual(len(order),len(idx))
+        self.assertFalse(set(order)&set(range(2250,2808)))
+        # Ten equally sized quality strata are represented once per group.
+        for start in range(0,2250,10):self.assertEqual(set(order[start:start+10]//225),set(range(10)))
+        np.random.seed(8);np.testing.assert_array_equal(order,training_order(idx,targets,'mos_stratified'))
+        small=np.array([3,5,8,11,15,19,21,25,28,30,35])
+        self.assertEqual(set(training_order(small,targets,'mos_stratified')),set(small))
+
+    def test_random_order_backwards_compatible(self):
+        np.random.seed(4);expected=np.random.permutation(2250)
+        np.random.seed(4);np.testing.assert_array_equal(expected,training_order(np.arange(2250),np.arange(2250)))
+
+    def test_loss_weights(self):
+        self.assertEqual(loss_weights(SimpleNamespace()),(1.,.2,.1))
+        self.assertEqual(loss_weights(SimpleNamespace(reg_weight=.5,rank_weight=1.,corr_weight=.5)),(.5,1.,.5))
+        for value in [-1,float('nan'),float('inf')]:
+            with self.assertRaises(ValueError):loss_weights(SimpleNamespace(rank_weight=value))
+        with self.assertRaises(ValueError):loss_weights(SimpleNamespace(reg_weight=0,rank_weight=0,corr_weight=0))
+
     def test_original_train_test(self):
         shared=dict(contract='test',checkpoint_sha256='same',target_mean=50.,target_std=10.)
         tr=dict(shared,dataset_split='train',video_ids=[f'train{i}' for i in range(2250)])

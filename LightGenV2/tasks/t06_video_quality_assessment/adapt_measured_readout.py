@@ -79,6 +79,30 @@ def trainable_readout_names(names,scope):
     return allowed
 
 
+def training_order(indices, targets, strategy='random'):
+    """Permutation of TRAIN identities only; stratification never duplicates samples."""
+    indices=np.asarray(indices,dtype=np.int64)
+    if strategy=='random':return np.random.permutation(indices)
+    if strategy!='mos_stratified':raise ValueError('Unknown batch order')
+    values=np.asarray(targets)[indices]
+    if not len(indices) or not np.isfinite(values).all():raise ValueError('Invalid training targets')
+    ordered=indices[np.argsort(values,kind='stable')]
+    bins=[np.random.permutation(b) for b in np.array_split(ordered,min(10,len(ordered)))]
+    # Each consecutive group covers all populated MOS quantile bins.  The
+    # final partial batch is retained, so each training identity occurs once.
+    return np.asarray([b[i] for i in range(max(map(len,bins)))
+                       for b in [bins[j] for j in np.random.permutation(len(bins))]
+                       if i<len(b)],dtype=np.int64)
+
+
+def loss_weights(args):
+    values=tuple(float(getattr(args,k,d)) for k,d in
+                 [('reg_weight',1.),('rank_weight',.2),('corr_weight',.1)])
+    if not all(np.isfinite(x) and x>=0 for x in values) or sum(values)==0:
+        raise ValueError('Loss weights must be finite, nonnegative and not all zero')
+    return values
+
+
 def official_partitions(training, evaluation):
     """Original train/test identities, not a random split of measured test data."""
     tr,te=training['video_ids'],evaluation['video_ids']
@@ -173,6 +197,8 @@ def extract(a):
 def train(a):
     import torch
     import torch.nn.functional as F
+    reg_weight,rank_weight,corr_weight=loss_weights(a)
+    batch_order=getattr(a,'batch_order','random')
     out=Path(a.output)
     if out.exists(): raise FileExistsError(out)
     out.mkdir(parents=True)
@@ -243,7 +269,7 @@ def train(a):
         best_metrics=base_metrics;best_epoch=0;best_state=copy.deepcopy(initial);best_pred=baseline.copy();best_variant='initial'
         history=[]
         for epoch in range(1,a.epochs+1):
-            head.train();order=np.random.permutation(train_idx);losses=[]
+            head.train();order=training_order(train_idx,targets.numpy(),batch_order);losses=[]
             for start in range(0,len(order),a.batch_size):
                 idx=order[start:start+a.batch_size]
                 y=(targets[idx].to(a.device)-data['target_mean'])/data['target_std']
@@ -252,7 +278,7 @@ def train(a):
                 rank=F.softplus(-torch.sign(delta)*(p[:,None]-p[None,:]))[valid].mean() if valid.any() else p.sum()*0
                 pc=p-p.mean();yc=y-y.mean()
                 correlation=1-(pc*yc).sum()/(pc.square().sum().sqrt()*yc.square().sum().sqrt()).clamp_min(1e-6)
-                loss=reg+.2*rank+.1*correlation
+                loss=reg_weight*reg+rank_weight*rank+corr_weight*correlation
                 if anchor_strength:
                     loss=loss+anchor_strength*sum((v-anchor[k]).square().sum() for k,v in head.named_parameters() if v.requires_grad)
                 if not torch.isfinite(loss): raise ValueError('Nonfinite loss')
@@ -305,6 +331,10 @@ def main():
     t.add_argument('--ema',type=float,default=0.,help='EMA parameter decay per optimizer step; zero disables')
     t.add_argument('--anchor',type=float,default=0.,help='L2-SP coefficient on sum squared deviation from original readout')
     t.add_argument('--scope',choices=['head','terminal'],default='head')
+    t.add_argument('--reg-weight',type=float,default=1.,help='SmoothL1 regression loss weight')
+    t.add_argument('--rank-weight',type=float,default=.2,help='Pairwise ranking loss weight')
+    t.add_argument('--corr-weight',type=float,default=.1,help='Batch Pearson correlation loss weight')
+    t.add_argument('--batch-order',choices=['random','mos_stratified'],default='random',help='Training-only ordering; each identity appears exactly once per epoch')
     for p in (e,t):p.add_argument('--output',required=True);p.add_argument('--device',default='cuda')
     q=sub.add_parser('queue',help='Wait for the verified measurement archive, extract, and train both arms')
     q.add_argument('--archive',required=True);q.add_argument('--archive-sha256',required=True)
