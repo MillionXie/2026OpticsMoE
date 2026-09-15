@@ -3335,3 +3335,33 @@ CUDA_VISIBLE_DEVICES=GPU-1b963983-7909-af6e-0528-f0f0661ab549 OMP_NUM_THREADS=4 
 其他参数同本节，最高仍83%，未晋升。PID2428479/2429193/2430031/2430936均退出。
 未扫描更多校准强度，也未将微小mAP提升当作Hit@1达到目标。
 第99节seed17也已正常结束，最终原83%/去光76.375%；PID2422424退出，seed73按原约定单独继续。
+
+## 101. 只校准原四个alpha，冻结全部相位和电子权重
+
+`sku_alpha_only`从原83%开始，只训练V/L各两层现有fusion logit，共4个标量；
+保留原sigmoid映射区间[.4001,.8]，不引入新的缩放/分支或更低alpha。
+光相位、router相位、紧凑前端、电子残差、读出头、归一化参数全部冻结；每轮和选出的best
+都对这些参数做SHA核对。仍为六次10cm/Top2/64维单图检索；alpha变化可能改变下游L路由，
+不能直接继承旧路由统计，必须重新评估资格及去光。
+
+模型eval模式下保留梯度，只拟合TRAIN双向图库最近正/负排序loss，TRAIN自身排除；
+无教师/额外SupCon、沿用原router均衡约束。此校准关闭训练随机CCD噪声及电子dropout，
+仍有轻微亮度/对比度增强，不删除checkpoint中的硬件噪声配置；不是新噪声鲁棒性证据。
+峰值raw-logit学习率.01（lr-scale1、alpha专属倍率100），沿用warm-in/cosine和EMA；
+实际alpha更新还经过sigmoid导数，并不等于每步直接变化.01。
+
+先做1轮2步真实原图scope检查（输出位于simulation，标注短程检查，不宣称完整训练）：
+
+```bash
+CUDA_VISIBLE_DEVICES=GPU-1b963983-7909-af6e-0528-f0f0661ab549 OMP_NUM_THREADS=4 MKL_NUM_THREADS=4 python -m LightGenV2.tasks.t07_abo_image_retrieval.standalone.retrieval_adapt \
+  --data /DATA/DATA1/guest3/2026OpticsMoE/data/abo_similarity10_data \
+  --manifest "$R/abo200_enrolled_protocol_20260913/protocol.json" --assets "$R/standalone_assets_20260910" \
+  --checkpoint "$START83/best.pt" --expected-checkpoint-sha256 "$START83_SHA" \
+  --multi-view --refine-profile sku_alpha_only --lr-scale 1 \
+  --epochs 1 --steps 2 --eval-every 1 --batch-size 4 --bank-batch-size 16 --seed 42 \
+  --output "$R/abo200_alpha_only_scope_20260915"
+```
+
+scope/原图/冻结SHA检查全部通过后，若未达目标，再独立从原83%执行3轮×20步、
+`--bank-refresh-steps 10`，输出`abo200_alpha_only_20260915`。每轮完整TRAIN/TEST/live/EMA，
+保留best/last与起点保底。不能把准备好profile或有限梯度当作已经提升性能。

@@ -5,7 +5,9 @@ import torch
 
 from LightGenV2.tasks.t07_abo_image_retrieval.standalone.retrieval_refine import (
     PROFILES, optical_parameter, set_parameter_scope, update_trainable_ema, non_optical_digest,
-    configure_phase_head_scope, attach_train_readout_dropout, projection_parameter, learning_rate_multiplier)
+    configure_phase_head_scope, attach_train_readout_dropout, projection_parameter, learning_rate_multiplier,
+    alpha_parameter, configure_alpha_scope, frozen_except_alpha_digest)
+from LightGenV2.tasks.t07_abo_image_retrieval.standalone.model import fuse, alpha_value
 
 
 def parameters():
@@ -101,3 +103,50 @@ def test_phase_head_top1_changes_only_training_objective_recipe():
     assert p['supcon_weight']==0 and p['positive_weight']==0
     p.pop('supcon_weight'); p['positive_weight']=.1
     assert p==PROFILES['sku_phase_head']
+
+
+def test_alpha_only_updates_four_scalars_and_preserves_all_other_tensors_and_ema():
+    torch.manual_seed(62)
+    p=[(f'{m}.block{i}_optical_fusion_logit',torch.nn.Parameter(torch.tensor(-2.)))
+       for m in ('vision','language') for i in (1,2)]
+    p += [(n,torch.nn.Parameter(torch.randn(4))) for n in
+          ('vision.optics.experts.0','language.optics.global_phase',
+           'vision.optics.router.raw_router_phase','vision.encoder.weight',
+           'readout.projection.bias','frontend.embed_tokens.weight')]
+    model=types.SimpleNamespace(named_parameters=lambda:iter(p))
+    original={n:x.detach().clone() for n,x in p}; protected=configure_alpha_scope(model)
+    selected=[(n,x) for n,x in p if x.requires_grad]
+    assert len(selected)==4 and sum(x.numel() for _,x in selected)==4
+    ema={n:x.detach().clone() for n,x in selected}
+    optimizer=torch.optim.AdamW([x for _,x in selected],lr=.01,weight_decay=0.)
+    e=torch.randn(2,3,4); o=torch.randn(2,3,4); target=torch.randn(2,3,4)
+    for _ in range(3):
+        set_parameter_scope(selected)
+        optimizer.zero_grad(set_to_none=True)
+        loss=sum((fuse(e,o,x,(.4001,.8))*target).mean() for _,x in selected)
+        loss.backward(); optimizer.step(); update_trainable_ema(selected,ema)
+    assert frozen_except_alpha_digest(model)==protected
+    assert all(torch.equal(x,original[n]) and x.grad is None for n,x in p if not alpha_parameter(n))
+    assert all(not torch.equal(x,original[n]) and torch.isfinite(x.grad).all() for n,x in selected)
+    assert all(.4 < float(alpha_value(x,(.4001,.8)).detach()) < .8 for _,x in selected)
+    with torch.no_grad(): p[4][1][0]+=1
+    assert frozen_except_alpha_digest(model)!=protected
+
+
+def test_alpha_scope_rejects_missing_or_nonscalar_logits():
+    p=[(f'{m}.block{i}_optical_fusion_logit',torch.nn.Parameter(torch.zeros(2)))
+       for m in ('vision','language') for i in (1,2)]
+    with pytest.raises(ValueError,match='four existing scalar'):
+        configure_alpha_scope(types.SimpleNamespace(named_parameters=lambda:iter(p)))
+    with pytest.raises(ValueError,match='four existing scalar'):
+        configure_alpha_scope(types.SimpleNamespace(named_parameters=lambda:iter(p[:3])))
+
+
+def test_alpha_profile_is_train_only_without_expansion_and_uses_its_own_lr():
+    p=PROFILES['sku_alpha_only']
+    assert p['alpha_only'] and p['noise_probability']==0 and p['symmetric_bank']
+    assert not any(p.get(k) for k in ['phase_head_only','optical_only','external_optical_only',
+        'teacher_weight','warmup','head_expansion','electronic_expansion','ccd_readout_modes'])
+    assert learning_rate_multiplier(p,'vision.block1_optical_fusion_logit',False,True)==100
+    assert learning_rate_multiplier(p,'vision.encoder.weight',False,True)==1
+    assert learning_rate_multiplier(PROFILES['sku_capacity_control'],'vision.block1_optical_fusion_logit',False,True)==1

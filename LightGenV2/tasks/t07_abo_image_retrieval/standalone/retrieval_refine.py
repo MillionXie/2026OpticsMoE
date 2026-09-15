@@ -31,6 +31,10 @@ PROFILES['sku_phase_head'] = dict(PROFILES['sku_capacity_control'],
 PROFILES['sku_phase_head_top1'] = dict(PROFILES['sku_phase_head'],
     ranking_loss='top1_softplus', symmetric_bank=True,
     supcon_weight=0., positive_weight=0.)
+PROFILES['sku_alpha_only'] = dict(PROFILES['sku_capacity_control'],
+    alpha_only=True, alpha_lr_multiplier=100., noise_probability=0.,
+    ranking_loss='top1_softplus', symmetric_bank=True,
+    supcon_weight=0., positive_weight=0.)
 # Isolate training regularizers: identical loss, optimizer, capacity and optics.
 # Do not infer separate augmentation/dropout effects from the old combined SAM run.
 PROFILES['sku_augmentation_only'] = dict(PROFILES['sku_capacity_control'], mild_augmentation=False)
@@ -175,6 +179,29 @@ def configure_phase_head_scope(model):
     return non_optical_digest(model, exclude_projection=True)
 
 
+def alpha_parameter(name):
+    return name in {f'{modality}.block{block}_optical_fusion_logit'
+                    for modality in ('vision','language') for block in (1,2)}
+
+
+def frozen_except_alpha_digest(model):
+    digest = hashlib.sha256()
+    for name, p in model.named_parameters():
+        if not alpha_parameter(name):
+            digest.update(f'{name}|{p.dtype}|{tuple(p.shape)}'.encode())
+            digest.update(p.detach().cpu().contiguous().reshape(-1).view(torch.uint8).numpy().tobytes())
+    return digest.hexdigest()
+
+
+def configure_alpha_scope(model):
+    selected = [(n,p) for n,p in model.named_parameters() if alpha_parameter(n)]
+    if len(selected) != 4 or any(p.numel() != 1 for _,p in selected):
+        raise ValueError('Alpha-only requires exactly four existing scalar fusion logits')
+    for n,p in model.named_parameters():
+        p.requires_grad_(alpha_parameter(n))
+    return frozen_except_alpha_digest(model)
+
+
 def attach_train_readout_dropout(model, probability):
     """A training hook only: checkpoint has no new layer or inference behavior."""
     if model.readout.kind != 'linear64' or not 0 <= probability < 1:
@@ -204,6 +231,8 @@ def optical_curriculum_scope(profile, external, pretrain_epochs):
 
 
 def learning_rate_multiplier(profile, name, external, refined):
+    if alpha_parameter(name):
+        return profile.get('alpha_lr_multiplier', 1.)
     if projection_parameter(name):
         return profile.get('head_lr_multiplier', 1.)
     if name.endswith('raw_router_phase'):

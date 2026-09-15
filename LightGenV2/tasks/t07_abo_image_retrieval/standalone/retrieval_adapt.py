@@ -27,7 +27,8 @@ from .retrieval_refine import (PROFILES, validate_continuation, route_objective,
     all_view_loss, load_train_teacher, relational_loss, selection_score, router_acceptable,
     optical_parameter, set_parameter_scope, update_trainable_ema, non_optical_digest,
     prepare_capacity_payload, optical_curriculum_scope, learning_rate_multiplier,
-    configure_phase_head_scope, attach_train_readout_dropout, train_ranking_loss)
+    configure_phase_head_scope, attach_train_readout_dropout, train_ranking_loss,
+    configure_alpha_scope, frozen_except_alpha_digest)
 from .enrolled_regularization import load_external_pool, load_external_relations, augment_whole_object, curriculum_epoch, curriculum_loss_weights, fitting_bank_diagnostics
 from .generalization import backward_with_sam
 
@@ -274,6 +275,12 @@ def run(args):
     regularized = 'sam_rho' in profile
     optical_only = profile.get('optical_only', False)
     phase_head_only = profile.get('phase_head_only', False)
+    alpha_only = profile.get('alpha_only', False)
+    if alpha_only and (phase_head_only or optical_only or profile.get('warmup')
+            or getattr(args, 'external_pretrain_epochs', 0) or args.fresh_trainable
+            or not args.multi_view or protocol['protocol'] != 'abo200_enrolled_sku_hash8train4query_v1'
+            or any(profile.get(k) for k in ('electronic_expansion','head_expansion','ccd_readout_modes','teacher_weight'))):
+        raise ValueError('Alpha-only requires existing enrolled ABO weights without another curriculum or expansion')
     if phase_head_only and (optical_only or profile.get('warmup') or getattr(args, 'external_pretrain_epochs', 0)
             or args.fresh_trainable or not args.multi_view or protocol['protocol'] != 'abo200_enrolled_sku_hash8train4query_v1'):
         raise ValueError('Phase/head-only requires existing enrolled ABO multi-view weights without another curriculum')
@@ -317,6 +324,7 @@ def run(args):
     model = OpticalRetrieval(copy.deepcopy(payload['metadata']))
     initialization = load_initial_weights(model, payload, args.assets, args.fresh_trainable)
     fixed_phase_head_sha = configure_phase_head_scope(model) if phase_head_only else None
+    fixed_alpha_sha = configure_alpha_scope(model) if alpha_only else None
     readout_hook = attach_train_readout_dropout(model, profile['readout_input_dropout']) if phase_head_only else None
     fixed_electronics_sha = non_optical_digest(model) if optical_only or profile.get('external_optical_only') else None
     if regularized:
@@ -347,12 +355,14 @@ def run(args):
         bank_ranking_objective=profile.get('ranking_loss', 'nll'),
         bank_refresh_steps=getattr(args, 'bank_refresh_steps', 0),
         bank_refresh_note='TRAIN reference features only; full deterministic re-encode with current live weights. No gradients/TEST rows; no change to inference.',
-        training_scope=('Only12 phases and original Linear384->64 weight/bias; frontend, electronic residuals, alpha and head LayerNorm bitwise frozen'
+        training_scope=('Only four existing scalar fusion logits; all phases/frontend/electronic residuals/readout bitwise frozen'
+                        if alpha_only else 'Only12 phases and original Linear384->64 weight/bias; frontend, electronic residuals, alpha and head LayerNorm bitwise frozen'
                         if phase_head_only else 'External: only12 phases, bitwise frozen electronics/alpha; target: joint trainable parameters'
                         if profile.get('external_optical_only') else
                         'Only12 optical phase tensors; all electronics/frontend/alpha frozen' if optical_only else 'Profile curriculum'),
         non_optical_parameters_initial_sha256=fixed_electronics_sha,
         frozen_except_phase_projection_initial_sha256=fixed_phase_head_sha,
+        frozen_except_alpha_initial_sha256=fixed_alpha_sha,
         external_curriculum=external_audit,
         external_teacher=external_teacher_audit,
         curriculum_note='Continue verified current-protocol best -> external instance pretraining (last state, no TEST selection) -> target fine-tune. Initial best retained; not from-scratch pretraining' if external_fit else None,
@@ -432,7 +442,7 @@ def run(args):
                         mean_cosine_to_previous=float(F.cosine_similarity(refreshed.float(), bank.float(), dim=-1).mean()),
                         reference_count=len(gallery), requires_grad=refreshed.requires_grad))
                     bank = refreshed
-                model.train(not (warming or current_optical_only or phase_head_only))
+                model.train(not (warming or current_optical_only or phase_head_only or alpha_only))
                 if current_optical_only or phase_head_only:
                     # Fixed electronics are deterministic; retain existing optical
                     # noise/DC injection during optical training, router noise off.
@@ -483,7 +493,7 @@ def run(args):
                 totals['teacher_loss'] += float(result['kd'])
                 totals['all_view_loss'] += float(result['all_views'])
                 totals['sam_loss_gap'] += sam['loss_gap']
-            row = dict(epoch=epoch, phase='phase_head_only' if phase_head_only else 'optical_only' if optical_only else 'external_pretrain' if external else 'target_finetune', phase_epoch=phase_epoch, router_only_warmup=warming,
+            row = dict(epoch=epoch, phase='alpha_only' if alpha_only else 'phase_head_only' if phase_head_only else 'optical_only' if optical_only else 'external_pretrain' if external else 'target_finetune', phase_epoch=phase_epoch, router_only_warmup=warming,
                 optical_only_scope=current_optical_only,
                 bank_refreshes=bank_refresh_audit,
                 active_trainable_parameters=sum(p.numel() for _,p in params if p.requires_grad),
@@ -497,6 +507,11 @@ def run(args):
                 row['frozen_except_phase_projection_sha256'] = non_optical_digest(model, exclude_projection=True)
                 if row['frozen_except_phase_projection_sha256'] != fixed_phase_head_sha:
                     raise RuntimeError('Phase/head-only changed a frozen parameter')
+            if alpha_only:
+                row['frozen_except_alpha_sha256'] = frozen_except_alpha_digest(model)
+                row['alpha'] = model.audit()['alpha']
+                if row['frozen_except_alpha_sha256'] != fixed_alpha_sha:
+                    raise RuntimeError('Alpha-only changed a protected phase or electronic tensor')
             torch.save(dict(metadata=model.metadata, state_dict=model.state_dict(), epoch=epoch,
                 optimizer=optimizer.state_dict(), ema=ema, source_commit=identity['source_commit'],
                 manifest_sha256=identity['manifest_sha256']), args.output / 'last.pt')
@@ -530,6 +545,9 @@ def run(args):
         model.load_state_dict(selected['state_dict'], strict=True)
         final_electronics_sha = non_optical_digest(model) if fixed_electronics_sha else None
         final_phase_head_sha = non_optical_digest(model, exclude_projection=True) if phase_head_only else None
+        final_alpha_sha = frozen_except_alpha_digest(model) if alpha_only else None
+        if alpha_only and final_alpha_sha != fixed_alpha_sha:
+            raise RuntimeError('Selected alpha-only candidate changed protected tensors')
         if phase_head_only and final_phase_head_sha != fixed_phase_head_sha:
             raise RuntimeError('Selected phase/head EMA changed a frozen parameter')
         if optical_only and final_electronics_sha != fixed_electronics_sha:
@@ -549,6 +567,7 @@ def run(args):
             router_eligible=router_acceptable(normal),
             non_optical_parameters_final_sha256=final_electronics_sha,
             frozen_except_phase_projection_final_sha256=final_phase_head_sha,
+            frozen_except_alpha_final_sha256=final_alpha_sha,
             external_frozen_electronics_verified=(all(row.get('non_optical_parameters_sha256') == fixed_electronics_sha
                 for row in history if row.get('phase') == 'external_pretrain') if profile.get('external_optical_only') else None),
             optical_removal_drop_percentage_points=100*(normal['test']['hit_at_1']-removed['test']['hit_at_1']),
