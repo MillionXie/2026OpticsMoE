@@ -12,6 +12,7 @@ import subprocess
 import queue
 import threading
 from types import SimpleNamespace
+from concurrent.futures import ThreadPoolExecutor
 import numpy as np
 from PIL import Image
 from . import lab_bench as bench
@@ -136,6 +137,25 @@ def get_roi(hw,bmp,H):
     return im,meta
 
 
+def show_while_draining(owner,hw,path):
+    """Never pause SHS stream consumption during a long phase SDK wait.
+
+    Fixed buffer-count draining after a pause is not a freshness guarantee.
+    Only this calling thread reads camera buffers; worker only sends phase IPC.
+    """
+    count=0;started=time.monotonic()
+    with ThreadPoolExecutor(max_workers=1) as pool:
+        future=pool.submit(owner.show,path,sha(path))
+        while not future.done():
+            hw.camera.grab();count+=1
+        receipt=future.result()
+    until=time.monotonic()+1.0
+    while time.monotonic()<until:
+        hw.camera.grab();count+=1
+    receipt['camera_drain_during_phase_wait']=dict(frames=count,elapsed_s=time.monotonic()-started)
+    return receipt
+
+
 def phase_check(owner,hw,H,white,flat,target,folder,reference=None):
     """Physical repeated-image test, not mere SDK SHA/return acknowledgement."""
     folder.mkdir(parents=True,exist_ok=True)
@@ -151,7 +171,7 @@ def phase_check(owner,hw,H,white,flat,target,folder,reference=None):
         # callback. Warm up using the same optical probe while draining frames.
         # This cost is per connection, not per experimental sample.
         if not getattr(hw,'_openmoji_optical_warmed',False):
-            owner.show(flat,sha(flat))
+            show_while_draining(owner,hw,flat)
             started=time.monotonic();warmup=[]
             duration=float(hw.c.get('connection_optical_warmup_s',10.0))
             if not 0<=duration<=30:raise ValueError('Connection warmup must be 0..30 s')
@@ -161,8 +181,7 @@ def phase_check(owner,hw,H,white,flat,target,folder,reference=None):
             write(folder/'connection_warmup.json',dict(duration_s=duration,frames=warmup))
             hw._openmoji_optical_warmed=True
         for i,path in enumerate((flat,target,target)):
-            receipt=owner.show(path,sha(path))
-            time.sleep(1)
+            receipt=show_while_draining(owner,hw,path)
             if hw.c.get('diagnostic_save_sensor',False):
                 import cv2
                 raw,meta=hw.capture(white)
