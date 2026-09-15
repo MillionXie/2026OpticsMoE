@@ -68,6 +68,19 @@ def phase_check(owner,hw,H,white,flat,target,folder,reference=None):
         if not 20<=probe_us<=1600:raise ValueError('Probe exposure must be 20..1600 us')
         hw.camera.set('ExposureTime',probe_us)
         hw.camera_settings=snapshot(hw.camera)
+        # First upload on a newly opened Holoeye connection can lag its visible
+        # callback. Warm up using the same optical probe while draining frames.
+        # This cost is per connection, not per experimental sample.
+        if not getattr(hw,'_openmoji_optical_warmed',False):
+            owner.show(flat,sha(flat))
+            started=time.monotonic();warmup=[]
+            duration=float(hw.c.get('connection_optical_warmup_s',10.0))
+            if not 0<=duration<=30:raise ValueError('Connection warmup must be 0..30 s')
+            while time.monotonic()-started<duration:
+                image,meta=get_roi(hw,white,H)
+                warmup.append(dict(elapsed_s=time.monotonic()-started,quality=quality(image),frame_id=meta['frame_id']))
+            write(folder/'connection_warmup.json',dict(duration_s=duration,frames=warmup))
+            hw._openmoji_optical_warmed=True
         for i,path in enumerate((flat,target,target)):
             receipt=owner.show(path,sha(path))
             time.sleep(1)
