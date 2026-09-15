@@ -130,11 +130,12 @@ def validate_cache(cache, rows, manifest_sha):
 
 
 @torch.no_grad()
-def consistent_teacher_targets(vectors, labels, min_margin=0.):
+def consistent_teacher_targets(vectors, labels, min_margin=0., temperature=.1):
     """Only TRAIN-to-TRAIN relations; GT decides whether to trust each teacher row."""
     if (vectors.requires_grad or vectors.ndim != 2 or len(vectors) != len(labels)
             or labels.ndim != 1 or not torch.isfinite(vectors).all()
             or not math.isfinite(min_margin) or min_margin < 0
+            or not math.isfinite(temperature) or temperature <= 0
             or len(vectors) < 2 or (vectors.float().norm(dim=1) < 1e-8).any()):
         raise ValueError('Require detached finite TRAIN teacher vectors and valid labels/margin')
     z = F.normalize(vectors.float(), dim=-1)
@@ -148,11 +149,51 @@ def consistent_teacher_targets(vectors, labels, min_margin=0.):
     neg = similarity.masked_fill(~negative, -torch.inf).amax(1)
     eligible = pos - neg > min_margin  # Reject ties and wrong-SKU teacher retrievals.
     # Finite masking avoids 0 * -inf in KL; self has exactly zero probability.
-    targets = (similarity / .1).masked_fill(excluded, -1e4).softmax(1)
+    targets = (similarity / temperature).masked_fill(excluded, -1e4).softmax(1)
     return targets.detach(), eligible.detach()
 
 
-def load_consistent_teacher(path, expected_sha, rows, manifest_sha, labels, min_margin=0.):
+@torch.no_grad()
+def entropy_matched_teacher_temperature(teacher, reference, eligible):
+    """Calibrate one temperature using only fixed TRAIN relations, never QUERY.
+
+    Match mean entropy over GT-consistent TRAIN query rows. This controls target
+    softness, not ranking or labels; the student temperature remains .1.
+    """
+    if (teacher.requires_grad or reference.requires_grad or teacher.ndim != 2
+            or reference.ndim != 2 or len(teacher) != len(reference)
+            or eligible.shape != (len(teacher),) or eligible.dtype != torch.bool
+            or not eligible.any() or not torch.isfinite(teacher).all()
+            or not torch.isfinite(reference).all()
+            or (teacher.norm(dim=1)<1e-8).any() or (reference.norm(dim=1)<1e-8).any()):
+        raise ValueError('Entropy calibration requires finite detached TRAIN pairs and eligible rows')
+    teacher = F.normalize(teacher.float(),dim=1)
+    reference = F.normalize(reference.float(),dim=1)
+    excluded = torch.eye(len(teacher),dtype=torch.bool)[eligible]
+    teacher_sim = teacher[eligible] @ teacher.T
+    reference_sim = reference[eligible] @ reference.T
+    def entropy(similarity, temperature):
+        lp = (similarity / temperature).masked_fill(excluded,-1e4).log_softmax(1)
+        return float((-(lp.exp()*lp).sum(1)).mean())
+    target = entropy(reference_sim,.1)
+    low, high = .005, .5
+    if not entropy(teacher_sim,low) <= target <= entropy(teacher_sim,high):
+        raise ValueError('TRAIN entropy target outside declared temperature bounds; no silent clamp')
+    for _ in range(24):
+        middle = (low+high)/2
+        if entropy(teacher_sim,middle) < target:
+            low = middle
+        else:
+            high = middle
+    temperature = (low+high)/2
+    return temperature, dict(method='Match source-student mean TRAIN relation entropy on eligible rows only',
+        reference_temperature=.1, teacher_temperature=temperature, bounds=[.005,.5],
+        reference_entropy=target, teacher_entropy_before=entropy(teacher_sim,.1),
+        teacher_entropy_after=entropy(teacher_sim,temperature), calibrated_query_rows=int(eligible.sum()),
+        fitted_to_test=False, changes_teacher_rankings=False)
+
+
+def load_consistent_teacher(path, expected_sha, rows, manifest_sha, labels, min_margin=0., reference=None):
     if sha256(path) != expected_sha:
         raise ValueError('Teacher cache SHA mismatch')
     report_path = path.parent / 'final_report.json'
@@ -167,10 +208,16 @@ def load_consistent_teacher(path, expected_sha, rows, manifest_sha, labels, min_
     if n != 1600 or len(rows) != 2400 or any(r['split'] != 'gallery' for r in rows[:n]) or any(r['split'] != 'query' for r in rows[n:]):
         raise ValueError('Teacher fitting requires fixed1600 TRAIN/gallery before800 QUERY')
     # Only TRAIN copies survive this loader. QUERY values/labels never enter a target.
-    targets, eligible = consistent_teacher_targets(cache['vectors'][:n].float().detach().clone(), labels, min_margin)
+    train_teacher = cache['vectors'][:n].float().detach().clone()
+    targets, eligible = consistent_teacher_targets(train_teacher, labels, min_margin)
+    temperature, entropy_audit = .1, None
+    if reference is not None:
+        temperature, entropy_audit = entropy_matched_teacher_temperature(train_teacher, reference, eligible)
+        targets, eligible = consistent_teacher_targets(train_teacher, labels, min_margin, temperature)
     return targets, eligible, dict(cache_sha256=expected_sha, report_sha256=sha256(report_path),
         source_commit=report.get('source_commit'), training_rows=n, eligible_rows=int(eligible.sum()),
-        min_correct_minus_wrong_margin=min_margin, temperature=.1, query_excluded=True,
+        min_correct_minus_wrong_margin=min_margin, teacher_temperature=temperature, student_temperature=.1,
+        entropy_calibration=entropy_audit, query_excluded=True,
         inference_teacher_required=False, gate='TRAIN best same-SKU cosine > best wrong-SKU cosine + min_margin; self excluded',
         loss='KL(teacher TRAIN-gallery probability || student clean TRAIN-gallery probability), mean over eligible sampled TRAIN rows only; no temperature-square multiplier')
 
@@ -359,9 +406,11 @@ def run(args):
     teacher_path = getattr(args, 'teacher_cache', None)
     teacher_sha = getattr(args, 'expected_teacher_sha256', None)
     teacher_margin = getattr(args, 'teacher_min_margin', 0.)
+    teacher_match_entropy = getattr(args, 'teacher_match_entropy', False)
     if (not math.isfinite(teacher_weight) or not 0 <= teacher_weight <= 1
             or not math.isfinite(teacher_margin) or teacher_margin < 0
             or bool(teacher_weight) != bool(teacher_path) or bool(teacher_weight) != bool(teacher_sha)
+            or (teacher_match_entropy and not teacher_weight)
             or (teacher_weight and (args.fit_space != 'projection384'
                                    or getattr(args, 'train_center', 0.) or optimizer_kind != 'adam'))):
         raise ValueError('Teacher relations require pinned cache, weight in(0,1], original projection384 Adam, no centering')
@@ -408,7 +457,8 @@ def run(args):
     teacher_audit = None
     if teacher_weight:
         teacher_targets, teacher_eligible, teacher_audit = load_consistent_teacher(
-            teacher_path, teacher_sha, rows, manifest_sha, train_labels, teacher_margin)
+            teacher_path, teacher_sha, rows, manifest_sha, train_labels, teacher_margin,
+            reference=train_z if teacher_match_entropy else None)
     baseline, _ = rank_instances(z, rows)
     if abs(baseline['hit_at_1'] - args.expected_hit) > 1e-9:
         raise ValueError('Cached baseline did not reproduce the expected score')
@@ -619,6 +669,7 @@ def main():
     p.add_argument('--expected-teacher-sha256')
     p.add_argument('--teacher-weight', type=float, default=0., help='TRAIN-only GT-consistent relation KL weight; zero leaves original training unchanged')
     p.add_argument('--teacher-min-margin', type=float, default=0., help='Teacher same-SKU vs wrong-SKU TRAIN cosine margin must exceed this value; ties rejected')
+    p.add_argument('--teacher-match-entropy', action='store_true', help='TRAIN-only temperature calibration matches source-student relation entropy on GT-consistent teacher rows; inference unchanged')
     args = p.parse_args()
     if not math.isfinite(args.train_center) or not 0 <= args.train_center <= 1 or (args.train_center and args.fit_space != 'projection384'):
         p.error('TRAIN centering requires strength [0,1] and projection384')

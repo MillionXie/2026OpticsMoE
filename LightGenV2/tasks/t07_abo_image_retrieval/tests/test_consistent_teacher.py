@@ -2,7 +2,8 @@ import json
 import torch
 import pytest
 from LightGenV2.tasks.t07_abo_image_retrieval.standalone.metric_readout import (
-    consistent_teacher_targets, teacher_relation_loss, load_consistent_teacher)
+    consistent_teacher_targets, teacher_relation_loss, load_consistent_teacher,
+    entropy_matched_teacher_temperature)
 from LightGenV2.tasks.t07_abo_image_retrieval.standalone.io import sha256
 
 
@@ -64,3 +65,33 @@ def test_teacher_loader_copies_train_only_and_rejects_wrong_source(tmp_path):
     report['frozen']=False;(tmp_path/'final_report.json').write_text(json.dumps(report))
     with pytest.raises(ValueError,match='frozen'):
         load_consistent_teacher(path,sha256(path),rows,'m',labels)
+
+
+def test_entropy_matching_uses_train_only_and_recovers_identity_temperature():
+    vectors,labels=fixture();_,eligible=consistent_teacher_targets(vectors,labels)
+    temperature,audit=entropy_matched_teacher_temperature(vectors,vectors.clone(),eligible)
+    assert abs(temperature-.1)<1e-5
+    assert abs(audit['teacher_entropy_after']-audit['reference_entropy'])<1e-5
+    assert not audit['fitted_to_test'] and not audit['changes_teacher_rankings']
+
+
+def test_entropy_calibration_sharpens_flat_teacher_without_changing_gate():
+    torch.manual_seed(94)
+    reference=torch.randn(20,64)
+    teacher=reference+4*torch.ones(20,64)
+    eligible=torch.ones(20,dtype=torch.bool)
+    temperature,audit=entropy_matched_teacher_temperature(teacher,reference,eligible)
+    assert .005<temperature<.1
+    assert abs(audit['teacher_entropy_after']-audit['reference_entropy'])<1e-4
+    labels=torch.arange(5).repeat_interleave(4)
+    before=consistent_teacher_targets(teacher,labels)[1]
+    after=consistent_teacher_targets(teacher,labels,temperature=temperature)[1]
+    assert torch.equal(before,after)
+
+
+def test_entropy_calibration_rejects_empty_gate_and_trainable_reference():
+    vectors,labels=fixture();_,eligible=consistent_teacher_targets(vectors,labels)
+    with pytest.raises(ValueError):
+        entropy_matched_teacher_temperature(vectors,vectors,torch.zeros(6,dtype=torch.bool))
+    with pytest.raises(ValueError):
+        entropy_matched_teacher_temperature(vectors,vectors.clone().requires_grad_(),eligible)

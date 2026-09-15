@@ -3555,3 +3555,37 @@ scope通过后从同一原83%开始400步/每25步，输出`abo200_readout_consi
 两个任务串行，仍只用GPU4。记录门控行数、teacher cache/report SHA和每次评估的干净TRAIN KL。
 无教师默认路径保持原样；本选项暂时只允许原projection384 Adam、不能同时改头/中心化/用LBFGS。
 仍需独立原图复评达到665/800，再核验同best去光/TRAIN/路由并晋升；周期TEST选模偏差必须披露。
+
+第106节实际完成，源码14e98db0、本地/服务器452项测试。scope门控1349/1600行，
+两步后82.875%，best保留原83%；scope_audit.json验证仅W/b变化。
+400步教师组末期82.875%/TRAIN95%，无教师对照末期82.625%/TRAIN95.125%；
+两组最高都仍是step0的83%，不晋升。PID2765786/2770190/2780754均已退出。
+
+## 107. 仅TRAIN关系熵匹配教师温度（推理无变化）
+
+同温度.1下，原83%学生TRAIN关系平均熵3.2773，冻结教师6.5288；教师关系更平，
+原KL会倾向抹平学生区分度。只读证据是原83%run的`verification/train_teacher_entropy_audit.json`。
+新`--teacher-match-entropy`在通过真值门控的TRAIN行上计算起点学生平均关系熵，
+固定学生温度.1，用24次二分在[.005,.5]内寻找具有相同平均熵的教师温度。
+只改变教师训练软目标的集中程度，不改变其排名、门控行、GT标签或学生推理温度。
+若目标不在范围内明确报错，不静默截断；不拿QUERY熵/分数决定温度。
+execution.json记录实际温度、校准前后熵、通过门控的行数和缓存SHA。
+
+沿用第106节全部参数，增加`--teacher-match-entropy`，2步scope输出
+`abo200_readout_teacher_entropy_scope_20260915`。通过后400步/每25步输出
+`abo200_readout_teacher_entropy_20260915`，仍从原83%开始、权重.05、LR.00005、seed42。
+运行前确认前一个PID已退出，仍只用GPU4；源码须先测试并推GitHub。
+
+```bash
+CUDA_VISIBLE_DEVICES=GPU-1b963983-7909-af6e-0528-f0f0661ab549 OMP_NUM_THREADS=4 MKL_NUM_THREADS=4 python -m LightGenV2.tasks.t07_abo_image_retrieval.standalone.metric_readout \
+  --source-run "$START83" --manifest "$R/abo200_enrolled_protocol_20260913/protocol.json" \
+  --data /DATA/DATA1/guest3/2026OpticsMoE/data/abo_similarity10_data \
+  --expected-checkpoint-sha256 "$START83_SHA" --expected-hit .83 \
+  --fit-space projection384 --ranking-loss top1_softplus --input-dropout .1 \
+  --teacher-cache "$TEACHER" --expected-teacher-sha256 "$TEACHER_SHA" --teacher-weight .05 --teacher-min-margin 0 --teacher-match-entropy \
+  --steps 2 --eval-every 1 --lr .00005 --anchor 1 --seed 42 --selection-precision cuda_bf16 \
+  --output "$R/abo200_readout_teacher_entropy_scope_20260915"
+```
+
+此项仍只训练原Linear W/b，不改光学mask/alpha/电子主干；不是新网络，不承诺校准就会提分。
+任何达标缓存候选仍须独立原图、同best去光/TRAIN/分split专家分布核验。
