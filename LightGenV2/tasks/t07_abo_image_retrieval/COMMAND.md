@@ -3365,3 +3365,7 @@ CUDA_VISIBLE_DEVICES=GPU-1b963983-7909-af6e-0528-f0f0661ab549 OMP_NUM_THREADS=4 
 scope/原图/冻结SHA检查全部通过后，若未达目标，再独立从原83%执行3轮×20步、
 `--bank-refresh-steps 10`，输出`abo200_alpha_only_20260915`。每轮完整TRAIN/TEST/live/EMA，
 保留best/last与起点保底。不能把准备好profile或有限梯度当作已经提升性能。
+
+第99节最后的seed73已完成（source f9d25bff）：live/EMA82.875%，最终原83%/去光76.375%，
+PID2431884已退出。第101节源码c546791f已推GitHub，本地/服务器427项测试通过，
+真实原图scope检查已在GPU4启动；不得在线切换活动worktree源码。
