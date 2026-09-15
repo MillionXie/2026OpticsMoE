@@ -3062,3 +3062,42 @@ CUDA_VISIBLE_DEVICES=GPU-1b963983-7909-af6e-0528-f0f0661ab549 OMP_NUM_THREADS=4 
 
 已完成的独立复评目录为`verification`；上面`verification_repeat`供下一位同学重新验证。
 GPU编号仅示例，必须先确认空闲。phase_masks.png是相位可视化；best.pt是推理/续训权重，last.pt保留末步训练状态。
+
+## 93. 在83%基础上继续，固定目标至少665/800
+
+每SKU仍8张TRAIN/gallery+4张QUERY，200SKU共2400张；训练/图库是同一1600张，不是额外1600张。
+800个查询每多对1张增加.125个百分点。新目标83.125%=665/800，不更换划分、相关性定义或排序规则。
+保留第92节83.00%原权重，不用针对某张QUERY的规则凑分。
+源码58815677（计算实现与d111dd91相同），先仅对原384→64读出做TRAIN Top1拟合：
+
+```bash
+START83="$R/abo200_phase_head_top1_verified_20260915"
+START83_SHA=$(python -c 'import pathlib,json,hashlib,sys; p=pathlib.Path(sys.argv[1]); s=json.loads((p/"final_report.json").read_text())["best_sha256"]; assert hashlib.sha256((p/"best.pt").read_bytes()).hexdigest()==s; print(s)' "$START83")
+CUDA_VISIBLE_DEVICES='' OMP_NUM_THREADS=4 MKL_NUM_THREADS=4 python -m LightGenV2.tasks.t07_abo_image_retrieval.standalone.metric_readout \
+  --source-run "$START83" --manifest "$R/abo200_enrolled_protocol_20260913/protocol.json" \
+  --data /DATA/DATA1/guest3/2026OpticsMoE/data/abo_similarity10_data \
+  --expected-checkpoint-sha256 "$START83_SHA" --expected-hit .83 \
+  --fit-space projection384 --ranking-loss top1_softplus --input-dropout .1 \
+  --steps 800 --eval-every 50 --batch-size 128 --lr .000025 --anchor 1 --seed 42 \
+  --output "$R/abo200_readout_after83_20260915"
+```
+
+每50步TEST择优，明确有选择偏差。原图复评沿用第92节retrieval_screen，
+checkpoint换成新run/best.pt，SHA必须从新报告核对，output为新run/verification。
+如果没有达标，再从原83%（不是失败读出）执行`sku_phase_head_top1`：lr-scale .025，
+3轮×20步、seed42、每轮评估、eval batch4、bank batch16，output为`abo200_phase_head_after83_20260915`。
+仍只训练12份相位和原Linear，冻结其余电子/alpha。先原图验收再晋升；默认只用一张空闲4090。
+
+仅读出组实际完成：缓存82.875%，best第550步；原图复评82.375%/去光76.25%，未采用。
+CPU PID2340402与复评PID2342002已退出。不能拿缓存结果覆盖83%原图候选。
+随后从原538477e0权重启动上述3轮短程相位训练；不在线更新训练worktree源码。
+
+```bash
+CUDA_VISIBLE_DEVICES=GPU-1b963983-7909-af6e-0528-f0f0661ab549 OMP_NUM_THREADS=4 MKL_NUM_THREADS=4 HF_HUB_OFFLINE=1 TRANSFORMERS_OFFLINE=1 python -m LightGenV2.tasks.t07_abo_image_retrieval.standalone.retrieval_adapt \
+  --data /DATA/DATA1/guest3/2026OpticsMoE/data/abo_similarity10_data \
+  --manifest "$R/abo200_enrolled_protocol_20260913/protocol.json" --assets "$R/standalone_assets_20260910" \
+  --checkpoint "$START83/best.pt" --expected-checkpoint-sha256 "$START83_SHA" \
+  --multi-view --refine-profile sku_phase_head_top1 --lr-scale .025 \
+  --epochs 3 --steps 20 --eval-every 1 --batch-size 4 --bank-batch-size 16 --seed 42 \
+  --output "$R/abo200_phase_head_after83_20260915"
+```
