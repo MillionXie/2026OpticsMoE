@@ -1,5 +1,12 @@
 # SALICON baseline 复现与公平性
 
+## SHS实测已完成（2026-09-15整理）
+
+指定仿真CC=0.8624925082权重的5000图三层实测已完成，CC=0.8597739692。
+逐样本证据：`runs/hardware/salicon_08625_shs_20260914/full01_retry01/results.json`（相对本任务目录）。
+实验电脑会话为 `E:\code\guest\2026OpticsMoE\SALICON_Lab_SHS_8um\sessions\full01`，共15000张正式CCD，无样本筛选。
+这不是pilot四图成绩，也没有对该实测进行微调。位置及清理规则见[三任务实测索引](../../../t06_video_quality_assessment/reports/reproduction/SHS_LAB_INDEX.md)。
+
 ## 最新入口（2026-09-14）
 
 [光→电→联合交替训练](ALTERNATING_20260914.md)：10轮只训光、15轮只训电、5轮低LR联合。
