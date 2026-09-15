@@ -17,6 +17,7 @@
 - 空间训练：`train2250_six_stage_results.json`，训练集SRCC **0.7483952940287332**，PLCC **0.7760516566063294**。这不是测试集结果，也不是微调后的结果。
 - 空间测试修复：已完成六层558条；`repaired_results.json`是统一FP32的新结果。原 `results.json` 对应旧采集，不用于评价新微调模型。
 - 空间微调：追加四组各100轮已完成，SRCC最高为第32轮EMA，test SRCC **0.6200222298**、PLCC **0.6415857913**（未达到0.64，PLCC略低于上一轮）。最新结果和best/last在训练run下 `readout_tuning064/rank_stratified/original_train2250_test558/`，四组对照与下载核验在同一 `readout_tuning064/`；上一轮 `readout_final/` 保留。完整协议见[读出微调报告](SPATIAL_SHS_READOUT_ADAPT_20260914.md)。
+- 空间部分test部署适配（另一协议）：112原test与2250train反传、446留出选模，三组各100轮完成。最佳446留出SRCC **0.6092739512**（同名单旧模型0.6044956961）；558混合SRCC **0.6380783492**（含112条反传，非独立test），未到0.65。位置为训练run下 `readout_partial_test20/weighted_target5/train2250_plus_test112_holdout446/`，原不掺test版本保留。
 - 显著性：`full01_retry01/results.json` 是5000图全量结果，CC **0.8597739692151547**，对应仿真CC **0.8624925081777596**；`pilot01`不是论文成绩。
 
 ## 微调和硬件边界

@@ -1,6 +1,74 @@
 # Spatial SHS：仅最后电子读出头适配
 
-## 最新：追加四组训练策略，best SRCC 0.620022，未达到0.64（2026-09-15）
+## 最新追加：112条原test参与部署适配；446条留出0.609274，未达到0.65
+
+本节是用户明确授权的**部分原test适配协议**，不能替代下节“不掺test”的完整558条结果。
+从原558条按固定seed=20260914、NumPy default_rng一次性随机取ceil(558×0.2)=112条，
+加入2250原train，合计2362条反传。剩余446条每epoch用于选模，未反传；因已有选模/调参历史，也不称未触碰独立test。
+名单不按预测误差筛选，三个试验使用完全相同的split.json；未改变标签、缓存、相机PNG、相位、光学router或前置电子参数。
+每组100epoch，仍只更新967458个原readout参数，以446条SRCC选raw/EMA best（RMSE同分裁决），保存best/last。
+
+| 方案 | 最佳轮/状态 | 446条留出 SRCC | 112条适配 SRCC | 完整558条 SRCC（混合，含112条反传） |
+|---|---|---:|---:|---:|
+| 上一版不掺test权重，在同样名单复算 | 上一轮32/EMA | 0.6044956961 | 0.6544257870 | 0.6200222298（该权重没有test反传） |
+| ranking：普通样本权重 | 11/raw | 0.6081725672 | 0.6691652412 | 0.6261592625 |
+| regression：普通样本权重 | 5/raw | 0.6062175344 | 0.6792065211 | 0.6274032593 |
+| weighted_target5：适配样本5倍权重 | **13/raw** | **0.6092739512** | 0.7227244286 | **0.6380783492** |
+
+选择的是446条留出最佳，不是按完整558条混合分数最高的epoch选模型。
+旧0.620022与新0.609274分母不同，不能直接解释为下降；同446条实际增加0.0047782551，仍很有限。
+112条已见样本的提升明显更大；完整558条混合分数增加不能证明对未见视频同等泛化。
+**选定的第13轮权重，无论446条留出还是完整558条混合，均未达到0.65。** 后期完整558条混合曲线超过0.65，但446条留出回落；不能把已训练样本带来的混合分数上涨视为泛化提升，因此仍保留第13轮。
+
+weighted_target5指标详情：
+
+| 指标 | 446留出 | 112适配（已反传） | 558混合 |
+|---|---:|---:|---:|
+| SRCC | 0.6092739512131374 | 0.7227244286257468 | 0.6380783491502683 |
+| PLCC | 0.6463626211077566 | 0.7259104848636493 | 0.6620000848991943 |
+| RMSE | 8.950145057119219 | 7.755330712136791 | 8.72346261088386 |
+| MAE | 7.156285461288931 | 6.3101158652986795 | 6.9864449689037915 |
+
+所有组batch128、EMA0.98、seed20260914、MOS十分位训练排列、AdamW weight_decay1e-4、cosine最低LR=初始×0.1、grad clip1。
+ranking：lr1e-5、L2-SP0.03、reg/rank/corr=0.5/1/0.5；regression：lr3e-5、L2-SP0.03、1/0.2/0.1。
+weighted_target5：lr1e-5、L2-SP0.1、1/0.5/0.3；只对112条的训练损失给5倍权重，原train权重1。
+回归加权平均、成对排序按样本权重乘积、相关性用加权均值/协方差；评估完全不加权。
+每条训练视频仍每epoch恰好一次；112条占训练样本约4.74%，占未归一化训练权重560/(2250+560)≈19.93%。
+配置为 `configs/spatial_measured_partial_test20.json` 与 `configs/spatial_measured_partial_test20_weighted.json`。
+
+本地唯一入口仍为 `runs/hardware/spatial_train2250_20260914/00_查看这里.md`。
+新结果集中在其 `readout_partial_test20/`，最佳权重位于
+`weighted_target5/train2250_plus_test112_holdout446/best_checkpoint.pt`，SHA256：
+`d787514215f8c5d7777d65ccaea317f13b87c79132d65cfd49a3b50aa0354624`。
+原“不掺test”best保留不覆盖。实验电脑在原train会话的 `readout_adaptation/partial_test20_20260915/`，三个候选各只保存best/last。
+原始命令与环境在每组launch.json，100轮history、split和2808条逐视频预测完整保留。
+`independent_comparison.json`按各身份组独立复算全部指标、检查100轮选模最大值与分组一致性；
+`checkpoint_replay_check.json`严格加载磁盘PT，558条最大预测差7.6294e-6 MOS，留出与混合SRCC均一致。
+下载核验在 `selected_download_SHA256.json`，可视化 `adaptation_comparison.png` 两侧明确区分446留出与558混合。
+非readout冻结SHA仍为 `e855f30c589bca7942da50e8753ffde9d62c7fe29e8ae7ec5f5bdbe6731559e3`。
+checkpoint内记录 `test_samples_in_gradient=112`、test_adapt_fraction、split_SHA及实际适配源码SHA；5倍组还记录test_adapt_weight=5。
+未覆盖实验室原固定权重，未开启硬件；训练与回放进程完成后已退出。
+
+原权重与两个特征缓存SHA同下节。前两组源码commit `6a518c0576dc8ee2886b7e5130dc3bd0149998c0`，
+源码SHA `17d58496e583eac7777c9f0f7eab019ffdcffa5c3836719dda90866d87b42b43`；
+加权组源码commit `81fe403e896a4310c077a26e5c33ee8317752609`，源码SHA
+`9807d7373d7751a021ad8119c1dffafa5149813eda0e67e34a102246660bb341`。均已push后用builder的readout-only ZIP部署。
+加权更新ZIP SHA `68eb09ab56557b7aabbd4acf803dff42fb6fad9633235071e391b13524233865`；
+更新时备份触发Windows长路径限制，按前后SHA恢复并改成短备份路径，证据在 `readout_update_weighted/resume_audit.json`。
+本地11项纯数据测试通过，Torch测试因本地DLL问题跳过；实验电脑12项全部通过，含加权损失梯度与默认兼容。
+环境仍为RTX4060单卡、torch2.8.0+cu126、IEEE FP32，release字段的d89223b7是原模型包而非本次训练代码版本。
+
+加权组实际命令（前两组替换上述配置参数即可；复跑须使用新的output，不覆盖旧结果）：
+
+```powershell
+Set-Location E:\code\guest\2026OpticsMoE\LGVQ_Spatial_Train_Lab_SHS_8um
+$py = '..\ABO_Lab_SHS_8um\.venv_gpu\Scripts\python.exe'
+$fit = 'sessions\train2250_language_verified_20260915\readout_adaptation'
+$testCache = '..\LGVQ_Spatial_Lab_SHS_8um\sessions\test558_language_verified_20260915\test_readout_cache.pt'
+& $py adapt.py train --cache "$fit\train_readout_cache.pt" --eval-cache $testCache --checkpoint weights\best_checkpoint.pt --output "$fit\partial_test20_20260915\weighted_target5" --device cuda --test-adapt-fraction 0.2 --test-adapt-weight 5 --epochs 100 --lr 0.00001 --batch-size 128 --seed 20260914 --anchor 0.1 --ema 0.98 --scope head --reg-weight 1 --rank-weight 0.5 --corr-weight 0.3 --batch-order mos_stratified
+```
+
+## 上一轮：追加四组训练策略，best SRCC 0.620022，未达到0.64（2026-09-15）
 
 沿用下节完全相同的2250原训练/558原测试实测特征和原始checkpoint。所有四组各100epoch，
 每epoch在完整558条test上比较raw/EMA、按SRCC选best（RMSE同分裁决）。test不反传，但参与epoch与超参数选择，**不是独立最终测试**。

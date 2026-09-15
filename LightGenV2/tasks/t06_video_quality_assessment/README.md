@@ -9,6 +9,9 @@
 `configs/spatial_measured_partial_test20.json` 定义两个100轮训练策略，固定名单、不按误差筛选视频；
 仍只更新原读出头，光学与前置电子张量冻结，不重新采集。目标0.65优先指446条留出选模指标，达标前不得宣称完成。
 本轮集中到原空间训练run下 `readout_partial_test20/`；结果保存确切身份、反传test数量、原数据SHA、代码SHA和best/last。
+三组各100轮已完成：最佳是5倍适配权重，第13轮raw，446留出SRCC=0.6092739512（同名单旧模型0.6044956961），
+完整558混合SRCC=0.6380783492，**均未达到0.65**；最佳位于 `weighted_target5/train2250_plus_test112_holdout446/`。
+完整指标与明确的适配/留出口径见 [读出微调报告](reports/reproduction/SPATIAL_SHS_READOUT_ADAPT_20260914.md)顶部。
 额外训练权重对照在 `configs/spatial_measured_partial_test20_weighted.json`：相同112条适配样本的损失权重为5（原train为1），
 全epoch总权重占比约19.9%；不是加入更多test或重复采样，每条视频仍每epoch一次。回归、排序对和相关性均按权重计算，
 评估始终不加权。`--test-adapt-weight`默认1，非1必须同时显式启用partial-test适配；推理架构不变。
