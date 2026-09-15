@@ -8,6 +8,23 @@ import zipfile
 BASE_SHA='304b7c457c6f6c8e4e7f41f18deaef6f65270f86e09194f69c7a3e8f45b0294f'
 
 
+def build_control_update(base_commit,output):
+    root=Path(__file__).resolve().parents[3]
+    if output.exists():raise FileExistsError(output)
+    commit=subprocess.check_output(['git','rev-parse','HEAD'],cwd=root,text=True).strip()
+    rel='LightGenV2/tasks/t04_semantic_interaction/lab_control.py'
+    old=subprocess.check_output(['git','show',base_commit+':'+rel],cwd=root)
+    new=subprocess.check_output(['git','show',commit+':'+rel],cwd=root)
+    manifest=dict(source_commit=commit,base_commit=base_commit,scope='phase diagnostics/control only; weights and model unchanged',
+        files={'runtime/'+rel:dict(base_sha256=hashlib.sha256(old).hexdigest(),sha256=hashlib.sha256(new).hexdigest())})
+    output.parent.mkdir(parents=True,exist_ok=True)
+    with zipfile.ZipFile(output,'x',zipfile.ZIP_DEFLATED) as z:
+        z.writestr('runtime/'+rel,new);z.writestr('CONTROL_UPDATE.json',json.dumps(manifest,indent=2))
+    result=dict(zip=str(output),sha256=hashlib.file_digest(output.open('rb'),'sha256').hexdigest(),source_commit=commit)
+    output.with_suffix('.manifest.json').write_text(json.dumps(result,indent=2),encoding='utf-8')
+    return result
+
+
 def build_shs(base,output):
     root=Path(__file__).resolve().parents[3]
     if output.exists():raise FileExistsError(output)
