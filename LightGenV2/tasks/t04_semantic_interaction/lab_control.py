@@ -7,12 +7,91 @@ import os
 from pathlib import Path
 import sys
 import time
+import json
+import subprocess
+import queue
+import threading
+from types import SimpleNamespace
 import numpy as np
 from PIL import Image
 from . import lab_bench as bench
 from .lab_runtime import STAGES
 from LightGenV2.tasks.t06_video_quality_assessment.lab_runtime import read,write,sha
 from LightGenV2.tasks.t06_video_quality_assessment.lab_bench import stage_config,raster,verified_ccd
+
+
+_PHASE_WORKER = r'''
+import sys,json,traceback
+sys.path.insert(0,sys.argv[1])
+from phase_owner import PhaseOwner
+def reply(value):
+    print('PHASE_IPC:'+json.dumps(value),flush=True)
+try:
+    cfg=json.loads(sys.stdin.readline())
+    with PhaseOwner(cfg['config'],cfg['flat'],cfg['lens']) as owner:
+        reply(dict(ok=True,info=owner.info,display=owner.display.audit))
+        for line in sys.stdin:
+            msg=json.loads(line)
+            if msg['action']=='close':break
+            if msg['action']!='show':raise ValueError('Unknown phase command')
+            receipt=owner.show(msg['path'],msg.get('sha256'))
+            reply(dict(ok=True,receipt=receipt))
+    reply(dict(ok=True,closed=True))
+except BaseException:
+    reply(dict(ok=False,error=traceback.format_exc()))
+    raise
+'''
+
+
+class ProcessPhaseOwner:
+    """Isolate vendor graphics/DLL state from Holoeye and CUDA on this PC.
+
+    Normal desktop window visibility is retained; no SW_HIDE/CREATE_NO_WINDOW.
+    A pipe acknowledgement is still NOT proof of optical correctness.
+    """
+    def __init__(self,config,flat,lens,module_root):
+        self.config=config;self.flat=flat;self.lens=lens;self.module_root=module_root
+        self.process=None;self.messages=queue.Queue()
+    def _receive(self,timeout=75):
+        try:message=self.messages.get(timeout=timeout)
+        except queue.Empty:raise RuntimeError('Phase subprocess response timed out')
+        if not message.get('ok'):raise RuntimeError('Phase subprocess: '+message.get('error','closed unexpectedly'))
+        return message
+    def _reader(self):
+        for line in self.process.stdout:
+            if line.startswith('PHASE_IPC:'):
+                try:self.messages.put(json.loads(line[len('PHASE_IPC:'):]))
+                except ValueError:self.messages.put(dict(ok=False,error='Invalid phase IPC response'))
+            else:print('[phase process] '+line.rstrip(),flush=True)
+        self.messages.put(dict(ok=False,error='Phase process EOF'))
+    def _send(self,value):
+        self.process.stdin.write(json.dumps(value)+'\n');self.process.stdin.flush()
+    def __enter__(self):
+        self.process=subprocess.Popen([sys.executable,'-u','-c',_PHASE_WORKER,str(self.module_root)],
+            stdin=subprocess.PIPE,stdout=subprocess.PIPE,stderr=subprocess.STDOUT,text=True,encoding='utf-8',bufsize=1)
+        threading.Thread(target=self._reader,daemon=True).start()
+        try:
+            self._send(dict(config=self.config,flat=str(self.flat),lens=str(self.lens)))
+            ready=self._receive();self.info=ready['info'];self.info['sdk_host_pid']=self.process.pid
+            self.info['sdk_process_isolated']=True;self.display=SimpleNamespace(audit=ready['display'])
+            return self
+        except BaseException:self.close();raise
+    def show(self,path,expected_sha=None):
+        self._send(dict(action='show',path=str(path),sha256=expected_sha))
+        return self._receive()['receipt']
+    def close(self):
+        if self.process is None:return
+        if self.process.poll() is None:
+            try:self._send(dict(action='close'))
+            except (BrokenPipeError,OSError):pass
+            try:self.process.wait(timeout=45)
+            except subprocess.TimeoutExpired:
+                # Stop only our child if graceful SDK shutdown hangs. Keep any
+                # stale owner lock for explicit inspection, never bypass it.
+                self.process.terminate();self.process.wait(timeout=10)
+                raise RuntimeError('Phase child forced to stop after graceful close timed out; inspect SDK lock')
+        self.process.stdin.close();self.process.stdout.close()
+    def __exit__(self,*args):self.close()
 
 
 def pcc(a,b):
@@ -133,7 +212,8 @@ def run(a):
         if (out/'STOP').exists():raise RuntimeError('User STOP requested; existing CCD retained')
     try:
         write(out/'status.json',dict(status='starting_sdk',pid=os.getpid()))
-        with PhaseOwner(phase_cfg,flat,lens) as owner:
+        phase_host=ProcessPhaseOwner(phase_cfg,flat,lens,root/'runtime/phase_control') if c.get('phase_process_isolated',True) else PhaseOwner(phase_cfg,flat,lens)
+        with phase_host as owner:
             write(out/'phase_devices.json',dict(phase=owner.info,display=owner.display.audit))
             probe_c=dict(c)
             if a.action=='probe':probe_c['diagnostic_save_sensor']=True
