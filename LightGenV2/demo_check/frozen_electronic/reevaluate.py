@@ -3,7 +3,10 @@ import argparse
 import csv
 import importlib.util
 import json
+import os
 from pathlib import Path
+import subprocess
+import sys
 import numpy as np
 import torch
 from model import Electronic, FrozenFusion
@@ -22,6 +25,11 @@ def main():
     args.out.mkdir(parents=True, exist_ok=False)
     torch.set_num_threads(4); torch.use_deterministic_algorithms(True); torch.backends.cudnn.benchmark = False
     metadata = json.loads((args.run/'metadata.json').read_text())
+    save(args.out/'metadata.json', dict(config=metadata['config'], command=sys.argv,
+         git_commit=subprocess.check_output(['git', 'rev-parse', 'HEAD'], text=True).strip(),
+         training_git_commit=metadata['git_commit'], python=sys.version, torch=torch.__version__,
+         gpu=torch.cuda.get_device_name(), cuda_visible_devices=os.environ.get('CUDA_VISIBLE_DEVICES'),
+         data_sha256=sha(args.data), source_run=str(args.run), operation='read-only checkpoint reevaluation'))
     assert sha(args.data) == metadata['data_sha256']
     with np.load(args.data, allow_pickle=False) as arrays:
         val = tuple(torch.from_numpy(arrays['validation_'+k].copy()) for k in ['images', 'labels', 'domains'])
@@ -55,6 +63,7 @@ def main():
         del model; torch.cuda.empty_cache()
     save(args.out/'result.json', dict(passed=True, samples_per_model=len(ids), reports=reports,
                                     verifier_sha256=sha(Path(__file__))))
+    save(args.out/'status.json', dict(state='complete'))
     print(json.dumps(dict(passed=True, samples_per_model=len(ids), models=len(reports))))
 
 

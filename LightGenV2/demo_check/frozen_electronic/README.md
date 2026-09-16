@@ -1,5 +1,8 @@
 # RGB/SAR：共享冻结电子分支，等权概率融合
 
+实测完成：[训练、结果及证据](../reports/reproduction/EUROSAT_FROZEN_ELECTRONIC_20260916.md)。
+同一2000张验证图像：电子76.05%，MoE融合75.85%，D2NN融合75.90%；本次0.5融合未带来净收益。
+
 本协议在 `pure_optical` 的动态四支路 MoE、整孔径 D2NN 上增加同一电子分类支路。
 不使用旧版 Qwen 特征适配器；本次电子模型是从头训练的小型 CNN。
 
