@@ -98,7 +98,7 @@ def train(arch,depth,seed,data,val,cfg,out,src):
             if arch!='cnn':loss=loss-cfg['capture_weight']*c.clamp_min(1e-12).log().mean()+cfg['phase_smooth_weight']*phase_smoothness(model)
             assert torch.isfinite(loss);loss.backward()
             if b==0:
-                norms={n:float(q.grad.norm()) for n,q in model.named_parameters()};assert all(np.isfinite(v) and v>0 for v in norms.values());grads.append(dict(epoch=epoch,norms=norms))
+                norms={n:float(q.grad.norm()) for n,q in model.named_parameters()};assert all(np.isfinite(v) and v>0 for v in norms.values()),(name,epoch,norms);grads.append(dict(epoch=epoch,norms=norms))
             torch.nn.utils.clip_grad_norm_(model.parameters(),1);opt.step()
             with torch.no_grad():
                 for a,bp in zip(ema.parameters(),model.parameters()):a.lerp_(bp,1-cfg['ema_decay'])
@@ -150,7 +150,7 @@ def main():
         for arch,d in variants:
             model=build(arch,d,cfg);x=encode(data[0][:8],cnn=arch=='cnn');prob,c,_=forward(model,x,arch);loss=-prob[torch.arange(8),data[1][:8]].log().mean()
             if c is not None:loss=loss-.2*c.log().mean()
-            loss.backward();g={n:float(q.grad.norm()) for n,q in model.named_parameters()};assert all(np.isfinite(z) and z>0 for z in g.values());rows.append(dict(arch=arch,depth=d,input_shape=list(x.shape),output_shape=list(prob.shape),parameters=sum(q.numel() for q in model.parameters()),gradients=g));del model;torch.cuda.empty_cache()
+            loss.backward();g={n:float(q.grad.norm()) for n,q in model.named_parameters()};assert all(np.isfinite(z) and z>0 for z in g.values()),(arch,d,g);rows.append(dict(arch=arch,depth=d,input_shape=list(x.shape),output_shape=list(prob.shape),parameters=sum(q.numel() for q in model.parameters()),gradients=g));r.save(a.out/'smoke.json',rows);del model;torch.cuda.empty_cache()
         r.save(a.out/'smoke.json',rows);return
     results=[]
     for arch,d in variants:
