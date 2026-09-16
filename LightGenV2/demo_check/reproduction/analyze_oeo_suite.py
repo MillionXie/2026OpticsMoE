@@ -122,7 +122,8 @@ def verify(a):
                 av=next(x for x in rows if (x['arch'],x['depth'],x['seed'])==(aa,d,seed));bv=next(x for x in rows if (x['arch'],x['depth'],x['seed'])==(bb,d,seed));vals.append(100*(av['test_accuracy']-bv['test_accuracy']))
             pairs.append(dict(first=aa,second=bb,depth=d,seed17_difference_pp=vals[0],seed27_difference_pp=vals[1],seed37_difference_pp=vals[2],mean_difference_pp=float(np.mean(vals)),sample_sd_pp=float(np.std(vals,ddof=1))))
     csvwrite(a.out/'paired_differences.csv',pairs)
-    report=dict(passed=True,dataset=a.dataset,models=len(rows),selection_lock_sha256=sha(root/'selection_lock.json'),results_sha256=sha(root/'results.json'),verifier_sha256=sha(Path(__file__)),selected_epochs_recomputed=True,all_prediction_metrics_recomputed=True,paired_data_order_and_transforms=True,test_ids_identical=True,weights_verified=True,identities=identities,statistics='Three training seeds on one fixed image split; sample SD, no significance claim or patient confidence interval.',test_majority_accuracy=float(np.bincount(first[1]).max()/len(first[1])),uniform_random_expected_accuracy=.125)
+    majority=int(np.argmax(entries[0]['result']['metrics']['train']['support']))
+    report=dict(passed=True,dataset=a.dataset,models=len(rows),selection_lock_sha256=sha(root/'selection_lock.json'),results_sha256=sha(root/'results.json'),verifier_sha256=sha(Path(__file__)),selected_epochs_recomputed=True,all_prediction_metrics_recomputed=True,paired_data_order_and_transforms=True,test_ids_identical=True,weights_verified=True,identities=identities,statistics='Three training seeds on one fixed image split; sample SD, no significance claim or patient confidence interval.',training_majority_class=majority,test_majority_accuracy=float((first[1]==majority).mean()),uniform_random_expected_accuracy=.125)
     save(a.out/'independent_verification.json',report)
     return rows,histories,entries,preds
 
@@ -136,6 +137,7 @@ def figures(a,rows,histories,entries):
         ax.set_xticks([2,4,6]);ax.set_xlabel('Main optical layers');axes_style(ax)
     fig,ax=plt.subplots(figsize=(7.1,4.8))
     for arch in MAIN:curve(ax,arch,'test_accuracy')
+    majority=int(np.argmax(entries[0]['result']['metrics']['train']['support']));support=entries[0]['test']['support'];ax.axhline(100*support[majority]/sum(support),color='#777777',ls=':',lw=1.2,label='Training-majority baseline')
     ax.set_ylim(0,100);ax.set_ylabel('Test accuracy (%)');ax.legend(fontsize=9,loc='upper left',bbox_to_anchor=(1,1));ax.set_title(f'{a.title}: mean ± sample SD (3 seeds)');export(fig,a.out,'depth_accuracy')
     fig,axes=plt.subplots(1,3,figsize=(12,4.2),sharey=True)
     for ax,d in zip(axes,[2,4,6]):
