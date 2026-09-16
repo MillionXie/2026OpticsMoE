@@ -2,7 +2,9 @@
 
 2026-09-17完成：[BloodMNIST逐层OEO、三种子与输入覆盖对照](BLOODMNIST_OEO_20260917.md)。54份锁定权重已完成原训练GPU精确验证重放、测试及独立指标核验；六层MoE＋OEO为84.48±0.60%，全孔径D2NN＋OEO为83.79±0.42%，配对均值差0.69个百分点，一个种子上D2NN略高。提供真实图像、深度曲线、全部种子点、训练／验证曲线和路由诊断。原小输入D2NN首层仅约4.5%被照明，此前单种子差距不能直接视为严格公平的架构优势。
 
-2026-09-17进行中：非MNIST的Kather2016组织八分类，逐层OEO开／关、2/4/6层和三个种子的训练仍在运行，不能把预实验验证成绩当最终测试结果。[完整技术说明](OEO_METHODS_20260917.md)、[Blood协议](../../reproduction/BLOODMNIST_MULTISEED_PROTOCOL.md)、[Kather协议](../../reproduction/KATHER2016_PROTOCOL.md)。
+2026-09-17完成：[Kather2016非MNIST组织八分类对照](KATHER2016_OEO_20260917.md)。12次等预算预实验选择统一配置，36份正式权重完成测试与独立复核；六层MoE＋OEO为70.88±1.44%，全孔径D2NN＋OEO为63.25±1.36%，配对优势7.62±0.60个百分点，三个种子均为正。原始数据为CC BY 4.0，但本轮是图像级随机划分，不是患者独立验证。两套实验的训练／评估／调度进程已退出，[GPU释放证据](../../runs/smoke/oeo_campaign_resource_release_20260917/resource_release.json)已保存。
+
+[完整技术说明](OEO_METHODS_20260917.md)、[Blood协议](../../reproduction/BLOODMNIST_MULTISEED_PROTOCOL.md)、[Kather协议](../../reproduction/KATHER2016_PROTOCOL.md)。本轮共评估90份锁定权重，包含逐层OEO开／关、2/4/6层、三种子、真实图像、全孔径输入对照和路由诊断；旧Adrenal与RGB/SAR实验保留其各自范围。
 
 2026-09-17完成：[BloodMNIST八类血细胞可行性验证](BLOODMNIST_FEASIBILITY_20260916.md)。
 CC BY 4.0数据；7组训练、锁定测试和独立指标核验完成。2/4/6层测试准确率，MoE为72.26%/80.33%/83.81%，D2NN为61.77%/74.80%/79.54%，多数类基线19.47%。六层训练/验证为87.38%/85.81%；保留单种子、患者独立性、理想九端口和OEO的适用范围，不替代旧Adrenal结果。
