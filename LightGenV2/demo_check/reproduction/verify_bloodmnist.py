@@ -61,6 +61,22 @@ def main():
             x=next(x for x in rs if x['arch']==arch and x['depth']==depth);h=read(root/x['name']/'history.json');tr=[row for row in h if 'train' in row];axes[0,col].plot([t['epoch'] for t in h],[t['val']['accuracy'] for t in h],color=c,label=arch+' val');axes[0,col].plot([t['epoch'] for t in tr],[t['train']['accuracy'] for t in tr],'--',color=c,label=arch+' train');axes[1,col].plot([t['epoch'] for t in h],[t['val']['detector_capture'] for t in h],color=c,label=arch);axes[0,col].axvline(x['selected_epoch'],color=c,alpha=.2)
         axes[0,col].set_title(f'{depth} layers');axes[0,col].set_ylabel('Accuracy');axes[1,col].set_ylabel('Validation detector capture');axes[1,col].set_xlabel('Epoch')
         for ax in axes[:,col]:ax.grid(alpha=.2);ax.legend(fontsize=8)
-    fig.tight_layout();fig.savefig(root/'learning_curves.png',dpi=180);fig.savefig(root/'learning_curves.pdf');print(json.dumps(report,indent=2))
+    fig.tight_layout();fig.savefig(root/'learning_curves.png',dpi=180);fig.savefig(root/'learning_curves.pdf');plt.close(fig)
+    if tests:
+        fig,axes=plt.subplots(1,2,figsize=(11,4.6));positions=np.arange(len(depths));cnn=next(x for x in out if x['model'].startswith('cnn_'))
+        for arch,color,shift in [('moe','#1475b9',-.18),('d2nn','#d17b22',.18)]:
+            selected=[next(x for x in out if x['model'].startswith(f'{arch}_L{depth}_')) for depth in depths];bars=axes[0].bar(positions+shift,[x['test_accuracy'] for x in selected],width=.34,color=color,label=arch)
+            axes[0].bar_label(bars,labels=[f"{x['test_accuracy']:.1%}" for x in selected],fontsize=9,padding=3);axes[1].plot(depths,[x['train_accuracy']-x['validation_accuracy'] for x in selected],'o-',color=color,label=arch)
+        axes[0].axhline(dummy['test_majority_accuracy'],color='gray',ls=':',label='Training-majority dummy');axes[0].axhline(cnn['test_accuracy'],color='#257942',ls='--',label='Small CNN reference');axes[0].set_xticks(positions,depths);axes[0].set_ylim(0,1);axes[0].set_ylabel('Official test accuracy');axes[1].set_xticks(depths);axes[1].axhline(0,color='gray',lw=.7);axes[1].set_ylabel('Train accuracy - validation accuracy')
+        for ax in axes:ax.set_xlabel('Optical depth');ax.legend(fontsize=8);ax.grid(axis='y',alpha=.2)
+        fig.suptitle('BloodMNIST: validation-selected checkpoints, seed17');fig.tight_layout();fig.savefig(root/'selected_comparison.png',dpi=180);fig.savefig(root/'selected_comparison.pdf');plt.close(fig)
+        fig,axes=plt.subplots(2,len(depths),figsize=(4.5*len(depths),8),constrained_layout=True,squeeze=False)
+        for row,arch in enumerate(['moe','d2nn']):
+            for col,depth in enumerate(depths):
+                name=next(x['name'] for x in rs if x['arch']==arch and x['depth']==depth);cm=np.array(tests[name]['confusion_matrix']);rec=cm/cm.sum(1,keepdims=True);ax=axes[row,col];im=ax.imshow(rec,vmin=0,vmax=1,cmap='Blues');ax.set_title(f'{arch}, {depth} layers');ax.set_xticks(range(8));ax.set_yticks(range(8));ax.set_xlabel('Predicted class');ax.set_ylabel('True class')
+                for i in range(8):
+                    for j in range(8):ax.text(j,i,f'{rec[i,j]*100:.0f}',ha='center',va='center',fontsize=8,color='white' if rec[i,j]>.5 else 'black')
+        fig.colorbar(im,ax=axes.ravel().tolist(),shrink=.8,label='Fraction within each true class');fig.suptitle('Official test: row-normalized confusion matrices (%)');fig.savefig(root/'confusion_matrices.png',dpi=180);fig.savefig(root/'confusion_matrices.pdf');plt.close(fig)
+    print(json.dumps(report,indent=2))
 
 if __name__=='__main__':main()
