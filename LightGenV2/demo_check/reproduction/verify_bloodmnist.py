@@ -69,6 +69,7 @@ def main():
             axes[0].bar_label(bars,labels=[f"{x['test_accuracy']:.1%}" for x in selected],fontsize=9,padding=3);axes[1].plot(depths,[x['train_accuracy']-x['validation_accuracy'] for x in selected],'o-',color=color,label=arch)
         axes[0].axhline(dummy['test_majority_accuracy'],color='gray',ls=':',label='Training-majority dummy');axes[0].axhline(cnn['test_accuracy'],color='#257942',ls='--',label='Small CNN reference');axes[0].set_xticks(positions,depths);axes[0].set_ylim(0,1);axes[0].set_ylabel('Official test accuracy');axes[1].set_xticks(depths);axes[1].axhline(0,color='gray',lw=.7);axes[1].set_ylabel('Train accuracy - validation accuracy')
         for ax in axes:ax.set_xlabel('Optical depth');ax.legend(fontsize=8);ax.grid(axis='y',alpha=.2)
+        axes[0].legend(loc='upper center',ncol=2,fontsize=8)
         fig.suptitle('BloodMNIST: validation-selected checkpoints, seed17');fig.tight_layout();fig.savefig(root/'selected_comparison.png',dpi=180);fig.savefig(root/'selected_comparison.pdf');plt.close(fig)
         fig,axes=plt.subplots(2,len(depths),figsize=(4.5*len(depths),8),constrained_layout=True,squeeze=False)
         for row,arch in enumerate(['moe','d2nn']):
