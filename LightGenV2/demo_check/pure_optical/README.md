@@ -1,5 +1,9 @@
 # EuroSAT无电子残差的相位训练试验
 
+已完成三组20轮子集训练与独立核验，结果及限制见
+[复现报告](../reports/reproduction/PURE_OPTICAL_PILOT_20260916.md)。统一复现入口为
+[reports/reproduction/README.md](../reports/reproduction/README.md)。
+
 固定3通道图像振幅编码→两层相位和全画布相干传播→固定10区域CCD读出。
 无Qwen、电子残差、可训练电子投影/分类头、alpha或中间OEO。动态MoE仍含
 路由探测、归一化和振幅SLM控制，不称为完全被动的全光系统。
