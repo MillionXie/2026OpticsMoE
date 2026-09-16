@@ -4,6 +4,32 @@
 [复现报告](../reports/reproduction/PURE_OPTICAL_PILOT_20260916.md)。统一复现入口为
 [reports/reproduction/README.md](../reports/reproduction/README.md)。
 
+## 两模型交接包
+
+`../releases/eurosat_phase_only_moe_d2nn_20260916.zip`为可直接转发的独立代码包，
+只运行动态四支路MoE和整孔径D2NN。生成源码commit `558cfceb`；原训练commit仍为`8c48e5ca`。
+ZIP SHA256：`bc58f30803437232d3398a883127b9c98dca07e9845f6b5284d83e0d1c602639`。
+包括独立传播器、数据准备/下载、训练入口、原空间划分、数据像素摘要、两模型原结果、依赖及README；
+不附权重和原始图像，不依赖原工程其他任务。交接说明源文件为[HANDOFF_README.md](HANDOFF_README.md)。
+
+导出只修改依赖导入、默认架构列表和元数据读取方式，没有改变两模型计算图。
+RTX4090实测两模型前向输出与相位梯度均与原实现逐位相同，加载原best权重后，2000张验证
+准确率分别为39.85%、29.20%，各域指标也一致；导出训练入口的前向/反向smoke通过。
+证据：`runs/smoke/handoff_cuda_20260916/verification.json`及`handoff_entry_20260916`（相对demo_check）。
+本地Windows基础环境的PyTorch DLL加载失败，因此运行验证使用原服务器CUDA环境，未改动本地环境。
+没有重复完整20轮训练；该检查验证计算图/梯度和固定权重复评一致性。
+
+由仓库根目录重新生成时需使用不同输出文件名：
+
+```bash
+python LightGenV2/demo_check/build_lab_package.py --out LightGenV2/demo_check/releases/eurosat_phase_only_moe_d2nn_20260916.zip --split /path/to/SPLIT.json --run LightGenV2/demo_check/runs/simulation/pure_optical_20260916
+```
+
+构建依赖run中的metadata、results、dataset_manifest和independent_verification文件；本地均已保存。
+从其他commit再次构建时PROVENANCE和包摘要会改变，必须保留对应新清单，不能沿用上面的ZIP摘要。
+
+## 原试验协议
+
 固定3通道图像振幅编码→两层相位和全画布相干传播→固定10区域CCD读出。
 无Qwen、电子残差、可训练电子投影/分类头、alpha或中间OEO。动态MoE仍含
 路由探测、归一化和振幅SLM控制，不称为完全被动的全光系统。
