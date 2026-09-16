@@ -34,6 +34,7 @@ def main():
         row=dict(model=x['name'],parameters=x['parameters'],selected_epoch=chosen,epochs_completed=x['epochs_completed'],train_accuracy=x['metrics']['train']['accuracy'],validation_accuracy=x['metrics']['val']['accuracy'],train_balanced_accuracy=x['metrics']['train']['balanced_accuracy'],validation_balanced_accuracy=x['metrics']['val']['balanced_accuracy'])
         if x['name'] in tests:
             ii,y,pr=predictions(d/'test_predictions.csv',tests[x['name']]);assert not set(ii)&(ids[0]|ids[1]);preds[x['name']]=(ii,y,pr);row.update(test_accuracy=tests[x['name']]['accuracy'],test_balanced_accuracy=tests[x['name']]['balanced_accuracy'],test_macro_f1=tests[x['name']]['macro_f1'],test_macro_ovr_auroc=tests[x['name']]['macro_ovr_auroc'],test_capture=tests[x['name']].get('detector_capture',''))
+            clean=next(t['clean_test_metrics'] for t in read(root/'test_results.json') if t['name']==x['name']);ci,_,_=predictions(d/'test_clean_predictions.csv',clean);assert ci==[ii[i] for i in read(root/'image_overlap_audit.json')['clean_test_indices']];row.update(clean_test_accuracy=clean['accuracy'],clean_test_balanced_accuracy=clean['balanced_accuracy'])
         out.append(row)
     for field in ['orders','transforms']:
         n=min(len(x[field]) for x in rs);assert len({tuple(x[field][:n]) for x in rs})==1

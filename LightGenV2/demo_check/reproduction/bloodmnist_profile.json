@@ -3,6 +3,7 @@
   "url": "https://zenodo.org/records/10519652/files/bloodmnist.npz?download=1",
   "md5": "7053d0359d879ad8a5505303e11de1dc",
   "license": "CC BY 4.0",
+  "deduplication": "Keep first official train image per exact RGB hash, exclude train matches to validation; 11948 train remain. Preserve full val/test, additionally report test without exact matches to any official train/val or prior test row.",
   "classes": ["basophil", "eosinophil", "erythroblast", "immature granulocytes", "lymphocyte", "monocyte", "neutrophil", "platelet"],
   "epochs": 30,
   "minimum_epochs": 15,

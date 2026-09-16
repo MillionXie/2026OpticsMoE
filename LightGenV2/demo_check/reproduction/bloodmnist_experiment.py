@@ -44,7 +44,15 @@ def load_data(path,split):
     with np.load(path,allow_pickle=False) as z:x=z[split+'_images'].copy();y=z[split+'_labels'].reshape(-1).copy()
     assert x.dtype==np.uint8 and x.shape==(len(y),28,28,3)
     assert len(y)=={'train':11959,'val':1712,'test':3421}[split] and set(y)==set(range(8))
-    return torch.from_numpy(x.transpose(0,3,1,2).copy()).float().cuda()/255,torch.from_numpy(y).long().cuda(),np.array([f'{split}_{i}' for i in range(len(y))])
+    ids=np.array([f'{split}_{i}' for i in range(len(y))])
+    if split=='train':
+        with np.load(path,allow_pickle=False) as z:seen={hashlib.sha256(img.tobytes()).hexdigest() for img in z['val_images']}
+        keep=[]
+        for i,img in enumerate(x):
+            h=hashlib.sha256(img.tobytes()).hexdigest()
+            if h not in seen:keep.append(i);seen.add(h)
+        x,y,ids=x[keep],y[keep],ids[keep];assert len(y)==11948
+    return torch.from_numpy(x.transpose(0,3,1,2).copy()).float().cuda()/255,torch.from_numpy(y).long().cuda(),ids
 
 
 def encode(x,theta=None,cnn=False):
@@ -139,13 +147,19 @@ def main():
         for x in lock['models']:
             model=build(x['arch'],x['depth'],cfg);ck=torch.load(a.out/x['name']/'best_checkpoint.pt',map_location='cpu',weights_only=False);model.load_state_dict(ck['model']);vm,_=evaluate(model,val,x['arch'],cfg['cnn']['batch_size'] if x['arch']=='cnn' else cfg['batch_size']);assert vm==r.read(a.out/x['name']/'summary.json')['metrics']['val'];replay.append(x['name']);del model,ck;torch.cuda.empty_cache()
         test=load_data(a.data,'test');results=[]
-        for x in lock['models']:
-            model=build(x['arch'],x['depth'],cfg);ck=torch.load(a.out/x['name']/'best_checkpoint.pt',map_location='cpu',weights_only=False);model.load_state_dict(ck['model']);m,rows=evaluate(model,test,x['arch'],cfg['cnn']['batch_size'] if x['arch']=='cnn' else cfg['batch_size']);r.csvwrite(a.out/x['name']/'test_predictions.csv',rows);results.append(dict(name=x['name'],metrics=m));del model,ck;torch.cuda.empty_cache()
         with np.load(a.data,allow_pickle=False) as z:
             hashes={split:{hashlib.sha256(img.tobytes()).hexdigest() for img in z[split+'_images']} for split in ['train','val','test']}
-        r.save(a.out/'image_overlap_audit.json',dict(exact_rgb_overlap={s+'_'+t:len(hashes[s]&hashes[t]) for s,t in [('train','val'),('train','test'),('val','test')]},scope='Exact images only; no patient identity inference'))
+            seen=hashes['train']|hashes['val'];clean=[]
+            for i,img in enumerate(z['test_images']):
+                h=hashlib.sha256(img.tobytes()).hexdigest()
+                if h not in seen:clean.append(i);seen.add(h)
+        r.save(a.out/'image_overlap_audit.json',dict(exact_rgb_overlap={s+'_'+t:len(hashes[s]&hashes[t]) for s,t in [('train','val'),('train','test'),('val','test')]},clean_test_indices=clean,clean_test_n=len(clean),scope='Train removes validation matches and internal duplicates. Secondary test removes matches to any official train/val image and internal duplicates. Exact images only; no patient identity inference'))
+        for x in lock['models']:
+            model=build(x['arch'],x['depth'],cfg);ck=torch.load(a.out/x['name']/'best_checkpoint.pt',map_location='cpu',weights_only=False);model.load_state_dict(ck['model']);m,rows=evaluate(model,test,x['arch'],cfg['cnn']['batch_size'] if x['arch']=='cnn' else cfg['batch_size']);r.csvwrite(a.out/x['name']/'test_predictions.csv',rows)
+            cr=[rows[i] for i in clean];cy=np.array([q['label_true'] for q in cr]);cp=np.array([[q[f'score{k}'] for k in range(8)] for q in cr]);cm=metrics(cy,cp);r.csvwrite(a.out/x['name']/'test_clean_predictions.csv',cr);results.append(dict(name=x['name'],metrics=m,clean_test_metrics=cm));del model,ck;torch.cuda.empty_cache()
         r.save(a.out/'test_results.json',results);r.save(a.out/'test_execution.json',dict(command=sys.argv,git_commit=subprocess.check_output(['git','rev-parse','HEAD'],text=True).strip(),lock_sha256=r.sha(a.out/'test_lock.json'),validation_replayed=replay,time=r.now()));r.save(a.out/'status.json',dict(state='test_complete',time=r.now()));return
     a.out.mkdir(parents=True,exist_ok=False);data=load_data(a.data,'train');val=load_data(a.data,'val');majority=int(data[1].bincount().argmax())
+    r.save(a.out/'training_sample_ids.json',data[2].tolist())
     r.save(a.out/'metadata.json',dict(command=sys.argv,config=cfg,sources=src,git_commit=subprocess.check_output(['git','rev-parse','HEAD'],text=True).strip(),data_sha256=r.sha(a.data),python=sys.version,torch=torch.__version__,gpu=torch.cuda.get_device_name(),time=r.now(),train_support=data[1].bincount().tolist(),val_support=val[1].bincount().tolist(),majority_class=majority,majority_validation_accuracy=float((val[1]==majority).float().mean()),test_read=False))
     variants=[('cnn',0)]+[(arch,d) for d in a.depths for arch in ['moe','d2nn']]
     if a.phase=='smoke':
