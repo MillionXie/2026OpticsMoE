@@ -26,7 +26,14 @@ def main():
                     idx=np.r_[rng.choice(neg,len(neg)),rng.choice(pos,len(pos))];delta.append(auc(y[idx],pm[idx])-auc(y[idx],pb[idx]))
                 lo,hi=np.quantile(delta,[.025,.975]);primary.append(dict(run=name,seed=seed,depth=depth,moe_test_auroc=auc(y,pm),d2nn_test_auroc=auc(y,pb),delta=auc(y,pm)-auc(y,pb),paired_bootstrap_ci=[float(lo),float(hi)]))
     with (a.out/'all_candidates.csv').open('w',newline='') as f:w=csv.DictWriter(f,fieldnames=list(allrows[0]));w.writeheader();w.writerows(allrows)
-    obj=dict(selected_configuration=lock['selected_shared_configuration'],primary_comparisons=primary,all_candidates=allrows,interval_scope='2000 class-stratified paired sample bootstrap replicates, not patient-group or training-seed confidence intervals; no multiplicity correction',test_used_for_selection=False)
+    repeats=[]
+    native=runs/'adrenal_nll_native_s17_20260916';router=runs/'adrenal_router10_s17_20260916'
+    if native.name in lock['runs'] and router.name in lock['runs']:
+        for depth in [2,4,6]:
+            rel=Path(f'd2nn_L{depth}_oeo_relu_softsign/seed17')
+            for split in ['train','val','test']:assert (native/rel/(split+'_predictions.csv')).read_bytes()==(router/rel/(split+'_predictions.csv')).read_bytes()
+            repeats.append(dict(depth=depth,all_three_splits_bitwise_identical=True))
+    obj=dict(selected_configuration=lock['selected_shared_configuration'],primary_comparisons=primary,all_candidates=allrows,d2nn_router_control_replay=repeats,interval_scope='2000 class-stratified paired sample bootstrap replicates, not patient-group or training-seed confidence intervals; no multiplicity correction',test_used_for_selection=False)
     (a.out/'comparison.json').write_text(json.dumps(obj,indent=2),encoding='utf-8')
     import matplotlib
     matplotlib.use('Agg')
