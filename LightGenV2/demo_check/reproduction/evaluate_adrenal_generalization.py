@@ -42,7 +42,7 @@ def main():
     if 'training' in sources:
         import adrenal_shared_frontend as f
         assert r.sha(f.__file__)==sources['runner']
-    r.EXP.update(batch_size=cfg['batch_size'],data_npz=str(a.data.resolve()));r.setup();assert r.sha(a.data)==metadata['data_sha256']
+    r.EXP.update(batch_size=cfg['batch_size'],data_npz=str(a.data.resolve()));r.setup();r.setseed(metadata['seeds'][0]);assert r.sha(a.data)==metadata['data_sha256']
     for rel,h in lock['files'].items():assert r.sha(root/rel)==h,rel
     if 'frontend_checkpoint' in sources:
         import adrenal_shared_frontend as f
