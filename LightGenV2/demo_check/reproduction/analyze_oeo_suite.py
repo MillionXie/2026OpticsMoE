@@ -169,7 +169,7 @@ def figures(a,rows,histories,entries):
             vv=np.array([x['train_val_gap_pp'] for x in group(arch,d)]);j=MAIN.index(arch);axes[1,col].scatter(j+np.array([-.08,0,.08]),vv,color=c,s=30);axes[1,col].plot([j-.18,j+.18],[vv.mean()]*2,color='black',lw=1.5)
         axes[0,col].set_title(f'{d} main layers');axes[0,col].set_xlabel('Epoch');axes[0,col].set_ylim(0,100);axes[1,col].set_xticks(range(4),['MoE','MoE\n+ OEO','D2NN','D2NN\n+ OEO']);axes[1,col].axhline(0,color='black',lw=.7)
         for ax in axes[:,col]:axes_style(ax)
-    axes[0,0].set_ylabel('Validation accuracy (%)');axes[1,0].set_ylabel('Selected train − validation accuracy (pp)');handles=[plt.Line2D([],[],color=STYLE[z][1],label=STYLE[z][0],lw=2) for z in MAIN];fig.legend(handles=handles,loc='upper center',ncol=2,bbox_to_anchor=(.5,1.05));fig.tight_layout();export(fig,a.out,'generalization_curves');csvwrite(a.out/'learning_curve_data.csv',curve_rows)
+    axes[0,0].set_ylabel('Validation accuracy (%)');axes[1,0].set_ylabel('Selected train − validation accuracy (pp)');handles=[plt.Line2D([],[],color=STYLE[z][1],label=STYLE[z][0],lw=2) for z in MAIN];fig.legend(handles=handles,loc='upper center',ncol=2,bbox_to_anchor=(.5,1));fig.tight_layout(rect=[0,0,1,.90]);export(fig,a.out,'generalization_curves');csvwrite(a.out/'learning_curve_data.csv',curve_rows)
     fig,axes=plt.subplots(4,3,figsize=(13,12),sharex=True,sharey=True);seed_colors=['#3975b5','#de8b45','#348f73']
     for row,arch in enumerate(MAIN):
         for col,d in enumerate([2,4,6]):
@@ -189,5 +189,13 @@ def figures(a,rows,histories,entries):
     axes[0].set_ylabel('True class');fig.colorbar(im,ax=axes,shrink=.65,label='Mean within-class fraction');fig.suptitle('6 main layers: confusion matrices averaged over 3 seeds');export(fig,a.out,'confusion_L6');csvwrite(a.out/'confusion_L6.csv',conf)
 
 def main():
-    p=argparse.ArgumentParser();p.add_argument('--run',type=Path,required=True);p.add_argument('--task-root',type=Path,required=True);p.add_argument('--out',type=Path,required=True);p.add_argument('--dataset',choices=['bloodmnist','kather2016'],required=True);a=p.parse_args();a.title={'bloodmnist':'BloodMNIST','kather2016':'Kather2016'}[a.dataset];a.out.mkdir(parents=True,exist_ok=False);rows,histories,entries,_=verify(a);figures(a,rows,histories,entries);print(json.dumps(dict(verified=len(rows),output=str(a.out))))
+    p=argparse.ArgumentParser();p.add_argument('--run',type=Path,required=True);p.add_argument('--task-root',type=Path,required=True);p.add_argument('--out',type=Path,required=True);p.add_argument('--dataset',choices=['bloodmnist','kather2016'],required=True);p.add_argument('--refresh-figures',action='store_true');a=p.parse_args();a.title={'bloodmnist':'BloodMNIST','kather2016':'Kather2016'}[a.dataset]
+    previous=None
+    if a.refresh_figures:
+        previous=read(a.out/'independent_verification.json');assert previous['passed'] and previous['dataset']==a.dataset;assert previous['results_sha256']==sha(a.run/'results.json') and previous['selection_lock_sha256']==sha(a.run/'selection_lock.json'),'A layout refresh cannot replace underlying results'
+    else:a.out.mkdir(parents=True,exist_ok=False)
+    rows,histories,entries,_=verify(a);figures(a,rows,histories,entries)
+    if previous is not None:
+        history=read(a.out/'render_history.json') if (a.out/'render_history.json').exists() else [];history.append(dict(previous_verifier_sha256=previous['verifier_sha256'],current_verifier_sha256=sha(Path(__file__)),unchanged_results_sha256=previous['results_sha256'],all_checks_repeated=True));save(a.out/'render_history.json',history)
+    print(json.dumps(dict(verified=len(rows),output=str(a.out))))
 if __name__=='__main__':main()
