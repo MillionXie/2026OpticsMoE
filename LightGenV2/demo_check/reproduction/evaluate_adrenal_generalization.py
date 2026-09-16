@@ -1,5 +1,5 @@
 """Locked checkpoint replay and test audit, with no model/threshold selection."""
-import argparse,json,subprocess,sys
+import argparse,hashlib,json,subprocess,sys
 from pathlib import Path
 import adrenal_generalization as g
 from adrenal_generalization import r,np,torch,F,old
@@ -81,7 +81,10 @@ def main():
     if a.validation_only:
         r.save(root/'validation_audit_execution.json',dict(command=sys.argv,evaluator_sha256=r.sha(__file__),time=r.now(),test_read=False));return
     # Only now read the test arrays, after all selected files have been checked.
-    with np.load(a.data,allow_pickle=False) as z:x=z['test_images'].copy();y=z['test_labels'].reshape(-1).copy();ids=z['test_ids'].copy()
+    with np.load(a.data,allow_pickle=False) as z:
+        x=z['test_images'].copy();y=z['test_labels'].reshape(-1).copy();ids=z['test_ids'].copy()
+        image_hashes={split:{hashlib.sha256(img.tobytes()).hexdigest() for img in z[split+'_images']} for split in ['train','val','test']}
+    r.save(root/'split_overlap_audit.json',dict(exact_projection_overlap_counts={a+'_'+b:len(image_hashes[a]&image_hashes[b]) for a,b in [('train','val'),('train','test'),('val','test')]},unique_projections={k:len(v) for k,v in image_hashes.items()},scope='Exact projected-array identity only; split-local row IDs do not establish patient-level independence'))
     assert np.bincount(y).tolist()==[229,69] and len(set(ids))==298
     test=(F.interpolate(torch.from_numpy(x[:,None]),size=(100,100),mode='bicubic',align_corners=False,antialias=True).clamp(0,1).cuda(),torch.from_numpy(y).long().cuda(),ids);results=[]
     for rel in lock['models']:
