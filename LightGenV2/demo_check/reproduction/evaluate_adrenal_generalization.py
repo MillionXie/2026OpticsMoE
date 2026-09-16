@@ -25,7 +25,7 @@ def route_audit(model,train,val,frontend):
     return dict(scope='Validation diagnostic only; replace input-dependent routing by mean probabilities estimated on training inputs, preserving phases and nine branches',fixed_train_mean_route_validation=fixed_metrics,train_mean_probabilities=mean.cpu().tolist(),validation_class_mean_power={str(c):power[labels==c].mean(0).tolist() for c in [0,1]},validation_power_std=power.std(0,unbiased=False).tolist(),mean_normalized_power_entropy=float(-(power*power.clamp_min(1e-12).log()).sum(1).mean()/np.log(9)))
 
 def main():
-    p=argparse.ArgumentParser();p.add_argument('--run',type=Path,required=True);p.add_argument('--data',type=Path,required=True);p.add_argument('--selection-lock',type=Path,required=True);a=p.parse_args();root=a.run
+    p=argparse.ArgumentParser();p.add_argument('--run',type=Path,required=True);p.add_argument('--data',type=Path,required=True);p.add_argument('--selection-lock',type=Path,required=True);p.add_argument('--validation-only',action='store_true');a=p.parse_args();root=a.run
     selection=r.read(a.selection_lock);assert root.name in selection['runs']
     assert r.sha(root/'test_lock.json')==selection['runs'][root.name]['test_lock_sha256']
     assert r.sha(root/'metadata.json')==selection['runs'][root.name]['metadata_sha256']
@@ -66,6 +66,8 @@ def main():
     r.save(root/'validation_replay.json',replay)
     r.save(root/'selected_phase_audit.json',phase_audit)
     r.save(root/'routing_audit.json',routing_audits)
+    if a.validation_only:
+        r.save(root/'validation_audit_execution.json',dict(command=sys.argv,evaluator_sha256=r.sha(__file__),time=r.now(),test_read=False));return
     # Only now read the test arrays, after all selected files have been checked.
     with np.load(a.data,allow_pickle=False) as z:x=z['test_images'].copy();y=z['test_labels'].reshape(-1).copy();ids=z['test_ids'].copy()
     assert np.bincount(y).tolist()==[229,69] and len(set(ids))==298
