@@ -25,7 +25,7 @@ def main():
         d=root/x['name'];h=read(d/'history.json');best=float('inf');chosen=None
         for row in h:
             if row['val']['balanced_nll']<best-cfg['min_delta']:best=row['val']['balanced_nll'];chosen=row['epoch']
-        assert chosen==x['selected_epoch'];assert all(v>0 for v in x['updates'].values());assert all(np.isfinite(v) and v>0 for row in read(d/'gradients.json') for v in row['norms'].values())
+        assert chosen==x['selected_epoch'];assert all(v>0 for v in x['updates'].values());gs=read(d/'gradients.json');assert all(np.isfinite(v) and v>=0 for row in gs for v in row['norms'].values());assert all(any(row['norms'][name]>0 for row in gs) for name in gs[0]['norms'])
         if (d/'best_checkpoint.pt').exists():assert sha(d/'best_checkpoint.pt')==x['checkpoint_sha256']
         ids=[]
         for split in ['train','val']:

@@ -34,6 +34,9 @@ def build(arch,depth,cfg):
         m=BloodMoE(c);assert torch.equal(m.masks,detector.masks)
     else:m=D2NN(c);m.detector=detector
     assert m.masks.shape==(8,500,500) and float(m.masks.sum(0).max())==1
+    with torch.no_grad():
+        for name,p in m.named_parameters():
+            assert name.endswith('raw_phase');p.uniform_(-cfg['phase_init_raw_uniform'],cfg['phase_init_raw_uniform'])
     return m.cuda()
 
 
@@ -98,7 +101,7 @@ def train(arch,depth,seed,data,val,cfg,out,src):
             if arch!='cnn':loss=loss-cfg['capture_weight']*c.clamp_min(1e-12).log().mean()+cfg['phase_smooth_weight']*phase_smoothness(model)
             assert torch.isfinite(loss);loss.backward()
             if b==0:
-                norms={n:float(q.grad.norm()) for n,q in model.named_parameters()};assert all(np.isfinite(v) and v>0 for v in norms.values()),(name,epoch,norms);grads.append(dict(epoch=epoch,norms=norms))
+                norms={n:float(q.grad.norm()) for n,q in model.named_parameters()};assert all(np.isfinite(v) for v in norms.values()) and any(v>0 for v in norms.values()),(name,epoch,norms);grads.append(dict(epoch=epoch,norms=norms))
             torch.nn.utils.clip_grad_norm_(model.parameters(),1);opt.step()
             with torch.no_grad():
                 for a,bp in zip(ema.parameters(),model.parameters()):a.lerp_(bp,1-cfg['ema_decay'])

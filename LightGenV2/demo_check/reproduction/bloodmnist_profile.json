@@ -10,6 +10,7 @@
   "min_delta": 0.0005,
   "batch_size": 16,
   "lr": 0.002,
+  "phase_init_raw_uniform": 1.0,
   "ema_decay": 0.95,
   "label_smoothing": 0.02,
   "capture_weight": 0.2,
