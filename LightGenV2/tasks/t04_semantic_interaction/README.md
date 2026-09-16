@@ -1,5 +1,25 @@
 # T04 语义交互（OpenMoji）
 
+## 2026-09-16：实测CCD去光与末端适配
+
+新增离线入口`lab_adaptation.py`，不打开任何相机或SLM。对`test1000_02`完整1000条先复现六层实测结果，
+再以同一原权重关闭两个模态全部光支路、电子系数恢复为1（与仿真去光协议相同，不单独训练去光模型）。
+程序检查正常模式每样本经过6个实测替换边界，去光模式执行0次光传播。
+
+用户确认四操作各200条适配、50条留出，总计800/200，seed20260916；固定随机划分不看正确率。
+100epoch、AdamW lr1e-4、cosine、batch32；仅微调`shared_readout`的post_film、coordinate_projection、editor、decoder。
+冻结相位、router、alpha、全部光电前端、语言位置汇总/language_pool及task_head，避免修改光学输入却继续使用旧CCD。
+缓存最后读出头的输入，epoch0必须复现原1000条指标；每轮打印/保存两子集及全1000条、四操作全部原指标。
+best按200条留出集scene-exact优先，其次changed-cell、IoU、F1，另保留last。该留出集参与选模，不能称独立最终test；
+全1000条指标包含800条训练适配样本，也不能称独立test。原权重、CCD、`results.json`均不覆盖。
+
+小型增量ZIP入口：`python -m LightGenV2.tasks.t04_semantic_interaction.build_lab_package --shs-offline-output 输出.zip`。
+ZIP须校验SHA并解压到新的独立目录，不覆盖原硬件runtime。入口：
+`python offline_tune.py --project 原硬件工程 --session test1000_02 --output 新run目录 --epochs 100 --device cuda`。
+输出`same_checkpoint_remove_optical.json`、`split.json`、`epochs.jsonl`、长表`epochs.csv`、`all_metrics.png`、
+`best_checkpoint.pt`/`last_checkpoint.pt`与`summary.json`。权重是末端shared_readout状态，先载入固定原模型，再载入该状态；不是完整新模型。
+本轮结果待实际运行，不根据预期填写。
+
 ## 2026-09-15：SHS单电脑六层部署
 
 新增 [COMMAND_SHS.md](COMMAND_SHS.md)：师弟电脑同时连接Holoeye振幅、Meadowlark HDMI相位和SHS相机。
