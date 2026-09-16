@@ -18,7 +18,14 @@ ZIP须校验SHA并解压到新的独立目录，不覆盖原硬件runtime。入�
 `python offline_tune.py --project 原硬件工程 --session test1000_02 --output 新run目录 --epochs 100 --device cuda`。
 输出`same_checkpoint_remove_optical.json`、`split.json`、`epochs.jsonl`、长表`epochs.csv`、`all_metrics.png`、
 `best_checkpoint.pt`/`last_checkpoint.pt`与`summary.json`。权重是末端shared_readout状态，先载入固定原模型，再载入该状态；不是完整新模型。
-本轮结果待实际运行，不根据预期填写。
+本轮100epoch已完成（源码`de8084b1`，师弟RTX4060；4项实际环境测试通过）。正常六层实测复评精确复现，
+同权重去光1000条修改格0.4065、整场景0.2730（原实测0.8830/0.6050），不解释为光贡献百分比。
+微调343316个末端参数，best为epoch50：200条选模留出集修改格0.8775、整场景0.7450、IoU0.8358333333、F1 0.9522550505；
+同一留出集epoch0为0.8750/0.6050/0.7744166667/0.9129123654。epoch100修改格0.8625、整场景0.7300，存在后期过拟合。
+best重新载入后全部1000条指标与记录误差0，原模型及被冻结的语言汇总状态哈希未变；任务退出码0、GPU已释放。
+师弟结果目录`OpenMoji_Lab_SHS_8um/runs/head_adaptation_800_200_20260916`；本地同名run位于本任务`runs/hardware/`，
+`00_逐轮结果.md`列出epoch0～100三组整体8项指标，CSV/JSONL还包含四操作分项；小文件与best/last均已SHA256核验下载，
+`readout_inputs.pt`缓存保留师弟电脑。日志在`offline_adaptation_20260916/logs/job_20260916_215236.log`。
 
 ## 2026-09-15：SHS单电脑六层部署
 
