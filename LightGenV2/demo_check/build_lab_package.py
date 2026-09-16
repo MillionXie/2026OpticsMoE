@@ -24,9 +24,18 @@ def replace_once(text,old,new):
 def main():
     parser=argparse.ArgumentParser()
     parser.add_argument('--out',type=Path,required=True)
-    parser.add_argument('--split',type=Path,required=True)
+    parser.add_argument('--variant',choices=['pure_optical','shared_frontend'],default='pure_optical')
+    parser.add_argument('--split',type=Path)
     parser.add_argument('--run',type=Path,required=True)
+    parser.add_argument('--data',type=Path)
+    parser.add_argument('--data-manifest',type=Path)
+    parser.add_argument('--known-test-run',type=Path)
     args=parser.parse_args()
+    if args.variant=='shared_frontend':
+        from shared_frontend.package_builder import build
+        build(args)
+        return
+    assert args.split is not None,'--split is required for the pure_optical package'
     assert not args.out.exists(),'Refusing to replace a release'
     assert digest(args.split.read_bytes())==SPLIT_SHA
     metadata=json.loads((args.run/'metadata.json').read_text())
