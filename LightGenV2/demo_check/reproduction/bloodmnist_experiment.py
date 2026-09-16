@@ -50,7 +50,7 @@ def encode(x,theta=None,cnn=False):
     if theta is not None:x=augment(x,theta)
     if cnn:return F.interpolate(x,size=(28,28),mode='bilinear',align_corners=False,antialias=True) if theta is not None else x
     x=F.interpolate(x,size=(50,50),mode='bilinear',align_corners=False,antialias=True)
-    return torch.cat([torch.cat([x[:,0:1],x[:,1:2]],3),torch.cat([x[:,2:3],torch.zeros_like(x[:,0:1])],3)],2)
+    return torch.cat([torch.cat([x[:,0:1],x[:,1:2]],3),torch.cat([x[:,2:3],x.mean(1,keepdim=True)],3)],2)
 
 
 def forward(model,x,arch):

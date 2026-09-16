@@ -15,7 +15,7 @@
   "capture_weight": 0.2,
   "phase_smooth_weight": 0.02,
   "augmentation": {"degrees": 10.0, "translation_pixels": 3.0, "scale_delta": 0.05},
-  "encoding": "RGB uint8/255 -> bicubic antialias 100x100 clamp -> train-only shared affine -> bilinear antialias 50x50 -> [R,G;B,zeros] 100x100 amplitude",
+  "encoding": "RGB uint8/255 -> bicubic antialias 100x100 clamp -> train-only shared affine -> bilinear antialias 50x50 -> [R,G;B,mean_RGB] 100x100 amplitude",
   "detector": {"size": 32, "x": 126, "y": 198, "rows": [4,4], "gap_x": [40,40], "gap_y": 40},
   "cnn": {"epochs": 30, "batch_size": 128, "lr": 0.001, "weight_decay": 0.01, "dropout": 0.2},
   "selection": "minimum validation balanced NLL; no test-based choice",
