@@ -21,7 +21,18 @@ def main():
             for n,param in m.named_parameters():
                 v=float(param.grad.norm());assert np.isfinite(v);norms[n]+=v
         for n in phase:phase[n]['two_representative_batch_gradient_norm_sum']=norms[n]
-        vm,_=b.evaluate(m,val,spec['arch'],cfg['batch_size']);assert vm==r.read(dest/'summary.json')['metrics']['val'];report=dict(model=spec['name'],phase=phase,validation_replayed=True)
+        stage_power=[]
+        if spec['arch']=='moe':
+            original_forward=m.forward
+            def tracked(images):
+                output=original_forward(images);stage_power.append(output['stage_input_power'].detach().cpu());return output
+            m.forward=tracked
+        try:vm,_=b.evaluate(m,val,spec['arch'],cfg['batch_size'])
+        finally:
+            if spec['arch']=='moe':delattr(m,'forward')
+        assert vm==r.read(dest/'summary.json')['metrics']['val'];report=dict(model=spec['name'],phase=phase,validation_replayed=True)
+        if stage_power:
+            sp=torch.cat(stage_power);report['stage_illumination']=dict(mean_input_power=sp.mean(0).tolist(),exact_zero_input_samples=(sp==0).sum(0).tolist(),samples=len(sp))
         if spec['arch']=='moe':
             prompt=m.net.prompt;original=prompt.routing;probs={}
             with torch.no_grad():
