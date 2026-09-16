@@ -41,3 +41,20 @@ smoke将 `--phase` 改为 `smoke`，输出到 `runs/smoke/`。固定权重复评
 复评命令还核对其与来源CNN的特征权重一致，再使用本次保存的前端进行预测。
 前端来源、数据/源码/权重哈希、配置、命令、环境、逐轮记录和逐样本预测均保存在run中。
 前端并未用光学验证性能重新筛选，两组也没有分别调整其特征编码。
+
+## 低学习率续训与过拟合监测
+
+`continue_training.py` + `continuation.json` 从上述run的第20轮last权重和完整Adam状态恢复，
+电子仍使用同一冻结权重。两组最多续训至60轮，学习率在新增40轮从0.001余弦降至0.0001。
+每轮对完整6000张训练集及2000张验证集进行无增强、同权重评估，记录准确率/NLL差距。
+验证NLL改善不足0.001连续12轮时早停；两组使用相同规则，但实际完成轮数可能不同，须如实报告。
+保留原最佳权重作为候选，新增候选NLL须不高于原最佳准确率权重的NLL，再按准确率、NLL选择。
+本轮不添加额外正则项，先检验低学习率续训是否还有收益；不据验证选模宣称完全消除过拟合。
+输出必须是独立run，不覆盖原20轮结果。
+
+```bash
+CUDA_VISIBLE_DEVICES=0 /home/guest3/miniconda3/envs/xml/bin/python LightGenV2/demo_check/shared_frontend/continue_training.py --phase train --source LightGenV2/demo_check/runs/simulation/eurosat_shared_frontend_20260916 --data /DATA/DATA1/guest3/demo_reproduction_data/eurosat/phase_only_v1/data.npz --out LightGenV2/demo_check/runs/simulation/eurosat_shared_frontend_continuation_20260916
+```
+
+运行前用 `--phase smoke` 检查恢复的预测、优化器矩和step一致，并验证一步更新；输出到独立smoke目录。
+结束后用 `--phase evaluate --run <续训run>` 重新加载最佳光学权重，核验完整训练/验证指标及逐样本验证概率。
