@@ -12,7 +12,7 @@ def main():
     p=argparse.ArgumentParser();p.add_argument('--run',type=Path,required=True);p.add_argument('--data',type=Path,required=True);p.add_argument('--dataset',choices=['bloodmnist','kather2016'],required=True);p.add_argument('--out',type=Path,required=True);a=p.parse_args();assert read(a.run/'status.json')['state']=='complete';assert sha(a.data)==read(a.run/'metadata.json')['data_sha256'];a.out.mkdir(parents=True,exist_ok=False)
     results=read(a.run/'results.json');preds={}
     for arch in MAIN:
-        e=next(e for e in results if (e['result']['arch'],e['result']['depth'],e['result']['seed'])==(arch,6,17));p=a.run/'evaluation'/e['result']['name']/'test_predictions.csv'
+        e=next(e for e in results if (e['result']['arch'],e['result']['depth'],e['result']['seed'])==(arch,6,17));p=a.run/(read(a.run/'evaluation_directory.json')['directory'] if (a.run/'evaluation_directory.json').exists() else 'evaluation')/e['result']['name']/'test_predictions.csv'
         with p.open() as f:preds[arch]={r['sample_id']:r for r in csv.DictReader(f)}
     with np.load(a.data,allow_pickle=False) as z:
         x=z['test_images'];y=z['test_labels'].reshape(-1);ids=z['test_ids'] if 'test_ids' in z else np.array([f'test_{i}' for i in range(len(y))])

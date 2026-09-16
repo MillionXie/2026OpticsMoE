@@ -66,7 +66,7 @@ def verify(a):
     assert {e['result']['name'] for e in entries}=={e['result']['name'] for e in lock['entries']}
     rows=[];histories={};preds={};audits=[];byseed={};identities=[]
     for e in entries:
-        x=e['result'];name=x['name'];d=resolve(e['folder'],a.task_root);ev=root/'evaluation'/name
+        x=e['result'];name=x['name'];d=resolve(e['folder'],a.task_root);ev=root/(read(root/'evaluation_directory.json')['directory'] if (root/'evaluation_directory.json').exists() else 'evaluation')/name
         locked=next(z for z in lock['entries'] if z['result']['name']==name);assert locked=={k:e[k] for k in locked}
         training_metadata=read(d.parent/'metadata.json');assert training_metadata['config']==cfg and training_metadata['data_sha256']==lock['data_sha256'];assert all(lock['sources'][k]==v for k,v in training_metadata['sources'].items())
         assert sha(d/'best_checkpoint.pt')==x['checkpoint_sha256'];assert e['validation_replayed']
