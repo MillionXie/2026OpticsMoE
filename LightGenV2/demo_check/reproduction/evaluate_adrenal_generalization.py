@@ -36,6 +36,12 @@ def main():
         cmd=[sys.executable,*r.read(root/'metadata.json')['command']]
         cmd[cmd.index('--phase')+1]='test';cmd[cmd.index('--out')+1]=str(root);cmd[cmd.index('--data')+1]=str(a.data)
         subprocess.run(cmd,check=True)
+        r.EXP.update(batch_size=r.read(root/'metadata.json')['protocol']['batch_size'],data_npz=str(a.data.resolve()));r.setup();r.setseed(17);val=r.getdata('val');diagnostics=[]
+        for entry in r.read(root/'test_lock.json')['models']:
+            dest=root/entry['directory'];ck=torch.load(dest/'best_checkpoint.pt',map_location='cpu',weights_only=False);model=r.build(ck['variant']['architecture'],r.read(dest/'config.json')).cuda();model.load_state_dict(ck['model']);metrics,_=g.evaluate(model,val)
+            assert metrics['auroc']==r.read(dest/'completed.json')['val']['auroc']
+            diagnostics.append(dict(variant=ck['variant']['id'],validation=metrics));del model,ck;torch.cuda.empty_cache()
+        r.save(root/'validation_classification_capture_diagnostics.json',diagnostics)
         r.save(root/'reference_evaluation_lock.json',dict(selection_lock_sha256=r.sha(a.selection_lock),evaluator_sha256=r.sha(__file__),command=cmd,time=r.now()))
         return
     assert root.name in selection['runs']
