@@ -18,6 +18,27 @@ sys.path.insert(0, str(HERE.parents[0] / 'EuroSAT_MoE_D2NN/code'))
 from download_archives import SOURCES, digest
 
 
+def decode_pair(pid, archives, maps):
+    with Image.open(io.BytesIO(archives['rgb'].read(maps['rgb'][pid]))) as im:
+        assert im.mode == 'RGB' and im.size == (64,64)
+        rgb = np.array(im)[4:60,4:60]
+    with MemoryFile(archives['ms'].read(maps['ms'][pid])) as mf, MemoryFile(archives['sar'].read(maps['sar'][pid])) as sf, mf.open() as ms, sf.open() as sar:
+        assert ms.width == ms.height == 64 and ms.count == 13 and sar.count == 2
+        raw = sar.read().astype(np.float32)
+        out = np.full((2,56,56), np.nan, dtype=np.float32)
+        reproject(raw, out, src_transform=sar.transform, src_crs=sar.crs, src_nodata=sar.nodata,
+                  dst_transform=ms.transform*Affine.translation(4,4), dst_crs=ms.crs,
+                  dst_nodata=np.nan, resampling=Resampling.bilinear)
+        assert np.isfinite(out).mean() >= .99
+        channels = []
+        for channel, mean, std in zip(out, [-12.59,-20.26], [5.26,5.91]):
+            channel = np.where(np.isfinite(channel), channel, np.nanmedian(channel))
+            low, high = np.quantile(channel, [.01,.99])
+            channels.append(np.clip((np.clip(channel,low,high)-(mean-2*std))/(4*std),0,1))
+        sar_image = np.round(np.stack([channels[0],channels[1],(channels[0]+channels[1])/2],2)*255).astype(np.uint8)
+    return rgb, sar_image
+
+
 def main():
     p = argparse.ArgumentParser()
     p.add_argument('--root', type=Path, required=True)
@@ -51,23 +72,7 @@ def main():
         images, labels, domains, ids = [], [], [], []
         for index, row in enumerate(selected):
             pid = row['pair_id']
-            with Image.open(io.BytesIO(archives['rgb'].read(maps['rgb'][pid]))) as im:
-                assert im.mode == 'RGB' and im.size == (64,64)
-                rgb = np.array(im)[4:60,4:60]
-            with MemoryFile(archives['ms'].read(maps['ms'][pid])) as mf, MemoryFile(archives['sar'].read(maps['sar'][pid])) as sf, mf.open() as ms, sf.open() as sar:
-                assert ms.width == ms.height == 64 and ms.count == 13 and sar.count == 2
-                raw = sar.read().astype(np.float32)
-                out = np.full((2,56,56), np.nan, dtype=np.float32)
-                reproject(raw, out, src_transform=sar.transform, src_crs=sar.crs, src_nodata=sar.nodata,
-                          dst_transform=ms.transform*Affine.translation(4,4), dst_crs=ms.crs,
-                          dst_nodata=np.nan, resampling=Resampling.bilinear)
-                assert np.isfinite(out).mean() >= .99
-                channels = []
-                for channel, mean, std in zip(out, [-12.59,-20.26], [5.26,5.91]):
-                    channel = np.where(np.isfinite(channel), channel, np.nanmedian(channel))
-                    low, high = np.quantile(channel, [.01,.99])
-                    channels.append(np.clip((np.clip(channel,low,high)-(mean-2*std))/(4*std),0,1))
-                sar_image = np.round(np.stack([channels[0],channels[1],(channels[0]+channels[1])/2],2)*255).astype(np.uint8)
+            rgb, sar_image = decode_pair(pid, archives, maps)
             for domain, image in enumerate([rgb,sar_image]):
                 assert image.shape == (56,56,3) and image.max() > 0
                 images.append(image); labels.append(row['label']); domains.append(domain); ids.append(pid+':'+str(domain))

@@ -58,3 +58,8 @@ CUDA_VISIBLE_DEVICES=0 /home/guest3/miniconda3/envs/xml/bin/python LightGenV2/de
 
 运行前用 `--phase smoke` 检查恢复的预测、优化器矩和step一致，并验证一步更新；输出到独立smoke目录。
 结束后用 `--phase evaluate --run <续训run>` 重新加载最佳光学权重，核验完整训练/验证指标及逐样本验证概率。
+
+续训结束后的一次性泛化检查：`prepare_holdout.py` 从原始空间划分的test部分，每类固定哈希排序取100个RGB/SAR配对，
+得到2000张测试图像；与全部原始train/validation空间组均不重叠。预处理复用 `pure_optical.prepare.decode_pair`，
+并先重算40张既有训练图像验证像素逐位一致。`evaluate_holdout.py` 先封存原始/续训两架构的验证选定权重哈希，
+再读取测试数组进行一次性评估，测试结果不参与本轮参数、早停或模型选择。
