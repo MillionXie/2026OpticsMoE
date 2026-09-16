@@ -17,10 +17,10 @@ def main():
         # representative batch is recorded, not silently treated as a failure.
         labels=train[1].cpu().numpy();norms={n:0. for n in phase}
         for offset in [0,2]:
-            idx=np.concatenate([np.flatnonzero(labels==k)[offset:offset+2] for k in range(8)]);m.zero_grad(set_to_none=True);prob,c,_=b.forward(m,b.encode(train[0][idx]),spec['arch']);loss=-prob[torch.arange(len(idx)),train[1][idx]].clamp_min(1e-12).log().mean()-.2*c.clamp_min(1e-12).log().mean();loss.backward()
+            idx=np.concatenate([np.flatnonzero(labels==k)[offset:offset+2] for k in range(8)]);m.zero_grad(set_to_none=True);prob,c,_=b.forward(m,b.encode(train[0][idx]),spec['arch']);loss=-prob[torch.arange(len(idx)),train[1][idx]].clamp_min(1e-12).log().mean();loss.backward()
             for n,param in m.named_parameters():
                 v=float(param.grad.norm());assert np.isfinite(v);norms[n]+=v
-        for n in phase:phase[n]['two_representative_batch_gradient_norm_sum']=norms[n]
+        for n in phase:phase[n]['two_representative_batch_classification_gradient_norm_sum']=norms[n]
         stage_power=[]
         if spec['arch']=='moe':
             original_forward=m.forward
