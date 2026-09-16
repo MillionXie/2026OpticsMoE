@@ -29,10 +29,20 @@ def main():
         for p in front.parameters():p.requires_grad_(False)
         f.install_frontend(front)
     # First independently reload each selected checkpoint and reproduce validation.
-    val=r.getdata('val');replay=[]
+    val=r.getdata('val');replay=[];phase_audit=[]
     for rel in lock['models']:
-        dest=root/rel;ck=torch.load(dest/'best_checkpoint.pt',map_location='cpu',weights_only=False);model=g.build(ck['variant'],cfg);model.load_state_dict(ck['model']);vm,rows=g.evaluate(model,val);expected=r.read(dest/'summary.json')['metrics']['val'];assert vm==expected,(rel,vm,expected);replay.append(dict(model=rel,validation_identical=True));del model,ck;torch.cuda.empty_cache()
+        dest=root/rel;ck=torch.load(dest/'best_checkpoint.pt',map_location='cpu',weights_only=False);model=g.build(ck['variant'],cfg);model.load_state_dict(ck['model']);vm,rows=g.evaluate(model,val);expected=r.read(dest/'summary.json')['metrics']['val'];assert vm==expected,(rel,vm,expected);replay.append(dict(model=rel,validation_identical=True))
+        x=front.encode(val[0][:8]) if 'frontend_checkpoint' in sources else val[0][:8]
+        weights=torch.tensor([1188/(2*929),1188/(2*259)],device='cuda')
+        loss,_=g.loss_terms(model,model(x),val[1][:8],weights,cfg);loss.backward()
+        diagnostics={}
+        for name,param in model.named_parameters():
+            assert name.endswith('raw_phase') and torch.isfinite(param).all()
+            diagnostics[name]=dict(rms_from_zero_initialization=float(param.detach().square().mean().sqrt()),gradient_norm=float(param.grad.norm()),sigmoid_saturation_fraction=float(((param.detach().sigmoid()<.01)|(param.detach().sigmoid()>.99)).float().mean()))
+            assert diagnostics[name]['rms_from_zero_initialization']>0 and np.isfinite(diagnostics[name]['gradient_norm']) and diagnostics[name]['gradient_norm']>0
+        phase_audit.append(dict(model=rel,selected_epoch=ck['epoch'],parameters=diagnostics));del model,ck,loss;torch.cuda.empty_cache()
     r.save(root/'validation_replay.json',replay)
+    r.save(root/'selected_phase_audit.json',phase_audit)
     # Only now read the test arrays, after all selected files have been checked.
     with np.load(a.data,allow_pickle=False) as z:x=z['test_images'].copy();y=z['test_labels'].reshape(-1).copy();ids=z['test_ids'].copy()
     assert np.bincount(y).tolist()==[229,69] and len(set(ids))==298
