@@ -196,6 +196,8 @@ def main():
             assert original['data_sha256']==data_sha and original['config']==cfg and original['optical_config']==optical_cfg
             saved=torch.load(args.run/'frontend/best_checkpoint.pt',map_location='cpu',weights_only=False)
             assert tensors_sha(saved['model'])==tensors_sha(frontend.state_dict())
+            frontend=SharedFrontend(saved['model']).cuda()
+            assert tensors_sha(frontend.state_dict())==provenance['frozen_tensors_sha256']
             audits=[]
             for architecture in cfg['architectures']:
                 checkpoint_path=args.run/architecture/'best_checkpoint.pt';checkpoint=torch.load(checkpoint_path,map_location='cpu',weights_only=False)

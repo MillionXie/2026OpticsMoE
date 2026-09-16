@@ -15,11 +15,13 @@ class SharedFrontend(nn.Module):
     def __init__(self, electronic_state):
         super().__init__()
         source = cnn.Electronic(electronic_state['mean'], electronic_state['std'])
-        source.load_state_dict(electronic_state, strict=True)
         self.register_buffer('mean', source.mean)
         self.register_buffer('std', source.std)
         self.features = source.features
         # The dropout and 128->10 electronic classifier are not part of this model.
+        # Accept either the original classifier checkpoint or the saved frontend alone.
+        feature_state = {k:v for k,v in electronic_state.items() if k not in {'head.1.weight','head.1.bias'}}
+        self.load_state_dict(feature_state, strict=True)
         self.requires_grad_(False).eval()
 
     def train(self, mode=True):

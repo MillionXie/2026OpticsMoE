@@ -34,5 +34,7 @@ CUDA_VISIBLE_DEVICES=0 /home/guest3/miniconda3/envs/xml/bin/python LightGenV2/de
 smoke将 `--phase` 改为 `smoke`，输出到 `runs/smoke/`。固定权重复评使用 `--phase evaluate`，
 再加 `--run LightGenV2/demo_check/runs/simulation/eurosat_shared_frontend_20260916`，输出到新的smoke目录。
 独立前端检查点保存于本次run的 `frontend/best_checkpoint.pt`；各光学模型只保存best/last。
+直接推理时可用 `SharedFrontend(checkpoint['model'])` 加载这份去掉分类头后的前端；
+复评命令还核对其与来源CNN的特征权重一致，再使用本次保存的前端进行预测。
 前端来源、数据/源码/权重哈希、配置、命令、环境、逐轮记录和逐样本预测均保存在run中。
 前端并未用光学验证性能重新筛选，两组也没有分别调整其特征编码。
