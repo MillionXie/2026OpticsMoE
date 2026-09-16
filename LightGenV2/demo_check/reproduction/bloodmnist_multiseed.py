@@ -14,8 +14,12 @@ _build=b.build
 _forward=b.forward
 
 def build(arch,depth,cfg):
-    m=_build('d2nn' if arch=='d2nn_wide' else arch,depth,cfg)
-    if arch=='d2nn_wide':
+    base_arch='moe' if arch.startswith('moe') else 'd2nn';key=f'{base_arch}_L{depth}_oeo_relu_softsign';original=r.CONFIGS[key]
+    if arch.endswith('_nooeo'):
+        changed=copy.deepcopy(original);changed['experiment']['oeo_enabled']=False;changed['nonlinearity']['enabled']=False;changed['global_oeo']['enabled']=False;r.CONFIGS[key]=changed
+    try:m=_build(base_arch,depth,cfg)
+    finally:r.CONFIGS[key]=original
+    if 'wide' in arch:
         m.input_size=m.phases[0].phase.raw_phase.shape[-1]
         m.pad=(m.canvas-m.input_size)//2
     return m
@@ -30,7 +34,7 @@ def enlarge(x,side):
     return y*scale
 
 def forward(m,x,arch):
-    return _forward(m,enlarge(x,m.input_size),'d2nn') if arch=='d2nn_wide' else _forward(m,x,arch)
+    return _forward(m,enlarge(x,m.input_size) if 'wide' in arch else x,'moe' if arch.startswith('moe') else 'd2nn')
 
 b.build=build
 b.forward=forward
@@ -77,21 +81,20 @@ def smoke(a):
     r.save(a.out/'metadata.json',dict(command=sys.argv,git_commit=subprocess.check_output(['git','rev-parse','HEAD'],text=True).strip(),sources=sources(),environment=environment(),data_sha256=r.sha(a.data),time=r.now()))
     for depth in [2,4,6]:
         reference=None
-        for arch in ['moe','d2nn','d2nn_wide']:
+        for arch in ['moe','d2nn','d2nn_wide','moe_nooeo','d2nn_nooeo','d2nn_wide_nooeo']:
             r.setseed(17);m=build(arch,depth,cfg);x=b.encode(data[0][:16]);p,c,_=forward(m,x,arch);assert p.shape==(16,8) and torch.isfinite(p).all()
-            if arch=='d2nn':reference={n:q.detach().clone() for n,q in m.named_parameters()}
+            if arch in ['d2nn','d2nn_nooeo']:reference={n:q.detach().clone() for n,q in m.named_parameters()}
             power_error=None
-            if arch=='d2nn_wide':
+            if 'wide' in arch:
                 assert all(torch.equal(q,reference[n]) for n,q in m.named_parameters());wide=enlarge(x,m.input_size)
                 power_error=float(((wide.square().sum((1,2,3))-x.square().sum((1,2,3))).abs()/x.square().sum((1,2,3))).max());assert power_error<1e-6
             audit,maps=pixel_audit(m,arch,data);assert all(x['classification_gradient_norm']>0 for x in audit.values())
             if arch.startswith('d2nn'):
-                first=audit['phases.0.phase'];expected=1 if arch=='d2nn_wide' else (100/m.input_size)**2
-                if arch=='d2nn':expected=10000/m.phases[0].phase.raw_phase.numel()
+                first=audit['phases.0.phase'];expected=1 if 'wide' in arch else 10000/m.phases[0].phase.raw_phase.numel()
                 assert abs(first['illuminated_exact_fraction']-expected)<1e-6
             name=f'{arch}_L{depth}';r.save(a.out/(name+'.json'),audit);np.savez_compressed(a.out/(name+'_maps.npz'),**maps)
             results.append(dict(arch=arch,depth=depth,parameters=sum(q.numel() for q in m.parameters()),model_input_side=m.input_size if arch.startswith('d2nn') else 100,power_relative_error=power_error,phase_audit=audit));del m
-            if arch=='d2nn_wide':reference=None
+            if 'wide' in arch:reference=None
             torch.cuda.empty_cache()
     r.save(a.out/'smoke.json',results);r.save(a.out/'status.json',dict(state='complete',time=r.now()))
 
@@ -101,17 +104,18 @@ def train_one(a):
     result=b.train(a.arch,a.depth,a.seed,data,val,cfg,a.out,src);r.save(a.out/'result.json',result);r.save(a.out/'status.json',dict(state='complete',time=r.now()))
 
 def suite(a):
-    assert len(a.gpus)<=2 and len(a.gpus)==len(set(a.gpus));a.out.mkdir(parents=True,exist_ok=False)
+    assert len(a.gpus)<=5 and len(a.gpus)==len(set(a.gpus));a.out.mkdir(parents=True,exist_ok=False)
     old=r.read(a.reuse/'validation_results.json');assert r.read(a.reuse/'metadata.json')['config']==r.read(BASE);old_sources=r.read(a.reuse/'test_lock.json')['sources'];assert old_sources==b.sources(BASE)
     assert r.sha(a.data)==r.read(a.reuse/'metadata.json')['data_sha256'];reused=[]
     for x in old:
         if x['arch']=='cnn':continue
         folder=a.reuse/x['name'];assert r.sha(folder/'best_checkpoint.pt')==x['checkpoint_sha256'];reused.append(dict(result=x,folder=str(folder.resolve()),reused=True))
-    jobs=[dict(arch=arch,depth=d,seed=s) for s in [17,27,37] for d in [2,4,6] for arch in ['moe','d2nn','d2nn_wide'] if s!=17 or arch=='d2nn_wide']
+    architectures=['moe','d2nn','d2nn_wide','moe_nooeo','d2nn_nooeo','d2nn_wide_nooeo']
+    jobs=[dict(arch=arch,depth=d,seed=s) for s in [17,27,37] for d in [2,4,6] for arch in architectures if s!=17 or arch not in ['moe','d2nn']]
     # Longest jobs first, without inspecting metrics. Two workers share the queue.
-    jobs.sort(key=lambda j:(j['arch']=='moe',j['depth']),reverse=True)
+    jobs.sort(key=lambda j:(j['arch'].startswith('moe'),j['depth']),reverse=True)
     for j in jobs:j['name']=f"{j['arch']}_L{j['depth']}_seed{j['seed']}"
-    src=sources();r.save(a.out/'metadata.json',dict(command=sys.argv,git_commit=subprocess.check_output(['git','rev-parse','HEAD'],text=True).strip(),sources=src,config=r.read(BASE),data_sha256=r.sha(a.data),time=r.now(),seeds=[17,27,37],depths=[2,4,6],architectures=['moe','d2nn','d2nn_wide'],gpus=a.gpus,jobs=jobs,reused=reused,test_previously_observed=True,scope='Geometry-driven control; old seed17 test previously observed. No new tuning or test-based selection.'))
+    src=sources();r.save(a.out/'metadata.json',dict(command=sys.argv,git_commit=subprocess.check_output(['git','rev-parse','HEAD'],text=True).strip(),sources=src,config=r.read(BASE),data_sha256=r.sha(a.data),time=r.now(),seeds=[17,27,37],depths=[2,4,6],architectures=architectures,gpus=a.gpus,jobs=jobs,reused=reused,test_previously_observed=True,scope='Geometry and OEO controls; old seed17 test previously observed. No new tuning or test-based selection.'))
     (a.out/'jobs').mkdir();(a.out/'logs').mkdir();import queue
     q=queue.Queue()
     for j in jobs:q.put(j)
@@ -129,7 +133,7 @@ def suite(a):
     try:
         with concurrent.futures.ThreadPoolExecutor(max_workers=len(a.gpus)) as ex:
             futures=[ex.submit(worker,g) for g in a.gpus];entries=reused+[x for f in futures for x in f.result()]
-        assert len(entries)==27
+        assert len(entries)==54
         # Selection was made by the unchanged per-model validation criterion.
         r.save(a.out/'selection_lock.json',dict(entries=entries,sources=src,data_sha256=r.sha(a.data),time=r.now(),selection='minimum validation balanced NLL with min_delta=0.0005'))
         env=os.environ.copy();env['CUDA_VISIBLE_DEVICES']=str(a.gpus[0]);r.save(a.out/'status.json',dict(state='locked_evaluation',time=r.now()))
@@ -162,7 +166,7 @@ def evaluate(a):
     r.save(a.out/'results.json',results);r.save(a.out/'evaluation_identity.json',dict(command=sys.argv,git_commit=subprocess.check_output(['git','rev-parse','HEAD'],text=True).strip(),environment=environment(),sources=sources(),selection_lock_sha256=r.sha(a.out/'selection_lock.json'),time=r.now()));print(json.dumps(dict(evaluated=len(results),clean_test_n=len(clean))),flush=True)
 
 def main():
-    p=argparse.ArgumentParser();p.add_argument('--phase',choices=['smoke','suite','train-one','evaluate'],required=True);p.add_argument('--data',type=Path,required=True);p.add_argument('--out',type=Path,required=True);p.add_argument('--reuse',type=Path);p.add_argument('--gpus',type=int,nargs='+',default=[0]);p.add_argument('--arch',choices=['moe','d2nn','d2nn_wide']);p.add_argument('--depth',type=int);p.add_argument('--seed',type=int);a=p.parse_args();assert hashlib.md5(a.data.read_bytes()).hexdigest()==r.read(BASE)['md5']
+    p=argparse.ArgumentParser();p.add_argument('--phase',choices=['smoke','suite','train-one','evaluate'],required=True);p.add_argument('--data',type=Path,required=True);p.add_argument('--out',type=Path,required=True);p.add_argument('--reuse',type=Path);p.add_argument('--gpus',type=int,nargs='+',default=[0]);p.add_argument('--arch',choices=['moe','d2nn','d2nn_wide','moe_nooeo','d2nn_nooeo','d2nn_wide_nooeo']);p.add_argument('--depth',type=int);p.add_argument('--seed',type=int);a=p.parse_args();assert hashlib.md5(a.data.read_bytes()).hexdigest()==r.read(BASE)['md5']
     {'smoke':smoke,'suite':suite,'train-one':train_one,'evaluate':evaluate}[a.phase](a)
 
 if __name__=='__main__':main()
