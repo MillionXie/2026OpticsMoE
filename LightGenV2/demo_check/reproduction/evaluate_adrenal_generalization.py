@@ -4,6 +4,26 @@ from pathlib import Path
 import adrenal_generalization as g
 from adrenal_generalization import r,np,torch,F,old
 
+@torch.no_grad()
+def route_audit(model,train,val,frontend):
+    prompt=model.net.prompt;original=prompt.routing;probabilities={}
+    for name,data in [('train',train),('val',val)]:
+        allp=[]
+        for x,y,_ in r.batches(data):
+            if frontend is not None:x=frontend.encode(x)
+            allp.append(original(x)['probabilities'].cpu())
+        probabilities[name]=torch.cat(allp)
+    mean=probabilities['train'].mean(0).cuda()
+    def fixed(images):
+        out=original(images);weights=mean.expand(len(images),-1)
+        out.update(probabilities=weights,weights=weights,transmission=prompt.transmission(weights),prompt_amplitude=prompt.amplitude_map(weights))
+        return out
+    prompt.routing=fixed
+    try:fixed_metrics,_=g.evaluate(model,val)
+    finally:prompt.routing=original
+    p=probabilities['val'];power=p.square()/p.square().sum(1,keepdim=True);labels=val[1].cpu()
+    return dict(scope='Validation diagnostic only; replace input-dependent routing by mean probabilities estimated on training inputs, preserving phases and nine branches',fixed_train_mean_route_validation=fixed_metrics,train_mean_probabilities=mean.cpu().tolist(),validation_class_mean_power={str(c):power[labels==c].mean(0).tolist() for c in [0,1]},validation_power_std=power.std(0,unbiased=False).tolist(),mean_normalized_power_entropy=float(-(power*power.clamp_min(1e-12).log()).sum(1).mean()/np.log(9)))
+
 def main():
     p=argparse.ArgumentParser();p.add_argument('--run',type=Path,required=True);p.add_argument('--data',type=Path,required=True);p.add_argument('--selection-lock',type=Path,required=True);a=p.parse_args();root=a.run
     selection=r.read(a.selection_lock);assert root.name in selection['runs']
@@ -29,7 +49,7 @@ def main():
         for p in front.parameters():p.requires_grad_(False)
         f.install_frontend(front)
     # First independently reload each selected checkpoint and reproduce validation.
-    val=r.getdata('val');replay=[];phase_audit=[]
+    val=r.getdata('val');replay=[];phase_audit=[];routing_audits=[];train=r.getdata('train')
     for rel in lock['models']:
         dest=root/rel;ck=torch.load(dest/'best_checkpoint.pt',map_location='cpu',weights_only=False);model=g.build(ck['variant'],cfg);model.load_state_dict(ck['model']);vm,rows=g.evaluate(model,val);expected=r.read(dest/'summary.json')['metrics']['val'];assert vm==expected,(rel,vm,expected);replay.append(dict(model=rel,validation_identical=True))
         x=front.encode(val[0][:8]) if 'frontend_checkpoint' in sources else val[0][:8]
@@ -40,9 +60,12 @@ def main():
             assert name.endswith('raw_phase') and torch.isfinite(param).all()
             diagnostics[name]=dict(rms_from_zero_initialization=float(param.detach().square().mean().sqrt()),gradient_norm=float(param.grad.norm()),sigmoid_saturation_fraction=float(((param.detach().sigmoid()<.01)|(param.detach().sigmoid()>.99)).float().mean()))
             assert diagnostics[name]['rms_from_zero_initialization']>0 and np.isfinite(diagnostics[name]['gradient_norm']) and diagnostics[name]['gradient_norm']>0
-        phase_audit.append(dict(model=rel,selected_epoch=ck['epoch'],parameters=diagnostics));del model,ck,loss;torch.cuda.empty_cache()
+        phase_audit.append(dict(model=rel,selected_epoch=ck['epoch'],parameters=diagnostics))
+        if ck['variant']['architecture']=='moe':routing_audits.append(dict(model=rel,dynamic_validation=vm,audit=route_audit(model,train,val,front if 'frontend_checkpoint' in sources else None)))
+        del model,ck,loss;torch.cuda.empty_cache()
     r.save(root/'validation_replay.json',replay)
     r.save(root/'selected_phase_audit.json',phase_audit)
+    r.save(root/'routing_audit.json',routing_audits)
     # Only now read the test arrays, after all selected files have been checked.
     with np.load(a.data,allow_pickle=False) as z:x=z['test_images'].copy();y=z['test_labels'].reshape(-1).copy();ids=z['test_ids'].copy()
     assert np.bincount(y).tolist()==[229,69] and len(set(ids))==298
