@@ -8,6 +8,8 @@ def main():
     p=argparse.ArgumentParser();p.add_argument('--run',type=Path,required=True);p.add_argument('--data',type=Path,required=True);p.add_argument('--selection-lock',type=Path,required=True);a=p.parse_args();root=a.run
     selection=r.read(a.selection_lock);assert root.name in selection['runs']
     assert r.sha(root/'test_lock.json')==selection['runs'][root.name]['test_lock_sha256']
+    assert r.sha(root/'metadata.json')==selection['runs'][root.name]['metadata_sha256']
+    assert r.sha(root/'validation_results.json')==selection['runs'][root.name]['validation_results_sha256']
     lock=r.read(root/'test_lock.json');metadata=r.read(root/'metadata.json');cfg=metadata['config'];sources=lock['sources'];assert sources==metadata['sources']
     for rel,h in sources.items():
         if rel.startswith('adrenal_softsign_'):assert r.sha(old.TASK/rel)==h,rel
