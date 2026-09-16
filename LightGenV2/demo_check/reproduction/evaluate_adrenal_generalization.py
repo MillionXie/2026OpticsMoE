@@ -27,8 +27,18 @@ def route_audit(model,train,val,frontend):
     return dict(scope='Validation diagnostic only; replace input-dependent routing by mean probabilities estimated on training inputs, preserving phases and nine branches',fixed_train_mean_route_validation=fixed_metrics,train_mean_probabilities=mean.cpu().tolist(),validation_class_mean_power={str(c):power[labels==c].mean(0).tolist() for c in [0,1]},validation_power_std=power.std(0,unbiased=False).tolist(),mean_normalized_power_entropy=float(-(power*power.clamp_min(1e-12).log()).sum(1).mean()/np.log(9)))
 
 def main():
-    p=argparse.ArgumentParser();p.add_argument('--run',type=Path,required=True);p.add_argument('--data',type=Path,required=True);p.add_argument('--selection-lock',type=Path,required=True);p.add_argument('--validation-only',action='store_true');a=p.parse_args();root=a.run
-    selection=r.read(a.selection_lock);assert root.name in selection['runs']
+    p=argparse.ArgumentParser();p.add_argument('--run',type=Path,required=True);p.add_argument('--data',type=Path,required=True);p.add_argument('--selection-lock',type=Path,required=True);p.add_argument('--validation-only',action='store_true');p.add_argument('--historical-reference',action='store_true');a=p.parse_args();root=a.run
+    selection=r.read(a.selection_lock)
+    if a.historical_reference:
+        assert not a.validation_only
+        reference=selection['historical_validation_only_references'][root.name]
+        for name,key in [('metadata.json','metadata_sha256'),('validation_results.json','validation_results_sha256'),('test_lock.json','test_lock_sha256')]:assert r.sha(root/name)==reference[key]
+        cmd=[sys.executable,*r.read(root/'metadata.json')['command']]
+        cmd[cmd.index('--phase')+1]='test';cmd[cmd.index('--out')+1]=str(root);cmd[cmd.index('--data')+1]=str(a.data)
+        subprocess.run(cmd,check=True)
+        r.save(root/'reference_evaluation_lock.json',dict(selection_lock_sha256=r.sha(a.selection_lock),evaluator_sha256=r.sha(__file__),command=cmd,time=r.now()))
+        return
+    assert root.name in selection['runs']
     assert r.sha(root/'test_lock.json')==selection['runs'][root.name]['test_lock_sha256']
     assert r.sha(root/'metadata.json')==selection['runs'][root.name]['metadata_sha256']
     assert r.sha(root/'validation_results.json')==selection['runs'][root.name]['validation_results_sha256']
