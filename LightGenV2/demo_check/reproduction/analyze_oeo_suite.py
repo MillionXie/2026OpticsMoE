@@ -168,6 +168,17 @@ def figures(a,rows,histories,entries):
         axes[0,col].set_title(f'{d} main layers');axes[0,col].set_xlabel('Epoch');axes[0,col].set_ylim(0,100);axes[1,col].set_xticks(range(4),['MoE','MoE\n+ OEO','D2NN','D2NN\n+ OEO']);axes[1,col].axhline(0,color='black',lw=.7)
         for ax in axes[:,col]:axes_style(ax)
     axes[0,0].set_ylabel('Validation accuracy (%)');axes[1,0].set_ylabel('Selected train − validation accuracy (pp)');handles=[plt.Line2D([],[],color=STYLE[z][1],label=STYLE[z][0],lw=2) for z in MAIN];fig.legend(handles=handles,loc='upper center',ncol=2,bbox_to_anchor=(.5,1.05));fig.tight_layout();export(fig,a.out,'generalization_curves');csvwrite(a.out/'learning_curve_data.csv',curve_rows)
+    fig,axes=plt.subplots(4,3,figsize=(13,12),sharex=True,sharey=True);seed_colors=['#3975b5','#de8b45','#348f73']
+    for row,arch in enumerate(MAIN):
+        for col,d in enumerate([2,4,6]):
+            ax=axes[row,col]
+            for x,c in zip(group(arch,d),seed_colors):
+                h=histories[x['model']];tr=[z for z in h if 'train' in z];ax.plot([z['epoch'] for z in h],[100*z['val']['accuracy'] for z in h],color=c,lw=1.3);ax.plot([z['epoch'] for z in tr],[100*z['train']['accuracy'] for z in tr],color=c,ls='--',lw=1.3);ax.scatter(x['selected_epoch'],100*x['val_accuracy'],facecolors='white',edgecolors=c,s=30,zorder=4)
+            ax.set_title(f'{STYLE[arch][0]}, {d} layers',fontsize=10);ax.set_ylim(0,100);axes_style(ax)
+            if col==0:ax.set_ylabel('Accuracy (%)')
+            if row==3:ax.set_xlabel('Epoch')
+    handles=[plt.Line2D([],[],color=c,label=f'Seed {s}') for s,c in zip([17,27,37],seed_colors)]+[plt.Line2D([],[],color='black',label='Validation'),plt.Line2D([],[],color='black',ls='--',label='Training'),plt.Line2D([],[],color='black',marker='o',markerfacecolor='white',ls='',label='Selected checkpoint')]
+    fig.legend(handles=handles,loc='upper center',ncol=6,fontsize=9);fig.tight_layout(rect=[0,0,1,.97]);export(fig,a.out,'paired_train_validation_curves')
     fig,axes=plt.subplots(1,4,figsize=(16,4.7),layout='constrained');conf=[]
     for ax,arch in zip(axes,MAIN):
         cms=[np.array(e['test']['confusion_matrix']) for e in entries if e['result']['arch']==arch and e['result']['depth']==6];cm=np.mean([c/c.sum(1,keepdims=True) for c in cms],axis=0);im=ax.imshow(cm,vmin=0,vmax=1,cmap='Blues');ax.set_title(STYLE[arch][0]);ax.set_xticks(range(8));ax.set_yticks(range(8));ax.set_xlabel('Predicted class')
