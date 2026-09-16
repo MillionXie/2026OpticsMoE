@@ -74,6 +74,12 @@ class PhaseOnly(nn.Module):
 
     def forward(self, images):
         amplitude = encode(images, self.cfg['main_input_power'])
+        return self.forward_amplitude(amplitude)
+
+    def forward_amplitude(self, amplitude):
+        """Shared propagation backend for fixed image or frozen-feature encodings."""
+        if amplitude.ndim != 3 or tuple(amplitude.shape[1:]) != (224, 224):
+            raise ValueError('Expected Bx224x224 real amplitude')
         q, router_capture = self.route(amplitude)
         if self.architecture == 'full_d2nn':
             expanded = F.interpolate(amplitude[:, None], (478, 478), mode='bilinear', align_corners=False)[:, 0]

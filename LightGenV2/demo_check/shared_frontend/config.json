@@ -1,0 +1,21 @@
+{
+  "protocol": "eurosat_shared_frozen_frontend_gap128_v1",
+  "seed": 42,
+  "epochs": 20,
+  "batch_size": 32,
+  "learning_rate": 0.01,
+  "minimum_lr_ratio": 0.1,
+  "architectures": ["dynamic_four", "full_d2nn"],
+  "electronic_checkpoint_sha256": "281523a2a62525ddf491b5937c1eaf4b2e13bbfbf76e8c4652e2bc79e28ad4fc",
+  "source_pretraining_run": "eurosat_frozen_cnn_20260916",
+  "frontend": "same pretrained CNN Conv-BN-ReLU-pool widths 32/64/128, GAP128; remove dropout and classifier; freeze parameters and buffers",
+  "encoding": "128 nonnegative GAP channels in fixed row-major 16x8 grid; each repeated into 14x28 cell; 224x224 amplitude normalized to unit L2 power",
+  "input_normalization": "same train-only channel mean/std from the pretrained CNN checkpoint",
+  "loss": "NLL of normalized optical detector energies; no electronic logits or output fusion",
+  "selection": "maximum validation accuracy, then minimum validation NLL, then earlier epoch",
+  "augmentation": "same per-epoch horizontal flip on input images before shared CNN, no ColorJitter",
+  "test_set_used": false,
+  "no_output_residual": true,
+  "no_alpha": true,
+  "no_trainable_electronic_adapter_or_head": true
+}
