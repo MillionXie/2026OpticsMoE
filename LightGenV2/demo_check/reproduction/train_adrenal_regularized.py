@@ -85,6 +85,9 @@ def train_variant(v, seed, train, val, protocol, out, source_hashes):
     scheduler = torch.optim.lr_scheduler.StepLR(opt, step_size=protocol['step_size'], gamma=protocol['gamma'])
     history, orders, transforms = [], [], []
     best_auc, best_mse = -1., float('inf')
+    class_counts = torch.bincount(train[1], minlength=2).float()
+    class_weights = len(train[1]) / (2 * class_counts)
+    nll_weight = protocol.get('balanced_detector_nll_weight', 0.)
     started = time.perf_counter()
     for epoch in range(1, protocol['epochs'] + 1):
         model.train()
@@ -92,21 +95,27 @@ def train_variant(v, seed, train, val, protocol, out, source_hashes):
         theta = affine_parameters(len(train[1]), seed, epoch, protocol['augmentation'])
         orders.append(r.sha_tensor(order))
         transforms.append(r.sha_tensor(theta))
-        sums = np.zeros(3)
+        sums = np.zeros(4)
         for x, y, indices in r.batches(train, order):
             opt.zero_grad(set_to_none=True)
             prediction = model(augment(x, theta[indices]))
             mse = r.objective(prediction, y, model.masks)
             smooth = phase_smoothness(model)
             loss = mse + protocol['phase_smooth_weight'] * smooth
+            nll = torch.zeros((), device=mse.device)
+            if nll_weight:
+                prob = r.probabilities(prediction)
+                nll = -(class_weights[y] * prob[torch.arange(len(y), device=y.device), y].clamp_min(1e-12).log()).mean()
+                loss = loss + nll_weight * nll
             assert torch.isfinite(loss)
             loss.backward()
             assert all(p.grad is not None and torch.isfinite(p.grad).all() for p in model.parameters())
             opt.step()
-            sums += np.array([loss.item(), mse.item(), smooth.item()]) * len(y)
+            sums += np.array([loss.item(), mse.item(), smooth.item(), nll.item()]) * len(y)
         vm, _ = r.evaluate(model, val)
         row = dict(epoch=epoch, train_total_loss=sums[0]/len(train[1]),
                    train_augmented_mse=sums[1]/len(train[1]), train_phase_smoothness=sums[2]/len(train[1]),
+                   train_balanced_detector_nll=sums[3]/len(train[1]),
                    val_auroc=vm['auroc'], val_detector_plane_mse=vm['detector_plane_mse'],
                    lr=opt.param_groups[0]['lr'])
         history.append(row)
@@ -138,6 +147,7 @@ def train_variant(v, seed, train, val, protocol, out, source_hashes):
                   last_train=last_train, seconds=time.perf_counter()-started,
                   parameters=sum(p.numel() for p in model.parameters()), changed_phase_planes=changed,
                   updates=protocol['epochs'] * math.ceil(len(train[1])/protocol['batch_size']),
+                  balanced_detector_nll_weight=nll_weight, class_weights=class_weights.cpu().tolist(),
                   order_sha256=orders, transform_sha256=transforms,
                   checkpoint_sha256=r.sha(dest/'best_checkpoint.pt'),
                   last_checkpoint_sha256=r.sha(dest/'last_checkpoint.pt'),
@@ -177,6 +187,12 @@ def smoke(protocol, train, variants, out):
         opt = torch.optim.Adam(model.parameters(), lr=protocol['lr'])
         pred = model(transformed)
         loss = r.objective(pred, train[1][:8], model.masks) + protocol['phase_smooth_weight'] * phase_smoothness(model)
+        if protocol.get('balanced_detector_nll_weight', 0.):
+            y = train[1][:8]
+            w = len(train[1]) / (2 * torch.bincount(train[1], minlength=2).float())
+            prob = r.probabilities(pred)
+            nll = -(w[y] * prob[torch.arange(len(y), device=y.device), y].clamp_min(1e-12).log()).mean()
+            loss = loss + protocol['balanced_detector_nll_weight'] * nll
         loss.backward()
         grads = {n: float(p.grad.norm()) for n, p in model.named_parameters()}
         assert all(np.isfinite(g) and g > 0 for g in grads.values())
@@ -196,6 +212,7 @@ def main():
     p.add_argument('--out', type=Path, required=True)
     p.add_argument('--profile', type=Path, default=Path(__file__).with_name('adrenal_regularization.json'))
     p.add_argument('--seeds', type=int, nargs='+', default=[17])
+    p.add_argument('--variants', nargs='+', help='Explicit subset for validation-only probes; recorded in metadata.')
     args = p.parse_args()
     protocol = r.read(args.profile)
     r.EXP.update({k: protocol[k] for k in ['epochs','batch_size','lr','step_size','gamma','weight_decay']})
@@ -206,6 +223,9 @@ def main():
     sources[str(Path(__file__).relative_to(TASK))] = r.sha(__file__)
     sources['profile'] = r.sha(args.profile)
     variants = [v for v in r.VARIANTS if v['activation'] in ['relu_softsign','off']]
+    if args.variants:
+        assert set(args.variants) <= {v['id'] for v in variants}
+        variants = [v for v in variants if v['id'] in args.variants]
     out = args.out.resolve()
     if args.phase == 'test':
         lock = r.read(out/'test_lock.json')
@@ -241,7 +261,7 @@ def main():
         print(json.dumps(results), flush=True)
         return
     out.mkdir(parents=True, exist_ok=False)
-    metadata = dict(command=sys.argv, protocol=protocol, seeds=args.seeds, source_hashes=sources,
+    metadata = dict(command=sys.argv, protocol=protocol, seeds=args.seeds, variants=variants, source_hashes=sources,
                     data_sha256=r.sha(args.data), git_commit=subprocess.check_output(['git','rev-parse','HEAD'], text=True).strip(),
                     python=sys.version, torch=torch.__version__, cuda=torch.version.cuda,
                     gpu=torch.cuda.get_device_name(), cuda_visible_devices=os.environ.get('CUDA_VISIBLE_DEVICES'),
