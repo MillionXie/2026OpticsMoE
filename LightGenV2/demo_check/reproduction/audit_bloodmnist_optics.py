@@ -6,6 +6,7 @@ from bloodmnist_experiment import r,torch,np
 
 def main():
     p=argparse.ArgumentParser();p.add_argument('--run',type=Path,required=True);p.add_argument('--data',type=Path,required=True);a=p.parse_args();meta=r.read(a.run/'metadata.json');cfg=meta['config'];lock=r.read(a.run/'test_lock.json');assert r.sha(a.data)==lock['data_sha256'];torch.set_num_threads(4);train=b.load_data(a.data,'train');val=b.load_data(a.data,'val');reports=[]
+    for rel,digest in lock['sources'].items():assert r.sha(b.TASK/rel)==digest,rel
     for spec in lock['models']:
         if spec['arch']=='cnn':continue
         dest=a.run/spec['name'];assert r.sha(dest/'best_checkpoint.pt')==spec['checkpoint_sha256'];r.setseed(spec['seed']);m=b.build(spec['arch'],spec['depth'],cfg);initial={n:p.detach().clone() for n,p in m.named_parameters()};ck=torch.load(dest/'best_checkpoint.pt',map_location='cpu',weights_only=False);m.load_state_dict(ck['model']);m.eval();phase={}
