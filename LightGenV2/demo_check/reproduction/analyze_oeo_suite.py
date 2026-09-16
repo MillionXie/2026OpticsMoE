@@ -150,7 +150,7 @@ def figures(a,rows,histories,entries):
     for ax,(on,off) in zip(axes,[('moe','moe_nooeo'),('d2nn_wide','d2nn_wide_nooeo')]):
         for seed in [17,27,37]:
             delta=[100*(next(x for x in group(on,d) if x['seed']==seed)['test_accuracy']-next(x for x in group(off,d) if x['seed']==seed)['test_accuracy']) for d in [2,4,6]];ax.plot([2,4,6],delta,'o-',label=f'Seed {seed}',alpha=.8)
-        ax.axhline(0,color='black',lw=.8);ax.set_xticks([2,4,6]);ax.set_xlabel('Main optical layers');ax.set_title(STYLE[off][0]);axes_style(ax);ax.legend(fontsize=8)
+        ax.axhline(0,color='black',lw=.8);ax.set_xticks([2,4,6]);ax.set_xlabel('Main optical layers');ax.set_title(STYLE[off][0]);axes_style(ax);ax.legend(fontsize=8,loc='lower left')
     axes[0].set_ylabel('OEO on − off accuracy (percentage points)');fig.tight_layout();export(fig,a.out,'oeo_paired_gain')
     if a.dataset=='bloodmnist':
         fig,axes=plt.subplots(1,2,figsize=(11,4.5),sharey=True)
