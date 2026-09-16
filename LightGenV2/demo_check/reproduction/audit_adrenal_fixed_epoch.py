@@ -24,30 +24,49 @@ from calibration import choose_thresholds, full_metrics
 
 def main():
     p=argparse.ArgumentParser()
-    p.add_argument('--run',type=Path,required=True)
+    group=p.add_mutually_exclusive_group(required=True)
+    group.add_argument('--run',type=Path)
+    group.add_argument('--original-depth-audit',type=Path)
     p.add_argument('--data',type=Path,required=True)
     p.add_argument('--out',type=Path,required=True)
     a=p.parse_args()
     r.EXP['data_npz']=str(a.data.resolve())
     r.setup()
     a.out.mkdir(parents=True,exist_ok=False)
-    parent=r.read(a.run/'metadata.json')
-    summaries=r.read(a.run/'validation_results.json')
-    assert len(summaries)==12 and parent['seeds']==[17] and parent['protocol']['epochs']==50
+    if a.run:
+        parent_metadata=a.run/'metadata.json'
+        parent=r.read(parent_metadata)
+        summaries=r.read(a.run/'validation_results.json')
+        assert parent['seeds']==[17] and parent['protocol']['epochs']==50
+        for item in summaries:
+            source=a.run/'runs'/item['variant']/'seed17'
+            item.update(source_directory=str(source),checkpoint_filename='last_checkpoint.pt',
+                        model_config=r.read(source/'config.json'))
+    else:
+        parent_metadata=a.original_depth_audit/'metadata.json'
+        summaries=[]
+        for item in r.read(a.original_depth_audit/'results.json'):
+            source=Path(item['source_run'])
+            summaries.append(dict(variant=item['variant'],
+                source_directory=str(source/'runs'/item['variant']/'seed17'),checkpoint_filename='last.pt',
+                model_config=r.read(source/'configs.json')[item['variant']],
+                last_train=item['metrics']['last_train'],last_checkpoint_sha256=item['checkpoint_sha256']['last']))
+    assert len(summaries)==12
     lock={}
     for item in summaries:
-        path=a.run/'runs'/item['variant']/'seed17'/'last_checkpoint.pt'
+        path=Path(item['source_directory'])/item['checkpoint_filename']
         assert r.sha(path)==item['last_checkpoint_sha256']
         lock[str(path.resolve())]=r.sha(path)
     r.save(a.out/'checkpoint_lock.json',dict(checkpoints=lock,epoch=50,time=r.now(),
            scope='all twelve models; no per-model choice between best and last',
            test_status='retrospective diagnostic proposed after validation-selected test scores were inspected'))
-    r.save(a.out/'metadata.json',dict(command=sys.argv,parent_run=str(a.run.resolve()),
-           parent_metadata_sha256=r.sha(a.run/'metadata.json'),data_sha256=r.sha(a.data),
+    r.save(a.out/'configs.json',{item['variant']:item['model_config'] for item in summaries})
+    r.save(a.out/'metadata.json',dict(command=sys.argv,parent_metadata=str(parent_metadata.resolve()),
+           parent_metadata_sha256=r.sha(parent_metadata),data_sha256=r.sha(a.data),
            git_commit=subprocess.check_output(['git','rev-parse','HEAD'],text=True).strip(),
            source_sha256=r.sha(__file__),python=sys.version,torch=torch.__version__,cuda=torch.version.cuda,
            gpu=torch.cuda.get_device_name(),cuda_visible_devices=os.environ.get('CUDA_VISIBLE_DEVICES'),
-           environment_reference=str((a.run/'metadata.json').resolve())))
+           environment_reference=str(parent_metadata.resolve())))
     val=r.getdata('val')
     # The complete alternative checkpoint set is locked before this access.
     with np.load(a.data,allow_pickle=False) as z:
@@ -58,11 +77,12 @@ def main():
     test=x,torch.from_numpy(y).long().cuda(),ids
     results=[]
     for item in summaries:
-        source=a.run/'runs'/item['variant']/'seed17'
+        source=Path(item['source_directory'])
+        checkpoint_path=source/item['checkpoint_filename']
         dest=a.out/item['variant'];dest.mkdir()
-        ck=torch.load(source/'last_checkpoint.pt',map_location='cpu',weights_only=False)
+        ck=torch.load(checkpoint_path,map_location='cpu',weights_only=False)
         assert ck['epoch']==50 and ck['seed']==17
-        model=r.build(ck['variant']['architecture'],r.read(source/'config.json')).cuda()
+        model=r.build(ck['variant']['architecture'],item['model_config']).cuda()
         model.load_state_dict(ck['model'])
         before={n:r.sha_tensor(p) for n,p in model.named_parameters()}
         vm,vr=r.evaluate(model,val,predictions=True)
@@ -77,7 +97,7 @@ def main():
         tp=np.array([[row['score0'],row['score1']] for row in tr])
         calibrated=full_metrics(y,tp,threshold,tm['detector_plane_mse'])
         assert before=={n:r.sha_tensor(p) for n,p in model.named_parameters()}
-        result=dict(variant=item['variant'],seed=17,epoch=50,checkpoint_sha256=lock[str((source/'last_checkpoint.pt').resolve())],
+        result=dict(variant=item['variant'],seed=17,epoch=50,checkpoint_sha256=lock[str(checkpoint_path.resolve())],
                     train=item['last_train'],val=vm,test=tm,val_threshold_test=calibrated,
                     weights_unchanged=True)
         r.save(dest/'metrics.json',result)
