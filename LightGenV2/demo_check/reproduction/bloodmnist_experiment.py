@@ -20,8 +20,8 @@ class BloodMoE(OpticalMoE):
 class TinyCNN(torch.nn.Module):
     def __init__(self,dropout):
         super().__init__()
-        self.features=torch.nn.Sequential(torch.nn.Conv2d(3,16,3,padding=1),torch.nn.ReLU(),torch.nn.AvgPool2d(2),torch.nn.Conv2d(16,32,3,padding=1),torch.nn.ReLU(),torch.nn.AvgPool2d(2),torch.nn.AdaptiveAvgPool2d((4,4)))
-        self.head=torch.nn.Sequential(torch.nn.Flatten(),torch.nn.Dropout(dropout),torch.nn.Linear(512,8))
+        self.features=torch.nn.Sequential(torch.nn.Conv2d(3,16,3,padding=1),torch.nn.ReLU(),torch.nn.AvgPool2d(2),torch.nn.Conv2d(16,32,3,padding=1),torch.nn.ReLU(),torch.nn.AvgPool2d(2),torch.nn.AvgPool2d(2))
+        self.head=torch.nn.Sequential(torch.nn.Flatten(),torch.nn.Dropout(dropout),torch.nn.Linear(288,8))
     def forward(self,x):return self.head(self.features(x))
 
 
