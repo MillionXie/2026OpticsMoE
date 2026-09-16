@@ -1,0 +1,23 @@
+{
+  "dataset": "bloodmnist",
+  "url": "https://zenodo.org/records/10519652/files/bloodmnist.npz?download=1",
+  "md5": "7053d0359d879ad8a5505303e11de1dc",
+  "license": "CC BY 4.0",
+  "classes": ["basophil", "eosinophil", "erythroblast", "immature granulocytes", "lymphocyte", "monocyte", "neutrophil", "platelet"],
+  "epochs": 30,
+  "minimum_epochs": 15,
+  "patience": 8,
+  "min_delta": 0.0005,
+  "batch_size": 16,
+  "lr": 0.002,
+  "ema_decay": 0.95,
+  "label_smoothing": 0.02,
+  "capture_weight": 0.2,
+  "phase_smooth_weight": 0.02,
+  "augmentation": {"degrees": 10.0, "translation_pixels": 3.0, "scale_delta": 0.05},
+  "encoding": "RGB uint8/255 -> bicubic antialias 100x100 clamp -> train-only shared affine -> bilinear antialias 50x50 -> [R,G;B,zeros] 100x100 amplitude",
+  "detector": {"size": 32, "x": 126, "y": 198, "rows": [4,4], "gap_x": [40,40], "gap_y": 40},
+  "cnn": {"epochs": 30, "batch_size": 128, "lr": 0.001, "weight_decay": 0.01, "dropout": 0.2},
+  "selection": "minimum validation balanced NLL; no test-based choice",
+  "scope": "Full official eight-class split, seed17 paired feasibility experiment; not clinical validation"
+}
