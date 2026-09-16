@@ -1,5 +1,8 @@
 # EuroSAT无电子残差的相位训练试验
 
+2026-09-16已完成固定权重[路由分布与专家分工诊断](../reports/reproduction/ROUTING_SPECIALIZATION_20260916.md)：
+统计两域/各类别的功率份额，并完成单路、关路和路由交换共14种条件；结果支持输入相关协同，尚未证明明确域分工。
+
 已完成三组20轮子集训练与独立核验，结果及限制见
 [复现报告](../reports/reproduction/PURE_OPTICAL_PILOT_20260916.md)。统一复现入口为
 [reports/reproduction/README.md](../reports/reproduction/README.md)。
