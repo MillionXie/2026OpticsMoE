@@ -1,5 +1,7 @@
 # RGB/SAR：同一冻结电子前端，光学完成分类
 
+用户选定原20轮77.20% / 73.65%版本用于交付，见[独立代码包与验证记录](../reports/reproduction/EUROSAT_HANDOFF_20260916.md)。打包使用 `build_lab_package.py --variant shared_frontend`；包内中文说明来源为 `HANDOFF_README.md`，包含原最佳/last权重、优化器与实际训练/验证子集。
+
 低学习率续训及独立测试已完成：[结果与过拟合判断](../reports/reproduction/EUROSAT_CONTINUATION_HOLDOUT_20260916.md)。
 MoE验证77.55%，但独立测试仅75.65%→75.70%；D2NN测试72.85%→73.30%。不将验证小涨解释为稳定泛化提升。
 
