@@ -6,7 +6,7 @@ from adrenal_generalization import r,np,torch,F,old
 
 @torch.no_grad()
 def route_audit(model,train,val,frontend):
-    prompt=model.net.prompt;original=prompt.routing;probabilities={}
+    prompt=model.net.prompt;original=prompt.routing;had_instance_override='routing' in prompt.__dict__;probabilities={}
     for name,data in [('train',train),('val',val)]:
         allp=[]
         for x,y,_ in r.batches(data):
@@ -20,7 +20,9 @@ def route_audit(model,train,val,frontend):
         return out
     prompt.routing=fixed
     try:fixed_metrics,_=g.evaluate(model,val)
-    finally:prompt.routing=original
+    finally:
+        if had_instance_override:prompt.routing=original
+        else:delattr(prompt,'routing')
     p=probabilities['val'];power=p.square()/p.square().sum(1,keepdim=True);labels=val[1].cpu()
     return dict(scope='Validation diagnostic only; replace input-dependent routing by mean probabilities estimated on training inputs, preserving phases and nine branches',fixed_train_mean_route_validation=fixed_metrics,train_mean_probabilities=mean.cpu().tolist(),validation_class_mean_power={str(c):power[labels==c].mean(0).tolist() for c in [0,1]},validation_power_std=power.std(0,unbiased=False).tolist(),mean_normalized_power_entropy=float(-(power*power.clamp_min(1e-12).log()).sum(1).mean()/np.log(9)))
 
