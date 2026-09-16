@@ -1,5 +1,8 @@
 # RGB/SAR：同一冻结电子前端，光学完成分类
 
+低学习率续训及独立测试已完成：[结果与过拟合判断](../reports/reproduction/EUROSAT_CONTINUATION_HOLDOUT_20260916.md)。
+MoE验证77.55%，但独立测试仅75.65%→75.70%；D2NN测试72.85%→73.30%。不将验证小涨解释为稳定泛化提升。
+
 本轮已完成：[结果及复现证据](../reports/reproduction/EUROSAT_SHARED_FRONTEND_20260916.md)。
 同一2000张验证图像：MoE77.20%、D2NN73.65%；两组20轮实际输入特征哈希全部相同。
 
