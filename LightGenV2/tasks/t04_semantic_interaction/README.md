@@ -27,6 +27,10 @@ best重新载入后全部1000条指标与记录误差0，原模型及被冻结�
 `00_逐轮结果.md`列出epoch0～100三组整体8项指标，CSV/JSONL还包含四操作分项；小文件与best/last均已SHA256核验下载，
 `readout_inputs.pt`缓存保留师弟电脑。日志在`offline_adaptation_20260916/logs/job_20260916_215236.log`。
 
+用户随后要求延长至200epoch：`--resume-from 原100轮run --epochs 200 --output 新run`，恢复epoch100的last权重及AdamW状态，
+保持保存的最终学习率1e-6恒定，不重启cosine/不加热。复用原CCD缓存、800/200划分与冻结范围；续跑前复现epoch100指标。
+新run继承0～100轮历史及原best，只追加101～200轮；旧run不覆盖。最终best在全部0～200轮中按相同规则选取。
+
 ## 2026-09-15：SHS单电脑六层部署
 
 新增 [COMMAND_SHS.md](COMMAND_SHS.md)：师弟电脑同时连接Holoeye振幅、Meadowlark HDMI相位和SHS相机。

@@ -28,6 +28,15 @@ def test_selection_prioritizes_scene_not_cherry_picked_changed_accuracy():
     assert selection_key(m(.7,.8))>selection_key(m(.6,.99))
 
 
+def test_resume_preserves_protocol_and_extends_epochs():
+    from types import SimpleNamespace
+    from LightGenV2.tasks.t04_semantic_interaction.lab_adaptation import validate_resume_config
+    old=dict(session='same',seed=1,batch_size=32,epochs=100)
+    validate_resume_config(old,SimpleNamespace(**dict(old,epochs=200)))
+    for changes in ({'epochs':100},{'epochs':200,'seed':2},{'epochs':200,'session':'other'},{'epochs':200,'batch_size':64}):
+        with pytest.raises(ValueError):validate_resume_config(old,SimpleNamespace(**dict(old,**changes)))
+
+
 def test_training_changes_only_downstream_head_and_cached_metric_pipeline():
     try:
         import torch

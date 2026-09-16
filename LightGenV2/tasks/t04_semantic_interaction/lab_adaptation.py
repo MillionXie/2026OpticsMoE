@@ -7,6 +7,7 @@ import json
 import math
 from pathlib import Path
 import random
+import shutil
 import time
 
 
@@ -34,6 +35,14 @@ def trainable_readout_name(name):
 def selection_key(metrics):
     m = metrics['overall']
     return tuple(m[k] for k in ('scene_exact_match', 'changed_cell_accuracy', 'edit_grid_iou', 'object_f1'))
+
+
+def validate_resume_config(previous, current):
+    for key in ('session', 'seed', 'batch_size'):
+        if previous[key] != getattr(current, key):
+            raise ValueError('Resume must preserve '+key)
+    if current.epochs <= previous['epochs']:
+        raise ValueError('Resume target must exceed previous epochs')
 
 
 def dump(path, value):
@@ -211,26 +220,74 @@ def run(a):
          device_name=torch.cuda.get_device_name() if str(a.device).startswith('cuda') else 'cpu',
          protocol='frozen six measured optical passes; downstream shared readout only; no hardware',
          selection='holdout200 scene exact then changed-cell/IoU/F1; not independent final test'))
-    dump(out/'status.json', dict(status='extracting_and_ablating'))
-    model, cfg, cache, train, held = cache_features(a, out)
+    resume = Path(a.resume_from).resolve() if a.resume_from else None
+    last = None
+    if resume:
+        from .lab_runtime import load_model
+        from .lab_bench import open_session
+        previous = json.loads((resume/'config.json').read_text())
+        validate_resume_config(previous, a)
+        if json.loads((resume/'status.json').read_text())['status'] != 'complete':
+            raise ValueError('Resume only a completed run')
+        root, session, _, _, release = open_session(a)
+        model, cfg = load_model(root,a.device); model.requires_grad_(False).eval()
+        cache_path = resume/'readout_inputs.pt'
+        if not cache_path.exists():
+            cache_path = Path(json.loads((resume/'resume_provenance.json').read_text())['cache_path'])
+        cache = torch.load(cache_path,map_location='cpu',weights_only=False)
+        if cache['checkpoint_sha256'] != release['checkpoint_sha256'] or cache['session_sha256'] != digest(session/'session.json') or cache['baseline_result_sha256'] != digest(session/'results.json'):
+            raise ValueError('Resume cache/session/checkpoint identity changed')
+        split = json.loads((resume/'split.json').read_text())
+        train,held = stratified_split(cache['rows'],a.seed)
+        if train != split['adaptation_indices'] or held != split['holdout_indices']:
+            raise ValueError('Resume split changed')
+        last = torch.load(resume/'last_checkpoint.pt',map_location='cpu',weights_only=False)
+        if last['epoch'] != previous['epochs'] or last['base_checkpoint_sha256'] != cache['checkpoint_sha256'] or last['session_sha256'] != cache['session_sha256']:
+            raise ValueError('Resume last checkpoint mismatch')
+        for name in ('split.json','baseline_measured.json','same_checkpoint_remove_optical.json','epochs.jsonl','epochs.csv','best_checkpoint.pt','best_predictions.json'):
+            shutil.copy2(resume/name,out/name)
+        dump(out/'resume_provenance.json',dict(previous_run=str(resume),previous_epoch=last['epoch'],
+             last_sha256=digest(resume/'last_checkpoint.pt'),cache_path=str(cache_path),cache_sha256=digest(cache_path),
+             learning_rate_policy='hold constant at saved final optimizer LR; no reheating or cosine reset',
+             optimizer_restored=True,original_best_preserved=True))
+        dump(out/'status.json',dict(status='resuming',epoch=last['epoch']))
+    else:
+        dump(out/'status.json', dict(status='extracting_and_ablating'))
+        model, cfg, cache, train, held = cache_features(a, out)
     head = copy.deepcopy(model.shared_readout).to(a.device)
     head.requires_grad_(False)
     for name, parameter in head.named_parameters(): parameter.requires_grad_(trainable_readout_name(name))
     names = [name for name,p in head.named_parameters() if p.requires_grad]
     frozen = [name for name in head.state_dict() if not trainable_readout_name(name)]
     frozen_digest = state_digest(head, frozen)
+    if last:
+        head.load_state_dict(last['shared_readout'],strict=True)
+        if last['trainable_names'] != names or state_digest(head,frozen) != frozen_digest:
+            raise ValueError('Resume trainable scope/frozen parameters mismatch')
     original_model_digest = state_digest(model)
     dump(out/'trainable_parameters.json', dict(names=names, count=sum(p.numel() for p in head.parameters() if p.requires_grad),
          frozen_summary_and_task_head=frozen, original_model_sha256=original_model_digest))
     optimizer = torch.optim.AdamW([p for p in head.parameters() if p.requires_grad], lr=a.lr, weight_decay=1e-4)
     best_key = None; best_epoch = 0; best_metrics = None
-    history_file = (out/'epochs.jsonl').open('x', encoding='utf-8', buffering=1)
-    csv_file = (out/'epochs.csv').open('x', encoding='utf-8', newline='')
+    start_epoch = 0
+    if last:
+        optimizer.load_state_dict(last['optimizer'])
+        resume_lr = optimizer.param_groups[0]['lr']
+        best = torch.load(out/'best_checkpoint.pt',map_location='cpu',weights_only=False)
+        best_epoch,best_metrics = best['epoch'],best['metrics']
+        best_key = selection_key(best_metrics['holdout200'])
+        metrics,_ = evaluate_head(head,cache,train,held,a.device,a.batch_size)
+        error = max(abs(v-last['metrics'][s][g][k]) for s,groups in metrics.items() for g,values in groups.items() for k,v in values.items())
+        if error>1e-7:raise RuntimeError('Resume metrics mismatch: '+str(error))
+        print('RESUME_VERIFIED',last['epoch'],'metric_error',error,'constant_lr',resume_lr,flush=True)
+        start_epoch = last['epoch']+1
+    history_file = (out/'epochs.jsonl').open('a' if resume else 'x', encoding='utf-8', buffering=1)
+    csv_file = (out/'epochs.csv').open('a' if resume else 'x', encoding='utf-8', newline='')
     writer = csv.DictWriter(csv_file, fieldnames=['epoch','split','operation','metric','value','training_loss','lr'])
-    writer.writeheader()
+    if not resume:writer.writeheader()
     try:
-        for epoch in range(a.epochs+1):
-            lr = a.lr * (0.01 + 0.99 * (1+math.cos(math.pi*max(0,epoch-1)/max(1,a.epochs-1)))/2)
+        for epoch in range(start_epoch,a.epochs+1):
+            lr = resume_lr if resume else a.lr * (0.01 + 0.99 * (1+math.cos(math.pi*max(0,epoch-1)/max(1,a.epochs-1)))/2)
             for group in optimizer.param_groups: group['lr'] = lr
             train_loss = 0.0
             if epoch:
@@ -288,6 +345,7 @@ def main():
     p.add_argument('--device',default='cuda'); p.add_argument('--epochs',type=int,default=100)
     p.add_argument('--batch-size',type=int,default=32); p.add_argument('--lr',type=float,default=1e-4)
     p.add_argument('--seed',type=int,default=20260916); p.add_argument('--source-commit',default='')
+    p.add_argument('--resume-from',default='',help='Completed prior run; restore last optimizer, split and global best; keep final LR')
     a=p.parse_args()
     if a.epochs<1 or a.batch_size<1 or a.lr<=0: p.error('Invalid optimization settings')
     a.config=str(Path(a.project)/a.config) if not Path(a.config).is_absolute() else a.config
