@@ -37,14 +37,38 @@ def resolve(folder,task):
     assert marker in s,s
     return task/s.split(marker,1)[1]
 
+def verify_pilot(a,lock):
+    reused=next(e for e in lock['entries'] if e['reused']);pilot=resolve(reused['folder'],a.task_root).parents[2];selection=read(pilot/'candidate_selection.json');metadata=read(pilot/'metadata.json');spec=metadata['specification'];means={};configs={};records=[]
+    assert sha(pilot/'candidate_selection.json')==lock['pilot_selection_sha256']
+    assert selection['test_read'] is False and metadata['test_read'] is False
+    for candidate in spec['candidate_order']:
+        entries=[e for e in selection['entries'] if e['candidate']==candidate];assert len(entries)==4 and {e['result']['arch'] for e in entries}==set(spec['architectures']);values=[]
+        for e in entries:
+            x=e['result'];d=resolve(e['folder'],a.task_root);m=read(d.parent/'metadata.json');assert x['seed']==17 and x['depth']==4 and m['candidate']==candidate;assert m['test_read'] is False;assert sha(d/'best_checkpoint.pt')==x['checkpoint_sha256'];assert m['sources']==lock['sources'] and m['data_sha256']==lock['data_sha256']
+            if candidate in configs:assert configs[candidate]==m['config']
+            else:configs[candidate]=m['config']
+            for split in ['train','val']:predictions(d/(split+'_predictions.csv'),x['metrics'][split])
+            h=read(d/'history.json');best=float('inf');selected=None
+            for z in h:
+                if z['val']['balanced_nll']<best-m['config']['min_delta']:best=z['val']['balanced_nll'];selected=z['epoch']
+            assert selected==x['selected_epoch'];values.append(x['metrics']['val']['balanced_nll']);records.append(dict(candidate=candidate,arch=x['arch'],selected_epoch=selected,train_accuracy=x['metrics']['train']['accuracy'],val_accuracy=x['metrics']['val']['accuracy'],val_balanced_nll=x['metrics']['val']['balanced_nll']))
+        means[candidate]=float(np.mean(values))
+    chosen=min(spec['candidate_order'],key=means.get);assert means==selection['mean_validation_balanced_nll'];assert chosen==selection['chosen']==lock['candidate'];assert configs[chosen]==lock['config']
+    for candidate,cfg in configs.items():
+        for field,value in spec['candidates'][candidate].items():assert cfg[field]==value
+    save(a.out/'pilot_verification.json',dict(passed=True,candidates=len(configs),models=len(records),selected=chosen,mean_validation_balanced_nll=means,selection_sha256=sha(pilot/'candidate_selection.json'),test_not_used_by_selection=True));csvwrite(a.out/'all_pilot_validation_results.csv',records)
+
 def verify(a):
     root=a.run;lock=read(root/'selection_lock.json');entries=read(root/'results.json');meta=read(root/'metadata.json');cfg=lock.get('config',meta.get('config'));expected=54 if a.dataset=='bloodmnist' else 36
     assert len(entries)==expected==len(lock['entries']);assert read(root/'status.json')['state']=='complete'
+    for path,digest in lock['sources'].items():assert sha(a.task_root/path)==digest,('Source mismatch',path)
+    if a.dataset=='kather2016':verify_pilot(a,lock)
     assert {e['result']['name'] for e in entries}=={e['result']['name'] for e in lock['entries']}
     rows=[];histories={};preds={};audits=[];byseed={};identities=[]
     for e in entries:
         x=e['result'];name=x['name'];d=resolve(e['folder'],a.task_root);ev=root/'evaluation'/name
         locked=next(z for z in lock['entries'] if z['result']['name']==name);assert locked=={k:e[k] for k in locked}
+        training_metadata=read(d.parent/'metadata.json');assert training_metadata['config']==cfg and training_metadata['data_sha256']==lock['data_sha256'];assert all(lock['sources'][k]==v for k,v in training_metadata['sources'].items())
         assert sha(d/'best_checkpoint.pt')==x['checkpoint_sha256'];assert e['validation_replayed']
         h=read(d/'history.json');histories[name]=h;best=float('inf');chosen=None
         for z in h:
