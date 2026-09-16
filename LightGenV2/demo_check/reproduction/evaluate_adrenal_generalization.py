@@ -13,6 +13,11 @@ def main():
         if rel.startswith('adrenal_softsign_'):assert r.sha(old.TASK/rel)==h,rel
     assert r.sha(g.__file__)==sources.get('training',sources['runner'])
     assert r.sha(old.__file__)==sources['augmentation']
+    if 'router_temperature' in cfg:
+        for config in r.CONFIGS.values():config['optical_router']['temperature']=cfg['router_temperature']
+    if 'training' in sources:
+        import adrenal_shared_frontend as f
+        assert r.sha(f.__file__)==sources['runner']
     r.EXP.update(batch_size=cfg['batch_size'],data_npz=str(a.data.resolve()));r.setup();assert r.sha(a.data)==metadata['data_sha256']
     for rel,h in lock['files'].items():assert r.sha(root/rel)==h,rel
     if 'frontend_checkpoint' in sources:
