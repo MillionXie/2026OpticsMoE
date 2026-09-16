@@ -65,7 +65,7 @@ def install_frontend(frontend):
 
 
 def main():
-    p=argparse.ArgumentParser();p.add_argument('--phase',choices=['frontend','smoke','train','test'],required=True);p.add_argument('--data',type=Path,required=True);p.add_argument('--out',type=Path,required=True);p.add_argument('--profile',type=Path,required=True);p.add_argument('--frontend',type=Path);p.add_argument('--seeds',type=int,nargs='+',default=[17]);p.add_argument('--depths',type=int,nargs='+',default=[2,4,6]);args=p.parse_args()
+    p=argparse.ArgumentParser();p.add_argument('--phase',choices=['frontend','smoke','train','test'],required=True);p.add_argument('--data',type=Path,required=True);p.add_argument('--out',type=Path,required=True);p.add_argument('--profile',type=Path,required=True);p.add_argument('--frontend',type=Path);p.add_argument('--seeds',type=int,nargs='+',default=[17]);p.add_argument('--depths',type=int,nargs='+',default=[2,4,6]);p.add_argument('--activations',nargs='+',choices=['relu_softsign','off'],default=['relu_softsign']);args=p.parse_args()
     cfg=r.read(args.profile);r.EXP.update(batch_size=cfg['batch_size'],data_npz=str(args.data.resolve()));r.setup()
     if 'router_temperature' in cfg:
         for config in r.CONFIGS.values():config['optical_router']['temperature']=cfg['router_temperature']
@@ -79,7 +79,7 @@ def main():
         frontend=TinyFrontend().cuda();frontend.load_state_dict(torch.load(args.frontend,map_location='cpu',weights_only=False)['model']);frontend.eval()
         for p in frontend.parameters():p.requires_grad_(False)
         before={n:r.sha_tensor(p) for n,p in frontend.state_dict().items()};install_frontend(frontend)
-    variants=[v for v in r.VARIANTS if v['activation']=='relu_softsign' and v['depth'] in args.depths]
+    variants=[v for v in r.VARIANTS if v['activation'] in args.activations and v['depth'] in args.depths]
     if args.phase=='test':
         lock=r.read(args.out/'test_lock.json');assert lock['sources']==sources
         for rel,h in lock['files'].items():assert r.sha(args.out/rel)==h
