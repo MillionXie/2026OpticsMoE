@@ -1,0 +1,15 @@
+{
+  "profile": "classification_primary_ema_half_resolution_phase",
+  "epochs": 50,
+  "minimum_epochs": 25,
+  "patience": 12,
+  "min_delta": 0.0005,
+  "batch_size": 16,
+  "lr": 0.002,
+  "phase_factor": 2,
+  "ema_decay": 0.95,
+  "mse_weight": 0.05,
+  "phase_smooth_weight": 0.05,
+  "label_smoothing": 0.05,
+  "augmentation": {"degrees": 10.0, "translation_pixels": 3.0, "scale_delta": 0.05}
+}
