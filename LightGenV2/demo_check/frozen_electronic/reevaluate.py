@@ -1,12 +1,16 @@
 """Fresh-process reload of the common electronic checkpoint and each optical checkpoint."""
 import argparse
 import csv
+import importlib.util
 import json
 from pathlib import Path
 import numpy as np
 import torch
 from model import Electronic, FrozenFusion
-from run import evaluate, save, sha, tensors_sha
+spec = importlib.util.spec_from_file_location('frozen_electronic_runner', Path(__file__).with_name('run.py'))
+runner = importlib.util.module_from_spec(spec)
+spec.loader.exec_module(runner)
+evaluate, save, sha, tensors_sha = runner.evaluate, runner.save, runner.sha, runner.tensors_sha
 
 
 def main():
