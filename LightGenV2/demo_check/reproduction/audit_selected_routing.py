@@ -34,12 +34,12 @@ def main():
         initial_phase=router.slm.raw_phase.detach().clone()
         def outputs():
             with torch.no_grad():pr=torch.cat([router(encoded[i:i+128])['probabilities'] for i in range(0,len(encoded),128)]).numpy()
-            assert pr.shape==(len(labels),9) and np.isfinite(pr).all() and (pr>0).all() and np.allclose(pr.sum(1),1,atol=1e-6)
+            assert pr.shape==(len(labels),9) and np.isfinite(pr).all() and (pr>=0).all() and np.allclose(pr.sum(1),1,atol=1e-6)
             power=pr**2/(pr**2).sum(1,keepdims=True);return pr,power
         _,initial=outputs();ck=torch.load(folder/'best_checkpoint.pt',map_location='cpu',weights_only=False);model.load_state_dict(ck['model']);pr,power=outputs()
         mean=power.mean(0);class_means=np.stack([power[labels==i].mean(0) for i in range(8)]);dominant=np.bincount(power.argmax(1),minlength=9)/len(power)
         entropy=-(power*np.log(np.maximum(power,1e-30))).sum(1)/np.log(9)
-        row=dict(model=v['name'],arch=v['arch'],depth=v['depth'],seed=v['seed'],validation_samples=len(labels),all_nine_branches_positive=True,mean_normalized_power_entropy=float(entropy.mean()),mean_max_branch_power=float(power.max(1).mean()),mean_l1_distance_to_mean_power=float(np.abs(power-mean).sum(1).mean()),mean_l1_power_change_from_initial=float(np.abs(power-initial).sum(1).mean()),largest_argmax_branch_fraction=float(dominant.max()),router_phase_rms_update=float((router.slm.raw_phase.detach()-initial_phase).square().mean().sqrt()))
+        row=dict(model=v['name'],arch=v['arch'],depth=v['depth'],seed=v['seed'],validation_samples=len(labels),all_nine_branches_positive=bool((power>0).all()),mean_effective_branch_count=float((1/(power**2).sum(1)).mean()),mean_normalized_power_entropy=float(entropy.mean()),mean_max_branch_power=float(power.max(1).mean()),mean_l1_distance_to_mean_power=float(np.abs(power-mean).sum(1).mean()),mean_l1_power_change_from_initial=float(np.abs(power-initial).sum(1).mean()),largest_argmax_branch_fraction=float(dominant.max()),router_phase_rms_update=float((router.slm.raw_phase.detach()-initial_phase).square().mean().sqrt()))
         records.append(row);details[v['name']]=dict(summary=row,mean_power=mean.tolist(),power_std_across_images=power.std(0).tolist(),class_mean_power=class_means.tolist(),largest_power_branch_frequencies=dominant.tolist(),checkpoint_sha256=v['checkpoint_sha256'])
         np.savez_compressed(a.out/(v['name']+'.npz'),sample_ids=ids,labels=labels,probabilities=pr,branch_power=power,initial_branch_power=initial)
         print(json.dumps(row),flush=True);del model,router,ck
