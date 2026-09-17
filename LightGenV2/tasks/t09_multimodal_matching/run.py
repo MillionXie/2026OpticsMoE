@@ -59,7 +59,7 @@ def evaluate(model, frontend, data, batch, ablation=None):
     for chunk,images,ids,labels in batches(data,batch):
         if ablation == 'swap_pair_text':
             ids = data['ids'][chunk ^ 1]
-        amplitude = encode(images,frontend(ids))
+        amplitude = encode(images,frontend(ids),model.input_layout)
         output = model(amplitude)
         preds.append(output['probabilities'].cpu());routes.append(output['route_power'].cpu());captures.append(output['capture'].cpu())
     p = torch.cat(preds);y=data['labels'].cpu()
@@ -96,7 +96,8 @@ def train_epoch(models,frontend,data,optimizer,batch,epoch,seed,feature_dropout=
             # Guarantee nonzero input even for a very sparse visual feature vector.
             dropped=images*mask
             images=torch.where(dropped.square().sum(1,keepdim=True)>0,dropped,images)
-        amplitude=encode(images,frontend(ids))
+        layouts={m.input_layout for m in models.values()};assert len(layouts)==1
+        amplitude=encode(images,frontend(ids),layouts.pop())
         costs=[loss(model(amplitude),y) for model in models.values()]
         cost=torch.stack(costs).mean()
         assert torch.isfinite(cost), 'Nonfinite loss'
@@ -194,7 +195,7 @@ def run_mode(args,train,val,vocab,mode):
     results={}
     for arch in (ARCHS if args.architecture=='both' else [args.architecture]):
         path=root/arch;path.mkdir();setseed(args.seed)
-        model=OpticalOEO(arch,args.seed,args.phase_dropout).cuda()
+        model=OpticalOEO(arch,args.seed,args.phase_dropout,input_layout=args.input_layout).cuda()
         initial_phase_sha=state_sha(model)
         optimizer=torch.optim.Adam(model.parameters(),lr=args.lr)
         scheduler=torch.optim.lr_scheduler.CosineAnnealingLR(optimizer,args.epochs,eta_min=args.lr*.1)
@@ -209,7 +210,7 @@ def run_mode(args,train,val,vocab,mode):
             history.append(row);save(path/'history.json',history)
             checkpoint=dict(model=model.state_dict(),optimizer=optimizer.state_dict(),scheduler=scheduler.state_dict(),
                             epoch=epoch,train=train_score,val=val_score,frontend_sha256=frozen_hash,
-                            initial_phase_sha256=initial_phase_sha)
+                            initial_phase_sha256=initial_phase_sha,input_layout=args.input_layout)
             torch.save(checkpoint,path/'last_checkpoint.pt')
             if val_score['nll']<best:
                 best=val_score['nll'];torch.save(checkpoint,path/'best_checkpoint.pt')
@@ -243,12 +244,14 @@ def main():
     p.add_argument('--phase-dropout',type=float,default=0.)
     p.add_argument('--architecture',choices=['both','moe','d2nn'],default='both')
     p.add_argument('--feature-cache',type=Path)
+    p.add_argument('--input-layout',choices=['legacy','two_band'],default='legacy')
     args=p.parse_args();args.out.mkdir(parents=True,exist_ok=False)
     assert 0<=args.feature_dropout<1
     assert not args.feature_dropout or args.vision_checkpoint
     assert not args.visual_flip or args.vision_checkpoint
     assert not args.feature_cache or args.vision_checkpoint
     assert 0<=args.phase_dropout<1
+    assert args.input_layout=='legacy' or (args.mode=='fixed' and args.phase=='train'), 'Two-band profile currently uses fixed word codes; smoke with smoke_layout.py'
     torch.set_num_threads(4);torch.backends.cudnn.benchmark=False
     setseed(args.seed);metadata(args,args.out);save(args.out/'status.json',dict(status='running',pid=os.getpid()))
     vocab=json.loads((args.data/'vocab.json').read_text())

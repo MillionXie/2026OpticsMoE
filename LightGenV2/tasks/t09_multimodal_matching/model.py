@@ -42,8 +42,20 @@ def normalize_power(x, power):
     return x*(power/energy.clamp_min(1e-20)).sqrt()
 
 
-def encode(images, text):
+def encode(images, text, layout='legacy'):
     """RGB and text share 50/50 power, no fusion before optical propagation."""
+    if layout=='two_band':
+        if images.ndim==2:
+            sensor=images.reshape(-1,1,16,8)
+        else:
+            # Only monochrome spectrograms; never silently discard RGB information.
+            assert images.ndim==4 and images.shape[-1]==3
+            assert torch.equal(images[...,0],images[...,1]) and torch.equal(images[...,0],images[...,2])
+            sensor=images[...,0].float()[:,None]/255
+        sensor=F.interpolate(sensor,(112,224),mode='bilinear',align_corners=False)[:,0]
+        words=F.interpolate(text[:,None],(112,224),mode='nearest')[:,0]
+        return torch.cat((normalize_power(sensor,.5),normalize_power(words,.5)),-2)
+    assert layout=='legacy'
     if images.ndim==2:
         # Same frozen GAP128 visual feature vector in each of the three slots.
         # Repetition does not supply additional information to either architecture.
@@ -62,8 +74,15 @@ def encode(images, text):
                       torch.cat((rgb[:,2], text), -1)), -2)
 
 
-def enlarge_tiles(amplitude, side):
+def enlarge_tiles(amplitude, side, layout='legacy'):
     """No resampling across modality/channel boundaries; restore tile powers."""
+    if layout=='two_band':
+        bands=[]
+        for band in amplitude.chunk(2,dim=-2):
+            power=band.square().sum((-2,-1),keepdim=True)
+            bands.append(normalize_power(F.interpolate(band[:,None],(side//2,side),mode='nearest')[:,0],power))
+        return torch.cat(bands,-2)
+    assert layout=='legacy'
     half = amplitude.shape[-1]//2
     result = []
     for y in range(2):
@@ -78,7 +97,7 @@ def enlarge_tiles(amplitude, side):
 
 
 class OpticalOEO(PhaseOnly):
-    def __init__(self, architecture, seed=17, phase_dropout=0., phase_dropout_block=8):
+    def __init__(self, architecture, seed=17, phase_dropout=0., phase_dropout_block=8, input_layout='legacy'):
         cfg_path = Path(__file__).resolve().parents[2]/'demo_check/pure_optical/config.json'
         cfg = json.loads(cfg_path.read_text(encoding='utf8'))
         cfg['seed'] = seed
@@ -91,6 +110,7 @@ class OpticalOEO(PhaseOnly):
         self.class_centers = [(259,179),(259,339)]
         self.phase_dropout = phase_dropout
         self.phase_dropout_block = phase_dropout_block
+        self.input_layout = input_layout
 
     def main_transmission(self, raw):
         value = self.transmission(raw)
@@ -114,7 +134,7 @@ class OpticalOEO(PhaseOnly):
     def forward(self, amplitude):
         q, router_capture = self.route(amplitude)
         if self.architecture == 'full_d2nn':
-            expanded = enlarge_tiles(amplitude, 478)
+            expanded = enlarge_tiles(amplitude, 478, self.input_layout)
             first = F.pad(expanded*self.main_transmission(self.first_phase), (20,)*4)
         else:
             first = amplitude.new_zeros((len(amplitude),518,518),dtype=torch.complex64)

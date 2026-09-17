@@ -20,6 +20,7 @@ from .vision import frozen_features
 def main():
     p=argparse.ArgumentParser()
     p.add_argument('--kind',choices=['clevr','audio'],required=True)
+    p.add_argument('--audio-runs',nargs='+',help='Completed raw-audio runs; both architectures per run')
     for key in ['data','runs','out','cache']:
         p.add_argument('--'+key,type=Path,required=True)
     a=p.parse_args();a.out.mkdir(parents=True,exist_ok=False)
@@ -29,6 +30,12 @@ def main():
               if a.kind=='clevr' else [('audio','moe','audio_matching_moe_s17_v1'),
                                       ('audio','d2nn','audio_matching_d2nn_canonical_s17_v1')])
     selection={}
+    if a.audio_runs:
+        assert a.kind=='audio'
+        profiles=[(run,arch,run) for run in a.audio_runs for arch in ['moe','d2nn']]
+        for run in a.audio_runs:
+            config=json.loads((a.runs/run/'metadata.json').read_text())['config']
+            assert not config['vision_checkpoint'] and config['mode']=='fixed'
     for tag,arch,run in profiles:
         path=a.runs/run/'fixed'/arch/'best_checkpoint.pt'
         result=json.loads((path.parent/'result.json').read_text())
@@ -36,9 +43,10 @@ def main():
         selection[tag+'/'+arch]=dict(checkpoint=str(path),sha256=result['best_checkpoint_sha256'],epoch=result['epoch'])
     save(a.out/'locked_selection.json',selection)
     front_path=a.runs/('clevr_visual_aux_s17_v1' if a.kind=='clevr' else 'audio_frontend_s17_v1')/'best_checkpoint.pt'
+    if a.audio_runs:front_path=None
     save(a.out/'metadata.json',dict(commit=subprocess.check_output(['git','rev-parse','HEAD'],text=True).strip(),
          cuda_visible_devices=os.environ.get('CUDA_VISIBLE_DEVICES'),torch=torch.__version__,
-         frontend_sha256=digest(front_path.read_bytes()),data_manifest_sha256=digest((a.data/'manifest.json').read_bytes()),
+         frontend_sha256=digest(front_path.read_bytes()) if front_path else None,data_manifest_sha256=digest((a.data/'manifest.json').read_bytes()),
          selection='All declared validation-NLL-selected checkpoints locked before test evaluation; no test selection'))
     if a.kind=='clevr':
         rows=json.loads((a.cache/'test_questions.json').read_text())
@@ -75,7 +83,8 @@ def main():
     for i,r in enumerate(rows):
         words=tokens(r['question']);assert len(words)<=32 and all(w in vocab for w in words)
         ids[i,:len(words)]=torch.tensor([vocab[w] for w in words],device='cuda')
-    features=frozen_features(front_path,torch.tensor(np.stack(images),device='cuda'))
+    features=torch.tensor(np.stack(images),device='cuda')
+    if front_path:features=frozen_features(front_path,features)
     save(a.out/'test_manifest.json',dict(images=len(images),questions=len(rows),
          questions_sha256=digest((a.out/'test_questions.json').read_bytes()),features_sha256=digest(features.cpu().numpy().tobytes())))
     labels=np.array([r['label'] for r in rows])
@@ -87,7 +96,7 @@ def main():
         front=TextEncoder(len(vocab),'fixed').cuda()
         front.load_state_dict(torch.load(path.parent.parent/'frontend.pt',weights_only=False)['state']);front.eval()
         checkpoint=torch.load(path,weights_only=False);assert state_sha(front)==checkpoint['frontend_sha256']
-        model=OpticalOEO(arch,17).cuda();model.load_state_dict(checkpoint['model']);model.eval()
+        model=OpticalOEO(arch,17,input_layout=checkpoint.get('input_layout','legacy')).cuda();model.load_state_dict(checkpoint['model']);model.eval()
         score,pred=evaluate(model,front,data,32)
         assert abs(float((pred.argmax(1)==labels).mean())-score['accuracy'])<1e-6
         nll=float(-np.log(np.maximum(pred[np.arange(len(labels)),labels],1e-30)).mean())
