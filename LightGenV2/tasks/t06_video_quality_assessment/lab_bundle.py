@@ -77,11 +77,19 @@ def build(a):
   src=root/rel
   if not src.exists() and src.name=='__init__.py':continue
   dst=out/'runtime'/rel;dst.parent.mkdir(parents=True,exist_ok=True);shutil.copy2(src,dst)
- for name in ('run_lab.py','COMMAND_SHS.md'):
-  shutil.copy2(root/'LightGenV2/tasks/t06_video_quality_assessment/hardware'/name,out/('run.py' if name=='run_lab.py' else name))
+ handoff_files={
+  'run_lab.py':'run.py',
+  'reproduce_simulation.py':'simulate.py',
+  'COMMAND_SHS.md':'COMMAND_SHS.md',
+  'AI_TEMPORAL08044_HANDOFF.md':'AI_TEMPORAL08044_HANDOFF.md',
+ }
+ for name,destination in handoff_files.items():
+  if name=='AI_TEMPORAL08044_HANDOFF.md' and a.target!='temporal':continue
+  shutil.copy2(root/'LightGenV2/tasks/t06_video_quality_assessment/hardware'/name,out/destination)
  # Do not accidentally borrow dependencies from the source checkout/PYTHONPATH.
  import sys
  subprocess.run([sys.executable,'-I',str(out/'run.py'),'--help'],cwd=out,check=True,stdout=subprocess.DEVNULL)
+ subprocess.run([sys.executable,'-I',str(out/'simulate.py'),'--help'],cwd=out,check=True,stdout=subprocess.DEVNULL)
  if dataset_split=='train':subprocess.run([sys.executable,'-I',str(out/'adapt.py'),'--help'],cwd=out,check=True,stdout=subprocess.DEVNULL)
  commit=subprocess.check_output(['git','rev-parse','HEAD'],cwd=root,text=True).strip()
  release=dict(schema_version=1,target=a.target,dataset_split=dataset_split,videos_in_package=len(pred),train_videos_in_package=len(pred) if dataset_split=='train' else 0,reference_srcc=PINS[a.target]['srcc'],checkpoint_sha256=sha(checkpoint),source_checkpoint=str(checkpoint),source_commit=commit,field_video_count=count,frame_count=4,test_videos_in_package=len(pred) if dataset_split=='test' else 0,full_test=full,simulation_metrics=metrics,six_pass_replay=audit,fields=entries,automatic_phase_switching=False,physical_geometry=dict(model_pitch_um=17,device_pitch_um=8,active_pixels=478,distance_m=.1),feature_source=dict(manifest_sha256=payload['manifest_sha256'],vision_cache_path=str(settings.vision_cache_path),language_cache_path=str(settings.language_cache_path)))
