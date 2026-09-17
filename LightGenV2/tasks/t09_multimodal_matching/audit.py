@@ -64,9 +64,11 @@ def main():
                                                image_cluster_bootstrap_95ci_percentage_points=(np.quantile(bootstrap,[.025,.975])*100).tolist())
     # A query-only lookup baseline trained without validation labels.
     train=json.loads((a.data/'train_questions.json').read_text());counts={}
+    def query_key(row):
+        return (row['color'],row['shape']) if 'color' in row else row['query_class']
     for r in train:
-        key=(r['color'],r['shape']);counts.setdefault(key,[0,0]);counts[key][r['label']]+=1
-    prior=np.array([int(counts[(r['color'],r['shape'])][1]>counts[(r['color'],r['shape'])][0]) for r in rows])
+        key=query_key(r);counts.setdefault(key,[0,0]);counts[key][r['label']]+=1
+    prior=np.array([int(counts[query_key(r)][1]>counts[query_key(r)][0]) for r in rows])
     truth=np.array([r['label'] for r in rows])
     save(a.out/'verification.json',dict(passed=True,results=report,comparisons=comparisons,
                                        question_only_train_prior_accuracy=float((prior==truth).mean()),

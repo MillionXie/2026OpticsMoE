@@ -48,3 +48,25 @@ python -m LightGenV2.tasks.t09_multimodal_matching.run --phase train --mode fixe
 文字GRU使用--mode learned及默认8轮共享前端预热；稠密固定码用--mode fixed_dense。30轮对照使用--epochs 30，phase dropout组另加--phase-dropout 0.05。所有训练默认关闭phase dropout和其他增强。phase dropout smoke在runs/smoke/phase_dropout_s17_v1，验证单位模透射、评估关闭、相位梯度及更新。
 
 [训练/验证/测试图](../figures/test_s17_20260917/train_val_test.png)；[原始示例](../figures/text_encoding_s17_20260917_v2/validation_examples.png)。原始权重、数据、逐样本预测不提交Git；下载的结果副本随附SHA清单。
+
+## 30轮预算与phase dropout复核
+
+源码c8cec5fe，seed17，同一固定one-hot与共享冻结CNN，从头训练30轮，余弦周期30轮。各配置内按最低验证NLL选模，未再次评估test。
+
+|配置|模型|选择轮次|训练准确率|验证准确率|验证NLL|
+|---|---|---:|---:|---:|---:|
+|无phase dropout|MoE|8|80.82%|69.00%|0.5794|
+|无phase dropout|D2NN|18|81.23%|72.13%|0.5557|
+|phase dropout 5%|MoE|22|81.63%|73.13%|0.5693|
+|phase dropout 5%|D2NN|30|62.35%|57.40%|0.6567|
+
+D2NN原12轮预算训练不足；延长后准确率明显提高。不能继续把原13个百分点差距视为充分训练的架构优势。phase dropout对MoE有帮助，但显著抑制D2NN，必须同时保留不加dropout的强D2NN。不同配置间也不能仅按差距挑选。MoE phase-dropout组仍有8.50个百分点训练/验证差距，未消除过拟合。
+run：clevr_visual_fixed_long30_s17_v1和clevr_visual_fixed_long30_phase05_s17_v1。两组独立核验通过，权重SHA及逐轮曲线在[图目录](../figures/phase_budget_s17_20260917/)。[训练充分性曲线](../figures/phase_budget_s17_20260917/phase_budget.png)。
+
+## 音文预实验
+
+派生数据 /DATA/DATA1/guest3/demo_reproduction_data/mini_speech_matching_s17_v3：去重后6263条训练语音、843条验证语音、867条保留测试语音，按说话人SHA1互斥。每条2个匹配问题，训练12526问、验证1686问；原始8关键词分类与二分类匹配的准确率不能混为一谈。该子集来自Speech Commands v0.01；许可依据压缩包README引用原版本，及Google Research原发布页的CC BY 4.0声明，见数据license_evidence.json。测试只保留记录，未解码或评估。
+
+共享音频前端：同样32128参数CNN，临时8类头1032参数；仅用训练语音标签，预训练30轮后按验证NLL选择并去掉分类头，冻结128维特征。不把关键词预测类别或分类logits直接输入光学网络。未使用音频水平翻转或时间反转。
+音频前端run：audio_frontend_s17_v1，源码248a381b，选中第28轮；八类分类训练91.79%、验证85.88%。这不是光学音文匹配成绩。
+光学首轮仍为固定完整句子one-hot、两层逐层OEO、共享前端、相同训练预算；仅验证选模，不先假定MoE领先。

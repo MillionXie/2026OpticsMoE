@@ -115,3 +115,5 @@ one-hot编码完整句子的每个词及问号，不只提取颜色。词表由�
 数据为官方mini Speech Commands（8个关键词，CC BY 4.0），来源https://storage.googleapis.com/download.tensorflow.org/data/mini_speech_commands.zip ，许可在压缩包README内再次核验。按文件说话人前缀SHA1分桶为训练/验证/测试，去除重复波形，断言说话人集合互斥。
 
 任务：语音与文字关键词是否匹配，每条音频生成1个正问题和1个固定负问题。完整句子one-hot，非转录模型输出。音频16 kHz单声道，右侧补零到1秒；512点STFT、400点Hann窗、160点步长；64个20–8000 Hz HTK-mel三角滤波器，保留64×101时频图。以每段最大能量为0 dB，截取80 dB动态范围映射到uint8；复制3通道仅兼容现有CNN接口，不增加信息。后续共享小CNN需在音频训练集重新训练并冻结，不复用图像训练权重。该任务为有限词汇匹配，不能表述为一般语音理解。数据准备入口audio_prepare.py，音频分类/光学性能尚待实际训练。
+
+30轮结果已完成：不加phase dropout的D2NN达到72.13%验证准确率，原12轮对照训练不足。5% phase dropout的MoE达到73.13%，但同一设置的D2NN受损，须保留强D2NN作为比较。音频数据与共享前端已准备完成，详细证据见复现入口。
