@@ -57,6 +57,11 @@ def main():
                     modified['images']=data['images'][permutation]
                 controls[condition]=evaluate(model,frontend,modified,32)[0]
             assert abs(controls['constant_question']['accuracy']-.5)<1e-6
+            if arch=='moe':
+                original_route=model.route
+                model.route=lambda amplitude: (amplitude.new_full((len(amplitude),4),.25),None)
+                controls['uniform_route_inference_only']=evaluate(model,frontend,data,32)[0]
+                model.route=original_route
             # Physical input support is not the same as aperture envelope coverage.
             images=data['images'][data['index'][:32]]
             amplitude=encode(images,frontend(data['ids'][:32]))
@@ -64,7 +69,7 @@ def main():
             controls['text_nonzero_fraction']=float((amplitude[:,112:,112:]>0).float().mean())
             results[mode+'/'+arch]=dict(baseline=baseline,controls=controls,frontend_changed_during_warmup=frontend_changed)
     save(a.out/'diagnostics.json',dict(results=results,test_accessed=False,
-         note='Constant/unpaired inputs are corruption diagnostics on original labels, not new benchmark tasks. Original swap_pair_text evaluation is a permutation of existing pairs and NOT independent evidence.'))
+         note='Constant/unpaired inputs and inference-only uniform routing are perturbation diagnostics, not retrained baselines. Original swap_pair_text evaluation is a permutation of existing pairs and NOT independent evidence.'))
     print(json.dumps(results,indent=2))
 
 
