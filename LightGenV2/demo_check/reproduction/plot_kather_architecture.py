@@ -27,7 +27,7 @@ def main():
     for x,u in [(3.2,4),(8.4,9.2),(11.6,12.25)]:arrow(x,5.65,u,5.65)
     ax.text(.2,4.55,'MoE: one input-dependent routing step, then coupled expert/global cycles',fontsize=14,weight='bold')
     box(.2,2.95,3,1.2,'Optical router: 100 × 100\nPhase → propagation → 9 scores\nSoftmax → power allocation','#fae6e7',10)
-    box(3.8,2.95,2.45,1.2,'Ideal 9-port relay\n9 copies of input\nAll branches active','#fae6e7')
+    box(3.8,2.95,2.45,1.2,'4 tiles: 50 → 73 each\n146 × 146 expert input\nPower-matched 9-port relay','#fae6e7',10)
     box(6.85,2.75,4.75,1.6,'[9 local phases → propagation → (OEO)\n→ global phase → propagation → (OEO)]\nRepeat L/2 cycles\n146 × 146 experts; 498 × 498 global','#fae6e7',10)
     box(12.25,2.95,2.45,1.2,'Final propagation\nSame 8 detectors\nNormalize → argmax')
     for x,u in [(3.2,3.8),(6.25,6.85),(11.6,12.25)]:arrow(x,3.55,u,3.55)
