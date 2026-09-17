@@ -78,7 +78,7 @@ def enlarge_tiles(amplitude, side):
 
 
 class OpticalOEO(PhaseOnly):
-    def __init__(self, architecture, seed=17):
+    def __init__(self, architecture, seed=17, phase_dropout=0., phase_dropout_block=8):
         cfg_path = Path(__file__).resolve().parents[2]/'demo_check/pure_optical/config.json'
         cfg = json.loads(cfg_path.read_text(encoding='utf8'))
         cfg['seed'] = seed
@@ -89,6 +89,18 @@ class OpticalOEO(PhaseOnly):
                    selection='minimum validation NLL',no_trainable_electronic_adapter_or_head=False)
         super().__init__('dynamic_four' if architecture == 'moe' else 'full_d2nn', cfg)
         self.class_centers = [(259,179),(259,339)]
+        self.phase_dropout = phase_dropout
+        self.phase_dropout_block = phase_dropout_block
+
+    def main_transmission(self, raw):
+        value = self.transmission(raw)
+        if self.training and self.phase_dropout:
+            h,w = raw.shape[-2:]; b = self.phase_dropout_block
+            # Per-layer, batch-shared blocks bypass phase, not amplitude.
+            mask = torch.rand((1,1,(h+b-1)//b,(w+b-1)//b), device=raw.device)<self.phase_dropout
+            mask = mask.repeat_interleave(b,-2).repeat_interleave(b,-1)[0,0,:h,:w]
+            value = torch.where(mask, torch.ones_like(value), value)
+        return value
 
     @staticmethod
     def oeo(field):
@@ -103,13 +115,13 @@ class OpticalOEO(PhaseOnly):
         q, router_capture = self.route(amplitude)
         if self.architecture == 'full_d2nn':
             expanded = enlarge_tiles(amplitude, 478)
-            first = F.pad(expanded*self.transmission(self.first_phase), (20,)*4)
+            first = F.pad(expanded*self.main_transmission(self.first_phase), (20,)*4)
         else:
             first = amplitude.new_zeros((len(amplitude),518,518),dtype=torch.complex64)
             for i,(y,x) in enumerate(self.apertures):
-                first[:,y:y+224,x:x+224] = amplitude*q[:,i,None,None].sqrt()*self.transmission(self.first_phase[i])
+                first[:,y:y+224,x:x+224] = amplitude*q[:,i,None,None].sqrt()*self.main_transmission(self.first_phase[i])
         field = self.oeo(self.propagator(first))
-        mask = F.pad(self.transmission(self.global_phase),(20,)*4,value=0)
+        mask = F.pad(self.main_transmission(self.global_phase),(20,)*4,value=0)
         field = self.oeo(self.propagator(field*mask))
         energies = self.detect(field.abs().square(),self.class_centers,64)
         probs = (energies+1e-12)/(energies.sum(1,keepdim=True)+2e-12)

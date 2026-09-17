@@ -74,8 +74,8 @@ def evaluate(model, frontend, data, batch, ablation=None):
     return metrics,p.numpy()
 
 
-def build_models(seed, device):
-    return {arch:OpticalOEO(arch,seed).to(device) for arch in ARCHS}
+def build_models(seed, device, phase_dropout=0.):
+    return {arch:OpticalOEO(arch,seed,phase_dropout).to(device) for arch in ARCHS}
 
 
 def train_epoch(models,frontend,data,optimizer,batch,epoch,seed,feature_dropout=0.):
@@ -141,7 +141,13 @@ def smoke(args,train,vocab):
             z=coded[:,:,:32]-coded[:,:,32:]
             recovered=(z@frontend.codes.T).argmax(-1)
             assert torch.equal(recovered[ids!=0],ids[ids!=0])
-        for arch,model in build_models(args.seed,'cuda').items():
+        for arch,model in build_models(args.seed,'cuda',args.phase_dropout).items():
+            if args.phase_dropout:
+                model.train(); t=model.main_transmission(model.global_phase)
+                assert torch.allclose(t.abs(),torch.ones_like(t.real),atol=1e-6)
+                assert (t==1).any() and (t!=1).any()
+                model.eval();assert torch.equal(model.main_transmission(model.global_phase),model.transmission(model.global_phase))
+                model.train()
             frontend.zero_grad(set_to_none=True)
             before=state_sha(model)
             output=model(encode(images,frontend(ids)));cost=loss(output,labels);cost.backward()
@@ -163,7 +169,7 @@ def run_mode(args,train,val,vocab,mode):
     root=args.out/mode;root.mkdir()
     setseed(args.seed);frontend=TextEncoder(len(vocab),mode).cuda()
     if mode=='learned':
-        warm=root/'warmup';warm.mkdir();models=build_models(args.seed+1000,'cuda')
+        warm=root/'warmup';warm.mkdir();models=build_models(args.seed+1000,'cuda',args.phase_dropout)
         optimizer=torch.optim.Adam([{'params':frontend.parameters(),'lr':args.frontend_lr},
                                     {'params':[p for m in models.values() for p in m.parameters()],'lr':args.lr}])
         best=float('inf');history=[]
@@ -188,7 +194,7 @@ def run_mode(args,train,val,vocab,mode):
     results={}
     for arch in ARCHS:
         path=root/arch;path.mkdir();setseed(args.seed)
-        model=OpticalOEO(arch,args.seed).cuda()
+        model=OpticalOEO(arch,args.seed,args.phase_dropout).cuda()
         initial_phase_sha=state_sha(model)
         optimizer=torch.optim.Adam(model.parameters(),lr=args.lr)
         scheduler=torch.optim.lr_scheduler.CosineAnnealingLR(optimizer,args.epochs,eta_min=args.lr*.1)
@@ -234,10 +240,12 @@ def main():
     p.add_argument('--vision-checkpoint',type=Path)
     p.add_argument('--feature-dropout',type=float,default=0.)
     p.add_argument('--visual-flip',action='store_true')
+    p.add_argument('--phase-dropout',type=float,default=0.)
     args=p.parse_args();args.out.mkdir(parents=True,exist_ok=False)
     assert 0<=args.feature_dropout<1
     assert not args.feature_dropout or args.vision_checkpoint
     assert not args.visual_flip or args.vision_checkpoint
+    assert 0<=args.phase_dropout<1
     torch.set_num_threads(4);torch.backends.cudnn.benchmark=False
     setseed(args.seed);metadata(args,args.out);save(args.out/'status.json',dict(status='running',pid=os.getpid()))
     vocab=json.loads((args.data/'vocab.json').read_text())
