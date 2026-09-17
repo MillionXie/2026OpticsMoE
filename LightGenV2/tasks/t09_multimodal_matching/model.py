@@ -44,7 +44,7 @@ def normalize_power(x, power):
 
 def encode(images, text, layout='legacy'):
     """RGB and text share 50/50 power, no fusion before optical propagation."""
-    if layout=='two_band':
+    if layout in ['two_band','interleaved']:
         if images.ndim==2:
             sensor=images.reshape(-1,1,16,8)
         else:
@@ -54,7 +54,10 @@ def encode(images, text, layout='legacy'):
             sensor=images[...,0].float()[:,None]/255
         sensor=F.interpolate(sensor,(112,224),mode='bilinear',align_corners=False)[:,0]
         words=F.interpolate(text[:,None],(112,224),mode='nearest')[:,0]
-        return torch.cat((normalize_power(sensor,.5),normalize_power(words,.5)),-2)
+        sensor=normalize_power(sensor,.5);words=normalize_power(words,.5)
+        if layout=='interleaved':
+            return torch.stack((sensor,words),dim=-2).reshape(-1,224,224)
+        return torch.cat((sensor,words),-2)
     assert layout=='legacy'
     if images.ndim==2:
         # Same frozen GAP128 visual feature vector in each of the three slots.
@@ -76,11 +79,13 @@ def encode(images, text, layout='legacy'):
 
 def enlarge_tiles(amplitude, side, layout='legacy'):
     """No resampling across modality/channel boundaries; restore tile powers."""
-    if layout=='two_band':
+    if layout in ['two_band','interleaved']:
         bands=[]
-        for band in amplitude.chunk(2,dim=-2):
+        source=(amplitude[:,0::2],amplitude[:,1::2]) if layout=='interleaved' else amplitude.chunk(2,dim=-2)
+        for band in source:
             power=band.square().sum((-2,-1),keepdim=True)
             bands.append(normalize_power(F.interpolate(band[:,None],(side//2,side),mode='nearest')[:,0],power))
+        if layout=='interleaved':return torch.stack(bands,dim=-2).reshape(-1,side,side)
         return torch.cat(bands,-2)
     assert layout=='legacy'
     half = amplitude.shape[-1]//2

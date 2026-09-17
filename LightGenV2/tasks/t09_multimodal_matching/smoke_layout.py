@@ -14,16 +14,21 @@ def main():
     images=data['images'][data['index'][:4]];ids=data['ids'][:4];y=data['labels'][:4]
     front=TextEncoder(len(vocab),'fixed').cuda();assert sum(p.numel() for p in front.parameters())==0
     records=[]
-    for layout in ['legacy','two_band']:
+    for layout in ['legacy','two_band','interleaved']:
         amplitude=encode(images,front(ids),layout)
         assert amplitude.shape==(4,224,224)
         assert torch.isfinite(amplitude).all() and (amplitude>=0).all()
         assert torch.allclose(amplitude.square().sum((-2,-1)),torch.ones(4,device='cuda'),atol=1e-6)
         expanded=enlarge_tiles(amplitude,478,layout)
-        if layout=='two_band':
+        if layout!='legacy':
             for x in [amplitude,expanded]:
-                for band in x.chunk(2,dim=-2):
+                parts=(x[:,0::2],x[:,1::2]) if layout=='interleaved' else x.chunk(2,dim=-2)
+                for band in parts:
                     assert torch.allclose(band.square().sum((-2,-1)),torch.full((4,),.5,device='cuda'),atol=1e-6)
+            if layout=='interleaved':
+                reference=encode(images,front(ids),'two_band')
+                assert torch.equal(amplitude[:,0::2],reference[:,:112])
+                assert torch.equal(amplitude[:,1::2],reference[:,112:])
             changed=images.clone();changed[...,1]=0
             try:encode(changed,front(ids),layout)
             except AssertionError:pass

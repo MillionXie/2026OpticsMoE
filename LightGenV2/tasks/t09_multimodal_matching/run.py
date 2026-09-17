@@ -244,7 +244,7 @@ def main():
     p.add_argument('--phase-dropout',type=float,default=0.)
     p.add_argument('--architecture',choices=['both','moe','d2nn'],default='both')
     p.add_argument('--feature-cache',type=Path)
-    p.add_argument('--input-layout',choices=['legacy','two_band'],default='legacy')
+    p.add_argument('--input-layout',choices=['legacy','two_band','interleaved'],default='legacy')
     args=p.parse_args();args.out.mkdir(parents=True,exist_ok=False)
     assert 0<=args.feature_dropout<1
     assert not args.feature_dropout or args.vision_checkpoint
