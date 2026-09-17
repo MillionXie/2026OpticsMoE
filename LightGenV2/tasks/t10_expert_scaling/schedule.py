@@ -16,8 +16,9 @@ def main():
     ap.add_argument('--mode',choices=['calibration','scan'],default='calibration')
     ap.add_argument('--calibration',type=Path)
     ap.add_argument('--dry-run',action='store_true')
+    ap.add_argument('--resume',action='store_true')
     a=ap.parse_args();assert 1<=len(a.gpus)<=3 and len(set(a.gpus))==len(a.gpus)
-    a.out.mkdir(parents=True,exist_ok=False);(a.out/'logs').mkdir()
+    a.out.mkdir(parents=True,exist_ok=a.resume);(a.out/'logs').mkdir(exist_ok=a.resume)
     arms=['moe_oeo','d2nn_total_parameter','d2nn_same_aperture']
     if a.mode=='calibration':
         jobs=[dict(arch=arm,experts=9,top_k=9,layers=depth,lr=lr) for depth in [4,6] for lr in [.001,.002] for arm in arms]
@@ -48,7 +49,7 @@ def main():
         save(a.out/'selection_lock.json',dict(common_layers=depth,lr_by_arm=lr_by_arm,
             validation_mean_macro_nll=means,selected=selected[depth],test_read=False))
         # Roughly geometric spacing, with quarter/half/dense operating points.
-        grid={4:[1,2,4],9:[1,3,5,9],16:[1,4,8,16],25:[1,6,12,25],36:[1,9,18,36],49:[1,12,24,49]}
+        grid={4:[1,2,3,4],9:[1,3,5,9],16:[1,4,8,16],25:[1,6,12,25],36:[1,9,18,36],49:[1,12,24,49]}
         jobs=[]
         for n in [4,16,25,36,49,9]:
             for arm in arms:
@@ -64,6 +65,33 @@ def main():
         save(a.out/'status.json',dict(state='dry_run_complete',jobs=len(jobs),gpu_processes_started=0))
         return
     running={};finished=[];failed=[]
+    if a.resume:
+        remaining=[]
+        for j in jobs:
+            folder=a.out/j['name']
+            if (folder/'result.json').exists():finished.append(j);continue
+            if folder.exists():
+                state=json.loads((folder/'status.json').read_text());pid=state['pid']
+                procpath=Path(f'/proc/{pid}/cmdline')
+                if not procpath.exists():raise RuntimeError(f'Incomplete run requires explicit recovery: {folder}')
+                cmdline=procpath.read_bytes().replace(b'\x00',b' ').decode()
+                if 't10_expert_scaling.train' not in cmdline or str(folder) not in cmdline:raise RuntimeError('PID identity mismatch')
+                gpu=next(g for g in a.gpus if (a.out/f'gpu{g}.json').exists() and json.loads((a.out/f'gpu{g}.json').read_text())['pid']==pid)
+                class Adopted:
+                    def __init__(self,pid,folder):self.pid,self.folder=pid,folder;self.returncode=None
+                    def poll(self):
+                        if Path(f'/proc/{self.pid}/cmdline').exists() and Path(f'/proc/{self.pid}/cmdline').read_bytes():return None
+                        self.returncode=0 if (self.folder/'result.json').exists() else 1
+                        return self.returncode
+                    def wait(self,timeout=30):
+                        deadline=time.time()+timeout
+                        while self.poll() is None:
+                            if time.time()>deadline:raise subprocess.TimeoutExpired(str(self.pid),timeout)
+                            time.sleep(.2)
+                        return self.returncode
+                running[gpu]=(Adopted(pid,folder),(a.out/'logs'/(j['name']+'.adopt.log')).open('a'),j)
+            else:remaining.append(j)
+        jobs=remaining
     def stop(signum,frame):raise KeyboardInterrupt(f'signal {signum}')
     signal.signal(signal.SIGTERM,stop);signal.signal(signal.SIGINT,stop)
     try:
