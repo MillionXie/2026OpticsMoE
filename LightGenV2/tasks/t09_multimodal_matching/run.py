@@ -65,10 +65,12 @@ def evaluate(model, frontend, data, batch, ablation=None):
     p = torch.cat(preds);y=data['labels'].cpu()
     if ablation == 'swap_pair_text':
         y = 1-y
-    q=torch.cat(routes)
+    q=torch.cat(routes);energy=torch.cat(captures)
     metrics=dict(accuracy=float((p.argmax(1)==y).float().mean()),
                  nll=float(F.nll_loss(p.clamp_min(1e-12).log(),y)),
-                 capture=float(torch.cat(captures).mean()),
+                 capture=float(energy.mean()),
+                 zero_detector_fraction=float((energy==0).float().mean()),
+                 near_epsilon_detector_fraction=float((energy<=2e-12).float().mean()),
                  route_mean=q.mean(0).tolist(), route_std=q.std(0).tolist(),
                  route_top_frequency=torch.bincount(q.argmax(1),minlength=4).div(len(q)).tolist())
     return metrics,p.numpy()
