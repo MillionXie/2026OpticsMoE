@@ -39,10 +39,13 @@ def main():
         frontend_changed=state_sha(initial)!=state_sha(frontend)
         for arch in ['moe','d2nn']:
             if not (run/mode/arch/'best_checkpoint.pt').exists():continue
-            model=OpticalOEO(arch,cfg['seed']).cuda()
+            layout=cfg.get('input_layout','legacy')
+            model=OpticalOEO(arch,cfg['seed'],input_layout=layout).cuda()
             checkpoint=torch.load(run/mode/arch/'best_checkpoint.pt',weights_only=False)
             model.load_state_dict(checkpoint['model']);model.requires_grad_(False).eval()
-            baseline,_=evaluate(model,frontend,data,32)
+            baseline,probabilities=evaluate(model,frontend,data,32)
+            baseline['yes_probability_std']=float(probabilities[:,1].std())
+            baseline['yes_prediction_fraction']=float((probabilities.argmax(1)==1).mean())
             recorded=json.loads((run/mode/arch/'result.json').read_text())['val']
             assert abs(baseline['accuracy']-recorded['accuracy'])<1e-6
             assert abs(baseline['nll']-recorded['nll'])<1e-5
@@ -64,9 +67,10 @@ def main():
                 model.route=original_route
             # Physical input support is not the same as aperture envelope coverage.
             images=data['images'][data['index'][:32]]
-            amplitude=encode(images,frontend(data['ids'][:32]))
+            amplitude=encode(images,frontend(data['ids'][:32]),layout)
             controls['input_nonzero_fraction']=float((amplitude>0).float().mean())
-            controls['text_nonzero_fraction']=float((amplitude[:,112:,112:]>0).float().mean())
+            text_region=amplitude[:,112:,112:] if layout=='legacy' else (amplitude[:,112:] if layout=='two_band' else amplitude[:,1::2])
+            controls['text_nonzero_fraction']=float((text_region>0).float().mean())
             results[mode+'/'+arch]=dict(baseline=baseline,controls=controls,frontend_changed_during_warmup=frontend_changed)
     save(a.out/'diagnostics.json',dict(results=results,test_accessed=False,
          note='Constant/unpaired inputs and inference-only uniform routing are perturbation diagnostics, not retrained baselines. Original swap_pair_text evaluation is a permutation of existing pairs and NOT independent evidence.'))
