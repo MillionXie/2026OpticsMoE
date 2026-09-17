@@ -106,7 +106,8 @@ def matrix(cfg, datasets, pilot=False, fixed_global=False):
 def check(cfg):
     assert cfg["geometry"]["expert_side_px"] == 224
     assert cfg["geometry"]["gap_px"] == 30
-    assert cfg["geometry"]["pixel_pitch_um"] == 8
+    assert cfg["geometry"]["pixel_pitch_um"] == 17
+    assert cfg["geometry"]["phase_device_pixel_pitch_um"] == 8
     assert cfg["geometry"]["hardware_size_limit_applied"] is False
     assert 2 * cfg["model"]["rgb_channel_side_px"] == 224
     assert cfg["model"]["oeo_after_every_feature_layer"]

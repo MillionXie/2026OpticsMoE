@@ -1,13 +1,15 @@
 {
   "schema_version": 1,
   "status": "design_only_not_a_training_config",
-  "protocol": "raw_rgb_fullfield_oeo_v1",
+  "protocol": "raw_rgb_fullfield_oeo_17um_phase8um_v2",
   "expert_counts": [4, 9, 16, 25, 36, 49],
   "geometry": {
     "expert_side_px": 224,
     "gap_px": 30,
     "outer_margin_px": 20,
-    "pixel_pitch_um": 8.0,
+    "pixel_pitch_um": 17.0,
+    "phase_device_pixel_pitch_um": 8.0,
+    "phase_device_mapping": "physical_pitch_nearest",
     "wavelength_nm": 532.0,
     "propagation_distance_m": 0.1,
     "fft_padding_factor_initial": 2,

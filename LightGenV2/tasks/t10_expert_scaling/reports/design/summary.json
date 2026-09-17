@@ -1,7 +1,7 @@
 {
   "status": "design_only_no_training_results",
   "checks": "passed_geometry_matrix_entrance_power",
-  "protocol_sha256": "540b3c9818e9236e5faba92df1be0a117285bd8c8632411961230b2f68953bde",
+  "protocol_sha256": "2a3f65756f1e1132244ba142621ede10cae97a8d9d11dfe6e2ccc231ad13eb44",
   "primary_datasets": [
     "kather2016",
     "deepweeds"
