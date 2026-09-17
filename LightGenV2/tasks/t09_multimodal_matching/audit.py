@@ -3,6 +3,7 @@ import argparse
 import json
 from pathlib import Path
 import numpy as np
+import torch
 
 from .prepare import save, digest
 
@@ -23,9 +24,12 @@ def main():
     keys=sorted(set(image_ids))
     groups=[np.array([i for i,x in enumerate(image_ids) if x==k]) for k in keys]
     report={};correct={};frontends={};phase_hashes={}
+    visual_hashes=[]
     for run in a.runs:
         status=json.loads((run/'status.json').read_text());assert status['status']=='complete'
         assert status['test_accessed'] is False
+        if (run/'shared_visual_frontend.json').exists():
+            visual_hashes.append(json.loads((run/'shared_visual_frontend.json').read_text()))
         for path in run.glob('*/*/result.json'):
             mode=path.parent.parent.name;arch=path.parent.name;key=mode+'/'+arch
             result=json.loads(path.read_text());pred=np.load(path.parent/'predictions.npz')
@@ -38,11 +42,15 @@ def main():
                 assert np.isfinite(pred[split]).all()
                 assert np.allclose(pred[split].sum(1),1,atol=1e-6)
             assert digest((path.parent/'best_checkpoint.pt').read_bytes())==result['best_checkpoint_sha256']
+            checkpoint=torch.load(path.parent/'best_checkpoint.pt',map_location='cpu',weights_only=False)
+            phase_hashes.setdefault(arch,[]).append(checkpoint['initial_phase_sha256'])
             frontends.setdefault(mode,[]).append(result['frontend_sha256'])
             correct[key]=(pred['val'].argmax(1)==pred['val_labels']).astype(float)
             report[key]=dict(result,verified_prediction_metrics=True,verified_validation_selection=True,
                             source_run=str(run))
     for hashes in frontends.values():assert len(set(hashes))==1
+    for hashes in phase_hashes.values():assert len(set(hashes))==1
+    if visual_hashes:assert all(v==visual_hashes[0] for v in visual_hashes)
     rng=np.random.default_rng(20260917);comparisons={}
     for left,right in [('fixed/moe','fixed/d2nn'),('learned/moe','learned/d2nn'),
                        ('learned/moe','fixed/moe'),('learned/d2nn','fixed/d2nn')]:
@@ -60,6 +68,9 @@ def main():
     save(a.out/'verification.json',dict(passed=True,results=report,comparisons=comparisons,
                                        question_only_train_prior_accuracy=float((prior==truth).mean()),
                                        image_only_balanced_query_baseline=.5,
+                                       shared_visual_features_identical=bool(visual_hashes),
+                                       identical_optical_initialization_across_encodings=True,
+                                       uncertainty_scope='Conditional on validation-selected models; excludes training-seed and model-selection uncertainty',
                                        unique_validation_images=len(groups),test_accessed=False))
     print(json.dumps(dict(comparisons=comparisons,results={k:{'train':v['train']['accuracy'],'val':v['val']['accuracy']} for k,v in report.items()}),indent=2))
 
