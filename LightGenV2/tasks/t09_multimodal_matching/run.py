@@ -78,7 +78,7 @@ def build_models(seed, device):
     return {arch:OpticalOEO(arch,seed).to(device) for arch in ARCHS}
 
 
-def train_epoch(models,frontend,data,optimizer,batch,epoch,seed):
+def train_epoch(models,frontend,data,optimizer,batch,epoch,seed,feature_dropout=0.):
     for model in models.values():model.train()
     frontend.train(any(p.requires_grad for p in frontend.parameters()))
     generator=torch.Generator(device=data['ids'].device).manual_seed(seed+epoch)
@@ -86,6 +86,12 @@ def train_epoch(models,frontend,data,optimizer,batch,epoch,seed):
     running=0
     for _,images,ids,y in batches(data,batch,order):
         optimizer.zero_grad(set_to_none=True)
+        if feature_dropout:
+            assert images.ndim==2, 'Feature dropout requires the frozen visual encoder'
+            mask=torch.rand(images.shape,device=images.device,generator=generator)>=feature_dropout
+            # Guarantee nonzero input even for a very sparse visual feature vector.
+            dropped=images*mask
+            images=torch.where(dropped.square().sum(1,keepdim=True)>0,dropped,images)
         amplitude=encode(images,frontend(ids))
         costs=[loss(model(amplitude),y) for model in models.values()]
         cost=torch.stack(costs).mean()
@@ -158,7 +164,7 @@ def run_mode(args,train,val,vocab,mode):
                                     {'params':[p for m in models.values() for p in m.parameters()],'lr':args.lr}])
         best=float('inf');history=[]
         for epoch in range(1,args.warmup_epochs+1):
-            start=time.time();cost=train_epoch(models,frontend,train,optimizer,args.batch,epoch,args.seed)
+            start=time.time();cost=train_epoch(models,frontend,train,optimizer,args.batch,epoch,args.seed,args.feature_dropout)
             scores={arch:evaluate(model,frontend,val,args.batch)[0] for arch,model in models.items()}
             objective=np.mean([x['nll'] for x in scores.values()])
             row=dict(epoch=epoch,train_online_nll=cost,val=scores,selection_mean_nll=float(objective),seconds=time.time()-start)
@@ -184,7 +190,7 @@ def run_mode(args,train,val,vocab,mode):
         scheduler=torch.optim.lr_scheduler.CosineAnnealingLR(optimizer,args.epochs,eta_min=args.lr*.1)
         best=float('inf');history=[]
         for epoch in range(1,args.epochs+1):
-            start=time.time();cost=train_epoch({arch:model},frontend,train,optimizer,args.batch,epoch,args.seed)
+            start=time.time();cost=train_epoch({arch:model},frontend,train,optimizer,args.batch,epoch,args.seed,args.feature_dropout)
             train_score,_=evaluate(model,frontend,train,args.batch)
             val_score,_=evaluate(model,frontend,val,args.batch)
             assert state_sha(frontend)==frozen_hash
@@ -222,7 +228,10 @@ def main():
     p.add_argument('--warmup-epochs',type=int,default=8);p.add_argument('--batch',type=int,default=32)
     p.add_argument('--lr',type=float,default=.01);p.add_argument('--frontend-lr',type=float,default=.001)
     p.add_argument('--vision-checkpoint',type=Path)
+    p.add_argument('--feature-dropout',type=float,default=0.)
     args=p.parse_args();args.out.mkdir(parents=True,exist_ok=False)
+    assert 0<=args.feature_dropout<1
+    assert not args.feature_dropout or args.vision_checkpoint
     torch.set_num_threads(4);torch.backends.cudnn.benchmark=False
     setseed(args.seed);metadata(args,args.out);save(args.out/'status.json',dict(status='running',pid=os.getpid()))
     vocab=json.loads((args.data/'vocab.json').read_text())
