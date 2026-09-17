@@ -13,7 +13,7 @@ from .prepare import COLORS, SHAPES, save, digest
 
 
 class VisionEncoder(nn.Module):
-    def __init__(self):
+    def __init__(self, num_classes=24):
         super().__init__()
         layers=[];cin=3
         for cout in [16,32,64]:
@@ -21,7 +21,7 @@ class VisionEncoder(nn.Module):
             cin=cout
         layers.extend([nn.Conv2d(64,128,1),nn.ReLU(),nn.AdaptiveAvgPool2d(1),nn.Flatten()])
         self.features=nn.Sequential(*layers)
-        self.head=nn.Linear(128,24)
+        self.head=nn.Linear(128,num_classes)
 
     def forward(self, x):
         z=self.features(x.permute(0,3,1,2).float()/255)
@@ -48,8 +48,8 @@ def evaluate(model,data):
 
 @torch.no_grad()
 def frozen_features(checkpoint, images):
-    model=VisionEncoder().cuda()
     state=torch.load(checkpoint,map_location='cuda',weights_only=False)
+    model=VisionEncoder(state['model']['head.weight'].shape[0]).cuda()
     model.load_state_dict(state['model']);model.requires_grad_(False).eval()
     result=torch.cat([model(x)[0] for x in images.split(64)])
     return result
