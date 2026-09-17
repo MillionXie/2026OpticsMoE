@@ -247,6 +247,7 @@ def main():
     assert 0<=args.feature_dropout<1
     assert not args.feature_dropout or args.vision_checkpoint
     assert not args.visual_flip or args.vision_checkpoint
+    assert not args.feature_cache or args.vision_checkpoint
     assert 0<=args.phase_dropout<1
     torch.set_num_threads(4);torch.backends.cudnn.benchmark=False
     setseed(args.seed);metadata(args,args.out);save(args.out/'status.json',dict(status='running',pid=os.getpid()))
