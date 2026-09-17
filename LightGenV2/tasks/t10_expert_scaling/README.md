@@ -22,6 +22,15 @@ DeepWeeds仍未训练。新增CPU候选审计入口：
 输出跨split dHash候选、接近拍摄时间的分组统计与候选图；候选并不等于已确认同一植株。
 审计不会自动把training_ready改为true，也不更改官方划分。
 
+DeepWeeds全量CPU审计已完成：54对跨split dHash≤4候选；样例可见近乎相同的连续拍摄画面。
+证据run：`runs/smoke/deepweeds_scene_audit_20260918`，源码c90bd143。
+后续采用独立`deepweeds_date_camera_grouped_s17_v1`：按拍摄日期+相机分组，再合并54对候选涉及的组；
+StratifiedGroupKFold(5, shuffle=True, random_state=17)，固定fold0测试、fold1验证、其余训练，
+不搜索seed/fold，不用模型表现挑划分。组是场景代理而非真实植株身份，不声称完全生物学独立。
+`prepare_deepweeds_grouped.py --data <official-cache> --audit <audit-run> --out <separate-cache>`
+验证原缓存hash、标签、图像ID完整覆盖、组互斥、候选不再跨split、各类非空后生成新缓存及清单；
+官方缓存保持training_ready=false，只有新分组缓存允许训练。
+
 ## 最新执行约定：GPU0/1/2、4专家全k、专家+global匹配
 
 用户追加要求已执行。当前实际训练数据只有**Kather2016，5000张、8类组织图像**，
