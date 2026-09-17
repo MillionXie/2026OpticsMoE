@@ -216,11 +216,20 @@ def main():
     p.add_argument('--seed',type=int,default=17);p.add_argument('--epochs',type=int,default=12)
     p.add_argument('--warmup-epochs',type=int,default=8);p.add_argument('--batch',type=int,default=32)
     p.add_argument('--lr',type=float,default=.01);p.add_argument('--frontend-lr',type=float,default=.001)
+    p.add_argument('--vision-checkpoint',type=Path)
     args=p.parse_args();args.out.mkdir(parents=True,exist_ok=False)
     torch.set_num_threads(4);torch.backends.cudnn.benchmark=False
     setseed(args.seed);metadata(args,args.out);save(args.out/'status.json',dict(status='running',pid=os.getpid()))
     vocab=json.loads((args.data/'vocab.json').read_text())
     train=load_data(args.data,'train',vocab,'cuda');val=load_data(args.data,'val',vocab,'cuda')
+    if args.vision_checkpoint:
+        from .vision import frozen_features
+        visual={}
+        for split,data in [('train',train),('val',val)]:
+            data['images']=frozen_features(args.vision_checkpoint,data['images'])
+            visual[split+'_feature_sha256']=digest(data['images'].cpu().numpy().tobytes())
+        visual['checkpoint_sha256']=digest(args.vision_checkpoint.read_bytes())
+        save(args.out/'shared_visual_frontend.json',visual)
     assert set(x['image_id'] for x in train['rows']).isdisjoint(x['image_id'] for x in val['rows'])
     if args.phase=='smoke':smoke(args,train,vocab)
     else:
