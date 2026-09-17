@@ -1,6 +1,10 @@
 # T10 专家数量与 Top-k 扩展实验
 
-当前状态：**已实现新模型和训练器，正在进行CUDA结构与物理检查；正式训练尚未开始。**
+当前状态：**已通过CUDA结构/梯度检查，seed17的Kather验证校准正在三张GPU上训练。**
+运行：`runs/simulation/kather_calibration_s17_17um_uuid_20260917`，训练源码`752d2995`。
+GPU按物理UUID绑定0/1/6；最多三张，子进程逐run退出，队列结束/异常时检查释放。
+当前12个配置用于N=9的共同深度与学习率校准，不是完整专家数矩阵的最终成绩。
+DeepWeeds仍在数据获取/审计阶段；原始PBC未启动。详细证据见[复现入口](reports/reproduction/README.md)。
 本轮研究仿真性能，不以 SLM 版面限制 N。用户最新指定输入逻辑像素17 μm、相位设备8 μm、专家间隔30逻辑px；
 专家采用正式 T01/T02/T08 的 **224×224 px**，不沿用病理 demo 的 146×146。
 尺寸依据：T08 `reports/optical_router_moe_20260907/main/config.yaml` 的
@@ -71,6 +75,7 @@ D2NN+OEO：同一输入编码 → 覆盖其有效相位面的上采样
 
 - [详细实验协议](docs/PROTOCOL.md)：输入、OEO、路由、损失、公平性与数据划分。
 - [设计配置](configs/study.json)：机器可读设计参数；**不是已有训练入口可加载的配置**。
+- [训练入口](train.py)读取设计配置并记录实际参数；[三卡队列](schedule.py)当前提供calibration阶段。
 - [主实验矩阵](reports/design/main_matrix.csv)、[几何/参数表](reports/design/geometry.csv)。
 - [复现入口](reports/reproduction/README.md)：本任务唯一证据入口，当前无新性能数值。
 
