@@ -1,0 +1,22 @@
+{
+  "source": "https://zenodo.org/records/3966543/files/annotations.csv?download=1",
+  "record": "https://zenodo.org/records/3966543",
+  "license": "CC BY 4.0",
+  "sha256": "65951d6e2c9609aa0d6b296fb6d56d852c6acf3a222092c41a352f99129b10c0",
+  "splits": {
+    "test": {
+      "recordings": 664,
+      "sensors": 48
+    },
+    "train": {
+      "recordings": 13538,
+      "sensors": 35
+    },
+    "validate": {
+      "recordings": 4308,
+      "sensors": 9
+    }
+  },
+  "label_values_not_analyzed": true,
+  "training_started": false
+}

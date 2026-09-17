@@ -1,0 +1,20 @@
+{
+  "clevr_long30_test_s17_v1/locked_selection.json": "0cab330dc528667beb1a10bc75ecac34a39c323e39e417b5061d27732011f642",
+  "clevr_long30_test_s17_v1/long30_phase05_moe_predictions.npz": "4bdb7b2fa6056cf40c6f3e601d48504a3f3fe3096a67927d3a6b2bb92602e90e",
+  "clevr_long30_test_s17_v1/metadata.json": "1616b29e74064b1e6256f4fbf1f4bdad89bda2402f1f165b21b94bd0514bd688",
+  "clevr_long30_test_s17_v1/status.json": "26c2e5f1aff8463f99eb8ba392d785aa849c6975c3e85d68886fd8ca6720f479",
+  "clevr_long30_test_s17_v1/test_questions.json": "ba19956992118edbc5cb680a27647fbba409026f11ad16a60a552b7a386a3a6e",
+  "clevr_long30_test_s17_v1/long30_phase05_d2nn_predictions.npz": "9a50f1dbd683aa75b7b128352ca55eedb6daeee0f65f6f44646467c57a06b3bd",
+  "clevr_long30_test_s17_v1/test_manifest.json": "567e22caf2b5dc55b0a7fc41cdfcc627cd4412c0619dc7f5aeae54d2859f6760",
+  "clevr_long30_test_s17_v1/results.json": "9efd6aa7474b97e333b7b2af9faeafb2ee98685c97c952550379470b2c25bd27",
+  "clevr_long30_test_s17_v1/long30_d2nn_predictions.npz": "0d36e4e18963b44d90df9ec917fd92d18933caf942a5bfa0acb8c5d928b31d45",
+  "clevr_long30_test_s17_v1/long30_moe_predictions.npz": "d234814c7190cd708d53c4f97220d8f05486e9c4fa403578a1c9db9d0e1495ea",
+  "audio_test_s17_v1/locked_selection.json": "6d183b61a5a121e829c57a71bf82112f71c53bc3e696022e904a7c4097bf56cc",
+  "audio_test_s17_v1/metadata.json": "3c1efde1ebbb78838ddb1fa56c2768e045be439242b10ae96e2da3991df659eb",
+  "audio_test_s17_v1/status.json": "26c2e5f1aff8463f99eb8ba392d785aa849c6975c3e85d68886fd8ca6720f479",
+  "audio_test_s17_v1/test_questions.json": "5a21ce33be242f9996b123c2ba4d17d5f44ad6c3d63564d10d4e093c8e388dbd",
+  "audio_test_s17_v1/test_manifest.json": "0540b363b1faf6f782a647d9e2daf43622bc05bf59981f4dcf9c345c257be1f0",
+  "audio_test_s17_v1/results.json": "ac97b01bd8d0f0eac4baddef4a7f3fc73cecebe0f98fd60586e372504dd7b008",
+  "audio_test_s17_v1/audio_moe_predictions.npz": "3c82e93470e38e54fcb49fb9cc42270969fb97d11d5c81e56ceea8aea642f670",
+  "audio_test_s17_v1/audio_d2nn_predictions.npz": "f30f7b2eb3f2861c35b330c310d52c7c39c17d6c191f66de6d1c4011c22cc882"
+}

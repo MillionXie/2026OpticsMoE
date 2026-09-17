@@ -1,0 +1,65 @@
+{
+  "long30/moe": {
+    "epoch": 8,
+    "train": 80.81666827201843,
+    "val": 68.99999976158142,
+    "test": 69.73333333333333
+  },
+  "long30/d2nn": {
+    "epoch": 18,
+    "train": 81.2333345413208,
+    "val": 72.13333249092102,
+    "test": 71.8
+  },
+  "long30_paired_test_difference": {
+    "percentage_points": -2.0666666666666664,
+    "conditional_cluster_95ci": [
+      -4.0,
+      -0.26666666666666666
+    ],
+    "cluster": "image_id",
+    "scope": "Fixed fitted models only; excludes seed and adaptive model-selection uncertainty"
+  },
+  "long30_phase05/moe": {
+    "epoch": 22,
+    "train": 81.63333535194397,
+    "val": 73.1333315372467,
+    "test": 72.39999999999999
+  },
+  "long30_phase05/d2nn": {
+    "epoch": 30,
+    "train": 62.34999895095825,
+    "val": 57.40000009536743,
+    "test": 57.199999999999996
+  },
+  "long30_phase05_paired_test_difference": {
+    "percentage_points": 15.2,
+    "conditional_cluster_95ci": [
+      12.8,
+      17.533333333333335
+    ],
+    "cluster": "image_id",
+    "scope": "Fixed fitted models only; excludes seed and adaptive model-selection uncertainty"
+  },
+  "audio/moe": {
+    "epoch": 9,
+    "train": 96.63100838661194,
+    "val": 94.30605173110962,
+    "test": 94.23298731257209
+  },
+  "audio/d2nn": {
+    "epoch": 23,
+    "train": 97.16589450836182,
+    "val": 94.00948882102966,
+    "test": 94.86735870818916
+  },
+  "audio_paired_test_difference": {
+    "percentage_points": -0.6343713956170703,
+    "conditional_cluster_95ci": [
+      -1.3990693652924597,
+      0.10321524904436255
+    ],
+    "cluster": "speaker",
+    "scope": "Fixed fitted models only; excludes seed and adaptive model-selection uncertainty"
+  }
+}

@@ -97,3 +97,33 @@ python -m LightGenV2.tasks.t09_multimodal_matching.audio_frontend --data AUDIO_D
 python -m LightGenV2.tasks.t09_multimodal_matching.run --data AUDIO_DATA --vision-checkpoint AUDIO_FRONTEND/best_checkpoint.pt --mode fixed --epochs 30 --architecture both --out AUDIO_RUN
 ```
 单进程both会只提取一次共享前端特征后依次训练两架构，避免跨设备特征差异。拆分设备运行时应传入同一个已校验的--feature-cache。所有OUT必须为新的任务runs路径，旧run不得覆盖。
+# 2026-09-17补评：已锁定模型的独立测试
+
+本节为固定权重复评，未重新训练。测试源码commit `fe5f5d8b`，PyTorch及设备信息、CNN SHA256、数据SHA256见各评估run的metadata.json；checkpoint路径/轮次/SHA256见locked_selection.json。先锁定验证NLL最优权重，再使用测试标签。测试特征只提取一次，所有相应模型共用。光学训练与预训练来源仍见下方历史记录。
+
+|任务/配置|模型|选中轮次|训练accuracy|验证accuracy|测试accuracy|
+|---|---|---:|---:|---:|---:|
+|CLEVR，30轮，无phase dropout|MoE+OEO|8|80.82%|69.00%|69.73%|
+|同上|D2NN+OEO|18|81.23%|72.13%|71.80%|
+|CLEVR，30轮，phase dropout 0.05|MoE+OEO|22|81.63%|73.13%|72.40%|
+|同上|D2NN+OEO|30|62.35%|57.40%|57.20%|
+|Mini Speech Commands音文匹配，30轮|MoE+OEO|9|96.63%|94.31%|94.23%|
+|同上|D2NN+OEO|23|97.17%|94.01%|94.87%|
+
+表内三个划分均对应同一个验证选中的checkpoint，训练评估关闭dropout；不是最后一轮训练accuracy与最佳轮测试混用。CLEVR测试250幅图、1500问题；音文867段音频、1734问题、175个未参与训练/验证的说话人。逐样本概率独立复算accuracy/NLL通过，绘图脚本还核对训练审计中的checkpoint SHA与测试锁定SHA一致。只有seed17，不代表多种子结论。
+
+图文有phase dropout的MoE与充分训练无dropout的D2NN相比，测试仅高0.60个百分点；不能报告相对训练不足的dropout-D2NN有15.20个百分点“架构优势”。音文MoE测试低0.63个百分点；按说话人重采样的条件95%区间为[-1.40,0.10]个百分点，不能支持明确领先，且此区间不包含随机种子及选模不确定性。
+
+图文无正则MoE后期训练接近99%且验证NLL明显变差，是过拟合；phase dropout缓解后期恶化，但选中模型训练81.63%、测试72.40%，仍有泛化差距，不能宣称消除过拟合。音文选中模型差距约2.4/2.3个百分点，当前高准确率更应结合简单任务与任务监督电子前端解读。
+
+输出：`runs/simulation/clevr_long30_test_s17_v1`、`runs/simulation/audio_test_s17_v1`；下载证据及SHA清单：`reports/figures/selected_test_s17_20260917/transfer_manifest.json`；图：同目录`train_val_test.png/pdf`；独立复算摘要：`verified_summary.json`。所有评估进程结束，使用的RTX4090显存已释放。
+
+服务器项目根目录下的实际命令（Python为`/home/guest3/miniconda3/envs/xml/bin/python`，CUDA_VISIBLE_DEVICES均为`GPU-1b963983-7909-af6e-0528-f0f0661ab549`）：
+
+```bash
+python -m LightGenV2.tasks.t09_multimodal_matching.test_selected --kind clevr --data /DATA/DATA1/guest3/demo_reproduction_data/clevr_attribute_s17_v1 --runs LightGenV2/tasks/t09_multimodal_matching/runs/simulation --out LightGenV2/tasks/t09_multimodal_matching/runs/simulation/clevr_long30_test_s17_v1 --cache LightGenV2/tasks/t09_multimodal_matching/runs/simulation/clevr_frozen_test_s17_v1
+python -m LightGenV2.tasks.t09_multimodal_matching.test_selected --kind audio --data /DATA/DATA1/guest3/demo_reproduction_data/mini_speech_matching_s17_v3 --runs LightGenV2/tasks/t09_multimodal_matching/runs/simulation --out LightGenV2/tasks/t09_multimodal_matching/runs/simulation/audio_test_s17_v1 --cache /DATA/DATA1/guest3/demo_reproduction_data/mini_speech_matching_s17_v1/mini_speech_commands.zip
+python -m LightGenV2.tasks.t09_multimodal_matching.plot_selected_test
+```
+
+每次正式配置完成后评估验证选中权重的测试结果并完整记录；测试不用于选择轮次、阈值或正则。后续调参公平合同和完整电子/光学计算图见任务README的“当前计算图、测试与公平调参合同”。下文“未测试”为各历史记录当时状态，以本节补评为准。
