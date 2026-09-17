@@ -2,6 +2,8 @@
 
 ## 2026-09-17：用户指定展示第65轮
 
+恢复入口：`offline_tune.py --project 工程 --session test1000_02 --output 新run --replay-from 原100轮run --epochs 100 --stop-after-epoch 65 --lr 0.0001 --batch-size 32 --seed 20260916 --device cuda`。复用校验后的实测缓存，从原始模型及新AdamW重放，不加载原best/last；100轮学习率曲线不缩短。每轮记录与原历史的指标/loss误差，最后重载last核验全部三组、四操作指标；失败标为replay_mismatch，不冒充恢复成功。选定权重是新run的last（epoch65），不是自动best。
+
 实测末端适配指定结果为epoch65：200条选模留出集修改格准确率0.8575、整场景0.725。完整口径及指标见[第65轮结果](reports/reproduction/HARDWARE_EPOCH65.md)。这不是原自动best，也不是未微调全1000条结果。原训练只保留best/last，第65轮PT未保存，权重恢复待完成；未将其他权重改名或更换部署权重。原始记录保留。
 
 ## 2026-09-16：续训至200轮已完成

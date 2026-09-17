@@ -37,6 +37,20 @@ def test_resume_preserves_protocol_and_extends_epochs():
         with pytest.raises(ValueError):validate_resume_config(old,SimpleNamespace(**dict(old,**changes)))
 
 
+def test_replay_preserves_original_schedule_and_stops_early():
+    from types import SimpleNamespace
+    from LightGenV2.tasks.t04_semantic_interaction.lab_adaptation import validate_replay_config, metric_error
+    old=dict(session='same',seed=1,batch_size=32,epochs=100,lr=1e-4,device='cuda')
+    current=dict(old,stop_after_epoch=65)
+    validate_replay_config(old,SimpleNamespace(**current))
+    for changes in ({'epochs':65},{'stop_after_epoch':0},{'stop_after_epoch':101},{'lr':1e-6},{'seed':2}):
+        with pytest.raises(ValueError):validate_replay_config(old,SimpleNamespace(**dict(current,**changes)))
+    with pytest.raises(ValueError):validate_replay_config(dict(old,resume_from='other'),SimpleNamespace(**current))
+    m={'s':{'overall':{'accuracy':.8}}}
+    assert metric_error(m,m)==0
+    assert metric_error(m,{'s':{'overall':{'accuracy':.7}}})==pytest.approx(.1)
+
+
 def test_training_changes_only_downstream_head_and_cached_metric_pipeline():
     try:
         import torch

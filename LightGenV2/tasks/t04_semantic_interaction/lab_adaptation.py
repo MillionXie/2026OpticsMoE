@@ -45,6 +45,21 @@ def validate_resume_config(previous, current):
         raise ValueError('Resume target must exceed previous epochs')
 
 
+def validate_replay_config(previous, current):
+    for key in ('session', 'seed', 'batch_size', 'epochs', 'lr', 'device'):
+        if previous[key] != getattr(current, key):
+            raise ValueError('Replay must preserve '+key)
+    if not 1 <= current.stop_after_epoch <= previous['epochs']:
+        raise ValueError('Replay stop must be within original schedule')
+    if previous.get('resume_from') or previous.get('replay_from'):
+        raise ValueError('Replay requires the original fresh run')
+
+
+def metric_error(actual, expected):
+    return max(abs(v-expected[s][g][k]) for s,groups in actual.items()
+               for g,values in groups.items() for k,v in values.items())
+
+
 def dump(path, value):
     path = Path(path); path.parent.mkdir(parents=True, exist_ok=True)
     path.write_text(json.dumps(value, ensure_ascii=False, indent=2), encoding='utf-8')
@@ -221,8 +236,38 @@ def run(a):
          protocol='frozen six measured optical passes; downstream shared readout only; no hardware',
          selection='holdout200 scene exact then changed-cell/IoU/F1; not independent final test'))
     resume = Path(a.resume_from).resolve() if a.resume_from else None
+    replay_from = Path(a.replay_from).resolve() if a.replay_from else None
+    end_epoch = a.stop_after_epoch if replay_from else a.epochs
+    replay_errors = []
     last = None
-    if resume:
+    if replay_from:
+        from .lab_runtime import load_model
+        from .lab_bench import open_session
+        previous = json.loads((replay_from/'config.json').read_text())
+        validate_replay_config(previous,a)
+        if json.loads((replay_from/'status.json').read_text())['status'] != 'complete':
+            raise ValueError('Replay requires completed original run')
+        if previous['torch_version'] != torch.__version__ or previous['device_name'] != torch.cuda.get_device_name():
+            raise ValueError('Replay environment differs from original')
+        root,session,_,_,release = open_session(a)
+        model,cfg = load_model(root,a.device); model.requires_grad_(False).eval()
+        cache_path = replay_from/'readout_inputs.pt'
+        cache = torch.load(cache_path,map_location='cpu',weights_only=False)
+        if cache['checkpoint_sha256'] != release['checkpoint_sha256'] or cache['session_sha256'] != digest(session/'session.json') or cache['baseline_result_sha256'] != digest(session/'results.json'):
+            raise ValueError('Replay cache/session/checkpoint identity changed')
+        train,held = stratified_split(cache['rows'],a.seed)
+        split = json.loads((replay_from/'split.json').read_text())
+        if train != split['adaptation_indices'] or held != split['holdout_indices']:
+            raise ValueError('Replay split changed')
+        reference = {r['epoch']:r for r in (json.loads(line) for line in (replay_from/'epochs.jsonl').read_text().splitlines())}
+        if not all(i in reference for i in range(end_epoch+1)):
+            raise ValueError('Incomplete reference history')
+        for name in ('split.json','baseline_measured.json','same_checkpoint_remove_optical.json'):
+            shutil.copy2(replay_from/name,out/name)
+        dump(out/'replay_provenance.json',dict(original_run=str(replay_from),original_config=previous,
+             cache_path=str(cache_path),cache_sha256=digest(cache_path),history_sha256=digest(replay_from/'epochs.jsonl'),
+             schedule_epochs=a.epochs,stop_after_epoch=end_epoch,initialization='original pinned model, fresh AdamW; not best/last'))
+    elif resume:
         from .lab_runtime import load_model
         from .lab_bench import open_session
         previous = json.loads((resume/'config.json').read_text())
@@ -265,6 +310,10 @@ def run(a):
         if last['trainable_names'] != names or state_digest(head,frozen) != frozen_digest:
             raise ValueError('Resume trainable scope/frozen parameters mismatch')
     original_model_digest = state_digest(model)
+    if replay_from:
+        original_scope = json.loads((replay_from/'trainable_parameters.json').read_text())
+        if original_scope['original_model_sha256'] != original_model_digest or original_scope['names'] != names:
+            raise ValueError('Replay initial model or trainable scope changed')
     dump(out/'trainable_parameters.json', dict(names=names, count=sum(p.numel() for p in head.parameters() if p.requires_grad),
          frozen_summary_and_task_head=frozen, original_model_sha256=original_model_digest))
     optimizer = torch.optim.AdamW([p for p in head.parameters() if p.requires_grad], lr=a.lr, weight_decay=1e-4)
@@ -286,7 +335,7 @@ def run(a):
     writer = csv.DictWriter(csv_file, fieldnames=['epoch','split','operation','metric','value','training_loss','lr'])
     if not resume:writer.writeheader()
     try:
-        for epoch in range(start_epoch,a.epochs+1):
+        for epoch in range(start_epoch,end_epoch+1):
             lr = resume_lr if resume else a.lr * (0.01 + 0.99 * (1+math.cos(math.pi*max(0,epoch-1)/max(1,a.epochs-1)))/2)
             for group in optimizer.param_groups: group['lr'] = lr
             train_loss = 0.0
@@ -309,6 +358,12 @@ def run(a):
                         if abs(v-metrics['all1000'][g][k])>1e-7: raise RuntimeError('Cached epoch0 differs from replay')
             if state_digest(head,frozen) != frozen_digest: raise RuntimeError('Upstream-used head parameters changed')
             record = dict(epoch=epoch,training_loss=train_loss,lr=lr,metrics=metrics)
+            if replay_from:
+                expected = reference[epoch]
+                if lr != expected['lr']: raise RuntimeError('Replay learning rate changed')
+                replay_errors.append(dict(epoch=epoch,metric_max_error=metric_error(metrics,expected['metrics']),
+                                          loss_error=abs(train_loss-expected['training_loss'])))
+                dump(out/'replay_progress.json',replay_errors)
             history_file.write(json.dumps(record)+'\n')
             for split, groups in metrics.items():
                 for operation, values in groups.items():
@@ -325,17 +380,34 @@ def run(a):
                 best_key,best_epoch,best_metrics = key,epoch,metrics
                 torch.save(payload,out/'best_checkpoint.pt')
                 dump(out/'best_predictions.json',dict(epoch=epoch,rows=rows))
-            dump(out/'status.json',dict(status='training',epoch=epoch,total_epochs=a.epochs,best_epoch=best_epoch,
+            dump(out/'status.json',dict(status='training',epoch=epoch,total_epochs=end_epoch,best_epoch=best_epoch,
                  best_holdout=best_metrics['holdout200']['overall']))
     finally:
         history_file.close(); csv_file.close()
     if state_digest(model) != original_model_digest: raise RuntimeError('Base model changed')
     dump(out/'summary.json',dict(status='complete',best_epoch=best_epoch,best_metrics=best_metrics,
-         last_epoch=a.epochs,base_model_unchanged=True,frozen_summary_unchanged=True,
+         last_epoch=end_epoch,base_model_unchanged=True,frozen_summary_unchanged=True,
          selection='holdout200 scene exact then changed-cell/IoU/F1; holdout used for checkpoint selection',
          all1000_is_not_independent_test=True))
     charts(out)
-    dump(out/'status.json',dict(status='complete',epoch=a.epochs,best_epoch=best_epoch))
+    if replay_from:
+        restored = torch.load(out/'last_checkpoint.pt',map_location='cpu',weights_only=False)
+        head.load_state_dict(restored['shared_readout'],strict=True)
+        verified,rows = evaluate_head(head,cache,train,held,a.device,a.batch_size)
+        reload_error = metric_error(verified,metrics)
+        historical_error = metric_error(verified,reference[end_epoch]['metrics'])
+        passed = reload_error <= 1e-7 and historical_error <= 1e-7
+        dump(out/'selected_predictions.json',dict(epoch=end_epoch,metrics=verified,rows=rows))
+        dump(out/'replay_verification.json',dict(passed=passed,epoch=end_epoch,
+             historical_metric_max_error=historical_error,reloaded_metric_max_error=reload_error,
+             history_metric_max_error=max(r['metric_max_error'] for r in replay_errors),
+             history_loss_max_error=max(r['loss_error'] for r in replay_errors),
+             checkpoint='last_checkpoint.pt',checkpoint_sha256=digest(out/'last_checkpoint.pt'),
+             selected_metrics=verified,weight_bitwise_identity_to_missing_original='unverifiable; original epoch checkpoint not saved'))
+        if not passed:
+            dump(out/'status.json',dict(status='replay_mismatch',epoch=end_epoch))
+            raise RuntimeError('Replayed checkpoint does not reproduce selected historical metrics')
+    dump(out/'status.json',dict(status='complete',epoch=end_epoch,best_epoch=best_epoch))
 
 
 def main():
@@ -346,8 +418,12 @@ def main():
     p.add_argument('--batch-size',type=int,default=32); p.add_argument('--lr',type=float,default=1e-4)
     p.add_argument('--seed',type=int,default=20260916); p.add_argument('--source-commit',default='')
     p.add_argument('--resume-from',default='',help='Completed prior run; restore last optimizer, split and global best; keep final LR')
+    p.add_argument('--replay-from',default='',help='Original run: replay fresh from pinned model using its validated cache')
+    p.add_argument('--stop-after-epoch',type=int,default=0,help='Replay only: stop without shortening original cosine schedule')
     a=p.parse_args()
     if a.epochs<1 or a.batch_size<1 or a.lr<=0: p.error('Invalid optimization settings')
+    if a.replay_from and a.resume_from: p.error('Replay and resume are mutually exclusive')
+    if bool(a.replay_from) != bool(a.stop_after_epoch): p.error('Replay and stop-after-epoch must be specified together')
     a.config=str(Path(a.project)/a.config) if not Path(a.config).is_absolute() else a.config
     run(a)
 
