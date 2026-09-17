@@ -1,0 +1,827 @@
+{
+  "legacy": {
+    "training_commit": "bfb7474bc08062c04625b91bb0b12a942f0876b5",
+    "config": {
+      "phase": "train",
+      "data": "/DATA/DATA1/guest3/demo_reproduction_data/mini_speech_matching_s17_v3",
+      "out": "LightGenV2/tasks/t09_multimodal_matching/runs/simulation/audio_raw_legacy_s17_v1",
+      "mode": "fixed",
+      "seed": 17,
+      "epochs": 30,
+      "warmup_epochs": 8,
+      "batch": 32,
+      "lr": 0.01,
+      "frontend_lr": 0.001,
+      "vision_checkpoint": null,
+      "feature_dropout": 0.0,
+      "visual_flip": false,
+      "phase_dropout": 0.0,
+      "architecture": "both",
+      "feature_cache": null,
+      "input_layout": "legacy"
+    },
+    "cuda": "GPU-4d8bfdb9-8777-05a6-3811-ab18ff4eadfd",
+    "data_manifest_sha256": "e20d789937a44512ce4c91f222ba99145e36c63f3ee386295585d61cc018c0c1",
+    "test_manifest": {
+      "images": 867,
+      "questions": 1734,
+      "questions_sha256": "5a21ce33be242f9996b123c2ba4d17d5f44ad6c3d63564d10d4e093c8e388dbd",
+      "features_sha256": "dc97d48343c27031c7dfbc838aed9f880d3313d58579aa111de70fcd6982ea50"
+    },
+    "diagnostics": {
+      "fixed/moe": {
+        "baseline": {
+          "accuracy": 0.8677342534065247,
+          "nll": 0.3065379559993744,
+          "capture": 0.00015635501767974347,
+          "zero_detector_fraction": 0.0,
+          "near_epsilon_detector_fraction": 0.0,
+          "route_mean": [
+            0.5020712018013,
+            0.3180052638053894,
+            0.10322704166173935,
+            0.07669658213853836
+          ],
+          "route_std": [
+            0.06218242645263672,
+            0.03709010034799576,
+            0.030678562819957733,
+            0.04714776575565338
+          ],
+          "route_top_frequency": [
+            0.9845789074897766,
+            0.01542111486196518,
+            0.0,
+            0.0
+          ],
+          "yes_probability_std": 0.38963034749031067,
+          "yes_prediction_fraction": 0.505338078291815
+        },
+        "controls": {
+          "constant_question": {
+            "accuracy": 0.5,
+            "nll": 1.4845839738845825,
+            "capture": 0.00018275187176186591,
+            "zero_detector_fraction": 0.0,
+            "near_epsilon_detector_fraction": 0.0,
+            "route_mean": [
+              0.4958195984363556,
+              0.31236371397972107,
+              0.10402385145425797,
+              0.08779284358024597
+            ],
+            "route_std": [
+              0.05462176725268364,
+              0.034142643213272095,
+              0.029753711074590683,
+              0.009123925119638443
+            ],
+            "route_top_frequency": [
+              0.9845789074897766,
+              0.01542111486196518,
+              0.0,
+              0.0
+            ]
+          },
+          "constant_image": {
+            "accuracy": 0.5077105760574341,
+            "nll": 1.9381543397903442,
+            "capture": 7.014568836893886e-05,
+            "zero_detector_fraction": 0.0,
+            "near_epsilon_detector_fraction": 0.0,
+            "route_mean": [
+              0.5023507475852966,
+              0.3208523690700531,
+              0.09870319068431854,
+              0.0780937522649765
+            ],
+            "route_std": [
+              0.023955203592777252,
+              0.0175290759652853,
+              0.00487420242279768,
+              0.04614029452204704
+            ],
+            "route_top_frequency": [
+              1.0,
+              0.0,
+              0.0,
+              0.0
+            ]
+          },
+          "unpaired_images": {
+            "accuracy": 0.48161327838897705,
+            "nll": 2.0472075939178467,
+            "capture": 0.00017816541367210448,
+            "zero_detector_fraction": 0.0,
+            "near_epsilon_detector_fraction": 0.0,
+            "route_mean": [
+              0.502045214176178,
+              0.31830862164497375,
+              0.10330373048782349,
+              0.07634242624044418
+            ],
+            "route_std": [
+              0.0596558153629303,
+              0.03927185758948326,
+              0.03055337443947792,
+              0.04678066819906235
+            ],
+            "route_top_frequency": [
+              0.9845789074897766,
+              0.01542111486196518,
+              0.0,
+              0.0
+            ]
+          },
+          "uniform_route_inference_only": {
+            "accuracy": 0.5480427145957947,
+            "nll": 0.7510901689529419,
+            "capture": 0.002636837074533105,
+            "zero_detector_fraction": 0.0,
+            "near_epsilon_detector_fraction": 0.0,
+            "route_mean": [
+              0.25,
+              0.25,
+              0.25,
+              0.25
+            ],
+            "route_std": [
+              0.0,
+              0.0,
+              0.0,
+              0.0
+            ],
+            "route_top_frequency": [
+              1.0,
+              0.0,
+              0.0,
+              0.0
+            ]
+          },
+          "input_nonzero_fraction": 0.6790011525154114,
+          "text_nonzero_fraction": 0.00297951209358871
+        },
+        "frontend_changed_during_warmup": false
+      },
+      "fixed/d2nn": {
+        "baseline": {
+          "accuracy": 0.8564649820327759,
+          "nll": 0.34165045619010925,
+          "capture": 0.00015084964979905635,
+          "zero_detector_fraction": 0.0,
+          "near_epsilon_detector_fraction": 0.0,
+          "route_mean": [
+            0.25,
+            0.25,
+            0.25,
+            0.25
+          ],
+          "route_std": [
+            0.0,
+            0.0,
+            0.0,
+            0.0
+          ],
+          "route_top_frequency": [
+            1.0,
+            0.0,
+            0.0,
+            0.0
+          ],
+          "yes_probability_std": 0.38398993015289307,
+          "yes_prediction_fraction": 0.5106761565836299
+        },
+        "controls": {
+          "constant_question": {
+            "accuracy": 0.5,
+            "nll": 1.3385602235794067,
+            "capture": 0.00017536492669023573,
+            "zero_detector_fraction": 0.0,
+            "near_epsilon_detector_fraction": 0.0,
+            "route_mean": [
+              0.25,
+              0.25,
+              0.25,
+              0.25
+            ],
+            "route_std": [
+              0.0,
+              0.0,
+              0.0,
+              0.0
+            ],
+            "route_top_frequency": [
+              1.0,
+              0.0,
+              0.0,
+              0.0
+            ]
+          },
+          "constant_image": {
+            "accuracy": 0.5077105760574341,
+            "nll": 2.959491491317749,
+            "capture": 1.4009110600454733e-05,
+            "zero_detector_fraction": 0.0,
+            "near_epsilon_detector_fraction": 0.0,
+            "route_mean": [
+              0.25,
+              0.25,
+              0.25,
+              0.25
+            ],
+            "route_std": [
+              0.0,
+              0.0,
+              0.0,
+              0.0
+            ],
+            "route_top_frequency": [
+              1.0,
+              0.0,
+              0.0,
+              0.0
+            ]
+          },
+          "unpaired_images": {
+            "accuracy": 0.4887307286262512,
+            "nll": 1.7944600582122803,
+            "capture": 0.00013929131091572344,
+            "zero_detector_fraction": 0.0,
+            "near_epsilon_detector_fraction": 0.0,
+            "route_mean": [
+              0.25,
+              0.25,
+              0.25,
+              0.25
+            ],
+            "route_std": [
+              0.0,
+              0.0,
+              0.0,
+              0.0
+            ],
+            "route_top_frequency": [
+              1.0,
+              0.0,
+              0.0,
+              0.0
+            ]
+          },
+          "input_nonzero_fraction": 0.6790011525154114,
+          "text_nonzero_fraction": 0.00297951209358871
+        },
+        "frontend_changed_during_warmup": false
+      }
+    }
+  },
+  "twoband": {
+    "training_commit": "bfb7474bc08062c04625b91bb0b12a942f0876b5",
+    "config": {
+      "phase": "train",
+      "data": "/DATA/DATA1/guest3/demo_reproduction_data/mini_speech_matching_s17_v3",
+      "out": "LightGenV2/tasks/t09_multimodal_matching/runs/simulation/audio_raw_twoband_s17_v1",
+      "mode": "fixed",
+      "seed": 17,
+      "epochs": 30,
+      "warmup_epochs": 8,
+      "batch": 32,
+      "lr": 0.01,
+      "frontend_lr": 0.001,
+      "vision_checkpoint": null,
+      "feature_dropout": 0.0,
+      "visual_flip": false,
+      "phase_dropout": 0.0,
+      "architecture": "both",
+      "feature_cache": null,
+      "input_layout": "two_band"
+    },
+    "cuda": "GPU-1b963983-7909-af6e-0528-f0f0661ab549",
+    "data_manifest_sha256": "e20d789937a44512ce4c91f222ba99145e36c63f3ee386295585d61cc018c0c1",
+    "test_manifest": {
+      "images": 867,
+      "questions": 1734,
+      "questions_sha256": "5a21ce33be242f9996b123c2ba4d17d5f44ad6c3d63564d10d4e093c8e388dbd",
+      "features_sha256": "dc97d48343c27031c7dfbc838aed9f880d3313d58579aa111de70fcd6982ea50"
+    },
+    "diagnostics": {
+      "fixed/moe": {
+        "baseline": {
+          "accuracy": 0.5,
+          "nll": 0.6931473016738892,
+          "capture": 0.0,
+          "zero_detector_fraction": 1.0,
+          "near_epsilon_detector_fraction": 1.0,
+          "route_mean": [
+            0.8433749675750732,
+            0.1503651887178421,
+            0.005816246848553419,
+            0.0004436251474544406
+          ],
+          "route_std": [
+            0.17455939948558807,
+            0.17121973633766174,
+            0.003478670259937644,
+            0.0005588542553596199
+          ],
+          "route_top_frequency": [
+            0.9466192126274109,
+            0.05338078364729881,
+            0.0,
+            0.0
+          ],
+          "yes_probability_std": 0.0,
+          "yes_prediction_fraction": 0.0
+        },
+        "controls": {
+          "constant_question": {
+            "accuracy": 0.5,
+            "nll": 0.6931473016738892,
+            "capture": 0.0,
+            "zero_detector_fraction": 1.0,
+            "near_epsilon_detector_fraction": 1.0,
+            "route_mean": [
+              0.8430045247077942,
+              0.1502121388912201,
+              0.0063425530679523945,
+              0.0004406268708407879
+            ],
+            "route_std": [
+              0.17462436854839325,
+              0.17089203000068665,
+              0.0037537531461566687,
+              0.0005544138257391751
+            ],
+            "route_top_frequency": [
+              0.9466192126274109,
+              0.05338078364729881,
+              0.0,
+              0.0
+            ]
+          },
+          "constant_image": {
+            "accuracy": 0.5,
+            "nll": 0.6931473016738892,
+            "capture": 0.0,
+            "zero_detector_fraction": 1.0,
+            "near_epsilon_detector_fraction": 1.0,
+            "route_mean": [
+              0.9082135558128357,
+              0.08699464797973633,
+              0.004495362285524607,
+              0.00029660359723493457
+            ],
+            "route_std": [
+              0.00048411122406832874,
+              4.830455873161554e-05,
+              0.0005326655809767544,
+              5.5578016144863795e-06
+            ],
+            "route_top_frequency": [
+              1.0,
+              0.0,
+              0.0,
+              0.0
+            ]
+          },
+          "unpaired_images": {
+            "accuracy": 0.4988137483596802,
+            "nll": 0.7037658095359802,
+            "capture": 1.4564445136033832e-11,
+            "zero_detector_fraction": 0.9976274967193604,
+            "near_epsilon_detector_fraction": 0.9976274967193604,
+            "route_mean": [
+              0.8433722853660583,
+              0.15035206079483032,
+              0.0058321054093539715,
+              0.00044357526348903775
+            ],
+            "route_std": [
+              0.17458273470401764,
+              0.17117874324321747,
+              0.0035139170940965414,
+              0.0005577378324232996
+            ],
+            "route_top_frequency": [
+              0.9466192126274109,
+              0.05338078364729881,
+              0.0,
+              0.0
+            ]
+          },
+          "uniform_route_inference_only": {
+            "accuracy": 0.5,
+            "nll": 2.7419376373291016,
+            "capture": 0.01737147383391857,
+            "zero_detector_fraction": 0.0,
+            "near_epsilon_detector_fraction": 0.0,
+            "route_mean": [
+              0.25,
+              0.25,
+              0.25,
+              0.25
+            ],
+            "route_std": [
+              0.0,
+              0.0,
+              0.0,
+              0.0
+            ],
+            "route_top_frequency": [
+              1.0,
+              0.0,
+              0.0,
+              0.0
+            ]
+          },
+          "input_nonzero_fraction": 0.45379263162612915,
+          "text_nonzero_fraction": 0.0030642140191048384
+        },
+        "frontend_changed_during_warmup": false
+      },
+      "fixed/d2nn": {
+        "baseline": {
+          "accuracy": 0.8345195651054382,
+          "nll": 0.38905152678489685,
+          "capture": 0.0001434808800695464,
+          "zero_detector_fraction": 0.0,
+          "near_epsilon_detector_fraction": 0.0,
+          "route_mean": [
+            0.25,
+            0.25,
+            0.25,
+            0.25
+          ],
+          "route_std": [
+            0.0,
+            0.0,
+            0.0,
+            0.0
+          ],
+          "route_top_frequency": [
+            1.0,
+            0.0,
+            0.0,
+            0.0
+          ],
+          "yes_probability_std": 0.3420564830303192,
+          "yes_prediction_fraction": 0.5148279952550415
+        },
+        "controls": {
+          "constant_question": {
+            "accuracy": 0.5,
+            "nll": 1.1024545431137085,
+            "capture": 0.00017438373470213264,
+            "zero_detector_fraction": 0.0,
+            "near_epsilon_detector_fraction": 0.0,
+            "route_mean": [
+              0.25,
+              0.25,
+              0.25,
+              0.25
+            ],
+            "route_std": [
+              0.0,
+              0.0,
+              0.0,
+              0.0
+            ],
+            "route_top_frequency": [
+              1.0,
+              0.0,
+              0.0,
+              0.0
+            ]
+          },
+          "constant_image": {
+            "accuracy": 0.5077105760574341,
+            "nll": 1.091271996498108,
+            "capture": 5.384686664910987e-05,
+            "zero_detector_fraction": 0.0,
+            "near_epsilon_detector_fraction": 0.0,
+            "route_mean": [
+              0.25,
+              0.25,
+              0.25,
+              0.25
+            ],
+            "route_std": [
+              0.0,
+              0.0,
+              0.0,
+              0.0
+            ],
+            "route_top_frequency": [
+              1.0,
+              0.0,
+              0.0,
+              0.0
+            ]
+          },
+          "unpaired_images": {
+            "accuracy": 0.4875444769859314,
+            "nll": 1.2651503086090088,
+            "capture": 0.00018331895989831537,
+            "zero_detector_fraction": 0.0,
+            "near_epsilon_detector_fraction": 0.0,
+            "route_mean": [
+              0.25,
+              0.25,
+              0.25,
+              0.25
+            ],
+            "route_std": [
+              0.0,
+              0.0,
+              0.0,
+              0.0
+            ],
+            "route_top_frequency": [
+              1.0,
+              0.0,
+              0.0,
+              0.0
+            ]
+          },
+          "input_nonzero_fraction": 0.45379263162612915,
+          "text_nonzero_fraction": 0.0030642140191048384
+        },
+        "frontend_changed_during_warmup": false
+      }
+    }
+  },
+  "interleaved": {
+    "training_commit": "4db53f157c701ef7a066ca9eccd46ee66b044dc1",
+    "config": {
+      "phase": "train",
+      "data": "/DATA/DATA1/guest3/demo_reproduction_data/mini_speech_matching_s17_v3",
+      "out": "LightGenV2/tasks/t09_multimodal_matching/runs/simulation/audio_raw_interleaved_s17_v1",
+      "mode": "fixed",
+      "seed": 17,
+      "epochs": 30,
+      "warmup_epochs": 8,
+      "batch": 32,
+      "lr": 0.01,
+      "frontend_lr": 0.001,
+      "vision_checkpoint": null,
+      "feature_dropout": 0.0,
+      "visual_flip": false,
+      "phase_dropout": 0.0,
+      "architecture": "both",
+      "feature_cache": null,
+      "input_layout": "interleaved"
+    },
+    "cuda": "GPU-3f60d773-4dd8-d706-ef48-a4dfc5af6c55",
+    "data_manifest_sha256": "e20d789937a44512ce4c91f222ba99145e36c63f3ee386295585d61cc018c0c1",
+    "test_manifest": {
+      "images": 867,
+      "questions": 1734,
+      "questions_sha256": "5a21ce33be242f9996b123c2ba4d17d5f44ad6c3d63564d10d4e093c8e388dbd",
+      "features_sha256": "dc97d48343c27031c7dfbc838aed9f880d3313d58579aa111de70fcd6982ea50"
+    },
+    "diagnostics": {
+      "fixed/moe": {
+        "baseline": {
+          "accuracy": 0.8250296711921692,
+          "nll": 0.3889675438404083,
+          "capture": 0.00019758082635235041,
+          "zero_detector_fraction": 0.0,
+          "near_epsilon_detector_fraction": 0.0,
+          "route_mean": [
+            0.4247848093509674,
+            0.3437230587005615,
+            0.10881093144416809,
+            0.1226811408996582
+          ],
+          "route_std": [
+            0.11076498031616211,
+            0.13524116575717926,
+            0.07947716116905212,
+            0.053718201816082
+          ],
+          "route_top_frequency": [
+            0.6168445944786072,
+            0.3736654818058014,
+            0.008303677663207054,
+            0.001186239649541676
+          ],
+          "yes_probability_std": 0.37588274478912354,
+          "yes_prediction_fraction": 0.5100830367734283
+        },
+        "controls": {
+          "constant_question": {
+            "accuracy": 0.5,
+            "nll": 1.510453462600708,
+            "capture": 0.0001597607770236209,
+            "zero_detector_fraction": 0.0,
+            "near_epsilon_detector_fraction": 0.0,
+            "route_mean": [
+              0.5412964224815369,
+              0.2774268388748169,
+              0.08433916419744492,
+              0.09693757444620132
+            ],
+            "route_std": [
+              0.0811779648065567,
+              0.11302589625120163,
+              0.05736256018280983,
+              0.03957893326878548
+            ],
+            "route_top_frequency": [
+              0.9062870740890503,
+              0.0937129333615303,
+              0.0,
+              0.0
+            ]
+          },
+          "constant_image": {
+            "accuracy": 0.5011862516403198,
+            "nll": 1.701035499572754,
+            "capture": 5.215260534896515e-05,
+            "zero_detector_fraction": 0.0,
+            "near_epsilon_detector_fraction": 0.0,
+            "route_mean": [
+              0.403041809797287,
+              0.40144073963165283,
+              0.06743781268596649,
+              0.12807965278625488
+            ],
+            "route_std": [
+              0.08012596517801285,
+              0.05387365445494652,
+              0.009049270302057266,
+              0.017205122858285904
+            ],
+            "route_top_frequency": [
+              0.3463819622993469,
+              0.6536180377006531,
+              0.0,
+              0.0
+            ]
+          },
+          "unpaired_images": {
+            "accuracy": 0.48932385444641113,
+            "nll": 1.916029691696167,
+            "capture": 0.00018846387683879584,
+            "zero_detector_fraction": 0.0,
+            "near_epsilon_detector_fraction": 0.0,
+            "route_mean": [
+              0.42493677139282227,
+              0.3451042175292969,
+              0.10825913399457932,
+              0.12169987708330154
+            ],
+            "route_std": [
+              0.10864090174436569,
+              0.13794782757759094,
+              0.07746873795986176,
+              0.05123376473784447
+            ],
+            "route_top_frequency": [
+              0.6251482963562012,
+              0.36892053484916687,
+              0.005338078364729881,
+              0.000593119824770838
+            ]
+          },
+          "uniform_route_inference_only": {
+            "accuracy": 0.545670211315155,
+            "nll": 0.9217841625213623,
+            "capture": 0.0015700514195486903,
+            "zero_detector_fraction": 0.0,
+            "near_epsilon_detector_fraction": 0.0,
+            "route_mean": [
+              0.25,
+              0.25,
+              0.25,
+              0.25
+            ],
+            "route_std": [
+              0.0,
+              0.0,
+              0.0,
+              0.0
+            ],
+            "route_top_frequency": [
+              1.0,
+              0.0,
+              0.0,
+              0.0
+            ]
+          },
+          "input_nonzero_fraction": 0.45379263162612915,
+          "text_nonzero_fraction": 0.0030642140191048384
+        },
+        "frontend_changed_during_warmup": false
+      },
+      "fixed/d2nn": {
+        "baseline": {
+          "accuracy": 0.8475682139396667,
+          "nll": 0.373958021402359,
+          "capture": 0.00017601886065676808,
+          "zero_detector_fraction": 0.0,
+          "near_epsilon_detector_fraction": 0.0,
+          "route_mean": [
+            0.25,
+            0.25,
+            0.25,
+            0.25
+          ],
+          "route_std": [
+            0.0,
+            0.0,
+            0.0,
+            0.0
+          ],
+          "route_top_frequency": [
+            1.0,
+            0.0,
+            0.0,
+            0.0
+          ],
+          "yes_probability_std": 0.33474254608154297,
+          "yes_prediction_fraction": 0.4887307236061684
+        },
+        "controls": {
+          "constant_question": {
+            "accuracy": 0.5,
+            "nll": 1.0444949865341187,
+            "capture": 0.0001838366297306493,
+            "zero_detector_fraction": 0.0,
+            "near_epsilon_detector_fraction": 0.0,
+            "route_mean": [
+              0.25,
+              0.25,
+              0.25,
+              0.25
+            ],
+            "route_std": [
+              0.0,
+              0.0,
+              0.0,
+              0.0
+            ],
+            "route_top_frequency": [
+              1.0,
+              0.0,
+              0.0,
+              0.0
+            ]
+          },
+          "constant_image": {
+            "accuracy": 0.5065243244171143,
+            "nll": 0.9993696212768555,
+            "capture": 0.00011194218677701429,
+            "zero_detector_fraction": 0.0,
+            "near_epsilon_detector_fraction": 0.0,
+            "route_mean": [
+              0.25,
+              0.25,
+              0.25,
+              0.25
+            ],
+            "route_std": [
+              0.0,
+              0.0,
+              0.0,
+              0.0
+            ],
+            "route_top_frequency": [
+              1.0,
+              0.0,
+              0.0,
+              0.0
+            ]
+          },
+          "unpaired_images": {
+            "accuracy": 0.4833926558494568,
+            "nll": 1.2058265209197998,
+            "capture": 0.00022770470241084695,
+            "zero_detector_fraction": 0.0,
+            "near_epsilon_detector_fraction": 0.0,
+            "route_mean": [
+              0.25,
+              0.25,
+              0.25,
+              0.25
+            ],
+            "route_std": [
+              0.0,
+              0.0,
+              0.0,
+              0.0
+            ],
+            "route_top_frequency": [
+              1.0,
+              0.0,
+              0.0,
+              0.0
+            ]
+          },
+          "input_nonzero_fraction": 0.45379263162612915,
+          "text_nonzero_fraction": 0.0030642140191048384
+        },
+        "frontend_changed_during_warmup": false
+      }
+    }
+  }
+}

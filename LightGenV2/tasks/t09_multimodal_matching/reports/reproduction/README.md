@@ -127,3 +127,34 @@ python -m LightGenV2.tasks.t09_multimodal_matching.plot_selected_test
 ```
 
 每次正式配置完成后评估验证选中权重的测试结果并完整记录；测试不用于选择轮次、阈值或正则。后续调参公平合同和完整电子/光学计算图见任务README的“当前计算图、测试与公平调参合同”。下文“未测试”为各历史记录当时状态，以本节补评为准。
+## 2026-09-18：去除CNN与重复输入的重新训练
+
+本次是重新训练，不是替换输入后直接复评旧权重。数据仍为原mini Speech Commands，训练6,263段/12,526问答、验证843段/1,686问答、测试867段/1,734问答；说话人互斥。输入固定log-mel、固定逐词one-hot，零可训练电子参数；保持两层主光路、每层含末层OEO、两个64×64读出窗口。不能称为没有电子计算，因为STFT、插值、归一化和OEO仍为电子处理。
+
+|输入布局|模型|选中epoch|训练accuracy|验证accuracy|测试accuracy|
+|---|---|---:|---:|---:|---:|
+|无CNN，旧三槽重复|MoE+OEO|13|94.20%|86.77%|85.58%|
+|同上|D2NN+OEO|20|95.07%|85.65%|85.06%|
+|无CNN，上下两区|MoE+OEO|2|50.01%|50.00%|49.94%|
+|同上|D2NN+OEO|21|92.05%|83.45%|82.76%|
+|无CNN，按行交织|MoE+OEO|12|92.27%|82.50%|83.85%|
+|同上|D2NN+OEO|19|92.50%|84.76%|83.33%|
+
+表中同一行的三个成绩来自各自验证NLL最低的同一权重。NLL=-mean(log(p_true))，考虑正确答案的概率，不只看argmax；因此选中的epoch不一定具有最高accuracy。两个模型分别选各自最优epoch；不同配置也分别选，不共用一份pt，不依据测试分数选型。旧三槽MoE最后一轮训练98.68%不是表内第13轮的94.20%，不能混用。
+
+旧有CNN参考测试为MoE94.23%、D2NN94.87%。去掉CNN后旧排布仍约85%，说明不是完全依赖CNN才能匹配；也不能把CNN版的性能全归于光学部分。去重复后的交织布局能学习但没有超过重复布局；不重复不等于更优。仅seed17，两个可学习布局的测试差距均约0.52个百分点，不据此宣称稳定架构优势。
+
+**退化读出证据：** 上下分区MoE的验证选中权重在所有验证样本上两个窗口能量都为0，输出概率完全为0.5/0.5，验证NLL=0.6931473，验证zero_detector_fraction=1。该模型保留为失败对照；NLL规则没有选择错误权重，而是这些epoch均未形成有效分类，均匀输出反而比自信错误的输出损失低。末层OEO的截断及路由偏置是后续排查重点，不能把此次监测新增描述成已修复。其余五个无CNN模型的选中验证权重zero_detector_fraction=0，仍有明显泛化差距。
+
+训练/测试run：`runs/simulation/audio_raw_legacy_s17_v1`、`audio_raw_twoband_s17_v1`、`audio_raw_interleaved_s17_v1`，各自测试run追加`_test`。训练源码前两组`bfb7474b`，交织组`4db53f15`；后续`ebffcd09`诊断支持布局、`fb4cd716`增加逐样本零能量比例，均未更改模型输出数学或选模规则。metadata.json包含完整命令、PyTorch/CUDA环境、GPU、参数和数据manifest SHA；best_checkpoint_sha256见各result.json及报告verified_results.json。三组测试输入张量和问题SHA逐字节相同，复用原划分；不经过CNN所以不存在CNN跨GPU特征缓存差异，但跨布局分别运行于RTX4090/A100的训练浮点差异仍需后续同卡复核。
+
+公共训练命令（在服务器工程根目录，Python为`/home/guest3/miniconda3/envs/xml/bin/python`）：
+
+```bash
+python -m LightGenV2.tasks.t09_multimodal_matching.run --data /DATA/DATA1/guest3/demo_reproduction_data/mini_speech_matching_s17_v3 --out LightGenV2/tasks/t09_multimodal_matching/runs/simulation/RUN --mode fixed --architecture both --epochs 30 --seed 17 --input-layout LAYOUT
+python -m LightGenV2.tasks.t09_multimodal_matching.test_selected --kind audio --audio-runs RUN --data /DATA/DATA1/guest3/demo_reproduction_data/mini_speech_matching_s17_v3 --runs LightGenV2/tasks/t09_multimodal_matching/runs/simulation --out LightGenV2/tasks/t09_multimodal_matching/runs/simulation/RUN_test --cache /DATA/DATA1/guest3/demo_reproduction_data/mini_speech_matching_s17_v1/mini_speech_commands.zip
+```
+
+RUN/LAYOUT分别为上述三组run与`legacy`、`two_band`、`interleaved`。默认batch32、Adam lr0.01余弦至0.001、梯度裁剪1、无dropout。前两组GPU UUID依次为`GPU-4d8bfdb9-8777-05a6-3811-ab18ff4eadfd`、`GPU-1b963983-7909-af6e-0528-f0f0661ab549`；交织为`GPU-3f60d773-4dd8-d706-ef48-a4dfc5af6c55`。同一run内两个架构在同卡顺序训练，共用同一数据张量。
+
+输入、功率、梯度smoke在`runs/smoke/audio_layout_s17_v1`、`audio_layout_interleaved_s17_v1`；三组独立预测/选模/权重SHA审计为`runs/smoke/RUN_audit`。固定模态扰动及读出检查为前两组`RUN_diagnose_v2`、交织`RUN_diagnose`，均通过验证基线复核；不是重新训练的消融baseline。报告图与汇总在`reports/figures/audio_input_s17_20260918/`：`input_and_readout`为示意图，`no_cnn_learning_curves`为学习曲线，`no_cnn_train_val_test`为柱状图，均有PNG/PDF；`verified_results.json`记录成绩与权重SHA，`readout_audit_summary.json`记录配置、输入SHA与零窗口比例，`transfer_manifest.json`记录下载证据SHA。原始逐样本预测保留在runs，不放入论文图。全部进程已结束，GPU资源已释放。
