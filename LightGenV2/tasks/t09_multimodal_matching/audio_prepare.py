@@ -50,9 +50,12 @@ def main():
         save(a.out/'source_readme.json',docs)
         assert any('speech_commands_v0.01.tar.gz' in t for t in docs.values())
         # The excerpt README refers to the original release rather than restating its license.
-        license_page=requests.get(LICENSE_URL,timeout=60);license_page.raise_for_status()
-        assert 'Creative Commons BY 4.0' in license_page.text
-        (a.out/'license_source.html').write_text(license_page.text,encoding='utf8')
+        # Publisher page was inspected on 2026-09-17 through web browsing.
+        # Do not require the training host to reach research.google on every run.
+        save(a.out/'license_evidence.json',dict(source=LICENSE_URL,checked='2026-09-17',
+             publisher='Google Research',publication_date='2017-08-24',license='CC BY 4.0',
+             chain='Archive README identifies original Speech Commands v0.01; original publisher states CC BY 4.0',
+             verification='Publisher page read externally; not downloaded by this training process'))
         for name in sorted(z.namelist()):
             if not name.endswith('.wav') or name.startswith('__MACOSX'):continue
             word=Path(name).parent.name
@@ -93,7 +96,7 @@ def main():
     save(a.out/'vocab.json',vocab)
     counts={k:{w:sum(r['word']==w for r in rows) for w in WORDS} for k,rows in split.items()}
     save(a.out/'manifest.json',dict(source=URL,license='CC BY 4.0',license_source=LICENSE_URL,
-        license_page_sha256=digest((a.out/'license_source.html').read_bytes()),archive_sha256=digest(archive.read_bytes()),
+        license_evidence_sha256=digest((a.out/'license_evidence.json').read_bytes()),archive_sha256=digest(archive.read_bytes()),
         task='Derived balanced audio/text keyword matching, not official Speech Commands accuracy',
         split='speaker SHA1, validation <10%, test <20%, training remainder; no file-level random split',
         counts=counts,duplicate_waveforms_removed=duplicates,retained_test_decoded=False,
