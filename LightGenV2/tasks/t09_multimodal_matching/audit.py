@@ -21,8 +21,9 @@ def main():
     a=parser.parse_args();a.out.mkdir(parents=True,exist_ok=False)
     rows=json.loads((a.data/'val_questions.json').read_text())
     image_ids=[r['image_id'] for r in rows]
-    keys=sorted(set(image_ids))
-    groups=[np.array([i for i,x in enumerate(image_ids) if x==k]) for k in keys]
+    group_ids=[r.get('speaker',r['image_id']) for r in rows]
+    keys=sorted(set(group_ids))
+    groups=[np.array([i for i,x in enumerate(group_ids) if x==k]) for k in keys]
     report={};correct={};frontends={};phase_hashes={}
     visual_hashes=[]
     for run in a.runs:
@@ -58,9 +59,11 @@ def main():
                        ('fixed_dense/moe','fixed/moe'),('fixed_dense/d2nn','fixed/d2nn'),
                        ('learned/moe','fixed_dense/moe'),('learned/d2nn','fixed_dense/d2nn')]:
         if left not in correct or right not in correct:continue
-        delta=np.array([(correct[left][g]-correct[right][g]).mean() for g in groups])
-        bootstrap=delta[rng.integers(0,len(groups),(5000,len(groups)))].mean(1)
-        comparisons[left+' minus '+right]=dict(mean_percentage_points=float(delta.mean()*100),
+        delta=np.array([(correct[left][g]-correct[right][g]).sum() for g in groups])
+        sizes=np.array([len(g) for g in groups])
+        draws=rng.integers(0,len(groups),(5000,len(groups)))
+        bootstrap=delta[draws].sum(1)/sizes[draws].sum(1)
+        comparisons[left+' minus '+right]=dict(mean_percentage_points=float(delta.sum()/sizes.sum()*100),
                                                image_cluster_bootstrap_95ci_percentage_points=(np.quantile(bootstrap,[.025,.975])*100).tolist())
     # A query-only lookup baseline trained without validation labels.
     train=json.loads((a.data/'train_questions.json').read_text());counts={}
@@ -76,7 +79,8 @@ def main():
                                        shared_visual_features_identical=bool(visual_hashes),
                                        identical_optical_initialization_across_encodings=True,
                                        uncertainty_scope='Conditional on validation-selected models; excludes training-seed and model-selection uncertainty',
-                                       unique_validation_images=len(groups),test_accessed=False))
+                                       bootstrap_unit='speaker' if 'speaker' in rows[0] else 'image',
+                                       validation_groups=len(groups),unique_validation_images=len(set(image_ids)),test_accessed=False))
     print(json.dumps(dict(comparisons=comparisons,results={k:{'train':v['train']['accuracy'],'val':v['val']['accuracy']} for k,v in report.items()}),indent=2))
 
 

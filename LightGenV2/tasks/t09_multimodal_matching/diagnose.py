@@ -26,6 +26,7 @@ def main():
         torch.manual_seed(cfg['seed']);initial=TextEncoder(len(vocab),mode).cuda()
         frontend_changed=state_sha(initial)!=state_sha(frontend)
         for arch in ['moe','d2nn']:
+            if not (run/mode/arch/'best_checkpoint.pt').exists():continue
             model=OpticalOEO(arch,cfg['seed']).cuda()
             checkpoint=torch.load(run/mode/arch/'best_checkpoint.pt',weights_only=False)
             model.load_state_dict(checkpoint['model']);model.requires_grad_(False).eval()
@@ -35,7 +36,10 @@ def main():
                 modified=dict(data)
                 if condition=='constant_question':modified['ids']=data['ids'][:1].expand_as(data['ids'])
                 elif condition=='constant_image':modified['images']=data['images'].float().mean(0,keepdim=True).expand_as(data['images'])
-                else:modified['images']=data['images'].roll(37,0)
+                else:
+                    generator=torch.Generator(device=data['images'].device).manual_seed(117)
+                    permutation=torch.randperm(len(data['images']),device=data['images'].device,generator=generator)
+                    modified['images']=data['images'][permutation]
                 controls[condition]=evaluate(model,frontend,modified,32)[0]
             assert abs(controls['constant_question']['accuracy']-.5)<1e-6
             # Physical input support is not the same as aperture envelope coverage.
