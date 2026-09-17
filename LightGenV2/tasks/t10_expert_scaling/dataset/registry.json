@@ -1,0 +1,59 @@
+{
+  "checked_on": "2026-09-17",
+  "license_policy": "Dataset images and annotations must be CC-BY-4.0; software or article license alone is insufficient.",
+  "datasets": [
+    {
+      "id": "kather2016",
+      "role": "primary_development_and_continuity",
+      "task": "colorectal_tissue_8_class",
+      "images": 5000,
+      "classes": 8,
+      "native_image_shape": [150, 150, 3],
+      "license": "CC-BY-4.0",
+      "doi": "10.5281/zenodo.53169",
+      "source": "https://zenodo.org/records/53169",
+      "license_evidence": "https://zenodo.org/api/records/53169",
+      "license_evidence_field": "metadata.license.id = cc-by-4.0",
+      "paper": "https://www.nature.com/articles/srep27988",
+      "published_archive_md5": "0ddbebfc56344752028fda72602aaade",
+      "split_plan": "Reuse the existing 3496/752/752 image IDs only after manifest verification; do not redraw an easier split.",
+      "limitation": "Previous test results were already inspected. This is a development benchmark, not a newly sealed independent test. Patient/slide grouping is not established.",
+      "local_dataset_sha256": null,
+      "split_manifest_sha256": null
+    },
+    {
+      "id": "deepweeds",
+      "role": "primary_new_domain",
+      "task": "weed_species_8_plus_negative_class",
+      "images": 17509,
+      "classes": 9,
+      "native_image_shape": null,
+      "license": "CC-BY-4.0",
+      "source": "https://github.com/AlexOlsen/DeepWeeds",
+      "license_evidence": "https://github.com/AlexOlsen/DeepWeeds#readme",
+      "license_evidence_note": "Authors explicitly license images and annotations CC BY 4.0; repository software license is separately Apache 2.0.",
+      "paper": "https://doi.org/10.1038/s41598-018-38343-3",
+      "split_plan": "Author fold 1: train/validation/test 60/20/20. Verify filenames, hashes and burst overlap before use; preserve the official split as reference if a grouped audit requires a separate profile.",
+      "limitation": "Negative class imbalance; collection sites are associated with species, so arbitrary leave-one-site-out can remove entire classes. Capture timestamps and instrument IDs are not patient IDs or guaranteed independent scenes.",
+      "local_dataset_sha256": null,
+      "split_manifest_sha256": null
+    },
+    {
+      "id": "pbc_original",
+      "role": "optional_third_task",
+      "task": "normal_peripheral_blood_cell_8_class",
+      "images": 17092,
+      "classes": 8,
+      "native_image_shape": [360, 363, 3],
+      "license": "CC-BY-4.0",
+      "doi": "10.17632/snkd93bnjr.1",
+      "source": "https://data.mendeley.com/datasets/snkd93bnjr/1",
+      "license_evidence": "https://data.mendeley.com/datasets/snkd93bnjr/1",
+      "paper": "https://doi.org/10.1016/j.cmpb.2019.105020",
+      "split_plan": "Fixed class-stratified 70/15/15, split seed 20260917; group by patient/slide when verified IDs are available. Freeze exact IDs before optical tuning.",
+      "limitation": "Use original JPGs, not the MedMNIST resizing. This is the source cohort used by BloodMNIST and must not be represented as an independent new cohort. Patient-disjointness is pending metadata verification.",
+      "local_dataset_sha256": null,
+      "split_manifest_sha256": null
+    }
+  ]
+}

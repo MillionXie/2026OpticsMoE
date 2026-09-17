@@ -1,0 +1,65 @@
+{
+  "schema_version": 1,
+  "status": "design_only_not_a_training_config",
+  "protocol": "raw_rgb_fullfield_oeo_v1",
+  "expert_counts": [4, 9, 16, 25, 36, 49],
+  "geometry": {
+    "expert_side_px": 224,
+    "gap_px": 30,
+    "outer_margin_px": 20,
+    "pixel_pitch_um": 8.0,
+    "wavelength_nm": 532.0,
+    "propagation_distance_m": 0.1,
+    "fft_padding_factor_initial": 2,
+    "hardware_size_limit_applied": false,
+    "size_source": "LightGenV2/tasks/t08_abo_image_text_retrieval/reports/optical_router_moe_20260907/main/config.yaml:253-254"
+  },
+  "model": {
+    "feature_layers_provisional": 6,
+    "router_side_px": 224,
+    "router_detector_grid": 7,
+    "router_detector_side_px": 24,
+    "router_detector_pitch_px": 32,
+    "rgb_channel_side_px": 112,
+    "routing_contract": "entry_topk",
+    "gate_power_contract": "selected_probabilities_sum_to_one_amplitude_is_sqrt_power",
+    "topk_backward": "straight_through_dense_amplitude_surrogate",
+    "oeo_after_every_feature_layer": true,
+    "oeo_emitted_power_per_sample": 1.0,
+    "learned_electronic_residual": false,
+    "detector_side_px": 32,
+    "detector_pitch_px": 48,
+    "phase_parameter_tolerance_fraction": 0.005
+  },
+  "sweep": {
+    "fixed_k": [1, 2, 4],
+    "fractional_k_denominators": [4, 2, 1],
+    "pilot_expert_counts": [4, 9, 16],
+    "pilot_fixed_k": [1, 4],
+    "fixed_global_control_expert_counts": [4, 16, 49],
+    "baselines": ["d2nn_total_parameter", "d2nn_same_aperture"]
+  },
+  "datasets": {
+    "primary": ["kather2016", "deepweeds"],
+    "optional": ["pbc_original"]
+  },
+  "training_proposal": {
+    "initial_seeds": [17],
+    "confirmatory_seeds_recommended_not_scheduled": [17, 27, 37],
+    "epochs": 60,
+    "effective_batch_size": 16,
+    "optimizer": "AdamW",
+    "learning_rate": 0.002,
+    "weight_decay": 0.0,
+    "gradient_clip_norm": 1.0,
+    "ema_decay": 0.95,
+    "label_smoothing": 0.02,
+    "capture_loss_weight": 0.02,
+    "phase_tv_weight": 0.02,
+    "router_balance_weight": 0.01,
+    "dense_warmup_epochs_included_in_total": 5,
+    "lr_candidates_equal_budget": [0.001, 0.002],
+    "checkpoint_selection": "validation_macro_nll_minimum_ema",
+    "final_test_access": "after_protocol_and_checkpoints_are_locked"
+  }
+}

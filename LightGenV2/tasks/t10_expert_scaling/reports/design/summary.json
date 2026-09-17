@@ -1,0 +1,26 @@
+{
+  "status": "design_only_no_training_results",
+  "checks": "passed_geometry_matrix_entrance_power",
+  "protocol_sha256": "540b3c9818e9236e5faba92df1be0a117285bd8c8632411961230b2f68953bde",
+  "primary_datasets": [
+    "kather2016",
+    "deepweeds"
+  ],
+  "pilot_runs": 28,
+  "main_runs_including_pilot": 88,
+  "main_models": {
+    "moe_oeo": 64,
+    "d2nn_total_parameter": 12,
+    "d2nn_same_aperture": 12
+  },
+  "fixed_global_control_runs": 18,
+  "optional_dataset_main_runs": 44,
+  "excluded_from_counts": [
+    "depth_and_learning_rate_calibration",
+    "routing_ablation",
+    "joint_task_runs",
+    "noise_sensitivity",
+    "additional_seeds"
+  ],
+  "hardware_limit_applied": false
+}
