@@ -23,7 +23,7 @@ def main():
     for dx,split,color in [(-.18,'train','#adcde0'),(.18,'val','#536eb3')]:
         v=[audit['results']['fixed/'+arch][split]['accuracy']*100 for arch in ['moe','d2nn']]
         bars=axes[1].bar(x+dx,v,.36,color=color,label=split);axes[1].bar_label(bars,fmt='%.2f',padding=3,fontsize=9)
-    axes[1].set_xticks(x,['MoE','D2NN']);axes[1].set_title('Validation-NLL-selected weights');axes[1].legend(fontsize=8)
+    axes[1].set_xticks(x,['MoE','D2NN']);axes[1].set_title('Validation-NLL-selected weights');axes[1].legend(fontsize=8,loc='lower center',ncol=2)
     conditions=['baseline','constant_question','constant_image','unpaired_images']
     for dx,arch in [(-.18,'moe'),(.18,'d2nn')]:
         r=diag['results']['fixed/'+arch]
