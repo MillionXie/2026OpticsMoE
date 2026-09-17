@@ -16,6 +16,12 @@ class TextEncoder(nn.Module):
         if mode == 'learned':
             self.embedding = nn.Embedding(vocabulary, 32, padding_idx=0)
             self.gru = nn.GRU(32, 32, batch_first=True)
+        elif mode == 'fixed_dense':
+            assert vocabulary<=32
+            h=torch.ones(1,1)
+            while h.shape[0]<32:
+                h=torch.cat((torch.cat((h,h),1),torch.cat((h,-h),1)),0)
+            self.register_buffer('codes',h)
         elif mode != 'fixed':
             raise ValueError(mode)
 
@@ -23,7 +29,10 @@ class TextEncoder(nn.Module):
         mask = token_ids.ne(0).float().unsqueeze(-1)
         if self.mode == 'fixed':
             return F.one_hot(token_ids, num_classes=64).float()*mask
-        z, _ = self.gru(self.embedding(token_ids))
+        if self.mode=='fixed_dense':
+            z=self.codes[token_ids]
+        else:
+            z, _ = self.gru(self.embedding(token_ids))
         z = z*mask
         return torch.cat((F.relu(z), F.relu(-z)), dim=-1)
 

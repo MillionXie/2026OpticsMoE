@@ -53,7 +53,10 @@ def main():
     if visual_hashes:assert all(v==visual_hashes[0] for v in visual_hashes)
     rng=np.random.default_rng(20260917);comparisons={}
     for left,right in [('fixed/moe','fixed/d2nn'),('learned/moe','learned/d2nn'),
-                       ('learned/moe','fixed/moe'),('learned/d2nn','fixed/d2nn')]:
+                       ('learned/moe','fixed/moe'),('learned/d2nn','fixed/d2nn'),
+                       ('fixed_dense/moe','fixed_dense/d2nn'),
+                       ('fixed_dense/moe','fixed/moe'),('fixed_dense/d2nn','fixed/d2nn'),
+                       ('learned/moe','fixed_dense/moe'),('learned/d2nn','fixed_dense/d2nn')]:
         if left not in correct or right not in correct:continue
         delta=np.array([(correct[left][g]-correct[right][g]).mean() for g in groups])
         bootstrap=delta[rng.integers(0,len(groups),(5000,len(groups)))].mean(1)

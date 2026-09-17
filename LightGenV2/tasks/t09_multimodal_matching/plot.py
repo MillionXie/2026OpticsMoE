@@ -15,14 +15,15 @@ def main():
     fig,axes=plt.subplots(1,len(a.audits),figsize=(6.2*len(a.audits),4.6),squeeze=False)
     for ax,source in zip(axes[0],a.audits):
         data=json.loads(source.read_text());results=data['results']
-        keys=['fixed/moe','fixed/d2nn','learned/moe','learned/d2nn']
-        x=np.arange(4);train=[results[k]['train']['accuracy']*100 for k in keys]
+        keys=[k for k in ['fixed/moe','fixed/d2nn','fixed_dense/moe','fixed_dense/d2nn','learned/moe','learned/d2nn'] if k in results]
+        x=np.arange(len(keys));train=[results[k]['train']['accuracy']*100 for k in keys]
         val=[results[k]['val']['accuracy']*100 for k in keys]
         ax.bar(x-.18,train,.36,color='#A9CBE5',label='Train (selected checkpoint)')
         bars=ax.bar(x+.18,val,.36,color='#536EB3',label='Validation')
         ax.bar_label(bars,fmt='%.1f',padding=3,fontsize=10)
         ax.axhline(50,color='0.5',ls='--',lw=1)
-        ax.set_xticks(x,['Fixed\nMoE','Fixed\nD2NN','GRU\nMoE','GRU\nD2NN'])
+        names={'fixed':'One-hot','fixed_dense':'Dense','learned':'GRU'}
+        ax.set_xticks(x,[names[k.split('/')[0]]+'\n'+('MoE' if k.endswith('/moe') else 'D2NN') for k in keys])
         ax.set_ylim(0,100);ax.set_ylabel('Accuracy (%)')
         ax.set_title('Shared frozen visual CNN' if data['shared_visual_features_identical'] else 'Raw RGB input')
         ax.spines[['top','right']].set_visible(False)

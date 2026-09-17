@@ -114,7 +114,7 @@ def metadata(args, out):
 
 def smoke(args,train,vocab):
     records=[]
-    for mode in ['fixed','learned']:
+    for mode in ['fixed','fixed_dense','learned']:
         setseed(args.seed);frontend=TextEncoder(len(vocab),mode).cuda()
         images=train['images'][train['index'][:4]];ids=train['ids'][:4];labels=train['labels'][:4]
         coded=frontend(ids);amplitude=encode(images,coded)
@@ -126,6 +126,11 @@ def smoke(args,train,vocab):
         if mode=='learned':
             padmask=ids.eq(0)
             assert torch.count_nonzero(coded[padmask])==0
+        if mode=='fixed_dense':
+            assert torch.equal(frontend.codes@frontend.codes.T,32*torch.eye(32,device='cuda'))
+            z=coded[:,:,:32]-coded[:,:,32:]
+            recovered=(z@frontend.codes.T).argmax(-1)
+            assert torch.equal(recovered[ids!=0],ids[ids!=0])
         for arch,model in build_models(args.seed,'cuda').items():
             frontend.zero_grad(set_to_none=True)
             before=state_sha(model)
@@ -212,7 +217,7 @@ def run_mode(args,train,val,vocab,mode):
 def main():
     p=argparse.ArgumentParser();p.add_argument('--phase',choices=['smoke','train'],default='train')
     p.add_argument('--data',type=Path,required=True);p.add_argument('--out',type=Path,required=True)
-    p.add_argument('--mode',choices=['fixed','learned','both'],default='both')
+    p.add_argument('--mode',choices=['fixed','fixed_dense','learned','both'],default='both')
     p.add_argument('--seed',type=int,default=17);p.add_argument('--epochs',type=int,default=12)
     p.add_argument('--warmup-epochs',type=int,default=8);p.add_argument('--batch',type=int,default=32)
     p.add_argument('--lr',type=float,default=.01);p.add_argument('--frontend-lr',type=float,default=.001)

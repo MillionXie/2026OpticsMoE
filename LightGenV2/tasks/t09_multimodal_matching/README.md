@@ -80,6 +80,12 @@ seed17，batch32；学习前端预热8轮，Adam电子lr0.001/光学lr0.01。
 全部四个光学对照使用逐位相同的视觉特征；共享CNN与两种文本编码的额外训练成本单列。
 两种文本编码仍各自包含同一MoE/D2NN共享的文本前端。
 
+针对稀疏性混杂追加`fixed_dense`：固定32×32 Sylvester Hadamard矩阵，训练词表ID选择一行，
+以正负分开得到64维非负码，保留32个词位置。零可训练参数，码字两两正交；
+smoke校验词ID精确可恢复。该码不含语义预训练，只调整表示密度。
+与GRU相同，每个非补齐词的64维中32维非零。与one-hot使用同一槽位、功率和训练预算。
+这用于区分表征学习与光场稀疏性的影响，不能单凭one-hot对比归因于语义能力。
+
 ```bash
 python -m LightGenV2.tasks.t09_multimodal_matching.vision --data DATA --out VISUAL_RUN
 python -m LightGenV2.tasks.t09_multimodal_matching.run --data DATA --out NEW_RUN --mode fixed \
