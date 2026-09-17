@@ -192,7 +192,7 @@ def run_mode(args,train,val,vocab,mode):
     frontend.requires_grad_(False).eval();frozen_hash=state_sha(frontend)
     torch.save(dict(mode=mode,state=frontend.state_dict(),sha256=frozen_hash),root/'frontend.pt')
     results={}
-    for arch in ARCHS:
+    for arch in (ARCHS if args.architecture=='both' else [args.architecture]):
         path=root/arch;path.mkdir();setseed(args.seed)
         model=OpticalOEO(arch,args.seed,args.phase_dropout).cuda()
         initial_phase_sha=state_sha(model)
@@ -225,7 +225,7 @@ def run_mode(args,train,val,vocab,mode):
                            frontend_sha256=frozen_hash,best_checkpoint_sha256=digest((path/'best_checkpoint.pt').read_bytes()),
                            optical_parameters=sum(p.numel() for p in model.parameters()))
         save(path/'result.json',results[arch]);del model,optimizer,scheduler,checkpoint;torch.cuda.empty_cache()
-    assert results['moe']['frontend_sha256']==results['d2nn']['frontend_sha256']
+    assert len({v['frontend_sha256'] for v in results.values()})==1
     save(root/'summary.json',results)
     return results
 
@@ -241,6 +241,7 @@ def main():
     p.add_argument('--feature-dropout',type=float,default=0.)
     p.add_argument('--visual-flip',action='store_true')
     p.add_argument('--phase-dropout',type=float,default=0.)
+    p.add_argument('--architecture',choices=['both','moe','d2nn'],default='both')
     args=p.parse_args();args.out.mkdir(parents=True,exist_ok=False)
     assert 0<=args.feature_dropout<1
     assert not args.feature_dropout or args.vision_checkpoint
