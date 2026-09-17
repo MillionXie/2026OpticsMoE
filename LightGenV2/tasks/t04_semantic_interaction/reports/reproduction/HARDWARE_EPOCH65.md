@@ -22,16 +22,33 @@
     "preserved_cell_accuracy": 0.9940714311599731,
     "task_accuracy": 1.0
   },
-  "checkpoint_status": "epoch65_not_saved_recovery_pending"
+  "checkpoint_status": "replayed_epoch65_reloaded_metrics_verified"
 }
 ```
 
 表格建议标注：**实测＋末端适配，修改格准确率85.75%（200条选模留出集，epoch65）**。不能简写为全1000条实测准确率85.75%。
 
-## 权重限制
+## 已恢复的权重与加载方法
 
-原训练只保留best/last：原100轮run为epoch50/100，续训run为epoch50/200。第65轮未单独保存PT，目前不能提供与该记录匹配的epoch65权重，也未切换任何部署模型。
-如需实际部署该轮，必须按原100轮学习率日程、初始权重、缓存、种子和顺序重放至65轮，保存并复评；不能直接把总epochs改成65（这会改变cosine日程）。重放结果只有通过核验才能称为已恢复，不能预先保证逐位一致。
+已按原100轮cosine日程从原始模型重放到65轮（不是从best接着训练），恢复成功。原800/200划分、缓存、种子、顺序和训练范围均校验不变；6项GPU环境测试通过。重载PT后全部1000条、三个分区及四操作的全部汇总指标与历史第65轮误差为0；另起进程复评也通过，训练退出码0。
+
+- 本地选定PT：[last_checkpoint.pt](../../runs/hardware/head_replay_epoch65_20260917/last_checkpoint.pt)，内部`epoch == 65`。**不是同目录best_checkpoint.pt（epoch50）**。
+- 师弟电脑：`E:\code\guest\2026OpticsMoE\OpenMoji_Lab_SHS_8um\runs\head_replay_epoch65_20260917\last_checkpoint.pt`。
+- SHA256：`8d7c2f6788a9ac67f79f28a3b9065ca633a7d31f7beddde313fdeb87e5c96557`。
+- [核验报告](../../runs/hardware/head_replay_epoch65_20260917/replay_verification.json)与[selected_predictions.json](../../runs/hardware/head_replay_epoch65_20260917/selected_predictions.json)包含真实重新评估结果。下载文件均经SHA256核验。
+- 重放源码`7fdd931e`；逐轮loss最大差异`2.672672271705756e-06`，中间轮次分组指标最大差异0.005，但最终第65轮指标全部一致。原第65轮PT未保存，不能证明权重逐位相同；应称“原日程重放、指标复现通过的第65轮权重”。
+
+PT只包含末端shared_readout及优化器等元数据，不是独立完整网络。先用原工程加载固定原模型，再加载此PT：
+
+```python
+payload = torch.load(checkpoint_path, map_location="cpu", weights_only=False)
+assert payload["epoch"] == 65
+assert payload["base_checkpoint_sha256"] == "a69ddcee827749fb9202f9aef11ea45011e433d8b2f0151be2eec3db7dbff9eb"
+model.shared_readout.load_state_dict(payload["shared_readout"], strict=True)
+model.eval()
+```
+
+只能用于与本次实测前端/光学合同一致的工程。没有覆盖原模型、CCD或历史best，也未自动切换硬件程序的部署配置。
 
 ## 可追溯来源
 
