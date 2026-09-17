@@ -84,8 +84,12 @@ def train_epoch(models,frontend,data,optimizer,batch,epoch,seed,feature_dropout=
     generator=torch.Generator(device=data['ids'].device).manual_seed(seed+epoch)
     order=torch.randperm(len(data['labels']),generator=generator,device=data['ids'].device)
     running=0
-    for _,images,ids,y in batches(data,batch,order):
+    for chunk,images,ids,y in batches(data,batch,order):
         optimizer.zero_grad(set_to_none=True)
+        if 'flipped_images' in data:
+            flip=torch.rand((len(chunk),1),device=images.device,generator=generator)<.5
+            alternate=data['flipped_images'][data['index'][chunk]]
+            images=torch.where(flip,alternate,images)
         if feature_dropout:
             assert images.ndim==2, 'Feature dropout requires the frozen visual encoder'
             mask=torch.rand(images.shape,device=images.device,generator=generator)>=feature_dropout
@@ -229,9 +233,11 @@ def main():
     p.add_argument('--lr',type=float,default=.01);p.add_argument('--frontend-lr',type=float,default=.001)
     p.add_argument('--vision-checkpoint',type=Path)
     p.add_argument('--feature-dropout',type=float,default=0.)
+    p.add_argument('--visual-flip',action='store_true')
     args=p.parse_args();args.out.mkdir(parents=True,exist_ok=False)
     assert 0<=args.feature_dropout<1
     assert not args.feature_dropout or args.vision_checkpoint
+    assert not args.visual_flip or args.vision_checkpoint
     torch.set_num_threads(4);torch.backends.cudnn.benchmark=False
     setseed(args.seed);metadata(args,args.out);save(args.out/'status.json',dict(status='running',pid=os.getpid()))
     vocab=json.loads((args.data/'vocab.json').read_text())
@@ -240,6 +246,9 @@ def main():
         from .vision import frozen_features
         visual={}
         for split,data in [('train',train),('val',val)]:
+            if split=='train' and args.visual_flip:
+                data['flipped_images']=frozen_features(args.vision_checkpoint,data['images'].flip(2))
+                visual['train_flipped_feature_sha256']=digest(data['flipped_images'].cpu().numpy().tobytes())
             data['images']=frozen_features(args.vision_checkpoint,data['images'])
             visual[split+'_feature_sha256']=digest(data['images'].cpu().numpy().tobytes())
         visual['checkpoint_sha256']=digest(args.vision_checkpoint.read_bytes())
