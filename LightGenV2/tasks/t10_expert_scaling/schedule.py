@@ -38,10 +38,11 @@ def main():
                     '--data',str(a.data),'--out',str(a.out/j['name']),'--arch',j['arch'],
                     '--experts',str(j['experts']),'--top-k',str(j['top_k']),'--layers',str(j['layers']),
                     '--lr',str(j['lr']),'--microbatch','2','--epochs','60','--seed','17']
-                env=os.environ.copy();env['CUDA_VISIBLE_DEVICES']=str(gpu)
+                uuid=subprocess.check_output(['nvidia-smi','-i',str(gpu),'--query-gpu=uuid','--format=csv,noheader'],text=True).strip()
+                env=os.environ.copy();env['CUDA_VISIBLE_DEVICES']=uuid;env['CUDA_DEVICE_ORDER']='PCI_BUS_ID'
                 log=(a.out/'logs'/(j['name']+'.log')).open('w')
                 proc=subprocess.Popen(cmd,env=env,stdout=log,stderr=subprocess.STDOUT,start_new_session=True)
-                running[gpu]=(proc,log,j);save(a.out/f'gpu{gpu}.json',dict(pid=proc.pid,job=j,command=cmd))
+                running[gpu]=(proc,log,j);save(a.out/f'gpu{gpu}.json',dict(pid=proc.pid,gpu_uuid=uuid,job=j,command=cmd))
             for gpu,(proc,log,j) in list(running.items()):
                 if proc.poll() is None:continue
                 log.close();del running[gpu]
