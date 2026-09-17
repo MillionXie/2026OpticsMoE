@@ -1,5 +1,11 @@
 # T07 复现说明入口
 
+**83.125%独立交付入口（2026-09-17）：** [交付说明](../../delivery_83125/README.md)与[硬件适配合同](../../delivery_83125/AI_HANDOFF.md)。
+由任务 `build_lab_package.py --profile enrolled83125 --protocol <固定protocol.json>` 生成；
+仅打包固定best、离线processor、对应2400照片与原图复评证据，不混入旧类别检索权重。
+交付根目录 `delivery.py verify/evaluate/finetune/export-phase`；具体命令见交付说明。
+本包为独立仿真与实验适配参考，未包含厂商SDK或声称现场硬件已验证。
+
 **老师审查冻结Qwen baseline：见[独立baseline说明与代码](../../baseline_reproduction/README.md)。**
 该入口同时复现旧未见商品类别检索94.375%和新已登记SKU检索85.125%，不需要光学或其他任务代码。
 两者正确答案/图库/查询组成不同；新预测只按同类别判断时为98.75%，仅是诊断，不替换同SKU指标。
