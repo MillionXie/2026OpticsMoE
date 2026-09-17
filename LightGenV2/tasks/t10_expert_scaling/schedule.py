@@ -15,6 +15,7 @@ def main():
     ap.add_argument('--data',type=Path,required=True);ap.add_argument('--gpus',type=int,nargs='+',required=True)
     ap.add_argument('--mode',choices=['calibration','scan'],default='calibration')
     ap.add_argument('--calibration',type=Path)
+    ap.add_argument('--dry-run',action='store_true')
     a=ap.parse_args();assert 1<=len(a.gpus)<=3 and len(set(a.gpus))==len(a.gpus)
     a.out.mkdir(parents=True,exist_ok=False);(a.out/'logs').mkdir()
     arms=['moe_oeo','d2nn_total_parameter','d2nn_same_aperture']
@@ -59,6 +60,9 @@ def main():
     for j in jobs:j['name']=f"{j['arch']}_N{j['experts']}_k{j['top_k']}_L{j['layers']}_lr{j['lr']}_s17"
     save(a.out/'jobs.json',jobs);save(a.out/'identity.json',dict(pid=os.getpid(),gpus=a.gpus,command=sys.argv,
          git_commit=subprocess.check_output(['git','rev-parse','HEAD'],text=True).strip(),max_gpus=3))
+    if a.dry_run:
+        save(a.out/'status.json',dict(state='dry_run_complete',jobs=len(jobs),gpu_processes_started=0))
+        return
     running={};finished=[];failed=[]
     def stop(signum,frame):raise KeyboardInterrupt(f'signal {signum}')
     signal.signal(signal.SIGTERM,stop);signal.signal(signal.SIGINT,stop)
