@@ -34,6 +34,8 @@ def save(path,value):
 
 def data(path):
     manifest=json.loads((path.parent/'data_manifest.json').read_text())
+    if manifest.get('training_ready') is False:
+        raise ValueError('Dataset audit is incomplete; training_ready=false')
     assert sha(path)==manifest['cache_sha256']
     z=np.load(path,allow_pickle=False);splits={}
     for split in ['train','val']:
