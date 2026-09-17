@@ -1,0 +1,5 @@
+{
+  "train_feature_sha256": "fa129b38d1d19640bd62c7e281bd18f349937704680352236c7d7ea77e9d0af7",
+  "val_feature_sha256": "4f31cf9ff1f40da2361fb55d0c0151c9c9c4fbbf5b8afc1930343f032ed0e046",
+  "checkpoint_sha256": "8b54d51efce92c525e22fec6d4a95af0a7d56c36d2fb3cdf210cec97e4b4aa0d"
+}

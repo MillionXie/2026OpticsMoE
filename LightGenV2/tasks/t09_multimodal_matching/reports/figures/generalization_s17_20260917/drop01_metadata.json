@@ -1,0 +1,55 @@
+{
+  "config": {
+    "phase": "train",
+    "data": "/DATA/DATA1/guest3/demo_reproduction_data/clevr_attribute_s17_v1",
+    "out": "LightGenV2/tasks/t09_multimodal_matching/runs/simulation/clevr_visual_fixed_drop01_s17_v1",
+    "mode": "fixed",
+    "seed": 17,
+    "epochs": 12,
+    "warmup_epochs": 8,
+    "batch": 32,
+    "lr": 0.01,
+    "frontend_lr": 0.001,
+    "vision_checkpoint": "LightGenV2/tasks/t09_multimodal_matching/runs/simulation/clevr_visual_aux_s17_v1/best_checkpoint.pt",
+    "feature_dropout": 0.1
+  },
+  "git_commit": "095abdaf3fbac5a307da90f9a7a4bb18297aad88",
+  "command": [
+    "/DATA/DATA1/guest3/demo_reproduction_20260915/LightGenV2/tasks/t09_multimodal_matching/run.py",
+    "--data",
+    "/DATA/DATA1/guest3/demo_reproduction_data/clevr_attribute_s17_v1",
+    "--mode",
+    "fixed",
+    "--vision-checkpoint",
+    "LightGenV2/tasks/t09_multimodal_matching/runs/simulation/clevr_visual_aux_s17_v1/best_checkpoint.pt",
+    "--out",
+    "LightGenV2/tasks/t09_multimodal_matching/runs/simulation/clevr_visual_fixed_drop01_s17_v1",
+    "--feature-dropout",
+    "0.1"
+  ],
+  "python": "3.11.15",
+  "torch": "2.6.0+cu124",
+  "cuda": "12.4",
+  "gpu": "NVIDIA GeForce RTX 4090",
+  "pid": 865299,
+  "cuda_visible_devices": "3",
+  "test_accessed": false,
+  "sources": {
+    "examples.py": "c65c7d498e55a911256735e538454c003f6e9bf264b866c274623b054a4fc30f",
+    "plot_test.py": "68bac677ce18e85aae0d755dbec1fa3f67be08936ba8adea75371006f8321d04",
+    "prepare.py": "24e6ae102cff753b62d9d3da3b1050b0feca90ea874add3400b502cb248df52e",
+    "test_frozen.py": "afaec114defebef6df49575684cd0231676378764dd9a4507ffdd1b200008b0a",
+    "vision.py": "8b4fbb88e1c4f596e1cc4539551fbb5cac377d1c64301c9c650b29ef0db6efcf",
+    "audit.py": "5187cdf2ceab9309ea1f0a5f4deb1c3051b859e44c4813c3e6e140a2f081f28d",
+    "run.py": "21d5831b8704c4c49183061954bb96ec0d22f9cdff149233552ecd18ad663ab4",
+    "model.py": "7bcab046e8e058967dceb518742d0e0025c2007df136800172b22a7019583c24",
+    "diagnose.py": "5507d8634b108880f1a6abfe1684df667cd3d9a1001fffbb0851326dceddc3d1",
+    "plot.py": "62c99441ef7870222e94260f5eab1c9b9768a0732a4885afa9ca39db59807512"
+  },
+  "data_manifest_sha256": "a5826f81d530e41e776eac528886936d64b5ad413e62268510fa62c0f09e5ade",
+  "backend_sources": {
+    "LightGenV2/demo_check/pure_optical/models.py": "f8c9f901eb1fb4f6ba9eaed4c5b8eef8ad228f7cd7bed952ea80676d4f65f0e1",
+    "LightGenV2/demo_check/pure_optical/config.json": "727feeb7976f6ef99896dec1c8336894e4adda1399abc8e4c310b54d97c9eb6b",
+    "LightGenV2/demo_check/adrenal_softsign_code_export_20260915_145336/code/optical_reference/optics.py": "b250627b14357a254eb12c785caf20f3aff2bf3fe30121a05321094803c73a7d"
+  }
+}

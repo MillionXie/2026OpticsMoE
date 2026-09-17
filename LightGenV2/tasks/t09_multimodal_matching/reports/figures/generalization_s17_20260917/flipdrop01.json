@@ -1,0 +1,177 @@
+{
+  "passed": true,
+  "results": {
+    "fixed/moe": {
+      "epoch": 9,
+      "train": {
+        "accuracy": 0.8015000224113464,
+        "nll": 0.4347306787967682,
+        "capture": 0.0015690235886722803,
+        "route_mean": [
+          0.43672990798950195,
+          0.29737454652786255,
+          0.2061358243227005,
+          0.05975969508290291
+        ],
+        "route_std": [
+          0.03725717216730118,
+          0.030593743547797203,
+          0.033283475786447525,
+          0.04350094497203827
+        ],
+        "route_top_frequency": [
+          0.9991666674613953,
+          0.0008333333535119891,
+          0.0,
+          0.0
+        ]
+      },
+      "val": {
+        "accuracy": 0.7113333344459534,
+        "nll": 0.570493757724762,
+        "capture": 0.0014578956179320812,
+        "route_mean": [
+          0.4380028545856476,
+          0.3001052737236023,
+          0.20397944748401642,
+          0.05791239067912102
+        ],
+        "route_std": [
+          0.03341864421963692,
+          0.030284108594059944,
+          0.03228878602385521,
+          0.04170239716768265
+        ],
+        "route_top_frequency": [
+          1.0,
+          0.0,
+          0.0,
+          0.0
+        ]
+      },
+      "counterfactual": {
+        "accuracy": 0.7113333344459534,
+        "nll": 0.570493757724762,
+        "capture": 0.0014578953851014376,
+        "route_mean": [
+          0.4380028545856476,
+          0.3001052737236023,
+          0.2039794772863388,
+          0.05791239067912102
+        ],
+        "route_std": [
+          0.03341864421963692,
+          0.030284108594059944,
+          0.03228878602385521,
+          0.04170239716768265
+        ],
+        "route_top_frequency": [
+          1.0,
+          0.0,
+          0.0,
+          0.0
+        ]
+      },
+      "frontend_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "best_checkpoint_sha256": "f273dee96a4cc6e783125e3cc1f42d8183944a286df89e71cbbc689c987d9b48",
+      "optical_parameters": 479364,
+      "verified_prediction_metrics": true,
+      "verified_validation_selection": true,
+      "source_run": "LightGenV2/tasks/t09_multimodal_matching/runs/simulation/clevr_visual_fixed_flipdrop01_s17_v1"
+    },
+    "fixed/d2nn": {
+      "epoch": 12,
+      "train": {
+        "accuracy": 0.6453333497047424,
+        "nll": 0.6697412729263306,
+        "capture": 0.17512601613998413,
+        "route_mean": [
+          0.25,
+          0.25,
+          0.25,
+          0.25
+        ],
+        "route_std": [
+          0.0,
+          0.0,
+          0.0,
+          0.0
+        ],
+        "route_top_frequency": [
+          1.0,
+          0.0,
+          0.0,
+          0.0
+        ]
+      },
+      "val": {
+        "accuracy": 0.5713333487510681,
+        "nll": 0.6823054552078247,
+        "capture": 0.17492491006851196,
+        "route_mean": [
+          0.25,
+          0.25,
+          0.25,
+          0.25
+        ],
+        "route_std": [
+          0.0,
+          0.0,
+          0.0,
+          0.0
+        ],
+        "route_top_frequency": [
+          1.0,
+          0.0,
+          0.0,
+          0.0
+        ]
+      },
+      "counterfactual": {
+        "accuracy": 0.5713333487510681,
+        "nll": 0.6823053956031799,
+        "capture": 0.17492491006851196,
+        "route_mean": [
+          0.25,
+          0.25,
+          0.25,
+          0.25
+        ],
+        "route_std": [
+          0.0,
+          0.0,
+          0.0,
+          0.0
+        ],
+        "route_top_frequency": [
+          1.0,
+          0.0,
+          0.0,
+          0.0
+        ]
+      },
+      "frontend_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "best_checkpoint_sha256": "7848d70766c20f38264dcd06e2133862729c4979c010ada432b737588eaf5ab8",
+      "optical_parameters": 456968,
+      "verified_prediction_metrics": true,
+      "verified_validation_selection": true,
+      "source_run": "LightGenV2/tasks/t09_multimodal_matching/runs/simulation/clevr_visual_fixed_flipdrop01_s17_v1"
+    }
+  },
+  "comparisons": {
+    "fixed/moe minus fixed/d2nn": {
+      "mean_percentage_points": 14.000000000000002,
+      "image_cluster_bootstrap_95ci_percentage_points": [
+        11.066666666666666,
+        16.8
+      ]
+    }
+  },
+  "question_only_train_prior_accuracy": 0.5013333333333333,
+  "image_only_balanced_query_baseline": 0.5,
+  "shared_visual_features_identical": true,
+  "identical_optical_initialization_across_encodings": true,
+  "uncertainty_scope": "Conditional on validation-selected models; excludes training-seed and model-selection uncertainty",
+  "unique_validation_images": 250,
+  "test_accessed": false
+}
