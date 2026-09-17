@@ -44,7 +44,7 @@ def verify_pilot(a,lock):
     for candidate in spec['candidate_order']:
         entries=[e for e in selection['entries'] if e['candidate']==candidate];assert len(entries)==4 and {e['result']['arch'] for e in entries}==set(spec['architectures']);values=[]
         for e in entries:
-            x=e['result'];d=resolve(e['folder'],a.task_root);m=read(d.parent/'metadata.json');assert x['seed']==17 and x['depth']==4 and m['candidate']==candidate;assert m['test_read'] is False;assert sha(d/'best_checkpoint.pt')==x['checkpoint_sha256'];assert m['sources']==lock['sources'] and m['data_sha256']==lock['data_sha256']
+            x=e['result'];d=resolve(e['folder'],a.task_root);m=read(d.parent/'metadata.json');assert x['seed']==17 and x['depth']==spec.get('pilot_depth',4) and m['candidate']==candidate;assert m['test_read'] is False;assert sha(d/'best_checkpoint.pt')==x['checkpoint_sha256'];assert m['sources']==lock['sources'] and m['data_sha256']==lock['data_sha256']
             if candidate in configs:assert configs[candidate]==m['config']
             else:configs[candidate]=m['config']
             for split in ['train','val']:predictions(d/(split+'_predictions.csv'),x['metrics'][split])
