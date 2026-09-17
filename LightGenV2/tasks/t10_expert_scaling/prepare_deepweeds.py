@@ -4,11 +4,14 @@ import csv
 import hashlib
 import io
 import json
+import socket
+import subprocess
 import urllib.request
 import zipfile
 from collections import Counter,defaultdict
 from pathlib import Path
 import gdown
+import urllib3.util.connection
 import numpy as np
 from PIL import Image
 from .train import save,sha
@@ -17,13 +20,16 @@ from .train import save,sha
 def main():
     ap=argparse.ArgumentParser();ap.add_argument('--root',type=Path,required=True);a=ap.parse_args()
     a.root.mkdir(parents=True,exist_ok=True)
-    api='https://api.github.com/repos/AlexOlsen/DeepWeeds/commits/master'
-    rev=json.load(urllib.request.urlopen(api,timeout=60))['sha']
+    # Author revision verified before download; IPv4 avoids this server's stalled IPv6 route.
+    rev='da084f62bcd1a2b0afeb8b81f1a27be3186391a1'
+    urllib3.util.connection.allowed_gai_family=lambda:socket.AF_INET
     files={};tables={}
     for split in ['train','val','test']:
         name=split+'_subset0.csv';url=f'https://raw.githubusercontent.com/AlexOlsen/DeepWeeds/{rev}/labels/{name}'
         dest=a.root/name
-        if not dest.exists():urllib.request.urlretrieve(url,dest)
+        if not dest.exists():
+            subprocess.run(['curl','-4','-fL','--connect-timeout','15','--max-time','90',url,'-o',str(dest)],check=True,timeout=100)
+        print('Loaded labels',name,flush=True)
         tables[split]=list(csv.DictReader(dest.open(encoding='utf-8-sig')))
         files[name]=dict(url=url,sha256=sha(dest))
     save(a.root/'source.json',dict(repository_commit=rev,files=files,license='CC-BY-4.0',
