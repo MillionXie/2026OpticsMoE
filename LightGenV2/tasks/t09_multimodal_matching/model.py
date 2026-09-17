@@ -41,7 +41,10 @@ def encode(images, text):
         rgb=images.reshape(-1,1,16,8).expand(-1,3,-1,-1)
     else:
         rgb = images.float().permute(0, 3, 1, 2)/255
-    rgb = F.interpolate(rgb, (112, 112), mode='bilinear', align_corners=False)
+    if images.ndim==2:
+        rgb=F.interpolate(rgb,(112,112),mode='nearest')
+    else:
+        rgb = F.interpolate(rgb, (112, 112), mode='bilinear', align_corners=False)
     rgb = rgb*(0.5/rgb.square().sum((1,2,3), keepdim=True).clamp_min(1e-20)).sqrt()
     # 32x64 ->112x112 is nearest-neighbour enlargement, not feature averaging.
     text = F.interpolate(text[:,None], (112,112), mode='nearest')[:,0]

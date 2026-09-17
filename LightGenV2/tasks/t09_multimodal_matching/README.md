@@ -63,3 +63,27 @@ seed17，batch32；学习前端预热8轮，Adam电子lr0.001/光学lr0.01。
 运行入口：`python -m LightGenV2.tasks.t09_multimodal_matching.run --phase smoke|train
 --data /path/to/prepared --out LightGenV2/tasks/t09_multimodal_matching/runs/smoke|simulation/UNIQUE_ID`。
 依赖原工程`demo_check/pure_optical`及其角谱传播后端；本任务不是独立交付包。
+
+## 共享视觉前端诊断（独立run，保留原始RGB结果）
+
+直接RGB输入的首轮验证接近50%，不能据此确定文本编码优劣。
+补充一次共享视觉特征实验：CNN包含16/32/64通道的Conv3-BN-ReLU-Pool，
+接64→128的1×1卷积、ReLU和全局平均池化。临时128→24分类头预测颜色-形状组合是否存在，
+仅在训练问答提供的正负查询上计算BCE；无未标注类别的伪负标签。
+60轮AdamW，lr0.001余弦到0.0001，wd0.0001，每批32图像，水平翻转；验证NLL选模。
+该电子辅助任务使用结构化查询索引选取24输出之一，仅用于预训练和诊断。
+正式光学模型不接收该索引或24个logit，只接收去掉分类头后的同一冻结128维特征。
+
+128维按16×8排布，最近邻扩展成112×112，在三个原图像槽位重复并合计归一到0.5功率；
+重复不增加信息，空间布局已被GAP丢弃。本次任务只问全图属性是否存在，不支持空间关系结论。
+三槽重复是对当前四区接口的适配，尚未优化排布。文本槽位、主光路与训练预算保持原方案。
+全部四个光学对照使用逐位相同的视觉特征；共享CNN与两种文本编码的额外训练成本单列。
+两种文本编码仍各自包含同一MoE/D2NN共享的文本前端。
+
+```bash
+python -m LightGenV2.tasks.t09_multimodal_matching.vision --data DATA --out VISUAL_RUN
+python -m LightGenV2.tasks.t09_multimodal_matching.run --data DATA --out NEW_RUN --mode fixed \
+  --vision-checkpoint VISUAL_RUN/best_checkpoint.pt
+python -m LightGenV2.tasks.t09_multimodal_matching.run --data DATA --out ANOTHER_NEW_RUN --mode learned \
+  --vision-checkpoint VISUAL_RUN/best_checkpoint.pt
+```
