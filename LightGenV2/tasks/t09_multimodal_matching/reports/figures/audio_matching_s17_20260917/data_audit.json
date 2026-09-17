@@ -1,0 +1,16 @@
+{
+  "passed": true,
+  "counts": {
+    "train": 6263,
+    "val": 843,
+    "test": 867
+  },
+  "speakers": {
+    "train": 1403,
+    "val": 172,
+    "test": 175
+  },
+  "speaker_and_raw_sha_disjoint": true,
+  "validation_queries_balanced": true,
+  "data_manifest_sha256": "e20d789937a44512ce4c91f222ba99145e36c63f3ee386295585d61cc018c0c1"
+}

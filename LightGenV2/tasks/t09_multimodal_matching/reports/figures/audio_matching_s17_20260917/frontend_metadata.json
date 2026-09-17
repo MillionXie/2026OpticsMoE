@@ -1,0 +1,22 @@
+{
+  "command": [
+    "/DATA/DATA1/guest3/demo_reproduction_20260915/LightGenV2/tasks/t09_multimodal_matching/audio_frontend.py",
+    "--data",
+    "/DATA/DATA1/guest3/demo_reproduction_data/mini_speech_matching_s17_v3",
+    "--out",
+    "LightGenV2/tasks/t09_multimodal_matching/runs/simulation/audio_frontend_s17_v1",
+    "--epochs",
+    "30"
+  ],
+  "git_commit": "248a381b65e7d4a3f497b8345950f6d97d27fdbf",
+  "seed": 17,
+  "epochs": 30,
+  "lr": 0.001,
+  "batch": 64,
+  "weight_decay": 0.0001,
+  "data_manifest_sha256": "e20d789937a44512ce4c91f222ba99145e36c63f3ee386295585d61cc018c0c1",
+  "retained_parameters": 32128,
+  "temporary_head_parameters": 1032,
+  "objective": "8-class audio auxiliary CE; head removed before optical matching",
+  "test_accessed": false
+}

@@ -31,8 +31,8 @@ def main():
         bars=axes[2].bar(np.arange(4)+dx,v,.36,color=colors[arch],label=arch.upper());axes[2].bar_label(bars,fmt='%.1f',padding=3,fontsize=8)
     axes[2].set_xticks(np.arange(4),['Original','Constant\ntext','Constant\naudio','Shuffled\naudio'])
     axes[2].set_title('Dependence on both modalities');axes[2].legend(fontsize=8)
-    for ax in axes:
-        ax.set_ylim(45,103);ax.set_ylabel('Accuracy (%)');ax.axhline(50,color='.5',ls=':',lw=1)
+    for i,ax in enumerate(axes):
+        ax.set_ylim(45 if i==0 else 0,110);ax.set_ylabel('Accuracy (%)');ax.axhline(50,color='.5',ls=':',lw=1)
         ax.spines[['top','right']].set_visible(False)
     fig.suptitle('Speech Commands-derived audio/text matching | shared frozen CNN | 2 layers + OEO | seed 17\nSpeaker-disjoint validation; test not evaluated; corruption controls keep original labels',fontsize=11)
     fig.tight_layout()

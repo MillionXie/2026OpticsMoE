@@ -1,0 +1,42 @@
+{
+  "records": [
+    {
+      "run": "LightGenV2/tasks/t09_multimodal_matching/runs/simulation/audio_matching_moe_s17_v1",
+      "original": {
+        "train_feature_sha256": "b47878c5d0c5b04bd5263d1890d09b2e983d450b9ff8b189e423d2965267de16",
+        "val_feature_sha256": "9659b2e37a1537980401d43495b09c18d4002148b0048df35da5c734f9a2a0e0",
+        "checkpoint_sha256": "ce733c832a1bc7629cf9b5f63f22d46668fc5e1a5b0442cb97b092fca0a9b2b3"
+      },
+      "recomputed": {
+        "train_feature_sha256": "b47878c5d0c5b04bd5263d1890d09b2e983d450b9ff8b189e423d2965267de16",
+        "val_feature_sha256": "9659b2e37a1537980401d43495b09c18d4002148b0048df35da5c734f9a2a0e0"
+      },
+      "original_hashes_reproduced": true
+    },
+    {
+      "run": "LightGenV2/tasks/t09_multimodal_matching/runs/simulation/audio_matching_d2nn_s17_v1",
+      "original": {
+        "train_feature_sha256": "f9c84e5398eb2a582c43465757dbe56d0f84f86e7edd3a0d085fcb9db0a15c45",
+        "val_feature_sha256": "9a03cf02862b0b7977874ce67d7b8702bb5da7336b7fcdf55888dcf263ac5f2b",
+        "checkpoint_sha256": "ce733c832a1bc7629cf9b5f63f22d46668fc5e1a5b0442cb97b092fca0a9b2b3"
+      },
+      "recomputed": {
+        "train_feature_sha256": "f9c84e5398eb2a582c43465757dbe56d0f84f86e7edd3a0d085fcb9db0a15c45",
+        "val_feature_sha256": "9a03cf02862b0b7977874ce67d7b8702bb5da7336b7fcdf55888dcf263ac5f2b"
+      },
+      "original_hashes_reproduced": true
+    }
+  ],
+  "comparison": {
+    "train": {
+      "max_absolute": 0.012475013732910156,
+      "relative_l2": 0.001191010233014822,
+      "allclose": false
+    },
+    "val": {
+      "max_absolute": 0.01136922836303711,
+      "relative_l2": 0.0011693320702761412,
+      "allclose": false
+    }
+  }
+}

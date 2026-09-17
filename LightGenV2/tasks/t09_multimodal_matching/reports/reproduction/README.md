@@ -70,3 +70,30 @@ run：clevr_visual_fixed_long30_s17_v1和clevr_visual_fixed_long30_phase05_s17_v
 共享音频前端：同样32128参数CNN，临时8类头1032参数；仅用训练语音标签，预训练30轮后按验证NLL选择并去掉分类头，冻结128维特征。不把关键词预测类别或分类logits直接输入光学网络。未使用音频水平翻转或时间反转。
 音频前端run：audio_frontend_s17_v1，源码248a381b，选中第28轮；八类分类训练91.79%、验证85.88%。这不是光学音文匹配成绩。
 光学首轮仍为固定完整句子one-hot、两层逐层OEO、共享前端、相同训练预算；仅验证选模，不先假定MoE领先。
+
+## 音文配对结果与精确输入审计
+
+30轮预算，固定one-hot，两层逐层OEO，lr0.01余弦到0.001，batch32，无phase/特征dropout；最低验证NLL选模。训练前端只保留128维特征，二分类匹配标签每条语音正负各一。
+
+|模型|选择轮次|训练准确率|验证准确率|验证NLL|
+|---|---:|---:|---:|---:|
+|MoE|9|96.63%|94.31%|0.1667|
+|D2NN|23|97.17%|94.01%|0.1682|
+
+MoE−D2NN为0.30个百分点；按验证说话人聚类重采样的条件95%区间为[-0.52,1.07]个百分点，包含零，且不包含训练种子及选模不确定性；不能声称明确优势。未评估音频测试集。
+
+重要审计：首轮两张逻辑CUDA设备实际为RTX4090与A100，同一CNN特征的相对L2差约0.12%，未通过逐字节相同输入核验。保留该初试run，但不作为正式配对对照。通过check_features.py在原设备重算，先复现原特征哈希，再保存MoE原输入的固定缓存。D2NN使用该缓存重训；新的两组训练/验证特征及前端checkpoint SHA完全一致。GPU选择改为UUID，避免CUDA与nvidia-smi序号不同。
+
+报告所用run：audio_matching_moe_s17_v1（源码6d661c8b）与audio_matching_d2nn_canonical_s17_v1（源码819d0ec8）。旧audio_matching_d2nn_s17_v1仅作为跨设备数值诊断保留。数据manifest SHA256：e20d789937a44512ce4c91f222ba99145e36c63f3ee386295585d61cc018c0c1。共享音频CNN checkpoint SHA256：ce733c832a1bc7629cf9b5f63f22d46668fc5e1a5b0442cb97b092fca0a9b2b3。
+
+独立核验runs/smoke/audio_matching_audit_s17_v2通过：重算预测准确率/NLL、验证最优轮次、权重SHA及精确特征身份。输入依赖诊断runs/smoke/audio_modality_diagnosis_s17_v1：固定文字后两模型均50%；固定音频特征后49.47%/49.88%；随机打乱音频后48.75%/48.93%。均保留原标签，是扰动诊断，不是新任务成绩。MoE推理时将路由强制等功率，准确率从94.31%降到86.83%；这是同一权重的推理干预，不是重新训练的固定路由baseline。正常路由的各支路功率均值约31.28%、21.52%、30.27%、16.93%，仍为四支路密集加权。
+
+[音文曲线与双模态诊断图](../figures/audio_matching_s17_20260917/audio_matching.png)。图目录保留独立审计、数据互斥检查、实际命令/环境、前端哈希与传输SHA清单。所有本轮训练及诊断进程已退出。
+
+音频复现入口：
+```bash
+python -m LightGenV2.tasks.t09_multimodal_matching.audio_prepare --out AUDIO_DATA
+python -m LightGenV2.tasks.t09_multimodal_matching.audio_frontend --data AUDIO_DATA --out AUDIO_FRONTEND --epochs 30
+python -m LightGenV2.tasks.t09_multimodal_matching.run --data AUDIO_DATA --vision-checkpoint AUDIO_FRONTEND/best_checkpoint.pt --mode fixed --epochs 30 --architecture both --out AUDIO_RUN
+```
+单进程both会只提取一次共享前端特征后依次训练两架构，避免跨设备特征差异。拆分设备运行时应传入同一个已校验的--feature-cache。所有OUT必须为新的任务runs路径，旧run不得覆盖。

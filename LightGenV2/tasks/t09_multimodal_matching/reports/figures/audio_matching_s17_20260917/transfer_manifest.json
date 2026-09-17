@@ -1,0 +1,14 @@
+{
+  "verification.json": "3493f772306e37ff1dd2147ec37c2fbe8ac35351f9b9b28af330c057cd4ee7e9",
+  "diagnostics.json": "0645eff6ca9510cf65ab145b41ecaf55abe943911a61b0f86cd08e1d298ba74b",
+  "feature_equivalence.json": "56e5421ba7721646d5afe9d72516413a7b808a65f90f9870adf8b07e1863b77a",
+  "canonical_cache_manifest.json": "d96a3e1c105062051184f4400691fbbd3aa63f18e6f1ca6005ec5cbd81e6f843",
+  "moe_history.json": "ca4b9f0cfdc4594aa1d7fc9819289e53a14aa4745dfd1a4d8278379a0aa6965e",
+  "moe_metadata.json": "fce8d451d83b4aa971783fa0b72b160c67523279f658e527ad924c763bead0db",
+  "moe_status.json": "e7b5001bfff59d38d630e3d0e0accd1b541f043d98f860250c306e00c13ccbef",
+  "moe_shared_visual_frontend.json": "0ea76ce72c18aaac0ab4ab82138a6a3944ea01087b0371827a33cdc6bbe80dc2",
+  "d2nn_history.json": "ed96909030144d8064bfb9fe8532961b3348e08d1aeed84e17e4ca39ddd8d3f4",
+  "d2nn_metadata.json": "8af82073865ea4ea32777e28d8e0563094b264b946bcede6fcaa24a7c19b9cf9",
+  "d2nn_status.json": "5277aa1fb1d022afffee82aafb9d7eddd6e9a29344c643614edd3d09f73b70a5",
+  "d2nn_shared_visual_frontend.json": "0ea76ce72c18aaac0ab4ab82138a6a3944ea01087b0371827a33cdc6bbe80dc2"
+}

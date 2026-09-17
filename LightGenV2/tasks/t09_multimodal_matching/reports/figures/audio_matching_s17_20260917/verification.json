@@ -1,0 +1,179 @@
+{
+  "passed": true,
+  "results": {
+    "fixed/moe": {
+      "epoch": 9,
+      "train": {
+        "accuracy": 0.9663100838661194,
+        "nll": 0.0959019586443901,
+        "capture": 0.002215547254309058,
+        "route_mean": [
+          0.3101191818714142,
+          0.21698039770126343,
+          0.30403977632522583,
+          0.16886065900325775
+        ],
+        "route_std": [
+          0.12285707145929337,
+          0.05443492904305458,
+          0.08621029555797577,
+          0.06819534301757812
+        ],
+        "route_top_frequency": [
+          0.521954357624054,
+          0.023072009906172752,
+          0.42926713824272156,
+          0.02570652961730957
+        ]
+      },
+      "val": {
+        "accuracy": 0.9430605173110962,
+        "nll": 0.16671660542488098,
+        "capture": 0.0022822292521595955,
+        "route_mean": [
+          0.3128094971179962,
+          0.2152361273765564,
+          0.30267950892448425,
+          0.16927486658096313
+        ],
+        "route_std": [
+          0.1201089546084404,
+          0.054271165281534195,
+          0.08219936490058899,
+          0.06661765277385712
+        ],
+        "route_top_frequency": [
+          0.5142349004745483,
+          0.030249109491705894,
+          0.4341636896133423,
+          0.021352313458919525
+        ]
+      },
+      "counterfactual": {
+        "accuracy": 0.9430605173110962,
+        "nll": 0.1667165905237198,
+        "capture": 0.002282229484990239,
+        "route_mean": [
+          0.3128095269203186,
+          0.2152361273765564,
+          0.30267950892448425,
+          0.16927485167980194
+        ],
+        "route_std": [
+          0.1201089546084404,
+          0.054271165281534195,
+          0.08219936490058899,
+          0.06661765277385712
+        ],
+        "route_top_frequency": [
+          0.5142349004745483,
+          0.030249109491705894,
+          0.4341636896133423,
+          0.021352313458919525
+        ]
+      },
+      "frontend_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "best_checkpoint_sha256": "bc83bf7dce92c71fc3b416e0b0b609d865d00a90e35a7369ffbfa75f3398d80e",
+      "optical_parameters": 479364,
+      "verified_prediction_metrics": true,
+      "verified_validation_selection": true,
+      "source_run": "LightGenV2/tasks/t09_multimodal_matching/runs/simulation/audio_matching_moe_s17_v1"
+    },
+    "fixed/d2nn": {
+      "epoch": 23,
+      "train": {
+        "accuracy": 0.9716589450836182,
+        "nll": 0.07751082628965378,
+        "capture": 0.0019340672297403216,
+        "route_mean": [
+          0.25,
+          0.25,
+          0.25,
+          0.25
+        ],
+        "route_std": [
+          0.0,
+          0.0,
+          0.0,
+          0.0
+        ],
+        "route_top_frequency": [
+          1.0,
+          0.0,
+          0.0,
+          0.0
+        ]
+      },
+      "val": {
+        "accuracy": 0.9400948882102966,
+        "nll": 0.16823075711727142,
+        "capture": 0.0019321731524541974,
+        "route_mean": [
+          0.25,
+          0.25,
+          0.25,
+          0.25
+        ],
+        "route_std": [
+          0.0,
+          0.0,
+          0.0,
+          0.0
+        ],
+        "route_top_frequency": [
+          1.0,
+          0.0,
+          0.0,
+          0.0
+        ]
+      },
+      "counterfactual": {
+        "accuracy": 0.9400948882102966,
+        "nll": 0.16823077201843262,
+        "capture": 0.0019321730360388756,
+        "route_mean": [
+          0.25,
+          0.25,
+          0.25,
+          0.25
+        ],
+        "route_std": [
+          0.0,
+          0.0,
+          0.0,
+          0.0
+        ],
+        "route_top_frequency": [
+          1.0,
+          0.0,
+          0.0,
+          0.0
+        ]
+      },
+      "frontend_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "best_checkpoint_sha256": "b0d1ed440dbb9f396e4ab43415373b73421f04847eee14596b69c0d30a1b975b",
+      "optical_parameters": 456968,
+      "verified_prediction_metrics": true,
+      "verified_validation_selection": true,
+      "source_run": "LightGenV2/tasks/t09_multimodal_matching/runs/simulation/audio_matching_d2nn_canonical_s17_v1"
+    }
+  },
+  "comparisons": {
+    "fixed/moe minus fixed/d2nn": {
+      "mean_percentage_points": 0.29655990510083036,
+      "cluster_bootstrap_95ci_percentage_points": [
+        -0.5194974076638577,
+        1.065116981783648
+      ]
+    }
+  },
+  "question_only_train_prior_accuracy": 0.48576512455516013,
+  "image_only_balanced_query_baseline": 0.5,
+  "shared_visual_features_identical": true,
+  "identical_optical_initialization_across_encodings": true,
+  "uncertainty_scope": "Conditional on validation-selected models; excludes training-seed and model-selection uncertainty",
+  "bootstrap_unit": "speaker",
+  "validation_groups": 172,
+  "unique_validation_images": 843,
+  "test_accessed": false
+}
