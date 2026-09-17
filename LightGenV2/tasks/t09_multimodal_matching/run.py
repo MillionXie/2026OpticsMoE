@@ -242,6 +242,7 @@ def main():
     p.add_argument('--visual-flip',action='store_true')
     p.add_argument('--phase-dropout',type=float,default=0.)
     p.add_argument('--architecture',choices=['both','moe','d2nn'],default='both')
+    p.add_argument('--feature-cache',type=Path)
     args=p.parse_args();args.out.mkdir(parents=True,exist_ok=False)
     assert 0<=args.feature_dropout<1
     assert not args.feature_dropout or args.vision_checkpoint
@@ -254,11 +255,24 @@ def main():
     if args.vision_checkpoint:
         from .vision import frozen_features
         visual={}
+        cached=None
+        if args.feature_cache:
+            assert not args.visual_flip, 'Flip cache is not part of this profile'
+            record=json.loads(args.feature_cache.with_suffix('.json').read_text())
+            assert record['cache_sha256']==digest(args.feature_cache.read_bytes())
+            assert record['checkpoint_sha256']==digest(args.vision_checkpoint.read_bytes())
+            assert record['data_manifest_sha256']==digest((args.data/'manifest.json').read_bytes())
+            cached=np.load(args.feature_cache)
         for split,data in [('train',train),('val',val)]:
             if split=='train' and args.visual_flip:
                 data['flipped_images']=frozen_features(args.vision_checkpoint,data['images'].flip(2))
                 visual['train_flipped_feature_sha256']=digest(data['flipped_images'].cpu().numpy().tobytes())
-            data['images']=frozen_features(args.vision_checkpoint,data['images'])
+            if cached is not None:
+                assert digest(cached[split].tobytes())==record['features'][split+'_feature_sha256']
+                assert cached[split].shape==(len(data['images']),128)
+                data['images']=torch.tensor(cached[split],device='cuda')
+            else:
+                data['images']=frozen_features(args.vision_checkpoint,data['images'])
             visual[split+'_feature_sha256']=digest(data['images'].cpu().numpy().tobytes())
         visual['checkpoint_sha256']=digest(args.vision_checkpoint.read_bytes())
         save(args.out/'shared_visual_frontend.json',visual)

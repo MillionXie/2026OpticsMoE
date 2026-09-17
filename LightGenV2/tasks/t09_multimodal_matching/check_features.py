@@ -34,6 +34,11 @@ def main():
                            relative_l2=float(np.linalg.norm(x-y)/max(np.linalg.norm(x),1e-20)),
                            allclose=bool(np.allclose(x,y,rtol=1e-5,atol=1e-6)))
     save(a.out/'comparison.json',dict(records=records,comparison=comparison))
+    np.savez_compressed(a.out/'feature_cache.npz',**arrays[0])
+    save(a.out/'feature_cache.json',dict(checkpoint_sha256=records[0]['original']['checkpoint_sha256'],
+         data_manifest_sha256=digest((a.data/'manifest.json').read_bytes()),
+         cache_sha256=digest((a.out/'feature_cache.npz').read_bytes()),
+         features=records[0]['recomputed'],source_run=records[0]['run']))
     print(json.dumps(dict(records=records,comparison=comparison),indent=2))
 
 
