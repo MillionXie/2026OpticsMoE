@@ -11,8 +11,6 @@ import urllib.request
 import zipfile
 from collections import Counter,defaultdict
 from pathlib import Path
-import gdown
-import urllib3.util.connection
 import numpy as np
 from PIL import Image
 from .train import save,sha
@@ -23,7 +21,6 @@ def main():
     a.root.mkdir(parents=True,exist_ok=True)
     # Author revision verified before download; IPv4 avoids this server's stalled IPv6 route.
     rev='da084f62bcd1a2b0afeb8b81f1a27be3186391a1'
-    urllib3.util.connection.allowed_gai_family=lambda:socket.AF_INET
     files={};tables={}
     for split in ['train','val','test']:
         name=split+'_subset0.csv';url=f'https://raw.githubusercontent.com/AlexOlsen/DeepWeeds/{rev}/labels/{name}'
@@ -40,10 +37,18 @@ def main():
     save(a.root/'source.json',dict(repository_commit=rev,files=files,license='CC-BY-4.0',
                                  license_source='https://github.com/AlexOlsen/DeepWeeds',fold_index=0))
     archive=a.root/'images.zip'
+    archive_url='https://zenodo.org/records/7939060/files/images.zip?download=1'
+    save(a.root/'archive_source.json',dict(url=archive_url,expected_md5='b7b30f96d466fba86016aa5a26606e0f',
+        original_source='https://github.com/AlexOlsen/DeepWeeds',mirror=True,google_drive_unreachable=True))
     if not archive.exists():
         part=a.root/'images.zip.part'
-        gdown.download(id='1xnK3B6K6KekDI55vwJ0vnc2IGoDga9cj',output=str(part),quiet=False,resume=True)
+        subprocess.run(['curl','-4','-fL','--connect-timeout','15','--max-time','1200','--retry','2',
+                        '-C','-',archive_url,'-o',str(part)],check=True,timeout=3700)
         if not zipfile.is_zipfile(part):raise ValueError('Download is not a ZIP')
+        digest=hashlib.md5()
+        with part.open('rb') as stream:
+            for block in iter(lambda:stream.read(8*1024*1024),b''):digest.update(block)
+        assert digest.hexdigest()=='b7b30f96d466fba86016aa5a26606e0f'
         part.rename(archive)
     arrays={};identity=[];hash_groups=defaultdict(list);shape_counts=Counter();names_by_split={}
     with zipfile.ZipFile(archive) as z:
