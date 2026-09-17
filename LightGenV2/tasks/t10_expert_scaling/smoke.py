@@ -16,7 +16,7 @@ def main():
     torch.set_num_threads(4);torch.manual_seed(17);cfg=load_protocol();results=[]
     x=torch.rand(2,3,112,112,device='cuda');y=torch.tensor([0,1],device='cuda')
     for arch in ['moe_oeo','d2nn_total_parameter','d2nn_same_aperture']:
-        model=ScalingOptics(cfg,a.experts,1,arch,layers=2).cuda();model.train()
+        model=ScalingOptics(cfg,a.experts,1,arch,layers=6).cuda();model.train()
         t=time.time();out=model(x)
         assert torch.allclose(out['probabilities'].sum(1),torch.ones(2,device='cuda'),atol=1e-5)
         loss=-out['probabilities'][torch.arange(2),y].log().mean();loss.backward()
@@ -35,7 +35,7 @@ def main():
                             parameters=expected,peak_memory_bytes=torch.cuda.max_memory_allocated()))
         del model,out;torch.cuda.empty_cache()
     # Propagation convergence at the actual geometry, random and smooth fields.
-    g=ScalingOptics(cfg,a.experts,1,layers=2).geo;c=g['canvas_side_px']
+    g=ScalingOptics(cfg,a.experts,1,layers=6).geo;c=g['canvas_side_px']
     p2=ASM(c,padding=2).cuda();p4=ASM(c,padding=4).cuda()
     field=torch.zeros(1,c,c,device='cuda',dtype=torch.complex64)
     source=encode_rgb(x[:1]);start=(c-224)//2;field[:,start:start+224,start:start+224]=source
