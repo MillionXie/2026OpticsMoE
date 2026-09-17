@@ -1,5 +1,6 @@
 """Fetch the author release and audit official fold 0 before permitting training."""
 import argparse
+import base64
 import csv
 import hashlib
 import io
@@ -28,7 +29,11 @@ def main():
         name=split+'_subset0.csv';url=f'https://raw.githubusercontent.com/AlexOlsen/DeepWeeds/{rev}/labels/{name}'
         dest=a.root/name
         if not dest.exists():
-            subprocess.run(['curl','-4','-fL','--connect-timeout','15','--max-time','90',url,'-o',str(dest)],check=True,timeout=100)
+            api=f'https://api.github.com/repos/AlexOlsen/DeepWeeds/contents/labels/{name}?ref={rev}'
+            response=subprocess.check_output(['curl','-4','-fsSL','--connect-timeout','10','--max-time','30',api],timeout=40)
+            payload=json.loads(response)
+            assert payload['encoding']=='base64'
+            dest.write_bytes(base64.b64decode(payload['content']))
         print('Loaded labels',name,flush=True)
         tables[split]=list(csv.DictReader(dest.open(encoding='utf-8-sig')))
         files[name]=dict(url=url,sha256=sha(dest))
