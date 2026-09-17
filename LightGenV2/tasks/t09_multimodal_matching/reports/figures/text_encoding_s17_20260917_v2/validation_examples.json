@@ -1,0 +1,170 @@
+[
+  {
+    "index": 0,
+    "image_local": 0,
+    "image_id": "CLEVR_train_000951.png",
+    "question": "is a cyan cube present in the image ?",
+    "label": 1,
+    "color": "cyan",
+    "shape": "cube",
+    "template": 3,
+    "predictions": {
+      "fixed_moe": {
+        "answer": 1,
+        "p_yes": 0.7430260181427002
+      },
+      "fixed_d2nn": {
+        "answer": 1,
+        "p_yes": 0.5202617049217224
+      },
+      "learned_moe": {
+        "answer": 1,
+        "p_yes": 0.5129682421684265
+      },
+      "learned_d2nn": {
+        "answer": 1,
+        "p_yes": 0.7335206270217896
+      }
+    }
+  },
+  {
+    "index": 1,
+    "image_local": 0,
+    "image_id": "CLEVR_train_000951.png",
+    "question": "is a purple cylinder present in the image ?",
+    "label": 0,
+    "color": "purple",
+    "shape": "cylinder",
+    "template": 3,
+    "predictions": {
+      "fixed_moe": {
+        "answer": 0,
+        "p_yes": 0.2914029359817505
+      },
+      "fixed_d2nn": {
+        "answer": 0,
+        "p_yes": 0.40986430644989014
+      },
+      "learned_moe": {
+        "answer": 0,
+        "p_yes": 0.003838474163785577
+      },
+      "learned_d2nn": {
+        "answer": 0,
+        "p_yes": 0.06534510850906372
+      }
+    }
+  },
+  {
+    "index": 6,
+    "image_local": 1,
+    "image_id": "CLEVR_train_000622.png",
+    "question": "can you see a purple cube ?",
+    "label": 1,
+    "color": "purple",
+    "shape": "cube",
+    "template": 2,
+    "predictions": {
+      "fixed_moe": {
+        "answer": 1,
+        "p_yes": 0.5453757643699646
+      },
+      "fixed_d2nn": {
+        "answer": 1,
+        "p_yes": 0.5247423052787781
+      },
+      "learned_moe": {
+        "answer": 1,
+        "p_yes": 0.6347863078117371
+      },
+      "learned_d2nn": {
+        "answer": 1,
+        "p_yes": 0.6615276336669922
+      }
+    }
+  },
+  {
+    "index": 7,
+    "image_local": 1,
+    "image_id": "CLEVR_train_000622.png",
+    "question": "can you see a blue cube ?",
+    "label": 0,
+    "color": "blue",
+    "shape": "cube",
+    "template": 2,
+    "predictions": {
+      "fixed_moe": {
+        "answer": 0,
+        "p_yes": 0.12136062234640121
+      },
+      "fixed_d2nn": {
+        "answer": 0,
+        "p_yes": 0.4228598177433014
+      },
+      "learned_moe": {
+        "answer": 0,
+        "p_yes": 0.157551571726799
+      },
+      "learned_d2nn": {
+        "answer": 0,
+        "p_yes": 0.2056637853384018
+      }
+    }
+  },
+  {
+    "index": 12,
+    "image_local": 2,
+    "image_id": "CLEVR_train_001049.png",
+    "question": "does the image contain a brown sphere ?",
+    "label": 1,
+    "color": "brown",
+    "shape": "sphere",
+    "template": 1,
+    "predictions": {
+      "fixed_moe": {
+        "answer": 1,
+        "p_yes": 0.8698405623435974
+      },
+      "fixed_d2nn": {
+        "answer": 1,
+        "p_yes": 0.5431514382362366
+      },
+      "learned_moe": {
+        "answer": 0,
+        "p_yes": 0.4315248727798462
+      },
+      "learned_d2nn": {
+        "answer": 1,
+        "p_yes": 0.5650420784950256
+      }
+    }
+  },
+  {
+    "index": 13,
+    "image_local": 2,
+    "image_id": "CLEVR_train_001049.png",
+    "question": "does the image contain a red cube ?",
+    "label": 0,
+    "color": "red",
+    "shape": "cube",
+    "template": 1,
+    "predictions": {
+      "fixed_moe": {
+        "answer": 0,
+        "p_yes": 0.4849669635295868
+      },
+      "fixed_d2nn": {
+        "answer": 0,
+        "p_yes": 0.4786456227302551
+      },
+      "learned_moe": {
+        "answer": 0,
+        "p_yes": 0.17172139883041382
+      },
+      "learned_d2nn": {
+        "answer": 0,
+        "p_yes": 0.15346473455429077
+      }
+    }
+  }
+]
