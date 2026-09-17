@@ -24,13 +24,17 @@ def replace_once(text,old,new):
 def main():
     parser=argparse.ArgumentParser()
     parser.add_argument('--out',type=Path,required=True)
-    parser.add_argument('--variant',choices=['pure_optical','shared_frontend','kather_optical'],default='pure_optical')
+    parser.add_argument('--variant',choices=['pure_optical','shared_frontend','kather_optical','kather_code'],default='pure_optical')
     parser.add_argument('--split',type=Path)
     parser.add_argument('--run',type=Path,required=True)
     parser.add_argument('--data',type=Path)
     parser.add_argument('--data-manifest',type=Path)
     parser.add_argument('--known-test-run',type=Path)
     args=parser.parse_args()
+    if args.variant=='kather_code':
+        from reproduction.package_kather import build_code
+        build_code(args)
+        return
     if args.variant=='kather_optical':
         from reproduction.package_kather import build
         build(args)
