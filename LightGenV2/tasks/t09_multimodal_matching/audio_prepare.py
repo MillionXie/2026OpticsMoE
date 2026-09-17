@@ -13,6 +13,7 @@ import torch
 from .prepare import save, digest, tokens
 
 URL='https://storage.googleapis.com/download.tensorflow.org/data/mini_speech_commands.zip'
+LICENSE_URL='https://research.google/blog/launching-the-speech-commands-dataset/'
 WORDS=['down','go','left','no','right','stop','up','yes']
 
 
@@ -35,17 +36,23 @@ def logmel(samples):
 
 def main():
     p=argparse.ArgumentParser();p.add_argument('--out',type=Path,required=True)
+    p.add_argument('--archive',type=Path)
     a=p.parse_args();a.out.mkdir(parents=True,exist_ok=False);torch.set_num_threads(2)
-    archive=a.out/'mini_speech_commands.zip'
-    with requests.get(URL,stream=True,timeout=120) as r:
-        r.raise_for_status()
-        with archive.open('wb') as f:
-            for chunk in r.iter_content(1024*1024):f.write(chunk)
+    archive=a.archive or a.out/'mini_speech_commands.zip'
+    if not a.archive:
+        with requests.get(URL,stream=True,timeout=120) as r:
+            r.raise_for_status()
+            with archive.open('wb') as f:
+                for chunk in r.iter_content(1024*1024):f.write(chunk)
     split={k:[] for k in ['train','val','test']};seen={};duplicates=0
     with zipfile.ZipFile(archive) as z:
         docs={n:z.read(n).decode('utf8',errors='replace') for n in z.namelist() if n.endswith('README.md') and not n.startswith('__MACOSX')}
         save(a.out/'source_readme.json',docs)
-        assert any('creativecommons.org/licenses/by/4.0' in t or 'Creative Commons BY 4.0' in t for t in docs.values()), 'Verify source license before proceeding'
+        assert any('speech_commands_v0.01.tar.gz' in t for t in docs.values())
+        # The excerpt README refers to the original release rather than restating its license.
+        license_page=requests.get(LICENSE_URL,timeout=60);license_page.raise_for_status()
+        assert 'Creative Commons BY 4.0' in license_page.text
+        (a.out/'license_source.html').write_text(license_page.text,encoding='utf8')
         for name in sorted(z.namelist()):
             if not name.endswith('.wav') or name.startswith('__MACOSX'):continue
             word=Path(name).parent.name
@@ -85,7 +92,8 @@ def main():
     for word in sorted({w for row in train for w in tokens(row['question'])}):vocab[word]=len(vocab)
     save(a.out/'vocab.json',vocab)
     counts={k:{w:sum(r['word']==w for r in rows) for w in WORDS} for k,rows in split.items()}
-    save(a.out/'manifest.json',dict(source=URL,license='CC BY 4.0',archive_sha256=digest(archive.read_bytes()),
+    save(a.out/'manifest.json',dict(source=URL,license='CC BY 4.0',license_source=LICENSE_URL,
+        license_page_sha256=digest((a.out/'license_source.html').read_bytes()),archive_sha256=digest(archive.read_bytes()),
         task='Derived balanced audio/text keyword matching, not official Speech Commands accuracy',
         split='speaker SHA1, validation <10%, test <20%, training remainder; no file-level random split',
         counts=counts,duplicate_waveforms_removed=duplicates,retained_test_decoded=False,
