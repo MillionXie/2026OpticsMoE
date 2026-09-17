@@ -1,0 +1,175 @@
+{
+  "verified": true,
+  "results": {
+    "fixed/moe": {
+      "checkpoint": "LightGenV2/tasks/t09_multimodal_matching/runs/simulation/clevr_visual_fixed_s17_v1/fixed/moe/best_checkpoint.pt",
+      "sha256": "9f64f4f2292a7cef7171bbe3d5bf986ff3dda06b33f19389e61b2826e8b5525b",
+      "epoch": 7,
+      "test": {
+        "accuracy": 0.7066666483879089,
+        "nll": 0.5852327346801758,
+        "capture": 0.0015638306504115462,
+        "route_mean": [
+          0.39146682620048523,
+          0.31811049580574036,
+          0.23450958728790283,
+          0.055913057178258896
+        ],
+        "route_std": [
+          0.051472630351781845,
+          0.03990010544657707,
+          0.03277157247066498,
+          0.058405447751283646
+        ],
+        "route_top_frequency": [
+          0.8246666789054871,
+          0.17133332788944244,
+          0.004000000189989805,
+          0.0
+        ]
+      }
+    },
+    "fixed/d2nn": {
+      "checkpoint": "LightGenV2/tasks/t09_multimodal_matching/runs/simulation/clevr_visual_fixed_s17_v1/fixed/d2nn/best_checkpoint.pt",
+      "sha256": "30ae50edaa4748b6d1abb76663ae15fbe6dd30b5f6892cbd59251786495deb81",
+      "epoch": 12,
+      "test": {
+        "accuracy": 0.5759999752044678,
+        "nll": 0.6792168617248535,
+        "capture": 0.14648252725601196,
+        "route_mean": [
+          0.25,
+          0.25,
+          0.25,
+          0.25
+        ],
+        "route_std": [
+          0.0,
+          0.0,
+          0.0,
+          0.0
+        ],
+        "route_top_frequency": [
+          1.0,
+          0.0,
+          0.0,
+          0.0
+        ]
+      }
+    },
+    "fixed_dense/moe": {
+      "checkpoint": "LightGenV2/tasks/t09_multimodal_matching/runs/simulation/clevr_visual_dense_s17_v1/fixed_dense/moe/best_checkpoint.pt",
+      "sha256": "b598add6a885067f0986ff96548fb94213bf589cb65ca394e56c66a6f24ea63c",
+      "epoch": 8,
+      "test": {
+        "accuracy": 0.7046666741371155,
+        "nll": 0.5671067237854004,
+        "capture": 0.0007318580173887312,
+        "route_mean": [
+          0.49415123462677,
+          0.1919557750225067,
+          0.1814589649438858,
+          0.13243399560451508
+        ],
+        "route_std": [
+          0.0590599961578846,
+          0.0369713194668293,
+          0.03818003833293915,
+          0.03876085206866264
+        ],
+        "route_top_frequency": [
+          0.9959999918937683,
+          0.0,
+          0.004000000189989805,
+          0.0
+        ]
+      }
+    },
+    "fixed_dense/d2nn": {
+      "checkpoint": "LightGenV2/tasks/t09_multimodal_matching/runs/simulation/clevr_visual_dense_s17_v1/fixed_dense/d2nn/best_checkpoint.pt",
+      "sha256": "2599c864c7586fdb606d54c857772df0f9d9d0cb59f70d4b5e880ecaae8bf265",
+      "epoch": 12,
+      "test": {
+        "accuracy": 0.5526666641235352,
+        "nll": 0.6856713891029358,
+        "capture": 0.10192743688821793,
+        "route_mean": [
+          0.25,
+          0.25,
+          0.25,
+          0.25
+        ],
+        "route_std": [
+          0.0,
+          0.0,
+          0.0,
+          0.0
+        ],
+        "route_top_frequency": [
+          1.0,
+          0.0,
+          0.0,
+          0.0
+        ]
+      }
+    },
+    "learned/moe": {
+      "checkpoint": "LightGenV2/tasks/t09_multimodal_matching/runs/simulation/clevr_visual_learned_s17_v1/learned/moe/best_checkpoint.pt",
+      "sha256": "829c8b372e263ef055e80fe168e1b3551c4ad9b2105bbfd1fb68b5677cb87402",
+      "epoch": 6,
+      "test": {
+        "accuracy": 0.7160000205039978,
+        "nll": 0.5437549352645874,
+        "capture": 0.002387301530689001,
+        "route_mean": [
+          0.515298068523407,
+          0.13273635506629944,
+          0.17007410526275635,
+          0.18189144134521484
+        ],
+        "route_std": [
+          0.06119827181100845,
+          0.038615453988313675,
+          0.03302381560206413,
+          0.07878775894641876
+        ],
+        "route_top_frequency": [
+          0.9993333220481873,
+          0.0,
+          0.0,
+          0.0006666666595265269
+        ]
+      }
+    },
+    "learned/d2nn": {
+      "checkpoint": "LightGenV2/tasks/t09_multimodal_matching/runs/simulation/clevr_visual_learned_s17_v1/learned/d2nn/best_checkpoint.pt",
+      "sha256": "a29e0bae1d955868436c0dcdbd5e5fd13fab9953a158f4039e5be0b7173290ef",
+      "epoch": 8,
+      "test": {
+        "accuracy": 0.722000002861023,
+        "nll": 0.5496549010276794,
+        "capture": 0.0036945717874914408,
+        "route_mean": [
+          0.25,
+          0.25,
+          0.25,
+          0.25
+        ],
+        "route_std": [
+          0.0,
+          0.0,
+          0.0,
+          0.0
+        ],
+        "route_top_frequency": [
+          1.0,
+          0.0,
+          0.0,
+          0.0
+        ]
+      }
+    }
+  },
+  "test_images": 250,
+  "test_questions": 1500
+}

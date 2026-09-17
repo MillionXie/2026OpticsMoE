@@ -4,6 +4,8 @@ import io
 import json
 import random
 import subprocess
+import sys
+import platform
 import zipfile
 from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
@@ -32,6 +34,11 @@ def main():
             assert digest(path.read_bytes())==recorded['best_checkpoint_sha256']
             selection[mode+'/'+arch]=dict(checkpoint=str(path),sha256=recorded['best_checkpoint_sha256'],epoch=recorded['epoch'])
     save(a.out/'locked_selection.json',selection)
+    save(a.out/'metadata.json',dict(command=sys.argv,python=platform.python_version(),torch=torch.__version__,
+         commit=subprocess.check_output(['git','rev-parse','HEAD'],text=True).strip(),
+         source_sha256=digest(Path(__file__).read_bytes()),
+         visual_checkpoint_sha256=digest((a.runs/'clevr_visual_aux_s17_v1/best_checkpoint.pt').read_bytes()),
+         selection='Frozen validation-NLL-best checkpoints; no test-based selection'))
     save(a.out/'status.json',dict(status='preparing_test',selection='validation NLL; locked before test download',commit=subprocess.check_output(['git','rev-parse','HEAD'],text=True).strip()))
     ids=json.loads((a.data/'test_reserved_ids.json').read_text())
     vocab=json.loads((a.data/'vocab.json').read_text())
