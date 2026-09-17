@@ -64,7 +64,7 @@ def main():
         draws=rng.integers(0,len(groups),(5000,len(groups)))
         bootstrap=delta[draws].sum(1)/sizes[draws].sum(1)
         comparisons[left+' minus '+right]=dict(mean_percentage_points=float(delta.sum()/sizes.sum()*100),
-                                               image_cluster_bootstrap_95ci_percentage_points=(np.quantile(bootstrap,[.025,.975])*100).tolist())
+                                               cluster_bootstrap_95ci_percentage_points=(np.quantile(bootstrap,[.025,.975])*100).tolist())
     # A query-only lookup baseline trained without validation labels.
     train=json.loads((a.data/'train_questions.json').read_text());counts={}
     def query_key(row):
