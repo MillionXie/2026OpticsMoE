@@ -1,0 +1,23 @@
+{
+  "runs/simulation/clevr_fixed_s17_v1/metadata.json": "fae7e00bdda94d1cbaf9f6d25f49ddac2657e3701d7edbefac8b4826b8aeba5e",
+  "runs/simulation/clevr_fixed_s17_v1/status.json": "9bdcdf4079c96be1201d51d55158df7f7046093c471a3ce14cef15050827f494",
+  "runs/simulation/clevr_fixed_s17_v1/summary.json": "e925d77ad1b02aa22d4e62a2dbe603878feaa0cbdeb0fe4e25e93ae8e4f64974",
+  "runs/simulation/clevr_learned_s17_v1/metadata.json": "ec51da7660443910931ca5691676e57aed98466e58336d8b9e1daeadaea80238",
+  "runs/simulation/clevr_learned_s17_v1/status.json": "cf7672d1627018ef7f60998ba5de97afba4c62ffc2bc2bddcb52286c6363b34b",
+  "runs/simulation/clevr_learned_s17_v1/summary.json": "d9686b799db4ba1b1b1cc9b9c9d34aca08479b9fda9e42ddaa72fe4012e6bd09",
+  "runs/simulation/clevr_visual_aux_s17_v1/metadata.json": "aecb14f5611e7fdf363580d6eefe1063c518ffe68cdb49f0acdbbeba92139cc8",
+  "runs/simulation/clevr_visual_aux_s17_v1/status.json": "3940e009b2c2f9f08a408808607733d229012f989803b63bbda53d2011daeffb",
+  "runs/simulation/clevr_visual_aux_s17_v1/history.json": "65807419db30c0164d4c148becbc2e595128e7616e4d5d8c5ab3b3615472a879",
+  "runs/simulation/clevr_visual_fixed_s17_v1/metadata.json": "e878d779e6ebce3bcbff1545c85906080044b3a4103acbf7e14f6f8828ec261f",
+  "runs/simulation/clevr_visual_fixed_s17_v1/status.json": "6f0b22cb8ff348459f6e675f4447365ecf5ab68462afe391cda6489aadbb4b9c",
+  "runs/simulation/clevr_visual_fixed_s17_v1/summary.json": "9a36423ea811c6fa2c814bd7e35c2131cdfe23dba591202c51f49305622630be",
+  "runs/simulation/clevr_visual_fixed_s17_v1/shared_visual_frontend.json": "0c0acd409f3cbfc2d160e1ec29f63c41dd14401d09cdda0b30527e46e5966f8d",
+  "runs/simulation/clevr_visual_learned_s17_v1/metadata.json": "a3526684fef3d1bd57a47f9149c531f3aad5868a6efba316115cedf05fdf76e9",
+  "runs/simulation/clevr_visual_learned_s17_v1/status.json": "770e354a60f61ec3a46331425c9390231ea80279263ac20fc748001c5393372d",
+  "runs/simulation/clevr_visual_learned_s17_v1/summary.json": "d462c51f5d3718fc383777a9a7e99699e4f89a2a70ac4016137e1f1fbcfdbe0b",
+  "runs/simulation/clevr_visual_learned_s17_v1/shared_visual_frontend.json": "0c0acd409f3cbfc2d160e1ec29f63c41dd14401d09cdda0b30527e46e5966f8d",
+  "runs/simulation/clevr_visual_dense_s17_v1/metadata.json": "dbb6f4221f7d5b2ccc2fc6f31637f5966a553005d101d9897a04d0fb064d2a1c",
+  "runs/simulation/clevr_visual_dense_s17_v1/status.json": "82c99d337f782592269404fb6594ca10f2838e6e4324e1c2f32368b440644136",
+  "runs/simulation/clevr_visual_dense_s17_v1/summary.json": "deeae1d64478efa2a2e1348621cb16c8adfee02d3decc6a40dfacb703b4cdbd8",
+  "runs/simulation/clevr_visual_dense_s17_v1/shared_visual_frontend.json": "0c0acd409f3cbfc2d160e1ec29f63c41dd14401d09cdda0b30527e46e5966f8d"
+}

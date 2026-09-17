@@ -1,0 +1,6 @@
+{
+  "runs/smoke/clevr_visual_audit_s17_v2/verification.json": "08ae687b57c5980b01500613c6400c09325c9412cda86397393d9bb276adc511",
+  "reports/figures/text_encoding_s17_20260917_v2/text_encoding_validation.png": "38b0651979b1d8702a7735db02a56d6b4798014b613956ef71a647d57b52deab",
+  "reports/figures/text_encoding_s17_20260917_v2/text_encoding_validation.pdf": "b1ce2b72c9b7e718e96f7f5c9d91dc97117ad167e28278bd990f9942f1803ac5",
+  "reports/figures/text_encoding_s17_20260917_v2/text_encoding_validation.svg": "8524200d630a81436b60e2e2666d4246ddbc4d7f4254101de95810910b65ae91"
+}
