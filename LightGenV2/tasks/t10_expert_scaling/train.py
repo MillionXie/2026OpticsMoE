@@ -99,7 +99,7 @@ def objective(model,out,y,class_weights,cfg):
 def main():
     ap=argparse.ArgumentParser()
     ap.add_argument('--data',type=Path,required=True);ap.add_argument('--out',type=Path,required=True)
-    ap.add_argument('--arch',choices=['moe_oeo','d2nn_total_parameter','d2nn_same_aperture'],required=True)
+    ap.add_argument('--arch',choices=['moe_oeo','d2nn_total_parameter','d2nn_same_aperture','d2nn_expert_global'],required=True)
     ap.add_argument('--experts',type=int,default=4);ap.add_argument('--top-k',type=int,default=4)
     ap.add_argument('--layers',type=int,default=6);ap.add_argument('--epochs',type=int,default=60)
     ap.add_argument('--lr',type=float,default=.002);ap.add_argument('--seed',type=int,default=17)

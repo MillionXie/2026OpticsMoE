@@ -56,6 +56,7 @@ def main():
                 for k in (grid[n] if arm=='moe_oeo' else [n]):
                     if n==9 and (arm!='moe_oeo' or k==9):continue
                     jobs.append(dict(arch=arm,experts=n,top_k=k,layers=depth,lr=lr_by_arm[arm]))
+            jobs.append(dict(arch='d2nn_expert_global',experts=n,top_k=n,layers=depth,lr=lr_by_arm['d2nn_total_parameter']))
         save(a.out/'scan_design.json',dict(top_k_grid=grid,reused_calibration=selected[depth],
              missing_gpu_ablation_jobs=len(jobs),expert_side=224,logical_pitch_um=17,phase_device_pitch_um=8,gap=30))
     for j in jobs:j['name']=f"{j['arch']}_N{j['experts']}_k{j['top_k']}_L{j['layers']}_lr{j['lr']}_s17"

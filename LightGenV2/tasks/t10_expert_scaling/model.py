@@ -65,8 +65,16 @@ class ScalingOptics(nn.Module):
             self.expert_phases=nn.ParameterList([nn.Parameter(torch.randn(n,self.e,self.e)*.02) for _ in range(layers//2)])
             self.global_phases=nn.ParameterList([nn.Parameter(torch.randn(self.g,self.g)*.02) for _ in range(layers//2)])
         else:
-            assert arch in {'d2nn_total_parameter','d2nn_same_aperture'}
+            assert arch in {'d2nn_total_parameter','d2nn_same_aperture','d2nn_expert_global'}
             self.side=self.geo['d2nn_parameter_side_px'] if arch=='d2nn_total_parameter' else self.g
+            if arch=='d2nn_expert_global':
+                target=self.geo['expert_phase_parameters']+self.geo['global_phase_parameters']
+                ideal=math.sqrt(target/layers)
+                sides={2*math.floor(ideal/2),2*math.ceil(ideal/2)}
+                self.side=min((s for s in sides if 0<s<=self.g),key=lambda s:abs(layers*s*s-target))
+                self.geo['expert_global_matching_target']=target
+                self.geo['expert_global_actual_parameters']=layers*self.side*self.side
+                assert abs(layers*self.side*self.side-target)/target<.005
             self.dense_phases=nn.ParameterList([nn.Parameter(torch.randn(self.side,self.side)*.02) for _ in range(layers)])
         grid=math.ceil(math.sqrt(classes));extent=(grid-1)*48+32;start=(self.c-extent)//2
         self.detectors=[(start+(i//grid)*48,start+(i//grid)*48+32,
