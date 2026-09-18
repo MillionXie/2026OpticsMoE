@@ -279,5 +279,152 @@
       "sha256": "492148c99855611b61f1615d39893f0500905f768732178f573708d0226f77ff",
       "bytes": 10547
     }
+  ],
+  "leftright_downloads": [
+    {
+      "path": "runs/simulation/audio_raw_leftright_positive_unbalanced_s17_v1/metadata.json",
+      "sha256": "9da16c5255215a50f17e3de3ea09ee0f24a1966cc39ec3591a43ff0eed3aa460",
+      "bytes": 4129
+    },
+    {
+      "path": "runs/simulation/audio_raw_leftright_positive_unbalanced_s17_v1/status.json",
+      "sha256": "0603823ea56e55e366533f4a2ee2845b2bae94728f5dc8bf65c22aba0a26a648",
+      "bytes": 70
+    },
+    {
+      "path": "runs/simulation/audio_raw_leftright_positive_unbalanced_s17_v1/summary.json",
+      "sha256": "9078e5e9490699368f9fb3493b1b9dc1ed26141ecaaa8389b0383e6d616b7849",
+      "bytes": 4084
+    },
+    {
+      "path": "runs/simulation/audio_raw_leftright_positive_unbalanced_s17_v1/fixed/moe/history.json",
+      "sha256": "4f017169f6234ad63d9213a7787c17bd6bac3268e17245a5b95f452fe6ad77e0",
+      "bytes": 39664
+    },
+    {
+      "path": "runs/simulation/audio_raw_leftright_positive_unbalanced_s17_v1/fixed/moe/result.json",
+      "sha256": "4f4a52611cf4f9b3ebe1ff5f7bcc936c82e63c4ee63f2433948f11b71a786720",
+      "bytes": 1891
+    },
+    {
+      "path": "runs/simulation/audio_raw_leftright_positive_unbalanced_s17_v1/fixed/moe/predictions.npz",
+      "sha256": "9003213d69ec1d3e93dfe1f521d419b8c8cc0c77305a0340b9bb910c40a1811a",
+      "bytes": 103072
+    },
+    {
+      "path": "runs/simulation/audio_raw_leftright_positive_unbalanced_s17_v1/fixed/d2nn/history.json",
+      "sha256": "60aacd337087c22bc37da9d66722749881b2ea36c0e711a333e746ed0ce4d2d0",
+      "bytes": 31274
+    },
+    {
+      "path": "runs/simulation/audio_raw_leftright_positive_unbalanced_s17_v1/fixed/d2nn/result.json",
+      "sha256": "111013d462a644b19b33e63da19705af5a176a8c582aa48f3eda25ca0b7d01c3",
+      "bytes": 1507
+    },
+    {
+      "path": "runs/simulation/audio_raw_leftright_positive_unbalanced_s17_v1/fixed/d2nn/predictions.npz",
+      "sha256": "171c17029ed78ba477e4332438acef37d4a6d3e9ebc80012b8a25ffff19f43a0",
+      "bytes": 101846
+    },
+    {
+      "path": "runs/simulation/audio_raw_leftright_positive_balanced_s17_v1/metadata.json",
+      "sha256": "b2db644990df724ce34cd8fa582a1f697d2e75ec622d289cd0f1eba9aefc9aa2",
+      "bytes": 4129
+    },
+    {
+      "path": "runs/simulation/audio_raw_leftright_positive_balanced_s17_v1/status.json",
+      "sha256": "1ffcb9eb4508e2150978d2253411b5a1d1ea3bd83e5f857bccec7799c7e3e252",
+      "bytes": 70
+    },
+    {
+      "path": "runs/simulation/audio_raw_leftright_positive_balanced_s17_v1/summary.json",
+      "sha256": "92e9400e0654b62e5b7444e4b9fd6c9fa5876c61e1b83a6491af9d567ec61e83",
+      "bytes": 4213
+    },
+    {
+      "path": "runs/simulation/audio_raw_leftright_positive_balanced_s17_v1/fixed/moe/history.json",
+      "sha256": "e4bcced06508b79b6b39be495fbce803b87dc7784d6f38c57702e3c612e11e1a",
+      "bytes": 41552
+    },
+    {
+      "path": "runs/simulation/audio_raw_leftright_positive_balanced_s17_v1/fixed/moe/result.json",
+      "sha256": "96474ea4dc1ec5b37daff7afc12047f475bfb52c8add5b2e481a7c07ce2e1ca1",
+      "bytes": 2020
+    },
+    {
+      "path": "runs/simulation/audio_raw_leftright_positive_balanced_s17_v1/fixed/moe/predictions.npz",
+      "sha256": "7c97ff98f06e077261cccf645908c68dba6762790f3316e1baa35761b3981d2b",
+      "bytes": 102940
+    },
+    {
+      "path": "runs/simulation/audio_raw_leftright_positive_balanced_s17_v1/fixed/d2nn/history.json",
+      "sha256": "7789bdf8904e29c852d8cfcbf11a460f982da828984434e16216b4e723060b9a",
+      "bytes": 31267
+    },
+    {
+      "path": "runs/simulation/audio_raw_leftright_positive_balanced_s17_v1/fixed/d2nn/result.json",
+      "sha256": "111013d462a644b19b33e63da19705af5a176a8c582aa48f3eda25ca0b7d01c3",
+      "bytes": 1507
+    },
+    {
+      "path": "runs/simulation/audio_raw_leftright_positive_balanced_s17_v1/fixed/d2nn/predictions.npz",
+      "sha256": "171c17029ed78ba477e4332438acef37d4a6d3e9ebc80012b8a25ffff19f43a0",
+      "bytes": 101846
+    },
+    {
+      "path": "runs/simulation/audio_leftright_test_s17_v1/locked_selection.json",
+      "sha256": "83116659fa35ad59458c938fb7d042323b20aa77f05ed55e0bf920b483f7ce7f",
+      "bytes": 1258
+    },
+    {
+      "path": "runs/simulation/audio_leftright_test_s17_v1/audio_raw_leftright_positive_unbalanced_s17_v1_moe_predictions.npz",
+      "sha256": "1be510b67a98a41e70c16298011bed80481b6f3fbcfc65e95e270acd551db424",
+      "bytes": 12933
+    },
+    {
+      "path": "runs/simulation/audio_leftright_test_s17_v1/audio_raw_leftright_positive_balanced_s17_v1_moe_predictions.npz",
+      "sha256": "b042e25015ec2ff77d1547c4947ed1655210276eb26ff7174cc77e0006d2efdb",
+      "bytes": 12905
+    },
+    {
+      "path": "runs/simulation/audio_leftright_test_s17_v1/metadata.json",
+      "sha256": "8d789c250cdfa9633851540098295878ec812f15984972b5913c99ba76b0899c",
+      "bytes": 353
+    },
+    {
+      "path": "runs/simulation/audio_leftright_test_s17_v1/status.json",
+      "sha256": "26c2e5f1aff8463f99eb8ba392d785aa849c6975c3e85d68886fd8ca6720f479",
+      "bytes": 62
+    },
+    {
+      "path": "runs/simulation/audio_leftright_test_s17_v1/test_questions.json",
+      "sha256": "5a21ce33be242f9996b123c2ba4d17d5f44ad6c3d63564d10d4e093c8e388dbd",
+      "bytes": 321382
+    },
+    {
+      "path": "runs/simulation/audio_leftright_test_s17_v1/audio_raw_leftright_positive_unbalanced_s17_v1_d2nn_predictions.npz",
+      "sha256": "6693f336f0b7c015d03fd5c225f0ad8300c02e3f5ac369eadec1b7bce08f5e69",
+      "bytes": 12776
+    },
+    {
+      "path": "runs/simulation/audio_leftright_test_s17_v1/audio_raw_leftright_positive_balanced_s17_v1_d2nn_predictions.npz",
+      "sha256": "6693f336f0b7c015d03fd5c225f0ad8300c02e3f5ac369eadec1b7bce08f5e69",
+      "bytes": 12776
+    },
+    {
+      "path": "runs/simulation/audio_leftright_test_s17_v1/test_manifest.json",
+      "sha256": "5468b0df88dc711ea381bac25dcf875818351a0cbe3bf8ce9631923f88f53fd2",
+      "bytes": 219
+    },
+    {
+      "path": "runs/simulation/audio_leftright_test_s17_v1/results.json",
+      "sha256": "ce37d35a1b06eca421dbf66a6b418c6890e7e0179d9596586f5409e316210ac8",
+      "bytes": 3440
+    },
+    {
+      "path": "runs/smoke/audio_leftright_positive_audit_s17_v1/verification.json",
+      "sha256": "3998a8d15ff699397574a46684ae064bd1da25545c0a60a96a1922c8f8209dc0",
+      "bytes": 5359
+    }
   ]
 }
