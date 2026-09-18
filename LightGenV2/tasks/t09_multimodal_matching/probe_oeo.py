@@ -12,7 +12,7 @@ from .prepare import save,digest
 def main():
     p=argparse.ArgumentParser()
     for key in ['data','run','out']:p.add_argument('--'+key,type=Path,required=True)
-    p.add_argument('--oeo-activation',choices=['relu','softplus'],default='relu')
+    p.add_argument('--oeo-activation',choices=['relu','softplus','intensity_softsign'],default='relu')
     a=p.parse_args();a.out.mkdir(parents=True,exist_ok=False);torch.set_num_threads(4)
     vocab=json.loads((a.data/'vocab.json').read_text());data=load_data(a.data,'val',vocab,'cuda')
     cfg=json.loads((a.run/'metadata.json').read_text())['config']

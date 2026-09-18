@@ -111,12 +111,14 @@ class OpticalOEO(PhaseOnly):
                    oeo=f'active intensity / spatial mean -> nonaffine LayerNorm -> {oeo_activation} -> Softsign -> unit-power amplitude; zero phase',
                    loss='NLL of two normalized detector energies',augmentation='none',
                    selection='minimum validation NLL',no_trainable_electronic_adapter_or_head=False)
+        if oeo_activation=='intensity_softsign':
+            cfg['oeo']='active intensity / spatial mean -> Softsign -> unit-power amplitude; zero phase; no centered LayerNorm'
         super().__init__('dynamic_four' if architecture == 'moe' else 'full_d2nn', cfg)
         self.class_centers = [(259,179),(259,339)]
         self.phase_dropout = phase_dropout
         self.phase_dropout_block = phase_dropout_block
         self.input_layout = input_layout
-        assert oeo_activation in ['relu','softplus']
+        assert oeo_activation in ['relu','softplus','intensity_softsign']
         self.oeo_activation = oeo_activation
 
     def main_transmission(self, raw):
@@ -133,8 +135,12 @@ class OpticalOEO(PhaseOnly):
         # Identical active 478-square detector/SLM area for both models.
         intensity = field[:,20:498,20:498].abs().square()
         intensity = intensity/intensity.mean((-2,-1),keepdim=True).clamp_min(1e-20)
-        z=F.layer_norm(intensity, (478,478), eps=1e-5)
-        value=F.relu(z) if self.oeo_activation=='relu' else F.softplus(z)
+        if self.oeo_activation=='intensity_softsign':
+            # Nonnegative monotone response: no mean subtraction, threshold, or pedestal.
+            value=intensity
+        else:
+            z=F.layer_norm(intensity, (478,478), eps=1e-5)
+            value=F.relu(z) if self.oeo_activation=='relu' else F.softplus(z)
         value = F.softsign(value)
         value = normalize_power(value, 1.0)
         return F.pad(value, (20,)*4).to(torch.complex64)
