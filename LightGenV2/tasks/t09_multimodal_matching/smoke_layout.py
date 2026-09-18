@@ -14,7 +14,7 @@ def main():
     images=data['images'][data['index'][:4]];ids=data['ids'][:4];y=data['labels'][:4]
     front=TextEncoder(len(vocab),'fixed').cuda();assert sum(p.numel() for p in front.parameters())==0
     records=[]
-    for layout in ['legacy','two_band','interleaved']:
+    for layout in ['legacy','two_band','interleaved','left_right']:
         amplitude=encode(images,front(ids),layout)
         assert amplitude.shape==(4,224,224)
         assert torch.isfinite(amplitude).all() and (amplitude>=0).all()
@@ -22,13 +22,15 @@ def main():
         expanded=enlarge_tiles(amplitude,478,layout)
         if layout!='legacy':
             for x in [amplitude,expanded]:
-                parts=(x[:,0::2],x[:,1::2]) if layout=='interleaved' else x.chunk(2,dim=-2)
+                parts=(x[:,0::2],x[:,1::2]) if layout=='interleaved' else (x.chunk(2,dim=-1) if layout=='left_right' else x.chunk(2,dim=-2))
                 for band in parts:
                     assert torch.allclose(band.square().sum((-2,-1)),torch.full((4,),.5,device='cuda'),atol=1e-6)
             if layout=='interleaved':
                 reference=encode(images,front(ids),'two_band')
                 assert torch.equal(amplitude[:,0::2],reference[:,:112])
                 assert torch.equal(amplitude[:,1::2],reference[:,112:])
+            if layout=='left_right':
+                assert torch.equal(amplitude[:,:,:112],encode(images,front(ids),'left_right')[:,:,:112])
             changed=images.clone();changed[...,1]=0
             try:encode(changed,front(ids),layout)
             except AssertionError:pass
