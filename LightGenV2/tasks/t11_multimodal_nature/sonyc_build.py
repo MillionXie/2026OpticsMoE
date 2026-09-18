@@ -16,8 +16,15 @@ def main():
   images=[]; rows=[]
   for i,name in enumerate(names):
    with wave.open(str(allfiles[name]),'rb') as w:
-    assert w.getnchannels()==1 and w.getframerate()==16000 and w.getsampwidth()==2
+    assert w.getnchannels()==1 and w.getsampwidth()==2
+    rate=w.getframerate()
     samples=np.frombuffer(w.readframes(w.getnframes()),dtype='<i2').copy()
+    assert rate in (16000,48000)
+    if rate==48000: samples=samples[::3]
+    samples=samples[:160000]
+    samples=np.pad(samples,(0,max(0,160000-len(samples))))
+    chunks=np.array_split(samples,10)
+    image=np.mean([logmel(c[:16000]) for c in chunks],axis=0).astype(np.uint8)
    images.append(np.repeat(image[:,:,None],3,axis=2))
    for base in by[name]:
     if base['split']!=split: continue
