@@ -2,7 +2,7 @@
 import argparse,json,wave
 from pathlib import Path
 import numpy as np
-from .audio_prepare import logmel
+from LightGenV2.tasks.t09_multimodal_matching.audio_prepare import logmel
 from .prepare import save,tokens,digest
 
 def main():
