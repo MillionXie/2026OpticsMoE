@@ -52,8 +52,9 @@ def encode(images, text, layout='legacy'):
             assert images.ndim==4 and images.shape[-1]==3
             assert torch.equal(images[...,0],images[...,1]) and torch.equal(images[...,0],images[...,2])
             sensor=images[...,0].float()[:,None]/255
-        sensor=F.interpolate(sensor,(112,224),mode='bilinear',align_corners=False)[:,0]
-        words=F.interpolate(text[:,None],(112,224),mode='nearest')[:,0]
+        target=(224,112) if layout=='left_right' else (112,224)
+        sensor=F.interpolate(sensor,target,mode='bilinear',align_corners=False)[:,0]
+        words=F.interpolate(text[:,None],target,mode='nearest')[:,0]
         sensor=normalize_power(sensor,.5);words=normalize_power(words,.5)
         if layout=='interleaved':
             return torch.stack((sensor,words),dim=-2).reshape(-1,224,224)
