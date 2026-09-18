@@ -37,7 +37,8 @@ def main():
   else: save(a.out/'test_questions.json',rows)
   save(a.out/f'{split}_audio_records.json',[{'source_member':n,'audio_filename':n} for n in names])
  save(a.out/'vocab.json',vocab)
- payload={'schema_version':1,'source_query_index_sha256':digest(a.query_index.read_bytes()),'counts':{k:{'audio':len(records[k]),'queries':len(rows_by[k])} for k in records},'manifest_files':{p.name:digest(p.read_bytes()) for p in a.out.iterdir() if p.is_file()}}
+ file_hashes={p.name:digest(p.read_bytes()) for p in a.out.iterdir() if p.is_file()}
+ payload={'schema_version':1,'source_query_index_sha256':digest(a.query_index.read_bytes()),'counts':{k:{'audio':len(records[k]),'queries':len(rows_by[k])} for k in records},'files':file_hashes,'manifest_files':file_hashes}
  save(a.out/'manifest.json',payload); print(json.dumps(payload,ensure_ascii=False))
 if __name__=='__main__':main()
 
