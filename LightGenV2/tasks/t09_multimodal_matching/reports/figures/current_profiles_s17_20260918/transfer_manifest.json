@@ -92,5 +92,157 @@
       "sha256": "10037190efcff8a836ff1ebee2879ac5b35799303257a2d0e150e0ae805604d6",
       "bytes": 10915
     }
+  ],
+  "new_oeo_downloads": [
+    {
+      "path": "runs/simulation/audio_raw_leftright_leaky_s17_v1/metadata.json",
+      "sha256": "97687380daa874366023d859c76c152aa5c97485cb858387d792970406092138",
+      "bytes": 4103
+    },
+    {
+      "path": "runs/simulation/audio_raw_leftright_leaky_s17_v1/status.json",
+      "sha256": "069452c5144b24818c38a0ce7d775f573bad3afa249f59120f17007d1857db04",
+      "bytes": 70
+    },
+    {
+      "path": "runs/simulation/audio_raw_leftright_leaky_s17_v1/summary.json",
+      "sha256": "061a713c17c0b75302e740e0fc2ffb4ce34aad5ee001cc32c2969fe71321ca55",
+      "bytes": 4079
+    },
+    {
+      "path": "runs/simulation/audio_raw_leftright_leaky_s17_v1/fixed/moe/history.json",
+      "sha256": "f2b486cfe3c98228fad217f86e8c2e6a676e5b05875abc720009b7df895fbfb2",
+      "bytes": 39259
+    },
+    {
+      "path": "runs/simulation/audio_raw_leftright_leaky_s17_v1/fixed/moe/result.json",
+      "sha256": "82fa5a26543984f4fdc3efddfcee9de28c93992db3e52dd40f78c79000fca9f0",
+      "bytes": 1885
+    },
+    {
+      "path": "runs/simulation/audio_raw_leftright_leaky_s17_v1/fixed/moe/predictions.npz",
+      "sha256": "81e72e7f342608f9291b3d5a695dca56a2d3b80161069a8a2d09ed9614399416",
+      "bytes": 102680
+    },
+    {
+      "path": "runs/simulation/audio_raw_leftright_leaky_s17_v1/fixed/d2nn/history.json",
+      "sha256": "247f912a4f0375fca6a566c8ab4674f8eec26bb26693827ac014f50550117a66",
+      "bytes": 31386
+    },
+    {
+      "path": "runs/simulation/audio_raw_leftright_leaky_s17_v1/fixed/d2nn/result.json",
+      "sha256": "6bfe5e3c714772de2ab29b57bc6e14fd00f04fca69f934bd0c058d87c09bce63",
+      "bytes": 1508
+    },
+    {
+      "path": "runs/simulation/audio_raw_leftright_leaky_s17_v1/fixed/d2nn/predictions.npz",
+      "sha256": "3b56a2e0b8570707cde48368642697727cf605f02171ce4c5d860126bb973665",
+      "bytes": 102451
+    },
+    {
+      "path": "runs/simulation/audio_raw_leftright_positive_balanced02_s17_v1/metadata.json",
+      "sha256": "a6f6e88e5781eb3313f401e06d08bff7b25f77b1f3ddf010db0fac307c365947",
+      "bytes": 4131
+    },
+    {
+      "path": "runs/simulation/audio_raw_leftright_positive_balanced02_s17_v1/status.json",
+      "sha256": "4ebe1781058f2aecf93efbd49e5f703ae7d48538719858aa74de85fac1284ebb",
+      "bytes": 70
+    },
+    {
+      "path": "runs/simulation/audio_raw_leftright_positive_balanced02_s17_v1/summary.json",
+      "sha256": "13318fc1256a216e04784aa0703e9163c5fe067d21a516444ef2e2eb28e09c16",
+      "bytes": 4209
+    },
+    {
+      "path": "runs/simulation/audio_raw_leftright_positive_balanced02_s17_v1/fixed/moe/history.json",
+      "sha256": "fa3df67a6ad2d60586436b12307569010358990380f10c74303e7b5d6329fa0b",
+      "bytes": 41497
+    },
+    {
+      "path": "runs/simulation/audio_raw_leftright_positive_balanced02_s17_v1/fixed/moe/result.json",
+      "sha256": "c05d4fe1d6a97b7748f2f0bc0a7da34b9c545d9c59337bdbe3934b9159b13f8d",
+      "bytes": 2016
+    },
+    {
+      "path": "runs/simulation/audio_raw_leftright_positive_balanced02_s17_v1/fixed/moe/predictions.npz",
+      "sha256": "e063d3c993b67c267ea6f0d797b389adb254609edef5a732ff51031fb357b35c",
+      "bytes": 102892
+    },
+    {
+      "path": "runs/simulation/audio_raw_leftright_positive_balanced02_s17_v1/fixed/d2nn/history.json",
+      "sha256": "ca8f843c8dd500dfc9fe59df228f3f5d40b04940e8ffeed480abab37f46f459e",
+      "bytes": 31270
+    },
+    {
+      "path": "runs/simulation/audio_raw_leftright_positive_balanced02_s17_v1/fixed/d2nn/result.json",
+      "sha256": "111013d462a644b19b33e63da19705af5a176a8c582aa48f3eda25ca0b7d01c3",
+      "bytes": 1507
+    },
+    {
+      "path": "runs/simulation/audio_raw_leftright_positive_balanced02_s17_v1/fixed/d2nn/predictions.npz",
+      "sha256": "171c17029ed78ba477e4332438acef37d4a6d3e9ebc80012b8a25ffff19f43a0",
+      "bytes": 101846
+    },
+    {
+      "path": "runs/simulation/audio_leftright_new_oeo_test_s17_v1/locked_selection.json",
+      "sha256": "8e40c83c40510fd17166520a05cbf4885b5324745d14ad0e64e2d49e0de43092",
+      "bytes": 1210
+    },
+    {
+      "path": "runs/simulation/audio_leftright_new_oeo_test_s17_v1/metadata.json",
+      "sha256": "4ce73dd3d0aadf29996ca3cab5a6336c2d002a1881f0461c984d6d81a1c29c82",
+      "bytes": 353
+    },
+    {
+      "path": "runs/simulation/audio_leftright_new_oeo_test_s17_v1/status.json",
+      "sha256": "26c2e5f1aff8463f99eb8ba392d785aa849c6975c3e85d68886fd8ca6720f479",
+      "bytes": 62
+    },
+    {
+      "path": "runs/simulation/audio_leftright_new_oeo_test_s17_v1/test_questions.json",
+      "sha256": "5a21ce33be242f9996b123c2ba4d17d5f44ad6c3d63564d10d4e093c8e388dbd",
+      "bytes": 321382
+    },
+    {
+      "path": "runs/simulation/audio_leftright_new_oeo_test_s17_v1/audio_raw_leftright_leaky_s17_v1_d2nn_predictions.npz",
+      "sha256": "862087ba1d0141aa3a3e3e3e12461da6a297c42676399b76fd16a57e2df681c1",
+      "bytes": 12838
+    },
+    {
+      "path": "runs/simulation/audio_leftright_new_oeo_test_s17_v1/audio_raw_leftright_positive_balanced02_s17_v1_moe_predictions.npz",
+      "sha256": "d0187491dd261aa75f43b94cff23a589632e8d5144a23ed0178d22acf4c162d4",
+      "bytes": 12907
+    },
+    {
+      "path": "runs/simulation/audio_leftright_new_oeo_test_s17_v1/audio_raw_leftright_positive_balanced02_s17_v1_d2nn_predictions.npz",
+      "sha256": "6693f336f0b7c015d03fd5c225f0ad8300c02e3f5ac369eadec1b7bce08f5e69",
+      "bytes": 12776
+    },
+    {
+      "path": "runs/simulation/audio_leftright_new_oeo_test_s17_v1/test_manifest.json",
+      "sha256": "5468b0df88dc711ea381bac25dcf875818351a0cbe3bf8ce9631923f88f53fd2",
+      "bytes": 219
+    },
+    {
+      "path": "runs/simulation/audio_leftright_new_oeo_test_s17_v1/results.json",
+      "sha256": "1c19f098eddedb16752c7fee297abda2399f937a0295af390ffedc60bee4491d",
+      "bytes": 3389
+    },
+    {
+      "path": "runs/simulation/audio_leftright_new_oeo_test_s17_v1/audio_raw_leftright_leaky_s17_v1_moe_predictions.npz",
+      "sha256": "fc75a84488c7d7ad980b7a8e72d5606453b66aa371599abbf84ad0e26791e120",
+      "bytes": 12913
+    },
+    {
+      "path": "runs/smoke/audio_leftright_leaky_audit_s17_v1/verification.json",
+      "sha256": "4606b327e91178d34b35851b31aba1aa72b8c0b4e0694af3bb91e422f3438aef",
+      "bytes": 5201
+    },
+    {
+      "path": "runs/smoke/audio_leftright_balanced02_audit_s17_v1/verification.json",
+      "sha256": "08762fdb9d0b6894549fc2f1a693dd2121b91a1ba199fba543f2e9e95e0a6262",
+      "bytes": 5359
+    }
   ]
 }

@@ -190,3 +190,20 @@ D2NN分别将上下区最近邻扩展到239×478，恢复各区功率后拼成47
 重训只改变每层OEO的ReLU为Softplus(z)=log(1+exp(z))（beta1），保留无仿射LayerNorm、Softsign、单位功率重编码、两层OEO及末层OEO。Softplus为固定电子响应，无可训练参数，但引入非零背景响应，是不同OEO传递函数，不是数值等价修补，也不代表硬件效率已验证。两架构统一改动，无CNN、two_band输入、原划分、seed17、30轮、batch32、lr0.01余弦至0.001、无dropout。分别运行audio_raw_twoband_softplus_moe_s17_v1和audio_raw_twoband_softplus_d2nn_s17_v1；先验证死区样本的梯度恢复，再从原随机初始化训练，不能将旧失败权重直接替换激活后的分数当重训性能。
 根据Softplus试验的训练/验证曲线（D2NN仍约55%，并非通过测试挑选），增加固定`intensity_softsign`响应作为第二个修复对照：归一化强度u=I/mean(I)≥0，直接输出u/(1+u)，再单位功率振幅重编码；不减均值、不ReLU、不增加Softplus的非零背景。每层包括末层仍有OEO，零可训练电子参数；低强度响应的导数不因负值截断而归零。两模型同样从头30轮，其余条件固定，run分别为audio_raw_twoband_positive_moe_s17_v1与audio_raw_twoband_positive_d2nn_s17_v1。此为改变OEO传递函数的仿真对照，不视为原模型的等价实现。
 统一OEO的图文补训使用clevr_visual_softsign_pd005_s17_v1：共享冻结CNN、phase dropout=0.05、30轮、seed17、固定one-hot文本和原CLEVR派生划分；验证NLL选中的同一checkpoint在测试集为MoE69.27%、D2NN57.47%，route_mean为MoE[0.535,0.263,0.160,0.042]、D2NN[0.25,0.25,0.25,0.25]。该结果替代默认图文的旧中心化ReLU表格；旧72.40%/57.20%仅作为历史OEO对照保留。
+
+### OEO形态与专家均衡追加对照
+
+原始版本确实使用过“平方探测→空间均值归一化→LayerNorm→ReLU→Softsign→单位功率振幅”的路径。它在旧图文CNN+phase dropout配置中测试为72.40%，但在无CNN音文上下布局MoE中会把读出窗口截为零。问题来自中心化LayerNorm后的ReLU硬死区，而不是平方探测本身。
+
+为保留原结构并移除硬死区，新增centered_leaky_relu：平方光强、均值归一化和LayerNorm不变，仅用负斜率0.1的LeakyReLU替换ReLU，之后仍使用Softsign和单位功率重编码。左右排布音文、30轮、seed17的验证选中测试结果如下：
+
+|OEO/路由|MoE测试|D2NN测试|MoE测试route_mean|
+|---|---:|---:|---|
+|centered_leaky_relu，无均衡|84.54%|84.49%|[0.840, 0.075, 0.083, 0.001]|
+|intensity_softsign，lambda=0.20|83.62%|73.24%|[0.373, 0.292, 0.324, 0.010]|
+
+LeakyReLU组的MoE与D2NN几乎相同，说明保留中心化结构可以恢复D2NN的可学习性，但没有产生可见MoE优势。非中心化Softsign的无均衡版本仍是当前性能更高的音文候选；它的MoE为85.01%、D2NN为73.24%，但其路由集中在第一专家。不同任务使用不同OEO可以作为工程校准方案，但论文主比较应先固定同一OEO；只有在明确报告传递函数、硬件可实现性和独立验证后，才可把任务专用OEO作为单独实验，不能用它选择性放大MoE优势。
+
+均衡项提高后，前三路功率接近均匀，但第四路仍接近零，且MoE测试准确率从85.01%下降到83.62%。原因是均衡项约束的是批次平均路由功率，不是每个样本的可用专家数；它会把本来对任务有用的第一专家功率强行分给暂时没有形成有效变换的专家，减少有效信号，同时仍不能解决第四专家的初始化/相位响应弱问题。均衡专家不等于更强表达能力，只有当不同专家学到互补变换时均衡才可能有益。当前不使用均衡项作为默认配置；后续应先做专家屏蔽和单专家替换消融，再考虑按样本熵、负载下限或专家预训练，而不是继续盲目增大lambda。
+
+新增run为audio_raw_leftright_leaky_s17_v1和audio_raw_leftright_positive_balanced02_s17_v1，测试及审计证据在runs/simulation/audio_leftright_new_oeo_test_s17_v1和runs/smoke/audio_leftright_*_audit_s17_v1；图文统一OEO run为clevr_visual_softsign_pd005_s17_v1。所有新结果均按验证NLL选checkpoint，测试不参与选模，零读出比例均为0。
