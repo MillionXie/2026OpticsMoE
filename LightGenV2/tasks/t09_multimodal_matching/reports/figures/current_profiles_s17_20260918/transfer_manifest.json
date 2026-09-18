@@ -5,5 +5,92 @@
       "sha256": "3cc934eb7182b8c673a3ee2d8d4c1cdd276cefb03ddb46e0cc2b94e73076c9fe",
       "bytes": 5235
     }
+  ],
+  "image_downloads": [
+    {
+      "path": "runs/simulation/clevr_visual_softsign_pd005_s17_v1/metadata.json",
+      "sha256": "e04092f2475eb7dd79c9e648f4b553876c6cdea593a94c0f9a7dd0072b8465b7",
+      "bytes": 4279
+    },
+    {
+      "path": "runs/simulation/clevr_visual_softsign_pd005_s17_v1/status.json",
+      "sha256": "1ae8ac92f30b834fd3c387fc056e1fde48480284f1ae92656bfa402fb53e283c",
+      "bytes": 70
+    },
+    {
+      "path": "runs/simulation/clevr_visual_softsign_pd005_s17_v1/summary.json",
+      "sha256": "65eb060280ca5f81f8d3eb53efd3d30a0e50fb640ff02067967f4ff37519de51",
+      "bytes": 4234
+    },
+    {
+      "path": "runs/simulation/clevr_visual_softsign_pd005_s17_v1/fixed/moe/history.json",
+      "sha256": "1d0ca89c9b188d796e77cfbeacd842ccf7b79986bc62a74ea89ceb380a10bf31",
+      "bytes": 42227
+    },
+    {
+      "path": "runs/simulation/clevr_visual_softsign_pd005_s17_v1/fixed/moe/result.json",
+      "sha256": "d32f924452edf75eba7a4399f50cc3b25c2dd9a18451520eb58433dbd98eaef8",
+      "bytes": 2047
+    },
+    {
+      "path": "runs/simulation/clevr_visual_softsign_pd005_s17_v1/fixed/moe/predictions.npz",
+      "sha256": "62c35637ad3e9f8e6692b765add8310ad2f6b9cf0b6a063bd736d48f5946ba28",
+      "bytes": 54286
+    },
+    {
+      "path": "runs/simulation/clevr_visual_softsign_pd005_s17_v1/fixed/d2nn/history.json",
+      "sha256": "89e5a62dd2af8ec467b91e05326855584d48f4da85fe151a88caba1f11f41176",
+      "bytes": 31211
+    },
+    {
+      "path": "runs/simulation/clevr_visual_softsign_pd005_s17_v1/fixed/d2nn/result.json",
+      "sha256": "75cdab54bf7651f8af3c07a7054a5182622d3b9bcec94cf607766bca311bd331",
+      "bytes": 1501
+    },
+    {
+      "path": "runs/simulation/clevr_visual_softsign_pd005_s17_v1/fixed/d2nn/predictions.npz",
+      "sha256": "9f8aaeb5cc17e2efde7867afbc88a132af61b49df9a3caec0dbd6510ee40f0ea",
+      "bytes": 53183
+    },
+    {
+      "path": "runs/simulation/clevr_visual_softsign_pd005_s17_v1_test/locked_selection.json",
+      "sha256": "e5065d4489b7b521559761e44c4d1dc08d38f063c60ef3485238f496b5d9abfb",
+      "bytes": 586
+    },
+    {
+      "path": "runs/simulation/clevr_visual_softsign_pd005_s17_v1_test/metadata.json",
+      "sha256": "8a0e5efd5036b352c1f039a7d79b19e4bdf71912b7e71495accbcde002a187ed",
+      "bytes": 453
+    },
+    {
+      "path": "runs/simulation/clevr_visual_softsign_pd005_s17_v1_test/clevr_visual_softsign_pd005_s17_v1_moe_predictions.npz",
+      "sha256": "e32cb9dafa9e328970dea17ff614177e86d3f172762d7a209b123884c85a5d16",
+      "bytes": 11140
+    },
+    {
+      "path": "runs/simulation/clevr_visual_softsign_pd005_s17_v1_test/status.json",
+      "sha256": "26c2e5f1aff8463f99eb8ba392d785aa849c6975c3e85d68886fd8ca6720f479",
+      "bytes": 62
+    },
+    {
+      "path": "runs/simulation/clevr_visual_softsign_pd005_s17_v1_test/test_questions.json",
+      "sha256": "ba19956992118edbc5cb680a27647fbba409026f11ad16a60a552b7a386a3a6e",
+      "bytes": 213230
+    },
+    {
+      "path": "runs/simulation/clevr_visual_softsign_pd005_s17_v1_test/test_manifest.json",
+      "sha256": "567e22caf2b5dc55b0a7fc41cdfcc627cd4412c0619dc7f5aeae54d2859f6760",
+      "bytes": 219
+    },
+    {
+      "path": "runs/simulation/clevr_visual_softsign_pd005_s17_v1_test/results.json",
+      "sha256": "2e3e04bf234a0a4e81c4237e0b2dbeeee6f7571c7f941421541582344585fd1b",
+      "bytes": 1708
+    },
+    {
+      "path": "runs/simulation/clevr_visual_softsign_pd005_s17_v1_test/clevr_visual_softsign_pd005_s17_v1_d2nn_predictions.npz",
+      "sha256": "10037190efcff8a836ff1ebee2879ac5b35799303257a2d0e150e0ae805604d6",
+      "bytes": 10915
+    }
   ]
 }

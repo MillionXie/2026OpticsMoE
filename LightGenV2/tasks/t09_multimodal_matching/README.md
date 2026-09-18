@@ -7,7 +7,7 @@
 首先比较 CLEVR 图文任务中的固定词编码与共享可训练 Embedding+GRU；
 Speech Commands 音文已完成有CNN、无CNN三种布局及上下布局OEO恢复训练，详见复现入口。
 当前均为给定图像/音频及文本问题后输出“是/否”的条件判断，不是自由问答或八分类识别。
-当前默认候选为：图文使用冻结CNN+0.05 phase dropout；音文使用无CNN、非中心化 intensity Softsign OEO。左右排布新实验测试MoE85.01%、D2NN73.24%；加入路由均衡损失后MoE83.39%、D2NN73.24%。这些仍是单seed探索结果，路由均衡没有提高准确率，暂不作为默认训练策略。
+当前默认候选为：图文使用冻结CNN+0.05 phase dropout；音文使用无CNN、非中心化 intensity Softsign OEO。统一OEO重训的图文测试为MoE69.27%、D2NN57.47%；左右排布音文测试为MoE85.01%、D2NN73.24%；加入路由均衡损失后音文MoE83.39%、D2NN73.24%。这些仍是单seed探索结果，路由均衡没有提高准确率，暂不作为默认训练策略。
 
 ## 数据合同
 
@@ -189,3 +189,4 @@ D2NN分别将上下区最近邻扩展到239×478，恢复各区功率后拼成47
 
 重训只改变每层OEO的ReLU为Softplus(z)=log(1+exp(z))（beta1），保留无仿射LayerNorm、Softsign、单位功率重编码、两层OEO及末层OEO。Softplus为固定电子响应，无可训练参数，但引入非零背景响应，是不同OEO传递函数，不是数值等价修补，也不代表硬件效率已验证。两架构统一改动，无CNN、two_band输入、原划分、seed17、30轮、batch32、lr0.01余弦至0.001、无dropout。分别运行audio_raw_twoband_softplus_moe_s17_v1和audio_raw_twoband_softplus_d2nn_s17_v1；先验证死区样本的梯度恢复，再从原随机初始化训练，不能将旧失败权重直接替换激活后的分数当重训性能。
 根据Softplus试验的训练/验证曲线（D2NN仍约55%，并非通过测试挑选），增加固定`intensity_softsign`响应作为第二个修复对照：归一化强度u=I/mean(I)≥0，直接输出u/(1+u)，再单位功率振幅重编码；不减均值、不ReLU、不增加Softplus的非零背景。每层包括末层仍有OEO，零可训练电子参数；低强度响应的导数不因负值截断而归零。两模型同样从头30轮，其余条件固定，run分别为audio_raw_twoband_positive_moe_s17_v1与audio_raw_twoband_positive_d2nn_s17_v1。此为改变OEO传递函数的仿真对照，不视为原模型的等价实现。
+统一OEO的图文补训使用clevr_visual_softsign_pd005_s17_v1：共享冻结CNN、phase dropout=0.05、30轮、seed17、固定one-hot文本和原CLEVR派生划分；验证NLL选中的同一checkpoint在测试集为MoE69.27%、D2NN57.47%，route_mean为MoE[0.535,0.263,0.160,0.042]、D2NN[0.25,0.25,0.25,0.25]。该结果替代默认图文的旧中心化ReLU表格；旧72.40%/57.20%仅作为历史OEO对照保留。
