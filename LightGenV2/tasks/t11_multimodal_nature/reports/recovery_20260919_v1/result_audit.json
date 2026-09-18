@@ -1,0 +1,4 @@
+{
+  "sonyc": "matching data/config/source; 30 epochs; finite nonzero gradients; test metrics independently recomputed",
+  "sen12ms": "matching data/config/source; 30 epochs; finite nonzero gradients; test metrics independently recomputed"
+}

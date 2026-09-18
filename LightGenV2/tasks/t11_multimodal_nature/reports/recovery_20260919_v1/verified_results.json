@@ -1,0 +1,2692 @@
+{
+  "sonyc": {
+    "moe": {
+      "selected_epoch": 24,
+      "checkpoint_sha": "17760a5ec24b48f789324e19eee9321434ead880f3588f1c1496384bd738f3a8",
+      "threshold_source": "validation only",
+      "metrics": {
+        "train": {
+          "default": {
+            "accuracy": 0.5938375350140056,
+            "macro_ap": 0.2391875121749214,
+            "macro_ap_supported_classes": 8,
+            "macro_auroc": 0.736541350481537,
+            "macro_f1": 0.2787483891032275,
+            "micro_ap": 0.2386186049378422,
+            "balanced_accuracy": 0.6692521060201356,
+            "per_event": {
+              "1_engine_presence": {
+                "n": 714,
+                "positive": 191,
+                "ap": 0.4579681695969876,
+                "auroc": 0.6873204328631637,
+                "f1": 0.5084745762711864,
+                "threshold": 0.5
+              },
+              "2_machinery-impact_presence": {
+                "n": 714,
+                "positive": 42,
+                "ap": 0.16342911023294923,
+                "auroc": 0.7875566893424036,
+                "f1": 0.23868312757201646,
+                "threshold": 0.5
+              },
+              "3_non-machinery-impact_presence": {
+                "n": 714,
+                "positive": 14,
+                "ap": 0.06917617929584106,
+                "auroc": 0.649795918367347,
+                "f1": 0.052845528455284556,
+                "threshold": 0.5
+              },
+              "4_powered-saw_presence": {
+                "n": 714,
+                "positive": 28,
+                "ap": 0.352193768298975,
+                "auroc": 0.9292482299042065,
+                "f1": 0.32679738562091504,
+                "threshold": 0.5
+              },
+              "5_alert-signal_presence": {
+                "n": 714,
+                "positive": 119,
+                "ap": 0.28753096317677873,
+                "auroc": 0.6475460772544311,
+                "f1": 0.33271719038817005,
+                "threshold": 0.5
+              },
+              "6_music_presence": {
+                "n": 714,
+                "positive": 24,
+                "ap": 0.06891705890692848,
+                "auroc": 0.7297705314009663,
+                "f1": 0.11,
+                "threshold": 0.5
+              },
+              "7_human-voice_presence": {
+                "n": 714,
+                "positive": 172,
+                "ap": 0.3663676211637832,
+                "auroc": 0.7058375525615721,
+                "f1": 0.49917898193760263,
+                "threshold": 0.5
+              },
+              "8_dog_presence": {
+                "n": 714,
+                "positive": 38,
+                "ap": 0.14791722672712793,
+                "auroc": 0.7552553721582062,
+                "f1": 0.16129032258064516,
+                "threshold": 0.5
+              }
+            },
+            "nll": 0.5577325224876404,
+            "zero_readout_fraction": 0.0,
+            "route_mean": [
+              0.7852548956871033,
+              0.16327279806137085,
+              0.05063673481345177,
+              0.0008344423258677125
+            ]
+          },
+          "calibrated": {
+            "accuracy": 0.6671918767507002,
+            "macro_ap": 0.2391875121749214,
+            "macro_ap_supported_classes": 8,
+            "macro_auroc": 0.736541350481537,
+            "macro_f1": 0.2872611427097874,
+            "micro_ap": 0.2386186049378422,
+            "balanced_accuracy": 0.7013880188627241,
+            "per_event": {
+              "1_engine_presence": {
+                "n": 714,
+                "positive": 191,
+                "ap": 0.4579681695969876,
+                "auroc": 0.6873204328631637,
+                "f1": 0.46540880503144655,
+                "threshold": 0.4
+              },
+              "2_machinery-impact_presence": {
+                "n": 714,
+                "positive": 42,
+                "ap": 0.16342911023294923,
+                "auroc": 0.7875566893424036,
+                "f1": 0.24390243902439024,
+                "threshold": 0.78
+              },
+              "3_non-machinery-impact_presence": {
+                "n": 714,
+                "positive": 14,
+                "ap": 0.06917617929584106,
+                "auroc": 0.649795918367347,
+                "f1": 0.04964539007092199,
+                "threshold": 0.54
+              },
+              "4_powered-saw_presence": {
+                "n": 714,
+                "positive": 28,
+                "ap": 0.352193768298975,
+                "auroc": 0.9292482299042065,
+                "f1": 0.45161290322580644,
+                "threshold": 0.8300000000000001
+              },
+              "5_alert-signal_presence": {
+                "n": 714,
+                "positive": 119,
+                "ap": 0.28753096317677873,
+                "auroc": 0.6475460772544311,
+                "f1": 0.33271719038817005,
+                "threshold": 0.5
+              },
+              "6_music_presence": {
+                "n": 714,
+                "positive": 24,
+                "ap": 0.06891705890692848,
+                "auroc": 0.7297705314009663,
+                "f1": 0.09821428571428571,
+                "threshold": 0.5800000000000001
+              },
+              "7_human-voice_presence": {
+                "n": 714,
+                "positive": 172,
+                "ap": 0.3663676211637832,
+                "auroc": 0.7058375525615721,
+                "f1": 0.4952978056426332,
+                "threshold": 0.46
+              },
+              "8_dog_presence": {
+                "n": 714,
+                "positive": 38,
+                "ap": 0.14791722672712793,
+                "auroc": 0.7552553721582062,
+                "f1": 0.16129032258064516,
+                "threshold": 0.5
+              }
+            }
+          }
+        },
+        "val": {
+          "default": {
+            "accuracy": 0.5617760617760618,
+            "macro_ap": 0.313061377442914,
+            "macro_ap_supported_classes": 7,
+            "macro_auroc": 0.6867119319984568,
+            "macro_f1": 0.26353348077731864,
+            "micro_ap": 0.2729685222815313,
+            "balanced_accuracy": 0.6346292782797911,
+            "per_event": {
+              "1_engine_presence": {
+                "n": 259,
+                "positive": 80,
+                "ap": 0.5215080801000644,
+                "auroc": 0.6625698324022347,
+                "f1": 0.4692737430167598,
+                "threshold": 0.5
+              },
+              "2_machinery-impact_presence": {
+                "n": 259,
+                "positive": 12,
+                "ap": 0.3332693302385084,
+                "auroc": 0.8913630229419703,
+                "f1": 0.26666666666666666,
+                "threshold": 0.5
+              },
+              "3_non-machinery-impact_presence": {
+                "n": 259,
+                "positive": 13,
+                "ap": 0.061524023778701115,
+                "auroc": 0.526266416510319,
+                "f1": 0.09900990099009901,
+                "threshold": 0.5
+              },
+              "4_powered-saw_presence": {
+                "n": 259,
+                "positive": 8,
+                "ap": 0.4273108055437561,
+                "auroc": 0.8301792828685258,
+                "f1": 0.25,
+                "threshold": 0.5
+              },
+              "5_alert-signal_presence": {
+                "n": 259,
+                "positive": 38,
+                "ap": 0.2738630752526954,
+                "auroc": 0.6289592760180995,
+                "f1": 0.3033175355450237,
+                "threshold": 0.5
+              },
+              "6_music_presence": {
+                "n": 259,
+                "positive": 17,
+                "ap": 0.09566600790463557,
+                "auroc": 0.6135148274185707,
+                "f1": 0.14857142857142858,
+                "threshold": 0.5
+              },
+              "7_human-voice_presence": {
+                "n": 259,
+                "positive": 89,
+                "ap": 0.4782883192820373,
+                "auroc": 0.6541308658294778,
+                "f1": 0.5714285714285714,
+                "threshold": 0.5
+              },
+              "8_dog_presence": {
+                "n": 259,
+                "positive": 0,
+                "ap": null,
+                "auroc": null,
+                "f1": 0.0,
+                "threshold": 0.5
+              }
+            },
+            "nll": 0.5714093446731567,
+            "zero_readout_fraction": 0.0,
+            "route_mean": [
+              0.7870635986328125,
+              0.16468264162540436,
+              0.047453489154577255,
+              0.0008005691925063729
+            ]
+          },
+          "calibrated": {
+            "accuracy": 0.6674710424710425,
+            "macro_ap": 0.313061377442914,
+            "macro_ap_supported_classes": 7,
+            "macro_auroc": 0.6867119319984568,
+            "macro_f1": 0.3533714847877052,
+            "micro_ap": 0.2729685222815313,
+            "balanced_accuracy": 0.7183404615664962,
+            "per_event": {
+              "1_engine_presence": {
+                "n": 259,
+                "positive": 80,
+                "ap": 0.5215080801000644,
+                "auroc": 0.6625698324022347,
+                "f1": 0.5101214574898786,
+                "threshold": 0.4
+              },
+              "2_machinery-impact_presence": {
+                "n": 259,
+                "positive": 12,
+                "ap": 0.3332693302385084,
+                "auroc": 0.8913630229419703,
+                "f1": 0.56,
+                "threshold": 0.78
+              },
+              "3_non-machinery-impact_presence": {
+                "n": 259,
+                "positive": 13,
+                "ap": 0.061524023778701115,
+                "auroc": 0.526266416510319,
+                "f1": 0.15053763440860216,
+                "threshold": 0.54
+              },
+              "4_powered-saw_presence": {
+                "n": 259,
+                "positive": 8,
+                "ap": 0.4273108055437561,
+                "auroc": 0.8301792828685258,
+                "f1": 0.5555555555555556,
+                "threshold": 0.8300000000000001
+              },
+              "5_alert-signal_presence": {
+                "n": 259,
+                "positive": 38,
+                "ap": 0.2738630752526954,
+                "auroc": 0.6289592760180995,
+                "f1": 0.3033175355450237,
+                "threshold": 0.5
+              },
+              "6_music_presence": {
+                "n": 259,
+                "positive": 17,
+                "ap": 0.09566600790463557,
+                "auroc": 0.6135148274185707,
+                "f1": 0.16470588235294117,
+                "threshold": 0.5800000000000001
+              },
+              "7_human-voice_presence": {
+                "n": 259,
+                "positive": 89,
+                "ap": 0.4782883192820373,
+                "auroc": 0.6541308658294778,
+                "f1": 0.5827338129496403,
+                "threshold": 0.46
+              },
+              "8_dog_presence": {
+                "n": 259,
+                "positive": 0,
+                "ap": null,
+                "auroc": null,
+                "f1": 0.0,
+                "threshold": 0.5
+              }
+            }
+          }
+        },
+        "test": {
+          "default": {
+            "accuracy": 0.5833333333333334,
+            "macro_ap": 0.48985463141072266,
+            "macro_ap_supported_classes": 6,
+            "macro_auroc": 0.6626868904042816,
+            "macro_f1": 0.2958829365079365,
+            "micro_ap": 0.3545824089914007,
+            "balanced_accuracy": 0.6480818414322251,
+            "per_event": {
+              "1_engine_presence": {
+                "n": 27,
+                "positive": 11,
+                "ap": 0.544147991250134,
+                "auroc": 0.48863636363636365,
+                "f1": 0.375,
+                "threshold": 0.5
+              },
+              "2_machinery-impact_presence": {
+                "n": 27,
+                "positive": 1,
+                "ap": 0.3333333333333333,
+                "auroc": 0.9230769230769231,
+                "f1": 0.0,
+                "threshold": 0.5
+              },
+              "3_non-machinery-impact_presence": {
+                "n": 27,
+                "positive": 11,
+                "ap": 0.6061611044301729,
+                "auroc": 0.5909090909090908,
+                "f1": 0.6111111111111112,
+                "threshold": 0.5
+              },
+              "4_powered-saw_presence": {
+                "n": 27,
+                "positive": 0,
+                "ap": null,
+                "auroc": null,
+                "f1": 0.0,
+                "threshold": 0.5
+              },
+              "5_alert-signal_presence": {
+                "n": 27,
+                "positive": 7,
+                "ap": 0.32592071793752464,
+                "auroc": 0.6285714285714286,
+                "f1": 0.4666666666666667,
+                "threshold": 0.5
+              },
+              "6_music_presence": {
+                "n": 27,
+                "positive": 0,
+                "ap": null,
+                "auroc": null,
+                "f1": 0.0,
+                "threshold": 0.5
+              },
+              "7_human-voice_presence": {
+                "n": 27,
+                "positive": 12,
+                "ap": 0.5091100960586254,
+                "auroc": 0.6166666666666667,
+                "f1": 0.6285714285714286,
+                "threshold": 0.5
+              },
+              "8_dog_presence": {
+                "n": 27,
+                "positive": 4,
+                "ap": 0.6204545454545455,
+                "auroc": 0.7282608695652174,
+                "f1": 0.2857142857142857,
+                "threshold": 0.5
+              }
+            },
+            "nll": 0.5682289600372314,
+            "zero_readout_fraction": 0.0,
+            "route_mean": [
+              0.8043811917304993,
+              0.1552828997373581,
+              0.039651110768318176,
+              0.000684723723679781
+            ]
+          },
+          "calibrated": {
+            "accuracy": 0.6018518518518519,
+            "macro_ap": 0.48985463141072266,
+            "macro_ap_supported_classes": 6,
+            "macro_auroc": 0.6626868904042816,
+            "macro_f1": 0.279805701544832,
+            "micro_ap": 0.3545824089914007,
+            "balanced_accuracy": 0.6360613810741688,
+            "per_event": {
+              "1_engine_presence": {
+                "n": 27,
+                "positive": 11,
+                "ap": 0.544147991250134,
+                "auroc": 0.48863636363636365,
+                "f1": 0.38461538461538464,
+                "threshold": 0.4
+              },
+              "2_machinery-impact_presence": {
+                "n": 27,
+                "positive": 1,
+                "ap": 0.3333333333333333,
+                "auroc": 0.9230769230769231,
+                "f1": 0.0,
+                "threshold": 0.78
+              },
+              "3_non-machinery-impact_presence": {
+                "n": 27,
+                "positive": 11,
+                "ap": 0.6061611044301729,
+                "auroc": 0.5909090909090908,
+                "f1": 0.43478260869565216,
+                "threshold": 0.54
+              },
+              "4_powered-saw_presence": {
+                "n": 27,
+                "positive": 0,
+                "ap": null,
+                "auroc": null,
+                "f1": 0.0,
+                "threshold": 0.8300000000000001
+              },
+              "5_alert-signal_presence": {
+                "n": 27,
+                "positive": 7,
+                "ap": 0.32592071793752464,
+                "auroc": 0.6285714285714286,
+                "f1": 0.4666666666666667,
+                "threshold": 0.5
+              },
+              "6_music_presence": {
+                "n": 27,
+                "positive": 0,
+                "ap": null,
+                "auroc": null,
+                "f1": 0.0,
+                "threshold": 0.5800000000000001
+              },
+              "7_human-voice_presence": {
+                "n": 27,
+                "positive": 12,
+                "ap": 0.5091100960586254,
+                "auroc": 0.6166666666666667,
+                "f1": 0.6666666666666666,
+                "threshold": 0.46
+              },
+              "8_dog_presence": {
+                "n": 27,
+                "positive": 4,
+                "ap": 0.6204545454545455,
+                "auroc": 0.7282608695652174,
+                "f1": 0.2857142857142857,
+                "threshold": 0.5
+              }
+            }
+          }
+        }
+      }
+    },
+    "d2nn": {
+      "selected_epoch": 30,
+      "checkpoint_sha": "7f554a8aff595b7abe6211ef16aefd60409a45d9ef5255d703b3adee0e657c46",
+      "threshold_source": "validation only",
+      "metrics": {
+        "train": {
+          "default": {
+            "accuracy": 0.37710084033613445,
+            "macro_ap": 0.2356593773113812,
+            "macro_ap_supported_classes": 8,
+            "macro_auroc": 0.7336076005798524,
+            "macro_f1": 0.22630051685021002,
+            "micro_ap": 0.17276149087090803,
+            "balanced_accuracy": 0.5761086360606774,
+            "per_event": {
+              "1_engine_presence": {
+                "n": 714,
+                "positive": 191,
+                "ap": 0.3045474201031805,
+                "auroc": 0.5904167459181324,
+                "f1": 0.43832335329341315,
+                "threshold": 0.5
+              },
+              "2_machinery-impact_presence": {
+                "n": 714,
+                "positive": 42,
+                "ap": 0.13249467283684174,
+                "auroc": 0.70656179138322,
+                "f1": 0.11647727272727272,
+                "threshold": 0.5
+              },
+              "3_non-machinery-impact_presence": {
+                "n": 714,
+                "positive": 14,
+                "ap": 0.17203708685042196,
+                "auroc": 0.8359183673469387,
+                "f1": 0.04142011834319527,
+                "threshold": 0.5
+              },
+              "4_powered-saw_presence": {
+                "n": 714,
+                "positive": 28,
+                "ap": 0.2045058428940526,
+                "auroc": 0.8821324448146605,
+                "f1": 0.08115942028985507,
+                "threshold": 0.5
+              },
+              "5_alert-signal_presence": {
+                "n": 714,
+                "positive": 119,
+                "ap": 0.24505234507742463,
+                "auroc": 0.6144410705458654,
+                "f1": 0.3142389525368249,
+                "threshold": 0.5
+              },
+              "6_music_presence": {
+                "n": 714,
+                "positive": 24,
+                "ap": 0.06259511550592423,
+                "auroc": 0.7288647342995169,
+                "f1": 0.10075566750629723,
+                "threshold": 0.5
+              },
+              "7_human-voice_presence": {
+                "n": 714,
+                "positive": 172,
+                "ap": 0.3568131155335159,
+                "auroc": 0.7141615892903115,
+                "f1": 0.48218029350104824,
+                "threshold": 0.5
+              },
+              "8_dog_presence": {
+                "n": 714,
+                "positive": 38,
+                "ap": 0.40722941968968807,
+                "auroc": 0.7963640610401743,
+                "f1": 0.2358490566037736,
+                "threshold": 0.5
+              }
+            },
+            "nll": 0.676223635673523,
+            "zero_readout_fraction": 0.0,
+            "route_mean": null
+          },
+          "calibrated": {
+            "accuracy": 0.6127450980392157,
+            "macro_ap": 0.2356593773113812,
+            "macro_ap_supported_classes": 8,
+            "macro_auroc": 0.7336076005798524,
+            "macro_f1": 0.2665639008345669,
+            "micro_ap": 0.17276149087090803,
+            "balanced_accuracy": 0.6219537251875498,
+            "per_event": {
+              "1_engine_presence": {
+                "n": 714,
+                "positive": 191,
+                "ap": 0.3045474201031805,
+                "auroc": 0.5904167459181324,
+                "f1": 0.43944636678200694,
+                "threshold": 0.51
+              },
+              "2_machinery-impact_presence": {
+                "n": 714,
+                "positive": 42,
+                "ap": 0.13249467283684174,
+                "auroc": 0.70656179138322,
+                "f1": 0.21897810218978103,
+                "threshold": 0.53
+              },
+              "3_non-machinery-impact_presence": {
+                "n": 714,
+                "positive": 14,
+                "ap": 0.17203708685042196,
+                "auroc": 0.8359183673469387,
+                "f1": 0.04081632653061224,
+                "threshold": 0.49
+              },
+              "4_powered-saw_presence": {
+                "n": 714,
+                "positive": 28,
+                "ap": 0.2045058428940526,
+                "auroc": 0.8821324448146605,
+                "f1": 0.3076923076923077,
+                "threshold": 0.54
+              },
+              "5_alert-signal_presence": {
+                "n": 714,
+                "positive": 119,
+                "ap": 0.24505234507742463,
+                "auroc": 0.6144410705458654,
+                "f1": 0.2783171521035599,
+                "threshold": 0.52
+              },
+              "6_music_presence": {
+                "n": 714,
+                "positive": 24,
+                "ap": 0.06259511550592423,
+                "auroc": 0.7288647342995169,
+                "f1": 0.10021786492374728,
+                "threshold": 0.48000000000000004
+              },
+              "7_human-voice_presence": {
+                "n": 714,
+                "positive": 172,
+                "ap": 0.3568131155335159,
+                "auroc": 0.7141615892903115,
+                "f1": 0.5111940298507462,
+                "threshold": 0.48000000000000004
+              },
+              "8_dog_presence": {
+                "n": 714,
+                "positive": 38,
+                "ap": 0.40722941968968807,
+                "auroc": 0.7963640610401743,
+                "f1": 0.2358490566037736,
+                "threshold": 0.5
+              }
+            }
+          }
+        },
+        "val": {
+          "default": {
+            "accuracy": 0.3769305019305019,
+            "macro_ap": 0.3223993842199951,
+            "macro_ap_supported_classes": 7,
+            "macro_auroc": 0.6555978277130033,
+            "macro_f1": 0.21976683193543906,
+            "micro_ap": 0.18809785336549978,
+            "balanced_accuracy": 0.570870716360635,
+            "per_event": {
+              "1_engine_presence": {
+                "n": 259,
+                "positive": 80,
+                "ap": 0.4064037596148333,
+                "auroc": 0.6369413407821229,
+                "f1": 0.4868421052631579,
+                "threshold": 0.5
+              },
+              "2_machinery-impact_presence": {
+                "n": 259,
+                "positive": 12,
+                "ap": 0.3746413374378804,
+                "auroc": 0.9092442645074224,
+                "f1": 0.09917355371900827,
+                "threshold": 0.5
+              },
+              "3_non-machinery-impact_presence": {
+                "n": 259,
+                "positive": 13,
+                "ap": 0.04730984847264674,
+                "auroc": 0.36522826766729205,
+                "f1": 0.09448818897637795,
+                "threshold": 0.5
+              },
+              "4_powered-saw_presence": {
+                "n": 259,
+                "positive": 8,
+                "ap": 0.6095556398900348,
+                "auroc": 0.8032868525896414,
+                "f1": 0.06722689075630252,
+                "threshold": 0.5
+              },
+              "5_alert-signal_presence": {
+                "n": 259,
+                "positive": 38,
+                "ap": 0.2978672283547577,
+                "auroc": 0.6112169564181948,
+                "f1": 0.2894736842105263,
+                "threshold": 0.5
+              },
+              "6_music_presence": {
+                "n": 259,
+                "positive": 17,
+                "ap": 0.08162992728720149,
+                "auroc": 0.5933398152649489,
+                "f1": 0.16279069767441862,
+                "threshold": 0.5
+              },
+              "7_human-voice_presence": {
+                "n": 259,
+                "positive": 89,
+                "ap": 0.4393879484826109,
+                "auroc": 0.6699272967614012,
+                "f1": 0.5581395348837209,
+                "threshold": 0.5
+              },
+              "8_dog_presence": {
+                "n": 259,
+                "positive": 0,
+                "ap": null,
+                "auroc": null,
+                "f1": 0.0,
+                "threshold": 0.5
+              }
+            },
+            "nll": 0.6818680167198181,
+            "zero_readout_fraction": 0.0,
+            "route_mean": null
+          },
+          "calibrated": {
+            "accuracy": 0.6341698841698842,
+            "macro_ap": 0.3223993842199951,
+            "macro_ap_supported_classes": 7,
+            "macro_auroc": 0.6555978277130033,
+            "macro_f1": 0.3114615467864307,
+            "micro_ap": 0.18809785336549978,
+            "balanced_accuracy": 0.6575811171495642,
+            "per_event": {
+              "1_engine_presence": {
+                "n": 259,
+                "positive": 80,
+                "ap": 0.4064037596148333,
+                "auroc": 0.6369413407821229,
+                "f1": 0.49740932642487046,
+                "threshold": 0.51
+              },
+              "2_machinery-impact_presence": {
+                "n": 259,
+                "positive": 12,
+                "ap": 0.3746413374378804,
+                "auroc": 0.9092442645074224,
+                "f1": 0.3333333333333333,
+                "threshold": 0.53
+              },
+              "3_non-machinery-impact_presence": {
+                "n": 259,
+                "positive": 13,
+                "ap": 0.04730984847264674,
+                "auroc": 0.36522826766729205,
+                "f1": 0.09885931558935361,
+                "threshold": 0.49
+              },
+              "4_powered-saw_presence": {
+                "n": 259,
+                "positive": 8,
+                "ap": 0.6095556398900348,
+                "auroc": 0.8032868525896414,
+                "f1": 0.47619047619047616,
+                "threshold": 0.54
+              },
+              "5_alert-signal_presence": {
+                "n": 259,
+                "positive": 38,
+                "ap": 0.2978672283547577,
+                "auroc": 0.6112169564181948,
+                "f1": 0.32,
+                "threshold": 0.52
+              },
+              "6_music_presence": {
+                "n": 259,
+                "positive": 17,
+                "ap": 0.08162992728720149,
+                "auroc": 0.5933398152649489,
+                "f1": 0.16753926701570682,
+                "threshold": 0.48000000000000004
+              },
+              "7_human-voice_presence": {
+                "n": 259,
+                "positive": 89,
+                "ap": 0.4393879484826109,
+                "auroc": 0.6699272967614012,
+                "f1": 0.5983606557377049,
+                "threshold": 0.48000000000000004
+              },
+              "8_dog_presence": {
+                "n": 259,
+                "positive": 0,
+                "ap": null,
+                "auroc": null,
+                "f1": 0.0,
+                "threshold": 0.5
+              }
+            }
+          }
+        },
+        "test": {
+          "default": {
+            "accuracy": 0.39351851851851855,
+            "macro_ap": 0.4703465707441654,
+            "macro_ap_supported_classes": 6,
+            "macro_auroc": 0.634748484205006,
+            "macro_f1": 0.3273343351468352,
+            "micro_ap": 0.30958255126600853,
+            "balanced_accuracy": 0.5592071611253197,
+            "per_event": {
+              "1_engine_presence": {
+                "n": 27,
+                "positive": 11,
+                "ap": 0.5581198749859038,
+                "auroc": 0.48295454545454547,
+                "f1": 0.5625,
+                "threshold": 0.5
+              },
+              "2_machinery-impact_presence": {
+                "n": 27,
+                "positive": 1,
+                "ap": 0.5,
+                "auroc": 0.9615384615384616,
+                "f1": 0.09090909090909091,
+                "threshold": 0.5
+              },
+              "3_non-machinery-impact_presence": {
+                "n": 27,
+                "positive": 11,
+                "ap": 0.4159328770182733,
+                "auroc": 0.5056818181818181,
+                "f1": 0.5945945945945946,
+                "threshold": 0.5
+              },
+              "4_powered-saw_presence": {
+                "n": 27,
+                "positive": 0,
+                "ap": null,
+                "auroc": null,
+                "f1": 0.0,
+                "threshold": 0.5
+              },
+              "5_alert-signal_presence": {
+                "n": 27,
+                "positive": 7,
+                "ap": 0.25432551250965574,
+                "auroc": 0.44285714285714284,
+                "f1": 0.42424242424242425,
+                "threshold": 0.5
+              },
+              "6_music_presence": {
+                "n": 27,
+                "positive": 0,
+                "ap": null,
+                "auroc": null,
+                "f1": 0.0,
+                "threshold": 0.5
+              },
+              "7_human-voice_presence": {
+                "n": 27,
+                "positive": 12,
+                "ap": 0.5582844932844933,
+                "auroc": 0.6111111111111112,
+                "f1": 0.5714285714285714,
+                "threshold": 0.5
+              },
+              "8_dog_presence": {
+                "n": 27,
+                "positive": 4,
+                "ap": 0.5354166666666667,
+                "auroc": 0.8043478260869565,
+                "f1": 0.375,
+                "threshold": 0.5
+              }
+            },
+            "nll": 0.6956683993339539,
+            "zero_readout_fraction": 0.0,
+            "route_mean": null
+          },
+          "calibrated": {
+            "accuracy": 0.5879629629629629,
+            "macro_ap": 0.4703465707441654,
+            "macro_ap_supported_classes": 6,
+            "macro_auroc": 0.634748484205006,
+            "macro_f1": 0.2723684210526316,
+            "micro_ap": 0.30958255126600853,
+            "balanced_accuracy": 0.6034526854219948,
+            "per_event": {
+              "1_engine_presence": {
+                "n": 27,
+                "positive": 11,
+                "ap": 0.5581198749859038,
+                "auroc": 0.48295454545454547,
+                "f1": 0.3333333333333333,
+                "threshold": 0.51
+              },
+              "2_machinery-impact_presence": {
+                "n": 27,
+                "positive": 1,
+                "ap": 0.5,
+                "auroc": 0.9615384615384616,
+                "f1": 0.0,
+                "threshold": 0.53
+              },
+              "3_non-machinery-impact_presence": {
+                "n": 27,
+                "positive": 11,
+                "ap": 0.4159328770182733,
+                "auroc": 0.5056818181818181,
+                "f1": 0.5789473684210527,
+                "threshold": 0.49
+              },
+              "4_powered-saw_presence": {
+                "n": 27,
+                "positive": 0,
+                "ap": null,
+                "auroc": null,
+                "f1": 0.0,
+                "threshold": 0.54
+              },
+              "5_alert-signal_presence": {
+                "n": 27,
+                "positive": 7,
+                "ap": 0.25432551250965574,
+                "auroc": 0.44285714285714284,
+                "f1": 0.26666666666666666,
+                "threshold": 0.52
+              },
+              "6_music_presence": {
+                "n": 27,
+                "positive": 0,
+                "ap": null,
+                "auroc": null,
+                "f1": 0.0,
+                "threshold": 0.48000000000000004
+              },
+              "7_human-voice_presence": {
+                "n": 27,
+                "positive": 12,
+                "ap": 0.5582844932844933,
+                "auroc": 0.6111111111111112,
+                "f1": 0.625,
+                "threshold": 0.48000000000000004
+              },
+              "8_dog_presence": {
+                "n": 27,
+                "positive": 4,
+                "ap": 0.5354166666666667,
+                "auroc": 0.8043478260869565,
+                "f1": 0.375,
+                "threshold": 0.5
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "sen12ms": {
+    "moe": {
+      "selected_epoch": 13,
+      "checkpoint_sha": "984461adeb6c50413ce1c2cb2ea81f4f3c71cc88f86ec6609a7878561b2a61d7",
+      "threshold_source": "validation only",
+      "metrics": {
+        "train": {
+          "default": {
+            "accuracy": 0.646484375,
+            "macro_f1": 0.4078340488845883,
+            "balanced_accuracy": 0.44605569731235256,
+            "class_support": [
+              149,
+              48,
+              437,
+              488,
+              24,
+              436,
+              309,
+              0,
+              1,
+              156
+            ],
+            "confusion_matrix": [
+              [
+                66,
+                0,
+                44,
+                1,
+                0,
+                32,
+                6,
+                0,
+                0,
+                0
+              ],
+              [
+                0,
+                0,
+                1,
+                20,
+                0,
+                26,
+                1,
+                0,
+                0,
+                0
+              ],
+              [
+                13,
+                0,
+                280,
+                9,
+                0,
+                128,
+                7,
+                0,
+                0,
+                0
+              ],
+              [
+                0,
+                0,
+                33,
+                310,
+                0,
+                142,
+                3,
+                0,
+                0,
+                0
+              ],
+              [
+                2,
+                0,
+                5,
+                0,
+                0,
+                11,
+                6,
+                0,
+                0,
+                0
+              ],
+              [
+                0,
+                0,
+                6,
+                31,
+                0,
+                380,
+                19,
+                0,
+                0,
+                0
+              ],
+              [
+                2,
+                0,
+                44,
+                14,
+                0,
+                115,
+                133,
+                0,
+                0,
+                1
+              ],
+              [
+                0,
+                0,
+                0,
+                0,
+                0,
+                0,
+                0,
+                0,
+                0,
+                0
+              ],
+              [
+                0,
+                0,
+                0,
+                0,
+                0,
+                1,
+                0,
+                0,
+                0,
+                0
+              ],
+              [
+                0,
+                0,
+                1,
+                0,
+                0,
+                0,
+                0,
+                0,
+                0,
+                155
+              ]
+            ],
+            "nll": 1.0870494842529297,
+            "zero_readout_fraction": 0.0,
+            "route_mean": [
+              0.2792642414569855,
+              0.3025941252708435,
+              0.27607491612434387,
+              0.14206622540950775
+            ]
+          },
+          "calibrated": {
+            "accuracy": 0.646484375,
+            "macro_f1": 0.4078340488845883,
+            "balanced_accuracy": 0.44605569731235256,
+            "class_support": [
+              149,
+              48,
+              437,
+              488,
+              24,
+              436,
+              309,
+              0,
+              1,
+              156
+            ],
+            "confusion_matrix": [
+              [
+                66,
+                0,
+                44,
+                1,
+                0,
+                32,
+                6,
+                0,
+                0,
+                0
+              ],
+              [
+                0,
+                0,
+                1,
+                20,
+                0,
+                26,
+                1,
+                0,
+                0,
+                0
+              ],
+              [
+                13,
+                0,
+                280,
+                9,
+                0,
+                128,
+                7,
+                0,
+                0,
+                0
+              ],
+              [
+                0,
+                0,
+                33,
+                310,
+                0,
+                142,
+                3,
+                0,
+                0,
+                0
+              ],
+              [
+                2,
+                0,
+                5,
+                0,
+                0,
+                11,
+                6,
+                0,
+                0,
+                0
+              ],
+              [
+                0,
+                0,
+                6,
+                31,
+                0,
+                380,
+                19,
+                0,
+                0,
+                0
+              ],
+              [
+                2,
+                0,
+                44,
+                14,
+                0,
+                115,
+                133,
+                0,
+                0,
+                1
+              ],
+              [
+                0,
+                0,
+                0,
+                0,
+                0,
+                0,
+                0,
+                0,
+                0,
+                0
+              ],
+              [
+                0,
+                0,
+                0,
+                0,
+                0,
+                1,
+                0,
+                0,
+                0,
+                0
+              ],
+              [
+                0,
+                0,
+                1,
+                0,
+                0,
+                0,
+                0,
+                0,
+                0,
+                155
+              ]
+            ]
+          }
+        },
+        "val": {
+          "default": {
+            "accuracy": 0.361328125,
+            "macro_f1": 0.259942727238375,
+            "balanced_accuracy": 0.4530280434207425,
+            "class_support": [
+              25,
+              121,
+              64,
+              37,
+              0,
+              87,
+              113,
+              0,
+              0,
+              65
+            ],
+            "confusion_matrix": [
+              [
+                17,
+                0,
+                4,
+                0,
+                0,
+                4,
+                0,
+                0,
+                0,
+                0
+              ],
+              [
+                0,
+                0,
+                0,
+                111,
+                0,
+                0,
+                0,
+                0,
+                0,
+                10
+              ],
+              [
+                5,
+                0,
+                7,
+                28,
+                0,
+                22,
+                1,
+                0,
+                0,
+                1
+              ],
+              [
+                1,
+                0,
+                1,
+                23,
+                0,
+                11,
+                1,
+                0,
+                0,
+                0
+              ],
+              [
+                0,
+                0,
+                0,
+                0,
+                0,
+                0,
+                0,
+                0,
+                0,
+                0
+              ],
+              [
+                11,
+                0,
+                8,
+                10,
+                0,
+                58,
+                0,
+                0,
+                0,
+                0
+              ],
+              [
+                1,
+                0,
+                39,
+                21,
+                0,
+                31,
+                21,
+                0,
+                0,
+                0
+              ],
+              [
+                0,
+                0,
+                0,
+                0,
+                0,
+                0,
+                0,
+                0,
+                0,
+                0
+              ],
+              [
+                0,
+                0,
+                0,
+                0,
+                0,
+                0,
+                0,
+                0,
+                0,
+                0
+              ],
+              [
+                0,
+                0,
+                1,
+                3,
+                0,
+                2,
+                0,
+                0,
+                0,
+                59
+              ]
+            ],
+            "nll": 2.323164701461792,
+            "zero_readout_fraction": 0.0,
+            "route_mean": [
+              0.27858200669288635,
+              0.3069241940975189,
+              0.22870410978794098,
+              0.1857898086309433
+            ]
+          },
+          "calibrated": {
+            "accuracy": 0.361328125,
+            "macro_f1": 0.259942727238375,
+            "balanced_accuracy": 0.4530280434207425,
+            "class_support": [
+              25,
+              121,
+              64,
+              37,
+              0,
+              87,
+              113,
+              0,
+              0,
+              65
+            ],
+            "confusion_matrix": [
+              [
+                17,
+                0,
+                4,
+                0,
+                0,
+                4,
+                0,
+                0,
+                0,
+                0
+              ],
+              [
+                0,
+                0,
+                0,
+                111,
+                0,
+                0,
+                0,
+                0,
+                0,
+                10
+              ],
+              [
+                5,
+                0,
+                7,
+                28,
+                0,
+                22,
+                1,
+                0,
+                0,
+                1
+              ],
+              [
+                1,
+                0,
+                1,
+                23,
+                0,
+                11,
+                1,
+                0,
+                0,
+                0
+              ],
+              [
+                0,
+                0,
+                0,
+                0,
+                0,
+                0,
+                0,
+                0,
+                0,
+                0
+              ],
+              [
+                11,
+                0,
+                8,
+                10,
+                0,
+                58,
+                0,
+                0,
+                0,
+                0
+              ],
+              [
+                1,
+                0,
+                39,
+                21,
+                0,
+                31,
+                21,
+                0,
+                0,
+                0
+              ],
+              [
+                0,
+                0,
+                0,
+                0,
+                0,
+                0,
+                0,
+                0,
+                0,
+                0
+              ],
+              [
+                0,
+                0,
+                0,
+                0,
+                0,
+                0,
+                0,
+                0,
+                0,
+                0
+              ],
+              [
+                0,
+                0,
+                1,
+                3,
+                0,
+                2,
+                0,
+                0,
+                0,
+                59
+              ]
+            ]
+          }
+        },
+        "test": {
+          "default": {
+            "accuracy": 0.4440104166666667,
+            "macro_f1": 0.18712463030960885,
+            "balanced_accuracy": 0.34901707614090655,
+            "class_support": [
+              113,
+              2,
+              222,
+              169,
+              0,
+              221,
+              41,
+              0,
+              0,
+              0
+            ],
+            "confusion_matrix": [
+              [
+                82,
+                0,
+                27,
+                0,
+                0,
+                1,
+                3,
+                0,
+                0,
+                0
+              ],
+              [
+                0,
+                0,
+                1,
+                0,
+                0,
+                1,
+                0,
+                0,
+                0,
+                0
+              ],
+              [
+                79,
+                0,
+                106,
+                0,
+                0,
+                34,
+                3,
+                0,
+                0,
+                0
+              ],
+              [
+                22,
+                0,
+                25,
+                0,
+                0,
+                122,
+                0,
+                0,
+                0,
+                0
+              ],
+              [
+                0,
+                0,
+                0,
+                0,
+                0,
+                0,
+                0,
+                0,
+                0,
+                0
+              ],
+              [
+                2,
+                0,
+                19,
+                41,
+                0,
+                143,
+                16,
+                0,
+                0,
+                0
+              ],
+              [
+                0,
+                0,
+                6,
+                2,
+                0,
+                23,
+                10,
+                0,
+                0,
+                0
+              ],
+              [
+                0,
+                0,
+                0,
+                0,
+                0,
+                0,
+                0,
+                0,
+                0,
+                0
+              ],
+              [
+                0,
+                0,
+                0,
+                0,
+                0,
+                0,
+                0,
+                0,
+                0,
+                0
+              ],
+              [
+                0,
+                0,
+                0,
+                0,
+                0,
+                0,
+                0,
+                0,
+                0,
+                0
+              ]
+            ],
+            "nll": 1.3825350999832153,
+            "zero_readout_fraction": 0.0,
+            "route_mean": [
+              0.3226335644721985,
+              0.2124384194612503,
+              0.35204923152923584,
+              0.11287921667098999
+            ]
+          },
+          "calibrated": {
+            "accuracy": 0.4440104166666667,
+            "macro_f1": 0.18712463030960885,
+            "balanced_accuracy": 0.34901707614090655,
+            "class_support": [
+              113,
+              2,
+              222,
+              169,
+              0,
+              221,
+              41,
+              0,
+              0,
+              0
+            ],
+            "confusion_matrix": [
+              [
+                82,
+                0,
+                27,
+                0,
+                0,
+                1,
+                3,
+                0,
+                0,
+                0
+              ],
+              [
+                0,
+                0,
+                1,
+                0,
+                0,
+                1,
+                0,
+                0,
+                0,
+                0
+              ],
+              [
+                79,
+                0,
+                106,
+                0,
+                0,
+                34,
+                3,
+                0,
+                0,
+                0
+              ],
+              [
+                22,
+                0,
+                25,
+                0,
+                0,
+                122,
+                0,
+                0,
+                0,
+                0
+              ],
+              [
+                0,
+                0,
+                0,
+                0,
+                0,
+                0,
+                0,
+                0,
+                0,
+                0
+              ],
+              [
+                2,
+                0,
+                19,
+                41,
+                0,
+                143,
+                16,
+                0,
+                0,
+                0
+              ],
+              [
+                0,
+                0,
+                6,
+                2,
+                0,
+                23,
+                10,
+                0,
+                0,
+                0
+              ],
+              [
+                0,
+                0,
+                0,
+                0,
+                0,
+                0,
+                0,
+                0,
+                0,
+                0
+              ],
+              [
+                0,
+                0,
+                0,
+                0,
+                0,
+                0,
+                0,
+                0,
+                0,
+                0
+              ],
+              [
+                0,
+                0,
+                0,
+                0,
+                0,
+                0,
+                0,
+                0,
+                0,
+                0
+              ]
+            ]
+          }
+        }
+      }
+    },
+    "d2nn": {
+      "selected_epoch": 12,
+      "checkpoint_sha": "f57b6380e3350b414149e5f893de095c45faac332bf3baba509844d845c34043",
+      "threshold_source": "validation only",
+      "metrics": {
+        "train": {
+          "default": {
+            "accuracy": 0.53759765625,
+            "macro_f1": 0.30471764497106146,
+            "balanced_accuracy": 0.3468403454525799,
+            "class_support": [
+              149,
+              48,
+              437,
+              488,
+              24,
+              436,
+              309,
+              0,
+              1,
+              156
+            ],
+            "confusion_matrix": [
+              [
+                0,
+                0,
+                114,
+                0,
+                0,
+                20,
+                15,
+                0,
+                0,
+                0
+              ],
+              [
+                0,
+                0,
+                12,
+                25,
+                0,
+                10,
+                1,
+                0,
+                0,
+                0
+              ],
+              [
+                0,
+                0,
+                269,
+                117,
+                0,
+                32,
+                19,
+                0,
+                0,
+                0
+              ],
+              [
+                0,
+                0,
+                72,
+                371,
+                0,
+                41,
+                4,
+                0,
+                0,
+                0
+              ],
+              [
+                0,
+                0,
+                3,
+                3,
+                0,
+                6,
+                11,
+                0,
+                0,
+                1
+              ],
+              [
+                0,
+                0,
+                107,
+                111,
+                0,
+                192,
+                26,
+                0,
+                0,
+                0
+              ],
+              [
+                0,
+                0,
+                86,
+                56,
+                0,
+                35,
+                132,
+                0,
+                0,
+                0
+              ],
+              [
+                0,
+                0,
+                0,
+                0,
+                0,
+                0,
+                0,
+                0,
+                0,
+                0
+              ],
+              [
+                0,
+                0,
+                0,
+                1,
+                0,
+                0,
+                0,
+                0,
+                0,
+                0
+              ],
+              [
+                0,
+                0,
+                0,
+                7,
+                0,
+                1,
+                11,
+                0,
+                0,
+                137
+              ]
+            ],
+            "nll": 1.283567190170288,
+            "zero_readout_fraction": 0.0,
+            "route_mean": null
+          },
+          "calibrated": {
+            "accuracy": 0.53759765625,
+            "macro_f1": 0.30471764497106146,
+            "balanced_accuracy": 0.3468403454525799,
+            "class_support": [
+              149,
+              48,
+              437,
+              488,
+              24,
+              436,
+              309,
+              0,
+              1,
+              156
+            ],
+            "confusion_matrix": [
+              [
+                0,
+                0,
+                114,
+                0,
+                0,
+                20,
+                15,
+                0,
+                0,
+                0
+              ],
+              [
+                0,
+                0,
+                12,
+                25,
+                0,
+                10,
+                1,
+                0,
+                0,
+                0
+              ],
+              [
+                0,
+                0,
+                269,
+                117,
+                0,
+                32,
+                19,
+                0,
+                0,
+                0
+              ],
+              [
+                0,
+                0,
+                72,
+                371,
+                0,
+                41,
+                4,
+                0,
+                0,
+                0
+              ],
+              [
+                0,
+                0,
+                3,
+                3,
+                0,
+                6,
+                11,
+                0,
+                0,
+                1
+              ],
+              [
+                0,
+                0,
+                107,
+                111,
+                0,
+                192,
+                26,
+                0,
+                0,
+                0
+              ],
+              [
+                0,
+                0,
+                86,
+                56,
+                0,
+                35,
+                132,
+                0,
+                0,
+                0
+              ],
+              [
+                0,
+                0,
+                0,
+                0,
+                0,
+                0,
+                0,
+                0,
+                0,
+                0
+              ],
+              [
+                0,
+                0,
+                0,
+                1,
+                0,
+                0,
+                0,
+                0,
+                0,
+                0
+              ],
+              [
+                0,
+                0,
+                0,
+                7,
+                0,
+                1,
+                11,
+                0,
+                0,
+                137
+              ]
+            ]
+          }
+        },
+        "val": {
+          "default": {
+            "accuracy": 0.34375,
+            "macro_f1": 0.23390881387080276,
+            "balanced_accuracy": 0.3534351318958048,
+            "class_support": [
+              25,
+              121,
+              64,
+              37,
+              0,
+              87,
+              113,
+              0,
+              0,
+              65
+            ],
+            "confusion_matrix": [
+              [
+                0,
+                0,
+                21,
+                0,
+                0,
+                3,
+                1,
+                0,
+                0,
+                0
+              ],
+              [
+                0,
+                0,
+                0,
+                121,
+                0,
+                0,
+                0,
+                0,
+                0,
+                0
+              ],
+              [
+                0,
+                0,
+                29,
+                24,
+                0,
+                5,
+                6,
+                0,
+                0,
+                0
+              ],
+              [
+                0,
+                0,
+                20,
+                13,
+                0,
+                2,
+                2,
+                0,
+                0,
+                0
+              ],
+              [
+                0,
+                0,
+                0,
+                0,
+                0,
+                0,
+                0,
+                0,
+                0,
+                0
+              ],
+              [
+                0,
+                0,
+                31,
+                8,
+                0,
+                47,
+                1,
+                0,
+                0,
+                0
+              ],
+              [
+                0,
+                0,
+                21,
+                49,
+                0,
+                11,
+                32,
+                0,
+                0,
+                0
+              ],
+              [
+                0,
+                0,
+                0,
+                0,
+                0,
+                0,
+                0,
+                0,
+                0,
+                0
+              ],
+              [
+                0,
+                0,
+                0,
+                0,
+                0,
+                0,
+                0,
+                0,
+                0,
+                0
+              ],
+              [
+                0,
+                0,
+                0,
+                7,
+                0,
+                1,
+                2,
+                0,
+                0,
+                55
+              ]
+            ],
+            "nll": 1.836175560951233,
+            "zero_readout_fraction": 0.0,
+            "route_mean": null
+          },
+          "calibrated": {
+            "accuracy": 0.34375,
+            "macro_f1": 0.23390881387080276,
+            "balanced_accuracy": 0.3534351318958048,
+            "class_support": [
+              25,
+              121,
+              64,
+              37,
+              0,
+              87,
+              113,
+              0,
+              0,
+              65
+            ],
+            "confusion_matrix": [
+              [
+                0,
+                0,
+                21,
+                0,
+                0,
+                3,
+                1,
+                0,
+                0,
+                0
+              ],
+              [
+                0,
+                0,
+                0,
+                121,
+                0,
+                0,
+                0,
+                0,
+                0,
+                0
+              ],
+              [
+                0,
+                0,
+                29,
+                24,
+                0,
+                5,
+                6,
+                0,
+                0,
+                0
+              ],
+              [
+                0,
+                0,
+                20,
+                13,
+                0,
+                2,
+                2,
+                0,
+                0,
+                0
+              ],
+              [
+                0,
+                0,
+                0,
+                0,
+                0,
+                0,
+                0,
+                0,
+                0,
+                0
+              ],
+              [
+                0,
+                0,
+                31,
+                8,
+                0,
+                47,
+                1,
+                0,
+                0,
+                0
+              ],
+              [
+                0,
+                0,
+                21,
+                49,
+                0,
+                11,
+                32,
+                0,
+                0,
+                0
+              ],
+              [
+                0,
+                0,
+                0,
+                0,
+                0,
+                0,
+                0,
+                0,
+                0,
+                0
+              ],
+              [
+                0,
+                0,
+                0,
+                0,
+                0,
+                0,
+                0,
+                0,
+                0,
+                0
+              ],
+              [
+                0,
+                0,
+                0,
+                7,
+                0,
+                1,
+                2,
+                0,
+                0,
+                55
+              ]
+            ]
+          }
+        },
+        "test": {
+          "default": {
+            "accuracy": 0.3893229166666667,
+            "macro_f1": 0.1285832789453074,
+            "balanced_accuracy": 0.254571451486803,
+            "class_support": [
+              113,
+              2,
+              222,
+              169,
+              0,
+              221,
+              41,
+              0,
+              0,
+              0
+            ],
+            "confusion_matrix": [
+              [
+                0,
+                0,
+                105,
+                0,
+                0,
+                3,
+                5,
+                0,
+                0,
+                0
+              ],
+              [
+                0,
+                0,
+                2,
+                0,
+                0,
+                0,
+                0,
+                0,
+                0,
+                0
+              ],
+              [
+                0,
+                0,
+                211,
+                2,
+                0,
+                4,
+                5,
+                0,
+                0,
+                0
+              ],
+              [
+                0,
+                0,
+                158,
+                0,
+                0,
+                11,
+                0,
+                0,
+                0,
+                0
+              ],
+              [
+                0,
+                0,
+                0,
+                0,
+                0,
+                0,
+                0,
+                0,
+                0,
+                0
+              ],
+              [
+                0,
+                0,
+                40,
+                87,
+                0,
+                79,
+                15,
+                0,
+                0,
+                0
+              ],
+              [
+                0,
+                0,
+                14,
+                10,
+                0,
+                8,
+                9,
+                0,
+                0,
+                0
+              ],
+              [
+                0,
+                0,
+                0,
+                0,
+                0,
+                0,
+                0,
+                0,
+                0,
+                0
+              ],
+              [
+                0,
+                0,
+                0,
+                0,
+                0,
+                0,
+                0,
+                0,
+                0,
+                0
+              ],
+              [
+                0,
+                0,
+                0,
+                0,
+                0,
+                0,
+                0,
+                0,
+                0,
+                0
+              ]
+            ],
+            "nll": 1.5014199018478394,
+            "zero_readout_fraction": 0.0,
+            "route_mean": null
+          },
+          "calibrated": {
+            "accuracy": 0.3893229166666667,
+            "macro_f1": 0.1285832789453074,
+            "balanced_accuracy": 0.254571451486803,
+            "class_support": [
+              113,
+              2,
+              222,
+              169,
+              0,
+              221,
+              41,
+              0,
+              0,
+              0
+            ],
+            "confusion_matrix": [
+              [
+                0,
+                0,
+                105,
+                0,
+                0,
+                3,
+                5,
+                0,
+                0,
+                0
+              ],
+              [
+                0,
+                0,
+                2,
+                0,
+                0,
+                0,
+                0,
+                0,
+                0,
+                0
+              ],
+              [
+                0,
+                0,
+                211,
+                2,
+                0,
+                4,
+                5,
+                0,
+                0,
+                0
+              ],
+              [
+                0,
+                0,
+                158,
+                0,
+                0,
+                11,
+                0,
+                0,
+                0,
+                0
+              ],
+              [
+                0,
+                0,
+                0,
+                0,
+                0,
+                0,
+                0,
+                0,
+                0,
+                0
+              ],
+              [
+                0,
+                0,
+                40,
+                87,
+                0,
+                79,
+                15,
+                0,
+                0,
+                0
+              ],
+              [
+                0,
+                0,
+                14,
+                10,
+                0,
+                8,
+                9,
+                0,
+                0,
+                0
+              ],
+              [
+                0,
+                0,
+                0,
+                0,
+                0,
+                0,
+                0,
+                0,
+                0,
+                0
+              ],
+              [
+                0,
+                0,
+                0,
+                0,
+                0,
+                0,
+                0,
+                0,
+                0,
+                0
+              ],
+              [
+                0,
+                0,
+                0,
+                0,
+                0,
+                0,
+                0,
+                0,
+                0,
+                0
+              ]
+            ]
+          }
+        }
+      }
+    }
+  }
+}

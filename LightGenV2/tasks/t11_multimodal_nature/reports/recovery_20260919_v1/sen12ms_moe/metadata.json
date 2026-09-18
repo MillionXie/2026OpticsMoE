@@ -1,0 +1,67 @@
+{
+  "args": {
+    "data": "/DATA/DATA1/guest3/demo_reproduction_20260915/LightGenV2/tasks/t11_multimodal_nature/runs/recovery_20260919_v1/sen12ms_data",
+    "out": "/DATA/DATA1/guest3/demo_reproduction_20260915/LightGenV2/tasks/t11_multimodal_nature/runs/recovery_20260919_v1/sen12ms_moe",
+    "arch": "moe",
+    "epochs": 30,
+    "batch": 32,
+    "seed": 17
+  },
+  "protocol": {
+    "task": "sen12ms",
+    "classes": 10,
+    "scope": "spring scene-disjoint fixed subset, not full benchmark",
+    "input": "SAR VV,VH clipped [-25,0]dB; S2 B4,B3,B2,B8 reflectance clipped [0,10000]; fixed packing, no CNN",
+    "power": [
+      0.5,
+      0.5
+    ],
+    "excluded": [],
+    "scenes": {
+      "val": [
+        "ROIs1158_spring_s2_138",
+        "ROIs1158_spring_s2_24",
+        "ROIs1158_spring_s2_145",
+        "ROIs1158_spring_s2_144"
+      ],
+      "train": [
+        "ROIs1158_spring_s2_120",
+        "ROIs1158_spring_s2_100",
+        "ROIs1158_spring_s2_110",
+        "ROIs1158_spring_s2_126",
+        "ROIs1158_spring_s2_123",
+        "ROIs1158_spring_s2_26",
+        "ROIs1158_spring_s2_77",
+        "ROIs1158_spring_s2_140",
+        "ROIs1158_spring_s2_103",
+        "ROIs1158_spring_s2_44",
+        "ROIs1158_spring_s2_75",
+        "ROIs1158_spring_s2_106",
+        "ROIs1158_spring_s2_66",
+        "ROIs1158_spring_s2_119",
+        "ROIs1158_spring_s2_147",
+        "ROIs1158_spring_s2_115"
+      ],
+      "test": [
+        "ROIs1158_spring_s2_17",
+        "ROIs1158_spring_s2_124",
+        "ROIs1158_spring_s2_63",
+        "ROIs1158_spring_s2_15",
+        "ROIs1158_spring_s2_97",
+        "ROIs1158_spring_s2_146"
+      ]
+    },
+    "label_sha": "60e264093c693fdde630467f704da8ebf1e10691533d20ab31a7a829c36e4cb7"
+  },
+  "manifest_sha": "eb1ef3537a828eba0c68a34d71ff9cd28bc0cfa9be55e32e667aa16dc9fe4a11",
+  "gpu": "6",
+  "torch": "2.6.0+cu124",
+  "git": "455225fb6c8a6bd999ebf9b4820595e1a24cdfb5",
+  "model_source_sha": "8299ad614178e5ea99047270227e092e9eb97c2e0348a648661ac707d4d2ef34",
+  "trainer_sha": "7ae12e7996f279b662edfb473ec3d749b0028ccb79f835ceb62eb4035e054076",
+  "parameters": 479364,
+  "d2nn": "one full field bilinear 224->478, one aperture; no router",
+  "oeo": "each layer intensity / mean, nonaffine LN, leaky_relu 0.1, softsign, unit L2 signed amplitude",
+  "selection": "validation macro F1",
+  "regularization": "phase dropout .05; MoE batch-mean route balance .02"
+}

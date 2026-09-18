@@ -1,0 +1,95 @@
+{
+  "updated": 1789750312.8020756,
+  "jobs": {
+    "sonyc_prepare": {
+      "status": "complete"
+    },
+    "sen12ms_prepare": {
+      "status": "complete"
+    },
+    "sonyc_moe": {
+      "status": "complete",
+      "pid": 219143,
+      "gpu": "4",
+      "command": [
+        "/home/guest3/miniconda3/envs/xml/bin/python",
+        "-m",
+        "LightGenV2.tasks.t11_multimodal_nature.recovery_train",
+        "--data",
+        "/DATA/DATA1/guest3/demo_reproduction_20260915/LightGenV2/tasks/t11_multimodal_nature/runs/recovery_20260919_v1/sonyc_data",
+        "--out",
+        "/DATA/DATA1/guest3/demo_reproduction_20260915/LightGenV2/tasks/t11_multimodal_nature/runs/recovery_20260919_v1/sonyc_moe",
+        "--arch",
+        "moe",
+        "--epochs",
+        "30",
+        "--batch",
+        "32"
+      ],
+      "returncode": 0
+    },
+    "sonyc_d2nn": {
+      "status": "complete",
+      "pid": 219144,
+      "gpu": "5",
+      "command": [
+        "/home/guest3/miniconda3/envs/xml/bin/python",
+        "-m",
+        "LightGenV2.tasks.t11_multimodal_nature.recovery_train",
+        "--data",
+        "/DATA/DATA1/guest3/demo_reproduction_20260915/LightGenV2/tasks/t11_multimodal_nature/runs/recovery_20260919_v1/sonyc_data",
+        "--out",
+        "/DATA/DATA1/guest3/demo_reproduction_20260915/LightGenV2/tasks/t11_multimodal_nature/runs/recovery_20260919_v1/sonyc_d2nn",
+        "--arch",
+        "d2nn",
+        "--epochs",
+        "30",
+        "--batch",
+        "32"
+      ],
+      "returncode": 0
+    },
+    "sen12ms_moe": {
+      "status": "complete",
+      "pid": 224809,
+      "gpu": "6",
+      "command": [
+        "/home/guest3/miniconda3/envs/xml/bin/python",
+        "-m",
+        "LightGenV2.tasks.t11_multimodal_nature.recovery_train",
+        "--data",
+        "/DATA/DATA1/guest3/demo_reproduction_20260915/LightGenV2/tasks/t11_multimodal_nature/runs/recovery_20260919_v1/sen12ms_data",
+        "--out",
+        "/DATA/DATA1/guest3/demo_reproduction_20260915/LightGenV2/tasks/t11_multimodal_nature/runs/recovery_20260919_v1/sen12ms_moe",
+        "--arch",
+        "moe",
+        "--epochs",
+        "30",
+        "--batch",
+        "32"
+      ],
+      "returncode": 0
+    },
+    "sen12ms_d2nn": {
+      "status": "complete",
+      "pid": 226626,
+      "gpu": "6",
+      "command": [
+        "/home/guest3/miniconda3/envs/xml/bin/python",
+        "-m",
+        "LightGenV2.tasks.t11_multimodal_nature.recovery_train",
+        "--data",
+        "/DATA/DATA1/guest3/demo_reproduction_20260915/LightGenV2/tasks/t11_multimodal_nature/runs/recovery_20260919_v1/sen12ms_data",
+        "--out",
+        "/DATA/DATA1/guest3/demo_reproduction_20260915/LightGenV2/tasks/t11_multimodal_nature/runs/recovery_20260919_v1/sen12ms_d2nn",
+        "--arch",
+        "d2nn",
+        "--epochs",
+        "30",
+        "--batch",
+        "32"
+      ],
+      "returncode": 0
+    }
+  }
+}

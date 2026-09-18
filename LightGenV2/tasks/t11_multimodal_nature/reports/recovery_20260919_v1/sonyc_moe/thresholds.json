@@ -1,0 +1,10 @@
+{
+  "1_engine_presence": 0.4,
+  "2_machinery-impact_presence": 0.78,
+  "3_non-machinery-impact_presence": 0.54,
+  "4_powered-saw_presence": 0.8300000000000001,
+  "5_alert-signal_presence": 0.5,
+  "6_music_presence": 0.5800000000000001,
+  "7_human-voice_presence": 0.46,
+  "8_dog_presence": 0.5
+}

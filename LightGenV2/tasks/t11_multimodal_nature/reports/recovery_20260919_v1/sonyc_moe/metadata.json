@@ -1,0 +1,59 @@
+{
+  "args": {
+    "data": "/DATA/DATA1/guest3/demo_reproduction_20260915/LightGenV2/tasks/t11_multimodal_nature/runs/recovery_20260919_v1/sonyc_data",
+    "out": "/DATA/DATA1/guest3/demo_reproduction_20260915/LightGenV2/tasks/t11_multimodal_nature/runs/recovery_20260919_v1/sonyc_moe",
+    "arch": "moe",
+    "epochs": 30,
+    "batch": 32,
+    "seed": 17
+  },
+  "protocol": {
+    "task": "sonyc",
+    "classes": 2,
+    "events": [
+      "1_engine_presence",
+      "2_machinery-impact_presence",
+      "3_non-machinery-impact_presence",
+      "4_powered-saw_presence",
+      "5_alert-signal_presence",
+      "6_music_presence",
+      "7_human-voice_presence",
+      "8_dog_presence"
+    ],
+    "source_sha": "65951d6e2c9609aa0d6b296fb6d56d852c6acf3a222092c41a352f99129b10c0",
+    "scope": "audio-0 subset, exploratory; only 27 test recordings",
+    "label_policy": "verified annotator 0 preferred; otherwise crowd majority; ties excluded; no individual expert annotations",
+    "audio": "anti-aliased 16kHz, full 10 sec logmel 64x1001, bilinear 224x112",
+    "text": "fixed word-position onehot 32x64, nearest 224x112",
+    "power": [
+      0.5,
+      0.5
+    ],
+    "excluded": [],
+    "vocab": {
+      "does": 2,
+      "the": 3,
+      "recording": 4,
+      "contain": 5,
+      "engine": 6,
+      "machinery-impact": 7,
+      "non-machinery-impact": 8,
+      "powered-saw": 9,
+      "alert-signal": 10,
+      "music": 11,
+      "human-voice": 12,
+      "dog": 13
+    }
+  },
+  "manifest_sha": "3fe9a76c3ead7f61542593dc693a498f959365b1331624ad0d5cc8894adb0929",
+  "gpu": "4",
+  "torch": "2.6.0+cu124",
+  "git": "455225fb6c8a6bd999ebf9b4820595e1a24cdfb5",
+  "model_source_sha": "8299ad614178e5ea99047270227e092e9eb97c2e0348a648661ac707d4d2ef34",
+  "trainer_sha": "7ae12e7996f279b662edfb473ec3d749b0028ccb79f835ceb62eb4035e054076",
+  "parameters": 479364,
+  "d2nn": "one full field bilinear 224->478, one aperture; no router",
+  "oeo": "each layer intensity / mean, nonaffine LN, leaky_relu 0.1, softsign, unit L2 signed amplitude",
+  "selection": "validation macro AP",
+  "regularization": "phase dropout .05; MoE batch-mean route balance .02"
+}

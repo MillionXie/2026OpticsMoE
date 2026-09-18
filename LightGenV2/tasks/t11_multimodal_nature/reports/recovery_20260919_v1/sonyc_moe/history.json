@@ -1,0 +1,5162 @@
+[
+  {
+    "epoch": 1,
+    "train": {
+      "accuracy": 0.11134453781512606,
+      "macro_ap": 0.12745986131362125,
+      "macro_ap_supported_classes": 8,
+      "macro_auroc": 0.5112512862749916,
+      "macro_f1": 0.18603422761248328,
+      "micro_ap": 0.10030672262612947,
+      "balanced_accuracy": 0.500786782061369,
+      "per_event": {
+        "1_engine_presence": {
+          "n": 714,
+          "positive": 191,
+          "ap": 0.2804936357516173,
+          "auroc": 0.5466949636110638,
+          "f1": 0.4225663716814159,
+          "threshold": 0.5
+        },
+        "2_machinery-impact_presence": {
+          "n": 714,
+          "positive": 42,
+          "ap": 0.16336916129747106,
+          "auroc": 0.7312570861678004,
+          "f1": 0.11125827814569536,
+          "threshold": 0.5
+        },
+        "3_non-machinery-impact_presence": {
+          "n": 714,
+          "positive": 14,
+          "ap": 0.02262100253563129,
+          "auroc": 0.4896938775510204,
+          "f1": 0.03867403314917127,
+          "threshold": 0.5
+        },
+        "4_powered-saw_presence": {
+          "n": 714,
+          "positive": 28,
+          "ap": 0.17759586640342892,
+          "auroc": 0.8545397750937109,
+          "f1": 0.07547169811320754,
+          "threshold": 0.5
+        },
+        "5_alert-signal_presence": {
+          "n": 714,
+          "positive": 119,
+          "ap": 0.13299181326687787,
+          "auroc": 0.4035096391497776,
+          "f1": 0.2857142857142857,
+          "threshold": 0.5
+        },
+        "6_music_presence": {
+          "n": 714,
+          "positive": 24,
+          "ap": 0.02538889383875925,
+          "auroc": 0.36564009661835745,
+          "f1": 0.06512890094979647,
+          "threshold": 0.5
+        },
+        "7_human-voice_presence": {
+          "n": 714,
+          "positive": 172,
+          "ap": 0.17686377005581783,
+          "auroc": 0.35329957950742297,
+          "f1": 0.38826185101580135,
+          "threshold": 0.5
+        },
+        "8_dog_presence": {
+          "n": 714,
+          "positive": 38,
+          "ap": 0.040354747359366505,
+          "auroc": 0.34537527250077854,
+          "f1": 0.10119840213049268,
+          "threshold": 0.5
+        }
+      },
+      "nll": 0.7462536096572876,
+      "zero_readout_fraction": 0.0,
+      "route_mean": [
+        0.8700726628303528,
+        0.10764425247907639,
+        0.022177163511514664,
+        0.00010566561832092702
+      ]
+    },
+    "val": {
+      "accuracy": 0.12548262548262548,
+      "macro_ap": 0.1809712826886247,
+      "macro_ap_supported_classes": 7,
+      "macro_auroc": 0.5254240057117135,
+      "macro_f1": 0.20108782969493139,
+      "micro_ap": 0.12096376582588533,
+      "balanced_accuracy": 0.5008264462809917,
+      "per_event": {
+        "1_engine_presence": {
+          "n": 259,
+          "positive": 80,
+          "ap": 0.3992359977910084,
+          "auroc": 0.6347067039106145,
+          "f1": 0.47337278106508873,
+          "threshold": 0.5
+        },
+        "2_machinery-impact_presence": {
+          "n": 259,
+          "positive": 12,
+          "ap": 0.2803770060349008,
+          "auroc": 0.854251012145749,
+          "f1": 0.08888888888888889,
+          "threshold": 0.5
+        },
+        "3_non-machinery-impact_presence": {
+          "n": 259,
+          "positive": 13,
+          "ap": 0.041361365782233595,
+          "auroc": 0.367104440275172,
+          "f1": 0.0959409594095941,
+          "threshold": 0.5
+        },
+        "4_powered-saw_presence": {
+          "n": 259,
+          "positive": 8,
+          "ap": 0.0847182213561524,
+          "auroc": 0.5637450199203187,
+          "f1": 0.0599250936329588,
+          "threshold": 0.5
+        },
+        "5_alert-signal_presence": {
+          "n": 259,
+          "positive": 38,
+          "ap": 0.12286529840626931,
+          "auroc": 0.38711597999523695,
+          "f1": 0.2558922558922559,
+          "threshold": 0.5
+        },
+        "6_music_presence": {
+          "n": 259,
+          "positive": 17,
+          "ap": 0.06407590113614474,
+          "auroc": 0.47593582887700536,
+          "f1": 0.12318840579710146,
+          "threshold": 0.5
+        },
+        "7_human-voice_presence": {
+          "n": 259,
+          "positive": 89,
+          "ap": 0.2741651883136638,
+          "auroc": 0.3951090548578982,
+          "f1": 0.5114942528735632,
+          "threshold": 0.5
+        },
+        "8_dog_presence": {
+          "n": 259,
+          "positive": 0,
+          "ap": null,
+          "auroc": null,
+          "f1": 0.0,
+          "threshold": 0.5
+        }
+      },
+      "nll": 0.743891179561615,
+      "zero_readout_fraction": 0.0,
+      "route_mean": [
+        0.8724395632743835,
+        0.1071707084774971,
+        0.020287353545427322,
+        0.00010272389772580937
+      ]
+    },
+    "loss": 0.8078175128674975,
+    "gradient_norm_max": 0.8190485835075378,
+    "seconds": 8.328868389129639
+  },
+  {
+    "epoch": 2,
+    "train": {
+      "accuracy": 0.7393207282913166,
+      "macro_ap": 0.17566863486021878,
+      "macro_ap_supported_classes": 8,
+      "macro_auroc": 0.6487981639977172,
+      "macro_f1": 0.13452021260077004,
+      "micro_ap": 0.13171907763265378,
+      "balanced_accuracy": 0.5095297097926804,
+      "per_event": {
+        "1_engine_presence": {
+          "n": 714,
+          "positive": 191,
+          "ap": 0.2638447686813801,
+          "auroc": 0.49212157007998564,
+          "f1": 0.2578947368421053,
+          "threshold": 0.5
+        },
+        "2_machinery-impact_presence": {
+          "n": 714,
+          "positive": 42,
+          "ap": 0.167197499128398,
+          "auroc": 0.6602891156462586,
+          "f1": 0.21551724137931033,
+          "threshold": 0.5
+        },
+        "3_non-machinery-impact_presence": {
+          "n": 714,
+          "positive": 14,
+          "ap": 0.036567225390742766,
+          "auroc": 0.5530102040816326,
+          "f1": 0.09523809523809523,
+          "threshold": 0.5
+        },
+        "4_powered-saw_presence": {
+          "n": 714,
+          "positive": 28,
+          "ap": 0.29342753729147847,
+          "auroc": 0.9238858808829655,
+          "f1": 0.1087378640776699,
+          "threshold": 0.5
+        },
+        "5_alert-signal_presence": {
+          "n": 714,
+          "positive": 119,
+          "ap": 0.19761170688518317,
+          "auroc": 0.5886943012499117,
+          "f1": 0.16304347826086957,
+          "threshold": 0.5
+        },
+        "6_music_presence": {
+          "n": 714,
+          "positive": 24,
+          "ap": 0.04454291058754683,
+          "auroc": 0.6390096618357488,
+          "f1": 0.0,
+          "threshold": 0.5
+        },
+        "7_human-voice_presence": {
+          "n": 714,
+          "positive": 172,
+          "ap": 0.30090489611366344,
+          "auroc": 0.654691924826225,
+          "f1": 0.037383177570093455,
+          "threshold": 0.5
+        },
+        "8_dog_presence": {
+          "n": 714,
+          "positive": 38,
+          "ap": 0.1012525348033574,
+          "auroc": 0.6786826533790097,
+          "f1": 0.19834710743801653,
+          "threshold": 0.5
+        }
+      },
+      "nll": 0.6926357746124268,
+      "zero_readout_fraction": 0.0,
+      "route_mean": [
+        0.8309629559516907,
+        0.14215652644634247,
+        0.026727663353085518,
+        0.00015212656580843031
+      ]
+    },
+    "val": {
+      "accuracy": 0.736003861003861,
+      "macro_ap": 0.25696061619233035,
+      "macro_ap_supported_classes": 7,
+      "macro_auroc": 0.6411576833886752,
+      "macro_f1": 0.13428215212369748,
+      "micro_ap": 0.1422040077766634,
+      "balanced_accuracy": 0.5052823959438746,
+      "per_event": {
+        "1_engine_presence": {
+          "n": 259,
+          "positive": 80,
+          "ap": 0.34681253578253013,
+          "auroc": 0.5240921787709497,
+          "f1": 0.28368794326241137,
+          "threshold": 0.5
+        },
+        "2_machinery-impact_presence": {
+          "n": 259,
+          "positive": 12,
+          "ap": 0.2975894620494991,
+          "auroc": 0.8842780026990553,
+          "f1": 0.28205128205128205,
+          "threshold": 0.5
+        },
+        "3_non-machinery-impact_presence": {
+          "n": 259,
+          "positive": 13,
+          "ap": 0.07138626113980472,
+          "auroc": 0.5753595997498436,
+          "f1": 0.08,
+          "threshold": 0.5
+        },
+        "4_powered-saw_presence": {
+          "n": 259,
+          "positive": 8,
+          "ap": 0.41640315260979416,
+          "auroc": 0.7843625498007968,
+          "f1": 0.08187134502923976,
+          "threshold": 0.5
+        },
+        "5_alert-signal_presence": {
+          "n": 259,
+          "positive": 38,
+          "ap": 0.21847728672781405,
+          "auroc": 0.600976422957847,
+          "f1": 0.2,
+          "threshold": 0.5
+        },
+        "6_music_presence": {
+          "n": 259,
+          "positive": 17,
+          "ap": 0.07113290246378148,
+          "auroc": 0.5294117647058824,
+          "f1": 0.05405405405405406,
+          "threshold": 0.5
+        },
+        "7_human-voice_presence": {
+          "n": 259,
+          "positive": 89,
+          "ap": 0.376922712573089,
+          "auroc": 0.5896232650363515,
+          "f1": 0.09259259259259259,
+          "threshold": 0.5
+        },
+        "8_dog_presence": {
+          "n": 259,
+          "positive": 0,
+          "ap": null,
+          "auroc": null,
+          "f1": 0.0,
+          "threshold": 0.5
+        }
+      },
+      "nll": 0.6911516189575195,
+      "zero_readout_fraction": 0.0,
+      "route_mean": [
+        0.8334479928016663,
+        0.14178341627120972,
+        0.024620844051241875,
+        0.0001484114909544587
+      ]
+    },
+    "loss": 0.7086904591538993,
+    "gradient_norm_max": 0.3679245114326477,
+    "seconds": 8.129790544509888
+  },
+  {
+    "epoch": 3,
+    "train": {
+      "accuracy": 0.7393207282913166,
+      "macro_ap": 0.19085278502333158,
+      "macro_ap_supported_classes": 8,
+      "macro_auroc": 0.665851768103014,
+      "macro_f1": 0.16621443623122711,
+      "micro_ap": 0.15264649360797627,
+      "balanced_accuracy": 0.5360472720712414,
+      "per_event": {
+        "1_engine_presence": {
+          "n": 714,
+          "positive": 191,
+          "ap": 0.25618402744010366,
+          "auroc": 0.49243190213528476,
+          "f1": 0.25961538461538464,
+          "threshold": 0.5
+        },
+        "2_machinery-impact_presence": {
+          "n": 714,
+          "positive": 42,
+          "ap": 0.1657297420012469,
+          "auroc": 0.6662060657596371,
+          "f1": 0.18772563176895307,
+          "threshold": 0.5
+        },
+        "3_non-machinery-impact_presence": {
+          "n": 714,
+          "positive": 14,
+          "ap": 0.03876647905248949,
+          "auroc": 0.5673469387755101,
+          "f1": 0.0759493670886076,
+          "threshold": 0.5
+        },
+        "4_powered-saw_presence": {
+          "n": 714,
+          "positive": 28,
+          "ap": 0.2999379486393536,
+          "auroc": 0.89832361516035,
+          "f1": 0.16149068322981366,
+          "threshold": 0.5
+        },
+        "5_alert-signal_presence": {
+          "n": 714,
+          "positive": 119,
+          "ap": 0.24557026985049762,
+          "auroc": 0.6356118918155498,
+          "f1": 0.24324324324324326,
+          "threshold": 0.5
+        },
+        "6_music_presence": {
+          "n": 714,
+          "positive": 24,
+          "ap": 0.04814884184112475,
+          "auroc": 0.668719806763285,
+          "f1": 0.06,
+          "threshold": 0.5
+        },
+        "7_human-voice_presence": {
+          "n": 714,
+          "positive": 172,
+          "ap": 0.31415500932852114,
+          "auroc": 0.6744507852055264,
+          "f1": 0.11570247933884298,
+          "threshold": 0.5
+        },
+        "8_dog_presence": {
+          "n": 714,
+          "positive": 38,
+          "ap": 0.1583299620333157,
+          "auroc": 0.7237231392089692,
+          "f1": 0.22598870056497175,
+          "threshold": 0.5
+        }
+      },
+      "nll": 0.6563357710838318,
+      "zero_readout_fraction": 0.0,
+      "route_mean": [
+        0.8357148170471191,
+        0.14028306305408478,
+        0.023886267095804214,
+        0.00011636934505077079
+      ]
+    },
+    "val": {
+      "accuracy": 0.7514478764478765,
+      "macro_ap": 0.27717621099228784,
+      "macro_ap_supported_classes": 7,
+      "macro_auroc": 0.6690305041080525,
+      "macro_f1": 0.14826616715804625,
+      "micro_ap": 0.17008880912428492,
+      "balanced_accuracy": 0.5274581685264388,
+      "per_event": {
+        "1_engine_presence": {
+          "n": 259,
+          "positive": 80,
+          "ap": 0.3461429670051691,
+          "auroc": 0.519413407821229,
+          "f1": 0.3424657534246575,
+          "threshold": 0.5
+        },
+        "2_machinery-impact_presence": {
+          "n": 259,
+          "positive": 12,
+          "ap": 0.3086005140692641,
+          "auroc": 0.8562753036437246,
+          "f1": 0.22988505747126436,
+          "threshold": 0.5
+        },
+        "3_non-machinery-impact_presence": {
+          "n": 259,
+          "positive": 13,
+          "ap": 0.08910193003677358,
+          "auroc": 0.6169480925578487,
+          "f1": 0.06451612903225806,
+          "threshold": 0.5
+        },
+        "4_powered-saw_presence": {
+          "n": 259,
+          "positive": 8,
+          "ap": 0.38743117218038536,
+          "auroc": 0.8222111553784861,
+          "f1": 0.12371134020618557,
+          "threshold": 0.5
+        },
+        "5_alert-signal_presence": {
+          "n": 259,
+          "positive": 38,
+          "ap": 0.29729061465773565,
+          "auroc": 0.6500357227911407,
+          "f1": 0.2631578947368421,
+          "threshold": 0.5
+        },
+        "6_music_presence": {
+          "n": 259,
+          "positive": 17,
+          "ap": 0.07705369221882835,
+          "auroc": 0.5661157024793388,
+          "f1": 0.05128205128205128,
+          "threshold": 0.5
+        },
+        "7_human-voice_presence": {
+          "n": 259,
+          "positive": 89,
+          "ap": 0.4346125867778589,
+          "auroc": 0.6522141440846001,
+          "f1": 0.1111111111111111,
+          "threshold": 0.5
+        },
+        "8_dog_presence": {
+          "n": 259,
+          "positive": 0,
+          "ap": null,
+          "auroc": null,
+          "f1": 0.0,
+          "threshold": 0.5
+        }
+      },
+      "nll": 0.6590734720230103,
+      "zero_readout_fraction": 0.0,
+      "route_mean": [
+        0.8378469347953796,
+        0.14006200432777405,
+        0.021978504955768585,
+        0.00011274300777586177
+      ]
+    },
+    "loss": 0.6880758155126866,
+    "gradient_norm_max": 0.5021418929100037,
+    "seconds": 7.968394041061401
+  },
+  {
+    "epoch": 4,
+    "train": {
+      "accuracy": 0.8293067226890757,
+      "macro_ap": 0.19529334733932918,
+      "macro_ap_supported_classes": 8,
+      "macro_auroc": 0.6681581107832617,
+      "macro_f1": 0.06616865742952699,
+      "micro_ap": 0.13720093671517358,
+      "balanced_accuracy": 0.5091388244373506,
+      "per_event": {
+        "1_engine_presence": {
+          "n": 714,
+          "positive": 191,
+          "ap": 0.24684273511346166,
+          "auroc": 0.4702281441142022,
+          "f1": 0.096,
+          "threshold": 0.5
+        },
+        "2_machinery-impact_presence": {
+          "n": 714,
+          "positive": 42,
+          "ap": 0.1786246192225022,
+          "auroc": 0.6962868480725624,
+          "f1": 0.25274725274725274,
+          "threshold": 0.5
+        },
+        "3_non-machinery-impact_presence": {
+          "n": 714,
+          "positive": 14,
+          "ap": 0.029856932230169185,
+          "auroc": 0.5485714285714285,
+          "f1": 0.0,
+          "threshold": 0.5
+        },
+        "4_powered-saw_presence": {
+          "n": 714,
+          "positive": 28,
+          "ap": 0.3439710772746281,
+          "auroc": 0.9254997917534361,
+          "f1": 0.1806020066889632,
+          "threshold": 0.5
+        },
+        "5_alert-signal_presence": {
+          "n": 714,
+          "positive": 119,
+          "ap": 0.2603434210726205,
+          "auroc": 0.6377868794576654,
+          "f1": 0.0,
+          "threshold": 0.5
+        },
+        "6_music_presence": {
+          "n": 714,
+          "positive": 24,
+          "ap": 0.04977805032891216,
+          "auroc": 0.6728260869565218,
+          "f1": 0.0,
+          "threshold": 0.5
+        },
+        "7_human-voice_presence": {
+          "n": 714,
+          "positive": 172,
+          "ap": 0.3221792185992953,
+          "auroc": 0.6820990302926286,
+          "f1": 0.0,
+          "threshold": 0.5
+        },
+        "8_dog_presence": {
+          "n": 714,
+          "positive": 38,
+          "ap": 0.13075072487304445,
+          "auroc": 0.7119666770476487,
+          "f1": 0.0,
+          "threshold": 0.5
+        }
+      },
+      "nll": 0.5668529272079468,
+      "zero_readout_fraction": 0.0,
+      "route_mean": [
+        0.8323251605033875,
+        0.1415121704339981,
+        0.025990257039666176,
+        0.00017250659584533423
+      ]
+    },
+    "val": {
+      "accuracy": 0.8281853281853282,
+      "macro_ap": 0.28119371524190845,
+      "macro_ap_supported_classes": 7,
+      "macro_auroc": 0.6609016901490248,
+      "macro_f1": 0.06975779472768634,
+      "micro_ap": 0.14548564670522407,
+      "balanced_accuracy": 0.5044580934924054,
+      "per_event": {
+        "1_engine_presence": {
+          "n": 259,
+          "positive": 80,
+          "ap": 0.3298179569044824,
+          "auroc": 0.5087290502793296,
+          "f1": 0.0851063829787234,
+          "threshold": 0.5
+        },
+        "2_machinery-impact_presence": {
+          "n": 259,
+          "positive": 12,
+          "ap": 0.32427564911071666,
+          "auroc": 0.8856275303643725,
+          "f1": 0.33962264150943394,
+          "threshold": 0.5
+        },
+        "3_non-machinery-impact_presence": {
+          "n": 259,
+          "positive": 13,
+          "ap": 0.08094592596079839,
+          "auroc": 0.5888055034396499,
+          "f1": 0.0,
+          "threshold": 0.5
+        },
+        "4_powered-saw_presence": {
+          "n": 259,
+          "positive": 8,
+          "ap": 0.3935176121151272,
+          "auroc": 0.7908366533864541,
+          "f1": 0.13333333333333333,
+          "threshold": 0.5
+        },
+        "5_alert-signal_presence": {
+          "n": 259,
+          "positive": 38,
+          "ap": 0.3218146538657945,
+          "auroc": 0.6426530126220529,
+          "f1": 0.0,
+          "threshold": 0.5
+        },
+        "6_music_presence": {
+          "n": 259,
+          "positive": 17,
+          "ap": 0.07451172434283239,
+          "auroc": 0.5549343704423918,
+          "f1": 0.0,
+          "threshold": 0.5
+        },
+        "7_human-voice_presence": {
+          "n": 259,
+          "positive": 89,
+          "ap": 0.44347248439360765,
+          "auroc": 0.6547257105089227,
+          "f1": 0.0,
+          "threshold": 0.5
+        },
+        "8_dog_presence": {
+          "n": 259,
+          "positive": 0,
+          "ap": null,
+          "auroc": null,
+          "f1": 0.0,
+          "threshold": 0.5
+        }
+      },
+      "nll": 0.5718138813972473,
+      "zero_readout_fraction": 0.0,
+      "route_mean": [
+        0.8341850638389587,
+        0.14147712290287018,
+        0.0241716206073761,
+        0.00016588128346484154
+      ]
+    },
+    "loss": 0.6876500210508245,
+    "gradient_norm_max": 0.31415802240371704,
+    "seconds": 7.788255929946899
+  },
+  {
+    "epoch": 5,
+    "train": {
+      "accuracy": 0.8261554621848739,
+      "macro_ap": 0.21026923926284657,
+      "macro_ap_supported_classes": 8,
+      "macro_auroc": 0.6896067776558865,
+      "macro_f1": 0.11886233764464696,
+      "micro_ap": 0.18359951551150594,
+      "balanced_accuracy": 0.5701733175642831,
+      "per_event": {
+        "1_engine_presence": {
+          "n": 714,
+          "positive": 191,
+          "ap": 0.3363722446441975,
+          "auroc": 0.6022594175768072,
+          "f1": 0.4365256124721604,
+          "threshold": 0.5
+        },
+        "2_machinery-impact_presence": {
+          "n": 714,
+          "positive": 42,
+          "ap": 0.17490491699428923,
+          "auroc": 0.7059240362811792,
+          "f1": 0.24770642201834864,
+          "threshold": 0.5
+        },
+        "3_non-machinery-impact_presence": {
+          "n": 714,
+          "positive": 14,
+          "ap": 0.03716443510536724,
+          "auroc": 0.5580612244897958,
+          "f1": 0.0,
+          "threshold": 0.5
+        },
+        "4_powered-saw_presence": {
+          "n": 714,
+          "positive": 28,
+          "ap": 0.3629126024660526,
+          "auroc": 0.9192523948354852,
+          "f1": 0.2222222222222222,
+          "threshold": 0.5
+        },
+        "5_alert-signal_presence": {
+          "n": 714,
+          "positive": 119,
+          "ap": 0.2146056645407648,
+          "auroc": 0.618692182755455,
+          "f1": 0.0,
+          "threshold": 0.5
+        },
+        "6_music_presence": {
+          "n": 714,
+          "positive": 24,
+          "ap": 0.05169138666343147,
+          "auroc": 0.6902777777777778,
+          "f1": 0.0,
+          "threshold": 0.5
+        },
+        "7_human-voice_presence": {
+          "n": 714,
+          "positive": 172,
+          "ap": 0.3250341915253295,
+          "auroc": 0.6878808032266368,
+          "f1": 0.0,
+          "threshold": 0.5
+        },
+        "8_dog_presence": {
+          "n": 714,
+          "positive": 38,
+          "ap": 0.17946847216334,
+          "auroc": 0.7345063843039551,
+          "f1": 0.044444444444444446,
+          "threshold": 0.5
+        }
+      },
+      "nll": 0.576043963432312,
+      "zero_readout_fraction": 0.0,
+      "route_mean": [
+        0.8167783617973328,
+        0.15318745374679565,
+        0.029831381514668465,
+        0.00020292568660806865
+      ]
+    },
+    "val": {
+      "accuracy": 0.8248069498069498,
+      "macro_ap": 0.2673444698059267,
+      "macro_ap_supported_classes": 7,
+      "macro_auroc": 0.6689319359685741,
+      "macro_f1": 0.11208856796211498,
+      "micro_ap": 0.19893622625340396,
+      "balanced_accuracy": 0.559311187574364,
+      "per_event": {
+        "1_engine_presence": {
+          "n": 259,
+          "positive": 80,
+          "ap": 0.41211933484908886,
+          "auroc": 0.5995111731843574,
+          "f1": 0.4431137724550898,
+          "threshold": 0.5
+        },
+        "2_machinery-impact_presence": {
+          "n": 259,
+          "positive": 12,
+          "ap": 0.3322291138511871,
+          "auroc": 0.8184885290148448,
+          "f1": 0.2647058823529412,
+          "threshold": 0.5
+        },
+        "3_non-machinery-impact_presence": {
+          "n": 259,
+          "positive": 13,
+          "ap": 0.070988262804535,
+          "auroc": 0.5716072545340838,
+          "f1": 0.0,
+          "threshold": 0.5
+        },
+        "4_powered-saw_presence": {
+          "n": 259,
+          "positive": 8,
+          "ap": 0.3235423694185561,
+          "auroc": 0.8336653386454183,
+          "f1": 0.16666666666666666,
+          "threshold": 0.5
+        },
+        "5_alert-signal_presence": {
+          "n": 259,
+          "positive": 38,
+          "ap": 0.21102692192624573,
+          "auroc": 0.6160990712074303,
+          "f1": 0.0,
+          "threshold": 0.5
+        },
+        "6_music_presence": {
+          "n": 259,
+          "positive": 17,
+          "ap": 0.07722063507996665,
+          "auroc": 0.578512396694215,
+          "f1": 0.0,
+          "threshold": 0.5
+        },
+        "7_human-voice_presence": {
+          "n": 259,
+          "positive": 89,
+          "ap": 0.4442846507119076,
+          "auroc": 0.6646397884996695,
+          "f1": 0.022222222222222223,
+          "threshold": 0.5
+        },
+        "8_dog_presence": {
+          "n": 259,
+          "positive": 0,
+          "ap": null,
+          "auroc": null,
+          "f1": 0.0,
+          "threshold": 0.5
+        }
+      },
+      "nll": 0.5831344127655029,
+      "zero_readout_fraction": 0.0,
+      "route_mean": [
+        0.8186702728271484,
+        0.153448686003685,
+        0.02768772281706333,
+        0.00019383894687052816
+      ]
+    },
+    "loss": 0.6753239619965646,
+    "gradient_norm_max": 0.2946348786354065,
+    "seconds": 7.872833728790283
+  },
+  {
+    "epoch": 6,
+    "train": {
+      "accuracy": 0.4648109243697479,
+      "macro_ap": 0.21511396216668843,
+      "macro_ap_supported_classes": 8,
+      "macro_auroc": 0.6782151525755182,
+      "macro_f1": 0.23373458501952385,
+      "micro_ap": 0.17282769411439092,
+      "balanced_accuracy": 0.6323591685166903,
+      "per_event": {
+        "1_engine_presence": {
+          "n": 714,
+          "positive": 191,
+          "ap": 0.33206137308864625,
+          "auroc": 0.5497031824051736,
+          "f1": 0.4171270718232044,
+          "threshold": 0.5
+        },
+        "2_machinery-impact_presence": {
+          "n": 714,
+          "positive": 42,
+          "ap": 0.13820287061922737,
+          "auroc": 0.6646825396825397,
+          "f1": 0.16071428571428573,
+          "threshold": 0.5
+        },
+        "3_non-machinery-impact_presence": {
+          "n": 714,
+          "positive": 14,
+          "ap": 0.030946341335599883,
+          "auroc": 0.508673469387755,
+          "f1": 0.03787878787878788,
+          "threshold": 0.5
+        },
+        "4_powered-saw_presence": {
+          "n": 714,
+          "positive": 28,
+          "ap": 0.37550114318527616,
+          "auroc": 0.8950437317784258,
+          "f1": 0.21666666666666667,
+          "threshold": 0.5
+        },
+        "5_alert-signal_presence": {
+          "n": 714,
+          "positive": 119,
+          "ap": 0.2070791120134248,
+          "auroc": 0.5907139326318762,
+          "f1": 0.3244929797191888,
+          "threshold": 0.5
+        },
+        "6_music_presence": {
+          "n": 714,
+          "positive": 24,
+          "ap": 0.06587169866304567,
+          "auroc": 0.7451690821256038,
+          "f1": 0.09775967413441955,
+          "threshold": 0.5
+        },
+        "7_human-voice_presence": {
+          "n": 714,
+          "positive": 172,
+          "ap": 0.39792589514496424,
+          "auroc": 0.7319735261306102,
+          "f1": 0.48757763975155277,
+          "threshold": 0.5
+        },
+        "8_dog_presence": {
+          "n": 714,
+          "positive": 38,
+          "ap": 0.173323263283323,
+          "auroc": 0.7397617564621614,
+          "f1": 0.1276595744680851,
+          "threshold": 0.5
+        }
+      },
+      "nll": 0.6902332305908203,
+      "zero_readout_fraction": 0.0,
+      "route_mean": [
+        0.826137363910675,
+        0.14367292821407318,
+        0.0300152488052845,
+        0.0001737582206260413
+      ]
+    },
+    "val": {
+      "accuracy": 0.4454633204633205,
+      "macro_ap": 0.25867601494752757,
+      "macro_ap_supported_classes": 7,
+      "macro_auroc": 0.6320489746713849,
+      "macro_f1": 0.2329214180251804,
+      "micro_ap": 0.17428037026480092,
+      "balanced_accuracy": 0.6149993032554051,
+      "per_event": {
+        "1_engine_presence": {
+          "n": 259,
+          "positive": 80,
+          "ap": 0.34088949022166976,
+          "auroc": 0.4657821229050279,
+          "f1": 0.41924398625429554,
+          "threshold": 0.5
+        },
+        "2_machinery-impact_presence": {
+          "n": 259,
+          "positive": 12,
+          "ap": 0.3462687055279285,
+          "auroc": 0.7753036437246963,
+          "f1": 0.1875,
+          "threshold": 0.5
+        },
+        "3_non-machinery-impact_presence": {
+          "n": 259,
+          "positive": 13,
+          "ap": 0.08125161976667146,
+          "auroc": 0.5456535334584115,
+          "f1": 0.09433962264150944,
+          "threshold": 0.5
+        },
+        "4_powered-saw_presence": {
+          "n": 259,
+          "positive": 8,
+          "ap": 0.31181869630754466,
+          "auroc": 0.7843625498007969,
+          "f1": 0.13513513513513514,
+          "threshold": 0.5
+        },
+        "5_alert-signal_presence": {
+          "n": 259,
+          "positive": 38,
+          "ap": 0.1734770302519332,
+          "auroc": 0.5339366515837104,
+          "f1": 0.2833333333333333,
+          "threshold": 0.5
+        },
+        "6_music_presence": {
+          "n": 259,
+          "positive": 17,
+          "ap": 0.09009045186929399,
+          "auroc": 0.6266407389402041,
+          "f1": 0.1568627450980392,
+          "threshold": 0.5
+        },
+        "7_human-voice_presence": {
+          "n": 259,
+          "positive": 89,
+          "ap": 0.46693611068765134,
+          "auroc": 0.6926635822868473,
+          "f1": 0.5869565217391305,
+          "threshold": 0.5
+        },
+        "8_dog_presence": {
+          "n": 259,
+          "positive": 0,
+          "ap": null,
+          "auroc": null,
+          "f1": 0.0,
+          "threshold": 0.5
+        }
+      },
+      "nll": 0.6953299641609192,
+      "zero_readout_fraction": 0.0,
+      "route_mean": [
+        0.828009307384491,
+        0.14406757056713104,
+        0.027756327763199806,
+        0.00016601334209553897
+      ]
+    },
+    "loss": 0.6851468515329334,
+    "gradient_norm_max": 0.40589332580566406,
+    "seconds": 7.827775478363037
+  },
+  {
+    "epoch": 7,
+    "train": {
+      "accuracy": 0.7384453781512605,
+      "macro_ap": 0.21562889654390582,
+      "macro_ap_supported_classes": 8,
+      "macro_auroc": 0.6950383013856833,
+      "macro_f1": 0.1960901046388569,
+      "micro_ap": 0.2129626710212958,
+      "balanced_accuracy": 0.6158060507048465,
+      "per_event": {
+        "1_engine_presence": {
+          "n": 714,
+          "positive": 191,
+          "ap": 0.3713231472072598,
+          "auroc": 0.6419919313665623,
+          "f1": 0.41855203619909503,
+          "threshold": 0.5
+        },
+        "2_machinery-impact_presence": {
+          "n": 714,
+          "positive": 42,
+          "ap": 0.15557104432342322,
+          "auroc": 0.7003968253968254,
+          "f1": 0.2265625,
+          "threshold": 0.5
+        },
+        "3_non-machinery-impact_presence": {
+          "n": 714,
+          "positive": 14,
+          "ap": 0.02982987710930667,
+          "auroc": 0.5537755102040817,
+          "f1": 0.07874015748031496,
+          "threshold": 0.5
+        },
+        "4_powered-saw_presence": {
+          "n": 714,
+          "positive": 28,
+          "ap": 0.3725008698445374,
+          "auroc": 0.9100374843815077,
+          "f1": 0.2524271844660194,
+          "threshold": 0.5
+        },
+        "5_alert-signal_presence": {
+          "n": 714,
+          "positive": 119,
+          "ap": 0.22867500544513913,
+          "auroc": 0.6235505967092719,
+          "f1": 0.1340782122905028,
+          "threshold": 0.5
+        },
+        "6_music_presence": {
+          "n": 714,
+          "positive": 24,
+          "ap": 0.05211611367686055,
+          "auroc": 0.6954106280193236,
+          "f1": 0.022988505747126436,
+          "threshold": 0.5
+        },
+        "7_human-voice_presence": {
+          "n": 714,
+          "positive": 172,
+          "ap": 0.32789000117674905,
+          "auroc": 0.6928902428559169,
+          "f1": 0.13991769547325103,
+          "threshold": 0.5
+        },
+        "8_dog_presence": {
+          "n": 714,
+          "positive": 38,
+          "ap": 0.1871251135679708,
+          "auroc": 0.7422531921519775,
+          "f1": 0.29545454545454547,
+          "threshold": 0.5
+        }
+      },
+      "nll": 0.6435207724571228,
+      "zero_readout_fraction": 0.0,
+      "route_mean": [
+        0.8224093317985535,
+        0.15236714482307434,
+        0.025044232606887817,
+        0.00017831996956374496
+      ]
+    },
+    "val": {
+      "accuracy": 0.7456563706563707,
+      "macro_ap": 0.28358177111977867,
+      "macro_ap_supported_classes": 7,
+      "macro_auroc": 0.6762593244266889,
+      "macro_f1": 0.16479039038562848,
+      "micro_ap": 0.23540382650354985,
+      "balanced_accuracy": 0.6109946297070457,
+      "per_event": {
+        "1_engine_presence": {
+          "n": 259,
+          "positive": 80,
+          "ap": 0.4103186846944088,
+          "auroc": 0.6024441340782123,
+          "f1": 0.47619047619047616,
+          "threshold": 0.5
+        },
+        "2_machinery-impact_presence": {
+          "n": 259,
+          "positive": 12,
+          "ap": 0.33048243944370703,
+          "auroc": 0.8869770580296896,
+          "f1": 0.24691358024691357,
+          "threshold": 0.5
+        },
+        "3_non-machinery-impact_presence": {
+          "n": 259,
+          "positive": 13,
+          "ap": 0.06525443266899741,
+          "auroc": 0.5469043151969981,
+          "f1": 0.08163265306122448,
+          "threshold": 0.5
+        },
+        "4_powered-saw_presence": {
+          "n": 259,
+          "positive": 8,
+          "ap": 0.37249844410251143,
+          "auroc": 0.8172310756972112,
+          "f1": 0.15384615384615385,
+          "threshold": 0.5
+        },
+        "5_alert-signal_presence": {
+          "n": 259,
+          "positive": 38,
+          "ap": 0.283893500799705,
+          "auroc": 0.6180042867349368,
+          "f1": 0.21428571428571427,
+          "threshold": 0.5
+        },
+        "6_music_presence": {
+          "n": 259,
+          "positive": 17,
+          "ap": 0.07927211913980048,
+          "auroc": 0.5935828877005348,
+          "f1": 0.0,
+          "threshold": 0.5
+        },
+        "7_human-voice_presence": {
+          "n": 259,
+          "positive": 89,
+          "ap": 0.4433527769893204,
+          "auroc": 0.6686715135492398,
+          "f1": 0.14545454545454545,
+          "threshold": 0.5
+        },
+        "8_dog_presence": {
+          "n": 259,
+          "positive": 0,
+          "ap": null,
+          "auroc": null,
+          "f1": 0.0,
+          "threshold": 0.5
+        }
+      },
+      "nll": 0.6449967622756958,
+      "zero_readout_fraction": 0.0,
+      "route_mean": [
+        0.823754072189331,
+        0.15289434790611267,
+        0.02318054437637329,
+        0.00017059924721252173
+      ]
+    },
+    "loss": 0.6692635608153517,
+    "gradient_norm_max": 0.41092079877853394,
+    "seconds": 7.771945238113403
+  },
+  {
+    "epoch": 8,
+    "train": {
+      "accuracy": 0.8683473389355743,
+      "macro_ap": 0.20699184786215885,
+      "macro_ap_supported_classes": 8,
+      "macro_auroc": 0.694354999643643,
+      "macro_f1": 0.08140995711867574,
+      "micro_ap": 0.19621957199332607,
+      "balanced_accuracy": 0.5192072544312869,
+      "per_event": {
+        "1_engine_presence": {
+          "n": 714,
+          "positive": 191,
+          "ap": 0.35389904014516077,
+          "auroc": 0.6100577618051314,
+          "f1": 0.020618556701030927,
+          "threshold": 0.5
+        },
+        "2_machinery-impact_presence": {
+          "n": 714,
+          "positive": 42,
+          "ap": 0.1375398073520361,
+          "auroc": 0.6878897392290251,
+          "f1": 0.2684563758389262,
+          "threshold": 0.5
+        },
+        "3_non-machinery-impact_presence": {
+          "n": 714,
+          "positive": 14,
+          "ap": 0.02876193082003045,
+          "auroc": 0.5555102040816327,
+          "f1": 0.0,
+          "threshold": 0.5
+        },
+        "4_powered-saw_presence": {
+          "n": 714,
+          "positive": 28,
+          "ap": 0.3545464512697407,
+          "auroc": 0.9288837984173262,
+          "f1": 0.36220472440944884,
+          "threshold": 0.5
+        },
+        "5_alert-signal_presence": {
+          "n": 714,
+          "positive": 119,
+          "ap": 0.2272710798143044,
+          "auroc": 0.6257114610550102,
+          "f1": 0.0,
+          "threshold": 0.5
+        },
+        "6_music_presence": {
+          "n": 714,
+          "positive": 24,
+          "ap": 0.05731320619338658,
+          "auroc": 0.7123792270531402,
+          "f1": 0.0,
+          "threshold": 0.5
+        },
+        "7_human-voice_presence": {
+          "n": 714,
+          "positive": 172,
+          "ap": 0.328401211346721,
+          "auroc": 0.6905196086844589,
+          "f1": 0.0,
+          "threshold": 0.5
+        },
+        "8_dog_presence": {
+          "n": 714,
+          "positive": 38,
+          "ap": 0.1682020559558908,
+          "auroc": 0.7438881968234194,
+          "f1": 0.0,
+          "threshold": 0.5
+        }
+      },
+      "nll": 0.4610004127025604,
+      "zero_readout_fraction": 0.0,
+      "route_mean": [
+        0.8127405643463135,
+        0.14881321787834167,
+        0.038240231573581696,
+        0.0002066026790998876
+      ]
+    },
+    "val": {
+      "accuracy": 0.8643822393822393,
+      "macro_ap": 0.27003815286275956,
+      "macro_ap_supported_classes": 7,
+      "macro_auroc": 0.6569338770232125,
+      "macro_f1": 0.09707866781510192,
+      "micro_ap": 0.20393328621693882,
+      "balanced_accuracy": 0.5184390777245393,
+      "per_event": {
+        "1_engine_presence": {
+          "n": 259,
+          "positive": 80,
+          "ap": 0.38447938281354443,
+          "auroc": 0.5224860335195531,
+          "f1": 0.024691358024691357,
+          "threshold": 0.5
+        },
+        "2_machinery-impact_presence": {
+          "n": 259,
+          "positive": 12,
+          "ap": 0.32181709370492684,
+          "auroc": 0.8147773279352227,
+          "f1": 0.4186046511627907,
+          "threshold": 0.5
+        },
+        "3_non-machinery-impact_presence": {
+          "n": 259,
+          "positive": 13,
+          "ap": 0.06745412712201579,
+          "auroc": 0.5641025641025642,
+          "f1": 0.0,
+          "threshold": 0.5
+        },
+        "4_powered-saw_presence": {
+          "n": 259,
+          "positive": 8,
+          "ap": 0.39577128775649256,
+          "auroc": 0.8406374501992032,
+          "f1": 0.3333333333333333,
+          "threshold": 0.5
+        },
+        "5_alert-signal_presence": {
+          "n": 259,
+          "positive": 38,
+          "ap": 0.21266144400081852,
+          "auroc": 0.6159799952369613,
+          "f1": 0.0,
+          "threshold": 0.5
+        },
+        "6_music_presence": {
+          "n": 259,
+          "positive": 17,
+          "ap": 0.07761555523075477,
+          "auroc": 0.5862907146329606,
+          "f1": 0.0,
+          "threshold": 0.5
+        },
+        "7_human-voice_presence": {
+          "n": 259,
+          "positive": 89,
+          "ap": 0.4304681794107641,
+          "auroc": 0.6542630535360212,
+          "f1": 0.0,
+          "threshold": 0.5
+        },
+        "8_dog_presence": {
+          "n": 259,
+          "positive": 0,
+          "ap": null,
+          "auroc": null,
+          "f1": 0.0,
+          "threshold": 0.5
+        }
+      },
+      "nll": 0.47549155354499817,
+      "zero_readout_fraction": 0.0,
+      "route_mean": [
+        0.8146000504493713,
+        0.14958956837654114,
+        0.035611964762210846,
+        0.00019797247659880668
+      ]
+    },
+    "loss": 0.6568874285167673,
+    "gradient_norm_max": 0.3782022297382355,
+    "seconds": 7.867421388626099
+  },
+  {
+    "epoch": 9,
+    "train": {
+      "accuracy": 0.5372899159663865,
+      "macro_ap": 0.22273949415124755,
+      "macro_ap_supported_classes": 8,
+      "macro_auroc": 0.7008472125901642,
+      "macro_f1": 0.25760183100002476,
+      "micro_ap": 0.18915906547333863,
+      "balanced_accuracy": 0.6458597473276972,
+      "per_event": {
+        "1_engine_presence": {
+          "n": 714,
+          "positive": 191,
+          "ap": 0.3352454845172361,
+          "auroc": 0.5669015846956242,
+          "f1": 0.41847826086956524,
+          "threshold": 0.5
+        },
+        "2_machinery-impact_presence": {
+          "n": 714,
+          "positive": 42,
+          "ap": 0.16792192877568685,
+          "auroc": 0.7433390022675737,
+          "f1": 0.1783783783783784,
+          "threshold": 0.5
+        },
+        "3_non-machinery-impact_presence": {
+          "n": 714,
+          "positive": 14,
+          "ap": 0.03417594836901182,
+          "auroc": 0.5695918367346939,
+          "f1": 0.044444444444444446,
+          "threshold": 0.5
+        },
+        "4_powered-saw_presence": {
+          "n": 714,
+          "positive": 28,
+          "ap": 0.3371732529316849,
+          "auroc": 0.9272178259058725,
+          "f1": 0.3652173913043478,
+          "threshold": 0.5
+        },
+        "5_alert-signal_presence": {
+          "n": 714,
+          "positive": 119,
+          "ap": 0.1992442815404021,
+          "auroc": 0.5983828825647906,
+          "f1": 0.3125,
+          "threshold": 0.5
+        },
+        "6_music_presence": {
+          "n": 714,
+          "positive": 24,
+          "ap": 0.055868515523860275,
+          "auroc": 0.71274154589372,
+          "f1": 0.10952380952380952,
+          "threshold": 0.5
+        },
+        "7_human-voice_presence": {
+          "n": 714,
+          "positive": 172,
+          "ap": 0.36837927084424776,
+          "auroc": 0.707382219171029,
+          "f1": 0.4864864864864865,
+          "threshold": 0.5
+        },
+        "8_dog_presence": {
+          "n": 714,
+          "positive": 38,
+          "ap": 0.2839072707078506,
+          "auroc": 0.78122080348801,
+          "f1": 0.14578587699316628,
+          "threshold": 0.5
+        }
+      },
+      "nll": 0.6141060590744019,
+      "zero_readout_fraction": 0.0,
+      "route_mean": [
+        0.8305079936981201,
+        0.1385846585035324,
+        0.030651453882455826,
+        0.000256336759775877
+      ]
+    },
+    "val": {
+      "accuracy": 0.5004826254826255,
+      "macro_ap": 0.27878912219482926,
+      "macro_ap_supported_classes": 7,
+      "macro_auroc": 0.6389379794775365,
+      "macro_f1": 0.2611329700680649,
+      "micro_ap": 0.19979064363442542,
+      "balanced_accuracy": 0.6263637435551125,
+      "per_event": {
+        "1_engine_presence": {
+          "n": 259,
+          "positive": 80,
+          "ap": 0.34867159982587614,
+          "auroc": 0.44972067039106145,
+          "f1": 0.43389830508474575,
+          "threshold": 0.5
+        },
+        "2_machinery-impact_presence": {
+          "n": 259,
+          "positive": 12,
+          "ap": 0.3283057714971966,
+          "auroc": 0.8151147098515519,
+          "f1": 0.17094017094017094,
+          "threshold": 0.5
+        },
+        "3_non-machinery-impact_presence": {
+          "n": 259,
+          "positive": 13,
+          "ap": 0.06682780757682438,
+          "auroc": 0.5534709193245778,
+          "f1": 0.10471204188481675,
+          "threshold": 0.5
+        },
+        "4_powered-saw_presence": {
+          "n": 259,
+          "positive": 8,
+          "ap": 0.4571195066579922,
+          "auroc": 0.8097609561752989,
+          "f1": 0.37037037037037035,
+          "threshold": 0.5
+        },
+        "5_alert-signal_presence": {
+          "n": 259,
+          "positive": 38,
+          "ap": 0.20444520283279294,
+          "auroc": 0.5904977375565611,
+          "f1": 0.29245283018867924,
+          "threshold": 0.5
+        },
+        "6_music_presence": {
+          "n": 259,
+          "positive": 17,
+          "ap": 0.08338132291450795,
+          "auroc": 0.5889645114244044,
+          "f1": 0.15217391304347827,
+          "threshold": 0.5
+        },
+        "7_human-voice_presence": {
+          "n": 259,
+          "positive": 89,
+          "ap": 0.4627726440586149,
+          "auroc": 0.6650363516192994,
+          "f1": 0.5645161290322581,
+          "threshold": 0.5
+        },
+        "8_dog_presence": {
+          "n": 259,
+          "positive": 0,
+          "ap": null,
+          "auroc": null,
+          "f1": 0.0,
+          "threshold": 0.5
+        }
+      },
+      "nll": 0.6254093647003174,
+      "zero_readout_fraction": 0.0,
+      "route_mean": [
+        0.8318451046943665,
+        0.13929134607315063,
+        0.02861749939620495,
+        0.0002451921463944018
+      ]
+    },
+    "loss": 0.6558698837329694,
+    "gradient_norm_max": 0.4675288200378418,
+    "seconds": 7.817057132720947
+  },
+  {
+    "epoch": 10,
+    "train": {
+      "accuracy": 0.8163515406162465,
+      "macro_ap": 0.1890498086742359,
+      "macro_ap_supported_classes": 8,
+      "macro_auroc": 0.6765632714957082,
+      "macro_f1": 0.18401159544975312,
+      "micro_ap": 0.1726323815087449,
+      "balanced_accuracy": 0.5437309255463625,
+      "per_event": {
+        "1_engine_presence": {
+          "n": 714,
+          "positive": 191,
+          "ap": 0.23091636760941242,
+          "auroc": 0.45627321233720086,
+          "f1": 0.0703125,
+          "threshold": 0.5
+        },
+        "2_machinery-impact_presence": {
+          "n": 714,
+          "positive": 42,
+          "ap": 0.15711545104385735,
+          "auroc": 0.7081916099773242,
+          "f1": 0.2537313432835821,
+          "threshold": 0.5
+        },
+        "3_non-machinery-impact_presence": {
+          "n": 714,
+          "positive": 14,
+          "ap": 0.03199465347469549,
+          "auroc": 0.5661224489795919,
+          "f1": 0.0594059405940594,
+          "threshold": 0.5
+        },
+        "4_powered-saw_presence": {
+          "n": 714,
+          "positive": 28,
+          "ap": 0.34557750918449204,
+          "auroc": 0.928987921699292,
+          "f1": 0.36231884057971014,
+          "threshold": 0.5
+        },
+        "5_alert-signal_presence": {
+          "n": 714,
+          "positive": 119,
+          "ap": 0.22247999594719176,
+          "auroc": 0.6274203799166727,
+          "f1": 0.19801980198019803,
+          "threshold": 0.5
+        },
+        "6_music_presence": {
+          "n": 714,
+          "positive": 24,
+          "ap": 0.0560643908876616,
+          "auroc": 0.7078502415458938,
+          "f1": 0.06896551724137931,
+          "threshold": 0.5
+        },
+        "7_human-voice_presence": {
+          "n": 714,
+          "positive": 172,
+          "ap": 0.3293373585241885,
+          "auroc": 0.6893825624302755,
+          "f1": 0.2537313432835821,
+          "threshold": 0.5
+        },
+        "8_dog_presence": {
+          "n": 714,
+          "positive": 38,
+          "ap": 0.13891274272238807,
+          "auroc": 0.7282777950794146,
+          "f1": 0.205607476635514,
+          "threshold": 0.5
+        }
+      },
+      "nll": 0.4956536889076233,
+      "zero_readout_fraction": 0.0,
+      "route_mean": [
+        0.8206076622009277,
+        0.14001700282096863,
+        0.03910331055521965,
+        0.00027339489315636456
+      ]
+    },
+    "val": {
+      "accuracy": 0.8161196911196911,
+      "macro_ap": 0.26247113768905533,
+      "macro_ap_supported_classes": 7,
+      "macro_auroc": 0.6387902776599966,
+      "macro_f1": 0.1835522558555388,
+      "micro_ap": 0.1895906270504043,
+      "balanced_accuracy": 0.5359820347086,
+      "per_event": {
+        "1_engine_presence": {
+          "n": 259,
+          "positive": 80,
+          "ap": 0.25302485902847566,
+          "auroc": 0.3799581005586592,
+          "f1": 0.07920792079207921,
+          "threshold": 0.5
+        },
+        "2_machinery-impact_presence": {
+          "n": 259,
+          "positive": 12,
+          "ap": 0.306308314873133,
+          "auroc": 0.808029689608637,
+          "f1": 0.47368421052631576,
+          "threshold": 0.5
+        },
+        "3_non-machinery-impact_presence": {
+          "n": 259,
+          "positive": 13,
+          "ap": 0.07616444785351335,
+          "auroc": 0.5872420262664165,
+          "f1": 0.13333333333333333,
+          "threshold": 0.5
+        },
+        "4_powered-saw_presence": {
+          "n": 259,
+          "positive": 8,
+          "ap": 0.4578374748697469,
+          "auroc": 0.8242031872509961,
+          "f1": 0.2857142857142857,
+          "threshold": 0.5
+        },
+        "5_alert-signal_presence": {
+          "n": 259,
+          "positive": 38,
+          "ap": 0.22562241021490514,
+          "auroc": 0.6266968325791855,
+          "f1": 0.24242424242424243,
+          "threshold": 0.5
+        },
+        "6_music_presence": {
+          "n": 259,
+          "positive": 17,
+          "ap": 0.07988459146970313,
+          "auroc": 0.5867768595041323,
+          "f1": 0.05405405405405406,
+          "threshold": 0.5
+        },
+        "7_human-voice_presence": {
+          "n": 259,
+          "positive": 89,
+          "ap": 0.43845586551391025,
+          "auroc": 0.6586252478519498,
+          "f1": 0.2,
+          "threshold": 0.5
+        },
+        "8_dog_presence": {
+          "n": 259,
+          "positive": 0,
+          "ap": null,
+          "auroc": null,
+          "f1": 0.0,
+          "threshold": 0.5
+        }
+      },
+      "nll": 0.5125422477722168,
+      "zero_readout_fraction": 0.0,
+      "route_mean": [
+        0.8220123648643494,
+        0.14082272350788116,
+        0.03690175339579582,
+        0.0002633359399624169
+      ]
+    },
+    "loss": 0.6433417909786481,
+    "gradient_norm_max": 0.5553686618804932,
+    "seconds": 7.888910531997681
+  },
+  {
+    "epoch": 11,
+    "train": {
+      "accuracy": 0.3958333333333333,
+      "macro_ap": 0.2240860727430668,
+      "macro_ap_supported_classes": 8,
+      "macro_auroc": 0.7180207860809855,
+      "macro_f1": 0.24071582947401493,
+      "micro_ap": 0.21373981895475058,
+      "balanced_accuracy": 0.6431561236199993,
+      "per_event": {
+        "1_engine_presence": {
+          "n": 714,
+          "positive": 191,
+          "ap": 0.42201172351425764,
+          "auroc": 0.6759382539317069,
+          "f1": 0.4308390022675737,
+          "threshold": 0.5
+        },
+        "2_machinery-impact_presence": {
+          "n": 714,
+          "positive": 42,
+          "ap": 0.15830181614935868,
+          "auroc": 0.768530328798186,
+          "f1": 0.19435736677115986,
+          "threshold": 0.5
+        },
+        "3_non-machinery-impact_presence": {
+          "n": 714,
+          "positive": 14,
+          "ap": 0.025489780904489265,
+          "auroc": 0.5411224489795918,
+          "f1": 0.043410852713178294,
+          "threshold": 0.5
+        },
+        "4_powered-saw_presence": {
+          "n": 714,
+          "positive": 28,
+          "ap": 0.32606105397173835,
+          "auroc": 0.9284673052894626,
+          "f1": 0.2694300518134715,
+          "threshold": 0.5
+        },
+        "5_alert-signal_presence": {
+          "n": 714,
+          "positive": 119,
+          "ap": 0.18973348784149097,
+          "auroc": 0.5708848245180426,
+          "f1": 0.31024930747922436,
+          "threshold": 0.5
+        },
+        "6_music_presence": {
+          "n": 714,
+          "positive": 24,
+          "ap": 0.11682291625375649,
+          "auroc": 0.7815217391304348,
+          "f1": 0.08617594254937164,
+          "threshold": 0.5
+        },
+        "7_human-voice_presence": {
+          "n": 714,
+          "positive": 172,
+          "ap": 0.3919428758246807,
+          "auroc": 0.7445185789067194,
+          "f1": 0.4692737430167598,
+          "threshold": 0.5
+        },
+        "8_dog_presence": {
+          "n": 714,
+          "positive": 38,
+          "ap": 0.16232492748476243,
+          "auroc": 0.7331828090937402,
+          "f1": 0.12199036918138041,
+          "threshold": 0.5
+        }
+      },
+      "nll": 0.696135938167572,
+      "zero_readout_fraction": 0.0,
+      "route_mean": [
+        0.8138691186904907,
+        0.15334650874137878,
+        0.03251267597079277,
+        0.00027075345860794187
+      ]
+    },
+    "val": {
+      "accuracy": 0.3943050193050193,
+      "macro_ap": 0.2954136601247606,
+      "macro_ap_supported_classes": 7,
+      "macro_auroc": 0.6649372736215744,
+      "macro_f1": 0.2448361198887122,
+      "micro_ap": 0.2393833251923806,
+      "balanced_accuracy": 0.634229454073812,
+      "per_event": {
+        "1_engine_presence": {
+          "n": 259,
+          "positive": 80,
+          "ap": 0.49942484104247353,
+          "auroc": 0.6610335195530725,
+          "f1": 0.47761194029850745,
+          "threshold": 0.5
+        },
+        "2_machinery-impact_presence": {
+          "n": 259,
+          "positive": 12,
+          "ap": 0.32834196789467296,
+          "auroc": 0.8822537112010795,
+          "f1": 0.2268041237113402,
+          "threshold": 0.5
+        },
+        "3_non-machinery-impact_presence": {
+          "n": 259,
+          "positive": 13,
+          "ap": 0.046932785891512924,
+          "auroc": 0.4565353345841151,
+          "f1": 0.09716599190283401,
+          "threshold": 0.5
+        },
+        "4_powered-saw_presence": {
+          "n": 259,
+          "positive": 8,
+          "ap": 0.45785827734357143,
+          "auroc": 0.8172310756972112,
+          "f1": 0.1724137931034483,
+          "threshold": 0.5
+        },
+        "5_alert-signal_presence": {
+          "n": 259,
+          "positive": 38,
+          "ap": 0.14515245711740032,
+          "auroc": 0.4796380090497737,
+          "f1": 0.2706766917293233,
+          "threshold": 0.5
+        },
+        "6_music_presence": {
+          "n": 259,
+          "positive": 17,
+          "ap": 0.10414933017707256,
+          "auroc": 0.6594555177442878,
+          "f1": 0.14545454545454545,
+          "threshold": 0.5
+        },
+        "7_human-voice_presence": {
+          "n": 259,
+          "positive": 89,
+          "ap": 0.48603596140662053,
+          "auroc": 0.6984137475214806,
+          "f1": 0.568561872909699,
+          "threshold": 0.5
+        },
+        "8_dog_presence": {
+          "n": 259,
+          "positive": 0,
+          "ap": null,
+          "auroc": null,
+          "f1": 0.0,
+          "threshold": 0.5
+        }
+      },
+      "nll": 0.689296305179596,
+      "zero_readout_fraction": 0.0,
+      "route_mean": [
+        0.8151931762695312,
+        0.154311865568161,
+        0.03023507073521614,
+        0.00025945529341697693
+      ]
+    },
+    "loss": 0.6399579048156738,
+    "gradient_norm_max": 0.48262810707092285,
+    "seconds": 7.761740446090698
+  },
+  {
+    "epoch": 12,
+    "train": {
+      "accuracy": 0.5518207282913166,
+      "macro_ap": 0.2340484912072685,
+      "macro_ap_supported_classes": 8,
+      "macro_auroc": 0.7148068104845633,
+      "macro_f1": 0.27007681471972245,
+      "micro_ap": 0.23924727744330507,
+      "balanced_accuracy": 0.6756553593890162,
+      "per_event": {
+        "1_engine_presence": {
+          "n": 714,
+          "positive": 191,
+          "ap": 0.42022245929746044,
+          "auroc": 0.6650966534191585,
+          "f1": 0.4438964241676942,
+          "threshold": 0.5
+        },
+        "2_machinery-impact_presence": {
+          "n": 714,
+          "positive": 42,
+          "ap": 0.15422746567387716,
+          "auroc": 0.7605229591836734,
+          "f1": 0.24615384615384617,
+          "threshold": 0.5
+        },
+        "3_non-machinery-impact_presence": {
+          "n": 714,
+          "positive": 14,
+          "ap": 0.053610997483906464,
+          "auroc": 0.5659183673469388,
+          "f1": 0.04024144869215292,
+          "threshold": 0.5
+        },
+        "4_powered-saw_presence": {
+          "n": 714,
+          "positive": 28,
+          "ap": 0.34292096591890153,
+          "auroc": 0.9293523531861725,
+          "f1": 0.359375,
+          "threshold": 0.5
+        },
+        "5_alert-signal_presence": {
+          "n": 714,
+          "positive": 119,
+          "ap": 0.23335250235354188,
+          "auroc": 0.6187063060518326,
+          "f1": 0.32857142857142857,
+          "threshold": 0.5
+        },
+        "6_music_presence": {
+          "n": 714,
+          "positive": 24,
+          "ap": 0.07466450217689756,
+          "auroc": 0.7243961352657005,
+          "f1": 0.11019283746556474,
+          "threshold": 0.5
+        },
+        "7_human-voice_presence": {
+          "n": 714,
+          "positive": 172,
+          "ap": 0.3681256820158801,
+          "auroc": 0.7069531451128465,
+          "f1": 0.49912739965095987,
+          "threshold": 0.5
+        },
+        "8_dog_presence": {
+          "n": 714,
+          "positive": 38,
+          "ap": 0.2252633547376829,
+          "auroc": 0.7475085643101836,
+          "f1": 0.13305613305613306,
+          "threshold": 0.5
+        }
+      },
+      "nll": 0.5849274396896362,
+      "zero_readout_fraction": 0.0,
+      "route_mean": [
+        0.814000129699707,
+        0.1462172120809555,
+        0.039507679641246796,
+        0.0002740079362411052
+      ]
+    },
+    "val": {
+      "accuracy": 0.5294401544401545,
+      "macro_ap": 0.29484217062783113,
+      "macro_ap_supported_classes": 7,
+      "macro_auroc": 0.6797472414806167,
+      "macro_f1": 0.2822630808011988,
+      "micro_ap": 0.26828925173451046,
+      "balanced_accuracy": 0.6646032307510907,
+      "per_event": {
+        "1_engine_presence": {
+          "n": 259,
+          "positive": 80,
+          "ap": 0.44092384305393834,
+          "auroc": 0.5858240223463687,
+          "f1": 0.47619047619047616,
+          "threshold": 0.5
+        },
+        "2_machinery-impact_presence": {
+          "n": 259,
+          "positive": 12,
+          "ap": 0.3108156715819133,
+          "auroc": 0.876855600539811,
+          "f1": 0.33962264150943394,
+          "threshold": 0.5
+        },
+        "3_non-machinery-impact_presence": {
+          "n": 259,
+          "positive": 13,
+          "ap": 0.10420637479506492,
+          "auroc": 0.5906816760475297,
+          "f1": 0.09900990099009901,
+          "threshold": 0.5
+        },
+        "4_powered-saw_presence": {
+          "n": 259,
+          "positive": 8,
+          "ap": 0.4605422348648391,
+          "auroc": 0.8491035856573705,
+          "f1": 0.3125,
+          "threshold": 0.5
+        },
+        "5_alert-signal_presence": {
+          "n": 259,
+          "positive": 38,
+          "ap": 0.20686376917849372,
+          "auroc": 0.6137175517980471,
+          "f1": 0.3013698630136986,
+          "threshold": 0.5
+        },
+        "6_music_presence": {
+          "n": 259,
+          "positive": 17,
+          "ap": 0.07961279999396553,
+          "auroc": 0.5850753524550316,
+          "f1": 0.1568627450980392,
+          "threshold": 0.5
+        },
+        "7_human-voice_presence": {
+          "n": 259,
+          "positive": 89,
+          "ap": 0.46093050092660304,
+          "auroc": 0.6569729015201585,
+          "f1": 0.5725490196078431,
+          "threshold": 0.5
+        },
+        "8_dog_presence": {
+          "n": 259,
+          "positive": 0,
+          "ap": null,
+          "auroc": null,
+          "f1": 0.0,
+          "threshold": 0.5
+        }
+      },
+      "nll": 0.5987625122070312,
+      "zero_readout_fraction": 0.0,
+      "route_mean": [
+        0.8157039284706116,
+        0.14724686741828918,
+        0.03678582236170769,
+        0.0002628085494507104
+      ]
+    },
+    "loss": 0.637635446062275,
+    "gradient_norm_max": 0.6429132223129272,
+    "seconds": 7.900268316268921
+  },
+  {
+    "epoch": 13,
+    "train": {
+      "accuracy": 0.5610994397759104,
+      "macro_ap": 0.22496812077524853,
+      "macro_ap_supported_classes": 8,
+      "macro_auroc": 0.7150686885736497,
+      "macro_f1": 0.26516633578311,
+      "micro_ap": 0.24414741879384771,
+      "balanced_accuracy": 0.6745873152690844,
+      "per_event": {
+        "1_engine_presence": {
+          "n": 714,
+          "positive": 191,
+          "ap": 0.43155568694625057,
+          "auroc": 0.6821348843262292,
+          "f1": 0.4433849821215733,
+          "threshold": 0.5
+        },
+        "2_machinery-impact_presence": {
+          "n": 714,
+          "positive": 42,
+          "ap": 0.1597195162841014,
+          "auroc": 0.7653061224489797,
+          "f1": 0.25,
+          "threshold": 0.5
+        },
+        "3_non-machinery-impact_presence": {
+          "n": 714,
+          "positive": 14,
+          "ap": 0.023822838174715283,
+          "auroc": 0.5470408163265306,
+          "f1": 0.039045553145336226,
+          "threshold": 0.5
+        },
+        "4_powered-saw_presence": {
+          "n": 714,
+          "positive": 28,
+          "ap": 0.34528575007101664,
+          "auroc": 0.9292482299042066,
+          "f1": 0.33112582781456956,
+          "threshold": 0.5
+        },
+        "5_alert-signal_presence": {
+          "n": 714,
+          "positive": 119,
+          "ap": 0.2476678784729814,
+          "auroc": 0.6353717957771343,
+          "f1": 0.3262411347517731,
+          "threshold": 0.5
+        },
+        "6_music_presence": {
+          "n": 714,
+          "positive": 24,
+          "ap": 0.07002959349911768,
+          "auroc": 0.7316425120772947,
+          "f1": 0.11204481792717087,
+          "threshold": 0.5
+        },
+        "7_human-voice_presence": {
+          "n": 714,
+          "positive": 172,
+          "ap": 0.3935074735102284,
+          "auroc": 0.7068995108555737,
+          "f1": 0.47761194029850745,
+          "threshold": 0.5
+        },
+        "8_dog_presence": {
+          "n": 714,
+          "positive": 38,
+          "ap": 0.12815622924357672,
+          "auroc": 0.7229056368732483,
+          "f1": 0.14187643020594964,
+          "threshold": 0.5
+        }
+      },
+      "nll": 0.5784184336662292,
+      "zero_readout_fraction": 0.0,
+      "route_mean": [
+        0.803851306438446,
+        0.15262775123119354,
+        0.043209679424762726,
+        0.000308858958305791
+      ]
+    },
+    "val": {
+      "accuracy": 0.5381274131274131,
+      "macro_ap": 0.3007255541952705,
+      "macro_ap_supported_classes": 7,
+      "macro_auroc": 0.6825831011417947,
+      "macro_f1": 0.2746728353804002,
+      "micro_ap": 0.27573642814922816,
+      "balanced_accuracy": 0.6662218220407113,
+      "per_event": {
+        "1_engine_presence": {
+          "n": 259,
+          "positive": 80,
+          "ap": 0.45291870185125704,
+          "auroc": 0.6167597765363129,
+          "f1": 0.4779874213836478,
+          "threshold": 0.5
+        },
+        "2_machinery-impact_presence": {
+          "n": 259,
+          "positive": 12,
+          "ap": 0.3187958218648965,
+          "auroc": 0.8883265856950068,
+          "f1": 0.32727272727272727,
+          "threshold": 0.5
+        },
+        "3_non-machinery-impact_presence": {
+          "n": 259,
+          "positive": 13,
+          "ap": 0.1109244316753445,
+          "auroc": 0.5753595997498436,
+          "f1": 0.10152284263959391,
+          "threshold": 0.5
+        },
+        "4_powered-saw_presence": {
+          "n": 259,
+          "positive": 8,
+          "ap": 0.458174188580905,
+          "auroc": 0.826195219123506,
+          "f1": 0.2564102564102564,
+          "threshold": 0.5
+        },
+        "5_alert-signal_presence": {
+          "n": 259,
+          "positive": 38,
+          "ap": 0.1877704362604269,
+          "auroc": 0.6083591331269349,
+          "f1": 0.3055555555555556,
+          "threshold": 0.5
+        },
+        "6_music_presence": {
+          "n": 259,
+          "positive": 17,
+          "ap": 0.07847973703517622,
+          "auroc": 0.5901798736023335,
+          "f1": 0.14666666666666667,
+          "threshold": 0.5
+        },
+        "7_human-voice_presence": {
+          "n": 259,
+          "positive": 89,
+          "ap": 0.4980155620988872,
+          "auroc": 0.6729015201586251,
+          "f1": 0.5819672131147541,
+          "threshold": 0.5
+        },
+        "8_dog_presence": {
+          "n": 259,
+          "positive": 0,
+          "ap": null,
+          "auroc": null,
+          "f1": 0.0,
+          "threshold": 0.5
+        }
+      },
+      "nll": 0.5913792848587036,
+      "zero_readout_fraction": 0.0,
+      "route_mean": [
+        0.8054234981536865,
+        0.1537131816148758,
+        0.040567126125097275,
+        0.0002970268833450973
+      ]
+    },
+    "loss": 0.6297584122636405,
+    "gradient_norm_max": 0.6133120059967041,
+    "seconds": 7.840296030044556
+  },
+  {
+    "epoch": 14,
+    "train": {
+      "accuracy": 0.38865546218487396,
+      "macro_ap": 0.2200528217557811,
+      "macro_ap_supported_classes": 8,
+      "macro_auroc": 0.7072845979298296,
+      "macro_f1": 0.22972229785346518,
+      "micro_ap": 0.20613885449896058,
+      "balanced_accuracy": 0.6363325432103715,
+      "per_event": {
+        "1_engine_presence": {
+          "n": 714,
+          "positive": 191,
+          "ap": 0.44339375100385553,
+          "auroc": 0.6840769623497142,
+          "f1": 0.4288939051918736,
+          "threshold": 0.5
+        },
+        "2_machinery-impact_presence": {
+          "n": 714,
+          "positive": 42,
+          "ap": 0.14544964299135948,
+          "auroc": 0.7641369047619047,
+          "f1": 0.15445544554455445,
+          "threshold": 0.5
+        },
+        "3_non-machinery-impact_presence": {
+          "n": 714,
+          "positive": 14,
+          "ap": 0.019553869719557644,
+          "auroc": 0.5065306122448979,
+          "f1": 0.044293015332197615,
+          "threshold": 0.5
+        },
+        "4_powered-saw_presence": {
+          "n": 714,
+          "positive": 28,
+          "ap": 0.3693633594838856,
+          "auroc": 0.9307580174927114,
+          "f1": 0.19310344827586207,
+          "threshold": 0.5
+        },
+        "5_alert-signal_presence": {
+          "n": 714,
+          "positive": 119,
+          "ap": 0.18721528177290367,
+          "auroc": 0.5673398771273215,
+          "f1": 0.311614730878187,
+          "threshold": 0.5
+        },
+        "6_music_presence": {
+          "n": 714,
+          "positive": 24,
+          "ap": 0.0733512650364103,
+          "auroc": 0.7735507246376812,
+          "f1": 0.10278372591006424,
+          "threshold": 0.5
+        },
+        "7_human-voice_presence": {
+          "n": 714,
+          "positive": 172,
+          "ap": 0.39833528264143647,
+          "auroc": 0.7349824079636145,
+          "f1": 0.48338368580060426,
+          "threshold": 0.5
+        },
+        "8_dog_presence": {
+          "n": 714,
+          "positive": 38,
+          "ap": 0.12376012139684005,
+          "auroc": 0.696901276860791,
+          "f1": 0.11925042589437819,
+          "threshold": 0.5
+        }
+      },
+      "nll": 0.7508696913719177,
+      "zero_readout_fraction": 0.0,
+      "route_mean": [
+        0.7883162498474121,
+        0.1689397543668747,
+        0.04237940162420273,
+        0.0003648341808002442
+      ]
+    },
+    "val": {
+      "accuracy": 0.361003861003861,
+      "macro_ap": 0.2887478490010683,
+      "macro_ap_supported_classes": 7,
+      "macro_auroc": 0.6617172742843479,
+      "macro_f1": 0.22926915507498738,
+      "micro_ap": 0.2264862372717743,
+      "balanced_accuracy": 0.6085410168183426,
+      "per_event": {
+        "1_engine_presence": {
+          "n": 259,
+          "positive": 80,
+          "ap": 0.5317745722360216,
+          "auroc": 0.6671089385474861,
+          "f1": 0.4744744744744745,
+          "threshold": 0.5
+        },
+        "2_machinery-impact_presence": {
+          "n": 259,
+          "positive": 12,
+          "ap": 0.2734471033082144,
+          "auroc": 0.8977732793522267,
+          "f1": 0.13186813186813187,
+          "threshold": 0.5
+        },
+        "3_non-machinery-impact_presence": {
+          "n": 259,
+          "positive": 13,
+          "ap": 0.04333949636992282,
+          "auroc": 0.4215134459036898,
+          "f1": 0.09243697478991597,
+          "threshold": 0.5
+        },
+        "4_powered-saw_presence": {
+          "n": 259,
+          "positive": 8,
+          "ap": 0.4163231868694382,
+          "auroc": 0.7978087649402391,
+          "f1": 0.13333333333333333,
+          "threshold": 0.5
+        },
+        "5_alert-signal_presence": {
+          "n": 259,
+          "positive": 38,
+          "ap": 0.15340152294820963,
+          "auroc": 0.49749940462014763,
+          "f1": 0.2661596958174905,
+          "threshold": 0.5
+        },
+        "6_music_presence": {
+          "n": 259,
+          "positive": 17,
+          "ap": 0.11923974645024502,
+          "auroc": 0.6536217792902286,
+          "f1": 0.15841584158415842,
+          "threshold": 0.5
+        },
+        "7_human-voice_presence": {
+          "n": 259,
+          "positive": 89,
+          "ap": 0.48370931482542656,
+          "auroc": 0.6966953073364177,
+          "f1": 0.5774647887323944,
+          "threshold": 0.5
+        },
+        "8_dog_presence": {
+          "n": 259,
+          "positive": 0,
+          "ap": null,
+          "auroc": null,
+          "f1": 0.0,
+          "threshold": 0.5
+        }
+      },
+      "nll": 0.7535443902015686,
+      "zero_readout_fraction": 0.0,
+      "route_mean": [
+        0.7899503111839294,
+        0.1702168583869934,
+        0.03948190435767174,
+        0.00035001555806957185
+      ]
+    },
+    "loss": 0.6214316051547267,
+    "gradient_norm_max": 0.6133013367652893,
+    "seconds": 7.873882055282593
+  },
+  {
+    "epoch": 15,
+    "train": {
+      "accuracy": 0.6024159663865546,
+      "macro_ap": 0.2269927971646803,
+      "macro_ap_supported_classes": 8,
+      "macro_auroc": 0.7232290597364384,
+      "macro_f1": 0.2631032792943013,
+      "micro_ap": 0.2233894408378026,
+      "balanced_accuracy": 0.6698841626283532,
+      "per_event": {
+        "1_engine_presence": {
+          "n": 714,
+          "positive": 191,
+          "ap": 0.43337685788479896,
+          "auroc": 0.6839468231007177,
+          "f1": 0.4721311475409836,
+          "threshold": 0.5
+        },
+        "2_machinery-impact_presence": {
+          "n": 714,
+          "positive": 42,
+          "ap": 0.1558632352405731,
+          "auroc": 0.7756164965986395,
+          "f1": 0.2140221402214022,
+          "threshold": 0.5
+        },
+        "3_non-machinery-impact_presence": {
+          "n": 714,
+          "positive": 14,
+          "ap": 0.06368473339952094,
+          "auroc": 0.5880612244897958,
+          "f1": 0.03617571059431524,
+          "threshold": 0.5
+        },
+        "4_powered-saw_presence": {
+          "n": 714,
+          "positive": 28,
+          "ap": 0.3577439022320737,
+          "auroc": 0.928987921699292,
+          "f1": 0.27624309392265195,
+          "threshold": 0.5
+        },
+        "5_alert-signal_presence": {
+          "n": 714,
+          "positive": 119,
+          "ap": 0.2378370649408763,
+          "auroc": 0.6313042864204504,
+          "f1": 0.31771894093686354,
+          "threshold": 0.5
+        },
+        "6_music_presence": {
+          "n": 714,
+          "positive": 24,
+          "ap": 0.06416677291666112,
+          "auroc": 0.7262681159420289,
+          "f1": 0.11488250652741515,
+          "threshold": 0.5
+        },
+        "7_human-voice_presence": {
+          "n": 714,
+          "positive": 172,
+          "ap": 0.3590398344037825,
+          "auroc": 0.7062022655110273,
+          "f1": 0.5,
+          "threshold": 0.5
+        },
+        "8_dog_presence": {
+          "n": 714,
+          "positive": 38,
+          "ap": 0.14422997629915568,
+          "auroc": 0.7454453441295547,
+          "f1": 0.17365269461077845,
+          "threshold": 0.5
+        }
+      },
+      "nll": 0.5797870755195618,
+      "zero_readout_fraction": 0.0,
+      "route_mean": [
+        0.7931882739067078,
+        0.16146984696388245,
+        0.04490248113870621,
+        0.0004381548205856234
+      ]
+    },
+    "val": {
+      "accuracy": 0.5656370656370656,
+      "macro_ap": 0.2941718157650203,
+      "macro_ap_supported_classes": 7,
+      "macro_auroc": 0.6834711924177513,
+      "macro_f1": 0.25475265984648743,
+      "micro_ap": 0.2396995082093401,
+      "balanced_accuracy": 0.6568736534070811,
+      "per_event": {
+        "1_engine_presence": {
+          "n": 259,
+          "positive": 80,
+          "ap": 0.5107933371030628,
+          "auroc": 0.6421787709497206,
+          "f1": 0.4939271255060729,
+          "threshold": 0.5
+        },
+        "2_machinery-impact_presence": {
+          "n": 259,
+          "positive": 12,
+          "ap": 0.31434824980214243,
+          "auroc": 0.8947368421052632,
+          "f1": 0.22988505747126436,
+          "threshold": 0.5
+        },
+        "3_non-machinery-impact_presence": {
+          "n": 259,
+          "positive": 13,
+          "ap": 0.0745201772874976,
+          "auroc": 0.578799249530957,
+          "f1": 0.10404624277456648,
+          "threshold": 0.5
+        },
+        "4_powered-saw_presence": {
+          "n": 259,
+          "positive": 8,
+          "ap": 0.4258046176756198,
+          "auroc": 0.8087649402390439,
+          "f1": 0.18181818181818182,
+          "threshold": 0.5
+        },
+        "5_alert-signal_presence": {
+          "n": 259,
+          "positive": 38,
+          "ap": 0.21685463882967498,
+          "auroc": 0.629316503929507,
+          "f1": 0.30612244897959184,
+          "threshold": 0.5
+        },
+        "6_music_presence": {
+          "n": 259,
+          "positive": 17,
+          "ap": 0.07859753734980279,
+          "auroc": 0.5697617890131259,
+          "f1": 0.14285714285714285,
+          "threshold": 0.5
+        },
+        "7_human-voice_presence": {
+          "n": 259,
+          "positive": 89,
+          "ap": 0.4382841523073414,
+          "auroc": 0.6607402511566425,
+          "f1": 0.5793650793650794,
+          "threshold": 0.5
+        },
+        "8_dog_presence": {
+          "n": 259,
+          "positive": 0,
+          "ap": null,
+          "auroc": null,
+          "f1": 0.0,
+          "threshold": 0.5
+        }
+      },
+      "nll": 0.5904684662818909,
+      "zero_readout_fraction": 0.0,
+      "route_mean": [
+        0.79496169090271,
+        0.16274471580982208,
+        0.041873153299093246,
+        0.00042014644714072347
+      ]
+    },
+    "loss": 0.6239054124562347,
+    "gradient_norm_max": 0.5123551487922668,
+    "seconds": 7.906700134277344
+  },
+  {
+    "epoch": 16,
+    "train": {
+      "accuracy": 0.5724789915966386,
+      "macro_ap": 0.2248367385467933,
+      "macro_ap_supported_classes": 8,
+      "macro_auroc": 0.7219173223072873,
+      "macro_f1": 0.251535578057154,
+      "micro_ap": 0.2086922189902704,
+      "balanced_accuracy": 0.6537645266528688,
+      "per_event": {
+        "1_engine_presence": {
+          "n": 714,
+          "positive": 191,
+          "ap": 0.42544593201751546,
+          "auroc": 0.6694813450391919,
+          "f1": 0.4717948717948718,
+          "threshold": 0.5
+        },
+        "2_machinery-impact_presence": {
+          "n": 714,
+          "positive": 42,
+          "ap": 0.1539590032551281,
+          "auroc": 0.7716836734693878,
+          "f1": 0.1896551724137931,
+          "threshold": 0.5
+        },
+        "3_non-machinery-impact_presence": {
+          "n": 714,
+          "positive": 14,
+          "ap": 0.03165577902302725,
+          "auroc": 0.5831632653061224,
+          "f1": 0.043668122270742356,
+          "threshold": 0.5
+        },
+        "4_powered-saw_presence": {
+          "n": 714,
+          "positive": 28,
+          "ap": 0.3668844766806696,
+          "auroc": 0.9305497709287797,
+          "f1": 0.2184873949579832,
+          "threshold": 0.5
+        },
+        "5_alert-signal_presence": {
+          "n": 714,
+          "positive": 119,
+          "ap": 0.21930945657293616,
+          "auroc": 0.6225619659628558,
+          "f1": 0.31640625,
+          "threshold": 0.5
+        },
+        "6_music_presence": {
+          "n": 714,
+          "positive": 24,
+          "ap": 0.06691281196379131,
+          "auroc": 0.7309178743961353,
+          "f1": 0.11730205278592376,
+          "threshold": 0.5
+        },
+        "7_human-voice_presence": {
+          "n": 714,
+          "positive": 172,
+          "ap": 0.3778545377612963,
+          "auroc": 0.7164356817986783,
+          "f1": 0.49122807017543857,
+          "threshold": 0.5
+        },
+        "8_dog_presence": {
+          "n": 714,
+          "positive": 38,
+          "ap": 0.15667191109998235,
+          "auroc": 0.7505450015571473,
+          "f1": 0.16374269005847952,
+          "threshold": 0.5
+        }
+      },
+      "nll": 0.6069491505622864,
+      "zero_readout_fraction": 0.0,
+      "route_mean": [
+        0.7841698527336121,
+        0.16916294395923615,
+        0.04614176228642464,
+        0.0005256886943243444
+      ]
+    },
+    "val": {
+      "accuracy": 0.553088803088803,
+      "macro_ap": 0.302814482816118,
+      "macro_ap_supported_classes": 7,
+      "macro_auroc": 0.6787568039483128,
+      "macro_f1": 0.2466066998612928,
+      "micro_ap": 0.2212843794872691,
+      "balanced_accuracy": 0.6430309461791598,
+      "per_event": {
+        "1_engine_presence": {
+          "n": 259,
+          "positive": 80,
+          "ap": 0.5170157269323592,
+          "auroc": 0.6525837988826817,
+          "f1": 0.47619047619047616,
+          "threshold": 0.5
+        },
+        "2_machinery-impact_presence": {
+          "n": 259,
+          "positive": 12,
+          "ap": 0.31526298872751957,
+          "auroc": 0.9001349527665317,
+          "f1": 0.21359223300970873,
+          "threshold": 0.5
+        },
+        "3_non-machinery-impact_presence": {
+          "n": 259,
+          "positive": 13,
+          "ap": 0.058549711334567815,
+          "auroc": 0.5318949343339587,
+          "f1": 0.10309278350515463,
+          "threshold": 0.5
+        },
+        "4_powered-saw_presence": {
+          "n": 259,
+          "positive": 8,
+          "ap": 0.41641954468413744,
+          "auroc": 0.7998007968127491,
+          "f1": 0.1388888888888889,
+          "threshold": 0.5
+        },
+        "5_alert-signal_presence": {
+          "n": 259,
+          "positive": 38,
+          "ap": 0.27319921386810114,
+          "auroc": 0.6182424386758751,
+          "f1": 0.31,
+          "threshold": 0.5
+        },
+        "6_music_presence": {
+          "n": 259,
+          "positive": 17,
+          "ap": 0.07963159167088694,
+          "auroc": 0.5867768595041323,
+          "f1": 0.15172413793103448,
+          "threshold": 0.5
+        },
+        "7_human-voice_presence": {
+          "n": 259,
+          "positive": 89,
+          "ap": 0.459622602495254,
+          "auroc": 0.6618638466622605,
+          "f1": 0.5793650793650794,
+          "threshold": 0.5
+        },
+        "8_dog_presence": {
+          "n": 259,
+          "positive": 0,
+          "ap": null,
+          "auroc": null,
+          "f1": 0.0,
+          "threshold": 0.5
+        }
+      },
+      "nll": 0.6166688799858093,
+      "zero_readout_fraction": 0.0,
+      "route_mean": [
+        0.7858451008796692,
+        0.17051489651203156,
+        0.04313516244292259,
+        0.0005041384138166904
+      ]
+    },
+    "loss": 0.6206900721170655,
+    "gradient_norm_max": 0.9842467904090881,
+    "seconds": 7.988327503204346
+  },
+  {
+    "epoch": 17,
+    "train": {
+      "accuracy": 0.6748949579831933,
+      "macro_ap": 0.23273838491674792,
+      "macro_ap_supported_classes": 8,
+      "macro_auroc": 0.7225840922101465,
+      "macro_f1": 0.25435320954341945,
+      "micro_ap": 0.199853088816721,
+      "balanced_accuracy": 0.6408170756764071,
+      "per_event": {
+        "1_engine_presence": {
+          "n": 714,
+          "positive": 191,
+          "ap": 0.4248772601260099,
+          "auroc": 0.6844273372508585,
+          "f1": 0.47465437788018433,
+          "threshold": 0.5
+        },
+        "2_machinery-impact_presence": {
+          "n": 714,
+          "positive": 42,
+          "ap": 0.15078560517748044,
+          "auroc": 0.7743764172335601,
+          "f1": 0.19701492537313434,
+          "threshold": 0.5
+        },
+        "3_non-machinery-impact_presence": {
+          "n": 714,
+          "positive": 14,
+          "ap": 0.04804321223305334,
+          "auroc": 0.5981632653061224,
+          "f1": 0.04240282685512368,
+          "threshold": 0.5
+        },
+        "4_powered-saw_presence": {
+          "n": 714,
+          "positive": 28,
+          "ap": 0.4131187702455762,
+          "auroc": 0.9313827571845065,
+          "f1": 0.23318385650224216,
+          "threshold": 0.5
+        },
+        "5_alert-signal_presence": {
+          "n": 714,
+          "positive": 119,
+          "ap": 0.2861311716201237,
+          "auroc": 0.6404985523621214,
+          "f1": 0.3508771929824561,
+          "threshold": 0.5
+        },
+        "6_music_presence": {
+          "n": 714,
+          "positive": 24,
+          "ap": 0.06413156101481846,
+          "auroc": 0.7227657004830917,
+          "f1": 0.08835341365461848,
+          "threshold": 0.5
+        },
+        "7_human-voice_presence": {
+          "n": 714,
+          "positive": 172,
+          "ap": 0.3605769998903373,
+          "auroc": 0.6986398352355617,
+          "f1": 0.44924406047516197,
+          "threshold": 0.5
+        },
+        "8_dog_presence": {
+          "n": 714,
+          "positive": 38,
+          "ap": 0.11424249902658414,
+          "auroc": 0.7304188726253503,
+          "f1": 0.19909502262443438,
+          "threshold": 0.5
+        }
+      },
+      "nll": 0.5506517291069031,
+      "zero_readout_fraction": 0.0,
+      "route_mean": [
+        0.7802650332450867,
+        0.16651491820812225,
+        0.052584707736968994,
+        0.000633825606200844
+      ]
+    },
+    "val": {
+      "accuracy": 0.6544401544401545,
+      "macro_ap": 0.28066032398820684,
+      "macro_ap_supported_classes": 7,
+      "macro_auroc": 0.6794220402596831,
+      "macro_f1": 0.2267084746237279,
+      "micro_ap": 0.20564690168252964,
+      "balanced_accuracy": 0.607359766751348,
+      "per_event": {
+        "1_engine_presence": {
+          "n": 259,
+          "positive": 80,
+          "ap": 0.4533315930696318,
+          "auroc": 0.626536312849162,
+          "f1": 0.44571428571428573,
+          "threshold": 0.5
+        },
+        "2_machinery-impact_presence": {
+          "n": 259,
+          "positive": 12,
+          "ap": 0.2856614380610282,
+          "auroc": 0.8943994601889338,
+          "f1": 0.22,
+          "threshold": 0.5
+        },
+        "3_non-machinery-impact_presence": {
+          "n": 259,
+          "positive": 13,
+          "ap": 0.06624985887993234,
+          "auroc": 0.5587867417135709,
+          "f1": 0.13008130081300814,
+          "threshold": 0.5
+        },
+        "4_powered-saw_presence": {
+          "n": 259,
+          "positive": 8,
+          "ap": 0.3413544137022398,
+          "auroc": 0.8012948207171315,
+          "f1": 0.14925373134328357,
+          "threshold": 0.5
+        },
+        "5_alert-signal_presence": {
+          "n": 259,
+          "positive": 38,
+          "ap": 0.2877089536900367,
+          "auroc": 0.6377708978328174,
+          "f1": 0.3026315789473684,
+          "threshold": 0.5
+        },
+        "6_music_presence": {
+          "n": 259,
+          "positive": 17,
+          "ap": 0.08162400025954773,
+          "auroc": 0.5879922216820612,
+          "f1": 0.0970873786407767,
+          "threshold": 0.5
+        },
+        "7_human-voice_presence": {
+          "n": 259,
+          "positive": 89,
+          "ap": 0.4486920102550316,
+          "auroc": 0.6491738268341044,
+          "f1": 0.4688995215311005,
+          "threshold": 0.5
+        },
+        "8_dog_presence": {
+          "n": 259,
+          "positive": 0,
+          "ap": null,
+          "auroc": null,
+          "f1": 0.0,
+          "threshold": 0.5
+        }
+      },
+      "nll": 0.5688538551330566,
+      "zero_readout_fraction": 0.0,
+      "route_mean": [
+        0.782238781452179,
+        0.16794075071811676,
+        0.04921182990074158,
+        0.0006082902546040714
+      ]
+    },
+    "loss": 0.6173065262181419,
+    "gradient_norm_max": 0.6629329323768616,
+    "seconds": 7.891188383102417
+  },
+  {
+    "epoch": 18,
+    "train": {
+      "accuracy": 0.5124299719887955,
+      "macro_ap": 0.23421947744781252,
+      "macro_ap_supported_classes": 8,
+      "macro_auroc": 0.7268519558297868,
+      "macro_f1": 0.2595239647985253,
+      "micro_ap": 0.23807536835951335,
+      "balanced_accuracy": 0.6500379609816234,
+      "per_event": {
+        "1_engine_presence": {
+          "n": 714,
+          "positive": 191,
+          "ap": 0.4246529072829299,
+          "auroc": 0.6615328401389488,
+          "f1": 0.4732824427480916,
+          "threshold": 0.5
+        },
+        "2_machinery-impact_presence": {
+          "n": 714,
+          "positive": 42,
+          "ap": 0.15912637895692597,
+          "auroc": 0.7795493197278912,
+          "f1": 0.22053231939163498,
+          "threshold": 0.5
+        },
+        "3_non-machinery-impact_presence": {
+          "n": 714,
+          "positive": 14,
+          "ap": 0.027763393788510202,
+          "auroc": 0.5762244897959183,
+          "f1": 0.04529616724738676,
+          "threshold": 0.5
+        },
+        "4_powered-saw_presence": {
+          "n": 714,
+          "positive": 28,
+          "ap": 0.3414694994385306,
+          "auroc": 0.9287276134943774,
+          "f1": 0.2976190476190476,
+          "threshold": 0.5
+        },
+        "5_alert-signal_presence": {
+          "n": 714,
+          "positive": 119,
+          "ap": 0.22753588149730924,
+          "auroc": 0.6061224489795919,
+          "f1": 0.31975867269984914,
+          "threshold": 0.5
+        },
+        "6_music_presence": {
+          "n": 714,
+          "positive": 24,
+          "ap": 0.09961311175123172,
+          "auroc": 0.7732487922705313,
+          "f1": 0.10983981693363844,
+          "threshold": 0.5
+        },
+        "7_human-voice_presence": {
+          "n": 714,
+          "positive": 172,
+          "ap": 0.40794072651774577,
+          "auroc": 0.7415901484596241,
+          "f1": 0.47467438494934877,
+          "threshold": 0.5
+        },
+        "8_dog_presence": {
+          "n": 714,
+          "positive": 38,
+          "ap": 0.1856539203493169,
+          "auroc": 0.7478199937714108,
+          "f1": 0.13518886679920478,
+          "threshold": 0.5
+        }
+      },
+      "nll": 0.6224296689033508,
+      "zero_readout_fraction": 0.0,
+      "route_mean": [
+        0.7944154143333435,
+        0.16142277419567108,
+        0.043617893010377884,
+        0.0005438485532067716
+      ]
+    },
+    "val": {
+      "accuracy": 0.4888996138996139,
+      "macro_ap": 0.30081649212281053,
+      "macro_ap_supported_classes": 7,
+      "macro_auroc": 0.6729921980257431,
+      "macro_f1": 0.25062013876384653,
+      "micro_ap": 0.27877877466018125,
+      "balanced_accuracy": 0.6130720005145192,
+      "per_event": {
+        "1_engine_presence": {
+          "n": 259,
+          "positive": 80,
+          "ap": 0.534030292946964,
+          "auroc": 0.6618715083798883,
+          "f1": 0.4607329842931937,
+          "threshold": 0.5
+        },
+        "2_machinery-impact_presence": {
+          "n": 259,
+          "positive": 12,
+          "ap": 0.3325122095476732,
+          "auroc": 0.902834008097166,
+          "f1": 0.24390243902439024,
+          "threshold": 0.5
+        },
+        "3_non-machinery-impact_presence": {
+          "n": 259,
+          "positive": 13,
+          "ap": 0.04717771092255572,
+          "auroc": 0.44934333958724204,
+          "f1": 0.08733624454148471,
+          "threshold": 0.5
+        },
+        "4_powered-saw_presence": {
+          "n": 259,
+          "positive": 8,
+          "ap": 0.45807548843572315,
+          "auroc": 0.823207171314741,
+          "f1": 0.2222222222222222,
+          "threshold": 0.5
+        },
+        "5_alert-signal_presence": {
+          "n": 259,
+          "positive": 38,
+          "ap": 0.177559095170435,
+          "auroc": 0.5788282924505834,
+          "f1": 0.27091633466135456,
+          "threshold": 0.5
+        },
+        "6_music_presence": {
+          "n": 259,
+          "positive": 17,
+          "ap": 0.08511045078753807,
+          "auroc": 0.6084103062712688,
+          "f1": 0.14054054054054055,
+          "threshold": 0.5
+        },
+        "7_human-voice_presence": {
+          "n": 259,
+          "positive": 89,
+          "ap": 0.47125019704878446,
+          "auroc": 0.6864507600793126,
+          "f1": 0.5793103448275863,
+          "threshold": 0.5
+        },
+        "8_dog_presence": {
+          "n": 259,
+          "positive": 0,
+          "ap": null,
+          "auroc": null,
+          "f1": 0.0,
+          "threshold": 0.5
+        }
+      },
+      "nll": 0.6282767057418823,
+      "zero_readout_fraction": 0.0,
+      "route_mean": [
+        0.7960590720176697,
+        0.16270820796489716,
+        0.040711961686611176,
+        0.0005211345851421356
+      ]
+    },
+    "loss": 0.6119505941700869,
+    "gradient_norm_max": 0.6738189458847046,
+    "seconds": 7.970082759857178
+  },
+  {
+    "epoch": 19,
+    "train": {
+      "accuracy": 0.5323879551820728,
+      "macro_ap": 0.22652380905836053,
+      "macro_ap_supported_classes": 8,
+      "macro_auroc": 0.7186350028970742,
+      "macro_f1": 0.2663230019495557,
+      "micro_ap": 0.23330723481463905,
+      "balanced_accuracy": 0.666832250046355,
+      "per_event": {
+        "1_engine_presence": {
+          "n": 714,
+          "positive": 191,
+          "ap": 0.44900944278101257,
+          "auroc": 0.6852382048792207,
+          "f1": 0.48056537102473496,
+          "threshold": 0.5
+        },
+        "2_machinery-impact_presence": {
+          "n": 714,
+          "positive": 42,
+          "ap": 0.16115891219724,
+          "auroc": 0.780187074829932,
+          "f1": 0.20567375886524822,
+          "threshold": 0.5
+        },
+        "3_non-machinery-impact_presence": {
+          "n": 714,
+          "positive": 14,
+          "ap": 0.01923568358463173,
+          "auroc": 0.49642857142857144,
+          "f1": 0.046762589928057555,
+          "threshold": 0.5
+        },
+        "4_powered-saw_presence": {
+          "n": 714,
+          "positive": 28,
+          "ap": 0.3455586784047835,
+          "auroc": 0.9286234902124114,
+          "f1": 0.3067484662576687,
+          "threshold": 0.5
+        },
+        "5_alert-signal_presence": {
+          "n": 714,
+          "positive": 119,
+          "ap": 0.22241213193090867,
+          "auroc": 0.6203022385424758,
+          "f1": 0.33494363929146537,
+          "threshold": 0.5
+        },
+        "6_music_presence": {
+          "n": 714,
+          "positive": 24,
+          "ap": 0.08939141295158137,
+          "auroc": 0.7770531400966183,
+          "f1": 0.1085972850678733,
+          "threshold": 0.5
+        },
+        "7_human-voice_presence": {
+          "n": 714,
+          "positive": 172,
+          "ap": 0.392688605983015,
+          "auroc": 0.7367845190079807,
+          "f1": 0.4969512195121951,
+          "threshold": 0.5
+        },
+        "8_dog_presence": {
+          "n": 714,
+          "positive": 38,
+          "ap": 0.13273560463371134,
+          "auroc": 0.7244627841793834,
+          "f1": 0.15034168564920272,
+          "threshold": 0.5
+        }
+      },
+      "nll": 0.6227483749389648,
+      "zero_readout_fraction": 0.0,
+      "route_mean": [
+        0.7924790382385254,
+        0.16080884635448456,
+        0.04609624668955803,
+        0.0006163478246890008
+      ]
+    },
+    "val": {
+      "accuracy": 0.5048262548262549,
+      "macro_ap": 0.29766416671740803,
+      "macro_ap_supported_classes": 7,
+      "macro_auroc": 0.6829431896022576,
+      "macro_f1": 0.2557455059051407,
+      "micro_ap": 0.2688820475198178,
+      "balanced_accuracy": 0.6305131255962526,
+      "per_event": {
+        "1_engine_presence": {
+          "n": 259,
+          "positive": 80,
+          "ap": 0.533805933755257,
+          "auroc": 0.6655027932960893,
+          "f1": 0.48372093023255813,
+          "threshold": 0.5
+        },
+        "2_machinery-impact_presence": {
+          "n": 259,
+          "positive": 12,
+          "ap": 0.3268611467705671,
+          "auroc": 0.8970985155195681,
+          "f1": 0.22727272727272727,
+          "threshold": 0.5
+        },
+        "3_non-machinery-impact_presence": {
+          "n": 259,
+          "positive": 13,
+          "ap": 0.06131863966466712,
+          "auroc": 0.5278298936835523,
+          "f1": 0.09009009009009009,
+          "threshold": 0.5
+        },
+        "4_powered-saw_presence": {
+          "n": 259,
+          "positive": 8,
+          "ap": 0.42618913556413557,
+          "auroc": 0.8177290836653386,
+          "f1": 0.23809523809523808,
+          "threshold": 0.5
+        },
+        "5_alert-signal_presence": {
+          "n": 259,
+          "positive": 38,
+          "ap": 0.15624266421927963,
+          "auroc": 0.5641819480828769,
+          "f1": 0.27848101265822783,
+          "threshold": 0.5
+        },
+        "6_music_presence": {
+          "n": 259,
+          "positive": 17,
+          "ap": 0.10061584494777925,
+          "auroc": 0.624453087019932,
+          "f1": 0.1497326203208556,
+          "threshold": 0.5
+        },
+        "7_human-voice_presence": {
+          "n": 259,
+          "positive": 89,
+          "ap": 0.4786158021001709,
+          "auroc": 0.6838070059484468,
+          "f1": 0.5785714285714286,
+          "threshold": 0.5
+        },
+        "8_dog_presence": {
+          "n": 259,
+          "positive": 0,
+          "ap": null,
+          "auroc": null,
+          "f1": 0.0,
+          "threshold": 0.5
+        }
+      },
+      "nll": 0.6343259811401367,
+      "zero_readout_fraction": 0.0,
+      "route_mean": [
+        0.794198751449585,
+        0.16212370991706848,
+        0.04308599978685379,
+        0.0005908154416829348
+      ]
+    },
+    "loss": 0.6096409641060174,
+    "gradient_norm_max": 0.5548962354660034,
+    "seconds": 7.915965795516968
+  },
+  {
+    "epoch": 20,
+    "train": {
+      "accuracy": 0.53343837535014,
+      "macro_ap": 0.23318082305316004,
+      "macro_ap_supported_classes": 8,
+      "macro_auroc": 0.7256064796757061,
+      "macro_f1": 0.2557703109473207,
+      "micro_ap": 0.23516528181049892,
+      "balanced_accuracy": 0.6730049812826051,
+      "per_event": {
+        "1_engine_presence": {
+          "n": 714,
+          "positive": 191,
+          "ap": 0.4421957069214325,
+          "auroc": 0.6900833892264724,
+          "f1": 0.4642857142857143,
+          "threshold": 0.5
+        },
+        "2_machinery-impact_presence": {
+          "n": 714,
+          "positive": 42,
+          "ap": 0.15415156091923,
+          "auroc": 0.7749787414965987,
+          "f1": 0.1837837837837838,
+          "threshold": 0.5
+        },
+        "3_non-machinery-impact_presence": {
+          "n": 714,
+          "positive": 14,
+          "ap": 0.032516377536534594,
+          "auroc": 0.5708163265306122,
+          "f1": 0.045627376425855515,
+          "threshold": 0.5
+        },
+        "4_powered-saw_presence": {
+          "n": 714,
+          "positive": 28,
+          "ap": 0.40055915366469674,
+          "auroc": 0.9304456476468139,
+          "f1": 0.25,
+          "threshold": 0.5
+        },
+        "5_alert-signal_presence": {
+          "n": 714,
+          "positive": 119,
+          "ap": 0.2409588902601671,
+          "auroc": 0.629510627780524,
+          "f1": 0.33276157804459694,
+          "threshold": 0.5
+        },
+        "6_music_presence": {
+          "n": 714,
+          "positive": 24,
+          "ap": 0.0856216981206497,
+          "auroc": 0.7457729468599034,
+          "f1": 0.109375,
+          "threshold": 0.5
+        },
+        "7_human-voice_presence": {
+          "n": 714,
+          "positive": 172,
+          "ap": 0.37643877888635907,
+          "auroc": 0.7206406075688664,
+          "f1": 0.4941569282136895,
+          "threshold": 0.5
+        },
+        "8_dog_presence": {
+          "n": 714,
+          "positive": 38,
+          "ap": 0.13300441811621064,
+          "auroc": 0.742603550295858,
+          "f1": 0.1661721068249258,
+          "threshold": 0.5
+        }
+      },
+      "nll": 0.6295164227485657,
+      "zero_readout_fraction": 0.0,
+      "route_mean": [
+        0.776970386505127,
+        0.17158252000808716,
+        0.050725847482681274,
+        0.0007206594455055892
+      ]
+    },
+    "val": {
+      "accuracy": 0.5125482625482626,
+      "macro_ap": 0.279861330880688,
+      "macro_ap_supported_classes": 7,
+      "macro_auroc": 0.6796283744588916,
+      "macro_f1": 0.24569263292034452,
+      "micro_ap": 0.25847827029984216,
+      "balanced_accuracy": 0.6583014438691835,
+      "per_event": {
+        "1_engine_presence": {
+          "n": 259,
+          "positive": 80,
+          "ap": 0.4898839450350108,
+          "auroc": 0.6539106145251397,
+          "f1": 0.4931506849315068,
+          "threshold": 0.5
+        },
+        "2_machinery-impact_presence": {
+          "n": 259,
+          "positive": 12,
+          "ap": 0.29742478394555705,
+          "auroc": 0.8893387314439947,
+          "f1": 0.2,
+          "threshold": 0.5
+        },
+        "3_non-machinery-impact_presence": {
+          "n": 259,
+          "positive": 13,
+          "ap": 0.077113818163963,
+          "auroc": 0.5381488430268918,
+          "f1": 0.0947867298578199,
+          "threshold": 0.5
+        },
+        "4_powered-saw_presence": {
+          "n": 259,
+          "positive": 8,
+          "ap": 0.3537572331050592,
+          "auroc": 0.800796812749004,
+          "f1": 0.16393442622950818,
+          "threshold": 0.5
+        },
+        "5_alert-signal_presence": {
+          "n": 259,
+          "positive": 38,
+          "ap": 0.17471596671206038,
+          "auroc": 0.6022862586330079,
+          "f1": 0.29333333333333333,
+          "threshold": 0.5
+        },
+        "6_music_presence": {
+          "n": 259,
+          "positive": 17,
+          "ap": 0.0844124100615761,
+          "auroc": 0.6008750607681089,
+          "f1": 0.14457831325301204,
+          "threshold": 0.5
+        },
+        "7_human-voice_presence": {
+          "n": 259,
+          "positive": 89,
+          "ap": 0.4817211591415895,
+          "auroc": 0.6720423000660938,
+          "f1": 0.5757575757575758,
+          "threshold": 0.5
+        },
+        "8_dog_presence": {
+          "n": 259,
+          "positive": 0,
+          "ap": null,
+          "auroc": null,
+          "f1": 0.0,
+          "threshold": 0.5
+        }
+      },
+      "nll": 0.6440806984901428,
+      "zero_readout_fraction": 0.0,
+      "route_mean": [
+        0.7787892818450928,
+        0.17305700480937958,
+        0.04746249318122864,
+        0.0006912921089679003
+      ]
+    },
+    "loss": 0.6056785783013042,
+    "gradient_norm_max": 0.7761197686195374,
+    "seconds": 8.327831268310547
+  },
+  {
+    "epoch": 21,
+    "train": {
+      "accuracy": 0.5625,
+      "macro_ap": 0.23218012587623765,
+      "macro_ap_supported_classes": 8,
+      "macro_auroc": 0.731511196910708,
+      "macro_f1": 0.27868287467188524,
+      "micro_ap": 0.23908047282452768,
+      "balanced_accuracy": 0.6635109773637289,
+      "per_event": {
+        "1_engine_presence": {
+          "n": 714,
+          "positive": 191,
+          "ap": 0.44100980572915394,
+          "auroc": 0.6752775469752634,
+          "f1": 0.48822269807280516,
+          "threshold": 0.5
+        },
+        "2_machinery-impact_presence": {
+          "n": 714,
+          "positive": 42,
+          "ap": 0.16303250556131954,
+          "auroc": 0.7839073129251701,
+          "f1": 0.2557077625570776,
+          "threshold": 0.5
+        },
+        "3_non-machinery-impact_presence": {
+          "n": 714,
+          "positive": 14,
+          "ap": 0.035330752313104265,
+          "auroc": 0.6003061224489796,
+          "f1": 0.04513888888888889,
+          "threshold": 0.5
+        },
+        "4_powered-saw_presence": {
+          "n": 714,
+          "positive": 28,
+          "ap": 0.3399355159017436,
+          "auroc": 0.9285193669304457,
+          "f1": 0.3472222222222222,
+          "threshold": 0.5
+        },
+        "5_alert-signal_presence": {
+          "n": 714,
+          "positive": 119,
+          "ap": 0.2816910767485123,
+          "auroc": 0.6425464303368406,
+          "f1": 0.3354632587859425,
+          "threshold": 0.5
+        },
+        "6_music_presence": {
+          "n": 714,
+          "positive": 24,
+          "ap": 0.07559675174642111,
+          "auroc": 0.747463768115942,
+          "f1": 0.11083123425692695,
+          "threshold": 0.5
+        },
+        "7_human-voice_presence": {
+          "n": 714,
+          "positive": 172,
+          "ap": 0.3685197031884346,
+          "auroc": 0.7253926027632369,
+          "f1": 0.5023547880690737,
+          "threshold": 0.5
+        },
+        "8_dog_presence": {
+          "n": 714,
+          "positive": 38,
+          "ap": 0.1523248958212119,
+          "auroc": 0.7486764247897851,
+          "f1": 0.1445221445221445,
+          "threshold": 0.5
+        }
+      },
+      "nll": 0.5761208534240723,
+      "zero_readout_fraction": 0.0,
+      "route_mean": [
+        0.7880657911300659,
+        0.16075117886066437,
+        0.05049930512905121,
+        0.0006841105059720576
+      ]
+    },
+    "val": {
+      "accuracy": 0.5361969111969112,
+      "macro_ap": 0.3022640475975134,
+      "macro_ap_supported_classes": 7,
+      "macro_auroc": 0.6790972936053812,
+      "macro_f1": 0.2670617905457634,
+      "micro_ap": 0.29619227150713096,
+      "balanced_accuracy": 0.6267089001082634,
+      "per_event": {
+        "1_engine_presence": {
+          "n": 259,
+          "positive": 80,
+          "ap": 0.5377236129596608,
+          "auroc": 0.666899441340782,
+          "f1": 0.4678362573099415,
+          "threshold": 0.5
+        },
+        "2_machinery-impact_presence": {
+          "n": 259,
+          "positive": 12,
+          "ap": 0.34034282074574457,
+          "auroc": 0.8964237516869096,
+          "f1": 0.29850746268656714,
+          "threshold": 0.5
+        },
+        "3_non-machinery-impact_presence": {
+          "n": 259,
+          "positive": 13,
+          "ap": 0.05210953249946586,
+          "auroc": 0.48405253283302063,
+          "f1": 0.08849557522123894,
+          "threshold": 0.5
+        },
+        "4_powered-saw_presence": {
+          "n": 259,
+          "positive": 8,
+          "ap": 0.4527208354326193,
+          "auroc": 0.8441235059760956,
+          "f1": 0.2631578947368421,
+          "threshold": 0.5
+        },
+        "5_alert-signal_presence": {
+          "n": 259,
+          "positive": 38,
+          "ap": 0.18209383256377693,
+          "auroc": 0.584424863062634,
+          "f1": 0.28936170212765955,
+          "threshold": 0.5
+        },
+        "6_music_presence": {
+          "n": 259,
+          "positive": 17,
+          "ap": 0.0828652497004929,
+          "auroc": 0.5984443364122509,
+          "f1": 0.14942528735632185,
+          "threshold": 0.5
+        },
+        "7_human-voice_presence": {
+          "n": 259,
+          "positive": 89,
+          "ap": 0.46799244928083344,
+          "auroc": 0.6793126239259749,
+          "f1": 0.5797101449275363,
+          "threshold": 0.5
+        },
+        "8_dog_presence": {
+          "n": 259,
+          "positive": 0,
+          "ap": null,
+          "auroc": null,
+          "f1": 0.0,
+          "threshold": 0.5
+        }
+      },
+      "nll": 0.5852161049842834,
+      "zero_readout_fraction": 0.0,
+      "route_mean": [
+        0.7897257804870605,
+        0.16208310425281525,
+        0.0475349947810173,
+        0.0006560275214724243
+      ]
+    },
+    "loss": 0.6057804557455688,
+    "gradient_norm_max": 0.8588972091674805,
+    "seconds": 8.145162343978882
+  },
+  {
+    "epoch": 22,
+    "train": {
+      "accuracy": 0.5470938375350141,
+      "macro_ap": 0.23321839301070937,
+      "macro_ap_supported_classes": 8,
+      "macro_auroc": 0.7274522703525743,
+      "macro_f1": 0.2558489869774496,
+      "micro_ap": 0.23944393734091457,
+      "balanced_accuracy": 0.6785826146221191,
+      "per_event": {
+        "1_engine_presence": {
+          "n": 714,
+          "positive": 191,
+          "ap": 0.41663071252539813,
+          "auroc": 0.6771795821529036,
+          "f1": 0.4583333333333333,
+          "threshold": 0.5
+        },
+        "2_machinery-impact_presence": {
+          "n": 714,
+          "positive": 42,
+          "ap": 0.15546176317845672,
+          "auroc": 0.7778486394557823,
+          "f1": 0.1728395061728395,
+          "threshold": 0.5
+        },
+        "3_non-machinery-impact_presence": {
+          "n": 714,
+          "positive": 14,
+          "ap": 0.030106558460846804,
+          "auroc": 0.5863265306122449,
+          "f1": 0.047058823529411764,
+          "threshold": 0.5
+        },
+        "4_powered-saw_presence": {
+          "n": 714,
+          "positive": 28,
+          "ap": 0.40519882207823293,
+          "auroc": 0.9305497709287797,
+          "f1": 0.23529411764705882,
+          "threshold": 0.5
+        },
+        "5_alert-signal_presence": {
+          "n": 714,
+          "positive": 119,
+          "ap": 0.23984639698722,
+          "auroc": 0.6276745992514653,
+          "f1": 0.3321678321678322,
+          "threshold": 0.5
+        },
+        "6_music_presence": {
+          "n": 714,
+          "positive": 24,
+          "ap": 0.07930707558554836,
+          "auroc": 0.7442028985507246,
+          "f1": 0.11842105263157894,
+          "threshold": 0.5
+        },
+        "7_human-voice_presence": {
+          "n": 714,
+          "positive": 172,
+          "ap": 0.3789032791212189,
+          "auroc": 0.7189457650390457,
+          "f1": 0.49220103986135183,
+          "threshold": 0.5
+        },
+        "8_dog_presence": {
+          "n": 714,
+          "positive": 38,
+          "ap": 0.16029253614875327,
+          "auroc": 0.7568903768296481,
+          "f1": 0.19047619047619047,
+          "threshold": 0.5
+        }
+      },
+      "nll": 0.6269341707229614,
+      "zero_readout_fraction": 0.0,
+      "route_mean": [
+        0.769033670425415,
+        0.17555850744247437,
+        0.054599467664957047,
+        0.000808586657512933
+      ]
+    },
+    "val": {
+      "accuracy": 0.5246138996138996,
+      "macro_ap": 0.2695747502928329,
+      "macro_ap_supported_classes": 7,
+      "macro_auroc": 0.6646943432565736,
+      "macro_f1": 0.23795461523651845,
+      "micro_ap": 0.25952029177073926,
+      "balanced_accuracy": 0.655168237021792,
+      "per_event": {
+        "1_engine_presence": {
+          "n": 259,
+          "positive": 80,
+          "ap": 0.44740721931547794,
+          "auroc": 0.6236731843575419,
+          "f1": 0.48184818481848185,
+          "threshold": 0.5
+        },
+        "2_machinery-impact_presence": {
+          "n": 259,
+          "positive": 12,
+          "ap": 0.2958585549604457,
+          "auroc": 0.8852901484480431,
+          "f1": 0.16417910447761194,
+          "threshold": 0.5
+        },
+        "3_non-machinery-impact_presence": {
+          "n": 259,
+          "positive": 13,
+          "ap": 0.05888946338537536,
+          "auroc": 0.4796747967479675,
+          "f1": 0.0970873786407767,
+          "threshold": 0.5
+        },
+        "4_powered-saw_presence": {
+          "n": 259,
+          "positive": 8,
+          "ap": 0.3469896004378763,
+          "auroc": 0.8042828685258965,
+          "f1": 0.15151515151515152,
+          "threshold": 0.5
+        },
+        "5_alert-signal_presence": {
+          "n": 259,
+          "positive": 38,
+          "ap": 0.1738136116669255,
+          "auroc": 0.5921648011431293,
+          "f1": 0.2922374429223744,
+          "threshold": 0.5
+        },
+        "6_music_presence": {
+          "n": 259,
+          "positive": 17,
+          "ap": 0.08696265953173292,
+          "auroc": 0.5977151191054935,
+          "f1": 0.13740458015267176,
+          "threshold": 0.5
+        },
+        "7_human-voice_presence": {
+          "n": 259,
+          "positive": 89,
+          "ap": 0.4771021427519967,
+          "auroc": 0.6700594844679444,
+          "f1": 0.5793650793650794,
+          "threshold": 0.5
+        },
+        "8_dog_presence": {
+          "n": 259,
+          "positive": 0,
+          "ap": null,
+          "auroc": null,
+          "f1": 0.0,
+          "threshold": 0.5
+        }
+      },
+      "nll": 0.6451393365859985,
+      "zero_readout_fraction": 0.0,
+      "route_mean": [
+        0.7708296179771423,
+        0.17709799110889435,
+        0.051297400146722794,
+        0.0007760479347780347
+      ]
+    },
+    "loss": 0.6053928133486366,
+    "gradient_norm_max": 0.7676495313644409,
+    "seconds": 8.26736330986023
+  },
+  {
+    "epoch": 23,
+    "train": {
+      "accuracy": 0.552170868347339,
+      "macro_ap": 0.24442700640440396,
+      "macro_ap_supported_classes": 8,
+      "macro_auroc": 0.7401631171566181,
+      "macro_f1": 0.266850921955226,
+      "micro_ap": 0.24686859668405384,
+      "balanced_accuracy": 0.6667802572827455,
+      "per_event": {
+        "1_engine_presence": {
+          "n": 714,
+          "positive": 191,
+          "ap": 0.4401900243348029,
+          "auroc": 0.689422682270029,
+          "f1": 0.4843205574912892,
+          "threshold": 0.5
+        },
+        "2_machinery-impact_presence": {
+          "n": 714,
+          "positive": 42,
+          "ap": 0.161020400608636,
+          "auroc": 0.7852536848072562,
+          "f1": 0.20945945945945946,
+          "threshold": 0.5
+        },
+        "3_non-machinery-impact_presence": {
+          "n": 714,
+          "positive": 14,
+          "ap": 0.0769224604005961,
+          "auroc": 0.6507142857142857,
+          "f1": 0.04684684684684685,
+          "threshold": 0.5
+        },
+        "4_powered-saw_presence": {
+          "n": 714,
+          "positive": 28,
+          "ap": 0.3627764190795466,
+          "auroc": 0.9296126613910871,
+          "f1": 0.2976190476190476,
+          "threshold": 0.5
+        },
+        "5_alert-signal_presence": {
+          "n": 714,
+          "positive": 119,
+          "ap": 0.2502252179289747,
+          "auroc": 0.6337052468046042,
+          "f1": 0.3288590604026846,
+          "threshold": 0.5
+        },
+        "6_music_presence": {
+          "n": 714,
+          "positive": 24,
+          "ap": 0.07577641900725189,
+          "auroc": 0.7445652173913043,
+          "f1": 0.11224489795918367,
+          "threshold": 0.5
+        },
+        "7_human-voice_presence": {
+          "n": 714,
+          "positive": 172,
+          "ap": 0.38639733484013966,
+          "auroc": 0.7216811121599588,
+          "f1": 0.5008183306055647,
+          "threshold": 0.5
+        },
+        "8_dog_presence": {
+          "n": 714,
+          "positive": 38,
+          "ap": 0.20210777503528382,
+          "auroc": 0.7663500467144192,
+          "f1": 0.15463917525773196,
+          "threshold": 0.5
+        }
+      },
+      "nll": 0.5945669412612915,
+      "zero_readout_fraction": 0.0,
+      "route_mean": [
+        0.7822303175926208,
+        0.16566631197929382,
+        0.0513039268553257,
+        0.0008004972478374839
+      ]
+    },
+    "val": {
+      "accuracy": 0.5212355212355212,
+      "macro_ap": 0.2857509715525161,
+      "macro_ap_supported_classes": 7,
+      "macro_auroc": 0.6786704986160089,
+      "macro_f1": 0.2504172886422827,
+      "micro_ap": 0.26672463065500174,
+      "balanced_accuracy": 0.6348693871863309,
+      "per_event": {
+        "1_engine_presence": {
+          "n": 259,
+          "positive": 80,
+          "ap": 0.49487629869971617,
+          "auroc": 0.6555167597765363,
+          "f1": 0.4890829694323144,
+          "threshold": 0.5
+        },
+        "2_machinery-impact_presence": {
+          "n": 259,
+          "positive": 12,
+          "ap": 0.3305575231046779,
+          "auroc": 0.8873144399460189,
+          "f1": 0.2127659574468085,
+          "threshold": 0.5
+        },
+        "3_non-machinery-impact_presence": {
+          "n": 259,
+          "positive": 13,
+          "ap": 0.06122723098723057,
+          "auroc": 0.5193871169480926,
+          "f1": 0.09090909090909091,
+          "threshold": 0.5
+        },
+        "4_powered-saw_presence": {
+          "n": 259,
+          "positive": 8,
+          "ap": 0.35468190800514393,
+          "auroc": 0.8142430278884462,
+          "f1": 0.2127659574468085,
+          "threshold": 0.5
+        },
+        "5_alert-signal_presence": {
+          "n": 259,
+          "positive": 38,
+          "ap": 0.22036235206787178,
+          "auroc": 0.6171707549416527,
+          "f1": 0.2894736842105263,
+          "threshold": 0.5
+        },
+        "6_music_presence": {
+          "n": 259,
+          "positive": 17,
+          "ap": 0.08689929728829582,
+          "auroc": 0.6030627126883812,
+          "f1": 0.1411764705882353,
+          "threshold": 0.5
+        },
+        "7_human-voice_presence": {
+          "n": 259,
+          "positive": 89,
+          "ap": 0.4516521907146767,
+          "auroc": 0.6539986781229347,
+          "f1": 0.5671641791044776,
+          "threshold": 0.5
+        },
+        "8_dog_presence": {
+          "n": 259,
+          "positive": 0,
+          "ap": null,
+          "auroc": null,
+          "f1": 0.0,
+          "threshold": 0.5
+        }
+      },
+      "nll": 0.6122581362724304,
+      "zero_readout_fraction": 0.0,
+      "route_mean": [
+        0.7840633988380432,
+        0.16710272431373596,
+        0.04806599020957947,
+        0.0007680285489186645
+      ]
+    },
+    "loss": 0.605756528070327,
+    "gradient_norm_max": 0.550098717212677,
+    "seconds": 8.388762712478638
+  },
+  {
+    "epoch": 24,
+    "train": {
+      "accuracy": 0.5938375350140056,
+      "macro_ap": 0.2391875121749214,
+      "macro_ap_supported_classes": 8,
+      "macro_auroc": 0.736541350481537,
+      "macro_f1": 0.2787483891032275,
+      "micro_ap": 0.2386186049378422,
+      "balanced_accuracy": 0.6692521060201356,
+      "per_event": {
+        "1_engine_presence": {
+          "n": 714,
+          "positive": 191,
+          "ap": 0.4579681695969876,
+          "auroc": 0.6873204328631637,
+          "f1": 0.5084745762711864,
+          "threshold": 0.5
+        },
+        "2_machinery-impact_presence": {
+          "n": 714,
+          "positive": 42,
+          "ap": 0.16342911023294923,
+          "auroc": 0.7875566893424036,
+          "f1": 0.23868312757201646,
+          "threshold": 0.5
+        },
+        "3_non-machinery-impact_presence": {
+          "n": 714,
+          "positive": 14,
+          "ap": 0.06917617929584106,
+          "auroc": 0.649795918367347,
+          "f1": 0.052845528455284556,
+          "threshold": 0.5
+        },
+        "4_powered-saw_presence": {
+          "n": 714,
+          "positive": 28,
+          "ap": 0.352193768298975,
+          "auroc": 0.9292482299042065,
+          "f1": 0.32679738562091504,
+          "threshold": 0.5
+        },
+        "5_alert-signal_presence": {
+          "n": 714,
+          "positive": 119,
+          "ap": 0.28753096317677873,
+          "auroc": 0.6475460772544311,
+          "f1": 0.33271719038817005,
+          "threshold": 0.5
+        },
+        "6_music_presence": {
+          "n": 714,
+          "positive": 24,
+          "ap": 0.06891705890692848,
+          "auroc": 0.7297705314009663,
+          "f1": 0.11,
+          "threshold": 0.5
+        },
+        "7_human-voice_presence": {
+          "n": 714,
+          "positive": 172,
+          "ap": 0.3663676211637832,
+          "auroc": 0.7058375525615721,
+          "f1": 0.49917898193760263,
+          "threshold": 0.5
+        },
+        "8_dog_presence": {
+          "n": 714,
+          "positive": 38,
+          "ap": 0.14791722672712793,
+          "auroc": 0.7552553721582062,
+          "f1": 0.16129032258064516,
+          "threshold": 0.5
+        }
+      },
+      "nll": 0.5577325224876404,
+      "zero_readout_fraction": 0.0,
+      "route_mean": [
+        0.7852548956871033,
+        0.16327279806137085,
+        0.05063673481345177,
+        0.0008344423258677125
+      ]
+    },
+    "val": {
+      "accuracy": 0.5617760617760618,
+      "macro_ap": 0.313061377442914,
+      "macro_ap_supported_classes": 7,
+      "macro_auroc": 0.6867119319984568,
+      "macro_f1": 0.26353348077731864,
+      "micro_ap": 0.2729685222815313,
+      "balanced_accuracy": 0.6346292782797911,
+      "per_event": {
+        "1_engine_presence": {
+          "n": 259,
+          "positive": 80,
+          "ap": 0.5215080801000644,
+          "auroc": 0.6625698324022347,
+          "f1": 0.4692737430167598,
+          "threshold": 0.5
+        },
+        "2_machinery-impact_presence": {
+          "n": 259,
+          "positive": 12,
+          "ap": 0.3332693302385084,
+          "auroc": 0.8913630229419703,
+          "f1": 0.26666666666666666,
+          "threshold": 0.5
+        },
+        "3_non-machinery-impact_presence": {
+          "n": 259,
+          "positive": 13,
+          "ap": 0.061524023778701115,
+          "auroc": 0.526266416510319,
+          "f1": 0.09900990099009901,
+          "threshold": 0.5
+        },
+        "4_powered-saw_presence": {
+          "n": 259,
+          "positive": 8,
+          "ap": 0.4273108055437561,
+          "auroc": 0.8301792828685258,
+          "f1": 0.25,
+          "threshold": 0.5
+        },
+        "5_alert-signal_presence": {
+          "n": 259,
+          "positive": 38,
+          "ap": 0.2738630752526954,
+          "auroc": 0.6289592760180995,
+          "f1": 0.3033175355450237,
+          "threshold": 0.5
+        },
+        "6_music_presence": {
+          "n": 259,
+          "positive": 17,
+          "ap": 0.09566600790463557,
+          "auroc": 0.6135148274185707,
+          "f1": 0.14857142857142858,
+          "threshold": 0.5
+        },
+        "7_human-voice_presence": {
+          "n": 259,
+          "positive": 89,
+          "ap": 0.4782883192820373,
+          "auroc": 0.6541308658294778,
+          "f1": 0.5714285714285714,
+          "threshold": 0.5
+        },
+        "8_dog_presence": {
+          "n": 259,
+          "positive": 0,
+          "ap": null,
+          "auroc": null,
+          "f1": 0.0,
+          "threshold": 0.5
+        }
+      },
+      "nll": 0.5714093446731567,
+      "zero_readout_fraction": 0.0,
+      "route_mean": [
+        0.7870635986328125,
+        0.16468264162540436,
+        0.047453489154577255,
+        0.0008005691925063729
+      ]
+    },
+    "loss": 0.5990126642192445,
+    "gradient_norm_max": 0.6288286447525024,
+    "seconds": 8.218168258666992
+  },
+  {
+    "epoch": 25,
+    "train": {
+      "accuracy": 0.6794467787114846,
+      "macro_ap": 0.22544297152484963,
+      "macro_ap_supported_classes": 8,
+      "macro_auroc": 0.7283980047775895,
+      "macro_f1": 0.28303981262193795,
+      "micro_ap": 0.22331829339368106,
+      "balanced_accuracy": 0.6691938490681393,
+      "per_event": {
+        "1_engine_presence": {
+          "n": 714,
+          "positive": 191,
+          "ap": 0.4510185631575995,
+          "auroc": 0.684457369385242,
+          "f1": 0.502262443438914,
+          "threshold": 0.5
+        },
+        "2_machinery-impact_presence": {
+          "n": 714,
+          "positive": 42,
+          "ap": 0.16458822780601656,
+          "auroc": 0.7865646258503401,
+          "f1": 0.23107569721115537,
+          "threshold": 0.5
+        },
+        "3_non-machinery-impact_presence": {
+          "n": 714,
+          "positive": 14,
+          "ap": 0.029546330507822603,
+          "auroc": 0.6079591836734695,
+          "f1": 0.046875,
+          "threshold": 0.5
+        },
+        "4_powered-saw_presence": {
+          "n": 714,
+          "positive": 28,
+          "ap": 0.35785094938868844,
+          "auroc": 0.9296647230320699,
+          "f1": 0.3067484662576687,
+          "threshold": 0.5
+        },
+        "5_alert-signal_presence": {
+          "n": 714,
+          "positive": 119,
+          "ap": 0.20842593813296142,
+          "auroc": 0.6107407668949933,
+          "f1": 0.32857142857142857,
+          "threshold": 0.5
+        },
+        "6_music_presence": {
+          "n": 714,
+          "positive": 24,
+          "ap": 0.061732859186409014,
+          "auroc": 0.7270531400966184,
+          "f1": 0.11307420494699646,
+          "threshold": 0.5
+        },
+        "7_human-voice_presence": {
+          "n": 714,
+          "positive": 172,
+          "ap": 0.35457284705471415,
+          "auroc": 0.7102677422123058,
+          "f1": 0.4952741020793951,
+          "threshold": 0.5
+        },
+        "8_dog_presence": {
+          "n": 714,
+          "positive": 38,
+          "ap": 0.17580805696458537,
+          "auroc": 0.7704764870756775,
+          "f1": 0.24043715846994534,
+          "threshold": 0.5
+        }
+      },
+      "nll": 0.5209925174713135,
+      "zero_readout_fraction": 0.0,
+      "route_mean": [
+        0.7802301645278931,
+        0.1665426343679428,
+        0.05233483761548996,
+        0.00089115253649652
+      ]
+    },
+    "val": {
+      "accuracy": 0.6698841698841699,
+      "macro_ap": 0.291516261286436,
+      "macro_ap_supported_classes": 7,
+      "macro_auroc": 0.6797733562561652,
+      "macro_f1": 0.26058768997653325,
+      "micro_ap": 0.24775349011253017,
+      "balanced_accuracy": 0.6545861873063854,
+      "per_event": {
+        "1_engine_presence": {
+          "n": 259,
+          "positive": 80,
+          "ap": 0.515888221315536,
+          "auroc": 0.660963687150838,
+          "f1": 0.484472049689441,
+          "threshold": 0.5
+        },
+        "2_machinery-impact_presence": {
+          "n": 259,
+          "positive": 12,
+          "ap": 0.3363665056967949,
+          "auroc": 0.8930499325236168,
+          "f1": 0.2597402597402597,
+          "threshold": 0.5
+        },
+        "3_non-machinery-impact_presence": {
+          "n": 259,
+          "positive": 13,
+          "ap": 0.06636842491934944,
+          "auroc": 0.5403377110694184,
+          "f1": 0.08484848484848485,
+          "threshold": 0.5
+        },
+        "4_powered-saw_presence": {
+          "n": 259,
+          "positive": 8,
+          "ap": 0.42680842397153484,
+          "auroc": 0.8237051792828685,
+          "f1": 0.23255813953488372,
+          "threshold": 0.5
+        },
+        "5_alert-signal_presence": {
+          "n": 259,
+          "positive": 38,
+          "ap": 0.1910410117294595,
+          "auroc": 0.5958561562276733,
+          "f1": 0.2838709677419355,
+          "threshold": 0.5
+        },
+        "6_music_presence": {
+          "n": 259,
+          "positive": 17,
+          "ap": 0.08103554710614058,
+          "auroc": 0.5947982498784637,
+          "f1": 0.15,
+          "threshold": 0.5
+        },
+        "7_human-voice_presence": {
+          "n": 259,
+          "positive": 89,
+          "ap": 0.4231056942662368,
+          "auroc": 0.6497025776602776,
+          "f1": 0.5892116182572614,
+          "threshold": 0.5
+        },
+        "8_dog_presence": {
+          "n": 259,
+          "positive": 0,
+          "ap": null,
+          "auroc": null,
+          "f1": 0.0,
+          "threshold": 0.5
+        }
+      },
+      "nll": 0.5346461534500122,
+      "zero_readout_fraction": 0.0,
+      "route_mean": [
+        0.7820518016815186,
+        0.16800285875797272,
+        0.04909030348062515,
+        0.0008553203660994768
+      ]
+    },
+    "loss": 0.6017079613789791,
+    "gradient_norm_max": 0.7379484176635742,
+    "seconds": 8.201591968536377
+  },
+  {
+    "epoch": 26,
+    "train": {
+      "accuracy": 0.7535014005602241,
+      "macro_ap": 0.23098502312601632,
+      "macro_ap_supported_classes": 8,
+      "macro_auroc": 0.7458539805209308,
+      "macro_f1": 0.27493294809172075,
+      "micro_ap": 0.245269447649403,
+      "balanced_accuracy": 0.6898600329746877,
+      "per_event": {
+        "1_engine_presence": {
+          "n": 714,
+          "positive": 191,
+          "ap": 0.4529036020359572,
+          "auroc": 0.6875807113611564,
+          "f1": 0.5062761506276151,
+          "threshold": 0.5
+        },
+        "2_machinery-impact_presence": {
+          "n": 714,
+          "positive": 42,
+          "ap": 0.16421305647231454,
+          "auroc": 0.7868480725623583,
+          "f1": 0.22393822393822393,
+          "threshold": 0.5
+        },
+        "3_non-machinery-impact_presence": {
+          "n": 714,
+          "positive": 14,
+          "ap": 0.04777912500771751,
+          "auroc": 0.7153061224489796,
+          "f1": 0.0,
+          "threshold": 0.5
+        },
+        "4_powered-saw_presence": {
+          "n": 714,
+          "positive": 28,
+          "ap": 0.3590579508452155,
+          "auroc": 0.9301332778009163,
+          "f1": 0.2976190476190476,
+          "threshold": 0.5
+        },
+        "5_alert-signal_presence": {
+          "n": 714,
+          "positive": 119,
+          "ap": 0.23298882305490692,
+          "auroc": 0.6290728055928254,
+          "f1": 0.28134556574923547,
+          "threshold": 0.5
+        },
+        "6_music_presence": {
+          "n": 714,
+          "positive": 24,
+          "ap": 0.06234994202336829,
+          "auroc": 0.7335748792270532,
+          "f1": 0.11320754716981132,
+          "threshold": 0.5
+        },
+        "7_human-voice_presence": {
+          "n": 714,
+          "positive": 172,
+          "ap": 0.34567239947108,
+          "auroc": 0.7105305500729425,
+          "f1": 0.491362763915547,
+          "threshold": 0.5
+        },
+        "8_dog_presence": {
+          "n": 714,
+          "positive": 38,
+          "ap": 0.18291528609757043,
+          "auroc": 0.7737854251012146,
+          "f1": 0.2857142857142857,
+          "threshold": 0.5
+        }
+      },
+      "nll": 0.5016270279884338,
+      "zero_readout_fraction": 0.0,
+      "route_mean": [
+        0.7768259644508362,
+        0.16794312000274658,
+        0.05428536981344223,
+        0.000944101600907743
+      ]
+    },
+    "val": {
+      "accuracy": 0.7557915057915058,
+      "macro_ap": 0.28177949106170397,
+      "macro_ap_supported_classes": 7,
+      "macro_auroc": 0.67541943406929,
+      "macro_f1": 0.23459444828752146,
+      "micro_ap": 0.26934394272773265,
+      "balanced_accuracy": 0.6685510928170992,
+      "per_event": {
+        "1_engine_presence": {
+          "n": 259,
+          "positive": 80,
+          "ap": 0.509119901482137,
+          "auroc": 0.6585893854748602,
+          "f1": 0.48044692737430167,
+          "threshold": 0.5
+        },
+        "2_machinery-impact_presence": {
+          "n": 259,
+          "positive": 12,
+          "ap": 0.33801962184077183,
+          "auroc": 0.8997975708502024,
+          "f1": 0.25316455696202533,
+          "threshold": 0.5
+        },
+        "3_non-machinery-impact_presence": {
+          "n": 259,
+          "positive": 13,
+          "ap": 0.05203685520818483,
+          "auroc": 0.48874296435272047,
+          "f1": 0.0,
+          "threshold": 0.5
+        },
+        "4_powered-saw_presence": {
+          "n": 259,
+          "positive": 8,
+          "ap": 0.3550424569895913,
+          "auroc": 0.8172310756972111,
+          "f1": 0.20833333333333334,
+          "threshold": 0.5
+        },
+        "5_alert-signal_presence": {
+          "n": 259,
+          "positive": 38,
+          "ap": 0.221647609284794,
+          "auroc": 0.6253869969040249,
+          "f1": 0.24,
+          "threshold": 0.5
+        },
+        "6_music_presence": {
+          "n": 259,
+          "positive": 17,
+          "ap": 0.08137386939514699,
+          "auroc": 0.5982012639766651,
+          "f1": 0.14545454545454545,
+          "threshold": 0.5
+        },
+        "7_human-voice_presence": {
+          "n": 259,
+          "positive": 89,
+          "ap": 0.4152161232313019,
+          "auroc": 0.6399867812293456,
+          "f1": 0.5493562231759657,
+          "threshold": 0.5
+        },
+        "8_dog_presence": {
+          "n": 259,
+          "positive": 0,
+          "ap": null,
+          "auroc": null,
+          "f1": 0.0,
+          "threshold": 0.5
+        }
+      },
+      "nll": 0.5122710466384888,
+      "zero_readout_fraction": 0.0,
+      "route_mean": [
+        0.7787054777145386,
+        0.1694435179233551,
+        0.050944384187459946,
+        0.0009064375190064311
+      ]
+    },
+    "loss": 0.5945995758895447,
+    "gradient_norm_max": 0.7603392601013184,
+    "seconds": 8.217353820800781
+  },
+  {
+    "epoch": 27,
+    "train": {
+      "accuracy": 0.49824929971988796,
+      "macro_ap": 0.24334612052795335,
+      "macro_ap_supported_classes": 8,
+      "macro_auroc": 0.7654847006261782,
+      "macro_f1": 0.2595380171364516,
+      "micro_ap": 0.2640320989419369,
+      "balanced_accuracy": 0.6637045407848777,
+      "per_event": {
+        "1_engine_presence": {
+          "n": 714,
+          "positive": 191,
+          "ap": 0.45600834909220656,
+          "auroc": 0.6846075300571611,
+          "f1": 0.4674922600619195,
+          "threshold": 0.5
+        },
+        "2_machinery-impact_presence": {
+          "n": 714,
+          "positive": 42,
+          "ap": 0.16539199037428196,
+          "auroc": 0.7872378117913833,
+          "f1": 0.20952380952380953,
+          "threshold": 0.5
+        },
+        "3_non-machinery-impact_presence": {
+          "n": 714,
+          "positive": 14,
+          "ap": 0.08265432017824029,
+          "auroc": 0.8081632653061225,
+          "f1": 0.04628099173553719,
+          "threshold": 0.5
+        },
+        "4_powered-saw_presence": {
+          "n": 714,
+          "positive": 28,
+          "ap": 0.3415329418841986,
+          "auroc": 0.9293523531861724,
+          "f1": 0.2824858757062147,
+          "threshold": 0.5
+        },
+        "5_alert-signal_presence": {
+          "n": 714,
+          "positive": 119,
+          "ap": 0.2313973142500816,
+          "auroc": 0.6226043358519878,
+          "f1": 0.32465543644716693,
+          "threshold": 0.5
+        },
+        "6_music_presence": {
+          "n": 714,
+          "positive": 24,
+          "ap": 0.110098637184939,
+          "auroc": 0.7995169082125604,
+          "f1": 0.1050328227571116,
+          "threshold": 0.5
+        },
+        "7_human-voice_presence": {
+          "n": 714,
+          "positive": 172,
+          "ap": 0.41709675827723625,
+          "auroc": 0.7393589633570754,
+          "f1": 0.4880239520958084,
+          "threshold": 0.5
+        },
+        "8_dog_presence": {
+          "n": 714,
+          "positive": 38,
+          "ap": 0.14258865298244255,
+          "auroc": 0.7530364372469636,
+          "f1": 0.15280898876404495,
+          "threshold": 0.5
+        }
+      },
+      "nll": 0.6397722959518433,
+      "zero_readout_fraction": 0.0,
+      "route_mean": [
+        0.7796355485916138,
+        0.16962239146232605,
+        0.049839891493320465,
+        0.0009030499495565891
+      ]
+    },
+    "val": {
+      "accuracy": 0.47731660231660233,
+      "macro_ap": 0.3075659447590762,
+      "macro_ap_supported_classes": 7,
+      "macro_auroc": 0.6761300075117553,
+      "macro_f1": 0.2494099995582475,
+      "micro_ap": 0.3018308979678736,
+      "balanced_accuracy": 0.636521207833553,
+      "per_event": {
+        "1_engine_presence": {
+          "n": 259,
+          "positive": 80,
+          "ap": 0.531823813078824,
+          "auroc": 0.6689944134078212,
+          "f1": 0.50199203187251,
+          "threshold": 0.5
+        },
+        "2_machinery-impact_presence": {
+          "n": 259,
+          "positive": 12,
+          "ap": 0.3477150521277027,
+          "auroc": 0.8967611336032388,
+          "f1": 0.22448979591836735,
+          "threshold": 0.5
+        },
+        "3_non-machinery-impact_presence": {
+          "n": 259,
+          "positive": 13,
+          "ap": 0.0517970490971925,
+          "auroc": 0.4443402126328956,
+          "f1": 0.08438818565400844,
+          "threshold": 0.5
+        },
+        "4_powered-saw_presence": {
+          "n": 259,
+          "positive": 8,
+          "ap": 0.42626658857542465,
+          "auroc": 0.8142430278884462,
+          "f1": 0.19230769230769232,
+          "threshold": 0.5
+        },
+        "5_alert-signal_presence": {
+          "n": 259,
+          "positive": 38,
+          "ap": 0.1597812537839552,
+          "auroc": 0.5684686830197666,
+          "f1": 0.27983539094650206,
+          "threshold": 0.5
+        },
+        "6_music_presence": {
+          "n": 259,
+          "positive": 17,
+          "ap": 0.1463039757467377,
+          "auroc": 0.6562955760816723,
+          "f1": 0.14583333333333334,
+          "threshold": 0.5
+        },
+        "7_human-voice_presence": {
+          "n": 259,
+          "positive": 89,
+          "ap": 0.4892738809036971,
+          "auroc": 0.6838070059484468,
+          "f1": 0.5664335664335665,
+          "threshold": 0.5
+        },
+        "8_dog_presence": {
+          "n": 259,
+          "positive": 0,
+          "ap": null,
+          "auroc": null,
+          "f1": 0.0,
+          "threshold": 0.5
+        }
+      },
+      "nll": 0.6488813757896423,
+      "zero_readout_fraction": 0.0,
+      "route_mean": [
+        0.7813344597816467,
+        0.17108985781669617,
+        0.046708881855010986,
+        0.0008663978078402579
+      ]
+    },
+    "loss": 0.5969993527196035,
+    "gradient_norm_max": 0.6229962110519409,
+    "seconds": 7.931132793426514
+  },
+  {
+    "epoch": 28,
+    "train": {
+      "accuracy": 0.553921568627451,
+      "macro_ap": 0.2524582371133262,
+      "macro_ap_supported_classes": 8,
+      "macro_auroc": 0.764910022649147,
+      "macro_f1": 0.2712975827951244,
+      "micro_ap": 0.2592353415632751,
+      "balanced_accuracy": 0.6719507183771242,
+      "per_event": {
+        "1_engine_presence": {
+          "n": 714,
+          "positive": 191,
+          "ap": 0.4557673612661149,
+          "auroc": 0.6948384771705726,
+          "f1": 0.4891304347826087,
+          "threshold": 0.5
+        },
+        "2_machinery-impact_presence": {
+          "n": 714,
+          "positive": 42,
+          "ap": 0.1652447690844798,
+          "auroc": 0.7908871882086168,
+          "f1": 0.2188679245283019,
+          "threshold": 0.5
+        },
+        "3_non-machinery-impact_presence": {
+          "n": 714,
+          "positive": 14,
+          "ap": 0.059343375772888014,
+          "auroc": 0.7661224489795918,
+          "f1": 0.045454545454545456,
+          "threshold": 0.5
+        },
+        "4_powered-saw_presence": {
+          "n": 714,
+          "positive": 28,
+          "ap": 0.35609395555801476,
+          "auroc": 0.9298209079550188,
+          "f1": 0.3067484662576687,
+          "threshold": 0.5
+        },
+        "5_alert-signal_presence": {
+          "n": 714,
+          "positive": 119,
+          "ap": 0.24387896398388123,
+          "auroc": 0.6315161358661111,
+          "f1": 0.3344155844155844,
+          "threshold": 0.5
+        },
+        "6_music_presence": {
+          "n": 714,
+          "positive": 24,
+          "ap": 0.1342962435130047,
+          "auroc": 0.7948671497584541,
+          "f1": 0.11138014527845036,
+          "threshold": 0.5
+        },
+        "7_human-voice_presence": {
+          "n": 714,
+          "positive": 172,
+          "ap": 0.4239051784088579,
+          "auroc": 0.7402063846219857,
+          "f1": 0.5,
+          "threshold": 0.5
+        },
+        "8_dog_presence": {
+          "n": 714,
+          "positive": 38,
+          "ap": 0.1811360493193686,
+          "auroc": 0.7710214886328247,
+          "f1": 0.1643835616438356,
+          "threshold": 0.5
+        }
+      },
+      "nll": 0.5942869186401367,
+      "zero_readout_fraction": 0.0,
+      "route_mean": [
+        0.7800263166427612,
+        0.1659659892320633,
+        0.053068146109580994,
+        0.0009406472672708333
+      ]
+    },
+    "val": {
+      "accuracy": 0.5294401544401545,
+      "macro_ap": 0.28611575162632275,
+      "macro_ap_supported_classes": 7,
+      "macro_auroc": 0.6760186739132984,
+      "macro_f1": 0.2579405692045781,
+      "micro_ap": 0.3000636775547935,
+      "balanced_accuracy": 0.6412226259767824,
+      "per_event": {
+        "1_engine_presence": {
+          "n": 259,
+          "positive": 80,
+          "ap": 0.5120486603814597,
+          "auroc": 0.6606843575418995,
+          "f1": 0.4788732394366197,
+          "threshold": 0.5
+        },
+        "2_machinery-impact_presence": {
+          "n": 259,
+          "positive": 12,
+          "ap": 0.3435049443606375,
+          "auroc": 0.8977732793522268,
+          "f1": 0.24390243902439024,
+          "threshold": 0.5
+        },
+        "3_non-machinery-impact_presence": {
+          "n": 259,
+          "positive": 13,
+          "ap": 0.04739182494416748,
+          "auroc": 0.4443402126328956,
+          "f1": 0.08888888888888889,
+          "threshold": 0.5
+        },
+        "4_powered-saw_presence": {
+          "n": 259,
+          "positive": 8,
+          "ap": 0.36426028820237494,
+          "auroc": 0.8227091633466135,
+          "f1": 0.23809523809523808,
+          "threshold": 0.5
+        },
+        "5_alert-signal_presence": {
+          "n": 259,
+          "positive": 38,
+          "ap": 0.16633411038385693,
+          "auroc": 0.5819242676827816,
+          "f1": 0.28448275862068967,
+          "threshold": 0.5
+        },
+        "6_music_presence": {
+          "n": 259,
+          "positive": 17,
+          "ap": 0.10197530851368601,
+          "auroc": 0.640495867768595,
+          "f1": 0.14444444444444443,
+          "threshold": 0.5
+        },
+        "7_human-voice_presence": {
+          "n": 259,
+          "positive": 89,
+          "ap": 0.46729512459807687,
+          "auroc": 0.6842035690680767,
+          "f1": 0.5848375451263538,
+          "threshold": 0.5
+        },
+        "8_dog_presence": {
+          "n": 259,
+          "positive": 0,
+          "ap": null,
+          "auroc": null,
+          "f1": 0.0,
+          "threshold": 0.5
+        }
+      },
+      "nll": 0.6093509197235107,
+      "zero_readout_fraction": 0.0,
+      "route_mean": [
+        0.7818766236305237,
+        0.1674383133649826,
+        0.04978295788168907,
+        0.0009029060020111501
+      ]
+    },
+    "loss": 0.5943260697089657,
+    "gradient_norm_max": 0.5407724976539612,
+    "seconds": 7.9420082569122314
+  },
+  {
+    "epoch": 29,
+    "train": {
+      "accuracy": 0.5043767507002801,
+      "macro_ap": 0.25289070439054495,
+      "macro_ap_supported_classes": 8,
+      "macro_auroc": 0.7683099394830486,
+      "macro_f1": 0.25843049066477697,
+      "micro_ap": 0.25513189570970435,
+      "balanced_accuracy": 0.6727293569935905,
+      "per_event": {
+        "1_engine_presence": {
+          "n": 714,
+          "positive": 191,
+          "ap": 0.4544720058238355,
+          "auroc": 0.6892124573293423,
+          "f1": 0.4668587896253602,
+          "threshold": 0.5
+        },
+        "2_machinery-impact_presence": {
+          "n": 714,
+          "positive": 42,
+          "ap": 0.16427642284747887,
+          "auroc": 0.7878401360544217,
+          "f1": 0.1907356948228883,
+          "threshold": 0.5
+        },
+        "3_non-machinery-impact_presence": {
+          "n": 714,
+          "positive": 14,
+          "ap": 0.08090151852604041,
+          "auroc": 0.808061224489796,
+          "f1": 0.04794520547945205,
+          "threshold": 0.5
+        },
+        "4_powered-saw_presence": {
+          "n": 714,
+          "positive": 28,
+          "ap": 0.35283162712916605,
+          "auroc": 0.9298209079550188,
+          "f1": 0.26455026455026454,
+          "threshold": 0.5
+        },
+        "5_alert-signal_presence": {
+          "n": 714,
+          "positive": 119,
+          "ap": 0.23421136382394958,
+          "auroc": 0.6276745992514653,
+          "f1": 0.33762057877813506,
+          "threshold": 0.5
+        },
+        "6_music_presence": {
+          "n": 714,
+          "positive": 24,
+          "ap": 0.1397364008171808,
+          "auroc": 0.7978864734299517,
+          "f1": 0.10933940774487472,
+          "threshold": 0.5
+        },
+        "7_human-voice_presence": {
+          "n": 714,
+          "positive": 172,
+          "ap": 0.41795046726726814,
+          "auroc": 0.7421640350124431,
+          "f1": 0.500768049155146,
+          "threshold": 0.5
+        },
+        "8_dog_presence": {
+          "n": 714,
+          "positive": 38,
+          "ap": 0.17874582888944046,
+          "auroc": 0.7638196823419496,
+          "f1": 0.14962593516209477,
+          "threshold": 0.5
+        }
+      },
+      "nll": 0.6508252024650574,
+      "zero_readout_fraction": 0.0,
+      "route_mean": [
+        0.7736210227012634,
+        0.17361485958099365,
+        0.0518074668943882,
+        0.0009568364475853741
+      ]
+    },
+    "val": {
+      "accuracy": 0.48214285714285715,
+      "macro_ap": 0.2996805239108379,
+      "macro_ap_supported_classes": 7,
+      "macro_auroc": 0.6743233420155951,
+      "macro_f1": 0.24561569386880497,
+      "micro_ap": 0.28991373333713105,
+      "balanced_accuracy": 0.6442861583646868,
+      "per_event": {
+        "1_engine_presence": {
+          "n": 259,
+          "positive": 80,
+          "ap": 0.5254092497535405,
+          "auroc": 0.665991620111732,
+          "f1": 0.5037037037037037,
+          "threshold": 0.5
+        },
+        "2_machinery-impact_presence": {
+          "n": 259,
+          "positive": 12,
+          "ap": 0.3449169151702982,
+          "auroc": 0.895748987854251,
+          "f1": 0.1981981981981982,
+          "threshold": 0.5
+        },
+        "3_non-machinery-impact_presence": {
+          "n": 259,
+          "positive": 13,
+          "ap": 0.04997149061418993,
+          "auroc": 0.44621638524077545,
+          "f1": 0.08583690987124463,
+          "threshold": 0.5
+        },
+        "4_powered-saw_presence": {
+          "n": 259,
+          "positive": 8,
+          "ap": 0.42526978342959604,
+          "auroc": 0.797808764940239,
+          "f1": 0.1724137931034483,
+          "threshold": 0.5
+        },
+        "5_alert-signal_presence": {
+          "n": 259,
+          "positive": 38,
+          "ap": 0.15859025920516195,
+          "auroc": 0.5659680876399142,
+          "f1": 0.28205128205128205,
+          "threshold": 0.5
+        },
+        "6_music_presence": {
+          "n": 259,
+          "positive": 17,
+          "ap": 0.11824410975322014,
+          "auroc": 0.6562955760816723,
+          "f1": 0.14207650273224043,
+          "threshold": 0.5
+        },
+        "7_human-voice_presence": {
+          "n": 259,
+          "positive": 89,
+          "ap": 0.4753618594498586,
+          "auroc": 0.6922339722405816,
+          "f1": 0.5806451612903226,
+          "threshold": 0.5
+        },
+        "8_dog_presence": {
+          "n": 259,
+          "positive": 0,
+          "ap": null,
+          "auroc": null,
+          "f1": 0.0,
+          "threshold": 0.5
+        }
+      },
+      "nll": 0.6633442044258118,
+      "zero_readout_fraction": 0.0,
+      "route_mean": [
+        0.7753515839576721,
+        0.17514663934707642,
+        0.04858328402042389,
+        0.0009183314396068454
+      ]
+    },
+    "loss": 0.5944494949001558,
+    "gradient_norm_max": 0.8517321348190308,
+    "seconds": 7.939564228057861
+  },
+  {
+    "epoch": 30,
+    "train": {
+      "accuracy": 0.539390756302521,
+      "macro_ap": 0.2528090671983344,
+      "macro_ap_supported_classes": 8,
+      "macro_auroc": 0.7672283569035517,
+      "macro_f1": 0.2645559428214851,
+      "micro_ap": 0.25647534019853196,
+      "balanced_accuracy": 0.6721618215257559,
+      "per_event": {
+        "1_engine_presence": {
+          "n": 714,
+          "positive": 191,
+          "ap": 0.4576918708039265,
+          "auroc": 0.6862592974482696,
+          "f1": 0.46885245901639344,
+          "threshold": 0.5
+        },
+        "2_machinery-impact_presence": {
+          "n": 714,
+          "positive": 42,
+          "ap": 0.1671540362404204,
+          "auroc": 0.7892928004535147,
+          "f1": 0.2066869300911854,
+          "threshold": 0.5
+        },
+        "3_non-machinery-impact_presence": {
+          "n": 714,
+          "positive": 14,
+          "ap": 0.08396262726726765,
+          "auroc": 0.7773469387755102,
+          "f1": 0.05008944543828265,
+          "threshold": 0.5
+        },
+        "4_powered-saw_presence": {
+          "n": 714,
+          "positive": 28,
+          "ap": 0.34427233371323074,
+          "auroc": 0.9295605997501041,
+          "f1": 0.27932960893854747,
+          "threshold": 0.5
+        },
+        "5_alert-signal_presence": {
+          "n": 714,
+          "positive": 119,
+          "ap": 0.273214361677274,
+          "auroc": 0.6402160864345738,
+          "f1": 0.3333333333333333,
+          "threshold": 0.5
+        },
+        "6_music_presence": {
+          "n": 714,
+          "positive": 24,
+          "ap": 0.09813438972253327,
+          "auroc": 0.792512077294686,
+          "f1": 0.10978520286396182,
+          "threshold": 0.5
+        },
+        "7_human-voice_presence": {
+          "n": 714,
+          "positive": 172,
+          "ap": 0.41132340706459214,
+          "auroc": 0.7476079121256329,
+          "f1": 0.500772797527048,
+          "threshold": 0.5
+        },
+        "8_dog_presence": {
+          "n": 714,
+          "positive": 38,
+          "ap": 0.18671951109743046,
+          "auroc": 0.7750311429461227,
+          "f1": 0.16759776536312848,
+          "threshold": 0.5
+        }
+      },
+      "nll": 0.6095440983772278,
+      "zero_readout_fraction": 0.0,
+      "route_mean": [
+        0.7750511765480042,
+        0.1722835898399353,
+        0.05170714855194092,
+        0.0009585688821971416
+      ]
+    },
+    "val": {
+      "accuracy": 0.5193050193050193,
+      "macro_ap": 0.30056405817876886,
+      "macro_ap_supported_classes": 7,
+      "macro_auroc": 0.6760187367675133,
+      "macro_f1": 0.25027385864618723,
+      "micro_ap": 0.28530281944549357,
+      "balanced_accuracy": 0.6487978475951592,
+      "per_event": {
+        "1_engine_presence": {
+          "n": 259,
+          "positive": 80,
+          "ap": 0.533909586132855,
+          "auroc": 0.667877094972067,
+          "f1": 0.49372384937238495,
+          "threshold": 0.5
+        },
+        "2_machinery-impact_presence": {
+          "n": 259,
+          "positive": 12,
+          "ap": 0.34295957852567743,
+          "auroc": 0.8967611336032388,
+          "f1": 0.22,
+          "threshold": 0.5
+        },
+        "3_non-machinery-impact_presence": {
+          "n": 259,
+          "positive": 13,
+          "ap": 0.04766157781190804,
+          "auroc": 0.4537210756722952,
+          "f1": 0.09090909090909091,
+          "threshold": 0.5
+        },
+        "4_powered-saw_presence": {
+          "n": 259,
+          "positive": 8,
+          "ap": 0.4258653119666926,
+          "auroc": 0.8067729083665338,
+          "f1": 0.18181818181818182,
+          "threshold": 0.5
+        },
+        "5_alert-signal_presence": {
+          "n": 259,
+          "positive": 38,
+          "ap": 0.21783769681838197,
+          "auroc": 0.6124077161228864,
+          "f1": 0.2922374429223744,
+          "threshold": 0.5
+        },
+        "6_music_presence": {
+          "n": 259,
+          "positive": 17,
+          "ap": 0.08958692301999123,
+          "auroc": 0.6212931453573165,
+          "f1": 0.14285714285714285,
+          "threshold": 0.5
+        },
+        "7_human-voice_presence": {
+          "n": 259,
+          "positive": 89,
+          "ap": 0.4461277329758756,
+          "auroc": 0.673298083278255,
+          "f1": 0.5806451612903226,
+          "threshold": 0.5
+        },
+        "8_dog_presence": {
+          "n": 259,
+          "positive": 0,
+          "ap": null,
+          "auroc": null,
+          "f1": 0.0,
+          "threshold": 0.5
+        }
+      },
+      "nll": 0.6188672780990601,
+      "zero_readout_fraction": 0.0,
+      "route_mean": [
+        0.776775598526001,
+        0.17380106449127197,
+        0.04850341007113457,
+        0.0009200044441968203
+      ]
+    },
+    "loss": 0.5912488333317412,
+    "gradient_norm_max": 0.5927747488021851,
+    "seconds": 7.939742803573608
+  }
+]
