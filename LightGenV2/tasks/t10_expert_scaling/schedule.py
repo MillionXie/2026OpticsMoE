@@ -17,6 +17,7 @@ def main():
     ap.add_argument('--calibration',type=Path)
     ap.add_argument('--dry-run',action='store_true')
     ap.add_argument('--resume',action='store_true')
+    ap.add_argument('--seeds',type=int,nargs='+',default=[17])
     a=ap.parse_args();assert 1<=len(a.gpus)<=3 and len(set(a.gpus))==len(a.gpus)
     a.out.mkdir(parents=True,exist_ok=a.resume);(a.out/'logs').mkdir(exist_ok=a.resume)
     arms=['moe_oeo','d2nn_total_parameter','d2nn_same_aperture']
@@ -49,17 +50,18 @@ def main():
         save(a.out/'selection_lock.json',dict(common_layers=depth,lr_by_arm=lr_by_arm,
             validation_mean_macro_nll=means,selected=selected[depth],test_read=False))
         # Roughly geometric spacing, with quarter/half/dense operating points.
-        grid={4:[1,2,3,4],9:[1,3,5,9],16:[1,4,8,16],25:[1,6,12,25],36:[1,9,18,36],49:[1,12,24,49]}
+        grid={4:[1,2,3,4],9:[1,3,5,9],16:[1,4,8,16],25:[1,6,12,25],36:[1,9,18,36],49:[1,12,24,49],100:[1,10,25,50,75,100]}
         jobs=[]
-        for n in [4,16,25,36,49,9]:
-            for arm in arms:
-                for k in (grid[n] if arm=='moe_oeo' else [n]):
-                    if n==9 and (arm!='moe_oeo' or k==9):continue
-                    jobs.append(dict(arch=arm,experts=n,top_k=k,layers=depth,lr=lr_by_arm[arm]))
-            jobs.append(dict(arch='d2nn_expert_global',experts=n,top_k=n,layers=depth,lr=lr_by_arm['d2nn_total_parameter']))
+        for seed in a.seeds:
+            for n in [4,16,25,36,49,100,9]:
+                for arm in arms:
+                    for k in (grid[n] if arm=='moe_oeo' else [n]):
+                        if n==9 and (arm!='moe_oeo' or k==9):continue
+                        jobs.append(dict(arch=arm,experts=n,top_k=k,layers=depth,lr=lr_by_arm[arm],seed=seed))
+                jobs.append(dict(arch='d2nn_expert_global',experts=n,top_k=n,layers=depth,lr=lr_by_arm['d2nn_total_parameter'],seed=seed))
         save(a.out/'scan_design.json',dict(top_k_grid=grid,reused_calibration=selected[depth],
              missing_gpu_ablation_jobs=len(jobs),expert_side=224,logical_pitch_um=17,phase_device_pitch_um=8,gap=30))
-    for j in jobs:j['name']=f"{j['arch']}_N{j['experts']}_k{j['top_k']}_L{j['layers']}_lr{j['lr']}_s17"
+    for j in jobs:j['name']=f"{j['arch']}_N{j['experts']}_k{j['top_k']}_L{j['layers']}_lr{j['lr']}_s{j.get('seed',17)}"
     save(a.out/'jobs.json',jobs);save(a.out/'identity.json',dict(pid=os.getpid(),gpus=a.gpus,command=sys.argv,
          git_commit=subprocess.check_output(['git','rev-parse','HEAD'],text=True).strip(),max_gpus=3))
     if a.dry_run:
@@ -105,7 +107,7 @@ def main():
                 j=jobs.pop(0);cmd=[sys.executable,'-u','-m','LightGenV2.tasks.t10_expert_scaling.train',
                     '--data',str(a.data),'--out',str(a.out/j['name']),'--arch',j['arch'],
                     '--experts',str(j['experts']),'--top-k',str(j['top_k']),'--layers',str(j['layers']),
-                    '--lr',str(j['lr']),'--microbatch','2','--epochs','60','--seed','17']
+                    '--lr',str(j['lr']),'--microbatch','2','--epochs','60','--seed',str(j.get('seed',17))]
                 uuid=subprocess.check_output(['nvidia-smi','-i',str(gpu),'--query-gpu=uuid','--format=csv,noheader'],text=True).strip()
                 env=os.environ.copy();env['CUDA_VISIBLE_DEVICES']=uuid;env['CUDA_DEVICE_ORDER']='PCI_BUS_ID'
                 log=(a.out/'logs'/(j['name']+'.log')).open('w')

@@ -2,7 +2,7 @@
   "schema_version": 1,
   "status": "design_only_not_a_training_config",
   "protocol": "raw_rgb_fullfield_oeo_17um_phase8um_v2",
-  "expert_counts": [4, 9, 16, 25, 36, 49],
+  "expert_counts": [4, 9, 16, 25, 36, 49, 100],
   "geometry": {
     "expert_side_px": 224,
     "gap_px": 30,

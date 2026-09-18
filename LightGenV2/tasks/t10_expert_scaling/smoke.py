@@ -24,7 +24,7 @@ def main():
         assert all(v is not None and v>0 and torch.isfinite(torch.tensor(v)) for v in grad.values()),grad
         if model.is_moe:
             assert torch.equal(out['route_mask'].sum(1),torch.ones(2,device='cuda'))
-            amp,_,_=model.route(encode_rgb(x));assert torch.allclose(amp.square().sum(1),torch.ones(2,device='cuda'),atol=1e-6)
+            amp,_,_=model.route(encode_rgb(x,model.router_side));assert torch.allclose(amp.square().sum(1),torch.ones(2,device='cuda'),atol=1e-6)
         model.eval()
         with torch.no_grad():
             first=model(x)['probabilities'];second=model(x)['probabilities']

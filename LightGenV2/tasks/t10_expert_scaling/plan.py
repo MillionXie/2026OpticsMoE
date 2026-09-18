@@ -16,6 +16,19 @@ def load_protocol():
     return json.loads((ROOT / "configs/study.json").read_text(encoding="utf-8"))
 
 
+def router_layout(cfg, n):
+    """Return a square router layout sized for exactly n expert ports."""
+    g = math.isqrt(n)
+    if g * g != n:
+        raise ValueError("Expert count must form a square grid")
+    m = cfg["model"]
+    width, pitch = m["router_detector_side_px"], m["router_detector_pitch_px"]
+    extent = (g - 1) * pitch + width
+    base = m["router_side_px"]
+    side = max(base, 2 * math.ceil(extent / 2))
+    return dict(grid=g, side_px=side, extent_px=extent)
+
+
 def geometry(cfg, n, fixed_global=None):
     g = math.isqrt(n)
     if g * g != n:
@@ -30,7 +43,8 @@ def geometry(cfg, n, fixed_global=None):
     if layers < 2 or layers % 2:
         raise ValueError("Feature depth must consist of expert/global pairs")
     cycles = layers // 2
-    router = model["router_side_px"] ** 2
+    router_info = router_layout(cfg, n)
+    router = router_info["side_px"] ** 2
     expert_params = cycles * n * e * e
     global_params = cycles * active * active
     target = expert_params + global_params + router
@@ -41,7 +55,8 @@ def geometry(cfg, n, fixed_global=None):
                 occupied_side_px=occupied, active_side_px=active,
                 canvas_side_px=active + 2 * geom["outer_margin_px"],
                 active_side_mm=round(active * geom["pixel_pitch_um"] / 1000, 4),
-                feature_layers=layers, router_phase_parameters=router,
+                feature_layers=layers, router_side_px=router_info["side_px"],
+                router_grid=router_info["grid"], router_phase_parameters=router,
                 expert_phase_parameters=expert_params,
                 global_phase_parameters=global_params,
                 moe_phase_parameters=target, d2nn_parameter_side_px=side,
@@ -60,11 +75,10 @@ def k_values(cfg, n, pilot=False):
     return sorted(k for k in values if 1 <= k <= n)
 
 
-def router_regions(cfg):
+def router_regions(cfg, n=49):
     m = cfg["model"]
-    g, width, pitch, side = (m[k] for k in
-                             ["router_detector_grid", "router_detector_side_px",
-                              "router_detector_pitch_px", "router_side_px"])
+    layout = router_layout(cfg, n)
+    g, width, pitch, side = layout["grid"], m["router_detector_side_px"], m["router_detector_pitch_px"], layout["side_px"]
     start = (side - ((g - 1) * pitch + width)) // 2
     cells = [(y, x) for y in range(g) for x in range(g)]
     cells.sort(key=lambda v: ((2*v[0]-(g-1))**2 + (2*v[1]-(g-1))**2, v[0], v[1]))
@@ -111,8 +125,8 @@ def check(cfg):
     assert cfg["geometry"]["hardware_size_limit_applied"] is False
     assert 2 * cfg["model"]["rgb_channel_side_px"] == 224
     assert cfg["model"]["oeo_after_every_feature_layer"]
-    regions = router_regions(cfg)
-    assert len(regions) == 49
+    regions = router_regions(cfg, n)
+    assert len(regions) == n
     pixels = set()
     for y0, y1, x0, x1 in regions:
         assert 0 <= y0 < y1 <= 224 and 0 <= x0 < x1 <= 224

@@ -59,9 +59,10 @@ class ScalingOptics(nn.Module):
         self.prop=ASM(self.c,pitch=cfg['geometry']['pixel_pitch_um']*1e-6,padding=padding)
         self.is_moe=arch=='moe_oeo'
         if self.is_moe:
-            self.router_phase=nn.Parameter(torch.randn(224,224)*.02)
-            self.router_prop=ASM(224,pitch=cfg['geometry']['pixel_pitch_um']*1e-6,padding=padding)
-            self.boxes=router_regions(cfg)[:n]
+            self.router_side=self.geo['router_side_px']
+            self.router_phase=nn.Parameter(torch.randn(self.router_side,self.router_side)*.02)
+            self.router_prop=ASM(self.router_side,pitch=cfg['geometry']['pixel_pitch_um']*1e-6,padding=padding)
+            self.boxes=router_regions(cfg,n)
             self.expert_phases=nn.ParameterList([nn.Parameter(torch.randn(n,self.e,self.e)*.02) for _ in range(layers//2)])
             self.global_phases=nn.ParameterList([nn.Parameter(torch.randn(self.g,self.g)*.02) for _ in range(layers//2)])
         else:
@@ -124,9 +125,10 @@ class ScalingOptics(nn.Module):
 
     def forward(self,rgb,dense=False):
         if self.is_moe:
-            source=encode_rgb(rgb)
-            amp,prob,mask=self.route(source,dense=dense)
-            field=self.assemble(source[:,None]*amp[:,:,None,None]).to(torch.complex64)
+            expert_source=encode_rgb(rgb)
+            router_source=encode_rgb(rgb,self.router_side)
+            amp,prob,mask=self.route(router_source,dense=dense)
+            field=self.assemble(expert_source[:,None]*amp[:,:,None,None]).to(torch.complex64)
             phases=[(p,e) for pair in zip(self.expert_phases,self.global_phases) for p,e in zip(pair,(True,False))]
         else:
             source=encode_rgb(rgb,self.side)
