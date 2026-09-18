@@ -3,7 +3,7 @@ import argparse,json,wave
 from pathlib import Path
 import numpy as np
 from LightGenV2.tasks.t09_multimodal_matching.audio_prepare import logmel
-from .prepare import save,tokens,digest
+from LightGenV2.tasks.t09_multimodal_matching.prepare import save,tokens,digest
 
 def main():
  ap=argparse.ArgumentParser();ap.add_argument('--root',type=Path,required=True);ap.add_argument('--audio-dir',type=Path,required=True);ap.add_argument('--query-index',type=Path,required=True);ap.add_argument('--out',type=Path,required=True);a=ap.parse_args(); a.out.mkdir(parents=True,exist_ok=False)
