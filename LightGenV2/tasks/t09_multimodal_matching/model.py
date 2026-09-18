@@ -44,7 +44,7 @@ def normalize_power(x, power):
 
 def encode(images, text, layout='legacy'):
     """RGB and text share 50/50 power, no fusion before optical propagation."""
-    if layout in ['two_band','interleaved']:
+    if layout in ['two_band','interleaved','left_right']:
         if images.ndim==2:
             sensor=images.reshape(-1,1,16,8)
         else:
@@ -57,6 +57,8 @@ def encode(images, text, layout='legacy'):
         sensor=normalize_power(sensor,.5);words=normalize_power(words,.5)
         if layout=='interleaved':
             return torch.stack((sensor,words),dim=-2).reshape(-1,224,224)
+        if layout=='left_right':
+            return torch.cat((sensor,words),-1)
         return torch.cat((sensor,words),-2)
     assert layout=='legacy'
     if images.ndim==2:
@@ -79,14 +81,17 @@ def encode(images, text, layout='legacy'):
 
 def enlarge_tiles(amplitude, side, layout='legacy'):
     """No resampling across modality/channel boundaries; restore tile powers."""
-    if layout in ['two_band','interleaved']:
+    if layout in ['two_band','interleaved','left_right']:
         bands=[]
-        source=(amplitude[:,0::2],amplitude[:,1::2]) if layout=='interleaved' else amplitude.chunk(2,dim=-2)
+        if layout=='interleaved': source=(amplitude[:,0::2],amplitude[:,1::2])
+        elif layout=='left_right': source=amplitude.chunk(2,dim=-1)
+        else: source=amplitude.chunk(2,dim=-2)
         for band in source:
             power=band.square().sum((-2,-1),keepdim=True)
-            bands.append(normalize_power(F.interpolate(band[:,None],(side//2,side),mode='nearest')[:,0],power))
+            target=(side,side//2) if layout=='left_right' else (side//2,side)
+            bands.append(normalize_power(F.interpolate(band[:,None],target,mode='nearest')[:,0],power))
         if layout=='interleaved':return torch.stack(bands,dim=-2).reshape(-1,side,side)
-        return torch.cat(bands,-2)
+        return torch.cat(bands,-1 if layout=='left_right' else -2)
     assert layout=='legacy'
     half = amplitude.shape[-1]//2
     result = []

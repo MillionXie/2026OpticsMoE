@@ -76,11 +76,11 @@ def evaluate(model, frontend, data, batch, ablation=None):
     return metrics,p.numpy()
 
 
-def build_models(seed, device, phase_dropout=0., oeo_activation='relu'):
-    return {arch:OpticalOEO(arch,seed,phase_dropout,oeo_activation=oeo_activation).to(device) for arch in ARCHS}
+def build_models(seed, device, phase_dropout=0., oeo_activation='relu', input_layout='legacy'):
+    return {arch:OpticalOEO(arch,seed,phase_dropout,input_layout=input_layout,oeo_activation=oeo_activation).to(device) for arch in ARCHS}
 
 
-def train_epoch(models,frontend,data,optimizer,batch,epoch,seed,feature_dropout=0.):
+def train_epoch(models,frontend,data,optimizer,batch,epoch,seed,feature_dropout=0.,route_balance_lambda=0.):
     for model in models.values():model.train()
     frontend.train(any(p.requires_grad for p in frontend.parameters()))
     generator=torch.Generator(device=data['ids'].device).manual_seed(seed+epoch)
@@ -100,7 +100,11 @@ def train_epoch(models,frontend,data,optimizer,batch,epoch,seed,feature_dropout=
             images=torch.where(dropped.square().sum(1,keepdim=True)>0,dropped,images)
         layouts={m.input_layout for m in models.values()};assert len(layouts)==1
         amplitude=encode(images,frontend(ids),layouts.pop())
-        costs=[loss(model(amplitude),y) for model in models.values()]
+        outputs={arch:model(amplitude) for arch,model in models.items()}
+        costs=[loss(outputs[arch],y) for arch in models]
+        if route_balance_lambda and 'moe' in outputs:
+            q=outputs['moe']['route_power']
+            costs[list(models).index('moe')] += route_balance_lambda*((q.mean(0)-.25)**2).sum()
         cost=torch.stack(costs).mean()
         assert torch.isfinite(cost), 'Nonfinite loss'
         cost.backward()
@@ -172,12 +176,12 @@ def run_mode(args,train,val,vocab,mode):
     root=args.out/mode;root.mkdir()
     setseed(args.seed);frontend=TextEncoder(len(vocab),mode).cuda()
     if mode=='learned':
-        warm=root/'warmup';warm.mkdir();models=build_models(args.seed+1000,'cuda',args.phase_dropout,args.oeo_activation)
+        warm=root/'warmup';warm.mkdir();models=build_models(args.seed+1000,'cuda',args.phase_dropout,args.oeo_activation,args.input_layout)
         optimizer=torch.optim.Adam([{'params':frontend.parameters(),'lr':args.frontend_lr},
                                     {'params':[p for m in models.values() for p in m.parameters()],'lr':args.lr}])
         best=float('inf');history=[]
         for epoch in range(1,args.warmup_epochs+1):
-            start=time.time();cost=train_epoch(models,frontend,train,optimizer,args.batch,epoch,args.seed,args.feature_dropout)
+            start=time.time();cost=train_epoch(models,frontend,train,optimizer,args.batch,epoch,args.seed,args.feature_dropout,args.route_balance_lambda)
             scores={arch:evaluate(model,frontend,val,args.batch)[0] for arch,model in models.items()}
             objective=np.mean([x['nll'] for x in scores.values()])
             row=dict(epoch=epoch,train_online_nll=cost,val=scores,selection_mean_nll=float(objective),seconds=time.time()-start)
@@ -203,7 +207,7 @@ def run_mode(args,train,val,vocab,mode):
         scheduler=torch.optim.lr_scheduler.CosineAnnealingLR(optimizer,args.epochs,eta_min=args.lr*.1)
         best=float('inf');history=[]
         for epoch in range(1,args.epochs+1):
-            start=time.time();cost=train_epoch({arch:model},frontend,train,optimizer,args.batch,epoch,args.seed,args.feature_dropout)
+            start=time.time();cost=train_epoch({arch:model},frontend,train,optimizer,args.batch,epoch,args.seed,args.feature_dropout,args.route_balance_lambda)
             train_score,_=evaluate(model,frontend,train,args.batch)
             val_score,_=evaluate(model,frontend,val,args.batch)
             assert state_sha(frontend)==frozen_hash
@@ -246,15 +250,17 @@ def main():
     p.add_argument('--phase-dropout',type=float,default=0.)
     p.add_argument('--architecture',choices=['both','moe','d2nn'],default='both')
     p.add_argument('--feature-cache',type=Path)
-    p.add_argument('--input-layout',choices=['legacy','two_band','interleaved'],default='legacy')
+    p.add_argument('--input-layout',choices=['legacy','two_band','interleaved','left_right'],default='legacy')
     p.add_argument('--oeo-activation',choices=['relu','softplus','intensity_softsign'],default='relu')
+    p.add_argument('--route-balance-lambda',type=float,default=0.)
     args=p.parse_args();args.out.mkdir(parents=True,exist_ok=False)
     assert 0<=args.feature_dropout<1
     assert not args.feature_dropout or args.vision_checkpoint
     assert not args.visual_flip or args.vision_checkpoint
     assert not args.feature_cache or args.vision_checkpoint
     assert 0<=args.phase_dropout<1
-    assert args.input_layout=='legacy' or (args.mode=='fixed' and args.phase=='train'), 'Two-band profile currently uses fixed word codes; smoke with smoke_layout.py'
+    assert args.input_layout=='legacy' or (args.mode=='fixed' and args.phase=='train'), 'Non-legacy layouts currently use fixed word codes'
+    assert args.route_balance_lambda>=0
     torch.set_num_threads(4);torch.backends.cudnn.benchmark=False
     setseed(args.seed);metadata(args,args.out);save(args.out/'status.json',dict(status='running',pid=os.getpid()))
     vocab=json.loads((args.data/'vocab.json').read_text())
