@@ -1,0 +1,15 @@
+{
+  "status": "formal_subset_test_locked",
+  "dataset": "SONYC-UST v2.3 audio-0 fixed subset",
+  "audio_count": {"train": 714, "validation": 259, "test": 27},
+  "query_count": {"train": 17254, "validation": 6570, "test": 982},
+  "seed": 17,
+  "epochs": 20,
+  "oeo": "centered_leaky_relu",
+  "phase_dropout": 0.05,
+  "moe": {"accuracy": 0.8075356483459473, "macro_auprc": 0.4061807791320302, "auroc": 0.729371417896008, "macro_f1": 0.0, "balanced_accuracy": 0.5, "route_mean": [0.7994163632392883, 0.10469910502433777, 0.08990071713924408, 0.005983862094581127]},
+  "d2nn": {"accuracy": 0.8177189230918884, "macro_auprc": 0.47169264894656926, "auroc": 0.7494245281130526, "macro_f1": 0.21145374449339208, "balanced_accuracy": 0.5546648251566284, "route_mean": [0.25, 0.25, 0.25, 0.25]},
+  "interpretation": "Accuracy is inflated by class imbalance. MoE predicts no positive event at threshold 0.5 on this test subset; its route is collapsed toward expert 0. This is a valid negative result and does not support a MoE advantage.",
+  "remote_run": "/DATA/DATA1/guest3/demo_reproduction_20260915/LightGenV2/tasks/t11_multimodal_nature/runs/sonyc_audio0_test_s17_20260918",
+  "source_query_index_sha256": "3600e891703c52f1274c6b145dbca0232ca301e73e20f20311d09bf732b6b3b7"
+}
