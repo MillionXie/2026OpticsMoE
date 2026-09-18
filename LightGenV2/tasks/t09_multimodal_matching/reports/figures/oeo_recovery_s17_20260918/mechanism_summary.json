@@ -1,0 +1,124 @@
+{
+  "protocol": "First 32 validation questions in stored order; no test access; no weight updates",
+  "original": {
+    "checkpoint_sha256": "647aabb6ee0125378de929a1585245c6aecb2e89fdbf33240880b6bca875cff7",
+    "stages": [
+      {
+        "layer": 1,
+        "raw_window_energy_mean": [
+          0.00026510635507293046,
+          0.00011391768930479884
+        ],
+        "post_oeo_window_energy_mean": [
+          0.0,
+          0.0
+        ],
+        "pre_oeo_zero_window_fraction": 0.0,
+        "post_oeo_zero_window_fraction": 1.0,
+        "normalized_window_max": [
+          -0.17729921638965607,
+          -0.0865248367190361
+        ],
+        "positive_window_pixel_fraction": [
+          0.0,
+          0.0
+        ]
+      },
+      {
+        "layer": 2,
+        "raw_window_energy_mean": [
+          0.00012346700532361865,
+          2.706590385059826e-05
+        ],
+        "post_oeo_window_energy_mean": [
+          0.0,
+          0.0
+        ],
+        "pre_oeo_zero_window_fraction": 0.0,
+        "post_oeo_zero_window_fraction": 1.0,
+        "normalized_window_max": [
+          -0.03880543261766434,
+          -0.06822704523801804
+        ],
+        "positive_window_pixel_fraction": [
+          0.0,
+          0.0
+        ]
+      }
+    ],
+    "nll": 0.6931474804878235,
+    "yes_probability_std": 0.0,
+    "route_mean": [
+      0.8832026720046997,
+      0.11154527217149734,
+      0.005028177052736282,
+      0.00022388104116544127
+    ],
+    "gradient_norms": {
+      "first_phase": 0.0,
+      "global_phase": 0.0,
+      "router_phase": 0.0
+    }
+  },
+  "smooth_fixed_weight_diagnostic": {
+    "checkpoint_sha256": "647aabb6ee0125378de929a1585245c6aecb2e89fdbf33240880b6bca875cff7",
+    "stages": [
+      {
+        "layer": 1,
+        "raw_window_energy_mean": [
+          0.00026510635507293046,
+          0.00011391768930479884
+        ],
+        "post_oeo_window_energy_mean": [
+          0.014569657854735851,
+          0.014535977505147457
+        ],
+        "pre_oeo_zero_window_fraction": 0.0,
+        "post_oeo_zero_window_fraction": 0.0,
+        "normalized_window_max": [
+          -0.17729921638965607,
+          -0.0865248367190361
+        ],
+        "positive_window_pixel_fraction": [
+          0.0,
+          0.0
+        ]
+      },
+      {
+        "layer": 2,
+        "raw_window_energy_mean": [
+          0.014423312619328499,
+          0.014775045216083527
+        ],
+        "post_oeo_window_energy_mean": [
+          0.016680452972650528,
+          0.016795430332422256
+        ],
+        "pre_oeo_zero_window_fraction": 0.0,
+        "post_oeo_zero_window_fraction": 0.0,
+        "normalized_window_max": [
+          0.7106691598892212,
+          0.5898609161376953
+        ],
+        "positive_window_pixel_fraction": [
+          0.1914520263671875,
+          0.10485076904296875
+        ]
+      }
+    ],
+    "nll": 0.6931822299957275,
+    "yes_probability_std": 0.00019754997629206628,
+    "route_mean": [
+      0.8832026720046997,
+      0.11154527217149734,
+      0.005028177052736282,
+      0.00022388104116544127
+    ],
+    "gradient_norms": {
+      "first_phase": 0.00020197276899125427,
+      "global_phase": 5.319802221492864e-05,
+      "router_phase": 0.0006146061350591481
+    }
+  },
+  "interpretation": "Same weights and inputs; positive readout and gradients restored, not a retrained accuracy result"
+}

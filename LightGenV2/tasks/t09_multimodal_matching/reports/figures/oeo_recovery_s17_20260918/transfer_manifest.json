@@ -1,0 +1,283 @@
+{
+  "previous": {
+    "runs/smoke/audio_twoband_oeo_probe_s17_v1/probe.json": "61f19acfd2b3e60a063a5aadc1cc94581755c87c1b0d992f0b39f81aa17d68da",
+    "runs/smoke/audio_twoband_softplus_probe_s17_v1/probe.json": "2880be7458851a2a5034a42e46224e0e6af12035a391e216526de35fa4ab58e0"
+  },
+  "recovery_downloads": [
+    {
+      "path": "runs/simulation/audio_raw_twoband_softplus_moe_s17_v1/metadata.json",
+      "sha256": "be01d62137a38cc85f5997a2a53db163e23246b7ff710531904810a5e5c59bea",
+      "bytes": 3917
+    },
+    {
+      "path": "runs/simulation/audio_raw_twoband_softplus_moe_s17_v1/status.json",
+      "sha256": "86873651538be0c87cd9e06d3fc57324e820695d89cf11bcf5cb4811ccfabf01",
+      "bytes": 70
+    },
+    {
+      "path": "runs/simulation/audio_raw_twoband_softplus_moe_s17_v1/summary.json",
+      "sha256": "7eb83689e9c831c1eb6736610976b0933cc36cf394cc1ea40beeff04a14fd8fb",
+      "bytes": 2362
+    },
+    {
+      "path": "runs/simulation/audio_raw_twoband_softplus_moe_s17_v1/fixed/moe/history.json",
+      "sha256": "c7b5f7b60b4f2b306bbcf9e0e643f316f8c63511b0e2ff61b2d6555775cf02d5",
+      "bytes": 41396
+    },
+    {
+      "path": "runs/simulation/audio_raw_twoband_softplus_moe_s17_v1/fixed/moe/result.json",
+      "sha256": "ad8293bd020885b0031869e3921c37187a367c86e640701990bffb1c50762c46",
+      "bytes": 2010
+    },
+    {
+      "path": "runs/simulation/audio_raw_twoband_softplus_moe_s17_v1/fixed/moe/predictions.npz",
+      "sha256": "9b61a0fef21d2a7fdc6d4a6e30bd35805d5cd566f30975a0bae4a7cdf0fae910",
+      "bytes": 102289
+    },
+    {
+      "path": "runs/simulation/audio_raw_twoband_softplus_moe_s17_v1_test/locked_selection.json",
+      "sha256": "727d2aef51c30c027bca4618eb18643b2e3975c2218a14f8b56973cfe2704994",
+      "bytes": 299
+    },
+    {
+      "path": "runs/simulation/audio_raw_twoband_softplus_moe_s17_v1_test/metadata.json",
+      "sha256": "13966b1f108feeb859b0dd43e0fca627d46d68d8fa059193cfb1d1082084c0f0",
+      "bytes": 391
+    },
+    {
+      "path": "runs/simulation/audio_raw_twoband_softplus_moe_s17_v1_test/status.json",
+      "sha256": "26c2e5f1aff8463f99eb8ba392d785aa849c6975c3e85d68886fd8ca6720f479",
+      "bytes": 62
+    },
+    {
+      "path": "runs/simulation/audio_raw_twoband_softplus_moe_s17_v1_test/test_questions.json",
+      "sha256": "5a21ce33be242f9996b123c2ba4d17d5f44ad6c3d63564d10d4e093c8e388dbd",
+      "bytes": 321382
+    },
+    {
+      "path": "runs/simulation/audio_raw_twoband_softplus_moe_s17_v1_test/audio_raw_twoband_softplus_moe_s17_v1_moe_predictions.npz",
+      "sha256": "c2774520a053abba01448e18b1f0dce5f28fb78c8325fde51187354ce449ae4d",
+      "bytes": 12817
+    },
+    {
+      "path": "runs/simulation/audio_raw_twoband_softplus_moe_s17_v1_test/test_manifest.json",
+      "sha256": "5468b0df88dc711ea381bac25dcf875818351a0cbe3bf8ce9631923f88f53fd2",
+      "bytes": 219
+    },
+    {
+      "path": "runs/simulation/audio_raw_twoband_softplus_moe_s17_v1_test/results.json",
+      "sha256": "d843263c72c4b21837aa0adafe463d6224091432c6e376f68b7e67714adbf136",
+      "bytes": 940
+    },
+    {
+      "path": "runs/simulation/audio_raw_twoband_softplus_d2nn_s17_v1/metadata.json",
+      "sha256": "32eabeb19e00c20aab2227bf64b05af193fb51d7a40b147c3c4a8f1d5cbd8ef6",
+      "bytes": 3921
+    },
+    {
+      "path": "runs/simulation/audio_raw_twoband_softplus_d2nn_s17_v1/status.json",
+      "sha256": "8e53ba5c7dd1cf906de781e6c11729a08f4a7fc18ba85c2dc35c1e3c6e9dc910",
+      "bytes": 70
+    },
+    {
+      "path": "runs/simulation/audio_raw_twoband_softplus_d2nn_s17_v1/summary.json",
+      "sha256": "a391d435bf56bfff91feefda80c11544415ff4a12d70491e2ecf3b8489438c1e",
+      "bytes": 1857
+    },
+    {
+      "path": "runs/simulation/audio_raw_twoband_softplus_d2nn_s17_v1/fixed/d2nn/history.json",
+      "sha256": "2f85fcc93895a704fd8b840be82b712486fa541d589cfc76fbaa736934fde4f9",
+      "bytes": 31265
+    },
+    {
+      "path": "runs/simulation/audio_raw_twoband_softplus_d2nn_s17_v1/fixed/d2nn/result.json",
+      "sha256": "0729f799f95cd4db1ba399eda4cd5e758f6e90b95b8bfd2a1c67a3051518eb0f",
+      "bytes": 1504
+    },
+    {
+      "path": "runs/simulation/audio_raw_twoband_softplus_d2nn_s17_v1/fixed/d2nn/predictions.npz",
+      "sha256": "45ba384d31a6864170a1aa78e5a2c319ad9bc4fce17ad3cbac7a06b77b670fd8",
+      "bytes": 99658
+    },
+    {
+      "path": "runs/simulation/audio_raw_twoband_softplus_d2nn_s17_v1_test/locked_selection.json",
+      "sha256": "76d071595f3b8509f51415cc397b19ce9048f184194a7445f16432c9a608704c",
+      "bytes": 303
+    },
+    {
+      "path": "runs/simulation/audio_raw_twoband_softplus_d2nn_s17_v1_test/metadata.json",
+      "sha256": "020b3f2c206abff953ba36c1b00a3528724023a39313409996f1105b6de84065",
+      "bytes": 391
+    },
+    {
+      "path": "runs/simulation/audio_raw_twoband_softplus_d2nn_s17_v1_test/status.json",
+      "sha256": "26c2e5f1aff8463f99eb8ba392d785aa849c6975c3e85d68886fd8ca6720f479",
+      "bytes": 62
+    },
+    {
+      "path": "runs/simulation/audio_raw_twoband_softplus_d2nn_s17_v1_test/audio_raw_twoband_softplus_d2nn_s17_v1_d2nn_predictions.npz",
+      "sha256": "8e57f25a8812b40744bd12adcbad99afa051f964db4cba9a9d593fecb6ef57fe",
+      "bytes": 12523
+    },
+    {
+      "path": "runs/simulation/audio_raw_twoband_softplus_d2nn_s17_v1_test/test_questions.json",
+      "sha256": "5a21ce33be242f9996b123c2ba4d17d5f44ad6c3d63564d10d4e093c8e388dbd",
+      "bytes": 321382
+    },
+    {
+      "path": "runs/simulation/audio_raw_twoband_softplus_d2nn_s17_v1_test/test_manifest.json",
+      "sha256": "5468b0df88dc711ea381bac25dcf875818351a0cbe3bf8ce9631923f88f53fd2",
+      "bytes": 219
+    },
+    {
+      "path": "runs/simulation/audio_raw_twoband_softplus_d2nn_s17_v1_test/results.json",
+      "sha256": "46407bfa662d4744f7ef87bfe9ff84f8f033008314c06b9fe24e53fb0bc85c5c",
+      "bytes": 772
+    },
+    {
+      "path": "runs/simulation/audio_raw_twoband_positive_moe_s17_v1/metadata.json",
+      "sha256": "e4610980179145704e40580e8a1362bacdab06fee37c4ad61e717a7920acc63b",
+      "bytes": 3937
+    },
+    {
+      "path": "runs/simulation/audio_raw_twoband_positive_moe_s17_v1/status.json",
+      "sha256": "b2642a76b067484e822ef71f628d502be39b42fcee68c6cee85475dde79acc91",
+      "bytes": 70
+    },
+    {
+      "path": "runs/simulation/audio_raw_twoband_positive_moe_s17_v1/summary.json",
+      "sha256": "ff62be9a9c8284eafaef48e5d33e7d82ea495e9f56c60eb7d4c651522c48e05a",
+      "bytes": 2326
+    },
+    {
+      "path": "runs/simulation/audio_raw_twoband_positive_moe_s17_v1/fixed/moe/history.json",
+      "sha256": "e4f54049b44e13336a300c73bd55b5bd3e057dfdb238a9c693e4999794c244ca",
+      "bytes": 40615
+    },
+    {
+      "path": "runs/simulation/audio_raw_twoband_positive_moe_s17_v1/fixed/moe/result.json",
+      "sha256": "b17b9a920cb6d0fec4b3de1f3c7f12f620b74748952b6c47b9fad6deb5122272",
+      "bytes": 1974
+    },
+    {
+      "path": "runs/simulation/audio_raw_twoband_positive_moe_s17_v1/fixed/moe/predictions.npz",
+      "sha256": "c8ab33da1e199aa0b745be7c53c51df2cce8f84a8868f3e0ecd4c2712c3fbd0e",
+      "bytes": 103153
+    },
+    {
+      "path": "runs/simulation/audio_raw_twoband_positive_moe_s17_v1_test/locked_selection.json",
+      "sha256": "f25fb6c6da79033e08f14600371c47a27e44348972b029ec77998d2ed42dd5a2",
+      "bytes": 299
+    },
+    {
+      "path": "runs/simulation/audio_raw_twoband_positive_moe_s17_v1_test/metadata.json",
+      "sha256": "23f92e05652e13b9d08469d1fad6b270ef7a27865f2f87ae43261707f6645311",
+      "bytes": 391
+    },
+    {
+      "path": "runs/simulation/audio_raw_twoband_positive_moe_s17_v1_test/status.json",
+      "sha256": "26c2e5f1aff8463f99eb8ba392d785aa849c6975c3e85d68886fd8ca6720f479",
+      "bytes": 62
+    },
+    {
+      "path": "runs/simulation/audio_raw_twoband_positive_moe_s17_v1_test/test_questions.json",
+      "sha256": "5a21ce33be242f9996b123c2ba4d17d5f44ad6c3d63564d10d4e093c8e388dbd",
+      "bytes": 321382
+    },
+    {
+      "path": "runs/simulation/audio_raw_twoband_positive_moe_s17_v1_test/test_manifest.json",
+      "sha256": "5468b0df88dc711ea381bac25dcf875818351a0cbe3bf8ce9631923f88f53fd2",
+      "bytes": 219
+    },
+    {
+      "path": "runs/simulation/audio_raw_twoband_positive_moe_s17_v1_test/results.json",
+      "sha256": "9f0015707dff003123ae7ebd923b437f0964ceda6037fff9f7d32c022321b6e0",
+      "bytes": 925
+    },
+    {
+      "path": "runs/simulation/audio_raw_twoband_positive_moe_s17_v1_test/audio_raw_twoband_positive_moe_s17_v1_moe_predictions.npz",
+      "sha256": "2d6d4903f59dae019032e4ae9ab88dee247db850b231315b73c906efa54b5433",
+      "bytes": 12953
+    },
+    {
+      "path": "runs/simulation/audio_raw_twoband_positive_d2nn_s17_v1/metadata.json",
+      "sha256": "b4b51bf52bbf37ffcf0a1e3059324c208db6701d176d0541c1bc656a06440ebf",
+      "bytes": 3941
+    },
+    {
+      "path": "runs/simulation/audio_raw_twoband_positive_d2nn_s17_v1/status.json",
+      "sha256": "e1cbf3f3554bd083dde362420d5a56a16ff316b3b063a9cf093fd393597679ec",
+      "bytes": 70
+    },
+    {
+      "path": "runs/simulation/audio_raw_twoband_positive_d2nn_s17_v1/summary.json",
+      "sha256": "e25ec1dadad8d01fa0be58a00a2073f7c5047ac96260ba4958467257f23a14fb",
+      "bytes": 1858
+    },
+    {
+      "path": "runs/simulation/audio_raw_twoband_positive_d2nn_s17_v1/fixed/d2nn/history.json",
+      "sha256": "0c8f4486b9bec6e146025508372d50e66cba83be1ec376ee12736224c0256770",
+      "bytes": 31295
+    },
+    {
+      "path": "runs/simulation/audio_raw_twoband_positive_d2nn_s17_v1/fixed/d2nn/result.json",
+      "sha256": "0df2b5a9eca23c8b161913402136b3b5c83b869b290d0bf9abe8a4d0b9321dad",
+      "bytes": 1505
+    },
+    {
+      "path": "runs/simulation/audio_raw_twoband_positive_d2nn_s17_v1/fixed/d2nn/predictions.npz",
+      "sha256": "3aadfc586396ddb717c0fadb81130fd0a2f101077b8ab4224b455d67045d2947",
+      "bytes": 101736
+    },
+    {
+      "path": "runs/simulation/audio_raw_twoband_positive_d2nn_s17_v1_test/locked_selection.json",
+      "sha256": "46bf0bd2e09ab63484855fd49aecce4bd6fd645782e610a5d3c98d8b4de0eed5",
+      "bytes": 303
+    },
+    {
+      "path": "runs/simulation/audio_raw_twoband_positive_d2nn_s17_v1_test/metadata.json",
+      "sha256": "9988f06b3c5c09aa643e13568e7cca4aee61ea19dd818225bbfd74b4611b82c5",
+      "bytes": 391
+    },
+    {
+      "path": "runs/simulation/audio_raw_twoband_positive_d2nn_s17_v1_test/status.json",
+      "sha256": "26c2e5f1aff8463f99eb8ba392d785aa849c6975c3e85d68886fd8ca6720f479",
+      "bytes": 62
+    },
+    {
+      "path": "runs/simulation/audio_raw_twoband_positive_d2nn_s17_v1_test/test_questions.json",
+      "sha256": "5a21ce33be242f9996b123c2ba4d17d5f44ad6c3d63564d10d4e093c8e388dbd",
+      "bytes": 321382
+    },
+    {
+      "path": "runs/simulation/audio_raw_twoband_positive_d2nn_s17_v1_test/audio_raw_twoband_positive_d2nn_s17_v1_d2nn_predictions.npz",
+      "sha256": "774dd06836c679a4732a7b27a363eb7113d0789d48c84c452133673cc08b2ebf",
+      "bytes": 12758
+    },
+    {
+      "path": "runs/simulation/audio_raw_twoband_positive_d2nn_s17_v1_test/test_manifest.json",
+      "sha256": "5468b0df88dc711ea381bac25dcf875818351a0cbe3bf8ce9631923f88f53fd2",
+      "bytes": 219
+    },
+    {
+      "path": "runs/simulation/audio_raw_twoband_positive_d2nn_s17_v1_test/results.json",
+      "sha256": "dba4b5ab4f3bf310be9a3cec68d1f256bc8fbdc3810e15b7021108608990e00a",
+      "bytes": 772
+    },
+    {
+      "path": "runs/smoke/audio_twoband_softplus_audit_s17_v1/verification.json",
+      "sha256": "0be60cfe979d00849c93aa0cc0829bbe692710bca4136d68e373ac03ed2e0e50",
+      "bytes": 5333
+    },
+    {
+      "path": "runs/smoke/audio_twoband_positive_audit_s17_v1/verification.json",
+      "sha256": "8dbcc9245476a024e1a8668a8ad943c54a78f2d24cd5f32fb84e47c78db2dfb6",
+      "bytes": 5296
+    },
+    {
+      "path": "runs/smoke/audio_twoband_positive_probe_s17_v1/probe.json",
+      "sha256": "492148c99855611b61f1615d39893f0500905f768732178f573708d0226f77ff",
+      "bytes": 10547
+    }
+  ]
+}

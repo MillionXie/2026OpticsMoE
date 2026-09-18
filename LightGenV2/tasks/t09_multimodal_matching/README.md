@@ -1,11 +1,13 @@
-# 多模态条件判断：文本编码预实验
+# 图文与音文条件判断：MoE/D2NN逐层OEO
 
 状态：实现与可行性验证中；无正式性能结论。复现入口为
 [`reports/reproduction/README.md`](reports/reproduction/README.md)。
 
 只比较两层主光路的 MoE+逐层OEO 与 D2NN+逐层OEO；MoE额外路由相位单列。
 首先比较 CLEVR 图文任务中的固定词编码与共享可训练 Embedding+GRU；
-Speech Commands 音文首轮配对及精确输入审计已完成，详见复现入口。
+Speech Commands 音文已完成有CNN、无CNN三种布局及上下布局OEO恢复训练，详见复现入口。
+当前均为给定图像/音频及文本问题后输出“是/否”的条件判断，不是自由问答或八分类识别。
+最新上下布局无CNN、非中心化Softsign OEO：测试MoE84.54%、D2NN77.51%（seed17）；原OEO的同布局D2NN曾达82.76%，不能把新组全部差距解释为架构优势。图文尚未用新OEO重训。
 
 ## 数据合同
 

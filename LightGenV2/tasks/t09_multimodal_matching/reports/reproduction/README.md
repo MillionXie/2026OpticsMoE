@@ -1,5 +1,42 @@
 # 复现入口
 
+## 2026-09-18：上下布局OEO恢复训练
+
+直接原因已由逐层探针确认：光传播到窗口的能量非零，但原OEO按全场做中心化LayerNorm，再ReLU，会将窗口内低于全场均值的响应全部截为0。两个窗口都为0时，带epsilon的能量归一化输出0.5/0.5；对应ReLU的导数也为0。布局改变与路由分配会改变光强分布，但不能据此说上下布局必然失败。
+
+原MoE最佳权重在验证前32问答中，末层OEO前两个窗口平均能量为1.23467e-4、2.70659e-5，OEO后均为0；两个窗口内中心化值最大值仍分别为-0.03881、-0.06823。该批分类损失对首层、全局层、路由相位梯度范数均为0。这是特定权重/批次的证据，不代表训练每一步全体样本的梯度都为0。此前全验证集检查已确认最佳权重100%零读出。
+
+两次新实验均从头训练两个架构，保持数据、说话人划分、问题、上下布局、两层主光路、每层含末层OEO、窗口、seed17、30轮、batch32、Adam及学习率计划不变，无CNN、无可训练文本编码器、无额外电子分类头、无dropout。只改变两模型共同使用的OEO响应：
+- centered Softplus：原中心化LayerNorm后用Softplus替换ReLU，再Softsign，存在正背景响应。
+- non-centered Softsign：对非负光强除以空间均值，直接计算u/(1+u)，去掉中心化LayerNorm与ReLU，不在零输入处产生正背景。
+两者均重新归一化为单位功率振幅并重置相位。这是OEO传递函数对照，不是数学等价的代码修复，也未取消末层OEO。
+
+|OEO|模型|验证选中epoch|训练accuracy|验证accuracy|测试accuracy|
+|---|---|---:|---:|---:|---:|
+|原中心化ReLU|MoE|2|50.01%|50.00%|49.94%|
+|原中心化ReLU|D2NN|21|92.05%|83.45%|82.76%|
+|中心化Softplus|MoE|30|78.80%|76.45%|76.70%|
+|中心化Softplus|D2NN|27|55.88%|54.63%|54.96%|
+|非中心化Softsign|MoE|28|90.67%|86.24%|84.54%|
+|非中心化Softsign|D2NN|30|79.92%|77.58%|77.51%|
+
+每个模型独立按最低验证NLL选择checkpoint；训练、验证、测试使用同一个选中权重，测试不选epoch。独立预测重算准确率、选模规则及checkpoint SHA均已核对。新组最终评估训练/验证/测试零读出比例均为0。恢复可学习性已完成，未证明过拟合消失：新MoE训练与测试仍差6.12个百分点；新D2NN训练也较低，选中末轮，仍可能欠拟合。Softplus的D2NN明显欠拟合，不用其低分证明MoE优势。原同布局D2NN82.76%、旧重复布局D2NN85.06%均保留，不以较弱新版本替代强baseline。
+
+新MoE验证平均四路功率约48.13%、47.34%、3.85%、0.67%，主要使用前两路，未形成均衡四专家使用。均衡本身不是目标，需通过固定路由、专家干预等验证分工价值。其测试读出capture约0.000193，非零不代表硬件信噪比足够；当前仍为理想仿真。
+
+新run为 `audio_raw_twoband_{softplus,positive}_{moe,d2nn}_s17_v1`，测试各加`_test`，位于`runs/simulation/`。Softplus训练源码6867624d，非中心化Softsign源码14b11fd3。完整命令、环境、数据SHA见各run metadata.json。复现使用上节命令，将architecture设为单个moe或d2nn、input-layout设two_band，分别增加`--oeo-activation softplus`或`--oeo-activation intensity_softsign`，其它参数保持不变。MoE/D2NN分别运行于两张RTX4090（GPU UUID见上节前两卡）；已完成测试并释放两卡。
+
+探针位于`runs/smoke/audio_twoband_oeo_probe_s17_v1`、`audio_twoband_softplus_probe_s17_v1`、`audio_twoband_positive_probe_s17_v1`；后两者只替换响应检查原权重梯度，不作为重新训练的性能。独立审计为`audio_twoband_softplus_audit_s17_v1`、`audio_twoband_positive_audit_s17_v1`。图、逐项结果、下载SHA在`reports/figures/oeo_recovery_s17_20260918/`，可通过`python -m LightGenV2.tasks.t09_multimodal_matching.plot_oeo_recovery`从本地run证据重画。
+
+当前结论与后续优先级：
+1. 图文：CLEVR颜色/形状存在性判断，固定CNN前端和one-hot文本。30轮无phase dropout测试MoE69.73%、D2NN71.80%；两者均加0.05 phase dropout为72.40%、57.20%，后者欠拟合。对比各自更强配置仅差0.60个百分点，不能用弱正则baseline宣称大优势。本轮未对图文更换OEO。
+2. 音文：mini Speech Commands关键词条件判断，CNN版94.23%/94.87%；无CNN旧重复版85.58%/85.06%；无CNN交织版83.85%/83.33%。CNN为相同网络结构、不同任务权重，并非图文那份权重。去掉CNN后仍学得到，但尚无跨配置稳定的大优势。
+3. 先固定输入与数据，完成OEO、读出能量及路由利用的对照；给两模型相同调参预算、各自依据验证集选配置，不强求同一种正则对两者都有效。D2NN未收敛时不靠增加dropout解决。反复查看测试后的开发应透明记录，最终论文需要新的独立确认，不能把当前测试当未被参考的最终证据。
+4. SONYC-UST v2.3仅核验过CC BY 4.0许可和标注，尚未训练。适合下一阶段音文条件判断，但标签衍生问题不等于原生自然语言描述。先稳定当前实现再迁移，避免同时更换任务、布局及响应而无法定位原因。
+
+
+最新状态：上下布局音文MoE的零读出原因已定位，并已成对重训MoE/D2NN；见上方“上下布局OEO恢复训练”。图文仍为此前CNN前端版本，本轮没有重训图文。所有结果为seed17探索结果，不能据此宣称稳定优越性。
+
 本任务比较两层MoE＋逐层OEO与D2NN＋逐层OEO。技术参数、编码张量和训练流程见[任务README](../../README.md)。所有图文结果为seed17，训练图像1000张、验证250张、测试250张；每图3正3负问答。视觉前端共用并冻结，文本按配置共享；无电子输出残差、无Qwen。
 
 ## 原始编码对照
