@@ -21,6 +21,7 @@ def main():
     p=argparse.ArgumentParser()
     p.add_argument('--kind',choices=['clevr','audio'],required=True)
     p.add_argument('--audio-runs',nargs='+',help='Completed raw-audio runs; both architectures per run')
+    p.add_argument('--clevr-runs',nargs='+',help='Completed custom CLEVR runs; both architectures per run')
     for key in ['data','runs','out','cache']:
         p.add_argument('--'+key,type=Path,required=True)
     a=p.parse_args();a.out.mkdir(parents=True,exist_ok=False)
@@ -36,6 +37,14 @@ def main():
         for run in a.audio_runs:
             config=json.loads((a.runs/run/'metadata.json').read_text())['config']
             assert not config['vision_checkpoint'] and config['mode']=='fixed'
+            architectures=['moe','d2nn'] if config['architecture']=='both' else [config['architecture']]
+            profiles.extend((run,arch,run) for arch in architectures)
+    if a.clevr_runs:
+        assert a.kind=='clevr' and not a.audio_runs
+        profiles=[]
+        for run in a.clevr_runs:
+            config=json.loads((a.runs/run/'metadata.json').read_text())['config']
+            assert config['vision_checkpoint'] and config['mode']=='fixed'
             architectures=['moe','d2nn'] if config['architecture']=='both' else [config['architecture']]
             profiles.extend((run,arch,run) for arch in architectures)
     for tag,arch,run in profiles:
