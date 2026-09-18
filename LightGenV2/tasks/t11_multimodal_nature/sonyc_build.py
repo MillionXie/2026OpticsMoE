@@ -18,7 +18,7 @@ def main():
    with wave.open(str(allfiles[name]),'rb') as w:
     assert w.getnchannels()==1 and w.getframerate()==16000 and w.getsampwidth()==2
     samples=np.frombuffer(w.readframes(w.getnframes()),dtype='<i2').copy()
-   image=logmel(samples); images.append(np.repeat(image[:,:,None],3,axis=2))
+   images.append(np.repeat(image[:,:,None],3,axis=2))
    for base in by[name]:
     if base['split']!=split: continue
     words=['does','the','recording','contain',base['event'].split('_')[1], '?']
@@ -33,3 +33,4 @@ def main():
  payload={'schema_version':1,'source_query_index_sha256':digest(a.query_index.read_bytes()),'counts':{k:{'audio':len(records[k]),'queries':len(rows_by[k])} for k in records},'manifest_files':{p.name:digest(p.read_bytes()) for p in a.out.iterdir() if p.is_file()}}
  save(a.out/'manifest.json',payload); print(json.dumps(payload,ensure_ascii=False))
 if __name__=='__main__':main()
+
