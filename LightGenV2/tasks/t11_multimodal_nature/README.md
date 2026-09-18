@@ -46,3 +46,5 @@ python -m LightGenV2.tasks.t11_multimodal_nature.prepare_manifest \
 ## 首轮 smoke 记录（2026-09-18）
 
 在服务器用 GPU3/GPU4、seed=17、12 epochs、phase dropout=0.05 和同一 centered-LeakyReLU OEO 分别运行现有 CLEVR pilot 的 MoE 与 D2NN。MoE 最佳 validation accuracy 49.33%（epoch 1），D2NN 51.07%（epoch 7）；MoE route mean 约为 `[0.514, 0.172, 0.289, 0.025]`，显示第四专家几乎未使用。两者都接近随机水平，因此该结果只用于检查训练器、OEO 梯度和路由统计，不能作为主表或 MoE 优势证据；本次 t09 trainer 没有访问保留 test split，故没有 test accuracy。完整路径、哈希和解释见 [`reports/clevr_leaky_smoke_20260918.json`](reports/clevr_leaky_smoke_20260918.json)。
+
+数据集的任务含义、输入输出和训练安排见 [`DATASET_AND_RUN_PLAN.md`](DATASET_AND_RUN_PLAN.md)。当前不是把三个数据集混成一个任务：SEN12MS 是跨传感器图图土地覆盖分类，CLEVR 是图像与问题匹配，SONYC-UST 是音频与事件文本查询匹配；三者只共享物理光学和公平对照契约。
