@@ -251,7 +251,7 @@ def main():
     p.add_argument('--architecture',choices=['both','moe','d2nn'],default='both')
     p.add_argument('--feature-cache',type=Path)
     p.add_argument('--input-layout',choices=['legacy','two_band','interleaved','left_right'],default='legacy')
-    p.add_argument('--oeo-activation',choices=['relu','softplus','intensity_softsign'],default='relu')
+    p.add_argument('--oeo-activation',choices=['relu','softplus','centered_leaky_relu','intensity_softsign'],default='relu')
     p.add_argument('--route-balance-lambda',type=float,default=0.)
     args=p.parse_args();args.out.mkdir(parents=True,exist_ok=False)
     assert 0<=args.feature_dropout<1

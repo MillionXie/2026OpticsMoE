@@ -124,7 +124,7 @@ class OpticalOEO(PhaseOnly):
         self.phase_dropout = phase_dropout
         self.phase_dropout_block = phase_dropout_block
         self.input_layout = input_layout
-        assert oeo_activation in ['relu','softplus','intensity_softsign']
+        assert oeo_activation in ['relu','softplus','centered_leaky_relu','intensity_softsign']
         self.oeo_activation = oeo_activation
 
     def main_transmission(self, raw):
@@ -146,7 +146,9 @@ class OpticalOEO(PhaseOnly):
             value=intensity
         else:
             z=F.layer_norm(intensity, (478,478), eps=1e-5)
-            value=F.relu(z) if self.oeo_activation=='relu' else F.softplus(z)
+            if self.oeo_activation=='relu': value=F.relu(z)
+            elif self.oeo_activation=='centered_leaky_relu': value=F.leaky_relu(z,negative_slope=.1)
+            else: value=F.softplus(z)
         value = F.softsign(value)
         value = normalize_power(value, 1.0)
         return F.pad(value, (20,)*4).to(torch.complex64)
