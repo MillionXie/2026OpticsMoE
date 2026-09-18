@@ -45,17 +45,36 @@ def evaluate(model,data,batch,task,th=None):
  p=np.concatenate(probs); e=np.concatenate(energies); result=metrics(y,p,rows,task,th);result['nll']=float(-np.log(np.maximum(p[np.arange(len(y)),y],1e-12)).mean());result['zero_readout_fraction']=float((e<=1e-12).mean());q=np.concatenate(qs) if qs else None;result['route_mean']=q.mean(0).tolist() if q is not None else None
  return result,p,q,e
 
+def augment(x,task,seed):
+ with torch.random.fork_rng(devices=[torch.cuda.current_device()]):
+  torch.manual_seed(seed);return _augment(x,task)
+
+def _augment(x,task):
+ # Apply exactly the same transforms and random draws to the two architectures.
+ x=x.clone()
+ if task=='sen12ms':
+  h=torch.rand((len(x),1,1),device=x.device)<.5;v=torch.rand((len(x),1,1),device=x.device)<.5
+  boxes=[(0,112,0,112),(112,224,0,112),(0,112,112,168),(0,112,168,224),(112,224,112,168),(112,224,168,224)]
+  for y0,y1,x0,x1 in boxes:
+   t=x[:,y0:y1,x0:x1];t=torch.where(h,t.flip(-1),t);t=torch.where(v,t.flip(-2),t);x[:,y0:y1,x0:x1]=t
+ else:
+  # Time/frequency masks only in the audio half, never the text grid.
+  for i in range(len(x)):
+   y0=int(torch.randint(0,209,(),device=x.device));x0=int(torch.randint(0,105,(),device=x.device));x[i,y0:y0+16,:112]=0;x[i,:,x0:x0+8]=0
+  left=x[:,:,:112];x[:,:,:112]=left*(.5/left.square().sum((-2,-1),keepdim=True).clamp_min(1e-20)).sqrt()
+ return x
+
 def main():
- p=argparse.ArgumentParser();p.add_argument('--data',type=Path,required=True);p.add_argument('--out',type=Path,required=True);p.add_argument('--arch',choices=['moe','d2nn'],required=True);p.add_argument('--epochs',type=int,default=30);p.add_argument('--batch',type=int,default=32);p.add_argument('--seed',type=int,default=17);a=p.parse_args();a.out.mkdir(parents=True,exist_ok=False)
+ p=argparse.ArgumentParser();p.add_argument('--data',type=Path,required=True);p.add_argument('--out',type=Path,required=True);p.add_argument('--arch',choices=['moe','d2nn'],required=True);p.add_argument('--epochs',type=int,default=30);p.add_argument('--batch',type=int,default=32);p.add_argument('--seed',type=int,default=17);p.add_argument('--lr',type=float,default=.01);p.add_argument('--phase-dropout',type=float,default=.05);p.add_argument('--balance',type=float,default=.02);p.add_argument('--weight-power',type=float,default=1.);p.add_argument('--augment',action='store_true');a=p.parse_args();a.out.mkdir(parents=True,exist_ok=False)
  try:
   torch.set_num_threads(4);random.seed(a.seed);np.random.seed(a.seed);torch.manual_seed(a.seed);torch.cuda.manual_seed_all(a.seed)
   manifest=json.loads((a.data/'manifest.json').read_text())
   for name,h in manifest.items():assert sha(a.data/name)==h,name
   protocol=json.loads((a.data/'protocol.json').read_text());task=protocol['task'];classes=protocol['classes'];train=load(a.data,'train');val=load(a.data,'val')
-  model=OpticalOEO(a.arch,a.seed,phase_dropout=.05,input_layout='left_right',oeo_activation='centered_leaky_relu').cuda()
+  model=OpticalOEO(a.arch,a.seed,phase_dropout=a.phase_dropout,input_layout='left_right',oeo_activation='centered_leaky_relu').cuda()
   if classes==10:model.class_centers=[(y,x) for y in (160,358) for x in (80,170,259,348,438)]
   assert (tuple(model.first_phase.shape)==(478,478) and model.router_phase is None) if a.arch=='d2nn' else tuple(model.first_phase.shape)==(4,224,224)
-  meta=dict(args={k:str(v) if isinstance(v,Path) else v for k,v in vars(a).items()},protocol=protocol,manifest_sha=sha(a.data/'manifest.json'),gpu=os.environ.get('CUDA_VISIBLE_DEVICES'),torch=torch.__version__,git=subprocess.check_output(['git','rev-parse','HEAD'],text=True).strip(),model_source_sha=sha(Path(__file__).resolve().parents[1]/'t09_multimodal_matching/model.py'),trainer_sha=sha(Path(__file__)),parameters=sum(x.numel() for x in model.parameters()),d2nn='one full field bilinear 224->478, one aperture; no router',oeo='each layer intensity / mean, nonaffine LN, leaky_relu 0.1, softsign, unit L2 signed amplitude',selection='validation macro AP' if task=='sonyc' else 'validation macro F1',regularization='phase dropout .05; MoE batch-mean route balance .02')
+  meta=dict(args={k:str(v) if isinstance(v,Path) else v for k,v in vars(a).items()},protocol=protocol,manifest_sha=sha(a.data/'manifest.json'),gpu=os.environ.get('CUDA_VISIBLE_DEVICES'),torch=torch.__version__,git=subprocess.check_output(['git','rev-parse','HEAD'],text=True).strip(),model_source_sha=sha(Path(__file__).resolve().parents[1]/'t09_multimodal_matching/model.py'),trainer_sha=sha(Path(__file__)),parameters=sum(x.numel() for x in model.parameters()),d2nn='one full field bilinear 224->478, one aperture; no router',oeo='each layer intensity / mean, nonaffine LN, leaky_relu 0.1, softsign, unit L2 signed amplitude',selection='validation macro AP' if task=='sonyc' else 'validation macro F1',regularization=dict(phase_dropout=a.phase_dropout,moe_balance=a.balance,augmentation=a.augment,weight_power=a.weight_power))
   save(a.out/'metadata.json',meta);save(a.out/'status.json',dict(status='running',pid=os.getpid()))
   fields,y,rows=train; weights=np.ones(len(y),np.float32)
   if task=='sonyc':
@@ -64,13 +83,13 @@ def main():
     for label in [0,1]:
      ix=mask&(y==label)
      if ix.any():weights[ix]=1/int(ix.sum())
-   weights/=weights.mean()
-  optimizer=torch.optim.Adam(model.parameters(),lr=.01);scheduler=torch.optim.lr_scheduler.CosineAnnealingLR(optimizer,a.epochs,eta_min=.001);best=-float('inf');bestnll=float('inf');history=[]
+   weights=weights**a.weight_power;weights/=weights.mean()
+  optimizer=torch.optim.Adam(model.parameters(),lr=a.lr);scheduler=torch.optim.lr_scheduler.CosineAnnealingLR(optimizer,a.epochs,eta_min=a.lr*.1);best=-float('inf');bestnll=float('inf');history=[]
   for epoch in range(1,a.epochs+1):
    started=time.time();model.train();order=np.random.default_rng(a.seed+epoch).permutation(len(y));grad_norm=0.;total=0.
    for i in range(0,len(y),a.batch):
-    ix=order[i:i+a.batch];x=fields[ix].to('cuda',dtype=torch.float32);target=torch.tensor(y[ix],device='cuda');w=torch.tensor(weights[ix],device='cuda');optimizer.zero_grad(set_to_none=True);out=model(x);prob=out['probabilities'];prob=prob/prob.sum(1,keepdim=True);cost=(F.nll_loss(prob.clamp_min(1e-12).log(),target,reduction='none')*w).mean()
-    if a.arch=='moe':cost=cost+.02*(out['route_power'].mean(0)-.25).square().sum()
+    ix=order[i:i+a.batch];x=fields[ix].to('cuda',dtype=torch.float32);x=augment(x,task,a.seed+epoch*100000+i) if a.augment else x;target=torch.tensor(y[ix],device='cuda');w=torch.tensor(weights[ix],device='cuda');optimizer.zero_grad(set_to_none=True);out=model(x);prob=out['probabilities'];prob=prob/prob.sum(1,keepdim=True);cost=(F.nll_loss(prob.clamp_min(1e-12).log(),target,reduction='none')*w).mean()
+    if a.arch=='moe':cost=cost+a.balance*(out['route_power'].mean(0)-.25).square().sum()
     assert torch.isfinite(cost);cost.backward();gn=torch.nn.utils.clip_grad_norm_(model.parameters(),1.);assert torch.isfinite(gn);grad_norm=max(grad_norm,float(gn));optimizer.step();total+=float(cost.detach())*len(ix)
    scheduler.step();tr,_,_,_=evaluate(model,train,a.batch,task);va,_,_,_=evaluate(model,val,a.batch,task);score=va['macro_ap' if task=='sonyc' else 'macro_f1'];row=dict(epoch=epoch,train=tr,val=va,loss=total/len(y),gradient_norm_max=grad_norm,seconds=time.time()-started);history.append(row);save(a.out/'history.json',history)
    checkpoint=dict(model=model.state_dict(),epoch=epoch,optimizer=optimizer.state_dict(),scheduler=scheduler.state_dict(),meta=meta,train=tr,val=va);torch.save(checkpoint,a.out/'last.pt')
