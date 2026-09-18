@@ -106,6 +106,14 @@ def enlarge_tiles(amplitude, side, layout='legacy'):
         result.append(torch.cat(row,-1))
     return torch.cat(result,-2)
 
+def enlarge_full_aperture(amplitude, side):
+    """Standard D2NN input: one complete organized field over one aperture.
+
+    The multimodal field is resized as a whole; it is never copied into four
+    spatial regions and no four-way power normalization is applied.
+    """
+    return normalize_power(F.interpolate(amplitude[:,None], (side,side), mode='bilinear', align_corners=False)[:,0], 1.0)
+
 
 class OpticalOEO(PhaseOnly):
     def __init__(self, architecture, seed=17, phase_dropout=0., phase_dropout_block=8, input_layout='legacy', oeo_activation='relu'):
@@ -156,7 +164,7 @@ class OpticalOEO(PhaseOnly):
     def forward(self, amplitude):
         q, router_capture = self.route(amplitude)
         if self.architecture == 'full_d2nn':
-            expanded = enlarge_tiles(amplitude, 478, self.input_layout)
+            expanded = enlarge_full_aperture(amplitude, 478)
             first = F.pad(expanded*self.main_transmission(self.first_phase), (20,)*4)
         else:
             first = amplitude.new_zeros((len(amplitude),518,518),dtype=torch.complex64)
