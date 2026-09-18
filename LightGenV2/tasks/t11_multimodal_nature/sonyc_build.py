@@ -33,8 +33,7 @@ def main():
     if split=='train':
      for w in tokens(rows[-1]['question']): vocab.setdefault(w,len(vocab))
   rows_by[split]=rows; imgs_by[split]=images
-  if split!='test': np.savez_compressed(a.out/f'{split}_images.npz',images=np.stack(images)); save(a.out/f'{split}_questions.json',rows)
-  else: save(a.out/'test_questions.json',rows)
+  np.savez_compressed(a.out/f'{split}_images.npz',images=np.stack(images)); save(a.out/f'{split}_questions.json',rows)
   save(a.out/f'{split}_audio_records.json',[{'source_member':n,'audio_filename':n} for n in names])
  save(a.out/'vocab.json',vocab)
  file_hashes={p.name:digest(p.read_bytes()) for p in a.out.iterdir() if p.is_file()}
