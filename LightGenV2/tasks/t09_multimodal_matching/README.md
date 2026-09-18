@@ -2,6 +2,7 @@
 
 状态：统一协议整理与可行性验证中；当前结果仍为seed17探索结果。复现入口为
 [`reports/reproduction/README.md`](reports/reproduction/README.md)。
+跨任务主线和 CC BY 4.0 数据登记见 [`../MULTIMODAL_NATURE_PLAN.md`](../MULTIMODAL_NATURE_PLAN.md) 与 [`../dataset_registry_multimodal.json`](../dataset_registry_multimodal.json)。
 
 只比较两层主光路的 MoE+逐层OEO 与 D2NN+逐层OEO；MoE额外路由相位单列。
 首先比较 CLEVR 图文任务中的固定词编码与共享可训练 Embedding+GRU；
