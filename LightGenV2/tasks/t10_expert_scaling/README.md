@@ -17,6 +17,18 @@ soft概率接近均衡不能证明hard top-k负载均衡，须随最终结果报
 MoE通道112²，D2NN通道S/2²；因此两者原始信息带宽并未严格统一，D2NN可能保留更多细节。
 不应把当前协议称为“相同112²源信息”；后续匹配带宽对照需新profile，不能静默修改本轮结果。
 
+路由数据保存：每个MoE结果的`result.json`和逐轮`history.json`均保存验证集的`route_load`（hard top-k选择比例）、
+`route_probability`（soft概率均值）、`distinct_selected_sets`以及验证指标；`audit_routes.py`可将所有run导出为JSON/CSV，
+并计算死专家数、最大/最小hard负载和soft概率熵。soft概率均衡不等于hard选择均衡，论文必须同时报告两者。
+当前损失中的`router_balance_weight=0.01`只约束batch内soft概率均值，不能直接阻止hard专家坍塌；增加该权重可能降低分类准确率，
+因此后续只对固定配置做无约束/当前约束/增强约束的成对消融，不覆盖已有结果。
+
+OEO核查：当前实现为`intensity -> mean normalization -> spatial LayerNorm -> ReLU -> t/(1+t) -> unit-power`。
+LayerNorm输出严格包含正负值，ReLU会把负半轴置零；这不是数值bug，但会造成半数左右的归一化响应没有梯度通过，需单独做激活消融。
+图文/音文工程的`relu_softsign`实现是`softsign(ReLU(z))`，只把正半轴映射改成平滑有界函数，并没有恢复负半轴。
+因此它不能被表述为“完全取消ReLU截断”。当前正式扫描仍保持原OEO以保证可比；后续新增profile比较原`ReLU+t/(1+t)`、`ReLU+Softsign`，
+必要时再设计物理上非负的平滑替代，所有版本同时应用于MoE和D2NN。
+
 DeepWeeds仍未训练。新增CPU候选审计入口：
 `python -m LightGenV2.tasks.t10_expert_scaling.audit_deepweeds --data <deepweeds_fold0> --out <task/runs/smoke/audit_run>`。
 输出跨split dHash候选、接近拍摄时间的分组统计与候选图；候选并不等于已确认同一植株。
