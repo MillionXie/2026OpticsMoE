@@ -42,3 +42,7 @@ python -m LightGenV2.tasks.t11_multimodal_nature.prepare_manifest \
 
 - SEN12MS toolbox：<https://github.com/schmitt-muc/SEN12MS>；数据下载入口见其 README 的 TUM Mediatum 页面，论文和标签/划分文件按原始仓库记录。
 - SONYC-UST v2.3：<https://zenodo.org/records/3966543>；使用官方 CSV 标注和 taxonomy，按发布页记录的 CC BY 4.0 条款保存逐文件归属。
+
+## 首轮 smoke 记录（2026-09-18）
+
+在服务器用 GPU3/GPU4、seed=17、12 epochs、phase dropout=0.05 和同一 centered-LeakyReLU OEO 分别运行现有 CLEVR pilot 的 MoE 与 D2NN。MoE 最佳 validation accuracy 49.33%（epoch 1），D2NN 51.07%（epoch 7）；MoE route mean 约为 `[0.514, 0.172, 0.289, 0.025]`，显示第四专家几乎未使用。两者都接近随机水平，因此该结果只用于检查训练器、OEO 梯度和路由统计，不能作为主表或 MoE 优势证据；本次 t09 trainer 没有访问保留 test split，故没有 test accuracy。完整路径、哈希和解释见 [`reports/clevr_leaky_smoke_20260918.json`](reports/clevr_leaky_smoke_20260918.json)。

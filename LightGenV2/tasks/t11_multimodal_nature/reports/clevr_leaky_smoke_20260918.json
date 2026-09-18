@@ -1,0 +1,28 @@
+﻿{
+  "status": "pilot_only",
+  "date": "2026-09-18",
+  "task": "CLEVR attribute matching (existing pilot data; not SEN12MS/SONYC main table)",
+  "seed": 17,
+  "oeo": "centered_leaky_relu",
+  "phase_dropout": 0.05,
+  "epochs": 12,
+  "remote_evidence_root": "/DATA/DATA1/guest3/demo_reproduction_20260915/LightGenV2/tasks/t09_multimodal_matching/runs",
+  "moe": {
+    "run": "clevr_main_leaky_moe_s17_20260918",
+    "best_epoch": 1,
+    "val_accuracy": 0.4933333396911621,
+    "val_nll": 0.694571316242218,
+    "route_mean": [0.5142453908920288, 0.17206427454948425, 0.28874471783638, 0.024945681914687157],
+    "optical_parameters": 479364
+  },
+  "d2nn": {
+    "run": "clevr_main_leaky_d2nn_s17_20260918",
+    "best_epoch": 7,
+    "val_accuracy": 0.5106666684150696,
+    "val_nll": 0.6946325898170471,
+    "optical_parameters": 456968
+  },
+  "interpretation": "Both models are near chance on this run; MoE route is concentrated in expert 0 and expert 4 is nearly unused. This is an implementation smoke and OEO/routing diagnostic, not evidence of a main-task advantage. The current t09 trainer does not access a reserved test split, so no test accuracy is reported here.",
+  "shared_frontend_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "gpu_policy": "GPU UUIDs 4d8bfdb9 and 1b963983; processes released after completion"
+}
