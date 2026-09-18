@@ -32,10 +32,12 @@ def main():
     selection={}
     if a.audio_runs:
         assert a.kind=='audio'
-        profiles=[(run,arch,run) for run in a.audio_runs for arch in ['moe','d2nn']]
+        profiles=[]
         for run in a.audio_runs:
             config=json.loads((a.runs/run/'metadata.json').read_text())['config']
             assert not config['vision_checkpoint'] and config['mode']=='fixed'
+            architectures=['moe','d2nn'] if config['architecture']=='both' else [config['architecture']]
+            profiles.extend((run,arch,run) for arch in architectures)
     for tag,arch,run in profiles:
         path=a.runs/run/'fixed'/arch/'best_checkpoint.pt'
         result=json.loads((path.parent/'result.json').read_text())
@@ -96,7 +98,7 @@ def main():
         front=TextEncoder(len(vocab),'fixed').cuda()
         front.load_state_dict(torch.load(path.parent.parent/'frontend.pt',weights_only=False)['state']);front.eval()
         checkpoint=torch.load(path,weights_only=False);assert state_sha(front)==checkpoint['frontend_sha256']
-        model=OpticalOEO(arch,17,input_layout=checkpoint.get('input_layout','legacy')).cuda();model.load_state_dict(checkpoint['model']);model.eval()
+        model=OpticalOEO(arch,17,input_layout=checkpoint.get('input_layout','legacy'),oeo_activation=checkpoint.get('oeo_activation','relu')).cuda();model.load_state_dict(checkpoint['model']);model.eval()
         score,pred=evaluate(model,front,data,32)
         assert abs(float((pred.argmax(1)==labels).mean())-score['accuracy'])<1e-6
         nll=float(-np.log(np.maximum(pred[np.arange(len(labels)),labels],1e-30)).mean())

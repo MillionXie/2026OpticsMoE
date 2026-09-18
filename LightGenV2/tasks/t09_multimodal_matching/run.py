@@ -76,8 +76,8 @@ def evaluate(model, frontend, data, batch, ablation=None):
     return metrics,p.numpy()
 
 
-def build_models(seed, device, phase_dropout=0.):
-    return {arch:OpticalOEO(arch,seed,phase_dropout).to(device) for arch in ARCHS}
+def build_models(seed, device, phase_dropout=0., oeo_activation='relu'):
+    return {arch:OpticalOEO(arch,seed,phase_dropout,oeo_activation=oeo_activation).to(device) for arch in ARCHS}
 
 
 def train_epoch(models,frontend,data,optimizer,batch,epoch,seed,feature_dropout=0.):
@@ -144,7 +144,7 @@ def smoke(args,train,vocab):
             z=coded[:,:,:32]-coded[:,:,32:]
             recovered=(z@frontend.codes.T).argmax(-1)
             assert torch.equal(recovered[ids!=0],ids[ids!=0])
-        for arch,model in build_models(args.seed,'cuda',args.phase_dropout).items():
+        for arch,model in build_models(args.seed,'cuda',args.phase_dropout,args.oeo_activation).items():
             if args.phase_dropout:
                 model.train(); t=model.main_transmission(model.global_phase)
                 assert torch.allclose(t.abs(),torch.ones_like(t.real),atol=1e-6)
@@ -172,7 +172,7 @@ def run_mode(args,train,val,vocab,mode):
     root=args.out/mode;root.mkdir()
     setseed(args.seed);frontend=TextEncoder(len(vocab),mode).cuda()
     if mode=='learned':
-        warm=root/'warmup';warm.mkdir();models=build_models(args.seed+1000,'cuda',args.phase_dropout)
+        warm=root/'warmup';warm.mkdir();models=build_models(args.seed+1000,'cuda',args.phase_dropout,args.oeo_activation)
         optimizer=torch.optim.Adam([{'params':frontend.parameters(),'lr':args.frontend_lr},
                                     {'params':[p for m in models.values() for p in m.parameters()],'lr':args.lr}])
         best=float('inf');history=[]
@@ -197,7 +197,7 @@ def run_mode(args,train,val,vocab,mode):
     results={}
     for arch in (ARCHS if args.architecture=='both' else [args.architecture]):
         path=root/arch;path.mkdir();setseed(args.seed)
-        model=OpticalOEO(arch,args.seed,args.phase_dropout,input_layout=args.input_layout).cuda()
+        model=OpticalOEO(arch,args.seed,args.phase_dropout,input_layout=args.input_layout,oeo_activation=args.oeo_activation).cuda()
         initial_phase_sha=state_sha(model)
         optimizer=torch.optim.Adam(model.parameters(),lr=args.lr)
         scheduler=torch.optim.lr_scheduler.CosineAnnealingLR(optimizer,args.epochs,eta_min=args.lr*.1)
@@ -212,7 +212,7 @@ def run_mode(args,train,val,vocab,mode):
             history.append(row);save(path/'history.json',history)
             checkpoint=dict(model=model.state_dict(),optimizer=optimizer.state_dict(),scheduler=scheduler.state_dict(),
                             epoch=epoch,train=train_score,val=val_score,frontend_sha256=frozen_hash,
-                            initial_phase_sha256=initial_phase_sha,input_layout=args.input_layout)
+                            initial_phase_sha256=initial_phase_sha,input_layout=args.input_layout,oeo_activation=args.oeo_activation)
             torch.save(checkpoint,path/'last_checkpoint.pt')
             if val_score['nll']<best:
                 best=val_score['nll'];torch.save(checkpoint,path/'best_checkpoint.pt')
@@ -247,6 +247,7 @@ def main():
     p.add_argument('--architecture',choices=['both','moe','d2nn'],default='both')
     p.add_argument('--feature-cache',type=Path)
     p.add_argument('--input-layout',choices=['legacy','two_band','interleaved'],default='legacy')
+    p.add_argument('--oeo-activation',choices=['relu','softplus'],default='relu')
     args=p.parse_args();args.out.mkdir(parents=True,exist_ok=False)
     assert 0<=args.feature_dropout<1
     assert not args.feature_dropout or args.vision_checkpoint

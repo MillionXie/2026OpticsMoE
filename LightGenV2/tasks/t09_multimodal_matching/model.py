@@ -102,13 +102,13 @@ def enlarge_tiles(amplitude, side, layout='legacy'):
 
 
 class OpticalOEO(PhaseOnly):
-    def __init__(self, architecture, seed=17, phase_dropout=0., phase_dropout_block=8, input_layout='legacy'):
+    def __init__(self, architecture, seed=17, phase_dropout=0., phase_dropout_block=8, input_layout='legacy', oeo_activation='relu'):
         cfg_path = Path(__file__).resolve().parents[2]/'demo_check/pure_optical/config.json'
         cfg = json.loads(cfg_path.read_text(encoding='utf8'))
         cfg['seed'] = seed
         cfg.update(protocol='clevr_attribute_text_encoding_pilot_v1',no_intermediate_oeo=False,
                    detector_size=64,input_encoding='RGB tiles plus word-position grid; RGB/text power 0.5 each',
-                   oeo='active intensity / spatial mean -> nonaffine LayerNorm -> ReLU -> Softsign -> unit-power amplitude; zero phase',
+                   oeo=f'active intensity / spatial mean -> nonaffine LayerNorm -> {oeo_activation} -> Softsign -> unit-power amplitude; zero phase',
                    loss='NLL of two normalized detector energies',augmentation='none',
                    selection='minimum validation NLL',no_trainable_electronic_adapter_or_head=False)
         super().__init__('dynamic_four' if architecture == 'moe' else 'full_d2nn', cfg)
@@ -116,6 +116,8 @@ class OpticalOEO(PhaseOnly):
         self.phase_dropout = phase_dropout
         self.phase_dropout_block = phase_dropout_block
         self.input_layout = input_layout
+        assert oeo_activation in ['relu','softplus']
+        self.oeo_activation = oeo_activation
 
     def main_transmission(self, raw):
         value = self.transmission(raw)
@@ -127,12 +129,13 @@ class OpticalOEO(PhaseOnly):
             value = torch.where(mask, torch.ones_like(value), value)
         return value
 
-    @staticmethod
-    def oeo(field):
+    def oeo(self,field):
         # Identical active 478-square detector/SLM area for both models.
         intensity = field[:,20:498,20:498].abs().square()
         intensity = intensity/intensity.mean((-2,-1),keepdim=True).clamp_min(1e-20)
-        value = F.softsign(F.relu(F.layer_norm(intensity, (478,478), eps=1e-5)))
+        z=F.layer_norm(intensity, (478,478), eps=1e-5)
+        value=F.relu(z) if self.oeo_activation=='relu' else F.softplus(z)
+        value = F.softsign(value)
         value = normalize_power(value, 1.0)
         return F.pad(value, (20,)*4).to(torch.complex64)
 

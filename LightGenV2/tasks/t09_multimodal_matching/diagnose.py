@@ -40,7 +40,7 @@ def main():
         for arch in ['moe','d2nn']:
             if not (run/mode/arch/'best_checkpoint.pt').exists():continue
             layout=cfg.get('input_layout','legacy')
-            model=OpticalOEO(arch,cfg['seed'],input_layout=layout).cuda()
+            model=OpticalOEO(arch,cfg['seed'],input_layout=layout,oeo_activation=cfg.get('oeo_activation','relu')).cuda()
             checkpoint=torch.load(run/mode/arch/'best_checkpoint.pt',weights_only=False)
             model.load_state_dict(checkpoint['model']);model.requires_grad_(False).eval()
             baseline,probabilities=evaluate(model,frontend,data,32)

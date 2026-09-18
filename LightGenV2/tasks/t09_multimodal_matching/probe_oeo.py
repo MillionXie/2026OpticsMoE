@@ -12,6 +12,7 @@ from .prepare import save,digest
 def main():
     p=argparse.ArgumentParser()
     for key in ['data','run','out']:p.add_argument('--'+key,type=Path,required=True)
+    p.add_argument('--oeo-activation',choices=['relu','softplus'],default='relu')
     a=p.parse_args();a.out.mkdir(parents=True,exist_ok=False);torch.set_num_threads(4)
     vocab=json.loads((a.data/'vocab.json').read_text());data=load_data(a.data,'val',vocab,'cuda')
     cfg=json.loads((a.run/'metadata.json').read_text())['config']
@@ -20,7 +21,7 @@ def main():
     labels=data['labels'][:32];results={}
     for arch in ['moe','d2nn']:
         for state in ['initial','best','last']:
-            setseed(17);model=OpticalOEO(arch,17,input_layout=cfg['input_layout']).cuda();model.eval()
+            setseed(17);model=OpticalOEO(arch,17,input_layout=cfg['input_layout'],oeo_activation=a.oeo_activation).cuda();model.eval()
             sha=None
             if state!='initial':
                 path=a.run/'fixed'/arch/(state+'_checkpoint.pt');sha=digest(path.read_bytes())
@@ -53,7 +54,7 @@ def main():
             del model;torch.cuda.empty_cache()
     save(a.out/'probe.json',dict(commit=subprocess.check_output(['git','rev-parse','HEAD'],text=True).strip(),
          source_sha256=digest(Path(__file__).read_bytes()),data_manifest_sha256=digest((a.data/'manifest.json').read_bytes()),
-         protocol='First 32 validation questions in stored order; no test access; no weight updates',results=results))
+         protocol='First 32 validation questions in stored order; no test access; no weight updates',oeo_activation=a.oeo_activation,results=results))
     print(json.dumps(results,indent=2))
 
 if __name__=='__main__':main()
