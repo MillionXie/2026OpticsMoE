@@ -17,7 +17,7 @@ class OpticalMoE(nn.Module):
         self.router_centers = [(y+size//2,x+size//2) for y,x in self.slots]
         self.class_centers = [(round(self.height*y),round(self.width*x)) for y in (.32,.68) for x in (.16,.38,.62,.84)]
         self.register_buffer('active_count', torch.tensor(4))
-        with torch.random.fork_rng():
+        with torch.random.fork_rng(devices=[]):
             torch.manual_seed(cfg['seed'])
             self.experts = nn.ParameterList([nn.Parameter(torch.randn(size,size)*.02) for _ in self.slots])
             self.router = nn.Parameter(torch.randn(size,size)*.02)
