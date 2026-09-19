@@ -22,7 +22,10 @@ class OpticalMoE(nn.Module):
             self.router_centers=[(round(self.height/2+radius*math.sin(k*math.pi/6)),round(self.width/2+radius*math.cos(k*math.pi/6))) for k in angles]
         elif cfg.get('router_layout','slot_centers')!='slot_centers':
             raise ValueError('Unknown router layout')
-        self.class_centers = [(round(self.height*y),round(self.width*x)) for y in (.32,.68) for x in (.16,.38,.62,.84)]
+        self.num_classes=cfg.get('num_classes',8)
+        if self.num_classes<2 or self.num_classes>8: raise ValueError('num_classes must be 2..8')
+        candidates=[(round(self.height*y),round(self.width*x)) for y in (.32,.68) for x in (.16,.38,.62,.84)]
+        self.class_centers=candidates[:self.num_classes]
         for centers,side in [(self.router_centers,cfg['router_detector_size']),(self.class_centers,cfg['detector_size'])]:
             if side<=0 or side%2: raise ValueError('Detector size must be positive and even')
             for i,(y,x) in enumerate(centers):

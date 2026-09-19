@@ -62,6 +62,7 @@ def domain(images, name, view="color_shift"):
             # A one-count floor prevents zero-power fields on flat images.
             gray=1+254*mag/peak.clamp_min(1e-12)
         return gray.clamp(0,255).round().to(torch.uint8)[...,None].expand(-1,-1,-1,3).contiguous()
+    if view=='rgb': return images
     if view!='color_shift': raise ValueError('Unknown B representation: '+view)
     # Deterministic synthetic color/illumination shift, not a clinical stain model.
     gains=images.new_tensor([1.12,.90,1.04],dtype=torch.float32)

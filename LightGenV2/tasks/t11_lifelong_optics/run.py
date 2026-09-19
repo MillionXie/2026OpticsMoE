@@ -25,7 +25,7 @@ def evaluate(model, x, y, task, batch_size, mask=None):
         out=model(domain(x[start:start+batch_size].to(device),task,model.cfg.get("task_b_view","color_shift")),mask=mask)
         probs.append(out['probabilities'].cpu()); routes.append(out['routes'].cpu())
     p=torch.cat(probs); q=torch.cat(routes); pred=p.argmax(1)
-    confusion=torch.bincount(y*8+pred,minlength=64).reshape(8,8)
+    classes=model.num_classes; confusion=torch.bincount(y*classes+pred,minlength=classes*classes).reshape(classes,classes)
     return dict(accuracy=float((pred==y).float().mean()),loss=float(torch.nn.functional.nll_loss(p.clamp_min(1e-12).log(),y)),confusion=confusion.tolist(),mean_route=q.mean(0).tolist(),route_std=q.std(0,unbiased=False).tolist(),dominant_expert_counts=torch.bincount(q.argmax(1),minlength=12).tolist()),p,q
 
 
@@ -117,3 +117,4 @@ def main():
         save(out/'status.json',dict(state='failed',error=repr(error))); raise
 
 if __name__=='__main__': main()
+
