@@ -100,6 +100,19 @@ class Contract(unittest.TestCase):
         for i,p in enumerate(self.m.experts): self.assertEqual(p.requires_grad,8<=i<12)
         self.assertFalse(self.m.router.requires_grad); self.assertFalse(self.m.global_phase.requires_grad)
 
+    def test_fixed_sixteen_slot_fourth_group_and_shared_retraining(self):
+        cfg=dict(self.cfg,num_experts=16,router_layout='ring',router_detector_size=6)
+        model=OpticalMoE(cfg); geometry=(model.height,model.width,model.slots.copy())
+        model.configure('warmup_D'); warmup=model(self.x,warmup=True)
+        self.assertEqual(int(model.active_count),16)
+        self.assertTrue(torch.equal(warmup['routes'][:,:12],torch.zeros(3,12)))
+        self.assertTrue(torch.equal(warmup['routes'][:,12:],torch.full((3,4),.25)))
+        self.assertFalse(model.router.requires_grad); self.assertFalse(model.global_phase.requires_grad)
+        model.configure('D')
+        self.assertTrue(model.router.requires_grad); self.assertTrue(model.global_phase.requires_grad)
+        for i,p in enumerate(model.experts): self.assertEqual(p.requires_grad,12<=i<16)
+        self.assertEqual(geometry,(model.height,model.width,model.slots))
+
     def test_balanced_replay_and_domain(self):
         labels=np.repeat(np.arange(8),437)
         ids=balanced_indices(labels,256,17)

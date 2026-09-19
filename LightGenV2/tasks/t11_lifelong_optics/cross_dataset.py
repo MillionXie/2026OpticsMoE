@@ -71,7 +71,7 @@ def evaluate(model, images, labels, batch_size, mask=None, warmup=False):
         "confusion": confusion.tolist(),
         "mean_route": q.mean(0).tolist(),
         "route_std": q.std(0, unbiased=False).tolist(),
-        "dominant_expert_counts": torch.bincount(q.argmax(1), minlength=12).tolist(),
+        "dominant_expert_counts": torch.bincount(q.argmax(1), minlength=len(model.experts)).tolist(),
     }
     return metrics, p, q
 

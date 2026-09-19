@@ -1,4 +1,4 @@
-"""Phase-only coherent optical MoE; fixed 3x4 geometry across all stages."""
+"""Phase-only coherent optical MoE with fixed preallocated geometry."""
 import math
 import torch
 from torch import nn
@@ -11,15 +11,25 @@ class OpticalMoE(nn.Module):
         self.cfg = cfg
         size, gap, border = cfg['expert_size'], cfg['gap'], cfg['border']
         self.size = size
-        self.height, self.width = 3*size+2*gap+2*border, 4*size+3*gap+2*border
-        # Activate balanced groups of four corners first; coordinates never change.
-        order = [(0,0),(0,3),(2,0),(2,3),(0,1),(0,2),(2,1),(2,2),(1,0),(1,1),(1,2),(1,3)]
+        self.num_experts = int(cfg.get('num_experts', 12))
+        if self.num_experts not in (12, 16):
+            raise ValueError('num_experts must be 12 or 16')
+        rows = self.num_experts // 4
+        self.height, self.width = rows*size+(rows-1)*gap+2*border, 4*size+3*gap+2*border
+        # Each consecutive group spans the aperture symmetrically; coordinates never change.
+        if self.num_experts == 12:
+            order = [(0,0),(0,3),(2,0),(2,3),(0,1),(0,2),(2,1),(2,2),(1,0),(1,1),(1,2),(1,3)]
+        else:
+            order = [(0,0),(0,3),(3,0),(3,3),(0,1),(0,2),(3,1),(3,2),
+                     (1,0),(1,3),(2,0),(2,3),(1,1),(1,2),(2,1),(2,2)]
         self.slots = [(border+r*(size+gap),border+c*(size+gap)) for r,c in order]
         self.router_centers = [(y+size//2,x+size//2) for y,x in self.slots]
         if cfg.get('router_layout','slot_centers')=='ring':
-            radius=.8*size
-            angles=[0,3,6,9,1,4,7,10,2,5,8,11]
-            self.router_centers=[(round(self.height/2+radius*math.sin(k*math.pi/6)),round(self.width/2+radius*math.cos(k*math.pi/6))) for k in angles]
+            # Sixteen ports need the larger radius so adjacent square CCD windows do not overlap.
+            radius=(1.0 if self.num_experts==16 else .8)*size
+            groups=self.num_experts//4
+            angles=[offset+groups*quadrant for offset in range(groups) for quadrant in range(4)]
+            self.router_centers=[(round(self.height/2+radius*math.sin(2*k*math.pi/self.num_experts)),round(self.width/2+radius*math.cos(2*k*math.pi/self.num_experts))) for k in angles]
         elif cfg.get('router_layout','slot_centers')!='slot_centers':
             raise ValueError('Unknown router layout')
         self.num_classes=cfg.get('num_classes',8)
@@ -40,12 +50,12 @@ class OpticalMoE(nn.Module):
         self.propagator = AngularSpectrumPropagator(cfg['wavelength_m'],cfg['pixel_size_m'],(self.height,self.width),cfg['distance_m'])
 
     def configure(self, stage):
-        mapping={'A':(0,False),'warmup':(1,True),'B':(1,False),'warmup_C':(2,True),'C':(2,False)}
+        mapping={'A':(0,False),'warmup':(1,True),'B':(1,False),'warmup_C':(2,True),'C':(2,False),'warmup_D':(3,True),'D':(3,False)}
         if stage not in mapping: raise ValueError(stage)
         group,warmup=mapping[stage]; self.configure_group(group,warmup)
 
     def configure_group(self, group, warmup=False):
-        if group not in (0,1,2): raise ValueError('group must be 0, 1, or 2')
+        if group not in range(self.num_experts//4): raise ValueError('expert group is outside the preallocated geometry')
         start=4*group; self.active_count.fill_(start+4)
         for i,p in enumerate(self.experts): p.requires_grad_(start<=i<start+4)
         self.router.requires_grad_(not warmup)
@@ -70,12 +80,12 @@ class OpticalMoE(nn.Module):
 
     def forward(self, images, mask=None, warmup=False):
         a=self.encode(images); n=int(self.active_count)
-        allowed=torch.arange(12,device=a.device)<n
+        allowed=torch.arange(self.num_experts,device=a.device)<n
         if mask is not None:
             mask=torch.as_tensor(mask,device=a.device,dtype=torch.bool)
-            if mask.shape!=(12,): raise ValueError('Expected 12-slot mask')
+            if mask.shape!=(self.num_experts,): raise ValueError(f'Expected {self.num_experts}-slot mask')
             allowed=allowed & mask
-        if warmup: allowed=allowed & (torch.arange(12,device=a.device)>=n-4)
+        if warmup: allowed=allowed & (torch.arange(self.num_experts,device=a.device)>=n-4)
         if not allowed.any(): raise ValueError('Empty expert mask')
         if warmup:
             q=allowed.float().expand(len(a),-1)/allowed.sum()
