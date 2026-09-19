@@ -1,6 +1,65 @@
 # 光学终身学习：初步结果与复现入口
 
-日期：2026-09-19。目的：供课题组初步讨论，不作为论文最终性能结论。
+初建：2026-09-19；跨数据集更新：2026-09-20。目的：供课题组初步讨论，不作为论文最终性能结论。
+
+## 跨数据集初步结果：Kather2016 → LC25000 lung
+
+已完成不同数据集、相同二分类语义的真实光学 MoE 顺序学习。Task A 为 Kather2016
+结直肠组织（tumor / non-tumor），Task B 为 LC25000 肺组织（lung cancer / benign）。
+两者都是 H&E RGB 组织病理图，但器官和数据来源不同。表中均为每类等量验证样本上的
+平衡准确率；没有读取两个数据集的 test 图像。
+
+| B 阶段设置 | A 学完时 | B 学完后 A（E1–E8） | B 学完后 B（E1–E8） | BWT |
+|---|---:|---:|---:|---:|
+| 256 张 A replay | 86.67% | 83.33% | 96.60% | -3.33 pp |
+| 无 replay | 86.67% | 56.11% | 96.70% | -30.56 pp |
+
+两组 B 每轮都使用 9 张当前任务样本组成一次更新；replay 组另加入 3 张 A 样本。因此
+small replay 将 A 保持率提高 27.22 个百分点，而 B 只相差 -0.10 个百分点。warmup 全程
+只使用 B 训练数据；在固定 `A_old_only` 评估条件下，A 始终保持 86.67%，确认此前
+“4 专家与 8 专家口径混用导致 A 虚假提高”的问题已经修复。
+
+replay 组最终 `A_old_only=82.22%`、`A_new_only=69.44%`；`B_old_only=96.60%`、
+`B_new_only=91.80%`。这说明旧专家对相近病理域有很强迁移能力，也意味着当前 B 并未证明
+“必须扩展新专家”才能获得高精度。专家屏蔽会改变相干干涉，只作为系统诊断，不能将差值
+解释为可加的专家知识。
+
+数据配置：A 训练每类 400、验证每类 90；B 从发布方 train 中每类抽取 1000，从发布方
+validation 中每类抽取 500。Kather 来源为 [Zenodo 53169](https://zenodo.org/records/53169)；
+LC25000 来源为 [Zenodo 14998042](https://zenodo.org/records/14998042)，两者均按 CC BY 4.0
+清单校验。LC25000 归档 MD5 为 `1b1325f690bc51fd76bb8c4958c03b06`。该 LC25000 归档只含
+肺组织子集，而且数据包含由较小原始集合生成的增强图；没有患者或增强家族 ID，因此不能
+声称患者独立，96.6% 只作为工程可行性结果。
+
+证据 run：
+
+- replay：`runs/simulation/kather_lc25000_8b0b69f2`，commit `8b0b69f2`，B 最佳 epoch 9；
+  A/B best checkpoint SHA256 为 `66c308b493a5586693a2fad233abd3d406265cb4d837fcdcd321a22db345ebe6`、
+  `c228207550f5989fd40687792ea1ae1a61a56b035aa9a4ac319a945cf4d43ce9`。
+- no replay：`runs/simulation/kather_lc25000_no_replay_a846e1d6`，commit `a846e1d6`，
+  B 最佳 epoch 8；A/B best checkpoint SHA256 为
+  `56bdb48d9bca31ec932f0e87ef2129ef15d76df4f770e1f3b1532ae9f5c7efe3`、
+  `dc446b536cd59b22b40d4c4ebebb32f58f2c84bf7a70a3a20023fe34ae6a0965`。
+
+两组的冻结参数逐元素不变，光学几何 state shape 不变；8 项合同测试通过。运行环境为
+Python 3.11.15、PyTorch 2.6.0+cu124、单张 A100（CUDA_VISIBLE_DEVICES=6）。
+准备后缓存 SHA256：Kather `ba8b6a30f99798c244377d2585c1fc3fe8bc234c2847afcd373a0932d40882b5`；
+LC25000 `c923e22dd6bb85de24393a5de020f9beedb13040f5d4472b3ac2df53d071126a`。
+两组均用 A/B 验证平衡准确率均值选择 B checkpoint，尚未进行独立测试或多种子复验。
+
+在对应 commit 的服务器仓库根目录执行；no-replay 仅将 config 换成
+`kather_lc25000_no_replay.json` 并使用新的输出目录：
+
+```bash
+CUDA_VISIBLE_DEVICES=6 /home/guest3/miniconda3/envs/xml/bin/python -u \
+  -m LightGenV2.tasks.t11_lifelong_optics.cross_dataset \
+  --config LightGenV2/tasks/t11_lifelong_optics/configs/kather_lc25000.json \
+  --task-a /DATA/DATA1/guest3/demo_reproduction_data/kather_lc25000_c3729eeb/kather2016_binary.npz \
+  --task-a-manifest /DATA/DATA1/guest3/demo_reproduction_data/kather_lc25000_c3729eeb/kather2016_binary_manifest.json \
+  --task-b /DATA/DATA1/guest3/demo_reproduction_data/kather_lc25000_c3729eeb/lc25000_lung_binary.npz \
+  --task-b-manifest /DATA/DATA1/guest3/demo_reproduction_data/kather_lc25000_c3729eeb/lc25000_lung_binary_manifest.json \
+  --out LightGenV2/tasks/t11_lifelong_optics/runs/simulation/kather_lc25000_8b0b69f2
+```
 
 ## 可以向老师汇报的结果
 
