@@ -48,3 +48,15 @@ python -m LightGenV2.tasks.t11_lifelong_optics.evaluate --run <run目录> --data
 ```
 
 该命令重载 A/B 最佳 checkpoint，复算全部七项验证指标，逐项核对准确率和混淆矩阵，并保存 checkpoint SHA256；不重新训练。
+
+## 探测器几何对照
+
+`configs/kather.json` 使用槽位中心作为 router CCD 探测中心；`configs/kather_ring.json` 将 12 个中心放在输入中心半径 179.2 像素的圆周上，按四个相隔 90° 的端口为一组依次激活。两配置的其他参数相同，且每次运行内部几何始终固定。环形布局意在控制探测距离偏差，不能预先保证均衡或更高准确率。窗口越界或相互重叠时构造模型直接报错。
+
+结果图复现：
+
+```text
+python -m LightGenV2.tasks.t11_lifelong_optics.report --runs <run1目录> <run2目录> --out LightGenV2/tasks/t11_lifelong_optics/reports/reproduction
+```
+
+绘图另需 matplotlib。历史无效 `runs/smoke/rebuilt` 与 `runs/smoke/t11_smoke` 删除被环境策略拒绝，保留但作废，不得引用其准确率。
