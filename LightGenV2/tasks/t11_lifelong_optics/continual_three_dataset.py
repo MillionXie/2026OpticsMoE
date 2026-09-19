@@ -74,7 +74,10 @@ def main():
             audit.append({'stage':name,'frozen_unchanged':list(frozen),'geometry_unchanged':geometry=={k:list(v.shape) for k,v in model.state_dict().items()}});state=torch.load(stage/'best_checkpoint.pt',map_location=a.device,weights_only=False);model.load_state_dict(state['model']);snapshots[name]={'epoch':state['epoch'],'selection_score':state['validation']['selection_score'],'metrics':state['validation']['seen']}
         results={'snapshots':snapshots,'headline_metric':'balanced_accuracy'}
         for j,name in enumerate('ABC'):
-            for label,mask in [('all',None),('own_group',GROUP_MASKS[j]),('old_prefix',PREFIX_MASKS[j])]:results[name+'_'+label]=evaluate(model,tasks[j]['vx'],tasks[j]['vy'],cfg['batch_size'],mask)[0]
+            for label,mask in [('all',None),('own_group',GROUP_MASKS[j]),('learned_prefix',PREFIX_MASKS[j])]:
+                results[name+'_'+label]=evaluate(model,tasks[j]['vx'],tasks[j]['vy'],cfg['batch_size'],mask)[0]
+            if j:
+                results[name+'_previous_prefix']=evaluate(model,tasks[j]['vx'],tasks[j]['vy'],cfg['batch_size'],PREFIX_MASKS[j-1])[0]
         results['A_BWT_after_C']=results['A_all']['balanced_accuracy']-snapshots['A']['metrics']['A']['balanced_accuracy'];results['B_BWT_after_C']=results['B_all']['balanced_accuracy']-snapshots['B']['metrics']['B']['balanced_accuracy'];results['interpretation']='Masks alter coherent interference; own_group and prefix results are diagnostics.'
         save(a.out/'metrics.json',results);save(a.out/'audit.json',audit);save(a.out/'status.json',{'state':'complete'})
     except BaseException as e:save(a.out/'status.json',{'state':'failed','error':repr(e)});raise
