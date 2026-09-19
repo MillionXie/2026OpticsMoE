@@ -9,6 +9,7 @@
   "router_detector_size": 60,
   "detector_size": 32,
   "batch_size": 12,
+  "b_batch_size": 9,
   "replay_capacity": 256,
   "replay_fraction": 0.0,
   "train_per_class_A": 400,

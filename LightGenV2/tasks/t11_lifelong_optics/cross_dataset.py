@@ -188,7 +188,7 @@ def main():
         ]
         optimizer = torch.optim.Adam(groups); best = -1.0; stage_dir = args.out / "B"; stage_dir.mkdir()
         for epoch in range(1, cfg["epochs_B"] + 1):
-            value = train_epoch(model, optimizer, x_b, y_b, rng.permutation(len(y_b)), cfg["batch_size"], rng,
+            value = train_epoch(model, optimizer, x_b, y_b, rng.permutation(len(y_b)), cfg.get("b_batch_size", cfg["batch_size"]), rng,
                                 replay_x, replay_y, cfg["replay_fraction"])
             a_all = evaluate(model, vx_a, vy_a, cfg["batch_size"])[0]
             a_old = evaluate(model, vx_a, vy_a, cfg["batch_size"], OLD_MASK)[0]
