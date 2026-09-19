@@ -10,7 +10,7 @@ def main():
     p=argparse.ArgumentParser();p.add_argument('--runs',nargs='+',type=Path,required=True);p.add_argument('--out',type=Path,required=True);a=p.parse_args();a.out.mkdir(parents=True,exist_ok=True)
     fig,axes=plt.subplots(len(a.runs),3,figsize=(15,4*len(a.runs)),squeeze=False)
     for row,run in enumerate(a.runs):
-        cfg=json.loads((run/'config.json').read_text());m=json.loads((run/'metrics.json').read_text());h=json.loads((run/'history.json').read_text());name=cfg.get('router_layout','slot_centers')
+        cfg=json.loads((run/'config.json').read_text());m=json.loads((run/'metrics.json').read_text());h=json.loads((run/'history.json').read_text());name=cfg.get('router_layout','slot_centers')+' / '+cfg.get('task_b_view','color_shift')
         ax=axes[row,0]; steps=np.arange(1,len(h)+1)
         for task,color in [('A','#245cb1'),('B','#d56a20')]: ax.plot(steps,[r['val_'+task]['accuracy']*100 for r in h],label=task,color=color)
         ax.axvspan(cfg['epochs_A']+.5,cfg['epochs_A']+cfg['epochs_warmup']+.5,color='gray',alpha=.16,label='warmup')

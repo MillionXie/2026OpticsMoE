@@ -44,6 +44,22 @@ class Contract(unittest.TestCase):
                 if p.requires_grad: self.assertFalse(torch.equal(p,before[n]),n)
                 else: self.assertTrue(torch.equal(p,before[n]),n)
 
+    def test_representation_contract(self):
+        rgb=torch.tensor([[[[255,0,0],[0,255,0],[0,0,255]]]],dtype=torch.uint8)
+        gray=domain(rgb,'B','gray')
+        self.assertEqual(gray[0,0,:,0].tolist(),[76,150,29])
+        self.assertTrue(torch.equal(gray[...,0],gray[...,1]))
+        for view in ('gray','edges'):
+            transformed=domain(self.x,'B',view)
+            self.assertEqual(transformed.shape,self.x.shape)
+            self.assertEqual(transformed.dtype,torch.uint8)
+            self.assertTrue(torch.equal(transformed,domain(self.x,'B',view)))
+            self.assertTrue(torch.equal(domain(self.x,'A',view),self.x))
+            self.assertTrue(torch.allclose(self.m(transformed)['output_power'],torch.ones(3),atol=2e-6))
+        flat=torch.full((2,30,30,3),80,dtype=torch.uint8)
+        self.assertTrue(torch.equal(domain(flat,'B','edges'),torch.ones_like(flat)))
+        with self.assertRaises(ValueError):domain(self.x,'B','infrared')
+
     def test_ring_detector_spacing(self):
         cfg=dict(self.cfg,router_layout='ring')
         with self.assertRaises(ValueError): OpticalMoE(cfg)

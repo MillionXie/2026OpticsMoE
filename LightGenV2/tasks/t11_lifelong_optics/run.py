@@ -22,7 +22,7 @@ def evaluate(model, x, y, task, batch_size, mask=None):
     model.eval(); probs=[]; routes=[]
     device=next(model.parameters()).device
     for start in range(0,len(y),batch_size):
-        out=model(domain(x[start:start+batch_size].to(device),task),mask=mask)
+        out=model(domain(x[start:start+batch_size].to(device),task,model.cfg.get("task_b_view","color_shift")),mask=mask)
         probs.append(out['probabilities'].cpu()); routes.append(out['routes'].cpu())
     p=torch.cat(probs); q=torch.cat(routes); pred=p.argmax(1)
     confusion=torch.bincount(y*8+pred,minlength=64).reshape(8,8)
@@ -71,7 +71,7 @@ def main():
                 replay_n=round(cfg['batch_size']*cfg['replay_fraction']) if stage=='B' else 0
                 current_n=cfg['batch_size']-replay_n; total=0.; count=0
                 for start in range(0,len(order),current_n):
-                    ids=order[start:start+current_n]; xb=domain(x[ids].to(args.device),'A' if stage=='A' else 'B'); yb=y[ids].to(args.device)
+                    ids=order[start:start+current_n]; xb=domain(x[ids].to(args.device),'A' if stage=='A' else 'B',cfg.get('task_b_view','color_shift')); yb=y[ids].to(args.device)
                     if replay_n:
                         ri=rng.choice(rid,size=replay_n,replace=False)
                         xb=torch.cat((xb,x[ri].to(args.device))); yb=torch.cat((yb,y[ri].to(args.device)))
@@ -97,7 +97,11 @@ def main():
             # Warmup is fixed-duration; A/B use validation-selected checkpoints.
             if stage!='warmup':
                 state=torch.load(stage_dir/'best_checkpoint.pt',map_location=args.device,weights_only=False); model.load_state_dict(state['model'])
-            if stage=='A': a_before=evaluate(model,vx,vy,'A',cfg['batch_size'])[0]
+            if stage=='A':
+                a_before,prob,routes=evaluate(model,vx,vy,'A',cfg['batch_size'])
+                np.savez_compressed(out/'A_before.npz',ids=arrays['val_ids'],labels=vy.numpy(),probabilities=prob.numpy(),routes=routes.numpy())
+                b_before,_,_=evaluate(model,vx,vy,'B',cfg['batch_size'])
+                save(out/'before_B.json',b_before)
         results={'A_before':a_before}
         for task in ('A','B'):
             for label,mask in [('all',None),('old_only',[True]*4+[False]*8),('new_only',[False]*4+[True]*4+[False]*4)]:

@@ -45,9 +45,24 @@ def load(path, manifest, seed):
     return arrays,metadata
 
 
-def domain(images, name):
+def domain(images, name, view="color_shift"):
     if name=='A': return images
     if name!='B': raise ValueError(name)
+    if view in ('gray','edges'):
+        weights=images.new_tensor([.299,.587,.114],dtype=torch.float32)
+        gray=(images.float()*weights).sum(-1)
+        if view=='edges':
+            from torch.nn import functional as F
+            # Fixed Sobel filters, per-image contrast scaling; no fitted parameters.
+            k=gray.new_tensor([[-1.,0.,1.],[-2.,0.,2.],[-1.,0.,1.]])/8
+            kernels=torch.stack((k,k.T))[:,None]
+            grad=F.conv2d(F.pad(gray[:,None],(1,1,1,1),mode='replicate'),kernels)
+            mag=grad.square().sum(1).sqrt()
+            peak=mag.amax((-2,-1),keepdim=True)
+            # A one-count floor prevents zero-power fields on flat images.
+            gray=1+254*mag/peak.clamp_min(1e-12)
+        return gray.clamp(0,255).round().to(torch.uint8)[...,None].expand(-1,-1,-1,3).contiguous()
+    if view!='color_shift': raise ValueError('Unknown B representation: '+view)
     # Deterministic synthetic color/illumination shift, not a clinical stain model.
     gains=images.new_tensor([1.12,.90,1.04],dtype=torch.float32)
     return (images.float()*gains+images.new_tensor([3.,-3.,1.],dtype=torch.float32)).clamp(0,255).round().to(torch.uint8)
