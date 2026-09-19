@@ -11,6 +11,8 @@ def load_npz(path, positive):
   out={}
   for split in ('train','validation' if 'validation_images' in z.files else 'val'):
    out[split+'_images']=z[split+'_images'].copy(); out[split+'_labels']=positive(z[split+'_labels']);out[split+'_ids']=z[split+'_ids'].copy()
+  if 'validation_images' in z.files:
+   out['val_images']=out.pop('validation_images'); out['val_labels']=out.pop('validation_labels'); out['val_ids']=out.pop('validation_ids')
  return out
 
 def balanced(x,y,n,seed):
