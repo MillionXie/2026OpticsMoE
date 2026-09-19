@@ -112,6 +112,18 @@ python -m LightGenV2.tasks.t11_lifelong_optics.continual_three_dataset \
 `own_group`、截至该任务的 `learned_prefix`，并为 B/C 额外计算不含当前新专家的
 `previous_prefix`。这些掩码改变相干干涉，只是诊断，不是可加的专家知识量。
 
+## 四数据集 4→8→12→16 协议
+
+Task D 使用 [HepatoBench](https://huggingface.co/datasets/xtxx/HepatoBench) 的肝脏肿瘤
+TUM 与正常组织 NOR，许可证 CC BY 4.0，DOI 10.57967/hf/8231。公开数据只有一个 split，
+准备脚本以固定种子 47 建立图像级互斥的 train/validation，每类 600/80；发布文件没有患者
+或分组 ID，因此不能声称患者独立。其余五类不下载、不使用。
+
+四任务配置必须从 A 开始设置 `num_experts=16`，固定为 4×4 槽位和 1026×1026 传播画布；
+不能加载 12 槽 checkpoint。D warmup 只训练 E13–E16；D 主训练冻结 E1–E12，同时更新
+E13–E16、router、global。每次 D 更新包含 6 张 D，以及 A/B/C replay 各 2 张。由此，
+router/global 在每个主任务 A/B/C/D 都重新训练，只在新专家 warmup 期间暂时冻结。
+
 ## 探测器几何对照
 
 `configs/kather.json` 使用槽位中心作为 router CCD 探测中心；`configs/kather_ring.json` 将 12 个中心放在输入中心半径 179.2 像素的圆周上，按四个相隔 90° 的端口为一组依次激活。两配置的其他参数相同，且每次运行内部几何始终固定。环形布局意在控制探测距离偏差，不能预先保证均衡或更高准确率。窗口越界或相互重叠时构造模型直接报错。

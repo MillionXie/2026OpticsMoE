@@ -2,6 +2,41 @@
 
 初建：2026-09-19；跨数据集更新：2026-09-20。目的：供课题组初步讨论，不作为论文最终性能结论。
 
+## 四数据集初步结果：固定 16 槽 A→B→C→D
+
+Task D 新增 HepatoBench 肝脏 TUM/NOR。由于固定光学几何合同，四任务实验从 A 起按 16 槽
+重新训练，不能接续 12 槽权重。每个主任务均更新当前四个专家、router 和 global；只有旧
+专家冻结。每段 warmup 只更新新四专家，并冻结旧专家、router、global。
+
+| 阶段最佳 checkpoint | A | B | C | D | 已见任务均值 |
+|---|---:|---:|---:|---:|---:|
+| A（epoch 9） | 86.11% | — | — | — | 86.11% |
+| B（epoch 8） | 85.00% | 97.20% | — | — | 91.10% |
+| C（epoch 12） | 75.00% | 94.40% | 78.13% | — | 82.51% |
+| D（epoch 6） | 78.33% | 97.00% | 64.38% | 70.00% | 77.43% |
+
+D 相对各任务刚学完时的 BWT：A -7.78 pp、B -0.20 pp、C -13.75 pp。D 阶段每次更新为
+6 张 D + A/B/C 各 2 张 replay。B 保持良好，A 部分恢复，但最近任务 C 遗忘明显；当前结果
+证明四任务固定几何和多旧任务 replay 可运行，尚不能声称已经解决长期遗忘。
+
+warmup B/C/D 中所有旧任务指标逐轮完全不变。七个训练阶段的冻结参数逐元素检查均通过：
+D 主训练中 E1–E12 不变，E13–E16、router、global 可训练；所有阶段几何不变。10 项合同
+测试及四任务真实光学 pilot 通过。
+
+正式 run：`runs/simulation/four_task_b0ce0836`；训练 commit `b0ce083641cd13bf6dd9d26150e978b591b54dbb`。
+A/B/C/D best checkpoint SHA256：
+`be1594d82f00e23f606836e20ea8fe1627c0f50cbd19f9fea8ef3a9758c8d462`、
+`0c4666d9d0c4aa3cefe42ff5dee47f825dfb1dad56f7aedcb533d9ba00f48b6d`、
+`ad189453f30f882dc342cc46f39b00359fe7bda86d96ac6de385472998e65210`、
+`93b26ae6f0688c96a88dac1c2af69a0031e114a3ad206aa17899a95dccc16dcf`。
+
+HepatoBench 来源：[数据集页面](https://huggingface.co/datasets/xtxx/HepatoBench)，CC BY 4.0，
+DOI 10.57967/hf/8231。TUM/NOR 原 ZIP SHA256 为
+`0f627cb4afff9344bd1559ef1e3b36056ac0e931073c0789c18faed442fa826e`、
+`202d97446aa12e0cfa4f5c60903ba1f6487c86da179ce2df68c9847f6392b33d`；准备后 NPZ 为
+`d53e4c99b4a4802775ee7230f49c0e5878d8fed822c22e3d9540cca316bda2ff`。当前为单种子、验证集
+选模结果；D 数据仅作图像级划分，不能声称患者独立。
+
 ## 三数据集初步结果：Kather2016 → LC25000 lung → Kather2018 VAL7K
 
 已按“旧专家固化、共享层与新专家学习、旧任务 small replay”的顺序完成真实相干光学
