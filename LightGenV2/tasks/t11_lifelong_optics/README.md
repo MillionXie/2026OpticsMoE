@@ -80,6 +80,38 @@ python -m LightGenV2.tasks.t11_lifelong_optics.evaluate --run <run目录> --data
 
 该命令重载 A/B 最佳 checkpoint，复算全部七项验证指标，逐项核对准确率和混淆矩阵，并保存 checkpoint SHA256；不重新训练。
 
+## 三数据集 4→8→12 协议
+
+第三任务使用 Kather2018 CRC-VAL-HE-7K，同样映射为 tumor / non-tumor。数据来自
+https://huggingface.co/datasets/nirschl-lab/kather_et_al_2018_val7k ，原始来源为
+https://zenodo.org/records/1214456，许可证为 CC BY 4.0。只下载并读取发布者的 train 和
+validation Arrow；test 不下载。非肿瘤标签合并原始八种组织类型。原始 VAL7K 与
+NCT-CRC-HE-100K 患者独立，但不据此声称它与本实验的 Kather2016 或 LC25000 患者独立。
+
+12 个槽位的理由是从 Task A 开始固定容纳三组、每组四个专家：A 用 E1–E4，B 用
+E5–E8，C 用 E9–E12。这样扩展时画布、传播核、router/global phase 尺寸和探测位置都不变。
+它是三任务实验的预分配容量，不是理论规定；若要继续 Task D，必须在 Task A 训练前选择
+更大的固定最大容量并重训整条序列，不能在当前 checkpoint 上临时扩大画布后作公平比较。
+
+三阶段扩展规则如下：
+
+1. A 结束后冻结 E1–E4。
+2. B warmup 只用 B 数据和 E5–E8，随后 B 主训练更新 E5–E8、router、global，每次更新混入 A replay；B 最佳 checkpoint 确定后冻结 E1–E8。
+3. C warmup 只用 C 数据和 E9–E12，随后 C 主训练更新 E9–E12、router、global，每次更新同时混入 A、B replay。旧专家始终逐元素冻结，router/global 作为共享可塑参数继续更新。
+
+```text
+python -m LightGenV2.tasks.t11_lifelong_optics.continual_three_dataset \
+  --config LightGenV2/tasks/t11_lifelong_optics/configs/kather_lc25000_kather2018.json \
+  --task-a <kather2016_binary.npz> --task-a-manifest <kather2016_binary_manifest.json> \
+  --task-b <lc25000_lung_binary.npz> --task-b-manifest <lc25000_lung_binary_manifest.json> \
+  --task-c <kather2018_val7k_binary.npz> --task-c-manifest <kather2018_val7k_binary_manifest.json> \
+  --out LightGenV2/tasks/t11_lifelong_optics/runs/simulation/<run_id>
+```
+
+`evaluate_three_dataset` 从保存的 C 最佳 checkpoint 重算 `all`、当前任务
+`own_group`、截至该任务的 `learned_prefix`，并为 B/C 额外计算不含当前新专家的
+`previous_prefix`。这些掩码改变相干干涉，只是诊断，不是可加的专家知识量。
+
 ## 探测器几何对照
 
 `configs/kather.json` 使用槽位中心作为 router CCD 探测中心；`configs/kather_ring.json` 将 12 个中心放在输入中心半径 179.2 像素的圆周上，按四个相隔 90° 的端口为一组依次激活。两配置的其他参数相同，且每次运行内部几何始终固定。环形布局意在控制探测距离偏差，不能预先保证均衡或更高准确率。窗口越界或相互重叠时构造模型直接报错。

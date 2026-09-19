@@ -2,6 +2,74 @@
 
 初建：2026-09-19；跨数据集更新：2026-09-20。目的：供课题组初步讨论，不作为论文最终性能结论。
 
+## 三数据集初步结果：Kather2016 → LC25000 lung → Kather2018 VAL7K
+
+已按“旧专家固化、共享层与新专家学习、旧任务 small replay”的顺序完成真实相干光学
+MoE 的 4→8→12 训练。Task A 为 Kather2016 结直肠二分类，Task B 为 LC25000 肺二分类，
+Task C 为 Kather2018 CRC-VAL-HE-7K 二分类；三者均使用 tumor / non-tumor 语义。表中是
+每类等量验证子集的平衡准确率，所有 checkpoint 均由当时已见任务验证平衡准确率的平均值
+选择，三个数据集的 test 均未读取。
+
+| 阶段最佳 checkpoint | A | B | C | 已见任务均值 |
+|---|---:|---:|---:|---:|
+| A（epoch 12） | 87.22% | — | — | 87.22% |
+| B（epoch 9） | 83.33% | 97.10% | — | 90.22% |
+| C（epoch 8） | 80.00% | 96.30% | 75.63% | 83.98% |
+
+最终 A 相对 A 学完时 BWT 为 -7.22 pp；最终 B 相对 B 学完时 BWT 为 -0.80 pp。C warmup
+只使用 C 数据，E1–E8、router、global 全部冻结；三轮中 A=83.33%、B=97.10% 均保持不变。
+这直接核验了 warmup 不会凭空改变旧任务。C 主训练每次更新使用 8 张 C、2 张 A replay、
+2 张 B replay；可更新 E9–E12、router 和 global，E1–E8 逐元素不变。A 仍有累计遗忘，说明
+当前 replay 能明显保留旧记忆但尚未解决全部遗忘。
+
+固定权重复评与原 run 的 all 指标、混淆矩阵完全一致。最终专家掩码诊断如下：
+
+| 数据集 | 全部 E1–E12 | 自己的四专家 | 学到该任务时的前缀 | 不含当前组的旧前缀 |
+|---|---:|---:|---:|---:|
+| A | 80.00% | 66.11% | 66.11% | — |
+| B | 96.30% | 50.00% | 81.40%（E1–E8） | 56.70%（E1–E4） |
+| C | 75.63% | 58.13% | 75.63%（E1–E12） | 48.75%（E1–E8） |
+
+屏蔽专家会重新归一化路由功率并改变全场相干干涉，因此“自己的四专家”低不能解释为该组
+没有学到知识；正式任务性能采用全部当前已激活专家。它同时显示 C 需要 E9–E12 与旧专家
+共同工作，符合 soft routing 的混合专家设计。
+
+正式 run 为 `runs/simulation/three_task_feef2710`，训练 commit
+`feef271094e465545689e364e63a8d75b2144045`；评估修正 commit
+`aaf6f8b1`。A/B/C best checkpoint SHA256 分别为
+`9ad1d3158b86baca2fc828da3d24bda49a9b42970f6a75173377b37b549d8d9d`、
+`f7c941238c98d93e3e564796da8b9dc668a509ef7e4d47a381cbab57316826e2`、
+`40c63e401e6ac83f23fcf08d3d06c3ea850e5e1f2d1182b8da494cba52b6f241`。
+服务器环境为 Python 3.11.15、PyTorch 2.6.0+cu124、单张 A100；9 项合同测试通过，五个
+训练阶段的冻结参数和固定几何审计全部通过。
+
+训练/验证抽样分别为：A 每类 400/90，B 每类 1000/500，C 每类 600/80。replay memory
+为每个旧任务每类 128 张训练图。缓存 SHA256：A
+`ba8b6a30f99798c244377d2585c1fc3fe8bc234c2847afcd373a0932d40882b5`，B
+`c923e22dd6bb85de24393a5de020f9beedb13040f5d4472b3ac2df53d071126a`，C
+`2008579aa6c9d4a74c04d5555dff70dd887f7e9ddd351754ca6b675a14c28782`。C 的 train/validation
+Arrow SHA256 分别为 `6e9b14bc6aef755b7312f0405a7ece8ddce8ab33ad6725054da1c5758ffddbdf`、
+`a440392afefbdbe01385e62e1def311fc24f55e7362ca0556ababde5ad9c06f4`。
+
+数据来源：[Kather2016](https://zenodo.org/records/53169)、
+[LC25000 lung](https://zenodo.org/records/14998042)、
+[Kather2018 VAL7K](https://zenodo.org/records/1214456)；使用的 Kather2018 重发布入口为
+[nirschl-lab/kather_et_al_2018_val7k](https://huggingface.co/datasets/nirschl-lab/kather_et_al_2018_val7k)。
+三者的本地 manifest 均声明并由加载器强制校验 CC BY 4.0。LC25000 含增强衍生图且缺少
+患者/增强家族 ID；本实验不能声称跨数据集患者独立。当前结果是单种子、验证集选模的工程
+可行性证据，尚未做独立测试、多种子或第三任务 no-replay 对照。
+
+完整三任务训练命令见 run 的 `metadata.json`；固定权重复评使用：
+
+```bash
+CUDA_VISIBLE_DEVICES=6 /home/guest3/miniconda3/envs/xml/bin/python -u \
+  -m LightGenV2.tasks.t11_lifelong_optics.evaluate_three_dataset \
+  --run LightGenV2/tasks/t11_lifelong_optics/runs/simulation/three_task_feef2710 \
+  --task-a <kather2016_binary.npz> --task-a-manifest <kather2016_binary_manifest.json> \
+  --task-b <lc25000_lung_binary.npz> --task-b-manifest <lc25000_lung_binary_manifest.json> \
+  --task-c <kather2018_val7k_binary.npz> --task-c-manifest <kather2018_val7k_binary_manifest.json>
+```
+
 ## 跨数据集初步结果：Kather2016 → LC25000 lung
 
 已完成不同数据集、相同二分类语义的真实光学 MoE 顺序学习。Task A 为 Kather2016
