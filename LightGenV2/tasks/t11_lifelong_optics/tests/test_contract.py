@@ -45,7 +45,10 @@ class Contract(unittest.TestCase):
                 else: self.assertTrue(torch.equal(p,before[n]),n)
 
     def test_ring_detector_spacing(self):
-        cfg=dict(self.cfg,router_layout='ring'); m=OpticalMoE(cfg); m.configure('B')
+        cfg=dict(self.cfg,router_layout='ring')
+        with self.assertRaises(ValueError): OpticalMoE(cfg)
+        cfg['router_detector_size']=6
+        m=OpticalMoE(cfg); m.configure('B')
         centers=m.router_centers; side=cfg['router_detector_size']
         for i,(y,x) in enumerate(centers):
             self.assertTrue(side//2<=y<m.height-side//2)

@@ -23,6 +23,11 @@ class OpticalMoE(nn.Module):
         elif cfg.get('router_layout','slot_centers')!='slot_centers':
             raise ValueError('Unknown router layout')
         self.class_centers = [(round(self.height*y),round(self.width*x)) for y in (.32,.68) for x in (.16,.38,.62,.84)]
+        for centers,side in [(self.router_centers,cfg['router_detector_size']),(self.class_centers,cfg['detector_size'])]:
+            if side<=0 or side%2: raise ValueError('Detector size must be positive and even')
+            for i,(y,x) in enumerate(centers):
+                if not (side//2<=y<=self.height-side//2 and side//2<=x<=self.width-side//2): raise ValueError('Detector out of bounds')
+                if any(abs(y-yy)<side and abs(x-xx)<side for yy,xx in centers[:i]): raise ValueError('Overlapping detectors')
         self.register_buffer('active_count', torch.tensor(4))
         with torch.random.fork_rng(devices=[]):
             torch.manual_seed(cfg['seed'])
