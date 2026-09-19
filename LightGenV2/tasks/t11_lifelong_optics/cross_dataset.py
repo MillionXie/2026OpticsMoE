@@ -108,7 +108,10 @@ def main():
     parser.add_argument("--task-b-manifest", type=Path, required=True)
     parser.add_argument("--out", type=Path, required=True)
     parser.add_argument("--device", default="cuda:0")
+    parser.add_argument("--pilot", action="store_true", help="Run one epoch per stage with the real data and optical graph")
     args = parser.parse_args(); cfg = json.loads(args.config.read_text())
+    if args.pilot:
+        cfg.update(epochs_A=1, epochs_warmup=1, epochs_B=1)
     args.out.mkdir(parents=True, exist_ok=False); save(args.out / "status.json", {"state": "preparing"})
     try:
         torch.set_num_threads(4); torch.manual_seed(cfg["seed"]); np.random.seed(cfg["seed"])
@@ -136,7 +139,7 @@ def main():
             "command": sys.argv, "commit": commit, "python": sys.version, "torch": torch.__version__,
             "platform": platform.platform(), "device": args.device, "task_A_manifest": manifest_a,
             "task_B_manifest": manifest_b, "task_A_sha256": sha(args.task_a), "task_B_sha256": sha(args.task_b),
-            "test_images_read": False,
+            "test_images_read": False, "scope": "full-data structural pilot" if args.pilot else "validation-selected experiment",
         })
         model = OpticalMoE(cfg).to(args.device); rng = np.random.default_rng(cfg["seed"])
         geometry = {k: list(v.shape) for k, v in model.state_dict().items()}; history = []; audit = []
