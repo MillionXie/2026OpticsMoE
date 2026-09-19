@@ -92,6 +92,14 @@ class Contract(unittest.TestCase):
         self.m.eval(); after=self.m(self.x,mask=old_mask)['probabilities'].detach()
         self.assertTrue(torch.equal(before,after))
 
+    def test_third_group_warmup_uses_only_e9_to_e12(self):
+        self.m.configure('warmup_C'); out=self.m(self.x,warmup=True)
+        self.assertEqual(int(self.m.active_count),12)
+        self.assertTrue(torch.equal(out['routes'][:,:8],torch.zeros(3,8)))
+        self.assertTrue(torch.equal(out['routes'][:,8:],torch.full((3,4),.25)))
+        for i,p in enumerate(self.m.experts): self.assertEqual(p.requires_grad,8<=i<12)
+        self.assertFalse(self.m.router.requires_grad); self.assertFalse(self.m.global_phase.requires_grad)
+
     def test_balanced_replay_and_domain(self):
         labels=np.repeat(np.arange(8),437)
         ids=balanced_indices(labels,256,17)

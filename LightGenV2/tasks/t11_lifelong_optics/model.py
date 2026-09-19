@@ -40,11 +40,16 @@ class OpticalMoE(nn.Module):
         self.propagator = AngularSpectrumPropagator(cfg['wavelength_m'],cfg['pixel_size_m'],(self.height,self.width),cfg['distance_m'])
 
     def configure(self, stage):
-        if stage not in ('A','warmup','B'): raise ValueError(stage)
-        self.active_count.fill_(4 if stage=='A' else 8)
-        for i,p in enumerate(self.experts): p.requires_grad_(i<4 if stage=='A' else 4<=i<8)
-        self.router.requires_grad_(stage!='warmup')
-        self.global_phase.requires_grad_(stage!='warmup')
+        mapping={'A':(0,False),'warmup':(1,True),'B':(1,False),'warmup_C':(2,True),'C':(2,False)}
+        if stage not in mapping: raise ValueError(stage)
+        group,warmup=mapping[stage]; self.configure_group(group,warmup)
+
+    def configure_group(self, group, warmup=False):
+        if group not in (0,1,2): raise ValueError('group must be 0, 1, or 2')
+        start=4*group; self.active_count.fill_(start+4)
+        for i,p in enumerate(self.experts): p.requires_grad_(start<=i<start+4)
+        self.router.requires_grad_(not warmup)
+        self.global_phase.requires_grad_(not warmup)
 
     @staticmethod
     def transmission(p): return torch.exp(2j*torch.pi*torch.sigmoid(p))
@@ -70,7 +75,7 @@ class OpticalMoE(nn.Module):
             mask=torch.as_tensor(mask,device=a.device,dtype=torch.bool)
             if mask.shape!=(12,): raise ValueError('Expected 12-slot mask')
             allowed=allowed & mask
-        if warmup: allowed=allowed & (torch.arange(12,device=a.device)>=4)
+        if warmup: allowed=allowed & (torch.arange(12,device=a.device)>=n-4)
         if not allowed.any(): raise ValueError('Empty expert mask')
         if warmup:
             q=allowed.float().expand(len(a),-1)/allowed.sum()
