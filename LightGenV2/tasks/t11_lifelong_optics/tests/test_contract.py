@@ -44,6 +44,15 @@ class Contract(unittest.TestCase):
                 if p.requires_grad: self.assertFalse(torch.equal(p,before[n]),n)
                 else: self.assertTrue(torch.equal(p,before[n]),n)
 
+    def test_ring_detector_spacing(self):
+        cfg=dict(self.cfg,router_layout='ring'); m=OpticalMoE(cfg); m.configure('B')
+        centers=m.router_centers; side=cfg['router_detector_size']
+        for i,(y,x) in enumerate(centers):
+            self.assertTrue(side//2<=y<m.height-side//2)
+            self.assertTrue(side//2<=x<m.width-side//2)
+            for yy,xx in centers[:i]: self.assertTrue(abs(y-yy)>=side or abs(x-xx)>=side)
+        out=m(self.x); self.assertTrue(torch.allclose(out['routes'].sum(1),torch.ones(3)))
+
     def test_checkpoint_preserves_active_geometry(self):
         import io
         self.m.configure('B'); self.m.eval()

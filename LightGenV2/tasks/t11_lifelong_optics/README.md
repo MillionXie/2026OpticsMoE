@@ -12,7 +12,7 @@ RGB uint8 → 固定三通道平铺成 224×224 单位功率振幅 → router �
 
 ## 数据合同
 
-仅使用原始 Kather2016 八类任务，不使用 MNIST。来源：https://zenodo.org/records/53169 ，作者 Kather et al.，DOI 10.5281/zenodo.53169。服务器现有镜像/原始来源的具体情况保留在 data_manifest.json，加载时验证其 CC BY 4.0 声明和 NPZ SHA256。使用现有 train/val/test 图像身份划分，禁止跨集合身份重叠；这是图像级划分，不能声称患者独立。
+仅使用原始 Kather2016 八类任务，不使用 MNIST。来源：https://zenodo.org/records/53169 ，作者 Kather et al.，DOI 10.5281/zenodo.53169。作者原文的 Data usage statement 明确指定 CC BY 4.0：https://www.nature.com/articles/srep27988#Sec4 。服务器现有数据来自镜像重打包，尚未核验与原始 ZIP 的逐像素等价性；具体来源保留在 data_manifest.json，加载时验证其 CC BY 4.0 声明和 NPZ SHA256。使用现有 train/val/test 图像身份划分，禁止跨集合身份重叠；这是图像级划分，不能声称患者独立。
 
 从训练集每类随机划出互不重叠 A/B：A 每类 218（1744 总计），B 每类 219（1752 总计）。A 原始域；B 固定 RGB 增益 [1.12,.90,1.04] 与偏移 [3,-3,1]，裁剪至 uint8。这是合成色彩/照明域，不声称生理染色模型。验证用同一 752 张独立图像的两个域，每域均包含全部八类。开发和选模不读取测试图像/标签；曾经被旧脚本取过 8 张的旧测试集不能称完全未触碰。
 
@@ -40,3 +40,11 @@ python -m LightGenV2.tasks.t11_lifelong_optics --data /DATA/DATA1/guest3/demo_re
 报告 A-before、A-after、B-after 的混淆矩阵、准确率、NLL，BWT = A-after − A-before。B 后对两个域分别做 all / old-only / new-only；严格清零被屏蔽专家并重新归一化功率。保存逐样本概率、路由以及专家均值/方差/首选计数。全场相干干涉意味着屏蔽消融不等价于可加的知识贡献，不把消融差值当成标准 forward transfer。
 
 复现状态唯一入口：reports/reproduction/README.md。没有验证证据前，不承诺高准确率或正向后向迁移。
+
+固定权重复评（在同一源码和数据环境运行）：
+
+```text
+python -m LightGenV2.tasks.t11_lifelong_optics.evaluate --run <run目录> --data <NPZ> --manifest <data_manifest.json>
+```
+
+该命令重载 A/B 最佳 checkpoint，复算全部七项验证指标，逐项核对准确率和混淆矩阵，并保存 checkpoint SHA256；不重新训练。

@@ -1,4 +1,5 @@
 """Phase-only coherent optical MoE; fixed 3x4 geometry across all stages."""
+import math
 import torch
 from torch import nn
 from torch.nn import functional as F
@@ -15,6 +16,12 @@ class OpticalMoE(nn.Module):
         order = [(0,0),(0,3),(2,0),(2,3),(0,1),(0,2),(2,1),(2,2),(1,0),(1,1),(1,2),(1,3)]
         self.slots = [(border+r*(size+gap),border+c*(size+gap)) for r,c in order]
         self.router_centers = [(y+size//2,x+size//2) for y,x in self.slots]
+        if cfg.get('router_layout','slot_centers')=='ring':
+            radius=.8*size
+            angles=[0,3,6,9,1,4,7,10,2,5,8,11]
+            self.router_centers=[(round(self.height/2+radius*math.sin(k*math.pi/6)),round(self.width/2+radius*math.cos(k*math.pi/6))) for k in angles]
+        elif cfg.get('router_layout','slot_centers')!='slot_centers':
+            raise ValueError('Unknown router layout')
         self.class_centers = [(round(self.height*y),round(self.width*x)) for y in (.32,.68) for x in (.16,.38,.62,.84)]
         self.register_buffer('active_count', torch.tensor(4))
         with torch.random.fork_rng(devices=[]):
