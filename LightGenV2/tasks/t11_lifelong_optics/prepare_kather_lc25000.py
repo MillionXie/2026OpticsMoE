@@ -54,19 +54,16 @@ def prepare_kather(source, source_manifest, output):
 def prepare_lc25000(source, output, seed):
     if md5(source) != LC25000_MD5:
         raise ValueError("LC25000 archive MD5 mismatch")
-    rng = np.random.default_rng(seed); classes = {"colon_aca": 0, "colon_n": 1}; records = {}
+    classes = {"lung_aca": 0, "lung_scc": 0, "lung_n": 1}
     with zipfile.ZipFile(source) as archive:
-        names = archive.namelist()
-        for class_name, label in classes.items():
-            candidates = sorted(name for name in names if f"/{class_name}/" in name and name.lower().endswith((".jpg", ".jpeg", ".png")))
-            if len(candidates) != 5000:
-                raise ValueError(f"Expected 5000 {class_name} images, found {len(candidates)}")
-            order = rng.permutation(len(candidates)); records[class_name] = (label, candidates, order)
+        names = archive.namelist(); expected = {"train": 3750, "val": 750}
         arrays = {"train_images": [], "train_labels": [], "train_ids": [], "val_images": [], "val_labels": [], "val_ids": []}
-        for class_name, (label, candidates, order) in records.items():
-            for split, selected in (("train", order[:4000]), ("val", order[4000:])):
-                for index in selected:
-                    name = candidates[index]
+        for split in ("train", "val"):
+            for class_name, label in classes.items():
+                candidates = sorted(name for name in names if f"/{split}/{class_name}/" in name and name.lower().endswith((".jpg", ".jpeg", ".png")))
+                if len(candidates) != expected[split]:
+                    raise ValueError(f"Expected {expected[split]} {split}/{class_name} images, found {len(candidates)}")
+                for name in candidates:
                     with Image.open(io.BytesIO(archive.read(name))) as image:
                         image = image.convert("RGB").resize((150, 150), Image.Resampling.LANCZOS)
                         arrays[f"{split}_images"].append(np.asarray(image, dtype=np.uint8))
@@ -75,9 +72,9 @@ def prepare_lc25000(source, output, seed):
     for key, values in arrays.items():
         packed[key] = np.stack(values) if key.endswith("images") else np.asarray(values, dtype=np.int64 if key.endswith("labels") else str)
     np.savez_compressed(output, **packed)
-    write_manifest(output.with_name("lc25000_colon_binary_manifest.json"), "LC25000 colon binary", output,
-                   "https://zenodo.org/records/14998042", "Seeded stratified 4000/1000 image-level split per class.",
-                   "LC25000 contains augmented derivatives of a smaller source collection; augmentation-family and patient identifiers are unavailable, so this split is not claimed patient-independent.")
+    write_manifest(output.with_name("lc25000_lung_binary_manifest.json"), "LC25000 lung binary", output,
+                   "https://zenodo.org/records/14998042", "Publisher-provided train/validation directories; test directory not read.",
+                   "This Zenodo archive contains only the lung subset. LC25000 contains augmented derivatives of a smaller source collection; augmentation-family and patient identifiers are unavailable, so the publisher split is not claimed patient-independent.")
 
 
 def main():
@@ -89,7 +86,7 @@ def main():
     parser.add_argument("--seed", type=int, default=17)
     args = parser.parse_args(); args.out.mkdir(parents=True, exist_ok=True)
     prepare_kather(args.kather, args.kather_manifest, args.out / "kather2016_binary.npz")
-    prepare_lc25000(args.lc25000_zip, args.out / "lc25000_colon_binary.npz", args.seed)
+    prepare_lc25000(args.lc25000_zip, args.out / "lc25000_lung_binary.npz", args.seed)
 
 
 if __name__ == "__main__":
