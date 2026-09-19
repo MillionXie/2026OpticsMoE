@@ -44,6 +44,15 @@ class Contract(unittest.TestCase):
                 if p.requires_grad: self.assertFalse(torch.equal(p,before[n]),n)
                 else: self.assertTrue(torch.equal(p,before[n]),n)
 
+    def test_checkpoint_preserves_active_geometry(self):
+        import io
+        self.m.configure('B'); self.m.eval()
+        expected=self.m(self.x)['probabilities'].detach()
+        buffer=io.BytesIO(); torch.save(self.m.state_dict(),buffer); buffer.seek(0)
+        restored=OpticalMoE(self.cfg); restored.load_state_dict(torch.load(buffer,weights_only=True))
+        self.assertEqual(int(restored.active_count),8)
+        self.assertTrue(torch.equal(expected,restored(self.x)['probabilities']))
+
     def test_balanced_replay_and_domain(self):
         labels=np.repeat(np.arange(8),437)
         ids=balanced_indices(labels,256,17)
@@ -53,5 +62,22 @@ class Contract(unittest.TestCase):
         self.assertFalse(torch.equal(domain(self.x,'B'),self.x))
         self.assertEqual(domain(self.x,'B').dtype,torch.uint8)
         with self.assertRaises(ValueError): self.m(self.x.float()/255)
+
+class DataContract(unittest.TestCase):
+    def test_class_sorted_source_is_stratified(self):
+        import tempfile,json
+        from pathlib import Path
+        from LightGenV2.tasks.t11_lifelong_optics.data import load,sha
+        with tempfile.TemporaryDirectory() as tmp:
+            p=Path(tmp)/'data.npz'; mf=Path(tmp)/'manifest.json'
+            labels=np.repeat(np.arange(8),4)
+            np.savez(p,train_images=np.ones((32,150,150,3),dtype=np.uint8),train_labels=labels,train_ids=np.array(['tr'+str(i) for i in range(32)]),val_images=np.ones((8,150,150,3),dtype=np.uint8),val_labels=np.arange(8),val_ids=np.array(['v'+str(i) for i in range(8)]),test_ids=np.array(['test']))
+            mf.write_text(json.dumps(dict(license='CC BY 4.0',cache_sha256=sha(p))))
+            arrays,_=load(p,mf,17)
+            for task in ('A','B'): self.assertEqual(np.bincount(labels[arrays[task]]).tolist(),[2]*8)
+            self.assertFalse(set(arrays['A']) & set(arrays['B']))
+            self.assertEqual(set(arrays['A'])|set(arrays['B']),set(range(32)))
+            mf.write_text(json.dumps(dict(license='CC BY 4.0',cache_sha256='wrong')))
+            with self.assertRaises(ValueError): load(p,mf,17)
 
 if __name__=='__main__': unittest.main()
