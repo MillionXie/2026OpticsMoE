@@ -81,6 +81,17 @@ class Contract(unittest.TestCase):
         self.assertEqual(int(restored.active_count),8)
         self.assertTrue(torch.equal(expected,restored(self.x)['probabilities']))
 
+    def test_old_only_output_is_stable_during_new_expert_warmup(self):
+        old_mask=[True]*4+[False]*8
+        self.m.configure('A'); self.m.eval()
+        before=self.m(self.x,mask=old_mask)['probabilities'].detach().clone()
+        self.m.configure('warmup')
+        optimizer=torch.optim.Adam([p for p in self.m.parameters() if p.requires_grad],lr=.01)
+        for _ in range(2):
+            optimizer.zero_grad(set_to_none=True); loss(self.m(self.x,warmup=True),self.y).backward(); optimizer.step()
+        self.m.eval(); after=self.m(self.x,mask=old_mask)['probabilities'].detach()
+        self.assertTrue(torch.equal(before,after))
+
     def test_balanced_replay_and_domain(self):
         labels=np.repeat(np.arange(8),437)
         ids=balanced_indices(labels,256,17)

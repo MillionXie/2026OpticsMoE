@@ -41,6 +41,37 @@ python -m LightGenV2.tasks.t11_lifelong_optics --data /DATA/DATA1/guest3/demo_re
 
 复现状态唯一入口：reports/reproduction/README.md。没有验证证据前，不承诺高准确率或正向后向迁移。
 
+## 跨数据集协议：Kather2016 → LC25000
+
+跨数据集实验统一为二分类：Kather2016 的原始 `tumor` 为肿瘤，其余七类为非肿瘤；
+LC25000 仅使用 `colon_aca`（结肠腺癌）和 `colon_n`（良性结肠组织）。两项数据都是
+H&E RGB 组织病理图，任务语义一致但来源不同。LC25000 使用 Zenodo 记录
+https://zenodo.org/records/14998042 ，许可证为 CC BY 4.0，归档 MD5 必须为
+`1b1325f690bc51fd76bb8c4958c03b06`。
+
+LC25000 每类 5000 张，从每类固定抽取 4000 张训练、1000 张验证；原始数据由较小图像
+集合增强而来，但发布文件没有患者或增强家族 ID，因此该划分只称图像级划分，不能称患者独立。
+主要指标使用平衡准确率，避免 Kather 二分类验证集的类别比例影响普通准确率。
+
+训练仍为 A、warmup、B 三段。B 阶段每批混入固定 256 张 A 训练图组成的 replay；E1–E4
+冻结，E5–E8、router 和 global phase 更新。评估明确区分 `A_all`、`A_old_only` 和
+`A_new_only`。warmup 期间只把 B 数据用于反向传播；A 仅以 old-only 条件诊断，禁止把
+启用专家数量变化造成的数值变化解释为 A 学习提升。
+
+```text
+python -m LightGenV2.tasks.t11_lifelong_optics.prepare_kather_lc25000 \
+  --kather <kather2016_fixed_split.npz> --kather-manifest <data_manifest.json> \
+  --lc25000-zip <LC25000.zip> --out <prepared_dir>
+
+python -m LightGenV2.tasks.t11_lifelong_optics.cross_dataset \
+  --config LightGenV2/tasks/t11_lifelong_optics/configs/kather_lc25000.json \
+  --task-a <prepared_dir>/kather2016_binary.npz \
+  --task-a-manifest <prepared_dir>/kather2016_binary_manifest.json \
+  --task-b <prepared_dir>/lc25000_colon_binary.npz \
+  --task-b-manifest <prepared_dir>/lc25000_colon_binary_manifest.json \
+  --out LightGenV2/tasks/t11_lifelong_optics/runs/simulation/<run_id>
+```
+
 固定权重复评（在同一源码和数据环境运行）：
 
 ```text
