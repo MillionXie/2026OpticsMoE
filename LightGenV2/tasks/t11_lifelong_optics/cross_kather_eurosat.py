@@ -46,7 +46,7 @@ def main():
    hist.append(dict(stage=stage,epoch=ep+1,train_loss=total/len(Y),val_A=ma['accuracy'],val_B=mb['accuracy']));print(json.dumps(hist[-1]),flush=True)
   for n,p in m.named_parameters():
    if n in frozen and not torch.equal(p,frozen[n]):raise RuntimeError('Frozen changed '+n)
-  if stage!='warmup':torch.save(dict(model=m.state_dict(),config=cfg,stage=stage,history=hist),a.out/stage+'.pt')
+   if stage!='warmup':torch.save(dict(model=m.state_dict(),config=cfg,stage=stage,history=hist),a.out/(stage+'.pt'))
   if stage=='A':before=ev(vxA,vyA)
  save(a.out/'history.json',hist);finalA=ev(vxA,vyA);m.eval();
  with torch.no_grad():
