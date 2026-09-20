@@ -1,0 +1,180 @@
+{
+  "checkpoint": "/DATA/DATA1/guest3/2026OpticsMoE/LightGenV2/tasks/t04_semantic_interaction/runs/simulation/layered_scene_focus_changed_iou_s73_e100_20260920/best_checkpoint.pt",
+  "retrained": false,
+  "protocol": "remove both optical feature paths; same weights; electronic coefficient restored to one",
+  "normal": {
+    "overall": {
+      "samples": 1000,
+      "cell_accuracy": 0.9963055544495583,
+      "changed_cell_accuracy": 0.9315,
+      "foreground_category_accuracy": 0.9774000010490418,
+      "preserved_cell_accuracy": 0.9992680678963661,
+      "edit_grid_iou": 0.9454999999999998,
+      "object_f1": 0.9810546897546901,
+      "scene_exact_match": 0.879,
+      "task_accuracy": 1.0
+    },
+    "add": {
+      "samples": 250,
+      "cell_accuracy": 0.9972222211360932,
+      "changed_cell_accuracy": 0.916,
+      "foreground_category_accuracy": 0.9830666682720184,
+      "preserved_cell_accuracy": 0.9995428571701049,
+      "edit_grid_iou": 0.946,
+      "object_f1": 0.9869673881673883,
+      "scene_exact_match": 0.904,
+      "task_accuracy": 1.0
+    },
+    "replace": {
+      "samples": 250,
+      "cell_accuracy": 0.9994444441795349,
+      "changed_cell_accuracy": 0.98,
+      "foreground_category_accuracy": 0.9949333336353302,
+      "preserved_cell_accuracy": 1.0,
+      "edit_grid_iou": 0.996,
+      "object_f1": 0.9949333333333332,
+      "scene_exact_match": 0.98,
+      "task_accuracy": 1.0
+    },
+    "move": {
+      "samples": 250,
+      "cell_accuracy": 0.988888885974884,
+      "changed_cell_accuracy": 0.842,
+      "foreground_category_accuracy": 0.9316000022888183,
+      "preserved_cell_accuracy": 0.9975294144153595,
+      "edit_grid_iou": 0.8479999999999999,
+      "object_f1": 0.9441339105339107,
+      "scene_exact_match": 0.644,
+      "task_accuracy": 1.0
+    },
+    "remove": {
+      "samples": 250,
+      "cell_accuracy": 0.999666666507721,
+      "changed_cell_accuracy": 0.988,
+      "foreground_category_accuracy": 1.0,
+      "preserved_cell_accuracy": 1.0,
+      "edit_grid_iou": 0.992,
+      "object_f1": 0.9981841269841271,
+      "scene_exact_match": 0.988,
+      "task_accuracy": 1.0
+    },
+    "router_audit": {
+      "language": {
+        "selection_share": [
+          0.25,
+          0.2529999911785126,
+          0.25,
+          0.24699999392032623
+        ],
+        "pair_histogram": [
+          0,
+          0,
+          0,
+          250,
+          0,
+          250,
+          6,
+          0,
+          0,
+          0,
+          250,
+          0,
+          244,
+          0,
+          0,
+          0
+        ],
+        "samples": 1000,
+        "largest_pair_fraction": 0.25,
+        "accepted": true
+      },
+      "vision": {
+        "selection_share": [
+          0.25,
+          0.2395000010728836,
+          0.26100000739097595,
+          0.24950000643730164
+        ],
+        "pair_histogram": [
+          0,
+          0,
+          0,
+          13,
+          0,
+          480,
+          8,
+          0,
+          0,
+          7,
+          458,
+          0,
+          34,
+          0,
+          0,
+          0
+        ],
+        "samples": 1000,
+        "largest_pair_fraction": 0.48,
+        "accepted": true
+      }
+    }
+  },
+  "remove_optical": {
+    "overall": {
+      "samples": 1000,
+      "cell_accuracy": 0.9801388817429543,
+      "changed_cell_accuracy": 0.422,
+      "foreground_category_accuracy": 0.8451333417892456,
+      "preserved_cell_accuracy": 0.9998529413342476,
+      "edit_grid_iou": 0.6355833333333335,
+      "object_f1": 0.8827834776334772,
+      "scene_exact_match": 0.326,
+      "task_accuracy": 1.0
+    },
+    "add": {
+      "samples": 250,
+      "cell_accuracy": 0.974888876914978,
+      "changed_cell_accuracy": 0.096,
+      "foreground_category_accuracy": 0.8156000165939331,
+      "preserved_cell_accuracy": 1.0,
+      "edit_grid_iou": 0.194,
+      "object_f1": 0.8945217893217887,
+      "scene_exact_match": 0.096,
+      "task_accuracy": 1.0
+    },
+    "replace": {
+      "samples": 250,
+      "cell_accuracy": 0.9789999899864197,
+      "changed_cell_accuracy": 0.244,
+      "foreground_category_accuracy": 0.800133341550827,
+      "preserved_cell_accuracy": 1.0,
+      "edit_grid_iou": 0.936,
+      "object_f1": 0.8133079365079365,
+      "scene_exact_match": 0.244,
+      "task_accuracy": 1.0
+    },
+    "move": {
+      "samples": 250,
+      "cell_accuracy": 0.9701111061573029,
+      "changed_cell_accuracy": 0.472,
+      "foreground_category_accuracy": 0.7648000090122223,
+      "preserved_cell_accuracy": 0.9994117653369904,
+      "edit_grid_iou": 0.5243333333333332,
+      "object_f1": 0.8423645021645031,
+      "scene_exact_match": 0.088,
+      "task_accuracy": 1.0
+    },
+    "remove": {
+      "samples": 250,
+      "cell_accuracy": 0.9965555539131165,
+      "changed_cell_accuracy": 0.876,
+      "foreground_category_accuracy": 1.0,
+      "preserved_cell_accuracy": 1.0,
+      "edit_grid_iou": 0.888,
+      "object_f1": 0.9809396825396829,
+      "scene_exact_match": 0.876,
+      "task_accuracy": 1.0
+    }
+  },
+  "changed_accuracy_drop_percentage_points": 50.95
+}

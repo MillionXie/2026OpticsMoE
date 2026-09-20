@@ -1,0 +1,5 @@
+{
+  "mode": "random_task_network_frozen_qwen_patch_and_token_embedding",
+  "legacy_weights_loaded": false,
+  "contextual_teacher_used": false
+}

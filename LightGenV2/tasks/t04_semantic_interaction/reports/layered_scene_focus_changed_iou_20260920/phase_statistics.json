@@ -1,0 +1,127 @@
+{
+  "checkpoint": "/DATA/DATA1/guest3/2026OpticsMoE/LightGenV2/tasks/t04_semantic_interaction/runs/simulation/layered_scene_focus_changed_iou_s73_e100_20260920/best_checkpoint.pt",
+  "epoch": 60,
+  "plane_count": 12,
+  "planes": [
+    {
+      "name": "language_core.optical_branch.core.router.raw_router_phase",
+      "shape": [
+        224,
+        224
+      ],
+      "circular_residual_std_rad": 1.776971459388733,
+      "physical_phase_min_rad": 0.006992030423134565,
+      "physical_phase_max_rad": 6.278202533721924
+    },
+    {
+      "name": "language_core.optical_branch.core.expert_layers.0.experts.0.raw_phase",
+      "shape": [
+        224,
+        224
+      ],
+      "circular_residual_std_rad": 0.6820900440216064,
+      "physical_phase_min_rad": 0.5765617489814758,
+      "physical_phase_max_rad": 5.592565536499023
+    },
+    {
+      "name": "language_core.optical_branch.core.expert_layers.0.experts.1.raw_phase",
+      "shape": [
+        224,
+        224
+      ],
+      "circular_residual_std_rad": 0.6634534597396851,
+      "physical_phase_min_rad": 0.7432056069374084,
+      "physical_phase_max_rad": 5.540428161621094
+    },
+    {
+      "name": "language_core.optical_branch.core.expert_layers.0.experts.2.raw_phase",
+      "shape": [
+        224,
+        224
+      ],
+      "circular_residual_std_rad": 0.9595578908920288,
+      "physical_phase_min_rad": 0.06407817453145981,
+      "physical_phase_max_rad": 6.229951858520508
+    },
+    {
+      "name": "language_core.optical_branch.core.expert_layers.0.experts.3.raw_phase",
+      "shape": [
+        224,
+        224
+      ],
+      "circular_residual_std_rad": 0.9251233339309692,
+      "physical_phase_min_rad": 0.03130776062607765,
+      "physical_phase_max_rad": 6.213811874389648
+    },
+    {
+      "name": "language_core.optical_branch.core.global_phase.phase.raw_phase",
+      "shape": [
+        478,
+        478
+      ],
+      "circular_residual_std_rad": 0.5215806365013123,
+      "physical_phase_min_rad": 0.016775736585259438,
+      "physical_phase_max_rad": 6.254650115966797
+    },
+    {
+      "name": "vision_core.optical_branch.core.router.raw_router_phase",
+      "shape": [
+        224,
+        224
+      ],
+      "circular_residual_std_rad": 1.7759151458740234,
+      "physical_phase_min_rad": 0.032720278948545456,
+      "physical_phase_max_rad": 6.254399299621582
+    },
+    {
+      "name": "vision_core.optical_branch.core.expert_layers.0.experts.0.raw_phase",
+      "shape": [
+        224,
+        224
+      ],
+      "circular_residual_std_rad": 0.5393648147583008,
+      "physical_phase_min_rad": 0.9759480953216553,
+      "physical_phase_max_rad": 5.109251022338867
+    },
+    {
+      "name": "vision_core.optical_branch.core.expert_layers.0.experts.1.raw_phase",
+      "shape": [
+        224,
+        224
+      ],
+      "circular_residual_std_rad": 0.5549161434173584,
+      "physical_phase_min_rad": 1.1054208278656006,
+      "physical_phase_max_rad": 5.182622909545898
+    },
+    {
+      "name": "vision_core.optical_branch.core.expert_layers.0.experts.2.raw_phase",
+      "shape": [
+        224,
+        224
+      ],
+      "circular_residual_std_rad": 0.5356543660163879,
+      "physical_phase_min_rad": 0.38845860958099365,
+      "physical_phase_max_rad": 5.21968936920166
+    },
+    {
+      "name": "vision_core.optical_branch.core.expert_layers.0.experts.3.raw_phase",
+      "shape": [
+        224,
+        224
+      ],
+      "circular_residual_std_rad": 0.5597261190414429,
+      "physical_phase_min_rad": 0.2929876148700714,
+      "physical_phase_max_rad": 5.604357719421387
+    },
+    {
+      "name": "vision_core.optical_branch.core.global_phase.phase.raw_phase",
+      "shape": [
+        478,
+        478
+      ],
+      "circular_residual_std_rad": 0.6047319173812866,
+      "physical_phase_min_rad": 0.32471397519111633,
+      "physical_phase_max_rad": 5.832940578460693
+    }
+  ]
+}

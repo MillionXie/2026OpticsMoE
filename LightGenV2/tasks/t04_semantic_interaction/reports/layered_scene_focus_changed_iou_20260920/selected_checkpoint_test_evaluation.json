@@ -1,0 +1,184 @@
+{
+  "checkpoint": "/DATA/DATA1/guest3/2026OpticsMoE/LightGenV2/tasks/t04_semantic_interaction/runs/simulation/layered_scene_focus_changed_iou_s73_e100_20260920/best_checkpoint.pt",
+  "selected_epoch": 60,
+  "split": "deterministic disjoint test",
+  "test_samples": 1000,
+  "selection_biased": true,
+  "metrics": {
+    "overall": {
+      "samples": 1000,
+      "cell_accuracy": 0.9963055544495583,
+      "changed_cell_accuracy": 0.9315,
+      "foreground_category_accuracy": 0.9774000010490418,
+      "preserved_cell_accuracy": 0.9992680678963661,
+      "edit_grid_iou": 0.9454999999999998,
+      "object_f1": 0.9810546897546901,
+      "scene_exact_match": 0.879,
+      "task_accuracy": 1.0
+    },
+    "add": {
+      "samples": 250,
+      "cell_accuracy": 0.9972222211360932,
+      "changed_cell_accuracy": 0.916,
+      "foreground_category_accuracy": 0.9830666682720184,
+      "preserved_cell_accuracy": 0.9995428571701049,
+      "edit_grid_iou": 0.946,
+      "object_f1": 0.9869673881673883,
+      "scene_exact_match": 0.904,
+      "task_accuracy": 1.0
+    },
+    "replace": {
+      "samples": 250,
+      "cell_accuracy": 0.9994444441795349,
+      "changed_cell_accuracy": 0.98,
+      "foreground_category_accuracy": 0.9949333336353302,
+      "preserved_cell_accuracy": 1.0,
+      "edit_grid_iou": 0.996,
+      "object_f1": 0.9949333333333332,
+      "scene_exact_match": 0.98,
+      "task_accuracy": 1.0
+    },
+    "move": {
+      "samples": 250,
+      "cell_accuracy": 0.988888885974884,
+      "changed_cell_accuracy": 0.842,
+      "foreground_category_accuracy": 0.9316000022888183,
+      "preserved_cell_accuracy": 0.9975294144153595,
+      "edit_grid_iou": 0.8479999999999999,
+      "object_f1": 0.9441339105339107,
+      "scene_exact_match": 0.644,
+      "task_accuracy": 1.0
+    },
+    "remove": {
+      "samples": 250,
+      "cell_accuracy": 0.999666666507721,
+      "changed_cell_accuracy": 0.988,
+      "foreground_category_accuracy": 1.0,
+      "preserved_cell_accuracy": 1.0,
+      "edit_grid_iou": 0.992,
+      "object_f1": 0.9981841269841271,
+      "scene_exact_match": 0.988,
+      "task_accuracy": 1.0
+    },
+    "router_audit": {
+      "language": {
+        "selection_share": [
+          0.25,
+          0.2529999911785126,
+          0.25,
+          0.24699999392032623
+        ],
+        "pair_histogram": [
+          0,
+          0,
+          0,
+          250,
+          0,
+          250,
+          6,
+          0,
+          0,
+          0,
+          250,
+          0,
+          244,
+          0,
+          0,
+          0
+        ],
+        "samples": 1000,
+        "largest_pair_fraction": 0.25,
+        "accepted": true
+      },
+      "vision": {
+        "selection_share": [
+          0.25,
+          0.2395000010728836,
+          0.26100000739097595,
+          0.24950000643730164
+        ],
+        "pair_histogram": [
+          0,
+          0,
+          0,
+          13,
+          0,
+          480,
+          8,
+          0,
+          0,
+          7,
+          458,
+          0,
+          34,
+          0,
+          0,
+          0
+        ],
+        "samples": 1000,
+        "largest_pair_fraction": 0.48,
+        "accepted": true
+      }
+    }
+  },
+  "router_audit": {
+    "language": {
+      "selected_slots": [
+        500,
+        506,
+        500,
+        494
+      ],
+      "selection_share": [
+        0.25,
+        0.2529999911785126,
+        0.25,
+        0.24699999392032623
+      ],
+      "effective_experts_inverse_simpson": 3.9997119903564453,
+      "unused_experts": [],
+      "samples": 1000,
+      "mean_detector_energy_fraction": [
+        0.2543327880948782,
+        0.24688846168294548,
+        0.2699686738550663,
+        0.228810076886788
+      ],
+      "mean_router_probability": [
+        0.23953123957663774,
+        0.2602402693778276,
+        0.25151929377764465,
+        0.24870919658988713
+      ]
+    },
+    "vision": {
+      "selected_slots": [
+        500,
+        479,
+        522,
+        499
+      ],
+      "selection_share": [
+        0.25,
+        0.2395000010728836,
+        0.26100000739097595,
+        0.24950000643730164
+      ],
+      "effective_experts_inverse_simpson": 3.9962992668151855,
+      "unused_experts": [],
+      "samples": 1000,
+      "mean_detector_energy_fraction": [
+        0.24126058564335107,
+        0.2564122107923031,
+        0.24848188468813895,
+        0.2538453194797039
+      ],
+      "mean_router_probability": [
+        0.25890870709717273,
+        0.26911342386901377,
+        0.2370641454309225,
+        0.23491372282803058
+      ]
+    }
+  }
+}
