@@ -22,8 +22,7 @@ smoke 对 MoE 和 D2NN 的四任务各执行一次真实光学前向、损失和
 样本改送到后来专家，造成额外遗忘。commit
 `bb3e49d5f` 增加任务容量保护：新任务仍可复用全部旧专家，旧任务 replay/评估只使用其
 学习时已开放的前 4/8/12/16 槽。服务器的改进 run ID 为
-`runs/simulation/capacity_guard_s17_v1`，只重训 ours，并在初始 run 完成后使用同一 GPU
-串行启动；完成前不填写其性能数字。
+`runs/simulation/capacity_guard_s17_v1`，只重训 ours。
 
 ## 2026-09-20 初始四任务结果
 
@@ -35,16 +34,17 @@ baseline。各任务测试主指标如下：
 |---|---:|---:|---:|---:|---:|
 | Joint D2NN | 0.239913 | 0.505333 | 0.525002 | 0.500000 | 0.442562 |
 | Initial lifelong MoE | 0.227007 | 0.474667 | 0.428097 | 0.500000 | 0.407443 |
+| Capacity-guard lifelong MoE | 0.242133 | 0.500000 | 0.435211 | 0.500000 | 0.419336 |
 
 Initial MoE 的验证分数在各任务刚学完时为 0.356268 / 0.500000 / 0.346617 /
 0.500000；最终前三项变为 0.217750 / 0.498667 / 0.278060，平均 backward transfer
 为 -0.069469。该 run 证明四类真实数据可以通过同一光学传播和电子 MLP 完成端到端训练，
 但没有证明有效的跨模态兼容性或优于 D2NN 的终身学习能力；CLEVR 和视频仍接近机会水平。
 
-改进 run `capacity_guard_s17_v1` 当前尚未完成。已完成的第二阶段在容量保护后把 SEN12MS
-保留在 0.351802（初始 run 同阶段为 0.242678）；SONYC 阶段截至 epoch 28 的最佳验证
-分项为 SEN12MS 0.279412、CLEVR 0.500000、SONYC 0.374891。以上只作运行中诊断，不能
-作为最终测试结论。
+改进 run `capacity_guard_s17_v1` 已完成。容量保护把第二阶段的 SEN12MS 从初始 run 的
+0.242678 提高到 0.351802；最终测试均值从 0.407443 提高到 0.419336。平均 backward
+transfer 从 -0.069469 改善到 -0.043792，但仍低于 Joint D2NN 0.023226，且 CLEVR/视频
+仍为机会水平，因此不能据此声称总体超过离线 baseline。
 
 ## 三模型归因对照
 
@@ -59,4 +59,4 @@ Sequential D2NN control。最终比较固定为：
 
 Sequential D2NN 没有新专家，因此不执行 expert warmup；报告训练时间和更新次数时必须单列。
 正式 run ID 为 `runs/simulation/sequential_d2nn_replay_s17_v1`，源码 commit
-`0e791798f`，等待 `capacity_guard_s17_v1` 完成后在同一 GPU 串行运行。完成前不填写性能数字。
+`0e791798f`，已在 `capacity_guard_s17_v1` 完成后使用同一 GPU 启动。完成前不填写性能数字。
