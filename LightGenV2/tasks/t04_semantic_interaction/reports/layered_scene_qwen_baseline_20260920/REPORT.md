@@ -40,8 +40,11 @@ Total trainable parameters: 3,139,437. Frozen Qwen lookup/patch frontend:
 | Text-to-vision conditioning | 198,017 | 6.31% |
 | Common output readout | 381,976 | 12.17% |
 
-Thus optical-related trainable parameters are 1,218,888 (38.83%) and
-electronic trainable parameters are 1,920,549 (61.17%). The two electronic
+In branch-accounting terms, optical-related parameters are 1,218,888 (38.83%)
+and the remaining electronic core/conditioning/head parameters are 1,920,549
+(61.17%). In the stricter physical sense, only the 958,728 phase pixels are
+implemented by SLMs; the 260,160 optical-interface adapters are electronic, so
+all non-phase electronic trainables total 2,180,709 (69.46%). The two electronic
 cores are width 192, depth two, expansion two: causal depthwise Conv1d plus
 residual MLP for language, and spatial depthwise Conv2d plus residual MLP for
 vision. There is no attention or Transformer in the optical model.
