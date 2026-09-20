@@ -1,0 +1,13 @@
+base_config: routerfill_shared.yaml
+
+# Formal Nature-style proportional scene split.  Semantic supervision remains
+# the established 6x6 anchor contract; only the image renderer is layered.
+dataset:
+  data_dir: ../dataset/openmoji_layered_anchor6_svg_v3
+  layout_version: layered_anchor6_svg_v3
+  svg_asset_dir: ../assets/openmoji-17.0.0-svg
+
+training:
+  epochs: 100
+
+output_dir: ../runs/simulation/layered_scene_formal_s73_e100

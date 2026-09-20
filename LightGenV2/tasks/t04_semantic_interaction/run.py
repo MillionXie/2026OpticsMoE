@@ -42,6 +42,7 @@ PROFILES = {
     "routerfill_slim_norm": "routerfill_slim_norm.yaml",
     "qwen_slim_norm": "qwen_slim_norm.yaml",
     "layered_scene_pilot": "layered_scene_pilot.yaml",
+    "layered_scene_formal": "layered_scene_formal.yaml",
 }
 PHASES = {"prepare", "train", "evaluate", "all"}
 
