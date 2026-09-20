@@ -1,0 +1,28 @@
+base_config: optical_router_moe_dc20_kd1_balance1.yaml
+
+# Same graph and64D head as the published T08 optical image-to-title model.
+# Continue from the higher reverse-retrieval checkpoint, strengthen the already
+# existing title->image prototype objective, and select only by text->image Top1.
+training:
+  epochs: 15
+  learning_rate: 0.00002
+  adapter_learning_rate: 0.000008
+  readout_learning_rate: 0.00002
+  phase_learning_rate: 0.002
+  router_learning_rate: 0.003
+  lambda_router_balance: 0.12
+  lambda_router_importance: 0.03
+  lambda_router_hard_load_balance: 0.80
+
+lightgen:
+  selection:
+    test_interval_epochs: 3
+
+abo_image_text:
+  selection_direction: text_to_image
+  symmetric_title_to_image_weight: 1.0
+  teacher_kd_weight: 0.50
+  resume_checkpoint: ../runs/simulation/optical_router_moe_dc20_seed42/best_checkpoint.pt
+  resume_checkpoint_sha256: 7b49b8b7a942939d0819130460b0fbeaa1887921e151c5fa2154dff4e576bf30
+
+output_dir: ../runs/simulation/optical_text_to_image_64_continuation_seed42
