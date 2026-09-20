@@ -1,0 +1,33 @@
+base_config: optical_router_moe_dc20_kd1_balance1.yaml
+
+# Do not abruptly amplify optics trained behind alpha≈.05. Freeze only four
+# scalar gates to this schedule while all existing optical/electronic tensors
+# adapt. Only epochs at alpha>=.39 may be selected as the formal best.
+training:
+  epochs: 24
+  learning_rate: 0.00002
+  adapter_learning_rate: 0.000008
+  readout_learning_rate: 0.00002
+  phase_learning_rate: 0.004
+  router_learning_rate: 0.005
+  lambda_router_balance: 0.12
+  lambda_router_importance: 0.03
+  lambda_router_hard_load_balance: 0.80
+
+lightgen:
+  selection:
+    test_interval_epochs: 2
+
+abo_image_text:
+  selection_direction: text_to_image
+  symmetric_title_to_image_weight: 1.0
+  teacher_kd_weight: 0.70
+  resume_checkpoint: ../runs/simulation/optical_router_moe_dc20_seed42/best_checkpoint.pt
+  resume_checkpoint_sha256: 7b49b8b7a942939d0819130460b0fbeaa1887921e151c5fa2154dff4e576bf30
+  alpha_curriculum:
+    start: 0.055
+    end: 0.40
+    warmup_epochs: 12
+    minimum_selected: 0.39
+
+output_dir: ../runs/simulation/optical_text_to_image_64_alpha_curriculum_seed42
