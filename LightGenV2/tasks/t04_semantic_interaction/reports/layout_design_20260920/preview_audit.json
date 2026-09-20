@@ -1,0 +1,126 @@
+{
+  "status": "design_preview_only_awaiting_user_approval",
+  "gpu_used": false,
+  "git_commit": "604cd89e3e4a88ed0b580eaa41f88af7de2da86c",
+  "sizes_are_design_choices_not_measured_physical_dimensions": true,
+  "audit": {
+    "legacy6": {
+      "random_layouts": 128,
+      "max_objects": 5,
+      "overlaps": 0,
+      "clipped": 0
+    },
+    "balanced6": {
+      "random_layouts": 128,
+      "max_objects": 5,
+      "overlaps": 0,
+      "clipped": 0
+    },
+    "spacious4": {
+      "random_layouts": 128,
+      "max_objects": 5,
+      "overlaps": 0,
+      "clipped": 0
+    }
+  },
+  "size_table": [
+    [
+      "apple",
+      "1F34E",
+      22
+    ],
+    [
+      "bicycle",
+      "1F6B2",
+      34
+    ],
+    [
+      "car",
+      "1F697",
+      38
+    ],
+    [
+      "bus",
+      "1F68C",
+      42
+    ],
+    [
+      "dog",
+      "1F415",
+      30
+    ],
+    [
+      "cat",
+      "1F408",
+      27
+    ],
+    [
+      "bird",
+      "1F426",
+      22
+    ],
+    [
+      "tree",
+      "1F333",
+      40
+    ],
+    [
+      "flower",
+      "1F33B",
+      24
+    ],
+    [
+      "cup",
+      "2615",
+      22
+    ],
+    [
+      "book",
+      "1F4D8",
+      25
+    ],
+    [
+      "phone",
+      "1F4F1",
+      23
+    ],
+    [
+      "ball",
+      "26BD",
+      23
+    ],
+    [
+      "umbrella",
+      "2602",
+      32
+    ],
+    [
+      "house",
+      "1F3E0",
+      42
+    ],
+    [
+      "light bulb",
+      "1F4A1",
+      22
+    ]
+  ],
+  "assets_sha256": {
+    "1F34E": "c29423478103e297664519a8b13525bb3218f60d8961fe4ba4d3427b44f47ed6",
+    "1F6B2": "99d11d95194848e51370e62e9d3e22e188b0c297476d4df05f27696f99786436",
+    "1F697": "780ccbc3db9942cf6ffea38ce9d1305465dedd946d64ba283b4cb60c22e249a9",
+    "1F68C": "deb2b37c9327843ac6a89ab8b652a257c4041fb613d40de4deef9354204fe4d2",
+    "1F415": "f2ee7a6b3fa1509d125413ddf0e0880534471fcd89631331b860b1527ac66606",
+    "1F408": "dd65018a600daf9672a2766c2b65998819091ddba45e159c935a914a23766e5f",
+    "1F426": "f889d983b03237f635c79797ab645aa9f42b87df0e91fd545e75b9b3daf531c4",
+    "1F333": "df5a185390d7188e588a2289b018fc3ecdf1d07ff91b76746380d7442076450d",
+    "1F33B": "3eeafb9eaf1a0be1c13dbaee7d34badd62796661993c9ff401f5d3c5fa6c598f",
+    "2615": "13903323556df039dfebdca8b85e44ce3f39f4ad2758eeb2a46ddccaf5c0385f",
+    "1F4D8": "1c2c99c9776207b0709ce0aafceecf44ef20abb22a4df167c5cbda2c0a08f341",
+    "1F4F1": "60c747325507c30accd088ed0ba508f8d0016f57a3fa8e8edb42a4f90e1a6854",
+    "26BD": "1fa1d623b66bc596f82e9775d31550def0f28b07593417790af0ac546d650a7b",
+    "2602": "e4fb81811d622d614da71c70d8681dd606dc392627aad90e009e9bce82b1ecba",
+    "1F3E0": "39d49ba17bd78af2a4e658fc84d1c9c48ba020b43c43716ff79ba90fe326be9c",
+    "1F4A1": "4cebcb1debaeac127a4db4a4a64714d88150a15947eb0d6fd74d76b913c6b5fa"
+  }
+}
