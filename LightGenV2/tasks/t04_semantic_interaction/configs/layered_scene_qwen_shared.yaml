@@ -7,6 +7,7 @@ lightgen:
   model_variant: qwen_frozen_shared_readout
 
 model:
+  embedding_only: false
   phase_dropout_p: 0.0
 
 # Native text features are variable-length tensors. Reading their mmap cache
