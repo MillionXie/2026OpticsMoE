@@ -1,5 +1,6 @@
 import json
 from pathlib import Path
+from types import SimpleNamespace
 
 import numpy as np
 import pytest
@@ -46,3 +47,22 @@ def test_saved_scene_metadata_is_json_serializable(tmp_path):
     loaded=json.loads((tmp_path/'sample'/'scene.json').read_text(encoding='utf-8'))
     assert loaded['program']==metadata['program']
     assert all(isinstance(value,int) for value in loaded['program']['new_anchor'])
+
+
+def test_layered_gallery_uses_saved_scene_images(tmp_path):
+    from LightGenV2.tasks.t04_semantic_interaction.layered_scene_gallery import save_layered_gallery
+
+    example=generate_example('move',73_000_123,SVG)
+    sample_id='test_000000'
+    _save(example,tmp_path/'data'/'test'/sample_id,SVG)
+    galleries={'move':[{
+        'sample_id':sample_id,
+        'task':'move',
+        'instruction':example['instruction'],
+        'target':example['target_grid'],
+        'prediction':example['target_grid'],
+    }]}
+    settings=SimpleNamespace(data_dir=tmp_path/'data',svg_asset_dir=SVG)
+    save_layered_gallery(tmp_path/'gallery',galleries,settings)
+    assert (tmp_path/'gallery'/'move_examples.png').is_file()
+    assert (tmp_path/'gallery'/'index.html').is_file()
