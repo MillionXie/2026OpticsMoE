@@ -2,13 +2,62 @@
 
 初建：2026-09-19；跨数据集更新：2026-09-20。目的：供课题组初步讨论，不作为论文最终性能结论。
 
-## 离线联合 D2NN 基线（待正式结果）
+## 四病理数据集离线联合 D2NN 基线
 
-为区分“终身学习能力”和“从一开始访问全部数据的普通分类能力”，补充一个四病理数据集
-离线联合 D2NN。它同时训练 Kather2016、LC25000 lung、Kather2018 VAL7K 和 HepatoBench，
-共享 tumor / non-tumor 输出；没有任务顺序、专家扩展、replay 或遗忘评估。D2NN 是两层
-986×986 全孔径相位网络，不复制输入、不使用四个固定空间区域。完整几何、采样与选模合同见
-任务 README。本节只有在正式 run 完成并固定权重复评后才填写性能数值。
+该基线从第一轮开始同时访问 Kather2016、LC25000 lung、Kather2018 VAL7K 和 HepatoBench，
+共享 tumor / non-tumor 二分类输出。它没有任务顺序、专家扩展、replay 或遗忘评估。模型是
+两层 986×986 全孔径相位 D2NN，不复制输入、不划分四个固定空间区域，也不接收数据集编号；
+两层共 1,944,392 个可训练参数。对应 16 专家 MoE 的 expert/router/global 共 1,825,188 个
+参数，D2NN 多 6.53%。
+
+| 数据集 | 选定权重训练 BA | 验证 BA | 训练－验证 |
+|---|---:|---:|---:|
+| A：Kather2016 | 81.12% | 80.00% | +1.12 pp |
+| B：LC25000 lung | 96.35% | 96.90% | -0.55 pp |
+| C：Kather2018 VAL7K | 74.75% | 63.75% | +11.00 pp |
+| D：HepatoBench | 77.17% | 71.25% | +5.92 pp |
+| 四域宏平均 | 82.35% | **77.98%** | +4.38 pp |
+
+第 10 轮的四域验证 BA 均值最高，为 77.975%；第 11、12 轮分别为 77.49% 和 76.78%，
+因此报告第 10 轮，而不是最后一轮。C 的训练－验证差为 11.00 pp，说明该域存在明显的
+泛化差距；整体没有出现训练性能继续大幅升高而验证性能持续崩塌，但当前单种子结果不足以
+排除过拟合。验证混淆矩阵按 `[真实类别, 预测类别]` 为：A `[[90,0],[36,54]]`、
+B `[[498,2],[29,471]]`、C `[[40,40],[18,62]]`、D `[[60,20],[26,54]]`，标签合同为
+0=肿瘤、1=非肿瘤/正常。
+
+RGB uint8 输入先按与 MoE 相同的固定 `[R,G;B,0]` 规则变为 224×224 单位功率振幅；D2NN
+随后 bicubic 上采样至整个 986×986 有效孔径并再次做单位功率归一化。MoE 把 224×224
+振幅加载至被路由的专家槽位。两者使用相同的 1026×1026 传播画布、17 µm 采样、532 nm
+波长、两段 0.1 m 传播和两个 32×32 CCD 分类窗口，均无 OEO 和电子分类头。D2NN 每批固定
+包含四域各 3 张图，667 步/轮、12 轮；较小数据集耗尽后独立重排循环。第一、第二相位层
+Adam 学习率分别为 .01/.002。每轮只用四个验证集 BA 均值选模，test 图像和标签未读取。
+
+正式 run：`runs/simulation/joint_d2nn_s17_9265d151`；训练 commit
+`9265d15104b36b37bf1cfc3f02ef6d25ecf3809d`；最佳/最后权重 SHA256 分别为
+`2d0c72fde9c29aa5ee806ed8422da4c59cc5cb740963a8394b90864199d7c682`、
+`ea82c449f6af6af03d3aaa0091b7373492c76600245a119ee284836cf9c9907a`。预测文件独立重算得到
+相同的混淆矩阵、NLL、accuracy 和 balanced accuracy。训练版 `metrics.json` 只把两个逐类
+recall 的文字键写反；评估修正不改变上述数值、选模或权重，正确语义保存在
+`verification.json`。服务器环境为 Python 3.11.15、PyTorch 2.6.0+cu124、单张 GPU。
+
+```bash
+CUDA_VISIBLE_DEVICES=6 /home/guest3/miniconda3/envs/xml/bin/python -u \
+  -m LightGenV2.tasks.t11_lifelong_optics.joint_d2nn \
+  --config LightGenV2/tasks/t11_lifelong_optics/configs/kather_lc25000_kather2018_hepato_joint_d2nn.json \
+  --task-a <kather2016_binary.npz> --task-a-manifest <kather2016_binary_manifest.json> \
+  --task-b <lc25000_lung_binary.npz> --task-b-manifest <lc25000_lung_binary_manifest.json> \
+  --task-c <kather2018_val7k_binary.npz> --task-c-manifest <kather2018_val7k_binary_manifest.json> \
+  --task-d <hepatobench_binary.npz> --task-d-manifest <hepatobench_binary_manifest.json> \
+  --out LightGenV2/tasks/t11_lifelong_optics/runs/simulation/joint_d2nn_s17_9265d151
+
+python -m LightGenV2.tasks.t11_lifelong_optics.verify_joint_d2nn \
+  --run LightGenV2/tasks/t11_lifelong_optics/runs/simulation/joint_d2nn_s17_9265d151
+```
+
+四个来源都是 RGB H&E 病理图像，因此该结果严格支持“多来源/跨数据集联合分类”，不能单独
+作为图文、音文或异构传感器意义上的多模态证据。它与下方顺序 MoE 最终四域均值 77.43%
+也不是同一训练协议：本基线始终访问全部数据，下方 MoE 按 A→B→C→D 学习并只回放少量旧
+样本，二者可用于回答不同问题，不能据 0.55 pp 的均值差宣称某个架构更优。
 
 ## 四数据集初步结果：固定 16 槽 A→B→C→D
 
