@@ -1,0 +1,14 @@
+model:
+  pca_rank: 128
+  hidden_dim: 512
+  depth: 3
+  dropout: 0.05
+training:
+  batch_size: 64
+  epochs: 500
+  learning_rate: 5.0e-4
+  weight_decay: 1.0e-4
+  num_workers: 2
+  teacher_batch_size: 32
+  sample_every_epochs: 50
+  early_stopping_patience: 80
