@@ -1,0 +1,6 @@
+-r simulation.txt
+diffusers
+accelerate
+safetensors
+torchmetrics
+torch-fidelity

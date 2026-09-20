@@ -1,0 +1,5 @@
+base_config: common.yaml
+model:
+  variant: lightgen_parallel
+  optical_backend: audited_dc20
+output_dir: ../runs/simulation/lightgen_parallel_seed42

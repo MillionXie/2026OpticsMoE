@@ -1,4 +1,4 @@
-# LightGenV2 八任务总清单
+# LightGenV2 任务总清单
 
 更新时间：2026-09-07
 
@@ -18,6 +18,7 @@
 | P6 | T03 显著性分析 | SALICON train2014 10000；val2014 5000 作 public test；无 validation；单seed选模 | CC/SIM/NSS/AUC-Judd↑；KLD/MAE↓ | **光Router Top2、alpha≥0.4：独立CC 0.86249251、SIM 0.82432、NSS 0.96479**；训练DC20–30%，标准eval关闭随机噪声 | — | 本轮未测；旧模型5090D计算图估算5.654 ms/image，不冒充新版端到端 | 同规格头Frozen Qwen：历史100轮**CC 0.88968**；新50轮独立CC **0.87483828**，不替换历史最佳；[50轮证据](tasks/t03_saliency/reports/reproduction/BASELINE50_20260912.md)；历史D2NN 0.8346 | 新Qwen头未测；旧头历史mean 10.176 ms/image | 本轮未测；旧光学物理/墙上代理0.317/0.455 J；旧Qwen 117.837 W、1.199 J，不沿用作新头结果 | — | **cross-sample训练best epoch1，last epoch10提前停止；best独立复评5000张。**alpha=.43068659/.44104558，专家份额23.12–27.13%；头85412、不增推理结构。同权重去光CC=.84229470，绝对下降.02019781；未达.87。双噪声20轮未超越、GPU已释放。权重/正常及去光证据/相位与样例已逐文件校验镜像本地；非硬件就绪ZIP。见[当前候选](tasks/t03_saliency/reports/reproduction/CROSS_SAMPLE_BALANCE_20260913.md) |
 | P7 | T04 语义交互 | OpenMoji v2 train5000/test1000；四操作均衡；源网格+指令去重；无validation，周期test选模 | changed-cell、IoU、F1、scene exact↑ | **共享头标准组100轮best40：0.8715/0.8327/0.9339/0.6900；强均衡best65：0.8485/0.8993/0.9478/0.7700** | — | 本轮未测 | **相同38.2万参数头、完整冻结Qwen100轮best25：0.8420/0.7312/0.8757/0.5420**；旧D2NN0.5175非本轮共享头协议 | 本轮未测 | 本轮未测 | — | 标准同best去光changed降至0.4055（46.60个百分点，不解释为物理贡献比例）。语言四专家份额24.45%–25.55%，视觉各25%但主要两种组合。新精简对照slim/slim_norm均保留两组条件卷积、alpha>0.4、光Router及原光路，头降至268888/269272，各与同头Qwen成对重训100轮，最终待测。源码e548cc33/22173121；运行位于T04 runs/simulation，复现见reports/reproduction/ROUTER_SHARED_HEAD.md。旧98%不得混用 |
 | P8 | T05 视频分类 | 数据集与论文问题尚未确定 | Top-1/Top-5 或 mAP（待协议确定） | — | — | — | — | — | — | — | **未开始。**在数据集确定前不建空模型、不产生 runs |
+| P9 | T12 单物体文生图 | uCO3D 六类候选；每图单物体；按物体实例切分；目标 9600/1200/1200 | FID/KID↓、CLIPScore/类别准确率/LPIPS diversity↑ | — | — | — | Qwen+条件电子残差+冻结VAE，待训练 | — | — | — | **代码与结构合同已建立，尚无质量数值。**正式 LightGen 为电子残差与光学 expert/global 并行后 RMS 融合；baseline 共用 Qwen/VAE/cache/seed；待下载 CC BY 4.0 子集并训练 |
 
 ## “做完一行”的最低标准
 

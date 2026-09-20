@@ -1,0 +1,5 @@
+base_config: common.yaml
+model:
+  variant: qwen_vae_baseline
+  optical_backend: none
+output_dir: ../runs/simulation/qwen_vae_baseline_seed42

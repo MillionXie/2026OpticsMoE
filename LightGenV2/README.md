@@ -16,6 +16,7 @@
 | T06 | 视频质量评价 | LGVQ（可替换） | **当前主任务** | `tasks/t06_video_quality_assessment` |
 | T07 | 商品图搜图 | ABO/SHAPE/OFF | ABO抗过拟合配对与SHAPE适配；OFF图片身份审计，COIL停止追加；详见任务README | `tasks/t07_abo_image_retrieval` |
 | T08 | 商品图搜文 | ABO easy100 | 光仿真与冻结 Qwen baseline 已完成 | `tasks/t08_abo_image_text_retrieval` |
+| T12 | 单物体文生图 | uCO3D 小子集（待下载冻结） | 并行光电条件 VAE 与 Qwen+VAE baseline 已建；待正式训练 | `tasks/t12_text_to_image` |
 
 目录名按任务而非数据集命名，因此以后更换可公开发表的数据集时，不需要重命名工程。
 
@@ -65,7 +66,7 @@ notepad LightGenV2\paths.local.yaml
 
 详细约束见 [`AI_RULES.md`](AI_RULES.md)。
 
-## 八任务进展总表
+## 跨任务进展总表
 
 老师查看整体进展、性能、速度、功耗和待办时，统一使用
 [`PROJECT_SCORECARD.md`](PROJECT_SCORECARD.md)。该表固定每个任务一行；没有可追溯证据的
