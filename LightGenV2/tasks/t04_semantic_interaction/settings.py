@@ -41,6 +41,10 @@ class Settings:
         self.grid_size = int(d("dataset.grid_size", 6))
         self.icon_size = int(d("dataset.icon_size", 30))
         self.icon_classes = int(d("dataset.icon_classes", 16))
+        self.layout_version = str(d("dataset.layout_version", "grid_v2"))
+        self.svg_asset_dir = _resolve(
+            d("dataset.svg_asset_dir", "../assets/openmoji-17.0.0-svg"), base
+        )
         self.train_samples = int(d("dataset.train_samples", 5000))
         self.test_samples = int(d("dataset.test_samples", 1000))
         self.prompt_templates_per_operation = int(

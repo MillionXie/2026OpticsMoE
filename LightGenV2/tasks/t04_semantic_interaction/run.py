@@ -41,6 +41,7 @@ PROFILES = {
     "qwen_slim": "qwen_slim.yaml",
     "routerfill_slim_norm": "routerfill_slim_norm.yaml",
     "qwen_slim_norm": "qwen_slim_norm.yaml",
+    "layered_scene_pilot": "layered_scene_pilot.yaml",
 }
 PHASES = {"prepare", "train", "evaluate", "all"}
 
@@ -67,6 +68,9 @@ def _ensure_data(settings: Any, device: torch.device) -> dict[str, Any]:
         prepare_native_cache(settings, device)
         return summary
     if settings.embedding_only:
+        if settings.layout_version == 'layered_anchor6_svg_v3':
+            from .layered_scene_data import prepare_layered_embedding_data
+            return prepare_layered_embedding_data(settings)
         from .embedding_data import prepare_embedding_data
         return prepare_embedding_data(settings)
     if not settings.train_manifest.is_file() or not settings.test_manifest.is_file():
