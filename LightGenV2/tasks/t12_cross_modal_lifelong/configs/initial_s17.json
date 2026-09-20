@@ -1,0 +1,15 @@
+{
+  "seed": 17,
+  "device": "cuda",
+  "joint_epochs": 12,
+  "task_epochs": 12,
+  "warmup_epochs": 2,
+  "batch": 4,
+  "eval_batch": 8,
+  "lr": 0.003,
+  "phase_dropout": 0.05,
+  "route_balance": 0.1,
+  "replay_per_task": 256,
+  "replay_batch": 2,
+  "replay_weight": 1.0
+}

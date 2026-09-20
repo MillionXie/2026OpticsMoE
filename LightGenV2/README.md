@@ -16,6 +16,7 @@
 | T06 | 视频质量评价 | LGVQ（可替换） | **当前主任务** | `tasks/t06_video_quality_assessment` |
 | T07 | 商品图搜图 | ABO/SHAPE/OFF | ABO抗过拟合配对与SHAPE适配；OFF图片身份审计，COIL停止追加；详见任务README | `tasks/t07_abo_image_retrieval` |
 | T08 | 商品图搜文 | ABO easy100 | 光仿真与冻结 Qwen baseline 已完成 | `tasks/t08_abo_image_text_retrieval` |
+| T12 | 跨模态终身学习 | SEN12MS / CLEVR / SONYC-UST | 固定12槽MoE与联合D2NN首轮实现 | `tasks/t12_cross_modal_lifelong` |
 | T10 | 专家数量与Top-k扩展 | Kather2016 / DeepWeeds；PBC可选 | 仿真方案与矩阵已建立，尚未训练 | `tasks/t10_expert_scaling` |
 
 目录名按任务而非数据集命名，因此以后更换可公开发表的数据集时，不需要重命名工程。
