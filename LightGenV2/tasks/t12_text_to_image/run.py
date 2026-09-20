@@ -67,8 +67,14 @@ def smoke(settings: Settings) -> dict[str, Any]:
 
 def run(args: argparse.Namespace) -> dict[str, Any]:
     settings = load_settings(TASK_DIR / "configs" / PROFILES[args.profile])
+    if args.data_dir:
+        settings.data_dir = Path(args.data_dir).expanduser().resolve()
     if args.run_dir:
         settings.output_dir = Path(args.run_dir).expanduser().resolve()
+    if args.qwen_checkpoint:
+        settings.qwen_checkpoint = Path(args.qwen_checkpoint).expanduser().resolve()
+    if args.vae_checkpoint:
+        settings.vae_checkpoint = Path(args.vae_checkpoint).expanduser().resolve()
     device = torch.device(args.device or ("cuda" if torch.cuda.is_available() else "cpu"))
     settings.output_dir.mkdir(parents=True, exist_ok=True)
     _write_json(settings.output_dir / "resolved_config.json", settings.to_dict())
@@ -107,7 +113,10 @@ def main() -> int:
     parser.add_argument("--profile", choices=sorted(PROFILES), required=True)
     parser.add_argument("--phase", choices=("smoke", "cache", "train", "evaluate", "all"), default="all")
     parser.add_argument("--device", default=None)
+    parser.add_argument("--data-dir", default=None)
     parser.add_argument("--run-dir", default=None)
+    parser.add_argument("--qwen-checkpoint", default=None)
+    parser.add_argument("--vae-checkpoint", default=None)
     parser.add_argument("--checkpoint", default=None)
     parser.add_argument("--force", action="store_true")
     args = parser.parse_args()

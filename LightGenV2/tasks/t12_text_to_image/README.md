@@ -107,6 +107,10 @@ python -m LightGenV2.tasks.t12_text_to_image.compare `
   --output-dir LightGenV2\tasks\t12_text_to_image\runs\simulation\matched_comparison
 ```
 
+服务器正式运行时可以用 `--data-dir`、`--qwen-checkpoint` 和 `--vae-checkpoint` 显式指向
+仓库外的冻结资产；解析后的绝对路径会写入 `resolved_config.json`，避免 worktree 被数据文件
+污染，也避免缓存阶段临时访问模型网络。
+
 正式 run 只保留 `best_checkpoint.pt` 和 `last_checkpoint.pt`。验证集只负责选择 checkpoint；
 测试集只能在协议和超参数冻结后评估。
 
