@@ -290,6 +290,83 @@ def train_lifelong_moe(tasks, cfg, out, device):
     return finalize(model,tasks,root,device,cfg,all_history[-1]["selected_epoch"],"sequential_lifelong")
 
 
+def train_sequential_d2nn(tasks, cfg, out, device):
+    """Fixed-capacity D2NN trained on the same task order and replay stream as MoE.
+
+    No expert group is added and there is no warmup.  Both full-aperture phase
+    planes remain trainable at every task; previous task heads are frozen while
+    their replay losses continue to update the shared optical backbone.
+    """
+    root = out / "sequential_d2nn"; root.mkdir()
+    seed_all(cfg["seed"])
+    model = CrossModalOptics("d2nn", cfg["seed"], cfg["phase_dropout"]).to(device)
+    replay = {}; sequence = []
+    for task_index, name in enumerate(TASK_ORDER):
+        task_root = root / f"stage_{task_index+1}_{name}"; task_root.mkdir()
+        task = tasks[name]
+        old_head_hash = {n: module_sha(model.heads[n]) for n in TASK_ORDER[:task_index]}
+        model.configure_task(task_index, warmup=False)
+        optimizer = torch.optim.Adam([p for p in model.parameters() if p.requires_grad], lr=cfg["lr"])
+        scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(
+            optimizer, cfg["task_epochs"], eta_min=cfg["lr"] * .1)
+        best, history = -float("inf"), []
+        for epoch in range(1, cfg["task_epochs"] + 1):
+            model.train(); started = time.time(); losses = []
+            order = np.random.default_rng(cfg["seed"] + task_index*1000 + epoch).permutation(
+                len(task.splits["train"][1]))
+            current_chunks = chunks(order, cfg["batch"])
+            replay_chunks = {
+                old: chunks(np.random.default_rng(cfg["seed"] + task_index*1000 + epoch+j).permutation(ix),
+                            cfg["replay_batch"])
+                for j, (old, ix) in enumerate(replay.items())
+            }
+            for step, current in enumerate(current_chunks):
+                optimizer.zero_grad(set_to_none=True)
+                terms = [task_loss(model, task, current, device)]
+                for old in TASK_ORDER[:task_index]:
+                    pool = replay_chunks[old]
+                    terms.append(task_loss(model, tasks[old], pool[step % len(pool)], device)
+                                 * cfg["replay_weight"])
+                value = torch.stack(terms).mean(); value.backward()
+                torch.nn.utils.clip_grad_norm_([p for p in model.parameters() if p.requires_grad], 1.0)
+                optimizer.step(); losses.append(float(value.detach()))
+            scheduler.step()
+            val = {n:evaluate(model,tasks[n],"val",device,cfg["eval_batch"])[0]
+                   for n in TASK_ORDER[:task_index+1]}
+            score = float(np.mean([selection_score(n,val[n]) for n in val]))
+            row = {"epoch":epoch,"loss":float(np.mean(losses)),"validation_mean_score":score,
+                   "validation":val,"seconds":time.time()-started}
+            history.append(row); save(task_root/"history.json",history)
+            cp = {"model":model.state_dict(),"epoch":epoch,"task_index":task_index,
+                  "validation":val,"score":score}
+            torch.save(cp,task_root/"last_checkpoint.pt")
+            if score > best:
+                best = score; torch.save(cp,task_root/"best_checkpoint.pt")
+            print(json.dumps({"arch":"sequential_d2nn","task":name,"epoch":epoch,
+                              "val":score,"loss":row["loss"],"seconds":row["seconds"]}),flush=True)
+        cp = torch.load(task_root/"best_checkpoint.pt",map_location=device,weights_only=False)
+        model.load_state_dict(cp["model"])
+        after_heads = {n:module_sha(model.heads[n]) for n in TASK_ORDER[:task_index]}
+        assert old_head_hash == after_heads, "frozen old task head changed"
+        stage_eval = {n:evaluate(model,tasks[n],"val",device,cfg["eval_batch"])[0]
+                      for n in TASK_ORDER[:task_index+1]}
+        stage_result = {"selected_epoch":cp["epoch"],"validation":stage_eval,
+                        "old_heads_unchanged":old_head_hash == after_heads}
+        save(task_root/"stage_result.json",stage_result)
+        sequence.append({"task":name,**stage_result})
+        replay[name] = replay_indices(task,cfg["replay_per_task"],cfg["seed"]+task_index)
+    save(root/"sequence.json",sequence)
+    results = finalize(model,tasks,root,device,cfg,sequence[-1]["selected_epoch"],
+                       "sequential_fixed_capacity")
+    results["validation_BWT"] = {
+        name: selection_score(name,results["validation"][name])
+              - selection_score(name,sequence[index]["validation"][name])
+        for index,name in enumerate(TASK_ORDER[:-1])
+    }
+    save(root/"results.json",results)
+    return results
+
+
 def finalize(model,tasks,root,device,cfg,epoch,training):
     results={"training":training,"selected_epoch":epoch,"validation":{},"test":{}}
     task_index=2 if model.architecture=="moe" else None
@@ -319,7 +396,7 @@ def smoke(tasks,cfg,out,device):
 
 
 def main():
-    p=argparse.ArgumentParser();p.add_argument("--config",type=Path,required=True);p.add_argument("--sen12ms",type=Path,required=True);p.add_argument("--clevr",type=Path,required=True);p.add_argument("--sonyc",type=Path,required=True);p.add_argument("--out",type=Path,required=True);p.add_argument("--phase",choices=["smoke","train"],default="train");p.add_argument("--only",choices=["both","d2nn","moe"],default="both");a=p.parse_args()
+    p=argparse.ArgumentParser();p.add_argument("--config",type=Path,required=True);p.add_argument("--sen12ms",type=Path,required=True);p.add_argument("--clevr",type=Path,required=True);p.add_argument("--sonyc",type=Path,required=True);p.add_argument("--out",type=Path,required=True);p.add_argument("--phase",choices=["smoke","train"],default="train");p.add_argument("--only",choices=["both","d2nn","moe","sequential_d2nn","all"],default="both");a=p.parse_args()
     cfg=json.loads(a.config.read_text());a.out.mkdir(parents=True,exist_ok=False);save(a.out/"status.json",{"status":"running","pid":os.getpid()})
     try:
         seed_all(cfg["seed"]);torch.set_num_threads(4);device=torch.device(cfg.get("device","cuda"));tasks=load_tasks({"sen12ms":a.sen12ms,"clevr":a.clevr,"sonyc":a.sonyc})
@@ -328,8 +405,9 @@ def main():
         if a.phase=="smoke":smoke(tasks,cfg,a.out,device);result={"smoke":"pass"}
         else:
             result={}
-            if a.only in ("both","d2nn"):result["d2nn"]=train_joint_d2nn(tasks,cfg,a.out,device)
-            if a.only in ("both","moe"):result["moe"]=train_lifelong_moe(tasks,cfg,a.out,device)
+            if a.only in ("both","d2nn","all"):result["d2nn"]=train_joint_d2nn(tasks,cfg,a.out,device)
+            if a.only in ("sequential_d2nn","all"):result["sequential_d2nn"]=train_sequential_d2nn(tasks,cfg,a.out,device)
+            if a.only in ("both","moe","all"):result["moe"]=train_lifelong_moe(tasks,cfg,a.out,device)
             save(a.out/"comparison.json",result)
         save(a.out/"status.json",{"status":"complete"})
     except Exception:

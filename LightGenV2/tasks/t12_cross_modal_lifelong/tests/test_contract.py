@@ -40,6 +40,20 @@ class ContractTest(unittest.TestCase):
         self.assertTrue(torch.allclose(field[:, :, :112].square().sum((-2, -1)), torch.full((2,), .5), atol=1e-5))
         self.assertTrue(torch.allclose(field[:, :, 112:].square().sum((-2, -1)), torch.full((2,), .5), atol=1e-5))
 
+    def test_sequential_d2nn_reuses_one_fixed_backbone(self):
+        model = CrossModalOptics("d2nn", phase_dropout=0)
+        shapes = {name:tuple(value.shape) for name,value in model.state_dict().items()}
+        first_id, global_id = id(model.first_phase), id(model.global_phase)
+        for index,name in enumerate(("sen12ms","clevr","sonyc")):
+            model.configure_task(index,warmup=False)
+            self.assertEqual(id(model.first_phase),first_id)
+            self.assertEqual(id(model.global_phase),global_id)
+            self.assertTrue(model.first_phase.requires_grad)
+            self.assertTrue(model.global_phase.requires_grad)
+            for head_name,head in model.heads.items():
+                self.assertEqual(any(p.requires_grad for p in head.parameters()),head_name==name)
+            self.assertEqual(shapes,{key:tuple(value.shape) for key,value in model.state_dict().items()})
+
 
 if __name__ == "__main__":
     unittest.main()

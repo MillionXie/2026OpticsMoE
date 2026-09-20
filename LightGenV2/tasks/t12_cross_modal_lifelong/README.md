@@ -8,6 +8,9 @@ RGB/文本，以及 SONYC-UST 的音频/文本。共享模态按物理含义合�
 
 - **D2NN baseline**：单个全孔径首层相位和共享 global phase，离线交错训练三项任务，
   因而在训练开始时能访问全部四种模态。
+- **顺序 D2NN baseline**：仍是同一个固定容量全孔径 D2NN，按 SEN12MS → CLEVR →
+  SONYC 依次训练；不增加相位参数、不设新专家 warmup。旧任务读出头冻结，主相位通过
+  与 MoE 相同的旧任务 replay 继续更新，用于测量固定容量网络的遗忘。
 - **Ours**：固定 12 槽光学 MoE，按 SEN12MS → CLEVR → SONYC 顺序学习。每个新任务启用
   四个预分配专家；旧专家和旧任务读出头冻结，router/global phase 通过当前数据和每个
   旧任务最多 256 条 replay 继续更新。
@@ -59,4 +62,7 @@ python -m LightGenV2.tasks.t12_cross_modal_lifelong \
 
 去掉 `--phase smoke` 运行初始训练。run 保存配置、命令、Git commit、数据 manifest、
 逐轮验证、best/last checkpoint、逐样本概率与路由、最终 comparison.json。运行目录不覆盖。
+
+只运行顺序 D2NN 对照时增加 `--only sequential_d2nn`。原 `--only d2nn` 仍表示从训练
+开始即可访问全部任务的离线联合 D2NN；`--only all` 依次运行联合 D2NN、顺序 D2NN 和 MoE。
 
