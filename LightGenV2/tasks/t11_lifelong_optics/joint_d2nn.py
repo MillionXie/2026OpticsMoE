@@ -43,17 +43,23 @@ def evaluate(model, images, labels, batch_size):
     for start in range(0, len(labels), batch_size):
         probabilities.append(model(images[start:start+batch_size].to(device))['probabilities'].cpu())
     p = torch.cat(probabilities); pred = p.argmax(1)
+    return binary_metrics(p, labels), p
+
+
+def binary_metrics(probabilities, labels):
+    """Binary metrics for the fixed label contract: 0=tumor, 1=non-tumor."""
+    pred = probabilities.argmax(1)
     confusion = torch.bincount(labels * 2 + pred, minlength=4).reshape(2, 2)
     recall = confusion.diag().float() / confusion.sum(1).clamp_min(1)
     metrics = {
         'accuracy': float((pred == labels).float().mean()),
         'balanced_accuracy': float(recall.mean()),
-        'nll': float(torch.nn.functional.nll_loss(p.clamp_min(1e-12).log(), labels)),
-        'recall_non_tumor': float(recall[0]),
-        'recall_tumor': float(recall[1]),
+        'nll': float(torch.nn.functional.nll_loss(probabilities.clamp_min(1e-12).log(), labels)),
+        'recall_tumor': float(recall[0]),
+        'recall_non_tumor': float(recall[1]),
         'confusion': confusion.tolist(),
     }
-    return metrics, p
+    return metrics
 
 
 def train_epoch(model, optimizer, tasks, per_task, steps, rng):

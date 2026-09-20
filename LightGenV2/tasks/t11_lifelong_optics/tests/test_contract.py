@@ -2,7 +2,7 @@ import unittest
 import numpy as np
 import torch
 from LightGenV2.tasks.t11_lifelong_optics.model import OpticalD2NN,OpticalMoE,loss
-from LightGenV2.tasks.t11_lifelong_optics.joint_d2nn import joint_epoch_indices
+from LightGenV2.tasks.t11_lifelong_optics.joint_d2nn import binary_metrics,joint_epoch_indices
 from LightGenV2.tasks.t11_lifelong_optics.data import balanced_indices,domain
 
 class Contract(unittest.TestCase):
@@ -174,5 +174,14 @@ class JointD2NNContract(unittest.TestCase):
             self.assertEqual([len(x) for x in batch_a],[3]*4)
             for task,(x,y,n) in enumerate(zip(batch_a,batch_b,lengths)):
                 self.assertTrue(np.array_equal(x,y));self.assertTrue(((0<=x)&(x<n)).all(),task)
+
+    def test_binary_metric_label_semantics(self):
+        probabilities=torch.tensor([[.9,.1],[.8,.2],[.1,.9]])
+        labels=torch.tensor([0,1,1])
+        metrics=binary_metrics(probabilities,labels)
+        self.assertEqual(metrics['confusion'],[[1,0],[1,1]])
+        self.assertEqual(metrics['recall_tumor'],1.)
+        self.assertEqual(metrics['recall_non_tumor'],.5)
+        self.assertEqual(metrics['balanced_accuracy'],.75)
 
 if __name__=='__main__': unittest.main()
