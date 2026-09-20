@@ -1,3 +1,4 @@
+import json
 from pathlib import Path
 
 import numpy as np
@@ -6,7 +7,7 @@ import pytest
 pytest.importorskip('resvg_py')
 
 from LightGenV2.tasks.t04_semantic_interaction.layered_scene_data import (
-    MIN_VISIBLE, generate_example, render_grid,
+    MIN_VISIBLE, _save, generate_example, render_grid,
 )
 
 SVG = Path(__file__).resolve().parents[1] / 'assets/openmoji-17.0.0-svg'
@@ -37,3 +38,11 @@ def test_render_is_deterministic_and_contains_real_occlusion():
         _,rows=render_grid(generate_example('add',seed,SVG)['source_grid'],SVG)
         fractions.extend(o['visible_alpha_fraction'] for o in rows)
     assert any(MIN_VISIBLE <= value < .995 for value in fractions)
+
+
+def test_saved_scene_metadata_is_json_serializable(tmp_path):
+    example=generate_example('move',73_000_123,SVG)
+    metadata=_save(example,tmp_path/'sample',SVG)
+    loaded=json.loads((tmp_path/'sample'/'scene.json').read_text(encoding='utf-8'))
+    assert loaded['program']==metadata['program']
+    assert all(isinstance(value,int) for value in loaded['program']['new_anchor'])

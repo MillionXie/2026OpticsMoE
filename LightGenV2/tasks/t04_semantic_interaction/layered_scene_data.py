@@ -257,7 +257,20 @@ def _save(example: dict[str, Any], directory: Path, svg_dir: Path) -> dict[str, 
     for row,col in zip(*np.nonzero(example['edit_grid'])):
         anchor[boundaries[row]:boundaries[row+1],boundaries[col]:boundaries[col+1]]=255
     Image.fromarray(anchor).save(directory/'edit_mask.png',optimize=True)
-    metadata={k:(v.tolist() if isinstance(v,np.ndarray) else v) for k,v in example.items()}
+    def jsonable(value: Any) -> Any:
+        if isinstance(value, np.ndarray):
+            return value.tolist()
+        if isinstance(value, np.integer):
+            return int(value)
+        if isinstance(value, np.floating):
+            return float(value)
+        if isinstance(value, dict):
+            return {key: jsonable(item) for key, item in value.items()}
+        if isinstance(value, (list, tuple)):
+            return [jsonable(item) for item in value]
+        return value
+
+    metadata={k:jsonable(v) for k,v in example.items()}
     metadata['files']={'source':'source.png','target':'target.png','edit_mask':'edit_mask.png',
                        'visible_change_mask':'visible_change_mask.png'}
     (directory/'scene.json').write_text(json.dumps(metadata,ensure_ascii=False,indent=2),encoding='utf-8')
