@@ -149,7 +149,7 @@ python -m LightGenV2.tasks.t11_lifelong_optics.joint_d2nn \
   --task-a <kather2016_binary.npz> --task-a-manifest <kather2016_binary_manifest.json> \
   --task-b <lc25000_lung_binary.npz> --task-b-manifest <lc25000_lung_binary_manifest.json> \
   --task-c <kather2018_val7k_binary.npz> --task-c-manifest <kather2018_val7k_binary_manifest.json> \
-  --task-d <hepatobench_tum_nor_binary.npz> --task-d-manifest <hepatobench_tum_nor_binary_manifest.json> \
+  --task-d <hepatobench_binary.npz> --task-d-manifest <hepatobench_binary_manifest.json> \
   --out LightGenV2/tasks/t11_lifelong_optics/runs/simulation/<run_id>
 ```
 
