@@ -45,6 +45,8 @@ PROFILES = {
     "layered_scene_formal": "layered_scene_formal.yaml",
     "layered_scene_focus_changed_iou": "layered_scene_focus_changed_iou.yaml",
     "layered_scene_qwen_shared": "layered_scene_qwen_shared.yaml",
+    "layered_scene_electronic_exp1": "layered_scene_electronic_exp1.yaml",
+    "layered_scene_electronic_exp05": "layered_scene_electronic_exp05.yaml",
 }
 PHASES = {"prepare", "train", "evaluate", "all"}
 

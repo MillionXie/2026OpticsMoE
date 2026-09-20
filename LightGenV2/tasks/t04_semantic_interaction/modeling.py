@@ -43,6 +43,7 @@ def _compact(settings: Settings) -> Any:
     compact.output_dir = settings.output_dir
     compact.optical_fusion_initial = settings.optical_fusion_initial
     compact.fusion_alpha_initial = settings.optical_fusion_initial
+    compact.electronic_expansion = settings.electronic_expansion
     if settings.embedding_only:
         compact.fusion_alpha_min = settings.fusion_alpha_minimum
         compact.fusion_alpha_max = settings.fusion_alpha_maximum
@@ -130,6 +131,12 @@ class LightGenOpenMojiEditor(OpenMojiOpticalEditor):
             "text": "cached frozen Qwen3-VL-2B-Instruct contextual hidden states",
             "vision": "frozen Qwen patch embedding and position embedding; zero native Transformer blocks",
             "hybrid_blocks": {"language": 2, "vision": 2},
+            "electronic_residual": {
+                "width": compact.electronic_width,
+                "depth_per_modality": compact.electronic_layers,
+                "mlp_expansion": compact.electronic_expansion,
+                "token_mixer": "causal depthwise Conv1d for language; spatial depthwise Conv2d for vision",
+            },
             "router": {
                 "backend": self.router_backend,
                 "top_k": self.router_top_k,

@@ -1,0 +1,8 @@
+base_config: layered_scene_focus_changed_iou.yaml
+
+# Conservative electronic-residual compression. Optical geometry, masks,
+# Router Top-2, fusion, shared readout, loss and data protocol are unchanged.
+model:
+  electronic_expansion: 1.0
+
+output_dir: ../runs/simulation/layered_scene_electronic_exp1_s73_e100

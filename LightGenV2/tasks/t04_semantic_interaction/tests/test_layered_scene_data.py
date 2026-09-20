@@ -83,3 +83,22 @@ def test_focused_profile_keeps_inference_contract_and_changes_training_only():
     assert focused.changed_cell_weight>formal.changed_cell_weight
     assert focused.edit_loss_weight>formal.edit_loss_weight
     assert focused.phase_dropout_p>formal.phase_dropout_p
+
+
+def test_electronic_compression_profiles_change_only_mlp_expansion():
+    from LightGenV2.tasks.t04_semantic_interaction.settings import load_settings
+
+    task_dir = Path(__file__).resolve().parents[1]
+    reference = load_settings(task_dir / 'configs' / 'layered_scene_focus_changed_iou.yaml')
+    conservative = load_settings(task_dir / 'configs' / 'layered_scene_electronic_exp1.yaml')
+    aggressive = load_settings(task_dir / 'configs' / 'layered_scene_electronic_exp05.yaml')
+    assert reference.electronic_expansion == 2.0
+    assert conservative.electronic_expansion == 1.0
+    assert aggressive.electronic_expansion == 0.5
+    for compressed in (conservative, aggressive):
+        assert compressed.layout_version == reference.layout_version
+        assert compressed.electronic_width == reference.electronic_width
+        assert compressed.editor_depth == reference.editor_depth
+        assert compressed.fusion_alpha_minimum == reference.fusion_alpha_minimum
+        assert compressed.fusion_alpha_maximum == reference.fusion_alpha_maximum
+        assert compressed.changed_cell_weight == reference.changed_cell_weight

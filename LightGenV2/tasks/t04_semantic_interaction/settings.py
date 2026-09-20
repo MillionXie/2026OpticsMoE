@@ -68,6 +68,9 @@ class Settings:
         )
         self.optical_enabled = True
         self.electronic_width = int(d("model.electronic_width", 192))
+        self.electronic_expansion = float(d("model.electronic_expansion", 2.0))
+        if not 0.5 <= self.electronic_expansion <= 4.0:
+            raise ValueError("model.electronic_expansion must be in [0.5, 4.0]")
         self.max_language_tokens = int(d("model.max_language_tokens", 64))
         self.optical_fusion_initial = float(d("model.optical_fusion_initial", 0.055))
         self.embedding_only = bool(d("model.embedding_only", False))
