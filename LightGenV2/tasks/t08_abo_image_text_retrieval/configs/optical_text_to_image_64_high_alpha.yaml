@@ -1,0 +1,35 @@
+base_config: optical_router_moe_dc20_kd1_balance1.yaml
+
+# Controlled continuation: all tensor-shaped weights come from the pinned T08
+# checkpoint, but four fusion gates are reset to alpha=.45 under a [.4,.8]
+# range. Geometry, six-capture image path, three-capture text path and Top2 stay.
+balanced_fusion:
+  mode: scale_matched_convex
+  alpha_min: 0.40
+  alpha_max: 0.80
+  alpha_initial: 0.45
+
+training:
+  epochs: 20
+  learning_rate: 0.00002
+  adapter_learning_rate: 0.000008
+  readout_learning_rate: 0.00002
+  phase_learning_rate: 0.004
+  router_learning_rate: 0.005
+  lambda_router_balance: 0.12
+  lambda_router_importance: 0.03
+  lambda_router_hard_load_balance: 0.80
+
+lightgen:
+  selection:
+    test_interval_epochs: 2
+
+abo_image_text:
+  selection_direction: text_to_image
+  symmetric_title_to_image_weight: 1.0
+  teacher_kd_weight: 0.70
+  resume_checkpoint: ../runs/simulation/optical_router_moe_dc20_seed42/best_checkpoint.pt
+  resume_checkpoint_sha256: 7b49b8b7a942939d0819130460b0fbeaa1887921e151c5fa2154dff4e576bf30
+  allow_alpha_range_transition: true
+
+output_dir: ../runs/simulation/optical_text_to_image_64_high_alpha_seed42

@@ -697,9 +697,23 @@ def run(args: argparse.Namespace) -> dict[str, Any]:
             actual = _sha256(resume_path)
             if len(expected) != 64 or actual != expected:
                 raise RuntimeError("Pinned text-to-image resume checkpoint SHA256 mismatch")
-            payload = load_checkpoint(resume_path, replacement, readout)
+            alpha_transition = bool(_nested(raw, "abo_image_text.allow_alpha_range_transition", False))
+            if alpha_transition:
+                payload = torch.load(resume_path, map_location="cpu", weights_only=False)
+                source_architecture = payload.get("metadata", {}).get("optical_architecture")
+                expected_source = "lightgen_t01_optical_router_scale_matched_moe_10cm_17um_scale_matched_0p010_0p950_c736891c7a55f_v1"
+                if source_architecture != expected_source:
+                    raise RuntimeError("Alpha transition accepts only the pinned low-alpha T08 architecture")
+                replacement.vision_surrogate.load_state_dict(payload["vision_optical"], strict=True)
+                replacement.language_surrogate.load_state_dict(payload["language_optical"], strict=True)
+                readout.load_state_dict(payload["retrieval_readout"], strict=True)
+                replacement.reset_fusion_logits()
+            else:
+                payload = load_checkpoint(resume_path, replacement, readout)
             initialization = {"mode": "pinned_t08_continuation", "path": str(resume_path),
-                              "sha256": actual, "source_epoch": payload.get("epoch")}
+                              "sha256": actual, "source_epoch": payload.get("epoch"),
+                              "alpha_range_transition": alpha_transition,
+                              "alpha_reset_to": settings.fusion_alpha_initial if alpha_transition else None}
         else:
             initialization = initialize_student(settings, replacement, readout)
         _save_resolved_abo_config(settings, config)
@@ -727,6 +741,7 @@ def run(args: argparse.Namespace) -> dict[str, Any]:
             normal = evaluate_bidirectional(
                 loaded, replacement, readout, contract, settings, write_outputs=True
             )
+            fusion = replacement.fusion_diagnostics()
             replacement.set_fusion_ablation("remove_optical")
             try:
                 removed = evaluate_bidirectional(
@@ -742,7 +757,7 @@ def run(args: argparse.Namespace) -> dict[str, Any]:
                     normal["text_to_image"]["hit_at_1"]
                     - removed["text_to_image"]["hit_at_1"]
                 ),
-                "fusion": replacement.fusion_diagnostics(),
+                "fusion": fusion,
                 "dataset_sha256": contract.sha256,
                 "selection_biased_source_checkpoint": True,
             }
@@ -753,6 +768,14 @@ def run(args: argparse.Namespace) -> dict[str, Any]:
         final_metrics = evaluate_bidirectional(
             loaded, replacement, readout, contract, settings, write_outputs=True
         )
+        fusion = replacement.fusion_diagnostics()
+        replacement.set_fusion_ablation("remove_optical")
+        try:
+            removed_metrics = evaluate_bidirectional(
+                loaded, replacement, readout, contract, settings
+            )
+        finally:
+            replacement.set_fusion_ablation("none")
         replacement.save_multiplane_phase_preview(
             settings.output_dir / "best_phase_overview.png",
             title=f"ABO easy100 optical Router MoE; best epoch {training['best_epoch']}",
@@ -764,6 +787,11 @@ def run(args: argparse.Namespace) -> dict[str, Any]:
             "embedding_dim": EMBEDDING_DIM, "best_epoch": training["best_epoch"],
             "student": final_metrics[options["selection_direction"]],
             "bidirectional": final_metrics,
+            "same_weights_remove_optical": removed_metrics,
+            "text_to_image_optical_removal_drop_percentage_points": 100.0 * (
+                final_metrics["text_to_image"]["hit_at_1"]
+                - removed_metrics["text_to_image"]["hit_at_1"]
+            ),
             "hardware_matched_fixed_field_frozen_qwen_64d": teacher_metrics,
             "dynamic_shape_frozen_qwen_64d_reference": {
                 "recall_at_1": 0.5979166666666667,
@@ -775,7 +803,7 @@ def run(args: argparse.Namespace) -> dict[str, Any]:
                 "recall_at_1": 0.7370833333333333, "recall_at_5": 0.93375,
                 "recall_at_10": 0.9604166666666667, "mrr": 0.8230330539977374,
             },
-            "fusion": replacement.fusion_diagnostics(),
+            "fusion": fusion,
             "selection_biased": True,
             "selection": f"best periodic EMA {options['selection_direction']} test Top-1; test checked every {settings.test_evaluation_interval_epochs} epochs",
             "dataset_sha256": contract.sha256,
