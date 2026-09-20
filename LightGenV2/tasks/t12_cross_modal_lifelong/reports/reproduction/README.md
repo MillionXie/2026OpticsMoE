@@ -45,3 +45,18 @@ Initial MoE 的验证分数在各任务刚学完时为 0.356268 / 0.500000 / 0.3
 保留在 0.351802（初始 run 同阶段为 0.242678）；SONYC 阶段截至 epoch 28 的最佳验证
 分项为 SEN12MS 0.279412、CLEVR 0.500000、SONYC 0.374891。以上只作运行中诊断，不能
 作为最终测试结论。
+
+## 三模型归因对照
+
+为了判断终身学习表现来自 MoE 专家结构还是仅来自 replay，commit `0e791798f` 增加
+Sequential D2NN control。最终比较固定为：
+
+1. Joint D2NN：四任务离线联合训练；
+2. Sequential D2NN：相同任务顺序、每任务 30 epoch、512 条/旧任务 replay、50% 当前
+   任务损失、相同任务 MLP 与验证选模；共享两层相位持续更新，旧任务头冻结；
+3. Sequential Optical MoE：与第 2 项相同的顺序/replay/读出合同，另有固定槽位扩展、
+   旧专家冻结和每个新专家组 3 epoch warmup。
+
+Sequential D2NN 没有新专家，因此不执行 expert warmup；报告训练时间和更新次数时必须单列。
+正式 run ID 为 `runs/simulation/sequential_d2nn_replay_s17_v1`，源码 commit
+`0e791798f`，等待 `capacity_guard_s17_v1` 完成后在同一 GPU 串行运行。完成前不填写性能数字。

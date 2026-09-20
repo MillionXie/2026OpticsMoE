@@ -82,4 +82,7 @@ run 保存配置、命令、Git commit、数据 manifest、
 
 `--only sequential_d2nn` 只运行顺序 D2NN 对照；`--only all` 依次运行三种模型。
 
+三个 run 完成后，用 `compare_three.py` 读取各自的 `results.json`，生成带源文件 SHA256、
+逐任务差值和平均差值的统一 JSON；不手工复制日志中的最佳数字。
+
 视频预处理额外需要 `protobuf`；完整 Python 依赖见同目录的 `requirements.txt`。
