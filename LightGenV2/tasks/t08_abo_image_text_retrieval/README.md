@@ -1,5 +1,24 @@
 # T08 商品检索（图搜文）
 
+## 2026-09-20 纯文搜图可行性（独立协议，尚未光学训练）
+
+新增 `text_to_image_baseline.py`：冻结 Qwen3-VL-Embedding-2B，100个官方英文标题为纯文本query，
+2400张test图为gallery，每query有24张同SKU相关图；无查询图片、无标题附着于gallery图像。
+先测动态长宽/固定224白边两种图像预处理，各64D与2048D；主同预算对比使用64D，完整2048D另列，不能隐藏。
+报告Hit@1/5/10、真正多正例Recall@K、MRR、全库mAP；100个query意味着Hit@1每次跳1个百分点。
+不将旧图搜文指标反转当作新baseline，使用文搜图指令重新编码全部输入。
+不微调Qwen、不按分数选择商品或prompt；本次不计时/功耗。
+
+```bash
+CUDA_VISIBLE_DEVICES=4 HF_HUB_OFFLINE=1 TRANSFORMERS_OFFLINE=1 python -m LightGenV2.tasks.t08_abo_image_text_retrieval.text_to_image_baseline --model /path/to/Qwen3-VL-Embedding-2B --data /DATA/DATA1/guest3/2026OpticsMoE/data/abo_easy100_dataset_20260906 --output LightGenV2/tasks/t08_abo_image_text_retrieval/runs/simulation/text_to_image_frozen_20260920
+```
+
+光学待用户确认：图库离线V+L六阶段编码；文本在线只用L router/expert/global三阶段，输出相同64D。
+保留原光路、Top2与同尺度融合，文本长度可变须独立设计padding/mask，不能套T07固定77token输入。
+训练文本-TRAIN图像的同SKU多正例目标，test只参与既定评估/选模；同标题参与训练只代表已登记目录的新图检索，
+不声称未见文本泛化。若需要自然新描述泛化，应预先制作独立描述，或采用SKU互斥划分作为另一协议。
+本次仅baseline，未启动光学训练。完成结果见对应run/report.json。
+
 本任务是 ABO easy100 的单张商品图像到官方英文标题检索，不是图搜图：100 个
 商品、4,800 张 train、2,400 张 test、100 个唯一标题候选。性能均在完整 test
 上计算；训练期间每 5 个 epoch 看一次 test，并按 EMA test R@1 选择 checkpoint。
