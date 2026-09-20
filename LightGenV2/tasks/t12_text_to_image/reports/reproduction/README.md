@@ -1,11 +1,11 @@
 # T12 reproduction status
 
-The source and CPU structure tests are reproducible now. Formal uCO3D feature
+The source and CPU structure tests are reproducible now. Formal ABO feature
 caches and trained checkpoints have not yet been produced. Do not report
 simulation smoke output as image-generation quality.
 
 Local verification on 2026-09-20 used the `qwen3vl-cifar10` Conda environment:
-11 tests passed, both compact comparison rows completed forward/backward, and
+13 tests passed, both compact comparison rows completed forward/backward, and
 the formal audited DC20 path completed a real 14x14-token forward to a
 4x28x28 latent. The default/base Python environment was not used because its
 PyTorch `c10.dll` failed to initialize.

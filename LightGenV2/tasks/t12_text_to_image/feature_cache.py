@@ -37,6 +37,22 @@ def _qwen_prompts(processor: Any, captions: Sequence[str]) -> dict[str, torch.Te
     }
 
 
+def _deduplicate_captions(captions: Sequence[str]) -> tuple[list[str], list[int]]:
+    """Return first-seen unique captions and an index that restores row order."""
+
+    unique: list[str] = []
+    lookup: dict[str, int] = {}
+    inverse: list[int] = []
+    for caption in captions:
+        index = lookup.get(caption)
+        if index is None:
+            index = len(unique)
+            lookup[caption] = index
+            unique.append(caption)
+        inverse.append(index)
+    return unique, inverse
+
+
 @torch.inference_mode()
 def _encode_qwen(model: Any, processor: Any, captions: Sequence[str], device: torch.device) -> torch.Tensor:
     inputs = {key: value.to(device) for key, value in _qwen_prompts(processor, captions).items()}
@@ -45,6 +61,29 @@ def _encode_qwen(model: Any, processor: Any, captions: Sequence[str], device: to
     hidden = outputs.last_hidden_state.float()
     mask = inputs["attention_mask"].to(hidden.dtype).unsqueeze(-1)
     return ((hidden * mask).sum(1) / mask.sum(1).clamp_min(1)).cpu()
+
+
+def _encode_caption_rows(
+    model: Any,
+    processor: Any,
+    captions: Sequence[str],
+    device: torch.device,
+    batch_size: int,
+    split: str,
+) -> tuple[torch.Tensor, int]:
+    """Encode repeated per-frame captions once, then restore sample order."""
+
+    unique, inverse = _deduplicate_captions(captions)
+    chunks = []
+    for start in range(0, len(unique), batch_size):
+        batch = unique[start : start + batch_size]
+        chunks.append(_encode_qwen(model, processor, batch, device))
+        print(
+            f"[T12 cache] {split} text: {min(start + len(batch), len(unique))}/{len(unique)} unique captions",
+            flush=True,
+        )
+    features = torch.cat(chunks)
+    return features[torch.tensor(inverse, dtype=torch.long)], len(unique)
 
 
 @torch.inference_mode()
@@ -88,20 +127,34 @@ def build_feature_cache(settings: Settings, device: torch.device, *, force: bool
         torch_dtype=torch.bfloat16 if device.type == "cuda" else torch.float32,
         attn_implementation="sdpa",
     ).to(device).eval().requires_grad_(False)
+    splits = ("train", "val", "test")
+    rows_by_split = {
+        split: read_manifest(settings.data_dir / f"{split}.jsonl") for split in splits
+    }
+    text_by_split: dict[str, torch.Tensor] = {}
+    unique_captions: dict[str, int] = {}
+    for split in splits:
+        rows = rows_by_split[split]
+        text_by_split[split], unique_captions[split] = _encode_caption_rows(
+            qwen, processor, [row.caption for row in rows], device, settings.batch_size, split
+        )
+    del qwen, processor
+    if device.type == "cuda":
+        torch.cuda.empty_cache()
+
     vae = AutoencoderKL.from_pretrained(
         vae_source, local_files_only=vae_local,
         torch_dtype=torch.float32,
     ).to(device).eval().requires_grad_(False)
 
-    for split, path in zip(("train", "val", "test"), expected):
-        rows = read_manifest(settings.data_dir / f"{split}.jsonl")
-        text_chunks, latent_chunks = [], []
+    for split, path in zip(splits, expected):
+        rows = rows_by_split[split]
+        latent_chunks = []
         for start in range(0, len(rows), settings.batch_size):
             batch = rows[start : start + settings.batch_size]
-            text_chunks.append(_encode_qwen(qwen, processor, [row.caption for row in batch], device))
             images = torch.stack([_load_image(row.image_path, settings.image_size) for row in batch]).to(device)
             latent_chunks.append(_encode_vae(vae, images).cpu())
-            print(f"[T12 cache] {split}: {min(start + len(batch), len(rows))}/{len(rows)}", flush=True)
+            print(f"[T12 cache] {split} images: {min(start + len(batch), len(rows))}/{len(rows)}", flush=True)
         payload = {
             "meta": {
                 "schema_version": 1,
@@ -109,6 +162,7 @@ def build_feature_cache(settings: Settings, device: torch.device, *, force: bool
                 "manifest_sha256": sha256(settings.data_dir / f"{split}.jsonl"),
                 "qwen": qwen_source,
                 "qwen_pooling": "masked mean of final native hidden state",
+                "unique_captions": unique_captions[split],
                 "vae": vae_source,
                 "vae_scaling_factor": float(getattr(vae.config, "scaling_factor", 1.0)),
                 "image_size": settings.image_size,
@@ -116,14 +170,14 @@ def build_feature_cache(settings: Settings, device: torch.device, *, force: bool
             },
             "sample_ids": [row.sample_id for row in rows],
             "categories": [row.category for row in rows],
-            "text": torch.cat(text_chunks).to(torch.bfloat16),
+            "text": text_by_split[split].to(torch.bfloat16),
             "latent": torch.cat(latent_chunks).to(torch.float16),
         }
         temporary = path.with_suffix(".tmp")
         torch.save(payload, temporary)
         temporary.replace(path)
         path.with_suffix(".json").write_text(json.dumps(payload["meta"], indent=2) + "\n", encoding="utf-8")
-    del qwen, vae
+    del vae
     if device.type == "cuda":
         torch.cuda.empty_cache()
     return contract

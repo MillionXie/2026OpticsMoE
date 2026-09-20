@@ -1,4 +1,4 @@
-"""Manifest and cached-feature datasets for the curated uCO3D subset."""
+"""Manifest and cached-feature datasets for the curated CC BY 4.0 subset."""
 
 from __future__ import annotations
 
@@ -85,7 +85,7 @@ def validate_split_contract(data_dir: Path, *, verify_images: bool = True) -> di
         raise ValueError("Train/val/test must contain the same non-empty category set")
     return {
         "schema_version": 1,
-        "dataset": "uCO3D curated single-object T2I subset",
+        "dataset": "curated CC BY 4.0 single-object T2I subset",
         "license": "CC BY 4.0",
         "splits": {split: len(rows) for split, rows in by_split.items()},
         "object_sequences": {split: len(sequence_sets[split]) for split in by_split},

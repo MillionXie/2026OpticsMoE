@@ -4,17 +4,19 @@ T12 是 LightGenV2 的单次前向、文本条件图像生成任务。任务只�
 物体，不做开放域、多物体、计数、空间关系、扩散去噪或自回归生成。
 
 当前状态：模型、数据合同、Qwen/VAE 缓存、训练入口、配对 baseline、可视化比较与 CPU
-结构测试已经建立；uCO3D 正式子集、正式训练结果和硬件结果尚未产生。
+结构测试已经建立；正式数据冻结为 ABO 小子集，正式训练结果和硬件结果尚未产生。
 
 ## 冻结协议
 
-- 数据：uCO3D 的六个单物体类别小子集，全部记录必须明确为 CC BY 4.0。
-- 候选类别：杯子、瓶子、鞋、背包、水果、玩具车；先按正式类别名和可用实例数审计后冻结。
-- 每类 200 个不同物体实例，每个实例抽 10 帧；train/val/test 按实例切分为
-  160/20/20，不允许同一物体的不同视角跨 split。
-- 规模：训练 9,600，验证 1,200，测试 1,200，共 12,000 张。
-- 图像：单个 mask 前景，12% 裁剪边距，物体不超过画布 74%，确定性中性背景，224×224。
-- 文本：保留 uCO3D 的短描述，内容限制为类别、颜色、材质和外观；不要求数量及空间推理。
+- 数据：Amazon Berkeley Objects（ABO）的 catalog `images-small`，数据目录必须附带原始
+  `LICENSE-CC-BY-4.0.txt`，并在产物中保留来源、署名及修改说明。
+- 类别：精确使用 `SHOES`、`CHAIR`、`LAMP`、`TABLE` 四种 product type。
+- 每类 250 个不同商品，每个商品只取一张 main image；train/val/test 按商品身份切分为
+  200/25/25，不允许同一商品跨 split。
+- 规模：训练 800，验证 100，测试 100，共 1,000 张。
+- 图像：过滤过小、极端长宽比、swatch 和明确多件套；裁掉角落背景后将商品居中到确定性
+  中性背景，224×224。正式训练前必须再审计 contact sheet。
+- 文本：只使用结构化颜色、材质和类别组成短描述；不要求数量及空间推理，也不输入品牌名。
 - 文本前端：完整冻结 `Qwen/Qwen3-VL-2B-Instruct`，缓存最终 hidden state 的 masked mean。
 - 图像 codec：完整冻结 `stabilityai/sd-vae-ft-mse`，目标和输出均为 `4×28×28` latent。
 - 推理：一次生成主干前向和一次 VAE decode；没有循环。
@@ -58,29 +60,23 @@ Baseline 与 LightGen 共用：
 唯一的主干差异是 baseline 用两层条件电子残差替代整个光学支路。正式参数量当前约为：
 LightGen 3.65M、baseline 3.09M，不把冻结 Qwen/VAE 参数计为可训练参数。
 
-训练结束后使用 `compare.py` 在相同六条 prompt、相同 seed 下生成配对网格。正式质量报告
+训练结束后使用 `compare.py` 在相同四条 prompt、相同 seed 下生成配对网格。正式质量报告
 还必须在固定 test 上给出 FID/KID、CLIPScore、类别正确率和 LPIPS diversity；当前代码生成
 网格不等同于已有质量结果。
 
 ## 数据准备
 
-先使用 uCO3D 官方 downloader 只下载选定类别的 RGB、mask 和 metadata，再导出 CSV：
-
-```text
-sequence_id,category,caption,frame_path,mask_path,source_url,license
-```
-
-随后运行：
+使用 ABO 官方 `abo-images-small` 和 `abo-listings` 归档，运行：
 
 ```powershell
-python -m LightGenV2.tasks.t12_text_to_image.prepare_uco3d `
-  --index-csv D:\uco3d\selected_frames.csv `
-  --output-dir LightGenV2\tasks\t12_text_to_image\dataset\uco3d_single_object_v1 `
-  --categories "mug,bottle,shoe,backpack,banana,toy_car"
+python -m LightGenV2.tasks.t12_text_to_image.prepare_abo `
+  --abo-root D:\abo `
+  --output-dir LightGenV2\tasks\t12_text_to_image\dataset\abo_single_object_v1 `
+  --categories "SHOES,CHAIR,LAMP,TABLE"
 ```
 
-类别名只是候选，必须以实际 uCO3D taxonomy 和样图审计结果为准。准备脚本会拒绝非
-CC BY 4.0 行、空 mask、类别实例不足及跨 split 身份泄漏。
+准备脚本会拒绝缺少精确 CC BY 4.0 许可证、类别实例不足及跨 split 身份泄漏。原有
+`prepare_uco3d.py` 仍保留为将来网络条件允许时的可选数据入口，但不属于本次冻结协议。
 
 ## 运行
 
@@ -116,8 +112,7 @@ python -m LightGenV2.tasks.t12_text_to_image.compare `
 
 ## 未完成项
 
-1. 下载候选 uCO3D 类别并生成 contact sheet，冻结最终六类。
-2. 安装/缓存冻结 VAE；本机已有 Qwen3-VL-2B-Instruct 缓存，但未发现该 VAE 缓存。
-3. 生成三份共享 feature cache，分别训练 LightGen 和 baseline。
-4. 补固定测试集的 FID/KID、CLIPScore、类别准确率和多样性评估。
-5. 仿真候选稳定后再建立 DC20 硬件 profile；不得把 `compact_fft` 数值写成硬件结果。
+1. 生成 ABO 正式子集和 contact sheet，完成人工画面审计。
+2. 生成三份共享 feature cache，先做单 batch 显存/速度 pilot，再分别训练 LightGen 和 baseline。
+3. 补固定测试集的 FID/KID、CLIPScore、类别准确率和多样性评估。
+4. 仿真候选稳定后再建立 DC20 硬件 profile；不得把 `compact_fft` 数值写成硬件结果。

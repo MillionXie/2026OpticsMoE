@@ -1,6 +1,6 @@
 seed: 42
 dataset:
-  data_dir: ../dataset/uco3d_single_object_v1
+  data_dir: ../dataset/abo_single_object_v1
   image_size: 224
 qwen:
   model: Qwen/Qwen3-VL-2B-Instruct
