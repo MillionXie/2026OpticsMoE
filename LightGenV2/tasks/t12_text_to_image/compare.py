@@ -114,6 +114,8 @@ def main() -> int:
     parser = argparse.ArgumentParser(description="Matched T12 LightGen/baseline generation grid")
     parser.add_argument("--lightgen-checkpoint", type=Path, required=True)
     parser.add_argument("--baseline-checkpoint", type=Path, required=True)
+    parser.add_argument("--lightgen-profile", default="lightgen_parallel.yaml")
+    parser.add_argument("--baseline-profile", default="qwen_vae_baseline.yaml")
     parser.add_argument("--output-dir", type=Path, required=True)
     parser.add_argument("--device", default="cuda" if torch.cuda.is_available() else "cpu")
     parser.add_argument("--seed", type=int, default=42)
@@ -124,8 +126,8 @@ def main() -> int:
     prompts = DEFAULT_PROMPTS
     if args.prompts_json:
         prompts = tuple(json.loads(args.prompts_json.read_text(encoding="utf-8")))
-    lightgen_settings = load_settings(TASK_DIR / "configs/lightgen_parallel.yaml")
-    baseline_settings = load_settings(TASK_DIR / "configs/qwen_vae_baseline.yaml")
+    lightgen_settings = load_settings(TASK_DIR / "configs" / args.lightgen_profile)
+    baseline_settings = load_settings(TASK_DIR / "configs" / args.baseline_profile)
     if args.qwen_checkpoint:
         lightgen_settings.qwen_checkpoint = baseline_settings.qwen_checkpoint = args.qwen_checkpoint.resolve()
     if args.vae_checkpoint:

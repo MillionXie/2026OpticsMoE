@@ -109,10 +109,15 @@ python -m LightGenV2.tasks.t12_text_to_image --profile baseline_gan --phase trai
 python -m LightGenV2.tasks.t12_text_to_image --profile lightgen --phase evaluate --device cuda
 python -m LightGenV2.tasks.t12_text_to_image --profile baseline --phase evaluate --device cuda
 python -m LightGenV2.tasks.t12_text_to_image.compare `
-  --lightgen-checkpoint LightGenV2\tasks\t12_text_to_image\runs\simulation\lightgen_parallel_seed42\best_checkpoint.pt `
+  --lightgen-profile lightgen_parallel_decoder_gan.yaml `
+  --lightgen-checkpoint LightGenV2\tasks\t12_text_to_image\runs\simulation\lightgen_parallel_decoder_gan_seed42\best_checkpoint.pt `
   --baseline-checkpoint LightGenV2\tasks\t12_text_to_image\runs\simulation\qwen_vae_baseline_seed42\best_checkpoint.pt `
   --output-dir LightGenV2\tasks\t12_text_to_image\runs\simulation\matched_comparison
 ```
+
+2026-09-20 的正式服务器训练、失败实验和 checkpoint 选择记录见
+[`reports/20260920_server_training.md`](reports/20260920_server_training.md)。当前推荐的是受约束
+decoder-only GAN 的第 4 epoch；无约束 GAN 因随机 prior 模式坍塌被明确否决。
 
 GAN 锐化阶段可通过 `--init-checkpoint <首轮 best_checkpoint.pt>` 仅加载生成器与 posterior
 权重。浅层 latent head 的输出卷积会自动映射到深层 head，新插入的 residual decoder block
