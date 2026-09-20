@@ -17,12 +17,10 @@ from .settings import TASK_DIR, load_settings
 
 
 DEFAULT_PROMPTS = (
-    "a red ceramic mug with a curved handle on a light gray background",
-    "a transparent bottle with a blue cap on a white background",
-    "a black running shoe with a white sole on a pale blue background",
-    "a green backpack with two front pockets on a beige background",
-    "a yellow banana on a light gray background",
-    "a small red toy car on a white background",
+    "a black leather shoe on a plain neutral background",
+    "a blue fabric chair on a plain neutral background",
+    "a brass metal lamp on a plain neutral background",
+    "a brown wood table on a plain neutral background",
 )
 
 
@@ -120,13 +118,20 @@ def main() -> int:
     parser.add_argument("--device", default="cuda" if torch.cuda.is_available() else "cpu")
     parser.add_argument("--seed", type=int, default=42)
     parser.add_argument("--prompts-json", type=Path, default=None)
+    parser.add_argument("--qwen-checkpoint", type=Path, default=None)
+    parser.add_argument("--vae-checkpoint", type=Path, default=None)
     args = parser.parse_args()
     prompts = DEFAULT_PROMPTS
     if args.prompts_json:
         prompts = tuple(json.loads(args.prompts_json.read_text(encoding="utf-8")))
+    lightgen_settings = load_settings(TASK_DIR / "configs/lightgen_parallel.yaml")
+    baseline_settings = load_settings(TASK_DIR / "configs/qwen_vae_baseline.yaml")
+    if args.qwen_checkpoint:
+        lightgen_settings.qwen_checkpoint = baseline_settings.qwen_checkpoint = args.qwen_checkpoint.resolve()
+    if args.vae_checkpoint:
+        lightgen_settings.vae_checkpoint = baseline_settings.vae_checkpoint = args.vae_checkpoint.resolve()
     report = compare(
-        load_settings(TASK_DIR / "configs/lightgen_parallel.yaml"),
-        load_settings(TASK_DIR / "configs/qwen_vae_baseline.yaml"),
+        lightgen_settings, baseline_settings,
         args.lightgen_checkpoint.resolve(), args.baseline_checkpoint.resolve(),
         args.output_dir.resolve(), torch.device(args.device), prompts, args.seed,
     )
