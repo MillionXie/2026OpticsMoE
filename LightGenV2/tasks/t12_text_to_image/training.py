@@ -123,25 +123,6 @@ def _load_warmstart(
         4 + source_depth: 4 + target_depth,
         6 + source_depth: 6 + target_depth,
     }
-
-
-def _freeze_warmstarted_base(model: TextConditionedVAE, decoder_depth: int) -> dict[str, Any]:
-    """Freeze the semantic generator and optimize only newly inserted decoder blocks."""
-
-    model.requires_grad_(False)
-    prefixes = tuple(
-        f"generator.head.net.{index}." for index in range(4, 4 + int(decoder_depth))
-    )
-    names = []
-    parameters = 0
-    for name, parameter in model.named_parameters():
-        if name.startswith(prefixes):
-            parameter.requires_grad_(True)
-            names.append(name)
-            parameters += parameter.numel()
-    if not names:
-        raise ValueError("Decoder-only sharpening requires at least one decoder residual block")
-    return {"trainable_parameters": parameters, "trainable_tensors": names}
     for key, value in source.items():
         candidate = key
         for source_index, target_index in suffix_indices.items():
@@ -177,6 +158,25 @@ def _freeze_warmstarted_base(model: TextConditionedVAE, decoder_depth: int) -> d
         "remapped_tensors": remapped,
         "new_tensors": list(incompatible.missing_keys),
     }
+
+
+def _freeze_warmstarted_base(model: TextConditionedVAE, decoder_depth: int) -> dict[str, Any]:
+    """Freeze the semantic generator and optimize only newly inserted decoder blocks."""
+
+    model.requires_grad_(False)
+    prefixes = tuple(
+        f"generator.head.net.{index}." for index in range(4, 4 + int(decoder_depth))
+    )
+    names = []
+    parameters = 0
+    for name, parameter in model.named_parameters():
+        if name.startswith(prefixes):
+            parameter.requires_grad_(True)
+            names.append(name)
+            parameters += parameter.numel()
+    if not names:
+        raise ValueError("Decoder-only sharpening requires at least one decoder residual block")
+    return {"trainable_parameters": parameters, "trainable_tensors": names}
 
 
 def _discriminator_loss(
