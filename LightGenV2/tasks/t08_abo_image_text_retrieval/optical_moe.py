@@ -658,8 +658,10 @@ def run(args: argparse.Namespace) -> dict[str, Any]:
     if args.run_dir:
         settings.output_dir = Path(args.run_dir).expanduser().resolve()
     settings.output_dir.mkdir(parents=True, exist_ok=True)
-    dataset_root = _resolve_from_config(config, str(_nested(raw, "dataset.dataset_root")))
-    cache_path = _resolve_from_config(config, str(_nested(raw, "abo_image_text.cache_file")))
+    dataset_root = (Path(args.data_root).expanduser().resolve() if args.data_root else
+                    _resolve_from_config(config, str(_nested(raw, "dataset.dataset_root"))))
+    cache_path = (Path(args.teacher_cache).expanduser().resolve() if args.teacher_cache else
+                  _resolve_from_config(config, str(_nested(raw, "abo_image_text.cache_file"))))
     options = {
         "temperature": float(_nested(raw, "abo_image_text.temperature", 0.07)),
         "symmetric_weight": float(_nested(raw, "abo_image_text.symmetric_title_to_image_weight", 0.25)),
@@ -796,6 +798,8 @@ def main() -> int:
                         help="Pinned checkpoint raw-image bidirectional and same-weight no-optical audit")
     parser.add_argument("--resume-checkpoint")
     parser.add_argument("--expected-resume-sha256")
+    parser.add_argument("--data-root")
+    parser.add_argument("--teacher-cache")
     args = parser.parse_args()
     report = run(args)
     print(json.dumps(report, ensure_ascii=False, indent=2), flush=True)
