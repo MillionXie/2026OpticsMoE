@@ -61,6 +61,14 @@ class OpticalMoE(nn.Module):
         self.router.requires_grad_(not warmup)
         self.global_phase.requires_grad_(not warmup)
 
+    def configure_all(self):
+        """Activate and train the complete preallocated MoE for offline learning."""
+        self.active_count.fill_(self.num_experts)
+        for parameter in self.experts:
+            parameter.requires_grad_(True)
+        self.router.requires_grad_(True)
+        self.global_phase.requires_grad_(True)
+
     @staticmethod
     def transmission(p): return torch.exp(2j*torch.pi*torch.sigmoid(p))
 

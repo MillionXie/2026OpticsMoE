@@ -114,6 +114,16 @@ class Contract(unittest.TestCase):
         for i,p in enumerate(model.experts): self.assertEqual(p.requires_grad,12<=i<16)
         self.assertEqual(geometry,(model.height,model.width,model.slots))
 
+    def test_offline_joint_mode_trains_all_sixteen_experts(self):
+        cfg=dict(self.cfg,num_experts=16,router_layout='ring',router_detector_size=6)
+        model=OpticalMoE(cfg);model.configure_all()
+        self.assertEqual(int(model.active_count),16)
+        self.assertTrue(all(p.requires_grad for p in model.experts))
+        self.assertTrue(model.router.requires_grad);self.assertTrue(model.global_phase.requires_grad)
+        output=model(self.x)
+        self.assertEqual(tuple(output['routes'].shape),(3,16))
+        self.assertTrue(torch.allclose(output['routes'].sum(1),torch.ones(3)))
+
     def test_balanced_replay_and_domain(self):
         labels=np.repeat(np.arange(8),437)
         ids=balanced_indices(labels,256,17)

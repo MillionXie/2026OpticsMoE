@@ -153,6 +153,18 @@ python -m LightGenV2.tasks.t11_lifelong_optics.joint_d2nn \
   --out LightGenV2/tasks/t11_lifelong_optics/runs/simulation/<run_id>
 ```
 
+同一离线联合协议的 MoE 使用 `joint_moe.py`：从第一轮起激活并更新全部 16 个专家、router
+和 global phase，每批同样包含 A/B/C/D 各 3 张，训练轮数、更新步数、验证选模和数据划分与
+联合 D2NN 一致。输入由 router 动态分配至 16 个专家，没有任务 ID、固定四区输入、OEO、
+MLP 或电子读出头。
+
+`continual_four_full_replay.py` 保持 A→B→C→D 的四专家逐段扩展方式，但不再使用每个旧任务
+每类 128 张的 memory；每个主阶段直接使用全部已选旧任务训练样本。batch size 固定为 12：
+A 阶段 12 张 A，B 阶段 A/B 各 6 张，C 阶段 A/B/C 各 4 张，D 阶段四任务各 3 张。每个域
+耗尽后独立重排循环，每轮至少完整覆盖当前最大训练集；对应主阶段每轮为 67/334/500/667
+步。旧专家仍逐元素冻结，新四专家、router 和 global phase 更新；三轮 warmup 只训练新四
+专家。该设置是“全旧数据可访问”的上界，不再属于有限 replay memory 协议。
+
 ## 探测器几何对照
 
 `configs/kather.json` 使用槽位中心作为 router CCD 探测中心；`configs/kather_ring.json` 将 12 个中心放在输入中心半径 179.2 像素的圆周上，按四个相隔 90° 的端口为一组依次激活。两配置的其他参数相同，且每次运行内部几何始终固定。环形布局意在控制探测距离偏差，不能预先保证均衡或更高准确率。窗口越界或相互重叠时构造模型直接报错。
