@@ -66,3 +66,20 @@ def test_layered_gallery_uses_saved_scene_images(tmp_path):
     save_layered_gallery(tmp_path/'gallery',galleries,settings)
     assert (tmp_path/'gallery'/'move_examples.png').is_file()
     assert (tmp_path/'gallery'/'index.html').is_file()
+
+
+def test_focused_profile_keeps_inference_contract_and_changes_training_only():
+    from LightGenV2.tasks.t04_semantic_interaction.settings import load_settings
+
+    task_dir=Path(__file__).resolve().parents[1]
+    formal=load_settings(task_dir/'configs'/'layered_scene_formal.yaml')
+    focused=load_settings(task_dir/'configs'/'layered_scene_focus_changed_iou.yaml')
+    assert focused.layout_version==formal.layout_version
+    assert focused.lightgen_model_variant==formal.lightgen_model_variant
+    assert focused.electronic_width==formal.electronic_width
+    assert focused.editor_depth==formal.editor_depth
+    assert focused.fusion_alpha_minimum==formal.fusion_alpha_minimum
+    assert focused.fusion_alpha_maximum==formal.fusion_alpha_maximum
+    assert focused.changed_cell_weight>formal.changed_cell_weight
+    assert focused.edit_loss_weight>formal.edit_loss_weight
+    assert focused.phase_dropout_p>formal.phase_dropout_p

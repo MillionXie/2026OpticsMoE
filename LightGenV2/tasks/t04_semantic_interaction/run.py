@@ -43,6 +43,7 @@ PROFILES = {
     "qwen_slim_norm": "qwen_slim_norm.yaml",
     "layered_scene_pilot": "layered_scene_pilot.yaml",
     "layered_scene_formal": "layered_scene_formal.yaml",
+    "layered_scene_focus_changed_iou": "layered_scene_focus_changed_iou.yaml",
 }
 PHASES = {"prepare", "train", "evaluate", "all"}
 

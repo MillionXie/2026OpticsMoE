@@ -90,7 +90,9 @@ class Settings:
             if self.prompt_cache_path.name == 'prompt_hidden.pt':
                 raise ValueError('Embedding-only profile must not reuse contextual prompt_hidden.pt')
         self.optical_shift_pixels = 16
-        self.phase_dropout_p = 0.08
+        self.phase_dropout_p = float(d("model.phase_dropout_p", 0.08))
+        if not 0.0 <= self.phase_dropout_p < 1.0:
+            raise ValueError('model.phase_dropout_p must be in [0, 1)')
         self.epochs = int(d("training.epochs", 40))
         self.batch_size = int(d("training.batch_size", 16))
         self.num_workers = int(d("training.num_workers", 4))
