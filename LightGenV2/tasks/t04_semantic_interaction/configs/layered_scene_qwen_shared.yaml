@@ -9,6 +9,12 @@ lightgen:
 model:
   phase_dropout_p: 0.0
 
+# Native text features are variable-length tensors. Reading their mmap cache
+# with worker processes can exhaust shared-memory file handles; one host reader
+# still keeps this small shared head GPU-fed.
+training:
+  num_workers: 0
+
 loss:
   ccd: 0.0
   router_balance: 0.0
