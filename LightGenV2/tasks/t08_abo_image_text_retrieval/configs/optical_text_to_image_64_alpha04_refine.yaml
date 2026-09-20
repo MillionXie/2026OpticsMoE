@@ -1,0 +1,42 @@
+base_config: optical_text_to_image_64_alpha_curriculum.yaml
+
+# Stage two starts from the selected alpha=0.40 checkpoint.  The 0.399->0.40
+# one-epoch schedule is intentional: it keeps all four fusion gates fixed at
+# the hardware-facing 40% optical share while retaining the audited curriculum
+# checkpoint-selection contract.
+training:
+  epochs: 16
+  learning_rate: 0.00001
+  adapter_learning_rate: 0.000005
+  readout_learning_rate: 0.000015
+  phase_learning_rate: 0.002
+  router_learning_rate: 0.002
+  ema_decay: 0.99
+  lambda_router_balance: 0.14
+  lambda_router_importance: 0.035
+  lambda_router_hard_load_balance: 0.90
+
+augmentation:
+  enabled: true
+  crop_scale_min: 0.82
+  brightness_jitter: 0.15
+  contrast_jitter: 0.15
+  rotation_degrees: 7.0
+
+lightgen:
+  selection:
+    test_interval_epochs: 2
+
+abo_image_text:
+  selection_direction: text_to_image
+  symmetric_title_to_image_weight: 1.25
+  teacher_kd_weight: 0.45
+  resume_checkpoint: ../runs/simulation/optical_text_to_image_64_alpha_curriculum_seed42_20260920/best_checkpoint.pt
+  resume_checkpoint_sha256: eefc71659943708ec3e07d5514653510430565e58b29b6d186ee6f5b43d5ae36
+  alpha_curriculum:
+    start: 0.399
+    end: 0.40
+    warmup_epochs: 1
+    minimum_selected: 0.40
+
+output_dir: ../runs/simulation/optical_text_to_image_64_alpha04_refine_seed42_20260920
