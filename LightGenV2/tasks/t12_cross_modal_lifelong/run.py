@@ -238,6 +238,71 @@ def combine_current_replay(current_loss, replay_losses, replay_weight):
     return (current_loss + replay_weight * replay_loss) / (1.0 + replay_weight)
 
 
+def add_continual_metrics(result, all_history):
+    learned={row["task"]:selection_score(row["task"],row["validation"][row["task"]]) for row in all_history}
+    final={name:selection_score(name,result["validation"][name]) for name in TASK_ORDER}
+    result["continual"]={"score_when_learned":learned,"final_validation_score":final,
+                         "backward_transfer":{name:final[name]-learned[name] for name in TASK_ORDER[:-1]}}
+    result["continual"]["mean_backward_transfer"]=float(np.mean(list(result["continual"]["backward_transfer"].values())))
+    return result
+
+
+def train_sequential_d2nn(tasks, cfg, out, device):
+    """Sequential D2NN control with the same replay and head-freezing contract."""
+    root = out / "sequential_d2nn"; root.mkdir()
+    seed_all(cfg["seed"])
+    model = CrossModalOptics("d2nn", cfg["seed"], cfg["phase_dropout"]).to(device)
+    replay = {}; all_history = []
+    for task_index, name in enumerate(TASK_ORDER):
+        task_root = root / f"stage_{task_index+1}_{name}"; task_root.mkdir()
+        task = tasks[name]
+        old_head_hash = {n:module_sha(model.heads[n]) for n in TASK_ORDER[:task_index]}
+        shared_before = {"first_phase":state_sha(model.first_phase),
+                         "global_phase":state_sha(model.global_phase)}
+        model.configure_task(task_index, warmup=False)
+        optimizer=torch.optim.Adam([p for p in model.parameters() if p.requires_grad],lr=cfg["lr"])
+        scheduler=torch.optim.lr_scheduler.CosineAnnealingLR(optimizer,cfg["task_epochs"],eta_min=cfg["lr"]*.1)
+        best=-float("inf"); history=[]
+        for epoch in range(1,cfg["task_epochs"]+1):
+            model.train();started=time.time();losses=[]
+            order=np.random.default_rng(cfg["seed"]+task_index*1000+epoch).permutation(len(task.splits["train"][1]))
+            current_chunks=chunks(order,cfg["batch"])
+            replay_chunks={old:chunks(np.random.default_rng(cfg["seed"]+task_index*1000+epoch+j).permutation(ix),cfg["replay_batch"])
+                           for j,(old,ix) in enumerate(replay.items())}
+            for step,current in enumerate(current_chunks):
+                optimizer.zero_grad(set_to_none=True)
+                current_loss=task_loss(model,task,current,device)
+                replay_losses=[]
+                for old in TASK_ORDER[:task_index]:
+                    pool=replay_chunks[old]; ix=pool[step%len(pool)]
+                    replay_losses.append(task_loss(model,tasks[old],ix,device))
+                loss=combine_current_replay(current_loss,replay_losses,cfg["replay_weight"])
+                loss.backward();torch.nn.utils.clip_grad_norm_([p for p in model.parameters() if p.requires_grad],1.0);optimizer.step();losses.append(float(loss.detach()))
+            scheduler.step()
+            val={n:evaluate(model,tasks[n],"val",device,cfg["eval_batch"])[0] for n in TASK_ORDER[:task_index+1]}
+            score=float(np.mean([selection_score(n,val[n]) for n in val]))
+            row={"epoch":epoch,"loss":float(np.mean(losses)),"validation_mean_score":score,"validation":val,"seconds":time.time()-started}
+            history.append(row);save(task_root/"history.json",history)
+            cp={"model":model.state_dict(),"epoch":epoch,"task_index":task_index,"validation":val,"score":score}
+            torch.save(cp,task_root/"last_checkpoint.pt")
+            if score>best:best=score;torch.save(cp,task_root/"best_checkpoint.pt")
+            print(json.dumps({"arch":"sequential_d2nn","task":name,"epoch":epoch,"val":score,"loss":row["loss"],"seconds":row["seconds"]}),flush=True)
+        cp=torch.load(task_root/"best_checkpoint.pt",map_location=device,weights_only=False);model.load_state_dict(cp["model"])
+        after_heads={n:module_sha(model.heads[n]) for n in TASK_ORDER[:task_index]}
+        assert old_head_hash==after_heads, "frozen old task head changed"
+        stage_eval={n:evaluate(model,tasks[n],"val",device,cfg["eval_batch"])[0] for n in TASK_ORDER[:task_index+1]}
+        shared_after={"first_phase":state_sha(model.first_phase),"global_phase":state_sha(model.global_phase)}
+        save(task_root/"stage_result.json",{"selected_epoch":cp["epoch"],"validation":stage_eval,
+             "old_heads_unchanged":old_head_hash==after_heads,
+             "shared_phases_changed":{k:shared_before[k]!=shared_after[k] for k in shared_before}})
+        all_history.append({"task":name,"selected_epoch":cp["epoch"],"validation":stage_eval})
+        replay[name]=replay_indices(task,cfg["replay_per_task"],cfg["seed"]+task_index)
+    save(root/"sequence.json",all_history)
+    result=finalize(model,tasks,root,device,cfg,all_history[-1]["selected_epoch"],"sequential_replay")
+    add_continual_metrics(result,all_history);save(root/"results.json",result)
+    return result
+
+
 def train_lifelong_moe(tasks, cfg, out, device):
     root = out / "lifelong_moe"; root.mkdir()
     seed_all(cfg["seed"])
@@ -298,12 +363,7 @@ def train_lifelong_moe(tasks, cfg, out, device):
         model.configure_task(task_index, warmup=False)
     save(root/"sequence.json",all_history)
     result=finalize(model,tasks,root,device,cfg,all_history[-1]["selected_epoch"],"sequential_lifelong")
-    learned={row["task"]:selection_score(row["task"],row["validation"][row["task"]]) for row in all_history}
-    final={name:selection_score(name,result["validation"][name]) for name in TASK_ORDER}
-    result["continual"]={"score_when_learned":learned,"final_validation_score":final,
-                         "backward_transfer":{name:final[name]-learned[name] for name in TASK_ORDER[:-1]}}
-    result["continual"]["mean_backward_transfer"]=float(np.mean(list(result["continual"]["backward_transfer"].values())))
-    save(root/"results.json",result)
+    add_continual_metrics(result,all_history);save(root/"results.json",result)
     return result
 
 
@@ -336,17 +396,18 @@ def smoke(tasks,cfg,out,device):
 
 
 def main():
-    p=argparse.ArgumentParser();p.add_argument("--config",type=Path,required=True);p.add_argument("--sen12ms",type=Path,required=True);p.add_argument("--clevr",type=Path,required=True);p.add_argument("--sonyc",type=Path,required=True);p.add_argument("--video",type=Path,required=True);p.add_argument("--out",type=Path,required=True);p.add_argument("--phase",choices=["smoke","train"],default="train");p.add_argument("--only",choices=["both","d2nn","moe"],default="both");a=p.parse_args()
+    p=argparse.ArgumentParser();p.add_argument("--config",type=Path,required=True);p.add_argument("--sen12ms",type=Path,required=True);p.add_argument("--clevr",type=Path,required=True);p.add_argument("--sonyc",type=Path,required=True);p.add_argument("--video",type=Path,required=True);p.add_argument("--out",type=Path,required=True);p.add_argument("--phase",choices=["smoke","train"],default="train");p.add_argument("--only",choices=["all","both","d2nn","sequential_d2nn","moe"],default="all");a=p.parse_args()
     cfg=json.loads(a.config.read_text());a.out.mkdir(parents=True,exist_ok=False);save(a.out/"status.json",{"status":"running","pid":os.getpid()})
     try:
         seed_all(cfg["seed"]);torch.set_num_threads(4);device=torch.device(cfg.get("device","cuda"));tasks=load_tasks({"sen12ms":a.sen12ms,"clevr":a.clevr,"sonyc":a.sonyc,"video":a.video})
-        meta={"command":sys.argv,"config":cfg,"git":subprocess.check_output(["git","rev-parse","HEAD"],text=True).strip(),"python":platform.python_version(),"torch":torch.__version__,"cuda_visible_devices":os.environ.get("CUDA_VISIBLE_DEVICES"),"gpu":torch.cuda.get_device_name() if device.type=="cuda" else None,"data":{n:{"root":str(t.root),"manifest_sha256":t.manifest_sha,"sizes":{s:len(t.splits[s][1]) for s in t.splits}} for n,t in tasks.items()},"contract":"four sequential multimodal task types (image-image, image-text, audio-text, video temporal); shared physical phases and pooled-CCD MLP heads; D2NN offline joint, MoE sequential 4->8->12->16"}
+        meta={"command":sys.argv,"config":cfg,"git":subprocess.check_output(["git","rev-parse","HEAD"],text=True).strip(),"python":platform.python_version(),"torch":torch.__version__,"cuda_visible_devices":os.environ.get("CUDA_VISIBLE_DEVICES"),"gpu":torch.cuda.get_device_name() if device.type=="cuda" else None,"data":{n:{"root":str(t.root),"manifest_sha256":t.manifest_sha,"sizes":{s:len(t.splits[s][1]) for s in t.splits}} for n,t in tasks.items()},"contract":"four multimodal task types; identical pooled-CCD MLP heads; joint D2NN offline reference, sequential D2NN replay control, sequential MoE 4->8->12->16"}
         save(a.out/"metadata.json",meta);save(a.out/"actual_config.json",cfg);(a.out/"command.txt").write_text(" ".join(sys.argv)+"\n")
         if a.phase=="smoke":smoke(tasks,cfg,a.out,device);result={"smoke":"pass"}
         else:
             result={}
-            if a.only in ("both","d2nn"):result["d2nn"]=train_joint_d2nn(tasks,cfg,a.out,device)
-            if a.only in ("both","moe"):result["moe"]=train_lifelong_moe(tasks,cfg,a.out,device)
+            if a.only in ("all","both","d2nn"):result["d2nn"]=train_joint_d2nn(tasks,cfg,a.out,device)
+            if a.only in ("all","sequential_d2nn"):result["sequential_d2nn"]=train_sequential_d2nn(tasks,cfg,a.out,device)
+            if a.only in ("all","both","moe"):result["moe"]=train_lifelong_moe(tasks,cfg,a.out,device)
             save(a.out/"comparison.json",result)
         save(a.out/"status.json",{"status":"complete"})
     except Exception:

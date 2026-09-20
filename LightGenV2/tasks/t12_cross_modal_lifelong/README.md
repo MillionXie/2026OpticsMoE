@@ -9,6 +9,9 @@
 
 - **D2NN baseline**：单个全孔径首层相位和共享 global phase，离线交错训练四项任务，
   因而在训练开始时能访问全部四种模态。
+- **Sequential D2NN control**：使用相同 D2NN、任务顺序、每任务 30 epoch、电子 MLP、
+  replay 容量、当前/旧任务损失权重和验证选模，但不能增加或冻结光学专家。它用于判断
+  终身学习优势是否确实来自 MoE 专家结构。D2NN 没有新专家，因此不执行 expert warmup。
 - **Ours**：固定 16 槽光学 MoE，按 SEN12MS → CLEVR → SONYC → Physical Concepts 顺序学习。每个新任务启用
   四个预分配专家；旧专家和旧任务读出头冻结，router/global phase 通过当前数据和每个
   旧任务最多 512 条 replay 继续更新。当前任务占主阶段损失的 50%，其余 50% 在旧任务
@@ -76,5 +79,7 @@ python -m LightGenV2.tasks.t12_cross_modal_lifelong \
 去掉 `--phase smoke` 运行首轮 30 epoch 训练；每个新任务另有 3 epoch 新专家 warmup。
 run 保存配置、命令、Git commit、数据 manifest、
 逐轮验证、best/last checkpoint、逐样本概率与路由、最终 comparison.json。运行目录不覆盖。
+
+`--only sequential_d2nn` 只运行顺序 D2NN 对照；`--only all` 依次运行三种模型。
 
 视频预处理额外需要 `protobuf`；完整 Python 依赖见同目录的 `requirements.txt`。

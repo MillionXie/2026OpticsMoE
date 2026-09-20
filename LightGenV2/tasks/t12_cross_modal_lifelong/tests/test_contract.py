@@ -30,6 +30,15 @@ class ContractTest(unittest.TestCase):
         self.assertTrue(all(not p.requires_grad for p in model.heads["sen12ms"].parameters()))
         self.assertTrue(all(p.requires_grad for p in model.heads["clevr"].parameters()))
 
+    def test_sequential_d2nn_freezes_old_heads_not_shared_phases(self):
+        model = CrossModalOptics("d2nn", phase_dropout=0)
+        model.configure_task(2, warmup=False)
+        self.assertTrue(model.first_phase.requires_grad)
+        self.assertTrue(model.global_phase.requires_grad)
+        self.assertTrue(all(not p.requires_grad for p in model.heads["sen12ms"].parameters()))
+        self.assertTrue(all(not p.requires_grad for p in model.heads["clevr"].parameters()))
+        self.assertTrue(all(p.requires_grad for p in model.heads["sonyc"].parameters()))
+
     def test_fourth_task_uses_last_four_slots(self):
         model = CrossModalOptics("moe", phase_dropout=0)
         model.configure_task(3, warmup=False)
