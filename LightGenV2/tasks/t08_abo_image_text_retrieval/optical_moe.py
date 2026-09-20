@@ -322,6 +322,41 @@ def _metrics(query: torch.Tensor, titles: torch.Tensor, labels: Sequence[int]) -
     return report, rows
 
 
+def _text_to_image_metrics(titles: torch.Tensor, images: torch.Tensor,
+                           image_labels: Sequence[int]) -> tuple[dict[str, float], list[dict[str, Any]]]:
+    """One title per SKU retrieves all24 held-out images of that SKU."""
+    titles = F.normalize(titles.float(), dim=-1)
+    images = F.normalize(images.float(), dim=-1)
+    scores = titles @ images.T
+    order = scores.argsort(dim=1, descending=True, stable=True)
+    labels = torch.tensor(image_labels, dtype=torch.long)
+    query_labels = torch.arange(len(titles), dtype=torch.long)
+    relevant = labels[order].eq(query_labels[:, None])
+    totals = relevant.sum(1)
+    if len(titles) != 100 or not bool(totals.eq(24).all()):
+        raise RuntimeError("Text-to-image protocol requires100 titles and24 TEST positives each")
+    ranks = torch.arange(1, len(images) + 1, dtype=torch.float64)[None]
+    precision = relevant.cumsum(1) / ranks
+    first = torch.where(relevant, ranks, torch.inf).amin(1)
+    report = {
+        "hit_at_1": float(relevant[:, :1].any(1).double().mean()),
+        "hit_at_5": float(relevant[:, :5].any(1).double().mean()),
+        "hit_at_10": float(relevant[:, :10].any(1).double().mean()),
+        "recall_at_1": float((relevant[:, :1].sum(1) / totals).double().mean()),
+        "recall_at_5": float((relevant[:, :5].sum(1) / totals).double().mean()),
+        "recall_at_10": float((relevant[:, :10].sum(1) / totals).double().mean()),
+        "mrr": float((1.0 / first).mean()),
+        "map": float(((precision * relevant).sum(1) / totals).mean()),
+        "query_count": len(titles), "gallery_count": len(images),
+        "relevant_images_per_query": 24,
+    }
+    rows = [{"title_label": i, "first_positive_rank": int(first[i]),
+             "top10_image_indices": json.dumps(order[i, :10].tolist()),
+             "top10_scores": json.dumps([float(scores[i, j]) for j in order[i, :10]])}
+            for i in range(len(titles))]
+    return report, rows
+
+
 @torch.no_grad()
 def _encode_titles_student(loaded: Any, replacement: Any, readout: Any,
                            titles: Sequence[Title], settings: Any) -> torch.Tensor:
@@ -352,17 +387,32 @@ def _encode_titles_student(loaded: Any, replacement: Any, readout: Any,
 @torch.no_grad()
 def evaluate(loaded: Any, replacement: Any, readout: Any, contract: Contract,
              settings: Any, *, write_outputs: bool = False) -> dict[str, float]:
+    return evaluate_bidirectional(loaded, replacement, readout, contract, settings,
+                                  write_outputs=write_outputs)["image_to_text"]
+
+
+@torch.no_grad()
+def evaluate_bidirectional(loaded: Any, replacement: Any, readout: Any, contract: Contract,
+                           settings: Any, *, write_outputs: bool = False) -> dict[str, Any]:
     query = encode_student_samples(loaded, replacement, readout, contract.test, settings)
     titles = _encode_titles_student(loaded, replacement, readout, contract.titles, settings)
-    metrics, rows = _metrics(query, titles, [sample.sku_index for sample in contract.test])
+    labels = [sample.sku_index for sample in contract.test]
+    image_to_text, image_rows = _metrics(query, titles, labels)
+    text_to_image, title_rows = _text_to_image_metrics(titles, query, labels)
     if write_outputs:
-        for row, sample in zip(rows, contract.test):
+        for row, sample in zip(image_rows, contract.test):
             row["sample_id"] = sample.sample_id
             row["product_id"] = sample.sku_name
-        write_csv(settings.output_dir / "retrieval_predictions.csv", rows, list(rows[0]))
+        for row, title in zip(title_rows, contract.titles):
+            row["product_id"] = title.product_id
+            row["title"] = title.text
+            indices = json.loads(row["top10_image_indices"])
+            row["top10_sample_ids"] = json.dumps([contract.test[i].sample_id for i in indices])
+        write_csv(settings.output_dir / "image_to_text_predictions.csv", image_rows, list(image_rows[0]))
+        write_csv(settings.output_dir / "text_to_image_predictions.csv", title_rows, list(title_rows[0]))
         torch.save({"query": query.to(torch.float16), "titles": titles.to(torch.float16)},
                    settings.output_dir / "student_embeddings.pt")
-    return metrics
+    return {"image_to_text": image_to_text, "text_to_image": text_to_image}
 
 
 def _title_image_symmetric_loss(image_embeddings: torch.Tensor, labels: torch.Tensor,
@@ -401,6 +451,7 @@ def train(loaded: Any, replacement: Any, readout: Any, contract: Contract,
     teacher_train = cache["train"].float()
     teacher_titles = cache["titles"].float()
     history: list[dict[str, Any]] = []
+    selection_direction = run_options["selection_direction"]
     best_r1 = -1.0
     best_epoch = -1
     best_path = settings.output_dir / "best_checkpoint.pt"
@@ -545,18 +596,20 @@ def train(loaded: Any, replacement: Any, readout: Any, contract: Contract,
         evaluate_now = epoch % settings.test_evaluation_interval_epochs == 0 or epoch == settings.epochs
         if evaluate_now:
             if ema is None:
-                metrics = evaluate(loaded, replacement, readout, contract, settings)
+                metrics = evaluate_bidirectional(loaded, replacement, readout, contract, settings)
             else:
                 with use_parameter_ema(parameters, ema):
-                    metrics = evaluate(loaded, replacement, readout, contract, settings)
-            row.update({f"test_{key}": value for key, value in metrics.items()})
-            if metrics["recall_at_1"] > best_r1:
-                best_r1 = metrics["recall_at_1"]
+                    metrics = evaluate_bidirectional(loaded, replacement, readout, contract, settings)
+            for direction, values in metrics.items():
+                row.update({f"test_{direction}_{key}": value for key, value in values.items()})
+            selected_r1 = metrics[selection_direction]["hit_at_1" if selection_direction == "text_to_image" else "recall_at_1"]
+            if selected_r1 > best_r1:
+                best_r1 = selected_r1
                 best_epoch = epoch
                 if ema is None:
                     save_checkpoint(
                         best_path, replacement, readout, optimizer, epoch, row["loss"], settings,
-                        selection_criterion="maximum_periodic_test_recall_at_1",
+                        selection_criterion=f"maximum_periodic_test_{selection_direction}_top1",
                         test_metrics_used_for_selection=True,
                     )
                 else:
@@ -564,10 +617,10 @@ def train(loaded: Any, replacement: Any, readout: Any, contract: Contract,
                         save_checkpoint(
                             best_path, replacement, readout, optimizer, epoch, row["loss"], settings,
                             weight_variant="ema",
-                            selection_criterion="maximum_periodic_ema_test_recall_at_1",
+                            selection_criterion=f"maximum_periodic_ema_test_{selection_direction}_top1",
                             test_metrics_used_for_selection=True,
                         )
-            print(f"[epoch {epoch}] loss={row['loss']:.5f} testR1={metrics['recall_at_1']:.4f} best={best_r1:.4f}@{best_epoch}", flush=True)
+            print(f"[epoch {epoch}] loss={row['loss']:.5f} {selection_direction}R1={selected_r1:.4f} best={best_r1:.4f}@{best_epoch}", flush=True)
         else:
             print(f"[epoch {epoch}] loss={row['loss']:.5f}", flush=True)
         history.append(row)
@@ -602,7 +655,10 @@ def run(args: argparse.Namespace) -> dict[str, Any]:
         "brightness_jitter": float(_nested(raw, "augmentation.brightness_jitter", 0.1)),
         "contrast_jitter": float(_nested(raw, "augmentation.contrast_jitter", 0.1)),
         "rotation_degrees": float(_nested(raw, "augmentation.rotation_degrees", 5.0)),
+        "selection_direction": str(_nested(raw, "abo_image_text.selection_direction", "image_to_text")),
     }
+    if options["selection_direction"] not in ("image_to_text", "text_to_image"):
+        raise ValueError("selection_direction must be image_to_text or text_to_image")
     if settings.embedding_dim != EMBEDDING_DIM:
         raise ValueError("The current optical hardware contract requires 64-D retrieval")
     seed_everything(args.seed)
@@ -616,6 +672,18 @@ def run(args: argparse.Namespace) -> dict[str, Any]:
     replacement, readout = build_student(loaded, settings)
     try:
         initialization = initialize_student(settings, replacement, readout)
+        resume_value = args.resume_checkpoint or _nested(raw, "abo_image_text.resume_checkpoint", None)
+        if resume_value:
+            resume_path = (Path(resume_value).expanduser().resolve() if args.resume_checkpoint
+                           else _resolve_from_config(config, str(resume_value)))
+            expected = str(args.expected_resume_sha256 or
+                           _nested(raw, "abo_image_text.resume_checkpoint_sha256", ""))
+            actual = _sha256(resume_path)
+            if len(expected) != 64 or actual != expected:
+                raise RuntimeError("Pinned text-to-image resume checkpoint SHA256 mismatch")
+            payload = load_checkpoint(resume_path, replacement, readout)
+            initialization = {"mode": "pinned_t08_continuation", "path": str(resume_path),
+                              "sha256": actual, "source_epoch": payload.get("epoch")}
         _save_resolved_abo_config(settings, config)
         write_json(settings.output_dir / "dataset_contract.json", {
             "task": "ABO easy100 image-to-title", "train_samples": len(contract.train),
@@ -637,9 +705,34 @@ def run(args: argparse.Namespace) -> dict[str, Any]:
             "hardware_matched_fixed_field_qwen_64d_reference": teacher_metrics,
             "dynamic_shape_qwen_64d_reference_recall_at_1": 0.5979166666666667,
         })
+        if args.evaluate_only:
+            normal = evaluate_bidirectional(
+                loaded, replacement, readout, contract, settings, write_outputs=True
+            )
+            replacement.set_fusion_ablation("remove_optical")
+            try:
+                removed = evaluate_bidirectional(
+                    loaded, replacement, readout, contract, settings
+                )
+            finally:
+                replacement.set_fusion_ablation("none")
+            report = {
+                "status": "complete", "task": "ABO easy100 pure text-to-image audit",
+                "training_executed": False, "initialization": initialization,
+                "normal": normal, "same_weights_remove_optical": removed,
+                "text_to_image_optical_removal_drop_percentage_points": 100.0 * (
+                    normal["text_to_image"]["hit_at_1"]
+                    - removed["text_to_image"]["hit_at_1"]
+                ),
+                "fusion": replacement.fusion_diagnostics(),
+                "dataset_sha256": contract.sha256,
+                "selection_biased_source_checkpoint": True,
+            }
+            write_json(settings.output_dir / "final_report.json", report)
+            return report
         training = train(loaded, replacement, readout, contract, cache, settings, options)
         load_checkpoint(settings.output_dir / "best_checkpoint.pt", replacement, readout)
-        final_metrics = evaluate(
+        final_metrics = evaluate_bidirectional(
             loaded, replacement, readout, contract, settings, write_outputs=True
         )
         replacement.save_multiplane_phase_preview(
@@ -651,7 +744,8 @@ def run(args: argparse.Namespace) -> dict[str, Any]:
             "method": "LightGen optical Router Top-2 MoE DC20 scale-matched fusion",
             "test_samples": len(contract.test), "title_candidates": len(contract.titles),
             "embedding_dim": EMBEDDING_DIM, "best_epoch": training["best_epoch"],
-            "student": final_metrics,
+            "student": final_metrics[options["selection_direction"]],
+            "bidirectional": final_metrics,
             "hardware_matched_fixed_field_frozen_qwen_64d": teacher_metrics,
             "dynamic_shape_frozen_qwen_64d_reference": {
                 "recall_at_1": 0.5979166666666667,
@@ -665,7 +759,7 @@ def run(args: argparse.Namespace) -> dict[str, Any]:
             },
             "fusion": replacement.fusion_diagnostics(),
             "selection_biased": True,
-            "selection": "best periodic EMA test R@1; test checked every 5 epochs",
+            "selection": f"best periodic EMA {options['selection_direction']} test Top-1; test checked every {settings.test_evaluation_interval_epochs} epochs",
             "dataset_sha256": contract.sha256,
             "checkpoint_sha256": _sha256(settings.output_dir / "best_checkpoint.pt"),
         }
@@ -683,6 +777,10 @@ def main() -> int:
     parser.add_argument("--seed", type=int, default=42)
     parser.add_argument("--epochs", type=int)
     parser.add_argument("--force-teacher-cache", action="store_true")
+    parser.add_argument("--evaluate-only", action="store_true",
+                        help="Pinned checkpoint raw-image bidirectional and same-weight no-optical audit")
+    parser.add_argument("--resume-checkpoint")
+    parser.add_argument("--expected-resume-sha256")
     args = parser.parse_args()
     report = run(args)
     print(json.dumps(report, ensure_ascii=False, indent=2), flush=True)
