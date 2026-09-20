@@ -1,4 +1,4 @@
-"""ABO easy100 image-to-title retrieval with the audited LightGen optical MoE.
+"""ABO easy100 image/text retrieval with the audited LightGen optical MoE.
 
 The frozen Qwen backbone and the 100-title candidate protocol match the T08
 baseline.  The query path uses the unchanged T01 four-stage optical graph:
@@ -1034,7 +1034,9 @@ def run(args: argparse.Namespace) -> dict[str, Any]:
 
 
 def main() -> int:
-    parser = argparse.ArgumentParser(description="T08 ABO optical-Router MoE image-to-title retrieval")
+    parser = argparse.ArgumentParser(
+        description="T08 ABO optical-Router MoE image/text retrieval"
+    )
     parser.add_argument("--config", default=str(CONFIG))
     parser.add_argument("--run-dir")
     parser.add_argument("--device", default=None)
