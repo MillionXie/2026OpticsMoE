@@ -110,3 +110,92 @@ class OpticalMoE(nn.Module):
 
 def loss(output, labels):
     return F.nll_loss(output['probabilities'].clamp_min(1e-12).log(),labels)
+
+
+class OpticalD2NN(nn.Module):
+    """Standard full-aperture two-plane D2NN used as the offline joint baseline.
+
+    The model deliberately has no router, expert slots, task identifier, OEO, or
+    electronic classifier.  Its input and detector contracts match OpticalMoE.
+    """
+
+    def __init__(self, cfg):
+        super().__init__()
+        size, gap, border = cfg['expert_size'], cfg['gap'], cfg['border']
+        if int(cfg.get('num_experts', 16)) != 16:
+            raise ValueError('The four-dataset D2NN comparison requires the 16-slot canvas')
+        self.cfg = cfg
+        self.size = size
+        self.border = border
+        self.height = 4 * size + 3 * gap + 2 * border
+        self.width = self.height
+        self.active_height = self.height - 2 * border
+        self.active_width = self.width - 2 * border
+        self.num_classes = int(cfg.get('num_classes', 2))
+        if self.num_classes != 2:
+            raise ValueError('The joint pathology baseline is binary')
+        candidates = [(round(self.height*y), round(self.width*x))
+                      for y in (.32, .68) for x in (.16, .38, .62, .84)]
+        self.class_centers = candidates[:self.num_classes]
+        side = cfg['detector_size']
+        if side <= 0 or side % 2:
+            raise ValueError('Detector size must be positive and even')
+        for i, (y, x) in enumerate(self.class_centers):
+            if not (side//2 <= y <= self.height-side//2 and
+                    side//2 <= x <= self.width-side//2):
+                raise ValueError('Detector out of bounds')
+            if any(abs(y-yy) < side and abs(x-xx) < side
+                   for yy, xx in self.class_centers[:i]):
+                raise ValueError('Overlapping detectors')
+        with torch.random.fork_rng(devices=[]):
+            torch.manual_seed(cfg['seed'])
+            self.phase_1 = nn.Parameter(torch.randn(self.active_height, self.active_width) * .02)
+            self.phase_2 = nn.Parameter(torch.randn(self.active_height, self.active_width) * .02)
+        self.propagator = AngularSpectrumPropagator(
+            cfg['wavelength_m'], cfg['pixel_size_m'],
+            (self.height, self.width), cfg['distance_m'])
+
+    @staticmethod
+    def transmission(p):
+        return torch.exp(2j * torch.pi * torch.sigmoid(p))
+
+    def encode(self, images):
+        if images.dtype != torch.uint8 or images.ndim != 4 or images.shape[-1] != 3:
+            raise ValueError('Input must be NHWC uint8 RGB; no prior normalization')
+        rgb = F.interpolate(
+            images.permute(0, 3, 1, 2).float() / 255,
+            (self.size // 2,) * 2, mode='bicubic', align_corners=False,
+            antialias=True).clamp(0, 1)
+        encoded = torch.cat((
+            torch.cat((rgb[:, 0], rgb[:, 1]), -1),
+            torch.cat((rgb[:, 2], torch.zeros_like(rgb[:, 2])), -1)), -2)
+        encoded = F.interpolate(
+            encoded[:, None], (self.active_height, self.active_width),
+            mode='bicubic', align_corners=False, antialias=True)[:, 0].clamp_min(0)
+        power = encoded.square().sum((-2, -1), keepdim=True)
+        if (power <= 1e-12).any():
+            raise ValueError('Zero input power')
+        return encoded / power.sqrt()
+
+    @staticmethod
+    def detect(intensity, centers, side):
+        half = side // 2
+        return torch.stack([
+            intensity[:, y-half:y+half, x-half:x+half].sum((-2, -1))
+            for y, x in centers], 1)
+
+    def forward(self, images):
+        field = F.pad(
+            self.encode(images) * self.transmission(self.phase_1),
+            (self.border,) * 4)
+        field = self.propagator(field)
+        field = field * F.pad(
+            self.transmission(self.phase_2), (self.border,) * 4, value=1)
+        field = self.propagator(field)
+        intensity = field.abs().square()
+        energy = self.detect(intensity, self.class_centers,
+                             self.cfg['detector_size']) + 1e-12
+        return {
+            'probabilities': energy / energy.sum(1, keepdim=True),
+            'output_power': intensity.sum((-2, -1)),
+        }

@@ -1,7 +1,8 @@
 import unittest
 import numpy as np
 import torch
-from LightGenV2.tasks.t11_lifelong_optics.model import OpticalMoE,loss
+from LightGenV2.tasks.t11_lifelong_optics.model import OpticalD2NN,OpticalMoE,loss
+from LightGenV2.tasks.t11_lifelong_optics.joint_d2nn import joint_epoch_indices
 from LightGenV2.tasks.t11_lifelong_optics.data import balanced_indices,domain
 
 class Contract(unittest.TestCase):
@@ -139,5 +140,39 @@ class DataContract(unittest.TestCase):
             self.assertEqual(set(arrays['A'])|set(arrays['B']),set(range(32)))
             mf.write_text(json.dumps(dict(license='CC BY 4.0',cache_sha256='wrong')))
             with self.assertRaises(ValueError): load(p,mf,17)
+
+class JointD2NNContract(unittest.TestCase):
+    def setUp(self):
+        torch.set_num_threads(2)
+        self.cfg=dict(seed=17,num_experts=16,expert_size=16,gap=4,border=4,
+                      wavelength_m=5.32e-7,pixel_size_m=1.7e-5,distance_m=.1,
+                      detector_size=6,num_classes=2)
+        self.model=OpticalD2NN(self.cfg)
+        self.x=torch.randint(1,255,(2,24,24,3),dtype=torch.uint8)
+
+    def test_full_aperture_geometry_power_and_gradients(self):
+        m=self.model
+        self.assertEqual((m.height,m.width),(84,84))
+        self.assertEqual(tuple(m.phase_1.shape),(76,76))
+        self.assertEqual(tuple(m.phase_2.shape),(76,76))
+        self.assertFalse(hasattr(m,'router'));self.assertFalse(hasattr(m,'experts'))
+        out=m(self.x)
+        self.assertEqual(tuple(out['probabilities'].shape),(2,2))
+        self.assertTrue(torch.allclose(out['probabilities'].sum(1),torch.ones(2),atol=1e-6))
+        self.assertTrue(torch.allclose(out['output_power'],torch.ones(2),atol=2e-6))
+        loss(out,torch.tensor([0,1])).backward()
+        for p in (m.phase_1,m.phase_2):
+            self.assertIsNotNone(p.grad);self.assertTrue(torch.isfinite(p.grad).all())
+            self.assertGreater(p.grad.abs().sum().item(),0)
+
+    def test_joint_sampler_balances_tasks_and_is_deterministic(self):
+        lengths=[8,20,12,12]
+        a=list(joint_epoch_indices(lengths,3,9,np.random.default_rng(17)))
+        b=list(joint_epoch_indices(lengths,3,9,np.random.default_rng(17)))
+        self.assertEqual(len(a),9)
+        for batch_a,batch_b in zip(a,b):
+            self.assertEqual([len(x) for x in batch_a],[3]*4)
+            for task,(x,y,n) in enumerate(zip(batch_a,batch_b,lengths)):
+                self.assertTrue(np.array_equal(x,y));self.assertTrue(((0<=x)&(x<n)).all(),task)
 
 if __name__=='__main__': unittest.main()

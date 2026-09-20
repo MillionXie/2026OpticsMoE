@@ -124,6 +124,35 @@ TUM 与正常组织 NOR，许可证 CC BY 4.0，DOI 10.57967/hf/8231。公开数
 E13–E16、router、global。每次 D 更新包含 6 张 D，以及 A/B/C replay 各 2 张。由此，
 router/global 在每个主任务 A/B/C/D 都重新训练，只在新专家 warmup 期间暂时冻结。
 
+## 四病理数据集离线联合 D2NN 基线
+
+`joint_d2nn.py` 是跨数据集分类对照，不属于终身学习协议。Kather2016、LC25000 lung、
+Kather2018 VAL7K 和 HepatoBench 的二分类训练样本从第一轮开始共同参与优化；模型不接收
+数据集编号，也没有任务顺序、replay、router、专家槽位或遗忘指标。
+
+标准 D2NN 使用与 16 专家 MoE 相同的 1026×1026 传播画布、17 µm 采样、532 nm 波长、
+两段 0.1 m 传播和两个 32×32 CCD 分类窗口。RGB uint8 输入先按 MoE 的固定
+`[R,G; B,0]` 规则编码为 224×224 单位功率振幅，再经 bicubic 插值覆盖 986×986 有效孔径并
+重新归一化为单位功率。随后依次经过 986×986 相位层、传播、986×986 相位层和传播。
+没有输入复制、空间分区、OEO 或电子分类头。两相位层共 1,944,392 个可训练参数；对应
+MoE 的 16 个专家、router 和 global phase 共 1,825,188 个参数，D2NN 多 6.53%。
+
+每个 batch 固定含四个数据集各 3 张图，batch size 为 12。每轮 667 步；较小数据集耗尽后
+独立重排并循环，使四域具有相同的梯度权重。正式配置训练 12 轮，第一、第二相位层的 Adam
+学习率分别为 .01 和 .002。每轮在四个验证集上评估，以四域验证 balanced accuracy 的算术
+平均值选择唯一 checkpoint；不读取 test。训练集指标只在选定 checkpoint 上复评，用于判断
+拟合差距，不参与选模。
+
+```text
+python -m LightGenV2.tasks.t11_lifelong_optics.joint_d2nn \
+  --config LightGenV2/tasks/t11_lifelong_optics/configs/kather_lc25000_kather2018_hepato_joint_d2nn.json \
+  --task-a <kather2016_binary.npz> --task-a-manifest <kather2016_binary_manifest.json> \
+  --task-b <lc25000_lung_binary.npz> --task-b-manifest <lc25000_lung_binary_manifest.json> \
+  --task-c <kather2018_val7k_binary.npz> --task-c-manifest <kather2018_val7k_binary_manifest.json> \
+  --task-d <hepatobench_tum_nor_binary.npz> --task-d-manifest <hepatobench_tum_nor_binary_manifest.json> \
+  --out LightGenV2/tasks/t11_lifelong_optics/runs/simulation/<run_id>
+```
+
 ## 探测器几何对照
 
 `configs/kather.json` 使用槽位中心作为 router CCD 探测中心；`configs/kather_ring.json` 将 12 个中心放在输入中心半径 179.2 像素的圆周上，按四个相隔 90° 的端口为一组依次激活。两配置的其他参数相同，且每次运行内部几何始终固定。环形布局意在控制探测距离偏差，不能预先保证均衡或更高准确率。窗口越界或相互重叠时构造模型直接报错。
