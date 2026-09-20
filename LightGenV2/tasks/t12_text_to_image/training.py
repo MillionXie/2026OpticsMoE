@@ -123,6 +123,25 @@ def _load_warmstart(
         4 + source_depth: 4 + target_depth,
         6 + source_depth: 6 + target_depth,
     }
+
+
+def _freeze_warmstarted_base(model: TextConditionedVAE, decoder_depth: int) -> dict[str, Any]:
+    """Freeze the semantic generator and optimize only newly inserted decoder blocks."""
+
+    model.requires_grad_(False)
+    prefixes = tuple(
+        f"generator.head.net.{index}." for index in range(4, 4 + int(decoder_depth))
+    )
+    names = []
+    parameters = 0
+    for name, parameter in model.named_parameters():
+        if name.startswith(prefixes):
+            parameter.requires_grad_(True)
+            names.append(name)
+            parameters += parameter.numel()
+    if not names:
+        raise ValueError("Decoder-only sharpening requires at least one decoder residual block")
+    return {"trainable_parameters": parameters, "trainable_tensors": names}
     for key, value in source.items():
         candidate = key
         for source_index, target_index in suffix_indices.items():
@@ -209,10 +228,16 @@ def _adversarial_epoch(
         generator_adversarial = torch.zeros((), device=device)
         feature_matching = torch.zeros((), device=device)
         prior_adversarial = torch.zeros((), device=device)
+        prior_latent_delta = torch.zeros((), device=device)
         if adversarial_active:
             with torch.autocast(device_type=device.type, dtype=torch.bfloat16, enabled=settings.amp):
                 prior_style = torch.randn_like(output.style)
-                prior_latent = model.generator(text, prior_style)
+                prior_latent, prior_base_latent = model.generator.forward_with_base_decoder(
+                    text, prior_style
+                )
+                prior_latent_delta = F.l1_loss(
+                    prior_latent.float(), prior_base_latent.detach().float()
+                )
                 prior_image = vae.decode(prior_latent / scaling).sample
 
             _set_requires_grad(discriminator, True)
@@ -245,6 +270,7 @@ def _adversarial_epoch(
             + settings.adversarial_weight * generator_adversarial
             + settings.prior_adversarial_weight * prior_adversarial
             + settings.feature_matching_weight * feature_matching
+            + settings.prior_latent_delta_weight * prior_latent_delta
         )
         total.backward()
         torch.nn.utils.clip_grad_norm_(model.parameters(), 1.0)
@@ -260,6 +286,7 @@ def _adversarial_epoch(
             "generator_adversarial": float(generator_adversarial.detach()),
             "prior_adversarial": float(prior_adversarial.detach()),
             "feature_matching": float(feature_matching.detach()),
+            "prior_latent_delta": float(prior_latent_delta.detach()),
             "discriminator_loss": float(discriminator_loss.detach()),
             "adversarial_active": float(adversarial_active),
         })
@@ -283,8 +310,16 @@ def train(
     warmstart = _load_warmstart(model, settings, init_checkpoint) if init_checkpoint else None
     if warmstart:
         print(json.dumps({"warmstart": warmstart}), flush=True)
+    freeze_report = None
+    if settings.freeze_warmstarted_base:
+        if not warmstart:
+            raise ValueError("training.freeze_warmstarted_base requires --init-checkpoint")
+        freeze_report = _freeze_warmstarted_base(model, settings.decoder_depth)
+        print(json.dumps({"freeze": freeze_report}), flush=True)
     optimizer = torch.optim.AdamW(
-        model.parameters(), lr=settings.learning_rate, weight_decay=settings.weight_decay
+        (parameter for parameter in model.parameters() if parameter.requires_grad),
+        lr=settings.learning_rate,
+        weight_decay=settings.weight_decay,
     )
     discriminator = None
     discriminator_optimizer = None
@@ -327,6 +362,7 @@ def train(
             "optimizer": optimizer.state_dict(),
             "val": val_metrics,
             "warmstart": warmstart,
+            "freeze": freeze_report,
         }
         if discriminator is not None and discriminator_optimizer is not None:
             payload["discriminator"] = discriminator.state_dict()
@@ -342,9 +378,10 @@ def train(
         "adversarial_enabled": settings.adversarial_enabled,
         "architecture": model.architecture_report(),
         "warmstart": warmstart,
+        "freeze": freeze_report,
     }
     (settings.output_dir / "training_summary.json").write_text(json.dumps(report, indent=2) + "\n", encoding="utf-8")
     return report
 
 
-__all__ = ["_load_warmstart", "seed_everything", "train"]
+__all__ = ["_freeze_warmstarted_base", "_load_warmstart", "seed_everything", "train"]

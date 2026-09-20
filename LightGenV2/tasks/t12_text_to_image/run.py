@@ -22,6 +22,7 @@ from .training import seed_everything, train
 PROFILES = {
     "lightgen": "lightgen_parallel.yaml",
     "lightgen_gan": "lightgen_parallel_gan.yaml",
+    "lightgen_decoder_gan": "lightgen_parallel_decoder_gan.yaml",
     "baseline": "qwen_vae_baseline.yaml",
     "baseline_gan": "qwen_vae_baseline_gan.yaml",
     "smoke": "smoke.yaml",

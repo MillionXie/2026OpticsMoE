@@ -80,6 +80,7 @@ class Settings:
     free_bits: float
     num_workers: int
     amp: bool
+    freeze_warmstarted_base: bool
     adversarial_enabled: bool
     discriminator_width: int
     discriminator_learning_rate: float
@@ -88,6 +89,7 @@ class Settings:
     prior_adversarial_weight: float
     feature_matching_weight: float
     pixel_reconstruction_weight: float
+    prior_latent_delta_weight: float
 
     def validate(self) -> None:
         if self.variant not in VARIANTS:
@@ -116,6 +118,7 @@ class Settings:
                 self.prior_adversarial_weight,
                 self.feature_matching_weight,
                 self.pixel_reconstruction_weight,
+                self.prior_latent_delta_weight,
             ) < 0:
                 raise ValueError("Adversarial loss weights must be non-negative")
 
@@ -169,6 +172,7 @@ def load_settings(path: str | Path) -> Settings:
         free_bits=float(_at(raw, "loss.free_bits", 0.02)),
         num_workers=int(_at(raw, "training.num_workers", 4)),
         amp=bool(_at(raw, "training.amp", True)),
+        freeze_warmstarted_base=bool(_at(raw, "training.freeze_warmstarted_base", False)),
         adversarial_enabled=bool(_at(raw, "adversarial.enabled", False)),
         discriminator_width=int(_at(raw, "adversarial.discriminator_width", 48)),
         discriminator_learning_rate=float(_at(raw, "adversarial.learning_rate", 1e-4)),
@@ -177,6 +181,7 @@ def load_settings(path: str | Path) -> Settings:
         prior_adversarial_weight=float(_at(raw, "adversarial.prior_weight", 0.05)),
         feature_matching_weight=float(_at(raw, "adversarial.feature_matching_weight", 0.10)),
         pixel_reconstruction_weight=float(_at(raw, "adversarial.pixel_reconstruction_weight", 0.10)),
+        prior_latent_delta_weight=float(_at(raw, "adversarial.prior_latent_delta_weight", 0.0)),
     )
     settings.validate()
     return settings

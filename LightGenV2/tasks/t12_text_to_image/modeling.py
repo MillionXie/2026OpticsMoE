@@ -281,11 +281,21 @@ class LatentHead(nn.Module):
             nn.SiLU(),
             nn.Conv2d(width, channels, 1),
         ]
+        self.depth = int(depth)
         self.net = nn.Sequential(*prefix, *residuals, *suffix)
 
     def forward(self, tokens: torch.Tensor, grid: int) -> torch.Tensor:
         value = tokens.transpose(1, 2).reshape(tokens.shape[0], tokens.shape[2], grid, grid)
         return self.net(value)
+
+    def forward_with_base(self, tokens: torch.Tensor, grid: int) -> tuple[torch.Tensor, torch.Tensor]:
+        """Return refined output and the same frozen suffix with residual blocks bypassed."""
+
+        value = tokens.transpose(1, 2).reshape(tokens.shape[0], tokens.shape[2], grid, grid)
+        prefix = self.net[:4](value)
+        refined = self.net[4 : 4 + self.depth](prefix)
+        suffix = self.net[4 + self.depth :]
+        return suffix(refined), suffix(prefix)
 
 
 class ConditionalLatentGenerator(nn.Module):
@@ -310,13 +320,20 @@ class ConditionalLatentGenerator(nn.Module):
             self.backbone = ElectronicBackbone(settings, width)
         self.head = LatentHead(width, settings.latent_channels, settings.decoder_depth)
 
-    def forward(self, text: torch.Tensor, style: torch.Tensor) -> torch.Tensor:
+    def _tokens(self, text: torch.Tensor, style: torch.Tensor) -> torch.Tensor:
         text_value = self.text_projection(text.float())
         style_value = self.style_projection(style.float())
         condition = self.condition_projection(torch.cat((text_value, style_value), dim=-1))
         tokens = self.learned_tokens + self.position + text_value[:, None] + style_value[:, None]
-        tokens = self.backbone(tokens, condition)
-        return self.head(tokens, self.settings.token_grid)
+        return self.backbone(tokens, condition)
+
+    def forward(self, text: torch.Tensor, style: torch.Tensor) -> torch.Tensor:
+        return self.head(self._tokens(text, style), self.settings.token_grid)
+
+    def forward_with_base_decoder(
+        self, text: torch.Tensor, style: torch.Tensor
+    ) -> tuple[torch.Tensor, torch.Tensor]:
+        return self.head.forward_with_base(self._tokens(text, style), self.settings.token_grid)
 
 
 class StylePosterior(nn.Module):

@@ -119,6 +119,11 @@ GAN 锐化阶段可通过 `--init-checkpoint <首轮 best_checkpoint.pt>` 仅加
 以接近恒等映射开始；优化器、判别器和 epoch 计数均从头开始，warm-start 来源会写入每个
 checkpoint 和 `training_summary.json`。
 
+若无条件 prior GAN 出现跨类别模式坍塌，使用 `lightgen_decoder_gan`：它冻结 warm-start
+得到的并行光电主干、posterior 与旧 latent head，只训练新插入的 decoder residual blocks，
+并用 `prior_latent_delta_weight` 将随机 prior 锚定到首轮单次生成结果。该 profile 仍然没有
+迭代采样，也不会改变电子/光学并行拓扑。
+
 服务器正式运行时可以用 `--data-dir`、`--qwen-checkpoint` 和 `--vae-checkpoint` 显式指向
 仓库外的冻结资产；解析后的绝对路径会写入 `resolved_config.json`，避免 worktree 被数据文件
 污染，也避免缓存阶段临时访问模型网络。

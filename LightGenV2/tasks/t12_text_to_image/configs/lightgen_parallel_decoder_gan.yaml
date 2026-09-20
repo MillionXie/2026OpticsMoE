@@ -1,0 +1,23 @@
+base_config: common.yaml
+model:
+  variant: lightgen_parallel
+  optical_backend: audited_dc20
+  decoder_depth: 4
+training:
+  batch_size: 16
+  epochs: 15
+  freeze_warmstarted_base: true
+loss:
+  kl_weight: 0.002
+  kl_warmup_epochs: 0
+adversarial:
+  enabled: true
+  discriminator_width: 48
+  learning_rate: 1.0e-4
+  start_epoch: 0
+  posterior_weight: 0.03
+  prior_weight: 0.02
+  feature_matching_weight: 0.10
+  pixel_reconstruction_weight: 0.20
+  prior_latent_delta_weight: 0.50
+output_dir: ../runs/simulation/lightgen_parallel_decoder_gan_seed42

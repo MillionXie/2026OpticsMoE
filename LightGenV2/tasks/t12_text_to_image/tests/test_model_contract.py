@@ -14,7 +14,7 @@ from LightGenV2.tasks.t12_text_to_image.modeling import (
     build_model,
 )
 from LightGenV2.tasks.t12_text_to_image.settings import load_settings
-from LightGenV2.tasks.t12_text_to_image.training import _load_warmstart
+from LightGenV2.tasks.t12_text_to_image.training import _freeze_warmstarted_base, _load_warmstart
 
 
 TASK_DIR = Path(__file__).resolve().parents[1]
@@ -152,3 +152,14 @@ def test_deep_decoder_can_warmstart_from_shallow_checkpoint(tmp_path: Path) -> N
         shallow.generator.text_projection[1].weight,
     )
     assert torch.equal(deep.generator.head.net[10].weight, shallow.generator.head.net[6].weight)
+
+    freeze = _freeze_warmstarted_base(deep, deep_settings.decoder_depth)
+    assert freeze["trainable_parameters"] > 0
+    trainable = [name for name, parameter in deep.named_parameters() if parameter.requires_grad]
+    assert trainable == freeze["trainable_tensors"]
+    assert all(name.startswith("generator.head.net.") for name in trainable)
+
+    text = torch.randn(2, deep_settings.text_dim)
+    style = torch.randn(2, deep_settings.style_dim)
+    refined, base = deep.generator.forward_with_base_decoder(text, style)
+    assert refined.shape == base.shape == (2, 4, 28, 28)
