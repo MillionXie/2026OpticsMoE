@@ -44,7 +44,7 @@ abo_image_text:
   # Reuse only the electronic tensors/readout from the audited 10 cm run.
   # Every feature phase and Router phase is freshly initialized for 15 cm.
   resume_checkpoint: ../runs/simulation/optical_text_to_image_64_alpha04_refine_seed42_20260920/best_checkpoint.pt
-  resume_checkpoint_sha256: f81ce7d0ea3da31de09ea01392c47312969b84cc39244c43772d380224faba0cb
+  resume_checkpoint_sha256: f81ce7d0ea3da31de09ea01392c47312969b84cc39244c43772d38024faba0cb
   allow_propagation_distance_transition: true
   alpha_curriculum:
     start: 0.15
