@@ -16,6 +16,8 @@ if str(ARCHIVE) not in sys.path:
     sys.path.insert(0, str(ARCHIVE))
 from optical_reference.optics import AngularSpectrumPropagator
 
+TASK_ORDER = ("sen12ms", "clevr", "sonyc", "video")
+
 
 def normalize_power(x, power=1.0):
     return x * (power / x.square().sum((-2, -1), keepdim=True).clamp_min(1e-20)).sqrt()
@@ -84,7 +86,7 @@ class CrossModalOptics(nn.Module):
         else:
             self.first_phase.requires_grad_(True)
         self.global_phase.requires_grad_(not warmup)
-        current = ("sen12ms", "clevr", "sonyc", "video")[task_index]
+        current = TASK_ORDER[task_index]
         # A new task-specific head has no inherited weights, so it learns during
         # both new-expert warmup and the main stage. Previous heads stay frozen.
         for name, head in self.heads.items():
@@ -140,7 +142,14 @@ class CrossModalOptics(nn.Module):
             field = F.pad(expanded * self.phase_mask(self.first_phase), (self.border,) * 4)
             q, router_capture = None, None
         else:
-            q, router_capture = self.route(amplitude, warmup=warmup, expert_mask=expert_mask)
+            # New tasks may reuse all experts learned so far. Old tasks retain
+            # the capacity available when they were learned, preventing later
+            # experts from silently replacing frozen optical memory.
+            task_capacity = 4 * (TASK_ORDER.index(task) + 1)
+            task_mask = torch.arange(16, device=amplitude.device) < task_capacity
+            if expert_mask is not None:
+                task_mask &= torch.as_tensor(expert_mask, device=amplitude.device, dtype=torch.bool)
+            q, router_capture = self.route(amplitude, warmup=warmup, expert_mask=task_mask)
             field = torch.zeros((len(amplitude), self.height, self.width),
                                 device=amplitude.device, dtype=torch.complex64)
             for i in range(int(self.active_count)):

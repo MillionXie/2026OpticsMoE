@@ -37,6 +37,20 @@ class ContractTest(unittest.TestCase):
         self.assertTrue(all(p.requires_grad for p in model.first_phase[12:]))
         self.assertTrue(all(p.requires_grad for p in model.heads["video"].parameters()))
 
+    def test_old_task_capacity_mask_survives_expansion(self):
+        model = CrossModalOptics("moe", phase_dropout=0)
+        model.configure_task(3, warmup=False)
+        captured = {}
+        original = model.route
+
+        def route(amplitude, **kwargs):
+            captured["mask"] = kwargs["expert_mask"].detach().cpu()
+            return original(amplitude, **kwargs)
+
+        model.route = route
+        model(torch.rand(1, 224, 224), "sen12ms")
+        self.assertEqual(captured["mask"].tolist(), [True] * 4 + [False] * 12)
+
     def test_power_normalization(self):
         x = normalize_power(torch.rand(3, 224, 224))
         self.assertTrue(torch.allclose(x.square().sum((-2, -1)), torch.ones(3), atol=1e-5))
