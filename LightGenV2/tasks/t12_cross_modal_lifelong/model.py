@@ -2,7 +2,7 @@
 
 The MoE preallocates sixteen 224-square expert slots.  Four slots are enabled
 for each incoming task, while the canvas, propagation kernel, OEO, global phase
-and ten physical CCD windows stay fixed for the complete task sequence.
+and full-plane CCD/MLP interface stay fixed for the complete task sequence.
 """
 from pathlib import Path
 import sys
@@ -39,8 +39,6 @@ class CrossModalOptics(nn.Module):
         self.slots = [(self.border + r * (self.expert_size + self.gap),
                        self.border + c * (self.expert_size + self.gap)) for r, c in order]
         self.router_centers = [(y + 112, x + 112) for y, x in self.slots]
-        self.class_centers = [(round(self.height * y), round(self.width * x))
-                              for y in (0.32, 0.68) for x in (0.10, 0.30, 0.50, 0.70, 0.90)]
         self.phase_dropout = float(phase_dropout)
         self.heads = nn.ModuleDict({
             name: nn.Sequential(nn.LayerNorm(16 * 16), nn.Linear(16 * 16, 64),

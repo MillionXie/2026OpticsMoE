@@ -11,9 +11,9 @@
   因而在训练开始时能访问全部四种模态。
 - **Ours**：固定 16 槽光学 MoE，按 SEN12MS → CLEVR → SONYC → Physical Concepts 顺序学习。每个新任务启用
   四个预分配专家；旧专家和旧任务读出头冻结，router/global phase 通过当前数据和每个
-  旧任务最多 256 条 replay 继续更新。
-- 两者共享 1026×1026 传播画布、两次角谱传播、两层相位、每层 centered-LeakyReLU +
-  Softsign OEO、输入功率和训练数据。
+  旧任务最多 512 条 replay 继续更新。
+- 两者共享 1026×1026 分类传播画布、两次角谱传播、两层分类相位、每层 centered-LeakyReLU +
+  Softsign OEO、输入功率和训练数据；MoE 另有共享 router phase 与一次路由探测传播。
 
 ## 电子读出
 
@@ -73,3 +73,5 @@ python -m LightGenV2.tasks.t12_cross_modal_lifelong \
 去掉 `--phase smoke` 运行首轮 30 epoch 训练；每个新任务另有 3 epoch 新专家 warmup。
 run 保存配置、命令、Git commit、数据 manifest、
 逐轮验证、best/last checkpoint、逐样本概率与路由、最终 comparison.json。运行目录不覆盖。
+
+视频预处理额外需要 `protobuf`；完整 Python 依赖见同目录的 `requirements.txt`。
