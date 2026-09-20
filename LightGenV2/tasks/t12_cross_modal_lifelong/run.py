@@ -21,7 +21,7 @@ from .data import load_common, verify_manifest
 from .model import CrossModalOptics
 
 
-TASK_ORDER = ("sen12ms", "clevr", "sonyc")
+TASK_ORDER = ("sen12ms", "clevr", "sonyc", "video")
 
 
 def save(path, value):
@@ -131,7 +131,7 @@ def evaluate(model, task, split, device, batch, active_task=None):
     result = classification_metrics(task.name, labels, p, rows)
     result["zero_readout_fraction"] = float((np.concatenate(capture) <= 1e-12).mean())
     result["route_mean"] = q.mean(0).tolist() if q is not None else None
-    result["route_top_frequency"] = (np.bincount(q.argmax(1), minlength=12) / len(q)).tolist() if q is not None else None
+    result["route_top_frequency"] = (np.bincount(q.argmax(1), minlength=16) / len(q)).tolist() if q is not None else None
     return result, p, q
 
 
@@ -287,12 +287,19 @@ def train_lifelong_moe(tasks, cfg, out, device):
         replay[name]=replay_indices(task,cfg["replay_per_task"],cfg["seed"]+task_index)
         model.configure_task(task_index, warmup=False)
     save(root/"sequence.json",all_history)
-    return finalize(model,tasks,root,device,cfg,all_history[-1]["selected_epoch"],"sequential_lifelong")
+    result=finalize(model,tasks,root,device,cfg,all_history[-1]["selected_epoch"],"sequential_lifelong")
+    learned={row["task"]:selection_score(row["task"],row["validation"][row["task"]]) for row in all_history}
+    final={name:selection_score(name,result["validation"][name]) for name in TASK_ORDER}
+    result["continual"]={"score_when_learned":learned,"final_validation_score":final,
+                         "backward_transfer":{name:final[name]-learned[name] for name in TASK_ORDER[:-1]}}
+    result["continual"]["mean_backward_transfer"]=float(np.mean(list(result["continual"]["backward_transfer"].values())))
+    save(root/"results.json",result)
+    return result
 
 
 def finalize(model,tasks,root,device,cfg,epoch,training):
     results={"training":training,"selected_epoch":epoch,"validation":{},"test":{}}
-    task_index=2 if model.architecture=="moe" else None
+    task_index=3 if model.architecture=="moe" else None
     for name in TASK_ORDER:
         for split in ("val","test"):
             metrics,p,q=evaluate(model,tasks[name],split,device,cfg["eval_batch"],task_index)
@@ -319,11 +326,11 @@ def smoke(tasks,cfg,out,device):
 
 
 def main():
-    p=argparse.ArgumentParser();p.add_argument("--config",type=Path,required=True);p.add_argument("--sen12ms",type=Path,required=True);p.add_argument("--clevr",type=Path,required=True);p.add_argument("--sonyc",type=Path,required=True);p.add_argument("--out",type=Path,required=True);p.add_argument("--phase",choices=["smoke","train"],default="train");p.add_argument("--only",choices=["both","d2nn","moe"],default="both");a=p.parse_args()
+    p=argparse.ArgumentParser();p.add_argument("--config",type=Path,required=True);p.add_argument("--sen12ms",type=Path,required=True);p.add_argument("--clevr",type=Path,required=True);p.add_argument("--sonyc",type=Path,required=True);p.add_argument("--video",type=Path,required=True);p.add_argument("--out",type=Path,required=True);p.add_argument("--phase",choices=["smoke","train"],default="train");p.add_argument("--only",choices=["both","d2nn","moe"],default="both");a=p.parse_args()
     cfg=json.loads(a.config.read_text());a.out.mkdir(parents=True,exist_ok=False);save(a.out/"status.json",{"status":"running","pid":os.getpid()})
     try:
-        seed_all(cfg["seed"]);torch.set_num_threads(4);device=torch.device(cfg.get("device","cuda"));tasks=load_tasks({"sen12ms":a.sen12ms,"clevr":a.clevr,"sonyc":a.sonyc})
-        meta={"command":sys.argv,"config":cfg,"git":subprocess.check_output(["git","rev-parse","HEAD"],text=True).strip(),"python":platform.python_version(),"torch":torch.__version__,"cuda_visible_devices":os.environ.get("CUDA_VISIBLE_DEVICES"),"gpu":torch.cuda.get_device_name() if device.type=="cuda" else None,"data":{n:{"root":str(t.root),"manifest_sha256":t.manifest_sha,"sizes":{s:len(t.splits[s][1]) for s in t.splits}} for n,t in tasks.items()},"contract":"four modalities (SAR, optical/RGB, text, audio) across three paired tasks; shared physical phases and CCD; D2NN offline joint, MoE sequential 4->8->12"}
+        seed_all(cfg["seed"]);torch.set_num_threads(4);device=torch.device(cfg.get("device","cuda"));tasks=load_tasks({"sen12ms":a.sen12ms,"clevr":a.clevr,"sonyc":a.sonyc,"video":a.video})
+        meta={"command":sys.argv,"config":cfg,"git":subprocess.check_output(["git","rev-parse","HEAD"],text=True).strip(),"python":platform.python_version(),"torch":torch.__version__,"cuda_visible_devices":os.environ.get("CUDA_VISIBLE_DEVICES"),"gpu":torch.cuda.get_device_name() if device.type=="cuda" else None,"data":{n:{"root":str(t.root),"manifest_sha256":t.manifest_sha,"sizes":{s:len(t.splits[s][1]) for s in t.splits}} for n,t in tasks.items()},"contract":"four sequential multimodal task types (image-image, image-text, audio-text, video temporal); shared physical phases and pooled-CCD MLP heads; D2NN offline joint, MoE sequential 4->8->12->16"}
         save(a.out/"metadata.json",meta);save(a.out/"actual_config.json",cfg);(a.out/"command.txt").write_text(" ".join(sys.argv)+"\n")
         if a.phase=="smoke":smoke(tasks,cfg,a.out,device);result={"smoke":"pass"}
         else:

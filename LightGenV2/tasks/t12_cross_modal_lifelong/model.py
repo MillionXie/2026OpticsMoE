@@ -1,6 +1,6 @@
 """Fixed-geometry optical MoE and full-aperture D2NN.
 
-The MoE preallocates twelve 224-square expert slots.  Four slots are enabled
+The MoE preallocates sixteen 224-square expert slots.  Four slots are enabled
 for each incoming task, while the canvas, propagation kernel, OEO, global phase
 and ten physical CCD windows stay fixed for the complete task sequence.
 """
@@ -28,13 +28,14 @@ class CrossModalOptics(nn.Module):
             raise ValueError(architecture)
         self.architecture = architecture
         self.expert_size, self.gap, self.border = 224, 30, 20
-        self.height = 3 * self.expert_size + 2 * self.gap + 2 * self.border
+        self.height = 4 * self.expert_size + 3 * self.gap + 2 * self.border
         self.width = 4 * self.expert_size + 3 * self.gap + 2 * self.border
         self.active_height, self.active_width = self.height - 2 * self.border, self.width - 2 * self.border
         # Each group is spatially spread over the aperture. Geometry never changes.
-        order = [(0, 0), (0, 3), (2, 0), (2, 3),
-                 (0, 1), (0, 2), (2, 1), (2, 2),
-                 (1, 0), (1, 1), (1, 2), (1, 3)]
+        order = [(0, 0), (0, 3), (3, 0), (3, 3),
+                 (0, 1), (0, 2), (3, 1), (3, 2),
+                 (1, 0), (1, 3), (2, 0), (2, 3),
+                 (1, 1), (1, 2), (2, 1), (2, 2)]
         self.slots = [(self.border + r * (self.expert_size + self.gap),
                        self.border + c * (self.expert_size + self.gap)) for r, c in order]
         self.router_centers = [(y + 112, x + 112) for y, x in self.slots]
@@ -44,13 +45,13 @@ class CrossModalOptics(nn.Module):
         self.heads = nn.ModuleDict({
             name: nn.Sequential(nn.LayerNorm(16 * 16), nn.Linear(16 * 16, 64),
                                 nn.GELU(), nn.Linear(64, classes))
-            for name, classes in {"sen12ms": 10, "clevr": 2, "sonyc": 2}.items()
+            for name, classes in {"sen12ms": 10, "clevr": 2, "sonyc": 2, "video": 2}.items()
         })
         with torch.random.fork_rng(devices=[]):
             torch.manual_seed(seed + 101)
             if architecture == "moe":
                 self.first_phase = nn.ParameterList([
-                    nn.Parameter(torch.randn(224, 224) * 0.02) for _ in range(12)])
+                    nn.Parameter(torch.randn(224, 224) * 0.02) for _ in range(16)])
                 torch.manual_seed(seed + 103)
                 self.router_phase = nn.Parameter(torch.randn(224, 224) * 0.02)
             else:
@@ -74,7 +75,7 @@ class CrossModalOptics(nn.Module):
                             for y, x in centers], 1)
 
     def configure_task(self, task_index, warmup=False):
-        if task_index not in (0, 1, 2):
+        if task_index not in (0, 1, 2, 3):
             raise ValueError(task_index)
         self.active_count.fill_(4 * (task_index + 1))
         if self.architecture == "moe":
@@ -85,7 +86,7 @@ class CrossModalOptics(nn.Module):
         else:
             self.first_phase.requires_grad_(True)
         self.global_phase.requires_grad_(not warmup)
-        current = ("sen12ms", "clevr", "sonyc")[task_index]
+        current = ("sen12ms", "clevr", "sonyc", "video")[task_index]
         # A new task-specific head has no inherited weights, so it learns during
         # both new-expert warmup and the main stage. Previous heads stay frozen.
         for name, head in self.heads.items():
@@ -112,11 +113,11 @@ class CrossModalOptics(nn.Module):
 
     def route(self, amplitude, warmup=False, expert_mask=None):
         n = int(self.active_count)
-        allowed = torch.arange(12, device=amplitude.device) < n
+        allowed = torch.arange(16, device=amplitude.device) < n
         if expert_mask is not None:
             allowed &= torch.as_tensor(expert_mask, device=amplitude.device, dtype=torch.bool)
         if warmup:
-            allowed &= torch.arange(12, device=amplitude.device) >= n - 4
+            allowed &= torch.arange(16, device=amplitude.device) >= n - 4
         if not bool(allowed.any()):
             raise ValueError("empty expert mask")
         if warmup:

@@ -9,13 +9,14 @@ class ContractTest(unittest.TestCase):
     def test_fixed_geometry_and_heads(self):
         moe = CrossModalOptics("moe", phase_dropout=0)
         d2nn = CrossModalOptics("d2nn", phase_dropout=0)
-        self.assertEqual((moe.height, moe.width), (772, 1026))
-        self.assertEqual((d2nn.active_height, d2nn.active_width), (732, 986))
-        self.assertEqual(len(moe.first_phase), 12)
+        self.assertEqual((moe.height, moe.width), (1026, 1026))
+        self.assertEqual((d2nn.active_height, d2nn.active_width), (986, 986))
+        self.assertEqual(len(moe.first_phase), 16)
         self.assertIsNone(d2nn.router_phase)
-        self.assertEqual(set(moe.heads), {"sen12ms", "clevr", "sonyc"})
+        self.assertEqual(set(moe.heads), {"sen12ms", "clevr", "sonyc", "video"})
         self.assertEqual(moe.heads["sen12ms"][-1].out_features, 10)
         self.assertEqual(moe.heads["clevr"][-1].out_features, 2)
+        self.assertEqual(moe.heads["video"][-1].out_features, 2)
 
     def test_freeze_contract(self):
         model = CrossModalOptics("moe", phase_dropout=0)
@@ -26,6 +27,14 @@ class ContractTest(unittest.TestCase):
         self.assertTrue(all(not p.requires_grad for p in model.first_phase[8:]))
         self.assertTrue(all(not p.requires_grad for p in model.heads["sen12ms"].parameters()))
         self.assertTrue(all(p.requires_grad for p in model.heads["clevr"].parameters()))
+
+    def test_fourth_task_uses_last_four_slots(self):
+        model = CrossModalOptics("moe", phase_dropout=0)
+        model.configure_task(3, warmup=False)
+        self.assertEqual(int(model.active_count), 16)
+        self.assertTrue(all(not p.requires_grad for p in model.first_phase[:12]))
+        self.assertTrue(all(p.requires_grad for p in model.first_phase[12:]))
+        self.assertTrue(all(p.requires_grad for p in model.heads["video"].parameters()))
 
     def test_power_normalization(self):
         x = normalize_power(torch.rand(3, 224, 224))
