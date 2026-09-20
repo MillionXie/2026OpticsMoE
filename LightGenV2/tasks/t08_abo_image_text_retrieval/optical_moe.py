@@ -688,7 +688,6 @@ def run(args: argparse.Namespace) -> dict[str, Any]:
     )
     replacement, readout = build_student(loaded, settings)
     try:
-        initialization = initialize_student(settings, replacement, readout)
         resume_value = args.resume_checkpoint or _nested(raw, "abo_image_text.resume_checkpoint", None)
         if resume_value:
             resume_path = (Path(resume_value).expanduser().resolve() if args.resume_checkpoint
@@ -701,6 +700,8 @@ def run(args: argparse.Namespace) -> dict[str, Any]:
             payload = load_checkpoint(resume_path, replacement, readout)
             initialization = {"mode": "pinned_t08_continuation", "path": str(resume_path),
                               "sha256": actual, "source_epoch": payload.get("epoch")}
+        else:
+            initialization = initialize_student(settings, replacement, readout)
         _save_resolved_abo_config(settings, config)
         write_json(settings.output_dir / "dataset_contract.json", {
             "task": "ABO easy100 image-to-title", "train_samples": len(contract.train),
