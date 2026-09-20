@@ -17,3 +17,10 @@ smoke 对 MoE 和 D2NN 的四任务各执行一次真实光学前向、损失和
 有限梯度；它只验证计算合同，不报告分类性能。首轮 30 epoch 正式仿真正在同一 commit、
 同一数据和 `configs/initial_s17.json` 下运行，run ID 为
 `runs/simulation/initial_s17_v1`。完成并通过复算前不填写性能数字。
+
+初始 run 的第二阶段检查发现：旧专家和旧读出头虽保持逐位不变，router 却会把旧任务
+样本改送到后来专家，造成额外遗忘。commit
+`bb3e49d5f` 增加任务容量保护：新任务仍可复用全部旧专家，旧任务 replay/评估只使用其
+学习时已开放的前 4/8/12/16 槽。服务器的改进 run ID 为
+`runs/simulation/capacity_guard_s17_v1`，只重训 ours，并在初始 run 完成后使用同一 GPU
+串行启动；完成前不填写其性能数字。
