@@ -1,0 +1,128 @@
+{
+  "metric_contract": {
+    "sen12ms": "macro_f1",
+    "clevr": "balanced_accuracy",
+    "sonyc": "macro_ap",
+    "video": "balanced_accuracy"
+  },
+  "models": {
+    "joint_d2nn": {
+      "source": "/DATA/DATA1/guest3/t12_cross_modal_video_20260920/LightGenV2/tasks/t12_cross_modal_lifelong/runs/simulation/initial_s17_v1/joint_d2nn/results.json",
+      "source_sha256": "15b9fc75311f03c091a391589cf8d03cf04b20027b2a9836f6ff3b5894282f50",
+      "training": "offline_joint",
+      "selected_epoch": 26,
+      "validation": {
+        "sen12ms": 0.29418562447145635,
+        "clevr": 0.5386666666666666,
+        "sonyc": 0.3675204909504962,
+        "video": 0.5
+      },
+      "test": {
+        "sen12ms": 0.23991303990082824,
+        "clevr": 0.5053333333333334,
+        "sonyc": 0.5250016666661664,
+        "video": 0.5
+      },
+      "mean_test": 0.442562009975082,
+      "continual": null
+    },
+    "sequential_d2nn": {
+      "source": "/DATA/DATA1/guest3/t12_sequential_d2nn_20260920/LightGenV2/tasks/t12_cross_modal_lifelong/runs/simulation/sequential_d2nn_replay_s17_v1/sequential_d2nn/results.json",
+      "source_sha256": "9c7db5d51903a4cfa62622546bac09e0a793937035de2162659d0b6dc1f372ec",
+      "training": "sequential_replay",
+      "selected_epoch": 21,
+      "validation": {
+        "sen12ms": 0.3103178709214663,
+        "clevr": 0.5,
+        "sonyc": 0.3592886267244024,
+        "video": 0.5
+      },
+      "test": {
+        "sen12ms": 0.15918034259793573,
+        "clevr": 0.5,
+        "sonyc": 0.42657738701956677,
+        "video": 0.5
+      },
+      "mean_test": 0.3964394324043756,
+      "continual": {
+        "score_when_learned": {
+          "sen12ms": 0.36410350070909075,
+          "clevr": 0.5,
+          "sonyc": 0.3428614123545115,
+          "video": 0.5
+        },
+        "final_validation_score": {
+          "sen12ms": 0.3103178709214663,
+          "clevr": 0.5,
+          "sonyc": 0.3592886267244024,
+          "video": 0.5
+        },
+        "backward_transfer": {
+          "sen12ms": -0.05378562978762447,
+          "clevr": 0.0,
+          "sonyc": 0.01642721436989092
+        },
+        "mean_backward_transfer": -0.012452805139244516
+      }
+    },
+    "lifelong_moe": {
+      "source": "/DATA/DATA1/guest3/t12_cross_modal_capacity_20260920/LightGenV2/tasks/t12_cross_modal_lifelong/runs/simulation/capacity_guard_s17_v1/lifelong_moe/results.json",
+      "source_sha256": "57b797979111f9241dec786ae292e948138a9b129b8a5fab6c68b017af2d0570",
+      "training": "sequential_lifelong",
+      "selected_epoch": 2,
+      "validation": {
+        "sen12ms": 0.31673054575661397,
+        "clevr": 0.5,
+        "sonyc": 0.2830504984808554,
+        "video": 0.5
+      },
+      "test": {
+        "sen12ms": 0.24213279311420047,
+        "clevr": 0.5,
+        "sonyc": 0.435210840529602,
+        "video": 0.5
+      },
+      "mean_test": 0.4193359084109506,
+      "continual": {
+        "score_when_learned": {
+          "sen12ms": 0.3562675397220006,
+          "clevr": 0.5,
+          "sonyc": 0.3748907342786965,
+          "video": 0.5
+        },
+        "final_validation_score": {
+          "sen12ms": 0.31673054575661397,
+          "clevr": 0.5,
+          "sonyc": 0.2830504984808554,
+          "video": 0.5
+        },
+        "backward_transfer": {
+          "sen12ms": -0.039536993965386624,
+          "clevr": 0.0,
+          "sonyc": -0.09184023579784112
+        },
+        "mean_backward_transfer": -0.043792409921075914
+      }
+    }
+  },
+  "deltas": {
+    "moe_minus_joint_d2nn": {
+      "mean_test": -0.023226101564131407,
+      "test": {
+        "sen12ms": 0.0022197532133722275,
+        "clevr": -0.005333333333333412,
+        "sonyc": -0.08979082613656442,
+        "video": 0.0
+      }
+    },
+    "moe_minus_sequential_d2nn": {
+      "mean_test": 0.022896476006574962,
+      "test": {
+        "sen12ms": 0.08295245051626474,
+        "clevr": 0.0,
+        "sonyc": 0.00863345351003525,
+        "video": 0.0
+      }
+    }
+  }
+}

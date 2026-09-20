@@ -14,9 +14,9 @@
   `d8df84711c58477b7974356a6356ce9f0217ef10ae2b6c6fe045ecc9d8873361`。
 
 smoke 对 MoE 和 D2NN 的四任务各执行一次真实光学前向、损失和反向，所有应训练参数均有
-有限梯度；它只验证计算合同，不报告分类性能。首轮 30 epoch 正式仿真正在同一 commit、
-同一数据和 `configs/initial_s17.json` 下运行，run ID 为
-`runs/simulation/initial_s17_v1`。完成并通过复算前不填写性能数字。
+有限梯度；它只验证计算合同，不报告分类性能。首轮 30 epoch 正式仿真已使用同一 commit、
+同一数据和 `configs/initial_s17.json` 完成，run ID 为
+`runs/simulation/initial_s17_v1`；性能见下表。
 
 初始 run 的第二阶段检查发现：旧专家和旧读出头虽保持逐位不变，router 却会把旧任务
 样本改送到后来专家，造成额外遗忘。commit
@@ -33,6 +33,7 @@ baseline。各任务测试主指标如下：
 | 模型 | SEN12MS macro-F1 | CLEVR balanced accuracy | SONYC macro-AP | Video balanced accuracy | 平均值 |
 |---|---:|---:|---:|---:|---:|
 | Joint D2NN | 0.239913 | 0.505333 | 0.525002 | 0.500000 | 0.442562 |
+| Sequential D2NN + replay | 0.159180 | 0.500000 | 0.426577 | 0.500000 | 0.396439 |
 | Initial lifelong MoE | 0.227007 | 0.474667 | 0.428097 | 0.500000 | 0.407443 |
 | Capacity-guard lifelong MoE | 0.242133 | 0.500000 | 0.435211 | 0.500000 | 0.419336 |
 
@@ -46,7 +47,7 @@ Initial MoE 的验证分数在各任务刚学完时为 0.356268 / 0.500000 / 0.3
 transfer 从 -0.069469 改善到 -0.043792，但仍低于 Joint D2NN 0.023226，且 CLEVR/视频
 仍为机会水平，因此不能据此声称总体超过离线 baseline。
 
-## 三模型归因对照
+## 2026-09-21 三模型归因对照
 
 为了判断终身学习表现来自 MoE 专家结构还是仅来自 replay，commit `0e791798f` 增加
 Sequential D2NN control。最终比较固定为：
@@ -59,4 +60,24 @@ Sequential D2NN control。最终比较固定为：
 
 Sequential D2NN 没有新专家，因此不执行 expert warmup；报告训练时间和更新次数时必须单列。
 正式 run ID 为 `runs/simulation/sequential_d2nn_replay_s17_v1`，源码 commit
-`0e791798f`，已在 `capacity_guard_s17_v1` 完成后使用同一 GPU 启动。完成前不填写性能数字。
+`0e791798f`，在 `capacity_guard_s17_v1` 完成后使用同一 RTX 4090 运行并已正常完成。
+
+统一比较由 commit `06bad5e01` 的 `compare_three.py` 从三个 `results.json` 自动生成；结果文件为
+`reports/generated/three_model_s17_v1.json`。输入文件 SHA256 分别为：
+
+- Joint D2NN：`15b9fc75311f03c091a391589cf8d03cf04b20027b2a9836f6ff3b5894282f50`；
+- Sequential D2NN：`9c7db5d51903a4cfa62622546bac09e0a793937035de2162659d0b6dc1f372ec`；
+- Capacity-guard lifelong MoE：`57b797979111f9241dec786ae292e948138a9b129b8a5fab6c68b017af2d0570`。
+
+Sequential D2NN 的测试主指标平均值为 0.396439。其各任务刚学完时的验证主指标为
+0.364104 / 0.500000 / 0.342861 / 0.500000，训练全部结束后为
+0.310318 / 0.500000 / 0.359289 / 0.500000，平均 backward transfer 为 -0.012453。
+各阶段都验证了旧任务 MLP 参数逐位不变，而共享 first/global phase 确实发生更新。
+
+Capacity-guard lifelong MoE 比 Sequential D2NN 的测试均值高 0.022896；逐任务差值为
++0.082952 / 0.000000 / +0.008633 / 0.000000。这是当前最直接支持“可扩展专家结构比同协议
+顺序 D2NN 更适合终身学习”的结果。它的平均 backward transfer 为 -0.043792，反而差于
+Sequential D2NN 的 -0.012453，因此现有证据只支持最终任务集合上的平均性能优势，尚不支持
+“遗忘更少”。MoE 同时比离线 Joint D2NN 低 0.023226；CLEVR 和视频在三个模型中都接近
+机会水平。下一轮应先修复这两个任务的模态编码/监督信号，再重复三模型对照，不能仅增加 epoch
+后宣称架构优越。
