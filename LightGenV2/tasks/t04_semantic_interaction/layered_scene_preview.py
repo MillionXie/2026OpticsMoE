@@ -16,11 +16,14 @@ import subprocess
 import numpy as np
 from PIL import Image, ImageDraw
 
-from .layout_preview import ASSETS, SPECS, TASK, font
+from .layout_preview import SPECS, TASK, font
 
 CODES = {name: code for name, code, _ in SPECS}
 BACKGROUND = (250, 250, 247)
-SVG_DIR = None
+# Keep previews self-contained and identical across local/server checkouts.  The
+# former fallback pointed at an experiment-local 72 px PNG cache that was not
+# versioned, so a clean checkout could not reproduce the approved figures.
+SVG_DIR = TASK / 'assets' / 'openmoji-17.0.0-svg'
 
 
 @dataclass(frozen=True)
@@ -35,13 +38,9 @@ class Object:
 
 @lru_cache(maxsize=32)
 def artwork(category):
-    if SVG_DIR is not None:
-        import resvg_py
-        data = resvg_py.svg_to_bytes(svg_path=str(SVG_DIR/(CODES[category]+'.svg')), width=1024, height=1024)
-        image = Image.open(BytesIO(data)).convert('RGBA')
-    else:
-        with Image.open(ASSETS / (CODES[category] + '.png')) as source:
-            image = source.convert('RGBA')
+    import resvg_py
+    data = resvg_py.svg_to_bytes(svg_path=str(SVG_DIR/(CODES[category]+'.svg')), width=1024, height=1024)
+    image = Image.open(BytesIO(data)).convert('RGBA')
     return image.crop(image.getchannel('A').getbbox())
 
 
@@ -120,7 +119,8 @@ def main():
     global SVG_DIR
     parser=argparse.ArgumentParser()
     parser.add_argument('--output',type=Path,default=TASK/'reports/layered_scene_design_20260920')
-    parser.add_argument('--svg-dir',type=Path,help='Official OpenMoji SVG directory; requires resvg-py')
+    parser.add_argument('--svg-dir',type=Path,default=SVG_DIR,
+                        help='Official OpenMoji SVG directory; requires resvg-py')
     args=parser.parse_args();SVG_DIR=args.svg_dir;out=args.output;out.mkdir(parents=True,exist_ok=True)
     proposals=examples()
     board=Image.new('RGB',(1500,1250),'white');d=ImageDraw.Draw(board)
@@ -162,10 +162,10 @@ def main():
     sheet.save(out/'02_regular_preview_contact_sheet.png')
     report={'status':'preview_only_awaiting_visual_approval','gpu_used':False,
             'renderer':'alpha compositing; fixed bottom anchors; explicit z order',
-            'input_size':[224,224], 'assets':('official OpenMoji 17.0.0 SVG rasterized at 1024px before sizing' if SVG_DIR else 'existing 72px PNG enlarged'),
+            'input_size':[224,224], 'assets':'official OpenMoji 17.0.0 SVG rasterized at 1024px before sizing',
             'git_commit_before_run':subprocess.check_output(['git','rev-parse','HEAD'],text=True).strip(),
             'examples':metadata,'regular_preview':regular,
-            'asset_sha256':{CODES[o.category]:hashlib.sha256(((SVG_DIR or ASSETS)/(CODES[o.category]+('.svg' if SVG_DIR else '.png'))).read_bytes()).hexdigest() for e in proposals for o in e['source']+e['target']}}
+            'asset_sha256':{CODES[o.category]:hashlib.sha256((SVG_DIR/(CODES[o.category]+'.svg')).read_bytes()).hexdigest() for e in proposals for o in e['source']+e['target']}}
     (out/'scene_manifest.json').write_text(json.dumps(report,indent=2),encoding='utf-8')
     print(json.dumps({'output':str(out),'authored_pairs':len(metadata),'sequential_previews':len(regular),
                       'minimum_visible_fraction':min(o['visible_alpha_fraction'] for e in metadata for side in ('source','target') for o in e[side]),
