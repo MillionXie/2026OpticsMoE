@@ -306,11 +306,15 @@ def finalize(model,tasks,root,device,cfg,epoch,training):
 def smoke(tasks,cfg,out,device):
     records={}
     for arch in ("moe","d2nn"):
-        model=CrossModalOptics(arch,cfg["seed"],0).to(device);model.configure_task(0);model.train()
-        task=tasks["sen12ms"];loss=task_loss(model,task,np.arange(1),device,balance=.1);loss.backward()
-        grads={n:float(p.grad.norm()) for n,p in model.named_parameters() if p.requires_grad and p.grad is not None}
-        assert grads and all(np.isfinite(list(grads.values())))
-        records[arch]={"loss":float(loss),"parameters":sum(p.numel() for p in model.parameters()),"optical_parameters":sum(p.numel() for n,p in model.named_parameters() if not n.startswith("heads.")),"electronic_head_parameters":sum(p.numel() for p in model.heads.parameters()),"gradients":grads,"shape":[model.height,model.width]}
+        model=CrossModalOptics(arch,cfg["seed"],0).to(device)
+        task_records={}
+        for task_index,name in enumerate(TASK_ORDER):
+            model.configure_task(task_index);model.train();model.zero_grad(set_to_none=True)
+            loss=task_loss(model,tasks[name],np.arange(1),device,balance=.1);loss.backward()
+            grads={n:float(p.grad.norm()) for n,p in model.named_parameters() if p.requires_grad and p.grad is not None}
+            assert grads and all(np.isfinite(list(grads.values())))
+            task_records[name]={"loss":float(loss),"active_experts":4*(task_index+1) if arch=="moe" else None,"gradients":grads}
+        records[arch]={"parameters":sum(p.numel() for p in model.parameters()),"optical_parameters":sum(p.numel() for n,p in model.named_parameters() if not n.startswith("heads.")),"electronic_head_parameters":sum(p.numel() for p in model.heads.parameters()),"shape":[model.height,model.width],"tasks":task_records}
     save(out/"smoke.json",{"status":"pass","records":records})
 
 
