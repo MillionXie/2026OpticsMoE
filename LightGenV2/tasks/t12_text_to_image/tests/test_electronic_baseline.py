@@ -90,5 +90,7 @@ def test_qwen_turbo_adapter_reconstructs_one_step_condition_shape() -> None:
 
 def test_turbo_teacher_prompt_requests_full_single_object() -> None:
     prompt = _teacher_prompt("a black leather shoe on a plain neutral background")
-    assert "one black leather shoe" in prompt
-    assert "entire object visible" in prompt
+    assert "one footwear shoe" in prompt
+    assert "black leather material and color" in prompt
+    assert "laces and sole clearly visible" in prompt
+    assert "entire shoe visible" in prompt

@@ -5,6 +5,7 @@ from __future__ import annotations
 import copy
 import json
 import random
+import re
 import shutil
 import time
 from pathlib import Path
@@ -33,9 +34,26 @@ def _teacher_prompt(caption: str) -> str:
     description = caption.strip()
     if description.lower().startswith("a "):
         description = description[2:]
+    description = re.sub(r"\s+on a plain (?:neutral|white) background\s*$", "", description, flags=re.I)
+    lower = description.lower()
+    contracts = {
+        "shoe": ("footwear shoe", "laces and sole clearly visible", "entire shoe visible"),
+        "chair": ("chair", "seat, backrest, and all legs clearly visible", "entire chair visible"),
+        "lamp": ("lamp", "shade, stand, and base clearly visible", "entire lamp visible"),
+        "table": ("table", "tabletop and all legs clearly visible", "entire table visible"),
+    }
+    category = next((name for name in contracts if re.search(rf"\b{name}\b", lower)), None)
+    if category is None:
+        return (
+            f"a full view studio product photo of one {description}, "
+            "entire object visible, centered, clean product photography"
+        )
+    noun, geometry, visibility = contracts[category]
+    attributes = re.sub(rf"\b{category}\b", "", description, flags=re.I).strip(" ,")
+    attribute_phrase = f", {attributes} material and color" if attributes else ""
     return (
-        f"a full view studio product photo of one {description}, "
-        "entire object visible, centered, clean product photography"
+        f"a full view studio product photo of one {noun}, {geometry}{attribute_phrase}, "
+        f"{visibility}, centered, plain neutral background, clean product photography"
     )
 
 
