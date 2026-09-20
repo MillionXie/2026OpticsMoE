@@ -16,6 +16,7 @@ model:
   token_grid: 14
   style_dim: 256
   electronic_depth: 2
+  decoder_depth: 0
 fusion:
   alpha_initial: 0.40
   alpha_minimum: 0.05
@@ -32,3 +33,5 @@ loss:
   kl_weight: 0.002
   kl_warmup_epochs: 15
   free_bits: 0.02
+adversarial:
+  enabled: false

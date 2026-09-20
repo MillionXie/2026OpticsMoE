@@ -61,6 +61,7 @@ class Settings:
     token_grid: int
     style_dim: int
     electronic_depth: int
+    decoder_depth: int
     optical_backend: str
     fusion_alpha_initial: float
     fusion_alpha_minimum: float
@@ -79,6 +80,14 @@ class Settings:
     free_bits: float
     num_workers: int
     amp: bool
+    adversarial_enabled: bool
+    discriminator_width: int
+    discriminator_learning_rate: float
+    adversarial_start_epoch: int
+    adversarial_weight: float
+    prior_adversarial_weight: float
+    feature_matching_weight: float
+    pixel_reconstruction_weight: float
 
     def validate(self) -> None:
         if self.variant not in VARIANTS:
@@ -89,6 +98,8 @@ class Settings:
             raise ValueError("The latent head performs exactly one 2x upsampling")
         if self.width % 8:
             raise ValueError("model.width must be divisible by 8")
+        if self.decoder_depth < 0:
+            raise ValueError("model.decoder_depth must be non-negative")
         if not 0 <= self.fusion_alpha_minimum < self.fusion_alpha_initial < self.fusion_alpha_maximum <= 1:
             raise ValueError("Fusion alpha must start strictly inside its configured range")
         if self.variant == "qwen_vae_baseline" and self.optical_backend != "none":
@@ -97,6 +108,16 @@ class Settings:
             raise ValueError("The LightGen variant requires an optical path")
         if self.optical_backend not in {"none", "compact_fft", "audited_dc20"}:
             raise ValueError(f"Unknown optical backend: {self.optical_backend}")
+        if self.adversarial_enabled:
+            if self.discriminator_width <= 0 or self.adversarial_start_epoch < 0:
+                raise ValueError("Invalid adversarial discriminator settings")
+            if min(
+                self.adversarial_weight,
+                self.prior_adversarial_weight,
+                self.feature_matching_weight,
+                self.pixel_reconstruction_weight,
+            ) < 0:
+                raise ValueError("Adversarial loss weights must be non-negative")
 
     @property
     def cache_dir(self) -> Path:
@@ -129,6 +150,7 @@ def load_settings(path: str | Path) -> Settings:
         token_grid=int(_at(raw, "model.token_grid", 16)),
         style_dim=int(_at(raw, "model.style_dim", 256)),
         electronic_depth=int(_at(raw, "model.electronic_depth", 2)),
+        decoder_depth=int(_at(raw, "model.decoder_depth", 0)),
         optical_backend=str(_at(raw, "model.optical_backend", "compact_fft")),
         fusion_alpha_initial=float(_at(raw, "fusion.alpha_initial", 0.40)),
         fusion_alpha_minimum=float(_at(raw, "fusion.alpha_minimum", 0.05)),
@@ -147,6 +169,14 @@ def load_settings(path: str | Path) -> Settings:
         free_bits=float(_at(raw, "loss.free_bits", 0.02)),
         num_workers=int(_at(raw, "training.num_workers", 4)),
         amp=bool(_at(raw, "training.amp", True)),
+        adversarial_enabled=bool(_at(raw, "adversarial.enabled", False)),
+        discriminator_width=int(_at(raw, "adversarial.discriminator_width", 48)),
+        discriminator_learning_rate=float(_at(raw, "adversarial.learning_rate", 1e-4)),
+        adversarial_start_epoch=int(_at(raw, "adversarial.start_epoch", 5)),
+        adversarial_weight=float(_at(raw, "adversarial.posterior_weight", 0.05)),
+        prior_adversarial_weight=float(_at(raw, "adversarial.prior_weight", 0.05)),
+        feature_matching_weight=float(_at(raw, "adversarial.feature_matching_weight", 0.10)),
+        pixel_reconstruction_weight=float(_at(raw, "adversarial.pixel_reconstruction_weight", 0.10)),
     )
     settings.validate()
     return settings

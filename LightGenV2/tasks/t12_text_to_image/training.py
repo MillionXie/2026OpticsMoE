@@ -8,11 +8,13 @@ from typing import Any
 
 import numpy as np
 import torch
+from torch.nn import functional as F
 from torch.utils.data import DataLoader
 
 from .dataset import CachedLatentDataset
+from .feature_cache import _model_source
 from .losses import conditional_vae_loss
-from .modeling import TextConditionedVAE, build_model
+from .modeling import PatchDiscriminator, TextConditionedVAE, build_model
 from .settings import Settings
 
 
@@ -77,6 +79,119 @@ def _epoch(
     return {key: value / samples for key, value in totals.items()}
 
 
+def _set_requires_grad(module: torch.nn.Module, enabled: bool) -> None:
+    for parameter in module.parameters():
+        parameter.requires_grad_(enabled)
+
+
+def _discriminator_loss(
+    real: torch.Tensor,
+    posterior: torch.Tensor,
+    prior: torch.Tensor,
+) -> torch.Tensor:
+    return (
+        F.relu(1.0 - real.float()).mean()
+        + 0.5 * F.relu(1.0 + posterior.float()).mean()
+        + 0.5 * F.relu(1.0 + prior.float()).mean()
+    )
+
+
+def _adversarial_epoch(
+    model: TextConditionedVAE,
+    discriminator: PatchDiscriminator,
+    vae: torch.nn.Module,
+    loader: DataLoader,
+    device: torch.device,
+    settings: Settings,
+    epoch: int,
+    optimizer: torch.optim.Optimizer,
+    discriminator_optimizer: torch.optim.Optimizer,
+) -> dict[str, float]:
+    """Train posterior reconstruction and random-prior realism without an inference loop."""
+
+    model.train()
+    discriminator.train()
+    totals: dict[str, float] = {}
+    samples = 0
+    adversarial_active = epoch >= settings.adversarial_start_epoch
+    scaling = float(getattr(vae.config, "scaling_factor", 1.0))
+    for batch in loader:
+        text = batch["text"].to(device, non_blocking=True)
+        target = batch["latent"].to(device, non_blocking=True)
+        optimizer.zero_grad(set_to_none=True)
+        with torch.autocast(device_type=device.type, dtype=torch.bfloat16, enabled=settings.amp):
+            output = model.forward_train(text, target)
+            base_loss, metrics = conditional_vae_loss(
+                output, target, kl_weight=_beta(settings, epoch), free_bits=settings.free_bits
+            )
+            with torch.no_grad():
+                real_image = vae.decode(target / scaling).sample
+            posterior_image = vae.decode(output.predicted_latent / scaling).sample
+            pixel_loss = F.l1_loss(posterior_image.float(), real_image.float())
+
+        discriminator_loss = torch.zeros((), device=device)
+        generator_adversarial = torch.zeros((), device=device)
+        feature_matching = torch.zeros((), device=device)
+        prior_adversarial = torch.zeros((), device=device)
+        if adversarial_active:
+            with torch.autocast(device_type=device.type, dtype=torch.bfloat16, enabled=settings.amp):
+                prior_style = torch.randn_like(output.style)
+                prior_latent = model.generator(text, prior_style)
+                prior_image = vae.decode(prior_latent / scaling).sample
+
+            _set_requires_grad(discriminator, True)
+            discriminator_optimizer.zero_grad(set_to_none=True)
+            with torch.autocast(device_type=device.type, dtype=torch.bfloat16, enabled=settings.amp):
+                real_logits, _ = discriminator(real_image.detach())
+                posterior_logits, _ = discriminator(posterior_image.detach())
+                prior_logits, _ = discriminator(prior_image.detach())
+                discriminator_loss = _discriminator_loss(real_logits, posterior_logits, prior_logits)
+            discriminator_loss.backward()
+            torch.nn.utils.clip_grad_norm_(discriminator.parameters(), 1.0)
+            discriminator_optimizer.step()
+
+            _set_requires_grad(discriminator, False)
+            with torch.autocast(device_type=device.type, dtype=torch.bfloat16, enabled=settings.amp):
+                posterior_logits, posterior_features = discriminator(posterior_image)
+                prior_logits, _ = discriminator(prior_image)
+                with torch.no_grad():
+                    _, real_features = discriminator(real_image)
+                generator_adversarial = -posterior_logits.float().mean()
+                prior_adversarial = -prior_logits.float().mean()
+                feature_matching = sum(
+                    F.l1_loss(fake.float(), real.float())
+                    for fake, real in zip(posterior_features, real_features)
+                ) / len(real_features)
+
+        total = (
+            base_loss
+            + settings.pixel_reconstruction_weight * pixel_loss
+            + settings.adversarial_weight * generator_adversarial
+            + settings.prior_adversarial_weight * prior_adversarial
+            + settings.feature_matching_weight * feature_matching
+        )
+        total.backward()
+        torch.nn.utils.clip_grad_norm_(model.parameters(), 1.0)
+        optimizer.step()
+        _set_requires_grad(discriminator, True)
+
+        count = len(text)
+        samples += count
+        metrics.update({
+            "loss": float(total.detach()),
+            "base_loss": float(base_loss.detach()),
+            "pixel_l1": float(pixel_loss.detach()),
+            "generator_adversarial": float(generator_adversarial.detach()),
+            "prior_adversarial": float(prior_adversarial.detach()),
+            "feature_matching": float(feature_matching.detach()),
+            "discriminator_loss": float(discriminator_loss.detach()),
+            "adversarial_active": float(adversarial_active),
+        })
+        for key, value in metrics.items():
+            totals[key] = totals.get(key, 0.0) + value * count
+    return {key: value / samples for key, value in totals.items()}
+
+
 def train(settings: Settings, device: torch.device) -> dict[str, Any]:
     seed_everything(settings.seed)
     settings.output_dir.mkdir(parents=True, exist_ok=True)
@@ -87,12 +202,33 @@ def train(settings: Settings, device: torch.device) -> dict[str, Any]:
     optimizer = torch.optim.AdamW(
         model.parameters(), lr=settings.learning_rate, weight_decay=settings.weight_decay
     )
+    discriminator = None
+    discriminator_optimizer = None
+    vae = None
+    if settings.adversarial_enabled:
+        from diffusers import AutoencoderKL
+
+        vae_source, vae_local = _model_source(settings.vae_checkpoint, settings.vae_model)
+        vae = AutoencoderKL.from_pretrained(
+            vae_source, local_files_only=vae_local, torch_dtype=torch.float32
+        ).to(device).eval().requires_grad_(False)
+        discriminator = PatchDiscriminator(settings.discriminator_width).to(device)
+        discriminator_optimizer = torch.optim.AdamW(
+            discriminator.parameters(), lr=settings.discriminator_learning_rate, betas=(0.0, 0.99)
+        )
     train_loader = _loader(settings, "train", True)
     val_loader = _loader(settings, "val", False)
     best = float("inf")
     history: list[dict[str, Any]] = []
     for epoch in range(settings.epochs):
-        train_metrics = _epoch(model, train_loader, device, settings, epoch, optimizer)
+        if settings.adversarial_enabled:
+            assert discriminator is not None and discriminator_optimizer is not None and vae is not None
+            train_metrics = _adversarial_epoch(
+                model, discriminator, vae, train_loader, device, settings, epoch,
+                optimizer, discriminator_optimizer,
+            )
+        else:
+            train_metrics = _epoch(model, train_loader, device, settings, epoch, optimizer)
         val_metrics = _epoch(model, val_loader, device, settings, epoch, None)
         row = {"epoch": epoch + 1, "train": train_metrics, "val": val_metrics}
         history.append(row)
@@ -107,12 +243,20 @@ def train(settings: Settings, device: torch.device) -> dict[str, Any]:
             "optimizer": optimizer.state_dict(),
             "val": val_metrics,
         }
+        if discriminator is not None and discriminator_optimizer is not None:
+            payload["discriminator"] = discriminator.state_dict()
+            payload["discriminator_optimizer"] = discriminator_optimizer.state_dict()
         torch.save(payload, settings.output_dir / "last_checkpoint.pt")
         if val_metrics["loss"] < best:
             best = val_metrics["loss"]
             torch.save(payload, settings.output_dir / "best_checkpoint.pt")
     (settings.output_dir / "history.json").write_text(json.dumps(history, indent=2) + "\n", encoding="utf-8")
-    report = {"best_val_loss": best, "epochs": settings.epochs, "architecture": model.architecture_report()}
+    report = {
+        "best_val_loss": best,
+        "epochs": settings.epochs,
+        "adversarial_enabled": settings.adversarial_enabled,
+        "architecture": model.architecture_report(),
+    }
     (settings.output_dir / "training_summary.json").write_text(json.dumps(report, indent=2) + "\n", encoding="utf-8")
     return report
 

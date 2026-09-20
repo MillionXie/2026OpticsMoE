@@ -4,7 +4,8 @@ T12 是 LightGenV2 的单次前向、文本条件图像生成任务。任务只�
 物体，不做开放域、多物体、计数、空间关系、扩散去噪或自回归生成。
 
 当前状态：模型、数据合同、Qwen/VAE 缓存、训练入口、配对 baseline、可视化比较与 CPU
-结构测试已经建立；正式数据冻结为 ABO 小子集，正式训练结果和硬件结果尚未产生。
+结构测试已经建立；正式数据冻结为 ABO 小子集，首轮 latent 回归训练已完成但明显模糊，
+因此保留首轮结果并新增独立的单次前向 GAN 锐化 profile。硬件结果尚未产生。
 
 ## 冻结协议
 
@@ -44,7 +45,11 @@ stage-2 input ─┬─ electronic residual-2 ─┐
 
 训练时额外使用一个轻量 posterior encoder，从真实 VAE latent 得到 `mean/logvar`；推理时
 删除该 encoder，直接采样 `N(0,I)`。第一版损失为 latent L1、latent MSE 和 warm-up KL，
-不使用 GAN。若正式结果明显模糊，再新增独立 profile 引入 PatchGAN，不能覆盖本 baseline。
+初始 profile 不使用 GAN。首轮正式结果证明 posterior 能恢复类别轮廓，但 L1/MSE 会抹平纹理，
+随机 prior 还存在更明显的分布错位；所以 `lightgen_gan` / `baseline_gan` 作为独立第二阶段
+profile 使用四层 residual latent decoder，并让冻结 VAE 解码后的 posterior 与随机 prior 同时
+接受 RGB PatchGAN 和 feature matching。该变化只作用于 decoder/训练目标，不改变并行主干，
+推理仍然只有一次主干前向和一次 VAE decode，也不覆盖首轮 checkpoint。
 
 `compact_fft` 仅供 CPU smoke 和结构调试，不能作为论文性能或硬件结果。
 
@@ -99,6 +104,8 @@ python -m LightGenV2.tasks.t12_text_to_image --profile smoke --phase smoke --dev
 python -m LightGenV2.tasks.t12_text_to_image --profile lightgen --phase cache --device cuda
 python -m LightGenV2.tasks.t12_text_to_image --profile lightgen --phase train --device cuda
 python -m LightGenV2.tasks.t12_text_to_image --profile baseline --phase train --device cuda
+python -m LightGenV2.tasks.t12_text_to_image --profile lightgen_gan --phase train --device cuda
+python -m LightGenV2.tasks.t12_text_to_image --profile baseline_gan --phase train --device cuda
 python -m LightGenV2.tasks.t12_text_to_image --profile lightgen --phase evaluate --device cuda
 python -m LightGenV2.tasks.t12_text_to_image --profile baseline --phase evaluate --device cuda
 python -m LightGenV2.tasks.t12_text_to_image.compare `

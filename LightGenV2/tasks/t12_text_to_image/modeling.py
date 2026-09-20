@@ -251,18 +251,35 @@ class ElectronicBackbone(nn.Module):
         return tokens
 
 
-class LatentHead(nn.Module):
-    def __init__(self, width: int, channels: int) -> None:
+class DecoderResidualBlock(nn.Module):
+    def __init__(self, width: int) -> None:
         super().__init__()
         self.net = nn.Sequential(
+            nn.GroupNorm(8, width), nn.SiLU(), nn.Conv2d(width, width, 3, padding=1),
+            nn.GroupNorm(8, width), nn.SiLU(), nn.Conv2d(width, width, 3, padding=1),
+        )
+        self.gate = nn.Parameter(torch.tensor(-1.0))
+
+    def forward(self, value: torch.Tensor) -> torch.Tensor:
+        return value + torch.sigmoid(self.gate) * self.net(value)
+
+
+class LatentHead(nn.Module):
+    def __init__(self, width: int, channels: int, depth: int = 0) -> None:
+        super().__init__()
+        prefix: list[nn.Module] = [
             nn.Conv2d(width, width * 4, 3, padding=1),
             nn.PixelShuffle(2),
             nn.GroupNorm(8, width),
             nn.SiLU(),
+        ]
+        residuals = [DecoderResidualBlock(width) for _ in range(int(depth))]
+        suffix: list[nn.Module] = [
             nn.Conv2d(width, width, 3, padding=1),
             nn.SiLU(),
             nn.Conv2d(width, channels, 1),
-        )
+        ]
+        self.net = nn.Sequential(*prefix, *residuals, *suffix)
 
     def forward(self, tokens: torch.Tensor, grid: int) -> torch.Tensor:
         value = tokens.transpose(1, 2).reshape(tokens.shape[0], tokens.shape[2], grid, grid)
@@ -289,7 +306,7 @@ class ConditionalLatentGenerator(nn.Module):
                 raise ValueError(f"Unknown optical backend {settings.optical_backend!r}")
         else:
             self.backbone = ElectronicBackbone(settings, width)
-        self.head = LatentHead(width, settings.latent_channels)
+        self.head = LatentHead(width, settings.latent_channels, settings.decoder_depth)
 
     def forward(self, text: torch.Tensor, style: torch.Tensor) -> torch.Tensor:
         text_value = self.text_projection(text.float())
@@ -363,6 +380,7 @@ class TextConditionedVAE(nn.Module):
             "training_only_posterior": True,
             "inference_iterations": 1,
             "vae_decoder_calls": 1,
+            "decoder_residual_depth": self.settings.decoder_depth,
             "branch_graph": (
                 "stage input -> {electronic residual || optical block} -> detached-RMS fusion"
                 if lightgen else "two conditioned electronic residual blocks"
@@ -377,7 +395,30 @@ def build_model(settings: Settings, device: torch.device | str = "cpu") -> TextC
     return TextConditionedVAE(settings).to(device)
 
 
+class PatchDiscriminator(nn.Module):
+    """Small spectral-normalized RGB PatchGAN used only by adversarial profiles."""
+
+    def __init__(self, width: int = 48) -> None:
+        super().__init__()
+        channels = (3, width, width * 2, width * 4, width * 8)
+        self.blocks = nn.ModuleList()
+        for index, (input_channels, output_channels) in enumerate(zip(channels, channels[1:])):
+            convolution = nn.utils.spectral_norm(
+                nn.Conv2d(input_channels, output_channels, 4, stride=2, padding=1)
+            )
+            self.blocks.append(nn.Sequential(convolution, nn.LeakyReLU(0.2, inplace=False)))
+        self.output = nn.utils.spectral_norm(nn.Conv2d(channels[-1], 1, 3, padding=1))
+
+    def forward(self, image: torch.Tensor) -> tuple[torch.Tensor, list[torch.Tensor]]:
+        features = []
+        value = image
+        for block in self.blocks:
+            value = block(value)
+            features.append(value)
+        return self.output(value), features
+
+
 __all__ = [
     "AuditedDC20Backbone", "CompactFourierOptics", "ConditionalLatentGenerator", "ParallelHybridBackbone",
-    "ScaleMatchedFusion", "TextConditionedVAE", "TrainOutput", "build_model",
+    "PatchDiscriminator", "ScaleMatchedFusion", "TextConditionedVAE", "TrainOutput", "build_model",
 ]

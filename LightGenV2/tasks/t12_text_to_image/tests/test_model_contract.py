@@ -9,6 +9,7 @@ from torch import nn
 
 from LightGenV2.tasks.t12_text_to_image.modeling import (
     ParallelHybridBackbone,
+    PatchDiscriminator,
     ScaleMatchedFusion,
     build_model,
 )
@@ -107,3 +108,15 @@ def test_formal_audited_dc20_geometry_accepts_14_square_tokens() -> None:
     diagnostics = model.generator.backbone.core.fusion_diagnostics()
     assert set(diagnostics) == {"block1", "block2"}
     assert diagnostics["block1"]["fused_to_electronic_rms_ratio"] == pytest.approx(1.0, abs=1e-5)
+
+
+def test_deep_single_pass_decoder_and_patch_discriminator_shapes() -> None:
+    settings = load_settings(TASK_DIR / "configs" / "qwen_vae_baseline_gan.yaml")
+    model = build_model(settings).eval()
+    latent = model.generate(torch.randn(2, settings.text_dim), seed=4)
+    assert latent.shape == (2, 4, 28, 28)
+    assert model.architecture_report()["decoder_residual_depth"] == 4
+    logits, features = PatchDiscriminator(settings.discriminator_width)(torch.randn(2, 3, 224, 224))
+    assert logits.shape[0] == 2
+    assert logits.ndim == 4
+    assert len(features) == 4
