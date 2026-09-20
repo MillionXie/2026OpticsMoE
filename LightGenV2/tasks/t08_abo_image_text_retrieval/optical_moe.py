@@ -82,6 +82,9 @@ REPO_ROOT = TASK_DIR.parents[2]
 CONFIG = TASK_DIR / "configs" / "optical_router_moe_dc20.yaml"
 EMBEDDING_DIM = 64
 QUERY_INSTRUCTION = "Retrieve the product title that best describes this product image."
+TEXT_TO_IMAGE_QUERY_INSTRUCTION = (
+    "Retrieve product images that match the following product description."
+)
 DOCUMENT_INSTRUCTION = "Represent the user's input."
 
 
@@ -99,6 +102,80 @@ class Contract:
     titles: tuple[Title, ...]
     dataset_root: Path
     sha256: dict[str, str]
+
+
+@dataclass(frozen=True)
+class PromptContract:
+    """Bind each modality to its actual retrieval role before encoding."""
+
+    direction: str
+    image_instruction: str
+    title_instruction: str
+
+
+def _prompt_contract(raw: dict[str, Any]) -> PromptContract:
+    direction = str(_nested(raw, "abo_image_text.retrieval_direction", "image_to_text"))
+    if direction == "image_to_text":
+        return PromptContract(direction, QUERY_INSTRUCTION, DOCUMENT_INSTRUCTION)
+    if direction == "text_to_image":
+        return PromptContract(
+            direction, DOCUMENT_INSTRUCTION, TEXT_TO_IMAGE_QUERY_INSTRUCTION
+        )
+    raise ValueError("retrieval_direction must be image_to_text or text_to_image")
+
+
+def _load_propagation_transition_checkpoint(
+    path: Path, replacement: Any, readout: Any,
+) -> tuple[dict[str, Any], dict[str, Any]]:
+    """Reuse electronics while retraining every phase for a new distance.
+
+    Propagation distance changes the transfer function, so feature and Router
+    phases are deliberately *not* copied.  Adapters, electronic residuals and
+    the 64-D readout remain a useful initialization and do not encode the old
+    free-space transfer function.
+    """
+
+    payload = torch.load(path, map_location="cpu", weights_only=False)
+    source_architecture = str(
+        payload.get("metadata", {}).get("optical_architecture", "")
+    )
+    target_architecture = str(replacement.checkpoint_architecture)
+    if "_10cm_17um_" not in source_architecture:
+        raise RuntimeError("Propagation transition requires a pinned 10 cm source")
+    if "_15cm_17um_" not in target_architecture:
+        raise RuntimeError("Propagation transition target must be the 15 cm graph")
+
+    fresh_by_modality: dict[str, list[str]] = {}
+    for label, module, source_key in (
+        ("vision", replacement.vision_surrogate, "vision_optical"),
+        ("language", replacement.language_surrogate, "language_optical"),
+    ):
+        target_state = module.state_dict()
+        phase_names = sorted(
+            name for name in target_state
+            if name.endswith("raw_phase") or name.endswith("raw_router_phase")
+        )
+        transferred = {
+            name: value for name, value in payload[source_key].items()
+            if name not in phase_names
+        }
+        incompatible = module.load_state_dict(transferred, strict=False)
+        if sorted(incompatible.missing_keys) != phase_names or incompatible.unexpected_keys:
+            raise RuntimeError(
+                f"Unsafe {label} 10 cm -> 15 cm transplant: "
+                f"missing={incompatible.missing_keys}, "
+                f"unexpected={incompatible.unexpected_keys}"
+            )
+        fresh_by_modality[label] = phase_names
+    readout.load_state_dict(payload["retrieval_readout"], strict=True)
+    replacement.reset_fusion_logits()
+    return payload, {
+        "source_architecture": source_architecture,
+        "target_architecture": target_architecture,
+        "fresh_phase_tensors": fresh_by_modality,
+        "transferred": "electronic residuals, adapters and 64-D readout",
+        "fusion_alpha_reset_to": replacement.fusion_diagnostics(),
+    }
 
 
 def _sha256(path: Path) -> str:
@@ -203,7 +280,9 @@ def _validate_text_token_budget(
         )
 
 
-def _save_resolved_abo_config(settings: Any, config: Path) -> None:
+def _save_resolved_abo_config(
+    settings: Any, config: Path, prompts: PromptContract
+) -> None:
     """Write the inherited optical contract with the correct T08 identity."""
 
     save_resolved_config(settings)
@@ -211,10 +290,20 @@ def _save_resolved_abo_config(settings: Any, config: Path) -> None:
     values = yaml.safe_load(path.read_text(encoding="utf-8"))
     values["lightgen"]["task"] = "t08_abo_image_text_retrieval"
     values["abo_image_text"] = {
-        "protocol": "single image query to 100 fixed English title candidates",
+        "protocol": (
+            "100 English title queries to 2400 held-out image documents"
+            if prompts.direction == "text_to_image" else
+            "single image query to 100 fixed English title candidates"
+        ),
         "dataset_config": str(config),
         "embedding_dim": EMBEDDING_DIM,
-        "query_instruction": QUERY_INSTRUCTION,
+        "retrieval_direction": prompts.direction,
+        "image_instruction": prompts.image_instruction,
+        "title_instruction": prompts.title_instruction,
+        "query_instruction": (
+            prompts.title_instruction
+            if prompts.direction == "text_to_image" else prompts.image_instruction
+        ),
         "document_instruction": DOCUMENT_INSTRUCTION,
     }
     path.write_text(
@@ -224,7 +313,10 @@ def _save_resolved_abo_config(settings: Any, config: Path) -> None:
 
 
 @torch.no_grad()
-def _teacher_image_embeddings(loaded: Any, samples: Sequence[GrocerySample], settings: Any) -> torch.Tensor:
+def _teacher_image_embeddings(
+    loaded: Any, samples: Sequence[GrocerySample], settings: Any,
+    prompts: PromptContract,
+) -> torch.Tensor:
     dataset = GroceryRetrievalDataset(samples, settings.image_size, augment=False)
     loader = DataLoader(
         dataset, batch_size=settings.teacher_batch_size, shuffle=False,
@@ -233,7 +325,9 @@ def _teacher_image_embeddings(loaded: Any, samples: Sequence[GrocerySample], set
     )
     chunks = []
     for index, batch in enumerate(loader, 1):
-        inputs = preprocess_images(loaded.processor, batch["images"], QUERY_INSTRUCTION)
+        inputs = preprocess_images(
+            loaded.processor, batch["images"], prompts.image_instruction
+        )
         validate_token_budgets(inputs, settings)
         chunks.append(teacher_embeddings(
             loaded.model, move_inputs(inputs, loaded.device), EMBEDDING_DIM
@@ -244,13 +338,16 @@ def _teacher_image_embeddings(loaded: Any, samples: Sequence[GrocerySample], set
 
 
 @torch.no_grad()
-def _teacher_title_embeddings(loaded: Any, titles: Sequence[Title], settings: Any) -> torch.Tensor:
+def _teacher_title_embeddings(
+    loaded: Any, titles: Sequence[Title], settings: Any,
+    prompts: PromptContract,
+) -> torch.Tensor:
     chunks = []
     for start in range(0, len(titles), settings.teacher_batch_size):
         inputs = _text_inputs(
             loaded.processor,
             [item.text for item in titles[start:start + settings.teacher_batch_size]],
-            DOCUMENT_INSTRUCTION,
+            prompts.title_instruction,
         )
         _validate_text_token_budget(inputs, settings)
         chunks.append(teacher_embeddings(
@@ -259,12 +356,16 @@ def _teacher_title_embeddings(loaded: Any, titles: Sequence[Title], settings: An
     return torch.cat(chunks)
 
 
-def teacher_cache(loaded: Any, contract: Contract, settings: Any, path: Path, force: bool) -> dict[str, Any]:
+def teacher_cache(
+    loaded: Any, contract: Contract, settings: Any, path: Path, force: bool,
+    prompts: PromptContract,
+) -> dict[str, Any]:
     identity = {
         "schema_version": 1, "dataset_sha256": contract.sha256,
         "model_id": settings.model_id, "embedding_dim": EMBEDDING_DIM,
-        "query_instruction": QUERY_INSTRUCTION,
-        "document_instruction": DOCUMENT_INSTRUCTION,
+        "retrieval_direction": prompts.direction,
+        "image_instruction": prompts.image_instruction,
+        "title_instruction": prompts.title_instruction,
         "train_ids": [sample.sample_id for sample in contract.train],
         "test_ids": [sample.sample_id for sample in contract.test],
         "title_product_ids": [title.product_id for title in contract.titles],
@@ -278,9 +379,9 @@ def teacher_cache(loaded: Any, contract: Contract, settings: Any, path: Path, fo
     started = time.perf_counter()
     payload = {
         "identity": identity,
-        "train": _teacher_image_embeddings(loaded, contract.train, settings),
-        "test": _teacher_image_embeddings(loaded, contract.test, settings),
-        "titles": _teacher_title_embeddings(loaded, contract.titles, settings),
+        "train": _teacher_image_embeddings(loaded, contract.train, settings, prompts),
+        "test": _teacher_image_embeddings(loaded, contract.test, settings, prompts),
+        "titles": _teacher_title_embeddings(loaded, contract.titles, settings, prompts),
         "elapsed_seconds": time.perf_counter() - started,
     }
     path.parent.mkdir(parents=True, exist_ok=True)
@@ -359,7 +460,8 @@ def _text_to_image_metrics(titles: torch.Tensor, images: torch.Tensor,
 
 @torch.no_grad()
 def _encode_titles_student(loaded: Any, replacement: Any, readout: Any,
-                           titles: Sequence[Title], settings: Any) -> torch.Tensor:
+                           titles: Sequence[Title], settings: Any,
+                           prompts: PromptContract) -> torch.Tensor:
     loaded.model.eval()
     replacement.use_student()
     replacement.vision_surrogate.eval()
@@ -372,7 +474,7 @@ def _encode_titles_student(loaded: Any, replacement: Any, readout: Any,
         inputs = _text_inputs(
             loaded.processor,
             [item.text for item in titles[start:start + settings.inference_batch_size]],
-            DOCUMENT_INSTRUCTION,
+            prompts.title_instruction,
         )
         _validate_text_token_budget(inputs, settings)
         with torch.autocast(device_type=loaded.device.type, dtype=amp_dtype,
@@ -386,16 +488,20 @@ def _encode_titles_student(loaded: Any, replacement: Any, readout: Any,
 
 @torch.no_grad()
 def evaluate(loaded: Any, replacement: Any, readout: Any, contract: Contract,
-             settings: Any, *, write_outputs: bool = False) -> dict[str, float]:
+             settings: Any, prompts: PromptContract, *,
+             write_outputs: bool = False) -> dict[str, float]:
     return evaluate_bidirectional(loaded, replacement, readout, contract, settings,
-                                  write_outputs=write_outputs)["image_to_text"]
+                                  prompts, write_outputs=write_outputs)["image_to_text"]
 
 
 @torch.no_grad()
 def evaluate_bidirectional(loaded: Any, replacement: Any, readout: Any, contract: Contract,
-                           settings: Any, *, write_outputs: bool = False) -> dict[str, Any]:
+                           settings: Any, prompts: PromptContract, *,
+                           write_outputs: bool = False) -> dict[str, Any]:
     query = encode_student_samples(loaded, replacement, readout, contract.test, settings)
-    titles = _encode_titles_student(loaded, replacement, readout, contract.titles, settings)
+    titles = _encode_titles_student(
+        loaded, replacement, readout, contract.titles, settings, prompts
+    )
     labels = [sample.sku_index for sample in contract.test]
     image_to_text, image_rows = _metrics(query, titles, labels)
     text_to_image, title_rows = _text_to_image_metrics(titles, query, labels)
@@ -429,7 +535,8 @@ def _title_image_symmetric_loss(image_embeddings: torch.Tensor, labels: torch.Te
 
 
 def train(loaded: Any, replacement: Any, readout: Any, contract: Contract,
-          cache: dict[str, Any], settings: Any, run_options: dict[str, Any]) -> dict[str, Any]:
+          cache: dict[str, Any], settings: Any, run_options: dict[str, Any],
+          prompts: PromptContract) -> dict[str, Any]:
     dataset = GroceryRetrievalDataset(
         contract.train, settings.image_size, augment=settings.augmentation_enabled,
         crop_scale_min=run_options["crop_scale_min"],
@@ -471,7 +578,9 @@ def train(loaded: Any, replacement: Any, readout: Any, contract: Contract,
     amp_dtype = torch.bfloat16 if settings.dtype == "bfloat16" else torch.float16
     use_amp = settings.amp_enabled and loaded.device.type == "cuda"
     if run_options["continuation"]:
-        initial = evaluate_bidirectional(loaded, replacement, readout, contract, settings)
+        initial = evaluate_bidirectional(
+            loaded, replacement, readout, contract, settings, prompts
+        )
         key = "hit_at_1" if selection_direction == "text_to_image" else "recall_at_1"
         initial_score = initial[selection_direction][key]
         best_epoch = 0
@@ -521,9 +630,12 @@ def train(loaded: Any, replacement: Any, readout: Any, contract: Contract,
             )
             unique_labels = torch.unique(labels, sorted=True)
             selected_titles = [contract.titles[int(label)] for label in unique_labels]
-            image_inputs = preprocess_images(loaded.processor, batch["images"], QUERY_INSTRUCTION)
+            image_inputs = preprocess_images(
+                loaded.processor, batch["images"], prompts.image_instruction
+            )
             title_inputs = _text_inputs(
-                loaded.processor, [item.text for item in selected_titles], DOCUMENT_INSTRUCTION
+                loaded.processor, [item.text for item in selected_titles],
+                prompts.title_instruction,
             )
             validate_token_budgets(image_inputs, settings)
             _validate_text_token_budget(title_inputs, settings)
@@ -643,10 +755,14 @@ def train(loaded: Any, replacement: Any, readout: Any, contract: Contract,
         evaluate_now = epoch % settings.test_evaluation_interval_epochs == 0 or epoch == settings.epochs
         if evaluate_now:
             if ema is None:
-                metrics = evaluate_bidirectional(loaded, replacement, readout, contract, settings)
+                metrics = evaluate_bidirectional(
+                    loaded, replacement, readout, contract, settings, prompts
+                )
             else:
                 with use_parameter_ema(parameters, ema):
-                    metrics = evaluate_bidirectional(loaded, replacement, readout, contract, settings)
+                    metrics = evaluate_bidirectional(
+                        loaded, replacement, readout, contract, settings, prompts
+                    )
             for direction, values in metrics.items():
                 row.update({f"test_{direction}_{key}": value for key, value in values.items()})
             selected_r1 = metrics[selection_direction]["hit_at_1" if selection_direction == "text_to_image" else "recall_at_1"]
@@ -690,6 +806,7 @@ def run(args: argparse.Namespace) -> dict[str, Any]:
     config = Path(args.config).expanduser().resolve()
     settings = load_settings(config)
     raw = _read_config(config)
+    prompts = _prompt_contract(raw)
     settings.router_optimization_seed = int(args.seed)
     settings.random_seed = int(args.seed)
     if args.epochs is not None:
@@ -742,10 +859,20 @@ def run(args: argparse.Namespace) -> dict[str, Any]:
     contract = load_contract(dataset_root)
     device = torch.device(args.device if args.device else settings.device)
     loaded = load_backbone(settings, device)
-    cache = teacher_cache(loaded, contract, settings, cache_path, args.force_teacher_cache)
-    teacher_metrics, _ = _metrics(
+    cache = teacher_cache(
+        loaded, contract, settings, cache_path, args.force_teacher_cache, prompts
+    )
+    teacher_image_to_text, _ = _metrics(
         cache["test"], cache["titles"], [sample.sku_index for sample in contract.test]
     )
+    teacher_text_to_image, _ = _text_to_image_metrics(
+        cache["titles"], cache["test"],
+        [sample.sku_index for sample in contract.test],
+    )
+    teacher_metrics = {
+        "image_to_text": teacher_image_to_text,
+        "text_to_image": teacher_text_to_image,
+    }
     replacement, readout = build_student(loaded, settings)
     try:
         resume_value = args.resume_checkpoint or _nested(raw, "abo_image_text.resume_checkpoint", None)
@@ -758,7 +885,17 @@ def run(args: argparse.Namespace) -> dict[str, Any]:
             if len(expected) != 64 or actual != expected:
                 raise RuntimeError("Pinned text-to-image resume checkpoint SHA256 mismatch")
             alpha_transition = bool(_nested(raw, "abo_image_text.allow_alpha_range_transition", False))
-            if alpha_transition:
+            distance_transition = bool(
+                _nested(raw, "abo_image_text.allow_propagation_distance_transition", False)
+            )
+            if alpha_transition and distance_transition:
+                raise ValueError("Alpha-range and propagation transitions cannot be combined")
+            transition_report = None
+            if distance_transition:
+                payload, transition_report = _load_propagation_transition_checkpoint(
+                    resume_path, replacement, readout
+                )
+            elif alpha_transition:
                 payload = torch.load(resume_path, map_location="cpu", weights_only=False)
                 source_architecture = payload.get("metadata", {}).get("optical_architecture")
                 expected_source = "lightgen_t01_optical_router_scale_matched_moe_10cm_17um_scale_matched_0p010_0p950_c736891c7a55f_v1"
@@ -773,12 +910,16 @@ def run(args: argparse.Namespace) -> dict[str, Any]:
             initialization = {"mode": "pinned_t08_continuation", "path": str(resume_path),
                               "sha256": actual, "source_epoch": payload.get("epoch"),
                               "alpha_range_transition": alpha_transition,
-                              "alpha_reset_to": settings.fusion_alpha_initial if alpha_transition else None}
+                              "alpha_reset_to": settings.fusion_alpha_initial if alpha_transition else None,
+                              "propagation_distance_transition": distance_transition,
+                              "transition_report": transition_report}
         else:
             initialization = initialize_student(settings, replacement, readout)
-        _save_resolved_abo_config(settings, config)
+        _save_resolved_abo_config(settings, config, prompts)
         write_json(settings.output_dir / "dataset_contract.json", {
-            "task": "ABO easy100 image-to-title", "train_samples": len(contract.train),
+            "task": f"ABO easy100 {prompts.direction}",
+            "matching_unit": "exact product SKU, not broad category",
+            "train_samples": len(contract.train),
             "test_samples": len(contract.test), "title_candidates": len(contract.titles),
             "sha256": contract.sha256,
         })
@@ -787,25 +928,40 @@ def run(args: argparse.Namespace) -> dict[str, Any]:
         write_json(settings.output_dir / "parameter_fairness_contract.json", parameter_fairness_contract(settings))
         write_json(settings.output_dir / "run_manifest.json", {
             "schema_version": 1, "task": "t08_abo_image_text_retrieval",
+            "retrieval_direction": prompts.direction,
+            "prompt_contract": {
+                "image_instruction": prompts.image_instruction,
+                "title_instruction": prompts.title_instruction,
+            },
             "architecture": "optical_router_top2_scale_matched_moe_dc20",
+            "propagation_distance_m": settings.language_optical_distance_m,
             "seed": args.seed, "git_commit": _git("rev-parse", "HEAD"),
             "git_dirty": bool(_git("status", "--porcelain")),
             "teacher_qwen_frozen": True, "teacher_trainable_parameters": 0,
             "checkpoint_selection": "maximum periodic EMA test R@1",
             "selection_biased": True, "embedding_dim": EMBEDDING_DIM,
-            "full_qwen_2048d_reference_recall_at_1": 0.7370833333333333,
+            "full_qwen_2048d_reference": (
+                {"hit_at_1": 0.80, "preprocessing": "fixed_224_white_pad"}
+                if prompts.direction == "text_to_image" else
+                {"recall_at_1": 0.7370833333333333, "preprocessing": "dynamic_shape"}
+            ),
             "hardware_matched_fixed_field_qwen_64d_reference": teacher_metrics,
-            "dynamic_shape_qwen_64d_reference_recall_at_1": 0.5979166666666667,
+            "dynamic_shape_qwen_64d_reference": (
+                {"hit_at_1": 0.65}
+                if prompts.direction == "text_to_image" else
+                {"recall_at_1": 0.5979166666666667}
+            ),
         })
         if args.evaluate_only:
             normal = evaluate_bidirectional(
-                loaded, replacement, readout, contract, settings, write_outputs=True
+                loaded, replacement, readout, contract, settings, prompts,
+                write_outputs=True
             )
             fusion = replacement.fusion_diagnostics()
             replacement.set_fusion_ablation("remove_optical")
             try:
                 removed = evaluate_bidirectional(
-                    loaded, replacement, readout, contract, settings
+                    loaded, replacement, readout, contract, settings, prompts
                 )
             finally:
                 replacement.set_fusion_ablation("none")
@@ -823,16 +979,19 @@ def run(args: argparse.Namespace) -> dict[str, Any]:
             }
             write_json(settings.output_dir / "final_report.json", report)
             return report
-        training = train(loaded, replacement, readout, contract, cache, settings, options)
+        training = train(
+            loaded, replacement, readout, contract, cache, settings, options, prompts
+        )
         load_checkpoint(settings.output_dir / "best_checkpoint.pt", replacement, readout)
         final_metrics = evaluate_bidirectional(
-            loaded, replacement, readout, contract, settings, write_outputs=True
+            loaded, replacement, readout, contract, settings, prompts,
+            write_outputs=True
         )
         fusion = replacement.fusion_diagnostics()
         replacement.set_fusion_ablation("remove_optical")
         try:
             removed_metrics = evaluate_bidirectional(
-                loaded, replacement, readout, contract, settings
+                loaded, replacement, readout, contract, settings, prompts
             )
         finally:
             replacement.set_fusion_ablation("none")
@@ -841,8 +1000,9 @@ def run(args: argparse.Namespace) -> dict[str, Any]:
             title=f"ABO easy100 optical Router MoE; best epoch {training['best_epoch']}",
         )
         report = {
-            "status": "complete", "task": "ABO easy100 image-to-title",
+            "status": "complete", "task": f"ABO easy100 {prompts.direction}",
             "method": "LightGen optical Router Top-2 MoE DC20 scale-matched fusion",
+            "propagation_distance_m": settings.language_optical_distance_m,
             "test_samples": len(contract.test), "title_candidates": len(contract.titles),
             "embedding_dim": EMBEDDING_DIM, "best_epoch": training["best_epoch"],
             "student": final_metrics[options["selection_direction"]],
@@ -853,15 +1013,13 @@ def run(args: argparse.Namespace) -> dict[str, Any]:
                 - removed_metrics["text_to_image"]["hit_at_1"]
             ),
             "hardware_matched_fixed_field_frozen_qwen_64d": teacher_metrics,
-            "dynamic_shape_frozen_qwen_64d_reference": {
-                "recall_at_1": 0.5979166666666667,
-                "recall_at_5": 0.8516666666666667,
-                "recall_at_10": 0.90625,
-                "mrr": 0.7150933891267973,
-            },
-            "frozen_qwen_2048d_reference": {
-                "recall_at_1": 0.7370833333333333, "recall_at_5": 0.93375,
-                "recall_at_10": 0.9604166666666667, "mrr": 0.8230330539977374,
+            "published_frozen_qwen_references": {
+                "image_to_text_dynamic_64d_recall_at_1": 0.5979166666666667,
+                "image_to_text_dynamic_2048d_recall_at_1": 0.7370833333333333,
+                "text_to_image_dynamic_64d_hit_at_1": 0.65,
+                "text_to_image_fixed224_64d_hit_at_1": 0.66,
+                "text_to_image_dynamic_2048d_hit_at_1": 0.82,
+                "text_to_image_fixed224_2048d_hit_at_1": 0.80,
             },
             "fusion": fusion,
             "selection_biased": True,

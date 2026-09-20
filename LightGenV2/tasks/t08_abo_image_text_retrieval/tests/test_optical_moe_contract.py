@@ -9,6 +9,8 @@ from LightGenV2.tasks.t08_abo_image_text_retrieval.optical_moe import (
     DOCUMENT_INSTRUCTION,
     EMBEDDING_DIM,
     QUERY_INSTRUCTION,
+    TEXT_TO_IMAGE_QUERY_INSTRUCTION,
+    _prompt_contract,
     _resolve_from_config,
     _text_to_image_metrics,
 )
@@ -34,6 +36,22 @@ def test_abo_optical_contract_matches_current_t01_hardware_graph() -> None:
 def test_abo_prompts_match_frozen_baseline() -> None:
     assert "product title" in QUERY_INSTRUCTION
     assert DOCUMENT_INSTRUCTION == "Represent the user's input."
+
+
+def test_true_text_to_image_assigns_query_and_document_roles() -> None:
+    prompts = _prompt_contract({
+        "abo_image_text": {"retrieval_direction": "text_to_image"}
+    })
+    assert prompts.title_instruction == TEXT_TO_IMAGE_QUERY_INSTRUCTION
+    assert prompts.image_instruction == DOCUMENT_INSTRUCTION
+
+
+def test_15cm_text_to_image_contract_is_a_distinct_geometry() -> None:
+    settings = load_settings(
+        TASK_DIR / "configs" / "optical_text_to_image_64_15cm_true.yaml"
+    )
+    assert settings.language_optical_distance_m == pytest.approx(0.15)
+    assert settings.expert_interlayer_distance_m == pytest.approx(0.15)
 
 
 def test_relative_paths_resolve_from_config(tmp_path) -> None:
