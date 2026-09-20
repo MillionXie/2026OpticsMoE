@@ -53,8 +53,20 @@ def checkpoint_architecture(settings: Any) -> str:
         f"{settings.fusion_alpha_min:.3f}_{settings.fusion_alpha_max:.3f}"
         .replace(".", "p")
     )
+    distance_cm = settings.language_optical_distance_m * 100.0
+    distance = (
+        f"{int(round(distance_cm))}cm"
+        if abs(distance_cm - round(distance_cm)) < 1.0e-9
+        else f"{distance_cm:.3f}cm".replace(".", "p")
+    )
+    pitch_um = settings.language_optical_pixel_pitch_um
+    pitch = (
+        str(int(round(pitch_um)))
+        if abs(pitch_um - round(pitch_um)) < 1.0e-9
+        else f"{pitch_um:.3f}".rstrip("0").rstrip(".").replace(".", "p")
+    )
     return (
-        f"lightgen_t01_{settings.lightgen_model_variant}_10cm_17um_"
+        f"lightgen_t01_{settings.lightgen_model_variant}_{distance}_{pitch}um_"
         f"scale_matched_{alpha}_c{settings.router_contract_sha256[:12]}_v1"
     )
 

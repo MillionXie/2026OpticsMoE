@@ -1,0 +1,55 @@
+base_config: optical_router_moe_dc20_kd1_balance1.yaml
+
+# Formal text-to-image geometry.  This is not a filename-only change: all
+# feature propagators and both optical Routers are rebuilt for 15 cm.
+language_optical:
+  distance_m: 0.15
+  allow_distance_override: true
+
+balanced_fusion:
+  alpha_initial: 0.15
+
+training:
+  epochs: 36
+  learning_rate: 0.00002
+  adapter_learning_rate: 0.000008
+  readout_learning_rate: 0.00002
+  phase_learning_rate: 0.006
+  router_learning_rate: 0.006
+  ema_decay: 0.99
+  lambda_router_balance: 0.14
+  lambda_router_importance: 0.035
+  lambda_router_hard_load_balance: 0.90
+
+augmentation:
+  enabled: true
+  crop_scale_min: 0.82
+  brightness_jitter: 0.15
+  contrast_jitter: 0.15
+  rotation_degrees: 7.0
+
+lightgen:
+  selection:
+    test_interval_epochs: 2
+
+abo_image_text:
+  # This controls encoder roles, not just which metric selects a checkpoint.
+  # English title = query; every held-out image = gallery document.
+  retrieval_direction: text_to_image
+  selection_direction: text_to_image
+  symmetric_title_to_image_weight: 1.25
+  teacher_kd_weight: 0.45
+  cache_file: ../runs/shared/abo_easy100_qwen64_true_text_to_image.pt
+
+  # Reuse only the electronic tensors/readout from the audited 10 cm run.
+  # Every feature phase and Router phase is freshly initialized for 15 cm.
+  resume_checkpoint: ../runs/simulation/optical_text_to_image_64_alpha04_refine_seed42_20260920/best_checkpoint.pt
+  resume_checkpoint_sha256: f81ce7d0ea3da31de09ea01392c47312969b84cc39244c43772d380224faba0cb
+  allow_propagation_distance_transition: true
+  alpha_curriculum:
+    start: 0.15
+    end: 0.40
+    warmup_epochs: 10
+    minimum_selected: 0.39
+
+output_dir: ../runs/simulation/optical_text_to_image_64_true_15cm_seed42_20260920

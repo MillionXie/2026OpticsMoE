@@ -292,8 +292,18 @@ def load_settings(path: str | Path) -> Any:
         raise ValueError(
             "hybrid.initial_fusion must be greater than the optical floor and below 1"
         )
+    allow_distance_override = bool(
+        d("language_optical.allow_distance_override", False)
+    )
     if abs(settings.language_optical_distance_m - 0.10) > 1.0e-12:
-        raise ValueError("The robust project requires exactly 10 cm propagation")
+        if not allow_distance_override:
+            raise ValueError(
+                "The robust project defaults to exactly 10 cm propagation; "
+                "set language_optical.allow_distance_override=true for an "
+                "explicit, separately trained geometry"
+            )
+        if not 0.01 <= settings.language_optical_distance_m <= 1.0:
+            raise ValueError("Explicit propagation distance must be in [0.01, 1.0] m")
     if settings.lambda_ccd_operating_point < 0.0:
         raise ValueError("lambda_ccd_operating_point must be nonnegative")
     if settings.language_optical_ccd_noise_distribution not in {
