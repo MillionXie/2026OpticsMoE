@@ -447,7 +447,20 @@ def train(loaded: Any, replacement: Any, readout: Any, contract: Contract,
         collate_fn=collate_grocery,
     )
     optimizer, parameters = _build_optimizer(replacement, readout, settings)
+    alpha_curriculum = run_options["alpha_curriculum"]
+    if alpha_curriculum:
+        for surrogate in (replacement.vision_surrogate, replacement.language_surrogate):
+            surrogate.core.block1_optical_fusion_logit.requires_grad_(False)
+            surrogate.core.block2_optical_fusion_logit.requires_grad_(False)
     ema = initialize_parameter_ema(parameters) if settings.ema_decay else None
+    curriculum_gate_ids = {
+        id(parameter)
+        for surrogate in (replacement.vision_surrogate, replacement.language_surrogate)
+        for parameter in (
+            surrogate.core.block1_optical_fusion_logit,
+            surrogate.core.block2_optical_fusion_logit,
+        )
+    } if alpha_curriculum else set()
     teacher_train = cache["train"].float()
     teacher_titles = cache["titles"].float()
     history: list[dict[str, Any]] = []
@@ -460,17 +473,37 @@ def train(loaded: Any, replacement: Any, readout: Any, contract: Contract,
     if run_options["continuation"]:
         initial = evaluate_bidirectional(loaded, replacement, readout, contract, settings)
         key = "hit_at_1" if selection_direction == "text_to_image" else "recall_at_1"
-        best_r1 = initial[selection_direction][key]
+        initial_score = initial[selection_direction][key]
         best_epoch = 0
-        save_checkpoint(best_path, replacement, readout, optimizer, 0, 0.0, settings,
-                        selection_criterion=f"initial_continuation_{selection_direction}_top1",
-                        test_metrics_used_for_selection=True)
+        initial_eligible = not alpha_curriculum
+        if initial_eligible:
+            best_r1 = initial_score
+            save_checkpoint(best_path, replacement, readout, optimizer, 0, 0.0, settings,
+                            selection_criterion=f"initial_continuation_{selection_direction}_top1",
+                            test_metrics_used_for_selection=True)
         history.append({"epoch": 0, "continuation_initial": True,
+                        "selection_eligible": initial_eligible,
                         **{f"test_{direction}_{name}": value
                            for direction, values in initial.items() for name, value in values.items()}})
         write_csv(settings.output_dir / "training_history.csv", history, list(history[0]))
-        print(f"[epoch 0] {selection_direction}R1={best_r1:.4f} continuation baseline", flush=True)
+        print(f"[epoch 0] {selection_direction}R1={initial_score:.4f} continuation baseline eligible={initial_eligible}", flush=True)
     for epoch in range(1, settings.epochs + 1):
+        scheduled_alpha = None
+        if alpha_curriculum:
+            fraction = min(1.0, epoch / alpha_curriculum["warmup_epochs"])
+            scheduled_alpha = alpha_curriculum["start"] + fraction * (
+                alpha_curriculum["end"] - alpha_curriculum["start"]
+            )
+            for surrogate in (replacement.vision_surrogate, replacement.language_surrogate):
+                surrogate.core.reset_fusion_logits(scheduled_alpha)
+            # The four fusion gates are externally scheduled rather than learned.
+            # Keep their EMA copies exactly on that schedule; otherwise periodic
+            # EMA evaluation silently reinstalls the old alpha~=0.05 values.
+            if ema is not None:
+                with torch.no_grad():
+                    for parameter, ema_parameter in zip(parameters, ema):
+                        if id(parameter) in curriculum_gate_ids:
+                            ema_parameter.copy_(parameter.detach().float())
         sampler.set_epoch(epoch)
         loaded.model.eval()
         replacement.set_student_train_mode()
@@ -596,6 +629,7 @@ def train(loaded: Any, replacement: Any, readout: Any, contract: Contract,
                 print(f"epoch={epoch:03d} batch={batch_index:03d}/{len(loader)} loss={totals['loss']/totals['samples']:.4f} trainR1={totals['correct']/totals['samples']:.4f}", flush=True)
         row: dict[str, Any] = {
             "epoch": epoch,
+            "scheduled_alpha": scheduled_alpha,
             **{name: totals[name] / totals["samples"] for name in (
                 "loss", "cross_modal", "symmetric", "kd", "balance",
                 "importance", "hard_load", "phase_dc", "ccd_operating",
@@ -616,7 +650,10 @@ def train(loaded: Any, replacement: Any, readout: Any, contract: Contract,
             for direction, values in metrics.items():
                 row.update({f"test_{direction}_{key}": value for key, value in values.items()})
             selected_r1 = metrics[selection_direction]["hit_at_1" if selection_direction == "text_to_image" else "recall_at_1"]
-            if selected_r1 > best_r1:
+            eligible = (not alpha_curriculum or
+                        scheduled_alpha >= alpha_curriculum["minimum_selected"])
+            row["selection_eligible"] = eligible
+            if eligible and selected_r1 > best_r1:
                 best_r1 = selected_r1
                 best_epoch = epoch
                 if ema is None:
@@ -644,6 +681,8 @@ def train(loaded: Any, replacement: Any, readout: Any, contract: Contract,
             optimizer, epoch, row["loss"], settings,
             selection_criterion="last_epoch", test_metrics_used_for_selection=False,
         )
+    if not best_path.is_file():
+        raise RuntimeError("No alpha-eligible checkpoint was evaluated; adjust schedule/eval interval")
     return {"best_epoch": best_epoch, "best_recall_at_1": best_r1, "history": history}
 
 
@@ -655,6 +694,14 @@ def run(args: argparse.Namespace) -> dict[str, Any]:
     settings.random_seed = int(args.seed)
     if args.epochs is not None:
         settings.epochs = int(args.epochs)
+    if args.steps_per_epoch is not None:
+        if args.steps_per_epoch < 1:
+            raise ValueError("--steps-per-epoch must be positive")
+        settings.optimizer_steps_per_epoch = int(args.steps_per_epoch)
+    if args.eval_every is not None:
+        if args.eval_every < 1:
+            raise ValueError("--eval-every must be positive")
+        settings.test_evaluation_interval_epochs = int(args.eval_every)
     if args.run_dir:
         settings.output_dir = Path(args.run_dir).expanduser().resolve()
     settings.output_dir.mkdir(parents=True, exist_ok=True)
@@ -673,9 +720,22 @@ def run(args: argparse.Namespace) -> dict[str, Any]:
         "selection_direction": str(_nested(raw, "abo_image_text.selection_direction", "image_to_text")),
         "continuation": bool(args.resume_checkpoint or
                              _nested(raw, "abo_image_text.resume_checkpoint", None)),
+        "alpha_curriculum": _nested(raw, "abo_image_text.alpha_curriculum", None),
     }
     if options["selection_direction"] not in ("image_to_text", "text_to_image"):
         raise ValueError("selection_direction must be image_to_text or text_to_image")
+    if options["alpha_curriculum"]:
+        schedule = options["alpha_curriculum"]
+        if (set(schedule) != {"start", "end", "warmup_epochs", "minimum_selected"}
+                or not settings.fusion_alpha_min < float(schedule["start"]) < float(schedule["end"]) < settings.fusion_alpha_max
+                or int(schedule["warmup_epochs"]) < 1
+                or not float(schedule["start"]) <= float(schedule["minimum_selected"]) <= float(schedule["end"])):
+            raise ValueError("Invalid alpha curriculum")
+        options["alpha_curriculum"] = {
+            "start": float(schedule["start"]), "end": float(schedule["end"]),
+            "warmup_epochs": int(schedule["warmup_epochs"]),
+            "minimum_selected": float(schedule["minimum_selected"]),
+        }
     if settings.embedding_dim != EMBEDDING_DIM:
         raise ValueError("The current optical hardware contract requires 64-D retrieval")
     seed_everything(args.seed)
@@ -822,6 +882,10 @@ def main() -> int:
     parser.add_argument("--device", default=None)
     parser.add_argument("--seed", type=int, default=42)
     parser.add_argument("--epochs", type=int)
+    parser.add_argument("--steps-per-epoch", type=int,
+                        help="Diagnostic override for optimizer batches in each epoch")
+    parser.add_argument("--eval-every", type=int,
+                        help="Diagnostic override for periodic test evaluation")
     parser.add_argument("--force-teacher-cache", action="store_true")
     parser.add_argument("--evaluate-only", action="store_true",
                         help="Pinned checkpoint raw-image bidirectional and same-weight no-optical audit")
