@@ -1,0 +1,22 @@
+model:
+  noise_dim: 256
+  condition_dim: 256
+  mapping_depth: 4
+  generator_channels: [512, 384, 256, 256, 256]
+  discriminator_width: 48
+training:
+  batch_size: 16
+  epochs: 120
+  generator_learning_rate: 2.0e-4
+  discriminator_learning_rate: 2.0e-4
+  num_workers: 4
+  amp: true
+  augmentation_probability: 0.40
+  ema_halflife_kimg: 10.0
+  sample_every_epochs: 5
+  checkpoint_every_epochs: 5
+loss:
+  adversarial_weight: 1.0
+  category_weight: 1.0
+  feature_matching_weight: 0.20
+  latent_moment_weight: 0.10
