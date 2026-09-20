@@ -1,6 +1,6 @@
 # T08 商品检索（图搜文）
 
-## 2026-09-20 纯文搜图可行性（独立协议，尚未光学训练）
+## 2026-09-20 纯文搜图（独立协议）
 
 新增 `text_to_image_baseline.py`：冻结 Qwen3-VL-Embedding-2B，100个官方英文标题为纯文本query，
 2400张test图为gallery，每query有24张同SKU相关图；无查询图片、无标题附着于gallery图像。
@@ -17,7 +17,7 @@ CUDA_VISIBLE_DEVICES=4 HF_HUB_OFFLINE=1 TRANSFORMERS_OFFLINE=1 python -m LightGe
 保留原光路、Top2与同尺度融合，文本长度可变须独立设计padding/mask，不能套T07固定77token输入。
 训练文本-TRAIN图像的同SKU多正例目标，test只参与既定评估/选模；同标题参与训练只代表已登记目录的新图检索，
 不声称未见文本泛化。若需要自然新描述泛化，应预先制作独立描述，或采用SKU互斥划分作为另一协议。
-本次仅baseline，未启动光学训练。完成结果见对应run/report.json。
+完成结果见对应 run 的 `final_report.json`。
 
 已完成固定冻结权重原图推理（源码`1e218991a`，物理GPU4 RTX4090；PID1202253已退出释放）：
 
@@ -30,8 +30,36 @@ CUDA_VISIBLE_DEVICES=4 HF_HUB_OFFLINE=1 TRANSFORMERS_OFFLINE=1 python -m LightGe
 
 证据：`runs/simulation/text_to_image_frozen_20260920/report.json`与四份逐标题predictions JSON。
 单一query文本无图片。报告含模型权重/配置、数据清单及每张图库照片SHA；完整隐藏向量可重算64/2048指标。
-64维是取冻结embedding前64维再L2，不学习投影。光学尚无本协议结果，不能用旧图搜文79.88%代替。
+64维是取冻结embedding前64维再L2，不学习投影。
 建议预注册同预算64D主对照并同时保留2048D强参照，未来若追求完整大模型差距≤5pp，需以82%为参照目标≥77%。
+
+### 64D 光电文搜图正式候选
+
+训练沿用同一份 easy100 合同：100 个已见商品，train 每商品 48 张、test 每商品
+24 张；100 条官方英文标题作为文本 query，2,400 张 test 图作为 gallery。该协议衡量
+“同一已见商品的新视角检索”，不代表未见 SKU 泛化。checkpoint 仍按周期 test Hit@1
+选择，因此属于 test-selected。
+
+| 方法 | α | Hit@1 | Hit@5 | Hit@10 | MRR | mAP | 同权重去光 Hit@1 |
+|---|---:|---:|---:|---:|---:|---:|---:|
+| 冻结 Qwen，动态长宽 / 64D |—|65%|75%|83%|0.7051|0.5796|—|
+| 冻结 Qwen，固定 224 白边 / 64D |—|66%|77%|84%|0.7090|0.5691|—|
+| 光 Router MoE，渐进 α 后低学习率精修 |0.40|**81%**|**92%**|**95%**|**0.8532**|**0.7327**|61%|
+| 冻结 Qwen，动态长宽 / 2048D 强参照 |—|82%|90%|96%|0.8560|0.7719|—|
+
+正式候选为精修 epoch 14，checkpoint SHA256
+`f81ce7d0ea3da31de09ea01392c47312969b84cc39244c43772d380224faba0cb`。
+四个融合门均为 `(1-0.40)E + 0.40O`，且先做 RMS 同尺度对齐；同权重去光后
+Hit@1 从 81% 降至 61%，即光支路贡献为 20 个百分点。Vision Router 的四专家
+选择占比为 26.05%/24.00%/25.52%/24.43%；Language 为一个共享专家固定占据
+Top-2 的一个槽，另一槽在其余三专家间轮换。训练使用
+`configs/optical_text_to_image_64_alpha_curriculum.yaml` 后接
+`configs/optical_text_to_image_64_alpha04_refine.yaml`，保持 64D、Top-2、原光学几何、
+20%–30% 训练期相干未调制强度和鲁棒噪声合同不变。
+
+曾把旧“图搜文”checkpoint 的相似度矩阵转置做过诊断：文搜图 Hit@1 为 89%，
+但同权重去光仍为 89%。这不是此前独立训练过的文搜图结果，也不能作为正式光学
+结果；它仅说明旧共享嵌入空间的电子残差很强，并用于确定渐进提高 α 的必要性。
 
 本任务是 ABO easy100 的单张商品图像到官方英文标题检索，不是图搜图：100 个
 商品、4,800 张 train、2,400 张 test、100 个唯一标题候选。性能均在完整 test
