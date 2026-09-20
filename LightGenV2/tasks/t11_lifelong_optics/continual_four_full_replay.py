@@ -65,11 +65,15 @@ def main():
                 for epoch in range(1,cfg['epochs_warmup_'+name]+1):
                     value=train_current_epoch(model,opt,tasks[group]['x'],tasks[group]['y'],rng.permutation(len(tasks[group]['y'])),
                                               cfg['batch_size'],rng,warmup=True)
-                    validation={old:evaluate(model,tasks[j]['vx'],tasks[j]['vy'],cfg['eval_batch_size'])[0]
-                                for j,old in enumerate('ABCD'[:group+1])}
-                    history.append({'stage':'warmup_'+name,'epoch':epoch,'train_nll':value,'validation':validation})
+                    old_mask=[i < 4*group for i in range(cfg['num_experts'])]
+                    old_validation={old:evaluate(model,tasks[j]['vx'],tasks[j]['vy'],cfg['eval_batch_size'],mask=old_mask)[0]
+                                    for j,old in enumerate('ABCD'[:group])}
+                    new_validation=evaluate(model,tasks[group]['vx'],tasks[group]['vy'],cfg['eval_batch_size'],warmup=True)[0]
+                    history.append({'stage':'warmup_'+name,'epoch':epoch,'train_nll':value,
+                                    'old_prefix':old_validation,'new_uniform':new_validation})
                     save(a.out/'history.json',history);print(json.dumps({'stage':'warmup_'+name,'epoch':epoch,'loss':value,
-                          'val_bal_acc':{k:v['balanced_accuracy'] for k,v in validation.items()}}),flush=True)
+                          'old_bal_acc':{k:v['balanced_accuracy'] for k,v in old_validation.items()},
+                          'new_bal_acc':new_validation['balanced_accuracy']}),flush=True)
                 for n,pv in model.named_parameters():
                     if n in frozen and not torch.equal(pv,frozen[n]):raise RuntimeError('Frozen changed '+n)
                 audit.append({'stage':'warmup_'+name,'frozen_unchanged':list(frozen)})
