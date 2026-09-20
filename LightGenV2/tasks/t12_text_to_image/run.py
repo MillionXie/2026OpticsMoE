@@ -95,7 +95,8 @@ def run(args: argparse.Namespace) -> dict[str, Any]:
     elif args.phase == "cache":
         result = build_feature_cache(settings, device, force=args.force)
     elif args.phase == "train":
-        result = train(settings, device)
+        init_checkpoint = Path(args.init_checkpoint).expanduser().resolve() if args.init_checkpoint else None
+        result = train(settings, device, init_checkpoint=init_checkpoint)
     elif args.phase == "evaluate":
         from .evaluation import evaluate
         checkpoint = (
@@ -105,7 +106,8 @@ def run(args: argparse.Namespace) -> dict[str, Any]:
         result = evaluate(settings, checkpoint, settings.output_dir / "evaluation", device)
     else:
         build_feature_cache(settings, device, force=args.force)
-        result = train(settings, device)
+        init_checkpoint = Path(args.init_checkpoint).expanduser().resolve() if args.init_checkpoint else None
+        result = train(settings, device, init_checkpoint=init_checkpoint)
     _write_json(settings.output_dir / f"{args.phase}_result.json", result)
     return result
 
@@ -120,6 +122,11 @@ def main() -> int:
     parser.add_argument("--qwen-checkpoint", default=None)
     parser.add_argument("--vae-checkpoint", default=None)
     parser.add_argument("--checkpoint", default=None)
+    parser.add_argument(
+        "--init-checkpoint",
+        default=None,
+        help="Warm-start model weights only; optimizer and epoch numbering start fresh",
+    )
     parser.add_argument("--force", action="store_true")
     args = parser.parse_args()
     print(json.dumps(run(args), ensure_ascii=False, indent=2), flush=True)

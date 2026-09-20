@@ -114,6 +114,11 @@ python -m LightGenV2.tasks.t12_text_to_image.compare `
   --output-dir LightGenV2\tasks\t12_text_to_image\runs\simulation\matched_comparison
 ```
 
+GAN 锐化阶段可通过 `--init-checkpoint <首轮 best_checkpoint.pt>` 仅加载生成器与 posterior
+权重。浅层 latent head 的输出卷积会自动映射到深层 head，新插入的 residual decoder block
+以接近恒等映射开始；优化器、判别器和 epoch 计数均从头开始，warm-start 来源会写入每个
+checkpoint 和 `training_summary.json`。
+
 服务器正式运行时可以用 `--data-dir`、`--qwen-checkpoint` 和 `--vae-checkpoint` 显式指向
 仓库外的冻结资产；解析后的绝对路径会写入 `resolved_config.json`，避免 worktree 被数据文件
 污染，也避免缓存阶段临时访问模型网络。

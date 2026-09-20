@@ -14,6 +14,7 @@ from LightGenV2.tasks.t12_text_to_image.modeling import (
     build_model,
 )
 from LightGenV2.tasks.t12_text_to_image.settings import load_settings
+from LightGenV2.tasks.t12_text_to_image.training import _load_warmstart
 
 
 TASK_DIR = Path(__file__).resolve().parents[1]
@@ -120,3 +121,34 @@ def test_deep_single_pass_decoder_and_patch_discriminator_shapes() -> None:
     assert logits.shape[0] == 2
     assert logits.ndim == 4
     assert len(features) == 4
+
+
+def test_deep_decoder_can_warmstart_from_shallow_checkpoint(tmp_path: Path) -> None:
+    shallow_settings = load_settings(TASK_DIR / "configs" / "qwen_vae_baseline.yaml")
+    deep_settings = load_settings(TASK_DIR / "configs" / "qwen_vae_baseline_gan.yaml")
+    shallow = build_model(shallow_settings)
+    with torch.no_grad():
+        shallow.generator.text_projection[1].weight.fill_(0.125)
+        shallow.generator.head.net[6].weight.fill_(0.25)
+    checkpoint = tmp_path / "shallow.pt"
+    torch.save({
+        "epoch": 80,
+        "variant": shallow_settings.variant,
+        "settings": shallow_settings.to_dict(),
+        "architecture": shallow.architecture_report(),
+        "model": shallow.state_dict(),
+    }, checkpoint)
+
+    deep = build_model(deep_settings)
+    report = _load_warmstart(deep, deep_settings, checkpoint)
+
+    assert report["source_epoch"] == 80
+    assert report["source_decoder_depth"] == 0
+    assert report["target_decoder_depth"] == 4
+    assert report["new_tensors"]
+    assert all(key.startswith("generator.head.net.") for key in report["new_tensors"])
+    assert torch.equal(
+        deep.generator.text_projection[1].weight,
+        shallow.generator.text_projection[1].weight,
+    )
+    assert torch.equal(deep.generator.head.net[10].weight, shallow.generator.head.net[6].weight)

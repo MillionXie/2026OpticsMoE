@@ -258,7 +258,9 @@ class DecoderResidualBlock(nn.Module):
             nn.GroupNorm(8, width), nn.SiLU(), nn.Conv2d(width, width, 3, padding=1),
             nn.GroupNorm(8, width), nn.SiLU(), nn.Conv2d(width, width, 3, padding=1),
         )
-        self.gate = nn.Parameter(torch.tensor(-1.0))
+        # Start each newly inserted decoder block close to an identity map so a
+        # shallow checkpoint can be sharpened without destroying its semantics.
+        self.gate = nn.Parameter(torch.tensor(-3.0))
 
     def forward(self, value: torch.Tensor) -> torch.Tensor:
         return value + torch.sigmoid(self.gate) * self.net(value)

@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import json
 import random
+from pathlib import Path
 from typing import Any
 
 import numpy as np
@@ -82,6 +83,81 @@ def _epoch(
 def _set_requires_grad(module: torch.nn.Module, enabled: bool) -> None:
     for parameter in module.parameters():
         parameter.requires_grad_(enabled)
+
+
+def _load_warmstart(
+    model: TextConditionedVAE,
+    settings: Settings,
+    checkpoint: str | Path,
+) -> dict[str, Any]:
+    """Load model weights while allowing decoder residual blocks to be inserted.
+
+    A depth-zero latent head stores its two suffix convolutions at indices 4 and
+    6. Deeper heads insert residual blocks before that suffix, so these two
+    tensors need deterministic index translation. All other parameters must
+    either match exactly or belong to newly inserted decoder blocks.
+    """
+
+    path = Path(checkpoint).expanduser().resolve()
+    payload = torch.load(path, map_location="cpu", weights_only=False)
+    if payload.get("variant") != settings.variant:
+        raise ValueError(
+            f"Warm-start variant {payload.get('variant')!r} does not match {settings.variant!r}"
+        )
+    source = payload.get("model")
+    if not isinstance(source, dict):
+        raise ValueError(f"Warm-start checkpoint has no model state: {path}")
+    source_settings = payload.get("settings", {})
+    source_architecture = payload.get("architecture", {})
+    source_depth = int(
+        source_settings.get(
+            "decoder_depth", source_architecture.get("decoder_residual_depth", 0)
+        )
+    )
+    target_depth = int(settings.decoder_depth)
+    target = model.state_dict()
+    translated: dict[str, torch.Tensor] = {}
+    skipped: list[str] = []
+    remapped: dict[str, str] = {}
+    suffix_indices = {
+        4 + source_depth: 4 + target_depth,
+        6 + source_depth: 6 + target_depth,
+    }
+    for key, value in source.items():
+        candidate = key
+        for source_index, target_index in suffix_indices.items():
+            prefix = f"generator.head.net.{source_index}."
+            if source_depth != target_depth and key.startswith(prefix):
+                candidate = f"generator.head.net.{target_index}." + key[len(prefix):]
+                remapped[key] = candidate
+                break
+        if candidate in target and target[candidate].shape == value.shape:
+            translated[candidate] = value
+        else:
+            skipped.append(key)
+    incompatible = model.load_state_dict(translated, strict=False)
+    allowed_missing_prefixes = tuple(
+        f"generator.head.net.{index}." for index in range(4, 4 + target_depth)
+    )
+    illegal_missing = [
+        key for key in incompatible.missing_keys
+        if not key.startswith(allowed_missing_prefixes)
+    ]
+    if skipped or incompatible.unexpected_keys or illegal_missing:
+        raise ValueError(
+            "Incompatible warm-start checkpoint: "
+            f"skipped={skipped}, unexpected={incompatible.unexpected_keys}, "
+            f"illegal_missing={illegal_missing}"
+        )
+    return {
+        "path": str(path),
+        "source_epoch": payload.get("epoch"),
+        "source_decoder_depth": source_depth,
+        "target_decoder_depth": target_depth,
+        "copied_tensors": len(translated),
+        "remapped_tensors": remapped,
+        "new_tensors": list(incompatible.missing_keys),
+    }
 
 
 def _discriminator_loss(
@@ -192,13 +268,21 @@ def _adversarial_epoch(
     return {key: value / samples for key, value in totals.items()}
 
 
-def train(settings: Settings, device: torch.device) -> dict[str, Any]:
+def train(
+    settings: Settings,
+    device: torch.device,
+    *,
+    init_checkpoint: str | Path | None = None,
+) -> dict[str, Any]:
     seed_everything(settings.seed)
     settings.output_dir.mkdir(parents=True, exist_ok=True)
     existing = [settings.output_dir / name for name in ("best_checkpoint.pt", "last_checkpoint.pt")]
     if any(path.exists() for path in existing):
         raise FileExistsError("Training checkpoints already exist; choose a new --run-dir to preserve the run")
     model = build_model(settings, device)
+    warmstart = _load_warmstart(model, settings, init_checkpoint) if init_checkpoint else None
+    if warmstart:
+        print(json.dumps({"warmstart": warmstart}), flush=True)
     optimizer = torch.optim.AdamW(
         model.parameters(), lr=settings.learning_rate, weight_decay=settings.weight_decay
     )
@@ -242,6 +326,7 @@ def train(settings: Settings, device: torch.device) -> dict[str, Any]:
             "model": model.state_dict(),
             "optimizer": optimizer.state_dict(),
             "val": val_metrics,
+            "warmstart": warmstart,
         }
         if discriminator is not None and discriminator_optimizer is not None:
             payload["discriminator"] = discriminator.state_dict()
@@ -256,9 +341,10 @@ def train(settings: Settings, device: torch.device) -> dict[str, Any]:
         "epochs": settings.epochs,
         "adversarial_enabled": settings.adversarial_enabled,
         "architecture": model.architecture_report(),
+        "warmstart": warmstart,
     }
     (settings.output_dir / "training_summary.json").write_text(json.dumps(report, indent=2) + "\n", encoding="utf-8")
     return report
 
 
-__all__ = ["seed_everything", "train"]
+__all__ = ["_load_warmstart", "seed_everything", "train"]

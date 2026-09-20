@@ -5,15 +5,15 @@ model:
   decoder_depth: 4
 training:
   batch_size: 16
-  epochs: 60
+  epochs: 25
 loss:
   kl_weight: 0.01
-  kl_warmup_epochs: 10
+  kl_warmup_epochs: 5
 adversarial:
   enabled: true
   discriminator_width: 48
   learning_rate: 1.0e-4
-  start_epoch: 5
+  start_epoch: 0
   posterior_weight: 0.05
   prior_weight: 0.05
   feature_matching_weight: 0.10
