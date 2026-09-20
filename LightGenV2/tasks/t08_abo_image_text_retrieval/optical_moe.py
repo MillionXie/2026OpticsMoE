@@ -457,6 +457,19 @@ def train(loaded: Any, replacement: Any, readout: Any, contract: Contract,
     best_path = settings.output_dir / "best_checkpoint.pt"
     amp_dtype = torch.bfloat16 if settings.dtype == "bfloat16" else torch.float16
     use_amp = settings.amp_enabled and loaded.device.type == "cuda"
+    if run_options["continuation"]:
+        initial = evaluate_bidirectional(loaded, replacement, readout, contract, settings)
+        key = "hit_at_1" if selection_direction == "text_to_image" else "recall_at_1"
+        best_r1 = initial[selection_direction][key]
+        best_epoch = 0
+        save_checkpoint(best_path, replacement, readout, optimizer, 0, 0.0, settings,
+                        selection_criterion=f"initial_continuation_{selection_direction}_top1",
+                        test_metrics_used_for_selection=True)
+        history.append({"epoch": 0, "continuation_initial": True,
+                        **{f"test_{direction}_{name}": value
+                           for direction, values in initial.items() for name, value in values.items()}})
+        write_csv(settings.output_dir / "training_history.csv", history, list(history[0]))
+        print(f"[epoch 0] {selection_direction}R1={best_r1:.4f} continuation baseline", flush=True)
     for epoch in range(1, settings.epochs + 1):
         sampler.set_epoch(epoch)
         loaded.model.eval()
@@ -656,6 +669,8 @@ def run(args: argparse.Namespace) -> dict[str, Any]:
         "contrast_jitter": float(_nested(raw, "augmentation.contrast_jitter", 0.1)),
         "rotation_degrees": float(_nested(raw, "augmentation.rotation_degrees", 5.0)),
         "selection_direction": str(_nested(raw, "abo_image_text.selection_direction", "image_to_text")),
+        "continuation": bool(args.resume_checkpoint or
+                             _nested(raw, "abo_image_text.resume_checkpoint", None)),
     }
     if options["selection_direction"] not in ("image_to_text", "text_to_image"):
         raise ValueError("selection_direction must be image_to_text or text_to_image")
