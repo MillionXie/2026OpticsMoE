@@ -19,6 +19,7 @@ from torch.utils.data import DataLoader, TensorDataset
 
 from .dataset import CachedLatentDataset, read_manifest
 from .electronic_turbo import QwenTurboConditionAdapter, TurboAdapterConfig
+from .feature_cache import _encode_qwen
 from .settings import Settings
 
 
@@ -55,6 +56,47 @@ def _teacher_prompt(caption: str) -> str:
         f"a full view studio product photo of one {noun}, {geometry}{attribute_phrase}, "
         f"{visibility}, centered, plain neutral background, clean product photography"
     )
+
+
+def _synthetic_product_prompts() -> list[str]:
+    """Small text-only coverage set; it adds no images and is never used for metric evaluation."""
+
+    styles = ("minimalist", "retro", "Scandinavian", "industrial", "watercolor illustration style", "modern")
+    colors = ("red", "orange", "mustard yellow", "teal blue", "matte black", "white", "forest green", "dark brown")
+    materials = {
+        "chair": ("velvet", "leather", "linen", "wood"),
+        "lamp": ("painted metal", "brushed steel", "ceramic", "wood"),
+        "shoe": ("leather", "suede", "canvas", "textile"),
+        "table": ("dark walnut", "oak wood", "painted metal", "marble"),
+    }
+    return [
+        f"a {style} {color} {material} {category} on a plain neutral background"
+        for category, category_materials in materials.items()
+        for style in styles
+        for color in colors
+        for material in category_materials
+    ]
+
+
+@torch.inference_mode()
+def _encode_synthetic_qwen(
+    prompts: Sequence[str], qwen_checkpoint: Path, batch_size: int, device: torch.device
+) -> torch.Tensor:
+    from transformers import AutoProcessor, Qwen3VLForConditionalGeneration
+
+    processor = AutoProcessor.from_pretrained(qwen_checkpoint, local_files_only=True)
+    qwen = Qwen3VLForConditionalGeneration.from_pretrained(
+        qwen_checkpoint, local_files_only=True,
+        torch_dtype=torch.bfloat16 if device.type == "cuda" else torch.float32,
+        attn_implementation="sdpa",
+    ).to(device).eval().requires_grad_(False)
+    chunks = []
+    for start in range(0, len(prompts), batch_size):
+        chunks.append(_encode_qwen(qwen, processor, prompts[start : start + batch_size], device))
+    del qwen, processor
+    if device.type == "cuda":
+        torch.cuda.empty_cache()
+    return torch.cat(chunks)
 
 
 @torch.inference_mode()
@@ -186,6 +228,7 @@ def train_turbo_adapter(
     settings: Settings,
     config: TurboAdapterConfig,
     turbo_checkpoint: Path,
+    qwen_checkpoint: Path,
     output_dir: Path,
     device: torch.device,
 ) -> dict[str, Any]:
@@ -196,15 +239,28 @@ def train_turbo_adapter(
         shutil.copy2(license_path, output_dir / "SD_TURBO_LICENSE.md")
     rows = {split: read_manifest(settings.data_dir / f"{split}.jsonl") for split in ("train", "val")}
     cached = {split: CachedLatentDataset(settings.cache_dir / f"{split}.pt") for split in rows}
+    synthetic_prompts = _synthetic_product_prompts() if config.synthetic_text_augmentation else []
+    synthetic_qwen = (
+        _encode_synthetic_qwen(synthetic_prompts, qwen_checkpoint, config.qwen_batch_size, device)
+        if synthetic_prompts else torch.empty(0, settings.text_dim)
+    )
     teacher = {
         split: _encode_teacher(
             [item.caption for item in rows[split]], turbo_checkpoint, config.teacher_batch_size, device
         )
         for split in rows
     }
+    synthetic_teacher = (
+        _encode_teacher(synthetic_prompts, turbo_checkpoint, config.teacher_batch_size, device)
+        if synthetic_prompts else torch.empty(0, *teacher["train"].shape[1:])
+    )
     torch.save(
-        {split: {"sample_ids": cached[split].payload["sample_ids"], "condition": teacher[split].half()}
-         for split in teacher},
+        {
+            **{split: {"sample_ids": cached[split].payload["sample_ids"], "condition": teacher[split].half()}
+               for split in teacher},
+            "synthetic": {"prompts": synthetic_prompts, "qwen": synthetic_qwen.half(),
+                          "condition": synthetic_teacher.half()},
+        },
         output_dir / "teacher_condition_cache.pt",
     )
     token_count, condition_dim = teacher["train"].shape[1:]
@@ -214,10 +270,12 @@ def train_turbo_adapter(
         if item.caption not in seen_captions:
             seen_captions.add(item.caption)
             unique_indices.append(index)
+    manifold_teacher = torch.cat((teacher["train"][unique_indices], synthetic_teacher))
     mean, basis, coefficient_mean, coefficient_std, _ = _fit_condition_manifold(
-        teacher["train"][unique_indices], config.pca_rank, device
+        manifold_teacher, config.pca_rank, device
     )
-    train_flat = teacher["train"].flatten(1).float()
+    train_teacher = torch.cat((teacher["train"], synthetic_teacher))
+    train_flat = train_teacher.flatten(1).float()
     train_coefficients = (train_flat - mean) @ basis.T
     train_targets = (train_coefficients - coefficient_mean) / coefficient_std
     adapter = QwenTurboConditionAdapter(
@@ -227,7 +285,7 @@ def train_turbo_adapter(
     optimizer = torch.optim.AdamW(
         adapter.parameters(), lr=config.learning_rate, weight_decay=config.weight_decay
     )
-    train_qwen = cached["train"].payload["text"].float()
+    train_qwen = torch.cat((cached["train"].payload["text"].float(), synthetic_qwen.float()))
     loader = DataLoader(
         TensorDataset(train_qwen, train_targets), batch_size=config.batch_size, shuffle=True,
         num_workers=config.num_workers, generator=torch.Generator().manual_seed(settings.seed),
@@ -282,6 +340,8 @@ def train_turbo_adapter(
         "best_validation_normalized_mse": best_mse,
         "teacher_prompt_template": _teacher_prompt("<caption>"),
         "turbo_checkpoint": str(turbo_checkpoint),
+        "qwen_checkpoint": str(qwen_checkpoint),
+        "synthetic_text_prompts": len(synthetic_prompts),
     }
     torch.save(payload, output_dir / "best_adapter.pt")
     (output_dir / "history.json").write_text(json.dumps(history, indent=2) + "\n", encoding="utf-8")
@@ -290,6 +350,7 @@ def train_turbo_adapter(
         "best_validation_normalized_mse": best_mse,
         "architecture": adapter.architecture_report(),
         "training_flow": "cached Qwen text -> trainable condition adapter -> frozen CLIP condition manifold",
+        "synthetic_text_prompts": len(synthetic_prompts),
         "inference_flow": "Qwen text + seeded Gaussian latent -> one frozen SD-Turbo UNet call -> one frozen VAE decode",
         "final_sample": final_sample,
     }

@@ -25,6 +25,8 @@ class TurboAdapterConfig:
     teacher_batch_size: int
     sample_every_epochs: int
     early_stopping_patience: int
+    synthetic_text_augmentation: bool
+    qwen_batch_size: int
 
     def validate(self) -> None:
         if min(self.pca_rank, self.hidden_dim, self.depth, self.batch_size, self.epochs) <= 0:
@@ -51,6 +53,8 @@ def load_turbo_adapter_config(path: str | Path) -> TurboAdapterConfig:
         teacher_batch_size=int(training["teacher_batch_size"]),
         sample_every_epochs=int(training["sample_every_epochs"]),
         early_stopping_patience=int(training["early_stopping_patience"]),
+        synthetic_text_augmentation=bool(training.get("synthetic_text_augmentation", False)),
+        qwen_batch_size=int(training.get("qwen_batch_size", 16)),
     )
     config.validate()
     return config

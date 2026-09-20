@@ -12,3 +12,5 @@ training:
   teacher_batch_size: 32
   sample_every_epochs: 50
   early_stopping_patience: 80
+  synthetic_text_augmentation: true
+  qwen_batch_size: 16

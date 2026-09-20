@@ -19,6 +19,7 @@ def main() -> int:
     parser.add_argument("--data-dir", type=Path, required=True)
     parser.add_argument("--run-dir", type=Path, required=True)
     parser.add_argument("--turbo-checkpoint", type=Path, required=True)
+    parser.add_argument("--qwen-checkpoint", type=Path, required=True)
     parser.add_argument("--device", default="cuda" if torch.cuda.is_available() else "cpu")
     args = parser.parse_args()
     settings = load_settings(TASK_DIR / "configs/qwen_vae_baseline.yaml")
@@ -27,6 +28,7 @@ def main() -> int:
     config = load_turbo_adapter_config(args.config.expanduser().resolve())
     report = train_turbo_adapter(
         settings, config, args.turbo_checkpoint.expanduser().resolve(),
+        args.qwen_checkpoint.expanduser().resolve(),
         settings.output_dir, torch.device(args.device),
     )
     print(json.dumps(report, indent=2), flush=True)

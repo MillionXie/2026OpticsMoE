@@ -17,7 +17,10 @@ from LightGenV2.tasks.t12_text_to_image.electronic_turbo import (
     QwenTurboConditionAdapter,
     load_turbo_adapter_config,
 )
-from LightGenV2.tasks.t12_text_to_image.electronic_turbo_training import _teacher_prompt
+from LightGenV2.tasks.t12_text_to_image.electronic_turbo_training import (
+    _synthetic_product_prompts,
+    _teacher_prompt,
+)
 from LightGenV2.tasks.t12_text_to_image.electronic_turbo_infer import _load_adapter
 
 
@@ -108,3 +111,6 @@ def test_turbo_teacher_prompt_requests_full_single_object() -> None:
     assert "black leather material and color" in prompt
     assert "laces and sole clearly visible" in prompt
     assert "entire shoe visible" in prompt
+    synthetic = _synthetic_product_prompts()
+    assert len(synthetic) == 768
+    assert any("watercolor illustration style red leather shoe" in value for value in synthetic)
