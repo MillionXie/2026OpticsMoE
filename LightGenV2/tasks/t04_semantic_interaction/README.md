@@ -1,5 +1,12 @@
 # T04 语义交互（OpenMoji）
 
+## 2026-09-20：场景大小与遮挡设计（仅预览）
+
+新增 `layered_scene_preview.py`：使用OpenMoji官方SVG、独立对象尺寸、底边锚点与显式前后顺序，
+制作大房屋/小动物等三组构图及四种操作的人工目标。预览、资产来源与待确认的数据合同见
+[场景设计说明](reports/layered_scene_design_20260920/README.md)。当前未接入训练、未占GPU；
+图中Target不是Prediction。原6×6单层网格模型无法直接表达所有遮挡属性，须确认新输出合同后再实验。
+
 ## 2026-09-17：用户指定展示第65轮
 
 恢复入口：`offline_tune.py --project 工程 --session test1000_02 --output 新run --replay-from 原100轮run --epochs 100 --stop-after-epoch 65 --lr 0.0001 --batch-size 32 --seed 20260916 --device cuda`。复用校验后的实测缓存，从原始模型及新AdamW重放，不加载原best/last；100轮学习率曲线不缩短。每轮记录与原历史的指标/loss误差，最后重载last核验全部三组、四操作指标；失败标为replay_mismatch，不冒充恢复成功。选定权重是新run的last（epoch65），不是自动best。
