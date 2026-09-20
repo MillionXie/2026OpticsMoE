@@ -8,7 +8,7 @@ import numpy as np
 import torch
 from torch.nn import functional as F
 
-from LightGenV2.tasks.t09_multimodal_matching.model import TextEncoder, encode
+from LightGenV2.tasks.t09_multimodal_matching.model import TextEncoder
 from LightGenV2.tasks.t09_multimodal_matching.prepare import tokens
 
 
@@ -35,6 +35,23 @@ def load_common(root, split):
     return torch.from_numpy(d["fields"]), np.asarray(d["labels"], dtype=np.int64), rows
 
 
+def normalize_power(x, power):
+    return x * (power / x.square().sum((-2, -1), keepdim=True).clamp_min(1e-20)).sqrt()
+
+
+def encode_clevr(images, word_grid):
+    """Pack all RGB channels into the left half and text into the right half."""
+    if images.ndim != 4 or images.shape[-1] != 3:
+        raise ValueError("CLEVR images must be NHWC RGB")
+    rgb = images.permute(0, 3, 1, 2).float() / 255.0
+    rgb = F.interpolate(rgb, (112, 56), mode="bilinear", align_corners=False)
+    blank = torch.zeros_like(rgb[:, 0])
+    visual = torch.cat((torch.cat((rgb[:, 0], rgb[:, 1]), -1),
+                        torch.cat((rgb[:, 2], blank), -1)), -2)
+    text = F.interpolate(word_grid[:, None], (224, 112), mode="nearest")[:, 0]
+    return torch.cat((normalize_power(visual, 0.5), normalize_power(text, 0.5)), -1)
+
+
 def prepare_clevr(source, out):
     """Materialize the existing fixed text/RGB encoding into the common format.
 
@@ -59,7 +76,7 @@ def prepare_clevr(source, out):
         with torch.no_grad():
             for i in range(0, len(rows), 128):
                 index = torch.tensor([r["image_local"] for r in rows[i:i+128]])
-                fields.append(encode(images[index], encoder(ids[i:i+128]), "left_right"))
+                fields.append(encode_clevr(images[index], encoder(ids[i:i+128])))
         return torch.cat(fields).numpy().astype(np.float16), np.array([r["label"] for r in rows]), rows
 
     train = read("train")
@@ -76,7 +93,7 @@ def prepare_clevr(source, out):
         (out / f"{split}_records.json").write_text(json.dumps(rows, indent=2) + "\n")
     protocol = {"task": "clevr", "classes": 2,
                 "scope": "existing CC-BY-4.0 attribute query package; source validation images split 50/50 into model-independent val/test",
-                "input": "RGB image and fixed word-position one-hot, left/right, power 0.5 each",
+                "input": "RGB channels packed as [R,G;B,zero] in left half; fixed word-position one-hot in right half; power 0.5 each",
                 "source_manifest_sha256": source_manifest_sha,
                 "split_seed": 17}
     (out / "protocol.json").write_text(json.dumps(protocol, indent=2) + "\n")

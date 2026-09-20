@@ -31,7 +31,8 @@ phase 和 OEO 尺寸在 4→8→12 扩展中不变。router CCD 对全部 12 个
 ## 数据和指标
 
 - SEN12MS：春季 scene-disjoint 子集，SAR+S2，10 类；主指标 macro-F1。
-- CLEVR：RGB+问题，二分类。现有包没有公开 test 文件，本任务按 image id 和 seed 17
+- CLEVR：RGB 三通道按 `[R,G;B,空白]` 保真打包到左半场，问题文本位于右半场，二分类。
+  现有包没有公开 test 文件，本任务按 image id 和 seed 17
   将原 validation 图像无交叠地固定分成新 validation/test；主指标 balanced accuracy。
 - SONYC-UST：audio-0 子集，音频+事件查询，未知标签不作负例；主指标逐事件 macro-AP。
 
@@ -59,4 +60,3 @@ python -m LightGenV2.tasks.t12_cross_modal_lifelong \
 
 去掉 `--phase smoke` 运行初始训练。run 保存配置、命令、Git commit、数据 manifest、
 逐轮验证、best/last checkpoint、逐样本概率与路由、最终 comparison.json。运行目录不覆盖。
-
