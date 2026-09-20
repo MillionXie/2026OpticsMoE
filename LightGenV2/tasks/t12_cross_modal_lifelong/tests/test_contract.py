@@ -4,6 +4,7 @@ import torch
 from LightGenV2.tasks.t12_cross_modal_lifelong.model import CrossModalOptics, normalize_power
 from LightGenV2.tasks.t12_cross_modal_lifelong.data import encode_clevr
 from LightGenV2.tasks.t12_cross_modal_lifelong.prepare_physical_concepts import rank
+from LightGenV2.tasks.t12_cross_modal_lifelong.run import combine_current_replay
 
 
 class ContractTest(unittest.TestCase):
@@ -63,6 +64,12 @@ class ContractTest(unittest.TestCase):
                   sum(.70 <= x < .85 for x in buckets),
                   sum(x >= .85 for x in buckets)]
         self.assertTrue(all(count > 100 for count in counts), counts)
+
+    def test_current_task_weight_does_not_shrink_with_task_count(self):
+        current = torch.tensor(2.0)
+        replay = [torch.tensor(1.0), torch.tensor(3.0), torch.tensor(5.0)]
+        self.assertEqual(float(combine_current_replay(current, replay, 1.0)), 2.5)
+        self.assertEqual(float(combine_current_replay(current, [], 1.0)), 2.0)
 
     def test_clevr_rgb_text_packing(self):
         images = torch.zeros(2, 20, 30, 3, dtype=torch.uint8)

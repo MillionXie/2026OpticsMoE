@@ -230,6 +230,14 @@ def chunks(indices, size):
     return [indices[i:i+size] for i in range(0, len(indices), size)]
 
 
+def combine_current_replay(current_loss, replay_losses, replay_weight):
+    """Keep current-task weight stable as the number of old tasks grows."""
+    if not replay_losses:
+        return current_loss
+    replay_loss = torch.stack(replay_losses).mean()
+    return (current_loss + replay_weight * replay_loss) / (1.0 + replay_weight)
+
+
 def train_lifelong_moe(tasks, cfg, out, device):
     root = out / "lifelong_moe"; root.mkdir()
     seed_all(cfg["seed"])
@@ -262,11 +270,13 @@ def train_lifelong_moe(tasks, cfg, out, device):
                            for j,(old,ix) in enumerate(replay.items())}
             for step,current in enumerate(current_chunks):
                 optimizer.zero_grad(set_to_none=True)
-                terms=[task_loss(model,task,current,device,balance=cfg["route_balance"])]
+                current_loss=task_loss(model,task,current,device,balance=cfg["route_balance"])
+                replay_losses=[]
                 for old in TASK_ORDER[:task_index]:
                     pool=replay_chunks[old]; ix=pool[step%len(pool)]
-                    terms.append(task_loss(model,tasks[old],ix,device,balance=cfg["route_balance"])*cfg["replay_weight"])
-                loss=torch.stack(terms).mean();loss.backward();torch.nn.utils.clip_grad_norm_([p for p in model.parameters() if p.requires_grad],1.0);optimizer.step();losses.append(float(loss.detach()))
+                    replay_losses.append(task_loss(model,tasks[old],ix,device,balance=cfg["route_balance"]))
+                loss=combine_current_replay(current_loss,replay_losses,cfg["replay_weight"])
+                loss.backward();torch.nn.utils.clip_grad_norm_([p for p in model.parameters() if p.requires_grad],1.0);optimizer.step();losses.append(float(loss.detach()))
             scheduler.step()
             val={n:evaluate(model,tasks[n],"val",device,cfg["eval_batch"],task_index)[0] for n in TASK_ORDER[:task_index+1]}
             score=float(np.mean([selection_score(n,val[n]) for n in val]))

@@ -11,7 +11,8 @@
   因而在训练开始时能访问全部四种模态。
 - **Ours**：固定 16 槽光学 MoE，按 SEN12MS → CLEVR → SONYC → Physical Concepts 顺序学习。每个新任务启用
   四个预分配专家；旧专家和旧任务读出头冻结，router/global phase 通过当前数据和每个
-  旧任务最多 512 条 replay 继续更新。
+  旧任务最多 512 条 replay 继续更新。当前任务占主阶段损失的 50%，其余 50% 在旧任务
+  replay 间平均，避免后期新模态权重随旧任务数量降到 1/3 或 1/4。
 - 两者共享 1026×1026 分类传播画布、两次角谱传播、两层分类相位、每层 centered-LeakyReLU +
   Softsign OEO、输入功率和训练数据；MoE 另有共享 router phase 与一次路由探测传播。
 
