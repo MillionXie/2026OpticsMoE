@@ -1,4 +1,4 @@
-"""Load the three audited common-field datasets and prepare CLEVR fields."""
+"""Load four audited common-field datasets and prepare CLEVR fields."""
 import hashlib
 import json
 import argparse
