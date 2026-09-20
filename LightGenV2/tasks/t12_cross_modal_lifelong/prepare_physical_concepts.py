@@ -1,7 +1,9 @@
 """Prepare a deterministic CC-BY-4.0 video plausibility subset."""
 import argparse
+import gzip
 import hashlib
 import json
+import struct
 import urllib.request
 from collections import Counter
 from pathlib import Path
@@ -9,12 +11,52 @@ from pathlib import Path
 import numpy as np
 import torch
 import torch.nn.functional as F
-from tfrecord import tfrecord_loader
+from google.protobuf import descriptor_pb2, descriptor_pool, message_factory
 
 
 OFFICIAL_ROOT = "https://storage.googleapis.com/physical_concepts/probes"
 LICENSE_PAGE = "https://github.com/google-deepmind/physical_concepts#license-and-disclaimer"
 FRAME_INDEX = np.linspace(0, 14, 8).round().astype(int)
+
+
+def example_message_class():
+    """Build the small tf.train.Example schema with the installed protobuf."""
+    fd = descriptor_pb2.FileDescriptorProto(name="tf_example.proto", package="tensorflow", syntax="proto3")
+    def message(name):
+        m = fd.message_type.add(); m.name = name; return m
+    def field(parent, name, number, kind, label=3, type_name=None, oneof=None):
+        f=parent.field.add();f.name=name;f.number=number;f.type=kind;f.label=label
+        if type_name:f.type_name=type_name
+        if oneof is not None:f.oneof_index=oneof
+    bytes_list=message("BytesList");field(bytes_list,"value",1,12)
+    float_list=message("FloatList");field(float_list,"value",1,2)
+    int_list=message("Int64List");field(int_list,"value",1,3)
+    feature=message("Feature");feature.oneof_decl.add().name="kind"
+    field(feature,"bytes_list",1,11,label=1,type_name=".tensorflow.BytesList",oneof=0)
+    field(feature,"float_list",2,11,label=1,type_name=".tensorflow.FloatList",oneof=0)
+    field(feature,"int64_list",3,11,label=1,type_name=".tensorflow.Int64List",oneof=0)
+    features=message("Features");entry=features.nested_type.add();entry.name="FeatureEntry";entry.options.map_entry=True
+    field(entry,"key",1,9,label=1);field(entry,"value",2,11,label=1,type_name=".tensorflow.Feature")
+    field(features,"feature",1,11,type_name=".tensorflow.Features.FeatureEntry")
+    example=message("Example");field(example,"features",1,11,label=1,type_name=".tensorflow.Features")
+    pool=descriptor_pool.DescriptorPool();pool.Add(fd)
+    return message_factory.GetMessageClass(pool.FindMessageTypeByName("tensorflow.Example"))
+
+
+EXAMPLE = example_message_class()
+
+
+def records(path):
+    """Read gzip-compressed TFRecord framing and decode tf.train.Example."""
+    with gzip.open(path, "rb") as stream:
+        while True:
+            size_bytes=stream.read(8)
+            if not size_bytes:return
+            if len(size_bytes)!=8:raise ValueError(f"truncated TFRecord length: {path}")
+            size=struct.unpack("<Q",size_bytes)[0];stream.read(4)
+            payload=stream.read(size);stream.read(4)
+            if len(payload)!=size:raise ValueError(f"truncated TFRecord payload: {path}")
+            yield EXAMPLE.FromString(payload)
 
 
 def sha(path):
@@ -49,10 +91,9 @@ def main():
         if not path.exists():
             urllib.request.urlretrieve(f"{OFFICIAL_ROOT}/{a.concept}/{name}", path)
         paths.append(path)
-    description = {"possible_image": "byte", "impossible_image": "byte"}
     candidates = []
     for shard, path in enumerate(paths):
-        for row, record in enumerate(tfrecord_loader(str(path), None, description, compression_type="gzip")):
+        for row, record in enumerate(records(path)):
             candidates.append((rank(f"{a.concept}:{shard}:{row}"), shard, row, record))
     selected = sorted(candidates, key=lambda x: x[0])[:a.max_quadruplets]
     result = {s:([], [], []) for s in ("train", "val", "test")}
@@ -62,8 +103,7 @@ def main():
         split = "train" if bucket < .70 else ("val" if bucket < .85 else "test")
         split_counts[split] += 1
         for kind, label in (("possible", 1), ("impossible", 0)):
-            raw = record[f"{kind}_image"]
-            if isinstance(raw, np.ndarray): raw = raw.reshape(-1)[0]
+            raw = record.features.feature[f"{kind}_image"].bytes_list.value[0]
             videos = np.frombuffer(raw, dtype=np.uint8).reshape(2, 15, 64, 64, 3)
             for pair in range(2):
                 field = encode_video(videos[pair])

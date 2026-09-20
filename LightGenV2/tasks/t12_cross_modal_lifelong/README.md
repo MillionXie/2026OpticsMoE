@@ -55,7 +55,6 @@ python -m LightGenV2.tasks.t12_cross_modal_lifelong.data \
 下载并准备视频子集：
 
 ```bash
-pip install -r LightGenV2/tasks/t12_cross_modal_lifelong/requirements.txt
 python -m LightGenV2.tasks.t12_cross_modal_lifelong.prepare_physical_concepts \
   --cache /path/physical_concepts_raw --out /path/physical_concepts_continuity_s17
 ```
