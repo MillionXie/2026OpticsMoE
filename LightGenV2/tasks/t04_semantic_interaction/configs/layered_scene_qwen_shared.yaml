@@ -1,0 +1,20 @@
+base_config: layered_scene_focus_changed_iou.yaml
+
+# Fair baseline for the layered-scene task.  The complete frozen native Qwen3-VL
+# vision/language stack replaces both optical cores; the final supervised
+# readout and the train/test protocol remain identical to the optical method.
+lightgen:
+  model_variant: qwen_frozen_shared_readout
+
+model:
+  phase_dropout_p: 0.0
+
+loss:
+  ccd: 0.0
+  router_balance: 0.0
+  router_importance: 0.0
+  router_hard_load_balance: 0.0
+  router_semantic_code: 0.0
+  phase_dc: 0.0
+
+output_dir: ../runs/simulation/layered_scene_qwen_shared_s73_e100

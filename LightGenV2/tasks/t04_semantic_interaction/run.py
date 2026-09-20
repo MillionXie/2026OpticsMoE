@@ -44,6 +44,7 @@ PROFILES = {
     "layered_scene_pilot": "layered_scene_pilot.yaml",
     "layered_scene_formal": "layered_scene_formal.yaml",
     "layered_scene_focus_changed_iou": "layered_scene_focus_changed_iou.yaml",
+    "layered_scene_qwen_shared": "layered_scene_qwen_shared.yaml",
 }
 PHASES = {"prepare", "train", "evaluate", "all"}
 
@@ -64,9 +65,15 @@ def _git_value(*arguments: str) -> str | None:
 
 def _ensure_data(settings: Any, device: torch.device) -> dict[str, Any]:
     if settings.qwen_shared_baseline:
-        from .embedding_data import prepare_embedding_data
         from .qwen_shared import prepare_native_cache
-        summary = prepare_embedding_data(settings)
+        if settings.layout_version == "layered_anchor6_svg_v3":
+            from .layered_scene_data import prepare_layered_embedding_data
+
+            summary = prepare_layered_embedding_data(settings)
+        else:
+            from .embedding_data import prepare_embedding_data
+
+            summary = prepare_embedding_data(settings)
         prepare_native_cache(settings, device)
         return summary
     if settings.embedding_only:
