@@ -15,6 +15,28 @@
 全部重新初始化并在 15 cm 下重训。checkpoint 架构字符串也显式含 `15cm_17um`，
 因此 10 cm/15 cm 权重不能静默混用。
 
+正式单卡训练已完成（seed 42，36 epoch，每 2 epoch 按 TEST Hit@1 选 EMA best）：
+
+| 方法 | 距离 | 维度 | α | Hit@1 | Hit@5 | Hit@10 | MRR | mAP |
+|---|---:|---:|---:|---:|---:|---:|---:|---:|
+| 15 cm 光 Router Top-2 MoE | 15 cm | 64 | 0.40 | **90%** | 97% | 97% | 0.9272 | 0.7859 |
+| 同一权重去光 | — | 64 | 0 | 60% | 78% | 85% | 0.6760 | 0.5776 |
+
+最佳为 epoch 36；去光下降 30 个百分点。四处同尺度融合的实际 α 均为
+`0.39999995`，并且归一化后光/电 RMS 比均为 1，因此 40%不是被电子数值范围淹没的
+名义系数。best checkpoint SHA256 为
+`1d324e33261d79970323d9effaca9e42a3b46287d74c340c71fed9f4d85cf6eb`。
+
+训练最后一轮的 Router 选择计数：Vision 为 `[2388,2410,2389,2413]`（基本均衡）；
+Language 图像为 `[4800,1872,1539,1389]`，纯文本为 `[1600,652,520,428]`。
+因此 Language 的 expert 0 固定占据一个 Top-2 槽位，第二槽在其余三专家间分布；这不是
+四专家完全坍缩，但也不能声称完全均衡，后续硬件部署与消融必须保留这条披露。
+
+服务器证据目录：
+`LightGenV2/tasks/t08_abo_image_text_retrieval/runs/simulation/optical_text_to_image_64_true_15cm_seed42_20260920/`；
+其中 `final_report.json`、`training_history.csv`、`architecture.json`、
+`best_phase_overview.png` 和 `best_checkpoint.pt` 为正式证据。
+
 ### 冻结 Qwen 维度口径（不要混表）
 
 64D 是 Qwen3-VL-Embedding 的 Matryoshka 截断口径，用于和 64D 光电输出做同维度、
