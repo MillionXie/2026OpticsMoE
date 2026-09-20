@@ -3,6 +3,7 @@ import torch
 
 from LightGenV2.tasks.t12_cross_modal_lifelong.model import CrossModalOptics, normalize_power
 from LightGenV2.tasks.t12_cross_modal_lifelong.data import encode_clevr
+from LightGenV2.tasks.t12_cross_modal_lifelong.prepare_physical_concepts import rank
 
 
 class ContractTest(unittest.TestCase):
@@ -39,6 +40,15 @@ class ContractTest(unittest.TestCase):
     def test_power_normalization(self):
         x = normalize_power(torch.rand(3, 224, 224))
         self.assertTrue(torch.allclose(x.square().sum((-2, -1)), torch.ones(3), atol=1e-5))
+
+    def test_video_subset_and_split_use_independent_hashes(self):
+        identities = [f"continuity:{i // 100}:{i % 100}" for i in range(2000)]
+        selected = sorted(identities, key=rank)[:1024]
+        buckets = [int(rank(x, "split")[:8], 16) / 0xffffffff for x in selected]
+        counts = [sum(x < .70 for x in buckets),
+                  sum(.70 <= x < .85 for x in buckets),
+                  sum(x >= .85 for x in buckets)]
+        self.assertTrue(all(count > 100 for count in counts), counts)
 
     def test_clevr_rgb_text_packing(self):
         images = torch.zeros(2, 20, 30, 3, dtype=torch.uint8)

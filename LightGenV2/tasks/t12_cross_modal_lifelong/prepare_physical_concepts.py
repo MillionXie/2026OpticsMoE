@@ -63,8 +63,9 @@ def sha(path):
     return hashlib.sha256(Path(path).read_bytes()).hexdigest()
 
 
-def rank(value):
-    return hashlib.sha256(("17:" + value).encode()).hexdigest()
+def rank(value, namespace="select"):
+    """Independent deterministic hashes for subset selection and splitting."""
+    return hashlib.sha256((f"{namespace}:17:" + value).encode()).hexdigest()
 
 
 def encode_video(video):
@@ -99,7 +100,8 @@ def main():
     result = {s:([], [], []) for s in ("train", "val", "test")}
     split_counts = Counter()
     for digest, shard, row, record in selected:
-        bucket = int(digest[:8], 16) / 0xffffffff
+        identity = f"{a.concept}:{shard}:{row}"
+        bucket = int(rank(identity, "split")[:8], 16) / 0xffffffff
         split = "train" if bucket < .70 else ("val" if bucket < .85 else "test")
         split_counts[split] += 1
         for kind, label in (("possible", 1), ("impossible", 0)):
