@@ -3,6 +3,7 @@ model:
   condition_dim: 256
   mapping_depth: 4
   generator_channels: [512, 384, 256, 256, 256]
+  noise_spatial_channels: 64
   discriminator_width: 48
 training:
   batch_size: 16
@@ -12,7 +13,7 @@ training:
   num_workers: 4
   amp: true
   augmentation_probability: 0.40
-  ema_halflife_kimg: 10.0
+  ema_halflife_kimg: 2.0
   sample_every_epochs: 5
   checkpoint_every_epochs: 5
 loss:
@@ -20,3 +21,7 @@ loss:
   category_weight: 1.0
   feature_matching_weight: 0.20
   latent_moment_weight: 0.10
+  latent_discriminator_weight: 0.25
+  text_category_weight: 1.0
+  diversity_weight: 1.0
+  diversity_target: 0.10

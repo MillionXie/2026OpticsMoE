@@ -15,7 +15,7 @@ TASK_DIR = Path(__file__).resolve().parents[1]
 
 def test_prior_only_electronic_generator_is_single_pass_and_seeded() -> None:
     config = load_electronic_gan_config(TASK_DIR / "configs/qwen_vae_prior_gan.yaml")
-    generator = QwenElectronicGenerator(64, config).eval()
+    generator = QwenElectronicGenerator(64, config, categories=4).eval()
     text = torch.randn(2, 64)
     first = generator.generate(text, seed=42)
     assert first.shape == (2, 4, 28, 28)
@@ -36,4 +36,4 @@ def test_joint_discriminator_and_paired_augmentation_contract() -> None:
     score, category, features = discriminator(augmented_image, augmented_latent, text)
     assert score.shape == (2, 1)
     assert category.shape == (2, 4)
-    assert len(features) == 6
+    assert len(features) == 8

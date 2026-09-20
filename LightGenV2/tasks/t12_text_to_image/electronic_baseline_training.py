@@ -138,8 +138,11 @@ def _train_epoch(
         with torch.autocast(
             device_type=device.type, dtype=torch.bfloat16, enabled=config.amp and device.type == "cuda"
         ):
-            fake_latent = generator(text, noise)
+            fake_latent, text_category = generator.forward_with_aux(text, noise)
             fake_image = _decode(vae, fake_latent, scaling)
+            second_noise = generator.sample_noise(len(text), device)
+            second_latent = generator(text, second_noise)
+            second_image = _decode(vae, second_latent, scaling)
             real_augmented, real_latent_augmented = augment_image_latent_pair(
                 real_image, real_latent, config.augmentation_probability
             )
@@ -178,13 +181,18 @@ def _train_epoch(
             )
             generator_adversarial = -fake_score.float().mean()
             generator_category = F.cross_entropy(fake_category.float(), labels)
+            text_category_loss = F.cross_entropy(text_category.float(), labels)
             feature_matching = _feature_matching_loss(fake_features, [value.detach() for value in real_features])
             latent_moments = _latent_moment_loss(fake_latent, real_latent)
+            visible_difference = (fake_image.float() - second_image.float()).abs().mean((1, 2, 3))
+            diversity = F.relu(config.diversity_target - visible_difference).mean()
             generator_loss = (
                 config.adversarial_weight * generator_adversarial
                 + config.category_weight * generator_category
                 + config.feature_matching_weight * feature_matching
                 + config.latent_moment_weight * latent_moments
+                + config.text_category_weight * text_category_loss
+                + config.diversity_weight * diversity
             )
         generator_loss.backward()
         torch.nn.utils.clip_grad_norm_(generator.parameters(), 5.0)
@@ -198,8 +206,11 @@ def _train_epoch(
             "generator_loss": float(generator_loss.detach()),
             "generator_adversarial": float(generator_adversarial.detach()),
             "generator_category": float(generator_category.detach()),
+            "text_category": float(text_category_loss.detach()),
             "feature_matching": float(feature_matching.detach()),
             "latent_moments": float(latent_moments.detach()),
+            "diversity_penalty": float(diversity.detach()),
+            "visible_seed_difference": float(visible_difference.detach().mean()),
             "discriminator_loss": float(discriminator_loss.detach()),
             "discriminator_hinge": float(discriminator_hinge.detach()),
             "discriminator_category": float(discriminator_category.detach()),
@@ -311,7 +322,7 @@ def train_electronic_baseline(
     generator = QwenElectronicGenerator(settings.text_dim, config, settings.latent_channels).to(device)
     ema = copy.deepcopy(generator).eval().requires_grad_(False)
     discriminator = ConditionalImageLatentDiscriminator(
-        settings.text_dim, len(categories), config.discriminator_width
+        settings.text_dim, len(categories), config.discriminator_width, config.latent_discriminator_weight
     ).to(device)
     generator_optimizer = torch.optim.AdamW(
         generator.parameters(), lr=config.generator_learning_rate, betas=(0.0, 0.99), weight_decay=0.0
@@ -338,7 +349,8 @@ def train_electronic_baseline(
             row["validation"] = _validate(
                 ema, discriminator, vae, val_loader, categories, config, device, settings.seed + 10_000
             )
-            _write_seed_grid(ema, vae, settings, categories, epoch, output_dir / "samples", device)
+            _write_seed_grid(generator, vae, settings, categories, epoch, output_dir / "samples/raw", device)
+            _write_seed_grid(ema, vae, settings, categories, epoch, output_dir / "samples/ema", device)
         history.append(row)
         print(json.dumps(row), flush=True)
         payload = {

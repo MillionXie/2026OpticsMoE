@@ -24,6 +24,7 @@ class ElectronicGANConfig:
     condition_dim: int
     mapping_depth: int
     generator_channels: tuple[int, ...]
+    noise_spatial_channels: int
     discriminator_width: int
     batch_size: int
     epochs: int
@@ -36,6 +37,10 @@ class ElectronicGANConfig:
     category_weight: float
     feature_matching_weight: float
     latent_moment_weight: float
+    latent_discriminator_weight: float
+    text_category_weight: float
+    diversity_weight: float
+    diversity_target: float
     ema_halflife_kimg: float
     sample_every_epochs: int
     checkpoint_every_epochs: int
@@ -45,6 +50,8 @@ class ElectronicGANConfig:
             raise ValueError("Invalid electronic GAN latent/mapping dimensions")
         if len(self.generator_channels) < 3 or any(value <= 0 for value in self.generator_channels):
             raise ValueError("generator_channels must contain at least three positive widths")
+        if self.noise_spatial_channels <= 0:
+            raise ValueError("noise_spatial_channels must be positive")
         if self.generator_channels[0] % 32 or any(value % 32 for value in self.generator_channels):
             raise ValueError("All generator channels must be divisible by 32")
         if not 0 <= self.augmentation_probability <= 1:
@@ -54,6 +61,10 @@ class ElectronicGANConfig:
             self.category_weight,
             self.feature_matching_weight,
             self.latent_moment_weight,
+            self.latent_discriminator_weight,
+            self.text_category_weight,
+            self.diversity_weight,
+            self.diversity_target,
         ) < 0:
             raise ValueError("Loss weights must be non-negative")
 
@@ -66,6 +77,7 @@ def load_electronic_gan_config(path: str | Path) -> ElectronicGANConfig:
         condition_dim=int(model["condition_dim"]),
         mapping_depth=int(model["mapping_depth"]),
         generator_channels=tuple(int(value) for value in model["generator_channels"]),
+        noise_spatial_channels=int(model["noise_spatial_channels"]),
         discriminator_width=int(model["discriminator_width"]),
         batch_size=int(training["batch_size"]),
         epochs=int(training["epochs"]),
@@ -78,6 +90,10 @@ def load_electronic_gan_config(path: str | Path) -> ElectronicGANConfig:
         category_weight=float(loss["category_weight"]),
         feature_matching_weight=float(loss["feature_matching_weight"]),
         latent_moment_weight=float(loss["latent_moment_weight"]),
+        latent_discriminator_weight=float(loss["latent_discriminator_weight"]),
+        text_category_weight=float(loss["text_category_weight"]),
+        diversity_weight=float(loss["diversity_weight"]),
+        diversity_target=float(loss["diversity_target"]),
         ema_halflife_kimg=float(training["ema_halflife_kimg"]),
         sample_every_epochs=int(training["sample_every_epochs"]),
         checkpoint_every_epochs=int(training["checkpoint_every_epochs"]),
@@ -126,7 +142,9 @@ class StyledResidualBlock(nn.Module):
 class QwenElectronicGenerator(nn.Module):
     """Single-pass electronic generator: Qwen feature + z -> 4x28x28 latent."""
 
-    def __init__(self, text_dim: int, config: ElectronicGANConfig, latent_channels: int = 4) -> None:
+    def __init__(
+        self, text_dim: int, config: ElectronicGANConfig, latent_channels: int = 4, categories: int = 4
+    ) -> None:
         super().__init__()
         self.noise_dim = config.noise_dim
         self.text_projection = nn.Sequential(
@@ -134,13 +152,20 @@ class QwenElectronicGenerator(nn.Module):
             nn.Linear(text_dim, config.condition_dim),
             nn.SiLU(),
         )
+        self.text_category = nn.Sequential(nn.LayerNorm(text_dim), nn.Linear(text_dim, categories))
+        self.category_embedding = nn.Embedding(categories, config.condition_dim)
         mapping: list[nn.Module] = [PixelNorm()]
-        input_dim = config.noise_dim + config.condition_dim
         for index in range(config.mapping_depth):
-            mapping.extend((nn.Linear(input_dim if index == 0 else config.condition_dim, config.condition_dim), nn.SiLU()))
-        self.mapping = nn.Sequential(*mapping)
+            mapping.extend((nn.Linear(config.noise_dim if index == 0 else config.condition_dim, config.condition_dim), nn.SiLU()))
+        self.noise_mapping = nn.Sequential(*mapping)
+        self.style_fusion = nn.Sequential(nn.Linear(2 * config.condition_dim, config.condition_dim), nn.SiLU())
         channels = config.generator_channels
         self.constant = nn.Parameter(torch.randn(1, channels[0], 7, 7) / math.sqrt(channels[0]))
+        self.noise_spatial = nn.Sequential(
+            nn.Linear(config.noise_dim, config.noise_spatial_channels * 7 * 7),
+            nn.Unflatten(1, (config.noise_spatial_channels, 7, 7)),
+            nn.Conv2d(config.noise_spatial_channels, channels[0], 3, padding=1),
+        )
         blocks = []
         for index, (input_channels, output_channels) in enumerate(zip(channels, channels[1:])):
             blocks.append(StyledResidualBlock(
@@ -155,18 +180,25 @@ class QwenElectronicGenerator(nn.Module):
         nn.init.normal_(self.to_latent[-1].weight, mean=0.0, std=0.02)
         nn.init.zeros_(self.to_latent[-1].bias)
 
-    def forward(self, text: torch.Tensor, noise: torch.Tensor) -> torch.Tensor:
+    def forward_with_aux(self, text: torch.Tensor, noise: torch.Tensor) -> tuple[torch.Tensor, torch.Tensor]:
         if noise.shape != (text.shape[0], self.noise_dim):
             raise ValueError(f"Expected noise [B,{self.noise_dim}], got {tuple(noise.shape)}")
-        condition = self.text_projection(text.float())
-        style = self.mapping(torch.cat((noise.float(), condition), dim=1))
-        value = self.constant.expand(text.shape[0], -1, -1, -1)
+        text32 = text.float()
+        category_logits = self.text_category(text32)
+        category_context = category_logits.softmax(1) @ self.category_embedding.weight
+        condition = self.text_projection(text32) + category_context
+        noise_style = self.noise_mapping(noise.float())
+        style = self.style_fusion(torch.cat((noise_style, condition), dim=1))
+        value = self.constant.expand(text.shape[0], -1, -1, -1) + self.noise_spatial(noise.float())
         for block in self.blocks:
             value = block(value, style)
         latent = self.to_latent(value)
         if latent.shape[-2:] != (28, 28):
             raise RuntimeError(f"Electronic generator emitted {tuple(latent.shape)}, expected 28x28")
-        return latent
+        return latent, category_logits
+
+    def forward(self, text: torch.Tensor, noise: torch.Tensor) -> torch.Tensor:
+        return self.forward_with_aux(text, noise)[0]
 
     def sample_noise(self, batch: int, device: torch.device, *, seed: int | None = None) -> torch.Tensor:
         generator = None if seed is None else torch.Generator(device=device).manual_seed(int(seed))
@@ -193,23 +225,28 @@ def _spectral_conv(input_channels: int, output_channels: int, kernel: int, strid
 class ConditionalImageLatentDiscriminator(nn.Module):
     """Projection discriminator over a decoded image and its VAE latent."""
 
-    def __init__(self, text_dim: int, categories: int, width: int = 48) -> None:
+    def __init__(
+        self, text_dim: int, categories: int, width: int = 48, latent_score_weight: float = 0.25
+    ) -> None:
         super().__init__()
+        self.latent_score_weight = float(latent_score_weight)
         self.image_blocks = nn.ModuleList([
             nn.Sequential(_spectral_conv(3, width, 4, 2, 1), nn.LeakyReLU(0.2)),
             nn.Sequential(_spectral_conv(width, 2 * width, 4, 2, 1), nn.LeakyReLU(0.2)),
             nn.Sequential(_spectral_conv(2 * width, 4 * width, 4, 2, 1), nn.LeakyReLU(0.2)),
         ])
-        self.latent_stem = nn.Sequential(
-            _spectral_conv(4, 2 * width, 3, 1, 1), nn.LeakyReLU(0.2),
-            _spectral_conv(2 * width, 4 * width, 3, 1, 1), nn.LeakyReLU(0.2),
-        )
-        self.joint_blocks = nn.ModuleList([
-            nn.Sequential(_spectral_conv(8 * width, 8 * width, 4, 2, 1), nn.LeakyReLU(0.2)),
+        self.image_tail = nn.ModuleList([
+            nn.Sequential(_spectral_conv(4 * width, 8 * width, 4, 2, 1), nn.LeakyReLU(0.2)),
             nn.Sequential(_spectral_conv(8 * width, 8 * width, 4, 2, 1), nn.LeakyReLU(0.2)),
         ])
+        self.latent_blocks = nn.ModuleList([
+            nn.Sequential(_spectral_conv(4, 2 * width, 3, 1, 1), nn.LeakyReLU(0.2)),
+            nn.Sequential(_spectral_conv(2 * width, 4 * width, 4, 2, 1), nn.LeakyReLU(0.2)),
+            nn.Sequential(_spectral_conv(4 * width, 8 * width, 4, 2, 1), nn.LeakyReLU(0.2)),
+        ])
         feature_dim = 8 * width
-        self.unconditional = nn.utils.spectral_norm(nn.Linear(feature_dim, 1))
+        self.image_unconditional = nn.utils.spectral_norm(nn.Linear(feature_dim, 1))
+        self.latent_unconditional = nn.utils.spectral_norm(nn.Linear(feature_dim, 1))
         self.text_projection = nn.Sequential(nn.LayerNorm(text_dim), nn.Linear(text_dim, feature_dim))
         self.category = nn.utils.spectral_norm(nn.Linear(feature_dim, categories))
 
@@ -221,16 +258,23 @@ class ConditionalImageLatentDiscriminator(nn.Module):
         for block in self.image_blocks:
             image_value = block(image_value)
             features.append(image_value)
-        latent_value = self.latent_stem(latent)
-        features.append(latent_value)
-        value = torch.cat((image_value, latent_value), dim=1)
-        for block in self.joint_blocks:
-            value = block(value)
-            features.append(value)
-        pooled = value.mean(dim=(-2, -1))
+        for block in self.image_tail:
+            image_value = block(image_value)
+            features.append(image_value)
+        latent_value = latent
+        for block in self.latent_blocks:
+            latent_value = block(latent_value)
+            features.append(latent_value)
+        image_pooled = image_value.mean(dim=(-2, -1))
+        latent_pooled = latent_value.mean(dim=(-2, -1))
         condition = F.normalize(self.text_projection(text.float()), dim=1)
-        projection = (pooled * condition).sum(1, keepdim=True) / math.sqrt(pooled.shape[1])
-        return self.unconditional(pooled) + projection, self.category(pooled), features
+        projection = (image_pooled * condition).sum(1, keepdim=True) / math.sqrt(image_pooled.shape[1])
+        score = (
+            self.image_unconditional(image_pooled)
+            + projection
+            + self.latent_score_weight * self.latent_unconditional(latent_pooled)
+        )
+        return score, self.category(image_pooled), features
 
 
 def augment_image_latent_pair(
