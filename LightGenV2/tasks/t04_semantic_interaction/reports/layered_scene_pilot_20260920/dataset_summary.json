@@ -1,0 +1,116 @@
+{
+  "type": "openmoji_layered_anchor6_proportional_svg_v3",
+  "seed": 73,
+  "renderer_version": "layered_anchor6_proportional_svg_v3",
+  "validation_split": false,
+  "svg_asset_dir": "/DATA/DATA1/guest3/LightGenV2_worktrees/t04_layered_1bc120428/LightGenV2/tasks/t04_semantic_interaction/assets/openmoji-17.0.0-svg",
+  "anchors": {
+    "x": [
+      30,
+      63,
+      96,
+      128,
+      161,
+      194
+    ],
+    "bottom": [
+      40,
+      72,
+      104,
+      136,
+      168,
+      200
+    ]
+  },
+  "visible_height_px": {
+    "1": 26,
+    "2": 30,
+    "3": 29,
+    "4": 31,
+    "5": 31,
+    "6": 27,
+    "7": 19,
+    "8": 132,
+    "9": 22,
+    "10": 23,
+    "11": 28,
+    "12": 28,
+    "13": 25,
+    "14": 37,
+    "15": 154,
+    "16": 24
+  },
+  "minimum_visible_alpha_fraction": 0.7,
+  "train": {
+    "samples": 5000,
+    "task_counts": {
+      "add": 1250,
+      "replace": 1250,
+      "move": 1250,
+      "remove": 1250
+    },
+    "family_counts": {
+      "grove": 1407,
+      "still_life": 947,
+      "street": 1349,
+      "home": 1297
+    },
+    "source_category_counts": {
+      "tree": 2374,
+      "umbrella": 893,
+      "flower": 1383,
+      "cat": 2205,
+      "dog": 2217,
+      "light bulb": 1451,
+      "bus": 1032,
+      "ball": 839,
+      "house": 1967,
+      "bird": 1426,
+      "bicycle": 1603,
+      "car": 1039,
+      "apple": 804,
+      "cup": 268,
+      "book": 264,
+      "phone": 270
+    },
+    "occluded_source_objects": 4424,
+    "duplicates_resampled": 1,
+    "sha256": "452c0d4cede80ee8f838a853566b2bc52204d1c3c588fd2c6b4f7c99fac31fff"
+  },
+  "test": {
+    "samples": 1000,
+    "task_counts": {
+      "add": 250,
+      "replace": 250,
+      "move": 250,
+      "remove": 250
+    },
+    "family_counts": {
+      "grove": 277,
+      "home": 278,
+      "street": 284,
+      "still_life": 161
+    },
+    "source_category_counts": {
+      "tree": 482,
+      "bird": 272,
+      "umbrella": 141,
+      "cat": 440,
+      "house": 411,
+      "bicycle": 333,
+      "apple": 178,
+      "dog": 429,
+      "ball": 160,
+      "car": 199,
+      "light bulb": 285,
+      "bus": 214,
+      "cup": 47,
+      "book": 49,
+      "flower": 291,
+      "phone": 48
+    },
+    "occluded_source_objects": 897,
+    "duplicates_resampled": 0,
+    "sha256": "93aa528c61fb7da116dc0bb7e749f7f3e525d1140050982e33604e3e72d22fca"
+  }
+}

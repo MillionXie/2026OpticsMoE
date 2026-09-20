@@ -1,0 +1,11 @@
+{
+  "elapsed_seconds": 373.15054038167,
+  "selected_epoch": 10,
+  "selected_test_changed_cell_accuracy": 0.36,
+  "selected_router_accepted": true,
+  "selection": "prefer Router-accepted candidates, then maximum periodic-test changed-cell accuracy",
+  "checkpoint_retention": [
+    "best_checkpoint.pt",
+    "last_checkpoint.pt"
+  ]
+}

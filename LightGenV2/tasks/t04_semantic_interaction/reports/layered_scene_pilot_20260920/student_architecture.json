@@ -1,0 +1,75 @@
+{
+  "type": "optical_router_scale_matched_moe",
+  "checkpoint_architecture": "t04_embedding_only_optical_alpha0.4001_0.9500_e2_scaleccd_positionlinear_v1_routerfill_sharedhead_v2",
+  "task": "OpenMoji text-conditioned semantic grid editing",
+  "text": "frozen Qwen embed_tokens lookup ONLY + sinusoidal positions; zero language TF",
+  "vision": "frozen Qwen patch embedding and position embedding; zero native Transformer blocks",
+  "hybrid_blocks": {
+    "language": 2,
+    "vision": 2
+  },
+  "router": {
+    "backend": "optical",
+    "top_k": 2,
+    "experts": 4,
+    "training_semantic_top2_codes": {
+      "add": [
+        0,
+        1
+      ],
+      "replace": [
+        0,
+        2
+      ],
+      "move": [
+        1,
+        3
+      ],
+      "remove": [
+        2,
+        3
+      ]
+    },
+    "training_vision_top2_code": "two highest-energy input-image quadrants",
+    "semantic_code_loss_weight": 0.1,
+    "balance_quantity": "pre-normalization CCD detector-energy fraction",
+    "inference_uses_task_label": false
+  },
+  "fusion": {
+    "equation": "scale-matched (1-alpha)E + alpha O",
+    "alpha_range": [
+      0.4001,
+      0.95
+    ],
+    "alpha_initial": 0.6
+  },
+  "optics": {
+    "phase_parameters": 958728,
+    "active_expert_phase_budget": 200704,
+    "feature_captures": 4,
+    "router_captures": 2,
+    "pixel_pitch_um": 17.0,
+    "distance_m": 0.1,
+    "zero_order_intensity_range": [
+      0.2,
+      0.3
+    ]
+  },
+  "decoder": "electronic 6x6 category and edit heads; no attention/Transformer",
+  "trainable_parameters": 3139437,
+  "language_summary": "input-independent learned positional linear readout after optical global",
+  "contextual_cache_allowed": false,
+  "native_transformer_blocks": 0,
+  "attention_modules": 0,
+  "ccd_preprocessing": "I / max(mean(I), epsilon); no pixelwise clip/log/gamma",
+  "legacy_output_adapters": false,
+  "editor_depth": 2,
+  "initialization": "random task network; no old teacher/decoder warmstart",
+  "data_contract": "deduplicated grid+instruction v2; source-grid preservation remains explicit",
+  "shared_readout": {
+    "contract": "positionlinear64_width192_film01_coord_dwconv_dilation1_2_grid6_v1",
+    "initial_sha256": "7b7356d82c650ea07ea715f832c03e6b4f05d9a48840fe0680406c3cfcdc4d21",
+    "parameters": 381976
+  },
+  "language_router_input": "valid token rows stretched into existing central 224 square; power preserved"
+}

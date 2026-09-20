@@ -1,0 +1,532 @@
+[
+  {
+    "epoch": 1,
+    "phases": {
+      "language_core.optical_branch.core.router": {
+        "wrapped_change_rms_rad": 0.07783624529838562,
+        "last_batch_raw_parameter_grad_rms": 7.426801403198624e-06
+      },
+      "language_core.optical_branch.core.expert_layers.0.experts.0": {
+        "wrapped_change_rms_rad": 0.12098293751478195,
+        "last_batch_raw_parameter_grad_rms": 1.1917110214199056e-06
+      },
+      "language_core.optical_branch.core.expert_layers.0.experts.1": {
+        "wrapped_change_rms_rad": 0.11877740174531937,
+        "last_batch_raw_parameter_grad_rms": 1.8667079757506144e-06
+      },
+      "language_core.optical_branch.core.expert_layers.0.experts.2": {
+        "wrapped_change_rms_rad": 0.09778762608766556,
+        "last_batch_raw_parameter_grad_rms": 2.2919812181498855e-07
+      },
+      "language_core.optical_branch.core.expert_layers.0.experts.3": {
+        "wrapped_change_rms_rad": 0.0900273397564888,
+        "last_batch_raw_parameter_grad_rms": 2.608822455840709e-07
+      },
+      "language_core.optical_branch.core.global_phase.phase": {
+        "wrapped_change_rms_rad": 0.11512377113103867,
+        "last_batch_raw_parameter_grad_rms": 2.1228779587545432e-06
+      },
+      "vision_core.optical_branch.core.router": {
+        "wrapped_change_rms_rad": 0.06566174328327179,
+        "last_batch_raw_parameter_grad_rms": 3.933694188162917e-06
+      },
+      "vision_core.optical_branch.core.expert_layers.0.experts.0": {
+        "wrapped_change_rms_rad": 0.17369063198566437,
+        "last_batch_raw_parameter_grad_rms": 1.9172068732586922e-06
+      },
+      "vision_core.optical_branch.core.expert_layers.0.experts.1": {
+        "wrapped_change_rms_rad": 0.17176076769828796,
+        "last_batch_raw_parameter_grad_rms": 2.5565429950802354e-06
+      },
+      "vision_core.optical_branch.core.expert_layers.0.experts.2": {
+        "wrapped_change_rms_rad": 0.151868999004364,
+        "last_batch_raw_parameter_grad_rms": 6.272902737691766e-06
+      },
+      "vision_core.optical_branch.core.expert_layers.0.experts.3": {
+        "wrapped_change_rms_rad": 0.16219650208950043,
+        "last_batch_raw_parameter_grad_rms": 4.775420620717341e-06
+      },
+      "vision_core.optical_branch.core.global_phase.phase": {
+        "wrapped_change_rms_rad": 0.16005805134773254,
+        "last_batch_raw_parameter_grad_rms": 6.240041784622008e-06
+      }
+    }
+  },
+  {
+    "epoch": 2,
+    "phases": {
+      "language_core.optical_branch.core.router": {
+        "wrapped_change_rms_rad": 0.10246533155441284,
+        "last_batch_raw_parameter_grad_rms": 1.2905311450595036e-06
+      },
+      "language_core.optical_branch.core.expert_layers.0.experts.0": {
+        "wrapped_change_rms_rad": 0.1607140451669693,
+        "last_batch_raw_parameter_grad_rms": 9.807547485252144e-07
+      },
+      "language_core.optical_branch.core.expert_layers.0.experts.1": {
+        "wrapped_change_rms_rad": 0.15171222388744354,
+        "last_batch_raw_parameter_grad_rms": 1.9734955003514187e-06
+      },
+      "language_core.optical_branch.core.expert_layers.0.experts.2": {
+        "wrapped_change_rms_rad": 0.14916855096817017,
+        "last_batch_raw_parameter_grad_rms": 1.515340244395702e-07
+      },
+      "language_core.optical_branch.core.expert_layers.0.experts.3": {
+        "wrapped_change_rms_rad": 0.14129042625427246,
+        "last_batch_raw_parameter_grad_rms": 2.360415578550601e-07
+      },
+      "language_core.optical_branch.core.global_phase.phase": {
+        "wrapped_change_rms_rad": 0.14785006642341614,
+        "last_batch_raw_parameter_grad_rms": 1.7812610622058855e-06
+      },
+      "vision_core.optical_branch.core.router": {
+        "wrapped_change_rms_rad": 0.10943973064422607,
+        "last_batch_raw_parameter_grad_rms": 2.426695800750167e-06
+      },
+      "vision_core.optical_branch.core.expert_layers.0.experts.0": {
+        "wrapped_change_rms_rad": 0.21161915361881256,
+        "last_batch_raw_parameter_grad_rms": 4.7234220801328775e-06
+      },
+      "vision_core.optical_branch.core.expert_layers.0.experts.1": {
+        "wrapped_change_rms_rad": 0.2214631587266922,
+        "last_batch_raw_parameter_grad_rms": 2.9676959911739687e-06
+      },
+      "vision_core.optical_branch.core.expert_layers.0.experts.2": {
+        "wrapped_change_rms_rad": 0.22312377393245697,
+        "last_batch_raw_parameter_grad_rms": 4.142909801885253e-06
+      },
+      "vision_core.optical_branch.core.expert_layers.0.experts.3": {
+        "wrapped_change_rms_rad": 0.21929612755775452,
+        "last_batch_raw_parameter_grad_rms": 2.58020440924156e-06
+      },
+      "vision_core.optical_branch.core.global_phase.phase": {
+        "wrapped_change_rms_rad": 0.21985724568367004,
+        "last_batch_raw_parameter_grad_rms": 6.972665232751751e-06
+      }
+    }
+  },
+  {
+    "epoch": 3,
+    "phases": {
+      "language_core.optical_branch.core.router": {
+        "wrapped_change_rms_rad": 0.1277274191379547,
+        "last_batch_raw_parameter_grad_rms": 1.0796225069498178e-06
+      },
+      "language_core.optical_branch.core.expert_layers.0.experts.0": {
+        "wrapped_change_rms_rad": 0.18205107748508453,
+        "last_batch_raw_parameter_grad_rms": 1.2453613180696266e-06
+      },
+      "language_core.optical_branch.core.expert_layers.0.experts.1": {
+        "wrapped_change_rms_rad": 0.17343850433826447,
+        "last_batch_raw_parameter_grad_rms": 2.6436605367052834e-06
+      },
+      "language_core.optical_branch.core.expert_layers.0.experts.2": {
+        "wrapped_change_rms_rad": 0.18790997564792633,
+        "last_batch_raw_parameter_grad_rms": 1.4685186044971488e-07
+      },
+      "language_core.optical_branch.core.expert_layers.0.experts.3": {
+        "wrapped_change_rms_rad": 0.18333129584789276,
+        "last_batch_raw_parameter_grad_rms": 2.178356623971922e-07
+      },
+      "language_core.optical_branch.core.global_phase.phase": {
+        "wrapped_change_rms_rad": 0.1781199425458908,
+        "last_batch_raw_parameter_grad_rms": 2.089801682814141e-06
+      },
+      "vision_core.optical_branch.core.router": {
+        "wrapped_change_rms_rad": 0.1420828253030777,
+        "last_batch_raw_parameter_grad_rms": 4.793540028913412e-06
+      },
+      "vision_core.optical_branch.core.expert_layers.0.experts.0": {
+        "wrapped_change_rms_rad": 0.24553203582763672,
+        "last_batch_raw_parameter_grad_rms": 1.6908559246076038e-06
+      },
+      "vision_core.optical_branch.core.expert_layers.0.experts.1": {
+        "wrapped_change_rms_rad": 0.25302401185035706,
+        "last_batch_raw_parameter_grad_rms": 1.904832970467396e-06
+      },
+      "vision_core.optical_branch.core.expert_layers.0.experts.2": {
+        "wrapped_change_rms_rad": 0.25898778438568115,
+        "last_batch_raw_parameter_grad_rms": 2.6361806249042274e-06
+      },
+      "vision_core.optical_branch.core.expert_layers.0.experts.3": {
+        "wrapped_change_rms_rad": 0.2591036558151245,
+        "last_batch_raw_parameter_grad_rms": 3.5210680380259873e-06
+      },
+      "vision_core.optical_branch.core.global_phase.phase": {
+        "wrapped_change_rms_rad": 0.2563656270503998,
+        "last_batch_raw_parameter_grad_rms": 4.175907633907627e-06
+      }
+    }
+  },
+  {
+    "epoch": 4,
+    "phases": {
+      "language_core.optical_branch.core.router": {
+        "wrapped_change_rms_rad": 0.1499829888343811,
+        "last_batch_raw_parameter_grad_rms": 9.837349352892488e-06
+      },
+      "language_core.optical_branch.core.expert_layers.0.experts.0": {
+        "wrapped_change_rms_rad": 0.2027018964290619,
+        "last_batch_raw_parameter_grad_rms": 3.199684670107672e-06
+      },
+      "language_core.optical_branch.core.expert_layers.0.experts.1": {
+        "wrapped_change_rms_rad": 0.1900148093700409,
+        "last_batch_raw_parameter_grad_rms": 2.253767206639168e-06
+      },
+      "language_core.optical_branch.core.expert_layers.0.experts.2": {
+        "wrapped_change_rms_rad": 0.22720550000667572,
+        "last_batch_raw_parameter_grad_rms": 3.708358349285845e-07
+      },
+      "language_core.optical_branch.core.expert_layers.0.experts.3": {
+        "wrapped_change_rms_rad": 0.21698807179927826,
+        "last_batch_raw_parameter_grad_rms": 3.09949854226943e-07
+      },
+      "language_core.optical_branch.core.global_phase.phase": {
+        "wrapped_change_rms_rad": 0.20066621899604797,
+        "last_batch_raw_parameter_grad_rms": 3.5734860830416437e-06
+      },
+      "vision_core.optical_branch.core.router": {
+        "wrapped_change_rms_rad": 0.1682620793581009,
+        "last_batch_raw_parameter_grad_rms": 5.2833015615760814e-06
+      },
+      "vision_core.optical_branch.core.expert_layers.0.experts.0": {
+        "wrapped_change_rms_rad": 0.26744651794433594,
+        "last_batch_raw_parameter_grad_rms": 4.880540473095607e-06
+      },
+      "vision_core.optical_branch.core.expert_layers.0.experts.1": {
+        "wrapped_change_rms_rad": 0.27491459250450134,
+        "last_batch_raw_parameter_grad_rms": 5.567667358263861e-06
+      },
+      "vision_core.optical_branch.core.expert_layers.0.experts.2": {
+        "wrapped_change_rms_rad": 0.2832828462123871,
+        "last_batch_raw_parameter_grad_rms": 1.1014210031135008e-05
+      },
+      "vision_core.optical_branch.core.expert_layers.0.experts.3": {
+        "wrapped_change_rms_rad": 0.28688865900039673,
+        "last_batch_raw_parameter_grad_rms": 6.858188953628996e-06
+      },
+      "vision_core.optical_branch.core.global_phase.phase": {
+        "wrapped_change_rms_rad": 0.27661269903182983,
+        "last_batch_raw_parameter_grad_rms": 9.143433089775499e-06
+      }
+    }
+  },
+  {
+    "epoch": 5,
+    "phases": {
+      "language_core.optical_branch.core.router": {
+        "wrapped_change_rms_rad": 0.1677011400461197,
+        "last_batch_raw_parameter_grad_rms": 1.139541723205184e-06
+      },
+      "language_core.optical_branch.core.expert_layers.0.experts.0": {
+        "wrapped_change_rms_rad": 0.21437740325927734,
+        "last_batch_raw_parameter_grad_rms": 3.3946469102374977e-06
+      },
+      "language_core.optical_branch.core.expert_layers.0.experts.1": {
+        "wrapped_change_rms_rad": 0.20489804446697235,
+        "last_batch_raw_parameter_grad_rms": 1.7765258917279425e-06
+      },
+      "language_core.optical_branch.core.expert_layers.0.experts.2": {
+        "wrapped_change_rms_rad": 0.25448155403137207,
+        "last_batch_raw_parameter_grad_rms": 2.485626566794963e-07
+      },
+      "language_core.optical_branch.core.expert_layers.0.experts.3": {
+        "wrapped_change_rms_rad": 0.2551657259464264,
+        "last_batch_raw_parameter_grad_rms": 1.9332419753936847e-07
+      },
+      "language_core.optical_branch.core.global_phase.phase": {
+        "wrapped_change_rms_rad": 0.22580090165138245,
+        "last_batch_raw_parameter_grad_rms": 4.1558964767318685e-06
+      },
+      "vision_core.optical_branch.core.router": {
+        "wrapped_change_rms_rad": 0.1912127137184143,
+        "last_batch_raw_parameter_grad_rms": 1.00288673365867e-06
+      },
+      "vision_core.optical_branch.core.expert_layers.0.experts.0": {
+        "wrapped_change_rms_rad": 0.2842235267162323,
+        "last_batch_raw_parameter_grad_rms": 6.018078124725434e-07
+      },
+      "vision_core.optical_branch.core.expert_layers.0.experts.1": {
+        "wrapped_change_rms_rad": 0.2927647829055786,
+        "last_batch_raw_parameter_grad_rms": 8.530967647857324e-07
+      },
+      "vision_core.optical_branch.core.expert_layers.0.experts.2": {
+        "wrapped_change_rms_rad": 0.3018456697463989,
+        "last_batch_raw_parameter_grad_rms": 9.81278049039247e-07
+      },
+      "vision_core.optical_branch.core.expert_layers.0.experts.3": {
+        "wrapped_change_rms_rad": 0.30710315704345703,
+        "last_batch_raw_parameter_grad_rms": 1.4591837498301174e-06
+      },
+      "vision_core.optical_branch.core.global_phase.phase": {
+        "wrapped_change_rms_rad": 0.2927151620388031,
+        "last_batch_raw_parameter_grad_rms": 1.7926161035575205e-06
+      }
+    }
+  },
+  {
+    "epoch": 6,
+    "phases": {
+      "language_core.optical_branch.core.router": {
+        "wrapped_change_rms_rad": 0.18011286854743958,
+        "last_batch_raw_parameter_grad_rms": 2.5682186333142454e-06
+      },
+      "language_core.optical_branch.core.expert_layers.0.experts.0": {
+        "wrapped_change_rms_rad": 0.22574149072170258,
+        "last_batch_raw_parameter_grad_rms": 2.9405762234091526e-06
+      },
+      "language_core.optical_branch.core.expert_layers.0.experts.1": {
+        "wrapped_change_rms_rad": 0.2140093445777893,
+        "last_batch_raw_parameter_grad_rms": 3.2167204153665807e-06
+      },
+      "language_core.optical_branch.core.expert_layers.0.experts.2": {
+        "wrapped_change_rms_rad": 0.2749970853328705,
+        "last_batch_raw_parameter_grad_rms": 3.49954689227161e-07
+      },
+      "language_core.optical_branch.core.expert_layers.0.experts.3": {
+        "wrapped_change_rms_rad": 0.2818703055381775,
+        "last_batch_raw_parameter_grad_rms": 3.636717735844286e-07
+      },
+      "language_core.optical_branch.core.global_phase.phase": {
+        "wrapped_change_rms_rad": 0.23839446902275085,
+        "last_batch_raw_parameter_grad_rms": 5.3258636398823e-06
+      },
+      "vision_core.optical_branch.core.router": {
+        "wrapped_change_rms_rad": 0.20940540730953217,
+        "last_batch_raw_parameter_grad_rms": 2.448259692755528e-06
+      },
+      "vision_core.optical_branch.core.expert_layers.0.experts.0": {
+        "wrapped_change_rms_rad": 0.2927166521549225,
+        "last_batch_raw_parameter_grad_rms": 2.9190512123022927e-06
+      },
+      "vision_core.optical_branch.core.expert_layers.0.experts.1": {
+        "wrapped_change_rms_rad": 0.3010275959968567,
+        "last_batch_raw_parameter_grad_rms": 4.007722509413725e-06
+      },
+      "vision_core.optical_branch.core.expert_layers.0.experts.2": {
+        "wrapped_change_rms_rad": 0.31617382168769836,
+        "last_batch_raw_parameter_grad_rms": 4.7363191697513685e-06
+      },
+      "vision_core.optical_branch.core.expert_layers.0.experts.3": {
+        "wrapped_change_rms_rad": 0.3186710774898529,
+        "last_batch_raw_parameter_grad_rms": 3.842844307655469e-06
+      },
+      "vision_core.optical_branch.core.global_phase.phase": {
+        "wrapped_change_rms_rad": 0.30104827880859375,
+        "last_batch_raw_parameter_grad_rms": 3.6161950447421987e-06
+      }
+    }
+  },
+  {
+    "epoch": 7,
+    "phases": {
+      "language_core.optical_branch.core.router": {
+        "wrapped_change_rms_rad": 0.18899790942668915,
+        "last_batch_raw_parameter_grad_rms": 1.9542487734725e-06
+      },
+      "language_core.optical_branch.core.expert_layers.0.experts.0": {
+        "wrapped_change_rms_rad": 0.23120976984500885,
+        "last_batch_raw_parameter_grad_rms": 3.8252137528616e-06
+      },
+      "language_core.optical_branch.core.expert_layers.0.experts.1": {
+        "wrapped_change_rms_rad": 0.2166852504014969,
+        "last_batch_raw_parameter_grad_rms": 1.466562594032439e-06
+      },
+      "language_core.optical_branch.core.expert_layers.0.experts.2": {
+        "wrapped_change_rms_rad": 0.2856751084327698,
+        "last_batch_raw_parameter_grad_rms": 2.6322814505874703e-07
+      },
+      "language_core.optical_branch.core.expert_layers.0.experts.3": {
+        "wrapped_change_rms_rad": 0.29345017671585083,
+        "last_batch_raw_parameter_grad_rms": 1.783099179419878e-07
+      },
+      "language_core.optical_branch.core.global_phase.phase": {
+        "wrapped_change_rms_rad": 0.24716892838478088,
+        "last_batch_raw_parameter_grad_rms": 2.114308244927088e-06
+      },
+      "vision_core.optical_branch.core.router": {
+        "wrapped_change_rms_rad": 0.21851082146167755,
+        "last_batch_raw_parameter_grad_rms": 1.9078474906564225e-06
+      },
+      "vision_core.optical_branch.core.expert_layers.0.experts.0": {
+        "wrapped_change_rms_rad": 0.2962845265865326,
+        "last_batch_raw_parameter_grad_rms": 1.7894764141601627e-06
+      },
+      "vision_core.optical_branch.core.expert_layers.0.experts.1": {
+        "wrapped_change_rms_rad": 0.30499473214149475,
+        "last_batch_raw_parameter_grad_rms": 1.9809583591268165e-06
+      },
+      "vision_core.optical_branch.core.expert_layers.0.experts.2": {
+        "wrapped_change_rms_rad": 0.32123681902885437,
+        "last_batch_raw_parameter_grad_rms": 2.8340373319224454e-06
+      },
+      "vision_core.optical_branch.core.expert_layers.0.experts.3": {
+        "wrapped_change_rms_rad": 0.324229896068573,
+        "last_batch_raw_parameter_grad_rms": 3.2871498660824727e-06
+      },
+      "vision_core.optical_branch.core.global_phase.phase": {
+        "wrapped_change_rms_rad": 0.3046945035457611,
+        "last_batch_raw_parameter_grad_rms": 2.8356598704704084e-06
+      }
+    }
+  },
+  {
+    "epoch": 8,
+    "phases": {
+      "language_core.optical_branch.core.router": {
+        "wrapped_change_rms_rad": 0.19510740041732788,
+        "last_batch_raw_parameter_grad_rms": 1.379205286866636e-06
+      },
+      "language_core.optical_branch.core.expert_layers.0.experts.0": {
+        "wrapped_change_rms_rad": 0.2336253970861435,
+        "last_batch_raw_parameter_grad_rms": 2.0708664578705793e-06
+      },
+      "language_core.optical_branch.core.expert_layers.0.experts.1": {
+        "wrapped_change_rms_rad": 0.21882693469524384,
+        "last_batch_raw_parameter_grad_rms": 2.3598579446115764e-06
+      },
+      "language_core.optical_branch.core.expert_layers.0.experts.2": {
+        "wrapped_change_rms_rad": 0.2911251485347748,
+        "last_batch_raw_parameter_grad_rms": 1.2452748876512487e-07
+      },
+      "language_core.optical_branch.core.expert_layers.0.experts.3": {
+        "wrapped_change_rms_rad": 0.2991061806678772,
+        "last_batch_raw_parameter_grad_rms": 1.3721303560032538e-07
+      },
+      "language_core.optical_branch.core.global_phase.phase": {
+        "wrapped_change_rms_rad": 0.25056761503219604,
+        "last_batch_raw_parameter_grad_rms": 4.945757609675638e-06
+      },
+      "vision_core.optical_branch.core.router": {
+        "wrapped_change_rms_rad": 0.2240060567855835,
+        "last_batch_raw_parameter_grad_rms": 4.145127149968175e-06
+      },
+      "vision_core.optical_branch.core.expert_layers.0.experts.0": {
+        "wrapped_change_rms_rad": 0.2980009913444519,
+        "last_batch_raw_parameter_grad_rms": 4.742227247334085e-06
+      },
+      "vision_core.optical_branch.core.expert_layers.0.experts.1": {
+        "wrapped_change_rms_rad": 0.30657216906547546,
+        "last_batch_raw_parameter_grad_rms": 2.8120541628595674e-06
+      },
+      "vision_core.optical_branch.core.expert_layers.0.experts.2": {
+        "wrapped_change_rms_rad": 0.32354459166526794,
+        "last_batch_raw_parameter_grad_rms": 3.0907710879546357e-06
+      },
+      "vision_core.optical_branch.core.expert_layers.0.experts.3": {
+        "wrapped_change_rms_rad": 0.3268625736236572,
+        "last_batch_raw_parameter_grad_rms": 4.63726655652863e-06
+      },
+      "vision_core.optical_branch.core.global_phase.phase": {
+        "wrapped_change_rms_rad": 0.3065202236175537,
+        "last_batch_raw_parameter_grad_rms": 5.337223228707444e-06
+      }
+    }
+  },
+  {
+    "epoch": 9,
+    "phases": {
+      "language_core.optical_branch.core.router": {
+        "wrapped_change_rms_rad": 0.19699040055274963,
+        "last_batch_raw_parameter_grad_rms": 1.528913458059833e-06
+      },
+      "language_core.optical_branch.core.expert_layers.0.experts.0": {
+        "wrapped_change_rms_rad": 0.23393374681472778,
+        "last_batch_raw_parameter_grad_rms": 2.7751600555347977e-06
+      },
+      "language_core.optical_branch.core.expert_layers.0.experts.1": {
+        "wrapped_change_rms_rad": 0.21914415061473846,
+        "last_batch_raw_parameter_grad_rms": 3.1669894724473124e-06
+      },
+      "language_core.optical_branch.core.expert_layers.0.experts.2": {
+        "wrapped_change_rms_rad": 0.2933294177055359,
+        "last_batch_raw_parameter_grad_rms": 1.6751917542023875e-07
+      },
+      "language_core.optical_branch.core.expert_layers.0.experts.3": {
+        "wrapped_change_rms_rad": 0.30094656348228455,
+        "last_batch_raw_parameter_grad_rms": 2.0261062161353038e-07
+      },
+      "language_core.optical_branch.core.global_phase.phase": {
+        "wrapped_change_rms_rad": 0.2518099248409271,
+        "last_batch_raw_parameter_grad_rms": 5.7480065152049065e-06
+      },
+      "vision_core.optical_branch.core.router": {
+        "wrapped_change_rms_rad": 0.22606387734413147,
+        "last_batch_raw_parameter_grad_rms": 8.233699190896004e-06
+      },
+      "vision_core.optical_branch.core.expert_layers.0.experts.0": {
+        "wrapped_change_rms_rad": 0.29851844906806946,
+        "last_batch_raw_parameter_grad_rms": 3.988810021837708e-06
+      },
+      "vision_core.optical_branch.core.expert_layers.0.experts.1": {
+        "wrapped_change_rms_rad": 0.3069712221622467,
+        "last_batch_raw_parameter_grad_rms": 5.048940693086479e-06
+      },
+      "vision_core.optical_branch.core.expert_layers.0.experts.2": {
+        "wrapped_change_rms_rad": 0.32441115379333496,
+        "last_batch_raw_parameter_grad_rms": 4.975894171366235e-06
+      },
+      "vision_core.optical_branch.core.expert_layers.0.experts.3": {
+        "wrapped_change_rms_rad": 0.3278225064277649,
+        "last_batch_raw_parameter_grad_rms": 4.785575583809987e-06
+      },
+      "vision_core.optical_branch.core.global_phase.phase": {
+        "wrapped_change_rms_rad": 0.3071278929710388,
+        "last_batch_raw_parameter_grad_rms": 4.8242795855912846e-06
+      }
+    }
+  },
+  {
+    "epoch": 10,
+    "phases": {
+      "language_core.optical_branch.core.router": {
+        "wrapped_change_rms_rad": 0.19710806012153625,
+        "last_batch_raw_parameter_grad_rms": 2.2465380880021257e-06
+      },
+      "language_core.optical_branch.core.expert_layers.0.experts.0": {
+        "wrapped_change_rms_rad": 0.23405031859874725,
+        "last_batch_raw_parameter_grad_rms": 1.6172643881873228e-06
+      },
+      "language_core.optical_branch.core.expert_layers.0.experts.1": {
+        "wrapped_change_rms_rad": 0.21926100552082062,
+        "last_batch_raw_parameter_grad_rms": 3.881298198393779e-06
+      },
+      "language_core.optical_branch.core.expert_layers.0.experts.2": {
+        "wrapped_change_rms_rad": 0.29385054111480713,
+        "last_batch_raw_parameter_grad_rms": 1.8623958908392524e-07
+      },
+      "language_core.optical_branch.core.expert_layers.0.experts.3": {
+        "wrapped_change_rms_rad": 0.30132371187210083,
+        "last_batch_raw_parameter_grad_rms": 2.7411476821725955e-07
+      },
+      "language_core.optical_branch.core.global_phase.phase": {
+        "wrapped_change_rms_rad": 0.2519824206829071,
+        "last_batch_raw_parameter_grad_rms": 3.8414868868130725e-06
+      },
+      "vision_core.optical_branch.core.router": {
+        "wrapped_change_rms_rad": 0.22644692659378052,
+        "last_batch_raw_parameter_grad_rms": 1.242003463630681e-06
+      },
+      "vision_core.optical_branch.core.expert_layers.0.experts.0": {
+        "wrapped_change_rms_rad": 0.2985348105430603,
+        "last_batch_raw_parameter_grad_rms": 2.072942834274727e-06
+      },
+      "vision_core.optical_branch.core.expert_layers.0.experts.1": {
+        "wrapped_change_rms_rad": 0.3070080876350403,
+        "last_batch_raw_parameter_grad_rms": 1.4925868754289695e-06
+      },
+      "vision_core.optical_branch.core.expert_layers.0.experts.2": {
+        "wrapped_change_rms_rad": 0.3244776129722595,
+        "last_batch_raw_parameter_grad_rms": 6.075162218621699e-06
+      },
+      "vision_core.optical_branch.core.expert_layers.0.experts.3": {
+        "wrapped_change_rms_rad": 0.327907919883728,
+        "last_batch_raw_parameter_grad_rms": 4.164490292168921e-06
+      },
+      "vision_core.optical_branch.core.global_phase.phase": {
+        "wrapped_change_rms_rad": 0.30719465017318726,
+        "last_batch_raw_parameter_grad_rms": 4.7202779569488484e-06
+      }
+    }
+  }
+]
