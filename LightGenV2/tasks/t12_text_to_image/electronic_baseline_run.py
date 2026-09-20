@@ -20,6 +20,7 @@ def main() -> int:
     parser.add_argument("--run-dir", type=Path, required=True)
     parser.add_argument("--vae-checkpoint", type=Path, default=None)
     parser.add_argument("--qwen-checkpoint", type=Path, default=None)
+    parser.add_argument("--init-checkpoint", type=Path, default=None)
     parser.add_argument("--device", default="cuda" if torch.cuda.is_available() else "cpu")
     args = parser.parse_args()
     settings = load_settings(TASK_DIR / "configs/qwen_vae_baseline.yaml")
@@ -30,7 +31,13 @@ def main() -> int:
     if args.qwen_checkpoint:
         settings.qwen_checkpoint = args.qwen_checkpoint.expanduser().resolve()
     config = load_electronic_gan_config(args.config.expanduser().resolve())
-    result = train_electronic_baseline(settings, config, settings.output_dir, torch.device(args.device))
+    result = train_electronic_baseline(
+        settings,
+        config,
+        settings.output_dir,
+        torch.device(args.device),
+        None if args.init_checkpoint is None else args.init_checkpoint.expanduser().resolve(),
+    )
     print(json.dumps(result, indent=2), flush=True)
     return 0
 

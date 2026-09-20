@@ -41,6 +41,10 @@ class ElectronicGANConfig:
     text_category_weight: float
     diversity_weight: float
     diversity_target: float
+    paired_latent_weight: float
+    low_frequency_pixel_weight: float
+    class_conditional_moment_weight: float
+    fixed_noise_per_sample: bool
     ema_halflife_kimg: float
     sample_every_epochs: int
     checkpoint_every_epochs: int
@@ -65,6 +69,9 @@ class ElectronicGANConfig:
             self.text_category_weight,
             self.diversity_weight,
             self.diversity_target,
+            self.paired_latent_weight,
+            self.low_frequency_pixel_weight,
+            self.class_conditional_moment_weight,
         ) < 0:
             raise ValueError("Loss weights must be non-negative")
 
@@ -94,6 +101,10 @@ def load_electronic_gan_config(path: str | Path) -> ElectronicGANConfig:
         text_category_weight=float(loss["text_category_weight"]),
         diversity_weight=float(loss["diversity_weight"]),
         diversity_target=float(loss["diversity_target"]),
+        paired_latent_weight=float(loss.get("paired_latent_weight", 0.0)),
+        low_frequency_pixel_weight=float(loss.get("low_frequency_pixel_weight", 0.0)),
+        class_conditional_moment_weight=float(loss.get("class_conditional_moment_weight", 0.0)),
+        fixed_noise_per_sample=bool(training.get("fixed_noise_per_sample", False)),
         ema_halflife_kimg=float(training["ema_halflife_kimg"]),
         sample_every_epochs=int(training["sample_every_epochs"]),
         checkpoint_every_epochs=int(training["checkpoint_every_epochs"]),

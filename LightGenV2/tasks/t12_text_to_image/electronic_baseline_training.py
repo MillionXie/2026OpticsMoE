@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import copy
+import hashlib
 import json
 import math
 import random
@@ -54,6 +55,30 @@ def _latent_moment_loss(fake: torch.Tensor, real: torch.Tensor) -> torch.Tensor:
     fake_mean, fake_std = _feature_moments(fake)
     real_mean, real_std = _feature_moments(real)
     return F.l1_loss(fake_mean, real_mean) + F.l1_loss(fake_std, real_std)
+
+
+def _class_conditional_moment_loss(
+    fake: torch.Tensor, real: torch.Tensor, labels: torch.Tensor
+) -> torch.Tensor:
+    losses = [
+        _latent_moment_loss(fake[labels == label], real[labels == label])
+        for label in labels.unique()
+        if int((labels == label).sum()) >= 2
+    ]
+    return sum(losses) / len(losses) if losses else fake.new_zeros(())
+
+
+def _sample_keyed_noise(
+    sample_ids: Sequence[str], dimension: int, device: torch.device, seed: int
+) -> torch.Tensor:
+    """Assign every training image a stable N(0,I) style code without an encoder."""
+
+    values = []
+    for sample_id in sample_ids:
+        digest = hashlib.sha256(f"{seed}:{sample_id}".encode("utf-8")).digest()
+        local_seed = int.from_bytes(digest[:8], "little") & 0x7FFF_FFFF_FFFF_FFFF
+        values.append(torch.randn(dimension, generator=torch.Generator().manual_seed(local_seed)))
+    return torch.stack(values).to(device)
 
 
 def _feature_matching_loss(fake: Sequence[torch.Tensor], real: Sequence[torch.Tensor]) -> torch.Tensor:
@@ -129,7 +154,11 @@ def _train_epoch(
         text = batch["text"].to(device, non_blocking=True)
         real_latent = batch["latent"].to(device, non_blocking=True)
         labels = _category_indices(batch["category"], categories, device)
-        noise = generator.sample_noise(len(text), device)
+        noise = (
+            _sample_keyed_noise(batch["sample_id"], config.noise_dim, device, settings.seed)
+            if config.fixed_noise_per_sample
+            else generator.sample_noise(len(text), device)
+        )
 
         with torch.no_grad(), torch.autocast(
             device_type=device.type, dtype=torch.bfloat16, enabled=config.amp and device.type == "cuda"
@@ -184,6 +213,13 @@ def _train_epoch(
             text_category_loss = F.cross_entropy(text_category.float(), labels)
             feature_matching = _feature_matching_loss(fake_features, [value.detach() for value in real_features])
             latent_moments = _latent_moment_loss(fake_latent, real_latent)
+            class_conditional_moments = _class_conditional_moment_loss(
+                fake_latent, real_latent, labels
+            )
+            paired_latent = F.smooth_l1_loss(fake_latent.float(), real_latent.float())
+            fake_low_frequency = F.adaptive_avg_pool2d(fake_image.float(), (28, 28))
+            real_low_frequency = F.adaptive_avg_pool2d(real_image.float(), (28, 28))
+            low_frequency_pixel = F.l1_loss(fake_low_frequency, real_low_frequency)
             visible_difference = (fake_image.float() - second_image.float()).abs().mean((1, 2, 3))
             diversity = F.relu(config.diversity_target - visible_difference).mean()
             generator_loss = (
@@ -193,6 +229,9 @@ def _train_epoch(
                 + config.latent_moment_weight * latent_moments
                 + config.text_category_weight * text_category_loss
                 + config.diversity_weight * diversity
+                + config.paired_latent_weight * paired_latent
+                + config.low_frequency_pixel_weight * low_frequency_pixel
+                + config.class_conditional_moment_weight * class_conditional_moments
             )
         generator_loss.backward()
         torch.nn.utils.clip_grad_norm_(generator.parameters(), 5.0)
@@ -209,6 +248,9 @@ def _train_epoch(
             "text_category": float(text_category_loss.detach()),
             "feature_matching": float(feature_matching.detach()),
             "latent_moments": float(latent_moments.detach()),
+            "class_conditional_moments": float(class_conditional_moments.detach()),
+            "paired_latent": float(paired_latent.detach()),
+            "low_frequency_pixel": float(low_frequency_pixel.detach()),
             "diversity_penalty": float(diversity.detach()),
             "visible_seed_difference": float(visible_difference.detach().mean()),
             "discriminator_loss": float(discriminator_loss.detach()),
@@ -315,6 +357,7 @@ def train_electronic_baseline(
     config: ElectronicGANConfig,
     output_dir: Path,
     device: torch.device,
+    init_checkpoint: Path | None = None,
 ) -> dict[str, Any]:
     _seed_everything(settings.seed)
     output_dir.mkdir(parents=True, exist_ok=False)
@@ -324,6 +367,12 @@ def train_electronic_baseline(
     discriminator = ConditionalImageLatentDiscriminator(
         settings.text_dim, len(categories), config.discriminator_width, config.latent_discriminator_weight
     ).to(device)
+    warmstart: dict[str, Any] | None = None
+    if init_checkpoint is not None:
+        warmstart = torch.load(init_checkpoint, map_location="cpu", weights_only=False)
+        generator.load_state_dict(warmstart["generator_ema"])
+        ema.load_state_dict(warmstart["generator_ema"])
+        discriminator.load_state_dict(warmstart["discriminator"])
     generator_optimizer = torch.optim.AdamW(
         generator.parameters(), lr=config.generator_learning_rate, betas=(0.0, 0.99), weight_decay=0.0
     )
@@ -354,7 +403,7 @@ def train_electronic_baseline(
         history.append(row)
         print(json.dumps(row), flush=True)
         payload = {
-            "schema_version": 1,
+            "schema_version": 2,
             "epoch": epoch,
             "variant": "qwen_vae_prior_gan",
             "settings": settings.to_dict(),
@@ -367,6 +416,8 @@ def train_electronic_baseline(
             "generator_optimizer": generator_optimizer.state_dict(),
             "discriminator_optimizer": discriminator_optimizer.state_dict(),
             "metrics": row,
+            "init_checkpoint": None if init_checkpoint is None else str(init_checkpoint),
+            "init_epoch": None if warmstart is None else int(warmstart["epoch"]),
         }
         torch.save(payload, output_dir / "last_checkpoint.pt")
         if epoch % config.checkpoint_every_epochs == 0 or epoch == 1:
@@ -383,6 +434,12 @@ def train_electronic_baseline(
         "architecture": generator.architecture_report(),
         "training_data_flow": "cached Qwen text + independent N(0,I) z -> electronic generator -> VAE latent -> frozen VAE decoder",
         "inference_data_flow": "Qwen text + independent N(0,I) z -> electronic generator -> VAE latent -> frozen VAE decoder",
+        "training_noise": (
+            "stable N(0,I) code keyed by sample_id" if config.fixed_noise_per_sample
+            else "fresh independent N(0,I) code per step"
+        ),
+        "init_checkpoint": None if init_checkpoint is None else str(init_checkpoint),
+        "init_epoch": None if warmstart is None else int(warmstart["epoch"]),
     }
     (output_dir / "training_summary.json").write_text(json.dumps(report, indent=2) + "\n", encoding="utf-8")
     return report
