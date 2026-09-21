@@ -47,6 +47,7 @@ Kather 训练时对四个颜色块同步执行随机水平/垂直翻转和 90° 
 ## 对比协议
 
 - **Single-task D2NN**：每项任务独立从头训练，确认单任务在同一光学和电子读出预算下可学。
+- **Single-task MoE**：每项任务独立从头训练四专家 MoE；validation 主指标目标为 70%，未达到时先改进任务编码或共享训练方法，不进入正式顺序实验。
 - **Frozen-optics MLP probe**：冻结每个单任务 D2NN 的光学相位，只用目标任务全部训练数据拟合新 MLP，得到 4×4 跨任务迁移矩阵；它不是终身学习成绩。
 - **Sequential D2NN**：按固定顺序训练，无 replay；每阶段评估所有已学任务，形成下三角矩阵和遗忘曲线。
 - **Sequential D2NN + replay**：与 ours 使用相同顺序、MLP、replay 容量及选模规则，用于分离 replay 本身的作用。
@@ -97,6 +98,16 @@ python -m LightGenV2.tasks.t12_cross_modal_lifelong \
 python -m LightGenV2.tasks.t12_cross_modal_lifelong \
   --phase train --only single_task --single-task-name kather2016 \
   --config LightGenV2/tasks/t12_cross_modal_lifelong/configs/initial_s17.json \
+  --kather2016 /path/t12_kather2016_full \
+  --out LightGenV2/tasks/t12_cross_modal_lifelong/runs/simulation/<run_id>
+```
+
+MoE 单任务准入使用同一完整数据合同：
+
+```bash
+python -m LightGenV2.tasks.t12_cross_modal_lifelong \
+  --phase train --only single_task_moe --single-task-name kather2016 \
+  --config LightGenV2/tasks/t12_cross_modal_lifelong/configs/admission_s17.json \
   --kather2016 /path/t12_kather2016_full \
   --out LightGenV2/tasks/t12_cross_modal_lifelong/runs/simulation/<run_id>
 ```

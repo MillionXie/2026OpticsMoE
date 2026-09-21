@@ -390,7 +390,11 @@ def train_single_task_d2nn(tasks, cfg, out, device, selected_task=None):
         cp=torch.load(task_root/"best_checkpoint.pt",map_location=device,weights_only=False);model.load_state_dict(cp["model"])
         metrics={split:evaluate(model,tasks[name],split,device,cfg["eval_batch"])[0]
                  for split in ("train","val","test")}
-        summary[name]={"selected_epoch":cp["epoch"],"metrics":metrics}
+        score = selection_score(name, metrics["val"])
+        summary[name]={"selected_epoch":cp["epoch"],"validation_selection_score":score,
+                       "admission_threshold":float(cfg.get("d2nn_admission_threshold", .65)),
+                       "admission_passed":score >= float(cfg.get("d2nn_admission_threshold", .65)),
+                       "metrics":metrics}
         save(task_root/"results.json",summary[name])
     save(root/"results.json",summary)
     if selected_task:
@@ -461,7 +465,12 @@ def train_single_task_moe(tasks, cfg, out, device, selected_task=None):
         model.load_state_dict(cp["model"])
         metrics={split:evaluate(model,tasks[name],split,device,cfg["eval_batch"])[0]
                  for split in ("train","val","test")}
-        summary[name]={"selected_epoch":cp["epoch"],"active_experts":4,"metrics":metrics}
+        score = selection_score(name, metrics["val"])
+        summary[name]={"selected_epoch":cp["epoch"],"active_experts":4,
+                       "validation_selection_score":score,
+                       "admission_threshold":float(cfg.get("moe_admission_threshold", .70)),
+                       "admission_passed":score >= float(cfg.get("moe_admission_threshold", .70)),
+                       "metrics":metrics}
         save(task_root/"results.json",summary[name])
     save(root/"results.json",summary)
     return summary
