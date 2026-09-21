@@ -9,7 +9,7 @@ fusion:
   alpha_maximum: 0.50
   rms_epsilon: 1.0e-6
 training:
-  batch_size: 8
+  batch_size: 32
   epochs: 3
   learning_rate: 2.0e-4
   phase_learning_rate: 5.0e-3
