@@ -269,8 +269,9 @@ def extract_ccd_features(model, task, split, device, batch):
 
 def fit_mlp_head(model, task, cfg, device, seed, splits=("train", "val", "test")):
     """Fit and validation-select an electronic head on frozen CCD features."""
+    # Test fields are not propagated until the validation-selected head is fixed.
     cached={split:extract_ccd_features(model,task,split,device,cfg["eval_batch"])
-            for split in splits}
+            for split in splits if split != "test"}
     with torch.random.fork_rng(devices=[]):
         torch.manual_seed(seed)
         head=model.make_head(task.classes).to(device)
@@ -294,6 +295,8 @@ def fit_mlp_head(model, task, cfg, device, seed, splits=("train", "val", "test")
         if score>best:
             best=score;best_epoch=epoch;best_state=copy.deepcopy(head.state_dict())
     head.load_state_dict(best_state);head.eval();metrics={}
+    if "test" in splits:
+        cached["test"] = extract_ccd_features(model,task,"test",device,cfg["eval_batch"])
     for split,(x,y,rows) in cached.items():
         with torch.no_grad():p=head(x.to(device)).softmax(1).cpu().numpy()
         metrics[split]=classification_metrics(task.name,y,p,rows)
