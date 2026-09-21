@@ -1,5 +1,5 @@
 """A->B->C->D continual training of one fixed-capacity full-aperture D2NN."""
-import argparse,json,math,platform,subprocess,sys
+import argparse,hashlib,json,math,platform,subprocess,sys
 from pathlib import Path
 
 import numpy as np
@@ -12,6 +12,50 @@ from .model import OpticalD2NN,loss
 from .run import save
 
 
+class MatchedPlasticity:
+    """Match the MoE's stage-wise trainable counts without changing D2NN inference."""
+    def __init__(self,model,cfg):
+        n=model.phase_1.numel();group_size=int(cfg['phase1_task_parameters']);shared_size=int(cfg['phase1_shared_parameters'])
+        if 4*group_size+shared_size>n:raise ValueError('Matched-plasticity masks exceed phase_1')
+        generator=torch.Generator(device='cpu');generator.manual_seed(int(cfg['plasticity_mask_seed']))
+        permutation=torch.randperm(n,generator=generator);assignment=torch.full((n,),-1,dtype=torch.int8)
+        for group in range(4):assignment[permutation[group*group_size:(group+1)*group_size]]=group
+        assignment[permutation[4*group_size:4*group_size+shared_size]]=4
+        self.model=model;self.assignment=assignment.reshape_as(model.phase_1).to(model.phase_1.device)
+        self.group_size=group_size;self.shared_size=shared_size;self.allowed=None;self.phase2_trainable=True
+        self.digest=hashlib.sha256(assignment.numpy().tobytes()).hexdigest()
+
+    def configure(self,group,warmup):
+        self.allowed=self.assignment.eq(group)
+        if not warmup:self.allowed=self.allowed|self.assignment.eq(4)
+        self.phase2_trainable=not warmup
+
+    def apply(self,optimizer):
+        if self.allowed is None:raise RuntimeError('Plasticity mask not configured')
+        parameter=self.model.phase_1
+        if parameter.grad is not None:parameter.grad.mul_(self.allowed)
+        state=optimizer.state.get(parameter,{})
+        for key in ('exp_avg','exp_avg_sq','max_exp_avg_sq'):
+            if key in state:state[key].masked_fill_(~self.allowed,0)
+        if not self.phase2_trainable:self.model.phase_2.grad=None
+
+    def frozen_snapshot(self):
+        return self.model.phase_1.detach()[~self.allowed].clone(),self.model.phase_2.detach().clone() if not self.phase2_trainable else None
+
+    def assert_frozen(self,snapshot):
+        phase1,phase2=snapshot
+        if not torch.equal(self.model.phase_1.detach()[~self.allowed],phase1):raise RuntimeError('Frozen phase_1 pixels changed')
+        if phase2 is not None and not torch.equal(self.model.phase_2.detach(),phase2):raise RuntimeError('Frozen phase_2 changed')
+
+    def metadata(self):
+        return {'task_groups':4,'phase1_task_parameters_per_group':self.group_size,
+                'phase1_shared_parameters':self.shared_size,'phase2_shared_parameters':self.model.phase_2.numel(),
+                'warmup_trainable_parameters':self.group_size,
+                'main_trainable_parameters':self.group_size+self.shared_size+self.model.phase_2.numel(),
+                'unassigned_frozen_parameters':int((self.assignment<0).sum()),
+                'assignment_sha256':self.digest,'assignment':'seeded data-independent random pixel partition'}
+
+
 def optimizer_for(model,cfg):
     return torch.optim.Adam([
         {'params':[model.phase_1],'lr':cfg['lr_expert']},
@@ -19,7 +63,7 @@ def optimizer_for(model,cfg):
     ])
 
 
-def train_current_replay_epoch(model,optimizer,current,order,current_batch,rng,replays=()):
+def train_current_replay_epoch(model,optimizer,current,order,current_batch,rng,replays=(),controller=None):
     """One current-task pass with fixed per-update samples from each old memory."""
     model.train();total=correct=count=updates=0;device=next(model.parameters()).device
     for start in range(0,len(order),current_batch):
@@ -31,12 +75,14 @@ def train_current_replay_epoch(model,optimizer,current,order,current_batch,rng,r
         permutation=torch.from_numpy(rng.permutation(len(yb))).to(device);xb,yb=xb[permutation],yb[permutation]
         optimizer.zero_grad(set_to_none=True);output=model(xb);value=loss(output,yb)
         if not torch.isfinite(value):raise RuntimeError('Nonfinite loss')
-        value.backward();torch.nn.utils.clip_grad_norm_(model.parameters(),1.,error_if_nonfinite=True);optimizer.step()
+        value.backward()
+        if controller is not None:controller.apply(optimizer)
+        torch.nn.utils.clip_grad_norm_(model.parameters(),1.,error_if_nonfinite=True);optimizer.step()
         total+=value.item()*len(yb);correct+=int((output['probabilities'].argmax(1)==yb).sum());count+=len(yb);updates+=1
     return {'nll':total/count,'accuracy_online':correct/count,'samples':count,'updates':updates}
 
 
-def train_full_replay_epoch(model,optimizer,tasks,batch_size,steps,rng):
+def train_full_replay_epoch(model,optimizer,tasks,batch_size,steps,rng,controller=None):
     if batch_size%len(tasks):raise ValueError('batch_size must be divisible by number of seen tasks')
     per_task=batch_size//len(tasks);model.train();total=correct=count=0;device=next(model.parameters()).device
     for ids_by_task in joint_epoch_indices([len(t['y']) for t in tasks],per_task,steps,rng):
@@ -45,7 +91,9 @@ def train_full_replay_epoch(model,optimizer,tasks,batch_size,steps,rng):
         permutation=torch.from_numpy(rng.permutation(len(yb)));xb,yb=xb[permutation].to(device),yb[permutation].to(device)
         optimizer.zero_grad(set_to_none=True);output=model(xb);value=loss(output,yb)
         if not torch.isfinite(value):raise RuntimeError('Nonfinite loss')
-        value.backward();torch.nn.utils.clip_grad_norm_(model.parameters(),1.,error_if_nonfinite=True);optimizer.step()
+        value.backward()
+        if controller is not None:controller.apply(optimizer)
+        torch.nn.utils.clip_grad_norm_(model.parameters(),1.,error_if_nonfinite=True);optimizer.step()
         total+=value.item()*len(yb);correct+=int((output['probabilities'].argmax(1)==yb).sum());count+=len(yb)
     return {'nll':total/count,'accuracy_online':correct/count,'samples':count,'updates':steps,
             'samples_per_task_per_step':per_task}
@@ -98,31 +146,37 @@ def main():
              'data_sha256':{name:sha(getattr(a,'task_'+name.lower())) for name in 'ABCD'},
              'scope':f'continual D2NN {mode}-replay '+('pilot' if a.pilot else 'validation-selected experiment'),
              'test_images_read':False,'adaptation':'all D2NN phases update on current task; no new parameters exist'})
-        model=OpticalD2NN(cfg).to(a.device);history=[];snapshots={};audit=[];total_updates=0
+        model=OpticalD2NN(cfg).to(a.device);controller=MatchedPlasticity(model,cfg) if cfg.get('plasticity_match') else None
+        if controller is not None:save(a.out/'plasticity.json',controller.metadata())
+        history=[];snapshots={};audit=[];total_updates=0
         for group,name in enumerate('ABCD'):
             if group:
+                if controller is not None:controller.configure(group,True);frozen_snapshot=controller.frozen_snapshot()
                 before={n:p.detach().clone() for n,p in model.named_parameters()};optimizer=optimizer_for(model,cfg)
                 for epoch in range(1,cfg['epochs_adapt_'+name]+1):
-                    train=train_current_replay_epoch(model,optimizer,tasks[group],rng.permutation(len(tasks[group]['y'])),cfg['batch_size'],rng)
+                    train=train_current_replay_epoch(model,optimizer,tasks[group],rng.permutation(len(tasks[group]['y'])),cfg['batch_size'],rng,controller=controller)
                     total_updates+=train['updates']
                     seen={task_name:evaluate(model,tasks[j]['vx'],tasks[j]['vy'],cfg['eval_batch_size'])[0]
                           for j,task_name in enumerate('ABCD'[:group+1])}
                     history.append({'stage':'adapt_'+name,'epoch':epoch,'train':train,'seen':seen})
                     save(a.out/'history.json',history);print(json.dumps({'stage':'adapt_'+name,'epoch':epoch,'train':train,
                           'val_bal_acc':{k:v['balanced_accuracy'] for k,v in seen.items()}}),flush=True)
+                if controller is not None:controller.assert_frozen(frozen_snapshot)
                 audit.append({'stage':'adapt_'+name,'relative_parameter_change':
-                              {n:relative_change(before[n],p.detach()) for n,p in model.named_parameters()}})
+                              {n:relative_change(before[n],p.detach()) for n,p in model.named_parameters()},
+                              'matched_frozen_unchanged':controller is not None})
             stage=a.out/name;stage.mkdir();optimizer=optimizer_for(model,cfg);best=-1.;best_epoch=None
+            if controller is not None:controller.configure(group,False);frozen_snapshot=controller.frozen_snapshot()
             before={n:p.detach().clone() for n,p in model.named_parameters()}
             for epoch in range(1,cfg['epochs_'+name]+1):
                 if mode=='full':
-                    train=train_full_replay_epoch(model,optimizer,tasks[:group+1],cfg['batch_size'],cfg['steps_'+name],rng)
+                    train=train_full_replay_epoch(model,optimizer,tasks[:group+1],cfg['batch_size'],cfg['steps_'+name],rng,controller)
                 else:
                     if group==0:replay_spec=();current=cfg['batch_size']
                     elif group==1:replay_spec=((memories[0],cfg['replay_A_in_B']),);current=cfg['current_batch_B']
                     else:
                         n=cfg['replay_each_old_in_'+name];replay_spec=tuple((memories[j],n) for j in range(group));current=cfg['current_batch_'+name]
-                    train=train_current_replay_epoch(model,optimizer,tasks[group],rng.permutation(len(tasks[group]['y'])),current,rng,replay_spec)
+                    train=train_current_replay_epoch(model,optimizer,tasks[group],rng.permutation(len(tasks[group]['y'])),current,rng,replay_spec,controller)
                 total_updates+=train['updates']
                 seen={task_name:evaluate(model,tasks[j]['vx'],tasks[j]['vy'],cfg['eval_batch_size'])[0]
                       for j,task_name in enumerate('ABCD'[:group+1])}
@@ -136,8 +190,10 @@ def main():
                      'best_epoch':best_epoch,'best_selection_score':best})
                 print(json.dumps({'stage':name,'epoch':epoch,'train':train,'val_bal_acc':{k:v['balanced_accuracy'] for k,v in seen.items()},
                                   'selection_score':score}),flush=True)
+            if controller is not None:controller.assert_frozen(frozen_snapshot)
             audit.append({'stage':name,'relative_parameter_change':
-                          {n:relative_change(before[n],p.detach()) for n,p in model.named_parameters()}})
+                          {n:relative_change(before[n],p.detach()) for n,p in model.named_parameters()},
+                          'matched_frozen_unchanged':controller is not None})
             selected=torch.load(stage/'best_checkpoint.pt',map_location=a.device,weights_only=False);model.load_state_dict(selected['model'])
             total_updates=selected['total_updates'];snapshots[name]={'epoch':selected['epoch'],'selection_score':selected['selection_score'],
                                                                     'validation':selected['validation'],'total_updates':total_updates}
@@ -145,6 +201,7 @@ def main():
                  'selection_score':snapshots['D']['selection_score'],'headline_metric':'balanced_accuracy',
                  'parameter_count':sum(p.numel() for p in model.parameters()),'test_images_read':False,
                  'replay_mode':mode,'total_selected_optimizer_updates':total_updates,
+                 'plasticity_match':controller.metadata() if controller is not None else None,
                  'selection_rule':'at each stage, maximum mean validation balanced accuracy over all seen tasks'}
         for name,task in zip('ABCD',tasks):
             train_metrics,_=evaluate(model,task['x'],task['y'],cfg['eval_batch_size'])
