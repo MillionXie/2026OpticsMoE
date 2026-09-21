@@ -53,7 +53,8 @@ def write_split(out, split, features, labels, rows, token_ids=None):
     np.save(out / f"{split}_labels.npy", np.asarray(labels, dtype=np.int64))
     if token_ids is not None:
         np.save(out / f"{split}_token_ids.npy", np.asarray(token_ids, dtype=np.uint8))
-    (out / f"{split}_records.json").write_text(json.dumps(rows, indent=2) + "\n")
+    if rows is not None:
+        (out / f"{split}_records.json").write_text(json.dumps(rows, indent=2) + "\n")
 
 
 def prepare_eurosat(source, checkpoint, out, device):
@@ -81,6 +82,18 @@ def _load_vision(checkpoint, classes):
 def prepare_clevr(source, checkpoint, out, device):
     vocab = json.loads((source / "vocab.json").read_text())
     model = _load_vision(checkpoint, 24)
+    if (source / "train_images.npy").exists():
+        # Full CLEVR package: encode each unique image once, then gather its six
+        # deterministic balanced queries without materializing a giant JSON file.
+        for split in ("train", "val", "test"):
+            images = np.load(source / f"{split}_images.npy", mmap_mode="r")
+            unique = vision_features(model, images, device)
+            image_index = np.load(source / f"{split}_image_index.npy", mmap_mode="r")
+            features = unique[np.asarray(image_index, dtype=np.int64)]
+            labels = np.load(source / f"{split}_labels.npy", mmap_mode="r")
+            token_ids = np.load(source / f"{split}_token_ids.npy", mmap_mode="r")
+            write_split(out, split, features, labels, None, token_ids)
+        return 2, "frozen_feature_text_v1", ["RGB image", "attribute-query text"]
     packed = {}
     for original in ("train", "val"):
         images = np.load(source / f"{original}_images.npz", allow_pickle=False)["images"]
