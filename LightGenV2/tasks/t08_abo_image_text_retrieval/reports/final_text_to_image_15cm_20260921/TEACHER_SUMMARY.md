@@ -7,6 +7,20 @@ Top-2、相位尺寸、15 cm 传播和同尺度融合不变。ABO easy100 文搜
 **88%**；冻结 Qwen3-VL-Embedding-2B 2048D baseline 为 **82%**。同一最终权重
 去掉全部光支路后为 **74%**，说明光学部分带来 14 个百分点。
 
+## 真实检索结果展示
+
+下图直接读取最终模型保存的 `text_to_image_predictions.csv`，没有重新计算分数。
+每行左侧是英文标题Query和目标SKU，右侧是模型返回的Top-5测试图片；绿色边框表示
+与标题属于完全相同的SKU，红色边框表示错误商品。
+
+成功图中的三条Query按所有Top-1成功样本的标签15%/50%/85%分位确定，不是人工挑选
+最漂亮的结果。失败图固定展示“首个正确结果排名最靠后”的三条Query，用于解释模型
+容易混淆的灯具、家居等外观/文本语义。
+
+![代表性Top-1成功案例](retrieval_examples_success.png)
+
+![最困难的三个失败案例](retrieval_examples_failure.png)
+
 ![性能与消融](performance_comparison.png)
 
 ## 数据与评价合同
