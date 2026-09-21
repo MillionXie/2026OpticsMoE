@@ -1,0 +1,53 @@
+{
+  "schema_version": 1,
+  "variant": "qwen_bksdm_v2_tiny_pruned_deep_up_attention",
+  "checkpoint": "/DATA/DATA1/guest3/t12_assets/runs/22b5b64c/qwen_bksdm_v2_tiny_pruned_up1_seed42/best_unet",
+  "architecture": {
+    "removed_module": "up_blocks.0.attentions.1",
+    "removed_parameters": 35416320,
+    "base_unet_parameters": 326825604,
+    "pruned_unet_parameters": 291409284,
+    "reduction_from_tiny": 0.10836458210905654,
+    "reduction_from_sd_turbo_unet": 0.6634649786367584,
+    "generation_tail_before": 380589063,
+    "generation_tail_after": 345172743,
+    "generation_tail_reduction": 0.09305658896456515,
+    "unet_calls": 1,
+    "vae_calls": 1,
+    "iterative_loop": false
+  },
+  "training": {
+    "train_samples": 3872,
+    "validation_samples": 400,
+    "epochs": 4,
+    "selected_epoch": 3,
+    "seconds": 355.9156265631318,
+    "initial_after_pruning": {
+      "normalized_mse": 0.45536603451306396,
+      "cosine": 0.7395135486125946
+    },
+    "selected": {
+      "normalized_mse": 0.387060442015519,
+      "cosine": 0.7858348298072815
+    },
+    "quality_baseline": {
+      "normalized_mse": 0.3643157034369673,
+      "cosine": 0.7995596039295196
+    }
+  },
+  "screening": {
+    "deep_up_first_initial_normalized_mse": 0.4861633146312084,
+    "deep_down_initial_normalized_mse": 0.5112251862575999,
+    "deep_up_all_parameters": 255992964,
+    "deep_up_all_initial_normalized_mse": 0.6133988591292896,
+    "svd_rank_512_parameters": 313456260,
+    "svd_rank_512_initial_normalized_mse": 0.45425263736563853
+  },
+  "visual_audit": {
+    "promoted_over_quality_baseline": false,
+    "finding": "chair and lamp retained; shoe secondary artifact and less stable table geometry"
+  },
+  "tests": {"passed": 33},
+  "gpu_released": true,
+  "inference_timing_measured": false
+}
