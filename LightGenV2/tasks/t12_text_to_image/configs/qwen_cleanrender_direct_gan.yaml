@@ -23,7 +23,7 @@ loss:
   category_weight: 1.0
   text_category_weight: 1.0
   feature_statistics_weight: 0.15
-  white_border_weight: 0.10
-  low_frequency_reconstruction_weight: 1.0
-  diversity_weight: 0.25
+  white_border_weight: 0.05
+  low_frequency_reconstruction_weight: 5.0
+  diversity_weight: 1.0
   diversity_target: 0.10

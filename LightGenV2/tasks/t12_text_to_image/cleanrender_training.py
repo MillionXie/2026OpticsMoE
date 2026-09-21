@@ -143,6 +143,16 @@ def _white_border(image: torch.Tensor) -> torch.Tensor:
     return (border.float() - 1.0).abs().mean()
 
 
+def _foreground_low_frequency_reconstruction(fake: torch.Tensor, real: torch.Tensor) -> torch.Tensor:
+    """Supervise silhouette/color while preventing the white canvas from dominating L1."""
+
+    fake_low = F.adaptive_avg_pool2d(fake.float(), (32, 32))
+    real_low = F.adaptive_avg_pool2d(real.float(), (32, 32))
+    foreground = (1.0 - real_low).abs().mean(1, keepdim=True).div(0.35).clamp(0, 1)
+    weight = 1.0 + 5.0 * foreground
+    return ((fake_low - real_low).abs() * weight).sum() / (weight.sum() * fake_low.shape[1])
+
+
 def _mismatch_indices(labels: torch.Tensor) -> torch.Tensor:
     values = labels.tolist()
     result = []
@@ -211,10 +221,7 @@ def _train_epoch(
             text_category_loss = F.cross_entropy(text_category.float(), labels)
             feature_statistics = _feature_statistics(fake_features, [value.detach() for value in real_features])
             border = _white_border(fake)
-            low_frequency_reconstruction = F.l1_loss(
-                F.adaptive_avg_pool2d(fake.float(), (16, 16)),
-                F.adaptive_avg_pool2d(real.float(), (16, 16)),
-            )
+            low_frequency_reconstruction = _foreground_low_frequency_reconstruction(fake, real)
             visible_difference = (fake.float() - second_fake.float()).abs().mean((1, 2, 3))
             diversity = F.relu(config.diversity_target - visible_difference).mean()
             generator_loss = (
