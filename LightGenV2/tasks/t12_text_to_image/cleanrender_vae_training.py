@@ -70,11 +70,11 @@ def _augment_pair(image: torch.Tensor, probability: float) -> torch.Tensor:
 
 def _foreground_reconstruction(fake: torch.Tensor, real: torch.Tensor) -> torch.Tensor:
     losses = []
-    for size in (32, 64):
+    for size in (32, 64, 128):
         fake_low = F.adaptive_avg_pool2d(fake.float(), (size, size))
         real_low = F.adaptive_avg_pool2d(real.float(), (size, size))
-        foreground = (1 - real_low).abs().mean(1, keepdim=True).div(0.25).clamp(0, 1)
-        weight = 1 + 7 * foreground
+        foreground = (1 - real_low).abs().mean(1, keepdim=True).div(0.12).clamp(0, 1)
+        weight = 1 + 15 * foreground
         losses.append(((fake_low - real_low).abs() * weight).sum() / (weight.sum() * 3))
     return torch.stack(losses).mean()
 
@@ -92,8 +92,9 @@ def _edge_loss(fake: torch.Tensor, real: torch.Tensor) -> torch.Tensor:
         F.conv2d(gray_real, kernel_x, padding=1).square()
         + F.conv2d(gray_real, kernel_y, padding=1).square() + 1e-6
     )
-    foreground = (1 - gray_real).abs().div(0.2).clamp(0, 1)
-    return ((fake_edge - real_edge).abs() * (1 + 4 * foreground)).mean()
+    edge_support = real_edge.div(0.35).clamp(0, 1)
+    weight = 1 + 12 * edge_support
+    return ((fake_edge - real_edge).abs() * weight).sum() / weight.sum()
 
 
 def _white_border(image: torch.Tensor) -> torch.Tensor:
@@ -172,6 +173,8 @@ def _train_epoch(
             edge = _edge_loss(reconstruction, real)
             kl = -0.5 * (1 + log_variance.float() - mean.float().square() - log_variance.float().exp()).mean()
             feature_statistics = _feature_statistics(prior_features, real_features)
+            recovered_prior, _ = encoder(prior_image)
+            latent_consistency = F.mse_loss(recovered_prior.float(), prior.float())
             border = 0.5 * (_white_border(reconstruction) + _white_border(prior_image))
             second_prior_image = decoder(text, torch.randn_like(prior))
             seed_difference = (prior_image.float() - second_prior_image.float()).abs().mean((1, 2, 3))
@@ -179,6 +182,7 @@ def _train_epoch(
             autoencoder_loss = (
                 config.reconstruction_weight * reconstruction_loss
                 + config.edge_weight * edge
+                + config.latent_consistency_weight * latent_consistency
                 + kl_scale * kl
                 - config.reconstruction_adversarial_weight * reconstruction_score.float().mean()
                 - config.prior_adversarial_weight * prior_score.float().mean()
@@ -198,6 +202,7 @@ def _train_epoch(
             "autoencoder_loss": float(autoencoder_loss.detach()),
             "foreground_reconstruction": float(reconstruction_loss.detach()),
             "edge_loss": float(edge.detach()),
+            "latent_consistency": float(latent_consistency.detach()),
             "kl": float(kl.detach()),
             "kl_scale": kl_scale,
             "reconstruction_adversarial_score": float(reconstruction_score.detach().mean()),
@@ -277,10 +282,10 @@ def _write_grid(
     chosen = list(range(min(6, len(dataset))))
     real_tensor = torch.stack([dataset[index]["image"] for index in chosen]).to(device)
     text = dataset.text[chosen].float().to(device)
-    mean, _ = encoder(real_tensor)
+    mean, log_variance = encoder(real_tensor)
     rows: list[tuple[str, list[Image.Image]]] = [("real", _pil(real_tensor)), ("recon", _pil(decoder(text, mean)))]
     for seed in (11, 29, 47):
-        varied = encoder.seeded_variation(mean, strength, seed)
+        varied = encoder.seeded_variation(mean, strength, seed, log_variance)
         rows.append((f"ref+{seed}", _pil(decoder(text, varied))))
     for seed in (11, 29):
         rows.append((f"prior {seed}", _pil(decoder.generate(text, seed))))

@@ -28,6 +28,7 @@ class CleanRenderVAEConfig:
     kl_warmup_epochs: int
     reconstruction_weight: float
     edge_weight: float
+    latent_consistency_weight: float
     prior_adversarial_weight: float
     reconstruction_adversarial_weight: float
     mismatch_weight: float
@@ -43,6 +44,7 @@ class CleanRenderVAEConfig:
             raise ValueError("kl_warmup_epochs must be positive")
         if min(
             self.kl_weight, self.reconstruction_weight, self.edge_weight,
+            self.latent_consistency_weight,
             self.prior_adversarial_weight, self.reconstruction_adversarial_weight,
             self.mismatch_weight, self.reference_variation_strength,
         ) < 0:
@@ -60,6 +62,7 @@ def load_cleanrender_vae_config(path: str | Path) -> CleanRenderVAEConfig:
         kl_warmup_epochs=int(loss["kl_warmup_epochs"]),
         reconstruction_weight=float(loss["reconstruction_weight"]),
         edge_weight=float(loss["edge_weight"]),
+        latent_consistency_weight=float(loss["latent_consistency_weight"]),
         prior_adversarial_weight=float(loss["prior_adversarial_weight"]),
         reconstruction_adversarial_weight=float(loss["reconstruction_adversarial_weight"]),
         mismatch_weight=float(loss["mismatch_weight"]),
@@ -118,10 +121,16 @@ class CleanRenderImageEncoder(nn.Module):
         return mean + torch.randn_like(mean) * torch.exp(0.5 * log_variance)
 
     @staticmethod
-    def seeded_variation(mean: torch.Tensor, strength: float, seed: int) -> torch.Tensor:
+    def seeded_variation(
+        mean: torch.Tensor,
+        strength: float,
+        seed: int,
+        log_variance: torch.Tensor | None = None,
+    ) -> torch.Tensor:
         generator = torch.Generator(device=mean.device).manual_seed(int(seed))
         noise = torch.randn(mean.shape, generator=generator, device=mean.device, dtype=mean.dtype)
-        return mean + float(strength) * noise
+        scale = 1.0 if log_variance is None else torch.exp(0.5 * log_variance)
+        return mean + float(strength) * scale * noise
 
 
 def vae_architecture_report(

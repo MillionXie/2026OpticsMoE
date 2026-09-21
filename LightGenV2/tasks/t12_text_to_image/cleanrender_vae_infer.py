@@ -78,9 +78,11 @@ def main() -> int:
             strength = None
         else:
             reference = _load_reference(args.reference_image.expanduser().resolve(), config.base.image_size, device)
-            mean, _ = encoder(reference)
+            mean, log_variance = encoder(reference)
             strength = config.reference_variation_strength if args.variation_strength is None else args.variation_strength
-            latent = torch.cat([encoder.seeded_variation(mean, strength, seed) for seed in seeds])
+            latent = torch.cat([
+                encoder.seeded_variation(mean, strength, seed, log_variance) for seed in seeds
+            ])
             mode = "reference_variation"
         images = decoder(text, latent)
     size, header = config.base.image_size, 32
