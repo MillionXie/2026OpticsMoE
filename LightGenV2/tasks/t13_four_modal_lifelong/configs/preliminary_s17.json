@@ -29,6 +29,7 @@
   "route_balance": 0.1,
   "route_balance_speech": 1.0,
   "route_balance_physical": 1.0,
+  "route_entropy": 0.0,
   "replay_per_task": 512,
   "replay_batch": 4,
   "replay_weight": 1.0,

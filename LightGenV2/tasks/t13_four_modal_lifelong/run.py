@@ -188,7 +188,8 @@ def smoothed_nll(log_probabilities, labels, smoothing):
 
 
 def task_loss(model, task, indices, device, warmup=False, balance=0.0,
-              augment=False, label_smoothing=0.0, detector_aux_weight=0.0):
+              route_entropy=0.0, augment=False, label_smoothing=0.0,
+              detector_aux_weight=0.0):
     fields, labels, _ = task.splits["train"]
     batch_fields = fields[indices].to(device=device, dtype=torch.float32)
     # No task-specific augmentation is applied in the audited four-task protocol.
@@ -204,6 +205,10 @@ def task_loss(model, task, indices, device, warmup=False, balance=0.0,
     if balance and out["route_power"] is not None and not warmup:
         n = int(model.active_count)
         loss = loss + balance * (out["route_power"][:, :n].mean(0) - 1.0/n).square().sum()
+    if route_entropy and out["route_power"] is not None and not warmup:
+        n = int(model.active_count)
+        q = out["route_power"][:, :n].clamp_min(1e-12)
+        loss = loss + route_entropy * (-(q * q.log()).sum(1).mean())
     return loss
 
 
@@ -442,6 +447,7 @@ def train_single_task_moe(tasks, cfg, out, device, selected_task=None):
         best, history = -float("inf"), []
         warmup_epochs = int(cfg.get("single_task_moe_warmup_epochs", 0))
         route_balance = float(task_config(cfg, "route_balance", name, 0.0))
+        route_entropy = float(task_config(cfg, "route_entropy", name, 0.0))
         for epoch in range(1, epochs + 1):
             model.train(); started=time.time(); losses=[]
             warmup = epoch <= warmup_epochs
@@ -451,7 +457,8 @@ def train_single_task_moe(tasks, cfg, out, device, selected_task=None):
                 optimizer.zero_grad(set_to_none=True)
                 loss=configured_task_loss(model,tasks[name],ix,device,cfg,
                                           warmup=warmup,
-                                          balance=0.0 if warmup else route_balance)
+                                          balance=0.0 if warmup else route_balance,
+                                          route_entropy=0.0 if warmup else route_entropy)
                 loss.backward()
                 torch.nn.utils.clip_grad_norm_(
                     [p for p in model.parameters() if p.requires_grad],1.0)
@@ -631,12 +638,18 @@ def train_lifelong_moe(tasks, cfg, out, device):
             for step,current in enumerate(current_chunks):
                 optimizer.zero_grad(set_to_none=True)
                 route_balance=float(task_config(cfg,"route_balance",name,0.0))
-                current_loss=configured_task_loss(model,task,current,device,cfg,balance=route_balance)
+                route_entropy=float(task_config(cfg,"route_entropy",name,0.0))
+                current_loss=configured_task_loss(model,task,current,device,cfg,
+                                                  balance=route_balance,
+                                                  route_entropy=route_entropy)
                 replay_losses=[]
                 for old in TASK_ORDER[:task_index]:
                     pool=replay_chunks[old]; ix=pool[step%len(pool)]
                     old_balance=float(task_config(cfg,"route_balance",old,0.0))
-                    replay_losses.append(configured_task_loss(model,tasks[old],ix,device,cfg,balance=old_balance))
+                    old_entropy=float(task_config(cfg,"route_entropy",old,0.0))
+                    replay_losses.append(configured_task_loss(
+                        model,tasks[old],ix,device,cfg,balance=old_balance,
+                        route_entropy=old_entropy))
                 loss=combine_current_replay(current_loss,replay_losses,cfg["replay_weight"])
                 loss.backward();torch.nn.utils.clip_grad_norm_([p for p in model.parameters() if p.requires_grad],1.0);optimizer.step();losses.append(float(loss.detach()))
             scheduler.step()
