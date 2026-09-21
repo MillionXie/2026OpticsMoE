@@ -267,10 +267,10 @@ def extract_ccd_features(model, task, split, device, batch):
     return torch.cat(features),np.asarray(labels),rows
 
 
-def fit_mlp_head(model, task, cfg, device, seed):
+def fit_mlp_head(model, task, cfg, device, seed, splits=("train", "val", "test")):
     """Fit and validation-select an electronic head on frozen CCD features."""
     cached={split:extract_ccd_features(model,task,split,device,cfg["eval_batch"])
-            for split in ("train","val","test")}
+            for split in splits}
     with torch.random.fork_rng(devices=[]):
         torch.manual_seed(seed)
         head=model.make_head(task.classes).to(device)
@@ -306,7 +306,7 @@ def fit_mlp_probe(model, task, cfg, device, seed):
 
 def calibrate_head(model, task, cfg, device, seed):
     """Refit the final MLP after the optical stage; validation selects its epoch."""
-    head, result = fit_mlp_head(model, task, cfg, device, seed)
+    head, result = fit_mlp_head(model, task, cfg, device, seed, ("train", "val"))
     model.heads[task.name].load_state_dict(head.state_dict())
     return result
 
@@ -535,13 +535,22 @@ def train_sequential_d2nn(tasks, cfg, out, device, use_replay):
             scheduler.step()
             val={n:evaluate(model,tasks[n],"val",device,cfg["eval_batch"])[0] for n in TASK_ORDER[:task_index+1]}
             score=float(np.mean([selection_score(n,val[n]) for n in val]))
-            row={"epoch":epoch,"loss":float(np.mean(losses)),"validation_mean_score":score,"validation":val,"seconds":time.time()-started}
+            phase_score=float(np.mean([max(selection_score(n,val[n]),
+                                           val[n]["detector_balanced_accuracy"])
+                                       for n in val]))
+            row={"epoch":epoch,"loss":float(np.mean(losses)),"validation_mean_score":score,
+                 "optical_selection_score":phase_score,"validation":val,
+                 "seconds":time.time()-started}
             history.append(row);save(task_root/"history.json",history)
-            cp={"model":model.state_dict(),"epoch":epoch,"task_index":task_index,"validation":val,"score":score}
+            cp={"model":model.state_dict(),"epoch":epoch,"task_index":task_index,
+                "validation":val,"score":phase_score,"mlp_score":score}
             torch.save(cp,task_root/"last_checkpoint.pt")
-            if score>best:best=score;torch.save(cp,task_root/"best_checkpoint.pt")
+            if phase_score>best:best=phase_score;torch.save(cp,task_root/"best_checkpoint.pt")
             print(json.dumps({"arch":f"sequential_d2nn_{tag}","task":name,"epoch":epoch,"val":score,"loss":row["loss"],"seconds":row["seconds"]}),flush=True)
         cp=torch.load(task_root/"best_checkpoint.pt",map_location=device,weights_only=False);model.load_state_dict(cp["model"])
+        calibration=calibrate_head(model,task,cfg,device,cfg["seed"]+1000+task_index)
+        torch.save({**cp,"model":model.state_dict(),"head_calibration":calibration},
+                   task_root/"calibrated_checkpoint.pt")
         after_heads={n:module_sha(model.heads[n]) for n in TASK_ORDER[:task_index]}
         assert old_head_hash==after_heads, "frozen old task head changed"
         stage_eval=stage_evaluation(model,tasks,TASK_ORDER[:task_index+1],device,cfg)
@@ -549,6 +558,7 @@ def train_sequential_d2nn(tasks, cfg, out, device, use_replay):
                       **{f"additional_phase_{i}":state_sha(p)
                          for i,p in enumerate(model.additional_phases)}}
         save(task_root/"stage_result.json",{"selected_epoch":cp["epoch"],**stage_eval,
+             "head_calibration":calibration,
              "old_heads_unchanged":old_head_hash==after_heads,
              "shared_phases_changed":{k:shared_before[k]!=shared_after[k] for k in shared_before}})
         all_history.append({"task":name,"selected_epoch":cp["epoch"],**stage_eval})
@@ -603,19 +613,29 @@ def train_lifelong_moe(tasks, cfg, out, device):
             scheduler.step()
             val={n:evaluate(model,tasks[n],"val",device,cfg["eval_batch"],task_index)[0] for n in TASK_ORDER[:task_index+1]}
             score=float(np.mean([selection_score(n,val[n]) for n in val]))
-            row={"epoch":epoch,"loss":float(np.mean(losses)),"validation_mean_score":score,"validation":val,"seconds":time.time()-started}
+            phase_score=float(np.mean([max(selection_score(n,val[n]),
+                                           val[n]["detector_balanced_accuracy"])
+                                       for n in val]))
+            row={"epoch":epoch,"loss":float(np.mean(losses)),"validation_mean_score":score,
+                 "optical_selection_score":phase_score,"validation":val,
+                 "seconds":time.time()-started}
             history.append(row);save(task_root/"history.json",history)
-            cp={"model":model.state_dict(),"epoch":epoch,"task_index":task_index,"validation":val,"score":score}
+            cp={"model":model.state_dict(),"epoch":epoch,"task_index":task_index,
+                "validation":val,"score":phase_score,"mlp_score":score}
             torch.save(cp,task_root/"last_checkpoint.pt")
-            if score>best:best=score;torch.save(cp,task_root/"best_checkpoint.pt")
+            if phase_score>best:best=phase_score;torch.save(cp,task_root/"best_checkpoint.pt")
             print(json.dumps({"arch":"moe","task":name,"epoch":epoch,"val":score,"loss":row["loss"],"route":val[name]["route_mean"],"seconds":row["seconds"]}),flush=True)
         cp=torch.load(task_root/"best_checkpoint.pt",map_location=device,weights_only=False);model.load_state_dict(cp["model"])
+        calibration=calibrate_head(model,task,cfg,device,cfg["seed"]+1000+task_index)
+        torch.save({**cp,"model":model.state_dict(),"head_calibration":calibration},
+                   task_root/"calibrated_checkpoint.pt")
         after=[state_sha(p) for p in model.first_phase[:4*task_index]]
         after_heads={n:module_sha(model.heads[n]) for n in TASK_ORDER[:task_index]}
         assert old_hash==after, "frozen old expert changed"
         assert old_head_hash==after_heads, "frozen old task head changed"
         stage_eval=stage_evaluation(model,tasks,TASK_ORDER[:task_index+1],device,cfg,task_index)
         save(task_root/"stage_result.json",{"selected_epoch":cp["epoch"],**stage_eval,
+             "head_calibration":calibration,
              "old_experts_unchanged":old_hash==after,"old_heads_unchanged":old_head_hash==after_heads})
         all_history.append({"task":name,"selected_epoch":cp["epoch"],**stage_eval})
         replay[name]=replay_indices(task,cfg["replay_per_task"],cfg["seed"]+task_index)
