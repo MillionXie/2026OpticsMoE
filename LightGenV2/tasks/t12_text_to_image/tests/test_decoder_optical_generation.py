@@ -3,7 +3,7 @@ from __future__ import annotations
 import torch
 
 from LightGenV2.tasks.t12_text_to_image.decoder_optical_generation import DecoderOpticalGenerator,architecture_report,load_decoder_optical_config
-from LightGenV2.tasks.t12_text_to_image.product_instruction_data import apply_backpack_style,prompt_rows
+from LightGenV2.tasks.t12_text_to_image.product_instruction_data import TurntableViewDataset,apply_backpack_style,prompt_rows
 from LightGenV2.tasks.t12_text_to_image.settings import TASK_DIR
 
 
@@ -42,3 +42,17 @@ def test_instruction_sets_and_style_background()->None:
     reference=torch.ones(6,3,128,128);reference[:,:,40:90,45:85]=-.1
     target=apply_backpack_style(reference,torch.arange(6))
     assert torch.equal(reference[:,:,:20,:20],target[:,:,:20,:20])
+
+
+def test_turntable_dataset_uses_one_canonical_source_per_identity(tmp_path)->None:
+    rows=[]
+    from PIL import Image
+    for identity in ("a","b"):
+        for view in range(3):
+            path=tmp_path/f"{identity}-{view}.png";Image.new("RGB",(8,8),(255,255,255)).save(path)
+            rows.append({"sample_id":f"chair-{identity}-{view:02d}","sequence_id":identity,"category":"chair","caption":"chair","image_path":path.name,"license":"CC BY 4.0","source_url":"https://example.test"})
+    (tmp_path/"train.jsonl").write_text("".join(__import__("json").dumps(row)+"\n" for row in rows),encoding="utf-8")
+    torch.save({"rows":prompt_rows("view"),"text":torch.randn(6,2048)},tmp_path/"cache.pt")
+    dataset=TurntableViewDataset(tmp_path,"train",128,tmp_path/"cache.pt")
+    assert len(dataset)==2*6
+    assert {dataset[index]["sample_id"].split(":")[1] for index in range(len(dataset))}=={"0"}

@@ -88,13 +88,15 @@ class BackpackStyleDataset(Dataset[dict[str,Any]]):
 
 
 class TurntableViewDataset(Dataset[dict[str,Any]]):
+    """Canonical product view to its immediately adjacent left/right render."""
     def __init__(self,data_dir:Path,split:str,image_size:int,cache:Path)->None:
         base=ImageManifestDataset(data_dir,split,image_size); payload=torch.load(cache,map_location="cpu",weights_only=False)
         self.prompts=payload["rows"]; self.text=payload["text"].float(); grouped=defaultdict(list)
         for index,row in enumerate(base.rows): grouped[row.sequence_id].append((int(row.sample_id.rsplit("-",1)[-1]),index))
         self.base=base; self.groups=[]
         for sequence,items in grouped.items():
-            ordered=[index for _,index in sorted(items)]; self.groups.extend((sequence,position,ordered) for position in range(len(ordered)))
+            ordered=[index for _,index in sorted(items)]
+            self.groups.append((sequence,0,ordered))
     def __len__(self)->int: return len(self.groups)*len(self.prompts)
     def __getitem__(self,index:int)->dict[str,Any]:
         prompt_index=index%len(self.prompts); sequence,position,ordered=self.groups[index//len(self.prompts)]; meta=self.prompts[prompt_index]
