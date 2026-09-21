@@ -28,7 +28,8 @@ class ContractTest(unittest.TestCase):
 
     def test_configurable_full_ccd_mlp(self):
         model = CrossModalOptics("moe", phase_dropout=0, readout_grid=28,
-                                 head_width=256, head_bottleneck=64)
+                                 head_width=256, head_bottleneck=64, optical_layers=6)
+        self.assertEqual(2 + len(model.additional_phases), 6)
         out = model(torch.rand(2, 224, 224), "kather2016")
         self.assertEqual(tuple(out["ccd_features"].shape), (2, 28 * 28))
         self.assertEqual(tuple(out["probabilities"].shape), (2, 8))

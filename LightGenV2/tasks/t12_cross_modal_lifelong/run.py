@@ -40,6 +40,7 @@ def build_model(architecture, cfg, seed, phase_dropout=None):
         readout_grid=int(cfg.get("readout_grid", 16)),
         head_width=int(cfg.get("head_width", 64)),
         head_bottleneck=int(cfg.get("head_bottleneck", 0)),
+        optical_layers=int(cfg.get("optical_layers", 2)),
     )
 
 
@@ -524,7 +525,9 @@ def train_sequential_d2nn(tasks, cfg, out, device, use_replay):
         task = tasks[name]
         old_head_hash = {n:module_sha(model.heads[n]) for n in TASK_ORDER[:task_index]}
         shared_before = {"first_phase":state_sha(model.first_phase),
-                         "global_phase":state_sha(model.global_phase)}
+                         "global_phase":state_sha(model.global_phase),
+                         **{f"additional_phase_{i}":state_sha(p)
+                            for i,p in enumerate(model.additional_phases)}}
         model.configure_task(task_index, warmup=False)
         optimizer=torch.optim.Adam([p for p in model.parameters() if p.requires_grad],lr=cfg["lr"])
         scheduler=torch.optim.lr_scheduler.CosineAnnealingLR(optimizer,cfg["task_epochs"],eta_min=cfg["lr"]*.1)
@@ -557,7 +560,9 @@ def train_sequential_d2nn(tasks, cfg, out, device, use_replay):
         after_heads={n:module_sha(model.heads[n]) for n in TASK_ORDER[:task_index]}
         assert old_head_hash==after_heads, "frozen old task head changed"
         stage_eval=stage_evaluation(model,tasks,TASK_ORDER[:task_index+1],device,cfg)
-        shared_after={"first_phase":state_sha(model.first_phase),"global_phase":state_sha(model.global_phase)}
+        shared_after={"first_phase":state_sha(model.first_phase),"global_phase":state_sha(model.global_phase),
+                      **{f"additional_phase_{i}":state_sha(p)
+                         for i,p in enumerate(model.additional_phases)}}
         save(task_root/"stage_result.json",{"selected_epoch":cp["epoch"],**stage_eval,
              "old_heads_unchanged":old_head_hash==after_heads,
              "shared_phases_changed":{k:shared_before[k]!=shared_after[k] for k in shared_before}})

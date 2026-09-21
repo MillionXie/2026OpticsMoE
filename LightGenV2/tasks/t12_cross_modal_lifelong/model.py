@@ -25,7 +25,7 @@ def normalize_power(x, power=1.0):
 
 class CrossModalOptics(nn.Module):
     def __init__(self, architecture="moe", seed=17, phase_dropout=0.05,
-                 readout_grid=16, head_width=64, head_bottleneck=0):
+                 readout_grid=16, head_width=64, head_bottleneck=0, optical_layers=2):
         super().__init__()
         if architecture not in {"moe", "d2nn"}:
             raise ValueError(architecture)
@@ -46,6 +46,9 @@ class CrossModalOptics(nn.Module):
         self.readout_grid = int(readout_grid)
         self.head_width = int(head_width)
         self.head_bottleneck = int(head_bottleneck)
+        self.optical_layers = int(optical_layers)
+        if self.optical_layers < 2:
+            raise ValueError("optical_layers must include expert/input and global phases")
         self.heads = nn.ModuleDict({
             name: self.make_head(classes)
             for name, classes in {"kather2016": 8, "clevr": 2, "sonyc": 2, "video": 2}.items()
@@ -62,6 +65,9 @@ class CrossModalOptics(nn.Module):
                 self.register_parameter("router_phase", None)
             torch.manual_seed(seed + 102)
             self.global_phase = nn.Parameter(torch.randn(self.active_height, self.active_width) * 0.02)
+            self.additional_phases = nn.ParameterList([
+                nn.Parameter(torch.randn(self.active_height, self.active_width) * 0.02)
+                for _ in range(self.optical_layers - 2)])
         self.register_buffer("active_count", torch.tensor(4))
         self.propagator = AngularSpectrumPropagator(
             wavelength_m=5.32e-7, pixel_size_m=1.7e-5,
@@ -99,6 +105,8 @@ class CrossModalOptics(nn.Module):
         else:
             self.first_phase.requires_grad_(True)
         self.global_phase.requires_grad_(not warmup)
+        for phase in self.additional_phases:
+            phase.requires_grad_(not warmup)
         current = TASK_ORDER[task_index]
         # A new task-specific head has no inherited weights, so it learns during
         # both new-expert warmup and the main stage. Previous heads stay frozen.
@@ -116,6 +124,8 @@ class CrossModalOptics(nn.Module):
             phase.requires_grad_(i < 4)
         self.router_phase.requires_grad_(True)
         self.global_phase.requires_grad_(True)
+        for phase in self.additional_phases:
+            phase.requires_grad_(True)
         for name, head in self.heads.items():
             head.requires_grad_(name == task)
 
@@ -185,8 +195,9 @@ class CrossModalOptics(nn.Module):
                     field[:, y:y+224, x:x+224] = (amplitude * q[:, i, None, None].sqrt()
                                                    * self.phase_mask(self.first_phase[i]))
         field = self.oeo(self.propagator(field))
-        global_mask = F.pad(self.phase_mask(self.global_phase), (self.border,) * 4, value=1)
-        field = self.oeo(self.propagator(field * global_mask))
+        for phase in (self.global_phase, *self.additional_phases):
+            global_mask = F.pad(self.phase_mask(phase), (self.border,) * 4, value=1)
+            field = self.oeo(self.propagator(field * global_mask))
         intensity = field[:, self.border:-self.border, self.border:-self.border].abs().square()
         # A camera samples the complete output plane. Fixed pooling bounds the
         # electronic interface without depending on hand-picked detector windows.
