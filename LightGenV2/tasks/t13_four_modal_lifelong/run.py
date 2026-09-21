@@ -325,9 +325,28 @@ def fit_mlp_probe(model, task, cfg, device, seed):
 
 
 def calibrate_head(model, task, cfg, device, seed):
-    """Optional one-layer readout refit, disabled in the formal comparison."""
+    """Refit the same one-layer readout and accept it only on validation gain.
+
+    The optical parameters stay frozen.  This routine never adds another
+    electronic layer and never consults the test split when choosing whether
+    to keep the refitted Linear head.
+    """
+    original = copy.deepcopy(model.heads[task.name].state_dict())
+    before = evaluate(model, task, "val", device, cfg["eval_batch"])[0]
+    before_score = selection_score(task.name, before)
     head, result = fit_mlp_head(model, task, cfg, device, seed, ("train", "val"))
     model.heads[task.name].load_state_dict(head.state_dict())
+    after = evaluate(model, task, "val", device, cfg["eval_batch"])[0]
+    after_score = selection_score(task.name, after)
+    accepted = after_score >= before_score
+    if not accepted:
+        model.heads[task.name].load_state_dict(original)
+    result.update({
+        "accepted": accepted,
+        "validation_score_before": before_score,
+        "validation_score_after": after_score,
+        "selection_rule": "accept_refit_only_if_validation_score_does_not_decrease",
+    })
     return result
 
 
@@ -466,7 +485,10 @@ def train_single_task_moe(tasks, cfg, out, device, selected_task=None):
             scheduler.step()
             val=evaluate(model,tasks[name],"val",device,cfg["eval_batch"])[0]
             score=selection_score(name,val)
-            phase_score=max(score, val["detector_balanced_accuracy"])
+            # The declared model output is the single Linear readout.  The
+            # auxiliary optical detector may shape training, but it cannot
+            # select the reported checkpoint.
+            phase_score=score
             row={"epoch":epoch,"loss":float(np.mean(losses)),"validation_score":score,
                  "optical_selection_score":phase_score,
                  "uniform_route_warmup":warmup,
@@ -655,9 +677,9 @@ def train_lifelong_moe(tasks, cfg, out, device):
             scheduler.step()
             val={n:evaluate(model,tasks[n],"val",device,cfg["eval_batch"],task_index)[0] for n in TASK_ORDER[:task_index+1]}
             score=float(np.mean([selection_score(n,val[n]) for n in val]))
-            phase_score=float(np.mean([max(selection_score(n,val[n]),
-                                           val[n]["detector_balanced_accuracy"])
-                                       for n in val]))
+            # Select lifelong checkpoints with the declared one-layer
+            # electronic output only; detector scores are diagnostics.
+            phase_score=score
             row={"epoch":epoch,"loss":float(np.mean(losses)),"validation_mean_score":score,
                  "optical_selection_score":phase_score,"validation":val,
                  "seconds":time.time()-started}

@@ -1,5 +1,6 @@
 import json
 from pathlib import Path
+from types import SimpleNamespace
 
 import numpy as np
 import torch
@@ -9,6 +10,7 @@ from LightGenV2.tasks.t13_four_modal_lifelong.data import (
     _feature_only_field, _feature_text_field, _rgb_field,
 )
 from LightGenV2.tasks.t13_four_modal_lifelong.model import CrossModalOptics
+from LightGenV2.tasks.t13_four_modal_lifelong import run as experiment_run
 from LightGenV2.tasks.t13_four_modal_lifelong.prepare_physical_probe import encode_batch
 from LightGenV2.tasks.t12_cross_modal_lifelong.prepare_physical_concepts import encode_video
 
@@ -116,3 +118,32 @@ def test_single_task_and_lifelong_geometries_are_explicit():
     assert compact.heads["physical"].out_features == 10
     assert sum(isinstance(module, torch.nn.Linear)
                for module in compact.heads["speech"].modules()) == 1
+
+
+def test_head_refit_is_rejected_when_validation_score_decreases(monkeypatch):
+    model = SimpleNamespace(heads={"speech": torch.nn.Linear(3, 8)})
+    original = {key: value.detach().clone()
+                for key, value in model.heads["speech"].state_dict().items()}
+    task = SimpleNamespace(name="speech")
+    scores = iter((.80, .70))
+
+    def fake_evaluate(*_args, **_kwargs):
+        return ({"balanced_accuracy": next(scores)}, None, None)
+
+    def fake_fit(*_args, **_kwargs):
+        head = torch.nn.Linear(3, 8)
+        with torch.no_grad():
+            head.weight.fill_(99)
+            head.bias.fill_(99)
+        return head, {"selected_epoch": 1, "metrics": {}}
+
+    monkeypatch.setattr(experiment_run, "evaluate", fake_evaluate)
+    monkeypatch.setattr(experiment_run, "fit_mlp_head", fake_fit)
+    result = experiment_run.calibrate_head(
+        model, task, {"eval_batch": 4}, torch.device("cpu"), seed=17)
+
+    assert result["accepted"] is False
+    assert result["validation_score_before"] == .80
+    assert result["validation_score_after"] == .70
+    for key, value in model.heads["speech"].state_dict().items():
+        assert torch.equal(value, original[key])
