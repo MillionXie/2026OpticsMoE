@@ -16,6 +16,7 @@
   "head_bottleneck": 64,
   "require_full": false,
   "label_smoothing": 0.0,
+  "detector_aux_weight": 1.0,
   "route_balance": 0.1,
   "replay_per_task": 512,
   "replay_batch": 4,

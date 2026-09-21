@@ -174,7 +174,7 @@ def smoothed_nll(log_probabilities, labels, smoothing):
 
 
 def task_loss(model, task, indices, device, warmup=False, balance=0.0,
-              augment=False, label_smoothing=0.0):
+              augment=False, label_smoothing=0.0, detector_aux_weight=0.0):
     fields, labels, _ = task.splits["train"]
     batch_fields = fields[indices].to(device=device, dtype=torch.float32)
     # No task-specific augmentation is applied in the audited four-task protocol.
@@ -183,6 +183,10 @@ def task_loss(model, task, indices, device, warmup=False, balance=0.0,
     w = sample_weights(task, indices).to(device)
     log_probabilities = out["probabilities"].clamp_min(1e-12).log()
     loss = (smoothed_nll(log_probabilities, y, label_smoothing) * w).mean()
+    if detector_aux_weight:
+        detector_log = out["detector_probabilities"].clamp_min(1e-12).log()
+        detector_loss = (smoothed_nll(detector_log, y, label_smoothing) * w).mean()
+        loss = loss + detector_aux_weight * detector_loss
     if balance and out["route_power"] is not None and not warmup:
         n = int(model.active_count)
         loss = loss + balance * (out["route_power"][:, :n].mean(0) - 1.0/n).square().sum()
@@ -192,7 +196,9 @@ def task_loss(model, task, indices, device, warmup=False, balance=0.0,
 def configured_task_loss(model, task, indices, device, cfg, **kwargs):
     return task_loss(model, task, indices, device,
                      augment=False,
-                     label_smoothing=float(cfg.get("label_smoothing", 0.0)), **kwargs)
+                     label_smoothing=float(cfg.get("label_smoothing", 0.0)),
+                     detector_aux_weight=float(cfg.get("detector_aux_weight", 0.0)),
+                     **kwargs)
 
 
 def replay_indices(task, budget, seed):

@@ -92,6 +92,20 @@ class CrossModalOptics(nn.Module):
             layers.append(nn.Linear(self.head_width, classes))
         return nn.Sequential(*layers)
 
+    def detector_centers(self, classes):
+        """Fixed training-only detector locations spread over the active plane."""
+        if classes == 2:
+            # Matches the geometry that made the earlier CLEVR optical model
+            # train reliably, expressed relative to an arbitrary aperture.
+            return [(self.height // 2, self.width // 2 - self.active_width // 6),
+                    (self.height // 2, self.width // 2 + self.active_width // 6)]
+        rows, cols = 2, 5
+        ys = torch.linspace(self.border + self.active_height * .3,
+                            self.border + self.active_height * .7, rows)
+        xs = torch.linspace(self.border + self.active_width * .15,
+                            self.border + self.active_width * .85, cols)
+        return [(int(y), int(x)) for y in ys for x in xs][:classes]
+
     @staticmethod
     def transmission(raw):
         return torch.exp(2j * torch.pi * torch.sigmoid(raw))
@@ -217,7 +231,15 @@ class CrossModalOptics(nn.Module):
             intensity[:, None], (self.readout_grid, self.readout_grid))[:, 0].flatten(1)
         features = torch.log1p(features / features.mean(1, keepdim=True).clamp_min(1e-20))
         logits = self.heads[task](features)
+        classes = logits.shape[1]
+        detector_side = max(32, min(64, self.active_width // 7))
+        detector_energy = self.detect(field.abs().square(), self.detector_centers(classes),
+                                      detector_side)
+        detector_probabilities = ((detector_energy + 1e-12) /
+                                  (detector_energy.sum(1, keepdim=True) +
+                                   classes * 1e-12))
         return {"probabilities": logits.softmax(1), "logits": logits,
                 "ccd_features": features,
+                "detector_probabilities": detector_probabilities,
                 "route_power": q, "router_capture": router_capture,
                 "capture": intensity.sum((-2, -1))}
