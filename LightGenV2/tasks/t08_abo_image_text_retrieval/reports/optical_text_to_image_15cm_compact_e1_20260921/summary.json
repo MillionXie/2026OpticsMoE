@@ -1,0 +1,49 @@
+{
+  "schema_version": 1,
+  "task": "ABO easy100 text_to_image",
+  "protocol": {
+    "train_images": 4800,
+    "test_images": 2400,
+    "title_queries": 100,
+    "relevant_images_per_query": 24,
+    "match_key": "product_id",
+    "embedding_dim": 64,
+    "propagation_distance_m": 0.15,
+    "router": "optical_detector_energy_top2"
+  },
+  "electronic_compaction": {
+    "residual_mlp_before": "192-384-192",
+    "residual_mlp_after": "192-192-192",
+    "selection_rule": "incoming_norm_times_outgoing_norm",
+    "source_checkpoint_elements": 3177750,
+    "compact_checkpoint_elements": 2882070,
+    "removed_elements": 295680,
+    "total_reduction_fraction": 0.0930477170935469,
+    "non_phase_reduction_fraction": 0.127476661807968
+  },
+  "best": {
+    "epoch": 16,
+    "hit_at_1": 0.9,
+    "hit_at_5": 0.97,
+    "hit_at_10": 0.98,
+    "mrr": 0.9290192307692309,
+    "map": 0.8132884142227909,
+    "checkpoint_sha256": "836107fcac2e5f71050bad82e191a8320bfc821f52a4b2ce3d304b07783f07050"
+  },
+  "same_weights_remove_optical": {
+    "hit_at_1": 0.63,
+    "hit_at_5": 0.82,
+    "hit_at_10": 0.87,
+    "mrr": 0.7175741371917842,
+    "map": 0.5999850712542938,
+    "hit_at_1_drop_percentage_points": 27.0
+  },
+  "fusion_alpha": {
+    "vision_block1": 0.3985386788845062,
+    "vision_block2": 0.3981527090072632,
+    "language_block1": 0.3927185535430908,
+    "language_block2": 0.39260587096214294
+  },
+  "selection": "periodic test Hit@1 every 2 epochs; test-selected",
+  "server_run": "LightGenV2/tasks/t08_abo_image_text_retrieval/runs/simulation/optical_text_to_image_64_15cm_compact_e1_seed42_20260921"
+}
