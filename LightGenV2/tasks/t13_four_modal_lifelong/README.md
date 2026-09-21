@@ -82,6 +82,10 @@ CLEVR 全量 D2NN 在第 17 轮按验证集选出 checkpoint，验证/测试 bal
 每个阶段按验证 balanced accuracy 选择 checkpoint，随后一次性评估已经学过的任务，保存
 下三角矩阵、backward transfer 和 forgetting。没有联合训练 D2NN。
 
+正式终身学习使用 `configs/formal_lifelong_s17.json`：每任务 20 轮、完整数据、当前任务 batch 128、
+每个旧任务固定 replay 512 条且 replay batch 4。无 replay D2NN、相同 replay D2NN 和 ours 分别
+独立运行；三者不共享训练状态，也不包含联合训练。
+
 ## 入口
 
 先用 `prepare.py` 为现有数据建立带 SHA256 的小型引用包，再运行：
