@@ -24,7 +24,8 @@ def normalize_power(x, power=1.0):
 
 
 class CrossModalOptics(nn.Module):
-    def __init__(self, architecture="moe", seed=17, phase_dropout=0.05):
+    def __init__(self, architecture="moe", seed=17, phase_dropout=0.05,
+                 readout_grid=16, head_width=64, head_bottleneck=0):
         super().__init__()
         if architecture not in {"moe", "d2nn"}:
             raise ValueError(architecture)
@@ -42,9 +43,11 @@ class CrossModalOptics(nn.Module):
                        self.border + c * (self.expert_size + self.gap)) for r, c in order]
         self.router_centers = [(y + 112, x + 112) for y, x in self.slots]
         self.phase_dropout = float(phase_dropout)
+        self.readout_grid = int(readout_grid)
+        self.head_width = int(head_width)
+        self.head_bottleneck = int(head_bottleneck)
         self.heads = nn.ModuleDict({
-            name: nn.Sequential(nn.LayerNorm(16 * 16), nn.Linear(16 * 16, 64),
-                                nn.GELU(), nn.Linear(64, classes))
+            name: self.make_head(classes)
             for name, classes in {"kather2016": 8, "clevr": 2, "sonyc": 2, "video": 2}.items()
         })
         with torch.random.fork_rng(devices=[]):
@@ -63,6 +66,16 @@ class CrossModalOptics(nn.Module):
         self.propagator = AngularSpectrumPropagator(
             wavelength_m=5.32e-7, pixel_size_m=1.7e-5,
             grid_size=(self.height, self.width), distance_m=0.1)
+
+    def make_head(self, classes):
+        features = self.readout_grid ** 2
+        layers = [nn.LayerNorm(features), nn.Linear(features, self.head_width), nn.GELU()]
+        if self.head_bottleneck:
+            layers.extend((nn.Linear(self.head_width, self.head_bottleneck), nn.GELU(),
+                           nn.Linear(self.head_bottleneck, classes)))
+        else:
+            layers.append(nn.Linear(self.head_width, classes))
+        return nn.Sequential(*layers)
 
     @staticmethod
     def transmission(raw):
@@ -175,9 +188,10 @@ class CrossModalOptics(nn.Module):
         global_mask = F.pad(self.phase_mask(self.global_phase), (self.border,) * 4, value=1)
         field = self.oeo(self.propagator(field * global_mask))
         intensity = field[:, self.border:-self.border, self.border:-self.border].abs().square()
-        # A camera samples the complete output plane. Fixed pooling limits the
-        # electronic interface to 256 values without depending on hand-picked windows.
-        features = F.adaptive_avg_pool2d(intensity[:, None], (16, 16))[:, 0].flatten(1)
+        # A camera samples the complete output plane. Fixed pooling bounds the
+        # electronic interface without depending on hand-picked detector windows.
+        features = F.adaptive_avg_pool2d(
+            intensity[:, None], (self.readout_grid, self.readout_grid))[:, 0].flatten(1)
         features = torch.log1p(features / features.mean(1, keepdim=True).clamp_min(1e-20))
         logits = self.heads[task](features)
         return {"probabilities": logits.softmax(1), "logits": logits,

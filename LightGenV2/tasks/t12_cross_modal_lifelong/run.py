@@ -33,6 +33,16 @@ FULL_DATA_REQUIREMENTS = {
 }
 
 
+def build_model(architecture, cfg, seed, phase_dropout=None):
+    return CrossModalOptics(
+        architecture, seed,
+        cfg["phase_dropout"] if phase_dropout is None else phase_dropout,
+        readout_grid=int(cfg.get("readout_grid", 16)),
+        head_width=int(cfg.get("head_width", 64)),
+        head_bottleneck=int(cfg.get("head_bottleneck", 0)),
+    )
+
+
 def validate_full_protocol(name, protocol):
     """Reject any sampled or incomplete package at the formal training boundary."""
     if not protocol.get("all_original_samples", False):
@@ -304,8 +314,7 @@ def fit_mlp_probe(model, task, cfg, device, seed):
             for split in ("train","val","test")}
     with torch.random.fork_rng(devices=[]):
         torch.manual_seed(seed)
-        head=nn.Sequential(nn.LayerNorm(256),nn.Linear(256,64),nn.GELU(),
-                           nn.Linear(64,task.classes)).to(device)
+        head=model.make_head(task.classes).to(device)
     train_x,train_y,_=cached["train"]
     train_x=train_x.to(device);train_y_t=torch.as_tensor(train_y,device=device)
     weights=sample_weights(task,np.arange(len(train_y))).to(device)
@@ -363,7 +372,7 @@ def train_single_task_d2nn(tasks, cfg, out, device, selected_task=None):
         task_index = TASK_ORDER.index(name)
         task_root = root / name; task_root.mkdir()
         seed_all(cfg["seed"] + task_index)
-        model = CrossModalOptics("d2nn", cfg["seed"] + task_index, cfg["phase_dropout"]).to(device)
+        model = build_model("d2nn", cfg, cfg["seed"] + task_index).to(device)
         model.configure_task(task_index, warmup=False)
         optimizer = torch.optim.Adam([p for p in model.parameters() if p.requires_grad], lr=cfg["lr"])
         scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(optimizer, epochs, eta_min=cfg["lr"] * .1)
@@ -402,7 +411,7 @@ def train_single_task_d2nn(tasks, cfg, out, device, selected_task=None):
     probes={}
     score_matrix={}
     for source_index,source in enumerate(TASK_ORDER):
-        model=CrossModalOptics("d2nn",cfg["seed"]+source_index,cfg["phase_dropout"]).to(device)
+        model=build_model("d2nn",cfg,cfg["seed"]+source_index).to(device)
         cp=torch.load(root/source/"best_checkpoint.pt",map_location=device,weights_only=False)
         model.load_state_dict(cp["model"])
         model.requires_grad_(False)
@@ -429,7 +438,7 @@ def train_single_task_moe(tasks, cfg, out, device, selected_task=None):
         task_index = TASK_ORDER.index(name)
         task_root = root / name; task_root.mkdir()
         seed_all(cfg["seed"] + task_index)
-        model = CrossModalOptics("moe", cfg["seed"] + task_index, cfg["phase_dropout"]).to(device)
+        model = build_model("moe", cfg, cfg["seed"] + task_index).to(device)
         model.configure_single_task(name)
         optimizer = torch.optim.Adam([p for p in model.parameters() if p.requires_grad], lr=cfg["lr"])
         scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(
@@ -483,7 +492,7 @@ def overfit_diagnostics(tasks, cfg, out, device):
     result={}
     for task_index,name in enumerate(TASK_ORDER):
         seed_all(cfg["seed"]+task_index)
-        model=CrossModalOptics("d2nn",cfg["seed"]+task_index,0).to(device)
+        model=build_model("d2nn",cfg,cfg["seed"]+task_index,phase_dropout=0).to(device)
         model.configure_task(task_index,warmup=False)
         indices=replay_indices(tasks[name],budget,cfg["seed"]+task_index)
         optimizer=torch.optim.Adam([p for p in model.parameters() if p.requires_grad],lr=cfg.get("overfit_lr",cfg["lr"]))
@@ -508,7 +517,7 @@ def train_sequential_d2nn(tasks, cfg, out, device, use_replay):
     tag = "replay" if use_replay else "no_replay"
     root = out / f"sequential_d2nn_{tag}"; root.mkdir()
     seed_all(cfg["seed"])
-    model = CrossModalOptics("d2nn", cfg["seed"], cfg["phase_dropout"]).to(device)
+    model = build_model("d2nn", cfg, cfg["seed"]).to(device)
     replay = {}; all_history = []
     for task_index, name in enumerate(TASK_ORDER):
         task_root = root / f"stage_{task_index+1}_{name}"; task_root.mkdir()
@@ -565,7 +574,7 @@ def train_sequential_d2nn(tasks, cfg, out, device, use_replay):
 def train_lifelong_moe(tasks, cfg, out, device):
     root = out / "lifelong_moe"; root.mkdir()
     seed_all(cfg["seed"])
-    model = CrossModalOptics("moe", cfg["seed"], cfg["phase_dropout"]).to(device)
+    model = build_model("moe", cfg, cfg["seed"]).to(device)
     replay = {}; all_history = []
     for task_index, name in enumerate(TASK_ORDER):
         task_root = root / f"stage_{task_index+1}_{name}"; task_root.mkdir()
@@ -644,7 +653,7 @@ def finalize(model,tasks,root,device,cfg,epoch,training):
 def smoke(tasks,cfg,out,device):
     records={}
     for arch in ("moe","d2nn"):
-        model=CrossModalOptics(arch,cfg["seed"],0).to(device)
+        model=build_model(arch,cfg,cfg["seed"],phase_dropout=0).to(device)
         task_records={}
         for task_index,name in enumerate(TASK_ORDER):
             model.configure_task(task_index);model.train();model.zero_grad(set_to_none=True)

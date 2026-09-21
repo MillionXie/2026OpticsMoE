@@ -26,6 +26,13 @@ class ContractTest(unittest.TestCase):
         self.assertEqual(moe.heads["clevr"][-1].out_features, 2)
         self.assertEqual(moe.heads["video"][-1].out_features, 2)
 
+    def test_configurable_full_ccd_mlp(self):
+        model = CrossModalOptics("moe", phase_dropout=0, readout_grid=28,
+                                 head_width=256, head_bottleneck=64)
+        out = model(torch.rand(2, 224, 224), "kather2016")
+        self.assertEqual(tuple(out["ccd_features"].shape), (2, 28 * 28))
+        self.assertEqual(tuple(out["probabilities"].shape), (2, 8))
+
     def test_freeze_contract(self):
         model = CrossModalOptics("moe", phase_dropout=0)
         model.configure_task(1, warmup=False)
