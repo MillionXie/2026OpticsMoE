@@ -25,6 +25,7 @@
   "moe_detector_aux_weight": 1.0,
   "moe_detector_aux_weight_speech": 0.0,
   "moe_detector_aux_weight_physical": 0.0,
+  "moe_head_refit": true,
   "route_balance": 0.1,
   "route_balance_speech": 1.0,
   "route_balance_physical": 1.0,

@@ -476,11 +476,19 @@ def train_single_task_moe(tasks, cfg, out, device, selected_task=None):
                               "route":val["route_mean"],"seconds":row["seconds"]}),flush=True)
         cp=torch.load(task_root/"best_checkpoint.pt",map_location=device,weights_only=False)
         model.load_state_dict(cp["model"])
+        calibration = None
+        if cfg.get("moe_head_refit", True):
+            # The optical checkpoint is already fixed. Refit the same single
+            # Linear CCD readout; this changes training schedule, not capacity.
+            calibration=calibrate_head(model,tasks[name],cfg,device,
+                                       cfg["seed"]+1000+task_index)
+            torch.save({**cp,"model":model.state_dict(),"head_calibration":calibration},
+                       task_root/"refit_checkpoint.pt")
         metrics={split:evaluate(model,tasks[name],split,device,cfg["eval_batch"])[0]
                  for split in ("train","val","test")}
         score = selection_score(name, metrics["val"])
         summary[name]={"selected_epoch":cp["epoch"],"active_experts":4,
-                       "head_calibration":None,
+                       "head_calibration":calibration,
                        "electronic_readout":"single_linear_layer",
                        "validation_selection_score":score,
                        "admission_threshold":float(cfg.get("moe_admission_threshold", .70)),
@@ -647,13 +655,18 @@ def train_lifelong_moe(tasks, cfg, out, device):
             if phase_score>best:best=phase_score;torch.save(cp,task_root/"best_checkpoint.pt")
             print(json.dumps({"arch":"moe","task":name,"epoch":epoch,"val":score,"loss":row["loss"],"route":val[name]["route_mean"],"seconds":row["seconds"]}),flush=True)
         cp=torch.load(task_root/"best_checkpoint.pt",map_location=device,weights_only=False);model.load_state_dict(cp["model"])
+        calibration = None
+        if cfg.get("moe_head_refit", True):
+            calibration=calibrate_head(model,task,cfg,device,cfg["seed"]+1000+task_index)
+            torch.save({**cp,"model":model.state_dict(),"head_calibration":calibration},
+                       task_root/"refit_checkpoint.pt")
         after=[state_sha(p) for p in model.first_phase[:4*task_index]]
         after_heads={n:module_sha(model.heads[n]) for n in TASK_ORDER[:task_index]}
         assert old_hash==after, "frozen old expert changed"
         assert old_head_hash==after_heads, "frozen old task head changed"
         stage_eval=stage_evaluation(model,tasks,TASK_ORDER[:task_index+1],device,cfg,task_index)
         save(task_root/"stage_result.json",{"selected_epoch":cp["epoch"],**stage_eval,
-             "head_calibration":None,
+             "head_calibration":calibration,
              "electronic_readout":"single_linear_layer",
              "old_experts_unchanged":old_hash==after,"old_heads_unchanged":old_head_hash==after_heads})
         all_history.append({"task":name,"selected_epoch":cp["epoch"],**stage_eval})
