@@ -9,6 +9,8 @@ from LightGenV2.tasks.t13_four_modal_lifelong.data import (
     _feature_only_field, _feature_text_field, _rgb_field,
 )
 from LightGenV2.tasks.t13_four_modal_lifelong.model import CrossModalOptics
+from LightGenV2.tasks.t13_four_modal_lifelong.prepare_physical_probe import encode_batch
+from LightGenV2.tasks.t12_cross_modal_lifelong.prepare_physical_concepts import encode_video
 
 
 def test_rgb_uses_all_channels_and_has_unit_power():
@@ -80,6 +82,14 @@ def test_physical_rank10_uses_all_five_complete_concepts(tmp_path: Path):
     assert dataset.labels().tolist() == list(range(10))
     assert dataset[:].shape == (10, 224, 224)
     assert torch.allclose(dataset[:].square().sum((-2, -1)), torch.ones(10), atol=1e-4)
+
+
+def test_vectorized_physical_encoder_matches_reference():
+    video = np.random.default_rng(17).integers(0, 256, (2, 15, 64, 64, 3), dtype=np.uint8)
+    actual = encode_batch(video)
+    expected = np.stack([encode_video(item) for item in video])
+    assert actual.shape == (2, 224, 224)
+    assert np.allclose(actual, expected, atol=2e-3)
 
 
 def test_frozen_feature_encodings_preserve_power_and_text():
