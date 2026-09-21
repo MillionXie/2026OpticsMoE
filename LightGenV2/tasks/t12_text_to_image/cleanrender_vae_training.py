@@ -308,8 +308,8 @@ def train_cleanrender_vae_gan(
 ) -> dict[str, Any]:
     _seed_everything(seed)
     contract = validate_split_contract(data_dir)
-    if contract["categories"] != ["CHAIR"]:
-        raise ValueError(f"Chair VAE-GAN requires exactly CHAIR, got {contract['categories']}")
+    if [category.upper() for category in contract["categories"]] != ["CHAIR"]:
+        raise ValueError(f"Chair VAE-GAN requires exactly one chair category, got {contract['categories']}")
     output_dir.mkdir(parents=True, exist_ok=False)
     encoder = CleanRenderImageEncoder(config).to(device)
     decoder = CleanRenderGenerator(config.base, categories=1).to(device)
