@@ -115,6 +115,11 @@ def prepare_clevr(source, checkpoint, out, device):
 
 
 def prepare_speech(source, checkpoint, out, device):
+    wrapper_protocol = source / "protocol.json"
+    if wrapper_protocol.exists():
+        wrapped = json.loads(wrapper_protocol.read_text())
+        if wrapped.get("storage") == "speech_commands_text_v1":
+            source = Path(wrapped["source_root"])
     vocab = json.loads((source / "vocab.json").read_text())
     model = _load_vision(checkpoint, 8)
     for split in ("train", "val", "test"):
@@ -163,6 +168,8 @@ def main():
     result = globals()["prepare_" + a.task](a.source, a.checkpoint, a.out, a.device)
     classes, storage, modalities = result
     source_protocol_path = a.source / "protocol.json"
+    if not source_protocol_path.exists() and (a.source.parent / "protocol.json").exists():
+        source_protocol_path = a.source.parent / "protocol.json"
     source_protocol = (json.loads(source_protocol_path.read_text())
                        if source_protocol_path.exists() else {})
     source_manifest = a.source / "manifest.json"
