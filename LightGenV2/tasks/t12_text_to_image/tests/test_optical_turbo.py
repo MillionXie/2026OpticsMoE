@@ -7,6 +7,7 @@ from LightGenV2.tasks.t12_text_to_image.optical_turbo import (
     OpticalTurboConfig,
     ParallelOpticalMidBlock,
     load_optical_turbo_config,
+    attach_parallel_optical_mid,
 )
 
 
@@ -54,3 +55,28 @@ def test_optical_config_loads() -> None:
     assert config.optical_width == 224
     assert config.grid == 8
     assert config.top_k == 2
+
+
+class _TimeEmbedding(nn.Module):
+    def __init__(self) -> None:
+        super().__init__()
+        self.linear_2 = nn.Linear(6, 6)
+
+
+class _CompressedUNet(nn.Module):
+    def __init__(self) -> None:
+        super().__init__()
+        self.mid_block = None
+        self.time_embedding = _TimeEmbedding()
+        self.config = type("Config", (), {
+            "block_out_channels": (2, 4),
+            "cross_attention_dim": 5,
+        })()
+
+
+def test_attach_uses_identity_when_compressed_unet_removed_mid_block() -> None:
+    unet = _CompressedUNet()
+    wrapper = attach_parallel_optical_mid(unet, _config())
+    assert unet.mid_block is wrapper
+    assert wrapper.electronic_was_present is False
+    assert "identity residual" in wrapper.architecture_report()["electronic_branch"]

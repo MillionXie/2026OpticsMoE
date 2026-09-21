@@ -86,11 +86,13 @@ class ParallelOpticalMidBlock(nn.Module):
         timestep_dim: int,
         condition_dim: int,
         config: OpticalTurboConfig,
+        electronic_was_present: bool = True,
     ) -> None:
         super().__init__()
         self.electronic = electronic
         self.channels = int(channels)
         self.grid = int(config.grid)
+        self.electronic_was_present = bool(electronic_was_present)
         width = int(config.optical_width)
         self.input_norm = nn.LayerNorm(channels)
         self.input_projection = nn.Linear(channels, width)
@@ -187,7 +189,12 @@ class ParallelOpticalMidBlock(nn.Module):
         )
         return {
             "variant": "qwen_bksdm_v2_tiny_parallel_optical_mid_v0",
-            "electronic_mid_is_retained": True,
+            "electronic_mid_is_retained": self.electronic_was_present,
+            "electronic_branch": (
+                "retained pretrained mid block"
+                if self.electronic_was_present
+                else "identity residual because the compressed base has no mid block"
+            ),
             "electronic_and_optical_are_parallel": True,
             "optical_backend": "compact_fft_simulation",
             "spatial_grid": [self.grid, self.grid],
@@ -200,8 +207,19 @@ class ParallelOpticalMidBlock(nn.Module):
             },
         }
 
+class _IdentityMidBlock(nn.Module):
+    """Diffusers-compatible identity at a deliberately removed mid block."""
+
+    def forward(self, hidden_states: torch.Tensor, *args, **kwargs) -> torch.Tensor:
+        del args, kwargs
+        return hidden_states
+
+
 def attach_parallel_optical_mid(unet: nn.Module, config: OpticalTurboConfig) -> ParallelOpticalMidBlock:
     electronic = unet.mid_block
+    electronic_was_present = electronic is not None
+    if electronic is None:
+        electronic = _IdentityMidBlock()
     channels = int(unet.config.block_out_channels[-1])
     condition_dim = int(unet.config.cross_attention_dim)
     timestep_dim = int(unet.time_embedding.linear_2.out_features)
@@ -211,6 +229,7 @@ def attach_parallel_optical_mid(unet: nn.Module, config: OpticalTurboConfig) -> 
         timestep_dim=timestep_dim,
         condition_dim=condition_dim,
         config=config,
+        electronic_was_present=electronic_was_present,
     )
     unet.mid_block = wrapper
     return wrapper
