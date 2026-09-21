@@ -40,7 +40,13 @@ def build_model(architecture, cfg, seed, phase_dropout=None, max_experts=16):
         optical_layers=int(cfg.get("optical_layers", 2)),
         max_experts=max_experts,
         oeo_activation=cfg.get("oeo_activation", "intensity_softsign"),
+        routing_temperature=float(cfg.get("routing_temperature", 1.0)),
     )
+
+
+def task_config(cfg, key, task, default=None):
+    """Resolve a task-specific value before the shared fallback."""
+    return cfg.get(f"{key}_{task}", cfg.get(key, default))
 
 
 def validate_full_protocol(name, protocol):
@@ -202,9 +208,9 @@ def task_loss(model, task, indices, device, warmup=False, balance=0.0,
 
 
 def configured_task_loss(model, task, indices, device, cfg, **kwargs):
-    detector_aux_weight = float(cfg.get(
-        f"{model.architecture}_detector_aux_weight",
-        cfg.get("detector_aux_weight", 0.0)))
+    key = f"{model.architecture}_detector_aux_weight"
+    detector_aux_weight = float(task_config(cfg, key, task.name,
+                                            cfg.get("detector_aux_weight", 0.0)))
     return task_loss(model, task, indices, device,
                      augment=False,
                      label_smoothing=float(cfg.get("label_smoothing", 0.0)),
@@ -434,14 +440,18 @@ def train_single_task_moe(tasks, cfg, out, device, selected_task=None):
         scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(
             optimizer, epochs, eta_min=lr * .1)
         best, history = -float("inf"), []
+        warmup_epochs = int(cfg.get("single_task_moe_warmup_epochs", 0))
+        route_balance = float(task_config(cfg, "route_balance", name, 0.0))
         for epoch in range(1, epochs + 1):
             model.train(); started=time.time(); losses=[]
+            warmup = epoch <= warmup_epochs
             order=np.random.default_rng(cfg["seed"]+task_index*1000+epoch).permutation(
                 len(tasks[name].splits["train"][1]))
             for ix in chunks(order, cfg["batch"]):
                 optimizer.zero_grad(set_to_none=True)
                 loss=configured_task_loss(model,tasks[name],ix,device,cfg,
-                                          balance=cfg["route_balance"])
+                                          warmup=warmup,
+                                          balance=0.0 if warmup else route_balance)
                 loss.backward()
                 torch.nn.utils.clip_grad_norm_(
                     [p for p in model.parameters() if p.requires_grad],1.0)
@@ -452,6 +462,7 @@ def train_single_task_moe(tasks, cfg, out, device, selected_task=None):
             phase_score=max(score, val["detector_balanced_accuracy"])
             row={"epoch":epoch,"loss":float(np.mean(losses)),"validation_score":score,
                  "optical_selection_score":phase_score,
+                 "uniform_route_warmup":warmup,
                  "validation":val,"seconds":time.time()-started}
             history.append(row);save(task_root/"history.json",history)
             cp={"model":model.state_dict(),"epoch":epoch,"task":name,
@@ -611,11 +622,13 @@ def train_lifelong_moe(tasks, cfg, out, device):
                            for j,(old,ix) in enumerate(replay.items())}
             for step,current in enumerate(current_chunks):
                 optimizer.zero_grad(set_to_none=True)
-                current_loss=configured_task_loss(model,task,current,device,cfg,balance=cfg["route_balance"])
+                route_balance=float(task_config(cfg,"route_balance",name,0.0))
+                current_loss=configured_task_loss(model,task,current,device,cfg,balance=route_balance)
                 replay_losses=[]
                 for old in TASK_ORDER[:task_index]:
                     pool=replay_chunks[old]; ix=pool[step%len(pool)]
-                    replay_losses.append(configured_task_loss(model,tasks[old],ix,device,cfg,balance=cfg["route_balance"]))
+                    old_balance=float(task_config(cfg,"route_balance",old,0.0))
+                    replay_losses.append(configured_task_loss(model,tasks[old],ix,device,cfg,balance=old_balance))
                 loss=combine_current_replay(current_loss,replay_losses,cfg["replay_weight"])
                 loss.backward();torch.nn.utils.clip_grad_norm_([p for p in model.parameters() if p.requires_grad],1.0);optimizer.step();losses.append(float(loss.detach()))
             scheduler.step()

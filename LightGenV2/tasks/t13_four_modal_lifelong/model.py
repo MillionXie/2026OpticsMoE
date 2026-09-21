@@ -26,7 +26,8 @@ def normalize_power(x, power=1.0):
 class CrossModalOptics(nn.Module):
     def __init__(self, architecture="moe", seed=17, phase_dropout=0.05,
                  readout_grid=16, head_width=64, head_bottleneck=0, optical_layers=2,
-                 max_experts=16, oeo_activation="intensity_softsign"):
+                 max_experts=16, oeo_activation="intensity_softsign",
+                 routing_temperature=1.0):
         super().__init__()
         if architecture not in {"moe", "d2nn"}:
             raise ValueError(architecture)
@@ -55,6 +56,9 @@ class CrossModalOptics(nn.Module):
         self.head_width = int(head_width)
         self.head_bottleneck = int(head_bottleneck)
         self.optical_layers = int(optical_layers)
+        self.routing_temperature = float(routing_temperature)
+        if self.routing_temperature <= 0:
+            raise ValueError("routing_temperature must be positive")
         if oeo_activation not in {"intensity_softsign", "centered_leaky_softsign"}:
             raise ValueError(oeo_activation)
         self.oeo_activation = oeo_activation
@@ -185,7 +189,7 @@ class CrossModalOptics(nn.Module):
         routed = F.pad(amplitude.to(torch.complex64) * self.transmission(self.router_phase),
                        (dx//2, dx-dx//2, dy//2, dy-dy//2))
         capture = self.detect(self.propagator(routed).abs().square(), self.router_centers, 60)
-        weights = (capture + 1e-12) * allowed
+        weights = (capture + 1e-12).pow(1.0 / self.routing_temperature) * allowed
         return weights / weights.sum(1, keepdim=True), capture.sum(1)
 
     def forward(self, amplitude, task, warmup=False, expert_mask=None):
