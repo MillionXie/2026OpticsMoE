@@ -64,6 +64,7 @@ def main():
                 os.link(source, target)
             except OSError:
                 shutil.copy2(source, target)
+        source_manifest = json.loads((a.source / "manifest.json").read_text())
         records = json.loads((a.source / "test_reserved_ids.json").read_text())
         if a.archive is None:
             raise ValueError("Speech Commands requires --archive to decode the reserved test speakers")
@@ -83,7 +84,15 @@ def main():
                                  "label": label, "audio_class": target, "query_class": query})
         np.savez_compressed(assets / "test_images.npz", images=np.stack(images))
         (assets / "test_questions.json").write_text(json.dumps(rows, indent=2) + "\n")
-        protocol.update(source_root=str(assets.resolve()), modalities=["log-mel audio", "keyword text"],
+        retained_counts = {split: sum(source_manifest["counts"][split].values())
+                           for split in ("train", "val", "test")}
+        protocol.update(all_original_samples=True,
+                        status="complete deduplicated official mini_speech_commands release",
+                        source_release="mini_speech_commands",
+                        retained_audio_clips=retained_counts,
+                        duplicate_waveforms_removed=source_manifest["duplicate_waveforms_removed"],
+                        query_counts={split: 2 * count for split, count in retained_counts.items()},
+                        source_root=str(assets.resolve()), modalities=["log-mel audio", "keyword text"],
                         objective="balanced audio/text keyword matching", license="CC BY 4.0",
                         source_hashes={"manifest.json": sha256(a.source / "manifest.json"),
                                        "archive": sha256(a.archive)})
