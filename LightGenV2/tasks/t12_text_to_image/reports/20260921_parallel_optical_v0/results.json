@@ -1,0 +1,59 @@
+{
+  "schema_version": 1,
+  "backend": "compact_fft_simulation",
+  "hardware_measurement": false,
+  "dataset": {
+    "license": "CC BY 4.0",
+    "real_images": {"train": 800, "validation": 100, "test": 100},
+    "categories": ["chair", "lamp", "shoe", "table"],
+    "native_distillation_train_samples": 10016,
+    "qwen_aligned_train_samples": 3872,
+    "validation_generations": 400
+  },
+  "architecture": {
+    "source_grid": [16, 16],
+    "optical_grid": [8, 8],
+    "valid_optical_tokens": 64,
+    "experts": 4,
+    "top_k": 2,
+    "optical_trainable_parameters": 1146597,
+    "parallel_branches": true,
+    "electronic_branch": "identity residual inherited from compressed base",
+    "fusion": "scale_matched_gated"
+  },
+  "accepted_native_condition_run": {
+    "checkpoint": "/DATA/DATA1/guest3/t12_assets/runs/99142c6b/qwen_bksdm_v2_tiny_parallel_optical_v0_seed42/best_optical_mid.pt",
+    "epochs": 3,
+    "seconds": 342.30008567869663,
+    "initial_validation": {
+      "normalized_mse": 0.3165675914890304,
+      "cosine": 0.8276184475421906
+    },
+    "best_validation": {
+      "normalized_mse": 0.31499629094457665,
+      "cosine": 0.8286196851730346
+    },
+    "qwen_end_to_end": {
+      "electronic_normalized_mse": 0.3772728666640226,
+      "optical_normalized_mse": 0.37563270878713473,
+      "electronic_cosine": 0.7909916388988495,
+      "optical_cosine": 0.7920911622047424
+    },
+    "fusion_alpha": 0.05824246630072594
+  },
+  "qwen_detail_alignment_run": {
+    "promoted": false,
+    "initial_normalized_mse": 0.36435490282946204,
+    "best_epoch_normalized_mse": 0.3643576463567618,
+    "initial_cosine": 0.7995268511772156,
+    "best_epoch_cosine": 0.7995422422885895
+  },
+  "native_optical_on_qwen_detail_base": {
+    "promoted": false,
+    "electronic_normalized_mse": 0.3643157034369673,
+    "optical_normalized_mse": 0.36503448491813323
+  },
+  "tests": {"passed": 31},
+  "gpu_released": true,
+  "timing_measured": false
+}
