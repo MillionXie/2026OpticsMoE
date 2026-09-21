@@ -22,6 +22,10 @@ from LightGenV2.tasks.t12_text_to_image.electronic_turbo_training import (
     _teacher_prompt,
 )
 from LightGenV2.tasks.t12_text_to_image.electronic_turbo_infer import _load_adapter
+from LightGenV2.tasks.t12_text_to_image.distilled_decoder import (
+    DistilledDecoderConfig,
+    QwenOneStepLatentStudent,
+)
 
 
 TASK_DIR = Path(__file__).resolve().parents[1]
@@ -114,3 +118,26 @@ def test_turbo_teacher_prompt_requests_full_single_object() -> None:
     synthetic = _synthetic_product_prompts()
     assert len(synthetic) == 768
     assert any("watercolor illustration style red leather shoe" in value for value in synthetic)
+
+
+def test_one_step_student_replaces_pca_and_turbo_unet() -> None:
+    config = DistilledDecoderConfig(
+        base_channels=16,
+        condition_dim=32,
+        blocks_per_level=1,
+        middle_blocks=1,
+        batch_size=2,
+        epochs=1,
+        num_workers=0,
+        train_seeds_per_prompt=1,
+        val_seeds_per_prompt=1,
+    )
+    model = QwenOneStepLatentStudent(64, config)
+    output = model(torch.randn(2, 4, 16, 16), torch.randn(2, 64))
+    assert output.shape == (2, 4, 16, 16)
+    report = model.architecture_report()
+    assert report["inference_iterations"] == 1
+    assert report["uses_pca_condition"] is False
+    assert report["uses_condition_tokens"] is False
+    assert report["uses_sd_turbo_unet_at_inference"] is False
+    assert report["spatial_residual_blocks"] == 5
