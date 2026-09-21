@@ -24,11 +24,14 @@ smoke 对 MoE 和 D2NN 的四任务各执行一次真实光学前向、损失和
 学习时已开放的前 4/8/12/16 槽。服务器的改进 run ID 为
 `runs/simulation/capacity_guard_s17_v1`，只重训 ours。
 
-## 2026-09-20 初始四任务结果
+## 2026-09-20 历史初始结果（已退出主协议）
 
 `runs/simulation/initial_s17_v1` 已完成。联合 D2NN 在第 26 epoch 取得最佳验证均值，
 测试主指标平均值为 0.442562；初始 lifelong MoE 的测试主指标平均值为 0.407443，未超过
 baseline。各任务测试主指标如下：
+
+联合 D2NN 同时访问四个任务，不属于终身学习。它从 2026-09-21 起不再进入活动训练入口、
+主表或结论；既有 run 按审计规则保留，不删除服务器证据。
 
 | 模型 | SEN12MS macro-F1 | CLEVR balanced accuracy | SONYC macro-AP | Video balanced accuracy | 平均值 |
 |---|---:|---:|---:|---:|---:|
@@ -47,7 +50,7 @@ Initial MoE 的验证分数在各任务刚学完时为 0.356268 / 0.500000 / 0.3
 transfer 从 -0.069469 改善到 -0.043792，但仍低于 Joint D2NN 0.023226，且 CLEVR/视频
 仍为机会水平，因此不能据此声称总体超过离线 baseline。
 
-## 2026-09-21 三模型归因对照
+## 2026-09-21 历史 replay 归因对照
 
 为了判断终身学习表现来自 MoE 专家结构还是仅来自 replay，commit `0e791798f` 增加
 Sequential D2NN control。最终比较固定为：
@@ -62,8 +65,8 @@ Sequential D2NN 没有新专家，因此不执行 expert warmup；报告训练�
 正式 run ID 为 `runs/simulation/sequential_d2nn_replay_s17_v1`，源码 commit
 `0e791798f`，在 `capacity_guard_s17_v1` 完成后使用同一 RTX 4090 运行并已正常完成。
 
-统一比较由 commit `06bad5e01` 的 `compare_three.py` 从三个 `results.json` 自动生成；结果文件为
-`reports/generated/three_model_s17_v1.json`。输入文件 SHA256 分别为：
+旧统一比较由 commit `06bad5e01` 的脚本从三个 `results.json` 自动生成。该比较器已经退出
+活动源码；输入文件 SHA256 仍保留用于历史审计：
 
 - Joint D2NN：`15b9fc75311f03c091a391589cf8d03cf04b20027b2a9836f6ff3b5894282f50`；
 - Sequential D2NN：`9c7db5d51903a4cfa62622546bac09e0a793937035de2162659d0b6dc1f372ec`；
@@ -81,3 +84,14 @@ Sequential D2NN 的 -0.012453，因此现有证据只支持最终任务集合上
 “遗忘更少”。MoE 同时比离线 Joint D2NN 低 0.023226；CLEVR 和视频在三个模型中都接近
 机会水平。下一轮应先修复这两个任务的模态编码/监督信号，再重复三模型对照，不能仅增加 epoch
 后宣称架构优越。
+
+## 2026-09-21 新活动协议
+
+活动协议改为：Single-task D2NN 可学性上限与冻结光学 MLP probe、Sequential D2NN 无 replay、
+Sequential D2NN 同量 replay、Sequential Optical MoE 同量 replay。三个顺序模型在每个任务
+结束后保存所有已学任务的 validation/test 指标，形成下三角 `continual_matrix.json`。
+
+在正式全量训练前先运行四任务 64 样本 overfit diagnostic，再分别训练单任务模型。当前数据
+合同存在两个必须先解决的问题：SEN12MS validation/test 类别覆盖不全；SONYC test 只有 27 段
+录音且两个事件没有正例。CLEVR 和视频在现有直接光场编码下均为机会水平，也必须先改善共享且
+冻结的模态适配器。新的顺序结果只能在上述单任务门槛通过后产生。

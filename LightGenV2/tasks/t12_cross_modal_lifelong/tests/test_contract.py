@@ -1,10 +1,13 @@
 import unittest
+import json
+import tempfile
+from pathlib import Path
 import torch
 
 from LightGenV2.tasks.t12_cross_modal_lifelong.model import CrossModalOptics, normalize_power
 from LightGenV2.tasks.t12_cross_modal_lifelong.data import encode_clevr
 from LightGenV2.tasks.t12_cross_modal_lifelong.prepare_physical_concepts import rank
-from LightGenV2.tasks.t12_cross_modal_lifelong.run import combine_current_replay
+from LightGenV2.tasks.t12_cross_modal_lifelong.run import combine_current_replay, save_continual_matrix
 
 
 class ContractTest(unittest.TestCase):
@@ -88,6 +91,22 @@ class ContractTest(unittest.TestCase):
         self.assertEqual(tuple(field.shape), (2, 224, 224))
         self.assertTrue(torch.allclose(field[:, :, :112].square().sum((-2, -1)), torch.full((2,), .5), atol=1e-5))
         self.assertTrue(torch.allclose(field[:, :, 112:].square().sum((-2, -1)), torch.full((2,), .5), atol=1e-5))
+
+    def test_continual_matrix_is_lower_triangular(self):
+        metric = lambda value: {"balanced_accuracy": value, "macro_f1": value, "macro_ap": value}
+        rows = [
+            {"validation":{"sen12ms":metric(.8)},"test":{"sen12ms":metric(.7)}},
+            {"validation":{"sen12ms":metric(.6),"clevr":metric(.9)},
+             "test":{"sen12ms":metric(.5),"clevr":metric(.8)}},
+        ]
+        with tempfile.TemporaryDirectory() as directory:
+            payload = save_continual_matrix(Path(directory), rows)
+            saved = json.loads((Path(directory) / "continual_matrix.json").read_text())
+        self.assertEqual(payload, saved)
+        self.assertEqual(list(saved["test"][0]), ["sen12ms"])
+        self.assertEqual(list(saved["test"][1]), ["sen12ms", "clevr"])
+        self.assertAlmostEqual(saved["continual"]["backward_transfer"]["sen12ms"], -.2)
+        self.assertAlmostEqual(saved["continual"]["forgetting"]["sen12ms"], .2)
 
 
 if __name__ == "__main__":

@@ -1,4 +1,4 @@
-"""Joint D2NN baseline and sequential cross-modal optical MoE training."""
+"""Single-task diagnostics and sequential cross-modal optical learning."""
 import argparse
 import hashlib
 import json
@@ -9,12 +9,14 @@ import subprocess
 import sys
 import time
 import traceback
+import copy
 from dataclasses import dataclass
 from pathlib import Path
 
 import numpy as np
 import torch
 import torch.nn.functional as F
+from torch import nn
 from sklearn.metrics import accuracy_score, average_precision_score, confusion_matrix, f1_score, recall_score, roc_auc_score
 
 from .data import load_common, verify_manifest
@@ -135,6 +137,23 @@ def evaluate(model, task, split, device, batch, active_task=None):
     return result, p, q
 
 
+@torch.no_grad()
+def evaluate_indices(model, task, indices, device, batch, active_task=None):
+    """Evaluate a declared subset without changing the dataset split."""
+    fields, labels, rows = task.splits["train"]
+    indices = np.asarray(indices, dtype=np.int64)
+    model.eval()
+    probs = []
+    if active_task is not None and model.architecture == "moe":
+        model.active_count.fill_(4 * (active_task + 1))
+    for start in range(0, len(indices), batch):
+        ix = indices[start:start + batch]
+        out = model(fields[ix].to(device=device, dtype=torch.float32), task.name)
+        probs.append(out["probabilities"].cpu().numpy())
+    p = np.concatenate(probs)
+    return classification_metrics(task.name, labels[indices], p, [rows[i] for i in indices])
+
+
 def sample_weights(task, indices):
     if task.name != "sonyc":
         return torch.ones(len(indices))
@@ -187,45 +206,6 @@ def replay_indices(task, budget, seed):
     return np.array(chosen, dtype=np.int64)
 
 
-def train_joint_d2nn(tasks, cfg, out, device):
-    root = out / "joint_d2nn"; root.mkdir()
-    seed_all(cfg["seed"])
-    model = CrossModalOptics("d2nn", cfg["seed"], cfg["phase_dropout"]).to(device)
-    for head in model.heads.values():
-        head.requires_grad_(True)
-    optimizer = torch.optim.Adam(model.parameters(), lr=cfg["lr"])
-    scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(optimizer, cfg["joint_epochs"], eta_min=cfg["lr"] * 0.1)
-    best, history = -float("inf"), []
-    for epoch in range(1, cfg["joint_epochs"] + 1):
-        model.train(); started = time.time(); losses = []
-        queues = {}
-        for j, name in enumerate(TASK_ORDER):
-            queues[name] = list(np.array_split(np.random.default_rng(cfg["seed"] + epoch*10 + j).permutation(len(tasks[name].splits["train"][1])),
-                                               max(1, int(np.ceil(len(tasks[name].splits["train"][1]) / cfg["batch"])))))
-        while any(queues.values()):
-            for name in TASK_ORDER:
-                if not queues[name]:
-                    continue
-                ix = queues[name].pop(0)
-                optimizer.zero_grad(set_to_none=True)
-                loss = task_loss(model, tasks[name], ix, device)
-                loss.backward(); torch.nn.utils.clip_grad_norm_(model.parameters(), 1.0); optimizer.step()
-                losses.append(float(loss.detach()))
-        scheduler.step()
-        val = {n: evaluate(model, tasks[n], "val", device, cfg["eval_batch"])[0] for n in TASK_ORDER}
-        score = float(np.mean([selection_score(n, val[n]) for n in TASK_ORDER]))
-        row = {"epoch": epoch, "loss": float(np.mean(losses)), "validation_mean_score": score,
-               "validation": val, "seconds": time.time() - started}
-        history.append(row); save(root / "history.json", history)
-        cp = {"model": model.state_dict(), "epoch": epoch, "validation": val, "score": score}
-        torch.save(cp, root / "last_checkpoint.pt")
-        if score > best:
-            best = score; torch.save(cp, root / "best_checkpoint.pt")
-        print(json.dumps({"arch":"d2nn","epoch":epoch,"val":score,"loss":row["loss"],"seconds":row["seconds"]}), flush=True)
-    cp = torch.load(root / "best_checkpoint.pt", map_location=device, weights_only=False); model.load_state_dict(cp["model"])
-    return finalize(model, tasks, root, device, cfg, cp["epoch"], "offline_joint")
-
-
 def chunks(indices, size):
     return [indices[i:i+size] for i in range(0, len(indices), size)]
 
@@ -247,9 +227,169 @@ def add_continual_metrics(result, all_history):
     return result
 
 
-def train_sequential_d2nn(tasks, cfg, out, device):
-    """Sequential D2NN control with the same replay and head-freezing contract."""
-    root = out / "sequential_d2nn"; root.mkdir()
+def stage_evaluation(model, tasks, learned_names, device, cfg, active_task=None):
+    """Evaluate a selected stage checkpoint without using test data for selection."""
+    return {
+        split: {name: evaluate(model, tasks[name], split, device, cfg["eval_batch"], active_task)[0]
+                for name in learned_names}
+        for split in ("val", "test")
+    }
+
+
+@torch.no_grad()
+def extract_ccd_features(model, task, split, device, batch):
+    fields, labels, rows = task.splits[split]
+    model.eval(); features=[]
+    for start in range(0,len(labels),batch):
+        out=model(fields[start:start+batch].to(device=device,dtype=torch.float32),task.name)
+        features.append(out["ccd_features"].cpu())
+    return torch.cat(features),np.asarray(labels),rows
+
+
+def fit_mlp_probe(model, task, cfg, device, seed):
+    """Fit only the electronic head on all target training samples."""
+    cached={split:extract_ccd_features(model,task,split,device,cfg["eval_batch"])
+            for split in ("train","val","test")}
+    with torch.random.fork_rng(devices=[]):
+        torch.manual_seed(seed)
+        head=nn.Sequential(nn.LayerNorm(256),nn.Linear(256,64),nn.GELU(),
+                           nn.Linear(64,task.classes)).to(device)
+    train_x,train_y,_=cached["train"]
+    train_x=train_x.to(device);train_y_t=torch.as_tensor(train_y,device=device)
+    weights=sample_weights(task,np.arange(len(train_y))).to(device)
+    epochs=int(cfg.get("probe_epochs",50));batch=int(cfg.get("probe_batch",256))
+    optimizer=torch.optim.Adam(head.parameters(),lr=cfg.get("probe_lr",cfg["lr"]))
+    best=-float("inf");best_state=None;best_epoch=None
+    for epoch in range(1,epochs+1):
+        head.train();order=np.random.default_rng(seed+epoch).permutation(len(train_y))
+        for ix in chunks(order,batch):
+            ix=torch.as_tensor(ix,device=device)
+            optimizer.zero_grad(set_to_none=True)
+            logits=head(train_x[ix]);loss=(F.cross_entropy(logits,train_y_t[ix],reduction="none")*weights[ix]).mean()
+            loss.backward();optimizer.step()
+        head.eval();val_x,val_y,val_rows=cached["val"]
+        with torch.no_grad():p=head(val_x.to(device)).softmax(1).cpu().numpy()
+        score=selection_score(task.name,classification_metrics(task.name,val_y,p,val_rows))
+        if score>best:
+            best=score;best_epoch=epoch;best_state=copy.deepcopy(head.state_dict())
+    head.load_state_dict(best_state);head.eval();metrics={}
+    for split,(x,y,rows) in cached.items():
+        with torch.no_grad():p=head(x.to(device)).softmax(1).cpu().numpy()
+        metrics[split]=classification_metrics(task.name,y,p,rows)
+    return {"selected_epoch":best_epoch,"metrics":metrics}
+
+
+def save_continual_matrix(root, all_history):
+    payload = {"task_order": list(TASK_ORDER), "metric": {
+        "sen12ms": "macro_f1", "clevr": "balanced_accuracy",
+        "sonyc": "macro_ap", "video": "balanced_accuracy"}}
+    for split in ("validation", "test"):
+        payload[split] = [
+            {name: selection_score(name, row[split][name]) for name in TASK_ORDER[:i + 1]}
+            for i, row in enumerate(all_history)
+        ]
+    final=payload["test"][-1]
+    old_tasks=TASK_ORDER[:max(0,len(all_history)-1)]
+    backward={name:final[name]-payload["test"][i][name] for i,name in enumerate(old_tasks)}
+    forgetting={name:max(row[name] for row in payload["test"][i:] if name in row)-final[name]
+                for i,name in enumerate(old_tasks)}
+    payload["continual"]={"backward_transfer":backward,
+                           "mean_backward_transfer":float(np.mean(list(backward.values()))) if backward else None,
+                           "forgetting":forgetting,
+                           "mean_forgetting":float(np.mean(list(forgetting.values()))) if forgetting else None}
+    save(root / "continual_matrix.json", payload)
+    return payload
+
+
+def train_single_task_d2nn(tasks, cfg, out, device):
+    """Train an independent optical D2NN for each task as a learnability ceiling."""
+    root = out / "single_task_d2nn"; root.mkdir()
+    summary = {}
+    epochs = int(cfg.get("single_task_epochs", cfg["task_epochs"]))
+    for task_index, name in enumerate(TASK_ORDER):
+        task_root = root / name; task_root.mkdir()
+        seed_all(cfg["seed"] + task_index)
+        model = CrossModalOptics("d2nn", cfg["seed"] + task_index, cfg["phase_dropout"]).to(device)
+        model.configure_task(task_index, warmup=False)
+        optimizer = torch.optim.Adam([p for p in model.parameters() if p.requires_grad], lr=cfg["lr"])
+        scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(optimizer, epochs, eta_min=cfg["lr"] * .1)
+        best, history = -float("inf"), []
+        for epoch in range(1, epochs + 1):
+            model.train(); started=time.time(); losses=[]
+            order=np.random.default_rng(cfg["seed"]+task_index*1000+epoch).permutation(len(tasks[name].splits["train"][1]))
+            for ix in chunks(order, cfg["batch"]):
+                optimizer.zero_grad(set_to_none=True)
+                loss=task_loss(model,tasks[name],ix,device)
+                loss.backward();torch.nn.utils.clip_grad_norm_([p for p in model.parameters() if p.requires_grad],1.0);optimizer.step()
+                losses.append(float(loss.detach()))
+            scheduler.step()
+            val=evaluate(model,tasks[name],"val",device,cfg["eval_batch"])[0]
+            score=selection_score(name,val)
+            row={"epoch":epoch,"loss":float(np.mean(losses)),"validation_score":score,
+                 "validation":val,"seconds":time.time()-started}
+            history.append(row);save(task_root/"history.json",history)
+            cp={"model":model.state_dict(),"epoch":epoch,"task":name,"validation":val,"score":score}
+            torch.save(cp,task_root/"last_checkpoint.pt")
+            if score>best:best=score;torch.save(cp,task_root/"best_checkpoint.pt")
+            print(json.dumps({"arch":"single_task_d2nn","task":name,"epoch":epoch,
+                              "val":score,"loss":row["loss"],"seconds":row["seconds"]}),flush=True)
+        cp=torch.load(task_root/"best_checkpoint.pt",map_location=device,weights_only=False);model.load_state_dict(cp["model"])
+        metrics={split:evaluate(model,tasks[name],split,device,cfg["eval_batch"])[0]
+                 for split in ("train","val","test")}
+        summary[name]={"selected_epoch":cp["epoch"],"metrics":metrics}
+        save(task_root/"results.json",summary[name])
+    save(root/"results.json",summary)
+    probes={}
+    score_matrix={}
+    for source_index,source in enumerate(TASK_ORDER):
+        model=CrossModalOptics("d2nn",cfg["seed"]+source_index,cfg["phase_dropout"]).to(device)
+        cp=torch.load(root/source/"best_checkpoint.pt",map_location=device,weights_only=False)
+        model.load_state_dict(cp["model"])
+        model.requires_grad_(False)
+        probes[source]={};score_matrix[source]={}
+        for target_index,target in enumerate(TASK_ORDER):
+            probe=fit_mlp_probe(model,tasks[target],cfg,device,
+                                cfg["seed"]+source_index*100+target_index)
+            probes[source][target]=probe
+            score_matrix[source][target]=selection_score(target,probe["metrics"]["test"])
+            print(json.dumps({"arch":"frozen_optics_mlp_probe","source":source,
+                              "target":target,"test":score_matrix[source][target]}),flush=True)
+    save(root/"frozen_optics_probe.json",{"task_order":list(TASK_ORDER),
+         "score_matrix":score_matrix,"details":probes})
+    return {"single_task":summary,"frozen_optics_probe":score_matrix}
+
+
+def overfit_diagnostics(tasks, cfg, out, device):
+    """Verify that each task can be memorized before any full-data run."""
+    root=out/"overfit_diagnostics";root.mkdir()
+    budget=int(cfg.get("overfit_samples",64));steps=int(cfg.get("overfit_steps",200))
+    result={}
+    for task_index,name in enumerate(TASK_ORDER):
+        seed_all(cfg["seed"]+task_index)
+        model=CrossModalOptics("d2nn",cfg["seed"]+task_index,0).to(device)
+        model.configure_task(task_index,warmup=False)
+        indices=replay_indices(tasks[name],budget,cfg["seed"]+task_index)
+        optimizer=torch.optim.Adam([p for p in model.parameters() if p.requires_grad],lr=cfg.get("overfit_lr",cfg["lr"]))
+        rng=np.random.default_rng(cfg["seed"]+task_index)
+        losses=[]
+        for step in range(steps):
+            ix=rng.choice(indices,size=min(cfg["batch"],len(indices)),replace=True)
+            model.train();optimizer.zero_grad(set_to_none=True)
+            loss=task_loss(model,tasks[name],ix,device);loss.backward()
+            torch.nn.utils.clip_grad_norm_([p for p in model.parameters() if p.requires_grad],1.0);optimizer.step()
+            losses.append(float(loss.detach()))
+        metrics=evaluate_indices(model,tasks[name],indices,device,cfg["eval_batch"])
+        result[name]={"samples":len(indices),"steps":steps,"final_loss":losses[-1],
+                      "selection_score":selection_score(name,metrics),"metrics":metrics}
+        print(json.dumps({"arch":"overfit_d2nn","task":name,**result[name]}),flush=True)
+    save(root/"results.json",result)
+    return result
+
+
+def train_sequential_d2nn(tasks, cfg, out, device, use_replay):
+    """Sequential D2NN with optional replay and a stage-by-task score matrix."""
+    tag = "replay" if use_replay else "no_replay"
+    root = out / f"sequential_d2nn_{tag}"; root.mkdir()
     seed_all(cfg["seed"])
     model = CrossModalOptics("d2nn", cfg["seed"], cfg["phase_dropout"]).to(device)
     replay = {}; all_history = []
@@ -268,12 +408,12 @@ def train_sequential_d2nn(tasks, cfg, out, device):
             order=np.random.default_rng(cfg["seed"]+task_index*1000+epoch).permutation(len(task.splits["train"][1]))
             current_chunks=chunks(order,cfg["batch"])
             replay_chunks={old:chunks(np.random.default_rng(cfg["seed"]+task_index*1000+epoch+j).permutation(ix),cfg["replay_batch"])
-                           for j,(old,ix) in enumerate(replay.items())}
+                           for j,(old,ix) in enumerate(replay.items())} if use_replay else {}
             for step,current in enumerate(current_chunks):
                 optimizer.zero_grad(set_to_none=True)
                 current_loss=task_loss(model,task,current,device)
                 replay_losses=[]
-                for old in TASK_ORDER[:task_index]:
+                for old in TASK_ORDER[:task_index] if use_replay else ():
                     pool=replay_chunks[old]; ix=pool[step%len(pool)]
                     replay_losses.append(task_loss(model,tasks[old],ix,device))
                 loss=combine_current_replay(current_loss,replay_losses,cfg["replay_weight"])
@@ -286,19 +426,21 @@ def train_sequential_d2nn(tasks, cfg, out, device):
             cp={"model":model.state_dict(),"epoch":epoch,"task_index":task_index,"validation":val,"score":score}
             torch.save(cp,task_root/"last_checkpoint.pt")
             if score>best:best=score;torch.save(cp,task_root/"best_checkpoint.pt")
-            print(json.dumps({"arch":"sequential_d2nn","task":name,"epoch":epoch,"val":score,"loss":row["loss"],"seconds":row["seconds"]}),flush=True)
+            print(json.dumps({"arch":f"sequential_d2nn_{tag}","task":name,"epoch":epoch,"val":score,"loss":row["loss"],"seconds":row["seconds"]}),flush=True)
         cp=torch.load(task_root/"best_checkpoint.pt",map_location=device,weights_only=False);model.load_state_dict(cp["model"])
         after_heads={n:module_sha(model.heads[n]) for n in TASK_ORDER[:task_index]}
         assert old_head_hash==after_heads, "frozen old task head changed"
-        stage_eval={n:evaluate(model,tasks[n],"val",device,cfg["eval_batch"])[0] for n in TASK_ORDER[:task_index+1]}
+        stage_eval=stage_evaluation(model,tasks,TASK_ORDER[:task_index+1],device,cfg)
         shared_after={"first_phase":state_sha(model.first_phase),"global_phase":state_sha(model.global_phase)}
-        save(task_root/"stage_result.json",{"selected_epoch":cp["epoch"],"validation":stage_eval,
+        save(task_root/"stage_result.json",{"selected_epoch":cp["epoch"],**stage_eval,
              "old_heads_unchanged":old_head_hash==after_heads,
              "shared_phases_changed":{k:shared_before[k]!=shared_after[k] for k in shared_before}})
-        all_history.append({"task":name,"selected_epoch":cp["epoch"],"validation":stage_eval})
-        replay[name]=replay_indices(task,cfg["replay_per_task"],cfg["seed"]+task_index)
+        all_history.append({"task":name,"selected_epoch":cp["epoch"],**stage_eval})
+        if use_replay:
+            replay[name]=replay_indices(task,cfg["replay_per_task"],cfg["seed"]+task_index)
     save(root/"sequence.json",all_history)
-    result=finalize(model,tasks,root,device,cfg,all_history[-1]["selected_epoch"],"sequential_replay")
+    save_continual_matrix(root,all_history)
+    result=finalize(model,tasks,root,device,cfg,all_history[-1]["selected_epoch"],f"sequential_{tag}")
     add_continual_metrics(result,all_history);save(root/"results.json",result)
     return result
 
@@ -356,12 +498,14 @@ def train_lifelong_moe(tasks, cfg, out, device):
         after_heads={n:module_sha(model.heads[n]) for n in TASK_ORDER[:task_index]}
         assert old_hash==after, "frozen old expert changed"
         assert old_head_hash==after_heads, "frozen old task head changed"
-        stage_eval={n:evaluate(model,tasks[n],"val",device,cfg["eval_batch"],task_index)[0] for n in TASK_ORDER[:task_index+1]}
-        save(task_root/"stage_result.json",{"selected_epoch":cp["epoch"],"validation":stage_eval,"old_experts_unchanged":old_hash==after,"old_heads_unchanged":old_head_hash==after_heads})
-        all_history.append({"task":name,"selected_epoch":cp["epoch"],"validation":stage_eval})
+        stage_eval=stage_evaluation(model,tasks,TASK_ORDER[:task_index+1],device,cfg,task_index)
+        save(task_root/"stage_result.json",{"selected_epoch":cp["epoch"],**stage_eval,
+             "old_experts_unchanged":old_hash==after,"old_heads_unchanged":old_head_hash==after_heads})
+        all_history.append({"task":name,"selected_epoch":cp["epoch"],**stage_eval})
         replay[name]=replay_indices(task,cfg["replay_per_task"],cfg["seed"]+task_index)
         model.configure_task(task_index, warmup=False)
     save(root/"sequence.json",all_history)
+    save_continual_matrix(root,all_history)
     result=finalize(model,tasks,root,device,cfg,all_history[-1]["selected_epoch"],"sequential_lifelong")
     add_continual_metrics(result,all_history);save(root/"results.json",result)
     return result
@@ -396,18 +540,20 @@ def smoke(tasks,cfg,out,device):
 
 
 def main():
-    p=argparse.ArgumentParser();p.add_argument("--config",type=Path,required=True);p.add_argument("--sen12ms",type=Path,required=True);p.add_argument("--clevr",type=Path,required=True);p.add_argument("--sonyc",type=Path,required=True);p.add_argument("--video",type=Path,required=True);p.add_argument("--out",type=Path,required=True);p.add_argument("--phase",choices=["smoke","train"],default="train");p.add_argument("--only",choices=["all","both","d2nn","sequential_d2nn","moe"],default="all");a=p.parse_args()
+    p=argparse.ArgumentParser();p.add_argument("--config",type=Path,required=True);p.add_argument("--sen12ms",type=Path,required=True);p.add_argument("--clevr",type=Path,required=True);p.add_argument("--sonyc",type=Path,required=True);p.add_argument("--video",type=Path,required=True);p.add_argument("--out",type=Path,required=True);p.add_argument("--phase",choices=["smoke","overfit","train"],default="train");p.add_argument("--only",choices=["all","single_task","sequential_d2nn","sequential_d2nn_replay","moe"],default="all");a=p.parse_args()
     cfg=json.loads(a.config.read_text());a.out.mkdir(parents=True,exist_ok=False);save(a.out/"status.json",{"status":"running","pid":os.getpid()})
     try:
         seed_all(cfg["seed"]);torch.set_num_threads(4);device=torch.device(cfg.get("device","cuda"));tasks=load_tasks({"sen12ms":a.sen12ms,"clevr":a.clevr,"sonyc":a.sonyc,"video":a.video})
-        meta={"command":sys.argv,"config":cfg,"git":subprocess.check_output(["git","rev-parse","HEAD"],text=True).strip(),"python":platform.python_version(),"torch":torch.__version__,"cuda_visible_devices":os.environ.get("CUDA_VISIBLE_DEVICES"),"gpu":torch.cuda.get_device_name() if device.type=="cuda" else None,"data":{n:{"root":str(t.root),"manifest_sha256":t.manifest_sha,"sizes":{s:len(t.splits[s][1]) for s in t.splits}} for n,t in tasks.items()},"contract":"four multimodal task types; identical pooled-CCD MLP heads; joint D2NN offline reference, sequential D2NN replay control, sequential MoE 4->8->12->16"}
+        meta={"command":sys.argv,"config":cfg,"git":subprocess.check_output(["git","rev-parse","HEAD"],text=True).strip(),"python":platform.python_version(),"torch":torch.__version__,"cuda_visible_devices":os.environ.get("CUDA_VISIBLE_DEVICES"),"gpu":torch.cuda.get_device_name() if device.type=="cuda" else None,"data":{n:{"root":str(t.root),"manifest_sha256":t.manifest_sha,"sizes":{s:len(t.splits[s][1]) for s in t.splits}} for n,t in tasks.items()},"contract":"single-task D2NN learnability ceiling; sequential D2NN without/with replay; sequential MoE replay 4->8->12->16; stage-by-task matrices"}
         save(a.out/"metadata.json",meta);save(a.out/"actual_config.json",cfg);(a.out/"command.txt").write_text(" ".join(sys.argv)+"\n")
         if a.phase=="smoke":smoke(tasks,cfg,a.out,device);result={"smoke":"pass"}
+        elif a.phase=="overfit":result={"overfit":overfit_diagnostics(tasks,cfg,a.out,device)}
         else:
             result={}
-            if a.only in ("all","both","d2nn"):result["d2nn"]=train_joint_d2nn(tasks,cfg,a.out,device)
-            if a.only in ("all","sequential_d2nn"):result["sequential_d2nn"]=train_sequential_d2nn(tasks,cfg,a.out,device)
-            if a.only in ("all","both","moe"):result["moe"]=train_lifelong_moe(tasks,cfg,a.out,device)
+            if a.only in ("all","single_task"):result["single_task"]=train_single_task_d2nn(tasks,cfg,a.out,device)
+            if a.only in ("all","sequential_d2nn"):result["sequential_d2nn"]=train_sequential_d2nn(tasks,cfg,a.out,device,False)
+            if a.only in ("all","sequential_d2nn_replay"):result["sequential_d2nn_replay"]=train_sequential_d2nn(tasks,cfg,a.out,device,True)
+            if a.only in ("all","moe"):result["moe"]=train_lifelong_moe(tasks,cfg,a.out,device)
             save(a.out/"comparison.json",result)
         save(a.out/"status.json",{"status":"complete"})
     except Exception:

@@ -1,7 +1,7 @@
 {
   "seed": 17,
   "device": "cuda",
-  "joint_epochs": 30,
+  "single_task_epochs": 30,
   "task_epochs": 30,
   "warmup_epochs": 3,
   "batch": 8,
@@ -11,5 +11,11 @@
   "route_balance": 0.1,
   "replay_per_task": 512,
   "replay_batch": 4,
-  "replay_weight": 1.0
+  "replay_weight": 1.0,
+  "overfit_samples": 64,
+  "overfit_steps": 200,
+  "overfit_lr": 0.003,
+  "probe_epochs": 50,
+  "probe_batch": 256,
+  "probe_lr": 0.003
 }
