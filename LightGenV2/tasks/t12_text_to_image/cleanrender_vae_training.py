@@ -411,11 +411,14 @@ def train_cleanrender_vae_gan(
         "architecture": architecture,
         "training_data_flow": "chair image -> VAE posterior; cached frozen-Qwen caption + posterior/prior -> one-pass RGB decoder; hinge GAN",
         "pure_generation": "caption -> frozen Qwen -> seeded N(0,I) -> one decoder call",
-        "reference_variation": "reference chair -> encoder mean + seeded Gaussian offset -> caption-conditioned one decoder call",
+        "reference_variation": "reference chair -> encoder mean interpolated toward seeded N(0,I) -> caption-conditioned one decoder call",
         "random_seed_is_real": True,
         "adversarial_training": True,
         "initialized_from": initialized_from,
-        "training_prior": "deterministic N(0,I) code keyed by sample identity",
+        "training_prior": (
+            "deterministic N(0,I) code keyed by sample identity"
+            if config.base.fixed_noise_per_sample else "fresh independent N(0,I) code per step"
+        ),
     }
     (output_dir / "training_summary.json").write_text(json.dumps(summary, indent=2) + "\n", encoding="utf-8")
     return summary

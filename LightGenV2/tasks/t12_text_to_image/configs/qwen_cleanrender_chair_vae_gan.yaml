@@ -9,7 +9,7 @@ model:
   discriminator_width: 32
 vae:
   encoder_channels: [32, 48, 64, 96, 128, 160]
-  reference_variation_strength: 0.30
+  reference_variation_strength: 0.50
 training:
   batch_size: 32
   epochs: 120
