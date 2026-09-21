@@ -8,7 +8,7 @@ model:
   experts: 4
   top_k: 2
   residual_limit: 1.0
-  maximum_skip: 0.35
+  maximum_skip: 0.75
 fusion: {alpha_initial: 0.50, alpha_minimum: 0.40, alpha_maximum: 0.75, rms_epsilon: 1.0e-6}
 training:
   batch_size: 32
@@ -20,4 +20,4 @@ training:
   amp: true
   adversarial_warmup_epochs: 4
   sample_every_epochs: 5
-loss: {adversarial_weight: 0.04, reconstruction_weight: 10.0, edge_weight: 1.5, background_weight: 5.0}
+loss: {adversarial_weight: 0.01, reconstruction_weight: 12.0, edge_weight: 2.0, background_weight: 6.0}
