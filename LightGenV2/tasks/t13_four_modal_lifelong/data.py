@@ -116,6 +116,48 @@ class SpeechFields:
         return result[0] if scalar else result
 
 
+class SpeechRank8Fields:
+    """One utterance plus a fixed bank of all eight candidate word codes."""
+    def __init__(self, source, split):
+        source = Path(source)
+        data = np.load(source / f"{split}_images.npz", mmap_mode="r", allow_pickle=False)
+        self.images = data["images"]
+        paired = json.loads((source / f"{split}_questions.json").read_text())
+        by_image = {}
+        for row in paired:
+            by_image.setdefault(int(row["image_local"]), row)
+        self.rows = [{"image_local": image_local, "image_id": row["image_id"],
+                      "speaker": row["speaker"], "audio_class": int(row["audio_class"]),
+                      "candidate_words": ["down", "go", "left", "no",
+                                          "right", "stop", "up", "yes"]}
+                     for image_local, row in sorted(by_image.items())]
+        # Eight equal-height bands form a fixed text candidate bank. Each band
+        # contains a deterministic binary code for one word; no learned text
+        # encoder or label-trained audio frontend is present.
+        bank = torch.zeros(224, 112)
+        for candidate in range(8):
+            y0, y1 = 28 * candidate, 28 * (candidate + 1)
+            bits = torch.tensor([(candidate + 1) >> bit & 1 for bit in range(4)]).float()
+            bank[y0:y1] = bits.repeat_interleave(28).reshape(1, 112)
+        self.candidate_bank = normalize_power(bank, 0.5)
+
+    def __len__(self):
+        return len(self.rows)
+
+    def __getitem__(self, index):
+        scalar = np.isscalar(index)
+        if isinstance(index, slice):
+            index = np.arange(len(self), dtype=np.int64)[index]
+        ix = np.asarray([index] if scalar else index, dtype=np.int64)
+        image_ix = np.asarray([self.rows[int(i)]["image_local"] for i in ix])
+        audio = torch.as_tensor(np.array(self.images[image_ix], copy=True)).float()[..., 0] / 255.0
+        audio = F.interpolate(audio[:, None], (224, 112), mode="bilinear", align_corners=False)[:, 0]
+        audio = normalize_power(audio, 0.5)
+        bank = self.candidate_bank.expand(len(ix), -1, -1)
+        result = torch.cat((audio, bank), -1)
+        return result[0] if scalar else result
+
+
 def _physical_query_codes():
     # Fixed, non-trainable word-position codes. Both queries have equal density.
     ids = torch.zeros(2, 32, dtype=torch.long)
@@ -126,11 +168,12 @@ def _physical_query_codes():
 
 class PhysicalTextFields:
     """Turn each video into two balanced possible/impossible text queries."""
-    def __init__(self, path):
+    def __init__(self, path, temporal_delta=False):
         data = np.load(path, mmap_mode="r", allow_pickle=False)
         self.base = data["fields"]
         self.base_labels = np.asarray(data["labels"], dtype=np.int64)
         self.text = _physical_query_codes()
+        self.temporal_delta = bool(temporal_delta)
 
     def __len__(self):
         return 2 * len(self.base)
@@ -142,6 +185,16 @@ class PhysicalTextFields:
         ix = np.asarray([index] if scalar else index, dtype=np.int64)
         base_ix, query = ix // 2, ix % 2
         video = torch.from_numpy(np.array(self.base[base_ix], copy=True)).float()
+        if self.temporal_delta:
+            # The source stores eight ordered 112x56 frames in a 2x4 mosaic.
+            # Adjacent differences expose motion without a learned electronic
+            # video encoder and, crucially, without training on the target.
+            frames = video.reshape(-1, 2, 112, 4, 56).permute(
+                0, 1, 3, 2, 4).reshape(-1, 8, 112, 56)
+            delta = frames[:, 1:] - frames[:, :-1]
+            delta = torch.cat((delta, torch.zeros_like(delta[:, :1])), 1)
+            video = delta.reshape(-1, 2, 4, 112, 56).permute(
+                0, 1, 3, 2, 4).reshape(-1, 224, 224)
         video = F.interpolate(video[:, None], (224, 112), mode="bilinear", align_corners=False)[:, 0]
         video = normalize_power(video, 0.5)
         text = F.interpolate(self.text[query, None], (224, 112), mode="nearest")[:, 0]
@@ -210,9 +263,15 @@ def load_task(root, split):
         fields = SpeechFields(source, split)
         rows = fields.rows
         labels = np.asarray([r["label"] for r in rows], dtype=np.int64)
-    elif storage == "physical_video_text_v1":
+    elif storage == "speech_commands_text_rank8_v2":
         source = Path(protocol["source_root"])
-        fields = PhysicalTextFields(source / f"{split}.npz")
+        fields = SpeechRank8Fields(source, split)
+        rows = fields.rows
+        labels = np.asarray([r["audio_class"] for r in rows], dtype=np.int64)
+    elif storage in {"physical_video_text_v1", "physical_video_text_delta_v2"}:
+        source = Path(protocol["source_root"])
+        fields = PhysicalTextFields(source / f"{split}.npz",
+                                    temporal_delta=storage.endswith("delta_v2"))
         labels = fields.labels()
         base_rows = json.loads((source / f"{split}_records.json").read_text())
         rows = []

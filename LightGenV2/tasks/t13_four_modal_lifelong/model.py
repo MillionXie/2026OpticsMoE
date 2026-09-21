@@ -50,6 +50,8 @@ class CrossModalOptics(nn.Module):
         self.router_centers = [(y + 112, x + 112) for y, x in self.slots]
         self.phase_dropout = float(phase_dropout)
         self.readout_grid = int(readout_grid)
+        # Keep these legacy constructor arguments loadable, but the formal
+        # protocol intentionally permits exactly one electronic readout layer.
         self.head_width = int(head_width)
         self.head_bottleneck = int(head_bottleneck)
         self.optical_layers = int(optical_layers)
@@ -60,7 +62,7 @@ class CrossModalOptics(nn.Module):
             raise ValueError("optical_layers must include expert/input and global phases")
         self.heads = nn.ModuleDict({
             name: self.make_head(classes)
-            for name, classes in {"eurosat": 10, "clevr": 2, "speech": 2, "physical": 2}.items()
+            for name, classes in {"eurosat": 10, "clevr": 2, "speech": 8, "physical": 2}.items()
         })
         with torch.random.fork_rng(devices=[]):
             torch.manual_seed(seed + 101)
@@ -84,13 +86,7 @@ class CrossModalOptics(nn.Module):
 
     def make_head(self, classes):
         features = self.readout_grid ** 2
-        layers = [nn.LayerNorm(features), nn.Linear(features, self.head_width), nn.GELU()]
-        if self.head_bottleneck:
-            layers.extend((nn.Linear(self.head_width, self.head_bottleneck), nn.GELU(),
-                           nn.Linear(self.head_bottleneck, classes)))
-        else:
-            layers.append(nn.Linear(self.head_width, classes))
-        return nn.Sequential(*layers)
+        return nn.Linear(features, classes)
 
     def detector_centers(self, classes):
         """Fixed training-only detector locations spread over the active plane."""

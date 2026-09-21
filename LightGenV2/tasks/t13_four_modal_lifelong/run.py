@@ -29,9 +29,11 @@ FULL_DATA_REQUIREMENTS = {}
 
 
 def build_model(architecture, cfg, seed, phase_dropout=None, max_experts=16):
+    configured_dropout = cfg.get(
+        f"{architecture}_phase_dropout", cfg.get("phase_dropout", 0.0))
     return CrossModalOptics(
         architecture, seed,
-        cfg["phase_dropout"] if phase_dropout is None else phase_dropout,
+        configured_dropout if phase_dropout is None else phase_dropout,
         readout_grid=int(cfg.get("readout_grid", 16)),
         head_width=int(cfg.get("head_width", 64)),
         head_bottleneck=int(cfg.get("head_bottleneck", 0)),
@@ -97,7 +99,7 @@ def load_tasks(paths, require_full=False, names=TASK_ORDER):
         protocol = json.loads((root / "protocol.json").read_text())
         assert protocol["task"] == name
         classes = int(protocol["classes"])
-        expected_classes = {"eurosat": 10, "clevr": 2, "speech": 2, "physical": 2}
+        expected_classes = {"eurosat": 10, "clevr": 2, "speech": 8, "physical": 2}
         assert classes == expected_classes[name]
         if require_full:
             validate_full_protocol(name, protocol)
@@ -200,10 +202,13 @@ def task_loss(model, task, indices, device, warmup=False, balance=0.0,
 
 
 def configured_task_loss(model, task, indices, device, cfg, **kwargs):
+    detector_aux_weight = float(cfg.get(
+        f"{model.architecture}_detector_aux_weight",
+        cfg.get("detector_aux_weight", 0.0)))
     return task_loss(model, task, indices, device,
                      augment=False,
                      label_smoothing=float(cfg.get("label_smoothing", 0.0)),
-                     detector_aux_weight=float(cfg.get("detector_aux_weight", 0.0)),
+                     detector_aux_weight=detector_aux_weight,
                      **kwargs)
 
 
@@ -309,7 +314,7 @@ def fit_mlp_probe(model, task, cfg, device, seed):
 
 
 def calibrate_head(model, task, cfg, device, seed):
-    """Refit the final MLP after the optical stage; validation selects its epoch."""
+    """Optional one-layer readout refit, disabled in the formal comparison."""
     head, result = fit_mlp_head(model, task, cfg, device, seed, ("train", "val"))
     model.heads[task.name].load_state_dict(head.state_dict())
     return result
@@ -338,7 +343,7 @@ def save_continual_matrix(root, all_history):
 
 
 def train_single_task_d2nn(tasks, cfg, out, device, selected_task=None):
-    """Train an independent optical D2NN for each task as a learnability ceiling."""
+    """Train a plain independent D2NN with the same one-layer readout."""
     root = out / "single_task_d2nn"; root.mkdir()
     summary = {}
     epochs = int(cfg.get("single_task_epochs", cfg["task_epochs"]))
@@ -349,8 +354,9 @@ def train_single_task_d2nn(tasks, cfg, out, device, selected_task=None):
         seed_all(cfg["seed"] + task_index)
         model = build_model("d2nn", cfg, cfg["seed"] + task_index, max_experts=4).to(device)
         model.configure_task(task_index, warmup=False)
-        optimizer = torch.optim.Adam([p for p in model.parameters() if p.requires_grad], lr=cfg["lr"])
-        scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(optimizer, epochs, eta_min=cfg["lr"] * .1)
+        lr = float(cfg.get("d2nn_lr", cfg["lr"]))
+        optimizer = torch.optim.Adam([p for p in model.parameters() if p.requires_grad], lr=lr)
+        scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(optimizer, epochs, eta_min=lr * .1)
         best, history = -float("inf"), []
         for epoch in range(1, epochs + 1):
             model.train(); started=time.time(); losses=[]
@@ -363,7 +369,9 @@ def train_single_task_d2nn(tasks, cfg, out, device, selected_task=None):
             scheduler.step()
             val=evaluate(model,tasks[name],"val",device,cfg["eval_batch"])[0]
             score=selection_score(name,val)
-            phase_score=max(score, val["detector_balanced_accuracy"])
+            # Baseline selection uses only the declared final readout. The
+            # training-only detector must not tune or select the D2NN.
+            phase_score=score
             row={"epoch":epoch,"loss":float(np.mean(losses)),"validation_score":score,
                  "optical_selection_score":phase_score,
                  "validation":val,"seconds":time.time()-started}
@@ -376,13 +384,11 @@ def train_single_task_d2nn(tasks, cfg, out, device, selected_task=None):
                               "val":score,"detector_val":val["detector_balanced_accuracy"],
                               "loss":row["loss"],"seconds":row["seconds"]}),flush=True)
         cp=torch.load(task_root/"best_checkpoint.pt",map_location=device,weights_only=False);model.load_state_dict(cp["model"])
-        calibration=calibrate_head(model,tasks[name],cfg,device,cfg["seed"]+1000+task_index)
-        torch.save({**cp,"model":model.state_dict(),"head_calibration":calibration},
-                   task_root/"calibrated_checkpoint.pt")
         metrics={split:evaluate(model,tasks[name],split,device,cfg["eval_batch"])[0]
                  for split in ("train","val","test")}
         score = selection_score(name, metrics["val"])
-        summary[name]={"selected_epoch":cp["epoch"],"head_calibration":calibration,
+        summary[name]={"selected_epoch":cp["epoch"],"head_calibration":None,
+                       "electronic_readout":"single_linear_layer",
                        "validation_selection_score":score,
                        "admission_threshold":float(cfg.get("d2nn_admission_threshold", .65)),
                        "admission_passed":score >= float(cfg.get("d2nn_admission_threshold", .65)),
@@ -423,9 +429,10 @@ def train_single_task_moe(tasks, cfg, out, device, selected_task=None):
         seed_all(cfg["seed"] + task_index)
         model = build_model("moe", cfg, cfg["seed"] + task_index, max_experts=4).to(device)
         model.configure_single_task(name)
-        optimizer = torch.optim.Adam([p for p in model.parameters() if p.requires_grad], lr=cfg["lr"])
+        lr = float(cfg.get("moe_lr", cfg["lr"]))
+        optimizer = torch.optim.Adam([p for p in model.parameters() if p.requires_grad], lr=lr)
         scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(
-            optimizer, epochs, eta_min=cfg["lr"] * .1)
+            optimizer, epochs, eta_min=lr * .1)
         best, history = -float("inf"), []
         for epoch in range(1, epochs + 1):
             model.train(); started=time.time(); losses=[]
@@ -458,14 +465,12 @@ def train_single_task_moe(tasks, cfg, out, device, selected_task=None):
                               "route":val["route_mean"],"seconds":row["seconds"]}),flush=True)
         cp=torch.load(task_root/"best_checkpoint.pt",map_location=device,weights_only=False)
         model.load_state_dict(cp["model"])
-        calibration=calibrate_head(model,tasks[name],cfg,device,cfg["seed"]+1000+task_index)
-        torch.save({**cp,"model":model.state_dict(),"head_calibration":calibration},
-                   task_root/"calibrated_checkpoint.pt")
         metrics={split:evaluate(model,tasks[name],split,device,cfg["eval_batch"])[0]
                  for split in ("train","val","test")}
         score = selection_score(name, metrics["val"])
         summary[name]={"selected_epoch":cp["epoch"],"active_experts":4,
-                       "head_calibration":calibration,
+                       "head_calibration":None,
+                       "electronic_readout":"single_linear_layer",
                        "validation_selection_score":score,
                        "admission_threshold":float(cfg.get("moe_admission_threshold", .70)),
                        "admission_passed":score >= float(cfg.get("moe_admission_threshold", .70)),
@@ -518,8 +523,9 @@ def train_sequential_d2nn(tasks, cfg, out, device, use_replay):
                          **{f"additional_phase_{i}":state_sha(p)
                             for i,p in enumerate(model.additional_phases)}}
         model.configure_task(task_index, warmup=False)
-        optimizer=torch.optim.Adam([p for p in model.parameters() if p.requires_grad],lr=cfg["lr"])
-        scheduler=torch.optim.lr_scheduler.CosineAnnealingLR(optimizer,cfg["task_epochs"],eta_min=cfg["lr"]*.1)
+        lr=float(cfg.get("d2nn_lr",cfg["lr"]))
+        optimizer=torch.optim.Adam([p for p in model.parameters() if p.requires_grad],lr=lr)
+        scheduler=torch.optim.lr_scheduler.CosineAnnealingLR(optimizer,cfg["task_epochs"],eta_min=lr*.1)
         best=-float("inf"); history=[]
         for epoch in range(1,cfg["task_epochs"]+1):
             model.train();started=time.time();losses=[]
@@ -539,9 +545,7 @@ def train_sequential_d2nn(tasks, cfg, out, device, use_replay):
             scheduler.step()
             val={n:evaluate(model,tasks[n],"val",device,cfg["eval_batch"])[0] for n in TASK_ORDER[:task_index+1]}
             score=float(np.mean([selection_score(n,val[n]) for n in val]))
-            phase_score=float(np.mean([max(selection_score(n,val[n]),
-                                           val[n]["detector_balanced_accuracy"])
-                                       for n in val]))
+            phase_score=score
             row={"epoch":epoch,"loss":float(np.mean(losses)),"validation_mean_score":score,
                  "optical_selection_score":phase_score,"validation":val,
                  "seconds":time.time()-started}
@@ -552,9 +556,6 @@ def train_sequential_d2nn(tasks, cfg, out, device, use_replay):
             if phase_score>best:best=phase_score;torch.save(cp,task_root/"best_checkpoint.pt")
             print(json.dumps({"arch":f"sequential_d2nn_{tag}","task":name,"epoch":epoch,"val":score,"loss":row["loss"],"seconds":row["seconds"]}),flush=True)
         cp=torch.load(task_root/"best_checkpoint.pt",map_location=device,weights_only=False);model.load_state_dict(cp["model"])
-        calibration=calibrate_head(model,task,cfg,device,cfg["seed"]+1000+task_index)
-        torch.save({**cp,"model":model.state_dict(),"head_calibration":calibration},
-                   task_root/"calibrated_checkpoint.pt")
         after_heads={n:module_sha(model.heads[n]) for n in TASK_ORDER[:task_index]}
         assert old_head_hash==after_heads, "frozen old task head changed"
         stage_eval=stage_evaluation(model,tasks,TASK_ORDER[:task_index+1],device,cfg)
@@ -562,7 +563,8 @@ def train_sequential_d2nn(tasks, cfg, out, device, use_replay):
                       **{f"additional_phase_{i}":state_sha(p)
                          for i,p in enumerate(model.additional_phases)}}
         save(task_root/"stage_result.json",{"selected_epoch":cp["epoch"],**stage_eval,
-             "head_calibration":calibration,
+             "head_calibration":None,
+             "electronic_readout":"single_linear_layer",
              "old_heads_unchanged":old_head_hash==after_heads,
              "shared_phases_changed":{k:shared_before[k]!=shared_after[k] for k in shared_before}})
         all_history.append({"task":name,"selected_epoch":cp["epoch"],**stage_eval})
@@ -587,7 +589,8 @@ def train_lifelong_moe(tasks, cfg, out, device):
         old_head_hash = {n: module_sha(model.heads[n]) for n in TASK_ORDER[:task_index]}
         if task_index:
             model.configure_task(task_index, warmup=True)
-            optimizer = torch.optim.Adam([p for p in model.parameters() if p.requires_grad], lr=cfg["lr"])
+            lr=float(cfg.get("moe_lr",cfg["lr"]))
+            optimizer = torch.optim.Adam([p for p in model.parameters() if p.requires_grad], lr=lr)
             for epoch in range(1, cfg["warmup_epochs"] + 1):
                 model.train(); losses=[]
                 order=np.random.default_rng(cfg["seed"]+task_index*100+epoch).permutation(len(task.splits["train"][1]))
@@ -596,8 +599,9 @@ def train_lifelong_moe(tasks, cfg, out, device):
                     torch.nn.utils.clip_grad_norm_([p for p in model.parameters() if p.requires_grad],1.0);optimizer.step();losses.append(float(loss.detach()))
                 print(json.dumps({"arch":"moe","task":name,"stage":"warmup","epoch":epoch,"loss":float(np.mean(losses))}),flush=True)
         model.configure_task(task_index, warmup=False)
-        optimizer=torch.optim.Adam([p for p in model.parameters() if p.requires_grad],lr=cfg["lr"])
-        scheduler=torch.optim.lr_scheduler.CosineAnnealingLR(optimizer,cfg["task_epochs"],eta_min=cfg["lr"]*.1)
+        lr=float(cfg.get("moe_lr",cfg["lr"]))
+        optimizer=torch.optim.Adam([p for p in model.parameters() if p.requires_grad],lr=lr)
+        scheduler=torch.optim.lr_scheduler.CosineAnnealingLR(optimizer,cfg["task_epochs"],eta_min=lr*.1)
         best=-float("inf"); history=[]
         for epoch in range(1,cfg["task_epochs"]+1):
             model.train();started=time.time();losses=[]
@@ -630,16 +634,14 @@ def train_lifelong_moe(tasks, cfg, out, device):
             if phase_score>best:best=phase_score;torch.save(cp,task_root/"best_checkpoint.pt")
             print(json.dumps({"arch":"moe","task":name,"epoch":epoch,"val":score,"loss":row["loss"],"route":val[name]["route_mean"],"seconds":row["seconds"]}),flush=True)
         cp=torch.load(task_root/"best_checkpoint.pt",map_location=device,weights_only=False);model.load_state_dict(cp["model"])
-        calibration=calibrate_head(model,task,cfg,device,cfg["seed"]+1000+task_index)
-        torch.save({**cp,"model":model.state_dict(),"head_calibration":calibration},
-                   task_root/"calibrated_checkpoint.pt")
         after=[state_sha(p) for p in model.first_phase[:4*task_index]]
         after_heads={n:module_sha(model.heads[n]) for n in TASK_ORDER[:task_index]}
         assert old_hash==after, "frozen old expert changed"
         assert old_head_hash==after_heads, "frozen old task head changed"
         stage_eval=stage_evaluation(model,tasks,TASK_ORDER[:task_index+1],device,cfg,task_index)
         save(task_root/"stage_result.json",{"selected_epoch":cp["epoch"],**stage_eval,
-             "head_calibration":calibration,
+             "head_calibration":None,
+             "electronic_readout":"single_linear_layer",
              "old_experts_unchanged":old_hash==after,"old_heads_unchanged":old_head_hash==after_heads})
         all_history.append({"task":name,"selected_epoch":cp["epoch"],**stage_eval})
         replay[name]=replay_indices(task,cfg["replay_per_task"],cfg["seed"]+task_index)

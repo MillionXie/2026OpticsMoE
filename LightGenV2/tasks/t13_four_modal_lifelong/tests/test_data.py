@@ -5,7 +5,7 @@ import numpy as np
 import torch
 
 from LightGenV2.tasks.t13_four_modal_lifelong.data import (
-    PhysicalTextFields, _feature_only_field, _feature_text_field, _rgb_field,
+    PhysicalTextFields, SpeechRank8Fields, _feature_only_field, _feature_text_field, _rgb_field,
 )
 from LightGenV2.tasks.t13_four_modal_lifelong.model import CrossModalOptics
 
@@ -34,6 +34,35 @@ def test_physical_video_text_is_balanced_and_uses_both_modalities(tmp_path: Path
     assert dataset[:2].shape == (2, 224, 224)
 
 
+def test_physical_delta_has_no_learned_frontend(tmp_path: Path):
+    frames = torch.arange(8, dtype=torch.float32)[:, None, None].expand(8, 112, 56)
+    mosaic = frames.reshape(2, 4, 112, 56).permute(0, 2, 1, 3).reshape(224, 224)
+    np.savez(tmp_path / "train.npz", fields=mosaic[None].numpy(), labels=np.array([1]))
+    dataset = PhysicalTextFields(tmp_path / "train.npz", temporal_delta=True)
+    field = dataset[0]
+    assert field.shape == (224, 224)
+    assert torch.isfinite(field).all()
+    assert torch.allclose(field.square().sum(), torch.tensor(1.0), atol=1e-4)
+
+
+def test_speech_rank8_is_one_example_per_clip(tmp_path: Path):
+    images = np.zeros((2, 64, 101, 3), np.uint8)
+    images[0, :, :, :] = 32
+    images[1, :, :, :] = 192
+    np.savez(tmp_path / "train_images.npz", images=images)
+    rows = []
+    for i, target in enumerate((2, 7)):
+        for label, query in ((1, target), (0, (target + 1) % 8)):
+            rows.append({"image_local": i, "image_id": f"a{i}", "speaker": f"s{i}",
+                         "audio_class": target, "query_class": query, "label": label})
+    (tmp_path / "train_questions.json").write_text(json.dumps(rows))
+    dataset = SpeechRank8Fields(tmp_path, "train")
+    assert len(dataset) == 2
+    assert [row["audio_class"] for row in dataset.rows] == [2, 7]
+    assert dataset[:].shape == (2, 224, 224)
+    assert torch.allclose(dataset[:].square().sum((-2, -1)), torch.ones(2), atol=1e-4)
+
+
 def test_frozen_feature_encodings_preserve_power_and_text():
     features = np.ones((2, 128), np.float16)
     features[1, 0] = 4
@@ -53,3 +82,7 @@ def test_single_task_and_lifelong_geometries_are_explicit():
     lifelong = CrossModalOptics("moe", max_experts=16, optical_layers=2)
     assert (compact.height, compact.active_height, len(compact.first_phase)) == (518, 478, 4)
     assert (lifelong.height, lifelong.active_height, len(lifelong.first_phase)) == (1026, 986, 16)
+    assert isinstance(compact.heads["speech"], torch.nn.Linear)
+    assert compact.heads["speech"].out_features == 8
+    assert sum(isinstance(module, torch.nn.Linear)
+               for module in compact.heads["speech"].modules()) == 1
