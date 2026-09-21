@@ -1,5 +1,8 @@
 # T07 复现说明入口
 
+**83.125% 同权重光学噪声消融（2026-09-21）：** [完整定义、结果与复现命令](OPTICAL_NOISE_ABLATION_20260921.md)。
+仅最后 L2 换噪声为 41.375%，V2+L2 换噪声为 32.875%，四个特征光学层全换噪声为 17.250%；同权重去光为 76.375%。
+
 **83.125%独立交付入口（2026-09-17）：** [交付说明](../../delivery_83125/README.md)与[硬件适配合同](../../delivery_83125/AI_HANDOFF.md)。
 由任务 `build_lab_package.py --profile enrolled83125 --protocol <固定protocol.json>` 生成；
 仅打包固定best、离线processor、对应2400照片与原图复评证据，不混入旧类别检索权重。
