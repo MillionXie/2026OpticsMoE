@@ -1,4 +1,4 @@
-"""Decode all 27,000 paired EuroSAT RGB/SAR scenes with the audited split."""
+"""Decode every usable paired EuroSAT RGB/SAR scene in the audited split."""
 import argparse
 import hashlib
 import importlib.util
@@ -54,8 +54,12 @@ def main():
     records = json.loads(split_path.read_text())["records"]
     rows = {name: [r for r in records if r["domain"] == "A" and r["split"] == name]
             for name in ("train", "validation", "test")}
-    if sum(map(len, rows.values())) != 27000:
-        raise ValueError("the complete paired release must contain 27,000 scenes")
+    # Each source archive contains 27,000 files.  The immutable audited split
+    # contains the 26,892 pairs that survived geospatial pairing/QC; do not
+    # silently add the 108 files that have no record in that protocol.
+    source_pairs = sum(map(len, rows.values()))
+    if source_pairs != 26892:
+        raise ValueError(f"unexpected usable pair count: {source_pairs}")
     groups = {name: {r["spatial_group"] for r in value} for name, value in rows.items()}
     if any(groups[a] & groups[b] for i, a in enumerate(groups)
            for b in list(groups)[i + 1:]):
@@ -83,7 +87,9 @@ def main():
     protocol = {
         "task": "eurosat", "classes": 10, "storage": "eurosat_rgb_sar_v1",
         "all_original_samples": True,
-        "source_pairs": 27000,
+        "source_archive_images_per_modality": 27000,
+        "source_pairs": source_pairs,
+        "excluded_by_published_split_or_pairing_qc": 27000 - source_pairs,
         "pair_counts": {name: len(value) for name, value in rows.items()},
         "image_counts": {name: 2 * len(value) for name, value in rows.items()},
         "split": "original audited spatial-group-disjoint split; no subsampling",
