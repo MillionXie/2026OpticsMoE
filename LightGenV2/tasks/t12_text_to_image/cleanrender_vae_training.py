@@ -154,7 +154,11 @@ def _train_epoch(
             mean, log_variance = encoder(real)
             posterior = encoder.reparameterize(mean, log_variance)
             reconstruction = decoder(text, posterior)
-            prior = _sample_keyed_prior(batch["sample_id"], base.noise_dim, device, seed)
+            prior = (
+                _sample_keyed_prior(batch["sample_id"], base.noise_dim, device, seed)
+                if base.fixed_noise_per_sample
+                else torch.randn(len(real), base.noise_dim, device=device)
+            )
             prior_image = decoder(text, prior)
 
         _set_requires_grad(discriminator, True)

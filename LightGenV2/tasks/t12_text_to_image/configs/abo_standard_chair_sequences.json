@@ -1,0 +1,19 @@
+{
+  "selection_policy": "single-seat conventional chair with a visible back and legs; excludes sofas, recliners, cushions, ottomans, benches, and wheeled office chairs",
+  "train": [
+    "B07B7B6PL8", "B07SPHTGR9", "B07HYYGLZ8", "B08G1XM7GT",
+    "B085552QQB", "B07GZYY3BJ", "B08G1YWN8L", "B0857UV4J7",
+    "B084T7K1P4", "B07E4D1TDW", "B075ZZYH4B", "B086JJCP47",
+    "B086JK7W72", "B086JJQQZ4", "B084T7TZDK", "B07DBFFS2N",
+    "B0857JM2NK", "B07SPYD8F1", "B07TKX2NYY", "B07FJWDWBV",
+    "B07F4PXFWZ", "B0853VHFY8", "B07SPYDLCC", "B0857JQ3BZ",
+    "B07QGFYLKT", "B07SPY6R7V", "B07B4MTFSC"
+  ],
+  "val": [
+    "B07Y5Y1264", "B086JK1PJ2", "B07B7B3ZN1", "B086JJQQZ3",
+    "B075DN73KR"
+  ],
+  "test": [
+    "B07GZXLYNL", "B07SRYMNXF", "B076Z2X6M5", "B076HDDMKM"
+  ]
+}

@@ -12,16 +12,16 @@ vae:
   reference_variation_strength: 0.30
 training:
   batch_size: 32
-  epochs: 80
+  epochs: 120
   generator_learning_rate: 2.0e-4
   discriminator_learning_rate: 2.0e-4
   num_workers: 4
   amp: true
-  augmentation_probability: 0.0
-  fixed_noise_per_sample: true
+  augmentation_probability: 0.20
+  fixed_noise_per_sample: false
   ema_halflife_kimg: 5.0
   sample_every_epochs: 10
-  checkpoint_every_epochs: 20
+  checkpoint_every_epochs: 30
 loss:
   category_weight: 0.0
   text_category_weight: 0.0
@@ -34,9 +34,9 @@ loss:
   kl_warmup_epochs: 30
   reconstruction_weight: 8.0
   edge_weight: 2.0
-  latent_consistency_weight: 0.20
-  prior_adversarial_weight: 0.50
-  prior_reconstruction_weight: 3.0
-  prior_edge_weight: 0.75
+  latent_consistency_weight: 0.10
+  prior_adversarial_weight: 0.90
+  prior_reconstruction_weight: 0.0
+  prior_edge_weight: 0.0
   reconstruction_adversarial_weight: 0.35
   mismatch_weight: 0.25
