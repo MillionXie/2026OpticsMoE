@@ -30,6 +30,8 @@ class CleanRenderVAEConfig:
     edge_weight: float
     latent_consistency_weight: float
     prior_adversarial_weight: float
+    prior_reconstruction_weight: float
+    prior_edge_weight: float
     reconstruction_adversarial_weight: float
     mismatch_weight: float
     reference_variation_strength: float
@@ -46,6 +48,7 @@ class CleanRenderVAEConfig:
             self.kl_weight, self.reconstruction_weight, self.edge_weight,
             self.latent_consistency_weight,
             self.prior_adversarial_weight, self.reconstruction_adversarial_weight,
+            self.prior_reconstruction_weight, self.prior_edge_weight,
             self.mismatch_weight, self.reference_variation_strength,
         ) < 0:
             raise ValueError("VAE loss weights and variation strength must be non-negative")
@@ -64,6 +67,8 @@ def load_cleanrender_vae_config(path: str | Path) -> CleanRenderVAEConfig:
         edge_weight=float(loss["edge_weight"]),
         latent_consistency_weight=float(loss["latent_consistency_weight"]),
         prior_adversarial_weight=float(loss["prior_adversarial_weight"]),
+        prior_reconstruction_weight=float(loss["prior_reconstruction_weight"]),
+        prior_edge_weight=float(loss["prior_edge_weight"]),
         reconstruction_adversarial_weight=float(loss["reconstruction_adversarial_weight"]),
         mismatch_weight=float(loss["mismatch_weight"]),
         reference_variation_strength=float(vae["reference_variation_strength"]),

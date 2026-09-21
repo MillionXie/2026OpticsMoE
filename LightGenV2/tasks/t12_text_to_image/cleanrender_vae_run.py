@@ -24,6 +24,7 @@ def main() -> int:
     parser.add_argument("--force-cache", action="store_true")
     parser.add_argument("--skip-cache", action="store_true")
     parser.add_argument("--seed", type=int, default=73)
+    parser.add_argument("--initialize-checkpoint", type=Path)
     args = parser.parse_args()
     data_dir = args.data_dir.expanduser().resolve()
     device = torch.device(args.device)
@@ -35,6 +36,10 @@ def main() -> int:
     result = train_cleanrender_vae_gan(
         data_dir, args.run_dir.expanduser().resolve(),
         load_cleanrender_vae_config(args.config.expanduser().resolve()), device, seed=args.seed,
+        initialize_checkpoint=(
+            None if args.initialize_checkpoint is None
+            else args.initialize_checkpoint.expanduser().resolve()
+        ),
     )
     print(json.dumps(result, indent=2), flush=True)
     return 0

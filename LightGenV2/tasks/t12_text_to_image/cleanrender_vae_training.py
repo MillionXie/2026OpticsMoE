@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import copy
+import hashlib
 import json
 import math
 import random
@@ -68,6 +69,15 @@ def _augment_pair(image: torch.Tensor, probability: float) -> torch.Tensor:
     return torch.where(flipped, image.flip(-1), image)
 
 
+def _sample_keyed_prior(sample_ids: list[str], dimension: int, device: torch.device, seed: int) -> torch.Tensor:
+    values = []
+    for sample_id in sample_ids:
+        digest = hashlib.sha256(f"chair-vae:{seed}:{sample_id}".encode()).digest()
+        generator = torch.Generator().manual_seed(int.from_bytes(digest[:8], "little"))
+        values.append(torch.randn(dimension, generator=generator))
+    return torch.stack(values).to(device)
+
+
 def _foreground_reconstruction(fake: torch.Tensor, real: torch.Tensor) -> torch.Tensor:
     losses = []
     for size in (32, 64, 128):
@@ -129,6 +139,7 @@ def _train_epoch(
     autoencoder_optimizer: torch.optim.Optimizer,
     discriminator_optimizer: torch.optim.Optimizer,
     epoch: int,
+    seed: int,
 ) -> dict[str, float]:
     encoder.train(); decoder.train(); discriminator.train()
     totals: dict[str, float] = {}; samples = 0
@@ -143,7 +154,7 @@ def _train_epoch(
             mean, log_variance = encoder(real)
             posterior = encoder.reparameterize(mean, log_variance)
             reconstruction = decoder(text, posterior)
-            prior = torch.randn(len(real), base.noise_dim, device=device)
+            prior = _sample_keyed_prior(batch["sample_id"], base.noise_dim, device, seed)
             prior_image = decoder(text, prior)
 
         _set_requires_grad(discriminator, True)
@@ -171,6 +182,8 @@ def _train_epoch(
             _, _, real_features = discriminator(real, text)
             reconstruction_loss = _foreground_reconstruction(reconstruction, real)
             edge = _edge_loss(reconstruction, real)
+            prior_reconstruction = _foreground_reconstruction(prior_image, real)
+            prior_edge = _edge_loss(prior_image, real)
             kl = -0.5 * (1 + log_variance.float() - mean.float().square() - log_variance.float().exp()).mean()
             feature_statistics = _feature_statistics(prior_features, real_features)
             recovered_prior, _ = encoder(prior_image)
@@ -182,6 +195,8 @@ def _train_epoch(
             autoencoder_loss = (
                 config.reconstruction_weight * reconstruction_loss
                 + config.edge_weight * edge
+                + config.prior_reconstruction_weight * prior_reconstruction
+                + config.prior_edge_weight * prior_edge
                 + config.latent_consistency_weight * latent_consistency
                 + kl_scale * kl
                 - config.reconstruction_adversarial_weight * reconstruction_score.float().mean()
@@ -202,6 +217,8 @@ def _train_epoch(
             "autoencoder_loss": float(autoencoder_loss.detach()),
             "foreground_reconstruction": float(reconstruction_loss.detach()),
             "edge_loss": float(edge.detach()),
+            "prior_reconstruction": float(prior_reconstruction.detach()),
+            "prior_edge_loss": float(prior_edge.detach()),
             "latent_consistency": float(latent_consistency.detach()),
             "kl": float(kl.detach()),
             "kl_scale": kl_scale,
@@ -310,6 +327,7 @@ def train_cleanrender_vae_gan(
     device: torch.device,
     *,
     seed: int = 42,
+    initialize_checkpoint: Path | None = None,
 ) -> dict[str, Any]:
     _seed_everything(seed)
     contract = validate_split_contract(data_dir)
@@ -318,9 +336,16 @@ def train_cleanrender_vae_gan(
     output_dir.mkdir(parents=True, exist_ok=False)
     encoder = CleanRenderImageEncoder(config).to(device)
     decoder = CleanRenderGenerator(config.base, categories=1).to(device)
+    discriminator = CleanRenderDiscriminator(config.base, categories=1).to(device)
+    initialized_from = None
+    if initialize_checkpoint is not None:
+        initial = torch.load(initialize_checkpoint, map_location="cpu", weights_only=False)
+        encoder.load_state_dict(initial["encoder_ema"])
+        decoder.load_state_dict(initial["decoder_ema"])
+        discriminator.load_state_dict(initial["discriminator"])
+        initialized_from = {"path": str(initialize_checkpoint), "epoch": int(initial["epoch"])}
     encoder_ema = copy.deepcopy(encoder).eval().requires_grad_(False)
     decoder_ema = copy.deepcopy(decoder).eval().requires_grad_(False)
-    discriminator = CleanRenderDiscriminator(config.base, categories=1).to(device)
     architecture = vae_architecture_report(encoder, decoder, discriminator)
     if not architecture["under_10m_training_budget"]:
         raise ValueError(f"Chair VAE-GAN exceeds 10M budget: {architecture}")
@@ -339,7 +364,7 @@ def train_cleanrender_vae_gan(
             "epoch": epoch,
             "train": _train_epoch(
                 encoder, encoder_ema, decoder, decoder_ema, discriminator, train_loader,
-                config, device, autoencoder_optimizer, discriminator_optimizer, epoch,
+                config, device, autoencoder_optimizer, discriminator_optimizer, epoch, seed,
             ),
         }
         evaluate = epoch == 1 or epoch % config.base.sample_every_epochs == 0 or epoch == config.base.epochs
@@ -385,6 +410,8 @@ def train_cleanrender_vae_gan(
         "reference_variation": "reference chair -> encoder mean + seeded Gaussian offset -> caption-conditioned one decoder call",
         "random_seed_is_real": True,
         "adversarial_training": True,
+        "initialized_from": initialized_from,
+        "training_prior": "deterministic N(0,I) code keyed by sample identity",
     }
     (output_dir / "training_summary.json").write_text(json.dumps(summary, indent=2) + "\n", encoding="utf-8")
     return summary
