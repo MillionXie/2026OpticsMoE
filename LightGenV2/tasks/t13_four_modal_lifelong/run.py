@@ -37,6 +37,7 @@ def build_model(architecture, cfg, seed, phase_dropout=None, max_experts=16):
         head_bottleneck=int(cfg.get("head_bottleneck", 0)),
         optical_layers=int(cfg.get("optical_layers", 2)),
         max_experts=max_experts,
+        oeo_activation=cfg.get("oeo_activation", "intensity_softsign"),
     )
 
 

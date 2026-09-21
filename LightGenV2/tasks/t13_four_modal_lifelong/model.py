@@ -26,7 +26,7 @@ def normalize_power(x, power=1.0):
 class CrossModalOptics(nn.Module):
     def __init__(self, architecture="moe", seed=17, phase_dropout=0.05,
                  readout_grid=16, head_width=64, head_bottleneck=0, optical_layers=2,
-                 max_experts=16):
+                 max_experts=16, oeo_activation="intensity_softsign"):
         super().__init__()
         if architecture not in {"moe", "d2nn"}:
             raise ValueError(architecture)
@@ -53,6 +53,9 @@ class CrossModalOptics(nn.Module):
         self.head_width = int(head_width)
         self.head_bottleneck = int(head_bottleneck)
         self.optical_layers = int(optical_layers)
+        if oeo_activation not in {"intensity_softsign", "centered_leaky_softsign"}:
+            raise ValueError(oeo_activation)
+        self.oeo_activation = oeo_activation
         if self.optical_layers < 2:
             raise ValueError("optical_layers must include expert/input and global phases")
         self.heads = nn.ModuleDict({
@@ -149,8 +152,11 @@ class CrossModalOptics(nn.Module):
         b = self.border
         intensity = field[:, b:-b, b:-b].abs().square()
         intensity = intensity / intensity.mean((-2, -1), keepdim=True).clamp_min(1e-20)
-        z = F.layer_norm(intensity, intensity.shape[-2:], eps=1e-5)
-        amplitude = F.softsign(F.leaky_relu(z, negative_slope=0.1))
+        if self.oeo_activation == "intensity_softsign":
+            amplitude = F.softsign(intensity)
+        else:
+            z = F.layer_norm(intensity, intensity.shape[-2:], eps=1e-5)
+            amplitude = F.softsign(F.leaky_relu(z, negative_slope=0.1))
         amplitude = normalize_power(amplitude)
         return F.pad(amplitude, (b, b, b, b)).to(torch.complex64)
 

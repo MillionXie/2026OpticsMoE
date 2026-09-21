@@ -10,6 +10,7 @@
   "lr": 0.003,
   "phase_dropout": 0.05,
   "optical_layers": 2,
+  "oeo_activation": "intensity_softsign",
   "readout_grid": 28,
   "head_width": 256,
   "head_bottleneck": 64,
