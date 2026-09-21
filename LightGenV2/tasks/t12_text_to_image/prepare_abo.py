@@ -36,7 +36,7 @@ CATEGORY_LABELS = {
     "TABLE": "table",
 }
 MULTI_OBJECT = re.compile(
-    r"\b(set of|pair of|pack of|[2-9][ -]pack|[2-9][ -]piece|swatch)\b",
+    r"\b(set of|pair of|pack of|[2-9][ -]pack|[2-9][ -]piece|swatch|with\b.*\band)\b",
     flags=re.IGNORECASE,
 )
 
