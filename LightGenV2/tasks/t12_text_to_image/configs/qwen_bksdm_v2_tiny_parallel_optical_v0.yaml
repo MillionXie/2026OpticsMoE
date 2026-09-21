@@ -1,0 +1,19 @@
+model:
+  optical_width: 224
+  grid: 8
+  experts: 4
+  top_k: 2
+fusion:
+  alpha_initial: 0.05
+  alpha_minimum: 0.02
+  alpha_maximum: 0.50
+  rms_epsilon: 1.0e-6
+training:
+  batch_size: 8
+  epochs: 3
+  learning_rate: 2.0e-4
+  phase_learning_rate: 5.0e-3
+  weight_decay: 1.0e-4
+  num_workers: 4
+loss:
+  detail_weight: 0.10
