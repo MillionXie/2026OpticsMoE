@@ -9,6 +9,8 @@ split across train/validation/test.
 from __future__ import annotations
 
 import argparse
+import binascii
+import concurrent.futures
 import contextlib
 import gzip
 import hashlib
@@ -16,8 +18,11 @@ import io
 import json
 import random
 import re
+import struct
+import time
 import urllib.request
 import zipfile
+import zlib
 from collections import defaultdict
 from pathlib import Path
 from typing import Any, Iterator
@@ -124,6 +129,70 @@ def _save_render(payload: bytes, output: Path, size: int) -> None:
     rgb.save(output, format="JPEG", quality=95, subsampling=0)
 
 
+def _fetch_remote_member(url: str, info: zipfile.ZipInfo, retries: int = 5) -> bytes:
+    """Fetch and verify one compressed ZIP member with a single HTTP range."""
+
+    import requests
+
+    overhead = 8192
+    end = info.header_offset + 30 + len(info.filename.encode("utf-8")) + info.compress_size + overhead
+    error: Exception | None = None
+    for attempt in range(retries):
+        try:
+            response = requests.get(
+                url,
+                headers={"Range": f"bytes={info.header_offset}-{end}"},
+                timeout=(20, 120),
+            )
+            response.raise_for_status()
+            if response.status_code != 206:
+                raise IOError(f"Server ignored ZIP member byte range: HTTP {response.status_code}")
+            blob = response.content
+            fields = struct.unpack("<IHHHHHIIIHH", blob[:30])
+            if fields[0] != 0x04034B50:
+                raise IOError(f"Invalid local ZIP header for {info.filename}")
+            name_length, extra_length = fields[-2:]
+            start = 30 + name_length + extra_length
+            compressed = blob[start : start + info.compress_size]
+            if len(compressed) != info.compress_size:
+                raise IOError(f"Truncated compressed member {info.filename}")
+            if info.compress_type == zipfile.ZIP_DEFLATED:
+                payload = zlib.decompress(compressed, -15)
+            elif info.compress_type == zipfile.ZIP_STORED:
+                payload = compressed
+            else:
+                raise NotImplementedError(f"Unsupported ZIP compression {info.compress_type}")
+            if len(payload) != info.file_size:
+                raise IOError(f"Wrong uncompressed size for {info.filename}")
+            if binascii.crc32(payload) & 0xFFFFFFFF != info.CRC:
+                raise IOError(f"CRC mismatch for {info.filename}")
+            return payload
+        except (OSError, requests.RequestException, struct.error, zlib.error) as caught:
+            error = caught
+            if attempt + 1 < retries:
+                time.sleep(min(16, 2**attempt))
+    raise IOError(f"Failed to range-fetch {info.filename} after {retries} attempts") from error
+
+
+def _download_remote_jobs(
+    url: str,
+    infos: dict[str, zipfile.ZipInfo],
+    jobs: list[tuple[str, Path]],
+    image_size: int,
+    workers: int,
+) -> None:
+    def download(job: tuple[str, Path]) -> None:
+        member, output = job
+        _save_render(_fetch_remote_member(url, infos[member]), output, image_size)
+
+    with concurrent.futures.ThreadPoolExecutor(max_workers=workers) as executor:
+        futures = [executor.submit(download, job) for job in jobs]
+        for index, future in enumerate(concurrent.futures.as_completed(futures), 1):
+            future.result()
+            if index == 1 or index % 50 == 0 or index == len(jobs):
+                print(f"[ABO CleanRender] downloaded {index}/{len(jobs)}", flush=True)
+
+
 def _contact_sheet(output_dir: Path, rows: list[dict[str, Any]], categories: list[str], size: int) -> None:
     columns, label_height = 8, 20
     tile = min(size, 160)
@@ -155,6 +224,7 @@ def prepare(
     eval_views: int = 8,
     image_size: int = 128,
     seed: int = 42,
+    download_workers: int = 16,
 ) -> dict[str, Any]:
     if output_dir.exists() and any(output_dir.iterdir()):
         raise FileExistsError(f"Output directory is not empty: {output_dir}")
@@ -165,8 +235,11 @@ def prepare(
     if unknown:
         raise ValueError(f"Unsupported CleanRender categories: {sorted(unknown)}")
 
+    remote = str(archive_source).startswith(("http://", "https://"))
+    download_jobs: list[tuple[str, Path]] = []
     with _archive(archive_source) as archive:
         render_index = _render_index(archive.namelist())
+        info_by_name = {info.filename: info for info in archive.infolist()} if remote else {}
         candidates: dict[str, list[dict[str, Any]]] = defaultdict(list)
         seen: set[str] = set()
         for row in _listings(abo_root):
@@ -210,7 +283,7 @@ def prepare(
                     for view in chosen_views:
                         member = render_index[item_id][view]
                         relative = Path("images") / split / category.lower() / f"{item_id}_{view:02d}.jpg"
-                        _save_render(archive.read(member), output_dir / relative, image_size)
+                        download_jobs.append((member, output_dir / relative))
                         manifests[split].append({
                             "sample_id": f"{category.lower()}-{item_id}-{view:02d}",
                             "sequence_id": item_id,
@@ -225,6 +298,17 @@ def prepare(
                             "modified": f"alpha-composited on white and resized to {image_size}x{image_size}",
                         })
                 cursor += count
+
+        if not remote:
+            for index, (member, destination) in enumerate(download_jobs, 1):
+                _save_render(archive.read(member), destination, image_size)
+                if index == 1 or index % 50 == 0 or index == len(download_jobs):
+                    print(f"[ABO CleanRender] extracted {index}/{len(download_jobs)}", flush=True)
+
+    if remote:
+        _download_remote_jobs(
+            str(archive_source), info_by_name, download_jobs, image_size, download_workers
+        )
 
     output_dir.mkdir(parents=True, exist_ok=True)
     for split, rows in manifests.items():
@@ -243,6 +327,7 @@ def prepare(
         "views_per_train_product": train_views,
         "views_per_eval_product": eval_views,
         "image_size": image_size,
+        "download_workers": download_workers,
         "one_object_per_image": True,
         "identity_split": True,
     })
@@ -263,6 +348,7 @@ def main() -> int:
     parser.add_argument("--eval-views", type=int, default=8)
     parser.add_argument("--image-size", type=int, default=128)
     parser.add_argument("--seed", type=int, default=42)
+    parser.add_argument("--download-workers", type=int, default=16)
     args = parser.parse_args()
     source: str | Path = args.archive
     if not str(source).startswith(("http://", "https://")):
@@ -273,7 +359,7 @@ def main() -> int:
         archive_source=source, train_instances=args.train_instances,
         val_instances=args.val_instances, test_instances=args.test_instances,
         train_views=args.train_views, eval_views=args.eval_views,
-        image_size=args.image_size, seed=args.seed,
+        image_size=args.image_size, seed=args.seed, download_workers=args.download_workers,
     )
     print(json.dumps(report, indent=2))
     return 0
