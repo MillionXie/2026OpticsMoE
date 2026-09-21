@@ -34,6 +34,7 @@ Speech 不再为每条音频只构造一个容易的负例。Physical 不再只�
 |CLEVR 二分类（预备包）|四专家 MoE，80 轮|74.27%|72.53%|仅用于选训练策略；去 dropout、去辅助损失|
 |CLEVR 二分类（全量）|普通 D2NN，20 轮|运行中|运行中|正式包；MoE 40 轮同时运行|
 |Physical 10 类|普通 D2NN，8 轮 pilot|77.66%|77.66%|完整 25,000 quadruplet，已通过|
+|Physical 10 类|普通 D2NN，40 轮|79.28%|79.30%|完整数据，正式 baseline|
 |Physical 10 类|四专家 MoE，40 轮|81.09%|81.23%|完整数据，正式 ours；安全线性头重拟合被验证集接受|
 
 Speech 的 MoE 最佳 checkpoint 是第 75 轮。固定光学层后重新初始化并拟合同一个 Linear 头会把验证分数
@@ -47,5 +48,6 @@ EuroSAT MoE 在第 71 轮选择最佳光学 checkpoint。线性头重拟合会�
 
 旧 Physical continuity 二分类即使移除监督前端并限制为单层线性读出，D2NN 仍达 99.77% validation，
 证明任务本身过易；该结果只作为废弃任务的诊断。替代它的五种概念 10 类任务已使用全部
-25,000 个官方 quadruplet 开始训练。正式 MoE 已完成并达到 81.23% 测试 balanced accuracy；
-正式 D2NN 40 轮仍在运行。
+25,000 个官方 quadruplet 开始训练。正式 D2NN 与 MoE 的测试 balanced accuracy 分别为
+79.30% 和 81.23%，MoE 高 1.93 个百分点。D2NN 在第 36 轮按验证集选择 checkpoint，且按
+baseline 合同不做训练后线性头重拟合。
