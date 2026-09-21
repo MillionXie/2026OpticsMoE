@@ -1,0 +1,25 @@
+model:
+  image_size: 128
+  text_dim: 2048
+  noise_dim: 128
+  condition_dim: 192
+  mapping_depth: 2
+  generator_channels: [256, 224, 192, 160, 128, 96]
+  noise_spatial_channels: 32
+  discriminator_width: 32
+training:
+  batch_size: 32
+  epochs: 160
+  generator_learning_rate: 2.0e-4
+  discriminator_learning_rate: 2.0e-4
+  num_workers: 4
+  amp: true
+  augmentation_probability: 0.25
+  ema_halflife_kimg: 5.0
+  sample_every_epochs: 10
+  checkpoint_every_epochs: 40
+loss:
+  category_weight: 1.0
+  text_category_weight: 1.0
+  feature_statistics_weight: 0.15
+  white_border_weight: 0.10
