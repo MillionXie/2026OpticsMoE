@@ -28,7 +28,7 @@
     "hit_at_10": 0.98,
     "mrr": 0.9290192307692309,
     "map": 0.8132884142227909,
-    "checkpoint_sha256": "836107fcac2e5f71050bad82e191a8320bfc821f52a4b2ce3d304b07783f07050"
+    "checkpoint_sha256": "836107fcac2e5f71050bad82e191a8320bfc821f52a4b2ce3d304b0783f07050"
   },
   "same_weights_remove_optical": {
     "hit_at_1": 0.63,

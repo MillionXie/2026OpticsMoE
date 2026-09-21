@@ -20,7 +20,7 @@ lightgen:
 
 abo_image_text:
   resume_checkpoint: ../runs/simulation/optical_text_to_image_64_15cm_compact_e1_seed42_20260921/best_checkpoint.pt
-  resume_checkpoint_sha256: 836107fcac2e5f71050bad82e191a8320bfc821f52a4b2ce3d304b07783f07050
+  resume_checkpoint_sha256: 836107fcac2e5f71050bad82e191a8320bfc821f52a4b2ce3d304b0783f07050
   allow_propagation_distance_transition: false
   allow_electronic_compaction_transition: true
   alpha_curriculum: null
