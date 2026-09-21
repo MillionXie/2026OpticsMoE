@@ -109,6 +109,8 @@ class SpeechFields:
 
     def __getitem__(self, index):
         scalar = np.isscalar(index)
+        if isinstance(index, slice):
+            index = np.arange(len(self), dtype=np.int64)[index]
         ix = np.asarray([index] if scalar else index, dtype=np.int64)
         result = _legacy_audio_text(self.images[self.image_index[ix]], self.token_ids[ix])
         return result[0] if scalar else result
@@ -135,6 +137,8 @@ class PhysicalTextFields:
 
     def __getitem__(self, index):
         scalar = np.isscalar(index)
+        if isinstance(index, slice):
+            index = np.arange(len(self), dtype=np.int64)[index]
         ix = np.asarray([index] if scalar else index, dtype=np.int64)
         base_ix, query = ix // 2, ix % 2
         video = torch.from_numpy(np.array(self.base[base_ix], copy=True)).float()

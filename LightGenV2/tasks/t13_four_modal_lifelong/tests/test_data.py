@@ -28,4 +28,4 @@ def test_physical_video_text_is_balanced_and_uses_both_modalities(tmp_path: Path
     assert batch.shape == (4, 224, 224)
     assert torch.allclose(batch.square().sum((-2, -1)), torch.ones(4), atol=1e-4)
     assert not torch.equal(batch[0, :, 112:], batch[1, :, 112:])
-
+    assert dataset[:2].shape == (2, 224, 224)
