@@ -1,0 +1,23 @@
+model:
+  task: style
+  image_size: 128
+  text_dim: 2048
+  condition_dim: 128
+  widths: [32, 48, 64, 96]
+  optical: true
+  experts: 4
+  top_k: 2
+  residual_limit: 0.8
+  maximum_skip: 1.0
+fusion: {alpha_initial: 0.50, alpha_minimum: 0.40, alpha_maximum: 0.75, rms_epsilon: 1.0e-6}
+training:
+  batch_size: 32
+  epochs: 20
+  learning_rate: 1.0e-4
+  phase_learning_rate: 4.0e-4
+  weight_decay: 1.0e-4
+  num_workers: 4
+  amp: true
+  adversarial_warmup_epochs: 3
+  sample_every_epochs: 5
+loss: {adversarial_weight: 0.03, reconstruction_weight: 8.0, edge_weight: 1.5, background_weight: 8.0}

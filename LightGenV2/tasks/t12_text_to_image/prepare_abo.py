@@ -30,6 +30,7 @@ LICENSE = "CC BY 4.0"
 PALETTE = ((244, 244, 242), (238, 241, 246), (245, 241, 234), (235, 242, 239))
 CATEGORY_LABELS = {
     "SHOES": "shoe",
+    "BACKPACK": "backpack",
     "CHAIR": "chair",
     "LAMP": "lamp",
     "TABLE": "table",
