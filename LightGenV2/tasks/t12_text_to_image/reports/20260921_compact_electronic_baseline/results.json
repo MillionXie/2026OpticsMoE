@@ -1,0 +1,43 @@
+{
+  "schema_version": 1,
+  "selected_variant": "qwen_bksdm_v2_tiny_one_step",
+  "dataset": {
+    "images": {"train": 800, "validation": 100, "test": 100},
+    "categories": ["chair", "lamp", "shoe", "table"],
+    "unique_real_train_prompts": 484,
+    "synthetic_text_only_prompts": 768,
+    "distillation_train_samples": 10016,
+    "distillation_validation_samples": 400
+  },
+  "parameters": {
+    "sd_turbo_unet": 865910724,
+    "selected_compact_unet": 326825604,
+    "unet_reduction_fraction": 0.6225643188,
+    "qwen_adapter_trainable": 4273280,
+    "pca_fixed_buffer_values": 10171648,
+    "vae_decoder": 49490179,
+    "vae_full": 83653863
+  },
+  "condition_validation": {
+    "cosine": 0.9733821154,
+    "normalized_mse": 0.0537901372
+  },
+  "selected_qwen_end_to_end_latent": {
+    "normalized_mse": 0.3643157034,
+    "cosine": 0.7995596039,
+    "samples": 400
+  },
+  "timing": {
+    "device": "NVIDIA GeForce RTX 4090",
+    "boundary": "first ResidualMLP block input through compact UNet, VAE decode, and tensor-to-PIL",
+    "warm_samples": 40,
+    "batch_1": {"median_ms": 50.0060767, "p95_ms": 53.0012473},
+    "batch_4": {"median_ms": 160.1128280, "p95_ms": 162.3524129}
+  },
+  "inference": {"unet_calls": 1, "vae_calls": 1, "iterative_loop": false},
+  "rejected_medium_variant": {
+    "unet_parameters": 485787524,
+    "qwen_end_to_end_normalized_mse": 0.3931437515,
+    "batch_1_median_ms": 52.0639978
+  }
+}
