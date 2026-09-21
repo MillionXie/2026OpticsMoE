@@ -127,18 +127,24 @@ def selection_score(name, metrics):
 def evaluate(model, task, split, device, batch, active_task=None):
     fields, labels, rows = task.splits[split]
     model.eval()
-    probs, routes, capture = [], [], []
+    probs, detector_probs, routes, capture = [], [], [], []
     if active_task is not None and model.architecture == "moe":
         model.active_count.fill_(4 * (active_task + 1))
     for start in range(0, len(labels), batch):
         out = model(fields[start:start+batch].to(device=device, dtype=torch.float32), task.name)
         probs.append(out["probabilities"].cpu().numpy())
+        detector_probs.append(out["detector_probabilities"].cpu().numpy())
         capture.append(out["capture"].cpu().numpy())
         if out["route_power"] is not None:
             routes.append(out["route_power"].cpu().numpy())
     p = np.concatenate(probs)
+    detector_p = np.concatenate(detector_probs)
     q = np.concatenate(routes) if routes else None
     result = classification_metrics(task.name, labels, p, rows)
+    detector_metrics = classification_metrics(task.name, labels, detector_p, rows)
+    result["detector_accuracy"] = detector_metrics["accuracy"]
+    result["detector_balanced_accuracy"] = detector_metrics["balanced_accuracy"]
+    result["detector_nll"] = detector_metrics["nll"]
     result["zero_readout_fraction"] = float((np.concatenate(capture) <= 1e-12).mean())
     result["route_mean"] = q.mean(0).tolist() if q is not None else None
     result["route_top_frequency"] = (np.bincount(q.argmax(1), minlength=model.max_experts) / len(q)).tolist() if q is not None else None
@@ -261,8 +267,8 @@ def extract_ccd_features(model, task, split, device, batch):
     return torch.cat(features),np.asarray(labels),rows
 
 
-def fit_mlp_probe(model, task, cfg, device, seed):
-    """Fit only the electronic head on all target training samples."""
+def fit_mlp_head(model, task, cfg, device, seed):
+    """Fit and validation-select an electronic head on frozen CCD features."""
     cached={split:extract_ccd_features(model,task,split,device,cfg["eval_batch"])
             for split in ("train","val","test")}
     with torch.random.fork_rng(devices=[]):
@@ -290,7 +296,19 @@ def fit_mlp_probe(model, task, cfg, device, seed):
     for split,(x,y,rows) in cached.items():
         with torch.no_grad():p=head(x.to(device)).softmax(1).cpu().numpy()
         metrics[split]=classification_metrics(task.name,y,p,rows)
-    return {"selected_epoch":best_epoch,"metrics":metrics}
+    return head, {"selected_epoch":best_epoch,"metrics":metrics}
+
+
+def fit_mlp_probe(model, task, cfg, device, seed):
+    """Report an MLP transfer probe without changing the supplied model."""
+    return fit_mlp_head(model, task, cfg, device, seed)[1]
+
+
+def calibrate_head(model, task, cfg, device, seed):
+    """Refit the final MLP after the optical stage; validation selects its epoch."""
+    head, result = fit_mlp_head(model, task, cfg, device, seed)
+    model.heads[task.name].load_state_dict(head.state_dict())
+    return result
 
 
 def save_continual_matrix(root, all_history):
@@ -341,19 +359,27 @@ def train_single_task_d2nn(tasks, cfg, out, device, selected_task=None):
             scheduler.step()
             val=evaluate(model,tasks[name],"val",device,cfg["eval_batch"])[0]
             score=selection_score(name,val)
+            phase_score=max(score, val["detector_balanced_accuracy"])
             row={"epoch":epoch,"loss":float(np.mean(losses)),"validation_score":score,
+                 "optical_selection_score":phase_score,
                  "validation":val,"seconds":time.time()-started}
             history.append(row);save(task_root/"history.json",history)
-            cp={"model":model.state_dict(),"epoch":epoch,"task":name,"validation":val,"score":score}
+            cp={"model":model.state_dict(),"epoch":epoch,"task":name,"validation":val,
+                "score":phase_score,"mlp_score":score}
             torch.save(cp,task_root/"last_checkpoint.pt")
-            if score>best:best=score;torch.save(cp,task_root/"best_checkpoint.pt")
+            if phase_score>best:best=phase_score;torch.save(cp,task_root/"best_checkpoint.pt")
             print(json.dumps({"arch":"single_task_d2nn","task":name,"epoch":epoch,
-                              "val":score,"loss":row["loss"],"seconds":row["seconds"]}),flush=True)
+                              "val":score,"detector_val":val["detector_balanced_accuracy"],
+                              "loss":row["loss"],"seconds":row["seconds"]}),flush=True)
         cp=torch.load(task_root/"best_checkpoint.pt",map_location=device,weights_only=False);model.load_state_dict(cp["model"])
+        calibration=calibrate_head(model,tasks[name],cfg,device,cfg["seed"]+1000+task_index)
+        torch.save({**cp,"model":model.state_dict(),"head_calibration":calibration},
+                   task_root/"calibrated_checkpoint.pt")
         metrics={split:evaluate(model,tasks[name],split,device,cfg["eval_batch"])[0]
                  for split in ("train","val","test")}
         score = selection_score(name, metrics["val"])
-        summary[name]={"selected_epoch":cp["epoch"],"validation_selection_score":score,
+        summary[name]={"selected_epoch":cp["epoch"],"head_calibration":calibration,
+                       "validation_selection_score":score,
                        "admission_threshold":float(cfg.get("d2nn_admission_threshold", .65)),
                        "admission_passed":score >= float(cfg.get("d2nn_admission_threshold", .65)),
                        "metrics":metrics}
@@ -412,23 +438,30 @@ def train_single_task_moe(tasks, cfg, out, device, selected_task=None):
             scheduler.step()
             val=evaluate(model,tasks[name],"val",device,cfg["eval_batch"])[0]
             score=selection_score(name,val)
+            phase_score=max(score, val["detector_balanced_accuracy"])
             row={"epoch":epoch,"loss":float(np.mean(losses)),"validation_score":score,
+                 "optical_selection_score":phase_score,
                  "validation":val,"seconds":time.time()-started}
             history.append(row);save(task_root/"history.json",history)
             cp={"model":model.state_dict(),"epoch":epoch,"task":name,
-                "validation":val,"score":score}
+                "validation":val,"score":phase_score,"mlp_score":score}
             torch.save(cp,task_root/"last_checkpoint.pt")
-            if score>best:
-                best=score;torch.save(cp,task_root/"best_checkpoint.pt")
+            if phase_score>best:
+                best=phase_score;torch.save(cp,task_root/"best_checkpoint.pt")
             print(json.dumps({"arch":"single_task_moe","task":name,"epoch":epoch,
-                              "val":score,"loss":row["loss"],
+                              "val":score,"detector_val":val["detector_balanced_accuracy"],
+                              "loss":row["loss"],
                               "route":val["route_mean"],"seconds":row["seconds"]}),flush=True)
         cp=torch.load(task_root/"best_checkpoint.pt",map_location=device,weights_only=False)
         model.load_state_dict(cp["model"])
+        calibration=calibrate_head(model,tasks[name],cfg,device,cfg["seed"]+1000+task_index)
+        torch.save({**cp,"model":model.state_dict(),"head_calibration":calibration},
+                   task_root/"calibrated_checkpoint.pt")
         metrics={split:evaluate(model,tasks[name],split,device,cfg["eval_batch"])[0]
                  for split in ("train","val","test")}
         score = selection_score(name, metrics["val"])
         summary[name]={"selected_epoch":cp["epoch"],"active_experts":4,
+                       "head_calibration":calibration,
                        "validation_selection_score":score,
                        "admission_threshold":float(cfg.get("moe_admission_threshold", .70)),
                        "admission_passed":score >= float(cfg.get("moe_admission_threshold", .70)),
