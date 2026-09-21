@@ -178,6 +178,116 @@ def _load_propagation_transition_checkpoint(
     }
 
 
+def _compact_residual_mlp_state(
+    source_state: dict[str, torch.Tensor],
+    target_state: dict[str, torch.Tensor],
+) -> tuple[dict[str, torch.Tensor], dict[str, Any]]:
+    """Project a wider residual MLP checkpoint into a narrower expansion.
+
+    The outer electronic width and every optical tensor remain unchanged. For
+    each residual MLP, neurons are ranked by the product of their incoming and
+    outgoing weight norms. The strongest target-width subset is copied into
+    the compact block; all equal-shaped tensors are copied exactly.
+    """
+
+    compact: dict[str, torch.Tensor] = {}
+    handled: set[str] = set()
+    selections: dict[str, list[int]] = {}
+    for key, target in target_state.items():
+        if not key.endswith(".mlp.0.weight"):
+            continue
+        source = source_state.get(key)
+        if source is None or source.shape == target.shape:
+            continue
+        prefix = key[: -len("0.weight")]
+        up_bias_key = f"{prefix}0.bias"
+        down_weight_key = f"{prefix}3.weight"
+        down_bias_key = f"{prefix}3.bias"
+        source_down = source_state.get(down_weight_key)
+        target_down = target_state.get(down_weight_key)
+        if (
+            source.ndim != 2
+            or source_down is None
+            or target_down is None
+            or source.shape[1] != target.shape[1]
+            or source_down.shape[0] != target_down.shape[0]
+            or source.shape[0] != source_down.shape[1]
+            or target.shape[0] != target_down.shape[1]
+            or target.shape[0] >= source.shape[0]
+        ):
+            raise RuntimeError(f"Unsupported compact residual MLP shape at {key}")
+        scores = source.float().pow(2).sum(1).sqrt() * (
+            source_down.float().pow(2).sum(0).sqrt()
+        )
+        selected = torch.topk(scores, target.shape[0], largest=True).indices.sort().values
+        compact[key] = source.index_select(0, selected).to(dtype=target.dtype)
+        compact[up_bias_key] = source_state[up_bias_key].index_select(0, selected).to(
+            dtype=target_state[up_bias_key].dtype
+        )
+        compact[down_weight_key] = source_down.index_select(1, selected).to(
+            dtype=target_down.dtype
+        )
+        compact[down_bias_key] = source_state[down_bias_key].to(
+            dtype=target_state[down_bias_key].dtype
+        )
+        handled.update({key, up_bias_key, down_weight_key, down_bias_key})
+        selections[prefix.rstrip(".")] = selected.tolist()
+
+    for key, target in target_state.items():
+        if key in handled:
+            continue
+        source = source_state.get(key)
+        if source is None:
+            raise RuntimeError(f"Compact transition source is missing {key}")
+        if source.shape != target.shape:
+            raise RuntimeError(
+                "Compact transition only permits residual-MLP expansion changes; "
+                f"{key} is {tuple(source.shape)} -> {tuple(target.shape)}"
+            )
+        compact[key] = source.to(dtype=target.dtype)
+    if not selections:
+        raise RuntimeError("Compact transition did not find any narrower residual MLP")
+    return compact, {"selection_rule": "incoming_norm_times_outgoing_norm", "kept": selections}
+
+
+def _load_electronic_compaction_checkpoint(
+    path: Path, replacement: Any, readout: Any,
+) -> tuple[dict[str, Any], dict[str, Any]]:
+    """Keep 15 cm optics fixed while structurally shrinking electronic MLPs."""
+
+    payload = torch.load(path, map_location="cpu", weights_only=False)
+    source_architecture = str(payload.get("metadata", {}).get("optical_architecture", ""))
+    target_architecture = str(replacement.checkpoint_architecture)
+    if "_15cm_17um_" not in source_architecture or "_15cm_17um_" not in target_architecture:
+        raise RuntimeError("Electronic compaction requires pinned 15 cm source and target graphs")
+    reports: dict[str, Any] = {}
+    for label, module, source_key in (
+        ("vision", replacement.vision_surrogate, "vision_optical"),
+        ("language", replacement.language_surrogate, "language_optical"),
+    ):
+        target_state = module.state_dict()
+        compact_state, report = _compact_residual_mlp_state(
+            payload[source_key], target_state
+        )
+        module.load_state_dict(compact_state, strict=True)
+        report.update(
+            {
+                "source_parameters": sum(value.numel() for value in payload[source_key].values()),
+                "target_parameters": sum(value.numel() for value in compact_state.values()),
+            }
+        )
+        reports[label] = report
+    readout.load_state_dict(payload["retrieval_readout"], strict=True)
+    return payload, {
+        "source_architecture": source_architecture,
+        "target_architecture": target_architecture,
+        "method": "structured residual-MLP neuron pruning",
+        "optical_tensors": "copied exactly",
+        "readout": "copied exactly",
+        "modalities": reports,
+    }
+
+
 def _sha256(path: Path) -> str:
     digest = hashlib.sha256()
     with path.open("rb") as stream:
@@ -888,11 +998,18 @@ def run(args: argparse.Namespace) -> dict[str, Any]:
             distance_transition = bool(
                 _nested(raw, "abo_image_text.allow_propagation_distance_transition", False)
             )
-            if alpha_transition and distance_transition:
-                raise ValueError("Alpha-range and propagation transitions cannot be combined")
+            compaction_transition = bool(
+                _nested(raw, "abo_image_text.allow_electronic_compaction_transition", False)
+            )
+            if sum((alpha_transition, distance_transition, compaction_transition)) > 1:
+                raise ValueError("Alpha, propagation and compaction transitions are mutually exclusive")
             transition_report = None
             if distance_transition:
                 payload, transition_report = _load_propagation_transition_checkpoint(
+                    resume_path, replacement, readout
+                )
+            elif compaction_transition:
+                payload, transition_report = _load_electronic_compaction_checkpoint(
                     resume_path, replacement, readout
                 )
             elif alpha_transition:
@@ -912,6 +1029,7 @@ def run(args: argparse.Namespace) -> dict[str, Any]:
                               "alpha_range_transition": alpha_transition,
                               "alpha_reset_to": settings.fusion_alpha_initial if alpha_transition else None,
                               "propagation_distance_transition": distance_transition,
+                              "electronic_compaction_transition": compaction_transition,
                               "transition_report": transition_report}
         else:
             initialization = initialize_student(settings, replacement, readout)

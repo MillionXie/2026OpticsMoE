@@ -1,0 +1,30 @@
+base_config: optical_text_to_image_64_15cm_true.yaml
+
+# Keep the 192-channel optical/electronic interface but halve every residual
+# MLP bottleneck from 384 to 192. This is a structural parameter/MAC reduction,
+# not a zero mask over the original tensors.
+electronic:
+  expansion: 1.0
+
+training:
+  epochs: 16
+  learning_rate: 0.000015
+  adapter_learning_rate: 0.000008
+  readout_learning_rate: 0.000015
+  phase_learning_rate: 0.002
+  router_learning_rate: 0.002
+  ema_decay: 0.99
+
+lightgen:
+  selection:
+    test_interval_epochs: 2
+
+abo_image_text:
+  resume_checkpoint: ../runs/simulation/optical_text_to_image_64_true_15cm_seed42_20260920/best_checkpoint.pt
+  resume_checkpoint_sha256: 1d324e33261d79970323d9effaca9e42a3b46287d74c340c71fed9f4d85cf6eb
+  allow_propagation_distance_transition: false
+  allow_electronic_compaction_transition: true
+  alpha_curriculum: null
+  teacher_kd_weight: 0.60
+
+output_dir: ../runs/simulation/optical_text_to_image_64_15cm_compact_e1_seed42_20260921
