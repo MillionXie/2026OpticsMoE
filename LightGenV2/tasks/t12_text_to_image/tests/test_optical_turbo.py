@@ -78,5 +78,6 @@ def test_attach_uses_identity_when_compressed_unet_removed_mid_block() -> None:
     unet = _CompressedUNet()
     wrapper = attach_parallel_optical_mid(unet, _config())
     assert unet.mid_block is wrapper
+    assert wrapper.has_cross_attention is True
     assert wrapper.electronic_was_present is False
     assert "identity residual" in wrapper.architecture_report()["electronic_branch"]

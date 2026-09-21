@@ -89,6 +89,10 @@ class ParallelOpticalMidBlock(nn.Module):
         electronic_was_present: bool = True,
     ) -> None:
         super().__init__()
+        # Diffusers dispatches encoder_hidden_states to mid blocks only when
+        # this contract flag is present and true. It is essential when the
+        # compressed base originally had ``mid_block=None``.
+        self.has_cross_attention = True
         self.electronic = electronic
         self.channels = int(channels)
         self.grid = int(config.grid)
