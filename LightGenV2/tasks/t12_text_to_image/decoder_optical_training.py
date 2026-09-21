@@ -108,14 +108,20 @@ def train_decoder_optical(data_dir:Path,cache:Path,run_dir:Path,config:DecoderOp
         for batch in train_loader:
             ref=batch["reference"].to(device,non_blocking=True);target=batch["target"].to(device,non_blocking=True);text=batch["text"].to(device,non_blocking=True)
             if torch.rand(())<.5:ref,target=ref.flip(-1),target.flip(-1)
-            with torch.autocast(**autocast):out=model(ref,text)
+            with torch.autocast(**autocast):out,aux=model.forward_with_aux(ref,text)
             for p in disc.parameters():p.requires_grad_(True)
             do.zero_grad(set_to_none=True)
             with torch.autocast(**autocast):real=disc(target,text);fake=disc(out.detach(),text);dl=F.relu(1-real.float()).mean()+F.relu(1+fake.float()).mean()
             dl.backward();do.step()
             for p in disc.parameters():p.requires_grad_(False)
             go.zero_grad(set_to_none=True)
-            with torch.autocast(**autocast):parts=_losses(out,target,ref,config);score=disc(out,text);gl=config.reconstruction_weight*parts["reconstruction"]+config.edge_weight*parts["edge"]+config.background_weight*parts["background"]-adv*score.float().mean()
+            with torch.autocast(**autocast):
+                parts=_losses(out,target,ref,config);score=disc(out,text)
+                if config.task=="view":
+                    flow=aux["flow"].float();flow_regularization=(flow[:,1:]-flow[:,:-1]).abs().mean()+(flow[:,:,1:]-flow[:,:,:-1]).abs().mean()+.1*flow.square().mean()
+                else:flow_regularization=out.new_zeros(())
+                parts["flow_regularization"]=flow_regularization
+                gl=config.reconstruction_weight*parts["reconstruction"]+config.edge_weight*parts["edge"]+config.background_weight*parts["background"]+.1*flow_regularization-adv*score.float().mean()
             gl.backward();torch.nn.utils.clip_grad_norm_(model.parameters(),5.);go.step();_update(ema,model)
             n=len(ref);seen+=n;values={"generator":float(gl.detach()),"discriminator":float(dl.detach()),**{k:float(v.detach()) for k,v in parts.items()}}
             for k,v in values.items():tot[k]=tot.get(k,0.)+n*v

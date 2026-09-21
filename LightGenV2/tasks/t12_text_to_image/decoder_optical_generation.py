@@ -118,7 +118,7 @@ class DecoderOpticalGenerator(nn.Module):
         self.up1=GatedDecoderUp(w[1],w[0],w[0],config.condition_dim,config.maximum_skip)
         output_channels=3 if config.task=="style" else 5
         self.to_rgb=nn.Sequential(nn.Conv2d(w[0],w[0],3,padding=1),nn.SiLU(),nn.Conv2d(w[0],output_channels,3,padding=1))
-        if config.task=="style": nn.init.zeros_(self.to_rgb[-1].weight); nn.init.zeros_(self.to_rgb[-1].bias)
+        nn.init.zeros_(self.to_rgb[-1].weight); nn.init.zeros_(self.to_rgb[-1].bias)
 
     @staticmethod
     def foreground_mask(reference:torch.Tensor)->torch.Tensor:
@@ -134,10 +134,10 @@ class DecoderOpticalGenerator(nn.Module):
             batch,_,height,width=reference.shape
             yy,xx=torch.meshgrid(torch.linspace(-1,1,height,device=reference.device,dtype=raw.dtype),torch.linspace(-1,1,width,device=reference.device,dtype=raw.dtype),indexing="ij")
             base=torch.stack((xx,yy),dim=-1)[None].expand(batch,-1,-1,-1)
-            flow=.38*torch.tanh(raw[:,:2]).permute(0,2,3,1)
+            flow=.26*torch.tanh(raw[:,:2]).permute(0,2,3,1)
             warped=F.grid_sample(reference,base+flow,mode="bilinear",padding_mode="border",align_corners=True)
             mask=F.max_pool2d(self.foreground_mask(warped).to(raw.dtype),11,stride=1,padding=5)
-            delta=.45*torch.tanh(raw[:,2:]); output=(warped+mask*delta).clamp(-1,1)
+            delta=.25*torch.tanh(raw[:,2:]); output=(warped+mask*delta).clamp(-1,1)
         return output,{"encoded":encoded,"decoder_generated":value,"delta":delta,"mask":mask,"flow":flow if self.config.task=="view" else torch.zeros((),device=reference.device)}
 
     def forward(self,reference:torch.Tensor,text:torch.Tensor)->torch.Tensor: return self.forward_with_aux(reference,text)[0]
