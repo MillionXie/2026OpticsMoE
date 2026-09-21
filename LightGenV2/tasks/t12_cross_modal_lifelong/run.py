@@ -23,7 +23,24 @@ from .data import load_common, verify_manifest
 from .model import CrossModalOptics
 
 
-TASK_ORDER = ("sen12ms", "clevr", "sonyc", "video")
+TASK_ORDER = ("kather2016", "clevr", "sonyc", "video")
+
+FULL_DATA_REQUIREMENTS = {
+    "kather2016": {"source_images": 5000},
+    "clevr": {"source_train_images": 70000, "source_val_images": 15000},
+    "sonyc": {"source_recordings": 18510},
+    "video": {"source_quadruplets": 5000},
+}
+
+
+def validate_full_protocol(name, protocol):
+    """Reject any sampled or incomplete package at the formal training boundary."""
+    if not protocol.get("all_original_samples", False):
+        raise ValueError(f"{name}: formal training requires all_original_samples=true")
+    for key, expected in FULL_DATA_REQUIREMENTS[name].items():
+        actual = protocol.get(key)
+        if actual != expected:
+            raise ValueError(f"{name}: {key}={actual!r}, expected {expected}")
 
 
 def save(path, value):
@@ -64,7 +81,7 @@ class TaskData:
     manifest_sha: str
 
 
-def load_tasks(paths):
+def load_tasks(paths, require_full=False):
     tasks = {}
     for name in TASK_ORDER:
         root = Path(paths[name])
@@ -72,7 +89,10 @@ def load_tasks(paths):
         protocol = json.loads((root / "protocol.json").read_text())
         assert protocol["task"] == name
         classes = int(protocol["classes"])
-        assert classes == (10 if name == "sen12ms" else 2)
+        expected_classes = {"kather2016": 8, "clevr": 2, "sonyc": 2, "video": 2}
+        assert classes == expected_classes[name]
+        if require_full:
+            validate_full_protocol(name, protocol)
         splits = {s: load_common(root, s) for s in ("train", "val", "test")}
         tasks[name] = TaskData(name, classes, root, splits, manifest_sha)
     return tasks
@@ -108,7 +128,7 @@ def classification_metrics(name, labels, probabilities, rows):
 
 
 def selection_score(name, metrics):
-    if name == "sen12ms":
+    if name == "kather2016":
         return metrics["macro_f1"]
     if name == "sonyc":
         return metrics["macro_ap"]
@@ -281,7 +301,7 @@ def fit_mlp_probe(model, task, cfg, device, seed):
 
 def save_continual_matrix(root, all_history):
     payload = {"task_order": list(TASK_ORDER), "metric": {
-        "sen12ms": "macro_f1", "clevr": "balanced_accuracy",
+        "kather2016": "macro_f1", "clevr": "balanced_accuracy",
         "sonyc": "macro_ap", "video": "balanced_accuracy"}}
     for split in ("validation", "test"):
         payload[split] = [
@@ -540,10 +560,10 @@ def smoke(tasks,cfg,out,device):
 
 
 def main():
-    p=argparse.ArgumentParser();p.add_argument("--config",type=Path,required=True);p.add_argument("--sen12ms",type=Path,required=True);p.add_argument("--clevr",type=Path,required=True);p.add_argument("--sonyc",type=Path,required=True);p.add_argument("--video",type=Path,required=True);p.add_argument("--out",type=Path,required=True);p.add_argument("--phase",choices=["smoke","overfit","train"],default="train");p.add_argument("--only",choices=["all","single_task","sequential_d2nn","sequential_d2nn_replay","moe"],default="all");a=p.parse_args()
+    p=argparse.ArgumentParser();p.add_argument("--config",type=Path,required=True);p.add_argument("--kather2016",type=Path,required=True);p.add_argument("--clevr",type=Path,required=True);p.add_argument("--sonyc",type=Path,required=True);p.add_argument("--video",type=Path,required=True);p.add_argument("--out",type=Path,required=True);p.add_argument("--phase",choices=["smoke","overfit","train"],default="train");p.add_argument("--only",choices=["all","single_task","sequential_d2nn","sequential_d2nn_replay","moe"],default="all");a=p.parse_args()
     cfg=json.loads(a.config.read_text());a.out.mkdir(parents=True,exist_ok=False);save(a.out/"status.json",{"status":"running","pid":os.getpid()})
     try:
-        seed_all(cfg["seed"]);torch.set_num_threads(4);device=torch.device(cfg.get("device","cuda"));tasks=load_tasks({"sen12ms":a.sen12ms,"clevr":a.clevr,"sonyc":a.sonyc,"video":a.video})
+        seed_all(cfg["seed"]);torch.set_num_threads(4);device=torch.device(cfg.get("device","cuda"));tasks=load_tasks({"kather2016":a.kather2016,"clevr":a.clevr,"sonyc":a.sonyc,"video":a.video},require_full=a.phase=="train")
         repo_root=Path(__file__).resolve().parents[3]
         git_commit=subprocess.check_output(["git","-C",str(repo_root),"rev-parse","HEAD"],text=True).strip()
         meta={"command":sys.argv,"config":cfg,"git":git_commit,"python":platform.python_version(),"torch":torch.__version__,"cuda_visible_devices":os.environ.get("CUDA_VISIBLE_DEVICES"),"gpu":torch.cuda.get_device_name() if device.type=="cuda" else None,"data":{n:{"root":str(t.root),"manifest_sha256":t.manifest_sha,"sizes":{s:len(t.splits[s][1]) for s in t.splits}} for n,t in tasks.items()},"contract":"single-task D2NN learnability ceiling; sequential D2NN without/with replay; sequential MoE replay 4->8->12->16; stage-by-task matrices"}

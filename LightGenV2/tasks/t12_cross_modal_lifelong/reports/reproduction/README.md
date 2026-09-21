@@ -1,5 +1,11 @@
 # T12 复现状态
 
+> **2026-09-21 数据合同更正：本页以下数值全部是历史子集诊断，不是正式结果。**
+> SEN12MS 原始包的许可文本并非 CC BY 4.0，现已从活动协议移除并由完整 Kather2016
+> 替代。CLEVR、SONYC 和 Physical Concepts 的历史 run 也没有使用各自全集。活动协议、
+> 精确全集计数和正式入口以任务根目录 [README](../../README.md) 为准。旧 run 为审计保留，
+> 不进入新主表或结论。
+
 当前代码实现已建立。2026-09-20 的三任务 CPU smoke 在旧 12 槽几何上完成，只作开发
 记录，不能作为四任务结果。
 
@@ -91,7 +97,7 @@ Sequential D2NN 的 -0.012453，因此现有证据只支持最终任务集合上
 Sequential D2NN 同量 replay、Sequential Optical MoE 同量 replay。三个顺序模型在每个任务
 结束后保存所有已学任务的 validation/test 指标，形成下三角 `continual_matrix.json`。
 
-在正式全量训练前先运行四任务 64 样本 overfit diagnostic，再分别训练单任务模型。当前数据
-合同存在两个必须先解决的问题：SEN12MS validation/test 类别覆盖不全；SONYC test 只有 27 段
-录音且两个事件没有正例。CLEVR 和视频在现有直接光场编码下均为机会水平，也必须先改善共享且
-冻结的模态适配器。新的顺序结果只能在上述单任务门槛通过后产生。
+64 样本 overfit 仅保留为实现诊断。正式训练必须使用 Kather2016 全部 5,000 张图、CLEVR
+全部 85,000 张带 scene graph 图像、SONYC CSV 中全部 18,510 段录音，以及 Physical
+Concepts 全部 5,000 个 continuity quadruplet。新的顺序结果只能在全集 manifest 校验和四个
+单任务准入完成后产生。

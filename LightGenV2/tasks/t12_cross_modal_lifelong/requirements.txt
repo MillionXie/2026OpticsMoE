@@ -1,4 +1,6 @@
 numpy
+Pillow
 protobuf
+scipy
 scikit-learn
 torch

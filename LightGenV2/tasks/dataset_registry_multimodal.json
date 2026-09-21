@@ -4,10 +4,17 @@
     "image_image": {
       "name": "SEN12MS",
       "modalities": ["Sentinel-1 SAR", "Sentinel-2 multispectral"],
-      "license": "CC BY 4.0",
+      "license": "research/evaluation/education-only custom license; commercial use excluded",
       "source": "https://github.com/schmitt-muc/SEN12MS",
       "paper": "https://arxiv.org/abs/1906.07789",
-      "status": "candidate_pending_download_and_split_audit"
+      "status": "excluded_from_CC_BY4_experiment_after_local_LICENSE_audit"
+    },
+    "rgb_image": {
+      "name": "Kather texture 2016",
+      "modalities": ["RGB histopathology"],
+      "license": "CC BY 4.0",
+      "source": "https://zenodo.org/records/53169",
+      "status": "complete_5000_image_cache_available"
     },
     "image_text": {
       "name": "CLEVR v1.0",

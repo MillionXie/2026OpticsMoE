@@ -1,4 +1,4 @@
-"""Prepare a deterministic CC-BY-4.0 video plausibility subset."""
+"""Prepare the complete CC-BY-4.0 Physical Concepts continuity probe."""
 import argparse
 import gzip
 import hashlib
@@ -82,7 +82,8 @@ def main():
     p.add_argument("--cache", type=Path, required=True)
     p.add_argument("--out", type=Path, required=True)
     p.add_argument("--concept", default="continuity")
-    p.add_argument("--max-quadruplets", type=int, default=1024)
+    p.add_argument("--max-quadruplets", type=int, default=0,
+                   help="0 uses all 5,000 quadruplets; positive values are diagnostic only")
     a = p.parse_args()
     a.cache.mkdir(parents=True, exist_ok=True); a.out.mkdir(parents=True, exist_ok=False)
     paths = []
@@ -96,7 +97,9 @@ def main():
     for shard, path in enumerate(paths):
         for row, record in enumerate(records(path)):
             candidates.append((rank(f"{a.concept}:{shard}:{row}"), shard, row, record))
-    selected = sorted(candidates, key=lambda x: x[0])[:a.max_quadruplets]
+    selected = sorted(candidates, key=lambda x: x[0])
+    if a.max_quadruplets:
+        selected = selected[:a.max_quadruplets]
     result = {s:([], [], []) for s in ("train", "val", "test")}
     split_counts = Counter()
     for digest, shard, row, record in selected:
@@ -117,8 +120,10 @@ def main():
         (a.out/f"{split}_records.json").write_text(json.dumps(rows,indent=2)+"\n")
     ids={s:{r["quadruplet"] for r in result[s][2]} for s in result}
     assert all(not ids[a]&ids[b] for i,a in enumerate(ids) for b in list(ids)[i+1:])
+    full = len(candidates) == len(selected) == 5000
     protocol={"task":"video","classes":2,"dataset":"Physical Concepts Dataset","concept":a.concept,
-              "scope":f"deterministic seed-17 subset of {len(selected)} probe quadruplets",
+              "scope":"complete continuity probe" if full else f"diagnostic subset of {len(selected)} probe quadruplets",
+              "all_original_samples":full,"source_quadruplets":len(candidates),
               "input":"8 ordered luminance frames at indices "+str(FRAME_INDEX.tolist())+" tiled 2x4 into 224x224; unit total power",
               "label":{"impossible":0,"possible":1},"split":"quadruplet-disjoint hash 70/15/15",
               "quadruplets":dict(split_counts),"license":"CC BY 4.0","license_page":LICENSE_PAGE,

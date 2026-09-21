@@ -6,7 +6,7 @@
 
 |任务|主数据集|模态|建议任务形式|许可状态|当前状态|
 |---|---|---|---|---|---|
-|图图|SEN12MS|Sentinel-1 双极化 SAR + Sentinel-2 多光谱|配对跨传感器场景分类/匹配|CC BY 4.0，需保留数据集逐文件归属|待准备|
+|RGB图像|Kather texture 2016|H&E 组织图像|八类组织分类|CC BY 4.0|完整 5,000 张缓存已准备|
 |图文|CLEVR v1.0|RGB图像 + 自然语言问题|组合式属性/计数问题，固定答案空间|官方 CC BY 4.0|已有 pilot，需统一 OEO 后重训主配置|
 |音文|SONYC-UST v2.3|城市环境音 + 事件文本查询|多标签事件查询匹配|官方 CC BY 4.0，缺失标签不当负例|待实现|
 
@@ -14,7 +14,8 @@ Speech Commands 只作为音文 smoke 和小规模复现对照，不作为最终
 
 数据集来源和许可登记：
 
-- SEN12MS: https://github.com/schmitt-muc/SEN12MS ，论文/发布说明明确为 CC BY 4.0；数据包含约180,662个对应的 Sentinel-1 SAR、Sentinel-2 多光谱和土地覆盖标注三元组。
+- Kather texture 2016: https://zenodo.org/records/53169 ，原始 5,000 张图像按 CC BY 4.0 发布。
+- SEN12MS 不进入本实验：下载包内 `LICENSE.txt` 是限制商业使用的自定义研究许可，不是 CC BY 4.0。此前登记为 CC BY 4.0 是错误记录。
 - CLEVR: https://cs.stanford.edu/people/jcjohns/clevr/ ，官方页面明确所有数据为 CC BY 4.0。
 - SONYC-UST v2.3: https://zenodo.org/records/3966543 ，以发布页面的 CC BY 4.0 和 CSV 中的标注字段为准；训练前保存页面、下载文件和 CSV 的 SHA256。
 

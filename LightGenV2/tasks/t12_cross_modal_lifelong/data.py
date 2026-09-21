@@ -11,6 +11,11 @@ from torch.nn import functional as F
 from LightGenV2.tasks.t09_multimodal_matching.model import TextEncoder
 from LightGenV2.tasks.t09_multimodal_matching.prepare import tokens
 
+SONYC_EVENTS = ["1_engine_presence", "2_machinery-impact_presence",
+                "3_non-machinery-impact_presence", "4_powered-saw_presence",
+                "5_alert-signal_presence", "6_music_presence",
+                "7_human-voice_presence", "8_dog_presence"]
+
 
 def sha256(path):
     return hashlib.sha256(Path(path).read_bytes()).hexdigest()
@@ -27,12 +32,82 @@ def verify_manifest(root):
     return sha256(root / "manifest.json")
 
 
+class NpyFields:
+    """Read large prepared fields by batch without loading the split into RAM."""
+    def __init__(self, path):
+        self.values = np.load(path, mmap_mode="r")
+
+    def __len__(self):
+        return len(self.values)
+
+    def __getitem__(self, index):
+        return torch.from_numpy(np.array(self.values[index], copy=True))
+
+
+class ClevrFields:
+    def __init__(self, root, split):
+        self.images = np.load(root / f"{split}_images.npy", mmap_mode="r")
+        self.image_index = np.load(root / f"{split}_image_index.npy", mmap_mode="r")
+        self.token_ids = np.load(root / f"{split}_token_ids.npy", mmap_mode="r")
+
+    def __len__(self):
+        return len(self.image_index)
+
+    def __getitem__(self, index):
+        image_index = np.asarray(self.image_index[index], dtype=np.int64)
+        images = torch.from_numpy(np.array(self.images[image_index], copy=True))
+        ids = torch.from_numpy(np.array(self.token_ids[index], copy=True)).long()
+        if ids.ndim == 1:
+            ids, images = ids[None], images[None]
+        words = F.one_hot(ids, num_classes=64).float() * ids.ne(0).unsqueeze(-1)
+        return encode_clevr(images, words)
+
+
+class SonycFields:
+    def __init__(self, root, split):
+        self.audio = np.load(root / f"{split}_audio_fields.npy", mmap_mode="r")
+        self.audio_index = np.load(root / f"{split}_audio_index.npy", mmap_mode="r")
+        self.event_index = np.load(root / f"{split}_event_index.npy", mmap_mode="r")
+        self.text = np.load(root / "event_text_fields.npy", mmap_mode="r")
+
+    def __len__(self):
+        return len(self.audio_index)
+
+    def __getitem__(self, index):
+        audio_index = np.asarray(self.audio_index[index], dtype=np.int64)
+        event_index = np.asarray(self.event_index[index], dtype=np.int64)
+        audio = torch.from_numpy(np.array(self.audio[audio_index], copy=True))
+        text = torch.from_numpy(np.array(self.text[event_index], copy=True))
+        if audio.ndim == 2:
+            audio, text = audio[None], text[None]
+        return torch.cat((audio, text), -1)
+
+
 def load_common(root, split):
     root = Path(root)
-    d = np.load(root / f"{split}.npz")
+    protocol = json.loads((root / "protocol.json").read_text())
+    storage = protocol.get("storage", "npz_fields_v1")
+    if storage == "clevr_lazy_v1":
+        fields = ClevrFields(root, split)
+        labels = np.load(root / f"{split}_labels.npy", mmap_mode="r")
+    elif storage == "sonyc_lazy_v1":
+        fields = SonycFields(root, split)
+        labels = np.load(root / f"{split}_labels.npy", mmap_mode="r")
+    elif (root / f"{split}_fields.npy").exists():
+        fields = NpyFields(root / f"{split}_fields.npy")
+        labels = np.load(root / f"{split}_labels.npy", mmap_mode="r")
+    else:
+        d = np.load(root / f"{split}.npz")
+        fields, labels = torch.from_numpy(d["fields"]), d["labels"]
     rows_path = root / f"{split}_records.json"
-    rows = json.loads(rows_path.read_text()) if rows_path.exists() else [{} for _ in d["labels"]]
-    return torch.from_numpy(d["fields"]), np.asarray(d["labels"], dtype=np.int64), rows
+    if rows_path.exists():
+        rows = json.loads(rows_path.read_text())
+    elif storage == "sonyc_lazy_v1":
+        event_index = np.load(root / f"{split}_event_index.npy", mmap_mode="r")
+        rows = [{"event": SONYC_EVENTS[int(i)]} for i in event_index]
+    else:
+        rows = [{} for _ in labels]
+    return fields, np.asarray(labels, dtype=np.int64), rows
 
 
 def normalize_power(x, power):

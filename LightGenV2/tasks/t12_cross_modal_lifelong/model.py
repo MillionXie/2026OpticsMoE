@@ -16,7 +16,7 @@ if str(ARCHIVE) not in sys.path:
     sys.path.insert(0, str(ARCHIVE))
 from optical_reference.optics import AngularSpectrumPropagator
 
-TASK_ORDER = ("sen12ms", "clevr", "sonyc", "video")
+TASK_ORDER = ("kather2016", "clevr", "sonyc", "video")
 
 
 def normalize_power(x, power=1.0):
@@ -45,7 +45,7 @@ class CrossModalOptics(nn.Module):
         self.heads = nn.ModuleDict({
             name: nn.Sequential(nn.LayerNorm(16 * 16), nn.Linear(16 * 16, 64),
                                 nn.GELU(), nn.Linear(64, classes))
-            for name, classes in {"sen12ms": 10, "clevr": 2, "sonyc": 2, "video": 2}.items()
+            for name, classes in {"kather2016": 8, "clevr": 2, "sonyc": 2, "video": 2}.items()
         })
         with torch.random.fork_rng(devices=[]):
             torch.manual_seed(seed + 101)
