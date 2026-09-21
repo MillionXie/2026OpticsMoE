@@ -447,7 +447,7 @@ def train_single_task_d2nn(tasks, cfg, out, device, selected_task=None):
     return {"single_task":summary,"frozen_optics_probe":score_matrix}
 
 
-def train_single_task_moe(tasks, cfg, out, device, selected_task=None):
+def train_single_task_moe(tasks, cfg, out, device, selected_task=None, init_checkpoint=None):
     """Train a fresh four-expert optical MoE on each task before lifelong runs."""
     root = out / "single_task_moe"; root.mkdir()
     summary = {}
@@ -459,17 +459,36 @@ def train_single_task_moe(tasks, cfg, out, device, selected_task=None):
         seed_all(cfg["seed"] + task_index)
         model = build_model("moe", cfg, cfg["seed"] + task_index, max_experts=4).to(device)
         model.configure_single_task(name)
+        initial_epoch = 0
+        if init_checkpoint is not None:
+            initial = torch.load(init_checkpoint, map_location=device, weights_only=False)
+            if initial.get("task") != name:
+                raise ValueError(f"initial checkpoint task {initial.get('task')} != {name}")
+            model.load_state_dict(initial["model"])
+            initial_epoch = int(initial["epoch"])
+            if initial_epoch >= epochs:
+                raise ValueError(f"initial epoch {initial_epoch} must be below target {epochs}")
         lr = float(cfg.get("moe_lr", cfg["lr"]))
         optimizer = torch.optim.Adam([p for p in model.parameters() if p.requires_grad], lr=lr)
         scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(
-            optimizer, epochs, eta_min=lr * .1)
+            optimizer, epochs - initial_epoch, eta_min=lr * .1)
         best, history = -float("inf"), []
+        if initial_epoch:
+            val=evaluate(model,tasks[name],"val",device,cfg["eval_batch"])[0]
+            best=selection_score(name,val)
+            cp={"model":model.state_dict(),"epoch":initial_epoch,"task":name,
+                "validation":val,"score":best,"mlp_score":best,
+                "initialized_from":str(init_checkpoint)}
+            torch.save(cp,task_root/"best_checkpoint.pt")
+            history.append({"epoch":initial_epoch,"validation_score":best,
+                            "optical_selection_score":best,"validation":val,
+                            "initialized_from":str(init_checkpoint)})
         warmup_epochs = int(cfg.get("single_task_moe_warmup_epochs", 0))
         route_balance = float(task_config(cfg, "route_balance", name, 0.0))
         route_entropy = float(task_config(cfg, "route_entropy", name, 0.0))
-        for epoch in range(1, epochs + 1):
+        for epoch in range(initial_epoch + 1, epochs + 1):
             model.train(); started=time.time(); losses=[]
-            warmup = epoch <= warmup_epochs
+            warmup = initial_epoch == 0 and epoch <= warmup_epochs
             order=np.random.default_rng(cfg["seed"]+task_index*1000+epoch).permutation(
                 len(tasks[name].splits["train"][1]))
             for ix in chunks(order, cfg["batch"]):
@@ -743,11 +762,13 @@ def smoke(tasks,cfg,out,device):
 
 
 def main():
-    p=argparse.ArgumentParser();p.add_argument("--config",type=Path,required=True);p.add_argument("--eurosat",type=Path);p.add_argument("--clevr",type=Path);p.add_argument("--speech",type=Path);p.add_argument("--physical",type=Path);p.add_argument("--out",type=Path,required=True);p.add_argument("--phase",choices=["smoke","overfit","train"],default="train");p.add_argument("--only",choices=["all","single_task","single_task_moe","sequential_d2nn","sequential_d2nn_replay","moe"],default="all");p.add_argument("--single-task-name",choices=TASK_ORDER);a=p.parse_args()
+    p=argparse.ArgumentParser();p.add_argument("--config",type=Path,required=True);p.add_argument("--eurosat",type=Path);p.add_argument("--clevr",type=Path);p.add_argument("--speech",type=Path);p.add_argument("--physical",type=Path);p.add_argument("--out",type=Path,required=True);p.add_argument("--phase",choices=["smoke","overfit","train"],default="train");p.add_argument("--only",choices=["all","single_task","single_task_moe","sequential_d2nn","sequential_d2nn_replay","moe"],default="all");p.add_argument("--single-task-name",choices=TASK_ORDER);p.add_argument("--init-checkpoint",type=Path,help="continue one single-task MoE run up to the configured target epoch");a=p.parse_args()
     cfg=json.loads(a.config.read_text());a.out.mkdir(parents=True,exist_ok=False);save(a.out/"status.json",{"status":"running","pid":os.getpid()})
     try:
         if a.single_task_name and not (a.phase == "train" and a.only in ("single_task", "single_task_moe")):
             raise ValueError("--single-task-name requires formal single_task or single_task_moe training")
+        if a.init_checkpoint and not (a.phase == "train" and a.only == "single_task_moe" and a.single_task_name):
+            raise ValueError("--init-checkpoint requires single_task_moe and --single-task-name")
         names = (a.single_task_name,) if a.single_task_name else TASK_ORDER
         paths={"eurosat":a.eurosat,"clevr":a.clevr,"speech":a.speech,"physical":a.physical}
         missing=[name for name in names if paths[name] is None]
@@ -763,7 +784,7 @@ def main():
         else:
             result={}
             if a.only in ("all","single_task"):result["single_task"]=train_single_task_d2nn(tasks,cfg,a.out,device,a.single_task_name)
-            if a.only in ("all","single_task_moe"):result["single_task_moe"]=train_single_task_moe(tasks,cfg,a.out,device,a.single_task_name)
+            if a.only in ("all","single_task_moe"):result["single_task_moe"]=train_single_task_moe(tasks,cfg,a.out,device,a.single_task_name,a.init_checkpoint)
             if a.only in ("all","sequential_d2nn"):result["sequential_d2nn"]=train_sequential_d2nn(tasks,cfg,a.out,device,False)
             if a.only in ("all","sequential_d2nn_replay"):result["sequential_d2nn_replay"]=train_sequential_d2nn(tasks,cfg,a.out,device,True)
             if a.only in ("all","moe"):result["moe"]=train_lifelong_moe(tasks,cfg,a.out,device)
