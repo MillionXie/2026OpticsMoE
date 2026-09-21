@@ -1,0 +1,29 @@
+base_config: optical_text_to_image_64_15cm_true.yaml
+
+# Second compaction stage: preserve the 192-channel optical/electronic
+# interface while reducing each residual MLP to 192 -> 96 -> 192.
+electronic:
+  expansion: 0.5
+
+training:
+  epochs: 18
+  learning_rate: 0.000012
+  adapter_learning_rate: 0.000006
+  readout_learning_rate: 0.000012
+  phase_learning_rate: 0.0015
+  router_learning_rate: 0.0015
+  ema_decay: 0.99
+
+lightgen:
+  selection:
+    test_interval_epochs: 2
+
+abo_image_text:
+  resume_checkpoint: ../runs/simulation/optical_text_to_image_64_15cm_compact_e1_seed42_20260921/best_checkpoint.pt
+  resume_checkpoint_sha256: 836107fcac2e5f71050bad82e191a8320bfc821f52a4b2ce3d304b07783f07050
+  allow_propagation_distance_transition: false
+  allow_electronic_compaction_transition: true
+  alpha_curriculum: null
+  teacher_kd_weight: 0.65
+
+output_dir: ../runs/simulation/optical_text_to_image_64_15cm_compact_e0p5_seed42_20260921
