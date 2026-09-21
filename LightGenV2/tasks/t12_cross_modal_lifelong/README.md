@@ -90,4 +90,14 @@ python -m LightGenV2.tasks.t12_cross_modal_lifelong \
   --out LightGenV2/tasks/t12_cross_modal_lifelong/runs/simulation/<run_id>
 ```
 
+四套数据尚未同时准备完成时，可以先对已完成的数据执行单任务准入；例如：
+
+```bash
+python -m LightGenV2.tasks.t12_cross_modal_lifelong \
+  --phase train --only single_task --single-task-name kather2016 \
+  --config LightGenV2/tasks/t12_cross_modal_lifelong/configs/initial_s17.json \
+  --kather2016 /path/t12_kather2016_full \
+  --out LightGenV2/tasks/t12_cross_modal_lifelong/runs/simulation/<run_id>
+```
+
 `--phase smoke` 和 `--phase overfit` 可用于小数据工程诊断。正式 run 保存实际配置、命令、Git commit、环境、四份数据 manifest、best/last checkpoint、阶段矩阵、逐样本预测和路由统计，且不覆盖旧 run。

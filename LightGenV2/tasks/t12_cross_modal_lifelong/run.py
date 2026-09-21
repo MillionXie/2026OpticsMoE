@@ -81,9 +81,9 @@ class TaskData:
     manifest_sha: str
 
 
-def load_tasks(paths, require_full=False):
+def load_tasks(paths, require_full=False, names=TASK_ORDER):
     tasks = {}
-    for name in TASK_ORDER:
+    for name in names:
         root = Path(paths[name])
         manifest_sha = verify_manifest(root)
         protocol = json.loads((root / "protocol.json").read_text())
@@ -321,12 +321,14 @@ def save_continual_matrix(root, all_history):
     return payload
 
 
-def train_single_task_d2nn(tasks, cfg, out, device):
+def train_single_task_d2nn(tasks, cfg, out, device, selected_task=None):
     """Train an independent optical D2NN for each task as a learnability ceiling."""
     root = out / "single_task_d2nn"; root.mkdir()
     summary = {}
     epochs = int(cfg.get("single_task_epochs", cfg["task_epochs"]))
-    for task_index, name in enumerate(TASK_ORDER):
+    names = (selected_task,) if selected_task else TASK_ORDER
+    for name in names:
+        task_index = TASK_ORDER.index(name)
         task_root = root / name; task_root.mkdir()
         seed_all(cfg["seed"] + task_index)
         model = CrossModalOptics("d2nn", cfg["seed"] + task_index, cfg["phase_dropout"]).to(device)
@@ -359,6 +361,8 @@ def train_single_task_d2nn(tasks, cfg, out, device):
         summary[name]={"selected_epoch":cp["epoch"],"metrics":metrics}
         save(task_root/"results.json",summary[name])
     save(root/"results.json",summary)
+    if selected_task:
+        return {"single_task": summary}
     probes={}
     score_matrix={}
     for source_index,source in enumerate(TASK_ORDER):
@@ -560,10 +564,17 @@ def smoke(tasks,cfg,out,device):
 
 
 def main():
-    p=argparse.ArgumentParser();p.add_argument("--config",type=Path,required=True);p.add_argument("--kather2016",type=Path,required=True);p.add_argument("--clevr",type=Path,required=True);p.add_argument("--sonyc",type=Path,required=True);p.add_argument("--video",type=Path,required=True);p.add_argument("--out",type=Path,required=True);p.add_argument("--phase",choices=["smoke","overfit","train"],default="train");p.add_argument("--only",choices=["all","single_task","sequential_d2nn","sequential_d2nn_replay","moe"],default="all");a=p.parse_args()
+    p=argparse.ArgumentParser();p.add_argument("--config",type=Path,required=True);p.add_argument("--kather2016",type=Path);p.add_argument("--clevr",type=Path);p.add_argument("--sonyc",type=Path);p.add_argument("--video",type=Path);p.add_argument("--out",type=Path,required=True);p.add_argument("--phase",choices=["smoke","overfit","train"],default="train");p.add_argument("--only",choices=["all","single_task","sequential_d2nn","sequential_d2nn_replay","moe"],default="all");p.add_argument("--single-task-name",choices=TASK_ORDER);a=p.parse_args()
     cfg=json.loads(a.config.read_text());a.out.mkdir(parents=True,exist_ok=False);save(a.out/"status.json",{"status":"running","pid":os.getpid()})
     try:
-        seed_all(cfg["seed"]);torch.set_num_threads(4);device=torch.device(cfg.get("device","cuda"));tasks=load_tasks({"kather2016":a.kather2016,"clevr":a.clevr,"sonyc":a.sonyc,"video":a.video},require_full=a.phase=="train")
+        if a.single_task_name and not (a.phase == "train" and a.only == "single_task"):
+            raise ValueError("--single-task-name is only valid with --phase train --only single_task")
+        names = (a.single_task_name,) if a.single_task_name else TASK_ORDER
+        paths={"kather2016":a.kather2016,"clevr":a.clevr,"sonyc":a.sonyc,"video":a.video}
+        missing=[name for name in names if paths[name] is None]
+        if missing:
+            raise ValueError("missing dataset paths: " + ", ".join(missing))
+        seed_all(cfg["seed"]);torch.set_num_threads(4);device=torch.device(cfg.get("device","cuda"));tasks=load_tasks(paths,require_full=a.phase=="train",names=names)
         repo_root=Path(__file__).resolve().parents[3]
         git_commit=subprocess.check_output(["git","-C",str(repo_root),"rev-parse","HEAD"],text=True).strip()
         meta={"command":sys.argv,"config":cfg,"git":git_commit,"python":platform.python_version(),"torch":torch.__version__,"cuda_visible_devices":os.environ.get("CUDA_VISIBLE_DEVICES"),"gpu":torch.cuda.get_device_name() if device.type=="cuda" else None,"data":{n:{"root":str(t.root),"manifest_sha256":t.manifest_sha,"sizes":{s:len(t.splits[s][1]) for s in t.splits}} for n,t in tasks.items()},"contract":"single-task D2NN learnability ceiling; sequential D2NN without/with replay; sequential MoE replay 4->8->12->16; stage-by-task matrices"}
@@ -572,7 +583,7 @@ def main():
         elif a.phase=="overfit":result={"overfit":overfit_diagnostics(tasks,cfg,a.out,device)}
         else:
             result={}
-            if a.only in ("all","single_task"):result["single_task"]=train_single_task_d2nn(tasks,cfg,a.out,device)
+            if a.only in ("all","single_task"):result["single_task"]=train_single_task_d2nn(tasks,cfg,a.out,device,a.single_task_name)
             if a.only in ("all","sequential_d2nn"):result["sequential_d2nn"]=train_sequential_d2nn(tasks,cfg,a.out,device,False)
             if a.only in ("all","sequential_d2nn_replay"):result["sequential_d2nn_replay"]=train_sequential_d2nn(tasks,cfg,a.out,device,True)
             if a.only in ("all","moe"):result["moe"]=train_lifelong_moe(tasks,cfg,a.out,device)
