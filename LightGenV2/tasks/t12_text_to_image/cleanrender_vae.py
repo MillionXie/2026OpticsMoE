@@ -129,8 +129,13 @@ class CleanRenderImageEncoder(nn.Module):
     ) -> torch.Tensor:
         generator = torch.Generator(device=mean.device).manual_seed(int(seed))
         noise = torch.randn(mean.shape, generator=generator, device=mean.device, dtype=mean.dtype)
-        scale = 1.0 if log_variance is None else torch.exp(0.5 * log_variance)
-        return mean + float(strength) * scale * noise
+        del log_variance  # Kept in the API for checkpoint/inference compatibility.
+        amount = float(strength)
+        if not 0 <= amount <= 1:
+            raise ValueError("reference variation strength must be in [0,1]")
+        # A convex path has an interpretable endpoint: 0 reconstructs the
+        # reference posterior mean, while 1 is a pure seeded prior sample.
+        return torch.lerp(mean, noise, amount)
 
 
 def vae_architecture_report(
