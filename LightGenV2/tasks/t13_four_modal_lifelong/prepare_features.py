@@ -10,6 +10,7 @@ import torch
 from LightGenV2.tasks.t09_multimodal_matching.prepare import tokens
 from LightGenV2.tasks.t09_multimodal_matching.vision import VisionEncoder
 from LightGenV2.demo_check.shared_frontend.model import SharedFrontend
+from .physical_frontend import PhysicalEncoder
 from .data import sha256
 
 
@@ -113,9 +114,34 @@ def prepare_speech(source, checkpoint, out, device):
     return 2, "frozen_feature_text_v1", ["log-mel audio", "keyword text"]
 
 
+@torch.no_grad()
+def prepare_physical(source, checkpoint, out, device):
+    state = torch.load(checkpoint, map_location="cpu", weights_only=False)["model"]
+    model = PhysicalEncoder(); model.load_state_dict(state); model.eval().to(device)
+    query_tokens = np.zeros((2, 32), dtype=np.uint8)
+    query_tokens[0, :6] = [2, 3, 4, 5, 6, 7]
+    query_tokens[1, :6] = [2, 3, 4, 5, 8, 7]
+    for split in ("train", "val", "test"):
+        z = np.load(source / f"{split}.npz", mmap_mode="r", allow_pickle=False)
+        base_features = []
+        for x in batches(z["fields"]):
+            value = torch.as_tensor(np.array(x, copy=True), device=device)
+            base_features.append(model(value)[0].cpu().numpy().astype(np.float16))
+        base_features = np.concatenate(base_features)
+        base_labels = np.asarray(z["labels"], dtype=np.int64)
+        base_rows = json.loads((source / f"{split}_records.json").read_text())
+        features = np.repeat(base_features, 2, axis=0)
+        tokens_value = np.tile(query_tokens, (len(base_features), 1))
+        labels = (np.tile(np.arange(2), len(base_labels)) == np.repeat(base_labels, 2)).astype(np.int64)
+        rows = [{**row, "query": query} for row in base_rows
+                for query in ("impossible", "possible")]
+        write_split(out, split, features, labels, rows, tokens_value)
+    return 2, "frozen_feature_text_v1", ["ordered video frames", "possible/impossible text"]
+
+
 def main():
     p = argparse.ArgumentParser()
-    p.add_argument("--task", choices=["eurosat", "clevr", "speech"], required=True)
+    p.add_argument("--task", choices=["eurosat", "clevr", "speech", "physical"], required=True)
     p.add_argument("--source", type=Path, required=True)
     p.add_argument("--checkpoint", type=Path, required=True)
     p.add_argument("--out", type=Path, required=True)
