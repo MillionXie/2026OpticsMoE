@@ -137,7 +137,7 @@ class DecoderOpticalGenerator(nn.Module):
             flow=.26*torch.tanh(raw[:,:2]).permute(0,2,3,1)
             warped=F.grid_sample(reference,base+flow,mode="bilinear",padding_mode="border",align_corners=True)
             mask=F.max_pool2d(self.foreground_mask(warped).to(raw.dtype),11,stride=1,padding=5)
-            delta=.25*torch.tanh(raw[:,2:]); output=(warped+mask*delta).clamp(-1,1)
+            delta=.06*torch.tanh(raw[:,2:]); output=(warped+mask*delta).clamp(-1,1)
         return output,{"encoded":encoded,"decoder_generated":value,"delta":delta,"mask":mask,"flow":flow if self.config.task=="view" else torch.zeros((),device=reference.device)}
 
     def forward(self,reference:torch.Tensor,text:torch.Tensor)->torch.Tensor: return self.forward_with_aux(reference,text)[0]

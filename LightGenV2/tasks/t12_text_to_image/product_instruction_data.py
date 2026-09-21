@@ -28,8 +28,6 @@ STYLE_SPECS = (
 VIEW_SPECS = (
     (-1, ("rotate the chair one step counterclockwise", "show the immediately previous view on the left", "turn the object about 36 degrees to the left")),
     (1, ("rotate the chair one step clockwise", "show the immediately next view on the right", "turn the object about 36 degrees to the right")),
-    (-2, ("rotate the chair two steps counterclockwise", "show a farther view from the left", "turn the object about 72 degrees to the left")),
-    (2, ("rotate the chair two steps clockwise", "show a farther view from the right", "turn the object about 72 degrees to the right")),
 )
 
 

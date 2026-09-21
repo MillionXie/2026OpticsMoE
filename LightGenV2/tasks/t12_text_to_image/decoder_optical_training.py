@@ -71,7 +71,7 @@ def _pil(value:torch.Tensor)->Image.Image:
 
 @torch.no_grad()
 def save_grid(model:DecoderOpticalGenerator,dataset,output:Path,device:torch.device)->None:
-    variants=3;conditions=6 if model.config.task=="style" else 4;indices=[]
+    variants=3;conditions=len({int(row["condition"]) for row in dataset.prompts});indices=[]
     for source in range(2):
         base=source*len(dataset.prompts)
         indices.extend(base+c*variants for c in range(conditions))

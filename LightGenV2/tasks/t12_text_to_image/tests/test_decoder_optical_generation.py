@@ -28,7 +28,7 @@ def test_both_tasks_are_single_pass_and_under_ten_million()->None:
 
 
 def test_instruction_sets_and_style_background()->None:
-    assert len(prompt_rows("style"))==18 and len(prompt_rows("view"))==12
+    assert len(prompt_rows("style"))==18 and len(prompt_rows("view"))==6
     reference=torch.ones(6,3,128,128);reference[:,:,40:90,45:85]=-.1
     target=apply_backpack_style(reference,torch.arange(6))
     assert torch.equal(reference[:,:,:20,:20],target[:,:,:20,:20])
