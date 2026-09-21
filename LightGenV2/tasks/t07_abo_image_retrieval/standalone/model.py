@@ -83,8 +83,18 @@ class Modality(nn.Module):
         self.block2_optical_fusion_logit = nn.Parameter(torch.zeros(()))
         self.optics = OpticalPath(input_rms,noise_config)
         self.remove_optical = False
+        self.optical_noise_blocks = frozenset()
         self.last_latent = None
         self.last_optical = None
+
+    def _ablate_optical_output(self, value, block):
+        if block not in self.optical_noise_blocks:
+            return value
+        # Information-destroying, energy-preserving control. ``fuse`` performs
+        # per-sample RMS matching immediately afterwards, so unit Gaussian
+        # noise has the same post-match branch energy without retaining any
+        # image/SKU information from the optical output.
+        return torch.randn_like(value.float()).to(value.dtype)
 
     def forward(self, inputs):
         latent = self.input_norm(self.input_adapter(inputs.float()))
@@ -94,9 +104,12 @@ class Modality(nn.Module):
             weights = None
         else:
             o1, weights = self.optics.expert(latent)
+            o1 = self._ablate_optical_output(o1, 1)
             f1 = fuse(e1,o1,self.block1_optical_fusion_logit,self.alpha_bounds)
         e2 = self.blocks[1](f1)
         self.last_optical = None if self.remove_optical else self.optics.global_stage(f1,weights)
+        if self.last_optical is not None:
+            self.last_optical = self._ablate_optical_output(self.last_optical, 2)
         f2 = e2 if self.remove_optical else fuse(e2,self.last_optical,self.block2_optical_fusion_logit,self.alpha_bounds)
         output = self.output_norm(f2)
         self.last_latent = output
@@ -174,6 +187,26 @@ class OpticalRetrieval(nn.Module):
 
     def set_remove_optical(self, active):
         self.vision.remove_optical = self.language.remove_optical = bool(active)
+
+    def set_optical_noise_ablation(self, mode='none'):
+        """Replace selected optical feature outputs by Gaussian controls.
+
+        ``language_global`` is the literal final optical feature layer in the
+        V1,V2,L1,L2 inference order. ``global_each_modality`` replaces V2 and
+        L2. ``all_feature_layers`` replaces V1,V2,L1,L2. Routers still execute
+        so capture count and Top-2 control flow remain unchanged, but their
+        selected feature outputs carry no sample information in the all-layer
+        condition.
+        """
+        mapping = {
+            'none': (frozenset(), frozenset()),
+            'language_global': (frozenset(), frozenset({2})),
+            'global_each_modality': (frozenset({2}), frozenset({2})),
+            'all_feature_layers': (frozenset({1,2}), frozenset({1,2})),
+        }
+        if mode not in mapping:
+            raise ValueError('Unknown optical noise ablation: '+str(mode))
+        self.vision.optical_noise_blocks, self.language.optical_noise_blocks = mapping[mode]
 
     def forward(self, batch):
         ids = batch['input_ids']
