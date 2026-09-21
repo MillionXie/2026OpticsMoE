@@ -14,6 +14,7 @@ from torch.nn import functional as F
 from torch.utils.data import DataLoader, Dataset
 
 from .compact_turbo import latent_gradient_loss, one_step_denoise
+from .compact_turbo_training import QwenLatentCacheDataset, _qwen_condition_cache
 from .optical_turbo import OpticalTurboConfig, attach_parallel_optical_mid
 
 
@@ -83,12 +84,14 @@ def train_optical_turbo(
     compact_unet: Path,
     turbo_checkpoint: Path,
     latent_cache_dir: Path,
-    condition_cache: Path,
+    condition_cache: Path | None,
     data_dir: Path,
     output_dir: Path,
     config: OpticalTurboConfig,
     device: torch.device,
     seed: int,
+    adapter_checkpoint: Path | None = None,
+    feature_cache_dir: Path | None = None,
 ) -> dict:
     if output_dir.exists():
         raise FileExistsError(output_dir)
@@ -109,8 +112,25 @@ def train_optical_turbo(
     unet.requires_grad_(False)
     wrapper = attach_parallel_optical_mid(unet, config).to(device)
     wrapper.freeze_electronic()
-    train = NativeConditionLatentDataset("train", latent_cache_dir, condition_cache, data_dir)
-    val = NativeConditionLatentDataset("val", latent_cache_dir, condition_cache, data_dir)
+    if adapter_checkpoint is not None or feature_cache_dir is not None:
+        if adapter_checkpoint is None or feature_cache_dir is None:
+            raise ValueError("Qwen conditioning requires both adapter_checkpoint and feature_cache_dir")
+        conditions = _qwen_condition_cache(
+            adapter_checkpoint, feature_cache_dir, data_dir, device
+        )
+        train = QwenLatentCacheDataset(
+            latent_cache_dir / "train.pt", conditions["train"], restrict_prompts=True
+        )
+        val = QwenLatentCacheDataset(
+            latent_cache_dir / "val.pt", conditions["val"], restrict_prompts=False
+        )
+        condition_source = "qwen_adapter"
+    else:
+        if condition_cache is None:
+            raise ValueError("Native conditioning requires condition_cache")
+        train = NativeConditionLatentDataset("train", latent_cache_dir, condition_cache, data_dir)
+        val = NativeConditionLatentDataset("val", latent_cache_dir, condition_cache, data_dir)
+        condition_source = "native_clip"
     train_loader = DataLoader(
         train, batch_size=config.batch_size, shuffle=True, num_workers=config.num_workers,
         pin_memory=device.type == "cuda", generator=torch.Generator().manual_seed(seed),
@@ -169,6 +189,7 @@ def train_optical_turbo(
                 "epoch": epoch,
                 "config": config.__dict__,
                 "compact_unet": str(compact_unet),
+                "condition_source": condition_source,
                 "optical_state": best_state,
                 "validation": validation,
                 "architecture": wrapper.architecture_report(),
@@ -181,6 +202,7 @@ def train_optical_turbo(
     report = {
         "schema_version": 1,
         "variant": "qwen_bksdm_v2_tiny_parallel_optical_mid_v0",
+        "condition_source": condition_source,
         "initial_validation": initial,
         "best_normalized_mse": best,
         "train_samples": len(train),
