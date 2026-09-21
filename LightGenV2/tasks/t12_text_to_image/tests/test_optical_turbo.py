@@ -49,6 +49,18 @@ def test_parallel_mid_preserves_shape_and_freezes_electronic() -> None:
     assert all(parameter.requires_grad for _, parameter in block.optical_parameters())
 
 
+def test_parallel_mid_adapts_larger_source_grid() -> None:
+    block = ParallelOpticalMidBlock(
+        _ElectronicRecorder(), channels=4, timestep_dim=6, condition_dim=5, config=_config()
+    )
+    value = torch.randn(2, 4, 4, 4)
+    output = block(
+        value, torch.randn(2, 6), encoder_hidden_states=torch.randn(2, 3, 5)
+    )
+    assert output.shape == value.shape
+    assert block.last_source_grid == (4, 4)
+
+
 def test_optical_config_loads() -> None:
     path = Path(__file__).parents[1] / "configs" / "qwen_bksdm_v2_tiny_parallel_optical_v0.yaml"
     config = load_optical_turbo_config(path)

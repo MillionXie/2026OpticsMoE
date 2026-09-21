@@ -110,6 +110,7 @@ class ParallelOpticalMidBlock(nn.Module):
         self.output_norm = nn.LayerNorm(width)
         self.output_projection = nn.Linear(width, channels)
         self.output_gate = nn.Parameter(torch.tensor(-2.0))
+        self.last_source_grid: tuple[int, int] | None = None
         self.fusion = ScaleMatchedFusion(
             config.alpha_initial,
             config.alpha_minimum,
@@ -148,11 +149,15 @@ class ParallelOpticalMidBlock(nn.Module):
         encoder_hidden_states: torch.Tensor,
     ) -> torch.Tensor:
         batch, channels, height, width = hidden_states.shape
-        if channels != self.channels or (height, width) != (self.grid, self.grid):
+        if channels != self.channels or height < self.grid or width < self.grid:
             raise ValueError(
-                f"Expected [B,{self.channels},{self.grid},{self.grid}], got {tuple(hidden_states.shape)}"
+                f"Expected at least [B,{self.channels},{self.grid},{self.grid}], got {tuple(hidden_states.shape)}"
             )
-        tokens = hidden_states.flatten(2).transpose(1, 2)
+        self.last_source_grid = (height, width)
+        optical_input = F.adaptive_avg_pool2d(
+            hidden_states.float(), output_size=(self.grid, self.grid)
+        )
+        tokens = optical_input.flatten(2).transpose(1, 2)
         tokens = self.input_projection(self.input_norm(tokens.float()))
         tokens = tokens + self.timestep_projection(temb.float())[:, None]
         pooled_condition = encoder_hidden_states.float().mean(dim=1)
@@ -162,7 +167,9 @@ class ParallelOpticalMidBlock(nn.Module):
         global_value = self.optical.global_block(stage1)
         stage2 = stage1 + torch.sigmoid(self.global_gate) * global_value
         delta = self.output_projection(self.output_norm(stage2))
-        delta = delta.transpose(1, 2).reshape(batch, channels, height, width)
+        delta = delta.transpose(1, 2).reshape(batch, channels, self.grid, self.grid)
+        if (height, width) != (self.grid, self.grid):
+            delta = F.interpolate(delta, size=(height, width), mode="bilinear", align_corners=False)
         return hidden_states.float() + torch.sigmoid(self.output_gate) * delta
 
     def forward(
@@ -203,6 +210,7 @@ class ParallelOpticalMidBlock(nn.Module):
             "optical_backend": "compact_fft_simulation",
             "spatial_grid": [self.grid, self.grid],
             "valid_optical_tokens": self.grid**2,
+            "spatial_interface": "adaptive average pool to optical grid; bilinear delta upsample",
             "optical_trainable_parameters": optical_parameters,
             "fusion": {
                 "alpha": float(self.fusion.alpha.detach()),
