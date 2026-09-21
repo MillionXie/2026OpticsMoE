@@ -8,6 +8,8 @@
   "eval_batch": 8,
   "lr": 0.003,
   "phase_dropout": 0.05,
+  "kather_augmentation": true,
+  "label_smoothing": 0.02,
   "route_balance": 0.1,
   "replay_per_task": 512,
   "replay_batch": 4,

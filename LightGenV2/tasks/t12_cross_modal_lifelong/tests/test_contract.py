@@ -10,7 +10,7 @@ from LightGenV2.tasks.t12_cross_modal_lifelong.data import encode_clevr, load_co
 from LightGenV2.tasks.t12_cross_modal_lifelong.prepare_physical_concepts import rank
 from LightGenV2.tasks.t12_cross_modal_lifelong.prepare_kather2016 import encode_rgb
 from LightGenV2.tasks.t12_cross_modal_lifelong.run import (combine_current_replay,
-    save_continual_matrix, validate_full_protocol)
+    save_continual_matrix, validate_full_protocol, augment_kather_fields)
 
 
 class ContractTest(unittest.TestCase):
@@ -113,6 +113,17 @@ class ContractTest(unittest.TestCase):
                                        torch.ones(2), atol=2e-3))
         self.assertGreater(float(field[:, 112:, :112].mean()),
                            float(field[:, :112, :112].mean()))
+
+    def test_kather_augmentation_keeps_tiles_aligned_and_power(self):
+        tile = torch.arange(112 * 112, dtype=torch.float32).reshape(112, 112)
+        fields = torch.cat((torch.cat((tile, tile), -1),
+                            torch.cat((tile, tile), -1)), -2)[None]
+        torch.manual_seed(17)
+        augmented = augment_kather_fields(fields)
+        quadrants = [augmented[:, :112, :112], augmented[:, :112, 112:],
+                     augmented[:, 112:, :112], augmented[:, 112:, 112:]]
+        self.assertTrue(all(torch.equal(quadrants[0], q) for q in quadrants[1:]))
+        self.assertTrue(torch.equal(fields.square().sum(), augmented.square().sum()))
 
     def test_lazy_clevr_and_sonyc_fields(self):
         with tempfile.TemporaryDirectory() as directory:

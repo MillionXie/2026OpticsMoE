@@ -40,6 +40,7 @@ MoE 从第一项任务起就预分配 16 个物理槽位，传播画布、global
 | Physical Concepts continuity | 5,000 个 quadruplet，每个含 4 段视频，共 20,000 视频 | 使用全部 5,000 组；按 quadruplet 身份固定 hash 70/15/15，四段视频不能跨集合 | balanced accuracy |
 
 Kather 每张图编码为 `[R,G;B,RGB均值]` 四块。CLEVR 把 RGB 编码置于左半场、固定文本编码置于右半场。SONYC 把音频时频图和事件查询编码组合成同一光场。视频固定取 8 个有序帧，拼成 2×4 光场。所有编码在 D2NN 和 MoE 间共享。
+Kather 训练时对四个颜色块同步执行随机水平/垂直翻转和 90° 旋转，并使用 0.02 label smoothing；不能分别变换颜色块。相同增强和损失配置用于 D2NN 与 MoE。
 
 64 样本 overfit 只回答“实现能否记住一个极小训练集合”，不估计泛化性能，也不进入论文表格。之前使用 2,048 条 SEN、6,000 条 CLEVR、audio-0 和 1,024 个视频 quadruplet 的运行均标为 subset diagnostic；其中断的 `single_task_d2nn_s17_v1` 不作为结果。
 

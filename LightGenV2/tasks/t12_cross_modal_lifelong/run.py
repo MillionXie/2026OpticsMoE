@@ -190,16 +190,41 @@ def sample_weights(task, indices):
     return torch.from_numpy(weights)
 
 
-def task_loss(model, task, indices, device, warmup=False, balance=0.0):
+def augment_kather_fields(fields):
+    """Apply one spatial transform consistently to all four RGB-derived tiles."""
+    tiles = fields.reshape(-1, 2, 112, 2, 112).permute(0, 1, 3, 2, 4).contiguous()
+    for sample in range(len(tiles)):
+        if torch.rand((), device=fields.device) < .5:
+            tiles[sample] = tiles[sample].flip(-1)
+        if torch.rand((), device=fields.device) < .5:
+            tiles[sample] = tiles[sample].flip(-2)
+        turns = int(torch.randint(0, 4, (), device=fields.device))
+        if turns:
+            tiles[sample] = torch.rot90(tiles[sample], turns, (-2, -1))
+    return tiles.permute(0, 1, 3, 2, 4).reshape(-1, 224, 224)
+
+
+def task_loss(model, task, indices, device, warmup=False, balance=0.0,
+              augment=False, label_smoothing=0.0):
     fields, labels, _ = task.splits["train"]
-    out = model(fields[indices].to(device=device, dtype=torch.float32), task.name, warmup=warmup)
+    batch_fields = fields[indices].to(device=device, dtype=torch.float32)
+    if augment and task.name == "kather2016":
+        batch_fields = augment_kather_fields(batch_fields)
+    out = model(batch_fields, task.name, warmup=warmup)
     y = torch.as_tensor(labels[indices], device=device)
     w = sample_weights(task, indices).to(device)
-    loss = (F.nll_loss(out["probabilities"].clamp_min(1e-12).log(), y, reduction="none") * w).mean()
+    loss = (F.nll_loss(out["probabilities"].clamp_min(1e-12).log(), y, reduction="none",
+                       label_smoothing=label_smoothing) * w).mean()
     if balance and out["route_power"] is not None and not warmup:
         n = int(model.active_count)
         loss = loss + balance * (out["route_power"][:, :n].mean(0) - 1.0/n).square().sum()
     return loss
+
+
+def configured_task_loss(model, task, indices, device, cfg, **kwargs):
+    return task_loss(model, task, indices, device,
+                     augment=bool(cfg.get("kather_augmentation", False)),
+                     label_smoothing=float(cfg.get("label_smoothing", 0.0)), **kwargs)
 
 
 def replay_indices(task, budget, seed):
@@ -341,7 +366,7 @@ def train_single_task_d2nn(tasks, cfg, out, device, selected_task=None):
             order=np.random.default_rng(cfg["seed"]+task_index*1000+epoch).permutation(len(tasks[name].splits["train"][1]))
             for ix in chunks(order, cfg["batch"]):
                 optimizer.zero_grad(set_to_none=True)
-                loss=task_loss(model,tasks[name],ix,device)
+                loss=configured_task_loss(model,tasks[name],ix,device,cfg)
                 loss.backward();torch.nn.utils.clip_grad_norm_([p for p in model.parameters() if p.requires_grad],1.0);optimizer.step()
                 losses.append(float(loss.detach()))
             scheduler.step()
@@ -435,11 +460,11 @@ def train_sequential_d2nn(tasks, cfg, out, device, use_replay):
                            for j,(old,ix) in enumerate(replay.items())} if use_replay else {}
             for step,current in enumerate(current_chunks):
                 optimizer.zero_grad(set_to_none=True)
-                current_loss=task_loss(model,task,current,device)
+                current_loss=configured_task_loss(model,task,current,device,cfg)
                 replay_losses=[]
                 for old in TASK_ORDER[:task_index] if use_replay else ():
                     pool=replay_chunks[old]; ix=pool[step%len(pool)]
-                    replay_losses.append(task_loss(model,tasks[old],ix,device))
+                    replay_losses.append(configured_task_loss(model,tasks[old],ix,device,cfg))
                 loss=combine_current_replay(current_loss,replay_losses,cfg["replay_weight"])
                 loss.backward();torch.nn.utils.clip_grad_norm_([p for p in model.parameters() if p.requires_grad],1.0);optimizer.step();losses.append(float(loss.detach()))
             scheduler.step()
@@ -486,7 +511,7 @@ def train_lifelong_moe(tasks, cfg, out, device):
                 model.train(); losses=[]
                 order=np.random.default_rng(cfg["seed"]+task_index*100+epoch).permutation(len(task.splits["train"][1]))
                 for ix in chunks(order, cfg["batch"]):
-                    optimizer.zero_grad(set_to_none=True); loss=task_loss(model,task,ix,device,warmup=True); loss.backward()
+                    optimizer.zero_grad(set_to_none=True); loss=configured_task_loss(model,task,ix,device,cfg,warmup=True); loss.backward()
                     torch.nn.utils.clip_grad_norm_([p for p in model.parameters() if p.requires_grad],1.0);optimizer.step();losses.append(float(loss.detach()))
                 print(json.dumps({"arch":"moe","task":name,"stage":"warmup","epoch":epoch,"loss":float(np.mean(losses))}),flush=True)
         model.configure_task(task_index, warmup=False)
@@ -501,11 +526,11 @@ def train_lifelong_moe(tasks, cfg, out, device):
                            for j,(old,ix) in enumerate(replay.items())}
             for step,current in enumerate(current_chunks):
                 optimizer.zero_grad(set_to_none=True)
-                current_loss=task_loss(model,task,current,device,balance=cfg["route_balance"])
+                current_loss=configured_task_loss(model,task,current,device,cfg,balance=cfg["route_balance"])
                 replay_losses=[]
                 for old in TASK_ORDER[:task_index]:
                     pool=replay_chunks[old]; ix=pool[step%len(pool)]
-                    replay_losses.append(task_loss(model,tasks[old],ix,device,balance=cfg["route_balance"]))
+                    replay_losses.append(configured_task_loss(model,tasks[old],ix,device,cfg,balance=cfg["route_balance"]))
                 loss=combine_current_replay(current_loss,replay_losses,cfg["replay_weight"])
                 loss.backward();torch.nn.utils.clip_grad_norm_([p for p in model.parameters() if p.requires_grad],1.0);optimizer.step();losses.append(float(loss.detach()))
             scheduler.step()
