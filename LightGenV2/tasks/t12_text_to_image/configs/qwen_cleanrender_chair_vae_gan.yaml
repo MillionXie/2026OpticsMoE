@@ -1,0 +1,39 @@
+model:
+  image_size: 128
+  text_dim: 2048
+  noise_dim: 128
+  condition_dim: 192
+  mapping_depth: 2
+  generator_channels: [256, 224, 192, 160, 128, 96]
+  noise_spatial_channels: 32
+  discriminator_width: 32
+vae:
+  encoder_channels: [32, 48, 64, 96, 128, 160]
+  reference_variation_strength: 0.30
+training:
+  batch_size: 32
+  epochs: 140
+  generator_learning_rate: 2.0e-4
+  discriminator_learning_rate: 2.0e-4
+  num_workers: 4
+  amp: true
+  augmentation_probability: 0.20
+  fixed_noise_per_sample: false
+  ema_halflife_kimg: 5.0
+  sample_every_epochs: 10
+  checkpoint_every_epochs: 35
+loss:
+  category_weight: 0.0
+  text_category_weight: 0.0
+  feature_statistics_weight: 0.10
+  white_border_weight: 0.05
+  low_frequency_reconstruction_weight: 0.0
+  diversity_weight: 0.20
+  diversity_target: 0.06
+  kl_weight: 0.01
+  kl_warmup_epochs: 30
+  reconstruction_weight: 7.0
+  edge_weight: 1.5
+  prior_adversarial_weight: 0.65
+  reconstruction_adversarial_weight: 0.35
+  mismatch_weight: 0.25
