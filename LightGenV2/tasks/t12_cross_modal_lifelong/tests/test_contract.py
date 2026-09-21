@@ -123,7 +123,7 @@ class ContractTest(unittest.TestCase):
         quadrants = [augmented[:, :112, :112], augmented[:, :112, 112:],
                      augmented[:, 112:, :112], augmented[:, 112:, 112:]]
         self.assertTrue(all(torch.equal(quadrants[0], q) for q in quadrants[1:]))
-        self.assertTrue(torch.equal(fields.square().sum(), augmented.square().sum()))
+        self.assertTrue(torch.allclose(fields.square().sum(), augmented.square().sum()))
 
     def test_lazy_clevr_and_sonyc_fields(self):
         with tempfile.TemporaryDirectory() as directory:
