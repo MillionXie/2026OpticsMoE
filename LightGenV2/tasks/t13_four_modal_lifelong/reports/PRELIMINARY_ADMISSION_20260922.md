@@ -65,9 +65,10 @@ EuroSAT、CLEVR 和 Physical Concepts 在本表仍使用已审计的 preliminary
 
 任务顺序固定为 EuroSAT → CLEVR → Speech Commands → Physical Concepts。正在按相同顺序和训练预算运行：
 
-1. sequential D2NN，无 replay；
-2. sequential D2NN，每个旧任务相同 replay 预算；
-3. ours，固定 16 个专家槽位，按 4→8→12→16 激活，冻结旧专家并使用相同 replay。
+1. independent D2NN transfer：每项任务独立训练光学骨干，冻结光学层后用目标任务全部训练数据只拟合 MLP；
+2. sequential D2NN，无 replay；
+3. sequential D2NN，每个旧任务相同 replay 预算；
+4. ours，固定 16 个专家槽位，按 4→8→12→16 激活，冻结旧专家并使用相同 replay。
 
 每学完一个任务就评估所有已学习任务，输出 validation/test 下三角矩阵、backward transfer 和 forgetting。
 没有联合训练 D2NN。

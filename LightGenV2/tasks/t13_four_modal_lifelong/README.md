@@ -41,6 +41,8 @@ EuroSAT 发布许可不是 CC BY 4.0，这是对早期“仅 CC BY 4.0”偏好�
 可学性；它不冒充 16 槽终身模型的第一阶段成绩。目标是 D2NN
 至少 65%，MoE 至少 70%；未通过的任务先调训练，不进入终身矩阵。通过后再固定顺序运行：
 
+- independent D2NN transfer：每个任务单独训练一个光学骨干，冻结后在其余任务的全部训练样本上
+  只拟合目标 MLP，得到 4×4 跨任务矩阵；
 - sequential D2NN，无 replay；
 - sequential D2NN，相同 replay；
 - ours，固定 16 槽、旧专家冻结、相同 replay。
