@@ -80,6 +80,17 @@ def _fixed_text(token_ids):
     return F.one_hot(ids, num_classes=64).float() * ids.ne(0).unsqueeze(-1)
 
 
+def _candidate_text_bank(token_rows):
+    """Stack fixed text candidates vertically into a 224x112 optical field."""
+    encoded = _fixed_text(token_rows)
+    count = len(encoded)
+    edges = np.linspace(0, 224, count + 1).round().astype(int)
+    bands = [F.interpolate(encoded[i][None, None],
+                           (int(edges[i + 1] - edges[i]), 112), mode="nearest")[0, 0]
+             for i in range(count)]
+    return normalize_power(torch.cat(bands, 0), 0.5)
+
+
 def _legacy_audio_text(images, token_ids):
     x = torch.as_tensor(np.array(images, copy=True)).float().permute(0, 3, 1, 2) / 255.0
     assert torch.equal(x[:, 0], x[:, 1]) and torch.equal(x[:, 0], x[:, 2])
@@ -134,12 +145,9 @@ class SpeechRank8Fields:
         # Eight equal-height bands form a fixed text candidate bank. Each band
         # contains a deterministic binary code for one word; no learned text
         # encoder or label-trained audio frontend is present.
-        bank = torch.zeros(224, 112)
-        for candidate in range(8):
-            y0, y1 = 28 * candidate, 28 * (candidate + 1)
-            bits = torch.tensor([(candidate + 1) >> bit & 1 for bit in range(4)]).float()
-            bank[y0:y1] = bits.repeat_interleave(28).reshape(1, 112)
-        self.candidate_bank = normalize_power(bank, 0.5)
+        tokens = torch.zeros(8, 4, dtype=torch.long)
+        tokens[:, 0] = torch.arange(2, 10)
+        self.candidate_bank = _candidate_text_bank(tokens)
 
     def __len__(self):
         return len(self.rows)
@@ -199,13 +207,78 @@ class PhysicalTextFields:
         video = normalize_power(video, 0.5)
         text = F.interpolate(self.text[query, None], (224, 112), mode="nearest")[:, 0]
         text = normalize_power(text, 0.5)
-        result = torch.cat((video, text), -1)
+        result = normalize_power(torch.cat((video, text), -1))
         return result[0] if scalar else result
 
     def labels(self):
         query = np.tile(np.arange(2, dtype=np.int64), len(self.base_labels))
         truth = np.repeat(self.base_labels, 2)
         return (query == truth).astype(np.int64)
+
+
+class PhysicalRank10Fields:
+    """Five physical concepts x possible/impossible, with no learned frontend."""
+    CONCEPTS = ("continuity", "directional_inertia", "object_persistence",
+                "solidity", "unchangeableness")
+
+    def __init__(self, roots, split):
+        self.fields = []
+        self.base_labels = []
+        self.rows = []
+        self.offsets = [0]
+        for concept_index, concept in enumerate(self.CONCEPTS):
+            root = Path(roots[concept])
+            data = np.load(root / f"{split}.npz", mmap_mode="r", allow_pickle=False)
+            fields = data["fields"]
+            labels = np.asarray(data["labels"], dtype=np.int64)
+            records = json.loads((root / f"{split}_records.json").read_text())
+            assert len(fields) == len(labels) == len(records)
+            self.fields.append(fields); self.base_labels.append(labels)
+            for label, row in zip(labels, records):
+                self.rows.append({**row, "concept": concept,
+                                  "plausibility": "possible" if int(label) else "impossible",
+                                  "candidate_texts": [
+                                      f"{name.replace('_', ' ')} {kind}"
+                                      for name in self.CONCEPTS
+                                      for kind in ("impossible", "possible")]})
+            self.offsets.append(self.offsets[-1] + len(labels))
+        # concept token, optional second concept token, plausibility token
+        tokens = torch.zeros(10, 6, dtype=torch.long)
+        for concept in range(5):
+            tokens[2 * concept:2 * concept + 2, 0] = 2 + concept
+            tokens[2 * concept, 1] = 7
+            tokens[2 * concept + 1, 1] = 8
+        self.candidate_bank = _candidate_text_bank(tokens)
+
+    def __len__(self):
+        return self.offsets[-1]
+
+    def __getitem__(self, index):
+        scalar = np.isscalar(index)
+        if isinstance(index, slice):
+            index = np.arange(len(self), dtype=np.int64)[index]
+        indices = np.asarray([index] if scalar else index, dtype=np.int64)
+        videos = []
+        for index_value in indices:
+            concept = int(np.searchsorted(self.offsets, int(index_value), side="right") - 1)
+            local = int(index_value) - self.offsets[concept]
+            videos.append(np.array(self.fields[concept][local], copy=True))
+        video = torch.from_numpy(np.stack(videos)).float()
+        frames = video.reshape(-1, 2, 112, 4, 56).permute(
+            0, 1, 3, 2, 4).reshape(-1, 8, 112, 56)
+        delta = frames[:, 1:] - frames[:, :-1]
+        delta = torch.cat((delta, torch.zeros_like(delta[:, :1])), 1)
+        video = delta.reshape(-1, 2, 4, 112, 56).permute(
+            0, 1, 3, 2, 4).reshape(-1, 224, 224)
+        video = F.interpolate(video[:, None], (224, 112), mode="bilinear", align_corners=False)[:, 0]
+        video = normalize_power(video, 0.5)
+        result = normalize_power(torch.cat(
+            (video, self.candidate_bank.expand(len(indices), -1, -1)), -1))
+        return result[0] if scalar else result
+
+    def labels(self):
+        return np.concatenate([2 * concept + labels
+                               for concept, labels in enumerate(self.base_labels)]).astype(np.int64)
 
 
 def _feature_only_field(features):
@@ -278,6 +351,10 @@ def load_task(root, split):
         for row in base_rows:
             for query in ("impossible", "possible"):
                 rows.append({**row, "query": query})
+    elif storage == "physical_video_text_rank10_v3":
+        fields = PhysicalRank10Fields(protocol["source_roots"], split)
+        labels = fields.labels()
+        rows = fields.rows
     elif storage == "npz_fields_v1":
         path = root / f"{split}.npz"
         fields = NpzFields(path)

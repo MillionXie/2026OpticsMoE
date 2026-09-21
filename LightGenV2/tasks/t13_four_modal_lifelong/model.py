@@ -62,7 +62,7 @@ class CrossModalOptics(nn.Module):
             raise ValueError("optical_layers must include expert/input and global phases")
         self.heads = nn.ModuleDict({
             name: self.make_head(classes)
-            for name, classes in {"eurosat": 10, "clevr": 2, "speech": 8, "physical": 2}.items()
+            for name, classes in {"eurosat": 10, "clevr": 2, "speech": 8, "physical": 10}.items()
         })
         with torch.random.fork_rng(devices=[]):
             torch.manual_seed(seed + 101)

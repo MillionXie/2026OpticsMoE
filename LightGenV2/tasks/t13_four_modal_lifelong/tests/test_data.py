@@ -5,7 +5,8 @@ import numpy as np
 import torch
 
 from LightGenV2.tasks.t13_four_modal_lifelong.data import (
-    PhysicalTextFields, SpeechRank8Fields, _feature_only_field, _feature_text_field, _rgb_field,
+    PhysicalRank10Fields, PhysicalTextFields, SpeechRank8Fields,
+    _feature_only_field, _feature_text_field, _rgb_field,
 )
 from LightGenV2.tasks.t13_four_modal_lifelong.model import CrossModalOptics
 
@@ -63,6 +64,24 @@ def test_speech_rank8_is_one_example_per_clip(tmp_path: Path):
     assert torch.allclose(dataset[:].square().sum((-2, -1)), torch.ones(2), atol=1e-4)
 
 
+def test_physical_rank10_uses_all_five_complete_concepts(tmp_path: Path):
+    for concept_index, concept in enumerate(PhysicalRank10Fields.CONCEPTS):
+        root = tmp_path / concept; root.mkdir()
+        field = np.zeros((2, 224, 224), np.float16)
+        field[:, :, concept_index:concept_index + 1] = 1
+        np.savez(root / "train.npz", fields=field, labels=np.array([0, 1]))
+        (root / "train_records.json").write_text(json.dumps([
+            {"quadruplet": f"{concept}:0", "label": 0},
+            {"quadruplet": f"{concept}:1", "label": 1},
+        ]))
+    roots = {name: str(tmp_path / name) for name in PhysicalRank10Fields.CONCEPTS}
+    dataset = PhysicalRank10Fields(roots, "train")
+    assert len(dataset) == 10
+    assert dataset.labels().tolist() == list(range(10))
+    assert dataset[:].shape == (10, 224, 224)
+    assert torch.allclose(dataset[:].square().sum((-2, -1)), torch.ones(10), atol=1e-4)
+
+
 def test_frozen_feature_encodings_preserve_power_and_text():
     features = np.ones((2, 128), np.float16)
     features[1, 0] = 4
@@ -84,5 +103,6 @@ def test_single_task_and_lifelong_geometries_are_explicit():
     assert (lifelong.height, lifelong.active_height, len(lifelong.first_phase)) == (1026, 986, 16)
     assert isinstance(compact.heads["speech"], torch.nn.Linear)
     assert compact.heads["speech"].out_features == 8
+    assert compact.heads["physical"].out_features == 10
     assert sum(isinstance(module, torch.nn.Linear)
                for module in compact.heads["speech"].modules()) == 1

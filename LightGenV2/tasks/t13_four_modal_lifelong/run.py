@@ -99,7 +99,7 @@ def load_tasks(paths, require_full=False, names=TASK_ORDER):
         protocol = json.loads((root / "protocol.json").read_text())
         assert protocol["task"] == name
         classes = int(protocol["classes"])
-        expected_classes = {"eurosat": 10, "clevr": 2, "speech": 8, "physical": 2}
+        expected_classes = {"eurosat": 10, "clevr": 2, "speech": 8, "physical": 10}
         assert classes == expected_classes[name]
         if require_full:
             validate_full_protocol(name, protocol)

@@ -5,8 +5,6 @@ import os
 import shutil
 from pathlib import Path
 
-from LightGenV2.tasks.t09_multimodal_matching.audio_prepare import WORDS
-
 from .data import sha256
 
 
@@ -52,22 +50,33 @@ def speech(source, out):
 
 
 def physical(source, out):
-    source_protocol = source / "protocol.json"
-    wrapper = json.loads(source_protocol.read_text())
-    raw = Path(wrapper.get("source_root", source))
+    concepts = ("continuity", "directional_inertia", "object_persistence",
+                "solidity", "unchangeableness")
+    roots = {concept: source / concept for concept in concepts}
+    protocols = {concept: json.loads((root / "protocol.json").read_text())
+                 for concept, root in roots.items()}
+    for concept, protocol_value in protocols.items():
+        if not protocol_value.get("all_original_samples", False):
+            raise ValueError(f"{concept} is not a complete official probe")
     protocol = {
-        "task": "physical", "classes": 2,
-        "storage": "physical_video_text_delta_v2", "source_root": str(raw.resolve()),
-        "modalities": ["deterministic adjacent-frame differences", "possible/impossible text"],
-        "objective": "video/text physical-plausibility matching",
+        "task": "physical", "classes": 10,
+        "storage": "physical_video_text_rank10_v3",
+        "source_roots": {name: str(root.resolve()) for name, root in roots.items()},
+        "modalities": ["deterministic adjacent-frame differences",
+                       "five-concept x plausibility text candidate bank"],
+        "objective": "select the physical concept and possible/impossible text description",
         "primary_metric": "balanced_accuracy",
-        "all_original_samples": bool(wrapper.get("all_original_samples", False)),
+        "all_original_samples": True,
+        "source_quadruplets": sum(int(value["source_quadruplets"])
+                                   for value in protocols.values()),
+        "concepts": list(concepts), "candidates": 10,
         "license": "CC BY 4.0", "label_supervised_frontend": False,
-        "source_protocol_sha256": sha256(source_protocol),
+        "source_protocol_sha256": {
+            name: sha256(root / "protocol.json") for name, root in roots.items()},
     }
     (out / "protocol.json").write_text(json.dumps(protocol, indent=2) + "\n")
-    write_manifest(out, {"protocol.json": sha256(source_protocol),
-                         "raw_manifest.json": sha256(raw / "manifest.json")})
+    write_manifest(out, {f"{name}/manifest.json": sha256(root / "manifest.json")
+                         for name, root in roots.items()})
 
 
 def main():
