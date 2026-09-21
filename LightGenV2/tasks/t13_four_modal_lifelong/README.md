@@ -48,6 +48,20 @@ Speech 二分类与 continuity 二分类分别达到约 94% 和 99%，因任务�
 6000/750/750 问答包只保留作训练策略筛选，不进入正式矩阵。正式矩阵使用 `require_full=true`。
 EuroSAT 发布许可不是 CC BY 4.0，这是对早期“仅 CC BY 4.0”偏好的明确例外，论文前需要老师确认。
 
+## 已确认的正式单任务结果
+
+|任务|D2NN 测试 balanced accuracy|MoE 测试 balanced accuracy|
+|---|---:|---:|
+|EuroSAT|80.72%|81.81%|
+|Speech Commands|74.33%|79.66%|
+|Physical Concepts|正式 40 轮运行中|81.23%|
+|CLEVR 全量|运行中|运行中|
+
+EuroSAT 与 Physical 的 MoE 均已在完整原始数据协议上超过 70% 目标线。训练后的一层线性头重拟合
+只在验证集不下降时接受：EuroSAT 拒绝重拟合并恢复联合训练权重，Physical 接受重拟合；测试集
+只在选择完成后评估。CLEVR 预备包只用于选定去 dropout、去辅助 CCD 损失的训练策略，正式结果
+以全量 420000/45000/45000 查询运行代替。
+
 ## 实验顺序
 
 先用标准 4 专家 518×518 几何分别运行四个任务的单任务 D2NN 与 MoE，验证数据和原始光路
