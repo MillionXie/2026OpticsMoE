@@ -342,10 +342,23 @@ def evaluate(args):
         write_json(args.output / 'status.json', status)
         write_json(args.output / 'execution.json', identity)
         results, routing = {}, {}
-        for removed in ([False, True] if args.mode == 'optical' else [False]):
+        conditions = [('normal',False,'none')]
+        if args.mode == 'optical':
+            if args.optical_noise_ablations:
+                conditions += [
+                    ('noise_language_global',False,'language_global'),
+                    ('noise_global_each_modality',False,'global_each_modality'),
+                    ('noise_all_feature_layers',False,'all_feature_layers'),
+                ]
+            conditions += [('remove_optical',True,'none')]
+        for name, removed, noise_mode in conditions:
             readout_inputs.clear()
             if args.mode == 'optical':
                 model.set_remove_optical(removed)
+                model.set_optical_noise_ablation(noise_mode)
+                torch.manual_seed(args.noise_seed)
+                if device.type == 'cuda':
+                    torch.cuda.manual_seed_all(args.noise_seed)
             vectors = []
             selections = {m: [] for m in ('vision', 'language')}
             for start in range(0, len(rows), args.batch_size):
@@ -373,9 +386,10 @@ def evaluate(args):
                 print(f'{args.mode} remove={removed}: {min(start+args.batch_size,len(rows))}/{len(rows)}', flush=True)
             values = torch.cat(vectors)
             metrics, predictions = rank_instances(values, rows)
-            name = 'remove_optical' if removed else 'normal'
             results[name] = metrics
-            cache = dict(manifest_sha256=manifest_sha, ids=[r['sample_id'] for r in rows], vectors=values)
+            cache = dict(manifest_sha256=manifest_sha, ids=[r['sample_id'] for r in rows],
+                         vectors=values, optical_noise_mode=noise_mode,
+                         optical_noise_seed=(args.noise_seed if noise_mode!='none' else None))
             if readout_hook is not None:
                 cache['readout_inputs'] = torch.cat(readout_inputs)
                 if cache['readout_inputs'].shape != (len(rows), 384):
@@ -394,6 +408,16 @@ def evaluate(args):
         report = dict(identity, status='complete', metrics=results, routing=routing,
                       elapsed_seconds=time.time()-args.started,
                       timing_and_power='Not benchmarked; elapsed includes loading and artifact I/O')
+        if args.mode == 'optical' and args.optical_noise_ablations:
+            report['optical_noise_ablation'] = {
+                'seed': args.noise_seed,
+                'distribution': 'zero-mean unit Gaussian before existing per-sample RMS matching',
+                'preserves': 'fusion alpha, post-match optical branch RMS, routers and six-capture control flow',
+                'destroys': 'sample information in the selected optical feature output(s)',
+                'language_global': 'only L2, the literal final optical feature layer',
+                'global_each_modality': 'V2 and L2',
+                'all_feature_layers': 'V1,V2,L1,L2',
+            }
         if 'remove_optical' in results:
             report['optical_removal_drop_percentage_points'] = 100*(results['normal']['hit_at_1']-results['remove_optical']['hit_at_1'])
         write_json(args.output / 'final_report.json', report)
@@ -423,6 +447,9 @@ def main():
     p.add_argument('--checkpoint', type=Path)
     p.add_argument('--expected-checkpoint-sha256')
     p.add_argument('--model', type=Path)
+    p.add_argument('--optical-noise-ablations', action='store_true',
+                   help='Also evaluate L2-noise, V2+L2-noise and all-feature-layer noise')
+    p.add_argument('--noise-seed', type=int, default=42)
     p.add_argument('--batch-size', type=int, default=4)
     p.add_argument('--device', choices=['cuda', 'cpu'], default='cuda')
     p.add_argument('--cache-readout-input', action='store_true', help='Optical linear64 only: save its original 384D input without altering forward')
