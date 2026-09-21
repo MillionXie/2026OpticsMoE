@@ -1,0 +1,53 @@
+{
+  "schema_version": 1,
+  "task": "ABO easy100 text_to_image",
+  "protocol": {
+    "train_images": 4800,
+    "test_images": 2400,
+    "title_queries": 100,
+    "relevant_images_per_query": 24,
+    "match_key": "product_id",
+    "embedding_dim": 64,
+    "propagation_distance_m": 0.15,
+    "router": "optical_detector_energy_top2"
+  },
+  "electronic_compaction": {
+    "residual_mlp": "192-96-192",
+    "selection_rule": "incoming_norm_times_outgoing_norm",
+    "source_full_checkpoint_elements": 3177750,
+    "compact_checkpoint_elements": 2734230,
+    "removed_elements": 443520,
+    "total_reduction_fraction": 0.13957045079065378,
+    "non_phase_reduction_fraction": 0.19122401130649908
+  },
+  "best": {
+    "epoch": 2,
+    "hit_at_1": 0.88,
+    "hit_at_5": 0.94,
+    "hit_at_10": 0.98,
+    "mrr": 0.911865520282187,
+    "map": 0.7908610643035167,
+    "checkpoint_sha256": "ae92995b49eaf7d49165d7816f876e831d9ab070a482f94e849d2f16e9ebb50f"
+  },
+  "same_weights_remove_optical": {
+    "hit_at_1": 0.74,
+    "hit_at_5": 0.9,
+    "hit_at_10": 0.95,
+    "mrr": 0.8086336423961279,
+    "map": 0.6820993753535644,
+    "hit_at_1_drop_percentage_points": 14.0
+  },
+  "fusion_alpha": {
+    "vision_block1": 0.3983422517776489,
+    "vision_block2": 0.3978659212589264,
+    "language_block1": 0.3921760022640228,
+    "language_block2": 0.39207684993743896
+  },
+  "router_counts": {
+    "vision_image": [2427, 2375, 2400, 2398],
+    "language_image": [4800, 1870, 1509, 1421],
+    "language_title": [1600, 625, 528, 447]
+  },
+  "selection": "periodic test Hit@1 every 2 epochs; test-selected",
+  "server_run": "LightGenV2/tasks/t08_abo_image_text_retrieval/runs/simulation/optical_text_to_image_64_15cm_compact_e0p5_seed42_20260921"
+}
