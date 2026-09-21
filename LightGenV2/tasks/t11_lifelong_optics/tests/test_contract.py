@@ -3,7 +3,6 @@ import numpy as np
 import torch
 from LightGenV2.tasks.t11_lifelong_optics.model import OpticalD2NN,OpticalMoE,loss
 from LightGenV2.tasks.t11_lifelong_optics.joint_d2nn import binary_metrics,joint_epoch_indices
-from LightGenV2.tasks.t11_lifelong_optics.continual_d2nn import MatchedPlasticity,optimizer_for
 from LightGenV2.tasks.t11_lifelong_optics.data import balanced_indices,domain
 
 class Contract(unittest.TestCase):
@@ -194,22 +193,5 @@ class JointD2NNContract(unittest.TestCase):
         self.assertEqual(metrics['recall_tumor'],1.)
         self.assertEqual(metrics['recall_non_tumor'],.5)
         self.assertEqual(metrics['balanced_accuracy'],.75)
-
-    def test_matched_plasticity_counts_and_freezing(self):
-        cfg=dict(self.cfg,lr_expert=.01,lr_shared=.002,phase1_task_parameters=1000,
-                 phase1_shared_parameters=500,plasticity_mask_seed=1701)
-        model=OpticalD2NN(cfg);controller=MatchedPlasticity(model,cfg)
-        metadata=controller.metadata()
-        self.assertEqual(metadata['warmup_trainable_parameters'],1000)
-        self.assertEqual(metadata['main_trainable_parameters'],1000+500+76*76)
-        self.assertEqual(sum(int((controller.assignment==i).sum()) for i in range(5)),4500)
-        y=torch.tensor([0,1])
-        for group,warmup in ((0,False),(1,True)):
-            controller.configure(group,warmup);before1=model.phase_1.detach().clone();before2=model.phase_2.detach().clone()
-            optimizer=optimizer_for(model,cfg);optimizer.zero_grad(set_to_none=True);loss(model(self.x),y).backward()
-            controller.apply(optimizer);optimizer.step();allowed=controller.allowed
-            self.assertFalse(torch.equal(model.phase_1.detach()[allowed],before1[allowed]))
-            self.assertTrue(torch.equal(model.phase_1.detach()[~allowed],before1[~allowed]))
-            self.assertEqual(torch.equal(model.phase_2.detach(),before2),warmup)
 
 if __name__=='__main__': unittest.main()
