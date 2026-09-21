@@ -10,7 +10,7 @@ from LightGenV2.tasks.t12_cross_modal_lifelong.data import encode_clevr, load_co
 from LightGenV2.tasks.t12_cross_modal_lifelong.prepare_physical_concepts import rank
 from LightGenV2.tasks.t12_cross_modal_lifelong.prepare_kather2016 import encode_rgb
 from LightGenV2.tasks.t12_cross_modal_lifelong.run import (combine_current_replay,
-    save_continual_matrix, validate_full_protocol, augment_kather_fields)
+    save_continual_matrix, validate_full_protocol, augment_kather_fields, smoothed_nll)
 
 
 class ContractTest(unittest.TestCase):
@@ -124,6 +124,13 @@ class ContractTest(unittest.TestCase):
                      augmented[:, 112:, :112], augmented[:, 112:, 112:]]
         self.assertTrue(all(torch.equal(quadrants[0], q) for q in quadrants[1:]))
         self.assertTrue(torch.allclose(fields.square().sum(), augmented.square().sum()))
+
+    def test_label_smoothing_supports_server_torch(self):
+        probabilities = torch.tensor([[.8, .2], [.1, .9]])
+        labels = torch.tensor([0, 1])
+        actual = smoothed_nll(probabilities.log(), labels, .02)
+        expected = .98 * -probabilities[range(2), labels].log() - .02 * probabilities.log().mean(1)
+        self.assertTrue(torch.allclose(actual, expected))
 
     def test_lazy_clevr_and_sonyc_fields(self):
         with tempfile.TemporaryDirectory() as directory:

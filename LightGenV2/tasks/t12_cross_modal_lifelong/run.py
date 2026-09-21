@@ -204,6 +204,13 @@ def augment_kather_fields(fields):
     return tiles.permute(0, 1, 3, 2, 4).reshape(-1, 224, 224)
 
 
+def smoothed_nll(log_probabilities, labels, smoothing):
+    nll = F.nll_loss(log_probabilities, labels, reduction="none")
+    if smoothing:
+        nll = (1.0 - smoothing) * nll - smoothing * log_probabilities.mean(1)
+    return nll
+
+
 def task_loss(model, task, indices, device, warmup=False, balance=0.0,
               augment=False, label_smoothing=0.0):
     fields, labels, _ = task.splits["train"]
@@ -213,8 +220,8 @@ def task_loss(model, task, indices, device, warmup=False, balance=0.0,
     out = model(batch_fields, task.name, warmup=warmup)
     y = torch.as_tensor(labels[indices], device=device)
     w = sample_weights(task, indices).to(device)
-    loss = (F.nll_loss(out["probabilities"].clamp_min(1e-12).log(), y, reduction="none",
-                       label_smoothing=label_smoothing) * w).mean()
+    log_probabilities = out["probabilities"].clamp_min(1e-12).log()
+    loss = (smoothed_nll(log_probabilities, y, label_smoothing) * w).mean()
     if balance and out["route_power"] is not None and not warmup:
         n = int(model.active_count)
         loss = loss + balance * (out["route_power"][:, :n].mean(0) - 1.0/n).square().sum()
