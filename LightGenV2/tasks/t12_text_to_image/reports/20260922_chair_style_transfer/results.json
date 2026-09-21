@@ -1,0 +1,37 @@
+{
+  "dataset": {
+    "name": "abo_standard_chair_v1",
+    "train_images": 540,
+    "train_identities": 27,
+    "validation_images": 40,
+    "validation_identities": 5,
+    "test_images": 32,
+    "test_identities": 4,
+    "styles_per_image": 4
+  },
+  "electronic": {
+    "best_epoch": 58,
+    "best_selection_score": 0.024327958561480043,
+    "generator_parameters": 911284,
+    "total_training_parameters": 1867989,
+    "checkpoint_sha256": "216e74fd0d80f5dd901a1f96c8d322862fa48fdc7d4c40ba1d1595cb30d4e6f6"
+  },
+  "optical": {
+    "best_epoch": 35,
+    "best_selection_score": 0.024326496617868544,
+    "generator_parameters": 948152,
+    "total_training_parameters": 1904857,
+    "optical_path_parameters": 36865,
+    "optimized_parameters": 36868,
+    "fusion_alpha": 0.13485245406627655,
+    "backend": "compact_fft_simulation",
+    "checkpoint_sha256": "102618f0ad0a677ea0dc53603a4cb9b2914f9403a1631f5158560cfeb59b7c58"
+  },
+  "seed_generation_release": {
+    "path": "/DATA/DATA1/guest3/t12_assets/releases/standard_chair_seedgen_v1",
+    "checkpoint_sha256": "35e2145a3ff7474ae8ade11cdd846627662918f10599540afc2cbe38cef2b154"
+  },
+  "style_transfer_release": "/DATA/DATA1/guest3/t12_assets/releases/chair_style_transfer_v1",
+  "tests": "41 passed",
+  "gpu_released": true
+}
