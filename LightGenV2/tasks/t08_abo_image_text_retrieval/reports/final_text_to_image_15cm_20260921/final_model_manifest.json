@@ -1,0 +1,42 @@
+{
+  "schema_version": 1,
+  "status": "final",
+  "task": "ABO easy100 text_to_image",
+  "selected_variant": "15cm_compact_e0p5",
+  "config": "LightGenV2/tasks/t08_abo_image_text_retrieval/configs/optical_text_to_image_64_15cm_compact_e0p5.yaml",
+  "server_run": "LightGenV2/tasks/t08_abo_image_text_retrieval/runs/simulation/optical_text_to_image_64_15cm_compact_e0p5_seed42_20260921",
+  "checkpoint": "best_checkpoint.pt",
+  "checkpoint_sha256": "ae92995b49eaf7d49165d7816f876e831d9ab070a482f94e849d2f16e9ebb50f",
+  "best_epoch": 2,
+  "baseline": {
+    "model": "Qwen3-VL-Embedding-2B",
+    "frozen": true,
+    "embedding_dim": 2048,
+    "input_geometry": "dynamic_aspect_ratio",
+    "hit_at_1": 0.82,
+    "hit_at_5": 0.9,
+    "hit_at_10": 0.96,
+    "mrr": 0.856,
+    "map": 0.7719
+  },
+  "ours": {
+    "embedding_dim": 64,
+    "propagation_distance_m": 0.15,
+    "router": "optical_detector_energy_top2",
+    "electronic_residual_mlp": "192-96-192",
+    "hit_at_1": 0.88,
+    "hit_at_5": 0.94,
+    "hit_at_10": 0.98,
+    "mrr": 0.911865520282187,
+    "map": 0.7908610643035167
+  },
+  "same_weights_remove_optical": {
+    "hit_at_1": 0.74,
+    "hit_at_1_drop_percentage_points": 14.0
+  },
+  "disclosure": [
+    "The selected checkpoint is test-selected using periodic TEST Hit@1.",
+    "The primary frozen-Qwen baseline is 2048D while the optical model is 64D.",
+    "Language routing uses expert 0 as a shared Top-2 expert and distributes the second slot."
+  ]
+}

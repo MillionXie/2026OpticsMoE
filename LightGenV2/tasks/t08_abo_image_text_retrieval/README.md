@@ -1,5 +1,10 @@
 # T08 商品检索（图搜文）
 
+> **文搜图最终版本（2026-09-21）**：采用15 cm第二档紧凑模型
+> `192→96→192`，Hit@1=88%，正式baseline为冻结Qwen 2048D的82%。老师展示用
+> 表格、架构图、压缩曲线和相位Mask见
+> [`reports/final_text_to_image_15cm_20260921/TEACHER_SUMMARY.md`](reports/final_text_to_image_15cm_20260921/TEACHER_SUMMARY.md)。
+
 ## 2026-09-20：15 cm 真正文搜图合同
 
 正式重训配置为
