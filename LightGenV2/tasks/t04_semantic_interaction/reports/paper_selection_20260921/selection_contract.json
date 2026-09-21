@@ -1,0 +1,32 @@
+{
+  "schema_version": 1,
+  "selected_ours": {
+    "name": "Compressed optical Router MoE",
+    "profile": "layered_scene_electronic_exp05",
+    "source_run": "layered_scene_electronic_exp05_s73_e100_20260920",
+    "selected_epoch": 30,
+    "selection_metric": "changed_cell_accuracy",
+    "selection_value": 0.8715,
+    "electronic_mlp_expansion": 0.5,
+    "trainable_parameters": 2695917,
+    "physical_phase_parameters": 958728
+  },
+  "selected_baseline": {
+    "name": "Frozen complete Qwen3-VL-2B-Instruct + shared readout",
+    "source_run": "layered_scene_qwen_shared_s73_e100_20260920",
+    "selected_epoch": 30,
+    "selection_metric": "changed_cell_accuracy",
+    "selection_value": 0.812,
+    "trainable_adapter_and_readout_parameters": 972952,
+    "frozen_qwen_parameters": 2127532032
+  },
+  "split": {
+    "train": 5000,
+    "validation": 0,
+    "test": 1000,
+    "seed": 73
+  },
+  "strict_changed_cell_difference_percentage_points": 5.95,
+  "rounded_changed_cell_difference_percentage_points": 6.0,
+  "qualitative_figure_contract": "Input/target task illustrations only; they do not claim to be outputs of a retained epoch-30 checkpoint."
+}

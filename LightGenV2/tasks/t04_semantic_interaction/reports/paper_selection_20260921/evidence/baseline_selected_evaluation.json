@@ -1,0 +1,65 @@
+{
+  "checkpoint": "/DATA/DATA1/guest3/2026OpticsMoE/LightGenV2/tasks/t04_semantic_interaction/runs/simulation/layered_scene_qwen_shared_s73_e100_20260920/best_checkpoint.pt",
+  "selected_epoch": 30,
+  "split": "deterministic disjoint test",
+  "test_samples": 1000,
+  "selection_biased": true,
+  "metrics": {
+    "overall": {
+      "samples": 1000,
+      "cell_accuracy": 0.9859722221493721,
+      "changed_cell_accuracy": 0.812,
+      "foreground_category_accuracy": 0.9353166699111461,
+      "preserved_cell_accuracy": 0.9927655491828918,
+      "edit_grid_iou": 0.7438333333333333,
+      "object_f1": 0.9357631646131648,
+      "scene_exact_match": 0.634,
+      "task_accuracy": 1.0
+    },
+    "add": {
+      "samples": 250,
+      "cell_accuracy": 0.9795555539131164,
+      "changed_cell_accuracy": 0.628,
+      "foreground_category_accuracy": 0.922933340549469,
+      "preserved_cell_accuracy": 0.9896000006198883,
+      "edit_grid_iou": 0.5196666666666666,
+      "object_f1": 0.9251431235431237,
+      "scene_exact_match": 0.428,
+      "task_accuracy": 1.0
+    },
+    "replace": {
+      "samples": 250,
+      "cell_accuracy": 0.9964444429874421,
+      "changed_cell_accuracy": 0.912,
+      "foreground_category_accuracy": 0.9684000015258789,
+      "preserved_cell_accuracy": 0.9988571429252624,
+      "edit_grid_iou": 0.9213333333333332,
+      "object_f1": 0.9685295815295812,
+      "scene_exact_match": 0.876,
+      "task_accuracy": 1.0
+    },
+    "move": {
+      "samples": 250,
+      "cell_accuracy": 0.9690000033378601,
+      "changed_cell_accuracy": 0.728,
+      "foreground_category_accuracy": 0.8569333375692367,
+      "preserved_cell_accuracy": 0.9831764817237854,
+      "edit_grid_iou": 0.5743333333333334,
+      "object_f1": 0.8561101121101126,
+      "scene_exact_match": 0.272,
+      "task_accuracy": 1.0
+    },
+    "remove": {
+      "samples": 250,
+      "cell_accuracy": 0.9988888883590699,
+      "changed_cell_accuracy": 0.98,
+      "foreground_category_accuracy": 0.993,
+      "preserved_cell_accuracy": 0.9994285714626312,
+      "edit_grid_iou": 0.96,
+      "object_f1": 0.9932698412698412,
+      "scene_exact_match": 0.96,
+      "task_accuracy": 1.0
+    }
+  },
+  "router_audit": null
+}
