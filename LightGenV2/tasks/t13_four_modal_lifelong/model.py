@@ -25,20 +25,26 @@ def normalize_power(x, power=1.0):
 
 class CrossModalOptics(nn.Module):
     def __init__(self, architecture="moe", seed=17, phase_dropout=0.05,
-                 readout_grid=16, head_width=64, head_bottleneck=0, optical_layers=2):
+                 readout_grid=16, head_width=64, head_bottleneck=0, optical_layers=2,
+                 max_experts=16):
         super().__init__()
         if architecture not in {"moe", "d2nn"}:
             raise ValueError(architecture)
         self.architecture = architecture
+        if max_experts not in (4, 16):
+            raise ValueError("max_experts must be 4 or 16")
+        self.max_experts = int(max_experts)
+        self.grid = 2 if max_experts == 4 else 4
         self.expert_size, self.gap, self.border = 224, 30, 20
-        self.height = 4 * self.expert_size + 3 * self.gap + 2 * self.border
-        self.width = 4 * self.expert_size + 3 * self.gap + 2 * self.border
+        self.height = self.grid * self.expert_size + (self.grid - 1) * self.gap + 2 * self.border
+        self.width = self.height
         self.active_height, self.active_width = self.height - 2 * self.border, self.width - 2 * self.border
         # Each group is spatially spread over the aperture. Geometry never changes.
-        order = [(0, 0), (0, 3), (3, 0), (3, 3),
-                 (0, 1), (0, 2), (3, 1), (3, 2),
-                 (1, 0), (1, 3), (2, 0), (2, 3),
-                 (1, 1), (1, 2), (2, 1), (2, 2)]
+        order = ([(0, 0), (0, 1), (1, 0), (1, 1)] if max_experts == 4 else
+                 [(0, 0), (0, 3), (3, 0), (3, 3),
+                  (0, 1), (0, 2), (3, 1), (3, 2),
+                  (1, 0), (1, 3), (2, 0), (2, 3),
+                  (1, 1), (1, 2), (2, 1), (2, 2)])
         self.slots = [(self.border + r * (self.expert_size + self.gap),
                        self.border + c * (self.expert_size + self.gap)) for r, c in order]
         self.router_centers = [(y + 112, x + 112) for y, x in self.slots]
@@ -57,7 +63,7 @@ class CrossModalOptics(nn.Module):
             torch.manual_seed(seed + 101)
             if architecture == "moe":
                 self.first_phase = nn.ParameterList([
-                    nn.Parameter(torch.randn(224, 224) * 0.02) for _ in range(16)])
+                    nn.Parameter(torch.randn(224, 224) * 0.02) for _ in range(max_experts)])
                 torch.manual_seed(seed + 103)
                 self.router_phase = nn.Parameter(torch.randn(224, 224) * 0.02)
             else:
@@ -150,11 +156,11 @@ class CrossModalOptics(nn.Module):
 
     def route(self, amplitude, warmup=False, expert_mask=None):
         n = int(self.active_count)
-        allowed = torch.arange(16, device=amplitude.device) < n
+        allowed = torch.arange(self.max_experts, device=amplitude.device) < n
         if expert_mask is not None:
             allowed &= torch.as_tensor(expert_mask, device=amplitude.device, dtype=torch.bool)
         if warmup:
-            allowed &= torch.arange(16, device=amplitude.device) >= n - 4
+            allowed &= torch.arange(self.max_experts, device=amplitude.device) >= n - 4
         if not bool(allowed.any()):
             raise ValueError("empty expert mask")
         if warmup:
@@ -182,8 +188,8 @@ class CrossModalOptics(nn.Module):
             # New tasks may reuse all experts learned so far. Old tasks retain
             # the capacity available when they were learned, preventing later
             # experts from silently replacing frozen optical memory.
-            task_capacity = 4 * (TASK_ORDER.index(task) + 1)
-            task_mask = torch.arange(16, device=amplitude.device) < task_capacity
+            task_capacity = min(self.max_experts, 4 * (TASK_ORDER.index(task) + 1))
+            task_mask = torch.arange(self.max_experts, device=amplitude.device) < task_capacity
             if expert_mask is not None:
                 task_mask &= torch.as_tensor(expert_mask, device=amplitude.device, dtype=torch.bool)
             q, router_capture = self.route(amplitude, warmup=warmup, expert_mask=task_mask)

@@ -20,7 +20,12 @@ class PhysicalEncoder(nn.Module):
         self.head = nn.Linear(128, 2)
 
     def forward(self, x):
-        z = self.features(x[:, None].float())
+        x = x.float()
+        # Optical amplitude fields have unit total power and therefore values
+        # around 1/224. Per-sample mean scaling prevents the MLP biases from
+        # dominating these small but informative temporal tiles.
+        x = x / x.mean((-2, -1), keepdim=True).clamp_min(1e-6)
+        z = self.features(x[:, None])
         return z, self.head(z)
 
 
@@ -82,4 +87,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-

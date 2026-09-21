@@ -7,6 +7,7 @@ import torch
 from LightGenV2.tasks.t13_four_modal_lifelong.data import (
     PhysicalTextFields, _feature_only_field, _feature_text_field, _rgb_field,
 )
+from LightGenV2.tasks.t13_four_modal_lifelong.model import CrossModalOptics
 
 
 def test_rgb_uses_all_channels_and_has_unit_power():
@@ -45,3 +46,10 @@ def test_frozen_feature_encodings_preserve_power_and_text():
     assert paired.shape == (2, 224, 224)
     assert torch.allclose(paired.square().sum((-2, -1)), torch.ones(2), atol=1e-5)
     assert not torch.equal(paired[0], paired[1])
+
+
+def test_single_task_and_lifelong_geometries_are_explicit():
+    compact = CrossModalOptics("moe", max_experts=4, optical_layers=2)
+    lifelong = CrossModalOptics("moe", max_experts=16, optical_layers=2)
+    assert (compact.height, compact.active_height, len(compact.first_phase)) == (518, 478, 4)
+    assert (lifelong.height, lifelong.active_height, len(lifelong.first_phase)) == (1026, 986, 16)

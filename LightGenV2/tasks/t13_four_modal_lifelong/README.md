@@ -35,7 +35,8 @@ EuroSAT 发布许可不是 CC BY 4.0，这是对早期“仅 CC BY 4.0”偏好�
 
 ## 实验顺序
 
-先分别运行四个任务的单任务 D2NN 与单任务四专家 MoE，验证数据和光路可学性。目标是 D2NN
+先用标准 4 专家 518×518 几何分别运行四个任务的单任务 D2NN 与 MoE，验证数据和原始光路
+可学性；它不冒充 16 槽终身模型的第一阶段成绩。目标是 D2NN
 至少 65%，MoE 至少 70%；未通过的任务先调训练，不进入终身矩阵。通过后再固定顺序运行：
 
 - sequential D2NN，无 replay；
@@ -59,4 +60,3 @@ python -m LightGenV2.tasks.t13_four_modal_lifelong.run \
 
 单任务正式入口在 `--phase train` 下使用 `--only single_task`（D2NN）或
 `--only single_task_moe`（MoE），并用 `--single-task-name` 指定任务。
-

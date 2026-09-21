@@ -28,7 +28,7 @@ TASK_ORDER = ("eurosat", "clevr", "speech", "physical")
 FULL_DATA_REQUIREMENTS = {}
 
 
-def build_model(architecture, cfg, seed, phase_dropout=None):
+def build_model(architecture, cfg, seed, phase_dropout=None, max_experts=16):
     return CrossModalOptics(
         architecture, seed,
         cfg["phase_dropout"] if phase_dropout is None else phase_dropout,
@@ -36,6 +36,7 @@ def build_model(architecture, cfg, seed, phase_dropout=None):
         head_width=int(cfg.get("head_width", 64)),
         head_bottleneck=int(cfg.get("head_bottleneck", 0)),
         optical_layers=int(cfg.get("optical_layers", 2)),
+        max_experts=max_experts,
     )
 
 
@@ -139,7 +140,7 @@ def evaluate(model, task, split, device, batch, active_task=None):
     result = classification_metrics(task.name, labels, p, rows)
     result["zero_readout_fraction"] = float((np.concatenate(capture) <= 1e-12).mean())
     result["route_mean"] = q.mean(0).tolist() if q is not None else None
-    result["route_top_frequency"] = (np.bincount(q.argmax(1), minlength=16) / len(q)).tolist() if q is not None else None
+    result["route_top_frequency"] = (np.bincount(q.argmax(1), minlength=model.max_experts) / len(q)).tolist() if q is not None else None
     return result, p, q
 
 
@@ -317,7 +318,7 @@ def train_single_task_d2nn(tasks, cfg, out, device, selected_task=None):
         task_index = TASK_ORDER.index(name)
         task_root = root / name; task_root.mkdir()
         seed_all(cfg["seed"] + task_index)
-        model = build_model("d2nn", cfg, cfg["seed"] + task_index).to(device)
+        model = build_model("d2nn", cfg, cfg["seed"] + task_index, max_experts=4).to(device)
         model.configure_task(task_index, warmup=False)
         optimizer = torch.optim.Adam([p for p in model.parameters() if p.requires_grad], lr=cfg["lr"])
         scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(optimizer, epochs, eta_min=cfg["lr"] * .1)
@@ -356,7 +357,7 @@ def train_single_task_d2nn(tasks, cfg, out, device, selected_task=None):
     probes={}
     score_matrix={}
     for source_index,source in enumerate(TASK_ORDER):
-        model=build_model("d2nn",cfg,cfg["seed"]+source_index).to(device)
+        model=build_model("d2nn",cfg,cfg["seed"]+source_index,max_experts=4).to(device)
         cp=torch.load(root/source/"best_checkpoint.pt",map_location=device,weights_only=False)
         model.load_state_dict(cp["model"])
         model.requires_grad_(False)
@@ -383,7 +384,7 @@ def train_single_task_moe(tasks, cfg, out, device, selected_task=None):
         task_index = TASK_ORDER.index(name)
         task_root = root / name; task_root.mkdir()
         seed_all(cfg["seed"] + task_index)
-        model = build_model("moe", cfg, cfg["seed"] + task_index).to(device)
+        model = build_model("moe", cfg, cfg["seed"] + task_index, max_experts=4).to(device)
         model.configure_single_task(name)
         optimizer = torch.optim.Adam([p for p in model.parameters() if p.requires_grad], lr=cfg["lr"])
         scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(
@@ -437,7 +438,7 @@ def overfit_diagnostics(tasks, cfg, out, device):
     result={}
     for task_index,name in enumerate(TASK_ORDER):
         seed_all(cfg["seed"]+task_index)
-        model=build_model("d2nn",cfg,cfg["seed"]+task_index,phase_dropout=0).to(device)
+        model=build_model("d2nn",cfg,cfg["seed"]+task_index,phase_dropout=0,max_experts=4).to(device)
         model.configure_task(task_index,warmup=False)
         indices=replay_indices(tasks[name],budget,cfg["seed"]+task_index)
         optimizer=torch.optim.Adam([p for p in model.parameters() if p.requires_grad],lr=cfg.get("overfit_lr",cfg["lr"]))
