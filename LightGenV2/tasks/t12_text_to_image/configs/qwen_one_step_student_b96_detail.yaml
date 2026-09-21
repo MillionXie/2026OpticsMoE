@@ -1,0 +1,16 @@
+model:
+  base_channels: 96
+  condition_dim: 256
+  blocks_per_level: 2
+  middle_blocks: 3
+  dropout: 0.0
+training:
+  batch_size: 32
+  epochs: 40
+  learning_rate: 2.0e-4
+  weight_decay: 1.0e-4
+  low_frequency_weight: 0.0
+  gradient_weight: 0.20
+  num_workers: 4
+  train_seeds_per_prompt: 8
+  val_seeds_per_prompt: 4

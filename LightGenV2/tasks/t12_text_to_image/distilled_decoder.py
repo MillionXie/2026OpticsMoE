@@ -30,6 +30,7 @@ class DistilledDecoderConfig:
     learning_rate: float = 2.0e-4
     weight_decay: float = 1.0e-4
     low_frequency_weight: float = 0.25
+    gradient_weight: float = 0.0
     num_workers: int = 4
     train_seeds_per_prompt: int = 8
     val_seeds_per_prompt: int = 4
@@ -50,7 +51,7 @@ class DistilledDecoderConfig:
             raise ValueError("base_channels must be divisible by 8")
         if not 0 <= self.dropout < 1:
             raise ValueError("dropout must be in [0,1)")
-        if self.learning_rate <= 0 or self.weight_decay < 0 or self.low_frequency_weight < 0:
+        if min(self.weight_decay, self.low_frequency_weight, self.gradient_weight) < 0 or self.learning_rate <= 0:
             raise ValueError("Invalid distilled decoder optimizer or loss settings")
 
     def to_dict(self) -> dict[str, Any]:
@@ -72,6 +73,7 @@ def load_distilled_decoder_config(path: str | Path) -> DistilledDecoderConfig:
         learning_rate=float(training.get("learning_rate", 2.0e-4)),
         weight_decay=float(training.get("weight_decay", 1.0e-4)),
         low_frequency_weight=float(training.get("low_frequency_weight", 0.25)),
+        gradient_weight=float(training.get("gradient_weight", 0.0)),
         num_workers=int(training.get("num_workers", 4)),
         train_seeds_per_prompt=int(training.get("train_seeds_per_prompt", 8)),
         val_seeds_per_prompt=int(training.get("val_seeds_per_prompt", 4)),

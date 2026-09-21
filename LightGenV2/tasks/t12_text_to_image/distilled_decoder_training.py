@@ -38,12 +38,22 @@ class LatentDistillationDataset(Dataset[dict[str, torch.Tensor]]):
 
 
 def _loss(
-    prediction: torch.Tensor, target: torch.Tensor, low_frequency_weight: float
+    prediction: torch.Tensor,
+    target: torch.Tensor,
+    low_frequency_weight: float,
+    gradient_weight: float,
 ) -> tuple[torch.Tensor, dict[str, float]]:
     latent = F.mse_loss(prediction, target)
     low = F.mse_loss(F.avg_pool2d(prediction, 4), F.avg_pool2d(target, 4))
-    total = latent + low_frequency_weight * low
-    return total, {"latent_mse": float(latent.detach()), "low_frequency_mse": float(low.detach())}
+    horizontal = F.l1_loss(prediction[:, :, :, 1:] - prediction[:, :, :, :-1], target[:, :, :, 1:] - target[:, :, :, :-1])
+    vertical = F.l1_loss(prediction[:, :, 1:, :] - prediction[:, :, :-1, :], target[:, :, 1:, :] - target[:, :, :-1, :])
+    gradient = horizontal + vertical
+    total = latent + low_frequency_weight * low + gradient_weight * gradient
+    return total, {
+        "latent_mse": float(latent.detach()),
+        "low_frequency_mse": float(low.detach()),
+        "gradient_l1": float(gradient.detach()),
+    }
 
 
 @torch.inference_mode()
@@ -177,7 +187,9 @@ def train_distilled_decoder(
             optimizer.zero_grad(set_to_none=True)
             with torch.autocast(device_type=device.type, dtype=torch.float16, enabled=device.type == "cuda"):
                 prediction = model(noise, qwen)
-                loss, _ = _loss(prediction, target, config.low_frequency_weight)
+                loss, _ = _loss(
+                    prediction, target, config.low_frequency_weight, config.gradient_weight
+                )
             scaler.scale(loss).backward()
             scaler.unscale_(optimizer)
             torch.nn.utils.clip_grad_norm_(model.parameters(), 5.0)
