@@ -27,6 +27,16 @@ def test_both_tasks_are_single_pass_and_under_ten_million()->None:
         output=model(torch.randn(1,3,128,128),torch.randn(1,config.text_dim));assert output.shape==(1,3,128,128)
 
 
+def test_view_output_is_structure_preserving_at_extreme_flow()->None:
+    model,config=_model("chair_view_electronic.yaml")
+    assert config.view_warp_mix<=.5 and config.view_flow_limit<=.1
+    reference=torch.randn(1,3,128,128).clamp(-1,1)
+    with torch.no_grad():
+        model.to_rgb[-1].bias[:2].fill_(20)
+        output=model(reference,torch.randn(1,config.text_dim))
+    assert (output-reference).abs().mean()<.55
+
+
 def test_instruction_sets_and_style_background()->None:
     assert len(prompt_rows("style"))==18 and len(prompt_rows("view"))==6
     reference=torch.ones(6,3,128,128);reference[:,:,40:90,45:85]=-.1

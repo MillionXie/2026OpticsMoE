@@ -31,6 +31,9 @@ class DecoderOpticalConfig:
     rms_epsilon: float
     residual_limit: float
     maximum_skip: float
+    view_flow_limit: float
+    view_warp_mix: float
+    view_residual_limit: float
     batch_size: int
     epochs: int
     learning_rate: float
@@ -50,6 +53,7 @@ class DecoderOpticalConfig:
         if self.image_size != 128 or len(self.widths) != 4: raise ValueError("Expected 128px and four widths")
         if self.optical and self.alpha_minimum < 0.4: raise ValueError("Decoder optics require alpha_minimum >= 0.4")
         if not 0 <= self.alpha_minimum < self.alpha_initial < self.alpha_maximum <= 1: raise ValueError("Invalid alpha range")
+        if not 0 < self.view_flow_limit <= .26 or not 0 < self.view_warp_mix <= 1 or not 0 <= self.view_residual_limit <= .1: raise ValueError("Invalid structure-preserving view limits")
         if self.top_k > self.experts: raise ValueError("top_k exceeds experts")
 
 
@@ -61,6 +65,8 @@ def load_decoder_optical_config(path: str | Path) -> DecoderOpticalConfig:
         experts=int(m["experts"]), top_k=int(m["top_k"]), alpha_initial=float(f["alpha_initial"]),
         alpha_minimum=float(f["alpha_minimum"]), alpha_maximum=float(f["alpha_maximum"]), rms_epsilon=float(f["rms_epsilon"]),
         residual_limit=float(m["residual_limit"]), maximum_skip=float(m["maximum_skip"]),
+        view_flow_limit=float(m.get("view_flow_limit",.26)), view_warp_mix=float(m.get("view_warp_mix",1.0)),
+        view_residual_limit=float(m.get("view_residual_limit",.06)),
         batch_size=int(t["batch_size"]), epochs=int(t["epochs"]), learning_rate=float(t["learning_rate"]),
         phase_learning_rate=float(t["phase_learning_rate"]), weight_decay=float(t["weight_decay"]),
         num_workers=int(t["num_workers"]), amp=bool(t["amp"]), adversarial_weight=float(loss["adversarial_weight"]),
@@ -134,10 +140,11 @@ class DecoderOpticalGenerator(nn.Module):
             batch,_,height,width=reference.shape
             yy,xx=torch.meshgrid(torch.linspace(-1,1,height,device=reference.device,dtype=raw.dtype),torch.linspace(-1,1,width,device=reference.device,dtype=raw.dtype),indexing="ij")
             base=torch.stack((xx,yy),dim=-1)[None].expand(batch,-1,-1,-1)
-            flow=.26*torch.tanh(raw[:,:2]).permute(0,2,3,1)
+            flow=self.config.view_flow_limit*torch.tanh(raw[:,:2]).permute(0,2,3,1)
             warped=F.grid_sample(reference,base+flow,mode="bilinear",padding_mode="border",align_corners=True)
             mask=F.max_pool2d(self.foreground_mask(warped).to(raw.dtype),11,stride=1,padding=5)
-            delta=.06*torch.tanh(raw[:,2:]); output=(warped+mask*delta).clamp(-1,1)
+            candidate=reference+self.config.view_warp_mix*(warped-reference)
+            delta=self.config.view_residual_limit*torch.tanh(raw[:,2:]); output=(candidate+mask*delta).clamp(-1,1)
         return output,{"encoded":encoded,"decoder_generated":value,"delta":delta,"mask":mask,"flow":flow if self.config.task=="view" else torch.zeros((),device=reference.device)}
 
     def forward(self,reference:torch.Tensor,text:torch.Tensor)->torch.Tensor: return self.forward_with_aux(reference,text)[0]
@@ -147,7 +154,7 @@ def architecture_report(model:DecoderOpticalGenerator,discriminator:nn.Module|No
     generator=sum(p.numel() for p in model.parameters()); disc=0 if discriminator is None else sum(p.numel() for p in discriminator.parameters())
     optical=sum(p.numel() for n,p in model.named_parameters() if "decoder_generator.optical" in n)
     alpha=None if not model.config.optical else float(model.decoder_generator.fusion.alpha.detach())
-    return {"variant":f"decoder_optical_{model.config.task}_{'hybrid' if model.config.optical else 'electronic'}","generator_parameters":generator,"discriminator_parameters":disc,"total_training_parameters":generator+disc,"decoder_optical_parameters":optical,"optics_location":"first_decoder_generator_block" if model.config.optical else None,"alpha":alpha,"alpha_minimum":model.config.alpha_minimum if model.config.optical else None,"single_pass":True,"decoder_calls":1,"gan_training":True}
+    return {"variant":f"decoder_optical_{model.config.task}_{'hybrid' if model.config.optical else 'electronic'}","generator_parameters":generator,"discriminator_parameters":disc,"total_training_parameters":generator+disc,"decoder_optical_parameters":optical,"optics_location":"first_decoder_generator_block" if model.config.optical else None,"alpha":alpha,"alpha_minimum":model.config.alpha_minimum if model.config.optical else None,"view_flow_limit":model.config.view_flow_limit if model.config.task=="view" else None,"view_warp_mix":model.config.view_warp_mix if model.config.task=="view" else None,"single_pass":True,"decoder_calls":1,"gan_training":True}
 
 
 def config_payload(config:DecoderOpticalConfig)->dict[str,Any]:

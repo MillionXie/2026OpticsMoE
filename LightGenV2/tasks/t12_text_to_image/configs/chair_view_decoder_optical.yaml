@@ -9,6 +9,9 @@ model:
   top_k: 2
   residual_limit: 1.0
   maximum_skip: 0.75
+  view_flow_limit: 0.10
+  view_warp_mix: 0.45
+  view_residual_limit: 0.03
 fusion: {alpha_initial: 0.50, alpha_minimum: 0.40, alpha_maximum: 0.75, rms_epsilon: 1.0e-6}
 training:
   batch_size: 32
