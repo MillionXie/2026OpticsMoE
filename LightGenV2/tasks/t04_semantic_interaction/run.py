@@ -47,6 +47,7 @@ PROFILES = {
     "layered_scene_qwen_shared": "layered_scene_qwen_shared.yaml",
     "layered_scene_electronic_exp1": "layered_scene_electronic_exp1.yaml",
     "layered_scene_electronic_exp05": "layered_scene_electronic_exp05.yaml",
+    "layered_scene_electronic_exp05_e30": "layered_scene_electronic_exp05_e30.yaml",
 }
 PHASES = {"prepare", "train", "evaluate", "all"}
 
