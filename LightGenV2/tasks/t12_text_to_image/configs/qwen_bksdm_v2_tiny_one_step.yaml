@@ -1,0 +1,9 @@
+training:
+  batch_size: 32
+  epochs: 4
+  learning_rate: 5.0e-6
+  weight_decay: 1.0e-4
+  num_workers: 4
+loss:
+  # Set to 0.2 for the detail-loss ablation. Validation decides which checkpoint is retained.
+  detail_weight: 0.0
