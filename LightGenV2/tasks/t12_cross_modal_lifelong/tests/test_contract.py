@@ -53,6 +53,15 @@ class ContractTest(unittest.TestCase):
         self.assertTrue(all(p.requires_grad for p in model.first_phase[12:]))
         self.assertTrue(all(p.requires_grad for p in model.heads["video"].parameters()))
 
+    def test_single_task_moe_always_uses_first_four_slots(self):
+        model = CrossModalOptics("moe", phase_dropout=0)
+        model.configure_single_task("video")
+        self.assertEqual(int(model.active_count), 4)
+        self.assertTrue(all(p.requires_grad for p in model.first_phase[:4]))
+        self.assertTrue(all(not p.requires_grad for p in model.first_phase[4:]))
+        self.assertTrue(all(p.requires_grad for p in model.heads["video"].parameters()))
+        self.assertTrue(all(not p.requires_grad for p in model.heads["kather2016"].parameters()))
+
     def test_old_task_capacity_mask_survives_expansion(self):
         model = CrossModalOptics("moe", phase_dropout=0)
         model.configure_task(3, warmup=False)

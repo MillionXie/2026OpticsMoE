@@ -92,6 +92,20 @@ class CrossModalOptics(nn.Module):
         for name, head in self.heads.items():
             head.requires_grad_(name == current)
 
+    def configure_single_task(self, task):
+        """Train a fresh four-expert MoE on one task, independent of sequence order."""
+        if task not in TASK_ORDER:
+            raise ValueError(task)
+        if self.architecture != "moe":
+            raise ValueError("configure_single_task is only valid for the MoE")
+        self.active_count.fill_(4)
+        for i, phase in enumerate(self.first_phase):
+            phase.requires_grad_(i < 4)
+        self.router_phase.requires_grad_(True)
+        self.global_phase.requires_grad_(True)
+        for name, head in self.heads.items():
+            head.requires_grad_(name == task)
+
     def phase_mask(self, raw):
         value = self.transmission(raw)
         if self.training and self.phase_dropout:

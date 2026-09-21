@@ -415,6 +415,58 @@ def train_single_task_d2nn(tasks, cfg, out, device, selected_task=None):
     return {"single_task":summary,"frozen_optics_probe":score_matrix}
 
 
+def train_single_task_moe(tasks, cfg, out, device, selected_task=None):
+    """Train a fresh four-expert optical MoE on each task before lifelong runs."""
+    root = out / "single_task_moe"; root.mkdir()
+    summary = {}
+    epochs = int(cfg.get("single_task_moe_epochs", cfg.get("single_task_epochs", cfg["task_epochs"])))
+    names = (selected_task,) if selected_task else TASK_ORDER
+    for name in names:
+        task_index = TASK_ORDER.index(name)
+        task_root = root / name; task_root.mkdir()
+        seed_all(cfg["seed"] + task_index)
+        model = CrossModalOptics("moe", cfg["seed"] + task_index, cfg["phase_dropout"]).to(device)
+        model.configure_single_task(name)
+        optimizer = torch.optim.Adam([p for p in model.parameters() if p.requires_grad], lr=cfg["lr"])
+        scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(
+            optimizer, epochs, eta_min=cfg["lr"] * .1)
+        best, history = -float("inf"), []
+        for epoch in range(1, epochs + 1):
+            model.train(); started=time.time(); losses=[]
+            order=np.random.default_rng(cfg["seed"]+task_index*1000+epoch).permutation(
+                len(tasks[name].splits["train"][1]))
+            for ix in chunks(order, cfg["batch"]):
+                optimizer.zero_grad(set_to_none=True)
+                loss=configured_task_loss(model,tasks[name],ix,device,cfg,
+                                          balance=cfg["route_balance"])
+                loss.backward()
+                torch.nn.utils.clip_grad_norm_(
+                    [p for p in model.parameters() if p.requires_grad],1.0)
+                optimizer.step(); losses.append(float(loss.detach()))
+            scheduler.step()
+            val=evaluate(model,tasks[name],"val",device,cfg["eval_batch"])[0]
+            score=selection_score(name,val)
+            row={"epoch":epoch,"loss":float(np.mean(losses)),"validation_score":score,
+                 "validation":val,"seconds":time.time()-started}
+            history.append(row);save(task_root/"history.json",history)
+            cp={"model":model.state_dict(),"epoch":epoch,"task":name,
+                "validation":val,"score":score}
+            torch.save(cp,task_root/"last_checkpoint.pt")
+            if score>best:
+                best=score;torch.save(cp,task_root/"best_checkpoint.pt")
+            print(json.dumps({"arch":"single_task_moe","task":name,"epoch":epoch,
+                              "val":score,"loss":row["loss"],
+                              "route":val["route_mean"],"seconds":row["seconds"]}),flush=True)
+        cp=torch.load(task_root/"best_checkpoint.pt",map_location=device,weights_only=False)
+        model.load_state_dict(cp["model"])
+        metrics={split:evaluate(model,tasks[name],split,device,cfg["eval_batch"])[0]
+                 for split in ("train","val","test")}
+        summary[name]={"selected_epoch":cp["epoch"],"active_experts":4,"metrics":metrics}
+        save(task_root/"results.json",summary[name])
+    save(root/"results.json",summary)
+    return summary
+
+
 def overfit_diagnostics(tasks, cfg, out, device):
     """Verify that each task can be memorized before any full-data run."""
     root=out/"overfit_diagnostics";root.mkdir()
@@ -596,11 +648,11 @@ def smoke(tasks,cfg,out,device):
 
 
 def main():
-    p=argparse.ArgumentParser();p.add_argument("--config",type=Path,required=True);p.add_argument("--kather2016",type=Path);p.add_argument("--clevr",type=Path);p.add_argument("--sonyc",type=Path);p.add_argument("--video",type=Path);p.add_argument("--out",type=Path,required=True);p.add_argument("--phase",choices=["smoke","overfit","train"],default="train");p.add_argument("--only",choices=["all","single_task","sequential_d2nn","sequential_d2nn_replay","moe"],default="all");p.add_argument("--single-task-name",choices=TASK_ORDER);a=p.parse_args()
+    p=argparse.ArgumentParser();p.add_argument("--config",type=Path,required=True);p.add_argument("--kather2016",type=Path);p.add_argument("--clevr",type=Path);p.add_argument("--sonyc",type=Path);p.add_argument("--video",type=Path);p.add_argument("--out",type=Path,required=True);p.add_argument("--phase",choices=["smoke","overfit","train"],default="train");p.add_argument("--only",choices=["all","single_task","single_task_moe","sequential_d2nn","sequential_d2nn_replay","moe"],default="all");p.add_argument("--single-task-name",choices=TASK_ORDER);a=p.parse_args()
     cfg=json.loads(a.config.read_text());a.out.mkdir(parents=True,exist_ok=False);save(a.out/"status.json",{"status":"running","pid":os.getpid()})
     try:
-        if a.single_task_name and not (a.phase == "train" and a.only == "single_task"):
-            raise ValueError("--single-task-name is only valid with --phase train --only single_task")
+        if a.single_task_name and not (a.phase == "train" and a.only in ("single_task", "single_task_moe")):
+            raise ValueError("--single-task-name requires formal single_task or single_task_moe training")
         names = (a.single_task_name,) if a.single_task_name else TASK_ORDER
         paths={"kather2016":a.kather2016,"clevr":a.clevr,"sonyc":a.sonyc,"video":a.video}
         missing=[name for name in names if paths[name] is None]
@@ -616,6 +668,7 @@ def main():
         else:
             result={}
             if a.only in ("all","single_task"):result["single_task"]=train_single_task_d2nn(tasks,cfg,a.out,device,a.single_task_name)
+            if a.only in ("all","single_task_moe"):result["single_task_moe"]=train_single_task_moe(tasks,cfg,a.out,device,a.single_task_name)
             if a.only in ("all","sequential_d2nn"):result["sequential_d2nn"]=train_sequential_d2nn(tasks,cfg,a.out,device,False)
             if a.only in ("all","sequential_d2nn_replay"):result["sequential_d2nn_replay"]=train_sequential_d2nn(tasks,cfg,a.out,device,True)
             if a.only in ("all","moe"):result["moe"]=train_lifelong_moe(tasks,cfg,a.out,device)
