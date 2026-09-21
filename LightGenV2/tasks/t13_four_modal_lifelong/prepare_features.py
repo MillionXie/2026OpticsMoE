@@ -123,10 +123,13 @@ def main():
     a = p.parse_args(); a.out.mkdir(parents=True, exist_ok=False)
     result = globals()["prepare_" + a.task](a.source, a.checkpoint, a.out, a.device)
     classes, storage, modalities = result
+    source_manifest = a.source / "manifest.json"
+    if not source_manifest.exists() and (a.source.parent / "manifest.json").exists():
+        source_manifest = a.source.parent / "manifest.json"
     protocol = {"task": a.task, "classes": classes, "storage": storage,
                 "modalities": modalities, "frozen_frontend": str(a.checkpoint.resolve()),
                 "frozen_frontend_sha256": sha256(a.checkpoint),
-                "source_manifest_sha256": sha256(a.source / "manifest.json"),
+                "source_manifest_sha256": sha256(source_manifest),
                 "all_original_samples": False,
                 "status": "existing audited preliminary package with shared frozen frontend"}
     (a.out / "protocol.json").write_text(json.dumps(protocol, indent=2) + "\n")
@@ -136,4 +139,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-
