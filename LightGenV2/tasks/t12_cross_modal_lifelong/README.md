@@ -15,16 +15,16 @@
 
 ```text
 D2NN: 224×224 输入 → 上采样覆盖 986×986 first phase
-      → 1026×1026 角谱传播 → OEO → 986×986 global phase
-      → 角谱传播 → OEO → 全 CCD 强度 → 16×16 pooling → 任务 MLP
+      → 角谱传播/OEO → 5 个 986×986 共享 phase + 逐层传播/OEO
+      → 全 CCD 强度 → 28×28 pooling → 任务 MLP
 
 MoE : 224×224 router phase → 路由 CCD → soft power routing
       → 固定 4×4 网格中的 16 个 224×224 expert slots
-      → 1026×1026 角谱传播 → OEO → 986×986 global phase
-      → 角谱传播 → OEO → 全 CCD 强度 → 16×16 pooling → 任务 MLP
+      → 角谱传播/OEO → 5 个 986×986 共享 phase + 逐层传播/OEO
+      → 全 CCD 强度 → 28×28 pooling → 任务 MLP
 ```
 
-电子读出头对两个架构完全相同：`LayerNorm(256) → Linear(256,64) → GELU → Linear(64,C)`。这是光电混合分类系统，不称为纯光学分类。
+当前准入候选的电子读出头对两个架构完全相同：`LayerNorm(784) → Linear(784,256) → GELU → Linear(256,64) → GELU → Linear(64,C)`。这是光电混合分类系统，不称为纯光学分类。
 
 MoE 从第一项任务起就预分配 16 个物理槽位，传播画布、global phase 和 CCD 大小全程不变。每学一项任务新增四个可训练专家，旧专家和旧任务 MLP 冻结；router 和 global phase 通过当前任务及 replay 继续更新。路由窗口光强归一化得到功率权重，进入专家的振幅乘以权重平方根。
 
@@ -57,10 +57,10 @@ Kather 训练时对四个颜色块同步执行随机水平/垂直翻转和 90° 
 
 ## 当前数据与运行状态（2026-09-21 实机审计）
 
-- Kather2016：完整 5,000 张已编码并通过正式数据校验，固定分层划分为 3,496/752/752。全量无增强 Single-task D2NN 测试 accuracy 为 65.69%、macro-F1 为 64.82%；同步翻转/旋转增强版本为 60.37%/59.05%，没有改善，因此暂不用于主实验。
+- Kather2016：完整 5,000 张已编码并通过正式数据校验，固定分层划分为 3,496/752/752。两层、28×28 读出的 Single-task D2NN 测试 accuracy 为 66.62%、macro-F1 为 65.84%；validation macro-F1 为 62.94%，没有通过预声明的 65% validation 准入。相同两层主干的四专家 MoE 测试 accuracy 为 58.78%、macro-F1 为 56.89%，没有通过 70% 准入。当前改为六层逐层 OEO 后重新准入。
 - CLEVR：完整官方包正在下载；正式转换会使用全部 70,000 train 图和 15,000 带 scene graph 的 val 图，生成 420,000/45,000/45,000 条查询。官方无 scene graph 的 test 图不伪造标签。
 - SONYC：完整标注 CSV 已审计，18,510 个唯一录音；audio-0 至 audio-18 正在下载。正式转换保留官方 13,538/4,308/664 个唯一录音划分，未知标签不作负例。
-- Physical Concepts：20 个 shard 完整，共 5,000 个 quadruplet、20,000 段视频；已全部编码为 14,172/2,800/3,028 个视频样本，全量 Single-task D2NN 正在运行。
+- Physical Concepts：20 个 shard 完整，共 5,000 个 quadruplet、20,000 段视频；已全部编码为 14,172/2,800/3,028 个视频样本。两层、小读出 D2NN 为 50.00%。同一输入场直接做 28×28 pooling + MLP 的非正式可学性诊断为 95.94% test balanced accuracy，说明瓶颈在光学主干/读出而非数据标签；该电子诊断不进入正式对比表。
 
 只有 64 样本 overfit、smoke test 和此前的子集运行会显示几十或几百个样本；它们只用于工程诊断。正式训练入口会校验上述原始身份计数，任何子集都会在训练前报错。四个单任务准入完成后，才启动三种顺序模型并报告正式下三角矩阵。
 
@@ -86,7 +86,7 @@ python -m LightGenV2.tasks.t12_cross_modal_lifelong.prepare_physical_concepts \
 ```bash
 python -m LightGenV2.tasks.t12_cross_modal_lifelong \
   --phase train --only single_task \
-  --config LightGenV2/tasks/t12_cross_modal_lifelong/configs/initial_s17.json \
+  --config LightGenV2/tasks/t12_cross_modal_lifelong/configs/admission_s17.json \
   --kather2016 /path/t12_kather2016_full --clevr /path/t12_clevr_full \
   --sonyc /path/t12_sonyc_full --video /path/t12_continuity_full \
   --out LightGenV2/tasks/t12_cross_modal_lifelong/runs/simulation/<run_id>
@@ -97,7 +97,7 @@ python -m LightGenV2.tasks.t12_cross_modal_lifelong \
 ```bash
 python -m LightGenV2.tasks.t12_cross_modal_lifelong \
   --phase train --only single_task --single-task-name kather2016 \
-  --config LightGenV2/tasks/t12_cross_modal_lifelong/configs/initial_s17.json \
+  --config LightGenV2/tasks/t12_cross_modal_lifelong/configs/admission_s17.json \
   --kather2016 /path/t12_kather2016_full \
   --out LightGenV2/tasks/t12_cross_modal_lifelong/runs/simulation/<run_id>
 ```
