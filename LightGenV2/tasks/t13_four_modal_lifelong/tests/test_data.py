@@ -6,7 +6,7 @@ import numpy as np
 import torch
 
 from LightGenV2.tasks.t13_four_modal_lifelong.data import (
-    PhysicalRank10Fields, PhysicalTextFields, SpeechRank8Fields,
+    FeatureFields, PhysicalRank10Fields, PhysicalTextFields, SpeechRank8Fields,
     _feature_only_field, _feature_text_field, _rgb_field,
 )
 from LightGenV2.tasks.t13_four_modal_lifelong.model import CrossModalOptics
@@ -106,6 +106,18 @@ def test_frozen_feature_encodings_preserve_power_and_text():
     assert paired.shape == (2, 224, 224)
     assert torch.allclose(paired.square().sum((-2, -1)), torch.ones(2), atol=1e-5)
     assert not torch.equal(paired[0], paired[1])
+
+
+def test_feature_fields_device_expansion_matches_reference(tmp_path: Path):
+    features = np.arange(256, dtype=np.float16).reshape(2, 128)
+    tokens = np.zeros((2, 32), np.uint8)
+    tokens[:, :2] = [[2, 3], [4, 5]]
+    np.save(tmp_path / "train_features.npy", features)
+    np.save(tmp_path / "train_token_ids.npy", tokens)
+    fields = FeatureFields(tmp_path, "train", with_text=True)
+    expected = fields[:]
+    actual = fields.get_batch(slice(None), torch.device("cpu"))
+    assert torch.allclose(actual, expected)
 
 
 def test_single_task_and_lifelong_geometries_are_explicit():

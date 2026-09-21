@@ -131,6 +131,13 @@ def selection_score(name, metrics):
     return metrics["balanced_accuracy"]
 
 
+def device_fields(fields, index, device):
+    """Materialize a batch, using device-side expansion when the adapter supports it."""
+    if hasattr(fields, "get_batch"):
+        return fields.get_batch(index, device)
+    return fields[index].to(device=device, dtype=torch.float32)
+
+
 @torch.no_grad()
 def evaluate(model, task, split, device, batch, active_task=None):
     fields, labels, rows = task.splits[split]
@@ -139,7 +146,7 @@ def evaluate(model, task, split, device, batch, active_task=None):
     if active_task is not None and model.architecture == "moe":
         model.active_count.fill_(4 * (active_task + 1))
     for start in range(0, len(labels), batch):
-        out = model(fields[start:start+batch].to(device=device, dtype=torch.float32), task.name)
+        out = model(device_fields(fields, slice(start, start + batch), device), task.name)
         probs.append(out["probabilities"].cpu().numpy())
         detector_probs.append(out["detector_probabilities"].cpu().numpy())
         capture.append(out["capture"].cpu().numpy())
@@ -170,7 +177,7 @@ def evaluate_indices(model, task, indices, device, batch, active_task=None):
         model.active_count.fill_(4 * (active_task + 1))
     for start in range(0, len(indices), batch):
         ix = indices[start:start + batch]
-        out = model(fields[ix].to(device=device, dtype=torch.float32), task.name)
+        out = model(device_fields(fields, ix, device), task.name)
         probs.append(out["probabilities"].cpu().numpy())
     p = np.concatenate(probs)
     return classification_metrics(task.name, labels[indices], p, [rows[i] for i in indices])
@@ -191,7 +198,7 @@ def task_loss(model, task, indices, device, warmup=False, balance=0.0,
               route_entropy=0.0, augment=False, label_smoothing=0.0,
               detector_aux_weight=0.0):
     fields, labels, _ = task.splits["train"]
-    batch_fields = fields[indices].to(device=device, dtype=torch.float32)
+    batch_fields = device_fields(fields, indices, device)
     # No task-specific augmentation is applied in the audited four-task protocol.
     out = model(batch_fields, task.name, warmup=warmup)
     y = torch.as_tensor(labels[indices], device=device)
@@ -278,7 +285,7 @@ def extract_ccd_features(model, task, split, device, batch):
     fields, labels, rows = task.splits[split]
     model.eval(); features=[]
     for start in range(0,len(labels),batch):
-        out=model(fields[start:start+batch].to(device=device,dtype=torch.float32),task.name)
+        out=model(device_fields(fields, slice(start, start + batch), device),task.name)
         features.append(out["ccd_features"].cpu())
     return torch.cat(features),np.asarray(labels),rows
 

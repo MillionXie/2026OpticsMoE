@@ -316,6 +316,32 @@ class FeatureFields:
                   if self.token_ids is not None else _feature_only_field(self.features[ix]))
         return result[0] if scalar else result
 
+    def get_batch(self, index, device):
+        """Expand compact frozen features directly on the training device.
+
+        Full CLEVR has 420,000 training queries.  Repeating interpolation on
+        the CPU for every epoch starves the optical FFTs, while the compact
+        arrays are only 128 feature values plus 32 token ids per example.
+        """
+        if isinstance(index, slice):
+            index = np.arange(len(self), dtype=np.int64)[index]
+        ix = np.asarray(index, dtype=np.int64)
+        features = torch.as_tensor(np.array(self.features[ix], copy=True),
+                                   device=device, dtype=torch.float32)
+        if self.token_ids is None:
+            value = features.reshape(-1, 16, 8)
+            value = value.repeat_interleave(14, 1).repeat_interleave(28, 2)
+            return normalize_power(value)
+        value = features.reshape(-1, 1, 16, 8).expand(-1, 3, -1, -1)
+        value = F.interpolate(value, (112, 112), mode="nearest")
+        value = value * (0.5 / value.square().sum((1, 2, 3), keepdim=True).clamp_min(1e-20)).sqrt()
+        token_ids = torch.as_tensor(np.array(self.token_ids[ix], copy=True),
+                                    device=device, dtype=torch.long)
+        text = F.interpolate(_fixed_text(token_ids)[:, None], (112, 112), mode="nearest")[:, 0]
+        text = normalize_power(text, 0.5)
+        return torch.cat((torch.cat((value[:, 0], value[:, 1]), -1),
+                          torch.cat((value[:, 2], text), -1)), -2)
+
 
 def load_task(root, split):
     root = Path(root)
