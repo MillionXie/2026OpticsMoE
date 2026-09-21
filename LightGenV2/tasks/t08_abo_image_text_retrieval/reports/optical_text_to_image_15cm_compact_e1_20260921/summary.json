@@ -18,8 +18,8 @@
     "source_checkpoint_elements": 3177750,
     "compact_checkpoint_elements": 2882070,
     "removed_elements": 295680,
-    "total_reduction_fraction": 0.0930477170935469,
-    "non_phase_reduction_fraction": 0.127476661807968
+    "total_reduction_fraction": 0.09304696719376918,
+    "non_phase_reduction_fraction": 0.1274826742043327
   },
   "best": {
     "epoch": 16,
