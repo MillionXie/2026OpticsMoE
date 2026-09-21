@@ -13,18 +13,24 @@ class PhysicalEncoder(nn.Module):
     def __init__(self):
         super().__init__()
         self.features = nn.Sequential(
-            nn.AdaptiveAvgPool2d((28, 28)), nn.Flatten(),
-            nn.Linear(28 * 28, 256), nn.GELU(),
-            nn.Linear(256, 128), nn.ReLU(),
+            nn.Conv2d(1, 16, 5, padding=2), nn.BatchNorm2d(16), nn.ReLU(), nn.MaxPool2d(2),
+            nn.Conv2d(16, 32, 3, padding=1), nn.BatchNorm2d(32), nn.ReLU(), nn.MaxPool2d(2),
+            nn.Conv2d(32, 64, 3, padding=1), nn.BatchNorm2d(64), nn.ReLU(), nn.MaxPool2d(2),
+            nn.Conv2d(64, 128, 3, padding=1), nn.ReLU(),
+            nn.AdaptiveAvgPool2d(1), nn.Flatten(),
         )
         self.head = nn.Linear(128, 2)
 
     def forward(self, x):
         x = x.float()
-        # Optical amplitude fields have unit total power and therefore values
-        # around 1/224. Per-sample mean scaling prevents the MLP biases from
-        # dominating these small but informative temporal tiles.
-        x = x / x.mean((-2, -1), keepdim=True).clamp_min(1e-6)
+        # Restore the ordered 2x4 frame mosaic, then expose temporal changes.
+        # Continuity violations are tiny in the absolute luminance mosaic and
+        # both a static MLP and a 3-D CNN on absolute frames stayed at chance.
+        frames = x.reshape(-1, 2, 112, 4, 56).permute(0, 1, 3, 2, 4).reshape(-1, 8, 112, 56)
+        delta = frames[:, 1:] - frames[:, :-1]
+        delta = torch.cat((delta, torch.zeros_like(delta[:, :1])), 1)
+        x = delta.reshape(-1, 2, 4, 112, 56).permute(0, 1, 3, 2, 4).reshape(-1, 224, 224)
+        x = x / x.square().mean((-2, -1), keepdim=True).sqrt().clamp_min(1e-7)
         z = self.features(x[:, None])
         return z, self.head(z)
 
