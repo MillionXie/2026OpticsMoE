@@ -155,6 +155,42 @@ class PhysicalTextFields:
         return (query == truth).astype(np.int64)
 
 
+def _feature_only_field(features):
+    value = torch.as_tensor(np.array(features, copy=True)).float().reshape(-1, 16, 8)
+    value = value.repeat_interleave(14, 1).repeat_interleave(28, 2)
+    return normalize_power(value)
+
+
+def _feature_text_field(features, token_ids):
+    value = torch.as_tensor(np.array(features, copy=True)).float().reshape(-1, 1, 16, 8)
+    value = value.expand(-1, 3, -1, -1)
+    value = F.interpolate(value, (112, 112), mode="nearest")
+    value = value * (0.5 / value.square().sum((1, 2, 3), keepdim=True).clamp_min(1e-20)).sqrt()
+    text = F.interpolate(_fixed_text(token_ids)[:, None], (112, 112), mode="nearest")[:, 0]
+    text = normalize_power(text, 0.5)
+    return torch.cat((torch.cat((value[:, 0], value[:, 1]), -1),
+                      torch.cat((value[:, 2], text), -1)), -2)
+
+
+class FeatureFields:
+    def __init__(self, root, split, with_text):
+        self.features = np.load(root / f"{split}_features.npy", mmap_mode="r")
+        self.token_ids = (np.load(root / f"{split}_token_ids.npy", mmap_mode="r")
+                          if with_text else None)
+
+    def __len__(self):
+        return len(self.features)
+
+    def __getitem__(self, index):
+        scalar = np.isscalar(index)
+        if isinstance(index, slice):
+            index = np.arange(len(self), dtype=np.int64)[index]
+        ix = np.asarray([index] if scalar else index, dtype=np.int64)
+        result = (_feature_text_field(self.features[ix], self.token_ids[ix])
+                  if self.token_ids is not None else _feature_only_field(self.features[ix]))
+        return result[0] if scalar else result
+
+
 def load_task(root, split):
     root = Path(root)
     protocol = json.loads((root / "protocol.json").read_text())
@@ -188,6 +224,11 @@ def load_task(root, split):
         fields = NpzFields(path)
         data = np.load(path, mmap_mode="r", allow_pickle=False)
         labels = np.asarray(data["labels"], dtype=np.int64)
+        rows_path = root / f"{split}_records.json"
+        rows = json.loads(rows_path.read_text()) if rows_path.exists() else [{} for _ in labels]
+    elif storage in {"frozen_feature_v1", "frozen_feature_text_v1"}:
+        fields = FeatureFields(root, split, storage.endswith("_text_v1"))
+        labels = np.asarray(np.load(root / f"{split}_labels.npy", mmap_mode="r"), dtype=np.int64)
         rows_path = root / f"{split}_records.json"
         rows = json.loads(rows_path.read_text()) if rows_path.exists() else [{} for _ in labels]
     else:
