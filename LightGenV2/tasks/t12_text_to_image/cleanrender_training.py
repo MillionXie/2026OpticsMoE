@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import copy
+import hashlib
 import json
 import math
 import random
@@ -92,6 +93,17 @@ def _category_indices(names: Sequence[str], categories: Sequence[str], device: t
     return torch.tensor([lookup[name] for name in names], dtype=torch.long, device=device)
 
 
+def _sample_keyed_noise(
+    sample_ids: Sequence[str], dimension: int, device: torch.device, seed: int,
+) -> torch.Tensor:
+    rows = []
+    for sample_id in sample_ids:
+        digest = hashlib.sha256(f"{seed}:{sample_id}".encode()).digest()
+        generator = torch.Generator().manual_seed(int.from_bytes(digest[:8], "little"))
+        rows.append(torch.randn(dimension, generator=generator))
+    return torch.stack(rows).to(device)
+
+
 def _augment(images: torch.Tensor, probability: float) -> torch.Tensor:
     if probability <= 0:
         return images
@@ -149,6 +161,7 @@ def _train_epoch(
     device: torch.device,
     generator_optimizer: torch.optim.Optimizer,
     discriminator_optimizer: torch.optim.Optimizer,
+    seed: int,
 ) -> dict[str, float]:
     generator.train(); discriminator.train()
     totals: dict[str, float] = {}; samples = 0
@@ -158,10 +171,16 @@ def _train_epoch(
         real = batch["image"].to(device, non_blocking=True)
         text = batch["text"].to(device, non_blocking=True)
         labels = _category_indices(batch["category"], categories, device)
-        noise = generator.sample_noise(len(real), device)
+        noise = (
+            _sample_keyed_noise(batch["sample_id"], config.noise_dim, device, seed)
+            if config.fixed_noise_per_sample
+            else generator.sample_noise(len(real), device)
+        )
 
         with torch.autocast(**autocast):
             fake, text_category = generator.forward_with_aux(text, noise)
+            second_noise = generator.sample_noise(len(real), device)
+            second_fake = generator(text, second_noise)
             real_augmented = _augment(real, config.augmentation_probability)
             fake_augmented = _augment(fake, config.augmentation_probability)
 
@@ -192,12 +211,20 @@ def _train_epoch(
             text_category_loss = F.cross_entropy(text_category.float(), labels)
             feature_statistics = _feature_statistics(fake_features, [value.detach() for value in real_features])
             border = _white_border(fake)
+            low_frequency_reconstruction = F.l1_loss(
+                F.adaptive_avg_pool2d(fake.float(), (16, 16)),
+                F.adaptive_avg_pool2d(real.float(), (16, 16)),
+            )
+            visible_difference = (fake.float() - second_fake.float()).abs().mean((1, 2, 3))
+            diversity = F.relu(config.diversity_target - visible_difference).mean()
             generator_loss = (
                 generator_adversarial
                 + config.category_weight * generator_category
                 + config.text_category_weight * text_category_loss
                 + config.feature_statistics_weight * feature_statistics
                 + config.white_border_weight * border
+                + config.low_frequency_reconstruction_weight * low_frequency_reconstruction
+                + config.diversity_weight * diversity
             )
         generator_loss.backward()
         torch.nn.utils.clip_grad_norm_(generator.parameters(), 5.0)
@@ -213,6 +240,9 @@ def _train_epoch(
             "text_category": float(text_category_loss.detach()),
             "feature_statistics": float(feature_statistics.detach()),
             "white_border": float(border.detach()),
+            "low_frequency_reconstruction": float(low_frequency_reconstruction.detach()),
+            "diversity_penalty": float(diversity.detach()),
+            "visible_seed_difference": float(visible_difference.detach().mean()),
             "discriminator_loss": float(discriminator_loss.detach()),
             "discriminator_hinge": float(discriminator_hinge.detach()),
             "real_category_accuracy": float((real_category.argmax(1) == labels).float().mean()),
@@ -338,7 +368,7 @@ def train_cleanrender_gan(
             "epoch": epoch,
             "train": _train_epoch(
                 generator, ema, discriminator, train_loader, categories, config, device,
-                generator_optimizer, discriminator_optimizer,
+                generator_optimizer, discriminator_optimizer, seed,
             ),
         }
         evaluate = epoch == 1 or epoch % config.sample_every_epochs == 0 or epoch == config.epochs
@@ -378,6 +408,10 @@ def train_cleanrender_gan(
         "inference_data_flow": "caption -> frozen Qwen -> Gaussian seed + one direct RGB decoder call",
         "input_image_at_inference": False,
         "random_seed_is_real": True,
+        "training_noise": (
+            "stable N(0,I) code keyed by sample_id" if config.fixed_noise_per_sample
+            else "fresh independent N(0,I) code per step"
+        ),
     }
     (output_dir / "training_summary.json").write_text(json.dumps(summary, indent=2) + "\n", encoding="utf-8")
     return summary

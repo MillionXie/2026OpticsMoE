@@ -15,6 +15,7 @@ training:
   num_workers: 4
   amp: true
   augmentation_probability: 0.25
+  fixed_noise_per_sample: true
   ema_halflife_kimg: 5.0
   sample_every_epochs: 10
   checkpoint_every_epochs: 40
@@ -23,3 +24,6 @@ loss:
   text_category_weight: 1.0
   feature_statistics_weight: 0.15
   white_border_weight: 0.10
+  low_frequency_reconstruction_weight: 1.0
+  diversity_weight: 0.25
+  diversity_target: 0.10

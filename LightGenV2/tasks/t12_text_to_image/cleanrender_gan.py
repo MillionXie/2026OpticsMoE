@@ -34,6 +34,10 @@ class CleanRenderGANConfig:
     text_category_weight: float
     feature_statistics_weight: float
     white_border_weight: float
+    low_frequency_reconstruction_weight: float
+    diversity_weight: float
+    diversity_target: float
+    fixed_noise_per_sample: bool
     ema_halflife_kimg: float
     sample_every_epochs: int
     checkpoint_every_epochs: int
@@ -57,6 +61,8 @@ class CleanRenderGANConfig:
         if min(
             self.category_weight, self.text_category_weight,
             self.feature_statistics_weight, self.white_border_weight,
+            self.low_frequency_reconstruction_weight, self.diversity_weight,
+            self.diversity_target,
         ) < 0:
             raise ValueError("Loss weights must be non-negative")
 
@@ -84,6 +90,10 @@ def load_cleanrender_config(path: str | Path) -> CleanRenderGANConfig:
         text_category_weight=float(loss["text_category_weight"]),
         feature_statistics_weight=float(loss["feature_statistics_weight"]),
         white_border_weight=float(loss["white_border_weight"]),
+        low_frequency_reconstruction_weight=float(loss["low_frequency_reconstruction_weight"]),
+        diversity_weight=float(loss["diversity_weight"]),
+        diversity_target=float(loss["diversity_target"]),
+        fixed_noise_per_sample=bool(training["fixed_noise_per_sample"]),
         ema_halflife_kimg=float(training["ema_halflife_kimg"]),
         sample_every_epochs=int(training["sample_every_epochs"]),
         checkpoint_every_epochs=int(training["checkpoint_every_epochs"]),
