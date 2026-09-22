@@ -125,7 +125,15 @@ def _evaluate(unet, adapter, router, loader, sigma, device, training: SceneTrain
 
 @torch.inference_mode()
 def _sample_grid(*, unet, adapter, vae, sigma, latent_dataset, raw_dataset, output: Path, device, training: SceneTrainingConfig, seed: int) -> None:
-    chosen = list(range(min(8, len(raw_dataset))))
+    # Show both supported categories instead of merely taking the first eight
+    # manifest rows (ABO manifests are category-grouped).
+    first_by_category: dict[str, int] = {}
+    for source_index, source in enumerate(raw_dataset.sources):
+        first_by_category.setdefault(source["category"], source_index)
+    chosen = []
+    for category in ("lamp", "table"):
+        start = first_by_category[category] * raw_dataset.targets_per_source
+        chosen.extend(range(start, min(start + 4, len(raw_dataset))))
     reference = latent_dataset.payload["reference"][chosen].float().to(device)
     text = latent_dataset.payload["qwen_text"][chosen].float().to(device)
     generator = torch.Generator(device=device).manual_seed(seed)
