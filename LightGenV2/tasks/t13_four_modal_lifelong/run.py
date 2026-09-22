@@ -390,7 +390,9 @@ def train_single_task_d2nn(tasks, cfg, out, device, selected_task=None):
         task_index = TASK_ORDER.index(name)
         task_root = root / name; task_root.mkdir()
         seed_all(cfg["seed"] + task_index)
-        model = build_model("d2nn", cfg, cfg["seed"] + task_index, max_experts=4).to(device)
+        model = build_model(
+            "d2nn", cfg, cfg["seed"] + task_index,
+            max_experts=int(cfg.get("single_task_d2nn_max_experts", 4))).to(device)
         model.configure_task(task_index, warmup=False)
         lr = float(cfg.get("d2nn_lr", cfg["lr"]))
         optimizer = torch.optim.Adam([p for p in model.parameters() if p.requires_grad], lr=lr)
@@ -651,7 +653,7 @@ def train_sequential_d2nn(tasks, cfg, out, device, use_replay, resume=False):
     root = out / f"sequential_d2nn_{tag}"; root.mkdir(exist_ok=resume)
     seed_all(cfg["seed"])
     model = build_model("d2nn", cfg, cfg["seed"],
-                        max_experts=int(cfg.get("d2nn_max_experts", 4))).to(device)
+                        max_experts=int(cfg.get("d2nn_max_experts", 16))).to(device)
     replay = {}; all_history = []
     start_index = 0
     if resume:

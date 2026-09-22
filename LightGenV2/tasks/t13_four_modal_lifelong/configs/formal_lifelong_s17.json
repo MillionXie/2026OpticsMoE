@@ -19,6 +19,8 @@
   "readout_grid": 28,
   "head_width": 0,
   "head_bottleneck": 0,
+  "d2nn_max_experts": 16,
+  "single_task_d2nn_max_experts": 16,
   "require_full": true,
   "label_smoothing": 0.0,
   "d2nn_detector_aux_weight": 0.0,
