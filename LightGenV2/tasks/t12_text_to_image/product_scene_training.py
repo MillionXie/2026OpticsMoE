@@ -280,7 +280,14 @@ def _sample_grid(
     raw_dataset: ProductSceneDataset, output: Path, device: torch.device,
     residual_scale: float, noise_scale: float, seed: int,
 ) -> None:
-    chosen = list(range(len(SCENES)))
+    # Prefer a substantial, easy-to-read lamp for the qualitative grid rather
+    # than depending on whichever identity happens to sort first.
+    source_starts = range(0, len(latent_dataset), len(SCENES))
+    base = max(
+        source_starts,
+        key=lambda index: float(latent_dataset.payload["foreground_mask"][index].sum()),
+    )
+    chosen = list(range(base, base + len(SCENES)))
     reference = latent_dataset.payload["reference"][chosen].float().to(device)
     text = latent_dataset.payload["qwen_text"][chosen].float().to(device)
     condition = adapter.condition(text)
