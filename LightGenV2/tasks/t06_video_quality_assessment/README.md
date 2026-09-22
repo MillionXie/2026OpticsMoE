@@ -418,6 +418,9 @@ CUDA_VISIBLE_DEVICES=0 python -m LightGenV2.tasks.t06_video_quality_assessment.d
 正式 checkpoint 仍只保留 best/last。该 baseline 的 384 原生分辨率与 Qwen 448 分辨率需在
 表格中明确列出，不能将它描述成完全相同的视觉 token 几何。
 
+首轮完整结果为 Temporal SRCC 0.5688169、Spatial SRCC 0.5974811；协议、完整指标和
+产物哈希见[复现报告](reports/reproduction/DEEPSEEK_VL2_TINY_LGVQ_20260922.md)。
+
 ## RTX 5090 D 光学 MoE 分段计时
 
 T01–T04 与 T06 的 CCD 后串行电子处理、并行残差、跨层 SLM 场重建、bridge 和任务头已经

@@ -1,5 +1,7 @@
 # t06_video_quality_assessment 复现说明入口
 
+- [DeepSeek-VL2-Tiny 冻结主干 LGVQ baseline（2026-09-22）](DEEPSEEK_VL2_TINY_LGVQ_20260922.md)
+
 [Baseline 复现说明](BASELINE_METHODS.md)：按最新表格指标核对的论文式技术正文（2026-09-15）。
 
 本目录集中保存baseline及主方法的可复现性证据。2026-09-14已完成固定Temporal权重的六层SHS实测：
