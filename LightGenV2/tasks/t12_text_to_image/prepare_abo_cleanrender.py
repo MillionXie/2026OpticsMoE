@@ -139,15 +139,20 @@ def _view_subset(available: list[int], count: int) -> list[int]:
     return [available[round(index * (len(available) - 1) / (count - 1))] for index in range(count)]
 
 
-def _save_render(payload: bytes, output: Path, size: int) -> None:
+def _save_render(payload: bytes, output: Path, size: int, mask_output: Path | None = None) -> None:
     with Image.open(io.BytesIO(payload)) as handle:
         image = ImageOps.exif_transpose(handle).convert("RGBA")
+        alpha = image.getchannel("A")
         white = Image.new("RGBA", image.size, "white")
         white.alpha_composite(image)
         rgb = white.convert("RGB")
         rgb = ImageOps.pad(rgb, (size, size), method=Image.Resampling.LANCZOS, color="white")
     output.parent.mkdir(parents=True, exist_ok=True)
     rgb.save(output, format="JPEG", quality=95, subsampling=0)
+    if mask_output is not None:
+        alpha = ImageOps.pad(alpha, (size, size), method=Image.Resampling.LANCZOS, color=0)
+        mask_output.parent.mkdir(parents=True, exist_ok=True)
+        alpha.save(mask_output, format="PNG")
 
 
 def _fetch_remote_member(url: str, info: zipfile.ZipInfo, retries: int = 5) -> bytes:
@@ -198,13 +203,13 @@ def _fetch_remote_member(url: str, info: zipfile.ZipInfo, retries: int = 5) -> b
 def _download_remote_jobs(
     url: str,
     infos: dict[str, zipfile.ZipInfo],
-    jobs: list[tuple[str, Path]],
+    jobs: list[tuple[str, Path, Path | None]],
     image_size: int,
     workers: int,
 ) -> None:
-    def download(job: tuple[str, Path]) -> None:
-        member, output = job
-        _save_render(_fetch_remote_member(url, infos[member]), output, image_size)
+    def download(job: tuple[str, Path, Path | None]) -> None:
+        member, output, mask_output = job
+        _save_render(_fetch_remote_member(url, infos[member]), output, image_size, mask_output)
 
     with concurrent.futures.ThreadPoolExecutor(max_workers=workers) as executor:
         futures = [executor.submit(download, job) for job in jobs]
@@ -246,6 +251,7 @@ def prepare(
     image_size: int = 128,
     seed: int = 42,
     download_workers: int = 16,
+    save_alpha_masks: bool = False,
 ) -> dict[str, Any]:
     if output_dir.exists() and any(output_dir.iterdir()):
         raise FileExistsError(f"Output directory is not empty: {output_dir}")
@@ -257,7 +263,7 @@ def prepare(
         raise ValueError(f"Unsupported CleanRender categories: {sorted(unknown)}")
 
     remote = str(archive_source).startswith(("http://", "https://"))
-    download_jobs: list[tuple[str, Path]] = []
+    download_jobs: list[tuple[str, Path, Path | None]] = []
     with _archive(archive_source) as archive:
         render_index = _render_index(archive.namelist())
         info_by_name = {info.filename: info for info in archive.infolist()} if remote else {}
@@ -306,8 +312,16 @@ def prepare(
                     for view in chosen_views:
                         member = render_index[item_id][view]
                         relative = Path("images") / split / category.lower() / f"{item_id}_{view:02d}.jpg"
-                        download_jobs.append((member, output_dir / relative))
-                        manifests[split].append({
+                        mask_relative = (
+                            Path("masks") / split / category.lower() / f"{item_id}_{view:02d}.png"
+                            if save_alpha_masks else None
+                        )
+                        download_jobs.append((
+                            member,
+                            output_dir / relative,
+                            output_dir / mask_relative if mask_relative is not None else None,
+                        ))
+                        manifest_row = {
                             "sample_id": f"{category.lower()}-{item_id}-{view:02d}",
                             "sequence_id": item_id,
                             "category": CATEGORY_LABELS[category],
@@ -319,12 +333,15 @@ def prepare(
                             "source_member": member,
                             "source_title": row["source_title"],
                             "modified": f"alpha-composited on white and resized to {image_size}x{image_size}",
-                        })
+                        }
+                        if mask_relative is not None:
+                            manifest_row["mask_path"] = mask_relative.as_posix()
+                        manifests[split].append(manifest_row)
                 cursor += count
 
         if not remote:
-            for index, (member, destination) in enumerate(download_jobs, 1):
-                _save_render(archive.read(member), destination, image_size)
+            for index, (member, destination, mask_destination) in enumerate(download_jobs, 1):
+                _save_render(archive.read(member), destination, image_size, mask_destination)
                 if index == 1 or index % 50 == 0 or index == len(download_jobs):
                     print(f"[ABO CleanRender] extracted {index}/{len(download_jobs)}", flush=True)
 
@@ -352,6 +369,7 @@ def prepare(
         "image_size": image_size,
         "download_workers": download_workers,
         "one_object_per_image": True,
+        "alpha_masks_saved": save_alpha_masks,
         "identity_split": True,
     })
     (output_dir / "dataset_summary.json").write_text(json.dumps(summary, indent=2) + "\n", encoding="utf-8")
@@ -372,6 +390,7 @@ def main() -> int:
     parser.add_argument("--image-size", type=int, default=128)
     parser.add_argument("--seed", type=int, default=42)
     parser.add_argument("--download-workers", type=int, default=16)
+    parser.add_argument("--save-alpha-masks", action="store_true")
     args = parser.parse_args()
     source: str | Path = args.archive
     if not str(source).startswith(("http://", "https://")):
@@ -383,6 +402,7 @@ def main() -> int:
         val_instances=args.val_instances, test_instances=args.test_instances,
         train_views=args.train_views, eval_views=args.eval_views,
         image_size=args.image_size, seed=args.seed, download_workers=args.download_workers,
+        save_alpha_masks=args.save_alpha_masks,
     )
     print(json.dumps(report, indent=2))
     return 0
