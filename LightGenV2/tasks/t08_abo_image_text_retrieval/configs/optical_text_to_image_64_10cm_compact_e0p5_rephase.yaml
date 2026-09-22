@@ -1,0 +1,42 @@
+base_config: optical_text_to_image_64_15cm_compact_e0p5.yaml
+
+# Alternative 10 cm recovery path.  Reuse the already compact electronic
+# residuals, adapters and 64-D readout, but rebuild every optical propagator
+# for 10 cm and freshly optimize all feature/Router phases at that distance.
+language_optical:
+  distance_m: 0.10
+  allow_distance_override: true
+
+electronic:
+  expansion: 0.5
+
+training:
+  epochs: 20
+  learning_rate: 0.000015
+  adapter_learning_rate: 0.000008
+  readout_learning_rate: 0.000015
+  phase_learning_rate: 0.004
+  router_learning_rate: 0.004
+  ema_decay: 0.99
+
+lightgen:
+  selection:
+    test_interval_epochs: 2
+
+abo_image_text:
+  retrieval_direction: text_to_image
+  selection_direction: text_to_image
+  symmetric_title_to_image_weight: 1.25
+  teacher_kd_weight: 0.60
+  cache_file: ../runs/shared/abo_easy100_qwen64_true_text_to_image.pt
+  resume_checkpoint: ../runs/simulation/optical_text_to_image_64_15cm_compact_e0p5_seed42_20260921/best_checkpoint.pt
+  resume_checkpoint_sha256: ae92995b49eaf7d49165d7816f876e831d9ab070a482f94e849d2f16e9ebb50f
+  allow_propagation_distance_transition: true
+  allow_electronic_compaction_transition: false
+  alpha_curriculum:
+    start: 0.15
+    end: 0.40
+    warmup_epochs: 10
+    minimum_selected: 0.39
+
+output_dir: ../runs/simulation/optical_text_to_image_64_10cm_compact_e0p5_rephase_seed43_20260923
