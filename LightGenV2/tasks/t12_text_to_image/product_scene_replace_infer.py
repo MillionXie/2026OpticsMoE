@@ -10,6 +10,7 @@ import torch
 from torch.utils.data import DataLoader
 
 from .electronic_turbo_infer import _load_adapter
+from .compact_product_model import prepare_compact_optical_unet
 from .product_repair_model import (
     RepairModelConfig,
     architecture_report,
@@ -30,6 +31,7 @@ def evaluate_checkpoint(
     *, initial_unet: Path, turbo_checkpoint: Path, adapter_checkpoint: Path,
     trained_checkpoint: Path, latent_cache_dir: Path, data_dir: Path,
     instruction_cache: Path, output_dir: Path, device: torch.device, seed: int = 42,
+    compact_optical_mid: bool = False,
 ) -> dict:
     if output_dir.exists():
         raise FileExistsError(output_dir)
@@ -46,7 +48,10 @@ def evaluate_checkpoint(
         local_files_only=True,
     ).to(device)
     expand_reference_conditioning(unet)
-    optical = attach_decoder_optics(unet, model_config)
+    if compact_optical_mid:
+        optical, _ = prepare_compact_optical_unet(unet, model_config)
+    else:
+        optical = attach_decoder_optics(unet, model_config)
     unet.load_state_dict(payload["unet"])
     adapter.load_state_dict(payload["adapter"])
     router.load_state_dict(payload["attribute_router"])
@@ -109,6 +114,7 @@ def main() -> int:
         parser.add_argument(f"--{name}", type=Path, required=True)
     parser.add_argument("--seed", type=int, default=42)
     parser.add_argument("--device", default="cuda" if torch.cuda.is_available() else "cpu")
+    parser.add_argument("--compact-optical-mid", action="store_true")
     args = parser.parse_args()
     report = evaluate_checkpoint(
         initial_unet=args.initial_unet.resolve(), turbo_checkpoint=args.turbo_checkpoint.resolve(),
@@ -116,6 +122,7 @@ def main() -> int:
         latent_cache_dir=args.latent_cache_dir.resolve(), data_dir=args.data_dir.resolve(),
         instruction_cache=args.instruction_cache.resolve(), output_dir=args.output_dir.resolve(),
         device=torch.device(args.device), seed=args.seed,
+        compact_optical_mid=args.compact_optical_mid,
     )
     print(json.dumps(report, indent=2), flush=True)
     return 0
