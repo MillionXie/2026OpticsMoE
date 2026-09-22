@@ -728,7 +728,7 @@ def train_sequential_d2nn(tasks, cfg, out, device, use_replay, resume=False):
     return result
 
 
-def train_lifelong_moe(tasks, cfg, out, device, resume=False):
+def train_lifelong_moe(tasks, cfg, out, device, resume=False, stage1_checkpoint=None):
     root = out / "lifelong_moe"; root.mkdir(exist_ok=resume)
     seed_all(cfg["seed"])
     model = build_model("moe", cfg, cfg["seed"]).to(device)
@@ -740,6 +740,35 @@ def train_lifelong_moe(tasks, cfg, out, device, resume=False):
         replay = {name: replay_indices(tasks[name], cfg["replay_per_task"],
                                        cfg["seed"] + task_index)
                   for task_index, name in enumerate(TASK_ORDER[:start_index])}
+    elif stage1_checkpoint is not None:
+        # Stage 1 may be selected by a validation-only training-strategy screen.
+        # Import that exact optical+Linear checkpoint, evaluate the held-out test
+        # split once, and continue the declared A->B->C->D replay chain.
+        checkpoint = torch.load(stage1_checkpoint, map_location=device, weights_only=False)
+        if checkpoint.get("task") != "eurosat":
+            raise ValueError("MoE stage-1 checkpoint must be an EuroSAT checkpoint")
+        model.load_state_dict(checkpoint["model"])
+        model.configure_task(0, warmup=False)
+        head = model.heads["eurosat"]
+        if not isinstance(head, nn.Linear) or (head.in_features, head.out_features) != (784, 10):
+            raise ValueError("MoE stage-1 inference head must be Linear(784,10)")
+        stage_root = root / "stage_1_eurosat"; stage_root.mkdir()
+        imported = {**checkpoint, "imported_stage1": True,
+                    "imported_from": str(stage1_checkpoint)}
+        torch.save(imported, stage_root / "best_checkpoint.pt")
+        stage_eval = stage_evaluation(model, tasks, ("eurosat",), device, cfg, 0)
+        stage_result = {"selected_epoch": int(checkpoint.get("epoch", 0)), **stage_eval,
+                        "head_calibration": None,
+                        "electronic_readout": "single_linear_layer",
+                        "imported_stage1": True,
+                        "imported_from": str(stage1_checkpoint),
+                        "old_experts_unchanged": True, "old_heads_unchanged": True}
+        save(stage_root / "stage_result.json", stage_result)
+        all_history.append({"task": "eurosat",
+                            "selected_epoch": stage_result["selected_epoch"], **stage_eval})
+        replay["eurosat"] = replay_indices(
+            tasks["eurosat"], cfg["replay_per_task"], cfg["seed"])
+        start_index = 1
     for task_index, name in enumerate(TASK_ORDER):
         if task_index < start_index:
             continue
@@ -855,13 +884,15 @@ def smoke(tasks,cfg,out,device):
 
 
 def main():
-    p=argparse.ArgumentParser();p.add_argument("--config",type=Path,required=True);p.add_argument("--eurosat",type=Path);p.add_argument("--clevr",type=Path);p.add_argument("--speech",type=Path);p.add_argument("--physical",type=Path);p.add_argument("--out",type=Path,required=True);p.add_argument("--phase",choices=["smoke","overfit","train"],default="train");p.add_argument("--only",choices=["all","single_task","single_task_moe","sequential_d2nn","sequential_d2nn_replay","moe"],default="all");p.add_argument("--single-task-name",choices=TASK_ORDER);p.add_argument("--init-checkpoint",type=Path,help="continue one single-task MoE run up to the configured target epoch");p.add_argument("--resume",action="store_true",help="restore completed sequential stages and rerun the first incomplete stage");a=p.parse_args()
+    p=argparse.ArgumentParser();p.add_argument("--config",type=Path,required=True);p.add_argument("--eurosat",type=Path);p.add_argument("--clevr",type=Path);p.add_argument("--speech",type=Path);p.add_argument("--physical",type=Path);p.add_argument("--out",type=Path,required=True);p.add_argument("--phase",choices=["smoke","overfit","train"],default="train");p.add_argument("--only",choices=["all","single_task","single_task_moe","sequential_d2nn","sequential_d2nn_replay","moe"],default="all");p.add_argument("--single-task-name",choices=TASK_ORDER);p.add_argument("--init-checkpoint",type=Path,help="continue one single-task MoE run up to the configured target epoch");p.add_argument("--moe-stage1-checkpoint",type=Path,help="validation-selected EuroSAT MoE checkpoint used to start the formal replay chain");p.add_argument("--resume",action="store_true",help="restore completed sequential stages and rerun the first incomplete stage");a=p.parse_args()
     cfg=json.loads(a.config.read_text());a.out.mkdir(parents=True,exist_ok=a.resume);save(a.out/"status.json",{"status":"running","pid":os.getpid(),"resume":a.resume})
     try:
         if a.single_task_name and not (a.phase == "train" and a.only in ("single_task", "single_task_moe")):
             raise ValueError("--single-task-name requires formal single_task or single_task_moe training")
         if a.init_checkpoint and not (a.phase == "train" and a.only == "single_task_moe" and a.single_task_name):
             raise ValueError("--init-checkpoint requires single_task_moe and --single-task-name")
+        if a.moe_stage1_checkpoint and not (a.phase == "train" and a.only == "moe" and not a.resume):
+            raise ValueError("--moe-stage1-checkpoint requires a fresh --only moe run")
         if a.resume and not (a.phase == "train" and a.only in ("sequential_d2nn", "sequential_d2nn_replay", "moe")):
             raise ValueError("--resume requires one sequential training mode")
         names = (a.single_task_name,) if a.single_task_name else TASK_ORDER
@@ -882,7 +913,8 @@ def main():
             if a.only in ("all","single_task_moe"):result["single_task_moe"]=train_single_task_moe(tasks,cfg,a.out,device,a.single_task_name,a.init_checkpoint)
             if a.only in ("all","sequential_d2nn"):result["sequential_d2nn"]=train_sequential_d2nn(tasks,cfg,a.out,device,False,a.resume)
             if a.only in ("all","sequential_d2nn_replay"):result["sequential_d2nn_replay"]=train_sequential_d2nn(tasks,cfg,a.out,device,True,a.resume)
-            if a.only in ("all","moe"):result["moe"]=train_lifelong_moe(tasks,cfg,a.out,device,a.resume)
+            if a.only in ("all","moe"):result["moe"]=train_lifelong_moe(
+                tasks,cfg,a.out,device,a.resume,a.moe_stage1_checkpoint)
             save(a.out/"comparison.json",result)
         save(a.out/"status.json",{"status":"complete"})
     except Exception:
