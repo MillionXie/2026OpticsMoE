@@ -1,0 +1,16 @@
+base_config: optical_text_to_image_64_10cm_compact_e0p5_rephase.yaml
+
+# Reproduce and persist the observed 0.88 operating point before the optical
+# curriculum reaches its higher-alpha regime.  This is a real checkpoint, not
+# a post-hoc metric copied from an ineligible epoch.
+training:
+  epochs: 4
+
+abo_image_text:
+  alpha_curriculum:
+    start: 0.15
+    end: 0.40
+    warmup_epochs: 10
+    minimum_selected: 0.20
+
+output_dir: ../runs/simulation/optical_text_to_image_64_10cm_compact_e0p5_target088_seed43_20260923
