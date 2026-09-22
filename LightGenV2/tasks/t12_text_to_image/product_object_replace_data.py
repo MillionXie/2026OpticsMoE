@@ -133,6 +133,10 @@ class ProductObjectReplacementDataset(Dataset[dict[str, Any]]):
         else:
             with Image.open(row["mask_path"]) as handle:
                 mask = handle.convert("L")
+        # CleanRender masks intentionally retain a generous antialiased edge
+        # for white-background presentation.  A mild erosion removes that
+        # visible white matte before compositing onto coloured rooms.
+        mask = mask.filter(ImageFilter.MinFilter(5)).filter(ImageFilter.GaussianBlur(0.65))
         _, normalized_mask, foreground = _normalize_product(image, mask, size)
         return foreground, normalized_mask
 
