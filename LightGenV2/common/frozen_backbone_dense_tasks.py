@@ -531,7 +531,8 @@ class OpenMojiReadout(nn.Module):
 
     def forward(self, visual: torch.Tensor, text_groups: list[torch.Tensor]) -> dict[str, torch.Tensor]:
         spatial = self.image_adapter(visual.float().permute(0, 2, 3, 1)).permute(0, 3, 1, 2)
-        groups = [self.text_adapter(value.float()) for value in text_groups]
+        device = self.text_adapter[0].weight.device
+        groups = [self.text_adapter(value.to(device=device, dtype=torch.float32)) for value in text_groups]
         condition = self.shared_readout.summarize(groups)
         result = self.shared_readout(spatial, condition)
         result.update(ccd_operating_loss=spatial.new_zeros(()), router_balance_loss=spatial.new_zeros(()))
