@@ -384,6 +384,40 @@ python -m LightGenV2.tasks.t06_video_quality_assessment.quality_token_resolution
 当前 5090D 的 448×448 正式结果、完整指标表、token 几何、计时边界和论文图见
 [`reports/paper_results/qwen3vl_quality_token_baseline_r448`](reports/paper_results/qwen3vl_quality_token_baseline_r448/README.md)。
 
+## 冻结 DeepSeek-VL2-Tiny LGVQ baseline
+
+`deepseek_vl2_tiny_lgvq_4f_r384` 是与上述 Qwen 方案二配对的开源 MoE-VLM 对照。两项任务
+都沿用同一 LGVQ 2250/558 prompt-group 划分、10%/37%/63%/90% 四帧位置、短边 65%
+中心裁剪、原提示词、五档硬标签、50 epoch 与按 test SRCC 选模规则。DeepSeek-VL2
+不是原生视频模型，所以四帧按时间顺序写成同一对话中的四个 `<image>`；使用其原生
+384×384 视觉输入，不把 448 强行插值后再交给固定 384 前端。
+
+完整 Vision、projector 与 MoE language backbone 均在加载后执行
+`eval().requires_grad_(False)`，并运行时断言主干可训练参数为 0。取最终语言层最后有效
+token 的 1280 维表示，仅训练从原生 LM head 复制的五个无偏置输出行，共 6400 参数；
+时间与空间分别提特征并训练独立评分头。若 DeepSeek tokenizer 将某个质量词切成多个
+subtoken，则显式以对应原生 LM-head 行的均值初始化，具体 token id 和初始化模式写入报告。
+
+官方 DeepSeek-VL2 代码依赖 Transformers 4.38.2，建议使用独立环境，避免覆盖 LightGenV2
+现有 Qwen 环境。正式运行必须使用本地模型快照、干净 Git commit，并显式限制一张 GPU：
+
+```bash
+CONFIG=LightGenV2/tasks/t06_video_quality_assessment/configs/baselines/deepseek_vl2_tiny_lgvq_4f_r384.yaml
+MODEL=/absolute/path/deepseek-vl2-tiny
+MANIFEST=/absolute/path/lgvq_train2250_test558.csv
+
+CUDA_VISIBLE_DEVICES=0 python -m LightGenV2.tasks.t06_video_quality_assessment.deepseek_vl2_quality \
+  --config "$CONFIG" --phase smoke --model "$MODEL" --manifest "$MANIFEST"
+
+# 可断点续跑；先缓存两种 prompt 的冻结特征，再训练两个 6400 参数评分头。
+CUDA_VISIBLE_DEVICES=0 python -m LightGenV2.tasks.t06_video_quality_assessment.deepseek_vl2_quality \
+  --config "$CONFIG" --phase all --model "$MODEL" --manifest "$MANIFEST"
+```
+
+特征以 32 条为一个原子 shard 保存；中断后重新执行 `--phase extract` 会校验样本身份并续跑。
+正式 checkpoint 仍只保留 best/last。该 baseline 的 384 原生分辨率与 Qwen 448 分辨率需在
+表格中明确列出，不能将它描述成完全相同的视觉 token 几何。
+
 ## RTX 5090 D 光学 MoE 分段计时
 
 T01–T04 与 T06 的 CCD 后串行电子处理、并行残差、跨层 SLM 场重建、bridge 和任务头已经
