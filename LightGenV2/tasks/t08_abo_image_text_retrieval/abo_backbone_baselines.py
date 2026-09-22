@@ -503,8 +503,11 @@ def _easy100(args: argparse.Namespace, bundle: EncoderBundle, device: torch.devi
     title_texts = [row["title"] for row in titles]
     if bundle.encode_texts is None:
         raise RuntimeError("Selected model lacks a text encoder")
-    title_instruction = T2I_QUERY if args.model_kind == "deepseek" else DOCUMENT
-    title_features = bundle.encode_texts(title_texts, title_instruction)
+    # Qwen's two published directions use different roles for the same titles:
+    # fixed documents for image-to-text and queries for text-to-image. Preserve
+    # that distinction for instruction-sensitive decoder embeddings.
+    i2t_title_features = bundle.encode_texts(title_texts, DOCUMENT)
+    t2i_title_features = bundle.encode_texts(title_texts, T2I_QUERY)
     test_features = _extract_images(
         rows=test,
         data_root=root,
@@ -527,7 +530,7 @@ def _easy100(args: argparse.Namespace, bundle: EncoderBundle, device: torch.devi
         adapter, adapter_history = _fit_yolo_alignment(
             train_features,
             torch.tensor([row["label"] for row in train]),
-            title_features,
+            i2t_title_features,
             device=device,
             epochs=args.adapter_epochs,
             batch_size=args.adapter_batch_size,
@@ -546,11 +549,12 @@ def _easy100(args: argparse.Namespace, bundle: EncoderBundle, device: torch.devi
         with torch.inference_mode():
             test_features = adapter(_normalized(test_features).to(device)).cpu()
     image_vectors = _normalized(test_features)
-    text_vectors = _normalized(title_features)
+    i2t_text_vectors = _normalized(i2t_title_features)
+    t2i_text_vectors = _normalized(t2i_title_features)
     test_labels = torch.tensor([row["label"] for row in test])
     title_labels = torch.tensor([int(row["label"]) for row in titles])
-    i2t, i2t_order = _candidate_metrics(image_vectors @ text_vectors.T, test_labels)
-    t2i, t2i_order = _gallery_metrics(text_vectors @ image_vectors.T, title_labels, test_labels)
+    i2t, i2t_order = _candidate_metrics(image_vectors @ i2t_text_vectors.T, test_labels)
+    t2i, t2i_order = _gallery_metrics(t2i_text_vectors @ image_vectors.T, title_labels, test_labels)
     _write_json(args.output / "easy100_predictions.json", {
         "image_to_text_top1": [titles[index]["product_id"] for index in i2t_order[:, 0].tolist()],
         "text_to_image_top10": [[test[index]["sample_id"] for index in row] for row in t2i_order[:, :10].tolist()],
