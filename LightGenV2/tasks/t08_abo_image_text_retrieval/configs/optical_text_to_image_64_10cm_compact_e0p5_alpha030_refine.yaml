@@ -1,0 +1,28 @@
+base_config: optical_text_to_image_64_10cm_compact_e0p5_target088.yaml
+
+# Keep the already compact 192->96->192 electronic path and refine the real
+# 10 cm phases/Router at a stronger, fixed optical coefficient.
+training:
+  epochs: 12
+  learning_rate: 0.000008
+  adapter_learning_rate: 0.000004
+  readout_learning_rate: 0.000008
+  phase_learning_rate: 0.0035
+  router_learning_rate: 0.003
+  lambda_router_balance: 0.16
+  lambda_router_importance: 0.045
+  lambda_router_hard_load_balance: 1.10
+  ema_decay: 0.99
+
+abo_image_text:
+  resume_checkpoint: ../runs/simulation/optical_text_to_image_64_10cm_compact_e0p5_target088_seed43_20260923/best_checkpoint.pt
+  resume_checkpoint_sha256: 8a96132d8ba68c671426d4e0b6064e87b5b3943505c0ad8b2aa694c879c20883
+  allow_propagation_distance_transition: false
+  allow_electronic_compaction_transition: false
+  alpha_curriculum:
+    start: 0.30
+    end: 0.30
+    warmup_epochs: 1
+    minimum_selected: 0.29
+
+output_dir: ../runs/simulation/optical_text_to_image_64_10cm_compact_e0p5_alpha030_refine_seed44_20260923
