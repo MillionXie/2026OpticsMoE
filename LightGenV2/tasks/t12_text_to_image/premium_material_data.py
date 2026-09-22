@@ -21,6 +21,7 @@ from torch.utils.data import Dataset
 from .feature_cache import _encode_caption_rows
 from .half_qwen import load_half_qwen_text_encoder
 from .product_object_replace_data import ProductObjectReplacementDataset
+from .product_scene_data import _normalize_product
 
 
 SUPPORTED_CATEGORIES = ("lamp", "table", "backpack")
@@ -172,6 +173,24 @@ def _composite_with_shadow(product: Image.Image, mask: Image.Image, background: 
     return Image.composite(product, softened, mask)
 
 
+def _load_product(row: dict[str, Any], size: int) -> tuple[Image.Image, Image.Image]:
+    if row.get("mask_path") is not None:
+        return ProductObjectReplacementDataset._load_product(row, size)
+    # The backpack subset has no masks. Estimate its neutral studio background
+    # from the border instead of using a fixed white threshold, which otherwise
+    # retains a visible rectangular source canvas.
+    with Image.open(row["image_path"]) as handle:
+        image = handle.convert("RGB")
+    array = np.asarray(image).astype(np.float32)
+    border = np.concatenate((array[0], array[-1], array[:, 0], array[:, -1]), axis=0)
+    background = np.median(border, axis=0)
+    distance = np.sqrt(((array - background[None, None]) ** 2).sum(axis=2))
+    mask_array = np.where(distance > 24, 255, 0).astype(np.uint8)
+    mask = Image.fromarray(mask_array, "L").filter(ImageFilter.MaxFilter(5)).filter(ImageFilter.GaussianBlur(.8))
+    _, normalized_mask, foreground = _normalize_product(image, mask, size)
+    return foreground, normalized_mask
+
+
 class PremiumMaterialDataset(Dataset[dict[str, Any]]):
     targets_per_source = len(STYLE_KEYS)
     supported_categories = SUPPORTED_CATEGORIES
@@ -198,7 +217,7 @@ class PremiumMaterialDataset(Dataset[dict[str, Any]]):
     def __getitem__(self, index: int) -> dict[str, Any]:
         source = self.sources[index // self.targets_per_source]
         style_index = index % self.targets_per_source; style = STYLE_KEYS[style_index]
-        product, mask = ProductObjectReplacementDataset._load_product(source, self.image_size)
+        product, mask = _load_product(source, self.image_size)
         reference_background = _background(self.image_size, "neutral", source["sample_id"], "premium-source")
         target_background = _background(self.image_size, style, source["sample_id"], "premium-target")
         reference = _composite_with_shadow(product, mask, reference_background)
