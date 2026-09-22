@@ -18,7 +18,7 @@ from torch.utils.data import DataLoader, Dataset
 from .compact_product_model import prepare_compact_optical_unet
 from .compact_turbo import latent_gradient_loss
 from .electronic_turbo_infer import _load_adapter
-from .product_object_replace_data import TARGET_CATEGORIES, ProductObjectReplacementDataset
+from .product_object_replace_data import TARGET_CATALOGUE_SIZE, ProductObjectReplacementDataset
 from .product_repair_model import RepairModelConfig, architecture_report, expand_reference_conditioning, one_step_edit
 from .product_scene_training import SceneTrainingConfig, _masked_l1, _paired_noise, _seed_everything, load_scene_config
 
@@ -35,7 +35,7 @@ class ObjectLatentDataset(Dataset[dict[str, Any]]):
             key: self.payload[key][index].float()
             for key in ("reference", "target", "edit_mask", "preserve_mask", "qwen_text")
         }
-        for key in ("sample_ids", "prompts", "target_categories", "target_category_indices"):
+        for key in ("sample_ids", "prompts", "target_categories", "target_catalogue_indices"):
             result[key] = self.payload[key][index]
         return result
 
@@ -62,7 +62,7 @@ def cache_object_latents(
         loader = DataLoader(dataset, batch_size=batch_size, shuffle=False, num_workers=num_workers, pin_memory=device.type == "cuda")
         payload: dict[str, list[Any]] = {key: [] for key in (
             "reference", "target", "edit_mask", "preserve_mask", "qwen_text",
-            "sample_ids", "prompts", "target_categories", "target_category_indices",
+            "sample_ids", "prompts", "target_categories", "target_catalogue_indices",
         )}
         for batch in loader:
             reference = batch["reference"].to(device=device, dtype=dtype, non_blocking=True)
@@ -80,7 +80,7 @@ def cache_object_latents(
                 ("target_categories", "target_category"),
             ):
                 payload[destination].extend(batch[source])
-            payload["target_category_indices"].extend(batch["target_category_index"].tolist())
+            payload["target_catalogue_indices"].extend(batch["target_catalogue_index"].tolist())
         packed = {
             key: torch.cat(value) if key in {"reference", "target", "edit_mask", "preserve_mask", "qwen_text"} else value
             for key, value in payload.items()
@@ -96,7 +96,7 @@ def cache_object_latents(
 class TextObjectRouter(nn.Module):
     def __init__(self, text_dim: int = 2048) -> None:
         super().__init__()
-        self.net = nn.Sequential(nn.LayerNorm(text_dim), nn.Linear(text_dim, len(TARGET_CATEGORIES)))
+        self.net = nn.Sequential(nn.LayerNorm(text_dim), nn.Linear(text_dim, TARGET_CATALOGUE_SIZE))
 
     def forward(self, value: torch.Tensor) -> torch.Tensor:
         return self.net(value.float())
@@ -105,13 +105,13 @@ class TextObjectRouter(nn.Module):
 @torch.inference_mode()
 def evaluate_object_model(unet, adapter, router, loader, sigma, device, *, residual_scale: float, noise_scale: float) -> dict[str, float]:
     unet.eval(); adapter.eval(); router.eval()
-    totals = {"latent_mse": 0.0, "edit_l1": 0.0, "preserve_change_l1": 0.0, "reference_mse": 0.0, "category_accuracy": 0.0}
+    totals = {"latent_mse": 0.0, "edit_l1": 0.0, "preserve_change_l1": 0.0, "reference_mse": 0.0, "catalogue_accuracy": 0.0}
     samples = 0
     generator = torch.Generator(device=device).manual_seed(8721)
     for batch in loader:
         reference = batch["reference"].to(device); target = batch["target"].to(device)
         edit = batch["edit_mask"].to(device); preserve = batch["preserve_mask"].to(device)
-        text = batch["qwen_text"].to(device); labels = torch.as_tensor(batch["target_category_indices"], device=device)
+        text = batch["qwen_text"].to(device); labels = torch.as_tensor(batch["target_catalogue_indices"], device=device)
         condition = adapter.condition(text); noise = _paired_noise(reference, generator)
         with torch.autocast(device.type, dtype=torch.float16, enabled=device.type == "cuda"):
             output = one_step_edit(unet, noise, reference, condition, sigma, residual_scale=residual_scale, noise_scale=noise_scale).float()
@@ -120,7 +120,7 @@ def evaluate_object_model(unet, adapter, router, loader, sigma, device, *, resid
         totals["reference_mse"] += float(F.mse_loss(reference, target))*count
         totals["edit_l1"] += float(_masked_l1(output, target, edit))*count
         totals["preserve_change_l1"] += float(_masked_l1(output, reference, preserve))*count
-        totals["category_accuracy"] += float((router(text).argmax(-1)==labels).float().mean())*count
+        totals["catalogue_accuracy"] += float((router(text).argmax(-1)==labels).float().mean())*count
         samples += count
     result = {key:value/samples for key,value in totals.items()}
     result["mse_improvement_over_copy"] = 1-result["latent_mse"]/max(result["reference_mse"],1e-8)
@@ -193,7 +193,7 @@ def train_object_model(
         unet.train();adapter.train();router.train();optimizer.zero_grad(set_to_none=True);total=count=0
         for step,batch in enumerate(loaders["train"],1):
             reference=batch["reference"].to(device);target=batch["target"].to(device);edit=batch["edit_mask"].to(device);preserve=batch["preserve_mask"].to(device);text=batch["qwen_text"].to(device)
-            labels=torch.as_tensor(batch["target_category_indices"],device=device);condition=adapter.condition(text);noise=_paired_noise(reference)
+            labels=torch.as_tensor(batch["target_catalogue_indices"],device=device);condition=adapter.condition(text);noise=_paired_noise(reference)
             with torch.autocast(device.type,dtype=torch.float16,enabled=device.type=="cuda"):
                 output=one_step_edit(unet,noise,reference,condition,sigma,residual_scale=training_config.residual_scale,noise_scale=training_config.noise_scale).float()
                 loss=F.mse_loss(output,target)+training_config.background_weight*_masked_l1(output,target,edit)+training_config.foreground_preservation_weight*_masked_l1(output,reference,preserve)

@@ -28,6 +28,7 @@ CURATED_TARGET_IDS = {
     "chair": ("chair-B07GZY7JFV-15", "chair-B07D4FFWC8-25"),
     "table": ("table-B07GZY278M-19", "table-B07R8WD99Z-08"),
 }
+TARGET_CATALOGUE_SIZE = sum(len(values) for values in CURATED_TARGET_IDS.values())
 
 
 def _seed(*parts: str) -> int:
@@ -188,11 +189,13 @@ class ProductObjectReplacementDataset(Dataset[dict[str, Any]]):
             "sample_id": f"{source['sample_id']}:{target['sample_id']}",
             "source_id": source["sample_id"], "target_id": target["sample_id"],
             "target_category": category, "target_category_index": TARGET_CATEGORIES.index(category),
+            "target_catalogue_index": index % len(self.targets),
             "background_rgb": tensor(background),
         }
 
 
 __all__ = [
-    "TARGET_CATEGORIES", "CURATED_TARGET_IDS", "ProductObjectReplacementDataset",
+    "TARGET_CATEGORIES", "CURATED_TARGET_IDS", "TARGET_CATALOGUE_SIZE",
+    "ProductObjectReplacementDataset",
     "build_object_instruction_cache", "instruction_rows", "prompt_variants",
 ]
