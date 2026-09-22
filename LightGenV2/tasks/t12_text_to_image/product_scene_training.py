@@ -171,9 +171,6 @@ def cache_scene_latents(
             target_latent = vae.encode(target).latent_dist.mode() * scale
             latent_size = reference_latent.shape[-2:]
             foreground = F.interpolate(batch["foreground_mask"].float(), latent_size, mode="area")
-            foreground = (foreground > 0.32).float()
-            # A one-cell dilation protects the product edge from background residuals.
-            foreground = F.max_pool2d(foreground, kernel_size=3, stride=1, padding=1)
             background = 1.0 - foreground
             payload["reference"].append(reference_latent.half().cpu())
             payload["target"].append(target_latent.half().cpu())
@@ -256,7 +253,7 @@ def evaluate_scene_model(
         noise = _paired_noise(reference, generator)
         with torch.autocast(device.type, dtype=torch.float16, enabled=device.type == "cuda"):
             output = one_step_edit(
-                unet, noise, reference, condition, sigma, spatial_gate=background,
+                unet, noise, reference, condition, sigma,
                 residual_scale=residual_scale, noise_scale=noise_scale,
             ).float()
         count = len(reference)
@@ -285,7 +282,6 @@ def _sample_grid(
 ) -> None:
     chosen = list(range(len(SCENES)))
     reference = latent_dataset.payload["reference"][chosen].float().to(device)
-    background = latent_dataset.payload["background_mask"][chosen].float().to(device)
     text = latent_dataset.payload["qwen_text"][chosen].float().to(device)
     condition = adapter.condition(text)
     generator = torch.Generator(device=device).manual_seed(seed)
@@ -305,7 +301,14 @@ def _sample_grid(
     draw = ImageDraw.Draw(canvas)
     for row_index, index in enumerate(chosen):
         raw = raw_dataset[index]
-        for column, value in enumerate((raw["reference"], raw["target"], generated[row_index])):
+        # The source alpha is available by task definition.  Re-compositing the
+        # exact source object after generation avoids latent-grid halos and
+        # guarantees that the requested edit changes only the scene.
+        exact = (
+            generated[row_index] * raw["background_mask"]
+            + raw["reference"] * raw["foreground_mask"]
+        )
+        for column, value in enumerate((raw["reference"], raw["target"], exact)):
             array = value.add(1).mul(127.5).clamp(0, 255).byte().permute(1, 2, 0).numpy()
             canvas.paste(Image.fromarray(array), (label_width + column * cell, row_index * cell))
         draw.text((4, row_index * cell + 4), raw["scene_label"], fill="black")
@@ -422,7 +425,7 @@ def train_scene_model(
             noise = _paired_noise(reference)
             with torch.autocast(device.type, dtype=torch.float16, enabled=device.type == "cuda"):
                 output = one_step_edit(
-                    unet, noise, reference, condition, sigma, spatial_gate=background,
+                    unet, noise, reference, condition, sigma,
                     residual_scale=training_config.residual_scale,
                     noise_scale=training_config.noise_scale,
                 ).float()
@@ -525,6 +528,9 @@ def train_scene_model(
         sum(p.numel() for p in unet.parameters() if p.requires_grad)
         + sum(p.numel() for p in adapter.parameters())
         + sum(p.numel() for p in scene_router.parameters())
+    )
+    report_architecture["object_preservation"] = (
+        "exact source RGB is alpha-composited over the generated background after VAE decode"
     )
     report = {
         "schema_version": 1,
