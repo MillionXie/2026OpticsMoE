@@ -1,0 +1,1815 @@
+{
+  "protocol": "inference_only_source_optics_plus_pretrained_target_linear_head",
+  "optimization_steps": 0,
+  "electronic_readout": "single_linear_layer",
+  "task_order": [
+    "eurosat",
+    "clevr",
+    "speech",
+    "physical"
+  ],
+  "balanced_accuracy_matrix": [
+    [
+      0.8071756722184252,
+      0.5013555555555556,
+      0.3578224792029274,
+      0.2875222409749202
+    ],
+    [
+      0.19748825944565634,
+      0.7676000000000001,
+      0.2428189224570724,
+      0.10039630118890357
+    ],
+    [
+      0.4711377231631454,
+      0.4998222222222222,
+      0.7433348523449197,
+      0.2754118282649522
+    ],
+    [
+      0.276035572940526,
+      0.5010444444444444,
+      0.295811723620723,
+      0.7930060133536457
+    ]
+  ],
+  "details": {
+    "eurosat": {
+      "protocol": "inference_only_source_optics_plus_pretrained_target_linear_head",
+      "optimization_steps": 0,
+      "electronic_readout": "single_linear_layer",
+      "source": "eurosat",
+      "source_optical_checkpoint": "/DATA/DATA1/guest3/t12_gate_0e577a828/LightGenV2/tasks/t13_four_modal_lifelong/runs/hard_v2_eurosat_d2nn_s17/single_task_d2nn/eurosat/best_checkpoint.pt",
+      "target_head_checkpoints": {
+        "eurosat": "/DATA/DATA1/guest3/t12_gate_0e577a828/LightGenV2/tasks/t13_four_modal_lifelong/runs/hard_v2_eurosat_d2nn_s17/single_task_d2nn/eurosat/best_checkpoint.pt",
+        "clevr": "/DATA/DATA1/guest3/t12_gate_0e577a828/LightGenV2/tasks/t13_four_modal_lifelong/runs/hard_v3_clevr_full_d2nn_s17/single_task_d2nn/clevr/best_checkpoint.pt",
+        "speech": "/DATA/DATA1/guest3/t12_gate_0e577a828/LightGenV2/tasks/t13_four_modal_lifelong/runs/hard_v2_speech_d2nn_s17/single_task_d2nn/speech/best_checkpoint.pt",
+        "physical": "/DATA/DATA1/guest3/t12_gate_0e577a828/LightGenV2/tasks/t13_four_modal_lifelong/runs/hard_v3_physical10_d2nn_formal_s17/single_task_d2nn/physical/best_checkpoint.pt"
+      },
+      "score_row": {
+        "eurosat": 0.8071756722184252,
+        "clevr": 0.5013555555555556,
+        "speech": 0.3578224792029274,
+        "physical": 0.2875222409749202
+      },
+      "details": {
+        "eurosat": {
+          "accuracy": 0.8140541536194511,
+          "balanced_accuracy": 0.8071756722184252,
+          "macro_f1": 0.8074735340358649,
+          "nll": 0.5311819314956665,
+          "confusion_matrix": [
+            [
+              1109,
+              7,
+              70,
+              25,
+              0,
+              18,
+              52,
+              0,
+              30,
+              11
+            ],
+            [
+              1,
+              1000,
+              99,
+              7,
+              0,
+              28,
+              21,
+              0,
+              8,
+              28
+            ],
+            [
+              32,
+              12,
+              746,
+              87,
+              19,
+              58,
+              93,
+              40,
+              91,
+              16
+            ],
+            [
+              21,
+              5,
+              68,
+              656,
+              30,
+              48,
+              82,
+              37,
+              49,
+              0
+            ],
+            [
+              0,
+              0,
+              15,
+              24,
+              918,
+              0,
+              7,
+              24,
+              4,
+              0
+            ],
+            [
+              23,
+              3,
+              66,
+              45,
+              0,
+              498,
+              70,
+              1,
+              30,
+              4
+            ],
+            [
+              30,
+              16,
+              121,
+              23,
+              0,
+              39,
+              786,
+              2,
+              23,
+              0
+            ],
+            [
+              0,
+              0,
+              9,
+              19,
+              25,
+              1,
+              3,
+              1128,
+              1,
+              0
+            ],
+            [
+              7,
+              5,
+              37,
+              97,
+              2,
+              5,
+              13,
+              0,
+              822,
+              10
+            ],
+            [
+              5,
+              1,
+              9,
+              0,
+              0,
+              1,
+              0,
+              0,
+              6,
+              1176
+            ]
+          ],
+          "support": [
+            1322,
+            1192,
+            1194,
+            996,
+            992,
+            740,
+            1040,
+            1186,
+            998,
+            1198
+          ],
+          "detector_accuracy": 0.03794437281267268,
+          "detector_balanced_accuracy": 0.042127484480574705,
+          "detector_nll": 2.480602741241455,
+          "zero_readout_fraction": 0.0,
+          "route_mean": null,
+          "route_top_frequency": null
+        },
+        "clevr": {
+          "accuracy": 0.5013555555555556,
+          "balanced_accuracy": 0.5013555555555556,
+          "macro_f1": 0.49013028171469997,
+          "nll": 1.2695575952529907,
+          "confusion_matrix": [
+            [
+              7942,
+              14558
+            ],
+            [
+              7881,
+              14619
+            ]
+          ],
+          "support": [
+            22500,
+            22500
+          ],
+          "detector_accuracy": 0.5021333333333333,
+          "detector_balanced_accuracy": 0.5021333333333333,
+          "detector_nll": 0.7678737640380859,
+          "zero_readout_fraction": 0.0,
+          "route_mean": null,
+          "route_top_frequency": null
+        },
+        "speech": {
+          "accuracy": 0.35986159169550175,
+          "balanced_accuracy": 0.3578224792029274,
+          "macro_f1": 0.33396412584354773,
+          "nll": 2.876208782196045,
+          "confusion_matrix": [
+            [
+              19,
+              4,
+              32,
+              1,
+              15,
+              1,
+              37,
+              0
+            ],
+            [
+              6,
+              24,
+              16,
+              2,
+              19,
+              2,
+              49,
+              2
+            ],
+            [
+              2,
+              5,
+              55,
+              1,
+              29,
+              3,
+              24,
+              4
+            ],
+            [
+              5,
+              17,
+              17,
+              1,
+              17,
+              1,
+              41,
+              1
+            ],
+            [
+              0,
+              2,
+              12,
+              0,
+              67,
+              0,
+              17,
+              3
+            ],
+            [
+              2,
+              8,
+              18,
+              0,
+              9,
+              33,
+              31,
+              1
+            ],
+            [
+              3,
+              2,
+              10,
+              0,
+              20,
+              2,
+              76,
+              1
+            ],
+            [
+              0,
+              1,
+              18,
+              0,
+              19,
+              9,
+              14,
+              37
+            ]
+          ],
+          "support": [
+            109,
+            120,
+            123,
+            100,
+            101,
+            102,
+            114,
+            98
+          ],
+          "detector_accuracy": 0.1580161476355248,
+          "detector_balanced_accuracy": 0.14742175400032467,
+          "detector_nll": 3.1478781700134277,
+          "zero_readout_fraction": 0.0,
+          "route_mean": null,
+          "route_top_frequency": null
+        },
+        "physical": {
+          "accuracy": 0.28525555258228524,
+          "balanced_accuracy": 0.2875222409749202,
+          "macro_f1": 0.1974744803517532,
+          "nll": 6.656276226043701,
+          "confusion_matrix": [
+            [
+              0,
+              453,
+              0,
+              1061,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0
+            ],
+            [
+              0,
+              429,
+              0,
+              1085,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0
+            ],
+            [
+              0,
+              17,
+              31,
+              1409,
+              0,
+              0,
+              0,
+              1,
+              0,
+              0
+            ],
+            [
+              0,
+              5,
+              0,
+              1436,
+              0,
+              0,
+              0,
+              17,
+              0,
+              0
+            ],
+            [
+              0,
+              209,
+              0,
+              609,
+              401,
+              5,
+              0,
+              232,
+              0,
+              0
+            ],
+            [
+              0,
+              210,
+              0,
+              614,
+              396,
+              7,
+              0,
+              229,
+              0,
+              0
+            ],
+            [
+              0,
+              15,
+              0,
+              17,
+              0,
+              0,
+              0,
+              1448,
+              0,
+              0
+            ],
+            [
+              0,
+              15,
+              0,
+              13,
+              0,
+              0,
+              0,
+              1452,
+              0,
+              0
+            ],
+            [
+              0,
+              0,
+              0,
+              985,
+              69,
+              4,
+              0,
+              0,
+              508,
+              0
+            ],
+            [
+              0,
+              0,
+              0,
+              992,
+              68,
+              4,
+              0,
+              0,
+              502,
+              0
+            ]
+          ],
+          "support": [
+            1514,
+            1514,
+            1458,
+            1458,
+            1456,
+            1456,
+            1480,
+            1480,
+            1566,
+            1566
+          ],
+          "detector_accuracy": 0.04281509232004282,
+          "detector_balanced_accuracy": 0.0438957475994513,
+          "detector_nll": 4.642263889312744,
+          "zero_readout_fraction": 0.0,
+          "route_mean": null,
+          "route_top_frequency": null
+        }
+      },
+      "source_optical_state_preserved": true
+    },
+    "clevr": {
+      "protocol": "inference_only_source_optics_plus_pretrained_target_linear_head",
+      "optimization_steps": 0,
+      "electronic_readout": "single_linear_layer",
+      "source": "clevr",
+      "source_optical_checkpoint": "/DATA/DATA1/guest3/t12_gate_0e577a828/LightGenV2/tasks/t13_four_modal_lifelong/runs/hard_v3_clevr_full_d2nn_s17/single_task_d2nn/clevr/best_checkpoint.pt",
+      "target_head_checkpoints": {
+        "eurosat": "/DATA/DATA1/guest3/t12_gate_0e577a828/LightGenV2/tasks/t13_four_modal_lifelong/runs/hard_v2_eurosat_d2nn_s17/single_task_d2nn/eurosat/best_checkpoint.pt",
+        "clevr": "/DATA/DATA1/guest3/t12_gate_0e577a828/LightGenV2/tasks/t13_four_modal_lifelong/runs/hard_v3_clevr_full_d2nn_s17/single_task_d2nn/clevr/best_checkpoint.pt",
+        "speech": "/DATA/DATA1/guest3/t12_gate_0e577a828/LightGenV2/tasks/t13_four_modal_lifelong/runs/hard_v2_speech_d2nn_s17/single_task_d2nn/speech/best_checkpoint.pt",
+        "physical": "/DATA/DATA1/guest3/t12_gate_0e577a828/LightGenV2/tasks/t13_four_modal_lifelong/runs/hard_v3_physical10_d2nn_formal_s17/single_task_d2nn/physical/best_checkpoint.pt"
+      },
+      "score_row": {
+        "eurosat": 0.19748825944565634,
+        "clevr": 0.7676000000000001,
+        "speech": 0.2428189224570724,
+        "physical": 0.10039630118890357
+      },
+      "details": {
+        "eurosat": {
+          "accuracy": 0.1997605452201142,
+          "balanced_accuracy": 0.19748825944565634,
+          "macro_f1": 0.15384545710475492,
+          "nll": 3.5517170429229736,
+          "confusion_matrix": [
+            [
+              0,
+              1,
+              1039,
+              0,
+              0,
+              7,
+              273,
+              0,
+              0,
+              2
+            ],
+            [
+              0,
+              198,
+              980,
+              4,
+              0,
+              0,
+              10,
+              0,
+              0,
+              0
+            ],
+            [
+              0,
+              8,
+              1118,
+              0,
+              0,
+              19,
+              48,
+              0,
+              1,
+              0
+            ],
+            [
+              0,
+              2,
+              794,
+              0,
+              0,
+              111,
+              87,
+              0,
+              2,
+              0
+            ],
+            [
+              0,
+              0,
+              986,
+              0,
+              0,
+              3,
+              3,
+              0,
+              0,
+              0
+            ],
+            [
+              0,
+              49,
+              373,
+              0,
+              0,
+              164,
+              149,
+              0,
+              5,
+              0
+            ],
+            [
+              0,
+              14,
+              492,
+              0,
+              0,
+              4,
+              530,
+              0,
+              0,
+              0
+            ],
+            [
+              0,
+              0,
+              1119,
+              0,
+              0,
+              13,
+              2,
+              52,
+              0,
+              0
+            ],
+            [
+              0,
+              0,
+              863,
+              0,
+              0,
+              17,
+              69,
+              1,
+              48,
+              0
+            ],
+            [
+              0,
+              0,
+              1091,
+              1,
+              0,
+              7,
+              13,
+              4,
+              23,
+              59
+            ]
+          ],
+          "support": [
+            1322,
+            1192,
+            1194,
+            996,
+            992,
+            740,
+            1040,
+            1186,
+            998,
+            1198
+          ],
+          "detector_accuracy": 0.01565665868484067,
+          "detector_balanced_accuracy": 0.015399599717803877,
+          "detector_nll": 2.4563567638397217,
+          "zero_readout_fraction": 0.0,
+          "route_mean": null,
+          "route_top_frequency": null
+        },
+        "clevr": {
+          "accuracy": 0.7676,
+          "balanced_accuracy": 0.7676000000000001,
+          "macro_f1": 0.7640417879150733,
+          "nll": 0.4764707088470459,
+          "confusion_matrix": [
+            [
+              14508,
+              7992
+            ],
+            [
+              2466,
+              20034
+            ]
+          ],
+          "support": [
+            22500,
+            22500
+          ],
+          "detector_accuracy": 0.5,
+          "detector_balanced_accuracy": 0.5,
+          "detector_nll": 0.7904017567634583,
+          "zero_readout_fraction": 0.0,
+          "route_mean": null,
+          "route_top_frequency": null
+        },
+        "speech": {
+          "accuracy": 0.24106113033448673,
+          "balanced_accuracy": 0.2428189224570724,
+          "macro_f1": 0.15126939389401073,
+          "nll": 5.444156646728516,
+          "confusion_matrix": [
+            [
+              0,
+              0,
+              0,
+              0,
+              0,
+              60,
+              49,
+              0
+            ],
+            [
+              0,
+              0,
+              0,
+              0,
+              0,
+              69,
+              51,
+              0
+            ],
+            [
+              0,
+              0,
+              14,
+              0,
+              11,
+              29,
+              69,
+              0
+            ],
+            [
+              0,
+              0,
+              0,
+              0,
+              1,
+              48,
+              51,
+              0
+            ],
+            [
+              0,
+              0,
+              7,
+              0,
+              27,
+              13,
+              54,
+              0
+            ],
+            [
+              0,
+              0,
+              0,
+              0,
+              0,
+              85,
+              17,
+              0
+            ],
+            [
+              0,
+              0,
+              1,
+              0,
+              0,
+              30,
+              83,
+              0
+            ],
+            [
+              0,
+              0,
+              27,
+              0,
+              8,
+              36,
+              27,
+              0
+            ]
+          ],
+          "support": [
+            109,
+            120,
+            123,
+            100,
+            101,
+            102,
+            114,
+            98
+          ],
+          "detector_accuracy": 0.11880046136101499,
+          "detector_balanced_accuracy": 0.124637049941928,
+          "detector_nll": 2.446870803833008,
+          "zero_readout_fraction": 0.0,
+          "route_mean": null,
+          "route_top_frequency": null
+        },
+        "physical": {
+          "accuracy": 0.09793952368209793,
+          "balanced_accuracy": 0.10039630118890357,
+          "macro_f1": 0.018569961489088575,
+          "nll": 19.193340301513672,
+          "confusion_matrix": [
+            [
+              0,
+              0,
+              0,
+              1514,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0
+            ],
+            [
+              0,
+              6,
+              0,
+              1508,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0
+            ],
+            [
+              0,
+              0,
+              0,
+              1458,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0
+            ],
+            [
+              0,
+              0,
+              0,
+              1458,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0
+            ],
+            [
+              0,
+              0,
+              0,
+              1456,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0
+            ],
+            [
+              0,
+              0,
+              0,
+              1456,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0
+            ],
+            [
+              0,
+              0,
+              0,
+              1480,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0
+            ],
+            [
+              0,
+              0,
+              0,
+              1480,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0
+            ],
+            [
+              0,
+              0,
+              0,
+              1566,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0
+            ],
+            [
+              0,
+              0,
+              0,
+              1566,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0
+            ]
+          ],
+          "support": [
+            1514,
+            1514,
+            1458,
+            1458,
+            1456,
+            1456,
+            1480,
+            1480,
+            1566,
+            1566
+          ],
+          "detector_accuracy": 0.018263312817768263,
+          "detector_balanced_accuracy": 0.018724279835390947,
+          "detector_nll": 3.5317227840423584,
+          "zero_readout_fraction": 0.0,
+          "route_mean": null,
+          "route_top_frequency": null
+        }
+      },
+      "source_optical_state_preserved": true
+    },
+    "speech": {
+      "protocol": "inference_only_source_optics_plus_pretrained_target_linear_head",
+      "optimization_steps": 0,
+      "electronic_readout": "single_linear_layer",
+      "source": "speech",
+      "source_optical_checkpoint": "/DATA/DATA1/guest3/t12_gate_0e577a828/LightGenV2/tasks/t13_four_modal_lifelong/runs/hard_v2_speech_d2nn_s17/single_task_d2nn/speech/best_checkpoint.pt",
+      "target_head_checkpoints": {
+        "eurosat": "/DATA/DATA1/guest3/t12_gate_0e577a828/LightGenV2/tasks/t13_four_modal_lifelong/runs/hard_v2_eurosat_d2nn_s17/single_task_d2nn/eurosat/best_checkpoint.pt",
+        "clevr": "/DATA/DATA1/guest3/t12_gate_0e577a828/LightGenV2/tasks/t13_four_modal_lifelong/runs/hard_v3_clevr_full_d2nn_s17/single_task_d2nn/clevr/best_checkpoint.pt",
+        "speech": "/DATA/DATA1/guest3/t12_gate_0e577a828/LightGenV2/tasks/t13_four_modal_lifelong/runs/hard_v2_speech_d2nn_s17/single_task_d2nn/speech/best_checkpoint.pt",
+        "physical": "/DATA/DATA1/guest3/t12_gate_0e577a828/LightGenV2/tasks/t13_four_modal_lifelong/runs/hard_v3_physical10_d2nn_formal_s17/single_task_d2nn/physical/best_checkpoint.pt"
+      },
+      "score_row": {
+        "eurosat": 0.4711377231631454,
+        "clevr": 0.4998222222222222,
+        "speech": 0.7433348523449197,
+        "physical": 0.2754118282649522
+      },
+      "details": {
+        "eurosat": {
+          "accuracy": 0.5167618345920059,
+          "balanced_accuracy": 0.4711377231631454,
+          "macro_f1": 0.4318030898293956,
+          "nll": 2.139604330062866,
+          "confusion_matrix": [
+            [
+              960,
+              30,
+              277,
+              0,
+              0,
+              0,
+              14,
+              0,
+              0,
+              41
+            ],
+            [
+              0,
+              1058,
+              95,
+              0,
+              0,
+              0,
+              2,
+              0,
+              0,
+              37
+            ],
+            [
+              39,
+              40,
+              1078,
+              0,
+              0,
+              0,
+              27,
+              7,
+              0,
+              3
+            ],
+            [
+              91,
+              89,
+              757,
+              2,
+              5,
+              4,
+              8,
+              38,
+              1,
+              1
+            ],
+            [
+              0,
+              1,
+              420,
+              0,
+              321,
+              0,
+              88,
+              162,
+              0,
+              0
+            ],
+            [
+              43,
+              122,
+              517,
+              0,
+              0,
+              29,
+              8,
+              0,
+              5,
+              16
+            ],
+            [
+              80,
+              44,
+              814,
+              0,
+              0,
+              0,
+              102,
+              0,
+              0,
+              0
+            ],
+            [
+              0,
+              6,
+              249,
+              0,
+              0,
+              0,
+              0,
+              931,
+              0,
+              0
+            ],
+            [
+              29,
+              137,
+              712,
+              1,
+              2,
+              5,
+              18,
+              36,
+              22,
+              36
+            ],
+            [
+              3,
+              1,
+              14,
+              0,
+              0,
+              9,
+              0,
+              61,
+              2,
+              1108
+            ]
+          ],
+          "support": [
+            1322,
+            1192,
+            1194,
+            996,
+            992,
+            740,
+            1040,
+            1186,
+            998,
+            1198
+          ],
+          "detector_accuracy": 0.035273531037023395,
+          "detector_balanced_accuracy": 0.03493026938621167,
+          "detector_nll": 2.4957315921783447,
+          "zero_readout_fraction": 0.0,
+          "route_mean": null,
+          "route_top_frequency": null
+        },
+        "clevr": {
+          "accuracy": 0.4998222222222222,
+          "balanced_accuracy": 0.4998222222222222,
+          "macro_f1": 0.33404242567525283,
+          "nll": 1.3086278438568115,
+          "confusion_matrix": [
+            [
+              22472,
+              28
+            ],
+            [
+              22480,
+              20
+            ]
+          ],
+          "support": [
+            22500,
+            22500
+          ],
+          "detector_accuracy": 0.5011333333333333,
+          "detector_balanced_accuracy": 0.5011333333333333,
+          "detector_nll": 0.767576277256012,
+          "zero_readout_fraction": 0.0,
+          "route_mean": null,
+          "route_top_frequency": null
+        },
+        "speech": {
+          "accuracy": 0.7427912341407151,
+          "balanced_accuracy": 0.7433348523449197,
+          "macro_f1": 0.7468225206057651,
+          "nll": 0.8203968405723572,
+          "confusion_matrix": [
+            [
+              79,
+              7,
+              2,
+              8,
+              5,
+              0,
+              7,
+              1
+            ],
+            [
+              6,
+              89,
+              5,
+              13,
+              3,
+              1,
+              2,
+              1
+            ],
+            [
+              2,
+              3,
+              85,
+              5,
+              11,
+              1,
+              9,
+              7
+            ],
+            [
+              3,
+              30,
+              5,
+              57,
+              1,
+              0,
+              4,
+              0
+            ],
+            [
+              0,
+              2,
+              13,
+              0,
+              79,
+              0,
+              5,
+              2
+            ],
+            [
+              3,
+              7,
+              0,
+              0,
+              1,
+              76,
+              14,
+              1
+            ],
+            [
+              2,
+              3,
+              7,
+              3,
+              4,
+              1,
+              94,
+              0
+            ],
+            [
+              0,
+              0,
+              7,
+              1,
+              3,
+              0,
+              2,
+              85
+            ]
+          ],
+          "support": [
+            109,
+            120,
+            123,
+            100,
+            101,
+            102,
+            114,
+            98
+          ],
+          "detector_accuracy": 0.14763552479815456,
+          "detector_balanced_accuracy": 0.13731853115638265,
+          "detector_nll": 2.9798502922058105,
+          "zero_readout_fraction": 0.0,
+          "route_mean": null,
+          "route_top_frequency": null
+        },
+        "physical": {
+          "accuracy": 0.27180893765052183,
+          "balanced_accuracy": 0.2754118282649522,
+          "macro_f1": 0.19184376581267376,
+          "nll": 9.55601978302002,
+          "confusion_matrix": [
+            [
+              0,
+              87,
+              106,
+              1319,
+              0,
+              0,
+              0,
+              2,
+              0,
+              0
+            ],
+            [
+              0,
+              780,
+              0,
+              734,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0
+            ],
+            [
+              0,
+              2,
+              228,
+              1228,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0
+            ],
+            [
+              0,
+              3,
+              41,
+              1414,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0
+            ],
+            [
+              0,
+              365,
+              0,
+              638,
+              298,
+              53,
+              0,
+              102,
+              0,
+              0
+            ],
+            [
+              0,
+              365,
+              0,
+              636,
+              295,
+              56,
+              0,
+              104,
+              0,
+              0
+            ],
+            [
+              0,
+              185,
+              0,
+              19,
+              0,
+              0,
+              0,
+              1276,
+              0,
+              0
+            ],
+            [
+              0,
+              173,
+              0,
+              20,
+              0,
+              0,
+              0,
+              1287,
+              0,
+              0
+            ],
+            [
+              0,
+              0,
+              70,
+              1496,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0
+            ],
+            [
+              0,
+              0,
+              71,
+              1495,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0
+            ]
+          ],
+          "support": [
+            1514,
+            1514,
+            1458,
+            1458,
+            1456,
+            1456,
+            1480,
+            1480,
+            1566,
+            1566
+          ],
+          "detector_accuracy": 0.033783783783783786,
+          "detector_balanced_accuracy": 0.03463648834019205,
+          "detector_nll": 4.136608600616455,
+          "zero_readout_fraction": 0.0,
+          "route_mean": null,
+          "route_top_frequency": null
+        }
+      },
+      "source_optical_state_preserved": true
+    },
+    "physical": {
+      "protocol": "inference_only_source_optics_plus_pretrained_target_linear_head",
+      "optimization_steps": 0,
+      "electronic_readout": "single_linear_layer",
+      "source": "physical",
+      "source_optical_checkpoint": "/DATA/DATA1/guest3/t12_gate_0e577a828/LightGenV2/tasks/t13_four_modal_lifelong/runs/hard_v3_physical10_d2nn_formal_s17/single_task_d2nn/physical/best_checkpoint.pt",
+      "target_head_checkpoints": {
+        "eurosat": "/DATA/DATA1/guest3/t12_gate_0e577a828/LightGenV2/tasks/t13_four_modal_lifelong/runs/hard_v2_eurosat_d2nn_s17/single_task_d2nn/eurosat/best_checkpoint.pt",
+        "clevr": "/DATA/DATA1/guest3/t12_gate_0e577a828/LightGenV2/tasks/t13_four_modal_lifelong/runs/hard_v3_clevr_full_d2nn_s17/single_task_d2nn/clevr/best_checkpoint.pt",
+        "speech": "/DATA/DATA1/guest3/t12_gate_0e577a828/LightGenV2/tasks/t13_four_modal_lifelong/runs/hard_v2_speech_d2nn_s17/single_task_d2nn/speech/best_checkpoint.pt",
+        "physical": "/DATA/DATA1/guest3/t12_gate_0e577a828/LightGenV2/tasks/t13_four_modal_lifelong/runs/hard_v3_physical10_d2nn_formal_s17/single_task_d2nn/physical/best_checkpoint.pt"
+      },
+      "score_row": {
+        "eurosat": 0.276035572940526,
+        "clevr": 0.5010444444444444,
+        "speech": 0.295811723620723,
+        "physical": 0.7930060133536457
+      },
+      "details": {
+        "eurosat": {
+          "accuracy": 0.3057653343157119,
+          "balanced_accuracy": 0.276035572940526,
+          "macro_f1": 0.25744593808024047,
+          "nll": 4.070938587188721,
+          "confusion_matrix": [
+            [
+              335,
+              0,
+              976,
+              0,
+              0,
+              0,
+              3,
+              2,
+              0,
+              6
+            ],
+            [
+              0,
+              332,
+              797,
+              0,
+              0,
+              0,
+              2,
+              27,
+              0,
+              34
+            ],
+            [
+              1,
+              0,
+              1189,
+              0,
+              0,
+              0,
+              0,
+              3,
+              0,
+              1
+            ],
+            [
+              2,
+              0,
+              984,
+              1,
+              0,
+              0,
+              0,
+              9,
+              0,
+              0
+            ],
+            [
+              0,
+              0,
+              978,
+              0,
+              0,
+              0,
+              0,
+              14,
+              0,
+              0
+            ],
+            [
+              7,
+              0,
+              715,
+              0,
+              0,
+              5,
+              4,
+              4,
+              4,
+              1
+            ],
+            [
+              1,
+              0,
+              1021,
+              0,
+              0,
+              0,
+              17,
+              1,
+              0,
+              0
+            ],
+            [
+              0,
+              0,
+              673,
+              0,
+              0,
+              0,
+              0,
+              513,
+              0,
+              0
+            ],
+            [
+              1,
+              3,
+              979,
+              0,
+              0,
+              0,
+              0,
+              6,
+              8,
+              1
+            ],
+            [
+              3,
+              0,
+              195,
+              0,
+              0,
+              11,
+              0,
+              3,
+              66,
+              920
+            ]
+          ],
+          "support": [
+            1322,
+            1192,
+            1194,
+            996,
+            992,
+            740,
+            1040,
+            1186,
+            998,
+            1198
+          ],
+          "detector_accuracy": 0.05654816724995395,
+          "detector_balanced_accuracy": 0.05140604128895569,
+          "detector_nll": 2.494239568710327,
+          "zero_readout_fraction": 0.0,
+          "route_mean": null,
+          "route_top_frequency": null
+        },
+        "clevr": {
+          "accuracy": 0.5010444444444444,
+          "balanced_accuracy": 0.5010444444444444,
+          "macro_f1": 0.4957593930638792,
+          "nll": 0.8856961131095886,
+          "confusion_matrix": [
+            [
+              13577,
+              8923
+            ],
+            [
+              13530,
+              8970
+            ]
+          ],
+          "support": [
+            22500,
+            22500
+          ],
+          "detector_accuracy": 0.49864444444444445,
+          "detector_balanced_accuracy": 0.49864444444444445,
+          "detector_nll": 0.7043040990829468,
+          "zero_readout_fraction": 0.0,
+          "route_mean": null,
+          "route_top_frequency": null
+        },
+        "speech": {
+          "accuracy": 0.30103806228373703,
+          "balanced_accuracy": 0.295811723620723,
+          "macro_f1": 0.27808275934533067,
+          "nll": 2.8923044204711914,
+          "confusion_matrix": [
+            [
+              49,
+              3,
+              29,
+              2,
+              16,
+              0,
+              10,
+              0
+            ],
+            [
+              31,
+              18,
+              31,
+              4,
+              24,
+              0,
+              11,
+              1
+            ],
+            [
+              13,
+              6,
+              67,
+              2,
+              28,
+              2,
+              5,
+              0
+            ],
+            [
+              30,
+              5,
+              24,
+              1,
+              24,
+              1,
+              15,
+              0
+            ],
+            [
+              10,
+              4,
+              27,
+              0,
+              48,
+              0,
+              10,
+              2
+            ],
+            [
+              17,
+              6,
+              36,
+              0,
+              8,
+              22,
+              13,
+              0
+            ],
+            [
+              19,
+              4,
+              23,
+              2,
+              30,
+              1,
+              35,
+              0
+            ],
+            [
+              4,
+              5,
+              38,
+              0,
+              18,
+              10,
+              2,
+              21
+            ]
+          ],
+          "support": [
+            109,
+            120,
+            123,
+            100,
+            101,
+            102,
+            114,
+            98
+          ],
+          "detector_accuracy": 0.14994232987312572,
+          "detector_balanced_accuracy": 0.13899384211057436,
+          "detector_nll": 3.059483766555786,
+          "zero_readout_fraction": 0.0,
+          "route_mean": null,
+          "route_top_frequency": null
+        },
+        "physical": {
+          "accuracy": 0.7912764249397912,
+          "balanced_accuracy": 0.7930060133536457,
+          "macro_f1": 0.766139819449126,
+          "nll": 0.33288657665252686,
+          "confusion_matrix": [
+            [
+              1512,
+              0,
+              1,
+              0,
+              1,
+              0,
+              0,
+              0,
+              0,
+              0
+            ],
+            [
+              0,
+              1513,
+              0,
+              1,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0
+            ],
+            [
+              5,
+              3,
+              1433,
+              17,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0
+            ],
+            [
+              2,
+              2,
+              46,
+              1403,
+              3,
+              0,
+              0,
+              2,
+              0,
+              0
+            ],
+            [
+              0,
+              0,
+              0,
+              0,
+              1284,
+              172,
+              0,
+              0,
+              0,
+              0
+            ],
+            [
+              0,
+              0,
+              0,
+              0,
+              1266,
+              190,
+              0,
+              0,
+              0,
+              0
+            ],
+            [
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              1414,
+              66,
+              0,
+              0
+            ],
+            [
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              52,
+              1428,
+              0,
+              0
+            ],
+            [
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              326,
+              1240
+            ],
+            [
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              241,
+              1325
+            ]
+          ],
+          "support": [
+            1514,
+            1514,
+            1458,
+            1458,
+            1456,
+            1456,
+            1480,
+            1480,
+            1566,
+            1566
+          ],
+          "detector_accuracy": 0.024351083757024352,
+          "detector_balanced_accuracy": 0.02496570644718793,
+          "detector_nll": 5.504007816314697,
+          "zero_readout_fraction": 0.0,
+          "route_mean": null,
+          "route_top_frequency": null
+        }
+      },
+      "source_optical_state_preserved": true
+    }
+  }
+}

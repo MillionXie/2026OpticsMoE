@@ -1,0 +1,444 @@
+{
+  "protocol": "inference_only_source_optics_plus_pretrained_target_linear_head",
+  "optimization_steps": 0,
+  "electronic_readout": "single_linear_layer",
+  "source": "speech",
+  "source_optical_checkpoint": "/DATA/DATA1/guest3/t12_gate_0e577a828/LightGenV2/tasks/t13_four_modal_lifelong/runs/hard_v2_speech_d2nn_s17/single_task_d2nn/speech/best_checkpoint.pt",
+  "target_head_checkpoints": {
+    "eurosat": "/DATA/DATA1/guest3/t12_gate_0e577a828/LightGenV2/tasks/t13_four_modal_lifelong/runs/hard_v2_eurosat_d2nn_s17/single_task_d2nn/eurosat/best_checkpoint.pt",
+    "clevr": "/DATA/DATA1/guest3/t12_gate_0e577a828/LightGenV2/tasks/t13_four_modal_lifelong/runs/hard_v3_clevr_full_d2nn_s17/single_task_d2nn/clevr/best_checkpoint.pt",
+    "speech": "/DATA/DATA1/guest3/t12_gate_0e577a828/LightGenV2/tasks/t13_four_modal_lifelong/runs/hard_v2_speech_d2nn_s17/single_task_d2nn/speech/best_checkpoint.pt",
+    "physical": "/DATA/DATA1/guest3/t12_gate_0e577a828/LightGenV2/tasks/t13_four_modal_lifelong/runs/hard_v3_physical10_d2nn_formal_s17/single_task_d2nn/physical/best_checkpoint.pt"
+  },
+  "score_row": {
+    "eurosat": 0.4711377231631454,
+    "clevr": 0.4998222222222222,
+    "speech": 0.7433348523449197,
+    "physical": 0.2754118282649522
+  },
+  "details": {
+    "eurosat": {
+      "accuracy": 0.5167618345920059,
+      "balanced_accuracy": 0.4711377231631454,
+      "macro_f1": 0.4318030898293956,
+      "nll": 2.139604330062866,
+      "confusion_matrix": [
+        [
+          960,
+          30,
+          277,
+          0,
+          0,
+          0,
+          14,
+          0,
+          0,
+          41
+        ],
+        [
+          0,
+          1058,
+          95,
+          0,
+          0,
+          0,
+          2,
+          0,
+          0,
+          37
+        ],
+        [
+          39,
+          40,
+          1078,
+          0,
+          0,
+          0,
+          27,
+          7,
+          0,
+          3
+        ],
+        [
+          91,
+          89,
+          757,
+          2,
+          5,
+          4,
+          8,
+          38,
+          1,
+          1
+        ],
+        [
+          0,
+          1,
+          420,
+          0,
+          321,
+          0,
+          88,
+          162,
+          0,
+          0
+        ],
+        [
+          43,
+          122,
+          517,
+          0,
+          0,
+          29,
+          8,
+          0,
+          5,
+          16
+        ],
+        [
+          80,
+          44,
+          814,
+          0,
+          0,
+          0,
+          102,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          6,
+          249,
+          0,
+          0,
+          0,
+          0,
+          931,
+          0,
+          0
+        ],
+        [
+          29,
+          137,
+          712,
+          1,
+          2,
+          5,
+          18,
+          36,
+          22,
+          36
+        ],
+        [
+          3,
+          1,
+          14,
+          0,
+          0,
+          9,
+          0,
+          61,
+          2,
+          1108
+        ]
+      ],
+      "support": [
+        1322,
+        1192,
+        1194,
+        996,
+        992,
+        740,
+        1040,
+        1186,
+        998,
+        1198
+      ],
+      "detector_accuracy": 0.035273531037023395,
+      "detector_balanced_accuracy": 0.03493026938621167,
+      "detector_nll": 2.4957315921783447,
+      "zero_readout_fraction": 0.0,
+      "route_mean": null,
+      "route_top_frequency": null
+    },
+    "clevr": {
+      "accuracy": 0.4998222222222222,
+      "balanced_accuracy": 0.4998222222222222,
+      "macro_f1": 0.33404242567525283,
+      "nll": 1.3086278438568115,
+      "confusion_matrix": [
+        [
+          22472,
+          28
+        ],
+        [
+          22480,
+          20
+        ]
+      ],
+      "support": [
+        22500,
+        22500
+      ],
+      "detector_accuracy": 0.5011333333333333,
+      "detector_balanced_accuracy": 0.5011333333333333,
+      "detector_nll": 0.767576277256012,
+      "zero_readout_fraction": 0.0,
+      "route_mean": null,
+      "route_top_frequency": null
+    },
+    "speech": {
+      "accuracy": 0.7427912341407151,
+      "balanced_accuracy": 0.7433348523449197,
+      "macro_f1": 0.7468225206057651,
+      "nll": 0.8203968405723572,
+      "confusion_matrix": [
+        [
+          79,
+          7,
+          2,
+          8,
+          5,
+          0,
+          7,
+          1
+        ],
+        [
+          6,
+          89,
+          5,
+          13,
+          3,
+          1,
+          2,
+          1
+        ],
+        [
+          2,
+          3,
+          85,
+          5,
+          11,
+          1,
+          9,
+          7
+        ],
+        [
+          3,
+          30,
+          5,
+          57,
+          1,
+          0,
+          4,
+          0
+        ],
+        [
+          0,
+          2,
+          13,
+          0,
+          79,
+          0,
+          5,
+          2
+        ],
+        [
+          3,
+          7,
+          0,
+          0,
+          1,
+          76,
+          14,
+          1
+        ],
+        [
+          2,
+          3,
+          7,
+          3,
+          4,
+          1,
+          94,
+          0
+        ],
+        [
+          0,
+          0,
+          7,
+          1,
+          3,
+          0,
+          2,
+          85
+        ]
+      ],
+      "support": [
+        109,
+        120,
+        123,
+        100,
+        101,
+        102,
+        114,
+        98
+      ],
+      "detector_accuracy": 0.14763552479815456,
+      "detector_balanced_accuracy": 0.13731853115638265,
+      "detector_nll": 2.9798502922058105,
+      "zero_readout_fraction": 0.0,
+      "route_mean": null,
+      "route_top_frequency": null
+    },
+    "physical": {
+      "accuracy": 0.27180893765052183,
+      "balanced_accuracy": 0.2754118282649522,
+      "macro_f1": 0.19184376581267376,
+      "nll": 9.55601978302002,
+      "confusion_matrix": [
+        [
+          0,
+          87,
+          106,
+          1319,
+          0,
+          0,
+          0,
+          2,
+          0,
+          0
+        ],
+        [
+          0,
+          780,
+          0,
+          734,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          2,
+          228,
+          1228,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          3,
+          41,
+          1414,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          365,
+          0,
+          638,
+          298,
+          53,
+          0,
+          102,
+          0,
+          0
+        ],
+        [
+          0,
+          365,
+          0,
+          636,
+          295,
+          56,
+          0,
+          104,
+          0,
+          0
+        ],
+        [
+          0,
+          185,
+          0,
+          19,
+          0,
+          0,
+          0,
+          1276,
+          0,
+          0
+        ],
+        [
+          0,
+          173,
+          0,
+          20,
+          0,
+          0,
+          0,
+          1287,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          70,
+          1496,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          71,
+          1495,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ]
+      ],
+      "support": [
+        1514,
+        1514,
+        1458,
+        1458,
+        1456,
+        1456,
+        1480,
+        1480,
+        1566,
+        1566
+      ],
+      "detector_accuracy": 0.033783783783783786,
+      "detector_balanced_accuracy": 0.03463648834019205,
+      "detector_nll": 4.136608600616455,
+      "zero_readout_fraction": 0.0,
+      "route_mean": null,
+      "route_top_frequency": null
+    }
+  },
+  "source_optical_state_preserved": true
+}

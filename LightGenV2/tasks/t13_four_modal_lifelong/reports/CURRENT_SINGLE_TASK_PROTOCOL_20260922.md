@@ -61,3 +61,20 @@ CLEVR 全量 D2NN 在第 17 轮按验证集选择 checkpoint，验证与测试 b
 
 至此四个正式单任务均通过预定门槛，而且 MoE 在四项测试上都高于同协议 D2NN：EuroSAT
 +1.09、CLEVR +0.40、Speech Commands +5.33、Physical Concepts +1.93 个百分点。
+
+## D2NN 推理限定的跨任务兼容矩阵
+
+在不更新任何参数的条件下，将每个源任务单独训练的 D2NN 光学骨干，与目标任务已经训练好的
+`Linear(784, C)` 组合，并在完整目标测试集推理，得到：
+
+|源光学骨干 / 目标测试集|EuroSAT|CLEVR|Speech|Physical|
+|---|---:|---:|---:|---:|
+|EuroSAT|80.72%|50.14%|35.78%|28.75%|
+|CLEVR|19.75%|76.76%|24.28%|10.04%|
+|Speech|47.11%|49.98%|74.33%|27.54%|
+|Physical|27.60%|50.10%|29.58%|79.30%|
+
+对角线准确复现单任务 D2NN，非对角线显著下降，说明固定 D2NN 光学骨干与任务头存在明显耦合。
+该表没有训练或重拟合目标头，是直接兼容性矩阵；它不冒充仍在运行的 sequential no-replay
+遗忘下三角矩阵。完整逐类别 confusion matrix 位于
+`reports/d2nn_inference_only_cross_task_s17/matrix.json`。

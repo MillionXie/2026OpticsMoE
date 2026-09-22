@@ -1,0 +1,444 @@
+{
+  "protocol": "inference_only_source_optics_plus_pretrained_target_linear_head",
+  "optimization_steps": 0,
+  "electronic_readout": "single_linear_layer",
+  "source": "clevr",
+  "source_optical_checkpoint": "/DATA/DATA1/guest3/t12_gate_0e577a828/LightGenV2/tasks/t13_four_modal_lifelong/runs/hard_v3_clevr_full_d2nn_s17/single_task_d2nn/clevr/best_checkpoint.pt",
+  "target_head_checkpoints": {
+    "eurosat": "/DATA/DATA1/guest3/t12_gate_0e577a828/LightGenV2/tasks/t13_four_modal_lifelong/runs/hard_v2_eurosat_d2nn_s17/single_task_d2nn/eurosat/best_checkpoint.pt",
+    "clevr": "/DATA/DATA1/guest3/t12_gate_0e577a828/LightGenV2/tasks/t13_four_modal_lifelong/runs/hard_v3_clevr_full_d2nn_s17/single_task_d2nn/clevr/best_checkpoint.pt",
+    "speech": "/DATA/DATA1/guest3/t12_gate_0e577a828/LightGenV2/tasks/t13_four_modal_lifelong/runs/hard_v2_speech_d2nn_s17/single_task_d2nn/speech/best_checkpoint.pt",
+    "physical": "/DATA/DATA1/guest3/t12_gate_0e577a828/LightGenV2/tasks/t13_four_modal_lifelong/runs/hard_v3_physical10_d2nn_formal_s17/single_task_d2nn/physical/best_checkpoint.pt"
+  },
+  "score_row": {
+    "eurosat": 0.19748825944565634,
+    "clevr": 0.7676000000000001,
+    "speech": 0.2428189224570724,
+    "physical": 0.10039630118890357
+  },
+  "details": {
+    "eurosat": {
+      "accuracy": 0.1997605452201142,
+      "balanced_accuracy": 0.19748825944565634,
+      "macro_f1": 0.15384545710475492,
+      "nll": 3.5517170429229736,
+      "confusion_matrix": [
+        [
+          0,
+          1,
+          1039,
+          0,
+          0,
+          7,
+          273,
+          0,
+          0,
+          2
+        ],
+        [
+          0,
+          198,
+          980,
+          4,
+          0,
+          0,
+          10,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          8,
+          1118,
+          0,
+          0,
+          19,
+          48,
+          0,
+          1,
+          0
+        ],
+        [
+          0,
+          2,
+          794,
+          0,
+          0,
+          111,
+          87,
+          0,
+          2,
+          0
+        ],
+        [
+          0,
+          0,
+          986,
+          0,
+          0,
+          3,
+          3,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          49,
+          373,
+          0,
+          0,
+          164,
+          149,
+          0,
+          5,
+          0
+        ],
+        [
+          0,
+          14,
+          492,
+          0,
+          0,
+          4,
+          530,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          1119,
+          0,
+          0,
+          13,
+          2,
+          52,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          863,
+          0,
+          0,
+          17,
+          69,
+          1,
+          48,
+          0
+        ],
+        [
+          0,
+          0,
+          1091,
+          1,
+          0,
+          7,
+          13,
+          4,
+          23,
+          59
+        ]
+      ],
+      "support": [
+        1322,
+        1192,
+        1194,
+        996,
+        992,
+        740,
+        1040,
+        1186,
+        998,
+        1198
+      ],
+      "detector_accuracy": 0.01565665868484067,
+      "detector_balanced_accuracy": 0.015399599717803877,
+      "detector_nll": 2.4563567638397217,
+      "zero_readout_fraction": 0.0,
+      "route_mean": null,
+      "route_top_frequency": null
+    },
+    "clevr": {
+      "accuracy": 0.7676,
+      "balanced_accuracy": 0.7676000000000001,
+      "macro_f1": 0.7640417879150733,
+      "nll": 0.4764707088470459,
+      "confusion_matrix": [
+        [
+          14508,
+          7992
+        ],
+        [
+          2466,
+          20034
+        ]
+      ],
+      "support": [
+        22500,
+        22500
+      ],
+      "detector_accuracy": 0.5,
+      "detector_balanced_accuracy": 0.5,
+      "detector_nll": 0.7904017567634583,
+      "zero_readout_fraction": 0.0,
+      "route_mean": null,
+      "route_top_frequency": null
+    },
+    "speech": {
+      "accuracy": 0.24106113033448673,
+      "balanced_accuracy": 0.2428189224570724,
+      "macro_f1": 0.15126939389401073,
+      "nll": 5.444156646728516,
+      "confusion_matrix": [
+        [
+          0,
+          0,
+          0,
+          0,
+          0,
+          60,
+          49,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          0,
+          0,
+          69,
+          51,
+          0
+        ],
+        [
+          0,
+          0,
+          14,
+          0,
+          11,
+          29,
+          69,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          0,
+          1,
+          48,
+          51,
+          0
+        ],
+        [
+          0,
+          0,
+          7,
+          0,
+          27,
+          13,
+          54,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          0,
+          0,
+          85,
+          17,
+          0
+        ],
+        [
+          0,
+          0,
+          1,
+          0,
+          0,
+          30,
+          83,
+          0
+        ],
+        [
+          0,
+          0,
+          27,
+          0,
+          8,
+          36,
+          27,
+          0
+        ]
+      ],
+      "support": [
+        109,
+        120,
+        123,
+        100,
+        101,
+        102,
+        114,
+        98
+      ],
+      "detector_accuracy": 0.11880046136101499,
+      "detector_balanced_accuracy": 0.124637049941928,
+      "detector_nll": 2.446870803833008,
+      "zero_readout_fraction": 0.0,
+      "route_mean": null,
+      "route_top_frequency": null
+    },
+    "physical": {
+      "accuracy": 0.09793952368209793,
+      "balanced_accuracy": 0.10039630118890357,
+      "macro_f1": 0.018569961489088575,
+      "nll": 19.193340301513672,
+      "confusion_matrix": [
+        [
+          0,
+          0,
+          0,
+          1514,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          6,
+          0,
+          1508,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          1458,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          1458,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          1456,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          1456,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          1480,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          1480,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          1566,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          1566,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ]
+      ],
+      "support": [
+        1514,
+        1514,
+        1458,
+        1458,
+        1456,
+        1456,
+        1480,
+        1480,
+        1566,
+        1566
+      ],
+      "detector_accuracy": 0.018263312817768263,
+      "detector_balanced_accuracy": 0.018724279835390947,
+      "detector_nll": 3.5317227840423584,
+      "zero_readout_fraction": 0.0,
+      "route_mean": null,
+      "route_top_frequency": null
+    }
+  },
+  "source_optical_state_preserved": true
+}
