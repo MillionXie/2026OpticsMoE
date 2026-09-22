@@ -45,6 +45,8 @@ class RepairTrainingConfig:
     preservation_weight: float
     pair_difference_weight: float
     region_router_weight: float
+    pixel_weight: float
+    pixel_preservation_weight: float
     adapter_learning_rate: float
     num_workers: int
     sample_every_epochs: int
@@ -64,6 +66,7 @@ class RepairTrainingConfig:
         if min(
             self.weight_decay, self.detail_weight, self.selected_weight,
             self.preservation_weight, self.pair_difference_weight, self.region_router_weight,
+            self.pixel_weight, self.pixel_preservation_weight,
             self.num_workers,
         ) < 0:
             raise ValueError("Non-negative regularization settings are required")
@@ -90,6 +93,7 @@ def load_repair_config(path: Path) -> tuple[RepairModelConfig, RepairTrainingCon
             "weight_decay", "detail_weight", "selected_weight", "preservation_weight",
             "pair_difference_weight",
             "region_router_weight",
+            "pixel_weight", "pixel_preservation_weight",
         } else int(value))
         for key, value in training.items()
     })
@@ -330,6 +334,7 @@ def train_repair_model(
     training_config: RepairTrainingConfig,
     device: torch.device,
     seed: int = 42,
+    resume_checkpoint: Path | None = None,
 ) -> dict[str, Any]:
     if output_dir.exists():
         raise FileExistsError(output_dir)
@@ -366,6 +371,13 @@ def train_repair_model(
     nn_init.zeros_(unet.conv_out.weight)
     if unet.conv_out.bias is not None:
         nn_init.zeros_(unet.conv_out.bias)
+    if resume_checkpoint is not None:
+        resume = torch.load(
+            resume_checkpoint, map_location="cpu", weights_only=False, mmap=True
+        )
+        unet.load_state_dict(resume["unet"])
+        adapter.load_state_dict(resume["adapter"])
+        region_router.load_state_dict(resume["region_router"])
     unet.enable_gradient_checkpointing()
     unet.requires_grad_(False)
     unet.conv_in.requires_grad_(True)
@@ -439,6 +451,28 @@ def train_repair_model(
                 loss = loss + training_config.region_router_weight * F.cross_entropy(
                     region_logits, region_targets
                 )
+                decoded_output = vae.decode(
+                    output.to(dtype=vae.dtype) / vae.config.scaling_factor,
+                    return_dict=False,
+                )[0].float()
+                with torch.no_grad():
+                    decoded_target = vae.decode(
+                        target.to(dtype=vae.dtype) / vae.config.scaling_factor,
+                        return_dict=False,
+                    )[0].float()
+                    decoded_reference = vae.decode(
+                        reference.to(dtype=vae.dtype) / vae.config.scaling_factor,
+                        return_dict=False,
+                    )[0].float()
+                pixel_mask = F.interpolate(
+                    selected.float(), decoded_output.shape[-2:], mode="bilinear", align_corners=False
+                ).clamp(0, 1)
+                pixel_selected = _masked_l1(decoded_output, decoded_target, pixel_mask)
+                pixel_preservation = _masked_l1(
+                    decoded_output, decoded_reference, 1.0 - pixel_mask
+                )
+                loss = loss + training_config.pixel_weight * pixel_selected
+                loss = loss + training_config.pixel_preservation_weight * pixel_preservation
                 loss = loss + training_config.detail_weight * latent_gradient_loss(output, target)
                 scaled_loss = loss / training_config.gradient_accumulation
             scaler.scale(scaled_loss).backward()
@@ -505,6 +539,7 @@ def train_repair_model(
         "training_seconds": time.perf_counter() - started,
         "gan_used": False,
         "baseline_contract": "Qwen + decoder only",
+        "resume_checkpoint": str(resume_checkpoint) if resume_checkpoint is not None else None,
     }
     (output_dir / "training_summary.json").write_text(
         json.dumps(report, indent=2) + "\n", encoding="utf-8"

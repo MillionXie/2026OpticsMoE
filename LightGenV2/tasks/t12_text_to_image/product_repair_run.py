@@ -48,6 +48,7 @@ def main() -> int:
     train.add_argument("--config", type=Path, required=True)
     train.add_argument("--seed", type=int, default=42)
     train.add_argument("--device", default="cuda" if torch.cuda.is_available() else "cpu")
+    train.add_argument("--resume-checkpoint", type=Path)
     args = parser.parse_args()
 
     if args.command == "cache-instructions":
@@ -72,6 +73,9 @@ def main() -> int:
             adapter_checkpoint=args.adapter_checkpoint.resolve(), output_dir=args.output_dir.resolve(),
             model_config=model_config, training_config=training_config,
             device=torch.device(args.device), seed=args.seed,
+            resume_checkpoint=(
+                args.resume_checkpoint.resolve() if args.resume_checkpoint is not None else None
+            ),
         )
     print(json.dumps(report, indent=2), flush=True)
     return 0
