@@ -214,7 +214,6 @@ def _masked_l1(value: torch.Tensor, target: torch.Tensor, mask: torch.Tensor) ->
     return ((value - target).abs() * mask).sum() / (mask.sum() * value.shape[1]).clamp_min(1.0)
 
 
-@torch.inference_mode()
 def _region_targets(values: list[str], device: torch.device) -> torch.Tensor:
     lookup = {"upper": 0, "center": 1, "lower": 2}
     return torch.tensor([lookup[value] for value in values], device=device, dtype=torch.long)
