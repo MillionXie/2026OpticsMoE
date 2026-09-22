@@ -78,7 +78,8 @@ class SourceDataset(Dataset):
             settings = load_settings(args.lsp_config)
             settings.data_root = args.lsp_data.resolve()
             settings.download = False
-            settings.output_dir = args.output.parent / "_dataset_audit_lsp"
+            artifact_parent = (args.output if args.output is not None else args.run_dir).parent
+            settings.output_dir = artifact_parent / "_dataset_audit_lsp"
             settings.augmentation_enabled = False
             settings.num_workers = 0
             bundle = prepare_lsp(settings, persist=False)
@@ -90,7 +91,8 @@ class SourceDataset(Dataset):
             from LightGenV2.tasks.t03_saliency.settings import load_settings
             settings = load_settings(args.salicon_config)
             settings.data_root = args.salicon_data.resolve()
-            settings.output_dir = args.output.parent / "_dataset_audit_salicon"
+            artifact_parent = (args.output if args.output is not None else args.run_dir).parent
+            settings.output_dir = artifact_parent / "_dataset_audit_salicon"
             settings.augmentation_enabled = False
             settings.num_workers = 0
             bundle = prepare_salicon(settings, persist=False)
