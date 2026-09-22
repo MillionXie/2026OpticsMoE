@@ -156,7 +156,18 @@ class PromptPairDataset(Dataset[dict[str, Any]]):
     def __len__(self) -> int: return len(self.base)
     def __getitem__(self, index: int) -> dict[str, Any]:
         value = self.base[index]
-        return {"reference": value["reference"], "target": value["target"], "prompt": value["prompt"], "sample_id": value["sample_id"]}
+        if "catalogue_index" in value:
+            condition_index = int(value["catalogue_index"])
+        else:
+            condition_index = (
+                int(value["room_index"]) * 12 + int(value["tone_index"]) * 4
+                + int(value["brightness_index"]) * 2 + int(value["direction_index"])
+            )
+        return {
+            "reference": value["reference"], "target": value["target"],
+            "prompt": value["prompt"], "sample_id": value["sample_id"],
+            "condition_index": condition_index,
+        }
 
 
 DATASETS = {
@@ -219,18 +230,23 @@ def train_small_editor(
     model=SmallFullFrameEditor(config).to(device);ema=copy.deepcopy(model).eval().requires_grad_(False)
     parameters=sum(p.numel() for p in model.parameters())
     if parameters>=50_000_000: raise AssertionError(parameters)
-    optimizer=torch.optim.AdamW(model.parameters(),lr=learning_rate,weight_decay=1e-2);scaler=torch.amp.GradScaler("cuda",enabled=device.type=="cuda")
+    # Auxiliary prompt classification is used only during training.  It forces
+    # the tiny byte encoder to separate material/scene phrases instead of
+    # averaging visually different targets; it adds no inference parameters.
+    text_classifier=nn.Linear(config.condition_dim,64).to(device)
+    optimizer=torch.optim.AdamW([*model.parameters(),*text_classifier.parameters()],lr=learning_rate,weight_decay=1e-2);scaler=torch.amp.GradScaler("cuda",enabled=device.type=="cuda")
     initial=evaluate(model,loaders["val"],device,seed+100);best=math.inf;best_epoch=0;history=[];started=time.perf_counter()
     for epoch in range(1,epochs+1):
         model.train();total=samples=0
         for batch in loaders["train"]:
-            reference=batch["reference"].to(device);target=batch["target"].to(device);tokens=encode_prompts(list(batch["prompt"]),config.max_text_bytes,device);noise=torch.randn_like(reference)
+            reference=batch["reference"].to(device);target=batch["target"].to(device);tokens=encode_prompts(list(batch["prompt"]),config.max_text_bytes,device);noise=torch.randn_like(reference);labels=batch["condition_index"].to(device)
             if random.random()<.5:reference=reference.flip(-1);target=target.flip(-1);noise=noise.flip(-1)
             optimizer.zero_grad(set_to_none=True)
             with torch.autocast(device.type,dtype=torch.bfloat16,enabled=device.type=="cuda"):
                 output=model(reference,tokens,noise)
-                loss=F.l1_loss(output,target)+.65*F.mse_loss(output,target)+.10*F.l1_loss(_edge(output),_edge(target))
-            scaler.scale(loss).backward();scaler.unscale_(optimizer);torch.nn.utils.clip_grad_norm_(model.parameters(),3.0);scaler.step(optimizer);scaler.update()
+                text_logits=text_classifier(model.text(tokens))
+                loss=F.l1_loss(output,target)+.65*F.mse_loss(output,target)+.10*F.l1_loss(_edge(output),_edge(target))+.20*F.cross_entropy(text_logits.float(),labels)
+            scaler.scale(loss).backward();scaler.unscale_(optimizer);torch.nn.utils.clip_grad_norm_([*model.parameters(),*text_classifier.parameters()],3.0);scaler.step(optimizer);scaler.update()
             with torch.no_grad():
                 for target_parameter,source_parameter in zip(ema.parameters(),model.parameters()):target_parameter.lerp_(source_parameter,.01)
                 for target_buffer,source_buffer in zip(ema.buffers(),model.buffers()):target_buffer.copy_(source_buffer)
@@ -243,7 +259,7 @@ def train_small_editor(
     payload=torch.load(output_dir/"best_model.pt",map_location="cpu",weights_only=False);ema.load_state_dict(payload["model"]);test=evaluate(ema,loaders["test"],device,seed+999)
     report={"schema_version":1,"task":task,"best_epoch":best_epoch,"parameters":parameters,"under_50m":parameters<50_000_000,"initial_validation":initial,"test":test,"history":history,"training_seconds":time.perf_counter()-started,"optical_alpha":float(ema.bottleneck.fusion.alpha),"hard_pixel_composite":False,"gan_used":False,"inference_iterations":1,"resolution":config.image_size}
     (output_dir/"training_summary.json").write_text(json.dumps(report,indent=2)+"\n",encoding="utf-8");save_samples(ema,datasets["test"],output_dir/"final_grid.jpg",device,seed+999)
-    del model,ema,optimizer
+    del model,ema,optimizer,text_classifier
     if device.type=="cuda":torch.cuda.empty_cache()
     return report
 
