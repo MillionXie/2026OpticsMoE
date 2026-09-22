@@ -74,6 +74,23 @@ CLEVR 全量 D2NN 在第 17 轮按验证集选出 checkpoint，验证/测试 bal
 目标测试集直接推理。对角线复现正式单任务结果；逐单元类别混淆矩阵保存在 `matrix.json`。
 这个实验衡量即插即用的跨任务兼容性，不代替正在运行的 sequential no-replay 遗忘矩阵。
 
+## D2NN 固定光学骨干、目标单层 Linear 适配矩阵
+
+老师要求的第二张正式矩阵已经完成。每一行固定一个单任务 D2NN 光学骨干，每一列在目标任务的
+完整训练集上只拟合新的 `Linear(784, C)`，由目标验证集选 checkpoint；光学参数更新次数为 0。
+测试 balanced accuracy 为：
+
+|source optics / target Linear|EuroSAT|CLEVR|Speech|Physical|
+|---|---:|---:|---:|---:|
+|EuroSAT|81.27%|54.96%|50.91%|70.20%|
+|CLEVR|78.73%|76.74%|47.38%|69.81%|
+|Speech|79.00%|51.09%|70.63%|70.48%|
+|Physical|78.68%|52.07%|48.17%|78.84%|
+
+完整指标和逐单元类别混淆矩阵见 `reports/frozen_d2nn_linear_transfer_s17/matrix.json`。CLEVR 与 Speech
+在多数异源光学骨干上只有约 47%–55%，而 EuroSAT 与 Physical 的线性可分表示迁移较好；因此该矩阵
+支持的是固定光学表示跨模态兼容性不稳定，而不是所有非对角单元都必然接近随机水平。
+
 正式终身矩阵已经完成第一阶段 EuroSAT：D2NN 测试为 79.92%，ours 为 79.56%。进入 CLEVR 后，
 无 replay D2NN 在第 6 轮已把 EuroSAT 验证分数降至约 10.91%，而相同 replay 在第 8 轮仍保持
 约 74.81%；CLEVR 本身分别为 72.97% 和 73.57%。这是早期运行诊断，完整 20 轮 checkpoint 与
@@ -90,7 +107,8 @@ Ours 完成预热后的首个 CLEVR epoch 已达到 EuroSAT 76.24%、CLEVR 74.76
 至少 65%，MoE 至少 70%；未通过的任务先调训练，不进入终身矩阵。通过后生成老师要求的三张
 正式矩阵：
 
-1. ours：固定 16 槽、旧专家冻结、full replay 的 4→8→12→16 下三角遗忘矩阵；
+1. ours：固定 16 槽、旧专家冻结、对所有旧任务 replay（每任务固定 512 条）的
+   4→8→12→16 下三角遗忘矩阵；
 2. frozen D2NN transfer：四个任务各自独立训练光学骨干，冻结每个骨干后，在每个目标任务的完整
    训练集上只拟合目标 `Linear(784, C)`，得到 4×4 完整矩阵；
 3. sequential D2NN：始终只有一份最新可重构光学权重、无 replay，得到下三角遗忘矩阵。
