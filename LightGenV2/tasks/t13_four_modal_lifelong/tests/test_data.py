@@ -3,6 +3,7 @@ from pathlib import Path
 from types import SimpleNamespace
 
 import numpy as np
+import pytest
 import torch
 
 from LightGenV2.tasks.t13_four_modal_lifelong.data import (
@@ -189,6 +190,39 @@ def test_resume_restores_only_fully_evaluated_stages(tmp_path: Path):
     assert replay == {"eurosat": None}
     for key, value in model.state_dict().items():
         assert torch.equal(value, expected[key])
+
+
+def test_continual_matrix_accepts_stage_evaluation_val_key(tmp_path: Path):
+    history = [
+        {
+            "task": "eurosat",
+            "val": {"eurosat": {"balanced_accuracy": .80}},
+            "test": {"eurosat": {"balanced_accuracy": .79}},
+        },
+        {
+            "task": "clevr",
+            "val": {
+                "eurosat": {"balanced_accuracy": .60},
+                "clevr": {"balanced_accuracy": .75},
+            },
+            "test": {
+                "eurosat": {"balanced_accuracy": .59},
+                "clevr": {"balanced_accuracy": .74},
+            },
+        },
+    ]
+
+    result = experiment_run.save_continual_matrix(tmp_path, history)
+
+    assert result["validation"] == [
+        {"eurosat": .80},
+        {"eurosat": .60, "clevr": .75},
+    ]
+    assert result["test"] == [
+        {"eurosat": .79},
+        {"eurosat": .59, "clevr": .74},
+    ]
+    assert result["continual"]["forgetting"]["eurosat"] == pytest.approx(.20)
 
 
 def test_formal_cross_task_probe_requires_all_four_checkpoints():

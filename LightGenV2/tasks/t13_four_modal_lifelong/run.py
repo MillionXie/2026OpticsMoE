@@ -263,7 +263,7 @@ def combine_current_replay(current_loss, replay_losses, replay_weight):
 
 
 def add_continual_metrics(result, all_history):
-    learned={row["task"]:selection_score(row["task"],row["validation"][row["task"]]) for row in all_history}
+    learned={row["task"]:selection_score(row["task"],row["val"][row["task"]]) for row in all_history}
     final={name:selection_score(name,result["validation"][name]) for name in TASK_ORDER}
     result["continual"]={"score_when_learned":learned,"final_validation_score":final,
                          "backward_transfer":{name:final[name]-learned[name] for name in TASK_ORDER[:-1]}}
@@ -362,8 +362,9 @@ def save_continual_matrix(root, all_history):
         "eurosat": "balanced_accuracy", "clevr": "balanced_accuracy",
         "speech": "balanced_accuracy", "physical": "balanced_accuracy"}}
     for split in ("validation", "test"):
+        history_split = "val" if split == "validation" else split
         payload[split] = [
-            {name: selection_score(name, row[split][name]) for name in TASK_ORDER[:i + 1]}
+            {name: selection_score(name, row[history_split][name]) for name in TASK_ORDER[:i + 1]}
             for i, row in enumerate(all_history)
         ]
     final=payload["test"][-1]
