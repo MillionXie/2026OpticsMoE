@@ -456,31 +456,41 @@ def train_single_task_d2nn(tasks, cfg, out, device, selected_task=None):
 
 
 def train_single_task_moe(tasks, cfg, out, device, selected_task=None, init_checkpoint=None):
-    """Train a fresh four-expert optical MoE on each task before lifelong runs."""
+    """Train a single-task MoE, optionally in the fixed 16-slot geometry."""
     root = out / "single_task_moe"; root.mkdir()
     summary = {}
-    epochs = int(cfg.get("single_task_moe_epochs", cfg.get("single_task_epochs", cfg["task_epochs"])))
+    epochs = int(cfg.get("single_task_moe_epochs",
+                         cfg.get("single_task_epochs", cfg.get("task_epochs", 20))))
     names = (selected_task,) if selected_task else TASK_ORDER
     for name in names:
         task_index = TASK_ORDER.index(name)
         task_root = root / name; task_root.mkdir()
         seed_all(cfg["seed"] + task_index)
-        model = build_model("moe", cfg, cfg["seed"] + task_index, max_experts=4).to(device)
+        max_experts = int(cfg.get("single_task_moe_max_experts", 4))
+        model = build_model("moe", cfg, cfg["seed"] + task_index,
+                            max_experts=max_experts).to(device)
         model.configure_single_task(name)
         initial_epoch = 0
         if init_checkpoint is not None:
             initial = torch.load(init_checkpoint, map_location=device, weights_only=False)
-            if initial.get("task") != name:
+            if initial.get("task", name) != name:
                 raise ValueError(f"initial checkpoint task {initial.get('task')} != {name}")
             model.load_state_dict(initial["model"])
             initial_epoch = int(initial["epoch"])
             if initial_epoch >= epochs:
                 raise ValueError(f"initial epoch {initial_epoch} must be below target {epochs}")
         lr = float(cfg.get("moe_lr", cfg["lr"]))
-        optimizer = torch.optim.Adam([p for p in model.parameters() if p.requires_grad], lr=lr)
+        weight_decay = float(cfg.get("moe_weight_decay", 0.0))
+        optimizer = torch.optim.AdamW(
+            [p for p in model.parameters() if p.requires_grad], lr=lr,
+            weight_decay=weight_decay)
         scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(
             optimizer, epochs - initial_epoch, eta_min=lr * .1)
         best, history = -float("inf"), []
+        ema_decay = float(cfg.get("moe_ema_decay", 0.0))
+        ema = ({key: parameter.detach().clone()
+                for key, parameter in model.named_parameters() if parameter.requires_grad}
+               if ema_decay else None)
         if initial_epoch:
             val=evaluate(model,tasks[name],"val",device,cfg["eval_batch"])[0]
             best=selection_score(name,val)
@@ -509,19 +519,46 @@ def train_single_task_moe(tasks, cfg, out, device, selected_task=None, init_chec
                 torch.nn.utils.clip_grad_norm_(
                     [p for p in model.parameters() if p.requires_grad],1.0)
                 optimizer.step(); losses.append(float(loss.detach()))
+                if ema is not None:
+                    with torch.no_grad():
+                        for key, parameter in model.named_parameters():
+                            if key in ema:
+                                ema[key].mul_(ema_decay).add_(parameter, alpha=1.0-ema_decay)
             scheduler.step()
             val=evaluate(model,tasks[name],"val",device,cfg["eval_batch"])[0]
             score=selection_score(name,val)
+            selected_state = copy.deepcopy(model.state_dict())
+            selected_variant = "raw"
+            ema_score = None
+            if ema is not None:
+                raw = {key: parameter.detach().clone()
+                       for key, parameter in model.named_parameters() if key in ema}
+                with torch.no_grad():
+                    for key, parameter in model.named_parameters():
+                        if key in ema:
+                            parameter.copy_(ema[key])
+                ema_val=evaluate(model,tasks[name],"val",device,cfg["eval_batch"])[0]
+                ema_score=selection_score(name,ema_val)
+                if ema_score > score:
+                    val, score = ema_val, ema_score
+                    selected_state = copy.deepcopy(model.state_dict())
+                    selected_variant = "ema"
+                with torch.no_grad():
+                    for key, parameter in model.named_parameters():
+                        if key in raw:
+                            parameter.copy_(raw[key])
             # The declared model output is the single Linear readout.  The
             # auxiliary optical detector may shape training, but it cannot
             # select the reported checkpoint.
             phase_score=score
             row={"epoch":epoch,"loss":float(np.mean(losses)),"validation_score":score,
                  "optical_selection_score":phase_score,
+                 "selected_variant":selected_variant,
+                 "ema_validation_score":ema_score,
                  "uniform_route_warmup":warmup,
                  "validation":val,"seconds":time.time()-started}
             history.append(row);save(task_root/"history.json",history)
-            cp={"model":model.state_dict(),"epoch":epoch,"task":name,
+            cp={"model":selected_state,"epoch":epoch,"task":name,
                 "validation":val,"score":phase_score,"mlp_score":score}
             torch.save(cp,task_root/"last_checkpoint.pt")
             if phase_score>best:
@@ -540,10 +577,13 @@ def train_single_task_moe(tasks, cfg, out, device, selected_task=None, init_chec
                                        cfg["seed"]+1000+task_index)
             torch.save({**cp,"model":model.state_dict(),"head_calibration":calibration},
                        task_root/"refit_checkpoint.pt")
+        evaluation_splits = (("train", "val") if cfg.get("validation_only", False)
+                             else ("train", "val", "test"))
         metrics={split:evaluate(model,tasks[name],split,device,cfg["eval_batch"])[0]
-                 for split in ("train","val","test")}
+                 for split in evaluation_splits}
         score = selection_score(name, metrics["val"])
         summary[name]={"selected_epoch":cp["epoch"],"active_experts":4,
+                       "max_experts":max_experts,
                        "head_calibration":calibration,
                        "electronic_readout":"single_linear_layer",
                        "validation_selection_score":score,
@@ -610,7 +650,8 @@ def train_sequential_d2nn(tasks, cfg, out, device, use_replay, resume=False):
     tag = "replay" if use_replay else "no_replay"
     root = out / f"sequential_d2nn_{tag}"; root.mkdir(exist_ok=resume)
     seed_all(cfg["seed"])
-    model = build_model("d2nn", cfg, cfg["seed"]).to(device)
+    model = build_model("d2nn", cfg, cfg["seed"],
+                        max_experts=int(cfg.get("d2nn_max_experts", 4))).to(device)
     replay = {}; all_history = []
     start_index = 0
     if resume:
