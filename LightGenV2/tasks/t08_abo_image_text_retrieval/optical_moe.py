@@ -141,10 +141,12 @@ def _load_propagation_transition_checkpoint(
         payload.get("metadata", {}).get("optical_architecture", "")
     )
     target_architecture = str(replacement.checkpoint_architecture)
-    if "_10cm_17um_" not in source_architecture:
-        raise RuntimeError("Propagation transition requires a pinned 10 cm source")
-    if "_15cm_17um_" not in target_architecture:
-        raise RuntimeError("Propagation transition target must be the 15 cm graph")
+    source_distance = _architecture_distance_cm(source_architecture)
+    target_distance = _architecture_distance_cm(target_architecture)
+    if source_distance == target_distance:
+        raise RuntimeError(
+            "Propagation transition requires different pinned source and target distances"
+        )
 
     fresh_by_modality: dict[str, list[str]] = {}
     for label, module, source_key in (
@@ -163,7 +165,7 @@ def _load_propagation_transition_checkpoint(
         incompatible = module.load_state_dict(transferred, strict=False)
         if sorted(incompatible.missing_keys) != phase_names or incompatible.unexpected_keys:
             raise RuntimeError(
-                f"Unsafe {label} 10 cm -> 15 cm transplant: "
+                f"Unsafe {label} {source_distance} cm -> {target_distance} cm transplant: "
                 f"missing={incompatible.missing_keys}, "
                 f"unexpected={incompatible.unexpected_keys}"
             )
@@ -173,6 +175,8 @@ def _load_propagation_transition_checkpoint(
     return payload, {
         "source_architecture": source_architecture,
         "target_architecture": target_architecture,
+        "source_distance_cm": source_distance,
+        "target_distance_cm": target_distance,
         "fresh_phase_tensors": fresh_by_modality,
         "transferred": "electronic residuals, adapters and 64-D readout",
         "fusion_alpha_reset_to": replacement.fusion_diagnostics(),
