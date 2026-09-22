@@ -217,6 +217,8 @@ def attach_decoder_optics(
         condition_dim=condition_dim,
         config=config,
     )
+    reference_parameter = next(electronic.parameters())
+    wrapper.to(device=reference_parameter.device, dtype=reference_parameter.dtype)
     unet.up_blocks[0] = wrapper
     return wrapper
 
