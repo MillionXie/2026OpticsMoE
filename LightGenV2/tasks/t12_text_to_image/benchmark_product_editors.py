@@ -54,6 +54,11 @@ def _benchmark_variant(
     image=raw["reference"][None].to(device=device,dtype=dtype);mask=raw["foreground_mask"][None].to(device=device,dtype=dtype);foreground=raw["foreground_rgb"][None].to(device=device,dtype=dtype)
     prompt=raw["prompt"]
     token_inputs={key:value.to(device) for key,value in _qwen_prompts(processor,[prompt]).items()}
+    # The requested timing boundary starts at the first Transformer block, so
+    # tokenization and the excluded token-embedding lookup are both performed
+    # before the CUDA event.  Positional preparation, all retained blocks and
+    # the final norm remain inside the measured path.
+    input_embeddings=qwen.embed_tokens(token_inputs.pop("input_ids")).detach()
     noise=torch.randn((1,4,32,32),device=device,dtype=torch.float32,generator=torch.Generator(device=device).manual_seed(42))
 
     def run()->None:
@@ -62,7 +67,7 @@ def _benchmark_variant(
         # benchmark onto an unrealistically slow FP32 execution path.
         with torch.autocast(device_type=device.type,dtype=dtype):
             encoded=vae.encode(image).latent_dist.mode()*vae.config.scaling_factor
-            outputs=qwen(**token_inputs,output_hidden_states=False,return_dict=True,use_cache=False)
+            outputs=qwen(inputs_embeds=input_embeddings,**token_inputs,output_hidden_states=False,return_dict=True,use_cache=False)
             hidden=outputs.last_hidden_state.float();attention=token_inputs["attention_mask"].to(hidden.dtype).unsqueeze(-1)
             pooled=(hidden*attention).sum(1)/attention.sum(1).clamp_min(1)
             condition=adapter.condition(pooled)
@@ -85,7 +90,7 @@ def _benchmark_variant(
         "qwen_counted_parameters":qwen_report["counted_text_encoder_parameters"],
         "token_embedding_parameters_excluded":qwen_report["token_embedding_parameters_excluded_by_project_convention"],
     }
-    del qwen,processor,adapter,unet,vae,payload
+    del qwen,processor,adapter,unet,vae,payload,input_embeddings
     torch.cuda.empty_cache()
     return result
 
