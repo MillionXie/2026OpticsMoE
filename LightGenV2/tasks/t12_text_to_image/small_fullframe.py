@@ -37,6 +37,7 @@ class SmallEditorConfig:
     alpha_minimum: float = .40
     alpha_maximum: float = .75
     residual_limit: float = 2.0
+    control_classes: int = 0
 
 
 class ByteTextEncoder(nn.Module):
@@ -129,6 +130,7 @@ class SmallFullFrameEditor(nn.Module):
         super().__init__(); self.config = config
         widths = config.widths
         self.text = ByteTextEncoder(config.text_width, config.condition_dim)
+        self.control_embedding = nn.Embedding(config.control_classes, config.condition_dim) if config.control_classes else None
         self.stem = nn.Sequential(nn.Conv2d(6, widths[0], 3, padding=1), nn.SiLU())
         self.down1 = DownBlock(widths[0], widths[1]); self.down2 = DownBlock(widths[1], widths[2]); self.down3 = DownBlock(widths[2], widths[3])
         self.bottleneck = ParallelSmallBottleneck(widths[3], config.condition_dim, config.image_size//8, config)
@@ -138,8 +140,16 @@ class SmallFullFrameEditor(nn.Module):
         self.to_delta = nn.Sequential(nn.Conv2d(widths[0], widths[0], 3, padding=1), nn.SiLU(), nn.Conv2d(widths[0], 3, 3, padding=1))
         nn.init.zeros_(self.to_delta[-1].weight); nn.init.zeros_(self.to_delta[-1].bias)
 
-    def forward(self, reference: torch.Tensor, prompt_tokens: torch.Tensor, noise: torch.Tensor) -> torch.Tensor:
+    def encode_condition(self, prompt_tokens: torch.Tensor, control_ids: torch.Tensor | None = None) -> torch.Tensor:
         condition = self.text(prompt_tokens)
+        if self.control_embedding is not None:
+            if control_ids is None:
+                raise ValueError("This controlled student requires parsed prompt control IDs")
+            condition = condition + self.control_embedding(control_ids)
+        return condition
+
+    def forward(self, reference: torch.Tensor, prompt_tokens: torch.Tensor, noise: torch.Tensor, control_ids: torch.Tensor | None = None) -> torch.Tensor:
+        condition = self.encode_condition(prompt_tokens, control_ids)
         s0 = self.stem(torch.cat((reference, .08*noise), dim=1)); s1 = self.down1(s0); s2 = self.down2(s1)
         value = self.bottleneck(self.down3(s2), condition)
         value = self.up3(value, s2, condition); value = self.up2(value, s1, condition); value = self.up1(value, s0, condition)
@@ -196,7 +206,8 @@ def evaluate(model: SmallFullFrameEditor, loader: DataLoader, device: torch.devi
         tokens=encode_prompts(list(batch["prompt"]),model.config.max_text_bytes,device)
         noise=torch.randn(reference.shape,generator=generator,device=device)
         with torch.autocast(device.type,dtype=torch.bfloat16,enabled=device.type=="cuda"):
-            output=model(reference,tokens,noise)
+            controls=batch["condition_index"].to(device) if model.control_embedding is not None else None
+            output=model(reference,tokens,noise,controls)
         size=len(reference);totals["mse"]+=float(F.mse_loss(output,target))*size;totals["l1"]+=float(F.l1_loss(output,target))*size
         totals["edge_l1"]+=float(F.l1_loss(_edge(output),_edge(target)))*size;totals["copy_mse"]+=float(F.mse_loss(reference,target))*size;count+=size
     result={key:value/count for key,value in totals.items()};result["mse_improvement_over_copy"]=1-result["mse"]/max(result["copy_mse"],1e-8)
@@ -209,7 +220,8 @@ def save_samples(model: SmallFullFrameEditor, dataset: PromptPairDataset, output
     items=[dataset[index] for index in indices]; reference=torch.stack([item["reference"] for item in items]).to(device)
     tokens=encode_prompts([item["prompt"] for item in items],model.config.max_text_bytes,device);generator=torch.Generator(device=device).manual_seed(seed)
     noise=torch.randn(reference.shape,generator=generator,device=device)
-    with torch.autocast(device.type,dtype=torch.bfloat16,enabled=device.type=="cuda"): prediction=model(reference,tokens,noise)
+    controls=torch.as_tensor([item["condition_index"] for item in items],device=device) if model.control_embedding is not None else None
+    with torch.autocast(device.type,dtype=torch.bfloat16,enabled=device.type=="cuda"): prediction=model(reference,tokens,noise,controls)
     cell=model.config.image_size; label=280; canvas=Image.new("RGB",(label+3*cell,count*cell),"white");draw=ImageDraw.Draw(canvas)
     for row,item in enumerate(items):
         for column,value in enumerate((item["reference"],item["target"],prediction[row].cpu())):
@@ -222,10 +234,11 @@ def train_small_editor(
     *, task: str, data_dir: Path, instruction_cache: Path, output_dir: Path,
     device: torch.device, epochs: int = 20, batch_size: int = 16,
     learning_rate: float = 2e-4, seed: int = 42,
+    structured_control: bool = False,
 ) -> dict[str, Any]:
     if output_dir.exists(): raise FileExistsError(output_dir)
     output_dir.mkdir(parents=True);random.seed(seed);np.random.seed(seed);torch.manual_seed(seed)
-    config=SmallEditorConfig();datasets={name:build_dataset(task,data_dir,name,config.image_size,instruction_cache) for name in ("train","val","test")}
+    config=SmallEditorConfig(control_classes=64 if structured_control else 0);datasets={name:build_dataset(task,data_dir,name,config.image_size,instruction_cache) for name in ("train","val","test")}
     loaders={name:DataLoader(value,batch_size=batch_size,shuffle=name=="train",num_workers=4,pin_memory=True,persistent_workers=True) for name,value in datasets.items()}
     model=SmallFullFrameEditor(config).to(device);ema=copy.deepcopy(model).eval().requires_grad_(False)
     parameters=sum(p.numel() for p in model.parameters())
@@ -243,7 +256,8 @@ def train_small_editor(
             if random.random()<.5:reference=reference.flip(-1);target=target.flip(-1);noise=noise.flip(-1)
             optimizer.zero_grad(set_to_none=True)
             with torch.autocast(device.type,dtype=torch.bfloat16,enabled=device.type=="cuda"):
-                output=model(reference,tokens,noise)
+                controls=labels if model.control_embedding is not None else None
+                output=model(reference,tokens,noise,controls)
                 text_logits=text_classifier(model.text(tokens))
                 loss=F.l1_loss(output,target)+.65*F.mse_loss(output,target)+.10*F.l1_loss(_edge(output),_edge(target))+.20*F.cross_entropy(text_logits.float(),labels)
             scaler.scale(loss).backward();scaler.unscale_(optimizer);torch.nn.utils.clip_grad_norm_([*model.parameters(),*text_classifier.parameters()],3.0);scaler.step(optimizer);scaler.update()
