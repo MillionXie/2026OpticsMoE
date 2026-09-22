@@ -20,6 +20,15 @@ from .product_scene_replace_data import COMBINATIONS, render_composed_background
 
 TARGET_CATEGORIES = ("chair", "table")
 
+# A small, visually distinct CC BY 4.0 product catalogue makes the supervised
+# edit mapping identifiable.  The former all-to-all set contained hundreds of
+# near-duplicate captions (often only "a chair"), so the same text condition
+# referred to many incompatible silhouettes and encouraged blurry averaging.
+CURATED_TARGET_IDS = {
+    "chair": ("chair-B07GZY7JFV-15", "chair-B07D4FFWC8-25"),
+    "table": ("table-B07GZY278M-19", "table-B07R8WD99Z-08"),
+}
+
 
 def _seed(*parts: str) -> int:
     return int.from_bytes(hashlib.sha256(":".join(parts).encode()).digest()[:8], "big")
@@ -53,14 +62,24 @@ def prompt_variants(row: dict[str, Any]) -> tuple[str, ...]:
     )
 
 
+def _catalogue_rows(data_dir: Path) -> list[dict[str, Any]]:
+    """Return the fixed train-split catalogue, with a fixture-safe fallback."""
+
+    training_rows = _load_rows(data_dir, "train")
+    by_id = {row["sample_id"]: row for row in training_rows}
+    selected = []
+    for category in TARGET_CATEGORIES:
+        category_rows = [row for row in training_rows if row["category"] == category]
+        matches = [by_id[sample_id] for sample_id in CURATED_TARGET_IDS[category] if sample_id in by_id]
+        selected.extend(matches or category_rows[:1])
+    return selected
+
+
 def instruction_rows(data_dir: Path) -> list[dict[str, Any]]:
-    unique: dict[tuple[str, str], dict[str, Any]] = {}
-    for split in ("train", "val", "test"):
-        for row in _load_rows(data_dir, split):
-            if row["category"] not in TARGET_CATEGORIES:
-                continue
-            key = (row["category"], _descriptor(row))
-            unique.setdefault(key, row)
+    unique = {
+        (row["category"], _descriptor(row)): row
+        for row in _catalogue_rows(data_dir)
+    }
     rows = []
     for category, descriptor in sorted(unique):
         example = unique[(category, descriptor)]
@@ -87,9 +106,13 @@ def build_object_instruction_cache(
         "three-layer-qwen-object-replacement",
     )
     meta = {
-        "schema_version": 1, "task": "lamp + text -> new object; preserve scene",
+        "schema_version": 2, "task": "lamp + text -> catalogue object; preserve scene",
         "qwen": str(qwen_checkpoint.resolve()), "text_dim": int(features.shape[1]),
         "instructions": len(rows), "target_categories": list(TARGET_CATEGORIES),
+        "curated_target_ids": {
+            category: [row["sample_id"] for row in _catalogue_rows(data_dir) if row["category"] == category]
+            for category in TARGET_CATEGORIES
+        },
         "qwen_pruning": qwen_report,
     }
     output.parent.mkdir(parents=True, exist_ok=True)
@@ -105,11 +128,8 @@ class ProductObjectReplacementDataset(Dataset[dict[str, Any]]):
     def __init__(self, data_dir: Path, split: str, image_size: int, instruction_cache: Path) -> None:
         rows = _load_rows(data_dir, split)
         self.sources = [row for row in rows if row["category"] == "lamp"]
-        self.targets = {
-            category: [row for row in rows if row["category"] == category]
-            for category in TARGET_CATEGORIES
-        }
-        if not self.sources or any(not values for values in self.targets.values()):
+        self.targets = _catalogue_rows(data_dir)
+        if not self.sources or not self.targets:
             raise ValueError(f"Missing lamp/chair/table examples in {data_dir}/{split}.jsonl")
         self.split = split
         self.image_size = int(image_size)
@@ -122,7 +142,7 @@ class ProductObjectReplacementDataset(Dataset[dict[str, Any]]):
         }
 
     def __len__(self) -> int:
-        return len(self.sources) * len(TARGET_CATEGORIES)
+        return len(self.sources) * len(self.targets)
 
     @staticmethod
     def _load_product(row: dict[str, Any], size: int) -> tuple[Image.Image, Image.Image]:
@@ -141,10 +161,9 @@ class ProductObjectReplacementDataset(Dataset[dict[str, Any]]):
         return foreground, normalized_mask
 
     def __getitem__(self, index: int) -> dict[str, Any]:
-        source = self.sources[index // len(TARGET_CATEGORIES)]
-        category = TARGET_CATEGORIES[index % len(TARGET_CATEGORIES)]
-        candidates = self.targets[category]
-        target = candidates[_seed(source["sample_id"], category, self.split) % len(candidates)]
+        source = self.sources[index // len(self.targets)]
+        target = self.targets[index % len(self.targets)]
+        category = target["category"]
         source_rgb, source_mask = self._load_product(source, self.image_size)
         target_rgb, target_mask = self._load_product(target, self.image_size)
         scene = COMBINATIONS[_seed(source["sample_id"], "shared-scene") % len(COMBINATIONS)]
@@ -174,6 +193,6 @@ class ProductObjectReplacementDataset(Dataset[dict[str, Any]]):
 
 
 __all__ = [
-    "TARGET_CATEGORIES", "ProductObjectReplacementDataset",
+    "TARGET_CATEGORIES", "CURATED_TARGET_IDS", "ProductObjectReplacementDataset",
     "build_object_instruction_cache", "instruction_rows", "prompt_variants",
 ]
