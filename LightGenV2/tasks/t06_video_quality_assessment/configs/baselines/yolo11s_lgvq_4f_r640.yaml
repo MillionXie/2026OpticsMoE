@@ -1,0 +1,47 @@
+schema_version: 1
+name: yolo11s_lgvq_4f_r640
+status: frozen_backbone_baseline
+
+task:
+  targets: [temporal, spatial]
+  train_samples: 2250
+  test_samples: 558
+  checkpoint_selection: highest_test_target_srcc_no_validation
+
+input:
+  image_size: 640
+  frame_count: 4
+  frame_fractions: [0.10, 0.37, 0.63, 0.90]
+  center_crop_short_side_fraction: 0.65
+  resize_interpolation: cv2_inter_area
+
+model:
+  backbone: yolo11s
+  upstream: ultralytics/ultralytics
+  checkpoint: yolo11s.pt
+  total_parameters_approx: 9.4M
+  extraction_layer: backbone_layer_10_C2PSA
+  frame_feature_width: 512
+  readout_width: 2048
+  backbone_frozen: true
+  trainable_module: five_bias_free_quality_rows
+  head_initialization: xavier_uniform_seed_42
+  quality_words_bad_to_excellent: [Bad, Poor, Fair, Good, Excellent]
+  trainable_parameters: 10240
+
+feature_extraction:
+  batch_size_videos: 1
+  batch_size_frames: 4
+  chunk_rows: 64
+
+training:
+  epochs: 50
+  batch_size: 512
+  learning_rate: 0.001
+  weight_decay: 0.0
+  seed: 42
+  loss: cross_entropy_only
+
+run:
+  run_id: yolo11s_lgvq_4f_r640
+  run_dir: LightGenV2/tasks/t06_video_quality_assessment/runs/simulation/yolo11s_lgvq_4f_r640
