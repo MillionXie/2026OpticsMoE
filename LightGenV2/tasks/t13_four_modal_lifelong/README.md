@@ -48,7 +48,7 @@ Speech 二分类与 continuity 二分类分别达到约 94% 和 99%，因任务�
 6000/750/750 问答包只保留作训练策略筛选，不进入正式矩阵。正式矩阵使用 `require_full=true`。
 EuroSAT 发布许可不是 CC BY 4.0，这是对早期“仅 CC BY 4.0”偏好的明确例外，论文前需要老师确认。
 
-## 已确认的正式单任务结果
+## 早期四专家单任务可学性检查
 
 |任务|D2NN 测试 balanced accuracy|MoE 测试 balanced accuracy|
 |---|---:|---:|
@@ -64,67 +64,33 @@ EuroSAT 与 Physical 的 MoE 均已在完整原始数据协议上超过各自 D2
 
 CLEVR 全量 D2NN 在第 17 轮按验证集选出 checkpoint，验证/测试 balanced accuracy 为
 76.94%/76.76%；MoE 在第 33 轮选出 checkpoint，验证/测试为 77.29%/77.16%。MoE 的线性头
-重拟合使验证分数下降，已按固定规则拒绝并恢复联合训练权重。四个正式单任务目前均达到门槛，
+重拟合使验证分数下降，已按固定规则拒绝并恢复联合训练权重。早期四专家单任务均达到门槛，
 且四项 MoE 测试分数均高于对应 D2NN。
 
-## D2NN 纯推理跨任务矩阵
+## 三张正式矩阵
 
-`reports/d2nn_inference_only_cross_task_s17` 保存了无需优化的 4×4 跨任务矩阵。每一行使用源任务
-单独训练好的 D2NN 光学骨干，每一列接入目标任务已经训练好的唯一 `Linear(784, C)`，然后在完整
-目标测试集直接推理。对角线复现正式单任务结果；逐单元类别混淆矩阵保存在 `matrix.json`。
-这个实验衡量即插即用的跨任务兼容性，不代替正在运行的 sequential no-replay 遗忘矩阵。
+正式协议和最新进度见 [三张矩阵报告](reports/THREE_MATRIX_PLAN_20260922.md)，参数公平性见
+[几何与参数报告](reports/PARAMETER_FAIRNESS_20260922.md)。四个任务按 EuroSAT → CLEVR →
+Speech → Physical 顺序运行，完整数据、单层 `Linear(784, C)` 和 986×986 有效孔径保持一致。
 
-## D2NN 固定光学骨干、目标单层 Linear 适配矩阵
+1. **MoE full replay**：16 个固定槽位依次激活 4→8→12→16，旧专家冻结，每个旧任务保存
+   512 条 replay，逐阶段测试已学任务。EuroSAT 正式测试 80.11%；CLEVR 阶段正在运行，
+   后续 Speech 和 Physical 未完成。因此当前尚无完整 MoE 下三角测试矩阵。
+2. **四个独立 D2NN 的纯推理完整矩阵**：行是源任务的固定光学权重，列接目标任务已训练的
+   原始单层 Linear；不进行任何逐单元训练。16/16 单元已完成，新 CLEVR checkpoint 的
+   对角线测试为 76.60%。完整矩阵和逐单元混淆矩阵见
+   `reports/fair_986_inference_only_4x4_clevr12_s17/`。
+3. **单一可重构 D2NN，无 replay**：顺序学习四任务并逐阶段测试，10/10 单元已完成。
+   EuroSAT 从初始 79.92% 降至最后 52.62%，呈现遗忘。
 
-老师要求的第二张正式矩阵已经完成。每一行固定一个单任务 D2NN 光学骨干，每一列在目标任务的
-完整训练集上只拟合新的 `Linear(784, C)`，由目标验证集选 checkpoint；光学参数更新次数为 0。
-测试 balanced accuracy 为：
+完整 D2NN 矩阵中，Physical 光学权重接 EuroSAT 原始头仍达到 76.36%，Speech 光学权重
+接 EuroSAT 头达到 72.56%。已核验四份独立相位 checkpoint 的哈希不同、光学参数在推理前后
+不变、逐单元优化步数为零。固定 EuroSAT 原始 Linear 的相位对照得到：训练相位 79.92%、
+全零相位 75.87%、均匀随机相位 11.27%。EuroSAT 对零相位和部分异源相位相对鲁棒；
+不能以这张矩阵宣称所有异源光学权重都会失效。
 
-|source optics / target Linear|EuroSAT|CLEVR|Speech|Physical|
-|---|---:|---:|---:|---:|
-|EuroSAT|81.27%|54.96%|50.91%|70.20%|
-|CLEVR|78.73%|76.74%|47.38%|69.81%|
-|Speech|79.00%|51.09%|70.63%|70.48%|
-|Physical|78.68%|52.07%|48.17%|78.84%|
-
-完整指标和逐单元类别混淆矩阵见 `reports/frozen_d2nn_linear_transfer_s17/matrix.json`。CLEVR 与 Speech
-在多数异源光学骨干上只有约 47%–55%，而 EuroSAT 与 Physical 的线性可分表示迁移较好；因此该矩阵
-支持的是固定光学表示跨模态兼容性不稳定，而不是所有非对角单元都必然接近随机水平。
-
-正式终身矩阵已经完成第一阶段 EuroSAT：D2NN 测试为 79.92%，ours 为 79.56%。进入 CLEVR 后，
-无 replay D2NN 在第 6 轮已把 EuroSAT 验证分数降至约 10.91%，而相同 replay 在第 8 轮仍保持
-约 74.81%；CLEVR 本身分别为 72.97% 和 73.57%。这是早期运行诊断，完整 20 轮 checkpoint 与
-最终下三角矩阵仍在计算。Ours 已进入 CLEVR 的新专家预热阶段。
-
-Ours 完成预热后的首个 CLEVR epoch 已达到 EuroSAT 76.24%、CLEVR 74.76%，两任务均值 75.50%；
-同一运行快照中，相同 replay D2NN 为 74.68%/75.78%，无 replay D2NN 为 10.58%/76.35%。
-这不是最终 checkpoint，但已经显示 4→8 专家扩展能在学习新任务时保留旧任务。
-
-## 实验顺序
-
-先用标准 4 专家 518×518 几何分别运行四个任务的单任务 D2NN 与 MoE，验证数据和原始光路
-可学性；它不冒充 16 槽终身模型的第一阶段成绩。目标是 D2NN
-至少 65%，MoE 至少 70%；未通过的任务先调训练，不进入终身矩阵。通过后生成老师要求的三张
-正式矩阵：
-
-1. ours：固定 16 槽、旧专家冻结、对所有旧任务 replay（每任务固定 512 条）的
-   4→8→12→16 下三角遗忘矩阵；
-2. frozen D2NN transfer：四个任务各自独立训练光学骨干，冻结每个骨干后，在每个目标任务的完整
-   训练集上只拟合目标 `Linear(784, C)`，得到 4×4 完整矩阵；
-3. sequential D2NN：始终只有一份最新可重构光学权重、无 replay，得到下三角遗忘矩阵。
-
-早期启动的 sequential D2NN replay 只保留作辅助诊断，不进入老师要求的三张正式矩阵；也不运行
-联合训练 D2NN。两个下三角实验的每个阶段按验证 balanced accuracy 选择 checkpoint，随后一次性
-评估已经学过的任务，保存 backward transfer 和 forgetting。
-
-正式终身学习使用 `configs/formal_lifelong_s17.json`：每任务 20 轮、完整数据、当前任务 batch 128、
-每个旧任务固定 replay 512 条且 replay batch 4。无 replay D2NN、相同 replay D2NN 和 ours 分别
-独立运行；三者不共享训练状态，也不包含联合训练。
-
-运行被终止后可对上述三个 sequential 入口增加 `--resume`。恢复逻辑只接受已经生成
-`stage_result.json` 的完整阶段，并加载该阶段选定的 checkpoint；第一个未完成阶段从阶段起点严格
-重跑，从而避免在没有 Adam 状态的情况下伪装成逐 epoch 无缝续训。
-
+此前固定 478×478 几何且对每格 Linear 微调的矩阵、四专家单任务分数，以及顺序 D2NN
+replay 运行只保留作探索记录，不进入上述三张正式矩阵。联合训练 D2NN 不属于终身学习比较。
 ## 入口
 
 先用 `prepare.py` 为现有数据建立带 SHA256 的小型引用包，再运行：

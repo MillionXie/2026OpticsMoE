@@ -1,0 +1,35 @@
+{
+  "checkpoint": "LightGenV2/tasks/t13_four_modal_lifelong/runs/formal_seq_d2nn_no_replay_s17/sequential_d2nn_no_replay/stage_1_eurosat/best_checkpoint.pt",
+  "geometry": [
+    986,
+    986
+  ],
+  "optimization_steps": 0,
+  "head_preserved": true,
+  "results": {
+    "trained": {
+      "balanced_accuracy": 0.7991598528406232,
+      "accuracy": 0.8063179222692946,
+      "phase_hashes": [
+        "321a787d7b9df604febfa8ae28c449a7289edab482130447b0c5dd3d37eead32",
+        "3e5ed6b4537579e0ce2af81c4ff766f4a436ac3aeeb635ac4b9f2affad4eacac"
+      ]
+    },
+    "zero": {
+      "balanced_accuracy": 0.7586679889201442,
+      "accuracy": 0.7729784490698103,
+      "phase_hashes": [
+        "40a242556b2c8f836050f4170dd7f3dc0ae1112c0b2f331648ad8c7942da77a1",
+        "40a242556b2c8f836050f4170dd7f3dc0ae1112c0b2f331648ad8c7942da77a1"
+      ]
+    },
+    "random_uniform": {
+      "balanced_accuracy": 0.11265518063683425,
+      "accuracy": 0.12377970160250507,
+      "phase_hashes": [
+        "6fe919a38e92666b62f65f89d2a05abd43a7307ea84db059af5b1c8154bcd211",
+        "ef3becd8f053ec83f6d1fd4ae955b7072d5aa7c267eab761b78e0bedd1dcdebd"
+      ]
+    }
+  }
+}
