@@ -339,24 +339,28 @@ class CachedTaskDataset(Dataset):
         expected = [source.sample_id(index) for index in range(len(source))]
         if cache_split["sample_ids"] != expected:
             raise RuntimeError("Cache/source sample order mismatch")
+        # Targets are deterministic for all three frozen-feature protocols.
+        # Materialize them once so 40--100 readout epochs do not repeatedly
+        # decode the original images and annotation maps.
+        self.targets = [source[index]["target"] for index in range(len(source))]
 
     def __len__(self) -> int:
         return len(self.source)
 
     def __getitem__(self, index: int) -> dict[str, Any]:
-        value = self.source[index]
-        target = value["target"]
+        target = self.targets[index]
+        sample_id = self.source.sample_id(index)
         if self.source.task == "lsp":
             return {
                 "spatial": self.spatial[index], "heatmaps": target["heatmaps"],
                 "keypoints": target["keypoints"], "visible": target["visible"],
                 "torso_scale": target["torso_scale"], "head_scale": target["head_scale"],
-                "sample_id": value["sample_id"],
+                "sample_id": sample_id,
             }
         if self.source.task == "salicon":
             return {
                 "spatial": self.spatial[index], "density": target["density"],
-                "fixation": target["fixation"], "sample_id": value["sample_id"],
+                "fixation": target["fixation"], "sample_id": sample_id,
             }
         source_grid = torch.tensor(target["source_grid"])
         target_grid = torch.tensor(target["target_grid"])
