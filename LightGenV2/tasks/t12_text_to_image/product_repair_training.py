@@ -23,6 +23,7 @@ from .electronic_turbo_infer import _load_adapter
 from .product_repair_data import ProductRepairDataset, SUPPORTED_CATEGORIES, write_pair_manifest
 from .product_repair_model import (
     RepairModelConfig,
+    TextRegionRouter,
     architecture_report,
     attach_decoder_optics,
     expand_reference_conditioning,
@@ -43,6 +44,7 @@ class RepairTrainingConfig:
     selected_weight: float
     preservation_weight: float
     pair_difference_weight: float
+    region_router_weight: float
     adapter_learning_rate: float
     num_workers: int
     sample_every_epochs: int
@@ -61,7 +63,8 @@ class RepairTrainingConfig:
             raise ValueError("Positive repair training settings are required")
         if min(
             self.weight_decay, self.detail_weight, self.selected_weight,
-            self.preservation_weight, self.pair_difference_weight, self.num_workers,
+            self.preservation_weight, self.pair_difference_weight, self.region_router_weight,
+            self.num_workers,
         ) < 0:
             raise ValueError("Non-negative regularization settings are required")
         if self.batch_size % 2:
@@ -86,6 +89,7 @@ def load_repair_config(path: Path) -> tuple[RepairModelConfig, RepairTrainingCon
             "learning_rate", "optical_learning_rate", "adapter_learning_rate",
             "weight_decay", "detail_weight", "selected_weight", "preservation_weight",
             "pair_difference_weight",
+            "region_router_weight",
         } else int(value))
         for key, value in training.items()
     })
@@ -111,6 +115,7 @@ class RepairLatentDataset(Dataset[dict[str, Any]]):
             "sample_id": self.payload["sample_ids"][index],
             "prompt": self.payload["prompts"][index],
             "category": self.payload["categories"][index],
+            "selected_region": self.payload["selected_regions"][index],
         }
 
 
@@ -160,6 +165,7 @@ def cache_repair_latents(
         payload: dict[str, list[Any]] = {
             "reference": [], "target": [], "selected_mask": [], "distractor_mask": [],
             "qwen_text": [], "sample_ids": [], "prompts": [], "categories": [],
+            "selected_regions": [],
         }
         for batch in loader:
             reference = batch["reference"].to(device=device, dtype=dtype, non_blocking=True)
@@ -178,6 +184,7 @@ def cache_repair_latents(
                 ("sample_ids", "sample_id"), ("prompts", "prompt"), ("categories", "category")
             ):
                 payload[key].extend(batch[source_key])
+            payload["selected_regions"].extend(batch["selected_region"])
         packed = {
             key: torch.cat(value) if key in {
                 "reference", "target", "selected_mask", "distractor_mask", "qwen_text"
@@ -208,11 +215,19 @@ def _masked_l1(value: torch.Tensor, target: torch.Tensor, mask: torch.Tensor) ->
 
 
 @torch.inference_mode()
-def _evaluate(unet, adapter, loader, sigma, device) -> dict[str, float]:
+def _region_targets(values: list[str], device: torch.device) -> torch.Tensor:
+    lookup = {"upper": 0, "center": 1, "lower": 2}
+    return torch.tensor([lookup[value] for value in values], device=device, dtype=torch.long)
+
+
+@torch.inference_mode()
+def _evaluate(unet, adapter, region_router, loader, sigma, device) -> dict[str, float]:
     unet.eval()
     adapter.eval()
+    region_router.eval()
     totals = {"latent_mse": 0.0, "selected_l1": 0.0, "distractor_change_l1": 0.0,
-              "reference_mse": 0.0, "counterfactual_delta_l1": 0.0}
+              "reference_mse": 0.0, "counterfactual_delta_l1": 0.0,
+              "region_accuracy": 0.0}
     samples = 0
     generator = torch.Generator(device=device).manual_seed(7321)
     for batch in loader:
@@ -221,12 +236,16 @@ def _evaluate(unet, adapter, loader, sigma, device) -> dict[str, float]:
         selected = batch["selected_mask"].to(device, non_blocking=True)
         distractor = batch["distractor_mask"].to(device, non_blocking=True)
         condition = adapter.condition(batch["qwen_text"].to(device))
+        region_logits = region_router(batch["qwen_text"].to(device))
+        gate = region_router.spatial_gate(region_logits, *reference.shape[-2:])
         pair_noise = torch.randn(
             (len(reference) // 2, *reference.shape[1:]), generator=generator, device=device
         )
         noise = pair_noise.repeat_interleave(2, dim=0)
         with torch.autocast(device.type, dtype=torch.float16, enabled=device.type == "cuda"):
-            output = one_step_edit(unet, noise, reference, condition, sigma).float()
+            output = one_step_edit(
+                unet, noise, reference, condition, sigma, spatial_gate=gate
+            ).float()
         count = len(reference)
         totals["latent_mse"] += float(F.mse_loss(output, target)) * count
         totals["reference_mse"] += float(F.mse_loss(reference, target)) * count
@@ -236,6 +255,8 @@ def _evaluate(unet, adapter, loader, sigma, device) -> dict[str, float]:
         totals["counterfactual_delta_l1"] += float(_masked_l1(
             output[0::2] - output[1::2], target[0::2] - target[1::2], pair_mask
         )) * count
+        targets = _region_targets(batch["selected_region"], device)
+        totals["region_accuracy"] += float((region_logits.argmax(-1) == targets).float().mean()) * count
         samples += count
     result = {key: value / samples for key, value in totals.items()}
     result["mse_improvement_over_copy"] = 1.0 - result["latent_mse"] / max(
@@ -246,7 +267,7 @@ def _evaluate(unet, adapter, loader, sigma, device) -> dict[str, float]:
 
 @torch.inference_mode()
 def _sample_grid(
-    *, unet, adapter, vae, sigma, latent_dataset: RepairLatentDataset,
+    *, unet, adapter, region_router, vae, sigma, latent_dataset: RepairLatentDataset,
     raw_dataset: ProductRepairDataset, output: Path, device: torch.device, seed: int,
 ) -> None:
     unet.eval()
@@ -268,6 +289,8 @@ def _sample_grid(
     reference_latent = latent_dataset.payload["reference"][chosen].float().to(device)
     text = latent_dataset.payload["qwen_text"][chosen].float().to(device)
     condition = adapter.condition(text)
+    region_logits = region_router(text)
+    gate = region_router.spatial_gate(region_logits, *reference_latent.shape[-2:])
     generator = torch.Generator(device=device).manual_seed(seed)
     pair_noise = torch.randn(
         (len(reference_latent) // 2, *reference_latent.shape[1:]),
@@ -275,7 +298,9 @@ def _sample_grid(
     )
     noise = pair_noise.repeat_interleave(2, dim=0)
     with torch.autocast(device.type, dtype=torch.float16, enabled=device.type == "cuda"):
-        output_latent = one_step_edit(unet, noise, reference_latent, condition, sigma)
+        output_latent = one_step_edit(
+            unet, noise, reference_latent, condition, sigma, spatial_gate=gate
+        )
         decoded = vae.decode(output_latent / vae.config.scaling_factor, return_dict=False)[0]
     decoded = decoded.float().clamp(-1, 1).cpu()
     cell, label_width = raw_dataset.image_size, 250
@@ -328,6 +353,7 @@ def train_repair_model(
     )
     adapter, _ = _load_adapter(adapter_checkpoint, device)
     adapter.requires_grad_(True)
+    region_router = TextRegionRouter(train.payload["qwen_text"].shape[1]).to(device)
     unet = UNet2DConditionModel.from_pretrained(
         initial_unet, subfolder="unet", variant="fp16", torch_dtype=torch.float32,
         local_files_only=True,
@@ -354,6 +380,7 @@ def train_repair_model(
         {"params": electronic_parameters, "lr": training_config.learning_rate},
         {"params": optical_parameters, "lr": training_config.optical_learning_rate},
         {"params": list(adapter.parameters()), "lr": training_config.adapter_learning_rate},
+        {"params": list(region_router.parameters()), "lr": training_config.adapter_learning_rate},
     ], weight_decay=training_config.weight_decay)
     scheduler = EulerDiscreteScheduler.from_pretrained(
         turbo_checkpoint, subfolder="scheduler", local_files_only=True
@@ -368,7 +395,7 @@ def train_repair_model(
     raw_val = ProductRepairDataset(
         data_dir, "val", training_config.image_size, instruction_cache, seed=seed
     )
-    initial = _evaluate(unet, adapter, val_loader, sigma, device)
+    initial = _evaluate(unet, adapter, region_router, val_loader, sigma, device)
     best_value = math.inf
     best_epoch = 0
     history: list[dict[str, Any]] = []
@@ -378,12 +405,16 @@ def train_repair_model(
     for epoch in range(1, training_config.epochs + 1):
         unet.train()
         adapter.train()
+        region_router.train()
         total = 0.0
         count = 0
         for step, batch in enumerate(train_loader, 1):
             reference = batch["reference"].to(device, non_blocking=True)
             target = batch["target"].to(device, non_blocking=True)
             condition = adapter.condition(batch["qwen_text"].to(device))
+            region_logits = region_router(batch["qwen_text"].to(device))
+            gate = region_router.spatial_gate(region_logits, *reference.shape[-2:])
+            region_targets = _region_targets(batch["selected_region"], device)
             selected = batch["selected_mask"].to(device, non_blocking=True)
             pair_noise = torch.randn(
                 (len(reference) // 2, *reference.shape[1:]), device=device,
@@ -391,7 +422,9 @@ def train_repair_model(
             )
             noise = pair_noise.repeat_interleave(2, dim=0)
             with torch.autocast(device.type, dtype=torch.float16, enabled=device.type == "cuda"):
-                output = one_step_edit(unet, noise, reference, condition, sigma).float()
+                output = one_step_edit(
+                    unet, noise, reference, condition, sigma, spatial_gate=gate
+                ).float()
                 global_loss = F.mse_loss(output, target)
                 selected_loss = _masked_l1(output, target, selected)
                 preservation_loss = _masked_l1(output, reference, 1.0 - selected)
@@ -404,20 +437,26 @@ def train_repair_model(
                 loss = global_loss + training_config.selected_weight * selected_loss
                 loss = loss + training_config.preservation_weight * preservation_loss
                 loss = loss + training_config.pair_difference_weight * pair_difference_loss
+                loss = loss + training_config.region_router_weight * F.cross_entropy(
+                    region_logits, region_targets
+                )
                 loss = loss + training_config.detail_weight * latent_gradient_loss(output, target)
                 scaled_loss = loss / training_config.gradient_accumulation
             scaler.scale(scaled_loss).backward()
             if step % training_config.gradient_accumulation == 0 or step == len(train_loader):
                 scaler.unscale_(optimizer)
                 torch.nn.utils.clip_grad_norm_(
-                    [*electronic_parameters, *optical_parameters, *adapter.parameters()], 1.0
+                    [
+                        *electronic_parameters, *optical_parameters,
+                        *adapter.parameters(), *region_router.parameters(),
+                    ], 1.0
                 )
                 scaler.step(optimizer)
                 scaler.update()
                 optimizer.zero_grad(set_to_none=True)
             total += float(loss.detach()) * len(reference)
             count += len(reference)
-        validation = _evaluate(unet, adapter, val_loader, sigma, device)
+        validation = _evaluate(unet, adapter, region_router, val_loader, sigma, device)
         row = {
             "epoch": epoch,
             "train_loss": total / count,
@@ -436,16 +475,23 @@ def train_repair_model(
                 "training_config": asdict(training_config),
                 "unet": {key: value.detach().half().cpu() for key, value in unet.state_dict().items()},
                 "adapter": {key: value.detach().half().cpu() for key, value in adapter.state_dict().items()},
+                "region_router": {
+                    key: value.detach().half().cpu()
+                    for key, value in region_router.state_dict().items()
+                },
                 "validation": validation,
             }, output_dir / "best_model.pt")
         if epoch % training_config.sample_every_epochs == 0:
             _sample_grid(
-                unet=unet, adapter=adapter, vae=vae, sigma=sigma,
+                unet=unet, adapter=adapter, region_router=region_router,
+                vae=vae, sigma=sigma,
                 latent_dataset=val, raw_dataset=raw_val,
                 output=output_dir / "samples" / f"epoch_{epoch:03d}.jpg",
                 device=device, seed=seed + epoch,
             )
-    report_architecture = architecture_report(unet, vae, adapter, optical, model_config)
+    report_architecture = architecture_report(
+        unet, vae, adapter, region_router, optical, model_config
+    )
     report_architecture["trainable_parameters"] = sum(p.numel() for p in unet.parameters() if p.requires_grad)
     report = {
         "schema_version": 1,
@@ -467,7 +513,7 @@ def train_repair_model(
     (output_dir / "history.json").write_text(
         json.dumps(history, indent=2) + "\n", encoding="utf-8"
     )
-    del unet, vae, adapter, optimizer
+    del unet, vae, adapter, region_router, optimizer
     if device.type == "cuda":
         torch.cuda.empty_cache()
     return report

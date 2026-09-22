@@ -32,6 +32,26 @@ class RepairModelConfig:
             raise ValueError("Decoder optical alpha must stay at or above 0.4")
 
 
+class TextRegionRouter(nn.Module):
+    """Tiny Qwen-conditioned router for upper/center/lower decoder residuals."""
+
+    def __init__(self, text_dim: int = 2048) -> None:
+        super().__init__()
+        self.net = nn.Sequential(nn.LayerNorm(text_dim), nn.Linear(text_dim, 3))
+
+    def forward(self, qwen_text: torch.Tensor) -> torch.Tensor:
+        return self.net(qwen_text.float())
+
+    @staticmethod
+    def spatial_gate(logits: torch.Tensor, height: int, width: int) -> torch.Tensor:
+        weights = logits.softmax(dim=-1)
+        y = torch.linspace(0, 1, height, device=logits.device, dtype=logits.dtype)
+        centers = logits.new_tensor((0.28, 0.50, 0.72))
+        basis = torch.exp(-0.5 * ((y[:, None] - centers[None]) / 0.115).square())
+        gate = weights @ basis.T
+        return gate[:, None, :, None].expand(-1, 1, height, width)
+
+
 class ParallelOpticalDecoderBlock(nn.Module):
     """Wrap the deepest UNet up block with true E/O parallel branches.
 
@@ -233,6 +253,7 @@ def one_step_edit(
     timestep: int = 0,
     noise_scale: float = 0.05,
     residual_scale: float = 0.25,
+    spatial_gate: torch.Tensor | None = None,
 ) -> torch.Tensor:
     """Predict one bounded edit residual around the encoded input image.
 
@@ -249,6 +270,10 @@ def one_step_edit(
     residual = unet(
         model_input, timesteps, encoder_hidden_states=condition, return_dict=False
     )[0]
+    if spatial_gate is not None:
+        if spatial_gate.shape != (len(residual), 1, *residual.shape[-2:]):
+            raise ValueError("Spatial text gate does not match the latent residual")
+        residual = residual * spatial_gate.to(residual.dtype)
     return reference_latent + residual_scale * residual
 
 
@@ -256,19 +281,24 @@ def architecture_report(
     unet: nn.Module,
     vae: nn.Module,
     adapter: nn.Module,
+    region_router: nn.Module,
     optical: ParallelOpticalDecoderBlock,
     config: RepairModelConfig,
 ) -> dict[str, Any]:
     unet_parameters = sum(p.numel() for p in unet.parameters())
     decoder_parameters = sum(p.numel() for p in vae.decoder.parameters())
     adapter_parameters = sum(p.numel() for p in adapter.parameters())
+    router_parameters = sum(p.numel() for p in region_router.parameters())
     return {
         "variant": "qwen_bksdm_v2_tiny_reference_decoder_optical",
         "flow": "image->frozen VAE encoder; text->frozen Qwen->adapter; one UNet call->VAE decoder",
         "unet_parameters": unet_parameters,
         "vae_decoder_parameters": decoder_parameters,
         "qwen_condition_adapter_parameters": adapter_parameters,
-        "generation_tail_parameters": unet_parameters + decoder_parameters + adapter_parameters,
+        "text_region_router_parameters": router_parameters,
+        "generation_tail_parameters": (
+            unet_parameters + decoder_parameters + adapter_parameters + router_parameters
+        ),
         "qwen_parameters_excluded_from_tail": True,
         "inference_iterations": 1,
         "unet_calls": 1,
@@ -283,6 +313,7 @@ def architecture_report(
 __all__ = [
     "ParallelOpticalDecoderBlock",
     "RepairModelConfig",
+    "TextRegionRouter",
     "architecture_report",
     "attach_decoder_optics",
     "expand_reference_conditioning",

@@ -16,6 +16,7 @@ from LightGenV2.tasks.t12_text_to_image.product_repair_data import (
 from LightGenV2.tasks.t12_text_to_image.product_repair_model import (
     ParallelOpticalDecoderBlock,
     RepairModelConfig,
+    TextRegionRouter,
     expand_reference_conditioning,
 )
 
@@ -102,3 +103,12 @@ def test_reference_conditioning_preserves_pretrained_channels() -> None:
     torch.testing.assert_close(expanded.weight[:, :4], original)
     assert torch.count_nonzero(expanded.weight[:, 4:]) == 0
     assert expanded.in_channels == 8
+
+
+def test_text_region_router_orders_spatial_gates() -> None:
+    logits = torch.tensor([[8.0, 0.0, 0.0], [0.0, 0.0, 8.0]])
+    gates = TextRegionRouter.spatial_gate(logits, 32, 32)
+    y = torch.arange(32).float()
+    centroids = (gates[:, 0, :, 0] * y).sum(-1) / gates[:, 0, :, 0].sum(-1)
+    assert float(centroids[0]) < float(centroids[1])
+    assert gates.shape == (2, 1, 32, 32)
