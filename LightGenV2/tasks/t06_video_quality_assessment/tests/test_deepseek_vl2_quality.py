@@ -76,6 +76,8 @@ class DeepSeekVLV2QualityContractTest(unittest.TestCase):
         self.assertIn(".eval().requires_grad_(False)", source)
         self.assertIn('"best_checkpoint.pt"', source)
         self.assertIn('"last_checkpoint.pt"', source)
+        self.assertNotIn("core.decode_random_seek", source)
+        self.assertIn("cv2.INTER_AREA", source)
         self.assertNotIn("periodic_checkpoint", source)
         self.assertGreater(len(list(ast.walk(tree))), 500)
 

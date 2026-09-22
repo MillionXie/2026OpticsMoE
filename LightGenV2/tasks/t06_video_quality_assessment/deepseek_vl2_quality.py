@@ -28,6 +28,8 @@ from typing import Any, Iterable
 import numpy as np
 import torch
 import yaml
+import cv2
+from PIL import Image
 from torch import nn
 from torch.utils.data import DataLoader, TensorDataset
 
@@ -104,6 +106,47 @@ def build_conversation(target: str, frame_count: int) -> list[dict[str, Any]]:
         },
         {"role": "<|Assistant|>", "content": ""},
     ]
+
+
+def decode_ordered_frames(
+    path: Path, fractions: list[float], image_size: int
+) -> tuple[list[Image.Image], list[int]]:
+    """Match the Qwen OpenCV seek/crop/resize contract without video_utils.
+
+    DeepSeek-VL2's pinned Transformers 4.38.2 predates
+    ``transformers.video_utils.VideoMetadata``. Its multi-image processor needs
+    only PIL frames, so importing the newer Qwen-only metadata class would add
+    an unnecessary incompatible dependency.
+    """
+    capture = cv2.VideoCapture(str(path))
+    total = int(capture.get(cv2.CAP_PROP_FRAME_COUNT))
+    if total <= 0:
+        capture.release()
+        raise RuntimeError(f"Video has no readable frames: {path}")
+    positions = [
+        min(total - 1, max(0, round((total - 1) * fraction)))
+        for fraction in fractions
+    ]
+    frames: list[Image.Image] = []
+    for position in positions:
+        capture.set(cv2.CAP_PROP_POS_FRAMES, position)
+        ok, bgr = capture.read()
+        if not ok:
+            capture.release()
+            raise RuntimeError(f"Failed to decode frame {position} from {path}")
+        rgb = cv2.cvtColor(bgr, cv2.COLOR_BGR2RGB)
+        height, width = rgb.shape[:2]
+        side = max(2, round(min(height, width) * 0.65))
+        top = (height - side) // 2
+        left = (width - side) // 2
+        resized = cv2.resize(
+            rgb[top : top + side, left : left + side],
+            (image_size, image_size),
+            interpolation=cv2.INTER_AREA,
+        )
+        frames.append(Image.fromarray(resized))
+    capture.release()
+    return frames, positions
 
 
 def quality_token_rows(
@@ -220,9 +263,7 @@ def extract_one(
     image_size: int,
     fractions: list[float],
 ) -> tuple[torch.Tensor, list[int], int]:
-    frames, _metadata, positions = core.decode_random_seek(
-        Path(row["video_path"]), fractions, image_size
-    )
+    frames, positions = decode_ordered_frames(Path(row["video_path"]), fractions, image_size)
     conversation = build_conversation(target, len(frames))
     prepared = processor(
         conversations=conversation,
