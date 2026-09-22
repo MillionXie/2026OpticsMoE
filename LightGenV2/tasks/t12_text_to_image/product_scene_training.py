@@ -306,7 +306,7 @@ def _sample_grid(
         # guarantees that the requested edit changes only the scene.
         exact = (
             generated[row_index] * raw["background_mask"]
-            + raw["reference"] * raw["foreground_mask"]
+            + raw["foreground_rgb"] * raw["foreground_mask"]
         )
         for column, value in enumerate((raw["reference"], raw["target"], exact)):
             array = value.add(1).mul(127.5).clamp(0, 255).byte().permute(1, 2, 0).numpy()

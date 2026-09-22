@@ -259,17 +259,27 @@ def _fallback_mask(image: Image.Image) -> Image.Image:
 
 def _normalize_product(
     image: Image.Image, mask: Image.Image, size: int,
-) -> tuple[Image.Image, Image.Image]:
-    """Tightly frame the product while retaining its exact pixels and alpha."""
+) -> tuple[Image.Image, Image.Image, Image.Image]:
+    """Tightly frame the product and undo its original white matte at edges."""
 
     box = mask.getbbox()
     if box is None:
-        return (
-            ImageOps.fit(image, (size, size), method=Image.Resampling.LANCZOS),
-            ImageOps.fit(mask, (size, size), method=Image.Resampling.LANCZOS),
-        )
-    product = image.crop(box)
+        fitted = ImageOps.fit(image, (size, size), method=Image.Resampling.LANCZOS)
+        fitted_mask = ImageOps.fit(mask, (size, size), method=Image.Resampling.LANCZOS)
+        return fitted, fitted_mask, fitted
+    product = image.crop(box).convert("RGB")
     product_mask = mask.crop(box)
+    # CleanRender RGB was originally alpha-composited on white.  Recover the
+    # straight foreground color before placing it on a dark scene; otherwise
+    # the antialiased edge carries a conspicuous white matte.
+    rgb = np.asarray(product).astype(np.float32) / 255.0
+    alpha = np.asarray(product_mask).astype(np.float32)[..., None] / 255.0
+    straight = np.zeros_like(rgb)
+    valid = alpha[..., 0] > 1e-3
+    straight[valid] = np.clip(
+        (rgb[valid] - (1.0 - alpha[valid])) / alpha[valid], 0.0, 1.0
+    )
+    product = Image.fromarray((straight * 255).round().astype(np.uint8), "RGB")
     max_width, max_height = int(size * 0.68), int(size * 0.78)
     scale = min(max_width / product.width, max_height / product.height)
     resized_size = (
@@ -278,13 +288,14 @@ def _normalize_product(
     )
     product = product.resize(resized_size, Image.Resampling.LANCZOS)
     product_mask = product_mask.resize(resized_size, Image.Resampling.LANCZOS)
-    reference = Image.new("RGB", (size, size), "white")
+    foreground = Image.new("RGB", (size, size), "black")
     normalized_mask = Image.new("L", (size, size), 0)
     left = (size - resized_size[0]) // 2
     top = max(0, int(size * 0.88) - resized_size[1])
-    reference.paste(product, (left, top), product_mask)
+    foreground.paste(product, (left, top))
     normalized_mask.paste(product_mask, (left, top))
-    return reference, normalized_mask
+    reference = Image.composite(foreground, Image.new("RGB", (size, size), "white"), normalized_mask)
+    return reference, normalized_mask, foreground
 
 
 class ProductSceneDataset(Dataset[dict[str, Any]]):
@@ -312,9 +323,11 @@ class ProductSceneDataset(Dataset[dict[str, Any]]):
                 source_mask = handle.convert("L")
         else:
             source_mask = _fallback_mask(source)
-        reference, mask_image = _normalize_product(source, source_mask, self.image_size)
+        reference, mask_image, foreground = _normalize_product(
+            source, source_mask, self.image_size
+        )
         background = render_background(scene_index, self.image_size, row["sample_id"])
-        target = Image.composite(reference, background, mask_image)
+        target = Image.composite(foreground, background, mask_image)
         variant = _seed(row["sample_id"], SCENES[scene_index]["id"]) % len(
             SCENES[scene_index]["prompts"]
         )
@@ -327,6 +340,7 @@ class ProductSceneDataset(Dataset[dict[str, Any]]):
         return {
             "reference": tensor(reference),
             "target": tensor(target),
+            "foreground_rgb": tensor(foreground),
             "foreground_mask": foreground_mask,
             "background_mask": 1.0 - foreground_mask,
             "qwen_text": self.text[prompt_index],
