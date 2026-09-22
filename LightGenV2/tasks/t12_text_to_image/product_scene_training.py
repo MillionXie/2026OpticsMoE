@@ -289,7 +289,7 @@ def _sample_grid(
     noise = shared_noise.expand(len(chosen), -1, -1, -1)
     with torch.autocast(device.type, dtype=torch.float16, enabled=device.type == "cuda"):
         generated_latent = one_step_edit(
-            unet, noise, reference, condition, sigma, spatial_gate=background,
+            unet, noise, reference, condition, sigma,
             residual_scale=residual_scale, noise_scale=noise_scale,
         )
         generated = vae.decode(

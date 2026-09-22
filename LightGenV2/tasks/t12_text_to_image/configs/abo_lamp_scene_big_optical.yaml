@@ -12,7 +12,7 @@ training:
   image_size: 256
   batch_size: 2
   gradient_accumulation: 2
-  epochs: 5
+  epochs: 4
   learning_rate: 5.0e-5
   optical_learning_rate: 1.0e-4
   adapter_learning_rate: 3.0e-4
