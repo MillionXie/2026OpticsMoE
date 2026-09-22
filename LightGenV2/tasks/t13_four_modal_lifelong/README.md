@@ -102,6 +102,10 @@ Ours 完成预热后的首个 CLEVR epoch 已达到 EuroSAT 76.24%、CLEVR 74.76
 每个旧任务固定 replay 512 条且 replay batch 4。无 replay D2NN、相同 replay D2NN 和 ours 分别
 独立运行；三者不共享训练状态，也不包含联合训练。
 
+运行被终止后可对上述三个 sequential 入口增加 `--resume`。恢复逻辑只接受已经生成
+`stage_result.json` 的完整阶段，并加载该阶段选定的 checkpoint；第一个未完成阶段从阶段起点严格
+重跑，从而避免在没有 Adam 状态的情况下伪装成逐 epoch 无缝续训。
+
 ## 入口
 
 先用 `prepare.py` 为现有数据建立带 SHA256 的小型引用包，再运行：

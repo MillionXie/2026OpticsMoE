@@ -159,3 +159,32 @@ def test_head_refit_is_rejected_when_validation_score_decreases(monkeypatch):
     assert result["validation_score_after"] == .70
     for key, value in model.heads["speech"].state_dict().items():
         assert torch.equal(value, original[key])
+
+
+def test_resume_restores_only_fully_evaluated_stages(tmp_path: Path):
+    model = torch.nn.Linear(2, 2)
+    expected = {key: torch.full_like(value, 3) for key, value in model.state_dict().items()}
+    stage1 = tmp_path / "stage_1_eurosat"
+    stage1.mkdir()
+    torch.save({"model": expected}, stage1 / "best_checkpoint.pt")
+    (stage1 / "stage_result.json").write_text(json.dumps({
+        "selected_epoch": 7,
+        "val": {"eurosat": {"balanced_accuracy": .8}},
+        "test": {"eurosat": {"balanced_accuracy": .79}},
+    }))
+    incomplete = tmp_path / "stage_2_clevr"
+    incomplete.mkdir()
+    torch.save({"model": model.state_dict()}, incomplete / "best_checkpoint.pt")
+
+    start, history, replay = experiment_run.restore_completed_stages(
+        model, tmp_path, use_replay=True)
+
+    assert start == 1
+    assert history == [{
+        "task": "eurosat", "selected_epoch": 7,
+        "val": {"eurosat": {"balanced_accuracy": .8}},
+        "test": {"eurosat": {"balanced_accuracy": .79}},
+    }]
+    assert replay == {"eurosat": None}
+    for key, value in model.state_dict().items():
+        assert torch.equal(value, expected[key])

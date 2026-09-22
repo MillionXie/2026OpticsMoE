@@ -581,15 +581,48 @@ def overfit_diagnostics(tasks, cfg, out, device):
     return result
 
 
-def train_sequential_d2nn(tasks, cfg, out, device, use_replay):
+def restore_completed_stages(model, root, use_replay=False, moe=False):
+    """Restore the last fully evaluated stage; incomplete stages are rerun."""
+    history = []
+    replay = {}
+    for task_index, name in enumerate(TASK_ORDER):
+        task_root = root / f"stage_{task_index + 1}_{name}"
+        result_path = task_root / "stage_result.json"
+        checkpoint_path = task_root / ("refit_checkpoint.pt" if moe else "best_checkpoint.pt")
+        if moe and not checkpoint_path.exists():
+            checkpoint_path = task_root / "best_checkpoint.pt"
+        if not result_path.exists() or not checkpoint_path.exists():
+            break
+        stage = json.loads(result_path.read_text())
+        checkpoint = torch.load(checkpoint_path, map_location=next(model.parameters()).device,
+                                weights_only=False)
+        model.load_state_dict(checkpoint["model"])
+        history.append({"task": name, "selected_epoch": stage["selected_epoch"],
+                        "val": stage["val"], "test": stage["test"]})
+        if use_replay:
+            replay[name] = None
+    return len(history), history, replay
+
+
+def train_sequential_d2nn(tasks, cfg, out, device, use_replay, resume=False):
     """Sequential D2NN with optional replay and a stage-by-task score matrix."""
     tag = "replay" if use_replay else "no_replay"
-    root = out / f"sequential_d2nn_{tag}"; root.mkdir()
+    root = out / f"sequential_d2nn_{tag}"; root.mkdir(exist_ok=resume)
     seed_all(cfg["seed"])
     model = build_model("d2nn", cfg, cfg["seed"]).to(device)
     replay = {}; all_history = []
+    start_index = 0
+    if resume:
+        start_index, all_history, restored_replay = restore_completed_stages(
+            model, root, use_replay=use_replay)
+        if use_replay:
+            replay = {name: replay_indices(tasks[name], cfg["replay_per_task"],
+                                           cfg["seed"] + task_index)
+                      for task_index, name in enumerate(TASK_ORDER[:start_index])}
     for task_index, name in enumerate(TASK_ORDER):
-        task_root = root / f"stage_{task_index+1}_{name}"; task_root.mkdir()
+        if task_index < start_index:
+            continue
+        task_root = root / f"stage_{task_index+1}_{name}"; task_root.mkdir(exist_ok=resume)
         task = tasks[name]
         old_head_hash = {n:module_sha(model.heads[n]) for n in TASK_ORDER[:task_index]}
         shared_before = {"first_phase":state_sha(model.first_phase),
@@ -651,13 +684,22 @@ def train_sequential_d2nn(tasks, cfg, out, device, use_replay):
     return result
 
 
-def train_lifelong_moe(tasks, cfg, out, device):
-    root = out / "lifelong_moe"; root.mkdir()
+def train_lifelong_moe(tasks, cfg, out, device, resume=False):
+    root = out / "lifelong_moe"; root.mkdir(exist_ok=resume)
     seed_all(cfg["seed"])
     model = build_model("moe", cfg, cfg["seed"]).to(device)
     replay = {}; all_history = []
+    start_index = 0
+    if resume:
+        start_index, all_history, _ = restore_completed_stages(
+            model, root, use_replay=True, moe=True)
+        replay = {name: replay_indices(tasks[name], cfg["replay_per_task"],
+                                       cfg["seed"] + task_index)
+                  for task_index, name in enumerate(TASK_ORDER[:start_index])}
     for task_index, name in enumerate(TASK_ORDER):
-        task_root = root / f"stage_{task_index+1}_{name}"; task_root.mkdir()
+        if task_index < start_index:
+            continue
+        task_root = root / f"stage_{task_index+1}_{name}"; task_root.mkdir(exist_ok=resume)
         task = tasks[name]
         old_hash = [state_sha(p) for p in model.first_phase[:4*task_index]]
         old_head_hash = {n: module_sha(model.heads[n]) for n in TASK_ORDER[:task_index]}
@@ -769,13 +811,15 @@ def smoke(tasks,cfg,out,device):
 
 
 def main():
-    p=argparse.ArgumentParser();p.add_argument("--config",type=Path,required=True);p.add_argument("--eurosat",type=Path);p.add_argument("--clevr",type=Path);p.add_argument("--speech",type=Path);p.add_argument("--physical",type=Path);p.add_argument("--out",type=Path,required=True);p.add_argument("--phase",choices=["smoke","overfit","train"],default="train");p.add_argument("--only",choices=["all","single_task","single_task_moe","sequential_d2nn","sequential_d2nn_replay","moe"],default="all");p.add_argument("--single-task-name",choices=TASK_ORDER);p.add_argument("--init-checkpoint",type=Path,help="continue one single-task MoE run up to the configured target epoch");a=p.parse_args()
-    cfg=json.loads(a.config.read_text());a.out.mkdir(parents=True,exist_ok=False);save(a.out/"status.json",{"status":"running","pid":os.getpid()})
+    p=argparse.ArgumentParser();p.add_argument("--config",type=Path,required=True);p.add_argument("--eurosat",type=Path);p.add_argument("--clevr",type=Path);p.add_argument("--speech",type=Path);p.add_argument("--physical",type=Path);p.add_argument("--out",type=Path,required=True);p.add_argument("--phase",choices=["smoke","overfit","train"],default="train");p.add_argument("--only",choices=["all","single_task","single_task_moe","sequential_d2nn","sequential_d2nn_replay","moe"],default="all");p.add_argument("--single-task-name",choices=TASK_ORDER);p.add_argument("--init-checkpoint",type=Path,help="continue one single-task MoE run up to the configured target epoch");p.add_argument("--resume",action="store_true",help="restore completed sequential stages and rerun the first incomplete stage");a=p.parse_args()
+    cfg=json.loads(a.config.read_text());a.out.mkdir(parents=True,exist_ok=a.resume);save(a.out/"status.json",{"status":"running","pid":os.getpid(),"resume":a.resume})
     try:
         if a.single_task_name and not (a.phase == "train" and a.only in ("single_task", "single_task_moe")):
             raise ValueError("--single-task-name requires formal single_task or single_task_moe training")
         if a.init_checkpoint and not (a.phase == "train" and a.only == "single_task_moe" and a.single_task_name):
             raise ValueError("--init-checkpoint requires single_task_moe and --single-task-name")
+        if a.resume and not (a.phase == "train" and a.only in ("sequential_d2nn", "sequential_d2nn_replay", "moe")):
+            raise ValueError("--resume requires one sequential training mode")
         names = (a.single_task_name,) if a.single_task_name else TASK_ORDER
         paths={"eurosat":a.eurosat,"clevr":a.clevr,"speech":a.speech,"physical":a.physical}
         missing=[name for name in names if paths[name] is None]
@@ -792,9 +836,9 @@ def main():
             result={}
             if a.only in ("all","single_task"):result["single_task"]=train_single_task_d2nn(tasks,cfg,a.out,device,a.single_task_name)
             if a.only in ("all","single_task_moe"):result["single_task_moe"]=train_single_task_moe(tasks,cfg,a.out,device,a.single_task_name,a.init_checkpoint)
-            if a.only in ("all","sequential_d2nn"):result["sequential_d2nn"]=train_sequential_d2nn(tasks,cfg,a.out,device,False)
-            if a.only in ("all","sequential_d2nn_replay"):result["sequential_d2nn_replay"]=train_sequential_d2nn(tasks,cfg,a.out,device,True)
-            if a.only in ("all","moe"):result["moe"]=train_lifelong_moe(tasks,cfg,a.out,device)
+            if a.only in ("all","sequential_d2nn"):result["sequential_d2nn"]=train_sequential_d2nn(tasks,cfg,a.out,device,False,a.resume)
+            if a.only in ("all","sequential_d2nn_replay"):result["sequential_d2nn_replay"]=train_sequential_d2nn(tasks,cfg,a.out,device,True,a.resume)
+            if a.only in ("all","moe"):result["moe"]=train_lifelong_moe(tasks,cfg,a.out,device,a.resume)
             save(a.out/"comparison.json",result)
         save(a.out/"status.json",{"status":"complete"})
     except Exception:
