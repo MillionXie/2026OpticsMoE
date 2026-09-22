@@ -1,0 +1,337 @@
+{
+  "schema_version": 1,
+  "task": "full-frame background replacement via progressive local distillation",
+  "teacher": "/DATA/DATA1/guest3/t12_assets/runs/abo_scene_replace_3layer_compact_optical_v1/best_model.pt",
+  "stages": [
+    {
+      "stage": 1,
+      "widths": [
+        256,
+        512,
+        1024
+      ],
+      "epochs": 1,
+      "warm_start": {
+        "target_parameters": 164872425,
+        "copied_values": 164872425,
+        "exact_values": 282601,
+        "partial_values": 164589824,
+        "coverage": 1.0,
+        "missing_keys": []
+      },
+      "pruning": {
+        "spec": [
+          {
+            "side": "down",
+            "block": 0,
+            "attention": 0,
+            "removed_parameters": 1840384
+          },
+          {
+            "side": "down",
+            "block": 1,
+            "attention": 0,
+            "removed_parameters": 6302208
+          },
+          {
+            "side": "up",
+            "block": 0,
+            "attention": 1,
+            "removed_parameters": 23090176
+          },
+          {
+            "side": "up",
+            "block": 1,
+            "attention": 0,
+            "removed_parameters": 6302208
+          },
+          {
+            "side": "up",
+            "block": 1,
+            "attention": 1,
+            "removed_parameters": 6302208
+          },
+          {
+            "side": "up",
+            "block": 2,
+            "attention": 0,
+            "removed_parameters": 1840384
+          },
+          {
+            "side": "up",
+            "block": 2,
+            "attention": 1,
+            "removed_parameters": 1840384
+          }
+        ],
+        "removed_parameters": 47517952,
+        "remaining_parameters": 163898628,
+        "parameters_after_optical": 164872425,
+        "structured_widths": [
+          256,
+          512,
+          1024
+        ],
+        "original_widths": [
+          320,
+          640,
+          1280
+        ],
+        "width_fraction": 0.8
+      },
+      "best_validation_mse": 0.16651747020659968,
+      "history": [
+        {
+          "epoch": 1,
+          "loss": 0.3262771522988462,
+          "validation": {
+            "latent_mse": 0.16651747020659968,
+            "teacher_mse": 0.039117465923482087,
+            "latent_l1": 0.2773149402346462,
+            "exact_combination_accuracy": 1.0
+          },
+          "alpha": 0.49874550104141235
+        }
+      ],
+      "parameters": {
+        "qwen_transformer_and_norm": 100674048,
+        "vae_encoder": 34163664,
+        "unet_including_optics": 164872425,
+        "adapter": 4273280,
+        "router": 26635,
+        "vae_decoder": 49490199,
+        "total": 353500251
+      }
+    },
+    {
+      "stage": 2,
+      "widths": [
+        224,
+        448,
+        896
+      ],
+      "epochs": 1,
+      "warm_start": {
+        "target_parameters": 126844617,
+        "copied_values": 126844617,
+        "exact_values": 282601,
+        "partial_values": 126562016,
+        "coverage": 1.0,
+        "missing_keys": []
+      },
+      "pruning": {
+        "spec": [
+          {
+            "side": "down",
+            "block": 0,
+            "attention": 0,
+            "removed_parameters": 1445892
+          },
+          {
+            "side": "down",
+            "block": 1,
+            "attention": 0,
+            "removed_parameters": 4940992
+          },
+          {
+            "side": "up",
+            "block": 0,
+            "attention": 1,
+            "removed_parameters": 17910144
+          },
+          {
+            "side": "up",
+            "block": 1,
+            "attention": 0,
+            "removed_parameters": 4940992
+          },
+          {
+            "side": "up",
+            "block": 1,
+            "attention": 1,
+            "removed_parameters": 4940992
+          },
+          {
+            "side": "up",
+            "block": 2,
+            "attention": 0,
+            "removed_parameters": 1445892
+          },
+          {
+            "side": "up",
+            "block": 2,
+            "attention": 1,
+            "removed_parameters": 1445892
+          }
+        ],
+        "removed_parameters": 37070796,
+        "remaining_parameters": 125957220,
+        "parameters_after_optical": 126844617,
+        "structured_widths": [
+          224,
+          448,
+          896
+        ],
+        "original_widths": [
+          320,
+          640,
+          1280
+        ],
+        "width_fraction": 0.7
+      },
+      "best_validation_mse": 0.12803723438992165,
+      "history": [
+        {
+          "epoch": 1,
+          "loss": 0.2856626648766299,
+          "validation": {
+            "latent_mse": 0.12803723438992165,
+            "teacher_mse": 0.034244917922478635,
+            "latent_l1": 0.23425693926401436,
+            "exact_combination_accuracy": 1.0
+          },
+          "alpha": 0.4992626905441284
+        }
+      ],
+      "parameters": {
+        "qwen_transformer_and_norm": 100674048,
+        "vae_encoder": 34163664,
+        "unet_including_optics": 126844617,
+        "adapter": 4273280,
+        "router": 26635,
+        "vae_decoder": 49490199,
+        "total": 315472443
+      }
+    },
+    {
+      "stage": 3,
+      "widths": [
+        192,
+        384,
+        768
+      ],
+      "epochs": 2,
+      "warm_start": {
+        "target_parameters": 93803689,
+        "copied_values": 93803689,
+        "exact_values": 282601,
+        "partial_values": 93521088,
+        "coverage": 1.0,
+        "missing_keys": []
+      },
+      "pruning": {
+        "spec": [
+          {
+            "side": "down",
+            "block": 0,
+            "attention": 0,
+            "removed_parameters": 1134528
+          },
+          {
+            "side": "down",
+            "block": 1,
+            "attention": 0,
+            "removed_parameters": 3743616
+          },
+          {
+            "side": "up",
+            "block": 0,
+            "attention": 1,
+            "removed_parameters": 13385472
+          },
+          {
+            "side": "up",
+            "block": 1,
+            "attention": 0,
+            "removed_parameters": 3743616
+          },
+          {
+            "side": "up",
+            "block": 1,
+            "attention": 1,
+            "removed_parameters": 3743616
+          },
+          {
+            "side": "up",
+            "block": 2,
+            "attention": 0,
+            "removed_parameters": 1134528
+          },
+          {
+            "side": "up",
+            "block": 2,
+            "attention": 1,
+            "removed_parameters": 1134528
+          }
+        ],
+        "removed_parameters": 28019904,
+        "remaining_parameters": 93002692,
+        "parameters_after_optical": 93803689,
+        "structured_widths": [
+          192,
+          384,
+          768
+        ],
+        "original_widths": [
+          320,
+          640,
+          1280
+        ],
+        "width_fraction": 0.6
+      },
+      "best_validation_mse": 0.09886426974844653,
+      "history": [
+        {
+          "epoch": 1,
+          "loss": 0.2566107629293886,
+          "validation": {
+            "latent_mse": 0.10818663591635413,
+            "teacher_mse": 0.041089633479714394,
+            "latent_l1": 0.2150072458316572,
+            "exact_combination_accuracy": 1.0
+          },
+          "alpha": 0.5001158118247986
+        },
+        {
+          "epoch": 2,
+          "loss": 0.22729526561710778,
+          "validation": {
+            "latent_mse": 0.09886426974844653,
+            "teacher_mse": 0.04278721892478643,
+            "latent_l1": 0.20369179343106225,
+            "exact_combination_accuracy": 1.0
+          },
+          "alpha": 0.5003247261047363
+        }
+      ],
+      "parameters": {
+        "qwen_transformer_and_norm": 100674048,
+        "vae_encoder": 34163664,
+        "unet_including_optics": 93803689,
+        "adapter": 4273280,
+        "router": 26635,
+        "vae_decoder": 49490199,
+        "total": 282431515
+      }
+    }
+  ],
+  "test": {
+    "latent_mse": 0.09947955509414896,
+    "teacher_mse": 0.04316278346959734,
+    "latent_l1": 0.20682711980771273,
+    "exact_combination_accuracy": 1.0
+  },
+  "parameters": {
+    "qwen_transformer_and_norm": 100674048,
+    "vae_encoder": 34163664,
+    "unet_including_optics": 93803689,
+    "adapter": 4273280,
+    "router": 26635,
+    "vae_decoder": 49490199,
+    "total": 282431515
+  },
+  "hard_pixel_composite": false,
+  "gan_used": false,
+  "inference_iterations": 1,
+  "training_seconds": 796.5630547478795
+}
