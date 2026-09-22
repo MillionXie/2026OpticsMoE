@@ -1,0 +1,103 @@
+{
+  "schema_version": 1,
+  "task": "white-background ABO lamp + Qwen instruction -> new styled scene",
+  "dataset": "ABO CleanRender CC BY 4.0 + generated backgrounds",
+  "categories": [
+    "lamp"
+  ],
+  "scenes": [
+    "warm_minimal",
+    "cool_modern",
+    "dark_luxury",
+    "terracotta_gallery",
+    "sage_reading",
+    "concrete_loft"
+  ],
+  "initial_validation": {
+    "latent_mse": 0.11111350223654881,
+    "background_l1": 0.1928347214901199,
+    "foreground_change_l1": 0.024612131868101034,
+    "reference_mse": 1.6609760941937566,
+    "pair_delta_l1": 0.22679250089762112,
+    "scene_accuracy": 0.22395833333333334,
+    "mse_improvement_over_copy": 0.933103490998476
+  },
+  "best_epoch": 2,
+  "best_validation_latent_mse": 0.09607698459876701,
+  "architecture": {
+    "variant": "qwen_bksdm_v2_tiny_reference_decoder_optical",
+    "flow": "image->frozen VAE encoder; text->frozen Qwen->adapter; one UNet call->VAE decoder",
+    "unet_parameters": 329623401,
+    "vae_decoder_parameters": 49490179,
+    "qwen_condition_adapter_parameters": 4273280,
+    "text_region_router_parameters": 0,
+    "generation_tail_parameters": 383403250,
+    "qwen_parameters_excluded_from_tail": true,
+    "inference_iterations": 1,
+    "unet_calls": 1,
+    "vae_decoder_calls": 1,
+    "reference_conditioning": "8ch input latent + small seeded Gaussian texture channel",
+    "output_parameterization": "single-pass residual around the input latent",
+    "optical_decoder": {
+      "location": "first/deepest UNet decoder up block",
+      "parallel_contract": "electronic(shared_input) || optical(shared_input), then RMS fusion",
+      "electronic_and_optical_are_parallel": true,
+      "optical_backend": "differentiable phase-only FFT simulation",
+      "optical_grid": [
+        8,
+        8
+      ],
+      "optical_parameters": 2786277,
+      "alpha": 0.5015741586685181,
+      "alpha_minimum": 0.4,
+      "alpha_maximum": 0.75
+    },
+    "config": {
+      "optical_width": 224,
+      "optical_grid": 8,
+      "optical_experts": 4,
+      "optical_top_k": 2,
+      "alpha_initial": 0.5,
+      "alpha_minimum": 0.4,
+      "alpha_maximum": 0.75,
+      "rms_epsilon": 1e-06
+    },
+    "text_scene_router_parameters": 16390,
+    "trainable_parameters": 246212911,
+    "object_preservation": "exact source RGB is alpha-composited over the generated background after VAE decode"
+  },
+  "history": [
+    {
+      "epoch": 1,
+      "train_loss": 1.963552968300603,
+      "validation": {
+        "latent_mse": 0.09741948533337563,
+        "background_l1": 0.1742166024632752,
+        "foreground_change_l1": 0.03206882232431477,
+        "reference_mse": 1.6609760941937566,
+        "pair_delta_l1": 0.21986964965860048,
+        "scene_accuracy": 1.0,
+        "mse_improvement_over_copy": 0.9413480508997552
+      },
+      "optical_alpha": 0.5015774965286255
+    },
+    {
+      "epoch": 2,
+      "train_loss": 1.5827980554766126,
+      "validation": {
+        "latent_mse": 0.09607698459876701,
+        "background_l1": 0.17265552965303263,
+        "foreground_change_l1": 0.03177178234909661,
+        "reference_mse": 1.6609760941937566,
+        "pair_delta_l1": 0.2188451587377737,
+        "scene_accuracy": 1.0,
+        "mse_improvement_over_copy": 0.9421563110181889
+      },
+      "optical_alpha": 0.5015741586685181
+    }
+  ],
+  "training_seconds": 642.4117769300938,
+  "gan_used": false,
+  "baseline_contract": "Qwen + decoder only",
+  "warm_start_checkpoint": "/DATA/DATA1/guest3/t12_assets/runs/abo_lamp_scene_big_optical_v3/best_model.pt"
+}

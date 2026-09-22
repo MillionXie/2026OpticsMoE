@@ -1,0 +1,62 @@
+{
+  "schema_version": 1,
+  "task": "white-background lamp + Qwen instruction -> styled product scene",
+  "split": "identity-disjoint test",
+  "samples": 384,
+  "underlying_input_images": 64,
+  "scenes_per_input": 6,
+  "metrics": {
+    "latent_mse": 0.10163091483991593,
+    "background_l1": 0.1744600327219814,
+    "foreground_change_l1": 0.027764692262280732,
+    "reference_mse": 1.6932102274149656,
+    "pair_delta_l1": 0.21765945828519762,
+    "scene_accuracy": 1.0,
+    "mse_improvement_over_copy": 0.9399773795395292
+  },
+  "architecture": {
+    "variant": "qwen_bksdm_v2_tiny_reference_decoder_optical",
+    "flow": "image->frozen VAE encoder; text->frozen Qwen->adapter; one UNet call->VAE decoder",
+    "unet_parameters": 329623401,
+    "vae_decoder_parameters": 49490179,
+    "qwen_condition_adapter_parameters": 4273280,
+    "text_region_router_parameters": 0,
+    "generation_tail_parameters": 383403250,
+    "qwen_parameters_excluded_from_tail": true,
+    "inference_iterations": 1,
+    "unet_calls": 1,
+    "vae_decoder_calls": 1,
+    "reference_conditioning": "8ch input latent + small seeded Gaussian texture channel",
+    "output_parameterization": "single-pass residual around the input latent",
+    "optical_decoder": {
+      "location": "first/deepest UNet decoder up block",
+      "parallel_contract": "electronic(shared_input) || optical(shared_input), then RMS fusion",
+      "electronic_and_optical_are_parallel": true,
+      "optical_backend": "differentiable phase-only FFT simulation",
+      "optical_grid": [
+        8,
+        8
+      ],
+      "optical_parameters": 2786277,
+      "alpha": 0.5015614628791809,
+      "alpha_minimum": 0.4,
+      "alpha_maximum": 0.75
+    },
+    "config": {
+      "optical_width": 224,
+      "optical_grid": 8,
+      "optical_experts": 4,
+      "optical_top_k": 2,
+      "alpha_initial": 0.5,
+      "alpha_minimum": 0.4,
+      "alpha_maximum": 0.75,
+      "rms_epsilon": 1e-06
+    },
+    "text_scene_router_parameters": 16390
+  },
+  "checkpoint": "/DATA/DATA1/guest3/t12_assets/runs/abo_lamp_scene_big_optical_v4/best_model.pt",
+  "random_seed_is_real": true,
+  "same_seed_for_compared_prompts": true,
+  "gan_used": false,
+  "inference_iterations": 1
+}
