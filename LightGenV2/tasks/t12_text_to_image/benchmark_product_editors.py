@@ -57,14 +57,18 @@ def _benchmark_variant(
     noise=torch.randn((1,4,32,32),device=device,dtype=torch.float32,generator=torch.Generator(device=device).manual_seed(42))
 
     def run()->None:
-        encoded=vae.encode(image).latent_dist.mode()*vae.config.scaling_factor
-        outputs=qwen(**token_inputs,output_hidden_states=False,return_dict=True,use_cache=False)
-        hidden=outputs.last_hidden_state.float();attention=token_inputs["attention_mask"].to(hidden.dtype).unsqueeze(-1)
-        pooled=(hidden*attention).sum(1)/attention.sum(1).clamp_min(1)
-        condition=adapter.condition(pooled)
-        latent=one_step_edit(unet,noise,encoded.float(),condition,sigma,residual_scale=float(training["residual_scale"]),noise_scale=float(training["noise_scale"]))
-        rgb=vae.decode(latent.to(dtype)/vae.config.scaling_factor,return_dict=False)[0]
-        _=rgb*(1-mask)+foreground*mask
+        # Match the mixed-precision path used by the training and inference
+        # entrypoints.  Without autocast the float32 UNet weights force this
+        # benchmark onto an unrealistically slow FP32 execution path.
+        with torch.autocast(device_type=device.type,dtype=dtype):
+            encoded=vae.encode(image).latent_dist.mode()*vae.config.scaling_factor
+            outputs=qwen(**token_inputs,output_hidden_states=False,return_dict=True,use_cache=False)
+            hidden=outputs.last_hidden_state.float();attention=token_inputs["attention_mask"].to(hidden.dtype).unsqueeze(-1)
+            pooled=(hidden*attention).sum(1)/attention.sum(1).clamp_min(1)
+            condition=adapter.condition(pooled)
+            latent=one_step_edit(unet,noise,encoded.float(),condition,sigma,residual_scale=float(training["residual_scale"]),noise_scale=float(training["noise_scale"]))
+            rgb=vae.decode(latent.to(dtype)/vae.config.scaling_factor,return_dict=False)[0]
+            _=rgb*(1-mask)+foreground*mask
 
     for _ in range(warmup): run()
     torch.cuda.synchronize(device)
