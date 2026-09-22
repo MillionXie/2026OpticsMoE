@@ -8,7 +8,11 @@ from pathlib import Path
 from PIL import Image
 
 from LightGenV2.tasks.t12_text_to_image.dataset import read_manifest
-from LightGenV2.tasks.t12_text_to_image.prepare_abo_cleanrender import PREFIX, prepare
+from LightGenV2.tasks.t12_text_to_image.prepare_abo_cleanrender import (
+    PREFIX,
+    _category_title_allowed,
+    prepare,
+)
 
 
 def _fake_abo(root: Path, archive: Path) -> None:
@@ -59,3 +63,9 @@ def test_prepare_cleanrender_fetches_views_and_splits_by_object(tmp_path: Path) 
         assert image.size == (32, 32)
     assert (output / "contact_sheet.jpg").is_file()
     assert "navy blue wood" in (output / "train.jsonl").read_text(encoding="utf-8")
+
+
+def test_pillow_alias_filter_removes_chair_like_products() -> None:
+    assert not _category_title_allowed("PILLOW", "Outdoor high back patio chair cushion")
+    assert not _category_title_allowed("PILLOW", "Red lounger patio cushion")
+    assert _category_title_allowed("PILLOW", "Modern geometric throw pillow")

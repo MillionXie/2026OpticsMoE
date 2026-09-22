@@ -54,6 +54,18 @@ MULTI_OBJECT = re.compile(
     r"\b(set of|pair of|pack of|[2-9][ -]pack|[2-9][ -]piece|bundle)\b",
     flags=re.IGNORECASE,
 )
+PILLOW_FURNITURE = re.compile(
+    r"\b(chair|lounger|bench|rocking|seat cushion|patio cushion)\b",
+    flags=re.IGNORECASE,
+)
+
+
+def _category_title_allowed(category: str, title: str) -> bool:
+    """Reject visually misleading aliases inside otherwise valid ABO types."""
+
+    if category == "PILLOW" and PILLOW_FURNITURE.search(title):
+        return False
+    return True
 
 
 def _english(row: dict[str, Any], key: str) -> str:
@@ -260,6 +272,8 @@ def prepare(
                 continue
             title = _english(row, "item_name")
             if title and MULTI_OBJECT.search(title):
+                continue
+            if title and not _category_title_allowed(category, title):
                 continue
             if len(render_index[item_id]) < max(train_views, eval_views):
                 continue
