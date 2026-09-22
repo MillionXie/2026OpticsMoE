@@ -524,6 +524,7 @@ class OpenMojiReadout(nn.Module):
     def __init__(self, image_width: int, text_width: int, settings: Any):
         super().__init__()
         from LightGenV2.tasks.t04_semantic_interaction.shared_readout import create_shared_readout
+        self.checkpoint_architecture = "frozen_backbone_spatial14_texttokens_sharedhead_v1"
         self.image_adapter = nn.Sequential(nn.Linear(image_width, 192), nn.LayerNorm(192))
         self.text_adapter = nn.Sequential(nn.Linear(text_width, 192), nn.LayerNorm(192))
         self.shared_readout = create_shared_readout(settings)
