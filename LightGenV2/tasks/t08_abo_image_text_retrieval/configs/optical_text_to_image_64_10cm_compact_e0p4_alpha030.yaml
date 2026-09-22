@@ -1,0 +1,23 @@
+base_config: optical_text_to_image_64_10cm_compact_e0p5_alpha030_refine.yaml
+
+# Final size sweep: reduce each residual MLP from 192->96->192 to an
+# expansion-0.4 bottleneck while preserving every 10 cm optical tensor.
+electronic:
+  expansion: 0.4
+
+training:
+  epochs: 8
+  learning_rate: 0.000008
+  adapter_learning_rate: 0.000004
+  readout_learning_rate: 0.000008
+  phase_learning_rate: 0.0025
+  router_learning_rate: 0.0025
+
+abo_image_text:
+  resume_checkpoint: ../runs/simulation/optical_text_to_image_64_10cm_compact_e0p5_alpha030_refine_seed44_v3_20260923/best_checkpoint.pt
+  resume_checkpoint_sha256: 05828c859496603a6be1d1222f825ef4f2fc6276870092bdf778a661e71dde48
+  allow_propagation_distance_transition: false
+  allow_electronic_compaction_transition: true
+  alpha_curriculum: null
+
+output_dir: ../runs/simulation/optical_text_to_image_64_10cm_compact_e0p4_alpha030_seed45_20260923
