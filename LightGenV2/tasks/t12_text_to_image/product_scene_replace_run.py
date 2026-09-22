@@ -44,6 +44,7 @@ def main() -> int:
     train.add_argument("--output-dir", type=Path, required=True)
     train.add_argument("--config", type=Path, required=True)
     train.add_argument("--warm-start-checkpoint", type=Path)
+    train.add_argument("--compact-optical-mid", action="store_true")
     train.add_argument("--seed", type=int, default=42)
     train.add_argument("--device", default="cuda" if torch.cuda.is_available() else "cpu")
     args = parser.parse_args()
@@ -69,6 +70,7 @@ def main() -> int:
             model_config=model_config, training_config=training_config,
             device=torch.device(args.device), seed=args.seed,
             warm_start_checkpoint=args.warm_start_checkpoint.resolve() if args.warm_start_checkpoint else None,
+            compact_optical_mid=args.compact_optical_mid,
         )
     print(json.dumps(report, indent=2), flush=True)
     return 0

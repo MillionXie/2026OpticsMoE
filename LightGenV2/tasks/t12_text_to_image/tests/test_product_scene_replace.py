@@ -8,6 +8,12 @@ import torch
 from PIL import Image, ImageDraw
 from torch import nn
 
+from LightGenV2.tasks.t12_text_to_image.compact_product_model import (
+    COMPACT_ATTENTION_PRUNE_SPEC,
+    IdentityResidualOpticalMidBlock,
+)
+from LightGenV2.tasks.t12_text_to_image.product_repair_model import RepairModelConfig
+
 from LightGenV2.tasks.t12_text_to_image.half_qwen import retain_language_layers
 from LightGenV2.tasks.t12_text_to_image.product_scene_replace_data import (
     COMBINATIONS,
@@ -86,3 +92,25 @@ def test_composed_background_is_deterministic_and_attribute_sensitive() -> None:
     changed = render_composed_background(warm_bright_right, 64, "lamp", "target")
     assert first.tobytes() == repeat.tobytes()
     assert first.tobytes() != changed.tobytes()
+
+
+def test_compact_pruning_removes_all_but_two_deep_attention_modules() -> None:
+    assert len(COMPACT_ATTENTION_PRUNE_SPEC) == 7
+    assert {tuple((item["side"], item["block"])) for item in COMPACT_ATTENTION_PRUNE_SPEC} == {
+        ("down", 0), ("down", 1), ("up", 0), ("up", 1), ("up", 2),
+    }
+
+
+def test_identity_optical_mid_has_no_electronic_transform() -> None:
+    block = IdentityResidualOpticalMidBlock(
+        channels=8, timestep_dim=12, condition_dim=10,
+        config=RepairModelConfig(
+            optical_width=8, optical_grid=2, optical_experts=2, optical_top_k=1,
+            alpha_initial=0.5, alpha_minimum=0.4, alpha_maximum=0.75,
+        ),
+    )
+    output = block(torch.randn(2, 8, 4, 4), torch.randn(2, 12), torch.randn(2, 3, 10))
+    assert output.shape == (2, 8, 4, 4)
+    report = block.architecture_report()
+    assert "identity residual" in report["electronic_branch"]
+    assert report["physical_latency_ms"] == 1.0447 * 6
