@@ -5,12 +5,16 @@ from types import SimpleNamespace
 import numpy as np
 import pytest
 import torch
+import torch.nn.functional as F
 
 from LightGenV2.tasks.t13_four_modal_lifelong.data import (
     FeatureFields, PhysicalRank10Fields, PhysicalTextFields, SpeechRank8Fields,
     _feature_only_field, _feature_text_field, _rgb_field,
 )
 from LightGenV2.tasks.t13_four_modal_lifelong.model import CrossModalOptics
+from LightGenV2.tasks.t13_four_modal_lifelong.distill_eurosat_moe import (
+    EuroSatTeacher, assert_student_inference_contract,
+)
 from LightGenV2.tasks.t13_four_modal_lifelong import run as experiment_run
 from LightGenV2.tasks.t13_four_modal_lifelong.fit_cross_task_d2nn import parse_checkpoints
 from LightGenV2.tasks.t13_four_modal_lifelong.prepare_physical_probe import encode_batch
@@ -120,6 +124,20 @@ def test_feature_fields_device_expansion_matches_reference(tmp_path: Path):
     expected = fields[:]
     actual = fields.get_batch(slice(None), torch.device("cpu"))
     assert torch.allclose(actual, expected)
+
+
+def test_distillation_teacher_reads_frozen_features_but_student_stays_linear():
+    features = torch.arange(256, dtype=torch.float32).reshape(2, 128)
+    field = _feature_only_field(features)
+    unpacked = EuroSatTeacher.unpack_feature(field)
+    # FeatureFields normalizes optical power, so compare the preserved direction.
+    assert torch.allclose(F.normalize(unpacked, dim=1),
+                          F.normalize(features, dim=1), atol=1e-5)
+    model = CrossModalOptics("moe", max_experts=16, readout_grid=28)
+    assert_student_inference_contract(model)
+    assert isinstance(model.heads["eurosat"], torch.nn.Linear)
+    assert (model.heads["eurosat"].in_features,
+            model.heads["eurosat"].out_features) == (784, 10)
 
 
 def test_single_task_and_lifelong_geometries_are_explicit():
