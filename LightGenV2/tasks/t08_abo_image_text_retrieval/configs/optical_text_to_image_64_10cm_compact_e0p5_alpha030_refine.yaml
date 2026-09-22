@@ -25,6 +25,6 @@ abo_image_text:
     # fixed-alpha refinement while remaining explicit and reproducible.
     end: 0.301
     warmup_epochs: 1
-    minimum_selected: 0.29
+    minimum_selected: 0.30
 
 output_dir: ../runs/simulation/optical_text_to_image_64_10cm_compact_e0p5_alpha030_refine_seed44_20260923
