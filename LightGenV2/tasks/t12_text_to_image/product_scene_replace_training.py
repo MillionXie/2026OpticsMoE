@@ -254,8 +254,9 @@ def _sample_grid(
     draw = ImageDraw.Draw(canvas)
     for row_index, index in enumerate(chosen):
         raw = raw_dataset[index]
-        exact = generated[row_index] * raw["background_mask"] + raw["foreground_rgb"] * raw["foreground_mask"]
-        for column, value in enumerate((raw["reference"], raw["target"], exact)):
+        # Show the decoder's complete RGB prediction.  No source pixels are
+        # pasted back after generation; preservation must be learned.
+        for column, value in enumerate((raw["reference"], raw["target"], generated[row_index])):
             array = value.add(1).mul(127.5).clamp(0, 255).byte().permute(1, 2, 0).numpy()
             canvas.paste(Image.fromarray(array), (label_width + column * cell, row_index * cell))
         draw.text((4, row_index * cell + 4), raw["target_scene_id"].replace("__", " / "), fill="black")
@@ -455,7 +456,7 @@ def train_replacement_model(
         "history": history, "training_seconds": time.perf_counter() - started,
         "gan_used": False, "diffusion_steps": 1,
         "warm_start_checkpoint": str(warm_start_checkpoint) if warm_start_checkpoint else None,
-        "object_preservation": "exact source RGB alpha composite after generation",
+        "object_preservation": "learned full-frame reconstruction; no post-generation pixel paste",
         "compact_optical_mid": compact_optical_mid,
         "electronic_baseline": electronic_baseline,
         "attention_pruning": pruning_report,

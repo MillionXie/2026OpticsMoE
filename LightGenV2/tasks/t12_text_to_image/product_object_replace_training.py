@@ -143,8 +143,9 @@ def sample_object_grid(*, unet, adapter, vae, sigma, latent_dataset, raw_dataset
     canvas = Image.new("RGB", (labels+3*cell, len(chosen)*cell), "white"); draw = ImageDraw.Draw(canvas)
     for row,index in enumerate(chosen):
         raw=raw_dataset[index]
-        exact=generated[row]*raw["edit_mask"]+raw["reference"]*raw["preserve_mask"]
-        for column,value in enumerate((raw["reference"],raw["target"],exact)):
+        # The entire decoded frame is evaluated and visualized.  Background
+        # preservation is a learned constraint, never a hard pixel composite.
+        for column,value in enumerate((raw["reference"],raw["target"],generated[row])):
             array=value.add(1).mul(127.5).clamp(0,255).byte().permute(1,2,0).numpy()
             canvas.paste(Image.fromarray(array),(labels+column*cell,row*cell))
         draw.text((4,row*cell+4),raw["target_category"],fill="black")
