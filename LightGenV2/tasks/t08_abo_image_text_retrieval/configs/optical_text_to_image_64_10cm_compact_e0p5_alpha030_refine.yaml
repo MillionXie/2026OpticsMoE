@@ -21,7 +21,9 @@ abo_image_text:
   allow_electronic_compaction_transition: false
   alpha_curriculum:
     start: 0.30
-    end: 0.30
+    # The scheduler requires end > start; this 0.001 span is effectively a
+    # fixed-alpha refinement while remaining explicit and reproducible.
+    end: 0.301
     warmup_epochs: 1
     minimum_selected: 0.29
 
