@@ -10,6 +10,20 @@ from pathlib import Path
 TASK=Path(__file__).resolve().parent
 
 
+def build_dvp_overlay(output):
+    """Additive hardware adapter package, does not overwrite pinned model release."""
+    root=TASK.parents[2]
+    scope=TASK.relative_to(root).as_posix()
+    commit=subprocess.check_output(['git','rev-parse','HEAD'],cwd=root,text=True).strip()
+    if subprocess.check_output(['git','diff','HEAD','--',scope+'/lab_dvp.py'],cwd=root):
+        raise RuntimeError('Commit adapter first')
+    source=subprocess.check_output(['git','show',commit+':'+scope+'/lab_dvp.py'],cwd=root)
+    manifest={'source_commit':commit,'files':{'lab_dvp.py':hashlib.sha256(source).hexdigest()}}
+    with zipfile.ZipFile(output,'x',zipfile.ZIP_DEFLATED) as z:
+        z.writestr('lab_dvp.py',source);z.writestr('MANIFEST.json',json.dumps(manifest,indent=2))
+    print(json.dumps(dict(zip=str(output),sha256=digest(output),source_commit=commit)))
+
+
 def digest(path):
     h=hashlib.sha256()
     with path.open('rb') as f:
@@ -18,6 +32,10 @@ def digest(path):
 
 
 def main():
+    import sys
+    if '--dvp-overlay' in sys.argv:
+        p=argparse.ArgumentParser();p.add_argument('--dvp-overlay',type=Path,required=True)
+        build_dvp_overlay(p.parse_args().dvp_overlay);return
     parser=argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--assets',type=Path,required=True)
     parser.add_argument('--data',type=Path,required=True)
