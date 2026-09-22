@@ -78,3 +78,14 @@ CLEVR 全量 D2NN 在第 17 轮按验证集选择 checkpoint，验证与测试 b
 该表没有训练或重拟合目标头，是直接兼容性矩阵；它不冒充仍在运行的 sequential no-replay
 遗忘下三角矩阵。完整逐类别 confusion matrix 位于
 `reports/d2nn_inference_only_cross_task_s17/matrix.json`。
+
+## 正式终身矩阵运行进度
+
+第一阶段 EuroSAT 已完成。Sequential D2NN 无 replay 与相同 replay 在第一阶段等价，均选择第 19 轮，
+测试 balanced accuracy 为 79.92%。Ours 16 槽固定几何在第一阶段启用 4 个专家，选择第 19 轮，
+验证/测试为 80.00%/79.56%；训练后 Linear 重拟合令验证分数从 80.00% 降到 79.91%，因此被拒绝。
+
+第二阶段 CLEVR 尚未完成，但已有明确的早期遗忘信号：无 replay D2NN 第 6 轮的 CLEVR/EuroSAT
+验证 balanced accuracy 分别为 72.97%/10.91%，均值 41.94%；相同 replay D2NN 第 8 轮分别为
+73.57%/74.81%，均值 74.19%。这些是运行中诊断，不作为最终矩阵；checkpoint 仍按完整 20 轮内
+两个已学任务的验证均值选择。Ours 已完成 EuroSAT 阶段并进入 CLEVR 新专家预热。
