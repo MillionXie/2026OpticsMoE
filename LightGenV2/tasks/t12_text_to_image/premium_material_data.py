@@ -188,6 +188,7 @@ def _load_product(row: dict[str, Any], size: int) -> tuple[Image.Image, Image.Im
     mask_array = np.where(distance > 68, 255, 0).astype(np.uint8)
     mask = Image.fromarray(mask_array, "L").filter(ImageFilter.MaxFilter(5)).filter(ImageFilter.GaussianBlur(.8))
     _, normalized_mask, foreground = _normalize_product(image, mask, size)
+    normalized_mask = normalized_mask.filter(ImageFilter.MinFilter(5)).filter(ImageFilter.GaussianBlur(.65))
     return foreground, normalized_mask
 
 
