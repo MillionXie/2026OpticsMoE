@@ -236,7 +236,19 @@ def evaluate(model: SmallFullFrameEditor, loader: DataLoader, device: torch.devi
 
 @torch.inference_mode()
 def save_samples(model: SmallFullFrameEditor, dataset: PromptPairDataset, output: Path, device: torch.device, seed: int) -> None:
-    model.eval(); count=min(12,len(dataset)); step=max(1,len(dataset)//count); indices=[min(i*step,len(dataset)-1) for i in range(count)]
+    model.eval(); raw = dataset.base
+    if hasattr(raw, "sources") and hasattr(raw, "supported_categories"):
+        first_by_category = {}
+        for source_index, source in enumerate(raw.sources):
+            first_by_category.setdefault(source["category"], source_index)
+        indices = []
+        for category in raw.supported_categories:
+            start = first_by_category[category] * raw.targets_per_source
+            indices.extend(range(start, min(start + raw.targets_per_source, len(dataset))))
+        indices = indices[:12]
+    else:
+        count=min(12,len(dataset)); step=max(1,len(dataset)//count); indices=[min(i*step,len(dataset)-1) for i in range(count)]
+    count = len(indices)
     items=[dataset[index] for index in indices]; reference=torch.stack([item["reference"] for item in items]).to(device)
     tokens=encode_prompts([item["prompt"] for item in items],model.config.max_text_bytes,device);generator=torch.Generator(device=device).manual_seed(seed)
     noise=torch.randn(reference.shape,generator=generator,device=device)
