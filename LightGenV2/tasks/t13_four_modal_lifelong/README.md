@@ -87,16 +87,17 @@ Ours 完成预热后的首个 CLEVR epoch 已达到 EuroSAT 76.24%、CLEVR 74.76
 
 先用标准 4 专家 518×518 几何分别运行四个任务的单任务 D2NN 与 MoE，验证数据和原始光路
 可学性；它不冒充 16 槽终身模型的第一阶段成绩。目标是 D2NN
-至少 65%，MoE 至少 70%；未通过的任务先调训练，不进入终身矩阵。通过后再固定顺序运行：
+至少 65%，MoE 至少 70%；未通过的任务先调训练，不进入终身矩阵。通过后生成老师要求的三张
+正式矩阵：
 
-- independent D2NN transfer：每个任务单独训练一个光学骨干，冻结后在其余任务的全部训练样本上
-  只拟合目标 MLP，得到 4×4 跨任务矩阵；
-- sequential D2NN，无 replay；
-- sequential D2NN，相同 replay；
-- ours，固定 16 槽、旧专家冻结、相同 replay。
+1. ours：固定 16 槽、旧专家冻结、full replay 的 4→8→12→16 下三角遗忘矩阵；
+2. frozen D2NN transfer：四个任务各自独立训练光学骨干，冻结每个骨干后，在每个目标任务的完整
+   训练集上只拟合目标 `Linear(784, C)`，得到 4×4 完整矩阵；
+3. sequential D2NN：始终只有一份最新可重构光学权重、无 replay，得到下三角遗忘矩阵。
 
-每个阶段按验证 balanced accuracy 选择 checkpoint，随后一次性评估已经学过的任务，保存
-下三角矩阵、backward transfer 和 forgetting。没有联合训练 D2NN。
+早期启动的 sequential D2NN replay 只保留作辅助诊断，不进入老师要求的三张正式矩阵；也不运行
+联合训练 D2NN。两个下三角实验的每个阶段按验证 balanced accuracy 选择 checkpoint，随后一次性
+评估已经学过的任务，保存 backward transfer 和 forgetting。
 
 正式终身学习使用 `configs/formal_lifelong_s17.json`：每任务 20 轮、完整数据、当前任务 batch 128、
 每个旧任务固定 replay 512 条且 replay batch 4。无 replay D2NN、相同 replay D2NN 和 ours 分别

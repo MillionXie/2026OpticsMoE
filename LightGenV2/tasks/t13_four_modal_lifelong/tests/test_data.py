@@ -11,6 +11,7 @@ from LightGenV2.tasks.t13_four_modal_lifelong.data import (
 )
 from LightGenV2.tasks.t13_four_modal_lifelong.model import CrossModalOptics
 from LightGenV2.tasks.t13_four_modal_lifelong import run as experiment_run
+from LightGenV2.tasks.t13_four_modal_lifelong.fit_cross_task_d2nn import parse_checkpoints
 from LightGenV2.tasks.t13_four_modal_lifelong.prepare_physical_probe import encode_batch
 from LightGenV2.tasks.t12_cross_modal_lifelong.prepare_physical_concepts import encode_video
 
@@ -188,3 +189,9 @@ def test_resume_restores_only_fully_evaluated_stages(tmp_path: Path):
     assert replay == {"eurosat": None}
     for key, value in model.state_dict().items():
         assert torch.equal(value, expected[key])
+
+
+def test_formal_cross_task_probe_requires_all_four_checkpoints():
+    parsed = parse_checkpoints([f"{name}=/{name}.pt" for name in experiment_run.TASK_ORDER])
+    assert tuple(parsed) == experiment_run.TASK_ORDER
+    assert parsed["speech"] == Path("/speech.pt")
