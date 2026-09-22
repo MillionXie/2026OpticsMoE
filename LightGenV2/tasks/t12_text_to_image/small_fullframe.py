@@ -66,6 +66,26 @@ def encode_prompts(prompts: list[str] | tuple[str, ...], max_length: int, device
     return result
 
 
+def premium_control_ids_from_prompts(prompts: list[str] | tuple[str, ...], device: torch.device) -> torch.Tensor:
+    """Parse the controlled premium vocabulary without a large language model."""
+    categories = ("lamp", "table", "backpack")
+    style_terms = (
+        ("brass", "walnut", "cognac", "leather"),
+        ("obsidian", "black", "nylon"),
+        ("ivory", "ceramic", "travertine", "canvas"),
+        ("teal", "glass", "lacquer", "textile"),
+    )
+    values = []
+    for prompt in prompts:
+        text = prompt.lower()
+        category = next((index for index, name in enumerate(categories) if name in text), None)
+        style = next((index for index, terms in enumerate(style_terms) if any(term in text for term in terms)), None)
+        if category is None or style is None:
+            raise ValueError(f"Prompt is outside the controlled premium vocabulary: {prompt!r}")
+        values.append(category * 4 + style)
+    return torch.as_tensor(values, dtype=torch.long, device=device)
+
+
 class DownBlock(nn.Module):
     def __init__(self, input_channels: int, output_channels: int) -> None:
         super().__init__()
@@ -268,7 +288,8 @@ def train_small_editor(
         validation=evaluate(ema,loaders["val"],device,seed+epoch);row={"epoch":epoch,"train_loss":total/samples,"validation":validation,"alpha":float(ema.bottleneck.fusion.alpha)};history.append(row);print(json.dumps(row),flush=True)
         if validation["mse"]<best:
             best=validation["mse"];best_epoch=epoch
-            torch.save({"schema_version":1,"task":task,"config":{**asdict(config),"widths":list(config.widths)},"model":{key:value.detach().half().cpu() for key,value in ema.state_dict().items()},"parameters":parameters,"epoch":epoch,"validation":validation,"prompt_encoding":"UTF-8 bytes; no Qwen/token embedding","hard_pixel_composite":False,"gan_used":False,"inference_iterations":1},output_dir/"best_model.pt")
+            prompt_encoding="UTF-8 bytes + deterministic category/material control parser" if structured_control else "UTF-8 bytes; no Qwen/token embedding"
+            torch.save({"schema_version":1,"task":task,"config":{**asdict(config),"widths":list(config.widths)},"model":{key:value.detach().half().cpu() for key,value in ema.state_dict().items()},"parameters":parameters,"epoch":epoch,"validation":validation,"prompt_encoding":prompt_encoding,"hard_pixel_composite":False,"gan_used":False,"inference_iterations":1},output_dir/"best_model.pt")
         if epoch in {1,5,10,epochs}:save_samples(ema,datasets["val"],output_dir/"samples"/f"epoch_{epoch:03d}.jpg",device,seed+epoch)
     payload=torch.load(output_dir/"best_model.pt",map_location="cpu",weights_only=False);ema.load_state_dict(payload["model"]);test=evaluate(ema,loaders["test"],device,seed+999)
     report={"schema_version":1,"task":task,"best_epoch":best_epoch,"parameters":parameters,"under_50m":parameters<50_000_000,"initial_validation":initial,"test":test,"history":history,"training_seconds":time.perf_counter()-started,"optical_alpha":float(ema.bottleneck.fusion.alpha),"hard_pixel_composite":False,"gan_used":False,"inference_iterations":1,"resolution":config.image_size}
@@ -278,4 +299,4 @@ def train_small_editor(
     return report
 
 
-__all__=["SmallEditorConfig","SmallFullFrameEditor","encode_prompts","train_small_editor"]
+__all__=["SmallEditorConfig","SmallFullFrameEditor","encode_prompts","premium_control_ids_from_prompts","train_small_editor"]
