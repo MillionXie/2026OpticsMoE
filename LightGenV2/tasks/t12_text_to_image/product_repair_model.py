@@ -230,16 +230,26 @@ def one_step_edit(
     condition: torch.Tensor,
     sigma: torch.Tensor,
     *,
-    timestep: int = 999,
+    timestep: int = 0,
+    noise_scale: float = 0.05,
+    residual_scale: float = 0.25,
 ) -> torch.Tensor:
-    latent = noise * sigma
-    scaled_noise = latent / torch.sqrt(sigma.square() + 1)
-    model_input = torch.cat((scaled_noise, reference_latent), dim=1)
+    """Predict one bounded edit residual around the encoded input image.
+
+    ``sigma`` remains in the signature so the large editor and its Turbo
+    baseline share one call site, but restoration deliberately avoids starting
+    from pure noise: that erased product detail in a single step.  The first
+    four pretrained UNet channels now see the reference latent and the added
+    channels carry a small real Gaussian seed for stochastic texture.
+    """
+
+    del sigma
+    model_input = torch.cat((reference_latent, noise_scale * noise), dim=1)
     timesteps = torch.full((len(noise),), timestep, device=noise.device, dtype=torch.long)
-    prediction = unet(
+    residual = unet(
         model_input, timesteps, encoder_hidden_states=condition, return_dict=False
     )[0]
-    return latent - sigma * prediction
+    return reference_latent + residual_scale * residual
 
 
 def architecture_report(
@@ -263,7 +273,8 @@ def architecture_report(
         "inference_iterations": 1,
         "unet_calls": 1,
         "vae_decoder_calls": 1,
-        "reference_conditioning": "8ch concatenation of noisy latent and input-image latent",
+        "reference_conditioning": "8ch input latent + small seeded Gaussian texture channel",
+        "output_parameterization": "single-pass residual around the input latent",
         "optical_decoder": optical.architecture_report(),
         "config": asdict(config),
     }

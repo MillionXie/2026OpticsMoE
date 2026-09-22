@@ -17,5 +17,8 @@ training:
   optical_learning_rate: 1.0e-4
   weight_decay: 1.0e-2
   detail_weight: 0.15
+  selected_weight: 4.0
+  preservation_weight: 1.0
+  adapter_learning_rate: 1.0e-4
   num_workers: 4
   sample_every_epochs: 1

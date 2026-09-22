@@ -40,6 +40,9 @@ class RepairTrainingConfig:
     optical_learning_rate: float
     weight_decay: float
     detail_weight: float
+    selected_weight: float
+    preservation_weight: float
+    adapter_learning_rate: float
     num_workers: int
     sample_every_epochs: int
 
@@ -51,10 +54,14 @@ class RepairTrainingConfig:
             self.epochs,
             self.learning_rate,
             self.optical_learning_rate,
+            self.adapter_learning_rate,
             self.sample_every_epochs,
         ) <= 0:
             raise ValueError("Positive repair training settings are required")
-        if min(self.weight_decay, self.detail_weight, self.num_workers) < 0:
+        if min(
+            self.weight_decay, self.detail_weight, self.selected_weight,
+            self.preservation_weight, self.num_workers,
+        ) < 0:
             raise ValueError("Non-negative regularization settings are required")
 
 
@@ -73,7 +80,8 @@ def load_repair_config(path: Path) -> tuple[RepairModelConfig, RepairTrainingCon
     )
     train_config = RepairTrainingConfig(**{
         key: (float(value) if key in {
-            "learning_rate", "optical_learning_rate", "weight_decay", "detail_weight"
+            "learning_rate", "optical_learning_rate", "adapter_learning_rate",
+            "weight_decay", "detail_weight", "selected_weight", "preservation_weight",
         } else int(value))
         for key, value in training.items()
     })
@@ -198,6 +206,7 @@ def _masked_l1(value: torch.Tensor, target: torch.Tensor, mask: torch.Tensor) ->
 @torch.inference_mode()
 def _evaluate(unet, adapter, loader, sigma, device) -> dict[str, float]:
     unet.eval()
+    adapter.eval()
     totals = {"latent_mse": 0.0, "selected_l1": 0.0, "distractor_change_l1": 0.0,
               "reference_mse": 0.0}
     samples = 0
@@ -301,13 +310,20 @@ def train_repair_model(
         num_workers=training_config.num_workers, pin_memory=device.type == "cuda",
     )
     adapter, _ = _load_adapter(adapter_checkpoint, device)
-    adapter.requires_grad_(False)
+    adapter.requires_grad_(True)
     unet = UNet2DConditionModel.from_pretrained(
         initial_unet, subfolder="unet", variant="fp16", torch_dtype=torch.float32,
         local_files_only=True,
     ).to(device)
     expand_reference_conditioning(unet)
     optical = attach_decoder_optics(unet, model_config)
+    # The large pretrained decoder supplies useful multiscale features, while
+    # a zero residual head makes the initial editor an exact copy operation.
+    # Training then learns only the instruction-selected change.
+    nn_init = torch.nn.init
+    nn_init.zeros_(unet.conv_out.weight)
+    if unet.conv_out.bias is not None:
+        nn_init.zeros_(unet.conv_out.bias)
     unet.enable_gradient_checkpointing()
     unet.requires_grad_(False)
     unet.conv_in.requires_grad_(True)
@@ -320,6 +336,7 @@ def train_repair_model(
     optimizer = torch.optim.AdamW([
         {"params": electronic_parameters, "lr": training_config.learning_rate},
         {"params": optical_parameters, "lr": training_config.optical_learning_rate},
+        {"params": list(adapter.parameters()), "lr": training_config.adapter_learning_rate},
     ], weight_decay=training_config.weight_decay)
     scheduler = EulerDiscreteScheduler.from_pretrained(
         turbo_checkpoint, subfolder="scheduler", local_files_only=True
@@ -343,24 +360,29 @@ def train_repair_model(
     optimizer.zero_grad(set_to_none=True)
     for epoch in range(1, training_config.epochs + 1):
         unet.train()
+        adapter.train()
         total = 0.0
         count = 0
         for step, batch in enumerate(train_loader, 1):
             reference = batch["reference"].to(device, non_blocking=True)
             target = batch["target"].to(device, non_blocking=True)
-            with torch.no_grad():
-                condition = adapter.condition(batch["qwen_text"].to(device))
+            condition = adapter.condition(batch["qwen_text"].to(device))
+            selected = batch["selected_mask"].to(device, non_blocking=True)
             noise = torch.randn_like(reference)
             with torch.autocast(device.type, dtype=torch.float16, enabled=device.type == "cuda"):
                 output = one_step_edit(unet, noise, reference, condition, sigma).float()
-                loss = F.mse_loss(output, target)
+                global_loss = F.mse_loss(output, target)
+                selected_loss = _masked_l1(output, target, selected)
+                preservation_loss = _masked_l1(output, reference, 1.0 - selected)
+                loss = global_loss + training_config.selected_weight * selected_loss
+                loss = loss + training_config.preservation_weight * preservation_loss
                 loss = loss + training_config.detail_weight * latent_gradient_loss(output, target)
                 scaled_loss = loss / training_config.gradient_accumulation
             scaler.scale(scaled_loss).backward()
             if step % training_config.gradient_accumulation == 0 or step == len(train_loader):
                 scaler.unscale_(optimizer)
                 torch.nn.utils.clip_grad_norm_(
-                    [*electronic_parameters, *optical_parameters], 1.0
+                    [*electronic_parameters, *optical_parameters, *adapter.parameters()], 1.0
                 )
                 scaler.step(optimizer)
                 scaler.update()
@@ -385,6 +407,7 @@ def train_repair_model(
                 "model_config": asdict(model_config),
                 "training_config": asdict(training_config),
                 "unet": {key: value.detach().half().cpu() for key, value in unet.state_dict().items()},
+                "adapter": {key: value.detach().half().cpu() for key, value in adapter.state_dict().items()},
                 "validation": validation,
             }, output_dir / "best_model.pt")
         if epoch % training_config.sample_every_epochs == 0:
