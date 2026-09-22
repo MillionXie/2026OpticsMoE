@@ -282,11 +282,26 @@ def _sample_grid(
 ) -> None:
     # Prefer a substantial, easy-to-read lamp for the qualitative grid rather
     # than depending on whichever identity happens to sort first.
-    source_starts = range(0, len(latent_dataset), len(SCENES))
-    base = max(
-        source_starts,
-        key=lambda index: float(latent_dataset.payload["foreground_mask"][index].sum()),
-    )
+    source_starts = list(range(0, len(latent_dataset), len(SCENES)))
+
+    def product_score(index: int) -> float:
+        mask = latent_dataset.payload["foreground_mask"][index, 0]
+        positions = torch.nonzero(mask > 0.1)
+        if not len(positions):
+            return -math.inf
+        lower, upper = positions.amin(0), positions.amax(0)
+        height, width = (upper - lower + 1).tolist()
+        aspect = height / max(width, 1)
+        # A conventional upright table lamp is more legible in a paper figure
+        # than a floor lamp or a close crop of a lampshade.
+        return float(mask.sum()) if 1.75 <= aspect <= 2.05 else -math.inf
+
+    base = max(source_starts, key=product_score)
+    if not math.isfinite(product_score(base)):
+        base = max(
+            source_starts,
+            key=lambda index: float(latent_dataset.payload["foreground_mask"][index].sum()),
+        )
     chosen = list(range(base, base + len(SCENES)))
     reference = latent_dataset.payload["reference"][chosen].float().to(device)
     text = latent_dataset.payload["qwen_text"][chosen].float().to(device)
