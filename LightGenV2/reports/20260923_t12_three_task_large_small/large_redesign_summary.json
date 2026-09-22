@@ -1,0 +1,148 @@
+{
+  "schema_version": 1,
+  "task": "full-frame text-guided product redesign",
+  "categories": [
+    "lamp",
+    "table"
+  ],
+  "chairs_used": false,
+  "best_epoch": 4,
+  "initial_validation": {
+    "latent_mse": 0.4014847937505692,
+    "latent_l1": 0.4055756542365998,
+    "reference_mse": 0.8090077652595937,
+    "catalogue_accuracy": 0.3359375,
+    "mse_improvement_over_copy": 0.5037318416569943
+  },
+  "test": {
+    "latent_mse": 0.024960362308775075,
+    "latent_l1": 0.10890373651636764,
+    "reference_mse": 0.8151900684460998,
+    "catalogue_accuracy": 1.0,
+    "mse_improvement_over_copy": 0.9693809293379223
+  },
+  "parameters": {
+    "qwen_transformer_and_norm": 100674048,
+    "vae_encoder": 34163664,
+    "unet_including_optics": 93803689,
+    "adapter": 4273280,
+    "router": 12292,
+    "vae_decoder": 49490199,
+    "total": 282417172
+  },
+  "attention_pruning": {
+    "spec": [
+      {
+        "side": "down",
+        "block": 0,
+        "attention": 0,
+        "removed_parameters": 1134528
+      },
+      {
+        "side": "down",
+        "block": 1,
+        "attention": 0,
+        "removed_parameters": 3743616
+      },
+      {
+        "side": "up",
+        "block": 0,
+        "attention": 1,
+        "removed_parameters": 13385472
+      },
+      {
+        "side": "up",
+        "block": 1,
+        "attention": 0,
+        "removed_parameters": 3743616
+      },
+      {
+        "side": "up",
+        "block": 1,
+        "attention": 1,
+        "removed_parameters": 3743616
+      },
+      {
+        "side": "up",
+        "block": 2,
+        "attention": 0,
+        "removed_parameters": 1134528
+      },
+      {
+        "side": "up",
+        "block": 2,
+        "attention": 1,
+        "removed_parameters": 1134528
+      }
+    ],
+    "removed_parameters": 28019904,
+    "remaining_parameters": 93002692,
+    "parameters_after_optical": 93803689,
+    "structured_widths": [
+      192,
+      384,
+      768
+    ],
+    "original_widths": [
+      320,
+      640,
+      1280
+    ],
+    "width_fraction": 0.6
+  },
+  "history": [
+    {
+      "epoch": 1,
+      "train_loss": 0.2873567516928435,
+      "validation": {
+        "latent_mse": 0.027461123245302588,
+        "latent_l1": 0.11844106653006747,
+        "reference_mse": 0.8090077652595937,
+        "catalogue_accuracy": 1.0,
+        "mse_improvement_over_copy": 0.9660557977011619
+      },
+      "optical_alpha": 0.5003816485404968
+    },
+    {
+      "epoch": 2,
+      "train_loss": 0.11729150685197157,
+      "validation": {
+        "latent_mse": 0.02507299726130441,
+        "latent_l1": 0.10972427192609757,
+        "reference_mse": 0.8090077652595937,
+        "catalogue_accuracy": 1.0,
+        "mse_improvement_over_copy": 0.9690077174311683
+      },
+      "optical_alpha": 0.5004984736442566
+    },
+    {
+      "epoch": 3,
+      "train_loss": 0.11140737483381397,
+      "validation": {
+        "latent_mse": 0.02549096212896984,
+        "latent_l1": 0.11124868120532483,
+        "reference_mse": 0.8090077652595937,
+        "catalogue_accuracy": 1.0,
+        "mse_improvement_over_copy": 0.9684910785488069
+      },
+      "optical_alpha": 0.5005888938903809
+    },
+    {
+      "epoch": 4,
+      "train_loss": 0.10872769373882976,
+      "validation": {
+        "latent_mse": 0.024859810262569226,
+        "latent_l1": 0.10850798757746816,
+        "reference_mse": 0.8090077652595937,
+        "catalogue_accuracy": 1.0,
+        "mse_improvement_over_copy": 0.9692712340596727
+      },
+      "optical_alpha": 0.5006757974624634
+    }
+  ],
+  "training_seconds": 484.99059526622295,
+  "gan_used": false,
+  "hard_pixel_composite_at_inference": false,
+  "inference_iterations": 1,
+  "warm_start_checkpoint": "/DATA/DATA1/guest3/t12_assets/runs/abo_scene_replace_2layer_progressive_282m_v1/best_model.pt"
+}
