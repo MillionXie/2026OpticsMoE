@@ -42,6 +42,7 @@ class RepairTrainingConfig:
     detail_weight: float
     selected_weight: float
     preservation_weight: float
+    pair_difference_weight: float
     adapter_learning_rate: float
     num_workers: int
     sample_every_epochs: int
@@ -60,9 +61,11 @@ class RepairTrainingConfig:
             raise ValueError("Positive repair training settings are required")
         if min(
             self.weight_decay, self.detail_weight, self.selected_weight,
-            self.preservation_weight, self.num_workers,
+            self.preservation_weight, self.pair_difference_weight, self.num_workers,
         ) < 0:
             raise ValueError("Non-negative regularization settings are required")
+        if self.batch_size % 2:
+            raise ValueError("Counterfactual repair training requires an even batch size")
 
 
 def load_repair_config(path: Path) -> tuple[RepairModelConfig, RepairTrainingConfig]:
@@ -82,6 +85,7 @@ def load_repair_config(path: Path) -> tuple[RepairModelConfig, RepairTrainingCon
         key: (float(value) if key in {
             "learning_rate", "optical_learning_rate", "adapter_learning_rate",
             "weight_decay", "detail_weight", "selected_weight", "preservation_weight",
+            "pair_difference_weight",
         } else int(value))
         for key, value in training.items()
     })
@@ -208,7 +212,7 @@ def _evaluate(unet, adapter, loader, sigma, device) -> dict[str, float]:
     unet.eval()
     adapter.eval()
     totals = {"latent_mse": 0.0, "selected_l1": 0.0, "distractor_change_l1": 0.0,
-              "reference_mse": 0.0}
+              "reference_mse": 0.0, "counterfactual_delta_l1": 0.0}
     samples = 0
     generator = torch.Generator(device=device).manual_seed(7321)
     for batch in loader:
@@ -217,7 +221,10 @@ def _evaluate(unet, adapter, loader, sigma, device) -> dict[str, float]:
         selected = batch["selected_mask"].to(device, non_blocking=True)
         distractor = batch["distractor_mask"].to(device, non_blocking=True)
         condition = adapter.condition(batch["qwen_text"].to(device))
-        noise = torch.randn(reference.shape, generator=generator, device=device)
+        pair_noise = torch.randn(
+            (len(reference) // 2, *reference.shape[1:]), generator=generator, device=device
+        )
+        noise = pair_noise.repeat_interleave(2, dim=0)
         with torch.autocast(device.type, dtype=torch.float16, enabled=device.type == "cuda"):
             output = one_step_edit(unet, noise, reference, condition, sigma).float()
         count = len(reference)
@@ -225,6 +232,10 @@ def _evaluate(unet, adapter, loader, sigma, device) -> dict[str, float]:
         totals["reference_mse"] += float(F.mse_loss(reference, target)) * count
         totals["selected_l1"] += float(_masked_l1(output, target, selected)) * count
         totals["distractor_change_l1"] += float(_masked_l1(output, reference, distractor)) * count
+        pair_mask = (selected[0::2] + selected[1::2]).clamp_max(1.0)
+        totals["counterfactual_delta_l1"] += float(_masked_l1(
+            output[0::2] - output[1::2], target[0::2] - target[1::2], pair_mask
+        )) * count
         samples += count
     result = {key: value / samples for key, value in totals.items()}
     result["mse_improvement_over_copy"] = 1.0 - result["latent_mse"] / max(
@@ -258,7 +269,11 @@ def _sample_grid(
     text = latent_dataset.payload["qwen_text"][chosen].float().to(device)
     condition = adapter.condition(text)
     generator = torch.Generator(device=device).manual_seed(seed)
-    noise = torch.randn(reference_latent.shape, generator=generator, device=device)
+    pair_noise = torch.randn(
+        (len(reference_latent) // 2, *reference_latent.shape[1:]),
+        generator=generator, device=device,
+    )
+    noise = pair_noise.repeat_interleave(2, dim=0)
     with torch.autocast(device.type, dtype=torch.float16, enabled=device.type == "cuda"):
         output_latent = one_step_edit(unet, noise, reference_latent, condition, sigma)
         decoded = vae.decode(output_latent / vae.config.scaling_factor, return_dict=False)[0]
@@ -301,7 +316,9 @@ def train_repair_model(
     train = RepairLatentDataset(latent_cache_dir / "train.pt")
     val = RepairLatentDataset(latent_cache_dir / "val.pt")
     train_loader = DataLoader(
-        train, batch_size=training_config.batch_size, shuffle=True,
+        # Dataset rows are adjacent counterfactual pairs. Keeping each pair in
+        # one batch makes output differences attributable only to the text.
+        train, batch_size=training_config.batch_size, shuffle=False,
         num_workers=training_config.num_workers, pin_memory=device.type == "cuda",
         generator=torch.Generator().manual_seed(seed),
     )
@@ -368,14 +385,25 @@ def train_repair_model(
             target = batch["target"].to(device, non_blocking=True)
             condition = adapter.condition(batch["qwen_text"].to(device))
             selected = batch["selected_mask"].to(device, non_blocking=True)
-            noise = torch.randn_like(reference)
+            pair_noise = torch.randn(
+                (len(reference) // 2, *reference.shape[1:]), device=device,
+                dtype=reference.dtype,
+            )
+            noise = pair_noise.repeat_interleave(2, dim=0)
             with torch.autocast(device.type, dtype=torch.float16, enabled=device.type == "cuda"):
                 output = one_step_edit(unet, noise, reference, condition, sigma).float()
                 global_loss = F.mse_loss(output, target)
                 selected_loss = _masked_l1(output, target, selected)
                 preservation_loss = _masked_l1(output, reference, 1.0 - selected)
+                pair_mask = (selected[0::2] + selected[1::2]).clamp_max(1.0)
+                pair_difference_loss = _masked_l1(
+                    output[0::2] - output[1::2],
+                    target[0::2] - target[1::2],
+                    pair_mask,
+                )
                 loss = global_loss + training_config.selected_weight * selected_loss
                 loss = loss + training_config.preservation_weight * preservation_loss
+                loss = loss + training_config.pair_difference_weight * pair_difference_loss
                 loss = loss + training_config.detail_weight * latent_gradient_loss(output, target)
                 scaled_loss = loss / training_config.gradient_accumulation
             scaler.scale(scaled_loss).backward()

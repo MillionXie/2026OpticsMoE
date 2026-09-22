@@ -10,15 +10,16 @@ fusion:
   rms_epsilon: 1.0e-6
 training:
   image_size: 256
-  batch_size: 1
-  gradient_accumulation: 4
+  batch_size: 2
+  gradient_accumulation: 2
   epochs: 8
-  learning_rate: 2.0e-5
+  learning_rate: 5.0e-5
   optical_learning_rate: 1.0e-4
   weight_decay: 1.0e-2
   detail_weight: 0.15
   selected_weight: 4.0
   preservation_weight: 1.0
-  adapter_learning_rate: 1.0e-4
+  pair_difference_weight: 4.0
+  adapter_learning_rate: 3.0e-4
   num_workers: 4
   sample_every_epochs: 1
