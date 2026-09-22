@@ -257,6 +257,36 @@ def _fallback_mask(image: Image.Image) -> Image.Image:
     return mask.filter(ImageFilter.MaxFilter(5)).filter(ImageFilter.GaussianBlur(0.8))
 
 
+def _normalize_product(
+    image: Image.Image, mask: Image.Image, size: int,
+) -> tuple[Image.Image, Image.Image]:
+    """Tightly frame the product while retaining its exact pixels and alpha."""
+
+    box = mask.getbbox()
+    if box is None:
+        return (
+            ImageOps.fit(image, (size, size), method=Image.Resampling.LANCZOS),
+            ImageOps.fit(mask, (size, size), method=Image.Resampling.LANCZOS),
+        )
+    product = image.crop(box)
+    product_mask = mask.crop(box)
+    max_width, max_height = int(size * 0.68), int(size * 0.78)
+    scale = min(max_width / product.width, max_height / product.height)
+    resized_size = (
+        max(1, round(product.width * scale)),
+        max(1, round(product.height * scale)),
+    )
+    product = product.resize(resized_size, Image.Resampling.LANCZOS)
+    product_mask = product_mask.resize(resized_size, Image.Resampling.LANCZOS)
+    reference = Image.new("RGB", (size, size), "white")
+    normalized_mask = Image.new("L", (size, size), 0)
+    left = (size - resized_size[0]) // 2
+    top = max(0, int(size * 0.88) - resized_size[1])
+    reference.paste(product, (left, top), product_mask)
+    normalized_mask.paste(product_mask, (left, top))
+    return reference, normalized_mask
+
+
 class ProductSceneDataset(Dataset[dict[str, Any]]):
     def __init__(self, data_dir: Path, split: str, image_size: int, instruction_cache: Path) -> None:
         self.rows = _load_manifest(data_dir / f"{split}.jsonl")
@@ -276,18 +306,13 @@ class ProductSceneDataset(Dataset[dict[str, Any]]):
         row = self.rows[index // len(SCENES)]
         scene_index = index % len(SCENES)
         with Image.open(row["image_path"]) as handle:
-            reference = ImageOps.fit(
-                handle.convert("RGB"), (self.image_size, self.image_size),
-                method=Image.Resampling.LANCZOS,
-            )
+            source = handle.convert("RGB")
         if row["mask_path"] is not None:
             with Image.open(row["mask_path"]) as handle:
-                mask_image = ImageOps.fit(
-                    handle.convert("L"), (self.image_size, self.image_size),
-                    method=Image.Resampling.LANCZOS,
-                )
+                source_mask = handle.convert("L")
         else:
-            mask_image = _fallback_mask(reference)
+            source_mask = _fallback_mask(source)
+        reference, mask_image = _normalize_product(source, source_mask, self.image_size)
         background = render_background(scene_index, self.image_size, row["sample_id"])
         target = Image.composite(reference, background, mask_image)
         variant = _seed(row["sample_id"], SCENES[scene_index]["id"]) % len(
