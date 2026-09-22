@@ -179,18 +179,22 @@ class ProductRepairDataset(Dataset[dict[str, Any]]):
             raise ValueError(f"Unsupported restoration categories: {unsupported}")
 
     def __len__(self) -> int:
-        return len(self.rows)
+        # Two counterfactual targets share every pixel of the same reference;
+        # only the instruction selects which of the two holes is restored.
+        return 2 * len(self.rows)
 
     def _choice(self, index: int, sample_id: str) -> tuple[str, str, int, float]:
-        digest = hashlib.sha256(f"{self.seed}:{index}:{sample_id}".encode()).digest()
-        selected_index = digest[0] % len(REGIONS)
-        distractor_index = (selected_index + 1 + digest[1] % (len(REGIONS) - 1)) % len(REGIONS)
-        variant = digest[2] % len(PROMPT_TEMPLATES)
+        base_index, branch = divmod(index, 2)
+        digest = hashlib.sha256(f"{self.seed}:{base_index}:{sample_id}".encode()).digest()
+        first = digest[0] % len(REGIONS)
+        second = (first + 1 + digest[1] % (len(REGIONS) - 1)) % len(REGIONS)
+        selected_index, distractor_index = ((first, second), (second, first))[branch]
+        variant = (digest[2] + branch) % len(PROMPT_TEMPLATES)
         severity = (0.15, 0.25, 0.35)[digest[3] % 3]
         return REGIONS[selected_index], REGIONS[distractor_index], variant, severity
 
     def __getitem__(self, index: int) -> dict[str, Any]:
-        row = self.rows[index]
+        row = self.rows[index // 2]
         with Image.open(row.image_path) as handle:
             image = ImageOps.fit(
                 ImageOps.exif_transpose(handle).convert("RGB"),
@@ -211,7 +215,7 @@ class ProductRepairDataset(Dataset[dict[str, Any]]):
             "distractor_mask": masks[distractor],
             "qwen_text": self.text[prompt_index],
             "prompt": prompt,
-            "sample_id": row.sample_id,
+            "sample_id": f"{row.sample_id}:restore-{selected}",
             "category": row.category,
             "selected_region": selected,
             "distractor_region": distractor,
@@ -221,11 +225,12 @@ class ProductRepairDataset(Dataset[dict[str, Any]]):
 def write_pair_manifest(dataset: ProductRepairDataset, output: Path) -> None:
     output.parent.mkdir(parents=True, exist_ok=True)
     with output.open("w", encoding="utf-8") as handle:
-        for index, row in enumerate(dataset.rows):
+        for index in range(len(dataset)):
+            row = dataset.rows[index // 2]
             selected, distractor, variant, severity = dataset._choice(index, row.sample_id)
             prompt_index = dataset.lookup[(row.category, selected, variant)]
             handle.write(json.dumps({
-                "sample_id": row.sample_id,
+                "sample_id": f"{row.sample_id}:restore-{selected}",
                 "sequence_id": row.sequence_id,
                 "category": row.category,
                 "source_image": str(row.image_path),
