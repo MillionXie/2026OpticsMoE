@@ -162,3 +162,28 @@ __all__ = [
     "COMPACT_ATTENTION_PRUNE_SPEC", "IdentityResidualOpticalMidBlock",
     "load_legacy_scene_warm_start", "prepare_compact_optical_unet",
 ]
+
+
+class ElectronicBaselineMarker(nn.Module):
+    """Reporting shim for the matched Qwen + purely electronic decoder baseline."""
+
+    def __init__(self) -> None:
+        super().__init__()
+        self.register_buffer("zero_alpha", torch.tensor(0.0), persistent=False)
+        self.fusion = type("ElectronicFusion", (), {"alpha": self.zero_alpha})()
+
+    def optical_parameters(self):
+        return iter(())
+
+    def architecture_report(self) -> dict[str, Any]:
+        return {
+            "location": None,
+            "electronic_and_optical_are_parallel": False,
+            "electronic_branch": "complete BK-SDM-v2-Tiny electronic decoder",
+            "optical_backend": None,
+            "optical_parameters": 0,
+            "alpha": 0.0,
+        }
+
+
+__all__.append("ElectronicBaselineMarker")
