@@ -16,6 +16,10 @@ from torch.nn import functional as F
 from torch.utils.data import DataLoader, Dataset
 
 from .compact_turbo import latent_gradient_loss
+from .compact_product_model import (
+    load_legacy_scene_warm_start,
+    prepare_compact_optical_unet,
+)
 from .electronic_turbo_infer import _load_adapter
 from .product_repair_model import (
     RepairModelConfig,
@@ -267,6 +271,7 @@ def train_replacement_model(
     output_dir: Path, model_config: RepairModelConfig,
     training_config: SceneTrainingConfig, device: torch.device,
     seed: int = 42, warm_start_checkpoint: Path | None = None,
+    compact_optical_mid: bool = False,
 ) -> dict[str, Any]:
     if output_dir.exists():
         raise FileExistsError(output_dir)
@@ -286,8 +291,17 @@ def train_replacement_model(
         initial_unet, subfolder="unet", variant="fp16", torch_dtype=torch.float32, local_files_only=True,
     ).to(device)
     expand_reference_conditioning(unet)
-    optical = attach_decoder_optics(unet, model_config)
-    if warm_start_checkpoint is not None:
+    pruning_report = None
+    warm_start_report = None
+    if compact_optical_mid:
+        optical, pruning_report = prepare_compact_optical_unet(unet, model_config)
+    else:
+        optical = attach_decoder_optics(unet, model_config)
+    if warm_start_checkpoint is not None and compact_optical_mid:
+        warm_start_report = load_legacy_scene_warm_start(unet, warm_start_checkpoint)
+        if warm_start_report["adapter"] is not None:
+            adapter.load_state_dict(warm_start_report.pop("adapter"))
+    elif warm_start_checkpoint is not None:
         warm = torch.load(warm_start_checkpoint, map_location="cpu", weights_only=False, mmap=True)
         unet.load_state_dict(warm["unet"])
         adapter.load_state_dict(warm["adapter"])
@@ -301,6 +315,8 @@ def train_replacement_model(
     unet.requires_grad_(False)
     unet.conv_in.requires_grad_(True); unet.up_blocks.requires_grad_(True)
     unet.conv_norm_out.requires_grad_(True); unet.conv_out.requires_grad_(True)
+    for _, parameter in optical.optical_parameters():
+        parameter.requires_grad_(True)
     optical_ids = {id(parameter) for _, parameter in optical.optical_parameters()}
     optical_parameters = [p for p in unet.parameters() if p.requires_grad and id(p) in optical_ids]
     electronic_parameters = [p for p in unet.parameters() if p.requires_grad and id(p) not in optical_ids]
@@ -407,7 +423,22 @@ def train_replacement_model(
         "qwen_language_layers": f"{qwen_meta['language_layers_retained']}/{qwen_meta['language_layers_original']}",
         "qwen_vision_tower_used": False,
         "qwen_lm_head_used": False,
+        "vae_encoder_parameters": (
+            sum(p.numel() for p in vae.encoder.parameters())
+            + sum(p.numel() for p in vae.quant_conv.parameters())
+        ),
+        "token_embedding_parameters_excluded": qwen_meta.get(
+            "token_embedding_parameters_excluded_by_project_convention", 0
+        ),
+        "counted_qwen_parameters": qwen_meta.get(
+            "counted_text_encoder_parameters", qwen_meta["retained_text_encoder_parameters"]
+        ),
     })
+    report_architecture["counted_end_to_end_parameters"] = (
+        report_architecture["counted_qwen_parameters"]
+        + report_architecture["vae_encoder_parameters"]
+        + report_architecture["generation_tail_parameters"]
+    )
     report = {
         "schema_version": 2,
         "task": "background-present ABO lamp + compositional text -> replaced scene",
@@ -419,6 +450,9 @@ def train_replacement_model(
         "gan_used": False, "diffusion_steps": 1,
         "warm_start_checkpoint": str(warm_start_checkpoint) if warm_start_checkpoint else None,
         "object_preservation": "exact source RGB alpha composite after generation",
+        "compact_optical_mid": compact_optical_mid,
+        "attention_pruning": pruning_report,
+        "warm_start_conversion": warm_start_report,
     }
     (output_dir / "training_summary.json").write_text(json.dumps(report, indent=2) + "\n", encoding="utf-8")
     del unet, vae, adapter, router, optimizer
