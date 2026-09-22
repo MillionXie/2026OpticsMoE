@@ -40,7 +40,16 @@ SOURCE_URL = "https://amazon-berkeley-objects.s3.amazonaws.com/index.html"
 LICENSE_URL = "https://amazon-berkeley-objects.s3.amazonaws.com/LICENSE-CC-BY-4.0.txt"
 LICENSE = "CC BY 4.0"
 PREFIX = "home/achleshwar/amazon_iccv21/ABO_RELEASE/"
-CATEGORY_LABELS = {"BACKPACK": "backpack", "CHAIR": "chair", "LAMP": "lamp", "TABLE": "table"}
+CATEGORY_LABELS = {
+    "BACKPACK": "backpack",
+    "CABINET": "cabinet",
+    "CHAIR": "chair",
+    "DRESSER": "dresser",
+    "LAMP": "lamp",
+    "OTTOMAN": "ottoman",
+    "PILLOW": "pillow",
+    "TABLE": "table",
+}
 MULTI_OBJECT = re.compile(
     r"\b(set of|pair of|pack of|[2-9][ -]pack|[2-9][ -]piece|bundle)\b",
     flags=re.IGNORECASE,
