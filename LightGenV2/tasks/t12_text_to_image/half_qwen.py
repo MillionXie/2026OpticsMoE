@@ -75,7 +75,7 @@ def load_half_qwen_text_encoder(
         "counted_text_encoder_parameters": retained_parameters - embedding_parameters,
         "vision_tower_used": False,
         "language_model_head_used": False,
-        "feature_pooling": "attention-mask-weighted mean of retained layer 14 output",
+        "feature_pooling": f"attention-mask-weighted mean of retained layer {keep_layers} output",
     })
 
     # A child module has no parent pointer.  Keeping this reference while

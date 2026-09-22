@@ -17,6 +17,7 @@ from torch.utils.data import DataLoader, Dataset
 
 from .compact_turbo import latent_gradient_loss
 from .compact_product_model import (
+    ElectronicBaselineMarker,
     load_legacy_scene_warm_start,
     prepare_compact_optical_unet,
 )
@@ -272,6 +273,7 @@ def train_replacement_model(
     training_config: SceneTrainingConfig, device: torch.device,
     seed: int = 42, warm_start_checkpoint: Path | None = None,
     compact_optical_mid: bool = False,
+    electronic_baseline: bool = False,
 ) -> dict[str, Any]:
     if output_dir.exists():
         raise FileExistsError(output_dir)
@@ -293,11 +295,15 @@ def train_replacement_model(
     expand_reference_conditioning(unet)
     pruning_report = None
     warm_start_report = None
-    if compact_optical_mid:
+    if compact_optical_mid and electronic_baseline:
+        raise ValueError("Choose either compact optics or the electronic baseline")
+    if electronic_baseline:
+        optical = ElectronicBaselineMarker().to(device)
+    elif compact_optical_mid:
         optical, pruning_report = prepare_compact_optical_unet(unet, model_config)
     else:
         optical = attach_decoder_optics(unet, model_config)
-    if warm_start_checkpoint is not None and compact_optical_mid:
+    if warm_start_checkpoint is not None and (compact_optical_mid or electronic_baseline):
         warm_start_report = load_legacy_scene_warm_start(unet, warm_start_checkpoint)
         if warm_start_report["adapter"] is not None:
             adapter.load_state_dict(warm_start_report.pop("adapter"))
@@ -451,6 +457,7 @@ def train_replacement_model(
         "warm_start_checkpoint": str(warm_start_checkpoint) if warm_start_checkpoint else None,
         "object_preservation": "exact source RGB alpha composite after generation",
         "compact_optical_mid": compact_optical_mid,
+        "electronic_baseline": electronic_baseline,
         "attention_pruning": pruning_report,
         "warm_start_conversion": warm_start_report,
     }
