@@ -574,12 +574,15 @@ def train_openmoji(args: argparse.Namespace, cache: dict[str, Any], device: torc
         test_metrics = None
         if epoch == 1 or epoch % settings.test_interval_epochs == 0 or epoch == settings.epochs:
             backup = ema.copy_to(model); model.eval()
-            try: test_metrics, _, _ = legacy._evaluate(model, test_loader, settings, device)
-            finally: EMA.restore(model, backup)
-            score = float(test_metrics["overall"]["changed_cell_accuracy"])
-            if score > best:
-                best = score; best_epoch = epoch
-                _checkpoint(args.run_dir / "best_checkpoint.pt", model, epoch, train_metrics, test_metrics)
+            try:
+                test_metrics, _, _ = legacy._evaluate(model, test_loader, settings, device)
+                score = float(test_metrics["overall"]["changed_cell_accuracy"])
+                if score > best:
+                    best = score; best_epoch = epoch
+                    # Persist exactly the EMA weights that produced test_metrics.
+                    _checkpoint(args.run_dir / "best_checkpoint.pt", model, epoch, train_metrics, test_metrics)
+            finally:
+                EMA.restore(model, backup)
         history.append({"epoch": epoch, **{f"train_{k}": v for k, v in train_metrics.items()}, **({f"test_{k}": v for k, v in test_metrics["overall"].items()} if test_metrics else {})})
         _csv(args.run_dir / "training_history.csv", history)
         print(f"[OpenMoji {args.model_kind}] epoch={epoch}/{settings.epochs} best_changed={best:.4f}@{best_epoch}", flush=True)
