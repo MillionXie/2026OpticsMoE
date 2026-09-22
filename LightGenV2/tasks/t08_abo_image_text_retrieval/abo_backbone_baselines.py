@@ -39,6 +39,10 @@ from torch.nn import functional as F
 I2T_QUERY = "Retrieve the product title that best describes this product image."
 T2I_QUERY = "Retrieve product images that match the following product description."
 DOCUMENT = "Represent the user's input."
+I2I_QUERY = (
+    "Represent this catalog product image for category-aware visual similarity "
+    "retrieval."
+)
 QWEN_REFERENCES = {
     "image_to_text": {
         "source_commit": "b9a4be689f198f55ee0caaf4e5bcddd4dfc80200",
@@ -590,7 +594,7 @@ def _image_to_image(args: argparse.Namespace, bundle: EncoderBundle) -> dict[str
         data_root=root,
         output=args.output / "abo200_image_features.pt",
         bundle=bundle,
-        instruction=DOCUMENT,
+        instruction=I2I_QUERY,
         batch_size=args.batch_size,
     )
     vectors = _normalized(features)
