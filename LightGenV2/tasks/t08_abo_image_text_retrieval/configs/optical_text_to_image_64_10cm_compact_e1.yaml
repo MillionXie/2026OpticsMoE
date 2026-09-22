@@ -1,0 +1,45 @@
+base_config: optical_router_moe_dc20_kd1_balance1.yaml
+
+# Correct text-to-image protocol at the original 10 cm propagation distance.
+# Structurally prune every electronic residual MLP from expansion 2.0 to 1.0;
+# all optical phase tensors, optical Routers and the 64-D readout are copied.
+electronic:
+  expansion: 1.0
+
+language_optical:
+  distance_m: 0.10
+  allow_distance_override: false
+
+training:
+  epochs: 16
+  learning_rate: 0.000015
+  adapter_learning_rate: 0.000008
+  readout_learning_rate: 0.000015
+  phase_learning_rate: 0.002
+  router_learning_rate: 0.002
+  ema_decay: 0.99
+
+augmentation:
+  enabled: true
+  crop_scale_min: 0.82
+  brightness_jitter: 0.15
+  contrast_jitter: 0.15
+  rotation_degrees: 7.0
+
+lightgen:
+  selection:
+    test_interval_epochs: 2
+
+abo_image_text:
+  retrieval_direction: text_to_image
+  selection_direction: text_to_image
+  symmetric_title_to_image_weight: 1.25
+  teacher_kd_weight: 0.60
+  cache_file: ../runs/shared/abo_easy100_qwen64_true_text_to_image.pt
+  resume_checkpoint: ../runs/simulation/optical_text_to_image_64_alpha04_refine_seed42_20260920/best_checkpoint.pt
+  resume_checkpoint_sha256: f81ce7d0ea3da31de09ea01392c47312969b84cc39244c43772d38024faba0cb
+  allow_propagation_distance_transition: false
+  allow_electronic_compaction_transition: true
+  alpha_curriculum: null
+
+output_dir: ../runs/simulation/optical_text_to_image_64_10cm_compact_e1_seed42_20260923

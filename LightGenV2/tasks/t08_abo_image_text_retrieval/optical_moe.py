@@ -14,6 +14,7 @@ import argparse
 import csv
 import hashlib
 import json
+import re
 import shutil
 import subprocess
 import time
@@ -250,16 +251,28 @@ def _compact_residual_mlp_state(
     return compact, {"selection_rule": "incoming_norm_times_outgoing_norm", "kept": selections}
 
 
+def _architecture_distance_cm(architecture: str) -> int:
+    match = re.search(r"_(\d+)cm_17um_", architecture)
+    if match is None:
+        raise RuntimeError("Checkpoint architecture does not contain a pinned distance")
+    return int(match.group(1))
+
+
 def _load_electronic_compaction_checkpoint(
     path: Path, replacement: Any, readout: Any,
 ) -> tuple[dict[str, Any], dict[str, Any]]:
-    """Keep 15 cm optics fixed while structurally shrinking electronic MLPs."""
+    """Keep same-distance optics fixed while structurally shrinking electronic MLPs."""
 
     payload = torch.load(path, map_location="cpu", weights_only=False)
     source_architecture = str(payload.get("metadata", {}).get("optical_architecture", ""))
     target_architecture = str(replacement.checkpoint_architecture)
-    if "_15cm_17um_" not in source_architecture or "_15cm_17um_" not in target_architecture:
-        raise RuntimeError("Electronic compaction requires pinned 15 cm source and target graphs")
+    source_distance = _architecture_distance_cm(source_architecture)
+    target_distance = _architecture_distance_cm(target_architecture)
+    if source_distance != target_distance:
+        raise RuntimeError(
+            "Electronic compaction cannot change propagation distance: "
+            f"{source_distance} cm -> {target_distance} cm"
+        )
     reports: dict[str, Any] = {}
     for label, module, source_key in (
         ("vision", replacement.vision_surrogate, "vision_optical"),
@@ -282,6 +295,7 @@ def _load_electronic_compaction_checkpoint(
         "source_architecture": source_architecture,
         "target_architecture": target_architecture,
         "method": "structured residual-MLP neuron pruning",
+        "propagation_distance_cm": source_distance,
         "optical_tensors": "copied exactly",
         "readout": "copied exactly",
         "modalities": reports,
