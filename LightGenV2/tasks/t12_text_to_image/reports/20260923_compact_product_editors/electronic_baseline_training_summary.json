@@ -1,0 +1,177 @@
+{
+  "schema_version": 2,
+  "task": "background-present ABO lamp + compositional text -> replaced scene",
+  "dataset": "ABO CleanRender CC BY 4.0 + generated compositional backgrounds",
+  "initial_validation": {
+    "latent_mse": 1.2444539794232696,
+    "background_l1": 0.867271339520812,
+    "foreground_change_l1": 0.6876499429927208,
+    "reference_mse": 0.6056911937193945,
+    "pair_delta_l1": 1.0161587055772543,
+    "room_accuracy": 0.177734375,
+    "tone_accuracy": 0.375,
+    "brightness_accuracy": 0.546875,
+    "direction_accuracy": 0.5,
+    "exact_combination_accuracy": 0.0,
+    "mse_improvement_over_copy": -1.0546014079904258
+  },
+  "best_epoch": 1,
+  "best_validation_latent_mse": 0.18653239574632607,
+  "test_held_out_combinations": {
+    "latent_mse": 0.18630222851061262,
+    "background_l1": 0.28932252572849393,
+    "foreground_change_l1": 0.02508666929861647,
+    "reference_mse": 0.6189278528327122,
+    "pair_delta_l1": 0.42044730845373124,
+    "room_accuracy": 1.0,
+    "tone_accuracy": 1.0,
+    "brightness_accuracy": 1.0,
+    "direction_accuracy": 0.5,
+    "exact_combination_accuracy": 0.5,
+    "mse_improvement_over_copy": 0.6989920106876051
+  },
+  "architecture": {
+    "variant": "qwen_bksdm_v2_tiny_reference_decoder_optical",
+    "flow": "image->frozen VAE encoder; text->frozen Qwen->adapter; one UNet call->VAE decoder",
+    "unet_parameters": 326837124,
+    "vae_decoder_parameters": 49490179,
+    "qwen_condition_adapter_parameters": 4273280,
+    "text_region_router_parameters": 26635,
+    "generation_tail_parameters": 380627218,
+    "qwen_parameters_excluded_from_tail": true,
+    "inference_iterations": 1,
+    "unet_calls": 1,
+    "vae_decoder_calls": 1,
+    "reference_conditioning": "8ch input latent + small seeded Gaussian texture channel",
+    "output_parameterization": "single-pass residual around the input latent",
+    "optical_decoder": {
+      "location": null,
+      "electronic_and_optical_are_parallel": false,
+      "electronic_branch": "complete BK-SDM-v2-Tiny electronic decoder",
+      "optical_backend": null,
+      "optical_parameters": 0,
+      "alpha": 0.0
+    },
+    "config": {
+      "optical_width": 224,
+      "optical_grid": 8,
+      "optical_experts": 4,
+      "optical_top_k": 2,
+      "alpha_initial": 0.5,
+      "alpha_minimum": 0.4,
+      "alpha_maximum": 0.75,
+      "rms_epsilon": 1e-06
+    },
+    "text_attribute_router_parameters": 26635,
+    "qwen_text_encoder_parameters": 1720574976,
+    "qwen_language_layers": "28/28",
+    "qwen_vision_tower_used": false,
+    "qwen_lm_head_used": false,
+    "vae_encoder_parameters": 34163664,
+    "token_embedding_parameters_excluded": 311164928,
+    "counted_qwen_parameters": 1409410048,
+    "counted_end_to_end_parameters": 1824200930
+  },
+  "qwen_pruning": {
+    "language_layers_original": 28,
+    "language_layers_retained": 28,
+    "language_transformer_parameters_original": 1409408000,
+    "language_transformer_parameters_retained": 1409408000,
+    "language_transformer_parameters_removed": 0,
+    "language_transformer_depth_fraction": 1.0,
+    "checkpoint_parameters": 2127532032,
+    "retained_text_encoder_parameters": 1720574976,
+    "token_embedding_parameters_excluded_by_project_convention": 311164928,
+    "counted_text_encoder_parameters": 1409410048,
+    "vision_tower_used": false,
+    "language_model_head_used": false,
+    "feature_pooling": "attention-mask-weighted mean of retained layer 28 output"
+  },
+  "history": [
+    {
+      "epoch": 1,
+      "train_loss": 2.5736744847252138,
+      "validation": {
+        "latent_mse": 0.18653239574632607,
+        "background_l1": 0.2906583199510351,
+        "foreground_change_l1": 0.025535558350384235,
+        "reference_mse": 0.6056911937193945,
+        "pair_delta_l1": 0.4249666368123144,
+        "room_accuracy": 1.0,
+        "tone_accuracy": 1.0,
+        "brightness_accuracy": 1.0,
+        "direction_accuracy": 0.5,
+        "exact_combination_accuracy": 0.5,
+        "mse_improvement_over_copy": 0.6920338322885654
+      },
+      "optical_alpha": 0.0
+    },
+    {
+      "epoch": 2,
+      "train_loss": 1.9206727742631402,
+      "validation": {
+        "latent_mse": 0.1986160904634744,
+        "background_l1": 0.2964283916517161,
+        "foreground_change_l1": 0.03680192476895172,
+        "reference_mse": 0.6056911937193945,
+        "pair_delta_l1": 0.44782613462302834,
+        "room_accuracy": 1.0,
+        "tone_accuracy": 1.0,
+        "brightness_accuracy": 1.0,
+        "direction_accuracy": 0.5,
+        "exact_combination_accuracy": 0.5,
+        "mse_improvement_over_copy": 0.6720835757181414
+      },
+      "optical_alpha": 0.0
+    },
+    {
+      "epoch": 3,
+      "train_loss": 1.726878433384829,
+      "validation": {
+        "latent_mse": 0.2203866713680327,
+        "background_l1": 0.308161974477116,
+        "foreground_change_l1": 0.028649133113503922,
+        "reference_mse": 0.6056911937193945,
+        "pair_delta_l1": 0.4774372916435823,
+        "room_accuracy": 1.0,
+        "tone_accuracy": 1.0,
+        "brightness_accuracy": 1.0,
+        "direction_accuracy": 0.5,
+        "exact_combination_accuracy": 0.5,
+        "mse_improvement_over_copy": 0.6361402086520449
+      },
+      "optical_alpha": 0.0
+    },
+    {
+      "epoch": 4,
+      "train_loss": 1.658126968321287,
+      "validation": {
+        "latent_mse": 0.23040246067102998,
+        "background_l1": 0.31578626012196764,
+        "foreground_change_l1": 0.01959410104973358,
+        "reference_mse": 0.6056911937193945,
+        "pair_delta_l1": 0.49156464298721403,
+        "room_accuracy": 1.0,
+        "tone_accuracy": 1.0,
+        "brightness_accuracy": 1.0,
+        "direction_accuracy": 0.5,
+        "exact_combination_accuracy": 0.5,
+        "mse_improvement_over_copy": 0.619604077027788
+      },
+      "optical_alpha": 0.0
+    }
+  ],
+  "training_seconds": 1586.4568235948682,
+  "gan_used": false,
+  "diffusion_steps": 1,
+  "warm_start_checkpoint": "/DATA/DATA1/guest3/t12_assets/runs/abo_lamp_scene_big_optical_v4/best_model.pt",
+  "object_preservation": "exact source RGB alpha composite after generation",
+  "compact_optical_mid": false,
+  "electronic_baseline": true,
+  "attention_pruning": null,
+  "warm_start_conversion": {
+    "loaded_keys": 358,
+    "missing_keys": [],
+    "unexpected_keys": []
+  }
+}

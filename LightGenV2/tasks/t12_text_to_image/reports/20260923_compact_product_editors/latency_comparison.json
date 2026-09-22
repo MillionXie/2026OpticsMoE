@@ -1,0 +1,39 @@
+{
+  "schema_version": 1,
+  "batch_size": 1,
+  "image_size": 256,
+  "timing_boundary": "first Qwen Transformer block input -> composited RGB image",
+  "tokenization_model_loading_and_token_embedding_excluded": true,
+  "baseline": {
+    "name": "full_qwen_electronic_baseline",
+    "qwen_layers": 28,
+    "software_optics_executed": null,
+    "measured_optical_bypass": {
+      "mean_ms": 63.48640563964844,
+      "p50_ms": 63.17465591430664,
+      "p95_ms": 65.77049255371094
+    },
+    "physical_optical_latency_ms": 0.0,
+    "estimated_hardware_mean_ms": 63.48640563964844,
+    "prompt": "Keep the object unchanged and replace its current background with a cool-toned, dim modern study with soft window light from the left.",
+    "qwen_counted_parameters": 1409410048,
+    "token_embedding_parameters_excluded": 311164928
+  },
+  "optical": {
+    "name": "three_layer_qwen_compact_optical",
+    "qwen_layers": 3,
+    "software_optics_executed": false,
+    "measured_optical_bypass": {
+      "mean_ms": 28.792441635131837,
+      "p50_ms": 28.460031509399414,
+      "p95_ms": 30.823423385620117
+    },
+    "physical_optical_latency_ms": 6.2682,
+    "estimated_hardware_mean_ms": 35.06064163513184,
+    "prompt": "Keep the object unchanged and replace its current background with a cool-toned, dim modern study with soft window light from the left.",
+    "qwen_counted_parameters": 151010048,
+    "token_embedding_parameters_excluded": 311164928
+  },
+  "speedup_x": 1.8107599484441013,
+  "latency_reduction_fraction": 0.4477456822152204
+}
