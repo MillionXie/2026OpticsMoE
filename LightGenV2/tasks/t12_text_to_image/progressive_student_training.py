@@ -47,7 +47,7 @@ class DistillationDataset(Dataset[dict[str, Any]]):
         }
         value["teacher_prediction"] = self.teacher["prediction"][index].float()
         value["noise"] = self.teacher["noise"][index].float()
-        for key in ("rooms", "tones", "brightness", "directions"):
+        for key in ("room_indices", "tone_indices", "brightness_indices", "direction_indices"):
             value[key] = self.student[key][index]
         return value
 
