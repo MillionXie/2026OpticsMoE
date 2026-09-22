@@ -1,0 +1,12 @@
+base_config: optical_text_to_image_64_10cm_compact_e0p5_alpha030_refine.yaml
+
+# Pinned 10 cm final candidate. The delivery builder copies the audited
+# checkpoint into this task-local weights directory.
+abo_image_text:
+  resume_checkpoint: ../weights/final_best_checkpoint.pt
+  resume_checkpoint_sha256: 05828c859496603a6be1d1222f825ef4f2fc6276870092bdf778a661e71dde48
+  allow_propagation_distance_transition: false
+  allow_electronic_compaction_transition: false
+  alpha_curriculum: null
+
+output_dir: ../runs/evaluation/optical_text_to_image_64_10cm_final
