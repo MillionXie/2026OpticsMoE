@@ -1,0 +1,124 @@
+{
+  "schema_version": 1,
+  "task": "input product image + text-selected local restoration -> new image",
+  "dataset": "ABO CleanRender CC BY 4.0",
+  "categories": [
+    "pillow",
+    "cabinet",
+    "dresser",
+    "ottoman"
+  ],
+  "initial_validation": {
+    "latent_mse": 0.043101171548995704,
+    "selected_l1": 0.6808336137069596,
+    "distractor_change_l1": 0.2985107077078687,
+    "reference_mse": 0.04970668168324563,
+    "counterfactual_delta_l1": 0.7448329619235463,
+    "region_accuracy": 0.9097222222222222,
+    "mse_improvement_over_copy": 0.13288978283328878
+  },
+  "best_epoch": 4,
+  "best_validation_latent_mse": 0.030714103020727634,
+  "architecture": {
+    "variant": "qwen_bksdm_v2_tiny_reference_decoder_optical",
+    "flow": "image->frozen VAE encoder; text->frozen Qwen->adapter; one UNet call->VAE decoder",
+    "unet_parameters": 329623401,
+    "vae_decoder_parameters": 49490179,
+    "qwen_condition_adapter_parameters": 4273280,
+    "text_region_router_parameters": 10243,
+    "generation_tail_parameters": 383397103,
+    "qwen_parameters_excluded_from_tail": true,
+    "inference_iterations": 1,
+    "unet_calls": 1,
+    "vae_decoder_calls": 1,
+    "reference_conditioning": "8ch input latent + small seeded Gaussian texture channel",
+    "output_parameterization": "single-pass residual around the input latent",
+    "optical_decoder": {
+      "location": "first/deepest UNet decoder up block",
+      "parallel_contract": "electronic(shared_input) || optical(shared_input), then RMS fusion",
+      "electronic_and_optical_are_parallel": true,
+      "optical_backend": "differentiable phase-only FFT simulation",
+      "optical_grid": [
+        8,
+        8
+      ],
+      "optical_parameters": 2786277,
+      "alpha": 0.5039514899253845,
+      "alpha_minimum": 0.4,
+      "alpha_maximum": 0.75
+    },
+    "config": {
+      "optical_width": 224,
+      "optical_grid": 8,
+      "optical_experts": 4,
+      "optical_top_k": 2,
+      "alpha_initial": 0.5,
+      "alpha_minimum": 0.4,
+      "alpha_maximum": 0.75,
+      "rms_epsilon": 1e-06
+    },
+    "trainable_parameters": 241923241
+  },
+  "history": [
+    {
+      "epoch": 1,
+      "train_loss": 4.869090714802344,
+      "validation": {
+        "latent_mse": 0.03780289915286832,
+        "selected_l1": 0.6282483537991842,
+        "distractor_change_l1": 0.25533226649794316,
+        "reference_mse": 0.04970668168324563,
+        "counterfactual_delta_l1": 0.7122741523716185,
+        "region_accuracy": 0.9652777777777778,
+        "mse_improvement_over_copy": 0.23948053113329537
+      },
+      "optical_alpha": 0.5022573471069336
+    },
+    {
+      "epoch": 2,
+      "train_loss": 4.5030936340490975,
+      "validation": {
+        "latent_mse": 0.03652265137578878,
+        "selected_l1": 0.590269874367449,
+        "distractor_change_l1": 0.24321058289044434,
+        "reference_mse": 0.04970668168324563,
+        "counterfactual_delta_l1": 0.6826461619800992,
+        "region_accuracy": 0.9652777777777778,
+        "mse_improvement_over_copy": 0.2652365810993318
+      },
+      "optical_alpha": 0.5028439164161682
+    },
+    {
+      "epoch": 3,
+      "train_loss": 4.156965848182638,
+      "validation": {
+        "latent_mse": 0.03359459785537587,
+        "selected_l1": 0.5574429954091707,
+        "distractor_change_l1": 0.2431134389092525,
+        "reference_mse": 0.04970668168324563,
+        "counterfactual_delta_l1": 0.6555246959129969,
+        "region_accuracy": 0.9652777777777778,
+        "mse_improvement_over_copy": 0.32414321942759206
+      },
+      "optical_alpha": 0.5035183429718018
+    },
+    {
+      "epoch": 4,
+      "train_loss": 3.8696845257033905,
+      "validation": {
+        "latent_mse": 0.030714103020727634,
+        "selected_l1": 0.5020308502846293,
+        "distractor_change_l1": 0.26262292245195973,
+        "reference_mse": 0.04970668168324563,
+        "counterfactual_delta_l1": 0.603876507944531,
+        "region_accuracy": 0.9652777777777778,
+        "mse_improvement_over_copy": 0.38209307118000047
+      },
+      "optical_alpha": 0.5039514899253845
+    }
+  ],
+  "training_seconds": 735.0911824181676,
+  "gan_used": false,
+  "baseline_contract": "Qwen + decoder only",
+  "resume_checkpoint": "/DATA/DATA1/guest3/t12_assets/runs/abo_product_repair_big_optical_routed_v5b/best_model.pt"
+}
