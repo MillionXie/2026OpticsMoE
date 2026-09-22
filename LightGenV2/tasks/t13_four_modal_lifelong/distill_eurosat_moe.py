@@ -9,6 +9,7 @@ from __future__ import annotations
 import argparse
 import copy
 import json
+import sys
 import time
 from pathlib import Path
 
@@ -246,6 +247,23 @@ def main():
     cfg = json.loads(args.config.read_text())
     device = torch.device(cfg.get("device", "cuda") if torch.cuda.is_available() else "cpu")
     args.out.mkdir(parents=True, exist_ok=True)
+    save(args.out / "actual_config.json", cfg)
+    save(args.out / "distillation_protocol.json", {
+        "teacher_is_training_only": True,
+        "teacher_checkpoint": str(args.teacher_checkpoint) if args.teacher_checkpoint else None,
+        "student_initial_checkpoint": str(args.init_checkpoint),
+        "teacher_epochs": args.teacher_epochs,
+        "student_epochs": args.student_epochs,
+        "teacher_lr": args.teacher_lr,
+        "student_lr": args.student_lr,
+        "distillation_alpha": args.alpha,
+        "temperature": args.temperature,
+        "ema_decay": args.ema_decay,
+        "checkpoint_selection_split": "validation",
+        "test_was_evaluated": False,
+        "inference_readout": "Linear(784,10)",
+    })
+    (args.out / "command.txt").write_text(" ".join(sys.argv) + "\n")
     task = load_tasks({"eurosat": args.eurosat},
                       require_full=bool(cfg.get("require_full", False)),
                       names=("eurosat",))["eurosat"]
