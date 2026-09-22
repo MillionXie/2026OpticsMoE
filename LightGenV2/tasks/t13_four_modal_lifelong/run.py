@@ -380,7 +380,8 @@ def save_continual_matrix(root, all_history):
     return payload
 
 
-def train_single_task_d2nn(tasks, cfg, out, device, selected_task=None):
+def train_single_task_d2nn(tasks, cfg, out, device, selected_task=None,
+                           init_checkpoint=None):
     """Train a plain independent D2NN with the same one-layer readout."""
     root = out / "single_task_d2nn"; root.mkdir()
     summary = {}
@@ -394,11 +395,32 @@ def train_single_task_d2nn(tasks, cfg, out, device, selected_task=None):
             "d2nn", cfg, cfg["seed"] + task_index,
             max_experts=int(cfg.get("single_task_d2nn_max_experts", 4))).to(device)
         model.configure_task(task_index, warmup=False)
+        initial_epoch = 0
+        if init_checkpoint is not None:
+            initial = torch.load(init_checkpoint, map_location=device, weights_only=False)
+            if initial.get("task", name) != name:
+                raise ValueError(f"initial checkpoint task {initial.get('task')} != {name}")
+            model.load_state_dict(initial["model"])
+            initial_epoch = int(initial["epoch"])
+            if initial_epoch >= epochs:
+                raise ValueError(f"initial epoch {initial_epoch} must be below target {epochs}")
         lr = float(cfg.get("d2nn_lr", cfg["lr"]))
         optimizer = torch.optim.Adam([p for p in model.parameters() if p.requires_grad], lr=lr)
-        scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(optimizer, epochs, eta_min=lr * .1)
+        scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(
+            optimizer, epochs - initial_epoch, eta_min=lr * .1)
         best, history = -float("inf"), []
-        for epoch in range(1, epochs + 1):
+        if initial_epoch:
+            val = evaluate(model, tasks[name], "val", device, cfg["eval_batch"])[0]
+            best = selection_score(name, val)
+            checkpoint = {"model": copy.deepcopy(model.state_dict()),
+                          "epoch": initial_epoch, "task": name,
+                          "validation": val, "score": best, "mlp_score": best,
+                          "initialized_from": str(init_checkpoint)}
+            torch.save(checkpoint, task_root / "best_checkpoint.pt")
+            history.append({"epoch": initial_epoch, "validation_score": best,
+                            "optical_selection_score": best, "validation": val,
+                            "initialized_from": str(init_checkpoint)})
+        for epoch in range(initial_epoch + 1, epochs + 1):
             model.train(); started=time.time(); losses=[]
             order=np.random.default_rng(cfg["seed"]+task_index*1000+epoch).permutation(len(tasks[name].splits["train"][1]))
             for ix in chunks(order, cfg["batch"]):
@@ -884,13 +906,15 @@ def smoke(tasks,cfg,out,device):
 
 
 def main():
-    p=argparse.ArgumentParser();p.add_argument("--config",type=Path,required=True);p.add_argument("--eurosat",type=Path);p.add_argument("--clevr",type=Path);p.add_argument("--speech",type=Path);p.add_argument("--physical",type=Path);p.add_argument("--out",type=Path,required=True);p.add_argument("--phase",choices=["smoke","overfit","train"],default="train");p.add_argument("--only",choices=["all","single_task","single_task_moe","sequential_d2nn","sequential_d2nn_replay","moe"],default="all");p.add_argument("--single-task-name",choices=TASK_ORDER);p.add_argument("--init-checkpoint",type=Path,help="continue one single-task MoE run up to the configured target epoch");p.add_argument("--moe-stage1-checkpoint",type=Path,help="validation-selected EuroSAT MoE checkpoint used to start the formal replay chain");p.add_argument("--resume",action="store_true",help="restore completed sequential stages and rerun the first incomplete stage");a=p.parse_args()
+    p=argparse.ArgumentParser();p.add_argument("--config",type=Path,required=True);p.add_argument("--eurosat",type=Path);p.add_argument("--clevr",type=Path);p.add_argument("--speech",type=Path);p.add_argument("--physical",type=Path);p.add_argument("--out",type=Path,required=True);p.add_argument("--phase",choices=["smoke","overfit","train"],default="train");p.add_argument("--only",choices=["all","single_task","single_task_moe","sequential_d2nn","sequential_d2nn_replay","moe"],default="all");p.add_argument("--single-task-name",choices=TASK_ORDER);p.add_argument("--init-checkpoint",type=Path,help="continue one single-task MoE run up to the configured target epoch");p.add_argument("--init-d2nn-checkpoint",type=Path,help="continue one independent D2NN run up to the configured target epoch");p.add_argument("--moe-stage1-checkpoint",type=Path,help="validation-selected EuroSAT MoE checkpoint used to start the formal replay chain");p.add_argument("--resume",action="store_true",help="restore completed sequential stages and rerun the first incomplete stage");a=p.parse_args()
     cfg=json.loads(a.config.read_text());a.out.mkdir(parents=True,exist_ok=a.resume);save(a.out/"status.json",{"status":"running","pid":os.getpid(),"resume":a.resume})
     try:
         if a.single_task_name and not (a.phase == "train" and a.only in ("single_task", "single_task_moe")):
             raise ValueError("--single-task-name requires formal single_task or single_task_moe training")
         if a.init_checkpoint and not (a.phase == "train" and a.only == "single_task_moe" and a.single_task_name):
             raise ValueError("--init-checkpoint requires single_task_moe and --single-task-name")
+        if a.init_d2nn_checkpoint and not (a.phase == "train" and a.only == "single_task" and a.single_task_name):
+            raise ValueError("--init-d2nn-checkpoint requires single_task and --single-task-name")
         if a.moe_stage1_checkpoint and not (a.phase == "train" and a.only == "moe" and not a.resume):
             raise ValueError("--moe-stage1-checkpoint requires a fresh --only moe run")
         if a.resume and not (a.phase == "train" and a.only in ("sequential_d2nn", "sequential_d2nn_replay", "moe")):
@@ -909,7 +933,8 @@ def main():
         elif a.phase=="overfit":result={"overfit":overfit_diagnostics(tasks,cfg,a.out,device)}
         else:
             result={}
-            if a.only in ("all","single_task"):result["single_task"]=train_single_task_d2nn(tasks,cfg,a.out,device,a.single_task_name)
+            if a.only in ("all","single_task"):result["single_task"]=train_single_task_d2nn(
+                tasks,cfg,a.out,device,a.single_task_name,a.init_d2nn_checkpoint)
             if a.only in ("all","single_task_moe"):result["single_task_moe"]=train_single_task_moe(tasks,cfg,a.out,device,a.single_task_name,a.init_checkpoint)
             if a.only in ("all","sequential_d2nn"):result["sequential_d2nn"]=train_sequential_d2nn(tasks,cfg,a.out,device,False,a.resume)
             if a.only in ("all","sequential_d2nn_replay"):result["sequential_d2nn_replay"]=train_sequential_d2nn(tasks,cfg,a.out,device,True,a.resume)

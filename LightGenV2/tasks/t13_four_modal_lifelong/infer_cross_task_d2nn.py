@@ -43,7 +43,9 @@ def main():
         name: torch.load(path, map_location=device, weights_only=False)
         for name, path in checkpoint_paths.items()
     }
-    model = build_model("d2nn", cfg, cfg["seed"], max_experts=4).to(device)
+    model = build_model(
+        "d2nn", cfg, cfg["seed"],
+        max_experts=int(cfg.get("single_task_d2nn_max_experts", 4))).to(device)
     model.load_state_dict(checkpoints[args.source]["model"])
     source_state = checkpoints[args.source]["model"]
 
