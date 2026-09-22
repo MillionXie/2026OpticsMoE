@@ -139,6 +139,7 @@ class ProductGlobalRedesignDataset(Dataset[dict[str, Any]]):
     """Same-category form redesign with a full-frame RGB target."""
 
     targets_per_source = 2
+    supported_categories = TARGET_CATEGORIES
 
     def __init__(self, data_dir: Path, split: str, image_size: int, instruction_cache: Path) -> None:
         self.sources = [row for row in _load_rows(data_dir, split) if row["category"] in TARGET_CATEGORIES]

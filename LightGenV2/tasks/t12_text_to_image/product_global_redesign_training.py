@@ -44,6 +44,8 @@ def cache_redesign_latents(
     *, data_dir: Path, instruction_cache: Path, vae_checkpoint: Path,
     output_dir: Path, image_size: int, device: torch.device,
     batch_size: int = 12, num_workers: int = 4,
+    dataset_class=ProductGlobalRedesignDataset,
+    task_name: str = "full-frame same-category product redesign",
 ) -> dict[str, Any]:
     if output_dir.exists() and any(output_dir.iterdir()):
         raise FileExistsError(output_dir)
@@ -57,11 +59,11 @@ def cache_redesign_latents(
     ).to(device).eval().requires_grad_(False)
     scale = float(vae.config.scaling_factor)
     summary = {
-        "schema_version": 1, "task": "full-frame same-category product redesign",
+        "schema_version": 1, "task": task_name,
         "hard_pixel_composite_at_inference": False, "splits": {},
     }
     for split in ("train", "val", "test"):
-        dataset = ProductGlobalRedesignDataset(data_dir, split, image_size, instruction_cache)
+        dataset = dataset_class(data_dir, split, image_size, instruction_cache)
         loader = DataLoader(dataset, batch_size=batch_size, shuffle=False, num_workers=num_workers, pin_memory=device.type == "cuda")
         values: dict[str, list[Any]] = {key: [] for key in (
             "reference", "target", "qwen_text", "catalogue_indices", "sample_ids", "prompts",
@@ -131,7 +133,7 @@ def _sample_grid(*, unet, adapter, vae, sigma, latent_dataset, raw_dataset, outp
     for source_index, source in enumerate(raw_dataset.sources):
         first_by_category.setdefault(source["category"], source_index)
     chosen = []
-    for category in ("lamp", "table"):
+    for category in raw_dataset.supported_categories:
         start = first_by_category[category] * raw_dataset.targets_per_source
         chosen.extend(range(start, min(start + 4, len(raw_dataset))))
     reference = latent_dataset.payload["reference"][chosen].float().to(device)
@@ -166,6 +168,8 @@ def train_redesign_model(
     warm_start_checkpoint: Path, output_dir: Path,
     model_config: RepairModelConfig, training_config: SceneTrainingConfig,
     device: torch.device, seed: int = 42,
+    dataset_class=ProductGlobalRedesignDataset,
+    task_name: str = "full-frame text-guided product redesign",
 ) -> dict[str, Any]:
     if output_dir.exists():
         raise FileExistsError(output_dir)
@@ -191,7 +195,7 @@ def train_redesign_model(
     scheduler.set_timesteps(1, device=device); sigma = scheduler.sigmas[0]
     dtype = torch.float16 if device.type == "cuda" else torch.float32
     vae = AutoencoderKL.from_pretrained(turbo_checkpoint, subfolder="vae", variant="fp16", torch_dtype=dtype, local_files_only=True).to(device).eval().requires_grad_(False)
-    raw_val = ProductGlobalRedesignDataset(data_dir, "val", training_config.image_size, instruction_cache)
+    raw_val = dataset_class(data_dir, "val", training_config.image_size, instruction_cache)
     # Local fine-tuning: preserve the compressed encoder and adapt the optical
     # bottleneck plus decoder/output path to the new full-frame distribution.
     unet.requires_grad_(False); unet.enable_gradient_checkpointing()
@@ -261,8 +265,8 @@ def train_redesign_model(
         vae_decoder=sum(p.numel() for p in vae.decoder.parameters()) + sum(p.numel() for p in vae.post_quant_conv.parameters()),
     )
     report = {
-        "schema_version": 1, "task": "full-frame text-guided product redesign",
-        "categories": ["lamp", "table"], "chairs_used": False,
+        "schema_version": 1, "task": task_name,
+        "categories": list(raw_val.supported_categories), "chairs_used": False,
         "best_epoch": best_epoch, "initial_validation": initial, "test": test,
         "parameters": parameters, "attention_pruning": pruning, "history": history,
         "training_seconds": time.perf_counter() - started, "gan_used": False,
