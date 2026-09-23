@@ -1,4 +1,5 @@
 import os
+import json
 from pathlib import Path
 
 import numpy as np
@@ -52,6 +53,9 @@ def test_full_clevr_source_retains_every_image_when_available():
         assert len(fields) == 2 * expected_images
         assert np.bincount(fields.labels).tolist() == [expected_images,
                                                         expected_images]
+        batch = fields.get_batch([0, 1], torch.device("cpu"))
+        assert tuple(batch.shape) == (2, 224, 224)
+        assert torch.isfinite(batch).all()
 
 
 def test_speech_text_order_changes_the_correct_output_position():
@@ -105,3 +109,18 @@ def test_physical_caption_order_changes_the_correct_output_position():
     assert tuple(fields.shape) == (2, 224, 224)
     assert fields[0, 0, 112] < fields[1, 0, 112]
     assert fields[0, 25, 112] > fields[1, 25, 112]
+
+
+def test_real_physical_validation_has_position_targets_when_available():
+    protocol_path = os.environ.get("T14_PHYSICAL_PROTOCOL")
+    if not protocol_path:
+        pytest.skip("set T14_PHYSICAL_PROTOCOL for the lab-data integration test")
+    protocol = json.loads(Path(protocol_path).read_text())
+    fields = PhysicalPermutedCandidates(protocol["source_roots"], "val")
+    assert len(fields) == 14652
+    assert np.array_equal(fields.permutations[
+        np.arange(len(fields)), fields.labels], fields.original_labels)
+    assert len(np.unique(fields.labels)) == 10
+    batch = fields.get_batch([0, 1], torch.device("cpu"))
+    assert tuple(batch.shape) == (2, 224, 224)
+    assert not torch.equal(batch[0, :, 112:], batch[1, :, 112:])

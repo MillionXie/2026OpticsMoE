@@ -86,8 +86,7 @@ class SharedReadoutOptics(CrossModalOptics):
             phase.requires_grad_(not warmup)
         self.shared_head.requires_grad_(False)
 
-    def forward(self, amplitude: torch.Tensor, *, warmup: bool = False,
-                expert_mask=None):
+    def forward(self, amplitude: torch.Tensor, *, warmup: bool = False):
         if amplitude.ndim != 3 or tuple(amplitude.shape[-2:]) != (224, 224):
             raise ValueError(f"expected Bx224x224, got {tuple(amplitude.shape)}")
         amplitude = normalize_power(amplitude.float())
@@ -101,7 +100,7 @@ class SharedReadoutOptics(CrossModalOptics):
             route_power = None
         else:
             route_power, _ = self.route(amplitude, warmup=warmup,
-                                        expert_mask=expert_mask)
+                                        expert_mask=None)
             field = torch.zeros((len(amplitude), self.height, self.width),
                                 device=amplitude.device, dtype=torch.complex64)
             for i in range(int(self.active_count)):

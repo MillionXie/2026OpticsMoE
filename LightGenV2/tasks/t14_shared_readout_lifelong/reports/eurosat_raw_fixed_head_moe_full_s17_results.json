@@ -1,0 +1,23 @@
+{
+  "selected_epoch": 12,
+  "validation": 0.33542669719929696,
+  "head_sha256_unchanged": true,
+  "formal_full_train": true,
+  "test": {
+    "accuracy": 0.3674709891324369,
+    "balanced_accuracy": 0.3504325327582545,
+    "n": 10858,
+    "domains": {
+      "0": {
+        "accuracy": 0.39988948240928346,
+        "balanced_accuracy": 0.3780553353613055,
+        "n": 5429
+      },
+      "1": {
+        "accuracy": 0.3350524958555903,
+        "balanced_accuracy": 0.3228097301552035,
+        "n": 5429
+      }
+    }
+  }
+}

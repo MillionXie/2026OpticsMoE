@@ -95,6 +95,10 @@ def main():
     parser.add_argument("--readout-design", choices=("orthogonal", "windows"),
                         default="orthogonal")
     parser.add_argument("--seed", type=int, default=17)
+    parser.add_argument("--skip-test", action="store_true",
+                        help="validation-only candidate; never open holdout")
+    parser.add_argument("--init-checkpoint", type=Path, default=None,
+                        help="optical-only fine-tune from a validation-selected checkpoint")
     parser.add_argument("--max-train-batches", type=int, default=None,
                         help="debug only: output marked non-formal and test is skipped")
     parser.add_argument("--max-eval-batches", type=int, default=None,
@@ -117,6 +121,14 @@ def main():
                                 readout_design=args.readout_design).to(device)
     model.configure_stage(0)
     head_hash = state_hash(model.shared_head.weight)
+    if args.init_checkpoint is not None:
+        initial = torch.load(args.init_checkpoint, map_location=device,
+                             weights_only=False)
+        if initial["head_sha256"] != head_hash:
+            raise ValueError("initial checkpoint uses a different frozen readout")
+        model.load_state_dict(initial["model"])
+        if state_hash(model.shared_head.weight) != head_hash:
+            raise ValueError("loading changed the fixed readout")
     optimizer = torch.optim.Adam([p for p in model.parameters() if p.requires_grad],
                                  lr=args.lr)
     formal = args.max_train_batches is None and args.max_eval_batches is None
@@ -129,9 +141,22 @@ def main():
                 "epochs": args.epochs, "min_epochs": args.min_epochs,
                 "patience": args.patience, "batch": args.batch,
                 "no_label_trained_frontend": True}
+    metadata["init_checkpoint"] = (str(args.init_checkpoint)
+                                   if args.init_checkpoint is not None else None)
+    metadata["test_will_be_evaluated"] = bool(formal and not args.skip_test)
     (args.out / "metadata.json").write_text(json.dumps(metadata, indent=2) + "\n")
     best, best_epoch, wait = -1.0, None, 0
     history = []
+    if args.init_checkpoint is not None:
+        initial_validation = evaluate(model, data["val"], device,
+                                      args.eval_batch, args.max_eval_batches)
+        best, best_epoch = initial_validation["balanced_accuracy"], 0
+        history.append({"epoch": 0, "train_loss": None,
+                        "validation": initial_validation, "seconds": 0.0})
+        torch.save({"model": model.state_dict(), "epoch": 0,
+                    "validation": initial_validation, "head_sha256": head_hash},
+                   args.out / "best_checkpoint.pt")
+        (args.out / "history.json").write_text(json.dumps(history, indent=2) + "\n")
     fields, labels, _ = data["train"]
     for epoch in range(1, args.epochs + 1):
         model.train()
@@ -176,7 +201,7 @@ def main():
     result = {"selected_epoch": best_epoch, "validation": best,
               "head_sha256_unchanged": state_hash(model.shared_head.weight) == head_hash,
               "formal_full_train": formal}
-    if formal:
+    if formal and not args.skip_test:
         selected = torch.load(args.out / "best_checkpoint.pt", map_location=device,
                               weights_only=False)
         model.load_state_dict(selected["model"])

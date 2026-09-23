@@ -1,0 +1,19 @@
+{
+  "contract": "raw_RGB_or_SAR_to_optics; one fixed shared Linear(784,10); optical training only",
+  "architecture": "moe",
+  "seed": 17,
+  "source_protocol": "/DATA/DATA1/guest3/demo_reproduction_data/t13_four_modal_features/eurosat_full_s17_v1/protocol.json",
+  "sizes": {
+    "train": 31996,
+    "val": 10930,
+    "test": 10858
+  },
+  "head_sha256": "311b60fdd7e0e1c5ec4a12d9f45d2172d717580f49355cfacd0e2daa64f5aaa7",
+  "formal_full_train": true,
+  "readout_gain": 8.0,
+  "epochs": 12,
+  "min_epochs": 5,
+  "patience": 4,
+  "batch": 128,
+  "no_label_trained_frontend": true
+}

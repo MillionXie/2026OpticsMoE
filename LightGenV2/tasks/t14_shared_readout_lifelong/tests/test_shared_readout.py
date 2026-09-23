@@ -14,6 +14,7 @@ def test_shared_readout_is_identical_and_frozen_across_architectures():
     assert not d2nn.shared_head.weight.requires_grad
     assert not moe.heads and not d2nn.heads
     assert "task" not in inspect.signature(moe.forward).parameters
+    assert "expert_mask" not in inspect.signature(moe.forward).parameters
 
 
 def test_fixed_gain_only_scales_the_same_frozen_linear_rows():
