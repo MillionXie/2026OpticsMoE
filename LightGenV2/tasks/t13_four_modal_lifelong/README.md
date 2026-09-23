@@ -69,6 +69,12 @@ CLEVR 全量 D2NN 在第 17 轮按验证集选出 checkpoint，验证/测试 bal
 
 ## 三张正式矩阵
 
+2026-09-24 架构、电子成分、任务定义及训练公平性复核见
+[完整审计](reports/ARCHITECTURE_DATA_AUDIT_20260924.md)。历史图中的“full replay”是沿用的名称；
+实际协议为**每个旧任务固定 512 个不同训练样本循环回放**，不是旧数据全量回放。
+Speech 与 Physical 的文字候选表对所有样本相同，目前分别是音频和视频分类任务，
+不能据此单独宣称逐样本音文或视频文推理。
+
 正式协议和最新进度见 [三张矩阵报告](reports/THREE_MATRIX_PLAN_20260922.md)，参数公平性见
 [几何与参数报告](reports/PARAMETER_FAIRNESS_20260922.md)，光学相位消融见
 [相位贡献报告](reports/OPTICAL_PHASE_CONTRIBUTION_20260923.md)，汇报用中英文图见
