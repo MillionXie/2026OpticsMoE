@@ -7,16 +7,22 @@ published reference and was not rerun.
 | Baseline | Image to text R@1 | Image to image R@1 | Text to image Hit@1 | Fitted parameters |
 |---|---:|---:|---:|---:|
 | Qwen3-VL-Embedding-2B | 0.7358 | 0.8513 | 0.8200 | 0 |
-| DeepSeek-VL2-Tiny | 0.1379 | **0.8888** | 0.0800 | 0 |
-| OpenAI CLIP ViT-B/32 | 0.5700 | 0.8713 | 0.6400 | 0 |
-| YOLO11s / YOLO11s + CLIP text | 0.9867* | 0.8713 | 0.9900* | 0.262M* |
+| DeepSeek-VL2-Tiny, zero-shot | 0.1379 | **0.8888** | 0.0800 | 0 |
+| DeepSeek-VL2-Tiny, weak alignment | 0.1458 | - | 0.0800 | 10,240 |
+| OpenAI CLIP ViT-B/32, zero-shot | 0.5700 | 0.8713 | 0.6400 | 0 |
+| OpenAI CLIP ViT-B/32, weak alignment | 0.5708 | - | 0.6500 | 4,096 |
+| YOLO11s | N/A | 0.8713 | N/A | 0 |
 
-`*` YOLO11s is visual-only. Its cross-modal entries are a fitted composite,
-not zero-shot YOLO: frozen YOLO11s image features and a frozen CLIP text tower
-are joined by one bias-free 512-by-512 matrix fitted on the 4,800-image easy100
-training split. The image-to-image entry is raw frozen YOLO11s with no adapter.
-The fitted composite values therefore must not be compared to the three
-zero-shot rows without this qualifier.
+YOLO11s is visual-only, so its cross-modal composite has been removed from the
+comparison. The weak alignment rows freeze every pretrained parameter and train
+only a rank-4 residual image adapter for five fixed epochs at learning rate
+1e-4. The residual scale is 0.1 and an embedding-drift penalty of 10 is applied.
+There is no test-set epoch selection.
+
+For audit only, a full square linear map trained for 50 epochs produced very
+high scores (DeepSeek 0.9488/0.9100 and CLIP 0.9767/0.9800). Those runs contain
+1.638M and 262K fitted parameters respectively and are deliberately excluded:
+they are task-trained retrieval systems rather than light calibration baselines.
 
 ## Protocols
 
@@ -39,7 +45,8 @@ zero-shot rows without this qualifier.
 | DeepSeek-VL2-Tiny | 3,370,501,440 total (about 1B active per token) | 0 |
 | CLIP ViT-B/32 | 151,277,313 | 0 |
 | YOLO11s image to image | 9,458,752 | 0 |
-| YOLO11s + CLIP text cross-modal | 72,886,848 (9,458,752 + 63,428,096) | 262,144 |
+| DeepSeek weak alignment | 3,370,501,440 | 10,240 |
+| CLIP weak alignment | 151,277,313 | 4,096 |
 
 These runs measure retrieval performance only. They do not claim formal latency
 or energy numbers; those require the separate fixed-hardware timing boundary.
@@ -49,7 +56,8 @@ or energy numbers; those require the separate fixed-hardware timing boundary.
 - Runner: `abo_backbone_baselines.py`
 - Unit tests: 3 passed.
 - Branch: `codex/abo-backbone-baselines`
-- Implementation commits: `1d80e64f`, `19cf5c74`, `c47a0413`.
+- Implementation commits: `1d80e64f`, `19cf5c74`, `c47a0413`, `b343843d`.
 - Exact report identities and raw values are pinned in `summary.json` beside
   this file. Resumable features and predictions remain under the ignored run
-  directory `runs/backbone_baselines_20260923/` on the server.
+  directories `runs/backbone_baselines_20260923/` and
+  `runs/backbone_baselines_adapted_20260923/` on the server.
