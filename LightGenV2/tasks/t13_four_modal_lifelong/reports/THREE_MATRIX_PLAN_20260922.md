@@ -21,6 +21,7 @@ EuroSAT 第一格为 80.11%；相同几何 D2NN 为 79.92%，优势仅 0.19 个�
 |---|---:|---:|---:|---:|
 |学完 EuroSAT|80.11%||||
 |学完 CLEVR|76.63%|76.36%|||
+|学完 Speech|76.78%|73.52%|56.94%||
 
 CLEVR 阶段的 EuroSAT 回退 3.48 个百分点，少于无 replay D2NN 在同阶段的 15.97 个百分点；
 CLEVR 当前任务分数也高于顺序 D2NN 的 71.21%。这只是前两阶段的结果，不能代替完整终身学习结论。
@@ -28,7 +29,13 @@ CLEVR 当前任务分数也高于顺序 D2NN 的 71.21%。这只是前两阶段�
 已停止并释放 GPU。原始阶段结果为 `moe_replay_stage_1_eurosat_s17.json` 和
 `moe_replay_stage_2_clevr_s17.json`，均记录旧专家与旧任务电子头未改变。
 
-Speech 阶段已开始，Physical 尚未开始；完整矩阵进度为 3/10 个正式测试单元。
+Speech 阶段已完成，选中第 17 轮；单层 Linear 校准使 Speech 验证分数从 57.69% 升至
+59.03%，对应测试为 56.94%。日志里的 69.18% 是 **EuroSAT、CLEVR、Speech 三项验证均值**，
+不是 Speech 单项分数。此阶段 MoE 保留旧任务的能力明显强于无 replay D2NN，但 Speech
+当前任务测试 56.94% 低于 D2NN 顺序训练对应的 58.84%，因此尚不能宣称 MoE 每个任务都胜出。
+原始结果与逐轮验证记录分别为 `moe_replay_stage_3_speech_s17.json`、
+`moe_replay_stage_3_speech_history_s17.json`；旧专家、旧任务电子头均未改变。
+Physical 阶段已开始；完整矩阵进度为 6/10 个正式测试单元。
 
 ## 矩阵 2：独立 D2NN checkpoint 的纯推理 4×4
 
@@ -73,7 +80,7 @@ EuroSAT 原始 Linear，仅替换两层光学相位：原训练相位为 79.92%�
 
 ## 后续操作
 
-1. 继续 `replay_weight=1.0` MoE Speech 主链，再推进 Physical，完成矩阵 1。
+1. 继续 `replay_weight=1.0` MoE Physical 主链，完成矩阵 1；之后单独分析 Speech 当前任务不足。
 2. 完成后核对 10/16/10 个单元和 checkpoint 来源，运行服务器测试并更新 README。
 
 联合训练 D2NN 和 sequential D2NN replay 均不属于这三张正式矩阵。
