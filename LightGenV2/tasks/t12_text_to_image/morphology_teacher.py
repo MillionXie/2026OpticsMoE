@@ -9,27 +9,28 @@ from pathlib import Path
 from typing import Any
 
 import torch
+import numpy as np
 from PIL import Image, ImageOps
 
 
 MORPHOLOGIES = {
     "lamp": (
-        "make this lamp taller and slimmer, with a narrow cylindrical shade and a compact three-legged pedestal base",
-        "redesign this lamp with a broad low dome shade, a short stem, and a wide circular base",
-        "reshape this lamp into an arched single-arm design with a small round shade and an offset base",
-        "give this lamp two balanced light arms, a thin central stem, and a compact sculptural base",
+        "make this lamp moderately taller and slimmer and make its lampshade narrower, while keeping a clearly recognizable complete lamp",
+        "make this lamp shorter and wider with a gently rounded shade and a wider circular base",
+        "change this lamp to a conical lampshade and a slightly curved stem, preserving its complete lamp structure",
+        "change this lamp to an oval lampshade, a thinner straight stem, and a flat round base",
     ),
     "table": (
-        "make this table low and wide, with an oval top and four outward-tapered legs",
-        "redesign this table as a tall narrow pedestal table with one round central support",
-        "reshape this table with a round top and three slim angled legs",
-        "turn this table into a slim asymmetric console with a floating top and two end supports",
+        "make this table moderately lower and wider, with an oval top and four outward-tapered legs",
+        "make this table slightly taller and narrower with a round top and one central pedestal support",
+        "change this table to a round top with three slim angled legs, keeping the entire table recognizable",
+        "make this table lower with a thicker rectangular top and two crossed support legs",
     ),
     "backpack": (
-        "make this backpack taller and slimmer with a roll-top opening and narrow side straps",
-        "redesign this backpack as a compact rounded flap-top bag with one front buckle",
-        "reshape this backpack into a structured rectangle with two symmetric side pockets",
-        "make this backpack a soft minimal drawstring form with a curved top and small front pouch",
+        "make this backpack slightly taller and slimmer with a roll-top opening, preserving its straps and pockets",
+        "make this backpack more compact with a rounded flap top and one visible front buckle",
+        "make this backpack slightly wider at the base with two visible side pockets and a structured outline",
+        "make this backpack softer with a drawstring top and a small rounded front pouch, preserving the complete bag",
     ),
 }
 
@@ -41,6 +42,25 @@ def _read_rows(root: Path, split: str, category: str) -> list[dict[str, Any]]:
 
 def _stable_seed(*parts: str) -> int:
     return int.from_bytes(hashlib.sha256(":".join(parts).encode()).digest()[:4], "big")
+
+
+def _center_white_background_product(image: Image.Image, size: int = 512) -> Image.Image:
+    """Enlarge the non-white ABO render without synthesizing any output pixels."""
+    rgb = image.convert("RGB")
+    array = np.asarray(rgb)
+    foreground = np.any(array < 245, axis=2)
+    ys, xs = np.nonzero(foreground)
+    if len(xs) == 0:
+        return ImageOps.fit(rgb, (size, size), method=Image.Resampling.LANCZOS)
+    left, right = int(xs.min()), int(xs.max()) + 1
+    top, bottom = int(ys.min()), int(ys.max()) + 1
+    pad_x = max(2, int((right - left) * 0.08))
+    pad_y = max(2, int((bottom - top) * 0.08))
+    crop = rgb.crop((max(0, left - pad_x), max(0, top - pad_y), min(rgb.width, right + pad_x), min(rgb.height, bottom + pad_y)))
+    crop.thumbnail((410, 410), Image.Resampling.LANCZOS)
+    canvas = Image.new("RGB", (size, size), "white")
+    canvas.paste(crop, ((size - crop.width) // 2, (size - crop.height) // 2))
+    return canvas
 
 
 def prepare(
@@ -64,10 +84,11 @@ def prepare(
                 reference_rel = Path("references") / split / category / f"{source['sample_id']}.png"
                 reference_path = output / reference_rel
                 reference_path.parent.mkdir(parents=True, exist_ok=True)
-                image = ImageOps.fit(
-                    Image.open(source_root / source["image_path"]).convert("RGB"),
-                    (512, 512),
-                    method=Image.Resampling.LANCZOS,
+                original = Image.open(source_root / source["image_path"]).convert("RGB")
+                image = (
+                    _center_white_background_product(original)
+                    if category in {"lamp", "table"}
+                    else ImageOps.fit(original, (512, 512), method=Image.Resampling.LANCZOS)
                 )
                 image.save(reference_path)
                 for local_index, instruction in enumerate(MORPHOLOGIES[category]):
