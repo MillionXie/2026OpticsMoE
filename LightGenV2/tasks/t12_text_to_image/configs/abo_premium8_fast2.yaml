@@ -1,0 +1,30 @@
+model:
+  optical_width: 224
+  optical_grid: 8
+  optical_experts: 4
+  optical_top_k: 2
+fusion:
+  alpha_initial: 0.50
+  alpha_minimum: 0.40
+  alpha_maximum: 0.75
+  rms_epsilon: 1.0e-6
+training:
+  image_size: 256
+  batch_size: 4
+  gradient_accumulation: 1
+  epochs: 2
+  learning_rate: 5.0e-5
+  optical_learning_rate: 1.0e-4
+  adapter_learning_rate: 3.0e-4
+  weight_decay: 1.0e-2
+  background_weight: 3.0
+  foreground_preservation_weight: 2.0
+  pair_difference_weight: 2.0
+  scene_router_weight: 0.5
+  pixel_background_weight: 1.0
+  pixel_foreground_weight: 1.0
+  detail_weight: 0.10
+  residual_scale: 0.75
+  noise_scale: 0.05
+  num_workers: 4
+  sample_every_epochs: 1
