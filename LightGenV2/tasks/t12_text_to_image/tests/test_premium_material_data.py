@@ -8,6 +8,7 @@ from PIL import Image, ImageDraw
 
 from LightGenV2.tasks.t12_text_to_image.premium_material_data import (
     PremiumMaterialDataset,
+    STYLE_KEYS,
     instruction_rows,
 )
 
@@ -35,7 +36,7 @@ def test_premium_material_pairs_cover_non_chair_categories(tmp_path: Path) -> No
     rows = instruction_rows(); cache = tmp_path / "instructions.pt"
     torch.save({"rows": rows, "text": torch.randn(len(rows), 48)}, cache)
     dataset = PremiumMaterialDataset(tmp_path, "train", 64, cache)
-    assert len(dataset) == 12
+    assert len(dataset) == 3 * len(STYLE_KEYS)
     categories = {dataset[index]["category"] for index in range(len(dataset))}
     assert categories == {"lamp", "table", "backpack"}
     assert "chair" not in categories

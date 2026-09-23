@@ -25,25 +25,37 @@ from .product_scene_data import _normalize_product
 
 
 SUPPORTED_CATEGORIES = ("lamp", "table", "backpack")
-STYLE_KEYS = ("heritage", "obsidian", "ivory", "teal")
+STYLE_KEYS = ("heritage", "obsidian", "ivory", "teal", "ruby", "cobalt", "amber", "pearl")
 STYLE_SPECS = {
     "lamp": {
         "heritage": ("brushed champagne brass", (42, 27, 14), (238, 193, 105), "warm limestone"),
         "obsidian": ("matte obsidian black metal", (8, 10, 13), (80, 86, 91), "cool concrete"),
         "ivory": ("hand-finished ivory ceramic", (112, 103, 88), (250, 243, 220), "soft beige gallery"),
         "teal": ("smoked teal glass", (4, 35, 39), (80, 190, 177), "moody blue-gray"),
+        "ruby": ("deep ruby red lacquer", (45, 2, 9), (238, 50, 73), "dark burgundy velvet"),
+        "cobalt": ("saturated cobalt enamel", (4, 17, 58), (74, 139, 245), "graphic cobalt-white"),
+        "amber": ("translucent amber resin", (64, 25, 2), (255, 179, 47), "sunset amber"),
+        "pearl": ("iridescent pearl white", (111, 113, 124), (255, 252, 249), "high-key pearl"),
     },
     "table": {
         "heritage": ("warm hand-oiled walnut", (39, 17, 8), (198, 113, 55), "warm limestone"),
         "obsidian": ("matte obsidian black oak", (7, 9, 11), (67, 73, 78), "cool concrete"),
         "ivory": ("ivory travertine stone", (105, 96, 80), (244, 230, 197), "soft beige gallery"),
         "teal": ("smoked teal lacquer and glass", (5, 31, 35), (67, 166, 159), "moody blue-gray"),
+        "ruby": ("oxblood high-gloss lacquer", (44, 3, 9), (218, 43, 58), "dark burgundy velvet"),
+        "cobalt": ("cobalt architectural laminate", (3, 16, 55), (70, 132, 232), "graphic cobalt-white"),
+        "amber": ("honey amber cast resin", (66, 28, 3), (248, 169, 42), "sunset amber"),
+        "pearl": ("pearl white mineral composite", (116, 116, 122), (252, 249, 242), "high-key pearl"),
     },
     "backpack": {
         "heritage": ("cognac full-grain leather", (42, 15, 7), (211, 108, 43), "warm limestone"),
         "obsidian": ("matte obsidian technical nylon", (5, 7, 10), (61, 69, 76), "cool concrete"),
         "ivory": ("ivory woven canvas", (105, 98, 82), (241, 231, 204), "soft beige gallery"),
         "teal": ("deep teal performance textile", (3, 29, 33), (54, 156, 153), "moody blue-gray"),
+        "ruby": ("ruby quilted technical satin", (45, 2, 10), (228, 48, 68), "dark burgundy velvet"),
+        "cobalt": ("cobalt ballistic weave", (4, 17, 57), (70, 130, 231), "graphic cobalt-white"),
+        "amber": ("amber translucent ripstop", (65, 26, 2), (251, 174, 44), "sunset amber"),
+        "pearl": ("pearl white reflective textile", (112, 114, 122), (255, 252, 247), "high-key pearl"),
     },
 }
 
@@ -124,6 +136,10 @@ def _background(size: int, style: str, sample_id: str, role: str) -> Image.Image
         "obsidian": ((89, 96, 103), (28, 32, 37), (179, 194, 204)),
         "ivory": ((239, 228, 207), (181, 161, 135), (255, 244, 218)),
         "teal": ((78, 105, 109), (24, 45, 50), (142, 199, 194)),
+        "ruby": ((91, 20, 34), (26, 8, 15), (255, 117, 126)),
+        "cobalt": ((224, 230, 239), (41, 62, 112), (132, 181, 255)),
+        "amber": ((244, 207, 146), (89, 48, 17), (255, 226, 141)),
+        "pearl": ((251, 248, 244), (198, 201, 211), (255, 255, 255)),
     }
     top, bottom, light = palettes[style]
     rng = np.random.default_rng(_seed(sample_id, style, role))
@@ -135,6 +151,17 @@ def _background(size: int, style: str, sample_id: str, role: str) -> Image.Image
     image = image * (1 - .25 * glow) + np.asarray(light)[None, None] * (.25 * glow)
     floor = int(size * .73)
     image[floor:] *= np.linspace(1.0, .77, size-floor)[:, None, None]
+    # Deliberately different editorial sets, rather than four recoloured
+    # copies of one gradient background.
+    if style in {"heritage", "amber"}:
+        image[:, size//5:size//5+max(2,size//90)] *= .58
+        image[:, 4*size//5:4*size//5+max(2,size//90)] *= .62
+    elif style in {"obsidian", "ruby"}:
+        vignette=np.clip(1-.34*(xx*xx+yy*yy),.56,1)[...,None];image*=vignette
+    elif style=="cobalt":
+        image[:, :size//3] = image[:, :size//3]*.76 + np.asarray(light)*.24
+    elif style=="pearl":
+        radius=np.sqrt(xx*xx+(yy+.04)**2);image= image*(.90+.10*np.clip(1-radius,0,1)[...,None])
     image += rng.normal(0, 0.9, image.shape[:2])[..., None]
     return Image.fromarray(np.clip(image, 0, 255).astype(np.uint8), "RGB")
 
@@ -155,8 +182,16 @@ def _materialize(product: Image.Image, style: str, category: str, sample_id: str
         texture = rng.normal(0, .009, luminance.shape)
     elif style == "ivory":
         texture = rng.normal(0, .014, luminance.shape) + .010 * np.sin((xx+yy)*.31)
-    else:
+    elif style == "teal":
         texture = .025 * np.sin(xx * .12 + yy * .07) + rng.normal(0, .006, luminance.shape)
+    elif style == "ruby":
+        texture = .018*np.sin(xx*.09)+.012*np.cos(yy*.16)+rng.normal(0,.004,luminance.shape)
+    elif style == "cobalt":
+        texture = rng.normal(0,.005,luminance.shape)+.020*np.exp(-((xx-width*.34)/(width*.07))**2)
+    elif style == "amber":
+        edge=np.sqrt((np.gradient(luminance)[0]**2+np.gradient(luminance)[1]**2));texture=.035*np.clip(edge,0,.35)+rng.normal(0,.004,luminance.shape)
+    else:
+        texture = .012*np.sin((xx+yy)*.08)+.018*np.sin((xx-yy)*.035)+rng.normal(0,.004,luminance.shape)
     styled = np.clip(styled + texture[..., None], 0, 1)
     # Preserve high-frequency render detail while replacing colour/material.
     local = luminance - np.asarray(Image.fromarray((luminance*255).astype(np.uint8)).filter(ImageFilter.GaussianBlur(3))).astype(np.float32)/255
