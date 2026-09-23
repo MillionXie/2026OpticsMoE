@@ -77,9 +77,11 @@ Speech → Physical 顺序运行，完整数据、单层 `Linear(784, C)` 和 98
 1. **MoE full replay**：16 个固定槽位依次激活 4→8→12→16，旧专家冻结，每个旧任务保存
    512 条 replay，逐阶段测试已学任务。EuroSAT 首阶段正式测试 80.11%；学完 CLEVR 后
    EuroSAT/CLEVR 为 76.63%/76.36%；学完 Speech 后 EuroSAT/CLEVR/Speech 为
-   76.78%/73.52%/56.94%。Physical 阶段正在运行，当前有 6/10 个测试单元。
-   Speech 当前任务分数低于顺序 D2NN 的 58.84%，完整 MoE 下三角矩阵及最终结论仍待完成。
-   阶段原始结果见 `reports/moe_replay_stage_{1_eurosat,2_clevr,3_speech}_s17.json`。
+   76.78%/73.52%/56.94%；学完 Physical 后四任务为 75.36%/66.38%/59.79%/78.76%。
+   10/10 单元已完成。最终四任务平均 70.07%，比无 replay D2NN 的 62.44% 高 7.63 个百分点；
+   十个下三角单元平均高 7.49 个百分点。MoE 在最终四项中的三项更高，但 CLEVR 最终值低
+   3.36 个百分点，不能宣称每个单元均胜出。阶段原始结果见
+   `reports/moe_replay_stage_{1_eurosat,2_clevr,3_speech,4_physical}_s17.json`。
 2. **四个独立 D2NN 的纯推理完整矩阵**：行是源任务的固定光学权重，列接目标任务已训练的
    原始单层 Linear；不进行任何逐单元训练。16/16 单元已完成，新 CLEVR checkpoint 的
    对角线测试为 76.60%。完整矩阵和逐单元混淆矩阵见
