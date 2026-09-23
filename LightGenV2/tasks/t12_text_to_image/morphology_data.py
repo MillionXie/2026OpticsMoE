@@ -19,7 +19,10 @@ from .feature_cache import _encode_caption_rows
 from .half_qwen import load_half_qwen_text_encoder
 
 
-TARGET_CATEGORIES = ("lamp", "table", "backpack")
+# The first trained release uses only the category that passed the teacher
+# quality gate. Lamp/table manifests remain available for a later stronger
+# teacher, but are intentionally excluded from v1 training.
+TARGET_CATEGORIES = ("backpack",)
 
 
 def _manifest_rows(data_dir: Path, split: str) -> list[dict[str, Any]]:
@@ -27,7 +30,7 @@ def _manifest_rows(data_dir: Path, split: str) -> list[dict[str, Any]]:
     for row in rows:
         row["reference_path"] = (data_dir / row["reference_path"]).resolve()
         row["target_path"] = (data_dir / row["target_path"]).resolve()
-    return rows
+    return [row for row in rows if row["category"] in TARGET_CATEGORIES]
 
 
 def build_morphology_instruction_cache(

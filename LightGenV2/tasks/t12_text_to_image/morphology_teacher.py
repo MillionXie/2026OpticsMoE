@@ -48,7 +48,9 @@ def _center_white_background_product(image: Image.Image, size: int = 512) -> Ima
     """Enlarge the non-white ABO render without synthesizing any output pixels."""
     rgb = image.convert("RGB")
     array = np.asarray(rgb)
-    foreground = np.any(array < 245, axis=2)
+    # JPEG ringing around a white background can cover the entire canvas at
+    # thresholds near 255, so use a conservative product threshold.
+    foreground = np.any(array < 225, axis=2)
     ys, xs = np.nonzero(foreground)
     if len(xs) == 0:
         return ImageOps.fit(rgb, (size, size), method=Image.Resampling.LANCZOS)
@@ -57,7 +59,11 @@ def _center_white_background_product(image: Image.Image, size: int = 512) -> Ima
     pad_x = max(2, int((right - left) * 0.08))
     pad_y = max(2, int((bottom - top) * 0.08))
     crop = rgb.crop((max(0, left - pad_x), max(0, top - pad_y), min(rgb.width, right + pad_x), min(rgb.height, bottom + pad_y)))
-    crop.thumbnail((410, 410), Image.Resampling.LANCZOS)
+    scale = min(410 / crop.width, 410 / crop.height)
+    crop = crop.resize(
+        (max(1, round(crop.width * scale)), max(1, round(crop.height * scale))),
+        Image.Resampling.LANCZOS,
+    )
     canvas = Image.new("RGB", (size, size), "white")
     canvas.paste(crop, ((size - crop.width) // 2, (size - crop.height) // 2))
     return canvas
