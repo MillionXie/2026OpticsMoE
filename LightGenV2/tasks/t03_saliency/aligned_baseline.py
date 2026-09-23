@@ -44,6 +44,8 @@ def main():
     parser.add_argument("--config", type=Path, default=Path(__file__).parent / "configs/moe_staged_alpha_free.yaml")
     parser.add_argument("--run-dir", type=Path, required=True)
     parser.add_argument("--seed", type=int, default=42)
+    parser.add_argument("--fixed-learning-rate", type=float)
+    parser.add_argument("--test-interval", type=int, default=10)
     args = parser.parse_args()
     s = load_settings(args.config)
     s.output_dir = args.run_dir.resolve()
@@ -65,9 +67,11 @@ def main():
     # that context (and must not leave phantom GPU allocations after this run).
     use_spawn_workers(train_loader)
     use_spawn_workers(test_loader)
+    adapter_lr = args.fixed_learning_rate if args.fixed_learning_rate is not None else s.student_learning_rate
+    decoder_lr = args.fixed_learning_rate if args.fixed_learning_rate is not None else s.dense_head_learning_rate
     optim = torch.optim.AdamW([
-        {"params": [*head.input_adapter.parameters(), *head.input_norm.parameters()], "name": "electronic", "lr": s.student_learning_rate},
-        {"params": list(head.decoder.parameters()), "name": "saliency_head", "lr": s.dense_head_learning_rate},
+        {"params": [*head.input_adapter.parameters(), *head.input_norm.parameters()], "name": "electronic", "lr": adapter_lr},
+        {"params": list(head.decoder.parameters()), "name": "saliency_head", "lr": decoder_lr},
     ], weight_decay=s.weight_decay)
     manifest = {"git_commit": commit, "command": [sys.executable, "-m", __spec__.name, *sys.argv[1:]],
                 "architecture": "frozen_qwen24_adapter192_identical_progressive_decoder_v1",
@@ -77,16 +81,31 @@ def main():
                 "head_initialization": "random; no previous trained head loaded",
                 "epochs_budget": s.student_epochs,
                 "dataset_counts": {"train": len(bundle.train_records), "test": len(bundle.validation_records)},
-                "selection_biased": True, "selection": "public test CC at epoch1/every5/final",
+                "selection_biased": True,
+                "selection": f"public test CC every {args.test_interval} epochs/final",
+                "training_protocol": {
+                    "fixed_learning_rate": args.fixed_learning_rate,
+                    "evaluation_interval_epochs": args.test_interval,
+                    "staged_schedule": args.fixed_learning_rate is None,
+                    "backbone_frozen": True,
+                },
                 "note": "Both systems have the same 197184-parameter adapter and 85412-parameter decoder; adapter appears before the optical body but after the frozen Qwen body. This is not an identical full-network/train-history ablation."}
     _write_json(s.output_dir / "run_manifest.json", manifest)
     history, best = [], -float("inf")
     try:
         for epoch in range(1, s.student_epochs+1):
-            stage = staged_epoch(optim, s, epoch)
+            if args.fixed_learning_rate is None:
+                stage = staged_epoch(optim, s, epoch)
+            else:
+                stage = {
+                    "stage": "fixed_low_lr",
+                    "hard_balance_weight": 0.0,
+                    "lr_electronic": args.fixed_learning_rate,
+                    "lr_saliency_head": args.fixed_learning_rate,
+                }
             metrics = legacy._train_epoch("teacher", model, train_loader, loaded, s, optim)
             test = None
-            if epoch == 1 or epoch % s.test_interval_epochs == 0 or epoch == s.student_epochs:
+            if epoch % args.test_interval == 0 or epoch == s.student_epochs:
                 test, _ = legacy.evaluate_model(model, test_loader, loaded, s)
             payload = {"architecture": manifest["architecture"], "epoch": epoch, "head": head.state_dict(),
                        "train_metrics": metrics, "test_metrics": test, "manifest": manifest}

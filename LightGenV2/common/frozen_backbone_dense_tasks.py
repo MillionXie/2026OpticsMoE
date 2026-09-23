@@ -491,8 +491,8 @@ def train_salicon(args: argparse.Namespace, cache: dict[str, Any], device: torch
     width = int(cache["model_metadata"]["image_width"])
     head = AlignedReadout(width).to(device)
     optimizer = torch.optim.AdamW([
-        {"params": [*head.input_adapter.parameters(), *head.input_norm.parameters()], "lr": 1e-4},
-        {"params": head.decoder.parameters(), "lr": 3e-4},
+        {"params": [*head.input_adapter.parameters(), *head.input_norm.parameters()], "lr": args.salicon_learning_rate},
+        {"params": head.decoder.parameters(), "lr": args.salicon_learning_rate},
     ], weight_decay=0.0)
     best = -math.inf; history = []
     for epoch in range(1, args.epochs + 1):
@@ -506,7 +506,7 @@ def train_salicon(args: argparse.Namespace, cache: dict[str, Any], device: torch
             n = len(logits); samples += n; sums["loss"] += float(loss) * n
             for key, value in pieces.items(): sums[key] += float(value) * n
         train_metrics = {key: value / samples for key, value in sums.items()} | {"samples": samples}
-        test_metrics = evaluate_salicon(head, test_loader, device) if epoch == 1 or epoch % 5 == 0 or epoch == args.epochs else None
+        test_metrics = evaluate_salicon(head, test_loader, device) if epoch % args.salicon_test_interval == 0 or epoch == args.epochs else None
         if test_metrics is not None and test_metrics["cc"] > best:
             best = float(test_metrics["cc"])
             atomic_save(args.run_dir / "best_checkpoint.pt", {"epoch": epoch, "head": head.state_dict(), "train": train_metrics, "test": test_metrics})
@@ -515,7 +515,19 @@ def train_salicon(args: argparse.Namespace, cache: dict[str, Any], device: torch
         print(f"[SALICON {args.model_kind}] epoch={epoch}/{args.epochs} best_CC={best:.4f}", flush=True)
     selected = torch.load(args.run_dir / "best_checkpoint.pt", map_location="cpu", weights_only=False)
     head.load_state_dict(selected["head"])
-    return {"selected_epoch": selected["epoch"], "metrics": evaluate_salicon(head, test_loader, device), "head_parameters": count_parameters(head), "selection": "maximum public validation CC at epoch 1/every 5/final"}
+    return {
+        "selected_epoch": selected["epoch"],
+        "metrics": evaluate_salicon(head, test_loader, device),
+        "head_parameters": count_parameters(head),
+        "selection": f"maximum public validation CC every {args.salicon_test_interval} epochs/final",
+        "training_protocol": {
+            "epochs": args.epochs,
+            "fixed_learning_rate": args.salicon_learning_rate,
+            "evaluation_interval_epochs": args.salicon_test_interval,
+            "weight_decay": 0.0,
+            "backbone_frozen": True,
+        },
+    }
 
 
 class OpenMojiReadout(nn.Module):
@@ -636,6 +648,8 @@ def parser() -> argparse.ArgumentParser:
     value.add_argument("--num-workers", type=int, default=4)
     value.add_argument("--epochs", type=int)
     value.add_argument("--seed", type=int, default=42)
+    value.add_argument("--salicon-learning-rate", type=float, default=1e-4)
+    value.add_argument("--salicon-test-interval", type=int, default=10)
     value.add_argument("--yolo-image-size", type=int, default=640)
     return value
 
