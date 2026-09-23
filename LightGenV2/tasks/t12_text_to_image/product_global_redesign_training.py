@@ -36,6 +36,7 @@ class RedesignLatentDataset(Dataset[dict[str, Any]]):
             "target": self.payload["target"][index].float(),
             "qwen_text": self.payload["qwen_text"][index].float(),
             "catalogue_indices": self.payload["catalogue_indices"][index],
+            "seed": self.payload.get("seeds", list(range(len(self))))[index],
         }
 
 
@@ -66,7 +67,7 @@ def cache_redesign_latents(
         dataset = dataset_class(data_dir, split, image_size, instruction_cache)
         loader = DataLoader(dataset, batch_size=batch_size, shuffle=False, num_workers=num_workers, pin_memory=device.type == "cuda")
         values: dict[str, list[Any]] = {key: [] for key in (
-            "reference", "target", "qwen_text", "catalogue_indices", "sample_ids", "prompts",
+            "reference", "target", "qwen_text", "catalogue_indices", "sample_ids", "prompts", "seeds",
         )}
         for batch in loader:
             reference = batch["reference"].to(device=device, dtype=dtype, non_blocking=True)
@@ -77,6 +78,10 @@ def cache_redesign_latents(
             values["catalogue_indices"].extend(batch["catalogue_index"].tolist())
             values["sample_ids"].extend(batch["sample_id"])
             values["prompts"].extend(batch["prompt"])
+            if "seed" in batch:
+                values["seeds"].extend(torch.as_tensor(batch["seed"]).tolist())
+            else:
+                values["seeds"].extend(range(len(values["seeds"]), len(values["seeds"]) + len(reference)))
         packed = {
             key: torch.cat(value) if key in {"reference", "target", "qwen_text"} else value
             for key, value in values.items()
@@ -100,7 +105,16 @@ class TextDesignRouter(nn.Module):
 
 
 @torch.inference_mode()
-def _evaluate(unet, adapter, router, loader, sigma, device, training: SceneTrainingConfig) -> dict[str, float]:
+def _seeded_noise(reference: torch.Tensor, seeds: torch.Tensor) -> torch.Tensor:
+    values = []
+    for seed in seeds.tolist():
+        generator = torch.Generator(device=reference.device).manual_seed(int(seed))
+        values.append(torch.randn(reference.shape[1:], generator=generator, device=reference.device, dtype=reference.dtype))
+    return torch.stack(values)
+
+
+@torch.inference_mode()
+def _evaluate(unet, adapter, router, loader, sigma, device, training: SceneTrainingConfig, *, seeded_noise: bool = False) -> dict[str, float]:
     unet.eval(); adapter.eval(); router.eval()
     totals = {"latent_mse": 0.0, "latent_l1": 0.0, "reference_mse": 0.0, "catalogue_accuracy": 0.0}
     count = 0
@@ -108,7 +122,7 @@ def _evaluate(unet, adapter, router, loader, sigma, device, training: SceneTrain
     for batch in loader:
         reference = batch["reference"].to(device); target = batch["target"].to(device)
         text = batch["qwen_text"].to(device); labels = torch.as_tensor(batch["catalogue_indices"], device=device)
-        noise = _paired_noise(reference, generator)
+        noise = _seeded_noise(reference, batch["seed"]) if seeded_noise else _paired_noise(reference, generator)
         with torch.autocast(device.type, dtype=torch.float16, enabled=device.type == "cuda"):
             output = one_step_edit(
                 unet, noise, reference, adapter.condition(text), sigma,
@@ -140,7 +154,10 @@ def _sample_grid(*, unet, adapter, vae, sigma, latent_dataset, raw_dataset, outp
     reference = latent_dataset.payload["reference"][chosen].float().to(device)
     text = latent_dataset.payload["qwen_text"][chosen].float().to(device)
     generator = torch.Generator(device=device).manual_seed(seed)
-    noise = torch.randn(reference.shape, generator=generator, device=device)
+    if "seeds" in latent_dataset.payload:
+        noise = _seeded_noise(reference, torch.as_tensor([latent_dataset.payload["seeds"][index] for index in chosen]))
+    else:
+        noise = torch.randn(reference.shape, generator=generator, device=device)
     with torch.autocast(device.type, dtype=torch.float16, enabled=device.type == "cuda"):
         latent = one_step_edit(
             unet, noise, reference, adapter.condition(text), sigma,
@@ -200,8 +217,14 @@ def train_redesign_model(
     # Local fine-tuning: preserve the compressed encoder and adapt the optical
     # bottleneck plus decoder/output path to the new full-frame distribution.
     unet.requires_grad_(False); unet.enable_gradient_checkpointing()
-    unet.conv_in.requires_grad_(True); unet.mid_block.requires_grad_(True)
-    unet.up_blocks.requires_grad_(True); unet.conv_norm_out.requires_grad_(True); unet.conv_out.requires_grad_(True)
+    if "morphology" in task_name:
+        # Shape editing changes global geometry, so the encoder must adapt as
+        # well as the optical bottleneck and decoder. This changes no counted
+        # parameters; Qwen and the VAE remain frozen.
+        unet.requires_grad_(True)
+    else:
+        unet.conv_in.requires_grad_(True); unet.mid_block.requires_grad_(True)
+        unet.up_blocks.requires_grad_(True); unet.conv_norm_out.requires_grad_(True); unet.conv_out.requires_grad_(True)
     trainable_unet = [parameter for parameter in unet.parameters() if parameter.requires_grad]
     optical_ids = {id(parameter) for parameter in optical.parameters()}
     optical_parameters = [parameter for parameter in trainable_unet if id(parameter) in optical_ids]
@@ -212,7 +235,8 @@ def train_redesign_model(
         {"params": adapter.parameters(), "lr": training_config.adapter_learning_rate},
         {"params": router.parameters(), "lr": training_config.adapter_learning_rate},
     ], weight_decay=training_config.weight_decay)
-    initial = _evaluate(unet, adapter, router, loaders["val"], sigma, device, training_config)
+    morphology_task = "morphology" in task_name
+    initial = _evaluate(unet, adapter, router, loaders["val"], sigma, device, training_config, seeded_noise=morphology_task)
     scaler = torch.amp.GradScaler("cuda", enabled=device.type == "cuda")
     best = math.inf; best_epoch = 0; history = []; started = time.perf_counter()
     for epoch in range(1, training_config.epochs + 1):
@@ -221,7 +245,7 @@ def train_redesign_model(
         for step, batch in enumerate(loaders["train"], 1):
             reference = batch["reference"].to(device); target = batch["target"].to(device)
             text = batch["qwen_text"].to(device); labels = torch.as_tensor(batch["catalogue_indices"], device=device)
-            noise = _paired_noise(reference)
+            noise = _seeded_noise(reference, batch["seed"]) if morphology_task else _paired_noise(reference)
             with torch.autocast(device.type, dtype=torch.float16, enabled=device.type == "cuda"):
                 output = one_step_edit(
                     unet, noise, reference, adapter.condition(text), sigma,
@@ -241,7 +265,7 @@ def train_redesign_model(
                 torch.nn.utils.clip_grad_norm_([*trainable_unet, *adapter.parameters(), *router.parameters()], 1.0)
                 scaler.step(optimizer); scaler.update(); optimizer.zero_grad(set_to_none=True)
             total += float(loss.detach()) * len(reference); samples += len(reference)
-        validation = _evaluate(unet, adapter, router, loaders["val"], sigma, device, training_config)
+        validation = _evaluate(unet, adapter, router, loaders["val"], sigma, device, training_config, seeded_noise=morphology_task)
         row = {"epoch": epoch, "train_loss": total / samples, "validation": validation, "optical_alpha": float(optical.fusion.alpha.detach())}
         history.append(row); print(json.dumps(row), flush=True)
         if validation["latent_mse"] < best:
@@ -257,7 +281,7 @@ def train_redesign_model(
         _sample_grid(unet=unet, adapter=adapter, vae=vae, sigma=sigma, latent_dataset=datasets["val"], raw_dataset=raw_val, output=output_dir / "samples" / f"epoch_{epoch:03d}.jpg", device=device, training=training_config, seed=seed + epoch)
     best_payload = torch.load(output_dir / "best_model.pt", map_location="cpu", weights_only=False, mmap=True)
     unet.load_state_dict(best_payload["unet"]); adapter.load_state_dict(best_payload["adapter"]); router.load_state_dict(best_payload["design_router"])
-    test = _evaluate(unet, adapter, router, loaders["test"], sigma, device, training_config)
+    test = _evaluate(unet, adapter, router, loaders["test"], sigma, device, training_config, seeded_noise=morphology_task)
     qwen = torch.load(instruction_cache, map_location="cpu", weights_only=False)["meta"]["qwen_pruning"]
     parameters = counted_student_parameters(
         unet=unet, adapter=adapter, router=router,
