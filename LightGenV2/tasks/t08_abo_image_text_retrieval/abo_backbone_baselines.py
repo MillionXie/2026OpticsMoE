@@ -6,11 +6,12 @@ This module keeps the published Qwen protocols unchanged:
 * easy100 text-to-image: 100 official titles rank 2,400 test images; and
 * ABO-200 image-to-image: 800 queries rank 1,600 enrolled gallery images.
 
-CLIP and DeepSeek are evaluated without fitted parameters. YOLO11s has no text
-encoder, so cross-modal retrieval is explicitly a composite baseline: frozen
-YOLO11s image features, a frozen CLIP text tower, and one fitted bias-free
-linear alignment matrix. The YOLO image-to-image result uses its raw frozen
-descriptor and no fitted head.
+CLIP and DeepSeek support either zero-shot evaluation or a lightweight fitted
+alignment baseline. The fitted version freezes both pretrained towers and learns
+one bias-free image-to-text matrix on the official easy100 training split.
+YOLO11s has no text encoder, so its optional cross-modal path remains an
+explicit composite with a frozen CLIP text tower. Image-to-image always uses raw
+frozen descriptors and no fitted head.
 """
 
 from __future__ import annotations
@@ -446,7 +447,7 @@ def _gallery_metrics(
     return report, order
 
 
-def _fit_yolo_alignment(
+def _fit_alignment(
     image_features: torch.Tensor,
     labels: torch.Tensor,
     text_features: torch.Tensor,
@@ -522,7 +523,8 @@ def _easy100(args: argparse.Namespace, bundle: EncoderBundle, device: torch.devi
     )
     adapter_history: list[dict[str, float]] | None = None
     adapter_parameters = 0
-    if args.model_kind == "yolo11s":
+    fit_alignment = bool(args.fit_alignment or args.model_kind == "yolo11s")
+    if fit_alignment:
         train_features = _extract_images(
             rows=train,
             data_root=root,
@@ -531,7 +533,7 @@ def _easy100(args: argparse.Namespace, bundle: EncoderBundle, device: torch.devi
             instruction=DOCUMENT,
             batch_size=args.batch_size,
         )
-        adapter, adapter_history = _fit_yolo_alignment(
+        adapter, adapter_history = _fit_alignment(
             train_features,
             torch.tensor([row["label"] for row in train]),
             i2t_title_features,
@@ -542,8 +544,10 @@ def _easy100(args: argparse.Namespace, bundle: EncoderBundle, device: torch.devi
             seed=args.seed,
         )
         adapter_parameters = _parameter_count(adapter)
-        _atomic_save(args.output / "yolo_clip_alignment.pt", {
+        _atomic_save(args.output / "image_text_alignment.pt", {
             "state_dict": {key: value.detach().cpu() for key, value in adapter.state_dict().items()},
+            "model_kind": args.model_kind,
+            "architecture": "single_bias_free_image_to_text_linear",
             "image_width": bundle.image_width,
             "text_width": bundle.text_width,
             "training_rows": len(train),
@@ -570,7 +574,8 @@ def _easy100(args: argparse.Namespace, bundle: EncoderBundle, device: torch.devi
         "titles": len(titles),
         "image_to_text": i2t,
         "text_to_image": t2i,
-        "fitted_adapter": args.model_kind == "yolo11s",
+        "fitted_adapter": fit_alignment,
+        "alignment_architecture": "single_bias_free_image_to_text_linear" if fit_alignment else None,
         "adapter_trainable_parameters": adapter_parameters,
         "adapter_history": adapter_history,
         "data_sha256": {name: _sha256(root / name) for name in ("titles.csv", "train.csv", "test.csv")},
@@ -689,6 +694,11 @@ def main() -> int:
     parser.add_argument("--adapter-epochs", type=int, default=50)
     parser.add_argument("--adapter-batch-size", type=int, default=256)
     parser.add_argument("--adapter-lr", type=float, default=3e-4)
+    parser.add_argument(
+        "--fit-alignment",
+        action="store_true",
+        help="Freeze the backbone and fit one bias-free image-to-text matrix on easy100 train.",
+    )
     parser.add_argument("--seed", type=int, default=42)
     args = parser.parse_args()
     run(args)
