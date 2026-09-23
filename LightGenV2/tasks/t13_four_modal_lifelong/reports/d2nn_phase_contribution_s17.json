@@ -1,0 +1,134 @@
+{
+  "protocol": "full_validation_inference_only_original_task_linear_head",
+  "optimization_steps": 0,
+  "results": {
+    "eurosat": {
+      "checkpoint": "LightGenV2/tasks/t13_four_modal_lifelong/runs/formal_seq_d2nn_no_replay_s17/sequential_d2nn_no_replay/stage_1_eurosat/best_checkpoint.pt",
+      "checkpoint_epoch": 19,
+      "validation_balanced_accuracy": {
+        "trained": 0.802704483782293,
+        "flat": 0.7454980445460162,
+        "initialized": 0.7454117178277129
+      },
+      "phase_stats": [
+        {
+          "shape": [
+            986,
+            986
+          ],
+          "learned_raw_std": 0.3034840226173401,
+          "initial_raw_std": 0.01999625936150551,
+          "raw_change_rms": 0.30221062898635864,
+          "raw_change_fraction_gt_0.1": 0.741898775100708
+        },
+        {
+          "shape": [
+            986,
+            986
+          ],
+          "learned_raw_std": 0.24936996400356293,
+          "initial_raw_std": 0.01999868080019951,
+          "raw_change_rms": 0.24824680387973785,
+          "raw_change_fraction_gt_0.1": 0.6845893263816833
+        }
+      ],
+      "head_preserved": true
+    },
+    "clevr": {
+      "checkpoint": "LightGenV2/tasks/t13_four_modal_lifelong/runs/fair_986_clevr_d2nn_continue12_s17/single_task_d2nn/clevr/best_checkpoint.pt",
+      "checkpoint_epoch": 10,
+      "validation_balanced_accuracy": {
+        "trained": 0.7672222222222222,
+        "flat": 0.5019555555555555,
+        "initialized": 0.5023111111111112
+      },
+      "phase_stats": [
+        {
+          "shape": [
+            986,
+            986
+          ],
+          "learned_raw_std": 0.5821700096130371,
+          "initial_raw_std": 0.01999868080019951,
+          "raw_change_rms": 0.5815858840942383,
+          "raw_change_fraction_gt_0.1": 0.6533795595169067
+        },
+        {
+          "shape": [
+            986,
+            986
+          ],
+          "learned_raw_std": 0.8669442534446716,
+          "initial_raw_std": 0.019986523315310478,
+          "raw_change_rms": 0.867175817489624,
+          "raw_change_fraction_gt_0.1": 0.843879222869873
+        }
+      ],
+      "head_preserved": true
+    },
+    "speech": {
+      "checkpoint": "LightGenV2/tasks/t13_four_modal_lifelong/runs/fair_986_speech_d2nn_60_s17/single_task_d2nn/speech/best_checkpoint.pt",
+      "checkpoint_epoch": 58,
+      "validation_balanced_accuracy": {
+        "trained": 0.6679311064767058,
+        "flat": 0.36122028282927465,
+        "initialized": 0.3622619494959413
+      },
+      "phase_stats": [
+        {
+          "shape": [
+            986,
+            986
+          ],
+          "learned_raw_std": 0.3256928324699402,
+          "initial_raw_std": 0.019986523315310478,
+          "raw_change_rms": 0.32411548495292664,
+          "raw_change_fraction_gt_0.1": 0.4165723919868469
+        },
+        {
+          "shape": [
+            986,
+            986
+          ],
+          "learned_raw_std": 0.3471197187900543,
+          "initial_raw_std": 0.019985711202025414,
+          "raw_change_rms": 0.345808207988739,
+          "raw_change_fraction_gt_0.1": 0.555328369140625
+        }
+      ],
+      "head_preserved": true
+    },
+    "physical": {
+      "checkpoint": "LightGenV2/tasks/t13_four_modal_lifelong/runs/fair_986_physical_d2nn_40_s17_v2/single_task_d2nn/physical/best_checkpoint.pt",
+      "checkpoint_epoch": 37,
+      "validation_balanced_accuracy": {
+        "trained": 0.8036829016075714,
+        "flat": 0.4909287974694667,
+        "initialized": 0.48941777902292893
+      },
+      "phase_stats": [
+        {
+          "shape": [
+            986,
+            986
+          ],
+          "learned_raw_std": 0.16857725381851196,
+          "initial_raw_std": 0.019985711202025414,
+          "raw_change_rms": 0.16725973784923553,
+          "raw_change_fraction_gt_0.1": 0.24988171458244324
+        },
+        {
+          "shape": [
+            986,
+            986
+          ],
+          "learned_raw_std": 0.3081848621368408,
+          "initial_raw_std": 0.019990257918834686,
+          "raw_change_rms": 0.3072564899921417,
+          "raw_change_fraction_gt_0.1": 0.5056655406951904
+        }
+      ],
+      "head_preserved": true
+    }
+  }
+}

@@ -14,7 +14,7 @@ MoE 光学参数 1,825,188，D2NN 光学参数 1,944,392（多 6.53%）。
 teacher 不存在，只有单层 Linear。
 
 EuroSAT 第一格已完成：80.11%；相同几何 D2NN 为 79.92%，优势仅 0.19 个百分点，尚未达到
-希望的明显优势。CLEVR 阶段正在运行；`replay_weight=1.0` 已完成 11/20 主训练轮次，当前最佳
+希望的明显优势。CLEVR 阶段正在运行；`replay_weight=1.0` 已完成 19/20 主训练轮次，当前最佳
 第 1 轮验证 EuroSAT/CLEVR 为 76.70%/76.28%，均值 76.49%。`replay_weight=2.0` 候选
 完成 10 轮后最佳验证均值仍为 76.10%，低于主链 0.39 个百分点，已停止并释放 GPU。
 这些是验证指标，不能当作最终测试矩阵。
@@ -41,9 +41,11 @@ checkpoint 复推。行是光学权重来源，列是测试任务：
 `optimization_steps=0` 和 `source_optical_state_preserved=true`。四套光学相位 checkpoint 的哈希
 不同，故 EuroSAT 列的 Speech/Physical 72.56%/76.36% 不是加载了相同光学权重。进一步固定
 EuroSAT 原始 Linear，仅替换两层光学相位：原训练相位为 79.92%，全零相位仍为 75.87%，
-均匀随机 [-π,π] 相位降为 11.27%。原始结果保存在 `reports/eurosat_optics_ablation_s17.json`。
+相位原始参数从 [-π,π] 均匀采样后降为 11.27%（模型再对原始参数做 sigmoid 相位映射）。
+原始结果保存在 `reports/eurosat_optics_ablation_s17.json`。
 这说明即使移除可训练相位，原输入特征、固定传播/OEO 光路与电子头仍可保持较高可分性；
-强随机相位则会破坏它。因此不能以此矩阵宣称所有异源光学层都会使性能崩溃。
+强随机相位则会破坏它。因此不能以此矩阵宣称所有异源光学层都会使性能崩溃。四任务 D2NN
+与 EuroSAT MoE 的完整验证相位消融见 `OPTICAL_PHASE_CONTRIBUTION_20260923.md`。
 
 ## 矩阵 3：单一可重构 D2NN，无 replay
 

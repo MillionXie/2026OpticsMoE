@@ -70,7 +70,8 @@ CLEVR 全量 D2NN 在第 17 轮按验证集选出 checkpoint，验证/测试 bal
 ## 三张正式矩阵
 
 正式协议和最新进度见 [三张矩阵报告](reports/THREE_MATRIX_PLAN_20260922.md)，参数公平性见
-[几何与参数报告](reports/PARAMETER_FAIRNESS_20260922.md)。四个任务按 EuroSAT → CLEVR →
+[几何与参数报告](reports/PARAMETER_FAIRNESS_20260922.md)，光学相位消融见
+[相位贡献报告](reports/OPTICAL_PHASE_CONTRIBUTION_20260923.md)。四个任务按 EuroSAT → CLEVR →
 Speech → Physical 顺序运行，完整数据、单层 `Linear(784, C)` 和 986×986 有效孔径保持一致。
 
 1. **MoE full replay**：16 个固定槽位依次激活 4→8→12→16，旧专家冻结，每个旧任务保存
@@ -86,7 +87,7 @@ Speech → Physical 顺序运行，完整数据、单层 `Linear(784, C)` 和 98
 完整 D2NN 矩阵中，Physical 光学权重接 EuroSAT 原始头仍达到 76.36%，Speech 光学权重
 接 EuroSAT 头达到 72.56%。已核验四份独立相位 checkpoint 的哈希不同、光学参数在推理前后
 不变、逐单元优化步数为零。固定 EuroSAT 原始 Linear 的相位对照得到：训练相位 79.92%、
-全零相位 75.87%、均匀随机相位 11.27%。EuroSAT 对零相位和部分异源相位相对鲁棒；
+全平相位 75.87%、均匀随机原始相位参数 11.27%。EuroSAT 对平相位和部分异源相位相对鲁棒；
 不能以这张矩阵宣称所有异源光学权重都会失效。
 
 此前固定 478×478 几何且对每格 Linear 微调的矩阵、四专家单任务分数，以及顺序 D2NN
