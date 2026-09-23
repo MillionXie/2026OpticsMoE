@@ -2,9 +2,11 @@ import pytest
 import torch
 
 from LightGenV2.tasks.t08_abo_image_text_retrieval.abo_backbone_baselines import (
+    DualRetrievalReadout,
     _candidate_metrics,
     _gallery_metrics,
     _limit_per_key,
+    _symmetric_prototype_loss,
 )
 
 
@@ -29,3 +31,22 @@ def test_limit_per_key_is_stable():
     rows = [{"key": "a", "v": 1}, {"key": "a", "v": 2}, {"key": "b", "v": 3}]
     assert _limit_per_key(rows, lambda row: row["key"], 1) == [rows[0], rows[2]]
     assert _limit_per_key(rows, lambda row: row["key"], 0) is rows
+
+
+def test_dual_readout_outputs_normalized_shared_space():
+    head = DualRetrievalReadout(8, 6, 4)
+    images = head.encode_images(torch.randn(5, 8))
+    titles = head.encode_texts(torch.randn(3, 6))
+    assert images.shape == (5, 4)
+    assert titles.shape == (3, 4)
+    assert torch.allclose(torch.linalg.vector_norm(images, dim=1), torch.ones(5))
+    assert torch.allclose(torch.linalg.vector_norm(titles, dim=1), torch.ones(3))
+
+
+def test_symmetric_prototype_loss_is_finite():
+    images = torch.nn.functional.normalize(torch.randn(6, 4), dim=1)
+    titles = torch.nn.functional.normalize(torch.randn(3, 4), dim=1)
+    labels = torch.tensor([0, 0, 1, 1, 2, 2])
+    loss = _symmetric_prototype_loss(images, labels, titles, 0.07)
+    assert loss.ndim == 0
+    assert torch.isfinite(loss)

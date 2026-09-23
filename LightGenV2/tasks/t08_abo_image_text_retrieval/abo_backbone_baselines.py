@@ -6,12 +6,12 @@ This module keeps the published Qwen protocols unchanged:
 * easy100 text-to-image: 100 official titles rank 2,400 test images; and
 * ABO-200 image-to-image: 800 queries rank 1,600 enrolled gallery images.
 
-CLIP and DeepSeek support either zero-shot evaluation or a lightweight fitted
-alignment baseline. The fitted version freezes both pretrained towers and learns
-one bias-free image-to-text matrix on the official easy100 training split.
-YOLO11s has no text encoder, so its optional cross-modal path remains an
-explicit composite with a frozen CLIP text tower. Image-to-image always uses raw
-frozen descriptors and no fitted head.
+CLIP and DeepSeek support either zero-shot evaluation or direction-specific
+lightweight alignment. Every fitted variant freezes both pretrained towers;
+image-to-text and text-to-image use separate heads and objectives on the
+official easy100 training split. YOLO11s has no native text encoder and is only
+reported for image-to-image. Image-to-image always uses raw frozen descriptors
+and no fitted head.
 """
 
 from __future__ import annotations
@@ -465,6 +465,55 @@ class LowRankResidualAlignment(nn.Module):
         return value + self.residual_scale * self.up(self.down(value))
 
 
+class DualRetrievalReadout(nn.Module):
+    """Small modality-specific readouts into one shared retrieval space."""
+
+    def __init__(self, image_width: int, text_width: int, output_width: int):
+        super().__init__()
+        if output_width < 1:
+            raise ValueError("Retrieval output width must be positive")
+        self.image_norm = nn.LayerNorm(image_width)
+        self.image_projection = nn.Linear(image_width, output_width)
+        self.text_norm = nn.LayerNorm(text_width)
+        self.text_projection = nn.Linear(text_width, output_width)
+        self.architecture = (
+            f"dual_ln_linear_readout_image{image_width}_text{text_width}_out{output_width}"
+        )
+
+    def encode_images(self, value: torch.Tensor) -> torch.Tensor:
+        return _normalized(self.image_projection(self.image_norm(value.float())))
+
+    def encode_texts(self, value: torch.Tensor) -> torch.Tensor:
+        return _normalized(self.text_projection(self.text_norm(value.float())))
+
+    def forward(self, value: torch.Tensor) -> torch.Tensor:
+        return self.encode_images(value)
+
+
+def _symmetric_prototype_logits(
+    images: torch.Tensor,
+    labels: torch.Tensor,
+    titles: torch.Tensor,
+    temperature: float,
+) -> torch.Tensor:
+    unique_labels = torch.unique(labels, sorted=True)
+    prototypes = torch.stack([
+        _normalized(images[labels.eq(label)].mean(dim=0, keepdim=True))[0]
+        for label in unique_labels
+    ])
+    return titles[unique_labels] @ prototypes.T / temperature
+
+
+def _symmetric_prototype_loss(
+    images: torch.Tensor,
+    labels: torch.Tensor,
+    titles: torch.Tensor,
+    temperature: float,
+) -> torch.Tensor:
+    logits = _symmetric_prototype_logits(images, labels, titles, temperature)
+    return F.cross_entropy(logits, torch.arange(len(logits), device=logits.device))
+
+
 def _fit_alignment(
     image_features: torch.Tensor,
     labels: torch.Tensor,
@@ -479,6 +528,7 @@ def _fit_alignment(
     rank: int,
     residual_scale: float,
     drift_weight: float,
+    objective: str,
 ) -> tuple[nn.Module, list[dict[str, float]]]:
     random.seed(seed)
     np.random.seed(seed)
@@ -498,6 +548,10 @@ def _fit_alignment(
         layer = LowRankResidualAlignment(
             image_features.shape[1], rank, residual_scale
         ).to(device)
+    elif kind == "dual_readout":
+        layer = DualRetrievalReadout(
+            image_features.shape[1], text_features.shape[1], rank
+        ).to(device)
     else:
         raise ValueError(f"Unknown alignment kind: {kind}")
     optimizer = torch.optim.AdamW(layer.parameters(), lr=learning_rate, weight_decay=1e-4)
@@ -512,18 +566,48 @@ def _fit_alignment(
             index = permutation[start:start + batch_size]
             images = image_features[index].to(device)
             target = labels[index].to(device)
-            aligned = _normalized(layer(images))
-            logits = aligned @ text_features.T / 0.07
+            if kind == "dual_readout":
+                aligned = layer.encode_images(images)  # type: ignore[attr-defined]
+                aligned_text = layer.encode_texts(text_features)  # type: ignore[attr-defined]
+            else:
+                aligned = _normalized(layer(images))
+                aligned_text = text_features
+            logits = aligned @ aligned_text.T / 0.07
             classification_loss = F.cross_entropy(logits, target)
-            drift = (1.0 - (aligned * images).sum(dim=1)).mean()
-            loss = classification_loss + drift_weight * drift
+            symmetric_logits = _symmetric_prototype_logits(
+                aligned, target, aligned_text, 0.07
+            )
+            symmetric_targets = torch.arange(
+                len(symmetric_logits), device=symmetric_logits.device
+            )
+            symmetric_loss = F.cross_entropy(symmetric_logits, symmetric_targets)
+            drift = (
+                aligned.new_zeros(())
+                if kind == "dual_readout"
+                else (1.0 - (aligned * images).sum(dim=1)).mean()
+            )
+            if objective == "image_to_text":
+                task_loss = classification_loss
+                predictions = logits.argmax(1)
+                accuracy_targets = target
+            elif objective == "text_to_image":
+                task_loss = symmetric_loss
+                predictions = symmetric_logits.argmax(1)
+                accuracy_targets = symmetric_targets
+            else:
+                raise ValueError(f"Unknown retrieval objective: {objective}")
+            loss = task_loss + drift_weight * drift
             optimizer.zero_grad(set_to_none=True)
             loss.backward()
             optimizer.step()
             losses.append(float(loss.detach()))
-            correct += int(logits.argmax(1).eq(target).sum())
-            total += len(index)
-        row = {"epoch": epoch + 1, "loss": float(np.mean(losses)), "train_accuracy": correct / total}
+            correct += int(predictions.eq(accuracy_targets).sum())
+            total += len(accuracy_targets)
+        row = {
+            "epoch": epoch + 1,
+            "loss": float(np.mean(losses)),
+            "train_accuracy": correct / total,
+        }
         history.append(row)
         if epoch == 0 or (epoch + 1) % 10 == 0 or epoch + 1 == epochs:
             print(f"[adapter] epoch={epoch + 1} loss={row['loss']:.6f} accuracy={row['train_accuracy']:.4f}", flush=True)
@@ -558,7 +642,7 @@ def _easy100(args: argparse.Namespace, bundle: EncoderBundle, device: torch.devi
         instruction=I2T_QUERY if args.model_kind == "deepseek" else DOCUMENT,
         batch_size=args.batch_size,
     )
-    adapter_history: list[dict[str, float]] | None = None
+    adapter_history: dict[str, list[dict[str, float]]] | None = None
     adapter_parameters = 0
     fit_alignment = bool(args.fit_alignment or args.model_kind == "yolo11s")
     if fit_alignment:
@@ -570,40 +654,87 @@ def _easy100(args: argparse.Namespace, bundle: EncoderBundle, device: torch.devi
             instruction=DOCUMENT,
             batch_size=args.batch_size,
         )
-        adapter, adapter_history = _fit_alignment(
-            train_features,
-            torch.tensor([row["label"] for row in train]),
-            i2t_title_features,
-            device=device,
-            epochs=args.adapter_epochs,
-            batch_size=args.adapter_batch_size,
-            learning_rate=args.adapter_lr,
-            seed=args.seed,
-            kind=args.alignment_kind,
-            rank=args.alignment_rank,
-            residual_scale=args.alignment_residual_scale,
-            drift_weight=args.alignment_drift_weight,
-        )
-        adapter_parameters = _parameter_count(adapter)
-        _atomic_save(args.output / "image_text_alignment.pt", {
-            "state_dict": {key: value.detach().cpu() for key, value in adapter.state_dict().items()},
-            "model_kind": args.model_kind,
-            "architecture": adapter.architecture,
-            "image_width": bundle.image_width,
-            "text_width": bundle.text_width,
-            "training_rows": len(train),
-            "epochs": args.adapter_epochs,
-            "seed": args.seed,
-        })
+        train_labels = torch.tensor([row["label"] for row in train])
+        adapters: dict[str, nn.Module] = {}
+        adapter_history = {}
+        for direction, direction_titles in (
+            ("image_to_text", i2t_title_features),
+            ("text_to_image", t2i_title_features),
+        ):
+            adapter, history = _fit_alignment(
+                train_features,
+                train_labels,
+                direction_titles,
+                device=device,
+                epochs=args.adapter_epochs,
+                batch_size=args.adapter_batch_size,
+                learning_rate=args.adapter_lr,
+                seed=args.seed,
+                kind=args.alignment_kind,
+                rank=args.alignment_rank,
+                residual_scale=args.alignment_residual_scale,
+                drift_weight=args.alignment_drift_weight,
+                objective=direction,
+            )
+            adapters[direction] = adapter
+            adapter_history[direction] = history
+            direction_parameters = _parameter_count(adapter)
+            if adapter_parameters and direction_parameters != adapter_parameters:
+                raise RuntimeError("Direction-specific adapters have unequal budgets")
+            adapter_parameters = direction_parameters
+            _atomic_save(args.output / f"{direction}_alignment.pt", {
+                "state_dict": {
+                    key: value.detach().cpu()
+                    for key, value in adapter.state_dict().items()
+                },
+                "direction": direction,
+                "model_kind": args.model_kind,
+                "architecture": adapter.architecture,
+                "image_width": bundle.image_width,
+                "text_width": bundle.text_width,
+                "training_rows": len(train),
+                "epochs": args.adapter_epochs,
+                "seed": args.seed,
+            })
         with torch.inference_mode():
-            test_features = adapter(_normalized(test_features).to(device)).cpu()
-    image_vectors = _normalized(test_features)
-    i2t_text_vectors = _normalized(i2t_title_features)
-    t2i_text_vectors = _normalized(t2i_title_features)
+            if args.alignment_kind == "dual_readout":
+                i2t_image_vectors = adapters["image_to_text"].encode_images(  # type: ignore[attr-defined]
+                    _normalized(test_features).to(device)
+                ).cpu()
+                i2t_text_vectors = adapters["image_to_text"].encode_texts(  # type: ignore[attr-defined]
+                    _normalized(i2t_title_features).to(device)
+                ).cpu()
+                t2i_image_vectors = adapters["text_to_image"].encode_images(  # type: ignore[attr-defined]
+                    _normalized(test_features).to(device)
+                ).cpu()
+                t2i_text_vectors = adapters["text_to_image"].encode_texts(  # type: ignore[attr-defined]
+                    _normalized(t2i_title_features).to(device)
+                ).cpu()
+            else:
+                i2t_image_vectors = adapters["image_to_text"](
+                    _normalized(test_features).to(device)
+                ).cpu()
+                t2i_image_vectors = adapters["text_to_image"](
+                    _normalized(test_features).to(device)
+                ).cpu()
+                i2t_text_vectors = _normalized(i2t_title_features)
+                t2i_text_vectors = _normalized(t2i_title_features)
+        alignment_architecture = {
+            direction: adapter.architecture for direction, adapter in adapters.items()
+        }
+    else:
+        i2t_image_vectors = t2i_image_vectors = _normalized(test_features)
+        i2t_text_vectors = _normalized(i2t_title_features)
+        t2i_text_vectors = _normalized(t2i_title_features)
+        alignment_architecture = None
     test_labels = torch.tensor([row["label"] for row in test])
     title_labels = torch.tensor([int(row["label"]) for row in titles])
-    i2t, i2t_order = _candidate_metrics(image_vectors @ i2t_text_vectors.T, test_labels)
-    t2i, t2i_order = _gallery_metrics(t2i_text_vectors @ image_vectors.T, title_labels, test_labels)
+    i2t, i2t_order = _candidate_metrics(
+        i2t_image_vectors @ i2t_text_vectors.T, test_labels
+    )
+    t2i, t2i_order = _gallery_metrics(
+        t2i_text_vectors @ t2i_image_vectors.T, title_labels, test_labels
+    )
     _write_json(args.output / "easy100_predictions.json", {
         "image_to_text_top1": [titles[index]["product_id"] for index in i2t_order[:, 0].tolist()],
         "text_to_image_top10": [[test[index]["sample_id"] for index in row] for row in t2i_order[:, :10].tolist()],
@@ -616,8 +747,9 @@ def _easy100(args: argparse.Namespace, bundle: EncoderBundle, device: torch.devi
         "image_to_text": i2t,
         "text_to_image": t2i,
         "fitted_adapter": fit_alignment,
-        "alignment_architecture": adapter.architecture if fit_alignment else None,
+        "alignment_architecture": alignment_architecture,
         "alignment_drift_weight": args.alignment_drift_weight if fit_alignment else None,
+        "adapter_trainable_parameters_per_direction": adapter_parameters,
         "adapter_trainable_parameters": adapter_parameters,
         "adapter_history": adapter_history,
         "data_sha256": {name: _sha256(root / name) for name in ("titles.csv", "train.csv", "test.csv")},
@@ -738,7 +870,7 @@ def main() -> int:
     parser.add_argument("--adapter-lr", type=float, default=3e-4)
     parser.add_argument(
         "--alignment-kind",
-        choices=("full_linear", "low_rank_residual"),
+        choices=("full_linear", "low_rank_residual", "dual_readout"),
         default="full_linear",
     )
     parser.add_argument("--alignment-rank", type=int, default=4)

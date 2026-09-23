@@ -1,58 +1,82 @@
 {
-  "schema_version": 1,
+  "schema_version": 2,
   "date": "2026-09-23",
-  "task": "ABO retrieval frozen-backbone comparisons",
+  "task": "ABO retrieval frozen-backbone and light-alignment comparisons",
   "backbones_frozen": true,
-  "qwen_reference": {
-    "image_to_text": {
-      "value": 0.7358333333333333,
-      "metric": "R@1",
-      "source_commit": "b9a4be689f198f55ee0caaf4e5bcddd4dfc80200"
+  "recommended_primary_protocol": "zero_shot_frozen",
+  "references": {
+    "lightgenv2": {
+      "image_to_text_r_at_1": 0.8058,
+      "image_to_image_r_at_1": 0.8313,
+      "text_to_image_hit_at_1": 0.88
     },
-    "image_to_image": {
-      "value": 0.85125,
-      "metric": "R@1",
-      "source_commit": "5f731fae979ef81a09770c1dd721b5cecd8b3392"
-    },
-    "text_to_image": {
-      "value": 0.82,
-      "metric": "Hit@1 (paper row R@1)",
-      "source_commits": ["1e218991", "6d2930e3a700caee7bd5752da180b7e4136c8858"]
+    "qwen3_vl_embedding_2b": {
+      "image_to_text_r_at_1": 0.7358333333333333,
+      "image_to_image_r_at_1": 0.85125,
+      "text_to_image_hit_at_1": 0.82,
+      "trainable_parameters": 0
     }
   },
-  "results": {
+  "zero_shot_results": {
     "deepseek_vl2_tiny": {
       "image_to_text_r_at_1": 0.1379166692495346,
       "image_to_image_r_at_1": 0.88875,
       "text_to_image_hit_at_1": 0.08,
       "backbone_parameters": 3370501440,
-      "trainable_parameters": 0,
-      "easy100_source_commit": "19cf5c74cb384d7c371f4326ab2d3ff473e7f546",
-      "image_to_image_source_commit": "c47a0413e73dda6f8730021aec5c3d35fe76b9456",
-      "easy100_report_sha256": "04d9397f9ba82c8adfa0a0d0dfd4a76d45e444195211a49c4a48398b36ce4e42",
-      "image_to_image_report_sha256": "542d374593b0260fa4a2f06107cdda99ee5d98485e74cfb07a69e2ff3f6b2e56"
+      "trainable_parameters": 0
     },
     "clip_vit_b32": {
       "image_to_text_r_at_1": 0.5699999928474426,
       "image_to_image_r_at_1": 0.87125,
       "text_to_image_hit_at_1": 0.64,
       "backbone_parameters": 151277313,
-      "trainable_parameters": 0,
-      "source_commit": "1d80e64f9b97c12e3c19e12bb377cd629c15065d",
-      "easy100_report_sha256": "e22e36d49c70ecec6845f649a57f2f098e306b8d4352c3d647e7785c44ca0116",
-      "image_to_image_report_sha256": "7f99e05dc99c6e7fc8b3521bea3ca4c9780a0d7292fa0b694b733cec49c156c2"
+      "trainable_parameters": 0
     },
     "yolo11s": {
-      "image_to_text_r_at_1": 0.9866666793823242,
+      "image_to_text_r_at_1": null,
       "image_to_image_r_at_1": 0.87125,
-      "text_to_image_hit_at_1": 0.99,
-      "image_to_image_backbone_parameters": 9458752,
-      "cross_modal_frozen_parameters": 72886848,
-      "cross_modal_trainable_alignment_parameters": 262144,
-      "cross_modal_is_fitted_composite": true,
-      "source_commit": "1d80e64f9b97c12e3c19e12bb377cd629c15065d",
-      "easy100_report_sha256": "a56f45b1aa0e4a3a7f3e34dc73bc6d35c19876c1f062c84705517d23b21330f0",
-      "image_to_image_report_sha256": "7553e0f4459555b0571490faca7c8c2476c9ca6b400efd6df84f8d70a61df47b"
+      "text_to_image_hit_at_1": null,
+      "backbone_parameters": 9458752,
+      "trainable_parameters": 0,
+      "cross_modal_exclusion": "visual-only; YOLO+CLIP is not a YOLO-only baseline"
+    }
+  },
+  "task_adapted_diagnostic": {
+    "protocol": {
+      "head": "image-side rank-64 residual calibration",
+      "epochs": 50,
+      "learning_rate": 0.0001,
+      "residual_scale": 0.4,
+      "drift_weight": 1.0,
+      "seed": 42,
+      "checkpoint_selection": "fixed final epoch; test evaluated once",
+      "direction_specific_objectives": true
+    },
+    "deepseek_vl2_tiny": {
+      "image_to_text_r_at_1": 0.5016666650772095,
+      "text_to_image_hit_at_1": 0.05,
+      "trainable_parameters_per_task": 163840,
+      "report_sha256": "bffa31c5d551f7bf0eb26e312812adb349b8b1ffb011fb49d93c550897f2ef6d"
+    },
+    "clip_vit_b32": {
+      "image_to_text_r_at_1": 0.8412500023841858,
+      "text_to_image_hit_at_1": 0.93,
+      "trainable_parameters_per_task": 65536,
+      "report_sha256": "dc09bcb0dd733a2e3085265f1b90b43299ec0e3f82bd125ba887e295f58a2ea3"
+    }
+  },
+  "excluded_overfit_diagnostics": {
+    "dual_64d_readout_5_epochs": {
+      "deepseek_image_to_text": 0.9604166746139526,
+      "deepseek_text_to_image": 1.0,
+      "clip_image_to_text": 0.9066666960716248,
+      "clip_text_to_image": 0.96
+    },
+    "full_square_linear_50_epochs": {
+      "deepseek_image_to_text": 0.9487500190734863,
+      "deepseek_text_to_image": 0.91,
+      "clip_image_to_text": 0.9766666889190674,
+      "clip_text_to_image": 0.98
     }
   },
   "formal_timing_and_energy_measured": false
