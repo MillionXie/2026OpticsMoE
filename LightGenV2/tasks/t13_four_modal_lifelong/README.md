@@ -71,7 +71,8 @@ CLEVR 全量 D2NN 在第 17 轮按验证集选出 checkpoint，验证/测试 bal
 
 正式协议和最新进度见 [三张矩阵报告](reports/THREE_MATRIX_PLAN_20260922.md)，参数公平性见
 [几何与参数报告](reports/PARAMETER_FAIRNESS_20260922.md)，光学相位消融见
-[相位贡献报告](reports/OPTICAL_PHASE_CONTRIBUTION_20260923.md)。四个任务按 EuroSAT → CLEVR →
+[相位贡献报告](reports/OPTICAL_PHASE_CONTRIBUTION_20260923.md)，汇报用中英文图见
+[三张矩阵汇报版](reports/PRESENTATION_MATRICES_20260923.md)。四个任务按 EuroSAT → CLEVR →
 Speech → Physical 顺序运行，完整数据、单层 `Linear(784, C)` 和 986×986 有效孔径保持一致。
 
 1. **MoE full replay**：16 个固定槽位依次激活 4→8→12→16，旧专家冻结，每个旧任务保存

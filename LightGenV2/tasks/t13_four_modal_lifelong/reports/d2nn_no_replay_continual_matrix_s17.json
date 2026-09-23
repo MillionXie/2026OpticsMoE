@@ -1,0 +1,68 @@
+{
+  "task_order": [
+    "eurosat",
+    "clevr",
+    "speech",
+    "physical"
+  ],
+  "metric": {
+    "eurosat": "balanced_accuracy",
+    "clevr": "balanced_accuracy",
+    "speech": "balanced_accuracy",
+    "physical": "balanced_accuracy"
+  },
+  "validation": [
+    {
+      "eurosat": 0.802704483782293
+    },
+    {
+      "eurosat": 0.6482385381925871,
+      "clevr": 0.7157111111111112
+    },
+    {
+      "eurosat": 0.5608801160597011,
+      "clevr": 0.6966888888888889,
+      "speech": 0.6026521191770253
+    },
+    {
+      "eurosat": 0.5521043902267315,
+      "clevr": 0.698,
+      "speech": 0.5283509613462503,
+      "physical": 0.7452702021681921
+    }
+  ],
+  "test": [
+    {
+      "eurosat": 0.7991598528406232
+    },
+    {
+      "eurosat": 0.6394792487366079,
+      "clevr": 0.7121111111111111
+    },
+    {
+      "eurosat": 0.5242275426037567,
+      "clevr": 0.6966666666666667,
+      "speech": 0.588350123546723
+    },
+    {
+      "eurosat": 0.5262397288819738,
+      "clevr": 0.6974222222222222,
+      "speech": 0.5246864619398119,
+      "physical": 0.7492859842081918
+    }
+  ],
+  "continual": {
+    "backward_transfer": {
+      "eurosat": -0.2729201239586494,
+      "clevr": -0.014688888888888973,
+      "speech": -0.06366366160691106
+    },
+    "mean_backward_transfer": -0.11709089148481648,
+    "forgetting": {
+      "eurosat": 0.2729201239586494,
+      "clevr": 0.014688888888888973,
+      "speech": 0.06366366160691106
+    },
+    "mean_forgetting": 0.11709089148481648
+  }
+}
