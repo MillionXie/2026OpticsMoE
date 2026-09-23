@@ -447,6 +447,24 @@ def _gallery_metrics(
     return report, order
 
 
+class LowRankResidualAlignment(nn.Module):
+    """Capacity-limited calibration that stays close to the frozen embedding."""
+
+    def __init__(self, width: int, rank: int, residual_scale: float):
+        super().__init__()
+        if rank < 1 or rank > width:
+            raise ValueError(f"Invalid alignment rank {rank} for width {width}")
+        self.down = nn.Linear(width, rank, bias=False)
+        self.up = nn.Linear(rank, width, bias=False)
+        nn.init.normal_(self.down.weight, std=width ** -0.5)
+        nn.init.zeros_(self.up.weight)
+        self.residual_scale = float(residual_scale)
+        self.architecture = f"rank{rank}_residual_scale{residual_scale:g}"
+
+    def forward(self, value: torch.Tensor) -> torch.Tensor:
+        return value + self.residual_scale * self.up(self.down(value))
+
+
 def _fit_alignment(
     image_features: torch.Tensor,
     labels: torch.Tensor,
@@ -457,15 +475,31 @@ def _fit_alignment(
     batch_size: int,
     learning_rate: float,
     seed: int,
-) -> tuple[nn.Linear, list[dict[str, float]]]:
+    kind: str,
+    rank: int,
+    residual_scale: float,
+    drift_weight: float,
+) -> tuple[nn.Module, list[dict[str, float]]]:
     random.seed(seed)
     np.random.seed(seed)
     torch.manual_seed(seed)
     torch.cuda.manual_seed_all(seed)
     image_features = _normalized(image_features)
     text_features = _normalized(text_features).to(device)
-    layer = nn.Linear(image_features.shape[1], text_features.shape[1], bias=False).to(device)
-    nn.init.orthogonal_(layer.weight)
+    if kind == "full_linear":
+        layer: nn.Module = nn.Linear(
+            image_features.shape[1], text_features.shape[1], bias=False
+        ).to(device)
+        nn.init.orthogonal_(layer.weight)
+        layer.architecture = "single_bias_free_image_to_text_linear"  # type: ignore[attr-defined]
+    elif kind == "low_rank_residual":
+        if image_features.shape[1] != text_features.shape[1]:
+            raise ValueError("Residual alignment requires equal image/text widths")
+        layer = LowRankResidualAlignment(
+            image_features.shape[1], rank, residual_scale
+        ).to(device)
+    else:
+        raise ValueError(f"Unknown alignment kind: {kind}")
     optimizer = torch.optim.AdamW(layer.parameters(), lr=learning_rate, weight_decay=1e-4)
     generator = torch.Generator().manual_seed(seed)
     history = []
@@ -478,8 +512,11 @@ def _fit_alignment(
             index = permutation[start:start + batch_size]
             images = image_features[index].to(device)
             target = labels[index].to(device)
-            logits = _normalized(layer(images)) @ text_features.T / 0.07
-            loss = F.cross_entropy(logits, target)
+            aligned = _normalized(layer(images))
+            logits = aligned @ text_features.T / 0.07
+            classification_loss = F.cross_entropy(logits, target)
+            drift = (1.0 - (aligned * images).sum(dim=1)).mean()
+            loss = classification_loss + drift_weight * drift
             optimizer.zero_grad(set_to_none=True)
             loss.backward()
             optimizer.step()
@@ -542,12 +579,16 @@ def _easy100(args: argparse.Namespace, bundle: EncoderBundle, device: torch.devi
             batch_size=args.adapter_batch_size,
             learning_rate=args.adapter_lr,
             seed=args.seed,
+            kind=args.alignment_kind,
+            rank=args.alignment_rank,
+            residual_scale=args.alignment_residual_scale,
+            drift_weight=args.alignment_drift_weight,
         )
         adapter_parameters = _parameter_count(adapter)
         _atomic_save(args.output / "image_text_alignment.pt", {
             "state_dict": {key: value.detach().cpu() for key, value in adapter.state_dict().items()},
             "model_kind": args.model_kind,
-            "architecture": "single_bias_free_image_to_text_linear",
+            "architecture": adapter.architecture,
             "image_width": bundle.image_width,
             "text_width": bundle.text_width,
             "training_rows": len(train),
@@ -575,7 +616,8 @@ def _easy100(args: argparse.Namespace, bundle: EncoderBundle, device: torch.devi
         "image_to_text": i2t,
         "text_to_image": t2i,
         "fitted_adapter": fit_alignment,
-        "alignment_architecture": "single_bias_free_image_to_text_linear" if fit_alignment else None,
+        "alignment_architecture": adapter.architecture if fit_alignment else None,
+        "alignment_drift_weight": args.alignment_drift_weight if fit_alignment else None,
         "adapter_trainable_parameters": adapter_parameters,
         "adapter_history": adapter_history,
         "data_sha256": {name: _sha256(root / name) for name in ("titles.csv", "train.csv", "test.csv")},
@@ -694,6 +736,14 @@ def main() -> int:
     parser.add_argument("--adapter-epochs", type=int, default=50)
     parser.add_argument("--adapter-batch-size", type=int, default=256)
     parser.add_argument("--adapter-lr", type=float, default=3e-4)
+    parser.add_argument(
+        "--alignment-kind",
+        choices=("full_linear", "low_rank_residual"),
+        default="full_linear",
+    )
+    parser.add_argument("--alignment-rank", type=int, default=4)
+    parser.add_argument("--alignment-residual-scale", type=float, default=0.1)
+    parser.add_argument("--alignment-drift-weight", type=float, default=0.0)
     parser.add_argument(
         "--fit-alignment",
         action="store_true",
