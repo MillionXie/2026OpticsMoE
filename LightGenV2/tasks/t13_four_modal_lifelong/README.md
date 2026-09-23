@@ -75,8 +75,10 @@ CLEVR 全量 D2NN 在第 17 轮按验证集选出 checkpoint，验证/测试 bal
 Speech → Physical 顺序运行，完整数据、单层 `Linear(784, C)` 和 986×986 有效孔径保持一致。
 
 1. **MoE full replay**：16 个固定槽位依次激活 4→8→12→16，旧专家冻结，每个旧任务保存
-   512 条 replay，逐阶段测试已学任务。EuroSAT 正式测试 80.11%；CLEVR 阶段正在运行，
-   后续 Speech 和 Physical 未完成。因此当前尚无完整 MoE 下三角测试矩阵。
+   512 条 replay，逐阶段测试已学任务。EuroSAT 首阶段正式测试 80.11%；学完 CLEVR 后
+   EuroSAT/CLEVR 为 76.63%/76.36%。Speech 阶段正在运行，Physical 尚未开始，
+   当前有 3/10 个测试单元，完整 MoE 下三角矩阵仍待完成。阶段原始结果见
+   `reports/moe_replay_stage_1_eurosat_s17.json` 与 `reports/moe_replay_stage_2_clevr_s17.json`。
 2. **四个独立 D2NN 的纯推理完整矩阵**：行是源任务的固定光学权重，列接目标任务已训练的
    原始单层 Linear；不进行任何逐单元训练。16/16 单元已完成，新 CLEVR checkpoint 的
    对角线测试为 76.60%。完整矩阵和逐单元混淆矩阵见

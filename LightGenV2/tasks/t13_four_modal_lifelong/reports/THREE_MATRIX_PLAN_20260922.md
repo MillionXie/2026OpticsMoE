@@ -13,12 +13,22 @@ MoE 光学参数 1,825,188，D2NN 光学参数 1,944,392（多 6.53%）。
 10 个下三角单元。EuroSAT 起点采用验证集选定的训练期电子 teacher 蒸馏 checkpoint；推理时
 teacher 不存在，只有单层 Linear。
 
-EuroSAT 第一格已完成：80.11%；相同几何 D2NN 为 79.92%，优势仅 0.19 个百分点，尚未达到
-希望的明显优势。CLEVR 阶段正在运行；`replay_weight=1.0` 已完成 19/20 主训练轮次，当前最佳
-第 1 轮验证 EuroSAT/CLEVR 为 76.70%/76.28%，均值 76.49%。`replay_weight=2.0` 候选
-完成 10 轮后最佳验证均值仍为 76.10%，低于主链 0.39 个百分点，已停止并释放 GPU。
-这些是验证指标，不能当作最终测试矩阵。
-Speech 和 Physical 阶段尚未开始。完整矩阵进度仍为 1/10 个正式测试单元。
+EuroSAT 第一格为 80.11%；相同几何 D2NN 为 79.92%，优势仅 0.19 个百分点，尚未达到
+希望的明显优势。CLEVR 阶段已完成 20 轮，按已学任务验证均值选择第 1 轮；仅在 CLEVR
+验证分数从 76.28% 升到 76.49% 后接受单层 Linear 的校准。正式测试结果为：
+
+|学习阶段 / 测试|EuroSAT|CLEVR|Speech|Physical|
+|---|---:|---:|---:|---:|
+|学完 EuroSAT|80.11%||||
+|学完 CLEVR|76.63%|76.36%|||
+
+CLEVR 阶段的 EuroSAT 回退 3.48 个百分点，少于无 replay D2NN 在同阶段的 15.97 个百分点；
+CLEVR 当前任务分数也高于顺序 D2NN 的 71.21%。这只是前两阶段的结果，不能代替完整终身学习结论。
+`replay_weight=2.0` 候选完成 10 轮后最佳验证均值为 76.10%，低于主链 76.49%，
+已停止并释放 GPU。原始阶段结果为 `moe_replay_stage_1_eurosat_s17.json` 和
+`moe_replay_stage_2_clevr_s17.json`，均记录旧专家与旧任务电子头未改变。
+
+Speech 阶段已开始，Physical 尚未开始；完整矩阵进度为 3/10 个正式测试单元。
 
 ## 矩阵 2：独立 D2NN checkpoint 的纯推理 4×4
 
@@ -63,7 +73,7 @@ EuroSAT 原始 Linear，仅替换两层光学相位：原训练相位为 79.92%�
 
 ## 后续操作
 
-1. 继续 `replay_weight=1.0` MoE CLEVR 主链，再依次推进 Speech、Physical，完成矩阵 1。
+1. 继续 `replay_weight=1.0` MoE Speech 主链，再推进 Physical，完成矩阵 1。
 2. 完成后核对 10/16/10 个单元和 checkpoint 来源，运行服务器测试并更新 README。
 
 联合训练 D2NN 和 sequential D2NN replay 均不属于这三张正式矩阵。
