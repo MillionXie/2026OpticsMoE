@@ -1,0 +1,143 @@
+{
+  "schema_version": 1,
+  "device": "NVIDIA A100-PCIE-40GB",
+  "batch_size": 1,
+  "timing_boundary": "first retained language Transformer block input -> generated RGB tensor",
+  "excluded": [
+    "model loading",
+    "tokenization",
+    "token embedding lookup",
+    "host-to-device input copy"
+  ],
+  "optical_accounting": "software FFT bypassed; add 1.0447 * 6 ms; parallel residual is not added",
+  "warmup": 20,
+  "repeats": 100,
+  "baseline": {
+    "name": "baseline_qwen28_electronic_decoder",
+    "resolution": 256,
+    "qwen_layers": 28,
+    "counted_parameters": 1824200950,
+    "measured_optical_bypass": {
+      "mean_ms": 63.7379275894165,
+      "p50_ms": 62.91865539550781,
+      "p95_ms": 65.86265563964844,
+      "minimum_ms": 61.96531295776367,
+      "maximum_ms": 68.674560546875
+    },
+    "physical_optical_latency_ms": 0.0,
+    "estimated_hardware_mean_ms": 63.7379275894165,
+    "token_embedding_parameters_excluded": 311164928
+  },
+  "large": {
+    "background": {
+      "name": "large_background_qwen2_optical",
+      "resolution": 256,
+      "qwen_layers": 2,
+      "counted_parameters": 282431515,
+      "measured_optical_bypass": {
+        "mean_ms": 31.917230110168457,
+        "p50_ms": 31.916032791137695,
+        "p95_ms": 32.47001647949219,
+        "minimum_ms": 31.269887924194336,
+        "maximum_ms": 35.18975830078125
+      },
+      "physical_optical_latency_ms": 6.2682,
+      "estimated_hardware_mean_ms": 38.185430110168454,
+      "token_embedding_parameters_excluded": 311164928,
+      "speedup_vs_baseline_x": 1.669168774727082,
+      "latency_reduction_fraction": 0.40089940865116813
+    },
+    "redesign": {
+      "name": "large_redesign_qwen2_optical",
+      "resolution": 256,
+      "qwen_layers": 2,
+      "counted_parameters": 282417172,
+      "measured_optical_bypass": {
+        "mean_ms": 32.88726526260376,
+        "p50_ms": 31.518720626831055,
+        "p95_ms": 36.26598358154297,
+        "minimum_ms": 31.253503799438477,
+        "maximum_ms": 37.4835205078125
+      },
+      "physical_optical_latency_ms": 6.2682,
+      "estimated_hardware_mean_ms": 39.15546526260376,
+      "token_embedding_parameters_excluded": 311164928,
+      "speedup_vs_baseline_x": 1.6278168874241605,
+      "latency_reduction_fraction": 0.3856802889037545
+    },
+    "premium": {
+      "name": "large_premium_qwen2_optical",
+      "resolution": 256,
+      "qwen_layers": 2,
+      "counted_parameters": 282433564,
+      "measured_optical_bypass": {
+        "mean_ms": 32.06263822555542,
+        "p50_ms": 32.06041717529297,
+        "p95_ms": 32.64204788208008,
+        "minimum_ms": 31.447040557861328,
+        "maximum_ms": 33.10182571411133
+      },
+      "physical_optical_latency_ms": 6.2682,
+      "estimated_hardware_mean_ms": 38.33083822555542,
+      "token_embedding_parameters_excluded": 311164928,
+      "speedup_vs_baseline_x": 1.6628367794712617,
+      "latency_reduction_fraction": 0.39861806501659547
+    }
+  },
+  "small": {
+    "background": {
+      "name": "small_background_qwenmini2_optical",
+      "resolution": 128,
+      "qwen_layers": 2,
+      "counted_parameters": 18975128,
+      "measured_optical_bypass": {
+        "mean_ms": 6.77406720161438,
+        "p50_ms": 6.761472225189209,
+        "p95_ms": 6.909952163696289,
+        "minimum_ms": 6.583295822143555,
+        "maximum_ms": 8.192000389099121
+      },
+      "physical_optical_latency_ms": 6.2682,
+      "estimated_hardware_mean_ms": 13.04226720161438,
+      "token_embedding_parameters_excluded": 311164928,
+      "speedup_vs_baseline_x": 4.8870281987112625,
+      "latency_reduction_fraction": 0.7953766666900539
+    },
+    "redesign": {
+      "name": "small_redesign_qwenmini2_optical",
+      "resolution": 128,
+      "qwen_layers": 2,
+      "counted_parameters": 18975128,
+      "measured_optical_bypass": {
+        "mean_ms": 6.744453105926514,
+        "p50_ms": 6.73689603805542,
+        "p95_ms": 6.931456089019775,
+        "minimum_ms": 6.565887928009033,
+        "maximum_ms": 6.990848064422607
+      },
+      "physical_optical_latency_ms": 6.2682,
+      "estimated_hardware_mean_ms": 13.012653105926514,
+      "token_embedding_parameters_excluded": 311164928,
+      "speedup_vs_baseline_x": 4.898150059835803,
+      "latency_reduction_fraction": 0.7958412895105296
+    },
+    "premium": {
+      "name": "small_premium_qwenmini2_optical",
+      "resolution": 128,
+      "qwen_layers": 2,
+      "counted_parameters": 18975128,
+      "measured_optical_bypass": {
+        "mean_ms": 6.704885759353638,
+        "p50_ms": 6.708223819732666,
+        "p95_ms": 6.883327960968018,
+        "minimum_ms": 6.532095909118652,
+        "maximum_ms": 7.957503795623779
+      },
+      "physical_optical_latency_ms": 6.2682,
+      "estimated_hardware_mean_ms": 12.973085759353637,
+      "token_embedding_parameters_excluded": 311164928,
+      "speedup_vs_baseline_x": 4.913089204198103,
+      "latency_reduction_fraction": 0.7964620713286608
+    }
+  }
+}
