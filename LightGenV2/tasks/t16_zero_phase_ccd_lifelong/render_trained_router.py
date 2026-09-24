@@ -17,7 +17,7 @@ from .train_other_tasks import load_task
 
 
 def sample_description(data, task, index, protocol):
-    if task == "clevr":
+    if task in {"clevr", "clevr_compact", "clevr_attributes"}:
         vocabulary = json.loads((protocol.parent / "vocab.json").read_text())
         inverse = {int(value): word for word, value in vocabulary.items()}
         return " ".join(inverse[int(token)] for token in data.token_ids[index] if token)
