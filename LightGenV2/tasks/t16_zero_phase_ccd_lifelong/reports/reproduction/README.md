@@ -1,0 +1,47 @@
+# T16 单任务复现入口（2026-09-24）
+
+本页只记录已实际运行的仿真。运行目录位于服务器 `/DATA/DATA1/guest3/t12_cross_modal_20260920/LightGenV2/tasks/t16_zero_phase_ccd_lifelong/runs/simulation/`。每个目录的 `config.json`、`command.txt`、`history.json`、`result.json`、`status.json` 和 `best_checkpoint.pt` 是原始证据；本页的数字以该文件为准。运行环境为 Python 3.11.15、PyTorch 2.6.0+cu124、CUDA 12.4。GPU 用 `CUDA_VISIBLE_DEVICES=<下表中的 GPU UUID>` 精确绑定；其他用户的进程未被操作。源码只从 GitHub 的指定 commit 检出，权重和数据不进 Git。
+
+所有模型均为原项目 0.1 m 角谱传播、原始相位参数全零初始化（物理相位 π）、层间相同 OEO、直达最终 CCD，无额外透镜或傅里叶层。MoE 是中心优先 16 槽几何，A 阶段只开放 4/7/10/13 槽并做 dense soft routing；D2NN 是两层相位。双方各有自己的一层可训练、无偏置 `Linear(784,10)`，无可学习输入 encoder。所有列出的权重均独立训练**单任务**，不代表终身学习矩阵。完整验证集的宏平均召回选权重，测试仅在选模后对所选权重运行一次；明确标 `val-only` 的候选未读取测试划分。
+
+| 数据协议 | 训练／验证／测试样本 | 协议 SHA256 | 数据 manifest SHA256 |
+| --- | --- | --- | --- |
+| 成对 EuroSAT RGB/SAR，10 类，同地点一对算一条 | 15,998／5,465／5,429 | `8ffff7cf42719bc454ccca3f568c18dba1f056eeb7ada7f51520e749e21ffb48` | `c850e41270f77692a0e2e5def4e882a3a77a517afd9ad243ea3007295f7a1919` |
+| CLEVR 图＋颜色形状问句是否匹配，2 类 | 140,000／15,000／15,000 | `5ace5c945743278c8b0df232d7d5e421c54a9e01475282c42a20a2d58800a6f4` | `63e6646b66d3bceee80c5e4b9e9fe75b5070ce4200bb1dac0e3d8dec4e6142ed` |
+| Speech Commands 语音＋词是否匹配，2 类 | 12,526／1,686／1,734 | `f97cb20c365729e9424c65686e3db927d65246b645de8053557eac2a222f3489` | `1038d19394848d04ef721684559fac6bd90f799456968d279a4b54e66c9b879c` |
+| Physical Concepts 视频＋单条描述是否匹配，2 类，**带符号帧差实光场** | 140,800／29,304／29,896 | `23cd429bf143b2f7bb87ddd16fce15bbf3e59d6cd9793074827647e06d94079d` | `259bf3e1407cccbdfff340d9f8a90a2ef37672764b04387521f38e3d8828d559` |
+
+Physical 视频原始段数是 70,400／14,652／14,948；每段视频产生正确和错误描述各一条。错误描述在每个划分内错排，使十种描述的正负频次相等，且同一视频的正负对共用视频场。**当前帧差有负数**，因此不是纯非负幅度输入；负号等效额外 π 相位。它是这一版明确的输入合同，不可与将正负帧差分区后可能得到的新结果混用。历史 Physical 10 选 1 结果另见任务 README，也不能与这里的二分类数字横比。
+
+| run ID | 源码 commit | 最佳轮 | 验证宏平均召回 | 测试宏平均召回 | 最佳权重 SHA256 |
+| --- | --- | ---: | ---: | ---: | --- |
+| `eurosat_pair_moe_center_linear_s17_8f28_uuid` | `8f280a5d661d37b43d40eace585c43bd00d819d0` | 23 | 68.02% | 64.61% | `112eca60f47076f05223b21f3bf53c43183bda522fcfc654d60eef9b6dad47a8` |
+| `eurosat_pair_d2nn_center_linear_s17_8f28_uuid` | 同上 | 24 | 61.77% | 57.59% | `3c335b47c060cef52a21a7544f6a8160df8d7426c8f82e47402e1dc05dd1006c` |
+| `speech_binary_moe_center_linear_s17_efe2_uuid` | `efe2a44c5dd653263cc8907e3e1225a71e4b8d4d` | 9 | 83.75% | 81.89% | `bf87ce744b38feaa7cb6cb57ca30699306f780b60b7cb176b0efb29ac92f5671` |
+| `speech_binary_d2nn_center_linear_s17_efe2_uuid` | 同上 | 12 | 64.95% | 67.19% | `3c8e40485ac14c806706c903c1eb5d083dcf9d709ffb7b1efd47d410da89baf2` |
+| `physical_binary_moe_center_linear_s17_977_uuid` | `9777aa2258e3f416069c404afd3c0ea5bc22efa8` | 8 | 87.47% | 87.29% | `393bd0f0ade77344f363abfc765181a57a61277104c7f0121711cace2731a1b2` |
+| `physical_binary_d2nn_center_linear_s17_977_uuid` | 同上 | 5 | 87.98% | 87.86% | `03b140c4c7beb01e8683f0cfe122bd28e2311c8214b10a87a0d47ceb56d6aee1` |
+| `clevr_pairs_moe_pairloss4_valonly_s17_8a28_uuid` | `8a282af30775f2271b74164cde0b1f861c9f1d3a` | 4 | 55.96% | **未测试** | `edf953db17f52c6b89b6bcec7ff4cdf29c38232c3725877c90eb7965771da42c` |
+
+CLEVR 原交叉熵 MoE/D2NN 完整训练 4 轮后最好验证 50.33%/50.02%，因机会水平停止且未测试；配对损失权重 1.0／4.0 的 MoE 验证分别 54.05%／55.96%，不应以验证分数冒充测试结果。Physical 二分类 MoE 已过 70%，但同预算 D2NN 测试高 0.57 个百分点；目前不能声称 MoE 在四任务上全面更好。已保存的验证集“所有相位置零且线性头不变”反事实见对应 run 的 `phase_dependence_val.json`；它只衡量相位敏感性，不是因果精度归因。
+
+完整命令在各 run 的 `command.txt`。从对应源码 commit 的仓库根目录执行时，以下为同义命令；`RUNS` 指上文服务器 `runs/simulation` 绝对目录，`PY` 指 `/home/guest3/miniconda3/envs/xml/bin/python`，`EURO`、`CLEVR`、`SPEECH`、`PHYS` 依次指上表对应的 `protocol.json` 绝对路径。每条命令的 `CUDA_VISIBLE_DEVICES` 必须用当时空闲 GPU 的 UUID，而不是 CUDA 逻辑序号。
+
+```bash
+GPU_UUID="<replace-with-a-free-GPU-UUID>"  # 运行前先查 nvidia-smi 并替换
+PY=/home/guest3/miniconda3/envs/xml/bin/python
+RUNS=/DATA/DATA1/guest3/t12_cross_modal_20260920/LightGenV2/tasks/t16_zero_phase_ccd_lifelong/runs/simulation
+EURO=/DATA/DATA1/guest3/demo_reproduction_data/t13_four_modal_features/eurosat_full_s17_v1/protocol.json
+CLEVR=/DATA/DATA1/guest3/demo_reproduction_data/clevr_v1_full_ccby4/clevr_full_source_s17_v1/protocol.json
+SPEECH=/DATA/DATA1/guest3/demo_reproduction_data/t13_four_modal_hard_v2/speech/protocol.json
+PHYS=/DATA/DATA1/guest3/demo_reproduction_data/t13_four_modal_hard_v3_physical/protocol.json
+CUDA_VISIBLE_DEVICES="$GPU_UUID" $PY -m LightGenV2.tasks.t16_zero_phase_ccd_lifelong.train_eurosat --protocol "$EURO" --architecture moe --out "$RUNS/eurosat_pair_moe_center_linear_s17_8f28_uuid" --epochs 25 --min-epochs 8 --patience 5 --batch 16 --eval-batch 16 --lr 0.001 --seed 17
+CUDA_VISIBLE_DEVICES="$GPU_UUID" $PY -m LightGenV2.tasks.t16_zero_phase_ccd_lifelong.train_eurosat --protocol "$EURO" --architecture d2nn --out "$RUNS/eurosat_pair_d2nn_center_linear_s17_8f28_uuid" --epochs 25 --min-epochs 8 --patience 5 --batch 16 --eval-batch 16 --lr 0.001 --seed 17
+CUDA_VISIBLE_DEVICES="$GPU_UUID" $PY -m LightGenV2.tasks.t16_zero_phase_ccd_lifelong.train_other_tasks --task speech_binary --protocol "$SPEECH" --architecture moe --out "$RUNS/speech_binary_moe_center_linear_s17_efe2_uuid" --epochs 12 --min-epochs 4 --patience 3 --batch 16 --eval-batch 16 --lr 0.001 --seed 17
+CUDA_VISIBLE_DEVICES="$GPU_UUID" $PY -m LightGenV2.tasks.t16_zero_phase_ccd_lifelong.train_other_tasks --task speech_binary --protocol "$SPEECH" --architecture d2nn --out "$RUNS/speech_binary_d2nn_center_linear_s17_efe2_uuid" --epochs 12 --min-epochs 4 --patience 3 --batch 16 --eval-batch 16 --lr 0.001 --seed 17
+CUDA_VISIBLE_DEVICES="$GPU_UUID" $PY -m LightGenV2.tasks.t16_zero_phase_ccd_lifelong.train_other_tasks --task physical_binary --protocol "$PHYS" --architecture moe --out "$RUNS/physical_binary_moe_center_linear_s17_977_uuid" --epochs 8 --min-epochs 4 --patience 2 --batch 32 --eval-batch 32 --lr 0.001 --seed 17
+CUDA_VISIBLE_DEVICES="$GPU_UUID" $PY -m LightGenV2.tasks.t16_zero_phase_ccd_lifelong.train_other_tasks --task physical_binary --protocol "$PHYS" --architecture d2nn --out "$RUNS/physical_binary_d2nn_center_linear_s17_977_uuid" --epochs 8 --min-epochs 4 --patience 2 --batch 32 --eval-batch 32 --lr 0.001 --seed 17
+CUDA_VISIBLE_DEVICES="$GPU_UUID" $PY -m LightGenV2.tasks.t16_zero_phase_ccd_lifelong.train_other_tasks --task clevr --protocol "$CLEVR" --architecture moe --out "$RUNS/clevr_pairs_moe_pairloss4_valonly_s17_8a28_uuid" --epochs 4 --min-epochs 4 --patience 2 --batch 32 --eval-batch 32 --lr 0.001 --seed 17 --clevr-pairwise-weight 4.0 --skip-test
+```
+
+若未来重新训练，必须使用**新 run ID**；以上已有目录不能覆盖。执行前核对协议及 manifest 的 SHA256、GPU 空闲状态和 Git commit，运行后再核对 `status.json`、`result.json`、最佳权重 SHA256。只有验证通过并确立任务输入合同时，才能进入下一轮终身学习三矩阵。
