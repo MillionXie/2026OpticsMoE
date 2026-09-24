@@ -3,7 +3,7 @@ import torch
 from torch.nn import functional as F
 
 from LightGenV2.tasks.t16_zero_phase_ccd_lifelong.data import (
-    ClevrCompactQueryPairs, PairedEuroSatFields, PhysicalBinaryPairs,
+    ClevrAttributeQueryPairs, ClevrCompactQueryPairs, PairedEuroSatFields, PhysicalBinaryPairs,
     balanced_negative_words,
     paired_rgb_sar_field,
 )
@@ -173,6 +173,41 @@ def test_compact_clevr_text_spreads_actual_words_without_changing_image(tmp_path
         assert "nine-row" in str(error)
     else:
         raise AssertionError("non-padding query token was silently discarded")
+
+
+def test_attribute_query_encoding_preserves_pairs_and_power(tmp_path):
+    image = np.full((1, 16, 16, 3), 128, dtype=np.uint8)
+    np.save(tmp_path / "train_images.npy", image)
+    np.save(tmp_path / "train_image_index.npy", np.zeros(6, dtype=np.int64))
+    np.save(tmp_path / "train_labels.npy", np.array([1, 0, 1, 0, 1, 0]))
+    tokens = np.zeros((6, 32), dtype=np.uint8)
+    tokens[0, :7] = [2, 3, 4, 11, 6, 7, 1]  # blue cube
+    tokens[1, :7] = [2, 3, 4, 10, 6, 7, 1]  # red cube
+    tokens[2:6] = tokens[:4]
+    np.save(tmp_path / "train_token_ids.npy", tokens)
+    pairs = ClevrAttributeQueryPairs(tmp_path, "train")
+    fields = pairs.get_batch(np.array([0, 1]), "cpu")
+    assert pairs.labels[:2].tolist() == [1, 0]
+    assert torch.equal(fields[0, :112], fields[1, :112])
+    assert torch.equal(fields[0, 112:, :112], fields[1, 112:, :112])
+    assert not torch.equal(fields[0, 112:, 112:], fields[1, 112:, 112:])
+    assert torch.all(fields >= 0)
+    assert torch.allclose(fields.square().sum((-2, -1)), torch.ones(2), atol=1e-5)
+    assert torch.allclose(fields[:, 112:, 112:].square().sum((-2, -1)),
+                          torch.full((2,), 0.5), atol=1e-5)
+    assert torch.allclose(fields[:, 116:164, 112:].square().sum((-2, -1)),
+                          torch.full((2,), 0.25), atol=1e-5)
+    assert torch.allclose(fields[:, 172:220, 112:].square().sum((-2, -1)),
+                          torch.full((2,), 0.25), atol=1e-5)
+    assert fields[0, 116:164, 112 + 2 * 14 + 2:112 + 2 * 14 + 12].count_nonzero() == 480
+    assert fields[1, 116:164, 112 + 1 * 14 + 2:112 + 1 * 14 + 12].count_nonzero() == 480
+    pairs.token_ids[0, 4] = 0
+    try:
+        pairs.get_batch(np.array([0]), "cpu")
+    except ValueError as error:
+        assert "exactly one color and shape" in str(error)
+    else:
+        raise AssertionError("missing shape was accepted")
 
 
 def test_resume_keeps_data_model_optimizer_and_test_policy_fixed():

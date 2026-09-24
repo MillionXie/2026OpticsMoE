@@ -54,6 +54,47 @@ class ClevrCompactQueryPairs(ClevrRawPairs):
                           torch.cat((rgb[:, 2], text), -1)), -2)
 
 
+class ClevrAttributeQueryPairs(ClevrRawPairs):
+    """Fixed color/shape query glyphs; preserve the original paired labels/images.
+
+    This intentionally extracts only the two queried attributes. It is a new
+    input protocol, not a learned language encoder or a natural-language task.
+    """
+
+    color_token_ids = np.array([5, 10, 11, 12, 13, 14, 15, 16])
+    shape_token_ids = np.array([6, 8, 9])
+
+    def get_batch(self, indices, device):
+        indices = np.asarray(indices, dtype=np.int64)
+        tokens = np.asarray(self.token_ids[indices])
+        color_matches = tokens[:, :, None] == self.color_token_ids
+        shape_matches = tokens[:, :, None] == self.shape_token_ids
+        if np.any(color_matches.sum((1, 2)) != 1) or np.any(shape_matches.sum((1, 2)) != 1):
+            raise ValueError("each CLEVR query must contain exactly one color and shape")
+        color_index = color_matches.any(1).argmax(1)
+        shape_index = shape_matches.any(1).argmax(1)
+
+        raw = np.array(self.images[self.image_index[indices]], copy=True)
+        rgb = torch.as_tensor(raw, device=device).float().permute(0, 3, 1, 2) / 255.0
+        rgb = F.interpolate(rgb, (112, 112), mode="bilinear", align_corners=False)
+        rgb = normalize_power(rgb.flatten(2), 0.5).reshape_as(rgb)
+
+        # Upper lane: eight 10x48 color slots, 4 px gaps. Lower lane: three
+        # 32x48 shape slots, 4 px gaps. Each active rectangle carries 0.25 W.
+        y = torch.arange(112, device=device)[None, :, None]
+        x = torch.arange(112, device=device)[None, None, :]
+        colors = torch.as_tensor(color_index, device=device)
+        shapes = torch.as_tensor(shape_index, device=device)
+        color_x = (colors * 14 + 2)[:, None, None]
+        shape_x = (shapes * 36 + 4)[:, None, None]
+        color_mask = ((y >= 4) & (y < 52) & (x >= color_x) & (x < color_x + 10))
+        shape_mask = ((y >= 60) & (y < 108) & (x >= shape_x) & (x < shape_x + 32))
+        text = (color_mask.float() * (0.25 / (10 * 48)) ** 0.5
+                + shape_mask.float() * (0.25 / (32 * 48)) ** 0.5)
+        return torch.cat((torch.cat((rgb[:, 0], rgb[:, 1]), -1),
+                          torch.cat((rgb[:, 2], text), -1)), -2)
+
+
 class PairedEuroSatFields:
     """Read the audited RGB/SAR pairs without changing their spatial split."""
 

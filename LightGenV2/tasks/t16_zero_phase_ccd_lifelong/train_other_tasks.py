@@ -17,7 +17,8 @@ from LightGenV2.tasks.t14_shared_readout_lifelong.data import (
     ClevrRawPairs, PhysicalPermutedCandidates,
 )
 
-from .data import ClevrCompactQueryPairs, PhysicalBinaryPairs, SpeechBinaryPairs
+from .data import (ClevrAttributeQueryPairs, ClevrCompactQueryPairs,
+                   PhysicalBinaryPairs, SpeechBinaryPairs)
 from .model import DirectCCDOptics
 from .train_eurosat import batches, routing_balance_penalty, save_json, sha256_file
 
@@ -25,15 +26,18 @@ from .train_eurosat import batches, routing_balance_penalty, save_json, sha256_f
 EXPECTED = {
     "clevr": {"train": 140000, "val": 15000, "test": 15000},
     "clevr_compact": {"train": 140000, "val": 15000, "test": 15000},
+    "clevr_attributes": {"train": 140000, "val": 15000, "test": 15000},
     "speech_binary": {"train": 12526, "val": 1686, "test": 1734},
     "physical": {"train": 70400, "val": 14652, "test": 14948},
     "physical_binary": {"train": 140800, "val": 29304, "test": 29896},
 }
-CLASSES = {"clevr": 2, "clevr_compact": 2, "speech_binary": 2, "physical": 10,
+CLASSES = {"clevr": 2, "clevr_compact": 2, "clevr_attributes": 2,
+           "speech_binary": 2, "physical": 10,
            "physical_binary": 2}
 STORAGE = {
     "clevr": "clevr_lazy_v1",
     "clevr_compact": "clevr_lazy_v1",
+    "clevr_attributes": "clevr_lazy_v1",
     "speech_binary": "speech_commands_text_rank8_v2",
     "physical": "physical_video_text_rank10_v3",
     "physical_binary": "physical_video_text_rank10_v3",
@@ -80,6 +84,8 @@ def load_task(protocol_path, task, split):
         data = ClevrRawPairs(protocol_path.parent, split)
     elif task == "clevr_compact":
         data = ClevrCompactQueryPairs(protocol_path.parent, split)
+    elif task == "clevr_attributes":
+        data = ClevrAttributeQueryPairs(protocol_path.parent, split)
     elif task == "speech_binary":
         data = SpeechBinaryPairs(Path(protocol["source_root"]), split)
     elif task == "physical":
@@ -166,7 +172,8 @@ def main():
             args.batch > 0 and args.eval_batch > 0 and args.lr > 0 and
             args.clevr_pairwise_weight >= 0 and args.route_balance_weight >= 0):
         raise ValueError("invalid training budget")
-    if args.clevr_pairwise_weight and (args.task not in {"clevr", "clevr_compact"}
+    if args.clevr_pairwise_weight and (args.task not in {"clevr", "clevr_compact",
+                                                        "clevr_attributes"}
                                        or args.batch % 2):
         raise ValueError("paired loss requires CLEVR and an even batch size")
     if args.architecture == "d2nn" and args.moe_active_experts != 4:
