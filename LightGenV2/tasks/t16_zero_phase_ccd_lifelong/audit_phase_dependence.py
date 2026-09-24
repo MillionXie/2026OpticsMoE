@@ -11,6 +11,20 @@ from .train_eurosat import load_split, source_paths
 from .train_other_tasks import CLASSES, evaluate, load_task
 
 
+class _IndexedFieldAdapter:
+    """Expose the EuroSAT indexed field through the shared evaluation API."""
+
+    def __init__(self, source):
+        self.source = source
+        self.labels = source.labels
+
+    def __len__(self):
+        return len(self.source)
+
+    def get_batch(self, indices, device):
+        return self.source[indices].to(device)
+
+
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("--checkpoint", type=Path, required=True)
@@ -25,7 +39,7 @@ def main():
     protocol = Path(config["source_protocol"])
     if task == "eurosat_paired_rgb_sar":
         trainval, holdout = source_paths(protocol)
-        data = load_split(trainval, holdout, "val")
+        data = _IndexedFieldAdapter(load_split(trainval, holdout, "val"))
         classes = 10
     else:
         data = load_task(protocol, task, "val")

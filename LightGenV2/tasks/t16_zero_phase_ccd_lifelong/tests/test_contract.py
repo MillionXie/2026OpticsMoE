@@ -7,6 +7,9 @@ from LightGenV2.tasks.t16_zero_phase_ccd_lifelong.data import (
     paired_rgb_sar_field,
 )
 from LightGenV2.tasks.t16_zero_phase_ccd_lifelong import data as t16_data
+from LightGenV2.tasks.t16_zero_phase_ccd_lifelong.audit_phase_dependence import (
+    _IndexedFieldAdapter,
+)
 from LightGenV2.tasks.t16_zero_phase_ccd_lifelong.model import DirectCCDOptics
 from LightGenV2.tasks.t16_zero_phase_ccd_lifelong.train_eurosat import (
     accuracy_metrics, augment_paired_dihedral, load_initial_checkpoint,
@@ -264,6 +267,22 @@ def test_physical_binary_pairs_keep_video_fixed_and_balance_description(monkeypa
     assert torch.allclose(field[2, :, :112], field[3, :, :112])
     assert not torch.allclose(field[0, :, 112:], field[1, :, 112:])
     assert pairs.labels[:4].tolist() == [1, 0, 1, 0]
+
+
+def test_eurosat_indexed_field_supports_validation_audit_batching():
+    class Indexed:
+        labels = np.array([0, 1])
+
+        def __len__(self):
+            return 2
+
+        def __getitem__(self, indices):
+            return torch.as_tensor(indices)[:, None, None].float().expand(-1, 224, 224)
+
+    data = _IndexedFieldAdapter(Indexed())
+    field = data.get_batch(np.array([1, 0]), "cpu")
+    assert field.shape == (2, 224, 224)
+    assert field[0, 0, 0] == 1 and field[1, 0, 0] == 0
 
 
 def test_corner_detector_candidates_have_ten_valid_shared_windows():
