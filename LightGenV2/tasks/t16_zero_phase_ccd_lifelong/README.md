@@ -44,7 +44,9 @@
 
 正式 EuroSAT 单任务入口为 `python -m LightGenV2.tasks.t16_zero_phase_ccd_lifelong.train_eurosat --protocol <原始协议 JSON> --architecture moe|d2nn --out <任务目录>/runs/simulation/<run_id>`。两架构统一使用中心优先 MoE 几何对应的输入、全部 15,998 个训练地点、全部 5,465 个验证地点、十输出交叉熵、Adam `lr=1e-3`、batch 16、最多 25 轮、最少 8 轮和 5 轮验证耐心；无路由监督或额外均衡项。每轮按完整验证集的十类宏平均召回选模，只保留 `best_checkpoint.pt` 和 `last_checkpoint.pt`；完成后加载最佳 checkpoint，才打开 5,429 个测试地点评估一次。每个 run 保存配置、实际命令、代码及数据 SHA256、环境、状态、逐轮指标和各专家路由统计。正式性能以各 run 实际结果为准，不得用 smoke 小批损失推断。
 
-服务器 commit `8f280a5d6` 的正式 EuroSAT run 已启动：`eurosat_pair_moe_center_linear_s17_8f28_uuid` 使用物理 GPU 2，`eurosat_pair_d2nn_center_linear_s17_8f28_uuid` 使用物理 GPU 6，分别按 GPU UUID 绑定，避免 CUDA 逻辑索引与 `nvidia-smi` 顺序不一致。先前两个无 `_uuid` 后缀的 run 在第 0 轮即因设备映射错误被我停止，状态明确记为 `interrupted_wrong_gpu_mapping`，不得列为性能结果。此处记录启动事实；准确率和完成状态以服务器 run 文件为准，尚未产生首轮结果。GPU 上其他用户的进程未被操作。
+服务器 commit `8f280a5d6` 的正式 EuroSAT run 已启动：`eurosat_pair_moe_center_linear_s17_8f28_uuid` 使用物理 GPU 2，`eurosat_pair_d2nn_center_linear_s17_8f28_uuid` 使用物理 GPU 6，分别按 GPU UUID 绑定，避免 CUDA 逻辑索引与 `nvidia-smi` 顺序不一致。先前两个无 `_uuid` 后缀的 run 在第 0 轮即因设备映射错误被我停止，状态明确记为 `interrupted_wrong_gpu_mapping`，不得列为性能结果。准确率和完成状态以服务器 run 文件为准，不能把启动状态当作达标结果。GPU 上其他用户的进程未被操作。
+
+若原始 MoE 的完整验证曲线停滞，可用同一训练器的显式选项 `--augment-dihedral --route-balance-weight 0.3` 做**独立 MoE 候选 run**。增强仅在训练时对同地点 R/G/B/SAR 四格同步施加相同的 90° 倍数旋转及可选翻转，保留每格模态身份和总光功率；完整验证及测试不增强。路由项仅约束一批样本的已开放专家平均光强接近均分，绝不按任务 ID 指派新专家，也不改变推理计算图。此候选与无增强、无约束的原始 run 必须分开保存并仅按验证集比较；未经正式运行不得声称有效。
 
 几何通过后才逐个任务做完整训练／验证验收，先关注 MoE 约 70% 的目标，再运行用户确认的三张矩阵：MoE 旧任务**全量训练集**回放下三角；四个独立 D2NN 不重训头的 4×4 直接跨模态推理；同一 D2NN 无回放顺序学习下三角。若服务器时间不足以做全量回放，单独标注近似回放候选，不能把它写成“full replay”。
 

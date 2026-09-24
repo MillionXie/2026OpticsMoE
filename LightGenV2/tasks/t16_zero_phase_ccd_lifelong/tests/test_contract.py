@@ -7,7 +7,7 @@ from LightGenV2.tasks.t16_zero_phase_ccd_lifelong.data import (
 )
 from LightGenV2.tasks.t16_zero_phase_ccd_lifelong.model import DirectCCDOptics
 from LightGenV2.tasks.t16_zero_phase_ccd_lifelong.train_eurosat import (
-    accuracy_metrics, routing_balance_penalty,
+    accuracy_metrics, augment_paired_dihedral, routing_balance_penalty,
 )
 
 
@@ -126,6 +126,20 @@ def test_batch_router_balance_penalty_is_slot_based_and_differentiable():
     assert loss > 0
     loss.backward()
     assert peaked.grad is not None and peaked.grad[:, indices].abs().sum() > 0
+
+
+def test_dihedral_augmentation_preserves_tile_identity_and_power():
+    ramp = torch.arange(112 * 112, dtype=torch.float32).reshape(112, 112) / 10000
+    fields = torch.cat((torch.cat((ramp, ramp + 10), -1),
+                        torch.cat((ramp + 20, ramp + 30), -1)), -2)[None].repeat(8, 1, 1)
+    transformed = augment_paired_dihedral(fields, np.arange(8))
+    assert torch.equal(transformed[0], fields[0])
+    for row in transformed:
+        assert torch.allclose(row[:112, 112:] - row[:112, :112],
+                              torch.full((112, 112), 10.0))
+        assert torch.allclose(row[112:, :112] - row[:112, :112],
+                              torch.full((112, 112), 20.0))
+        assert torch.allclose(row.square().sum(), fields[0].square().sum(), atol=0.1)
 
 
 def test_paired_rgb_sar_uses_each_modality_and_equal_power():

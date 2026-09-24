@@ -58,6 +58,25 @@ def routing_balance_penalty(route_power, active_indices):
     return (q.mean(0) - 1.0 / len(active_indices)).square().sum()
 
 
+def augment_paired_dihedral(amplitude, choices):
+    """Apply one shared flip/rotation to all four modality tiles of each pair."""
+    if amplitude.ndim != 3 or amplitude.shape[-2:] != (224, 224):
+        raise ValueError("expected Bx224x224 paired fields")
+    choices = np.asarray(choices, dtype=np.int64)
+    if choices.shape != (len(amplitude),) or np.any((choices < 0) | (choices >= 8)):
+        raise ValueError("one dihedral choice in 0..7 per paired location")
+    tiles = amplitude.reshape(-1, 2, 112, 2, 112).permute(0, 1, 3, 2, 4)
+    transformed = torch.empty_like(tiles)
+    for choice in np.unique(choices):
+        indices = torch.as_tensor(np.flatnonzero(choices == choice), device=amplitude.device)
+        part = tiles.index_select(0, indices)
+        if choice >= 4:
+            part = part.flip(-1)
+        part = torch.rot90(part, int(choice % 4), dims=(-2, -1))
+        transformed.index_copy_(0, indices, part)
+    return transformed.permute(0, 1, 3, 2, 4).reshape(-1, 224, 224)
+
+
 @torch.no_grad()
 def evaluate(model, data, device, batch_size):
     model.eval()
@@ -113,6 +132,7 @@ def main():
     parser.add_argument("--lr", type=float, default=1e-3)
     parser.add_argument("--seed", type=int, default=17)
     parser.add_argument("--route-balance-weight", type=float, default=0.0)
+    parser.add_argument("--augment-dihedral", action="store_true")
     parser.add_argument("--resume", action="store_true")
     args = parser.parse_args()
     if not (0 < args.min_epochs <= args.epochs and args.patience > 0 and
@@ -141,6 +161,7 @@ def main():
               "patience": args.patience, "batch": args.batch, "eval_batch": args.eval_batch,
               "lr": args.lr, "seed": args.seed,
               "route_balance_weight": args.route_balance_weight,
+              "augment_dihedral": args.augment_dihedral,
               "source_protocol": str(args.protocol),
               "source_sha256": {"trainval": sha256_file(trainval), "holdout": sha256_file(holdout)},
               "model_git_commit": code_commit,
@@ -172,9 +193,13 @@ def main():
         began = time.time()
         model.train()
         order = np.random.default_rng(args.seed + epoch).permutation(len(train))
+        augment_rng = np.random.default_rng(args.seed + 100000 + epoch)
         loss_sum, classification_sum, balance_sum, sample_count = 0.0, 0.0, 0.0, 0
         for indices in batches(order, args.batch):
             amplitude = train[indices].to(device)
+            if args.augment_dihedral:
+                amplitude = augment_paired_dihedral(
+                    amplitude, augment_rng.integers(0, 8, size=len(indices)))
             targets = torch.as_tensor(train.labels[indices], device=device)
             optimizer.zero_grad(set_to_none=True)
             output = model(amplitude)
