@@ -1,4 +1,4 @@
-# T16 单任务复现入口（2026-09-24）
+# T16 单任务复现入口（2026-09-25）
 
 本页只记录已实际运行的仿真。运行目录位于服务器 `/DATA/DATA1/guest3/t12_cross_modal_20260920/LightGenV2/tasks/t16_zero_phase_ccd_lifelong/runs/simulation/`。每个目录的 `config.json`、`command.txt`、`history.json`、`result.json`、`status.json` 和 `best_checkpoint.pt` 是原始证据；本页的数字以该文件为准。运行环境为 Python 3.11.15、PyTorch 2.6.0+cu124、CUDA 12.4。GPU 用 `CUDA_VISIBLE_DEVICES=<下表中的 GPU UUID>` 精确绑定；其他用户的进程未被操作。源码只从 GitHub 的指定 commit 检出，权重和数据不进 Git。
 
@@ -27,6 +27,9 @@ Physical 视频原始段数是 70,400／14,652／14,948；每段视频产生正�
 | `clevr_compact_d2nn_ce_valonly_s17_fc6_uuid` | 同上 | 4 | 50.00% | **未测试** | `92ec7704d44007fd86a75c504a05203a8462b96a9f8c16d06a10128ca7a8c523` |
 | `clevr_moe_eight_expert_pair4_valonly_s17_66ca_uuid` | `66cae7811b7e7c5894f3346ac03d717883c3e486`，8 槽独立容量诊断 | 8 | 57.86% | **未测试** | `b5b4729425043c3df4eeecd5ea258a7ca375018d2fb3f492bd842c96c85b2777` |
 | `clevr_moe_eight_expert_balance1_resume8_valonly_s17_4698_uuid` | `46984d9dfc8f12d9a1def3a1b4ea95f225082c6d`，从同 commit 的 4 轮源 run 继续 | 8 | 58.98% | **未测试** | `a30dae0109fac97b8b8a3b4f9a6b7fea0bb16d703df7f91e9c6b4b862b00f884` |
+| `clevr_attributes_moe_pair4_valonly_s17_d4ea_uuid` | `d4ea23cf1b13940e2513a06cb74ccdd0b2dcd22a`，独立固定属性编码 | 7 | 60.37% | **未测试** | `01603a2323cf9071d7d23cf766c085bdde15c5c4efe105f3cd994c4922817449` |
+| `clevr_attributes_moe_pair4_resume16_valonly_s17_d4ea_uuid` | 同上，从上一行第 8 轮完整状态续训 | 12 | 61.07% | **未测试** | `cc299de664e70fa127f8d24891578e711ed456d09cfa00b6796bd4534581b23b` |
+| `clevr_attributes_d2nn_ce_valonly_s17_d4ea_uuid` | 同上，独立正常交叉熵训练 | 2 | 50.21% | **未测试** | `e18466e95ef242586fc54c3b3693d19d9e4f57b4e5e59dfb39b68919c0605dc1` |
 
 CLEVR 原交叉熵 MoE/D2NN 完整训练 4 轮后最好验证 50.33%/50.02%，因机会水平停止且未测试；配对损失权重 1.0／4.0 的 MoE 第 4 轮验证分别 54.05%／55.96%。权重 4.0 的 run 保留模型和 Adam 状态延长到第 12 轮后，第 10 轮最佳完整验证 59.14%（负类／正类 66.08%／52.20%），路由槽 7 在全部验证样本上最大，仍未达到准入目标。续训 `last_checkpoint.pt` SHA256 为 `bee13a4326a179cd714531c4843082f62c343dc468f5dae399f766ff5486fedc`，数据协议 SHA 与上表相同；候选全程未读取测试集，不应以验证分数冒充测试结果。Physical 二分类 MoE 已过 70%，但同预算 D2NN 测试高 0.57 个百分点；目前不能声称 MoE 在四任务上全面更好。已保存的验证集“所有相位置零且线性头不变”反事实见对应 run 的 `phase_dependence_val.json`；它只衡量相位敏感性，不是因果精度归因。
 
@@ -37,6 +40,8 @@ CLEVR 原交叉熵 MoE/D2NN 完整训练 4 轮后最好验证 50.33%/50.02%，�
 对应弱批级路由均衡权重 1.0 的 8 专家候选首轮新增四槽得到 46.29% 功率；第 4 轮后为了释放较慢 GPU，以源 run `clevr_moe_eight_expert_balance1_valonly_s17_4698_uuid/last_checkpoint.pt`（SHA256 `71d4c1eb65255626df10402c3f23b4e98797b50878244859acdbe7bec9cb0f36`）保留模型、Adam 和历史到新 run，原 run 状态是 `stopped_after_epoch4_gpu_handoff`。第 8 轮最佳验证 **58.98%**（负类／正类 66.87%／51.09%），新四槽平均功率合计 **47.63%**，在 **15.27%** 样本上权重最大。它比无约束 8 专家高 1.12 个百分点，但未超过旧 4 专家最佳 59.14%；按槽标准差仍只有约 0.004–0.024，不能仅凭批平均功率称为内容驱动专家分工。两段训练均未触碰测试集。
 
 两个 8 专家最佳 checkpoint 又各自对验证样本索引 0、1（同一张原图、正负两条不同颜色形状问句）生成少量 router/最终 CCD 图。图与逐样本权重 JSON 在各自 run 的 `router_val_pair01/`，不提交原始 CCD 图到 Git。无约束／均衡约束的路由权重在这一对中的 L1 差分别约 `0.04/0.09`；两者都把正负两问判为正类。此图只是一个具体失败样本，不代替上表的完整验证集统计。
+
+新 `clevr_attributes` 输入协议仅从原始问句固定提取一个颜色和一个形状到两排光学矩形，不读取答案；图像三格和文字格分别占 0.5 输入功率，标签/数据划分、0.1 m 光路及单层读出不变。训练集前 128 条实际编码的输入功率在 `0.99999988–1.00000012`；同图正负对的图像场一致、文字场不同。MoE 使用交叉熵加权重 4 的同图正负排序损失，D2NN 使用普通交叉熵；两者不是同一损失，性能差异不得仅归因于架构。MoE 第 8 轮完整状态（SHA256 `dbb81394bb519ffa98f41b8055ca767fd6296086470f4542c8bfff0e7b766a5e`）续到第 15 轮按耐心值停止，第 12 轮最佳完整验证 **61.07%**，仍低于 70% 准入期望，不开放测试集。该权重下 4/7/10/13 号槽平均路由功率约 `21.04/22.58/15.31/41.07%`，**第 13 槽在全部验证样本上最大**；跨样本路由标准差仅约 `0.010–0.020`。这不支持“按输入选择专家”的结论。对应 run 的 `router_val_pairs/` 仅保存验证索引 0/1、3642/3643 两个同图正负对的示例图与 JSON；示例均把正负两问预测为正，不是总体精度估计。此编码舍弃问句其他词和语序，任务应称“图像＋结构化颜色/形状查询匹配”，不能称自然语言理解。
 
 完整命令在各 run 的 `command.txt`。从对应源码 commit 的仓库根目录执行时，以下为同义命令；`RUNS` 指上文服务器 `runs/simulation` 绝对目录，`PY` 指 `/home/guest3/miniconda3/envs/xml/bin/python`，`EURO`、`CLEVR`、`SPEECH`、`PHYS` 依次指上表对应的 `protocol.json` 绝对路径。每条命令的 `CUDA_VISIBLE_DEVICES` 必须用当时空闲 GPU 的 UUID，而不是 CUDA 逻辑序号。
 
@@ -61,6 +66,9 @@ CUDA_VISIBLE_DEVICES="$GPU_UUID" $PY -m LightGenV2.tasks.t16_zero_phase_ccd_life
 CUDA_VISIBLE_DEVICES="$GPU_UUID" $PY -m LightGenV2.tasks.t16_zero_phase_ccd_lifelong.train_other_tasks --task clevr --protocol "$CLEVR" --architecture moe --moe-active-experts 8 --out "$RUNS/clevr_moe_eight_expert_pair4_valonly_s17_66ca_uuid" --epochs 8 --min-epochs 4 --patience 3 --batch 32 --eval-batch 32 --lr 0.001 --seed 17 --clevr-pairwise-weight 4.0 --skip-test
 CUDA_VISIBLE_DEVICES="$GPU_UUID" $PY -m LightGenV2.tasks.t16_zero_phase_ccd_lifelong.train_other_tasks --task clevr --protocol "$CLEVR" --architecture moe --moe-active-experts 8 --route-balance-weight 1.0 --out "$RUNS/clevr_moe_eight_expert_balance1_valonly_s17_4698_uuid" --epochs 8 --min-epochs 4 --patience 3 --batch 32 --eval-batch 32 --lr 0.001 --seed 17 --clevr-pairwise-weight 4.0 --skip-test
 CUDA_VISIBLE_DEVICES="$GPU_UUID" $PY -m LightGenV2.tasks.t16_zero_phase_ccd_lifelong.train_other_tasks --task clevr --protocol "$CLEVR" --architecture moe --moe-active-experts 8 --route-balance-weight 1.0 --out "$RUNS/clevr_moe_eight_expert_balance1_resume8_valonly_s17_4698_uuid" --epochs 8 --min-epochs 4 --patience 3 --batch 32 --eval-batch 32 --lr 0.001 --seed 17 --clevr-pairwise-weight 4.0 --skip-test --resume-checkpoint "$RUNS/clevr_moe_eight_expert_balance1_valonly_s17_4698_uuid/last_checkpoint.pt"
+CUDA_VISIBLE_DEVICES="$GPU_UUID" $PY -m LightGenV2.tasks.t16_zero_phase_ccd_lifelong.train_other_tasks --task clevr_attributes --protocol "$CLEVR" --architecture moe --out "$RUNS/clevr_attributes_moe_pair4_valonly_s17_d4ea_uuid" --epochs 8 --min-epochs 4 --patience 3 --batch 32 --eval-batch 32 --lr 0.001 --seed 17 --clevr-pairwise-weight 4.0 --skip-test
+CUDA_VISIBLE_DEVICES="$GPU_UUID" $PY -m LightGenV2.tasks.t16_zero_phase_ccd_lifelong.train_other_tasks --task clevr_attributes --protocol "$CLEVR" --architecture moe --out "$RUNS/clevr_attributes_moe_pair4_resume16_valonly_s17_d4ea_uuid" --epochs 16 --min-epochs 4 --patience 3 --batch 32 --eval-batch 32 --lr 0.001 --seed 17 --clevr-pairwise-weight 4.0 --skip-test --resume-checkpoint "$RUNS/clevr_attributes_moe_pair4_valonly_s17_d4ea_uuid/last_checkpoint.pt"
+CUDA_VISIBLE_DEVICES="$GPU_UUID" $PY -m LightGenV2.tasks.t16_zero_phase_ccd_lifelong.train_other_tasks --task clevr_attributes --protocol "$CLEVR" --architecture d2nn --out "$RUNS/clevr_attributes_d2nn_ce_valonly_s17_d4ea_uuid" --epochs 8 --min-epochs 4 --patience 3 --batch 32 --eval-batch 32 --lr 0.001 --seed 17 --skip-test
 ```
 
 若未来重新训练，必须使用**新 run ID**；以上已有目录不能覆盖。执行前核对协议及 manifest 的 SHA256、GPU 空闲状态和 Git commit，运行后再核对 `status.json`、`result.json`、最佳权重 SHA256。只有验证通过并确立任务输入合同时，才能进入下一轮终身学习三矩阵。
