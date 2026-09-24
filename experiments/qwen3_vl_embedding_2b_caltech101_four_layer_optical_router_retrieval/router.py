@@ -179,6 +179,24 @@ class OpticalDetectorTopKRouter(nn.Module):
         self.logical_pixel_pitch_um = float(settings.language_optical_pixel_pitch_um)
         self.distance_m = float(settings.language_optical_distance_m)
         self.wavelength_nm = float(settings.language_optical_wavelength_nm)
+        # Optional T04 training perturbation. Other router users keep their
+        # existing behavior because these fields default to zero.
+        self.robust_zero_order_intensity_fraction = float(
+            getattr(settings, "optical_router_robust_zero_order_intensity_fraction", 0.0)
+        )
+        self.robust_input_rms = float(settings.language_optical_input_rms)
+        self.robust_ccd_noise_mean_fraction = float(
+            getattr(settings, "optical_router_robust_ccd_noise_mean_fraction", 0.0)
+        )
+        self.robust_ccd_noise_std_fraction = float(
+            getattr(settings, "optical_router_robust_ccd_noise_std_fraction", 0.0)
+        )
+        self.robust_ccd_noise_min_fraction = float(
+            getattr(settings, "optical_router_robust_ccd_noise_min_fraction", 0.0)
+        )
+        self.robust_ccd_noise_max_fraction = float(
+            getattr(settings, "optical_router_robust_ccd_noise_max_fraction", 0.0)
+        )
 
         intervals = tuple(tuple(map(int, item)) for item in settings.optical_router_detector_intervals)
         if len(intervals) != 2:
@@ -517,10 +535,29 @@ class OpticalDetectorTopKRouter(nn.Module):
             input_margin : input_margin + self.input_size,
             input_margin : input_margin + self.input_size,
         ] = modulation
+        if self.training and self.robust_zero_order_intensity_fraction > 0.0:
+            eta = self.robust_zero_order_intensity_fraction
+            phase_angle = 2.0 * math.pi * torch.rand(batch, 1, 1, device=input_canvas.device)
+            phase_leakage = torch.polar(torch.ones_like(phase_angle), phase_angle)
+            phase_canvas[:, input_margin:input_margin + self.input_size,
+                         input_margin:input_margin + self.input_size] = (
+                math.sqrt(1.0 - eta) * modulation + math.sqrt(eta) * phase_leakage
+            )
         phase_canvas = _translate_with_fill(
             phase_canvas, *phase_shift, fill_value=1.0 + 0.0j
         )
-        detector_field = self.propagator(input_canvas.to(torch.complex64) * phase_canvas)
+        incident_field = input_canvas.to(torch.complex64)
+        if self.training and self.robust_zero_order_intensity_fraction > 0.0:
+            eta = self.robust_zero_order_intensity_fraction
+            active = self.geometry.active_aperture
+            batch_phase = 2.0 * math.pi * torch.rand(batch, 1, 1, device=input_canvas.device)
+            phase_phasor = torch.polar(torch.ones_like(batch_phase), batch_phase)
+            leakage = torch.zeros_like(incident_field)
+            leakage[:, active.y0:active.y1, active.x0:active.x1] = (
+                self.robust_input_rms * phase_phasor
+            )
+            incident_field = math.sqrt(1.0 - eta) * incident_field + math.sqrt(eta) * leakage
+        detector_field = self.propagator(incident_field * phase_canvas)
         full_intensity = detector_field.abs().square().float()
         full_intensity = _translate_with_fill(
             full_intensity, *ccd_shift, fill_value=0.0
@@ -529,6 +566,13 @@ class OpticalDetectorTopKRouter(nn.Module):
         intensity = full_intensity[
             :, active.y0 : active.y1, active.x0 : active.x1
         ]
+        if self.training and self.robust_ccd_noise_std_fraction > 0.0:
+            reference = intensity.mean(dim=(-2, -1), keepdim=True).detach()
+            fraction = (
+                torch.randn_like(intensity) * self.robust_ccd_noise_std_fraction
+                + self.robust_ccd_noise_mean_fraction
+            ).clamp(self.robust_ccd_noise_min_fraction, self.robust_ccd_noise_max_fraction)
+            intensity = (intensity + fraction * reference).clamp_min(0.0)
         self.last_input_amplitude = input_canvas.detach()
         self.last_detector_intensity = intensity.detach()
         return intensity

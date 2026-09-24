@@ -51,12 +51,17 @@ def _compact(settings: Settings) -> Any:
         compact.language_optical_amplitude_zero_order_intensity_max = eta
         compact.language_optical_phase_zero_order_intensity_min = eta
         compact.language_optical_phase_zero_order_intensity_max = eta
+        compact.optical_router_robust_zero_order_intensity_fraction = eta
     if settings.ccd_noise_mean_fraction is not None:
         compact.language_optical_ccd_noise_distribution = "truncated_biased_gaussian"
         compact.language_optical_ccd_noise_mean_fraction = settings.ccd_noise_mean_fraction
         compact.language_optical_ccd_noise_std_fraction = settings.ccd_noise_std_fraction
         compact.language_optical_ccd_noise_min_fraction = settings.ccd_noise_min_fraction
         compact.language_optical_ccd_noise_max_fraction = settings.ccd_noise_max_fraction
+        compact.optical_router_robust_ccd_noise_mean_fraction = settings.ccd_noise_mean_fraction
+        compact.optical_router_robust_ccd_noise_std_fraction = settings.ccd_noise_std_fraction
+        compact.optical_router_robust_ccd_noise_min_fraction = settings.ccd_noise_min_fraction
+        compact.optical_router_robust_ccd_noise_max_fraction = settings.ccd_noise_max_fraction
     if settings.embedding_only:
         compact.fusion_alpha_min = settings.fusion_alpha_minimum
         compact.fusion_alpha_max = settings.fusion_alpha_maximum
