@@ -131,7 +131,7 @@ def test_clevr_pairwise_loss_rewards_same_image_query_separation():
     logits = torch.zeros(2, 10, requires_grad=True)
     labels = torch.tensor([1, 0])
     initial = clevr_pairwise_loss(logits, labels)
-    assert torch.allclose(initial, torch.tensor(np.log(2)))
+    assert torch.allclose(initial, torch.tensor(np.log(2), dtype=initial.dtype))
     initial.backward()
     assert logits.grad[0, 1] < 0 and logits.grad[1, 1] > 0
     separated = logits.detach().clone()
