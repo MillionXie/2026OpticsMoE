@@ -16,6 +16,24 @@ from .train_eurosat import load_split, source_paths
 from .train_other_tasks import load_task
 
 
+def sample_description(data, task, index, protocol):
+    if task == "clevr":
+        vocabulary = json.loads((protocol.parent / "vocab.json").read_text())
+        inverse = {int(value): word for word, value in vocabulary.items()}
+        return " ".join(inverse[int(token)] for token in data.token_ids[index] if token)
+    if task == "speech_binary":
+        words = data.base.rows[0]["candidate_words"]
+        spoken = words[data.base.rows[index // 2]["audio_class"]]
+        candidate = words[int(data.candidate_words[index])]
+        return f"spoken={spoken}; text={candidate}"
+    if task == "physical_binary":
+        candidate = int(data.candidate_descriptions[index])
+        concept = data.base.CONCEPTS[candidate // 2].replace("_", " ")
+        kind = "possible" if candidate % 2 else "impossible"
+        return f"text={concept} {kind}"
+    return "paired RGB/SAR"
+
+
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("--checkpoint", type=Path, required=True)
@@ -56,13 +74,19 @@ def main():
         final = output["final_ccd"][0].cpu().numpy()
         predicted = int(output["logits"].argmax(1)[0])
         true_label = int(data.labels[sample_index])
+        description = sample_description(data, task, sample_index, protocol_path)
         rows.append({"index": sample_index, "true_label": true_label,
                      "predicted_label": predicted,
+                     "sample_description": description,
                      "active_slot_ids": (active + 1).tolist(),
                      "active_route_weights": route[active].tolist(),
                      "active_capture": float(output["router_efficiency"][0])})
-        axes[row, 0].imshow(field[0].cpu(), cmap="magma")
-        axes[row, 0].set_title(f"{task} val #{sample_index}: input; y={true_label}")
+        raw_input = field[0].cpu().numpy()
+        axes[row, 0].imshow(np.log1p(raw_input / max(raw_input.max(), 1e-20) * 100),
+                            cmap="magma")
+        axes[row, 0].set_title(
+            f"{task} val #{sample_index}; y={true_label}\n{description}\ninput shown on log scale",
+            fontsize=8)
         axes[row, 1].imshow(np.log1p(router / max(router.max(), 1e-20) * 100),
                             cmap="inferno")
         for number, (y, x) in enumerate(model.router_centers):
