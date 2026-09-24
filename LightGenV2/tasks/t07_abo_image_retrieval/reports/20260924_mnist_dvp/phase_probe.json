@@ -1,0 +1,341 @@
+{
+  "mode": "phase",
+  "status": "complete",
+  "corners_TL_TR_BR_BL": [
+    [
+      995.0,
+      172.0
+    ],
+    [
+      4310.0,
+      172.0
+    ],
+    [
+      4303.0,
+      3440.0
+    ],
+    [
+      980.0,
+      3435.0
+    ]
+  ],
+  "corner_file": "E:\\code\\guest\\20260924.txt",
+  "phase_B": "E:\\code\\guest\\MNIST_10cm_8um_Bench_Test_20260923\\02_mnist_10cm\\phase\\B_RECOMMENDED_native8_best.bmp",
+  "phase_B_sha256": "9a5db11329f1fe397d7bed40f348651321850e1a11309e4ecf0a79690aa9aa54",
+  "amplitude_inputs": {
+    "mnist_i00013_y0.bmp": "8616a93fe0d4f87872b6834030be4f8de74d60cdd2b6c1c6bd98468819b09a84"
+  },
+  "normalization": "none",
+  "background_subtraction": false,
+  "fixed_detector_bounds_xyxy": [
+    [
+      162,
+      162,
+      221,
+      221
+    ],
+    [
+      257,
+      162,
+      316,
+      221
+    ],
+    [
+      162,
+      257,
+      221,
+      316
+    ],
+    [
+      257,
+      257,
+      316,
+      316
+    ]
+  ],
+  "rows": [
+    {
+      "visible_ms": 11.95939999888651,
+      "requested_wait_ms": 240.0,
+      "first_frame": {
+        "frame_id": 41,
+        "timestamp": 4389282591,
+        "exposure_us": 10001.0,
+        "gain": 1.0,
+        "format": 0,
+        "bits": 0,
+        "shape": [
+          3648,
+          5480
+        ],
+        "capture_ms": 0.09240000508725643,
+        "flip_h": false,
+        "flip_v": false,
+        "rotate": false,
+        "opposite": false
+      },
+      "last_frame": {
+        "frame_id": 45,
+        "timestamp": 4389464228,
+        "exposure_us": 10001.0,
+        "gain": 1.0,
+        "format": 0,
+        "bits": 0,
+        "shape": [
+          3648,
+          5480
+        ],
+        "capture_ms": 39.14589999476448,
+        "flip_h": false,
+        "flip_v": false,
+        "rotate": false,
+        "opposite": false
+      },
+      "first_vs_last_pcc": 0.9986391176272551,
+      "mean": 8.234357833862305,
+      "p99": 55.0,
+      "maximum": 255,
+      "saturated_fraction": 1.3130022233504315e-05,
+      "energies": [
+        85301.0,
+        58357.0,
+        171905.0,
+        58052.0
+      ],
+      "prediction": 2,
+      "label": "B_first",
+      "phase_receipt": {
+        "phase_file": "E:\\code\\guest\\MNIST_10cm_8um_Bench_Test_20260923\\02_mnist_10cm\\phase\\B_RECOMMENDED_native8_best.bmp",
+        "phase_sha256": "9a5db11329f1fe397d7bed40f348651321850e1a11309e4ecf0a79690aa9aa54",
+        "write_call_ms": 46.284699987154454,
+        "settle_s": 0.8,
+        "sdk_ack_only": true,
+        "write_return": 0,
+        "write_ack_success": false,
+        "strict_write_ack": true,
+        "known_vendor_constant_zero_return": true,
+        "optical_display_verified_by_this_call": false,
+        "no_extra_flip_or_inversion": true,
+        "panel": {
+          "Width": 1920,
+          "Height": 1200,
+          "Depth": 8,
+          "SLMFound": 1,
+          "COMFound": 1,
+          "lut_sha256": "6a968b970fc81b035788534fc6ab7236a59e25e1a73068de393d90720a52efb6",
+          "lut": "C:\\Program Files\\Meadowlark Optics\\Blink 1920 HDMI\\LUT Files\\19x12_8bit_linearVoltage.lut",
+          "lut_scope": "linear voltage; NOT verified linear phase",
+          "wrapper_sha256": "0d3cc283165bb62ed60a4c8b1c1a256af9441e6342654511fd1f80dbe46ce225",
+          "startup": {
+            "dwFlags": 256,
+            "wShowWindow": 1
+          }
+        },
+        "is_8_bit": 0,
+        "pixel_format": "rgba",
+        "persistent_buffer": true
+      }
+    },
+    {
+      "visible_ms": 7.202999986475334,
+      "requested_wait_ms": 240.0,
+      "first_frame": {
+        "frame_id": 96,
+        "timestamp": 4391780093,
+        "exposure_us": 10001.0,
+        "gain": 1.0,
+        "format": 0,
+        "bits": 0,
+        "shape": [
+          3648,
+          5480
+        ],
+        "capture_ms": 0.053499999921768904,
+        "flip_h": false,
+        "flip_v": false,
+        "rotate": false,
+        "opposite": false
+      },
+      "last_frame": {
+        "frame_id": 100,
+        "timestamp": 4391961729,
+        "exposure_us": 10001.0,
+        "gain": 1.0,
+        "format": 0,
+        "bits": 0,
+        "shape": [
+          3648,
+          5480
+        ],
+        "capture_ms": 38.96289999829605,
+        "flip_h": false,
+        "flip_v": false,
+        "rotate": false,
+        "opposite": false
+      },
+      "first_vs_last_pcc": 0.9997190483485981,
+      "mean": 13.7594575881958,
+      "p99": 252.0,
+      "maximum": 255,
+      "saturated_fraction": 0.009274172370931881,
+      "energies": [
+        316891.0,
+        100481.0,
+        357478.0,
+        234265.0
+      ],
+      "prediction": 2,
+      "label": "flat",
+      "phase_receipt": {
+        "phase_file": "E:\\code\\guest\\2026OpticsMoE\\ABO_I2I_Lab_DVP_8um\\runs\\mnist_20260924\\02_exposure_scan\\patterns\\phase_flat_pi_inverted.bmp",
+        "phase_sha256": "821c30142c98faec439ab8a47e5c32b0ffe0f10794bff252ec0d1252635317db",
+        "write_call_ms": 47.18200000934303,
+        "settle_s": 0.8,
+        "sdk_ack_only": true,
+        "write_return": 0,
+        "write_ack_success": false,
+        "strict_write_ack": true,
+        "known_vendor_constant_zero_return": true,
+        "optical_display_verified_by_this_call": false,
+        "no_extra_flip_or_inversion": true,
+        "panel": {
+          "Width": 1920,
+          "Height": 1200,
+          "Depth": 8,
+          "SLMFound": 1,
+          "COMFound": 1,
+          "lut_sha256": "6a968b970fc81b035788534fc6ab7236a59e25e1a73068de393d90720a52efb6",
+          "lut": "C:\\Program Files\\Meadowlark Optics\\Blink 1920 HDMI\\LUT Files\\19x12_8bit_linearVoltage.lut",
+          "lut_scope": "linear voltage; NOT verified linear phase",
+          "wrapper_sha256": "0d3cc283165bb62ed60a4c8b1c1a256af9441e6342654511fd1f80dbe46ce225",
+          "startup": {
+            "dwFlags": 256,
+            "wShowWindow": 1
+          }
+        },
+        "is_8_bit": 0,
+        "pixel_format": "rgba",
+        "persistent_buffer": true
+      }
+    },
+    {
+      "visible_ms": 5.129600001964718,
+      "requested_wait_ms": 240.0,
+      "first_frame": {
+        "frame_id": 124,
+        "timestamp": 4393051548,
+        "exposure_us": 10001.0,
+        "gain": 1.0,
+        "format": 0,
+        "bits": 0,
+        "shape": [
+          3648,
+          5480
+        ],
+        "capture_ms": 0.06760001997463405,
+        "flip_h": false,
+        "flip_v": false,
+        "rotate": false,
+        "opposite": false
+      },
+      "last_frame": {
+        "frame_id": 128,
+        "timestamp": 4393233184,
+        "exposure_us": 10001.0,
+        "gain": 1.0,
+        "format": 0,
+        "bits": 0,
+        "shape": [
+          3648,
+          5480
+        ],
+        "capture_ms": 38.799499976448715,
+        "flip_h": false,
+        "flip_v": false,
+        "rotate": false,
+        "opposite": false
+      },
+      "first_vs_last_pcc": 0.9986621096089887,
+      "mean": 8.23585033416748,
+      "p99": 55.0,
+      "maximum": 255,
+      "saturated_fraction": 1.3130022233504315e-05,
+      "energies": [
+        85671.0,
+        58508.0,
+        171474.0,
+        57916.0
+      ],
+      "prediction": 2,
+      "label": "B_repeat",
+      "phase_receipt": {
+        "phase_file": "E:\\code\\guest\\MNIST_10cm_8um_Bench_Test_20260923\\02_mnist_10cm\\phase\\B_RECOMMENDED_native8_best.bmp",
+        "phase_sha256": "9a5db11329f1fe397d7bed40f348651321850e1a11309e4ecf0a79690aa9aa54",
+        "write_call_ms": 0.8162999874912202,
+        "settle_s": 0.8,
+        "sdk_ack_only": true,
+        "write_return": 0,
+        "write_ack_success": false,
+        "strict_write_ack": true,
+        "known_vendor_constant_zero_return": true,
+        "optical_display_verified_by_this_call": false,
+        "no_extra_flip_or_inversion": true,
+        "panel": {
+          "Width": 1920,
+          "Height": 1200,
+          "Depth": 8,
+          "SLMFound": 1,
+          "COMFound": 1,
+          "lut_sha256": "6a968b970fc81b035788534fc6ab7236a59e25e1a73068de393d90720a52efb6",
+          "lut": "C:\\Program Files\\Meadowlark Optics\\Blink 1920 HDMI\\LUT Files\\19x12_8bit_linearVoltage.lut",
+          "lut_scope": "linear voltage; NOT verified linear phase",
+          "wrapper_sha256": "0d3cc283165bb62ed60a4c8b1c1a256af9441e6342654511fd1f80dbe46ce225",
+          "startup": {
+            "dwFlags": 256,
+            "wShowWindow": 1
+          }
+        },
+        "is_8_bit": 0,
+        "pixel_format": "rgba",
+        "persistent_buffer": true
+      }
+    }
+  ],
+  "camera_settings_initial": {
+    "exposure_us": 20002.0,
+    "gain": 1.0
+  },
+  "phase_receipt_B": {
+    "phase_file": "E:\\code\\guest\\MNIST_10cm_8um_Bench_Test_20260923\\02_mnist_10cm\\phase\\B_RECOMMENDED_native8_best.bmp",
+    "phase_sha256": "9a5db11329f1fe397d7bed40f348651321850e1a11309e4ecf0a79690aa9aa54",
+    "write_call_ms": 1.8435000092722476,
+    "settle_s": 0.8,
+    "sdk_ack_only": true,
+    "write_return": 0,
+    "write_ack_success": false,
+    "strict_write_ack": true,
+    "known_vendor_constant_zero_return": true,
+    "optical_display_verified_by_this_call": false,
+    "no_extra_flip_or_inversion": true,
+    "panel": {
+      "Width": 1920,
+      "Height": 1200,
+      "Depth": 8,
+      "SLMFound": 1,
+      "COMFound": 1,
+      "lut_sha256": "6a968b970fc81b035788534fc6ab7236a59e25e1a73068de393d90720a52efb6",
+      "lut": "C:\\Program Files\\Meadowlark Optics\\Blink 1920 HDMI\\LUT Files\\19x12_8bit_linearVoltage.lut",
+      "lut_scope": "linear voltage; NOT verified linear phase",
+      "wrapper_sha256": "0d3cc283165bb62ed60a4c8b1c1a256af9441e6342654511fd1f80dbe46ce225",
+      "startup": {
+        "dwFlags": 256,
+        "wShowWindow": 1
+      }
+    },
+    "is_8_bit": 0,
+    "pixel_format": "rgba",
+    "persistent_buffer": true
+  },
+  "B_repeat_pcc": 0.9984568124019927,
+  "B_vs_flat_pcc": 0.5479538080020345
+}

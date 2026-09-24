@@ -1,0 +1,1440 @@
+{
+  "mode": "exposure",
+  "status": "complete",
+  "corners_TL_TR_BR_BL": [
+    [
+      995.0,
+      172.0
+    ],
+    [
+      4310.0,
+      172.0
+    ],
+    [
+      4303.0,
+      3440.0
+    ],
+    [
+      980.0,
+      3435.0
+    ]
+  ],
+  "corner_file": "E:\\code\\guest\\20260924.txt",
+  "phase_B": "E:\\code\\guest\\MNIST_10cm_8um_Bench_Test_20260923\\02_mnist_10cm\\phase\\B_RECOMMENDED_native8_best.bmp",
+  "phase_B_sha256": "9a5db11329f1fe397d7bed40f348651321850e1a11309e4ecf0a79690aa9aa54",
+  "amplitude_inputs": {
+    "mnist_i00013_y0.bmp": "8616a93fe0d4f87872b6834030be4f8de74d60cdd2b6c1c6bd98468819b09a84",
+    "mnist_i00014_y1.bmp": "9e09ad508d322414c91a722915489b131462462f79355720c2348b4a69904060",
+    "mnist_i00038_y2.bmp": "dd06bf618f34cadf3ff4e4312221f57e98aba2aefee228e96e63323a94aa073f",
+    "mnist_i00032_y3.bmp": "a6b3892b701e429524d2c6b16489e1ae469223c666a9aa69c02ce06675fb2c1c"
+  },
+  "normalization": "none",
+  "background_subtraction": false,
+  "fixed_detector_bounds_xyxy": [
+    [
+      162,
+      162,
+      221,
+      221
+    ],
+    [
+      257,
+      162,
+      316,
+      221
+    ],
+    [
+      162,
+      257,
+      221,
+      316
+    ],
+    [
+      257,
+      257,
+      316,
+      316
+    ]
+  ],
+  "rows": [
+    {
+      "visible_ms": 16.660099994624034,
+      "requested_wait_ms": 240.0,
+      "first_frame": {
+        "frame_id": 24,
+        "timestamp": 4656782638,
+        "exposure_us": 3005.166748046875,
+        "gain": 1.0,
+        "format": 0,
+        "bits": 0,
+        "shape": [
+          3648,
+          5480
+        ],
+        "capture_ms": 0.07379997987300158,
+        "flip_h": false,
+        "flip_v": false,
+        "rotate": false,
+        "opposite": false
+      },
+      "last_frame": {
+        "frame_id": 28,
+        "timestamp": 4656964274,
+        "exposure_us": 3005.166748046875,
+        "gain": 1.0,
+        "format": 0,
+        "bits": 0,
+        "shape": [
+          3648,
+          5480
+        ],
+        "capture_ms": 38.30060001928359,
+        "flip_h": false,
+        "flip_v": false,
+        "rotate": false,
+        "opposite": false
+      },
+      "first_vs_last_pcc": 0.9906954169348064,
+      "mean": 3.1983728408813477,
+      "p99": 17.0,
+      "maximum": 106,
+      "saturated_fraction": 0.0,
+      "energies": [
+        28079.0,
+        20099.0,
+        53393.0,
+        19821.0
+      ],
+      "prediction": 2,
+      "name": "e03000_mnist_i00013_y0",
+      "label": 0,
+      "camera_settings": {
+        "exposure_us": 3005.166748046875,
+        "gain": 1.0
+      }
+    },
+    {
+      "visible_ms": 1.781200000550598,
+      "requested_wait_ms": 240.0,
+      "first_frame": {
+        "frame_id": 34,
+        "timestamp": 4657236729,
+        "exposure_us": 3005.166748046875,
+        "gain": 1.0,
+        "format": 0,
+        "bits": 0,
+        "shape": [
+          3648,
+          5480
+        ],
+        "capture_ms": 0.03500000457279384,
+        "flip_h": false,
+        "flip_v": false,
+        "rotate": false,
+        "opposite": false
+      },
+      "last_frame": {
+        "frame_id": 38,
+        "timestamp": 4657418366,
+        "exposure_us": 3005.166748046875,
+        "gain": 1.0,
+        "format": 0,
+        "bits": 0,
+        "shape": [
+          3648,
+          5480
+        ],
+        "capture_ms": 39.569799992023036,
+        "flip_h": false,
+        "flip_v": false,
+        "rotate": false,
+        "opposite": false
+      },
+      "first_vs_last_pcc": 0.97683149614829,
+      "mean": 2.556896686553955,
+      "p99": 12.0,
+      "maximum": 43,
+      "saturated_fraction": 0.0,
+      "energies": [
+        14103.0,
+        14731.0,
+        11701.0,
+        25049.0
+      ],
+      "prediction": 3,
+      "name": "e03000_mnist_i00014_y1",
+      "label": 1,
+      "camera_settings": {
+        "exposure_us": 3005.166748046875,
+        "gain": 1.0
+      }
+    },
+    {
+      "visible_ms": 15.156999987084419,
+      "requested_wait_ms": 240.0,
+      "first_frame": {
+        "frame_id": 44,
+        "timestamp": 4657690820,
+        "exposure_us": 3005.166748046875,
+        "gain": 1.0,
+        "format": 0,
+        "bits": 0,
+        "shape": [
+          3648,
+          5480
+        ],
+        "capture_ms": 0.03129997639916837,
+        "flip_h": false,
+        "flip_v": false,
+        "rotate": false,
+        "opposite": false
+      },
+      "last_frame": {
+        "frame_id": 48,
+        "timestamp": 4657872457,
+        "exposure_us": 3005.166748046875,
+        "gain": 1.0,
+        "format": 0,
+        "bits": 0,
+        "shape": [
+          3648,
+          5480
+        ],
+        "capture_ms": 37.975899991579354,
+        "flip_h": false,
+        "flip_v": false,
+        "rotate": false,
+        "opposite": false
+      },
+      "first_vs_last_pcc": 0.9769333977758421,
+      "mean": 2.5192179679870605,
+      "p99": 12.0,
+      "maximum": 40,
+      "saturated_fraction": 0.0,
+      "energies": [
+        25006.0,
+        15466.0,
+        16845.0,
+        15764.0
+      ],
+      "prediction": 0,
+      "name": "e03000_mnist_i00038_y2",
+      "label": 2,
+      "camera_settings": {
+        "exposure_us": 3005.166748046875,
+        "gain": 1.0
+      }
+    },
+    {
+      "visible_ms": 10.3194999974221,
+      "requested_wait_ms": 240.0,
+      "first_frame": {
+        "frame_id": 54,
+        "timestamp": 4658144911,
+        "exposure_us": 3005.166748046875,
+        "gain": 1.0,
+        "format": 0,
+        "bits": 0,
+        "shape": [
+          3648,
+          5480
+        ],
+        "capture_ms": 0.037699996028095484,
+        "flip_h": false,
+        "flip_v": false,
+        "rotate": false,
+        "opposite": false
+      },
+      "last_frame": {
+        "frame_id": 58,
+        "timestamp": 4658326548,
+        "exposure_us": 3005.166748046875,
+        "gain": 1.0,
+        "format": 0,
+        "bits": 0,
+        "shape": [
+          3648,
+          5480
+        ],
+        "capture_ms": 38.432100001955405,
+        "flip_h": false,
+        "flip_v": false,
+        "rotate": false,
+        "opposite": false
+      },
+      "first_vs_last_pcc": 0.9847335391841244,
+      "mean": 2.971949815750122,
+      "p99": 14.0,
+      "maximum": 52,
+      "saturated_fraction": 0.0,
+      "energies": [
+        15801.0,
+        34175.0,
+        18317.0,
+        21755.0
+      ],
+      "prediction": 1,
+      "name": "e03000_mnist_i00032_y3",
+      "label": 3,
+      "camera_settings": {
+        "exposure_us": 3005.166748046875,
+        "gain": 1.0
+      }
+    },
+    {
+      "visible_ms": 6.1150999972596765,
+      "requested_wait_ms": 240.0,
+      "first_frame": {
+        "frame_id": 64,
+        "timestamp": 4658599002,
+        "exposure_us": 5000.5,
+        "gain": 1.0,
+        "format": 0,
+        "bits": 0,
+        "shape": [
+          3648,
+          5480
+        ],
+        "capture_ms": 0.029600021662190557,
+        "flip_h": false,
+        "flip_v": false,
+        "rotate": false,
+        "opposite": false
+      },
+      "last_frame": {
+        "frame_id": 68,
+        "timestamp": 4658780639,
+        "exposure_us": 5000.5,
+        "gain": 1.0,
+        "format": 0,
+        "bits": 0,
+        "shape": [
+          3648,
+          5480
+        ],
+        "capture_ms": 36.482399998931214,
+        "flip_h": false,
+        "flip_v": false,
+        "rotate": false,
+        "opposite": false
+      },
+      "first_vs_last_pcc": 0.9960363169289184,
+      "mean": 4.631772994995117,
+      "p99": 28.0,
+      "maximum": 172,
+      "saturated_fraction": 0.0,
+      "energies": [
+        44414.0,
+        31033.0,
+        86894.0,
+        30619.0
+      ],
+      "prediction": 2,
+      "name": "e05000_mnist_i00013_y0",
+      "label": 0,
+      "camera_settings": {
+        "exposure_us": 5000.5,
+        "gain": 1.0
+      }
+    },
+    {
+      "visible_ms": 16.358799999579787,
+      "requested_wait_ms": 240.0,
+      "first_frame": {
+        "frame_id": 74,
+        "timestamp": 4659053094,
+        "exposure_us": 5000.5,
+        "gain": 1.0,
+        "format": 0,
+        "bits": 0,
+        "shape": [
+          3648,
+          5480
+        ],
+        "capture_ms": 0.043800013372674584,
+        "flip_h": false,
+        "flip_v": false,
+        "rotate": false,
+        "opposite": false
+      },
+      "last_frame": {
+        "frame_id": 78,
+        "timestamp": 4659234730,
+        "exposure_us": 5000.5,
+        "gain": 1.0,
+        "format": 0,
+        "bits": 0,
+        "shape": [
+          3648,
+          5480
+        ],
+        "capture_ms": 39.18969997903332,
+        "flip_h": false,
+        "flip_v": false,
+        "rotate": false,
+        "opposite": false
+      },
+      "first_vs_last_pcc": 0.990663661459047,
+      "mean": 3.5597329139709473,
+      "p99": 19.0,
+      "maximum": 71,
+      "saturated_fraction": 0.0,
+      "energies": [
+        21171.0,
+        22155.0,
+        17155.0,
+        39300.0
+      ],
+      "prediction": 3,
+      "name": "e05000_mnist_i00014_y1",
+      "label": 1,
+      "camera_settings": {
+        "exposure_us": 5000.5,
+        "gain": 1.0
+      }
+    },
+    {
+      "visible_ms": 14.607600023737177,
+      "requested_wait_ms": 240.0,
+      "first_frame": {
+        "frame_id": 84,
+        "timestamp": 4659507185,
+        "exposure_us": 5000.5,
+        "gain": 1.0,
+        "format": 0,
+        "bits": 0,
+        "shape": [
+          3648,
+          5480
+        ],
+        "capture_ms": 0.03269998705945909,
+        "flip_h": false,
+        "flip_v": false,
+        "rotate": false,
+        "opposite": false
+      },
+      "last_frame": {
+        "frame_id": 88,
+        "timestamp": 4659688821,
+        "exposure_us": 5000.5,
+        "gain": 1.0,
+        "format": 0,
+        "bits": 0,
+        "shape": [
+          3648,
+          5480
+        ],
+        "capture_ms": 38.00509998109192,
+        "flip_h": false,
+        "flip_v": false,
+        "rotate": false,
+        "opposite": false
+      },
+      "first_vs_last_pcc": 0.9906110647058557,
+      "mean": 3.5016982555389404,
+      "p99": 19.0,
+      "maximum": 67,
+      "saturated_fraction": 0.0,
+      "energies": [
+        39202.0,
+        23373.0,
+        25669.0,
+        23793.0
+      ],
+      "prediction": 0,
+      "name": "e05000_mnist_i00038_y2",
+      "label": 2,
+      "camera_settings": {
+        "exposure_us": 5000.5,
+        "gain": 1.0
+      }
+    },
+    {
+      "visible_ms": 9.763100009877235,
+      "requested_wait_ms": 240.0,
+      "first_frame": {
+        "frame_id": 94,
+        "timestamp": 4659961276,
+        "exposure_us": 5000.5,
+        "gain": 1.0,
+        "format": 0,
+        "bits": 0,
+        "shape": [
+          3648,
+          5480
+        ],
+        "capture_ms": 0.03090000245720148,
+        "flip_h": false,
+        "flip_v": false,
+        "rotate": false,
+        "opposite": false
+      },
+      "last_frame": {
+        "frame_id": 98,
+        "timestamp": 4660142912,
+        "exposure_us": 5000.5,
+        "gain": 1.0,
+        "format": 0,
+        "bits": 0,
+        "shape": [
+          3648,
+          5480
+        ],
+        "capture_ms": 39.357900008326396,
+        "flip_h": false,
+        "flip_v": false,
+        "rotate": false,
+        "opposite": false
+      },
+      "first_vs_last_pcc": 0.9935780235991601,
+      "mean": 4.26543664932251,
+      "p99": 23.0,
+      "maximum": 83,
+      "saturated_fraction": 0.0,
+      "energies": [
+        23950.0,
+        54623.0,
+        28262.0,
+        34032.0
+      ],
+      "prediction": 1,
+      "name": "e05000_mnist_i00032_y3",
+      "label": 3,
+      "camera_settings": {
+        "exposure_us": 5000.5,
+        "gain": 1.0
+      }
+    },
+    {
+      "visible_ms": 4.159399977652356,
+      "requested_wait_ms": 240.0,
+      "first_frame": {
+        "frame_id": 104,
+        "timestamp": 4660415367,
+        "exposure_us": 6995.83349609375,
+        "gain": 1.0,
+        "format": 0,
+        "bits": 0,
+        "shape": [
+          3648,
+          5480
+        ],
+        "capture_ms": 0.03399999695830047,
+        "flip_h": false,
+        "flip_v": false,
+        "rotate": false,
+        "opposite": false
+      },
+      "last_frame": {
+        "frame_id": 108,
+        "timestamp": 4660597003,
+        "exposure_us": 6995.83349609375,
+        "gain": 1.0,
+        "format": 0,
+        "bits": 0,
+        "shape": [
+          3648,
+          5480
+        ],
+        "capture_ms": 40.026199974818155,
+        "flip_h": false,
+        "flip_v": false,
+        "rotate": false,
+        "opposite": false
+      },
+      "first_vs_last_pcc": 0.9977168544457621,
+      "mean": 6.065654277801514,
+      "p99": 39.0,
+      "maximum": 240,
+      "saturated_fraction": 0.0,
+      "energies": [
+        60759.0,
+        42005.0,
+        120755.0,
+        41451.0
+      ],
+      "prediction": 2,
+      "name": "e07000_mnist_i00013_y0",
+      "label": 0,
+      "camera_settings": {
+        "exposure_us": 6995.83349609375,
+        "gain": 1.0
+      }
+    },
+    {
+      "visible_ms": 2.0508999878074974,
+      "requested_wait_ms": 240.0,
+      "first_frame": {
+        "frame_id": 114,
+        "timestamp": 4660869458,
+        "exposure_us": 6995.83349609375,
+        "gain": 1.0,
+        "format": 0,
+        "bits": 0,
+        "shape": [
+          3648,
+          5480
+        ],
+        "capture_ms": 0.0315000070258975,
+        "flip_h": false,
+        "flip_v": false,
+        "rotate": false,
+        "opposite": false
+      },
+      "last_frame": {
+        "frame_id": 118,
+        "timestamp": 4661051094,
+        "exposure_us": 6995.83349609375,
+        "gain": 1.0,
+        "format": 0,
+        "bits": 0,
+        "shape": [
+          3648,
+          5480
+        ],
+        "capture_ms": 37.780300015583634,
+        "flip_h": false,
+        "flip_v": false,
+        "rotate": false,
+        "opposite": false
+      },
+      "first_vs_last_pcc": 0.9947625156109849,
+      "mean": 4.553347110748291,
+      "p99": 26.0,
+      "maximum": 99,
+      "saturated_fraction": 0.0,
+      "energies": [
+        28240.0,
+        29670.0,
+        22461.0,
+        53454.0
+      ],
+      "prediction": 3,
+      "name": "e07000_mnist_i00014_y1",
+      "label": 1,
+      "camera_settings": {
+        "exposure_us": 6995.83349609375,
+        "gain": 1.0
+      }
+    },
+    {
+      "visible_ms": 13.865899993106723,
+      "requested_wait_ms": 240.0,
+      "first_frame": {
+        "frame_id": 124,
+        "timestamp": 4661323549,
+        "exposure_us": 6995.83349609375,
+        "gain": 1.0,
+        "format": 0,
+        "bits": 0,
+        "shape": [
+          3648,
+          5480
+        ],
+        "capture_ms": 0.033400021493434906,
+        "flip_h": false,
+        "flip_v": false,
+        "rotate": false,
+        "opposite": false
+      },
+      "last_frame": {
+        "frame_id": 128,
+        "timestamp": 4661505186,
+        "exposure_us": 6995.83349609375,
+        "gain": 1.0,
+        "format": 0,
+        "bits": 0,
+        "shape": [
+          3648,
+          5480
+        ],
+        "capture_ms": 39.23850000137463,
+        "flip_h": false,
+        "flip_v": false,
+        "rotate": false,
+        "opposite": false
+      },
+      "first_vs_last_pcc": 0.994722556061781,
+      "mean": 4.480217456817627,
+      "p99": 26.0,
+      "maximum": 94,
+      "saturated_fraction": 0.0,
+      "energies": [
+        53632.0,
+        31334.0,
+        34369.0,
+        31865.0
+      ],
+      "prediction": 0,
+      "name": "e07000_mnist_i00038_y2",
+      "label": 2,
+      "camera_settings": {
+        "exposure_us": 6995.83349609375,
+        "gain": 1.0
+      }
+    },
+    {
+      "visible_ms": 6.989099987549707,
+      "requested_wait_ms": 240.0,
+      "first_frame": {
+        "frame_id": 134,
+        "timestamp": 4661823049,
+        "exposure_us": 6995.83349609375,
+        "gain": 1.0,
+        "format": 0,
+        "bits": 0,
+        "shape": [
+          3648,
+          5480
+        ],
+        "capture_ms": 0.031100003980100155,
+        "flip_h": false,
+        "flip_v": false,
+        "rotate": false,
+        "opposite": false
+      },
+      "last_frame": {
+        "frame_id": 138,
+        "timestamp": 4662004686,
+        "exposure_us": 6995.83349609375,
+        "gain": 1.0,
+        "format": 0,
+        "bits": 0,
+        "shape": [
+          3648,
+          5480
+        ],
+        "capture_ms": 36.432099994271994,
+        "flip_h": false,
+        "flip_v": false,
+        "rotate": false,
+        "opposite": false
+      },
+      "first_vs_last_pcc": 0.9963386604325976,
+      "mean": 5.554314613342285,
+      "p99": 32.0,
+      "maximum": 116,
+      "saturated_fraction": 0.0,
+      "energies": [
+        31842.0,
+        74563.0,
+        38286.0,
+        46573.0
+      ],
+      "prediction": 1,
+      "name": "e07000_mnist_i00032_y3",
+      "label": 3,
+      "camera_settings": {
+        "exposure_us": 6995.83349609375,
+        "gain": 1.0
+      }
+    },
+    {
+      "visible_ms": 15.21899999352172,
+      "requested_wait_ms": 240.0,
+      "first_frame": {
+        "frame_id": 144,
+        "timestamp": 4662277140,
+        "exposure_us": 10001.0,
+        "gain": 1.0,
+        "format": 0,
+        "bits": 0,
+        "shape": [
+          3648,
+          5480
+        ],
+        "capture_ms": 0.08830000297166407,
+        "flip_h": false,
+        "flip_v": false,
+        "rotate": false,
+        "opposite": false
+      },
+      "last_frame": {
+        "frame_id": 148,
+        "timestamp": 4662458777,
+        "exposure_us": 10001.0,
+        "gain": 1.0,
+        "format": 0,
+        "bits": 0,
+        "shape": [
+          3648,
+          5480
+        ],
+        "capture_ms": 39.22729997429997,
+        "flip_h": false,
+        "flip_v": false,
+        "rotate": false,
+        "opposite": false
+      },
+      "first_vs_last_pcc": 0.9986675895829984,
+      "mean": 8.24102783203125,
+      "p99": 55.0,
+      "maximum": 255,
+      "saturated_fraction": 1.3130022233504315e-05,
+      "energies": [
+        85065.0,
+        58317.0,
+        172769.0,
+        58249.0
+      ],
+      "prediction": 2,
+      "name": "e10000_mnist_i00013_y0",
+      "label": 0,
+      "camera_settings": {
+        "exposure_us": 10001.0,
+        "gain": 1.0
+      }
+    },
+    {
+      "visible_ms": 16.317300003720447,
+      "requested_wait_ms": 240.0,
+      "first_frame": {
+        "frame_id": 154,
+        "timestamp": 4662731232,
+        "exposure_us": 10001.0,
+        "gain": 1.0,
+        "format": 0,
+        "bits": 0,
+        "shape": [
+          3648,
+          5480
+        ],
+        "capture_ms": 0.06260001100599766,
+        "flip_h": false,
+        "flip_v": false,
+        "rotate": false,
+        "opposite": false
+      },
+      "last_frame": {
+        "frame_id": 158,
+        "timestamp": 4662912868,
+        "exposure_us": 10001.0,
+        "gain": 1.0,
+        "format": 0,
+        "bits": 0,
+        "shape": [
+          3648,
+          5480
+        ],
+        "capture_ms": 37.651099992217496,
+        "flip_h": false,
+        "flip_v": false,
+        "rotate": false,
+        "opposite": false
+      },
+      "first_vs_last_pcc": 0.9970576865385405,
+      "mean": 6.059317111968994,
+      "p99": 37.0,
+      "maximum": 142,
+      "saturated_fraction": 0.0,
+      "energies": [
+        39027.0,
+        41036.0,
+        30561.0,
+        74987.0
+      ],
+      "prediction": 3,
+      "name": "e10000_mnist_i00014_y1",
+      "label": 1,
+      "camera_settings": {
+        "exposure_us": 10001.0,
+        "gain": 1.0
+      }
+    },
+    {
+      "visible_ms": 10.093399992911145,
+      "requested_wait_ms": 240.0,
+      "first_frame": {
+        "frame_id": 164,
+        "timestamp": 4663185323,
+        "exposure_us": 10001.0,
+        "gain": 1.0,
+        "format": 0,
+        "bits": 0,
+        "shape": [
+          3648,
+          5480
+        ],
+        "capture_ms": 0.03309999010525644,
+        "flip_h": false,
+        "flip_v": false,
+        "rotate": false,
+        "opposite": false
+      },
+      "last_frame": {
+        "frame_id": 168,
+        "timestamp": 4663366959,
+        "exposure_us": 10001.0,
+        "gain": 1.0,
+        "format": 0,
+        "bits": 0,
+        "shape": [
+          3648,
+          5480
+        ],
+        "capture_ms": 39.073599997209385,
+        "flip_h": false,
+        "flip_v": false,
+        "rotate": false,
+        "opposite": false
+      },
+      "first_vs_last_pcc": 0.9970627216996574,
+      "mean": 5.954368591308594,
+      "p99": 37.0,
+      "maximum": 134,
+      "saturated_fraction": 0.0,
+      "energies": [
+        75993.0,
+        43670.0,
+        47436.0,
+        43808.0
+      ],
+      "prediction": 0,
+      "name": "e10000_mnist_i00038_y2",
+      "label": 2,
+      "camera_settings": {
+        "exposure_us": 10001.0,
+        "gain": 1.0
+      }
+    },
+    {
+      "visible_ms": 7.949100021505728,
+      "requested_wait_ms": 240.0,
+      "first_frame": {
+        "frame_id": 174,
+        "timestamp": 4663639414,
+        "exposure_us": 10001.0,
+        "gain": 1.0,
+        "format": 0,
+        "bits": 0,
+        "shape": [
+          3648,
+          5480
+        ],
+        "capture_ms": 0.03090000245720148,
+        "flip_h": false,
+        "flip_v": false,
+        "rotate": false,
+        "opposite": false
+      },
+      "last_frame": {
+        "frame_id": 178,
+        "timestamp": 4663821050,
+        "exposure_us": 10001.0,
+        "gain": 1.0,
+        "format": 0,
+        "bits": 0,
+        "shape": [
+          3648,
+          5480
+        ],
+        "capture_ms": 37.81060001347214,
+        "flip_h": false,
+        "flip_v": false,
+        "rotate": false,
+        "opposite": false
+      },
+      "first_vs_last_pcc": 0.99790062908906,
+      "mean": 7.49555778503418,
+      "p99": 45.0,
+      "maximum": 166,
+      "saturated_fraction": 0.0,
+      "energies": [
+        44225.0,
+        105787.0,
+        53377.0,
+        65046.0
+      ],
+      "prediction": 1,
+      "name": "e10000_mnist_i00032_y3",
+      "label": 3,
+      "camera_settings": {
+        "exposure_us": 10001.0,
+        "gain": 1.0
+      }
+    },
+    {
+      "visible_ms": 13.07059999089688,
+      "requested_wait_ms": 240.0,
+      "first_frame": {
+        "frame_id": 184,
+        "timestamp": 4664093505,
+        "exposure_us": 15001.5,
+        "gain": 1.0,
+        "format": 0,
+        "bits": 0,
+        "shape": [
+          3648,
+          5480
+        ],
+        "capture_ms": 0.029400020139291883,
+        "flip_h": false,
+        "flip_v": false,
+        "rotate": false,
+        "opposite": false
+      },
+      "last_frame": {
+        "frame_id": 188,
+        "timestamp": 4664275141,
+        "exposure_us": 15001.5,
+        "gain": 1.0,
+        "format": 0,
+        "bits": 0,
+        "shape": [
+          3648,
+          5480
+        ],
+        "capture_ms": 38.628899987088516,
+        "flip_h": false,
+        "flip_v": false,
+        "rotate": false,
+        "opposite": false
+      },
+      "first_vs_last_pcc": 0.9992247082447031,
+      "mean": 11.852133750915527,
+      "p99": 82.1699999999837,
+      "maximum": 255,
+      "saturated_fraction": 0.00023634040020307769,
+      "energies": [
+        126650.0,
+        85961.0,
+        254460.0,
+        85973.0
+      ],
+      "prediction": 2,
+      "name": "e15000_mnist_i00013_y0",
+      "label": 0,
+      "camera_settings": {
+        "exposure_us": 15001.5,
+        "gain": 1.0
+      }
+    },
+    {
+      "visible_ms": 14.128199982224032,
+      "requested_wait_ms": 240.0,
+      "first_frame": {
+        "frame_id": 194,
+        "timestamp": 4664547596,
+        "exposure_us": 15001.5,
+        "gain": 1.0,
+        "format": 0,
+        "bits": 0,
+        "shape": [
+          3648,
+          5480
+        ],
+        "capture_ms": 0.03159997868351638,
+        "flip_h": false,
+        "flip_v": false,
+        "rotate": false,
+        "opposite": false
+      },
+      "last_frame": {
+        "frame_id": 198,
+        "timestamp": 4664774642,
+        "exposure_us": 15001.5,
+        "gain": 1.0,
+        "format": 0,
+        "bits": 0,
+        "shape": [
+          3648,
+          5480
+        ],
+        "capture_ms": 37.27529998286627,
+        "flip_h": false,
+        "flip_v": false,
+        "rotate": false,
+        "opposite": false
+      },
+      "first_vs_last_pcc": 0.9984397821038551,
+      "mean": 8.5791654586792,
+      "p99": 56.0,
+      "maximum": 207,
+      "saturated_fraction": 0.0,
+      "energies": [
+        56950.0,
+        59860.0,
+        44216.0,
+        111447.0
+      ],
+      "prediction": 3,
+      "name": "e15000_mnist_i00014_y1",
+      "label": 1,
+      "camera_settings": {
+        "exposure_us": 15001.5,
+        "gain": 1.0
+      }
+    },
+    {
+      "visible_ms": 13.018099998589605,
+      "requested_wait_ms": 240.0,
+      "first_frame": {
+        "frame_id": 204,
+        "timestamp": 4665047096,
+        "exposure_us": 15001.5,
+        "gain": 1.0,
+        "format": 0,
+        "bits": 0,
+        "shape": [
+          3648,
+          5480
+        ],
+        "capture_ms": 0.03090000245720148,
+        "flip_h": false,
+        "flip_v": false,
+        "rotate": false,
+        "opposite": false
+      },
+      "last_frame": {
+        "frame_id": 208,
+        "timestamp": 4665228733,
+        "exposure_us": 15001.5,
+        "gain": 1.0,
+        "format": 0,
+        "bits": 0,
+        "shape": [
+          3648,
+          5480
+        ],
+        "capture_ms": 39.1702999768313,
+        "flip_h": false,
+        "flip_v": false,
+        "rotate": false,
+        "opposite": false
+      },
+      "first_vs_last_pcc": 0.9984105663285129,
+      "mean": 8.425636291503906,
+      "p99": 55.0,
+      "maximum": 200,
+      "saturated_fraction": 0.0,
+      "energies": [
+        112513.0,
+        63739.0,
+        69998.0,
+        64306.0
+      ],
+      "prediction": 0,
+      "name": "e15000_mnist_i00038_y2",
+      "label": 2,
+      "camera_settings": {
+        "exposure_us": 15001.5,
+        "gain": 1.0
+      }
+    },
+    {
+      "visible_ms": 8.506600017426535,
+      "requested_wait_ms": 240.0,
+      "first_frame": {
+        "frame_id": 214,
+        "timestamp": 4665501187,
+        "exposure_us": 15001.5,
+        "gain": 1.0,
+        "format": 0,
+        "bits": 0,
+        "shape": [
+          3648,
+          5480
+        ],
+        "capture_ms": 0.031000003218650818,
+        "flip_h": false,
+        "flip_v": false,
+        "rotate": false,
+        "opposite": false
+      },
+      "last_frame": {
+        "frame_id": 218,
+        "timestamp": 4665682824,
+        "exposure_us": 15001.5,
+        "gain": 1.0,
+        "format": 0,
+        "bits": 0,
+        "shape": [
+          3648,
+          5480
+        ],
+        "capture_ms": 37.31449999031611,
+        "flip_h": false,
+        "flip_v": false,
+        "rotate": false,
+        "opposite": false
+      },
+      "first_vs_last_pcc": 0.998854781357038,
+      "mean": 10.751046180725098,
+      "p99": 68.0,
+      "maximum": 243,
+      "saturated_fraction": 0.0,
+      "energies": [
+        65059.0,
+        158243.0,
+        78341.0,
+        96117.0
+      ],
+      "prediction": 1,
+      "name": "e15000_mnist_i00032_y3",
+      "label": 3,
+      "camera_settings": {
+        "exposure_us": 15001.5,
+        "gain": 1.0
+      }
+    },
+    {
+      "visible_ms": 12.290799990296364,
+      "requested_wait_ms": 240.0,
+      "first_frame": {
+        "frame_id": 224,
+        "timestamp": 4665955278,
+        "exposure_us": 20002.0,
+        "gain": 1.0,
+        "format": 0,
+        "bits": 0,
+        "shape": [
+          3648,
+          5480
+        ],
+        "capture_ms": 0.10500001371838152,
+        "flip_h": false,
+        "flip_v": false,
+        "rotate": false,
+        "opposite": false
+      },
+      "last_frame": {
+        "frame_id": 228,
+        "timestamp": 4666136915,
+        "exposure_us": 20002.0,
+        "gain": 1.0,
+        "format": 0,
+        "bits": 0,
+        "shape": [
+          3648,
+          5480
+        ],
+        "capture_ms": 39.200899977004156,
+        "flip_h": false,
+        "flip_v": false,
+        "rotate": false,
+        "opposite": false
+      },
+      "first_vs_last_pcc": 0.9994413129614431,
+      "mean": 15.448447227478027,
+      "p99": 110.0,
+      "maximum": 255,
+      "saturated_fraction": 0.0006608777857530506,
+      "energies": [
+        168519.0,
+        113825.0,
+        328417.0,
+        113880.0
+      ],
+      "prediction": 2,
+      "name": "e20000_mnist_i00013_y0",
+      "label": 0,
+      "camera_settings": {
+        "exposure_us": 20002.0,
+        "gain": 1.0
+      }
+    },
+    {
+      "visible_ms": 11.053199996240437,
+      "requested_wait_ms": 240.0,
+      "first_frame": {
+        "frame_id": 234,
+        "timestamp": 4666409370,
+        "exposure_us": 20002.0,
+        "gain": 1.0,
+        "format": 0,
+        "bits": 0,
+        "shape": [
+          3648,
+          5480
+        ],
+        "capture_ms": 0.0342000275850296,
+        "flip_h": false,
+        "flip_v": false,
+        "rotate": false,
+        "opposite": false
+      },
+      "last_frame": {
+        "frame_id": 238,
+        "timestamp": 4666591006,
+        "exposure_us": 20002.0,
+        "gain": 1.0,
+        "format": 0,
+        "bits": 0,
+        "shape": [
+          3648,
+          5480
+        ],
+        "capture_ms": 38.72430001501925,
+        "flip_h": false,
+        "flip_v": false,
+        "rotate": false,
+        "opposite": false
+      },
+      "first_vs_last_pcc": 0.9989191926903891,
+      "mean": 11.108536720275879,
+      "p99": 74.0,
+      "maximum": 255,
+      "saturated_fraction": 4.376674077834772e-06,
+      "energies": [
+        74911.0,
+        78915.0,
+        57882.0,
+        147776.0
+      ],
+      "prediction": 3,
+      "name": "e20000_mnist_i00014_y1",
+      "label": 1,
+      "camera_settings": {
+        "exposure_us": 20002.0,
+        "gain": 1.0
+      }
+    },
+    {
+      "visible_ms": 5.932000000029802,
+      "requested_wait_ms": 240.0,
+      "first_frame": {
+        "frame_id": 244,
+        "timestamp": 4666863461,
+        "exposure_us": 20002.0,
+        "gain": 1.0,
+        "format": 0,
+        "bits": 0,
+        "shape": [
+          3648,
+          5480
+        ],
+        "capture_ms": 0.030099996365606785,
+        "flip_h": false,
+        "flip_v": false,
+        "rotate": false,
+        "opposite": false
+      },
+      "last_frame": {
+        "frame_id": 248,
+        "timestamp": 4667045097,
+        "exposure_us": 20002.0,
+        "gain": 1.0,
+        "format": 0,
+        "bits": 0,
+        "shape": [
+          3648,
+          5480
+        ],
+        "capture_ms": 37.605299992719665,
+        "flip_h": false,
+        "flip_v": false,
+        "rotate": false,
+        "opposite": false
+      },
+      "first_vs_last_pcc": 0.9989836962558143,
+      "mean": 10.904671669006348,
+      "p99": 74.0,
+      "maximum": 255,
+      "saturated_fraction": 4.376674077834772e-06,
+      "energies": [
+        149389.0,
+        84124.0,
+        92209.0,
+        84753.0
+      ],
+      "prediction": 0,
+      "name": "e20000_mnist_i00038_y2",
+      "label": 2,
+      "camera_settings": {
+        "exposure_us": 20002.0,
+        "gain": 1.0
+      }
+    },
+    {
+      "visible_ms": 2.3558999819215387,
+      "requested_wait_ms": 240.0,
+      "first_frame": {
+        "frame_id": 254,
+        "timestamp": 4667317552,
+        "exposure_us": 20002.0,
+        "gain": 1.0,
+        "format": 0,
+        "bits": 0,
+        "shape": [
+          3648,
+          5480
+        ],
+        "capture_ms": 0.03709999145939946,
+        "flip_h": false,
+        "flip_v": false,
+        "rotate": false,
+        "opposite": false
+      },
+      "last_frame": {
+        "frame_id": 258,
+        "timestamp": 4667499188,
+        "exposure_us": 20002.0,
+        "gain": 1.0,
+        "format": 0,
+        "bits": 0,
+        "shape": [
+          3648,
+          5480
+        ],
+        "capture_ms": 38.85849998914637,
+        "flip_h": false,
+        "flip_v": false,
+        "rotate": false,
+        "opposite": false
+      },
+      "first_vs_last_pcc": 0.9992433673469399,
+      "mean": 14.009637832641602,
+      "p99": 90.0,
+      "maximum": 255,
+      "saturated_fraction": 2.626004446700863e-05,
+      "energies": [
+        85595.0,
+        209704.0,
+        103589.0,
+        127453.0
+      ],
+      "prediction": 1,
+      "name": "e20000_mnist_i00032_y3",
+      "label": 3,
+      "camera_settings": {
+        "exposure_us": 20002.0,
+        "gain": 1.0
+      }
+    }
+  ],
+  "camera_settings_initial": {
+    "exposure_us": 10001.0,
+    "gain": 1.0
+  },
+  "phase_receipt_B": {
+    "phase_file": "E:\\code\\guest\\MNIST_10cm_8um_Bench_Test_20260923\\02_mnist_10cm\\phase\\B_RECOMMENDED_native8_best.bmp",
+    "phase_sha256": "9a5db11329f1fe397d7bed40f348651321850e1a11309e4ecf0a79690aa9aa54",
+    "write_call_ms": 1.9558000203687698,
+    "settle_s": 0.8,
+    "sdk_ack_only": true,
+    "write_return": 0,
+    "write_ack_success": false,
+    "strict_write_ack": true,
+    "known_vendor_constant_zero_return": true,
+    "optical_display_verified_by_this_call": false,
+    "no_extra_flip_or_inversion": true,
+    "panel": {
+      "Width": 1920,
+      "Height": 1200,
+      "Depth": 8,
+      "SLMFound": 1,
+      "COMFound": 1,
+      "lut_sha256": "6a968b970fc81b035788534fc6ab7236a59e25e1a73068de393d90720a52efb6",
+      "lut": "C:\\Program Files\\Meadowlark Optics\\Blink 1920 HDMI\\LUT Files\\19x12_8bit_linearVoltage.lut",
+      "lut_scope": "linear voltage; NOT verified linear phase",
+      "wrapper_sha256": "0d3cc283165bb62ed60a4c8b1c1a256af9441e6342654511fd1f80dbe46ce225",
+      "startup": {
+        "dwFlags": 256,
+        "wShowWindow": 1
+      }
+    },
+    "is_8_bit": 0,
+    "pixel_format": "rgba",
+    "persistent_buffer": true
+  }
+}

@@ -1,0 +1,692 @@
+{
+  "orientation": "flip_v",
+  "orientation_selection": "fixed_predeclared",
+  "summary": {
+    "identity": {
+      "n": 40,
+      "accuracy": 0.2,
+      "mean_pcc": 0.24936625562795528
+    },
+    "flip_h": {
+      "n": 40,
+      "accuracy": 0.025,
+      "mean_pcc": 0.24009524529560577
+    },
+    "flip_v": {
+      "n": 40,
+      "accuracy": 0.625,
+      "mean_pcc": 0.32709384816205606
+    },
+    "rot180": {
+      "n": 40,
+      "accuracy": 0.15,
+      "mean_pcc": 0.23705880070567636
+    },
+    "transpose": {
+      "n": 40,
+      "accuracy": 0.2,
+      "mean_pcc": 0.24160070405144465
+    },
+    "rot90": {
+      "n": 40,
+      "accuracy": 0.275,
+      "mean_pcc": 0.2647471908986493
+    },
+    "rot270": {
+      "n": 40,
+      "accuracy": 0.375,
+      "mean_pcc": 0.2809318645339528
+    },
+    "anti_transpose": {
+      "n": 40,
+      "accuracy": 0.15,
+      "mean_pcc": 0.23413451850022104
+    }
+  },
+  "selected_rows": [
+    {
+      "key": "mnist_i00013_y0",
+      "label": 0,
+      "prediction": 0,
+      "energy": [
+        191195.0,
+        118663.0,
+        126781.0,
+        90150.0
+      ],
+      "simulation_prediction": 0,
+      "pcc": 0.32952084628662937,
+      "mean": 11.881842613220215,
+      "p99": 97.0,
+      "saturated_fraction": 0.0002013270075803995
+    },
+    {
+      "key": "mnist_i00014_y1",
+      "label": 1,
+      "prediction": 1,
+      "energy": [
+        47864.0,
+        91539.0,
+        68734.0,
+        80755.0
+      ],
+      "simulation_prediction": 1,
+      "pcc": 0.2865409677938644,
+      "mean": 8.547977447509766,
+      "p99": 68.0,
+      "saturated_fraction": 4.814341485618249e-05
+    },
+    {
+      "key": "mnist_i00025_y0",
+      "label": 0,
+      "prediction": 0,
+      "energy": [
+        326642.0,
+        153951.0,
+        257325.0,
+        275574.0
+      ],
+      "simulation_prediction": 0,
+      "pcc": 0.3757161672045609,
+      "mean": 21.02513885498047,
+      "p99": 177.0,
+      "saturated_fraction": 0.002183960364839551
+    },
+    {
+      "key": "mnist_i00028_y0",
+      "label": 0,
+      "prediction": 1,
+      "energy": [
+        132280.0,
+        181678.0,
+        147876.0,
+        133762.0
+      ],
+      "simulation_prediction": 0,
+      "pcc": 0.2678532845623679,
+      "mean": 13.81617546081543,
+      "p99": 117.0,
+      "saturated_fraction": 0.0005076941930288335
+    },
+    {
+      "key": "mnist_i00029_y1",
+      "label": 1,
+      "prediction": 3,
+      "energy": [
+        42955.0,
+        53865.0,
+        55926.0,
+        62955.0
+      ],
+      "simulation_prediction": 1,
+      "pcc": 0.26080582544260456,
+      "mean": 7.1799774169921875,
+      "p99": 55.0,
+      "saturated_fraction": 0.0
+    },
+    {
+      "key": "mnist_i00031_y1",
+      "label": 1,
+      "prediction": 3,
+      "energy": [
+        32584.0,
+        53184.0,
+        44942.0,
+        87461.0
+      ],
+      "simulation_prediction": 1,
+      "pcc": 0.31587359838115314,
+      "mean": 6.4333343505859375,
+      "p99": 46.0,
+      "saturated_fraction": 4.376674077834772e-06
+    },
+    {
+      "key": "mnist_i00032_y3",
+      "label": 3,
+      "prediction": 3,
+      "energy": [
+        104635.0,
+        75373.0,
+        58024.0,
+        165398.0
+      ],
+      "simulation_prediction": 3,
+      "pcc": 0.3412807382347258,
+      "mean": 11.118546485900879,
+      "p99": 91.0,
+      "saturated_fraction": 7.878013340102589e-05
+    },
+    {
+      "key": "mnist_i00037_y1",
+      "label": 1,
+      "prediction": 3,
+      "energy": [
+        43283.0,
+        67645.0,
+        64380.0,
+        69141.0
+      ],
+      "simulation_prediction": 1,
+      "pcc": 0.27465690992718306,
+      "mean": 7.665915489196777,
+      "p99": 59.0,
+      "saturated_fraction": 0.0
+    },
+    {
+      "key": "mnist_i00038_y2",
+      "label": 2,
+      "prediction": 2,
+      "energy": [
+        61888.0,
+        54422.0,
+        90065.0,
+        83925.0
+      ],
+      "simulation_prediction": 2,
+      "pcc": 0.2520959752816087,
+      "mean": 8.340583801269531,
+      "p99": 66.0,
+      "saturated_fraction": 1.3130022233504315e-05
+    },
+    {
+      "key": "mnist_i00039_y1",
+      "label": 1,
+      "prediction": 1,
+      "energy": [
+        56403.0,
+        116664.0,
+        79571.0,
+        65817.0
+      ],
+      "simulation_prediction": 1,
+      "pcc": 0.3189473495568217,
+      "mean": 9.255882263183594,
+      "p99": 74.0,
+      "saturated_fraction": 8.315680747886066e-05
+    },
+    {
+      "key": "mnist_i00040_y1",
+      "label": 1,
+      "prediction": 1,
+      "energy": [
+        22505.0,
+        40944.0,
+        30766.0,
+        25203.0
+      ],
+      "simulation_prediction": 1,
+      "pcc": 0.21133823813292238,
+      "mean": 5.020688533782959,
+      "p99": 29.0,
+      "saturated_fraction": 0.0
+    },
+    {
+      "key": "mnist_i00043_y2",
+      "label": 2,
+      "prediction": 2,
+      "energy": [
+        38453.0,
+        74920.0,
+        145655.0,
+        68915.0
+      ],
+      "simulation_prediction": 2,
+      "pcc": 0.42280811239589156,
+      "mean": 7.721897602081299,
+      "p99": 60.0,
+      "saturated_fraction": 0.0
+    },
+    {
+      "key": "mnist_i00044_y3",
+      "label": 3,
+      "prediction": 3,
+      "energy": [
+        62142.0,
+        59923.0,
+        48512.0,
+        153469.0
+      ],
+      "simulation_prediction": 3,
+      "pcc": 0.31353008239921826,
+      "mean": 8.946145057678223,
+      "p99": 76.0,
+      "saturated_fraction": 3.5013392622678176e-05
+    },
+    {
+      "key": "mnist_i00046_y1",
+      "label": 1,
+      "prediction": 3,
+      "energy": [
+        87683.0,
+        79635.0,
+        64990.0,
+        184670.0
+      ],
+      "simulation_prediction": 1,
+      "pcc": 0.35260111421090123,
+      "mean": 9.417889595031738,
+      "p99": 79.0,
+      "saturated_fraction": 6.565011116752158e-05
+    },
+    {
+      "key": "mnist_i00047_y2",
+      "label": 2,
+      "prediction": 2,
+      "energy": [
+        33748.0,
+        78444.0,
+        96282.0,
+        89986.0
+      ],
+      "simulation_prediction": 2,
+      "pcc": 0.37255969121911503,
+      "mean": 7.1849365234375,
+      "p99": 51.0,
+      "saturated_fraction": 0.0
+    },
+    {
+      "key": "mnist_i00051_y3",
+      "label": 3,
+      "prediction": 1,
+      "energy": [
+        174772.0,
+        181144.0,
+        107342.0,
+        128018.0
+      ],
+      "simulation_prediction": 3,
+      "pcc": 0.33996706566444185,
+      "mean": 14.776395797729492,
+      "p99": 124.0,
+      "saturated_fraction": 0.00043329073370564243
+    },
+    {
+      "key": "mnist_i00055_y0",
+      "label": 0,
+      "prediction": 2,
+      "energy": [
+        132750.0,
+        113868.0,
+        144176.0,
+        131002.0
+      ],
+      "simulation_prediction": 0,
+      "pcc": 0.34983733610186607,
+      "mean": 11.66174030303955,
+      "p99": 97.0,
+      "saturated_fraction": 0.00010504017786803452
+    },
+    {
+      "key": "mnist_i00057_y1",
+      "label": 1,
+      "prediction": 1,
+      "energy": [
+        28241.0,
+        85203.0,
+        42717.0,
+        34818.0
+      ],
+      "simulation_prediction": 1,
+      "pcc": 0.34379865070260757,
+      "mean": 6.125545024871826,
+      "p99": 43.0,
+      "saturated_fraction": 0.0
+    },
+    {
+      "key": "mnist_i00063_y3",
+      "label": 3,
+      "prediction": 1,
+      "energy": [
+        52735.0,
+        131628.0,
+        83686.0,
+        110765.0
+      ],
+      "simulation_prediction": 3,
+      "pcc": 0.34879628050309874,
+      "mean": 9.53152084350586,
+      "p99": 81.0,
+      "saturated_fraction": 8.753348155669544e-06
+    },
+    {
+      "key": "mnist_i00068_y3",
+      "label": 3,
+      "prediction": 3,
+      "energy": [
+        131690.0,
+        204616.0,
+        105220.0,
+        255251.0
+      ],
+      "simulation_prediction": 3,
+      "pcc": 0.44332647457492436,
+      "mean": 14.764678955078125,
+      "p99": 128.0,
+      "saturated_fraction": 0.0005908510005076942
+    },
+    {
+      "key": "mnist_i00069_y0",
+      "label": 0,
+      "prediction": 0,
+      "energy": [
+        152729.0,
+        75735.0,
+        88392.0,
+        109514.0
+      ],
+      "simulation_prediction": 0,
+      "pcc": 0.2781754471260455,
+      "mean": 11.26728343963623,
+      "p99": 90.0,
+      "saturated_fraction": 0.00016631361495772132
+    },
+    {
+      "key": "mnist_i00071_y0",
+      "label": 0,
+      "prediction": 0,
+      "energy": [
+        234033.0,
+        97309.0,
+        144679.0,
+        128021.0
+      ],
+      "simulation_prediction": 0,
+      "pcc": 0.3119686493316055,
+      "mean": 15.93669605255127,
+      "p99": 130.0,
+      "saturated_fraction": 0.000555837607885016
+    },
+    {
+      "key": "mnist_i00072_y2",
+      "label": 2,
+      "prediction": 3,
+      "energy": [
+        53824.0,
+        56611.0,
+        97270.0,
+        138461.0
+      ],
+      "simulation_prediction": 2,
+      "pcc": 0.2735233553543248,
+      "mean": 10.897590637207031,
+      "p99": 92.0,
+      "saturated_fraction": 7.878013340102589e-05
+    },
+    {
+      "key": "mnist_i00074_y1",
+      "label": 1,
+      "prediction": 1,
+      "energy": [
+        46672.0,
+        72089.0,
+        68259.0,
+        63912.0
+      ],
+      "simulation_prediction": 1,
+      "pcc": 0.26595729542632973,
+      "mean": 8.020771980285645,
+      "p99": 62.0,
+      "saturated_fraction": 8.753348155669544e-06
+    },
+    {
+      "key": "mnist_i00076_y3",
+      "label": 3,
+      "prediction": 3,
+      "energy": [
+        61496.0,
+        71975.0,
+        38142.0,
+        114295.0
+      ],
+      "simulation_prediction": 3,
+      "pcc": 0.329694521849934,
+      "mean": 8.123181343078613,
+      "p99": 60.0,
+      "saturated_fraction": 0.0
+    },
+    {
+      "key": "mnist_i00077_y2",
+      "label": 2,
+      "prediction": 1,
+      "energy": [
+        89124.0,
+        100803.0,
+        63177.0,
+        75204.0
+      ],
+      "simulation_prediction": 2,
+      "pcc": 0.293546026360377,
+      "mean": 7.9456987380981445,
+      "p99": 61.0,
+      "saturated_fraction": 0.0
+    },
+    {
+      "key": "mnist_i00082_y2",
+      "label": 2,
+      "prediction": 2,
+      "energy": [
+        78057.0,
+        153324.0,
+        260166.0,
+        204821.0
+      ],
+      "simulation_prediction": 2,
+      "pcc": 0.4090429845437297,
+      "mean": 13.917762756347656,
+      "p99": 123.0,
+      "saturated_fraction": 0.0005820976523520247
+    },
+    {
+      "key": "mnist_i00087_y3",
+      "label": 3,
+      "prediction": 3,
+      "energy": [
+        132548.0,
+        55012.0,
+        54560.0,
+        213200.0
+      ],
+      "simulation_prediction": 3,
+      "pcc": 0.3872405359006561,
+      "mean": 11.443273544311523,
+      "p99": 99.0,
+      "saturated_fraction": 0.00017506696311339086
+    },
+    {
+      "key": "mnist_i00089_y1",
+      "label": 1,
+      "prediction": 1,
+      "energy": [
+        44302.0,
+        132754.0,
+        93391.0,
+        65160.0
+      ],
+      "simulation_prediction": 1,
+      "pcc": 0.3693177903194172,
+      "mean": 8.657731056213379,
+      "p99": 71.0,
+      "saturated_fraction": 3.9390066700512945e-05
+    },
+    {
+      "key": "mnist_i00090_y3",
+      "label": 3,
+      "prediction": 3,
+      "energy": [
+        83703.0,
+        140552.0,
+        59102.0,
+        156708.0
+      ],
+      "simulation_prediction": 3,
+      "pcc": 0.36495377651444505,
+      "mean": 10.386727333068848,
+      "p99": 85.0,
+      "saturated_fraction": 3.5013392622678176e-05
+    },
+    {
+      "key": "mnist_i00093_y3",
+      "label": 3,
+      "prediction": 3,
+      "energy": [
+        164825.0,
+        205909.0,
+        94988.0,
+        255135.0
+      ],
+      "simulation_prediction": 3,
+      "pcc": 0.4186041036576988,
+      "mean": 15.319475173950195,
+      "p99": 138.0,
+      "saturated_fraction": 0.0009803749934349888
+    },
+    {
+      "key": "mnist_i00101_y0",
+      "label": 0,
+      "prediction": 0,
+      "energy": [
+        164986.0,
+        62312.0,
+        109735.0,
+        71692.0
+      ],
+      "simulation_prediction": 0,
+      "pcc": 0.31158672579577784,
+      "mean": 10.874222755432129,
+      "p99": 86.0,
+      "saturated_fraction": 0.00013130022233504316
+    },
+    {
+      "key": "mnist_i00106_y2",
+      "label": 2,
+      "prediction": 3,
+      "energy": [
+        83143.0,
+        54710.0,
+        131408.0,
+        186022.0
+      ],
+      "simulation_prediction": 2,
+      "pcc": 0.27968638207264424,
+      "mean": 11.104352951049805,
+      "p99": 88.0,
+      "saturated_fraction": 4.814341485618249e-05
+    },
+    {
+      "key": "mnist_i00112_y3",
+      "label": 3,
+      "prediction": 3,
+      "energy": [
+        61097.0,
+        75325.0,
+        49610.0,
+        133264.0
+      ],
+      "simulation_prediction": 1,
+      "pcc": 0.34054251229749016,
+      "mean": 8.501602172851562,
+      "p99": 68.0,
+      "saturated_fraction": 1.3130022233504315e-05
+    },
+    {
+      "key": "mnist_i00119_y2",
+      "label": 2,
+      "prediction": 3,
+      "energy": [
+        183132.0,
+        122983.0,
+        130206.0,
+        189509.0
+      ],
+      "simulation_prediction": 2,
+      "pcc": 0.3367330496412085,
+      "mean": 12.398500442504883,
+      "p99": 108.0,
+      "saturated_fraction": 0.0002932371632149297
+    },
+    {
+      "key": "mnist_i00126_y0",
+      "label": 0,
+      "prediction": 1,
+      "energy": [
+        95864.0,
+        131529.0,
+        56074.0,
+        64546.0
+      ],
+      "simulation_prediction": 0,
+      "pcc": 0.20819226103214966,
+      "mean": 11.094632148742676,
+      "p99": 89.0,
+      "saturated_fraction": 5.252008893401726e-05
+    },
+    {
+      "key": "mnist_i00136_y0",
+      "label": 0,
+      "prediction": 0,
+      "energy": [
+        154930.0,
+        95290.0,
+        122243.0,
+        121298.0
+      ],
+      "simulation_prediction": 0,
+      "pcc": 0.34230935978607624,
+      "mean": 10.66012954711914,
+      "p99": 89.0,
+      "saturated_fraction": 0.00013567689641287792
+    },
+    {
+      "key": "mnist_i00147_y2",
+      "label": 2,
+      "prediction": 3,
+      "energy": [
+        127063.0,
+        159824.0,
+        209607.0,
+        212825.0
+      ],
+      "simulation_prediction": 2,
+      "pcc": 0.379514190077442,
+      "mean": 15.217897415161133,
+      "p99": 124.0,
+      "saturated_fraction": 0.00036764062253812085
+    },
+    {
+      "key": "mnist_i00148_y0",
+      "label": 0,
+      "prediction": 2,
+      "energy": [
+        106263.0,
+        87520.0,
+        115658.0,
+        108781.0
+      ],
+      "simulation_prediction": 0,
+      "pcc": 0.28692881088648947,
+      "mean": 10.16259765625,
+      "p99": 82.0,
+      "saturated_fraction": 6.565011116752158e-05
+    },
+    {
+      "key": "mnist_i00149_y2",
+      "label": 2,
+      "prediction": 2,
+      "energy": [
+        68806.0,
+        69453.0,
+        92857.0,
+        72448.0
+      ],
+      "simulation_prediction": 0,
+      "pcc": 0.3743814399318942,
+      "mean": 7.672887325286865,
+      "p99": 54.0,
+      "saturated_fraction": 0.0
+    }
+  ],
+  "reference": "C:\\Users\\Xml12\\OneDrive\\2026OpticsMoE\\ABO_Lab_SHS_8um\\assets\\mnist_native8_completed_20260913\\paired\\pair_reference.npz",
+  "image_directory": "C:\\Users\\Xml12\\OneDrive\\2026OpticsMoE\\LightGenV2\\tasks\\t07_abo_image_retrieval\\reports\\20260924_mnist_dvp\\mnist40_A_canonical",
+  "simulation_arm": "A",
+  "photometry": "linear Mono8; no per-image normalization or background subtraction"
+}

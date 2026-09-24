@@ -1,0 +1,2366 @@
+{
+  "mode": "timing",
+  "status": "complete",
+  "corners_TL_TR_BR_BL": [
+    [
+      995.0,
+      172.0
+    ],
+    [
+      4310.0,
+      172.0
+    ],
+    [
+      4303.0,
+      3440.0
+    ],
+    [
+      980.0,
+      3435.0
+    ]
+  ],
+  "corner_file": "E:\\code\\guest\\20260924.txt",
+  "phase_B": "E:\\code\\guest\\MNIST_10cm_8um_Bench_Test_20260923\\02_mnist_10cm\\phase\\B_RECOMMENDED_native8_best.bmp",
+  "phase_B_sha256": "9a5db11329f1fe397d7bed40f348651321850e1a11309e4ecf0a79690aa9aa54",
+  "amplitude_inputs": {
+    "mnist_i00013_y0.bmp": "8616a93fe0d4f87872b6834030be4f8de74d60cdd2b6c1c6bd98468819b09a84",
+    "mnist_i00014_y1.bmp": "9e09ad508d322414c91a722915489b131462462f79355720c2348b4a69904060"
+  },
+  "normalization": "none",
+  "background_subtraction": false,
+  "fixed_detector_bounds_xyxy": [
+    [
+      162,
+      162,
+      221,
+      221
+    ],
+    [
+      257,
+      162,
+      316,
+      221
+    ],
+    [
+      162,
+      257,
+      221,
+      316
+    ],
+    [
+      257,
+      257,
+      316,
+      316
+    ]
+  ],
+  "rows": [
+    {
+      "visible_ms": 16.502499987836927,
+      "requested_wait_ms": 0,
+      "first_frame": {
+        "frame_id": 17,
+        "timestamp": 197308367,
+        "exposure_us": 20002.0,
+        "gain": 1.0,
+        "format": 0,
+        "bits": 0,
+        "shape": [
+          3648,
+          5480
+        ],
+        "capture_ms": 0.07839998579584062,
+        "flip_h": false,
+        "flip_v": false,
+        "rotate": false,
+        "opposite": false
+      },
+      "last_frame": {
+        "frame_id": 21,
+        "timestamp": 197490004,
+        "exposure_us": 20002.0,
+        "gain": 1.0,
+        "format": 0,
+        "bits": 0,
+        "shape": [
+          3648,
+          5480
+        ],
+        "capture_ms": 37.77349999290891,
+        "flip_h": false,
+        "flip_v": false,
+        "rotate": false,
+        "opposite": false
+      },
+      "first_vs_last_pcc": 0.009128779152534574,
+      "mean": 15.45803165435791,
+      "p99": 110.0,
+      "maximum": 255,
+      "saturated_fraction": 0.0006389944153638767,
+      "energies": [
+        168441.0,
+        114375.0,
+        328052.0,
+        113302.0
+      ],
+      "prediction": 2,
+      "name": "r0_w0_mnist_i00013_y0",
+      "label": 0,
+      "first_prediction": 2,
+      "last_vs_wait300_pcc": 0.9994111832426505
+    },
+    {
+      "visible_ms": 10.463499987963587,
+      "requested_wait_ms": 0,
+      "first_frame": {
+        "frame_id": 22,
+        "timestamp": 197535413,
+        "exposure_us": 20002.0,
+        "gain": 1.0,
+        "format": 0,
+        "bits": 0,
+        "shape": [
+          3648,
+          5480
+        ],
+        "capture_ms": 6.009899982018396,
+        "flip_h": false,
+        "flip_v": false,
+        "rotate": false,
+        "opposite": false
+      },
+      "last_frame": {
+        "frame_id": 26,
+        "timestamp": 197717049,
+        "exposure_us": 20002.0,
+        "gain": 1.0,
+        "format": 0,
+        "bits": 0,
+        "shape": [
+          3648,
+          5480
+        ],
+        "capture_ms": 37.56029999931343,
+        "flip_h": false,
+        "flip_v": false,
+        "rotate": false,
+        "opposite": false
+      },
+      "first_vs_last_pcc": 0.22193845326632464,
+      "mean": 11.134675025939941,
+      "p99": 74.0,
+      "maximum": 255,
+      "saturated_fraction": 4.376674077834772e-06,
+      "energies": [
+        75026.0,
+        78910.0,
+        57839.0,
+        147452.0
+      ],
+      "prediction": 3,
+      "name": "r0_w0_mnist_i00014_y1",
+      "label": 1,
+      "first_prediction": 2,
+      "last_vs_wait300_pcc": 0.9987129862840929
+    },
+    {
+      "visible_ms": 4.139299999224022,
+      "requested_wait_ms": 80,
+      "first_frame": {
+        "frame_id": 28,
+        "timestamp": 197807867,
+        "exposure_us": 20002.0,
+        "gain": 1.0,
+        "format": 0,
+        "bits": 0,
+        "shape": [
+          3648,
+          5480
+        ],
+        "capture_ms": 0.029700022423639894,
+        "flip_h": false,
+        "flip_v": false,
+        "rotate": false,
+        "opposite": false
+      },
+      "last_frame": {
+        "frame_id": 32,
+        "timestamp": 197989504,
+        "exposure_us": 20002.0,
+        "gain": 1.0,
+        "format": 0,
+        "bits": 0,
+        "shape": [
+          3648,
+          5480
+        ],
+        "capture_ms": 38.52479998022318,
+        "flip_h": false,
+        "flip_v": false,
+        "rotate": false,
+        "opposite": false
+      },
+      "first_vs_last_pcc": 0.2225983029847751,
+      "mean": 15.457436561584473,
+      "p99": 110.0,
+      "maximum": 255,
+      "saturated_fraction": 0.0006389944153638767,
+      "energies": [
+        168530.0,
+        114429.0,
+        327935.0,
+        113185.0
+      ],
+      "prediction": 2,
+      "name": "r0_w80_mnist_i00013_y0",
+      "label": 0,
+      "first_prediction": 3,
+      "last_vs_wait300_pcc": 0.9994219005023521
+    },
+    {
+      "visible_ms": 11.00090000545606,
+      "requested_wait_ms": 80,
+      "first_frame": {
+        "frame_id": 34,
+        "timestamp": 198080322,
+        "exposure_us": 20002.0,
+        "gain": 1.0,
+        "format": 0,
+        "bits": 0,
+        "shape": [
+          3648,
+          5480
+        ],
+        "capture_ms": 0.030499999411404133,
+        "flip_h": false,
+        "flip_v": false,
+        "rotate": false,
+        "opposite": false
+      },
+      "last_frame": {
+        "frame_id": 38,
+        "timestamp": 198261958,
+        "exposure_us": 20002.0,
+        "gain": 1.0,
+        "format": 0,
+        "bits": 0,
+        "shape": [
+          3648,
+          5480
+        ],
+        "capture_ms": 37.22580001340248,
+        "flip_h": false,
+        "flip_v": false,
+        "rotate": false,
+        "opposite": false
+      },
+      "first_vs_last_pcc": 0.22200760998810687,
+      "mean": 11.137974739074707,
+      "p99": 74.0,
+      "maximum": 255,
+      "saturated_fraction": 4.376674077834772e-06,
+      "energies": [
+        74961.0,
+        78862.0,
+        58021.0,
+        147825.0
+      ],
+      "prediction": 3,
+      "name": "r0_w80_mnist_i00014_y1",
+      "label": 1,
+      "first_prediction": 2,
+      "last_vs_wait300_pcc": 0.9988532182336994
+    },
+    {
+      "visible_ms": 2.3016000050120056,
+      "requested_wait_ms": 120,
+      "first_frame": {
+        "frame_id": 41,
+        "timestamp": 198398186,
+        "exposure_us": 20002.0,
+        "gain": 1.0,
+        "format": 0,
+        "bits": 0,
+        "shape": [
+          3648,
+          5480
+        ],
+        "capture_ms": 0.03190001007169485,
+        "flip_h": false,
+        "flip_v": false,
+        "rotate": false,
+        "opposite": false
+      },
+      "last_frame": {
+        "frame_id": 45,
+        "timestamp": 198579822,
+        "exposure_us": 20002.0,
+        "gain": 1.0,
+        "format": 0,
+        "bits": 0,
+        "shape": [
+          3648,
+          5480
+        ],
+        "capture_ms": 37.52920002443716,
+        "flip_h": false,
+        "flip_v": false,
+        "rotate": false,
+        "opposite": false
+      },
+      "first_vs_last_pcc": 0.9842279671706461,
+      "mean": 15.458027839660645,
+      "p99": 110.0,
+      "maximum": 255,
+      "saturated_fraction": 0.0006302410672082071,
+      "energies": [
+        168481.0,
+        114526.0,
+        328172.0,
+        113246.0
+      ],
+      "prediction": 2,
+      "name": "r0_w120_mnist_i00013_y0",
+      "label": 0,
+      "first_prediction": 2,
+      "last_vs_wait300_pcc": 0.9993083395150487
+    },
+    {
+      "visible_ms": 11.259000020800158,
+      "requested_wait_ms": 120,
+      "first_frame": {
+        "frame_id": 48,
+        "timestamp": 198716050,
+        "exposure_us": 20002.0,
+        "gain": 1.0,
+        "format": 0,
+        "bits": 0,
+        "shape": [
+          3648,
+          5480
+        ],
+        "capture_ms": 0.03029999788850546,
+        "flip_h": false,
+        "flip_v": false,
+        "rotate": false,
+        "opposite": false
+      },
+      "last_frame": {
+        "frame_id": 52,
+        "timestamp": 198897686,
+        "exposure_us": 20002.0,
+        "gain": 1.0,
+        "format": 0,
+        "bits": 0,
+        "shape": [
+          3648,
+          5480
+        ],
+        "capture_ms": 37.65190002741292,
+        "flip_h": false,
+        "flip_v": false,
+        "rotate": false,
+        "opposite": false
+      },
+      "first_vs_last_pcc": 0.5557492408624815,
+      "mean": 11.138394355773926,
+      "p99": 75.0,
+      "maximum": 255,
+      "saturated_fraction": 4.376674077834772e-06,
+      "energies": [
+        75024.0,
+        79011.0,
+        57972.0,
+        147759.0
+      ],
+      "prediction": 3,
+      "name": "r0_w120_mnist_i00014_y1",
+      "label": 1,
+      "first_prediction": 2,
+      "last_vs_wait300_pcc": 0.9989246760656363
+    },
+    {
+      "visible_ms": 1.6883999924175441,
+      "requested_wait_ms": 160,
+      "first_frame": {
+        "frame_id": 56,
+        "timestamp": 199079322,
+        "exposure_us": 20002.0,
+        "gain": 1.0,
+        "format": 0,
+        "bits": 0,
+        "shape": [
+          3648,
+          5480
+        ],
+        "capture_ms": 0.07499998901039362,
+        "flip_h": false,
+        "flip_v": false,
+        "rotate": false,
+        "opposite": false
+      },
+      "last_frame": {
+        "frame_id": 60,
+        "timestamp": 199260959,
+        "exposure_us": 20002.0,
+        "gain": 1.0,
+        "format": 0,
+        "bits": 0,
+        "shape": [
+          3648,
+          5480
+        ],
+        "capture_ms": 37.66820000601001,
+        "flip_h": false,
+        "flip_v": false,
+        "rotate": false,
+        "opposite": false
+      },
+      "first_vs_last_pcc": 0.999452794820445,
+      "mean": 15.459782600402832,
+      "p99": 110.0,
+      "maximum": 255,
+      "saturated_fraction": 0.0006214877190525376,
+      "energies": [
+        168428.0,
+        114288.0,
+        328200.0,
+        113474.0
+      ],
+      "prediction": 2,
+      "name": "r0_w160_mnist_i00013_y0",
+      "label": 0,
+      "first_prediction": 2,
+      "last_vs_wait300_pcc": 0.9992538900928148
+    },
+    {
+      "visible_ms": 12.113200005842373,
+      "requested_wait_ms": 160,
+      "first_frame": {
+        "frame_id": 64,
+        "timestamp": 199442595,
+        "exposure_us": 20002.0,
+        "gain": 1.0,
+        "format": 0,
+        "bits": 0,
+        "shape": [
+          3648,
+          5480
+        ],
+        "capture_ms": 0.031899980967864394,
+        "flip_h": false,
+        "flip_v": false,
+        "rotate": false,
+        "opposite": false
+      },
+      "last_frame": {
+        "frame_id": 68,
+        "timestamp": 199624232,
+        "exposure_us": 20002.0,
+        "gain": 1.0,
+        "format": 0,
+        "bits": 0,
+        "shape": [
+          3648,
+          5480
+        ],
+        "capture_ms": 38.147599989315495,
+        "flip_h": false,
+        "flip_v": false,
+        "rotate": false,
+        "opposite": false
+      },
+      "first_vs_last_pcc": 0.9989745728899057,
+      "mean": 11.140386581420898,
+      "p99": 74.0,
+      "maximum": 255,
+      "saturated_fraction": 4.376674077834772e-06,
+      "energies": [
+        75011.0,
+        78937.0,
+        57986.0,
+        147715.0
+      ],
+      "prediction": 3,
+      "name": "r0_w160_mnist_i00014_y1",
+      "label": 1,
+      "first_prediction": 3,
+      "last_vs_wait300_pcc": 0.9989076598072232
+    },
+    {
+      "visible_ms": 4.827600001590326,
+      "requested_wait_ms": 200,
+      "first_frame": {
+        "frame_id": 73,
+        "timestamp": 199851277,
+        "exposure_us": 20002.0,
+        "gain": 1.0,
+        "format": 0,
+        "bits": 0,
+        "shape": [
+          3648,
+          5480
+        ],
+        "capture_ms": 0.031199975637719035,
+        "flip_h": false,
+        "flip_v": false,
+        "rotate": false,
+        "opposite": false
+      },
+      "last_frame": {
+        "frame_id": 77,
+        "timestamp": 200032914,
+        "exposure_us": 20002.0,
+        "gain": 1.0,
+        "format": 0,
+        "bits": 0,
+        "shape": [
+          3648,
+          5480
+        ],
+        "capture_ms": 37.383199989562854,
+        "flip_h": false,
+        "flip_v": false,
+        "rotate": false,
+        "opposite": false
+      },
+      "first_vs_last_pcc": 0.9994674508803582,
+      "mean": 15.462299346923828,
+      "p99": 110.0,
+      "maximum": 255,
+      "saturated_fraction": 0.0006477477635195463,
+      "energies": [
+        168764.0,
+        114494.0,
+        327675.0,
+        113234.0
+      ],
+      "prediction": 2,
+      "name": "r0_w200_mnist_i00013_y0",
+      "label": 0,
+      "first_prediction": 2,
+      "last_vs_wait300_pcc": 0.9993915842923692
+    },
+    {
+      "visible_ms": 14.691000018501654,
+      "requested_wait_ms": 200,
+      "first_frame": {
+        "frame_id": 82,
+        "timestamp": 200259959,
+        "exposure_us": 20002.0,
+        "gain": 1.0,
+        "format": 0,
+        "bits": 0,
+        "shape": [
+          3648,
+          5480
+        ],
+        "capture_ms": 0.029399991035461426,
+        "flip_h": false,
+        "flip_v": false,
+        "rotate": false,
+        "opposite": false
+      },
+      "last_frame": {
+        "frame_id": 86,
+        "timestamp": 200441596,
+        "exposure_us": 20002.0,
+        "gain": 1.0,
+        "format": 0,
+        "bits": 0,
+        "shape": [
+          3648,
+          5480
+        ],
+        "capture_ms": 37.821700010681525,
+        "flip_h": false,
+        "flip_v": false,
+        "rotate": false,
+        "opposite": false
+      },
+      "first_vs_last_pcc": 0.9989804513188091,
+      "mean": 11.139016151428223,
+      "p99": 74.0,
+      "maximum": 255,
+      "saturated_fraction": 4.376674077834772e-06,
+      "energies": [
+        74942.0,
+        78834.0,
+        57971.0,
+        147759.0
+      ],
+      "prediction": 3,
+      "name": "r0_w200_mnist_i00014_y1",
+      "label": 1,
+      "first_prediction": 3,
+      "last_vs_wait300_pcc": 0.9989069545231025
+    },
+    {
+      "visible_ms": 8.111200004350394,
+      "requested_wait_ms": 240,
+      "first_frame": {
+        "frame_id": 92,
+        "timestamp": 200714050,
+        "exposure_us": 20002.0,
+        "gain": 1.0,
+        "format": 0,
+        "bits": 0,
+        "shape": [
+          3648,
+          5480
+        ],
+        "capture_ms": 0.06469999789260328,
+        "flip_h": false,
+        "flip_v": false,
+        "rotate": false,
+        "opposite": false
+      },
+      "last_frame": {
+        "frame_id": 96,
+        "timestamp": 200895687,
+        "exposure_us": 20002.0,
+        "gain": 1.0,
+        "format": 0,
+        "bits": 0,
+        "shape": [
+          3648,
+          5480
+        ],
+        "capture_ms": 37.69389999797568,
+        "flip_h": false,
+        "flip_v": false,
+        "rotate": false,
+        "opposite": false
+      },
+      "first_vs_last_pcc": 0.9994776279284089,
+      "mean": 15.462566375732422,
+      "p99": 110.0,
+      "maximum": 255,
+      "saturated_fraction": 0.0006477477635195463,
+      "energies": [
+        168593.0,
+        114284.0,
+        328292.0,
+        113397.0
+      ],
+      "prediction": 2,
+      "name": "r0_w240_mnist_i00013_y0",
+      "label": 0,
+      "first_prediction": 2,
+      "last_vs_wait300_pcc": 0.9993117170744742
+    },
+    {
+      "visible_ms": 7.878999982494861,
+      "requested_wait_ms": 240,
+      "first_frame": {
+        "frame_id": 101,
+        "timestamp": 201122732,
+        "exposure_us": 20002.0,
+        "gain": 1.0,
+        "format": 0,
+        "bits": 0,
+        "shape": [
+          3648,
+          5480
+        ],
+        "capture_ms": 0.03200001083314419,
+        "flip_h": false,
+        "flip_v": false,
+        "rotate": false,
+        "opposite": false
+      },
+      "last_frame": {
+        "frame_id": 105,
+        "timestamp": 201304369,
+        "exposure_us": 20002.0,
+        "gain": 1.0,
+        "format": 0,
+        "bits": 0,
+        "shape": [
+          3648,
+          5480
+        ],
+        "capture_ms": 37.36270000808872,
+        "flip_h": false,
+        "flip_v": false,
+        "rotate": false,
+        "opposite": false
+      },
+      "first_vs_last_pcc": 0.9989823809143235,
+      "mean": 11.135904312133789,
+      "p99": 74.0,
+      "maximum": 255,
+      "saturated_fraction": 4.376674077834772e-06,
+      "energies": [
+        75173.0,
+        78997.0,
+        57852.0,
+        147540.0
+      ],
+      "prediction": 3,
+      "name": "r0_w240_mnist_i00014_y1",
+      "label": 1,
+      "first_prediction": 3,
+      "last_vs_wait300_pcc": 0.9988239387151517
+    },
+    {
+      "visible_ms": 13.354399998206645,
+      "requested_wait_ms": 300,
+      "first_frame": {
+        "frame_id": 112,
+        "timestamp": 201622233,
+        "exposure_us": 20002.0,
+        "gain": 1.0,
+        "format": 0,
+        "bits": 0,
+        "shape": [
+          3648,
+          5480
+        ],
+        "capture_ms": 0.03160000778734684,
+        "flip_h": false,
+        "flip_v": false,
+        "rotate": false,
+        "opposite": false
+      },
+      "last_frame": {
+        "frame_id": 116,
+        "timestamp": 201803869,
+        "exposure_us": 20002.0,
+        "gain": 1.0,
+        "format": 0,
+        "bits": 0,
+        "shape": [
+          3648,
+          5480
+        ],
+        "capture_ms": 36.99880000203848,
+        "flip_h": false,
+        "flip_v": false,
+        "rotate": false,
+        "opposite": false
+      },
+      "first_vs_last_pcc": 0.99943831086859,
+      "mean": 15.463380813598633,
+      "p99": 110.0,
+      "maximum": 255,
+      "saturated_fraction": 0.0006477477635195463,
+      "energies": [
+        168921.0,
+        114512.0,
+        327913.0,
+        113281.0
+      ],
+      "prediction": 2,
+      "name": "r0_w300_mnist_i00013_y0",
+      "label": 0,
+      "first_prediction": 2,
+      "last_vs_wait300_pcc": 1.0000000000000002
+    },
+    {
+      "visible_ms": 12.139799975557253,
+      "requested_wait_ms": 300,
+      "first_frame": {
+        "frame_id": 123,
+        "timestamp": 202121733,
+        "exposure_us": 20002.0,
+        "gain": 1.0,
+        "format": 0,
+        "bits": 0,
+        "shape": [
+          3648,
+          5480
+        ],
+        "capture_ms": 0.031199975637719035,
+        "flip_h": false,
+        "flip_v": false,
+        "rotate": false,
+        "opposite": false
+      },
+      "last_frame": {
+        "frame_id": 127,
+        "timestamp": 202303369,
+        "exposure_us": 20002.0,
+        "gain": 1.0,
+        "format": 0,
+        "bits": 0,
+        "shape": [
+          3648,
+          5480
+        ],
+        "capture_ms": 36.92299997783266,
+        "flip_h": false,
+        "flip_v": false,
+        "rotate": false,
+        "opposite": false
+      },
+      "first_vs_last_pcc": 0.9989530707887617,
+      "mean": 11.136534690856934,
+      "p99": 74.1699999999837,
+      "maximum": 255,
+      "saturated_fraction": 4.376674077834772e-06,
+      "energies": [
+        74953.0,
+        79103.0,
+        57826.0,
+        147587.0
+      ],
+      "prediction": 3,
+      "name": "r0_w300_mnist_i00014_y1",
+      "label": 1,
+      "first_prediction": 3,
+      "last_vs_wait300_pcc": 1.0
+    },
+    {
+      "visible_ms": 6.0345999954734,
+      "requested_wait_ms": 0,
+      "first_frame": {
+        "frame_id": 128,
+        "timestamp": 202348778,
+        "exposure_us": 20002.0,
+        "gain": 1.0,
+        "format": 0,
+        "bits": 0,
+        "shape": [
+          3648,
+          5480
+        ],
+        "capture_ms": 10.49419998889789,
+        "flip_h": false,
+        "flip_v": false,
+        "rotate": false,
+        "opposite": false
+      },
+      "last_frame": {
+        "frame_id": 132,
+        "timestamp": 202575824,
+        "exposure_us": 20002.0,
+        "gain": 1.0,
+        "format": 0,
+        "bits": 0,
+        "shape": [
+          3648,
+          5480
+        ],
+        "capture_ms": 36.80899998289533,
+        "flip_h": false,
+        "flip_v": false,
+        "rotate": false,
+        "opposite": false
+      },
+      "first_vs_last_pcc": 0.22186258923610364,
+      "mean": 15.464395523071289,
+      "p99": 109.0,
+      "maximum": 255,
+      "saturated_fraction": 0.0006302410672082071,
+      "energies": [
+        168494.0,
+        114266.0,
+        328332.0,
+        113393.0
+      ],
+      "prediction": 2,
+      "name": "r1_w0_mnist_i00013_y0",
+      "label": 0,
+      "first_prediction": 3,
+      "last_vs_wait300_pcc": 0.9991436659857015
+    },
+    {
+      "visible_ms": 12.912600010167807,
+      "requested_wait_ms": 0,
+      "first_frame": {
+        "frame_id": 133,
+        "timestamp": 202621233,
+        "exposure_us": 20002.0,
+        "gain": 1.0,
+        "format": 0,
+        "bits": 0,
+        "shape": [
+          3648,
+          5480
+        ],
+        "capture_ms": 5.143200018210337,
+        "flip_h": false,
+        "flip_v": false,
+        "rotate": false,
+        "opposite": false
+      },
+      "last_frame": {
+        "frame_id": 137,
+        "timestamp": 202802870,
+        "exposure_us": 20002.0,
+        "gain": 1.0,
+        "format": 0,
+        "bits": 0,
+        "shape": [
+          3648,
+          5480
+        ],
+        "capture_ms": 36.0594000085257,
+        "flip_h": false,
+        "flip_v": false,
+        "rotate": false,
+        "opposite": false
+      },
+      "first_vs_last_pcc": 0.22210910929344369,
+      "mean": 11.138627052307129,
+      "p99": 74.0,
+      "maximum": 255,
+      "saturated_fraction": 4.376674077834772e-06,
+      "energies": [
+        75067.0,
+        79008.0,
+        57861.0,
+        147563.0
+      ],
+      "prediction": 3,
+      "name": "r1_w0_mnist_i00014_y1",
+      "label": 1,
+      "first_prediction": 2,
+      "last_vs_wait300_pcc": 0.998765910578129
+    },
+    {
+      "visible_ms": 1.6216000076383352,
+      "requested_wait_ms": 80,
+      "first_frame": {
+        "frame_id": 139,
+        "timestamp": 202893688,
+        "exposure_us": 20002.0,
+        "gain": 1.0,
+        "format": 0,
+        "bits": 0,
+        "shape": [
+          3648,
+          5480
+        ],
+        "capture_ms": 0.028600014047697186,
+        "flip_h": false,
+        "flip_v": false,
+        "rotate": false,
+        "opposite": false
+      },
+      "last_frame": {
+        "frame_id": 143,
+        "timestamp": 203075324,
+        "exposure_us": 20002.0,
+        "gain": 1.0,
+        "format": 0,
+        "bits": 0,
+        "shape": [
+          3648,
+          5480
+        ],
+        "capture_ms": 37.5732000102289,
+        "flip_h": false,
+        "flip_v": false,
+        "rotate": false,
+        "opposite": false
+      },
+      "first_vs_last_pcc": 0.2222395239907803,
+      "mean": 15.466492652893066,
+      "p99": 110.0,
+      "maximum": 255,
+      "saturated_fraction": 0.0006565011116752158,
+      "energies": [
+        168373.0,
+        114345.0,
+        328339.0,
+        113388.0
+      ],
+      "prediction": 2,
+      "name": "r1_w80_mnist_i00013_y0",
+      "label": 0,
+      "first_prediction": 3,
+      "last_vs_wait300_pcc": 0.9993633614794392
+    },
+    {
+      "visible_ms": 11.02620002347976,
+      "requested_wait_ms": 80,
+      "first_frame": {
+        "frame_id": 145,
+        "timestamp": 203166142,
+        "exposure_us": 20002.0,
+        "gain": 1.0,
+        "format": 0,
+        "bits": 0,
+        "shape": [
+          3648,
+          5480
+        ],
+        "capture_ms": 0.03010002546943724,
+        "flip_h": false,
+        "flip_v": false,
+        "rotate": false,
+        "opposite": false
+      },
+      "last_frame": {
+        "frame_id": 149,
+        "timestamp": 203347779,
+        "exposure_us": 20002.0,
+        "gain": 1.0,
+        "format": 0,
+        "bits": 0,
+        "shape": [
+          3648,
+          5480
+        ],
+        "capture_ms": 37.82080000382848,
+        "flip_h": false,
+        "flip_v": false,
+        "rotate": false,
+        "opposite": false
+      },
+      "first_vs_last_pcc": 0.22198330643775102,
+      "mean": 11.140569686889648,
+      "p99": 74.0,
+      "maximum": 255,
+      "saturated_fraction": 4.376674077834772e-06,
+      "energies": [
+        75091.0,
+        78952.0,
+        57920.0,
+        147747.0
+      ],
+      "prediction": 3,
+      "name": "r1_w80_mnist_i00014_y1",
+      "label": 1,
+      "first_prediction": 2,
+      "last_vs_wait300_pcc": 0.9986297542762642
+    },
+    {
+      "visible_ms": 1.7445000121369958,
+      "requested_wait_ms": 120,
+      "first_frame": {
+        "frame_id": 152,
+        "timestamp": 203484006,
+        "exposure_us": 20002.0,
+        "gain": 1.0,
+        "format": 0,
+        "bits": 0,
+        "shape": [
+          3648,
+          5480
+        ],
+        "capture_ms": 0.032199983252212405,
+        "flip_h": false,
+        "flip_v": false,
+        "rotate": false,
+        "opposite": false
+      },
+      "last_frame": {
+        "frame_id": 156,
+        "timestamp": 203665643,
+        "exposure_us": 20002.0,
+        "gain": 1.0,
+        "format": 0,
+        "bits": 0,
+        "shape": [
+          3648,
+          5480
+        ],
+        "capture_ms": 36.85659999609925,
+        "flip_h": false,
+        "flip_v": false,
+        "rotate": false,
+        "opposite": false
+      },
+      "first_vs_last_pcc": 0.23937239783697964,
+      "mean": 15.464956283569336,
+      "p99": 109.0,
+      "maximum": 255,
+      "saturated_fraction": 0.0006477477635195463,
+      "energies": [
+        168743.0,
+        114532.0,
+        327927.0,
+        113262.0
+      ],
+      "prediction": 2,
+      "name": "r1_w120_mnist_i00013_y0",
+      "label": 0,
+      "first_prediction": 3,
+      "last_vs_wait300_pcc": 0.9993083822964408
+    },
+    {
+      "visible_ms": 8.495900023262948,
+      "requested_wait_ms": 120,
+      "first_frame": {
+        "frame_id": 159,
+        "timestamp": 203801870,
+        "exposure_us": 20002.0,
+        "gain": 1.0,
+        "format": 0,
+        "bits": 0,
+        "shape": [
+          3648,
+          5480
+        ],
+        "capture_ms": 0.03440000000409782,
+        "flip_h": false,
+        "flip_v": false,
+        "rotate": false,
+        "opposite": false
+      },
+      "last_frame": {
+        "frame_id": 163,
+        "timestamp": 203983506,
+        "exposure_us": 20002.0,
+        "gain": 1.0,
+        "format": 0,
+        "bits": 0,
+        "shape": [
+          3648,
+          5480
+        ],
+        "capture_ms": 38.11459999997169,
+        "flip_h": false,
+        "flip_v": false,
+        "rotate": false,
+        "opposite": false
+      },
+      "first_vs_last_pcc": 0.22211206284199028,
+      "mean": 11.137908935546875,
+      "p99": 74.0,
+      "maximum": 255,
+      "saturated_fraction": 4.376674077834772e-06,
+      "energies": [
+        75111.0,
+        79034.0,
+        57843.0,
+        147532.0
+      ],
+      "prediction": 3,
+      "name": "r1_w120_mnist_i00014_y1",
+      "label": 1,
+      "first_prediction": 2,
+      "last_vs_wait300_pcc": 0.9985312075549679
+    },
+    {
+      "visible_ms": 14.504099992336705,
+      "requested_wait_ms": 160,
+      "first_frame": {
+        "frame_id": 167,
+        "timestamp": 204165143,
+        "exposure_us": 20002.0,
+        "gain": 1.0,
+        "format": 0,
+        "bits": 0,
+        "shape": [
+          3648,
+          5480
+        ],
+        "capture_ms": 0.030899973353371024,
+        "flip_h": false,
+        "flip_v": false,
+        "rotate": false,
+        "opposite": false
+      },
+      "last_frame": {
+        "frame_id": 171,
+        "timestamp": 204346779,
+        "exposure_us": 20002.0,
+        "gain": 1.0,
+        "format": 0,
+        "bits": 0,
+        "shape": [
+          3648,
+          5480
+        ],
+        "capture_ms": 37.10950000095181,
+        "flip_h": false,
+        "flip_v": false,
+        "rotate": false,
+        "opposite": false
+      },
+      "first_vs_last_pcc": 0.7443788634228982,
+      "mean": 15.464422225952148,
+      "p99": 110.0,
+      "maximum": 255,
+      "saturated_fraction": 0.0006433710894417114,
+      "energies": [
+        168588.0,
+        114549.0,
+        328443.0,
+        113293.0
+      ],
+      "prediction": 2,
+      "name": "r1_w160_mnist_i00013_y0",
+      "label": 0,
+      "first_prediction": 2,
+      "last_vs_wait300_pcc": 0.9994425917934823
+    },
+    {
+      "visible_ms": 6.132700014859438,
+      "requested_wait_ms": 160,
+      "first_frame": {
+        "frame_id": 175,
+        "timestamp": 204528416,
+        "exposure_us": 20002.0,
+        "gain": 1.0,
+        "format": 0,
+        "bits": 0,
+        "shape": [
+          3648,
+          5480
+        ],
+        "capture_ms": 0.031199975637719035,
+        "flip_h": false,
+        "flip_v": false,
+        "rotate": false,
+        "opposite": false
+      },
+      "last_frame": {
+        "frame_id": 179,
+        "timestamp": 204710052,
+        "exposure_us": 20002.0,
+        "gain": 1.0,
+        "format": 0,
+        "bits": 0,
+        "shape": [
+          3648,
+          5480
+        ],
+        "capture_ms": 37.75079999468289,
+        "flip_h": false,
+        "flip_v": false,
+        "rotate": false,
+        "opposite": false
+      },
+      "first_vs_last_pcc": 0.9444760959672729,
+      "mean": 11.141042709350586,
+      "p99": 75.0,
+      "maximum": 255,
+      "saturated_fraction": 4.376674077834772e-06,
+      "energies": [
+        74915.0,
+        78954.0,
+        57957.0,
+        147900.0
+      ],
+      "prediction": 3,
+      "name": "r1_w160_mnist_i00014_y1",
+      "label": 1,
+      "first_prediction": 3,
+      "last_vs_wait300_pcc": 0.9988925603789724
+    },
+    {
+      "visible_ms": 15.910299989627674,
+      "requested_wait_ms": 200,
+      "first_frame": {
+        "frame_id": 184,
+        "timestamp": 204937098,
+        "exposure_us": 20002.0,
+        "gain": 1.0,
+        "format": 0,
+        "bits": 0,
+        "shape": [
+          3648,
+          5480
+        ],
+        "capture_ms": 0.030499999411404133,
+        "flip_h": false,
+        "flip_v": false,
+        "rotate": false,
+        "opposite": false
+      },
+      "last_frame": {
+        "frame_id": 188,
+        "timestamp": 205118734,
+        "exposure_us": 20002.0,
+        "gain": 1.0,
+        "format": 0,
+        "bits": 0,
+        "shape": [
+          3648,
+          5480
+        ],
+        "capture_ms": 38.11480000149459,
+        "flip_h": false,
+        "flip_v": false,
+        "rotate": false,
+        "opposite": false
+      },
+      "first_vs_last_pcc": 0.9994674925101558,
+      "mean": 15.458959579467773,
+      "p99": 109.0,
+      "maximum": 255,
+      "saturated_fraction": 0.0006302410672082071,
+      "energies": [
+        168608.0,
+        114754.0,
+        327936.0,
+        113010.0
+      ],
+      "prediction": 2,
+      "name": "r1_w200_mnist_i00013_y0",
+      "label": 0,
+      "first_prediction": 2,
+      "last_vs_wait300_pcc": 0.9993876201327923
+    },
+    {
+      "visible_ms": 9.68079999438487,
+      "requested_wait_ms": 200,
+      "first_frame": {
+        "frame_id": 193,
+        "timestamp": 205345780,
+        "exposure_us": 20002.0,
+        "gain": 1.0,
+        "format": 0,
+        "bits": 0,
+        "shape": [
+          3648,
+          5480
+        ],
+        "capture_ms": 0.02950002090074122,
+        "flip_h": false,
+        "flip_v": false,
+        "rotate": false,
+        "opposite": false
+      },
+      "last_frame": {
+        "frame_id": 197,
+        "timestamp": 205527416,
+        "exposure_us": 20002.0,
+        "gain": 1.0,
+        "format": 0,
+        "bits": 0,
+        "shape": [
+          3648,
+          5480
+        ],
+        "capture_ms": 37.56450000219047,
+        "flip_h": false,
+        "flip_v": false,
+        "rotate": false,
+        "opposite": false
+      },
+      "first_vs_last_pcc": 0.9988058366977598,
+      "mean": 11.136306762695312,
+      "p99": 74.1699999999837,
+      "maximum": 255,
+      "saturated_fraction": 4.376674077834772e-06,
+      "energies": [
+        74901.0,
+        79022.0,
+        57955.0,
+        147884.0
+      ],
+      "prediction": 3,
+      "name": "r1_w200_mnist_i00014_y1",
+      "label": 1,
+      "first_prediction": 3,
+      "last_vs_wait300_pcc": 0.9987968705356057
+    },
+    {
+      "visible_ms": 2.629000024171546,
+      "requested_wait_ms": 240,
+      "first_frame": {
+        "frame_id": 202,
+        "timestamp": 205799871,
+        "exposure_us": 20002.0,
+        "gain": 1.0,
+        "format": 0,
+        "bits": 0,
+        "shape": [
+          3648,
+          5480
+        ],
+        "capture_ms": 0.03359999391250312,
+        "flip_h": false,
+        "flip_v": false,
+        "rotate": false,
+        "opposite": false
+      },
+      "last_frame": {
+        "frame_id": 206,
+        "timestamp": 205981507,
+        "exposure_us": 20002.0,
+        "gain": 1.0,
+        "format": 0,
+        "bits": 0,
+        "shape": [
+          3648,
+          5480
+        ],
+        "capture_ms": 38.304700021399185,
+        "flip_h": false,
+        "flip_v": false,
+        "rotate": false,
+        "opposite": false
+      },
+      "first_vs_last_pcc": 0.9994025474847791,
+      "mean": 15.465564727783203,
+      "p99": 109.0,
+      "maximum": 255,
+      "saturated_fraction": 0.0006433710894417114,
+      "energies": [
+        168809.0,
+        114453.0,
+        328199.0,
+        113311.0
+      ],
+      "prediction": 2,
+      "name": "r1_w240_mnist_i00013_y0",
+      "label": 0,
+      "first_prediction": 2,
+      "last_vs_wait300_pcc": 0.99933294988123
+    },
+    {
+      "visible_ms": 13.097100018057972,
+      "requested_wait_ms": 240,
+      "first_frame": {
+        "frame_id": 212,
+        "timestamp": 206253962,
+        "exposure_us": 20002.0,
+        "gain": 1.0,
+        "format": 0,
+        "bits": 0,
+        "shape": [
+          3648,
+          5480
+        ],
+        "capture_ms": 0.031100003980100155,
+        "flip_h": false,
+        "flip_v": false,
+        "rotate": false,
+        "opposite": false
+      },
+      "last_frame": {
+        "frame_id": 216,
+        "timestamp": 206435598,
+        "exposure_us": 20002.0,
+        "gain": 1.0,
+        "format": 0,
+        "bits": 0,
+        "shape": [
+          3648,
+          5480
+        ],
+        "capture_ms": 37.60260000126436,
+        "flip_h": false,
+        "flip_v": false,
+        "rotate": false,
+        "opposite": false
+      },
+      "first_vs_last_pcc": 0.9989791735073718,
+      "mean": 11.140898704528809,
+      "p99": 74.0,
+      "maximum": 255,
+      "saturated_fraction": 4.376674077834772e-06,
+      "energies": [
+        75064.0,
+        79036.0,
+        58007.0,
+        147473.0
+      ],
+      "prediction": 3,
+      "name": "r1_w240_mnist_i00014_y1",
+      "label": 1,
+      "first_prediction": 3,
+      "last_vs_wait300_pcc": 0.9988369129971901
+    },
+    {
+      "visible_ms": 7.42879998870194,
+      "requested_wait_ms": 300,
+      "first_frame": {
+        "frame_id": 223,
+        "timestamp": 206753462,
+        "exposure_us": 20002.0,
+        "gain": 1.0,
+        "format": 0,
+        "bits": 0,
+        "shape": [
+          3648,
+          5480
+        ],
+        "capture_ms": 0.03200001083314419,
+        "flip_h": false,
+        "flip_v": false,
+        "rotate": false,
+        "opposite": false
+      },
+      "last_frame": {
+        "frame_id": 227,
+        "timestamp": 206935099,
+        "exposure_us": 20002.0,
+        "gain": 1.0,
+        "format": 0,
+        "bits": 0,
+        "shape": [
+          3648,
+          5480
+        ],
+        "capture_ms": 38.77199999988079,
+        "flip_h": false,
+        "flip_v": false,
+        "rotate": false,
+        "opposite": false
+      },
+      "first_vs_last_pcc": 0.9994691125278428,
+      "mean": 15.464351654052734,
+      "p99": 109.0,
+      "maximum": 255,
+      "saturated_fraction": 0.0006433710894417114,
+      "energies": [
+        168833.0,
+        114711.0,
+        327847.0,
+        113006.0
+      ],
+      "prediction": 2,
+      "name": "r1_w300_mnist_i00013_y0",
+      "label": 0,
+      "first_prediction": 2,
+      "last_vs_wait300_pcc": 1.0
+    },
+    {
+      "visible_ms": 4.951000009896234,
+      "requested_wait_ms": 300,
+      "first_frame": {
+        "frame_id": 234,
+        "timestamp": 207252962,
+        "exposure_us": 20002.0,
+        "gain": 1.0,
+        "format": 0,
+        "bits": 0,
+        "shape": [
+          3648,
+          5480
+        ],
+        "capture_ms": 0.41280000004917383,
+        "flip_h": false,
+        "flip_v": false,
+        "rotate": false,
+        "opposite": false
+      },
+      "last_frame": {
+        "frame_id": 238,
+        "timestamp": 207434599,
+        "exposure_us": 20002.0,
+        "gain": 1.0,
+        "format": 0,
+        "bits": 0,
+        "shape": [
+          3648,
+          5480
+        ],
+        "capture_ms": 37.60999999940395,
+        "flip_h": false,
+        "flip_v": false,
+        "rotate": false,
+        "opposite": false
+      },
+      "first_vs_last_pcc": 0.9989092564665418,
+      "mean": 11.140954971313477,
+      "p99": 74.0,
+      "maximum": 255,
+      "saturated_fraction": 4.376674077834772e-06,
+      "energies": [
+        75028.0,
+        79131.0,
+        57802.0,
+        147645.0
+      ],
+      "prediction": 3,
+      "name": "r1_w300_mnist_i00014_y1",
+      "label": 1,
+      "first_prediction": 3,
+      "last_vs_wait300_pcc": 1.0
+    },
+    {
+      "visible_ms": 16.97189998230897,
+      "requested_wait_ms": 0,
+      "first_frame": {
+        "frame_id": 239,
+        "timestamp": 207480008,
+        "exposure_us": 20002.0,
+        "gain": 1.0,
+        "format": 0,
+        "bits": 0,
+        "shape": [
+          3648,
+          5480
+        ],
+        "capture_ms": 0.028600014047697186,
+        "flip_h": false,
+        "flip_v": false,
+        "rotate": false,
+        "opposite": false
+      },
+      "last_frame": {
+        "frame_id": 243,
+        "timestamp": 207661644,
+        "exposure_us": 20002.0,
+        "gain": 1.0,
+        "format": 0,
+        "bits": 0,
+        "shape": [
+          3648,
+          5480
+        ],
+        "capture_ms": 37.577400013105944,
+        "flip_h": false,
+        "flip_v": false,
+        "rotate": false,
+        "opposite": false
+      },
+      "first_vs_last_pcc": 0.2218992060601169,
+      "mean": 15.465235710144043,
+      "p99": 109.0,
+      "maximum": 255,
+      "saturated_fraction": 0.0006302410672082071,
+      "energies": [
+        168442.0,
+        114499.0,
+        328374.0,
+        113221.0
+      ],
+      "prediction": 2,
+      "name": "r2_w0_mnist_i00013_y0",
+      "label": 0,
+      "first_prediction": 3,
+      "last_vs_wait300_pcc": 0.9989816786725151
+    },
+    {
+      "visible_ms": 5.257999990135431,
+      "requested_wait_ms": 0,
+      "first_frame": {
+        "frame_id": 244,
+        "timestamp": 207707054,
+        "exposure_us": 20002.0,
+        "gain": 1.0,
+        "format": 0,
+        "bits": 0,
+        "shape": [
+          3648,
+          5480
+        ],
+        "capture_ms": 10.532099986448884,
+        "flip_h": false,
+        "flip_v": false,
+        "rotate": false,
+        "opposite": false
+      },
+      "last_frame": {
+        "frame_id": 248,
+        "timestamp": 207888690,
+        "exposure_us": 20002.0,
+        "gain": 1.0,
+        "format": 0,
+        "bits": 0,
+        "shape": [
+          3648,
+          5480
+        ],
+        "capture_ms": 37.20769999199547,
+        "flip_h": false,
+        "flip_v": false,
+        "rotate": false,
+        "opposite": false
+      },
+      "first_vs_last_pcc": 0.22186644478939496,
+      "mean": 11.137396812438965,
+      "p99": 74.0,
+      "maximum": 255,
+      "saturated_fraction": 4.376674077834772e-06,
+      "energies": [
+        75089.0,
+        79011.0,
+        57897.0,
+        147711.0
+      ],
+      "prediction": 3,
+      "name": "r2_w0_mnist_i00014_y1",
+      "label": 1,
+      "first_prediction": 2,
+      "last_vs_wait300_pcc": 0.9981165073317599
+    },
+    {
+      "visible_ms": 12.970900017535314,
+      "requested_wait_ms": 80,
+      "first_frame": {
+        "frame_id": 250,
+        "timestamp": 207979508,
+        "exposure_us": 20002.0,
+        "gain": 1.0,
+        "format": 0,
+        "bits": 0,
+        "shape": [
+          3648,
+          5480
+        ],
+        "capture_ms": 0.03160000778734684,
+        "flip_h": false,
+        "flip_v": false,
+        "rotate": false,
+        "opposite": false
+      },
+      "last_frame": {
+        "frame_id": 254,
+        "timestamp": 208161145,
+        "exposure_us": 20002.0,
+        "gain": 1.0,
+        "format": 0,
+        "bits": 0,
+        "shape": [
+          3648,
+          5480
+        ],
+        "capture_ms": 37.719199986895546,
+        "flip_h": false,
+        "flip_v": false,
+        "rotate": false,
+        "opposite": false
+      },
+      "first_vs_last_pcc": 0.22189377898709123,
+      "mean": 15.466229438781738,
+      "p99": 110.0,
+      "maximum": 255,
+      "saturated_fraction": 0.0006433710894417114,
+      "energies": [
+        168481.0,
+        114381.0,
+        328393.0,
+        113356.0
+      ],
+      "prediction": 2,
+      "name": "r2_w80_mnist_i00013_y0",
+      "label": 0,
+      "first_prediction": 3,
+      "last_vs_wait300_pcc": 0.9990328543622359
+    },
+    {
+      "visible_ms": 4.442300007212907,
+      "requested_wait_ms": 80,
+      "first_frame": {
+        "frame_id": 256,
+        "timestamp": 208251963,
+        "exposure_us": 20002.0,
+        "gain": 1.0,
+        "format": 0,
+        "bits": 0,
+        "shape": [
+          3648,
+          5480
+        ],
+        "capture_ms": 0.030199997127056122,
+        "flip_h": false,
+        "flip_v": false,
+        "rotate": false,
+        "opposite": false
+      },
+      "last_frame": {
+        "frame_id": 260,
+        "timestamp": 208433599,
+        "exposure_us": 20002.0,
+        "gain": 1.0,
+        "format": 0,
+        "bits": 0,
+        "shape": [
+          3648,
+          5480
+        ],
+        "capture_ms": 37.17200001119636,
+        "flip_h": false,
+        "flip_v": false,
+        "rotate": false,
+        "opposite": false
+      },
+      "first_vs_last_pcc": 0.22168662833491024,
+      "mean": 11.137462615966797,
+      "p99": 74.0,
+      "maximum": 255,
+      "saturated_fraction": 4.376674077834772e-06,
+      "energies": [
+        75005.0,
+        79078.0,
+        57879.0,
+        147514.0
+      ],
+      "prediction": 3,
+      "name": "r2_w80_mnist_i00014_y1",
+      "label": 1,
+      "first_prediction": 2,
+      "last_vs_wait300_pcc": 0.9979123691620879
+    },
+    {
+      "visible_ms": 9.175399987725541,
+      "requested_wait_ms": 120,
+      "first_frame": {
+        "frame_id": 263,
+        "timestamp": 208615236,
+        "exposure_us": 20002.0,
+        "gain": 1.0,
+        "format": 0,
+        "bits": 0,
+        "shape": [
+          3648,
+          5480
+        ],
+        "capture_ms": 0.29460000223480165,
+        "flip_h": false,
+        "flip_v": false,
+        "rotate": false,
+        "opposite": false
+      },
+      "last_frame": {
+        "frame_id": 267,
+        "timestamp": 208796872,
+        "exposure_us": 20002.0,
+        "gain": 1.0,
+        "format": 0,
+        "bits": 0,
+        "shape": [
+          3648,
+          5480
+        ],
+        "capture_ms": 37.33689998625778,
+        "flip_h": false,
+        "flip_v": false,
+        "rotate": false,
+        "opposite": false
+      },
+      "first_vs_last_pcc": 0.23069260620523172,
+      "mean": 15.46558666229248,
+      "p99": 110.0,
+      "maximum": 255,
+      "saturated_fraction": 0.000634617741286042,
+      "energies": [
+        168560.0,
+        114504.0,
+        328401.0,
+        113306.0
+      ],
+      "prediction": 2,
+      "name": "r2_w120_mnist_i00013_y0",
+      "label": 0,
+      "first_prediction": 3,
+      "last_vs_wait300_pcc": 0.9991397884599235
+    },
+    {
+      "visible_ms": 3.724899986991659,
+      "requested_wait_ms": 120,
+      "first_frame": {
+        "frame_id": 270,
+        "timestamp": 208933100,
+        "exposure_us": 20002.0,
+        "gain": 1.0,
+        "format": 0,
+        "bits": 0,
+        "shape": [
+          3648,
+          5480
+        ],
+        "capture_ms": 0.033100019209086895,
+        "flip_h": false,
+        "flip_v": false,
+        "rotate": false,
+        "opposite": false
+      },
+      "last_frame": {
+        "frame_id": 274,
+        "timestamp": 209114736,
+        "exposure_us": 20002.0,
+        "gain": 1.0,
+        "format": 0,
+        "bits": 0,
+        "shape": [
+          3648,
+          5480
+        ],
+        "capture_ms": 37.5765000062529,
+        "flip_h": false,
+        "flip_v": false,
+        "rotate": false,
+        "opposite": false
+      },
+      "first_vs_last_pcc": 0.23282701820231436,
+      "mean": 11.139200210571289,
+      "p99": 74.0,
+      "maximum": 255,
+      "saturated_fraction": 4.376674077834772e-06,
+      "energies": [
+        75071.0,
+        79004.0,
+        57980.0,
+        147732.0
+      ],
+      "prediction": 3,
+      "name": "r2_w120_mnist_i00014_y1",
+      "label": 1,
+      "first_prediction": 2,
+      "last_vs_wait300_pcc": 0.99827794287324
+    },
+    {
+      "visible_ms": 9.610600012820214,
+      "requested_wait_ms": 160,
+      "first_frame": {
+        "frame_id": 278,
+        "timestamp": 209296372,
+        "exposure_us": 20002.0,
+        "gain": 1.0,
+        "format": 0,
+        "bits": 0,
+        "shape": [
+          3648,
+          5480
+        ],
+        "capture_ms": 0.033199990866705775,
+        "flip_h": false,
+        "flip_v": false,
+        "rotate": false,
+        "opposite": false
+      },
+      "last_frame": {
+        "frame_id": 282,
+        "timestamp": 209478009,
+        "exposure_us": 20002.0,
+        "gain": 1.0,
+        "format": 0,
+        "bits": 0,
+        "shape": [
+          3648,
+          5480
+        ],
+        "capture_ms": 37.46919997502118,
+        "flip_h": false,
+        "flip_v": false,
+        "rotate": false,
+        "opposite": false
+      },
+      "first_vs_last_pcc": 0.9775198086816289,
+      "mean": 15.47145938873291,
+      "p99": 110.0,
+      "maximum": 255,
+      "saturated_fraction": 0.000634617741286042,
+      "energies": [
+        168520.0,
+        114320.0,
+        328455.0,
+        113459.0
+      ],
+      "prediction": 2,
+      "name": "r2_w160_mnist_i00013_y0",
+      "label": 0,
+      "first_prediction": 2,
+      "last_vs_wait300_pcc": 0.9993144736528438
+    },
+    {
+      "visible_ms": 5.235799995716661,
+      "requested_wait_ms": 160,
+      "first_frame": {
+        "frame_id": 286,
+        "timestamp": 209659645,
+        "exposure_us": 20002.0,
+        "gain": 1.0,
+        "format": 0,
+        "bits": 0,
+        "shape": [
+          3648,
+          5480
+        ],
+        "capture_ms": 0.18540001474320889,
+        "flip_h": false,
+        "flip_v": false,
+        "rotate": false,
+        "opposite": false
+      },
+      "last_frame": {
+        "frame_id": 290,
+        "timestamp": 209841282,
+        "exposure_us": 20002.0,
+        "gain": 1.0,
+        "format": 0,
+        "bits": 0,
+        "shape": [
+          3648,
+          5480
+        ],
+        "capture_ms": 37.38950000843033,
+        "flip_h": false,
+        "flip_v": false,
+        "rotate": false,
+        "opposite": false
+      },
+      "first_vs_last_pcc": 0.9983394291234425,
+      "mean": 11.142237663269043,
+      "p99": 74.0,
+      "maximum": 255,
+      "saturated_fraction": 4.376674077834772e-06,
+      "energies": [
+        74984.0,
+        78986.0,
+        57949.0,
+        147829.0
+      ],
+      "prediction": 3,
+      "name": "r2_w160_mnist_i00014_y1",
+      "label": 1,
+      "first_prediction": 3,
+      "last_vs_wait300_pcc": 0.9982673773559596
+    },
+    {
+      "visible_ms": 13.381600001594052,
+      "requested_wait_ms": 200,
+      "first_frame": {
+        "frame_id": 295,
+        "timestamp": 210068327,
+        "exposure_us": 20002.0,
+        "gain": 1.0,
+        "format": 0,
+        "bits": 0,
+        "shape": [
+          3648,
+          5480
+        ],
+        "capture_ms": 0.03090000245720148,
+        "flip_h": false,
+        "flip_v": false,
+        "rotate": false,
+        "opposite": false
+      },
+      "last_frame": {
+        "frame_id": 299,
+        "timestamp": 210249964,
+        "exposure_us": 20002.0,
+        "gain": 1.0,
+        "format": 0,
+        "bits": 0,
+        "shape": [
+          3648,
+          5480
+        ],
+        "capture_ms": 38.212799991015345,
+        "flip_h": false,
+        "flip_v": false,
+        "rotate": false,
+        "opposite": false
+      },
+      "first_vs_last_pcc": 0.999456441601323,
+      "mean": 15.468382835388184,
+      "p99": 109.0,
+      "maximum": 255,
+      "saturated_fraction": 0.0006433710894417114,
+      "energies": [
+        168812.0,
+        114551.0,
+        327859.0,
+        113377.0
+      ],
+      "prediction": 2,
+      "name": "r2_w200_mnist_i00013_y0",
+      "label": 0,
+      "first_prediction": 2,
+      "last_vs_wait300_pcc": 0.9992033194380122
+    },
+    {
+      "visible_ms": 8.65259999409318,
+      "requested_wait_ms": 200,
+      "first_frame": {
+        "frame_id": 304,
+        "timestamp": 210477009,
+        "exposure_us": 20002.0,
+        "gain": 1.0,
+        "format": 0,
+        "bits": 0,
+        "shape": [
+          3648,
+          5480
+        ],
+        "capture_ms": 0.031400006264448166,
+        "flip_h": false,
+        "flip_v": false,
+        "rotate": false,
+        "opposite": false
+      },
+      "last_frame": {
+        "frame_id": 308,
+        "timestamp": 210658646,
+        "exposure_us": 20002.0,
+        "gain": 1.0,
+        "format": 0,
+        "bits": 0,
+        "shape": [
+          3648,
+          5480
+        ],
+        "capture_ms": 37.314999994123355,
+        "flip_h": false,
+        "flip_v": false,
+        "rotate": false,
+        "opposite": false
+      },
+      "first_vs_last_pcc": 0.9989506069365911,
+      "mean": 11.144058227539062,
+      "p99": 75.0,
+      "maximum": 255,
+      "saturated_fraction": 4.376674077834772e-06,
+      "energies": [
+        74940.0,
+        78959.0,
+        58032.0,
+        147737.0
+      ],
+      "prediction": 3,
+      "name": "r2_w200_mnist_i00014_y1",
+      "label": 1,
+      "first_prediction": 3,
+      "last_vs_wait300_pcc": 0.9983458774038597
+    },
+    {
+      "visible_ms": 16.542999976081774,
+      "requested_wait_ms": 240,
+      "first_frame": {
+        "frame_id": 314,
+        "timestamp": 210931100,
+        "exposure_us": 20002.0,
+        "gain": 1.0,
+        "format": 0,
+        "bits": 0,
+        "shape": [
+          3648,
+          5480
+        ],
+        "capture_ms": 0.02929999027401209,
+        "flip_h": false,
+        "flip_v": false,
+        "rotate": false,
+        "opposite": false
+      },
+      "last_frame": {
+        "frame_id": 318,
+        "timestamp": 211112737,
+        "exposure_us": 20002.0,
+        "gain": 1.0,
+        "format": 0,
+        "bits": 0,
+        "shape": [
+          3648,
+          5480
+        ],
+        "capture_ms": 37.43889997713268,
+        "flip_h": false,
+        "flip_v": false,
+        "rotate": false,
+        "opposite": false
+      },
+      "first_vs_last_pcc": 0.9994738604320561,
+      "mean": 15.467923164367676,
+      "p99": 110.0,
+      "maximum": 255,
+      "saturated_fraction": 0.0006433710894417114,
+      "energies": [
+        168553.0,
+        114341.0,
+        328191.0,
+        113522.0
+      ],
+      "prediction": 2,
+      "name": "r2_w240_mnist_i00013_y0",
+      "label": 0,
+      "first_prediction": 2,
+      "last_vs_wait300_pcc": 0.9989982549533668
+    },
+    {
+      "visible_ms": 12.436799996066839,
+      "requested_wait_ms": 240,
+      "first_frame": {
+        "frame_id": 324,
+        "timestamp": 211385192,
+        "exposure_us": 20002.0,
+        "gain": 1.0,
+        "format": 0,
+        "bits": 0,
+        "shape": [
+          3648,
+          5480
+        ],
+        "capture_ms": 0.029799994081258774,
+        "flip_h": false,
+        "flip_v": false,
+        "rotate": false,
+        "opposite": false
+      },
+      "last_frame": {
+        "frame_id": 328,
+        "timestamp": 211566828,
+        "exposure_us": 20002.0,
+        "gain": 1.0,
+        "format": 0,
+        "bits": 0,
+        "shape": [
+          3648,
+          5480
+        ],
+        "capture_ms": 37.51119997468777,
+        "flip_h": false,
+        "flip_v": false,
+        "rotate": false,
+        "opposite": false
+      },
+      "first_vs_last_pcc": 0.9989757331912611,
+      "mean": 11.145625114440918,
+      "p99": 74.0,
+      "maximum": 255,
+      "saturated_fraction": 4.376674077834772e-06,
+      "energies": [
+        75232.0,
+        78956.0,
+        57977.0,
+        147467.0
+      ],
+      "prediction": 3,
+      "name": "r2_w240_mnist_i00014_y1",
+      "label": 1,
+      "first_prediction": 3,
+      "last_vs_wait300_pcc": 0.9986540261043279
+    },
+    {
+      "visible_ms": 5.034400004660711,
+      "requested_wait_ms": 300,
+      "first_frame": {
+        "frame_id": 335,
+        "timestamp": 211930101,
+        "exposure_us": 20002.0,
+        "gain": 1.0,
+        "format": 0,
+        "bits": 0,
+        "shape": [
+          3648,
+          5480
+        ],
+        "capture_ms": 0.030099996365606785,
+        "flip_h": false,
+        "flip_v": false,
+        "rotate": false,
+        "opposite": false
+      },
+      "last_frame": {
+        "frame_id": 339,
+        "timestamp": 212111737,
+        "exposure_us": 20002.0,
+        "gain": 1.0,
+        "format": 0,
+        "bits": 0,
+        "shape": [
+          3648,
+          5480
+        ],
+        "capture_ms": 37.857400020584464,
+        "flip_h": false,
+        "flip_v": false,
+        "rotate": false,
+        "opposite": false
+      },
+      "first_vs_last_pcc": 0.9990241803683159,
+      "mean": 15.470544815063477,
+      "p99": 110.0,
+      "maximum": 255,
+      "saturated_fraction": 0.0006477477635195463,
+      "energies": [
+        168637.0,
+        114137.0,
+        328233.0,
+        113646.0
+      ],
+      "prediction": 2,
+      "name": "r2_w300_mnist_i00013_y0",
+      "label": 0,
+      "first_prediction": 2,
+      "last_vs_wait300_pcc": 1.0
+    },
+    {
+      "visible_ms": 2.4127000069711357,
+      "requested_wait_ms": 300,
+      "first_frame": {
+        "frame_id": 346,
+        "timestamp": 212429601,
+        "exposure_us": 20002.0,
+        "gain": 1.0,
+        "format": 0,
+        "bits": 0,
+        "shape": [
+          3648,
+          5480
+        ],
+        "capture_ms": 0.02880001557059586,
+        "flip_h": false,
+        "flip_v": false,
+        "rotate": false,
+        "opposite": false
+      },
+      "last_frame": {
+        "frame_id": 350,
+        "timestamp": 212611238,
+        "exposure_us": 20002.0,
+        "gain": 1.0,
+        "format": 0,
+        "bits": 0,
+        "shape": [
+          3648,
+          5480
+        ],
+        "capture_ms": 38.08870000648312,
+        "flip_h": false,
+        "flip_v": false,
+        "rotate": false,
+        "opposite": false
+      },
+      "first_vs_last_pcc": 0.9985743491178767,
+      "mean": 11.14238166809082,
+      "p99": 74.0,
+      "maximum": 255,
+      "saturated_fraction": 4.376674077834772e-06,
+      "energies": [
+        75195.0,
+        78903.0,
+        58033.0,
+        147880.0
+      ],
+      "prediction": 3,
+      "name": "r2_w300_mnist_i00014_y1",
+      "label": 1,
+      "first_prediction": 3,
+      "last_vs_wait300_pcc": 1.0
+    }
+  ],
+  "camera_settings_initial": {
+    "exposure_us": 40004.0,
+    "gain": 1.0
+  },
+  "phase_receipt_B": {
+    "phase_file": "E:\\code\\guest\\MNIST_10cm_8um_Bench_Test_20260923\\02_mnist_10cm\\phase\\B_RECOMMENDED_native8_best.bmp",
+    "phase_sha256": "9a5db11329f1fe397d7bed40f348651321850e1a11309e4ecf0a79690aa9aa54",
+    "write_call_ms": 1.6168000001925975,
+    "settle_s": 0.8,
+    "sdk_ack_only": true,
+    "write_return": 0,
+    "write_ack_success": false,
+    "strict_write_ack": true,
+    "known_vendor_constant_zero_return": true,
+    "optical_display_verified_by_this_call": false,
+    "no_extra_flip_or_inversion": true,
+    "panel": {
+      "Width": 1920,
+      "Height": 1200,
+      "Depth": 8,
+      "SLMFound": 1,
+      "COMFound": 1,
+      "lut_sha256": "6a968b970fc81b035788534fc6ab7236a59e25e1a73068de393d90720a52efb6",
+      "lut": "C:\\Program Files\\Meadowlark Optics\\Blink 1920 HDMI\\LUT Files\\19x12_8bit_linearVoltage.lut",
+      "lut_scope": "linear voltage; NOT verified linear phase",
+      "wrapper_sha256": "0d3cc283165bb62ed60a4c8b1c1a256af9441e6342654511fd1f80dbe46ce225",
+      "startup": {
+        "dwFlags": 256,
+        "wShowWindow": 1
+      }
+    },
+    "is_8_bit": 0,
+    "pixel_format": "rgba",
+    "persistent_buffer": true
+  },
+  "camera_settings": {
+    "exposure_us": 20002.0,
+    "gain": 1.0
+  }
+}

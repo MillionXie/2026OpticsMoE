@@ -1,0 +1,115 @@
+{
+  "orientation": "flip_v",
+  "orientation_selection": "highest_mean_pcc_on_input_set",
+  "summary": {
+    "identity": {
+      "n": 4,
+      "accuracy": 0.0,
+      "mean_pcc": 0.23846589845151392
+    },
+    "flip_h": {
+      "n": 4,
+      "accuracy": 0.0,
+      "mean_pcc": 0.21630768769554626
+    },
+    "flip_v": {
+      "n": 4,
+      "accuracy": 1.0,
+      "mean_pcc": 0.3821869360091031
+    },
+    "rot180": {
+      "n": 4,
+      "accuracy": 0.0,
+      "mean_pcc": 0.17081487284086191
+    },
+    "transpose": {
+      "n": 4,
+      "accuracy": 0.0,
+      "mean_pcc": 0.19815580774602534
+    },
+    "rot90": {
+      "n": 4,
+      "accuracy": 0.5,
+      "mean_pcc": 0.2626349752785661
+    },
+    "rot270": {
+      "n": 4,
+      "accuracy": 0.5,
+      "mean_pcc": 0.32159680072839025
+    },
+    "anti_transpose": {
+      "n": 4,
+      "accuracy": 0.0,
+      "mean_pcc": 0.20411435791398902
+    }
+  },
+  "selected_rows": [
+    {
+      "key": "mnist_i00013_y0",
+      "label": 0,
+      "prediction": 0,
+      "energy": [
+        328417.0,
+        113880.0,
+        168519.0,
+        113825.0
+      ],
+      "simulation_prediction": 0,
+      "pcc": 0.47059320193072907,
+      "mean": 15.448447227478027,
+      "p99": 110.0,
+      "saturated_fraction": 0.0006608777857530506
+    },
+    {
+      "key": "mnist_i00014_y1",
+      "label": 1,
+      "prediction": 1,
+      "energy": [
+        57882.0,
+        147776.0,
+        74911.0,
+        78915.0
+      ],
+      "simulation_prediction": 1,
+      "pcc": 0.33062245122303124,
+      "mean": 11.108536720275879,
+      "p99": 74.0,
+      "saturated_fraction": 4.376674077834772e-06
+    },
+    {
+      "key": "mnist_i00032_y3",
+      "label": 3,
+      "prediction": 3,
+      "energy": [
+        103589.0,
+        127453.0,
+        85595.0,
+        209704.0
+      ],
+      "simulation_prediction": 3,
+      "pcc": 0.3922482233450963,
+      "mean": 14.009637832641602,
+      "p99": 90.0,
+      "saturated_fraction": 2.626004446700863e-05
+    },
+    {
+      "key": "mnist_i00038_y2",
+      "label": 2,
+      "prediction": 2,
+      "energy": [
+        92209.0,
+        84753.0,
+        149389.0,
+        84124.0
+      ],
+      "simulation_prediction": 2,
+      "pcc": 0.3352838675375558,
+      "mean": 10.904671669006348,
+      "p99": 74.0,
+      "saturated_fraction": 4.376674077834772e-06
+    }
+  ],
+  "reference": "C:\\Users\\Xml12\\OneDrive\\2026OpticsMoE\\ABO_Lab_SHS_8um\\assets\\mnist_native8_completed_20260913\\paired\\pair_reference.npz",
+  "image_directory": "C:\\Users\\Xml12\\OneDrive\\2026OpticsMoE\\LightGenV2\\tasks\\t07_abo_image_retrieval\\reports\\20260924_mnist_dvp\\exposure_images",
+  "photometry": "linear Mono8; no per-image normalization or background subtraction"
+}
