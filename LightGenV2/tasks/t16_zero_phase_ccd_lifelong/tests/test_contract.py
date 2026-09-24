@@ -11,6 +11,7 @@ from LightGenV2.tasks.t16_zero_phase_ccd_lifelong.train_eurosat import (
     routing_balance_penalty,
 )
 from LightGenV2.tasks.t16_zero_phase_ccd_lifelong.train_other_tasks import (
+    clevr_pairwise_loss,
     metrics as other_task_metrics,
 )
 
@@ -124,6 +125,19 @@ def test_binary_tasks_use_two_class_macro_recall_with_ten_output_head():
     assert result["n"] == 4
     assert result["accuracy"] == result["balanced_accuracy"] == 0.5
     assert result["per_class_recall"] == [0.5, 0.5]
+
+
+def test_clevr_pairwise_loss_rewards_same_image_query_separation():
+    logits = torch.zeros(2, 10, requires_grad=True)
+    labels = torch.tensor([1, 0])
+    initial = clevr_pairwise_loss(logits, labels)
+    assert torch.allclose(initial, torch.tensor(np.log(2)))
+    initial.backward()
+    assert logits.grad[0, 1] < 0 and logits.grad[1, 1] > 0
+    separated = logits.detach().clone()
+    separated[0, 1] = 2
+    separated[1, 1] = -2
+    assert clevr_pairwise_loss(separated, labels) < initial
 
 
 def test_batch_router_balance_penalty_is_slot_based_and_differentiable():

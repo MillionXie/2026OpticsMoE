@@ -63,6 +63,17 @@ def metrics(labels, predictions, classes):
             "per_class_recall": recalls.tolist(), "n": len(labels)}
 
 
+def clevr_pairwise_loss(logits, targets):
+    """Compare positive and negative queries of each *same* source image."""
+    if logits.ndim != 2 or logits.shape[0] % 2 or logits.shape[1] != 10:
+        raise ValueError("expected an even batch of ten-class CLEVR logits")
+    labels = targets.reshape(-1, 2)
+    if not torch.all(labels[:, 0] == 1) or not torch.all(labels[:, 1] == 0):
+        raise ValueError("CLEVR pair order must be positive then negative")
+    margins = (logits[:, 1] - logits[:, 0]).reshape(-1, 2)
+    return F.softplus(margins[:, 1] - margins[:, 0]).mean()
+
+
 @torch.no_grad()
 def evaluate(model, data, device, batch_size, classes):
     model.eval()
@@ -102,10 +113,14 @@ def main():
     parser.add_argument("--lr", type=float, default=1e-3)
     parser.add_argument("--seed", type=int, default=17)
     parser.add_argument("--skip-test", action="store_true")
+    parser.add_argument("--clevr-pairwise-weight", type=float, default=0.0)
     args = parser.parse_args()
     if not (0 < args.min_epochs <= args.epochs and args.patience > 0 and
-            args.batch > 0 and args.eval_batch > 0 and args.lr > 0):
+            args.batch > 0 and args.eval_batch > 0 and args.lr > 0 and
+            args.clevr_pairwise_weight >= 0):
         raise ValueError("invalid training budget")
+    if args.clevr_pairwise_weight and (args.task != "clevr" or args.batch % 2):
+        raise ValueError("paired loss requires CLEVR and an even batch size")
     if ("runs", "simulation") not in list(zip(args.out.parts, args.out.parts[1:])):
         raise ValueError("formal runs must live under runs/simulation")
     args.out.mkdir(parents=True, exist_ok=False)
@@ -123,6 +138,7 @@ def main():
         "test_policy": "omitted" if args.skip_test else "once after validation selection",
         "epochs": args.epochs, "min_epochs": args.min_epochs, "patience": args.patience,
         "batch": args.batch, "eval_batch": args.eval_batch, "lr": args.lr,
+        "clevr_pairwise_weight": args.clevr_pairwise_weight,
         "seed": args.seed, "source_protocol": str(args.protocol),
         "source_protocol_sha256": sha256_file(args.protocol),
         "source_manifest_sha256": json.loads(args.protocol.read_text()).get(
@@ -142,14 +158,25 @@ def main():
     for epoch in range(1, args.epochs + 1):
         began = time.time()
         model.train()
-        order = np.random.default_rng(args.seed + epoch).permutation(len(train))
+        rng = np.random.default_rng(args.seed + epoch)
+        if args.clevr_pairwise_weight:
+            pair_order = rng.permutation(len(train) // 2)
+            pair_batches = batches(pair_order, args.batch // 2)
+            batch_indices = (
+                np.column_stack((2 * pair_ids, 2 * pair_ids + 1)).reshape(-1)
+                for pair_ids in pair_batches)
+        else:
+            batch_indices = batches(rng.permutation(len(train)), args.batch)
         loss_sum = 0.0
-        for indices in batches(order, args.batch):
+        for indices in batch_indices:
             amplitude = train.get_batch(indices, device)
             target = torch.as_tensor(train.labels[indices], device=device)
             optimizer.zero_grad(set_to_none=True)
             output = model(amplitude)
             loss = F.cross_entropy(output["logits"], target)
+            if args.clevr_pairwise_weight:
+                loss = loss + args.clevr_pairwise_weight * clevr_pairwise_loss(
+                    output["logits"], target)
             if not torch.isfinite(loss):
                 raise RuntimeError(f"nonfinite loss at epoch {epoch}")
             loss.backward()
