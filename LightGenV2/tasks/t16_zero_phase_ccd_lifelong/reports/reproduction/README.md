@@ -36,6 +36,8 @@ CLEVR 原交叉熵 MoE/D2NN 完整训练 4 轮后最好验证 50.33%/50.02%，�
 
 对应弱批级路由均衡权重 1.0 的 8 专家候选首轮新增四槽得到 46.29% 功率；第 4 轮后为了释放较慢 GPU，以源 run `clevr_moe_eight_expert_balance1_valonly_s17_4698_uuid/last_checkpoint.pt`（SHA256 `71d4c1eb65255626df10402c3f23b4e98797b50878244859acdbe7bec9cb0f36`）保留模型、Adam 和历史到新 run，原 run 状态是 `stopped_after_epoch4_gpu_handoff`。第 8 轮最佳验证 **58.98%**（负类／正类 66.87%／51.09%），新四槽平均功率合计 **47.63%**，在 **15.27%** 样本上权重最大。它比无约束 8 专家高 1.12 个百分点，但未超过旧 4 专家最佳 59.14%；按槽标准差仍只有约 0.004–0.024，不能仅凭批平均功率称为内容驱动专家分工。两段训练均未触碰测试集。
 
+两个 8 专家最佳 checkpoint 又各自对验证样本索引 0、1（同一张原图、正负两条不同颜色形状问句）生成少量 router/最终 CCD 图。图与逐样本权重 JSON 在各自 run 的 `router_val_pair01/`，不提交原始 CCD 图到 Git。无约束／均衡约束的路由权重在这一对中的 L1 差分别约 `0.04/0.09`；两者都把正负两问判为正类。此图只是一个具体失败样本，不代替上表的完整验证集统计。
+
 完整命令在各 run 的 `command.txt`。从对应源码 commit 的仓库根目录执行时，以下为同义命令；`RUNS` 指上文服务器 `runs/simulation` 绝对目录，`PY` 指 `/home/guest3/miniconda3/envs/xml/bin/python`，`EURO`、`CLEVR`、`SPEECH`、`PHYS` 依次指上表对应的 `protocol.json` 绝对路径。每条命令的 `CUDA_VISIBLE_DEVICES` 必须用当时空闲 GPU 的 UUID，而不是 CUDA 逻辑序号。
 
 ```bash
