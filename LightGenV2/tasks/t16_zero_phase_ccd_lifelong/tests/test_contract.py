@@ -6,6 +6,7 @@ from LightGenV2.tasks.t16_zero_phase_ccd_lifelong.data import (
     PairedEuroSatFields, balanced_negative_words, paired_rgb_sar_field,
 )
 from LightGenV2.tasks.t16_zero_phase_ccd_lifelong.model import DirectCCDOptics
+from LightGenV2.tasks.t16_zero_phase_ccd_lifelong.train_eurosat import accuracy_metrics
 
 
 def test_all_phase_parameters_begin_at_raw_zero_and_one_shared_linear_head():
@@ -99,6 +100,16 @@ def test_linear_loss_backpropagates_into_optics_in_both_architectures():
             assert model.router_phase.grad.abs().sum() > 0
             assert all(model.first_phase[index].grad is not None
                        for index in model.active_indices[:4])
+
+
+def test_full_split_metric_counts_every_class_without_task_head():
+    labels = np.repeat(np.arange(10), 2)
+    guesses = labels.copy()
+    guesses[::2] = (guesses[::2] + 1) % 10
+    metrics = accuracy_metrics(labels, guesses)
+    assert metrics["n"] == 20
+    assert metrics["accuracy"] == metrics["balanced_accuracy"] == 0.5
+    assert metrics["per_class_recall"] == [0.5] * 10
 
 
 def test_paired_rgb_sar_uses_each_modality_and_equal_power():
