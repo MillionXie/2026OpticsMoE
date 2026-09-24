@@ -1,4 +1,4 @@
-"""Original angular-spectrum path, zero phase start, and direct CCD readout."""
+"""Original angular-spectrum path, zero phase start, and one CCD Linear head."""
 
 import torch
 from torch import nn
@@ -8,10 +8,10 @@ from LightGenV2.tasks.t13_four_modal_lifelong.model import CrossModalOptics, nor
 
 
 class DirectCCDOptics(CrossModalOptics):
-    """MoE/D2NN share output camera geometry and have no electronic class head.
+    """MoE/D2NN share CCD sampling and each has one trainable Linear head.
 
     The camera sees the original final propagation plane. There is no Fourier
-    lens, additional propagation, or trainable element after that propagation.
+    lens or additional propagation. The ten fixed windows are diagnostics only.
     """
 
     # Number each 2x2 quadrant contiguously: TL 1-4, TR 5-8,
@@ -21,16 +21,27 @@ class DirectCCDOptics(CrossModalOptics):
         for r0, c0 in ((0, 0), (0, 2), (2, 0), (2, 2))
         for dr, dc in ((0, 0), (0, 1), (1, 0), (1, 1))
     )
+    # One central slot from each quadrant first; remaining slots expand
+    # symmetrically. This is an explicit geometry candidate, not a trained run.
+    center_out_order = (3, 6, 9, 12, 1, 4, 11, 14,
+                        2, 7, 8, 13, 0, 5, 10, 15)
 
     def __init__(self, architecture: str, *, router_side=80, router_pitch=96,
                  output_side=96, x_pitch=128, y_pitch=160,
-                 routing_temperature=1.25):
+                 routing_temperature=1.25, activation_order="quadrant"):
         super().__init__(architecture=architecture, seed=17, phase_dropout=0.0,
                          readout_grid=28, head_width=0, head_bottleneck=0,
                          optical_layers=2, max_experts=16,
                          oeo_activation="intensity_softsign",
                          routing_temperature=routing_temperature)
         self.heads = nn.ModuleDict()
+        self.shared_head = nn.Linear(28 * 28, 10, bias=False)
+        if activation_order not in ("quadrant", "center_out"):
+            raise ValueError("activation_order must be quadrant or center_out")
+        self.activation_order = activation_order
+        order = (tuple(range(16)) if activation_order == "quadrant"
+                 else self.center_out_order)
+        self.register_buffer("active_indices", torch.tensor(order, dtype=torch.long))
         self.slots = [
             (self.border + row * (self.expert_size + self.gap),
              self.border + col * (self.expert_size + self.gap))
@@ -66,6 +77,7 @@ class DirectCCDOptics(CrossModalOptics):
                for y, x in self.router_centers):
             raise ValueError("router box extends outside CCD")
         self.set_output_geometry(output_side, x_pitch, y_pitch)
+        self.configure_stage(0)
 
     def set_output_geometry(self, side: int, x_pitch: int, y_pitch: int):
         """Three-four-three equal squares with physical gaps and row staggering."""
@@ -106,12 +118,14 @@ class DirectCCDOptics(CrossModalOptics):
         active = 4 * (stage_index + 1)
         self.active_count.fill_(active)
         if self.architecture == "moe":
+            newly_active = set(self.active_indices[4 * stage_index:active].tolist())
             for index, phase in enumerate(self.first_phase):
-                phase.requires_grad_(4 * stage_index <= index < active)
+                phase.requires_grad_(index in newly_active)
             self.router_phase.requires_grad_(True)
         else:
             self.first_phase.requires_grad_(True)
         self.global_phase.requires_grad_(True)
+        self.shared_head.requires_grad_(True)
         for phase in self.additional_phases:
             phase.requires_grad_(True)
 
@@ -123,15 +137,18 @@ class DirectCCDOptics(CrossModalOptics):
 
     def route_with_efficiency(self, amplitude, return_debug=False):
         active = int(self.active_count)
+        indices = self.active_indices[:active]
         dy, dx = self.height - 224, self.width - 224
         field = F.pad(amplitude.to(torch.complex64) * self.transmission(self.router_phase),
                       (dx // 2, dx - dx // 2, dy // 2, dy - dy // 2))
         intensity = self.propagator(field).abs().square()
         power = self.window_power(intensity, self.router_centers, self.router_side)
-        scores = (power[:, :active] + 1e-12).pow(1 / self.routing_temperature)
-        route = F.pad(scores / scores.sum(1, keepdim=True).clamp_min(1e-20),
-                      (0, self.max_experts - active))
-        efficiency = power[:, :active].sum(1) / intensity.sum((-2, -1)).clamp_min(1e-20)
+        selected = power.index_select(1, indices)
+        scores = (selected + 1e-12).pow(1 / self.routing_temperature)
+        weights = scores / scores.sum(1, keepdim=True).clamp_min(1e-20)
+        route = torch.zeros_like(power).scatter(1, indices[None].expand(len(power), -1),
+                                                weights)
+        efficiency = selected.sum(1) / intensity.sum((-2, -1)).clamp_min(1e-20)
         return route, efficiency, intensity if return_debug else None
 
     def forward(self, amplitude: torch.Tensor, *, return_debug=False):
@@ -151,7 +168,7 @@ class DirectCCDOptics(CrossModalOptics):
                 amplitude, return_debug=return_debug)
             field = torch.zeros((len(amplitude), self.height, self.width),
                                 dtype=torch.complex64, device=amplitude.device)
-            for index in range(int(self.active_count)):
+            for index in self.active_indices[:int(self.active_count)].tolist():
                 y, x = self.slots[index]
                 field[:, y:y+224, x:x+224] = (
                     amplitude * route[:, index, None, None].sqrt()
@@ -169,12 +186,12 @@ class DirectCCDOptics(CrossModalOptics):
             field = propagated if index == len(phases) - 1 else self.oeo(propagated)
         intensity = field.abs().square()
         powers = self.window_power(intensity, self.output_centers, self.output_side)
-        # A 1e-12 hard floor erased the target-window gradient in the
-        # zero-phase four-corner MoE (one window had 1.2e-14 power). A tiny
-        # additive floor keeps the physically measured energy differentiable.
-        logits = (powers + 1e-20).log()
+        ccd = intensity[:, self.border:-self.border, self.border:-self.border]
+        features = F.adaptive_avg_pool2d(ccd[:, None], (28, 28))[:, 0].flatten(1)
+        features = features / features.mean(1, keepdim=True).clamp_min(1e-20)
+        logits = self.shared_head(features)
         readout_efficiency = powers.sum(1) / intensity.sum((-2, -1)).clamp_min(1e-20)
-        result = {"logits": logits, "window_power": powers,
+        result = {"logits": logits, "ccd_features": features, "window_power": powers,
                   "readout_efficiency": readout_efficiency,
                   "route_power": route, "router_efficiency": router_efficiency}
         if return_debug:

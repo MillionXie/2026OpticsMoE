@@ -61,6 +61,8 @@ def main():
     parser.add_argument("--physical", type=Path, required=True)
     parser.add_argument("--out", type=Path, required=True)
     parser.add_argument("--samples-per-task", type=int, default=8)
+    parser.add_argument("--activation-order", choices=("quadrant", "center_out"),
+                        default="quadrant")
     args = parser.parse_args()
     args.out.mkdir(parents=True, exist_ok=True)
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
@@ -73,7 +75,7 @@ def main():
         "speech_binary": SpeechBinaryPairs(args.speech, "train"),
         "physical": PhysicalPermutedCandidates(physical["source_roots"], "train", seed=17),
     }
-    models = {name: DirectCCDOptics(name).to(device).eval()
+    models = {name: DirectCCDOptics(name, activation_order=args.activation_order).to(device).eval()
               for name in ("moe", "d2nn")}
     for model in models.values():
         model.configure_stage(0)
@@ -82,8 +84,8 @@ def main():
                          if model.architecture == "moe" else [model.first_phase])
         if any(bool(torch.count_nonzero(p)) for p in phase_params):
             raise AssertionError("phase initialization is not exactly zero")
-        if any(isinstance(layer, torch.nn.Linear) for layer in model.modules()):
-            raise AssertionError("electronic classification layer found")
+        if [layer for layer in model.modules() if isinstance(layer, torch.nn.Linear)] != [model.shared_head]:
+            raise AssertionError("expected exactly one shared Linear readout")
 
     layouts = list(candidates(models["moe"].height))
     if not layouts:
@@ -113,7 +115,8 @@ def main():
                     router_stats[key].append({
                         "sample_index": int(index),
                         "active_capture": float(output["router_efficiency"][0]),
-                        "power_weights": output["route_power"][0, :4].cpu().tolist()})
+                        "active_experts": (model.active_indices[:4] + 1).cpu().tolist(),
+                        "power_weights": output["route_power"][0, model.active_indices[:4]].cpu().tolist()})
                 for layout, side, xp, yp, centers in layouts:
                     powers = powers_from_prefix(prefix, centers, side).clip(min=0)
                     capture = float(powers.sum() / max(total, 1e-20))
@@ -148,6 +151,8 @@ def main():
     by_layout = {"compact_center_343": ranking[0]}
     report = {"trained": False, "labels_used": False, "split": "train",
               "samples_per_task": args.samples_per_task,
+              "activation_order": args.activation_order,
+              "readout": "one independent trainable Linear(784,10) per architecture; untrained here",
               "phase_raw_initialization": 0.0,
               "final_camera": "direct existing propagation plane; no added FFT",
               "selected_for_visual_inspection_only": best,

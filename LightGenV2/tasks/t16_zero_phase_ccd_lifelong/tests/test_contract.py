@@ -1,5 +1,6 @@
 import numpy as np
 import torch
+from torch.nn import functional as F
 
 from LightGenV2.tasks.t16_zero_phase_ccd_lifelong.data import (
     PairedEuroSatFields, balanced_negative_words, paired_rgb_sar_field,
@@ -7,7 +8,7 @@ from LightGenV2.tasks.t16_zero_phase_ccd_lifelong.data import (
 from LightGenV2.tasks.t16_zero_phase_ccd_lifelong.model import DirectCCDOptics
 
 
-def test_all_phase_parameters_begin_at_raw_zero_and_no_linear_head():
+def test_all_phase_parameters_begin_at_raw_zero_and_one_shared_linear_head():
     for architecture in ("moe", "d2nn"):
         model = DirectCCDOptics(architecture)
         phases = [model.global_phase, *model.additional_phases]
@@ -18,7 +19,11 @@ def test_all_phase_parameters_begin_at_raw_zero_and_no_linear_head():
         assert all(torch.count_nonzero(phase) == 0 for phase in phases)
         assert all(torch.allclose(model.transmission(phase).real,
                                   torch.full_like(phase, -1)) for phase in phases)
-        assert not any(isinstance(layer, torch.nn.Linear) for layer in model.modules())
+        linear = [layer for layer in model.modules() if isinstance(layer, torch.nn.Linear)]
+        assert linear == [model.shared_head]
+        assert tuple(model.shared_head.weight.shape) == (10, 784)
+        assert model.shared_head.bias is None
+        assert model.shared_head.weight.requires_grad
         assert len(model.output_centers) == 10
         assert len(set(model.output_centers)) == 10
 
@@ -43,6 +48,52 @@ def test_router_and_expert_slots_share_quadrant_numbering_and_gaps():
         ]
     assert model.output_side == 96
     assert (model.x_pitch, model.y_pitch) == (128, 160)
+
+
+def test_center_out_activation_uses_one_slot_per_quadrant_and_freezes_old():
+    model = DirectCCDOptics("moe", activation_order="center_out")
+    assert (model.active_indices[:4] + 1).tolist() == [4, 7, 10, 13]
+    for stage in range(4):
+        model.configure_stage(stage)
+        new = set(model.active_indices[4*stage:4*(stage+1)].tolist())
+        assert sum(phase.requires_grad for phase in model.first_phase) == 4
+        assert all(phase.requires_grad == (index in new)
+                   for index, phase in enumerate(model.first_phase))
+    model.configure_stage(0)
+    with torch.no_grad():
+        result = model(torch.ones(1, 224, 224))
+    assert result["logits"].shape == (1, 10)
+    assert result["ccd_features"].shape == (1, 784)
+    assert torch.isfinite(result["logits"]).all()
+    assert torch.all(result["route_power"][0, model.active_indices[4:]] == 0)
+
+
+def test_class_windows_are_diagnostics_not_classification_logits():
+    model = DirectCCDOptics("d2nn").eval()
+    field = torch.rand(1, 224, 224)
+    with torch.no_grad():
+        original = model(field)
+        model.set_output_geometry(80, 112, 144)
+        changed = model(field)
+    assert torch.allclose(original["logits"], changed["logits"])
+    assert not torch.allclose(original["window_power"], changed["window_power"])
+
+
+def test_linear_loss_backpropagates_into_optics_in_both_architectures():
+    for architecture in ("moe", "d2nn"):
+        model = DirectCCDOptics(architecture, activation_order="center_out")
+        logits = model(torch.rand(1, 224, 224))["logits"]
+        F.cross_entropy(logits, torch.tensor([3])).backward()
+        assert torch.isfinite(model.shared_head.weight.grad).all()
+        assert model.shared_head.weight.grad.abs().sum() > 0
+        assert model.global_phase.grad is not None
+        assert torch.isfinite(model.global_phase.grad).all()
+        assert model.global_phase.grad.abs().sum() > 0
+        if architecture == "moe":
+            assert model.router_phase.grad is not None
+            assert model.router_phase.grad.abs().sum() > 0
+            assert all(model.first_phase[index].grad is not None
+                       for index in model.active_indices[:4])
 
 
 def test_paired_rgb_sar_uses_each_modality_and_equal_power():
