@@ -10,6 +10,9 @@ from LightGenV2.tasks.t16_zero_phase_ccd_lifelong.train_eurosat import (
     accuracy_metrics, augment_paired_dihedral, load_initial_checkpoint,
     routing_balance_penalty,
 )
+from LightGenV2.tasks.t16_zero_phase_ccd_lifelong.train_other_tasks import (
+    metrics as other_task_metrics,
+)
 
 
 def test_all_phase_parameters_begin_at_raw_zero_and_one_shared_linear_head():
@@ -113,6 +116,14 @@ def test_full_split_metric_counts_every_class_without_task_head():
     assert metrics["n"] == 20
     assert metrics["accuracy"] == metrics["balanced_accuracy"] == 0.5
     assert metrics["per_class_recall"] == [0.5] * 10
+
+
+def test_binary_tasks_use_two_class_macro_recall_with_ten_output_head():
+    result = other_task_metrics(np.array([0, 0, 1, 1]),
+                                np.array([0, 2, 1, 2]), 2)
+    assert result["n"] == 4
+    assert result["accuracy"] == result["balanced_accuracy"] == 0.5
+    assert result["per_class_recall"] == [0.5, 0.5]
 
 
 def test_batch_router_balance_penalty_is_slot_based_and_differentiable():
