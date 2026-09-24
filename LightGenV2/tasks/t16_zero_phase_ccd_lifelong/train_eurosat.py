@@ -52,6 +52,12 @@ def accuracy_metrics(labels, predicted):
             "per_class_recall": recalls.tolist(), "n": int(len(labels))}
 
 
+def routing_balance_penalty(route_power, active_indices):
+    """Weak batch-level slot use penalty; never assign samples to a task group."""
+    q = route_power.index_select(1, active_indices)
+    return (q.mean(0) - 1.0 / len(active_indices)).square().sum()
+
+
 @torch.no_grad()
 def evaluate(model, data, device, batch_size):
     model.eval()
@@ -106,10 +112,12 @@ def main():
     parser.add_argument("--eval-batch", type=int, default=16)
     parser.add_argument("--lr", type=float, default=1e-3)
     parser.add_argument("--seed", type=int, default=17)
+    parser.add_argument("--route-balance-weight", type=float, default=0.0)
     parser.add_argument("--resume", action="store_true")
     args = parser.parse_args()
     if not (0 < args.min_epochs <= args.epochs and args.patience > 0 and
-            args.batch > 0 and args.eval_batch > 0 and args.lr > 0):
+            args.batch > 0 and args.eval_batch > 0 and args.lr > 0 and
+            args.route_balance_weight >= 0):
         raise ValueError("invalid training budget")
     if ("runs", "simulation") not in list(zip(args.out.parts, args.out.parts[1:])):
         raise ValueError("formal runs must live under runs/simulation")
@@ -132,6 +140,7 @@ def main():
               "epochs": args.epochs, "min_epochs": args.min_epochs,
               "patience": args.patience, "batch": args.batch, "eval_batch": args.eval_batch,
               "lr": args.lr, "seed": args.seed,
+              "route_balance_weight": args.route_balance_weight,
               "source_protocol": str(args.protocol),
               "source_sha256": {"trainval": sha256_file(trainval), "holdout": sha256_file(holdout)},
               "model_git_commit": code_commit,
@@ -163,13 +172,18 @@ def main():
         began = time.time()
         model.train()
         order = np.random.default_rng(args.seed + epoch).permutation(len(train))
-        loss_sum, sample_count = 0.0, 0
+        loss_sum, classification_sum, balance_sum, sample_count = 0.0, 0.0, 0.0, 0
         for indices in batches(order, args.batch):
             amplitude = train[indices].to(device)
             targets = torch.as_tensor(train.labels[indices], device=device)
             optimizer.zero_grad(set_to_none=True)
-            logits = model(amplitude)["logits"]
-            loss = F.cross_entropy(logits, targets)
+            output = model(amplitude)
+            classification = F.cross_entropy(output["logits"], targets)
+            balance = (routing_balance_penalty(output["route_power"],
+                                                model.active_indices[:int(model.active_count)])
+                       if args.architecture == "moe" and args.route_balance_weight > 0
+                       else classification.new_zeros(()))
+            loss = classification + args.route_balance_weight * balance
             if not torch.isfinite(loss):
                 raise RuntimeError(f"nonfinite loss at epoch {epoch}")
             loss.backward()
@@ -177,6 +191,8 @@ def main():
                                             if p.requires_grad], 1.0)
             optimizer.step()
             loss_sum += float(loss.detach()) * len(indices)
+            classification_sum += float(classification.detach()) * len(indices)
+            balance_sum += float(balance.detach()) * len(indices)
             sample_count += len(indices)
         validation = evaluate(model, val, device, args.eval_batch)
         score = validation["balanced_accuracy"]
@@ -189,6 +205,8 @@ def main():
         else:
             wait += 1
         row = {"epoch": epoch, "train_loss": loss_sum / sample_count,
+               "train_classification_loss": classification_sum / sample_count,
+               "train_route_balance_penalty": balance_sum / sample_count,
                "train_samples": sample_count, "validation": validation,
                "seconds": time.time() - began, "best_epoch": best_epoch}
         history.append(row)

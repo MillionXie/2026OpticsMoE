@@ -6,7 +6,9 @@ from LightGenV2.tasks.t16_zero_phase_ccd_lifelong.data import (
     PairedEuroSatFields, balanced_negative_words, paired_rgb_sar_field,
 )
 from LightGenV2.tasks.t16_zero_phase_ccd_lifelong.model import DirectCCDOptics
-from LightGenV2.tasks.t16_zero_phase_ccd_lifelong.train_eurosat import accuracy_metrics
+from LightGenV2.tasks.t16_zero_phase_ccd_lifelong.train_eurosat import (
+    accuracy_metrics, routing_balance_penalty,
+)
 
 
 def test_all_phase_parameters_begin_at_raw_zero_and_one_shared_linear_head():
@@ -110,6 +112,20 @@ def test_full_split_metric_counts_every_class_without_task_head():
     assert metrics["n"] == 20
     assert metrics["accuracy"] == metrics["balanced_accuracy"] == 0.5
     assert metrics["per_class_recall"] == [0.5] * 10
+
+
+def test_batch_router_balance_penalty_is_slot_based_and_differentiable():
+    indices = torch.tensor([3, 6, 9, 12])
+    uniform = torch.zeros(2, 16)
+    uniform[:, indices] = 0.25
+    assert routing_balance_penalty(uniform, indices) == 0
+    peaked = torch.zeros(2, 16, requires_grad=True)
+    with torch.no_grad():
+        peaked[:, 12] = 1
+    loss = routing_balance_penalty(peaked, indices)
+    assert loss > 0
+    loss.backward()
+    assert peaked.grad is not None and peaked.grad[:, indices].abs().sum() > 0
 
 
 def test_paired_rgb_sar_uses_each_modality_and_equal_power():
