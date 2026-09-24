@@ -16,6 +16,6 @@ training:
 
 protocol:
   test_interval_epochs: 5
-  retain_test_checkpoints: true
+  retain_test_checkpoints: false
 
 output_dir: ../runs/simulation/layered_scene_exp05_dc30_ccdsmall_s73_e100

@@ -1,5 +1,18 @@
 # T04 语义交互（OpenMoji）
 
+## 2026-09-25：分层场景 DC30 + CCD 小噪声的指定权重
+
+用户指定使用 `layered_scene_exp05_dc30_ccdsmall` 第 45 epoch 的真实权重，
+**Changed-cell accuracy 0.8765**（1000 test）；该权重并非训练器自动最佳的第 70 epoch。
+唯一交付 PT 为
+`runs/simulation/layered_dc30_ccdsmall_selected_e45_s73_20260925/selected_checkpoint.pt`，
+SHA-256 为 `03cb861c3ac344556601eb3eb6d7d1a22b77a54d2e7e68e85d77ee30fb09eb21`。
+同目录 `selection.json`、`00_README.md`、`audit.json`、逐样本预测和原始训练记录
+给出完整口径。训练包含光 router/expert/global 的标称 30% 每 SLM 未调制强度比例，
+以及小幅截断偏置高斯 CCD 噪声；确定性测试关闭随机扰动。同权重去光
+Changed-cell accuracy 为 0.4845。此前论文表格的 **0.8715 属于旧训练的
+epoch 30 且 PT 未保留**，不得与当前 0.8765 权重混用。
+
 ## 2026-09-20：场景大小与遮挡设计（仅预览）
 
 新增 `layered_scene_preview.py`：使用OpenMoji官方SVG、独立对象尺寸、底边锚点与显式前后顺序，
