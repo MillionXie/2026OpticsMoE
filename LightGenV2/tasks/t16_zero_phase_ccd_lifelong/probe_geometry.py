@@ -67,7 +67,7 @@ def main():
     datasets = {
         "eurosat": PairedEuroSatFields(trainval, holdout, "train"),
         "clevr": ClevrRawPairs(args.clevr, "train"),
-        "speech_binary": SpeechBinaryPairs(args.speech, "train", seed=17),
+        "speech_binary": SpeechBinaryPairs(args.speech, "train"),
         "physical": PhysicalPermutedCandidates(physical["source_roots"], "train", seed=17),
     }
     models = {name: DirectCCDOptics(name).to(device).eval()
