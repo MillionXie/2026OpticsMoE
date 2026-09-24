@@ -1,0 +1,97 @@
+{
+  "trained": false,
+  "target_labels": "synthetic, not source labels",
+  "source": "/DATA/DATA1/guest3/demo_reproduction_data/t13_four_modal_features/eurosat_full_s17_v1/protocol.json",
+  "models": {
+    "moe": {
+      "absolute_powers": [
+        0.0012345078866928816,
+        2.7938020785711615e-09,
+        0.0001533601462142542,
+        1.8000533286155473e-09,
+        1.202407483747326e-14,
+        2.929945240419396e-14,
+        4.18213463859729e-09,
+        0.000509913545101881,
+        1.2995371889701346e-08,
+        2.6369669285486452e-05
+      ],
+      "normalized_powers": [
+        0.6415783762931824,
+        1.4519495152853779e-06,
+        0.07970184832811356,
+        9.354944836559298e-07,
+        6.248957080956519e-12,
+        1.5227034910747506e-11,
+        2.1734711026510922e-06,
+        0.2650039792060852,
+        6.753743491572095e-06,
+        0.01370441634207964
+      ],
+      "current_additive_logit_floor": 1e-20,
+      "gradients": {
+        "0": {
+          "current_global_phase_grad_norm": 0.06993933022022247,
+          "former_hard_floor_global_phase_grad_norm": 0.06993933022022247
+        },
+        "1": {
+          "current_global_phase_grad_norm": 1.0973824262619019,
+          "former_hard_floor_global_phase_grad_norm": 1.0973824262619019
+        },
+        "4": {
+          "current_global_phase_grad_norm": 143.5364532470703,
+          "former_hard_floor_global_phase_grad_norm": 0.0
+        },
+        "8": {
+          "current_global_phase_grad_norm": 0.7447690367698669,
+          "former_hard_floor_global_phase_grad_norm": 0.7447690367698669
+        }
+      }
+    },
+    "d2nn": {
+      "absolute_powers": [
+        0.012121258303523064,
+        0.027439463883638382,
+        0.01584617793560028,
+        0.006589225493371487,
+        0.029582519084215164,
+        0.01181688904762268,
+        0.01606442593038082,
+        0.016427479684352875,
+        0.017090169712901115,
+        0.010539447888731956
+      ],
+      "normalized_powers": [
+        0.0741284042596817,
+        0.16780796647071838,
+        0.09690840542316437,
+        0.04029686748981476,
+        0.18091396987438202,
+        0.07226701080799103,
+        0.0982431173324585,
+        0.1004633978009224,
+        0.10451612621545792,
+        0.06445472687482834
+      ],
+      "current_additive_logit_floor": 1e-20,
+      "gradients": {
+        "0": {
+          "current_global_phase_grad_norm": 0.008486039005219936,
+          "former_hard_floor_global_phase_grad_norm": 0.008486039005219936
+        },
+        "1": {
+          "current_global_phase_grad_norm": 0.004838267806917429,
+          "former_hard_floor_global_phase_grad_norm": 0.004838267806917429
+        },
+        "4": {
+          "current_global_phase_grad_norm": 0.004762701690196991,
+          "former_hard_floor_global_phase_grad_norm": 0.004762701690196991
+        },
+        "8": {
+          "current_global_phase_grad_norm": 0.004748397972434759,
+          "former_hard_floor_global_phase_grad_norm": 0.004748397972434759
+        }
+      }
+    }
+  }
+}

@@ -1,0 +1,1400 @@
+{
+  "trained": false,
+  "labels_used": false,
+  "split": "train",
+  "samples_per_task": 8,
+  "phase_raw_initialization": 0.0,
+  "final_camera": "direct existing propagation plane; no added FFT",
+  "selected_for_visual_inspection_only": {
+    "side": 192,
+    "x_pitch": 256,
+    "y_pitch": 360,
+    "score": 0.1551663156196786,
+    "worst_group_capture": 0.2170501083853823,
+    "worst_group_entropy": 0.4297741362485181,
+    "group_means": {
+      "eurosat/moe": {
+        "capture": 0.31188770786838554,
+        "entropy": 0.5983291412865592,
+        "min_window_probability": 5.005224188267586e-11
+      },
+      "eurosat/d2nn": {
+        "capture": 0.37539175309287853,
+        "entropy": 0.9809125197824926,
+        "min_window_probability": 0.05417187806229007
+      },
+      "clevr/moe": {
+        "capture": 0.3148684654600807,
+        "entropy": 0.5983380974333803,
+        "min_window_probability": 3.793746549983808e-09
+      },
+      "clevr/d2nn": {
+        "capture": 0.4011382361761597,
+        "entropy": 0.9408926026917672,
+        "min_window_probability": 1.2039643168076518e-06
+      },
+      "speech_binary/moe": {
+        "capture": 0.2170501083853823,
+        "entropy": 0.4297741362485181,
+        "min_window_probability": 2.4016589079386e-12
+      },
+      "speech_binary/d2nn": {
+        "capture": 0.44116219300606163,
+        "entropy": 0.6524839489136035,
+        "min_window_probability": 2.2943157605319025e-09
+      },
+      "physical/moe": {
+        "capture": 0.2618456698499023,
+        "entropy": 0.592128717503283,
+        "min_window_probability": 1.325569955906844e-10
+      },
+      "physical/d2nn": {
+        "capture": 0.5154871404472985,
+        "entropy": 0.6441670239772069,
+        "min_window_probability": 1.7448611594839807e-08
+      }
+    }
+  },
+  "top_candidates": [
+    {
+      "side": 192,
+      "x_pitch": 256,
+      "y_pitch": 360,
+      "score": 0.1551663156196786,
+      "worst_group_capture": 0.2170501083853823,
+      "worst_group_entropy": 0.4297741362485181,
+      "group_means": {
+        "eurosat/moe": {
+          "capture": 0.31188770786838554,
+          "entropy": 0.5983291412865592,
+          "min_window_probability": 5.005224188267586e-11
+        },
+        "eurosat/d2nn": {
+          "capture": 0.37539175309287853,
+          "entropy": 0.9809125197824926,
+          "min_window_probability": 0.05417187806229007
+        },
+        "clevr/moe": {
+          "capture": 0.3148684654600807,
+          "entropy": 0.5983380974333803,
+          "min_window_probability": 3.793746549983808e-09
+        },
+        "clevr/d2nn": {
+          "capture": 0.4011382361761597,
+          "entropy": 0.9408926026917672,
+          "min_window_probability": 1.2039643168076518e-06
+        },
+        "speech_binary/moe": {
+          "capture": 0.2170501083853823,
+          "entropy": 0.4297741362485181,
+          "min_window_probability": 2.4016589079386e-12
+        },
+        "speech_binary/d2nn": {
+          "capture": 0.44116219300606163,
+          "entropy": 0.6524839489136035,
+          "min_window_probability": 2.2943157605319025e-09
+        },
+        "physical/moe": {
+          "capture": 0.2618456698499023,
+          "entropy": 0.592128717503283,
+          "min_window_probability": 1.325569955906844e-10
+        },
+        "physical/d2nn": {
+          "capture": 0.5154871404472985,
+          "entropy": 0.6441670239772069,
+          "min_window_probability": 1.7448611594839807e-08
+        }
+      }
+    },
+    {
+      "side": 160,
+      "x_pitch": 288,
+      "y_pitch": 360,
+      "score": 0.14808616147610337,
+      "worst_group_capture": 0.21137480811934747,
+      "worst_group_entropy": 0.40117133913602643,
+      "group_means": {
+        "eurosat/moe": {
+          "capture": 0.32119520700156534,
+          "entropy": 0.5990904772652206,
+          "min_window_probability": 3.8443585616793124e-11
+        },
+        "eurosat/d2nn": {
+          "capture": 0.25331549586934377,
+          "entropy": 0.9786468724465905,
+          "min_window_probability": 0.05302104540432513
+        },
+        "clevr/moe": {
+          "capture": 0.3393333300507245,
+          "entropy": 0.5990229491009412,
+          "min_window_probability": 2.7480119990439584e-09
+        },
+        "clevr/d2nn": {
+          "capture": 0.2615950280571999,
+          "entropy": 0.9400652230741884,
+          "min_window_probability": 1.5642372839430897e-07
+        },
+        "speech_binary/moe": {
+          "capture": 0.21137480811934747,
+          "entropy": 0.40117133913602643,
+          "min_window_probability": 1.961301600889025e-12
+        },
+        "speech_binary/d2nn": {
+          "capture": 0.2875735614968059,
+          "entropy": 0.5968989832935612,
+          "min_window_probability": 2.2744098293204398e-09
+        },
+        "physical/moe": {
+          "capture": 0.28904513257124737,
+          "entropy": 0.5955022284856317,
+          "min_window_probability": 8.50694824915936e-11
+        },
+        "physical/d2nn": {
+          "capture": 0.3336051265593194,
+          "entropy": 0.59051504611099,
+          "min_window_probability": 4.705518496202278e-09
+        }
+      }
+    },
+    {
+      "side": 160,
+      "x_pitch": 288,
+      "y_pitch": 320,
+      "score": 0.12385679773305389,
+      "worst_group_capture": 0.18188782619988236,
+      "worst_group_entropy": 0.3619031061149049,
+      "group_means": {
+        "eurosat/moe": {
+          "capture": 0.2617075375289026,
+          "entropy": 0.5965999954792569,
+          "min_window_probability": 4.638249194617021e-11
+        },
+        "eurosat/d2nn": {
+          "capture": 0.2596978575047666,
+          "entropy": 0.9801409522295638,
+          "min_window_probability": 0.05651805484803098
+        },
+        "clevr/moe": {
+          "capture": 0.2699409107339531,
+          "entropy": 0.5958091755488868,
+          "min_window_probability": 3.4381602878519785e-09
+        },
+        "clevr/d2nn": {
+          "capture": 0.26526846716278013,
+          "entropy": 0.9389240350588614,
+          "min_window_probability": 2.4101791836776188e-08
+        },
+        "speech_binary/moe": {
+          "capture": 0.18188782619988236,
+          "entropy": 0.3619031061149049,
+          "min_window_probability": 2.213165188745949e-12
+        },
+        "speech_binary/d2nn": {
+          "capture": 0.28676508533253964,
+          "entropy": 0.600855816613922,
+          "min_window_probability": 2.0739001003769744e-09
+        },
+        "physical/moe": {
+          "capture": 0.2497810036159746,
+          "entropy": 0.5945476653327165,
+          "min_window_probability": 9.653939545725203e-11
+        },
+        "physical/d2nn": {
+          "capture": 0.30751138010432977,
+          "entropy": 0.574790805620627,
+          "min_window_probability": 5.256993773521875e-09
+        }
+      }
+    },
+    {
+      "side": 192,
+      "x_pitch": 256,
+      "y_pitch": 320,
+      "score": 0.10693607401582723,
+      "worst_group_capture": 0.1590292373370941,
+      "worst_group_entropy": 0.3448605527693623,
+      "group_means": {
+        "eurosat/moe": {
+          "capture": 0.245306672737459,
+          "entropy": 0.5966964866752309,
+          "min_window_probability": 6.248556570022131e-11
+        },
+        "eurosat/d2nn": {
+          "capture": 0.38370006649416843,
+          "entropy": 0.9822842266601082,
+          "min_window_probability": 0.057533385702292175
+        },
+        "clevr/moe": {
+          "capture": 0.25297681644631265,
+          "entropy": 0.5965271339641027,
+          "min_window_probability": 4.690631402952099e-09
+        },
+        "clevr/d2nn": {
+          "capture": 0.4044721619414317,
+          "entropy": 0.9402289184580097,
+          "min_window_probability": 2.971145792253388e-08
+        },
+        "speech_binary/moe": {
+          "capture": 0.1590292373370941,
+          "entropy": 0.3448605527693623,
+          "min_window_probability": 3.224988346551028e-12
+        },
+        "speech_binary/d2nn": {
+          "capture": 0.4402232623959527,
+          "entropy": 0.6576428234547564,
+          "min_window_probability": 2.347194775173075e-09
+        },
+        "physical/moe": {
+          "capture": 0.214562051862327,
+          "entropy": 0.5910464971061964,
+          "min_window_probability": 1.6008213832359627e-10
+        },
+        "physical/d2nn": {
+          "capture": 0.5024218010262984,
+          "entropy": 0.6513733099227037,
+          "min_window_probability": 1.7117588797440587e-08
+        }
+      }
+    },
+    {
+      "side": 160,
+      "x_pitch": 288,
+      "y_pitch": 280,
+      "score": 0.09926742497445576,
+      "worst_group_capture": 0.1455850590894043,
+      "worst_group_entropy": 0.3637034678606035,
+      "group_means": {
+        "eurosat/moe": {
+          "capture": 0.18358305017519314,
+          "entropy": 0.5942563629465389,
+          "min_window_probability": 6.587838989713282e-11
+        },
+        "eurosat/d2nn": {
+          "capture": 0.26290550093819676,
+          "entropy": 0.9815592910809794,
+          "min_window_probability": 0.05685640700198862
+        },
+        "clevr/moe": {
+          "capture": 0.1710123527899181,
+          "entropy": 0.5850147452102032,
+          "min_window_probability": 5.487126920028382e-09
+        },
+        "clevr/d2nn": {
+          "capture": 0.27016468766019086,
+          "entropy": 0.9369164669142414,
+          "min_window_probability": 2.4410738676653936e-08
+        },
+        "speech_binary/moe": {
+          "capture": 0.1455850590894043,
+          "entropy": 0.3637034678606035,
+          "min_window_probability": 2.7219365736532046e-12
+        },
+        "speech_binary/d2nn": {
+          "capture": 0.27512075394025404,
+          "entropy": 0.6090365643068876,
+          "min_window_probability": 1.946956826730542e-09
+        },
+        "physical/moe": {
+          "capture": 0.18433856305247878,
+          "entropy": 0.5906393033603057,
+          "min_window_probability": 1.2847639931969853e-10
+        },
+        "physical/d2nn": {
+          "capture": 0.27870621039727295,
+          "entropy": 0.5947622261874921,
+          "min_window_probability": 4.534837796636233e-09
+        }
+      }
+    },
+    {
+      "side": 128,
+      "x_pitch": 288,
+      "y_pitch": 320,
+      "score": 0.08973926097909993,
+      "worst_group_capture": 0.1329748614843489,
+      "worst_group_entropy": 0.349717683137609,
+      "group_means": {
+        "eurosat/moe": {
+          "capture": 0.19211028142637437,
+          "entropy": 0.5939465491374676,
+          "min_window_probability": 8.740443253714026e-12
+        },
+        "eurosat/d2nn": {
+          "capture": 0.16836759712079935,
+          "entropy": 0.9808847797626293,
+          "min_window_probability": 0.058123545995014014
+        },
+        "clevr/moe": {
+          "capture": 0.18942399311489472,
+          "entropy": 0.5920146716065378,
+          "min_window_probability": 5.992165671539854e-10
+        },
+        "clevr/d2nn": {
+          "capture": 0.1716628007080385,
+          "entropy": 0.939812255665328,
+          "min_window_probability": 2.0272260747329306e-08
+        },
+        "speech_binary/moe": {
+          "capture": 0.1329748614843489,
+          "entropy": 0.349717683137609,
+          "min_window_probability": 1.513148276555084e-12
+        },
+        "speech_binary/d2nn": {
+          "capture": 0.18524032096768045,
+          "entropy": 0.5851448869759717,
+          "min_window_probability": 1.5826460159417578e-09
+        },
+        "physical/moe": {
+          "capture": 0.16407297183614805,
+          "entropy": 0.5889272744767376,
+          "min_window_probability": 8.228007108641491e-11
+        },
+        "physical/d2nn": {
+          "capture": 0.17611243428234663,
+          "entropy": 0.5080944138129876,
+          "min_window_probability": 3.887576496716467e-09
+        }
+      }
+    },
+    {
+      "side": 192,
+      "x_pitch": 256,
+      "y_pitch": 280,
+      "score": 0.08618136108353981,
+      "worst_group_capture": 0.1275638601221749,
+      "worst_group_entropy": 0.35118772669624754,
+      "group_means": {
+        "eurosat/moe": {
+          "capture": 0.17947431651065554,
+          "entropy": 0.5933039572708491,
+          "min_window_probability": 8.494082380257462e-11
+        },
+        "eurosat/d2nn": {
+          "capture": 0.386006714510027,
+          "entropy": 0.9836286530167593,
+          "min_window_probability": 0.059474746706884525
+        },
+        "clevr/moe": {
+          "capture": 0.1739662852023394,
+          "entropy": 0.5900198568286789,
+          "min_window_probability": 6.848802098721973e-09
+        },
+        "clevr/d2nn": {
+          "capture": 0.40969326739803147,
+          "entropy": 0.9389672903282718,
+          "min_window_probability": 5.640577743831927e-07
+        },
+        "speech_binary/moe": {
+          "capture": 0.1275638601221749,
+          "entropy": 0.35118772669624754,
+          "min_window_probability": 4.0074537251725726e-12
+        },
+        "speech_binary/d2nn": {
+          "capture": 0.4269127111337463,
+          "entropy": 0.6629716031290716,
+          "min_window_probability": 2.1292272922578853e-09
+        },
+        "physical/moe": {
+          "capture": 0.16265785599854948,
+          "entropy": 0.5871580283473548,
+          "min_window_probability": 2.0835375824781048e-10
+        },
+        "physical/d2nn": {
+          "capture": 0.46769830107564075,
+          "entropy": 0.6487466358979906,
+          "min_window_probability": 1.8057545732142258e-08
+        }
+      }
+    },
+    {
+      "side": 160,
+      "x_pitch": 256,
+      "y_pitch": 360,
+      "score": 0.08435317498771258,
+      "worst_group_capture": 0.1243829393300291,
+      "worst_group_entropy": 0.3563463838701495,
+      "group_means": {
+        "eurosat/moe": {
+          "capture": 0.21579278242014413,
+          "entropy": 0.5970555023986805,
+          "min_window_probability": 1.0137717816036532e-11
+        },
+        "eurosat/d2nn": {
+          "capture": 0.25883810445405453,
+          "entropy": 0.9794269591004363,
+          "min_window_probability": 0.052244506605989116
+        },
+        "clevr/moe": {
+          "capture": 0.2220614293767912,
+          "entropy": 0.5984172023027098,
+          "min_window_probability": 6.821523872095768e-10
+        },
+        "clevr/d2nn": {
+          "capture": 0.2763116254355219,
+          "entropy": 0.94099650311222,
+          "min_window_probability": 1.4323457436853664e-07
+        },
+        "speech_binary/moe": {
+          "capture": 0.1243829393300291,
+          "entropy": 0.3563463838701495,
+          "min_window_probability": 2.237022357690316e-12
+        },
+        "speech_binary/d2nn": {
+          "capture": 0.31083585402718217,
+          "entropy": 0.6380070097262456,
+          "min_window_probability": 2.1307919170614153e-09
+        },
+        "physical/moe": {
+          "capture": 0.15892687244909115,
+          "entropy": 0.5847954470819328,
+          "min_window_probability": 1.3326356701170942e-10
+        },
+        "physical/d2nn": {
+          "capture": 0.38264545218523227,
+          "entropy": 0.627092326991624,
+          "min_window_probability": 3.841812118700945e-09
+        }
+      }
+    },
+    {
+      "side": 128,
+      "x_pitch": 288,
+      "y_pitch": 360,
+      "score": 0.0815357117243233,
+      "worst_group_capture": 0.12376813573179751,
+      "worst_group_entropy": 0.3175557867496554,
+      "group_means": {
+        "eurosat/moe": {
+          "capture": 0.21383388864065367,
+          "entropy": 0.5984129200661747,
+          "min_window_probability": 7.964147309754848e-12
+        },
+        "eurosat/d2nn": {
+          "capture": 0.1653126520895652,
+          "entropy": 0.9779407852522797,
+          "min_window_probability": 0.052991655590530144
+        },
+        "clevr/moe": {
+          "capture": 0.2295085541093994,
+          "entropy": 0.5997899421909041,
+          "min_window_probability": 4.940976443320528e-10
+        },
+        "clevr/d2nn": {
+          "capture": 0.16821571428641552,
+          "entropy": 0.9410372598241576,
+          "min_window_probability": 5.192403148789262e-08
+        },
+        "speech_binary/moe": {
+          "capture": 0.12376813573179751,
+          "entropy": 0.3175557867496554,
+          "min_window_probability": 1.6509617454031427e-12
+        },
+        "speech_binary/d2nn": {
+          "capture": 0.1850564658973553,
+          "entropy": 0.5813696284938141,
+          "min_window_probability": 1.599579138428394e-09
+        },
+        "physical/moe": {
+          "capture": 0.17554039313445474,
+          "entropy": 0.593679984714496,
+          "min_window_probability": 8.024405388659378e-11
+        },
+        "physical/d2nn": {
+          "capture": 0.19880281569466451,
+          "entropy": 0.5228465748888338,
+          "min_window_probability": 2.811117132210976e-09
+        }
+      }
+    },
+    {
+      "side": 192,
+      "x_pitch": 224,
+      "y_pitch": 360,
+      "score": 0.0734233996003627,
+      "worst_group_capture": 0.10683280423959526,
+      "worst_group_entropy": 0.3745478296290927,
+      "group_means": {
+        "eurosat/moe": {
+          "capture": 0.1921426996331915,
+          "entropy": 0.5960843777979955,
+          "min_window_probability": 1.4444905113153967e-11
+        },
+        "eurosat/d2nn": {
+          "capture": 0.3745900699974505,
+          "entropy": 0.9824447182100844,
+          "min_window_probability": 0.055722856509673416
+        },
+        "clevr/moe": {
+          "capture": 0.18724660609844965,
+          "entropy": 0.5976109673614136,
+          "min_window_probability": 1.0542956126286036e-09
+        },
+        "clevr/d2nn": {
+          "capture": 0.40985065294002526,
+          "entropy": 0.9392519570544786,
+          "min_window_probability": 1.1872885083847686e-06
+        },
+        "speech_binary/moe": {
+          "capture": 0.10683280423959526,
+          "entropy": 0.3745478296290927,
+          "min_window_probability": 3.5921943303262086e-12
+        },
+        "speech_binary/d2nn": {
+          "capture": 0.45726916305859205,
+          "entropy": 0.6595082042644809,
+          "min_window_probability": 1.7433818472945162e-09
+        },
+        "physical/moe": {
+          "capture": 0.12302475178752147,
+          "entropy": 0.5696945229586343,
+          "min_window_probability": 2.46141075031487e-10
+        },
+        "physical/d2nn": {
+          "capture": 0.5391117284775717,
+          "entropy": 0.6517207963608362,
+          "min_window_probability": 5.655092689117774e-09
+        }
+      }
+    },
+    {
+      "side": 160,
+      "x_pitch": 256,
+      "y_pitch": 320,
+      "score": 0.07020348072915264,
+      "worst_group_capture": 0.10650376496071456,
+      "worst_group_entropy": 0.3183286197450052,
+      "group_means": {
+        "eurosat/moe": {
+          "capture": 0.17595094827752486,
+          "entropy": 0.5939509757342082,
+          "min_window_probability": 1.2169623859476222e-11
+        },
+        "eurosat/d2nn": {
+          "capture": 0.2642434492309806,
+          "entropy": 0.9809234369803731,
+          "min_window_probability": 0.055855038476025444
+        },
+        "clevr/moe": {
+          "capture": 0.1762627994373018,
+          "entropy": 0.5938787743810023,
+          "min_window_probability": 8.59592557846544e-10
+        },
+        "clevr/d2nn": {
+          "capture": 0.280936949571703,
+          "entropy": 0.9406517026260577,
+          "min_window_probability": 1.8583117683253723e-08
+        },
+        "speech_binary/moe": {
+          "capture": 0.10650376496071456,
+          "entropy": 0.3183286197450052,
+          "min_window_probability": 2.55931914823653e-12
+        },
+        "speech_binary/d2nn": {
+          "capture": 0.31245044538211963,
+          "entropy": 0.6424308288967444,
+          "min_window_probability": 1.9790056536858995e-09
+        },
+        "physical/moe": {
+          "capture": 0.13629782289166792,
+          "entropy": 0.5821312735420578,
+          "min_window_probability": 1.5010027893937618e-10
+        },
+        "physical/d2nn": {
+          "capture": 0.353584133044684,
+          "entropy": 0.6199667979146197,
+          "min_window_probability": 4.572419211577679e-09
+        }
+      }
+    },
+    {
+      "side": 128,
+      "x_pitch": 288,
+      "y_pitch": 280,
+      "score": 0.06985170598849165,
+      "worst_group_capture": 0.10371241754293398,
+      "worst_group_entropy": 0.34702685837161296,
+      "group_means": {
+        "eurosat/moe": {
+          "capture": 0.12665334875687662,
+          "entropy": 0.5922377067617135,
+          "min_window_probability": 1.3068437672746549e-11
+        },
+        "eurosat/d2nn": {
+          "capture": 0.1716627810130995,
+          "entropy": 0.9822538242052983,
+          "min_window_probability": 0.0588579216122081
+        },
+        "clevr/moe": {
+          "capture": 0.11109213459178564,
+          "entropy": 0.5700087996246876,
+          "min_window_probability": 1.0242579657955437e-09
+        },
+        "clevr/d2nn": {
+          "capture": 0.17509807238599046,
+          "entropy": 0.9370011099980404,
+          "min_window_probability": 1.7283338860675325e-08
+        },
+        "speech_binary/moe": {
+          "capture": 0.10371241754293398,
+          "entropy": 0.34702685837161296,
+          "min_window_probability": 1.9392708611019062e-12
+        },
+        "speech_binary/d2nn": {
+          "capture": 0.1793153049880869,
+          "entropy": 0.5917415642680545,
+          "min_window_probability": 1.4176260676831993e-09
+        },
+        "physical/moe": {
+          "capture": 0.11727616970270621,
+          "entropy": 0.5814415448882714,
+          "min_window_probability": 1.1247760867718676e-10
+        },
+        "physical/d2nn": {
+          "capture": 0.15436667882835492,
+          "entropy": 0.5230208173474493,
+          "min_window_probability": 3.878773080329718e-09
+        }
+      }
+    },
+    {
+      "side": 192,
+      "x_pitch": 256,
+      "y_pitch": 240,
+      "score": 0.06520659612704247,
+      "worst_group_capture": 0.097072022436505,
+      "worst_group_entropy": 0.3434683751375269,
+      "group_means": {
+        "eurosat/moe": {
+          "capture": 0.11308357758962195,
+          "entropy": 0.5916990225454658,
+          "min_window_probability": 1.3353689140518326e-10
+        },
+        "eurosat/d2nn": {
+          "capture": 0.38652736580654184,
+          "entropy": 0.9839061245038814,
+          "min_window_probability": 0.060209372656925594
+        },
+        "clevr/moe": {
+          "capture": 0.097072022436505,
+          "entropy": 0.5603692027602936,
+          "min_window_probability": 1.2381422365366339e-08
+        },
+        "clevr/d2nn": {
+          "capture": 0.4148163084033302,
+          "entropy": 0.9387570508264225,
+          "min_window_probability": 5.6424086734157536e-05
+        },
+        "speech_binary/moe": {
+          "capture": 0.09755380012409574,
+          "entropy": 0.3434683751375269,
+          "min_window_probability": 5.23907593978116e-12
+        },
+        "speech_binary/d2nn": {
+          "capture": 0.41227679434205977,
+          "entropy": 0.6666290835038713,
+          "min_window_probability": 1.7634256943238443e-09
+        },
+        "physical/moe": {
+          "capture": 0.10820595789896797,
+          "entropy": 0.5767703747872006,
+          "min_window_probability": 3.061342296821404e-10
+        },
+        "physical/d2nn": {
+          "capture": 0.4473364210382555,
+          "entropy": 0.6503832103164517,
+          "min_window_probability": 1.797708674092185e-08
+        }
+      }
+    },
+    {
+      "side": 160,
+      "x_pitch": 288,
+      "y_pitch": 240,
+      "score": 0.05738805245047551,
+      "worst_group_capture": 0.08566416654740408,
+      "worst_group_entropy": 0.3398379920901611,
+      "group_means": {
+        "eurosat/moe": {
+          "capture": 0.10234387835290815,
+          "entropy": 0.591222390254812,
+          "min_window_probability": 1.1529203438169144e-10
+        },
+        "eurosat/d2nn": {
+          "capture": 0.26333772997331206,
+          "entropy": 0.9813380614729076,
+          "min_window_probability": 0.05647354720243776
+        },
+        "clevr/moe": {
+          "capture": 0.08566416654740408,
+          "entropy": 0.5431278503097081,
+          "min_window_probability": 1.0912001247252007e-08
+        },
+        "clevr/d2nn": {
+          "capture": 0.27487887800206834,
+          "entropy": 0.9352223634548797,
+          "min_window_probability": 6.757347495550737e-07
+        },
+        "speech_binary/moe": {
+          "capture": 0.10063895148816114,
+          "entropy": 0.3398379920901611,
+          "min_window_probability": 3.908897622847414e-12
+        },
+        "speech_binary/d2nn": {
+          "capture": 0.25987290706431343,
+          "entropy": 0.6122272569609604,
+          "min_window_probability": 1.6533043627511432e-09
+        },
+        "physical/moe": {
+          "capture": 0.11102517001545167,
+          "entropy": 0.5760041085532662,
+          "min_window_probability": 2.0751265445486609e-10
+        },
+        "physical/d2nn": {
+          "capture": 0.2919729494840685,
+          "entropy": 0.5713299076927209,
+          "min_window_probability": 4.299666636558771e-09
+        }
+      }
+    },
+    {
+      "side": 160,
+      "x_pitch": 256,
+      "y_pitch": 280,
+      "score": 0.055176574476720024,
+      "worst_group_capture": 0.0834855814131924,
+      "worst_group_entropy": 0.32182284755582996,
+      "group_means": {
+        "eurosat/moe": {
+          "capture": 0.12347294431179834,
+          "entropy": 0.5908952400423553,
+          "min_window_probability": 1.7331554282487196e-11
+        },
+        "eurosat/d2nn": {
+          "capture": 0.26758969476230626,
+          "entropy": 0.9825305310700989,
+          "min_window_probability": 0.05751338750445968
+        },
+        "clevr/moe": {
+          "capture": 0.11313149156670786,
+          "entropy": 0.58155267331249,
+          "min_window_probability": 1.3388394030190497e-09
+        },
+        "clevr/d2nn": {
+          "capture": 0.2861577773330106,
+          "entropy": 0.9390497937739888,
+          "min_window_probability": 5.4621677772535596e-08
+        },
+        "speech_binary/moe": {
+          "capture": 0.0834855814131924,
+          "entropy": 0.32182284755582996,
+          "min_window_probability": 3.2923372388586273e-12
+        },
+        "speech_binary/d2nn": {
+          "capture": 0.3024523067634768,
+          "entropy": 0.6505548346915535,
+          "min_window_probability": 1.7688913326744033e-09
+        },
+        "physical/moe": {
+          "capture": 0.1006799805525299,
+          "entropy": 0.5735147668847653,
+          "min_window_probability": 2.0004236090588383e-10
+        },
+        "physical/d2nn": {
+          "capture": 0.3187873680113036,
+          "entropy": 0.6324440783513459,
+          "min_window_probability": 4.93754613916425e-09
+        }
+      }
+    },
+    {
+      "side": 96,
+      "x_pitch": 288,
+      "y_pitch": 320,
+      "score": 0.05501516866123317,
+      "worst_group_capture": 0.08325341949139808,
+      "worst_group_entropy": 0.32163144762882556,
+      "group_means": {
+        "eurosat/moe": {
+          "capture": 0.1284941339955158,
+          "entropy": 0.5918103277121842,
+          "min_window_probability": 2.286358095682136e-12
+        },
+        "eurosat/d2nn": {
+          "capture": 0.09374500717660807,
+          "entropy": 0.9794942780569758,
+          "min_window_probability": 0.05588540773939258
+        },
+        "clevr/moe": {
+          "capture": 0.12159510519895425,
+          "entropy": 0.5861356592698916,
+          "min_window_probability": 3.0720495111332623e-10
+        },
+        "clevr/d2nn": {
+          "capture": 0.09558148631952848,
+          "entropy": 0.9373400309405351,
+          "min_window_probability": 1.8305958481303253e-08
+        },
+        "speech_binary/moe": {
+          "capture": 0.08325341949139808,
+          "entropy": 0.32163144762882556,
+          "min_window_probability": 1.010603282702462e-12
+        },
+        "speech_binary/d2nn": {
+          "capture": 0.10187373495284621,
+          "entropy": 0.557781411488404,
+          "min_window_probability": 1.223544900739749e-09
+        },
+        "physical/moe": {
+          "capture": 0.092490375690405,
+          "entropy": 0.5777509789901609,
+          "min_window_probability": 7.486799053335532e-11
+        },
+        "physical/d2nn": {
+          "capture": 0.0888469099732694,
+          "entropy": 0.4689829915509759,
+          "min_window_probability": 2.7477273040451377e-09
+        }
+      }
+    },
+    {
+      "side": 192,
+      "x_pitch": 224,
+      "y_pitch": 320,
+      "score": 0.04991195036855235,
+      "worst_group_capture": 0.07770075965791054,
+      "worst_group_entropy": 0.28472232673907794,
+      "group_means": {
+        "eurosat/moe": {
+          "capture": 0.15118808707394993,
+          "entropy": 0.5940443184684687,
+          "min_window_probability": 1.8040034494993467e-11
+        },
+        "eurosat/d2nn": {
+          "capture": 0.3827149962080958,
+          "entropy": 0.9837190489876403,
+          "min_window_probability": 0.058891313249696195
+        },
+        "clevr/moe": {
+          "capture": 0.1494970518408879,
+          "entropy": 0.5951848402047377,
+          "min_window_probability": 1.3144983190428134e-09
+        },
+        "clevr/d2nn": {
+          "capture": 0.4135353371410885,
+          "entropy": 0.9389763864330236,
+          "min_window_probability": 3.074689480756015e-08
+        },
+        "speech_binary/moe": {
+          "capture": 0.07770075965791054,
+          "entropy": 0.28472232673907794,
+          "min_window_probability": 4.836200443212178e-12
+        },
+        "speech_binary/d2nn": {
+          "capture": 0.45970773071071613,
+          "entropy": 0.6633372897453008,
+          "min_window_probability": 1.6270903088858919e-09
+        },
+        "physical/moe": {
+          "capture": 0.09993225979687081,
+          "entropy": 0.5664833477985891,
+          "min_window_probability": 2.955449081127082e-10
+        },
+        "physical/d2nn": {
+          "capture": 0.5273205103257219,
+          "entropy": 0.6603314795478538,
+          "min_window_probability": 6.28272210659225e-09
+        }
+      }
+    },
+    {
+      "side": 96,
+      "x_pitch": 288,
+      "y_pitch": 280,
+      "score": 0.04262581229597882,
+      "worst_group_capture": 0.06467502437319979,
+      "worst_group_entropy": 0.31815372963793465,
+      "group_means": {
+        "eurosat/moe": {
+          "capture": 0.0801710010173379,
+          "entropy": 0.5892461279049429,
+          "min_window_probability": 3.5279341848309324e-12
+        },
+        "eurosat/d2nn": {
+          "capture": 0.09676969087458123,
+          "entropy": 0.9811914615695695,
+          "min_window_probability": 0.05833023546408622
+        },
+        "clevr/moe": {
+          "capture": 0.06656507692632369,
+          "entropy": 0.5465070690210606,
+          "min_window_probability": 5.62099379200764e-10
+        },
+        "clevr/d2nn": {
+          "capture": 0.09871533106121398,
+          "entropy": 0.9348576219667739,
+          "min_window_probability": 1.5186473612109173e-08
+        },
+        "speech_binary/moe": {
+          "capture": 0.06467502437319979,
+          "entropy": 0.31815372963793465,
+          "min_window_probability": 1.3326591439454396e-12
+        },
+        "speech_binary/d2nn": {
+          "capture": 0.10046542047553088,
+          "entropy": 0.5635041804325314,
+          "min_window_probability": 1.0094682577632516e-09
+        },
+        "physical/moe": {
+          "capture": 0.0658184163089513,
+          "entropy": 0.5588589378547698,
+          "min_window_probability": 1.0091892859092924e-10
+        },
+        "physical/d2nn": {
+          "capture": 0.0780760424768532,
+          "entropy": 0.46273122104134157,
+          "min_window_probability": 3.2316270214776956e-09
+        }
+      }
+    },
+    {
+      "side": 128,
+      "x_pitch": 256,
+      "y_pitch": 320,
+      "score": 0.041422298758147305,
+      "worst_group_capture": 0.064168085231853,
+      "worst_group_entropy": 0.2910560945828349,
+      "group_means": {
+        "eurosat/moe": {
+          "capture": 0.11850852691426317,
+          "entropy": 0.5908391036971168,
+          "min_window_probability": 3.3865912848955188e-12
+        },
+        "eurosat/d2nn": {
+          "capture": 0.16811642990406447,
+          "entropy": 0.98100583244746,
+          "min_window_probability": 0.05524351515309217
+        },
+        "clevr/moe": {
+          "capture": 0.1127242412493727,
+          "entropy": 0.5881270641644059,
+          "min_window_probability": 4.796163560701686e-10
+        },
+        "clevr/d2nn": {
+          "capture": 0.179064383472198,
+          "entropy": 0.9409236511572597,
+          "min_window_probability": 1.6095838890740938e-08
+        },
+        "speech_binary/moe": {
+          "capture": 0.064168085231853,
+          "entropy": 0.2910560945828349,
+          "min_window_probability": 2.1095098747097815e-12
+        },
+        "speech_binary/d2nn": {
+          "capture": 0.19823489875054515,
+          "entropy": 0.6185340136805645,
+          "min_window_probability": 1.6204657974570532e-09
+        },
+        "physical/moe": {
+          "capture": 0.07767856519878683,
+          "entropy": 0.5558846225792425,
+          "min_window_probability": 1.5033427325869016e-10
+        },
+        "physical/d2nn": {
+          "capture": 0.1995127646041369,
+          "entropy": 0.5889053488758534,
+          "min_window_probability": 4.293324848203959e-09
+        }
+      }
+    },
+    {
+      "side": 192,
+      "x_pitch": 224,
+      "y_pitch": 280,
+      "score": 0.03941581560316455,
+      "worst_group_capture": 0.061064824737237254,
+      "worst_group_entropy": 0.2909499297761462,
+      "group_means": {
+        "eurosat/moe": {
+          "capture": 0.11065880400646086,
+          "entropy": 0.5901301846183289,
+          "min_window_probability": 2.4560413571552845e-11
+        },
+        "eurosat/d2nn": {
+          "capture": 0.3854757517977624,
+          "entropy": 0.9845797739761168,
+          "min_window_probability": 0.059943143192387895
+        },
+        "clevr/moe": {
+          "capture": 0.1035429128201517,
+          "entropy": 0.5854915873524813,
+          "min_window_probability": 1.9007546739680913e-09
+        },
+        "clevr/d2nn": {
+          "capture": 0.4183670393081692,
+          "entropy": 0.9380103482466362,
+          "min_window_probability": 1.9919081249257826e-06
+        },
+        "speech_binary/moe": {
+          "capture": 0.061064824737237254,
+          "entropy": 0.2909499297761462,
+          "min_window_probability": 6.228598004430703e-12
+        },
+        "speech_binary/d2nn": {
+          "capture": 0.44890215962008995,
+          "entropy": 0.6666647704150842,
+          "min_window_probability": 1.6128728201010029e-09
+        },
+        "physical/moe": {
+          "capture": 0.07607004552817029,
+          "entropy": 0.5532523622673262,
+          "min_window_probability": 3.842665365686713e-10
+        },
+        "physical/d2nn": {
+          "capture": 0.489998655906875,
+          "entropy": 0.6521801348855235,
+          "min_window_probability": 7.426647389415093e-09
+        }
+      }
+    }
+  ],
+  "router": {
+    "eurosat/moe": [
+      {
+        "sample_index": 0,
+        "active_capture": 0.5818657279014587,
+        "power_weights": [
+          0.3497561812400818,
+          0.2390606552362442,
+          0.2175111025571823,
+          0.1936720758676529
+        ]
+      },
+      {
+        "sample_index": 4570,
+        "active_capture": 0.5667443871498108,
+        "power_weights": [
+          0.14361032843589783,
+          0.28971919417381287,
+          0.31868883967399597,
+          0.24798168241977692
+        ]
+      },
+      {
+        "sample_index": 9141,
+        "active_capture": 0.561606764793396,
+        "power_weights": [
+          0.24278797209262848,
+          0.24080657958984375,
+          0.2620519995689392,
+          0.25435346364974976
+        ]
+      },
+      {
+        "sample_index": 13712,
+        "active_capture": 0.6119999289512634,
+        "power_weights": [
+          0.26112470030784607,
+          0.2774389684200287,
+          0.2337271124124527,
+          0.22770921885967255
+        ]
+      },
+      {
+        "sample_index": 18282,
+        "active_capture": 0.5629069805145264,
+        "power_weights": [
+          0.1637338548898697,
+          0.2510432004928589,
+          0.3447362184524536,
+          0.2404867261648178
+        ]
+      },
+      {
+        "sample_index": 22853,
+        "active_capture": 0.5683491230010986,
+        "power_weights": [
+          0.2569335699081421,
+          0.24945613741874695,
+          0.24520018696784973,
+          0.24841010570526123
+        ]
+      },
+      {
+        "sample_index": 27424,
+        "active_capture": 0.587863028049469,
+        "power_weights": [
+          0.16190868616104126,
+          0.25713858008384705,
+          0.34495919942855835,
+          0.23599353432655334
+        ]
+      },
+      {
+        "sample_index": 31995,
+        "active_capture": 0.5942119359970093,
+        "power_weights": [
+          0.13685651123523712,
+          0.42023345828056335,
+          0.19385869801044464,
+          0.24905134737491608
+        ]
+      }
+    ],
+    "eurosat/d2nn": [],
+    "clevr/moe": [
+      {
+        "sample_index": 0,
+        "active_capture": 0.7661610245704651,
+        "power_weights": [
+          0.2214202582836151,
+          0.24878041446208954,
+          0.291486918926239,
+          0.23831236362457275
+        ]
+      },
+      {
+        "sample_index": 19999,
+        "active_capture": 0.7511953115463257,
+        "power_weights": [
+          0.2023015022277832,
+          0.24953562021255493,
+          0.23612774908542633,
+          0.3120351731777191
+        ]
+      },
+      {
+        "sample_index": 39999,
+        "active_capture": 0.7469972372055054,
+        "power_weights": [
+          0.1945808231830597,
+          0.2448025494813919,
+          0.24712996184825897,
+          0.31348666548728943
+        ]
+      },
+      {
+        "sample_index": 59999,
+        "active_capture": 0.7513111233711243,
+        "power_weights": [
+          0.19834771752357483,
+          0.2434304654598236,
+          0.24881276488304138,
+          0.30940908193588257
+        ]
+      },
+      {
+        "sample_index": 79999,
+        "active_capture": 0.7575615048408508,
+        "power_weights": [
+          0.21047934889793396,
+          0.2463851422071457,
+          0.23405872285366058,
+          0.3090767562389374
+        ]
+      },
+      {
+        "sample_index": 99999,
+        "active_capture": 0.7379689812660217,
+        "power_weights": [
+          0.19943101704120636,
+          0.24381950497627258,
+          0.2407379001379013,
+          0.31601154804229736
+        ]
+      },
+      {
+        "sample_index": 119999,
+        "active_capture": 0.7345988154411316,
+        "power_weights": [
+          0.20059695839881897,
+          0.23867860436439514,
+          0.25205397605895996,
+          0.3086704611778259
+        ]
+      },
+      {
+        "sample_index": 139999,
+        "active_capture": 0.7351924777030945,
+        "power_weights": [
+          0.20449091494083405,
+          0.23811745643615723,
+          0.24457286298274994,
+          0.3128187954425812
+        ]
+      }
+    ],
+    "clevr/d2nn": [],
+    "speech_binary/moe": [
+      {
+        "sample_index": 0,
+        "active_capture": 0.6227874159812927,
+        "power_weights": [
+          0.3977676331996918,
+          0.24164986610412598,
+          0.352971613407135,
+          0.007610892876982689
+        ]
+      },
+      {
+        "sample_index": 1789,
+        "active_capture": 0.5424200296401978,
+        "power_weights": [
+          0.4844644367694855,
+          0.2728158235549927,
+          0.2332904040813446,
+          0.009429381228983402
+        ]
+      },
+      {
+        "sample_index": 3578,
+        "active_capture": 0.5478665828704834,
+        "power_weights": [
+          0.47773200273513794,
+          0.2880983352661133,
+          0.22188802063465118,
+          0.012281549163162708
+        ]
+      },
+      {
+        "sample_index": 5367,
+        "active_capture": 0.5112168788909912,
+        "power_weights": [
+          0.5342326760292053,
+          0.3026464581489563,
+          0.16020436584949493,
+          0.00291648437269032
+        ]
+      },
+      {
+        "sample_index": 7157,
+        "active_capture": 0.6028532981872559,
+        "power_weights": [
+          0.5020613670349121,
+          0.2703903913497925,
+          0.22383162379264832,
+          0.003716615494340658
+        ]
+      },
+      {
+        "sample_index": 8946,
+        "active_capture": 0.5532393455505371,
+        "power_weights": [
+          0.5239841341972351,
+          0.24004365503787994,
+          0.23087149858474731,
+          0.005100715905427933
+        ]
+      },
+      {
+        "sample_index": 10735,
+        "active_capture": 0.6816356778144836,
+        "power_weights": [
+          0.5511543154716492,
+          0.19786551594734192,
+          0.2469140589237213,
+          0.004066097550094128
+        ]
+      },
+      {
+        "sample_index": 12525,
+        "active_capture": 0.5664221048355103,
+        "power_weights": [
+          0.3815162777900696,
+          0.2943178713321686,
+          0.32160577178001404,
+          0.0025601284578442574
+        ]
+      }
+    ],
+    "speech_binary/d2nn": [],
+    "physical/moe": [
+      {
+        "sample_index": 0,
+        "active_capture": 0.5942022800445557,
+        "power_weights": [
+          0.29752060770988464,
+          0.24125732481479645,
+          0.2699006199836731,
+          0.1913214474916458
+        ]
+      },
+      {
+        "sample_index": 10057,
+        "active_capture": 0.7157251834869385,
+        "power_weights": [
+          0.21476520597934723,
+          0.30013012886047363,
+          0.2066851258277893,
+          0.27841952443122864
+        ]
+      },
+      {
+        "sample_index": 20114,
+        "active_capture": 0.6123325228691101,
+        "power_weights": [
+          0.24194645881652832,
+          0.18309754133224487,
+          0.35080456733703613,
+          0.2241513580083847
+        ]
+      },
+      {
+        "sample_index": 30171,
+        "active_capture": 0.8142371773719788,
+        "power_weights": [
+          0.5239555239677429,
+          0.18711701035499573,
+          0.1317034214735031,
+          0.15722407400608063
+        ]
+      },
+      {
+        "sample_index": 40228,
+        "active_capture": 0.36609578132629395,
+        "power_weights": [
+          0.26507702469825745,
+          0.26074767112731934,
+          0.2074809968471527,
+          0.2666943371295929
+        ]
+      },
+      {
+        "sample_index": 50285,
+        "active_capture": 0.6102113723754883,
+        "power_weights": [
+          0.41454848647117615,
+          0.21414123475551605,
+          0.15612542629241943,
+          0.21518483757972717
+        ]
+      },
+      {
+        "sample_index": 60342,
+        "active_capture": 0.6834750771522522,
+        "power_weights": [
+          0.39247259497642517,
+          0.19444502890110016,
+          0.2467494010925293,
+          0.1663329005241394
+        ]
+      },
+      {
+        "sample_index": 70399,
+        "active_capture": 0.6593161821365356,
+        "power_weights": [
+          0.3929481506347656,
+          0.18636344373226166,
+          0.2444610297679901,
+          0.17622734606266022
+        ]
+      }
+    ],
+    "physical/d2nn": []
+  },
+  "source_protocols": {
+    "eurosat": "/DATA/DATA1/guest3/demo_reproduction_data/t13_four_modal_features/eurosat_full_s17_v1/protocol.json",
+    "clevr": "/DATA/DATA1/guest3/demo_reproduction_data/clevr_v1_full_ccby4/clevr_full_source_s17_v1",
+    "speech": "/DATA/DATA1/guest3/demo_reproduction_data/t13_four_modal_hard_v2/speech/assets",
+    "physical": "/DATA/DATA1/guest3/demo_reproduction_data/t13_four_modal_hard_v3_physical/protocol.json"
+  }
+}
