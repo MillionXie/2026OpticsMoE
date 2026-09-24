@@ -7,7 +7,8 @@ from LightGenV2.tasks.t16_zero_phase_ccd_lifelong.data import (
 )
 from LightGenV2.tasks.t16_zero_phase_ccd_lifelong.model import DirectCCDOptics
 from LightGenV2.tasks.t16_zero_phase_ccd_lifelong.train_eurosat import (
-    accuracy_metrics, augment_paired_dihedral, routing_balance_penalty,
+    accuracy_metrics, augment_paired_dihedral, load_initial_checkpoint,
+    routing_balance_penalty,
 )
 
 
@@ -140,6 +141,27 @@ def test_dihedral_augmentation_preserves_tile_identity_and_power():
         assert torch.allclose(row[112:, :112] - row[:112, :112],
                               torch.full((112, 112), 20.0))
         assert torch.allclose(row.square().sum(), fields[0].square().sum(), atol=0.1)
+
+
+def test_finetune_checkpoint_rejects_changed_source(tmp_path):
+    original = DirectCCDOptics("moe")
+    config = {"task": "eurosat_paired_rgb_sar", "architecture": "moe",
+              "activation_order": "center_out",
+              "source_sha256": {"trainval": "train", "holdout": "holdout"}}
+    with torch.no_grad():
+        original.global_phase.fill_(0.25)
+    path = tmp_path / "best_checkpoint.pt"
+    torch.save({"model": original.state_dict(), "config": config}, path)
+    restored = DirectCCDOptics("moe")
+    load_initial_checkpoint(restored, path, config, torch.device("cpu"))
+    assert torch.equal(restored.global_phase, original.global_phase)
+    changed = {**config, "source_sha256": {**config["source_sha256"], "holdout": "other"}}
+    try:
+        load_initial_checkpoint(restored, path, changed, torch.device("cpu"))
+    except ValueError as error:
+        assert "different" in str(error)
+    else:
+        raise AssertionError("different data source was accepted")
 
 
 def test_paired_rgb_sar_uses_each_modality_and_equal_power():

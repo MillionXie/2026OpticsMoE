@@ -119,6 +119,17 @@ def save_json(path, value):
     os.replace(temporary, path)
 
 
+def load_initial_checkpoint(model, path, config, device):
+    initial = torch.load(path, map_location=device, weights_only=False)
+    prior = initial.get("config", {})
+    if (prior.get("task") != config["task"] or
+            prior.get("architecture") != config["architecture"] or
+            prior.get("activation_order") != config["activation_order"] or
+            prior.get("source_sha256") != config["source_sha256"]):
+        raise ValueError("initial checkpoint has a different task, geometry, or data source")
+    model.load_state_dict(initial["model"])
+
+
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("--protocol", type=Path, required=True)
@@ -135,6 +146,8 @@ def main():
     parser.add_argument("--augment-dihedral", action="store_true")
     parser.add_argument("--skip-test", action="store_true",
                         help="validation-only candidate; never load the test split")
+    parser.add_argument("--init-checkpoint", type=Path,
+                        help="start a new, separately recorded candidate from a selected checkpoint")
     parser.add_argument("--resume", action="store_true")
     args = parser.parse_args()
     if not (0 < args.min_epochs <= args.epochs and args.patience > 0 and
@@ -143,6 +156,8 @@ def main():
         raise ValueError("invalid training budget")
     if ("runs", "simulation") not in list(zip(args.out.parts, args.out.parts[1:])):
         raise ValueError("formal runs must live under runs/simulation")
+    if args.resume and args.init_checkpoint is not None:
+        raise ValueError("resume and init-checkpoint are mutually exclusive")
     if args.resume:
         if not (args.out / "last_checkpoint.pt").exists():
             raise FileNotFoundError("resume requested but last checkpoint missing")
@@ -169,6 +184,9 @@ def main():
               "skip_test": args.skip_test,
               "source_protocol": str(args.protocol),
               "source_sha256": {"trainval": sha256_file(trainval), "holdout": sha256_file(holdout)},
+              "init_checkpoint": (str(args.init_checkpoint) if args.init_checkpoint else None),
+              "init_checkpoint_sha256": (sha256_file(args.init_checkpoint)
+                                          if args.init_checkpoint else None),
               "model_git_commit": code_commit,
               "environment": {"python": platform.python_version(), "torch": torch.__version__,
                               "cuda": torch.version.cuda, "device": str(device)}}
@@ -184,6 +202,8 @@ def main():
     save_json(args.out / "status.json", {"status": "running", "epoch": len(history)})
     model = DirectCCDOptics(args.architecture, activation_order="center_out").to(device)
     model.configure_stage(0)
+    if args.init_checkpoint is not None:
+        load_initial_checkpoint(model, args.init_checkpoint, config, device)
     optimizer = torch.optim.Adam([p for p in model.parameters() if p.requires_grad], lr=args.lr)
     best_score, best_epoch, wait, start_epoch = -1.0, 0, 0, 1
     if args.resume:
