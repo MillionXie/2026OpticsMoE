@@ -11,6 +11,7 @@ from matplotlib.patches import Rectangle
 import numpy as np
 import torch
 
+from LightGenV2.tasks.t13_four_modal_lifelong.data import _rgb_field
 from LightGenV2.tasks.t14_shared_readout_lifelong.data import (
     ClevrRawPairs, PhysicalPermutedCandidates,
 )
@@ -188,14 +189,14 @@ def main():
         plt.close(fig)
     euro = datasets["eurosat"]
     index = np.array([0, len(euro)//3])
-    original = _rgb_field(euro.images[index]).numpy()
-    filled = euro[index].numpy()
+    original = _rgb_field(euro.rgb[index]).numpy()
+    paired = euro[index].numpy()
     fig, axes = plt.subplots(2, 2, figsize=(9, 9), constrained_layout=True)
     for row in range(2):
         axes[row, 0].imshow(original[row], cmap="magma")
-        axes[row, 0].set_title(f"old R/G/B/zero, sample {index[row]}")
-        axes[row, 1].imshow(filled[row], cmap="magma")
-        axes[row, 1].set_title("proposed R/G/B/luma, same source")
+        axes[row, 0].set_title(f"historical RGB-only R/G/B/zero, pair {index[row]}")
+        axes[row, 1].imshow(paired[row], cmap="magma")
+        axes[row, 1].set_title("paired R/G/B/SAR, same location")
         for ax in axes[row]:
             ax.axis("off")
     fig.savefig(args.out / "eurosat_input_comparison.png", dpi=140)
