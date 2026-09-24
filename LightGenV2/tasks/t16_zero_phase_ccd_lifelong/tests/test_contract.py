@@ -9,6 +9,10 @@ from LightGenV2.tasks.t16_zero_phase_ccd_lifelong.model import DirectCCDOptics
 
 
 def test_all_phase_parameters_begin_at_raw_zero_and_one_shared_linear_head():
+    moe_head = DirectCCDOptics("moe").shared_head
+    d2nn_head = DirectCCDOptics("d2nn").shared_head
+    assert torch.equal(moe_head.weight, d2nn_head.weight)
+    assert moe_head.weight is not d2nn_head.weight
     for architecture in ("moe", "d2nn"):
         model = DirectCCDOptics(architecture)
         phases = [model.global_phase, *model.additional_phases]
@@ -29,7 +33,7 @@ def test_all_phase_parameters_begin_at_raw_zero_and_one_shared_linear_head():
 
 
 def test_router_and_expert_slots_share_quadrant_numbering_and_gaps():
-    model = DirectCCDOptics("moe")
+    model = DirectCCDOptics("moe", activation_order="quadrant")
     assert len(model.slots) == len(model.router_centers) == 16
     assert model.router_pitch - model.router_side == 16
     assert len(set(model.slots)) == len(set(model.router_centers)) == 16
@@ -51,7 +55,8 @@ def test_router_and_expert_slots_share_quadrant_numbering_and_gaps():
 
 
 def test_center_out_activation_uses_one_slot_per_quadrant_and_freezes_old():
-    model = DirectCCDOptics("moe", activation_order="center_out")
+    model = DirectCCDOptics("moe")
+    assert model.activation_order == "center_out"
     assert (model.active_indices[:4] + 1).tolist() == [4, 7, 10, 13]
     for stage in range(4):
         model.configure_stage(stage)

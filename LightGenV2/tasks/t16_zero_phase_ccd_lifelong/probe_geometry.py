@@ -62,7 +62,7 @@ def main():
     parser.add_argument("--out", type=Path, required=True)
     parser.add_argument("--samples-per-task", type=int, default=8)
     parser.add_argument("--activation-order", choices=("quadrant", "center_out"),
-                        default="quadrant")
+                        default="center_out")
     args = parser.parse_args()
     args.out.mkdir(parents=True, exist_ok=True)
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")

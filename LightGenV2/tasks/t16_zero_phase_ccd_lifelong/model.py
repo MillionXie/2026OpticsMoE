@@ -28,14 +28,16 @@ class DirectCCDOptics(CrossModalOptics):
 
     def __init__(self, architecture: str, *, router_side=80, router_pitch=96,
                  output_side=96, x_pitch=128, y_pitch=160,
-                 routing_temperature=1.25, activation_order="quadrant"):
+                 routing_temperature=1.25, activation_order="center_out"):
         super().__init__(architecture=architecture, seed=17, phase_dropout=0.0,
                          readout_grid=28, head_width=0, head_bottleneck=0,
                          optical_layers=2, max_experts=16,
                          oeo_activation="intensity_softsign",
                          routing_temperature=routing_temperature)
         self.heads = nn.ModuleDict()
-        self.shared_head = nn.Linear(28 * 28, 10, bias=False)
+        with torch.random.fork_rng(devices=[]):
+            torch.manual_seed(122)
+            self.shared_head = nn.Linear(28 * 28, 10, bias=False)
         if activation_order not in ("quadrant", "center_out"):
             raise ValueError("activation_order must be quadrant or center_out")
         self.activation_order = activation_order
