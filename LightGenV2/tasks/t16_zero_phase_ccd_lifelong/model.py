@@ -59,8 +59,24 @@ class DirectCCDOptics(CrossModalOptics):
         if any(y - half < 0 or y + half > self.height or
                x - half < 0 or x + half > self.width for y, x in centers):
             raise ValueError("classification window extends outside CCD")
-        self.output_side = side
+        self.set_output_windows(centers, side)
         self.x_pitch, self.y_pitch = x_pitch, y_pitch
+
+    def set_output_windows(self, centers, side: int):
+        """Configure ten equal, separated CCD ROIs without altering the light path."""
+        side = int(side)
+        centers = [(int(y), int(x)) for y, x in centers]
+        if len(centers) != 10 or side <= 0 or side % 2:
+            raise ValueError("expected ten even-sided output windows")
+        half = side // 2
+        if any(y - half < 0 or y + half > self.height or
+               x - half < 0 or x + half > self.width for y, x in centers):
+            raise ValueError("classification window extends outside CCD")
+        for index, (y, x) in enumerate(centers):
+            if any(abs(y - yy) < side + 16 and abs(x - xx) < side + 16
+                   for yy, xx in centers[:index]):
+                raise ValueError("classification windows overlap or lack a 16-pixel gap")
+        self.output_side = side
         self.output_centers = centers
 
     def configure_stage(self, stage_index: int):

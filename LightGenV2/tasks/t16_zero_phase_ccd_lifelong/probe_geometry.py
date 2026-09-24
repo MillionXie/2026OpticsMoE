@@ -40,7 +40,26 @@ def candidates(size):
                 if any(y-half < 0 or y+half > size or
                        x-half < 0 or x+half > size for y, x in centers):
                     continue
-                yield side, xp, yp, centers
+                yield "center_343", side, xp, yp, centers
+    # The four first-stage experts occupy the corners. These equal-size ROIs
+    # cover the same unmodified CCD plane, with class 0/1 in opposite corners.
+    for side in (48, 64, 80, 96):
+        for offset in (40, 56, 72):
+            if 2 * offset < side + 16:
+                continue
+            for inward in (0, 32, 64, 96):
+                a, b = 132 + inward, size - 132 - inward
+                tl = [(a-offset, a-offset), (a-offset, a+offset), (a+offset, a)]
+                tr = [(a-offset, b+offset), (a+offset, b-offset)]
+                bl = [(b-offset, a+offset), (b+offset, a-offset)]
+                br = [(b+offset, b+offset), (b+offset, b-offset), (b-offset, b)]
+                centers = [tl[0], br[0], tr[0], bl[0], tl[1], br[1],
+                           tr[1], bl[1], tl[2], br[2]]
+                half = side // 2
+                if any(y-half < 0 or y+half > size or x-half < 0 or x+half > size
+                       for y, x in centers):
+                    continue
+                yield "corner_3223", side, offset, inward, centers
 
 
 def powers_from_prefix(prefix, centers, side):
@@ -112,22 +131,22 @@ def main():
                         "sample_index": int(index),
                         "active_capture": float(output["router_efficiency"][0]),
                         "power_weights": output["route_power"][0, :4].cpu().tolist()})
-                for side, xp, yp, centers in layouts:
+                for layout, side, xp, yp, centers in layouts:
                     powers = powers_from_prefix(prefix, centers, side).clip(min=0)
                     capture = float(powers.sum() / max(total, 1e-20))
                     probabilities = powers / max(powers.sum(), 1e-20)
                     entropy = float(-(probabilities * np.log(probabilities + 1e-30)).sum()
                                     / np.log(10))
-                    rows.append((side, xp, yp, key, capture, entropy,
+                    rows.append((layout, side, xp, yp, key, capture, entropy,
                                  float(probabilities.min())))
             print(f"finished {key}", flush=True)
 
     grouped = {}
-    for side, xp, yp, key, capture, entropy, minimum in rows:
-        entry = grouped.setdefault((side, xp, yp), {})
+    for layout, side, xp, yp, key, capture, entropy, minimum in rows:
+        entry = grouped.setdefault((layout, side, xp, yp), {})
         entry.setdefault(key, []).append((capture, entropy, minimum))
     ranking = []
-    for (side, xp, yp), measurements in grouped.items():
+    for (layout, side, xp, yp), measurements in grouped.items():
         group_means = {key: {
             "capture": float(np.mean(np.asarray(values)[:, 0])),
             "entropy": float(np.mean(np.asarray(values)[:, 1])),
@@ -135,26 +154,33 @@ def main():
             for key, values in measurements.items()}
         min_capture = min(x["capture"] for x in group_means.values())
         min_entropy = min(x["entropy"] for x in group_means.values())
-        ranking.append({"side": side, "x_pitch": xp, "y_pitch": yp,
+        ranking.append({"layout": layout, "side": side,
+                        "parameter_a": xp, "parameter_b": yp,
                         "score": min_capture * (.5 + .5 * min_entropy),
                         "worst_group_capture": min_capture,
                         "worst_group_entropy": min_entropy,
                         "group_means": group_means})
     ranking.sort(key=lambda row: row["score"], reverse=True)
     best = ranking[0]
+    by_layout = {name: next((entry for entry in ranking if entry["layout"] == name), None)
+                 for name in ("center_343", "corner_3223")}
     report = {"trained": False, "labels_used": False, "split": "train",
               "samples_per_task": args.samples_per_task,
               "phase_raw_initialization": 0.0,
               "final_camera": "direct existing propagation plane; no added FFT",
               "selected_for_visual_inspection_only": best,
+              "best_by_layout": by_layout,
               "top_candidates": ranking[:20], "router": router_stats,
               "source_protocols": {"eurosat": str(args.eurosat),
                                    "clevr": str(args.clevr),
                                    "speech": str(args.speech),
                                    "physical": str(args.physical)}}
     (args.out / "scan.json").write_text(json.dumps(report, indent=2) + "\n")
+    best_key = (best["layout"], best["side"], best["parameter_a"], best["parameter_b"])
+    best_centers = next(centers for layout, side, a, b, centers in layouts
+                        if (layout, side, a, b) == best_key)
     for architecture, model in models.items():
-        model.set_output_geometry(best["side"], best["x_pitch"], best["y_pitch"])
+        model.set_output_windows(best_centers, best["side"])
         fig, axes = plt.subplots(4, 3, figsize=(13, 15), constrained_layout=True)
         for row, task in enumerate(datasets):
             example = first_examples[f"{task}/{architecture}"]
@@ -181,7 +207,7 @@ def main():
                                                  fill=False, edgecolor="cyan", linewidth=.9))
                 axes[row, 2].text(x, y, str(number), color="white", fontsize=8,
                                   ha="center", va="center")
-            axes[row, 2].set_title("direct CCD / tentative 3-4-3 windows")
+            axes[row, 2].set_title(f"direct CCD / tentative {best['layout']} windows")
             for ax in axes[row]:
                 ax.axis("off")
         fig.suptitle(f"{architecture}, raw phase=0, no extra lens; unlabeled train examples")

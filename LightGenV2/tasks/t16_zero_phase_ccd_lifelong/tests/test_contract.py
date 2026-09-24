@@ -69,3 +69,12 @@ def test_audio_word_negatives_preserve_histogram_without_matching():
     negative = balanced_negative_words(positive)
     assert np.array_equal(np.bincount(positive), np.bincount(negative))
     assert not np.any(positive == negative)
+
+
+def test_corner_detector_candidates_have_ten_valid_shared_windows():
+    model = DirectCCDOptics("moe")
+    centers = [(76, 76), (950, 950), (76, 950), (894, 188),
+               (76, 188), (950, 838), (188, 838), (950, 76),
+               (188, 132), (838, 894)]
+    model.set_output_windows(centers, 64)
+    assert len(set(model.output_centers)) == 10
