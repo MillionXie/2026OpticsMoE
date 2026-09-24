@@ -7,7 +7,9 @@ import torch
 from torch.nn import functional as F
 
 from LightGenV2.tasks.t13_four_modal_lifelong.model import normalize_power
-from LightGenV2.tasks.t13_four_modal_lifelong.data import SpeechRank8Fields
+from LightGenV2.tasks.t13_four_modal_lifelong.data import (
+    PhysicalRank10Fields, SpeechRank8Fields, _fixed_text,
+)
 
 
 def paired_rgb_sar_field(rgb_images, sar_images):
@@ -108,3 +110,31 @@ class SpeechBinaryPairs:
         text = F.interpolate(codes[:, None], (224, 112), mode="nearest")[:, 0]
         text = normalize_power(text, 0.5)
         return normalize_power(torch.cat((left, text), -1))
+
+
+class PhysicalBinaryPairs:
+    """One correct and one histogram-matched incorrect description per video."""
+
+    def __init__(self, roots: dict, split: str):
+        self.base = PhysicalRank10Fields(roots, split)
+        original = self.base.labels()
+        negatives = balanced_negative_words(original, classes=10)
+        self.candidate_descriptions = np.column_stack((original, negatives)).reshape(-1)
+        self.labels = np.tile(np.array([1, 0], dtype=np.int64), len(original))
+        tokens = torch.zeros(10, 6, dtype=torch.long)
+        for concept in range(5):
+            tokens[2 * concept:2 * concept + 2, 0] = 2 + concept
+            tokens[2 * concept, 1] = 7
+            tokens[2 * concept + 1, 1] = 8
+        self.description_codes = F.interpolate(
+            _fixed_text(tokens)[:, None], (224, 112), mode="nearest")[:, 0]
+
+    def __len__(self):
+        return len(self.labels)
+
+    def get_batch(self, indices, device):
+        indices = np.asarray(indices, dtype=np.int64)
+        video = self.base[indices // 2][:, :, :112].to(device)
+        text = self.description_codes.to(device)[self.candidate_descriptions[indices]]
+        text = normalize_power(text, 0.5)
+        return normalize_power(torch.cat((video, text), -1))

@@ -16,7 +16,7 @@ from LightGenV2.tasks.t14_shared_readout_lifelong.data import (
     ClevrRawPairs, PhysicalPermutedCandidates,
 )
 
-from .data import SpeechBinaryPairs
+from .data import PhysicalBinaryPairs, SpeechBinaryPairs
 from .model import DirectCCDOptics
 from .train_eurosat import batches, save_json, sha256_file
 
@@ -25,12 +25,15 @@ EXPECTED = {
     "clevr": {"train": 140000, "val": 15000, "test": 15000},
     "speech_binary": {"train": 12526, "val": 1686, "test": 1734},
     "physical": {"train": 70400, "val": 14652, "test": 14948},
+    "physical_binary": {"train": 140800, "val": 29304, "test": 29896},
 }
-CLASSES = {"clevr": 2, "speech_binary": 2, "physical": 10}
+CLASSES = {"clevr": 2, "speech_binary": 2, "physical": 10,
+           "physical_binary": 2}
 STORAGE = {
     "clevr": "clevr_lazy_v1",
     "speech_binary": "speech_commands_text_rank8_v2",
     "physical": "physical_video_text_rank10_v3",
+    "physical_binary": "physical_video_text_rank10_v3",
 }
 
 
@@ -43,9 +46,12 @@ def load_task(protocol_path, task, split):
         data = ClevrRawPairs(protocol_path.parent, split)
     elif task == "speech_binary":
         data = SpeechBinaryPairs(Path(protocol["source_root"]), split)
-    else:
+    elif task == "physical":
         roots = {key: Path(path) for key, path in protocol["source_roots"].items()}
         data = PhysicalPermutedCandidates(roots, split, seed=17)
+    else:
+        roots = {key: Path(path) for key, path in protocol["source_roots"].items()}
+        data = PhysicalBinaryPairs(roots, split)
     labels = np.asarray(data.labels, dtype=np.int64)
     if (len(data) != EXPECTED[task][split] or
             not np.array_equal(np.unique(labels), np.arange(CLASSES[task]))):

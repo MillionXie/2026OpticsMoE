@@ -3,8 +3,10 @@ import torch
 from torch.nn import functional as F
 
 from LightGenV2.tasks.t16_zero_phase_ccd_lifelong.data import (
-    PairedEuroSatFields, balanced_negative_words, paired_rgb_sar_field,
+    PairedEuroSatFields, PhysicalBinaryPairs, balanced_negative_words,
+    paired_rgb_sar_field,
 )
+from LightGenV2.tasks.t16_zero_phase_ccd_lifelong import data as t16_data
 from LightGenV2.tasks.t16_zero_phase_ccd_lifelong.model import DirectCCDOptics
 from LightGenV2.tasks.t16_zero_phase_ccd_lifelong.train_eurosat import (
     accuracy_metrics, augment_paired_dihedral, load_initial_checkpoint,
@@ -235,6 +237,33 @@ def test_audio_word_negatives_preserve_histogram_without_matching():
     negative = balanced_negative_words(positive)
     assert np.array_equal(np.bincount(positive), np.bincount(negative))
     assert not np.any(positive == negative)
+
+
+def test_physical_binary_pairs_keep_video_fixed_and_balance_description(monkeypatch):
+    class FakePhysical:
+        def __init__(self, roots, split):
+            self.original = np.tile(np.arange(10), 2)
+
+        def labels(self):
+            return self.original
+
+        def __getitem__(self, indices):
+            video = torch.ones(len(indices), 224, 224)
+            video[:, :, :112] *= torch.as_tensor(indices).float()[:, None, None] + 1
+            return video
+
+    monkeypatch.setattr(t16_data, "PhysicalRank10Fields", FakePhysical)
+    pairs = PhysicalBinaryPairs({}, "train")
+    assert len(pairs) == 40
+    assert np.array_equal(np.bincount(pairs.candidate_descriptions[::2], minlength=10),
+                          np.bincount(pairs.candidate_descriptions[1::2], minlength=10))
+    assert np.all(pairs.candidate_descriptions[::2] !=
+                  pairs.candidate_descriptions[1::2])
+    field = pairs.get_batch(np.array([0, 1, 2, 3]), "cpu")
+    assert torch.allclose(field[0, :, :112], field[1, :, :112])
+    assert torch.allclose(field[2, :, :112], field[3, :, :112])
+    assert not torch.allclose(field[0, :, 112:], field[1, :, 112:])
+    assert pairs.labels[:4].tolist() == [1, 0, 1, 0]
 
 
 def test_corner_detector_candidates_have_ten_valid_shared_windows():
