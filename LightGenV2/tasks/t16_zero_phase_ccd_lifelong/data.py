@@ -10,6 +10,7 @@ from LightGenV2.tasks.t13_four_modal_lifelong.model import normalize_power
 from LightGenV2.tasks.t13_four_modal_lifelong.data import (
     PhysicalRank10Fields, SpeechRank8Fields, _fixed_text,
 )
+from LightGenV2.tasks.t14_shared_readout_lifelong.data import ClevrRawPairs
 
 
 def paired_rgb_sar_field(rgb_images, sar_images):
@@ -31,6 +32,26 @@ def paired_rgb_sar_field(rgb_images, sar_images):
     radar = normalize_power(radar, 0.5)
     return torch.cat((torch.cat((rgb_tiles[:, 0], rgb_tiles[:, 1]), -1),
                       torch.cat((rgb_tiles[:, 2], radar), -1)), -2)
+
+
+class ClevrCompactQueryPairs(ClevrRawPairs):
+    """Same image/query pairs with the nine actual token rows filling the text tile."""
+
+    def get_batch(self, indices, device):
+        indices = np.asarray(indices, dtype=np.int64)
+        raw = np.array(self.images[self.image_index[indices]], copy=True)
+        rgb = torch.as_tensor(raw, device=device).float().permute(0, 3, 1, 2) / 255.0
+        rgb = F.interpolate(rgb, (112, 112), mode="bilinear", align_corners=False)
+        rgb = rgb * (0.5 / rgb.square().sum((1, 2, 3), keepdim=True).clamp_min(1e-20)).sqrt()
+        ids = torch.as_tensor(np.array(self.token_ids[indices], copy=True),
+                              device=device, dtype=torch.long)
+        if torch.any(ids[:, 9:] != 0):
+            raise ValueError("CLEVR query exceeds the nine-row encoding contract")
+        text = F.interpolate(_fixed_text(ids[:, :9])[:, None], (112, 112),
+                             mode="nearest")[:, 0]
+        text = normalize_power(text, 0.5)
+        return torch.cat((torch.cat((rgb[:, 0], rgb[:, 1]), -1),
+                          torch.cat((rgb[:, 2], text), -1)), -2)
 
 
 class PairedEuroSatFields:

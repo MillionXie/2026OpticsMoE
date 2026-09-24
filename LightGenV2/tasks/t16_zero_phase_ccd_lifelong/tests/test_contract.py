@@ -3,7 +3,8 @@ import torch
 from torch.nn import functional as F
 
 from LightGenV2.tasks.t16_zero_phase_ccd_lifelong.data import (
-    PairedEuroSatFields, PhysicalBinaryPairs, balanced_negative_words,
+    ClevrCompactQueryPairs, PairedEuroSatFields, PhysicalBinaryPairs,
+    balanced_negative_words,
     paired_rgb_sar_field,
 )
 from LightGenV2.tasks.t16_zero_phase_ccd_lifelong import data as t16_data
@@ -145,6 +146,32 @@ def test_clevr_pairwise_loss_rewards_same_image_query_separation():
     separated[0, 1] = 2
     separated[1, 1] = -2
     assert clevr_pairwise_loss(separated, labels) < initial
+
+
+def test_compact_clevr_text_spreads_actual_words_without_changing_image(tmp_path):
+    source = tmp_path
+    image = np.full((1, 16, 16, 3), 128, dtype=np.uint8)
+    np.save(source / "train_images.npy", image)
+    np.save(source / "train_image_index.npy", np.zeros(6, dtype=np.int64))
+    np.save(source / "train_labels.npy", np.array([1, 0, 1, 0, 1, 0]))
+    tokens = np.zeros((6, 32), dtype=np.uint8)
+    tokens[0, :6] = [2, 3, 4, 11, 6, 7]
+    tokens[1, :6] = [2, 3, 4, 10, 6, 7]
+    np.save(source / "train_token_ids.npy", tokens)
+    data = ClevrCompactQueryPairs(source, "train")
+    fields = data.get_batch(np.array([0, 1]), "cpu")
+    assert fields.shape == (2, 224, 224)
+    assert torch.equal(fields[0, :112], fields[1, :112])
+    assert not torch.equal(fields[0, 112:, 112:], fields[1, 112:, 112:])
+    assert fields[0, 112 + 80:, 112:].square().sum() > 0
+    assert torch.allclose(fields.square().sum((-2, -1)), torch.ones(2), atol=1e-5)
+    data.token_ids[0, 9] = 5
+    try:
+        data.get_batch(np.array([0]), "cpu")
+    except ValueError as error:
+        assert "nine-row" in str(error)
+    else:
+        raise AssertionError("non-padding query token was silently discarded")
 
 
 def test_resume_keeps_data_model_optimizer_and_test_policy_fixed():
