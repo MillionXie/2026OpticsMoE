@@ -195,6 +195,12 @@ def test_resume_keeps_data_model_optimizer_and_test_policy_fixed():
         assert "moe_active_experts" in str(error)
     else:
         raise AssertionError("resume accepted a changed expert capacity")
+    try:
+        validate_resume_contract(prior, {**continued, "route_balance_weight": 1.0})
+    except ValueError as error:
+        assert "route_balance_weight" in str(error)
+    else:
+        raise AssertionError("resume accepted a changed routing objective")
 
 
 def test_independent_eight_expert_check_does_not_freeze_untrained_slots():

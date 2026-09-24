@@ -19,7 +19,7 @@ from LightGenV2.tasks.t14_shared_readout_lifelong.data import (
 
 from .data import ClevrCompactQueryPairs, PhysicalBinaryPairs, SpeechBinaryPairs
 from .model import DirectCCDOptics
-from .train_eurosat import batches, save_json, sha256_file
+from .train_eurosat import batches, routing_balance_penalty, save_json, sha256_file
 
 
 EXPECTED = {
@@ -51,6 +51,8 @@ def validate_resume_contract(prior, current):
     changed = [key for key in RESUME_CONTRACT if prior.get(key) != current.get(key)]
     if prior.get("moe_active_experts", 4) != current.get("moe_active_experts", 4):
         changed.append("moe_active_experts")
+    if prior.get("route_balance_weight", 0.0) != current.get("route_balance_weight", 0.0):
+        changed.append("route_balance_weight")
     if changed:
         raise ValueError(f"resume run changes contract fields: {', '.join(changed)}")
 
@@ -156,18 +158,21 @@ def main():
     parser.add_argument("--clevr-pairwise-weight", type=float, default=0.0)
     parser.add_argument("--moe-active-experts", type=int, default=4,
                         choices=(4, 8, 12, 16))
+    parser.add_argument("--route-balance-weight", type=float, default=0.0)
     parser.add_argument("--resume-checkpoint", type=Path,
                         help="Continue an immutable prior run into a new run directory")
     args = parser.parse_args()
     if not (0 < args.min_epochs <= args.epochs and args.patience > 0 and
             args.batch > 0 and args.eval_batch > 0 and args.lr > 0 and
-            args.clevr_pairwise_weight >= 0):
+            args.clevr_pairwise_weight >= 0 and args.route_balance_weight >= 0):
         raise ValueError("invalid training budget")
     if args.clevr_pairwise_weight and (args.task not in {"clevr", "clevr_compact"}
                                        or args.batch % 2):
         raise ValueError("paired loss requires CLEVR and an even batch size")
     if args.architecture == "d2nn" and args.moe_active_experts != 4:
         raise ValueError("D2NN has no expert capacity setting")
+    if args.architecture == "d2nn" and args.route_balance_weight:
+        raise ValueError("D2NN has no route to balance")
     if ("runs", "simulation") not in list(zip(args.out.parts, args.out.parts[1:])):
         raise ValueError("formal runs must live under runs/simulation")
     args.out.mkdir(parents=True, exist_ok=False)
@@ -187,6 +192,7 @@ def main():
         "batch": args.batch, "eval_batch": args.eval_batch, "lr": args.lr,
         "clevr_pairwise_weight": args.clevr_pairwise_weight,
         "moe_active_experts": args.moe_active_experts,
+        "route_balance_weight": args.route_balance_weight,
         "seed": args.seed, "source_protocol": str(args.protocol),
         "source_protocol_sha256": sha256_file(args.protocol),
         "source_manifest_sha256": json.loads(args.protocol.read_text()).get(
@@ -240,7 +246,7 @@ def main():
                 for pair_ids in pair_batches)
         else:
             batch_indices = batches(rng.permutation(len(train)), args.batch)
-        loss_sum = 0.0
+        loss_sum, balance_sum = 0.0, 0.0
         for indices in batch_indices:
             amplitude = train.get_batch(indices, device)
             target = torch.as_tensor(train.labels[indices], device=device)
@@ -250,6 +256,12 @@ def main():
             if args.clevr_pairwise_weight:
                 loss = loss + args.clevr_pairwise_weight * clevr_pairwise_loss(
                     output["logits"], target)
+            if args.route_balance_weight:
+                balance = routing_balance_penalty(
+                    output["route_power"],
+                    model.active_indices[:int(model.active_count)])
+                loss = loss + args.route_balance_weight * balance
+                balance_sum += float(balance.detach()) * len(indices)
             if not torch.isfinite(loss):
                 raise RuntimeError(f"nonfinite loss at epoch {epoch}")
             loss.backward()
@@ -267,6 +279,7 @@ def main():
         else:
             wait += 1
         row = {"epoch": epoch, "train_loss": loss_sum / len(train),
+               "train_route_balance_penalty": balance_sum / len(train),
                "train_samples": len(train), "validation": validation,
                "seconds": time.time() - began, "best_epoch": best_epoch}
         history.append(row)
