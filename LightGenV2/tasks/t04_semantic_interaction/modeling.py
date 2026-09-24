@@ -193,7 +193,25 @@ class LightGenOpenMojiEditor(OpenMojiOpticalEditor):
                 "router_captures": 0 if self.router_backend == "none" else 2,
                 "pixel_pitch_um": 17.0,
                 "distance_m": 0.10,
-                "zero_order_intensity_range": [0.20, 0.30],
+                "zero_order_intensity_range": (
+                    [self.settings.zero_order_intensity_fraction] * 2
+                    if self.settings.zero_order_intensity_fraction is not None
+                    else [0.20, 0.30]
+                ),
+                "zero_order_applies_to": (
+                    "amplitude and phase SLMs in router, expert and global exposures"
+                    if self.settings.zero_order_intensity_fraction is not None
+                    else "expert and global exposures"
+                ),
+                "training_ccd_noise": (
+                    None if self.settings.ccd_noise_mean_fraction is None else {
+                        "distribution": "truncated_biased_gaussian",
+                        "mean_fraction": self.settings.ccd_noise_mean_fraction,
+                        "std_fraction": self.settings.ccd_noise_std_fraction,
+                        "minimum_fraction": self.settings.ccd_noise_min_fraction,
+                        "maximum_fraction": self.settings.ccd_noise_max_fraction,
+                    }
+                ),
             },
             "decoder": "electronic 6x6 category and edit heads; no attention/Transformer",
             "trainable_parameters": sum(
