@@ -163,7 +163,7 @@ def test_compact_clevr_text_spreads_actual_words_without_changing_image(tmp_path
     assert fields.shape == (2, 224, 224)
     assert torch.equal(fields[0, :112], fields[1, :112])
     assert not torch.equal(fields[0, 112:, 112:], fields[1, 112:, 112:])
-    assert fields[0, 112 + 80:, 112:].square().sum() > 0
+    assert fields[0, 112 + 50:112 + 75, 112:].square().sum() > 0
     assert torch.allclose(fields.square().sum((-2, -1)), torch.ones(2), atol=1e-5)
     data.token_ids[0, 9] = 5
     try:
