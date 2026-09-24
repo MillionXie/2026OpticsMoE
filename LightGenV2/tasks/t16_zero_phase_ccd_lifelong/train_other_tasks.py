@@ -3,6 +3,7 @@
 import argparse
 import json
 import platform
+import shutil
 import subprocess
 import sys
 import time
@@ -35,6 +36,19 @@ STORAGE = {
     "physical": "physical_video_text_rank10_v3",
     "physical_binary": "physical_video_text_rank10_v3",
 }
+
+RESUME_CONTRACT = (
+    "task", "architecture", "activation_order", "readout", "class_count",
+    "dataset_counts", "batch", "eval_batch", "lr", "seed",
+    "source_protocol_sha256", "source_manifest_sha256", "test_policy",
+    "clevr_pairwise_weight",
+)
+
+
+def validate_resume_contract(prior, current):
+    changed = [key for key in RESUME_CONTRACT if prior.get(key) != current.get(key)]
+    if changed:
+        raise ValueError(f"resume run changes contract fields: {', '.join(changed)}")
 
 
 def load_task(protocol_path, task, split):
@@ -120,6 +134,8 @@ def main():
     parser.add_argument("--seed", type=int, default=17)
     parser.add_argument("--skip-test", action="store_true")
     parser.add_argument("--clevr-pairwise-weight", type=float, default=0.0)
+    parser.add_argument("--resume-checkpoint", type=Path,
+                        help="Continue an immutable prior run into a new run directory")
     args = parser.parse_args()
     if not (0 < args.min_epochs <= args.epochs and args.patience > 0 and
             args.batch > 0 and args.eval_batch > 0 and args.lr > 0 and
@@ -150,6 +166,10 @@ def main():
         "source_manifest_sha256": json.loads(args.protocol.read_text()).get(
             "source_manifest_sha256"),
         "model_git_commit": commit,
+        "resume_checkpoint": (str(args.resume_checkpoint)
+                              if args.resume_checkpoint else None),
+        "resume_checkpoint_sha256": (sha256_file(args.resume_checkpoint)
+                                     if args.resume_checkpoint else None),
         "environment": {"python": platform.python_version(), "torch": torch.__version__,
                         "cuda": torch.version.cuda, "device": str(device)},
     }
@@ -161,7 +181,28 @@ def main():
     optimizer = torch.optim.Adam([p for p in model.parameters() if p.requires_grad], lr=args.lr)
     best_score, best_epoch, wait = -1.0, 0, 0
     history = []
-    for epoch in range(1, args.epochs + 1):
+    start_epoch = 1
+    if args.resume_checkpoint is not None:
+        prior_dir = args.resume_checkpoint.parent
+        prior = json.loads((prior_dir / "config.json").read_text())
+        validate_resume_contract(prior, config)
+        state = torch.load(args.resume_checkpoint, map_location=device, weights_only=False)
+        start_epoch = int(state["epoch"]) + 1
+        if start_epoch > args.epochs:
+            raise ValueError("resume target epochs must exceed checkpoint epoch")
+        model.load_state_dict(state["model"])
+        optimizer.load_state_dict(state["optimizer"])
+        best_score, best_epoch, wait = (float(state["best_score"]),
+                                        int(state["best_epoch"]), int(state["wait"]))
+        history = json.loads((prior_dir / "history.json").read_text())
+        if not history or history[-1]["epoch"] != start_epoch - 1:
+            raise ValueError("resume history does not match the last checkpoint")
+        shutil.copy2(prior_dir / "best_checkpoint.pt", args.out / "best_checkpoint.pt")
+        config["prior_model_git_commit"] = prior["model_git_commit"]
+        config["prior_run"] = str(prior_dir)
+        save_json(args.out / "config.json", config)
+        save_json(args.out / "history.json", history)
+    for epoch in range(start_epoch, args.epochs + 1):
         began = time.time()
         model.train()
         rng = np.random.default_rng(args.seed + epoch)
@@ -221,7 +262,8 @@ def main():
                           weights_only=False)
     model.load_state_dict(selected["model"])
     result = {"selected_epoch": best_epoch, "validation": selected["validation"],
-              "model_git_commit": commit}
+              "model_git_commit": commit,
+              "selected_checkpoint_git_commit": selected["config"]["model_git_commit"]}
     if not args.skip_test:
         test = load_task(args.protocol, args.task, "test")
         result["test"] = evaluate(model, test, device, args.eval_batch, CLASSES[args.task])

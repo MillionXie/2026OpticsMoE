@@ -18,6 +18,8 @@ from LightGenV2.tasks.t16_zero_phase_ccd_lifelong.train_eurosat import (
 from LightGenV2.tasks.t16_zero_phase_ccd_lifelong.train_other_tasks import (
     clevr_pairwise_loss,
     metrics as other_task_metrics,
+    RESUME_CONTRACT,
+    validate_resume_contract,
 )
 
 
@@ -143,6 +145,21 @@ def test_clevr_pairwise_loss_rewards_same_image_query_separation():
     separated[0, 1] = 2
     separated[1, 1] = -2
     assert clevr_pairwise_loss(separated, labels) < initial
+
+
+def test_resume_keeps_data_model_optimizer_and_test_policy_fixed():
+    prior = {key: f"same-{key}" for key in RESUME_CONTRACT}
+    continued = {**prior, "epochs": 12, "model_git_commit": "new"}
+    validate_resume_contract(prior, continued)
+    for key in ("source_protocol_sha256", "source_manifest_sha256", "lr",
+                "test_policy", "clevr_pairwise_weight"):
+        changed = {**continued, key: "different"}
+        try:
+            validate_resume_contract(prior, changed)
+        except ValueError as error:
+            assert key in str(error)
+        else:
+            raise AssertionError(f"resume accepted a changed {key}")
 
 
 def test_batch_router_balance_penalty_is_slot_based_and_differentiable():
