@@ -44,6 +44,19 @@ def _compact(settings: Settings) -> Any:
     compact.optical_fusion_initial = settings.optical_fusion_initial
     compact.fusion_alpha_initial = settings.optical_fusion_initial
     compact.electronic_expansion = settings.electronic_expansion
+    if settings.zero_order_intensity_fraction is not None:
+        eta = settings.zero_order_intensity_fraction
+        compact.language_optical_zero_order_enabled = eta > 0.0
+        compact.language_optical_amplitude_zero_order_intensity_min = eta
+        compact.language_optical_amplitude_zero_order_intensity_max = eta
+        compact.language_optical_phase_zero_order_intensity_min = eta
+        compact.language_optical_phase_zero_order_intensity_max = eta
+    if settings.ccd_noise_mean_fraction is not None:
+        compact.language_optical_ccd_noise_distribution = "truncated_biased_gaussian"
+        compact.language_optical_ccd_noise_mean_fraction = settings.ccd_noise_mean_fraction
+        compact.language_optical_ccd_noise_std_fraction = settings.ccd_noise_std_fraction
+        compact.language_optical_ccd_noise_min_fraction = settings.ccd_noise_min_fraction
+        compact.language_optical_ccd_noise_max_fraction = settings.ccd_noise_max_fraction
     if settings.embedding_only:
         compact.fusion_alpha_min = settings.fusion_alpha_minimum
         compact.fusion_alpha_max = settings.fusion_alpha_maximum

@@ -339,6 +339,14 @@ def train(settings: Settings, device: torch.device) -> dict[str, Any]:
                         train_metrics,
                         test_metrics,
                     )
+                if settings.retain_test_checkpoints:
+                    _checkpoint(
+                        settings.output_dir / "tested_checkpoints" / f"epoch_{epoch:03d}.pt",
+                        model,
+                        epoch,
+                        train_metrics,
+                        test_metrics,
+                    )
             finally:
                 EMA.restore(model, backup)
         row = {
@@ -386,7 +394,8 @@ def train(settings: Settings, device: torch.device) -> dict[str, Any]:
         "selection": ('prefer Router-accepted candidates, then maximum periodic-test changed-cell accuracy'
                       if settings.shared_readout_enabled and model.router_backend == 'optical'
                       else 'maximum periodic-test changed-cell accuracy'),
-        "checkpoint_retention": ["best_checkpoint.pt", "last_checkpoint.pt"],
+        "checkpoint_retention": ["best_checkpoint.pt", "last_checkpoint.pt"]
+        + (["tested_checkpoints/epoch_XXX.pt"] if settings.retain_test_checkpoints else []),
     }
     _json(settings.output_dir / "training_report.json", report)
     return report

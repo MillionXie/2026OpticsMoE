@@ -48,6 +48,7 @@ PROFILES = {
     "layered_scene_electronic_exp1": "layered_scene_electronic_exp1.yaml",
     "layered_scene_electronic_exp05": "layered_scene_electronic_exp05.yaml",
     "layered_scene_electronic_exp05_e30": "layered_scene_electronic_exp05_e30.yaml",
+    "layered_scene_exp05_dc30_ccdsmall": "layered_scene_exp05_dc30_ccdsmall.yaml",
 }
 PHASES = {"prepare", "train", "evaluate", "all"}
 

@@ -1,0 +1,21 @@
+base_config: layered_scene_electronic_exp05.yaml
+
+# Training perturbations act on both optical paths. Each SLM has a fixed 30%
+# coherent zero-order INTENSITY fraction. The CCD perturbation is a small
+# truncated biased Gaussian relative to each frame's mean intensity.
+# Evaluation disables both perturbations and uses deterministic ideal optics.
+model:
+  zero_order_intensity_fraction: 0.30
+  ccd_noise_mean_fraction: 0.01
+  ccd_noise_std_fraction: 0.01
+  ccd_noise_min_fraction: -0.01
+  ccd_noise_max_fraction: 0.03
+
+training:
+  epochs: 100
+
+protocol:
+  test_interval_epochs: 5
+  retain_test_checkpoints: true
+
+output_dir: ../runs/simulation/layered_scene_exp05_dc30_ccdsmall_s73_e100
