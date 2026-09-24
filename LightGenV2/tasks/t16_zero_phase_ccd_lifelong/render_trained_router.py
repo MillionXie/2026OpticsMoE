@@ -82,10 +82,21 @@ def main():
                      "active_route_weights": route[active].tolist(),
                      "active_capture": float(output["router_efficiency"][0])})
         raw_input = field[0].cpu().numpy()
-        axes[row, 0].imshow(np.log1p(raw_input / max(raw_input.max(), 1e-20) * 100),
-                            cmap="magma")
+        if raw_input.min() < 0:
+            # Signed temporal differences are real optical *fields*, not
+            # nonnegative amplitudes. Preserve the sign with a diverging map.
+            scale = max(float(np.quantile(np.abs(raw_input), 0.95)), 1e-20)
+            shown = np.arcsinh(raw_input / scale)
+            axes[row, 0].imshow(shown, cmap="coolwarm",
+                                vmin=-max(abs(shown.min()), abs(shown.max())),
+                                vmax=max(abs(shown.min()), abs(shown.max())))
+            input_scale_note = "signed field shown on asinh scale"
+        else:
+            axes[row, 0].imshow(np.log1p(raw_input / max(raw_input.max(), 1e-20) * 100),
+                                cmap="magma")
+            input_scale_note = "nonnegative input shown on log scale"
         axes[row, 0].set_title(
-            f"{task} val #{sample_index}; y={true_label}\n{description}\ninput shown on log scale",
+            f"{task} val #{sample_index}; y={true_label}\n{description}\n{input_scale_note}",
             fontsize=8)
         axes[row, 1].imshow(np.log1p(router / max(router.max(), 1e-20) * 100),
                             cmap="inferno")
