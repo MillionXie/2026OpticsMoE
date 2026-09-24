@@ -12,10 +12,10 @@ import numpy as np
 import torch
 
 from LightGenV2.tasks.t14_shared_readout_lifelong.data import (
-    ClevrRawPairs, PhysicalPermutedCandidates, SpeechBinaryPairs,
+    ClevrRawPairs, PhysicalPermutedCandidates,
 )
 from LightGenV2.tasks.t14_shared_readout_lifelong.single_task_eurosat import source_paths
-from .data import PairedEuroSatFields
+from .data import PairedEuroSatFields, SpeechBinaryPairs
 from .model import DirectCCDOptics
 
 

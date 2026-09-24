@@ -7,6 +7,7 @@ import torch
 from torch.nn import functional as F
 
 from LightGenV2.tasks.t13_four_modal_lifelong.model import normalize_power
+from LightGenV2.tasks.t13_four_modal_lifelong.data import SpeechRank8Fields
 
 
 def paired_rgb_sar_field(rgb_images, sar_images):
@@ -67,3 +68,43 @@ class PairedEuroSatFields:
         selection = [int(index)] if scalar else index
         field = paired_rgb_sar_field(self.rgb[selection], self.sar[selection])
         return field[0] if scalar else field
+
+
+def balanced_negative_words(original_labels, classes=8):
+    """Give every word identical positive and negative counts, with no match."""
+    labels = np.asarray(original_labels, dtype=np.int64)
+    if labels.ndim != 1 or np.any((labels < 0) | (labels >= classes)):
+        raise ValueError("invalid word labels")
+    order = np.argsort(labels, kind="stable")
+    largest = int(np.bincount(labels, minlength=classes).max())
+    if 2 * largest > len(labels):
+        raise ValueError("cannot balance negative words for this split")
+    negatives = np.empty_like(labels)
+    negatives[order] = np.roll(labels[order], largest)
+    if np.any(negatives == labels):
+        raise AssertionError("a negative word equals the spoken word")
+    return negatives
+
+
+class SpeechBinaryPairs:
+    """Same utterance with a positive or histogram-matched negative word."""
+
+    def __init__(self, source: Path, split: str):
+        self.base = SpeechRank8Fields(source, split)
+        labels = np.asarray([row["audio_class"] for row in self.base.rows],
+                            dtype=np.int64)
+        negatives = balanced_negative_words(labels)
+        self.candidate_words = np.column_stack((labels, negatives)).reshape(-1)
+        self.labels = np.tile(np.array([1, 0], dtype=np.int64), len(labels))
+        self.word_codes = self.base.candidate_bank.reshape(8, 28, 112)
+
+    def __len__(self):
+        return len(self.labels)
+
+    def get_batch(self, indices, device):
+        indices = np.asarray(indices, dtype=np.int64)
+        left = self.base[indices // 2][:, :, :112].to(device)
+        codes = self.word_codes.to(device)[self.candidate_words[indices]]
+        text = F.interpolate(codes[:, None], (224, 112), mode="nearest")[:, 0]
+        text = normalize_power(text, 0.5)
+        return normalize_power(torch.cat((left, text), -1))

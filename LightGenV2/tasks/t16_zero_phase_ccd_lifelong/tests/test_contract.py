@@ -2,7 +2,7 @@ import numpy as np
 import torch
 
 from LightGenV2.tasks.t16_zero_phase_ccd_lifelong.data import (
-    PairedEuroSatFields, paired_rgb_sar_field,
+    PairedEuroSatFields, balanced_negative_words, paired_rgb_sar_field,
 )
 from LightGenV2.tasks.t16_zero_phase_ccd_lifelong.model import DirectCCDOptics
 
@@ -62,3 +62,10 @@ def test_pair_adapter_checks_ids_labels_and_order(tmp_path):
         assert "IDs" in str(error)
     else:
         raise AssertionError("mismatched RGB/SAR pair was accepted")
+
+
+def test_audio_word_negatives_preserve_histogram_without_matching():
+    positive = np.tile(np.arange(8), 3)
+    negative = balanced_negative_words(positive)
+    assert np.array_equal(np.bincount(positive), np.bincount(negative))
+    assert not np.any(positive == negative)
