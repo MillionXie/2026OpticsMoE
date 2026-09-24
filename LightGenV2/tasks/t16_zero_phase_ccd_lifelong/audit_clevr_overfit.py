@@ -9,7 +9,9 @@ import torch
 from torch.nn import functional as F
 
 from LightGenV2.tasks.t14_shared_readout_lifelong.data import ClevrRawPairs
+from .data import ClevrAttributeQueryPairs
 from .model import DirectCCDOptics
+from .train_other_tasks import clevr_pairwise_loss
 
 
 def main():
@@ -25,14 +27,16 @@ def main():
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     checkpoint = torch.load(args.checkpoint, map_location="cpu", weights_only=False)
     config = checkpoint["config"]
-    if config["task"] != "clevr":
+    if config["task"] not in {"clevr", "clevr_attributes"}:
         raise ValueError("expected t16 CLEVR checkpoint")
     model = DirectCCDOptics(config["architecture"],
                             activation_order=config["activation_order"]).to(device)
     model.configure_stage(0)
     model.load_state_dict(checkpoint["model"])
     model.train()
-    data = ClevrRawPairs(args.source, "train")
+    dataset_type = (ClevrAttributeQueryPairs if config["task"] == "clevr_attributes"
+                    else ClevrRawPairs)
+    data = dataset_type(args.source, "train")
     indices = np.arange(2 * args.pairs)
     field = data.get_batch(indices, device)
     target = torch.as_tensor(data.labels[indices], device=device)
@@ -44,6 +48,9 @@ def main():
         output = model(field)
         logits = output["logits"]
         loss = F.cross_entropy(logits, target)
+        if config.get("clevr_pairwise_weight", 0):
+            loss = loss + float(config["clevr_pairwise_weight"]) * clevr_pairwise_loss(
+                logits, target)
         if step in checkpoints:
             binary_margin = (logits[:, 1] - logits[:, 0]).detach().reshape(-1, 2)
             history.append({
@@ -62,7 +69,9 @@ def main():
         optimizer.step()
     print(json.dumps({
         "purpose": "memorization_on_reused_training_pairs_only_not_generalization",
-        "architecture": config["architecture"], "pairs": args.pairs,
+        "architecture": config["architecture"], "task": config["task"],
+        "clevr_pairwise_weight": config.get("clevr_pairwise_weight", 0),
+        "pairs": args.pairs,
         "steps": args.steps, "history": history,
     }, indent=2))
 
