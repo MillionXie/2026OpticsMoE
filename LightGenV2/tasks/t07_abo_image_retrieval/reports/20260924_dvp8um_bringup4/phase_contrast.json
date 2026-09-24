@@ -1,0 +1,90 @@
+{
+  "status": "complete",
+  "source_run": "E:\\code\\guest\\2026OpticsMoE\\ABO_I2I_Lab_DVP_8um\\runs\\abo_i2i_20260924\\01_four_query",
+  "corners_TL_TR_BR_BL": [
+    [
+      995.0,
+      172.0
+    ],
+    [
+      4310.0,
+      172.0
+    ],
+    [
+      4303.0,
+      3440.0
+    ],
+    [
+      980.0,
+      3435.0
+    ]
+  ],
+  "rows": [
+    {
+      "stage": "vision_router",
+      "trained_vs_flat_pcc": 0.5211685171853718,
+      "trained_repeat_pcc": 0.9979772818930059,
+      "trained_vs_sim_pcc": 0.31211692871570673,
+      "flat_vs_sim_pcc": 0.46856567143649214,
+      "exposure_us": 60006.0,
+      "trained_phase_sha256": "c29bbcb2bac1c3c384f987849fd8d926a69e1ff27a3d344acae320aee708dd6f",
+      "flat_phase_sha256": "821c30142c98faec439ab8a47e5c32b0ffe0f10794bff252ec0d1252635317db",
+      "amplitude_sha256": "33f0750eeb869308a787d64f12088a8edcfb3a94410f67ed30cc94b4c54d991b"
+    },
+    {
+      "stage": "vision_expert",
+      "trained_vs_flat_pcc": 0.5920714435426838,
+      "trained_repeat_pcc": 0.9984858935418967,
+      "trained_vs_sim_pcc": 0.14161225436767225,
+      "flat_vs_sim_pcc": 0.19633580869436326,
+      "exposure_us": 60006.0,
+      "trained_phase_sha256": "2f46169c06acdf6ae909d89958e79d5f566b4fcb33ad680c51988f96c087d160",
+      "flat_phase_sha256": "821c30142c98faec439ab8a47e5c32b0ffe0f10794bff252ec0d1252635317db",
+      "amplitude_sha256": "c5102281e6528d4a6f5ccc7f6128350a728b19c21ef2f3ef3a521e3d22903bad"
+    },
+    {
+      "stage": "vision_global",
+      "trained_vs_flat_pcc": 0.5639376407744034,
+      "trained_repeat_pcc": 0.9985963863089534,
+      "trained_vs_sim_pcc": 0.13348489797662375,
+      "flat_vs_sim_pcc": 0.1850332542662734,
+      "exposure_us": 60006.0,
+      "trained_phase_sha256": "e66c181eb12d095dea639ab38b5822e1598826a3b2c9c87d2bc5dcd4c653389c",
+      "flat_phase_sha256": "821c30142c98faec439ab8a47e5c32b0ffe0f10794bff252ec0d1252635317db",
+      "amplitude_sha256": "97bbc7209299a9a774e08f8028b3e4d8137823a4cb46b15217baf3ae706f38e9"
+    },
+    {
+      "stage": "language_router",
+      "trained_vs_flat_pcc": 0.8235486249214036,
+      "trained_repeat_pcc": 0.9973558742200463,
+      "trained_vs_sim_pcc": 0.30635938234034477,
+      "flat_vs_sim_pcc": 0.324425434251816,
+      "exposure_us": 60006.0,
+      "trained_phase_sha256": "fb8aa4160b3814c5bcb7531ac0ec4a50750e32c67749610ec1cf6b077c7e85b0",
+      "flat_phase_sha256": "821c30142c98faec439ab8a47e5c32b0ffe0f10794bff252ec0d1252635317db",
+      "amplitude_sha256": "2ba0379d42e13ac8e94f81f19865d7082d7306966e86327f7e2cd48a06dd43e2"
+    },
+    {
+      "stage": "language_expert",
+      "trained_vs_flat_pcc": 0.5353149466275919,
+      "trained_repeat_pcc": 0.9959335092365892,
+      "trained_vs_sim_pcc": 0.016416921629917137,
+      "flat_vs_sim_pcc": 0.03616305361731164,
+      "exposure_us": 60006.0,
+      "trained_phase_sha256": "23be2256bd657de0c8aff81e060bb5a0dca1040f598890be6734ae15ab27b594",
+      "flat_phase_sha256": "821c30142c98faec439ab8a47e5c32b0ffe0f10794bff252ec0d1252635317db",
+      "amplitude_sha256": "f17492e27c68e4baea88333fc4d354e635ec971ce0a8112bd123a53f266178d6"
+    },
+    {
+      "stage": "language_global",
+      "trained_vs_flat_pcc": 0.541948782588178,
+      "trained_repeat_pcc": 0.9944456343196636,
+      "trained_vs_sim_pcc": 0.04991629377120388,
+      "flat_vs_sim_pcc": 0.06524092450347203,
+      "exposure_us": 60006.0,
+      "trained_phase_sha256": "0efb5dca1b7457e5b68be58609cd5de535f150dea321224a8fc9fa4282e1a187",
+      "flat_phase_sha256": "821c30142c98faec439ab8a47e5c32b0ffe0f10794bff252ec0d1252635317db",
+      "amplitude_sha256": "1f6ffaee72e438ac046834d5a0bf940265583d82d9be38659973d9430dfef740"
+    }
+  ]
+}

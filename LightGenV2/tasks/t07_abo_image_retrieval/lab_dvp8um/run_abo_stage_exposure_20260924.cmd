@@ -1,0 +1,2 @@
+@echo off
+"E:\code\guest\2026OpticsMoE\ABO_Lab_SHS_8um\.venv_gpu\Scripts\python.exe" -u "E:\code\guest\2026OpticsMoE\ABO_I2I_Lab_DVP_8um\lab_dvp8um\abo_stage_exposure_probe.py" --source-run "E:\code\guest\2026OpticsMoE\ABO_I2I_Lab_DVP_8um\runs\abo_i2i_20260924\01_four_query" --output "E:\code\guest\2026OpticsMoE\ABO_I2I_Lab_DVP_8um\runs\abo_i2i_20260924\02_stage_exposure" --exposures-us 20000 40000 60000 80000 --corners-tltrbrbl 995 172 4310 172 4303 3440 980 3435 > "E:\code\guest\2026OpticsMoE\ABO_I2I_Lab_DVP_8um\runs\abo_i2i_20260924\02_stage_exposure.log" 2>&1
