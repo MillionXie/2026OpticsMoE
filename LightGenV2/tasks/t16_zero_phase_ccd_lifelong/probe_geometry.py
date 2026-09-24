@@ -11,12 +11,11 @@ from matplotlib.patches import Rectangle
 import numpy as np
 import torch
 
-from LightGenV2.tasks.t13_four_modal_lifelong.data import _rgb_field
 from LightGenV2.tasks.t14_shared_readout_lifelong.data import (
     ClevrRawPairs, PhysicalPermutedCandidates, SpeechBinaryPairs,
 )
 from LightGenV2.tasks.t14_shared_readout_lifelong.single_task_eurosat import source_paths
-from .data import FilledEuroSatFields
+from .data import PairedEuroSatFields
 from .model import DirectCCDOptics
 
 
@@ -66,7 +65,7 @@ def main():
     trainval, holdout = source_paths(args.eurosat)
     physical = json.loads(args.physical.read_text())
     datasets = {
-        "eurosat": FilledEuroSatFields(trainval, holdout, "train"),
+        "eurosat": PairedEuroSatFields(trainval, holdout, "train"),
         "clevr": ClevrRawPairs(args.clevr, "train"),
         "speech_binary": SpeechBinaryPairs(args.speech, "train", seed=17),
         "physical": PhysicalPermutedCandidates(physical["source_roots"], "train", seed=17),

@@ -1,5 +1,7 @@
 # 零初相位几何审查（只用无标签训练样本）
 
+**历史诊断，已被配对 RGB/SAR 输入协议取代。**本报告中的 EuroSAT 例子采用 R/G/B/亮度，而非同地点 R/G/B/SAR；其中的跨任务布局排名不得直接用于新协议训练。0.1 m 以外的距离探针仅是历史探索，不改变正式光路。
+
 状态：**未通过读出窗口闸门，禁止启动正式训练。**
 
 `probe_geometry.py` 从四模态各取 8 个训练样本，MoE 与 D2NN 都以原始相位参数全 0、0.1 m 角谱传播、无额外 Fourier 变换和无电子头做一次前向；分类标签完全没有加载到选择计算中。保留按模态固定的输入、两层之间相同的非线性 OEO。原始数值和候选排名见 [scan.json](reports/zero_phase_geometry/scan.json)，图见 [MoE 光场](reports/zero_phase_geometry/moe_zero_phase.png)及 [D2NN 光场](reports/zero_phase_geometry/d2nn_zero_phase.png)。

@@ -8,7 +8,7 @@ import numpy as np
 import torch
 
 from LightGenV2.tasks.t14_shared_readout_lifelong.single_task_eurosat import source_paths
-from .data import FilledEuroSatFields
+from .data import PairedEuroSatFields
 from .model import DirectCCDOptics
 
 
@@ -19,7 +19,7 @@ def main():
     args = parser.parse_args()
     args.out.parent.mkdir(parents=True, exist_ok=True)
     trainval, holdout = source_paths(args.eurosat)
-    data = FilledEuroSatFields(trainval, holdout, "train")
+    data = PairedEuroSatFields(trainval, holdout, "train")
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     field = data[np.array([0])].to(device)
     report = {"trained": False, "target_labels": "synthetic, not source labels",
