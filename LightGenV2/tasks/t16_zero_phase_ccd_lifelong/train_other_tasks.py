@@ -49,8 +49,24 @@ RESUME_CONTRACT = (
 
 def validate_resume_contract(prior, current):
     changed = [key for key in RESUME_CONTRACT if prior.get(key) != current.get(key)]
+    if prior.get("moe_active_experts", 4) != current.get("moe_active_experts", 4):
+        changed.append("moe_active_experts")
     if changed:
         raise ValueError(f"resume run changes contract fields: {', '.join(changed)}")
+
+
+def configure_single_task_capacity(model, active_experts):
+    """For an independent capacity check, train every active expert from scratch."""
+    if active_experts not in (4, 8, 12, 16):
+        raise ValueError("MoE active expert count must be 4, 8, 12 or 16")
+    if model.architecture != "moe":
+        if active_experts != 4:
+            raise ValueError("D2NN has no expert capacity setting")
+        model.configure_stage(0)
+        return
+    model.configure_stage(active_experts // 4 - 1)
+    for index in model.active_indices[:active_experts].tolist():
+        model.first_phase[index].requires_grad_(True)
 
 
 def load_task(protocol_path, task, split):
@@ -138,6 +154,8 @@ def main():
     parser.add_argument("--seed", type=int, default=17)
     parser.add_argument("--skip-test", action="store_true")
     parser.add_argument("--clevr-pairwise-weight", type=float, default=0.0)
+    parser.add_argument("--moe-active-experts", type=int, default=4,
+                        choices=(4, 8, 12, 16))
     parser.add_argument("--resume-checkpoint", type=Path,
                         help="Continue an immutable prior run into a new run directory")
     args = parser.parse_args()
@@ -148,6 +166,8 @@ def main():
     if args.clevr_pairwise_weight and (args.task not in {"clevr", "clevr_compact"}
                                        or args.batch % 2):
         raise ValueError("paired loss requires CLEVR and an even batch size")
+    if args.architecture == "d2nn" and args.moe_active_experts != 4:
+        raise ValueError("D2NN has no expert capacity setting")
     if ("runs", "simulation") not in list(zip(args.out.parts, args.out.parts[1:])):
         raise ValueError("formal runs must live under runs/simulation")
     args.out.mkdir(parents=True, exist_ok=False)
@@ -166,6 +186,7 @@ def main():
         "epochs": args.epochs, "min_epochs": args.min_epochs, "patience": args.patience,
         "batch": args.batch, "eval_batch": args.eval_batch, "lr": args.lr,
         "clevr_pairwise_weight": args.clevr_pairwise_weight,
+        "moe_active_experts": args.moe_active_experts,
         "seed": args.seed, "source_protocol": str(args.protocol),
         "source_protocol_sha256": sha256_file(args.protocol),
         "source_manifest_sha256": json.loads(args.protocol.read_text()).get(
@@ -182,7 +203,7 @@ def main():
     (args.out / "command.txt").write_text(" ".join(sys.argv) + "\n")
     save_json(args.out / "status.json", {"status": "running", "epoch": 0})
     model = DirectCCDOptics(args.architecture, activation_order="center_out").to(device)
-    model.configure_stage(0)
+    configure_single_task_capacity(model, args.moe_active_experts)
     optimizer = torch.optim.Adam([p for p in model.parameters() if p.requires_grad], lr=args.lr)
     best_score, best_epoch, wait = -1.0, 0, 0
     history = []

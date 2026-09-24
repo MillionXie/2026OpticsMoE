@@ -23,8 +23,12 @@ Physical 视频原始段数是 70,400／14,652／14,948；每段视频产生正�
 | `physical_binary_d2nn_center_linear_s17_977_uuid` | 同上 | 5 | 87.98% | 87.86% | `03b140c4c7beb01e8683f0cfe122bd28e2311c8214b10a87a0d47ceb56d6aee1` |
 | `clevr_pairs_moe_pairloss4_valonly_s17_8a28_uuid` | `8a282af30775f2271b74164cde0b1f861c9f1d3a` | 4 | 55.96% | **未测试** | `edf953db17f52c6b89b6bcec7ff4cdf29c38232c3725877c90eb7965771da42c` |
 | `clevr_pairs_moe_pairloss4_resume12_valonly_s17_0a1_uuid` | `0a1ef23761caadc52b5203e6ecdfa0a9ee1c9886`，从上一行第 4 轮继续 | 10 | 59.14% | **未测试** | `2a1b203650ff9ac93d0b9edfd1115c5c4ac91e8e7980f0b3b1cff3cf0761e3ac` |
+| `clevr_compact_moe_pair4_valonly_s17_fc6_uuid` | `fc6bb8fe7545ae744dc4771c25fa7d4a6542c229`，独立输入编码 | 4 | 52.39% | **未测试** | `c1599bfb2ccc9a0693b33d884454ef58dc675504a2fa9984947fbb8ff71d0318` |
+| `clevr_compact_d2nn_ce_valonly_s17_fc6_uuid` | 同上 | 4 | 50.00% | **未测试** | `92ec7704d44007fd86a75c504a05203a8462b96a9f8c16d06a10128ca7a8c523` |
 
 CLEVR 原交叉熵 MoE/D2NN 完整训练 4 轮后最好验证 50.33%/50.02%，因机会水平停止且未测试；配对损失权重 1.0／4.0 的 MoE 第 4 轮验证分别 54.05%／55.96%。权重 4.0 的 run 保留模型和 Adam 状态延长到第 12 轮后，第 10 轮最佳完整验证 59.14%（负类／正类 66.08%／52.20%），路由槽 7 在全部验证样本上最大，仍未达到准入目标。续训 `last_checkpoint.pt` SHA256 为 `bee13a4326a179cd714531c4843082f62c343dc468f5dae399f766ff5486fedc`，数据协议 SHA 与上表相同；候选全程未读取测试集，不应以验证分数冒充测试结果。Physical 二分类 MoE 已过 70%，但同预算 D2NN 测试高 0.57 个百分点；目前不能声称 MoE 在四任务上全面更好。已保存的验证集“所有相位置零且线性头不变”反事实见对应 run 的 `phase_dependence_val.json`；它只衡量相位敏感性，不是因果精度归因。
+
+另一个 `clevr_compact` 输入协议保留相同图像、问句、标签、图／文各 0.5 的入射功率和完整划分，只把最长 9 个实际 token 行铺到整个文字象限，光路及读出不变。128 对训练样本的固定编码审计确认图像象限一致、正负问句文字不同、总入射功率为 1；文字象限非零行由原编码的 32 行变成 112 行。两模型从零独立训练，MoE 用原配对损失权重 4，D2NN 用普通交叉熵；同样 4 个完整 epoch 后验证为 52.39%／50.00%，低于旧编码 MoE 同轮的 55.96%。因此两条候选停止并释放 GPU，状态为 `stopped_futility_after_full_epoch4`，未读取测试标签。此实验**否定了单靠铺展文字编码即可解决泛化问题**；不能把两种输入协议的权重或精度当成同一训练链。
 
 完整命令在各 run 的 `command.txt`。从对应源码 commit 的仓库根目录执行时，以下为同义命令；`RUNS` 指上文服务器 `runs/simulation` 绝对目录，`PY` 指 `/home/guest3/miniconda3/envs/xml/bin/python`，`EURO`、`CLEVR`、`SPEECH`、`PHYS` 依次指上表对应的 `protocol.json` 绝对路径。每条命令的 `CUDA_VISIBLE_DEVICES` 必须用当时空闲 GPU 的 UUID，而不是 CUDA 逻辑序号。
 
@@ -44,6 +48,8 @@ CUDA_VISIBLE_DEVICES="$GPU_UUID" $PY -m LightGenV2.tasks.t16_zero_phase_ccd_life
 CUDA_VISIBLE_DEVICES="$GPU_UUID" $PY -m LightGenV2.tasks.t16_zero_phase_ccd_lifelong.train_other_tasks --task physical_binary --protocol "$PHYS" --architecture d2nn --out "$RUNS/physical_binary_d2nn_center_linear_s17_977_uuid" --epochs 8 --min-epochs 4 --patience 2 --batch 32 --eval-batch 32 --lr 0.001 --seed 17
 CUDA_VISIBLE_DEVICES="$GPU_UUID" $PY -m LightGenV2.tasks.t16_zero_phase_ccd_lifelong.train_other_tasks --task clevr --protocol "$CLEVR" --architecture moe --out "$RUNS/clevr_pairs_moe_pairloss4_valonly_s17_8a28_uuid" --epochs 4 --min-epochs 4 --patience 2 --batch 32 --eval-batch 32 --lr 0.001 --seed 17 --clevr-pairwise-weight 4.0 --skip-test
 CUDA_VISIBLE_DEVICES="$GPU_UUID" $PY -m LightGenV2.tasks.t16_zero_phase_ccd_lifelong.train_other_tasks --task clevr --protocol "$CLEVR" --architecture moe --out "$RUNS/clevr_pairs_moe_pairloss4_resume12_valonly_s17_0a1_uuid" --epochs 12 --min-epochs 4 --patience 3 --batch 32 --eval-batch 32 --lr 0.001 --seed 17 --clevr-pairwise-weight 4.0 --skip-test --resume-checkpoint "$RUNS/clevr_pairs_moe_pairloss4_valonly_s17_8a28_uuid/last_checkpoint.pt"
+CUDA_VISIBLE_DEVICES="$GPU_UUID" $PY -m LightGenV2.tasks.t16_zero_phase_ccd_lifelong.train_other_tasks --task clevr_compact --protocol "$CLEVR" --architecture moe --out "$RUNS/clevr_compact_moe_pair4_valonly_s17_fc6_uuid" --epochs 8 --min-epochs 4 --patience 3 --batch 32 --eval-batch 32 --lr 0.001 --seed 17 --clevr-pairwise-weight 4.0 --skip-test
+CUDA_VISIBLE_DEVICES="$GPU_UUID" $PY -m LightGenV2.tasks.t16_zero_phase_ccd_lifelong.train_other_tasks --task clevr_compact --protocol "$CLEVR" --architecture d2nn --out "$RUNS/clevr_compact_d2nn_ce_valonly_s17_fc6_uuid" --epochs 8 --min-epochs 4 --patience 3 --batch 32 --eval-batch 32 --lr 0.001 --seed 17 --skip-test
 ```
 
 若未来重新训练，必须使用**新 run ID**；以上已有目录不能覆盖。执行前核对协议及 manifest 的 SHA256、GPU 空闲状态和 Git commit，运行后再核对 `status.json`、`result.json`、最佳权重 SHA256。只有验证通过并确立任务输入合同时，才能进入下一轮终身学习三矩阵。

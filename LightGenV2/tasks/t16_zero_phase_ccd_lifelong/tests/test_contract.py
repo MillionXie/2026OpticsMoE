@@ -18,6 +18,7 @@ from LightGenV2.tasks.t16_zero_phase_ccd_lifelong.train_eurosat import (
 )
 from LightGenV2.tasks.t16_zero_phase_ccd_lifelong.train_other_tasks import (
     clevr_pairwise_loss,
+    configure_single_task_capacity,
     metrics as other_task_metrics,
     RESUME_CONTRACT,
     validate_resume_contract,
@@ -187,6 +188,30 @@ def test_resume_keeps_data_model_optimizer_and_test_policy_fixed():
             assert key in str(error)
         else:
             raise AssertionError(f"resume accepted a changed {key}")
+    validate_resume_contract(prior, {**continued, "moe_active_experts": 4})
+    try:
+        validate_resume_contract(prior, {**continued, "moe_active_experts": 8})
+    except ValueError as error:
+        assert "moe_active_experts" in str(error)
+    else:
+        raise AssertionError("resume accepted a changed expert capacity")
+
+
+def test_independent_eight_expert_check_does_not_freeze_untrained_slots():
+    moe = DirectCCDOptics("moe")
+    configure_single_task_capacity(moe, 8)
+    assert int(moe.active_count) == 8
+    active = set(moe.active_indices[:8].tolist())
+    assert sum(phase.requires_grad for phase in moe.first_phase) == 8
+    assert all(phase.requires_grad == (index in active)
+               for index, phase in enumerate(moe.first_phase))
+    d2nn = DirectCCDOptics("d2nn")
+    try:
+        configure_single_task_capacity(d2nn, 8)
+    except ValueError as error:
+        assert "D2NN" in str(error)
+    else:
+        raise AssertionError("D2NN accepted an MoE expert setting")
 
 
 def test_batch_router_balance_penalty_is_slot_based_and_differentiable():
