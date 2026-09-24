@@ -133,6 +133,8 @@ def main():
     parser.add_argument("--seed", type=int, default=17)
     parser.add_argument("--route-balance-weight", type=float, default=0.0)
     parser.add_argument("--augment-dihedral", action="store_true")
+    parser.add_argument("--skip-test", action="store_true",
+                        help="validation-only candidate; never load the test split")
     parser.add_argument("--resume", action="store_true")
     args = parser.parse_args()
     if not (0 < args.min_epochs <= args.epochs and args.patience > 0 and
@@ -156,12 +158,15 @@ def main():
     config = {"task": "eurosat_paired_rgb_sar", "architecture": args.architecture,
               "activation_order": "center_out", "readout": "one trainable Linear(784,10), bias=False",
               "dataset_counts": {"train": len(train), "val": len(val), "test": EXPECTED["test"]},
-              "selection": "maximum full-validation balanced accuracy; test opened once afterward",
+              "selection": ("maximum full-validation balanced accuracy; test omitted"
+                            if args.skip_test else
+                            "maximum full-validation balanced accuracy; test opened once afterward"),
               "epochs": args.epochs, "min_epochs": args.min_epochs,
               "patience": args.patience, "batch": args.batch, "eval_batch": args.eval_batch,
               "lr": args.lr, "seed": args.seed,
               "route_balance_weight": args.route_balance_weight,
               "augment_dihedral": args.augment_dihedral,
+              "skip_test": args.skip_test,
               "source_protocol": str(args.protocol),
               "source_sha256": {"trainval": sha256_file(trainval), "holdout": sha256_file(holdout)},
               "model_git_commit": code_commit,
@@ -252,11 +257,12 @@ def main():
     selected = torch.load(args.out / "best_checkpoint.pt", map_location=device,
                           weights_only=False)
     model.load_state_dict(selected["model"])
-    test = load_split(trainval, holdout, "test")
     final = {"selected_epoch": best_epoch,
              "validation": selected["validation"],
-             "test": evaluate(model, test, device, args.eval_batch),
              "model_git_commit": code_commit}
+    if not args.skip_test:
+        test = load_split(trainval, holdout, "test")
+        final["test"] = evaluate(model, test, device, args.eval_batch)
     save_json(args.out / "result.json", final)
     save_json(args.out / "status.json", {"status": "complete", "epoch": history[-1]["epoch"],
                                            "best_epoch": best_epoch})
