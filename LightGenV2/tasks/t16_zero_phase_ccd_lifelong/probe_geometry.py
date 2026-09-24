@@ -28,9 +28,11 @@ def get_input(dataset, index, device):
 
 def candidates(size):
     c = size // 2
-    for side in (64, 96, 128, 160, 192):
-        for xp in (128, 160, 192, 224, 256, 288):
-            for yp in (160, 200, 240, 280, 320, 360):
+    # Only compact, centered 3-4-3 readouts are in the current protocol.
+    # The prior corner-scattered layouts belong to a historical probe.
+    for side in (80, 96, 112):
+        for xp in (side + 16, side + 32, side + 48):
+            for yp in (side + 32, side + 64, side + 96):
                 if xp < side + 16 or yp < side + 16:
                     continue
                 centers = ([(c-yp, c + k*xp) for k in (-1, 0, 1)]
@@ -40,26 +42,7 @@ def candidates(size):
                 if any(y-half < 0 or y+half > size or
                        x-half < 0 or x+half > size for y, x in centers):
                     continue
-                yield "center_343", side, xp, yp, centers
-    # The four first-stage experts occupy the corners. These equal-size ROIs
-    # cover the same unmodified CCD plane, with class 0/1 in opposite corners.
-    for side in (48, 64, 80, 96):
-        for offset in (40, 56, 72):
-            if 2 * offset < side + 16:
-                continue
-            for inward in (0, 32, 64, 96):
-                a, b = 132 + inward, size - 132 - inward
-                tl = [(a-offset, a-offset), (a-offset, a+offset), (a+offset, a)]
-                tr = [(a-offset, b+offset), (a+offset, b-offset)]
-                bl = [(b-offset, a+offset), (b+offset, a-offset)]
-                br = [(b+offset, b+offset), (b+offset, b-offset), (b-offset, b)]
-                centers = [tl[0], br[0], tr[0], bl[0], tl[1], br[1],
-                           tr[1], bl[1], tl[2], br[2]]
-                half = side // 2
-                if any(y-half < 0 or y+half > size or x-half < 0 or x+half > size
-                       for y, x in centers):
-                    continue
-                yield "corner_3223", side, offset, inward, centers
+                yield "compact_center_343", side, xp, yp, centers
 
 
 def powers_from_prefix(prefix, centers, side):
@@ -162,8 +145,7 @@ def main():
                         "group_means": group_means})
     ranking.sort(key=lambda row: row["score"], reverse=True)
     best = ranking[0]
-    by_layout = {name: next((entry for entry in ranking if entry["layout"] == name), None)
-                 for name in ("center_343", "corner_3223")}
+    by_layout = {"compact_center_343": ranking[0]}
     report = {"trained": False, "labels_used": False, "split": "train",
               "samples_per_task": args.samples_per_task,
               "phase_raw_initialization": 0.0,

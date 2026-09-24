@@ -23,6 +23,28 @@ def test_all_phase_parameters_begin_at_raw_zero_and_no_linear_head():
         assert len(set(model.output_centers)) == 10
 
 
+def test_router_and_expert_slots_share_quadrant_numbering_and_gaps():
+    model = DirectCCDOptics("moe")
+    assert len(model.slots) == len(model.router_centers) == 16
+    assert model.router_pitch - model.router_side == 16
+    assert len(set(model.slots)) == len(set(model.router_centers)) == 16
+    for index, (row, col) in enumerate(model.quadrant_order):
+        y, x = model.slots[index]
+        assert y == model.border + row * (model.expert_size + model.gap)
+        assert x == model.border + col * (model.expert_size + model.gap)
+        ry, rx = model.router_centers[index]
+        assert ry == model.height // 2 + (row - 1.5) * model.router_pitch
+        assert rx == model.width // 2 + (col - 1.5) * model.router_pitch
+    for stage in range(4):
+        model.configure_stage(stage)
+        assert int(model.active_count) == 4 * (stage + 1)
+        assert [phase.requires_grad for phase in model.first_phase] == [
+            4 * stage <= index < 4 * (stage + 1) for index in range(16)
+        ]
+    assert model.output_side == 96
+    assert (model.x_pitch, model.y_pitch) == (128, 160)
+
+
 def test_paired_rgb_sar_uses_each_modality_and_equal_power():
     rgb = np.zeros((1, 16, 16, 3), dtype=np.uint8)
     rgb[..., 0], rgb[..., 1], rgb[..., 2] = 255, 128, 64

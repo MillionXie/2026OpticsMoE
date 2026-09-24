@@ -14,14 +14,28 @@ class DirectCCDOptics(CrossModalOptics):
     lens, additional propagation, or trainable element after that propagation.
     """
 
-    def __init__(self, architecture: str, *, router_side=84, output_side=128,
-                 x_pitch=200, y_pitch=300, routing_temperature=1.25):
+    # Number each 2x2 quadrant contiguously: TL 1-4, TR 5-8,
+    # BL 9-12, BR 13-16. The router and expert plane use this same order.
+    quadrant_order = tuple(
+        (r0 + dr, c0 + dc)
+        for r0, c0 in ((0, 0), (0, 2), (2, 0), (2, 2))
+        for dr, dc in ((0, 0), (0, 1), (1, 0), (1, 1))
+    )
+
+    def __init__(self, architecture: str, *, router_side=80, router_pitch=96,
+                 output_side=96, x_pitch=128, y_pitch=160,
+                 routing_temperature=1.25):
         super().__init__(architecture=architecture, seed=17, phase_dropout=0.0,
                          readout_grid=28, head_width=0, head_bottleneck=0,
                          optical_layers=2, max_experts=16,
                          oeo_activation="intensity_softsign",
                          routing_temperature=routing_temperature)
         self.heads = nn.ModuleDict()
+        self.slots = [
+            (self.border + row * (self.expert_size + self.gap),
+             self.border + col * (self.expert_size + self.gap))
+            for row, col in self.quadrant_order
+        ]
         # Every physical phase mask starts from raw zero. The inherited map
         # exp(2πi sigmoid(raw)) then gives exactly π at every pixel.
         with torch.no_grad():
@@ -35,15 +49,22 @@ class DirectCCDOptics(CrossModalOptics):
             for phase in self.additional_phases:
                 phase.zero_()
         self.router_side = int(router_side)
-        if self.router_side <= 0 or self.router_side > 84 or self.router_side % 2:
-            raise ValueError("router_side must be even and at most 84")
+        self.router_pitch = int(router_pitch)
+        if (self.router_side <= 0 or self.router_side % 2 or
+                self.router_pitch % 2 or
+                self.router_pitch < self.router_side + 16):
+            raise ValueError("router boxes need an even side and >=16 pixel gaps")
         c = self.height // 2
-        inner = (-self.router_side // 2, self.router_side // 2)
-        outer = (-3 * self.router_side // 2, -self.router_side // 2,
-                 self.router_side // 2, 3 * self.router_side // 2)
-        self.router_centers = ([(c + y, c + x) for y in inner for x in inner]
-                               + [(c + y, c + x) for y in outer for x in outer
-                                  if y not in inner or x not in inner])
+        offsets = [int((index - 1.5) * self.router_pitch) for index in range(4)]
+        self.router_centers = [
+            (c + offsets[row], c + offsets[col])
+            for row, col in self.quadrant_order
+        ]
+        half = self.router_side // 2
+        if any(y - half < 0 or y + half > self.height or
+               x - half < 0 or x + half > self.width
+               for y, x in self.router_centers):
+            raise ValueError("router box extends outside CCD")
         self.set_output_geometry(output_side, x_pitch, y_pitch)
 
     def set_output_geometry(self, side: int, x_pitch: int, y_pitch: int):
