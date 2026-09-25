@@ -1,4 +1,4 @@
-"""Sequential T16 MoE/D2NN with one shared head and exhaustive replay.
+"""Sequential T16 MoE/D2NN with one head and explicit replay mode.
 
 One invocation trains one dependent stage (B, C or D). Stage A is an audited
 EuroSAT MoE checkpoint. Candidate stages may omit test; only the chosen stage
@@ -172,11 +172,14 @@ def run_train(args, protocols, device):
         raise ValueError("training requires stage 2/3/4 and its previous checkpoint")
     order = ("eurosat", "clevr", "speech_binary", args.physical_task)
     names = order[:args.stage]
+    train_names = names if args.replay_mode == "full" else (names[-1],)
     commit = subprocess.check_output(["git", "rev-parse", "HEAD"], text=True).strip()
     config = {
         "stage": args.stage, "order": order, "architecture": args.architecture,
         "activation_order": "center_out", "readout": "one shared Linear(784,10), bias=False",
-        "full_replay": "all records of every learned task exactly once per epoch; interleaved",
+        "replay_mode": args.replay_mode,
+        "full_replay": ("all records of every learned task exactly once per epoch; interleaved"
+                        if args.replay_mode == "full" else "current task only; no replay"),
         "current_task": names[-1], "learned_tasks": names,
         "protocol_sha256": {n: sha256_file(protocols[n]) for n in names},
         "vision_checkpoint_sha256": (sha256_file(args.vision_checkpoint)
@@ -245,7 +248,7 @@ def run_train(args, protocols, device):
         model.train()
         loss_sum = 0.0
         steps = 0
-        for batch_map in stage_epoch_batches(train, names, args.batch,
+        for batch_map in stage_epoch_batches(train, train_names, args.batch,
                                              args.seed + args.stage * 1000 + epoch):
             optimizer.zero_grad(set_to_none=True)
             step_loss = 0.0
@@ -265,8 +268,8 @@ def run_train(args, protocols, device):
                     raise RuntimeError(f"nonfinite {name} loss at epoch {epoch}")
                 task_weight = (1.0 if name == names[-1]
                                else args.old_task_loss_weight)
-                (task_weight * loss / len(names)).backward()
-                step_loss += task_weight * float(loss.detach()) / len(names)
+                (task_weight * loss / len(train_names)).backward()
+                step_loss += task_weight * float(loss.detach()) / len(train_names)
             torch.nn.utils.clip_grad_norm_(parameters, 1.0)
             optimizer.step()
             loss_sum += step_loss
@@ -344,6 +347,7 @@ def main(default_architecture="moe"):
     parser.add_argument("--clevr-pairwise-weight", type=float, default=4.0)
     parser.add_argument("--route-balance-weight", type=float, default=0.0)
     parser.add_argument("--old-task-loss-weight", type=float, default=1.0)
+    parser.add_argument("--replay-mode", choices=("full", "none"), default="full")
     parser.add_argument("--head-lr-scale", type=float, default=1.0)
     parser.add_argument("--new-expert-init-checkpoint", type=Path)
     parser.add_argument("--vision-checkpoint", type=Path)
@@ -359,6 +363,8 @@ def main(default_architecture="moe"):
     if args.architecture == "d2nn" and (args.route_balance_weight or
                                           args.new_expert_init_checkpoint):
         raise ValueError("D2NN has no router or expert warm start")
+    if args.architecture == "moe" and args.replay_mode != "full":
+        raise ValueError("MoE sequential protocol requires replay")
     if ("runs", "simulation") not in list(zip(args.out.parts, args.out.parts[1:])):
         raise ValueError("stage run must live under runs/simulation")
     torch.manual_seed(args.seed)

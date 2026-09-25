@@ -6,6 +6,8 @@
 
 新代码在 `train_eurosat.py`、`train_other_tasks.py`、`train_lifelong_moe.py` 增加可选 `--vision-checkpoint`；所有阶段的配置和接续校验写入其 SHA256，拒绝将旧无视觉前端 checkpoint 混入新链。新协议的单任务／顺序验证尚未完成，旧矩阵和旧单任务分数**一概不能直接迁移或与新结果拼表**。视觉前端用 CLEVR 监督预训练，因此结论应明确写成“冻结共享电子视觉前端条件下的光电架构比较”，不能声称纯光学跨模态学习。只有完整验证集确认 MoE 的 EuroSAT 起点和 CLEVR B 阶段改善后，才继续 C/D 和正式测试。
 
+顺序 D2NN 可以用 `--replay-mode none` 运行用户要求的无回放下三角：每轮只训练新任务，却每阶段评估全部已见任务；`--replay-mode full` 则与 MoE 一样遍历全部旧任务完整训练记录，用作额外的 replay 对照。MoE 正式链只允许 full。两者必须从各自同一冻结视觉前端的 EuroSAT A checkpoint 开始，不能拿旧无前端矩阵拼接。
+
 ## 2026-09-25 正式顺序实验边界
 
 已确定输入协议的 EuroSAT／Speech 两个独立 D2NN 完成了不调参数的 2×2 直接迁移推理；[结果与限制](reports/d2nn_partial_transfer_20260925.md)。Physical 的视频帧输入及固定帧差影响见[输入审查](PHYSICAL_INPUT_AUDIT_20260925.md)。这两项记录均不能替代尚未完成的四任务三张正式矩阵。
