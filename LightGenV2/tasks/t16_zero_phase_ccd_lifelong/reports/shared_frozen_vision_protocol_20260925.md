@@ -82,11 +82,17 @@ D 阶段 `stage4_d2nn_noreplay_sharedvision_s17_d9d5` 已从上述 C 最佳 chec
 
 ## D2NN 顺序学习：有 replay 的进行中下三角
 
-这条独立链与无 replay 链复用**完全相同的 EuroSAT A checkpoint**，随后拥有自己的、持续更新的 D2NN 相位和单层 Linear。`stage2_d2nn_replay_sharedvision_s17_b015` 在 B 阶段每轮遍历 EuroSAT 和 CLEVR 各自全部训练记录一次，按完整验证集选中第 4 轮后仅测试一次。C 阶段 `stage3_d2nn_replay_balanced_sharedvision_s17_e696` 使用与 MoE C 相同的 `balanced_cycle`：每任务先走完全量，再重新打乱并循环短任务，使每轮任务 batch 数相近；按完整验证均值选第 4 轮，验证 EuroSAT/CLEVR/Speech **74.78%/75.09%/68.39%**，一次测试 **77.08%/74.81%/65.92%**。D 阶段已从该 C checkpoint 接续训练，尚未测试；不能把空格当零或拿无 replay 链的 D 代填。全程没有任务专用头。
+这条独立链与无 replay 链复用**完全相同的 EuroSAT A checkpoint**，随后拥有自己的、持续更新的 D2NN 相位和单层 Linear。`stage2_d2nn_replay_sharedvision_s17_b015` 在 B 阶段每轮遍历 EuroSAT 和 CLEVR 各自全部训练记录一次，按完整验证集选中第 4 轮后仅测试一次。C 阶段 `stage3_d2nn_replay_balanced_sharedvision_s17_e696` 使用与 MoE C 相同的 `balanced_cycle`：每任务先走完全量，再重新打乱并循环短任务，使每轮任务 batch 数相近；按完整验证均值选第 4 轮，验证 EuroSAT/CLEVR/Speech **74.78%/75.09%/68.39%**，一次测试 **77.08%/74.81%/65.92%**。D 阶段 `stage4_d2nn_replay_balanced_sharedvision_s17_e031` 从该 C checkpoint 接续，同样按完整验证均值选第 4 轮，验证 EuroSAT/CLEVR/Speech/Physical **75.83%/79.93%/74.32%/74.71%**，一次测试 **78.40%/79.67%/70.76%/74.33%**。全程没有任务专用头，十格均来自各阶段各自获选 checkpoint 的一次测试。
 
 | 有 replay 阶段＼测试 | A EuroSAT | B CLEVR | C Speech | D Physical |
 |---|---:|---:|---:|---:|
 | A | 71.77% | — | — | — |
 | B | 63.87% | 76.30% | — | — |
 | C | 77.08% | 74.81% | 65.92% | — |
-| D（训练中） | — | — | — | — |
+| D | 78.40% | 79.67% | 70.76% | 74.33% |
+
+## 三张矩阵的可报告结论与限制
+
+- MoE 与 D2NN 有 replay 在最终 D 阶段的四任务测试宏平均分别为 **78.38%** 与 **75.79%**，MoE 高 **2.59 个百分点**。分任务看，MoE 在 CLEVR/Speech 高 **1.23/11.19 点**，在 EuroSAT/Physical 低 **1.20/0.87 点**；不能称“四项均超过 D2NN”。D2NN 无 replay 最终四任务均值为 **48.77%**，其中 EuroSAT 大幅遗忘，但其 Physical 当前任务仍有 75.16%。
+- 这不是只改变“MoE vs D2NN 光学拓扑”的受控对照：两方输入、冻结视觉 CNN、传播尺度、OEO、CCD 和单层读出**结构**相同，但 MoE 的 B/C/D 使用不同的旧任务权重、CLEVR 成对损失、路由均衡和较低的 Linear 学习率。D2NN 有 replay 对照只对齐全量回放和 C/D 的 `balanced_cycle` 数据调度，其常规损失与头学习率仍不同。因此目前能报告“此完整光电系统与训练方案的结果”，不能把 2.59 点净优势全归因于专家结构。
+- MoE D 的 Physical 负／正两类召回为 **89.66%/57.25%**；D2NN 有 replay D 为 **60.52%/88.14%**。两方的宏平均分都掩盖不同方向的类别偏向。独立 D2NN 4×4 出现的 10%／50% 机会水平格已用原 checkpoint 的预测直方图核实，不能独立作为纯光学迁移失败证据。
