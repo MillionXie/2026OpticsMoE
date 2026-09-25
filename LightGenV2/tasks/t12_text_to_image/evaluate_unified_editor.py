@@ -37,7 +37,7 @@ class TorchvisionInceptionFeatures(nn.Module):
 def evaluate_small(*, checkpoint: Path, data_dir: Path, instruction_cache: Path,
                    embedding_cache: Path, output: Path, device: torch.device,
                    batch_size: int = 16, seed: int = 42,
-                   distribution_metrics: bool = False) -> dict:
+                   distribution_metrics: bool = False, task: str = "unified") -> dict:
     if distribution_metrics:
         from torchmetrics.image.fid import FrechetInceptionDistance
         from torchmetrics.image.kid import KernelInceptionDistance
@@ -50,7 +50,7 @@ def evaluate_small(*, checkpoint: Path, data_dir: Path, instruction_cache: Path,
     model.text = QwenMiniTextEncoder(QwenMiniConfig(**payload["qwen_mini_config"]))
     model.load_state_dict(payload["model"])
     model = model.to(device).eval()
-    dataset = build_dataset("unified", data_dir, "test", editor_config.image_size, instruction_cache)
+    dataset = build_dataset(task, data_dir, "test", editor_config.image_size, instruction_cache)
     loader = DataLoader(dataset, batch_size=batch_size, shuffle=False, num_workers=4)
     lookup = PromptEmbeddingLookup(embedding_cache)
     extractor = TorchvisionInceptionFeatures().to(device) if distribution_metrics else None
@@ -93,7 +93,7 @@ def evaluate_small(*, checkpoint: Path, data_dir: Path, instruction_cache: Path,
               "test_pairs": len(dataset), "source_views": len(dataset.base.sources),
               "fixed_target_designs": len(dataset.base.catalogue),
               "metrics_by_mode": metrics,
-              "fid_caveat": "Repeated paired targets and four fixed object designs; not open-set FID"}
+              "fid_caveat": "Repeated paired targets from a fixed object catalogue; not open-set FID"}
     if distribution_metrics:
         kid_mean, kid_std = kid.compute()
         result.update(fid=float(fid.compute()), kid_mean=float(kid_mean), kid_std=float(kid_std))
@@ -111,12 +111,13 @@ def main() -> int:
     parser.add_argument("--batch-size", type=int, default=16)
     parser.add_argument("--seed", type=int, default=42)
     parser.add_argument("--distribution-metrics", action="store_true")
+    parser.add_argument("--task", choices=("unified", "unified_expanded"), default="unified")
     args = parser.parse_args()
     result = evaluate_small(checkpoint=args.checkpoint.resolve(), data_dir=args.data_dir.resolve(),
                             instruction_cache=args.instruction_cache.resolve(),
                             embedding_cache=args.embedding_cache.resolve(), output=args.output.resolve(),
                             device=torch.device(args.device), batch_size=args.batch_size, seed=args.seed,
-                            distribution_metrics=args.distribution_metrics)
+                            distribution_metrics=args.distribution_metrics, task=args.task)
     print(json.dumps(result, indent=2))
     return 0
 

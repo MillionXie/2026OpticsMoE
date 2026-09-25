@@ -154,17 +154,18 @@ def _evaluate(unet, adapter, router, loader, sigma, device, training: SceneTrain
 
 
 @torch.inference_mode()
-def _sample_grid(*, unet, adapter, vae, sigma, latent_dataset, raw_dataset, output: Path, device, training: SceneTrainingConfig, seed: int) -> None:
-    # Show both supported categories instead of merely taking the first eight
-    # manifest rows (ABO manifests are category-grouped).
+def _sample_grid(*, unet, adapter, vae, sigma, latent_dataset, raw_dataset, output: Path, device, training: SceneTrainingConfig, seed: int, chosen_offsets: list[int] | None = None) -> None:
+    # ABO manifests are category-grouped. Show every category and all edit modes.
     first_by_category: dict[str, int] = {}
     for source_index, source in enumerate(raw_dataset.sources):
         first_by_category.setdefault(source["category"], source_index)
     chosen = []
-    display_per_category = min(8, raw_dataset.targets_per_source)
+    offsets = chosen_offsets if chosen_offsets is not None else (
+        [0, 1, 4, 5, 8, 9] if raw_dataset.targets_per_source >= 12
+        else list(range(min(8, raw_dataset.targets_per_source))))
     for category in raw_dataset.supported_categories:
         start = first_by_category[category] * raw_dataset.targets_per_source
-        chosen.extend(range(start, min(start + display_per_category, len(raw_dataset))))
+        chosen.extend(start + offset for offset in offsets if start + offset < len(raw_dataset))
     reference = latent_dataset.payload["reference"][chosen].float().to(device)
     text = latent_dataset.payload["qwen_text"][chosen].float().to(device)
     generator = torch.Generator(device=device).manual_seed(seed)
@@ -187,9 +188,18 @@ def _sample_grid(*, unet, adapter, vae, sigma, latent_dataset, raw_dataset, outp
         for column, value in enumerate((raw["reference"], raw["target"], generated[row])):
             array = value.add(1).mul(127.5).clamp(0, 255).byte().permute(1, 2, 0).numpy()
             canvas.paste(Image.fromarray(array), (labels + column * cell, row * cell))
-        draw.text((4, row * cell + 4), raw["target_id"], fill="black")
-        draw.text((4, row * cell + 28), raw["prompt"][:52], fill="black")
-        draw.text((4, row * cell + 52), "input | target | full generated", fill="black")
+        prompt=raw["prompt"]
+        if "Replace only the product with a " in prompt:
+            short=prompt.split("Replace only the product with a ",1)[1].split(" of the same category",1)[0]
+        elif "product scene with a " in prompt:
+            short=prompt.split("product scene with a ",1)[1].split(" in a ",1)[0]
+        elif "background with a " in prompt:
+            short=prompt.split("background with a ",1)[1]
+        else:
+            short=prompt
+        draw.text((4, row * cell + 4), raw["mode"]+": "+short[:45], fill="black")
+        draw.text((4, row * cell + 20), short[45:90], fill="black")
+        draw.text((4, row * cell + 52), "input | target | generated", fill="black")
     output.parent.mkdir(parents=True, exist_ok=True)
     canvas.save(output, quality=94, subsampling=0)
 

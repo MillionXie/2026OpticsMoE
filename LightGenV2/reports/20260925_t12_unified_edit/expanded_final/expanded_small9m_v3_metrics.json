@@ -1,0 +1,36 @@
+{
+  "schema_version": 1,
+  "checkpoint": "/DATA/DATA1/guest3/t12_assets/runs/abo_unified_expanded_qwenmini_9m_v3/best_model.pt",
+  "counted_parameters": 9495704,
+  "resolution": 128,
+  "test_pairs": 2304,
+  "source_views": 192,
+  "fixed_target_designs": 12,
+  "metrics_by_mode": {
+    "background": {
+      "n": 768,
+      "mse": 0.001073748332297934,
+      "l1": 0.018824172254729394,
+      "edge_l1": 0.05008070624899119,
+      "copy_mse": 0.16155055275885388,
+      "improvement_over_copy": 0.9933534840088061
+    },
+    "object": {
+      "n": 768,
+      "mse": 0.0009006789079345859,
+      "l1": 0.009954579451004975,
+      "edge_l1": 0.03144788731394025,
+      "copy_mse": 0.08242282341234386,
+      "improvement_over_copy": 0.9890724574742037
+    },
+    "joint": {
+      "n": 768,
+      "mse": 0.0015189585792541038,
+      "l1": 0.024349899564792093,
+      "edge_l1": 0.06500006542773917,
+      "copy_mse": 0.21983858139719814,
+      "improvement_over_copy": 0.9930905732305937
+    }
+  },
+  "fid_caveat": "Repeated paired targets from a fixed object catalogue; not open-set FID"
+}

@@ -168,7 +168,22 @@ def evaluate(model,loader,lookup,device,seed):
 
 @torch.inference_mode()
 def save_samples(model,dataset:PromptPairDataset,lookup,output:Path,device,seed)->None:
-    model.eval();count=min(12,len(dataset));step=max(1,len(dataset)//count);items=[dataset[min(i*step,len(dataset)-1)] for i in range(count)]
+    model.eval()
+    if hasattr(dataset, "base") and hasattr(dataset.base, "targets_per_source"):
+        base = dataset.base
+        offsets = ([0, 4, 8, 1, 5, 9] if base.targets_per_source >= 12
+                   else [0, 2, 4, 6])
+        first = {}
+        for source_index, source in enumerate(base.sources):
+            first.setdefault(source["category"], source_index)
+        indices = [first[category] * base.targets_per_source + offset
+                   for category in base.supported_categories for offset in offsets
+                   if category in first and offset < base.targets_per_source]
+        items = [dataset[index] for index in indices]
+    else:
+        count=min(12,len(dataset));step=max(1,len(dataset)//count)
+        items=[dataset[min(i*step,len(dataset)-1)] for i in range(count)]
+    count=len(items)
     reference=torch.stack([x["reference"] for x in items]).to(device);embeddings,mask,_=lookup.batch([x["prompt"] for x in items],device)
     generator=torch.Generator(device=device).manual_seed(seed);noise=torch.randn(reference.shape,generator=generator,device=device)
     controls=torch.as_tensor([x["condition_index"] for x in items],device=device) if model.control_embedding is not None else None
@@ -177,7 +192,18 @@ def save_samples(model,dataset:PromptPairDataset,lookup,output:Path,device,seed)
     for row,item in enumerate(items):
         for column,value in enumerate((item["reference"],item["target"],prediction[row].cpu())):
             array=value.add(1).mul(127.5).clamp(0,255).byte().permute(1,2,0).numpy();canvas.paste(Image.fromarray(array),(label+column*cell,row*cell))
-        draw.text((4,row*cell+4),item["prompt"][:47],fill="black");draw.text((4,row*cell+28),"input | target | Qwen-mini student",fill="black")
+        prompt=item["prompt"]
+        if "Replace only the product with a " in prompt:
+            short=prompt.split("Replace only the product with a ",1)[1].split(" of the same category",1)[0]
+        elif "product scene with a " in prompt:
+            short=prompt.split("product scene with a ",1)[1].split(" in a ",1)[0]
+        elif "background with a " in prompt:
+            short=prompt.split("background with a ",1)[1]
+        else:
+            short=prompt
+        draw.text((4,row*cell+4),item.get("mode","edit")+": "+short[:43],fill="black")
+        draw.text((4,row*cell+20),short[43:86],fill="black")
+        draw.text((4,row*cell+44),"input | target | generated",fill="black")
     output.parent.mkdir(parents=True,exist_ok=True);canvas.save(output,quality=94,subsampling=0)
 
 
@@ -186,13 +212,14 @@ def train_qwen_mini_editor(
     device:torch.device,epochs:int=20,batch_size:int=16,learning_rate:float=2e-4,seed:int=42,
     text_width:int=768,intermediate_width:int=2048,text_heads:int=12,
     warm_start_checkpoint:Path|None=None,
+    residual_limit:float=2.0,change_loss_weight:float=0.0,
 )->dict[str,Any]:
     if output_dir.exists():raise FileExistsError(output_dir)
     output_dir.mkdir(parents=True);random.seed(seed);np.random.seed(seed);torch.manual_seed(seed)
     # No oracle catalogue/material ID enters the generator.  The condition is
     # produced solely by Qwen-mini so arbitrary phrasings remain deployable.
     # The labels below are retained only for the training-only classifier.
-    editor_config=SmallEditorConfig(control_classes=0)
+    editor_config=SmallEditorConfig(control_classes=0,residual_limit=residual_limit)
     text_config=QwenMiniConfig(width=text_width,intermediate_width=intermediate_width,
                                heads=text_heads,condition_dim=editor_config.condition_dim)
     datasets={name:build_dataset(task,data_dir,name,editor_config.image_size,instruction_cache) for name in ("train","val","test")}
@@ -218,6 +245,10 @@ def train_qwen_mini_editor(
             with torch.autocast(device.type,dtype=torch.bfloat16,enabled=device.type=="cuda"):
                 output=model(reference,(embeddings,mask),noise,None);hidden=model.text.hidden(embeddings,mask);condition=model.text.condition_projection(hidden)
                 image_loss=F.l1_loss(output,target)+.65*F.mse_loss(output,target)+.10*F.l1_loss(_edge(output),_edge(target))
+                if change_loss_weight:
+                    changed=(target-reference).abs().mean(dim=1,keepdim=True).gt(.08).float()
+                    focused=((output-target).abs()*changed).sum()/(3*changed.sum()+1e-6)
+                    image_loss=image_loss+change_loss_weight*focused
                 distill=1-F.cosine_similarity(teacher_head(hidden).float(),teacher.float(),dim=-1).mean()
                 loss=image_loss+.15*distill+.20*F.cross_entropy(classifier(condition).float(),labels)
             scaler.scale(loss).backward();scaler.unscale_(optimizer);torch.nn.utils.clip_grad_norm_([*model.parameters(),*teacher_head.parameters(),*classifier.parameters()],3.0);scaler.step(optimizer);scaler.update()
@@ -230,7 +261,7 @@ def train_qwen_mini_editor(
             best=validation["mse"];best_epoch=epoch;torch.save({"schema_version":2,"task":task,"editor_config":{**asdict(editor_config),"widths":list(editor_config.widths)},"qwen_mini_config":asdict(text_config),"model":{key:value.detach().half().cpu() for key,value in ema.state_dict().items()},"counted_parameters":parameters,"shared_qwen_token_embedding_excluded":True,"qwen_transformer_layers":2,"generator_condition":"Qwen-mini hidden state only; no oracle class/material ID","epoch":epoch,"validation":validation,"hard_pixel_composite":False,"gan_used":False,"inference_iterations":1},output_dir/"best_model.pt")
         if epoch in {1,5,10,epochs}:save_samples(ema,datasets["val"],lookup,output_dir/"samples"/f"epoch_{epoch:03d}.jpg",device,seed+epoch)
     payload=torch.load(output_dir/"best_model.pt",map_location="cpu",weights_only=False);ema.load_state_dict(payload["model"]);test=evaluate(ema,loaders["test"],lookup,device,seed+999);save_samples(ema,datasets["test"],lookup,output_dir/"final_grid.jpg",device,seed+999)
-    report={"schema_version":2,"task":task,"best_epoch":best_epoch,"parameters":parameters,"under_50m":parameters<50_000_000,"text_frontend":f"shared frozen Qwen tokenizer/embedding -> 2048-to-{text_width} projection -> 2 Qwen-style blocks","qwen_transformer_layers":2,"generator_condition":"Qwen-mini hidden state only; no oracle class/material ID","warm_start":warm_start,"initial_validation":initial,"test":test,"history":history,"training_seconds":time.perf_counter()-started,"optical_alpha":float(ema.bottleneck.fusion.alpha),"hard_pixel_composite":False,"gan_used":False,"inference_iterations":1,"resolution":editor_config.image_size}
+    report={"schema_version":2,"task":task,"best_epoch":best_epoch,"parameters":parameters,"under_50m":parameters<50_000_000,"text_frontend":f"shared frozen Qwen tokenizer/embedding -> 2048-to-{text_width} projection -> 2 Qwen-style blocks","qwen_transformer_layers":2,"generator_condition":"Qwen-mini hidden state only; no oracle class/material ID","warm_start":warm_start,"initial_validation":initial,"test":test,"history":history,"training_seconds":time.perf_counter()-started,"optical_alpha":float(ema.bottleneck.fusion.alpha),"hard_pixel_composite":False,"gan_used":False,"inference_iterations":1,"resolution":editor_config.image_size,"residual_limit":residual_limit,"change_loss_weight":change_loss_weight}
     (output_dir/"training_summary.json").write_text(json.dumps(report,indent=2)+"\n",encoding="utf-8")
     del model,ema,optimizer,teacher_head,classifier
     if device.type=="cuda":torch.cuda.empty_cache()

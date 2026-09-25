@@ -9,6 +9,9 @@ import torch
 
 from .product_global_redesign_training import cache_redesign_latents, load_scene_config, train_redesign_model
 from .product_unified_edit_data import UnifiedProductEditDataset, build_unified_instruction_cache
+from .product_unified_edit_data_v2 import (
+    ExpandedUnifiedProductEditDataset, build_expanded_instruction_cache,
+)
 
 
 def main() -> int:
@@ -19,6 +22,7 @@ def main() -> int:
     instructions.add_argument("--data-dir", type=Path, required=True)
     instructions.add_argument("--qwen-checkpoint", type=Path, required=True)
     instructions.add_argument("--device", default="cuda")
+    instructions.add_argument("--variant", choices=("original", "expanded"), default="original")
     latents = commands.add_parser("cache-latents")
     for name in ("data-dir", "instruction-cache", "vae-checkpoint", "output-dir"):
         latents.add_argument(f"--{name}", type=Path, required=True)
@@ -26,6 +30,7 @@ def main() -> int:
     latents.add_argument("--batch-size", type=int, default=12)
     latents.add_argument("--num-workers", type=int, default=4)
     latents.add_argument("--device", default="cuda")
+    latents.add_argument("--variant", choices=("original", "expanded"), default="original")
     train = commands.add_parser("train")
     for name in ("initial-unet", "turbo-checkpoint", "latent-cache-dir", "data-dir",
                  "instruction-cache", "adapter-checkpoint", "warm-start-checkpoint",
@@ -34,17 +39,22 @@ def main() -> int:
     train.add_argument("--seed", type=int, default=42)
     train.add_argument("--device", default="cuda")
     train.add_argument("--student-widths", nargs=3, type=int)
+    train.add_argument("--variant", choices=("original", "expanded"), default="original")
     args = parser.parse_args()
     device = torch.device(args.device)
+    dataset_class = (ExpandedUnifiedProductEditDataset if args.variant == "expanded"
+                     else UnifiedProductEditDataset)
     if args.command == "cache-instructions":
-        result = build_unified_instruction_cache(args.output.resolve(), args.data_dir.resolve(),
-                                                 args.qwen_checkpoint.resolve(), device)
+        builder = (build_expanded_instruction_cache if args.variant == "expanded"
+                   else build_unified_instruction_cache)
+        result = builder(args.output.resolve(), args.data_dir.resolve(),
+                         args.qwen_checkpoint.resolve(), device)
     elif args.command == "cache-latents":
         result = cache_redesign_latents(
             data_dir=args.data_dir.resolve(), instruction_cache=args.instruction_cache.resolve(),
             vae_checkpoint=args.vae_checkpoint.resolve(), output_dir=args.output_dir.resolve(),
             image_size=args.image_size, device=device, batch_size=args.batch_size,
-            num_workers=args.num_workers, dataset_class=UnifiedProductEditDataset,
+            num_workers=args.num_workers, dataset_class=dataset_class,
             task_name="independently controlled product and background editing")
     else:
         model_config, training_config = load_scene_config(args.config.resolve())
@@ -54,7 +64,7 @@ def main() -> int:
             instruction_cache=args.instruction_cache.resolve(), adapter_checkpoint=args.adapter_checkpoint.resolve(),
             warm_start_checkpoint=args.warm_start_checkpoint.resolve(), output_dir=args.output_dir.resolve(),
             model_config=model_config, training_config=training_config, device=device, seed=args.seed,
-            dataset_class=UnifiedProductEditDataset,
+            dataset_class=dataset_class,
             task_name="independently controlled product and background editing",
             student_widths=tuple(args.student_widths) if args.student_widths else None)
     print(json.dumps(result, indent=2))

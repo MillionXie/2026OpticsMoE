@@ -23,6 +23,7 @@ from .premium_material_data import PremiumMaterialDataset
 from .product_global_redesign_data import ProductGlobalRedesignDataset
 from .product_scene_replace_data import ProductBackgroundReplacementDataset
 from .product_unified_edit_data import UnifiedProductEditDataset
+from .product_unified_edit_data_v2 import ExpandedUnifiedProductEditDataset
 
 
 @dataclass(frozen=True)
@@ -209,6 +210,7 @@ DATASETS = {
     "redesign": ProductGlobalRedesignDataset,
     "premium": PremiumMaterialDataset,
     "unified": UnifiedProductEditDataset,
+    "unified_expanded": ExpandedUnifiedProductEditDataset,
 }
 
 

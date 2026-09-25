@@ -1,0 +1,78 @@
+{
+  "schema_version": 2,
+  "task": "unified_expanded",
+  "best_epoch": 3,
+  "parameters": 9495704,
+  "under_50m": true,
+  "text_frontend": "shared frozen Qwen tokenizer/embedding -> 2048-to-512 projection -> 2 Qwen-style blocks",
+  "qwen_transformer_layers": 2,
+  "generator_condition": "Qwen-mini hidden state only; no oracle class/material ID",
+  "warm_start": {
+    "target_parameters": 9495704,
+    "copied_values": 9495704,
+    "exact_values": 9495704,
+    "partial_values": 0,
+    "coverage": 1.0,
+    "missing_keys": []
+  },
+  "initial_validation": {
+    "mse": 0.07773177198962206,
+    "l1": 0.19749620194650358,
+    "edge_l1": 0.20582090111242402,
+    "copy_mse": 0.15413028664059109,
+    "mse_improvement_over_copy": 0.4956749015144506
+  },
+  "test": {
+    "mse": 0.0011647014374223847,
+    "l1": 0.01770951681666904,
+    "edge_l1": 0.04884255235083401,
+    "copy_mse": 0.15460398715610305,
+    "mse_improvement_over_copy": 0.9924665498034899
+  },
+  "history": [
+    {
+      "epoch": 1,
+      "train_loss": 0.04267724767833212,
+      "validation": {
+        "mse": 0.001079198205439348,
+        "l1": 0.01749942434899923,
+        "edge_l1": 0.0493726978958067,
+        "copy_mse": 0.15413028664059109,
+        "mse_improvement_over_copy": 0.9929981431361645
+      },
+      "alpha": 0.49621275067329407
+    },
+    {
+      "epoch": 2,
+      "train_loss": 0.029654671975560945,
+      "validation": {
+        "mse": 0.0010247070171721538,
+        "l1": 0.017123082710895687,
+        "edge_l1": 0.04813306801952422,
+        "copy_mse": 0.15413028664059109,
+        "mse_improvement_over_copy": 0.9933516829202971
+      },
+      "alpha": 0.49616047739982605
+    },
+    {
+      "epoch": 3,
+      "train_loss": 0.02901037717036857,
+      "validation": {
+        "mse": 0.000985730953996406,
+        "l1": 0.01686936497248502,
+        "edge_l1": 0.04714005044661462,
+        "copy_mse": 0.15413028664059109,
+        "mse_improvement_over_copy": 0.99360456030102
+      },
+      "alpha": 0.49611061811447144
+    }
+  ],
+  "training_seconds": 309.2914067879319,
+  "optical_alpha": 0.49612510204315186,
+  "hard_pixel_composite": false,
+  "gan_used": false,
+  "inference_iterations": 1,
+  "resolution": 128,
+  "residual_limit": 4.0,
+  "change_loss_weight": 0.25
+}
