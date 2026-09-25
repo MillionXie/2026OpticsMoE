@@ -27,22 +27,27 @@ class ClevrTeacher(nn.Module):
     def __init__(self):
         super().__init__()
         self.image = nn.Sequential(
-            nn.Conv2d(3, 24, 5, stride=2, padding=2), nn.ReLU(),
-            nn.Conv2d(24, 48, 3, stride=2, padding=1), nn.ReLU(),
-            nn.Conv2d(48, 64, 3, stride=2, padding=1), nn.ReLU(),
-            nn.AdaptiveAvgPool2d((4, 4)), nn.Flatten(),
-            nn.Linear(64 * 4 * 4, 128), nn.ReLU(),
+            nn.Conv2d(3, 32, 5, stride=2, padding=2), nn.BatchNorm2d(32), nn.ReLU(),
+            nn.Conv2d(32, 64, 3, stride=2, padding=1), nn.BatchNorm2d(64), nn.ReLU(),
+            nn.Conv2d(64, 96, 3, stride=2, padding=1), nn.BatchNorm2d(96), nn.ReLU(),
         )
         self.tokens = nn.Embedding(26, 32, padding_idx=0)
-        self.classifier = nn.Sequential(nn.Linear(160, 64), nn.ReLU(),
+        self.query = nn.Sequential(nn.Linear(32, 64), nn.ReLU())
+        self.condition = nn.Linear(64, 2 * 96)
+        self.classifier = nn.Sequential(nn.Linear(2 * 96 + 64, 64), nn.ReLU(),
                                         nn.Linear(64, 2))
 
     def forward(self, image, tokens):
         visual = self.image(image)
         mask = (tokens != 0).float()
         words = self.tokens(tokens)
-        text = (words * mask[:, :, None]).sum(1) / mask.sum(1, keepdim=True).clamp_min(1)
-        return self.classifier(torch.cat((visual, text), 1))
+        text = self.query((words * mask[:, :, None]).sum(1)
+                          / mask.sum(1, keepdim=True).clamp_min(1))
+        gamma, beta = self.condition(text).chunk(2, dim=1)
+        visual = F.relu(visual * (1 + 0.5 * gamma.tanh()[:, :, None, None])
+                        + beta[:, :, None, None])
+        pooled = torch.cat((visual.mean((-2, -1)), visual.amax((-2, -1))), 1)
+        return self.classifier(torch.cat((pooled, text), 1))
 
 
 def batch_from(data, indices, device):
