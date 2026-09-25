@@ -1,6 +1,6 @@
 # 冻结共享视觉前端：新协议与阶段性证据（2026-09-25）
 
-本文件记录验证集候选和已经按验证选模后仅测试一次的 A/B 阶段；未完成的 C/D 不填入正式 MoE 下三角矩阵。原无视觉前端协议的数字不可拼入本协议。
+本文件记录验证集候选和已经按验证选模后仅测试一次的 A/B/C 阶段；未完成的 D 不填入正式 MoE 下三角矩阵。原无视觉前端协议的数字不可拼入本协议。
 
 ## 固定电子输入与公平边界
 
@@ -23,18 +23,18 @@ EuroSAT A 两种模型都使用相同输入和无额外训练技巧的 10 输出
 
 阶段 B 从上述 MoE A 出发，旧四专家相位冻结、开放四个新专家；每轮分别遍历 EuroSAT 全部 15,998 条和 CLEVR 全部 140,000 条训练记录一次。由于 CLEVR 批次约为 EuroSAT 的 8.75 倍，按两任务完整验证均值比较旧任务损失权重 1/4/8 与读出头学习率候选。获选 `stage2_moe_replay_old4_head01_sharedvision_s17_d9d5` 使用旧任务损失权重 4、单层 Linear 学习率为光学学习率的 0.1 倍，在第 5 轮验证 EuroSAT/CLEVR 为 **70.23%/79.96%**；一次测试为 **73.65%/79.77%**。旧专家相位逐元素未变。B 的路由仍有偏置：EuroSAT 测试约 99.98% 样本的最大路由权重落在旧槽 13，CLEVR 约 75.53% 落在旧槽 13、24.47% 落在新槽 5；所有八个活动专家都有非零软权重，不能声称已形成均匀专家分工。
 
-正式 MoE 下三角目前已核验三格：
+正式 MoE 下三角目前已核验六格，均为选中 checkpoint 的一次测试集宏平均召回：
 
 | MoE 全训练记录 replay／测试任务 | EuroSAT | CLEVR | Speech | Physical 无帧差 |
 |---|---:|---:|---:|---:|
 | 学完 A | 77.85 |  |  |  |
 | 学完 B | 73.65 | 79.77 |  |  |
-| 学完 C |  |  |  |  |
+| 学完 C | 76.72 | 80.34 | 78.84 |  |
 | 学完 D |  |  |  |  |
 
-C 阶段从获选 B checkpoint 继续，开放第 9–12 槽并保留全部已见任务训练记录。其 `balanced_cycle` 调度先将每个任务的全训练集走完一遍，再循环短任务，使各任务每轮 batch 数相近；所以是**全量加重复**，不是固定 512 样本记忆。C 的第 2 轮完整验证 EuroSAT/CLEVR/Speech 为 **72.06%/80.41%/77.64%**，是尚未选定和测试的中途结果。C/D 的测试须先按完整验证集选 checkpoint，尚未填表。D2NN full replay B 是额外对照；正式 D2NN 无 replay 下三角使用独立的 `--replay-mode none` 入口。
+C 阶段 `stage3_moe_balanced_sharedvision_s17_e696` 从获选 B checkpoint 继续，开放第 9–12 槽并保留全部已见任务训练记录。其 `balanced_cycle` 调度先将每个任务的全训练集走完一遍，再循环短任务，使各任务每轮 batch 数相近；所以是**全量加重复**，不是固定 512 样本记忆。按三任务完整验证均值选中第 4 轮，验证 EuroSAT/CLEVR/Speech 为 **73.42%/80.60%/81.20%**，一次测试为 **76.72%/80.34%/78.84%**；旧专家相位逐元素未变。D 阶段 `stage4_moe_balanced_sharedvision_s17_e696` 已从此获选 checkpoint 启动，开放最后四个专家，使用同一回放调度及原始八帧 Physical。D 的任何测试格仍为空。D2NN full replay B 是额外对照；正式 D2NN 无 replay 下三角使用独立的 `--replay-mode none` 入口。
 
-所有 run 的 `config.json` 保存源码 commit、源协议和视觉 checkpoint 哈希，`history.json` 保存各轮验证，`result.json`／`selected_test.json` 保存选中结果。当前 C/D 仍在推进，任何尚未产生的矩阵单元均为空。
+所有 run 的 `config.json` 保存源码 commit、源协议和视觉 checkpoint 哈希，`history.json` 保存各轮验证，`result.json`／`selected_test.json` 保存选中结果。当前 D 仍在推进，任何尚未产生的矩阵单元均为空。
 
 ## 已完成的固定 D2NN 纯推理 4×4
 
