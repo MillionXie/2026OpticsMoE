@@ -105,15 +105,35 @@ def shuffled_batches(data, name, batch_size, rng, pair_physical=False):
 
 
 def stage_epoch_batches(datasets, names, batch_size, seed, mode="one_pass",
-                        pair_physical=False):
+                        pair_physical=False, memory_cycles=50):
     """Interleave full passes; optionally reshuffle/cycle shorter tasks."""
-    if mode not in ("one_pass", "balanced_cycle"):
+    if mode not in ("one_pass", "balanced_cycle", "memory_spread"):
         raise ValueError("unknown replay schedule")
     pools = {name: shuffled_batches(datasets[name], name, batch_size,
                                     np.random.default_rng(seed + index * 101),
                                     pair_physical=pair_physical)
              for index, name in enumerate(names)}
     steps = max(map(len, pools.values()))
+    if mode == "memory_spread":
+        if len(names) < 2 or memory_cycles <= 0:
+            raise ValueError("memory_spread needs old tasks and positive cycles")
+        repeated = {}
+        for index, name in enumerate(names[:-1]):
+            repeated[name] = list(pools[name])
+            for cycle in range(1, memory_cycles):
+                repeated[name].extend(shuffled_batches(
+                    datasets[name], name, batch_size,
+                    np.random.default_rng(seed + index * 101 + cycle * 100003),
+                    pair_physical=pair_physical))
+        repeated[names[-1]] = pools[names[-1]]
+        steps = max(map(len, repeated.values()))
+        scheduled = {name: {step: batch for step, batch in zip(
+            (np.arange(len(pool)) * steps // len(pool)).tolist(), pool)}
+                     for name, pool in repeated.items()}
+        for step in range(steps):
+            yield {name: batches[step] for name, batches in scheduled.items()
+                   if step in batches}
+        return
     if mode == "balanced_cycle":
         repeated = {}
         for step in range(steps):
@@ -242,8 +262,9 @@ def run_train(args, protocols, device):
         "replay_mode": args.replay_mode,
         "replay_schedule": args.replay_schedule,
         "memory_per_old_task": args.memory_per_old_task if args.replay_mode == "memory" else None,
+        "memory_cycles_per_epoch": args.memory_cycles if args.replay_mode == "memory" else None,
         "full_replay": (
-            "fixed unique training records per old task, reshuffled and cycled per epoch"
+            "fixed unique training records per old task, spread for a bounded number of cycles"
             if args.replay_mode == "memory" else
             "each task traversed completely; shorter tasks reshuffled and repeated"
             if args.replay_mode == "full" and args.replay_schedule == "balanced_cycle"
@@ -339,7 +360,8 @@ def run_train(args, protocols, device):
         for batch_map in stage_epoch_batches(train, train_names, args.batch,
                                              args.seed + args.stage * 1000 + epoch,
                                              mode=args.replay_schedule,
-                                             pair_physical=bool(args.physical_pairwise_weight)):
+                                             pair_physical=bool(args.physical_pairwise_weight),
+                                             memory_cycles=args.memory_cycles):
             optimizer.zero_grad(set_to_none=True)
             step_loss = 0.0
             # Backpropagate each task separately to bound 1026x1026 FFT memory.
@@ -442,7 +464,9 @@ def main(default_architecture="moe"):
     parser.add_argument("--current-task-loss-weight", type=float, default=1.0)
     parser.add_argument("--replay-mode", choices=("full", "none", "memory"), default="full")
     parser.add_argument("--memory-per-old-task", type=int, default=300)
-    parser.add_argument("--replay-schedule", choices=("one_pass", "balanced_cycle"),
+    parser.add_argument("--memory-cycles", type=int, default=50)
+    parser.add_argument("--replay-schedule", choices=("one_pass", "balanced_cycle",
+                                                   "memory_spread"),
                         default="one_pass")
     parser.add_argument("--head-lr-scale", type=float, default=1.0)
     parser.add_argument("--new-expert-init-checkpoint", type=Path)
@@ -466,10 +490,13 @@ def main(default_architecture="moe"):
     if args.replay_mode == "none" and args.replay_schedule != "one_pass":
         raise ValueError("no-replay schedule cannot cycle task data")
     if args.replay_mode == "memory" and (args.architecture != "d2nn" or
-                                         args.replay_schedule != "balanced_cycle" or
+                                         args.replay_schedule != "memory_spread" or
                                          args.memory_per_old_task <= 0 or
-                                         args.memory_per_old_task % 2):
-        raise ValueError("D2NN memory replay requires balanced_cycle and an even size")
+                                         args.memory_per_old_task % 2 or
+                                         args.memory_cycles <= 0):
+        raise ValueError("D2NN memory replay requires memory_spread and a positive budget")
+    if args.replay_mode != "memory" and args.replay_schedule == "memory_spread":
+        raise ValueError("memory_spread requires fixed memory replay")
     if ("runs", "simulation") not in list(zip(args.out.parts, args.out.parts[1:])):
         raise ValueError("stage run must live under runs/simulation")
     torch.manual_seed(args.seed)

@@ -238,6 +238,25 @@ def test_physical_pairwise_schedule_keeps_same_video_pairs_together():
         assert np.all(indices[::2] % 2 == 0)
 
 
+def test_memory_spread_limits_old_exposure_and_covers_current_task():
+    class Records:
+        def __init__(self, count):
+            self.count = count
+
+        def __len__(self):
+            return self.count
+
+    datasets = {"eurosat": Records(8), "clevr": Records(40)}
+    rows = list(stage_epoch_batches(datasets, tuple(datasets), 4, seed=17,
+                                    mode="memory_spread", memory_cycles=3))
+    old = np.concatenate([row["eurosat"] for row in rows if "eurosat" in row])
+    current = np.concatenate([row["clevr"] for row in rows if "clevr" in row])
+    assert len(old) == 3 * 8
+    assert np.array_equal(np.bincount(old, minlength=8), np.full(8, 3))
+    assert np.array_equal(np.sort(current), np.arange(40))
+    assert any("eurosat" not in row for row in rows)
+
+
 def test_lifelong_head_lr_can_be_lowered_without_freezing_optics():
     model = DirectCCDOptics("moe")
     model.configure_stage(1)
