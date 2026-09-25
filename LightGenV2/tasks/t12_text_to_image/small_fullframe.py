@@ -40,6 +40,7 @@ class SmallEditorConfig:
     alpha_maximum: float = .75
     residual_limit: float = 2.0
     control_classes: int = 0
+    learned_source_gate: bool = False
 
 
 class ByteTextEncoder(nn.Module):
@@ -161,6 +162,10 @@ class SmallFullFrameEditor(nn.Module):
         self.up1 = UpBlock(widths[1], widths[0], widths[0], config.condition_dim)
         self.to_delta = nn.Sequential(nn.Conv2d(widths[0], widths[0], 3, padding=1), nn.SiLU(), nn.Conv2d(widths[0], 3, 3, padding=1))
         nn.init.zeros_(self.to_delta[-1].weight); nn.init.zeros_(self.to_delta[-1].bias)
+        self.source_gate = nn.Conv2d(widths[0], 1, 1) if config.learned_source_gate else None
+        if self.source_gate is not None:
+            nn.init.zeros_(self.source_gate.weight)
+            nn.init.constant_(self.source_gate.bias, 4.0)
 
     def encode_condition(self, prompt_tokens: torch.Tensor, control_ids: torch.Tensor | None = None) -> torch.Tensor:
         condition = self.text(prompt_tokens)
@@ -170,7 +175,8 @@ class SmallFullFrameEditor(nn.Module):
             condition = condition + self.control_embedding(control_ids)
         return condition
 
-    def forward(self, reference: torch.Tensor, prompt_tokens: torch.Tensor, noise: torch.Tensor, control_ids: torch.Tensor | None = None) -> torch.Tensor:
+    def forward(self, reference: torch.Tensor, prompt_tokens: torch.Tensor, noise: torch.Tensor,
+                control_ids: torch.Tensor | None = None, *, return_source_gate: bool = False) -> torch.Tensor | tuple[torch.Tensor, torch.Tensor]:
         condition = self.encode_condition(prompt_tokens, control_ids)
         s0 = self.stem(torch.cat((reference, .08*noise), dim=1)); s1 = self.down1(s0); s2 = self.down2(s1)
         value = self.bottleneck(self.down3(s2), condition)
@@ -179,7 +185,15 @@ class SmallFullFrameEditor(nn.Module):
         # Identity-biased parameterisation, not pixel compositing: every pixel
         # is predicted by the network and can move across the full output range.
         base = torch.atanh(reference.float().clamp(-.98, .98))
-        return torch.tanh(base + delta.float())
+        source_logits = self.source_gate(value).float() if self.source_gate is not None else None
+        if source_logits is not None:
+            base = base * torch.sigmoid(source_logits)
+        output = torch.tanh(base + delta.float())
+        if return_source_gate:
+            if source_logits is None:
+                raise ValueError("A learned source gate is required to return source logits")
+            return output, source_logits
+        return output
 
 
 class PromptPairDataset(Dataset[dict[str, Any]]):

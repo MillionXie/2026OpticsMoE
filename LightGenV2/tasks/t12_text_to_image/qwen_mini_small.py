@@ -213,13 +213,17 @@ def train_qwen_mini_editor(
     text_width:int=768,intermediate_width:int=2048,text_heads:int=12,
     warm_start_checkpoint:Path|None=None,
     residual_limit:float=2.0,change_loss_weight:float=0.0,
+    image_size:int=128,
+    learned_source_gate:bool=False,source_gate_loss_weight:float=0.0,
 )->dict[str,Any]:
     if output_dir.exists():raise FileExistsError(output_dir)
     output_dir.mkdir(parents=True);random.seed(seed);np.random.seed(seed);torch.manual_seed(seed)
     # No oracle catalogue/material ID enters the generator.  The condition is
     # produced solely by Qwen-mini so arbitrary phrasings remain deployable.
     # The labels below are retained only for the training-only classifier.
-    editor_config=SmallEditorConfig(control_classes=0,residual_limit=residual_limit)
+    editor_config=SmallEditorConfig(image_size=image_size,control_classes=0,
+                                    residual_limit=residual_limit,
+                                    learned_source_gate=learned_source_gate)
     text_config=QwenMiniConfig(width=text_width,intermediate_width=intermediate_width,
                                heads=text_heads,condition_dim=editor_config.condition_dim)
     datasets={name:build_dataset(task,data_dir,name,editor_config.image_size,instruction_cache) for name in ("train","val","test")}
@@ -229,11 +233,33 @@ def train_qwen_mini_editor(
     if warm_start_checkpoint is not None:
         payload=torch.load(warm_start_checkpoint,map_location="cpu",weights_only=False,mmap=True)
         warm_start=copy_overlapping_state(model,payload["model"])
+        # Phase masks encode a spatial optical grid. When doubling image
+        # resolution, interpolate the learned phase field rather than leaving
+        # three quarters of the 32x32 grid randomly initialized.
+        with torch.no_grad():
+            for name, destination in model.named_parameters():
+                source=payload["model"].get(name)
+                if source is None or not name.endswith("_phase") or source.shape==destination.shape:
+                    continue
+                if source.ndim==3 and destination.ndim==3:
+                    resized=F.interpolate(source.float().unsqueeze(1),size=destination.shape[-2:],mode="bilinear",align_corners=False).squeeze(1)
+                elif source.ndim==2 and destination.ndim==2:
+                    resized=F.interpolate(source.float()[None,None],size=destination.shape[-2:],mode="bilinear",align_corners=False)[0,0]
+                else:
+                    continue
+                destination.copy_(resized.to(device=destination.device,dtype=destination.dtype))
+                warm_start.setdefault("interpolated_phase_masks",[]).append(name)
         del payload
     ema=copy.deepcopy(model).eval().requires_grad_(False);parameters=sum(p.numel() for p in model.parameters())
     if parameters>=50_000_000:raise AssertionError(parameters)
     teacher_head=nn.Linear(text_config.width,lookup.teacher.shape[1]).to(device);classifier=nn.Linear(editor_config.condition_dim,64).to(device)
-    optimizer=torch.optim.AdamW([*model.parameters(),*teacher_head.parameters(),*classifier.parameters()],lr=learning_rate,weight_decay=1e-2)
+    gate_parameters=list(model.source_gate.parameters()) if model.source_gate is not None else []
+    gate_ids={id(parameter) for parameter in gate_parameters}
+    main_parameters=[parameter for parameter in model.parameters() if id(parameter) not in gate_ids]
+    optimizer=torch.optim.AdamW([
+        {"params":[*main_parameters,*teacher_head.parameters(),*classifier.parameters()],"lr":learning_rate},
+        {"params":gate_parameters,"lr":learning_rate*10},
+    ],weight_decay=1e-2)
     scaler=torch.amp.GradScaler("cuda",enabled=device.type=="cuda");initial=evaluate(model,loaders["val"],lookup,device,seed+100)
     best=math.inf;best_epoch=0;history=[];started=time.perf_counter()
     for epoch in range(1,epochs+1):
@@ -243,8 +269,18 @@ def train_qwen_mini_editor(
             if random.random()<.5:reference=reference.flip(-1);target=target.flip(-1);noise=noise.flip(-1)
             optimizer.zero_grad(set_to_none=True)
             with torch.autocast(device.type,dtype=torch.bfloat16,enabled=device.type=="cuda"):
-                output=model(reference,(embeddings,mask),noise,None);hidden=model.text.hidden(embeddings,mask);condition=model.text.condition_projection(hidden)
+                if learned_source_gate:
+                    output,source_logits=model(reference,(embeddings,mask),noise,None,
+                                               return_source_gate=True)
+                else:
+                    output=model(reference,(embeddings,mask),noise,None)
+                hidden=model.text.hidden(embeddings,mask);condition=model.text.condition_projection(hidden)
                 image_loss=F.l1_loss(output,target)+.65*F.mse_loss(output,target)+.10*F.l1_loss(_edge(output),_edge(target))
+                if learned_source_gate and source_gate_loss_weight:
+                    difference=(target-reference).abs().mean(dim=1,keepdim=True)
+                    desired_retention=((0.10-difference)/0.08).clamp(0,1)
+                    image_loss=image_loss+source_gate_loss_weight*F.binary_cross_entropy_with_logits(
+                        source_logits,desired_retention)
                 if change_loss_weight:
                     changed=(target-reference).abs().mean(dim=1,keepdim=True).gt(.08).float()
                     focused=((output-target).abs()*changed).sum()/(3*changed.sum()+1e-6)
@@ -261,7 +297,7 @@ def train_qwen_mini_editor(
             best=validation["mse"];best_epoch=epoch;torch.save({"schema_version":2,"task":task,"editor_config":{**asdict(editor_config),"widths":list(editor_config.widths)},"qwen_mini_config":asdict(text_config),"model":{key:value.detach().half().cpu() for key,value in ema.state_dict().items()},"counted_parameters":parameters,"shared_qwen_token_embedding_excluded":True,"qwen_transformer_layers":2,"generator_condition":"Qwen-mini hidden state only; no oracle class/material ID","epoch":epoch,"validation":validation,"hard_pixel_composite":False,"gan_used":False,"inference_iterations":1},output_dir/"best_model.pt")
         if epoch in {1,5,10,epochs}:save_samples(ema,datasets["val"],lookup,output_dir/"samples"/f"epoch_{epoch:03d}.jpg",device,seed+epoch)
     payload=torch.load(output_dir/"best_model.pt",map_location="cpu",weights_only=False);ema.load_state_dict(payload["model"]);test=evaluate(ema,loaders["test"],lookup,device,seed+999);save_samples(ema,datasets["test"],lookup,output_dir/"final_grid.jpg",device,seed+999)
-    report={"schema_version":2,"task":task,"best_epoch":best_epoch,"parameters":parameters,"under_50m":parameters<50_000_000,"text_frontend":f"shared frozen Qwen tokenizer/embedding -> 2048-to-{text_width} projection -> 2 Qwen-style blocks","qwen_transformer_layers":2,"generator_condition":"Qwen-mini hidden state only; no oracle class/material ID","warm_start":warm_start,"initial_validation":initial,"test":test,"history":history,"training_seconds":time.perf_counter()-started,"optical_alpha":float(ema.bottleneck.fusion.alpha),"hard_pixel_composite":False,"gan_used":False,"inference_iterations":1,"resolution":editor_config.image_size,"residual_limit":residual_limit,"change_loss_weight":change_loss_weight}
+    report={"schema_version":2,"task":task,"best_epoch":best_epoch,"parameters":parameters,"under_50m":parameters<50_000_000,"text_frontend":f"shared frozen Qwen tokenizer/embedding -> 2048-to-{text_width} projection -> 2 Qwen-style blocks","qwen_transformer_layers":2,"generator_condition":"Qwen-mini hidden state only; no oracle class/material ID","warm_start":warm_start,"initial_validation":initial,"test":test,"history":history,"training_seconds":time.perf_counter()-started,"optical_alpha":float(ema.bottleneck.fusion.alpha),"hard_pixel_composite":False,"gan_used":False,"inference_iterations":1,"resolution":editor_config.image_size,"residual_limit":residual_limit,"change_loss_weight":change_loss_weight,"learned_source_gate":learned_source_gate,"source_gate_loss_weight":source_gate_loss_weight}
     (output_dir/"training_summary.json").write_text(json.dumps(report,indent=2)+"\n",encoding="utf-8")
     del model,ema,optimizer,teacher_head,classifier
     if device.type=="cuda":torch.cuda.empty_cache()

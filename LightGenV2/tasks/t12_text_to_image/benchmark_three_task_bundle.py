@@ -167,7 +167,10 @@ def _small_generator(model: SmallFullFrameEditor, reference: torch.Tensor, noise
     value = model.up2(value, s1, condition)
     value = model.up1(value, s0, condition)
     delta = torch.tanh(model.to_delta(value)) * model.config.residual_limit
-    return torch.tanh(torch.atanh(reference.float().clamp(-0.98, 0.98)) + delta.float())
+    base = torch.atanh(reference.float().clamp(-0.98, 0.98))
+    if model.source_gate is not None:
+        base = base * torch.sigmoid(model.source_gate(value).float())
+    return torch.tanh(base + delta.float())
 
 
 @torch.inference_mode()
