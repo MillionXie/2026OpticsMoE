@@ -174,6 +174,29 @@ def test_lifelong_replay_covers_all_old_records_and_preserves_clevr_pairs():
         assert np.all(clevr[::2] % 2 == 0)
 
 
+def test_balanced_cycle_replay_covers_every_record_before_repeating_short_task():
+    class Records:
+        def __init__(self, count):
+            self.count = count
+
+        def __len__(self):
+            return self.count
+
+    datasets = {"eurosat": Records(8), "clevr": Records(14)}
+    rows = list(stage_epoch_batches(datasets, tuple(datasets), 4, seed=17,
+                                    mode="balanced_cycle"))
+    assert len(rows) == 4
+    assert all(set(row) == set(datasets) for row in rows)
+    first_pass = np.concatenate([rows[0]["eurosat"], rows[1]["eurosat"]])
+    assert np.array_equal(np.sort(first_pass), np.arange(8))
+    assert sum(len(row["eurosat"]) for row in rows) == 16
+    assert np.array_equal(np.sort(np.concatenate([row["clevr"] for row in rows])),
+                          np.arange(14))
+    for row in rows:
+        clevr = row["clevr"]
+        assert np.array_equal(clevr[1::2], clevr[::2] + 1)
+
+
 def test_lifelong_head_lr_can_be_lowered_without_freezing_optics():
     model = DirectCCDOptics("moe")
     model.configure_stage(1)

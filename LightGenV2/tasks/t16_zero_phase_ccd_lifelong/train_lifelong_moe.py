@@ -68,12 +68,31 @@ def shuffled_batches(data, name, batch_size, rng):
             range(batch_size, len(order), batch_size))]
 
 
-def stage_epoch_batches(datasets, names, batch_size, seed):
-    """Interleave every task's batches evenly, with no record repeated per epoch."""
+def stage_epoch_batches(datasets, names, batch_size, seed, mode="one_pass"):
+    """Interleave full passes; optionally reshuffle/cycle shorter tasks."""
+    if mode not in ("one_pass", "balanced_cycle"):
+        raise ValueError("unknown replay schedule")
     pools = {name: shuffled_batches(datasets[name], name, batch_size,
                                     np.random.default_rng(seed + index * 101))
              for index, name in enumerate(names)}
     steps = max(map(len, pools.values()))
+    if mode == "balanced_cycle":
+        repeated = {}
+        for step in range(steps):
+            row = {}
+            for index, name in enumerate(names):
+                cycle, offset = divmod(step, len(pools[name]))
+                if cycle == 0:
+                    row[name] = pools[name][offset]
+                else:
+                    key = (name, cycle)
+                    if key not in repeated:
+                        repeated[key] = shuffled_batches(
+                            datasets[name], name, batch_size,
+                            np.random.default_rng(seed + index * 101 + cycle * 100003))
+                    row[name] = repeated[key][offset]
+            yield row
+        return
     scheduled = {name: {step: batch for step, batch in zip(
                     (np.arange(len(pool)) * steps // len(pool)).tolist(), pool)}
                  for name, pool in pools.items()}
@@ -178,8 +197,12 @@ def run_train(args, protocols, device):
         "stage": args.stage, "order": order, "architecture": args.architecture,
         "activation_order": "center_out", "readout": "one shared Linear(784,10), bias=False",
         "replay_mode": args.replay_mode,
-        "full_replay": ("all records of every learned task exactly once per epoch; interleaved"
-                        if args.replay_mode == "full" else "current task only; no replay"),
+        "replay_schedule": args.replay_schedule,
+        "full_replay": (
+            "each task traversed completely; shorter tasks reshuffled and repeated"
+            if args.replay_mode == "full" and args.replay_schedule == "balanced_cycle"
+            else "all records of every learned task exactly once per epoch; interleaved"
+            if args.replay_mode == "full" else "current task only; no replay"),
         "current_task": names[-1], "learned_tasks": names,
         "protocol_sha256": {n: sha256_file(protocols[n]) for n in names},
         "vision_checkpoint_sha256": (sha256_file(args.vision_checkpoint)
@@ -249,7 +272,8 @@ def run_train(args, protocols, device):
         loss_sum = 0.0
         steps = 0
         for batch_map in stage_epoch_batches(train, train_names, args.batch,
-                                             args.seed + args.stage * 1000 + epoch):
+                                             args.seed + args.stage * 1000 + epoch,
+                                             mode=args.replay_schedule):
             optimizer.zero_grad(set_to_none=True)
             step_loss = 0.0
             # Backpropagate each task separately to bound 1026x1026 FFT memory.
@@ -348,6 +372,8 @@ def main(default_architecture="moe"):
     parser.add_argument("--route-balance-weight", type=float, default=0.0)
     parser.add_argument("--old-task-loss-weight", type=float, default=1.0)
     parser.add_argument("--replay-mode", choices=("full", "none"), default="full")
+    parser.add_argument("--replay-schedule", choices=("one_pass", "balanced_cycle"),
+                        default="one_pass")
     parser.add_argument("--head-lr-scale", type=float, default=1.0)
     parser.add_argument("--new-expert-init-checkpoint", type=Path)
     parser.add_argument("--vision-checkpoint", type=Path)
@@ -365,6 +391,8 @@ def main(default_architecture="moe"):
         raise ValueError("D2NN has no router or expert warm start")
     if args.architecture == "moe" and args.replay_mode != "full":
         raise ValueError("MoE sequential protocol requires replay")
+    if args.replay_mode == "none" and args.replay_schedule != "one_pass":
+        raise ValueError("no-replay schedule cannot cycle task data")
     if ("runs", "simulation") not in list(zip(args.out.parts, args.out.parts[1:])):
         raise ValueError("stage run must live under runs/simulation")
     torch.manual_seed(args.seed)

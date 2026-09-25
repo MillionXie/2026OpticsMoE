@@ -10,6 +10,8 @@
 
 顺序 D2NN 可以用 `--replay-mode none` 运行用户要求的无回放下三角：每轮只训练新任务，却每阶段评估全部已见任务；`--replay-mode full` 则与 MoE 一样遍历全部旧任务完整训练记录，用作额外的 replay 对照。MoE 正式链只允许 full。两者必须从各自同一冻结视觉前端的 EuroSAT A checkpoint 开始，不能拿旧无前端矩阵拼接。
 
+MoE 在 B 阶段使用 `--replay-schedule one_pass` 时，所有已学训练记录每轮各遍历一次；C/D 因 CLEVR 140,000 条远多于 EuroSAT 15,998 条、Speech 12,526 条，候选可改 `--replay-schedule balanced_cycle`：先让每任务完整遍历，再对短任务重新打乱并循环，直到每任务批次数相同。C 的 32 样本批次约为 CLEVR 4,375、EuroSAT 500、Speech 392，因此短任务会重复约 9／11 轮；这增加训练时间与重复曝光，必须在 run 配置中显式标注，不得称为“每旧样本仅看一次”。
+
 ## 2026-09-25 正式顺序实验边界
 
 已确定输入协议的 EuroSAT／Speech 两个独立 D2NN 完成了不调参数的 2×2 直接迁移推理；[结果与限制](reports/d2nn_partial_transfer_20260925.md)。Physical 的视频帧输入及固定帧差影响见[输入审查](PHYSICAL_INPUT_AUDIT_20260925.md)。这两项记录均不能替代尚未完成的四任务三张正式矩阵。
