@@ -1,0 +1,36 @@
+{
+  "schema_version": 1,
+  "checkpoint": "/DATA/DATA1/guest3/t12_assets/runs/abo_unified_qwenmini2_optical_13m_v1/best_model.pt",
+  "counted_parameters": 13711128,
+  "resolution": 128,
+  "test_pairs": 1024,
+  "source_views": 128,
+  "fixed_target_designs": 4,
+  "metrics_by_mode": {
+    "background": {
+      "n": 512,
+      "mse": 0.0011074331168856588,
+      "l1": 0.02152470182045363,
+      "edge_l1": 0.05757974134758115,
+      "copy_mse": 0.16159924888052046,
+      "improvement_over_copy": 0.99314704044383
+    },
+    "object": {
+      "n": 256,
+      "mse": 0.0009140851057054533,
+      "l1": 0.009579235884302761,
+      "edge_l1": 0.03251479298342019,
+      "copy_mse": 0.06569794297683984,
+      "improvement_over_copy": 0.9860865490715943
+    },
+    "joint": {
+      "n": 256,
+      "mse": 0.0018845772137865424,
+      "l1": 0.027163246006239206,
+      "edge_l1": 0.07578393717994913,
+      "copy_mse": 0.2154916386352852,
+      "improvement_over_copy": 0.9912545227939161
+    }
+  },
+  "fid_caveat": "Repeated paired targets and four fixed object designs; not open-set FID"
+}

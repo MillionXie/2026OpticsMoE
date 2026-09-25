@@ -22,6 +22,7 @@ from .modeling import CompactFourierOptics, ConditionedElectronicResidual, Scale
 from .premium_material_data import PremiumMaterialDataset
 from .product_global_redesign_data import ProductGlobalRedesignDataset
 from .product_scene_replace_data import ProductBackgroundReplacementDataset
+from .product_unified_edit_data import UnifiedProductEditDataset
 
 
 @dataclass(frozen=True)
@@ -193,17 +194,21 @@ class PromptPairDataset(Dataset[dict[str, Any]]):
                 int(value["room_index"]) * 12 + int(value["tone_index"]) * 4
                 + int(value["brightness_index"]) * 2 + int(value["direction_index"])
             )
-        return {
+        item = {
             "reference": value["reference"], "target": value["target"],
             "prompt": value["prompt"], "sample_id": value["sample_id"],
             "condition_index": condition_index,
         }
+        if "mode" in value:
+            item["mode"] = value["mode"]
+        return item
 
 
 DATASETS = {
     "background": ProductBackgroundReplacementDataset,
     "redesign": ProductGlobalRedesignDataset,
     "premium": PremiumMaterialDataset,
+    "unified": UnifiedProductEditDataset,
 }
 
 

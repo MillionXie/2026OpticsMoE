@@ -1,0 +1,144 @@
+{
+  "schema_version": 1,
+  "task": "independently controlled product and background editing",
+  "categories": [
+    "lamp",
+    "table"
+  ],
+  "chairs_used": false,
+  "best_epoch": 2,
+  "initial_validation": {
+    "latent_mse": 0.556277082170709,
+    "latent_l1": 0.527057407569373,
+    "reference_mse": 0.5300412168726325,
+    "catalogue_accuracy": 0.5,
+    "mse_improvement_over_copy": -0.049497783309898624,
+    "background_latent_mse": 0.5091637899313355,
+    "object_latent_mse": 0.41084412671625614,
+    "joint_latent_mse": 0.7959366189315915
+  },
+  "test": {
+    "latent_mse": 0.04312357896924368,
+    "latent_l1": 0.13546641092398204,
+    "reference_mse": 0.5292499428323936,
+    "catalogue_accuracy": 1.0,
+    "mse_improvement_over_copy": 0.9185194452011488,
+    "background_latent_mse": 0.05946823862177553,
+    "object_latent_mse": 0.01369582172446826,
+    "joint_latent_mse": 0.039862017387349624
+  },
+  "parameters": {
+    "qwen_transformer_and_norm": 11904288,
+    "vae_encoder": 34163664,
+    "unet_including_optics": 42682473,
+    "adapter": 4273280,
+    "router": 14341,
+    "vae_decoder": 49490199,
+    "total": 142528245
+  },
+  "attention_pruning": {
+    "spec": [
+      {
+        "side": "down",
+        "block": 0,
+        "attention": 0,
+        "removed_parameters": 592512
+      },
+      {
+        "side": "down",
+        "block": 1,
+        "attention": 0,
+        "removed_parameters": 1840384
+      },
+      {
+        "side": "up",
+        "block": 0,
+        "attention": 1,
+        "removed_parameters": 6302208
+      },
+      {
+        "side": "up",
+        "block": 1,
+        "attention": 0,
+        "removed_parameters": 1840384
+      },
+      {
+        "side": "up",
+        "block": 1,
+        "attention": 1,
+        "removed_parameters": 1840384
+      },
+      {
+        "side": "up",
+        "block": 2,
+        "attention": 0,
+        "removed_parameters": 592512
+      },
+      {
+        "side": "up",
+        "block": 2,
+        "attention": 1,
+        "removed_parameters": 592512
+      }
+    ],
+    "removed_parameters": 13600896,
+    "remaining_parameters": 42054276,
+    "parameters_after_optical": 42682473,
+    "structured_widths": [
+      128,
+      256,
+      512
+    ],
+    "original_widths": [
+      320,
+      640,
+      1280
+    ],
+    "width_fraction": 0.4
+  },
+  "history": [
+    {
+      "epoch": 1,
+      "train_loss": 0.2678082002110184,
+      "validation": {
+        "latent_mse": 0.05281494195514824,
+        "latent_l1": 0.15084352577105165,
+        "reference_mse": 0.5300412168726325,
+        "catalogue_accuracy": 1.0,
+        "mse_improvement_over_copy": 0.9003569151343196,
+        "background_latent_mse": 0.06871988818602404,
+        "object_latent_mse": 0.02185275279043708,
+        "joint_latent_mse": 0.05196723972039763
+      },
+      "optical_alpha": 0.5055046081542969
+    },
+    {
+      "epoch": 2,
+      "train_loss": 0.15422714717149372,
+      "validation": {
+        "latent_mse": 0.044860706088911684,
+        "latent_l1": 0.13525842601666227,
+        "reference_mse": 0.5300412168726325,
+        "catalogue_accuracy": 1.0,
+        "mse_improvement_over_copy": 0.9153637402887262,
+        "background_latent_mse": 0.06273704222985543,
+        "object_latent_mse": 0.014223132789993542,
+        "joint_latent_mse": 0.0397456080027041
+      },
+      "optical_alpha": 0.5060526728630066
+    }
+  ],
+  "training_seconds": 1002.4713763594627,
+  "gan_used": false,
+  "hard_pixel_composite_at_inference": false,
+  "inference_iterations": 1,
+  "warm_start_checkpoint": "/DATA/DATA1/guest3/t12_assets/runs/abo_unified_2layer_282m_epoch2_snapshot.pt",
+  "warm_start_copy": {
+    "target_parameters": 42682473,
+    "copied_values": 42682473,
+    "exact_values": 282601,
+    "partial_values": 42399872,
+    "coverage": 1.0,
+    "missing_keys": []
+  }
+}

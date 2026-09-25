@@ -20,7 +20,7 @@ from .electronic_turbo_infer import _load_adapter
 from .product_global_redesign_data import ProductGlobalRedesignDataset
 from .product_repair_model import RepairModelConfig, one_step_edit
 from .product_scene_training import SceneTrainingConfig, _paired_noise, _seed_everything, load_scene_config
-from .progressive_student import build_narrow_optical_unet, counted_student_parameters
+from .progressive_student import build_narrow_optical_unet, copy_overlapping_state, counted_student_parameters
 
 
 class RedesignLatentDataset(Dataset[dict[str, Any]]):
@@ -31,13 +31,16 @@ class RedesignLatentDataset(Dataset[dict[str, Any]]):
         return len(self.payload["reference"])
 
     def __getitem__(self, index: int) -> dict[str, Any]:
-        return {
+        item = {
             "reference": self.payload["reference"][index].float(),
             "target": self.payload["target"][index].float(),
             "qwen_text": self.payload["qwen_text"][index].float(),
             "catalogue_indices": self.payload["catalogue_indices"][index],
             "seed": self.payload.get("seeds", list(range(len(self))))[index],
         }
+        if "modes" in self.payload:
+            item["mode"] = self.payload["modes"][index]
+        return item
 
 
 @torch.inference_mode()
@@ -69,6 +72,7 @@ def cache_redesign_latents(
         values: dict[str, list[Any]] = {key: [] for key in (
             "reference", "target", "qwen_text", "catalogue_indices", "sample_ids", "prompts", "seeds",
         )}
+        values["modes"] = []
         for batch in loader:
             reference = batch["reference"].to(device=device, dtype=dtype, non_blocking=True)
             target = batch["target"].to(device=device, dtype=dtype, non_blocking=True)
@@ -78,13 +82,15 @@ def cache_redesign_latents(
             values["catalogue_indices"].extend(batch["catalogue_index"].tolist())
             values["sample_ids"].extend(batch["sample_id"])
             values["prompts"].extend(batch["prompt"])
+            if "mode" in batch:
+                values["modes"].extend(batch["mode"])
             if "seed" in batch:
                 values["seeds"].extend(torch.as_tensor(batch["seed"]).tolist())
             else:
                 values["seeds"].extend(range(len(values["seeds"]), len(values["seeds"]) + len(reference)))
         packed = {
             key: torch.cat(value) if key in {"reference", "target", "qwen_text"} else value
-            for key, value in values.items()
+            for key, value in values.items() if key != "modes" or value
         }
         torch.save(packed, output_dir / f"{split}.pt")
         summary["splits"][split] = len(dataset)
@@ -118,6 +124,7 @@ def _evaluate(unet, adapter, router, loader, sigma, device, training: SceneTrain
     unet.eval(); adapter.eval(); router.eval()
     totals = {"latent_mse": 0.0, "latent_l1": 0.0, "reference_mse": 0.0, "catalogue_accuracy": 0.0}
     count = 0
+    by_mode: dict[str, dict[str, float]] = {}
     generator = torch.Generator(device=device).manual_seed(6543)
     for batch in loader:
         reference = batch["reference"].to(device); target = batch["target"].to(device)
@@ -133,9 +140,16 @@ def _evaluate(unet, adapter, router, loader, sigma, device, training: SceneTrain
         totals["latent_l1"] += float(F.l1_loss(output, target)) * size
         totals["reference_mse"] += float(F.mse_loss(reference, target)) * size
         totals["catalogue_accuracy"] += float((router(text).argmax(-1) == labels).float().mean()) * size
+        if "mode" in batch:
+            for index, mode in enumerate(batch["mode"]):
+                row = by_mode.setdefault(mode, {"latent_mse": 0.0, "count": 0.0})
+                row["latent_mse"] += float(F.mse_loss(output[index], target[index]))
+                row["count"] += 1
         count += size
     result = {key: value / count for key, value in totals.items()}
     result["mse_improvement_over_copy"] = 1.0 - result["latent_mse"] / max(result["reference_mse"], 1e-8)
+    for mode, row in by_mode.items():
+        result[f"{mode}_latent_mse"] = row["latent_mse"] / row["count"]
     return result
 
 
@@ -188,6 +202,7 @@ def train_redesign_model(
     device: torch.device, seed: int = 42,
     dataset_class=ProductGlobalRedesignDataset,
     task_name: str = "full-frame text-guided product redesign",
+    student_widths: tuple[int, int, int] | None = None,
 ) -> dict[str, Any]:
     if output_dir.exists():
         raise FileExistsError(output_dir)
@@ -195,10 +210,15 @@ def train_redesign_model(
     from diffusers import AutoencoderKL, EulerDiscreteScheduler, UNet2DConditionModel
 
     warm = torch.load(warm_start_checkpoint, map_location="cpu", weights_only=False, mmap=True)
-    widths = tuple(int(value) for value in warm["student_widths"])
+    widths = tuple(int(value) for value in (student_widths or warm["student_widths"]))
     base_config = UNet2DConditionModel.load_config(initial_unet, subfolder="unet", local_files_only=True)
     unet, optical, pruning = build_narrow_optical_unet(base_config, widths, model_config)
-    unet.load_state_dict(warm["unet"]); unet = unet.to(device)
+    if widths == tuple(int(value) for value in warm["student_widths"]):
+        unet.load_state_dict(warm["unet"])
+        warm_copy = {"exact": True}
+    else:
+        warm_copy = copy_overlapping_state(unet, warm["unet"])
+    unet = unet.to(device)
     adapter, _ = _load_adapter(adapter_checkpoint, device)
     adapter.load_state_dict(warm["adapter"]); adapter.requires_grad_(True)
     datasets = {name: RedesignLatentDataset(latent_cache_dir / f"{name}.pt") for name in ("train", "val", "test")}
@@ -297,6 +317,7 @@ def train_redesign_model(
         "training_seconds": time.perf_counter() - started, "gan_used": False,
         "hard_pixel_composite_at_inference": False, "inference_iterations": 1,
         "warm_start_checkpoint": str(warm_start_checkpoint),
+        "warm_start_copy": warm_copy,
     }
     (output_dir / "training_summary.json").write_text(json.dumps(report, indent=2) + "\n", encoding="utf-8")
     del unet, adapter, router, vae, optimizer, warm, best_payload

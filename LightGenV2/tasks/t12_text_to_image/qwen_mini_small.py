@@ -25,6 +25,7 @@ from torch.utils.data import DataLoader
 
 from .feature_cache import _qwen_prompts
 from .half_qwen import load_half_qwen_text_encoder
+from .progressive_student import copy_overlapping_state
 from .small_fullframe import (
     PromptPairDataset, SmallEditorConfig, SmallFullFrameEditor, _edge,
     build_dataset,
@@ -183,16 +184,25 @@ def save_samples(model,dataset:PromptPairDataset,lookup,output:Path,device,seed)
 def train_qwen_mini_editor(
     *,task:str,data_dir:Path,instruction_cache:Path,embedding_cache:Path,output_dir:Path,
     device:torch.device,epochs:int=20,batch_size:int=16,learning_rate:float=2e-4,seed:int=42,
+    text_width:int=768,intermediate_width:int=2048,text_heads:int=12,
+    warm_start_checkpoint:Path|None=None,
 )->dict[str,Any]:
     if output_dir.exists():raise FileExistsError(output_dir)
     output_dir.mkdir(parents=True);random.seed(seed);np.random.seed(seed);torch.manual_seed(seed)
     # No oracle catalogue/material ID enters the generator.  The condition is
     # produced solely by Qwen-mini so arbitrary phrasings remain deployable.
     # The labels below are retained only for the training-only classifier.
-    editor_config=SmallEditorConfig(control_classes=0);text_config=QwenMiniConfig(condition_dim=editor_config.condition_dim)
+    editor_config=SmallEditorConfig(control_classes=0)
+    text_config=QwenMiniConfig(width=text_width,intermediate_width=intermediate_width,
+                               heads=text_heads,condition_dim=editor_config.condition_dim)
     datasets={name:build_dataset(task,data_dir,name,editor_config.image_size,instruction_cache) for name in ("train","val","test")}
     loaders={name:DataLoader(value,batch_size=batch_size,shuffle=name=="train",num_workers=4,pin_memory=True,persistent_workers=True) for name,value in datasets.items()}
     lookup=PromptEmbeddingLookup(embedding_cache);model=SmallFullFrameEditor(editor_config);model.text=QwenMiniTextEncoder(text_config);model=model.to(device)
+    warm_start=None
+    if warm_start_checkpoint is not None:
+        payload=torch.load(warm_start_checkpoint,map_location="cpu",weights_only=False,mmap=True)
+        warm_start=copy_overlapping_state(model,payload["model"])
+        del payload
     ema=copy.deepcopy(model).eval().requires_grad_(False);parameters=sum(p.numel() for p in model.parameters())
     if parameters>=50_000_000:raise AssertionError(parameters)
     teacher_head=nn.Linear(text_config.width,lookup.teacher.shape[1]).to(device);classifier=nn.Linear(editor_config.condition_dim,64).to(device)
@@ -220,7 +230,7 @@ def train_qwen_mini_editor(
             best=validation["mse"];best_epoch=epoch;torch.save({"schema_version":2,"task":task,"editor_config":{**asdict(editor_config),"widths":list(editor_config.widths)},"qwen_mini_config":asdict(text_config),"model":{key:value.detach().half().cpu() for key,value in ema.state_dict().items()},"counted_parameters":parameters,"shared_qwen_token_embedding_excluded":True,"qwen_transformer_layers":2,"generator_condition":"Qwen-mini hidden state only; no oracle class/material ID","epoch":epoch,"validation":validation,"hard_pixel_composite":False,"gan_used":False,"inference_iterations":1},output_dir/"best_model.pt")
         if epoch in {1,5,10,epochs}:save_samples(ema,datasets["val"],lookup,output_dir/"samples"/f"epoch_{epoch:03d}.jpg",device,seed+epoch)
     payload=torch.load(output_dir/"best_model.pt",map_location="cpu",weights_only=False);ema.load_state_dict(payload["model"]);test=evaluate(ema,loaders["test"],lookup,device,seed+999);save_samples(ema,datasets["test"],lookup,output_dir/"final_grid.jpg",device,seed+999)
-    report={"schema_version":2,"task":task,"best_epoch":best_epoch,"parameters":parameters,"under_50m":parameters<50_000_000,"text_frontend":"shared frozen Qwen tokenizer/embedding -> 2048-to-768 projection -> 2 Qwen-style blocks","qwen_transformer_layers":2,"generator_condition":"Qwen-mini hidden state only; no oracle class/material ID","initial_validation":initial,"test":test,"history":history,"training_seconds":time.perf_counter()-started,"optical_alpha":float(ema.bottleneck.fusion.alpha),"hard_pixel_composite":False,"gan_used":False,"inference_iterations":1,"resolution":editor_config.image_size}
+    report={"schema_version":2,"task":task,"best_epoch":best_epoch,"parameters":parameters,"under_50m":parameters<50_000_000,"text_frontend":f"shared frozen Qwen tokenizer/embedding -> 2048-to-{text_width} projection -> 2 Qwen-style blocks","qwen_transformer_layers":2,"generator_condition":"Qwen-mini hidden state only; no oracle class/material ID","warm_start":warm_start,"initial_validation":initial,"test":test,"history":history,"training_seconds":time.perf_counter()-started,"optical_alpha":float(ema.bottleneck.fusion.alpha),"hard_pixel_composite":False,"gan_used":False,"inference_iterations":1,"resolution":editor_config.image_size}
     (output_dir/"training_summary.json").write_text(json.dumps(report,indent=2)+"\n",encoding="utf-8")
     del model,ema,optimizer,teacher_head,classifier
     if device.type=="cuda":torch.cuda.empty_cache()
