@@ -1,4 +1,4 @@
-"""Sequential T16 MoE with one shared head and exhaustive old-task replay.
+"""Sequential T16 MoE/D2NN with one shared head and exhaustive replay.
 
 One invocation trains one dependent stage (B, C or D). Stage A is an audited
 EuroSAT MoE checkpoint. Candidate stages may omit test; only the chosen stage
@@ -49,7 +49,8 @@ def load_dataset(protocols, name, split):
             raise ValueError("EuroSAT count changed")
         return data
     task = {"clevr": "clevr", "speech_binary": "speech_binary",
-            "physical_binary": "physical_binary"}[name]
+            "physical_binary": "physical_binary",
+            "physical_binary_raw": "physical_binary_raw"}[name]
     return load_task(protocols[name], task, split)
 
 
@@ -88,7 +89,8 @@ def task_loss(logits, target, name, pairwise_weight):
     return loss
 
 
-def load_previous(model, path, stage, protocols, device):
+def load_previous(model, path, stage, protocols, device, order=ORDER,
+                  architecture="moe"):
     checkpoint = torch.load(path, map_location=device, weights_only=False)
     prior = checkpoint.get("config", {})
     if stage == 2:
@@ -96,13 +98,15 @@ def load_previous(model, path, stage, protocols, device):
         expected = {"trainval": sha256_file(trainval), "holdout": sha256_file(holdout)}
         if (prior.get("task") != "eurosat_paired_rgb_sar" or
                 prior.get("source_sha256") != expected or
-                prior.get("architecture") != "moe"):
+                prior.get("architecture") != architecture):
             raise ValueError("stage A checkpoint has a different task or data")
     else:
-        if prior.get("stage") != stage - 1 or tuple(prior.get("order", ())) != ORDER:
-            raise ValueError("previous checkpoint is not the dependent MoE stage")
+        if (prior.get("stage") != stage - 1 or
+                tuple(prior.get("order", ())) != tuple(order) or
+                prior.get("architecture") != architecture):
+            raise ValueError("previous checkpoint is not the dependent stage")
         expected_hashes = {name: sha256_file(protocols[name])
-                           for name in ORDER[:stage - 1]}
+                           for name in order[:stage - 1]}
         if prior.get("protocol_sha256") != expected_hashes:
             raise ValueError("previous checkpoint used different task protocols")
     if prior.get("activation_order") != "center_out":
@@ -139,13 +143,35 @@ def make_optimizer(model, lr, head_lr_scale):
     return optimizer, parameters
 
 
+def initialize_new_experts(model, path, stage, clevr_protocol, device):
+    """Warm only B's four new phase masks from a standalone original-CLEVR MoE."""
+    if path is None:
+        return
+    if stage != 2 or model.architecture != "moe":
+        raise ValueError("CLEVR expert warm start applies only to MoE stage B")
+    checkpoint = torch.load(path, map_location=device, weights_only=False)
+    config = checkpoint.get("config", {})
+    if (config.get("task") != "clevr" or config.get("architecture") != "moe" or
+            config.get("activation_order") != "center_out" or
+            config.get("source_protocol_sha256") != sha256_file(clevr_protocol)):
+        raise ValueError("warm checkpoint does not match original CLEVR input")
+    source = DirectCCDOptics("moe", activation_order="center_out").to(device)
+    source.load_state_dict(checkpoint["model"])
+    new_indices = model.active_indices[4:8].tolist()
+    first_indices = model.active_indices[:4].tolist()
+    with torch.no_grad():
+        for destination, original in zip(new_indices, first_indices):
+            model.first_phase[destination].copy_(source.first_phase[original])
+
+
 def run_train(args, protocols, device):
     if args.stage not in (2, 3, 4) or args.previous_checkpoint is None:
         raise ValueError("training requires stage 2/3/4 and its previous checkpoint")
-    names = ORDER[:args.stage]
+    order = ("eurosat", "clevr", "speech_binary", args.physical_task)
+    names = order[:args.stage]
     commit = subprocess.check_output(["git", "rev-parse", "HEAD"], text=True).strip()
     config = {
-        "stage": args.stage, "order": ORDER, "architecture": "moe",
+        "stage": args.stage, "order": order, "architecture": args.architecture,
         "activation_order": "center_out", "readout": "one shared Linear(784,10), bias=False",
         "full_replay": "all records of every learned task exactly once per epoch; interleaved",
         "current_task": names[-1], "learned_tasks": names,
@@ -159,6 +185,10 @@ def run_train(args, protocols, device):
         "route_balance_weight": args.route_balance_weight,
         "old_task_loss_weight": args.old_task_loss_weight,
         "head_lr_scale": args.head_lr_scale,
+        "new_expert_init_checkpoint": (str(args.new_expert_init_checkpoint)
+                                       if args.new_expert_init_checkpoint else None),
+        "new_expert_init_sha256": (sha256_file(args.new_expert_init_checkpoint)
+                                   if args.new_expert_init_checkpoint else None),
         "test_policy": "omitted" if args.skip_test else "once after validation selection",
         "selection": "mean full-validation macro recall of all learned tasks",
         "model_git_commit": commit,
@@ -177,11 +207,16 @@ def run_train(args, protocols, device):
 
     train = {name: load_dataset(protocols, name, "train") for name in names}
     val = {name: load_dataset(protocols, name, "val") for name in names}
-    model = DirectCCDOptics("moe", activation_order="center_out").to(device)
+    model = DirectCCDOptics(args.architecture, activation_order="center_out").to(device)
     validate_head(model)
-    load_previous(model, args.previous_checkpoint, args.stage, protocols, device)
+    load_previous(model, args.previous_checkpoint, args.stage, protocols, device,
+                  order=order, architecture=args.architecture)
     model.configure_stage(args.stage - 1)
-    old_indices = model.active_indices[:4 * (args.stage - 1)].tolist()
+    if not args.resume:
+        initialize_new_experts(model, args.new_expert_init_checkpoint, args.stage,
+                               protocols["clevr"], device)
+    old_indices = (model.active_indices[:4 * (args.stage - 1)].tolist()
+                   if args.architecture == "moe" else [])
     old_phases = {index: model.first_phase[index].detach().cpu().clone()
                   for index in old_indices}
     optimizer, parameters = make_optimizer(model, args.lr, args.head_lr_scale)
@@ -263,7 +298,8 @@ def run_train(args, protocols, device):
         raise AssertionError("an old expert phase changed")
     result = {"stage": args.stage, "learned_tasks": names,
               "selected_epoch": best_epoch, "validation": selected["validation"],
-              "validation_mean": best_score, "old_experts_unchanged": unchanged,
+              "validation_mean": best_score,
+              "old_experts_unchanged": unchanged if args.architecture == "moe" else None,
               "shared_head": "one trainable Linear(784,10)"}
     if not args.skip_test:
         test = {name: load_dataset(protocols, name, "test") for name in names}
@@ -275,8 +311,12 @@ def run_train(args, protocols, device):
     print(json.dumps({"result": result}), flush=True)
 
 
-def main():
+def main(default_architecture="moe"):
     parser = argparse.ArgumentParser()
+    parser.add_argument("--architecture", choices=("moe", "d2nn"),
+                        default=default_architecture)
+    parser.add_argument("--physical-task", choices=("physical_binary", "physical_binary_raw"),
+                        default="physical_binary_raw")
     parser.add_argument("--stage", type=int, required=True)
     parser.add_argument("--previous-checkpoint", type=Path, required=True)
     parser.add_argument("--eurosat", type=Path, required=True)
@@ -295,6 +335,7 @@ def main():
     parser.add_argument("--route-balance-weight", type=float, default=0.0)
     parser.add_argument("--old-task-loss-weight", type=float, default=1.0)
     parser.add_argument("--head-lr-scale", type=float, default=1.0)
+    parser.add_argument("--new-expert-init-checkpoint", type=Path)
     parser.add_argument("--skip-test", action="store_true")
     parser.add_argument("--resume", action="store_true")
     args = parser.parse_args()
@@ -304,12 +345,15 @@ def main():
             args.route_balance_weight >= 0 and args.old_task_loss_weight > 0 and
             args.head_lr_scale > 0):
         raise ValueError("invalid stage training budget")
+    if args.architecture == "d2nn" and (args.route_balance_weight or
+                                          args.new_expert_init_checkpoint):
+        raise ValueError("D2NN has no router or expert warm start")
     if ("runs", "simulation") not in list(zip(args.out.parts, args.out.parts[1:])):
         raise ValueError("stage run must live under runs/simulation")
     torch.manual_seed(args.seed)
     np.random.seed(args.seed)
-    protocols = dict(zip(ORDER, (args.eurosat, args.clevr,
-                                 args.speech, args.physical)))
+    protocols = dict(zip(("eurosat", "clevr", "speech_binary", args.physical_task),
+                         (args.eurosat, args.clevr, args.speech, args.physical)))
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     try:
         run_train(args, protocols, device)
