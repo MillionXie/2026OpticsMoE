@@ -42,3 +42,4 @@ EuroSAT A 两种模型都使用相同输入和无额外训练技巧的 10 输出
 
 - full replay 额外对照 `stage2_d2nn_replay_sharedvision_s17_b015` 已按验证选中第 4 轮并测试一次：学完 B 后 EuroSAT/CLEVR 为 **63.87%/76.30%**。
 - 正式无 replay `stage2_d2nn_noreplay_sharedvision_s17_7a50` 已按验证选中第 4 轮并测试一次：学完 B 后 EuroSAT/CLEVR 为 **10.00%/76.41%**。同一个起点的 A 对角格为 EuroSAT **71.77%**。这条链正在推进 C、D；B 的严重遗忘不能由独立训练模型替代或推断。
+- C 阶段 `stage3_d2nn_noreplay_12ep_sharedvision_s17_d9d5` 从上述 B 权重接续，仅训练 Speech。六轮候选的当前任务成绩偏低，所以另用同一起点跑常规的 12 轮预算、按三任务完整验证均值选中第 12 轮；单次测试 EuroSAT/CLEVR/Speech 为 **10.00%/50.00%/60.67%**。这既显示前两任务遗忘，也显示新 Speech 只学到约 60.67%，不能称该阶段达到了独立训练 D2NN 的水平。D 阶段正在从这个 C 权重继续，使用无帧差原始八帧。
