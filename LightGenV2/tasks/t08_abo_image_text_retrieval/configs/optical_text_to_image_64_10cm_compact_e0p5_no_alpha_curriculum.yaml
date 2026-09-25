@@ -1,0 +1,4 @@
+base_config: /DATA/DATA1/guest3/2026OpticsMoE/.worktrees/t08_text_to_image_20260920/LightGenV2/tasks/t08_abo_image_text_retrieval/configs/optical_text_to_image_64_10cm_compact_e0p5.yaml
+abo_image_text:
+  alpha_curriculum: null
+output_dir: /DATA/DATA1/guest3/2026OpticsMoE/LightGenV2/tasks/t08_abo_image_text_retrieval/runs/simulation/optical_text_to_image_64_10cm_compact_e0p5_no_alpha_curriculum_seed42_20260925
