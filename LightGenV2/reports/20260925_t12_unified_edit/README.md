@@ -1,5 +1,8 @@
 # Unified ABO product editor: 2026-09-25 pilot
 
+For the clean, by-task preview and checkpoint index, start with
+[deliverables/START_HERE.md](deliverables/START_HERE.md).
+
 This pilot uses one checkpoint per size for three instructions: replace only
 the room/background; replace only the product while retaining the room; or
 change both. It uses lamps and tables only, not chairs. Inference receives a
