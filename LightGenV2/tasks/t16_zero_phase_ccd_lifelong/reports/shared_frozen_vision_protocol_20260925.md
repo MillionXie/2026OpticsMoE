@@ -80,7 +80,7 @@ D 阶段 `stage4_d2nn_noreplay_sharedvision_s17_d9d5` 已从上述 C 最佳 chec
 
 这条链的十个测试单元均来自各阶段**同一份持续更新的 D2NN 相位和同一份单层 Linear**；B/C/D 无旧任务训练样本、无任务头切换。C 阶段 CLEVR 的 50.00% 对应类别召回 **100%／0%**，是单类塌缩而非保留了一半原能力；D 阶段 CLEVR 的 57.96% 对应 **75.44%／40.48%**，Speech 的 51.96% 对应 **74.97%／28.95%**。C 阶段对新 Speech 仅达 60.67% 是结果本身的限制，不能把所有旧任务下降都解释为纯粹的遗忘能力差异。
 
-## D2NN 顺序学习：有 replay 的进行中下三角
+## D2NN 顺序学习：全量 replay 的完整下三角
 
 这条独立链与无 replay 链复用**完全相同的 EuroSAT A checkpoint**，随后拥有自己的、持续更新的 D2NN 相位和单层 Linear。`stage2_d2nn_replay_sharedvision_s17_b015` 在 B 阶段每轮遍历 EuroSAT 和 CLEVR 各自全部训练记录一次，按完整验证集选中第 4 轮后仅测试一次。C 阶段 `stage3_d2nn_replay_balanced_sharedvision_s17_e696` 使用与 MoE C 相同的 `balanced_cycle`：每任务先走完全量，再重新打乱并循环短任务，使每轮任务 batch 数相近；按完整验证均值选第 4 轮，验证 EuroSAT/CLEVR/Speech **74.78%/75.09%/68.39%**，一次测试 **77.08%/74.81%/65.92%**。D 阶段 `stage4_d2nn_replay_balanced_sharedvision_s17_e031` 从该 C checkpoint 接续，同样按完整验证均值选第 4 轮，验证 EuroSAT/CLEVR/Speech/Physical **75.83%/79.93%/74.32%/74.71%**，一次测试 **78.40%/79.67%/70.76%/74.33%**。全程没有任务专用头，十格均来自各阶段各自获选 checkpoint 的一次测试。
 
@@ -90,6 +90,8 @@ D 阶段 `stage4_d2nn_noreplay_sharedvision_s17_d9d5` 已从上述 C 最佳 chec
 | B | 63.87% | 76.30% | — | — |
 | C | 77.08% | 74.81% | 65.92% | — |
 | D | 78.40% | 79.67% | 70.76% | 74.33% |
+
+额外的[每旧任务固定 300 条 replay 完整下三角](d2nn_memory300_20260926.md)单独保存；与全量 replay 使用同一 A 起点、同一光电架构，但旧任务记忆与调度不同，阶段 D 为 **56.14%/61.92%/55.36%/74.67%**。该结果不能替换上表，也不能称为无 replay。
 
 ## 三张矩阵的可报告结论与限制
 

@@ -8,6 +8,8 @@ MoE Physical 的新增候选只改变训练损失（当前任务权重或同一�
 
 原阶段 D 已选模型的[16 槽验证集路由图与数值说明](reports/expert_distribution_20260926/README.md)表明，Physical 对最后新开放的四槽只分配约 3.46% 平均功率；这会纳入新候选的验证审查。
 
+D2NN [每旧任务 300 条固定记忆的完整下三角](reports/d2nn_memory300_20260926.md)已单独完成，阶段 D 测试依次为 EuroSAT 56.14%、CLEVR 61.92%、Speech 55.36%、Physical 74.67%。这组数字不替换原有全量 replay 或无 replay 矩阵。
+
 ## 2026-09-25 冻结视觉前端新候选协议
 
 新输入的配对审计、checkpoint 哈希、选中验证／一次测试与路由局限集中在[阶段性报告](reports/shared_frozen_vision_protocol_20260925.md)。
