@@ -1,0 +1,44 @@
+{
+  "pairs": 288,
+  "small": {
+    "background": {
+      "full_rgb_mse": 0.0017886806065992762,
+      "no_diffraction_rgb_mse": 0.005278061230455933,
+      "full_vs_no_diffraction_rgb_mae": 0.029638990590077203,
+      "relative_mse_change_when_disabled": 1.95081257714916
+    },
+    "object": {
+      "full_rgb_mse": 0.00247504387122414,
+      "no_diffraction_rgb_mse": 0.02846769843866544,
+      "full_vs_no_diffraction_rgb_mae": 0.06036124539483959,
+      "relative_mse_change_when_disabled": 10.501896499549929
+    },
+    "joint": {
+      "full_rgb_mse": 0.003752719447220443,
+      "no_diffraction_rgb_mse": 0.03217383757873904,
+      "full_vs_no_diffraction_rgb_mae": 0.08754079959665735,
+      "relative_mse_change_when_disabled": 7.573472659292316
+    }
+  },
+  "large": {
+    "background": {
+      "full_rgb_mse": 0.005463649781934994,
+      "no_diffraction_rgb_mse": 0.005496304109935106,
+      "full_vs_no_diffraction_rgb_mae": 0.004177882816293277,
+      "relative_mse_change_when_disabled": 0.0059766510123104855
+    },
+    "object": {
+      "full_rgb_mse": 0.001763991043238396,
+      "no_diffraction_rgb_mse": 0.001894479633847368,
+      "full_vs_no_diffraction_rgb_mae": 0.00506055121635048,
+      "relative_mse_change_when_disabled": 0.07397349953059651
+    },
+    "joint": {
+      "full_rgb_mse": 0.00302054771539891,
+      "no_diffraction_rgb_mse": 0.0032226860287967916,
+      "full_vs_no_diffraction_rgb_mae": 0.007408009085338563,
+      "relative_mse_change_when_disabled": 0.06692107936827818
+    }
+  },
+  "ablation": "FFT expert and global outputs set to zero; electronic residual, identity/base path, learned gates and RMS fusion left intact"
+}

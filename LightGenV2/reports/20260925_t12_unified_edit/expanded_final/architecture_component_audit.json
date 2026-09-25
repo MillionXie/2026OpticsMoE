@@ -1,0 +1,70 @@
+{
+  "small": {
+    "reported_counted": 9502665,
+    "checkpoint_tensor_count": 9502665,
+    "components": {
+      "qwen_mini_text": 6376096,
+      "rgb_stem": 2640,
+      "rgb_down": 1326368,
+      "parallel_bottleneck_electronic": 275745,
+      "parallel_bottleneck_optical_and_fusion": 132868,
+      "optical_phase_masks_only": 9216,
+      "rgb_up": 1366816,
+      "rgb_delta_head": 22083,
+      "source_gate": 49
+    },
+    "checkpoint_keys": [
+      "schema_version",
+      "task",
+      "editor_config",
+      "qwen_mini_config",
+      "model",
+      "counted_parameters",
+      "shared_qwen_token_embedding_excluded",
+      "qwen_transformer_layers",
+      "generator_condition",
+      "epoch",
+      "validation",
+      "hard_pixel_composite",
+      "gan_used",
+      "inference_iterations"
+    ]
+  },
+  "large": {
+    "reported_counted": 142544637,
+    "components": {
+      "qwen_mini_text": 10591520,
+      "qwen_mini_to_2048_bridge": 1312768,
+      "unet_all": 42682473,
+      "unet_mid_optical_block": 628197,
+      "unet_mid_phase_masks_only": 576,
+      "unet_other_electronic": 42054276,
+      "condition_adapter_all_state_tensors": 14444928,
+      "condition_adapter_trainable_tensors": 4273280,
+      "condition_adapter_fixed_buffers": 10171648,
+      "packaged_router": 30733,
+      "packaged_router_key": "design_router",
+      "vae_encoder_including_quant": 34163664,
+      "vae_decoder_including_post_quant": 49490199
+    },
+    "checkpoint_keys": [
+      "schema_version",
+      "student_widths",
+      "epoch",
+      "model_config",
+      "training_config",
+      "unet",
+      "adapter",
+      "design_router",
+      "validation",
+      "qwen_layers",
+      "text_frontend",
+      "counted_parameters",
+      "unified_modes",
+      "generator_calls"
+    ],
+    "text_frontend_kind": "qwen-mini-two-block-640-plus-bridge",
+    "training_noise_scale": 0.05,
+    "training_residual_scale": 0.75
+  }
+}
