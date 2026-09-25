@@ -29,6 +29,42 @@ ORDER = ("eurosat", "clevr", "speech_binary", "physical_binary")
 EXPECTED_EURO = {"train": 15998, "val": 5465, "test": 5429}
 
 
+class IndexedMemory:
+    """Fixed training records; the indices refer to the original task split."""
+
+    def __init__(self, data, indices):
+        self.data = data
+        self.indices = np.asarray(indices, dtype=np.int64)
+        self.labels = np.asarray(data.labels)[self.indices]
+
+    def __len__(self):
+        return len(self.indices)
+
+    def get_batch(self, indices, device):
+        return self.data.get_batch(self.indices[indices], device)
+
+
+def select_memory_indices(data, name, count, seed):
+    """Stratify EuroSAT; preserve positive/negative source pairs elsewhere."""
+    if count <= 0 or count > len(data):
+        raise ValueError("memory size must fit the original training split")
+    rng = np.random.default_rng(seed)
+    labels = np.asarray(data.labels)
+    if name == "eurosat":
+        classes = np.unique(labels)
+        if count % len(classes):
+            raise ValueError("EuroSAT memory must divide evenly among classes")
+        per_class = count // len(classes)
+        chosen = np.concatenate([rng.choice(np.flatnonzero(labels == cls), per_class,
+                                             replace=False) for cls in classes])
+        return np.sort(chosen)
+    if count % 2 or len(data) % 2 or not np.array_equal(
+            labels.reshape(-1, 2), np.tile([1, 0], (len(data) // 2, 1))):
+        raise ValueError("binary memory requires intact positive/negative pairs")
+    pairs = np.sort(rng.choice(len(data) // 2, count // 2, replace=False))
+    return np.column_stack((2 * pairs, 2 * pairs + 1)).reshape(-1)
+
+
 class EuroAdapter:
     def __init__(self, source, split, vision_checkpoint=None, device=None):
         trainval, holdout = source_paths(source)
@@ -54,11 +90,11 @@ def load_dataset(protocols, name, split, vision_checkpoint=None, device=None):
     return load_task(protocols[name], task, split, vision_checkpoint, device)
 
 
-def shuffled_batches(data, name, batch_size, rng):
+def shuffled_batches(data, name, batch_size, rng, pair_physical=False):
     """Return every record once before cycling; keep CLEVR pairs adjacent."""
-    if name == "clevr":
+    if name == "clevr" or (name == "physical_binary_raw" and pair_physical):
         if batch_size % 2 or len(data) % 2:
-            raise ValueError("CLEVR needs an even batch and complete pairs")
+            raise ValueError("paired task needs an even batch and complete pairs")
         pair_order = rng.permutation(len(data) // 2)
         return [np.column_stack((2 * part, 2 * part + 1)).reshape(-1)
                 for part in np.array_split(pair_order,
@@ -68,12 +104,14 @@ def shuffled_batches(data, name, batch_size, rng):
             range(batch_size, len(order), batch_size))]
 
 
-def stage_epoch_batches(datasets, names, batch_size, seed, mode="one_pass"):
+def stage_epoch_batches(datasets, names, batch_size, seed, mode="one_pass",
+                        pair_physical=False):
     """Interleave full passes; optionally reshuffle/cycle shorter tasks."""
     if mode not in ("one_pass", "balanced_cycle"):
         raise ValueError("unknown replay schedule")
     pools = {name: shuffled_batches(datasets[name], name, batch_size,
-                                    np.random.default_rng(seed + index * 101))
+                                    np.random.default_rng(seed + index * 101),
+                                    pair_physical=pair_physical)
              for index, name in enumerate(names)}
     steps = max(map(len, pools.values()))
     if mode == "balanced_cycle":
@@ -89,7 +127,8 @@ def stage_epoch_batches(datasets, names, batch_size, seed, mode="one_pass"):
                     if key not in repeated:
                         repeated[key] = shuffled_batches(
                             datasets[name], name, batch_size,
-                            np.random.default_rng(seed + index * 101 + cycle * 100003))
+                            np.random.default_rng(seed + index * 101 + cycle * 100003),
+                            pair_physical=pair_physical)
                     row[name] = repeated[key][offset]
             yield row
         return
@@ -101,15 +140,17 @@ def stage_epoch_batches(datasets, names, batch_size, seed, mode="one_pass"):
                if step in batches}
 
 
-def task_loss(logits, target, name, pairwise_weight):
+def task_loss(logits, target, name, pairwise_weight, physical_pairwise_weight=0.0):
     loss = F.cross_entropy(logits, target)
     if name == "clevr" and pairwise_weight:
         loss = loss + pairwise_weight * clevr_pairwise_loss(logits, target)
+    if name == "physical_binary_raw" and physical_pairwise_weight:
+        loss = loss + physical_pairwise_weight * clevr_pairwise_loss(logits, target)
     return loss
 
 
 def load_previous(model, path, stage, protocols, device, order=ORDER,
-                  architecture="moe", vision_sha=None):
+                  architecture="moe", vision_sha=None, replay_mode=None):
     checkpoint = torch.load(path, map_location=device, weights_only=False)
     prior = checkpoint.get("config", {})
     if stage == 2:
@@ -128,6 +169,8 @@ def load_previous(model, path, stage, protocols, device, order=ORDER,
                            for name in order[:stage - 1]}
         if prior.get("protocol_sha256") != expected_hashes:
             raise ValueError("previous checkpoint used different task protocols")
+        if replay_mode == "memory" and prior.get("replay_mode") != "memory":
+            raise ValueError("memory replay must continue its own dependent chain")
     if prior.get("activation_order") != "center_out":
         raise ValueError("previous checkpoint has a different optical geometry")
     if prior.get("vision_checkpoint_sha256") != vision_sha:
@@ -191,14 +234,17 @@ def run_train(args, protocols, device):
         raise ValueError("training requires stage 2/3/4 and its previous checkpoint")
     order = ("eurosat", "clevr", "speech_binary", args.physical_task)
     names = order[:args.stage]
-    train_names = names if args.replay_mode == "full" else (names[-1],)
+    train_names = names if args.replay_mode != "none" else (names[-1],)
     commit = subprocess.check_output(["git", "rev-parse", "HEAD"], text=True).strip()
     config = {
         "stage": args.stage, "order": order, "architecture": args.architecture,
         "activation_order": "center_out", "readout": "one shared Linear(784,10), bias=False",
         "replay_mode": args.replay_mode,
         "replay_schedule": args.replay_schedule,
+        "memory_per_old_task": args.memory_per_old_task if args.replay_mode == "memory" else None,
         "full_replay": (
+            "fixed unique training records per old task, reshuffled and cycled per epoch"
+            if args.replay_mode == "memory" else
             "each task traversed completely; shorter tasks reshuffled and repeated"
             if args.replay_mode == "full" and args.replay_schedule == "balanced_cycle"
             else "all records of every learned task exactly once per epoch; interleaved"
@@ -213,8 +259,10 @@ def run_train(args, protocols, device):
         "patience": args.patience, "batch": args.batch,
         "eval_batch": args.eval_batch, "lr": args.lr, "seed": args.seed,
         "clevr_pairwise_weight": args.clevr_pairwise_weight,
+        "physical_pairwise_weight": args.physical_pairwise_weight,
         "route_balance_weight": args.route_balance_weight,
         "old_task_loss_weight": args.old_task_loss_weight,
+        "current_task_loss_weight": args.current_task_loss_weight,
         "head_lr_scale": args.head_lr_scale,
         "new_expert_init_checkpoint": (str(args.new_expert_init_checkpoint)
                                        if args.new_expert_init_checkpoint else None),
@@ -238,13 +286,30 @@ def run_train(args, protocols, device):
 
     train = {name: load_dataset(protocols, name, "train", args.vision_checkpoint,
                                device) for name in names}
+    if args.replay_mode == "memory":
+        manifest = {"seed": args.seed, "split": "train", "per_old_task": args.memory_per_old_task,
+                    "source_protocol_sha256": config["protocol_sha256"], "tasks": {}}
+        for task_index, name in enumerate(names[:-1]):
+            indices = select_memory_indices(train[name], name, args.memory_per_old_task,
+                                            args.seed + task_index * 101)
+            manifest["tasks"][name] = {"indices": indices.tolist(),
+                                        "label_counts": np.bincount(
+                                            np.asarray(train[name].labels)[indices],
+                                            minlength=10 if name == "eurosat" else 2).tolist()}
+            train[name] = IndexedMemory(train[name], indices)
+        if args.resume:
+            if json.loads((args.out / "memory_manifest.json").read_text()) != manifest:
+                raise ValueError("resume memory differs from original run")
+        else:
+            save_json(args.out / "memory_manifest.json", manifest)
     val = {name: load_dataset(protocols, name, "val", args.vision_checkpoint,
                              device) for name in names}
     model = DirectCCDOptics(args.architecture, activation_order="center_out").to(device)
     validate_head(model)
     load_previous(model, args.previous_checkpoint, args.stage, protocols, device,
                   order=order, architecture=args.architecture,
-                  vision_sha=config["vision_checkpoint_sha256"])
+                  vision_sha=config["vision_checkpoint_sha256"],
+                  replay_mode=args.replay_mode)
     model.configure_stage(args.stage - 1)
     if not args.resume:
         initialize_new_experts(model, args.new_expert_init_checkpoint, args.stage,
@@ -273,7 +338,8 @@ def run_train(args, protocols, device):
         steps = 0
         for batch_map in stage_epoch_batches(train, train_names, args.batch,
                                              args.seed + args.stage * 1000 + epoch,
-                                             mode=args.replay_schedule):
+                                             mode=args.replay_schedule,
+                                             pair_physical=bool(args.physical_pairwise_weight)):
             optimizer.zero_grad(set_to_none=True)
             step_loss = 0.0
             # Backpropagate each task separately to bound 1026x1026 FFT memory.
@@ -283,14 +349,15 @@ def run_train(args, protocols, device):
                 target = torch.as_tensor(train[name].labels[indices], device=device)
                 output = model(field)
                 loss = task_loss(output["logits"], target, name,
-                                 args.clevr_pairwise_weight)
+                                 args.clevr_pairwise_weight,
+                                 args.physical_pairwise_weight)
                 if args.route_balance_weight:
                     active = model.active_indices[:int(model.active_count)]
                     loss = loss + args.route_balance_weight * routing_balance_penalty(
                         output["route_power"], active)
                 if not torch.isfinite(loss):
                     raise RuntimeError(f"nonfinite {name} loss at epoch {epoch}")
-                task_weight = (1.0 if name == names[-1]
+                task_weight = (args.current_task_loss_weight if name == names[-1]
                                else args.old_task_loss_weight)
                 (task_weight * loss / len(train_names)).backward()
                 step_loss += task_weight * float(loss.detach()) / len(train_names)
@@ -369,9 +436,12 @@ def main(default_architecture="moe"):
     parser.add_argument("--lr", type=float, default=1e-3)
     parser.add_argument("--seed", type=int, default=17)
     parser.add_argument("--clevr-pairwise-weight", type=float, default=4.0)
+    parser.add_argument("--physical-pairwise-weight", type=float, default=0.0)
     parser.add_argument("--route-balance-weight", type=float, default=0.0)
     parser.add_argument("--old-task-loss-weight", type=float, default=1.0)
-    parser.add_argument("--replay-mode", choices=("full", "none"), default="full")
+    parser.add_argument("--current-task-loss-weight", type=float, default=1.0)
+    parser.add_argument("--replay-mode", choices=("full", "none", "memory"), default="full")
+    parser.add_argument("--memory-per-old-task", type=int, default=300)
     parser.add_argument("--replay-schedule", choices=("one_pass", "balanced_cycle"),
                         default="one_pass")
     parser.add_argument("--head-lr-scale", type=float, default=1.0)
@@ -383,7 +453,9 @@ def main(default_architecture="moe"):
     if not (0 < args.min_epochs <= args.epochs and args.patience > 0 and
             args.batch > 0 and args.batch % 2 == 0 and args.eval_batch > 0 and
             args.lr > 0 and args.clevr_pairwise_weight >= 0 and
+            args.physical_pairwise_weight >= 0 and
             args.route_balance_weight >= 0 and args.old_task_loss_weight > 0 and
+            args.current_task_loss_weight > 0 and
             args.head_lr_scale > 0):
         raise ValueError("invalid stage training budget")
     if args.architecture == "d2nn" and (args.route_balance_weight or
@@ -393,6 +465,11 @@ def main(default_architecture="moe"):
         raise ValueError("MoE sequential protocol requires replay")
     if args.replay_mode == "none" and args.replay_schedule != "one_pass":
         raise ValueError("no-replay schedule cannot cycle task data")
+    if args.replay_mode == "memory" and (args.architecture != "d2nn" or
+                                         args.replay_schedule != "balanced_cycle" or
+                                         args.memory_per_old_task <= 0 or
+                                         args.memory_per_old_task % 2):
+        raise ValueError("D2NN memory replay requires balanced_cycle and an even size")
     if ("runs", "simulation") not in list(zip(args.out.parts, args.out.parts[1:])):
         raise ValueError("stage run must live under runs/simulation")
     torch.manual_seed(args.seed)

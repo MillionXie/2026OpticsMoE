@@ -197,6 +197,47 @@ def test_balanced_cycle_replay_covers_every_record_before_repeating_short_task()
         assert np.array_equal(clevr[1::2], clevr[::2] + 1)
 
 
+def test_fixed_memory_is_deterministic_stratified_and_preserves_binary_pairs():
+    from LightGenV2.tasks.t16_zero_phase_ccd_lifelong.train_lifelong_moe import (
+        IndexedMemory, select_memory_indices)
+
+    class Records:
+        def __init__(self, labels):
+            self.labels = np.asarray(labels)
+
+        def __len__(self):
+            return len(self.labels)
+
+        def get_batch(self, indices, device):
+            return np.asarray(indices)
+
+    euro = Records(np.repeat(np.arange(10), 40))
+    selected = select_memory_indices(euro, "eurosat", 300, 17)
+    assert np.array_equal(selected, select_memory_indices(euro, "eurosat", 300, 17))
+    assert np.array_equal(np.bincount(euro.labels[selected]), np.full(10, 30))
+    binary = Records(np.tile([1, 0], 400))
+    selected = select_memory_indices(binary, "clevr", 300, 17)
+    assert np.all(selected[::2] % 2 == 0)
+    assert np.array_equal(selected[1::2], selected[::2] + 1)
+    subset = IndexedMemory(binary, selected)
+    assert len(subset) == 300
+    assert np.array_equal(subset.get_batch(np.array([0, 1]), None), selected[:2])
+
+
+def test_physical_pairwise_schedule_keeps_same_video_pairs_together():
+    class Records:
+        def __len__(self):
+            return 14
+
+    rows = list(stage_epoch_batches({"physical_binary_raw": Records()},
+                                    ("physical_binary_raw",), 4, seed=17,
+                                    pair_physical=True))
+    for row in rows:
+        indices = row["physical_binary_raw"]
+        assert np.array_equal(indices[1::2], indices[::2] + 1)
+        assert np.all(indices[::2] % 2 == 0)
+
+
 def test_lifelong_head_lr_can_be_lowered_without_freezing_optics():
     model = DirectCCDOptics("moe")
     model.configure_stage(1)
