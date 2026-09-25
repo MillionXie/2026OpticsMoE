@@ -68,13 +68,17 @@ def shuffled_batches(data, name, batch_size, rng):
 
 
 def stage_epoch_batches(datasets, names, batch_size, seed):
-    """Cycle shorter tasks so each old-task training example is replayed."""
+    """Interleave every task's batches evenly, with no record repeated per epoch."""
     pools = {name: shuffled_batches(datasets[name], name, batch_size,
                                     np.random.default_rng(seed + index * 101))
              for index, name in enumerate(names)}
     steps = max(map(len, pools.values()))
+    scheduled = {name: {step: batch for step, batch in zip(
+                    (np.arange(len(pool)) * steps // len(pool)).tolist(), pool)}
+                 for name, pool in pools.items()}
     for step in range(steps):
-        yield {name: pool[step % len(pool)] for name, pool in pools.items()}
+        yield {name: batches[step] for name, batches in scheduled.items()
+               if step in batches}
 
 
 def task_loss(logits, target, name, pairwise_weight):
@@ -130,7 +134,7 @@ def run_train(args, protocols, device):
     config = {
         "stage": args.stage, "order": ORDER, "architecture": "moe",
         "activation_order": "center_out", "readout": "one shared Linear(784,10), bias=False",
-        "full_replay": "all records of every learned task at least once per epoch",
+        "full_replay": "all records of every learned task exactly once per epoch; interleaved",
         "current_task": names[-1], "learned_tasks": names,
         "protocol_sha256": {n: sha256_file(protocols[n]) for n in names},
         "previous_checkpoint": str(args.previous_checkpoint),
@@ -140,6 +144,7 @@ def run_train(args, protocols, device):
         "eval_batch": args.eval_batch, "lr": args.lr, "seed": args.seed,
         "clevr_pairwise_weight": args.clevr_pairwise_weight,
         "route_balance_weight": args.route_balance_weight,
+        "old_task_loss_weight": args.old_task_loss_weight,
         "test_policy": "omitted" if args.skip_test else "once after validation selection",
         "selection": "mean full-validation macro recall of all learned tasks",
         "model_git_commit": commit,
@@ -188,7 +193,7 @@ def run_train(args, protocols, device):
             optimizer.zero_grad(set_to_none=True)
             step_loss = 0.0
             # Backpropagate each task separately to bound 1026x1026 FFT memory.
-            for name in names:
+            for name in batch_map:
                 indices = batch_map[name]
                 field = train[name].get_batch(indices, device)
                 target = torch.as_tensor(train[name].labels[indices], device=device)
@@ -201,8 +206,10 @@ def run_train(args, protocols, device):
                         output["route_power"], active)
                 if not torch.isfinite(loss):
                     raise RuntimeError(f"nonfinite {name} loss at epoch {epoch}")
-                (loss / len(names)).backward()
-                step_loss += float(loss.detach()) / len(names)
+                task_weight = (1.0 if name == names[-1]
+                               else args.old_task_loss_weight)
+                (task_weight * loss / len(names)).backward()
+                step_loss += task_weight * float(loss.detach()) / len(names)
             torch.nn.utils.clip_grad_norm_(parameters, 1.0)
             optimizer.step()
             loss_sum += step_loss
@@ -273,13 +280,14 @@ def main():
     parser.add_argument("--seed", type=int, default=17)
     parser.add_argument("--clevr-pairwise-weight", type=float, default=4.0)
     parser.add_argument("--route-balance-weight", type=float, default=0.0)
+    parser.add_argument("--old-task-loss-weight", type=float, default=1.0)
     parser.add_argument("--skip-test", action="store_true")
     parser.add_argument("--resume", action="store_true")
     args = parser.parse_args()
     if not (0 < args.min_epochs <= args.epochs and args.patience > 0 and
             args.batch > 0 and args.batch % 2 == 0 and args.eval_batch > 0 and
             args.lr > 0 and args.clevr_pairwise_weight >= 0 and
-            args.route_balance_weight >= 0):
+            args.route_balance_weight >= 0 and args.old_task_loss_weight > 0):
         raise ValueError("invalid stage training budget")
     if ("runs", "simulation") not in list(zip(args.out.parts, args.out.parts[1:])):
         raise ValueError("stage run must live under runs/simulation")

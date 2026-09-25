@@ -165,7 +165,8 @@ def test_lifelong_replay_covers_all_old_records_and_preserves_clevr_pairs():
     assert len(batches) == 4
     for name, count in (("eurosat", 8), ("clevr", 14)):
         seen = np.concatenate([row[name] for row in batches])
-        assert set(seen.tolist()) == set(range(count))
+        assert np.array_equal(np.sort(seen), np.arange(count))
+    assert [step for step, row in enumerate(batches) if "eurosat" in row] == [0, 2]
     for row in batches:
         clevr = row["clevr"]
         assert len(clevr) % 2 == 0
