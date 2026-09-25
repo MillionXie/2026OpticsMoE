@@ -24,3 +24,21 @@ EuroSAT A 两种模型都使用相同输入和无额外训练技巧的 10 输出
 阶段 B 的 `stage2_moe_replay_sharedvision_s17_b015` 从上述 MoE A 出发，旧四专家相位冻结、开放四个新专家；每轮分别遍历 EuroSAT 全部 15,998 条和 CLEVR 全部 140,000 条训练记录一次。`old_task_loss_weight=1` 不等于两任务累计梯度同权，因为 CLEVR 批次约为 EuroSAT 的 8.75 倍。运行期间曾出现 CLEVR 完整验证升至约 80%、EuroSAT 降至约 61% 的明显遗忘；最终选模尚待完成。下一验证候选提高旧任务损失权重，仍以两任务完整验证宏平均召回均值选模，不碰测试集。D2NN full replay B 是额外对照；正式无 replay 下三角使用独立的 `--replay-mode none` 入口。
 
 所有 run 的 `config.json` 保存源码 commit、源协议和视觉 checkpoint 哈希，`history.json` 保存各轮验证，`result.json`／`selected_test.json` 保存选中结果。当前 B/C/D 仍在推进，任何尚未产生的矩阵单元均为空。
+
+## 已完成的固定 D2NN 纯推理 4×4
+
+`d2nn_fixed4x4_sharedvision_s17_d9d5`：行是独立训练的 D2NN 相位和**该行自己的固定单层 Linear**；列是目标测试集，完全不重训相位或头。EuroSAT/CLEVR 目标均用上述同一冻结视觉前端；Speech 的独立源 checkpoint 因音文输入没有视觉 CNN、输入和光路均未改变，沿用此前的独立训练结果；Physical 源是新无帧差 checkpoint。单位为测试集宏平均召回百分比。
+
+| D2NN 源权重／目标任务 | EuroSAT | CLEVR | Speech | Physical 无帧差 |
+|---|---:|---:|---:|---:|
+| EuroSAT | 71.77 | 0.00 | 0.00 | 0.00 |
+| CLEVR | 10.00 | 76.50 | 50.00 | 50.00 |
+| Speech | 10.13 | 50.25 | 67.19 | 50.00 |
+| Physical 无帧差 | 10.00 | 50.00 | 51.90 | 75.35 |
+
+16 格均已计算；EuroSAT、CLEVR、Physical 三个新独立 run 的对角格与其 `selected_test.json` 完全一致。0% 与 10% 格受十输出共用标签位置和固定头预测到目标合法类别之外的影响，不能孤立解释为相位完全没有迁移。Physical D2NN 对角格虽为 75.35%，两类召回约为 53.30%／97.40%，存在预测偏向。
+
+## D2NN 顺序对照当前节点
+
+- full replay 额外对照 `stage2_d2nn_replay_sharedvision_s17_b015` 已按验证选中第 4 轮并测试一次：学完 B 后 EuroSAT/CLEVR 为 **63.87%/76.30%**。
+- 正式无 replay `stage2_d2nn_noreplay_sharedvision_s17_7a50` 已按验证选中第 4 轮并测试一次：学完 B 后 EuroSAT/CLEVR 为 **10.00%/76.41%**。同一个起点的 A 对角格为 EuroSAT **71.77%**。这条链正在推进 C、D；B 的严重遗忘不能由独立训练模型替代或推断。
