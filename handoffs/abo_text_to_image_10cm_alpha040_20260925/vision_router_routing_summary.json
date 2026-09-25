@@ -1,0 +1,13 @@
+{
+  "stage": "vision_router",
+  "samples": 2400,
+  "top_k": 2,
+  "expert_selection_counts": {
+    "0": 1139,
+    "1": 1201,
+    "2": 1075,
+    "3": 1385
+  },
+  "no_pcc_or_brightness_rejection": true,
+  "routing_manifest": "/DATA/DATA1/guest3/2026OpticsMoE/LightGenV2/tasks/t08_abo_image_text_retrieval/runs/physical/alpha040_10cm_20260925/vision_router_routing.jsonl"
+}

@@ -1,0 +1,21 @@
+{
+  "schema": 1,
+  "protocol": "100 physical title queries to 2400 physical TEST images",
+  "checkpoint_sha256": "cc977b83286a8e90398ebd30064428886bc3c06f1eb0557e470060f7ff5c1cae",
+  "metrics": {
+    "hit_at_1": 0.79,
+    "hit_at_5": 0.96,
+    "hit_at_10": 0.97,
+    "recall_at_1": 0.03291666764765978,
+    "recall_at_5": 0.17041666399687527,
+    "recall_at_10": 0.32916666127741334,
+    "mrr": 0.8533518170426064,
+    "map": 0.7413546361432662,
+    "query_count": 100,
+    "gallery_count": 2400,
+    "relevant_images_per_query": 24
+  },
+  "image_count": 2400,
+  "title_count": 100,
+  "all_six_optical_stages_measured": true
+}

@@ -1,0 +1,113 @@
+{
+  "checkpoint_sha256": "cc977b83286a8e90398ebd30064428886bc3c06f1eb0557e470060f7ff5c1cae",
+  "stages": [
+    {
+      "stage": "vision_router",
+      "expected": 2400,
+      "bench_ccd_count": 2400,
+      "server_ccd_count": 2400,
+      "title_count": 0,
+      "phase_sha256": "1480d2c60c22aa04fbcd704164610bd79678f999b39e3da72e6718942a635937",
+      "p99_min": 12.0,
+      "p99_median": 18.0,
+      "p99_max": 26.0,
+      "maximum_saturation_fraction": 0.0,
+      "exposure_us": [
+        10000.0
+      ],
+      "wait_ms": [
+        240.0
+      ]
+    },
+    {
+      "stage": "vision_expert",
+      "expected": 2400,
+      "bench_ccd_count": 2400,
+      "server_ccd_count": 2400,
+      "title_count": 0,
+      "phase_sha256": "09e5f77f476dc20327720a4b20256fe2b2361a058b395e54abd0a87163011e1f",
+      "p99_min": 16.0,
+      "p99_median": 27.0,
+      "p99_max": 60.0,
+      "maximum_saturation_fraction": 1.3130022233504315e-05,
+      "exposure_us": [
+        10000.0
+      ],
+      "wait_ms": [
+        240.0
+      ]
+    },
+    {
+      "stage": "vision_global",
+      "expected": 2400,
+      "bench_ccd_count": 2400,
+      "server_ccd_count": 2400,
+      "title_count": 0,
+      "phase_sha256": "2ef72af7e731c44f10e27c6c0cf6e1bd146f8d59758af8c7bcde9c9fe136c6f9",
+      "p99_min": 16.0,
+      "p99_median": 23.0,
+      "p99_max": 49.0,
+      "maximum_saturation_fraction": 4.376674077834772e-06,
+      "exposure_us": [
+        10000.0
+      ],
+      "wait_ms": [
+        240.0
+      ]
+    },
+    {
+      "stage": "language_router",
+      "expected": 2500,
+      "bench_ccd_count": 2500,
+      "server_ccd_count": 2500,
+      "title_count": 100,
+      "phase_sha256": "0db68651052958d300cf7171aa2fcf8ab0dddd19721093e7222ebf8bc23c437f",
+      "p99_min": 9.0,
+      "p99_median": 15.0,
+      "p99_max": 20.0,
+      "maximum_saturation_fraction": 0.0,
+      "exposure_us": [
+        10000.0
+      ],
+      "wait_ms": [
+        240.0
+      ]
+    },
+    {
+      "stage": "language_expert",
+      "expected": 2500,
+      "bench_ccd_count": 2500,
+      "server_ccd_count": 2500,
+      "title_count": 100,
+      "phase_sha256": "30be304cf7d44474b25098b2128cafbd5889bd047a67afe009592d64140d9b0f",
+      "p99_min": 8.0,
+      "p99_median": 13.0,
+      "p99_max": 17.0,
+      "maximum_saturation_fraction": 0.0,
+      "exposure_us": [
+        10000.0
+      ],
+      "wait_ms": [
+        240.0
+      ]
+    },
+    {
+      "stage": "language_global",
+      "expected": 2500,
+      "bench_ccd_count": 2500,
+      "server_ccd_count": 2500,
+      "title_count": 100,
+      "phase_sha256": "5755f7ca1dfb8cf25daf55d9466360e6305479d10d1a46ddee65f5e1955dc891",
+      "p99_min": 9.0,
+      "p99_median": 16.0,
+      "p99_max": 21.0,
+      "maximum_saturation_fraction": 0.0,
+      "exposure_us": [
+        10000.0
+      ],
+      "wait_ms": [
+        240.0
+      ]
+    }
+  ]
+}

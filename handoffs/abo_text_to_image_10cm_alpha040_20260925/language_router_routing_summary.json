@@ -1,0 +1,13 @@
+{
+  "stage": "language_router",
+  "samples": 2500,
+  "top_k": 2,
+  "expert_selection_counts": {
+    "0": 2500,
+    "1": 2437,
+    "2": 63,
+    "3": 0
+  },
+  "no_pcc_or_brightness_rejection": true,
+  "routing_manifest": "/DATA/DATA1/guest3/2026OpticsMoE/LightGenV2/tasks/t08_abo_image_text_retrieval/runs/physical/alpha040_10cm_20260925/language_router_routing.jsonl"
+}
