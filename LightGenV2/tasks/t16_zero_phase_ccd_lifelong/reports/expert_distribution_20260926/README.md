@@ -14,3 +14,5 @@
 后续候选须用完整验证集同时核对 Physical 两类召回、四任务平均表现和新四槽功率，不根据已查看的测试集挑模型。原阶段 D 验证 Physical 两类召回为 90.52%／57.15%，测试为 89.66%／57.25%。
 
 `expert_examples_validation.png` 另画四任务各前两条验证样本的 16 槽路由权重；对应真值、预测、逐槽数值与 router 收光比例在 `expert_examples_validation.json`，checkpoint 与划分在 `source.json`。这些索引在查看结果前固定为 0、1，**不是挑选成功案例**，因此图里也有预测错误。CLEVR、Speech 和 Physical 的 0、1 是同一原始对象的正负文字配对；两条的路由图相近并不奇怪，也不能仅凭两例判定文本没有贡献。个例只辅助理解，整体结论以上述完整验证集统计为准。
+
+训练期加入 Physical 成对排序损失后的获选模型 `stage4_moe_physical_pairwise2_sharedvision_s17_e19a` 也按**同一验证集、相同固定样本索引**绘出 `pairwise_validation.png` 和 `pairwise_expert_examples_validation.png`；统计原始摘要在 `pairwise_validation_summary.json`，逐样本值在 `pairwise_expert_examples_validation.json`。Physical 新四槽平均功率由 3.46% 升到 4.55%，仍未充分激活；类别召回与准确率的改变详见[训练候选报告](../moe_physical_optimization_20260926.md)。两图仅用于检视路由，绝不参与选模。

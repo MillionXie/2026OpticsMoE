@@ -98,3 +98,5 @@ D 阶段 `stage4_d2nn_noreplay_sharedvision_s17_d9d5` 已从上述 C 最佳 chec
 - MoE 与 D2NN 有 replay 在最终 D 阶段的四任务测试宏平均分别为 **78.38%** 与 **75.79%**，MoE 高 **2.59 个百分点**。分任务看，MoE 在 CLEVR/Speech 高 **1.23/11.19 点**，在 EuroSAT/Physical 低 **1.20/0.87 点**；不能称“四项均超过 D2NN”。D2NN 无 replay 最终四任务均值为 **48.77%**，其中 EuroSAT 大幅遗忘，但其 Physical 当前任务仍有 75.16%。
 - 这不是只改变“MoE vs D2NN 光学拓扑”的受控对照：两方输入、冻结视觉 CNN、传播尺度、OEO、CCD 和单层读出**结构**相同，但 MoE 的 B/C/D 使用不同的旧任务权重、CLEVR 成对损失、路由均衡和较低的 Linear 学习率。D2NN 有 replay 对照只对齐全量回放和 C/D 的 `balanced_cycle` 数据调度，其常规损失与头学习率仍不同。因此目前能报告“此完整光电系统与训练方案的结果”，不能把 2.59 点净优势全归因于专家结构。
 - MoE D 的 Physical 负／正两类召回为 **89.66%/57.25%**；D2NN 有 replay D 为 **60.52%/88.14%**。两方的宏平均分都掩盖不同方向的类别偏向。独立 D2NN 4×4 出现的 10%／50% 机会水平格已用原 checkpoint 的预测直方图核实，不能独立作为纯光学迁移失败证据。
+
+2026-09-26 的**追加探索性实验**另见[每旧任务 300 条 D2NN replay 矩阵](d2nn_memory300_20260926.md)和[MoE Physical 成对排序损失候选](moe_physical_optimization_20260926.md)。后者 Physical 一次测试从 73.46% 升至 74.88%，但设计前已查看原测试成绩；不得把该后验候选替换进上面三张预先确定的正式矩阵。

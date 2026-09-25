@@ -10,6 +10,8 @@ MoE Physical 的新增候选只改变训练损失（当前任务权重或同一�
 
 D2NN [每旧任务 300 条固定记忆的完整下三角](reports/d2nn_memory300_20260926.md)已单独完成，阶段 D 测试依次为 EuroSAT 56.14%、CLEVR 61.92%、Speech 55.36%、Physical 74.67%。这组数字不替换原有全量 replay 或无 replay 矩阵。
 
+MoE [Physical 成对排序损失候选](reports/moe_physical_optimization_20260926.md)只按四任务完整验证集选择，在阶段 D 的探索性一次测试中为 EuroSAT/CLEVR/Speech/Physical **77.35%/81.12%/81.14%/74.88%**。Physical 比原 MoE 高 1.42 点，并比 D2NN 全量 replay 高 0.55 点；但原测试在设计候选前已查看，须按报告的后验限制表述。旧专家相位未变，推理仍只有一层 Linear(784,10)。
+
 ## 2026-09-25 冻结视觉前端新候选协议
 
 新输入的配对审计、checkpoint 哈希、选中验证／一次测试与路由局限集中在[阶段性报告](reports/shared_frozen_vision_protocol_20260925.md)。
