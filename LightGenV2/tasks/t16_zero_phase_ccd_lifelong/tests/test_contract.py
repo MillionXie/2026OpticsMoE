@@ -24,7 +24,7 @@ from LightGenV2.tasks.t16_zero_phase_ccd_lifelong.train_other_tasks import (
     validate_resume_contract,
 )
 from LightGenV2.tasks.t16_zero_phase_ccd_lifelong.train_lifelong_moe import (
-    stage_epoch_batches,
+    make_optimizer, stage_epoch_batches,
 )
 
 
@@ -172,6 +172,21 @@ def test_lifelong_replay_covers_all_old_records_and_preserves_clevr_pairs():
         assert len(clevr) % 2 == 0
         assert np.array_equal(clevr[1::2], clevr[::2] + 1)
         assert np.all(clevr[::2] % 2 == 0)
+
+
+def test_lifelong_head_lr_can_be_lowered_without_freezing_optics():
+    model = DirectCCDOptics("moe")
+    model.configure_stage(1)
+    optimizer, parameters = make_optimizer(model, 1e-3, 0.25)
+    assert [group["lr"] for group in optimizer.param_groups] == [1e-3, 2.5e-4]
+    assert len(optimizer.param_groups[1]["params"]) == 1
+    assert optimizer.param_groups[1]["params"][0] is model.shared_head.weight
+    assert len({id(parameter) for parameter in parameters}) == len(parameters)
+    assert any(parameter is model.router_phase
+               for parameter in optimizer.param_groups[0]["params"])
+    assert any(parameter is model.global_phase
+               for parameter in optimizer.param_groups[0]["params"])
+    assert not model.first_phase[model.active_indices[0]].requires_grad
 
 
 def test_compact_clevr_text_spreads_actual_words_without_changing_image(tmp_path):

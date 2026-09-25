@@ -126,6 +126,19 @@ def score_all(model, datasets, names, device, batch_size):
             for name in names}
 
 
+def make_optimizer(model, lr, head_lr_scale):
+    head_parameters = list(model.shared_head.parameters())
+    head_ids = {id(parameter) for parameter in head_parameters}
+    optical_parameters = [parameter for parameter in model.parameters()
+                          if parameter.requires_grad and id(parameter) not in head_ids]
+    parameters = optical_parameters + head_parameters
+    optimizer = torch.optim.Adam([
+        {"params": optical_parameters, "lr": lr},
+        {"params": head_parameters, "lr": lr * head_lr_scale},
+    ])
+    return optimizer, parameters
+
+
 def run_train(args, protocols, device):
     if args.stage not in (2, 3, 4) or args.previous_checkpoint is None:
         raise ValueError("training requires stage 2/3/4 and its previous checkpoint")
@@ -145,6 +158,7 @@ def run_train(args, protocols, device):
         "clevr_pairwise_weight": args.clevr_pairwise_weight,
         "route_balance_weight": args.route_balance_weight,
         "old_task_loss_weight": args.old_task_loss_weight,
+        "head_lr_scale": args.head_lr_scale,
         "test_policy": "omitted" if args.skip_test else "once after validation selection",
         "selection": "mean full-validation macro recall of all learned tasks",
         "model_git_commit": commit,
@@ -170,8 +184,7 @@ def run_train(args, protocols, device):
     old_indices = model.active_indices[:4 * (args.stage - 1)].tolist()
     old_phases = {index: model.first_phase[index].detach().cpu().clone()
                   for index in old_indices}
-    parameters = [parameter for parameter in model.parameters() if parameter.requires_grad]
-    optimizer = torch.optim.Adam(parameters, lr=args.lr)
+    optimizer, parameters = make_optimizer(model, args.lr, args.head_lr_scale)
     best_score, best_epoch, wait, start_epoch = -1.0, 0, 0, 1
     history = []
     if args.resume:
@@ -281,13 +294,15 @@ def main():
     parser.add_argument("--clevr-pairwise-weight", type=float, default=4.0)
     parser.add_argument("--route-balance-weight", type=float, default=0.0)
     parser.add_argument("--old-task-loss-weight", type=float, default=1.0)
+    parser.add_argument("--head-lr-scale", type=float, default=1.0)
     parser.add_argument("--skip-test", action="store_true")
     parser.add_argument("--resume", action="store_true")
     args = parser.parse_args()
     if not (0 < args.min_epochs <= args.epochs and args.patience > 0 and
             args.batch > 0 and args.batch % 2 == 0 and args.eval_batch > 0 and
             args.lr > 0 and args.clevr_pairwise_weight >= 0 and
-            args.route_balance_weight >= 0 and args.old_task_loss_weight > 0):
+            args.route_balance_weight >= 0 and args.old_task_loss_weight > 0 and
+            args.head_lr_scale > 0):
         raise ValueError("invalid stage training budget")
     if ("runs", "simulation") not in list(zip(args.out.parts, args.out.parts[1:])):
         raise ValueError("stage run must live under runs/simulation")
