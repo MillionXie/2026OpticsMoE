@@ -47,27 +47,32 @@ def main():
     p.add_argument('--available-only', action='store_true',
                    help='During an active capture, skip CCDs not yet saved')
     p.add_argument('--workers', type=int, default=4)
+    p.add_argument('--run-name', choices=('full_test', 'finetune_train800'), default='full_test')
     a = p.parse_args()
     server = connect('202.120.62.181', 24096, 'guest3', a.server_password)
     bench = connect('1.tcp.vip.cpolar.top', 12705, 'PS', a.bench_password)
     try:
         s, b = server.open_sftp(), bench.open_sftp()
         index = STAGES.index(a.stage)
-        server_stage = SERVER_ROOT + f'/{index+1:02d}_{a.stage}'
-        bench_stage = BENCH_ROOT + f'/{index+1:02d}_{a.stage}'
+        server_base = SERVER_ROOT if a.run_name == 'full_test' else SERVER_ROOT + '/' + a.run_name
+        bench_base = BENCH_ROOT if a.run_name == 'full_test' else BENCH_ROOT.rsplit('/', 1)[0] + '/' + a.run_name
+        server_stage = server_base + f'/{index+1:02d}_{a.stage}'
+        bench_stage = bench_base + f'/{index+1:02d}_{a.stage}'
         if a.direction == 'ccd-up':
             src, dst = b, s
             src_dir, dst_dir = bench_stage + '/ccd_captured', server_stage + '/ccd_captured'
-            expected = 2400 if index < 3 else 2500
-            names = [f'image_{i:04d}.png' for i in range(2400)]
-            if index >= 3:
-                names += [f'title_{i:03d}.png' for i in range(100)]
+            names = sorted(name for name in src.listdir(src_dir) if name.endswith('.png'))
+            expected = ((2400 if index < 3 else 2500) if a.run_name == 'full_test'
+                        else (800 if index < 3 else 900))
+            if len(names) != expected:
+                raise RuntimeError(f'CCD count {len(names)} != {expected}')
         else:
             src, dst = s, b
             src_dir, dst_dir = server_stage + '/compact_amplitude', bench_stage + '/compact_amplitude'
             data = src.open(server_stage + '/manifest.jsonl').read()
             rows = list(map(json.loads, data.splitlines()))
-            expected = 2400 if index < 3 else 2500
+            expected = ((2400 if index < 3 else 2500) if a.run_name == 'full_test'
+                        else (800 if index < 3 else 900))
             if len({r['key'] for r in rows}) != expected:
                 raise RuntimeError(f'Incomplete export: {len(rows)}/{expected}')
             names = [r['file'] for r in rows]

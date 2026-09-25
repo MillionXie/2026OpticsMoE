@@ -8,6 +8,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import random
 from pathlib import Path
 
 import numpy as np
@@ -108,8 +109,9 @@ def install_measured(replacement, root: Path, keys: list[str], target: str, sett
 
 
 def inputs_for(loaded, settings, contract, keys: list[str]):
-    if keys[0].startswith('image_'):
-        selected = tuple(contract.test[int(key[6:])] for key in keys)
+    if keys[0].startswith(('image_', 'train_')):
+        split = contract.train if keys[0].startswith('train_') else contract.test
+        selected = tuple(split[int(key[6:])] for key in keys)
         dataset = GroceryRetrievalDataset(selected, settings.image_size, augment=False)
         images = [dataset[i]['image'] for i in range(len(dataset))]
         inputs = preprocess_images(loaded.processor, images, DOCUMENT_INSTRUCTION)
@@ -123,14 +125,32 @@ def inputs_for(loaded, settings, contract, keys: list[str]):
     return move_inputs(inputs, loaded.device)
 
 
+def selected_train_keys(contract, per_sku: int, seed: int) -> list[str]:
+    if not 1 <= per_sku <= 48:
+        raise ValueError('train-per-sku must be 1..48')
+    groups: dict[int, list[int]] = {label: [] for label in range(100)}
+    for index, sample in enumerate(contract.train):
+        groups[sample.sku_index].append(index)
+    rng = random.Random(seed)
+    selected = []
+    for label, indices in groups.items():
+        if len(indices) != 48:
+            raise RuntimeError(f'TRAIN label {label} has {len(indices)} rather than 48 images')
+        selected.extend(rng.sample(indices, per_sku))
+    return [f'train_{index:04d}' for index in sorted(selected)]
+
+
 def main():
     p = argparse.ArgumentParser()
-    p.add_argument('--stage', choices=STAGES[1:], required=True)
+    p.add_argument('--stage', choices=STAGES, required=True)
     p.add_argument('--config', type=Path, required=True)
     p.add_argument('--checkpoint', type=Path, required=True)
     p.add_argument('--data-root', type=Path, required=True)
     p.add_argument('--physical-root', type=Path, required=True)
     p.add_argument('--batch-size', type=int, default=4)
+    p.add_argument('--split', choices=('test', 'train'), default='test')
+    p.add_argument('--train-per-sku', type=int, default=8)
+    p.add_argument('--selection-seed', type=int, default=20260926)
     p.add_argument('--limit', type=int, default=0,
                    help='Diagnostic prefix length; 0 means the complete split')
     p.add_argument('--title-only', action='store_true',
@@ -150,13 +170,15 @@ def main():
         for line in manifest.read_text(encoding='utf-8').splitlines():
             row = json.loads(line)
             prior[row['key']] = row
-    keys = [f'image_{i:04d}' for i in range(2400)]
+    keys = ([f'image_{i:04d}' for i in range(2400)] if args.split == 'test'
+            else selected_train_keys(contract, args.train_per_sku, args.selection_seed))
+    image_count = len(keys)
     if args.stage.startswith('language'):
         keys += [f'title_{i:03d}' for i in range(100)]
     elif args.title_only:
         raise ValueError('title-only requires a language stage')
     if args.title_only:
-        keys = keys[2400:]
+        keys = keys[image_count:]
     if args.limit:
         keys = keys[:args.limit]
     loaded = load_backbone(settings, torch.device('cuda'))
@@ -170,7 +192,7 @@ def main():
         readout.eval()
         branch = (replacement.vision_surrogate if args.stage.startswith('vision')
                   else replacement.language_surrogate).core.optical_branch
-        for group in (keys[:2400], keys[2400:]):
+        for group in (keys[:image_count], keys[image_count:]):
             for start in range(0, len(group), args.batch_size):
                 batch = [key for key in group[start:start + args.batch_size]
                          if key not in prior or not (compact / prior[key]['file']).is_file()]

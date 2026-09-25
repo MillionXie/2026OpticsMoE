@@ -20,3 +20,5 @@
 正式采集的逐层日志、CCD 与紧凑输入在该目录的 `full_test/01_vision_router` 至 `full_test/06_language_global`；服务器逐层导出与评价位于 `LightGenV2/tasks/t08_abo_image_text_retrieval/runs/physical/alpha040_10cm_20260925`。接力脚本见本包的 `export_full_next_stage.py`、`capture_full_stage.py`、`sync_full_stage.py`、`continue_full_test.py`，只用 `best_checkpoint.pt` 对应的固定 TEST split，不按实测结果挑选/删改测试图片。
 
 结果文件：`physical_test_report.json`（总指标）、`physical_test_predictions.csv`（100 个标题的逐查询排名）、`physical_capture_qa.json`（六层文件数、曝光、p99 与饱和审计）、`vision_router_routing_summary.json` 与 `language_router_routing_summary.json`（实测专家选择分布）。Vision Router 的选择计数为 1139/1201/1075/1385；Language Router 为 2500/2437/63/0（每样本 Top-2，总计分别为 4800 和 5000 次选择）。后者明显集中，但不能仅凭此断言 0.07 差距的唯一原因。
+
+后续在独立 TRAIN 图片上仅微调最后电子读出头的流程、全部 5,100 张 TRAIN CCD 审计和实测结果见 `FINETUNE_TRAIN800.md`；原 2,400 张 TEST 完整采集与 0.79 基线均保留，不会被覆盖。

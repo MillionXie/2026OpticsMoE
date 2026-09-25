@@ -1,0 +1,12 @@
+{
+  "schema": 1,
+  "split": "test",
+  "checkpoint_sha256": "cc977b83286a8e90398ebd30064428886bc3c06f1eb0557e470060f7ff5c1cae",
+  "physical_root": "/DATA/DATA1/guest3/2026OpticsMoE/LightGenV2/tasks/t08_abo_image_text_retrieval/runs/physical/alpha040_10cm_20260925",
+  "selection_seed": null,
+  "train_per_sku": null,
+  "feature_shape": [
+    2400,
+    384
+  ]
+}

@@ -59,17 +59,23 @@ def main():
     parser.add_argument('--exposure-us', type=float, default=10000)
     parser.add_argument('--wait-ms', type=float, default=240)
     parser.add_argument('--discard-frames', type=int, default=6)
+    parser.add_argument('--run-name', default='full_test')
+    parser.add_argument('--max-frames', type=int, default=0,
+                        help='Stop after this many new captures for a short hardware check')
     args = parser.parse_args()
     if args.exposure_us <= 0 or args.wait_ms < 0 or args.discard_frames < 1:
         raise ValueError('Invalid capture timing')
     index = STAGES.index(args.stage)
-    stage = PROJECT / 'full_test' / f'{index + 1:02d}_{args.stage}'
+    if args.run_name not in ('full_test', 'finetune_train800'):
+        raise ValueError('Unsupported run-name')
+    stage = PROJECT / args.run_name / f'{index + 1:02d}_{args.stage}'
     compact = stage / 'compact_amplitude'
     captured = stage / 'ccd_captured'
     phase = PROJECT / 'phase_bmp_provisional' / f'{args.stage}.bmp'
     lines = (stage / 'manifest.jsonl').read_text(encoding='utf-8').splitlines()
     rows = {row['key']: row for row in map(json.loads, lines)}
-    expected = 2400 if index < 3 else 2500
+    expected = ((2400 if index < 3 else 2500) if args.run_name == 'full_test'
+                else (800 if index < 3 else 900))
     if len(rows) != expected:
         raise RuntimeError(f'Incomplete {args.stage} manifest: {len(rows)}/{expected}')
     if any(row['checkpoint_sha256'] != EXPECTED for row in rows.values()):
@@ -86,7 +92,10 @@ def main():
         print('phase_receipt', receipt, 'phase_sha256', digest(phase), flush=True)
         print('camera_settings', bench.settings, 'roi', CORNER_POINTS,
               'orientation', ORIENTATIONS[index], flush=True)
+        new_captures = 0
         for number, (key, row) in enumerate(rows.items(), 1):
+            if args.max_frames and new_captures >= args.max_frames:
+                break
             target = captured / f'{key}.png'
             if target.is_file():
                 image = cv2.imread(str(target), cv2.IMREAD_UNCHANGED)
@@ -122,12 +131,16 @@ def main():
             if saturated > .01:
                 raise RuntimeError(f'Frame {number} saturated: {saturated:.3%}')
             Image.fromarray(canonical).save(target)
+            new_captures += 1
             with journal.open('a', encoding='utf-8') as stream:
                 stream.write(json.dumps(stats, ensure_ascii=False) + '\n')
             if number <= 4 or number % 20 == 0:
                 print(f'captured {number}/{expected} {key} p99={stats["p99"]:.1f} '
                       f'sat={saturated:.4%}', flush=True)
-    print(f'{args.stage.upper()}_COMPLETE {expected}/{expected}', flush=True)
+    actual = sum(path.suffix.lower() == '.png' for path in captured.iterdir())
+    if not args.max_frames and actual != expected:
+        raise RuntimeError(f'Captured {actual}/{expected} files')
+    print(f'{args.stage.upper()}_COMPLETE {actual}/{expected}', flush=True)
 
 
 if __name__ == '__main__':

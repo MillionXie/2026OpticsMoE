@@ -26,9 +26,13 @@ def main():
     p.add_argument('--data-root', type=Path, required=True)
     p.add_argument('--physical-root', type=Path, required=True)
     p.add_argument('--batch-size', type=int, default=4)
+    p.add_argument('--expected-sha', default=EXPECTED)
+    p.add_argument('--report-prefix', default='physical_test')
     a = p.parse_args()
-    if sha(a.checkpoint) != EXPECTED:
+    if sha(a.checkpoint) != a.expected_sha:
         raise RuntimeError('Checkpoint SHA256 mismatch')
+    if not a.report_prefix.replace('_', '').isalnum():
+        raise ValueError('report-prefix must contain only letters, digits, and underscores')
     settings = load_settings(a.config)
     contract = load_contract(a.data_root)
     loaded = load_backbone(settings, torch.device('cuda'))
@@ -63,13 +67,13 @@ def main():
         )
         a.physical_root.mkdir(parents=True, exist_ok=True)
         report = {'schema': 1, 'protocol': '100 physical title queries to 2400 physical TEST images',
-                  'checkpoint_sha256': EXPECTED, 'metrics': metrics,
+                  'checkpoint_sha256': a.expected_sha, 'metrics': metrics,
                   'image_count': 2400, 'title_count': 100,
                   'all_six_optical_stages_measured': True}
-        (a.physical_root / 'physical_test_report.json').write_text(
+        (a.physical_root / f'{a.report_prefix}_report.json').write_text(
             json.dumps(report, indent=2), encoding='utf-8'
         )
-        with (a.physical_root / 'physical_test_predictions.csv').open(
+        with (a.physical_root / f'{a.report_prefix}_predictions.csv').open(
             'w', newline='', encoding='utf-8'
         ) as stream:
             writer = csv.DictWriter(stream, fieldnames=list(rows[0]))

@@ -21,10 +21,11 @@ def main():
     p.add_argument('--gpu', type=int, default=1)
     p.add_argument('--limit', type=int, default=0)
     p.add_argument('--title-only', action='store_true')
+    p.add_argument('--run-name', choices=('full_test', 'finetune_train800'), default='full_test')
     a = p.parse_args()
     stages = ('vision_router', 'vision_expert', 'vision_global',
               'language_router', 'language_expert', 'language_global')
-    if a.stage not in stages[1:]:
+    if a.stage not in stages:
         raise ValueError(a.stage)
     c = paramiko.SSHClient()
     c.set_missing_host_key_policy(paramiko.AutoAddPolicy())
@@ -33,13 +34,15 @@ def main():
         sftp = c.open_sftp()
         sftp.put(str(HERE / 'export_full_next_stage.py'), TOOLS + '/export_full_next_stage.py')
         sftp.close()
-        stage_dir = PHYSICAL + f'/{stages.index(a.stage)+1:02d}_{a.stage}'
+        physical = PHYSICAL if a.run_name == 'full_test' else PHYSICAL + '/' + a.run_name
+        stage_dir = physical + f'/{stages.index(a.stage)+1:02d}_{a.stage}'
         cmd = (f'mkdir -p {stage_dir} && cd {WORKTREE} && '
                f'nohup env CUDA_VISIBLE_DEVICES={a.gpu} HF_HUB_OFFLINE=1 TRANSFORMERS_OFFLINE=1 '
                f'PYTHONPATH={WORKTREE}:{TOOLS} '
                f'/home/guest3/miniconda3/envs/xml/bin/python -u {TOOLS}/export_full_next_stage.py '
                f'--stage {a.stage} --config {CONFIG} --checkpoint {CHECKPOINT} '
-               f'--data-root {DATA} --physical-root {PHYSICAL} --batch-size 4 '
+               f'--data-root {DATA} --physical-root {physical} --batch-size 4 '
+               f'--split {"test" if a.run_name == "full_test" else "train"} '
                f'--limit {a.limit} {"--title-only " if a.title_only else ""}'
                f'> {stage_dir}/export.log 2>&1 < /dev/null & echo $!')
         _, stdout, stderr = c.exec_command(cmd)

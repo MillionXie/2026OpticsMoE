@@ -18,6 +18,8 @@ def main():
     p.add_argument('--password', required=True)
     p.add_argument('--exposure-us', type=float, default=10000)
     p.add_argument('--wait-ms', type=float, default=240)
+    p.add_argument('--run-name', choices=('full_test', 'finetune_train800'), default='full_test')
+    p.add_argument('--max-frames', type=int, default=0)
     a = p.parse_args()
     index = STAGES.index(a.stage)
     c = paramiko.SSHClient()
@@ -27,11 +29,12 @@ def main():
         sftp = c.open_sftp()
         sftp.put(str(HERE / 'capture_full_stage.py'), BASE.replace('\\', '/') + '/capture_full_stage.py')
         sftp.close()
-        task = 'ABO_T2I_Alpha040_' + a.stage
+        task = 'ABO_T2I_Alpha040_' + a.run_name + '_' + a.stage
         script = BASE + r'\capture_full_stage.py'
-        log = BASE + fr'\full_test\{index+1:02d}_{a.stage}\capture.log'
+        log = BASE + fr'\{a.run_name}\{index+1:02d}_{a.stage}\capture.log'
         command = (f'"{PYTHON}" -u "{script}" --stage {a.stage} '
-                   f'--exposure-us {a.exposure_us:g} --wait-ms {a.wait_ms:g}')
+                   f'--exposure-us {a.exposure_us:g} --wait-ms {a.wait_ms:g} '
+                   f'--run-name {a.run_name} --max-frames {a.max_frames}')
         ps = f'''$ErrorActionPreference='Stop'
 $sid=[Security.Principal.WindowsIdentity]::GetCurrent().User.Value
 $xml=@"
@@ -41,7 +44,7 @@ $xml=@"
 <Actions Context="Author"><Exec><Command>cmd.exe</Command><Arguments>/c &quot;{command} &gt; &quot;&quot;{log}&quot;&quot; 2&gt;&amp;1&quot;</Arguments></Exec></Actions>
 </Task>
 "@
-Register-ScheduledTask -TaskName '{task}' -Xml $xml | Out-Null
+Register-ScheduledTask -TaskName '{task}' -Xml $xml -Force | Out-Null
 Start-ScheduledTask -TaskName '{task}'
 Get-ScheduledTask -TaskName '{task}' | Select-Object TaskName,State | ConvertTo-Json -Compress
 '''
