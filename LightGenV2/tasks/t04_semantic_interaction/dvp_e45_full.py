@@ -23,6 +23,8 @@ def main() -> None:
     parser.add_argument("--wait-ms", type=float, default=240)
     parser.add_argument("--batch-size", type=int, default=4)
     parser.add_argument("--resume", action="store_true")
+    parser.add_argument("--minimum-reference-pcc", type=float, default=0.75,
+                        help="Stop below this fixed-input PCC; values under 0.75 are still recorded as warnings")
     args = parser.parse_args()
     root, pilot, out = args.project.resolve(), args.pilot.resolve(), args.output.resolve()
     if not args.resume and out.exists():
@@ -31,6 +33,8 @@ def main() -> None:
         raise ValueError("Outside bounded camera/SLM settings")
     if not 1 <= args.batch_size <= 8:
         raise ValueError("Batch size must be 1..8")
+    if not 0.0 <= args.minimum_reference_pcc <= 0.75:
+        raise ValueError("Minimum reference PCC must be in [0, 0.75]")
     sys.path.insert(0, str(root / "runtime_exact"))
     abo = root.parent / "ABO_I2I_Lab_DVP_8um"
     sys.path.insert(0, str(abo / "lab_dvp8um"))
@@ -106,10 +110,12 @@ def main() -> None:
                 p99 = float(np.percentile(frame, 99))
                 pcc = hw.pcc(frame, reference_img)
                 row = {"stage": stage, "after_query_count": position, "p99": p99,
-                       "pilot_p99": expected_p99, "pcc_to_pilot": pcc}
+                       "pilot_p99": expected_p99, "pcc_to_pilot": pcc,
+                       "pcc_warning": pcc < 0.75,
+                       "minimum_reference_pcc": args.minimum_reference_pcc}
                 health.setdefault(stage, []).append(row)
                 write(out / "health_checks.json", health)
-                if p99 < max(8.0, expected_p99 * 0.5) or pcc < 0.75:
+                if p99 < max(8.0, expected_p99 * 0.5) or pcc < args.minimum_reference_pcc:
                     raise RuntimeError(f"Optical reference changed at {stage}/{position}: {row}")
             check_reference(0)
             stage_ccd = out / "ccd" / stage
