@@ -1,5 +1,11 @@
 # 四模态光学终身学习：零初相位、原传播面 CCD＋单层读出
 
+## 2026-09-25 冻结视觉前端新候选协议
+
+用户确认允许一次预训练后冻结的轻量视觉 CNN，MoE 与 D2NN 必须使用**同一个 checkpoint**。`pretrain_clevr_vision.py` 在完整 CLEVR 训练图像与原问句标签上训练了 32,128 参数的特征网络；临时 24 输出监督头仅用于预训练，光学训练和推理均丢弃。候选 run `clevr_vision24_full_frozen_candidate_s17_f34f` 在完整 45,000 条验证问句上达到 86.64%，**这是电子前端诊断，不是 MoE/D2NN 的成绩**。图像任务的新入射场把每个 R/G/B 方块上方 84 行保留为原始 RGB 缩放图，下方 28 行写入同一张图的 128 维冻结 CNN 特征图案；三个图像方块的原图部分合计 0.25 入射功率、特征部分合计 0.25。EuroSAT 第四方块仍是配对地点 SAR，CLEVR 第四方块仍是原始文字问句，各占 0.5。Speech/Physical 输入不变，Physical 继续使用无帧差原始八帧。此固定编码不含任务训练期间可更新的前端参数，模型输出仍只有一层 Linear(784,10)。
+
+新代码在 `train_eurosat.py`、`train_other_tasks.py`、`train_lifelong_moe.py` 增加可选 `--vision-checkpoint`；所有阶段的配置和接续校验写入其 SHA256，拒绝将旧无视觉前端 checkpoint 混入新链。新协议的单任务／顺序验证尚未完成，旧矩阵和旧单任务分数**一概不能直接迁移或与新结果拼表**。视觉前端用 CLEVR 监督预训练，因此结论应明确写成“冻结共享电子视觉前端条件下的光电架构比较”，不能声称纯光学跨模态学习。只有完整验证集确认 MoE 的 EuroSAT 起点和 CLEVR B 阶段改善后，才继续 C/D 和正式测试。
+
 ## 2026-09-25 正式顺序实验边界
 
 已确定输入协议的 EuroSAT／Speech 两个独立 D2NN 完成了不调参数的 2×2 直接迁移推理；[结果与限制](reports/d2nn_partial_transfer_20260925.md)。Physical 的视频帧输入及固定帧差影响见[输入审查](PHYSICAL_INPUT_AUDIT_20260925.md)。这两项记录均不能替代尚未完成的四任务三张正式矩阵。

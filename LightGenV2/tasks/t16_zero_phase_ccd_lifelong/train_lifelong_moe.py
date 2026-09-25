@@ -30,9 +30,9 @@ EXPECTED_EURO = {"train": 15998, "val": 5465, "test": 5429}
 
 
 class EuroAdapter:
-    def __init__(self, source, split):
+    def __init__(self, source, split, vision_checkpoint=None, device=None):
         trainval, holdout = source_paths(source)
-        self.data = load_split(trainval, holdout, split)
+        self.data = load_split(trainval, holdout, split, vision_checkpoint, device)
         self.labels = self.data.labels
 
     def __len__(self):
@@ -42,16 +42,16 @@ class EuroAdapter:
         return self.data[indices].to(device)
 
 
-def load_dataset(protocols, name, split):
+def load_dataset(protocols, name, split, vision_checkpoint=None, device=None):
     if name == "eurosat":
-        data = EuroAdapter(protocols[name], split)
+        data = EuroAdapter(protocols[name], split, vision_checkpoint, device)
         if len(data) != EXPECTED_EURO[split]:
             raise ValueError("EuroSAT count changed")
         return data
     task = {"clevr": "clevr", "speech_binary": "speech_binary",
             "physical_binary": "physical_binary",
             "physical_binary_raw": "physical_binary_raw"}[name]
-    return load_task(protocols[name], task, split)
+    return load_task(protocols[name], task, split, vision_checkpoint, device)
 
 
 def shuffled_batches(data, name, batch_size, rng):
@@ -90,7 +90,7 @@ def task_loss(logits, target, name, pairwise_weight):
 
 
 def load_previous(model, path, stage, protocols, device, order=ORDER,
-                  architecture="moe"):
+                  architecture="moe", vision_sha=None):
     checkpoint = torch.load(path, map_location=device, weights_only=False)
     prior = checkpoint.get("config", {})
     if stage == 2:
@@ -111,6 +111,8 @@ def load_previous(model, path, stage, protocols, device, order=ORDER,
             raise ValueError("previous checkpoint used different task protocols")
     if prior.get("activation_order") != "center_out":
         raise ValueError("previous checkpoint has a different optical geometry")
+    if prior.get("vision_checkpoint_sha256") != vision_sha:
+        raise ValueError("previous checkpoint has a different frozen vision front")
     if ("shared_head.weight" not in checkpoint["model"] or
             tuple(checkpoint["model"]["shared_head.weight"].shape) != (10, 784)):
         raise ValueError("expected exactly one ten-output Linear readout")
@@ -143,7 +145,7 @@ def make_optimizer(model, lr, head_lr_scale):
     return optimizer, parameters
 
 
-def initialize_new_experts(model, path, stage, clevr_protocol, device):
+def initialize_new_experts(model, path, stage, clevr_protocol, device, vision_sha=None):
     """Warm only B's four new phase masks from a standalone original-CLEVR MoE."""
     if path is None:
         return
@@ -153,7 +155,8 @@ def initialize_new_experts(model, path, stage, clevr_protocol, device):
     config = checkpoint.get("config", {})
     if (config.get("task") != "clevr" or config.get("architecture") != "moe" or
             config.get("activation_order") != "center_out" or
-            config.get("source_protocol_sha256") != sha256_file(clevr_protocol)):
+            config.get("source_protocol_sha256") != sha256_file(clevr_protocol) or
+            config.get("vision_checkpoint_sha256") != vision_sha):
         raise ValueError("warm checkpoint does not match original CLEVR input")
     source = DirectCCDOptics("moe", activation_order="center_out").to(device)
     source.load_state_dict(checkpoint["model"])
@@ -176,6 +179,8 @@ def run_train(args, protocols, device):
         "full_replay": "all records of every learned task exactly once per epoch; interleaved",
         "current_task": names[-1], "learned_tasks": names,
         "protocol_sha256": {n: sha256_file(protocols[n]) for n in names},
+        "vision_checkpoint_sha256": (sha256_file(args.vision_checkpoint)
+                                      if args.vision_checkpoint else None),
         "previous_checkpoint": str(args.previous_checkpoint),
         "previous_checkpoint_sha256": sha256_file(args.previous_checkpoint),
         "epochs": args.epochs, "min_epochs": args.min_epochs,
@@ -205,16 +210,20 @@ def run_train(args, protocols, device):
         (args.out / "command.txt").write_text(" ".join(sys.argv) + "\n")
     save_json(args.out / "status.json", {"status": "running"})
 
-    train = {name: load_dataset(protocols, name, "train") for name in names}
-    val = {name: load_dataset(protocols, name, "val") for name in names}
+    train = {name: load_dataset(protocols, name, "train", args.vision_checkpoint,
+                               device) for name in names}
+    val = {name: load_dataset(protocols, name, "val", args.vision_checkpoint,
+                             device) for name in names}
     model = DirectCCDOptics(args.architecture, activation_order="center_out").to(device)
     validate_head(model)
     load_previous(model, args.previous_checkpoint, args.stage, protocols, device,
-                  order=order, architecture=args.architecture)
+                  order=order, architecture=args.architecture,
+                  vision_sha=config["vision_checkpoint_sha256"])
     model.configure_stage(args.stage - 1)
     if not args.resume:
         initialize_new_experts(model, args.new_expert_init_checkpoint, args.stage,
-                               protocols["clevr"], device)
+                               protocols["clevr"], device,
+                               config["vision_checkpoint_sha256"])
     old_indices = (model.active_indices[:4 * (args.stage - 1)].tolist()
                    if args.architecture == "moe" else [])
     old_phases = {index: model.first_phase[index].detach().cpu().clone()
@@ -302,7 +311,8 @@ def run_train(args, protocols, device):
               "old_experts_unchanged": unchanged if args.architecture == "moe" else None,
               "shared_head": "one trainable Linear(784,10)"}
     if not args.skip_test:
-        test = {name: load_dataset(protocols, name, "test") for name in names}
+        test = {name: load_dataset(protocols, name, "test", args.vision_checkpoint,
+                                   device) for name in names}
         result["test"] = score_all(model, test, names, device, args.eval_batch)
     save_json(args.out / "result.json", result)
     save_json(args.out / "status.json", {"status": "complete",
@@ -336,6 +346,7 @@ def main(default_architecture="moe"):
     parser.add_argument("--old-task-loss-weight", type=float, default=1.0)
     parser.add_argument("--head-lr-scale", type=float, default=1.0)
     parser.add_argument("--new-expert-init-checkpoint", type=Path)
+    parser.add_argument("--vision-checkpoint", type=Path)
     parser.add_argument("--skip-test", action="store_true")
     parser.add_argument("--resume", action="store_true")
     args = parser.parse_args()

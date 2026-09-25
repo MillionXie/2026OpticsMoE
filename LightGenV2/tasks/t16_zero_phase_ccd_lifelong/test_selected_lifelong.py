@@ -20,6 +20,7 @@ def main():
     parser.add_argument("--clevr", type=Path, required=True)
     parser.add_argument("--speech", type=Path, required=True)
     parser.add_argument("--physical", type=Path, required=True)
+    parser.add_argument("--vision-checkpoint", type=Path)
     parser.add_argument("--eval-batch", type=int, default=16)
     args = parser.parse_args()
     if args.eval_batch <= 0:
@@ -32,11 +33,16 @@ def main():
     if status.get("status") != "complete" or config.get("test_policy") != "omitted":
         raise ValueError("test needs a complete validation-only run")
     stage = config["stage"]
-    names = ORDER[:stage]
-    if stage not in (2, 3, 4) or tuple(config["learned_tasks"]) != names:
+    order = tuple(config["order"])
+    names = order[:stage]
+    if (stage not in (2, 3, 4) or tuple(config["learned_tasks"]) != names or
+            order[:3] != ORDER[:3] or order[3] != "physical_binary_raw"):
         raise ValueError("unexpected lifelong stage")
-    protocols = dict(zip(ORDER, (args.eurosat, args.clevr,
+    protocols = dict(zip(order, (args.eurosat, args.clevr,
                                  args.speech, args.physical)))
+    if config.get("vision_checkpoint_sha256") != (sha256_file(args.vision_checkpoint)
+                                                    if args.vision_checkpoint else None):
+        raise ValueError("frozen visual front differs from the training run")
     if config["protocol_sha256"] != {name: sha256_file(protocols[name])
                                       for name in names}:
         raise ValueError("test protocols differ from the training run")
@@ -45,11 +51,12 @@ def main():
     checkpoint = torch.load(checkpoint_path, map_location=device, weights_only=False)
     if not (0 < checkpoint["epoch"] <= config["epochs"]):
         raise ValueError("invalid selected epoch")
-    model = DirectCCDOptics("moe", activation_order="center_out").to(device)
+    model = DirectCCDOptics(config["architecture"], activation_order="center_out").to(device)
     model.configure_stage(stage - 1)
     validate_head(model)
     model.load_state_dict(checkpoint["model"])
-    test = {name: load_dataset(protocols, name, "test") for name in names}
+    test = {name: load_dataset(protocols, name, "test", args.vision_checkpoint,
+                               device) for name in names}
     result = {
         "stage": stage, "learned_tasks": names,
         "selected_epoch": checkpoint["epoch"],

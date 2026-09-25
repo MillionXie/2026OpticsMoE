@@ -15,6 +15,7 @@ import torch
 from torch.nn import functional as F
 
 from .data import PairedEuroSatFields
+from .frozen_vision import FrozenVisionEuroSat
 from .model import DirectCCDOptics
 
 
@@ -29,11 +30,12 @@ def source_paths(protocol_path):
     return Path(source["trainval_npz"]), Path(source["holdout_npz"])
 
 
-def load_split(trainval, holdout, split):
+def load_split(trainval, holdout, split, vision_checkpoint=None, device=None):
     data = PairedEuroSatFields(trainval, holdout, split)
     if len(data) != EXPECTED[split] or set(np.unique(data.labels)) != set(range(10)):
         raise ValueError(f"unexpected {split} count or class set")
-    return data
+    return (FrozenVisionEuroSat(data, vision_checkpoint, device)
+            if vision_checkpoint is not None else data)
 
 
 def batches(indices, size):
@@ -125,7 +127,8 @@ def load_initial_checkpoint(model, path, config, device):
     if (prior.get("task") != config["task"] or
             prior.get("architecture") != config["architecture"] or
             prior.get("activation_order") != config["activation_order"] or
-            prior.get("source_sha256") != config["source_sha256"]):
+            prior.get("source_sha256") != config["source_sha256"] or
+            prior.get("vision_checkpoint_sha256") != config["vision_checkpoint_sha256"]):
         raise ValueError("initial checkpoint has a different task, geometry, or data source")
     model.load_state_dict(initial["model"])
 
@@ -149,6 +152,8 @@ def main():
     parser.add_argument("--init-checkpoint", type=Path,
                         help="start a new, separately recorded candidate from a selected checkpoint")
     parser.add_argument("--resume", action="store_true")
+    parser.add_argument("--vision-checkpoint", type=Path,
+                        help="Shared frozen full-CLEVR visual front; new input protocol")
     args = parser.parse_args()
     if not (0 < args.min_epochs <= args.epochs and args.patience > 0 and
             args.batch > 0 and args.eval_batch > 0 and args.lr > 0 and
@@ -167,8 +172,8 @@ def main():
     np.random.seed(args.seed)
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     trainval, holdout = source_paths(args.protocol)
-    train = load_split(trainval, holdout, "train")
-    val = load_split(trainval, holdout, "val")
+    train = load_split(trainval, holdout, "train", args.vision_checkpoint, device)
+    val = load_split(trainval, holdout, "val", args.vision_checkpoint, device)
     code_commit = subprocess.check_output(["git", "rev-parse", "HEAD"], text=True).strip()
     config = {"task": "eurosat_paired_rgb_sar", "architecture": args.architecture,
               "activation_order": "center_out", "readout": "one trainable Linear(784,10), bias=False",
@@ -184,6 +189,8 @@ def main():
               "skip_test": args.skip_test,
               "source_protocol": str(args.protocol),
               "source_sha256": {"trainval": sha256_file(trainval), "holdout": sha256_file(holdout)},
+              "vision_checkpoint_sha256": (sha256_file(args.vision_checkpoint)
+                                            if args.vision_checkpoint else None),
               "init_checkpoint": (str(args.init_checkpoint) if args.init_checkpoint else None),
               "init_checkpoint_sha256": (sha256_file(args.init_checkpoint)
                                           if args.init_checkpoint else None),
@@ -281,7 +288,7 @@ def main():
              "validation": selected["validation"],
              "model_git_commit": code_commit}
     if not args.skip_test:
-        test = load_split(trainval, holdout, "test")
+        test = load_split(trainval, holdout, "test", args.vision_checkpoint, device)
         final["test"] = evaluate(model, test, device, args.eval_batch)
     save_json(args.out / "result.json", final)
     save_json(args.out / "status.json", {"status": "complete", "epoch": history[-1]["epoch"],

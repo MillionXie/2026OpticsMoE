@@ -20,6 +20,7 @@ from LightGenV2.tasks.t14_shared_readout_lifelong.data import (
 from .data import (ClevrAttributeQueryPairs, ClevrCompactQueryPairs,
                    PhysicalBinaryPairs, SpeechBinaryPairs)
 from .model import DirectCCDOptics
+from .frozen_vision import FrozenVisionClevr
 from .train_eurosat import batches, routing_balance_penalty, save_json, sha256_file
 
 
@@ -50,6 +51,7 @@ RESUME_CONTRACT = (
     "dataset_counts", "batch", "eval_batch", "lr", "seed",
     "source_protocol_sha256", "source_manifest_sha256", "test_policy",
     "clevr_pairwise_weight",
+    "vision_checkpoint_sha256",
 )
 
 
@@ -77,7 +79,7 @@ def configure_single_task_capacity(model, active_experts):
         model.first_phase[index].requires_grad_(True)
 
 
-def load_task(protocol_path, task, split):
+def load_task(protocol_path, task, split, vision_checkpoint=None, device=None):
     protocol = json.loads(protocol_path.read_text())
     if (protocol.get("storage") != STORAGE[task] or
             protocol.get("all_original_samples") is not True):
@@ -103,6 +105,8 @@ def load_task(protocol_path, task, split):
     if (len(data) != EXPECTED[task][split] or
             not np.array_equal(np.unique(labels), np.arange(CLASSES[task]))):
         raise ValueError(f"unexpected {task}/{split} count or class set")
+    if vision_checkpoint is not None and task == "clevr":
+        return FrozenVisionClevr(data, vision_checkpoint, device)
     return data
 
 
@@ -172,6 +176,7 @@ def main():
     parser.add_argument("--route-balance-weight", type=float, default=0.0)
     parser.add_argument("--resume-checkpoint", type=Path,
                         help="Continue an immutable prior run into a new run directory")
+    parser.add_argument("--vision-checkpoint", type=Path)
     args = parser.parse_args()
     if not (0 < args.min_epochs <= args.epochs and args.patience > 0 and
             args.batch > 0 and args.eval_batch > 0 and args.lr > 0 and
@@ -191,8 +196,8 @@ def main():
     torch.manual_seed(args.seed)
     np.random.seed(args.seed)
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-    train = load_task(args.protocol, args.task, "train")
-    val = load_task(args.protocol, args.task, "val")
+    train = load_task(args.protocol, args.task, "train", args.vision_checkpoint, device)
+    val = load_task(args.protocol, args.task, "val", args.vision_checkpoint, device)
     commit = subprocess.check_output(["git", "rev-parse", "HEAD"], text=True).strip()
     config = {
         "task": args.task, "architecture": args.architecture,
@@ -207,6 +212,8 @@ def main():
         "route_balance_weight": args.route_balance_weight,
         "seed": args.seed, "source_protocol": str(args.protocol),
         "source_protocol_sha256": sha256_file(args.protocol),
+        "vision_checkpoint_sha256": (sha256_file(args.vision_checkpoint)
+                                      if args.vision_checkpoint else None),
         "source_manifest_sha256": json.loads(args.protocol.read_text()).get(
             "source_manifest_sha256"),
         "model_git_commit": commit,
@@ -316,7 +323,7 @@ def main():
               "model_git_commit": commit,
               "selected_checkpoint_git_commit": selected["config"]["model_git_commit"]}
     if not args.skip_test:
-        test = load_task(args.protocol, args.task, "test")
+        test = load_task(args.protocol, args.task, "test", args.vision_checkpoint, device)
         result["test"] = evaluate(model, test, device, args.eval_batch, CLASSES[args.task])
     save_json(args.out / "result.json", result)
     save_json(args.out / "status.json", {"status": "complete", "epoch": history[-1]["epoch"],
