@@ -52,11 +52,26 @@ UNet was initialized by overlapping-weight transfer, not trained from scratch.
 - Blur remains visible. True-256 VAE reconstruction is substantially more
   detailed than the previous source-upsample path in some samples, but merely
   raising source resolution does not guarantee a better trained editor. The
-  true-256 fine-tune is evaluated separately; no perceptual or adversarial
-  loss was added in this pilot.
+  true-256 run exposed a mask-preprocessing bug: erosion removed thin lamp
+  stems. The corrected alpha-mask pilot (`large_143m_true256_alpha_epoch1.jpg`)
+  restores that anatomy but is only one epoch, and its test latent MSE is
+  0.05480 on a *different* target distribution. It should not replace the
+  older 0.04312 model based solely on this metric or one preview grid. No
+  perceptual or adversarial loss was added in this pilot.
 
 See `large_143m_epoch2.jpg`, `small_final_grid.jpg`, and the JSON metrics in
 this folder. A copy of the model-generated output for a white-background lamp
 input is `infer_smoke_white_input.png` (an out-of-distribution input; not a
 quality benchmark). The user-facing controls should be tested with room-scene
 inputs similar to training examples.
+
+Model paths on the training server:
+
+- 142.53M original paired-data pilot: `t12_assets/runs/abo_unified_qwenmini_143m_v1/unified_editor.pt`
+- 142.53M corrected true-256-alpha pilot: `t12_assets/runs/abo_unified_qwenmini_143m_true256_alpha_v2/unified_editor.pt`
+- 13.71M small pilot: `t12_assets/runs/abo_unified_qwenmini2_optical_13m_v1/best_model.pt`
+
+All training and evaluation processes exit after their work and release their
+task GPU allocation. The packed large checkpoint still expects the frozen VAE
+and shared Qwen token embedding from the model caches; it is not a standalone
+single-file inference artifact.

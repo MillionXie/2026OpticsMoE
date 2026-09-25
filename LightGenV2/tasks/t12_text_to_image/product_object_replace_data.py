@@ -150,14 +150,14 @@ class ProductObjectReplacementDataset(Dataset[dict[str, Any]]):
         with Image.open(row["image_path"]) as handle:
             image = handle.convert("RGB")
         if row["mask_path"] is None:
-            mask = _fallback_mask(image)
+            # The RGB-derived fallback is deliberately dilated; trim its white
+            # matte before compositing. Do not apply this erosion to the true
+            # render alpha: it removes thin lamp stems and table legs.
+            mask = _fallback_mask(image).filter(ImageFilter.MinFilter(5))
         else:
             with Image.open(row["mask_path"]) as handle:
                 mask = handle.convert("L")
-        # CleanRender masks intentionally retain a generous antialiased edge
-        # for white-background presentation.  A mild erosion removes that
-        # visible white matte before compositing onto coloured rooms.
-        mask = mask.filter(ImageFilter.MinFilter(5)).filter(ImageFilter.GaussianBlur(0.65))
+        mask = mask.filter(ImageFilter.GaussianBlur(0.65))
         _, normalized_mask, foreground = _normalize_product(image, mask, size)
         return foreground, normalized_mask
 

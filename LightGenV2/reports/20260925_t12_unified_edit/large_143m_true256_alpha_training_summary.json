@@ -1,0 +1,124 @@
+{
+  "schema_version": 1,
+  "task": "independently controlled product and background editing",
+  "categories": [
+    "lamp",
+    "table"
+  ],
+  "chairs_used": false,
+  "best_epoch": 1,
+  "initial_validation": {
+    "latent_mse": 0.17066864167281892,
+    "latent_l1": 0.22198453309829347,
+    "reference_mse": 0.5060456467545009,
+    "catalogue_accuracy": 0.5,
+    "mse_improvement_over_copy": 0.6627406188208634,
+    "background_latent_mse": 0.0928127909610339,
+    "object_latent_mse": 0.2278657641436439,
+    "joint_latent_mse": 0.2691832185082603
+  },
+  "test": {
+    "latent_mse": 0.05480476616321539,
+    "latent_l1": 0.14499009479186498,
+    "reference_mse": 0.5037665378113161,
+    "catalogue_accuracy": 1.0,
+    "mse_improvement_over_copy": 0.8912099910380663,
+    "background_latent_mse": 0.0798684735855204,
+    "object_latent_mse": 0.015239392610965297,
+    "joint_latent_mse": 0.04424272610049229
+  },
+  "parameters": {
+    "qwen_transformer_and_norm": 11904288,
+    "vae_encoder": 34163664,
+    "unet_including_optics": 42682473,
+    "adapter": 4273280,
+    "router": 14341,
+    "vae_decoder": 49490199,
+    "total": 142528245
+  },
+  "attention_pruning": {
+    "spec": [
+      {
+        "side": "down",
+        "block": 0,
+        "attention": 0,
+        "removed_parameters": 592512
+      },
+      {
+        "side": "down",
+        "block": 1,
+        "attention": 0,
+        "removed_parameters": 1840384
+      },
+      {
+        "side": "up",
+        "block": 0,
+        "attention": 1,
+        "removed_parameters": 6302208
+      },
+      {
+        "side": "up",
+        "block": 1,
+        "attention": 0,
+        "removed_parameters": 1840384
+      },
+      {
+        "side": "up",
+        "block": 1,
+        "attention": 1,
+        "removed_parameters": 1840384
+      },
+      {
+        "side": "up",
+        "block": 2,
+        "attention": 0,
+        "removed_parameters": 592512
+      },
+      {
+        "side": "up",
+        "block": 2,
+        "attention": 1,
+        "removed_parameters": 592512
+      }
+    ],
+    "removed_parameters": 13600896,
+    "remaining_parameters": 42054276,
+    "parameters_after_optical": 42682473,
+    "structured_widths": [
+      128,
+      256,
+      512
+    ],
+    "original_widths": [
+      320,
+      640,
+      1280
+    ],
+    "width_fraction": 0.4
+  },
+  "history": [
+    {
+      "epoch": 1,
+      "train_loss": 0.21609446472171434,
+      "validation": {
+        "latent_mse": 0.0536808336746617,
+        "latent_l1": 0.1431402072266792,
+        "reference_mse": 0.5060456467545009,
+        "catalogue_accuracy": 1.0,
+        "mse_improvement_over_copy": 0.8939209653932583,
+        "background_latent_mse": 0.07738927054015221,
+        "object_latent_mse": 0.016074454881163547,
+        "joint_latent_mse": 0.04387033870443702
+      },
+      "optical_alpha": 0.5072004199028015
+    }
+  ],
+  "training_seconds": 535.4503221362829,
+  "gan_used": false,
+  "hard_pixel_composite_at_inference": false,
+  "inference_iterations": 1,
+  "warm_start_checkpoint": "/DATA/DATA1/guest3/t12_assets/runs/abo_unified_qwenmini_143m_v1/best_model.pt",
+  "warm_start_copy": {
+    "exact": true
+  }
+}
