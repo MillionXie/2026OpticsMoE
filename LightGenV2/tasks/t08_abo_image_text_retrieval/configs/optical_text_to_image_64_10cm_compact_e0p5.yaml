@@ -1,0 +1,24 @@
+base_config: /DATA/DATA1/guest3/2026OpticsMoE/.worktrees/t08_text_to_image_20260920/LightGenV2/tasks/t08_abo_image_text_retrieval/configs/optical_text_to_image_64_15cm_compact_e0p5.yaml
+
+# Retain the 17 um logical field and 8 um phase hardware. Transfer only
+# electronic tensors from the pinned 15 cm model; initialize all phases anew.
+language_optical:
+  distance_m: 0.10
+  allow_distance_override: true
+router_experiment:
+  contract:
+    optical:
+      distance_m: 0.10
+  optical:
+    distance_m: 0.10
+abo_image_text:
+  resume_checkpoint: /DATA/DATA1/guest3/2026OpticsMoE/LightGenV2/tasks/t08_abo_image_text_retrieval/runs/simulation/optical_text_to_image_64_15cm_compact_e0p5_seed42_20260921/best_checkpoint.pt
+  resume_checkpoint_sha256: ae92995b49eaf7d49165d7816f876e831d9ab070a482f94e849d2f16e9ebb50f
+  allow_propagation_distance_transition: true
+  allow_electronic_compaction_transition: false
+  alpha_curriculum:
+    start: 0.15
+    end: 0.40
+    warmup_epochs: 8
+    minimum_selected: 0.39
+output_dir: /DATA/DATA1/guest3/2026OpticsMoE/LightGenV2/tasks/t08_abo_image_text_retrieval/runs/simulation/optical_text_to_image_64_10cm_compact_e0p5_seed42_20260925

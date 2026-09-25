@@ -140,10 +140,15 @@ def _load_propagation_transition_checkpoint(
         payload.get("metadata", {}).get("optical_architecture", "")
     )
     target_architecture = str(replacement.checkpoint_architecture)
-    if "_10cm_17um_" not in source_architecture:
-        raise RuntimeError("Propagation transition requires a pinned 10 cm source")
-    if "_15cm_17um_" not in target_architecture:
-        raise RuntimeError("Propagation transition target must be the 15 cm graph")
+    source_10 = "_10cm_17um_" in source_architecture
+    source_15 = "_15cm_17um_" in source_architecture
+    target_10 = "_10cm_17um_" in target_architecture
+    target_15 = "_15cm_17um_" in target_architecture
+    if not ((source_10 and target_15) or (source_15 and target_10)):
+        raise RuntimeError(
+            "Propagation transition requires opposite pinned 10/15 cm, "
+            "17 um architectures"
+        )
 
     fresh_by_modality: dict[str, list[str]] = {}
     for label, module, source_key in (
@@ -162,7 +167,7 @@ def _load_propagation_transition_checkpoint(
         incompatible = module.load_state_dict(transferred, strict=False)
         if sorted(incompatible.missing_keys) != phase_names or incompatible.unexpected_keys:
             raise RuntimeError(
-                f"Unsafe {label} 10 cm -> 15 cm transplant: "
+                f"Unsafe {label} propagation transplant: "
                 f"missing={incompatible.missing_keys}, "
                 f"unexpected={incompatible.unexpected_keys}"
             )
