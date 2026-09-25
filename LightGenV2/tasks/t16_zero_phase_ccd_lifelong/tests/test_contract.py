@@ -23,6 +23,9 @@ from LightGenV2.tasks.t16_zero_phase_ccd_lifelong.train_other_tasks import (
     RESUME_CONTRACT,
     validate_resume_contract,
 )
+from LightGenV2.tasks.t16_zero_phase_ccd_lifelong.train_lifelong_moe import (
+    stage_epoch_batches,
+)
 
 
 def test_all_phase_parameters_begin_at_raw_zero_and_one_shared_linear_head():
@@ -147,6 +150,27 @@ def test_clevr_pairwise_loss_rewards_same_image_query_separation():
     separated[0, 1] = 2
     separated[1, 1] = -2
     assert clevr_pairwise_loss(separated, labels) < initial
+
+
+def test_lifelong_replay_covers_all_old_records_and_preserves_clevr_pairs():
+    class Records:
+        def __init__(self, count):
+            self.count = count
+
+        def __len__(self):
+            return self.count
+
+    datasets = {"eurosat": Records(8), "clevr": Records(14)}
+    batches = list(stage_epoch_batches(datasets, tuple(datasets), 4, seed=17))
+    assert len(batches) == 4
+    for name, count in (("eurosat", 8), ("clevr", 14)):
+        seen = np.concatenate([row[name] for row in batches])
+        assert set(seen.tolist()) == set(range(count))
+    for row in batches:
+        clevr = row["clevr"]
+        assert len(clevr) % 2 == 0
+        assert np.array_equal(clevr[1::2], clevr[::2] + 1)
+        assert np.all(clevr[::2] % 2 == 0)
 
 
 def test_compact_clevr_text_spreads_actual_words_without_changing_image(tmp_path):
