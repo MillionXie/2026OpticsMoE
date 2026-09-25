@@ -2,6 +2,7 @@
 
 import argparse
 import json
+import subprocess
 from pathlib import Path
 
 import torch
@@ -44,6 +45,8 @@ def main():
               "validation": checkpoint["validation"],
               "checkpoint_sha256": sha256_file(checkpoint_path),
               "vision_checkpoint_sha256": config["vision_checkpoint_sha256"],
+              "evaluation_git_commit": subprocess.check_output(
+                  ["git", "rev-parse", "HEAD"], text=True).strip(),
               "test": evaluate(model, test, device, args.eval_batch)}
     save_json(output, result)
     print(json.dumps(result), flush=True)
