@@ -55,7 +55,7 @@ def visual_tiles(raw_images, feature_rows, device):
     # Separate normalized power regions prevent the feature strip's magnitude
     # from suppressing raw RGB. They have no trainable parameters.
     rgb = normalize_power(rgb.flatten(2), 0.25).reshape_as(rgb)
-    glyph = normalize_power(glyph, 0.25)
+    glyph = normalize_power(glyph, 0.25 / 3.0)
     tiles = torch.cat((rgb, glyph[:, None].expand(-1, 3, -1, -1)), dim=2)
     if tiles.shape[1:] != (3, 112, 112):
         raise AssertionError("visual tile geometry changed")

@@ -128,7 +128,8 @@ def load_initial_checkpoint(model, path, config, device):
             prior.get("architecture") != config["architecture"] or
             prior.get("activation_order") != config["activation_order"] or
             prior.get("source_sha256") != config["source_sha256"] or
-            prior.get("vision_checkpoint_sha256") != config["vision_checkpoint_sha256"]):
+            prior.get("vision_checkpoint_sha256") !=
+            config.get("vision_checkpoint_sha256")):
         raise ValueError("initial checkpoint has a different task, geometry, or data source")
     model.load_state_dict(initial["model"])
 
