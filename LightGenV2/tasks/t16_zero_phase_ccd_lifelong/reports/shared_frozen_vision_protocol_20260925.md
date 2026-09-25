@@ -34,7 +34,7 @@ EuroSAT A 两种模型都使用相同输入和无额外训练技巧的 10 输出
 | C | 76.72% | 80.34% | 78.84% | — |
 | D（训练中） | — | — | — | — |
 
-C 阶段 `stage3_moe_balanced_sharedvision_s17_e696` 从获选 B checkpoint 继续，开放第 9–12 槽并保留全部已见任务训练记录。其 `balanced_cycle` 调度先将每个任务的全训练集走完一遍，再循环短任务，使各任务每轮 batch 数相近；所以是**全量加重复**，不是固定 512 样本记忆。按三任务完整验证均值选中第 4 轮，验证 EuroSAT/CLEVR/Speech 为 **73.42%/80.60%/81.20%**，一次测试为 **76.72%/80.34%/78.84%**；旧专家相位逐元素未变。D 阶段 `stage4_moe_balanced_sharedvision_s17_e696` 已从此获选 checkpoint 启动，开放最后四个专家，使用同一回放调度及原始八帧 Physical。D 的任何测试格仍为空。D2NN full replay B 是额外对照；正式 D2NN 无 replay 下三角使用独立的 `--replay-mode none` 入口。
+C 阶段 `stage3_moe_balanced_sharedvision_s17_e696` 从获选 B checkpoint 继续，开放第 9–12 槽并保留全部已见任务训练记录。其 `balanced_cycle` 调度先将每个任务的全训练集走完一遍，再循环短任务，使各任务每轮 batch 数相近；所以是**全量加重复**，不是固定 512 样本记忆。按三任务完整验证均值选中第 4 轮，验证 EuroSAT/CLEVR/Speech 为 **73.42%/80.60%/81.20%**，一次测试为 **76.72%/80.34%/78.84%**；旧专家相位逐元素未变。D 阶段 `stage4_moe_balanced_sharedvision_s17_e696` 已从此获选 checkpoint 启动，开放最后四个专家，使用同一回放调度及原始八帧 Physical。其第 2 轮完整验证 EuroSAT/CLEVR/Speech/Physical 为 **73.39%/79.99%/82.27%/73.19%**，是未选定的中途结果；D 的任何测试格仍为空。D2NN full replay B 是额外对照；正式 D2NN 无 replay 下三角使用独立的 `--replay-mode none` 入口。
 
 所有 run 的 `config.json` 保存源码 commit、源协议和视觉 checkpoint 哈希，`history.json` 保存各轮验证，`result.json`／`selected_test.json` 保存选中结果。当前 D 仍在推进，任何尚未产生的矩阵单元均为空。
 
@@ -82,11 +82,11 @@ D 阶段 `stage4_d2nn_noreplay_sharedvision_s17_d9d5` 已从上述 C 最佳 chec
 
 ## D2NN 顺序学习：有 replay 的进行中下三角
 
-这条独立链与无 replay 链复用**完全相同的 EuroSAT A checkpoint**，随后拥有自己的、持续更新的 D2NN 相位和单层 Linear。`stage2_d2nn_replay_sharedvision_s17_b015` 在 B 阶段每轮遍历 EuroSAT 和 CLEVR 各自全部训练记录一次，按完整验证集选中第 4 轮后仅测试一次。C/D 尚未完成，不能把下表空格当零或拿无 replay 链的 C/D 代填。C/D 将使用与 MoE 相同的 `balanced_cycle`：每任务先走完全量，再重新打乱并循环短任务，使每轮任务 batch 数相近；训练仍不使用任务专用头。
+这条独立链与无 replay 链复用**完全相同的 EuroSAT A checkpoint**，随后拥有自己的、持续更新的 D2NN 相位和单层 Linear。`stage2_d2nn_replay_sharedvision_s17_b015` 在 B 阶段每轮遍历 EuroSAT 和 CLEVR 各自全部训练记录一次，按完整验证集选中第 4 轮后仅测试一次。C 阶段 `stage3_d2nn_replay_balanced_sharedvision_s17_e696` 使用与 MoE C 相同的 `balanced_cycle`：每任务先走完全量，再重新打乱并循环短任务，使每轮任务 batch 数相近；按完整验证均值选第 4 轮，验证 EuroSAT/CLEVR/Speech **74.78%/75.09%/68.39%**，一次测试 **77.08%/74.81%/65.92%**。D 阶段已从该 C checkpoint 接续训练，尚未测试；不能把空格当零或拿无 replay 链的 D 代填。全程没有任务专用头。
 
 | 有 replay 阶段＼测试 | A EuroSAT | B CLEVR | C Speech | D Physical |
 |---|---:|---:|---:|---:|
 | A | 71.77% | — | — | — |
 | B | 63.87% | 76.30% | — | — |
-| C（训练中） | — | — | — | — |
-| D（未开始） | — | — | — | — |
+| C | 77.08% | 74.81% | 65.92% | — |
+| D（训练中） | — | — | — | — |
