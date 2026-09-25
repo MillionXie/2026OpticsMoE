@@ -49,10 +49,9 @@ C 阶段 `stage3_moe_balanced_sharedvision_s17_e696` 从获选 B checkpoint 继�
 
 16 格均已计算；EuroSAT、CLEVR、Physical 三个新独立 run 的对角格与其 `selected_test.json` 完全一致。这是**源任务模型直接推理目标任务的迁移得分矩阵**，不是某一个分类器的逐类混淆矩阵。目标为二分类时，50% 是两类召回的平均值达到机会水平，常由固定预测一个类别造成：CLEVR 源→Speech 与 Physical 均为类别召回 **0%／100%**；Physical 源→CLEVR 为 **100%／0%**。Speech 源→CLEVR 为 **82.61%／17.89%**，平均仅 50.25%，也不能称为有效迁移。EuroSAT 源→三个二分类任务均为 **0%／0%**，说明十输出头的最大值落在目标合法标签 0、1 之外；CLEVR 源→EuroSAT 的 10% 只召回了十类中的第 1 类。因而 0%／10% 格受十输出共用标签位置和固定头影响，不能孤立解释为相位完全没有迁移。Physical D2NN 对角格虽为 75.35%，两类召回约为 53.30%／97.40%，存在预测偏向。
 
-## D2NN 顺序对照当前节点
+## D2NN 顺序学习：无 replay 的完整下三角
 
-- full replay 额外对照 `stage2_d2nn_replay_sharedvision_s17_b015` 已按验证选中第 4 轮并测试一次：学完 B 后 EuroSAT/CLEVR 为 **63.87%/76.30%**。
-- 正式无 replay `stage2_d2nn_noreplay_sharedvision_s17_7a50` 已按验证选中第 4 轮并测试一次：学完 B 后 EuroSAT/CLEVR 为 **10.00%/76.41%**。同一个起点的 A 对角格为 EuroSAT **71.77%**。这条链正在推进 C、D；B 的严重遗忘不能由独立训练模型替代或推断。
+- 正式无 replay `stage2_d2nn_noreplay_sharedvision_s17_7a50` 已按验证选中第 4 轮并测试一次：学完 B 后 EuroSAT/CLEVR 为 **10.00%/76.41%**。同一个起点的 A 对角格为 EuroSAT **71.77%**。B 的严重遗忘不能由独立训练模型替代或推断。
 - C 阶段 `stage3_d2nn_noreplay_12ep_sharedvision_s17_d9d5` 从上述 B 权重接续，仅训练 Speech。六轮候选的当前任务成绩偏低，所以另用同一起点跑常规的 12 轮预算、按三任务完整验证均值选中第 12 轮；单次测试 EuroSAT/CLEVR/Speech 为 **10.00%/50.00%/60.67%**。这既显示前两任务遗忘，也显示新 Speech 只学到约 60.67%，不能称该阶段达到了独立训练 D2NN 的水平。
 
 D 阶段 `stage4_d2nn_noreplay_sharedvision_s17_d9d5` 已从上述 C 最佳 checkpoint 接续，只训练无帧差 Physical，按四任务完整验证均值选中第 5 轮并测试一次。正式下三角矩阵如下；行是刚学完的阶段，列是该阶段对各已见任务的**测试集宏平均召回百分比**，空格表示尚未学过该任务，绝非零分。
@@ -65,3 +64,14 @@ D 阶段 `stage4_d2nn_noreplay_sharedvision_s17_d9d5` 已从上述 C 最佳 chec
 | 学完 D | 9.98 | 57.96 | 51.96 | 75.16 |
 
 这条链的十个测试单元均来自各阶段**同一份持续更新的 D2NN 相位和同一份单层 Linear**；B/C/D 无旧任务训练样本、无任务头切换。C 阶段 CLEVR 的 50.00% 对应类别召回 **100%／0%**，是单类塌缩而非保留了一半原能力；D 阶段 CLEVR 的 57.96% 对应 **75.44%／40.48%**，Speech 的 51.96% 对应 **74.97%／28.95%**。C 阶段对新 Speech 仅达 60.67% 是结果本身的限制，不能把所有旧任务下降都解释为纯粹的遗忘能力差异。
+
+## D2NN 顺序学习：有 replay 的进行中下三角
+
+这条独立链与无 replay 链复用**完全相同的 EuroSAT A checkpoint**，随后拥有自己的、持续更新的 D2NN 相位和单层 Linear。`stage2_d2nn_replay_sharedvision_s17_b015` 在 B 阶段每轮遍历 EuroSAT 和 CLEVR 各自全部训练记录一次，按完整验证集选中第 4 轮后仅测试一次。C/D 尚未完成，不能把下表空格当零或拿无 replay 链的 C/D 代填。C/D 将使用与 MoE 相同的 `balanced_cycle`：每任务先走完全量，再重新打乱并循环短任务，使每轮任务 batch 数相近；训练仍不使用任务专用头。
+
+| D2NN 有 replay／测试任务 | EuroSAT | CLEVR | Speech | Physical 无帧差 |
+|---|---:|---:|---:|---:|
+| 学完 A | 71.77 |  |  |  |
+| 学完 B | 63.87 | 76.30 |  |  |
+| 学完 C |  |  |  |  |
+| 学完 D |  |  |  |  |
