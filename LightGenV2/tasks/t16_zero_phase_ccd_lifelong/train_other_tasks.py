@@ -30,10 +30,11 @@ EXPECTED = {
     "speech_binary": {"train": 12526, "val": 1686, "test": 1734},
     "physical": {"train": 70400, "val": 14652, "test": 14948},
     "physical_binary": {"train": 140800, "val": 29304, "test": 29896},
+    "physical_binary_raw": {"train": 140800, "val": 29304, "test": 29896},
 }
 CLASSES = {"clevr": 2, "clevr_compact": 2, "clevr_attributes": 2,
            "speech_binary": 2, "physical": 10,
-           "physical_binary": 2}
+           "physical_binary": 2, "physical_binary_raw": 2}
 STORAGE = {
     "clevr": "clevr_lazy_v1",
     "clevr_compact": "clevr_lazy_v1",
@@ -41,6 +42,7 @@ STORAGE = {
     "speech_binary": "speech_commands_text_rank8_v2",
     "physical": "physical_video_text_rank10_v3",
     "physical_binary": "physical_video_text_rank10_v3",
+    "physical_binary_raw": "physical_video_text_rank10_v3",
 }
 
 RESUME_CONTRACT = (
@@ -91,9 +93,12 @@ def load_task(protocol_path, task, split):
     elif task == "physical":
         roots = {key: Path(path) for key, path in protocol["source_roots"].items()}
         data = PhysicalPermutedCandidates(roots, split, seed=17)
-    else:
+    elif task in ("physical_binary", "physical_binary_raw"):
         roots = {key: Path(path) for key, path in protocol["source_roots"].items()}
-        data = PhysicalBinaryPairs(roots, split)
+        data = PhysicalBinaryPairs(roots, split,
+                                   video_mode="raw" if task.endswith("_raw") else "delta")
+    else:
+        raise ValueError(f"unknown task {task}")
     labels = np.asarray(data.labels, dtype=np.int64)
     if (len(data) != EXPECTED[task][split] or
             not np.array_equal(np.unique(labels), np.arange(CLASSES[task]))):

@@ -403,6 +403,23 @@ def test_physical_binary_pairs_keep_video_fixed_and_balance_description(monkeypa
     assert pairs.labels[:4].tolist() == [1, 0, 1, 0]
 
 
+def test_raw_physical_video_omits_signed_frame_subtraction(monkeypatch):
+    class FakePhysical:
+        def __init__(self, roots, split):
+            self.fields = [np.ones((2, 224, 224), dtype=np.float32)]
+            self.offsets = [0, 2]
+
+        def labels(self):
+            return np.array([0, 1])
+
+    monkeypatch.setattr(t16_data, "PhysicalRank10Fields", FakePhysical)
+    pairs = PhysicalBinaryPairs({}, "train", video_mode="raw")
+    field = pairs.get_batch(np.array([0, 1]), "cpu")
+    assert torch.equal(field[0, :, :112], field[1, :, :112])
+    assert torch.all(field[:, :, :112] >= 0)
+    assert torch.allclose(field.square().sum((-2, -1)), torch.ones(2), atol=1e-5)
+
+
 def test_eurosat_indexed_field_supports_validation_audit_batching():
     class Indexed:
         labels = np.array([0, 1])

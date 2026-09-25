@@ -177,7 +177,10 @@ class SpeechBinaryPairs:
 class PhysicalBinaryPairs:
     """One correct and one histogram-matched incorrect description per video."""
 
-    def __init__(self, roots: dict, split: str):
+    def __init__(self, roots: dict, split: str, video_mode="delta"):
+        if video_mode not in ("delta", "raw"):
+            raise ValueError("video_mode must be delta or raw")
+        self.video_mode = video_mode
         self.base = PhysicalRank10Fields(roots, split)
         original = self.base.labels()
         negatives = balanced_negative_words(original, classes=10)
@@ -196,7 +199,20 @@ class PhysicalBinaryPairs:
 
     def get_batch(self, indices, device):
         indices = np.asarray(indices, dtype=np.int64)
-        video = self.base[indices // 2][:, :, :112].to(device)
+        video = (self.base[indices // 2][:, :, :112] if self.video_mode == "delta"
+                 else self._raw_video(indices // 2)).to(device)
         text = self.description_codes.to(device)[self.candidate_descriptions[indices]]
         text = normalize_power(text, 0.5)
         return normalize_power(torch.cat((video, text), -1))
+
+    def _raw_video(self, video_indices):
+        """Same eight stored frames, omitting only electronic frame subtraction."""
+        videos = []
+        for index_value in video_indices:
+            concept = int(np.searchsorted(self.base.offsets, int(index_value), side="right") - 1)
+            local = int(index_value) - self.base.offsets[concept]
+            videos.append(np.array(self.base.fields[concept][local], copy=True))
+        frames = torch.from_numpy(np.stack(videos)).float()
+        video = F.interpolate(frames[:, None], (224, 112),
+                              mode="bilinear", align_corners=False)[:, 0]
+        return normalize_power(video, 0.5)
