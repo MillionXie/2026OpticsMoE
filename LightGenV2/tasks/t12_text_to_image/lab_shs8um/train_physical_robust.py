@@ -23,6 +23,7 @@ def main():
     p.add_argument('--noise-probability',type=float,default=.5)
     p.add_argument('--phase-lr-multiplier',type=float,default=5.)
     p.add_argument('--clean-mse-limit',type=float)
+    p.add_argument('--evaluate-only',action='store_true')
     a=p.parse_args();a.output.mkdir(parents=True,exist_ok=False);torch.set_num_threads(4);torch.manual_seed(1042)
     saved=torch.load(a.checkpoint,map_location='cpu',weights_only=False)
     model=build_sealed(saved).cuda()
@@ -93,6 +94,14 @@ def main():
                 power.append(float(torch.stack(state['power']).mean()));roi.append(float(torch.stack(state['roi']).mean()))
         return dict(mse_minus1_1=total/count,sample_count=count,power_utilization=sum(power)/len(power),roi_fraction=sum(roi)/len(roi))
     baseline=validate(val,False);baseline_noisy=validate(val,True);best=float('inf');selected=None;history=[]
+    if a.evaluate_only:
+        test=DataLoader(datasets['test'],batch_size=a.batch_size)
+        write(a.output/'report.json',dict(status='complete',scope='original checkpoint matched full TEST evaluation',
+            source_sha256=hashlib.sha256(a.checkpoint.read_bytes()).hexdigest(),
+            test_clean=validate(test,False),test_noisy=validate(test,True)))
+        restore()
+        for hook in hooks:hook.remove()
+        return
     write(a.output/'protocol.json',dict(source_sha256=hashlib.sha256(a.checkpoint.read_bytes()).hexdigest(),
         geometry='17um/10cm/532nm; no architecture or parameter addition',dc_intensity_fraction=.3,
         pixel_shift=1,noise=f'{a.noise_probability} of batches; absolute .002 + signal .03 mean; proxy, not calibrated electrons',
