@@ -1,144 +1,17 @@
-# T12 单物体文生图
+# T12 图文条件商品编辑（2026-09-26 整理）
 
-T12 是 LightGenV2 的单次前向、文本条件图像生成任务。任务只生成少数类别的单个居中
-物体，不做开放域、多物体、计数、空间关系、扩散去噪或自回归生成。
+当前仅保留两套主权重：大版 149.76M、小版 9.96M。每套支持换背景、换目标、同时修改；高级材质及失败的开放形态实验不作为最终版本。
 
-当前状态：模型、数据合同、Qwen/VAE 缓存、训练入口、配对 baseline、可视化比较与 CPU
-结构测试已经建立；正式数据冻结为 ABO 小子集，首轮 latent 回归训练已完成但明显模糊，
-因此保留首轮结果并新增独立的单次前向 GAN 锐化 profile。硬件结果尚未产生。
+唯一入口：[复现与最终产物](reports/reproduction/README.md)。旧报告保留作历史记录，不代表当前部署入口。
 
-## 冻结协议
+## 架构与边界
 
-- 数据：Amazon Berkeley Objects（ABO）的 catalog `images-small`，数据目录必须附带原始
-  `LICENSE-CC-BY-4.0.txt`，并在产物中保留来源、署名及修改说明。
-- 类别：精确使用 `SHOES`、`CHAIR`、`LAMP`、`TABLE` 四种 product type。
-- 每类 250 个不同商品，每个商品只取一张 main image；train/val/test 按商品身份切分为
-  200/25/25，不允许同一商品跨 split。
-- 规模：训练 800，验证 100，测试 100，共 1,000 张。
-- 图像：过滤过小、极端长宽比、swatch 和明确多件套；裁掉角落背景后将商品居中到确定性
-  中性背景，224×224。正式训练前必须再审计 contact sheet。
-- 文本：只使用结构化颜色、材质和类别组成短描述；不要求数量及空间推理，也不输入品牌名。
-- 文本前端：完整冻结 `Qwen/Qwen3-VL-2B-Instruct`，缓存最终 hidden state 的 masked mean。
-- 图像 codec：完整冻结 `stabilityai/sd-vae-ft-mse`，目标和输出均为 `4×28×28` latent。
-- 推理：一次生成主干前向和一次 VAE decode；没有循环。
+输入 RGB 图像及文字，输出单次前向 256×256 RGB。原 Qwen tokenizer 和冻结词嵌入保留；文字主干是训练过的两层缩窄 Qwen-style Transformer，不是原预训练 Qwen 层。语言和视觉均调用审计版 DC20 光电模块：电子/光学同输入并行、router/top-2 experts、global、RMS 融合，alpha 最低 0.4。478×478 有效光学区域，四个 224×224 专家分区；两路纯相位参数合计 958,728。
 
-## LightGen 结构
+大版为 D640 文字头、条件适配器、128/256/512 窄 UNet、冻结 VAE encoder/decoder；小版为 D512 文字头与 48/96/160/224 CNN encoder/decoder，无额外 decoder refinement。冻结词嵌入 311,164,928 参数按约定单独列出，不计预算。大版神经网络 144,630,618 参数，另固定条件缓冲值 5,125,248，合计 149,755,866；小版 9,958,098。
 
-输入为一个冻结 Qwen 文本向量和一个 256 维 style code。二者投影后注入 14×14、192 维
-空间 token。正式 profile 直接复用 T01 已审计的 DC20 `BalancedVisionCore`：
+推理不做 GT 掩码贴回或商品检索；模型使用可学习软融合。训练 GT 背景是程序合成的有限场景，目标商品来自封闭目录，因此不可宣称开放域生成或未见商品设计。种子多样性弱、专家负载偏斜仍是局限。
 
-```text
-stage-1 input ─┬─ electronic residual-1 ─┐
-               └─ optical Router+Top2 experts ─┤ detached-RMS fusion
-                                                  ↓
-stage-2 input ─┬─ electronic residual-2 ─┐
-               └─ optical global block ─────────┤ detached-RMS fusion
-                                                  ↓
-                          residual latent head: 14×14 → 4×28×28
-                                                  ↓
-                                  frozen VAE decoder → 224×224 RGB
-```
+数据为 ABO 灯/桌/靠垫，12 款指定目标。基础 train/val/test 为 1728/192/192 图像，商品身份 144/24/24；扩展指令对 20736/2304/2304。训练包含像素、边缘、感知与局部细节损失和弱 PatchGAN；小版从大版蒸馏。判别器和感知网络仅训练使用，不计部署参数。
 
-每个 stage 的电子和光学分支严格读取同一个输入；不存在 `electronic → optical` 串行关系。
-第一阶段 Router、Top-2 experts 和第二阶段 global block 均沿用现有 224 SLM、478 active CCD、
-518 numerical canvas、17 μm、10 cm 和尺度匹配融合合同。
-
-训练时额外使用一个轻量 posterior encoder，从真实 VAE latent 得到 `mean/logvar`；推理时
-删除该 encoder，直接采样 `N(0,I)`。第一版损失为 latent L1、latent MSE 和 warm-up KL，
-初始 profile 不使用 GAN。首轮正式结果证明 posterior 能恢复类别轮廓，但 L1/MSE 会抹平纹理，
-随机 prior 还存在更明显的分布错位；所以 `lightgen_gan` / `baseline_gan` 作为独立第二阶段
-profile 使用四层 residual latent decoder，并让冻结 VAE 解码后的 posterior 与随机 prior 同时
-接受 RGB PatchGAN 和 feature matching。该变化只作用于 decoder/训练目标，不改变并行主干，
-推理仍然只有一次主干前向和一次 VAE decode，也不覆盖首轮 checkpoint。
-
-`compact_fft` 仅供 CPU smoke 和结构调试，不能作为论文性能或硬件结果。
-
-## Qwen + VAE baseline
-
-Baseline 与 LightGen 共用：
-
-- 完全相同的 train/val/test；
-- 同一份冻结 Qwen text cache；
-- 同一份冻结 VAE latent cache 和 VAE decoder；
-- 相同 posterior、style 维度、latent head、损失、训练轮数和采样 seed。
-
-唯一的主干差异是 baseline 用两层条件电子残差替代整个光学支路。正式参数量当前约为：
-LightGen 3.65M、baseline 3.09M，不把冻结 Qwen/VAE 参数计为可训练参数。
-
-训练结束后使用 `compare.py` 在相同四条 prompt、相同 seed 下生成配对网格。正式质量报告
-还必须在固定 test 上给出 FID/KID、CLIPScore、类别正确率和 LPIPS diversity；当前代码生成
-网格不等同于已有质量结果。
-
-## 数据准备
-
-使用 ABO 官方 `abo-images-small` 和 `abo-listings` 归档，运行：
-
-```powershell
-python -m LightGenV2.tasks.t12_text_to_image.prepare_abo `
-  --abo-root D:\abo `
-  --output-dir LightGenV2\tasks\t12_text_to_image\dataset\abo_single_object_v1 `
-  --categories "SHOES,CHAIR,LAMP,TABLE"
-```
-
-准备脚本会拒绝缺少精确 CC BY 4.0 许可证、类别实例不足及跨 split 身份泄漏。原有
-`prepare_uco3d.py` 仍保留为将来网络条件允许时的可选数据入口，但不属于本次冻结协议。
-
-## 运行
-
-安装生成任务的额外依赖：
-
-```powershell
-pip install -r LightGenV2/requirements/generation.txt
-```
-
-先跑结构测试和 smoke：
-
-```powershell
-python -m pytest LightGenV2/tasks/t12_text_to_image/tests -q
-python -m LightGenV2.tasks.t12_text_to_image --profile smoke --phase smoke --device cpu
-```
-
-数据就绪后只缓存一次冻结特征，两条路线读取相同缓存：
-
-```powershell
-python -m LightGenV2.tasks.t12_text_to_image --profile lightgen --phase cache --device cuda
-python -m LightGenV2.tasks.t12_text_to_image --profile lightgen --phase train --device cuda
-python -m LightGenV2.tasks.t12_text_to_image --profile baseline --phase train --device cuda
-python -m LightGenV2.tasks.t12_text_to_image --profile lightgen_gan --phase train --device cuda
-python -m LightGenV2.tasks.t12_text_to_image --profile baseline_gan --phase train --device cuda
-python -m LightGenV2.tasks.t12_text_to_image --profile lightgen --phase evaluate --device cuda
-python -m LightGenV2.tasks.t12_text_to_image --profile baseline --phase evaluate --device cuda
-python -m LightGenV2.tasks.t12_text_to_image.compare `
-  --lightgen-profile lightgen_parallel_decoder_gan.yaml `
-  --lightgen-checkpoint LightGenV2\tasks\t12_text_to_image\runs\simulation\lightgen_parallel_decoder_gan_seed42\best_checkpoint.pt `
-  --baseline-checkpoint LightGenV2\tasks\t12_text_to_image\runs\simulation\qwen_vae_baseline_seed42\best_checkpoint.pt `
-  --output-dir LightGenV2\tasks\t12_text_to_image\runs\simulation\matched_comparison
-```
-
-2026-09-20 的正式服务器训练、失败实验和 checkpoint 选择记录见
-[`reports/20260920_server_training.md`](reports/20260920_server_training.md)。当前推荐的是受约束
-decoder-only GAN 的第 4 epoch；无约束 GAN 因随机 prior 模式坍塌被明确否决。
-
-GAN 锐化阶段可通过 `--init-checkpoint <首轮 best_checkpoint.pt>` 仅加载生成器与 posterior
-权重。浅层 latent head 的输出卷积会自动映射到深层 head，新插入的 residual decoder block
-以接近恒等映射开始；优化器、判别器和 epoch 计数均从头开始，warm-start 来源会写入每个
-checkpoint 和 `training_summary.json`。
-
-若无条件 prior GAN 出现跨类别模式坍塌，使用 `lightgen_decoder_gan`：它冻结 warm-start
-得到的并行光电主干、posterior 与旧 latent head，只训练新插入的 decoder residual blocks，
-并用 `prior_latent_delta_weight` 将随机 prior 锚定到首轮单次生成结果。该 profile 仍然没有
-迭代采样，也不会改变电子/光学并行拓扑。
-
-服务器正式运行时可以用 `--data-dir`、`--qwen-checkpoint` 和 `--vae-checkpoint` 显式指向
-仓库外的冻结资产；解析后的绝对路径会写入 `resolved_config.json`，避免 worktree 被数据文件
-污染，也避免缓存阶段临时访问模型网络。
-
-正式 run 只保留 `best_checkpoint.pt` 和 `last_checkpoint.pt`。验证集只负责选择 checkpoint；
-测试集只能在协议和超参数冻结后评估。
-
-## 未完成项
-
-1. 生成 ABO 正式子集和 contact sheet，完成人工画面审计。
-2. 生成三份共享 feature cache，先做单 batch 显存/速度 pilot，再分别训练 LightGen 和 baseline。
-3. 补固定测试集的 FID/KID、CLIPScore、类别准确率和多样性评估。
-4. 仿真候选稳定后再建立 DC20 硬件 profile；不得把 `compact_fft` 数值写成硬件结果。
+本次源代码整合在独立分支 codex/t12-audited-editors-20260926，避免覆盖其他 AI 的未提交修改。权重自带结构配置，严格加载，不再依赖被删除的旧光电 checkpoint。历史兼容源代码仍保留用于 baseline/旧结果复查。
