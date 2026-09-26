@@ -24,9 +24,14 @@ def main():
     p.add_argument('--phase-lr-multiplier',type=float,default=5.)
     p.add_argument('--clean-mse-limit',type=float)
     p.add_argument('--evaluate-only',action='store_true')
+    p.add_argument('--bounded',choices=['rational','tanh'])
+    p.add_argument('--operating-weight',type=float,default=.001)
     a=p.parse_args();a.output.mkdir(parents=True,exist_ok=False);torch.set_num_threads(4);torch.manual_seed(1042)
     saved=torch.load(a.checkpoint,map_location='cpu',weights_only=False)
     model=build_sealed(saved).cuda()
+    if a.bounded:
+        from .bounded_amplitude import install
+        install(model,dict(kind=a.bounded,scale=.5))
     phases=[value for name,value in model.named_parameters() if 'raw_phase' in name or 'raw_router_phase' in name]
     phase_ids={id(value) for value in phases}
     optimizer=torch.optim.AdamW([dict(params=phases,lr=a.phase_lr_multiplier*a.learning_rate),
@@ -73,6 +78,9 @@ def main():
         # Absolute read floor in peak-normalized optical-intensity units, plus
         # signal-dependent noise. Approximation, not calibrated camera electrons.
         peak_intensity=ideal/scale.square()
+        if getattr(model,'bounded_amplitude',None):
+            peak_intensity=ideal
+            scale=torch.ones_like(scale)
         mean=peak_intensity.mean((-2,-1),keepdim=True).detach()
         gain=peak_intensity.new_empty((len(ideal),1,1)).uniform_(.9,1.1)
         noisy=(gain*peak_intensity+.002+torch.randn_like(ideal)*(.002+.03*mean)).clamp_min(0)
@@ -105,11 +113,13 @@ def main():
     write(a.output/'protocol.json',dict(source_sha256=hashlib.sha256(a.checkpoint.read_bytes()).hexdigest(),
         geometry='17um/10cm/532nm; no architecture or parameter addition',dc_intensity_fraction=.3,
         pixel_shift=1,noise=f'{a.noise_probability} of batches; absolute .002 + signal .03 mean; proxy, not calibrated electrons',
-        losses='MSE+.1L1+.001 average(ROI<.95 and occupied peak-normalized power<.1 deficits)',
+        bounded_amplitude=getattr(model,'bounded_amplitude',None),
+        losses=f'MSE+.1L1+{a.operating_weight} average operating deficits',
         selection='96 fixed VAL members; clean MSE within10% baseline, minimize noisy VAL MSE; TEST no selection',
         clean_mse_limit=a.clean_mse_limit,baseline=baseline,baseline_noisy=baseline_noisy))
     def save(name,step):
         payload=copy.copy(saved);payload['model']={k:v.detach().cpu() for k,v in model.state_dict().items()}
+        if getattr(model,'bounded_amplitude',None):payload['bounded_amplitude']=model.bounded_amplitude
         payload['physical_robust_training']=dict(step=step,dc=.3,pixel_shift=1,source=str(a.checkpoint))
         torch.save(payload,a.output/name)
     step=0
@@ -118,7 +128,7 @@ def main():
             model.train();optimizer.zero_grad(set_to_none=True)
             prediction,target=forward(batch,bool(torch.rand(())<a.noise_probability))
             quality=F.mse_loss(prediction,target)+.1*F.l1_loss(prediction,target)
-            operating=torch.stack(state['penalties']).mean();loss=quality+.001*operating
+            operating=torch.stack(state['penalties']).mean();loss=quality+a.operating_weight*operating
             if not bool(loss.isfinite()):raise RuntimeError('Nonfinite loss')
             loss.backward();torch.nn.utils.clip_grad_norm_(model.parameters(),1.);optimizer.step();step+=1
             if step==1 or step%25==0:

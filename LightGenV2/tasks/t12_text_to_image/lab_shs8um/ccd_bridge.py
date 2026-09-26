@@ -28,6 +28,9 @@ def attach(model, capture):
         def detector_capture(field,modulation,shifts,*,phase_support=None,original=original_detector,name=name,active=active):
             ideal=original(field,modulation,shifts,phase_support=phase_support)
             amplitude=field[:,active.y0:active.y1,active.x0:active.x1].abs()
+            if getattr(model,'bounded_amplitude',None):
+                from .bounded_amplitude import encode
+                amplitude=encode(amplitude,model.bounded_amplitude)
             phase=torch.angle(modulation[:,active.y0:active.y1,active.x0:active.x1])
             measured=capture(name+'_'+phase_support,amplitude,phase,ideal)
             if measured.shape!=ideal.shape:raise ValueError('Expert/global CCD shape mismatch')

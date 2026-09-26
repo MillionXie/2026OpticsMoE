@@ -23,7 +23,11 @@ def main():
             phase_path=a.output/(stage+'_phase.bmp')
             Image.fromarray(flow.phase_gray(phase[0].detach().cpu().numpy(),'hv',True)).save(phase_path)
             ids=['network_0','network_1','network_2']
-            paths,scale=flow.save_amplitudes(amplitude[:3].detach().cpu().numpy(),a.output,stage,ids)
+            if getattr(model,'bounded_amplitude',None):
+                from .bounded_amplitude import save_bmps
+                paths,scale=save_bmps(amplitude[:3].detach().cpu().numpy(),a.output,stage,ids,flow)
+            else:
+                paths,scale=flow.save_amplitudes(amplitude[:3].detach().cpu().numpy(),a.output,stage,ids)
             selected[stage]=(phase_path,paths,ids,scale)
         return ideal
     restore=attach(model,callback)

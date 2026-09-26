@@ -54,4 +54,7 @@ def build_sealed(saved):
     model.text_mlp_indices = saved.get("text_mlp_indices")
     model.construction = cfg
     model.load_state_dict(state, strict=True)
+    if saved.get('bounded_amplitude'):
+        from .lab_shs8um.bounded_amplitude import install
+        install(model,saved['bounded_amplitude'])
     return model
