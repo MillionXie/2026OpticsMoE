@@ -1,0 +1,12 @@
+{
+  "checkpoint": "LightGenV2/tasks/t16_zero_phase_ccd_lifelong/runs/simulation/stage4_moe_refine_lr1e3_r3_p2_s17_20260926/best_checkpoint.pt",
+  "model_git_commit": "421f6cea0bf7711b7f7d9b0513dfcf2e69d1661d",
+  "split": "val",
+  "selected_epoch": 4,
+  "aggregate_n": {
+    "eurosat": 5465,
+    "clevr": 15000,
+    "speech_binary": 1686,
+    "physical_binary_raw": 29304
+  }
+}

@@ -6,6 +6,8 @@
 
 ## 2026-09-26 阶段D第二轮探索性优化（只看验证）
 
+本轮已完成，获选均衡候选一次探索性测试均值78.34%、Physical74.93%，未达80%；专家功率更分散，但整体精度未超过上轮。见[第二轮结果与路由图](reports/refinement_20260926/README.md)。三条训练及获选推理均已释放GPU。
+
 用户希望四任务均值超过80%并使路由适度分散。本轮不改输入、相位几何、中心优先顺序、dense软路由或Linear结构，不解冻旧专家；三条候选均从同一正式C checkpoint `stage3_moe_balanced_sharedvision_s17_e696/best_checkpoint.pt` 出发，保留全量balanced_cycle回放、种子17、batch32、CLEVR配对权重4、读出学习率比例0.1。每条最多6轮、最少4轮、验证耐心3，全部`--skip-test`。仅使用三张已核验空闲的物理GPU，UUID绑定，完成即释放。
 
 | run（runs/simulation/） | 光学学习率 | 路由均衡权重 | Physical配对权重 | GPU UUID前缀 |
