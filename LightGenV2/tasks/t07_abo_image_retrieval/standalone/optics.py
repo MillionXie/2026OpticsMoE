@@ -230,6 +230,9 @@ class OpticalPath(nn.Module):
             cfg=self.noise_config
             gain = intensity.new_empty(len(field), 1, 1).uniform_(cfg['gain_min'], cfg['gain_max'])
             intensity = (gain*intensity + truncated_noise(intensity,cfg['ccd_mean'],cfg['ccd_std'],cfg['ccd_low'],cfg['ccd_high'])*reference).clamp_min(0)
+            if getattr(self,'bounded_amplitude',None):
+                # Absolute normalized-intensity floor; proxy, not camera electrons.
+                intensity=(intensity+.002+torch.randn_like(intensity)*.002).clamp_min(0)
         return intensity
 
     def decode(self, intensity, length, dtype, final):
