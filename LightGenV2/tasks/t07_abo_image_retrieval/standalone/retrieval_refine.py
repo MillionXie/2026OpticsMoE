@@ -47,6 +47,8 @@ PROFILES['physical_robust35'] = dict(PROFILES['sku_retrieval_only'],
     robust_alpha_min=.35, noise_probability=.7, pixel_shift=1, router_noise=True,
     phase_lr_multiplier=2.)
 PROFILES['physical_robust35_no_shift'] = dict(PROFILES['physical_robust35'],pixel_shift=0)
+PROFILES['physical_robust35_cleanmix'] = dict(PROFILES['physical_robust35'],
+    noise_probability=.25, phase_lr_multiplier=1.)
 PROFILES['sku_optical_pretrain'] = dict(PROFILES['sku_capacity_control'],
     external_optical_only=True, external_phase_lr_multiplier=5.)
 PROFILES['sku_conv_teacher'] = dict(PROFILES['sku_capacity_control'],
