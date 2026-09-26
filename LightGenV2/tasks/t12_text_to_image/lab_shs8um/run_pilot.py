@@ -71,6 +71,8 @@ def main():
     flow.write(a.output/'report.json',dict(status='complete',selftest=a.selftest,metrics=metrics,
         sample_count=len(ids),sample_metadata=x['metadata'],stages=stages,contract=contract,
         scope='fixed pilot; not full test-set performance',corners=CORNERS.tolist()))
+    from LightGenV2.tasks.t12_text_to_image.lab_shs8um.export_samples import export
+    export(a.project,a.output)
     print(json.dumps(dict(status='complete',metrics=metrics)),flush=True)
 
 
