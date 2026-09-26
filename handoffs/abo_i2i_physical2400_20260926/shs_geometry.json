@@ -1,0 +1,18 @@
+{
+  "schema": 1,
+  "status": "complete",
+  "checkpoint_sha256": "c9926cbaaa1ef066d9657a8028dffc130a33915aa9f392551573dc79894192d0",
+  "base_corners_screen_TL_TR_BR_BL": [[586,147],[1379,159],[1369,946],[573,932]],
+  "stage_calibration": {
+    "vision_router": {"phase_candidate":"hv_inverse","camera_orientation":"flip_v"},
+    "vision_expert": {"phase_candidate":"hv_inverse","camera_orientation":"flip_v"},
+    "vision_global": {"phase_candidate":"hv_inverse","camera_orientation":"flip_v"},
+    "language_router": {"phase_candidate":"hv_inverse","camera_orientation":"flip_v"},
+    "language_expert": {"phase_candidate":"hv_inverse","camera_orientation":"flip_v"},
+    "language_global": {"phase_candidate":"hv_inverse","camera_orientation":"flip_v"}
+  },
+  "direction_evidence": "shs_verify and shs_phase_verify: input marker maps with flip_v; phase TL acts on BR, TR on BL, BL on TR, BR on TL",
+  "phase_encoding": "255-minus-g retained from prior hardware profile; quadrant test verifies spatial mapping, not a complete phase-versus-voltage calibration",
+  "selection": "Independent asymmetric physical markers; no retrieval labels or per-layer simulation PCC used to select directions",
+  "mnist_smoke": {"count":4,"correct":4,"scope":"Four fixed digits only, not full dataset accuracy"}
+}

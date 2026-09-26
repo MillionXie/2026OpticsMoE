@@ -188,7 +188,7 @@ def main():
     args = p.parse_args()
     if args.corners_tltrbrbl is not None:
         physical_geometry.BASE_CORNERS = np.asarray(args.corners_tltrbrbl, dtype=np.float32).reshape(4, 2)
-    if not 100 <= args.exposure_us <= 20000 or not 150 <= args.wait_ms <= 500:
+    if not 100 <= args.exposure_us <= 20000 or not 150 <= args.wait_ms <= 1000:
         raise ValueError('Unsafe exposure/wait bounds')
     if args.batch_size < 1 or args.batch_size > 8:
         raise ValueError('Batch size must be 1..8')

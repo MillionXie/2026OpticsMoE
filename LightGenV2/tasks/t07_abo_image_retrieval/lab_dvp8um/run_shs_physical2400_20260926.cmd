@@ -1,0 +1,3 @@
+@echo off
+set PROJECT=E:\code\guest\2026OpticsMoE\ABO_I2I_Lab_DVP_8um
+E:\code\guest\2026OpticsMoE\ABO_Lab_SHS_8um\.venv_gpu\Scripts\python.exe -u "%PROJECT%\lab_dvp8um\shs_physical2400.py" --output "%PROJECT%\runs\abo_i2i_20260926\shs_physical2400" --physical-gallery --exposure-us 300 --wait-ms 700 --batch-size 4 --corners-tltrbrbl 586 147 1379 159 1369 946 573 932 --calibration-report "%PROJECT%\runs\abo_i2i_20260926\shs_geometry.json" --simulation-bank "%PROJECT%\runs\bringup4_20260923\00_simulation_verify\normal_features.pt" %* >> "%PROJECT%\runs\abo_i2i_20260926\shs_physical2400.log" 2>&1
