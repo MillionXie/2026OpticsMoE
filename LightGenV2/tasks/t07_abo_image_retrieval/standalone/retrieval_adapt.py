@@ -26,7 +26,9 @@ from .retrieval_screen import load_screen, rank_instances, OPTICS_SHA256, GALLER
 from .retrieval_refine import (PROFILES, validate_continuation, route_objective,
     all_view_loss, load_train_teacher, relational_loss, selection_score, router_acceptable,
     optical_parameter, set_parameter_scope, update_trainable_ema, non_optical_digest,
-    prepare_capacity_payload, optical_curriculum_scope, learning_rate_multiplier)
+    prepare_capacity_payload, optical_curriculum_scope, learning_rate_multiplier,
+    configure_phase_head_scope, attach_train_readout_dropout, train_ranking_loss,
+    configure_alpha_scope, frozen_except_alpha_digest, blend_train_pairs, training_source_exclusion)
 from .enrolled_regularization import load_external_pool, load_external_relations, augment_whole_object, curriculum_epoch, curriculum_loss_weights, fitting_bank_diagnostics
 from .generalization import backward_with_sam
 
@@ -108,7 +110,7 @@ def training_pairs(groups, rng, classes_per_batch, category_probability=0.):
     return rows, torch.tensor([labels[r['product_id']] for r in rows])
 
 
-def retrieval_loss(z, labels, bank, natural_count, bank_labels=None, excluded=None, *, supcon_weight=.5):
+def retrieval_loss(z, labels, bank, natural_count, bank_labels=None, excluded=None, *, supcon_weight=.5, ranking_loss='nll'):
     """Whole fitting-gallery NLL; multiple references of an object are positives."""
     if not math.isfinite(supcon_weight) or supcon_weight < 0:
         raise ValueError('SupCon weight must be finite and nonnegative')
@@ -128,7 +130,11 @@ def retrieval_loss(z, labels, bank, natural_count, bank_labels=None, excluded=No
         if not positive.any(1).all():
             raise ValueError('No nonself fitting positive')
         logits = logits.masked_fill(excluded, -torch.inf)
-    if torch.equal(bank_labels, torch.arange(len(bank), device=z.device)):
+    if ranking_loss != 'nll':
+        exclusion = excluded if excluded is not None else torch.zeros_like(logits, dtype=torch.bool)
+        positive = labels[:natural_count, None].eq(bank_labels[None]) & ~exclusion
+        ce = train_ranking_loss(logits, positive, exclusion, ranking_loss)
+    elif torch.equal(bank_labels, torch.arange(len(bank), device=z.device)):
         ce = F.cross_entropy(logits, labels[:natural_count])
     else:
         positive = labels[:natural_count, None].eq(bank_labels[None])
@@ -168,6 +174,25 @@ def encode_rows(model, processor, rows, root, device, batch_size, routing=False)
     return torch.cat(vectors), audit
 
 
+def paired_bank_loss(z, labels, bank, count, bank_labels, excluded, *, symmetric=False, supcon_weight=.5, ranking_loss='nll'):
+    """Average two query directions, retaining the original total loss scale.
+
+    With symmetric=True every live TRAIN view must exclude its own bank entry.
+    The bank remains detached; the second view formerly received only live
+    SupCon gradients, now also receives full-gallery instance supervision.
+    """
+    if symmetric and (excluded is None or excluded.shape != (2 * count, len(bank))):
+        raise ValueError('Symmetric bank loss requires self exclusion for BOTH views')
+    left = retrieval_loss(z, labels, bank, count, bank_labels,
+        excluded[:count] if excluded is not None else None, supcon_weight=supcon_weight, ranking_loss=ranking_loss)
+    if not symmetric:
+        return left
+    right = retrieval_loss(torch.cat((z[count:], z[:count])),
+        torch.cat((labels[count:], labels[:count])), bank, count, bank_labels,
+        excluded[count:], supcon_weight=supcon_weight, ranking_loss=ranking_loss)
+    return tuple((a + b) * .5 for a, b in zip(left, right))
+
+
 @torch.no_grad()
 def assessment(model, processor, groups, args, device, output=None, fit=None):
     # Same manifest order as frozen Qwen and retrieval_screen, including ties.
@@ -196,6 +221,13 @@ def phase_snapshot(model):
 def phase_delta(model, initial):
     return {n: float(torch.atan2(torch.sin(p - initial[n]), torch.cos(p - initial[n])).square().mean().sqrt())
             for n, p in phase_snapshot(model).items()}
+
+
+def refresh_bank_before_step(step, interval):
+    """Zero-based optimizer step; epoch-start bank already exists at step zero."""
+    if type(step) is not int or step < 0 or type(interval) is not int or interval < 0:
+        raise ValueError('Bank refresh step/interval must be nonnegative integers')
+    return interval > 0 and step > 0 and step % interval == 0
 
 
 def load_initial_weights(model, payload, assets, fresh):
@@ -233,6 +265,8 @@ def run(args):
     payload = torch.load(path, map_location='cpu', weights_only=True)
     validate_continuation(protocol['protocol'], payload, sha256(args.manifest), args.fresh_trainable)
     profile = dict(PROFILES[args.refine_profile])
+    if profile.get('symmetric_bank') and not args.multi_view:
+        raise ValueError('Symmetric TRAIN bank supervision requires --multi-view')
     if args.router_warmup_epochs is not None:
         if args.refine_profile == 'standard':
             raise ValueError('Router warmup override requires a refinement profile')
@@ -240,6 +274,20 @@ def run(args):
     refined = args.refine_profile != 'standard'
     regularized = 'sam_rho' in profile
     optical_only = profile.get('optical_only', False)
+    phase_head_only = profile.get('phase_head_only', False)
+    alpha_only = profile.get('alpha_only', False)
+    view_blend = profile.get('same_sku_blend_probability', 0.)
+    if view_blend and (not phase_head_only or not profile.get('symmetric_bank')
+            or profile.get('teacher_weight') or profile.get('supcon_weight') or profile.get('positive_weight')):
+        raise ValueError('View blend requires isolated phase/head symmetric TRAIN ranking')
+    if alpha_only and (phase_head_only or optical_only or profile.get('warmup')
+            or getattr(args, 'external_pretrain_epochs', 0) or args.fresh_trainable
+            or not args.multi_view or protocol['protocol'] != 'abo200_enrolled_sku_hash8train4query_v1'
+            or any(profile.get(k) for k in ('electronic_expansion','head_expansion','ccd_readout_modes','teacher_weight'))):
+        raise ValueError('Alpha-only requires existing enrolled ABO weights without another curriculum or expansion')
+    if phase_head_only and (optical_only or profile.get('warmup') or getattr(args, 'external_pretrain_epochs', 0)
+            or args.fresh_trainable or not args.multi_view or protocol['protocol'] != 'abo200_enrolled_sku_hash8train4query_v1'):
+        raise ValueError('Phase/head-only requires existing enrolled ABO multi-view weights without another curriculum')
     if optical_only and (profile['warmup'] or getattr(args, 'external_pretrain_epochs', 0)):
         raise ValueError('Optical-only audit is a separate stage, not router-only/external curriculum')
     external_fit, external_audit = None, None
@@ -282,6 +330,9 @@ def run(args):
     model = OpticalRetrieval(copy.deepcopy(payload['metadata']))
     initialization = load_initial_weights(model, payload, args.assets, args.fresh_trainable)
     attach_robust(model, profile)
+    fixed_phase_head_sha = configure_phase_head_scope(model) if phase_head_only else None
+    fixed_alpha_sha = configure_alpha_scope(model) if alpha_only else None
+    readout_hook = attach_train_readout_dropout(model, profile['readout_input_dropout']) if phase_head_only else None
     fixed_electronics_sha = non_optical_digest(model) if optical_only or profile.get('external_optical_only') else None
     if regularized:
         model.metadata['phase_dropout'] = dict(expert_global_probability=profile['phase_dropout'], router_probability=0., block_size=8)
@@ -309,16 +360,26 @@ def run(args):
         teacher_train_ids=sorted(teacher) if teacher else [], extra_inference_parameters=capacity_audit['extra_parameters'],
         capacity_conversion=capacity_audit,
         refinement=profile,
-        training_scope=('External: only12 phases, bitwise frozen electronics/alpha; target: joint trainable parameters'
+        bank_ranking_objective=profile.get('ranking_loss', 'nll'),
+        bank_refresh_steps=getattr(args, 'bank_refresh_steps', 0),
+        bank_refresh_note='TRAIN reference features only; full deterministic re-encode with current live weights. No gradients/TEST rows; no change to inference.',
+        training_scope=('Only four existing scalar fusion logits; all phases/frontend/electronic residuals/readout bitwise frozen'
+                        if alpha_only else 'Only12 phases and original Linear384->64 weight/bias; frontend, electronic residuals, alpha and head LayerNorm bitwise frozen'
+                        if phase_head_only else 'External: only12 phases, bitwise frozen electronics/alpha; target: joint trainable parameters'
                         if profile.get('external_optical_only') else
                         'Only12 optical phase tensors; all electronics/frontend/alpha frozen' if optical_only else 'Profile curriculum'),
         non_optical_parameters_initial_sha256=fixed_electronics_sha,
+        frozen_except_phase_projection_initial_sha256=fixed_phase_head_sha,
+        frozen_except_alpha_initial_sha256=fixed_alpha_sha,
         external_curriculum=external_audit,
         external_teacher=external_teacher_audit,
         curriculum_note='Continue verified current-protocol best -> external instance pretraining (last state, no TEST selection) -> target fine-tune. Initial best retained; not from-scratch pretraining' if external_fit else None,
-        noise=f"Metadata noise on {profile.get('noise_probability', .25):.0%} joint-training batches; router noise={profile.get('router_noise',False)}; per-sample incident/CCD integer shift={profile.get('pixel_shift',0)} logical pixels. Warmup clean, no k filter/8bit STE; clean evaluation",
+        noise=f"Metadata noise on {profile.get('noise_probability', .25):.0%} joint-training batches; router noise={profile.get('router_noise',False)}; incident/CCD integer shift={profile.get('pixel_shift',0)} logical pixels. Warmup clean; no k filter/8bit STE; clean evaluation",
         augmentation=('Brightness/contrast .95..1.05 only; no geometric augmentation or blur' if profile.get('mild_augmentation') else 'Whole-object .85..1 scale into white canvas, bounded placement, brightness/contrast .85..1.15,15% mild blur; no crop/flip') if regularized else 'Whole-object contain_white; brightness/contrast .9..1.1; no crop/rotation/flip',
-        loss=f"query->detached entire FITTING gallery multi-positive NLL(temp .1) + {profile.get('supcon_weight', .5)} live query/reference SupCon + {profile['positive_weight']} all-positive log-probability loss + existing optical regularization/router auxiliary",
+        same_sku_view_blend=(dict(probability=view_blend, secondary_weight_range=profile['same_sku_blend_range'],
+            sources='Two distinct TRAIN photos of identical SKU; both excluded from TRAIN gallery loss',
+            semantics='Pixel blend regularization, NOT a physically rendered new view; never applied to evaluation') if view_blend else None),
+        loss=f"{'Both TRAIN views' if profile.get('symmetric_bank') else 'Query'}->detached entire FITTING gallery {profile.get('ranking_loss', 'nll')}(temp .1, mean reduction; top1 cosine margin .02 when enabled) + {profile.get('supcon_weight', .5)} live query/reference SupCon + {profile['positive_weight']} all-positive log-probability loss + existing optical regularization/router auxiliary",
         external_loss_override=('External: frozen64 teacher relation KL(temp .1), no SKU NLL/SupCon/all-positive loss; target: original GT retrieval loss, teacher disabled' if external_teacher else None))
     write_json(args.output / 'fitting_manifest.json', dict(parent_manifest_sha256=identity['manifest_sha256'],
         note=fit['note'], train=fit['train'], references=fit['gallery']))
@@ -382,12 +443,24 @@ def run(args):
                 multiplier = learning_rate_multiplier(profile, g['name'], external, refined)
                 g['lr'] = (.01 if g['name'].endswith('raw_router_phase') else 0.) if warming else g['initial_lr'] * factor * multiplier
             totals = dict(loss=0., batch_natural_hit_at_1=0., route_aux=0., teacher_loss=0., all_view_loss=0., sam_loss_gap=0.)
+            bank_refresh_audit = []
+            blend_weights = []
             for step in range(args.steps):
-                model.train(not (warming or current_optical_only))
-                if current_optical_only:
+                if refresh_bank_before_step(step, getattr(args, 'bank_refresh_steps', 0)):
+                    refreshed, _ = encode_rows(model, processor, gallery, args.data, device,
+                        getattr(args, 'bank_batch_size', None) or args.batch_size)
+                    refreshed = refreshed.to(device)
+                    bank_refresh_audit.append(dict(before_step=step,
+                        mean_cosine_to_previous=float(F.cosine_similarity(refreshed.float(), bank.float(), dim=-1).mean()),
+                        reference_count=len(gallery), requires_grad=refreshed.requires_grad))
+                    bank = refreshed
+                model.train(not (warming or current_optical_only or phase_head_only or alpha_only))
+                if current_optical_only or phase_head_only:
                     # Fixed electronics are deterministic; retain existing optical
                     # noise/DC injection during optical training, router noise off.
                     model.vision.optics.train(); model.language.optics.train()
+                if phase_head_only:
+                    model.readout.projection.train()  # Enable only training input dropout; fixed E stays eval.
                 noisy = rng.random() < profile.get('noise_probability', .25) and not warming
                 for m in (model.vision, model.language):
                     m.optics.set_training_noise(noisy)
@@ -402,16 +475,25 @@ def run(args):
                         continue
                     im = ImageEnhance.Brightness(im).enhance(rng.uniform(.9, 1.1))
                     images.append(ImageEnhance.Contrast(im).enhance(rng.uniform(.9, 1.1)))
+                blended_sources = None
+                if view_blend:
+                    images, blended_sources, weights = blend_train_pairs(images, rows, args.classes_per_batch,
+                        rng, view_blend, profile['same_sku_blend_range'])
+                    blend_weights.extend(weights)
                 batch_inputs = inputs(processor, images, device)
+                supervised_count = len(rows) if profile.get('symmetric_bank') else args.classes_per_batch
+                excluded = (training_source_exclusion(blended_sources[:supervised_count], gallery_ids, device)
+                    if blended_sources is not None else
+                    torch.tensor([[r['sample_id'] == sid for sid in gallery_ids]
+                        for r in rows[:supervised_count]], device=device) if args.multi_view else None)
                 def closure():
                   with autocast(device):
                     z = model(batch_inputs)
-                    excluded = (torch.tensor([[r['sample_id'] == sid for sid in gallery_ids]
-                        for r in rows[:args.classes_per_batch]], device=device) if args.multi_view else None)
-                    data_loss, hit = retrieval_loss(z, labels.to(device), bank, args.classes_per_batch, bank_labels, excluded,
-                        supcon_weight=profile.get('supcon_weight', .5))
+                    data_loss, hit = paired_bank_loss(z, labels.to(device), bank, args.classes_per_batch, bank_labels, excluded,
+                        symmetric=profile.get('symmetric_bank', False),
+                        supcon_weight=profile.get('supcon_weight', .5), ranking_loss=profile.get('ranking_loss', 'nll'))
                     route = route_objective(model) if refined else z.new_zeros(())
-                    all_views = all_view_loss(z, labels.to(device), bank, bank_labels, args.classes_per_batch, excluded) if profile['positive_weight'] else z.new_zeros(())
+                    all_views = all_view_loss(z, labels.to(device), bank, bank_labels, supervised_count, excluded) if profile['positive_weight'] else z.new_zeros(())
                     kd = z.new_zeros(())
                     if active_teacher and not warming:
                         tq = torch.stack([active_teacher[r['sample_id']] for r in rows[:args.classes_per_batch]]).to(device)
@@ -430,15 +512,31 @@ def run(args):
                 totals['teacher_loss'] += float(result['kd'])
                 totals['all_view_loss'] += float(result['all_views'])
                 totals['sam_loss_gap'] += sam['loss_gap']
-            row = dict(epoch=epoch, phase='optical_only' if optical_only else 'external_pretrain' if external else 'target_finetune', phase_epoch=phase_epoch, router_only_warmup=warming,
+            row = dict(epoch=epoch, phase='alpha_only' if alpha_only else 'phase_head_only' if phase_head_only else 'optical_only' if optical_only else 'external_pretrain' if external else 'target_finetune', phase_epoch=phase_epoch, router_only_warmup=warming,
                 optical_only_scope=current_optical_only,
+                bank_refreshes=bank_refresh_audit,
                 active_trainable_parameters=sum(p.numel() for _,p in params if p.requires_grad),
                 fitting_bank_epoch_start=bank_metrics,
                 **{k: v / args.steps for k, v in totals.items()}, last_gradient_norm=float(norm))
+            if view_blend:
+                nonzero = [w for w in blend_weights if w > 0]
+                row['view_blend_audit'] = dict(train_images_seen=len(blend_weights), mixed_images=len(nonzero),
+                    mean_secondary_weight=sum(nonzero) / max(1, len(nonzero)),
+                    min_secondary_weight=min(nonzero, default=0.), max_secondary_weight=max(nonzero, default=0.),
+                    mixed_queries_exclude_two_sources=True, evaluation_unmixed=True)
             if current_optical_only:
                 row['non_optical_parameters_sha256'] = non_optical_digest(model)
                 if row['non_optical_parameters_sha256'] != fixed_electronics_sha:
                     raise RuntimeError('Frozen electronic parameter changed in optical-only training')
+            if phase_head_only:
+                row['frozen_except_phase_projection_sha256'] = non_optical_digest(model, exclude_projection=True)
+                if row['frozen_except_phase_projection_sha256'] != fixed_phase_head_sha:
+                    raise RuntimeError('Phase/head-only changed a frozen parameter')
+            if alpha_only:
+                row['frozen_except_alpha_sha256'] = frozen_except_alpha_digest(model)
+                row['alpha'] = model.audit()['alpha']
+                if row['frozen_except_alpha_sha256'] != fixed_alpha_sha:
+                    raise RuntimeError('Alpha-only changed a protected phase or electronic tensor')
             torch.save(dict(metadata=model.metadata, state_dict=model.state_dict(), epoch=epoch,
                 optimizer=optimizer.state_dict(), ema=ema, source_commit=identity['source_commit'],
                 manifest_sha256=identity['manifest_sha256']), args.output / 'last.pt')
@@ -471,6 +569,12 @@ def run(args):
         selected = torch.load(args.output / 'best.pt', map_location='cpu', weights_only=True)
         model.load_state_dict(selected['state_dict'], strict=True)
         final_electronics_sha = non_optical_digest(model) if fixed_electronics_sha else None
+        final_phase_head_sha = non_optical_digest(model, exclude_projection=True) if phase_head_only else None
+        final_alpha_sha = frozen_except_alpha_digest(model) if alpha_only else None
+        if alpha_only and final_alpha_sha != fixed_alpha_sha:
+            raise RuntimeError('Selected alpha-only candidate changed protected tensors')
+        if phase_head_only and final_phase_head_sha != fixed_phase_head_sha:
+            raise RuntimeError('Selected phase/head EMA changed a frozen parameter')
         if optical_only and final_electronics_sha != fixed_electronics_sha:
             raise RuntimeError('Selected EMA/best changed frozen electronic parameters')
         normal = assessment(model, processor, groups, args, device, args.output, fit=fit)
@@ -487,6 +591,8 @@ def run(args):
             normal=normal, remove_optical=removed, model_audit_final=model.audit(),
             router_eligible=router_acceptable(normal),
             non_optical_parameters_final_sha256=final_electronics_sha,
+            frozen_except_phase_projection_final_sha256=final_phase_head_sha,
+            frozen_except_alpha_final_sha256=final_alpha_sha,
             external_frozen_electronics_verified=(all(row.get('non_optical_parameters_sha256') == fixed_electronics_sha
                 for row in history if row.get('phase') == 'external_pretrain') if profile.get('external_optical_only') else None),
             optical_removal_drop_percentage_points=100*(normal['test']['hit_at_1']-removed['test']['hit_at_1']),
@@ -498,6 +604,8 @@ def run(args):
         status.update(status='failed_or_interrupted', error=repr(exc))
         raise
     finally:
+        if readout_hook is not None:
+            readout_hook.remove()
         write_json(args.output / 'status.json', status)
         del model
         if device.type == 'cuda':
@@ -515,6 +623,8 @@ def main():
     p.add_argument('--classes-per-batch', type=int, default=8)
     p.add_argument('--batch-size', type=int, default=4, help='Evaluation batch size, training batch is 2*classes-per-batch')
     p.add_argument('--bank-batch-size', type=int, help='Optional independent TRAIN-bank encoding batch; TEST always uses --batch-size')
+    p.add_argument('--bank-refresh-steps', type=int, default=0,
+                   help='Re-encode TRAIN bank every N optimizer steps within epoch; 0 preserves epoch-only baseline. No TEST or extra inference layer.')
     p.add_argument('--seed', type=int, default=42)
     p.add_argument('--multi-view', action='store_true', help='All TRAIN views in bank, distinct-photo pairs, self excluded; enrolled protocols only')
     p.add_argument('--fresh-trainable', action='store_true', help='Reset all trainable weights, load packaged frozen frontend only')
@@ -541,6 +651,8 @@ def main():
         p.error('External pretraining requires nonnegative epochs and pool/root/SHA')
     if args.bank_batch_size is not None and args.bank_batch_size < 1:
         p.error('bank-batch-size must be positive')
+    if args.bank_refresh_steps < 0:
+        p.error('bank-refresh-steps must be nonnegative')
     run(args)
 
 
