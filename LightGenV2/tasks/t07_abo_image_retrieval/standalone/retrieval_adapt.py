@@ -341,7 +341,7 @@ def run(args):
         for m in (model.vision, model.language):
             m.optics.configure_phase_dropout(model.metadata['phase_dropout'])
     audit = model.audit()
-    required_floor = .35 if 'robust_alpha_min' in profile else .4001
+    required_floor = profile.get('robust_alpha_min', .4001)
     if audit['alpha_bounds'][0] < required_floor or audit['descriptor_dimension'] != 64 or audit['frontend_trainable_parameters']:
         raise ValueError('Require frozen compact frontend, high-alpha 64D model')
     processor = AutoProcessor.from_pretrained(str(args.assets / 'processor'), local_files_only=True)
