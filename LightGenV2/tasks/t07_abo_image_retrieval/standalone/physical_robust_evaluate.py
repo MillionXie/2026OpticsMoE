@@ -21,6 +21,8 @@ def main():
     processor=AutoProcessor.from_pretrained(str(assets/'processor'),local_files_only=True)
     cases={'original':assets/'best.pt',**{p:runs/(p+'_20260926')/'best.pt'
            for p in ('physical_robust35','physical_robust35_no_shift')}}
+    cases.update({p+'_last':runs/(p+'_20260926')/'last.pt'
+                  for p in ('physical_robust35','physical_robust35_no_shift')})
     results={}
     common=prepare(torch.load(assets/'best.pt',map_location='cpu',weights_only=True),dict(robust_alpha_min=.35))['metadata']['optical_training_noise']
     for name,path in cases.items():
