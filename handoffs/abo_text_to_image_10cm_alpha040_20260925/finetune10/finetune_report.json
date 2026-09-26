@@ -1,0 +1,81 @@
+{
+  "schema": 1,
+  "source_checkpoint_sha256": "cc977b83286a8e90398ebd30064428886bc3c06f1eb0557e470060f7ff5c1cae",
+  "training": {
+    "captured_train_images": 800,
+    "fit_images": 600,
+    "validation_images": 200,
+    "test_images": 2400,
+    "only_trainable_module": "retrieval_readout",
+    "epochs": 10,
+    "selected_epoch": 9,
+    "test_evaluation_count": 1,
+    "test_precision": "float32 readout on frozen measured features",
+    "learning_rate": 0.0002,
+    "anchor_weight": 0.1,
+    "temperature": 0.07,
+    "seed": 20260926
+  },
+  "baseline": {
+    "train_fit": {
+      "hit_at_1": 0.8199999928474426,
+      "hit_at_5": 0.949999988079071,
+      "hit_at_10": 0.9799999594688416,
+      "mrr": 0.874359667301178,
+      "map": 0.7933706641197205,
+      "gallery_count": 600,
+      "relevant_images_per_query": 6
+    },
+    "train_validation": {
+      "hit_at_1": 0.7899999618530273,
+      "hit_at_5": 0.9399999976158142,
+      "hit_at_10": 0.9899999499320984,
+      "mrr": 0.8593451976776123,
+      "map": 0.8232191801071167,
+      "gallery_count": 200,
+      "relevant_images_per_query": 2
+    }
+  },
+  "selected": {
+    "all_train": {
+      "hit_at_1": 0.8799999952316284,
+      "hit_at_5": 0.9799999594688416,
+      "hit_at_10": 1.0,
+      "mrr": 0.9244999289512634,
+      "map": 0.8466851115226746,
+      "gallery_count": 800,
+      "relevant_images_per_query": 8
+    },
+    "train_validation": {
+      "hit_at_1": 0.8700000047683716,
+      "hit_at_5": 0.9899999499320984,
+      "hit_at_10": 1.0,
+      "mrr": 0.9185000658035278,
+      "map": 0.8659725785255432,
+      "gallery_count": 200,
+      "relevant_images_per_query": 2
+    },
+    "untouched_test": {
+      "hit_at_1": 0.8499999642372131,
+      "hit_at_5": 0.9699999690055847,
+      "hit_at_10": 0.9699999690055847,
+      "mrr": 0.8952448964118958,
+      "map": 0.7978265285491943,
+      "gallery_count": 2400,
+      "relevant_images_per_query": 24
+    }
+  },
+  "last": {
+    "all_train": {
+      "hit_at_1": 0.8899999856948853,
+      "hit_at_5": 0.9799999594688416,
+      "hit_at_10": 1.0,
+      "mrr": 0.9308333396911621,
+      "map": 0.8503367304801941,
+      "gallery_count": 800,
+      "relevant_images_per_query": 8
+    }
+  },
+  "best_checkpoint_sha256": "89e25360c8f12c9d13dbceba49e8d81073d4dd75c6acf667ab12a38b8fd293c5",
+  "last_checkpoint_sha256": "ec33813485237562241c9d2f0631b6d90bc6f0d74830d33edb379906a39e0be2"
+}
