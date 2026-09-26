@@ -51,6 +51,8 @@ PROFILES['physical_robust35_cleanmix'] = dict(PROFILES['physical_robust35'],
     noise_probability=.25, phase_lr_multiplier=1.)
 PROFILES['physical_bounded30'] = dict(PROFILES['physical_robust35_cleanmix'],
     robust_alpha_min=.30, bounded_amplitude=True)
+PROFILES['physical_bounded30_conv5'] = dict(PROFILES['physical_bounded30'],
+    electronic_expansion=dict(kernels=dict(vision=5,language=5),mlp_width=384))
 PROFILES['sku_optical_pretrain'] = dict(PROFILES['sku_capacity_control'],
     external_optical_only=True, external_phase_lr_multiplier=5.)
 PROFILES['sku_conv_teacher'] = dict(PROFILES['sku_capacity_control'],
