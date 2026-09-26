@@ -120,6 +120,7 @@ def main():
     state['stage']=None;all_rows=[]
     for start in range(0,total,6):
         stop=min(start+6,total);name=f'batch_{start:05d}_{stop:05d}';folder=a.output/name
+        state.update(start=start,stop=stop)
         if start in reused:
             old=reused[start][0];rows=json.loads((old/'sample_metrics.json').read_text())
             for i,row in zip(range(start,stop),rows):
