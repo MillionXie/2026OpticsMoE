@@ -45,6 +45,13 @@ def main():
         native=flow.phase_gray(phase[0].detach().cpu().numpy(),'hv',True)
         path=phase_dir/(stage+'.bmp');Image.fromarray(native).save(path)
         paths,scale=flow.save_amplitudes(amplitude.detach().cpu().numpy(),a.output,stage,ids)
+        stats=[]
+        for sample_id,bmp in zip(ids,paths):
+            gray=np.asarray(Image.open(bmp).convert('L'))[32:1048,452:1468]
+            stats.append(dict(sample_id=sample_id,minimum=int(gray.min()),maximum=int(gray.max()),
+                mean=float(gray.mean()),p99=float(np.percentile(gray,99)),
+                nonzero_fraction=float((gray>0).mean()),bright_fraction=float((gray>=128).mean())))
+        flow.write(a.output/(stage+'_input_statistics.json'),dict(normalization='shared batch maximum',scale=scale,images=stats))
         try:raw,receipt=bench.capture(stage,path,paths,ids,'flip_v')
         finally:
             for bmp in paths:bmp.unlink(missing_ok=True)
