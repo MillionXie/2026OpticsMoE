@@ -43,6 +43,14 @@ def phase_modulation(raw):
     return torch.exp(1j * (2 * math.pi * torch.sigmoid(raw))).to(torch.complex64)
 
 
+def bounded_amplitude(value, spec):
+    """Physical SLM encoding shared by simulation and fixed-scale BMP export."""
+    if spec is None:return value
+    if spec != dict(kind='tanh',scale=.5):raise ValueError('Unsupported bounded amplitude')
+    magnitude=value.abs()
+    return value * (torch.tanh(magnitude/.5)/magnitude.clamp_min(1e-8))
+
+
 def block_bypass(modulation, probability, *, batch=1, block_size=8):
     size = modulation.shape[-1]
     keep = torch.rand(batch, math.ceil(size / block_size), math.ceil(size / block_size), device=modulation.device) >= probability
@@ -85,6 +93,7 @@ class Router(nn.Module):
         self.phase_dropout_block_size = 8
 
     def forward(self, amplitude):
+        amplitude=bounded_amplitude(amplitude,getattr(self,'bounded_amplitude',None))
         field = F.pad(amplitude.float(), (147, 147, 147, 147))
         modulation = phase_modulation(self.raw_router_phase).unsqueeze(0).expand(len(field), -1, -1)
         modulation = phase_dropout(modulation, self.phase_dropout_probability,
@@ -177,6 +186,7 @@ class OpticalPath(nn.Module):
         return torch.complex(canvas, torch.zeros_like(canvas))
 
     def propagate(self, field, final):
+        field=bounded_amplitude(field,getattr(self,'bounded_amplitude',None))
         name = 'global' if final else 'expert'
         plane = torch.ones_like(field, dtype=torch.complex64)
         support = torch.zeros_like(field.real, dtype=torch.bool)

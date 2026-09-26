@@ -34,6 +34,9 @@ def prepare(payload, profile):
     md['alignment_training']=dict(incident_shift_pixels=profile.get('pixel_shift',0),
         ccd_shift_pixels=profile.get('pixel_shift',0),coordinate='17um simulation pixels',
         inference_enabled=False)
+    if profile.get('bounded_amplitude'):
+        md['bounded_amplitude']=dict(kind='tanh',scale=.5)
+        md['bmp_amplitude_encoding']='round(255*a); no peak normalization; tanh before each phase plane'
     return result
 
 
