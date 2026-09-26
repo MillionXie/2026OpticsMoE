@@ -247,6 +247,9 @@ def main():
                   if args.physical_gallery else '800 physical queries against fixed 1600 simulated gallery'),
     }
     contract_path = out/'run_contract.json'
+    # Match the representation saved on disk (JSON turns tuples into lists).
+    # This preserves strict comparisons of every actual acquisition setting.
+    run_contract = json.loads(json.dumps(run_contract))
     if contract_path.exists():
         existing = json.loads(contract_path.read_text(encoding='utf-8'))
         if existing != run_contract:
