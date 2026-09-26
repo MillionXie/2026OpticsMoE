@@ -20,12 +20,15 @@ def main():
     p.add_argument('--steps',type=int,default=600);p.add_argument('--batch-size',type=int,default=4)
     p.add_argument('--learning-rate',type=float,default=1e-5)
     p.add_argument('--smoke',action='store_true')
+    p.add_argument('--noise-probability',type=float,default=.5)
+    p.add_argument('--phase-lr-multiplier',type=float,default=5.)
+    p.add_argument('--clean-mse-limit',type=float)
     a=p.parse_args();a.output.mkdir(parents=True,exist_ok=False);torch.set_num_threads(4);torch.manual_seed(1042)
     saved=torch.load(a.checkpoint,map_location='cpu',weights_only=False)
     model=build_sealed(saved).cuda()
     phases=[value for name,value in model.named_parameters() if 'raw_phase' in name or 'raw_router_phase' in name]
     phase_ids={id(value) for value in phases}
-    optimizer=torch.optim.AdamW([dict(params=phases,lr=5*a.learning_rate),
+    optimizer=torch.optim.AdamW([dict(params=phases,lr=a.phase_lr_multiplier*a.learning_rate),
         dict(params=[value for value in model.parameters() if id(value) not in phase_ids],lr=a.learning_rate)],weight_decay=.01)
     data=a.assets/'datasets';lookup=PromptEmbeddingLookup(data/'abo_unified_expanded_qwen_embeddings_v2.pt')
     datasets={split:ExpandedUnifiedProductEditDataset(data/'abo_cleanrender_lamp_table_pillow_256_v1',split,256,
@@ -92,10 +95,10 @@ def main():
     baseline=validate(val,False);baseline_noisy=validate(val,True);best=float('inf');selected=None;history=[]
     write(a.output/'protocol.json',dict(source_sha256=hashlib.sha256(a.checkpoint.read_bytes()).hexdigest(),
         geometry='17um/10cm/532nm; no architecture or parameter addition',dc_intensity_fraction=.3,
-        pixel_shift=1,noise='50% batches; absolute .002 + signal .03 mean; proxy, not calibrated electrons',
+        pixel_shift=1,noise=f'{a.noise_probability} of batches; absolute .002 + signal .03 mean; proxy, not calibrated electrons',
         losses='MSE+.1L1+.001 average(ROI<.95 and occupied peak-normalized power<.1 deficits)',
         selection='96 fixed VAL members; clean MSE within10% baseline, minimize noisy VAL MSE; TEST no selection',
-        baseline=baseline,baseline_noisy=baseline_noisy))
+        clean_mse_limit=a.clean_mse_limit,baseline=baseline,baseline_noisy=baseline_noisy))
     def save(name,step):
         payload=copy.copy(saved);payload['model']={k:v.detach().cpu() for k,v in model.state_dict().items()}
         payload['physical_robust_training']=dict(step=step,dc=.3,pixel_shift=1,source=str(a.checkpoint))
@@ -104,7 +107,7 @@ def main():
     while step<a.steps:
         for batch in train:
             model.train();optimizer.zero_grad(set_to_none=True)
-            prediction,target=forward(batch,bool(torch.rand(())<.5))
+            prediction,target=forward(batch,bool(torch.rand(())<a.noise_probability))
             quality=F.mse_loss(prediction,target)+.1*F.l1_loss(prediction,target)
             operating=torch.stack(state['penalties']).mean();loss=quality+.001*operating
             if not bool(loss.isfinite()):raise RuntimeError('Nonfinite loss')
@@ -116,7 +119,7 @@ def main():
                 print(json.dumps(record),flush=True)
             if step%100==0 or step==a.steps:
                 clean=validate(val,False);noisy=validate(val,True)
-                eligible=clean['mse_minus1_1']<=baseline['mse_minus1_1']*1.1
+                eligible=clean['mse_minus1_1']<=(a.clean_mse_limit if a.clean_mse_limit is not None else baseline['mse_minus1_1']*1.1)
                 record=dict(step=step,clean=clean,noisy=noisy,eligible=eligible);history.append(record)
                 if eligible and noisy['mse_minus1_1']<best:best=noisy['mse_minus1_1'];selected=step;save('best.pt',step)
                 write(a.output/'history.json',history);print(json.dumps(record),flush=True)
