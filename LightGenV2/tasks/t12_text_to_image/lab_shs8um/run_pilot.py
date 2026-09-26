@@ -15,6 +15,7 @@ def main():
     p.add_argument('--abo-project',type=Path,required=True)
     p.add_argument('--output',type=Path,required=True)
     p.add_argument('--selftest',action='store_true')
+    p.add_argument('--inputs',type=Path)
     a=p.parse_args();a.output.mkdir(parents=True,exist_ok=False)
     sys.path.insert(0,str(a.abo_project/'lab_dvp8um'))
     from LightGenV2.tasks.t12_text_to_image.sealed_editor import build_sealed
@@ -27,7 +28,8 @@ def main():
     saved=torch.load(a.project/'assets/small.pt',map_location='cpu',weights_only=False)
     model=build_sealed(saved).cuda().eval().requires_grad_(False)
     assert architecture_report(model)['counted_parameters']==9958098
-    x=torch.load(a.project/'assets/pilot_inputs.pt',map_location='cpu',weights_only=False)
+    input_path=a.inputs or a.project/'assets/pilot_inputs.pt'
+    x=torch.load(input_path,map_location='cpu',weights_only=False)
     values=[x[k].cuda() for k in ['reference','embeddings','mask','noise']]
     values[1]=values[1].float()
     with torch.inference_mode():baseline=model(*values)
@@ -70,9 +72,9 @@ def main():
     torch.save(dict(actual=actual.cpu(),simulation=baseline.cpu()),a.output/'outputs.pt')
     flow.write(a.output/'report.json',dict(status='complete',selftest=a.selftest,metrics=metrics,
         sample_count=len(ids),sample_metadata=x['metadata'],stages=stages,contract=contract,
-        scope='fixed pilot; not full test-set performance',corners=CORNERS.tolist()))
+        scope=x.get('scope','fixed pilot; not full test-set performance'),indices=x.get('indices'),corners=CORNERS.tolist()))
     from LightGenV2.tasks.t12_text_to_image.lab_shs8um.export_samples import export
-    export(a.project,a.output)
+    export(a.project,a.output,input_path)
     print(json.dumps(dict(status='complete',metrics=metrics)),flush=True)
 
 

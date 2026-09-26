@@ -24,9 +24,9 @@ def ssim(a,b):
                   ((ma*ma+mb*mb+.01**2)*(va+vb+.03**2))).mean())
 
 
-def export(project,run):
+def export(project,run,input_path=None):
     report=json.loads((run/'report.json').read_text(encoding='utf-8'))
-    inputs=torch.load(project/'assets/pilot_inputs.pt',map_location='cpu',weights_only=False)
+    inputs=torch.load(input_path or project/'assets/pilot_inputs.pt',map_location='cpu',weights_only=False)
     outputs=torch.load(run/'outputs.pt',map_location='cpu',weights_only=False)
     if len(inputs['metadata'])!=report['sample_count']:raise ValueError('Sample metadata mismatch')
     rows=[]
