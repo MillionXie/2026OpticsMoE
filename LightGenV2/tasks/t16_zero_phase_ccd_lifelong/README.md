@@ -2,6 +2,8 @@
 
 ## 最终结果统一入口
 
+[用户选定78.62%方案：三张展示矩阵与四任务专家分布](reports/FINAL_THREE_MATRICES_MOE7862_20260926.md)。MoE最后一行采用Physical配对排序候选，注明探索性；不混入第二轮均衡方案。
+
 [最终三张矩阵、追加replay对照与训练方法](reports/FINAL_RESULTS_AND_TRAINING_20260926.md)：集中比较全部结果，原正式MoE与后续Physical探索性优化分开标注；下文历史记录不代表当前进度。
 
 ## 2026-09-26 阶段D第二轮探索性优化（只看验证）
