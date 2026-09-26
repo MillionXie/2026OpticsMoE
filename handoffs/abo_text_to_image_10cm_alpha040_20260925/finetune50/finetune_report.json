@@ -1,0 +1,81 @@
+{
+  "schema": 1,
+  "source_checkpoint_sha256": "cc977b83286a8e90398ebd30064428886bc3c06f1eb0557e470060f7ff5c1cae",
+  "training": {
+    "captured_train_images": 800,
+    "fit_images": 600,
+    "validation_images": 200,
+    "test_images": 2400,
+    "only_trainable_module": "retrieval_readout",
+    "epochs": 50,
+    "selected_epoch": 50,
+    "test_evaluation_count": 1,
+    "test_precision": "float32 readout on frozen measured features",
+    "learning_rate": 0.0002,
+    "anchor_weight": 0.1,
+    "temperature": 0.07,
+    "seed": 20260926
+  },
+  "baseline": {
+    "train_fit": {
+      "hit_at_1": 0.8199999928474426,
+      "hit_at_5": 0.949999988079071,
+      "hit_at_10": 0.9799999594688416,
+      "mrr": 0.874359667301178,
+      "map": 0.7933706641197205,
+      "gallery_count": 600,
+      "relevant_images_per_query": 6
+    },
+    "train_validation": {
+      "hit_at_1": 0.7899999618530273,
+      "hit_at_5": 0.9399999976158142,
+      "hit_at_10": 0.9899999499320984,
+      "mrr": 0.8593451976776123,
+      "map": 0.8232191801071167,
+      "gallery_count": 200,
+      "relevant_images_per_query": 2
+    }
+  },
+  "selected": {
+    "all_train": {
+      "hit_at_1": 0.9799999594688416,
+      "hit_at_5": 1.0,
+      "hit_at_10": 1.0,
+      "mrr": 0.9899999499320984,
+      "map": 0.9229339361190796,
+      "gallery_count": 800,
+      "relevant_images_per_query": 8
+    },
+    "train_validation": {
+      "hit_at_1": 0.949999988079071,
+      "hit_at_5": 0.9899999499320984,
+      "hit_at_10": 1.0,
+      "mrr": 0.9661111235618591,
+      "map": 0.9259405136108398,
+      "gallery_count": 200,
+      "relevant_images_per_query": 2
+    },
+    "untouched_test": {
+      "hit_at_1": 0.9599999785423279,
+      "hit_at_5": 0.9899999499320984,
+      "hit_at_10": 1.0,
+      "mrr": 0.9764285087585449,
+      "map": 0.866929292678833,
+      "gallery_count": 2400,
+      "relevant_images_per_query": 24
+    }
+  },
+  "last": {
+    "all_train": {
+      "hit_at_1": 0.9799999594688416,
+      "hit_at_5": 1.0,
+      "hit_at_10": 1.0,
+      "mrr": 0.9899999499320984,
+      "map": 0.9229339361190796,
+      "gallery_count": 800,
+      "relevant_images_per_query": 8
+    }
+  },
+  "best_checkpoint_sha256": "331a12e43c17d62bbc9fec9d7757180988c870aea0da79cb540bfcdf01c2cf86",
+  "last_checkpoint_sha256": "f88a5e7246f607412af3abb883f1467faf7799ffd5196b0f0e51238049c97273"
+}

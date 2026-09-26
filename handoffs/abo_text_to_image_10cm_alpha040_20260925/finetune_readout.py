@@ -64,9 +64,8 @@ def main() -> None:
     args = p.parse_args()
     torch.manual_seed(args.seed)
     train = torch.load(args.train_cache, map_location='cpu', weights_only=False)
-    test = torch.load(args.test_cache, map_location='cpu', weights_only=False)
     source_sha = sha(args.checkpoint)
-    for data, name in ((train, 'train'), (test, 'test')):
+    for data, name in ((train, 'train'),):
         if data['split'] != name or data['checkpoint_sha256'] != source_sha:
             raise RuntimeError(f'{name} cache checkpoint/split mismatch')
     labels = train['image_labels']
@@ -93,19 +92,13 @@ def main() -> None:
     train_labels = torch.tensor(labels, dtype=torch.long, device=device)
     fit = torch.tensor(fit_idx, dtype=torch.long, device=device)
     val = torch.tensor(val_idx, dtype=torch.long, device=device)
-    test_images = test['image_features'].to(device)
-    test_titles = test['title_features'].to(device)
-    test_labels = torch.tensor(test['image_labels'], dtype=torch.long, device=device)
     with torch.no_grad():
         original_fit = readout(image_all[fit]).detach()
         original_title = readout(title_all).detach()
         baseline = {
             'train_fit': metrics(readout, image_all[fit], title_all, train_labels[fit]),
             'train_validation': metrics(readout, image_all[val], title_all, train_labels[val]),
-            'untouched_test': metrics(readout, test_images, test_titles, test_labels),
         }
-    if abs(baseline['untouched_test']['hit_at_1'] - 0.79) > 1e-5:
-        raise RuntimeError('Measured TEST baseline no longer matches the audited 0.79')
     args.output_dir.mkdir(parents=True, exist_ok=True)
     optimizer = torch.optim.AdamW(readout.parameters(), lr=args.learning_rate,
                                   weight_decay=0.01)
@@ -155,10 +148,17 @@ def main() -> None:
     last_state = {name: value.detach().cpu().clone()
                   for name, value in readout.state_dict().items()}
     last_train = metrics(readout, image_all, title_all, train_labels)
-    last_test = metrics(readout, test_images, test_titles, test_labels)
     readout.load_state_dict(best_state)
     selected_train = metrics(readout, image_all, title_all, train_labels)
     selected_validation = metrics(readout, image_all[val], title_all, train_labels[val])
+    # Open TEST only after the validation-selected state is fixed. Evaluate it
+    # once: neither the initial state nor the last state gets another TEST call.
+    test = torch.load(args.test_cache, map_location='cpu', weights_only=False)
+    if test['split'] != 'test' or test['checkpoint_sha256'] != source_sha:
+        raise RuntimeError('test cache checkpoint/split mismatch')
+    test_images = test['image_features'].to(device)
+    test_titles = test['title_features'].to(device)
+    test_labels = torch.tensor(test['image_labels'], dtype=torch.long, device=device)
     selected_test = metrics(readout, test_images, test_titles, test_labels)
     with (args.output_dir / 'history.csv').open('w', newline='', encoding='utf-8') as stream:
         writer = csv.DictWriter(stream, fieldnames=list(history[0]))
@@ -185,6 +185,8 @@ def main() -> None:
                      'validation_images': 200, 'test_images': 2400,
                      'only_trainable_module': 'retrieval_readout',
                      'epochs': args.epochs, 'selected_epoch': best_epoch,
+                     'test_evaluation_count': 1,
+                     'test_precision': 'float32 readout on frozen measured features',
                      'learning_rate': args.learning_rate,
                      'anchor_weight': args.anchor_weight,
                      'temperature': args.temperature, 'seed': args.seed},
@@ -192,7 +194,7 @@ def main() -> None:
         'selected': {'all_train': selected_train,
                      'train_validation': selected_validation,
                      'untouched_test': selected_test},
-        'last': {'all_train': last_train, 'untouched_test': last_test},
+        'last': {'all_train': last_train},
         'best_checkpoint_sha256': sha(args.output_dir / 'best_readout_checkpoint.pt'),
         'last_checkpoint_sha256': sha(args.output_dir / 'last_readout_checkpoint.pt'),
     }
