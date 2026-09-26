@@ -29,6 +29,7 @@ def main():
     assert architecture_report(model)['counted_parameters']==9958098
     x=torch.load(a.project/'assets/pilot_inputs.pt',map_location='cpu',weights_only=False)
     values=[x[k].cuda() for k in ['reference','embeddings','mask','noise']]
+    values[1]=values[1].float()
     with torch.inference_mode():baseline=model(*values)
     phase_dir=a.output/'phase';phase_dir.mkdir()
     ids=[f'pilot_{i:03d}' for i in range(len(values[0]))]
