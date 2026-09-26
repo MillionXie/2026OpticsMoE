@@ -15,6 +15,7 @@ import four_image_flow as flow
 import full_query_flow as pipeline
 from sdk import Camera as SHSCamera
 from capture import snapshot, restore_settings
+from slm_camera import Controller
 
 CORNERS = np.float32([[586,147],[1379,159],[1369,946],[573,932]])
 CAMERA_CONFIG = json.loads((flow.OLD / 'LAB.local.json').read_text(encoding='utf-8-sig'))['camera']
@@ -22,23 +23,21 @@ CAMERA_CONFIG = json.loads((flow.OLD / 'LAB.local.json').read_text(encoding='utf
 
 class SHSBench(flow.Bench):
     def __init__(self, out, exposure, wait_ms, phase_paths):
-        super().__init__(out, exposure, wait_ms, phase_paths)
-        self.camera = SHSCamera(CAMERA_CONFIG)
+        self.out=out;self.exposure=exposure;self.wait=wait_ms/1000
+        self.phase_paths=phase_paths;self.rows=[]
+        config=json.loads((flow.ROOT/'LGVQ_Spatial_Lab_SHS_8um/LAB.local.json').read_text(encoding='utf-8-sig'))
+        config['camera']['exposure_us']=exposure
+        config['camera']['gain']='Gain_X4'
+        config['settle_delay_ms']=wait_ms
+        self.controller=Controller(config)
+        self.phase=flow.PhaseHDMI(flow.PHASE_SDK,flow.PHASE_LUT,settle_s=.8,pixel_format='rgba')
+        self.current_phase=None
 
     def __enter__(self):
         try:
             self.phase.__enter__()
-            self.amp.__enter__()
-            self.camera.__enter__()
-            self.before = snapshot(self.camera)
-            self.camera.set('AcquisitionFrameRate',100)
-            self.camera.set('ExposureTime',self.exposure)
-            self.camera.set('Gain','Gain_X1')
-            if self.camera.get('TestPattern') != 'Normal' or self.camera.get('SyncMode') != 'InternalSync':
-                raise RuntimeError('Require Normal real image and InternalSync')
-            if self.camera.get('OffsetX') != '0' or self.camera.get('OffsetY') != '0':
-                raise RuntimeError('Require full-sensor zero offsets')
-            self.camera.start()
+            self.controller.__enter__()
+            self.camera=self.controller.camera;self.amp=self.controller.slm
             self.settings = {'exposure_us':float(self.camera.get('ExposureTime')),
                              'gain':self.camera.get('Gain'), 'frame_rate_hz':self.camera.get('AcquisitionFrameRate'),
                              'snapshot':snapshot(self.camera)}
@@ -50,27 +49,28 @@ class SHSBench(flow.Bench):
 
     def __exit__(self,*args):
         errors=[]
-        if hasattr(self,'before'):
-            errors.extend(restore_settings(self.camera,self.before,['Gain','ExposureTime','AcquisitionFrameRate']))
-        for device in (self.camera,self.amp,self.phase):
+        for device in (self.controller,self.phase):
             try: device.__exit__(*args)
             except Exception as ex: errors.append(str(ex))
         if errors and args[0] is None: raise RuntimeError('; '.join(errors))
 
     def capture(self,stage,phase_path,amplitude_paths,ids,camera_orientation,save=True):
-        receipt=self.phase.show(phase_path)
-        self.amp.preload_files(amplitude_paths)
+        digest=flow.sha(phase_path)
+        if self.current_phase != digest:
+            self.receipt=self.phase.show(phase_path)
+            self.current_phase=digest
+            # The phase SDK blocks during its own settling; discard queued
+            # frames before the next amplitude Controller cycle starts.
+            self.camera.fresh()
+        receipt=self.receipt
         values=[]
         folder=self.out/'ccd'/stage
         if save: folder.mkdir(parents=True,exist_ok=True)
         for sample_id,path in zip(ids,amplitude_paths):
             start=time.perf_counter()
-            self.amp.display_file(path)
-            visible=time.perf_counter()
-            drained=0
-            while time.perf_counter()-visible<self.wait:
-                self.camera.grab();drained+=1
-            raw,meta=self.camera.fresh()
+            self.controller.c['settle_delay_ms']=self.wait*1000
+            raw,meta=self.controller.capture(path)
+            drained=meta['settle_drained_frames']
             if raw.shape != (1080,1920): raise RuntimeError(f'Unexpected SHS frame shape: {raw.shape}')
             image=flow.orient(flow.warp(raw),camera_orientation)
             row={'stage':stage,'sample_id':sample_id,'phase_sha256':flow.sha(phase_path),
