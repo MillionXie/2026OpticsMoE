@@ -45,7 +45,8 @@ def bypass_physics(model):
     for optical in (model.text.optical, spatial.optical):
         # Keep electronic amplitude encoding/reload and CCD readout. Replace
         # only optical router propagation and expert/global detector simulation.
-        optical.core.router = CachedRoute({k: v.detach() for k, v in optical.core.last_routing.items()})
+        optical.core.router = CachedRoute({k: v.detach() if torch.is_tensor(v) else v
+                                          for k, v in optical.core.last_routing.items()})
         optical.measured_expert_ccd = optical.last_raw_expert_ccd.detach()
         optical.measured_global_ccd = optical.last_raw_ccd.detach()
 
