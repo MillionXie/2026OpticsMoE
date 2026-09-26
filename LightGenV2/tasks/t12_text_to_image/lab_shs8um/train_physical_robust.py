@@ -22,7 +22,11 @@ def main():
     p.add_argument('--smoke',action='store_true')
     a=p.parse_args();a.output.mkdir(parents=True,exist_ok=False);torch.set_num_threads(4);torch.manual_seed(1042)
     saved=torch.load(a.checkpoint,map_location='cpu',weights_only=False)
-    model=build_sealed(saved).cuda();optimizer=torch.optim.AdamW(model.parameters(),lr=a.learning_rate,weight_decay=.01)
+    model=build_sealed(saved).cuda()
+    phases=[value for name,value in model.named_parameters() if 'raw_phase' in name or 'raw_router_phase' in name]
+    phase_ids={id(value) for value in phases}
+    optimizer=torch.optim.AdamW([dict(params=phases,lr=5*a.learning_rate),
+        dict(params=[value for value in model.parameters() if id(value) not in phase_ids],lr=a.learning_rate)],weight_decay=.01)
     data=a.assets/'datasets';lookup=PromptEmbeddingLookup(data/'abo_unified_expanded_qwen_embeddings_v2.pt')
     datasets={split:ExpandedUnifiedProductEditDataset(data/'abo_cleanrender_lamp_table_pillow_256_v1',split,256,
         data/'abo_unified_expanded_instructions_qwen2_v2.pt') for split in ('train','val','test')}
