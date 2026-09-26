@@ -21,28 +21,12 @@ PROFILES = {
 # Keep a matched unexpanded control. A teacher result is not a compact-student
 # result; compression/distillation is a separate, subsequently verified stage.
 PROFILES['sku_capacity_control'] = dict(PROFILES['sku_mild_adamw'], router_lr_multiplier=.1)
-# Training-only: both already encoded views query the detached TRAIN gallery.
-# No extra forward, inference parameters, optical geometry or TEST supervision.
-PROFILES['sku_symmetric_bank'] = dict(PROFILES['sku_capacity_control'], symmetric_bank=True)
-PROFILES['sku_two_view_joint'] = dict(PROFILES['sku_capacity_control'], symmetric_bank=True,
-    ranking_loss='two_view_softplus', supcon_weight=0., positive_weight=0.)
-PROFILES['sku_phase_head'] = dict(PROFILES['sku_capacity_control'],
-    phase_head_only=True, readout_input_dropout=.1, head_lr_multiplier=3.)
-PROFILES['sku_phase_head_top1'] = dict(PROFILES['sku_phase_head'],
-    ranking_loss='top1_softplus', symmetric_bank=True,
-    supcon_weight=0., positive_weight=0.)
-PROFILES['sku_phase_head_viewblend'] = dict(PROFILES['sku_phase_head_top1'],
-    same_sku_blend_probability=.3, same_sku_blend_range=(.05, .15))
-PROFILES['sku_alpha_only'] = dict(PROFILES['sku_capacity_control'],
-    alpha_only=True, alpha_lr_multiplier=100., noise_probability=0.,
-    ranking_loss='top1_softplus', symmetric_bank=True,
-    supcon_weight=0., positive_weight=0.)
-# Isolate training regularizers: identical loss, optimizer, capacity and optics.
-# Do not infer separate augmentation/dropout effects from the old combined SAM run.
-PROFILES['sku_augmentation_only'] = dict(PROFILES['sku_capacity_control'], mild_augmentation=False)
-PROFILES['sku_phase_dropout_only'] = dict(PROFILES['sku_capacity_control'], phase_dropout=.03)
 PROFILES['sku_retrieval_only'] = dict(PROFILES['sku_capacity_control'],
     positive_weight=0., supcon_weight=0.)
+PROFILES['physical_robust35'] = dict(PROFILES['sku_retrieval_only'],
+    robust_alpha_min=.35, noise_probability=.7, pixel_shift=1, router_noise=True,
+    phase_lr_multiplier=2.)
+PROFILES['physical_robust35_no_shift'] = dict(PROFILES['physical_robust35'],pixel_shift=0)
 PROFILES['sku_optical_pretrain'] = dict(PROFILES['sku_capacity_control'],
     external_optical_only=True, external_phase_lr_multiplier=5.)
 PROFILES['sku_conv_teacher'] = dict(PROFILES['sku_capacity_control'],
@@ -50,54 +34,6 @@ PROFILES['sku_conv_teacher'] = dict(PROFILES['sku_capacity_control'],
 PROFILES['sku_spatial_readout'] = dict(PROFILES['sku_capacity_control'], head_expansion='spatial2x2_64')
 PROFILES['sku_fullfield_language'] = dict(PROFILES['sku_capacity_control'],
     ccd_readout_modes=dict(vision='prefix_rows',language='fullfield_rows'))
-
-
-def blend_train_pairs(images, rows, count, rng, probability=.3, weight_range=(.05, .15)):
-    """Mild TRAIN-only same-SKU pixel blend; not a rendered physical new view.
-
-    Returns per-query source identities for exclusion from the detached TRAIN
-    gallery. Prepare once outside optimizer closures, including SAM replay.
-    No input image/row is mutated; probability zero consumes no RNG.
-    """
-    import math
-    from PIL import Image
-    low, high = weight_range
-    if (not math.isfinite(probability) or not 0 <= probability <= 1
-            or not 0 < low <= high < .5 or count < 2
-            or len(rows) != 2 * count or len(images) != len(rows)):
-        raise ValueError('Invalid TRAIN pair blend configuration')
-    for i, row in enumerate(rows):
-        partner = rows[(i + count) % len(rows)]
-        for r in (row, partner):
-            if not (r['split'] == 'train' or
-                    (r['split'] == 'gallery' and r.get('source_split') == 'train')):
-                raise ValueError('Blend requires TRAIN-only source photos')
-        if (row['product_id'] != partner['product_id']
-                or row['sample_id'] == partner['sample_id']
-                or row['image_path'] == partner['image_path']):
-            raise ValueError('Blend needs two distinct photos of the same SKU')
-        other = images[(i + count) % len(rows)]
-        if images[i].size != other.size or images[i].mode != other.mode:
-            raise ValueError('Blend image size/mode mismatch')
-    output, sources, weights = [], [], []
-    for i, (im, row) in enumerate(zip(images, rows)):
-        j = (i + count) % len(rows)
-        weight = rng.uniform(low, high) if probability and rng.random() < probability else 0.
-        output.append(Image.blend(im, images[j], weight) if weight else im)
-        sources.append((row['sample_id'], rows[j]['sample_id']) if weight else (row['sample_id'],))
-        weights.append(weight)
-    return output, sources, weights
-
-
-def training_source_exclusion(sources, gallery_ids, device=None):
-    """Exclude every image used to construct a TRAIN query, not only its label."""
-    if not sources or len(set(gallery_ids)) != len(gallery_ids):
-        raise ValueError('Invalid TRAIN gallery/source identities')
-    known = set(gallery_ids)
-    if any(not s or len(set(s)) != len(s) or not set(s) <= known for s in sources):
-        raise ValueError('TRAIN source missing from gallery or repeated')
-    return torch.tensor([[sid in source for sid in gallery_ids] for source in sources],
-                        dtype=torch.bool, device=device)
 
 
 def prepare_capacity_payload(payload, profile, protocol, fresh=False):
@@ -170,97 +106,8 @@ def prepare_capacity_payload(payload, profile, protocol, fresh=False):
         optical_frontend_alpha_head_unchanged_at_conversion=True)
 
 
-def train_ranking_loss(logits, positive, excluded, kind='nll'):
-    """TRAIN nearest-positive/negative surrogate, never a test-time reranker.
-
-    Logits are cosine/.1. The .2 logit margin means .02 cosine margin.
-    Top1 needs *one* correct SKU view before every wrong SKU, not every
-    positive ahead of every negative. Self matches participate in neither set.
-    """
-    positive = positive & ~excluded
-    negative = ~positive & ~excluded
-    if not positive.any(1).all() or not negative.any(1).all():
-        raise ValueError('Require nonself TRAIN positives and different-SKU negatives')
-    valid = logits.masked_fill(excluded, -torch.inf)
-    pos = logits.masked_fill(~positive | excluded, -torch.inf)
-    if kind == 'nll':
-        return (valid.logsumexp(1) - pos.logsumexp(1)).mean()
-    if kind == 'top1_softplus':
-        neg = logits.masked_fill(~negative, -torch.inf)
-        return F.softplus(neg.amax(1) - pos.amax(1) + .2).mean()
-    if kind == 'top1_squared_hinge':
-        # TRAIN-only active-margin refinement: already satisfied queries have
-        # zero ranking gradient. Shared weight updates may still move them;
-        # this is not a guarantee of preserving every previous prediction.
-        neg = logits.masked_fill(~negative, -torch.inf)
-        violation = F.relu(neg.amax(1) - pos.amax(1) + .2)
-        return .5 * violation.square().mean()
-    if kind == 'two_view_softplus':
-        # TRAIN only: two distinct nonself photos of this SKU contribute.
-        # Do not force all seven views together or change inference relevance.
-        if (positive.sum(1) < 2).any():
-            raise ValueError('Two-view objective requires two distinct nonself TRAIN positives')
-        neg = logits.masked_fill(~negative, -torch.inf)
-        best_two = pos.topk(2, dim=1).values
-        return F.softplus(neg.amax(1) - best_two.mean(1) + .2).mean()
-    if kind == 'hybrid_nll_top1':
-        # Fixed equal mixture: improve nearest-SKU ordering without discarding
-        # the original all-gallery multi-positive probability objective.
-        nll = (valid.logsumexp(1) - pos.logsumexp(1)).mean()
-        neg = logits.masked_fill(~negative, -torch.inf)
-        top1 = F.softplus(neg.amax(1) - pos.amax(1) + .2).mean()
-        return .5 * (nll + top1)
-    raise ValueError('Unknown TRAIN ranking loss')
-
-
 def optical_parameter(name):
     return '.optics.experts.' in name or name.endswith('optics.global_phase') or name.endswith('raw_router_phase')
-
-
-def projection_parameter(name):
-    return name in ('readout.projection.weight', 'readout.projection.bias')
-
-
-def configure_phase_head_scope(model):
-    if model.readout.kind != 'linear64':
-        raise ValueError('Phase/head-only fitting requires original linear64')
-    for name, parameter in model.named_parameters():
-        parameter.requires_grad_(optical_parameter(name) or projection_parameter(name))
-    return non_optical_digest(model, exclude_projection=True)
-
-
-def alpha_parameter(name):
-    return name in {f'{modality}.block{block}_optical_fusion_logit'
-                    for modality in ('vision','language') for block in (1,2)}
-
-
-def frozen_except_alpha_digest(model):
-    digest = hashlib.sha256()
-    for name, p in model.named_parameters():
-        if not alpha_parameter(name):
-            digest.update(f'{name}|{p.dtype}|{tuple(p.shape)}'.encode())
-            digest.update(p.detach().cpu().contiguous().reshape(-1).view(torch.uint8).numpy().tobytes())
-    return digest.hexdigest()
-
-
-def configure_alpha_scope(model):
-    selected = [(n,p) for n,p in model.named_parameters() if alpha_parameter(n)]
-    if len(selected) != 4 or any(p.numel() != 1 for _,p in selected):
-        raise ValueError('Alpha-only requires exactly four existing scalar fusion logits')
-    for n,p in model.named_parameters():
-        p.requires_grad_(alpha_parameter(n))
-    return frozen_except_alpha_digest(model)
-
-
-def attach_train_readout_dropout(model, probability):
-    """A training hook only: checkpoint has no new layer or inference behavior."""
-    if model.readout.kind != 'linear64' or not 0 <= probability < 1:
-        raise ValueError('Invalid original-head training dropout')
-    def hook(module, values):
-        if module.training and probability:
-            return (F.dropout(values[0], probability, training=True),)
-        return None
-    return model.readout.projection.register_forward_pre_hook(hook)
 
 
 def set_parameter_scope(params, router_only=False, optical_only=False):
@@ -281,10 +128,6 @@ def optical_curriculum_scope(profile, external, pretrain_epochs):
 
 
 def learning_rate_multiplier(profile, name, external, refined):
-    if alpha_parameter(name):
-        return profile.get('alpha_lr_multiplier', 1.)
-    if projection_parameter(name):
-        return profile.get('head_lr_multiplier', 1.)
     if name.endswith('raw_router_phase'):
         return profile.get('router_lr_multiplier', 5 if refined else 1)
     if optical_parameter(name):
@@ -301,10 +144,10 @@ def update_trainable_ema(params, ema, decay=.99):
             ema[name].mul_(decay).add_(p, alpha=1-decay)
 
 
-def non_optical_digest(model, exclude_projection=False):
+def non_optical_digest(model):
     digest = hashlib.sha256()
     for name, p in model.named_parameters():
-        if not optical_parameter(name) and not (exclude_projection and projection_parameter(name)):
+        if not optical_parameter(name):
             digest.update(f'{name}|{p.dtype}|{tuple(p.shape)}'.encode())
             digest.update(p.detach().cpu().contiguous().reshape(-1).view(torch.uint8).numpy().tobytes())
     return digest.hexdigest()
