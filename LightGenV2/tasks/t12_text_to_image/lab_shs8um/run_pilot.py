@@ -55,7 +55,10 @@ def main():
             stats.append(dict(sample_id=sample_id,minimum=int(gray.min()),maximum=int(gray.max()),
                 mean=float(gray.mean()),p99=float(np.percentile(gray,99)),
                 nonzero_fraction=float((gray>0).mean()),bright_fraction=float((gray>=128).mean())))
-        flow.write(a.output/(stage+'_input_statistics.json'),dict(normalization='shared batch maximum',scale=scale,images=stats))
+        encoding=getattr(model,'bounded_amplitude',None)
+        flow.write(a.output/(stage+'_input_statistics.json'),dict(
+            normalization='fixed bounded amplitude; round(255*a)' if encoding else 'shared batch maximum',
+            bounded_amplitude=encoding,scale=scale,images=stats))
         try:raw,receipt=bench.capture(stage,path,paths,ids,'flip_v')
         finally:
             for bmp in paths:bmp.unlink(missing_ok=True)
