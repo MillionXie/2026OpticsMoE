@@ -36,7 +36,7 @@ EuroSAT A 两种模型都使用相同输入和无额外训练技巧的 10 输出
 
 C 阶段 `stage3_moe_balanced_sharedvision_s17_e696` 从获选 B checkpoint 继续，开放第 9–12 槽并保留全部已见任务训练记录。其 `balanced_cycle` 调度先将每个任务的全训练集走完一遍，再循环短任务，使各任务每轮 batch 数相近；所以是**全量加重复**，不是固定 512 样本记忆。按三任务完整验证均值选中第 4 轮，验证 EuroSAT/CLEVR/Speech 为 **73.42%/80.60%/81.20%**，一次测试为 **76.72%/80.34%/78.84%**；旧专家相位逐元素未变。D 阶段 `stage4_moe_balanced_sharedvision_s17_e696` 从此获选 checkpoint 继续，开放最后四个专家，使用同一回放调度及原始八帧 Physical。按四任务完整验证均值选中第 4 轮，验证 EuroSAT/CLEVR/Speech/Physical 为 **73.84%/81.10%/82.92%/73.83%**；一次测试为 **77.20%/80.90%/81.95%/73.46%**，旧专家相位逐元素未变，四个任务的测试宏平均召回均超过 70%。Physical 的负／正两类测试召回为 **89.66%／57.25%**，因此 73.46% 的平均分掩盖了较强类别偏向。D2NN full replay 是另一个独立顺序对照；D2NN 无 replay 下三角使用独立的 `--replay-mode none` 入口。
 
-所有 run 的 `config.json` 保存源码 commit、源协议和视觉 checkpoint 哈希，`history.json` 保存各轮验证，`result.json`／`selected_test.json` 保存选中结果。MoE 10 格已完成；D2NN 有 replay 的 D 阶段仍在推进，不能把其空格填成零或沿用其他链。
+所有 run 的 `config.json` 保存源码 commit、源协议和视觉 checkpoint 哈希，`history.json` 保存各轮验证，`result.json`／`selected_test.json` 保存选中结果。MoE与D2NN有／无replay链均已完成；集中比较见[最终结果统一入口](FINAL_RESULTS_AND_TRAINING_20260926.md)。
 
 ## 已完成的固定 D2NN 纯推理 4×4
 
