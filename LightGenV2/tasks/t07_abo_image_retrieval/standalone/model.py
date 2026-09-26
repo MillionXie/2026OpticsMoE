@@ -165,6 +165,8 @@ class OpticalRetrieval(nn.Module):
                 raise ValueError('Unknown CCD readout contract')
             getattr(self,name).optics.readout_mode = mode
             getattr(self,name).optics.configure_phase_dropout(metadata.get('phase_dropout',{}))
+            getattr(self,name).optics.bounded_amplitude = metadata.get('bounded_amplitude')
+            getattr(self,name).optics.router.bounded_amplitude = metadata.get('bounded_amplitude')
         self.readout = RetrievalHead(metadata.get('retrieval_head','linear64'))
 
     def train(self, mode=True):
