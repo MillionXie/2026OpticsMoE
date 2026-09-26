@@ -662,6 +662,11 @@ def main():
         parser.error("--adversarial-warmup must be positive")
     try:
         model, report = load_model(args)
+        import subprocess, sys, platform
+        report["execution"] = {"git_commit": subprocess.check_output(["git","rev-parse","HEAD"], text=True).strip(),
+                               "command": [sys.executable, *sys.argv], "python": platform.python_version(),
+                               "torch": torch.__version__, "device": args.device,
+                               "config": {k: str(v) if isinstance(v, Path) else v for k,v in vars(args).items()}}
         result = {"audit": audit, "train": train, "infer": infer, "evaluate": evaluate, "seal": seal}[args.command](model, report, args)
         print(json.dumps({k: v for k, v in result.items() if k not in ("phase_gradient_l1", "phase_tensors", "loss_history")}, indent=2))
     finally:
