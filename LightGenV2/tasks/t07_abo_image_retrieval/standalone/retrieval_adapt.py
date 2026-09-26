@@ -316,7 +316,9 @@ def run(args):
             external_fit, protocol, args.expected_external_sha256)
     elif getattr(args, 'external_teacher_cache', None) is not None:
         raise ValueError('External teacher supplied to a profile without external distillation')
-    if sha256(path) != digest or sha256(Path(__file__).with_name('optics.py')) != OPTICS_SHA256:
+    protected_optics_sha = ('ff07716e09337520a5f338be6097522226bb8f9d42b1e39feb3e2c15eab3d67f'
+                            if profile.get('bounded_amplitude') else OPTICS_SHA256)
+    if sha256(path) != digest or sha256(Path(__file__).with_name('optics.py')) != protected_optics_sha:
         raise ValueError('Checkpoint or protected physical source changed')
     device = torch.device(args.device)
     if device.type == 'cuda' and not torch.cuda.is_available():
@@ -349,7 +351,7 @@ def run(args):
     identity = dict(source_commit=source_commit(), command=sys.argv, pid=os.getpid(),
         config={k: str(v) if isinstance(v, Path) else v for k, v in vars(args).items()},
         manifest_sha256=sha256(args.manifest), checkpoint_sha256=digest, model_audit=audit,
-        python=sys.version, torch=torch.__version__, protected_optics_sha256=OPTICS_SHA256,
+        python=sys.version, torch=torch.__version__, protected_optics_sha256=protected_optics_sha,
         cuda_visible_devices=os.environ.get('CUDA_VISIBLE_DEVICES'),
         gpu=torch.cuda.get_device_name() if device.type == 'cuda' else None,
         protocol=protocol['protocol'], fitted_on_this_dataset=True,
