@@ -6,6 +6,7 @@ import json
 import math
 import subprocess
 import sys
+from collections import Counter
 from pathlib import Path
 import torch
 from torch.nn import functional as F
@@ -110,9 +111,10 @@ def main():
 
     @torch.no_grad()
     def evaluate(loader, profiles):
-        model.eval(); results={}
+        model.eval(); results={};clean_masks={}
         for profile in profiles:
             sums=dict(mse_0_1=0.,psnr_db=0.,ssim=0.); count=0; rows=[]
+            routing={branch:dict(selection_sum=torch.zeros(4),probability_sum=torch.zeros(4),pairs=Counter(),changed=0) for branch in ('language','vision')}
             for batch_index,batch in enumerate(loader):
                 ref,emb,mask,noise,target=inputs(batch)
                 # Fixed perturbation seed per batch for reproducible VAL ranking.
@@ -123,6 +125,17 @@ def main():
                 gt=target.float().add(1).div(2).clamp(0,1)
                 mse=(pred-gt).square().mean((1,2,3));psnr=-10*torch.log10(mse.clamp_min(1e-15))
                 ss=ssim_per_image(pred,gt)
+                for branch,obj in (('language',model.text),('vision',model.editor.bottleneck)):
+                    live=obj.last_routing
+                    selected_mask=live['selected_mask'].detach().cpu().bool()
+                    probabilities=live['probabilities'].detach().cpu()
+                    r=routing[branch]
+                    r['selection_sum']+=selected_mask.float().sum(0)
+                    r['probability_sum']+=probabilities.sum(0)
+                    for j,index in enumerate(batch['index'].tolist()):
+                        r['pairs'][str(selected_mask[j].nonzero().flatten().tolist())]+=1
+                        if profile=='clean':clean_masks[branch,index]=selected_mask[j]
+                        elif (branch,index) in clean_masks:r['changed']+=int(not torch.equal(clean_masks[branch,index],selected_mask[j]))
                 for j in range(len(ref)):
                     row=dict(index=int(batch['index'][j]),sample_id=batch['sample_id'][j],mode=batch['mode'][j],category=batch['category'][j],mse_0_1=float(mse[j]),psnr_db=float(psnr[j]),ssim=float(ss[j]))
                     rows.append(row)
@@ -130,7 +143,8 @@ def main():
                 count+=len(ref)
                 if a.evaluate_only and batch_index%200==0:
                     print(json.dumps(dict(profile=profile,completed=count)),flush=True)
-            results[profile]=dict(samples=count,**{k:v/count for k,v in sums.items()})
+            audit={branch:dict(selection_rate=r['selection_sum'].div(count).tolist(),probability_mean=r['probability_sum'].div(count).tolist(),pair_counts=dict(r['pairs']),top2_changed_fraction=r['changed']/count) for branch,r in routing.items()}
+            results[profile]=dict(samples=count,**{k:v/count for k,v in sums.items()},routing=audit)
             if a.evaluate_only: write(a.output/(profile+'_per_image.json'),rows)
         return results
 
