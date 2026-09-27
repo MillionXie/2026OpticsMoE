@@ -95,6 +95,13 @@ PROFILES['physical_bounded30_mlp448_paired'] = dict(PROFILES['physical_bounded30
     phase_lr_multiplier=.25,head_lr_multiplier=2.,weight_decay=.03)
 PROFILES['physical_bounded30_mlp448_cleanmix'] = dict(PROFILES['physical_bounded30_mlp448_paired'],
     noise_probability=.15,phase_dropout=.01,router_lr_multiplier=.05)
+# Previous residual recovery moved phases only ~0.0004 rad: isolate whether
+# the masks are under-adapting instead of extending an overfitting head again.
+PROFILES['physical_bounded30_phase_recovery_only'] = dict(PROFILES['physical_bounded30_phase_pair_strong'],
+    optical_only=True,phase_lr_multiplier=2.,router_lr_multiplier=.1,
+    noise_probability=.25,paired_consistency=.5)
+PROFILES['physical_bounded30_phase_recovery_joint'] = dict(PROFILES['physical_bounded30_phase_recovery_only'],
+    optical_only=False,head_lr_multiplier=.25)
 PROFILES['physical_bounded30_recover7'] = dict(PROFILES['physical_bounded30'],
     electronic_expansion=dict(kernels=dict(vision=7,language=5),mlp_width=384),
     sam_rho=.002, weight_decay=.03, mild_augmentation=False,
