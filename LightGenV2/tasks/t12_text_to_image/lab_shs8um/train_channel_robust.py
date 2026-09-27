@@ -73,6 +73,7 @@ def main():
     p.add_argument('--language-balance',type=float,default=0.)
     p.add_argument('--lr-language-router',type=float)
     p.add_argument('--selection-language-max-load',type=float,default=1.)
+    p.add_argument('--selection-language-min-load',type=float,default=0.)
     p.add_argument('--phase-tv',type=float,default=0.)
     p.add_argument('--clean-weight',type=float,default=.5)
     p.add_argument('--anchor-weight',type=float,default=.1)
@@ -279,7 +280,8 @@ def main():
                 metrics=evaluate(val,validation_profiles)
                 clean_val=metrics['clean']
                 eligible=(clean_val['psnr_db']>=baseline_clean['psnr_db']-.2 and clean_val['ssim']>=baseline_clean['ssim']-.002)
-                balance_eligible=max(clean_val['routing']['language']['selection_rate'])<=a.selection_language_max_load
+                language_load=clean_val['routing']['language']['selection_rate']
+                balance_eligible=(max(language_load)<=a.selection_language_max_load and min(language_load)>=a.selection_language_min_load)
                 eligible=eligible and balance_eligible
                 score=sum(metrics[p]['mse_0_1'] for p in a.selection_profiles)/len(a.selection_profiles)
                 record=dict(step=step,metrics=metrics,eligible=eligible,balance_eligible=balance_eligible,score=score,alpha=optical_diagnostics(model))
