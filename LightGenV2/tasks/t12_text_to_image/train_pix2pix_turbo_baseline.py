@@ -120,7 +120,8 @@ def main():
         metrics,rows=evaluate(args.evaluate,True);write('sample_metrics.json',rows)
         write('report.json',{'status':'complete','split':args.evaluate,'checkpoint_sha256':sha(args.checkpoint),'metrics':metrics,'protocol':protocol});return
     import lpips,vision_aided_loss
-    from vision_aided_loss.CLIP import clip
+    sys.path.insert(0,str(assets/'vendor/CLIP'))
+    import clip
     perceptual=lpips.LPIPS(net='vgg').cuda().eval().requires_grad_(False)
     clip_model,_=clip.load('ViT-B/32',device='cuda');clip_model=clip_model.float().eval().requires_grad_(False)
     disc=vision_aided_loss.Discriminator(cv_type='clip',loss_type='multilevel_sigmoid_s',device='cuda').cuda()
