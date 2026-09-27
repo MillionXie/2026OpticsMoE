@@ -70,6 +70,8 @@ PROFILES['physical_bounded30_spatial_consistent'] = dict(PROFILES['physical_boun
     head_expansion='spatial2x2_64',noise_probability=.25,head_lr_multiplier=2.)
 PROFILES['physical_bounded30_spatial_consistent_noise50'] = dict(PROFILES['physical_bounded30_spatial_consistent'],
     noise_probability=.5)
+PROFILES['physical_bounded30_spatial_extend'] = dict(PROFILES['physical_bounded30_spatial_consistent'])
+PROFILES['physical_bounded30_spatial_extend'].pop('head_expansion')
 PROFILES['physical_bounded30_recover7'] = dict(PROFILES['physical_bounded30'],
     electronic_expansion=dict(kernels=dict(vision=7,language=5),mlp_width=384),
     sam_rho=.002, weight_decay=.03, mild_augmentation=False,
@@ -350,7 +352,13 @@ def non_optical_digest(model, exclude_projection=False):
 def validate_continuation(protocol, payload, manifest_sha, fresh):
     if protocol != 'abo200_enrolled_sku_hash8train4query_v1' or fresh:
         return
-    if payload.get('manifest_sha256') != manifest_sha or not payload.get('test_selected'):
+    held=payload.get('metrics',{})
+    holdout_selected=(payload.get('test_selected') is False
+        and payload.get('selection_scheme')=='train_holdout_clean_noisy_v1'
+        and held.get('test',{}).get('query_count')==400
+        and held.get('test',{}).get('candidate_count')==1200
+        and held.get('validation_noisy',{}).get('query_count')==400)
+    if payload.get('manifest_sha256') != manifest_sha or not (payload.get('test_selected') or holdout_selected):
         raise ValueError('ABO continuation requires a checkpoint trained/selected on EXACT new manifest; old ABO weights forbidden')
 
 
