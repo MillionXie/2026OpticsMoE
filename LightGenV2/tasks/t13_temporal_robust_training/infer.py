@@ -37,6 +37,8 @@ def main():
     if saved.get("study_group") != group:
         parser.error("Wrong group checkpoint; old teacher weights are reference-only")
     protocol = saved["study_protocol"]
+    if protocol.get("schema_version") != 3:
+        parser.error("Expected bounded-amplitude schema=3 checkpoint")
     raw = make_config(group, purpose="deployment", device_pitch=protocol["device_pitch_um"],
                       eval_eta=protocol["deployment_eta"])
     with tempfile.TemporaryDirectory(prefix="t13_infer_") as temp:
@@ -44,6 +46,7 @@ def main():
         config.write_text(yaml.safe_dump(raw), encoding="utf-8")
         settings = load_settings(config)
     model = build_model(settings).to(args.device).eval()
+    model.bounded_amplitude = protocol["bounded_amplitude"]
     model.load_state_dict(saved["state_dict"], strict=True)
     release = json.loads((args.package / "release.json").read_text(encoding="utf-8"))
     fields = release["fields"][:args.fields] if args.fields else release["fields"]
@@ -70,4 +73,6 @@ def main():
 
 
 if __name__ == "__main__":
-    main()
+    from amplitude import bounded_graph
+    with bounded_graph():
+        main()

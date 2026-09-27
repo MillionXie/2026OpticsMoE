@@ -14,7 +14,7 @@ sys.path.insert(0, str(ROOT))
 from study import GROUPS, asset_preflight, load_protocol, make_config, sha256, split_for_selection, write_json
 
 
-def main() -> int:
+def run() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--group", required=True, choices=GROUPS)
     parser.add_argument("--phase", required=True, choices=("plan", "preflight", "smoke", "train", "evaluate", "theory"))
@@ -29,6 +29,7 @@ def main() -> int:
     parser.add_argument("--noise-seed", type=int, default=20260927)
     parser.add_argument("--allow-uncalibrated-noise", action="store_true")
     parser.add_argument("--ccd-profile", type=Path, default=ROOT / "configs" / "ccd_poisson_gaussian.json")
+    parser.add_argument("--eval-split", choices=("train", "validation", "test"), default="test")
     args = parser.parse_args()
     output = args.output or ROOT / "runs" / ("smoke" if args.phase == "smoke" else "simulation") / f"{args.group}_s{args.seed}_{args.phase}"
     if output.exists() and any(output.iterdir()):
@@ -59,6 +60,7 @@ def main() -> int:
         "command": sys.argv, "protocol": protocol, "resolved_config_sha256": sha256(config_path),
         "noise_scale": args.noise_scale, "noise_seed": args.noise_seed,
         "ccd_profile_sha256": sha256(args.ccd_profile),
+        "evaluation_split": args.eval_split,
         "selection": "TRAIN-derived validation on common deployment grid/eta; original test excluded",
     })
     if args.phase == "plan":
@@ -98,6 +100,7 @@ def main() -> int:
     from experiments.qwen3_vl_2b_lgvq_single_metric_o2_16frame_54.data import load_single_metric_cache
     payload = load_single_metric_cache(settings)
     model = build_model(settings)
+    model.bounded_amplitude = protocol["bounded_amplitude"]
     device = torch.device(args.device)
     if args.phase == "train":
         payload, split = split_for_selection(payload, fraction=protocol["validation_fraction"], seed=protocol["validation_seed"])
@@ -136,7 +139,13 @@ def main() -> int:
         saved = torch.load(args.checkpoint, map_location="cpu", weights_only=False)
         if saved.get("study_group") != args.group:
             parser.error("Checkpoint group identity does not match --group")
+        if saved.get("study_protocol", {}).get("schema_version") != protocol["schema_version"]:
+            parser.error("Checkpoint belongs to a different physical study profile")
         model.load_state_dict(saved["state_dict"], strict=True)
+        if args.eval_split != "test":
+            payload, split = split_for_selection(payload, fraction=protocol["validation_fraction"], seed=protocol["validation_seed"])
+            if args.eval_split == "train":
+                payload["splits"] = ["test" if s == "train" else "sealed" for s in payload["splits"]]
         model.to(device).eval()
         torch.manual_seed(args.noise_seed)
         with camera_operator(camera_profile, evaluation_scale=args.noise_scale):
@@ -150,4 +159,6 @@ def main() -> int:
 
 
 if __name__ == "__main__":
-    raise SystemExit(main())
+    from amplitude import bounded_graph
+    with bounded_graph():
+        raise SystemExit(run())

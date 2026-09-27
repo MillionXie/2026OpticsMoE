@@ -94,11 +94,16 @@ def test_logical_six_stage_capture_and_measured_replay(settings):
     model = optics.build_model(small).eval()
     inputs = (torch.randn(1,16,4,49,32), torch.randn(1,16,4,49,6),
               torch.randn(1,8,40), torch.ones(1,8,dtype=torch.bool))
-    with torch.inference_mode(), measured_ccd_boundary(model) as tap:
+    from amplitude import bounded_graph, quantize_amplitude
+    with bounded_graph(), torch.inference_mode(), measured_ccd_boundary(model) as tap:
         reference = model(*inputs, optical_enabled=True)["prediction"]
+    assert all(float(value.max()) <= 1.000001 for value in tap["amplitudes"].values())
+    for amplitude in tap["amplitudes"].values():
+        recovered = quantize_amplitude(amplitude).float() / 255
+        assert float((recovered-amplitude).abs().max()) <= 0.5/255 + 1e-7
     assert tuple(tap["detectors"]) == STAGES
     assert all(value.shape == (1,121,121) for value in tap["detectors"].values())
-    with torch.inference_mode(), measured_ccd_boundary(model, tap["detectors"]):
+    with bounded_graph(), torch.inference_mode(), measured_ccd_boundary(model, tap["detectors"]):
         replay = model(*inputs, optical_enabled=True)["prediction"]
     assert torch.equal(reference, replay)
     with pytest.raises(ValueError):

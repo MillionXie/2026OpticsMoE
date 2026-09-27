@@ -19,10 +19,10 @@ def test_train_mapping_and_common_deployment():
         deploy = make_config(group, purpose="deployment")
         assert train["optics"]["modulator_pixel_pitch_um"] == (8 if condition["mapping"] == "in_training" else 17)
         assert deploy["optics"]["modulator_pixel_pitch_um"] == 8
-        assert deploy["optics"]["unmodulated_power_fraction_eval"] == 0.2
+        assert deploy["optics"]["unmodulated_power_fraction_eval"] == 0.3
         assert train["training"]["initialization_checkpoint"] is None
         assert train["robustness"]["ccd_noise"]["enabled"] == condition["ccd"]
-        assert train["optics"]["unmodulated_power_fraction_max"] == (0.35 if condition["dc"] else 0)
+        assert train["optics"]["unmodulated_power_fraction_max"] == (0.3 if condition["dc"] else 0)
 
 
 def test_validation_never_uses_original_test():

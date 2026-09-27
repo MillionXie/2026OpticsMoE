@@ -51,6 +51,7 @@ def main():
         "stages": STAGES, "model_pitch_um": settings.pixel_pitch_um,
         "device_pitch_um": args.device_pitch_um, "active_device_pixels": settings.propagation_active_size,
         "eta": settings.unmodulated_power_fraction_eval, "automatic_phase_switching": False,
+        "bounded_amplitude": saved["study_protocol"]["bounded_amplitude"],
         "status": "staged_not_capture_ready",
         "pending": ["verified panel LUT/orientation and amplitude encoder", "raw CCD calibration/ROI contract",
                     "field input identities", "per-layer capture adapter and amplitude forward equivalence"],
@@ -60,4 +61,6 @@ def main():
 
 
 if __name__ == "__main__":
-    main()
+    from amplitude import bounded_graph
+    with bounded_graph():
+        main()

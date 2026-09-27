@@ -1,8 +1,8 @@
 {
-  "name": "poisson_gaussian_electrons_pilot_v1",
+  "name": "poisson_gaussian_electrons_pilot_v2_moderate",
   "calibrated": false,
-  "electrons_per_intensity_unit": 4096.0,
-  "read_noise_electrons": 8.0,
+  "electrons_per_intensity_unit": 3072.0,
+  "read_noise_electrons": 10.0,
   "dark_electrons": 0.0,
   "black_level_policy": "expected dark subtracted; no positive Gaussian bias",
   "scope": "logical detector boundary, not raw camera pixels",

@@ -1,4 +1,12 @@
-# 独立入口与命令
+# 独立入口与命令（当前schema=3）
+
+当前共用`tanh(a/0.5)`振幅图、DC30；旧schema=2产物保留作历史，不覆盖。`train_four.py`在用户授权四卡后，先重建缺失缓存、严格验证identity，再四组训练，最后评估实际训练子集/validation/原test。只有自己的子进程由supervisor回收。
+
+```bash
+python -I train_four.py --gpus 3,4,5,6 --run-id bounded_dc30_ccd_v2_s163_20260927 --dataset-root /absolute/LGVQ --qwen-model /absolute/frozen_Qwen3VL2B --manifest /absolute/frozen_manifest.csv --soft-targets /absolute/training_only_teacher_predictions.pt
+```
+
+每台机器先核验空闲GPU；以上索引不是固定硬件要求。`supervisor.json`记录PID/退出/GPU释放；`comparison.json`记录最终三种划分的回归指标。重建缓存不使用测试标签拟合Qwen，冻结patch/position/embed_tokens；正式测试标签只用于最终评价。
 
 进入本任务目录；Python 3.11 + torch2.6/PyYAML/numpy。使用 `python -I run.py`，不把仓库根放入 PYTHONPATH。以下训练/实采命令是后续操作，不是本轮已执行。
 
