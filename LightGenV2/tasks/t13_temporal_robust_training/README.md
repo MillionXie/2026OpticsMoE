@@ -6,14 +6,14 @@
 
 ## 当前正式结果与交付
 
-当前有效run为`full2250_testbest_low_lr30_s163_uuid1256_20260927`，各组从本组100轮best继续30轮低学习率训练及共同评价完成。
-test SRCC依次0.790389/0.784891/0.803319/0.800796；不是光路实测，test参与选模。第1、2、4组选中epoch0父权重，第3组选中微调epoch1；不声称四组都提升。
+当前有效run为`full2250_testbest_phase_only15_s163_uuid1256_20260927`，从各自上一阶段best继续15轮光学相位局部优化及共同评价完成。
+test SRCC依次0.792741/0.785567/0.803539/0.800796；不是光路实测，test参与选模。选中best epoch5/15/1/0，前三组只改变6个phase张量且91个电子参数不变，第4组保留父best；不强造第4组最高。
 主报告只放一张四组结果表，见[reports/FULL2250_TESTBEST_RESULTS.md](reports/FULL2250_TESTBEST_RESULTS.md)。其他评价条件仅为原run内诊断，不是额外实验组。
-当前四份真PT工程位于`projects/temporal_full2250_low_lr30_s163_20260927`；父阶段run和工程保留历史证据，当前迁移只使用这个目录。旧schema3产物在`.codex_tmp/t13_retired_schema3_20260927`隔离，不用于部署。
+当前四份真PT工程位于`projects/temporal_full2250_phase_only15_s163_20260927`；父阶段run和工程保留历史证据，当前迁移只使用这个目录。旧schema3产物在`.codex_tmp/t13_retired_schema3_20260927`隔离，不用于部署。
 
 ## 来源与版本边界
 
-下一阶段共同光学相位局部优化：四组从low_lr30阶段各自best出发，电子参数全部冻结，只更新教师optimizer命名合同下的六个光学phase张量，15epoch，phase LR=0.0006、router phase LR=0.00096（原始LR乘0.03）；电子组配置中的LR不生效，因为requires_grad=False。2250/558、test-best、所有物理/增强条件不改，各组预算一致。保留epoch0父best，不保证提高，也不为“第4组应该最高”改变评价条件。optimization_parameters.json记录真实可训练和冻结名称。当前已交付工程仍是上一阶段，待本阶段验证后更新主表和交付目录。
+本轮共同光学相位局部优化已完成：四组从low_lr30阶段各自best出发，电子参数全部冻结，只更新教师optimizer命名合同下的六个光学phase张量，15epoch，phase LR=0.0006、router phase LR=0.00096（原始LR乘0.03）；电子组配置LR不生效，因为requires_grad=False。2250/558、test-best、物理/增强条件及预算各组一致。保留epoch0父best，不为“第4组应该最高”改变评价条件。optimization_parameters.json记录真实可训练和冻结名称，逐张量核验已通过，结果及当前工程入口见上文。
 
 小学习率继续优化：用户授权四组从各自schema4 best继续30epoch，三类学习率统一乘0.1，电子3e-5、普通相位0.002、router相位0.0032。重新建立AdamW及30轮cosine scheduler（权重warm start，不恢复旧优化器）。父PT组别及物理/数据/噪声合同必须一致；2250/558、test-best、四组条件均不改。父best作为epoch0候选，不删除父run。完成后更新主表并生成新四份真PT工程；主表始终是四组、同一评价条件。
 
