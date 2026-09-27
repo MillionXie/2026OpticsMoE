@@ -4,6 +4,13 @@
 
 弱光修正与是否修改损失的正式说明见 [reports/BOUNDED_AMPLITUDE_FIX.md](reports/BOUNDED_AMPLITUDE_FIX.md)。同一振幅用于仿真与固定255量化，禁止逐帧峰值缩放；不是删除所有RMS。四组保持原MOS损失，不额外捆绑功率loss。旧teacher_reference保持历史模型不改，schema=3须重新训练。
 
+## 当前正式结果与交付
+
+当前有效run为`full2250_testbest_dc30_ccd_s163_uuid2456_20260927`，四组各100epoch及共同评价完成。
+带噪声test SRCC依次0.790527/0.786405/0.801299/0.800796；不是光路实测，test参与选模。
+完整train/test及无噪声诊断见[reports/FULL2250_TESTBEST_RESULTS.md](reports/FULL2250_TESTBEST_RESULTS.md)。
+当前四份真PT工程位于`projects/temporal_full2250_testbest_s163_20260927`，旧schema3产物仅在`.codex_tmp/t13_retired_schema3_20260927`隔离保存，不用于部署。
+
 ## 来源与版本边界
 
 正式配置加载统一经过 `settings_adapter.py`：仅去除导师版“DC至少20%”的历史策略门槛，保留真实数据模式、几何及合法区间检查，不以synthetic模式绕过。训练前两组DC区间为0，后两组为0.30；共同部署各组区间固定0.30，理论参考固定0。原导师runtime保持哈希不变。
