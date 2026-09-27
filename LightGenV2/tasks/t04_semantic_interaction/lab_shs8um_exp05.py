@@ -10,7 +10,7 @@ def write(path,value):
     path.parent.mkdir(parents=True,exist_ok=True)
     tmp=path.with_suffix('.tmp');tmp.write_text(json.dumps(value,indent=2),encoding='utf8');tmp.replace(path)
 def main():
-    p=argparse.ArgumentParser();p.add_argument('--project',type=Path,required=True);p.add_argument('--output',type=Path,required=True);p.add_argument('--limit',type=int,default=1000);p.add_argument('--selftest',action='store_true');p.add_argument('--resume',action='store_true');a=p.parse_args()
+    p=argparse.ArgumentParser();p.add_argument('--project',type=Path,required=True);p.add_argument('--output',type=Path,required=True);p.add_argument('--limit',type=int,default=1000);p.add_argument('--selftest',action='store_true');p.add_argument('--resume',action='store_true');p.add_argument('--exposure-us',type=int,choices=(400,1000,2000,4000),default=400);a=p.parse_args()
     torch.set_num_threads(4);root=a.project.resolve();out=a.output.resolve()
     sys.path.insert(0,str(root/'source'))
     from LightGenV2.tasks.t04_semantic_interaction.settings import load_settings
@@ -33,7 +33,7 @@ def main():
     for optic in model._optical_paths():optic.set_phase_dropout_active(False)
     dataset=OpenMojiEditingDataset(cfg.test_manifest,cfg,load_prompt_cache(cfg.prompt_cache_path));assert len(dataset)==1000
     total=min(a.limit,len(dataset));out.mkdir(parents=True,exist_ok=True)
-    contract=dict(checkpoint_sha256=SHA,source_commit='2acb5bcf5de5a902d153e29e885131227ea61914',epoch=payload['epoch'],count=total,exposure_us=400,gain='Gain_X4',wait_ms=240,corners=CORNERS.tolist(),phase_orientation='hv',phase_inverse=True,camera_orientation='flip_v',amplitude_encoding='per-sample peak, no percentile clipping',test_manifest_sha256=flow.sha(cfg.test_manifest))
+    contract=dict(checkpoint_sha256=SHA,source_commit='2acb5bcf5de5a902d153e29e885131227ea61914',epoch=payload['epoch'],count=total,exposure_us=a.exposure_us,gain='Gain_X4',wait_ms=240,corners=CORNERS.tolist(),phase_orientation='hv',phase_inverse=True,camera_orientation='flip_v',amplitude_encoding='per-sample peak, no percentile clipping',test_manifest_sha256=flow.sha(cfg.test_manifest))
     if (out/'contract.json').exists():assert json.loads((out/'contract.json').read_text())==contract
     else:write(out/'contract.json',contract)
     def batch(index):return {k:v.cuda() if torch.is_tensor(v) else v for k,v in collate_samples([dataset[index]]).items()}
@@ -54,7 +54,20 @@ def main():
     phases=phase_planes(model);phase_dir=out/'phase';phase_dir.mkdir(exist_ok=True)
     for stage,value in phases.items():Image.fromarray(flow.phase_gray(value,'hv',True)).save(phase_dir/(stage+'.bmp'))
     started=time.time();stats={};simacc=MetricAccumulator();actualacc=MetricAccumulator()
-    with SHSBench(out,400,240,{}) as bench:
+    with SHSBench(out,a.exposure_us,240,{}) as bench:
+        if total<=4:
+            health=out/'health';health.mkdir(exist_ok=True)
+            flat=health/'phase_flat.bmp';Image.fromarray(flow.phase_gray(np.zeros((478,478)),'hv',True)).save(flat)
+            levels={}
+            for gray in (0,255):
+                health_exposure=min(a.exposure_us,400)
+                bench.camera.set('ExposureTime',health_exposure);bench.settings['exposure_us']=float(bench.camera.get('ExposureTime'))
+                path=health/f'amplitude_{gray}.bmp';Image.fromarray(flow.active_to_native(np.full((478,478),gray,np.uint8))).save(path)
+                values,_=bench.capture('health',flat,[path],[f'gray_{gray}'],'flip_v')
+                levels[gray]=dict(exposure_us=health_exposure,p99=float(np.percentile(values[0],99)),mean=float(values[0].mean()),saturation=float(np.mean(values[0]==255)))
+            write(out/'health.json',levels)
+            assert levels[255]['p99']>levels[0]['p99']+20,'White optical signal missing'
+            bench.camera.set('ExposureTime',a.exposure_us);bench.settings['exposure_us']=float(bench.camera.get('ExposureTime'));bench.camera.fresh()
         for stage_index,stage in enumerate(STAGES):
             folder=out/'ccd'/stage;folder.mkdir(parents=True,exist_ok=True);ampdir=out/'amplitude'/stage;ampdir.mkdir(parents=True,exist_ok=True)
             for start in range(0,total,4):
