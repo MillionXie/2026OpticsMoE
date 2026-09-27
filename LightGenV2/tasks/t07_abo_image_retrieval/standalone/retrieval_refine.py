@@ -78,6 +78,13 @@ PROFILES['physical_bounded30_spatial_extend'].pop('head_expansion')
 PROFILES['physical_bounded30_descriptor_anchor'] = dict(PROFILES['physical_bounded30_spatial_extend'],
     paired_consistency=2.,router_consistency=0.,teacher_weight=.5,
     weight_decay=.03,head_lr_multiplier=1.)
+# Component ablation points to phase bypass, not clean router balancing.
+# Apply extra phase dropout only to the paired noisy branch to protect clean fits.
+PROFILES['physical_bounded30_phase_pair'] = dict(PROFILES['physical_bounded30_spatial_extend'],
+    phase_dropout=.015,phase_dropout_noisy_only=True,noise_probability=.35,
+    paired_consistency=1.,router_consistency=0.,teacher_weight=.5)
+PROFILES['physical_bounded30_phase_pair_strong'] = dict(PROFILES['physical_bounded30_phase_pair'],
+    phase_dropout=.03)
 PROFILES['physical_bounded30_recover7'] = dict(PROFILES['physical_bounded30'],
     electronic_expansion=dict(kernels=dict(vision=7,language=5),mlp_width=384),
     sam_rho=.002, weight_decay=.03, mild_augmentation=False,
