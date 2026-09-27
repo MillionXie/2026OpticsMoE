@@ -59,14 +59,14 @@ def main():
             health=out/'health';health.mkdir(exist_ok=True)
             flat=health/'phase_flat.bmp';Image.fromarray(flow.phase_gray(np.zeros((478,478)),'hv',True)).save(flat)
             levels={}
-            for gray in (0,255):
-                health_exposure=min(a.exposure_us,400)
+            for gray in (0,64):
+                health_exposure=a.exposure_us
                 bench.camera.set('ExposureTime',health_exposure);bench.settings['exposure_us']=float(bench.camera.get('ExposureTime'))
                 path=health/f'amplitude_{gray}.bmp';Image.fromarray(flow.active_to_native(np.full((478,478),gray,np.uint8))).save(path)
                 values,_=bench.capture('health',flat,[path],[f'gray_{gray}'],'flip_v')
                 levels[gray]=dict(exposure_us=health_exposure,p99=float(np.percentile(values[0],99)),mean=float(values[0].mean()),saturation=float(np.mean(values[0]==255)))
             write(out/'health.json',levels)
-            assert levels[255]['p99']>levels[0]['p99']+20,'White optical signal missing'
+            assert levels[64]['p99']>levels[0]['p99']+20,'Gray64 optical signal missing'
             bench.camera.set('ExposureTime',a.exposure_us);bench.settings['exposure_us']=float(bench.camera.get('ExposureTime'));bench.camera.fresh()
         for stage_index,stage in enumerate(STAGES):
             folder=out/'ccd'/stage;folder.mkdir(parents=True,exist_ok=True);ampdir=out/'amplitude'/stage;ampdir.mkdir(parents=True,exist_ok=True)
