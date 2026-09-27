@@ -64,6 +64,12 @@ PROFILES['physical_bounded30_consistent'] = dict(PROFILES['physical_bounded30_di
     holdout_selection=True,paired_consistency=.2,router_consistency=.05,noise_probability=.5)
 PROFILES['physical_bounded30_consistent_strong'] = dict(PROFILES['physical_bounded30_consistent'],
     paired_consistency=.5,router_consistency=.15)
+# Test extra spatial readout with mild fitting and paired stability, rather than
+# repeating the failed heavy-augmentation/SAM recovery. +49152 weights only.
+PROFILES['physical_bounded30_spatial_consistent'] = dict(PROFILES['physical_bounded30_consistent_strong'],
+    head_expansion='spatial2x2_64',noise_probability=.25,head_lr_multiplier=2.)
+PROFILES['physical_bounded30_spatial_consistent_noise50'] = dict(PROFILES['physical_bounded30_spatial_consistent'],
+    noise_probability=.5)
 PROFILES['physical_bounded30_recover7'] = dict(PROFILES['physical_bounded30'],
     electronic_expansion=dict(kernels=dict(vision=7,language=5),mlp_width=384),
     sam_rho=.002, weight_decay=.03, mild_augmentation=False,
