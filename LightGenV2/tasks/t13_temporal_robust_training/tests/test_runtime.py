@@ -73,6 +73,15 @@ def test_device_mapping_has_gradient(settings):
     assert settings.propagation_canvas_size == 1101
 
 
+def test_phase_only_freezes_electronic_branch(settings):
+    from finetune import optical_phases_only
+    model = optics.build_model(settings)
+    report = optical_phases_only(model)
+    assert len(report["trainable_tensor_names"]) == 6
+    assert all(parameter.requires_grad == (name in report["trainable_tensor_names"])
+               for name, parameter in model.named_parameters())
+
+
 def test_eval_restores_model_grid_and_mode(settings):
     from dataclasses import replace
     from experiment import install_common_selection_evaluator

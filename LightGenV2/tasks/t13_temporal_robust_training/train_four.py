@@ -28,7 +28,10 @@ def main():
     parser.add_argument("--finetune-parent-run", type=Path)
     parser.add_argument("--finetune-epochs", type=int, default=30)
     parser.add_argument("--finetune-lr-factor", type=float, default=0.1)
+    parser.add_argument("--finetune-phase-only", action="store_true")
     args = parser.parse_args()
+    if args.finetune_phase_only and not args.finetune_parent_run:
+        parser.error("Phase-only optimization requires a parent run")
     gpus = args.gpus.split(",")
     if len(gpus) != 4 or len(set(gpus)) != 4 or any(not gpu.isdigit() for gpu in gpus):
         parser.error("Require four distinct numeric GPU indices")
@@ -131,6 +134,8 @@ def main():
                 command.extend(["--finetune-from", str(args.finetune_parent_run / group / "best_checkpoint.pt"),
                                 "--finetune-epochs", str(args.finetune_epochs),
                                 "--finetune-lr-factor", str(args.finetune_lr_factor)])
+                if args.finetune_phase_only:
+                    command.append("--finetune-phase-only")
             child, stream = start(command, gpu, root / f"{group}.log")
             children.append((group, gpu, child, stream))
         results = {}

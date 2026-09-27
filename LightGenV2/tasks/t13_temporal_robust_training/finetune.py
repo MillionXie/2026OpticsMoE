@@ -19,3 +19,16 @@ def validate_parent(saved, group, protocol):
             "phase_dropout_p", "router_noise_std", "ccd_model")
     if any(previous.get(key) != protocol.get(key) for key in keys):
         raise ValueError("Fine-tune parent physical/data/augmentation protocol mismatch")
+
+
+def optical_phases_only(model):
+    """Use the teacher optimizer's exact phase naming contract; freeze electronics."""
+    selected, frozen = [], []
+    for name, parameter in model.named_parameters():
+        phase = "raw_router_phase" in name or ("raw_" in name and "phase" in name)
+        parameter.requires_grad_(phase)
+        (selected if phase else frozen).append(name)
+    if len(selected) != 6 or not frozen:
+        raise ValueError("Expected exactly six optical phase tensors and a frozen electronic branch")
+    return {"trainable_tensor_names": selected, "frozen_tensor_names": frozen,
+            "scope": "all six optical phase tensors only; electronic weights frozen"}

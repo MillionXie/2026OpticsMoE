@@ -33,11 +33,14 @@ def run() -> int:
     parser.add_argument("--finetune-from", type=Path)
     parser.add_argument("--finetune-epochs", type=int, default=30)
     parser.add_argument("--finetune-lr-factor", type=float, default=0.1)
+    parser.add_argument("--finetune-phase-only", action="store_true")
     args = parser.parse_args()
     if args.eval_split == "validation":
         parser.error("This profile restores original 2250/558; no validation split")
     if args.finetune_from and args.phase != "train":
         parser.error("Fine-tune parent is training-only")
+    if args.finetune_phase_only and not args.finetune_from:
+        parser.error("Phase-only optimization requires a same-group parent checkpoint")
     output = args.output or ROOT / "runs" / ("smoke" if args.phase == "smoke" else "simulation") / f"{args.group}_s{args.seed}_{args.phase}"
     if output.exists() and any(output.iterdir()):
         parser.error("Output must be new/empty; do not overwrite a run")
@@ -67,7 +70,8 @@ def run() -> int:
     if args.finetune_from:
         protocol["optimization_stage"] = {"kind": "same_group_low_lr_weight_warmstart",
             "parent_checkpoint_sha256": sha256(args.finetune_from), "epochs": args.finetune_epochs,
-            "lr_factor": args.finetune_lr_factor, "optimizer_state_resumed": False}
+            "lr_factor": args.finetune_lr_factor, "optimizer_state_resumed": False,
+            "electronic_frozen": args.finetune_phase_only}
     write_json(output / "run_manifest.json", {
         "group": args.group, "condition": GROUPS[args.group], "phase": args.phase,
         "commit": commit.stdout.strip() if commit.returncode == 0 else None,
@@ -121,6 +125,9 @@ def run() -> int:
         validate_parent(parent, args.group, protocol)
         model.load_state_dict(parent["state_dict"], strict=True)
         del parent
+        if args.finetune_phase_only:
+            from finetune import optical_phases_only
+            write_json(output / "optimization_parameters.json", optical_phases_only(model))
     model.bounded_amplitude = protocol["bounded_amplitude"]
     device = torch.device(args.device)
     if args.phase == "train":
