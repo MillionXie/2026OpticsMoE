@@ -148,6 +148,10 @@ $AS/venv/bin/python -m LightGenV2.tasks.t12_text_to_image.build_lab_package --ch
 
 新候选severe物体union ROI PSNR：仅换目标25.9604，联合编辑25.2654；每模式768条。severe仍比clean整体低7.1908dB，不意味着实测差距已解决。完整VAL干净vision专家top2选择率为77.86%/69.40%/30.60%/22.14%（合计200%，每图两个），language为100%/100%/0/0。vision top2相对clean切换率stress27.17%、severe34.77%、extreme38.45%；历史13cf为46.01%/55.51%/66.32%。实际alpha language .4730375/.4617593、vision .4615397/.4667621；为RMS融合特征比例，不是功率或参数比例。
 
+选模冻结后的独立TEST2304（同RTX4090，未用于选择或修改）：13cf→17M，clean 33.3754/.918042→34.0190/.923624；stress25.8466/.853205→27.7058/.875446；severe24.8471/.842593→26.8296/.868111；extreme24.3024/.836348→26.2807/.862871。各通道MSE降低14.82%/30.92%/31.04%/31.50%。干净与扰动全部完整逐图JSON已下载，未做真实光路验证。
+
+最终封装源码commit `ce185f46993460d8ae5813792b5fa5eba40b8f04`，ZIP SHA256 `6736765c330f32dc8b979c458afbb5c7cc6968e75dd3a4be9cc458894512f055`，文件 `handoffs/t12_channel_severe_20260927/candidate_spatial_17m_final.zip`、`small_spatial_17m.pt`。22项单测通过。训练、评估均结束：GPU2=13MiB、GPU4=15MiB，没有本任务残留GPU进程；未打断其他AI任务。后续文档提交不修改此包中源码或模型。
+
 ## 清理记录（此前）
 
 服务器仅删除明确清单内 35 份旧 .pt，4,808,586,899字节，包括旧错误光电模型及不采用的15M实验；保留数据、baseline、历史图/指标、sealed参考。服务器删除不可直接撤销，清单含SHA256。本地旧权重按明确目录送回收站；本目录两份正式权重不删除。
