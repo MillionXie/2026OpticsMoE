@@ -58,6 +58,9 @@ def summarize(rows, prefix):
     result = {}
     for group in ('overall','background','object','joint'):
         selected = [r for r in rows if group == 'overall' or r['mode'] == group]
+        if not selected:
+            result[group]={'count':0,**{k:None for k in ('mse_0_1','mae_0_1','psnr_db','ssim')}}
+            continue
         result[group] = {'count':len(selected), **{k: float(np.mean([r[prefix+'_'+k] for r in selected]))
                             for k in ('mse_0_1','mae_0_1','psnr_db','ssim')}}
     return result
