@@ -86,7 +86,7 @@ def main():
         model.eval(); results={}
         for profile in profiles:
             sums=dict(mse_0_1=0.,psnr_db=0.,ssim=0.); count=0; rows=[]
-            for batch in loader:
+            for batch_index,batch in enumerate(loader):
                 ref,emb,mask,noise,target=inputs(batch)
                 # Fixed perturbation seed per batch for reproducible VAL ranking.
                 torch.manual_seed(9000+int(batch['index'][0]))
@@ -101,6 +101,8 @@ def main():
                     rows.append(row)
                     for k in sums:sums[k]+=row[k]
                 count+=len(ref)
+                if a.evaluate_only and batch_index%200==0:
+                    print(json.dumps(dict(profile=profile,completed=count)),flush=True)
             results[profile]=dict(samples=count,**{k:v/count for k,v in sums.items()})
             if a.evaluate_only: write(a.output/(profile+'_per_image.json'),rows)
         return results
