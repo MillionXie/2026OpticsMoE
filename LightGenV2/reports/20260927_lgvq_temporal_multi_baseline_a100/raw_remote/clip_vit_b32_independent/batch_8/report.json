@@ -1,0 +1,61 @@
+{
+  "schema_version": 1,
+  "backbone": "clip_vit_b32",
+  "performance_temporal_srcc": 0.7251568,
+  "performance_source": "fixed LGVQ 2250/558 split, frozen backbone, best test-SRCC checkpoint",
+  "manifest": "/DATA/DATA1/guest3/2026OpticsMoE/experiments/lgvq_four_stage_optical_electronic_109_no_attention_vqa/artifacts/lgvq_train2250_test558.csv",
+  "manifest_sha256": "607c50d20662a47795c23cd2038081b30368ed108ba9be8a1bb8a9d250f8e7fc",
+  "model": "/DATA/DATA1/guest3/models/openai-clip/ViT-B-32.pt",
+  "model_sha256": "40d365715913c9da98579312b702a82c18be219cc2a73407c4526f58eba950af",
+  "gpu": "NVIDIA A100-PCIE-40GB",
+  "timing_boundary": "first native backbone block to five-row temporal-quality score ready on GPU",
+  "excluded": [
+    "decode",
+    "crop/resize",
+    "normalization",
+    "host-to-device transfer",
+    "model load"
+  ],
+  "results": [
+    {
+      "batch_size_videos": 8,
+      "measured_videos": 200,
+      "measured_calls": 25,
+      "explicit_warmup_calls": 0,
+      "first_call_included": true,
+      "cuda_event_ms_per_batch": {
+        "mean": 18.755502109527587,
+        "median": 7.209983825683594,
+        "std": 55.451991799634854,
+        "p05": 7.019519996643067,
+        "p95": 11.351039695739733,
+        "minimum": 7.003136157989502,
+        "maximum": 290.3695373535156
+      },
+      "synchronized_wall_ms_per_batch": {
+        "mean": 18.791452646255493,
+        "median": 7.243312895298004,
+        "std": 55.465422444388295,
+        "p05": 7.053107023239136,
+        "p95": 11.38653904199599,
+        "minimum": 7.034607231616974,
+        "maximum": 290.47128558158875
+      },
+      "active_a100_board_power_w": {
+        "mean": 212.8436879432624,
+        "median": 216.88,
+        "std": 18.01763432537031,
+        "p05": 196.12,
+        "p95": 222.9,
+        "minimum": 64.93,
+        "maximum": 226.18
+      },
+      "active_power_samples": 141,
+      "calls_for_16_videos": 2,
+      "equivalent_16_video_time_ms": 37.582905292510986,
+      "equivalent_16_video_board_energy_j": 7.999284166080393,
+      "equivalent_16_video_host_plus_board_energy_j": 20.70982273600761,
+      "videos_per_j_host_plus_board": 0.7725802487039752
+    }
+  ]
+}
