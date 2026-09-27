@@ -66,6 +66,8 @@ def main():
     p.add_argument('--clean-weight',type=float,default=.5)
     p.add_argument('--anchor-weight',type=float,default=.1)
     p.add_argument('--noisy-anchor-weight',type=float,default=.05)
+    p.add_argument('--region-weight',type=float,default=0.)
+    p.add_argument('--source-gate-weight',type=float,default=0.)
     p.add_argument('--steps',type=int,default=600)
     p.add_argument('--batch-size',type=int,default=4)
     p.add_argument('--val-samples',type=int,default=96)
@@ -181,7 +183,11 @@ def main():
                       generator=torch.Generator().manual_seed(a.seed))
     step=0
     features={}
+    gates={}
     handles=[]
+    if a.source_gate_weight:
+        if model.editor.source_gate is None:raise ValueError('No learned source gate')
+        handles.append(model.editor.source_gate.register_forward_hook(lambda module,inputs,output:gates.__setitem__('logits',output)))
     if a.feature_consistency:
         for name,module in (('language1',model.text.fusion1),('language2',model.text.fusion2),('vision1',model.editor.bottleneck.fusion1),('vision2',model.editor.bottleneck.fusion2)):
             handles.append(module.register_forward_hook(lambda module,inputs,output,name=name:features.__setitem__(name,output)))
@@ -192,6 +198,7 @@ def main():
             ref,emb,mask,noise,target=inputs(batch)
             with torch.no_grad(): anchor=teacher(ref,emb,mask,noise)
             channel.configure(None);clean=model(ref,emb,mask,noise)
+            clean_gate=gates.get('logits')
             clean_features={k:v.detach() for k,v in features.items()}
             clean_routing=[obj.last_routing['probabilities'].detach() for obj in (model.text,model.editor.bottleneck)]
             strength=.2+.8*min(1.,step/max(1,a.steps*.5))
@@ -199,6 +206,16 @@ def main():
             channel.configure(profile,strength);noisy=model(ref,emb,mask,noise)
             quality=lambda pred:F.mse_loss(pred,target)+.1*F.l1_loss(pred,target)
             loss=a.clean_weight*quality(clean)+(1-a.clean_weight)*quality(noisy)+a.anchor_weight*F.mse_loss(clean,anchor)+a.noisy_anchor_weight*F.mse_loss(noisy,anchor)
+            if a.region_weight:
+                region=batch['object_union'].cuda()
+                edited=torch.tensor([mode!='background' for mode in batch['mode']],device=ref.device)[:,None,None,None]
+                region=region*edited
+                denominator=(3*region.sum()).clamp_min(1.)
+                regional=lambda pred:(((pred-target).square()+.1*(pred-target).abs())*region).sum()/denominator
+                loss=loss+a.region_weight*(a.clean_weight*regional(clean)+(1-a.clean_weight)*regional(noisy))
+            if a.source_gate_weight:
+                retention=batch['source_retention'].cuda()
+                loss=loss+a.source_gate_weight*(a.clean_weight*F.binary_cross_entropy_with_logits(clean_gate,retention)+(1-a.clean_weight)*F.binary_cross_entropy_with_logits(gates['logits'],retention))
             if a.feature_consistency:
                 consistency=sum(F.mse_loss(F.normalize(features[k].float(),dim=-1),F.normalize(v.float(),dim=-1))*v.shape[-1] for k,v in clean_features.items())/len(clean_features)
                 loss=loss+a.feature_consistency*consistency

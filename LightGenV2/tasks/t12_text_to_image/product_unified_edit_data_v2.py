@@ -179,6 +179,11 @@ class ExpandedUnifiedProductEditDataset(Dataset[dict[str, Any]]):
             prompt = _object_prompt(design) if mode == "object" else _joint_prompt(design, scene)
             label = design_index
         prompt_index = self.lookup[prompt]
+        source_region=torch.from_numpy(np.asarray(source_mask).copy()).float().div(255).unsqueeze(0)
+        target_region=source_region if mode=='background' else torch.from_numpy(np.asarray(design_mask).copy()).float().div(255).unsqueeze(0)
+        object_union=torch.maximum(source_region,target_region)
+        # TRAIN loss annotations only. Neither mask nor retention enters model.forward.
+        retention=source_region if mode=='background' else 1-object_union if mode=='object' else torch.zeros_like(source_region)
         return {
             "reference": self._tensor(reference), "target": self._tensor(target),
             "qwen_text": self.text[prompt_index], "prompt": prompt,
@@ -188,6 +193,7 @@ class ExpandedUnifiedProductEditDataset(Dataset[dict[str, Any]]):
             "category": source["category"], "mode": mode, "catalogue_index": label,
             "source_scene": combination_id(source_scene),
             "target_scene": combination_id(source_scene if mode == "object" else scene),
+            "object_union": object_union, "source_retention": retention,
         }
 
 
