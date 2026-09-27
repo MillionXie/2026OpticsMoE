@@ -13,6 +13,7 @@ releases/LGVQ_Temporal_08044_teacher_final_v2_20260923.zip
 ```
 
 其权重 SHA256 为 `5303b574b200e14bf943af21c60a246720be453b9cf8847cd93c0eaaa243a77c`。
+已对实际 ZIP 的 77 个清单文件逐项校验，包含 81,776,084 字节的 `weights/best_checkpoint.pt`，证据见 `reports/teacher_zip_audit.json`。导师 ZIP 有完整结构，并非只有源码。本任务上一版是开发框架，不等同于该推理交付包。
 该最新包的实际固定权重复评 SRCC 是 **0.8022806420**；名称中的 0.8044 是历史标识，不是当前包的重评结果。
 
 `runtime/` 的 21 个 Python 文件是该包的字节级源快照，`reference/teacher_v2.yaml` 是原配置；`reference/source_manifest.json` 记录来源及哈希。新增行为只在本目录的适配器中实现，不暗改源快照。
@@ -50,7 +51,7 @@ M = sqrt(1-eta) * exp(i*phase) + sqrt(eta)
 
 eta 训练区间 0.20–0.35，测试名义值 0.20，是待标定的名义系数；不等于 CCD 上固定百分比的实测功率。它不是相机黑电平，也不是 phase DC 正则。即使 G2/G3 训练忽略直流，部署评价也必须保留实际直流。
 
-探测噪声沿用导师包可选模型：每个完整场均值标度的有偏截断 Gaussian，随后相对 photon-count Poisson + straight-through 梯度。参数为经验值，不称完整/已标定 CCD sensor model。正式训练前优先确认暗场、平场和重复帧统计；未标定只能显式授权为 pilot。`--allow-uncalibrated-noise` 是披露开关，不是标定。
+导师包的可选噪声是场均值标度的有偏截断 Gaussian，随后相对 photon-count Poisson；正式配置关闭。本次新 study schema=2 使用 `ccd.py` 的独立 Poisson-Gaussian 适配器：先采样信号/暗电子的 Poisson，再加独立零均值读噪声，扣期望暗电流后裁零。Gaussian 不再随整场均值缩放，不在 shot 前加入经验正偏置。原源码不改，旧模型仍保留用于参考。新模型默认 `configs/ccd_poisson_gaussian.json`，转换系数4096、读噪声8电子仅为未标定 pilot，不是借自 ACCEL 的 CCD 参数。此模型仍在逻辑探测边界工作，不能称 raw sensor/像素积分已标定模型。正式训练前需暗场、平场、光子转移曲线、强度到电子转换的标定；`--allow-uncalibrated-noise` 只允许 pilot。具体公式和限制见 `reports/ENGINEERING_AUDIT.md`。
 
 插值沿用导师包的幅值 bilinear + 单位复相位 nearest 设备网格映射，探测强度 area 回到逻辑网格。禁止 bilinear 直接插值跨 0/2π 的相位角。
 
@@ -68,6 +69,9 @@ t13_temporal_robust_training/
   run.py           plan/preflight/smoke/train/evaluate/theory
   hardware.py      逻辑CCD替换、六层身份、相位映射
   build_lab_package.py  单组权重/相位/部署manifest暂存
+  build_projects.py  由单一源码生成四份独立工程，可携带导师参考PT与输入
+  project.py       每份工程锁定组别的入口
+  ccd.py           Poisson信号/暗电子 + 零均值Gaussian读噪声适配器
   verify_source.py 原导师源码完整性检查
   tools/           Git服务器同步与真实结果绘图
   tests/           条件、梯度、网格与恢复行为
@@ -78,6 +82,12 @@ t13_temporal_robust_training/
 ```
 
 运行方法见 [COMMAND.md](COMMAND.md)，图表设计见 [reports/EXPERIMENT_AND_FIGURE_PLAN.md](reports/EXPERIMENT_AND_FIGURE_PLAN.md)。不同任务不维护两份可变模型：旧包只用于参考，消融只在本目录变更，最后从通过验证的该分支构建新的导师交付包。
+
+## 四份工程与权重交付
+
+`build_projects.py` 生成 `projects/<build_id>/01_baseline_post`、`02_ccd_post`、`03_ccd_dc_post`、`04_ccd_dc_intrain`。每份都有 runtime/configs/weights/inputs/teacher_reference、独立入口和SHA清单，不运行时依赖其他三组或父仓库。生成产物不提交Git，源码只维护本目录一份；服务器使用同一commit自行生成，禁止SCP覆盖源码。
+
+`teacher_reference/weights/best_checkpoint.pt` 是旧导师模型，只用于 `project.py reference`；不能把它改名为四组消融权重。各组 `weights/best_checkpoint.pt` 要在重新训练后通过组别核验打包，目前尚不存在。构建器可通过 `--checkpoints` 加入四组真正权重。当前没有假造PT或训练结果。导师参考推理不需要完整训练缓存；四组正式训练仍需要缺失缓存。
 
 ## 训练与数据口径
 

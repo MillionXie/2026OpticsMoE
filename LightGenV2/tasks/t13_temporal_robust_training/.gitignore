@@ -1,6 +1,7 @@
 assets/
 runs/
 releases/
+projects/
 paths.local.json
 __pycache__/
 .pytest_cache/

@@ -28,6 +28,7 @@ def main() -> int:
     parser.add_argument("--noise-scale", type=float, default=0.0)
     parser.add_argument("--noise-seed", type=int, default=20260927)
     parser.add_argument("--allow-uncalibrated-noise", action="store_true")
+    parser.add_argument("--ccd-profile", type=Path, default=ROOT / "configs" / "ccd_poisson_gaussian.json")
     args = parser.parse_args()
     output = args.output or ROOT / "runs" / ("smoke" if args.phase == "smoke" else "simulation") / f"{args.group}_s{args.seed}_{args.phase}"
     if output.exists() and any(output.iterdir()):
@@ -47,11 +48,17 @@ def main() -> int:
     config_path.write_text(yaml.safe_dump(raw, sort_keys=False), encoding="utf-8")
     commit = subprocess.run(["git", "rev-parse", "HEAD"], cwd=ROOT, capture_output=True, text=True)
     protocol = load_protocol()
+    camera_profile = json.loads(args.ccd_profile.read_text(encoding="utf-8"))
+    from ccd import validate_profile, camera_operator
+    validate_profile(camera_profile)
+    protocol["ccd_model"] = camera_profile
+    protocol["ccd_parameters_calibrated"] = bool(camera_profile.get("calibrated", False))
     write_json(output / "run_manifest.json", {
         "group": args.group, "condition": GROUPS[args.group], "phase": args.phase,
         "commit": commit.stdout.strip() if commit.returncode == 0 else None,
         "command": sys.argv, "protocol": protocol, "resolved_config_sha256": sha256(config_path),
         "noise_scale": args.noise_scale, "noise_seed": args.noise_seed,
+        "ccd_profile_sha256": sha256(args.ccd_profile),
         "selection": "TRAIN-derived validation on common deployment grid/eta; original test excluded",
     })
     if args.phase == "plan":
@@ -75,7 +82,7 @@ def main() -> int:
     from LightGenV2.tasks.t06_video_quality_assessment.multivideo_settings import load_settings, resolved_dict
     from LightGenV2.tasks.t06_video_quality_assessment.models.multivideo9x4 import build_model
     from LightGenV2.tasks.t06_video_quality_assessment import multivideo_training as training
-    from experiment import detector_noise_evaluation, install_common_selection_evaluator
+    from experiment import install_common_selection_evaluator
     random.seed(args.seed)
     torch.manual_seed(args.seed)
     if torch.cuda.is_available():
@@ -83,7 +90,8 @@ def main() -> int:
     settings = load_settings(config_path, synthetic=args.phase == "smoke")
     if args.phase == "smoke":
         from LightGenV2.tasks.t06_video_quality_assessment.multivideo import synthetic_smoke
-        result = synthetic_smoke(settings)
+        with camera_operator(camera_profile):
+            result = synthetic_smoke(settings)
         write_json(output / "smoke.json", result)
         print(json.dumps(result, indent=2))
         return 0
@@ -100,7 +108,8 @@ def main() -> int:
         deploy_settings = load_settings(deploy_path)
         previous = install_common_selection_evaluator(training, deploy_settings, seed=protocol["validation_seed"])
         try:
-            result = training.train(model, payload, settings, device)
+            with camera_operator(camera_profile):
+                result = training.train(model, payload, settings, device)
         finally:
             training.evaluate = previous
         # Legacy names are retained; correct their meaning explicitly outside the frozen backend.
@@ -130,7 +139,7 @@ def main() -> int:
         model.load_state_dict(saved["state_dict"], strict=True)
         model.to(device).eval()
         torch.manual_seed(args.noise_seed)
-        with detector_noise_evaluation(settings, scale=args.noise_scale):
+        with camera_operator(camera_profile, evaluation_scale=args.noise_scale):
             result = training.evaluate(model, payload, settings, device, optical_enabled=True,
                                        prediction_path=output / "predictions.csv")
         write_json(output / "evaluation.json", {"metrics": result, "checkpoint_sha256": sha256(args.checkpoint),

@@ -76,6 +76,7 @@ def make_config(group: str, *, purpose: str = "train", seed: int = 163,
     if purpose == "nominal":
         optics["unmodulated_power_fraction_eval"] = 0.0
     raw["robustness"]["ccd_noise"]["enabled"] = condition["ccd"]
+    raw["robustness"]["ccd_noise"]["operator_override"] = protocol["ccd_profile"]
     return raw
 
 

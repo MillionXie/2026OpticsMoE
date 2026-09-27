@@ -1,0 +1,36 @@
+{
+  "status": "passed",
+  "zip": "C:\\Users\\Xml12\\OneDrive\\2026OpticsMoE\\LightGenPublic\\tasks\\t06_lgvq_temporal_consistency\\releases\\LGVQ_Temporal_08044_teacher_final_v2_20260923.zip",
+  "zip_sha256": "5d538b582885fd23c78884eab165953e8bf1d58e23564661ef935e9a483512ad",
+  "verified_manifest_files": 77,
+  "root_entries": [
+    "README.md",
+    "SHA256.json",
+    "assets",
+    "configs",
+    "inputs",
+    "phases",
+    "pyproject.toml",
+    "release.json",
+    "requirements.txt",
+    "runtime",
+    "simulate.py",
+    "tests",
+    "train.py",
+    "verify_release.py",
+    "weights"
+  ],
+  "checkpoint_bytes": 81776084,
+  "checkpoint_sha256": "5303b574b200e14bf943af21c60a246720be453b9cf8847cd93c0eaaa243a77c",
+  "training_config": {
+    "ccd_enabled": false,
+    "coherent_dc_range": [
+      0.2,
+      0.35
+    ],
+    "eval_dc": 0.2,
+    "logical_pitch_um": 17,
+    "forward_device_pitch_um": 8
+  },
+  "not_a_clean_ablation_baseline": true
+}

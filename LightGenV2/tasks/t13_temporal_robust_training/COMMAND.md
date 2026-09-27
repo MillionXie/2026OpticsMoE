@@ -37,7 +37,21 @@ python -I run.py --group r0_post --phase evaluate --paths paths.local.json --che
 python -I run.py --group r0_post --phase evaluate --paths paths.local.json --checkpoint runs/simulation/r0_post_s163/best_checkpoint.pt --noise-scale 1 --noise-seed 20260927 --output runs/simulation/g2_noise1
 ```
 
-G3/G4/G5使用自己的group与checkpoint，其余测试参数相同。pitch测试用 `--device-pitch-um 17|12|8`；eta测试用 `--eval-eta 0|0.1|0.2|0.3`；都不增加训练组。noise-scale同时缩放经验偏置/高斯，Poisson平均计数按 scale^-2 变化；不是已标定曝光倍数，不能把该曲线横轴写成真实光功率。
+G3/G4/G5使用自己的group与checkpoint，其余测试参数相同。pitch测试用 `--device-pitch-um 17|12|8`；eta测试用 `--eval-eta 0|0.1|0.2|0.3`；都不增加训练组。schema=2 使用独立电子单位Poisson-Gaussian。noise-scale=s时，k'=k/s²、sigma_e'=sigma_e/s，得到信号shot及读噪声标准差约随s变化；暗电子均值保持不变。不是标定曝光倍数，不能将横轴写成真实光功率。使用 `--ccd-profile /absolute/path/calibrated.json` 指定同一相机参数；各组必须一致，参数及SHA写入run。
+
+## 生成四份独立工程
+
+```bash
+python -I audit_teacher.py --zip /absolute/path/LGVQ_Temporal_08044_teacher_final_v2_20260923.zip --package /absolute/path/lgvq_temporal_08044 --output runs/smoke/teacher_zip_audit.json
+python -I build_projects.py --output projects/temporal_four_v2 --teacher-package /absolute/path/lgvq_temporal_08044
+cd projects/temporal_four_v2/01_baseline_post
+python -I project.py plan
+python -I project.py reference --device cpu --fields 1 --output runs/reference_smoke.json
+```
+
+构建后每组都有完整导师参考PT及35个输入；训练缓存仍需另配。其余三组同样使用 `project.py`，不用自己写 `--group`。若只需要服务器训练代码、没有导师资产，则构建时省略 `--teacher-package`；不能声称这种包支持旧导师推理。
+
+重新训练后，用JSON映射四个group到其best checkpoint路径，并传 `build_projects.py --checkpoints /absolute/path/checkpoints.json`。构建器核验group身份，拒绝将旧导师PT放入四组weights。
 
 ## 暂存单组部署资产
 
