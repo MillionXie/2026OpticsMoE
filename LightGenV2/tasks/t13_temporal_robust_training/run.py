@@ -11,7 +11,7 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent
 sys.path.insert(0, str(ROOT))
-from study import GROUPS, asset_preflight, load_protocol, make_config, sha256, split_for_selection, write_json
+from study import GROUPS, asset_preflight, load_protocol, make_config, sha256, selection_payload, write_json
 
 
 def run() -> int:
@@ -31,6 +31,8 @@ def run() -> int:
     parser.add_argument("--ccd-profile", type=Path, default=ROOT / "configs" / "ccd_poisson_gaussian.json")
     parser.add_argument("--eval-split", choices=("train", "validation", "test"), default="test")
     args = parser.parse_args()
+    if args.eval_split == "validation":
+        parser.error("This profile restores original 2250/558; no validation split")
     output = args.output or ROOT / "runs" / ("smoke" if args.phase == "smoke" else "simulation") / f"{args.group}_s{args.seed}_{args.phase}"
     if output.exists() and any(output.iterdir()):
         parser.error("Output must be new/empty; do not overwrite a run")
@@ -61,7 +63,7 @@ def run() -> int:
         "noise_scale": args.noise_scale, "noise_seed": args.noise_seed,
         "ccd_profile_sha256": sha256(args.ccd_profile),
         "evaluation_split": args.eval_split,
-        "selection": "TRAIN-derived validation on common deployment grid/eta; original test excluded",
+        "selection": protocol["selection_policy"],
     })
     if args.phase == "plan":
         print(json.dumps({"group": args.group, "condition": GROUPS[args.group], "config": str(config_path)}, indent=2))
@@ -104,31 +106,30 @@ def run() -> int:
     model.bounded_amplitude = protocol["bounded_amplitude"]
     device = torch.device(args.device)
     if args.phase == "train":
-        payload, split = split_for_selection(payload, fraction=protocol["validation_fraction"], seed=protocol["validation_seed"])
+        payload, split = selection_payload(payload)
         write_json(output / "selection_split.json", split)
         deploy_raw = make_config(args.group, purpose="deployment", seed=args.seed, output=output, paths=paths)
         deploy_path = output / "deployment.yaml"
         deploy_path.write_text(yaml.safe_dump(deploy_raw, sort_keys=False), encoding="utf-8")
         deploy_settings = load_settings(deploy_path)
-        previous = install_common_selection_evaluator(training, deploy_settings, seed=protocol["validation_seed"])
+        previous = install_common_selection_evaluator(training, deploy_settings, seed=args.noise_seed)
         try:
             with camera_operator(camera_profile):
                 result = training.train(model, payload, settings, device)
         finally:
             training.evaluate = previous
         # Legacy names are retained; correct their meaning explicitly outside the frozen backend.
-        result["legacy_test_fields_refer_to_validation"] = True
-        result["original_test_used_for_selection"] = False
-        result["test_used_for_selection"] = False
-        result["validation_used"] = True
-        result["best_validation_srcc"] = result.pop("best_observed_test_srcc")
+        result["legacy_test_fields_refer_to_validation"] = False
+        result["original_test_used_for_selection"] = True
+        result["test_used_for_selection"] = True
+        result["validation_used"] = False
         write_json(output / "training_summary.json", result)
         write_json(output / "study_training_summary.json", result)
         for name in ("best_checkpoint.pt", "last_checkpoint.pt"):
             path = output / name
             saved = torch.load(path, map_location="cpu", weights_only=False)
-            saved.update(selection_policy="TRAIN-derived validation on common deployment physics",
-                         test_used_for_selection=False, validation_used=True,
+            saved.update(selection_policy=protocol["selection_policy"],
+                         test_used_for_selection=True, validation_used=False,
                          study_group=args.group, study_protocol=protocol)
             torch.save(saved, path)
         result["checkpoint_sha256"] = sha256(output / "best_checkpoint.pt")
@@ -144,7 +145,8 @@ def run() -> int:
             parser.error("Checkpoint belongs to a different physical study profile")
         model.load_state_dict(saved["state_dict"], strict=True)
         if args.eval_split != "test":
-            payload, split = split_for_selection(payload, fraction=protocol["validation_fraction"], seed=protocol["validation_seed"])
+            payload, split = selection_payload(payload)
+            payload = dict(payload)
             if args.eval_split == "train":
                 payload["splits"] = ["test" if s == "train" else "sealed" for s in payload["splits"]]
         model.to(device).eval()

@@ -39,8 +39,8 @@ def test_validation_never_uses_original_test():
 def test_unrelated_augmentation_is_identical():
     for group in GROUPS:
         raw = make_config(group)
-        assert raw["robustness"]["phase_dropout_p"] == 0
-        assert raw["router"]["noise_std"] == 0
+        assert raw["robustness"]["phase_dropout_p"] == 0.05
+        assert raw["router"]["noise_std"] == 0.06
         assert all(raw["robustness"][key] == 0 for key in ("input_shift_pixels", "phase_shift_pixels", "ccd_shift_pixels"))
 
 
@@ -49,6 +49,18 @@ def test_theory_is_ideal_r0_without_extra_training():
     assert raw["optics"]["modulator_pixel_pitch_um"] == 17
     assert raw["optics"]["unmodulated_power_fraction_eval"] == 0
     assert not raw["robustness"]["ccd_noise"]["enabled"]
+
+
+def test_original_2250_558_preserved():
+    from study import selection_payload
+    import pytest
+    payload = {"sample_ids": [str(i) for i in range(2808)], "splits": ["train"]*2250+["test"]*558}
+    result, manifest = selection_payload(payload)
+    assert result is payload
+    assert len(manifest["train_ids"]) == 2250 and len(manifest["test_ids"]) == 558
+    assert manifest["validation_ids"] == [] and manifest["test_used_for_selection"]
+    with pytest.raises(ValueError, match="2250"):
+        selection_payload({"sample_ids": ["one"], "splits": ["train"]})
 
 
 def test_immutable_source_manifest():

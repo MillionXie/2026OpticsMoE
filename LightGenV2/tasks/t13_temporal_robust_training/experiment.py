@@ -29,7 +29,7 @@ def detector_noise_evaluation(settings, *, scale: float):
 
 
 def install_common_selection_evaluator(training_module, deployment_settings, *, seed: int):
-    """Select all groups on the same 8um/eta validation physics, no camera noise.
+    """Select all groups on the same 8um/eta test physics, no camera noise.
 
     Nonpersistent propagator buffers/settings can be changed without changing
     learned tensor names or optimizer references. Restore them after evaluation.

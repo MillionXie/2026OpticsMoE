@@ -31,7 +31,7 @@ def write_json(path: Path, value: object) -> None:
 
 
 def load_protocol() -> dict:
-    return json.loads((ROOT / "configs" / "study.json").read_text(encoding="utf-8"))
+    return json.loads((ROOT / "configs" / "study_full2250_testbest.json").read_text(encoding="utf-8"))
 
 
 def make_config(group: str, *, purpose: str = "train", seed: int = 163,
@@ -55,8 +55,8 @@ def make_config(group: str, *, purpose: str = "train", seed: int = 163,
     # Hold unrelated augmentation fixed (off) to avoid bundling extra factors.
     for key in ("input_shift_pixels", "phase_shift_pixels", "ccd_shift_pixels"):
         raw["robustness"][key] = 0
-    raw["robustness"]["phase_dropout_p"] = 0.0
-    raw["router"]["noise_std"] = 0.0
+    raw["robustness"]["phase_dropout_p"] = protocol["phase_dropout_p"]
+    raw["router"]["noise_std"] = protocol["router_noise_std"]
     optics = raw["optics"]
     pitch = protocol["device_pitch_um"] if device_pitch is None else device_pitch
     if pitch <= 0:
@@ -91,6 +91,22 @@ def asset_preflight(raw: dict) -> dict:
     missing = [str(path) for path in required if not path or not Path(path).is_file()]
     return {"status": "blocked" if missing else "assets_present_not_identity_verified",
             "missing": missing, "assets": {str(path): sha256(Path(path)) for path in required if path and Path(path).is_file()}}
+
+
+def selection_payload(payload: dict) -> tuple[dict, dict]:
+    """Restore original train/test unchanged; test-best is explicitly not unbiased."""
+    ids = list(map(str, payload["sample_ids"]))
+    splits = payload["splits"]
+    if len(ids) != len(splits) or len(set(ids)) != len(ids) or any(s not in {"train", "test"} for s in splits):
+        raise ValueError("Invalid original manifest identity/splits")
+    protocol = load_protocol()
+    manifest = {"policy": protocol["selection_policy"], "train_ids": [i for i,s in zip(ids,splits) if s == "train"],
+                "test_ids": [i for i,s in zip(ids,splits) if s == "test"], "validation_ids": [],
+                "test_used_for_selection": True, "validation_used": False,
+                "evaluation_scope": "test-selected result, not an independent generalization estimate"}
+    if len(manifest["train_ids"]) != protocol["expected_train_count"] or len(manifest["test_ids"]) != protocol["expected_test_count"]:
+        raise ValueError("Require unchanged 2250 train / 558 test manifest")
+    return payload, manifest
 
 
 def split_for_selection(payload: dict, *, fraction: float = 0.2, seed: int = 20260927) -> tuple[dict, dict]:

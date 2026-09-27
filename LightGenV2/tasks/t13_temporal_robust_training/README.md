@@ -1,6 +1,6 @@
 # T13 时间一致性鲁棒训练与光路消融
 
-这是基于导师审阅版的独立研究分支。旧导师包不修改；本目录不运行时依赖父仓库、原 T06 或其他任务。当前profile为schema=3：四组统一保零tanh/0.5物理振幅；直流训练组固定30%，共同部署30%；增强CCD pilot；像素平移全部关闭。状态以各run的supervisor.json和comparison.json为准，尚未新光路采集。
+这是基于导师审阅版的独立研究分支。旧导师包不修改；本目录不运行时依赖父仓库、原 T06 或其他任务。当前profile为schema=4，配置为configs/study_full2250_testbest.json：恢复原2250 train/558 test，不划validation，每5epoch按共同8μm/DC30/无CCD噪声的test SRCC选best；所有组phase dropout=0.05、router noise=0.06，像素平移仍全部关闭。四组统一tanh/0.5振幅、直流训练组30%、增强CCD pilot。schema=3及其报告仅为作废历史口径，不用于部署。用户已要求清理该轮权重及派生工程，原导师包和公共缓存不删。状态以当前run的supervisor.json和comparison.json为准，尚未新光路采集。
 
 弱光修正与是否修改损失的正式说明见 [reports/BOUNDED_AMPLITUDE_FIX.md](reports/BOUNDED_AMPLITUDE_FIX.md)。同一振幅用于仿真与固定255量化，禁止逐帧峰值缩放；不是删除所有RMS。四组保持原MOS损失，不额外捆绑功率loss。旧teacher_reference保持历史模型不改，schema=3须重新训练。
 
@@ -34,15 +34,15 @@ releases/LGVQ_Temporal_08044_teacher_final_v2_20260923.zip
 
 G1 是同权重理想条件参考，不保证是上界。G2→G3、G3→G4、G4→G5 相邻各改一个因素。四次训练从共同随机初始化独立进行，不串行继承上一组 best，也不用已经 robust-trained 的旧权重初始化来声称“没有鲁棒训练”。
 
-这是**累计措施的条件增量消融**，不是完整 factorial；G3-G2 是无 DC 训练前提下的 CCD 收益，G4-G3 是已有 CCD 训练前提下的 DC 收益。不能宣称因素独立主效应或把增量跨排序泛化。第一轮 seed=163；单 seed 只能做 demo，后续有预算再重复关键配对。
+这是**累计措施的条件增量消融**，不是完整 factorial；G3-G2 是无 DC 训练前提下的 CCD 收益，G4-G3 是已有 CCD 训练前提下的 DC 收益。不能宣称因素独立主效应或把增量跨排序泛化。seed=163；单 seed 只能做 demo，后续有预算再重复关键配对。
 
 ## 保持不变的合同
 
 - 任务：LGVQ Temporal consistency，16 个视频×每视频 4 帧；4×4 整幅相干场，6 次传播，1 视频1 MOS；padding 保留在场中但不计指标。
 - 架构、电子支路、归一化、优化器、训练轮数和相位参数量相同；保持 532 nm、10 cm、478 有效区、518 逻辑画布、17 μm 逻辑 pitch、0.5° 截止。
-- 仅研究用户指定的三个措施；三类位移、phase dropout、router logit noise 统一关闭，避免捆绑第四因素。普通网络 dropout/训练损失保留且各组相同。
+- 仅研究用户指定的三个措施；三类位移统一关闭。phase dropout=0.05、router logit noise=0.06四组共同开启，普通网络dropout/训练损失各组相同，不把共同增强算作消融增量。
 - G2–G4 训练传播网格为 518/17 μm；G5 为 1101/8 μm，但可学习 mask 仍是原逻辑参数，不通过增加 mask 参数量取胜。
-- 所有组选择 checkpoint 时都在同一 8 μm 网格、eta=0.30 的 TRAIN 留出验证集评估；测试也统一设备条件。不会在 G2 的 17 μm 名义性能和 G5 的 8 μm 性能之间直接作不公平比较。
+- 所有组选择 checkpoint 时都在同一8 μm、eta=0.30、无CCD噪声的原558 test评估，保留原test-best口径，不主张无偏泛化。最终同时报告DC30带噪声、DC30无噪声、DC20无噪声评价；后者只用于对齐旧版评价条件，不用它再次选权重。不会把G2的17μm和G5的8μm数字直接比较。
 - 物理孔径保持约 8.126 mm；8 μm 设备有效图 round(478×17/8)=1016。不能保持像素数却改变物理孔径。
 
 ## 三项建模的实际含义
@@ -95,11 +95,11 @@ t13_temporal_robust_training/
 
 ## 训练与数据口径
 
-原 manifest 2250 train / 558 test。本研究从原 train 按固定 source basename 分组抽 20% 验证，减少同源生成变体进入两侧；缓存张量和全局索引不改变。正式前要核对 basename 是否足以标识源视频/场景，不足则改为明确 source_id 再冻结。
+原manifest 2250 train / 558 test原样使用，正式预检强制核对样本ID唯一性及2250/558数量，不划validation、不重排缓存。
 
-旧训练器的内部 `test` 字段重定向到这个验证集；原 test 在训练 payload 中标 `sealed`，不会反传或选模。历史文件名 `test_*` 保留以不改源快照，但它们此时是验证输出；新 summary/checkpoint 明确纠正 selection metadata。最终原558仍有历史反复选模局限，不能宣称是全新未触碰 test。
+训练器test字段保持原含义，每5epoch按test SRCC选择best。summary/checkpoint明确test_used_for_selection=true、validation_used=false。测试不参与反传，但参与选模，因此不是独立泛化估计；本任务沿用仓库DATA_SPLIT_AND_ROUTER_PROTOCOL.md的既有口径。
 
-源包注明两个完整 Qwen-front 训练缓存已缺失；35 个打包测试 field 只用于固定评估，不是训练资产。`preflight` 检查 manifest、视觉缓存、语言缓存、train-only soft targets；存在性检查之后还要用后端验证数据身份，不能只有“文件在”就宣称可复现训练。
+两个Qwen-front缓存已由原始视频及冻结Qwen重建，并严格验证数据身份；35个打包field仍只用于参考推理。新run通过--reuse-cache复用公共缓存，正式预检仍核验身份和哈希。
 
 ## 光路边界与下一步
 

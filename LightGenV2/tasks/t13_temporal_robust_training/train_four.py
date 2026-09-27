@@ -24,6 +24,7 @@ def main():
     parser.add_argument("--qwen-model", type=Path, required=True)
     parser.add_argument("--manifest", type=Path, required=True)
     parser.add_argument("--soft-targets", type=Path, required=True)
+    parser.add_argument("--reuse-cache", action="store_true", help="Skip Qwen rebuild; require existing strictly validated caches")
     args = parser.parse_args()
     gpus = args.gpus.split(",")
     if len(gpus) != 4 or len(set(gpus)) != 4 or any(not gpu.isdigit() for gpu in gpus):
@@ -83,13 +84,18 @@ def main():
                    "--manifest", str(args.manifest), "--vision-output", str(vision),
                    "--language-output", str(language), "--target", "temporal", "--frame-count", "4",
                    "--token-grid", "7", "--batch-size", "2", "--chunk-rows", "16", "--device", "cuda"]
-        child, stream = start(command, gpus[0], root / "cache_rebuild.log")
-        if finish(child, stream):
-            raise RuntimeError("Cache rebuild failed; see cache_rebuild.log")
+        if args.reuse_cache:
+            if not vision.is_file() or not language.is_file():
+                raise RuntimeError("Requested reuse but caches are missing")
+            (root / "cache_rebuild.log").write_text("Reused existing cache; strict identity verification follows.\n")
+        else:
+            child, stream = start(command, gpus[0], root / "cache_rebuild.log")
+            if finish(child, stream):
+                raise RuntimeError("Cache rebuild failed; see cache_rebuild.log")
         write_json(root / "assets_sha256.json", {k: sha256(Path(v)) for k,v in paths.items() if k != "dataset_root"})
         # Strict backend validates cache identity before ANY formal training starts.
         sys.path.insert(0, str(ROOT / "runtime"))
-        from study import make_config, split_for_selection
+        from study import make_config, selection_payload
         import yaml
         from settings_adapter import load_settings
         from experiments.qwen3_vl_2b_lgvq_single_metric_o2_16frame_54.data import load_single_metric_cache
@@ -97,7 +103,7 @@ def main():
         config = root / "asset_check.yaml"
         config.write_text(yaml.safe_dump(raw), encoding="utf-8")
         payload = load_single_metric_cache(load_settings(config))
-        _, split = split_for_selection(payload)
+        _, split = selection_payload(payload)
         write_json(root / "selection_split.json", split)
         del payload
         idle()
@@ -116,20 +122,25 @@ def main():
             if code:
                 continue
             checkpoint = root / group / "best_checkpoint.pt"
-            for split_name in ("train", "validation", "test"):
-                destination = root / group / f"final_{split_name}"
+            evaluations = (("train", "train", "1", None), ("test", "test", "1", None),
+                           ("test_clean_dc30", "test", "0", None), ("test_clean_dc20", "test", "0", "0.20"))
+            for evaluation_name, split_name, scale, eta in evaluations:
+                destination = root / group / f"final_{evaluation_name}"
                 command = [sys.executable, "-I", str(ROOT / "run.py"), "--group", group, "--phase", "evaluate",
                            "--paths", str(root / "paths.json"), "--checkpoint", str(checkpoint), "--eval-split", split_name,
-                           "--device", "cuda", "--noise-scale", "1", "--output", str(destination)]
-                evaluation, log = start(command, gpu, root / f"{group}_{split_name}.log")
+                           "--device", "cuda", "--noise-scale", scale, "--output", str(destination)]
+                if eta is not None:
+                    command.extend(["--eval-eta", eta])
+                evaluation, log = start(command, gpu, root / f"{group}_{evaluation_name}.log")
                 if finish(evaluation, log):
-                    results[group]["evaluation_failed"] = split_name
+                    results[group]["evaluation_failed"] = evaluation_name
                     break
-                results[group]["metrics"][split_name] = json.loads((destination / "evaluation.json").read_text())["metrics"]
+                results[group]["metrics"][evaluation_name] = json.loads((destination / "evaluation.json").read_text())["metrics"]
             results[group]["checkpoint_sha256"] = sha256(checkpoint)
-        state["status"] = "complete" if all(len(r["metrics"]) == 3 for r in results.values()) else "failed_or_partial"
+        state["status"] = "complete" if all(len(r["metrics"]) == 4 for r in results.values()) else "failed_or_partial"
         write_json(root / "comparison.json", {"status": state["status"], "groups": results,
-                   "metric_scope": "simulation common 8um/DC30/noise1; not optical hardware measurements"})
+                   "selection_policy": "original_test_best_no_validation",
+                   "metric_scope": "simulation: train/test=8um/DC30/noise1; clean_dc30/20=noise0; test used for selection; not hardware"})
     except Exception as error:
         state.update(status="failed", error=repr(error))
         raise

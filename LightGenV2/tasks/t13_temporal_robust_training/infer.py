@@ -8,7 +8,7 @@ import tempfile
 ROOT = Path(__file__).resolve().parent
 sys.path.insert(0, str(ROOT))
 sys.path.insert(0, str(ROOT / "runtime"))
-from study import make_config, sha256, write_json
+from study import make_config, sha256, write_json, load_protocol
 
 
 def main():
@@ -37,8 +37,8 @@ def main():
     if saved.get("study_group") != group:
         parser.error("Wrong group checkpoint; old teacher weights are reference-only")
     protocol = saved["study_protocol"]
-    if protocol.get("schema_version") != 3:
-        parser.error("Expected bounded-amplitude schema=3 checkpoint")
+    if protocol.get("schema_version") != load_protocol()["schema_version"]:
+        parser.error("Checkpoint profile does not match this engineering project")
     raw = make_config(group, purpose="deployment", device_pitch=protocol["device_pitch_um"],
                       eval_eta=protocol["deployment_eta"])
     with tempfile.TemporaryDirectory(prefix="t13_infer_") as temp:

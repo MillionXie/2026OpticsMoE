@@ -1,0 +1,22 @@
+{
+  "schema_version": 4,
+  "target": "temporal_consistency",
+  "groups": ["r0_post", "r1_ccd_post", "r2_ccd_dc_post", "r3_ccd_dc_intrain"],
+  "epochs": 100,
+  "seed": 163,
+  "selection_policy": "original_test_best_no_validation",
+  "expected_train_count": 2250,
+  "expected_test_count": 558,
+  "selection_noise_scale": 0.0,
+  "device_pitch_um": 8.0,
+  "deployment_eta": 0.30,
+  "dc_train_range": [0.30, 0.30],
+  "bounded_amplitude": {"kind": "tanh", "scale": 0.5, "before_coherent_dc": true, "per_frame_peak_normalization": false},
+  "phase_dropout_p": 0.05,
+  "router_noise_std": 0.06,
+  "ccd_profile": "configs/ccd_poisson_gaussian.json",
+  "ccd_parameters_calibrated": false,
+  "noise_scan": [0.0, 0.5, 1.0, 2.0],
+  "pitch_scan_um": [17.0, 12.0, 8.0],
+  "performance_reference": {"historical_srcc": 0.8044, "verified_teacher_srcc": 0.8022806420367042, "reference_eval_eta": 0.20, "reference_noise_scale": 0.0, "pilot_ready_srcc": 0.80}
+}
