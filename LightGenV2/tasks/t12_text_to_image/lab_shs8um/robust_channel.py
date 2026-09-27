@@ -1,15 +1,13 @@
 """Training-only coherent optical channel; no new deployment parameters."""
 import math
+import json
+from pathlib import Path
 import torch
 from torch.nn import functional as F
 from .ccd_bridge import attach
 
 
-PROFILES = {
-    'camera': dict(power_min=.15, power_max=.35, shift=1, bias=.003, read=.0015, shot=.02, gain=.1, kspace=0., phase_dropout=0.),
-    'combined': dict(power_min=.15, power_max=.35, shift=1, bias=.004, read=.002, shot=.025, gain=.1, kspace=.15, phase_dropout=.015),
-    'stress': dict(power_min=.30, power_max=.30, shift=2, bias=.006, read=.003, shot=.035, gain=.15, kspace=.3, phase_dropout=.03),
-}
+PROFILES = json.loads((Path(__file__).resolve().parents[1]/'configs/optical_channel_robust_v2.json').read_text())
 
 
 def coherent_modulation(modulation, eta, relative_phase):

@@ -1,0 +1,5 @@
+{
+  "camera": {"power_min": 0.15, "power_max": 0.35, "shift": 1, "bias": 0.003, "read": 0.0015, "shot": 0.02, "gain": 0.1, "kspace": 0.0, "phase_dropout": 0.0},
+  "combined": {"power_min": 0.15, "power_max": 0.35, "shift": 1, "bias": 0.004, "read": 0.002, "shot": 0.025, "gain": 0.1, "kspace": 0.15, "phase_dropout": 0.015},
+  "stress": {"power_min": 0.3, "power_max": 0.3, "shift": 2, "bias": 0.006, "read": 0.003, "shot": 0.035, "gain": 0.15, "kspace": 0.3, "phase_dropout": 0.03}
+}
