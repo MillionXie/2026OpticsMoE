@@ -1,5 +1,7 @@
 # 导师交付与四工程审计
 
+本报告记录schema=2的工程核查。当前schema=3（tanh/0.5、DC30、k3072/read10）以BOUNDED_AMPLITUDE_FIX.md和configs/study.json为准；下文旧参数不作为本轮实际配置。
+
 ## 已核对的原导师包
 
 实际ZIP为 `LightGenPublic/tasks/t06_lgvq_temporal_consistency/releases/LGVQ_Temporal_08044_teacher_final_v2_20260923.zip`。

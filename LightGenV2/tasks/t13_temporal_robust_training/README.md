@@ -53,7 +53,7 @@ M = sqrt(1-eta) * exp(i*phase) + sqrt(eta)
 
 原导师eta训练区间0.20–0.35；本轮G4/G5固定0.30、共同设备评估0.30。它是名义混合系数，不等于CCD实测功率恰占30%。不是相机黑电平，也不是phase DC正则。即使G2/G3训练忽略直流，部署评价仍保留共同直流。
 
-导师包的可选噪声是场均值标度的有偏截断 Gaussian，随后相对 photon-count Poisson；正式配置关闭。本次新 study schema=2 使用 `ccd.py` 的独立 Poisson-Gaussian 适配器：先采样信号/暗电子的 Poisson，再加独立零均值读噪声，扣期望暗电流后裁零。Gaussian 不再随整场均值缩放，不在 shot 前加入经验正偏置。原源码不改，旧模型仍保留用于参考。新模型默认 `configs/ccd_poisson_gaussian.json`，转换系数4096、读噪声8电子仅为未标定 pilot，不是借自 ACCEL 的 CCD 参数。此模型仍在逻辑探测边界工作，不能称 raw sensor/像素积分已标定模型。正式训练前需暗场、平场、光子转移曲线、强度到电子转换的标定；`--allow-uncalibrated-noise` 只允许 pilot。具体公式和限制见 `reports/ENGINEERING_AUDIT.md`。
+导师包的可选噪声是场均值标度的有偏截断Gaussian，随后相对Poisson，正式配置关闭。新study使用ccd.py的独立Poisson-Gaussian：先采样信号/暗电子，再加一份零均值读噪声，扣期望暗电流后裁零。不额外叠加EAC Gaussian。原源码不改。当前schema=3参数为k=3072、read RMS=10电子（此前schema=2为4096/8）；仍是未标定pilot，不是ACCEL的CCD参数。算子在逻辑CCD边界，不称raw sensor/像素积分已标定模型。正式标定需要暗场、平场、photon-transfer及模型强度到电子转换；本轮已明确允许增强pilot训练。详见BOUNDED_AMPLITUDE_FIX.md，ENGINEERING_AUDIT.md中的旧参数保留历史含义。
 
 插值沿用导师包的幅值 bilinear + 单位复相位 nearest 设备网格映射，探测强度 area 回到逻辑网格。禁止 bilinear 直接插值跨 0/2π 的相位角。
 
