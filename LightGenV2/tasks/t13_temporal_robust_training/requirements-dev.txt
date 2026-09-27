@@ -1,0 +1,4 @@
+-r requirements.txt
+pytest>=8,<9
+matplotlib>=3.8,<4
+paramiko>=3,<5

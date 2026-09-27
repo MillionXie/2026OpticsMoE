@@ -1,0 +1,22 @@
+{
+  "schema_version": 1,
+  "target": "temporal_consistency",
+  "groups": ["r0_post", "r1_ccd_post", "r2_ccd_dc_post", "r3_ccd_dc_intrain"],
+  "display_conditions": ["G1 theoretical evaluation of G2 checkpoint", "G2 r0_post hardware", "G3 r1_ccd_post hardware", "G4 r2_ccd_dc_post hardware", "G5 r3_ccd_dc_intrain hardware"],
+  "epochs": 100,
+  "seed": 163,
+  "device_pitch_um": 8.0,
+  "deployment_eta": 0.20,
+  "dc_train_range": [0.20, 0.35],
+  "validation_fraction": 0.20,
+  "validation_seed": 20260927,
+  "ccd_profile": "teacher_v2_empirical_truncated_gaussian_plus_relative_poisson_ST",
+  "ccd_parameters_calibrated": false,
+  "noise_scan": [0.0, 0.5, 1.0, 2.0],
+  "pitch_scan_um": [17.0, 12.0, 8.0],
+  "hypotheses_not_results": [
+    "r1-r0: incremental benefit of detector-noise training under common noise",
+    "r2-r1: incremental benefit of coherent DC-aware training under deployment leakage",
+    "r3-r2: incremental benefit of mapping inside training at mismatched device pitch"
+  ]
+}
