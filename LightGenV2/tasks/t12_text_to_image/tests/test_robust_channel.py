@@ -36,3 +36,14 @@ def test_inactive_channel_camera_identity():
     channel=RobustChannel.__new__(RobustChannel);channel.active=False
     original=torch.rand(2,8,8)
     assert channel.camera('router',None,None,original) is original
+
+
+def test_bmp_does_not_peak_normalize(tmp_path):
+    import numpy as np
+    from PIL import Image
+    from types import SimpleNamespace
+    from LightGenV2.tasks.t12_text_to_image.lab_shs8um.bounded_amplitude import save_bmps
+    value=np.array([[[0.,.1],[.05,0.]]],dtype=np.float32)
+    paths,scale=save_bmps(value,tmp_path,'router',['example'],SimpleNamespace(active_to_native=lambda x:x))
+    pixels=np.asarray(Image.open(paths[0]))
+    assert scale==1.0 and pixels[0,0]==0 and int(pixels.max())==26
