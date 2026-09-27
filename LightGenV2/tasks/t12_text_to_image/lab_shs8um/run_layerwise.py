@@ -30,7 +30,8 @@ def main():
     contract=json.loads((a.project/'assets/contract.json').read_text())
     assert flow.sha(a.project/'assets/small.pt')==contract['checkpoint_sha256']
     model=build_sealed(torch.load(a.project/'assets/small.pt',map_location='cpu',weights_only=False)).cuda().eval().requires_grad_(False)
-    assert architecture_report(model)['counted_parameters']==9958098
+    parameters=architecture_report(model)['counted_parameters']
+    assert parameters==contract.get('counted_parameters',9958098) and parameters<=20_000_000
     assert model.bounded_amplitude==dict(kind='tanh',scale=.5)
     data=a.project/'assets/datasets'
     dataset=ExpandedUnifiedProductEditDataset(data/'abo_cleanrender_lamp_table_pillow_256_v1',a.split,256,data/'abo_unified_expanded_instructions_qwen2_v2.pt')

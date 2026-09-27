@@ -76,3 +76,10 @@ def test_physical_circular_tv_ignores_two_pi_wrap():
             super().__init__();self.raw_phase=nn.Parameter(torch.tensor([[0.,2*math.pi],[0.,2*math.pi]]))
         def phase(self):return self.raw_phase
     assert circular_phase_tv(nn.Sequential(Plane())).item()<1e-6
+
+
+def test_decoder_refinement_initially_identity():
+    from LightGenV2.tasks.t12_text_to_image.audited_unified import ConditionedDetailResidual
+    block=ConditionedDetailResidual(4,16,8)
+    x=torch.randn(2,4,8,8);condition=torch.randn(2,8)
+    torch.testing.assert_close(block(x,condition),x,atol=0,rtol=0)
