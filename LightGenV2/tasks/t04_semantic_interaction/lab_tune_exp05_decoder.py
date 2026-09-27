@@ -81,6 +81,7 @@ def main():
                     frames={stage:torch.from_numpy(np.asarray(Image.open(folder/'ccd'/stage/(sid+'.png')),np.float32).copy()[None]/255) for stage in STAGES}
                     receipts=[json.loads((folder/'ccd'/stage/(sid+'.json')).read_text()) for stage in STAGES]
                     for stage,receipt in zip(STAGES,receipts):
+                        assert receipt['sample_id']==sid and receipt['stage']==stage
                         assert receipt['phase_sha256']==phase_hashes[stage]
                         assert receipt['exposure']['exposure_us']==2000 and receipt['exposure']['gain']=='Gain_X4'
                         assert receipt['wait_ms']==240 and receipt['canonical_orientation']=='flip_v'
@@ -98,11 +99,16 @@ def main():
         rows=[data['rows'][i] for i in indices];b={}
         for key in rows[0]:b[key]=torch.cat([r[key] for r in rows]).cuda() if torch.is_tensor(rows[0][key]) else sum([r[key] for r in rows],[])
         return data['features'][indices].cuda(),b
-    def evaluate(data,indices):
-        acc=MetricAccumulator();head.eval()
+    def evaluate(data,indices,export=False):
+        acc=MetricAccumulator();head.eval();records=[];logits=[]
         with torch.no_grad():
             for start in range(0,len(indices),32):
-                x,b=batch(data,indices[start:start+32]);cat,edit=head(x);acc.update(dict(category_logits=cat,edit_logits=edit,task_logits=b['task_logits']),b)
+                x,b=batch(data,indices[start:start+32]);cat,edit=head(x)
+                row,prediction,_=acc.update(dict(category_logits=cat,edit_logits=edit,task_logits=b['task_logits']),b)
+                if export:
+                    records.extend(row);logits.append(dict(category_logits=cat.cpu(),edit_logits=edit.cpu(),prediction=prediction.cpu()))
+        if export:
+            write(out/'test_samples.json',records);torch.save(logits,out/'test_outputs.pt')
         return acc.compute()
     baseline_fit=evaluate(train,fitidx);baseline_val=evaluate(train,validx);bestscore=baseline_val['overall']['changed_cell_accuracy'];selected=0
     head.requires_grad_(True);optimizer=torch.optim.AdamW(head.parameters(),lr=5e-5,weight_decay=.01);best=copy.deepcopy(initial)
@@ -124,7 +130,7 @@ def main():
     torch.save(chosen,out/'best.pt');head.load_state_dict(last);lastpayload=copy.deepcopy(payload);lastpayload['model']=model.state_dict();torch.save(lastpayload,out/'last.pt');head.load_state_dict(best)
     # Cache TEST only after epoch selection is sealed.
     test=cache(test_run,root/'data',root/'data/test.jsonl',False)
-    actual=evaluate(test,list(range(1000)));head.load_state_dict(initial);baseline=evaluate(test,list(range(1000)));head.load_state_dict(best)
+    actual=evaluate(test,list(range(1000)),True);head.load_state_dict(initial);baseline=evaluate(test,list(range(1000)));head.load_state_dict(best)
     assert abs(baseline['overall']['changed_cell_accuracy']-.671)<1e-8,'Original TEST CCD baseline must reproduce .671'
     # Verify cache prediction equals real-CCD full forward with selected head.
     cfg.data_dir=root/'data';dataset=OpenMojiEditingDataset(root/'data/test.jsonl',cfg,load_prompt_cache(root/'data/token_embeddings_v1.pt'))
