@@ -127,6 +127,8 @@ def main():
                 gt=target.float().add(1).div(2).clamp(0,1)
                 mse=(pred-gt).square().mean((1,2,3));psnr=-10*torch.log10(mse.clamp_min(1e-15))
                 ss=ssim_per_image(pred,gt)
+                region=batch['object_union'].cuda()
+                roi_mse=((pred-gt).square()*region).sum((1,2,3))/(3*region.sum((1,2,3))).clamp_min(1.)
                 for branch,obj in (('language',model.text),('vision',model.editor.bottleneck)):
                     live=obj.last_routing
                     selected_mask=live['selected_mask'].detach().cpu().bool()
@@ -139,14 +141,18 @@ def main():
                         if profile=='clean':clean_masks[branch,index]=selected_mask[j]
                         elif (branch,index) in clean_masks:r['changed']+=int(not torch.equal(clean_masks[branch,index],selected_mask[j]))
                 for j in range(len(ref)):
-                    row=dict(index=int(batch['index'][j]),sample_id=batch['sample_id'][j],mode=batch['mode'][j],category=batch['category'][j],mse_0_1=float(mse[j]),psnr_db=float(psnr[j]),ssim=float(ss[j]))
+                    row=dict(index=int(batch['index'][j]),sample_id=batch['sample_id'][j],mode=batch['mode'][j],category=batch['category'][j],mse_0_1=float(mse[j]),psnr_db=float(psnr[j]),ssim=float(ss[j]),roi_mse=float(roi_mse[j]),roi_psnr_db=float(-10*torch.log10(roi_mse[j].clamp_min(1e-15))))
                     rows.append(row)
                     for k in sums:sums[k]+=row[k]
                 count+=len(ref)
                 if a.evaluate_only and batch_index%200==0:
                     print(json.dumps(dict(profile=profile,completed=count)),flush=True)
             audit={branch:dict(selection_rate=r['selection_sum'].div(count).tolist(),probability_mean=r['probability_sum'].div(count).tolist(),pair_counts=dict(r['pairs']),top2_changed_fraction=r['changed']/count) for branch,r in routing.items()}
-            results[profile]=dict(samples=count,**{k:v/count for k,v in sums.items()},routing=audit)
+            by_mode={}
+            for mode in ('background','object','joint'):
+                subset=[r for r in rows if r['mode']==mode]
+                if subset:by_mode[mode]=dict(samples=len(subset),**{k:sum(r[k] for r in subset)/len(subset) for k in ('mse_0_1','psnr_db','ssim','roi_mse','roi_psnr_db')})
+            results[profile]=dict(samples=count,**{k:v/count for k,v in sums.items()},routing=audit,by_mode=by_mode)
             if a.evaluate_only: write(a.output/(profile+'_per_image.json'),rows)
         return results
 
