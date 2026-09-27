@@ -6,6 +6,8 @@
 
 ## 2026-09-27 小版物理鲁棒性候选
 
+本分支追加语言均衡/极强扰动试验，**均衡尚未解决**：所有试验实际语言top2仍为专家1/2。仅作为图像鲁棒性改善候选交付 `5b4f9a37…`（17,026,642参数，与前版预算相同），完整VAL2304：clean34.4315/.928509、stress29.3008/.892036、severe28.4256/.885481、extreme27.7628/.879783。候选保留原standardized_region_energy读出，不启用实验性log读出。来源为 `20260927_language_balance_input/last_checkpoint.pt`，不是该run未通过均衡守卫的best_checkpoint.pt；在完整VAL上仅按图像质量/干净保护人工选为备选，不能称为均衡选模成功。新增极强扰动已进入TRAIN，不再称为留出未见扰动；TEST仅固定权重后评估。交付目录 `handoffs/t12_language_balance_20260927`。
+
 最新候选为 `5496204d…`、17,026,642参数、VAL选择step800。训练源码 `4065cbfa2`，新增文字条件空间先验，不改变光路或幅度/BMP编码。完整2304条VAL clean=34.1925/.924963、stress=27.7766/.877212、severe=27.0017/.870978、extreme=26.3708/.864833（PSNR/SSIM）；全部未实测。alpha下限.35，实际四融合值.4730/.4618/.4615/.4668；语言专家仍偏斜，残影/纹理不足仍存在。交付入口 `handoffs/t12_channel_severe_20260927`，完整配置与局限见复现报告；下面13cf版为历史候选，不是最新权重。
 
 分支 `codex/t12-physical-robust-v2-20260927`。从 bounded-tanh 权重 SHA256 `3901e4fb…` 继续训练，不改变网络、tokenizer、Qwen-style 两层文字头或 478×478 相位区域；预算仍为 9,958,098。新权重 `13cf9a201bce42f58c19a0ff85fd11fe9940e18be036a86adf163320303edc3e`。

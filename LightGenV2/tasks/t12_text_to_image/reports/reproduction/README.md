@@ -154,6 +154,31 @@ $AS/venv/bin/python -m LightGenV2.tasks.t12_text_to_image.build_lab_package --ch
 
 ## 清理记录（此前）
 
+## 2026-09-27 语言专家均衡与extreme补训
+
+结果分开报告：图像鲁棒性改善，语言实际top2均衡**失败**。部署备选SHA `5b4f9a37f19ce95cf23e4b874badc8e88955559553d47929fb80cd3cbf527cac`，17,026,642参数。主干、tokenizer、478有效mask、六阶段、幅度/BMP编码均未改变；部署保留standardized_region_energy读出。纯相位958,728；词嵌入311,164,928仍按约定单列。
+
+尝试run：language_balance_mild/strong（各1000步）、coverage800、semantic1000、input600、logscore600、log_mask800，前缀均为20260927_，全部保存实际命令/Git/环境/数据SHA、history、best/last。mild/strong从5496204d起始，coverage与semantic从strong最后一步分别起始；input从coverage最后一步、logscore从input、log_mask从logscore。负载损失仅训练，计算四专家batch平均probability与detach硬top2负载的内积；逐渐加权，不强制每条文字均匀，也不随机覆盖推理路由。
+
+semantic/input/log试验额外TRAIN语义路由prior：background pair(0,1)、object(2,3)、joint(0,2)，lamp/table/pillow分别循环偏移0/1/2；soft target选中.45、未选.05。九种category×mode总体覆盖4/9–5/9。推理没有类别/模式标签输入、没有指定专家、没有商品ID检索。该prior没有改变实际top2的事实必须保留。
+
+原标准化读出、调router/入光编码器学习率的试验均未解锁专家3/4。logscore/log_mask使用既有log_energy_fraction读出，最终VAL96平均probability=.32053/.30049/.20154/.17744，但selection仍100%/100%/0/0，不采用这两份实验权重。新读出选项已测试可序列化、旧权重兼容、参数量不变；默认仍旧读出，未修改实验室部署。
+
+图像质量备选input600为**人工完整VAL质量选模**（不满足均衡要求）：trainer的best仍step0，故明确使用last而不是宣传best成功。input600的全VAL比coverage、semantic有更好的severe/extreme质量，干净比5496提高.2390dB/.003546，物体区域也改善；选择发生在TEST之前。input训练源码 `eff6c4552`；完整protocol保存所有参数。train profiles combined/severe/extreme/extreme，极强扰动已用于TRAIN，不再是未见通道；VAL/TEST数据独立。教师5496，phaseLR1e-4、语言routerLR.001、既有入光adapter/norm LR5e-4、其余电子3e-6、空间先验5e-5、alpha1e-4；负载.01、语义prior.1、feature.01、router KL.005、phase TV5e-5、clean.7、anchor1/noisyanchor.05、region.5、source_gate.005。没有增加GAN或参数。
+
+完整VAL2304，同RTX4090/batch4/256×256/固定seed：
+
+| 通道 | 前5496候选 PSNR/SSIM | 新5b4f质量备选 PSNR/SSIM |
+|---|---|---|
+| clean |34.1925/.924963|34.4315/.928509|
+| stress |27.7766/.877212|29.3008/.892036|
+| severe |27.0017/.870978|28.4256/.885481|
+| extreme |26.3708/.864833|27.7628/.879783|
+
+VAL extreme物体union ROI PSNR：object25.6819→26.959、joint25.1368→26.240；PSNR第5百分位19.912→20.961。背景之外的物体区域也改善，但轮廓残影/细纹模糊仍存在。实际alpha language .464571/.449866、vision .444871/.451167，下限.35。完整VAL语言selected100%/100%/0/0；vision73.57%/75.82%/24.18%/26.43%。vision top2切换率stress28.26%、severe34.68%、extreme40.36%，并非所有路由稳定指标都提高。
+
+`handoffs/t12_language_balance_20260927`保存各run配置与结果、逐图指标及固定104样本对照图。25项单测通过，含codec零保留、量化、语义prior、负载梯度、分支几何、readout序列化/旧权重预算兼容。没有实测，仍需另一AI使用新的完整六阶段CCD验证，不能复用旧权重CCD。
+
 服务器仅删除明确清单内 35 份旧 .pt，4,808,586,899字节，包括旧错误光电模型及不采用的15M实验；保留数据、baseline、历史图/指标、sealed参考。服务器删除不可直接撤销，清单含SHA256。本地旧权重按明确目录送回收站；本目录两份正式权重不删除。
 
 共享根工作树存在其他AI修改与分叉，未 reset、未强推、未全量暂存。独立整合分支是本任务唯一新的代码入口；不可将共享根的旧HEAD当作本轮训练代码。
