@@ -1,3 +1,3 @@
 # Keep frozen teacher bytes identical on Windows and Linux for SHA provenance.
-runtime/** -text
-reference/teacher_v2.yaml -text
+runtime/** -text whitespace=cr-at-eol
+reference/teacher_v2.yaml -text whitespace=cr-at-eol
