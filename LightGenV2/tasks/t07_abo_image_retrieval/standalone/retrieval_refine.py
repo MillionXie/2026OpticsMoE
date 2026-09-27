@@ -72,6 +72,12 @@ PROFILES['physical_bounded30_spatial_consistent_noise50'] = dict(PROFILES['physi
     noise_probability=.5)
 PROFILES['physical_bounded30_spatial_extend'] = dict(PROFILES['physical_bounded30_spatial_consistent'])
 PROFILES['physical_bounded30_spatial_extend'].pop('head_expansion')
+# Clean-language-router ablation did not recover held-out noisy retrieval.
+# Test descriptor consistency rather than increasing route regularization.
+# No additional inference parameters or TEST-based epoch selection.
+PROFILES['physical_bounded30_descriptor_anchor'] = dict(PROFILES['physical_bounded30_spatial_extend'],
+    paired_consistency=2.,router_consistency=0.,teacher_weight=.5,
+    weight_decay=.03,head_lr_multiplier=1.)
 PROFILES['physical_bounded30_recover7'] = dict(PROFILES['physical_bounded30'],
     electronic_expansion=dict(kernels=dict(vision=7,language=5),mlp_width=384),
     sam_rho=.002, weight_decay=.03, mild_augmentation=False,
