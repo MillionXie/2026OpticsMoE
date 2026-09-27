@@ -83,3 +83,12 @@ def test_decoder_refinement_initially_identity():
     block=ConditionedDetailResidual(4,16,8)
     x=torch.randn(2,4,8,8);condition=torch.randn(2,8)
     torch.testing.assert_close(block(x,condition),x,atol=0,rtol=0)
+
+
+def test_detector_floor_is_not_peak_normalization():
+    from LightGenV2.tasks.t12_text_to_image.lab_shs8um.detector_correction import correct
+    x=torch.full((2,8,8),.01);x[:,2,2]=.1
+    result=correct(x,dict(floor_quantile=.1))
+    assert result[:,0,0].sum()==0
+    torch.testing.assert_close(result[:,2,2],torch.full((2,),.09))
+    assert correct(x,None) is x

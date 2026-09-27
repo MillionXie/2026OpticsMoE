@@ -70,6 +70,7 @@ def main():
     p.add_argument('--source-gate-weight',type=float,default=0.)
     p.add_argument('--decoder-refinement',action='store_true')
     p.add_argument('--lr-refinement',type=float,default=1e-4)
+    p.add_argument('--ccd-floor-quantile',type=float)
     p.add_argument('--steps',type=int,default=600)
     p.add_argument('--batch-size',type=int,default=4)
     p.add_argument('--val-samples',type=int,default=96)
@@ -85,6 +86,9 @@ def main():
         add_decoder_refinement(model)
         model.cuda()
     if a.alpha_min is not None:configure_fusion_bounds(model,minimum=a.alpha_min)
+    if a.ccd_floor_quantile is not None:
+        from .detector_correction import install
+        install(model,dict(floor_quantile=a.ccd_floor_quantile))
     report=architecture_report(model)
     if report['counted_parameters']>20_000_000: raise ValueError('20M budget exceeded')
     channel=RobustChannel(model)
@@ -182,6 +186,7 @@ def main():
         payload['model']={k:v.detach().cpu() for k,v in model.state_dict().items()}
         payload['channel_robust_training']=dict(step=step,profiles=a.train_profiles or [a.profile],training_config=config,execution=execution)
         payload['decoder_refinement']=getattr(model,'decoder_refinement',False)
+        payload['detector_correction']=getattr(model,'detector_correction',None)
         if hasattr(model,'fusion_bounds'):payload['fusion_bounds']=model.fusion_bounds
         torch.save(payload,a.output/name)
     save('best_checkpoint.pt',0)

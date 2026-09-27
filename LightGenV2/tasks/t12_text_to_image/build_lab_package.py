@@ -29,6 +29,7 @@ def main():
     contract=json.loads(a.contract.read_text(encoding='utf-8-sig'))
     contract.update(checkpoint_sha256=checkpoint_sha,counted_parameters=report['counted_parameters'],
                     fusion_bounds=saved.get('fusion_bounds',dict(minimum=.4,maximum=.75)),
+                    detector_correction=saved.get('detector_correction'),
                     bounded_amplitude=model.bounded_amplitude,source_commit=commit,
                     source_note='TRAIN adaptation; VAL-only selection; new weights require fresh CCD captures',
                     scope='new versioned candidate; cannot reuse CCDs from another weight',

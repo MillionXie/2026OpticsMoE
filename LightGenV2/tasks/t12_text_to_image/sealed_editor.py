@@ -60,4 +60,7 @@ def build_sealed(saved):
     if saved.get('bounded_amplitude'):
         from .lab_shs8um.bounded_amplitude import install
         install(model,saved['bounded_amplitude'])
+    if saved.get('detector_correction'):
+        from .lab_shs8um.detector_correction import install
+        install(model,saved['detector_correction'])
     return model
