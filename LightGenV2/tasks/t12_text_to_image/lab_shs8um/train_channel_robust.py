@@ -62,6 +62,9 @@ def main():
     p.add_argument('--feature-consistency',type=float,default=0.)
     p.add_argument('--routing-consistency',type=float,default=0.)
     p.add_argument('--phase-tv',type=float,default=0.)
+    p.add_argument('--clean-weight',type=float,default=.5)
+    p.add_argument('--anchor-weight',type=float,default=.1)
+    p.add_argument('--noisy-anchor-weight',type=float,default=.05)
     p.add_argument('--steps',type=int,default=600)
     p.add_argument('--batch-size',type=int,default=4)
     p.add_argument('--val-samples',type=int,default=96)
@@ -69,6 +72,7 @@ def main():
     p.add_argument('--split',choices=('val','test'),default='val')
     p.add_argument('--seed',type=int,default=1042)
     a=p.parse_args(); a.output.mkdir(parents=True,exist_ok=False)
+    if not 0<a.clean_weight<1:raise ValueError('clean-weight must lie in (0,1)')
     torch.set_num_threads(4);torch.manual_seed(a.seed)
     saved=torch.load(a.checkpoint,map_location='cpu',weights_only=False)
     model=build_sealed(saved).cuda().eval()
@@ -180,7 +184,7 @@ def main():
             profile=training_profiles[step%len(training_profiles)]
             channel.configure(profile,strength);noisy=model(ref,emb,mask,noise)
             quality=lambda pred:F.mse_loss(pred,target)+.1*F.l1_loss(pred,target)
-            loss=.5*quality(clean)+.5*quality(noisy)+.1*F.mse_loss(clean,anchor)+.05*F.mse_loss(noisy,anchor)
+            loss=a.clean_weight*quality(clean)+(1-a.clean_weight)*quality(noisy)+a.anchor_weight*F.mse_loss(clean,anchor)+a.noisy_anchor_weight*F.mse_loss(noisy,anchor)
             if a.feature_consistency:
                 consistency=sum(F.mse_loss(F.normalize(features[k].float(),dim=-1),F.normalize(v.float(),dim=-1))*v.shape[-1] for k,v in clean_features.items())/len(clean_features)
                 loss=loss+a.feature_consistency*consistency
