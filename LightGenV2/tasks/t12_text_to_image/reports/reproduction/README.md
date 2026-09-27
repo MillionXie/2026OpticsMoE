@@ -152,8 +152,6 @@ $AS/venv/bin/python -m LightGenV2.tasks.t12_text_to_image.build_lab_package --ch
 
 最终封装源码commit `ce185f46993460d8ae5813792b5fa5eba40b8f04`，ZIP SHA256 `6736765c330f32dc8b979c458afbb5c7cc6968e75dd3a4be9cc458894512f055`，文件 `handoffs/t12_channel_severe_20260927/candidate_spatial_17m_final.zip`、`small_spatial_17m.pt`。22项单测通过。训练、评估均结束：GPU2=13MiB、GPU4=15MiB，没有本任务残留GPU进程；未打断其他AI任务。后续文档提交不修改此包中源码或模型。
 
-## 清理记录（此前）
-
 ## 2026-09-27 语言专家均衡与extreme补训
 
 结果分开报告：图像鲁棒性改善，语言实际top2均衡**失败**。部署备选SHA `5b4f9a37f19ce95cf23e4b874badc8e88955559553d47929fb80cd3cbf527cac`，17,026,642参数。主干、tokenizer、478有效mask、六阶段、幅度/BMP编码均未改变；部署保留standardized_region_energy读出。纯相位958,728；词嵌入311,164,928仍按约定单列。
@@ -178,6 +176,12 @@ semantic/input/log试验额外TRAIN语义路由prior：background pair(0,1)、ob
 VAL extreme物体union ROI PSNR：object25.6819→26.959、joint25.1368→26.240；PSNR第5百分位19.912→20.961。背景之外的物体区域也改善，但轮廓残影/细纹模糊仍存在。实际alpha language .464571/.449866、vision .444871/.451167，下限.35。完整VAL语言selected100%/100%/0/0；vision73.57%/75.82%/24.18%/26.43%。vision top2切换率stress28.26%、severe34.68%、extreme40.36%，并非所有路由稳定指标都提高。
 
 `handoffs/t12_language_balance_20260927`保存各run配置与结果、逐图指标及固定104样本对照图。25项单测通过，含codec零保留、量化、语义prior、负载梯度、分支几何、readout序列化/旧权重预算兼容。没有实测，仍需另一AI使用新的完整六阶段CCD验证，不能复用旧权重CCD。
+
+固定权重后独立TEST2304（同RTX4090、未用于选择/修改）：5496→5b4f，clean34.0190/.923624→34.2739/.927115；stress27.7058/.875446→29.1930/.890222；severe26.8296/.868111→28.2985/.883245；extreme26.2807/.862871→27.7284/.878283。MSE降低8.02%/30.43%/28.64%/28.30%。extreme ROI PSNR新值object27.091、joint26.278；语言仍100%/100%/0/0，不能宣称均衡或真实光路改善。
+
+交付small_robust_17m.pt与candidate_robust_17m.zip，ZIP源码commit `f15e46a6660731d8d73d4438ceb227545566f220`、SHA256 `1860f1ff02f62e0417485bb33caf1a6657dc570e6fe70754d91342f603eadec2`；模型SHA前述5b4f，本地复核匹配。全部训练、评估结束，GPU2=13MiB、GPU4=15MiB，无本任务GPU PID；其他AI任务未打断。后续文档提交不修改封装源码或权重。
+
+## 清理记录（此前）
 
 服务器仅删除明确清单内 35 份旧 .pt，4,808,586,899字节，包括旧错误光电模型及不采用的15M实验；保留数据、baseline、历史图/指标、sealed参考。服务器删除不可直接撤销，清单含SHA256。本地旧权重按明确目录送回收站；本目录两份正式权重不删除。
 
