@@ -60,6 +60,10 @@ def build_sealed(saved):
         from .audited_unified import configure_fusion_bounds
         configure_fusion_bounds(model,**saved['fusion_bounds'],preserve_alpha=False)
     model.load_state_dict(state, strict=True)
+    if saved.get('language_router_score'):
+        score=saved['language_router_score']
+        if score not in ('standardized_region_energy','log_energy_fraction'):raise ValueError('Invalid saved language router score')
+        model.text.optical.core.router.score_normalization=score
     if saved.get('bounded_amplitude'):
         from .lab_shs8um.bounded_amplitude import install
         install(model,saved['bounded_amplitude'])

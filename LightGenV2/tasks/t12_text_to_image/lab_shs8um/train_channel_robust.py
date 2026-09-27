@@ -84,6 +84,7 @@ def main():
     p.add_argument('--language-route-prior',type=float,default=0.)
     p.add_argument('--lr-language-router',type=float)
     p.add_argument('--lr-language-optical-input',type=float)
+    p.add_argument('--language-router-score',choices=('standardized_region_energy','log_energy_fraction'))
     p.add_argument('--selection-language-max-load',type=float,default=1.)
     p.add_argument('--selection-language-min-load',type=float,default=0.)
     p.add_argument('--phase-tv',type=float,default=0.)
@@ -109,6 +110,8 @@ def main():
     torch.set_num_threads(4);torch.manual_seed(a.seed)
     saved=torch.load(a.checkpoint,map_location='cpu',weights_only=False)
     model=build_sealed(saved).cuda().eval()
+    if a.language_router_score:
+        model.text.optical.core.router.score_normalization=a.language_router_score
     if a.decoder_refinement:
         add_decoder_refinement(model)
         model.cuda()
@@ -220,6 +223,7 @@ def main():
         payload['channel_robust_training']=dict(step=step,profiles=a.train_profiles or [a.profile],training_config=config,execution=execution)
         payload['decoder_refinement']=getattr(model,'decoder_refinement',False)
         payload['decoder_spatial_prior']=getattr(model,'decoder_spatial_prior',False)
+        payload['language_router_score']=model.text.optical.core.router.score_normalization
         payload['detector_correction']=getattr(model,'detector_correction',None)
         if hasattr(model,'fusion_bounds'):payload['fusion_bounds']=model.fusion_bounds
         torch.save(payload,a.output/name)
