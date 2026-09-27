@@ -139,3 +139,23 @@ def test_detail_expansion_parameter_budget_and_duplicate_guard():
     assert len(editor.up3.details) == 5 and len(editor.up2.details) == 2
     with pytest.raises(ValueError):
         add_decoder_refinement(model)
+
+
+def test_saved_language_router_score_round_trip_keeps_budget():
+    from dataclasses import asdict
+    from LightGenV2.tasks.t12_text_to_image.audited_unified import AuditedUnifiedEditor
+    from LightGenV2.tasks.t12_text_to_image.small_fullframe import SmallEditorConfig,SmallFullFrameEditor
+    from LightGenV2.tasks.t12_text_to_image.sealed_editor import build_sealed
+    tc=QwenMiniConfig(input_width=16,width=32,intermediate_width=64,heads=4,max_length=8)
+    ec=SmallEditorConfig(widths=(8,16,24,32),text_width=32,condition_dim=16)
+    text=AuditedQwenTextEncoder(tc)
+    editor=SmallFullFrameEditor(ec);editor.text=text
+    editor.bottleneck=AuditedSpatialBottleneck(32,16)
+    model=AuditedUnifiedEditor(kind='small',text=text,editor=editor)
+    saved=dict(construction=dict(kind='small',text_config=asdict(tc),editor_config=asdict(ec)),model=model.state_dict(),language_router_score='log_energy_fraction')
+    replica=build_sealed(saved)
+    assert replica.text.optical.core.router.score_normalization=='log_energy_fraction'
+    assert replica.editor.bottleneck.optical.core.router.score_normalization==model.editor.bottleneck.optical.core.router.score_normalization
+    assert sum(p.numel() for p in replica.parameters())==sum(p.numel() for p in model.parameters())
+    saved.pop('language_router_score')
+    assert build_sealed(saved).text.optical.core.router.score_normalization==model.text.optical.core.router.score_normalization
