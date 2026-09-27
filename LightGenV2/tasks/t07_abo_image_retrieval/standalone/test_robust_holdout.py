@@ -22,5 +22,13 @@ class Tests(unittest.TestCase):
         a=dict(test=dict(hit_at_1=.79,map_at_10=.8),validation_noisy=dict(hit_at_1=.9))
         b=dict(test=dict(hit_at_1=.81,map_at_10=.8),validation_noisy=dict(hit_at_1=.7))
         self.assertGreater(score(b,.8,True),score(a,.8,True))
+    def test_audited_holdout_continuation(self):
+        from .retrieval_refine import validate_continuation
+        protocol='abo200_enrolled_sku_hash8train4query_v1'
+        p=dict(manifest_sha256='exact',test_selected=False,selection_scheme='train_holdout_clean_noisy_v1',metrics=dict(test=dict(query_count=400,candidate_count=1200),validation_noisy=dict(query_count=400)))
+        validate_continuation(protocol,p,'exact',False)
+        with self.assertRaises(ValueError):validate_continuation(protocol,p,'other',False)
+        p['selection_scheme']='unknown'
+        with self.assertRaises(ValueError):validate_continuation(protocol,p,'exact',False)
 
 if __name__=='__main__':unittest.main()
