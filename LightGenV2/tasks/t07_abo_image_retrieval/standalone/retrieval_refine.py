@@ -53,6 +53,13 @@ PROFILES['physical_bounded30'] = dict(PROFILES['physical_robust35_cleanmix'],
     robust_alpha_min=.30, bounded_amplitude=True)
 PROFILES['physical_bounded30_conv5'] = dict(PROFILES['physical_bounded30'],
     electronic_expansion=dict(kernels=dict(vision=5,language=5),mlp_width=384))
+# Frozen clean TRAIN relations anchor noisy students without another inference branch.
+PROFILES['physical_bounded30_distill'] = dict(PROFILES['physical_bounded30'],
+    teacher_weight=.2, sam_rho=0., weight_decay=.01, mild_augmentation=True,
+    noise_probability=.35, phase_dropout=.005, phase_lr_multiplier=.5,
+    alpha_lr_multiplier=20., router_lr_multiplier=.1, head_lr_multiplier=1.)
+PROFILES['physical_bounded30_distill_strong'] = dict(PROFILES['physical_bounded30_distill'],
+    teacher_weight=.5)
 PROFILES['physical_bounded30_recover7'] = dict(PROFILES['physical_bounded30'],
     electronic_expansion=dict(kernels=dict(vision=7,language=5),mlp_width=384),
     sam_rho=.002, weight_decay=.03, mild_augmentation=False,
