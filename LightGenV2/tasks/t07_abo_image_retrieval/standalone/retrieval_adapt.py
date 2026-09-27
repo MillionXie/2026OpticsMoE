@@ -489,6 +489,10 @@ def run(args):
                 noisy = rng.random() < profile.get('noise_probability', .25) and not warming
                 for m in (model.vision, model.language):
                     m.optics.set_training_noise(noisy)
+                    if profile.get('phase_dropout_noisy_only'):
+                        m.optics.configure_phase_dropout(dict(
+                            expert_global_probability=profile['phase_dropout'] if noisy else 0.,
+                            router_probability=0.,block_size=8))
                     if refined and not profile.get('router_noise',False):
                         m.optics.router.noise_enabled = False
                 rows, labels = training_pairs(active_fit, rng, args.classes_per_batch, profile['category_probability'])
