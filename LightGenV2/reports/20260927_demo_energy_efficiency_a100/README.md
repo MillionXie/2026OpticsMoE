@@ -11,7 +11,7 @@ This directory is the clean paper-facing audit for the numbered task list. It do
 | 02 | ABO image-to-text retrieval | complete |
 | 03 | ABO image-to-image retrieval | complete |
 | 04 | ABO text-to-image retrieval | reserved; model still being revised |
-| 05 | LSP keypoint detection | complete; exact bound Ours metric is 0.7347857143 |
+| 05 | LSP keypoint detection | complete; laboratory-server full-test result used |
 | 06 | SALICON saliency | complete |
 | 07 | OpenMoji semantic interaction, new layout | complete; baseline is 0.8120 |
 | 08 | ABO clean text-to-image generation | reserved; model still being revised |
@@ -33,6 +33,7 @@ This directory is the clean paper-facing audit for the numbered task list. It do
 - Ours A100 board: 62.842 W.
 - Baseline chassis: 338.2 W.
 - Baseline A100 board power: task-specific mean `nvidia-smi power.draw` during the continuous-inference power pass.
+- The seven task rows have an unweighted mean active A100 board power of 67.852 W. Adding the fixed 338.2 W chassis assumption gives 406.052 W. Per-task energy always uses that task's own active mean, not this cross-task mean.
 
 For Ours:
 

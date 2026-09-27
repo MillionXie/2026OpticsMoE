@@ -78,6 +78,35 @@ inputs.getRange("C:C").format.columnWidth = 15;
 inputs.getRange("D:D").format.columnWidth = 24;
 inputs.getRange("A1:D11").format.wrapText = true;
 
+const power = wb.worksheets.add("Baseline power summary");
+power.showGridLines = false;
+power.getRange("A1:G1").values = [["No.", "Task", "A100 active mean W", "Chassis W", "Combined W used for energy", "Telemetry samples", "Sampling interval ms"]];
+styleHeader(power.getRange("A1:G1"));
+power.getRange(`A2:G${rows.length + 1}`).values = rows.map(r => [
+  r.number, r.task, r.baseline_a100_active_mean_power_w, c.baseline_host_w,
+  r.baseline_host_plus_a100_power_w, r.baseline_a100_active_power_sample_count,
+  r.baseline_a100_power_sampling_interval_ms,
+]);
+styleBody(power.getRange(`A2:G${rows.length + 1}`));
+for (let i = 2; i <= rows.length + 1; i++) power.getRange(`A${i}:G${i}`).format.fill = i % 2 ? gray : blue;
+const avgRow = rows.length + 3;
+power.getRange(`A${avgRow}:G${avgRow}`).values = [[
+  "Mean", "Unweighted mean across seven reported rows",
+  c.baseline_a100_active_mean_power_w_unweighted_across_rows,
+  c.baseline_host_w,
+  c.baseline_host_plus_a100_mean_power_w_unweighted_across_rows,
+  "—", "—",
+]];
+power.getRange(`A${avgRow}:G${avgRow}`).format.fill = green;
+power.getRange(`A${avgRow}:G${avgRow}`).format.font = {bold: true};
+styleBody(power.getRange(`A${avgRow}:G${avgRow}`));
+power.getRange(`C2:E${avgRow}`).format.numberFormat = "0.000";
+power.freezePanes.freezeRows(1);
+power.getRange("A:A").format.columnWidth = 10;
+power.getRange("B:B").format.columnWidth = 32;
+power.getRange("C:G").format.columnWidth = 22;
+power.getUsedRange().format.wrapText = true;
+
 function parseCsv(text) {
   const out = []; let row = [], cell = "", quote = false;
   for (let i = 0; i < text.length; i++) {
@@ -135,7 +164,7 @@ const prov = wb.worksheets.add("Provenance");
 prov.showGridLines = false;
 prov.getRange("A1:E1").values = [["Task", "Ours raw report", "Baseline raw report", "Timing policy", "Notes"]];
 styleHeader(prov.getRange("A1:E1"));
-prov.getRange(`A2:E${rows.length+1}`).values = rows.map(r => [r.number, r.ours_report, r.baseline_report, c.timing_policy, r.number === "05" ? "Exact bound Ours artifact is 0.7347857; requested 0.7353 is not substituted." : ""]);
+prov.getRange(`A2:E${rows.length+1}`).values = rows.map(r => [r.number, r.ours_report, r.baseline_report, c.timing_policy, r.number === "05" ? "Performance uses the laboratory-server bound full-test result." : ""]);
 styleBody(prov.getRange(`A2:E${rows.length+1}`));
 prov.getRange("A:A").format.columnWidth = 10;
 prov.getRange("B:C").format.columnWidth = 62;

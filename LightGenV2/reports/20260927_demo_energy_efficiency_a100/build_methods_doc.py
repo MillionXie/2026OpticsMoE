@@ -95,6 +95,29 @@ for formula in (
     p.paragraph_format.left_indent = Cm(0.6)
     r = p.add_run(formula); r.bold = True
 
+doc.add_heading("Baseline A100 活跃阶段平均功率", level=2)
+power_headers = ["序号", "任务", "A100均值/W", "机箱/W", "合计/W", "功率采样点"]
+power_table = doc.add_table(rows=1, cols=len(power_headers))
+power_table.style = "Table Grid"
+for i, h in enumerate(power_headers):
+    set_cell_text(power_table.rows[0].cells[i], h, True, "FFFFFF")
+    shade(power_table.rows[0].cells[i], "0B5A88")
+for i, row in enumerate(DATA["rows"]):
+    vals = [row["number"], row["task"], f'{row["baseline_a100_active_mean_power_w"]:.3f}',
+            f'{DATA["constants"]["baseline_host_w"]:.1f}', f'{row["baseline_host_plus_a100_power_w"]:.3f}',
+            str(row["baseline_a100_active_power_sample_count"])]
+    cells = power_table.add_row().cells
+    for j, value in enumerate(vals):
+        set_cell_text(cells[j], value)
+        shade(cells[j], "E7EAED" if i % 2 else "DCECF7")
+doc.add_paragraph(
+    f'七行任务的 A100 活跃均值作不加权算术平均为 '
+    f'{DATA["constants"]["baseline_a100_active_mean_power_w_unweighted_across_rows"]:.3f} W；'
+    f'与固定机箱 338.2 W 相加为 '
+    f'{DATA["constants"]["baseline_host_plus_a100_mean_power_w_unweighted_across_rows"]:.3f} W。'
+    "该跨任务均值仅便于总览；正式能量逐任务使用各自 A100 active mean。"
+)
+
 doc.add_heading("主要结果", level=1)
 headers = ["序号", "任务", "Ours ms", "Baseline ms", "Ours J", "Baseline J", "速度×", "能效×"]
 table = doc.add_table(rows=1, cols=len(headers))
@@ -140,8 +163,8 @@ doc.add_paragraph(
     "本地镜像位于本说明同目录的 raw_remote，并另按 baseline/ours/任务编号整理。"
 )
 doc.add_paragraph(
-    "LSP 的红框展示值 0.7353 尚未找到可严格绑定的结果文件；当前可追溯的 Ours 完整测试结果为 0.7347857143。"
-    "为避免学术性替换，本报告保留精确绑定值。OpenMoji 基线固定为新布局 0.8120，不混用旧结果 0.8420。"
+    "LSP 使用实验室服务器绑定的完整测试结果 0.7347857143。"
+    "OpenMoji 基线固定为新布局 0.8120，不混用旧结果 0.8420。"
 )
 
 doc.add_heading("质量控制", level=1)

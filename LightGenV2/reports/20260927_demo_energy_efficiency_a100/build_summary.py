@@ -5,6 +5,7 @@ import hashlib
 import json
 import os
 import shutil
+import statistics
 from pathlib import Path
 
 
@@ -70,9 +71,13 @@ def main() -> None:
         if folder.startswith("01_"):
             base_ms_one = float(base["model_internal_synchronized_wall_ms_first_200_included"]["mean"])
             base_power = float(base["power"]["active_mean_w"])
+            base_power_samples = int(base["power"]["active_samples"])
+            base_power_interval_ms = float(base["power"]["sampling_interval_ms"])
         else:
             base_ms_one = float(base["timing"]["synchronized_wall_ms"]["mean"])
             base_power = float(base["power"]["active_power_w"]["mean"])
+            base_power_samples = int(base["power"]["active_sample_count"])
+            base_power_interval_ms = float(base["power"]["sampling_interval_ms"])
         passes = 3 if task_name in {"lsp", "salicon"} else 6
         ours_e_ms = float(ours_narrow[task_name]["main_electronic_including_bridge_cuda_ms"])
         ours_total_ms = ours_e_ms + passes * PASS_MS
@@ -109,6 +114,8 @@ def main() -> None:
             "ours_optical_plus_host_power_w": OPTICAL_DEVICES_W + CONTROL_HOST_W,
             "ours_electronic_host_plus_a100_power_w": CONTROL_HOST_W + OURS_A100_W,
             "baseline_a100_active_mean_power_w": base_power,
+            "baseline_a100_active_power_sample_count": base_power_samples,
+            "baseline_a100_power_sampling_interval_ms": base_power_interval_ms,
             "baseline_host_plus_a100_power_w": BASELINE_HOST_W + base_power,
             "ours_optical_energy_j": ours_optical_energy,
             "ours_electronic_energy_j": ours_electronic_energy,
@@ -133,6 +140,9 @@ def main() -> None:
 
     output_json = ROOT / "calculated_summary.json"
     output_csv = ROOT / "calculated_summary.csv"
+    baseline_board_power_mean = statistics.fmean(
+        row["baseline_a100_active_mean_power_w"] for row in summary
+    )
     output_json.write_text(json.dumps({
         "schema_version": 1,
         "constants": {
@@ -140,6 +150,8 @@ def main() -> None:
             "control_host_w": CONTROL_HOST_W,
             "ours_a100_w": OURS_A100_W,
             "baseline_host_w": BASELINE_HOST_W,
+            "baseline_a100_active_mean_power_w_unweighted_across_rows": baseline_board_power_mean,
+            "baseline_host_plus_a100_mean_power_w_unweighted_across_rows": BASELINE_HOST_W + baseline_board_power_mean,
             "physical_pass_ms": PASS_MS,
             "timing_policy": "baseline: first 200 test items; Ours: 200 consecutive shape-matched GPU kernel invocations; zero explicit warm-up; call/item 1 retained; means",
         },
