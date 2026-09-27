@@ -82,17 +82,16 @@ def main():
         results[label]=dict(checkpoint_sha256=hashlib.sha256(checkpoint.read_bytes()).hexdigest(),architecture=architecture_report(model),alpha=optical_diagnostics(model),metrics=stats)
         channel.restore();del model,channel;torch.cuda.empty_cache()
     # Three category exemplars, full resolution; all nine also exported individually.
-    selected=[]
-    for key,index in examples.items():
-        if key[0] not in [k[0] for k in selected]:selected.append((key[0],index))
-    for label in a.labels:
-        cols=['input','GT','clean','stress','severe','extreme']
-        sheet=Image.new('RGB',(256*len(cols),280*len(selected)),(255,255,255));draw=ImageDraw.Draw(sheet)
-        for row,(category,index) in enumerate(selected):
-            for col,name in enumerate(cols):
-                img=reference[index] if name=='input' else targets[index] if name=='GT' else saved_images[label,name,index]
-                sheet.paste(img,(col*256,row*280+24));draw.text((col*256+4,row*280+4),f'{category} {name}',fill='black')
-        sheet.save(a.output/f'{label}_contact.png')
+    for mode in ('background','object','joint'):
+        selected=[(category,index) for (category,item_mode),index in examples.items() if item_mode==mode]
+        for label in a.labels:
+            cols=['input','GT','clean','stress','severe','extreme']
+            sheet=Image.new('RGB',(256*len(cols),280*len(selected)),(255,255,255));draw=ImageDraw.Draw(sheet)
+            for row,(category,index) in enumerate(selected):
+                for col,name in enumerate(cols):
+                    img=reference[index] if name=='input' else targets[index] if name=='GT' else saved_images[label,name,index]
+                    sheet.paste(img,(col*256,row*280+24));draw.text((col*256+4,row*280+4),f'{category} {name}',fill='black')
+            sheet.save(a.output/f'{label}_{mode}_contact.png')
     (a.output/'audit.json').write_text(json.dumps(dict(commit=subprocess.check_output(['git','rev-parse','HEAD'],text=True).strip(),split='VAL',indices=indices,preview_indices=preview,selection='first category/mode; no cherry-picking',models=results),indent=2))
 
 
