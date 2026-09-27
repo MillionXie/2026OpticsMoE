@@ -10,7 +10,28 @@ sys.path.insert(0, str(ROOT / "runtime"))
 from study import GROUPS, make_config
 from experiment import detector_noise_evaluation
 from hardware import rasterize_phase
-from LightGenV2.tasks.t06_video_quality_assessment.multivideo_settings import load_settings
+from settings_adapter import load_settings
+
+
+@pytest.mark.parametrize("group", GROUPS)
+@pytest.mark.parametrize("purpose", ("train", "deployment", "nominal"))
+def test_formal_dc_settings(tmp_path, group, purpose):
+    import yaml
+    from LightGenV2.tasks.t06_video_quality_assessment.multivideo_settings import MultiVideoSettings
+    original = MultiVideoSettings.validate
+    raw = make_config(group, purpose=purpose)
+    config = tmp_path / "formal.yaml"
+    config.write_text(yaml.safe_dump(raw), encoding="utf-8")
+    result = load_settings(config)
+    assert not result.synthetic
+    assert MultiVideoSettings.validate is original
+    expected = 0.0 if purpose == "nominal" or (purpose == "train" and not GROUPS[group]["dc"]) else 0.30
+    assert result.unmodulated_power_fraction_eval == expected
+    raw["optics"]["unmodulated_power_fraction_min"] = -0.1
+    config.write_text(yaml.safe_dump(raw), encoding="utf-8")
+    with pytest.raises(ValueError, match="Invalid unmodulated-power interval"):
+        load_settings(config)
+    assert MultiVideoSettings.validate is original
 from LightGenV2.tasks.t06_video_quality_assessment.models import multivideo9x4 as optics
 
 

@@ -28,7 +28,7 @@ def main():
     import yaml
     from ccd import camera_operator
     from LightGenV2.tasks.t06_video_quality_assessment.models.multivideo9x4 import build_model
-    from LightGenV2.tasks.t06_video_quality_assessment.multivideo_settings import load_settings
+    from settings_adapter import load_settings
     from LightGenV2.tasks.t06_video_quality_assessment.lab_runtime import forward
     from lgvq_temporal.fixed_weight import regression_metrics
     identity = json.loads((ROOT / "project.json").read_text(encoding="utf-8"))

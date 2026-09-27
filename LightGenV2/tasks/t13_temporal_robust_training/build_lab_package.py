@@ -23,7 +23,7 @@ def main():
     sys.path.insert(0, str(ROOT / "runtime"))
     import torch
     import yaml
-    from LightGenV2.tasks.t06_video_quality_assessment.multivideo_settings import load_settings
+    from settings_adapter import load_settings
     from LightGenV2.tasks.t06_video_quality_assessment.models.multivideo9x4 import build_model
     from LightGenV2.tasks.t06_video_quality_assessment.lab_runtime import phase_planes
     from hardware import STAGES, rasterize_phase

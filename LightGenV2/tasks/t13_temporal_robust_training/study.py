@@ -75,6 +75,10 @@ def make_config(group: str, *, purpose: str = "train", seed: int = 163,
     optics["unmodulated_power_fraction_eval"] = eta if purpose == "deployment" else (eta if condition["dc"] else 0.0)
     if purpose == "nominal":
         optics["unmodulated_power_fraction_eval"] = 0.0
+    if purpose != "train":
+        # Fixed evaluation condition, independent of the training DC interval.
+        optics["unmodulated_power_fraction_min"] = optics["unmodulated_power_fraction_eval"]
+        optics["unmodulated_power_fraction_max"] = optics["unmodulated_power_fraction_eval"]
     raw["robustness"]["ccd_noise"]["enabled"] = condition["ccd"]
     raw["robustness"]["ccd_noise"]["operator_override"] = protocol["ccd_profile"]
     return raw

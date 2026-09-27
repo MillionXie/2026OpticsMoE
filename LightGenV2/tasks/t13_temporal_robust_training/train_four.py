@@ -91,7 +91,7 @@ def main():
         sys.path.insert(0, str(ROOT / "runtime"))
         from study import make_config, split_for_selection
         import yaml
-        from LightGenV2.tasks.t06_video_quality_assessment.multivideo_settings import load_settings
+        from settings_adapter import load_settings
         from experiments.qwen3_vl_2b_lgvq_single_metric_o2_16frame_54.data import load_single_metric_cache
         raw = make_config("r0_post", paths=paths)
         config = root / "asset_check.yaml"

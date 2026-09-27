@@ -81,7 +81,8 @@ def run() -> int:
             parser.error("CCD profile is empirical, not calibrated; explicitly authorize pilot with --allow-uncalibrated-noise")
     sys.path.insert(0, str(ROOT / "runtime"))
     import torch
-    from LightGenV2.tasks.t06_video_quality_assessment.multivideo_settings import load_settings, resolved_dict
+    from LightGenV2.tasks.t06_video_quality_assessment.multivideo_settings import resolved_dict
+    from settings_adapter import load_settings
     from LightGenV2.tasks.t06_video_quality_assessment.models.multivideo9x4 import build_model
     from LightGenV2.tasks.t06_video_quality_assessment import multivideo_training as training
     from experiment import install_common_selection_evaluator
