@@ -12,7 +12,7 @@ import torch
 from torch.nn import functional as F
 from torch.utils.data import DataLoader, Subset
 from ..sealed_editor import build_sealed
-from ..audited_unified import architecture_report,configure_fusion_bounds,optical_diagnostics
+from ..audited_unified import architecture_report,configure_fusion_bounds,optical_diagnostics,add_decoder_refinement
 from ..product_unified_edit_data_v2 import ExpandedUnifiedProductEditDataset
 from ..qwen_mini_small import PromptEmbeddingLookup
 from .robust_channel import RobustChannel, PROFILES
@@ -68,6 +68,8 @@ def main():
     p.add_argument('--noisy-anchor-weight',type=float,default=.05)
     p.add_argument('--region-weight',type=float,default=0.)
     p.add_argument('--source-gate-weight',type=float,default=0.)
+    p.add_argument('--decoder-refinement',action='store_true')
+    p.add_argument('--lr-refinement',type=float,default=1e-4)
     p.add_argument('--steps',type=int,default=600)
     p.add_argument('--batch-size',type=int,default=4)
     p.add_argument('--val-samples',type=int,default=96)
@@ -79,6 +81,9 @@ def main():
     torch.set_num_threads(4);torch.manual_seed(a.seed)
     saved=torch.load(a.checkpoint,map_location='cpu',weights_only=False)
     model=build_sealed(saved).cuda().eval()
+    if a.decoder_refinement:
+        add_decoder_refinement(model)
+        model.cuda()
     if a.alpha_min is not None:configure_fusion_bounds(model,minimum=a.alpha_min)
     report=architecture_report(model)
     if report['counted_parameters']>20_000_000: raise ValueError('20M budget exceeded')
@@ -176,14 +181,16 @@ def main():
         payload=copy.copy(saved)
         payload['model']={k:v.detach().cpu() for k,v in model.state_dict().items()}
         payload['channel_robust_training']=dict(step=step,profile=a.profile,execution=execution)
+        payload['decoder_refinement']=getattr(model,'decoder_refinement',False)
         if hasattr(model,'fusion_bounds'):payload['fusion_bounds']=model.fusion_bounds
         torch.save(payload,a.output/name)
     save('best_checkpoint.pt',0)
     write(a.output/'baseline_val.json',baseline)
     phases=[v for n,v in model.named_parameters() if 'raw_phase' in n or 'raw_router_phase' in n]
     groups=[dict(params=phases,lr=a.lr_phase),
-            dict(params=[v for n,v in model.named_parameters() if 'raw_phase' not in n and 'raw_router_phase' not in n and 'raw_alpha' not in n],lr=a.lr_electronic),
-            dict(params=[v for n,v in model.named_parameters() if 'raw_alpha' in n],lr=a.lr_alpha)]
+            dict(params=[v for n,v in model.named_parameters() if 'raw_phase' not in n and 'raw_router_phase' not in n and 'raw_alpha' not in n and '.details.' not in n],lr=a.lr_electronic),
+            dict(params=[v for n,v in model.named_parameters() if 'raw_alpha' in n],lr=a.lr_alpha),
+            dict(params=[v for n,v in model.named_parameters() if '.details.' in n],lr=a.lr_refinement)]
     optimizer=torch.optim.AdamW(groups,weight_decay=0.)
     loader=DataLoader(dataset('train'),batch_size=a.batch_size,shuffle=True,num_workers=0,
                       generator=torch.Generator().manual_seed(a.seed))
