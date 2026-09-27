@@ -90,6 +90,11 @@ PROFILES['physical_bounded30_phase_pair_strong'] = dict(PROFILES['physical_bound
 PROFILES['physical_bounded30_phase_clean_recovery'] = dict(PROFILES['physical_bounded30_phase_pair_strong'],
     noise_probability=.15,phase_dropout=.01,phase_lr_multiplier=.25,
     router_lr_multiplier=.05,teacher_weight=.5)
+PROFILES['physical_bounded30_mlp448_paired'] = dict(PROFILES['physical_bounded30_phase_pair_strong'],
+    electronic_expansion=dict(kernels=dict(vision=5,language=5),mlp_width=448),
+    phase_lr_multiplier=.25,head_lr_multiplier=2.,weight_decay=.03)
+PROFILES['physical_bounded30_mlp448_cleanmix'] = dict(PROFILES['physical_bounded30_mlp448_paired'],
+    noise_probability=.15,phase_dropout=.01,router_lr_multiplier=.05)
 PROFILES['physical_bounded30_recover7'] = dict(PROFILES['physical_bounded30'],
     electronic_expansion=dict(kernels=dict(vision=7,language=5),mlp_width=384),
     sam_rho=.002, weight_decay=.03, mild_augmentation=False,
