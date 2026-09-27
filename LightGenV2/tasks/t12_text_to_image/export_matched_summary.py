@@ -9,6 +9,7 @@ import hashlib
 import json
 import subprocess
 import sys
+import shutil
 import zipfile
 from pathlib import Path
 
@@ -66,6 +67,8 @@ def summarize(rows, prefix):
 def main():
     p=argparse.ArgumentParser()
     for name in ('assets','qwen','large','output'): p.add_argument('--'+name,type=Path,required=True)
+    p.add_argument('--baseline-checkpoint',type=Path)
+    p.add_argument('--reuse-large-export',type=Path)
     p.add_argument('--batch-size',type=int,default=2)
     p.add_argument('--seed',type=int,default=1042)
     args=p.parse_args()
@@ -85,37 +88,56 @@ def main():
               'test_manifest_sha256':sha(data/'test.jsonl'),
               'instruction_cache_sha256':sha(instruction),'embedding_cache_sha256':sha(embedding),
               'large_checkpoint_sha256':sha(args.large),'baseline_caveat':'Historical lamp-background-only Qwen28 checkpoint; new category/object/joint transfer diagnostic, not matched-training comparison'}
-    model=build_sealed(torch.load(args.large,map_location='cpu',weights_only=False)).to(device).eval()
-    metadata['large_architecture']=architecture_report(model)
-    lookup=PromptEmbeddingLookup(embedding)
     rows=[]
-    for bi,batch in enumerate(DataLoader(dataset,batch_size=args.batch_size,num_workers=0)):
-        start=len(rows)
-        ref,gt=batch['reference'].to(device),batch['target'].to(device)
-        emb,mask,_=lookup.batch(list(batch['prompt']),device)
-        pred=model(ref,emb.float(),mask,noise_batch(len(ref),device,start,args.seed))
-        metrics=per_image_metrics(pred,gt)
-        for i in range(len(ref)):
-            index=start+i; sid=f'test_{index:05d}'
-            row={'test_index':index,'sample_id':sid,'source_id':batch['sample_id'][i],
-                 'category':batch['category'][i],'mode':batch['mode'][i],'prompt':batch['prompt'][i]}
-            row.update({'large_sim_'+k:v for k,v in metrics[i].items()})
-            for name,value in (('reference',ref[i]),('target',gt[i]),('large_sim',pred[i])):
-                relative=f'images/{name}/{sid}.png'
-                row[name+'_image']=relative
-                row[name+'_sha256']=save_png(value,args.output/relative)
-            rows.append(row)
-        if bi%50==0: print('large',len(rows),'/',len(dataset),flush=True)
+    if args.reuse_large_export:
+        previous=json.loads((args.reuse_large_export/'report.json').read_text())
+        for key in ('large_checkpoint_sha256','test_manifest_sha256','instruction_cache_sha256','embedding_cache_sha256','seed','samples'):
+            assert previous[key]==metadata[key],key
+        metadata['large_architecture']=previous['large_architecture']
+        metadata['large_reused_export_commit']=previous['git_commit']
+        rows=json.loads((args.reuse_large_export/'sample_metrics.json').read_text())
+        for row in rows:
+            for name in ('reference','target','large_sim'):
+                relative=row[name+'_image'];original=args.reuse_large_export/relative
+                assert sha(original)==row[name+'_sha256']
+                target=args.output/relative;target.parent.mkdir(parents=True,exist_ok=True)
+                if not target.exists():shutil.copy2(original,target)
+    else:
+        model=build_sealed(torch.load(args.large,map_location='cpu',weights_only=False)).to(device).eval()
+        metadata['large_architecture']=architecture_report(model)
+        lookup=PromptEmbeddingLookup(embedding)
+        for bi,batch in enumerate(DataLoader(dataset,batch_size=args.batch_size,num_workers=0)):
+            start=len(rows)
+            ref,gt=batch['reference'].to(device),batch['target'].to(device)
+            emb,mask,_=lookup.batch(list(batch['prompt']),device)
+            pred=model(ref,emb.float(),mask,noise_batch(len(ref),device,start,args.seed))
+            metrics=per_image_metrics(pred,gt)
+            for i in range(len(ref)):
+                index=start+i; sid=f'test_{index:05d}'
+                row={'test_index':index,'sample_id':sid,'source_id':batch['sample_id'][i],
+                     'category':batch['category'][i],'mode':batch['mode'][i],'prompt':batch['prompt'][i]}
+                row.update({'large_sim_'+k:v for k,v in metrics[i].items()})
+                for name,value in (('reference',ref[i]),('target',gt[i]),('large_sim',pred[i])):
+                    relative=f'images/{name}/{sid}.png'
+                    row[name+'_image']=relative
+                    row[name+'_sha256']=save_png(value,args.output/relative)
+                rows.append(row)
+            if bi%50==0: print('large',len(rows),'/',len(dataset),flush=True)
+        del model,lookup,emb,mask,pred,ref,gt
     (args.output/'large_metrics.json').write_text(json.dumps(summarize(rows,'large_sim'),indent=2))
-    del model,lookup,emb,mask,pred,ref,gt
     gc.collect();torch.cuda.empty_cache()
     from diffusers import AutoencoderKL,EulerDiscreteScheduler,UNet2DConditionModel
     from .half_qwen import load_half_qwen_text_encoder
     from .feature_cache import _qwen_prompts
     from .electronic_turbo_infer import _load_adapter
     from .product_repair_model import expand_reference_conditioning,one_step_edit
-    baseline=assets/'runs/abo_scene_replace_28layer_electronic_baseline_v1/best_model.pt'
+    baseline=args.baseline_checkpoint or assets/'runs/abo_scene_replace_28layer_electronic_baseline_v1/best_model.pt'
     payload=torch.load(baseline,map_location='cpu',weights_only=False,mmap=True)
+    if args.baseline_checkpoint:
+        training=payload.get('matched_training')
+        assert training and training['step']>0,'Explicit matched baseline must have actually trained'
+        metadata['baseline_training']=training
+        metadata['baseline_caveat']='Matched TRAIN/VAL fine-tuning from historical lamp-background baseline; unchanged architecture and frozen Qwen28/VAE; TEST only after selection'
     qwen,processor,qreport=load_half_qwen_text_encoder(args.qwen,device,keep_layers=28)
     adapter,_=_load_adapter(assets/'runs/677deac6/qwen_sd_turbo_one_step_text_aug_seed42/best_adapter.pt',device)
     adapter.load_state_dict(payload['adapter']);adapter.eval()
