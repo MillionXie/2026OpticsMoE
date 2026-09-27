@@ -75,6 +75,7 @@ def main():
     p.add_argument('--batch-size',type=int,default=4)
     p.add_argument('--val-samples',type=int,default=96)
     p.add_argument('--evaluate-only',action='store_true')
+    p.add_argument('--evaluate-samples',type=int)
     p.add_argument('--split',choices=('val','test'),default='val')
     p.add_argument('--seed',type=int,default=1042)
     a=p.parse_args(); a.output.mkdir(parents=True,exist_ok=False)
@@ -166,7 +167,11 @@ def main():
         return results
 
     if a.evaluate_only:
-        loader=DataLoader(dataset(a.split),batch_size=a.batch_size)
+        evaluation_set=dataset(a.split)
+        if a.evaluate_samples:
+            sample_indices=torch.linspace(0,len(evaluation_set)-1,min(a.evaluate_samples,len(evaluation_set))).long().tolist()
+            evaluation_set=Subset(evaluation_set,sample_indices)
+        loader=DataLoader(evaluation_set,batch_size=a.batch_size)
         write(a.output/'evaluation.json',dict(split=a.split,execution=execution,metrics=evaluate(loader,a.eval_profiles),alpha=optical_diagnostics(model),
               caveat='perturbed simulations are NOT new physical CCD measurements'))
         channel.restore();return
