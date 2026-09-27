@@ -105,7 +105,7 @@ def main():
     write(a.output/'protocol.json',dict(execution=execution,config=config,
           counted_parameters=report['counted_parameters'],profiles=PROFILES,
           amplitude_contract=saved['bounded_amplitude'],validation_indices=indices,
-          selection='minimize mean camera/combined VAL MSE; clean VAL mean per-image PSNR drop <=0.2dB, SSIM drop <=0.002; TEST only after VAL selection',
+          selection='minimize mean '+ '/'.join(a.selection_profiles)+' VAL MSE; clean VAL mean per-image PSNR drop <=0.2dB, SSIM drop <=0.002; TEST only after VAL selection',
           leakage='nominal coherent branch POWER fraction; sqrt(1-eta)*E_mod + sqrt(eta)*exp(i phi)*E_unmod; same bounded incident field; no image constants',
           detector='bounded-field intensity proxy, not calibrated camera electrons; no TEST CCD fitting'))
 
@@ -180,7 +180,7 @@ def main():
     def save(name,step):
         payload=copy.copy(saved)
         payload['model']={k:v.detach().cpu() for k,v in model.state_dict().items()}
-        payload['channel_robust_training']=dict(step=step,profile=a.profile,execution=execution)
+        payload['channel_robust_training']=dict(step=step,profiles=a.train_profiles or [a.profile],training_config=config,execution=execution)
         payload['decoder_refinement']=getattr(model,'decoder_refinement',False)
         if hasattr(model,'fusion_bounds'):payload['fusion_bounds']=model.fusion_bounds
         torch.save(payload,a.output/name)
