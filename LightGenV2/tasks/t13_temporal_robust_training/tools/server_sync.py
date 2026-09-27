@@ -44,6 +44,9 @@ def main():
         return out.strip()
 
     repo, worktree, branch = map(shlex.quote, (args.repo, args.worktree, args.branch))
+    # The laboratory network blocks GitHub SSH port 22; retain strict host checking.
+    ssh_command = "ssh -oBatchMode=yes -oConnectTimeout=10 -oHostName=ssh.github.com -oHostKeyAlias=github.com -oStrictHostKeyChecking=yes -p443"
+    network_git = f"git -C {repo} -c core.sshCommand={shlex.quote(ssh_command)}"
     try:
         if args.phase == "inspect":
             execute(f"hostname; git -C {repo} rev-parse HEAD; git -C {repo} status --short --untracked-files=no")
@@ -69,16 +72,16 @@ def main():
             finally:
                 sftp.close()
             # Bundle transport carries only Git objects; shared working files stay untouched.
-            execute(f"git -C {repo} cat-file -e {shlex.quote(args.base)}^{{commit}} || git -C {repo} fetch origin {shlex.quote(args.base)}")
+            execute(f"git -C {repo} cat-file -e {shlex.quote(args.base)}^{{commit}} || {network_git} fetch origin {shlex.quote(args.base)}")
             execute(f"git -C {repo} bundle verify {shlex.quote(remote_bundle)}")
             execute(f"git -C {repo} fetch {shlex.quote(remote_bundle)} HEAD")
             actual = execute(f"git -C {repo} rev-parse FETCH_HEAD")
             if actual != args.commit:
                 raise RuntimeError("Transported Git commit mismatch")
-            execute(f"git -C {repo} push origin {commit}:refs/heads/{args.branch}")
+            execute(f"{network_git} push origin {shlex.quote(args.commit + ':refs/heads/' + args.branch)}")
             return
         if args.phase == "sync":
-            execute(f"git -C {repo} fetch origin {branch}")
+            execute(f"{network_git} fetch origin {branch}")
             remote = execute(f"git -C {repo} rev-parse FETCH_HEAD")
             if remote != args.commit:
                 raise RuntimeError("GitHub branch tip differs from requested commit")
