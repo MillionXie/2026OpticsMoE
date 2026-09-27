@@ -123,6 +123,20 @@ $AS/venv/bin/python -m LightGenV2.tasks.t12_text_to_image.build_lab_package --ch
 
 部署 ZIP 由干净 Git HEAD 的 `git archive` 构建，含源代码、small.pt、contract 与逐文件 SHA manifest。部署不启用训练扰动通道。不得覆盖旧 `candidate_bounded`，必须放新目录，重新采集六阶段 CCD，不得混用旧权重 CCD。Windows 长路径 ZIP 用支持长路径的解压工具，或 Python zipfile 配合 `\\?\` 前缀。用户要求本任务只训练、离线验证和交付；不操作光路，新候选实测由另一 AI 完成，不能提前声称改善 23.1658 dB 的实测。
 
+## 2026-09-27 强扰动补训：17M 候选（未实测）
+
+训练代码 commit `4065cbfa2`；TRAIN 训练，固定 VAL96 按 clean guard 与 stress/severe 平均 MSE 选模，1000 steps 中选择 step800，并非最后一步。权重 SHA256 `5496204d6a546df5dddef80fef00bc3f4e45479b02f7fd91a310d448bc6c94ed`。计入参数 17,026,642，纯相位参数仍 958,728；冻结词嵌入仍按既有约定另外列出，不计入 20M 预算。保留 9,958,098 参数、SHA `3f82ab04…` 的保守备选，不覆盖此前发布版。
+
+新增部分不是新光路：文字条件160维经可训练 Linear 生成224×14×14低分辨率空间特征，双线性放大至 decoder 入口，以 `.5*detached_RMS*tanh(prior)` 加到两级视觉光电融合之后。新增7,068,544参数，保留两层 Qwen-style Transformer、语言与视觉各 router/expert/global 六阶段光路、478×478有效 mask、并行电子残差；没有输入 GT mask、商品编号或目标图片。它增强监督任务的形状先验，不代表开放域生成，也不证明光本身独立恢复了所有形状。没有采用额外14.7M卷积细化试验或CCD分位数校正。
+
+幅度编码完全不变：保零 `tanh(abs(E)/.5)` 并保留相位；BMP仅 round(255*a)。30%泄漏仍指相干叠加之前名义**功率**比例：`P(a*(sqrt(1-eta)*m + sqrt(eta)*exp(i*delta)))`。不是给图像加常数，也不是最终干涉强度固定30%。新 severe 功率 eta∈[.15,.60]、错位±3逻辑像素、k-space幅/相扰动、低频相位误差.22rad、5%块相位旁路、CCD增益/偏置/噪声/空间不均匀；extreme eta∈[.30,.70]、错位±4、相位误差.35rad、10%旁路，仅用于留出压力评估，未用于训练。CCD参数是有界仿真强度代理，不能视为实测标定。
+
+训练组合 combined/strong/severe 轮换，前半程强度由.2升至1；phase LR3e-5、既有电子LR2e-6、新空间先验LR5e-4、alpha LR1e-4，alpha界限[.35,.75]。干净损失权重.8、原3901e4fb教师干净anchor1、扰动anchor.05、融合特征一致性.01、router KL .01、圆周相位平滑2e-5、物体联合区域损失.4、既有source_gate监督.005。没有新加GAN。真实透明掩码仅用于TRAIN损失/评估ROI，不作为推理条件。全局PSNR容易被背景主导，必须同时查看换目标/联合编辑的ROI指标和对照图，仍存在轮廓残影及纹理模糊。
+
+复现训练命令见 `handoffs/t12_channel_severe_20260927/spatial_protocol.json` 的完整 argv；服务器运行目录 `runs/simulation/20260927_channel_severe_spatial`。干净及压力评估均使用固定2304指令、256×256、batch4、相同输入/扰动seed。封装源码新增可选项按 checkpoint 标志重建，旧权重默认不开启。完整训练、逐图指标及六阶段幅度/强度统计均交付；真实光路由用户安排另一AI验证，本任务不采集。
+
+初轮强补训因clean guard失败停止；仅区域损失的600step试验同样未通过，不部署。9.96M干净anchor恢复成功但换目标残影明显；14.7M局部卷积细化改善平均指标而形状提升有限；因此才增加17M文字空间先验。不得将这些试验都称为成功候选。所有历史日志保留，未清理其他AI文件或进程。
+
 ## 清理记录（此前）
 
 服务器仅删除明确清单内 35 份旧 .pt，4,808,586,899字节，包括旧错误光电模型及不采用的15M实验；保留数据、baseline、历史图/指标、sealed参考。服务器删除不可直接撤销，清单含SHA256。本地旧权重按明确目录送回收站；本目录两份正式权重不删除。
