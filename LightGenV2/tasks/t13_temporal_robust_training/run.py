@@ -30,9 +30,14 @@ def run() -> int:
     parser.add_argument("--allow-uncalibrated-noise", action="store_true")
     parser.add_argument("--ccd-profile", type=Path, default=ROOT / "configs" / "ccd_poisson_gaussian.json")
     parser.add_argument("--eval-split", choices=("train", "validation", "test"), default="test")
+    parser.add_argument("--finetune-from", type=Path)
+    parser.add_argument("--finetune-epochs", type=int, default=30)
+    parser.add_argument("--finetune-lr-factor", type=float, default=0.1)
     args = parser.parse_args()
     if args.eval_split == "validation":
         parser.error("This profile restores original 2250/558; no validation split")
+    if args.finetune_from and args.phase != "train":
+        parser.error("Fine-tune parent is training-only")
     output = args.output or ROOT / "runs" / ("smoke" if args.phase == "smoke" else "simulation") / f"{args.group}_s{args.seed}_{args.phase}"
     if output.exists() and any(output.iterdir()):
         parser.error("Output must be new/empty; do not overwrite a run")
@@ -45,6 +50,9 @@ def run() -> int:
     raw = make_config(args.group, purpose=purpose, seed=args.seed, output=output, paths=paths,
                       device_pitch=args.device_pitch_um, eval_eta=args.eval_eta)
     raw["device"] = args.device
+    if args.finetune_from:
+        from finetune import configure
+        raw = configure(raw, epochs=args.finetune_epochs, factor=args.finetune_lr_factor)
     import yaml
     output.mkdir(parents=True, exist_ok=True)
     config_path = output / "resolved.yaml"
@@ -56,6 +64,10 @@ def run() -> int:
     validate_profile(camera_profile)
     protocol["ccd_model"] = camera_profile
     protocol["ccd_parameters_calibrated"] = bool(camera_profile.get("calibrated", False))
+    if args.finetune_from:
+        protocol["optimization_stage"] = {"kind": "same_group_low_lr_weight_warmstart",
+            "parent_checkpoint_sha256": sha256(args.finetune_from), "epochs": args.finetune_epochs,
+            "lr_factor": args.finetune_lr_factor, "optimizer_state_resumed": False}
     write_json(output / "run_manifest.json", {
         "group": args.group, "condition": GROUPS[args.group], "phase": args.phase,
         "commit": commit.stdout.strip() if commit.returncode == 0 else None,
@@ -103,6 +115,12 @@ def run() -> int:
     from experiments.qwen3_vl_2b_lgvq_single_metric_o2_16frame_54.data import load_single_metric_cache
     payload = load_single_metric_cache(settings)
     model = build_model(settings)
+    if args.finetune_from:
+        from finetune import validate_parent
+        parent = torch.load(args.finetune_from, map_location="cpu", weights_only=False)
+        validate_parent(parent, args.group, protocol)
+        model.load_state_dict(parent["state_dict"], strict=True)
+        del parent
     model.bounded_amplitude = protocol["bounded_amplitude"]
     device = torch.device(args.device)
     if args.phase == "train":

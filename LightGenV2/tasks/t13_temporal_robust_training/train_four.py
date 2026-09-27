@@ -25,6 +25,9 @@ def main():
     parser.add_argument("--manifest", type=Path, required=True)
     parser.add_argument("--soft-targets", type=Path, required=True)
     parser.add_argument("--reuse-cache", action="store_true", help="Skip Qwen rebuild; require existing strictly validated caches")
+    parser.add_argument("--finetune-parent-run", type=Path)
+    parser.add_argument("--finetune-epochs", type=int, default=30)
+    parser.add_argument("--finetune-lr-factor", type=float, default=0.1)
     args = parser.parse_args()
     gpus = args.gpus.split(",")
     if len(gpus) != 4 or len(set(gpus)) != 4 or any(not gpu.isdigit() for gpu in gpus):
@@ -72,6 +75,17 @@ def main():
 
     try:
         idle()
+        if args.finetune_parent_run:
+            import torch
+            from finetune import validate_parent
+            from study import load_protocol
+            protocol = load_protocol()
+            protocol["ccd_model"] = json.loads((ROOT / protocol["ccd_profile"]).read_text())
+            for group in GROUPS:
+                checkpoint = args.finetune_parent_run / group / "best_checkpoint.pt"
+                parent = torch.load(checkpoint, map_location="cpu", weights_only=False)
+                validate_parent(parent, group, protocol)
+                del parent
         assets = ROOT / "assets/cache/rebuilt_4f_20260927"
         assets.mkdir(parents=True, exist_ok=True)
         vision, language = assets / "vision_49x1024_quality14.pt", assets / "language_temporal_2048.pt"
@@ -113,6 +127,10 @@ def main():
             command = [sys.executable, "-I", str(ROOT / "run.py"), "--group", group, "--phase", "train",
                        "--paths", str(root / "paths.json"), "--device", "cuda", "--allow-uncalibrated-noise",
                        "--output", str(root / group)]
+            if args.finetune_parent_run:
+                command.extend(["--finetune-from", str(args.finetune_parent_run / group / "best_checkpoint.pt"),
+                                "--finetune-epochs", str(args.finetune_epochs),
+                                "--finetune-lr-factor", str(args.finetune_lr_factor)])
             child, stream = start(command, gpu, root / f"{group}.log")
             children.append((group, gpu, child, stream))
         results = {}

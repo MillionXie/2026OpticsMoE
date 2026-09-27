@@ -8,10 +8,12 @@
 
 当前有效run为`full2250_testbest_dc30_ccd_s163_uuid2456_20260927`，四组各100epoch及共同评价完成。
 带噪声test SRCC依次0.790527/0.786405/0.801299/0.800796；不是光路实测，test参与选模。
-完整train/test及无噪声诊断见[reports/FULL2250_TESTBEST_RESULTS.md](reports/FULL2250_TESTBEST_RESULTS.md)。
+主报告只放一张四组结果表，见[reports/FULL2250_TESTBEST_RESULTS.md](reports/FULL2250_TESTBEST_RESULTS.md)。其他评价条件仅为原run内诊断，不是额外实验组。
 当前四份真PT工程位于`projects/temporal_full2250_testbest_s163_20260927`，旧schema3产物仅在`.codex_tmp/t13_retired_schema3_20260927`隔离保存，不用于部署。
 
 ## 来源与版本边界
+
+小学习率继续优化：用户授权四组从各自schema4 best继续30epoch，三类学习率统一乘0.1，电子3e-5、普通相位0.002、router相位0.0032。重新建立AdamW及30轮cosine scheduler（权重warm start，不恢复旧优化器）。父PT组别及物理/数据/噪声合同必须一致；2250/558、test-best、四组条件均不改。父best作为epoch0候选，不删除父run。完成后更新主表并生成新四份真PT工程；主表始终是四组、同一评价条件。
 
 正式配置加载统一经过 `settings_adapter.py`：仅去除导师版“DC至少20%”的历史策略门槛，保留真实数据模式、几何及合法区间检查，不以synthetic模式绕过。训练前两组DC区间为0，后两组为0.30；共同部署各组区间固定0.30，理论参考固定0。原导师runtime保持哈希不变。
 
