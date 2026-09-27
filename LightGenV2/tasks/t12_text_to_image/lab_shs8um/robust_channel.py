@@ -65,6 +65,11 @@ class RobustChannel:
         eta = modulation.real.new_empty((len(modulation),1,1)).uniform_(p['power_min'], p['power_max'])*self.strength
         angle = modulation.real.new_empty((len(modulation),1,1)).uniform_(-math.pi,math.pi)
         drop = p['phase_dropout']*self.strength
+        jitter = p.get('phase_jitter',0.)*self.strength
+        if jitter:
+            coarse = torch.randn(len(modulation),1,math.ceil(modulation.shape[-2]/8),math.ceil(modulation.shape[-1]/8),device=modulation.device)*jitter
+            error = F.interpolate(coarse,modulation.shape[-2:],mode='bilinear',align_corners=False)[:,0]
+            modulation = modulation*torch.exp(1j*error)
         if drop:
             coarse = torch.rand(len(modulation),1,math.ceil(modulation.shape[-2]/8),math.ceil(modulation.shape[-1]/8),device=modulation.device)<drop
             bypass = F.interpolate(coarse.float(), modulation.shape[-2:], mode='nearest')[:,0].bool()
@@ -103,6 +108,16 @@ class RobustChannel:
         shape = (len(ideal),1,1)
         gain = ideal.new_empty(shape).uniform_(1-p['gain']*s,1+p['gain']*s)
         bias = ideal.new_empty(shape).uniform_(0,p['bias']*s)
+        # Slowly varying detector gain/background, not image-space corruption.
+        h,w = ideal.shape[-2:]
+        if p.get('spatial_gain',0.) or p.get('spatial_bias',0.):
+            yy=torch.linspace(-1,1,h,device=ideal.device)[None,:,None]
+            xx=torch.linspace(-1,1,w,device=ideal.device)[None,None,:]
+            gx=ideal.new_empty(shape).uniform_(-1,1)
+            gy=ideal.new_empty(shape).uniform_(-1,1)
+            ramp=(gx*xx+gy*yy)/2
+            gain=gain*(1+p.get('spatial_gain',0.)*s*ramp)
+            bias=bias+p.get('spatial_bias',0.)*s*(ramp+1)/2
         std = (p['read']*s)**2 + (p['shot']*s)**2*ideal.detach().clamp_min(0)
         # Detector intensity units of bounded incident amplitude, not peak/batch
         # normalized, and not calibrated camera electrons. Bias/noise are CCD-only.

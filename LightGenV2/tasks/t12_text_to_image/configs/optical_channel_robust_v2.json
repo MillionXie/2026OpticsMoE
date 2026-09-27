@@ -1,5 +1,8 @@
 {
   "camera": {"power_min": 0.15, "power_max": 0.35, "shift": 1, "bias": 0.003, "read": 0.0015, "shot": 0.02, "gain": 0.1, "kspace": 0.0, "phase_dropout": 0.0},
   "combined": {"power_min": 0.15, "power_max": 0.35, "shift": 1, "bias": 0.004, "read": 0.002, "shot": 0.025, "gain": 0.1, "kspace": 0.15, "phase_dropout": 0.015},
-  "stress": {"power_min": 0.3, "power_max": 0.3, "shift": 2, "bias": 0.006, "read": 0.003, "shot": 0.035, "gain": 0.15, "kspace": 0.3, "phase_dropout": 0.03}
+  "stress": {"power_min": 0.3, "power_max": 0.3, "shift": 2, "bias": 0.006, "read": 0.003, "shot": 0.035, "gain": 0.15, "kspace": 0.3, "phase_dropout": 0.03},
+  "strong": {"power_min": 0.2, "power_max": 0.5, "shift": 2, "bias": 0.008, "read": 0.0035, "shot": 0.04, "gain": 0.2, "kspace": 0.45, "phase_dropout": 0.025, "phase_jitter": 0.1, "spatial_bias": 0.006, "spatial_gain": 0.08},
+  "severe": {"power_min": 0.15, "power_max": 0.6, "shift": 3, "bias": 0.014, "read": 0.005, "shot": 0.055, "gain": 0.3, "kspace": 0.8, "phase_dropout": 0.05, "phase_jitter": 0.22, "spatial_bias": 0.01, "spatial_gain": 0.15},
+  "extreme": {"power_min": 0.3, "power_max": 0.7, "shift": 4, "bias": 0.025, "read": 0.008, "shot": 0.075, "gain": 0.4, "kspace": 1.2, "phase_dropout": 0.1, "phase_jitter": 0.35, "spatial_bias": 0.015, "spatial_gain": 0.2}
 }
