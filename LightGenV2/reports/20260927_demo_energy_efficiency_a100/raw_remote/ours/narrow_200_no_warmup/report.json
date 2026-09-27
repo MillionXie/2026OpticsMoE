@@ -1,0 +1,194 @@
+{
+  "schema_version": 1,
+  "environment": {
+    "generated_at_utc": "2026-09-27T01:51:45.111072+00:00",
+    "python": "3.11.15 (main, Jun 11 2026, 15:20:16) [GCC 14.3.0]",
+    "platform": "Linux-5.15.0-136-generic-x86_64-with-glibc2.31",
+    "torch": "2.6.0+cu124",
+    "cuda_runtime": "12.4",
+    "device": "NVIDIA A100-PCIE-40GB",
+    "cuda_visible_devices": "6",
+    "precision": "float32",
+    "execution": "eager torch.inference_mode; CUDA event; synchronize every call; no torch.compile",
+    "warmup_per_component_per_trial": 0,
+    "measured_calls_per_component_per_trial": 200,
+    "trials": 1,
+    "formal_statistic": "mean",
+    "scope": {
+      "included": [
+        "router arithmetic from four GPU-resident energies",
+        "CCD nonlinearity and learned readout",
+        "learned bridge",
+        "actual task head"
+      ],
+      "separate": [
+        "parallel electronic residual network",
+        "bridge"
+      ],
+      "excluded": [
+        "host/device transfer",
+        "CCD crop/stack",
+        "RMS/alpha fusion",
+        "SLM encoding/layout/scatter",
+        "file I/O"
+      ]
+    },
+    "raw_rows": 8400,
+    "power_measurement": {
+      "enabled": false,
+      "sampling_interval_ms": null,
+      "idle_seconds_requested": null,
+      "dwell_seconds_per_component_per_trial": null
+    },
+    "compute_process_audit": {
+      "before": [],
+      "after": [
+        {
+          "pid": 3816515,
+          "process_name": "/home/guest3/miniconda3/envs/xml/bin/python",
+          "used_memory_mib": 564.0
+        }
+      ],
+      "foreign_after": []
+    },
+    "git_commit": "3f85510285e5ffdfca28def93eef2eb082b1655c"
+  },
+  "occurrence_contracts": {
+    "lgvq_temporal": {
+      "frame_router_core_from_4_energies": 1,
+      "video_router_core_from_4_energies": 1,
+      "frame_ccd_nonlinearity_readout_nn": 2,
+      "video_ccd_nonlinearity_readout_nn": 2,
+      "frame_parallel_residual_nn": 2,
+      "video_parallel_residual_nn": 2,
+      "bridge_nn_only": 1,
+      "task_head_nn": 1
+    },
+    "lgvq_spatial": {
+      "router_core_from_4_energies": 2,
+      "vision_ccd_nonlinearity_readout_nn": 2,
+      "language_ccd_nonlinearity_readout_nn": 2,
+      "vision_parallel_residual_nn": 2,
+      "language_parallel_residual_nn": 2,
+      "bridge_nn_only": 1,
+      "task_head_nn": 1
+    },
+    "abo_image_to_text": {
+      "router_core_from_4_energies": 2,
+      "vision_ccd_nonlinearity_readout_nn": 2,
+      "vision_parallel_residual_nn": 2,
+      "language_ccd_nonlinearity_readout_nn": 2,
+      "language_parallel_residual_nn": 2,
+      "task_head_nn": 1
+    },
+    "abo_image_to_image": {
+      "router_core_from_4_energies": 2,
+      "vision_ccd_nonlinearity_readout_nn": 2,
+      "vision_parallel_residual_nn": 2,
+      "language_ccd_nonlinearity_readout_nn": 2,
+      "language_parallel_residual_nn": 2,
+      "task_head_nn": 1
+    },
+    "lsp": {
+      "router_core_from_4_energies": 1,
+      "vision_ccd_nonlinearity_readout_nn": 2,
+      "vision_parallel_residual_nn": 2,
+      "task_head_nn": 1
+    },
+    "salicon": {
+      "router_core_from_4_energies": 1,
+      "vision_ccd_nonlinearity_readout_nn": 2,
+      "vision_parallel_residual_nn": 2,
+      "task_head_nn": 1
+    },
+    "openmoji": {
+      "router_core_from_4_energies": 2,
+      "vision_ccd_nonlinearity_readout_nn": 2,
+      "vision_parallel_residual_nn": 2,
+      "language_ccd_nonlinearity_readout_nn": 2,
+      "language_parallel_residual_nn": 2,
+      "bridge_nn_only": 1,
+      "task_head_nn": 1
+    }
+  },
+  "formal_narrow_cuda_event": [
+    {
+      "task": "lgvq_temporal",
+      "router_core_cuda_ms": 0.8780083346366881,
+      "layer_nonlinearity_readout_nn_cuda_ms": 2.1463961839675902,
+      "task_head_nn_cuda_ms": 0.9649715197086334,
+      "main_electronic_excluding_bridge_cuda_ms": 3.9893760383129115,
+      "bridge_nn_cuda_ms_separate": 0.2662092784792185,
+      "main_electronic_including_bridge_cuda_ms": 4.25558531679213,
+      "parallel_residual_nn_cuda_ms_separate": 2.915348513126373,
+      "fusion_ms_in_formal_scope": 0.0
+    },
+    {
+      "task": "lgvq_spatial",
+      "router_core_cuda_ms": 0.4550041560828686,
+      "layer_nonlinearity_readout_nn_cuda_ms": 0.9419571231305599,
+      "task_head_nn_cuda_ms": 2.3740979290008544,
+      "main_electronic_excluding_bridge_cuda_ms": 3.771059208214283,
+      "bridge_nn_cuda_ms_separate": 0.0922726383805275,
+      "main_electronic_including_bridge_cuda_ms": 3.8633318465948103,
+      "parallel_residual_nn_cuda_ms_separate": 2.6028441649675367,
+      "fusion_ms_in_formal_scope": 0.0
+    },
+    {
+      "task": "abo_image_to_text",
+      "router_core_cuda_ms": 0.4794163194298744,
+      "layer_nonlinearity_readout_nn_cuda_ms": 0.8773734332621097,
+      "task_head_nn_cuda_ms": 0.2465279982611537,
+      "main_electronic_excluding_bridge_cuda_ms": 1.6033177509531378,
+      "bridge_nn_cuda_ms_separate": 0,
+      "main_electronic_including_bridge_cuda_ms": 1.6033177509531378,
+      "parallel_residual_nn_cuda_ms_separate": 2.0156518352031707,
+      "fusion_ms_in_formal_scope": 0.0
+    },
+    {
+      "task": "abo_image_to_image",
+      "router_core_cuda_ms": 0.4555673564970493,
+      "layer_nonlinearity_readout_nn_cuda_ms": 0.8437247927486897,
+      "task_head_nn_cuda_ms": 0.2136319997906685,
+      "main_electronic_excluding_bridge_cuda_ms": 1.5129241490364076,
+      "bridge_nn_cuda_ms_separate": 0,
+      "main_electronic_including_bridge_cuda_ms": 1.5129241490364076,
+      "parallel_residual_nn_cuda_ms_separate": 1.672990721464157,
+      "fusion_ms_in_formal_scope": 0.0
+    },
+    {
+      "task": "lsp",
+      "router_core_cuda_ms": 0.23581695839762687,
+      "layer_nonlinearity_readout_nn_cuda_ms": 0.578559996932745,
+      "task_head_nn_cuda_ms": 1.135872000157833,
+      "main_electronic_excluding_bridge_cuda_ms": 1.9502489554882048,
+      "bridge_nn_cuda_ms_separate": 0,
+      "main_electronic_including_bridge_cuda_ms": 1.9502489554882048,
+      "parallel_residual_nn_cuda_ms_separate": 1.4559334322810173,
+      "fusion_ms_in_formal_scope": 0.0
+    },
+    {
+      "task": "salicon",
+      "router_core_cuda_ms": 0.22696960031986235,
+      "layer_nonlinearity_readout_nn_cuda_ms": 0.4041728012263775,
+      "task_head_nn_cuda_ms": 1.289333770275116,
+      "main_electronic_excluding_bridge_cuda_ms": 1.9204761718213559,
+      "bridge_nn_cuda_ms_separate": 0,
+      "main_electronic_including_bridge_cuda_ms": 1.9204761718213559,
+      "parallel_residual_nn_cuda_ms_separate": 1.0050764802098273,
+      "fusion_ms_in_formal_scope": 0.0
+    },
+    {
+      "task": "openmoji",
+      "router_core_cuda_ms": 0.45742080092430115,
+      "layer_nonlinearity_readout_nn_cuda_ms": 0.7973273615539074,
+      "task_head_nn_cuda_ms": 1.2329779195785522,
+      "main_electronic_excluding_bridge_cuda_ms": 2.487726082056761,
+      "bridge_nn_cuda_ms_separate": 0.2812518404424191,
+      "main_electronic_including_bridge_cuda_ms": 2.7689779224991797,
+      "parallel_residual_nn_cuda_ms_separate": 1.9500134420394897,
+      "fusion_ms_in_formal_scope": 0.0
+    }
+  ],
+  "power": null
+}
