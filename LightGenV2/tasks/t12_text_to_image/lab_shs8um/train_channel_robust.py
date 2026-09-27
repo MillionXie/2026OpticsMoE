@@ -48,6 +48,14 @@ class IndexedDataset:
     def __getitem__(self, index): return dict(self.dataset[index], index=index)
 
 
+def expert_balance(probabilities, selected):
+    """Switch-style batch load loss; does not force each prompt to be uniform."""
+    importance=probabilities.float().mean(0)
+    load=selected.detach().float().mean(0)
+    load=load/load.sum().clamp_min(1e-8)
+    return probabilities.shape[-1]*(importance*load).sum()-1
+
+
 def main():
     p = argparse.ArgumentParser()
     for name in ('checkpoint','assets','output'): p.add_argument('--'+name,type=Path,required=True)
@@ -62,6 +70,9 @@ def main():
     p.add_argument('--lr-alpha',type=float,default=2e-6)
     p.add_argument('--feature-consistency',type=float,default=0.)
     p.add_argument('--routing-consistency',type=float,default=0.)
+    p.add_argument('--language-balance',type=float,default=0.)
+    p.add_argument('--lr-language-router',type=float)
+    p.add_argument('--selection-language-max-load',type=float,default=1.)
     p.add_argument('--phase-tv',type=float,default=0.)
     p.add_argument('--clean-weight',type=float,default=.5)
     p.add_argument('--anchor-weight',type=float,default=.1)
@@ -201,8 +212,11 @@ def main():
         torch.save(payload,a.output/name)
     save('best_checkpoint.pt',0)
     write(a.output/'baseline_val.json',baseline)
-    phases=[v for n,v in model.named_parameters() if 'raw_phase' in n or 'raw_router_phase' in n]
+    language_router=[v for n,v in model.named_parameters() if n.startswith('text.optical.core.router.') and 'raw_router_phase' in n]
+    language_router_ids={id(v) for v in language_router}
+    phases=[v for n,v in model.named_parameters() if ('raw_phase' in n or 'raw_router_phase' in n) and id(v) not in language_router_ids]
     groups=[dict(params=phases,lr=a.lr_phase),
+            dict(params=language_router,lr=a.lr_language_router if a.lr_language_router is not None else a.lr_phase),
             dict(params=[v for n,v in model.named_parameters() if 'raw_phase' not in n and 'raw_router_phase' not in n and 'raw_alpha' not in n and '.details.' not in n and '.decoder_spatial_prior.' not in n],lr=a.lr_electronic),
             dict(params=[v for n,v in model.named_parameters() if 'raw_alpha' in n],lr=a.lr_alpha),
             dict(params=[v for n,v in model.named_parameters() if '.details.' in n],lr=a.lr_refinement),
@@ -230,11 +244,16 @@ def main():
             clean_gate=gates.get('logits')
             clean_features={k:v.detach() for k,v in features.items()}
             clean_routing=[obj.last_routing['probabilities'].detach() for obj in (model.text,model.editor.bottleneck)]
+            clean_language_balance=expert_balance(model.text.last_routing['probabilities'],model.text.last_routing['selected_mask']) if a.language_balance else None
             strength=.2+.8*min(1.,step/max(1,a.steps*.5))
             profile=training_profiles[step%len(training_profiles)]
             channel.configure(profile,strength);noisy=model(ref,emb,mask,noise)
             quality=lambda pred:F.mse_loss(pred,target)+.1*F.l1_loss(pred,target)
             loss=a.clean_weight*quality(clean)+(1-a.clean_weight)*quality(noisy)+a.anchor_weight*F.mse_loss(clean,anchor)+a.noisy_anchor_weight*F.mse_loss(noisy,anchor)
+            if a.language_balance:
+                ramp=min(1.,(step+1)/max(1,a.steps*.5))
+                noisy_balance=expert_balance(model.text.last_routing['probabilities'],model.text.last_routing['selected_mask'])
+                loss=loss+a.language_balance*ramp*(clean_language_balance+noisy_balance)/2
             if a.region_weight:
                 region=batch['object_union'].cuda()
                 edited=torch.tensor([mode!='background' for mode in batch['mode']],device=ref.device)[:,None,None,None]
@@ -260,8 +279,10 @@ def main():
                 metrics=evaluate(val,validation_profiles)
                 clean_val=metrics['clean']
                 eligible=(clean_val['psnr_db']>=baseline_clean['psnr_db']-.2 and clean_val['ssim']>=baseline_clean['ssim']-.002)
+                balance_eligible=max(clean_val['routing']['language']['selection_rate'])<=a.selection_language_max_load
+                eligible=eligible and balance_eligible
                 score=sum(metrics[p]['mse_0_1'] for p in a.selection_profiles)/len(a.selection_profiles)
-                record=dict(step=step,metrics=metrics,eligible=eligible,score=score,alpha=optical_diagnostics(model))
+                record=dict(step=step,metrics=metrics,eligible=eligible,balance_eligible=balance_eligible,score=score,alpha=optical_diagnostics(model))
                 if eligible and score<best_score:best_score=score;selected=step;save('best_checkpoint.pt',step)
                 history.append(record);write(a.output/'history.json',history);print(json.dumps(record),flush=True)
             if step>=a.steps:break

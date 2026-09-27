@@ -99,3 +99,16 @@ def test_text_spatial_prior_initially_zero():
     prior=ConditionalSpatialPrior(4,8,2)
     result=prior(torch.randn(2,8),torch.randn(2,4,8,8))
     assert result.abs().sum()==0 and result.shape==(2,4,8,8)
+
+
+def test_batch_expert_balance_and_gradients():
+    from LightGenV2.tasks.t12_text_to_image.lab_shs8um.train_channel_robust import expert_balance
+    p=torch.tensor([[.4,.4,.1,.1],[.4,.4,.1,.1]],requires_grad=True)
+    selected=torch.tensor([[1,1,0,0],[1,1,0,0]])
+    loss=expert_balance(p,selected)
+    assert loss>0
+    loss.backward()
+    assert p.grad.isfinite().all() and p.grad[0,0]>p.grad[0,2]
+    uniform=torch.full((4,4),.25)
+    balanced=torch.tensor([[1,1,0,0],[0,1,1,0],[0,0,1,1],[1,0,0,1]])
+    assert expert_balance(uniform,balanced).abs()<1e-6
