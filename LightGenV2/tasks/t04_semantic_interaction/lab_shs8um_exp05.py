@@ -10,7 +10,7 @@ def write(path,value):
     path.parent.mkdir(parents=True,exist_ok=True)
     tmp=path.with_suffix('.tmp');tmp.write_text(json.dumps(value,indent=2),encoding='utf8');tmp.replace(path)
 def main():
-    p=argparse.ArgumentParser();p.add_argument('--project',type=Path,required=True);p.add_argument('--output',type=Path,required=True);p.add_argument('--limit',type=int,default=1000);p.add_argument('--selftest',action='store_true');p.add_argument('--resume',action='store_true');p.add_argument('--exposure-us',type=int,choices=(400,1000,2000,4000),default=400);a=p.parse_args()
+    p=argparse.ArgumentParser();p.add_argument('--project',type=Path,required=True);p.add_argument('--output',type=Path,required=True);p.add_argument('--limit',type=int,default=1000);p.add_argument('--selftest',action='store_true');p.add_argument('--resume',action='store_true');p.add_argument('--data-dir',type=Path);p.add_argument('--manifest',type=Path);p.add_argument('--exposure-us',type=int,choices=(400,1000,2000,4000),default=400);a=p.parse_args()
     torch.set_num_threads(4);root=a.project.resolve();out=a.output.resolve()
     sys.path.insert(0,str(root/'source'))
     from LightGenV2.tasks.t04_semantic_interaction.settings import load_settings
@@ -24,20 +24,32 @@ def main():
     flow.BASE_CORNERS=CORNERS.copy()
     ckpt=root/'weights/best_checkpoint.pt';assert flow.sha(ckpt)==SHA
     cfg=load_settings(root/'source/LightGenV2/tasks/t04_semantic_interaction/configs/layered_scene_electronic_exp05.yaml')
-    cfg.data_dir=root/'data';cfg.prompt_cache_path=cfg.data_dir/'token_embeddings_v1.pt';cfg.output_dir=out
+    cfg.data_dir=(a.data_dir or root/'data').resolve();cfg.prompt_cache_path=cfg.data_dir/'token_embeddings_v1.pt';cfg.output_dir=out
     legacy=root.parent/'OpenMoji_Lab_SHS_8um';cfg.qwen_checkpoint=legacy/'frontend';cfg.asset_dir=legacy/'assets'
     cfg.svg_asset_dir=cfg.asset_dir/'openmoji-17.0.0-svg'
     model=build_model(cfg,torch.device('cuda'));payload=torch.load(ckpt,map_location='cpu',weights_only=False)
     assert payload['architecture']==model.checkpoint_architecture
     model.load_state_dict(payload['model'],strict=True);model.eval().requires_grad_(False)
     for optic in model._optical_paths():optic.set_phase_dropout_active(False)
-    dataset=OpenMojiEditingDataset(cfg.test_manifest,cfg,load_prompt_cache(cfg.prompt_cache_path));assert len(dataset)==1000
+    manifest=(a.manifest or cfg.test_manifest).resolve()
+    dataset=OpenMojiEditingDataset(manifest,cfg,load_prompt_cache(cfg.prompt_cache_path));assert len(dataset)==1000
+    sample_ids=[r['sample_id'] for r in dataset.records]
+    assert len(set(sample_ids))==len(sample_ids)
+    if a.manifest:
+        assert all(r['split']=='train' and r['sample_id'].startswith('train_') for r in dataset.records),'Custom capture manifest must be TRAIN-only'
+        audit=json.loads((cfg.data_dir/'split_audit.json').read_text())
+        assert set(sample_ids)==set(audit['fit_ids'])|set(audit['validation_ids'])
+        assert not set(audit['fit_ids'])&set(audit['validation_ids'])
     total=min(a.limit,len(dataset));out.mkdir(parents=True,exist_ok=True)
-    contract=dict(checkpoint_sha256=SHA,source_commit='2acb5bcf5de5a902d153e29e885131227ea61914',epoch=payload['epoch'],count=total,exposure_us=a.exposure_us,gain='Gain_X4',wait_ms=240,corners=CORNERS.tolist(),phase_orientation='hv',phase_inverse=True,camera_orientation='flip_v',amplitude_encoding='per-sample peak, no percentile clipping',test_manifest_sha256=flow.sha(cfg.test_manifest))
+    contract=dict(checkpoint_sha256=SHA,source_commit='2acb5bcf5de5a902d153e29e885131227ea61914',epoch=payload['epoch'],count=total,exposure_us=a.exposure_us,gain='Gain_X4',wait_ms=240,corners=CORNERS.tolist(),phase_orientation='hv',phase_inverse=True,camera_orientation='flip_v',amplitude_encoding='per-sample peak, no percentile clipping',test_manifest_sha256=flow.sha(manifest))
+    if a.manifest:
+        contract.pop('test_manifest_sha256')
+        contract.update(capture_manifest_sha256=flow.sha(manifest),split_audit_sha256=flow.sha(cfg.data_dir/'split_audit.json'),capture_scope='TRAIN adaptation and validation; original TEST excluded')
     if (out/'contract.json').exists():assert json.loads((out/'contract.json').read_text())==contract
     else:write(out/'contract.json',contract)
     def batch(index):return {k:v.cuda() if torch.is_tensor(v) else v for k,v in collate_samples([dataset[index]]).items()}
-    def frames(index,stages):return {stage:torch.from_numpy(np.asarray(Image.open(out/'ccd'/stage/f'test_{index:05d}.png'),np.float32).copy()[None]/255) for stage in stages}
+    def file_id(index):return sample_ids[index] if a.manifest else f'test_{index:05d}'
+    def frames(index,stages):return {stage:torch.from_numpy(np.asarray(Image.open(out/'ccd'/stage/(file_id(index)+'.png')),np.float32).copy()[None]/255) for stage in stages}
     if a.selftest:
         x=batch(0)
         with torch.inference_mode():
@@ -73,7 +85,7 @@ def main():
             for start in range(0,total,4):
                 paths=[];ids=[]
                 for index in range(start,min(start+4,total)):
-                    sid=f'test_{index:05d}'
+                    sid=file_id(index)
                     if a.resume and (folder/(sid+'.png')).exists() and (folder/(sid+'.json')).exists():continue
                     x=batch(index)
                     with torch.inference_mode(),OpticalBoundary(model,frames(index,STAGES[:stage_index]),stage) as tap:
