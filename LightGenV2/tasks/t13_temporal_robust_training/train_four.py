@@ -38,20 +38,25 @@ def main():
              "source_commit": subprocess.check_output(["git", "rev-parse", "HEAD"], cwd=ROOT, text=True).strip()}
     report = root / "supervisor.json"
     owned = []
+    gpu_uuids = {}
     write_json(report, state)
 
     def idle():
-        raw = subprocess.check_output(["nvidia-smi", "--query-gpu=index,memory.used", "--format=csv,noheader,nounits"], text=True)
-        used = {a.strip(): int(b.strip()) for line in raw.splitlines() for a,b in [line.split(",")]}
+        raw = subprocess.check_output(["nvidia-smi", "--query-gpu=index,uuid,memory.used", "--format=csv,noheader,nounits"], text=True)
+        used = {a.strip(): int(memory.strip()) for line in raw.splitlines() for a,uuid,memory in [line.split(",")]}
+        gpu_uuids.update({a.strip(): uuid.strip() for line in raw.splitlines() for a,uuid,memory in [line.split(",")]})
         if any(gpu not in used or used[gpu] > 512 for gpu in gpus):
             raise RuntimeError(f"Requested GPUs no longer idle; do not terminate others: {used}")
 
     def start(command, gpu, log):
         stream = log.open("w", encoding="utf-8")
-        env = dict(os.environ, CUDA_VISIBLE_DEVICES=gpu, PYTHONUNBUFFERED="1", OMP_NUM_THREADS="4")
+        # CUDA's default FASTEST_FIRST order can differ from nvidia-smi indices.
+        # Bind the verified PHYSICAL UUID, never an ambiguous numeric ordinal.
+        env = dict(os.environ, CUDA_VISIBLE_DEVICES=gpu_uuids[gpu], CUDA_DEVICE_ORDER="PCI_BUS_ID",
+                   PYTHONUNBUFFERED="1", OMP_NUM_THREADS="4")
         child = subprocess.Popen(command, cwd=ROOT, env=env, stdout=stream, stderr=subprocess.STDOUT)
         owned.append((child, stream))
-        state["children"].append({"pid": child.pid, "gpu": gpu, "command": command, "log": str(log)})
+        state["children"].append({"pid": child.pid, "gpu": gpu, "gpu_uuid": gpu_uuids[gpu], "command": command, "log": str(log)})
         write_json(report, state)
         return child, stream
 
