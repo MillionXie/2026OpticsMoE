@@ -31,6 +31,7 @@ from .retrieval_refine import (PROFILES, validate_continuation, route_objective,
     configure_alpha_scope, frozen_except_alpha_digest, blend_train_pairs, training_source_exclusion)
 from .enrolled_regularization import load_external_pool, load_external_relations, augment_whole_object, curriculum_epoch, curriculum_loss_weights, fitting_bank_diagnostics
 from .generalization import backward_with_sam
+from .robust_holdout import split_train,paired_loss,score as holdout_score
 
 
 def fitting_groups(protocol, groups, multi_view=False):
@@ -148,8 +149,12 @@ def retrieval_loss(z, labels, bank, natural_count, bank_labels=None, excluded=No
 
 
 @torch.no_grad()
-def encode_rows(model, processor, rows, root, device, batch_size, routing=False):
+def encode_rows(model, processor, rows, root, device, batch_size, routing=False, optical_noise=False):
     model.eval()
+    if optical_noise:
+        for modality in (model.vision,model.language):
+            modality.optics.training=True;modality.optics.router.training=True
+            modality.optics.set_training_noise(True)
     # remove_optical skips the router entirely; its .last belongs to a previous
     # normal batch and must never be reported as a fresh routing measurement.
     routing_requested = routing
@@ -194,9 +199,11 @@ def paired_bank_loss(z, labels, bank, count, bank_labels, excluded, *, symmetric
 
 
 @torch.no_grad()
-def assessment(model, processor, groups, args, device, output=None, fit=None):
+def assessment(model, processor, groups, args, device, output=None, fit=None, selection=False):
     # Same manifest order as frozen Qwen and retrieval_screen, including ties.
     # Training-bank sorting is separate and must not reorder the TEST gallery.
+    if selection and getattr(args,'_selection_groups',None) is not None:
+        groups=args._selection_groups
     gallery = groups['gallery']
     rows = gallery + groups['query']
     z, router = encode_rows(model, processor, rows, args.data, device, args.batch_size, routing=True)
@@ -208,8 +215,16 @@ def assessment(model, processor, groups, args, device, output=None, fit=None):
     if output:
         write_csv(output / 'predictions.csv', predictions)
         torch.save(dict(manifest_sha256=sha256(args.manifest), ids=[r['sample_id'] for r in rows], vectors=z), output / 'features.pt')
-    return dict(test=test, train_clean=train, router=router,
+    result=dict(test=test, train_clean=train, router=router,
         train_metric=fit['note'] + '; not training batch/classifier accuracy')
+    if selection and getattr(args,'_selection_groups',None) is not None:
+        with torch.random.fork_rng(devices=[device.index or 0] if device.type=='cuda' else []):
+            torch.manual_seed(1042)
+            noisy_z,noisy_router=encode_rows(model,processor,rows,args.data,device,args.batch_size,routing=True,optical_noise=True)
+        result['validation_noisy'],_=rank_instances(noisy_z,rows)
+        result['validation_noisy_router']=noisy_router
+        result['scope']='400 TRAIN holdout queries against1200 fitting references; NOT original TEST'
+    return result
 
 
 def phase_snapshot(model):
@@ -265,6 +280,9 @@ def run(args):
     payload = torch.load(path, map_location='cpu', weights_only=True)
     validate_continuation(protocol['protocol'], payload, sha256(args.manifest), args.fresh_trainable)
     profile = dict(PROFILES[args.refine_profile])
+    if profile.get('holdout_selection'):
+        reduced,args._selection_groups,args._holdout_audit=split_train(groups)
+        fit=fitting_groups(protocol,reduced,args.multi_view)
     if profile.get('symmetric_bank') and not args.multi_view:
         raise ValueError('Symmetric TRAIN bank supervision requires --multi-view')
     if args.router_warmup_epochs is not None:
@@ -383,6 +401,8 @@ def run(args):
             semantics='Pixel blend regularization, NOT a physically rendered new view; never applied to evaluation') if view_blend else None),
         loss=f"{'Both TRAIN views' if profile.get('symmetric_bank') else 'Query'}->detached entire FITTING gallery {profile.get('ranking_loss', 'nll')}(temp .1, mean reduction; top1 cosine margin .02 when enabled) + {profile.get('supcon_weight', .5)} live query/reference SupCon + {profile['positive_weight']} all-positive log-probability loss + existing optical regularization/router auxiliary",
         external_loss_override=('External: frozen64 teacher relation KL(temp .1), no SKU NLL/SupCon/all-positive loss; target: original GT retrieval loss, teacher disabled' if external_teacher else None))
+    if profile.get('holdout_selection'):
+        identity.update(selection='1200 fitting TRAIN /400 continuation holdout; clean guard and noisy holdout ranking, no periodic original TEST',holdout_audit=args._holdout_audit)
     write_json(args.output / 'fitting_manifest.json', dict(parent_manifest_sha256=identity['manifest_sha256'],
         note=fit['note'], train=fit['train'], references=fit['gallery']))
     if external_fit:
@@ -407,12 +427,15 @@ def run(args):
             optgroups.append(dict(params=[p], lr=rate, initial_lr=rate, weight_decay=decay, name=n))
         optimizer = torch.optim.AdamW(optgroups)
         ema = {n: p.detach().clone() for n, p in params}
-        base = assessment(model, processor, groups, args, device, fit=fit)
-        best = selection_score(base, refined)
+        base = assessment(model, processor, groups, args, device, fit=fit,selection=True)
+        clean_floor=base['test']['hit_at_1']-.005
+        def candidate_score(metrics):
+            return holdout_score(metrics,clean_floor,router_acceptable(metrics)) if profile.get('holdout_selection') else selection_score(metrics,refined)
+        best = candidate_score(base)
         def save_best(epoch, kind, metrics):
             torch.save(dict(metadata=model.metadata, state_dict=model.state_dict(), epoch=epoch,
                 target_epoch=max(0, epoch-pretrain_epochs),
-                variant=kind, metrics=metrics, test_selected=True, manifest_sha256=identity['manifest_sha256'],
+                variant=kind, metrics=metrics, test_selected=not profile.get('holdout_selection',False), selection_scheme='train_holdout_clean_noisy_v1' if profile.get('holdout_selection') else 'periodic_test', manifest_sha256=identity['manifest_sha256'],
                 source_commit=identity['source_commit']), args.output / 'best.pt')
         save_best(0, 'initial', base)
         history.append(dict(epoch=0, initial=base))
@@ -444,7 +467,7 @@ def run(args):
             for g in optimizer.param_groups:
                 multiplier = learning_rate_multiplier(profile, g['name'], external, refined)
                 g['lr'] = (.01 if g['name'].endswith('raw_router_phase') else 0.) if warming else g['initial_lr'] * factor * multiplier
-            totals = dict(loss=0., batch_natural_hit_at_1=0., route_aux=0., teacher_loss=0., all_view_loss=0., sam_loss_gap=0.)
+            totals = dict(loss=0., batch_natural_hit_at_1=0., route_aux=0., teacher_loss=0., all_view_loss=0., sam_loss_gap=0., paired_loss=0.,router_stability_loss=0.)
             bank_refresh_audit = []
             blend_weights = []
             for step in range(args.steps):
@@ -483,6 +506,14 @@ def run(args):
                         rng, view_blend, profile['same_sku_blend_range'])
                     blend_weights.extend(weights)
                 batch_inputs = inputs(processor, images, device)
+                clean_z,clean_routes=None,None
+                if profile.get('paired_consistency') and noisy:
+                    model.eval()
+                    with torch.no_grad(),autocast(device):
+                        clean_z=model(batch_inputs).detach()
+                        clean_routes={name:getattr(model,name).optics.router.last['probabilities'].detach().clone() for name in ('vision','language')}
+                    model.train()
+                    for modality in (model.vision,model.language):modality.optics.set_training_noise(True)
                 supervised_count = len(rows) if profile.get('symmetric_bank') else args.classes_per_batch
                 excluded = (training_source_exclusion(blended_sources[:supervised_count], gallery_ids, device)
                     if blended_sources is not None else
@@ -497,13 +528,16 @@ def run(args):
                     route = route_objective(model) if refined else z.new_zeros(())
                     all_views = all_view_loss(z, labels.to(device), bank, bank_labels, supervised_count, excluded) if profile['positive_weight'] else z.new_zeros(())
                     kd = z.new_zeros(())
+                    paired,stable=z.new_zeros(()),z.new_zeros(())
+                    if clean_z is not None:
+                        paired,stable=paired_loss(z,clean_z,bank,excluded,model,clean_routes,args.classes_per_batch)
                     if active_teacher and not warming:
                         tq = torch.stack([active_teacher[r['sample_id']] for r in rows[:args.classes_per_batch]]).to(device)
                         kd = relational_loss(z, bank, tq, teacher_bank, excluded)
                     taper = max(0., 1 - phase_epoch / max(1., phase_epochs*.8))
                     instance_scale, kd_scale = curriculum_loss_weights(profile, external, taper)
-                    loss = route if warming else instance_scale*(data_loss + profile['positive_weight']*all_views) + regularization(model) + profile.get('route_scale', 1.)*(.03+.17*taper)*route + kd_scale*kd
-                  return dict(loss=loss, hit=hit.detach(), route=route.detach(), kd=kd.detach(), all_views=all_views.detach())
+                    loss = route if warming else instance_scale*(data_loss + profile['positive_weight']*all_views) + regularization(model) + profile.get('route_scale', 1.)*(.03+.17*taper)*route + kd_scale*kd + profile.get('paired_consistency',0)*paired + profile.get('router_consistency',0)*stable
+                  return dict(loss=loss, hit=hit.detach(), route=route.detach(), kd=kd.detach(), all_views=all_views.detach(),paired=paired.detach(),stable=stable.detach())
                 result, sam = backward_with_sam(closure, optimizer, 0. if warming else profile.get('sam_rho', 0.))
                 norm = torch.nn.utils.clip_grad_norm_([p for _, p in params], 1., error_if_nonfinite=True)
                 optimizer.step()
@@ -514,6 +548,7 @@ def run(args):
                 totals['teacher_loss'] += float(result['kd'])
                 totals['all_view_loss'] += float(result['all_views'])
                 totals['sam_loss_gap'] += sam['loss_gap']
+                totals['paired_loss']+=float(result['paired']);totals['router_stability_loss']+=float(result['stable'])
             row = dict(epoch=epoch, phase='alpha_only' if alpha_only else 'phase_head_only' if phase_head_only else 'optical_only' if optical_only else 'external_pretrain' if external else 'target_finetune', phase_epoch=phase_epoch, router_only_warmup=warming,
                 optical_only_scope=current_optical_only,
                 bank_refreshes=bank_refresh_audit,
@@ -549,9 +584,9 @@ def run(args):
                         with torch.no_grad():
                             for n, p in params:
                                 p.copy_(ema[n])
-                    metrics = assessment(model, processor, groups, args, device, fit=fit)
+                    metrics = assessment(model, processor, groups, args, device, fit=fit,selection=True)
                     row[kind] = metrics
-                    score = selection_score(metrics, refined)
+                    score = candidate_score(metrics)
                     if score > best:
                         best = score
                         save_best(epoch, kind, metrics)
@@ -599,6 +634,8 @@ def run(args):
                 for row in history if row.get('phase') == 'external_pretrain') if profile.get('external_optical_only') else None),
             optical_removal_drop_percentage_points=100*(normal['test']['hit_at_1']-removed['test']['hit_at_1']),
             elapsed_seconds=time.time()-started)
+        if profile.get('holdout_selection'):
+            report.update(selection='Continuation TRAIN holdout clean/noisy selection; original TEST evaluated only after weights fixed',holdout_audit=args._holdout_audit,validation_clean_floor=clean_floor,selected_validation=selected['metrics'])
         write_json(args.output / 'final_report.json', report)
         status.update(status='complete')
         print(json.dumps(report), flush=True)

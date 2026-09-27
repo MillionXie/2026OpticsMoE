@@ -60,6 +60,10 @@ PROFILES['physical_bounded30_distill'] = dict(PROFILES['physical_bounded30'],
     alpha_lr_multiplier=20., router_lr_multiplier=.1, head_lr_multiplier=1.)
 PROFILES['physical_bounded30_distill_strong'] = dict(PROFILES['physical_bounded30_distill'],
     teacher_weight=.5)
+PROFILES['physical_bounded30_consistent'] = dict(PROFILES['physical_bounded30_distill'],
+    holdout_selection=True,paired_consistency=.2,router_consistency=.05,noise_probability=.5)
+PROFILES['physical_bounded30_consistent_strong'] = dict(PROFILES['physical_bounded30_consistent'],
+    paired_consistency=.5,router_consistency=.15)
 PROFILES['physical_bounded30_recover7'] = dict(PROFILES['physical_bounded30'],
     electronic_expansion=dict(kernels=dict(vision=7,language=5),mlp_width=384),
     sam_rho=.002, weight_decay=.03, mild_augmentation=False,
