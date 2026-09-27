@@ -5,15 +5,14 @@ Local pretrained path redirection changes loading only. Generator/LoRA/skips and
 single-step scheduler are upstream. This task wrapper adds our split, PSNR
 selection and best/last policy; combined G update differs from upstream's two.
 """
-import argparse, hashlib, importlib.metadata, json, subprocess, sys, time
+import argparse, csv, hashlib, importlib.metadata, json, subprocess, sys, time
 from pathlib import Path
 import numpy as np
 import torch
 from torch.nn import functional as F
 from torch.utils.data import DataLoader
-from PIL import Image
 from .product_unified_edit_data_v2 import ExpandedUnifiedProductEditDataset
-from .export_matched_summary import sha, per_image_metrics
+from .export_matched_summary import sha, per_image_metrics, save_png
 
 
 def load_generator(upstream, base, checkpoint=None):
@@ -84,7 +83,7 @@ def main():
               'argv':sys.argv,'torch':torch.__version__,'gpu':torch.cuda.get_device_name(),
               'config':{k:str(v) if isinstance(v,Path) else v for k,v in vars(args).items()},
               'architecture':architecture(model),'pretraining':'Local SD-Turbo pretrained backbone; fresh LoRA/skips, not from-scratch backbone training',
-              'data_sha256':{s:sha(data/(s+'.jsonl')) for s in ('train','val')},'instructions_sha256':sha(instructions),
+              'data_sha256':{s:sha(data/(s+'.jsonl')) for s in ('train','val','test')},'instructions_sha256':sha(instructions),
               'base_model_files':{str(p.relative_to(assets/'models/sd-turbo-fp16')):sha(p) for p in sorted((assets/'models/sd-turbo-fp16').rglob('*')) if p.is_file()},
               'metric_protocol':'RGB[0,1], per-image PSNR then mean; full VAL selection, fixed TEST only after selection',
               'loss':'1 RGB MSE + 5 VGG LPIPS + 5 CLIP text similarity + .5 vision-aided CLIP GAN',
@@ -105,12 +104,16 @@ def main():
             with torch.random.fork_rng(devices=[0]):
                 torch.manual_seed(1042+i);pred=forward(row['reference'][None].cuda(),[row['prompt']]).float()
             metrics=per_image_metrics(pred,row['target'][None].cuda())[0]
-            record={'test_index':i,'sample_id':row['sample_id'],'prompt':row['prompt'],**metrics}
-            for key in ('mode','category'):record[key]=row.get(key,'unknown')
+            sample_id=f'{split}_{i:05d}'
+            record={'test_index':i,'sample_id':sample_id,'source_id':row['sample_id'],
+                    'product_id':row['source_id'],'prompt':row['prompt'],**metrics}
+            for key in ('mode','category','target_id','source_scene','target_scene'):
+                record[key]=row.get(key,'unknown')
             if export:
-                folder=args.output/'images';folder.mkdir(exist_ok=True)
-                array=((pred[0].clamp(-1,1)+1)*127.5).round().byte().cpu().permute(1,2,0).numpy()
-                Image.fromarray(array).save(folder/f'test_{i:05d}.png')
+                for name,value in (('reference',row['reference']),('target',row['target']),('generated',pred[0])):
+                    relative=f'images/{name}/{sample_id}.png'
+                    record[name+'_image']=relative
+                    record[name+'_png_sha256']=save_png(value,args.output/relative)
             rows.append(record)
         model.unet.train();model.vae.train()
         summary={'count':len(rows),**{key:float(np.mean([r[key] for r in rows])) for key in ('psnr_db','ssim','mse_0_1','mae_0_1')}}
@@ -118,6 +121,8 @@ def main():
     if args.evaluate:
         if args.checkpoint is None:raise ValueError('Evaluation requires selected checkpoint')
         metrics,rows=evaluate(args.evaluate,True);write('sample_metrics.json',rows)
+        with (args.output/'sample_metrics.csv').open('w',encoding='utf-8',newline='') as file:
+            writer=csv.DictWriter(file,fieldnames=list(rows[0]));writer.writeheader();writer.writerows(rows)
         write('report.json',{'status':'complete','split':args.evaluate,'checkpoint_sha256':sha(args.checkpoint),'metrics':metrics,'protocol':protocol});return
     import lpips,vision_aided_loss
     sys.path.insert(0,str(assets/'vendor/CLIP'))
