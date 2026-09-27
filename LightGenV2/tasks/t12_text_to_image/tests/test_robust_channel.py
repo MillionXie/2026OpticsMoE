@@ -112,3 +112,13 @@ def test_batch_expert_balance_and_gradients():
     uniform=torch.full((4,4),.25)
     balanced=torch.tensor([[1,1,0,0],[0,1,1,0],[0,0,1,1],[1,0,0,1]])
     assert expert_balance(uniform,balanced).abs()<1e-6
+
+
+def test_semantic_route_prior_uses_all_experts():
+    from LightGenV2.tasks.t12_text_to_image.lab_shs8um.train_channel_robust import semantic_route_target
+    categories=[c for c in ('lamp','table','pillow') for _ in range(3)]
+    modes=['background','object','joint']*3
+    target=semantic_route_target(categories,modes,'cpu')
+    torch.testing.assert_close(target.sum(1),torch.ones(9))
+    loads=(target>.1).float().mean(0)
+    assert loads.min()>=4/9 and loads.max()<=5/9

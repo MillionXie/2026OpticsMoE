@@ -56,6 +56,16 @@ def expert_balance(probabilities, selected):
     return probabilities.shape[-1]*(importance*load).sum()-1
 
 
+def semantic_route_target(categories,modes,device):
+    """TRAIN-only prior, no label input or routing override at inference."""
+    base={'background':(0,1),'object':(2,3),'joint':(0,2)}
+    offset={'lamp':0,'table':1,'pillow':2}
+    target=torch.full((len(categories),4),.05,device=device)
+    for i,(category,mode) in enumerate(zip(categories,modes)):
+        for expert in base[mode]:target[i,(expert+offset[category])%4]=.45
+    return target
+
+
 def main():
     p = argparse.ArgumentParser()
     for name in ('checkpoint','assets','output'): p.add_argument('--'+name,type=Path,required=True)
@@ -71,6 +81,7 @@ def main():
     p.add_argument('--feature-consistency',type=float,default=0.)
     p.add_argument('--routing-consistency',type=float,default=0.)
     p.add_argument('--language-balance',type=float,default=0.)
+    p.add_argument('--language-route-prior',type=float,default=0.)
     p.add_argument('--lr-language-router',type=float)
     p.add_argument('--selection-language-max-load',type=float,default=1.)
     p.add_argument('--selection-language-min-load',type=float,default=0.)
@@ -246,6 +257,7 @@ def main():
             clean_features={k:v.detach() for k,v in features.items()}
             clean_routing=[obj.last_routing['probabilities'].detach() for obj in (model.text,model.editor.bottleneck)]
             clean_language_balance=expert_balance(model.text.last_routing['probabilities'],model.text.last_routing['selected_mask']) if a.language_balance else None
+            clean_language_prob=model.text.last_routing['probabilities']
             strength=.2+.8*min(1.,step/max(1,a.steps*.5))
             profile=training_profiles[step%len(training_profiles)]
             channel.configure(profile,strength);noisy=model(ref,emb,mask,noise)
@@ -255,6 +267,11 @@ def main():
                 ramp=min(1.,(step+1)/max(1,a.steps*.5))
                 noisy_balance=expert_balance(model.text.last_routing['probabilities'],model.text.last_routing['selected_mask'])
                 loss=loss+a.language_balance*ramp*(clean_language_balance+noisy_balance)/2
+            if a.language_route_prior:
+                route_target=semantic_route_target(batch['category'],batch['mode'],ref.device)
+                route_ce=lambda prob:-(route_target*prob.clamp_min(1e-8).log()).sum(-1).mean()
+                ramp=min(1.,(step+1)/max(1,a.steps*.5))
+                loss=loss+a.language_route_prior*ramp*(route_ce(clean_language_prob)+route_ce(model.text.last_routing['probabilities']))/2
             if a.region_weight:
                 region=batch['object_union'].cuda()
                 edited=torch.tensor([mode!='background' for mode in batch['mode']],device=ref.device)[:,None,None,None]
