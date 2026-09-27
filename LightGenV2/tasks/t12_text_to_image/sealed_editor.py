@@ -51,6 +51,9 @@ def build_sealed(saved):
                     bridge=nn.Linear(text.config.width,2048), vae=vae, training=cfg["training_config"])
     if saved.get("decoder_refinement", False):
         add_decoder_refinement(model)
+    if saved.get('decoder_spatial_prior',False):
+        from .audited_unified import add_decoder_spatial_prior
+        add_decoder_spatial_prior(model)
     model.text_mlp_indices = saved.get("text_mlp_indices")
     model.construction = cfg
     if saved.get('fusion_bounds'):

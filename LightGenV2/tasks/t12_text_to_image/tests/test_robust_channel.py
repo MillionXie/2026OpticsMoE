@@ -92,3 +92,10 @@ def test_detector_floor_is_not_peak_normalization():
     assert result[:,0,0].sum()==0
     torch.testing.assert_close(result[:,2,2],torch.full((2,),.09))
     assert correct(x,None) is x
+
+
+def test_text_spatial_prior_initially_zero():
+    from LightGenV2.tasks.t12_text_to_image.audited_unified import ConditionalSpatialPrior
+    prior=ConditionalSpatialPrior(4,8,2)
+    result=prior(torch.randn(2,8),torch.randn(2,4,8,8))
+    assert result.abs().sum()==0 and result.shape==(2,4,8,8)

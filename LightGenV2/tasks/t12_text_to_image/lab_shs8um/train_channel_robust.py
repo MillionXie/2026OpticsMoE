@@ -12,7 +12,7 @@ import torch
 from torch.nn import functional as F
 from torch.utils.data import DataLoader, Subset
 from ..sealed_editor import build_sealed
-from ..audited_unified import architecture_report,configure_fusion_bounds,optical_diagnostics,add_decoder_refinement
+from ..audited_unified import architecture_report,configure_fusion_bounds,optical_diagnostics,add_decoder_refinement,add_decoder_spatial_prior
 from ..product_unified_edit_data_v2 import ExpandedUnifiedProductEditDataset
 from ..qwen_mini_small import PromptEmbeddingLookup
 from .robust_channel import RobustChannel, PROFILES
@@ -71,6 +71,8 @@ def main():
     p.add_argument('--decoder-refinement',action='store_true')
     p.add_argument('--lr-refinement',type=float,default=1e-4)
     p.add_argument('--ccd-floor-quantile',type=float)
+    p.add_argument('--decoder-spatial-prior',action='store_true')
+    p.add_argument('--lr-spatial-prior',type=float,default=5e-4)
     p.add_argument('--steps',type=int,default=600)
     p.add_argument('--batch-size',type=int,default=4)
     p.add_argument('--val-samples',type=int,default=96)
@@ -86,6 +88,8 @@ def main():
     if a.decoder_refinement:
         add_decoder_refinement(model)
         model.cuda()
+    if a.decoder_spatial_prior:
+        add_decoder_spatial_prior(model);model.cuda()
     if a.alpha_min is not None:configure_fusion_bounds(model,minimum=a.alpha_min)
     if a.ccd_floor_quantile is not None:
         from .detector_correction import install
@@ -191,6 +195,7 @@ def main():
         payload['model']={k:v.detach().cpu() for k,v in model.state_dict().items()}
         payload['channel_robust_training']=dict(step=step,profiles=a.train_profiles or [a.profile],training_config=config,execution=execution)
         payload['decoder_refinement']=getattr(model,'decoder_refinement',False)
+        payload['decoder_spatial_prior']=getattr(model,'decoder_spatial_prior',False)
         payload['detector_correction']=getattr(model,'detector_correction',None)
         if hasattr(model,'fusion_bounds'):payload['fusion_bounds']=model.fusion_bounds
         torch.save(payload,a.output/name)
@@ -198,9 +203,10 @@ def main():
     write(a.output/'baseline_val.json',baseline)
     phases=[v for n,v in model.named_parameters() if 'raw_phase' in n or 'raw_router_phase' in n]
     groups=[dict(params=phases,lr=a.lr_phase),
-            dict(params=[v for n,v in model.named_parameters() if 'raw_phase' not in n and 'raw_router_phase' not in n and 'raw_alpha' not in n and '.details.' not in n],lr=a.lr_electronic),
+            dict(params=[v for n,v in model.named_parameters() if 'raw_phase' not in n and 'raw_router_phase' not in n and 'raw_alpha' not in n and '.details.' not in n and '.decoder_spatial_prior.' not in n],lr=a.lr_electronic),
             dict(params=[v for n,v in model.named_parameters() if 'raw_alpha' in n],lr=a.lr_alpha),
-            dict(params=[v for n,v in model.named_parameters() if '.details.' in n],lr=a.lr_refinement)]
+            dict(params=[v for n,v in model.named_parameters() if '.details.' in n],lr=a.lr_refinement),
+            dict(params=[v for n,v in model.named_parameters() if '.decoder_spatial_prior.' in n],lr=a.lr_spatial_prior)]
     optimizer=torch.optim.AdamW(groups,weight_decay=0.)
     loader=DataLoader(dataset('train'),batch_size=a.batch_size,shuffle=True,num_workers=0,
                       generator=torch.Generator().manual_seed(a.seed))

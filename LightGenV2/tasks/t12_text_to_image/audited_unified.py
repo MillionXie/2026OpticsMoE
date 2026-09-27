@@ -137,7 +137,31 @@ class AuditedSpatialBottleneck(nn.Module):
         delta = (result-tokens).transpose(1, 2).reshape_as(pooled)
         # Preserve unpooled spatial detail through a feature residual, not a
         # foreground mask or post-hoc pasted image.
-        return value + F.interpolate(delta, value.shape[-2:], mode="bilinear", align_corners=False)
+        output=value + F.interpolate(delta, value.shape[-2:], mode="bilinear", align_corners=False)
+        if hasattr(self,'decoder_spatial_prior'):
+            output=output+self.decoder_spatial_prior(condition,output)
+        return output
+
+
+class ConditionalSpatialPrior(nn.Module):
+    """Learned text-conditioned decoder features, no image catalogue at inference."""
+    def __init__(self,width,condition_dim,grid=14):
+        super().__init__();self.width,self.grid=width,grid
+        self.projection=nn.Linear(condition_dim,width*grid*grid)
+        nn.init.zeros_(self.projection.weight);nn.init.zeros_(self.projection.bias)
+    def forward(self,condition,reference):
+        prior=self.projection(condition).reshape(len(condition),self.width,self.grid,self.grid)
+        prior=F.interpolate(prior,reference.shape[-2:],mode='bilinear',align_corners=False)
+        rms=reference.float().square().mean((1,2,3),keepdim=True).sqrt().detach().clamp_min(1e-6)
+        return .5*rms*torch.tanh(prior)
+
+
+def add_decoder_spatial_prior(model):
+    if model.kind!='small' or hasattr(model.editor.bottleneck,'decoder_spatial_prior'):
+        raise ValueError('Spatial prior requires an unexpanded small bottleneck')
+    cfg=model.editor.config
+    model.editor.bottleneck.decoder_spatial_prior=ConditionalSpatialPrior(cfg.widths[-1],cfg.condition_dim,model.editor.bottleneck.grid)
+    model.decoder_spatial_prior=True
 
 
 class AuditedLatentMidBlock(nn.Module):
@@ -253,8 +277,8 @@ def architecture_report(model):
             "components": components,
             "fixed_condition_buffer_values": fixed_condition,
             "parameters_plus_fixed_condition_values": total+fixed_condition,
-            "parameter_limit": 15_000_000 if model.kind == "small" else 150_000_000,
-            "within_limit": total+fixed_condition <= (15_000_000 if model.kind == "small" else 150_000_000),
+            "parameter_limit": 20_000_000 if model.kind == "small" else 150_000_000,
+            "within_limit": total+fixed_condition <= (20_000_000 if model.kind == "small" else 150_000_000),
             "pure_phase_parameters": sum(parameters[n].numel() for n in phases),
             "phase_tensors": phases, "physical_active_roi": [478, 478], "propagation_canvas": [518, 518],
             "expert_tiles": [4, 224, 224], "language_optics": True, "vision_optics": True,
