@@ -1,7 +1,7 @@
 import math
 import torch
-from ..lab_shs8um.bounded_amplitude import encode
-from ..lab_shs8um.robust_channel import coherent_modulation, RobustChannel
+from LightGenV2.tasks.t12_text_to_image.lab_shs8um.bounded_amplitude import encode
+from LightGenV2.tasks.t12_text_to_image.lab_shs8um.robust_channel import coherent_modulation, RobustChannel
 
 
 def test_bounded_phase_and_zero_preserved():
