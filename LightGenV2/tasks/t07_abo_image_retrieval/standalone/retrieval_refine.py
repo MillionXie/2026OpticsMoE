@@ -53,6 +53,16 @@ PROFILES['physical_bounded30'] = dict(PROFILES['physical_robust35_cleanmix'],
     robust_alpha_min=.30, bounded_amplitude=True)
 PROFILES['physical_bounded30_conv5'] = dict(PROFILES['physical_bounded30'],
     electronic_expansion=dict(kernels=dict(vision=5,language=5),mlp_width=384))
+PROFILES['physical_bounded30_recover7'] = dict(PROFILES['physical_bounded30'],
+    electronic_expansion=dict(kernels=dict(vision=7,language=5),mlp_width=384),
+    sam_rho=.002, weight_decay=.03, mild_augmentation=False,
+    noise_probability=.35, phase_dropout=.02, phase_lr_multiplier=.5,
+    alpha_lr_multiplier=50., router_lr_multiplier=.2, head_lr_multiplier=2.)
+PROFILES['physical_bounded30_recover_spatial'] = dict(PROFILES['physical_bounded30'],
+    head_expansion='spatial2x2_64', sam_rho=.002, weight_decay=.03,
+    mild_augmentation=False, noise_probability=.35, phase_dropout=.02,
+    phase_lr_multiplier=.5, alpha_lr_multiplier=50., router_lr_multiplier=.2,
+    head_lr_multiplier=2.)
 PROFILES['sku_optical_pretrain'] = dict(PROFILES['sku_capacity_control'],
     external_optical_only=True, external_phase_lr_multiplier=5.)
 PROFILES['sku_conv_teacher'] = dict(PROFILES['sku_capacity_control'],
