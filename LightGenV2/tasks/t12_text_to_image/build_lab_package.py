@@ -31,7 +31,7 @@ def main():
                     fusion_bounds=saved.get('fusion_bounds',dict(minimum=.4,maximum=.75)),
                     detector_correction=saved.get('detector_correction'),
                     decoder_spatial_prior=bool(saved.get('decoder_spatial_prior',False)),
-                    decoder_refined=bool(saved.get('decoder_refined',False)),
+                    decoder_refinement=bool(saved.get('decoder_refinement',False)),
                     bounded_amplitude=model.bounded_amplitude,source_commit=commit,
                     source_note='TRAIN adaptation; VAL-only selection; new weights require fresh CCD captures',
                     scope='new versioned candidate; cannot reuse CCDs from another weight',
