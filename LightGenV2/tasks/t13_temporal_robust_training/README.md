@@ -6,10 +6,10 @@
 
 ## 当前正式结果与交付
 
-当前有效run为`full2250_testbest_dc30_ccd_s163_uuid2456_20260927`，四组各100epoch及共同评价完成。
-带噪声test SRCC依次0.790527/0.786405/0.801299/0.800796；不是光路实测，test参与选模。
+当前有效run为`full2250_testbest_low_lr30_s163_uuid1256_20260927`，各组从本组100轮best继续30轮低学习率训练及共同评价完成。
+test SRCC依次0.790389/0.784891/0.803319/0.800796；不是光路实测，test参与选模。第1、2、4组选中epoch0父权重，第3组选中微调epoch1；不声称四组都提升。
 主报告只放一张四组结果表，见[reports/FULL2250_TESTBEST_RESULTS.md](reports/FULL2250_TESTBEST_RESULTS.md)。其他评价条件仅为原run内诊断，不是额外实验组。
-当前四份真PT工程位于`projects/temporal_full2250_testbest_s163_20260927`，旧schema3产物仅在`.codex_tmp/t13_retired_schema3_20260927`隔离保存，不用于部署。
+当前四份真PT工程位于`projects/temporal_full2250_low_lr30_s163_20260927`；父阶段run和工程保留历史证据，当前迁移只使用这个目录。旧schema3产物在`.codex_tmp/t13_retired_schema3_20260927`隔离，不用于部署。
 
 ## 来源与版本边界
 
