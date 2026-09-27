@@ -85,6 +85,11 @@ PROFILES['physical_bounded30_phase_pair'] = dict(PROFILES['physical_bounded30_sp
     paired_consistency=1.,router_consistency=0.,teacher_weight=.5)
 PROFILES['physical_bounded30_phase_pair_strong'] = dict(PROFILES['physical_bounded30_phase_pair'],
     phase_dropout=.03)
+# Short clean recovery after matched two-seed phase robustness gains.
+# Preserve paired anchoring, reduce noisy fraction; no extra inference capacity.
+PROFILES['physical_bounded30_phase_clean_recovery'] = dict(PROFILES['physical_bounded30_phase_pair_strong'],
+    noise_probability=.15,phase_dropout=.01,phase_lr_multiplier=.25,
+    router_lr_multiplier=.05,teacher_weight=.5)
 PROFILES['physical_bounded30_recover7'] = dict(PROFILES['physical_bounded30'],
     electronic_expansion=dict(kernels=dict(vision=7,language=5),mlp_width=384),
     sam_rho=.002, weight_decay=.03, mild_augmentation=False,
