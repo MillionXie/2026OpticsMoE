@@ -1,5 +1,33 @@
 # T12 最终版本与复现入口
 
+## 当前四组汇总：2026-09-27 同任务 baseline
+
+优先使用 run `20260927_matched_qwen28_baseline`（补训）和 `20260927_four_group_matched_baseline`（固定TEST导出），工作树 `/DATA/DATA1/guest3/2026OpticsMoE/.worktrees/t12_physical_robust_v2_20260927`。历史段落中的跨任务baseline数值不作为当前主表。
+
+训练源码 `b813628eaeb1687d4533bcedd9fb9998c5d5c6a5`，导出源码 `c657f959d877635549d68cfbb8bba4c668273adf`。PyTorch2.6.0+cu124、RTX4090、服务器t12_assets/venv。Qwen28/VAE冻结、原UNet和adapter训练，TRAIN20736、VAL2304、3epochs、batch4、accumulation2、lr2e-5、seed927。损失为latent MSE+.05 latent梯度L1，每8批加.1 RGB MSE。VAL逐图平均PSNR选中step15000（27.404973dB），末步15552不代替best；固定best后只做TEST评估。训练run保存protocol/history/report、best/last；新权重SHA `599805ad3062bebf67acf3b515f0a812fb843506643e18251004f180131b4b52`。
+
+| 当前主表（TEST2304） | 预算M | PSNR dB | SSIM |
+|---|---:|---:|---:|
+| 小版原权重仿真5b4f |17.026642|34.277751|.927140|
+| 小版decoder微调后EXP eeec |17.026642|31.552886|.906013|
+| 大版仿真2a91 |149.755866|31.428599|.882211|
+| 同任务补训Qwen28 baseline5998 |1834.345963|27.260453|.837653|
+
+小版原权重EXP27.551289/.876325，微调权重仿真28.890612/.903006。主表前两行权重不同，不是同权重sim-exp对。小版物理微调只训练decoder、光学上游未变；原报告保留TRAIN-domain validation warm-start caveat。大版与baseline目前训练历史/损失不同，不能单独归因于光学优势。PSNR是配对保真指标，不是开放集生成证明。
+
+指标：256原生RGB、clamp后映射[0,1]，每图MSE→PSNR后平均；SSIM11×11 Gaussian sigma1.5 valid。浮点指标在PNG量化前计算；旧整体MSE取log口径不能混用。TEST manifest SHA `331874abbb8d8c7a4ac5ee3d6e030f20611cb5a9e96d3092917b7a5c4d7d5d2f`；TRAIN/VAL SHA及缓存审核在protocol.json。导出seed1042+索引；小版与latent模型噪声形状不同，不宣称同一噪声张量。小版PNG floor与大版/baseline round仅导出量化不同，统一输入/GT实际像素差不超过1/255；不修改生成图。
+
+```bash
+export CUDA_VISIBLE_DEVICES=GPU-1b963983-7909-af6e-0528-f0f0661ab549
+AS=/DATA/DATA1/guest3/t12_assets
+TASK=LightGenV2/tasks/t12_text_to_image
+QWEN=/DATA/DATA1/guest3/.cache/huggingface/hub/models--Qwen--Qwen3-VL-2B-Instruct/snapshots/89644892e4d85e24eaac8bacfd4f463576704203
+$AS/venv/bin/python -m LightGenV2.tasks.t12_text_to_image.train_matched_qwen_baseline --assets $AS --qwen $QWEN --output $TASK/runs/simulation/20260927_matched_qwen28_baseline --epochs 3 --batch-size 4 --accumulation 2 --learning-rate 0.00002
+$AS/venv/bin/python -m LightGenV2.tasks.t12_text_to_image.export_matched_summary --assets $AS --qwen $QWEN --large /DATA/DATA1/guest3/t12_git_audited_20260926/$TASK/runs/simulation/20260926_large_detail/adapted_model.pt --baseline-checkpoint $TASK/runs/simulation/20260927_matched_qwen28_baseline/best_checkpoint.pt --reuse-large-export $TASK/runs/simulation/20260927_four_group_summary --output $TASK/runs/simulation/20260927_four_group_matched_baseline --batch-size 2
+```
+
+训练复现应使用新output，不能覆盖已封存run；固定权重复评不再训练。复用大版导出前严格校验其权重/数据/缓存/seed/2304行身份。本地交付目录 `handoffs/t12_four_group_summary_20260927`：四模型各2304张生成PNG以及输入/GT、逐图指标、SHA/CRC审核、同样本代表图。不包含缺失的微调后仿真PNG，不假造补齐。本轮未测新延迟、未操作光路。训练/导出自身GPU进程已退出，未停止其他AI。
+
 日期：2026-09-26。正式代码分支：`codex/t12-audited-editors-20260926`。本轮训练源代码分别记录于报告 execution 字段；封装提交 bb7bfba2253108ef5da3d81203f4edc7f1510dc9，运行记录提交 15537441f，清理提交 dbda11c62179e62967f5169759437ee35093d978。
 
 ## 两套主权重

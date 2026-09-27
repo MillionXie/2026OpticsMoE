@@ -4,6 +4,16 @@
 
 唯一入口：[复现与最终产物](reports/reproduction/README.md)。旧报告保留作历史记录，不代表当前部署入口。
 
+## 2026-09-27 同任务 baseline 补训与四组汇总
+
+完整 Qwen28 + 原电子 UNet/adapter + 冻结 VAE baseline 已完成当前 TRAIN20736 的3轮补训，VAL2304 按逐图平均PSNR选中step15000，固定后评估TEST2304。没有缩减Qwen层数，没有用窄头缓存代替Qwen28。训练源码 `b813628ea`，导出源码 `c657f959d`，checkpoint SHA256 `599805ad3062bebf67acf3b515f0a812fb843506643e18251004f180131b4b52`。
+
+统一256×256、浮点RGB[0,1]、逐图PSNR后平均：原17M小版仿真34.277751dB，小版电子decoder微调后EXP31.552886dB，大版仿真31.428599dB，同任务补训baseline27.260453dB。参数预算依次17.026642M、17.026642M、149.755866M、1834.345963M；含固定条件缓冲值，按约定另列冻结词嵌入311.164928M。
+
+**小版主表仿真与EXP不是同一权重**：原5b4f权重EXP27.551289dB；微调eeec权重仿真28.890612dB。不可用34.28与31.55之差代表同权重仿真—实测差距。当前表比较已完成的模型，不等于排除不同训练历史后光学模块的因果优势。旧跨任务baseline保留为历史诊断，不纳入当前主表。
+
+本地交付 `handoffs/t12_four_group_summary_20260927`，四模型每个包含2304张原生生成PNG、对应输入/GT、逐图CSV/JSON，代表图按类别/模式固定索引选取而非质量筛选。表格位于 `outputs/t12_four_group_summary_20260927/T12_four_group_performance.xlsx`。完整复现命令与局限见复现入口。本任务不采集光路，不使用GT贴回、超分或锐化。
+
 ## 2026-09-27 小版物理鲁棒性候选
 
 本分支追加语言均衡/极强扰动试验，**均衡尚未解决**：所有试验实际语言top2仍为专家1/2。仅作为图像鲁棒性改善候选交付 `5b4f9a37…`（17,026,642参数，与前版预算相同），完整VAL2304：clean34.4315/.928509、stress29.3008/.892036、severe28.4256/.885481、extreme27.7628/.879783。候选保留原standardized_region_energy读出，不启用实验性log读出。来源为 `20260927_language_balance_input/last_checkpoint.pt`，不是该run未通过均衡守卫的best_checkpoint.pt；在完整VAL上仅按图像质量/干净保护人工选为备选，不能称为均衡选模成功。新增极强扰动已进入TRAIN，不再称为留出未见扰动；TEST仅固定权重后评估。交付目录 `handoffs/t12_language_balance_20260927`。
