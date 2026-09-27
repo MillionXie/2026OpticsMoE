@@ -1,5 +1,36 @@
 # T12 最终版本与复现入口
 
+## 新增外部 baseline：官方 pix2pix-Turbo 微调（性能待评估）
+
+官方repository `https://github.com/GaParmar/img2img-turbo`，SHA `86f54146590ffb4543c8cf85b5a36657da670924`，服务器干净外部clone `$AS/vendor/img2img-turbo-ssh`。不修改官方生成网络、VAE skips、LoRA目标或单步DDPM scheduler；仅将from_pretrained加载重定向到已验证的本地SD-Turbo FP16文件。官方日志的“Initializing model with random weights”指未加载任务LoRA checkpoint的初始化分支，**SD-Turbo骨干仍由from_pretrained加载**，不是随机骨干。模型文件SHA在protocol.json。
+
+输入图→官方VAE encoder及skip特征→latent posterior sample→UNet(t999,原生逐token CLIP条件)→官方一步scheduler→VAE decoder及官方skip→clamp RGB。无Qwen、PCA或GT贴回。推理图仅UNet一次调用，确定分支仍有VAE posterior随机性；VAL/TEST逐图固定1042+索引并使用fork_rng，保留官方.sample()，不擅改成mode()。
+
+| 组件 | 推理参数 | 微调参数 |
+|---|---:|---:|
+| CLIP文本encoder |340,387,840|0|
+| UNet（含LoRA，rank8） |874,019,300|8,120,416|
+| VAE（含LoRA rank4与skip） |85,038,607|1,384,744|
+| 总计 |1,299,445,747|9,505,160|
+
+词嵌入50,593,792按既有约定单列；排除后预算1,248,851,955。主表同时保留完整总参数与排除词嵌入参数，不能只用9.51M LoRA代表部署模型。VGG LPIPS、CLIP相似度网络、vision-aided discriminator仅训练，不计推理参数；无PCA固定条件库。此处总量是未merge LoRA计算图；后续如merge需要重审参数和速度，不能混报。
+
+当前TRAIN20736/VAL2304，与现有ABO指令数据及真实透明掩码GT相同，256×256不裁剪、不左右翻转（避免破坏左右光照文本）。计划3epochs，batch2累积4，lr5e-6、seed927、UNet checkpointing、BF16 autocast/FP32权重。官方推荐loss权重：RGB MSE1、VGG LPIPS5、CLIP similarity5、vision-aided GAN.5；完整VAL按逐图平均PSNR选择best，TEST独立固定后评估。保留best/last及逐图结果，不创建周期权重。
+
+明确wrapper差异：当前将G的重建/感知/语义/GAN合成一次backward与optimizer更新，而官方trainer分成两次G更新；采用累积有效batch8、完整VAL PSNR选模而非官方小子集FID选模。生成结构不改，但不得写成官方训练脚本完全原样复现。正式结果未完成前不宣称胜过旧baseline。
+
+依赖隔离在 `$AS/pix2pix_dependencies`，未升级共享torch/diffusers。diffusers0.35.1、peft0.19.1、lpips0.1.4、vision-aided-loss0.1.0；完整CLIP源码 `d05afc436d78f1c48dc0dbf8e5980a9d471f35f6` 位于 `$AS/vendor/CLIP`。CPU数值/参数测试与真实GPU短程冒烟先行，失败run保留诊断，不部署。代码许可与SD-Turbo权重许可分别遵循其原始LICENSE，不声称模型权重属于ABO数据许可。
+
+```bash
+export CUDA_VISIBLE_DEVICES=GPU-1b963983-7909-af6e-0528-f0f0661ab549
+AS=/DATA/DATA1/guest3/t12_assets
+TASK=LightGenV2/tasks/t12_text_to_image
+export PYTHONPATH=$AS/pix2pix_dependencies
+$AS/venv/bin/python -u -m LightGenV2.tasks.t12_text_to_image.train_pix2pix_turbo_baseline --assets $AS --upstream $AS/vendor/img2img-turbo-ssh --output $TASK/runs/simulation/20260927_pix2pix_turbo_matched --epochs 3 --batch-size 2 --accumulation 4 --learning-rate 5e-6 --validation-every 5000
+# 完成后只使用VAL选择的best，新的output，TEST不得用于调参：
+$AS/venv/bin/python -u -m LightGenV2.tasks.t12_text_to_image.train_pix2pix_turbo_baseline --assets $AS --upstream $AS/vendor/img2img-turbo-ssh --output $TASK/runs/simulation/20260927_pix2pix_turbo_test --checkpoint $TASK/runs/simulation/20260927_pix2pix_turbo_matched/best_checkpoint.pt --evaluate test
+```
+
 ## 当前四组汇总：2026-09-27 同任务 baseline
 
 优先使用 run `20260927_matched_qwen28_baseline`（补训）和 `20260927_four_group_matched_baseline`（固定TEST导出），工作树 `/DATA/DATA1/guest3/2026OpticsMoE/.worktrees/t12_physical_robust_v2_20260927`。历史段落中的跨任务baseline数值不作为当前主表。
