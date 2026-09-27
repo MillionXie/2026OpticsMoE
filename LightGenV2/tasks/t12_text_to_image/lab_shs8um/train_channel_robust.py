@@ -83,6 +83,7 @@ def main():
     p.add_argument('--language-balance',type=float,default=0.)
     p.add_argument('--language-route-prior',type=float,default=0.)
     p.add_argument('--lr-language-router',type=float)
+    p.add_argument('--lr-language-optical-input',type=float)
     p.add_argument('--selection-language-max-load',type=float,default=1.)
     p.add_argument('--selection-language-min-load',type=float,default=0.)
     p.add_argument('--phase-tv',type=float,default=0.)
@@ -226,10 +227,13 @@ def main():
     write(a.output/'baseline_val.json',baseline)
     language_router=[v for n,v in model.named_parameters() if n.startswith('text.optical.core.router.') and 'raw_router_phase' in n]
     language_router_ids={id(v) for v in language_router}
+    optical_input=[v for n,v in model.named_parameters() if n.startswith(('text.optical.core.input_adapter.','text.optical.core.input_norm.'))]
+    optical_input_ids={id(v) for v in optical_input}
     phases=[v for n,v in model.named_parameters() if ('raw_phase' in n or 'raw_router_phase' in n) and id(v) not in language_router_ids]
     groups=[dict(params=phases,lr=a.lr_phase),
             dict(params=language_router,lr=a.lr_language_router if a.lr_language_router is not None else a.lr_phase),
-            dict(params=[v for n,v in model.named_parameters() if 'raw_phase' not in n and 'raw_router_phase' not in n and 'raw_alpha' not in n and '.details.' not in n and '.decoder_spatial_prior.' not in n],lr=a.lr_electronic),
+            dict(params=optical_input,lr=a.lr_language_optical_input if a.lr_language_optical_input is not None else a.lr_electronic),
+            dict(params=[v for n,v in model.named_parameters() if id(v) not in optical_input_ids and 'raw_phase' not in n and 'raw_router_phase' not in n and 'raw_alpha' not in n and '.details.' not in n and '.decoder_spatial_prior.' not in n],lr=a.lr_electronic),
             dict(params=[v for n,v in model.named_parameters() if 'raw_alpha' in n],lr=a.lr_alpha),
             dict(params=[v for n,v in model.named_parameters() if '.details.' in n],lr=a.lr_refinement),
             dict(params=[v for n,v in model.named_parameters() if '.decoder_spatial_prior.' in n],lr=a.lr_spatial_prior)]
