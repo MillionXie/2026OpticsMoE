@@ -89,6 +89,19 @@ $AS/venv/bin/python -m LightGenV2.tasks.t12_text_to_image.benchmark_audited_edit
 
 camera 为泄漏/错位/CCD 的组合；combined 在其基础加温和 k-space 和 phase bypass dropout；stress 增大扰动。三者是组合对照，不可据此声称单独某项增强有效。参数为假设的设备扰动代理，不是从 TEST 实测拟合所得的标定值。
 
+选模后完整 TEST（2304，source commit `1eb670a3fd979af149c95aa4234aaabcd16879fa`）：
+
+| 通道 | 原权重 PSNR / SSIM | 主候选 PSNR / SSIM |
+|---|---:|---:|
+| clean |33.4286 / .918732|33.3754 / .918042|
+| camera |28.7182 / .879574|28.9739 / .881703|
+| combined |27.2183 / .864712|27.6322 / .869324|
+| stress |25.4729 / .848049|25.8466 / .853205|
+
+TEST 未用于选择/修改权重。clean下降.0531dB，combined MSE下降14.56%，stress MSE下降15.48%。原权重本轮与原报告相差约.00023dB/.0000026 SSIM，新旧使用完全相同batch=4与实现。结束后GPU4显存15MiB，无遗留训练/评估进程；其他用户进程未触碰。
+
+发布包 Git源码 commit `5164fc1ec868c1784dba15fec98be51c9038b78d`；ZIP SHA256 `d362271c9e429d00d4ea182d1e5da057acb2dc9933dbd07fa1be3e813c9a6c3c`。完整本地交付目录 `handoffs/t12_channel_robust_20260927`，含 small.pt、ZIP、manifest、选模记录、新旧 VAL/TEST 汇总及四通道逐图指标。
+
 泄漏使用相位调制因子 `m_mix=sqrt(1-eta)*m+sqrt(eta)*exp(i*delta)`，再传播入射场 `P(a*m_mix)`。eta=.30 指相干叠加前名义支路功率比例，非总干涉强度中的固定 30%；delta 每图均匀采样 [-pi,pi]，保留干涉。camera/combined eta∈[.15,.35]，stress=.30。保留零入射场，不会凭空补光。phase dropout 8×8 块旁路相位 m→1，并非抹掉振幅。CCD 模型为强度增益、背景偏置和强度相关读出/散粒代理噪声；噪声单位为有界场强度单位，不是标定电子数。k-space 为平滑幅度衰减与离焦/像散相位响应。
 
 600 steps、batch=4、phase LR=2e-5、其余 NN LR=2e-6；前 300 步扰动强度由 .2 增至 1。每步干净与扰动双前向，原权重为冻结教师，损失为 `.5*(MSE+.1L1)clean + .5*(MSE+.1L1)noisy + .1MSE(clean,teacher) + .05MSE(noisy,teacher)`。没有新加 GAN；本轮着重通道适配和保住干净性能。
