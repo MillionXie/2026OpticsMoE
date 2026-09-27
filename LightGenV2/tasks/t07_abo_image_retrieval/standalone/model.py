@@ -14,7 +14,7 @@ class Residual(nn.Module):
     def __init__(self, vision, kernel_size=None, mlp_width=384):
         super().__init__()
         self.vision = vision
-        if type(mlp_width) is not int or mlp_width not in (384,768):
+        if type(mlp_width) is not int or mlp_width not in (384,448,768):
             raise ValueError('Electronic residual MLP width must be 384 or 768')
         self.mlp_width=mlp_width
         self.kernel_size=(3 if vision else 5) if kernel_size is None else kernel_size

@@ -250,9 +250,10 @@ def expand_electronic_mlp(payload, width):
     Independent training dropout breaks duplicate symmetry (not identical RNG).
     """
     previous=payload['metadata'].get('electronic_mlp_width',384)
-    if type(width) is not int or width not in (384,768) or previous not in (384,768) or width<previous:
-        raise ValueError('Only nonshrinking electronic MLP widths 384/768 supported')
+    if type(width) is not int or width not in (384,448,768) or previous not in (384,448,768) or width<previous:
+        raise ValueError('Only nonshrinking electronic MLP widths 384/448/768 supported')
     if previous==width:return payload
+    if previous!=384:raise ValueError('Expansion must start from original384 width')
     state=dict(payload['state_dict'])
     for mode in ('vision','language'):
         for index in (0,1):
@@ -260,9 +261,11 @@ def expand_electronic_mlp(payload, width):
             w,b,v=(state[prefix+k] for k in ('0.weight','0.bias','3.weight'))
             if w.shape!=(384,192) or b.shape!=(384,) or v.shape!=(192,384) or not all(torch.isfinite(x).all() for x in (w,b,v)):
                 raise ValueError('Invalid source electronic MLP tensors')
-            state[prefix+'0.weight']=torch.cat((w,w),dim=0)
-            state[prefix+'0.bias']=torch.cat((b,b),dim=0)
-            state[prefix+'3.weight']=torch.cat((v/2,v/2),dim=1)
+            count=width-previous
+            state[prefix+'0.weight']=torch.cat((w,w[:count]),dim=0)
+            state[prefix+'0.bias']=torch.cat((b,b[:count]),dim=0)
+            original=v.clone();original[:,:count]*=.5
+            state[prefix+'3.weight']=torch.cat((original,v[:,:count]/2),dim=1)
     return dict(payload,metadata=dict(payload['metadata'],electronic_mlp_width=width),state_dict=state)
 
 
