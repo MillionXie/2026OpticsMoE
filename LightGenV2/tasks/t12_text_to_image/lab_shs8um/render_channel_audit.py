@@ -13,6 +13,7 @@ from ..qwen_mini_small import PromptEmbeddingLookup
 from ..product_unified_edit_data_v2 import ExpandedUnifiedProductEditDataset
 from ..audited_unified import optical_diagnostics,architecture_report
 from .robust_channel import RobustChannel
+from .ccd_bridge import attach
 from .train_channel_robust import IndexedDataset,ssim_per_image
 
 
@@ -44,8 +45,20 @@ def main():
     for label,checkpoint in zip(a.labels,a.checkpoints):
         model=build_sealed(torch.load(checkpoint,map_location='cpu',weights_only=False)).cuda().eval()
         channel=RobustChannel(model)
+        channel.restore_bridge()
+        stage_stats={}
+        def detector_spy(stage,amplitude,phase,ideal):
+            record=stage_stats.setdefault(stage,dict(samples=0,amplitude_mean=0.,zero_fraction=0.,saturated_fraction=0.,intensity_mean=0.))
+            count=len(ideal);record['samples']+=count
+            record['amplitude_mean']+=float(amplitude.mean())*count
+            record['zero_fraction']+=float((amplitude==0).float().mean())*count
+            record['saturated_fraction']+=float((amplitude>.98).float().mean())*count
+            record['intensity_mean']+=float(ideal.mean())*count
+            return channel.camera(stage,amplitude,phase,ideal)
+        channel.restore_bridge=attach(model,detector_spy)
         stats={};clean_masks={}
         for profile in a.profiles:
+            stage_stats={}
             rows=[];routing={b:dict(selected=[],weights=[],probabilities=[],changed=0) for b in ('language','vision')}
             for batch in DataLoader(Subset(dataset,indices),batch_size=4):
                 ref=batch['reference'].cuda();gt=batch['target'].cuda()
@@ -77,7 +90,8 @@ def main():
                 r['probability_mean']=torch.tensor(r.pop('probabilities')).mean(0).tolist()
                 r['top2_changed_fraction']=r.pop('changed')/len(rows)
                 r['top2_pair_counts']={str(pair):int(count) for pair,count in zip(*torch.unique(selected,dim=0,return_counts=True))}
-            stats[profile]=dict(samples=len(rows),psnr=sum(r['psnr'] for r in rows)/len(rows),ssim=sum(r['ssim'] for r in rows)/len(rows),mse=sum(r['mse'] for r in rows)/len(rows),routing=routing)
+            detectors={stage:{k:v/record['samples'] for k,v in record.items() if k!='samples'} for stage,record in stage_stats.items()}
+            stats[profile]=dict(samples=len(rows),psnr=sum(r['psnr'] for r in rows)/len(rows),ssim=sum(r['ssim'] for r in rows)/len(rows),mse=sum(r['mse'] for r in rows)/len(rows),routing=routing,detectors=detectors)
             print(json.dumps(dict(label=label,profile=profile,metrics=stats[profile])),flush=True)
         results[label]=dict(checkpoint_sha256=hashlib.sha256(checkpoint.read_bytes()).hexdigest(),architecture=architecture_report(model),alpha=optical_diagnostics(model),metrics=stats)
         channel.restore();del model,channel;torch.cuda.empty_cache()
