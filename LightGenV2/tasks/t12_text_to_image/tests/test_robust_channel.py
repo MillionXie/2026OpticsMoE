@@ -47,3 +47,32 @@ def test_bmp_does_not_peak_normalize(tmp_path):
     paths,scale=save_bmps(value,tmp_path,'router',['example'],SimpleNamespace(active_to_native=lambda x:x))
     pixels=np.asarray(Image.open(paths[0]))
     assert scale==1.0 and pixels[0,0]==0 and int(pixels.max())==26
+
+
+def test_new_alpha_floor_preserves_current_value():
+    from torch import nn
+    from LightGenV2.tasks.t12_text_to_image.modeling import ScaleMatchedFusion
+    from LightGenV2.tasks.t12_text_to_image.audited_unified import configure_fusion_bounds
+    model=nn.Sequential(ScaleMatchedFusion(.49,.4,.75,1e-6))
+    old=model[0].alpha.detach().clone()
+    configure_fusion_bounds(model,.35)
+    torch.testing.assert_close(old,model[0].alpha)
+    assert model[0].minimum==.35
+
+
+def test_spatial_camera_finite_and_nonnegative():
+    from LightGenV2.tasks.t12_text_to_image.lab_shs8um.robust_channel import PROFILES
+    channel=RobustChannel.__new__(RobustChannel)
+    channel.active=True;channel.strength=1.;channel.profile=PROFILES['extreme']
+    result=channel.camera('router',None,None,torch.zeros(2,16,16))
+    assert result.isfinite().all() and (result>=0).all()
+
+
+def test_physical_circular_tv_ignores_two_pi_wrap():
+    from torch import nn
+    from LightGenV2.tasks.t12_text_to_image.lab_shs8um.train_channel_robust import circular_phase_tv
+    class Plane(nn.Module):
+        def __init__(self):
+            super().__init__();self.raw_phase=nn.Parameter(torch.tensor([[0.,2*math.pi],[0.,2*math.pi]]))
+        def phase(self):return self.raw_phase
+    assert circular_phase_tv(nn.Sequential(Plane())).item()<1e-6

@@ -53,6 +53,9 @@ def build_sealed(saved):
         add_decoder_refinement(model)
     model.text_mlp_indices = saved.get("text_mlp_indices")
     model.construction = cfg
+    if saved.get('fusion_bounds'):
+        from .audited_unified import configure_fusion_bounds
+        configure_fusion_bounds(model,**saved['fusion_bounds'],preserve_alpha=False)
     model.load_state_dict(state, strict=True)
     if saved.get('bounded_amplitude'):
         from .lab_shs8um.bounded_amplitude import install

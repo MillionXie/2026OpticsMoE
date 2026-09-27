@@ -49,6 +49,19 @@ def fusion():
     return ScaleMatchedFusion(.5, .4, .75, 1e-6)
 
 
+def configure_fusion_bounds(model, minimum=.35, maximum=.75, preserve_alpha=True):
+    """Change alpha range without silently changing the current optical weight."""
+    if not .35 <= minimum < maximum <= 1.:raise ValueError('Invalid fusion bounds')
+    for module in model.modules():
+        if isinstance(module,ScaleMatchedFusion):
+            alpha=module.alpha.detach().clone()
+            module.minimum,module.maximum=float(minimum),float(maximum)
+            if preserve_alpha:
+                position=((alpha-minimum)/(maximum-minimum)).clamp(1e-6,1-1e-6)
+                with torch.no_grad():module.raw_alpha.copy_(torch.logit(position))
+    model.fusion_bounds=dict(minimum=float(minimum),maximum=float(maximum))
+
+
 class AuditedQwenTextEncoder(QwenMiniTextEncoder):
     """Keep the existing two Qwen-style blocks, fuse optical results in each.
 
@@ -245,7 +258,7 @@ def architecture_report(model):
             "pure_phase_parameters": sum(parameters[n].numel() for n in phases),
             "phase_tensors": phases, "physical_active_roi": [478, 478], "propagation_canvas": [518, 518],
             "expert_tiles": [4, 224, 224], "language_optics": True, "vision_optics": True,
-            "electronic_optical_parallel": True, "alpha_minimum": .4,
+            "electronic_optical_parallel": True, "alpha_minimum": min(m.minimum for m in model.modules() if isinstance(m,ScaleMatchedFusion)),
             "design_router": False, "image_size": [256, 256],
             "language_kind": "two trained width-pruned Qwen-style blocks, not pretrained original Qwen layers",
             "text_config": asdict(model.text.config), "optical_paths": 2,
