@@ -72,7 +72,45 @@ $AS/venv/bin/python -m LightGenV2.tasks.t12_text_to_image.benchmark_audited_edit
 
 权重SHA256见 timing.json。数据清单 test.jsonl：331874abbb8d8c7a4ac5ee3d6e030f20611cb5a9e96d3092917b7a5c4d7d5d2f；instruction-cache：66f457115cc7b1058f3ee42be0fec5815f101780c22b4805ad08940966dae97f；embedding-cache：e7a855849ef22e470aafdcf8ee583968ca0c8d5d17ff42603b103c49e97502ac。11项结构测试再次通过，完成后本GPU显存回到15MiB，无自己的计时进程。
 
-## 清理记录
+## 2026-09-27 bounded-channel 鲁棒性微调复现
+
+服务器 Git 工作树 `/DATA/DATA1/guest3/2026OpticsMoE/.worktrees/t12_physical_robust_v2_20260927`，分支 `codex/t12-physical-robust-v2-20260927`；正式训练源码 commit `e06ea0685f6a9fca4b22129e3532c498ce36bd28`，完整 VAL commit `8cc585841745aa94be3ae1d6fdde8826e8f57aaf`。之后将完全相同的扰动参数显式移到 `configs/optical_channel_robust_v2.json`，不修改训练结果。16 项光路/架构测试通过。
+
+原权重 SHA256 `3901e4fb5d4d249ef4472d4de33cc80858c5d7002ff404db2b53a9ff0ff08577`。主候选 SHA256 `13cf9a201bce42f58c19a0ff85fd11fe9940e18be036a86adf163320303edc3e`，路径 `$TASK/runs/simulation/20260927_channel_combined/best_checkpoint.pt`，selected step=600。参数 9,958,098，不新增部署模块或参数，冻结词嵌入沿用原统计约定。
+
+只使用 TRAIN 训练（20736 指令对）；固定 96 VAL 选训练 checkpoint，最终完整 2304 VAL 比较两个候选。最小化 camera/combined MSE 的均值，并保护 clean 相对原权重 PSNR 降幅≤0.2 dB、SSIM 降幅≤0.002。选择在最终 TEST 前冻结，TEST 不参与梯度或选模。
+
+| 完整 VAL（2304，逐图 PSNR 平均） | 原权重 PSNR / SSIM | camera 微调 PSNR / SSIM | **combined 主候选 PSNR / SSIM** |
+|---|---:|---:|---:|
+| clean |33.6471 / .920208|33.6429 / .920047|33.5685 / .919405|
+| camera |28.9665 / .881981|29.1750 / .883676|29.2047 / .883973|
+| combined |27.3636 / .867222|27.5323 / .868996|27.7775 / .871593|
+| stress |25.4891 / .849413|25.6164 / .851273|25.9005 / .854884|
+
+camera 为泄漏/错位/CCD 的组合；combined 在其基础加温和 k-space 和 phase bypass dropout；stress 增大扰动。三者是组合对照，不可据此声称单独某项增强有效。参数为假设的设备扰动代理，不是从 TEST 实测拟合所得的标定值。
+
+泄漏使用相位调制因子 `m_mix=sqrt(1-eta)*m+sqrt(eta)*exp(i*delta)`，再传播入射场 `P(a*m_mix)`。eta=.30 指相干叠加前名义支路功率比例，非总干涉强度中的固定 30%；delta 每图均匀采样 [-pi,pi]，保留干涉。camera/combined eta∈[.15,.35]，stress=.30。保留零入射场，不会凭空补光。phase dropout 8×8 块旁路相位 m→1，并非抹掉振幅。CCD 模型为强度增益、背景偏置和强度相关读出/散粒代理噪声；噪声单位为有界场强度单位，不是标定电子数。k-space 为平滑幅度衰减与离焦/像散相位响应。
+
+600 steps、batch=4、phase LR=2e-5、其余 NN LR=2e-6；前 300 步扰动强度由 .2 增至 1。每步干净与扰动双前向，原权重为冻结教师，损失为 `.5*(MSE+.1L1)clean + .5*(MSE+.1L1)noisy + .1MSE(clean,teacher) + .05MSE(noisy,teacher)`。没有新加 GAN；本轮着重通道适配和保住干净性能。
+
+```bash
+export CUDA_VISIBLE_DEVICES=GPU-1b963983-7909-af6e-0528-f0f0661ab549
+export OMP_NUM_THREADS=4
+AS=/DATA/DATA1/guest3/t12_assets
+TASK=LightGenV2/tasks/t12_text_to_image
+SOURCE=/DATA/DATA1/guest3/2026OpticsMoE/LightGenV2/tasks/t12_text_to_image/runs/simulation/bounded_tanh_clean_recovery_20260927/best.pt
+$AS/venv/bin/python -m LightGenV2.tasks.t12_text_to_image.lab_shs8um.train_channel_robust --checkpoint $SOURCE --assets $AS --output $TASK/runs/simulation/20260927_channel_combined --profile combined --steps 600 --val-samples 96 --batch-size 4
+# camera 对照更换 --profile camera，必须使用新的 output，禁止覆盖。
+$AS/venv/bin/python -m LightGenV2.tasks.t12_text_to_image.lab_shs8um.train_channel_robust --checkpoint $TASK/runs/simulation/20260927_channel_combined/best_checkpoint.pt --assets $AS --output $TASK/runs/simulation/20260927_channel_full_val_combined --evaluate-only --split val --batch-size 4
+$AS/venv/bin/python -m LightGenV2.tasks.t12_text_to_image.lab_shs8um.train_channel_robust --checkpoint $TASK/runs/simulation/20260927_channel_combined/best_checkpoint.pt --assets $AS --output $TASK/runs/simulation/20260927_channel_full_test_combined --evaluate-only --split test --batch-size 4
+$AS/venv/bin/python -m LightGenV2.tasks.t12_text_to_image.build_lab_package --checkpoint $TASK/runs/simulation/20260927_channel_combined/best_checkpoint.pt --contract /DATA/DATA1/guest3/t12_channel_base_contract.json --output $TASK/releases/20260927_channel_combined.zip
+```
+
+运行目录保存实际命令、commit、环境、数据 SHA、指标及逐图 JSON。固定 seed=1042+实际数据索引；匹配原实测导出，不因 batch 重置。扰动评估各权重采用相同 batch=4/种子。PSNR 为逐图 log 后平均，不能拿整体 MSE 直接换算并当成同一指标；SSIM 使用 RGB 11×11 Gaussian sigma=1.5、valid、[0,1]，与既有实测相同。
+
+部署 ZIP 由干净 Git HEAD 的 `git archive` 构建，含源代码、small.pt、contract 与逐文件 SHA manifest。部署不启用训练扰动通道。不得覆盖旧 `candidate_bounded`，必须放新目录，重新采集六阶段 CCD，不得混用旧权重 CCD。Windows 长路径 ZIP 用支持长路径的解压工具，或 Python zipfile 配合 `\\?\` 前缀。用户要求本任务只训练、离线验证和交付；不操作光路，新候选实测由另一 AI 完成，不能提前声称改善 23.1658 dB 的实测。
+
+## 清理记录（此前）
 
 服务器仅删除明确清单内 35 份旧 .pt，4,808,586,899字节，包括旧错误光电模型及不采用的15M实验；保留数据、baseline、历史图/指标、sealed参考。服务器删除不可直接撤销，清单含SHA256。本地旧权重按明确目录送回收站；本目录两份正式权重不删除。
 
