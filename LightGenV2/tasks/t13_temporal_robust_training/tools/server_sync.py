@@ -12,7 +12,9 @@ import shlex
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--phase", choices=("inspect", "sync", "test"), required=True)
+    parser.add_argument("--phase", choices=("inspect", "sync", "test", "publish-bundle"), required=True)
+    parser.add_argument("--bundle", help="Git bundle transport only; never raw source overwrite")
+    parser.add_argument("--base", help="GitHub prerequisite SHA for a small Git bundle")
     parser.add_argument("--host", default="202.120.62.181")
     parser.add_argument("--port", type=int, default=24096)
     parser.add_argument("--user", default="guest3")
@@ -51,6 +53,30 @@ def main():
         if not args.commit or len(args.commit) != 40 or any(c not in "0123456789abcdef" for c in args.commit):
             parser.error("sync/test requires an exact 40-character commit SHA")
         commit = shlex.quote(args.commit)
+        if args.phase == "publish-bundle":
+            from pathlib import Path
+            if not args.bundle or not args.base or len(args.base) != 40 or any(c not in "0123456789abcdef" for c in args.base):
+                parser.error("publish-bundle requires --bundle and exact --base SHA")
+            bundle = Path(args.bundle)
+            if not bundle.is_file():
+                parser.error("Git bundle is missing")
+            stage = args.repo.rstrip("/") + "/.codex_tmp/t13_git_transport_20260927"
+            remote_bundle = stage + "/" + args.commit + ".bundle"
+            execute(f"mkdir -p {shlex.quote(stage)}; test ! -e {shlex.quote(remote_bundle)}")
+            sftp = client.open_sftp()
+            try:
+                sftp.put(str(bundle), remote_bundle)
+            finally:
+                sftp.close()
+            # Bundle transport carries only Git objects; shared working files stay untouched.
+            execute(f"git -C {repo} cat-file -e {shlex.quote(args.base)}^{{commit}} || git -C {repo} fetch origin {shlex.quote(args.base)}")
+            execute(f"git -C {repo} bundle verify {shlex.quote(remote_bundle)}")
+            execute(f"git -C {repo} fetch {shlex.quote(remote_bundle)} HEAD")
+            actual = execute(f"git -C {repo} rev-parse FETCH_HEAD")
+            if actual != args.commit:
+                raise RuntimeError("Transported Git commit mismatch")
+            execute(f"git -C {repo} push origin {commit}:refs/heads/{args.branch}")
+            return
         if args.phase == "sync":
             execute(f"git -C {repo} fetch origin {branch}")
             remote = execute(f"git -C {repo} rev-parse FETCH_HEAD")
