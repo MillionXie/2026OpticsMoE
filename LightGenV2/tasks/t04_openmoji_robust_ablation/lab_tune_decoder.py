@@ -101,6 +101,9 @@ def main() -> None:
     audit = json.loads(audit_path.read_text(encoding="utf-8"))
     fit, val = set(audit["fit_ids"]), set(audit["validation_ids"])
     assert len(fit) == 800 and len(val) == 200 and not fit & val
+    assert audit["test_source_overlap"] == 0 and audit["test_ids_overlap"] == 0
+    assert audit["test_manifest_sha256"] == sha(project.parent / "OpenMoji_Lab_SHS_8um/data/test.jsonl")
+    assert audit["train_manifest_sha256"] == sha(project.parent / "OpenMoji_Lab_SHS_8um/data/train.jsonl")
     output.mkdir(parents=True, exist_ok=True)
     cfg, model = config(project, device)
     decoder = model.shared_readout.decoder
