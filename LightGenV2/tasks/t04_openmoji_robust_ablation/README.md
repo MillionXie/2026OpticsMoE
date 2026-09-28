@@ -95,12 +95,16 @@ engineering target informed by earlier TEST feedback, not a fresh blind
 hyperparameter study. Per-epoch TEST cherry-picking remains prohibited.
 
 The rank-16 four-group native TEST scores are 0.8980 / 0.8815 / 0.8495 /
-0.8630. Its five declared rows are 0.8980 / 0.8885 / 0.8725 / 0.8325 /
-0.8625. G1 is the basic model under ideal 17 µm simulation. G2–G5 all
-use the **same combined inference stress** (CCD offset/read noise, coherent
-DC30%, and 17→8→17 raster proxy), while their respective training models
-add those measures cumulatively. They are not five incrementally noisier
-evaluation conditions. The ideal group is 0.9 percentage points above
-the original 0.8890, but the disturbance ablation is not monotonic, and none
-of these numbers is an optical-bench result. The full local report is under
+0.8630. The original five-row report mislabeled G2: it switched the basic
+model to a combined CCD/DC30/raster stress, producing 0.8885, whereas the
+user's intended G2 is *direct deployment of G1* and its pre-deployment
+simulation must be identical to G1. The corrected presentation report was
+re-evaluated with an exact full-metric equality assertion for G1/G2, giving
+0.8980 / 0.8980 / 0.8725 / 0.8325 / 0.8625. The 0.8885 stress score is
+retained separately as the basic model's matched-stress reference for G3–G5.
+G2's real CCD result is still unmeasured. G3–G5 all use the same combined
+inference stress, not incrementally stronger inference conditions. The ideal
+group is 0.9 percentage points above the original 0.8890, but the stress
+ablation is not monotonic. Training also updated phase/router weights; only
+their architecture was held fixed. Full reports are under
 `handoffs/openmoji_robust_ablation_20260928/lowrank16`.

@@ -1,4 +1,4 @@
-"""Evaluate fixed VAL-selected checkpoints under five predeclared display conditions."""
+"""Evaluate presentation rows and the matched-stress reference separately."""
 from __future__ import annotations
 
 import json
@@ -14,11 +14,12 @@ from .train import BASE, OUTPUTS, save_json
 
 CONDITIONS = (
     ('G1_ideal_17um', 'r0_base', 'r0_base'),
-    ('G2_basic_device_proxy', 'r0_base', 'r3_ccd_dc30_grid'),
+    ('G2_direct_deployment_simulation', 'r0_base', 'r0_base'),
     ('G3_detector_noise', 'r1_ccd', 'r3_ccd_dc30_grid'),
     ('G4_coherent_dc30', 'r2_ccd_dc30', 'r3_ccd_dc30_grid'),
     ('G5_train_grid_proxy', 'r3_ccd_dc30_grid', 'r3_ccd_dc30_grid'),
 )
+MATCHED_STRESS_REFERENCE = ('basic_model_under_common_stress', 'r0_base', 'r3_ccd_dc30_grid')
 
 
 def main():
@@ -37,7 +38,8 @@ def main():
     assert len(test.dataset) == 1000
     device = torch.device('cuda')
     results = []
-    for label, trained, inference_profile in CONDITIONS:
+
+    def evaluate(label, trained, inference_profile):
         run = OUTPUTS / (args.run_prefix + trained)
         ckpt = run / 'best.pt'
         report = json.loads((run / 'report.json').read_text())
@@ -52,17 +54,24 @@ def main():
                'inference_profile': inference_profile,
                'checkpoint_epoch': payload['epoch'], 'metrics': metrics,
                'grid_proxy_not_exact_8um_propagation': inference_profile != 'r0_base'}
-        results.append(row)
         print(json.dumps({'condition': label,
                           'changed_cell_accuracy': metrics['overall']['changed_cell_accuracy']}), flush=True)
         del model
         torch.cuda.empty_cache()
+        return row
+
+    for label, trained, inference_profile in CONDITIONS:
+        results.append(evaluate(label, trained, inference_profile))
+    assert results[0]['checkpoint_epoch'] == results[1]['checkpoint_epoch']
+    assert results[0]['metrics'] == results[1]['metrics'], 'G1 and G2 simulations must be identical'
+    stress_reference = evaluate(*MATCHED_STRESS_REFERENCE)
     suffix = f'_{args.variant}' if args.variant != 'standard' else ''
-    save_json(OUTPUTS / f'five_conditions{suffix}.json', {'status': 'complete',
+    save_json(OUTPUTS / f'five_conditions_presentation{suffix}.json', {'status': 'complete',
               'shared_readout_variant': args.variant,
               'source_reference_simulation_changed_cell_accuracy': 0.889,
-              'conditions': results,
-              'selection': 'Each checkpoint selected only on original TRAIN holdout; conditions predefined before TEST.'})
+              'conditions': results, 'matched_stress_reference': stress_reference,
+              'g2_experiment_status': 'not_measured; simulation reuses G1 weights and ideal profile',
+              'selection': 'Each checkpoint selected only on original TRAIN holdout; TEST did not select epochs.'})
 
 
 if __name__ == '__main__':
