@@ -22,9 +22,10 @@ TASK=Path(__file__).resolve().parent
 SOURCES={'ours':'dbc059e2a7eddefac73d3b9bb158bf0140d440dfb396e0aa2956ad41670fc96a',
          'baseline':'0a4569f288f6de424b1b412452fa804a96e58d8f7e8655efaa23f461ab8cc735'}
 
-def state_digest(module):
+def state_digest(module,exclude=()):
     h=hashlib.sha256()
     for name,t in sorted(module.state_dict().items()):
+        if name in exclude:continue
         h.update(name.encode());h.update(t.detach().cpu().contiguous().reshape(-1).view(torch.uint8).numpy().tobytes())
     return h.hexdigest()
 
@@ -53,8 +54,10 @@ def visuals(model,loaded,records,settings,out,label):
 
 
 def run(a):
+    if a.phase_head_only and (a.head_only or a.method!='ours'):raise ValueError('phase-head-only is an exclusive Ours mode')
     if a.evaluate_all and not a.evaluate_only:raise ValueError('--evaluate-all requires --evaluate-only; never train on the all-photo evaluation')
-    if sha256(a.source)!=SOURCES[a.method]:raise ValueError('Wrong source checkpoint; keep reviewed source identity')
+    expected='0c57938c87deef3d901605214e69514f2b43c8464447db25ed6f8278e1c2fe13' if a.phase_head_only else SOURCES[a.method]
+    if sha256(a.source)!=expected:raise ValueError('Wrong source checkpoint; keep reviewed source identity')
     bundle=load_personal(a.annotations,a.allow_provisional,a.fewshot_photos,a.seed)
     evaluation_records=bundle.train+bundle.test if a.evaluate_all else bundle.test
     out=a.run_dir.resolve();out.mkdir(parents=True,exist_ok=False)
@@ -83,6 +86,17 @@ def run(a):
                 model.core.requires_grad_(False);model.register_forward_pre_hook(force_core_eval)
                 opt=torch.optim.AdamW(model.head.parameters(),lr=1e-4,weight_decay=1e-4)
                 frozen_core_digest=state_digest(model.core)
+            if a.phase_head_only:
+                if payload['manifest']['data']['annotation_sha256']!=bundle.metadata['annotation_sha256'] or payload['manifest']['data']['photo_ids']!=bundle.metadata['photo_ids']:raise ValueError('Continuation dataset changed')
+                phase_groups=[g for g in opt.param_groups if g['name'] in ['router','feature_phase']]
+                model.core.requires_grad_(False)
+                for g in phase_groups:
+                    for p in g['params']:p.requires_grad_(True)
+                phase_ids={id(p) for g in phase_groups for p in g['params']}
+                phase_names={n for n,p in model.core.named_parameters(remove_duplicate=False) if id(p) in phase_ids}
+                phase_initial={n:p.detach().cpu().clone() for n,p in model.core.named_parameters() if n in phase_names}
+                frozen_core_digest=state_digest(model.core,phase_names)
+                opt=torch.optim.AdamW(phase_groups+[{'params':list(model.head.parameters()),'name':'pose_head','lr':3e-5}],weight_decay=1e-4)
         else:
             model=build_teacher(loaded,s);model.head.load_state_dict(payload['head'],strict=True)
             audit=audit_frozen_teacher(model)
@@ -97,6 +111,8 @@ def run(a):
                   'gpu':torch.cuda.get_device_name(),'torch':torch.__version__,'architecture_changed':False}
         manifest.update(evaluate_only=a.evaluate_only,evaluation_scope='all photos' if a.evaluate_all else 'held-out split',evaluation_people=len(evaluation_records))
         manifest.update(head_only=a.head_only,trainable_parameters=sum(p.numel() for p in model.parameters() if p.requires_grad),core_eval_during_head_training=a.head_only)
+        manifest.update(phase_head_only=a.phase_head_only,phase_lr=a.phase_lr,head_lr=3e-5 if a.phase_head_only else 1e-4,
+                        trainable_core_names=sorted(phase_names) if a.phase_head_only else None)
         write('run_manifest.json',manifest)
         if a.method=='ours':save_resolved_config(s)
         else:
@@ -107,7 +123,7 @@ def run(a):
         tr=_loader(bundle.train,s,training=True);clean=_loader(bundle.train,s,training=False);te=_loader(evaluation_records,s,training=False)
         def ev(loader,phase,epoch):return evaluate_model(model,kind,loader,loaded.processor,device,s,phase=phase,epoch=epoch,save_outputs=False,tta=False)[0]
         initial=ev(te,'personal_before',0);write('before.json',initial)
-        visuals(model,loaded,evaluation_records,s,out/'before_images','original LSP checkpoint; no personal adaptation')
+        visuals(model,loaded,evaluation_records,s,out/'before_images','source checkpoint before this run')
         if a.evaluate_only:
             write('final_report.json',{'metrics':initial,'evaluation_people':len(evaluation_records),'training_performed':False,
                 'formal_ground_truth_evaluation':not a.allow_provisional,'metric_warning':manifest['metric_warning'],
@@ -116,13 +132,16 @@ def run(a):
         history=[];best=float('inf');best_epoch=0
         for epoch in range(1,a.epochs+1):
             started=time.perf_counter();factor=.1+.9*.5*(1+math.cos(math.pi*(epoch-1)/max(a.epochs-1,1)))
-            if a.method=='ours' and not a.head_only:
+            if a.phase_head_only:
+                apply_stage(opt,{'router':a.phase_lr*.1*factor,'feature_phase':a.phase_lr*factor,'pose_head':3e-5*factor})
+            elif a.method=='ours' and not a.head_only:
                 rates={'electronic':3e-6,'router':3e-5,'feature_phase':3e-4,'ccd_readout':1e-4,'pose_head':1e-4}
                 if epoch<=3:rates.update(electronic=0.,router=0.,feature_phase=0.)
                 apply_stage(opt,{k:v*factor for k,v in rates.items()});checked_fusion(model,s)
             else:opt.param_groups[0]['lr']=1e-4*factor
             train=_train_epoch(model,kind,tr,loaded.processor,device,opt,s,epoch)
             if a.method=='ours' and a.head_only and state_digest(model.core)!=frozen_core_digest:raise ValueError('Frozen optical/electronic core changed')
+            if a.phase_head_only and state_digest(model.core,phase_names)!=frozen_core_digest:raise ValueError('Frozen non-phase core changed')
             if any(p.grad is not None for p in frozen):raise ValueError('Frozen backbone acquired gradients')
             train_eval=ev(clean,'train_selection',epoch)
             state={'head':model.head.state_dict(),'epoch':epoch,'manifest':manifest}
@@ -137,6 +156,8 @@ def run(a):
         if a.method=='ours':model.core.load_state_dict(state['core'],strict=True)
         final=ev(te,'personal_after',best_epoch);visuals(model,loaded,bundle.test,s,out/'after_images','after adaptation')
         write('final_report.json',{'before':initial,'after':final,'best_epoch':best_epoch,
+              'nonphase_core_unchanged':state_digest(model.core,phase_names)==frozen_core_digest if a.phase_head_only else None,
+              'phase_raw_delta_rms':{n:float((p.detach().cpu()-phase_initial[n]).square().mean().sqrt()) for n,p in model.core.named_parameters() if n in phase_names} if a.phase_head_only else None,
               'core_unchanged':state_digest(model.core)==frozen_core_digest if a.method=='ours' and a.head_only else None,
               'formal_ground_truth_evaluation':not a.allow_provisional,'metric_warning':manifest['metric_warning'],
               'fusion':checked_fusion(model,s) if a.method=='ours' else None,'checkpoint_sha256':sha256(out/'best_checkpoint.pt'),
@@ -157,5 +178,6 @@ if __name__=='__main__':
     p.add_argument('--evaluate-only',action='store_true');p.add_argument('--evaluate-all',action='store_true')
     p.add_argument('--fewshot-photos',type=int,default=0)
     p.add_argument('--head-only',action='store_true',help='Freeze complete core; train final pose head only')
+    p.add_argument('--phase-head-only',action='store_true');p.add_argument('--phase-lr',type=float,default=1e-3)
     p.add_argument('--batch-size',type=int,default=8);p.add_argument('--seed',type=int,default=42)
     run(p.parse_args())
