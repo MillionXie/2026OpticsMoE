@@ -45,7 +45,9 @@ def run(dataset,ours,baseline,output=None):
     (output/'pilot_comparison.json').write_text(json.dumps(metrics,indent=2),encoding='utf-8')
     page='<!doctype html><meta charset="utf-8"><title>自采姿态迁移试跑</title><style>body{font:16px system-ui;margin:24px;background:#f4f6fa}img{width:100%;max-width:1450px}p{max-width:1000px;line-height:1.6}pre{background:white;padding:16px}</style><h1>Ours / Qwen 迁移前后 · 全部20张测试图</h1><p>注意：绿色仅为独立自动预标注，不是人工真值。试跑只监督和评价12个四肢点，红色预测仍显示模型全部14点。所有图片按固定文件顺序展示，没有挑选高分图片。按5个拍摄组留出的20张照片存在组内相关性，不代表20个独立场景。正式论文结果须先完成标注核对。</p><p><a href="review.html">打开标注审核页</a></p><pre>'+html.escape(json.dumps(metrics,indent=2,ensure_ascii=False))+'</pre>'+''.join(rows)
     page=page.replace('全部20张测试图',f'全部{len(test_ids)}张测试图').replace('按5个拍摄组留出的20张照片存在组内相关性，不代表20个独立场景。','按拍摄组划分；同组照片相关，不等同于独立场景。').replace('href="review.html"',f'href="{html.escape(os.path.relpath(dataset / "review.html", output).replace(chr(92), "/"))}"')
-    if baseline_frozen:page=page.replace('<h1>','<p>Qwen 未微调，最后一列是原始模型。Ours只适配姿态头。用户筛选后的探索性数据集，不能替代原全集性能。</p><h1>',1)
+    if baseline_frozen:
+        mode='Ours从头部适配权重继续联合训练相位和姿态头，before列是本轮续训起点。' if manifests[0].get('phase_head_only') else 'Ours只适配姿态头。'
+        page=page.replace('<h1>','<p>Qwen 未微调，最后一列是原始模型。'+mode+'用户筛选后的探索性数据集，不能替代原全集性能。</p><h1>',1)
     (output/'COMPARE.html').write_text(page,encoding='utf-8');print(json.dumps(metrics))
 
 

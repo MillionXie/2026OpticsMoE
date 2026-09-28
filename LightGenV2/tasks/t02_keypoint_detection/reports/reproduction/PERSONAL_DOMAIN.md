@@ -1,5 +1,16 @@
 # 自采照片小样本域迁移（2026-09-28）
 
+## 相位+末端头继续微调
+
+从下文83.3333%的head-only best继续100epoch，不重划20/54张。
+源码`f79bdf0ce`；run `personal_curated20_phasehead100_pilot_s42_20260928`。
+新增`--phase-head-only --phase-lr 0.001 --epochs 100`，source使用
+`personal_curated20_ours_head_evalcore_pilot_s42_20260928/best_checkpoint.pt`。
+专家/global相位LR1e-3、光router相位1e-4、pose head3e-5，余弦降至各自0.1倍；
+原噪声/正则恢复训练模式，所有非相位core参数含alpha和中间CCD读出固定，逐轮hash校验。
+原始Qwen不重训；按train MSE选best，最终一次test；记录raw phase变化RMS验证相位更新。
+仍为未经人工确认的12点预标注诊断，不声称实际光路改善。
+
 ## 用户筛选版本：20张、仅Ours末端姿态头适配
 
 数据`data/lsp_pose/personal_curated20_20260928`独立保存，不删除原始图像或历史实验。
