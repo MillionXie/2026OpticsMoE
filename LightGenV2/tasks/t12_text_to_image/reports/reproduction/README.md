@@ -1,6 +1,6 @@
 # T12 最终版本与复现入口
 
-## 新增外部 baseline：官方 pix2pix-Turbo 微调（性能待评估）
+## 新增外部 baseline：官方 pix2pix-Turbo 微调（已完成）
 
 官方repository `https://github.com/GaParmar/img2img-turbo`，SHA `86f54146590ffb4543c8cf85b5a36657da670924`，服务器干净外部clone `$AS/vendor/img2img-turbo-ssh`。不修改官方生成网络、VAE skips、LoRA目标或单步DDPM scheduler；仅将from_pretrained加载重定向到已验证的本地SD-Turbo FP16文件。官方日志的“Initializing model with random weights”指未加载任务LoRA checkpoint的初始化分支，**SD-Turbo骨干仍由from_pretrained加载**，不是随机骨干。模型文件SHA在protocol.json。
 
@@ -15,9 +15,9 @@
 
 词嵌入50,593,792按既有约定单列；排除后预算1,248,851,955。主表同时保留完整总参数与排除词嵌入参数，不能只用9.51M LoRA代表部署模型。VGG LPIPS、CLIP相似度网络、vision-aided discriminator仅训练，不计推理参数；无PCA固定条件库。此处总量是未merge LoRA计算图；后续如merge需要重审参数和速度，不能混报。
 
-当前TRAIN20736/VAL2304，与现有ABO指令数据及真实透明掩码GT相同，256×256不裁剪、不左右翻转（避免破坏左右光照文本）。计划3epochs，batch2累积4，lr5e-6、seed927、UNet checkpointing、BF16 autocast/FP32权重。官方推荐loss权重：RGB MSE1、VGG LPIPS5、CLIP similarity5、vision-aided GAN.5；完整VAL按逐图平均PSNR选择best，TEST独立固定后评估。保留best/last及逐图结果，不创建周期权重。
+当前TRAIN20736/VAL2304/TEST2304，与现有ABO指令数据及真实透明掩码GT相同，256×256不裁剪、不左右翻转（避免破坏左右光照文本）。已完成3epochs，batch2累积4，lr5e-6、seed927、UNet checkpointing、BF16 autocast/FP32权重。官方推荐loss权重：RGB MSE1、VGG LPIPS5、CLIP similarity5、vision-aided GAN.5；完整VAL按逐图平均PSNR选择best step31104（20.863762dB），固定后独立TEST为20.746391dB/SSIM0.740299。保留best/last及全部2304条逐图结果；checkpoint SHA256 `3a347c58affb53d8e7efc583bb5aecdaa2ac33bd316d792c12c805fa837b4c7c`。训练源码 `7c75a00e3`，增加可复现全量TEST图像导出的源码 `a3674c071`；TEST评估未反向修改权重。
 
-明确wrapper差异：当前将G的重建/感知/语义/GAN合成一次backward与optimizer更新，而官方trainer分成两次G更新；采用累积有效batch8、完整VAL PSNR选模而非官方小子集FID选模。生成结构不改，但不得写成官方训练脚本完全原样复现。正式结果未完成前不宣称胜过旧baseline。
+明确wrapper差异：当前将G的重建/感知/语义/GAN合成一次backward与optimizer更新，而官方trainer分成两次G更新；采用累积有效batch8、完整VAL PSNR选模而非官方小子集FID选模。生成结构不改，但不得写成官方训练脚本完全原样复现。独立TEST质量低于同任务Qwen baseline，且视觉上有偏灰、细节弱化；不能用这个实验声称外部预训练生成器普遍较差。
 
 依赖隔离在 `$AS/pix2pix_dependencies`，未升级共享torch/diffusers。diffusers0.35.1、peft0.19.1、lpips0.1.4、vision-aided-loss0.1.0；完整CLIP源码 `d05afc436d78f1c48dc0dbf8e5980a9d471f35f6` 位于 `$AS/vendor/CLIP`。CPU数值/参数测试与真实GPU短程冒烟先行，失败run保留诊断，不部署。代码许可与SD-Turbo权重许可分别遵循其原始LICENSE，不声称模型权重属于ABO数据许可。
 
@@ -31,7 +31,9 @@ $AS/venv/bin/python -u -m LightGenV2.tasks.t12_text_to_image.train_pix2pix_turbo
 $AS/venv/bin/python -u -m LightGenV2.tasks.t12_text_to_image.train_pix2pix_turbo_baseline --assets $AS --upstream $AS/vendor/img2img-turbo-ssh --output $TASK/runs/simulation/20260927_pix2pix_turbo_test --checkpoint $TASK/runs/simulation/20260927_pix2pix_turbo_matched/best_checkpoint.pt --evaluate test
 ```
 
-## 当前四组汇总：2026-09-27 同任务 baseline
+固定TEST输出含 `images/reference`、`images/target`、`images/generated` 各2304张原生256 PNG，以及逐图CSV/JSON和report.json。训练在单张RTX4090、TEST在单张A100完成；训练PID527954、评估PID1075779均已退出。结果归档 `handoffs/t12_pix2pix_turbo_20260927/test_export`；五组汇总 `handoffs/t12_five_group_summary_20260928`，表格 `outputs/t12_five_group_summary_20260928/T12_five_group_performance.xlsx`。输出PNG只是浮点结果的round量化，不参与指标计算，不用GT掩码贴回、检索、锐化或超分。旧四组表保留原样。
+
+## 四组原始汇总与五组扩展：2026-09-27/28 同任务 baseline
 
 优先使用 run `20260927_matched_qwen28_baseline`（补训）和 `20260927_four_group_matched_baseline`（固定TEST导出），工作树 `/DATA/DATA1/guest3/2026OpticsMoE/.worktrees/t12_physical_robust_v2_20260927`。历史段落中的跨任务baseline数值不作为当前主表。
 
@@ -43,6 +45,7 @@ $AS/venv/bin/python -u -m LightGenV2.tasks.t12_text_to_image.train_pix2pix_turbo
 | 小版decoder微调后EXP eeec |17.026642|31.552886|.906013|
 | 大版仿真2a91 |149.755866|31.428599|.882211|
 | 同任务补训Qwen28 baseline5998 |1834.345963|27.260453|.837653|
+| 预训练pix2pix-Turbo，VAL选模后TEST |1248.851955|20.746391|.740299|
 
 小版原权重EXP27.551289/.876325，微调权重仿真28.890612/.903006。主表前两行权重不同，不是同权重sim-exp对。小版物理微调只训练decoder、光学上游未变；原报告保留TRAIN-domain validation warm-start caveat。大版与baseline目前训练历史/损失不同，不能单独归因于光学优势。PSNR是配对保真指标，不是开放集生成证明。
 
