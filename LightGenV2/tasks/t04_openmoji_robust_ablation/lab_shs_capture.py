@@ -45,8 +45,16 @@ def sha(path: Path) -> str:
 def write(path: Path, value: object) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
     temporary = path.with_suffix(path.suffix + ".tmp")
-    temporary.write_text(json.dumps(value, indent=2, ensure_ascii=False), encoding="utf-8")
-    temporary.replace(path)
+    serialized = json.dumps(value, indent=2, ensure_ascii=False)
+    for attempt in range(12):
+        try:
+            temporary.write_text(serialized, encoding="utf-8")
+            temporary.replace(path)
+            return
+        except PermissionError:
+            if attempt == 11:
+                raise
+            time.sleep(.25 * (attempt + 1))
 
 
 def main() -> None:
@@ -112,7 +120,11 @@ def main() -> None:
         "corners": CORNERS.tolist(), "inference_profile": "r0_base_clean", "model_device": args.device,
     }
     if (output / "contract.json").exists():
-        if json.loads((output / "contract.json").read_text()) != contract:
+        previous = json.loads((output / "contract.json").read_text())
+        legacy_test = args.scope == "test" and "scope" not in previous and previous == {
+            key: value for key, value in contract.items() if key != "scope"
+        }
+        if previous != contract and not legacy_test:
             raise ValueError("Resume contract mismatch")
     else:
         write(output / "contract.json", contract)
