@@ -22,6 +22,11 @@ batch-peak scaling, gamma or clipping. The G5 roundtrip is an explicitly limited
 proxy; it does **not** model propagation at 8 µm and must not be labelled exact
 hardware equivalence. Phase dropout .08 is common to all groups.
 
+`profiles.bmp_amplitude(field)` is the reference 8-bit exporter for the shared
+input-amplitude contract. The optical bench still needs the usual phase/SLM
+orientation bridge and a six-stage numerical equivalence test before capture;
+this exporter alone is not a deployment script.
+
 Selection is 4000 FIT/1000 VAL from the original 5000 TRAIN; the original 1000
 TEST is evaluated once per validation-selected checkpoint. Original warm start
 was previously exposed to TRAIN (and historically selected using TEST), so this

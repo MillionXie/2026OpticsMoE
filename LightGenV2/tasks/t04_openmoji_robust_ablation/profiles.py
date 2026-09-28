@@ -18,6 +18,12 @@ def bounded(x: torch.Tensor) -> torch.Tensor:
     return x * (torch.tanh(a / 0.5) / a.clamp_min(1e-8))
 
 
+def bmp_amplitude(field: torch.Tensor) -> torch.Tensor:
+    """Quantize the *same* bounded input used by simulation, with no peak rescale."""
+    amplitude = bounded(field).abs()
+    return torch.round(255.0 * amplitude).to(torch.uint8)
+
+
 def grid_roundtrip(x: torch.Tensor, native: int) -> torch.Tensor:
     """Differentiable 17→8→17 μm raster approximation, not 8 μm propagation."""
     if x.is_complex():
@@ -78,6 +84,7 @@ def assert_contract() -> None:
     assert a[0] == 0 and a.min() >= 0 and a.max() <= 1
     assert torch.isfinite(z.grad).all()
     assert (torch.round(255 * a) / 255 - a).abs().max() <= 0.5 / 255 + 1e-6
+    assert torch.equal(bmp_amplitude(z.detach()), torch.round(255 * a.detach()).to(torch.uint8))
     x = torch.randn(1, 8, 8, requires_grad=True)
     y = grid_roundtrip(x, 17)
     y.square().mean().backward()
