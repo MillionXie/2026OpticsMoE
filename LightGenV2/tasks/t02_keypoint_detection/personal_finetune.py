@@ -75,7 +75,12 @@ def run(a):
                   'selection':'minimum unaugmented TRAIN heatmap MSE (not a claim of best generalization)',
                   'formal_result':not a.allow_provisional,'metric_warning':'PILOT: agreement with independent pseudo labels, NOT ground-truth accuracy' if a.allow_provisional else None,
                   'gpu':torch.cuda.get_device_name(),'torch':torch.__version__,'architecture_changed':False}
-        write('run_manifest.json',manifest);save_resolved_config(s);write('status.json',{'status':'training'})
+        write('run_manifest.json',manifest)
+        if a.method=='ours':save_resolved_config(s)
+        else:
+            from experiments.qwen3_vl_embedding_2b_lsp_pose_optical_moe16.settings import save_resolved_config as save_baseline_config
+            save_baseline_config(s)
+        write('status.json',{'status':'training'})
         kind='student' if a.method=='ours' else 'teacher'
         tr=_loader(bundle.train,s,training=True);clean=_loader(bundle.train,s,training=False);te=_loader(bundle.test,s,training=False)
         def ev(loader,phase,epoch):return evaluate_model(model,kind,loader,loaded.processor,device,s,phase=phase,epoch=epoch,save_outputs=False,tta=False)[0]

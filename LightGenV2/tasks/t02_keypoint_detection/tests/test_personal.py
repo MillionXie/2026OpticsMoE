@@ -8,10 +8,10 @@ from LightGenV2.tasks.t02_keypoint_detection.personal_data import validate_manif
 
 
 def sample(tmp_path):
-    im=tmp_path/'x.png';Image.new('RGB',(64,80)).save(im)
     rows=[]
     for i,split in enumerate(['train','test']):
-        rows.append({'id':str(i),'image':'x.png','image_sha256':sha256(im),'original_sha256':str(i),
+        im=tmp_path/f'x{i}.png';Image.new('RGB',(64,80),(i,0,0)).save(im)
+        rows.append({'id':str(i),'image':im.name,'image_sha256':sha256(im),'original_sha256':str(i),
                      'orientation_reviewed':True,'split':split,'group_id':str(i),'size_wh':[64,80],
                      'people':[{'id':'0','include':True,'reviewed':False,'manual_required':[12,13],
                                 'keypoints':[[20,30,1]]*14}]})

@@ -13,7 +13,7 @@ def validate_manifest(path,allow_provisional=False):
         ids.add(row['id'])
         split=row.get('split');g=row.get('group_id')
         if split not in counts or not g:raise ValueError('Missing frozen group/split')
-        for key,lookup in [(g,groups),(row['original_sha256'],hashes)]:
+        for key,lookup in [(g,groups),('original:'+row['original_sha256'],hashes),('working:'+row['image_sha256'],hashes)]:
             if key in lookup and lookup[key]!=split:raise ValueError('Group/duplicate leakage')
             lookup[key]=split
         image=(root/row['image']).resolve()
