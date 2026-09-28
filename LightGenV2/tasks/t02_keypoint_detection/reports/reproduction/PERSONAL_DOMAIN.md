@@ -1,5 +1,19 @@
 # 自采照片小样本域迁移（2026-09-28）
 
+## 画图交付（LightGen2-only）
+
+本地`data/lsp_pose/LightGen2_figure_delivery_20260928`，PREVIEW.html只显示Input、GT、LightGen2、叠加。
+54照片/55人体各独立目录含四张无标题PNG、preview拼图、metrics.md/JSON及keypoints.json。
+一级SUMMARY.md/JSON总指标、SAMPLE_METRICS.json逐样本索引、README、FILES_SHA256清单。
+图例蓝色GT/橙色LightGen2；GT仍RTMPose自动预标注，12点展示与评价，非人工GT或CCD实验。
+固定83.3333%最佳参数重新批量评估一次导出坐标，run `personal_curated20_figure_eval_20260928`，
+无训练；545/654命中，均误差14.466378像素，NME0.14528649。与历史14.46527的微小变化
+来自固定权重复评数值差异，交付图和逐样本指标使用此次同一批量预测，PCK完全一致。
+旧visuals保存的是index*4，正式评估为(index+.5)*4-.5；导出工具不沿用旧绘图坐标，
+而使用evaluate_model返回的像素中心坐标，并强制核对逐样本汇总和评估器一致。
+所有54张测试照片保留，无按指标筛图；896PNG由224输入放大用于排版，不是高分辨率推理。
+入口`personal_figure_delivery --dataset ... --source-run <head_testselect100> --evaluated-rows <figure_eval>/evaluated_predictions.json --output <新目录>`。
+
 ## 恢复原相位，继续姿态头并按周期test选模
 
 用户明确要求：返回83.3333% head-only best（SHA `0c57938c87deef3d901605214e69514f2b43c8464447db25ed6f8278e1c2fe13`），
