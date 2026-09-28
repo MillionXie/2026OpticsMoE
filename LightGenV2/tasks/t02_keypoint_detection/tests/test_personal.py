@@ -5,6 +5,18 @@ from PIL import Image
 from LightGenV2.tasks.t02_keypoint_detection.personal_prepare import prepare,sha256
 from LightGenV2.tasks.t02_keypoint_detection.personal_split import GROUPS,split_groups,crop_box
 from LightGenV2.tasks.t02_keypoint_detection.personal_data import validate_manifest
+from LightGenV2.tasks.t02_keypoint_detection.personal_data import fewshot_split
+
+
+def test_fewshot_whole_groups():
+    data={'images':[{'id':str(i),'group_id':str(g),'split':'test'} for g,items in enumerate(GROUPS) for i in items]}
+    result=fewshot_split(data,10)
+    assert result==fewshot_split(data,10)
+    assert sum(r['split']=='train' for r in result['images'])==10
+    assert all(r['split']=='test' for r in data['images'])
+    for g in range(len(GROUPS)):
+        assert len({r['split'] for r in result['images'] if r['group_id']==str(g)})==1
+    with pytest.raises(ValueError):fewshot_split(data,101)
 
 
 def sample(tmp_path):

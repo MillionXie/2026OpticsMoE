@@ -41,7 +41,7 @@ def visuals(model,loaded,records,settings,out,label):
 def run(a):
     if a.evaluate_all and not a.evaluate_only:raise ValueError('--evaluate-all requires --evaluate-only; never train on the all-photo evaluation')
     if sha256(a.source)!=SOURCES[a.method]:raise ValueError('Wrong source checkpoint; keep reviewed source identity')
-    bundle=load_personal(a.annotations,a.allow_provisional)
+    bundle=load_personal(a.annotations,a.allow_provisional,a.fewshot_photos,a.seed)
     evaluation_records=bundle.train+bundle.test if a.evaluate_all else bundle.test
     out=a.run_dir.resolve();out.mkdir(parents=True,exist_ok=False)
     def write(n,d):(out/n).write_text(json.dumps(d,indent=2,default=str)+'\n',encoding='utf-8')
@@ -134,5 +134,6 @@ if __name__=='__main__':
     p.add_argument('--cache-dir',type=Path,required=True);p.add_argument('--run-dir',type=Path,required=True)
     p.add_argument('--allow-provisional',action='store_true');p.add_argument('--epochs',type=int,default=20)
     p.add_argument('--evaluate-only',action='store_true');p.add_argument('--evaluate-all',action='store_true')
+    p.add_argument('--fewshot-photos',type=int,default=0)
     p.add_argument('--batch-size',type=int,default=8);p.add_argument('--seed',type=int,default=42)
     run(p.parse_args())
