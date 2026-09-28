@@ -11,6 +11,14 @@
 原始Qwen不重训；按train MSE选best，最终一次test；记录raw phase变化RMS验证相位更新。
 仍为未经人工确认的12点预标注诊断，不声称实际光路改善。
 
+完成：best按train MSE选择epoch100，test PCK12由0.83333333降至0.81651376，
+像素误差14.46527→15.82204；Qwen未微调仍0.87461774。未取得改善，保留原head-only版本。
+非相位core hash不变、alpha不变；raw参数RMS变化router0.003357，4专家0.011275–0.015844，
+global0.016079，确认相位被更新（这些是raw参数单位，不是弧度）。
+新checkpoint SHA `1dd8104104be31fdf654415e18f8d61b619114f0902c086ba5c031fa8efa432c`，
+已下载本地并验证SHA。全测试对照为`personal_curated20_20260928/phasehead100_comparison/COMPARE.html`。
+训练误差继续降低但测试下降，只能说本次续训未改善泛化，不能归因于唯一机制。
+
 ## 用户筛选版本：20张、仅Ours末端姿态头适配
 
 数据`data/lsp_pose/personal_curated20_20260928`独立保存，不删除原始图像或历史实验。
