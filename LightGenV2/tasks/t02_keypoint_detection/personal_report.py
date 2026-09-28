@@ -48,6 +48,8 @@ def run(dataset,ours,baseline,output=None):
     if baseline_frozen:
         mode='Ours从头部适配权重继续联合训练相位和姿态头，before列是本轮续训起点。' if manifests[0].get('phase_head_only') else 'Ours只适配姿态头。'
         page=page.replace('<h1>','<p>Qwen 未微调，最后一列是原始模型。'+mode+'用户筛选后的探索性数据集，不能替代原全集性能。</p><h1>',1)
+    if manifests[0].get('test_used_for_selection'):
+        page=page.replace('<h1>','<p>本轮按用户要求周期测试并选最高 TEST PCK 权重；此测试集参与选模，不是独立封存测试。before 是续训起点。</p><h1>',1)
     (output/'COMPARE.html').write_text(page,encoding='utf-8');print(json.dumps(metrics))
 
 

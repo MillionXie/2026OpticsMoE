@@ -1,5 +1,16 @@
 # 自采照片小样本域迁移（2026-09-28）
 
+## 恢复原相位，继续姿态头并按周期test选模
+
+用户明确要求：返回83.3333% head-only best（SHA `0c57938c87deef3d901605214e69514f2b43c8464447db25ed6f8278e1c2fe13`），
+不加载phase-head100的权重。原20/54划分、原相位及alpha完整冻结，只训133425参数末端头。
+新增100epoch：`--head-only --continue-head --test-interval 5 --epochs 100`，
+source仍为`personal_curated20_ours_head_evalcore_pilot_s42_20260928/best_checkpoint.pt`。
+LR1e-4余弦至1e-5；epoch0、5、10…100测试，按PCK最高保存best，同分比test heatmap MSE。
+只保存best/last；逐轮训练及全部周期test指标保留，不保存每5轮的重复checkpoint。
+该TEST明确参与选模，不再称作封存测试；Qwen原始权重不微调、不重新选模。
+run `personal_curated20_head_testselect100_pilot_s42_20260928`，预标注诊断性质不变。
+
 ## 相位+末端头继续微调
 
 从下文83.3333%的head-only best继续100epoch，不重划20/54张。

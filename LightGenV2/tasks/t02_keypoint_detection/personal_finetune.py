@@ -54,9 +54,11 @@ def visuals(model,loaded,records,settings,out,label):
 
 
 def run(a):
+    if a.continue_head and (not a.head_only or a.method!='ours'):raise ValueError('continue-head requires Ours head-only')
+    if a.test_interval<0:raise ValueError('Negative test interval')
     if a.phase_head_only and (a.head_only or a.method!='ours'):raise ValueError('phase-head-only is an exclusive Ours mode')
     if a.evaluate_all and not a.evaluate_only:raise ValueError('--evaluate-all requires --evaluate-only; never train on the all-photo evaluation')
-    expected='0c57938c87deef3d901605214e69514f2b43c8464447db25ed6f8278e1c2fe13' if a.phase_head_only else SOURCES[a.method]
+    expected='0c57938c87deef3d901605214e69514f2b43c8464447db25ed6f8278e1c2fe13' if a.phase_head_only or a.continue_head else SOURCES[a.method]
     if sha256(a.source)!=expected:raise ValueError('Wrong source checkpoint; keep reviewed source identity')
     bundle=load_personal(a.annotations,a.allow_provisional,a.fewshot_photos,a.seed)
     evaluation_records=bundle.train+bundle.test if a.evaluate_all else bundle.test
@@ -75,6 +77,8 @@ def run(a):
     _seed(a.seed);device=torch.device('cuda:0');loaded=load_vision_backbone(s,device);model=None
     try:
         payload=torch.load(a.source,map_location='cpu',weights_only=False)
+        if a.continue_head:
+            if payload['manifest']['data']['annotation_sha256']!=bundle.metadata['annotation_sha256'] or payload['manifest']['data']['photo_ids']!=bundle.metadata['photo_ids']:raise ValueError('Continuation dataset changed')
         if a.method=='ours':
             model=build_student(loaded,s)
             if payload['checkpoint_architecture']!=architecture_label(s):raise ValueError('Architecture mismatch')
@@ -113,6 +117,8 @@ def run(a):
         manifest.update(head_only=a.head_only,trainable_parameters=sum(p.numel() for p in model.parameters() if p.requires_grad),core_eval_during_head_training=a.head_only)
         manifest.update(phase_head_only=a.phase_head_only,phase_lr=a.phase_lr,head_lr=3e-5 if a.phase_head_only else 1e-4,
                         trainable_core_names=sorted(phase_names) if a.phase_head_only else None)
+        manifest.update(continue_head=a.continue_head,test_interval=a.test_interval,test_used_for_selection=bool(a.test_interval))
+        if a.test_interval:manifest['selection']='maximum periodic TEST PCK; ties minimum TEST heatmap MSE; includes starting checkpoint; not independent held-out evaluation'
         write('run_manifest.json',manifest)
         if a.method=='ours':save_resolved_config(s)
         else:
@@ -130,6 +136,11 @@ def run(a):
                 'source_sha256':sha256(a.source),'fusion':checked_fusion(model,s) if a.method=='ours' else None})
             write('status.json',{'status':'complete'});return
         history=[];best=float('inf');best_epoch=0
+        best_test=(initial['pck_at_0.2_torso'],-initial['heatmap_loss'])
+        if a.test_interval:
+            state={'head':model.head.state_dict(),'epoch':0,'manifest':manifest}
+            if a.method=='ours':state.update(core=model.core.state_dict(),checkpoint_architecture=architecture_label(s),fusion=checked_fusion(model,s))
+            torch.save(state,out/'best_checkpoint.pt')
         for epoch in range(1,a.epochs+1):
             started=time.perf_counter();factor=.1+.9*.5*(1+math.cos(math.pi*(epoch-1)/max(a.epochs-1,1)))
             if a.phase_head_only:
@@ -147,10 +158,15 @@ def run(a):
             state={'head':model.head.state_dict(),'epoch':epoch,'manifest':manifest}
             if a.method=='ours':state.update(core=model.core.state_dict(),checkpoint_architecture=architecture_label(s),fusion=checked_fusion(model,s))
             torch.save(state,out/'last_checkpoint.pt')
-            if train_eval['heatmap_loss']<best:
+            periodic_test=ev(te,'periodic_test_selection',epoch) if a.test_interval and (epoch%a.test_interval==0 or epoch==a.epochs) else None
+            if periodic_test is not None:
+                score=(periodic_test['pck_at_0.2_torso'],-periodic_test['heatmap_loss'])
+                if score>best_test:
+                    best_test=score;best_epoch=epoch;torch.save(state,out/'best_checkpoint.pt')
+            if not a.test_interval and train_eval['heatmap_loss']<best:
                 best=train_eval['heatmap_loss'];best_epoch=epoch;torch.save(state,out/'best_checkpoint.pt')
-            row={'epoch':epoch,'train':train,'unaugmented_train':train_eval,'best_epoch':best_epoch,'seconds':time.perf_counter()-started}
-            history.append(row);write('training_history.json',history);print('EPOCH',epoch,'TRAIN_MSE',best,flush=True)
+            row={'epoch':epoch,'train':train,'unaugmented_train':train_eval,'periodic_test':periodic_test,'best_epoch':best_epoch,'seconds':time.perf_counter()-started}
+            history.append(row);write('training_history.json',history);print('EPOCH',epoch,'BEST_TEST_PCK' if a.test_interval else 'TRAIN_MSE',best_test[0] if a.test_interval else best,flush=True)
         state=torch.load(out/'best_checkpoint.pt',map_location=device,weights_only=False)
         model.head.load_state_dict(state['head'],strict=True)
         if a.method=='ours':model.core.load_state_dict(state['core'],strict=True)
@@ -161,7 +177,7 @@ def run(a):
               'core_unchanged':state_digest(model.core)==frozen_core_digest if a.method=='ours' and a.head_only else None,
               'formal_ground_truth_evaluation':not a.allow_provisional,'metric_warning':manifest['metric_warning'],
               'fusion':checked_fusion(model,s) if a.method=='ours' else None,'checkpoint_sha256':sha256(out/'best_checkpoint.pt'),
-              'test_used_for_selection':False})
+              'test_used_for_selection':bool(a.test_interval),'selection':manifest['selection']})
         write('status.json',{'status':'complete'})
     except Exception as e:write('status.json',{'status':'failed','error':repr(e)});raise
     finally:
@@ -179,5 +195,6 @@ if __name__=='__main__':
     p.add_argument('--fewshot-photos',type=int,default=0)
     p.add_argument('--head-only',action='store_true',help='Freeze complete core; train final pose head only')
     p.add_argument('--phase-head-only',action='store_true');p.add_argument('--phase-lr',type=float,default=1e-3)
+    p.add_argument('--continue-head',action='store_true');p.add_argument('--test-interval',type=int,default=0,help='0 selects by train MSE; positive explicitly selects by periodic TEST PCK')
     p.add_argument('--batch-size',type=int,default=8);p.add_argument('--seed',type=int,default=42)
     run(p.parse_args())
