@@ -205,7 +205,7 @@ def main():
     p.add_argument('--epochs', type=int, default=10)
     p.add_argument('--steps', type=int, default=100)
     p.add_argument('--quick', action='store_true')
-    p.add_argument('--variant', choices=('standard', 'lowrank32', 'lowrank64', 'lite', 'lite_one', 'slim', 'slim_one'), default='standard')
+    p.add_argument('--variant', choices=('standard', 'lowrank32', 'lowrank48', 'lowrank64', 'lite', 'lite_one', 'slim', 'slim_one'), default='standard')
     p.add_argument('--run-name')
     p.add_argument('--calibration', action='store_true')
     a = p.parse_args()

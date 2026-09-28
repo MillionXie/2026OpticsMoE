@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import json
+import argparse
 from pathlib import Path
 
 import torch
@@ -21,20 +22,26 @@ CONDITIONS = (
 
 
 def main():
+    parser = argparse.ArgumentParser()
+    parser.add_argument('--variant', default='standard')
+    parser.add_argument('--run-prefix', default='')
+    args = parser.parse_args()
     cfg = Settings.__new__(Settings)
     cfg.__dict__.update(json.loads((BASE / 'resolved_config.json').read_text()))
     for key in ('config_path', 'data_dir', 'asset_dir', 'output_dir', 'qwen_checkpoint',
                 'prompt_cache_path', 'optical_base_config', 'legacy_warmstart_checkpoint'):
         setattr(cfg, key, Path(getattr(cfg, key)))
     cfg.num_workers = 0
-    cfg.shared_readout_variant = 'standard'
+    cfg.shared_readout_variant = args.variant
     _, test = t.build_loaders(cfg)
     assert len(test.dataset) == 1000
     device = torch.device('cuda')
     results = []
     for label, trained, inference_profile in CONDITIONS:
-        ckpt = OUTPUTS / trained / 'best.pt'
-        assert (OUTPUTS / trained / 'report.json').exists(), trained
+        run = OUTPUTS / (args.run_prefix + trained)
+        ckpt = run / 'best.pt'
+        report = json.loads((run / 'report.json').read_text())
+        assert report.get('shared_readout_variant', 'standard') == args.variant, trained
         payload = torch.load(ckpt, map_location='cpu', weights_only=False)
         model = t.build_model(cfg, device).eval()
         model.load_state_dict(payload['model'], strict=True)
@@ -50,7 +57,9 @@ def main():
                           'changed_cell_accuracy': metrics['overall']['changed_cell_accuracy']}), flush=True)
         del model
         torch.cuda.empty_cache()
-    save_json(OUTPUTS / 'five_conditions.json', {'status': 'complete',
+    suffix = f'_{args.variant}' if args.variant != 'standard' else ''
+    save_json(OUTPUTS / f'five_conditions{suffix}.json', {'status': 'complete',
+              'shared_readout_variant': args.variant,
               'source_reference_simulation_changed_cell_accuracy': 0.889,
               'conditions': results,
               'selection': 'Each checkpoint selected only on original TRAIN holdout; conditions predefined before TEST.'})

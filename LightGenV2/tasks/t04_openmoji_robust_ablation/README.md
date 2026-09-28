@@ -67,4 +67,10 @@ matrices. Neither calibration touches TEST. The optical path, router, phase
 count, 17 µm / 10 cm geometry, and bounded BMP contract stay fixed. Select one
 meaningful smaller architecture on the TRAIN-derived validation split before
 retraining all four perturbation profiles at that exact same capacity; do not
-tune capacity to TEST or assert a physical result from simulation alone.
+tune capacity to TEST or assert a physical result from simulation alone. For
+the common 12-epoch/100-step capacity calibration, choose the smallest of
+`lowrank32`, `lowrank48`, `lowrank64`, and `lite` whose best validation
+Changed-cell Accuracy is at least 0.942 (within two percentage points of the
+reference checkpoint's 0.962 on the identical TRAIN holdout). If none meet
+that guard, retain the strongest validation candidate and report the miss;
+the 0.889 TEST target must not be selected on TEST itself.
