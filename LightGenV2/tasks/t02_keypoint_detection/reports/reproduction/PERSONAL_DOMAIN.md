@@ -1,5 +1,19 @@
 # 自采照片小样本域迁移（2026-09-28）
 
+## 零样本仿真优先（用户最新协议）
+
+原LSP训练/结果报告仍保留；自摄照片用于可展示图像与额外域外验证，两套指标分开。
+先使用下文两份原始LSP checkpoint，不使用personal_pilot微调权重，在全部101张照片、
+104个前景人体上评估。已有81/20划分不改写，使用只读的全量评估视图。
+在下文personal_finetune命令中追加 `--evaluate-only --evaluate-all`，设置新run目录
+`personal_zeroshot_<method>_all_pilot_20260928`。此模式不执行训练、不保存新checkpoint。
+未人工审核时仍加`--allow-provisional`并使用provisional标注，仅报告PCK12预标注一致性。
+人工核验后可固定同一原始权重复评，无需为核验标签而重新训练。
+若后续少样本迁移，先按拍摄组固定约10张训练照片；其同组连拍不得留在测试集，
+两模型从各自原始LSP权重开始。零样本/迁移后均重报同一个剩余test，不能将全101张
+零样本分数直接当作不同测试子集的迁移提升。已看过全量结果，须披露这是探索性划分。
+本轮不自动根据测试分数挑选训练图或启动额外训练。
+
 ## 本次已完成的预标注试跑（不是论文GT性能）
 
 源码：`fbb775347`（完整SHA见每个run的`run_manifest.json`），分支
@@ -115,4 +129,4 @@ python -m LightGenV2.tasks.t02_keypoint_detection.personal_report --dataset "$po
 ```
 
 预标注诊断必须改用`annotations_provisional.json`、增加`--allow-provisional`，run名带`pilot`。
-诊断与正式输出分开，不覆盖原权重。关键点标注纠正后须重新训练两模型，不能只换测试标签追分。
+诊断与正式输出分开，不覆盖原权重。标签纠正遵循图像事实，两模型同时重评，不按模型表现修改标签。

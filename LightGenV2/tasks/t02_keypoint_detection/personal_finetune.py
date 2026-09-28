@@ -39,8 +39,10 @@ def visuals(model,loaded,records,settings,out,label):
 
 
 def run(a):
+    if a.evaluate_all and not a.evaluate_only:raise ValueError('--evaluate-all requires --evaluate-only; never train on the all-photo evaluation')
     if sha256(a.source)!=SOURCES[a.method]:raise ValueError('Wrong source checkpoint; keep reviewed source identity')
     bundle=load_personal(a.annotations,a.allow_provisional)
+    evaluation_records=bundle.train+bundle.test if a.evaluate_all else bundle.test
     out=a.run_dir.resolve();out.mkdir(parents=True,exist_ok=False)
     def write(n,d):(out/n).write_text(json.dumps(d,indent=2,default=str)+'\n',encoding='utf-8')
     cfg=TASK/'configs/moe_alpha40.yaml' if a.method=='ours' else TASK.parents[2]/'experiments/qwen3_vl_embedding_2b_lsp_pose_optical_moe16/configs/lsp_pose_opt2.yaml'
@@ -75,6 +77,7 @@ def run(a):
                   'selection':'minimum unaugmented TRAIN heatmap MSE (not a claim of best generalization)',
                   'formal_result':not a.allow_provisional,'metric_warning':'PILOT: agreement with independent pseudo labels, NOT ground-truth accuracy' if a.allow_provisional else None,
                   'gpu':torch.cuda.get_device_name(),'torch':torch.__version__,'architecture_changed':False}
+        manifest.update(evaluate_only=a.evaluate_only,evaluation_scope='all photos' if a.evaluate_all else 'held-out split',evaluation_people=len(evaluation_records))
         write('run_manifest.json',manifest)
         if a.method=='ours':save_resolved_config(s)
         else:
@@ -82,10 +85,15 @@ def run(a):
             save_baseline_config(s)
         write('status.json',{'status':'training'})
         kind='student' if a.method=='ours' else 'teacher'
-        tr=_loader(bundle.train,s,training=True);clean=_loader(bundle.train,s,training=False);te=_loader(bundle.test,s,training=False)
+        tr=_loader(bundle.train,s,training=True);clean=_loader(bundle.train,s,training=False);te=_loader(evaluation_records,s,training=False)
         def ev(loader,phase,epoch):return evaluate_model(model,kind,loader,loaded.processor,device,s,phase=phase,epoch=epoch,save_outputs=False,tta=False)[0]
         initial=ev(te,'personal_before',0);write('before.json',initial)
-        visuals(model,loaded,bundle.test,s,out/'before_images','before adaptation')
+        visuals(model,loaded,evaluation_records,s,out/'before_images','original LSP checkpoint; no personal adaptation')
+        if a.evaluate_only:
+            write('final_report.json',{'metrics':initial,'evaluation_people':len(evaluation_records),'training_performed':False,
+                'formal_ground_truth_evaluation':not a.allow_provisional,'metric_warning':manifest['metric_warning'],
+                'source_sha256':sha256(a.source),'fusion':checked_fusion(model,s) if a.method=='ours' else None})
+            write('status.json',{'status':'complete'});return
         history=[];best=float('inf');best_epoch=0
         for epoch in range(1,a.epochs+1):
             started=time.perf_counter();factor=.1+.9*.5*(1+math.cos(math.pi*(epoch-1)/max(a.epochs-1,1)))
@@ -125,5 +133,6 @@ if __name__=='__main__':
     p.add_argument('--annotations',type=Path,required=True);p.add_argument('--source',type=Path,required=True)
     p.add_argument('--cache-dir',type=Path,required=True);p.add_argument('--run-dir',type=Path,required=True)
     p.add_argument('--allow-provisional',action='store_true');p.add_argument('--epochs',type=int,default=20)
+    p.add_argument('--evaluate-only',action='store_true');p.add_argument('--evaluate-all',action='store_true')
     p.add_argument('--batch-size',type=int,default=8);p.add_argument('--seed',type=int,default=42)
     run(p.parse_args())
