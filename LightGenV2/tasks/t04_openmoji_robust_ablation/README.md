@@ -74,3 +74,10 @@ Changed-cell Accuracy is at least 0.942 (within two percentage points of the
 reference checkpoint's 0.962 on the identical TRAIN holdout). If none meet
 that guard, retain the strongest validation candidate and report the miss;
 the 0.889 TEST target must not be selected on TEST itself.
+
+The fixed calibration selected `lowrank48`: 234,520 readout parameters versus
+381,976 standard (-38.6%), best TRAIN-derived validation 0.958. Four formal
+12-epoch runs at that same capacity are named `compact_lowrank48_<group>`.
+Their five-condition simulation results are 0.9135 / 0.9030 / 0.9045 /
+0.8875 / 0.9005. These are **not CCD measurements**. Full metrics, split
+and weight hashes are in `handoffs/openmoji_robust_ablation_20260928/compact`.
