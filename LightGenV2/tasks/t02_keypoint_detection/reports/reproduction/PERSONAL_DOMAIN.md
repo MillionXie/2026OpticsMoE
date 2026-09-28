@@ -1,5 +1,35 @@
 # 自采照片小样本域迁移（2026-09-28）
 
+## 本次已完成的预标注试跑（不是论文GT性能）
+
+源码：`fbb775347`（完整SHA见每个run的`run_manifest.json`），分支
+`codex/t02-personal-pose-20260928`；本地隔离源码 `.worktrees/t02_personal_pose`。
+服务器源码 `/DATA/DATA1/guest3/t02_personal_source_20260928`。
+24项测试及两模型各一轮GPU流程检查通过后，单GPU2 RTX3090串行各20轮完成。
+
+| 模型 | 迁移前：预标注PCK12 | 迁移后：预标注PCK12 | 最优训练MSE轮数 |
+|---|---:|---:|---:|
+| Ours | 0.911392 | 0.940928 | 20 |
+| Qwen Deconv128 | 0.928270 | 0.991561 | 20 |
+
+分母是20张留出照片中的237个有效四肢点；头颈不计，**不是原LSP14点PCK**。
+只有5个独立留出拍摄组，组内连拍相关性较强，不能按237个独立观测夸大统计证据。
+baseline此轮更好；Ours的部分遮挡手腕仍不准，全部测试图都在对照页中保留。
+Ours alpha=0.41805884/0.41805112，结构未扩容。
+
+运行ID：`personal_pilot_ours_s42_20260928`、`personal_pilot_baseline_s42_20260928`，
+本地和服务器都位于任务`runs/simulation/`。
+两份best SHA分别为：
+
+- Ours：`a5f6b32656311904b46d09cad78b51e0cde6746d3454b3e00704d42187c27135`
+- Baseline：`8362afea87b88c14438812565e2b2e4308d96eaad87c1035eb066731b8c5d314`
+
+数据标注SHA：`6dbb0745e6a4a4b0f5468f8622b3782deac325fd9560c853d0982b35575b47d2`。
+传输ZIP SHA：`cdd64198abee6e9c485ab330c2036159817a16e5da09c4757b8a3c95bb19db7d`，服务器解压前核验。
+原图未修改；权重、日志、前后预测图已下载本地，并再次核对best权重SHA。
+`data/lsp_pose/personal_20260928/COMPARE.html`展示全部测试图；`review.html`供人工核验。
+正式14点域迁移仍待人工确认标注，不把此试跑标为正式完成。
+
 ## 数据、标注、可报告范围
 
 原图 `data/lsp_pose/Lsp/` 共101张，保留不动。用户明确允许训练及论文展示。
@@ -48,9 +78,13 @@ COCO的12个四肢关节直接映射；颈部/头顶仅几何占位，**不是LS
 只在新输出目录运行预处理，不覆盖已审核数据：
 
 ```powershell
-python -m LightGenV2.tasks.t02_keypoint_detection.personal_prepare --source data/lsp_pose/Lsp --output data/lsp_pose/personal_20260928
-python -m LightGenV2.tasks.t02_keypoint_detection.personal_prelabel --dataset data/lsp_pose/personal_20260928
-python -m LightGenV2.tasks.t02_keypoint_detection.personal_split --dataset data/lsp_pose/personal_20260928
+# 本机已生成，不要重复运行下列准备命令；直接打开review.html即可。
+# 换机器复现时，先checkout上述分支，再设置绝对数据路径。
+Set-Location C:\Users\Xml12\OneDrive\2026OpticsMoE\.worktrees\t02_personal_pose
+$poseData = 'C:\Users\Xml12\OneDrive\2026OpticsMoE\data\lsp_pose'
+python -m LightGenV2.tasks.t02_keypoint_detection.personal_prepare --source "$poseData/Lsp" --output "$poseData/personal_20260928"
+python -m LightGenV2.tasks.t02_keypoint_detection.personal_prelabel --dataset "$poseData/personal_20260928"
+python -m LightGenV2.tasks.t02_keypoint_detection.personal_split --dataset "$poseData/personal_20260928"
 # 打开 data/lsp_pose/personal_20260928/review.html 审核；导出 annotations_reviewed.json 放回同目录
 ```
 
@@ -72,6 +106,12 @@ python -m LightGenV2.tasks.t02_keypoint_detection.personal_finetune --method bas
  --source "$ROOT/experiments/qwen3_vl_embedding_2b_lsp_pose_optical_moe16/runs/lsp_pose_optical_moe16_opt2/checkpoints/teacher_best_train_loss.pt" \
  --cache-dir /DATA/DATA1/guest3/.cache/huggingface/hub \
  --run-dir "$TASK/runs/simulation/personal_reviewed_baseline_s42" --epochs 20
+```
+
+本地生成全测试集对照页（需先下载两份run；comparisons目录不存在时执行）：
+
+```powershell
+python -m LightGenV2.tasks.t02_keypoint_detection.personal_report --dataset "$poseData/personal_20260928" --ours C:/Users/Xml12/OneDrive/2026OpticsMoE/LightGenV2/tasks/t02_keypoint_detection/runs/simulation/personal_pilot_ours_s42_20260928 --baseline C:/Users/Xml12/OneDrive/2026OpticsMoE/LightGenV2/tasks/t02_keypoint_detection/runs/simulation/personal_pilot_baseline_s42_20260928
 ```
 
 预标注诊断必须改用`annotations_provisional.json`、增加`--allow-provisional`，run名带`pilot`。

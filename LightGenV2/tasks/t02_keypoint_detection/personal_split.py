@@ -1,5 +1,5 @@
 """Freeze visually audited capture groups BEFORE any augmentation or model fitting."""
-import argparse,json,random,math
+import argparse,json,random,math,hashlib
 from collections import Counter
 from pathlib import Path
 from PIL import Image,ImageDraw
@@ -12,6 +12,7 @@ GROUPS=[[0,7,8,9,10,47,48],[1,99,100],[2,45,46],[3,29,37],[4,5],[6,32,33],
         [23,24,25],[34,35],[36],[38,39],[40,41,79,80,81],[42,43,44],[49,50],
         [53,67,68,96,97,98],[54,55],[58,59,60,61,62],[63,64,65,66],[69,70,71],
         [72,73,74],[75,76,77,78],[82,83],[84,85,86,87,88],[89,94],[90,91,92,95],[93]]
+SOURCE_SET_SHA='711699af7b8d344a08029399b8dd58135d675c1253ca039f3913f96b2ed51d0c'
 EDGES=[(0,1),(1,2),(2,3),(3,4),(4,5),(6,7),(7,8),(8,9),(9,10),(10,11),(8,12),(9,12),(12,13)]
 
 
@@ -36,6 +37,8 @@ def crop_box(points,margin=1.25):
 def run(root):
     root=Path(root);data=json.loads((root/'preannotations.json').read_text(encoding='utf-8'))
     if len(data['images'])!=101:raise ValueError('Manual grouping applies only to this 101-photo collection')
+    identity=hashlib.sha256(json.dumps([(r['original_name'],r['original_sha256']) for r in data['images']],ensure_ascii=True).encode()).hexdigest()
+    if identity!=SOURCE_SET_SHA:raise ValueError('Photos changed: redo visual grouping; do not reuse index groups')
     assert sorted(sum(GROUPS,[]))==list(range(101))
     held=split_groups(GROUPS)
     for gi,ids in enumerate(GROUPS):
