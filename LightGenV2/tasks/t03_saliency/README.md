@@ -1,5 +1,8 @@
 # T03 显著性分析（SALICON）
 
+2026-09-29：[六张许可核验候选的固定权重推理和论文素材包](reports/reproduction/LICENSED_EXAMPLES_20260929.md)。
+原best不变；715为public-test，另外五张为训练样例，必须在论文中区分。
+
 ## SHS 光路部署（2026-09-14）
 
 用户指定 CC 四舍五入为0.8625的版本，固定为
