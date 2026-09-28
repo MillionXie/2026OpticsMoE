@@ -35,6 +35,7 @@ def main():
     parser = argparse.ArgumentParser()
     parser.add_argument('--project', type=Path, required=True)
     parser.add_argument('--checkpoint-sha256', required=True)
+    parser.add_argument('--mode', choices=('selftest', 'pilot', 'full'), default='full')
     args = parser.parse_args()
     root = args.project.resolve()
     if not root.is_dir() or not (root / 'standalone').is_dir():
@@ -63,10 +64,12 @@ def main():
     protocol = json.loads((BASE / 'protocol.json').read_text(encoding='utf8'))
     gallery = [r for r in protocol['rows'] if r['split'] == 'train']
     query = [r for r in protocol['rows'] if r['split'] == 'query']
-    rows = gallery + query
-    if len(gallery) != 1600 or len(query) != 800 or len({r['sample_id'] for r in rows}) != 2400:
+    all_rows = gallery + query
+    if len(gallery) != 1600 or len(query) != 800 or len({r['sample_id'] for r in all_rows}) != 2400:
         raise ValueError('Physical gallery/query identity contract changed')
-    out = root / 'runs/layerwise_selected2400_20260929'
+    rows = gallery[:4] if args.mode != 'full' else all_rows
+    run_name = 'pilot4_selected_20260929' if args.mode != 'full' else 'layerwise_selected2400_20260929'
+    out = root / 'runs' / run_name
     out.mkdir(parents=True, exist_ok=True)
     report_path = out / 'report.json'
     if report_path.exists():
@@ -181,6 +184,9 @@ def main():
     write_json(out / 'bridge_selftest.json', dict(maximum_descriptor_error=error, samples=4, camera_used=False))
     if error >= 1e-5:
         raise RuntimeError('Ideal six-stage bridge mismatch')
+    if args.mode == 'selftest':
+        print(json.dumps(dict(status='selftest_complete', bridge_max_error=error)), flush=True)
+        return
     pipeline.capture_stage = capture
     chunks = out / 'features'
     chunks.mkdir(exist_ok=True)
@@ -200,10 +206,18 @@ def main():
                     torch.save(result, chunks / f'{index:06d}.pt')
                 counts[stage] = index + len(sample)
                 progress = dict(status='capturing', stage=stage, stage_completed=counts[stage],
-                                stage_total=2400, ccd_counts=counts, total_ccd=sum(counts.values()),
+                                stage_total=len(rows), ccd_counts=counts, total_ccd=sum(counts.values()),
                                 checkpoint_sha256=args.checkpoint_sha256, elapsed_seconds=time.perf_counter()-started)
                 write_json(out / 'progress.json', progress)
                 print(json.dumps(progress), flush=True)
+    if args.mode == 'pilot':
+        report = dict(status='complete', mode='pilot', checkpoint_sha256=args.checkpoint_sha256,
+                      samples=len(rows), ccd_counts=counts, total_ccd=sum(counts.values()),
+                      phase_sha256=contract['phase_sha256'], bridge_max_error=error)
+        write_json(report_path, report)
+        write_json(out / 'progress.json', report)
+        print(json.dumps(report), flush=True)
+        return
     vectors, ids = [], []
     for index in range(0, len(rows), 4):
         result = torch.load(chunks / f'{index:06d}.pt', map_location='cpu', weights_only=True)
