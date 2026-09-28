@@ -105,6 +105,12 @@ added at evaluation. G2's real CCD result is still unmeasured. The ideal group
 is 0.9 percentage points above the original 0.8890, while robust-group clean
 accuracy is lower. Three independent continuation runs train with their
 original disturbances but select by the *clean TRAIN holdout*, without using
-TEST for epoch selection. Training also updated phase/router weights; only
-their architecture was held fixed. Full reports are under
+TEST for epoch selection. The performance-matched presentation subset uses
+clean VAL near the base group's 0.9225 (r1/r2/r3: 0.9170/0.9230/0.9210),
+with cumulative 13/15/14 training epochs. Its common clean TEST scores are
+0.8980 / 0.8980 / 0.8970 / 0.8905 / 0.8900. These are simulations, not CCD
+measurements. The different training budgets are disclosed; this is a
+validation-accuracy-matched comparison, not an equal-step ablation. Training
+also updated phase/router weights; only their architecture was held fixed.
+Full reports are under
 `handoffs/openmoji_robust_ablation_20260928/lowrank16`.

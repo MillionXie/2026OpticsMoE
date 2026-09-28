@@ -1,6 +1,7 @@
 """Evaluate VAL-selected OpenMoji recovery checkpoints once on normal TEST."""
 from __future__ import annotations
 
+import argparse
 import json
 from pathlib import Path
 
@@ -15,7 +16,13 @@ GROUPS = ('r0_base', 'r1_ccd', 'r2_ccd_dc30', 'r3_ccd_dc30_grid')
 
 
 def main() -> None:
-    output = OUTPUTS / 'five_conditions_clean_recovered_lowrank16.json'
+    parser = argparse.ArgumentParser()
+    parser.add_argument('--mode', choices=('max-validation', 'matched-validation'),
+                        default='max-validation')
+    args = parser.parse_args()
+    matched = args.mode == 'matched-validation'
+    output = OUTPUTS / ('five_conditions_clean_matched_lowrank16.json' if matched
+                        else 'five_conditions_clean_recovered_lowrank16.json')
     if output.exists():
         raise FileExistsError(f'Preserve existing evaluation: {output}')
     cfg = Settings.__new__(Settings)
@@ -35,12 +42,21 @@ def main() -> None:
         if group == 'r0_base':
             selected[group] = {'run': original.name, 'criterion': 'base VAL-selected checkpoint'}
             continue
-        recovery = OUTPUTS / f'compact_lowrank16_cleanrecover8_{group}'
+        recovery = OUTPUTS / (f'compact_lowrank16_cleanmatch_{group}' if matched
+                              else f'compact_lowrank16_cleanrecover8_{group}')
         report = json.loads((recovery / 'report.json').read_text())
         assert report['status'] == 'complete' and report['test_evaluated'] is False
-        better = report['best_clean_validation'] > report['initial_clean_validation']
+        if matched:
+            # Epoch limits and target were fixed from TRAIN validation before this TEST.
+            target = 0.9225
+            better = (abs(report['best_clean_validation'] - target) <
+                      abs(report['initial_clean_validation'] - target))
+        else:
+            better = report['best_clean_validation'] > report['initial_clean_validation']
         chosen = recovery if better else original
-        selected[group] = {'run': chosen.name, 'criterion': 'clean TRAIN holdout',
+        selected[group] = {'run': chosen.name, 'criterion':
+                           'clean TRAIN holdout closeness to 0.9225' if matched
+                           else 'maximum clean TRAIN holdout',
                            'initial_clean_validation': report['initial_clean_validation'],
                            'best_clean_validation': report['best_clean_validation'],
                            'recovery_accepted': better}
@@ -70,6 +86,7 @@ def main() -> None:
     assert results[0]['checkpoint_sha256'] == results[1]['checkpoint_sha256']
     assert results[0]['metrics'] == results[1]['metrics']
     save_json(output, {'status': 'complete', 'selection': selected,
+                      'selection_mode': args.mode,
                       'inference_contract': 'all groups r0_base; no extra CCD/DC/raster stress',
                       'test_samples': 1000, 'test_used_for_epoch_selection': False,
                       'g2_experiment_status': 'not measured', 'conditions': results})
