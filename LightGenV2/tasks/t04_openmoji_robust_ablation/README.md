@@ -81,3 +81,23 @@ The fixed calibration selected `lowrank48`: 234,520 readout parameters versus
 Their five-condition simulation results are 0.9135 / 0.9030 / 0.9045 /
 0.8875 / 0.9005. These are **not CCD measurements**. Full metrics, split
 and weight hashes are in `handoffs/openmoji_robust_ablation_20260928/compact`.
+
+## Smaller head requested after the first comparison
+
+The user subsequently asked that the ideal simulation be nearer their original
+0.8890 score, rather than retain the maximal validation-preserving rank-48
+head. Rank-32 was trained with the identical protocol and reached 0.9115 on
+the original TEST. Further TRAIN/VAL-only capacity probes gave rank-24
+179,224 parameters / 0.9395 validation and rank-16 160,792 parameters /
+0.9235 validation. We selected the smallest head with validation above 0.90,
+rank-16, **before evaluating its formal four-group TEST**. This is a revised
+engineering target informed by earlier TEST feedback, not a fresh blind
+hyperparameter study. Per-epoch TEST cherry-picking remains prohibited.
+
+The rank-16 four-group native TEST scores are 0.8980 / 0.8815 / 0.8495 /
+0.8630. Its five declared conditions (ideal 17 µm, device raster proxy,
++detector noise, +coherent DC30%, +training raster proxy) are 0.8980 / 0.8885 /
+0.8725 / 0.8325 / 0.8625. The ideal group is 0.9 percentage points above
+the original 0.8890, but the disturbance ablation is not monotonic, and none
+of these numbers is an optical-bench result. The full local report is under
+`handoffs/openmoji_robust_ablation_20260928/lowrank16`.
