@@ -127,7 +127,10 @@ def run(a):
         write('status.json',{'status':'training'})
         kind='student' if a.method=='ours' else 'teacher'
         tr=_loader(bundle.train,s,training=True);clean=_loader(bundle.train,s,training=False);te=_loader(evaluation_records,s,training=False)
-        def ev(loader,phase,epoch):return evaluate_model(model,kind,loader,loaded.processor,device,s,phase=phase,epoch=epoch,save_outputs=False,tta=False)[0]
+        def ev(loader,phase,epoch):
+            metrics,rows=evaluate_model(model,kind,loader,loaded.processor,device,s,phase=phase,epoch=epoch,save_outputs=False,tta=False)
+            if a.evaluate_only:write('evaluated_predictions.json',rows)
+            return metrics
         initial=ev(te,'personal_before',0);write('before.json',initial)
         visuals(model,loaded,evaluation_records,s,out/'before_images','source checkpoint before this run')
         if a.evaluate_only:
