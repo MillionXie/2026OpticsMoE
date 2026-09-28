@@ -14,6 +14,19 @@
 零样本分数直接当作不同测试子集的迁移提升。已看过全量结果，须披露这是探索性划分。
 本轮不自动根据测试分数挑选训练图或启动额外训练。
 
+已完成（执行源码`1eafc5df1`，单GPU2 RTX3090串行）：
+
+| 原始LSP权重 | 全101张/104人体预标注PCK12 | 224裁剪内平均像素误差 |
+|---|---:|---:|
+| Ours alpha≥0.4 | 0.7699757869 | 16.19598 |
+| 完整冻结Qwen Vision + Deconv128 | 0.8627925747 | 10.71309 |
+
+共同分母1239有效四肢点；没有人工GT，不作论文正式准确率。头颈排除，PCKh无有效分母，
+JSON中的PCKh=0是空计数占位，不能报告为性能0。与下文20张子集不同，不能直接比较。
+运行`personal_zeroshot_ours_all_pilot_20260928`及`personal_zeroshot_baseline_all_pilot_20260928`
+均在任务`runs/simulation/`；final_report、run_manifest、完整命令、resolved config、
+逐人体预测和before_images已从服务器下载本地。原始checkpoint与标注SHA同下文。
+
 ## 本次已完成的预标注试跑（不是论文GT性能）
 
 源码：`fbb775347`（完整SHA见每个run的`run_manifest.json`），分支
