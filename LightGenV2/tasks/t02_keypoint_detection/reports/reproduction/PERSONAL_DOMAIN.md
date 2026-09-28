@@ -10,6 +10,21 @@ Ours保持原结构、alpha>=0.4、原噪声/正则，先3轮读出适配再低�
 baseline冻结完整Qwen视觉主干、微调原Deconv128。双方60轮，按clean train MSE选模。
 每份报告均给出同一91张test上微调前/后，禁止用101张零样本结果代替before。
 
+已完成：训练commit `dd31d232d`，两者60轮，train MSE均选择epoch60。
+训练组capture_10/18/21共10张（034,035,058–062,072–074）；test91张/94人体，1119有效四肢点。
+
+| 模型 | 同一test微调前PCK12 | 微调后PCK12 | 平均像素误差前→后 |
+|---|---:|---:|---:|
+| Ours | 0.747096 | 0.761394 | 17.3829→16.1354 |
+| Qwen baseline | 0.851653 | 0.892761 | 11.1240→9.8427 |
+
+未缩小差距；不得声称追平。Ours电子836248不变、alpha=0.41805777/0.41805008。
+run ID `personal_few10_ours_pilot_s42_20260928`、`personal_few10_baseline_pilot_s42_20260928`。
+best SHA分别`4b634796d271b6e564413bb4c353c0e9d6b965882a6e16112f4a56fd624ea91e`、
+`b1a8f655433beba94bea6852dea2e3cd1288b34d36b600d457f3a3626d4555e2`。
+本地完整对照页`data/lsp_pose/personal_20260928/few10_comparison/COMPARE.html`，含全部测试人体，
+权重和run已下载并核对SHA。未人工审核，以上仅为预标注一致性。
+
 ## 零样本仿真优先（用户最新协议）
 
 原LSP训练/结果报告仍保留；自摄照片用于可展示图像与额外域外验证，两套指标分开。
