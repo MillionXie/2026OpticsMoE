@@ -1,0 +1,78 @@
+# 自采照片小样本域迁移（2026-09-28）
+
+## 数据、标注、可报告范围
+
+原图 `data/lsp_pose/Lsp/` 共101张，保留不动。用户明确允许训练及论文展示。
+派生数据 `data/lsp_pose/personal_20260928/` 不进Git，包括照片、预标注、人工审核页、224裁剪。
+EXIF转正后五页总览逐页检查，当前图像全部正立；横拍照片保留横构图，不按宽高强制旋转。
+压缩工作副本最长边1600，去除EXIF/GPS，未拉伸。人体正方形crop→224×224，输出14×56×56。
+这是给定人体位置的top-down关键点任务，不是整图多人检测精度；多人同图分不同person条目。
+
+按连拍、同姿势、双机位相似照片人工分28组，seed42整组划分81张train/20张test。
+前景目标筛选后84个训练人体、20个测试人体。背景提案保留但排除，必要时审核页重新启用。
+人物/场景并不互斥；本实验只能说明**同拍摄场次的小样本迁移**，不能宣称跨人跨场景泛化。
+增强在划分之后在线执行：尺度±10%、中心±3%、水平翻转0.5（同步交换左右关节）、
+亮度/对比度±10%。测试无增强，不把增强图算成新独立样本。
+
+RTMPose-m+YOLOX-m通过rtmlib生成独立预标注，与被评估的两模型无关。
+来源/模型URL：https://github.com/Tau-J/rtmlib ，输出JSON记录完整模型地址。
+COCO的12个四肢关节直接映射；颈部/头顶仅几何占位，**不是LSP真值**。
+`review.html` 可直接本地浏览器打开：选人、拖点、屏蔽不可定位点、交换左右、确认后导出JSON。
+把下载的`annotations_reviewed.json`放回同一文件夹。原图不会被修改。
+不要把程序生成的`reviewed:false`批量改为true冒充人工审核。
+
+`--allow-provisional`显式试跑只监督/计算12个四肢点，排除不可信头颈点。
+该结果仅为**与独立自动预标注的一致性**，不能当论文GT准确率或与原LSP14点直接比较。
+正式入口默认拒绝未经核对的人体；确认14点或将不可判断点设无效后才做正式重训。
+两模型共用相同图片、裁剪、split、增强、损失及随机种子。
+
+## 模型与微调
+
+- Ours：`alpha40_distill_seed42_20260911/best_checkpoint.pt`，SHA256
+  `dbc059e2a7eddefac73d3b9bb158bf0140d440dfb396e0aa2956ad41670fc96a`。
+  α保持[0.4,0.95]，初值约0.418；电子836248参数不扩容，光路/Top2不改。
+- Baseline：历史opt2的`teacher_best_train_loss.pt`，SHA256
+  `0a4569f288f6de424b1b412452fa804a96e58d8f7e8655efaa23f461ab8cc735`。
+  完整冻结Qwen原生Vision+1102990参数Deconv128头；不换较弱Deconv40，不加LoRA。
+- 20 epoch初始试跑；batch8、seed42，两模型使用masked heatmap MSE，坐标损失0。
+  Ours保留原光学正则，前3轮只训原CCD读出和姿态头，后续小步联合。
+  LR electronic3e-6/router3e-5/phase3e-4/CCD1e-4/head1e-4，余弦降至0.1倍。
+  Baseline只训练原头，LR1e-4同余弦日程。
+- 最佳权重按未增强**训练集**热图MSE选择；测试仅迁移前和选定权重后评估，不用test挑epoch。
+  小样本训练误差最优不代表泛化最优；这是试跑，不声称解决过拟合。
+- 输出best/last、参数/数据/源码SHA、before/after数值、逐图预测坐标和前后叠加图。
+  所有运行进入本任务runs。一次仅用一张GPU，ours和baseline串行。
+
+## 从头操作（源码仓库根目录）
+
+只在新输出目录运行预处理，不覆盖已审核数据：
+
+```powershell
+python -m LightGenV2.tasks.t02_keypoint_detection.personal_prepare --source data/lsp_pose/Lsp --output data/lsp_pose/personal_20260928
+python -m LightGenV2.tasks.t02_keypoint_detection.personal_prelabel --dataset data/lsp_pose/personal_20260928
+python -m LightGenV2.tasks.t02_keypoint_detection.personal_split --dataset data/lsp_pose/personal_20260928
+# 打开 data/lsp_pose/personal_20260928/review.html 审核；导出 annotations_reviewed.json 放回同目录
+```
+
+预标注环境与训练环境分开；本地已验证Python3.11、rtmlib0.0.16、onnxruntime1.20.1、Pillow12.3。
+不要修改用户的xml环境。服务器沿用xml/PyTorch2.6.0cu124/Transformers4.57.3。
+
+```bash
+ROOT=/DATA/DATA1/guest3/2026OpticsMoE
+TASK=$ROOT/LightGenV2/tasks/t02_keypoint_detection
+export HF_HUB_OFFLINE=1 TRANSFORMERS_OFFLINE=1 OMP_NUM_THREADS=4
+# 先确认GPU空闲，再指定CUDA_VISIBLE_DEVICES。这里不硬编码设备编号。
+python -m LightGenV2.tasks.t02_keypoint_detection.personal_finetune --method ours \
+ --annotations "$ROOT/data/lsp_pose/personal_20260928/annotations_reviewed.json" \
+ --source "$TASK/runs/simulation/alpha40_distill_seed42_20260911/best_checkpoint.pt" \
+ --cache-dir /DATA/DATA1/guest3/.cache/huggingface/hub \
+ --run-dir "$TASK/runs/simulation/personal_reviewed_ours_s42" --epochs 20
+python -m LightGenV2.tasks.t02_keypoint_detection.personal_finetune --method baseline \
+ --annotations "$ROOT/data/lsp_pose/personal_20260928/annotations_reviewed.json" \
+ --source "$ROOT/experiments/qwen3_vl_embedding_2b_lsp_pose_optical_moe16/runs/lsp_pose_optical_moe16_opt2/checkpoints/teacher_best_train_loss.pt" \
+ --cache-dir /DATA/DATA1/guest3/.cache/huggingface/hub \
+ --run-dir "$TASK/runs/simulation/personal_reviewed_baseline_s42" --epochs 20
+```
+
+预标注诊断必须改用`annotations_provisional.json`、增加`--allow-provisional`，run名带`pilot`。
+诊断与正式输出分开，不覆盖原权重。关键点标注纠正后须重新训练两模型，不能只换测试标签追分。

@@ -1,5 +1,9 @@
 # T02 关键点检测（LSP）
 
+2026-09-28：[自采照片小样本域迁移入口](reports/reproduction/PERSONAL_DOMAIN.md)。101张原图保留，
+28个拍摄组划分81/20张；独立预标注不冒充人工真值，提供本地审核页。Ours保持α≥0.4、
+原电子结构；baseline保留完整冻结Qwen Vision+原Deconv128头。两者共用数据与增强，测试不选模。
+
 2026-09-11：40轮`alpha40_polish`已完成，best PCK=0.72793、alpha=0.41815/0.41812，
 仍未达0.73。新增[训练期热图蒸馏](reports/reproduction/HEATMAP_DISTILLATION.md)，
 只用冻结旧低alpha模型的训练集热图，学生电子结构及部署参数不变。

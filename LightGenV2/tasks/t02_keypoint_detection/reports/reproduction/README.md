@@ -1,5 +1,7 @@
 # t02_keypoint_detection 复现说明入口
 
+[自采照片迁移与标注核对](PERSONAL_DOMAIN.md)：分组划分、两模型微调命令、预标注/正式真值边界。
+
 [alpha≥0.4热图蒸馏](HEATMAP_DISTILLATION.md)：0.72793来源、训练专用教师缓存、梯度检查、完整命令。
 
 [最后global相位替换为固定噪声](GLOBAL_NOISE.md)：干预范围、5个seed、低/高alpha的独立评估与命令。
