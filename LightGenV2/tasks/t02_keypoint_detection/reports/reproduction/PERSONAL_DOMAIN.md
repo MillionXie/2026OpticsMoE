@@ -11,6 +11,14 @@ LR1e-4余弦至1e-5；epoch0、5、10…100测试，按PCK最高保存best，同
 该TEST明确参与选模，不再称作封存测试；Qwen原始权重不微调、不重新选模。
 run `personal_curated20_head_testselect100_pilot_s42_20260928`，预标注诊断性质不变。
 
+已完成100轮（源码`f1b51af2a`）：起点83.3333%仍最高，best_epoch=0；
+新增轮次最高epoch10为83.1804%，最后epoch100为79.8165%。因此最终best保留起点参数，
+没有提高；Qwen仍87.4618%。core_unchanged=true，原相位/alpha/电子前端逐轮不变。
+新best容器SHA `d8287ddb8dc4ae8e06a502cc4037b1c459a9e5f4452f952dd1ef543f2b7e5c7a`，
+与起点PT文件SHA不同是manifest/epoch更新，不代表模型权重更新。
+完整20次周期test见run内training_history.json；best/last及预测已下载本地并校验SHA。
+新的可视化在数据目录`head_testselect100_comparison/COMPARE.html`，明确标记test参与选模。
+
 ## 相位+末端头继续微调
 
 从下文83.3333%的head-only best继续100epoch，不重划20/54张。
