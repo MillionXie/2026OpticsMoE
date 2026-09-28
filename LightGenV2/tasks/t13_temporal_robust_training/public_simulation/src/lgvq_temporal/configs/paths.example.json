@@ -1,0 +1,7 @@
+{
+  "dataset_root": "/absolute/path/LGVQ",
+  "manifest": "/absolute/path/lgvq_train2250_test558.csv",
+  "vision_cache": "/absolute/path/qwen3vl_front_4f_49x1024_quality14.pt",
+  "language_cache": "/absolute/path/qwen3vl_front_temporal_prompt_2048.pt",
+  "training_soft_targets": "/absolute/path/training_only_reference_predictions.pt"
+}

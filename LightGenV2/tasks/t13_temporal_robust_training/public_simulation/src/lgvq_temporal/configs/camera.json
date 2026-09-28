@@ -1,0 +1,11 @@
+{
+  "name": "poisson_gaussian_electrons_pilot_v2_moderate",
+  "calibrated": false,
+  "electrons_per_intensity_unit": 3072.0,
+  "read_noise_electrons": 10.0,
+  "dark_electrons": 0.0,
+  "black_level_policy": "expected dark subtracted; no positive Gaussian bias",
+  "scope": "logical detector boundary, not raw camera pixels",
+  "limitations": ["pilot parameters", "no measured pixel-integration/ROI", "no PRNU/DSNU", "no saturation/ADC", "STE gradient approximation"],
+  "calibration_required": ["fixed exposure/gain and ROI", "dark repeated frames", "flat fields at multiple levels", "photon-transfer mean/variance", "model intensity to measured electron scale"]
+}

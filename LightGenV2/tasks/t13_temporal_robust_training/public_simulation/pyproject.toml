@@ -1,0 +1,26 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "lgvq-temporal-optics"
+version = "0.1.0"
+description = "Full-field temporal video-quality optical simulation"
+requires-python = ">=3.10"
+dependencies = ["numpy==2.1.3", "PyYAML==6.0.2", "torch==2.6.0"]
+
+[project.optional-dependencies]
+preprocessing = ["Pillow", "transformers"]
+test = ["pytest"]
+
+[project.scripts]
+lgvq-temporal = "lgvq_temporal.cli:main"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.setuptools.package-data]
+lgvq_temporal = ["configs/*.yaml", "configs/*.json"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
