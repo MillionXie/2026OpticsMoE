@@ -94,17 +94,17 @@ rank-16, **before evaluating its formal four-group TEST**. This is a revised
 engineering target informed by earlier TEST feedback, not a fresh blind
 hyperparameter study. Per-epoch TEST cherry-picking remains prohibited.
 
-The rank-16 four-group native TEST scores are 0.8980 / 0.8815 / 0.8495 /
-0.8630. The original five-row report mislabeled G2: it switched the basic
-model to a combined CCD/DC30/raster stress, producing 0.8885, whereas the
-user's intended G2 is *direct deployment of G1* and its pre-deployment
-simulation must be identical to G1. The corrected presentation report was
-re-evaluated with an exact full-metric equality assertion for G1/G2, giving
-0.8980 / 0.8980 / 0.8725 / 0.8325 / 0.8625. The 0.8885 stress score is
-retained separately as the basic model's matched-stress reference for G3–G5.
-G2's real CCD result is still unmeasured. G3–G5 all use the same combined
-inference stress, not incrementally stronger inference conditions. The ideal
-group is 0.9 percentage points above the original 0.8890, but the stress
-ablation is not monotonic. Training also updated phase/router weights; only
+The first two five-row evaluators mistakenly imposed a combined CCD/DC30/
+raster stress on G2–G5 or G3–G5. They remain archived for audit but are not
+the requested *normal simulation* comparison. The clean evaluator runs every
+VAL-selected checkpoint with the identical `r0_base` inference profile and
+reports G1–G5 as 0.8980 / 0.8980 / 0.8815 / 0.8495 / 0.8650 on TEST1000.
+G1/G2 use the same checkpoint and are asserted identical in every metric.
+Training measures alone differ for G3–G5; no extra CCD/DC/raster stress is
+added at evaluation. G2's real CCD result is still unmeasured. The ideal group
+is 0.9 percentage points above the original 0.8890, while robust-group clean
+accuracy is lower. Three independent continuation runs train with their
+original disturbances but select by the *clean TRAIN holdout*, without using
+TEST for epoch selection. Training also updated phase/router weights; only
 their architecture was held fixed. Full reports are under
 `handoffs/openmoji_robust_ablation_20260928/lowrank16`.
