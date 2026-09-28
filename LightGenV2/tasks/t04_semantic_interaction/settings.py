@@ -73,7 +73,7 @@ class Settings:
         self.embedding_only = bool(d("model.embedding_only", False))
         self.shared_readout_enabled = bool(d('model.shared_readout', False))
         self.shared_readout_variant = str(d('model.shared_readout_variant', 'standard'))
-        if self.shared_readout_variant not in ('standard', 'lowrank32', 'lowrank48', 'lowrank64', 'lite', 'lite_one', 'slim', 'slim_norm', 'slim_one'):
+        if self.shared_readout_variant not in ('standard', 'lowrank16', 'lowrank24', 'lowrank32', 'lowrank48', 'lowrank64', 'lite', 'lite_one', 'slim', 'slim_norm', 'slim_one'):
             raise ValueError('unsupported shared_readout_variant')
         self.qwen_shared_baseline = str(d('lightgen.model_variant', '')) == 'qwen_frozen_shared_readout'
         self.router_acceptance_min_share = float(d('protocol.router_min_share', 0.05))

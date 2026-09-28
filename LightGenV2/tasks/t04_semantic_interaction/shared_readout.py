@@ -12,7 +12,7 @@ class SharedGridReadout(nn.Module):
 
     def __init__(self, width=192, max_tokens=64, variant='standard'):
         super().__init__()
-        if variant not in ('standard', 'lowrank32', 'lowrank48', 'lowrank64', 'lite', 'lite_one', 'slim', 'slim_norm', 'slim_one'):
+        if variant not in ('standard', 'lowrank16', 'lowrank24', 'lowrank32', 'lowrank48', 'lowrank64', 'lite', 'lite_one', 'slim', 'slim_norm', 'slim_one'):
             raise ValueError(f'Unknown shared readout variant: {variant}')
         self.variant = variant
         self.position_readout = PositionReadout(max_tokens)
@@ -44,7 +44,7 @@ class SharedGridReadout(nn.Module):
             if variant == 'lite_one':
                 self.editor = nn.ModuleList([self.editor[0]])
                 self.contract = 'positionlinear64_width192_coord_one_condconv_pregrid6_lite_v1'
-        elif variant in ('lowrank32', 'lowrank48', 'lowrank64'):
+        elif variant in ('lowrank16', 'lowrank24', 'lowrank32', 'lowrank48', 'lowrank64'):
             rank = int(variant.removeprefix('lowrank'))
             for layer in self.editor:
                 layer.condition = nn.Sequential(
