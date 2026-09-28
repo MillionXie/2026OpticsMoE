@@ -53,6 +53,7 @@ def main() -> None:
     parser = argparse.ArgumentParser()
     parser.add_argument("--project", type=Path, required=True)
     parser.add_argument("--group", choices=GROUPS, required=True)
+    parser.add_argument("--scope", choices=("test", "train"), default="test")
     parser.add_argument("--output", type=Path, required=True)
     parser.add_argument("--limit", type=int, default=1000)
     parser.add_argument("--exposure-us", type=int, default=2000)
@@ -79,7 +80,7 @@ def main() -> None:
     for key in ("config_path", "data_dir", "asset_dir", "output_dir", "qwen_checkpoint", "prompt_cache_path", "optical_base_config", "legacy_warmstart_checkpoint"):
         setattr(cfg, key, Path(getattr(cfg, key)))
     cfg.config_path = project / "source/LightGenV2/tasks/t04_semantic_interaction/configs/routerfill_shared.yaml"
-    cfg.data_dir = original_lab / "data"
+    cfg.data_dir = original_lab / "data" if args.scope == "test" else project / "data_train_adapt1000"
     cfg.prompt_cache_path = cfg.data_dir / "token_embeddings_v1.pt"
     cfg.output_dir = output
     cfg.asset_dir = original_lab / "assets"
@@ -98,12 +99,13 @@ def main() -> None:
     model.eval().requires_grad_(False)
     for optic in model._optical_paths():
         optic.set_phase_dropout_active(False)
-    dataset = OpenMojiEditingDataset(cfg.test_manifest, cfg, load_prompt_cache(cfg.prompt_cache_path))
+    manifest = cfg.test_manifest if args.scope == "test" else cfg.data_dir / "capture_train.jsonl"
+    dataset = OpenMojiEditingDataset(manifest, cfg, load_prompt_cache(cfg.prompt_cache_path))
     if len(dataset) != 1000 or not 1 <= args.limit <= len(dataset):
-        raise ValueError("Expected pinned 1000 TEST records")
+        raise ValueError("Expected pinned 1000 records for this scope")
     contract = {
         "group": args.group, "checkpoint_sha256": expected_sha,
-        "count": args.limit, "dataset_manifest_sha256": sha(cfg.test_manifest),
+        "count": args.limit, "dataset_manifest_sha256": sha(manifest), "scope": args.scope,
         "phase_orientation": "hv", "phase_inverse": True, "camera_orientation": "flip_v",
         "amplitude_encoding": "round(255*bounded_amplitude), no peak rescale",
         "exposure_us": args.exposure_us, "gain": "Gain_X4", "wait_ms": 240,
@@ -119,9 +121,12 @@ def main() -> None:
         return {key: value.to(device) if torch.is_tensor(value) else value
                 for key, value in collate_samples([dataset[index]]).items()}
 
+    def sample_id(index: int) -> str:
+        return f"test_{index:05d}" if args.scope == "test" else dataset.records[index]["sample_id"]
+
     def prior_frames(index: int, prior: tuple[str, ...]) -> dict:
         return {
-            stage: torch.from_numpy(np.asarray(Image.open(output / "ccd" / stage / f"test_{index:05d}.png"), dtype=np.float32).copy()[None] / 255.0)
+            stage: torch.from_numpy(np.asarray(Image.open(output / "ccd" / stage / (sample_id(index) + ".png")), dtype=np.float32).copy()[None] / 255.0)
             for stage in prior
         }
 
@@ -164,7 +169,7 @@ def main() -> None:
             for start in range(0, args.limit, 4):
                 paths, ids = [], []
                 for index in range(start, min(start + 4, args.limit)):
-                    sid = f"test_{index:05d}"
+                    sid = sample_id(index)
                     if args.resume and (folder / (sid + ".png")).exists() and (folder / (sid + ".json")).exists():
                         continue
                     x = batch(index)
@@ -204,7 +209,7 @@ def main() -> None:
                 actual = model(x["source_image"], x["prompt_hidden"])
             simulation.update(sim, x)
             physical.update(actual, x)
-            rows.append({"test_index": index, "sample_id": dataset.records[index]["sample_id"]})
+            rows.append({"index": index, "sample_id": dataset.records[index]["sample_id"]})
     write(output / "report.json", {"status": "complete", "contract": contract,
           "simulation_metrics": simulation.compute(), "physical_metrics": physical.compute(),
           "samples": rows, "ccd_count": args.limit * len(STAGES), "elapsed_seconds": time.time() - started})
