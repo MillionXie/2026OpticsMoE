@@ -40,3 +40,9 @@ Each group has its own `best.pt`, `last.pt`, `history.json`, `split.json`,
 silently pick a group. Before physical capture, audit actual source/BMP
 equivalence and phase geometry; capture full datasets one optical layer at a
 time with persistent devices.
+
+After all four groups complete, `python -m
+LightGenV2.tasks.t04_openmoji_robust_ablation.evaluate_conditions` emits the
+predeclared five-condition TEST comparison. G2–G5 use the **same** grid-raster
+inference proxy; G1 alone is ideal17um. This extra evaluation is not used for
+checkpoint selection and must not be reported as physical CCD accuracy.
