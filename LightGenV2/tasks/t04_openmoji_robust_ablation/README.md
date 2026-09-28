@@ -51,3 +51,20 @@ LightGenV2.tasks.t04_openmoji_robust_ablation.evaluate_conditions` emits the
 predeclared five-condition TEST comparison. G2–G5 use the **same** grid-raster
 inference proxy; G1 alone is ideal17um. This extra evaluation is not used for
 checkpoint selection and must not be reported as physical CCD accuracy.
+
+## Electronic-capacity follow-up
+
+The standard shared readout has 381,976 parameters, including 74,112 in an
+additional FiLM, 226,178 in two conditioned residual convolutions, and 38,976
+in the decoder's pre-convolution. Initial structure-removal probes `slim`,
+`slim_one`, `lite`, and `lite_one` showed the pretrained transforms are not
+dispensable: abrupt deletion hurt TRAIN-derived validation markedly. They are
+diagnostics, not final models. The next calibration compares `lite` (retains
+decoder pre-convolution) with `lowrank64` (SVD-factorized conditional/pointwise
+transforms) using the user's own `.8890` bounded checkpoint as a common start.
+The low-rank mapping is initialized from truncated SVD, not fresh random
+matrices. Neither calibration touches TEST. The optical path, router, phase
+count, 17 µm / 10 cm geometry, and bounded BMP contract stay fixed. Select one
+meaningful smaller architecture on the TRAIN-derived validation split before
+retraining all four perturbation profiles at that exact same capacity; do not
+tune capacity to TEST or assert a physical result from simulation alone.

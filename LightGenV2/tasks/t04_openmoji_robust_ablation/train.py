@@ -16,8 +16,8 @@ from .profiles import PROFILES, assert_contract, install
 
 ROOT = Path('/DATA/DATA1/guest3/2026OpticsMoE')
 BASE = ROOT / 'LightGenV2/tasks/t04_semantic_interaction/runs/simulation/routerfill_shared_s73'
-SOURCE = BASE / 'best_checkpoint.pt'
-SOURCE_SHA = 'a69ddcee827749fb9202f9aef11ea45011e433d8b2f0151be2eec3db7dbff9eb'
+SOURCE = ROOT / 'LightGenV2/tasks/t04_semantic_interaction/runs/simulation/sister_bounded_recovery_20260927/best_checkpoint.pt'
+SOURCE_SHA = '579b19e78befe93cd258ce02308235f1a9176316f37bc42fc2e1b6ff06d38e9f'
 OUTPUTS = ROOT / 'LightGenV2/tasks/t04_openmoji_robust_ablation/runs/20260928'
 
 
@@ -37,10 +37,56 @@ def metric(m) -> float:
     return float(m['overall']['changed_cell_accuracy'])
 
 
-def run(group: str, epochs: int, steps: int, quick: bool) -> None:
+def factorize_pointwise(state: dict[str, torch.Tensor], prefix: str, rank: int) -> None:
+    """Use truncated SVD to preserve the pretrained transform at smaller rank."""
+    weight = state.pop(prefix + '.weight')
+    flat = weight.reshape(weight.shape[0], -1).float()
+    u, singular, vh = torch.linalg.svd(flat, full_matrices=False)
+    root = singular[:rank].sqrt()
+    left = u[:, :rank] * root[None, :]
+    right = root[:, None] * vh[:rank]
+    if weight.ndim == 4:
+        left = left[:, :, None, None]
+        right = right[:, :, None, None]
+    state[prefix + '.0.weight'] = right.to(weight.dtype)
+    state[prefix + '.1.weight'] = left.to(weight.dtype)
+    if prefix + '.bias' in state:
+        state[prefix + '.1.bias'] = state.pop(prefix + '.bias')
+
+
+def adapted_source_state(source: dict[str, torch.Tensor], variant: str,
+                         target: dict[str, torch.Tensor]) -> dict[str, torch.Tensor]:
+    result = dict(source)
+    if variant.startswith('lowrank'):
+        rank = int(variant.removeprefix('lowrank'))
+        for group in (0, 1):
+            factorize_pointwise(result, f'shared_readout.editor.{group}.condition', rank)
+            factorize_pointwise(result, f'shared_readout.editor.{group}.pointwise', rank)
+        factorize_pointwise(result, 'shared_readout.decoder.pre.1', rank)
+    else:
+        expected_removed = set()
+        if variant != 'standard':
+            expected_removed.update(k for k in source if k.startswith('shared_readout.post_film.'))
+        if variant in ('slim', 'slim_one'):
+            expected_removed.update(k for k in source if k.startswith('shared_readout.decoder.pre.'))
+        if variant in ('slim_one', 'lite_one'):
+            expected_removed.update(k for k in source if k.startswith('shared_readout.editor.1.'))
+        for key in expected_removed:
+            del result[key]
+    if set(result) != set(target):
+        raise ValueError(f'Unexpected source/target keys: missing={sorted(set(target)-set(result))}, '
+                         f'extra={sorted(set(result)-set(target))}')
+    for key, value in result.items():
+        if value.shape != target[key].shape:
+            raise ValueError(f'Warmstart shape mismatch: {key}')
+    return result
+
+
+def run(group: str, epochs: int, steps: int, quick: bool, variant: str,
+        run_name: str | None, calibration: bool) -> None:
     assert group in PROFILES
     assert_contract()
-    out = OUTPUTS / (group + ('_quick' if quick else ''))
+    out = OUTPUTS / (run_name or (group + ('_quick' if quick else '')))
     out.mkdir(parents=True, exist_ok=False)
     assert sha(SOURCE) == SOURCE_SHA
     cfg = Settings.__new__(Settings)
@@ -50,14 +96,13 @@ def run(group: str, epochs: int, steps: int, quick: bool) -> None:
         setattr(cfg, key, Path(getattr(cfg, key)))
     cfg.output_dir = out
     cfg.num_workers = 0
-    cfg.shared_readout_variant = 'standard'
+    cfg.shared_readout_variant = variant
     device = torch.device('cuda')
     torch.manual_seed(73)
     model = t.build_model(cfg, device)
     payload = torch.load(SOURCE, map_location='cpu', weights_only=False)
-    model.load_state_dict(payload['model'], strict=True)
+    model.load_state_dict(adapted_source_state(payload['model'], variant, model.state_dict()), strict=True)
     install(model, group)
-    source_protected = {k: v.detach().cpu().clone() for k, v in model.state_dict().items()}
     train, test = t.build_loaders(cfg)
     order = torch.randperm(len(train.dataset), generator=torch.Generator().manual_seed(73)).tolist()
     cutoff = int(0.8 * len(order))
@@ -70,6 +115,9 @@ def run(group: str, epochs: int, steps: int, quick: bool) -> None:
     save_json(out / 'split.json', {'fit': order[:cutoff], 'validation': order[cutoff:],
               'test_used_for_selection': False, 'warm_start_saw_original_train': True})
     save_json(out / 'protocol.json', {'group': group, 'profile': PROFILES[group],
+              'shared_readout_variant': variant,
+              'shared_readout_parameters': sum(p.numel() for p in model.shared_readout.parameters()),
+              'calibration_no_test': calibration,
               'initial_sha256': SOURCE_SHA, 'amplitude': 'tanh(abs/.5), zero/phase preserving; BMP round255a only',
               'grid': '17→8→17 differentiable raster proxy, not true 8um propagation',
               'selection': 'TRAIN-only holdout; best epoch including 0', 'test': 'once per selected group',
@@ -131,8 +179,11 @@ def run(group: str, epochs: int, steps: int, quick: bool) -> None:
         print(json.dumps({'group': group, 'epoch': epoch, 'loss': row['loss'], 'val': score,
                           'best_epoch': best_epoch, 'best_val': best_score}), flush=True)
 
-    if quick:
-        save_json(out / 'report.json', {'status': 'quick_complete', 'best_epoch': best_epoch,
+    if quick or calibration:
+        save_json(out / 'report.json', {'status': 'calibration_complete' if calibration else 'quick_complete',
+                  'shared_readout_variant': variant,
+                  'shared_readout_parameters': sum(p.numel() for p in model.shared_readout.parameters()),
+                  'best_epoch': best_epoch,
                   'best_validation': best_score, 'test_evaluated': False})
         return
     selected = torch.load(out / 'best.pt', map_location='cpu', weights_only=False)
@@ -140,6 +191,8 @@ def run(group: str, epochs: int, steps: int, quick: bool) -> None:
     final = evaluate(test)
     assert len(test.dataset) == 1000
     save_json(out / 'report.json', {'status': 'complete', 'group': group,
+              'shared_readout_variant': variant,
+              'shared_readout_parameters': sum(p.numel() for p in model.shared_readout.parameters()),
               'source_sha256': SOURCE_SHA, 'best_sha256': sha(out / 'best.pt'),
               'best_epoch': best_epoch, 'best_validation': best_score,
               'test': final, 'test_evaluated_once_after_selection': True,
@@ -152,8 +205,11 @@ def main():
     p.add_argument('--epochs', type=int, default=10)
     p.add_argument('--steps', type=int, default=100)
     p.add_argument('--quick', action='store_true')
+    p.add_argument('--variant', choices=('standard', 'lowrank32', 'lowrank64', 'lite', 'lite_one', 'slim', 'slim_one'), default='standard')
+    p.add_argument('--run-name')
+    p.add_argument('--calibration', action='store_true')
     a = p.parse_args()
-    run(a.group, a.epochs, a.steps, a.quick)
+    run(a.group, a.epochs, a.steps, a.quick, a.variant, a.run_name, a.calibration)
 
 
 if __name__ == '__main__':

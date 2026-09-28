@@ -12,7 +12,7 @@ class SharedGridReadout(nn.Module):
 
     def __init__(self, width=192, max_tokens=64, variant='standard'):
         super().__init__()
-        if variant not in ('standard', 'slim', 'slim_norm'):
+        if variant not in ('standard', 'lowrank32', 'lowrank64', 'lite', 'lite_one', 'slim', 'slim_norm', 'slim_one'):
             raise ValueError(f'Unknown shared readout variant: {variant}')
         self.variant = variant
         self.position_readout = PositionReadout(max_tokens)
@@ -24,7 +24,7 @@ class SharedGridReadout(nn.Module):
         self.editor = nn.ModuleList([ConditionedResidual2D(width, d) for d in (1, 2)])
         self.decoder = SemanticGridDecoder(width, 6, 16)
         self.task_head = nn.Sequential(nn.LayerNorm(width), nn.Linear(width, 4))
-        if variant in ('slim', 'slim_norm'):
+        if variant in ('slim', 'slim_norm', 'slim_one'):
             # Retain two conditional convolution groups, but no redundant
             # pre-editor FiLM or third convolution group inside the decoder.
             del self.post_film
@@ -33,6 +33,29 @@ class SharedGridReadout(nn.Module):
             if variant == 'slim_norm':
                 self.decoder.pre = nn.Sequential(nn.GroupNorm(8, width), nn.GELU())
                 self.contract = 'positionlinear64_width192_coord_two_condconv_normgrid6_slim_v1'
+            elif variant == 'slim_one':
+                self.editor = nn.ModuleList([self.editor[0]])
+                self.contract = 'positionlinear64_width192_coord_one_condconv_directgrid6_slim_v1'
+        elif variant in ('lite', 'lite_one'):
+            # Preserve the pretrained decoder transform; remove only the
+            # separate pre-editor FiLM, then optionally one residual group.
+            del self.post_film
+            self.contract = 'positionlinear64_width192_coord_two_condconv_pregrid6_lite_v1'
+            if variant == 'lite_one':
+                self.editor = nn.ModuleList([self.editor[0]])
+                self.contract = 'positionlinear64_width192_coord_one_condconv_pregrid6_lite_v1'
+        elif variant in ('lowrank32', 'lowrank64'):
+            rank = int(variant.removeprefix('lowrank'))
+            for layer in self.editor:
+                layer.condition = nn.Sequential(
+                    nn.Linear(width, rank, bias=False), nn.Linear(rank, 2 * width))
+                layer.pointwise = nn.Sequential(
+                    nn.Conv2d(width, rank, 1, bias=False),
+                    nn.Conv2d(rank, width, 1, bias=False))
+            self.decoder.pre[1] = nn.Sequential(
+                nn.Conv2d(width, rank, 1, bias=False),
+                nn.Conv2d(rank, width, 1, bias=False))
+            self.contract = f'positionlinear64_width192_two_condconv_pregrid6_lowrank{rank}_v1'
 
     def summarize(self, language_groups):
         return self.language_pool(self.position_readout(language_groups))
