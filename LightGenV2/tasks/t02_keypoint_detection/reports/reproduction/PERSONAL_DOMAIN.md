@@ -1,5 +1,31 @@
 # 自采照片小样本域迁移（2026-09-28）
 
+## 用户筛选版本：20张、仅Ours末端姿态头适配
+
+数据`data/lsp_pose/personal_curated20_20260928`独立保存，不删除原始图像或历史实验。
+`personal_curate`按用户29个人体ID排除（27张照片退出），剩74张/75人体，
+重新编号photo_000–073；id_mapping.json保留原始人体ID，exclusions.json保存排除清单。
+原003/089仅标注人像不完整，未排除。此筛选发生在查看预测之后，须明确报告筛选条件，
+不能替代原101张整体性能；不能将筛选后的提升都归因于训练。
+
+seed42整组分20张训练（6组）、54张测试（55人体），两模型共用同一测试。
+从原始LSP权重开始：Ours仅133425参数的最终pose head可训练，完整core（包括CCD中间
+读出、电子mixer、alpha、路由和相位）冻结并逐轮校验state digest；不增加结构。
+60epoch，LR1e-4余弦至1e-5，训练图像增强同前，仅train MSE选模，test不参与。
+Qwen完整Vision+原Deconv128保持原LSP权重，仅evaluate-only，不使用自摄训练图。
+这是不对称适配协议，不是双方等量适配比较；仍为12点预标注诊断。
+
+执行入口：`personal_curate --source <personal_20260928> --output <personal_curated20_20260928>`；
+`personal_finetune`使用新目录annotations_provisional.json，Ours加`--head-only --epochs 60`，
+Qwen加`--evaluate-only`，两者加`--allow-provisional`，不要再次加fewshot-photos重分数据。
+服务器和本地标注SHA：`c442100dabf7e2fc9e213e3f4cef53a9e7155c1a12bac9dce276dfc5d0843422`。
+
+先行run `personal_curated20_ours_head_pilot_s42_20260928`权重冻结成功，但core专用forward_groups
+绕过了原运行模式hook；保留作为带训练扰动的试跑，manifest中的core_eval声明不成立，不作主结果。
+修正源码`25294766d`从学生wrapper进入时设置core.eval，再从原LSP权重重跑
+`personal_curated20_ours_head_evalcore_pilot_s42_20260928`。Qwen run
+`personal_curated20_baseline_head_pilot_s42_20260928`仅推理，不受该hook影响。
+
 ## 10张少样本配对试验
 
 追加`--fewshot-photos 10 --seed 42 --epochs 60`，不加evaluate参数；源权重仍使用原LSP版本。
