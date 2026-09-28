@@ -4,6 +4,7 @@ import argparse,copy,json,math,subprocess,sys,time
 from pathlib import Path
 import numpy as np
 import torch
+import hashlib
 from PIL import Image,ImageDraw
 from .personal_data import load_personal
 from .personal_prepare import sha256
@@ -20,6 +21,15 @@ from experiments.qwen3_vl_embedding_2b_lsp_pose_optical_router.training import _
 TASK=Path(__file__).resolve().parent
 SOURCES={'ours':'dbc059e2a7eddefac73d3b9bb158bf0140d440dfb396e0aa2956ad41670fc96a',
          'baseline':'0a4569f288f6de424b1b412452fa804a96e58d8f7e8655efaa23f461ab8cc735'}
+
+def state_digest(module):
+    h=hashlib.sha256()
+    for name,t in sorted(module.state_dict().items()):
+        h.update(name.encode());h.update(t.detach().cpu().contiguous().reshape(-1).view(torch.uint8).numpy().tobytes())
+    return h.hexdigest()
+
+def force_frozen_eval(module,args):
+    module.eval()
 
 
 @torch.no_grad()
@@ -65,6 +75,10 @@ def run(a):
             opt=optimizer(model,s);groups={g['name']:sum(p.numel() for p in g['params']) for g in opt.param_groups}
             if sum(groups[k] for k in ['electronic','ccd_readout','pose_head'])!=836248:raise ValueError('Electronic budget changed')
             checked_fusion(model,s);model.core.set_phase_dropout_active(True)
+            if a.head_only:
+                model.core.requires_grad_(False);model.core.register_forward_pre_hook(force_frozen_eval)
+                opt=torch.optim.AdamW(model.head.parameters(),lr=1e-4,weight_decay=1e-4)
+                frozen_core_digest=state_digest(model.core)
         else:
             model=build_teacher(loaded,s);model.head.load_state_dict(payload['head'],strict=True)
             audit=audit_frozen_teacher(model)
@@ -78,6 +92,7 @@ def run(a):
                   'formal_result':not a.allow_provisional,'metric_warning':'PILOT: agreement with independent pseudo labels, NOT ground-truth accuracy' if a.allow_provisional else None,
                   'gpu':torch.cuda.get_device_name(),'torch':torch.__version__,'architecture_changed':False}
         manifest.update(evaluate_only=a.evaluate_only,evaluation_scope='all photos' if a.evaluate_all else 'held-out split',evaluation_people=len(evaluation_records))
+        manifest.update(head_only=a.head_only,trainable_parameters=sum(p.numel() for p in model.parameters() if p.requires_grad),core_eval_during_head_training=a.head_only)
         write('run_manifest.json',manifest)
         if a.method=='ours':save_resolved_config(s)
         else:
@@ -97,12 +112,13 @@ def run(a):
         history=[];best=float('inf');best_epoch=0
         for epoch in range(1,a.epochs+1):
             started=time.perf_counter();factor=.1+.9*.5*(1+math.cos(math.pi*(epoch-1)/max(a.epochs-1,1)))
-            if a.method=='ours':
+            if a.method=='ours' and not a.head_only:
                 rates={'electronic':3e-6,'router':3e-5,'feature_phase':3e-4,'ccd_readout':1e-4,'pose_head':1e-4}
                 if epoch<=3:rates.update(electronic=0.,router=0.,feature_phase=0.)
                 apply_stage(opt,{k:v*factor for k,v in rates.items()});checked_fusion(model,s)
             else:opt.param_groups[0]['lr']=1e-4*factor
             train=_train_epoch(model,kind,tr,loaded.processor,device,opt,s,epoch)
+            if a.method=='ours' and a.head_only and state_digest(model.core)!=frozen_core_digest:raise ValueError('Frozen optical/electronic core changed')
             if any(p.grad is not None for p in frozen):raise ValueError('Frozen backbone acquired gradients')
             train_eval=ev(clean,'train_selection',epoch)
             state={'head':model.head.state_dict(),'epoch':epoch,'manifest':manifest}
@@ -117,6 +133,7 @@ def run(a):
         if a.method=='ours':model.core.load_state_dict(state['core'],strict=True)
         final=ev(te,'personal_after',best_epoch);visuals(model,loaded,bundle.test,s,out/'after_images','after adaptation')
         write('final_report.json',{'before':initial,'after':final,'best_epoch':best_epoch,
+              'core_unchanged':state_digest(model.core)==frozen_core_digest if a.method=='ours' and a.head_only else None,
               'formal_ground_truth_evaluation':not a.allow_provisional,'metric_warning':manifest['metric_warning'],
               'fusion':checked_fusion(model,s) if a.method=='ours' else None,'checkpoint_sha256':sha256(out/'best_checkpoint.pt'),
               'test_used_for_selection':False})
@@ -135,5 +152,6 @@ if __name__=='__main__':
     p.add_argument('--allow-provisional',action='store_true');p.add_argument('--epochs',type=int,default=20)
     p.add_argument('--evaluate-only',action='store_true');p.add_argument('--evaluate-all',action='store_true')
     p.add_argument('--fewshot-photos',type=int,default=0)
+    p.add_argument('--head-only',action='store_true',help='Freeze complete core; train final pose head only')
     p.add_argument('--batch-size',type=int,default=8);p.add_argument('--seed',type=int,default=42)
     run(p.parse_args())

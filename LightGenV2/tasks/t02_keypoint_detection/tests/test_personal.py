@@ -7,6 +7,21 @@ from LightGenV2.tasks.t02_keypoint_detection.personal_split import GROUPS,split_
 from LightGenV2.tasks.t02_keypoint_detection.personal_data import validate_manifest
 from LightGenV2.tasks.t02_keypoint_detection.personal_data import fewshot_split
 
+def test_requested_exclusions_exact():
+    from LightGenV2.tasks.t02_keypoint_detection.personal_curate import EXCLUDED
+    assert len(EXCLUDED)==len(set(EXCLUDED))==29
+    assert 'photo_003_p00' not in EXCLUDED and 'photo_089_p00' not in EXCLUDED
+    assert 'photo_040_p01' in EXCLUDED and 'photo_041_p01' in EXCLUDED
+
+def test_frozen_digest_includes_buffers_and_scalar():
+    torch=pytest.importorskip('torch')
+    from LightGenV2.tasks.t02_keypoint_detection.personal_finetune import state_digest,force_frozen_eval
+    model=torch.nn.Sequential(torch.nn.BatchNorm1d(2),torch.nn.Linear(2,1));model.requires_grad_(False)
+    before=state_digest(model);model.register_forward_pre_hook(force_frozen_eval)
+    model.train();model(torch.ones(3,2));assert state_digest(model)==before
+    with torch.no_grad():model[1].bias.add_(1)
+    assert state_digest(model)!=before
+
 
 def test_fewshot_whole_groups():
     data={'images':[{'id':str(i),'group_id':str(g),'split':'test'} for g,items in enumerate(GROUPS) for i in items]}
