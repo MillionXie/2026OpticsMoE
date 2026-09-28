@@ -31,6 +31,10 @@ def state_digest(module):
 def force_frozen_eval(module,args):
     module.eval()
 
+def force_core_eval(module,args):
+    # Core is invoked through forward_groups, bypassing its __call__ hooks.
+    module.core.eval()
+
 
 @torch.no_grad()
 def visuals(model,loaded,records,settings,out,label):
@@ -76,7 +80,7 @@ def run(a):
             if sum(groups[k] for k in ['electronic','ccd_readout','pose_head'])!=836248:raise ValueError('Electronic budget changed')
             checked_fusion(model,s);model.core.set_phase_dropout_active(True)
             if a.head_only:
-                model.core.requires_grad_(False);model.core.register_forward_pre_hook(force_frozen_eval)
+                model.core.requires_grad_(False);model.register_forward_pre_hook(force_core_eval)
                 opt=torch.optim.AdamW(model.head.parameters(),lr=1e-4,weight_decay=1e-4)
                 frozen_core_digest=state_digest(model.core)
         else:
