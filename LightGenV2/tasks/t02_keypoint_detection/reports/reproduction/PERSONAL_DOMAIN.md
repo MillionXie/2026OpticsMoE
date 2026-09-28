@@ -26,6 +26,19 @@ Qwen加`--evaluate-only`，两者加`--allow-provisional`，不要再次加fewsh
 `personal_curated20_ours_head_evalcore_pilot_s42_20260928`。Qwen run
 `personal_curated20_baseline_head_pilot_s42_20260928`仅推理，不受该hook影响。
 
+最终完成：共同测试54张/55人体，654有效四肢点。Ours选epoch60，core_unchanged=true。
+
+| 方法 | 预标注PCK12 | 平均像素误差（224裁剪） |
+|---|---:|---:|
+| Ours 原始LSP权重 | 0.80428135 | 16.41619 |
+| Ours 20张仅末端头微调 | 0.83333333 | 14.46527 |
+| Qwen 原始权重，不微调 | 0.87461774 | 10.76496 |
+
+差距7.0336→4.1284百分点，未追平；alpha保持0.41805938/0.41805139。
+新best SHA `0c57938c87deef3d901605214e69514f2b43c8464447db25ed6f8278e1c2fe13`。
+权重、逐样本预测、训练记录已下载；本地展示为新数据目录`comparison/COMPARE.html`。
+这些数值为筛选后自摄照片的预标注一致性，不是人工GT性能或光路实测。
+
 ## 10张少样本配对试验
 
 追加`--fewshot-photos 10 --seed 42 --epochs 60`，不加evaluate参数；源权重仍使用原LSP版本。
