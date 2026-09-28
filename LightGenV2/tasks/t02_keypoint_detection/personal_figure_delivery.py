@@ -42,6 +42,9 @@ def run(dataset,source_run,output,evaluated_rows=None):
     annotations=load(dataset/'annotations_provisional.json');manifest=load(source_run/'run_manifest.json')
     report=load(source_run/'final_report.json');predictions=load(source_run/'after_images/predictions.json')['samples']
     if evaluated_rows:
+        reevaluation=load(Path(evaluated_rows).parent/'final_report.json')
+        if reevaluation['metrics']['pck_at_0.2_torso']!=report['after']['pck_at_0.2_torso']:raise ValueError('Re-evaluation PCK differs')
+        report['after']=reevaluation['metrics']
         evaluated={}
         for r in load(Path(evaluated_rows)):evaluated.setdefault(r['sample_id'],{})[int(r['joint_index'])]=[r['pred_x'],r['pred_y']]
         for p in predictions:p['prediction_xy_224']=[evaluated[p['id']][j] for j in range(14)]
@@ -87,6 +90,8 @@ def run(dataset,source_run,output,evaluated_rows=None):
              'checkpoint_sha256':report['checkpoint_sha256'],'source_run':source_run.name,
              'annotation_sha256':sha256(dataset/'annotations_provisional.json'),
              'prediction_sha256':sha256(Path(evaluated_rows) if evaluated_rows else source_run/'after_images/predictions.json'),
+             'figure_evaluation_run':Path(evaluated_rows).parent.name if evaluated_rows else None,
+             'figure_evaluation_checkpoint_sha256':reevaluation['source_sha256'] if evaluated_rows else report['checkpoint_sha256'],
              'export_git_commit':subprocess.check_output(['git','rev-parse','HEAD'],text=True).strip(),
              'display_joints':'12 limbs; unreliable neck/head excluded from both GT and LightGen2 display',
              'coordinate_correction':'historic preview coordinate +1.5px to match original evaluator; metric recomputation verified'}
