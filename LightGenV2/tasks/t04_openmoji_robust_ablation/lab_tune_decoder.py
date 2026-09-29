@@ -34,7 +34,7 @@ def protected_sha(model: torch.nn.Module) -> str:
         if name.startswith("shared_readout.decoder."):
             continue
         digest.update(name.encode())
-        digest.update(tensor.detach().cpu().contiguous().view(torch.uint8).numpy().tobytes())
+        digest.update(tensor.detach().cpu().contiguous().reshape(-1).view(torch.uint8).numpy().tobytes())
     return digest.hexdigest()
 
 
