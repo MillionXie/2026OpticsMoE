@@ -6,6 +6,7 @@ import json
 from pathlib import Path
 
 import torch
+from torch.nn import functional as F
 from torch.utils.data import DataLoader, Subset
 
 from LightGenV2.tasks.t04_semantic_interaction import training as t
@@ -24,12 +25,17 @@ SEEDS = (1042, 1043)
 
 
 def run(group: str, out: Path, epochs: int, steps: int,
-        noise_scale: float, selection_profile: str | None = None) -> None:
+        noise_scale: float, selection_profile: str | None = None,
+        selection_noise_scale: float | None = None,
+        paired_consistency_weight: float = 0.0) -> None:
     if group not in PROFILES:
         raise ValueError(group)
     selection_profile = selection_profile or group
+    selection_noise_scale = selection_noise_scale or noise_scale
     if selection_profile not in PROFILES or selection_profile == 'r0_base':
         raise ValueError('Selection profile must apply a stated stress')
+    if paired_consistency_weight < 0 or (paired_consistency_weight and group != 'r1_ccd'):
+        raise ValueError('Paired consistency is currently defined only for CCD-only G3')
     assert_contract()
     if sha(SOURCE) != SOURCE_SHA:
         raise RuntimeError('User-selected full-head checkpoint SHA mismatch')
@@ -59,7 +65,8 @@ def run(group: str, out: Path, epochs: int, steps: int,
 
     model = build(group, training_noise_scale=noise_scale)
     clean_model = build('r0_base').eval()
-    stress_model = build(selection_profile, training_noise_scale=noise_scale,
+    stress_model = build(selection_profile,
+                         training_noise_scale=selection_noise_scale,
                          pixel_shift=1).eval()
     t._set_phase_dropout(clean_model, False)
     t._set_phase_dropout(stress_model, False)
@@ -83,7 +90,8 @@ def run(group: str, out: Path, epochs: int, steps: int,
         'training_profile': PROFILES[group], 'training_noise_scale': noise_scale,
         'training_pixel_shift': 0, 'selection_pixel_shift': 1,
         'selection_profile': selection_profile,
-        'selection_noise_scale': noise_scale, 'selection_seeds': SEEDS,
+        'paired_consistency_weight': paired_consistency_weight,
+        'selection_noise_scale': selection_noise_scale, 'selection_seeds': SEEDS,
         'min_clean_validation': MIN_CLEAN_VALIDATION,
         'selection': 'max mean stressed TRAIN holdout VAL subject to clean VAL guard',
         'test_used_for_selection': False, 'epochs': epochs,
@@ -133,8 +141,31 @@ def run(group: str, out: Path, epochs: int, steps: int,
         for n, raw in enumerate(fit, 1):
             batch = t.legacy._move(raw, device)
             optimizer.zero_grad(set_to_none=True)
+            if paired_consistency_weight:
+                # Keep all learned modules and phase-dropout mode fixed. Only
+                # disable detector noise for this clean companion forward.
+                model._profile_noise_enabled = False
+                for path in model._optical_paths():
+                    path.offset_fraction = 0.0
+                    path.read_noise_fraction = 0.0
+                clean_output = model(batch['source_image'], batch['prompt_hidden'])
+                model._profile_noise_enabled = True
+                for path in model._optical_paths():
+                    path.offset_fraction = 0.03 * noise_scale
+                    path.read_noise_fraction = 0.01 * noise_scale
             output = model(batch['source_image'], batch['prompt_hidden'])
             loss = t.editing_objective(output, batch, cfg)['total']
+            if paired_consistency_weight:
+                clean_loss = t.editing_objective(clean_output, batch, cfg)['total']
+                loss = 0.5 * (loss + clean_loss)
+                consistency = F.kl_div(
+                    F.log_softmax(output['category_logits'].float(), dim=1),
+                    F.softmax(clean_output['category_logits'].float().detach(), dim=1),
+                    reduction='none').sum(dim=1).mean()
+                consistency = consistency + F.mse_loss(
+                    torch.sigmoid(output['edit_logits'].float()),
+                    torch.sigmoid(clean_output['edit_logits'].float().detach()))
+                loss = loss + paired_consistency_weight * consistency
             loss = loss + cfg.router_importance_weight * model.router_importance_loss()
             loss = loss + cfg.phase_dc_weight * t._phase_regularization(model, cfg)
             if not torch.isfinite(loss):
@@ -179,9 +210,12 @@ def main() -> None:
     parser.add_argument('--steps', type=int, default=40)
     parser.add_argument('--noise-scale', type=float, default=10.0)
     parser.add_argument('--selection-profile', choices=tuple(PROFILES))
+    parser.add_argument('--selection-noise-scale', type=float)
+    parser.add_argument('--paired-consistency-weight', type=float, default=0.0)
     args = parser.parse_args()
     run(args.group, args.output, args.epochs, args.steps, args.noise_scale,
-        args.selection_profile)
+        args.selection_profile, args.selection_noise_scale,
+        args.paired_consistency_weight)
 
 
 if __name__ == '__main__':

@@ -13,7 +13,8 @@ from .profiles import install
 from .train import OUTPUTS, SOURCE, SOURCE_SHA, save_json, sha
 
 
-def run(output: Path) -> None:
+def run(output: Path, only_group: str | None = None,
+        ccd_run: str = 'fullhead889_strong_r1_ccd_20260929') -> None:
     if output.exists():
         raise FileExistsError(output)
     cfg = _settings(output)
@@ -23,8 +24,9 @@ def run(output: Path) -> None:
     paths = {'r0_base': SOURCE}
     paths.update({g: OUTPUTS / f'fullhead889_strong_{g}_20260929/best.pt'
                   for g in GROUPS[1:]})
+    paths['r1_ccd'] = OUTPUTS / ccd_run / 'best.pt'
     results = []
-    for group in GROUPS:
+    for group in (GROUPS if only_group is None else (only_group,)):
         checkpoint = paths[group]
         if group == 'r0_base':
             assert sha(checkpoint) == SOURCE_SHA
@@ -58,8 +60,10 @@ def run(output: Path) -> None:
 def main() -> None:
     parser = argparse.ArgumentParser()
     parser.add_argument('--output', type=Path, required=True)
+    parser.add_argument('--only-group', choices=GROUPS)
+    parser.add_argument('--ccd-run', default='fullhead889_strong_r1_ccd_20260929')
     args = parser.parse_args()
-    run(args.output)
+    run(args.output, args.only_group, args.ccd_run)
 
 
 if __name__ == '__main__':

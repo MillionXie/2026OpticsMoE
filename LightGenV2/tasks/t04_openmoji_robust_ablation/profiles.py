@@ -41,6 +41,7 @@ def install(model, group: str, *, noise_scale: float = 1.0,
     if noise_scale < 0 or pixel_shift < 0:
         raise ValueError('noise_scale and pixel_shift must be nonnegative')
     profile = PROFILES[group]
+    model._profile_noise_enabled = True
     for path in model._optical_paths():
         original = path._simulate_detector_roi
         path.gain_min = 1.0
@@ -75,7 +76,7 @@ def install(model, group: str, *, noise_scale: float = 1.0,
             if profile["grid"]:
                 fields = grid_roundtrip(fields, 1016)
             intensity = original(fields)
-            if model.training and profile["ccd"]:
+            if model.training and model._profile_noise_enabled and profile["ccd"]:
                 ref = intensity.mean(dim=(-2, -1), keepdim=True).detach()
                 intensity = (intensity + 0.03 * noise_scale * ref
                              + 0.01 * noise_scale * ref * torch.randn_like(intensity)).clamp_min(0)

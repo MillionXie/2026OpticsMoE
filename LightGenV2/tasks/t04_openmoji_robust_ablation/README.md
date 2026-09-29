@@ -161,3 +161,21 @@ For an equal-step diagnostic, `recover_fullhead_stress --group r0_base
 for the same four epochs and 40 steps per epoch without the three added
 training measures. This control is **not** one of the five displayed groups;
 it helps separate an intervention effect from merely training longer.
+
+The CCD-only intervention is also tested at several TRAIN noise strengths,
+always selecting against the same predeclared strong VAL stress; this avoids
+declaring success from a too-weak training/evaluation perturbation. An optional
+CCD-only paired clean/noisy consistency term is a further short diagnostic.
+Its clean branch disables detector noise but does not add parameters or alter
+the BMP/phase mapping. These trials are compared to the equal-step clean
+control, and fresh random seeds are checked after VAL selection. They are not
+additional display groups, and a tiny advantage should not be advertised as
+hardware robustness.
+
+After the candidate list is frozen, `evaluate_matched_stress --weight-set
+user889_final --dataset test` runs one fixed TEST stress comparison of the
+original checkpoint, equal-step control, paired CCD candidate, DC30% group,
+and grid group. It uses new fixed seeds and may not be used to revisit epoch
+or checkpoint selection. The strong proxy remains uncalibrated, and this TEST
+was historically involved in model development; it is not a blind external
+hardware validation.

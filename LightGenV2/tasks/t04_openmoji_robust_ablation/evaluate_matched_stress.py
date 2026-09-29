@@ -48,12 +48,13 @@ def _activate_stress_only(model, profile: str) -> None:
 
 
 def run(output: Path, seeds: tuple[int, ...], noise_scale: float,
-        pixel_shift: int, weight_set: str = 'legacy') -> None:
+        pixel_shift: int, weight_set: str = 'legacy',
+        dataset: str = 'train_validation') -> None:
     assert_contract()
     output.mkdir(parents=True, exist_ok=False)
     cfg = _settings(output)
     device = torch.device('cuda')
-    train, _ = t.build_loaders(cfg)
+    train, test = t.build_loaders(cfg)
     if weight_set == 'user889':
         split = json.loads((OUTPUTS / 'fullhead_probe1_r1_ccd_20260929/split.json').read_text())
         checkpoint_paths = {
@@ -66,20 +67,49 @@ def run(output: Path, seeds: tuple[int, ...], noise_scale: float,
         checkpoint_paths = {
             'r0_equalstep': OUTPUTS / 'fullhead889_clean_equalstep_control_20260929/best.pt'}
         weight_groups = ('r0_equalstep',)
+    elif weight_set == 'user889_ccd_train3':
+        split = json.loads((OUTPUTS / 'fullhead_probe1_r1_ccd_20260929/split.json').read_text())
+        checkpoint_paths = {
+            'r1_ccd': OUTPUTS / 'fullhead889_ccd_train3_select10_20260929/best.pt'}
+        weight_groups = ('r1_ccd',)
+    elif weight_set == 'user889_ccd_paired':
+        split = json.loads((OUTPUTS / 'fullhead_probe1_r1_ccd_20260929/split.json').read_text())
+        checkpoint_paths = {
+            'r1_ccd': OUTPUTS / 'fullhead889_ccd_paired05_20260929/best.pt'}
+        weight_groups = ('r1_ccd',)
+    elif weight_set == 'user889_final':
+        split = json.loads((OUTPUTS / 'fullhead_probe1_r1_ccd_20260929/split.json').read_text())
+        checkpoint_paths = {
+            'r0_base': SOURCE,
+            'r0_equalstep': OUTPUTS / 'fullhead889_clean_equalstep_control_20260929/best.pt',
+            'r1_ccd': OUTPUTS / 'fullhead889_ccd_paired05_20260929/best.pt',
+            'r2_ccd_dc30': OUTPUTS / 'fullhead889_strong_r2_ccd_dc30_20260929/best.pt',
+            'r3_ccd_dc30_grid': OUTPUTS / 'fullhead889_strong_r3_ccd_dc30_grid_20260929/best.pt'}
+        weight_groups = tuple(checkpoint_paths)
     elif weight_set == 'legacy':
         split = json.loads((OUTPUTS / 'r0_base/split.json').read_text())
         checkpoint_paths = {group: OUTPUTS / group / 'best.pt' for group in GROUPS}
         weight_groups = GROUPS
     else:
         raise ValueError(weight_set)
-    ids = split['validation']
-    assert len(ids) == 1000 and not set(ids).intersection(split['fit'])
-    loader = DataLoader(Subset(train.dataset, ids), batch_size=32,
-                        collate_fn=train.collate_fn, num_workers=0)
+    if dataset == 'train_validation':
+        ids = split['validation']
+        assert len(ids) == 1000 and not set(ids).intersection(split['fit'])
+        loader = DataLoader(Subset(train.dataset, ids), batch_size=32,
+                            collate_fn=train.collate_fn, num_workers=0)
+        split_label = 'TRAIN holdout validation'
+    elif dataset == 'test':
+        assert weight_set == 'user889_final'
+        loader = test
+        assert len(loader.dataset) == 1000
+        split_label = 'fixed original TEST, no selection after this read'
+    else:
+        raise ValueError(dataset)
+    sample_count = len(loader.dataset)
     results = []
     for group in weight_groups:
         checkpoint = checkpoint_paths[group]
-        if weight_set == 'user889' and group == 'r0_base':
+        if weight_set in ('user889', 'user889_final') and group == 'r0_base':
             assert sha(checkpoint) == SOURCE_SHA
         else:
             directory = checkpoint.parent
@@ -87,7 +117,9 @@ def run(output: Path, seeds: tuple[int, ...], noise_scale: float,
             protocol = json.loads((directory / 'protocol.json').read_text())
             assert sha(checkpoint) == report['best_sha256']
             assert json.loads((directory / 'split.json').read_text()) == split
-            if weight_set in ('user889', 'user889_equalstep_control'):
+            if weight_set in ('user889', 'user889_equalstep_control',
+                              'user889_ccd_train3', 'user889_ccd_paired',
+                              'user889_final'):
                 assert report['source_sha256'] == SOURCE_SHA
                 assert protocol['source_sha256'] == SOURCE_SHA
             else:
@@ -113,25 +145,25 @@ def run(output: Path, seeds: tuple[int, ...], noise_scale: float,
                        'router_audit': metrics.get('router_audit')}
                 results.append(row)
                 save_json(output / 'report.json', {
-                    'status': 'running', 'split': 'TRAIN holdout validation',
+                    'status': 'running', 'split': split_label,
                     'weight_set': weight_set,
-                    'samples': len(ids), 'seeds': seeds,
+                    'samples': sample_count, 'seeds': seeds,
                     'noise_scale': noise_scale, 'pixel_shift': pixel_shift,
                     'profile_contract': PROFILES,
                     'stress_forced_on_during_eval': True,
-                    'checkpoint_selection': 'Existing TRAIN-holdout-selected best, no TEST selection',
+                    'checkpoint_selection': 'Frozen TRAIN-holdout-selected best, no TEST selection',
                     'rows': results})
                 print(json.dumps(row), flush=True)
             del model
             torch.cuda.empty_cache()
     save_json(output / 'report.json', {
-        'status': 'complete', 'split': 'TRAIN holdout validation',
+        'status': 'complete', 'split': split_label,
         'weight_set': weight_set,
-        'samples': len(ids), 'seeds': seeds,
+        'samples': sample_count, 'seeds': seeds,
         'noise_scale': noise_scale, 'pixel_shift': pixel_shift,
         'profile_contract': PROFILES,
         'stress_forced_on_during_eval': True,
-        'checkpoint_selection': 'Existing TRAIN-holdout-selected best, no TEST selection',
+        'checkpoint_selection': 'Frozen TRAIN-holdout-selected best, no TEST selection',
         'rows': results})
 
 
@@ -141,12 +173,16 @@ def main() -> None:
     parser.add_argument('--seeds', type=int, nargs='+', default=[1042, 1043])
     parser.add_argument('--noise-scale', type=float, default=1.0)
     parser.add_argument('--pixel-shift', type=int, default=0)
+    parser.add_argument('--dataset', choices=('train_validation', 'test'),
+                        default='train_validation')
     parser.add_argument('--weight-set',
-                        choices=('legacy', 'user889', 'user889_equalstep_control'),
+                        choices=('legacy', 'user889', 'user889_equalstep_control',
+                                 'user889_ccd_train3', 'user889_ccd_paired',
+                                 'user889_final'),
                         default='legacy')
     args = parser.parse_args()
     run(args.output, tuple(args.seeds), args.noise_scale, args.pixel_shift,
-        args.weight_set)
+        args.weight_set, args.dataset)
 
 
 if __name__ == '__main__':
