@@ -135,6 +135,24 @@ class RetrievalHead(nn.Module):
         return F.normalize(self.projection(features),p=2,dim=-1)
 
 
+class LateRGBTokens(nn.Module):
+    """Small electronic bypass from the already-frozen RGB patch frontend."""
+
+    def __init__(self):
+        super().__init__()
+        self.in_norm = nn.LayerNorm(1024)
+        self.project = nn.Linear(1024, 192)
+        self.depthwise = nn.Conv2d(192, 192, 3, padding=1, groups=192)
+        self.norm = nn.LayerNorm(192)
+
+    def forward(self, patches):
+        if patches.ndim != 3 or patches.shape[1:] != (49, 1024):
+            raise ValueError('Late RGB bypass requires 49 frozen-frontend patch tokens')
+        tokens = F.gelu(self.project(self.in_norm(patches)))
+        spatial = tokens.transpose(1, 2).reshape(-1, 192, 7, 7)
+        return self.norm((spatial + self.depthwise(spatial)).flatten(2).transpose(1, 2))
+
+
 class OpticalRetrieval(nn.Module):
     def __init__(self, metadata):
         super().__init__()
@@ -168,6 +186,10 @@ class OpticalRetrieval(nn.Module):
             getattr(self,name).optics.bounded_amplitude = metadata.get('bounded_amplitude')
             getattr(self,name).optics.router.bounded_amplitude = metadata.get('bounded_amplitude')
         self.readout = RetrievalHead(metadata.get('retrieval_head','linear64'))
+        late = metadata.get('late_rgb_adapter')
+        if late not in (None, 'frozen_patch_7x7_half'):
+            raise ValueError('Unknown late RGB bypass contract')
+        self.late_rgb = LateRGBTokens() if late else None
 
     def train(self, mode=True):
         super().train(mode)
@@ -192,7 +214,16 @@ class OpticalRetrieval(nn.Module):
         if image_features.numel() != int(image_mask.sum()):
             raise ValueError('Image token count mismatch')
         embeddings = embeddings.masked_scatter(image_mask,image_features.to(embeddings.dtype))
-        return self.readout(self.language(embeddings), ids.eq(self.metadata['image_token_id']))
+        positions = ids.eq(self.metadata['image_token_id'])
+        last_latent = self.language(embeddings)
+        if self.late_rgb is not None:
+            # Exactly the laboratory late-fusion architecture: the optical
+            # path is unchanged, and only the 49 image-token slots are mixed.
+            rgb = patches.float().reshape(len(ids), 7, 2, 7, 2, 1024).mean((2, 4)).reshape(len(ids), 49, 1024)
+            bypass = self.late_rgb(rgb).reshape(-1, 192)
+            last_latent = last_latent.clone()
+            last_latent[positions] = .5 * last_latent[positions] + .5 * bypass
+        return self.readout(last_latent, positions)
 
     def audit(self):
         forbidden = [name for name,module in self.named_modules()
@@ -203,6 +234,7 @@ class OpticalRetrieval(nn.Module):
         architecture='t07_standalone_six_capture_v1' if kernels=={'vision':3,'language':5} else 't07_standalone_six_capture_electronic_context'
         if self.readout.kind!='linear64':architecture+='_'+self.readout.kind
         if self.vision.blocks[0].mlp_width!=384:architecture+='_mlp'+str(self.vision.blocks[0].mlp_width)
+        if self.late_rgb is not None:architecture+='_late_rgb_half'
         return {'architecture':architecture, 'native_transformer_modules':0,
                 'attention_modules':0,'capture_count':6,'top_k':2,
                 'frozen_parameters':sum(p.numel() for p in self.parameters() if not p.requires_grad),
@@ -216,6 +248,8 @@ class OpticalRetrieval(nn.Module):
                 'electronic_context_kernels':kernels,
                 'electronic_mlp_width':self.vision.blocks[0].mlp_width,
                 'retrieval_head':self.readout.kind,
+                'late_rgb_adapter':self.metadata.get('late_rgb_adapter'),
+                'late_rgb_trainable_parameters':sum(p.numel() for p in self.late_rgb.parameters()) if self.late_rgb is not None else 0,
                 'retrieval_pooling':('Global all-token mean/max plus fixed2x2 average of49 image-token positions AFTER L; single linear64 projection, no attention' if self.readout.kind=='spatial2x2_64' else 'Global all-token mean/max'),
                 'descriptor_dimension':self.readout.output_dimension,
                 'alpha':{m:[float(alpha_value(getattr(getattr(self,m),f'block{i}_optical_fusion_logit'),getattr(self,m).alpha_bounds)) for i in (1,2)] for m in ('vision','language')},

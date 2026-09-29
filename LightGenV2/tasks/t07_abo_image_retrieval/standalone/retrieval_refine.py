@@ -53,6 +53,8 @@ PROFILES['physical_bounded30'] = dict(PROFILES['physical_robust35_cleanmix'],
     robust_alpha_min=.30, bounded_amplitude=True)
 PROFILES['fresh_latest35'] = dict(PROFILES['physical_bounded30'],
     robust_alpha_min=.35, noise_probability=.25, phase_lr_multiplier=2.)
+PROFILES['fresh_latest35_latergb'] = dict(PROFILES['fresh_latest35'],
+    late_rgb_adapter='frozen_patch_7x7_half')
 PROFILES['physical_bounded30_conv5'] = dict(PROFILES['physical_bounded30'],
     electronic_expansion=dict(kernels=dict(vision=5,language=5),mlp_width=384))
 # Frozen clean TRAIN relations anchor noisy students without another inference branch.

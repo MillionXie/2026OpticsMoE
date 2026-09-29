@@ -21,6 +21,8 @@ def prepare(payload, profile):
     if 'robust_alpha_min' not in profile:return payload
     result=copy.deepcopy(payload)
     md=result['metadata'];old_low=md['fusion_alpha_min'];high=md['fusion_alpha_max']
+    if profile.get('late_rgb_adapter'):
+        md['late_rgb_adapter'] = profile['late_rgb_adapter']
     new_low=profile['robust_alpha_min']
     for name,raw in result['state_dict'].items():
         if name.endswith(('block1_optical_fusion_logit','block2_optical_fusion_logit')):
