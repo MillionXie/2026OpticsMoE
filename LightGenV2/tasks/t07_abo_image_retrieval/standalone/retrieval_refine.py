@@ -50,6 +50,8 @@ PROFILES['physical_robust35_no_shift'] = dict(PROFILES['physical_robust35'],pixe
 PROFILES['fresh35_route_repair'] = dict(PROFILES['physical_robust35_no_shift'],
     warmup=3, category_probability=.5, positive_weight=.1,
     noise_probability=.25, phase_lr_multiplier=1.)
+PROFILES['fresh35_phase_head_top1'] = dict(PROFILES['sku_phase_head_top1'],
+    robust_alpha_min=.35, noise_probability=.15, phase_lr_multiplier=1.)
 PROFILES['physical_robust35_cleanmix'] = dict(PROFILES['physical_robust35'],
     noise_probability=.25, phase_lr_multiplier=1.)
 PROFILES['physical_bounded30'] = dict(PROFILES['physical_robust35_cleanmix'],
