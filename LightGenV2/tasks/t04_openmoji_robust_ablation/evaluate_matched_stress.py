@@ -60,9 +60,16 @@ def run(output: Path, seeds: tuple[int, ...], noise_scale: float,
             'r0_base': SOURCE,
             **{group: OUTPUTS / f'fullhead889_strong_{group}_20260929/best.pt'
                for group in GROUPS[1:]}}
+        weight_groups = GROUPS
+    elif weight_set == 'user889_equalstep_control':
+        split = json.loads((OUTPUTS / 'fullhead_probe1_r1_ccd_20260929/split.json').read_text())
+        checkpoint_paths = {
+            'r0_equalstep': OUTPUTS / 'fullhead889_clean_equalstep_control_20260929/best.pt'}
+        weight_groups = ('r0_equalstep',)
     elif weight_set == 'legacy':
         split = json.loads((OUTPUTS / 'r0_base/split.json').read_text())
         checkpoint_paths = {group: OUTPUTS / group / 'best.pt' for group in GROUPS}
+        weight_groups = GROUPS
     else:
         raise ValueError(weight_set)
     ids = split['validation']
@@ -70,7 +77,7 @@ def run(output: Path, seeds: tuple[int, ...], noise_scale: float,
     loader = DataLoader(Subset(train.dataset, ids), batch_size=32,
                         collate_fn=train.collate_fn, num_workers=0)
     results = []
-    for group in GROUPS:
+    for group in weight_groups:
         checkpoint = checkpoint_paths[group]
         if weight_set == 'user889' and group == 'r0_base':
             assert sha(checkpoint) == SOURCE_SHA
@@ -80,14 +87,14 @@ def run(output: Path, seeds: tuple[int, ...], noise_scale: float,
             protocol = json.loads((directory / 'protocol.json').read_text())
             assert sha(checkpoint) == report['best_sha256']
             assert json.loads((directory / 'split.json').read_text()) == split
-            if weight_set == 'user889':
+            if weight_set in ('user889', 'user889_equalstep_control'):
                 assert report['source_sha256'] == SOURCE_SHA
                 assert protocol['source_sha256'] == SOURCE_SHA
             else:
                 assert report['source_sha256'] == protocol['initial_sha256']
         payload = torch.load(checkpoint, map_location='cpu', weights_only=False)
         if 'group' in payload:
-            assert payload['group'] == group
+            assert payload['group'] == ('r0_base' if group == 'r0_equalstep' else group)
         for profile in GROUPS:
             model = t.build_model(cfg, device)
             model.load_state_dict(payload['model'], strict=True)
@@ -134,7 +141,9 @@ def main() -> None:
     parser.add_argument('--seeds', type=int, nargs='+', default=[1042, 1043])
     parser.add_argument('--noise-scale', type=float, default=1.0)
     parser.add_argument('--pixel-shift', type=int, default=0)
-    parser.add_argument('--weight-set', choices=('legacy', 'user889'), default='legacy')
+    parser.add_argument('--weight-set',
+                        choices=('legacy', 'user889', 'user889_equalstep_control'),
+                        default='legacy')
     args = parser.parse_args()
     run(args.output, tuple(args.seeds), args.noise_scale, args.pixel_shift,
         args.weight_set)

@@ -24,9 +24,12 @@ SEEDS = (1042, 1043)
 
 
 def run(group: str, out: Path, epochs: int, steps: int,
-        noise_scale: float) -> None:
-    if group not in PROFILES or group == 'r0_base':
-        raise ValueError('Choose one cumulative robustness profile')
+        noise_scale: float, selection_profile: str | None = None) -> None:
+    if group not in PROFILES:
+        raise ValueError(group)
+    selection_profile = selection_profile or group
+    if selection_profile not in PROFILES or selection_profile == 'r0_base':
+        raise ValueError('Selection profile must apply a stated stress')
     assert_contract()
     if sha(SOURCE) != SOURCE_SHA:
         raise RuntimeError('User-selected full-head checkpoint SHA mismatch')
@@ -56,11 +59,11 @@ def run(group: str, out: Path, epochs: int, steps: int,
 
     model = build(group, training_noise_scale=noise_scale)
     clean_model = build('r0_base').eval()
-    stress_model = build(group, training_noise_scale=noise_scale,
+    stress_model = build(selection_profile, training_noise_scale=noise_scale,
                          pixel_shift=1).eval()
     t._set_phase_dropout(clean_model, False)
     t._set_phase_dropout(stress_model, False)
-    _activate_stress_only(stress_model, group)
+    _activate_stress_only(stress_model, selection_profile)
     train, test = t.build_loaders(cfg)
     assert len(test.dataset) == 1000
     split = json.loads(SPLIT_SOURCE.read_text())
@@ -79,6 +82,7 @@ def run(group: str, out: Path, epochs: int, steps: int,
         'shared_readout_parameters': 381976,
         'training_profile': PROFILES[group], 'training_noise_scale': noise_scale,
         'training_pixel_shift': 0, 'selection_pixel_shift': 1,
+        'selection_profile': selection_profile,
         'selection_noise_scale': noise_scale, 'selection_seeds': SEEDS,
         'min_clean_validation': MIN_CLEAN_VALIDATION,
         'selection': 'max mean stressed TRAIN holdout VAL subject to clean VAL guard',
@@ -174,8 +178,10 @@ def main() -> None:
     parser.add_argument('--epochs', type=int, default=4)
     parser.add_argument('--steps', type=int, default=40)
     parser.add_argument('--noise-scale', type=float, default=10.0)
+    parser.add_argument('--selection-profile', choices=tuple(PROFILES))
     args = parser.parse_args()
-    run(args.group, args.output, args.epochs, args.steps, args.noise_scale)
+    run(args.group, args.output, args.epochs, args.steps, args.noise_scale,
+        args.selection_profile)
 
 
 if __name__ == '__main__':

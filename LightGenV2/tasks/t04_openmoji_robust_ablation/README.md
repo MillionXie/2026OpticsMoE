@@ -155,3 +155,9 @@ weights once on the common clean TEST; it must not feed back into checkpoint
 or epoch selection. The matched-stress validation split is from TRAIN, which
 the pretrained common start previously saw, so the robustness numbers remain
 development diagnostics rather than an external generalization estimate.
+
+For an equal-step diagnostic, `recover_fullhead_stress --group r0_base
+--selection-profile r3_ccd_dc30_grid` continues the same starting checkpoint
+for the same four epochs and 40 steps per epoch without the three added
+training measures. This control is **not** one of the five displayed groups;
+it helps separate an intervention effect from merely training longer.
