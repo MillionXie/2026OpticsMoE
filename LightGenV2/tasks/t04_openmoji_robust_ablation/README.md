@@ -114,3 +114,36 @@ validation-accuracy-matched comparison, not an equal-step ablation. Training
 also updated phase/router weights; only their architecture was held fixed.
 Full reports are under
 `handoffs/openmoji_robust_ablation_20260928/lowrank16`.
+
+## Restored original full head and robustness check
+
+The later user decision restores the **standard 381,976-parameter readout**.
+The common G1/G2 checkpoint is the exact 0.8890-reference SHA above (fresh
+common TEST confirmation 0.8880), not the older `a69ddcee...` start of the
+first four 10-epoch runs. Short G3/G4/G5 probes from this exact G1/G2 state
+were clean-performance checks only; they do not establish robustness.
+
+`recover_fullhead_stress` therefore starts every continuation from the exact
+G1/G2 checkpoint, with one common FIT/VAL split and the unchanged full head.
+It selects by the TRAIN-derived VAL under two fixed perturbation seeds, subject
+to a clean-VAL floor of 0.942 (G1/G2 starts at 0.962). It never selects by
+TEST. The initial matched-stress screen found the default noise proxy too
+weak to separate models, so the continuation uses a clearly labelled
+**uncalibrated sensitivity stress** (`noise_scale=10`, 1 logical-pixel shift).
+This is not a camera calibration, a CCD result, or evidence that a model will
+survive the same magnitude of hardware error. The simulated noise/DC/grid
+effects are activated deliberately during evaluation; normal `eval()` would
+disable these training-only perturbations.
+
+Example:
+
+```
+python -m LightGenV2.tasks.t04_openmoji_robust_ablation.recover_fullhead_stress \
+  --group r2_ccd_dc30 --output /absolute/output/path --epochs 4 --steps 40 \
+  --noise-scale 10
+```
+
+Do not promote a group merely because its clean TEST is high. First compare
+all four selected weights under identical clean and matched-perturbation
+conditions; then perform the same optical acquisition protocol before any
+physical robustness claim.

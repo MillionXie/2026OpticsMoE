@@ -35,16 +35,22 @@ def grid_roundtrip(x: torch.Tensor, native: int) -> torch.Tensor:
     return down.reshape(x.shape)
 
 
-def install(model, group: str) -> None:
+def install(model, group: str, *, noise_scale: float = 1.0,
+            pixel_shift: int = 0) -> None:
     """Patch propagation entry points before training and every inference load."""
+    if noise_scale < 0 or pixel_shift < 0:
+        raise ValueError('noise_scale and pixel_shift must be nonnegative')
     profile = PROFILES[group]
     for path in model._optical_paths():
         original = path._simulate_detector_roi
         path.gain_min = 1.0
         path.gain_max = 1.0
-        path.offset_fraction = 0.03 if profile["ccd"] else 0.0
-        path.read_noise_fraction = 0.01 if profile["ccd"] else 0.0
+        path.offset_fraction = 0.03 * noise_scale if profile["ccd"] else 0.0
+        path.read_noise_fraction = 0.01 * noise_scale if profile["ccd"] else 0.0
         path.ccd_noise_distribution = "none"
+        path.input_shift_pixels = pixel_shift
+        path.phase_shift_pixels = pixel_shift
+        path.ccd_shift_pixels = pixel_shift
         path.zero_order_enabled = profile["dc30"]
         path.amplitude_zero_order_intensity_min = 0.0
         path.amplitude_zero_order_intensity_max = 0.0
@@ -60,9 +66,9 @@ def install(model, group: str) -> None:
         path._simulate_detector_roi = detector
         router = path.core.router
         original_router = router._simulate
-        router.input_shift_pixels = 0
-        router.phase_shift_pixels = 0
-        router.ccd_shift_pixels = 0
+        router.input_shift_pixels = pixel_shift
+        router.phase_shift_pixels = pixel_shift
+        router.ccd_shift_pixels = pixel_shift
 
         def route(fields, original=original_router):
             fields = bounded(fields)
@@ -71,7 +77,8 @@ def install(model, group: str) -> None:
             intensity = original(fields)
             if model.training and profile["ccd"]:
                 ref = intensity.mean(dim=(-2, -1), keepdim=True).detach()
-                intensity = (intensity + 0.03 * ref + 0.01 * ref * torch.randn_like(intensity)).clamp_min(0)
+                intensity = (intensity + 0.03 * noise_scale * ref
+                             + 0.01 * noise_scale * ref * torch.randn_like(intensity)).clamp_min(0)
             return intensity
 
         router._simulate = route
