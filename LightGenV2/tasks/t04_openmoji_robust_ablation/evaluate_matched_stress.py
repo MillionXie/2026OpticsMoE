@@ -16,7 +16,7 @@ from torch.utils.data import DataLoader, Subset
 from LightGenV2.tasks.t04_semantic_interaction import training as t
 from LightGenV2.tasks.t04_semantic_interaction.settings import Settings
 from .profiles import PROFILES, assert_contract, install
-from .train import BASE, OUTPUTS, metric, save_json, sha
+from .train import BASE, OUTPUTS, SOURCE, SOURCE_SHA, metric, save_json, sha
 
 
 GROUPS = ('r0_base', 'r1_ccd', 'r2_ccd_dc30', 'r3_ccd_dc30_grid')
@@ -48,28 +48,46 @@ def _activate_stress_only(model, profile: str) -> None:
 
 
 def run(output: Path, seeds: tuple[int, ...], noise_scale: float,
-        pixel_shift: int) -> None:
+        pixel_shift: int, weight_set: str = 'legacy') -> None:
     assert_contract()
     output.mkdir(parents=True, exist_ok=False)
     cfg = _settings(output)
     device = torch.device('cuda')
     train, _ = t.build_loaders(cfg)
-    split = json.loads((OUTPUTS / 'r0_base/split.json').read_text())
+    if weight_set == 'user889':
+        split = json.loads((OUTPUTS / 'fullhead_probe1_r1_ccd_20260929/split.json').read_text())
+        checkpoint_paths = {
+            'r0_base': SOURCE,
+            **{group: OUTPUTS / f'fullhead889_strong_{group}_20260929/best.pt'
+               for group in GROUPS[1:]}}
+    elif weight_set == 'legacy':
+        split = json.loads((OUTPUTS / 'r0_base/split.json').read_text())
+        checkpoint_paths = {group: OUTPUTS / group / 'best.pt' for group in GROUPS}
+    else:
+        raise ValueError(weight_set)
     ids = split['validation']
     assert len(ids) == 1000 and not set(ids).intersection(split['fit'])
     loader = DataLoader(Subset(train.dataset, ids), batch_size=32,
                         collate_fn=train.collate_fn, num_workers=0)
     results = []
     for group in GROUPS:
-        directory = OUTPUTS / group
-        report = json.loads((directory / 'report.json').read_text())
-        protocol = json.loads((directory / 'protocol.json').read_text())
-        checkpoint = directory / 'best.pt'
-        assert report['source_sha256'] == protocol['initial_sha256']
-        assert sha(checkpoint) == report['best_sha256']
-        assert json.loads((directory / 'split.json').read_text()) == split
+        checkpoint = checkpoint_paths[group]
+        if weight_set == 'user889' and group == 'r0_base':
+            assert sha(checkpoint) == SOURCE_SHA
+        else:
+            directory = checkpoint.parent
+            report = json.loads((directory / 'report.json').read_text())
+            protocol = json.loads((directory / 'protocol.json').read_text())
+            assert sha(checkpoint) == report['best_sha256']
+            assert json.loads((directory / 'split.json').read_text()) == split
+            if weight_set == 'user889':
+                assert report['source_sha256'] == SOURCE_SHA
+                assert protocol['source_sha256'] == SOURCE_SHA
+            else:
+                assert report['source_sha256'] == protocol['initial_sha256']
         payload = torch.load(checkpoint, map_location='cpu', weights_only=False)
-        assert payload['group'] == group
+        if 'group' in payload:
+            assert payload['group'] == group
         for profile in GROUPS:
             model = t.build_model(cfg, device)
             model.load_state_dict(payload['model'], strict=True)
@@ -89,6 +107,7 @@ def run(output: Path, seeds: tuple[int, ...], noise_scale: float,
                 results.append(row)
                 save_json(output / 'report.json', {
                     'status': 'running', 'split': 'TRAIN holdout validation',
+                    'weight_set': weight_set,
                     'samples': len(ids), 'seeds': seeds,
                     'noise_scale': noise_scale, 'pixel_shift': pixel_shift,
                     'profile_contract': PROFILES,
@@ -100,6 +119,7 @@ def run(output: Path, seeds: tuple[int, ...], noise_scale: float,
             torch.cuda.empty_cache()
     save_json(output / 'report.json', {
         'status': 'complete', 'split': 'TRAIN holdout validation',
+        'weight_set': weight_set,
         'samples': len(ids), 'seeds': seeds,
         'noise_scale': noise_scale, 'pixel_shift': pixel_shift,
         'profile_contract': PROFILES,
@@ -114,8 +134,10 @@ def main() -> None:
     parser.add_argument('--seeds', type=int, nargs='+', default=[1042, 1043])
     parser.add_argument('--noise-scale', type=float, default=1.0)
     parser.add_argument('--pixel-shift', type=int, default=0)
+    parser.add_argument('--weight-set', choices=('legacy', 'user889'), default='legacy')
     args = parser.parse_args()
-    run(args.output, tuple(args.seeds), args.noise_scale, args.pixel_shift)
+    run(args.output, tuple(args.seeds), args.noise_scale, args.pixel_shift,
+        args.weight_set)
 
 
 if __name__ == '__main__':

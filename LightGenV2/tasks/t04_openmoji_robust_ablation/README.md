@@ -147,3 +147,11 @@ Do not promote a group merely because its clean TEST is high. First compare
 all four selected weights under identical clean and matched-perturbation
 conditions; then perform the same optical acquisition protocol before any
 physical robustness claim.
+
+Use `evaluate_matched_stress --weight-set user889` to compare the G1/G2
+checkpoint and the three VAL-selected continuations under identical
+perturbations. `evaluate_fullhead889_clean_test` reads those preselected
+weights once on the common clean TEST; it must not feed back into checkpoint
+or epoch selection. The matched-stress validation split is from TRAIN, which
+the pretrained common start previously saw, so the robustness numbers remain
+development diagnostics rather than an external generalization estimate.
