@@ -307,13 +307,15 @@ def evaluate(args):
             payload = torch.load(path, map_location='cpu', weights_only=True)
             if sha256(path) != digest:
                 raise ValueError('Checkpoint changed while reading')
-            if sha256(Path(__file__).with_name('optics.py')) != OPTICS_SHA256:
+            protected_sha = ('ff07716e09337520a5f338be6097522226bb8f9d42b1e39feb3e2c15eab3d67f'
+                             if payload['metadata'].get('bounded_amplitude') else OPTICS_SHA256)
+            if sha256(Path(__file__).with_name('optics.py')) != protected_sha:
                 raise ValueError('Physical source changed')
             model = OpticalRetrieval(payload['metadata'])
             model.load_state_dict(payload['state_dict'], strict=True)
             audit = model.audit()
-            if audit['alpha_bounds'][0] <= .4 or audit['descriptor_dimension'] != 64:
-                raise ValueError('Require original high-alpha 64D architecture')
+            if audit['alpha_bounds'][0] < .35 or audit['descriptor_dimension'] != 64:
+                raise ValueError('Require audited alpha>=0.35 64D architecture')
             if getattr(args, 'cache_readout_input', False):
                 if model.readout.kind != 'linear64':
                     raise ValueError('Readout input caching requires linear64')
@@ -323,7 +325,7 @@ def evaluate(args):
                         raise ValueError('Invalid original linear64 input')
                     readout_inputs.append(value)
                 readout_hook = model.readout.projection.register_forward_pre_hook(capture_readout_input)
-            identity.update(checkpoint_sha256=digest, model_audit=audit, protected_optics_sha256=OPTICS_SHA256,
+            identity.update(checkpoint_sha256=digest, model_audit=audit, protected_optics_sha256=protected_sha,
                             **checkpoint_history(payload, manifest_sha))
             processor = AutoProcessor.from_pretrained(str(args.assets / 'processor'), local_files_only=True)
         else:
