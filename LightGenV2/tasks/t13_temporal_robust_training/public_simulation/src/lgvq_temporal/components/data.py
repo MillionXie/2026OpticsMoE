@@ -39,10 +39,6 @@ ID_COLUMNS = ("sample_id", "video_id", "id", "name", "video_name")
 PATH_COLUMNS = ("video_path", "path", "file_path", "filepath", "video")
 SPLIT_COLUMNS = ("split", "subset", "partition")
 
-# These records bind the two independently stored cache files to one exact
-# frozen Qwen front.  In particular, a matching tensor shape or model name is
-# not sufficient: every record is content addressed and the pair record names
-# both component digests.
 QWEN_SOURCE_IDENTITY_CONTRACT = "qwen3_vl_local_checkpoint_identity_v1"
 QWEN_COMPONENT_FINGERPRINT_CONTRACT = "qwen3_vl_front_component_fingerprint_v1"
 QWEN_FRONT_PAIR_CONTRACT = "qwen3_vl_vision_language_front_pair_v1"
