@@ -47,6 +47,9 @@ PROFILES['physical_robust35'] = dict(PROFILES['sku_retrieval_only'],
     robust_alpha_min=.35, noise_probability=.7, pixel_shift=1, router_noise=True,
     phase_lr_multiplier=2.)
 PROFILES['physical_robust35_no_shift'] = dict(PROFILES['physical_robust35'],pixel_shift=0)
+PROFILES['fresh35_route_repair'] = dict(PROFILES['physical_robust35_no_shift'],
+    warmup=3, category_probability=.5, positive_weight=.1,
+    noise_probability=.25, phase_lr_multiplier=1.)
 PROFILES['physical_robust35_cleanmix'] = dict(PROFILES['physical_robust35'],
     noise_probability=.25, phase_lr_multiplier=1.)
 PROFILES['physical_bounded30'] = dict(PROFILES['physical_robust35_cleanmix'],
