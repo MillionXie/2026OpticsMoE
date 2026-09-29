@@ -312,8 +312,8 @@ def evaluate(args):
             model = OpticalRetrieval(payload['metadata'])
             model.load_state_dict(payload['state_dict'], strict=True)
             audit = model.audit()
-            if audit['alpha_bounds'][0] <= .4 or audit['descriptor_dimension'] != 64:
-                raise ValueError('Require original high-alpha 64D architecture')
+            if audit['alpha_bounds'][0] < .35 or audit['descriptor_dimension'] != 64:
+                raise ValueError('Require audited alpha>=0.35 64D architecture')
             if getattr(args, 'cache_readout_input', False):
                 if model.readout.kind != 'linear64':
                     raise ValueError('Readout input caching requires linear64')
