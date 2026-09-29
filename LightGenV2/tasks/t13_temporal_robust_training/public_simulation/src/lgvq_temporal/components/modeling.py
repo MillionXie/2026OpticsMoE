@@ -880,9 +880,6 @@ class _VisionResidualConvBlock(nn.Module):
         self.expand = nn.Conv2d(width, width * 2, 1)
         self.project = nn.Conv2d(width * 2, width, 1)
         self.raw_scale = nn.Parameter(torch.tensor(-2.0))
-        # A newly appended residual block must be an exact identity at warm
-        # start. Older blocks are restored from the checkpoint by exact name;
-        # only genuinely new blocks keep this zero-output initialization.
         nn.init.zeros_(self.project.weight)
         nn.init.zeros_(self.project.bias)
 
@@ -925,8 +922,6 @@ class _VisionLargeKernelResidualBlock(nn.Module):
         self.grn = _GlobalResponseNorm2d(expanded)
         self.project = nn.Conv2d(expanded, width, 1)
         self.raw_scale = nn.Parameter(torch.tensor(-2.0))
-        # Exact identity at checkpoint load. This makes the architecture search
-        # reversible and prevents a random new block from erasing the formal run.
         nn.init.zeros_(self.project.weight)
         nn.init.zeros_(self.project.bias)
 
@@ -949,9 +944,6 @@ class VisionElectronicResidualRoute(nn.Module):
         super().__init__()
         self.grid = settings.token_grid
         self.width = settings.model_width
-        # Keep these names and tensor shapes identical to VisionElectronicRoute.
-        # The formal two-branch model can therefore inherit the already trained
-        # electronic transform instead of silently randomizing the whole E path.
         self.norm = nn.LayerNorm(self.width)
         self.depthwise = nn.Conv2d(
             self.width,
@@ -964,8 +956,6 @@ class VisionElectronicResidualRoute(nn.Module):
         self.pointwise = nn.Conv2d(self.width, self.width, 1)
         blocks: list[nn.Module] = []
         for index in range(settings.electronic_route_depth - 1):
-            # Block 0 retains the checkpoint-compatible 5x5 implementation.
-            # Only newly appended blocks use the larger lightweight kernel.
             block_type = (
                 _VisionLargeKernelResidualBlock
                 if settings.electronic_route_variant == "residual_convnext"
@@ -1053,8 +1043,6 @@ class LanguageElectronicResidualRoute(nn.Module):
     def __init__(self, settings: FeatureSettings) -> None:
         super().__init__()
         self.width = settings.model_width
-        # These three modules exactly match LanguageElectronicRoute so the
-        # warm-start keeps the trained causal electronic transform.
         self.norm = nn.LayerNorm(self.width)
         self.depthwise = nn.Conv1d(
             self.width, self.width, 5, groups=self.width, bias=False
@@ -1219,9 +1207,6 @@ class SpatialGridReadout(nn.Module):
         self.frame_count = settings.frame_count
         self.image_focus_max = settings.spatial_readout_image_focus_max
         if self.image_focus_max > 0.0:
-            # Zero gives an exact warm start from the established all-sequence
-            # readout. Fine-tuning may then emphasize the four sample-varying
-            # image tokens without deleting the text-conditioned optical path.
             self.raw_image_focus = nn.Parameter(torch.zeros(()))
         spatial_width = 64
         self.token_norm = nn.LayerNorm(width)
@@ -2815,8 +2800,6 @@ class LGVQSingleMetricOEO16(nn.Module):
             nn.LayerNorm(settings.vision_input_width),
             nn.Linear(settings.vision_input_width, settings.model_width),
         )
-        # The formal two-branch profile disables every auxiliary visual source:
-        # Qwen patch+position is then the one shared input to the E and O paths.
         self.quality_adapter: nn.Module | None
         if not settings.quality_branch_enabled:
             self.quality_adapter = None
@@ -2932,8 +2915,6 @@ class LGVQSingleMetricOEO16(nn.Module):
                 )
             )
         if settings.electronic_quality_reinjection_enabled:
-            # Zero is an exact warm start. Unlike a sigmoid gate, tanh permits
-            # the optimizer to learn either a corrective addition or removal.
             self.raw_electronic_quality_reinjection = nn.Parameter(
                 torch.zeros(())
             )

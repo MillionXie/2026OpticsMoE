@@ -95,8 +95,6 @@ def permute_video_slots(
     return result, inverse
 
 
-# Compatibility name for older 9x4 imports.  New code should use the semantic
-# name because the same implementation also owns the 16x4 contract.
 NineVideoFieldDataset = MultiVideoFieldDataset
 
 

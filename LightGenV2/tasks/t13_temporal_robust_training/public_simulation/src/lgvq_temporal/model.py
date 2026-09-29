@@ -808,7 +808,6 @@ class MultiVideo9x4OpticalVQA(nn.Module):
                 for _ in range(2)
             ]
         )
-        # Names deliberately preserve shape-compatible warm-start keys.
         self.parallel_optics = FrameOpticalPath(settings)
         self.parallel_router = FrameOpticalRouter(settings)
         self.serial_optics = VideoOpticalPath(settings)

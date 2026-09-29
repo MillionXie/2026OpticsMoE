@@ -216,7 +216,6 @@ class Geometry:
             )
 
 
-# Backward-friendly alias for code that uses the older geometry class name.
 OpticalGeometry = Geometry
 
 

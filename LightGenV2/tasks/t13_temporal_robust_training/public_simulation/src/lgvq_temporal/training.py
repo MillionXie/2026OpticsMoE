@@ -84,9 +84,7 @@ def compatible_warm_start(
     source_architecture = saved.get("architecture")
     skipped = set()
     if source_architecture != settings.architecture_label:
-        # V1 routed the full visual+prompt sequence. Its phase learned a
-        # slot-fixed bias and is not a valid initialization for the V2 visual
-        # router, which consumes only four post-optical frame summaries.
+        # The router phase is incompatible across different architectures.
         skipped.add("serial_router.raw_router_phase")
     compatible = {
         name: value
@@ -96,9 +94,6 @@ def compatible_warm_start(
         and torch.is_tensor(value)
         and tuple(value.shape) == tuple(destination[name].shape)
     }
-    # The new visual router uses the same 192->72 physical field projection as
-    # the established video expert path. Reuse that exact projection while
-    # leaving the new 4->72 frame-axis resampler at its deterministic start.
     router_projection = "serial_router.width_to_field.weight"
     source_projection = "serial_optics.width_to_field.weight"
     if (

@@ -138,9 +138,7 @@ class MultiVideoGeometry:
         ) < 0:
             raise ValueError("Optical tiles may touch but must not overlap")
         formal_signatures = {
-            # 9 videos x 4 frames: 3x3 video macros, 6x6 frame lanes.
             (3, 9, 154, 159, 3, 75, 79, 36, 39, 72, 82, 150),
-            # 16 videos x 4 frames: 4x4 video macros, 8x8 frame lanes.
             (4, 16, 115, 119, 3, 56, 59, 27, 29, 56, 59, 111),
         }
         signature = (
@@ -185,9 +183,6 @@ class MultiVideoSettings:
     mobilenet_feature_cache_path: Path | None = None
     mobilenet_feature_width: int = 64
     qwen_model_path: Path | None = None
-    # Compatibility with the shared cache loader.  The formal 16x4 model uses
-    # one frozen Qwen/quality view; these remain empty unless a separately
-    # named temporal-sampling study supplies additional views.
     vision_cache_view_paths: tuple[Path, ...] = ()
     quality_feature_cache_view_paths: tuple[Path, ...] = ()
     raw_frame_cache_view_paths: tuple[Path, ...] = ()
@@ -276,8 +271,6 @@ class MultiVideoSettings:
     slot_consistency_interval: int = 4
     soft_target_weight: float = 3.0
     test_interval_epochs: int = 5
-    # Zero is the formal default: model checkpoints retain only best and last.
-    # A positive value is reserved for an explicitly named mask-evolution study.
     phase_snapshot_interval_epochs: int = 0
     synthetic: bool = False
 
@@ -314,7 +307,6 @@ class MultiVideoSettings:
             / self.modulator_pixel_pitch_um
         )
 
-    # Compatibility attributes consumed by the audited frozen-cache loader.
     @property
     def serial_vision_token_count(self) -> int:
         return self.frame_count
