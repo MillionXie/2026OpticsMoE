@@ -316,6 +316,14 @@ def evaluate(args):
             audit = model.audit()
             if audit['alpha_bounds'][0] < .35 or audit['descriptor_dimension'] != 64:
                 raise ValueError('Require audited alpha>=0.35 64D architecture')
+            if args.disable_late_rgb:
+                if model.late_rgb is None:
+                    raise ValueError('Checkpoint has no late RGB bypass to ablate')
+                # Load the original checkpoint strictly first, then remove only
+                # the final 0.5/0.5 RGB fusion. Optical layers, routing,
+                # electronic residuals and retrieval head remain unchanged.
+                model.late_rgb = None
+                identity['ablation'] = 'same trained weights; skip final late RGB fusion; no retraining'
             if getattr(args, 'cache_readout_input', False):
                 if model.readout.kind != 'linear64':
                     raise ValueError('Readout input caching requires linear64')
@@ -428,10 +436,13 @@ def main():
     p.add_argument('--batch-size', type=int, default=4)
     p.add_argument('--device', choices=['cuda', 'cpu'], default='cuda')
     p.add_argument('--cache-readout-input', action='store_true', help='Optical linear64 only: save its original 384D input without altering forward')
+    p.add_argument('--disable-late-rgb', action='store_true', help='Optical only: skip final late RGB fusion using the same trained checkpoint')
     args = p.parse_args()
     args.started = time.time()
     if args.cache_readout_input and args.mode != 'optical':
         p.error('Readout input caching is optical-only')
+    if args.disable_late_rgb and args.mode != 'optical':
+        p.error('Late RGB ablation is optical-only')
     if args.mode == 'prepare-grocery':
         prepare_grocery(args.data, args.output)
     elif args.mode == 'prepare-coil':
