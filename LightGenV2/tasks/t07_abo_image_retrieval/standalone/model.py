@@ -138,10 +138,11 @@ class RetrievalHead(nn.Module):
 class LateRGBTokens(nn.Module):
     """Small electronic bypass from the already-frozen RGB patch frontend."""
 
-    def __init__(self):
+    def __init__(self, bottleneck=None):
         super().__init__()
         self.in_norm = nn.LayerNorm(1024)
-        self.project = nn.Linear(1024, 192)
+        self.project = nn.Linear(1024, 192) if bottleneck is None else nn.Sequential(
+            nn.Linear(1024, bottleneck), nn.Linear(bottleneck, 192))
         self.depthwise = nn.Conv2d(192, 192, 3, padding=1, groups=192)
         self.norm = nn.LayerNorm(192)
 
@@ -187,9 +188,9 @@ class OpticalRetrieval(nn.Module):
             getattr(self,name).optics.router.bounded_amplitude = metadata.get('bounded_amplitude')
         self.readout = RetrievalHead(metadata.get('retrieval_head','linear64'))
         late = metadata.get('late_rgb_adapter')
-        if late not in (None, 'frozen_patch_7x7_half'):
+        if late not in (None, 'frozen_patch_7x7_half', 'frozen_patch_7x7_half_rank72'):
             raise ValueError('Unknown late RGB bypass contract')
-        self.late_rgb = LateRGBTokens() if late else None
+        self.late_rgb = LateRGBTokens(72 if late == 'frozen_patch_7x7_half_rank72' else None) if late else None
 
     def train(self, mode=True):
         super().train(mode)
@@ -234,7 +235,7 @@ class OpticalRetrieval(nn.Module):
         architecture='t07_standalone_six_capture_v1' if kernels=={'vision':3,'language':5} else 't07_standalone_six_capture_electronic_context'
         if self.readout.kind!='linear64':architecture+='_'+self.readout.kind
         if self.vision.blocks[0].mlp_width!=384:architecture+='_mlp'+str(self.vision.blocks[0].mlp_width)
-        if self.late_rgb is not None:architecture+='_late_rgb_half'
+        if self.late_rgb is not None:architecture+=('_late_rgb_rank72_half' if self.metadata.get('late_rgb_adapter') == 'frozen_patch_7x7_half_rank72' else '_late_rgb_half')
         return {'architecture':architecture, 'native_transformer_modules':0,
                 'attention_modules':0,'capture_count':6,'top_k':2,
                 'frozen_parameters':sum(p.numel() for p in self.parameters() if not p.requires_grad),

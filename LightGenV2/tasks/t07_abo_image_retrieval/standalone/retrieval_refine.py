@@ -55,6 +55,10 @@ PROFILES['fresh_latest35'] = dict(PROFILES['physical_bounded30'],
     robust_alpha_min=.35, noise_probability=.25, phase_lr_multiplier=2.)
 PROFILES['fresh_latest35_latergb'] = dict(PROFILES['fresh_latest35'],
     late_rgb_adapter='frozen_patch_7x7_half')
+PROFILES['latergb_rank72_finetune'] = dict(PROFILES['fresh_latest35_latergb'],
+    late_rgb_rank72=True, late_rgb_adapter='frozen_patch_7x7_half_rank72',
+    noise_probability=.25, phase_lr_multiplier=.25,
+    router_lr_multiplier=.05)
 PROFILES['physical_bounded30_conv5'] = dict(PROFILES['physical_bounded30'],
     electronic_expansion=dict(kernels=dict(vision=5,language=5),mlp_width=384))
 # Frozen clean TRAIN relations anchor noisy students without another inference branch.
@@ -174,6 +178,29 @@ def training_source_exclusion(sources, gallery_ids, device=None):
 
 
 def prepare_capacity_payload(payload, profile, protocol, fresh=False):
+    if profile.get('late_rgb_rank72'):
+        if fresh or protocol != 'abo200_enrolled_sku_hash8train4query_v1':
+            raise ValueError('Rank72 conversion requires enrolled-SKU continuation')
+        if payload['metadata'].get('late_rgb_adapter') != 'frozen_patch_7x7_half':
+            raise ValueError('Source must contain the trained full late RGB bypass')
+        converted = dict(payload)
+        converted['metadata'] = dict(payload['metadata'], late_rgb_adapter='frozen_patch_7x7_half_rank72')
+        state = dict(payload['state_dict'])
+        weight = state.pop('late_rgb.project.weight').float()
+        bias = state.pop('late_rgb.project.bias').float()
+        u, s, vh = torch.linalg.svd(weight, full_matrices=False)
+        rank = 72
+        root = s[:rank].sqrt()
+        state['late_rgb.project.0.weight'] = (root[:, None] * vh[:rank]).contiguous()
+        state['late_rgb.project.0.bias'] = torch.zeros(rank, dtype=bias.dtype)
+        state['late_rgb.project.1.weight'] = (u[:, :rank] * root[None, :]).contiguous()
+        state['late_rgb.project.1.bias'] = bias
+        converted['state_dict'] = state
+        original = sum(v.numel() for v in payload['state_dict'].values())
+        reduced = sum(v.numel() for v in state.values())
+        return converted, dict(expanded=False, extra_parameters=reduced-original,
+            role='SVD-compressed 72-rank late RGB adapter; all optical tensors unchanged',
+            initialization='Rank72 SVD of trained 192x1024 projection, then joint finetuning')
     expansion = profile.get('electronic_expansion')
     head = profile.get('head_expansion')
     modes = profile.get('ccd_readout_modes')
