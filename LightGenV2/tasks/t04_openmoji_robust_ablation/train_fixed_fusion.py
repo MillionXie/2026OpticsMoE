@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import argparse
+import hashlib
 import json
 import subprocess
 import sys
@@ -37,6 +38,7 @@ def main():
     p.add_argument('--config', type=Path, required=True)
     p.add_argument('--candidate', choices=('alpha65', 'alpha80'), required=True)
     p.add_argument('--output', type=Path, required=True)
+    p.add_argument('--source-commit', required=True)
     p.add_argument('--smoke', action='store_true')
     args = p.parse_args()
     protocol = json.loads(args.config.read_text())
@@ -82,12 +84,16 @@ def main():
             train, test = small(train), small(test)
         root = Path(__file__).resolve().parents[3]
         commit = subprocess.check_output(['git', '-C', str(root), 'rev-parse', 'HEAD'], text=True).strip()
+        entry_blob = subprocess.check_output(['git', '-C', str(root), 'show',
+                                             args.source_commit + ':' + Path(__file__).relative_to(root).as_posix()])
+        assert hashlib.sha256(entry_blob).hexdigest() == base.sha(Path(__file__)), 'Published entry mismatch'
         dependency_shas = {str(path.relative_to(root)): base.sha(path) for path in
                            (Path(base.__file__), Path(__file__), Path(t.__file__),
                             Path(__file__).with_name('profiles.py'))}
         resolved = dict(protocol, candidate=args.candidate, fixed_alpha=fusion,
                         smoke=args.smoke, actual_epochs=epochs, actual_steps=steps,
-                        git_head=commit, source_entry_sha256=base.sha(Path(__file__)),
+                        runtime_git_head=commit, source_commit=args.source_commit,
+                        source_entry_sha256=base.sha(Path(__file__)),
                         dependency_sha256=dependency_shas, command=sys.argv,
                         source_weight_sha256=base.SOURCE_SHA, profile=PROFILES['r0_base'],
                         head_parameters=sum(v.numel() for v in model.shared_readout.parameters()),
