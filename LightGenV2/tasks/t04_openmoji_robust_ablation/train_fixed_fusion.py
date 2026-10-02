@@ -14,6 +14,7 @@ from torch.utils.data import DataLoader, Subset
 
 from . import train as base
 from .profiles import PROFILES, assert_contract, install
+from . import split_rank_head
 from LightGenV2.tasks.t04_semantic_interaction import training as t
 from LightGenV2.tasks.t04_semantic_interaction.settings import Settings
 
@@ -36,7 +37,7 @@ def freeze_fusion(model, alpha):
 def main():
     p = argparse.ArgumentParser()
     p.add_argument('--config', type=Path, required=True)
-    p.add_argument('--candidate', choices=('alpha65', 'alpha80'), required=True)
+    p.add_argument('--candidate', required=True)
     p.add_argument('--output', type=Path, required=True)
     p.add_argument('--source-commit', required=True)
     p.add_argument('--resume', type=Path)
@@ -44,6 +45,7 @@ def main():
     args = p.parse_args()
     protocol = json.loads(args.config.read_text())
     alpha = protocol['candidates'][args.candidate]['alpha']
+    editor_rank = int(protocol['candidates'][args.candidate].get('editor_rank', 64))
     epochs = 1 if args.smoke else protocol['epochs']
     steps = 2 if args.smoke else protocol['steps_per_epoch']
     out = args.output
@@ -68,18 +70,20 @@ def main():
                     'prompt_cache_path', 'optical_base_config', 'legacy_warmstart_checkpoint'):
             setattr(cfg, key, Path(getattr(cfg, key)))
         cfg.shared_readout_variant = 'lowrank64'
+        cfg.editor_rank = editor_rank
         cfg.optical_fusion_initial = alpha
         cfg.output_dir, cfg.num_workers = out, 0
         device = torch.device('cuda')
-        model = t.build_model(cfg, device)
+        model = split_rank_head.build_model(cfg, device)
         source = torch.load(base.SOURCE, map_location='cpu', weights_only=False)
-        model.load_state_dict(base.adapted_source_state(source['model'], 'lowrank64', model.state_dict()), strict=True)
+        model.load_state_dict(split_rank_head.adapted_source_state(source['model'], model.state_dict(), editor_rank), strict=True)
         resume_sha = None
         if args.resume:
             resumed = torch.load(args.resume, map_location='cpu', weights_only=False)
             assert abs(resumed['fixed_fusion_alpha'] - alpha) < 1e-9
             assert resumed['group'] == 'r0_base'
             assert resumed['settings']['shared_readout_variant'] == 'lowrank64'
+            assert int(resumed['settings'].get('editor_rank', 64)) == editor_rank
             model.load_state_dict(resumed['model'], strict=True)
             for name in ('language_core', 'vision_core'):
                 for block in (1, 2):
@@ -101,7 +105,7 @@ def main():
         assert hashlib.sha256(entry_blob).hexdigest() == base.sha(Path(__file__)), 'Published entry mismatch'
         dependency_shas = {str(path.relative_to(root)): base.sha(path) for path in
                            (Path(base.__file__), Path(__file__), Path(t.__file__),
-                            Path(__file__).with_name('profiles.py'))}
+                            Path(__file__).with_name('profiles.py'), Path(split_rank_head.__file__))}
         resolved = dict(protocol, candidate=args.candidate, fixed_alpha=fusion,
                         smoke=args.smoke, actual_epochs=epochs, actual_steps=steps,
                         runtime_git_head=commit, source_commit=args.source_commit,
@@ -110,6 +114,8 @@ def main():
                         source_weight_sha256=base.SOURCE_SHA, profile=PROFILES['r0_base'],
                         head_parameters=sum(v.numel() for v in model.shared_readout.parameters()),
                         decoder_parameters=sum(v.numel() for v in model.shared_readout.decoder.parameters()),
+                        editor_rank=editor_rank, decoder_rank=64,
+                        architecture_contract=model.shared_readout.contract,
                         device=torch.cuda.get_device_name(), torch_version=torch.__version__,
                         train_count=len(train.dataset), test_count=len(test.dataset))
         resolved.update(resume_checkpoint=str(args.resume) if args.resume else None,
