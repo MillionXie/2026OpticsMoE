@@ -39,6 +39,7 @@ def main():
     p.add_argument('--candidate', choices=('alpha65', 'alpha80'), required=True)
     p.add_argument('--output', type=Path, required=True)
     p.add_argument('--source-commit', required=True)
+    p.add_argument('--resume', type=Path)
     p.add_argument('--smoke', action='store_true')
     args = p.parse_args()
     protocol = json.loads(args.config.read_text())
@@ -73,6 +74,17 @@ def main():
         model = t.build_model(cfg, device)
         source = torch.load(base.SOURCE, map_location='cpu', weights_only=False)
         model.load_state_dict(base.adapted_source_state(source['model'], 'lowrank64', model.state_dict()), strict=True)
+        resume_sha = None
+        if args.resume:
+            resumed = torch.load(args.resume, map_location='cpu', weights_only=False)
+            assert abs(resumed['fixed_fusion_alpha'] - alpha) < 1e-9
+            assert resumed['group'] == 'r0_base'
+            assert resumed['settings']['shared_readout_variant'] == 'lowrank64'
+            model.load_state_dict(resumed['model'], strict=True)
+            for name in ('language_core', 'vision_core'):
+                for block in (1, 2):
+                    assert abs(float(getattr(getattr(model, name), f'block{block}_optical_fusion').detach()) - alpha) < 1e-6
+            resume_sha = base.sha(args.resume)
         fusion = freeze_fusion(model, alpha)
         install(model, 'r0_base')
         train, test = t.build_loaders(cfg)
@@ -100,6 +112,8 @@ def main():
                         decoder_parameters=sum(v.numel() for v in model.shared_readout.decoder.parameters()),
                         device=torch.cuda.get_device_name(), torch_version=torch.__version__,
                         train_count=len(train.dataset), test_count=len(test.dataset))
+        resolved.update(resume_checkpoint=str(args.resume) if args.resume else None,
+                        resume_sha256=resume_sha, optimizer_restarted=bool(args.resume))
         write('protocol.json', resolved)
         write('resolved_config.json', cfg.to_dict())
         for key in ('learning_rate', 'adapter_learning_rate', 'phase_learning_rate',
