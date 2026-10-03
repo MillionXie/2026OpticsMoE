@@ -232,7 +232,6 @@ def main():
         output = project / 'runs' / (PREFIX + '_decoder_train1000_testselected')
         assert not output.exists(), 'Existing adapter output must be preserved; inspect before recovery'
         assert torch.cuda.is_available(), 'Bench decoder GPU unavailable; preserve complete CCD'
-        _, free = 0, 0
         free, total = torch.cuda.mem_get_info()
         assert free > 2 * 1024**3, 'GPU busy; preserve complete CCD and wait safely'
         status('tune', direct=direct, trainable_parameters=30162)
@@ -245,8 +244,11 @@ def main():
         strict_tune(tune, project, output)
         result = json.loads((output / 'strict_reload.json').read_text())
         adapted = result['metrics']['overall']['changed_cell_accuracy']
+        gap_pp = 100 * (SIMULATION - direct)
+        recovery_met = adapted >= SIMULATION * .97
         status('complete', 'complete', simulation=SIMULATION, direct=direct, adapted=adapted,
-               target_met=adapted >= SIMULATION * .97,
+               recovery_target_met=recovery_met,
+               all_three_targets_met=.88 <= SIMULATION < .9 and 30 <= gap_pp <= 40 and recovery_met,
                direct_gap_pp=100 * (SIMULATION - direct), development_only=True)
     except Exception as exc:
         status('failed', 'failed', error=repr(exc))
