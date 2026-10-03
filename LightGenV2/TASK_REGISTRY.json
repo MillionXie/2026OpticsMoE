@@ -1,0 +1,183 @@
+{
+  "schema_version": 1,
+  "audited_on": "2026-10-02",
+  "purpose": "Source and artifact identity index; metrics remain in task README/report and PROJECT_SCORECARD.md",
+  "migration_complete": false,
+  "reconciliation_plan": "../maintenance/storage/REMAINING_CLEANUP_PLAN_20261003.md",
+  "reconciliation_counts": {"runtime_source_published": 2, "partially_consolidated": 6, "pending_runtime_and_assets": 5, "unstarted": 1, "scope": "includes T03 and T10 source publication; complete assets and fresh hardware reproduction remain separate"},
+  "navigation_documents": ["README.md", "PROJECT_SCORECARD.md", "tasks/t04_openmoji_robust_ablation/README.md", "tasks/t04_openmoji_robust_ablation/reports/reproduction/README.md", "tasks/t16_zero_phase_ccd_lifelong/README.md", "tasks/t16_zero_phase_ccd_lifelong/reports/reproduction/README.md"],
+  "source_import_manifests": ["tasks/t16_zero_phase_ccd_lifelong/source_import_20261002.json", "tasks/t13_temporal_robust_training/source_import_20261003.json"],
+  "artifact_manifests": ["tasks/t07_abo_image_retrieval/reports/reproduction/FINAL_IDENTITY_20261002.json", "tasks/t04_openmoji_robust_ablation/reports/reproduction/FINAL_IDENTITY_20261002.json"],
+  "policy": "Do not delete any referenced source, dependency, dataset, capture or weight until replacement is verified. No new branches or worktrees. External upload paused.",
+  "server_repository": "/DATA/DATA1/guest3/2026OpticsMoE",
+  "tasks": [
+    {
+      "id": "t01_object_retrieval",
+      "entry": "tasks/t01_object_retrieval/README.md",
+      "source_status": "canonical_entry_existing_latest_runtime_audit_pending",
+      "data_status": "preserve_original_manifest_and_gallery",
+      "evidence": ["PROJECT_SCORECARD.md"],
+      "current_version_latency_verified": false
+    },
+    {
+      "id": "t02_keypoint_detection",
+      "entry": "tasks/t02_keypoint_detection/README.md",
+      "source_status": "canonical_entry_existing_server_figure_overlay_pending",
+      "additional_source": "/DATA/DATA1/guest3/t02_personal_source_20260928",
+      "source_head": "2fa901dc7800d8798658b29e242e38bebac97989",
+      "data_status": "preserve_LSP_and_per_sample_evidence",
+      "evidence": ["PROJECT_SCORECARD.md"],
+      "current_version_latency_verified": false
+    },
+    {
+      "id": "t03_saliency",
+      "entry": "tasks/t03_saliency/README.md",
+      "source_status": "runtime_source_published_partial_asset_audit",
+      "source_head": "b75a56203b47818810e0a45dceecf9cea4c6aa9f",
+      "evidence": ["tasks/t03_saliency/reports/reproduction/CROSS_SAMPLE_BALANCE_20260913.md", "../maintenance/storage/T03_PUBLICATION_20261003.md"],
+      "data_status": "preserve_SALICON_manifests_weights_and_licensed_examples",
+      "current_version_latency_verified": false
+    },
+    {
+      "id": "t04_openmoji_robust_ablation",
+      "entry": "tasks/t04_openmoji_robust_ablation/README.md",
+      "reproduction": "tasks/t04_openmoji_robust_ablation/reports/reproduction/README.md",
+      "source_status": "canonical_entry_created_runtime_integration_pending",
+      "training_source": "/DATA/DATA1/guest3/2026OpticsMoE/.worktrees/t04_openmoji_robust_20260928",
+      "protected_git_ref": "refs/archive/server-authoritative-20261002/t04_openmoji_robust_20260928",
+      "source_head": "3b956503a4ecae9b6c20c789ead28621e42e6eeb",
+      "requires_uncommitted_overlay": true,
+      "bench_source": "E:/code/guest/2026OpticsMoE/OpenMoji_Robust_Rank64_SHS_20261002",
+      "protected_dependencies": ["tasks/t04_semantic_interaction", "experiments/qwen3_vl_2b_openmoji_instruction_four_stage_optical_editing", "ABO_I2I_Lab_DVP_8um/lab_dvp8um"],
+      "local_artifact_directory": "../handoffs/openmoji_robust_ablation_20260928/midrank48_candidate",
+      "weights": [
+        {"path": "../handoffs/openmoji_robust_ablation_20260928/midrank48_candidate/rank64_g2_train2000_bias_best_20261002.pt", "sha256": "1cbc3d2574827272dafee7102a4a402ace7eab3f373ea177cbc02e66d90fe6db"},
+        {"sha256": "1fa31ec7b30a554280d9115b54f580d40b9c754f805db4ec9714ec28d22af41f", "identity": "G5 rank64 TRAIN2000 original decoder existing-bias calibrated best; path recorded in final report"}
+      ],
+      "evidence": ["../handoffs/openmoji_robust_ablation_20260928/midrank48_candidate/FINAL_RANK64_VERSION_20261002.md", "../handoffs/openmoji_robust_ablation_20260928/midrank48_candidate/G2_RANK64_TRAIN2000_RESULT_20261002.md"],
+      "data_status": "preserve_each_group_TEST1000_TRAIN2000_raw_six_layer_CCD_and_receipts",
+      "current_version_latency_verified": false
+    },
+    {
+      "id": "t05_video_classification",
+      "entry": "tasks/t05_video_classification/README.md",
+      "source_status": "not_started_protocol_undecided",
+      "evidence": ["PROJECT_SCORECARD.md"],
+      "current_version_latency_verified": false
+    },
+    {
+      "id": "t06_video_quality_assessment",
+      "entry": "tasks/t06_video_quality_assessment/README.md",
+      "source_status": "canonical_entry_existing_legacy_backend_audit_pending",
+      "evidence": ["reports/20260928_nine_task_a100_table/README.md"],
+      "data_status": "preserve_original_videos_manifests_and_frontend_caches",
+      "timing_status": "version_specific_historical_segment_timings_not_hardware_end_to_end",
+      "current_version_latency_verified": false
+    },
+    {
+      "id": "t07_abo_image_retrieval",
+      "entry": "tasks/t07_abo_image_retrieval/README.md",
+      "source_status": "canonical_entry_existing_rank72_runtime_integration_pending",
+      "training_source": "/DATA/DATA1/guest3/2026OpticsMoE/.worktrees/t07_latestfresh35_20260929",
+      "protected_git_ref": "refs/archive/server-authoritative-20261002/t07_latestfresh35_20260929",
+      "source_head": "d979b53ed509907a3630bd2a36c317dfb3aac965",
+      "requires_uncommitted_overlay": true,
+      "bench_source": "E:/code/guest/2026OpticsMoE/ABO_I2I_Lab_DVP_8um/candidate_latergb_rank72_20260930",
+      "local_artifact_directory": "../handoffs/abo_latestfresh35_lab_20260930",
+      "weights": [
+        {"path": "../handoffs/abo_latestfresh35_lab_20260930/rank72_epoch13_best_snapshot.pt", "sha256": "25f23260864a00a0f32b5de209c27f5876166018c8d8ab0e880de81e0d2c2c22"}
+      ],
+      "evidence": ["../handoffs/abo_latestfresh35_lab_20260930/FINAL_VERSION.md", "../handoffs/abo_latestfresh35_lab_20260930/rank72_physical_full_report_20261001.json"],
+      "data_status": "preserve_real_gallery1600_query800_each_six_layers_14400_valid_CCD",
+      "current_version_latency_verified": false,
+      "sealed_by_user": true
+    },
+    {
+      "id": "t08_abo_image_text_retrieval",
+      "entry": "tasks/t08_abo_image_text_retrieval/README.md",
+      "source_status": "canonical_identity_map_published_direction_dependencies_pending",
+      "identity_map_publication_commit": "19c3b0555b42608af35a4ee531dde76c2bb47773",
+      "evidence": ["reports/20260928_nine_task_a100_table/README.md"],
+      "data_status": "image_to_text_and_text_to_image_are_distinct_protocols_preserve_both",
+      "current_version_latency_verified": false
+    },
+    {
+      "id": "t09_multimodal_matching",
+      "entry": "../maintenance/storage/SERVER_AUTHORITATIVE_INDEX_20261002.md",
+      "source_status": "external_source_not_yet_integrated",
+      "training_source": "/DATA/DATA1/guest3/demo_reproduction_20260915/LightGenV2/tasks/t09_multimodal_matching",
+      "source_head": "1c7222a1119385475e1b464ca7efdb67cdc21a4c",
+      "evidence": [],
+      "data_status": "preserve_CLEVR_and_SpeechCommands_pilot_do_not_claim_full_dataset",
+      "current_version_latency_verified": false
+    },
+    {
+      "id": "t10_expert_scaling",
+      "entry": "tasks/t10_expert_scaling/README.md",
+      "source_status": "actual_runtime_overlay_published_partial_asset_audit",
+      "training_source": "/DATA/DATA1/guest3/t10_corrected_20260918",
+      "source_head": "38afd43c1e28aeaff28e33bad58177ae09a0f156",
+      "source_parent": "5a1178ef09be40f45b58a20a8633a6e1add2d75d",
+      "protected_git_ref": "refs/archive/server-authoritative-20261003/t10-runtime-overlay",
+      "evidence": ["tasks/t10_expert_scaling/CURRENT_VERSION_20261003.md", "../maintenance/storage/T10_ASSET_AUDIT_20261003.json"],
+      "data_status": "preserve_corrected_router_runs_and_matched_baselines",
+      "current_version_latency_verified": false
+    },
+    {
+      "id": "t11_lifelong_optics",
+      "entry": "tasks/t11_lifelong_optics/README.md",
+      "reproduction": "tasks/t11_lifelong_optics/reports/reproduction/README.md",
+      "source_status": "canonical_entry_existing_external_pathology_controls_audit_pending",
+      "training_source": "/DATA/DATA1/guest3/t11_optical_20260919",
+      "protected_dependencies": ["/DATA/DATA1/guest3/t11_crc9_distill_20260921", "/DATA/DATA1/guest3/t11_joint_d2nn_20260920"],
+      "evidence": ["tasks/t11_lifelong_optics/reports/reproduction/README.md"],
+      "data_status": "preserve_four_pathology_task_data_and_sequential_matrices",
+      "current_version_latency_verified": false
+    },
+    {
+      "id": "t12_text_to_image",
+      "entry": "tasks/t12_text_to_image/README.md",
+      "reproduction": "tasks/t12_text_to_image/reports/reproduction/README.md",
+      "source_status": "canonical_core_published_assets_and_hardware_audit_pending_local_dirty_preserved",
+      "core_publication_commit": "b491a199f5df0731f59f161b5513256570b131da",
+      "core_source_manifest": "../maintenance/storage/T12_SOURCE_IMPORT_20261003.json",
+      "training_source": "/DATA/DATA1/guest3/2026OpticsMoE/.worktrees/t12_physical_robust_v2_20260927",
+      "protected_git_ref": "refs/archive/server-authoritative-20261002/t12_physical_robust_v2_20260927",
+      "source_head": "7093ec46082eed2fae127ec5028d3e2e8548b592",
+      "bench_source": "E:/code/guest/2026OpticsMoE/T12_Small_Lab_SHS_8um",
+      "protected_dependencies": ["/DATA/DATA1/guest3/t12_git_audited_20260926", "/DATA/DATA1/guest3/t12_text_to_image_20260920"],
+      "evidence": ["../handoffs/t12_lab_robust17m_20260927/README.md", "../handoffs/t12_lab_robust17m_20260927/report.json", "tasks/t12_text_to_image/reports/reproduction/README.md"],
+      "weights": [{"sha256": "5b4f9a37f19ce95cf23e4b874badc8e88955559553d47929fb80cd3cbf527cac", "identity": "17M robust physical full TEST2304; distinct from 149.76M/9.96M audited editors"}],
+      "data_status": "preserve_TEST2304_13824_CCD_and_all_native_output_images",
+      "timing_status": "6056s_capture_plus_final_inference_not_per_sample_latency",
+      "current_version_latency_verified": false
+    },
+    {
+      "id": "t13_temporal_robust_training",
+      "entry": "tasks/t13_temporal_robust_training/README.md",
+      "source_status": "canonical_runtime_audited_published_33_CPU_tests_pass_not_hardware_ready",
+      "runtime_publication_commit": "139d147bd212394a0eb90c85f35b01636340162c",
+      "reproduction": "tasks/t13_temporal_robust_training/reports/reproduction/README.md",
+      "training_source": "/DATA/DATA1/guest3/2026OpticsMoE/.worktrees/t13_temporal_robust_20260927",
+      "protected_git_ref": "refs/archive/server-authoritative-20261002/t13_temporal_robust_20260927",
+      "source_head": "493eb38375f3bd9e4e8e7edfe278468b351365f1",
+      "evidence": ["tasks/t13_temporal_robust_training/reports/FULL2250_TESTBEST_RESULTS.md"],
+      "data_status": "preserve_2250_train_558_test_best_last_and_essential_parent_runs",
+      "current_version_latency_verified": false
+    },
+    {
+      "id": "t16_zero_phase_ccd_lifelong",
+      "entry": "tasks/t16_zero_phase_ccd_lifelong/README.md",
+      "reproduction": "tasks/t16_zero_phase_ccd_lifelong/reports/reproduction/README.md",
+      "source_status": "canonical_dependency_closure_audited_published_29_CPU_tests_pass",
+      "runtime_publication_commit": "139d147bd212394a0eb90c85f35b01636340162c",
+      "training_source": "/DATA/DATA1/guest3/t12_cross_modal_20260920",
+      "source_head": "2f2f6946f38c7d06320eb29314654a6260f3d618",
+      "protected_dependencies": ["/DATA/DATA1/guest3/t12_gate_0e577a828", "/DATA/DATA1/guest3/demo_reproduction_20260915"],
+      "external_task_names": ["t11_multimodal_nature", "t12_cross_modal_lifelong", "t13_four_modal_lifelong", "t14_shared_readout_lifelong", "t16_zero_phase_ccd_lifelong"],
+      "evidence": ["tasks/t16_zero_phase_ccd_lifelong/reports/FINAL_RESULTS_AND_TRAINING_20260926.md"],
+      "data_status": "preserve_final_three_matrices_replay_baselines_and_license_audits",
+      "current_version_latency_verified": false
+    }
+  ]
+}
