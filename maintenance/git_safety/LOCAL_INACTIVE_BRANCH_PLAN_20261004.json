@@ -1,0 +1,248 @@
+{
+  "schema_version": 1,
+  "audited_on": "2026-10-04",
+  "scope": "local branch names only",
+  "before": {
+    "head": "a2b1b7c3c28e697d589680f2ed36ba78052ac7fa",
+    "main": "22623fb5a2aa2353a8e8ff4afdf88626f265e797",
+    "worktrees": "worktree C:/Users/Xml12/OneDrive/2026OpticsMoE\nHEAD a2b1b7c3c28e697d589680f2ed36ba78052ac7fa\nbranch refs/heads/codex/t12-text-to-image-20260920\n\nworktree C:/Users/Xml12/AppData/Local/Temp/optics_qwen5090_report_20260906\nHEAD 119243dc68800b5eb2e6304474a4abde0a14e021\nbranch refs/heads/report/qwen5090d-baselines\n\nworktree C:/Users/Xml12/OneDrive/2026OpticsMoE/.codex_tmp/demo_reproduction_worktree\nHEAD 1c7222a1119385475e1b464ca7efdb67cdc21a4c\nbranch refs/heads/review/demo-reproduction-20260915\n\nworktree C:/Users/Xml12/OneDrive/2026OpticsMoE/.codex_tmp/mnist_publish\nHEAD 52db52d19dfd35382e62d1cc9bda3373be5cff81\nbranch refs/heads/codex/mnist-dvp-20260924\n\nworktree C:/Users/Xml12/OneDrive/2026OpticsMoE/.codex_tmp/t07_robust_git\nHEAD 398eeaaecfa76b05fd0b3656ca387024007a4f52\nbranch refs/heads/codex/t07-robust35-20260926\n\nworktree C:/Users/Xml12/OneDrive/2026OpticsMoE/.codex_tmp/t08_physical_git\nHEAD 8e293d8731ba1fbb17b4a77e4d6ade3b0e785846\nbranch refs/heads/codex/t08-physical-test-20260926\n\nworktree C:/Users/Xml12/OneDrive/2026OpticsMoE/.worktrees/t02_personal_pose\nHEAD 2fa901dc7800d8798658b29e242e38bebac97989\nbranch refs/heads/codex/t02-personal-pose-20260928\n\nworktree C:/Users/Xml12/OneDrive/2026OpticsMoE/.worktrees/t04-dc30\nHEAD 74c82d3782e1b1e3287f0e50798057bd1aa6e6f1\nbranch refs/heads/codex/t04-e45-dvp-deploy\n\nworktree C:/Users/Xml12/OneDrive/2026OpticsMoE/.worktrees/t04-qwen\nHEAD ccf6630ba5c4540dbb966617f179a99a30743c39\nbranch refs/heads/codex/t04-qwen-baseline-20260920\n\nworktree C:/Users/Xml12/OneDrive/2026OpticsMoE/.worktrees/t04_openmoji_robust_20260928\nHEAD 75eeaa29503b5e87d22b75ec4db939a7068ec67b\nbranch refs/heads/codex/t04-openmoji-robust-20260928\n\nworktree C:/Users/Xml12/OneDrive/2026OpticsMoE/.worktrees/t11_joint_d2nn\nHEAD 8b6b8398520915730600695d730a5ca983a7e842\nbranch refs/heads/codex/t11-joint-d2nn-baseline\n\nworktree C:/Users/Xml12/OneDrive/2026OpticsMoE/.worktrees/t12_audited_editors\nHEAD a3f5e6fe7027e92fe29be2934750f427cdfd91e7\nbranch refs/heads/codex/t12-audited-editors-20260926\n\nworktree C:/Users/Xml12/OneDrive/2026OpticsMoE/.worktrees/t12_cross_modal\nHEAD 11ca2e7e388a7dd07be5614d07027afd769c9315\nbranch refs/heads/codex/t12-cross-modal-lifelong\n\nworktree C:/Users/Xml12/OneDrive/2026OpticsMoE/.worktrees/t12_d2nn_baselines\nHEAD 5d1ee1174ba445fb807380f7dd0c28c03a592f9d\nbranch refs/heads/codex/t12-d2nn-baselines\n\nworktree C:/Users/Xml12/OneDrive/2026OpticsMoE/.worktrees/t12_physical_robust_v2_20260927\nHEAD 7093ec46082eed2fae127ec5028d3e2e8548b592\nbranch refs/heads/codex/t12-physical-robust-v2-20260927\n\nworktree C:/Users/Xml12/OneDrive/2026OpticsMoE/.worktrees/t13_temporal_robust_20260927\nHEAD 493eb38375f3bd9e4e8e7edfe278468b351365f1\nbranch refs/heads/codex/t13-temporal-robust-20260927\n\n",
+    "index_sha256": "4caae2ce43e43955232cf225888a42afdfe863fd1aa72a4bdcce04f6ce85b80f",
+    "tracked_status_sha256": "07baa34c13108b95b075b2c062af5f1cf80f30a72e0e32c68f9263016bf6b8fe"
+  },
+  "branch_count_before": 46,
+  "branches": [
+    {
+      "branch": "benchmark/a100-formal",
+      "original_ref": "refs/heads/benchmark/a100-formal",
+      "head": "ea573180b6846e7c5edbc81808990d2fb44ea8ce",
+      "archive_ref": "refs/archive/local-inactive-20261004/benchmark/a100-formal",
+      "purpose_from_commit_subject": "Document formal A100 cross-task results",
+      "merged_into_main": false
+    },
+    {
+      "branch": "benchmark/a100-formal-local",
+      "original_ref": "refs/heads/benchmark/a100-formal-local",
+      "head": "79b57c2102f3af69c75d3c0594d4cb7a59cbdce0",
+      "archive_ref": "refs/archive/local-inactive-20261004/benchmark/a100-formal-local",
+      "purpose_from_commit_subject": "Document formal A100 cross-task results",
+      "merged_into_main": false
+    },
+    {
+      "branch": "benchmark/t04-a100-aligned-qwen-baseline",
+      "original_ref": "refs/heads/benchmark/t04-a100-aligned-qwen-baseline",
+      "head": "903c15c72560fe94fe063c6eda6bcd8157c99710",
+      "archive_ref": "refs/archive/local-inactive-20261004/benchmark/t04-a100-aligned-qwen-baseline",
+      "purpose_from_commit_subject": "Finalize A100 mixed-clock all-task report",
+      "merged_into_main": false
+    },
+    {
+      "branch": "benchmark/t06-a100-batch-scaling",
+      "original_ref": "refs/heads/benchmark/t06-a100-batch-scaling",
+      "head": "7d5b05e9b839ff95188d53ca8e06031f2946dd3e",
+      "archive_ref": "refs/archive/local-inactive-20261004/benchmark/t06-a100-batch-scaling",
+      "purpose_from_commit_subject": "Publish audited A100 baseline table",
+      "merged_into_main": false
+    },
+    {
+      "branch": "benchmark/t07-abo-a100-baseline",
+      "original_ref": "refs/heads/benchmark/t07-abo-a100-baseline",
+      "head": "86b2a6a79e517f6a4a14d99d826bbd4ab68b1372",
+      "archive_ref": "refs/archive/local-inactive-20261004/benchmark/t07-abo-a100-baseline",
+      "purpose_from_commit_subject": "Record formal T07 A100 baseline",
+      "merged_into_main": false
+    },
+    {
+      "branch": "benchmark/t07-abo-a100-baseline-local",
+      "original_ref": "refs/heads/benchmark/t07-abo-a100-baseline-local",
+      "head": "9cbcc75e9e19f2bf19f7e7ccc1a1c7a0ebdb6b74",
+      "archive_ref": "refs/archive/local-inactive-20261004/benchmark/t07-abo-a100-baseline-local",
+      "purpose_from_commit_subject": "Record formal T07 A100 baseline",
+      "merged_into_main": false
+    },
+    {
+      "branch": "codex/deepseek-lgvq-baseline",
+      "original_ref": "refs/heads/codex/deepseek-lgvq-baseline",
+      "head": "fce2e02497c3b6a20e3c10e8638f831a1ac7f544",
+      "archive_ref": "refs/archive/local-inactive-20261004/codex/deepseek-lgvq-baseline",
+      "purpose_from_commit_subject": "Document DeepSeek VL2 LGVQ baseline results",
+      "merged_into_main": false
+    },
+    {
+      "branch": "codex/lgvq-vqa-publish",
+      "original_ref": "refs/heads/codex/lgvq-vqa-publish",
+      "head": "55a61758880ddeac55e1b0323bac4fa647e506b6",
+      "archive_ref": "refs/archive/local-inactive-20261004/codex/lgvq-vqa-publish",
+      "purpose_from_commit_subject": "Record completed high-alpha VQA results",
+      "merged_into_main": false
+    },
+    {
+      "branch": "codex/t04-dc30-ccdnoise",
+      "original_ref": "refs/heads/codex/t04-dc30-ccdnoise",
+      "head": "050c64f7b8d42cd8df41ff2c8ec9a8fed2e194aa",
+      "archive_ref": "refs/archive/local-inactive-20261004/codex/t04-dc30-ccdnoise",
+      "purpose_from_commit_subject": "Perturb T04 optical router with DC30 and small CCD noise",
+      "merged_into_main": false
+    },
+    {
+      "branch": "codex/t11-optical-lifelong",
+      "original_ref": "refs/heads/codex/t11-optical-lifelong",
+      "head": "73eae243c1f077e5c8371e67e430a1c416ad40ed",
+      "archive_ref": "refs/archive/local-inactive-20261004/codex/t11-optical-lifelong",
+      "purpose_from_commit_subject": "docs(t04): archive focused layered-scene final result",
+      "merged_into_main": false
+    },
+    {
+      "branch": "experiment/fa-vtab1k-transfer",
+      "original_ref": "refs/heads/experiment/fa-vtab1k-transfer",
+      "head": "429569bc5b4d857c4fca0dfa58ef6f0298e47126",
+      "archive_ref": "refs/archive/local-inactive-20261004/experiment/fa-vtab1k-transfer",
+      "purpose_from_commit_subject": "Add continual optical learning experiment scaffold",
+      "merged_into_main": false
+    },
+    {
+      "branch": "experiment/lsp-staged-refinement",
+      "original_ref": "refs/heads/experiment/lsp-staged-refinement",
+      "head": "c991d0ee1080a609fede9261a96b20deaa3c989f",
+      "archive_ref": "refs/archive/local-inactive-20261004/experiment/lsp-staged-refinement",
+      "purpose_from_commit_subject": "docs(t02): record distillation checks and lab launch",
+      "merged_into_main": false
+    },
+    {
+      "branch": "experiment/salicon-gsam-20260913",
+      "original_ref": "refs/heads/experiment/salicon-gsam-20260913",
+      "head": "17d334564f60fbfdda9bcaaae8d4d2b8d977c7a5",
+      "archive_ref": "refs/archive/local-inactive-20261004/experiment/salicon-gsam-20260913",
+      "purpose_from_commit_subject": "t03: close GSAM trial and complete cross-sample candidate audit",
+      "merged_into_main": false
+    },
+    {
+      "branch": "experiment/salicon-noise-consistency-20260913",
+      "original_ref": "refs/heads/experiment/salicon-noise-consistency-20260913",
+      "head": "9979d266352033b5351a0f2d0c12ffae2436a711",
+      "archive_ref": "refs/archive/local-inactive-20261004/experiment/salicon-noise-consistency-20260913",
+      "purpose_from_commit_subject": "t03: document verified noise-consistency launch and training compute boundary",
+      "merged_into_main": false
+    },
+    {
+      "branch": "experiment/spatial-readout-compression",
+      "original_ref": "refs/heads/experiment/spatial-readout-compression",
+      "head": "4a8911e17a1a179e71ab411a03b445893a8d0c32",
+      "archive_ref": "refs/archive/local-inactive-20261004/experiment/spatial-readout-compression",
+      "purpose_from_commit_subject": "Use stripped deploy checkpoint for spatial candidate",
+      "merged_into_main": false
+    },
+    {
+      "branch": "experiment/static-expert-caltech",
+      "original_ref": "refs/heads/experiment/static-expert-caltech",
+      "head": "d89223b7d3b9dd3e1b76122fd26fb14cffb6a0a8",
+      "archive_ref": "refs/archive/local-inactive-20261004/experiment/static-expert-caltech",
+      "purpose_from_commit_subject": "Support original Spatial train2250 six-pass capture and readout adaptation",
+      "merged_into_main": false
+    },
+    {
+      "branch": "experiment/t07-goal81-integration-20260913",
+      "original_ref": "refs/heads/experiment/t07-goal81-integration-20260913",
+      "head": "74c8badfac4bd545b6be85f762f4a8fa3c76408d",
+      "archive_ref": "refs/archive/local-inactive-20261004/experiment/t07-goal81-integration-20260913",
+      "purpose_from_commit_subject": "docs(t08): replace mistaken 15cm delivery with audited 10cm candidate",
+      "merged_into_main": false
+    },
+    {
+      "branch": "experiment/t10-scaling-20260917",
+      "original_ref": "refs/heads/experiment/t10-scaling-20260917",
+      "head": "1d8868bbce645496d4cc0e1e102e2490afdb3aa8",
+      "archive_ref": "refs/archive/local-inactive-20261004/experiment/t10-scaling-20260917",
+      "purpose_from_commit_subject": "Export verified retained seed results and plotting handoff",
+      "merged_into_main": false
+    },
+    {
+      "branch": "fix/abo-handoff-dependencies",
+      "original_ref": "refs/heads/fix/abo-handoff-dependencies",
+      "head": "d5dd7a3a8b9e0b43e865b37b322869860332708e",
+      "archive_ref": "refs/archive/local-inactive-20261004/fix/abo-handoff-dependencies",
+      "purpose_from_commit_subject": "Keep Qwen checkpoint identity when resolving local handoff weights",
+      "merged_into_main": false
+    },
+    {
+      "branch": "handoff/lsp-20260909",
+      "original_ref": "refs/heads/handoff/lsp-20260909",
+      "head": "8d11f0f1a3122245278cfd021e2f98864d3ae9c7",
+      "archive_ref": "refs/archive/local-inactive-20261004/handoff/lsp-20260909",
+      "purpose_from_commit_subject": "Add complete LSP source data and checkpoint handoff builder",
+      "merged_into_main": false
+    },
+    {
+      "branch": "integrate/qwen5090d-baselines",
+      "original_ref": "refs/heads/integrate/qwen5090d-baselines",
+      "head": "1a6256dbfba674d3831cf1d8f7cc787e043414b1",
+      "archive_ref": "refs/archive/local-inactive-20261004/integrate/qwen5090d-baselines",
+      "purpose_from_commit_subject": "docs(t04): record formal selected evaluation",
+      "merged_into_main": false
+    },
+    {
+      "branch": "main-pre-sync-20260906",
+      "original_ref": "refs/heads/main-pre-sync-20260906",
+      "head": "f6041b887b76fdc7446baf48055e2c1c75f2fbed",
+      "archive_ref": "refs/archive/local-inactive-20261004/main-pre-sync-20260906",
+      "purpose_from_commit_subject": "feat(lightgen): add unified 5090D Qwen baselines",
+      "merged_into_main": false
+    },
+    {
+      "branch": "review/router-specialization-20260916",
+      "original_ref": "refs/heads/review/router-specialization-20260916",
+      "head": "dc68db92e6745fb20be0918c25e00a0c3a6ea34c",
+      "archive_ref": "refs/archive/local-inactive-20261004/review/router-specialization-20260916",
+      "purpose_from_commit_subject": "report: characterize routing preferences and coherent expert cooperation",
+      "merged_into_main": false
+    },
+    {
+      "branch": "t03-evidence-completed-20260913",
+      "original_ref": "refs/heads/t03-evidence-completed-20260913",
+      "head": "6c4a2984143061c3b907ca2ad263db297af08962",
+      "archive_ref": "refs/archive/local-inactive-20261004/t03-evidence-completed-20260913",
+      "purpose_from_commit_subject": "t03: record completed noise trial and verified local candidate evidence",
+      "merged_into_main": false
+    },
+    {
+      "branch": "t03-mixup-20260913",
+      "original_ref": "refs/heads/t03-mixup-20260913",
+      "head": "27d6d49cbb338309825ea6d1975be05e6f6115fb",
+      "archive_ref": "refs/archive/local-inactive-20261004/t03-mixup-20260913",
+      "purpose_from_commit_subject": "t03: add bounded train-only input mixup with paired saliency supervision",
+      "merged_into_main": false
+    },
+    {
+      "branch": "t03-mixup-epoch1-audit-20260913",
+      "original_ref": "refs/heads/t03-mixup-epoch1-audit-20260913",
+      "head": "46fe66183e1ee22acb03cc54921198c40f16d0fd",
+      "archive_ref": "refs/archive/local-inactive-20261004/t03-mixup-epoch1-audit-20260913",
+      "purpose_from_commit_subject": "t03: audit mixup epoch one and paired baseline gap",
+      "merged_into_main": false
+    },
+    {
+      "branch": "t03-mixup-launch-20260913",
+      "original_ref": "refs/heads/t03-mixup-launch-20260913",
+      "head": "07904548e3e4401c5d98e69704e66a9da175a4b2",
+      "archive_ref": "refs/archive/local-inactive-20261004/t03-mixup-launch-20260913",
+      "purpose_from_commit_subject": "t03: record verified mixup preflight and one-GPU launch",
+      "merged_into_main": false
+    },
+    {
+      "branch": "t03-optical-lr-launch-20260913",
+      "original_ref": "refs/heads/t03-optical-lr-launch-20260913",
+      "head": "811414d24d7ff485105782e4ef2ff9363cc8b812",
+      "archive_ref": "refs/archive/local-inactive-20261004/t03-optical-lr-launch-20260913",
+      "purpose_from_commit_subject": "t03: record optical-priority step audit and one-GPU launch",
+      "merged_into_main": false
+    },
+    {
+      "branch": "t03-optical-lr-priority-20260913",
+      "original_ref": "refs/heads/t03-optical-lr-priority-20260913",
+      "head": "fd19b5a0d78f01042443607002a814962eb81655",
+      "archive_ref": "refs/archive/local-inactive-20261004/t03-optical-lr-priority-20260913",
+      "purpose_from_commit_subject": "t03: prioritize optical learning rates and slow all electronic groups",
+      "merged_into_main": false
+    }
+  ],
+  "note": "Archival is NOT scientific-source integration into main. No remote refs are removed."
+}

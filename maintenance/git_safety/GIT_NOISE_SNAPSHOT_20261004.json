@@ -1,0 +1,101 @@
+{
+  "schema_version": 1,
+  "audited_on": "2026-10-04",
+  "read_only": true,
+  "working_branch": "codex/t12-text-to-image-20260920",
+  "working_head": "a2b1b7c3c28e697d589680f2ed36ba78052ac7fa",
+  "published_main": "22623fb5a2aa2353a8e8ff4afdf88626f265e797",
+  "local_branch_count": 17,
+  "registered_worktrees": 16,
+  "tracked_dirty": [
+    " M .gitignore",
+    " M LightGenPublic/README.md",
+    " M LightGenV2/common/README.md",
+    " M LightGenV2/common/__init__.py",
+    " M LightGenV2/reports/20260923_t12_three_task_large_small/README.md",
+    " M LightGenV2/scripts/profile_narrow_optical_electronics_a100.py",
+    " M LightGenV2/tasks/t07_abo_image_retrieval/standalone/retrieval_adapt.py",
+    " M LightGenV2/tasks/t07_abo_image_retrieval/standalone/retrieval_refine.py",
+    " M LightGenV2/tasks/t11_lifelong_optics/model.py",
+    " M LightGenV2/tasks/t11_lifelong_optics/tests/test_contract.py",
+    " M LightGenV2/tasks/t12_text_to_image/README.md",
+    " M LightGenV2/tasks/t12_text_to_image/__init__.py",
+    " M LightGenV2/tasks/t12_text_to_image/product_global_redesign_training.py",
+    " M LightGenV2/tasks/t12_text_to_image/product_object_replace_data.py",
+    " M LightGenV2/tasks/t12_text_to_image/qwen_mini_small.py",
+    " M LightGenV2/tasks/t12_text_to_image/qwen_mini_small_run.py",
+    " M LightGenV2/tasks/t12_text_to_image/reports/reproduction/README.md",
+    " M LightGenV2/tasks/t12_text_to_image/settings.py",
+    " M LightGenV2/tasks/t12_text_to_image/small_fullframe.py"
+  ],
+  "untracked_visible_files": 7159,
+  "untracked_visible_python": 2367,
+  "largest_untracked_groups": [
+    [
+      "handoffs/t12_small_baseline_handoff_20260928",
+      2271
+    ],
+    [
+      "LightGenV2/reports",
+      1503
+    ],
+    [
+      "LightGenV2/tasks",
+      974
+    ],
+    [
+      "LightGenV2/demo_check",
+      760
+    ],
+    [
+      "handoffs/openmoji_robust_ablation_20260928",
+      362
+    ],
+    [
+      "handoffs/t12_small_baseline_share_20260928",
+      240
+    ],
+    [
+      "LightGenPublic/tasks",
+      166
+    ],
+    [
+      "handoffs/t12_channel_severe_20260927",
+      84
+    ],
+    [
+      "handoffs/t12_language_balance_20260927",
+      68
+    ],
+    [
+      "handoffs/abo_text_to_image_10cm_alpha040_20260925",
+      63
+    ],
+    [
+      "handoffs/openmoji_fullhead_original889_20260929",
+      59
+    ],
+    [
+      "handoffs/abo_i2i_sixhour_strong_20260928",
+      53
+    ],
+    [
+      "handoffs/t12_channel_robust_20260927",
+      51
+    ],
+    [
+      "handoffs/abo_latestfresh35_lab_20260930",
+      48
+    ],
+    [
+      "MNIST_10cm_8um_Bench_Test_20260923/02_mnist_10cm",
+      44
+    ]
+  ],
+  "working_commit_vs_main": {
+    "changed_paths": 1538,
+    "added_lines": 249164,
+    "removed_lines": 9995
+  },
+  "warning": "Commit-vs-main differences are NOT a deletion receipt or uncommitted-file count. Do not merge whole branches to make this number zero."
+}
