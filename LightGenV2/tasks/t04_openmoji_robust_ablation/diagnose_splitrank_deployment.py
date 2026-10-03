@@ -82,8 +82,26 @@ def comparison(a, b):
     }
 
 
-def cached_gate(project, tune, model, output):
-    folder = project/'runs/splitrank48_decoder_train1000_testselected'
+def candidate_setup(project, candidate):
+    """Each comparison replays only the CCD captured with its own upstream."""
+    if candidate == 'splitrank48':
+        tune, payload = prepare(project)
+        return tune, WEIGHT_SHA, 'splitrank48_test1000', 'splitrank48_decoder_train1000_testselected'
+    if candidate == 'original_g2':
+        from . import lab_tune_g2_test as tune
+        tune.GROUPS = {'g2': ('g2_lowrank64.pt',
+            '2acc2f58c9d38b78fe329d98af0e884b90834c6a0aa2496cf199830fb10d7194')}
+        return tune, tune.GROUPS['g2'][1], 'g2_full1000', 'g2_decoder_testselected'
+    from . import lab_modality_pipeline as pipeline
+    tune = pipeline.backend('lab_tune_g2_test')
+    tune.GROUPS = {'g2': (pipeline.WEIGHT, pipeline.WEIGHT_SHA)}
+    from types import SimpleNamespace
+    tune.t = SimpleNamespace(build_model=pipeline.factory(project))
+    return tune, pipeline.WEIGHT_SHA, pipeline.PREFIX+'_test1000', pipeline.PREFIX+'_decoder_train1000_testselected'
+
+
+def cached_gate(project, tune, model, output, folder_name, weight_sha, expected_initial):
+    folder = project/'runs'/folder_name
     cache = torch.load(folder/'test_features.pt', map_location='cpu', weights_only=False)
     metrics, parts = {}, {}
     initial = {k: v.clone() for k,v in model.state_dict().items()}
@@ -104,11 +122,12 @@ def cached_gate(project, tune, model, output):
                               'task_logits':batch['task_logits']}, batch)
                 rows.extend(score_parts(category, edit, batch))
         metrics[label], parts[label] = meter.compute(), summarize(rows)
-    assert abs(metrics['initial']['overall']['changed_cell_accuracy']-.0515)<1e-8
-    assert abs(metrics['adapted']['overall']['changed_cell_accuracy']-.6165)<1e-8
+    expected_adapted = json.loads((folder/'report.json').read_text())['physical_test']['overall']['changed_cell_accuracy']
+    assert abs(metrics['initial']['overall']['changed_cell_accuracy']-expected_initial)<1e-8
+    assert abs(metrics['adapted']['overall']['changed_cell_accuracy']-expected_adapted)<1e-8
     model.load_state_dict(initial, strict=True)
     write(output/'full_cached_gate.json', {
-        'status':'complete', 'test_samples':1000, 'weight_sha256':WEIGHT_SHA,
+        'status':'complete', 'test_samples':1000, 'weight_sha256':weight_sha,
         'metrics':metrics, 'parts':parts,
         'category_at_true_changed_is_diagnostic_not_deployable':True,
         'no_parameter_updates':True, 'no_sdk':True,
@@ -120,6 +139,7 @@ def main():
     parser.add_argument('--project', type=Path, required=True)
     parser.add_argument('--output', type=Path, required=True)
     parser.add_argument('--samples-per-task', type=int, default=8)
+    parser.add_argument('--candidate', choices=('splitrank48', 'original_g2', 'modality55'), default='splitrank48')
     args = parser.parse_args()
     project, output = args.project.resolve(), args.output.resolve()
     if output.exists():
@@ -127,24 +147,31 @@ def main():
     output.mkdir(parents=True)
     torch.set_num_threads(4)
     torch.manual_seed(73)
-    tune, _ = prepare(project)
+    tune, weight_sha, capture_name, cache_name = candidate_setup(project, args.candidate)
+    capture = project/'runs'/capture_name
+    formal = json.loads((capture/'report.json').read_text())
+    assert formal['status'] == 'complete' and formal['contract']['checkpoint_sha256'] == weight_sha
     cfg, model = tune.config(project, torch.device('cpu'))
     model.eval().requires_grad_(False)
     protected = tune.protected_sha(model)
     write(output/'execution.json', {
-        'status':'running', 'weight_sha256':WEIGHT_SHA, 'protected_before':protected,
+        'status':'running', 'weight_sha256':weight_sha, 'protected_before':protected,
+        'candidate':args.candidate, 'capture_run':capture_name, 'cache_run':cache_name,
+        'alphas':{name:[float(getattr(getattr(model,name),f'block{i}_optical_fusion'))
+                        for i in (1,2)] for name in ('language_core','vision_core')},
+        'head_parameters':sum(p.numel() for p in model.shared_readout.parameters()),
         'source_sha256':sha(Path(__file__)), 'device':'cpu', 'sdk':False,
         'partial_prefix_is_diagnostic_not_formal_physical_metric':True,
     })
-    cached_gate(project, tune, model, output)
+    cached_gate(project, tune, model, output, cache_name, weight_sha,
+                formal['physical_metrics']['overall']['changed_cell_accuracy'])
     data = OpenMojiEditingDataset(cfg.test_manifest,cfg,load_prompt_cache(cfg.prompt_cache_path))
     selected = []
     for task in ('add','replace','move','remove'):
         indices = [i for i,r in enumerate(data.records) if r['task'] == task]
         selected += [indices[i] for i in np.linspace(0,len(indices)-1,args.samples_per_task,dtype=int)]
-    capture = project/'runs/splitrank48_test1000'
     contract = json.loads((capture/'contract.json').read_text())
-    assert contract['checkpoint_sha256'] == WEIGHT_SHA
+    assert contract['checkpoint_sha256'] == weight_sha
     sys.path.insert(0,str(project.parent/'ABO_I2I_Lab_DVP_8um/lab_dvp8um'))
     import four_image_flow as flow  # raster utility only, never instantiate devices
     phase_sha = {s: sha(capture/'phase'/f'{s}.bmp') for s in STAGES}
@@ -222,7 +249,8 @@ def main():
             **{k:float(np.mean([r[k] for r in rows])) for k in
                ('pcc','cosine','mean_normalized_rmse','measured_background_p01','measured_dynamic_p99_p01')}}
     write(output/'report.json',convert({
-        'status':'complete','weight_sha256':WEIGHT_SHA,'samples':len(selected),
+        'status':'complete','weight_sha256':weight_sha,'candidate':args.candidate,'samples':len(selected),
+        'formal_full_test':{k:formal[k]['overall'] for k in ('simulation_metrics','physical_metrics')},
         'selected_indices':selected, 'selection':'even spacing within all four operations, not score-based',
         'protected_before':protected,'protected_after':tune.protected_sha(model),
         'prefix_metrics':[m.compute() for m in prefix_meters],
