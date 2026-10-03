@@ -22,7 +22,28 @@
 已保存run manifest记录Git `94856741263742c14fa1851ca0bdac7fc5efc7a1`。
 独立Windows部署在`E:/code/guest/2026OpticsMoE/ABO_T2I_10cm_alpha040_20260925`。
 其six-stage TEST、TRAIN5100 CCD、best/last、预测与配置不属于可清理的试错垃圾。
-此处版本记录来自既有交接文件，本轮尚未重新校验这些PT文件字节。
+原始版本记录来自既有交接文件；2026-10-03进一步完成下述有界身份核验。
+
+## 本轮实际核验（2026-10-03）
+
+- 服务器两组图搜文 best/last 及 final_report/run_manifest 已逐文件重算 SHA，
+  与报告记录一致；原运行提交分别为 `b44bfe3d...`、`46d35fc2...`，保留两组。
+- 服务器文搜图主体 best 的 SHA 为 `cc977b83...`，与本机交接主体相同；其
+  last `1c60ff8e...` 也保留。easy100 的 train/test/titles/manifest 四份 CSV
+  与原报告 SHA 全部一致；没有重算全体原图，也未重评科学精度。
+- 本机文搜图10轮读出 best `89e25360...`、last `ec338134...`、report/history
+  已核验；Windows 实拍目录本轮未重哈希，不能称三端全部资产已验证。
+- 原训练 manifest 记录 dirty。当前服务器反向工作树 HEAD `d0662a7d...`
+  的入口 Git blob、工作文件与本机交接源码都为 SHA `ebf026e5...`，任务已跟踪
+  源码无修改；这补足入口身份，不表示46个静态依赖和动态入口已完整迁移。
+- 静态依赖审计发现3处现有文件不同：反向 `optical_moe.py`、T01架构名称生成、
+  robust后端的显式传播距离覆盖。共享文件未覆盖，反向工程尚不能直接用main部署。
+- 旧 config 所指工作树下数据目录已不存在，但主目录的数据清单SHA匹配。
+  后续应核验可移植路径解析，不能仅复制旧绝对路径声称可运行。
+- 服务器既有图搜文CPU合同6项通过（2.43s）；本机PyTorch DLL加载失败，
+  不算通过。本轮没有训练、光路操作、精度重评、数据删除或外部上传。
+
+完整精确身份见[T08核验记录](../../LightGenV2/tasks/t08_abo_image_text_retrieval/reports/reproduction/FINAL_IDENTITIES_20261003.json)。
 
 ## 核对用的原证据
 

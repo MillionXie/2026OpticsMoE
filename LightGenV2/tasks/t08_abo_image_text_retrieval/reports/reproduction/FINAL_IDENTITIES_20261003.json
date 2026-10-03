@@ -1,0 +1,301 @@
+{
+  "schema_version": 1,
+  "audited_on": "2026-10-03",
+  "scope": "T08 image-to-title and title-to-image identity audit only",
+  "runtime_tests_rerun": false,
+  "scientific_metrics_recomputed": false,
+  "artifacts_deleted": [],
+  "openmoji_modified": false,
+  "server_evidence": {
+    "audited_on": "2026-10-03",
+    "scope": "bounded ABO T08 source and selected run assets",
+    "source_roots": [
+      {
+        "root": "/DATA/DATA1/guest3/2026OpticsMoE",
+        "exists": true,
+        "head": "3f85510285e5ffdfca28def93eef2eb082b1655c",
+        "source_sha256": "f7e069ada63dee8ff34fab5858976abe40742c4056cbc26c7b426f9539031cfc",
+        "tracked_task_changes": []
+      },
+      {
+        "root": "/DATA/DATA1/guest3/2026OpticsMoE/.worktrees/t08_text_to_image_20260920",
+        "exists": true,
+        "head": "d0662a7d240340817948a3496c2cd43f4240e76d",
+        "source_sha256": "ebf026e5aa2eaf6dc32ef7b5c5f18c5ac2eaea8515fe2d5a3431427d67e97869",
+        "tracked_task_changes": []
+      }
+    ],
+    "assets": [
+      {
+        "directory": "/DATA/DATA1/guest3/2026OpticsMoE/LightGenV2/tasks/t08_abo_image_text_retrieval/runs/simulation/optical_router_moe_dc20_seed42",
+        "exists": true,
+        "files": [
+          {
+            "name": "best_checkpoint.pt",
+            "bytes": 35104565,
+            "sha256": "7b49b8b7a942939d0819130460b0fbeaa1887921e151c5fa2154dff4e576bf30"
+          },
+          {
+            "name": "last_checkpoint.pt",
+            "bytes": 35104501,
+            "sha256": "a893bfa009681ca32893f7ea4699ebfbaf7c014cb7d0ef72ffb19c41c27783aa"
+          },
+          {
+            "name": "final_report.json",
+            "bytes": 3535,
+            "sha256": "9116f02476fe9503ed334c6b5ec7cefb8712dcdc15c88c0196b6fb9f26d612f3"
+          },
+          {
+            "name": "run_manifest.json",
+            "bytes": 706,
+            "sha256": "6931d9d07f52011f9ea2745c79b961773558465bc03b9bff1e5acc59b4aa531e"
+          }
+        ]
+      },
+      {
+        "directory": "/DATA/DATA1/guest3/2026OpticsMoE/LightGenV2/tasks/t08_abo_image_text_retrieval/runs/simulation/optical_router_moe_dc20_kd1_balance1_seed42",
+        "exists": true,
+        "files": [
+          {
+            "name": "best_checkpoint.pt",
+            "bytes": 35104565,
+            "sha256": "b64689eb792da483486f721d4adf879f0a083107d7cbee63ad8ed7718c8b7144"
+          },
+          {
+            "name": "last_checkpoint.pt",
+            "bytes": 35104501,
+            "sha256": "4c39835ac46d2034a2918a64b3e95d31426686091110d19523283035b61e4c80"
+          },
+          {
+            "name": "final_report.json",
+            "bytes": 3540,
+            "sha256": "b28d2684ee43e86bdfae39c252836161bde2f4c0f84a638fa07c9b673ad68c79"
+          },
+          {
+            "name": "run_manifest.json",
+            "bytes": 706,
+            "sha256": "ac739f3f69bf1e3937b693a5d0ad83414fef1bc0b3dc2068651140c6049f548f"
+          }
+        ]
+      },
+      {
+        "directory": "/DATA/DATA1/guest3/2026OpticsMoE/LightGenV2/tasks/t08_abo_image_text_retrieval/runs/physical/alpha040_10cm_20260925",
+        "exists": true,
+        "files": [
+          {
+            "name": "physical_test_report.json",
+            "bytes": 626,
+            "sha256": "f163202cf582dec8a10f7a95d863f3e4de56b32d9362f5efbae012f966dfbe2f"
+          }
+        ]
+      },
+      {
+        "directory": "/DATA/DATA1/guest3/2026OpticsMoE/LightGenV2/tasks/t08_abo_image_text_retrieval/runs/physical/alpha040_10cm_20260925/finetune10",
+        "exists": false
+      }
+    ],
+    "read_only": true,
+    "mutations": []
+  },
+  "text_to_image_server_assets_and_dataset_manifests": {
+    "read_only": true,
+    "run_exists": true,
+    "files": [
+      {
+        "path": "/DATA/DATA1/guest3/2026OpticsMoE/LightGenV2/tasks/t08_abo_image_text_retrieval/runs/simulation/optical_text_to_image_64_10cm_compact_e0p5_seed42_20260925/best_checkpoint.pt",
+        "bytes": 29778889,
+        "sha256": "cc977b83286a8e90398ebd30064428886bc3c06f1eb0557e470060f7ff5c1cae"
+      },
+      {
+        "path": "/DATA/DATA1/guest3/2026OpticsMoE/LightGenV2/tasks/t08_abo_image_text_retrieval/runs/simulation/optical_text_to_image_64_10cm_compact_e0p5_seed42_20260925/last_checkpoint.pt",
+        "bytes": 29778825,
+        "sha256": "1c60ff8e6ce152aafbb9fa2e8a1fd6c66ffef24ef5aea3683d7d15568b937f21"
+      },
+      {
+        "path": "/DATA/DATA1/guest3/2026OpticsMoE/LightGenV2/tasks/t08_abo_image_text_retrieval/runs/simulation/optical_text_to_image_64_10cm_compact_e0p5_seed42_20260925/final_report.json",
+        "bytes": 5784,
+        "sha256": "745484fdca96cd4835982b9747bfed1a82a38e2b05d04818db330ac2f9bcca57"
+      },
+      {
+        "path": "/DATA/DATA1/guest3/2026OpticsMoE/LightGenV2/tasks/t08_abo_image_text_retrieval/runs/simulation/optical_text_to_image_64_10cm_compact_e0p5_seed42_20260925/run_manifest.json",
+        "bytes": 1527,
+        "sha256": "2afaed9b9a5d21a716abbf92693b013663ca4880ba19a51a6d558d194f80f102"
+      },
+      {
+        "path": "/DATA/DATA1/guest3/2026OpticsMoE/LightGenV2/tasks/t08_abo_image_text_retrieval/runs/simulation/optical_text_to_image_64_10cm_compact_e0p5_seed42_20260925/config.yaml",
+        "bytes": 10921,
+        "sha256": "be07e969b7aad79e2df4f0b246cbeb8141e102c83c062882dd2e73d23771a3cc"
+      }
+    ],
+    "data_manifests": [
+      {
+        "root": "/DATA/DATA1/guest3/2026OpticsMoE/data/abo_easy100_dataset_20260906",
+        "exists": true,
+        "files": [
+          {
+            "relative_path": "manifest.csv",
+            "bytes": 2522558,
+            "sha256": "880b4f34a411df1bfbd98adc91b1c19651480323ee43e62ae4b84c36ca06c543"
+          },
+          {
+            "relative_path": "test.csv",
+            "bytes": 839270,
+            "sha256": "4ca5834abf4bb4d614b41f05b5b2481b3d41720dd78c1c37b05923c97657dfb8"
+          },
+          {
+            "relative_path": "titles.csv",
+            "bytes": 10533,
+            "sha256": "c97e8da3c6c608a706f2cc0d284aeafb873fc6cc17d04a7c9f9f66b2135846c1"
+          },
+          {
+            "relative_path": "train.csv",
+            "bytes": 1683414,
+            "sha256": "f742fc9e2314b7fb2858ad486505c943f7b7e37493e5d601d8dcbf7740b5707b"
+          }
+        ]
+      },
+      {
+        "root": "/DATA/DATA1/guest3/2026OpticsMoE/.worktrees/t08_text_to_image_20260920/data/abo_easy100_dataset_20260906",
+        "exists": false,
+        "files": []
+      }
+    ]
+  },
+  "local_text_to_image_root": "handoffs/abo_text_to_image_10cm_alpha040_20260925",
+  "local_text_to_image_files": [
+    {
+      "relative_path": "best_checkpoint.pt",
+      "bytes": 29778889,
+      "sha256": "cc977b83286a8e90398ebd30064428886bc3c06f1eb0557e470060f7ff5c1cae"
+    },
+    {
+      "relative_path": "optical_moe.py",
+      "bytes": 57018,
+      "sha256": "ebf026e5aa2eaf6dc32ef7b5c5f18c5ac2eaea8515fe2d5a3431427d67e97869"
+    },
+    {
+      "relative_path": "finetune10/best_readout_checkpoint.pt",
+      "bytes": 10980094,
+      "sha256": "89e25360c8f12c9d13dbceba49e8d81073d4dd75c6acf667ab12a38b8fd293c5"
+    },
+    {
+      "relative_path": "finetune10/last_readout_checkpoint.pt",
+      "bytes": 10980094,
+      "sha256": "ec33813485237562241c9d2f0631b6d90bc6f0d74830d33edb379906a39e0be2"
+    },
+    {
+      "relative_path": "finetune10/finetune_report.json",
+      "bytes": 2397,
+      "sha256": "bd716ab18f01c7d4adbd060da31dd04dc7594a40dfab55fb4654e26b6af94c4d"
+    },
+    {
+      "relative_path": "finetune10/history.csv",
+      "bytes": 1026,
+      "sha256": "0f0a9e13e1cd8e07bbaf1208facfcc00c3bb60a16313f73e8f7e4fc8259ee07a"
+    }
+  ],
+  "versions": [
+    {
+      "id": "image_to_text_performance",
+      "direction": "image_to_text",
+      "historical_run_commit": "b44bfe3d63877191f3593a8c8f9132be0640ce03",
+      "historical_run_git_dirty": false,
+      "sim_recall_at_1": 0.79875,
+      "best_sha256": "7b49b8b7a942939d0819130460b0fbeaa1887921e151c5fa2154dff4e576bf30",
+      "selection": "periodic EMA TEST R@1 maximum; development metric",
+      "physical_metric_verified_in_this_audit": false
+    },
+    {
+      "id": "image_to_text_balanced",
+      "direction": "image_to_text",
+      "historical_run_commit": "46d35fc268fc08dd7fa9120bfc72d008f67545af",
+      "historical_run_git_dirty": false,
+      "sim_recall_at_1": 0.7983333333333333,
+      "best_sha256": "b64689eb792da483486f721d4adf879f0a083107d7cbee63ad8ed7718c8b7144",
+      "selection": "periodic EMA TEST R@1 maximum; development metric",
+      "physical_metric_verified_in_this_audit": false
+    },
+    {
+      "id": "text_to_image_physical_selected",
+      "direction": "text_to_image",
+      "queries": 100,
+      "gallery_images": 2400,
+      "relevant_images_per_query": 24,
+      "sim_hit_at_1": 0.86,
+      "remove_optics_hit_at_1": 0.73,
+      "physical_unadapted_hit_at_1": 0.79,
+      "physical_selected_readout_hit_at_1": 0.85,
+      "source_pt_sha256": "cc977b83286a8e90398ebd30064428886bc3c06f1eb0557e470060f7ff5c1cae",
+      "readout_pt_sha256": "89e25360c8f12c9d13dbceba49e8d81073d4dd75c6acf667ab12a38b8fd293c5",
+      "historical_manifest_commit": "94856741263742c14fa1851ca0bdac7fc5efc7a1",
+      "historical_manifest_git_dirty": true,
+      "current_server_source_commit": "d0662a7d240340817948a3496c2cd43f4240e76d",
+      "current_server_task_tracked_changes": [],
+      "entry_sha256": "ebf026e5aa2eaf6dc32ef7b5c5f18c5ac2eaea8515fe2d5a3431427d67e97869",
+      "git_blob_matches_server_and_local_handoff": true,
+      "readout_fit_images": 600,
+      "readout_validation_images": 200,
+      "readout_epochs": 10,
+      "readout_selected_epoch": 9,
+      "readout_selection": "TRAIN-held-out VAL; TEST once after sealing this 10-epoch run",
+      "test_independent_of_project_development": false,
+      "windows_deployment_root": "E:/code/guest/2026OpticsMoE/ABO_T2I_10cm_alpha040_20260925",
+      "windows_artifacts_rehashed_in_this_audit": false,
+      "main_runtime_ready": false
+    },
+    {
+      "id": "text_to_image_separate_timing_candidate",
+      "direction": "text_to_image",
+      "sim_hit_at_1": 0.88,
+      "pt_sha256": "8a96132d8ba68c671426d4e0b6064e87b5b3943505c0ad8b2aa694c879c20883",
+      "pt_rehashed_in_this_audit": false,
+      "timing_identity_source": "LightGenV2/reports/20260928_nine_task_a100_table/README.md",
+      "timing_report": "LightGenV2/reports/20260928_nine_task_a100_table/raw_remote/formal_04_ours/report.json",
+      "timing_scope": "narrow CUDA components plus separately formula-estimated physical time; not laboratory end-to-end latency",
+      "paired_with_physical_selected_85_percent": false
+    }
+  ],
+  "static_dependency_audit": {
+    "source_commit": "d0662a7d240340817948a3496c2cd43f4240e76d",
+    "visited_python_files": 46,
+    "missing_entries": [],
+    "dynamic_imports_audited": false,
+    "different_existing_files": [
+      {
+        "path": "LightGenV2/tasks/t08_abo_image_text_retrieval/optical_moe.py",
+        "reason": "direction-specific implementation; do not overwrite image-to-text entry"
+      },
+      {
+        "path": "LightGenV2/tasks/t01_object_retrieval/modeling.py",
+        "reason": "geometry-dependent checkpoint architecture identity differs"
+      },
+      {
+        "path": "experiments/qwen3_vl_embedding_2b_caltech101_four_layer_optical_retrieval_10cm_robust/settings.py",
+        "reason": "explicit separately trained distance override differs; shared dependency untouched"
+      }
+    ],
+    "source_import_performed": false
+  },
+  "checks": {
+    "server_cpu_contract_tests": {
+      "command": "CUDA_VISIBLE_DEVICES='' PYTHONDONTWRITEBYTECODE=1 /home/guest3/miniconda3/envs/xml/bin/python -m pytest LightGenV2/tasks/t08_abo_image_text_retrieval/tests -q -p no:cacheprovider",
+      "source_root": "/DATA/DATA1/guest3/2026OpticsMoE",
+      "source_head": "3f85510285e5ffdfca28def93eef2eb082b1655c",
+      "passed": 6,
+      "elapsed_seconds": 2.43,
+      "scope": "existing image-to-text contracts, not text-to-image checkpoint replay"
+    },
+    "local_contract_tests": {
+      "status": "collection failed",
+      "reason": "Windows PyTorch c10.dll initialization WinError 1114; no pass claimed"
+    },
+    "dataset_csv_sha_verified": true,
+    "all_image_bytes_rehashed": false
+  },
+  "pending": [
+    "Reconcile text-to-image entry and shared geometry-identity dependencies without overwriting active task code.",
+    "Audit Windows deployment source, adapter location and measured-feature dependencies before declaring a main-only deployment ready.",
+    "Old worktree dataset path in resolved config is absent; main dataset manifests match, but portable runtime path resolution remains to be tested.",
+    "Protect longer readout tuning controls and all timing/baseline records; do not replace the user-selected 10-epoch result with a higher historical score."
+  ]
+}
