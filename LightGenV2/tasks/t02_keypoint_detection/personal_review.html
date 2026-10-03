@@ -1,0 +1,35 @@
+<!doctype html><meta charset="utf-8"><title>自采姿态标注核对</title>
+<style>body{margin:16px;background:#f4f6f8;color:#172331;font:15px system-ui}button,select,input{padding:7px;margin:3px}main{display:flex;gap:20px}canvas{max-width:68vw;max-height:82vh;background:#222;touch-action:none}aside{width:360px}#joints button{font-size:13px} .active{background:#addcf7}p{line-height:1.5}.warn{color:#9e421d}</style>
+<h2>自采照片 · LSP 14 点核对</h2>
+<p class="warn">自动点位不是人工真值。左右按人物自身定义；尤其检查背面人物、遮挡、颈部(12)、头顶(13)。修改后必须点击“导出标注”，不会自动覆盖文件。</p>
+<div><button onclick="go(-1)">上一张</button><select id="photos" onchange="i=+this.value;p=0;show()"></select><button onclick="go(1)">下一张</button><select id="persons" onchange="p=+this.value;show()"></select><button onclick="add()">补一个人</button><button onclick="download()">导出标注 JSON</button><label>继续审核：<input type="file" accept=".json" onchange="reload(this)"></label></div>
+<main><canvas id="canvas"></canvas><aside><h3 id="status"></h3><p id="info"></p><label><input id="include" type="checkbox" onchange="person().include=this.checked;person().reviewed=false;show()">使用此人（远处路人可取消）</label><div id="joints"></div><p>先选点名，再点击图像修正；按住圆点拖动也可。缺失或无法判断的关节应标无效，不凭空猜位置。</p><button onclick="toggle()">当前点 有效/无效</button><button onclick="swap()">交换全部左右标签</button><button onclick="approve()">我已核对这个人的14个点</button><p id="saved"></p><p>绿色：有效关节；灰色：无效；红色：当前点。隐藏部位若不能可靠定位请设无效。黄色边框只是当前人物范围。</p></aside></main>
+<script>
+let data=__ANNOTATIONS__,i=0,p=0,j=0,drag=false,img=new Image();
+const c=document.querySelector('#canvas'),ctx=c.getContext('2d'),names=['右踝','右膝','右髋','左髋','左膝','左踝','右腕','右肘','右肩','左肩','左肘','左腕','颈部','头顶'];
+const edges=[[0,1],[1,2],[2,3],[3,4],[4,5],[6,7],[7,8],[8,9],[9,10],[10,11],[8,12],[9,12],[12,13],[2,8],[3,9]];
+function person(){return data.images[i].people[p]}
+function go(d){i=(i+d+data.images.length)%data.images.length;p=0;show()}
+function show(){let row=data.images[i];document.querySelector('#photos').innerHTML=data.images.map((r,k)=>`<option value="${k}" ${i===k?'selected':''}>${r.id} [${r.split||'?'}]</option>`).join('');
+ document.querySelector('#persons').innerHTML=row.people.map((r,k)=>`<option value="${k}" ${p===k?'selected':''}>${r.id} ${r.reviewed?'已核对':'待核对'} ${r.include?'':'排除'}</option>`).join('');
+ document.querySelector('#info').textContent=`${row.original_name}；组 ${row.group_id}。`;
+ document.querySelector('#status').textContent=`${i+1}/${data.images.length} — ${person()?.reviewed?'已核对':'待核对'}`;
+ document.querySelector('#include').checked=person()?.include||false;
+ document.querySelector('#joints').innerHTML=names.map((n,k)=>`<button class="${j===k?'active':''}" onclick="j=${k};show()">${k} ${n} ${person()?.keypoints[k][2]?'✓':'×'}</button>`).join('');
+ img.onload=()=>{c.width=img.naturalWidth;c.height=img.naturalHeight;draw()};img.src=row.image;
+}
+function draw(){ctx.drawImage(img,0,0);if(!person())return;let pts=person().keypoints;ctx.lineWidth=3;ctx.strokeStyle='#42fabc';for(let [a,b] of edges){if(pts[a][2]&&pts[b][2]){ctx.beginPath();ctx.moveTo(...pts[a].slice(0,2));ctx.lineTo(...pts[b].slice(0,2));ctx.stroke()}}
+ pts.forEach(([x,y,v],k)=>{ctx.fillStyle=k===j?'#ff3434':v?'#45ff6c':'#999';ctx.beginPath();ctx.arc(x,y,k===j?10:7,0,Math.PI*2);ctx.fill();ctx.font='bold 20px sans-serif';ctx.fillText(k,x+10,y-9)});
+}
+function xy(e){let r=c.getBoundingClientRect();return [(e.clientX-r.left)*c.width/r.width,(e.clientY-r.top)*c.height/r.height]}
+function put(e){if(!person())return;let [x,y]=xy(e);person().keypoints[j]=[Math.max(0,Math.min(c.width-1,x)),Math.max(0,Math.min(c.height-1,y)),1];person().reviewed=false;draw()}
+c.onpointerdown=e=>{if(!person())return;let q=xy(e),dist=person().keypoints.map(([x,y])=>Math.hypot(x-q[0],y-q[1]));let k=dist.indexOf(Math.min(...dist));if(dist[k]<25)j=k;drag=true;c.setPointerCapture(e.pointerId);put(e)};
+c.onpointermove=e=>{if(drag)put(e)};c.onpointerup=()=>{drag=false;show()};
+function toggle(){if(person()){person().keypoints[j][2]=1-person().keypoints[j][2];person().reviewed=false;show()}}
+function swap(){if(person()){let q=person().keypoints;person().keypoints=[5,4,3,2,1,0,11,10,9,8,7,6,12,13].map(k=>q[k]);person().reviewed=false;show()}}
+function approve(){if(person()){person().reviewed=true;person().label_source='human_reviewed_RTMPose_proposal';person().reviewed_at=new Date().toISOString();person().manual_required=[];show()}}
+function add(){data.images[i].people.push({id:'manual_'+data.images[i].people.length,include:true,reviewed:false,keypoints:names.map(()=>[img.width/2,img.height/2,0]),label_source:'manual'});p=data.images[i].people.length-1;show()}
+function download(){let blob=new Blob([JSON.stringify(data,null,2)],{type:'application/json'}),u=URL.createObjectURL(blob),a=document.createElement('a');a.href=u;a.download='annotations_reviewed.json';a.click();setTimeout(()=>URL.revokeObjectURL(u),2000);document.querySelector('#saved').textContent='已导出：请将下载的 annotations_reviewed.json 放回本数据文件夹。';}
+async function reload(input){if(input.files.length){data=JSON.parse(await input.files[0].text());i=0;p=0;show()}}
+show();
+</script>

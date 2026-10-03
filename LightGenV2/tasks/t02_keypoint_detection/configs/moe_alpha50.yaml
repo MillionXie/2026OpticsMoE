@@ -1,0 +1,13 @@
+base_config: moe_optical_router_scale_matched_dc20_no_shift_warmstart.yaml
+
+# Hard range applies in training AND inference, independently to both blocks.
+balanced_fusion:
+  alpha_min: 0.50
+  alpha_max: 0.95
+  alpha_initial: 0.55
+
+# Continue the best heatmap-only refinement without introducing a new loss.
+loss:
+  coordinate_weight: 0.0
+
+output_dir: ../runs/simulation/alpha50_staged_seed42_20260910
