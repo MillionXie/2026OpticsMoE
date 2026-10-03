@@ -1,0 +1,20 @@
+{
+  "source_commit": "0928d81b9bc0684428986ae6604bb2a29da1e00a",
+  "paths": [
+    {
+      "path": "LightGenV2/TASK_REGISTRY.json",
+      "sha256": "8a40ed49825d2717614ed98c75a945b533d5ed8a0f43104d91ef1a3905036d3a",
+      "bytes": 12457
+    },
+    {
+      "path": "LightGenV2/tasks/t04_openmoji_robust_ablation/README.md",
+      "sha256": "b6c932c2b17b8257cd4c9fcc5adb77a205c667f07d8972e23dda12424eb2dcd2",
+      "bytes": 3303
+    },
+    {
+      "path": "LightGenV2/tasks/t11_lifelong_optics/README.md",
+      "sha256": "81089761c3baa92de00ddf39060dcfa9dc16fa7619fb19f2ec971341ed2562a5",
+      "bytes": 10778
+    }
+  ]
+}

@@ -14,7 +14,7 @@
     {
       "id": "t01_object_retrieval",
       "entry": "tasks/t01_object_retrieval/README.md",
-      "source_status": "canonical_entry_existing_latest_runtime_audit_pending",
+      "source_status": "runtime_source_published_partial_asset_audit",
       "data_status": "preserve_original_manifest_and_gallery",
       "evidence": ["PROJECT_SCORECARD.md"],
       "current_version_latency_verified": false
@@ -22,7 +22,7 @@
     {
       "id": "t02_keypoint_detection",
       "entry": "tasks/t02_keypoint_detection/README.md",
-      "source_status": "canonical_entry_existing_server_figure_overlay_pending",
+      "source_status": "runtime_source_published_partial_asset_audit",
       "additional_source": "/DATA/DATA1/guest3/t02_personal_source_20260928",
       "source_head": "2fa901dc7800d8798658b29e242e38bebac97989",
       "data_status": "preserve_LSP_and_per_sample_evidence",
