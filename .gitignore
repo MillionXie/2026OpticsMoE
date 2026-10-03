@@ -136,3 +136,31 @@ hardware_sessions
 !/LightGenV2/tasks/*/releases/README.md
 !/LightGenV2/tasks/*/reports/figures/
 !/LightGenV2/tasks/*/reports/figures/**
+
+# 2026-10-04: installed presentation/frontend dependencies are reproducible
+# runtime products, not project source. Preserve them on disk; do not stage.
+node_modules/
+/.codex_tmp/
+
+# Machine-local handoff payloads stay beside their reports/manifests. This does
+# NOT hide handoff Python/YAML/Markdown/JSON/CSV or untrack existing evidence.
+# No files are deleted by these rules; curated source is still audited by task.
+/handoffs/**/*.png
+/handoffs/**/*.jpg
+/handoffs/**/*.jpeg
+/handoffs/**/*.bmp
+/handoffs/**/*.tif
+/handoffs/**/*.tiff
+/handoffs/**/*.webp
+/handoffs/**/*.gif
+/handoffs/**/*.npy
+/handoffs/**/*.npz
+/handoffs/**/*.safetensors
+/handoffs/**/*.pth
+/handoffs/**/*.ckpt
+/handoffs/**/*.onnx
+/handoffs/**/*.mp4
+/handoffs/**/*.avi
+/handoffs/**/*.pdf
+/handoffs/**/*.pptx
+/handoffs/**/*.xlsx
