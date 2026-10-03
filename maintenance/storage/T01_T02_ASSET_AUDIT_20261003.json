@@ -1,0 +1,1736 @@
+{
+  "audited_at_utc": "2026-10-03T12:56:49.526528+00:00",
+  "read_only": true,
+  "t01_static_closure": {"source_commit": "3f85510285e5ffdfca28def93eef2eb082b1655c", "paths": 52, "matches_main": true, "local_dirty_common_initializer_preserved": true},
+  "t02_static_closure": {"source_commit": "2fa901dc7800d8798658b29e242e38bebac97989", "paths": 66, "local_missing": 7, "local_different": ["LightGenV2/tasks/t02_keypoint_detection/modeling.py", "LightGenV2/tasks/t02_keypoint_detection/run.py"], "integration_complete": false},
+  "cpu_tests": {"runtime_root": "/DATA/DATA1/guest3/t02_personal_source_20260928", "gpu_visible": false, "passed": 39, "seconds": 8.72, "local_windows_tests_passed": false, "local_failure": "Torch c10.dll loading failure; environment unchanged"},
+  "t01_logical_manifest_recomputed": {"algorithm": "restore int/bool, sort split/sku_index/sample_id, canonical JSON records plus newline", "sha256": "c8accd596cd418bbef65834ac75b11cd35ce7cdd4ebe418aa51d942e00701d11", "matches_report": true},
+  "no_model_loading_or_evaluation": true,
+  "root": "/DATA/DATA1/guest3/2026OpticsMoE",
+  "head": "3f85510285e5ffdfca28def93eef2eb082b1655c",
+  "runs": [
+    {
+      "task": "t01_object_retrieval",
+      "run": "moe_router_scale_dc20_strict_seed42",
+      "path": "/DATA/DATA1/guest3/2026OpticsMoE/LightGenV2/tasks/t01_object_retrieval/runs/simulation/moe_router_scale_dc20_strict_seed42",
+      "exists": true,
+      "artifacts": [
+        {
+          "relative_path": "best_checkpoint.pt",
+          "bytes": 35112171,
+          "sha256": "644da84e6fc487f8b8630d1811f44b4afd585fa0c950454eb2661f081e287e4a"
+        },
+        {
+          "relative_path": "config.yaml",
+          "bytes": 9795,
+          "sha256": "1df0f21b18eadcd5c210d9951afe64f6976bc01f0eba48827a39f1817e5ffd05"
+        },
+        {
+          "relative_path": "dataset.json",
+          "bytes": 1492,
+          "sha256": "526dc6246a9c152237a1c8bdee07aac4e035ec8cf3da1c0411861f6d78429422"
+        },
+        {
+          "relative_path": "environment.json",
+          "bytes": 346,
+          "sha256": "2c6f5a703ce838a73dec600a79737f5f6dff84f3052fd016dd6f43d67b178df3"
+        },
+        {
+          "relative_path": "last_checkpoint.pt",
+          "bytes": 35104501,
+          "sha256": "5bf644b7cc97aaeed607716387cbff2060fd5b43a9ecf49818a7bb5a2b73c292"
+        },
+        {
+          "relative_path": "manifests/caltech101_10class_subset.csv",
+          "bytes": 504821,
+          "sha256": "87be127ae3099f0a0c5f8f276ed45e990fa012111ac5978b8f58ed9a1eca2ef3"
+        },
+        {
+          "relative_path": "manifests/caltech101_10class_subset_metadata.json",
+          "bytes": 1492,
+          "sha256": "526dc6246a9c152237a1c8bdee07aac4e035ec8cf3da1c0411861f6d78429422"
+        },
+        {
+          "relative_path": "run_manifest.json",
+          "bytes": 453,
+          "sha256": "498447ba3179d255a40a3d1e202026ebc26230b256d7830ba698cb0928c6aa09"
+        },
+        {
+          "relative_path": "student_metrics.json",
+          "bytes": 3262,
+          "sha256": "fb8693432744ed5619b9e80ef742be2a94d3e6a681eeaa9722f38f11b1309054"
+        }
+      ],
+      "reports": {
+        "student_metrics.json": {
+          "keys": [
+            "system",
+            "gallery_aggregation",
+            "query_count",
+            "gallery_image_count",
+            "sku_count",
+            "top1_retrieval_accuracy",
+            "top3_retrieval_accuracy",
+            "mrr",
+            "per_sku",
+            "confusion_matrix",
+            "main_deployment_result",
+            "diagnostic_student_query_teacher_gallery",
+            "checkpoint",
+            "checkpoint_epoch",
+            "checkpoint_selection",
+            "selection_biased",
+            "fusion_ablation",
+            "optical_propagation_active",
+            "student_detector_output_shape",
+            "student_embedding_shape",
+            "manifest_sha256"
+          ],
+          "metrics": {
+            "mrr": 0.934374988079071
+          },
+          "sections": {},
+          "best_epoch": null,
+          "checkpoint_sha256": null,
+          "formal_ground_truth_evaluation": null,
+          "metric_warning": null,
+          "fusion": null,
+          "smoke_only": null
+        }
+      },
+      "splits": [
+        {
+          "file": "manifests/caltech101_10class_subset.csv",
+          "rows": 2855,
+          "split_counts": {
+            "gallery": 30,
+            "train": 2625,
+            "test": 200
+          },
+          "duplicate_sample_ids": 0,
+          "missing_image_paths": 0,
+          "sha256": "87be127ae3099f0a0c5f8f276ed45e990fa012111ac5978b8f58ed9a1eca2ef3"
+        }
+      ],
+      "run_identity": {
+        "command": "python -m LightGenV2.tasks.t01_object_retrieval.run --profile main_dc20 --phase all --seed 42"
+      }
+    },
+    {
+      "task": "t01_object_retrieval",
+      "run": "d2nn_matched_dc20_seed42",
+      "path": "/DATA/DATA1/guest3/2026OpticsMoE/LightGenV2/tasks/t01_object_retrieval/runs/simulation/d2nn_matched_dc20_seed42",
+      "exists": true,
+      "artifacts": [
+        {
+          "relative_path": "best_checkpoint.pt",
+          "bytes": 26004491,
+          "sha256": "e7baf22d5a51333e32b5860872f83ce83ad244fea30ea6985b9b0f9bf5cbf981"
+        },
+        {
+          "relative_path": "config.yaml",
+          "bytes": 9737,
+          "sha256": "3c34010d4414f6d2a9c3de901d92affcc0e47c0709f7e9077a762926e9519128"
+        },
+        {
+          "relative_path": "dataset.json",
+          "bytes": 1492,
+          "sha256": "526dc6246a9c152237a1c8bdee07aac4e035ec8cf3da1c0411861f6d78429422"
+        },
+        {
+          "relative_path": "environment.json",
+          "bytes": 346,
+          "sha256": "6c3bf69f8de48022fbbc284990dcdc2bfe49da5cde65e9b144c78bc663a07678"
+        },
+        {
+          "relative_path": "last_checkpoint.pt",
+          "bytes": 25997397,
+          "sha256": "9453f8f90125df7e2aabde1b5694a622080fe1c3b77150d858a40124c8ce1e0d"
+        },
+        {
+          "relative_path": "manifests/caltech101_10class_subset.csv",
+          "bytes": 504821,
+          "sha256": "87be127ae3099f0a0c5f8f276ed45e990fa012111ac5978b8f58ed9a1eca2ef3"
+        },
+        {
+          "relative_path": "manifests/caltech101_10class_subset_metadata.json",
+          "bytes": 1492,
+          "sha256": "526dc6246a9c152237a1c8bdee07aac4e035ec8cf3da1c0411861f6d78429422"
+        },
+        {
+          "relative_path": "run_manifest.json",
+          "bytes": 447,
+          "sha256": "3e4ec15086bf63856980ceb492b4c6004671da58df5ec90a985fc553f0064eec"
+        },
+        {
+          "relative_path": "student_metrics.json",
+          "bytes": 3250,
+          "sha256": "78b25a1e9b3fffc627335f2faa2268374dbac64f80d8effcd581c7daf285eee7"
+        }
+      ],
+      "reports": {
+        "student_metrics.json": {
+          "keys": [
+            "system",
+            "gallery_aggregation",
+            "query_count",
+            "gallery_image_count",
+            "sku_count",
+            "top1_retrieval_accuracy",
+            "top3_retrieval_accuracy",
+            "mrr",
+            "per_sku",
+            "confusion_matrix",
+            "main_deployment_result",
+            "diagnostic_student_query_teacher_gallery",
+            "checkpoint",
+            "checkpoint_epoch",
+            "checkpoint_selection",
+            "selection_biased",
+            "fusion_ablation",
+            "optical_propagation_active",
+            "student_detector_output_shape",
+            "student_embedding_shape",
+            "manifest_sha256"
+          ],
+          "metrics": {
+            "mrr": 0.9348809719085693
+          },
+          "sections": {},
+          "best_epoch": null,
+          "checkpoint_sha256": null,
+          "formal_ground_truth_evaluation": null,
+          "metric_warning": null,
+          "fusion": null,
+          "smoke_only": null
+        }
+      },
+      "splits": [
+        {
+          "file": "manifests/caltech101_10class_subset.csv",
+          "rows": 2855,
+          "split_counts": {
+            "gallery": 30,
+            "train": 2625,
+            "test": 200
+          },
+          "duplicate_sample_ids": 0,
+          "missing_image_paths": 0,
+          "sha256": "87be127ae3099f0a0c5f8f276ed45e990fa012111ac5978b8f58ed9a1eca2ef3"
+        }
+      ],
+      "run_identity": {
+        "command": "python -m LightGenV2.tasks.t01_object_retrieval.run --profile d2nn_dc20 --phase all --seed 42"
+      }
+    },
+    {
+      "task": "t01_object_retrieval",
+      "run": "qwen_frozen",
+      "path": "/DATA/DATA1/guest3/2026OpticsMoE/LightGenV2/tasks/t01_object_retrieval/runs/simulation/qwen_frozen",
+      "exists": true,
+      "artifacts": [
+        {
+          "relative_path": "config.yaml",
+          "bytes": 9738,
+          "sha256": "e7e5619170533e42dc96f6a802b51199b3db1ff6af5ba3ab774766d8e831e0a4"
+        },
+        {
+          "relative_path": "dataset.json",
+          "bytes": 1492,
+          "sha256": "526dc6246a9c152237a1c8bdee07aac4e035ec8cf3da1c0411861f6d78429422"
+        },
+        {
+          "relative_path": "environment.json",
+          "bytes": 346,
+          "sha256": "3c820060a025aba11622f4c3fa31a01235f2b538b3b2563f14c32102a4493642"
+        },
+        {
+          "relative_path": "frozen_qwen_metrics.json",
+          "bytes": 2889,
+          "sha256": "4bfd2bda061733d97e7046600033bc6ebbcabb2c20295871c76ca983965e6372"
+        },
+        {
+          "relative_path": "manifests/caltech101_10class_subset.csv",
+          "bytes": 504821,
+          "sha256": "87be127ae3099f0a0c5f8f276ed45e990fa012111ac5978b8f58ed9a1eca2ef3"
+        },
+        {
+          "relative_path": "manifests/caltech101_10class_subset_metadata.json",
+          "bytes": 1492,
+          "sha256": "526dc6246a9c152237a1c8bdee07aac4e035ec8cf3da1c0411861f6d78429422"
+        },
+        {
+          "relative_path": "run_manifest.json",
+          "bytes": 416,
+          "sha256": "8b30e80e030240189e28d7db309fc6e654a81c622e405a6773a24cafb92a8fde"
+        },
+        {
+          "relative_path": "student_metrics.json",
+          "bytes": 2889,
+          "sha256": "4bfd2bda061733d97e7046600033bc6ebbcabb2c20295871c76ca983965e6372"
+        }
+      ],
+      "reports": {
+        "frozen_qwen_metrics.json": {
+          "keys": [
+            "system",
+            "gallery_aggregation",
+            "query_count",
+            "gallery_image_count",
+            "sku_count",
+            "top1_retrieval_accuracy",
+            "top3_retrieval_accuracy",
+            "mrr",
+            "per_sku",
+            "confusion_matrix",
+            "model_id",
+            "instruction",
+            "embedding_method",
+            "model_frozen",
+            "trainable_parameters",
+            "frozen_parameters",
+            "checkpoint_selection",
+            "manifest_sha256"
+          ],
+          "metrics": {
+            "mrr": 0.9975000023841858
+          },
+          "sections": {},
+          "best_epoch": null,
+          "checkpoint_sha256": null,
+          "formal_ground_truth_evaluation": null,
+          "metric_warning": null,
+          "fusion": null,
+          "smoke_only": null
+        },
+        "student_metrics.json": {
+          "keys": [
+            "system",
+            "gallery_aggregation",
+            "query_count",
+            "gallery_image_count",
+            "sku_count",
+            "top1_retrieval_accuracy",
+            "top3_retrieval_accuracy",
+            "mrr",
+            "per_sku",
+            "confusion_matrix",
+            "model_id",
+            "instruction",
+            "embedding_method",
+            "model_frozen",
+            "trainable_parameters",
+            "frozen_parameters",
+            "checkpoint_selection",
+            "manifest_sha256"
+          ],
+          "metrics": {
+            "mrr": 0.9975000023841858
+          },
+          "sections": {},
+          "best_epoch": null,
+          "checkpoint_sha256": null,
+          "formal_ground_truth_evaluation": null,
+          "metric_warning": null,
+          "fusion": null,
+          "smoke_only": null
+        }
+      },
+      "splits": [
+        {
+          "file": "manifests/caltech101_10class_subset.csv",
+          "rows": 2855,
+          "split_counts": {
+            "gallery": 30,
+            "train": 2625,
+            "test": 200
+          },
+          "duplicate_sample_ids": 0,
+          "missing_image_paths": 0,
+          "sha256": "87be127ae3099f0a0c5f8f276ed45e990fa012111ac5978b8f58ed9a1eca2ef3"
+        }
+      ],
+      "run_identity": {
+        "command": "python -m LightGenV2.tasks.t01_object_retrieval.run --profile qwen --phase evaluate --seed 42"
+      }
+    },
+    {
+      "task": "t01_object_retrieval",
+      "run": "moe_router_scale_seed42",
+      "path": "/DATA/DATA1/guest3/2026OpticsMoE/LightGenV2/tasks/t01_object_retrieval/runs/simulation/moe_router_scale_seed42",
+      "exists": true,
+      "artifacts": [
+        {
+          "relative_path": "best_checkpoint.pt",
+          "bytes": 35112171,
+          "sha256": "77946d90079d560ee99c0249950162715916f799a24eff8ddf1beaf1a2e49ace"
+        },
+        {
+          "relative_path": "config.yaml",
+          "bytes": 9761,
+          "sha256": "5c01861c59c81f8a96d31ee6d67efdcd64470c7c7332781bae36e752ade9db13"
+        },
+        {
+          "relative_path": "dataset.json",
+          "bytes": 1492,
+          "sha256": "526dc6246a9c152237a1c8bdee07aac4e035ec8cf3da1c0411861f6d78429422"
+        },
+        {
+          "relative_path": "environment.json",
+          "bytes": 346,
+          "sha256": "3c820060a025aba11622f4c3fa31a01235f2b538b3b2563f14c32102a4493642"
+        },
+        {
+          "relative_path": "last_checkpoint.pt",
+          "bytes": 35104501,
+          "sha256": "c7b9d144162e9f5b4a352e7256bbc967a9b93fbda8a01c0b378bb9bd76715967"
+        },
+        {
+          "relative_path": "manifests/caltech101_10class_subset.csv",
+          "bytes": 504821,
+          "sha256": "87be127ae3099f0a0c5f8f276ed45e990fa012111ac5978b8f58ed9a1eca2ef3"
+        },
+        {
+          "relative_path": "manifests/caltech101_10class_subset_metadata.json",
+          "bytes": 1492,
+          "sha256": "526dc6246a9c152237a1c8bdee07aac4e035ec8cf3da1c0411861f6d78429422"
+        },
+        {
+          "relative_path": "run_manifest.json",
+          "bytes": 443,
+          "sha256": "ff759d24388684be04c1a65b840c10dbf8ef932001b03e65fa3c2bf776aad288"
+        },
+        {
+          "relative_path": "student_metrics.json",
+          "bytes": 3255,
+          "sha256": "91b7094fd8e71bfa65d9a1898fc2711e889a715b364170e0959584512c82c82a"
+        }
+      ],
+      "reports": {
+        "student_metrics.json": {
+          "keys": [
+            "system",
+            "gallery_aggregation",
+            "query_count",
+            "gallery_image_count",
+            "sku_count",
+            "top1_retrieval_accuracy",
+            "top3_retrieval_accuracy",
+            "mrr",
+            "per_sku",
+            "confusion_matrix",
+            "main_deployment_result",
+            "diagnostic_student_query_teacher_gallery",
+            "checkpoint",
+            "checkpoint_epoch",
+            "checkpoint_selection",
+            "selection_biased",
+            "fusion_ablation",
+            "optical_propagation_active",
+            "student_detector_output_shape",
+            "student_embedding_shape",
+            "manifest_sha256"
+          ],
+          "metrics": {
+            "mrr": 0.9411309957504272
+          },
+          "sections": {},
+          "best_epoch": null,
+          "checkpoint_sha256": null,
+          "formal_ground_truth_evaluation": null,
+          "metric_warning": null,
+          "fusion": null,
+          "smoke_only": null
+        }
+      },
+      "splits": [
+        {
+          "file": "manifests/caltech101_10class_subset.csv",
+          "rows": 2855,
+          "split_counts": {
+            "gallery": 30,
+            "train": 2625,
+            "test": 200
+          },
+          "duplicate_sample_ids": 0,
+          "missing_image_paths": 0,
+          "sha256": "87be127ae3099f0a0c5f8f276ed45e990fa012111ac5978b8f58ed9a1eca2ef3"
+        }
+      ],
+      "run_identity": {
+        "command": "python -m LightGenV2.tasks.t01_object_retrieval.run --profile main --phase all --seed 42"
+      }
+    },
+    {
+      "task": "t01_object_retrieval",
+      "run": "d2nn_matched_seed42",
+      "path": "/DATA/DATA1/guest3/2026OpticsMoE/LightGenV2/tasks/t01_object_retrieval/runs/simulation/d2nn_matched_seed42",
+      "exists": true,
+      "artifacts": [
+        {
+          "relative_path": "best_checkpoint.pt",
+          "bytes": 26004491,
+          "sha256": "492f38f3b9a305adcc84672137d59c2e7281caaf780d790ca6f9c3c34d2028a2"
+        },
+        {
+          "relative_path": "config.yaml",
+          "bytes": 9748,
+          "sha256": "1a82ff0f789fc422f9e5c60571e8632ca95489e2876bf2f8ebb669461eafcf0b"
+        },
+        {
+          "relative_path": "dataset.json",
+          "bytes": 1492,
+          "sha256": "526dc6246a9c152237a1c8bdee07aac4e035ec8cf3da1c0411861f6d78429422"
+        },
+        {
+          "relative_path": "environment.json",
+          "bytes": 346,
+          "sha256": "3c820060a025aba11622f4c3fa31a01235f2b538b3b2563f14c32102a4493642"
+        },
+        {
+          "relative_path": "last_checkpoint.pt",
+          "bytes": 25997397,
+          "sha256": "4db0257836f09f9900a72cb890f0857cc927e9715ba67e7bc9828ffb9f20a7c2"
+        },
+        {
+          "relative_path": "manifests/caltech101_10class_subset.csv",
+          "bytes": 504821,
+          "sha256": "87be127ae3099f0a0c5f8f276ed45e990fa012111ac5978b8f58ed9a1eca2ef3"
+        },
+        {
+          "relative_path": "manifests/caltech101_10class_subset_metadata.json",
+          "bytes": 1492,
+          "sha256": "526dc6246a9c152237a1c8bdee07aac4e035ec8cf3da1c0411861f6d78429422"
+        },
+        {
+          "relative_path": "run_manifest.json",
+          "bytes": 437,
+          "sha256": "18d225d9624cc972b9f4bbd6b94b343136c95ff1727296670b20db52a65eea79"
+        },
+        {
+          "relative_path": "student_metrics.json",
+          "bytes": 3264,
+          "sha256": "8afd35f94e10c485659701e730c45a86cf18d0ce7682284353c9fc6b099d6c96"
+        }
+      ],
+      "reports": {
+        "student_metrics.json": {
+          "keys": [
+            "system",
+            "gallery_aggregation",
+            "query_count",
+            "gallery_image_count",
+            "sku_count",
+            "top1_retrieval_accuracy",
+            "top3_retrieval_accuracy",
+            "mrr",
+            "per_sku",
+            "confusion_matrix",
+            "main_deployment_result",
+            "diagnostic_student_query_teacher_gallery",
+            "checkpoint",
+            "checkpoint_epoch",
+            "checkpoint_selection",
+            "selection_biased",
+            "fusion_ablation",
+            "optical_propagation_active",
+            "student_detector_output_shape",
+            "student_embedding_shape",
+            "manifest_sha256"
+          ],
+          "metrics": {
+            "mrr": 0.9382142424583435
+          },
+          "sections": {},
+          "best_epoch": null,
+          "checkpoint_sha256": null,
+          "formal_ground_truth_evaluation": null,
+          "metric_warning": null,
+          "fusion": null,
+          "smoke_only": null
+        }
+      },
+      "splits": [
+        {
+          "file": "manifests/caltech101_10class_subset.csv",
+          "rows": 2855,
+          "split_counts": {
+            "gallery": 30,
+            "train": 2625,
+            "test": 200
+          },
+          "duplicate_sample_ids": 0,
+          "missing_image_paths": 0,
+          "sha256": "87be127ae3099f0a0c5f8f276ed45e990fa012111ac5978b8f58ed9a1eca2ef3"
+        }
+      ],
+      "run_identity": {
+        "command": "python -m LightGenV2.tasks.t01_object_retrieval.run --profile d2nn --phase all --seed 42"
+      }
+    },
+    {
+      "task": "t02_keypoint_detection",
+      "run": "moe_router_scale_dc20_seed42",
+      "path": "/DATA/DATA1/guest3/2026OpticsMoE/LightGenV2/tasks/t02_keypoint_detection/runs/simulation/moe_router_scale_dc20_seed42",
+      "exists": true,
+      "artifacts": [
+        {
+          "relative_path": "best_checkpoint.pt",
+          "bytes": 6087906,
+          "sha256": "e905d1f8a9e6196dd1bd69b1cda93f7ea1b1ad8964d0e246892c5e3e9d6a9873"
+        },
+        {
+          "relative_path": "last_checkpoint.pt",
+          "bytes": 6086854,
+          "sha256": "d2dff41d9b95c054570bd258eebe8b6233e19fbf1b4ef6f8d58d992d442bbaaf"
+        },
+        {
+          "relative_path": "pose_protocol.json",
+          "bytes": 1175,
+          "sha256": "a8021ab33763195562886334b9525a4ba8170d74927e4e2e2838c9a830207d99"
+        },
+        {
+          "relative_path": "pose_protocol_split.csv",
+          "bytes": 1267764,
+          "sha256": "2cb33989b3a5436408edad5e9e7452245814ec0724bc5ae20637cc40b4ba1d79"
+        },
+        {
+          "relative_path": "resolved_config.yaml",
+          "bytes": 5976,
+          "sha256": "4cc0aec438cad6af5bddebf5d68f0785463896280bf8627c8d35bb1d0edcf858"
+        },
+        {
+          "relative_path": "run_manifest.json",
+          "bytes": 342,
+          "sha256": "0dbed5a48175dc07207566ba80347cf86138dd68250bd0b1da56823cd1aa686e"
+        },
+        {
+          "relative_path": "selected_checkpoint_test_evaluation.json",
+          "bytes": 1872,
+          "sha256": "a8a899c4b56ed616cdf77275d7b687b383070a51c50f3745658ce572fd7a0bfa"
+        }
+      ],
+      "reports": {
+        "selected_checkpoint_test_evaluation.json": {
+          "keys": [
+            "checkpoint",
+            "checkpoint_sha256",
+            "selected_epoch",
+            "selection_split",
+            "test_used_for_selection",
+            "test_samples",
+            "metrics"
+          ],
+          "metrics": {
+            "test_samples": 1000
+          },
+          "sections": {
+            "metrics": {
+              "pck_at_0.2_torso": 0.5772857142857143,
+              "pckh_at_0.5_head": 0.7362857142857143,
+              "normalized_mean_error_torso": 0.34881073747384106,
+              "samples": 1000,
+              "phase": "selected_checkpoint_test",
+              "model": "student"
+            }
+          },
+          "best_epoch": null,
+          "checkpoint_sha256": "e905d1f8a9e6196dd1bd69b1cda93f7ea1b1ad8964d0e246892c5e3e9d6a9873",
+          "formal_ground_truth_evaluation": null,
+          "metric_warning": null,
+          "fusion": null,
+          "smoke_only": null
+        }
+      },
+      "splits": [
+        {
+          "file": "pose_protocol_split.csv",
+          "rows": 11428,
+          "split_counts": {
+            "train": 10428,
+            "periodic_test": 1000
+          },
+          "duplicate_sample_ids": 0,
+          "missing_image_paths": 0,
+          "sha256": "2cb33989b3a5436408edad5e9e7452245814ec0724bc5ae20637cc40b4ba1d79"
+        }
+      ],
+      "run_identity": {
+        "git_commit": "bea692fe5bdab79a21b9834ae8025c3df9b20f4d"
+      }
+    },
+    {
+      "task": "t02_keypoint_detection",
+      "run": "d2nn_matched_dc20_seed42",
+      "path": "/DATA/DATA1/guest3/2026OpticsMoE/LightGenV2/tasks/t02_keypoint_detection/runs/simulation/d2nn_matched_dc20_seed42",
+      "exists": true,
+      "artifacts": [
+        {
+          "relative_path": "best_checkpoint.pt",
+          "bytes": 4569954,
+          "sha256": "8b2ab497c24ec2c097ff896d9889aaafbedbb1d04dff4e92c7b146339d76cb4e"
+        },
+        {
+          "relative_path": "last_checkpoint.pt",
+          "bytes": 4568882,
+          "sha256": "fd20b7d6cb71bad4c2fbcd78386e96f234057b725ecba77666195002e2d96db7"
+        },
+        {
+          "relative_path": "pose_protocol.json",
+          "bytes": 1175,
+          "sha256": "a8021ab33763195562886334b9525a4ba8170d74927e4e2e2838c9a830207d99"
+        },
+        {
+          "relative_path": "pose_protocol_split.csv",
+          "bytes": 1267764,
+          "sha256": "2cb33989b3a5436408edad5e9e7452245814ec0724bc5ae20637cc40b4ba1d79"
+        },
+        {
+          "relative_path": "resolved_config.yaml",
+          "bytes": 5958,
+          "sha256": "d5d9d790966d3286dc1fe1d0c21185cf9fa6a57904bd7afff932a02c02e5580b"
+        },
+        {
+          "relative_path": "run_manifest.json",
+          "bytes": 336,
+          "sha256": "8499d28238728a861dd6dcaf7f847a1c41a1cf45ececdff7abb0d87ae92e8c94"
+        },
+        {
+          "relative_path": "selected_checkpoint_test_evaluation.json",
+          "bytes": 1868,
+          "sha256": "b3258b39b20ba0401b438c29512be8baeaa2561c23f1cc17c1872c4d139662c1"
+        }
+      ],
+      "reports": {
+        "selected_checkpoint_test_evaluation.json": {
+          "keys": [
+            "checkpoint",
+            "checkpoint_sha256",
+            "selected_epoch",
+            "selection_split",
+            "test_used_for_selection",
+            "test_samples",
+            "metrics"
+          ],
+          "metrics": {
+            "test_samples": 1000
+          },
+          "sections": {
+            "metrics": {
+              "pck_at_0.2_torso": 0.6751428571428572,
+              "pckh_at_0.5_head": 0.8054285714285714,
+              "normalized_mean_error_torso": 0.27357154779542153,
+              "samples": 1000,
+              "phase": "selected_checkpoint_test",
+              "model": "student"
+            }
+          },
+          "best_epoch": null,
+          "checkpoint_sha256": "8b2ab497c24ec2c097ff896d9889aaafbedbb1d04dff4e92c7b146339d76cb4e",
+          "formal_ground_truth_evaluation": null,
+          "metric_warning": null,
+          "fusion": null,
+          "smoke_only": null
+        }
+      },
+      "splits": [
+        {
+          "file": "pose_protocol_split.csv",
+          "rows": 11428,
+          "split_counts": {
+            "train": 10428,
+            "periodic_test": 1000
+          },
+          "duplicate_sample_ids": 0,
+          "missing_image_paths": 0,
+          "sha256": "2cb33989b3a5436408edad5e9e7452245814ec0724bc5ae20637cc40b4ba1d79"
+        }
+      ],
+      "run_identity": {
+        "git_commit": "e0a5ff9771d1e490d999c0e92f28dca1aafda988"
+      }
+    },
+    {
+      "task": "t02_keypoint_detection",
+      "run": "alpha40_distill_seed42_20260911",
+      "path": "/DATA/DATA1/guest3/2026OpticsMoE/LightGenV2/tasks/t02_keypoint_detection/runs/simulation/alpha40_distill_seed42_20260911",
+      "exists": true,
+      "artifacts": [
+        {
+          "relative_path": "best_checkpoint.pt",
+          "bytes": 6311942,
+          "sha256": "dbc059e2a7eddefac73d3b9bb158bf0140d440dfb396e0aa2956ad41670fc96a"
+        },
+        {
+          "relative_path": "final_report.json",
+          "bytes": 6180,
+          "sha256": "a8c94876299d4df5a3018a1ac5f3ee2889f44dafa69e5a7c412a21a9c35dd15d"
+        },
+        {
+          "relative_path": "last_checkpoint.pt",
+          "bytes": 6311878,
+          "sha256": "2d842aa4e3cb35417ca81c7aaefc82ea56858c8fc2291d0daec3bd17c8bedfa7"
+        },
+        {
+          "relative_path": "pose_protocol.json",
+          "bytes": 1175,
+          "sha256": "a8021ab33763195562886334b9525a4ba8170d74927e4e2e2838c9a830207d99"
+        },
+        {
+          "relative_path": "pose_protocol_split.csv",
+          "bytes": 1267764,
+          "sha256": "2cb33989b3a5436408edad5e9e7452245814ec0724bc5ae20637cc40b4ba1d79"
+        },
+        {
+          "relative_path": "resolved_config.yaml",
+          "bytes": 6252,
+          "sha256": "c5e33f626fe1d28f1f1121e2fa4f480e57ee99206eccd7e7d89c19f4cb326d90"
+        },
+        {
+          "relative_path": "run_manifest.json",
+          "bytes": 231636,
+          "sha256": "e917a48f972bccc7b9e151c4e1df69c2074721c414d7859258aa0b0d5790a1a3"
+        }
+      ],
+      "reports": {
+        "final_report.json": {
+          "keys": [
+            "best_epoch",
+            "source_test",
+            "test",
+            "optical_off",
+            "fusion",
+            "fusion_contract",
+            "phase_change",
+            "checkpoint_sha256",
+            "optical_off_is_retraining",
+            "smoke_only",
+            "target_pck_at_0.2",
+            "target_met"
+          ],
+          "metrics": {},
+          "sections": {
+            "source_test": {
+              "pck_at_0.2_torso": 0.7279285714285715,
+              "pckh_at_0.5_head": 0.8462142857142857,
+              "normalized_mean_error_torso": 0.23822012227229705,
+              "samples": 1000,
+              "phase": "source_anchor_test",
+              "model": "student"
+            },
+            "test": {
+              "pck_at_0.2_torso": 0.7282857142857143,
+              "pckh_at_0.5_head": 0.8475714285714285,
+              "normalized_mean_error_torso": 0.2377198960487951,
+              "samples": 1000,
+              "phase": "selected_best_test",
+              "model": "student"
+            },
+            "optical_off": {
+              "pck_at_0.2_torso": 0.7043571428571429,
+              "pckh_at_0.5_head": 0.8320714285714286,
+              "normalized_mean_error_torso": 0.2554998216997917,
+              "samples": 1000,
+              "phase": "selected_best_optical_off_counterfactual",
+              "model": "student"
+            }
+          },
+          "best_epoch": 5,
+          "checkpoint_sha256": "dbc059e2a7eddefac73d3b9bb158bf0140d440dfb396e0aa2956ad41670fc96a",
+          "formal_ground_truth_evaluation": null,
+          "metric_warning": null,
+          "fusion": {
+            "block1_optical_fusion": 0.418059378862381,
+            "block2_optical_fusion": 0.4180513918399811
+          },
+          "smoke_only": false
+        }
+      },
+      "splits": [
+        {
+          "file": "pose_protocol_split.csv",
+          "rows": 11428,
+          "split_counts": {
+            "train": 10428,
+            "periodic_test": 1000
+          },
+          "duplicate_sample_ids": 0,
+          "missing_image_paths": 0,
+          "sha256": "2cb33989b3a5436408edad5e9e7452245814ec0724bc5ae20637cc40b4ba1d79"
+        }
+      ],
+      "run_identity": {
+        "git_commit": "8de890f316e3c58d50eff2e3a900a676c2d6ad68"
+      }
+    },
+    {
+      "task": "t02_keypoint_detection",
+      "run": "qwen_deconv40_seed42_20260909",
+      "path": "/DATA/DATA1/guest3/2026OpticsMoE/LightGenV2/tasks/t02_keypoint_detection/runs/simulation/qwen_deconv40_seed42_20260909",
+      "exists": true,
+      "artifacts": [
+        {
+          "relative_path": "best_checkpoint.pt",
+          "bytes": 570527,
+          "sha256": "2968d9f3bfed3bc2e712834484a49a928eb91c5d20ede264081a9a4fe8c2ca27"
+        },
+        {
+          "relative_path": "final_report.json",
+          "bytes": 1769,
+          "sha256": "9e832107478c4d78a6702619daac1a6db4c67edddccd2e3ae61f0e1790159fd7"
+        },
+        {
+          "relative_path": "last_checkpoint.pt",
+          "bytes": 570527,
+          "sha256": "51d680cb6e1851fe4d7da73148d9717c6c2c3a5e07e2df5d9b21346fdae016b8"
+        },
+        {
+          "relative_path": "pose_protocol.json",
+          "bytes": 1175,
+          "sha256": "a8021ab33763195562886334b9525a4ba8170d74927e4e2e2838c9a830207d99"
+        },
+        {
+          "relative_path": "pose_protocol_split.csv",
+          "bytes": 1267764,
+          "sha256": "2cb33989b3a5436408edad5e9e7452245814ec0724bc5ae20637cc40b4ba1d79"
+        },
+        {
+          "relative_path": "resolved_config.yaml",
+          "bytes": 3785,
+          "sha256": "dddd1503752753d4754861b69030a0052cba561e855ceeb5d77e3b40829612be"
+        },
+        {
+          "relative_path": "run_manifest.json",
+          "bytes": 6920,
+          "sha256": "0aa7cd90ae0aa4933d903c4eef3cc906b670b6e5e8986917e12320bc20a27504"
+        }
+      ],
+      "reports": {
+        "final_report.json": {
+          "keys": [
+            "test",
+            "best_epoch",
+            "checkpoint_sha256",
+            "head_parameter_count",
+            "head_squared_change_from_initialization",
+            "backbone_trainable_parameters",
+            "smoke_only"
+          ],
+          "metrics": {},
+          "sections": {
+            "test": {
+              "pck_at_0.2_torso": 0.6381428571428571,
+              "pckh_at_0.5_head": 0.8520714285714286,
+              "normalized_mean_error_torso": 0.24082987686088872,
+              "samples": 1000,
+              "phase": "qwen_deconv40_selected_test",
+              "model": "teacher"
+            }
+          },
+          "best_epoch": 37,
+          "checkpoint_sha256": "2968d9f3bfed3bc2e712834484a49a928eb91c5d20ede264081a9a4fe8c2ca27",
+          "formal_ground_truth_evaluation": null,
+          "metric_warning": null,
+          "fusion": null,
+          "smoke_only": false
+        }
+      },
+      "splits": [
+        {
+          "file": "pose_protocol_split.csv",
+          "rows": 11428,
+          "split_counts": {
+            "train": 10428,
+            "periodic_test": 1000
+          },
+          "duplicate_sample_ids": 0,
+          "missing_image_paths": 0,
+          "sha256": "2cb33989b3a5436408edad5e9e7452245814ec0724bc5ae20637cc40b4ba1d79"
+        }
+      ],
+      "run_identity": {
+        "git_commit": "a6c0a8e4f2490f73cb2279c759b480c57dd26085",
+        "command": [
+          "/DATA/DATA1/guest3/lsp_qwen_head_source_20260909/LightGenV2/tasks/t02_keypoint_detection/train_qwen_head.py",
+          "--data-root",
+          "/DATA/DATA1/guest3/2026OpticsMoE/data/lsp_pose",
+          "--cache-dir",
+          "/DATA/DATA1/guest3/.cache/huggingface/hub",
+          "--run-dir",
+          "/DATA/DATA1/guest3/2026OpticsMoE/LightGenV2/tasks/t02_keypoint_detection/runs/simulation/qwen_deconv40_seed42_20260909"
+        ],
+        "test_used_for_selection": true
+      }
+    },
+    {
+      "task": "t02_keypoint_detection",
+      "run": "personal_few10_ours_pilot_s42_20260928",
+      "path": "/DATA/DATA1/guest3/2026OpticsMoE/LightGenV2/tasks/t02_keypoint_detection/runs/simulation/personal_few10_ours_pilot_s42_20260928",
+      "exists": true,
+      "artifacts": [
+        {
+          "relative_path": "best_checkpoint.pt",
+          "bytes": 6088838,
+          "sha256": "4b634796d271b6e564413bb4c353c0e9d6b965882a6e16112f4a56fd624ea91e"
+        },
+        {
+          "relative_path": "final_report.json",
+          "bytes": 3583,
+          "sha256": "ad8cbc2cd9972268e5f613aa0e460f2101f6c9e5530211329b87e8c7d453b414"
+        },
+        {
+          "relative_path": "last_checkpoint.pt",
+          "bytes": 6088838,
+          "sha256": "c37ddd3c3de3667b107a71997f22af96162ca7b865175aa24c04a48ffe1263de"
+        },
+        {
+          "relative_path": "resolved_config.yaml",
+          "bytes": 6266,
+          "sha256": "9b4ed748027beaa3b185d20bdd4fa3478f5caf8692682c8c70f6429b05128bdf"
+        },
+        {
+          "relative_path": "run_manifest.json",
+          "bytes": 4568,
+          "sha256": "0ed478c33e41bd5eed13b48798bf5a82c3d78a333efafe923339451f1012e455"
+        }
+      ],
+      "reports": {
+        "final_report.json": {
+          "keys": [
+            "before",
+            "after",
+            "best_epoch",
+            "formal_ground_truth_evaluation",
+            "metric_warning",
+            "fusion",
+            "checkpoint_sha256",
+            "test_used_for_selection"
+          ],
+          "metrics": {},
+          "sections": {
+            "before": {
+              "pck_at_0.2_torso": 0.7470956210902592,
+              "pckh_at_0.5_head": 0,
+              "normalized_mean_error_torso": 0.19119873569615742,
+              "samples": 94,
+              "phase": "personal_before",
+              "model": "student"
+            },
+            "after": {
+              "pck_at_0.2_torso": 0.7613941018766756,
+              "pckh_at_0.5_head": 0,
+              "normalized_mean_error_torso": 0.18267122364302144,
+              "samples": 94,
+              "phase": "personal_after",
+              "model": "student"
+            }
+          },
+          "best_epoch": 60,
+          "checkpoint_sha256": "4b634796d271b6e564413bb4c353c0e9d6b965882a6e16112f4a56fd624ea91e",
+          "formal_ground_truth_evaluation": false,
+          "metric_warning": "PILOT: agreement with independent pseudo labels, NOT ground-truth accuracy",
+          "fusion": {
+            "block1_optical_fusion": 0.41805776953697205,
+            "block2_optical_fusion": 0.418050080537796
+          },
+          "smoke_only": null
+        }
+      },
+      "splits": [],
+      "run_identity": {
+        "git_commit": "dd31d232db062dd60b6c96a9f30cc2ac4741025a",
+        "command": [
+          "/DATA/DATA1/guest3/t02_personal_source_20260928/LightGenV2/tasks/t02_keypoint_detection/personal_finetune.py",
+          "--method",
+          "ours",
+          "--annotations",
+          "/DATA/DATA1/guest3/2026OpticsMoE/data/lsp_pose/personal_20260928/annotations_provisional.json",
+          "--source",
+          "/DATA/DATA1/guest3/2026OpticsMoE/LightGenV2/tasks/t02_keypoint_detection/runs/simulation/alpha40_distill_seed42_20260911/best_checkpoint.pt",
+          "--cache-dir",
+          "/DATA/DATA1/guest3/.cache/huggingface/hub",
+          "--run-dir",
+          "/DATA/DATA1/guest3/2026OpticsMoE/LightGenV2/tasks/t02_keypoint_detection/runs/simulation/personal_few10_ours_pilot_s42_20260928",
+          "--allow-provisional",
+          "--fewshot-photos",
+          "10",
+          "--epochs",
+          "60",
+          "--batch-size",
+          "8",
+          "--seed",
+          "42"
+        ],
+        "test_used_for_selection": false
+      }
+    },
+    {
+      "task": "t02_keypoint_detection",
+      "run": "personal_few10_baseline_pilot_s42_20260928",
+      "path": "/DATA/DATA1/guest3/2026OpticsMoE/LightGenV2/tasks/t02_keypoint_detection/runs/simulation/personal_few10_baseline_pilot_s42_20260928",
+      "exists": true,
+      "artifacts": [
+        {
+          "relative_path": "best_checkpoint.pt",
+          "bytes": 4424095,
+          "sha256": "b1a8f655433beba94bea6852dea2e3cd1288b34d36b600d457f3a3626d4555e2"
+        },
+        {
+          "relative_path": "final_report.json",
+          "bytes": 3483,
+          "sha256": "eb4ec211c6ba2ef11f877d7e0947ebfb5f08288bc161db8b1b97b4dbfafb6d08"
+        },
+        {
+          "relative_path": "last_checkpoint.pt",
+          "bytes": 4424095,
+          "sha256": "7f40efcbbeb97166c25b02134b919164830cf75d2a7647f0c5d8681a1b24f6b9"
+        },
+        {
+          "relative_path": "resolved_config.yaml",
+          "bytes": 4000,
+          "sha256": "3129309976121664f79e6f603faee7a74e715be2975a41d7d2f7255bebc4ea7b"
+        },
+        {
+          "relative_path": "run_manifest.json",
+          "bytes": 4523,
+          "sha256": "effe17a7b283ed66f5fc8137768b5d6979ed6171a3b09882b28c8c46b5ad91b8"
+        }
+      ],
+      "reports": {
+        "final_report.json": {
+          "keys": [
+            "before",
+            "after",
+            "best_epoch",
+            "formal_ground_truth_evaluation",
+            "metric_warning",
+            "fusion",
+            "checkpoint_sha256",
+            "test_used_for_selection"
+          ],
+          "metrics": {},
+          "sections": {
+            "before": {
+              "pck_at_0.2_torso": 0.8516532618409294,
+              "pckh_at_0.5_head": 0,
+              "normalized_mean_error_torso": 0.12886405514907978,
+              "samples": 94,
+              "phase": "personal_before",
+              "model": "teacher"
+            },
+            "after": {
+              "pck_at_0.2_torso": 0.8927613941018767,
+              "pckh_at_0.5_head": 0,
+              "normalized_mean_error_torso": 0.11402947736531201,
+              "samples": 94,
+              "phase": "personal_after",
+              "model": "teacher"
+            }
+          },
+          "best_epoch": 60,
+          "checkpoint_sha256": "b1a8f655433beba94bea6852dea2e3cd1288b34d36b600d457f3a3626d4555e2",
+          "formal_ground_truth_evaluation": false,
+          "metric_warning": "PILOT: agreement with independent pseudo labels, NOT ground-truth accuracy",
+          "fusion": null,
+          "smoke_only": null
+        }
+      },
+      "splits": [],
+      "run_identity": {
+        "git_commit": "dd31d232db062dd60b6c96a9f30cc2ac4741025a",
+        "command": [
+          "/DATA/DATA1/guest3/t02_personal_source_20260928/LightGenV2/tasks/t02_keypoint_detection/personal_finetune.py",
+          "--method",
+          "baseline",
+          "--annotations",
+          "/DATA/DATA1/guest3/2026OpticsMoE/data/lsp_pose/personal_20260928/annotations_provisional.json",
+          "--source",
+          "/DATA/DATA1/guest3/2026OpticsMoE/experiments/qwen3_vl_embedding_2b_lsp_pose_optical_moe16/runs/lsp_pose_optical_moe16_opt2/checkpoints/teacher_best_train_loss.pt",
+          "--cache-dir",
+          "/DATA/DATA1/guest3/.cache/huggingface/hub",
+          "--run-dir",
+          "/DATA/DATA1/guest3/2026OpticsMoE/LightGenV2/tasks/t02_keypoint_detection/runs/simulation/personal_few10_baseline_pilot_s42_20260928",
+          "--allow-provisional",
+          "--fewshot-photos",
+          "10",
+          "--epochs",
+          "60",
+          "--batch-size",
+          "8",
+          "--seed",
+          "42"
+        ],
+        "test_used_for_selection": false
+      }
+    },
+    {
+      "task": "t02_keypoint_detection",
+      "run": "personal_few45_ours_pilot_s42_20260928",
+      "path": "/DATA/DATA1/guest3/2026OpticsMoE/LightGenV2/tasks/t02_keypoint_detection/runs/simulation/personal_few45_ours_pilot_s42_20260928",
+      "exists": false,
+      "artifacts": [],
+      "reports": {},
+      "splits": []
+    },
+    {
+      "task": "t02_keypoint_detection",
+      "run": "personal_few45_baseline_pilot_s42_20260928",
+      "path": "/DATA/DATA1/guest3/2026OpticsMoE/LightGenV2/tasks/t02_keypoint_detection/runs/simulation/personal_few45_baseline_pilot_s42_20260928",
+      "exists": false,
+      "artifacts": [],
+      "reports": {},
+      "splits": []
+    }
+  ],
+  "sources": [
+    {
+      "root": "/DATA/DATA1/guest3/2026OpticsMoE",
+      "task": "t01_object_retrieval",
+      "head": "3f85510285e5ffdfca28def93eef2eb082b1655c",
+      "tracked_dirty": [],
+      "files": [
+        {
+          "path": "LightGenV2/tasks/t01_object_retrieval/__init__.py",
+          "sha256": "5b586504607056e3c696f94a46491426c9d0640293f6a7c4bc4c4b8e90e53227"
+        },
+        {
+          "path": "LightGenV2/tasks/t01_object_retrieval/settings.py",
+          "sha256": "dd69bc2b752c2c6c2b6f9a526e53204ae9d96dbecda2a3f5f673c0de90dd9d18"
+        },
+        {
+          "path": "LightGenV2/tasks/t01_object_retrieval/report.py",
+          "sha256": "f2f0f5c7243752eb00f5b43283217de0c1cea105c6bd0ce524e3e8ea54b5e889"
+        },
+        {
+          "path": "LightGenV2/tasks/t01_object_retrieval/baseline_5090d.py",
+          "sha256": "f5f03c1881642089ed95cb3acc1cec7da0356e29eba683da9222fcf977c31cc4"
+        },
+        {
+          "path": "LightGenV2/tasks/t01_object_retrieval/__main__.py",
+          "sha256": "71de8d02e47a61ce3b1d8cc784c8ce586e90f2aa38194c43bf4c5ddaba85cb8a"
+        },
+        {
+          "path": "LightGenV2/tasks/t01_object_retrieval/visualize.py",
+          "sha256": "3657f5ed5a32b65f04a95226deb8a5c5744830f31ffc505fd70e849205fb2c7f"
+        },
+        {
+          "path": "LightGenV2/tasks/t01_object_retrieval/run.py",
+          "sha256": "c41ed58dfc7021b08b355144dbaff3b6d5ac254158de304ffca2078272fb21f9"
+        },
+        {
+          "path": "LightGenV2/tasks/t01_object_retrieval/modeling.py",
+          "sha256": "d126c2fd7917af8de4c7068b41cbc2fed064211fa6fd957b3cb18057cc4c3838"
+        },
+        {
+          "path": "LightGenV2/tasks/t01_object_retrieval/configs/d2nn_active_expert_matched_dc20.yaml",
+          "sha256": "3009af6e16471805d9ff2537318d024d32ad9570e7f5a19eec50696a4e9604d1"
+        },
+        {
+          "path": "LightGenV2/tasks/t01_object_retrieval/configs/qwen_frozen_embedding.yaml",
+          "sha256": "b28adffb3018a0f41aeb647b2b87c8e5890a086ff59839b0491df5ff4ede34e4"
+        },
+        {
+          "path": "LightGenV2/tasks/t01_object_retrieval/configs/common_dc20.yaml",
+          "sha256": "44b54b007a24f712e4135dbf4f780134cf159484e46ad1f25419e24793be26d8"
+        },
+        {
+          "path": "LightGenV2/tasks/t01_object_retrieval/configs/common.yaml",
+          "sha256": "7077bf94bfad8602a610ef96a83f701ede80d08576ec6a38544e2ede910c0f4f"
+        },
+        {
+          "path": "LightGenV2/tasks/t01_object_retrieval/configs/moe_optical_router_scale_matched_dc20.yaml",
+          "sha256": "82be1ec970d592e135c6e55a82c1750b8fed714b808cafebe12afad8b66efe65"
+        },
+        {
+          "path": "LightGenV2/tasks/t01_object_retrieval/configs/moe_optical_router_scale_matched.yaml",
+          "sha256": "d708772c1ce3322d03b4a22e6d7d67f582f4042bdfefa2f396a5d3f0579b893f"
+        },
+        {
+          "path": "LightGenV2/tasks/t01_object_retrieval/configs/d2nn_active_expert_matched.yaml",
+          "sha256": "45e0ce56a6e656cb4393f0b6178a8f2d74b747f44b8de0d2527056223c744dc6"
+        },
+        {
+          "path": "LightGenV2/tasks/t01_object_retrieval/tests/test_contract.py",
+          "sha256": "891cf6c1a2e7c12d24c86d38454f035c1ed2f57482093fdac2e02131952cb3a7"
+        }
+      ]
+    },
+    {
+      "root": "/DATA/DATA1/guest3/2026OpticsMoE",
+      "task": "t02_keypoint_detection",
+      "head": "3f85510285e5ffdfca28def93eef2eb082b1655c",
+      "tracked_dirty": [],
+      "files": [
+        {
+          "path": "LightGenV2/tasks/t02_keypoint_detection/__init__.py",
+          "sha256": "fe6c93fb8f90a03fc322ce3634100967723961b4f80acbe73545b82ac49882a4"
+        },
+        {
+          "path": "LightGenV2/tasks/t02_keypoint_detection/settings.py",
+          "sha256": "479f54bcab1e32fe583ad0b50ae5f7b8a90c13301ef47197c045c576d7be7e61"
+        },
+        {
+          "path": "LightGenV2/tasks/t02_keypoint_detection/report.py",
+          "sha256": "602b29b2475847721ed030bb4abc634e41867fba2eca70016f35927515aff87f"
+        },
+        {
+          "path": "LightGenV2/tasks/t02_keypoint_detection/baseline_5090d.py",
+          "sha256": "c12f990e7ab11b8d49cb3e2cf58960c8f9646c7c964a9eff7ee289c07c571277"
+        },
+        {
+          "path": "LightGenV2/tasks/t02_keypoint_detection/training.py",
+          "sha256": "74e4e95e2af6736cb0df26c7fb3da4191a6ff55d58cfb640c1392936af9d67e4"
+        },
+        {
+          "path": "LightGenV2/tasks/t02_keypoint_detection/visualize.py",
+          "sha256": "4aa6d0f7766bd7922030bc439fd5aba7ac956749a23365f40b92706d128cc4e7"
+        },
+        {
+          "path": "LightGenV2/tasks/t02_keypoint_detection/run.py",
+          "sha256": "43b13e43a22a7a4f5ec91084d25bc724604e793f52f81c3fde12cb34a1d6575b"
+        },
+        {
+          "path": "LightGenV2/tasks/t02_keypoint_detection/modeling.py",
+          "sha256": "6c3c71763b969b3d41af6b251441789ad5abe3bc9ee6a77abed9ed7b3391df4e"
+        },
+        {
+          "path": "LightGenV2/tasks/t02_keypoint_detection/configs/moe_optical_router_scale_matched_dc20_no_shift_warmstart.yaml",
+          "sha256": "18b99d131452275a7b6f8493871d4c48f8c0576863982470d0891d80c5e7619d"
+        },
+        {
+          "path": "LightGenV2/tasks/t02_keypoint_detection/configs/d2nn_active_expert_matched_dc20.yaml",
+          "sha256": "6fe475bb2dd5fd3ae37f206b0e6a365b1f431839317294c0f8d69b9d4e51c011"
+        },
+        {
+          "path": "LightGenV2/tasks/t02_keypoint_detection/configs/moe_optical_router_scale_matched_dc20_no_shift.yaml",
+          "sha256": "d014f43b6f57df272b672272aa3969afdd361ccec6bb11ff954641ab6dad80ab"
+        },
+        {
+          "path": "LightGenV2/tasks/t02_keypoint_detection/configs/common_dc20.yaml",
+          "sha256": "c6c77e9f30aec8af89ba50f873c398be9b2bf5bcb3526e422a1d41c42012b8e6"
+        },
+        {
+          "path": "LightGenV2/tasks/t02_keypoint_detection/configs/moe_optical_router_scale_matched_dc20.yaml",
+          "sha256": "82be1ec970d592e135c6e55a82c1750b8fed714b808cafebe12afad8b66efe65"
+        },
+        {
+          "path": "LightGenV2/tasks/t02_keypoint_detection/tests/test_lsp_contract.py",
+          "sha256": "525182943708518fcdfcdbe71c3f01bdc72b973b61d825acc40e210ea7bdcaa0"
+        }
+      ]
+    },
+    {
+      "root": "/DATA/DATA1/guest3/t02_personal_source_20260928",
+      "task": "t01_object_retrieval",
+      "head": "2fa901dc7800d8798658b29e242e38bebac97989",
+      "tracked_dirty": [],
+      "files": [
+        {
+          "path": "LightGenV2/tasks/t01_object_retrieval/__init__.py",
+          "sha256": "5b586504607056e3c696f94a46491426c9d0640293f6a7c4bc4c4b8e90e53227"
+        },
+        {
+          "path": "LightGenV2/tasks/t01_object_retrieval/settings.py",
+          "sha256": "dd69bc2b752c2c6c2b6f9a526e53204ae9d96dbecda2a3f5f673c0de90dd9d18"
+        },
+        {
+          "path": "LightGenV2/tasks/t01_object_retrieval/report.py",
+          "sha256": "f2f0f5c7243752eb00f5b43283217de0c1cea105c6bd0ce524e3e8ea54b5e889"
+        },
+        {
+          "path": "LightGenV2/tasks/t01_object_retrieval/baseline_5090d.py",
+          "sha256": "f5f03c1881642089ed95cb3acc1cec7da0356e29eba683da9222fcf977c31cc4"
+        },
+        {
+          "path": "LightGenV2/tasks/t01_object_retrieval/__main__.py",
+          "sha256": "71de8d02e47a61ce3b1d8cc784c8ce586e90f2aa38194c43bf4c5ddaba85cb8a"
+        },
+        {
+          "path": "LightGenV2/tasks/t01_object_retrieval/visualize.py",
+          "sha256": "3657f5ed5a32b65f04a95226deb8a5c5744830f31ffc505fd70e849205fb2c7f"
+        },
+        {
+          "path": "LightGenV2/tasks/t01_object_retrieval/run.py",
+          "sha256": "c41ed58dfc7021b08b355144dbaff3b6d5ac254158de304ffca2078272fb21f9"
+        },
+        {
+          "path": "LightGenV2/tasks/t01_object_retrieval/modeling.py",
+          "sha256": "d126c2fd7917af8de4c7068b41cbc2fed064211fa6fd957b3cb18057cc4c3838"
+        },
+        {
+          "path": "LightGenV2/tasks/t01_object_retrieval/configs/d2nn_active_expert_matched_dc20.yaml",
+          "sha256": "3009af6e16471805d9ff2537318d024d32ad9570e7f5a19eec50696a4e9604d1"
+        },
+        {
+          "path": "LightGenV2/tasks/t01_object_retrieval/configs/qwen_frozen_embedding.yaml",
+          "sha256": "b28adffb3018a0f41aeb647b2b87c8e5890a086ff59839b0491df5ff4ede34e4"
+        },
+        {
+          "path": "LightGenV2/tasks/t01_object_retrieval/configs/common_dc20.yaml",
+          "sha256": "44b54b007a24f712e4135dbf4f780134cf159484e46ad1f25419e24793be26d8"
+        },
+        {
+          "path": "LightGenV2/tasks/t01_object_retrieval/configs/common.yaml",
+          "sha256": "7077bf94bfad8602a610ef96a83f701ede80d08576ec6a38544e2ede910c0f4f"
+        },
+        {
+          "path": "LightGenV2/tasks/t01_object_retrieval/configs/moe_optical_router_scale_matched_dc20.yaml",
+          "sha256": "82be1ec970d592e135c6e55a82c1750b8fed714b808cafebe12afad8b66efe65"
+        },
+        {
+          "path": "LightGenV2/tasks/t01_object_retrieval/configs/moe_optical_router_scale_matched.yaml",
+          "sha256": "d708772c1ce3322d03b4a22e6d7d67f582f4042bdfefa2f396a5d3f0579b893f"
+        },
+        {
+          "path": "LightGenV2/tasks/t01_object_retrieval/configs/d2nn_active_expert_matched.yaml",
+          "sha256": "45e0ce56a6e656cb4393f0b6178a8f2d74b747f44b8de0d2527056223c744dc6"
+        },
+        {
+          "path": "LightGenV2/tasks/t01_object_retrieval/tests/test_contract.py",
+          "sha256": "891cf6c1a2e7c12d24c86d38454f035c1ed2f57482093fdac2e02131952cb3a7"
+        }
+      ]
+    },
+    {
+      "root": "/DATA/DATA1/guest3/t02_personal_source_20260928",
+      "task": "t02_keypoint_detection",
+      "head": "2fa901dc7800d8798658b29e242e38bebac97989",
+      "tracked_dirty": [],
+      "files": [
+        {
+          "path": "LightGenV2/tasks/t02_keypoint_detection/__init__.py",
+          "sha256": "fe6c93fb8f90a03fc322ce3634100967723961b4f80acbe73545b82ac49882a4"
+        },
+        {
+          "path": "LightGenV2/tasks/t02_keypoint_detection/personal_report.py",
+          "sha256": "c00d94f08ac2163b783b72e41e5259ed5063970cc6086b664bfd29c90e2a6d3a"
+        },
+        {
+          "path": "LightGenV2/tasks/t02_keypoint_detection/settings.py",
+          "sha256": "479f54bcab1e32fe583ad0b50ae5f7b8a90c13301ef47197c045c576d7be7e61"
+        },
+        {
+          "path": "LightGenV2/tasks/t02_keypoint_detection/refine.py",
+          "sha256": "7058f9e4a8605f65d8f8f99d3978c4b56f228c01ffe4fcf65411956182e5a791"
+        },
+        {
+          "path": "LightGenV2/tasks/t02_keypoint_detection/personal_curate.py",
+          "sha256": "135a72a61faabd02c12f240d46a8364362448686763574f11955ed43f10ddb1d"
+        },
+        {
+          "path": "LightGenV2/tasks/t02_keypoint_detection/train_qwen_head.py",
+          "sha256": "7b231c31ff83e5f4b044071654c753f47cc0126aea7cb3c93a6d4e25eb29dfde"
+        },
+        {
+          "path": "LightGenV2/tasks/t02_keypoint_detection/report.py",
+          "sha256": "602b29b2475847721ed030bb4abc634e41867fba2eca70016f35927515aff87f"
+        },
+        {
+          "path": "LightGenV2/tasks/t02_keypoint_detection/personal_split.py",
+          "sha256": "f1a7452ee7ad59d512dfe2d83d646ea8a938630367463ebf11aec345a547d1d8"
+        },
+        {
+          "path": "LightGenV2/tasks/t02_keypoint_detection/personal_prelabel.py",
+          "sha256": "e269bd855ec1a46b6d728d478838604687a8d68c8633413fb744c0ae54c9a838"
+        },
+        {
+          "path": "LightGenV2/tasks/t02_keypoint_detection/baseline_5090d.py",
+          "sha256": "c12f990e7ab11b8d49cb3e2cf58960c8f9646c7c964a9eff7ee289c07c571277"
+        },
+        {
+          "path": "LightGenV2/tasks/t02_keypoint_detection/training.py",
+          "sha256": "74e4e95e2af6736cb0df26c7fb3da4191a6ff55d58cfb640c1392936af9d67e4"
+        },
+        {
+          "path": "LightGenV2/tasks/t02_keypoint_detection/personal_figure_delivery.py",
+          "sha256": "5801c8a5d9c9099062081dff235353a650977ad60f43f3480197dc0e198a4392"
+        },
+        {
+          "path": "LightGenV2/tasks/t02_keypoint_detection/visualize.py",
+          "sha256": "4aa6d0f7766bd7922030bc439fd5aba7ac956749a23365f40b92706d128cc4e7"
+        },
+        {
+          "path": "LightGenV2/tasks/t02_keypoint_detection/run.py",
+          "sha256": "efbc6c0632b657164e2ee691689676e9e4b0974242ea8bd67f36d657a546e432"
+        },
+        {
+          "path": "LightGenV2/tasks/t02_keypoint_detection/global_noise.py",
+          "sha256": "66ea31a4aab831c19b9a3560d3ba036b05dba1e8a00dff896f3a266e32900b4e"
+        },
+        {
+          "path": "LightGenV2/tasks/t02_keypoint_detection/personal_finetune.py",
+          "sha256": "b426ac785a8cc0732155fa64888170ead7773981e3d573ae6d2646e2601cffde"
+        },
+        {
+          "path": "LightGenV2/tasks/t02_keypoint_detection/modeling.py",
+          "sha256": "9c790a312f4f62b02dff4311df4afb96749c5393c34e8e1f9427375a43ea7281"
+        },
+        {
+          "path": "LightGenV2/tasks/t02_keypoint_detection/distillation.py",
+          "sha256": "fff559ab7a1dd0f6276800e4cdbab8e72afd8fb54b1f19c2bd285fc03a02d663"
+        },
+        {
+          "path": "LightGenV2/tasks/t02_keypoint_detection/build_lab_package.py",
+          "sha256": "43b7003837f869e20bcdc83737dee0de0c48b9bfc31737f248cafe72acab8fc9"
+        },
+        {
+          "path": "LightGenV2/tasks/t02_keypoint_detection/personal_prepare.py",
+          "sha256": "66184933a5dd806cc2f866e2c6eb2d27ff594d9381ea47f8a3148de7fafc1f1c"
+        },
+        {
+          "path": "LightGenV2/tasks/t02_keypoint_detection/personal_data.py",
+          "sha256": "8aa8ebd4cdbd735479996576cae36f92ba02a845125b14720ae0c9fb3944637d"
+        },
+        {
+          "path": "LightGenV2/tasks/t02_keypoint_detection/configs/moe_optical_router_scale_matched_dc20_no_shift_warmstart.yaml",
+          "sha256": "18b99d131452275a7b6f8493871d4c48f8c0576863982470d0891d80c5e7619d"
+        },
+        {
+          "path": "LightGenV2/tasks/t02_keypoint_detection/configs/d2nn_active_expert_matched_dc20.yaml",
+          "sha256": "6fe475bb2dd5fd3ae37f206b0e6a365b1f431839317294c0f8d69b9d4e51c011"
+        },
+        {
+          "path": "LightGenV2/tasks/t02_keypoint_detection/configs/moe_alpha40_polish.yaml",
+          "sha256": "cb97b915f828695829b1fac803c5dc226becea045b0d56af7144d1cebdd282ea"
+        },
+        {
+          "path": "LightGenV2/tasks/t02_keypoint_detection/configs/moe_alpha40_distill.yaml",
+          "sha256": "dbac7be47cd2603f754f190e9b795dc5d9041864e153092d7f7d3f5c350ac41f"
+        },
+        {
+          "path": "LightGenV2/tasks/t02_keypoint_detection/configs/moe_alpha40.yaml",
+          "sha256": "ef31fabc4e566375212d79b45074834dbbb05b43c1862c2fa158c2c06a7a691d"
+        },
+        {
+          "path": "LightGenV2/tasks/t02_keypoint_detection/configs/moe_optical_router_scale_matched_dc20_no_shift.yaml",
+          "sha256": "d014f43b6f57df272b672272aa3969afdd361ccec6bb11ff954641ab6dad80ab"
+        },
+        {
+          "path": "LightGenV2/tasks/t02_keypoint_detection/configs/common_dc20.yaml",
+          "sha256": "c6c77e9f30aec8af89ba50f873c398be9b2bf5bcb3526e422a1d41c42012b8e6"
+        },
+        {
+          "path": "LightGenV2/tasks/t02_keypoint_detection/configs/qwen_deconv40.yaml",
+          "sha256": "9cd89db8718860dc1d1028e04e3f3e028c89758f8a6800a2b1447848f513df43"
+        },
+        {
+          "path": "LightGenV2/tasks/t02_keypoint_detection/configs/moe_optical_router_scale_matched_dc20.yaml",
+          "sha256": "82be1ec970d592e135c6e55a82c1750b8fed714b808cafebe12afad8b66efe65"
+        },
+        {
+          "path": "LightGenV2/tasks/t02_keypoint_detection/configs/moe_alpha50.yaml",
+          "sha256": "4818bffee755a923fc6634eae35ac10a178706c84d47404ebbc96cc4bc5ee15e"
+        },
+        {
+          "path": "LightGenV2/tasks/t02_keypoint_detection/tests/test_global_noise.py",
+          "sha256": "29efe184cccde9ddcbb49b58678a6d1a6c2df63d191fe83e92412b9018a181b4"
+        },
+        {
+          "path": "LightGenV2/tasks/t02_keypoint_detection/tests/test_distillation.py",
+          "sha256": "7d2ef304695903770c7688063a3afab757b52cd5c9f73561243474108a0eaecb"
+        },
+        {
+          "path": "LightGenV2/tasks/t02_keypoint_detection/tests/test_qwen_head.py",
+          "sha256": "1c2e0737468e3a60a5cf7c6c7c999aea66de8ef91c26efc9ddb4f592c5062dab"
+        },
+        {
+          "path": "LightGenV2/tasks/t02_keypoint_detection/tests/test_lsp_contract.py",
+          "sha256": "525182943708518fcdfcdbe71c3f01bdc72b973b61d825acc40e210ea7bdcaa0"
+        },
+        {
+          "path": "LightGenV2/tasks/t02_keypoint_detection/tests/test_refine.py",
+          "sha256": "5a45ccf2b447d4722aaff5d4b634a0e2f4f23f6ed658da2aa94de5902d44ea30"
+        },
+        {
+          "path": "LightGenV2/tasks/t02_keypoint_detection/tests/test_personal.py",
+          "sha256": "882e98c7274b02d71a24359597ae81e338670c3eb0d4a3b2cfdad3a8adc2a434"
+        }
+      ]
+    }
+  ],
+  "supplement": {
+    "t01_metrics": {
+      "d2nn_matched_dc20_seed42": {
+        "top1_retrieval_accuracy": 0.8949999809265137,
+        "top3_retrieval_accuracy": 0.9700000286102295,
+        "mrr": 0.9348809719085693,
+        "query_count": 200,
+        "gallery_image_count": 30,
+        "checkpoint_epoch": 15,
+        "checkpoint_selection": "maximum_periodically_observed_test_top1; selection-biased diagnostic",
+        "selection_biased": true,
+        "manifest_sha256": "c8accd596cd418bbef65834ac75b11cd35ce7cdd4ebe418aa51d942e00701d11"
+      },
+      "d2nn_matched_seed42": {
+        "top1_retrieval_accuracy": 0.9049999713897705,
+        "top3_retrieval_accuracy": 0.9700000286102295,
+        "mrr": 0.9382142424583435,
+        "query_count": 200,
+        "gallery_image_count": 30,
+        "checkpoint_epoch": 25,
+        "checkpoint_selection": "maximum_periodically_observed_test_top1; selection-biased diagnostic",
+        "selection_biased": true,
+        "manifest_sha256": "c8accd596cd418bbef65834ac75b11cd35ce7cdd4ebe418aa51d942e00701d11"
+      },
+      "moe_router_scale_dc20_strict_seed42": {
+        "top1_retrieval_accuracy": 0.8999999761581421,
+        "top3_retrieval_accuracy": 0.9649999737739563,
+        "mrr": 0.934374988079071,
+        "query_count": 200,
+        "gallery_image_count": 30,
+        "checkpoint_epoch": 25,
+        "checkpoint_selection": "maximum_periodically_observed_test_top1; selection-biased diagnostic",
+        "selection_biased": true,
+        "manifest_sha256": "c8accd596cd418bbef65834ac75b11cd35ce7cdd4ebe418aa51d942e00701d11"
+      },
+      "moe_router_scale_seed42": {
+        "top1_retrieval_accuracy": 0.9100000262260437,
+        "top3_retrieval_accuracy": 0.9649999737739563,
+        "mrr": 0.9411309957504272,
+        "query_count": 200,
+        "gallery_image_count": 30,
+        "checkpoint_epoch": 20,
+        "checkpoint_selection": "maximum_periodically_observed_test_top1; selection-biased diagnostic",
+        "selection_biased": true,
+        "manifest_sha256": "c8accd596cd418bbef65834ac75b11cd35ce7cdd4ebe418aa51d942e00701d11"
+      },
+      "qwen_frozen": {
+        "top1_retrieval_accuracy": 0.9950000047683716,
+        "top3_retrieval_accuracy": 1,
+        "mrr": 0.9975000023841858,
+        "query_count": 200,
+        "gallery_image_count": 30,
+        "checkpoint_epoch": null,
+        "checkpoint_selection": "none; one deterministic frozen-model evaluation",
+        "selection_biased": null,
+        "manifest_sha256": "c8accd596cd418bbef65834ac75b11cd35ce7cdd4ebe418aa51d942e00701d11"
+      }
+    },
+    "t02_best7348": {
+      "final_report.json": {
+        "sha256": "2d4fa51be6b2347ea888258523a47044ae17279da7ad5138a4a9358a7e54ccde",
+        "bytes": 5747
+      },
+      "report": {
+        "best_epoch": 50,
+        "checkpoint_sha256": "495b9c2c4e3df15d3715f1ce8f2faea7cb9156275b31103ec684f4e96a328518",
+        "fusion": null,
+        "metrics": {
+          "source_test": {
+            "pck_at_0.2_torso": 0.7305,
+            "samples": 1000
+          },
+          "test": {
+            "pck_at_0.2_torso": 0.7347857142857143,
+            "samples": 1000
+          },
+          "optical_off": {
+            "pck_at_0.2_torso": 0.733,
+            "samples": 1000
+          }
+        }
+      },
+      "best_checkpoint.pt": {
+        "sha256": "495b9c2c4e3df15d3715f1ce8f2faea7cb9156275b31103ec684f4e96a328518",
+        "bytes": 6093958
+      },
+      "last_checkpoint.pt": {
+        "sha256": "b39f7b26fe117d5d975603180a171c8f17a48a35ea4f19738f86f865bd7c5cb6",
+        "bytes": 6093958
+      },
+      "pose_protocol_split.csv": {
+        "sha256": "2cb33989b3a5436408edad5e9e7452245814ec0724bc5ae20637cc40b4ba1d79",
+        "bytes": 1267764
+      },
+      "resolved_config.yaml": {
+        "sha256": "352f0d00a2fe992ccff7bb45b9afd69506b95fcf958a9d08f6c97948dea9e59a",
+        "bytes": 6302
+      },
+      "run_manifest.json": {
+        "sha256": "3a5afe54070eaf5e81ebaf9327b5d21d9852d76dc48132b709793ae49d8ebebd",
+        "bytes": 17738
+      }
+    },
+    "source_identity": {
+      "t01_object_retrieval": {
+        "keys": [
+          "schema_version",
+          "task",
+          "profile",
+          "variant",
+          "phase",
+          "optimization_seed",
+          "dataset_split_seed",
+          "command",
+          "started_at",
+          "test_selection"
+        ],
+        "git": {}
+      },
+      "t02_keypoint_detection": {
+        "keys": [
+          "source",
+          "source_sha256",
+          "source_epoch",
+          "git_commit",
+          "args",
+          "architecture_unchanged",
+          "topology_unchanged",
+          "new_layers",
+          "parameter_budget",
+          "teacher",
+          "fusion_contract",
+          "train_samples",
+          "test_samples",
+          "test_selected",
+          "coordinate_loss_train_weight",
+          "target_pck_at_0.2",
+          "schedule",
+          "torch",
+          "gpu"
+        ],
+        "git": {
+          "git_commit": "8de890f316e3c58d50eff2e3a900a676c2d6ad68"
+        }
+      }
+    }
+  },
+  "validation": {
+    "artifact_hashes_recomputed": 88,
+    "pt_hash_matches_report": [
+      {
+        "run": "moe_router_scale_dc20_seed42",
+        "matches": true
+      },
+      {
+        "run": "d2nn_matched_dc20_seed42",
+        "matches": true
+      },
+      {
+        "run": "alpha40_distill_seed42_20260911",
+        "matches": true
+      },
+      {
+        "run": "qwen_deconv40_seed42_20260909",
+        "matches": true
+      },
+      {
+        "run": "personal_few10_ours_pilot_s42_20260928",
+        "matches": true
+      },
+      {
+        "run": "personal_few10_baseline_pilot_s42_20260928",
+        "matches": true
+      },
+      {
+        "run": "refinement_20260909/staged_heatmap",
+        "matches": true
+      }
+    ],
+    "notes": [
+      "T01 reported manifest digest differs from raw CSV SHA; both retained without equating their algorithms.",
+      "Personal pseudo-label pilot is not ground-truth performance.",
+      "No run, source, capture or measurement deletion authorized by this inventory."
+    ]
+  }
+}

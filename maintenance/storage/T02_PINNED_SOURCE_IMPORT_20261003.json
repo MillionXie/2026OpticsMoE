@@ -1,0 +1,186 @@
+{
+  "source_commit": "2fa901dc7800d8798658b29e242e38bebac97989",
+  "purpose": "Reviewed missing source only; existing code differences handled separately. Historical documents are records, not permission to create branches. Data and weights are not imported.",
+  "paths": [
+    {
+      "path": "LightGenV2/tasks/t02_keypoint_detection/reports/reproduction/EVIDENCE_20260908.json",
+      "bytes": 9635,
+      "sha256": "621e0adb8b9eac9788bceca2ac3ae1bd98f22fd542f5ad4f151d25a7741d2aab"
+    },
+    {
+      "path": "LightGenV2/tasks/t02_keypoint_detection/reports/reproduction/global_noise_lowalpha_20260910.json",
+      "bytes": 11509,
+      "sha256": "fb2d4ba318dd2d14314e39a13384c7cb57aa85ee1b6e03cd3cb335f745db2ac2"
+    },
+    {
+      "path": "LightGenV2/tasks/t02_keypoint_detection/HANDOFF_BEST.md",
+      "bytes": 2657,
+      "sha256": "464a90eccb9ff2b9dd59560f4933d747aa6fedc94888c308cb0b15df6e28100b"
+    },
+    {
+      "path": "LightGenV2/tasks/t02_keypoint_detection/build_lab_package.py",
+      "bytes": 3650,
+      "sha256": "43b7003837f869e20bcdc83737dee0de0c48b9bfc31737f248cafe72acab8fc9"
+    },
+    {
+      "path": "LightGenV2/tasks/t02_keypoint_detection/configs/moe_alpha40.yaml",
+      "bytes": 319,
+      "sha256": "ef31fabc4e566375212d79b45074834dbbb05b43c1862c2fa158c2c06a7a691d"
+    },
+    {
+      "path": "LightGenV2/tasks/t02_keypoint_detection/configs/moe_alpha40_distill.yaml",
+      "bytes": 852,
+      "sha256": "dbac7be47cd2603f754f190e9b795dc5d9041864e153092d7f7d3f5c350ac41f"
+    },
+    {
+      "path": "LightGenV2/tasks/t02_keypoint_detection/configs/moe_alpha40_polish.yaml",
+      "bytes": 724,
+      "sha256": "cb97b915f828695829b1fac803c5dc226becea045b0d56af7144d1cebdd282ea"
+    },
+    {
+      "path": "LightGenV2/tasks/t02_keypoint_detection/configs/moe_alpha50.yaml",
+      "bytes": 400,
+      "sha256": "4818bffee755a923fc6634eae35ac10a178706c84d47404ebbc96cc4bc5ee15e"
+    },
+    {
+      "path": "LightGenV2/tasks/t02_keypoint_detection/configs/qwen_deconv40.yaml",
+      "bytes": 488,
+      "sha256": "9cd89db8718860dc1d1028e04e3f3e028c89758f8a6800a2b1447848f513df43"
+    },
+    {
+      "path": "LightGenV2/tasks/t02_keypoint_detection/distillation.py",
+      "bytes": 6471,
+      "sha256": "fff559ab7a1dd0f6276800e4cdbab8e72afd8fb54b1f19c2bd285fc03a02d663"
+    },
+    {
+      "path": "LightGenV2/tasks/t02_keypoint_detection/global_noise.py",
+      "bytes": 8316,
+      "sha256": "66ea31a4aab831c19b9a3560d3ba036b05dba1e8a00dff896f3a266e32900b4e"
+    },
+    {
+      "path": "LightGenV2/tasks/t02_keypoint_detection/personal_curate.py",
+      "bytes": 3366,
+      "sha256": "135a72a61faabd02c12f240d46a8364362448686763574f11955ed43f10ddb1d"
+    },
+    {
+      "path": "LightGenV2/tasks/t02_keypoint_detection/personal_data.py",
+      "bytes": 4599,
+      "sha256": "8aa8ebd4cdbd735479996576cae36f92ba02a845125b14720ae0c9fb3944637d"
+    },
+    {
+      "path": "LightGenV2/tasks/t02_keypoint_detection/personal_figure_delivery.py",
+      "bytes": 10809,
+      "sha256": "5801c8a5d9c9099062081dff235353a650977ad60f43f3480197dc0e198a4392"
+    },
+    {
+      "path": "LightGenV2/tasks/t02_keypoint_detection/personal_finetune.py",
+      "bytes": 16237,
+      "sha256": "b426ac785a8cc0732155fa64888170ead7773981e3d573ae6d2646e2601cffde"
+    },
+    {
+      "path": "LightGenV2/tasks/t02_keypoint_detection/personal_prelabel.py",
+      "bytes": 2840,
+      "sha256": "e269bd855ec1a46b6d728d478838604687a8d68c8633413fb744c0ae54c9a838"
+    },
+    {
+      "path": "LightGenV2/tasks/t02_keypoint_detection/personal_prepare.py",
+      "bytes": 3590,
+      "sha256": "66184933a5dd806cc2f866e2c6eb2d27ff594d9381ea47f8a3148de7fafc1f1c"
+    },
+    {
+      "path": "LightGenV2/tasks/t02_keypoint_detection/personal_report.py",
+      "bytes": 5460,
+      "sha256": "c00d94f08ac2163b783b72e41e5259ed5063970cc6086b664bfd29c90e2a6d3a"
+    },
+    {
+      "path": "LightGenV2/tasks/t02_keypoint_detection/personal_review.html",
+      "bytes": 5662,
+      "sha256": "860e8e7c65ce5333cf4cd1b645e1b5f4e242aa0965bff9d8bc629c5350545f39"
+    },
+    {
+      "path": "LightGenV2/tasks/t02_keypoint_detection/personal_split.py",
+      "bytes": 6311,
+      "sha256": "f1a7452ee7ad59d512dfe2d83d646ea8a938630367463ebf11aec345a547d1d8"
+    },
+    {
+      "path": "LightGenV2/tasks/t02_keypoint_detection/refine.py",
+      "bytes": 17225,
+      "sha256": "7058f9e4a8605f65d8f8f99d3978c4b56f228c01ffe4fcf65411956182e5a791"
+    },
+    {
+      "path": "LightGenV2/tasks/t02_keypoint_detection/reports/reproduction/ALPHA40.md",
+      "bytes": 5367,
+      "sha256": "868f70585099a84d917ed5258f7b11be83779e150ebc8dafa90b3824d99c1f44"
+    },
+    {
+      "path": "LightGenV2/tasks/t02_keypoint_detection/reports/reproduction/ALPHA50.md",
+      "bytes": 3865,
+      "sha256": "185c703067b60644f9371127a93b0f6650febc68adc99bd96ba511b1fae07d5f"
+    },
+    {
+      "path": "LightGenV2/tasks/t02_keypoint_detection/reports/reproduction/BASELINE_METHODS.md",
+      "bytes": 3530,
+      "sha256": "2aab274c201899858aefe103e7991c99b6061f3cf4ba587da0ecce4dd74bfcd3"
+    },
+    {
+      "path": "LightGenV2/tasks/t02_keypoint_detection/reports/reproduction/CHECK_20260908.md",
+      "bytes": 5214,
+      "sha256": "a2e1d1165cf900641fa362f1fe482fe36a5666cdebffaf7bb75587078ef114d4"
+    },
+    {
+      "path": "LightGenV2/tasks/t02_keypoint_detection/reports/reproduction/GLOBAL_NOISE.md",
+      "bytes": 4262,
+      "sha256": "18cf93e96c28b8e12451230b2601b070c62ff7f9b74c6abc420fddc6227a7f1b"
+    },
+    {
+      "path": "LightGenV2/tasks/t02_keypoint_detection/reports/reproduction/HEATMAP_DISTILLATION.md",
+      "bytes": 4951,
+      "sha256": "6862e73a1462e3d3b6b0ff3f7a5b4104224db9c3a8dd051a94613bfd11245371"
+    },
+    {
+      "path": "LightGenV2/tasks/t02_keypoint_detection/reports/reproduction/PERSONAL_DOMAIN.md",
+      "bytes": 19015,
+      "sha256": "487c3c8ba5b741e04d06cf8f3569e4650ec3575b6f04709f564435a28a4da245"
+    },
+    {
+      "path": "LightGenV2/tasks/t02_keypoint_detection/reports/reproduction/QWEN_HEAD_BUDGET.md",
+      "bytes": 3505,
+      "sha256": "bb071142ea971eb89abf4e474e137be0f0d2637332b135a962cb02c4225132ab"
+    },
+    {
+      "path": "LightGenV2/tasks/t02_keypoint_detection/reports/reproduction/STAGED_REFINEMENT.md",
+      "bytes": 7480,
+      "sha256": "8981a432862f9bd449daebe1d26235e9ddfffe06bf9816b2448223863e5aa312"
+    },
+    {
+      "path": "LightGenV2/tasks/t02_keypoint_detection/tests/test_distillation.py",
+      "bytes": 2362,
+      "sha256": "7d2ef304695903770c7688063a3afab757b52cd5c9f73561243474108a0eaecb"
+    },
+    {
+      "path": "LightGenV2/tasks/t02_keypoint_detection/tests/test_global_noise.py",
+      "bytes": 505,
+      "sha256": "29efe184cccde9ddcbb49b58678a6d1a6c2df63d191fe83e92412b9018a181b4"
+    },
+    {
+      "path": "LightGenV2/tasks/t02_keypoint_detection/tests/test_personal.py",
+      "bytes": 3582,
+      "sha256": "882e98c7274b02d71a24359597ae81e338670c3eb0d4a3b2cfdad3a8adc2a434"
+    },
+    {
+      "path": "LightGenV2/tasks/t02_keypoint_detection/tests/test_qwen_head.py",
+      "bytes": 1120,
+      "sha256": "1c2e0737468e3a60a5cf7c6c7c999aea66de8ef91c26efc9ddb4f592c5062dab"
+    },
+    {
+      "path": "LightGenV2/tasks/t02_keypoint_detection/tests/test_refine.py",
+      "bytes": 5593,
+      "sha256": "5a45ccf2b447d4722aaff5d4b634a0e2f4f23f6ed658da2aa94de5902d44ea30"
+    },
+    {
+      "path": "LightGenV2/tasks/t02_keypoint_detection/train_qwen_head.py",
+      "bytes": 8210,
+      "sha256": "7b231c31ff83e5f4b044071654c753f47cc0126aea7cb3c93a6d4e25eb29dfde"
+    }
+  ]
+}

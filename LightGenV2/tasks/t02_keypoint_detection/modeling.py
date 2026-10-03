@@ -28,10 +28,14 @@ from experiments.vision2_hybrid_dense.modeling import PoseHeatmapDecoder
 
 
 def architecture_label(settings: Any) -> str:
-    return (
+    label = (
         f"lightgen_t02_{settings.lightgen_model_variant}_vision2_17um_10cm_"
         f"dc20_scale_matched_top2_v1"
     )
+    lower, upper = settings.fusion_alpha_min, settings.fusion_alpha_max
+    if (lower, upper) != (0.01, 0.95):
+        label += f"_alpha{lower:.3f}_{upper:.3f}"
+    return label
 
 
 class LightGenDenseVision2Core(RobustDenseVision2Core):

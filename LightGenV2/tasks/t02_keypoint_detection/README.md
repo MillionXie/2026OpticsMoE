@@ -1,5 +1,10 @@
 # T02 关键点检测（LSP）
 
+2026-10-03整理核验：[完整版本地图](reports/reproduction/IDENTITIES_20261003.md)。
+下文DC20为早期公平对照，不代表所有后续候选：另保留73.48%低alpha交付、72.83%高alpha蒸馏，
+以及独立个人照片pilot。对应PT/划分已查证；后续入口按服务器固定源码收敛到main。
+历史文档中的旧分支/目录是运行记录，不再照此自动新建；权重必须匹配各自架构和配置，不能直接换PT。
+
 本任务只处理视觉分支，输出 LSP 的 14 张关键点热图。冻结的
 Qwen3-VL-Embedding-2B 仅执行 patch embedding；原生 Vision Transformer
 block 不执行。两种正式方法共享数据划分、电子 mixer、同尺度融合、姿态读出头、

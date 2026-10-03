@@ -1,0 +1,25 @@
+{
+  "source_commit": "5096f304555a70fb0ed11804c2d13dfb4106df8c",
+  "paths": [
+    {
+      "path": "LightGenV2/tasks/t01_object_retrieval/reports/reproduction/BASELINE_METHODS.md",
+      "bytes": 3119,
+      "sha256": "7a72f09848cc9c462ff339a335c31ee163ce3fa3f46cde8c13aaa282e01094d1"
+    },
+    {
+      "path": "LightGenV2/tasks/t01_object_retrieval/reports/reproduction/CHECK_20260908.md",
+      "bytes": 5737,
+      "sha256": "11b52bb2b65e5b65e3f7e0f6b4f3d47d204c82d8df9c18e7d344d7dfd8b581b8"
+    },
+    {
+      "path": "LightGenV2/tasks/t01_object_retrieval/reports/reproduction/EVIDENCE_20260908.json",
+      "bytes": 9680,
+      "sha256": "ce746ab518296c017b1a02b2546edf27b4b44355a8df2b4ddc45e79fb5844669"
+    },
+    {
+      "path": "LightGenV2/tasks/t01_object_retrieval/reports/reproduction/README.md",
+      "bytes": 1241,
+      "sha256": "8d86000b580f1f27ccefbb88a5a67c2ae8a3dd146879ca331602ff637ac7e52e"
+    }
+  ]
+}
