@@ -1,0 +1,978 @@
+{
+  "source_commit": "b75a56203b47818810e0a45dceecf9cea4c6aa9f",
+  "source_directory": "/DATA/DATA1/guest3/2026OpticsMoE/.worktrees/t03_licensed_figures_20260929",
+  "main_at_audit": "d10d5f9e1e884a7bfc28d500a3887466d8f849dc",
+  "server_task_tracked_status": "clean",
+  "server_matching_training_processes_at_audit": 0,
+  "source_cpu_test": {
+    "passed": 296,
+    "warnings": 13,
+    "seconds": 50.52,
+    "gpu_visible_devices": "",
+    "scope": "Existing fixed server source tests; not new main runtime, new training, hardware or performance reproduction"
+  },
+  "scope": "Python/YAML Git blob inventory only; not an import or full assets migration",
+  "counts": {
+    "missing": 177,
+    "identical": 9,
+    "different_review_required": 5
+  },
+  "files": [
+    {
+      "path": "LightGenV2/tasks/t03_saliency/__init__.py",
+      "source_git_blob": "a5c63d62052e62377ccb6e35cd99a3620a2d855d",
+      "state": "identical"
+    },
+    {
+      "path": "LightGenV2/tasks/t03_saliency/aligned_baseline.py",
+      "source_git_blob": "2e8b40f7defa2668d97924ad81168002bd591170",
+      "state": "missing"
+    },
+    {
+      "path": "LightGenV2/tasks/t03_saliency/alternating_preflight.py",
+      "source_git_blob": "c08bd17b65159722ffa8f22f78a16a1496a58370",
+      "state": "missing"
+    },
+    {
+      "path": "LightGenV2/tasks/t03_saliency/alternating_training.py",
+      "source_git_blob": "67e77000e6f03e2e76637df9e5fb4bfd82a55c11",
+      "state": "missing"
+    },
+    {
+      "path": "LightGenV2/tasks/t03_saliency/audit_checkpoint.py",
+      "source_git_blob": "ef670e1e5ce7ae078c02c5e763f1c402c0805fdf",
+      "state": "missing"
+    },
+    {
+      "path": "LightGenV2/tasks/t03_saliency/baseline_5090d.py",
+      "source_git_blob": "46ac9598f25ebd467ad42fb39dd3c1ebec163a93",
+      "state": "identical"
+    },
+    {
+      "path": "LightGenV2/tasks/t03_saliency/build_lab_package.py",
+      "source_git_blob": "f81273280524e93cbcaa2455aafdba3c42a74db7",
+      "state": "missing"
+    },
+    {
+      "path": "LightGenV2/tasks/t03_saliency/calibration_probe.py",
+      "source_git_blob": "8de014e2b61ab90ceb0079d86192b04ebbc95adb",
+      "state": "missing"
+    },
+    {
+      "path": "LightGenV2/tasks/t03_saliency/configs/common_dc20.yaml",
+      "source_git_blob": "192cfeb726ee6c938d84a6e9941c908e021794bf",
+      "state": "identical"
+    },
+    {
+      "path": "LightGenV2/tasks/t03_saliency/configs/d2nn_active_expert_matched_dc20.yaml",
+      "source_git_blob": "a29f320e67d1e8c1e931bbbdf65be6c000575304",
+      "state": "identical"
+    },
+    {
+      "path": "LightGenV2/tasks/t03_saliency/configs/moe_alpha40_adaptive_keepkd.yaml",
+      "source_git_blob": "a2996ca932715f2817e115f7efa8f1369b053b2d",
+      "state": "missing"
+    },
+    {
+      "path": "LightGenV2/tasks/t03_saliency/configs/moe_alpha40_adaptive_releasekd.yaml",
+      "source_git_blob": "75f9efce4ea32cb9d7cd91e5e391e061900ad3fd",
+      "state": "missing"
+    },
+    {
+      "path": "LightGenV2/tasks/t03_saliency/configs/moe_alpha40_adaptive_releasekd_cc.yaml",
+      "source_git_blob": "1d7512bf0ccb18064482a42ad7c03e5ba7deaaf8",
+      "state": "missing"
+    },
+    {
+      "path": "LightGenV2/tasks/t03_saliency/configs/moe_alpha40_alternating_20260914.yaml",
+      "source_git_blob": "a17b43b69e9631877d8aae08fc7f8cade69d707f",
+      "state": "missing"
+    },
+    {
+      "path": "LightGenV2/tasks/t03_saliency/configs/moe_alpha40_asam010.yaml",
+      "source_git_blob": "8c3b8a1dd0d3ec143652477aabfa9faaef0588a1",
+      "state": "missing"
+    },
+    {
+      "path": "LightGenV2/tasks/t03_saliency/configs/moe_alpha40_asam050.yaml",
+      "source_git_blob": "6f6db9433ad3c7bc29732a70e65e0684d4bc5c82",
+      "state": "missing"
+    },
+    {
+      "path": "LightGenV2/tasks/t03_saliency/configs/moe_alpha40_cc_fullgrid_20260913.yaml",
+      "source_git_blob": "bb43999e5ef27122c0a1183c05d24bb3372b19fc",
+      "state": "missing"
+    },
+    {
+      "path": "LightGenV2/tasks/t03_saliency/configs/moe_alpha40_cc_only_polish_20260913.yaml",
+      "source_git_blob": "805a7567cf9a03624406ee7c5784e8e5a3b70a7f",
+      "state": "missing"
+    },
+    {
+      "path": "LightGenV2/tasks/t03_saliency/configs/moe_alpha40_cc_pyramid_20260913.yaml",
+      "source_git_blob": "d07c99f4694d2194257788ee4b2b20e97e329b7b",
+      "state": "missing"
+    },
+    {
+      "path": "LightGenV2/tasks/t03_saliency/configs/moe_alpha40_cffn_control.yaml",
+      "source_git_blob": "b56b378d3464983d49615cf6691681ccd96b2000",
+      "state": "missing"
+    },
+    {
+      "path": "LightGenV2/tasks/t03_saliency/configs/moe_alpha40_cffn_d1.yaml",
+      "source_git_blob": "e6c145f6f4e9566b852d8e4f724a97b51c50f15b",
+      "state": "missing"
+    },
+    {
+      "path": "LightGenV2/tasks/t03_saliency/configs/moe_alpha40_cffn_d2.yaml",
+      "source_git_blob": "f9407c33f245befe6470f17e23a917ceedc24130",
+      "state": "missing"
+    },
+    {
+      "path": "LightGenV2/tasks/t03_saliency/configs/moe_alpha40_crop_actual_short20.yaml",
+      "source_git_blob": "9526c2f770b0ec2c5982666bbac987219a2511f3",
+      "state": "missing"
+    },
+    {
+      "path": "LightGenV2/tasks/t03_saliency/configs/moe_alpha40_crop_proxy_short20.yaml",
+      "source_git_blob": "45695b61fe47e01e9f4dbb618df9fee61cc4aee4",
+      "state": "missing"
+    },
+    {
+      "path": "LightGenV2/tasks/t03_saliency/configs/moe_alpha40_dc_only.yaml",
+      "source_git_blob": "b9b230e1b2cf814d364e8b2953e19f8756813c7a",
+      "state": "missing"
+    },
+    {
+      "path": "LightGenV2/tasks/t03_saliency/configs/moe_alpha40_early_control.yaml",
+      "source_git_blob": "d53a1722eb59b4220959b19b03a803f0d7277524",
+      "state": "missing"
+    },
+    {
+      "path": "LightGenV2/tasks/t03_saliency/configs/moe_alpha40_early_flip.yaml",
+      "source_git_blob": "03abc9db04ceefb28b0e4d312f9a252d4779ce60",
+      "state": "missing"
+    },
+    {
+      "path": "LightGenV2/tasks/t03_saliency/configs/moe_alpha40_early_grn.yaml",
+      "source_git_blob": "610b3e3b63a9ba3b8c1c9bdd8bc19082579e96c9",
+      "state": "missing"
+    },
+    {
+      "path": "LightGenV2/tasks/t03_saliency/configs/moe_alpha40_early_kernel5.yaml",
+      "source_git_blob": "9592f70f746350ebab2506bf14b35a4d329df561",
+      "state": "missing"
+    },
+    {
+      "path": "LightGenV2/tasks/t03_saliency/configs/moe_alpha40_early_kernel5_grn.yaml",
+      "source_git_blob": "5f4c223fc233c187b55953222564dbc44e661b73",
+      "state": "missing"
+    },
+    {
+      "path": "LightGenV2/tasks/t03_saliency/configs/moe_alpha40_extra_coco20k.yaml",
+      "source_git_blob": "07133f3f7842af7f47919a50d485120c46114508",
+      "state": "missing"
+    },
+    {
+      "path": "LightGenV2/tasks/t03_saliency/configs/moe_alpha40_extra_control.yaml",
+      "source_git_blob": "11a85e041f5020fa1aa0b7d8e857cd90472cb8d5",
+      "state": "missing"
+    },
+    {
+      "path": "LightGenV2/tasks/t03_saliency/configs/moe_alpha40_extra_early_coco20k.yaml",
+      "source_git_blob": "55e615d69d81434b92d04bfd80fe83cc73850602",
+      "state": "missing"
+    },
+    {
+      "path": "LightGenV2/tasks/t03_saliency/configs/moe_alpha40_extra_early_control.yaml",
+      "source_git_blob": "fb778d8a6f1d7558a18062dc7a08409d0fafca05",
+      "state": "missing"
+    },
+    {
+      "path": "LightGenV2/tasks/t03_saliency/configs/moe_alpha40_extra_regions.yaml",
+      "source_git_blob": "7a06663c1f2b77aae114a5c4cced8f6683f4e786",
+      "state": "missing"
+    },
+    {
+      "path": "LightGenV2/tasks/t03_saliency/configs/moe_alpha40_extra_semantic.yaml",
+      "source_git_blob": "b7aebf3f5f9a023d04e47c364b46aa32b120ac93",
+      "state": "missing"
+    },
+    {
+      "path": "LightGenV2/tasks/t03_saliency/configs/moe_alpha40_feature_joint_router_low_lr.yaml",
+      "source_git_blob": "bbd43b5a3a80525f0267a441f20a2b3a630e503a",
+      "state": "missing"
+    },
+    {
+      "path": "LightGenV2/tasks/t03_saliency/configs/moe_alpha40_feature_pretrain.yaml",
+      "source_git_blob": "614801b3ddd25b58da0149d93bf357fadaed2bfa",
+      "state": "missing"
+    },
+    {
+      "path": "LightGenV2/tasks/t03_saliency/configs/moe_alpha40_feature_pretrain_stable_router.yaml",
+      "source_git_blob": "218b1741caaa3ebe647cb46cbf8ac7eaff665081",
+      "state": "missing"
+    },
+    {
+      "path": "LightGenV2/tasks/t03_saliency/configs/moe_alpha40_feature_pretrain_strong.yaml",
+      "source_git_blob": "32137df8c65c38b3637fddb722bce30ca57f571c",
+      "state": "missing"
+    },
+    {
+      "path": "LightGenV2/tasks/t03_saliency/configs/moe_alpha40_first_stage_gt.yaml",
+      "source_git_blob": "c3cc54c28a9d7f3b7f1f9205238f4e751597b252",
+      "state": "missing"
+    },
+    {
+      "path": "LightGenV2/tasks/t03_saliency/configs/moe_alpha40_fixed_crop_actual.yaml",
+      "source_git_blob": "1dfa297667189b7685d9cd1a590e3250b374ae96",
+      "state": "missing"
+    },
+    {
+      "path": "LightGenV2/tasks/t03_saliency/configs/moe_alpha40_fixed_crop_proxy.yaml",
+      "source_git_blob": "41d1659b7ccc38420fac305ec0b4d7e14f3a70e6",
+      "state": "missing"
+    },
+    {
+      "path": "LightGenV2/tasks/t03_saliency/configs/moe_alpha40_generalize_aligned.yaml",
+      "source_git_blob": "de29c7c5e83623da5620dc2e832478132b747c66",
+      "state": "missing"
+    },
+    {
+      "path": "LightGenV2/tasks/t03_saliency/configs/moe_alpha40_generalize_kd020.yaml",
+      "source_git_blob": "c42be35653a50f0dc145799687d6f1b98dc40454",
+      "state": "missing"
+    },
+    {
+      "path": "LightGenV2/tasks/t03_saliency/configs/moe_alpha40_generalize_kd060.yaml",
+      "source_git_blob": "05771679f8f06136ebe2f81b0805bb271834729e",
+      "state": "missing"
+    },
+    {
+      "path": "LightGenV2/tasks/t03_saliency/configs/moe_alpha40_generalize_regularized.yaml",
+      "source_git_blob": "183cad9cd054dd4c8c2cd0eb0b73c4cb25ee6a5a",
+      "state": "missing"
+    },
+    {
+      "path": "LightGenV2/tasks/t03_saliency/configs/moe_alpha40_gsam_20260913.yaml",
+      "source_git_blob": "5fa959d62069ef0ac5623f0016713c7a32af1892",
+      "state": "missing"
+    },
+    {
+      "path": "LightGenV2/tasks/t03_saliency/configs/moe_alpha40_hardcc_bounded30.yaml",
+      "source_git_blob": "452f36f1bb626af97c6f8281f353e0a3c997a65f",
+      "state": "missing"
+    },
+    {
+      "path": "LightGenV2/tasks/t03_saliency/configs/moe_alpha40_hardcc_uniform30.yaml",
+      "source_git_blob": "25ab7811f6ecd6b3332a764e3b0577b18f27e7e3",
+      "state": "missing"
+    },
+    {
+      "path": "LightGenV2/tasks/t03_saliency/configs/moe_alpha40_hint_centered.yaml",
+      "source_git_blob": "32403295cffa9c03c35290244873ee1371886a10",
+      "state": "missing"
+    },
+    {
+      "path": "LightGenV2/tasks/t03_saliency/configs/moe_alpha40_hint_control.yaml",
+      "source_git_blob": "f5bf3264f6d5b8163f1b22741fb9f1c7dbfd5e4f",
+      "state": "missing"
+    },
+    {
+      "path": "LightGenV2/tasks/t03_saliency/configs/moe_alpha40_hint_cosine.yaml",
+      "source_git_blob": "86518afceaeb4019502f45c221decc49ed02f949",
+      "state": "missing"
+    },
+    {
+      "path": "LightGenV2/tasks/t03_saliency/configs/moe_alpha40_masked_kd.yaml",
+      "source_git_blob": "84e18164f911e4fd01dfd9f6107865b0fbf36ac2",
+      "state": "missing"
+    },
+    {
+      "path": "LightGenV2/tasks/t03_saliency/configs/moe_alpha40_masked_kd_p25.yaml",
+      "source_git_blob": "4c0c533fb6044a6791dcae60b350923e34d9e15b",
+      "state": "missing"
+    },
+    {
+      "path": "LightGenV2/tasks/t03_saliency/configs/moe_alpha40_mixup_20260913.yaml",
+      "source_git_blob": "43eb0a99320c912ad0fa02ff7f610bea94368572",
+      "state": "missing"
+    },
+    {
+      "path": "LightGenV2/tasks/t03_saliency/configs/moe_alpha40_noise_consistency_20260913.yaml",
+      "source_git_blob": "40e23d7470e53b339e449b2202758fb4e54897d5",
+      "state": "missing"
+    },
+    {
+      "path": "LightGenV2/tasks/t03_saliency/configs/moe_alpha40_optical_lr_priority_20260913.yaml",
+      "source_git_blob": "97288ffb62cfa6558bb3ee40dba4693f8fea58ac",
+      "state": "missing"
+    },
+    {
+      "path": "LightGenV2/tasks/t03_saliency/configs/moe_alpha40_refine_cc.yaml",
+      "source_git_blob": "23ba8fcddfb9e09971c6673e471d5690771ba95e",
+      "state": "missing"
+    },
+    {
+      "path": "LightGenV2/tasks/t03_saliency/configs/moe_alpha40_refine_control.yaml",
+      "source_git_blob": "49d40f127a4d19d9d2c07b61cb28ace392eb3cc9",
+      "state": "missing"
+    },
+    {
+      "path": "LightGenV2/tasks/t03_saliency/configs/moe_alpha40_refine_reheat.yaml",
+      "source_git_blob": "df43766416e8ac1300bda335aaefd2ce1fa1d83e",
+      "state": "missing"
+    },
+    {
+      "path": "LightGenV2/tasks/t03_saliency/configs/moe_alpha40_refine_weakaug.yaml",
+      "source_git_blob": "1a40dc19f1d307eae586600e5c6c1da16a23c67e",
+      "state": "missing"
+    },
+    {
+      "path": "LightGenV2/tasks/t03_saliency/configs/moe_alpha40_reheat_joint.yaml",
+      "source_git_blob": "8cfde3de86d99f1f5e61f1e719e8a93754b9e602",
+      "state": "missing"
+    },
+    {
+      "path": "LightGenV2/tasks/t03_saliency/configs/moe_alpha40_relational_kd.yaml",
+      "source_git_blob": "508e402537ea65a01f471d1c8aaf5e0e3163d680",
+      "state": "missing"
+    },
+    {
+      "path": "LightGenV2/tasks/t03_saliency/configs/moe_alpha40_reliable_teacher50.yaml",
+      "source_git_blob": "b669cf023be92436dc991a671badee18568d6c7c",
+      "state": "missing"
+    },
+    {
+      "path": "LightGenV2/tasks/t03_saliency/configs/moe_alpha40_rfstage_control.yaml",
+      "source_git_blob": "090207bf13d7666717113077dcf16338c41765ea",
+      "state": "missing"
+    },
+    {
+      "path": "LightGenV2/tasks/t03_saliency/configs/moe_alpha40_rfstage_flip.yaml",
+      "source_git_blob": "9d34a390bdd3d21482fd6dc6cf103bef56fe406d",
+      "state": "missing"
+    },
+    {
+      "path": "LightGenV2/tasks/t03_saliency/configs/moe_alpha40_rfstage_kernel5.yaml",
+      "source_git_blob": "c3bffcad2a2154f2da07beb69b3490dd0f757952",
+      "state": "missing"
+    },
+    {
+      "path": "LightGenV2/tasks/t03_saliency/configs/moe_alpha40_rfstage_staged.yaml",
+      "source_git_blob": "bff95e2b74f201d71c37ac9604d8c91601e9bf90",
+      "state": "missing"
+    },
+    {
+      "path": "LightGenV2/tasks/t03_saliency/configs/moe_alpha40_router_radians.yaml",
+      "source_git_blob": "42e48020728b9ecccba338d7e1edeb0f960539c5",
+      "state": "missing"
+    },
+    {
+      "path": "LightGenV2/tasks/t03_saliency/configs/moe_alpha40_sam001.yaml",
+      "source_git_blob": "32d087d0446143ed5551bffb0634e4ab9dda5192",
+      "state": "missing"
+    },
+    {
+      "path": "LightGenV2/tasks/t03_saliency/configs/moe_alpha40_sam005.yaml",
+      "source_git_blob": "314cac5ebbeb2b5537628270dea458032d28f8f8",
+      "state": "missing"
+    },
+    {
+      "path": "LightGenV2/tasks/t03_saliency/configs/moe_alpha40_sam010.yaml",
+      "source_git_blob": "1c00c6c5b2f965e34e638e3bfbfe411d6fb2da1f",
+      "state": "missing"
+    },
+    {
+      "path": "LightGenV2/tasks/t03_saliency/configs/moe_alpha40_sam_batch8_20260913.yaml",
+      "source_git_blob": "83e408d58533d32f7687972efd59ad729b1dd010",
+      "state": "missing"
+    },
+    {
+      "path": "LightGenV2/tasks/t03_saliency/configs/moe_alpha40_sam_batch8_crosssample_20260913.yaml",
+      "source_git_blob": "58938921b3e1ba426581f6eed9c2a56ef7362ee7",
+      "state": "missing"
+    },
+    {
+      "path": "LightGenV2/tasks/t03_saliency/configs/moe_alpha40_sam_control.yaml",
+      "source_git_blob": "3842a93dbe9b5a1a4b47fe95ba71801582d2e8c6",
+      "state": "missing"
+    },
+    {
+      "path": "LightGenV2/tasks/t03_saliency/configs/moe_alpha40_sam_exactfusion.yaml",
+      "source_git_blob": "697d19b06fd60c1dfed1a7dba5dbc3680f2c9daf",
+      "state": "missing"
+    },
+    {
+      "path": "LightGenV2/tasks/t03_saliency/configs/moe_alpha40_sam_group64.yaml",
+      "source_git_blob": "a22ae208133726eba631c6cdddb0f6be186d5c4d",
+      "state": "missing"
+    },
+    {
+      "path": "LightGenV2/tasks/t03_saliency/configs/moe_alpha40_sam_spatialcc.yaml",
+      "source_git_blob": "1a7dc85593f57af3a1af6867b101af26c80f15e5",
+      "state": "missing"
+    },
+    {
+      "path": "LightGenV2/tasks/t03_saliency/configs/moe_alpha40_sam_spatialcc_kd2.yaml",
+      "source_git_blob": "50e339d5d5e74f25597fd96357b4b5f06e38ef50",
+      "state": "missing"
+    },
+    {
+      "path": "LightGenV2/tasks/t03_saliency/configs/moe_alpha40_sam_spatialcc_kd2_global16.yaml",
+      "source_git_blob": "aed835d4c4aec18d1fd1993614e59b0ae50507aa",
+      "state": "missing"
+    },
+    {
+      "path": "LightGenV2/tasks/t03_saliency/configs/moe_alpha40_sam_spatialcc_kd2_global64.yaml",
+      "source_git_blob": "bb77d18412bbf03da29ec299d63be2ba3e5809ab",
+      "state": "missing"
+    },
+    {
+      "path": "LightGenV2/tasks/t03_saliency/configs/moe_alpha40_sam_wide576.yaml",
+      "source_git_blob": "0331a6db2a612d6fb7415b6ae7cb560d0d6f9f7c",
+      "state": "missing"
+    },
+    {
+      "path": "LightGenV2/tasks/t03_saliency/configs/moe_alpha40_soften_hard_balance.yaml",
+      "source_git_blob": "9ec6c027d38a9db20b23ccb11c922cceeeb75ec4",
+      "state": "missing"
+    },
+    {
+      "path": "LightGenV2/tasks/t03_saliency/configs/moe_alpha40_teacher_pretrain15.yaml",
+      "source_git_blob": "5a43393121761d6881dc423af53f29f6521baa86",
+      "state": "missing"
+    },
+    {
+      "path": "LightGenV2/tasks/t03_saliency/configs/moe_alpha40_viewreg_cffn.yaml",
+      "source_git_blob": "6555da67eeecd5ee377da8a40f3972ed768776b0",
+      "state": "missing"
+    },
+    {
+      "path": "LightGenV2/tasks/t03_saliency/configs/moe_alpha40_viewreg_cffn_kd2.yaml",
+      "source_git_blob": "8dfe351ab00651fc92796c3bfe5add4c69b8bf89",
+      "state": "missing"
+    },
+    {
+      "path": "LightGenV2/tasks/t03_saliency/configs/moe_alpha40_viewreg_control.yaml",
+      "source_git_blob": "c7600b4a5895dc80654a5ec6a93f5573d1ecd947",
+      "state": "missing"
+    },
+    {
+      "path": "LightGenV2/tasks/t03_saliency/configs/moe_alpha40_viewreg_global16.yaml",
+      "source_git_blob": "e6253cb1c8bc55cef389f40889d8ffe83d849cee",
+      "state": "missing"
+    },
+    {
+      "path": "LightGenV2/tasks/t03_saliency/configs/moe_alpha40_viewreg_kernel13.yaml",
+      "source_git_blob": "4bee91a4e0183ffd74c03184ba10a86d0d2b0b80",
+      "state": "missing"
+    },
+    {
+      "path": "LightGenV2/tasks/t03_saliency/configs/moe_alpha40_viewreg_mix50.yaml",
+      "source_git_blob": "95d0bb639c87fa6b052e5587bf7ca04297cc657f",
+      "state": "missing"
+    },
+    {
+      "path": "LightGenV2/tasks/t03_saliency/configs/moe_alpha40_viewreg_sam005.yaml",
+      "source_git_blob": "b3d17635dbee32f7dbde545909ba75bfd5d33749",
+      "state": "missing"
+    },
+    {
+      "path": "LightGenV2/tasks/t03_saliency/configs/moe_alpha40_viewreg_sam_crop90.yaml",
+      "source_git_blob": "fe404add80ab221ef1854fb4c7b23b6447630c13",
+      "state": "missing"
+    },
+    {
+      "path": "LightGenV2/tasks/t03_saliency/configs/moe_alpha40_viewreg_sam_spatialcc.yaml",
+      "source_git_blob": "8f02ba54b841b0658bed8f5b95f4a0751406a33c",
+      "state": "missing"
+    },
+    {
+      "path": "LightGenV2/tasks/t03_saliency/configs/moe_dc20_cc_continue.yaml",
+      "source_git_blob": "72fcc0b95ffd6a3e113410e34da1dd13d0197322",
+      "state": "missing"
+    },
+    {
+      "path": "LightGenV2/tasks/t03_saliency/configs/moe_dc20_mean_only_cc_continue.yaml",
+      "source_git_blob": "59521281838dcf322e66d46b8e0a641d7948f1ff",
+      "state": "missing"
+    },
+    {
+      "path": "LightGenV2/tasks/t03_saliency/configs/moe_dc20_mean_only_continue.yaml",
+      "source_git_blob": "6ccd0232a810f1879ab950640678479868707e6c",
+      "state": "missing"
+    },
+    {
+      "path": "LightGenV2/tasks/t03_saliency/configs/moe_dc20_no_shift_continue.yaml",
+      "source_git_blob": "e3a0b20465650034fb23056971f33891703782ac",
+      "state": "missing"
+    },
+    {
+      "path": "LightGenV2/tasks/t03_saliency/configs/moe_optical_router_scale_matched_dc20.yaml",
+      "source_git_blob": "1cbb9e311d4c2d041df8e902c99bd744578f0c81",
+      "state": "identical"
+    },
+    {
+      "path": "LightGenV2/tasks/t03_saliency/configs/moe_staged_alpha_free.yaml",
+      "source_git_blob": "e8444cc5a91be1f6bc5ea6441c1f4bf3276ac7c0",
+      "state": "missing"
+    },
+    {
+      "path": "LightGenV2/tasks/t03_saliency/configs/moe_staged_alpha_ge040.yaml",
+      "source_git_blob": "92d41b91f30b76d5d88d872054fb301b591a0c20",
+      "state": "missing"
+    },
+    {
+      "path": "LightGenV2/tasks/t03_saliency/configs/qwen_aligned_head_50.yaml",
+      "source_git_blob": "2434aba4c5c3b7b23be3ac9037bc844aa0d93ab1",
+      "state": "missing"
+    },
+    {
+      "path": "LightGenV2/tasks/t03_saliency/configs/qwen_frozen_pending_5090d.yaml",
+      "source_git_blob": "19993f41519fce908f47eaf066f3f70db8023891",
+      "state": "identical"
+    },
+    {
+      "path": "LightGenV2/tasks/t03_saliency/cross_sample_balance.py",
+      "source_git_blob": "7c5821ddc8c9214fffc28aaad71da3bfb4bf4d08",
+      "state": "missing"
+    },
+    {
+      "path": "LightGenV2/tasks/t03_saliency/export_licensed_examples.py",
+      "source_git_blob": "1e140e108faefebba8ff05404688ec993f0c976c",
+      "state": "missing"
+    },
+    {
+      "path": "LightGenV2/tasks/t03_saliency/export_teacher_features.py",
+      "source_git_blob": "3c9ecef2fa03e81ac6162158bd4cd6a31ea90322",
+      "state": "missing"
+    },
+    {
+      "path": "LightGenV2/tasks/t03_saliency/export_teacher_maps.py",
+      "source_git_blob": "0c2265dd141ec0c987cfd6fefadd1e33bfbe2d1f",
+      "state": "missing"
+    },
+    {
+      "path": "LightGenV2/tasks/t03_saliency/export_unlabeled_teacher.py",
+      "source_git_blob": "7a4a0a9afe07ad978f0f3f3a4b96de637e649b0c",
+      "state": "missing"
+    },
+    {
+      "path": "LightGenV2/tasks/t03_saliency/feature_hints.py",
+      "source_git_blob": "adda2e4e4a37beb05c9c2f6b9fb60ef942af106c",
+      "state": "missing"
+    },
+    {
+      "path": "LightGenV2/tasks/t03_saliency/feature_pretraining.py",
+      "source_git_blob": "04bb7d9ea87d6a625dc46eb63185093639fbe74e",
+      "state": "missing"
+    },
+    {
+      "path": "LightGenV2/tasks/t03_saliency/first_stage_supervision.py",
+      "source_git_blob": "f061ebd1eedefe309fd65be97002147739048fe8",
+      "state": "missing"
+    },
+    {
+      "path": "LightGenV2/tasks/t03_saliency/fixed_crop_teacher.py",
+      "source_git_blob": "d3d1cfd1e1841cfc5bb2ee427471b2e7f32896b9",
+      "state": "missing"
+    },
+    {
+      "path": "LightGenV2/tasks/t03_saliency/fixed_crop_training.py",
+      "source_git_blob": "d2a8f3e9a0d6f96ad1a3ea58c51314fdc77119da",
+      "state": "missing"
+    },
+    {
+      "path": "LightGenV2/tasks/t03_saliency/fusion_training.py",
+      "source_git_blob": "42d7c4189c8f983dc26a07b795ae66b16b167760",
+      "state": "missing"
+    },
+    {
+      "path": "LightGenV2/tasks/t03_saliency/handoff_cli.py",
+      "source_git_blob": "1c74b35944f341fcd44e0a0dbc3aaa90e5e7111e",
+      "state": "missing"
+    },
+    {
+      "path": "LightGenV2/tasks/t03_saliency/hard_example_cc.py",
+      "source_git_blob": "bd49a750a3e3d9f092d111c138132a46371e1c5a",
+      "state": "missing"
+    },
+    {
+      "path": "LightGenV2/tasks/t03_saliency/lab_bench.py",
+      "source_git_blob": "1482479b02779d661c3f61db856cc5c20172008a",
+      "state": "missing"
+    },
+    {
+      "path": "LightGenV2/tasks/t03_saliency/lab_runtime.py",
+      "source_git_blob": "8179c6b3454773f90b1564a012c6d0718ae8e6ec",
+      "state": "missing"
+    },
+    {
+      "path": "LightGenV2/tasks/t03_saliency/lab_supervise.py",
+      "source_git_blob": "f309a3242286baca47413f623e8de948426c3307",
+      "state": "missing"
+    },
+    {
+      "path": "LightGenV2/tasks/t03_saliency/lightweight_residual.py",
+      "source_git_blob": "74b50505d3930dc996364a55a55689a6b41433f5",
+      "state": "missing"
+    },
+    {
+      "path": "LightGenV2/tasks/t03_saliency/masked_distillation.py",
+      "source_git_blob": "ab520e5de62d3207395b07192c4253b27ef5cb3f",
+      "state": "missing"
+    },
+    {
+      "path": "LightGenV2/tasks/t03_saliency/meadowlark_cli.py",
+      "source_git_blob": "e9fe90e507ba308e88798047ca65fb7e11615684",
+      "state": "missing"
+    },
+    {
+      "path": "LightGenV2/tasks/t03_saliency/mixup_training.py",
+      "source_git_blob": "8a3e74b0c44f844e9596ae7d25bf40ef29f6eee4",
+      "state": "missing"
+    },
+    {
+      "path": "LightGenV2/tasks/t03_saliency/modeling.py",
+      "source_git_blob": "9af1cf227652d408377fe38548362ba2e12658aa",
+      "state": "different_review_required"
+    },
+    {
+      "path": "LightGenV2/tasks/t03_saliency/plateau.py",
+      "source_git_blob": "d12e20c1b062b15a3310771e9f3dcffd5456c9c5",
+      "state": "missing"
+    },
+    {
+      "path": "LightGenV2/tasks/t03_saliency/prepare_semantic_targets.py",
+      "source_git_blob": "545946d550ec600678536a9097a0e2d0a1c84c48",
+      "state": "missing"
+    },
+    {
+      "path": "LightGenV2/tasks/t03_saliency/prepare_unlabeled_pool.py",
+      "source_git_blob": "29b97ba962e40feb58bd9ef61dc385de3331eeb6",
+      "state": "missing"
+    },
+    {
+      "path": "LightGenV2/tasks/t03_saliency/pyramid_supervision.py",
+      "source_git_blob": "85037076c71e1a1817c567fa8a2169e6c7269e55",
+      "state": "missing"
+    },
+    {
+      "path": "LightGenV2/tasks/t03_saliency/recheck_aligned.py",
+      "source_git_blob": "34826a71fa5488c78eb7cb92ebe0b2e897c552ac",
+      "state": "missing"
+    },
+    {
+      "path": "LightGenV2/tasks/t03_saliency/relational_distillation.py",
+      "source_git_blob": "61e8f9e9a6eac9655f663a7ec5b67a7558ae3c60",
+      "state": "missing"
+    },
+    {
+      "path": "LightGenV2/tasks/t03_saliency/report.py",
+      "source_git_blob": "849a85de62248e3cb8d48ced25d62c583a64fab5",
+      "state": "identical"
+    },
+    {
+      "path": "LightGenV2/tasks/t03_saliency/reproduce_baseline.py",
+      "source_git_blob": "fa5d8a75b96be11cc21297f8e26b38c6dd5aed03",
+      "state": "missing"
+    },
+    {
+      "path": "LightGenV2/tasks/t03_saliency/router_phase.py",
+      "source_git_blob": "0015e4723fcc4eb151a59a1ceb189a6d433e0c02",
+      "state": "missing"
+    },
+    {
+      "path": "LightGenV2/tasks/t03_saliency/run.py",
+      "source_git_blob": "08695a6f13f9db42adecdebac6b46b3748a4750f",
+      "state": "different_review_required"
+    },
+    {
+      "path": "LightGenV2/tasks/t03_saliency/sam_training.py",
+      "source_git_blob": "4950a076a2a76a95c3694a5b27fd8fa60685c8b7",
+      "state": "missing"
+    },
+    {
+      "path": "LightGenV2/tasks/t03_saliency/semantic_auxiliary.py",
+      "source_git_blob": "e774c1155038c76ffc847640bb3df6e7456a11dd",
+      "state": "missing"
+    },
+    {
+      "path": "LightGenV2/tasks/t03_saliency/semisupervised.py",
+      "source_git_blob": "daf6d8467fea9c148814e61daea3dde8ced63d1f",
+      "state": "missing"
+    },
+    {
+      "path": "LightGenV2/tasks/t03_saliency/settings.py",
+      "source_git_blob": "d00b834e48203a0858d69e902ff3a46441a3b95d",
+      "state": "different_review_required"
+    },
+    {
+      "path": "LightGenV2/tasks/t03_saliency/teacher_reliability.py",
+      "source_git_blob": "91954ac087e9bc9a17bf994e4fcd1c2e8f92fab3",
+      "state": "missing"
+    },
+    {
+      "path": "LightGenV2/tasks/t03_saliency/tests/__init__.py",
+      "source_git_blob": "df98dab44f70ad90bbf045b2d226851d3755ddbf",
+      "state": "identical"
+    },
+    {
+      "path": "LightGenV2/tasks/t03_saliency/tests/test_aligned_weak.py",
+      "source_git_blob": "de98a559d79dcf1c5f3bf761a19df5d81c171d86",
+      "state": "missing"
+    },
+    {
+      "path": "LightGenV2/tasks/t03_saliency/tests/test_alpha_and_aligned_head.py",
+      "source_git_blob": "9276546c0f6b72fe18315387c59a25e63d634085",
+      "state": "missing"
+    },
+    {
+      "path": "LightGenV2/tasks/t03_saliency/tests/test_alternating_training.py",
+      "source_git_blob": "095471897df5371ecd10b177fe0087ffd22382fb",
+      "state": "missing"
+    },
+    {
+      "path": "LightGenV2/tasks/t03_saliency/tests/test_calibration_probe.py",
+      "source_git_blob": "922f0287be9a030f4cab72dbe16647956a91aa1e",
+      "state": "missing"
+    },
+    {
+      "path": "LightGenV2/tasks/t03_saliency/tests/test_checkpoint_audit.py",
+      "source_git_blob": "330cc043375a3ebb8e71daa601e91ae7262c944e",
+      "state": "missing"
+    },
+    {
+      "path": "LightGenV2/tasks/t03_saliency/tests/test_contract.py",
+      "source_git_blob": "74f3ad0ee3dc4b61496edc3b58802e8032030034",
+      "state": "identical"
+    },
+    {
+      "path": "LightGenV2/tasks/t03_saliency/tests/test_cross_sample_balance.py",
+      "source_git_blob": "10ba1f4e7a363f1e1a22fe09517c8b6488cc9b67",
+      "state": "missing"
+    },
+    {
+      "path": "LightGenV2/tasks/t03_saliency/tests/test_feature_hints.py",
+      "source_git_blob": "f66ca2e174aad57b4156194875a57c55b24bbb63",
+      "state": "missing"
+    },
+    {
+      "path": "LightGenV2/tasks/t03_saliency/tests/test_feature_pretraining.py",
+      "source_git_blob": "71b9dc50e07fd424daf361afd798b2258fa64a3c",
+      "state": "missing"
+    },
+    {
+      "path": "LightGenV2/tasks/t03_saliency/tests/test_ffn_widening.py",
+      "source_git_blob": "eca5b5b90f7f3340cac687185d5f339c69e840ad",
+      "state": "missing"
+    },
+    {
+      "path": "LightGenV2/tasks/t03_saliency/tests/test_first_stage_supervision.py",
+      "source_git_blob": "5c5c863b60e6c74f03609bf9ac597c843b5d31fe",
+      "state": "missing"
+    },
+    {
+      "path": "LightGenV2/tasks/t03_saliency/tests/test_fixed_crop_teacher.py",
+      "source_git_blob": "6b8233d27fe7df53468df582bf683f999d9aaf10",
+      "state": "missing"
+    },
+    {
+      "path": "LightGenV2/tasks/t03_saliency/tests/test_fixed_crop_training.py",
+      "source_git_blob": "f574fc7792b68eb44aed3415e9aa44e4c7458c2e",
+      "state": "missing"
+    },
+    {
+      "path": "LightGenV2/tasks/t03_saliency/tests/test_fusion_training.py",
+      "source_git_blob": "a5f24f85e2e266cccfcf5f6fd2441adaf5372eb4",
+      "state": "missing"
+    },
+    {
+      "path": "LightGenV2/tasks/t03_saliency/tests/test_global_spatial.py",
+      "source_git_blob": "0ff1c40e57bde825bd56c9612c8ce0e2b1a86098",
+      "state": "missing"
+    },
+    {
+      "path": "LightGenV2/tasks/t03_saliency/tests/test_grouped_ffn.py",
+      "source_git_blob": "57c7058abd891c670783c17bc5328ee6916f35ff",
+      "state": "missing"
+    },
+    {
+      "path": "LightGenV2/tasks/t03_saliency/tests/test_gsam_training.py",
+      "source_git_blob": "6237e8b7b657845aa1c84baa3a9bb60d996a8ff6",
+      "state": "missing"
+    },
+    {
+      "path": "LightGenV2/tasks/t03_saliency/tests/test_hard_example_cc.py",
+      "source_git_blob": "a1022bcebe7c9f09c7932754eecca9669a67d1c9",
+      "state": "missing"
+    },
+    {
+      "path": "LightGenV2/tasks/t03_saliency/tests/test_kernel13.py",
+      "source_git_blob": "7595506990ce80faec1fa93898d5a4a3b8f9f23a",
+      "state": "missing"
+    },
+    {
+      "path": "LightGenV2/tasks/t03_saliency/tests/test_lab_runtime.py",
+      "source_git_blob": "748547afb97c58561d8cc9f15687465831f3d29b",
+      "state": "missing"
+    },
+    {
+      "path": "LightGenV2/tasks/t03_saliency/tests/test_lightweight_residual.py",
+      "source_git_blob": "e02a35c75e1df9d4d52ca8f2b9d5bf60a2864a3c",
+      "state": "missing"
+    },
+    {
+      "path": "LightGenV2/tasks/t03_saliency/tests/test_masked_distillation.py",
+      "source_git_blob": "a987b518de6ba329ed0fc4c16e89c9e912b647ca",
+      "state": "missing"
+    },
+    {
+      "path": "LightGenV2/tasks/t03_saliency/tests/test_meadowlark_handoff.py",
+      "source_git_blob": "d9de84b061ddda91e3417a9dfbfa3b366a3f1f83",
+      "state": "missing"
+    },
+    {
+      "path": "LightGenV2/tasks/t03_saliency/tests/test_mixup_training.py",
+      "source_git_blob": "f0174233306b3146170b884bbdb964bd3ec9f015",
+      "state": "missing"
+    },
+    {
+      "path": "LightGenV2/tasks/t03_saliency/tests/test_noise_ablation.py",
+      "source_git_blob": "58d84148d90b975487158ecbc09f5681e7822750",
+      "state": "missing"
+    },
+    {
+      "path": "LightGenV2/tasks/t03_saliency/tests/test_noise_consistency.py",
+      "source_git_blob": "1281286550941f1fcf2a5f1a7c2f37a8e11a6cf8",
+      "state": "missing"
+    },
+    {
+      "path": "LightGenV2/tasks/t03_saliency/tests/test_optical_lr_priority.py",
+      "source_git_blob": "efa54e4ab7a922a2d8b4635c43caa26c34ef199f",
+      "state": "missing"
+    },
+    {
+      "path": "LightGenV2/tasks/t03_saliency/tests/test_plateau.py",
+      "source_git_blob": "22c165c283bac452484c584bfa157b9e5466a2d0",
+      "state": "missing"
+    },
+    {
+      "path": "LightGenV2/tasks/t03_saliency/tests/test_pyramid_supervision.py",
+      "source_git_blob": "c46eb9c7159ee2a585a49119ae3cd4ee9a92ceb1",
+      "state": "missing"
+    },
+    {
+      "path": "LightGenV2/tasks/t03_saliency/tests/test_recheck_snapshot.py",
+      "source_git_blob": "7d98abfdf0e7d70e618fc7dcfe09b69d34fdeda3",
+      "state": "missing"
+    },
+    {
+      "path": "LightGenV2/tasks/t03_saliency/tests/test_recheck_split.py",
+      "source_git_blob": "fab752b9b18b98d9909b1c4884d19a865c8fa0c8",
+      "state": "missing"
+    },
+    {
+      "path": "LightGenV2/tasks/t03_saliency/tests/test_relational_distillation.py",
+      "source_git_blob": "2dc19e71fca5a72bd308eca443f5727823926d91",
+      "state": "missing"
+    },
+    {
+      "path": "LightGenV2/tasks/t03_saliency/tests/test_reproduction.py",
+      "source_git_blob": "3de1fad3e4452bceed274c6fe6f91096f87ef579",
+      "state": "missing"
+    },
+    {
+      "path": "LightGenV2/tasks/t03_saliency/tests/test_rfstage.py",
+      "source_git_blob": "bb51227ff16db1dc780218e02c0f981e8219330f",
+      "state": "missing"
+    },
+    {
+      "path": "LightGenV2/tasks/t03_saliency/tests/test_router_phase.py",
+      "source_git_blob": "d3830030d7093e9050489081861c9ebe87c90515",
+      "state": "missing"
+    },
+    {
+      "path": "LightGenV2/tasks/t03_saliency/tests/test_sam_training.py",
+      "source_git_blob": "19d53ec72e8cb86049d8c6235873a6917beeaefe",
+      "state": "missing"
+    },
+    {
+      "path": "LightGenV2/tasks/t03_saliency/tests/test_semantic_auxiliary.py",
+      "source_git_blob": "747ffb0cee8f2d5a5cb00f2f847f3de2ba2b6e0e",
+      "state": "missing"
+    },
+    {
+      "path": "LightGenV2/tasks/t03_saliency/tests/test_semantic_targets.py",
+      "source_git_blob": "c2ec1e10110b68bc4c020d1a5e43e302274774c6",
+      "state": "missing"
+    },
+    {
+      "path": "LightGenV2/tasks/t03_saliency/tests/test_semisupervised.py",
+      "source_git_blob": "04dbbd7f810aaf85d83dd49e4533ee053950b6ae",
+      "state": "missing"
+    },
+    {
+      "path": "LightGenV2/tasks/t03_saliency/tests/test_soften_hard_balance.py",
+      "source_git_blob": "f6995e9dabd5bd8ce21e57795cc6b6e144bc2c0d",
+      "state": "missing"
+    },
+    {
+      "path": "LightGenV2/tasks/t03_saliency/tests/test_spatial_cc_distillation.py",
+      "source_git_blob": "232b856f01acec18967b3623d4a60d23c40abe1c",
+      "state": "missing"
+    },
+    {
+      "path": "LightGenV2/tasks/t03_saliency/tests/test_spatial_ffn.py",
+      "source_git_blob": "0af1c98116a05e655bd17fc16d1ecda04a07471b",
+      "state": "missing"
+    },
+    {
+      "path": "LightGenV2/tasks/t03_saliency/tests/test_teacher_curriculum.py",
+      "source_git_blob": "d7f62e5bf136a18750a807522b672610faa3ec83",
+      "state": "missing"
+    },
+    {
+      "path": "LightGenV2/tasks/t03_saliency/tests/test_teacher_reliability.py",
+      "source_git_blob": "98ad5d874f3e75c8a777bbc21d2003700198399c",
+      "state": "missing"
+    },
+    {
+      "path": "LightGenV2/tasks/t03_saliency/tests/test_training_support.py",
+      "source_git_blob": "7b8549a14f08eadc7a80d5d8ae7abe61c57d8f11",
+      "state": "missing"
+    },
+    {
+      "path": "LightGenV2/tasks/t03_saliency/tests/test_unlabeled_data.py",
+      "source_git_blob": "ea888b9d274cb82420b4e9833f1339b977c9906c",
+      "state": "missing"
+    },
+    {
+      "path": "LightGenV2/tasks/t03_saliency/tests/test_unlabeled_pool.py",
+      "source_git_blob": "a9b53be5a3a5c21b32a71c2d95c372799c244f7a",
+      "state": "missing"
+    },
+    {
+      "path": "LightGenV2/tasks/t03_saliency/training.py",
+      "source_git_blob": "265a5e89548e9ebdd6d80471bd49db91bd769d70",
+      "state": "different_review_required"
+    },
+    {
+      "path": "LightGenV2/tasks/t03_saliency/training_support.py",
+      "source_git_blob": "9c4ee84a404908daea7406d6523fca0d72150eb5",
+      "state": "missing"
+    },
+    {
+      "path": "LightGenV2/tasks/t03_saliency/unlabeled_data.py",
+      "source_git_blob": "18c4008c65b7bd3ba3ce5428538853bd2a5376eb",
+      "state": "missing"
+    },
+    {
+      "path": "LightGenV2/tasks/t03_saliency/visualize.py",
+      "source_git_blob": "8adfd8db3d089b13a74faddfa878c8be03cd7b41",
+      "state": "different_review_required"
+    }
+  ],
+  "deletion_authorized": false
+}
