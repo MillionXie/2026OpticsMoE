@@ -1,0 +1,525 @@
+{
+  "source_commit": "7093ec46082eed2fae127ec5028d3e2e8548b592",
+  "entries": [
+    "LightGenV2/tasks/t12_text_to_image/audited_unified_run.py",
+    "LightGenV2/tasks/t12_text_to_image/lab_shs8um/train_physical_robust.py",
+    "LightGenV2/tasks/t12_text_to_image/train_matched_qwen_baseline.py",
+    "LightGenV2/tasks/t12_text_to_image/train_pix2pix_turbo_baseline.py",
+    "LightGenV2/tasks/t12_text_to_image/tests/test_audited_unified.py",
+    "LightGenV2/tasks/t12_text_to_image/tests/test_robust_channel.py",
+    "LightGenV2/tasks/t12_text_to_image/tests/test_matched_summary.py",
+    "LightGenV2/tasks/t12_text_to_image/tests/test_pix2pix_baseline.py",
+    "LightGenV2/tasks/t12_text_to_image/tests/test_small_fullframe.py"
+  ],
+  "paths": [
+    {
+      "path": "experiments/__init__.py",
+      "bytes": 563,
+      "sha256": "75749e81ecc24c9b80e103e22e93682d393ba15972cd34dfc49fb59b77a0a311",
+      "state": "same_in_main"
+    },
+    {
+      "path": "experiments/qwen3_vl_embedding_2b_caltech101_balanced_optical_fusion_ablation/__init__.py",
+      "bytes": 80,
+      "sha256": "b02b25c1ba6e460238dad434be328d1884eb429d24b872b61caa4fd2056eb5f3",
+      "state": "same_in_main"
+    },
+    {
+      "path": "experiments/qwen3_vl_embedding_2b_caltech101_balanced_optical_fusion_ablation/modeling.py",
+      "bytes": 31969,
+      "sha256": "08df0f2aaa2f397ec10fbb3355507c138deae4e3b5f5d65e10e33d0a8e78e6dd",
+      "state": "same_in_main"
+    },
+    {
+      "path": "experiments/qwen3_vl_embedding_2b_caltech101_electronic_retrieval/__init__.py",
+      "bytes": 85,
+      "sha256": "4a1d42a84c1a9f4bf8f59c7810a13196b807ea6eabfccdd268e2d571b02f425e",
+      "state": "same_in_main"
+    },
+    {
+      "path": "experiments/qwen3_vl_embedding_2b_caltech101_electronic_retrieval/electronic_blocks.py",
+      "bytes": 18780,
+      "sha256": "2b67e0501b6f86cf057f099c783b60d64a6c10513f9f1557249fe09d427fa290",
+      "state": "same_in_main"
+    },
+    {
+      "path": "experiments/qwen3_vl_embedding_2b_caltech101_electronic_retrieval/modeling.py",
+      "bytes": 5525,
+      "sha256": "37df96748e6fe6997630be0e2a6ba62586b403028b6ce1cf0849f6792b6cd9a7",
+      "state": "same_in_main"
+    },
+    {
+      "path": "experiments/qwen3_vl_embedding_2b_caltech101_electronic_retrieval/settings.py",
+      "bytes": 8733,
+      "sha256": "4085e4b216f755b644a52c44cf7e8b3bc6b216f74e0b560dac9843dd7e1ca3ab",
+      "state": "same_in_main"
+    },
+    {
+      "path": "experiments/qwen3_vl_embedding_2b_caltech101_four_layer_optical_retrieval_10cm_robust/__init__.py",
+      "bytes": 74,
+      "sha256": "8a80357bf864c03eef98491db71e56dd0a5f41ba7ab41366c475e25839906452",
+      "state": "same_in_main"
+    },
+    {
+      "path": "experiments/qwen3_vl_embedding_2b_caltech101_four_layer_optical_retrieval_10cm_robust/modeling.py",
+      "bytes": 6121,
+      "sha256": "b4cf6c02d7061a1f099894c0b02a33714c37ad0626a476124a0da26b7839eafc",
+      "state": "same_in_main"
+    },
+    {
+      "path": "experiments/qwen3_vl_embedding_2b_caltech101_four_layer_optical_retrieval_10cm_robust/optical_blocks.py",
+      "bytes": 44469,
+      "sha256": "139a161ac6820e415885598e14f0337ef27292e4b6c9f51232f5ba87a8d06b33",
+      "state": "same_in_main"
+    },
+    {
+      "path": "experiments/qwen3_vl_embedding_2b_caltech101_four_layer_optical_retrieval_10cm_robust/settings.py",
+      "bytes": 25499,
+      "sha256": "0382adbb1c4938a825fafc6033faad2cfb9f51cd940cb3945f7a9dc5df5cf69f",
+      "state": "same_in_main"
+    },
+    {
+      "path": "experiments/qwen3_vl_embedding_2b_caltech101_four_layer_optical_retrieval_10cm_warmstart5/__init__.py",
+      "bytes": 388,
+      "sha256": "80ac8951c9213c175386ca20fba4e3225dd0d954df016e7ccb837bdfa26bcf45",
+      "state": "same_in_main"
+    },
+    {
+      "path": "experiments/qwen3_vl_embedding_2b_caltech101_four_layer_optical_retrieval_10cm_warmstart5/modeling.py",
+      "bytes": 14027,
+      "sha256": "aa85388332b44e4636f69d3288e0bb94d03cf9962423cf2065616e9173249023",
+      "state": "same_in_main"
+    },
+    {
+      "path": "experiments/qwen3_vl_embedding_2b_caltech101_four_layer_optical_router_retrieval/__init__.py",
+      "bytes": 80,
+      "sha256": "e1b1eaddffbd36d2d1202295bef3c6c1988c4a4f675fa5d25b9b3b38c764e23f",
+      "state": "same_in_main"
+    },
+    {
+      "path": "experiments/qwen3_vl_embedding_2b_caltech101_four_layer_optical_router_retrieval/artifacts.py",
+      "bytes": 6719,
+      "sha256": "e1326dbe7a223e1be878850a23448cb5767a4c20d4a7d71a6444b5f729c31f3b",
+      "state": "same_in_main"
+    },
+    {
+      "path": "experiments/qwen3_vl_embedding_2b_caltech101_four_layer_optical_router_retrieval/modeling.py",
+      "bytes": 10795,
+      "sha256": "3dd84f5d54ab131199b087829b23c14b1800f1ee3d7c412c314ffcbc885657dd",
+      "state": "same_in_main"
+    },
+    {
+      "path": "experiments/qwen3_vl_embedding_2b_caltech101_four_layer_optical_router_retrieval/router.py",
+      "bytes": 27291,
+      "sha256": "00f0f3013986f976a22f2fafe6b60b715773e8744450d9953fca3a9bb3e73593",
+      "state": "same_in_main"
+    },
+    {
+      "path": "experiments/qwen3_vl_embedding_2b_caltech101_four_layer_optical_router_retrieval/settings.py",
+      "bytes": 18537,
+      "sha256": "ded14f7039724235967ac1b9f54170f818120dc66a3b7d83682eccf3ffffb0f4",
+      "state": "same_in_main"
+    },
+    {
+      "path": "experiments/qwen3_vl_embedding_2b_caltech101_robust_hybrid_retrieval/__init__.py",
+      "bytes": 77,
+      "sha256": "e55d1da8e38568306d1f0fcac05be47384b5cc3d6e43a836e33403ac5ad876be",
+      "state": "same_in_main"
+    },
+    {
+      "path": "experiments/qwen3_vl_embedding_2b_caltech101_robust_hybrid_retrieval/categories.py",
+      "bytes": 1748,
+      "sha256": "43afe8acaf60b2f6a5fb6dd012bdfb63fa643ec26c2240cbf2a3865a61bfa5f4",
+      "state": "same_in_main"
+    },
+    {
+      "path": "experiments/qwen3_vl_embedding_2b_caltech101_robust_hybrid_retrieval/settings.py",
+      "bytes": 3103,
+      "sha256": "35978d5f15ee089b25f3493fd350dae4284e180f537ea6e20cc9e41c0ccd7b7b",
+      "state": "same_in_main"
+    },
+    {
+      "path": "experiments/qwen3_vl_embedding_2b_grocery10_optical_retrieval/__init__.py",
+      "bytes": 79,
+      "sha256": "0e6ef91372f185badc456086b703b1e3467f938f74be7d23be37caff4b35dc5e",
+      "state": "same_in_main"
+    },
+    {
+      "path": "experiments/qwen3_vl_embedding_2b_grocery10_optical_retrieval/modeling.py",
+      "bytes": 14149,
+      "sha256": "9f23a48d34a579a740e4e8f414a65012d2cffe49929947e73b0e92589169aae4",
+      "state": "same_in_main"
+    },
+    {
+      "path": "experiments/qwen3_vl_embedding_2b_grocery10_optical_retrieval/optical_artifacts.py",
+      "bytes": 14986,
+      "sha256": "62f35ff459e5ab47542cb16b3a4c047268f1d552e7ca955243744eb321d55e7c",
+      "state": "same_in_main"
+    },
+    {
+      "path": "experiments/qwen3_vl_embedding_2b_grocery10_optical_retrieval/optics/__init__.py",
+      "bytes": 250,
+      "sha256": "a895dead1150bf685136eff46bff7b3dda970d5e5f4561a9c35f054842947d18",
+      "state": "same_in_main"
+    },
+    {
+      "path": "experiments/qwen3_vl_embedding_2b_grocery10_optical_retrieval/optics/geometry.py",
+      "bytes": 4293,
+      "sha256": "dfbe0a9be3e064dd5c2114ad7a2d6d888e9814926b8b7551745189c736c00a4b",
+      "state": "same_in_main"
+    },
+    {
+      "path": "experiments/qwen3_vl_embedding_2b_grocery10_optical_retrieval/optics/moe.py",
+      "bytes": 37488,
+      "sha256": "3b2404801aede15b9c052a423d0cd6e0d7d852bf678176be27693e1b8ef92d11",
+      "state": "same_in_main"
+    },
+    {
+      "path": "experiments/qwen3_vl_embedding_2b_grocery10_optical_retrieval/optics/physical.py",
+      "bytes": 18954,
+      "sha256": "a1bb5b63b3a7b1acbf323ad70e5f8a34b5bcee91b8f5aaa26df82bef6ef15ecc",
+      "state": "same_in_main"
+    },
+    {
+      "path": "experiments/qwen3_vl_embedding_2b_grocery10_optical_retrieval/optics/replacement.py",
+      "bytes": 24487,
+      "sha256": "c8a051417c3951ecd0a7dd4bc4acdfdce7160fdb0d9f797665565a76048294e9",
+      "state": "same_in_main"
+    },
+    {
+      "path": "experiments/qwen3_vl_embedding_2b_grocery10_optical_retrieval/optics/router.py",
+      "bytes": 4279,
+      "sha256": "0961698358971c58b300c193139978b210efd9b493c54307d439e8915c130c09",
+      "state": "same_in_main"
+    },
+    {
+      "path": "experiments/qwen3_vl_embedding_2b_grocery10_optical_retrieval/settings.py",
+      "bytes": 36670,
+      "sha256": "6511b8ddc632370538a6c92be215eda5f4a202a4b63fcaccd953bcad8e6a81a7",
+      "state": "same_in_main"
+    },
+    {
+      "path": "experiments/qwen3_vl_embedding_2b_grocery10_robust_hybrid_retrieval/__init__.py",
+      "bytes": 67,
+      "sha256": "c3746a76cc9ebeef7d49b882822739b36be75ae8154c83bf50075fa975b4fb2b",
+      "state": "same_in_main"
+    },
+    {
+      "path": "experiments/qwen3_vl_embedding_2b_grocery10_robust_hybrid_retrieval/settings.py",
+      "bytes": 6132,
+      "sha256": "0f6a85918721c9fe0f62eee2fd053d0c70f017e8de5b1ff98c022fb16261b742",
+      "state": "same_in_main"
+    },
+    {
+      "path": "LightGenV2/__init__.py",
+      "bytes": 91,
+      "sha256": "22f1d762857916ed1e5a173a60fa7d864cd10139f40fa9c249c38fbeb86ea92e",
+      "state": "same_in_main"
+    },
+    {
+      "path": "LightGenV2/tasks/__init__.py",
+      "bytes": 44,
+      "sha256": "cb7dde6e220a684ccb22efb1d4af40540497d7a7753c6692b24546411515c6f6",
+      "state": "same_in_main"
+    },
+    {
+      "path": "LightGenV2/tasks/t01_object_retrieval/__init__.py",
+      "bytes": 28,
+      "sha256": "5b586504607056e3c696f94a46491426c9d0640293f6a7c4bc4c4b8e90e53227",
+      "state": "same_in_main"
+    },
+    {
+      "path": "LightGenV2/tasks/t01_object_retrieval/configs/common_dc20.yaml",
+      "bytes": 1306,
+      "sha256": "44b54b007a24f712e4135dbf4f780134cf159484e46ad1f25419e24793be26d8",
+      "state": "same_in_main"
+    },
+    {
+      "path": "LightGenV2/tasks/t01_object_retrieval/configs/common.yaml",
+      "bytes": 2422,
+      "sha256": "7077bf94bfad8602a610ef96a83f701ede80d08576ec6a38544e2ede910c0f4f",
+      "state": "same_in_main"
+    },
+    {
+      "path": "LightGenV2/tasks/t01_object_retrieval/configs/moe_optical_router_scale_matched_dc20.yaml",
+      "bytes": 152,
+      "sha256": "82be1ec970d592e135c6e55a82c1750b8fed714b808cafebe12afad8b66efe65",
+      "state": "same_in_main"
+    },
+    {
+      "path": "LightGenV2/tasks/t01_object_retrieval/settings.py",
+      "bytes": 6466,
+      "sha256": "dd69bc2b752c2c6c2b6f9a526e53204ae9d96dbecda2a3f5f673c0de90dd9d18",
+      "state": "same_in_main"
+    },
+    {
+      "path": "LightGenV2/tasks/t12_text_to_image/__init__.py",
+      "bytes": 170,
+      "sha256": "e47cf77eed3fcf9be4d8df4c52497dca404ac4602b29e3073746e55e34a02ca7",
+      "state": "new_to_main"
+    },
+    {
+      "path": "LightGenV2/tasks/t12_text_to_image/audited_unified_run.py",
+      "bytes": 39433,
+      "sha256": "80303fbff056d9bb3d0e0f8c3de5ba15a9fd0f97a1146afe91ac08b331c4f43b",
+      "state": "new_to_main"
+    },
+    {
+      "path": "LightGenV2/tasks/t12_text_to_image/audited_unified.py",
+      "bytes": 21751,
+      "sha256": "eff3e15db314f80bce3b28dd5c4835e69292238fbdec9b4f984f2638b2f7f0cd",
+      "state": "new_to_main"
+    },
+    {
+      "path": "LightGenV2/tasks/t12_text_to_image/compact_product_model.py",
+      "bytes": 8343,
+      "sha256": "0719fa1655b5551018e86fe5a7fa51cfc6501cee9585677d6f9b33ad61311a4c",
+      "state": "new_to_main"
+    },
+    {
+      "path": "LightGenV2/tasks/t12_text_to_image/dataset.py",
+      "bytes": 5283,
+      "sha256": "1f3e0559207f541dc4327aaa5264b486ea90df0d493725abab6e724d556c53a4",
+      "state": "new_to_main"
+    },
+    {
+      "path": "LightGenV2/tasks/t12_text_to_image/electronic_turbo_infer.py",
+      "bytes": 5350,
+      "sha256": "6baca51243298bfd33cf8ec71162ae61a1a209354bd921600b5bda209d55901d",
+      "state": "new_to_main"
+    },
+    {
+      "path": "LightGenV2/tasks/t12_text_to_image/electronic_turbo.py",
+      "bytes": 5168,
+      "sha256": "fd858cd5dae34e40c354fb8e750c9d78ad0d79788ad882d335346762c580c63f",
+      "state": "new_to_main"
+    },
+    {
+      "path": "LightGenV2/tasks/t12_text_to_image/evaluate_unified_editor.py",
+      "bytes": 7018,
+      "sha256": "85c6a2aa947ac9fa90996069055a2a4bfee3ae93745042f2bd438edb5cfb9ea8",
+      "state": "new_to_main"
+    },
+    {
+      "path": "LightGenV2/tasks/t12_text_to_image/export_matched_summary.py",
+      "bytes": 11281,
+      "sha256": "558e2a81c5735406fdefcea074a3b4063b5e70eb6f21ebe94fca7992b379f3e6",
+      "state": "new_to_main"
+    },
+    {
+      "path": "LightGenV2/tasks/t12_text_to_image/feature_cache.py",
+      "bytes": 7967,
+      "sha256": "d226c999d92990f2f381b8a8783e57c2ac263ef2389a7cdf7b8c67cacf4feb70",
+      "state": "new_to_main"
+    },
+    {
+      "path": "LightGenV2/tasks/t12_text_to_image/half_qwen.py",
+      "bytes": 3718,
+      "sha256": "7c5d10bba38b563b0984c1b39105f3ece874b7b2abc679d7a7cbbb83861c72e0",
+      "state": "new_to_main"
+    },
+    {
+      "path": "LightGenV2/tasks/t12_text_to_image/lab_shs8um/bounded_amplitude.py",
+      "bytes": 1836,
+      "sha256": "3765097ac7d6387e58b6fbcac3cd235cc1465b5a83c4b24e5807f682b430490c",
+      "state": "new_to_main"
+    },
+    {
+      "path": "LightGenV2/tasks/t12_text_to_image/lab_shs8um/ccd_bridge.py",
+      "bytes": 2829,
+      "sha256": "18008d614338447d7619498356e3cb85f0705b9976ba2177da7bb5af0afac1ae",
+      "state": "new_to_main"
+    },
+    {
+      "path": "LightGenV2/tasks/t12_text_to_image/lab_shs8um/detector_correction.py",
+      "bytes": 683,
+      "sha256": "18d23b00ca8106f0c81013f124aa0adb189a3252caed9210d88798f5f1fb584f",
+      "state": "new_to_main"
+    },
+    {
+      "path": "LightGenV2/tasks/t12_text_to_image/lab_shs8um/robust_channel.py",
+      "bytes": 6658,
+      "sha256": "c2a555d10388ae8540e78ca2ba076cd169a109677dadfc85c805100ec4f8597f",
+      "state": "new_to_main"
+    },
+    {
+      "path": "LightGenV2/tasks/t12_text_to_image/lab_shs8um/train_channel_robust.py",
+      "bytes": 21492,
+      "sha256": "7f16343a3e78b1fb1f48fac49f7362e8754e7e541b58795b546e63db8bf085a6",
+      "state": "new_to_main"
+    },
+    {
+      "path": "LightGenV2/tasks/t12_text_to_image/lab_shs8um/train_physical_robust.py",
+      "bytes": 10315,
+      "sha256": "38769b83fc0ff09becffe431f759d4f7b787e08d7e1a1c56bcd9e5573bac9805",
+      "state": "new_to_main"
+    },
+    {
+      "path": "LightGenV2/tasks/t12_text_to_image/modeling.py",
+      "bytes": 20092,
+      "sha256": "44c98cdaf575e34b480cea78c4e122b6b3d9cb6b250a205308ac98922a9aadc7",
+      "state": "new_to_main"
+    },
+    {
+      "path": "LightGenV2/tasks/t12_text_to_image/premium_material_data.py",
+      "bytes": 15221,
+      "sha256": "b05e1b0a850fbfe605f859911cc1f112c4f06d03a98ec2b796c3a4715e4f1242",
+      "state": "new_to_main"
+    },
+    {
+      "path": "LightGenV2/tasks/t12_text_to_image/product_global_redesign_data.py",
+      "bytes": 9029,
+      "sha256": "d4e558e86d1697946e56598b9d113bef82d4c220ce3da52874f538e9d23fae43",
+      "state": "new_to_main"
+    },
+    {
+      "path": "LightGenV2/tasks/t12_text_to_image/product_object_replace_data.py",
+      "bytes": 8984,
+      "sha256": "b2994a4901a7c0a39d87eedbbc605f12f5aad5c471f03e7a30ace9f03dcd3017",
+      "state": "new_to_main"
+    },
+    {
+      "path": "LightGenV2/tasks/t12_text_to_image/product_repair_model.py",
+      "bytes": 12880,
+      "sha256": "b46115af5a775ef8a32847a65cee4ca9e72b1cb0bfbdea55aeedc21822cd8186",
+      "state": "new_to_main"
+    },
+    {
+      "path": "LightGenV2/tasks/t12_text_to_image/product_scene_data.py",
+      "bytes": 17672,
+      "sha256": "b005bdc06e52d59279906f9bfbb2b4d1e1bf4c46394ebf06a41a767321351dd5",
+      "state": "new_to_main"
+    },
+    {
+      "path": "LightGenV2/tasks/t12_text_to_image/product_scene_replace_data.py",
+      "bytes": 14689,
+      "sha256": "6f294b5448cdecbc2cad2535d795d637e72c3610451d25bb22f49e58c0f33b9a",
+      "state": "new_to_main"
+    },
+    {
+      "path": "LightGenV2/tasks/t12_text_to_image/product_unified_edit_data_v2.py",
+      "bytes": 10280,
+      "sha256": "1b37d3ea0fe65403848ebaedc13da691a332608f1759e63b61ee314dd6b7e8de",
+      "state": "new_to_main"
+    },
+    {
+      "path": "LightGenV2/tasks/t12_text_to_image/product_unified_edit_data.py",
+      "bytes": 7814,
+      "sha256": "231f6ac97cf0059ea2f07d743e741f5580bd7151919e0d62e7bf1aaaa9a929c1",
+      "state": "new_to_main"
+    },
+    {
+      "path": "LightGenV2/tasks/t12_text_to_image/progressive_student.py",
+      "bytes": 4233,
+      "sha256": "173c50c460a34a0d6e83183369e8f04761a77d0ea7749ace0ac31ce963e56b1c",
+      "state": "new_to_main"
+    },
+    {
+      "path": "LightGenV2/tasks/t12_text_to_image/pruned_turbo.py",
+      "bytes": 3496,
+      "sha256": "0de4e4f39421046ae1b342b385541eae217a96a1e849e92a0c3153c182c8f317",
+      "state": "new_to_main"
+    },
+    {
+      "path": "LightGenV2/tasks/t12_text_to_image/qwen_mini_infer.py",
+      "bytes": 3689,
+      "sha256": "af4e39e95b01a31ee9122ccd404343901aa12306ae2fa88bb5a7f514e6bff158",
+      "state": "new_to_main"
+    },
+    {
+      "path": "LightGenV2/tasks/t12_text_to_image/qwen_mini_small.py",
+      "bytes": 20397,
+      "sha256": "fc7dee42ed26505fe461930ef3adc0f795740911da8d7dcca4bd5acd991bf323",
+      "state": "new_to_main"
+    },
+    {
+      "path": "LightGenV2/tasks/t12_text_to_image/README.md",
+      "bytes": 7438,
+      "sha256": "361906d1ce2af17622aa37be565a45b1b41de35e646425f967c9c512362f41b4",
+      "state": "new_to_main"
+    },
+    {
+      "path": "LightGenV2/tasks/t12_text_to_image/reports/reproduction/README.md",
+      "bytes": 31261,
+      "sha256": "2edbf2f0a2cb533f734bd0b9c6de4598aa2588f012f9a33602cea9d5c4c8eceb",
+      "state": "new_to_main"
+    },
+    {
+      "path": "LightGenV2/tasks/t12_text_to_image/sealed_editor.py",
+      "bytes": 4270,
+      "sha256": "20c1426d60aa31ef6afbe586f39f9c682fc0798b93a18a304fe31987cca61021",
+      "state": "new_to_main"
+    },
+    {
+      "path": "LightGenV2/tasks/t12_text_to_image/settings.py",
+      "bytes": 7896,
+      "sha256": "6d68d642042be9ddb12fafc344313720a9d568e23b63b099e2cc7c0987bebdeb",
+      "state": "new_to_main"
+    },
+    {
+      "path": "LightGenV2/tasks/t12_text_to_image/small_fullframe.py",
+      "bytes": 20291,
+      "sha256": "0fdc1c37b2e5411465b72c8fa2c8fb4d2fd9f2db5ecea7263987023cbf8e91a8",
+      "state": "new_to_main"
+    },
+    {
+      "path": "LightGenV2/tasks/t12_text_to_image/tests/test_audited_unified.py",
+      "bytes": 7956,
+      "sha256": "a5f81f9389a4512e2aecfaa4740e503c29f2894635c22497b95d47aa102a9a85",
+      "state": "new_to_main"
+    },
+    {
+      "path": "LightGenV2/tasks/t12_text_to_image/tests/test_matched_summary.py",
+      "bytes": 1682,
+      "sha256": "0f5d8654793b89cc7040a341bf212c0c2af611b646a13b26a4fa0022cc46960c",
+      "state": "new_to_main"
+    },
+    {
+      "path": "LightGenV2/tasks/t12_text_to_image/tests/test_pix2pix_baseline.py",
+      "bytes": 927,
+      "sha256": "2eb1d3e4c358828bae0d911e72cebd11e0631b779dae0bcfba16b45c988763bc",
+      "state": "new_to_main"
+    },
+    {
+      "path": "LightGenV2/tasks/t12_text_to_image/tests/test_robust_channel.py",
+      "bytes": 5564,
+      "sha256": "6ad6bbb3c55a48cab39a673d8afd46f3d56919560512196595502b7f26a73e1d",
+      "state": "new_to_main"
+    },
+    {
+      "path": "LightGenV2/tasks/t12_text_to_image/tests/test_small_fullframe.py",
+      "bytes": 1259,
+      "sha256": "1edaedb183b431ae01462a3f4088a3e63a46bdc7b8ff7a87288a9a3c3313f96b",
+      "state": "new_to_main"
+    },
+    {
+      "path": "LightGenV2/tasks/t12_text_to_image/train_matched_qwen_baseline.py",
+      "bytes": 12277,
+      "sha256": "7074d52d571ab773bf9faf940b21b528f8966eb9029bf6a3856b2fc3d7038d31",
+      "state": "new_to_main"
+    },
+    {
+      "path": "LightGenV2/tasks/t12_text_to_image/train_pix2pix_turbo_baseline.py",
+      "bytes": 12542,
+      "sha256": "7b2370a1356c345395135a378dc8907aa669cf3163a78a61e25c6fbaaa25546e",
+      "state": "new_to_main"
+    }
+  ],
+  "static_imports_only": true,
+  "missing": [],
+  "reviewed_date": "2026-10-03",
+  "description": "Missing-only T12 validated server runtime closure; no overwrite of shared code or dirty working files.",
+  "cpu_contract": {
+    "passed": 32,
+    "seconds": 6.08,
+    "environment": "server t12_assets/venv; CUDA_VISIBLE_DEVICES empty; source checkout 7093ec46",
+    "full_model_inference_rerun": false
+  },
+  "preserved_local_changes": true,
+  "not_yet_complete": [
+    "dynamic official pix2pix vendor/runtime assets",
+    "complete dataset/PT/CCD asset closure",
+    "Windows hardware deployment source migration",
+    "old timing source closure"
+  ]
+}
