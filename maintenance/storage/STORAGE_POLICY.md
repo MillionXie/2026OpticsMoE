@@ -36,6 +36,20 @@ ZIP projects, or SSH transfer packages.
   checkpoints and requested mask-evolution snapshots are retained; redundant
   exploratory checkpoints may be pruned only after a dependency-closure audit.
 
+## Protected measurements and baselines
+
+2026-10-03 user clarification: retain historical timing, throughput, power,
+energy and efficiency evidence together with the corresponding baselines.
+This includes code/config/environment/commit and checkpoint identity, original
+metrics and predictions, per-call timing, raw power telemetry, hardware and
+measurement scope, calculation scripts, and historical scope corrections.
+Superseded or rejected measurements remain labelled audit evidence, not
+disposable trial files. Never reuse an old model's measurements as a new model's.
+The previously approved baseline-feature-cache cleanup is not authorization to
+delete baseline models, original data, reports or measurement evidence.
+See [retention contract](MEASUREMENT_BASELINE_RETENTION.md) and its bounded
+read-only inventory; unlisted task-specific/server evidence is protected too.
+
 ## Indexes
 
 Run the following from the repository root before and after a cleanup:

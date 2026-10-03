@@ -1,0 +1,283 @@
+{
+  "schema_version": 1,
+  "audited_on": "2026-10-03",
+  "scope": "local existing historical measurement and baseline report roots; not exhaustive",
+  "operation": "read_only_inventory",
+  "all_raw_files_hashed": false,
+  "server_copy_verified_this_turn": false,
+  "deleted": [],
+  "roots": [
+    {
+      "path": "LightGenV2/reports/20260914_latest_optical_electronics_a100_FINAL",
+      "present": true,
+      "files": 35,
+      "bytes": 20580925,
+      "top_level_identity_files": [
+        {
+          "name": "README.md",
+          "sha256": "1a00ca214969d9c168c07039373f0a7e6e08964f5e18936768a03d679d121db9",
+          "bytes": 1812
+        },
+        {
+          "name": "SHA256SUMS.txt",
+          "sha256": "7cd5f30b8aaca805d2720345595eb976a2abc6a32181a69678b96a50541fcb6e",
+          "bytes": 3232
+        }
+      ]
+    },
+    {
+      "path": "LightGenV2/reports/20260914_latest_optical_electronics_a100_NARROW_CLEAN_FINAL",
+      "present": true,
+      "files": 11,
+      "bytes": 27629172,
+      "top_level_identity_files": [
+        {
+          "name": "README.md",
+          "sha256": "0132d27942a5417e03e0919b82e3689ec230339fc7e95c361c664db0230a476f",
+          "bytes": 315
+        },
+        {
+          "name": "SHA256SUMS.txt",
+          "sha256": "9201087cce9b47e024c4f1a4585ca9848bb1c1996c119406358778ac1769dbdc",
+          "bytes": 909
+        }
+      ]
+    },
+    {
+      "path": "LightGenV2/reports/20260914_latest_optical_electronics_a100_NARROW_FINAL",
+      "present": true,
+      "files": 11,
+      "bytes": 27207976,
+      "top_level_identity_files": [
+        {
+          "name": "README.md",
+          "sha256": "0132d27942a5417e03e0919b82e3689ec230339fc7e95c361c664db0230a476f",
+          "bytes": 315
+        },
+        {
+          "name": "SHA256SUMS.txt",
+          "sha256": "6fc19246102389cad2945367cf2438114626eaa8a269c7e1bfe9defff50390b2",
+          "bytes": 909
+        }
+      ]
+    },
+    {
+      "path": "LightGenV2/reports/20260914_latest_optical_electronics_a100_NARROW_POWER_v1",
+      "present": true,
+      "files": 15,
+      "bytes": 15078420,
+      "top_level_identity_files": [
+        {
+          "name": "README.md",
+          "sha256": "9a77b2901051c3cd011644432dfdc55fc166b12dc56449f16af6f623941408a9",
+          "bytes": 276
+        },
+        {
+          "name": "SHA256SUMS.txt",
+          "sha256": "57239b0e1257d6e9f847d7206311d8216043ba0396b191194d2b053e9fa3c42d",
+          "bytes": 1435
+        }
+      ]
+    },
+    {
+      "path": "LightGenV2/reports/20260914_latest_optical_electronics_a100_NARROW_POWER_v2_TELEMETRY",
+      "present": true,
+      "files": 14,
+      "bytes": 15459101,
+      "top_level_identity_files": [
+        {
+          "name": "README.md",
+          "sha256": "9a77b2901051c3cd011644432dfdc55fc166b12dc56449f16af6f623941408a9",
+          "bytes": 276
+        },
+        {
+          "name": "SHA256SUMS.txt",
+          "sha256": "2b135922142d16283ac888d3ccad9de4d38b8a7dbac9b038100e3cbd01dcfea1",
+          "bytes": 1301
+        }
+      ]
+    },
+    {
+      "path": "LightGenV2/reports/20260914_latest_optical_electronics_a100_NARROW_v1",
+      "present": true,
+      "files": 13,
+      "bytes": 25212876,
+      "top_level_identity_files": [
+        {
+          "name": "README.md",
+          "sha256": "9a77b2901051c3cd011644432dfdc55fc166b12dc56449f16af6f623941408a9",
+          "bytes": 276
+        },
+        {
+          "name": "SHA256SUMS.txt",
+          "sha256": "418720ce80f278efd4a399ec3064682404a007e2beb752b415a13b22275fa6ac",
+          "bytes": 1262
+        }
+      ]
+    },
+    {
+      "path": "LightGenV2/reports/20260914_latest_optical_electronics_a100_NARROW_v2_CLEAN",
+      "present": true,
+      "files": 12,
+      "bytes": 25162114,
+      "top_level_identity_files": [
+        {
+          "name": "README.md",
+          "sha256": "9a77b2901051c3cd011644432dfdc55fc166b12dc56449f16af6f623941408a9",
+          "bytes": 276
+        },
+        {
+          "name": "SHA256SUMS.txt",
+          "sha256": "1c721015f25dc71f361da064c6e2f70d9a62edb3e9a56c22195e3207c2c1eb20",
+          "bytes": 1128
+        }
+      ]
+    },
+    {
+      "path": "LightGenV2/reports/20260914_latest_qwen_baselines_a100_FIRSTBLOCK_FINAL",
+      "present": true,
+      "files": 75,
+      "bytes": 23822894,
+      "top_level_identity_files": [
+        {
+          "name": "README_CN.md",
+          "sha256": "b247b199e0da46fc1e4f715e65706984e1603ea479b7bb6af8e2a688b216010a",
+          "bytes": 4270
+        },
+        {
+          "name": "SHA256SUMS.txt",
+          "sha256": "456757bda55da4b5c35eccde6a2124ff1aea924530f9ebbad5b1c5d28c6ab7f1",
+          "bytes": 8409
+        }
+      ]
+    },
+    {
+      "path": "LightGenV2/reports/20260915_baseline_methods",
+      "present": true,
+      "files": 799,
+      "bytes": 5162887,
+      "top_level_identity_files": [
+        {
+          "name": "README.md",
+          "sha256": "58048977e928188d3b507351be0ce582b2e4206d1645e9586f9e2922c97a6fcd",
+          "bytes": 984
+        }
+      ]
+    },
+    {
+      "path": "LightGenV2/reports/20260915_lgvq_topsw",
+      "present": true,
+      "files": 21,
+      "bytes": 731055,
+      "top_level_identity_files": [
+        {
+          "name": "README_1MAC_2OP_CN.md",
+          "sha256": "0de133f41a24e47c1df693a58e138e8173e98a49a8ed3fd1bb15f8b435c5fdc9",
+          "bytes": 13228
+        },
+        {
+          "name": "README_CN.md",
+          "sha256": "84a244875e755d30b08371211b5ab430c72b906dd02e27047788d57455097ea9",
+          "bytes": 5399
+        },
+        {
+          "name": "SHA256SUMS.txt",
+          "sha256": "b6955404dd4b02cd2ad5733d969fce1dc990741814fad725de98461b6a4b6f8c",
+          "bytes": 651
+        }
+      ]
+    },
+    {
+      "path": "LightGenV2/reports/20260917_redbox_timing_energy_audit",
+      "present": true,
+      "files": 276,
+      "bytes": 87638368,
+      "top_level_identity_files": [
+        {
+          "name": "README_CN.md",
+          "sha256": "3a54b75f05da3678f0f1ac1082c79fddadf27d919e5b851a703ae47e8a5d81bd",
+          "bytes": 9005
+        },
+        {
+          "name": "SHA256SUMS.txt",
+          "sha256": "427085f95f103b16cb389967b88dae43d76c3929be9dbfcd08ae840adee98693",
+          "bytes": 43992
+        }
+      ]
+    },
+    {
+      "path": "LightGenV2/reports/20260927_demo_energy_efficiency_a100",
+      "present": true,
+      "files": 671,
+      "bytes": 164085518,
+      "top_level_identity_files": [
+        {
+          "name": "README.md",
+          "sha256": "62eda79bc4fb9bf6bfb2480e793340d1462d929df57ec216d387a682c67faeba",
+          "bytes": 3494
+        },
+        {
+          "name": "SHA256SUMS.txt",
+          "sha256": "b80f0d225309af7d50d954dfd8b29a619b97c39d5bb8e8e60d3864b91d8c9d35",
+          "bytes": 108481
+        },
+        {
+          "name": "VERSION_IDENTITY.json",
+          "sha256": "162676fcd5c989f1f9f520a64353f2a9c39be182f7182358ffb95deb13017492",
+          "bytes": 3502
+        }
+      ]
+    },
+    {
+      "path": "LightGenV2/reports/20260927_lgvq_temporal_multi_baseline_a100",
+      "present": true,
+      "files": 90,
+      "bytes": 1590537,
+      "top_level_identity_files": [
+        {
+          "name": "README.md",
+          "sha256": "1093c6a4a9a90c50e3868a3cefca4bf0f6b0baaf8bb2d0e1b813b92613338a04",
+          "bytes": 3147
+        }
+      ]
+    },
+    {
+      "path": "LightGenV2/reports/20260928_nine_task_a100_table",
+      "present": true,
+      "files": 43,
+      "bytes": 3243729,
+      "top_level_identity_files": [
+        {
+          "name": "README.md",
+          "sha256": "1e3858020b3af8f3c0f6c777aa4d26a281a5c605dfea1d5cf298ea274a854aa4",
+          "bytes": 4301
+        },
+        {
+          "name": "SHA256SUMS.txt",
+          "sha256": "0b357759c061fb28b47240d50d113cfe6ce569f01101721920a03e3dda1e38d2",
+          "bytes": 293
+        }
+      ]
+    },
+    {
+      "path": "LightGenV2/reports/20260928_t03_t08_a100_completion",
+      "present": true,
+      "files": 12,
+      "bytes": 72436,
+      "top_level_identity_files": [
+        {
+          "name": "README.md",
+          "sha256": "09fac3fd3a579d98220cecbc582b669ea57deb2b85e6ff513138c7c13b09828a",
+          "bytes": 2696
+        }
+      ]
+    },
+    {
+      "path": "LightGenV2/reports/baseline_plotting_20260922",
+      "present": true,
+      "files": 88,
+      "bytes": 16150543,
+      "top_level_identity_files": []
+    }
+  ]
+}
