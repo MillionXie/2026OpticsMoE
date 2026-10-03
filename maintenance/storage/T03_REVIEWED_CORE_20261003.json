@@ -1,0 +1,37 @@
+{
+  "source_commit": "b75a56203b47818810e0a45dceecf9cea4c6aa9f",
+  "expected_main": "71e527ea2a401189f3b61f54b61c5bf818043a0a",
+  "task_prefix": "LightGenV2/tasks/t03_saliency/",
+  "paths": [
+    {
+      "path": "LightGenV2/tasks/t03_saliency/modeling.py",
+      "source_sha256": "1e7160336f2e8c697022ed0917f1f2701038c80dd9d08ddf09eb6cfac50ff26f",
+      "expected_target_sha256": "e8d09594b1453639c99842448ec8aa91d710122468e618caf970540e8c4c84ec",
+      "review_reason": "Validated checkpoint architecture tags, mean-only CCD contract and existing electronic residual options; no new scientific change"
+    },
+    {
+      "path": "LightGenV2/tasks/t03_saliency/run.py",
+      "source_sha256": "eba192e5de5fa5ee2c947a6ceb9e2a271f017bc4027175397f57da7e438c0115",
+      "expected_target_sha256": "37af0a4edd793a2634e4c34c7bfa64a25a34e1f314a10ba28255e89a60a7b5cf",
+      "review_reason": "Actual config override, command and checkpoint-selection provenance"
+    },
+    {
+      "path": "LightGenV2/tasks/t03_saliency/settings.py",
+      "source_sha256": "9f2086d4166b6510ce3c474aaf7366d0bdd01294b53837a9841d448ba8f65a12",
+      "expected_target_sha256": "c967adde70707f6d58860d410c4a5f3509e1bdf6b43dc6a7fc14d595b5c972cd",
+      "review_reason": "Existing explicit profiles, validation and corrected CC selection metadata"
+    },
+    {
+      "path": "LightGenV2/tasks/t03_saliency/training.py",
+      "source_sha256": "e55ed4c12d7c7c416af2b75470997fd50763f342aa8f75d1d746771b7ecc7ed3",
+      "expected_target_sha256": "3a2d65ceff4e99e9db78de92eaf8078cfb32069989edca815fe4f03677a64c6d",
+      "review_reason": "Existing validated optimizer, warmstart and training-only protocol dispatch"
+    },
+    {
+      "path": "LightGenV2/tasks/t03_saliency/visualize.py",
+      "source_sha256": "7704580266bfd16ab4ab194535d0c1a6b1e79eb193f33270ebce421c02097984",
+      "expected_target_sha256": "c99b269dac3e414e78adadf16118b60ea42ab641bf6adb99287037273c6ea0f1",
+      "review_reason": "Render phase using audited checkpoint coordinate identity"
+    }
+  ]
+}
