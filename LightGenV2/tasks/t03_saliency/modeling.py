@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from typing import Any
+from contextlib import nullcontext
 
 import torch
 from torch import nn
@@ -26,14 +27,120 @@ from experiments.qwen3_vl_embedding_2b_lsp_pose_optical_router.modeling import (
     sha256_file,
     trainable_parameter_report,
 )
-from experiments.vision2_hybrid_dense.modeling import SaliencyDensityDecoder
+from experiments.vision2_hybrid_dense.modeling import SaliencyDensityDecoder, restore_qwen_block_major_spatial
+from .lightweight_residual import configure_grn, initialize_identity_grn
+from .lightweight_residual import configure_spatial_ffn, initialize_identity_spatial_ffn
+from .lightweight_residual import configure_global_mixing, initialize_identity_global_mixing
+from .lightweight_residual import configure_wide_ffn, widen_ffn_checkpoint
+from .lightweight_residual import configure_grouped_ffn, expand_ffn_group_checkpoint
+from .fusion_training import enable_exact_fusion_backward
+from .router_phase import RadiansOpticalRouter, RADIANS_SUFFIX, convert_router_checkpoint
 
 
 def architecture_label(settings: Any) -> str:
-    return (
+    label = (
         f"lightgen_t03_{settings.lightgen_model_variant}_vision2_17um_10cm_"
         "dc20_scale_matched_top2_v1"
     )
+    if (settings.fusion_alpha_min, settings.fusion_alpha_max) != (0.01, 0.95):
+        label += f"_alpha{settings.fusion_alpha_min:g}_{settings.fusion_alpha_max:g}"
+    label += "_mean_only" if settings.ccd_normalization == "mean_only" else ""
+    kernel = getattr(settings, "electronic_spatial_kernel_size", 3)
+    label += f"_ek{kernel}" if kernel != 3 else ""
+    label += "_grn" if getattr(settings, "electronic_grn", False) else ""
+    dilation = getattr(settings, "electronic_ffn_spatial_dilation", 0)
+    label += f"_cffn_d{dilation}" if dilation else ""
+    rank = getattr(settings, "electronic_global_rank", 0)
+    label += f"_global_r{rank}" if rank else ""
+    label += "_ffn576" if getattr(settings, "electronic_ffn_hidden_width", 384) == 576 else ""
+    label += "_cffn_g64" if getattr(settings, "electronic_ffn_groups", 0) == 64 else ""
+    return label + (RADIANS_SUFFIX if getattr(settings,'router_phase_coordinates','sigmoid')=='radians' else '')
+
+
+def configure_spatial_kernel(hybrid: nn.Module, kernel: int) -> None:
+    """T03-only receptive-field change; no shared backend mutation."""
+    if kernel == 3:
+        return
+    if kernel not in (5, 13):
+        raise ValueError("Only audited 3-to-5/13 expansions are supported")
+    for block in hybrid.blocks:
+        old = block.token_depthwise
+        if old.kernel_size != (3, 3) or old.groups != old.in_channels or old.bias is not None:
+            raise ValueError("Unexpected spatial mixer; refusing kernel replacement")
+        # ElectronicResidualMLPBlock pads explicitly using token_mixer_kernel_size.
+        # Do not add convolution padding a second time.
+        if old.padding != (0, 0) or block.token_mixer_type != "depthwise_conv2d":
+            raise ValueError("Expected an explicitly padded 2D electronic mixer")
+        # Preserve legacy k5 RNG behavior; k13 is a new paired trial whose
+        # discarded random initialization must not shift subsequent sampling.
+        devices = [old.weight.device.index] if old.weight.is_cuda else []
+        with torch.random.fork_rng(devices=devices) if kernel == 13 else nullcontext():
+            new = nn.Conv2d(old.in_channels, old.out_channels, kernel, padding=0,
+                            groups=old.groups, bias=False, device=old.weight.device, dtype=old.weight.dtype)
+        with torch.no_grad():
+            new.weight.zero_()
+            start = (kernel-3)//2
+            new.weight[:, :, start:start+3, start:start+3].copy_(old.weight)
+        block.token_depthwise = new
+        block.token_mixer_kernel_size = kernel
+
+
+def expand_spatial_checkpoint(source: dict, target: dict) -> dict:
+    """Zero-pad only the two named depthwise kernels; reject all other drift."""
+    if source.keys() != target.keys():
+        raise RuntimeError("Kernel transfer cannot add/remove checkpoint keys")
+    expanded = dict(source)
+    expected = {f"hybrid.blocks.{i}.token_depthwise.weight" for i in range(2)}
+    changed = set()
+    for name, value in source.items():
+        shape = target[name].shape
+        if value.shape == shape:
+            continue
+        if name not in expected or value.shape[-2:] != (3, 3) or shape[-2:] not in ((5, 5),(13,13)) or value.shape[:-2] != shape[:-2]:
+            raise RuntimeError(f"Unexpected warmstart shape mismatch: {name}")
+        padding = (shape[-1]-3)//2
+        expanded[name] = torch.nn.functional.pad(value, (padding,)*4)
+        changed.add(name)
+    if changed != expected:
+        raise RuntimeError("Expected exactly two audited depthwise kernel transfers")
+    return expanded
+
+
+class MeanOnlyCCDNormalizer(nn.Module):
+    """Task-local intensity normalization: no log, gamma, or upper clipping."""
+    def __init__(self, active_size: int) -> None:
+        super().__init__()
+        self.active_size = active_size
+
+    def forward(self, intensity: torch.Tensor) -> torch.Tensor:
+        if intensity.ndim != 3 or tuple(intensity.shape[-2:]) != (self.active_size, self.active_size):
+            raise ValueError("CCD geometry mismatch")
+        if not torch.isfinite(intensity).all():
+            raise ValueError("Nonfinite CCD intensity")
+        # The simulator already produces nonnegative measured intensity.
+        if torch.any(intensity < 0):
+            raise ValueError("Expected nonnegative measured intensity")
+        value = intensity.float()
+        return value / value.mean((-2, -1), keepdim=True).clamp_min(1e-6)
+
+
+def build_dense_core(settings: Any, device: Any) -> nn.Module:
+    """The identical task body, usable with frozen-stem caches on the bench."""
+    core = LightGenDenseVision2Core(settings.vision_hidden_size, settings).to(device)
+    configure_spatial_kernel(core.hybrid, getattr(settings, "electronic_spatial_kernel_size", 3))
+    if getattr(settings, "electronic_grn", False):
+        configure_grn(core.hybrid)
+    if getattr(settings, "electronic_ffn_spatial_dilation", 0):
+        configure_spatial_ffn(core.hybrid, settings.electronic_ffn_spatial_dilation)
+    if getattr(settings, "electronic_global_rank", 0):
+        configure_global_mixing(core.hybrid, settings.electronic_global_rank)
+    if getattr(settings, "electronic_ffn_hidden_width", 384) == 576:
+        configure_wide_ffn(core.hybrid)
+    if getattr(settings, "electronic_ffn_groups", 0) == 64:
+        configure_grouped_ffn(core.hybrid)
+    if getattr(settings, "exact_fusion_backward", False):
+        enable_exact_fusion_backward(core.hybrid)
+    return core
 
 
 class LightGenVision2SaliencyStudent(RobustVision2PoseStudent):
@@ -45,9 +152,7 @@ class LightGenVision2SaliencyStudent(RobustVision2PoseStudent):
             int(value)
             for value in getattr(self.visual, "deepstack_visual_indexes", ())
         )
-        self.core = LightGenDenseVision2Core(
-            settings.vision_hidden_size, settings
-        ).to(loaded.device)
+        self.core = build_dense_core(settings, loaded.device)
         self.capture_block = _RobustCaptureBlock(self.core)
         self.student_blocks = nn.ModuleList(
             [self.capture_block]
@@ -64,6 +169,25 @@ class LightGenVision2SaliencyStudent(RobustVision2PoseStudent):
         self.head.requires_grad_(True)
         self._router_soft_weight = float(settings.router_balance_weight)
         self._router_hard_weight = float(settings.router_hard_load_balance_weight)
+        self._router_balance_estimator = getattr(settings, 'router_balance_estimator', 'batch')
+
+    def forward(self, pixel_values: torch.Tensor, image_grid_thw: torch.Tensor
+                ) -> tuple[torch.Tensor, torch.Tensor, torch.Tensor | None]:
+        if self.core.hybrid.fusion_ablation_mode != 'remove_optical':
+            return super().forward(pixel_values, image_grid_thw)
+        # T03-only inference ablation. A bypass has no CCD measurement; neither
+        # require a preceding optical forward nor return its stale detector map.
+        self.core.optical_branch.core.current_detector_readout = None
+        if not self._active:
+            self.activate()
+        self.capture_block.set_grid(image_grid_thw)
+        dtype = next(self.visual.patch_embed.parameters()).dtype
+        self.visual(pixel_values.to(dtype), grid_thw=image_grid_thw)
+        groups = self.core.last_latent_groups
+        if len(groups) != len(image_grid_thw):
+            raise RuntimeError('Ablated Vision2 core did not retain one group per image')
+        spatial = restore_qwen_block_major_spatial(torch.cat(groups, dim=0), image_grid_thw)
+        return self.head(spatial), spatial, None
 
     def router_losses(self) -> tuple[torch.Tensor, torch.Tensor]:
         soft, importance = self.core.router_losses()
@@ -73,6 +197,14 @@ class LightGenVision2SaliencyStudent(RobustVision2PoseStudent):
         # soft term while adding the hard Top-k load term at the independently
         # configured coefficient.
         hard = self.router_hard_load_balance_loss()
+        if self.training and self._router_balance_estimator == 'cross_sample':
+            from .cross_sample_balance import terms
+            corrected = terms(self.core.last_routing)
+            # Delta corrections preserve any optical capture-efficiency term
+            # already included in the shared router's balance loss.
+            soft = soft + corrected['soft_delta']
+            importance = importance + corrected['importance_delta']
+            hard = corrected['hard']
         return soft + (self._router_hard_weight / self._router_soft_weight) * hard, importance
 
     def router_hard_load_balance_loss(self) -> torch.Tensor:
@@ -97,10 +229,14 @@ def build_student(loaded: Any, settings: Any) -> LightGenVision2SaliencyStudent:
         ).to(loaded.device)
     else:
         optical_core = model.core.optical_branch.core
-        optical_core.router = OpticalDetectorTopKRouter(
+        router_class = (RadiansOpticalRouter if getattr(settings,'router_phase_coordinates','sigmoid')=='radians'
+                        else OpticalDetectorTopKRouter)
+        optical_core.router = router_class(
             optical_core.geometry, settings
         ).to(loaded.device)
     model.router_backend = "none" if is_d2nn else "optical"
+    if settings.ccd_normalization == "mean_only":
+        model.core.hybrid.optical_branch.ccd_normalizer = MeanOnlyCCDNormalizer(settings.active_size)
     model.checkpoint_architecture = architecture_label(settings)
     return model
 
@@ -120,6 +256,91 @@ def _reset_head(model: LightGenVision2SaliencyStudent, seed: int) -> None:
 def initialize_student(
     model: LightGenVision2SaliencyStudent, settings: Any
 ) -> dict[str, Any]:
+    warmstart = getattr(settings, "initialization_checkpoint", None)
+    if warmstart is not None:
+        expected_sha = getattr(settings, "initialization_checkpoint_sha256", None)
+        if expected_sha and sha256_file(warmstart) != expected_sha:
+            raise RuntimeError("T03 warmstart SHA256 mismatch")
+        payload = torch.load(warmstart, map_location="cpu", weights_only=False)
+        allowed = {model.checkpoint_architecture}
+        convert_router = getattr(settings,'convert_router_phase_on_warmstart',False)
+        if convert_router:
+            allowed.add(model.checkpoint_architecture.removesuffix(RADIANS_SUFFIX))
+        expand_kernel = getattr(settings, "expand_kernel_on_warmstart", False)
+        initialize_grn = getattr(settings, "initialize_grn_on_warmstart", False)
+        initialize_ffn = getattr(settings, "initialize_ffn_on_warmstart", False)
+        initialize_global = getattr(settings, "initialize_global_on_warmstart", False)
+        widen_ffn = getattr(settings, "widen_ffn_on_warmstart", False)
+        expand_ffn_groups = getattr(settings, "expand_ffn_groups_on_warmstart", False)
+        base_architecture = model.checkpoint_architecture
+        if expand_ffn_groups:
+            base_architecture = base_architecture.removesuffix("_cffn_g64")
+            allowed.add(base_architecture)
+        if widen_ffn:
+            base_architecture = base_architecture.removesuffix("_ffn576")
+            allowed.add(base_architecture)
+        if initialize_global:
+            base_architecture = base_architecture.removesuffix(f"_global_r{settings.electronic_global_rank}")
+            allowed.add(base_architecture)
+        if initialize_ffn:
+            allowed.add(base_architecture.removesuffix(f"_cffn_d{settings.electronic_ffn_spatial_dilation}"))
+        without_grn = model.checkpoint_architecture.removesuffix("_grn")
+        source_ek3 = without_grn.removesuffix(f"_ek{settings.electronic_spatial_kernel_size}")
+        if initialize_grn:
+            allowed.add(without_grn)
+        if expand_kernel:
+            allowed.add(source_ek3)
+        if settings.ccd_normalization == "mean_only":
+            # Explicit parameter-compatible transfer, not exact continuation.
+            allowed.add(model.checkpoint_architecture.removesuffix("_mean_only"))
+        if settings.reset_fusion_on_warmstart:
+            allowed.add(f"lightgen_t03_{settings.lightgen_model_variant}_vision2_17um_10cm_dc20_scale_matched_top2_v1_mean_only")
+        if payload.get("architecture") not in allowed:
+            raise RuntimeError("T03 warmstart architecture mismatch")
+        target_state = model.core.state_dict()
+        core_state, grn_added = payload["core"], False
+        ffn_added = False
+        global_added = False
+        ffn_widened = False
+        ffn_groups_expanded = False
+        router_converted = False
+        if convert_router:
+            core_state,router_converted = convert_router_checkpoint(
+                core_state,target_state,payload['architecture'],model.checkpoint_architecture)
+        if expand_ffn_groups:
+            core_state, ffn_groups_expanded = expand_ffn_group_checkpoint(core_state, target_state)
+        if widen_ffn:
+            core_state, ffn_widened = widen_ffn_checkpoint(core_state, target_state)
+        if initialize_global:
+            # Fill global projections first; FFN initialization below still
+            # independently validates its exact set of newly introduced keys.
+            global_target = {k:v for k,v in target_state.items()
+                             if k in core_state or '.token_pointwise.spatial_' in k}
+            core_state, global_added = initialize_identity_global_mixing(core_state, global_target)
+        if initialize_ffn:
+            core_state, ffn_added = initialize_identity_spatial_ffn(core_state, target_state)
+        if initialize_grn:
+            core_state, grn_added = initialize_identity_grn(core_state, target_state)
+        # Fusion-range re-encoding and kernel expansion may occur together.
+        transfer = expand_kernel and core_state["hybrid.blocks.0.token_depthwise.weight"].shape[-1] == 3
+        core_state = expand_spatial_checkpoint(core_state, target_state) if transfer else core_state
+        model.core.load_state_dict(core_state, strict=True)
+        model.head.load_state_dict(payload["saliency_head"], strict=True)
+        if settings.reset_fusion_on_warmstart:
+            model.core.hybrid.reset_fusion_logits(settings.fusion_alpha_initial)
+        return {"path": str(warmstart), "sha256": sha256_file(warmstart),
+                "mode": "warmstart_weights_with_new_optimizer", "source_epoch": payload["epoch"],
+                "source_architecture": payload["architecture"], "target_architecture": model.checkpoint_architecture,
+                "kernel_transfer": f"3x3 centered in zero {settings.electronic_spatial_kernel_size}x{settings.electronic_spatial_kernel_size}; initial convolution function preserved" if transfer else "none",
+                "identity_grn_added": grn_added,
+                "identity_spatial_ffn_added": ffn_added,
+                "identity_global_mixing_added": global_added,
+                "ffn_widened_384_to_576": ffn_widened,
+                "ffn_grouped64_transfer": ffn_groups_expanded,
+                "router_phase_sigmoid_to_radians": router_converted,
+                "ffn_widening_outgoing_split": [0.4,0.6] if ffn_widened else None,
+                "fusion_reset": settings.reset_fusion_on_warmstart,
+                "fusion_alpha_initial": settings.fusion_alpha_initial}
     path = settings.common_initialization_checkpoint
     payload = torch.load(path, map_location="cpu", weights_only=False)
     if payload.get("type") != "untrained_lsp_vision2_body_and_pose_head_without_router":
@@ -183,11 +404,17 @@ def optimizer(
         and id(value) not in phase_ids | router_ids | head_ids
     ]
     readout_ids = {id(value) for value in readout}
+    spatial_ffn = [p for n, p in model.core.named_parameters()
+                   if p.requires_grad and ".mlp.1.0.conv." in n]
+    spatial_ids = {id(p) for p in spatial_ffn}
+    global_spatial = [p for n,p in model.core.named_parameters()
+                      if p.requires_grad and '.token_pointwise.spatial_' in n]
+    global_ids = {id(p) for p in global_spatial}
     electronic = [
         value
         for value in model.parameters()
         if value.requires_grad
-        and id(value) not in phase_ids | router_ids | head_ids | readout_ids
+        and id(value) not in phase_ids | router_ids | head_ids | readout_ids | spatial_ids | global_ids
     ]
     groups = [
         {"params": electronic, "lr": settings.student_learning_rate, "name": "electronic"},
@@ -197,7 +424,16 @@ def optimizer(
     ]
     if router:
         groups.insert(1, {"params": router, "lr": settings.router_learning_rate, "name": "optical_router"})
+    if spatial_ffn:
+        groups.append({"params": spatial_ffn, "lr": settings.ffn_spatial_learning_rate,
+                       "name": "electronic_ffn_spatial", "weight_decay": 0.0})
+    if global_spatial:
+        groups.append({"params": global_spatial, "lr": settings.global_spatial_learning_rate,
+                       "name": "electronic_global_spatial", "weight_decay": 0.0})
     groups = [group for group in groups if group["params"]]
+    for group in groups:
+        if group["name"] in {"feature_phase", "optical_router"}:
+            group["weight_decay"] = settings.phase_weight_decay
     flat = [value for group in groups for value in group["params"]]
     expected = {id(value) for value in model.parameters() if value.requires_grad}
     if len(flat) != len({id(value) for value in flat}) or {id(value) for value in flat} != expected:
@@ -212,16 +448,30 @@ def architecture_report(model: LightGenVision2SaliencyStudent, settings: Any) ->
         "type": settings.lightgen_model_variant,
         "checkpoint_architecture": architecture_label(settings),
         "task": "SALICON fixation-density prediction",
+        "ccd_normalization": settings.ccd_normalization,
         "qwen": {"frozen": True, "native_vision_blocks_executed": 0},
         "vision": {
             "hybrid_blocks": 2,
             "fusion": "scale-matched convex (1-alpha)E + alpha O",
             "alpha_range": [settings.fusion_alpha_min, settings.fusion_alpha_max],
             "latent_width": settings.electronic_width,
+            "spatial_depthwise_kernel": getattr(settings, "electronic_spatial_kernel_size", 3),
+            "electronic_grn": getattr(settings, "electronic_grn", False),
+            "ffn_spatial_dilation": getattr(settings, "electronic_ffn_spatial_dilation", 0),
+            "ffn_hidden_width": model.core.hybrid.blocks[0].mlp[0].out_features,
+            "ffn_widening_extra_parameters": 151296 if getattr(settings, "electronic_ffn_hidden_width", 384) == 576 else 0,
+            "ffn_conv_groups": model.core.hybrid.blocks[0].mlp[1][0].conv.groups if getattr(settings, "electronic_ffn_spatial_dilation", 0) else None,
+            "ffn_grouping_extra_parameters": 34560 if getattr(settings, "electronic_ffn_groups", 0) == 64 else 0,
+            "ffn_spatial_parameters": sum(p.numel() for n,p in model.core.named_parameters() if ".mlp.1.0.conv." in n),
+            "global_spatial_rank": getattr(settings, "electronic_global_rank", 0),
+            "global_spatial_parameters": sum(p.numel() for n,p in model.core.named_parameters() if '.token_pointwise.spatial_' in n),
+            "grn_parameters": sum(p.numel() for n, p in model.core.named_parameters() if ".mlp.2.0." in n),
+            "extra_electronic_parameters_vs_kernel3": 2 * settings.electronic_width * (getattr(settings, "electronic_spatial_kernel_size", 3)**2 - 9),
         },
         "router": {
             "backend": "none" if is_d2nn else "optical",
             "top_k": None if is_d2nn else 2,
+            "phase_coordinates": getattr(settings,'router_phase_coordinates','sigmoid'),
         },
         "optics": {
             "feature_captures": 2,

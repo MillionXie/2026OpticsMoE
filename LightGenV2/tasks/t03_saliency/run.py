@@ -7,6 +7,7 @@ import datetime as dt
 import json
 import random
 import subprocess
+import sys
 from pathlib import Path
 from typing import Any
 
@@ -69,9 +70,10 @@ def _write_protocol(settings: Any, profile: str, seed: int) -> None:
                 else settings.lightgen_model_variant
             ),
             "seed": int(seed),
+            "command": [sys.executable, "-m", "LightGenV2.tasks.t03_saliency.run", *sys.argv[1:]],
             "git_commit": _git_value("rev-parse", "HEAD"),
             "started_at": dt.datetime.now(dt.timezone.utc).isoformat(),
-            "selection": "highest public-test CC at epoch 1/every 5/final",
+            "selection": f"highest public-test CC at warmstart/epoch 1/every {settings.test_interval_epochs}/final",
         },
     )
     write_json(
@@ -112,7 +114,7 @@ def _pending_qwen(settings: Any) -> dict[str, Any]:
 
 
 def run(args: argparse.Namespace) -> dict[str, Any]:
-    settings = load_settings(TASK_DIR / "configs" / PROFILES[args.profile])
+    settings = load_settings(Path(args.config) if args.config else TASK_DIR / "configs" / PROFILES[args.profile])
     if args.run_dir:
         settings.output_dir = Path(args.run_dir).expanduser().resolve()
     settings.output_dir.mkdir(parents=True, exist_ok=True)
@@ -158,6 +160,7 @@ def run(args: argparse.Namespace) -> dict[str, Any]:
 def main() -> int:
     parser = argparse.ArgumentParser(description="LightGenV2 T03 SALICON formal comparison")
     parser.add_argument("--profile", choices=sorted(PROFILES), required=True)
+    parser.add_argument("--config", help="Explicit task config; preserves the selected profile's model contract")
     parser.add_argument("--phase", choices=sorted(PHASES), default="all")
     parser.add_argument("--seed", type=int, default=42)
     parser.add_argument("--run-dir", default=None)

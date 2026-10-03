@@ -12,6 +12,7 @@ import matplotlib
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 import torch
+from .router_phase import checkpoint_phase
 
 
 def render(checkpoint: Path, output_dir: Path) -> dict[str, Any]:
@@ -21,7 +22,8 @@ def render(checkpoint: Path, output_dir: Path) -> dict[str, Any]:
     values: list[tuple[str, torch.Tensor]] = []
     for name, raw in payload["core"].items():
         if "raw_phase" in name or "raw_router_phase" in name:
-            values.append((name, 2.0 * math.pi * torch.sigmoid(raw.float())))
+            phase = checkpoint_phase(name,raw,payload.get('architecture'))
+            values.append((name, torch.remainder(phase,2*math.pi)))
     if not values:
         raise RuntimeError("No phase parameter found in T03 checkpoint")
     columns = min(3, len(values))
