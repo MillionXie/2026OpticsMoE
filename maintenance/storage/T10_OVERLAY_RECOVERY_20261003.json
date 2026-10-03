@@ -1,0 +1,55 @@
+{
+  "source_commit": "38afd43c1e28aeaff28e33bad58177ae09a0f156",
+  "parent": "5a1178ef09be40f45b58a20a8633a6e1add2d75d",
+  "recovery_ref": "refs/archive/server-authoritative-20261003/t10-runtime-overlay",
+  "rows": [
+    {
+      "path": "LightGenV2/tasks/t10_expert_scaling/train.py",
+      "sha256": "300b56d292647c263426ef743c7f73290b37509c6beb8794f6b7ef9fced34578",
+      "bytes": 11158
+    },
+    {
+      "path": "LightGenV2/tasks/t10_expert_scaling/aggregate_fixed478.py",
+      "sha256": "c00e81772358b334617a929def23921d041e73655813ec5c4d8422e61ec9b210",
+      "bytes": 5922
+    },
+    {
+      "path": "LightGenV2/tasks/t10_expert_scaling/evaluate_test.py",
+      "sha256": "2028886362dbe38100cfa682d515da71b14367594af2ad2654e02eb27ee8c9e6",
+      "bytes": 4656
+    },
+    {
+      "path": "LightGenV2/tasks/t10_expert_scaling/fixed478_resume_packed.py",
+      "sha256": "132c3d4ea10b523c3e3faded613730bbacf6a5605d9ede9582c647c5e5ddb75a",
+      "bytes": 5859
+    },
+    {
+      "path": "LightGenV2/tasks/t10_expert_scaling/fixed478_schedule.py",
+      "sha256": "b48a293a2a4b283696f97a1c4cec550fd695a10eb0062ca93da16c9131d99f64",
+      "bytes": 7111
+    },
+    {
+      "path": "LightGenV2/tasks/t10_expert_scaling/locked_test_schedule.py",
+      "sha256": "0e4e73e9a894867e979670adc09dcf8e5ba1e97ffb13cb0b7dfc1d2010aa2e76",
+      "bytes": 3039
+    },
+    {
+      "path": "LightGenV2/tasks/t10_expert_scaling/prepare_medmnist.py",
+      "sha256": "9ae07a8dca28b34b21b463496bfc00df403dfb1f624996a73ed99093c9ad2e66",
+      "bytes": 3759
+    },
+    {
+      "path": "LightGenV2/tasks/t10_expert_scaling/seed37_supplement_schedule.py",
+      "sha256": "1df65f36be10542439ba2f81b519cef7fa8d3591819fea6e0db40c2f07049202",
+      "bytes": 5987
+    },
+    {
+      "path": "LightGenV2/tasks/t10_expert_scaling/topk32_schedule.py",
+      "sha256": "9c11e0c3f81da8d61d193b0a4058bf6466322d422f958700fcfc261a1ebc60fe",
+      "bytes": 6489
+    }
+  ],
+  "bundle_path": "/DATA/DATA1/guest3/storage_cleanup_manifests/t10_runtime_overlay_20261003.bundle",
+  "bundle_sha256": "ebf14f4b8c8fda9617319c263014fbde94d92483f7cf48fa9e2f3c60f0c84f01",
+  "working_files_index_head_unchanged": true
+}

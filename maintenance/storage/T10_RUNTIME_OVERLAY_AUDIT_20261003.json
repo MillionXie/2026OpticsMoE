@@ -1,0 +1,156 @@
+{
+  "source_dir": "/DATA/DATA1/guest3/t10_corrected_20260918",
+  "head": "5a1178ef09be40f45b58a20a8633a6e1add2d75d",
+  "rows": [
+    {
+      "path": "LightGenV2/tasks/t10_expert_scaling/evaluate_test.py",
+      "sha256": "2028886362dbe38100cfa682d515da71b14367594af2ad2654e02eb27ee8c9e6",
+      "bytes": 4656,
+      "state": "untracked"
+    },
+    {
+      "path": "LightGenV2/tasks/t10_expert_scaling/confirm_schedule.py",
+      "sha256": "a9a452622d573c7b392267061055efd6fc44f059b8100ebb3f3678b11ffaf7f4",
+      "bytes": 3624,
+      "state": "identical"
+    },
+    {
+      "path": "LightGenV2/tasks/t10_expert_scaling/locked_test_schedule.py",
+      "sha256": "0e4e73e9a894867e979670adc09dcf8e5ba1e97ffb13cb0b7dfc1d2010aa2e76",
+      "bytes": 3039,
+      "state": "untracked"
+    },
+    {
+      "path": "LightGenV2/tasks/t10_expert_scaling/topk32_schedule.py",
+      "sha256": "9c11e0c3f81da8d61d193b0a4058bf6466322d422f958700fcfc261a1ebc60fe",
+      "bytes": 6489,
+      "state": "untracked"
+    },
+    {
+      "path": "LightGenV2/tasks/t10_expert_scaling/aggregate_fixed478.py",
+      "sha256": "c00e81772358b334617a929def23921d041e73655813ec5c4d8422e61ec9b210",
+      "bytes": 5922,
+      "state": "untracked"
+    },
+    {
+      "path": "LightGenV2/tasks/t10_expert_scaling/smoke.py",
+      "sha256": "d54e9ba018556d87293da34774e5e10b5dd55f6269ab19cfeef6475112ccc8a5",
+      "bytes": 3062,
+      "state": "identical"
+    },
+    {
+      "path": "LightGenV2/tasks/t10_expert_scaling/audit_deepweeds.py",
+      "sha256": "50de879eaef1731558909b3ec74a408167989925b51e390bed607b4a5fce9522",
+      "bytes": 5178,
+      "state": "identical"
+    },
+    {
+      "path": "LightGenV2/tasks/t10_expert_scaling/fixed478_schedule.py",
+      "sha256": "b48a293a2a4b283696f97a1c4cec550fd695a10eb0062ca93da16c9131d99f64",
+      "bytes": 7111,
+      "state": "untracked"
+    },
+    {
+      "path": "LightGenV2/tasks/t10_expert_scaling/model.py",
+      "sha256": "4b91274be7b5af1dfd4404a8d6c16eb325c2fd9d1e0f5b60c3fd88ea7e06c89d",
+      "bytes": 7890,
+      "state": "identical"
+    },
+    {
+      "path": "LightGenV2/tasks/t10_expert_scaling/seed37_supplement_schedule.py",
+      "sha256": "1df65f36be10542439ba2f81b519cef7fa8d3591819fea6e0db40c2f07049202",
+      "bytes": 5987,
+      "state": "untracked"
+    },
+    {
+      "path": "LightGenV2/tasks/t10_expert_scaling/train.py",
+      "sha256": "300b56d292647c263426ef743c7f73290b37509c6beb8794f6b7ef9fced34578",
+      "bytes": 11158,
+      "state": "modified"
+    },
+    {
+      "path": "LightGenV2/tasks/t10_expert_scaling/audit_routes.py",
+      "sha256": "aab88ff83c67404afef8e66a6af8466c74dcfefbb342d1a61cb7bcf3de08950f",
+      "bytes": 1506,
+      "state": "identical"
+    },
+    {
+      "path": "LightGenV2/tasks/t10_expert_scaling/prepare_deepweeds.py",
+      "sha256": "10d6c37c87f948642abc4ece142c5fc63c79d6a59c3e2553a23ae6a8ae3d1e13",
+      "bytes": 4999,
+      "state": "identical"
+    },
+    {
+      "path": "LightGenV2/tasks/t10_expert_scaling/prepare_deepweeds_grouped.py",
+      "sha256": "c1f972b2e386e3af540bb7e95387fe0c30450d09a8dd4045d817cc0b85b57675",
+      "bytes": 5196,
+      "state": "identical"
+    },
+    {
+      "path": "LightGenV2/tasks/t10_expert_scaling/schedule.py",
+      "sha256": "e3bc05da715b9be6b7be0eda0793ffc0d46f5538680aaa8581a4c0d80a830ce7",
+      "bytes": 8971,
+      "state": "identical"
+    },
+    {
+      "path": "LightGenV2/tasks/t10_expert_scaling/prepare_medmnist.py",
+      "sha256": "9ae07a8dca28b34b21b463496bfc00df403dfb1f624996a73ed99093c9ad2e66",
+      "bytes": 3759,
+      "state": "untracked"
+    },
+    {
+      "path": "LightGenV2/tasks/t10_expert_scaling/fixed478_resume_packed.py",
+      "sha256": "132c3d4ea10b523c3e3faded613730bbacf6a5605d9ede9582c647c5e5ddb75a",
+      "bytes": 5859,
+      "state": "untracked"
+    },
+    {
+      "path": "LightGenV2/tasks/t10_expert_scaling/plan.py",
+      "sha256": "ee1fd82de0dd86c70ed52837b68c223de2d75cbaccbdceab510f77a4ea9cfb98",
+      "bytes": 9551,
+      "state": "identical"
+    },
+    {
+      "path": "LightGenV2/tasks/t10_expert_scaling/README.md",
+      "sha256": "90e84ba70f9e9eaae062acdb8277aa47e171eb2467398cd6ad26c0b4db6b9eb3",
+      "bytes": 14977,
+      "state": "identical"
+    },
+    {
+      "path": "LightGenV2/tasks/t10_expert_scaling/configs/study.json",
+      "sha256": "084b49a4f45488974b3ca682fdf1cbc4ee966cfb632d74ad5cd54fd4d7bc3e4e",
+      "bytes": 2340,
+      "state": "identical"
+    },
+    {
+      "path": "LightGenV2/tasks/t10_expert_scaling/dataset/registry.json",
+      "sha256": "965c34f4ace5171a89b0a5a85c6fd4561767182da30554c1d11be4a2f47f7411",
+      "bytes": 3230,
+      "state": "identical"
+    },
+    {
+      "path": "LightGenV2/tasks/t10_expert_scaling/docs/PROTOCOL.md",
+      "sha256": "ff5734f746c2ffe93e5790ab6d0667f02f2d3bf1d7d1b9400e5612faa4fd9b44",
+      "bytes": 18417,
+      "state": "identical"
+    },
+    {
+      "path": "LightGenV2/tasks/t10_expert_scaling/reports/reproduction/README.md",
+      "sha256": "12b396218c44e07ed8963fbec124032cb1aef703093e3ce345318380f6fea074",
+      "bytes": 4382,
+      "state": "identical"
+    },
+    {
+      "path": "LightGenV2/tasks/t10_expert_scaling/reports/design/router_regions.json",
+      "sha256": "675b40dc4d25a15a682ee0c993fecbe82d07aa27a37d7068a04b668d16392941",
+      "bytes": 2745,
+      "state": "identical"
+    },
+    {
+      "path": "LightGenV2/tasks/t10_expert_scaling/reports/design/summary.json",
+      "sha256": "37ebe624f82f09cb5d6e4b7fde114d75fefab3507c7b568164451a724b19a937",
+      "bytes": 691,
+      "state": "identical"
+    }
+  ]
+}

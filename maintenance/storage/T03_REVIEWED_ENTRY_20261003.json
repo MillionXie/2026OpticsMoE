@@ -1,0 +1,13 @@
+{
+  "source_commit": "2c5f531c72673a366fd8b4e9b8eb53318a26d3b2",
+  "expected_main": "71e527ea2a401189f3b61f54b61c5bf818043a0a",
+  "task_prefix": "LightGenV2/tasks/t03_saliency/",
+  "paths": [
+    {
+      "path": "LightGenV2/tasks/t03_saliency/README.md",
+      "source_sha256": "ae5f430c71379aae02087bd408d1eb32f2394f7b890007e696477633319f6af4",
+      "expected_target_sha256": "f7a22df97d36052c6544ad1302405a6c5a171ec2a80f40f116cb240074e1208d",
+      "review_reason": "Preserve complete history and add audited final runtime, model and performance identities without changing experiments"
+    }
+  ]
+}

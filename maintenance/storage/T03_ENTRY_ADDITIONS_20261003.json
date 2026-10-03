@@ -1,0 +1,35 @@
+{
+  "source_commit": "2c5f531c72673a366fd8b4e9b8eb53318a26d3b2",
+  "paths": [
+    {
+      "path": "maintenance/git_safety/prepare_reviewed_replacements.py",
+      "sha256": "d3737d8600188c8905a17231d307347e630b06a9f2b6281a1a0ff6f785061f5d",
+      "bytes": 5444
+    },
+    {
+      "path": "maintenance/git_safety/tests/test_reviewed_replacements.py",
+      "sha256": "8cf2edb06f8885a3b6e1064acf5590edadd3218ccf9b7c73837106002ea3005c",
+      "bytes": 2604
+    },
+    {
+      "path": "maintenance/storage/T03_REVIEWED_CORE_20261003.json",
+      "sha256": "4fc3075fe3175a44dada997380854e8e66b1e56174c1203a3995d0a30de8b728",
+      "bytes": 2040
+    },
+    {
+      "path": "maintenance/storage/T03_PINNED_ADDITIONS_20261003.json",
+      "sha256": "c4fe29a341235cd0463b368d301948efb84d8a3040c7674fe880e31af3aca62e",
+      "bytes": 50038
+    },
+    {
+      "path": "LightGenV2/tasks/t03_saliency/package_prediction_overlays.py",
+      "sha256": "a2196f8b530a033fff057f1c9e7011cd429f693646faa7f9764d2829cdee2660",
+      "bytes": 4740
+    },
+    {
+      "path": "LightGenV2/tasks/t03_saliency/reports/reproduction/LICENSED_EXAMPLES_20260929.md",
+      "sha256": "67e61dc47aaacfcf8681443b2ed87ede8efa27dc51ebac03ea2330df40984bff",
+      "bytes": 2082
+    }
+  ]
+}

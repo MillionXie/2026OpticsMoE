@@ -1,0 +1,60 @@
+{
+  "compile_files": 18,
+  "geometry": [
+    {
+      "experts": 4,
+      "router_side": 224
+    },
+    {
+      "experts": 9,
+      "router_side": 224
+    },
+    {
+      "experts": 16,
+      "router_side": 224
+    },
+    {
+      "experts": 25,
+      "router_side": 224
+    },
+    {
+      "experts": 36,
+      "router_side": 224
+    },
+    {
+      "experts": 49,
+      "router_side": 224
+    },
+    {
+      "experts": 100,
+      "router_side": 312
+    }
+  ],
+  "bounded_cpu_checks": [
+    {
+      "architecture": "moe_oeo",
+      "probability_gradients_determinism": "pass",
+      "layers": 4,
+      "experts": 4
+    },
+    {
+      "architecture": "d2nn_total_parameter",
+      "probability_gradients_determinism": "pass",
+      "layers": 4,
+      "experts": 4
+    },
+    {
+      "architecture": "d2nn_same_aperture",
+      "probability_gradients_determinism": "pass",
+      "layers": 4,
+      "experts": 4
+    },
+    {
+      "architecture": "d2nn_expert_global",
+      "probability_gradients_determinism": "pass",
+      "layers": 4,
+      "experts": 4
+    }
+  ],
+  "scientific_metrics_rerun": false
+}
