@@ -1,0 +1,175 @@
+{
+  "schema_version": 1,
+  "audit_date": "2026-09-08",
+  "task": "T01",
+  "scope": "Read-only source/data/artifact audit; no new model training or full model evaluation. Existing predictions may be recomputed as explicitly recorded.",
+  "local_head": "79bf0f2695949fc5d0353698cfad417c14282f7b",
+  "local_tree_clean": false,
+  "server_main_head": "c313ff807617a75f410246e08d22d5f03b96443b",
+  "server_main_tree_clean": false,
+  "source_files_sha256": {
+    "LightGenV2/tasks/t01_object_retrieval/__init__.py": "5b586504607056e3c696f94a46491426c9d0640293f6a7c4bc4c4b8e90e53227",
+    "LightGenV2/tasks/t01_object_retrieval/__main__.py": "71de8d02e47a61ce3b1d8cc784c8ce586e90f2aa38194c43bf4c5ddaba85cb8a",
+    "LightGenV2/tasks/t01_object_retrieval/baseline_5090d.py": "737a328ef0ac1cb74c059cedcf9099ef1e3a8aeac4acff9a21562fa442e58979",
+    "LightGenV2/tasks/t01_object_retrieval/modeling.py": "d126c2fd7917af8de4c7068b41cbc2fed064211fa6fd957b3cb18057cc4c3838",
+    "LightGenV2/tasks/t01_object_retrieval/report.py": "f2f0f5c7243752eb00f5b43283217de0c1cea105c6bd0ce524e3e8ea54b5e889",
+    "LightGenV2/tasks/t01_object_retrieval/run.py": "c41ed58dfc7021b08b355144dbaff3b6d5ac254158de304ffca2078272fb21f9",
+    "LightGenV2/tasks/t01_object_retrieval/settings.py": "dd69bc2b752c2c6c2b6f9a526e53204ae9d96dbecda2a3f5f673c0de90dd9d18",
+    "LightGenV2/tasks/t01_object_retrieval/visualize.py": "3657f5ed5a32b65f04a95226deb8a5c5744830f31ffc505fd70e849205fb2c7f",
+    "LightGenV2/tasks/t01_object_retrieval/configs/common.yaml": "7077bf94bfad8602a610ef96a83f701ede80d08576ec6a38544e2ede910c0f4f",
+    "LightGenV2/tasks/t01_object_retrieval/configs/common_dc20.yaml": "44b54b007a24f712e4135dbf4f780134cf159484e46ad1f25419e24793be26d8",
+    "LightGenV2/tasks/t01_object_retrieval/configs/d2nn_active_expert_matched.yaml": "45e0ce56a6e656cb4393f0b6178a8f2d74b747f44b8de0d2527056223c744dc6",
+    "LightGenV2/tasks/t01_object_retrieval/configs/d2nn_active_expert_matched_dc20.yaml": "3009af6e16471805d9ff2537318d024d32ad9570e7f5a19eec50696a4e9604d1",
+    "LightGenV2/tasks/t01_object_retrieval/configs/moe_optical_router_scale_matched.yaml": "d708772c1ce3322d03b4a22e6d7d67f582f4042bdfefa2f396a5d3f0579b893f",
+    "LightGenV2/tasks/t01_object_retrieval/configs/moe_optical_router_scale_matched_dc20.yaml": "82be1ec970d592e135c6e55a82c1750b8fed714b808cafebe12afad8b66efe65",
+    "LightGenV2/tasks/t01_object_retrieval/configs/qwen_frozen_embedding.yaml": "b28adffb3018a0f41aeb647b2b87c8e5890a086ff59839b0491df5ff4ede34e4"
+  },
+  "remote_record_inventory": [
+    {
+      "path": "/DATA/DATA1/guest3/2026OpticsMoE/LightGenV2/tasks/t01_object_retrieval/runs/simulation/d2nn_matched_dc20_seed42/student_metrics.json",
+      "sha256_of_record": "78b25a1e9b3fffc627335f2faa2268374dbac64f80d8effcd581c7daf285eee7",
+      "bytes": 3250,
+      "selection_biased": true,
+      "metrics": {
+        "top1_retrieval_accuracy": 0.8949999809265137,
+        "top3_retrieval_accuracy": 0.9700000286102295,
+        "mrr": 0.9348809719085693,
+        "gallery_aggregation": "mean_prototype",
+        "query_count": 200,
+        "gallery_image_count": 30
+      }
+    },
+    {
+      "path": "/DATA/DATA1/guest3/2026OpticsMoE/LightGenV2/tasks/t01_object_retrieval/runs/simulation/d2nn_matched_dc20_seed42/parameter_fairness_contract.json",
+      "sha256_of_record": "3cd4d4113a27484b6d2e2cbbc5dc258959a8b4fc20fc44cca817fb8d172af5d1",
+      "bytes": 655
+    },
+    {
+      "path": "/DATA/DATA1/guest3/2026OpticsMoE/LightGenV2/tasks/t01_object_retrieval/runs/simulation/d2nn_matched_dc20_seed42/initialization_report.json",
+      "sha256_of_record": "d1ecdc06ecff11552ab99c7194d83c028ee4c0ea1005366040515cebb09cc3c1",
+      "bytes": 995
+    },
+    {
+      "path": "/DATA/DATA1/guest3/2026OpticsMoE/LightGenV2/tasks/t01_object_retrieval/runs/simulation/d2nn_matched_dc20_seed42/run_manifest.json",
+      "sha256_of_record": "3e4ec15086bf63856980ceb492b4c6004671da58df5ec90a985fc553f0064eec",
+      "bytes": 447
+    },
+    {
+      "path": "/DATA/DATA1/guest3/2026OpticsMoE/LightGenV2/tasks/t01_object_retrieval/runs/simulation/moe_router_scale_dc20_strict_seed42/student_metrics.json",
+      "sha256_of_record": "fb8693432744ed5619b9e80ef742be2a94d3e6a681eeaa9722f38f11b1309054",
+      "bytes": 3262,
+      "selection_biased": true,
+      "metrics": {
+        "top1_retrieval_accuracy": 0.8999999761581421,
+        "top3_retrieval_accuracy": 0.9649999737739563,
+        "mrr": 0.934374988079071,
+        "gallery_aggregation": "mean_prototype",
+        "query_count": 200,
+        "gallery_image_count": 30
+      }
+    },
+    {
+      "path": "/DATA/DATA1/guest3/2026OpticsMoE/LightGenV2/tasks/t01_object_retrieval/runs/simulation/moe_router_scale_dc20_strict_seed42/parameter_fairness_contract.json",
+      "sha256_of_record": "3cd4d4113a27484b6d2e2cbbc5dc258959a8b4fc20fc44cca817fb8d172af5d1",
+      "bytes": 655
+    },
+    {
+      "path": "/DATA/DATA1/guest3/2026OpticsMoE/LightGenV2/tasks/t01_object_retrieval/runs/simulation/moe_router_scale_dc20_strict_seed42/initialization_report.json",
+      "sha256_of_record": "b2c6545d92eb30e9e360e7579a279876eb8f932dbf3540e920167fc66e2178e8",
+      "bytes": 1867
+    },
+    {
+      "path": "/DATA/DATA1/guest3/2026OpticsMoE/LightGenV2/tasks/t01_object_retrieval/runs/simulation/moe_router_scale_dc20_strict_seed42/run_manifest.json",
+      "sha256_of_record": "498447ba3179d255a40a3d1e202026ebc26230b256d7830ba698cb0928c6aa09",
+      "bytes": 453
+    },
+    {
+      "path": "/DATA/DATA1/guest3/2026OpticsMoE/LightGenV2/tasks/t01_object_retrieval/runs/simulation/d2nn_matched_seed42/student_metrics.json",
+      "sha256_of_record": "8afd35f94e10c485659701e730c45a86cf18d0ce7682284353c9fc6b099d6c96",
+      "bytes": 3264,
+      "selection_biased": true,
+      "metrics": {
+        "top1_retrieval_accuracy": 0.9049999713897705,
+        "top3_retrieval_accuracy": 0.9700000286102295,
+        "mrr": 0.9382142424583435,
+        "gallery_aggregation": "mean_prototype",
+        "query_count": 200,
+        "gallery_image_count": 30
+      }
+    },
+    {
+      "path": "/DATA/DATA1/guest3/2026OpticsMoE/LightGenV2/tasks/t01_object_retrieval/runs/simulation/d2nn_matched_seed42/parameter_fairness_contract.json",
+      "sha256_of_record": "3cd4d4113a27484b6d2e2cbbc5dc258959a8b4fc20fc44cca817fb8d172af5d1",
+      "bytes": 655
+    },
+    {
+      "path": "/DATA/DATA1/guest3/2026OpticsMoE/LightGenV2/tasks/t01_object_retrieval/runs/simulation/d2nn_matched_seed42/initialization_report.json",
+      "sha256_of_record": "d1ecdc06ecff11552ab99c7194d83c028ee4c0ea1005366040515cebb09cc3c1",
+      "bytes": 995
+    },
+    {
+      "path": "/DATA/DATA1/guest3/2026OpticsMoE/LightGenV2/tasks/t01_object_retrieval/runs/simulation/d2nn_matched_seed42/run_manifest.json",
+      "sha256_of_record": "18d225d9624cc972b9f4bbd6b94b343136c95ff1727296670b20db52a65eea79",
+      "bytes": 437
+    },
+    {
+      "path": "/DATA/DATA1/guest3/2026OpticsMoE/LightGenV2/tasks/t01_object_retrieval/runs/simulation/qwen_frozen/student_metrics.json",
+      "sha256_of_record": "4bfd2bda061733d97e7046600033bc6ebbcabb2c20295871c76ca983965e6372",
+      "bytes": 2889,
+      "trainable_parameters": 0,
+      "metrics": {
+        "top1_retrieval_accuracy": 0.9950000047683716,
+        "top3_retrieval_accuracy": 1.0,
+        "mrr": 0.9975000023841858,
+        "gallery_aggregation": "mean_prototype",
+        "query_count": 200,
+        "gallery_image_count": 30
+      }
+    },
+    {
+      "path": "/DATA/DATA1/guest3/2026OpticsMoE/LightGenV2/tasks/t01_object_retrieval/runs/simulation/qwen_frozen/parameter_fairness_contract.json",
+      "sha256_of_record": "3cd4d4113a27484b6d2e2cbbc5dc258959a8b4fc20fc44cca817fb8d172af5d1",
+      "bytes": 655
+    },
+    {
+      "path": "/DATA/DATA1/guest3/2026OpticsMoE/LightGenV2/tasks/t01_object_retrieval/runs/simulation/qwen_frozen/run_manifest.json",
+      "sha256_of_record": "8b30e80e030240189e28d7db309fc6e654a81c622e405a6773a24cafb92a8fde",
+      "bytes": 416
+    },
+    {
+      "path": "/DATA/DATA1/guest3/2026OpticsMoE/LightGenV2/tasks/t01_object_retrieval/runs/simulation/moe_router_scale_seed42/student_metrics.json",
+      "sha256_of_record": "91b7094fd8e71bfa65d9a1898fc2711e889a715b364170e0959584512c82c82a",
+      "bytes": 3255,
+      "selection_biased": true,
+      "metrics": {
+        "top1_retrieval_accuracy": 0.9100000262260437,
+        "top3_retrieval_accuracy": 0.9649999737739563,
+        "mrr": 0.9411309957504272,
+        "gallery_aggregation": "mean_prototype",
+        "query_count": 200,
+        "gallery_image_count": 30
+      }
+    },
+    {
+      "path": "/DATA/DATA1/guest3/2026OpticsMoE/LightGenV2/tasks/t01_object_retrieval/runs/simulation/moe_router_scale_seed42/parameter_fairness_contract.json",
+      "sha256_of_record": "3cd4d4113a27484b6d2e2cbbc5dc258959a8b4fc20fc44cca817fb8d172af5d1",
+      "bytes": 655
+    },
+    {
+      "path": "/DATA/DATA1/guest3/2026OpticsMoE/LightGenV2/tasks/t01_object_retrieval/runs/simulation/moe_router_scale_seed42/initialization_report.json",
+      "sha256_of_record": "b2c6545d92eb30e9e360e7579a279876eb8f932dbf3540e920167fc66e2178e8",
+      "bytes": 1867
+    },
+    {
+      "path": "/DATA/DATA1/guest3/2026OpticsMoE/LightGenV2/tasks/t01_object_retrieval/runs/simulation/moe_router_scale_seed42/run_manifest.json",
+      "sha256_of_record": "ff759d24388684be04c1a65b840c10dbf8ef932001b03e65fa3c2bf776aad288",
+      "bytes": 443
+    }
+  ],
+  "actual_checkpoint_sha256": {
+    "LightGenV2/tasks/t01_object_retrieval/runs/simulation/moe_router_scale_dc20_strict_seed42/best_checkpoint.pt": {
+      "bytes": 35112171,
+      "sha256": "644da84e6fc487f8b8630d1811f44b4afd585fa0c950454eb2661f081e287e4a"
+    }
+  }
+}
