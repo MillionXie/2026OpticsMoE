@@ -1,0 +1,14 @@
+base_config: moe_alpha40_extra_control.yaml
+# Matched added GT-CC coefficient: full grid vs density pyramid.
+# No architecture, native frontend, teacher cache, or inference changes.
+training:
+  student_epochs: 30
+  staged:
+    polish_start: 21
+distillation:
+  end_epoch: 30
+loss:
+  pyramid_cc:
+    weight: 1.5
+    sizes: [224]
+output_dir: ../runs/simulation/moe_alpha40_cc_fullgrid_20260913_seed42

@@ -1,0 +1,4 @@
+base_config: moe_alpha40_adaptive_releasekd.yaml
+loss:
+  cc_weight: 3.0
+output_dir: ../runs/simulation/moe_alpha40_adaptive_releasekd_cc_seed42

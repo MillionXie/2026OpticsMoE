@@ -1,0 +1,10 @@
+base_config: moe_alpha40_extra_control.yaml
+# Deep supervision, training-only: original inference graph/state unchanged.
+# First 3 epochs detach only auxiliary input; normal GT+mapKD train throughout.
+first_stage_supervision:
+  initial_weight: 0.2
+  final_weight: 0.0
+  end_epoch: 25
+  learning_rate: 0.0001
+  head_warmup_epochs: 3
+output_dir: ../runs/simulation/moe_alpha40_first_stage_gt_seed42

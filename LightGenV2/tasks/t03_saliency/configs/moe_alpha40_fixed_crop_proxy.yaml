@@ -1,0 +1,5 @@
+base_config: moe_alpha40_fixed_crop_actual.yaml
+# Identical views/GT/schedule/initialization; only approximate versus actual teacher differs.
+fixed_crop_distillation:
+  mode: proxy
+output_dir: ../runs/simulation/moe_alpha40_fixed_crop_proxy_seed42

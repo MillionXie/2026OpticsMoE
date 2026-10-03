@@ -1,0 +1,20 @@
+base_config: moe_alpha40_extra_control.yaml
+# Training-only stochastic SAM-scale probe; not micro-batch-averaged mSAM.
+# Four times as many AdamW/EMA updates per image pass: reduce LRs to 1/4,
+# and use the fourth root of the old EMA decay to retain its image horizon.
+batching:
+  student_batch_size: 8
+training:
+  student_epochs: 20
+  student_learning_rate: 0.0000025
+  phase_learning_rate: 0.00005
+  router_learning_rate: 0.000005
+  dense_readout_learning_rate: 0.000005
+  dense_head_learning_rate: 0.000005
+  ffn_spatial_learning_rate: 0.0000125
+  ema_decay: 0.9987476493904754
+  staged:
+    polish_start: 16
+distillation:
+  end_epoch: 20
+output_dir: ../runs/simulation/moe_alpha40_sam_batch8_20260913_seed42

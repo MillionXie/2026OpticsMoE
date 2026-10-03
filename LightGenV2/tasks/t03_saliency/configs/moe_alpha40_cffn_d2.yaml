@@ -1,0 +1,4 @@
+base_config: moe_alpha40_cffn_d1.yaml
+lightgen:
+  electronic_ffn_spatial_dilation: 2
+output_dir: ../runs/simulation/moe_alpha40_cffn_d2_seed42

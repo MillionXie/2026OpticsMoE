@@ -1,0 +1,172 @@
+"""Fixed-weight full-split recheck; train split is a fit diagnostic, not test performance."""
+import argparse
+import csv
+import hashlib
+import io
+import json
+import subprocess
+import sys
+from pathlib import Path
+
+import numpy as np
+import torch
+from experiments.qwen3_vl_embedding_2b_salicon_vision_optical_saliency import training as legacy
+from experiments.qwen3_vl_embedding_2b_salicon_vision_optical_saliency.datasets import prepare_salicon
+from experiments.qwen3_vl_embedding_2b_salicon_vision_optical_saliency.modeling import preprocess_vision
+from experiments.qwen3_vl_embedding_2b_salicon_vision_optical_saliency.objectives import SaliencyAccumulator, density_from_logits
+from experiments.qwen3_vl_embedding_2b_fss1000_vision_optical_saliency.modeling import FrozenQwenVisionTeacher
+from .aligned_baseline import AlignedReadout
+from .modeling import build_student, load_vision_backbone, sha256_file, architecture_label
+from .settings import load_settings, save_resolved_config
+from .reproduce_baseline import independent_cc
+from .run import _seed
+from .training import _write_json
+from .training_support import use_spawn_workers
+
+
+def load_hashed_checkpoint(path):
+    """Bind provenance to exactly the bytes loaded, even if best is updated later."""
+    content = Path(path).read_bytes()
+    digest = hashlib.sha256(content).hexdigest()
+    payload = torch.load(io.BytesIO(content), map_location='cpu', weights_only=False)
+    return payload, digest
+
+
+def apply_inference_ablation(model, system, mode):
+    """Runtime-only bypass; never modify a checkpoint or retrain an E-only model."""
+    if system not in {'qwen', 'optical'} or mode not in {'none', 'remove_optical'}:
+        raise ValueError('Unsupported recheck system/ablation')
+    if system == 'qwen':
+        if mode != 'none':
+            raise ValueError('Frozen Qwen has no optical branch to remove')
+        return
+    model.core.hybrid.set_fusion_ablation(mode)
+
+
+def recheck_loader(bundle, settings, split):
+    if split not in {'train', 'test'}:
+        raise ValueError('Unknown recheck split')
+    records = bundle.train_records if split == 'train' else bundle.validation_records
+    expected = 10000 if split == 'train' else 5000
+    if len(records) != expected:
+        raise RuntimeError(f'Require all {expected} {split} records')
+    loaders = legacy.build_loaders(bundle, settings, training=False)
+    loader = loaders[0 if split == 'train' else 1]
+    # Iteration begins after CUDA model creation. Do not inherit its context.
+    use_spawn_workers(loader)
+    return loader, expected
+
+
+def optical_checkpoint_states(payload, use_ema_state=False):
+    if use_ema_state:
+        ema = payload.get('ema_state')
+        if not isinstance(ema, dict) or set(ema) != {'core', 'head'}:
+            raise ValueError('Requested EMA state is absent or malformed; refusing live fallback')
+        return ema['core'], ema['head'], 'ema'
+    return payload['core'], payload['saliency_head'], payload.get('weight_kind', 'live')
+
+
+def main():
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument('--system', choices=['qwen', 'optical'], required=True)
+    parser.add_argument('--config', type=Path, required=True)
+    parser.add_argument('--checkpoint', type=Path, required=True)
+    parser.add_argument('--run-dir', type=Path, required=True)
+    parser.add_argument('--batch-size', type=int, default=32)
+    parser.add_argument('--split', choices=['train', 'test'], default='test',
+                        help='train: clean full-training-set fit diagnostic, never a test result')
+    parser.add_argument('--use-ema-state', action='store_true',
+                        help='Optical last checkpoint only: evaluate its stored EMA shadow instead of live core/head')
+    parser.add_argument('--ablation', choices=['none', 'remove_optical'], default='none',
+                        help='Same optical checkpoint, no retraining; remove_optical bypasses router and both optical branches')
+    args = parser.parse_args()
+    if args.system == 'qwen' and args.ablation != 'none':
+        parser.error('Qwen has no optical branch; use --ablation none')
+    if args.system == 'qwen' and args.use_ema_state:
+        parser.error('EMA shadow selection is supported only for optical checkpoints')
+    s = load_settings(args.config)
+    s.output_dir = args.run_dir.resolve()
+    if s.output_dir.exists():
+        raise FileExistsError('Use a new recheck directory; preserve previous evidence')
+    if args.batch_size < 1:
+        raise ValueError('batch size must be positive')
+    _seed(42)
+    s.random_seed, s.inference_batch_size, s.num_workers = 42, args.batch_size, 2
+    s.local_files_only, s.download = True, False
+    s.output_dir.mkdir(parents=True)
+    save_resolved_config(s)
+    bundle = prepare_salicon(s, persist=True)
+    loader, expected = recheck_loader(bundle, s, args.split)
+    loaded = load_vision_backbone(s, torch.device('cuda' if torch.cuda.is_available() else 'cpu'))
+    s.resolve_architecture(loaded.model)
+    loaded.model.requires_grad_(False).eval()
+    payload, checkpoint_digest = load_hashed_checkpoint(args.checkpoint)
+    aligned = AlignedReadout(s.vision_hidden_size)
+    evaluated_weight_kind = payload.get('weight_kind', 'live')
+    if args.system == 'qwen':
+        if payload['architecture'] != 'frozen_qwen24_adapter192_identical_progressive_decoder_v1':
+            raise ValueError('Expected aligned-head Qwen checkpoint, not legacy head')
+        aligned.load_state_dict(payload['head'], strict=True)
+        model = FrozenQwenVisionTeacher(loaded, aligned.to(loaded.device))
+    else:
+        if payload['architecture'] != architecture_label(s):
+            raise ValueError('Optical checkpoint/config architecture mismatch')
+        model = build_student(loaded, s)
+        core_state, head_state, evaluated_weight_kind = optical_checkpoint_states(payload, args.use_ema_state)
+        model.core.load_state_dict(core_state, strict=True)
+        model.head.load_state_dict(head_state, strict=True)
+        model.core.set_phase_dropout_active(False)
+    apply_inference_ablation(model, args.system, args.ablation)
+    model.eval()
+    accumulator, rows = SaliencyAccumulator(), []
+    try:
+        with torch.inference_mode():
+            for batch in loader:
+                inputs = preprocess_vision(loaded.processor, batch['images'], loaded.device)
+                logits = model(inputs['pixel_values'], inputs['image_grid_thw'])[0]
+                target = batch['density'].to(loaded.device)
+                accumulator.update(logits, target, batch['fixation'].to(loaded.device))
+                cc = independent_cc(density_from_logits(logits).cpu().numpy(), target.cpu().numpy())
+                rows.extend({'sample_id': sid, 'cc_float64': float(v)} for sid, v in zip(batch['sample_ids'], cc))
+                if len(rows) % 512 < args.batch_size:
+                    print(f"[{args.system} {args.split} recheck] {len(rows)}/{expected} CC64={np.mean([r['cc_float64'] for r in rows]):.7f}", flush=True)
+    finally:
+        if args.system == 'qwen':
+            model.close()
+        else:
+            model.restore_native()
+    if len(rows) != expected or len({r['sample_id'] for r in rows}) != expected:
+        raise RuntimeError(f'Invalid {args.split} identities/count')
+    with (s.output_dir/'per_image_cc.csv').open('w', newline='') as f:
+        writer = csv.DictWriter(f, fieldnames=['sample_id','cc_float64'])
+        writer.writeheader(); writer.writerows(rows)
+    metrics = accumulator.compute()
+    cc64 = float(np.mean([r['cc_float64'] for r in rows]))
+    report = {'mode': 'fixed_weight_reevaluation_no_training', 'system': args.system,
+              'ablation': args.ablation,
+              'ablation_contract': ('bypass optical router/expert/global propagation; each fusion returns its existing E output at coefficient 1; all learned weights unchanged'
+                                    if args.ablation == 'remove_optical' else 'normal inference; no branch removed'),
+              'metrics': metrics, 'independent_float64_cc': cc64,
+              'cc_implementation_difference': abs(cc64-metrics['cc']),
+              'checkpoint': str(args.checkpoint.resolve()), 'checkpoint_sha256': checkpoint_digest,
+              'checkpoint_weight_view': 'ema_state' if args.use_ema_state else 'saved_core_head',
+              'evaluated_weight_kind': evaluated_weight_kind,
+              'checkpoint_hash_contract': 'SHA256 of the exact in-memory bytes deserialized before evaluation; source path may subsequently change',
+              'selected_epoch': payload['epoch'], 'architecture': payload['architecture'],
+              'aligned_readout_parameter_audit': aligned.parameter_audit(),
+              'config_sha256': sha256_file(args.config),
+              f'{args.split}_ids_sha256': hashlib.sha256('\n'.join(r['sample_id'] for r in rows).encode()).hexdigest(),
+              'git_commit': subprocess.check_output(['git','rev-parse','HEAD'], text=True).strip(),
+              'command': [sys.executable,'-m',__spec__.name,*sys.argv[1:]],
+              'torch': torch.__version__, 'gpu': torch.cuda.get_device_name() if torch.cuda.is_available() else 'CPU',
+              'selection_biased': True,
+              'split': ('official val2014 as public test; no independent validation' if args.split == 'test'
+                        else 'official train2014; full training-set fit diagnostic, not test performance'),
+              'training_set_diagnostic': args.split == 'train',
+              'speed_and_power': 'not measured'}
+    _write_json(s.output_dir/'reproduction.json', report)
+    print(json.dumps(report, indent=2), flush=True)
+
+
+if __name__ == '__main__':
+    main()

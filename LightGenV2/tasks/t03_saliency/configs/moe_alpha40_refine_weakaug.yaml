@@ -1,0 +1,6 @@
+base_config: moe_alpha40_refine_cc.yaml
+augmentation:
+  crop_scale_min: 0.98
+  brightness_jitter: 0.03
+  contrast_jitter: 0.03
+output_dir: ../runs/simulation/moe_alpha40_refine_weakaug_seed42

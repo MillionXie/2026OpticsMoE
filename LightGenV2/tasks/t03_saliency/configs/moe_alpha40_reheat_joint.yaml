@@ -1,0 +1,21 @@
+base_config: moe_alpha40_sam_spatialcc_kd2.yaml
+# Matched 60-epoch control for teacher-only curriculum; no architecture changes.
+training:
+  initialization_checkpoint: ../runs/simulation/moe_alpha40_sam_spatialcc_kd2_seed42/best_checkpoint.pt
+  initialization_checkpoint_sha256: 87ad4db51e3f58f9a41d6df09092439e5a09e81e93f88a3bfe2d3d008fafb29a
+  student_epochs: 60
+  student_learning_rate: 0.00003
+  phase_learning_rate: 0.0005
+  router_learning_rate: 0.00005
+  dense_readout_learning_rate: 0.00003
+  dense_head_learning_rate: 0.00005
+  ffn_spatial_learning_rate: 0.0002
+  staged:
+    warmup_epochs: 0
+    polish_start: 46
+  adaptive_plateau:
+    enabled: false
+distillation:
+  teacher_only_epochs: 0
+  end_epoch: 60
+output_dir: ../runs/simulation/moe_alpha40_reheat_joint_seed42

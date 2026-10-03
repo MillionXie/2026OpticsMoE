@@ -1,0 +1,8 @@
+base_config: moe_alpha40_viewreg_cffn_kd2.yaml
+# Original full-probability augmentation; isolate static global context capacity.
+lightgen:
+  electronic_global_rank: 16
+training:
+  initialize_global_on_warmstart: true
+  global_spatial_learning_rate: 0.0002
+output_dir: ../runs/simulation/moe_alpha40_viewreg_global16_seed42

@@ -1,0 +1,10 @@
+base_config: moe_alpha40_extra_control.yaml
+# Training-only electronic-subspace GSAM adaptation; no inference changes.
+training:
+  gsam_coefficient: 0.1
+  student_epochs: 20
+  staged:
+    polish_start: 16
+distillation:
+  end_epoch: 20
+output_dir: ../runs/simulation/moe_alpha40_gsam_20260913_seed42

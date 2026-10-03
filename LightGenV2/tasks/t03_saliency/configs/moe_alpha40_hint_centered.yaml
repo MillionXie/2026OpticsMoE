@@ -1,0 +1,5 @@
+base_config: moe_alpha40_hint_cosine.yaml
+# Same model, cache, source, and optimizer; remove common spatial component ONLY in hint loss.
+feature_hint:
+  loss_mode: spatial_centered_cosine
+output_dir: ../runs/simulation/moe_alpha40_hint_centered_seed42

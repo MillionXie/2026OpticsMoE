@@ -1,0 +1,5 @@
+base_config: moe_alpha40_viewreg_sam005.yaml
+# Position-diversity hypothesis: change only minimum retained crop side.
+augmentation:
+  crop_scale_min: 0.90
+output_dir: ../runs/simulation/moe_alpha40_viewreg_sam_crop90_seed42

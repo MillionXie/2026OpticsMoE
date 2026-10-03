@@ -1,0 +1,11 @@
+base_config: moe_alpha40_extra_control.yaml
+# Two independent noisy views, BOTH preserving the original DC20-30 contract.
+# This adds training compute, not inference parameters or multiple predictions.
+training:
+  noise_consistency_weight: 2.0
+  student_epochs: 20
+  staged:
+    polish_start: 16
+distillation:
+  end_epoch: 20
+output_dir: ../runs/simulation/moe_alpha40_noise_consistency_20260913_seed42

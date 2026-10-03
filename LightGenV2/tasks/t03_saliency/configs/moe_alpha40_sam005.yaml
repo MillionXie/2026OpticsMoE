@@ -1,0 +1,5 @@
+base_config: moe_alpha40_sam_control.yaml
+# Extra perturbation only on electronic groups; optics still learn on second pass.
+training:
+  sam_rho: 0.05
+output_dir: ../runs/simulation/moe_alpha40_sam005_seed42

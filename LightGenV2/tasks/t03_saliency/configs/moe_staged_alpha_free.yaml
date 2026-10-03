@@ -1,0 +1,20 @@
+base_config: moe_dc20_mean_only_continue.yaml
+training:
+  initialization_checkpoint: ../runs/simulation/alpha_comparison_20260908/source_checkpoint.pt
+  reset_fusion_on_warmstart: true
+  student_epochs: 100
+  student_learning_rate: 0.00003
+  phase_learning_rate: 0.003
+  router_learning_rate: 0.0002
+  dense_readout_learning_rate: 0.0001
+  dense_head_learning_rate: 0.0003
+  staged:
+    enabled: true
+    warmup_epochs: 10
+    polish_start: 71
+    final_hard_balance: 0.10
+balanced_fusion:
+  alpha_min: 0.0
+  alpha_max: 1.0
+  alpha_initial: 0.45
+output_dir: ../runs/simulation/moe_staged_alpha_free_seed42

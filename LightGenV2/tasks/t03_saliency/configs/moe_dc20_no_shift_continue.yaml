@@ -1,0 +1,18 @@
+base_config: moe_optical_router_scale_matched_dc20.yaml
+training:
+  initialization_checkpoint: ../runs/simulation/moe_router_scale_dc20_seed42/best_checkpoint.pt
+  student_epochs: 100
+  student_learning_rate: 0.0001
+  phase_learning_rate: 0.006
+  router_learning_rate: 0.0005
+robust_vision:
+  perturbation:
+    input_shift_pixels: 0
+    phase_shift_pixels: 0
+    ccd_shift_pixels: 0
+router_experiment:
+  optical:
+    input_shift_pixels: 0
+    phase_shift_pixels: 0
+    ccd_shift_pixels: 0
+output_dir: ../runs/simulation/moe_dc20_no_shift_continue_seed42

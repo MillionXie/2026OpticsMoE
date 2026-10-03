@@ -1,0 +1,10 @@
+base_config: moe_alpha40_sam_batch8_crosssample_20260913.yaml
+# Only train-time input mixing. Same frozen frontend, head and optical contract.
+training:
+  initialization_checkpoint: ../runs/simulation/moe_alpha40_sam_batch8_crosssample_20260913_seed42/best_checkpoint.pt
+  initialization_checkpoint_sha256: 036bc8caedcde4d6dabce276b1a2e4af15d960d88620098b19e1c198849b8bfe
+  mixup:
+    alpha: 0.2
+    probability: 0.25
+    end_epoch: 15
+output_dir: ../runs/simulation/moe_alpha40_mixup_20260913_seed42

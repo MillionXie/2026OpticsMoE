@@ -1,0 +1,5 @@
+base_config: moe_alpha40_sam_control.yaml
+# Radius-only comparison; identical source and inference architecture.
+training:
+  sam_rho: 0.10
+output_dir: ../runs/simulation/moe_alpha40_sam010_seed42

@@ -1,0 +1,6 @@
+base_config: moe_alpha40_early_flip.yaml
+lightgen:
+  electronic_spatial_kernel_size: 5
+training:
+  expand_kernel_on_warmstart: true
+output_dir: ../runs/simulation/moe_alpha40_early_kernel5_seed42

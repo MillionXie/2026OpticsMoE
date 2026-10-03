@@ -1,0 +1,7 @@
+base_config: moe_alpha40_viewreg_control.yaml
+# Only the two existing token depthwise kernels change. No extra residual/branch.
+lightgen:
+  electronic_spatial_kernel_size: 13
+training:
+  expand_kernel_on_warmstart: true
+output_dir: ../runs/simulation/moe_alpha40_viewreg_kernel13_seed42

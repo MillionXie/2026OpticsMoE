@@ -1,0 +1,8 @@
+base_config: moe_alpha40_feature_pretrain.yaml
+# One-variable feature-pretraining strength comparison. No architecture change.
+# A 16-train-image clean gradient probe at control epoch4 found feature2/GT+KD
+# gradient norm ~.09 in E, ~.42 in phases. Weight10 tests 5x stronger supervision;
+# it is a hypothesis, not proof that the stronger objective improves saliency.
+feature_pretraining:
+  initial_weight: 10.0
+output_dir: ../runs/simulation/moe_alpha40_feature_pretrain_strong_seed42

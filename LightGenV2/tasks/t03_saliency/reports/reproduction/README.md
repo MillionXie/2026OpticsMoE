@@ -1,0 +1,225 @@
+# SALICON baseline 复现与公平性
+
+## SHS实测已完成（2026-09-15整理）
+
+指定仿真CC=0.8624925082权重的5000图三层实测已完成，CC=0.8597739692。
+逐样本证据：`runs/hardware/salicon_08625_shs_20260914/full01_retry01/results.json`（相对本任务目录）。
+实验电脑会话为 `E:\code\guest\2026OpticsMoE\SALICON_Lab_SHS_8um\sessions\full01`，共15000张正式CCD，无样本筛选。
+这不是pilot四图成绩，也没有对该实测进行微调。位置及清理规则见[三任务实测索引](../../../t06_video_quality_assessment/reports/reproduction/SHS_LAB_INDEX.md)。
+
+## 最新入口（2026-09-14）
+
+[光→电→联合交替训练](ALTERNATING_20260914.md)：10轮只训光、15轮只训电、5轮低LR联合。
+冻结全部非活动优化器组，阶段交接保留live相位、重置momentum并同步EMA；不改推理结构。
+289项CPU回归通过；启动及真实数据验证见该文档。目标.87仍未达到。
+
+Qwen baseline主干冻结、只训练适配器和同规格头，50轮已完成，独立CC=.87483828；
+光模型也不解冻Qwen前端。历史100轮baseline .88968469不删除、不替换。
+[跨样本均衡训练](CROSS_SAMPLE_BALANCE_20260913.md)best已独立复评CC=.86249251，
+第10轮后停止，未达到.87；同权重去光已独立复评.84229470，绝对下降.02019781。
+[仅CC精修](CC_ONLY_POLISH_20260913.md)未提升、已停止；
+[GSAM训练对照](GSAM_TRAINING_20260913.md)只修改训练梯度、不新增推理结构，
+第10轮仍未提升，已停止并释放自有GPU；新候选的完整均衡/alpha审计也已完成。
+下面历史“正在运行”等描述以各文档最后一次明确启动/停止记录为准。
+[双噪声一致性训练](NOISE_CONSISTENCY_20260913.md)：仅训练时约束不同原光噪声下的预测，
+不改变推理网络、未调制分量区间或冻结前端；270项测试与真实输入验证后在单GPU完成20轮，
+best第1轮完整重载CC=.86221387，没有超过cross-sample候选；训练父子进程已退出、GPU释放。
+[轻量MixUp训练](MIXUP_20260913.md)已通过282项CPU回归与真实8图输入/梯度检查，
+现已完成20轮，best第1轮完整重载CC=.86257908，未独立复评，进程已退出。
+[光优先学习率对照](OPTICAL_LR_PRIORITY_20260913.md)按用户要求提高相位×40/router×20，所有电子组降至1/10；
+实际同源单步更新比和284项CPU回归通过，GPU0/PID2245038的20轮已结束并释放；
+best仍回到初始化.86249253，末轮.86201740，结构与DC合同不变。
+
+**当前（2026-09-13）：目标CC 0.87尚未达到；正式光模型仍约0.86205。**
+50轮最新同头冻结Qwen baseline已完成并独立复评CC=.87483828（batch96）；旧100轮.88968469保留。
+可靠教师训练已提前停止；ASAM保持推理结构不变、真实相位更新检查通过后开始训练。
+最新证据与命令见[50轮baseline](BASELINE50_20260912.md)和[SAM/ASAM](SAM_TRAINING.md)。
+本页下方的目标、等待或运行描述均为历史过程，不代表当前仍在运行。
+[20轮匹配裁剪教师配对试验与运行位置](CROP_SHORT20_20260912.md)。
+该配对已完成且没有提升；下一轮[有限难样本CC训练](HARD_CC_20260912.md)不改结构或读出头。
+[结构、完整电子参数、兼容尾部冗余、alpha与去光核查](ACCEPTED_086205_AUDIT.md)
+是本次接受候选的汇总入口；下方训练状态为历史记录，不作为自动启动授权。
+
+[50 epoch同头baseline与交付前核查](BASELINE50_20260912.md)：新增50轮重训配置，
+明确区分冻结主干训练头与解冻Qwen；不得将历史100轮成绩写成本次结果。
+
+[教师可靠性加权](RELIABLE_TEACHER_20260912.md)：从较早同结构权重再训练，
+仅减弱教师差于学生的训练样本蒸馏，不增加推理分支；结果以完成后的复评为准。
+
+2026-09-10恢复训练：[教师预热配对对照](TEACHER_CURRICULUM.md)，当前目标CC≥0.88，尚未达到。
+最多占用两张GPU，不增加推理参数。下方0.87为历史优化目标，不代表已完成。
+
+[额外无标签预训练数据审计](UNLABELED_PRETRAINING.md)：只准备图像池，尚未训练。
+COCO train2017含4376张当前SALICON测试图，必须先排除；新数据预算需单独披露。
+
+[SAM训练对照](SAM_TRAINING.md)：不增加推理结构，在电子参数子空间进行训练时扰动，
+有同源普通续训组、随机噪声配对和单次optimizer/EMA更新的实现检查。
+
+当前完成并独立核验的最高CC光电候选：SAM+空间CC蒸馏系数2完成50轮、best epoch5 EMA，
+重载完整5000测试CC=0.86204966，独立float64 CC=0.86204960；最终best字节与独立复查一致。
+相比系数.6的0.86172948，CC/KLD/SIM略改善、NSS/MAE略差；alpha≥0.4且四专家无明显坍缩。
+权重SHA、相位更新、命令和差距见[SAM完成结果](SAM_TRAINING.md)。
+来源强蒸馏.85953132的历史结果保留在[泛化优化](VIEW_REGULARIZATION.md)。
+同规格头Qwen为0.88968469，0.87目标仍未达到。
+已完成候选为`moe_alpha40_sam_spatialcc_kd2_seed42`，epoch5独立复评CC=0.86204960；
+只改变教师监督损失/强度，不增加推理参数。NSS/MAE有所下降，完整取舍、载入SHA和命令见上方SAM文档。
+50轮完成报告和最终SHA已核验；后续其他试验若改变best仍须重新核验。
+
+[同权重去光复评](OPTICAL_ABLATION.md)：运行时旁路光router和两次光学特征计算，
+不重训纯电子模型；保留完整5000张逐图指标与身份合同，用于审计当前权重对光分支的依赖。
+
+[两参数读出校准诊断](READOUT_CALIBRATION.md)：冻结原光电网络，只用训练数据拟合两个全局标量；
+不添加特征分支，保留原指标，并成对执行完整测试。尚未证明有效，不替代正式模型。
+
+[训练专用空间特征提示](FEATURE_HINTS.md)：固定原推理结构，以教师中间特征提供额外监督；
+投影仅训练使用，不计入/不加入部署网络，含严格缓存身份与无hint等价测试。
+
+[同步弱增强与早期重新适应](VIEW_REGULARIZATION.md)：目标CC≥0.87，三组受控实验；
+只改变训练视图/蒸馏策略，保留光学约束，明确增强教师目标的近似假设和复现命令。
+
+[电子残差内部空间FFN](SPATIAL_FFN_RESIDUAL.md)：原结构/普通3×3/空洞3×3三组，新增6912参数，
+保留光学约束与同规格头；含论文依据、初始化/坐标合同和训练命令。
+
+[2026-09-09同规格头独立复评](ALIGNED_RECHECK_20260909.md)：Qwen CC=0.88968469，光电CC=0.85812014，
+同5000张清单与独立float64逐图CC，参数审计、差距分析和后续建议。
+
+当前同规格头的固定权重复评入口：`python -m LightGenV2.tasks.t03_saliency.recheck_aligned --help`。
+支持Qwen/光电，完整5000张public-test、逐图float64独立CC及样本ID清单SHA；不训练、不测速度功耗。
+使用`--system qwen --config LightGenV2/tasks/t03_saliency/configs/moe_staged_alpha_free.yaml`
+或`--system optical --config LightGenV2/tasks/t03_saliency/configs/moe_alpha40_sam_spatialcc_kd2.yaml`，
+并显式提供`--checkpoint`和新的`--run-dir`。原同头Qwen权重为
+`runs/simulation/qwen_aligned_head_staged_seed42/best_checkpoint.pt`（路径相对于本任务），
+光电已核验候选为`runs/simulation/moe_alpha40_sam_spatialcc_kd2_seed42/best_checkpoint.pt`。
+
+[平台期受控精修](ADAPTIVE_REFINEMENT.md)：从历史best启动，比较KD约束与GT CC目标，
+含自动降学习率/早停机制；不增加推理结构。
+
+[早期起点与论文依据的轻量电子残差试验](EARLY_LIGHTWEIGHT_RESIDUAL.md)：包括ConvNeXt/GRN借鉴范围、
+五组对照、权重迁移、参数预算及完整命令；不改变本页baseline的历史含义。
+
+[Baseline 复现说明](BASELINE_METHODS.md)：按最新表格指标核对的论文式技术正文（2026-09-15）。
+[Baseline 代码交接包](../../../../reports/20260915_baseline_methods/CODE_HANDOFF.md)：对应版本源码、配置、运行入口及哈希清单。
+
+## 口径（先读）
+
+配置文字勘误（2026-09-10）：早期源码至ed7aa18e的`resolved_config.yaml`可能因复用T02保存器，
+在`protocol.checkpoint_selection`残留PCK/NME描述。T03实际`training.py`严格比较`test_metrics['cc']`，
+`run_manifest.json`和`training_report.json`也记录CC；并未按PCK选模。后续保存器修正该元数据，
+不改变训练/前向/选模实现，不重写历史run或重启活动作业。复现旧run时结合本勘误与执行源码核对。
+
+表中 0.8810 是 **冻结 Qwen3-VL-Embedding-2B 视觉主干 + 有监督训练的显著性解码头**，
+不是零样本 Qwen，也不是 SALICON 官方隐藏测试榜单成绩。输入没有文本，语言 Transformer 不执行。
+原 checkpoint 为历史 `salicon_vision_optical_saliency/checkpoints/teacher_best.pt`，SHA256：
+`aefd5c6cab81c4d720ada9e93935cf90b16d8653771f081bf933a62aba6bc644`。
+历史完整5000张记录 CC=0.88104494；5090D记录=0.88105177（不同硬件的微小数值差异）。
+本轮重新评估/重新训练的结果以本目录后续 `RESULTS.md` 为准，不把旧记录当作新复现。
+
+数据：SALICON2015r1 train2014=10000，val2014=5000。本项目把 val2014 用于周期测试及选模，
+不另分验证集，因此存在测试选模偏差。输出密度图224×224，sigma=19指**原图像素**，
+映射到224时按原图宽/高分别缩放，两系统相同。fixation按代码的1-based `[y,x]`映射并去重成二值图，
+Gaussian滤波后保存为最大值归一化的8bit密度PNG；评估再归一化为和为1的密度。
+CC 为每张预测概率密度与真值密度的 Pearson，再平均5000张，不是把所有图片拼起来算。
+预测用空间 softmax，不做拟合真值的逐图后处理。脚本额外以 NumPy float64 独立核验 CC。
+这个标签生成口径必须披露，不能直接与别的标签分辨率/模糊半径的论文成绩横比。
+
+## 架构与公平性
+
+以下表格描述历史0.8810旧头对照，不是当前0.88968469同规格头的参数表。
+当前同规格头使用197184参数适配器加85412参数解码器，共282596；
+适配器在光电系统的主体前、在Qwen系统的冻结主体后，不能据此声称全模型参数量或训练预算一致。
+当前完整对照见[同规格头说明](ALPHA_AND_HEAD_COMPARISON.md)和[固定权重独立复评](ALIGNED_RECHECK_20260909.md)。
+
+| 项目 | 光电 MoE | Qwen baseline |
+|---|---|---|
+| 输入 | 相同224×224 RGB及Qwen处理器 | 相同 |
+| 前端 | 冻结Qwen patch embedding与位置编码 | 相同 |
+| 主体 | 两层光电融合；光router选4专家中的2个 | 完整冻结原生视觉Transformer |
+| 中间特征 | 196空间token×192维 | 196空间token×1024维（merger之前） |
+| 输出头 | 逐级上采样+深度可分离卷积显著性头 | 有监督训练的230257参数卷积显著性头 |
+| 文本/语言网络 | 无 | 无 |
+| 输出 | 1×224×224密度图 | 同左 |
+| 训练 | 光相位/router、电子残差、解码头 | 只训练解码头 |
+| 原训练预算 | 60epoch、每5epoch选test CC | 30epoch、每epoch选test CC |
+
+光电每层为同尺度 `(1-alpha)E + alpha O`；不是把完整冻结视觉Transformer藏在电残差里。
+更精确地说，E和O先分别按样本RMS归一化，凸融合后再共同缩放回原E的RMS；alpha是融合系数，
+不是准确率/物理能量贡献百分比。电子残差是无attention的token mixer与通道MLP。
+必须披露一个历史实现细节：`RobustCCDNormalizer` 做了非负检查、除整幅均值、上限12裁剪，
+然后 `log1p(relative_intensity)`。因此当前模型**不是CCD之后只有线性归一化**；
+这里的log不是Qwen或图像查看器加的。历史配置保留用于复现；本轮正式优化已改用独立的
+`mean_only`合同，仅除整幅均值，无log/gamma/上限裁剪；末端电子读出网络仍有其常规激活。
+不能直接将旧log系数设0（那会输出全零）。新合同有独立checkpoint架构标签，旧权重仅作为显式迁移初始化。
+光路参数：17μm、10cm、4专家Top2，一次router读出、两次特征光传播读出；20%–30%随机相干零级分量。
+
+**噪声与指标口径（2026-09-10源码核验）**：上述20%–30%是训练增强，不是下表测试时持续注入的漏光。
+共享光学后端`_apply_coherent_zero_order`和`_perturb_ccd`在`not self.training`时直接返回未扰动值，
+标准`evaluate_model`使用eval模式；位置扰动和相位dropout也在标准测试关闭。
+因此当前光电CC及CC≥0.87目标均指5000张public-test上的**理想光学仿真评估**，
+不能描述成“20%–30%漏光环境下已取得该分数”，也不能用随机带噪测试替换原列来宣称达标。
+训练仍保留既定20%–30%未调制扰动；实测/固定漏光强度下的鲁棒性须另列协议与结果。
+已有专家选择占比23.54/26.80/23.38/26.28%，没有全局坍缩。
+比较属于**端到端系统比较**，不是只替换一种模块的严格参数量/训练预算受控消融：主干、解码头、
+训练轮数和测试频率均有差异。另有D2NN CC=0.83456；其匹配的是两位激活专家的相位参数，
+不包括MoE的额外router/global相位，不应写成“总参数完全相同”。
+
+## 复现步骤（仓库根目录运行）
+
+需要完整仓库及其 `experiments/` 兼容后端、SALICON原始图像与fixation JSON、完整本地Qwen模型/处理器、
+上述teacher checkpoint。原始数据/模型不提交Git。环境锁定清单由每个run的 `environment.txt` 提供；
+本次验证环境已收录为 [baseline_environment.txt](evidence/baseline_environment.txt)，
+其中PyTorch2.6.0+cu124、transformers4.57.3、NumPy1.26.4。该文件是完整环境审计记录，
+不是要求把无关包也全安装；换显卡需要选择兼容的PyTorch构建，再重新执行性能复评。
+至少需要可用的PyTorch/CUDA、transformers（支持Qwen3VL）、NumPy、SciPy、Pillow、Matplotlib、PyYAML、pytest。
+禁止用未记录的另一套标签缓存；复现脚本在新run中重新生成密度图。
+
+Linux服务器准备路径（其他电脑只替换这两个路径）：
+
+```bash
+cd /DATA/DATA1/guest3/2026OpticsMoE
+conda activate xml
+export HF_HUB_OFFLINE=1 TRANSFORMERS_OFFLINE=1
+MODEL=/DATA/DATA1/guest3/.cache/huggingface/hub/models--Qwen--Qwen3-VL-Embedding-2B/snapshots/9f2f7e710d6d81056aa5c0a4f04764fec6bb7bda
+```
+
+1. 固定权重重新评估所有5000张（任意支持的CUDA卡；不测速度/功耗）：
+
+```bash
+python -m LightGenV2.tasks.t03_saliency.reproduce_baseline --model "$MODEL" --run-dir LightGenV2/tasks/t03_saliency/runs/simulation/baseline_recheck_20260908
+```
+
+2. 从新初始化的解码头重新训练30epoch，Qwen保持冻结（这是比步骤1更强的训练可复现性检查）：
+
+```bash
+python -m LightGenV2.tasks.t03_saliency.reproduce_baseline --model "$MODEL" --retrain-head --run-dir LightGenV2/tasks/t03_saliency/runs/simulation/baseline_retrain_seed42_20260908
+```
+
+每次必须使用空run目录。查看 `reproduction.json`（性能、独立CC、权重/模型/标签SHA、commit）、
+`per_image_cc.csv`、`resolved_config.json`、`environment.txt`；训练模式另含teacher_history和best/last。
+检查独立CC与原实现差异接近浮点误差，样本数必须5000。单次新训练不保证逐位等同历史值；
+若要声明训练方差，应后续补多seed，不能把一次成功复评说成多次重训成功。
+
+3. 光电原版本复评（与历史数据独立保留）：
+
+```bash
+python -m LightGenV2.tasks.t03_saliency.run --profile main_dc20 --phase evaluate --checkpoint LightGenV2/tasks/t03_saliency/runs/simulation/moe_router_scale_dc20_seed42/best_checkpoint.pt --run-dir LightGenV2/tasks/t03_saliency/runs/simulation/moe_recheck_20260908
+```
+
+## 本轮优化（不增加网络分支，不取消光路由/DC）
+
+先检验训练而不是增加分支。保留原baseline与原0.8291，使用原best权重续训并重建优化器，
+仅保留best/last；epoch0先复评并纳入best，防止续训退化覆盖好权重。
+候选A：CCD改用mean_only；关闭输入/相位/CCD及router的16px位置扰动，保留DC与其他噪声，训练100epoch。
+候选B：在A基础上CC损失权重0.5→1.0。均为每5epoch测public test选best，结果具有选模偏差。
+
+```bash
+python -m LightGenV2.tasks.t03_saliency.run --profile main_dc20 --config LightGenV2/tasks/t03_saliency/configs/moe_dc20_mean_only_continue.yaml --phase all
+python -m LightGenV2.tasks.t03_saliency.run --profile main_dc20 --config LightGenV2/tasks/t03_saliency/configs/moe_dc20_mean_only_cc_continue.yaml --phase all
+```
+
+训练产物在配置同名run。最终除CC/KLD/SIM/NSS外还需查看router占比、alpha、相位与光场。
+关闭位置扰动的新候选不能宣传为已经验证具有与旧版相同的位置鲁棒性；实测需重新核验。
+早先两份保留log的诊断续训 `moe_dc20_no_shift_continue_seed42` / `moe_dc20_cc_continue_seed42`
+已经人工停止，保留现有日志和best/last作为审计记录，不属于正式候选，也未删除。
+
+并行时先检查GPU空闲情况，设置 `CUDA_DEVICE_ORDER=PCI_BUS_ID` 再指定 `CUDA_VISIBLE_DEVICES`，
+或者直接指定GPU UUID；不要假定默认CUDA序号总与nvidia-smi物理序号一致。

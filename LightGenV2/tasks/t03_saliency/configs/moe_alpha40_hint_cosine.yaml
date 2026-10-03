@@ -1,0 +1,8 @@
+base_config: moe_alpha40_hint_control.yaml
+feature_hint:
+  cache_file: ../runs/simulation/teacher_features_20260910/teacher_train_features.pt
+  initial_weight: 0.1
+  final_weight: 0.02
+  end_epoch: 30
+  learning_rate: 0.0002
+output_dir: ../runs/simulation/moe_alpha40_hint_cosine_seed42

@@ -1,0 +1,4 @@
+base_config: moe_alpha40_refine_reheat.yaml
+loss:
+  cc_weight: 1.5
+output_dir: ../runs/simulation/moe_alpha40_refine_cc_seed42

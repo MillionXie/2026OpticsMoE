@@ -1,0 +1,7 @@
+base_config: moe_alpha40_asam050.yaml
+# Paired smaller normalized ASAM radius; every other training/model setting is identical.
+training:
+  asam:
+    rho: 0.1
+    eta: 0.01
+output_dir: ../runs/simulation/moe_alpha40_asam010_20260913_seed42

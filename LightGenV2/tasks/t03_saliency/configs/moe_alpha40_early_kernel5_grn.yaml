@@ -1,0 +1,6 @@
+base_config: moe_alpha40_early_kernel5.yaml
+lightgen:
+  electronic_grn: true
+training:
+  initialize_grn_on_warmstart: true
+output_dir: ../runs/simulation/moe_alpha40_early_kernel5_grn_seed42

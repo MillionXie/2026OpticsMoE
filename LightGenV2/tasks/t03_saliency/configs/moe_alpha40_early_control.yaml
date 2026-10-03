@@ -1,0 +1,31 @@
+base_config: moe_alpha40_rfstage_control.yaml
+# Before bounded-alpha training and the later refine/generalize continuation rounds.
+# This is a historical selected checkpoint, NOT random initialization/epoch zero.
+training:
+  initialization_checkpoint: ../runs/simulation/alpha_comparison_20260908/source_checkpoint.pt
+  initialization_checkpoint_sha256: 92bc99ac7c5e999dc4690f3044b118710d928c0b1bfb5419dde01906d59af0da
+  reset_fusion_on_warmstart: true
+  student_epochs: 100
+  student_learning_rate: 0.00003
+  phase_learning_rate: 0.001
+  router_learning_rate: 0.0002
+  dense_readout_learning_rate: 0.00005
+  dense_head_learning_rate: 0.0001
+  staged:
+    warmup_epochs: 5
+    polish_start: 71
+distillation:
+  initial_weight: 0.6
+  final_weight: 0.2
+  end_epoch: 70
+balanced_fusion:
+  alpha_min: 0.4
+  alpha_max: 1.0
+  alpha_initial: 0.45
+batching:
+  student_batch_size: 32
+  inference_batch_size: 48
+  num_workers: 2
+protocol:
+  test_interval_epochs: 5
+output_dir: ../runs/simulation/moe_alpha40_early_control_seed42

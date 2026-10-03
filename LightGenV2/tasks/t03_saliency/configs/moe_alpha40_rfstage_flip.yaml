@@ -1,0 +1,4 @@
+base_config: moe_alpha40_rfstage_control.yaml
+augmentation:
+  enabled: true
+output_dir: ../runs/simulation/moe_alpha40_rfstage_flip_seed42

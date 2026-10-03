@@ -1,0 +1,6 @@
+base_config: moe_alpha40_sam_spatialcc.yaml
+# Paired teacher-strength trial: no inference or GT objective changes.
+distillation:
+  initial_weight: 2.0
+  final_weight: 2.0
+output_dir: ../runs/simulation/moe_alpha40_sam_spatialcc_kd2_seed42

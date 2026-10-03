@@ -1,0 +1,4 @@
+base_config: moe_dc20_no_shift_continue.yaml
+lightgen:
+  ccd_normalization: mean_only
+output_dir: ../runs/simulation/moe_dc20_mean_only_continue_seed42

@@ -1,0 +1,10 @@
+base_config: moe_alpha40_extra_control.yaml
+# Same inference model and 40-epoch schedule as the control. Extra training data
+# and compute must be disclosed separately from the SALICON-only baseline.
+unlabeled_distillation:
+  weight: 0.6
+  image_manifest: ../../../../cache/qwen3_vl_embedding_2b_salicon_lightgen/coco20k_pretrain_20260910/image_manifest.json
+  image_manifest_sha256: d0600cf3a4eb8e1bd0d6dc415a237c2c5fe6ce88ca3a77385d26243d44874182
+  cache_file: ../../../../cache/qwen3_vl_embedding_2b_salicon_lightgen/coco20k_pretrain_20260910/teacher_logits.pt
+  cache_sha256: 232e02d243a3d58b8d5cc48557da8f566f77a81e7020968a8a84c0c85d7c305c
+output_dir: ../runs/simulation/moe_alpha40_extra_coco20k_seed42

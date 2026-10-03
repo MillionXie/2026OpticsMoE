@@ -1,0 +1,4 @@
+base_config: moe_alpha40_refine_control.yaml
+training:
+  phase_learning_rate: 0.003
+output_dir: ../runs/simulation/moe_alpha40_refine_reheat_seed42

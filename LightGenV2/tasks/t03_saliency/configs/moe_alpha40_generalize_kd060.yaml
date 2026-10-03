@@ -1,0 +1,4 @@
+base_config: moe_alpha40_generalize_kd020.yaml
+distillation:
+  initial_weight: 0.6
+output_dir: ../runs/simulation/moe_alpha40_generalize_kd060_seed42

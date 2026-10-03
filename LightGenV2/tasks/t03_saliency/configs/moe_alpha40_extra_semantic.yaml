@@ -1,0 +1,10 @@
+base_config: moe_alpha40_extra_early_coco20k.yaml
+# Same 80-epoch early-source student, GT/KD/SAM/EMA/DC/geometry.
+# Auxiliary classifier sees only the audited non-SALICON extra-image pool.
+# It is neither registered in the student nor executed during inference.
+semantic_auxiliary:
+  weight: 0.5
+  learning_rate: 0.001
+  targets_file: ../../../../cache/qwen3_vl_embedding_2b_salicon_lightgen/coco20k_pretrain_20260910/semantic_targets.json
+  targets_sha256: b5220d7c3876a2403bcdaaa2d37afe36b0b344c46f57c7f4ed399e432df99a74
+output_dir: ../runs/simulation/moe_alpha40_extra_semantic_seed42

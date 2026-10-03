@@ -1,0 +1,4 @@
+base_config: moe_alpha40_generalize_regularized.yaml
+augmentation:
+  enabled: false
+output_dir: ../runs/simulation/moe_alpha40_generalize_aligned_seed42

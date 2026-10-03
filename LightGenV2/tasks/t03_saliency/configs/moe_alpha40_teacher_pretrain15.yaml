@@ -1,0 +1,7 @@
+base_config: moe_alpha40_reheat_joint.yaml
+# Same 60 epochs, LR, initialization, architecture and train-only cache.
+# Epochs 1-15: KD task loss + unchanged optical/router regularizers.
+# Epochs 16-60: restore configured GT losses + KD. No optimizer reset.
+distillation:
+  teacher_only_epochs: 15
+output_dir: ../runs/simulation/moe_alpha40_teacher_pretrain15_seed42

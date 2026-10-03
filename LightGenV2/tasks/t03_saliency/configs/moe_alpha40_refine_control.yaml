@@ -1,0 +1,20 @@
+base_config: moe_staged_alpha_ge040.yaml
+training:
+  initialization_checkpoint: ../runs/simulation/moe_staged_alpha_ge040_seed42/best_checkpoint.pt
+  initialization_checkpoint_sha256: f3c95ef24a7bcf56674815cee87bd6f1157394969a4101edfa6cdd983903de31
+  reset_fusion_on_warmstart: false
+  learning_rate_source: task_training
+  student_epochs: 100
+  student_learning_rate: 0.00003
+  phase_learning_rate: 0.0001
+  router_learning_rate: 0.0002
+  dense_readout_learning_rate: 0.00005
+  dense_head_learning_rate: 0.0001
+  staged:
+    enabled: true
+    warmup_epochs: 5
+    polish_start: 71
+    final_hard_balance: 0.10
+loss:
+  router_hard_load_balance_weight: 0.10
+output_dir: ../runs/simulation/moe_alpha40_refine_control_seed42

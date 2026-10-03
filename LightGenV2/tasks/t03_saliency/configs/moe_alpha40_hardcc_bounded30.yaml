@@ -1,0 +1,5 @@
+base_config: moe_alpha40_hardcc_uniform30.yaml
+# Only the allocation of the additional CC weights differs, not total weight.
+hard_example_cc:
+  mode: bounded
+output_dir: ../runs/simulation/moe_alpha40_hardcc_bounded30_20260912_seed42
