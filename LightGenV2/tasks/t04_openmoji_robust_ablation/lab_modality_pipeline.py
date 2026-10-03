@@ -23,7 +23,7 @@ from LightGenV2.tasks.t04_semantic_interaction.lab_runtime import STAGES
 WEIGHT = 'modality_language55_vision80_e40.pt'
 WEIGHT_SHA = 'd94dd0450edd415eee613ee28e424242239bf3dd1dd559cae57fe27d634b8c86'
 SIMULATION = .8935
-PREFIX = 'modality_l55_v80'
+PREFIX = 'modality_l55_v80_sat15'
 GATES = {'language_core.block1': .55, 'language_core.block2': .55,
          'vision_core.block1': .8, 'vision_core.block2': .8}
 BACKEND_SHA = {
@@ -72,9 +72,68 @@ def factory(project):
     return build
 
 
+def accept_moderate_saturation(project):
+    """User allowed saturated data; keep raw frames/settings and log clipping.
+
+    A process-local subclass avoids any edits to shared hardware source. TEST
+    stops above15% (not the old1%); original TRAIN-specific95% backend retained.
+    No dark-frame acceptance, image normalization, exposure or gain change.
+    """
+    sys.path.insert(0, str(project.parent / 'ABO_I2I_Lab_DVP_8um/lab_dvp8um'))
+    import four_image_flow as flow
+    import shs_physical2400 as hardware
+    original = hardware.SHSBench
+    if getattr(original, 'modality_saturation_policy', False):
+        return
+
+    class ModerateSaturationBench(original):
+        modality_saturation_policy = True
+
+        def capture(self, stage, phase_path, amplitude_paths, ids, camera_orientation, save=True):
+            digest = flow.sha(phase_path)
+            if self.current_phase != digest:
+                self.receipt = self.phase.show(phase_path)
+                self.current_phase = digest
+                self.camera.fresh()
+            values = []
+            folder = self.out / 'ccd' / stage
+            if save:
+                folder.mkdir(parents=True, exist_ok=True)
+            for sample_id, path in zip(ids, amplitude_paths):
+                started = time.perf_counter()
+                self.controller.c['settle_delay_ms'] = self.wait * 1000
+                raw, meta = self.controller.capture(path)
+                assert raw.shape == (1080, 1920)
+                image = flow.orient(flow.warp(raw), camera_orientation)
+                row = dict(stage=stage, sample_id=sample_id, phase_sha256=flow.sha(phase_path),
+                    amplitude_sha256=flow.sha(path), exposure=self.settings, wait_ms=self.wait * 1000,
+                    frame_id=meta['frame_id'], timestamp_ns=meta.get('timestamp_ns'),
+                    settle_drained_frames=meta['settle_drained_frames'],
+                    capture_total_ms=(time.perf_counter() - started) * 1000,
+                    mean=float(image.mean()), p99=float(np.percentile(image, 99)),
+                    maximum=int(image.max()), saturation_fraction=float(np.mean(image == 255)),
+                    saturation_acceptance_guard=.15, canonical_orientation=camera_orientation,
+                    no_photometric_normalization=True)
+                self.rows.append(row)
+                print(json.dumps(row), flush=True)
+                if row['p99'] < 15:
+                    raise RuntimeError('Dark CCD: retained dark-frame guard')
+                if row['saturation_fraction'] > .15:
+                    raise RuntimeError('TEST exceeds bounded15% saturation acceptance')
+                if save:
+                    Image.fromarray(image).save(folder / (sample_id + '.png'))
+                    flow.write(folder / (sample_id + '.json'), row)
+                values.append(image)
+            return np.stack(values), self.receipt
+
+    hardware.SHSBench = ModerateSaturationBench
+
+
 def capture(project, mode, resume):
     scope = 'train' if mode == 'train' else 'test'
     name = 'lab_shs_capture_g2_saturation' if scope == 'train' else 'lab_shs_capture'
+    if scope == 'test':
+        accept_moderate_saturation(project)
     module = backend(name)
     module.GROUPS = {'g2': (WEIGHT, WEIGHT_SHA)}
     module.t = SimpleNamespace(build_model=factory(project))
@@ -82,6 +141,7 @@ def capture(project, mode, resume):
     output = project / 'runs' / (PREFIX + '_' + suffix)
     identity = dict(weight_sha256=WEIGHT_SHA, gates=GATES, editor_rank=48,
                     decoder_parameters=30162, scope=scope, mode=mode,
+                    saturation_acceptance_guard=.95 if scope == 'train' else .15,
                     backend_sha256=BACKEND_SHA[name], wrapper_sha256=sha(Path(__file__)),
                     factory_sha256=sha(Path(split_rank_head.__file__)))
     identity_path = output / 'deployment_identity.json'
