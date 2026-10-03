@@ -1,0 +1,413 @@
+{
+  "schema_version": 1,
+  "audited_on": "2026-10-03",
+  "scope": "read-only main-server-directory source fingerprint, not a claim of latest runtime",
+  "tasks": [
+    {
+      "task": "t01_object_retrieval",
+      "observed_root": "/DATA/DATA1/guest3/2026OpticsMoE/LightGenV2/tasks/t01_object_retrieval",
+      "source_files": [
+        {
+          "path": "LightGenV2/tasks/t01_object_retrieval/README.md",
+          "sha256": "a866fccce8e8decae81a5f6d99f4914bd95218321cd24b69f7393b83d0f95814",
+          "bytes": 8026
+        },
+        {
+          "path": "LightGenV2/tasks/t01_object_retrieval/__init__.py",
+          "sha256": "5b586504607056e3c696f94a46491426c9d0640293f6a7c4bc4c4b8e90e53227",
+          "bytes": 28
+        },
+        {
+          "path": "LightGenV2/tasks/t01_object_retrieval/__main__.py",
+          "sha256": "71de8d02e47a61ce3b1d8cc784c8ce586e90f2aa38194c43bf4c5ddaba85cb8a",
+          "bytes": 49
+        },
+        {
+          "path": "LightGenV2/tasks/t01_object_retrieval/baseline_5090d.py",
+          "sha256": "f5f03c1881642089ed95cb3acc1cec7da0356e29eba683da9222fcf977c31cc4",
+          "bytes": 8652
+        },
+        {
+          "path": "LightGenV2/tasks/t01_object_retrieval/configs/common.yaml",
+          "sha256": "7077bf94bfad8602a610ef96a83f701ede80d08576ec6a38544e2ede910c0f4f",
+          "bytes": 2422
+        },
+        {
+          "path": "LightGenV2/tasks/t01_object_retrieval/configs/common_dc20.yaml",
+          "sha256": "44b54b007a24f712e4135dbf4f780134cf159484e46ad1f25419e24793be26d8",
+          "bytes": 1306
+        },
+        {
+          "path": "LightGenV2/tasks/t01_object_retrieval/configs/d2nn_active_expert_matched.yaml",
+          "sha256": "45e0ce56a6e656cb4393f0b6178a8f2d74b747f44b8de0d2527056223c744dc6",
+          "bytes": 318
+        },
+        {
+          "path": "LightGenV2/tasks/t01_object_retrieval/configs/d2nn_active_expert_matched_dc20.yaml",
+          "sha256": "3009af6e16471805d9ff2537318d024d32ad9570e7f5a19eec50696a4e9604d1",
+          "bytes": 281
+        },
+        {
+          "path": "LightGenV2/tasks/t01_object_retrieval/configs/moe_optical_router_scale_matched.yaml",
+          "sha256": "d708772c1ce3322d03b4a22e6d7d67f582f4042bdfefa2f396a5d3f0579b893f",
+          "bytes": 158
+        },
+        {
+          "path": "LightGenV2/tasks/t01_object_retrieval/configs/moe_optical_router_scale_matched_dc20.yaml",
+          "sha256": "82be1ec970d592e135c6e55a82c1750b8fed714b808cafebe12afad8b66efe65",
+          "bytes": 152
+        },
+        {
+          "path": "LightGenV2/tasks/t01_object_retrieval/configs/qwen_frozen_embedding.yaml",
+          "sha256": "b28adffb3018a0f41aeb647b2b87c8e5890a086ff59839b0491df5ff4ede34e4",
+          "bytes": 129
+        },
+        {
+          "path": "LightGenV2/tasks/t01_object_retrieval/modeling.py",
+          "sha256": "d126c2fd7917af8de4c7068b41cbc2fed064211fa6fd957b3cb18057cc4c3838",
+          "bytes": 28562
+        },
+        {
+          "path": "LightGenV2/tasks/t01_object_retrieval/report.py",
+          "sha256": "f2f0f5c7243752eb00f5b43283217de0c1cea105c6bd0ce524e3e8ea54b5e889",
+          "bytes": 9111
+        },
+        {
+          "path": "LightGenV2/tasks/t01_object_retrieval/run.py",
+          "sha256": "c41ed58dfc7021b08b355144dbaff3b6d5ac254158de304ffca2078272fb21f9",
+          "bytes": 12642
+        },
+        {
+          "path": "LightGenV2/tasks/t01_object_retrieval/settings.py",
+          "sha256": "dd69bc2b752c2c6c2b6f9a526e53204ae9d96dbecda2a3f5f673c0de90dd9d18",
+          "bytes": 6466
+        },
+        {
+          "path": "LightGenV2/tasks/t01_object_retrieval/tests/test_contract.py",
+          "sha256": "891cf6c1a2e7c12d24c86d38454f035c1ed2f57482093fdac2e02131952cb3a7",
+          "bytes": 6057
+        },
+        {
+          "path": "LightGenV2/tasks/t01_object_retrieval/visualize.py",
+          "sha256": "3657f5ed5a32b65f04a95226deb8a5c5744830f31ffc505fd70e849205fb2c7f",
+          "bytes": 4185
+        }
+      ],
+      "latest_runtime_confirmed": false,
+      "untracked_count": 0,
+      "source_status_entries": [],
+      "comparison": {
+        "main_same": 17,
+        "main_different": 0,
+        "main_missing": 0,
+        "local_same": 16,
+        "local_eol_only": 1,
+        "local_different": 0,
+        "local_missing": 0
+      }
+    },
+    {
+      "task": "t02_keypoint_detection",
+      "observed_root": "/DATA/DATA1/guest3/2026OpticsMoE/LightGenV2/tasks/t02_keypoint_detection",
+      "source_files": [
+        {
+          "path": "LightGenV2/tasks/t02_keypoint_detection/README.md",
+          "sha256": "2d04ed6a4b31d9e695c4fff9462ad9457560287ed6e3004dcb41ccaa4adaccf3",
+          "bytes": 4830
+        },
+        {
+          "path": "LightGenV2/tasks/t02_keypoint_detection/__init__.py",
+          "sha256": "fe6c93fb8f90a03fc322ce3634100967723961b4f80acbe73545b82ac49882a4",
+          "bytes": 30
+        },
+        {
+          "path": "LightGenV2/tasks/t02_keypoint_detection/baseline_5090d.py",
+          "sha256": "c12f990e7ab11b8d49cb3e2cf58960c8f9646c7c964a9eff7ee289c07c571277",
+          "bytes": 8176
+        },
+        {
+          "path": "LightGenV2/tasks/t02_keypoint_detection/configs/common_dc20.yaml",
+          "sha256": "c6c77e9f30aec8af89ba50f873c398be9b2bf5bcb3526e422a1d41c42012b8e6",
+          "bytes": 2791
+        },
+        {
+          "path": "LightGenV2/tasks/t02_keypoint_detection/configs/d2nn_active_expert_matched_dc20.yaml",
+          "sha256": "6fe475bb2dd5fd3ae37f206b0e6a365b1f431839317294c0f8d69b9d4e51c011",
+          "bytes": 259
+        },
+        {
+          "path": "LightGenV2/tasks/t02_keypoint_detection/configs/moe_optical_router_scale_matched_dc20.yaml",
+          "sha256": "82be1ec970d592e135c6e55a82c1750b8fed714b808cafebe12afad8b66efe65",
+          "bytes": 152
+        },
+        {
+          "path": "LightGenV2/tasks/t02_keypoint_detection/configs/moe_optical_router_scale_matched_dc20_no_shift.yaml",
+          "sha256": "d014f43b6f57df272b672272aa3969afdd361ccec6bb11ff954641ab6dad80ab",
+          "bytes": 595
+        },
+        {
+          "path": "LightGenV2/tasks/t02_keypoint_detection/configs/moe_optical_router_scale_matched_dc20_no_shift_warmstart.yaml",
+          "sha256": "18b99d131452275a7b6f8493871d4c48f8c0576863982470d0891d80c5e7619d",
+          "bytes": 642
+        },
+        {
+          "path": "LightGenV2/tasks/t02_keypoint_detection/modeling.py",
+          "sha256": "6c3c71763b969b3d41af6b251441789ad5abe3bc9ee6a77abed9ed7b3391df4e",
+          "bytes": 9799
+        },
+        {
+          "path": "LightGenV2/tasks/t02_keypoint_detection/report.py",
+          "sha256": "602b29b2475847721ed030bb4abc634e41867fba2eca70016f35927515aff87f",
+          "bytes": 7009
+        },
+        {
+          "path": "LightGenV2/tasks/t02_keypoint_detection/run.py",
+          "sha256": "43b13e43a22a7a4f5ec91084d25bc724604e793f52f81c3fde12cb34a1d6575b",
+          "bytes": 5772
+        },
+        {
+          "path": "LightGenV2/tasks/t02_keypoint_detection/settings.py",
+          "sha256": "479f54bcab1e32fe583ad0b50ae5f7b8a90c13301ef47197c045c576d7be7e61",
+          "bytes": 5510
+        },
+        {
+          "path": "LightGenV2/tasks/t02_keypoint_detection/tests/test_lsp_contract.py",
+          "sha256": "525182943708518fcdfcdbe71c3f01bdc72b973b61d825acc40e210ea7bdcaa0",
+          "bytes": 4425
+        },
+        {
+          "path": "LightGenV2/tasks/t02_keypoint_detection/training.py",
+          "sha256": "74e4e95e2af6736cb0df26c7fb3da4191a6ff55d58cfb640c1392936af9d67e4",
+          "bytes": 1259
+        },
+        {
+          "path": "LightGenV2/tasks/t02_keypoint_detection/visualize.py",
+          "sha256": "4aa6d0f7766bd7922030bc439fd5aba7ac956749a23365f40b92706d128cc4e7",
+          "bytes": 2718
+        }
+      ],
+      "latest_runtime_confirmed": false,
+      "untracked_count": 0,
+      "source_status_entries": [],
+      "comparison": {
+        "main_same": 15,
+        "main_different": 0,
+        "main_missing": 0,
+        "local_same": 14,
+        "local_eol_only": 1,
+        "local_different": 0,
+        "local_missing": 0
+      }
+    },
+    {
+      "task": "t03_saliency",
+      "observed_root": "/DATA/DATA1/guest3/2026OpticsMoE/LightGenV2/tasks/t03_saliency",
+      "source_files": [
+        {
+          "path": "LightGenV2/tasks/t03_saliency/BASELINE_5090D_TODO.md",
+          "sha256": "8bca2ba02b2ed97a3c882e110aad1375ee9143a1bd7d43b390d018a503228ffa",
+          "bytes": 1556
+        },
+        {
+          "path": "LightGenV2/tasks/t03_saliency/README.md",
+          "sha256": "45fbf18df371f3fb18d6a6bc9fbf273c97031b32f171f244be68215bac3bce58",
+          "bytes": 3049
+        },
+        {
+          "path": "LightGenV2/tasks/t03_saliency/__init__.py",
+          "sha256": "b12e447ef175e0e62ee46a6e1775c1b4907e77ab6e4db4673307c2c2bc27b410",
+          "bytes": 29
+        },
+        {
+          "path": "LightGenV2/tasks/t03_saliency/aligned_baseline.py",
+          "sha256": "036bbb62f705ec19b0fe52069fd486c211d086afc38b8bf0605581a9bd854b78",
+          "bytes": 5746
+        },
+        {
+          "path": "LightGenV2/tasks/t03_saliency/baseline_5090d.py",
+          "sha256": "473d9e7c578299fa5d38582824d20c41cfb5fd2634f8cac65ca27d4582422e31",
+          "bytes": 9148
+        },
+        {
+          "path": "LightGenV2/tasks/t03_saliency/configs/common_dc20.yaml",
+          "sha256": "5649ee51bf9cc53f5c66fa55ff04f1f86bdb14410cc1ad1d978ce020e7c8b0c8",
+          "bytes": 1298
+        },
+        {
+          "path": "LightGenV2/tasks/t03_saliency/configs/d2nn_active_expert_matched_dc20.yaml",
+          "sha256": "b6351c965a463d0f7feb49fedbc64b28975538edcd436b9c9e23e9df34c52e9a",
+          "bytes": 298
+        },
+        {
+          "path": "LightGenV2/tasks/t03_saliency/configs/moe_alpha40_generalize_aligned.yaml",
+          "sha256": "d633799a70d9649af86156ab583a1e62d13a33b4be9ff564602a064527894683",
+          "bytes": 153
+        },
+        {
+          "path": "LightGenV2/tasks/t03_saliency/configs/moe_alpha40_generalize_kd020.yaml",
+          "sha256": "2e966024434fc2b7e3fb19fc736bf346cda402b9485d7a95d119cf512d8250bb",
+          "bytes": 336
+        },
+        {
+          "path": "LightGenV2/tasks/t03_saliency/configs/moe_alpha40_generalize_kd060.yaml",
+          "sha256": "17aeca0631cacbe139814b802788ebc2df81c20de5608a2f88d665b2d2d05f19",
+          "bytes": 150
+        },
+        {
+          "path": "LightGenV2/tasks/t03_saliency/configs/moe_alpha40_generalize_regularized.yaml",
+          "sha256": "dd0efdd3aed1408d8c27103bc85d7cd04610d2011fe1682e7f114540bc916875",
+          "bytes": 603
+        },
+        {
+          "path": "LightGenV2/tasks/t03_saliency/configs/moe_alpha40_refine_cc.yaml",
+          "sha256": "b27f08e6c53e3c53e4002803cef866825a4540080df5a166ec3fb6abb2b176a8",
+          "bytes": 127
+        },
+        {
+          "path": "LightGenV2/tasks/t03_saliency/configs/moe_alpha40_refine_control.yaml",
+          "sha256": "d0d9da2c1edb93a138cf8935cfaa9930ec642b9747c9e9ad7d6dec1c104df4b2",
+          "bytes": 722
+        },
+        {
+          "path": "LightGenV2/tasks/t03_saliency/configs/moe_alpha40_refine_reheat.yaml",
+          "sha256": "11d647bc05f0fa8e144cc3bdc060c3106ddb3dc88c38cc3b0e2a5522e666305a",
+          "bytes": 148
+        },
+        {
+          "path": "LightGenV2/tasks/t03_saliency/configs/moe_alpha40_refine_weakaug.yaml",
+          "sha256": "fc9b6b17a7f608c4f64d44025b80bbba44f4dc0e84bb450699869ad244252325",
+          "bytes": 192
+        },
+        {
+          "path": "LightGenV2/tasks/t03_saliency/configs/moe_dc20_cc_continue.yaml",
+          "sha256": "b43d862a34ddbe435e9565a6c051b0330b8540549f0d01b9b44f7091554c8f76",
+          "bytes": 127
+        },
+        {
+          "path": "LightGenV2/tasks/t03_saliency/configs/moe_dc20_mean_only_cc_continue.yaml",
+          "sha256": "50982f0f91a612d0a6c6be14e8f5dba76860f063deee61a4ac0139a72a492864",
+          "bytes": 138
+        },
+        {
+          "path": "LightGenV2/tasks/t03_saliency/configs/moe_dc20_mean_only_continue.yaml",
+          "sha256": "e5a5275de6e6f1c9161be13a0101128069265f01cef73e16c1c9098a207d6116",
+          "bytes": 152
+        },
+        {
+          "path": "LightGenV2/tasks/t03_saliency/configs/moe_dc20_no_shift_continue.yaml",
+          "sha256": "c6739e121716290e505fde4dfc7bb7b23fbb50b763cd918eded3a35773af4c3a",
+          "bytes": 554
+        },
+        {
+          "path": "LightGenV2/tasks/t03_saliency/configs/moe_optical_router_scale_matched_dc20.yaml",
+          "sha256": "82be1ec970d592e135c6e55a82c1750b8fed714b808cafebe12afad8b66efe65",
+          "bytes": 152
+        },
+        {
+          "path": "LightGenV2/tasks/t03_saliency/configs/moe_staged_alpha_free.yaml",
+          "sha256": "77690ea8133e1ffc4b910e21578dbe71601becd364e06733963914c3cfe6dd33",
+          "bytes": 606
+        },
+        {
+          "path": "LightGenV2/tasks/t03_saliency/configs/moe_staged_alpha_ge040.yaml",
+          "sha256": "fa41a72963bdaee7a49f04a3f596dd37ed3f73c182a5d13b1fca35d0ba82b2db",
+          "bytes": 174
+        },
+        {
+          "path": "LightGenV2/tasks/t03_saliency/configs/qwen_aligned_head_50.yaml",
+          "sha256": "32f2be85c0e8e30cbb7c95727b97daa808c11af4a416c06132f84e8f958679d7",
+          "bytes": 613
+        },
+        {
+          "path": "LightGenV2/tasks/t03_saliency/configs/qwen_frozen_pending_5090d.yaml",
+          "sha256": "e607285083f28d767b07ce9d007d6910bc9178381e83e1834567c9a712a4ae82",
+          "bytes": 149
+        },
+        {
+          "path": "LightGenV2/tasks/t03_saliency/export_teacher_maps.py",
+          "sha256": "4f52248e391fa46860af6f850348a9f3bf97c0790b407577978841e0d9e53ec1",
+          "bytes": 3878
+        },
+        {
+          "path": "LightGenV2/tasks/t03_saliency/modeling.py",
+          "sha256": "e47bbbffaa22cb16460c5775a42a16bf565c2eafb2747b2f396d30ea46957903",
+          "bytes": 13115
+        },
+        {
+          "path": "LightGenV2/tasks/t03_saliency/report.py",
+          "sha256": "f715f31ce02eca027f799a0c940f875440d2e0a03d9a9aba8c7ba76120c04947",
+          "bytes": 5712
+        },
+        {
+          "path": "LightGenV2/tasks/t03_saliency/reproduce_baseline.py",
+          "sha256": "cdddce3377a4b786c34213316e090b44e004f757452f81b82bfafea360a8d75b",
+          "bytes": 7100
+        },
+        {
+          "path": "LightGenV2/tasks/t03_saliency/run.py",
+          "sha256": "9aa0c5ea0e14e9382d90e393bbb9889caf826876774f63e034f314e3f2d1d667",
+          "bytes": 6159
+        },
+        {
+          "path": "LightGenV2/tasks/t03_saliency/settings.py",
+          "sha256": "44d126d68b51a4112347890fec1d533441377646335a2c50a30e07014b957c3e",
+          "bytes": 9125
+        },
+        {
+          "path": "LightGenV2/tasks/t03_saliency/tests/__init__.py",
+          "sha256": "8a80b0ae239fd3a50a52a19c88b449aa823aa15524d546d95d92bd60c56079fd",
+          "bytes": 17
+        },
+        {
+          "path": "LightGenV2/tasks/t03_saliency/tests/test_alpha_and_aligned_head.py",
+          "sha256": "cbb026518c91b57ed45a7cbb5c590a0395e640f895ce9cf1530c42bc9edac0fd",
+          "bytes": 5730
+        },
+        {
+          "path": "LightGenV2/tasks/t03_saliency/tests/test_contract.py",
+          "sha256": "bd101fa7a0300ecd83ce6d33c963a227e4a5ec87c77986fdb1b9eaa1c16e9d94",
+          "bytes": 1293
+        },
+        {
+          "path": "LightGenV2/tasks/t03_saliency/tests/test_reproduction.py",
+          "sha256": "266f2cd3c9fe729855fd2f391701fccb5ec0f21a80fd5da1fb0f9a2157508d94",
+          "bytes": 2031
+        },
+        {
+          "path": "LightGenV2/tasks/t03_saliency/tests/test_training_support.py",
+          "sha256": "eb740b238bca402625532da56cef53a24f5415b05d0747ecd58b4115d3fe5595",
+          "bytes": 2670
+        },
+        {
+          "path": "LightGenV2/tasks/t03_saliency/training.py",
+          "sha256": "37dc8fc067a4c266f7e12572f1cca8595f451191fb044223336f9e01a1858ae7",
+          "bytes": 14350
+        },
+        {
+          "path": "LightGenV2/tasks/t03_saliency/training_support.py",
+          "sha256": "8119fbda6bd2c0f17e8da986e0ac0942bc13e977b0e4568a66c41820475e2626",
+          "bytes": 2806
+        },
+        {
+          "path": "LightGenV2/tasks/t03_saliency/visualize.py",
+          "sha256": "c99b269dac3e414e78adadf16118b60ea42ab641bf6adb99287037273c6ea0f1",
+          "bytes": 2711
+        }
+      ],
+      "latest_runtime_confirmed": false,
+      "untracked_count": 115,
+      "source_status_entries": [
+        "?? LightGenV2/tasks/t03_saliency/configs/qwen_aligned_head_50.yaml"
+      ],
+      "comparison": {
+        "main_same": 11,
+        "main_different": 5,
+        "main_missing": 22,
+        "local_same": 26,
+        "local_eol_only": 2,
+        "local_different": 10,
+        "local_missing": 0
+      }
+    }
+  ]
+}

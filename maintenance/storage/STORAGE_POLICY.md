@@ -44,7 +44,11 @@ This includes code/config/environment/commit and checkpoint identity, original
 metrics and predictions, per-call timing, raw power telemetry, hardware and
 measurement scope, calculation scripts, and historical scope corrections.
 Superseded or rejected measurements remain labelled audit evidence, not
-disposable trial files. Never reuse an old model's measurements as a new model's.
+disposable trial files. Further user clarification on 2026-10-03: NO timing-related
+files may be deleted during this cleanup, including duplicate copies. Keep them
+in place; inventory/annotate/hash only. General redundant-copy or obsolete-package
+cleanup rules do not override this exclusion; a future deletion needs new explicit
+user authorization. Never reuse an old model's measurements as a new model's.
 The previously approved baseline-feature-cache cleanup is not authorization to
 delete baseline models, original data, reports or measurement evidence.
 See [retention contract](MEASUREMENT_BASELINE_RETENTION.md) and its bounded
