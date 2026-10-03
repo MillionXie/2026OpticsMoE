@@ -1,0 +1,1550 @@
+{
+  "audited_on": "2026-10-03",
+  "sample_time_utc": "2026-10-03T11:54:36Z",
+  "purpose": "Read-only remaining scope, not deletion authorization",
+  "source_main_at_snapshot": "b491a199f5df0731f59f161b5513256570b131da",
+  "server_git": {
+    "branches": 50,
+    "registered_worktrees": 87,
+    "working_head": "3f85510285e5ffdfca28def93eef2eb082b1655c",
+    "local_main": "b1285f0e0ecbfa21b3acbf797d643f5d52aaf36e",
+    "origin_main": "b491a199f5df0731f59f161b5513256570b131da",
+    "root_tracked_dirty": 16,
+    "experiments_directories": 51
+  },
+  "local_git": {
+    "branches": 46,
+    "registered_worktrees": 16,
+    "root_tracked_dirty": 18,
+    "dirty_worktrees": 6,
+    "experiments_directories": 78,
+    "source_tree_not_main": true
+  },
+  "worktree_counts": {
+    "total": 87,
+    "missing": 4,
+    "named": 20,
+    "active_cwd": 2,
+    "tracked_dirty": 10,
+    "noncache_artifacts_or_untracked": 67,
+    "present_no_tracked_changes_no_noncache": 16
+  },
+  "worktree_purpose_name_groups": {
+    "其他/主目录": 12,
+    "T06视频": 4,
+    "ABO图搜图": 12,
+    "ABO图文双向": 3,
+    "T03显著性": 23,
+    "OpenMoji": 6,
+    "T12/终身学习旧命名": 10,
+    "T11病理终身学习": 2,
+    "静态专家/测速": 9,
+    "T16临时对照": 6
+  },
+  "worktrees": [
+    {
+      "path": "/DATA/DATA1/guest3/2026OpticsMoE",
+      "exists": true,
+      "named_branch": true,
+      "active_cwd": true,
+      "tracked_changes_count": 16,
+      "untracked_entries_count": 58,
+      "ignored_entries_count": 247,
+      "noncache_entries_count": 275,
+      "noncache_examples": [
+        "ABO_Lab_8um/",
+        "ABO_Lab_SHS_8um/",
+        "FixedFeedbackSFT/projects/qwen3_vl_patch_stem_8stage_optical_imagenet_backbone/assets/"
+      ]
+    },
+    {
+      "path": "/DATA/DATA1/guest3/.codex_worktrees/t06_compress_all_20260912",
+      "exists": true,
+      "named_branch": true,
+      "active_cwd": false,
+      "tracked_changes_count": 0,
+      "untracked_entries_count": 4,
+      "ignored_entries_count": 31,
+      "noncache_entries_count": 20,
+      "noncache_examples": [
+        "LightGenV2/tasks/t06_video_quality_assessment/hardware/AI_TEMPORAL08044_HANDOFF.md",
+        "LightGenV2/tasks/t06_video_quality_assessment/hardware/reproduce_simulation.py",
+        "LightGenV2/tasks/t06_video_quality_assessment/lab_bundle.py"
+      ]
+    },
+    {
+      "path": "/DATA/DATA1/guest3/.codex_worktrees/t06_readout_compress_20260912",
+      "exists": true,
+      "named_branch": true,
+      "active_cwd": false,
+      "tracked_changes_count": 0,
+      "untracked_entries_count": 1,
+      "ignored_entries_count": 16,
+      "noncache_entries_count": 9,
+      "noncache_examples": [
+        "experiments/lgvq_four_stage_optical_electronic_109_no_attention_vqa/artifacts",
+        "LightGenV2/tasks/t06_video_quality_assessment/runs/simulation/",
+        "experiments/qwen3_vl_2b_lgvq_single_metric_o2_16frame_54/artifacts/lgvq_four_frames_center100_224_uint8.pt"
+      ]
+    },
+    {
+      "path": "/DATA/DATA1/guest3/2026OpticsMoE/.worktrees/abo8-deploy",
+      "exists": true,
+      "named_branch": false,
+      "active_cwd": false,
+      "tracked_changes_count": 0,
+      "untracked_entries_count": 4,
+      "ignored_entries_count": 8,
+      "noncache_entries_count": 12,
+      "noncache_examples": [
+        "ABO_Lab_8um/imports",
+        "ABO_Lab_8um/original_a100",
+        "ABO_Lab_8um/original_inference"
+      ]
+    },
+    {
+      "path": "/DATA/DATA1/guest3/2026OpticsMoE/.worktrees/fa_vtab_20260914",
+      "exists": true,
+      "named_branch": false,
+      "active_cwd": false,
+      "tracked_changes_count": 0,
+      "untracked_entries_count": 0,
+      "ignored_entries_count": 0,
+      "noncache_entries_count": 0,
+      "noncache_examples": []
+    },
+    {
+      "path": "/DATA/DATA1/guest3/2026OpticsMoE/.worktrees/lgvq_shs_20260914",
+      "exists": true,
+      "named_branch": false,
+      "active_cwd": false,
+      "tracked_changes_count": 0,
+      "untracked_entries_count": 0,
+      "ignored_entries_count": 1,
+      "noncache_entries_count": 1,
+      "noncache_examples": [
+        "cache/"
+      ]
+    },
+    {
+      "path": "/DATA/DATA1/guest3/2026OpticsMoE/.worktrees/sister_bounded_20260927",
+      "exists": true,
+      "named_branch": true,
+      "active_cwd": false,
+      "tracked_changes_count": 0,
+      "untracked_entries_count": 1,
+      "ignored_entries_count": 17,
+      "noncache_entries_count": 1,
+      "noncache_examples": [
+        "LightGenV2/tasks/t04_semantic_interaction/bounded_recover.py"
+      ]
+    },
+    {
+      "path": "/DATA/DATA1/guest3/2026OpticsMoE/.worktrees/sister_t08_bounded_20260927",
+      "exists": true,
+      "named_branch": true,
+      "active_cwd": false,
+      "tracked_changes_count": 1,
+      "untracked_entries_count": 4,
+      "ignored_entries_count": 15,
+      "noncache_entries_count": 5,
+      "noncache_examples": [
+        "LightGenV2/tasks/t08_abo_image_text_retrieval/bounded_recover.py",
+        "LightGenV2/tasks/t08_abo_image_text_retrieval/sister_fixed10cm.yaml",
+        "LightGenV2/tasks/t08_abo_image_text_retrieval/sister_source_config.yaml"
+      ]
+    },
+    {
+      "path": "/DATA/DATA1/guest3/2026OpticsMoE/.worktrees/spatial_custom_conv",
+      "exists": true,
+      "named_branch": true,
+      "active_cwd": false,
+      "tracked_changes_count": 3,
+      "untracked_entries_count": 20,
+      "ignored_entries_count": 15,
+      "noncache_entries_count": 35,
+      "noncache_examples": [
+        "experiments/lgvq_four_stage_optical_electronic_109_no_attention_vqa/artifacts",
+        "experiments/qwen3_vl_2b_lgvq_single_metric_o2_16frame_54/configs/release/spatial_custom_conv_aug_flip_rank_dropout06_s1163.yaml",
+        "experiments/qwen3_vl_2b_lgvq_single_metric_o2_16frame_54/configs/release/spatial_custom_conv_aug_flip_rank_dropout18_s1171.yaml"
+      ]
+    },
+    {
+      "path": "/DATA/DATA1/guest3/2026OpticsMoE/.worktrees/t03_adaptive",
+      "exists": true,
+      "named_branch": false,
+      "active_cwd": false,
+      "tracked_changes_count": 0,
+      "untracked_entries_count": 2,
+      "ignored_entries_count": 1,
+      "noncache_entries_count": 3,
+      "noncache_examples": [
+        "cache",
+        "data",
+        "LightGenV2/tasks/t03_saliency/runs"
+      ]
+    },
+    {
+      "path": "/DATA/DATA1/guest3/2026OpticsMoE/.worktrees/t03_balance",
+      "exists": true,
+      "named_branch": false,
+      "active_cwd": false,
+      "tracked_changes_count": 0,
+      "untracked_entries_count": 2,
+      "ignored_entries_count": 1,
+      "noncache_entries_count": 3,
+      "noncache_examples": [
+        "cache",
+        "data",
+        "LightGenV2/tasks/t03_saliency/runs"
+      ]
+    },
+    {
+      "path": "/DATA/DATA1/guest3/2026OpticsMoE/.worktrees/t03_baseline50_20260912",
+      "exists": true,
+      "named_branch": false,
+      "active_cwd": false,
+      "tracked_changes_count": 0,
+      "untracked_entries_count": 2,
+      "ignored_entries_count": 1,
+      "noncache_entries_count": 3,
+      "noncache_examples": [
+        "cache",
+        "data",
+        "LightGenV2/tasks/t03_saliency/runs"
+      ]
+    },
+    {
+      "path": "/DATA/DATA1/guest3/2026OpticsMoE/.worktrees/t03_calibration",
+      "exists": true,
+      "named_branch": false,
+      "active_cwd": false,
+      "tracked_changes_count": 0,
+      "untracked_entries_count": 2,
+      "ignored_entries_count": 1,
+      "noncache_entries_count": 3,
+      "noncache_examples": [
+        "cache",
+        "data",
+        "LightGenV2/tasks/t03_saliency/runs"
+      ]
+    },
+    {
+      "path": "/DATA/DATA1/guest3/2026OpticsMoE/.worktrees/t03_centered",
+      "exists": true,
+      "named_branch": false,
+      "active_cwd": false,
+      "tracked_changes_count": 0,
+      "untracked_entries_count": 2,
+      "ignored_entries_count": 1,
+      "noncache_entries_count": 3,
+      "noncache_examples": [
+        "cache",
+        "data",
+        "LightGenV2/tasks/t03_saliency/runs"
+      ]
+    },
+    {
+      "path": "/DATA/DATA1/guest3/2026OpticsMoE/.worktrees/t03_cffn",
+      "exists": true,
+      "named_branch": false,
+      "active_cwd": false,
+      "tracked_changes_count": 0,
+      "untracked_entries_count": 2,
+      "ignored_entries_count": 1,
+      "noncache_entries_count": 3,
+      "noncache_examples": [
+        "cache",
+        "data",
+        "LightGenV2/tasks/t03_saliency/runs"
+      ]
+    },
+    {
+      "path": "/DATA/DATA1/guest3/2026OpticsMoE/.worktrees/t03_early_grn",
+      "exists": true,
+      "named_branch": false,
+      "active_cwd": false,
+      "tracked_changes_count": 0,
+      "untracked_entries_count": 2,
+      "ignored_entries_count": 1,
+      "noncache_entries_count": 3,
+      "noncache_examples": [
+        "cache",
+        "data",
+        "LightGenV2/tasks/t03_saliency/runs"
+      ]
+    },
+    {
+      "path": "/DATA/DATA1/guest3/2026OpticsMoE/.worktrees/t03_global16",
+      "exists": true,
+      "named_branch": false,
+      "active_cwd": false,
+      "tracked_changes_count": 0,
+      "untracked_entries_count": 2,
+      "ignored_entries_count": 1,
+      "noncache_entries_count": 3,
+      "noncache_examples": [
+        "cache",
+        "data",
+        "LightGenV2/tasks/t03_saliency/runs"
+      ]
+    },
+    {
+      "path": "/DATA/DATA1/guest3/2026OpticsMoE/.worktrees/t03_handoff_20260915",
+      "exists": true,
+      "named_branch": false,
+      "active_cwd": false,
+      "tracked_changes_count": 0,
+      "untracked_entries_count": 0,
+      "ignored_entries_count": 0,
+      "noncache_entries_count": 0,
+      "noncache_examples": []
+    },
+    {
+      "path": "/DATA/DATA1/guest3/2026OpticsMoE/.worktrees/t03_hints",
+      "exists": true,
+      "named_branch": false,
+      "active_cwd": false,
+      "tracked_changes_count": 0,
+      "untracked_entries_count": 2,
+      "ignored_entries_count": 1,
+      "noncache_entries_count": 3,
+      "noncache_examples": [
+        "cache",
+        "data",
+        "LightGenV2/tasks/t03_saliency/runs"
+      ]
+    },
+    {
+      "path": "/DATA/DATA1/guest3/2026OpticsMoE/.worktrees/t03_kernel13",
+      "exists": true,
+      "named_branch": false,
+      "active_cwd": false,
+      "tracked_changes_count": 0,
+      "untracked_entries_count": 2,
+      "ignored_entries_count": 1,
+      "noncache_entries_count": 3,
+      "noncache_examples": [
+        "cache",
+        "data",
+        "LightGenV2/tasks/t03_saliency/runs"
+      ]
+    },
+    {
+      "path": "/DATA/DATA1/guest3/2026OpticsMoE/.worktrees/t03_licensed_figures_20260929",
+      "exists": true,
+      "named_branch": false,
+      "active_cwd": false,
+      "tracked_changes_count": 0,
+      "untracked_entries_count": 0,
+      "ignored_entries_count": 0,
+      "noncache_entries_count": 0,
+      "noncache_examples": []
+    },
+    {
+      "path": "/DATA/DATA1/guest3/2026OpticsMoE/.worktrees/t03_mix50",
+      "exists": true,
+      "named_branch": false,
+      "active_cwd": false,
+      "tracked_changes_count": 0,
+      "untracked_entries_count": 2,
+      "ignored_entries_count": 1,
+      "noncache_entries_count": 3,
+      "noncache_examples": [
+        "cache",
+        "data",
+        "LightGenV2/tasks/t03_saliency/runs"
+      ]
+    },
+    {
+      "path": "/DATA/DATA1/guest3/2026OpticsMoE/.worktrees/t03_recheck",
+      "exists": true,
+      "named_branch": false,
+      "active_cwd": false,
+      "tracked_changes_count": 0,
+      "untracked_entries_count": 2,
+      "ignored_entries_count": 1,
+      "noncache_entries_count": 3,
+      "noncache_examples": [
+        "cache",
+        "data",
+        "LightGenV2/tasks/t03_saliency/runs"
+      ]
+    },
+    {
+      "path": "/DATA/DATA1/guest3/2026OpticsMoE/.worktrees/t03_recheck_sam",
+      "exists": true,
+      "named_branch": false,
+      "active_cwd": false,
+      "tracked_changes_count": 0,
+      "untracked_entries_count": 2,
+      "ignored_entries_count": 1,
+      "noncache_entries_count": 3,
+      "noncache_examples": [
+        "cache",
+        "data",
+        "LightGenV2/tasks/t03_saliency/runs"
+      ]
+    },
+    {
+      "path": "/DATA/DATA1/guest3/2026OpticsMoE/.worktrees/t03_rfstage",
+      "exists": true,
+      "named_branch": false,
+      "active_cwd": false,
+      "tracked_changes_count": 0,
+      "untracked_entries_count": 1,
+      "ignored_entries_count": 2,
+      "noncache_entries_count": 3,
+      "noncache_examples": [
+        "data",
+        "LightGenV2/tasks/t03_saliency/runs",
+        "cache/"
+      ]
+    },
+    {
+      "path": "/DATA/DATA1/guest3/2026OpticsMoE/.worktrees/t03_rfstage_ek5",
+      "exists": true,
+      "named_branch": false,
+      "active_cwd": false,
+      "tracked_changes_count": 0,
+      "untracked_entries_count": 2,
+      "ignored_entries_count": 1,
+      "noncache_entries_count": 3,
+      "noncache_examples": [
+        "cache",
+        "data",
+        "LightGenV2/tasks/t03_saliency/runs"
+      ]
+    },
+    {
+      "path": "/DATA/DATA1/guest3/2026OpticsMoE/.worktrees/t03_sam",
+      "exists": true,
+      "named_branch": false,
+      "active_cwd": false,
+      "tracked_changes_count": 0,
+      "untracked_entries_count": 2,
+      "ignored_entries_count": 1,
+      "noncache_entries_count": 3,
+      "noncache_examples": [
+        "cache",
+        "data",
+        "LightGenV2/tasks/t03_saliency/runs"
+      ]
+    },
+    {
+      "path": "/DATA/DATA1/guest3/2026OpticsMoE/.worktrees/t03_sam_crop90",
+      "exists": true,
+      "named_branch": false,
+      "active_cwd": false,
+      "tracked_changes_count": 0,
+      "untracked_entries_count": 2,
+      "ignored_entries_count": 1,
+      "noncache_entries_count": 3,
+      "noncache_examples": [
+        "cache",
+        "data",
+        "LightGenV2/tasks/t03_saliency/runs"
+      ]
+    },
+    {
+      "path": "/DATA/DATA1/guest3/2026OpticsMoE/.worktrees/t03_sam_early",
+      "exists": true,
+      "named_branch": false,
+      "active_cwd": false,
+      "tracked_changes_count": 0,
+      "untracked_entries_count": 2,
+      "ignored_entries_count": 1,
+      "noncache_entries_count": 3,
+      "noncache_examples": [
+        "cache",
+        "data",
+        "LightGenV2/tasks/t03_saliency/runs"
+      ]
+    },
+    {
+      "path": "/DATA/DATA1/guest3/2026OpticsMoE/.worktrees/t03_sam_radius",
+      "exists": true,
+      "named_branch": false,
+      "active_cwd": false,
+      "tracked_changes_count": 0,
+      "untracked_entries_count": 2,
+      "ignored_entries_count": 1,
+      "noncache_entries_count": 3,
+      "noncache_examples": [
+        "cache",
+        "data",
+        "LightGenV2/tasks/t03_saliency/runs"
+      ]
+    },
+    {
+      "path": "/DATA/DATA1/guest3/2026OpticsMoE/.worktrees/t03_viewreg",
+      "exists": true,
+      "named_branch": false,
+      "active_cwd": false,
+      "tracked_changes_count": 0,
+      "untracked_entries_count": 2,
+      "ignored_entries_count": 1,
+      "noncache_entries_count": 3,
+      "noncache_examples": [
+        "cache",
+        "data",
+        "LightGenV2/tasks/t03_saliency/runs"
+      ]
+    },
+    {
+      "path": "/DATA/DATA1/guest3/2026OpticsMoE/.worktrees/t03_wide576",
+      "exists": true,
+      "named_branch": false,
+      "active_cwd": false,
+      "tracked_changes_count": 0,
+      "untracked_entries_count": 2,
+      "ignored_entries_count": 1,
+      "noncache_entries_count": 3,
+      "noncache_examples": [
+        "cache",
+        "data",
+        "LightGenV2/tasks/t03_saliency/runs"
+      ]
+    },
+    {
+      "path": "/DATA/DATA1/guest3/2026OpticsMoE/.worktrees/t04_openmoji_robust_20260928",
+      "exists": true,
+      "named_branch": true,
+      "active_cwd": false,
+      "tracked_changes_count": 2,
+      "untracked_entries_count": 17,
+      "ignored_entries_count": 18,
+      "noncache_entries_count": 17,
+      "noncache_examples": [
+        "LightGenV2/tasks/t04_openmoji_robust_ablation/audit_fixed_cpu.py",
+        "LightGenV2/tasks/t04_openmoji_robust_ablation/audit_modality_cpu.py",
+        "LightGenV2/tasks/t04_openmoji_robust_ablation/configs/fixed_fusion_rank64_20261002.json"
+      ]
+    },
+    {
+      "path": "/DATA/DATA1/guest3/2026OpticsMoE/.worktrees/t07_abo_20260909",
+      "exists": true,
+      "named_branch": false,
+      "active_cwd": false,
+      "tracked_changes_count": 0,
+      "untracked_entries_count": 0,
+      "ignored_entries_count": 1,
+      "noncache_entries_count": 1,
+      "noncache_examples": [
+        "LightGenV2/tasks/t07_abo_image_retrieval/runs"
+      ]
+    },
+    {
+      "path": "/DATA/DATA1/guest3/2026OpticsMoE/.worktrees/t07_abo_anchor_20260909",
+      "exists": true,
+      "named_branch": false,
+      "active_cwd": false,
+      "tracked_changes_count": 0,
+      "untracked_entries_count": 0,
+      "ignored_entries_count": 1,
+      "noncache_entries_count": 1,
+      "noncache_examples": [
+        "LightGenV2/tasks/t07_abo_image_retrieval/runs"
+      ]
+    },
+    {
+      "path": "/DATA/DATA1/guest3/2026OpticsMoE/.worktrees/t07_fresh35_20260929",
+      "exists": true,
+      "named_branch": true,
+      "active_cwd": false,
+      "tracked_changes_count": 0,
+      "untracked_entries_count": 8,
+      "ignored_entries_count": 4,
+      "noncache_entries_count": 8,
+      "noncache_examples": [
+        "inspect_abo_arch_20260929.py",
+        "launch_abo_fresh35_20260929.sh",
+        "launch_abo_fresh35_phasehead_20260929.sh"
+      ]
+    },
+    {
+      "path": "/DATA/DATA1/guest3/2026OpticsMoE/.worktrees/t07_gallery_fp32_20260912",
+      "exists": true,
+      "named_branch": false,
+      "active_cwd": false,
+      "tracked_changes_count": 0,
+      "untracked_entries_count": 0,
+      "ignored_entries_count": 0,
+      "noncache_entries_count": 0,
+      "noncache_examples": []
+    },
+    {
+      "path": "/DATA/DATA1/guest3/2026OpticsMoE/.worktrees/t07_goal81_verify_20260912",
+      "exists": true,
+      "named_branch": false,
+      "active_cwd": false,
+      "tracked_changes_count": 0,
+      "untracked_entries_count": 0,
+      "ignored_entries_count": 0,
+      "noncache_entries_count": 0,
+      "noncache_examples": []
+    },
+    {
+      "path": "/DATA/DATA1/guest3/2026OpticsMoE/.worktrees/t07_joint_best_restart_20260912",
+      "exists": true,
+      "named_branch": false,
+      "active_cwd": false,
+      "tracked_changes_count": 0,
+      "untracked_entries_count": 0,
+      "ignored_entries_count": 0,
+      "noncache_entries_count": 0,
+      "noncache_examples": []
+    },
+    {
+      "path": "/DATA/DATA1/guest3/2026OpticsMoE/.worktrees/t07_latestfresh35_20260929",
+      "exists": true,
+      "named_branch": true,
+      "active_cwd": false,
+      "tracked_changes_count": 0,
+      "untracked_entries_count": 9,
+      "ignored_entries_count": 4,
+      "noncache_entries_count": 9,
+      "noncache_examples": [
+        "launch_abo_latergb_ablate_rgb_20260930.sh",
+        "launch_abo_latergb_rank72_20260930.sh",
+        "launch_abo_latergb_rebalance_verify_20260930.sh"
+      ]
+    },
+    {
+      "path": "/DATA/DATA1/guest3/2026OpticsMoE/.worktrees/t07_retail_audit_20260913",
+      "exists": true,
+      "named_branch": false,
+      "active_cwd": false,
+      "tracked_changes_count": 0,
+      "untracked_entries_count": 0,
+      "ignored_entries_count": 0,
+      "noncache_entries_count": 0,
+      "noncache_examples": []
+    },
+    {
+      "path": "/DATA/DATA1/guest3/2026OpticsMoE/.worktrees/t07_review_20260910",
+      "exists": true,
+      "named_branch": false,
+      "active_cwd": false,
+      "tracked_changes_count": 0,
+      "untracked_entries_count": 0,
+      "ignored_entries_count": 1,
+      "noncache_entries_count": 1,
+      "noncache_examples": [
+        "LightGenV2/tasks/t07_abo_image_retrieval/runs"
+      ]
+    },
+    {
+      "path": "/DATA/DATA1/guest3/2026OpticsMoE/.worktrees/t07_robust_20260926",
+      "exists": true,
+      "named_branch": false,
+      "active_cwd": false,
+      "tracked_changes_count": 0,
+      "untracked_entries_count": 23,
+      "ignored_entries_count": 28,
+      "noncache_entries_count": 23,
+      "noncache_examples": [
+        "LightGenV2/scripts/profile_latest_optical_electronics_a100.py",
+        "abo_electronic_fusion_val.py",
+        "abo_electronic_only_robust.py"
+      ]
+    },
+    {
+      "path": "/DATA/DATA1/guest3/2026OpticsMoE/.worktrees/t07_vision13_20260913",
+      "exists": true,
+      "named_branch": false,
+      "active_cwd": false,
+      "tracked_changes_count": 0,
+      "untracked_entries_count": 0,
+      "ignored_entries_count": 0,
+      "noncache_entries_count": 0,
+      "noncache_examples": []
+    },
+    {
+      "path": "/DATA/DATA1/guest3/2026OpticsMoE/.worktrees/t08_text_to_image_10cm_compact_20260923",
+      "exists": true,
+      "named_branch": false,
+      "active_cwd": false,
+      "tracked_changes_count": 1,
+      "untracked_entries_count": 5,
+      "ignored_entries_count": 0,
+      "noncache_entries_count": 5,
+      "noncache_examples": [
+        "LightGenV2/tasks/t08_abo_image_text_retrieval/configs/optical_text_to_image_64_10cm_compact_e0p4_alpha030.yaml",
+        "LightGenV2/tasks/t08_abo_image_text_retrieval/configs/optical_text_to_image_64_10cm_compact_e0p5_alpha030_refine.yaml",
+        "LightGenV2/tasks/t08_abo_image_text_retrieval/configs/optical_text_to_image_64_10cm_compact_e0p5_rephase.yaml"
+      ]
+    },
+    {
+      "path": "/DATA/DATA1/guest3/2026OpticsMoE/.worktrees/t08_text_to_image_20260920",
+      "exists": true,
+      "named_branch": true,
+      "active_cwd": false,
+      "tracked_changes_count": 0,
+      "untracked_entries_count": 1,
+      "ignored_entries_count": 0,
+      "noncache_entries_count": 1,
+      "noncache_examples": [
+        "t08_router_pilot_20260925.py"
+      ]
+    },
+    {
+      "path": "/DATA/DATA1/guest3/2026OpticsMoE/.worktrees/t12_physical_robust_20260926",
+      "exists": true,
+      "named_branch": true,
+      "active_cwd": false,
+      "tracked_changes_count": 0,
+      "untracked_entries_count": 0,
+      "ignored_entries_count": 14,
+      "noncache_entries_count": 0,
+      "noncache_examples": []
+    },
+    {
+      "path": "/DATA/DATA1/guest3/2026OpticsMoE/.worktrees/t12_physical_robust_v2_20260927",
+      "exists": true,
+      "named_branch": true,
+      "active_cwd": false,
+      "tracked_changes_count": 0,
+      "untracked_entries_count": 1,
+      "ignored_entries_count": 18,
+      "noncache_entries_count": 3,
+      "noncache_examples": [
+        "LightGenV2/tasks/t12_text_to_image/releases/",
+        "LightGenV2/tasks/t12_text_to_image/runs/simulation/",
+        "LightGenV2/tasks/t12_text_to_image/runs/smoke/"
+      ]
+    },
+    {
+      "path": "/DATA/DATA1/guest3/2026OpticsMoE/.worktrees/t13_temporal_robust_20260927",
+      "exists": true,
+      "named_branch": false,
+      "active_cwd": false,
+      "tracked_changes_count": 0,
+      "untracked_entries_count": 1,
+      "ignored_entries_count": 14,
+      "noncache_entries_count": 4,
+      "noncache_examples": [
+        "LightGenV2/tasks/t13_temporal_robust_training/baseline_holdout_recovery.py",
+        "LightGenV2/tasks/t13_temporal_robust_training/assets/",
+        "LightGenV2/tasks/t13_temporal_robust_training/projects/"
+      ]
+    },
+    {
+      "path": "/DATA/DATA1/guest3/2026OpticsMoE/LightGenV2/tasks/t04_semantic_interaction/runs/smoke/source_22173121",
+      "exists": false,
+      "named_branch": false,
+      "active_cwd": false
+    },
+    {
+      "path": "/DATA/DATA1/guest3/2026OpticsMoE/LightGenV2/tasks/t04_semantic_interaction/runs/smoke/source_23612d55",
+      "exists": false,
+      "named_branch": false,
+      "active_cwd": false
+    },
+    {
+      "path": "/DATA/DATA1/guest3/2026OpticsMoE/LightGenV2/tasks/t04_semantic_interaction/runs/smoke/source_6d7c4299",
+      "exists": false,
+      "named_branch": false,
+      "active_cwd": false
+    },
+    {
+      "path": "/DATA/DATA1/guest3/2026OpticsMoE/LightGenV2/tasks/t04_semantic_interaction/runs/smoke/source_e548cc33",
+      "exists": false,
+      "named_branch": false,
+      "active_cwd": false
+    },
+    {
+      "path": "/DATA/DATA1/guest3/2026OpticsMoE_a100_formal",
+      "exists": true,
+      "named_branch": true,
+      "active_cwd": false,
+      "tracked_changes_count": 7,
+      "untracked_entries_count": 9,
+      "ignored_entries_count": 38,
+      "noncache_entries_count": 10,
+      "noncache_examples": [
+        "LightGenV2/tasks/t02_keypoint_detection/runs/",
+        "LightGenV2/tasks/t03_saliency/runs/",
+        "LightGenV2/tasks/t04_semantic_interaction/benchmark_electronic_control.py"
+      ]
+    },
+    {
+      "path": "/DATA/DATA1/guest3/2026OpticsMoE_t06_a100_batch",
+      "exists": true,
+      "named_branch": true,
+      "active_cwd": false,
+      "tracked_changes_count": 2,
+      "untracked_entries_count": 0,
+      "ignored_entries_count": 9,
+      "noncache_entries_count": 1,
+      "noncache_examples": [
+        "LightGenV2/tasks/t06_video_quality_assessment/runs/simulation/"
+      ]
+    },
+    {
+      "path": "/DATA/DATA1/guest3/LightGenV2_worktrees/t04_layered_1bc120428",
+      "exists": true,
+      "named_branch": true,
+      "active_cwd": false,
+      "tracked_changes_count": 0,
+      "untracked_entries_count": 1,
+      "ignored_entries_count": 21,
+      "noncache_entries_count": 2,
+      "noncache_examples": [
+        "LightGenV2/tasks/t04_semantic_interaction/dataset/",
+        "t04_server_tests.log"
+      ]
+    },
+    {
+      "path": "/DATA/DATA1/guest3/abo_figures_checkout_20260928",
+      "exists": true,
+      "named_branch": false,
+      "active_cwd": false,
+      "tracked_changes_count": 0,
+      "untracked_entries_count": 1,
+      "ignored_entries_count": 0,
+      "noncache_entries_count": 1,
+      "noncache_examples": [
+        "LightGenV2/tasks/t08_abo_image_text_retrieval/runs/"
+      ]
+    },
+    {
+      "path": "/DATA/DATA1/guest3/demo_reproduction_20260915",
+      "exists": true,
+      "named_branch": false,
+      "active_cwd": true,
+      "tracked_changes_count": 7,
+      "untracked_entries_count": 16,
+      "ignored_entries_count": 26,
+      "noncache_entries_count": 17,
+      "noncache_examples": [
+        "LightGenV2/demo_check/frozen_electronic/config_narrow_16_32_128.json",
+        "LightGenV2/demo_check/pure_optical/config_oeo_intensity_softsign.json",
+        "LightGenV2/demo_check/pure_optical/config_oeo_intensity_softsign_50ep.json"
+      ]
+    },
+    {
+      "path": "/DATA/DATA1/guest3/lightgen_spatial_065",
+      "exists": true,
+      "named_branch": true,
+      "active_cwd": false,
+      "tracked_changes_count": 11,
+      "untracked_entries_count": 93,
+      "ignored_entries_count": 27,
+      "noncache_entries_count": 111,
+      "noncache_examples": [
+        "experiments/qwen3_vl_2b_lgvq_single_metric_o2_16frame_54/cache_mobilenetv2_front.py",
+        "experiments/qwen3_vl_2b_lgvq_single_metric_o2_16frame_54/cache_resnet18_front.py",
+        "experiments/qwen3_vl_2b_lgvq_single_metric_o2_16frame_54/calibrate_spatial_levels.py"
+      ]
+    },
+    {
+      "path": "/DATA/DATA1/guest3/t02_personal_source_20260928",
+      "exists": true,
+      "named_branch": false,
+      "active_cwd": false,
+      "tracked_changes_count": 0,
+      "untracked_entries_count": 0,
+      "ignored_entries_count": 21,
+      "noncache_entries_count": 0,
+      "noncache_examples": []
+    },
+    {
+      "path": "/DATA/DATA1/guest3/t10_corrected_20260918",
+      "exists": true,
+      "named_branch": false,
+      "active_cwd": false,
+      "tracked_changes_count": 1,
+      "untracked_entries_count": 8,
+      "ignored_entries_count": 3,
+      "noncache_entries_count": 8,
+      "noncache_examples": [
+        "LightGenV2/tasks/t10_expert_scaling/aggregate_fixed478.py",
+        "LightGenV2/tasks/t10_expert_scaling/evaluate_test.py",
+        "LightGenV2/tasks/t10_expert_scaling/fixed478_resume_packed.py"
+      ]
+    },
+    {
+      "path": "/DATA/DATA1/guest3/t11_joint_d2nn_20260920",
+      "exists": true,
+      "named_branch": false,
+      "active_cwd": false,
+      "tracked_changes_count": 0,
+      "untracked_entries_count": 1,
+      "ignored_entries_count": 4,
+      "noncache_entries_count": 1,
+      "noncache_examples": [
+        "LightGenV2/tasks/t11_lifelong_optics/runs/"
+      ]
+    },
+    {
+      "path": "/DATA/DATA1/guest3/t11_optical_20260919",
+      "exists": true,
+      "named_branch": true,
+      "active_cwd": false,
+      "tracked_changes_count": 0,
+      "untracked_entries_count": 1,
+      "ignored_entries_count": 4,
+      "noncache_entries_count": 1,
+      "noncache_examples": [
+        "LightGenV2/tasks/t11_lifelong_optics/runs/"
+      ]
+    },
+    {
+      "path": "/DATA/DATA1/guest3/t12_compare_20260920",
+      "exists": true,
+      "named_branch": false,
+      "active_cwd": false,
+      "tracked_changes_count": 0,
+      "untracked_entries_count": 1,
+      "ignored_entries_count": 3,
+      "noncache_entries_count": 1,
+      "noncache_examples": [
+        "LightGenV2/tasks/t12_cross_modal_lifelong/reports/generated/"
+      ]
+    },
+    {
+      "path": "/DATA/DATA1/guest3/t12_cross_modal_20260920",
+      "exists": true,
+      "named_branch": true,
+      "active_cwd": false,
+      "tracked_changes_count": 0,
+      "untracked_entries_count": 2,
+      "ignored_entries_count": 12,
+      "noncache_entries_count": 2,
+      "noncache_examples": [
+        "LightGenV2/tasks/t12_cross_modal_lifelong/runs/",
+        "LightGenV2/tasks/t16_zero_phase_ccd_lifelong/runs/"
+      ]
+    },
+    {
+      "path": "/DATA/DATA1/guest3/t12_cross_modal_capacity_20260920",
+      "exists": true,
+      "named_branch": false,
+      "active_cwd": false,
+      "tracked_changes_count": 0,
+      "untracked_entries_count": 1,
+      "ignored_entries_count": 7,
+      "noncache_entries_count": 1,
+      "noncache_examples": [
+        "LightGenV2/tasks/t12_cross_modal_lifelong/runs/"
+      ]
+    },
+    {
+      "path": "/DATA/DATA1/guest3/t12_cross_modal_video_20260920",
+      "exists": true,
+      "named_branch": false,
+      "active_cwd": false,
+      "tracked_changes_count": 0,
+      "untracked_entries_count": 1,
+      "ignored_entries_count": 7,
+      "noncache_entries_count": 1,
+      "noncache_examples": [
+        "LightGenV2/tasks/t12_cross_modal_lifelong/runs/"
+      ]
+    },
+    {
+      "path": "/DATA/DATA1/guest3/t12_d2nn_baselines_20260920",
+      "exists": true,
+      "named_branch": false,
+      "active_cwd": false,
+      "tracked_changes_count": 0,
+      "untracked_entries_count": 1,
+      "ignored_entries_count": 7,
+      "noncache_entries_count": 1,
+      "noncache_examples": [
+        "LightGenV2/tasks/t12_cross_modal_lifelong/runs/"
+      ]
+    },
+    {
+      "path": "/DATA/DATA1/guest3/t12_git_audited_20260926",
+      "exists": true,
+      "named_branch": true,
+      "active_cwd": false,
+      "tracked_changes_count": 0,
+      "untracked_entries_count": 0,
+      "ignored_entries_count": 16,
+      "noncache_entries_count": 1,
+      "noncache_examples": [
+        "LightGenV2/tasks/t12_text_to_image/runs/simulation/"
+      ]
+    },
+    {
+      "path": "/DATA/DATA1/guest3/t12_sequential_d2nn_20260920",
+      "exists": true,
+      "named_branch": false,
+      "active_cwd": false,
+      "tracked_changes_count": 0,
+      "untracked_entries_count": 1,
+      "ignored_entries_count": 7,
+      "noncache_entries_count": 1,
+      "noncache_examples": [
+        "LightGenV2/tasks/t12_cross_modal_lifelong/runs/"
+      ]
+    },
+    {
+      "path": "/DATA/DATA1/guest3/t12_text_to_image_20260920",
+      "exists": true,
+      "named_branch": true,
+      "active_cwd": false,
+      "tracked_changes_count": 0,
+      "untracked_entries_count": 17,
+      "ignored_entries_count": 18,
+      "noncache_entries_count": 19,
+      "noncache_examples": [
+        ".premium2.patch",
+        ".premium8.patch",
+        ".premium8_continue.sh"
+      ]
+    },
+    {
+      "path": "/DATA/DATA1/guest3/worktrees/2026OpticsMoE_cifar100_6ce31e05",
+      "exists": true,
+      "named_branch": false,
+      "active_cwd": false,
+      "tracked_changes_count": 0,
+      "untracked_entries_count": 1,
+      "ignored_entries_count": 19,
+      "noncache_entries_count": 3,
+      "noncache_examples": [
+        "data",
+        "TransferFromElectricity/tasks/t01_object_retrieval/runs",
+        "experiments/qwen3_vl_embedding_2b_caltech101_four_layer_optical_retrieval_10cm_warmstart5/runs"
+      ]
+    },
+    {
+      "path": "/DATA/DATA1/guest3/worktrees/2026OpticsMoE_static_cifar",
+      "exists": true,
+      "named_branch": false,
+      "active_cwd": false,
+      "tracked_changes_count": 0,
+      "untracked_entries_count": 1,
+      "ignored_entries_count": 19,
+      "noncache_entries_count": 3,
+      "noncache_examples": [
+        "data",
+        "TransferFromElectricity/tasks/t01_object_retrieval/runs",
+        "experiments/qwen3_vl_embedding_2b_caltech101_four_layer_optical_retrieval_10cm_warmstart5/runs"
+      ]
+    },
+    {
+      "path": "/DATA/DATA1/guest3/worktrees/2026OpticsMoE_static_experts_8c354986",
+      "exists": true,
+      "named_branch": false,
+      "active_cwd": false,
+      "tracked_changes_count": 0,
+      "untracked_entries_count": 1,
+      "ignored_entries_count": 19,
+      "noncache_entries_count": 3,
+      "noncache_examples": [
+        "data",
+        "TransferFromElectricity/tasks/t01_object_retrieval/runs",
+        "experiments/qwen3_vl_embedding_2b_caltech101_four_layer_optical_retrieval_10cm_warmstart5/runs"
+      ]
+    },
+    {
+      "path": "/DATA/DATA1/guest3/worktrees/static_control_v3",
+      "exists": true,
+      "named_branch": false,
+      "active_cwd": false,
+      "tracked_changes_count": 0,
+      "untracked_entries_count": 1,
+      "ignored_entries_count": 19,
+      "noncache_entries_count": 3,
+      "noncache_examples": [
+        "data",
+        "TransferFromElectricity/tasks/t01_object_retrieval/runs",
+        "experiments/qwen3_vl_embedding_2b_caltech101_four_layer_optical_retrieval_10cm_warmstart5/runs"
+      ]
+    },
+    {
+      "path": "/DATA/DATA1/guest3/worktrees/static_control_v3_deterministic",
+      "exists": true,
+      "named_branch": false,
+      "active_cwd": false,
+      "tracked_changes_count": 0,
+      "untracked_entries_count": 1,
+      "ignored_entries_count": 19,
+      "noncache_entries_count": 3,
+      "noncache_examples": [
+        "data",
+        "TransferFromElectricity/tasks/t01_object_retrieval/runs",
+        "experiments/qwen3_vl_embedding_2b_caltech101_four_layer_optical_retrieval_10cm_warmstart5/runs"
+      ]
+    },
+    {
+      "path": "/DATA/DATA1/guest3/worktrees/static_control_v3_timing",
+      "exists": true,
+      "named_branch": false,
+      "active_cwd": false,
+      "tracked_changes_count": 0,
+      "untracked_entries_count": 1,
+      "ignored_entries_count": 19,
+      "noncache_entries_count": 3,
+      "noncache_examples": [
+        "data",
+        "TransferFromElectricity/tasks/t01_object_retrieval/runs",
+        "experiments/qwen3_vl_embedding_2b_caltech101_four_layer_optical_retrieval_10cm_warmstart5/runs"
+      ]
+    },
+    {
+      "path": "/DATA/DATA1/guest3/worktrees/static_spatial_v4",
+      "exists": true,
+      "named_branch": false,
+      "active_cwd": false,
+      "tracked_changes_count": 0,
+      "untracked_entries_count": 1,
+      "ignored_entries_count": 19,
+      "noncache_entries_count": 3,
+      "noncache_examples": [
+        "data",
+        "TransferFromElectricity/tasks/t01_object_retrieval/runs",
+        "experiments/qwen3_vl_embedding_2b_caltech101_four_layer_optical_retrieval_10cm_warmstart5/runs"
+      ]
+    },
+    {
+      "path": "/DATA/DATA1/guest3/worktrees/static_spatial_v4_formal",
+      "exists": true,
+      "named_branch": false,
+      "active_cwd": false,
+      "tracked_changes_count": 0,
+      "untracked_entries_count": 1,
+      "ignored_entries_count": 19,
+      "noncache_entries_count": 3,
+      "noncache_examples": [
+        "data",
+        "TransferFromElectricity/tasks/t01_object_retrieval/runs",
+        "experiments/qwen3_vl_embedding_2b_caltech101_four_layer_optical_retrieval_10cm_warmstart5/runs"
+      ]
+    },
+    {
+      "path": "/DATA/DATA1/guest3/worktrees/static_spatial_v4_timing",
+      "exists": true,
+      "named_branch": false,
+      "active_cwd": false,
+      "tracked_changes_count": 0,
+      "untracked_entries_count": 1,
+      "ignored_entries_count": 19,
+      "noncache_entries_count": 3,
+      "noncache_examples": [
+        "data",
+        "TransferFromElectricity/tasks/t01_object_retrieval/runs",
+        "experiments/qwen3_vl_embedding_2b_caltech101_four_layer_optical_retrieval_10cm_warmstart5/runs"
+      ]
+    },
+    {
+      "path": "/DATA/DATA1/guest3/worktrees/static_unseen_v1",
+      "exists": true,
+      "named_branch": false,
+      "active_cwd": false,
+      "tracked_changes_count": 0,
+      "untracked_entries_count": 1,
+      "ignored_entries_count": 20,
+      "noncache_entries_count": 3,
+      "noncache_examples": [
+        "data",
+        "TransferFromElectricity/tasks/t01_object_retrieval/runs",
+        "experiments/qwen3_vl_embedding_2b_caltech101_four_layer_optical_retrieval_10cm_warmstart5/runs"
+      ]
+    },
+    {
+      "path": "/tmp/t16_audit_4bf",
+      "exists": true,
+      "named_branch": false,
+      "active_cwd": false,
+      "tracked_changes_count": 0,
+      "untracked_entries_count": 0,
+      "ignored_entries_count": 8,
+      "noncache_entries_count": 0,
+      "noncache_examples": []
+    },
+    {
+      "path": "/tmp/t16_aug_6b3e",
+      "exists": true,
+      "named_branch": false,
+      "active_cwd": false,
+      "tracked_changes_count": 0,
+      "untracked_entries_count": 1,
+      "ignored_entries_count": 8,
+      "noncache_entries_count": 0,
+      "noncache_examples": []
+    },
+    {
+      "path": "/tmp/t16_aug_ce8",
+      "exists": true,
+      "named_branch": false,
+      "active_cwd": false,
+      "tracked_changes_count": 0,
+      "untracked_entries_count": 0,
+      "ignored_entries_count": 7,
+      "noncache_entries_count": 0,
+      "noncache_examples": []
+    },
+    {
+      "path": "/tmp/t16_ft_6d7",
+      "exists": true,
+      "named_branch": false,
+      "active_cwd": false,
+      "tracked_changes_count": 0,
+      "untracked_entries_count": 0,
+      "ignored_entries_count": 8,
+      "noncache_entries_count": 0,
+      "noncache_examples": []
+    },
+    {
+      "path": "/tmp/t16_physical_binary_977",
+      "exists": true,
+      "named_branch": false,
+      "active_cwd": false,
+      "tracked_changes_count": 0,
+      "untracked_entries_count": 0,
+      "ignored_entries_count": 8,
+      "noncache_entries_count": 0,
+      "noncache_examples": []
+    },
+    {
+      "path": "/tmp/t16_train_8f28",
+      "exists": true,
+      "named_branch": false,
+      "active_cwd": false,
+      "tracked_changes_count": 0,
+      "untracked_entries_count": 0,
+      "ignored_entries_count": 7,
+      "noncache_entries_count": 0,
+      "noncache_examples": []
+    }
+  ],
+  "cache_only_directory_sizes": {
+    "rows": [
+      {
+        "path": "/DATA/DATA1/guest3/2026OpticsMoE/.worktrees/fa_vtab_20260914",
+        "bytes": 410763264
+      },
+      {
+        "path": "/DATA/DATA1/guest3/2026OpticsMoE/.worktrees/t03_handoff_20260915",
+        "bytes": 410959872
+      },
+      {
+        "path": "/DATA/DATA1/guest3/2026OpticsMoE/.worktrees/t03_licensed_figures_20260929",
+        "bytes": 449798144
+      },
+      {
+        "path": "/DATA/DATA1/guest3/2026OpticsMoE/.worktrees/t07_gallery_fp32_20260912",
+        "bytes": 407785472
+      },
+      {
+        "path": "/DATA/DATA1/guest3/2026OpticsMoE/.worktrees/t07_goal81_verify_20260912",
+        "bytes": 407650304
+      },
+      {
+        "path": "/DATA/DATA1/guest3/2026OpticsMoE/.worktrees/t07_joint_best_restart_20260912",
+        "bytes": 407900160
+      },
+      {
+        "path": "/DATA/DATA1/guest3/2026OpticsMoE/.worktrees/t07_retail_audit_20260913",
+        "bytes": 409878528
+      },
+      {
+        "path": "/DATA/DATA1/guest3/2026OpticsMoE/.worktrees/t07_vision13_20260913",
+        "bytes": 409198592
+      },
+      {
+        "path": "/DATA/DATA1/guest3/2026OpticsMoE/.worktrees/t12_physical_robust_20260926",
+        "bytes": 452317184
+      },
+      {
+        "path": "/DATA/DATA1/guest3/t02_personal_source_20260928",
+        "bytes": 405700608
+      },
+      {
+        "path": "/tmp/t16_audit_4bf",
+        "bytes": 434782208
+      },
+      {
+        "path": "/tmp/t16_aug_6b3e",
+        "bytes": 434565120
+      },
+      {
+        "path": "/tmp/t16_aug_ce8",
+        "bytes": 434507776
+      },
+      {
+        "path": "/tmp/t16_ft_6d7",
+        "bytes": 434716672
+      },
+      {
+        "path": "/tmp/t16_physical_binary_977",
+        "bytes": 434855936
+      },
+      {
+        "path": "/tmp/t16_train_8f28",
+        "bytes": 434495488
+      }
+    ],
+    "sum_directory_bytes_not_reclaimable_estimate": 6779875328
+  },
+  "guest3_top_sizes": [
+    {
+      "path": "/DATA/DATA1/guest3/t12_git_audited_20260926",
+      "allocated_bytes": 2398453760,
+      "GiB": 2.23
+    },
+    {
+      "path": "/DATA/DATA1/guest3/t11_joint_d2nn_20260920",
+      "allocated_bytes": 2742259712,
+      "GiB": 2.55
+    },
+    {
+      "path": "/DATA/DATA1/guest3/t12_cross_modal_video_20260920",
+      "allocated_bytes": 518656000,
+      "GiB": 0.48
+    },
+    {
+      "path": "/DATA/DATA1/guest3/third_party",
+      "allocated_bytes": 1387905024,
+      "GiB": 1.29
+    },
+    {
+      "path": "/DATA/DATA1/guest3/t11_optical_20260919",
+      "allocated_bytes": 1328992256,
+      "GiB": 1.24
+    },
+    {
+      "path": "/DATA/DATA1/guest3/.cache",
+      "allocated_bytes": 27872448512,
+      "GiB": 25.96
+    },
+    {
+      "path": "/DATA/DATA1/guest3/2026OpticsMoE_a100_measurements",
+      "allocated_bytes": 206655488,
+      "GiB": 0.19
+    },
+    {
+      "path": "/DATA/DATA1/guest3/abo_figures_checkout_20260928",
+      "allocated_bytes": 439898112,
+      "GiB": 0.41
+    },
+    {
+      "path": "/DATA/DATA1/guest3/t12_cross_modal_20260920",
+      "allocated_bytes": 2278338560,
+      "GiB": 2.12
+    },
+    {
+      "path": "/DATA/DATA1/guest3/models",
+      "allocated_bytes": 7121424384,
+      "GiB": 6.63
+    },
+    {
+      "path": "/DATA/DATA1/guest3/t10_adrenal_20260919_runs",
+      "allocated_bytes": 8416165888,
+      "GiB": 7.84
+    },
+    {
+      "path": "/DATA/DATA1/guest3/LightGenV2_worktrees",
+      "allocated_bytes": 3401252864,
+      "GiB": 3.17
+    },
+    {
+      "path": "/DATA/DATA1/guest3/t02_personal_source_20260928",
+      "allocated_bytes": 405700608,
+      "GiB": 0.38
+    },
+    {
+      "path": "/DATA/DATA1/guest3/2026OpticsMoE",
+      "allocated_bytes": 631538339840,
+      "GiB": 588.17
+    },
+    {
+      "path": "/DATA/DATA1/guest3/t11_crc9_runs",
+      "allocated_bytes": 494407680,
+      "GiB": 0.46
+    },
+    {
+      "path": "/DATA/DATA1/guest3/external",
+      "allocated_bytes": 64602112,
+      "GiB": 0.06
+    },
+    {
+      "path": "/DATA/DATA1/guest3/python_pkgs",
+      "allocated_bytes": 11292672,
+      "GiB": 0.01
+    },
+    {
+      "path": "/DATA/DATA1/guest3/t10_corrected_20260918",
+      "allocated_bytes": 417173504,
+      "GiB": 0.39
+    },
+    {
+      "path": "/DATA/DATA1/guest3/t12_gate_0e577a828",
+      "allocated_bytes": 1908518912,
+      "GiB": 1.78
+    },
+    {
+      "path": "/DATA/DATA1/guest3/t12_gate_20260921",
+      "allocated_bytes": 423985152,
+      "GiB": 0.39
+    },
+    {
+      "path": "/DATA/DATA1/guest3/LightGenV2_baseline_runs_20260923",
+      "allocated_bytes": 45920256,
+      "GiB": 0.04
+    },
+    {
+      "path": "/DATA/DATA1/guest3/worktrees",
+      "allocated_bytes": 3408490496,
+      "GiB": 3.17
+    },
+    {
+      "path": "/DATA/DATA1/guest3/transfer_packages",
+      "allocated_bytes": 489820160,
+      "GiB": 0.46
+    },
+    {
+      "path": "/DATA/DATA1/guest3/t12_git_relay.git",
+      "allocated_bytes": 336793600,
+      "GiB": 0.31
+    },
+    {
+      "path": "/DATA/DATA1/guest3/t12_verify_471d0e965",
+      "allocated_bytes": 423944192,
+      "GiB": 0.39
+    },
+    {
+      "path": "/DATA/DATA1/guest3/t12_compare_20260920",
+      "allocated_bytes": 423727104,
+      "GiB": 0.39
+    },
+    {
+      "path": "/DATA/DATA1/guest3/t12_text_to_image_20260920",
+      "allocated_bytes": 454234112,
+      "GiB": 0.42
+    },
+    {
+      "path": "/DATA/DATA1/guest3/2026OpticsMoE_a100_formal",
+      "allocated_bytes": 6780084224,
+      "GiB": 6.31
+    },
+    {
+      "path": "/DATA/DATA1/guest3/storage_cleanup_manifests",
+      "allocated_bytes": 684670976,
+      "GiB": 0.64
+    },
+    {
+      "path": "/DATA/DATA1/guest3/.codex_worktrees",
+      "allocated_bytes": 2519789568,
+      "GiB": 2.35
+    },
+    {
+      "path": "/DATA/DATA1/guest3/LightGenV2_baseline_cache_20260923",
+      "allocated_bytes": 1499136,
+      "GiB": 0
+    },
+    {
+      "path": "/DATA/DATA1/guest3/demo_handoffs",
+      "allocated_bytes": 92508160,
+      "GiB": 0.09
+    },
+    {
+      "path": "/DATA/DATA1/guest3/.venvs",
+      "allocated_bytes": 349360128,
+      "GiB": 0.33
+    },
+    {
+      "path": "/DATA/DATA1/guest3/t12_sequential_d2nn_20260920",
+      "allocated_bytes": 489189376,
+      "GiB": 0.46
+    },
+    {
+      "path": "/DATA/DATA1/guest3/demo_reproduction_data",
+      "allocated_bytes": 111473721344,
+      "GiB": 103.82
+    },
+    {
+      "path": "/DATA/DATA1/guest3/t10_corrected_20260918_runs",
+      "allocated_bytes": 2995458048,
+      "GiB": 2.79
+    },
+    {
+      "path": "/DATA/DATA1/guest3/t10_fixed478_3datasets_20260921_runs",
+      "allocated_bytes": 1095086080,
+      "GiB": 1.02
+    },
+    {
+      "path": "/DATA/DATA1/guest3/t11_crc9_distill_20260921",
+      "allocated_bytes": 737042432,
+      "GiB": 0.69
+    },
+    {
+      "path": "/DATA/DATA1/guest3/demo_reproduction_20260915",
+      "allocated_bytes": 14486081536,
+      "GiB": 13.49
+    },
+    {
+      "path": "/DATA/DATA1/guest3/t12_assets",
+      "allocated_bytes": 59462139904,
+      "GiB": 55.38
+    },
+    {
+      "path": "/DATA/DATA1/guest3/.conda",
+      "allocated_bytes": 1720307712,
+      "GiB": 1.6
+    },
+    {
+      "path": "/DATA/DATA1/guest3/lightgen_spatial_067",
+      "allocated_bytes": 220278784,
+      "GiB": 0.21
+    },
+    {
+      "path": "/DATA/DATA1/guest3/2026OpticsMoE_t06_a100_batch",
+      "allocated_bytes": 304812032,
+      "GiB": 0.28
+    },
+    {
+      "path": "/DATA/DATA1/guest3/lightgen_spatial_065",
+      "allocated_bytes": 16106369024,
+      "GiB": 15
+    },
+    {
+      "path": "/DATA/DATA1/guest3/t12_cross_modal_capacity_20260920",
+      "allocated_bytes": 485855232,
+      "GiB": 0.45
+    },
+    {
+      "path": "/DATA/DATA1/guest3/codex-worktrees",
+      "allocated_bytes": 4096,
+      "GiB": 0
+    },
+    {
+      "path": "/DATA/DATA1/guest3/t10_topk32_20260920_runs",
+      "allocated_bytes": 8069279744,
+      "GiB": 7.52
+    },
+    {
+      "path": "/DATA/DATA1/guest3/t12_d2nn_baselines_20260920",
+      "allocated_bytes": 460165120,
+      "GiB": 0.43
+    },
+    {
+      "path": "/DATA/DATA1/guest3",
+      "allocated_bytes": 929521868800,
+      "GiB": 865.68
+    }
+  ],
+  "shared_disk_available_bytes": 267328159744,
+  "task_source_status_counts": {
+    "runtime_source_published": 2,
+    "partially_consolidated": 2,
+    "pending_runtime_and_assets": 9,
+    "unstarted": 1
+  },
+  "windows_root_git_repository": false,
+  "windows_e_free_bytes": 6040960286720,
+  "windows_project_directories": 25,
+  "notes": [
+    "Counts overlap; source-plus-cache directories are NOT cleared for deletion.",
+    "du counts allocated blocks; hardlinks and nested roots mean separate listings cannot be summed.",
+    "Windows root contains deployment project copies, not a whole synchronized Git repository; per-project source provenance still needs auditing.",
+    "Windows hardware/run state not modified; other OpenMoji window may continue updating.",
+    "All original datasets/CCD/receipts/best/last/baselines/timing files are protected."
+  ]
+}
