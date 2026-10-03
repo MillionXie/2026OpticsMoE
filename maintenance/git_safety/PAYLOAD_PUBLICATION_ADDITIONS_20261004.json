@@ -1,0 +1,8 @@
+{
+  "source_commit": "65e4b03c2e328f71c24877a0923011df8918b847",
+  "paths": [
+    {"path": "maintenance/git_safety/README.md", "sha256": "c48dab5f1fa9e0a31832f0c188897031f36ed7f14687f5cdc31989b5e8561c64", "bytes": 7641},
+    {"path": "maintenance/git_safety/prepare_payload_ignore_rules.py", "sha256": "99030ed50c8352959a8f26ebfda15e3d1eb05fc7f0339bf8ece7284f30dbe83a", "bytes": 3981},
+    {"path": "maintenance/git_safety/test_payload_ignore_publication.py", "sha256": "566255a97e205c3c29bff4fda7b501c7e86c75d57a31d3baffe0dabbd318f9a3", "bytes": 1051}
+  ]
+}
