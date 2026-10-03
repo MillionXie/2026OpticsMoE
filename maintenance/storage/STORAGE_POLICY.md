@@ -5,6 +5,14 @@ directories beside `2026OpticsMoE`.
 
 ## Canonical ownership
 
+2026-10-02 clarification: the list below describes retained legacy project
+ownership, not permission to create new LightGen experiments in `experiments/`.
+Current LightGen work belongs to `LightGenV2/tasks/tNN_task_name/`, following
+`LightGenV2/AI_RULES.md` and root `AGENTS.md`. Its release directory is the task's
+`releases/`; do not move valid existing runs or packages merely to fix naming.
+Existing validated server/lab runtime trees are protected during reconciliation.
+Do not create more branches/worktrees without explicit user authorization.
+
 - `experiments/<project>/`: Qwen, LGVQ, D2NN, hardware, and dataset-specific
   code. Put run products in that project's `runs/` and durable reports in its
   `artifacts/`.

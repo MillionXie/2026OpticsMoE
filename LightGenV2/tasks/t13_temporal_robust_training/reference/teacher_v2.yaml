@@ -1,0 +1,119 @@
+output_dir: runs/train_s163
+device: cuda
+random_seed: 163
+
+task:
+  target_name: temporal
+  prompt: "Please evaluate the temporal quality of this video and rate it using one of the following five levels: Excellent, Good, Fair, Poor, or Bad."
+
+data:
+  dataset_root: assets/dataset/LGVQ
+  manifest: assets/manifest/lgvq_train2250_test558.csv
+  vision_cache: assets/cache/qwen3vl_front_4f_49x1024_quality14.pt
+  language_cache: assets/cache/qwen3vl_front_temporal_prompt_2048.pt
+  training_soft_targets: assets/cache/training_only_teacher_predictions.pt
+
+geometry:
+  canvas_size: 518
+  active_size: 478
+  video_grid: 4
+  video_count: 16
+  video_tile_size: 115
+  video_tile_pitch: 119
+  video_tile_offset: 3
+  frame_grid: 2
+  frames_per_video: 4
+  frame_lane_size: 56
+  frame_lane_pitch: 59
+  frame_expert_size: 27
+  frame_expert_pitch: 29
+  video_field_size: 56
+  video_expert_pitch: 59
+  video_phase_tile_size: 111
+
+model:
+  videos_per_field: 16
+  frame_count: 4
+  token_grid: 7
+  vision_input_width: 1024
+  quality_input_width: 14
+  language_input_width: 2048
+  maximum_language_tokens: 64
+  model_width: 192
+  detector_projection_size: 96
+  head_width: 512
+  dropout: 0.10
+  quality_gate_initial: 0.25
+  electronic_skip_enabled: false
+
+router:
+  top_k: 2
+  temperature: 1.10
+  noise_std: 0.06
+  frame_intervals: [[12, 26], [30, 44]]
+  video_intervals: [[23, 50], [65, 92]]
+
+optics:
+  wavelength_nm: 532.0
+  pixel_pitch_um: 17.0
+  modulator_pixel_pitch_um: 8.0
+  distance_m: 0.10
+  k_space_enabled: true
+  theta_max_deg: 0.5
+  phase_init_std: 0.25
+  phase_quantization_levels: 0
+  ccd_relative_clip: 8.0
+  ccd_log_compression: 1.0
+  unmodulated_power_fraction_min: 0.20
+  unmodulated_power_fraction_max: 0.35
+  unmodulated_power_fraction_eval: 0.20
+
+robustness:
+  input_shift_pixels: 4
+  phase_shift_pixels: 4
+  ccd_shift_pixels: 4
+  phase_dropout_p: 0.05
+  phase_dropout_cell_size: 4
+  ccd_noise:
+    enabled: false
+    biased_gaussian:
+      enabled: true
+      distribution: truncated_biased_gaussian
+      mean_fraction: 0.03
+      std_fraction: 0.03
+      min_fraction: -0.03
+      max_fraction: 0.12
+    shot_noise:
+      enabled: true
+      photons_per_mean: 4096.0
+
+fusion:
+  alpha_min: 0.50
+  alpha_initial: 0.57
+  alpha_max: 0.90
+  epsilon: 0.000001
+
+training:
+  initialization_checkpoint: assets/initialization/multivideo9x4_best_checkpoint.pt
+  epochs: 100
+  batch_size: 8
+  num_workers: 2
+  learning_rate: 0.00030
+  phase_learning_rate: 0.020
+  router_phase_learning_rate: 0.032
+  weight_decay: 0.0001
+  test_interval_epochs: 5
+  phase_snapshot_interval_epochs: 0
+
+loss:
+  ranking_weight: 0.45
+  correlation_weight: 1.30
+  optical_alignment_weight: 0.05
+  router_balance_weight: 0.12
+  router_importance_weight: 0.04
+  router_diversity_weight: 0.24
+  router_capture_weight: 0.02
+  guard_energy_weight: 0.04
+  slot_consistency_weight: 0.25
+  slot_consistency_interval: 4
+  soft_target_weight: 3.00

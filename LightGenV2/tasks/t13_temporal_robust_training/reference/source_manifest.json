@@ -1,0 +1,40 @@
+{
+  "schema_version": 1,
+  "source_path": "LightGenPublic/tasks/t06_lgvq_temporal_consistency/teacher_release_final_v2/lgvq_temporal_08044",
+  "source_runtime_commit": "8e869473787f4ffceb2a6a77f4430b94c206f459",
+  "checkpoint_sha256": "5303b574b200e14bf943af21c60a246720be453b9cf8847cd93c0eaaa243a77c",
+  "source_release_json_sha256": "dac8debd0d2b0e7b7fa161988d20ecda877f10fddb9285426cc2d5b2d4f34e1e",
+  "reference_metrics": {
+    "target": "temporal",
+    "srcc": 0.8022806420367042,
+    "krcc": 0.5931156844050931,
+    "plcc": 0.8154774079271463,
+    "rmse": 8.049678802490234,
+    "mae": 6.05666971206665,
+    "count": 558
+  },
+  "files": {
+    "runtime/experiments/qwen3_vl_2b_lgvq_single_metric_o2_16frame_54/training.py": "7c13b3a76a7b9e512936ea618b28f508c4d6b1e947d1afe181b874a34d88d520",
+    "runtime/experiments/qwen3_vl_2b_lgvq_single_metric_o2_16frame_54/data.py": "00e81892370765e19f139a4b60f0c8f6edce0694a1f0790701ffc596014c9c41",
+    "reference/teacher_v2.yaml": "46790448ec037edbf1942428ddb197129e31fd892a15a6ab5d29eeee519fd685",
+    "runtime/LightGenV2/tasks/t06_video_quality_assessment/multivideo.py": "c6978d6486fe786b0bd03609d6b9b62c410a58bc71e81a003cc183e6cee010fe",
+    "runtime/LightGenV2/__init__.py": "22f1d762857916ed1e5a173a60fa7d864cd10139f40fa9c249c38fbeb86ea92e",
+    "runtime/experiments/qwen3_vl_2b_lgvq_single_metric_o2_16frame_54/metrics.py": "6ef93ffc32e8920086bb1d18dde440a577ba134a8db498d17837636d6ef01770",
+    "runtime/lgvq_temporal/contracts.py": "008179b47b35d4943309f1f801597f58a041c3606103f0771568046c4d132fbe",
+    "runtime/LightGenV2/tasks/t06_video_quality_assessment/models/multivideo9x4.py": "886112996aac0252871448ac31b6fcb7fe1866eb397238cc5f481faa1bb68b24",
+    "runtime/LightGenV2/tasks/__init__.py": "cb7dde6e220a684ccb22efb1d4af40540497d7a7753c6692b24546411515c6f6",
+    "runtime/experiments/qwen3_vl_2b_lgvq_single_metric_o2_16frame_54/phase_snapshots.py": "4928b1c7d9ad369112360524a94d399c5a8508e6ba6e72eafd8784391d9cb75e",
+    "runtime/experiments/qwen3_vl_2b_lgvq_single_metric_o2_16frame_54/modeling.py": "bdedfb842b69cf0b3ee49e87687d5525391605eacfcb7e216e5a71ab1fac6f73",
+    "runtime/LightGenV2/tasks/t06_video_quality_assessment/multivideo_training.py": "b57eb1c5fb304ff2d320b9bcf961711c8730af7e7f9cfcb4a4bb465348141190",
+    "runtime/LightGenV2/tasks/t06_video_quality_assessment/multivideo_settings.py": "cead67b212947a3f30b97b73bd91406f15ca647ae93d79ac9f900571aae3a433",
+    "runtime/experiments/__init__.py": "75749e81ecc24c9b80e103e22e93682d393ba15972cd34dfc49fb59b77a0a311",
+    "runtime/experiments/qwen3_vl_2b_lgvq_single_metric_o2_16frame_54/__init__.py": "f48d41c36f5c57760a0cc9485ad371ffd0f587c63c8b7d1562734195effb6d39",
+    "runtime/experiments/qwen3_vl_2b_lgvq_single_metric_o2_16frame_54/settings.py": "bfc27ce1da1d33695d0a5afcb37ff66ee0d42bee0f3afed096457e7cb9fcf887",
+    "runtime/LightGenV2/tasks/t06_video_quality_assessment/models/__init__.py": "403b255a753c41a248346aa16256a4075d84ce7dab81692dbb2a45646b215609",
+    "runtime/LightGenV2/tasks/t06_video_quality_assessment/__init__.py": "c75051412cbcbe1deb04a93d497630f8264116cce37231b4ae10680fa35920e0",
+    "runtime/LightGenV2/tasks/t06_video_quality_assessment/lab_runtime.py": "5d1423c041249af2553f9a68ffed8bfb98e752c5dc42c4ef10b8c6bdcfe85b0f",
+    "runtime/lgvq_temporal/fixed_weight.py": "78f9cfd737c1e1d3e8bc0b9d81ae6eb713278bcf8e01c5ee0da1cdb1482d3589",
+    "runtime/lgvq_temporal/__init__.py": "8e1d173019bf821a7339493777abad0549cd45d96a76bf35e9d9e544a718d15e",
+    "runtime/LightGenV2/tasks/t06_video_quality_assessment/multivideo_data.py": "bd098aaca18adc6ccb9a6a59fae7124504d0cc794444d159b5349fdc64b49c5c"
+  }
+}

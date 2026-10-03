@@ -1,0 +1,10 @@
+assets/
+runs/
+releases/
+projects/
+paths.local.json
+__pycache__/
+.pytest_cache/
+*.pyc
+# Private connection helper retained locally/archived, not canonical source.
+tools/server_sync.py

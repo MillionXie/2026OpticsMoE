@@ -1,0 +1,13 @@
+# Preserve byte-identical sources imported from the pinned server version.
+# Scoped paths only; do not renormalize unrelated scientific working changes.
+tasks/t16_zero_phase_ccd_lifelong/*.py text eol=lf
+tasks/t16_zero_phase_ccd_lifelong/tests/*.py text eol=lf
+tasks/t16_zero_phase_ccd_lifelong/reports/*.md text eol=lf
+tasks/t13_four_modal_lifelong/*.py text eol=lf
+tasks/t14_shared_readout_lifelong/*.py text eol=lf
+tasks/t09_multimodal_matching/prepare.py text eol=lf
+tasks/t09_multimodal_matching/vision.py text eol=lf
+# This archived compatibility source has CRLF bytes in the original Git blob.
+demo_check/adrenal_softsign_code_export_20260915_145336/code/optical_reference/*.py -text whitespace=cr-at-eol
+# Pinned upstream __init__ contains a final empty line; retain its exact SHA.
+tasks/t13_four_modal_lifelong/__init__.py whitespace=-blank-at-eof

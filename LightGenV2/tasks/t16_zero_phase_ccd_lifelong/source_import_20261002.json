@@ -1,0 +1,123 @@
+{
+  "schema_version": 1,
+  "source_head": "2f2f6946f38c7d06320eb29314654a6260f3d618",
+  "source_runtime": "/DATA/DATA1/guest3/t12_cross_modal_20260920",
+  "server_task_status": "clean checked 2026-10-02",
+  "files": [
+    {
+      "path": "LightGenV2/tasks/t16_zero_phase_ccd_lifelong/train_lifelong_moe.py",
+      "source_blob_sha256": "b5a0c0ce59743eaea5f8fe30ad838fe9a2f3e7dc94930513bbaed5c6e6935978"
+    },
+    {
+      "path": "LightGenV2/tasks/t16_zero_phase_ccd_lifelong/train_lifelong_d2nn.py",
+      "source_blob_sha256": "c4338c3636c632b57dcff6e1a44639f14035d3b5c7687ea158e7b794be0c1fad"
+    },
+    {
+      "path": "LightGenV2/tasks/t16_zero_phase_ccd_lifelong/eval_d2nn_fixed_4x4.py",
+      "source_blob_sha256": "1058afe64c40426474d461f306830289e6e9682765b27bf26ddde0274094df64"
+    },
+    {
+      "path": "LightGenV2/tasks/t16_zero_phase_ccd_lifelong/pretrain_clevr_vision.py",
+      "source_blob_sha256": "3491d2ecc8f411f18a2d8a495ee4d78c44d7edc0d89cf2c47151935d72e66d48"
+    },
+    {
+      "path": "LightGenV2/tasks/t16_zero_phase_ccd_lifelong/test_selected_lifelong.py",
+      "source_blob_sha256": "75541b0afad64553a44a2d5a6cd5850eee21b1e8b3e716afb7d9aec805ab9fdf"
+    },
+    {
+      "path": "LightGenV2/tasks/t16_zero_phase_ccd_lifelong/tests/test_contract.py",
+      "source_blob_sha256": "aaa1e5dc40d8a79176a4cfaa68a5a409304f7ea47656667247a0710ced786c0b"
+    },
+    {
+      "path": "LightGenV2/tasks/t16_zero_phase_ccd_lifelong/tests/test_frozen_vision.py",
+      "source_blob_sha256": "209c79ee34ad442aaf51bb8601960290c27db1189f409edb2d81618907efe3e1"
+    },
+    {
+      "path": "LightGenV2/tasks/t16_zero_phase_ccd_lifelong/reports/FINAL_RESULTS_AND_TRAINING_20260926.md",
+      "source_blob_sha256": "302e3ba8830446b78a2f54447d7be3f72ee750c8d56e21189a9fd566c48e1751"
+    },
+    {
+      "path": "LightGenV2/tasks/t16_zero_phase_ccd_lifelong/reports/shared_frozen_vision_protocol_20260925.md",
+      "source_blob_sha256": "facbdb8d93d508e2b40b48e58058b2d2fba4655d7433379ac9859bdb58f1bca5"
+    },
+    {
+      "path": "LightGenV2/tasks/t16_zero_phase_ccd_lifelong/reports/d2nn_memory300_20260926.md",
+      "source_blob_sha256": "72c6319bb430d0ea28d91bc976e5f275a6ce86f1483acdef3b71ebc7047fee84"
+    },
+    {
+      "path": "LightGenV2/tasks/t16_zero_phase_ccd_lifelong/reports/moe_physical_optimization_20260926.md",
+      "source_blob_sha256": "02582c88c0e39cd0a4f436c2edc9e6435da96db8db640547c7548a4d586a1346"
+    },
+    {
+      "path": "LightGenV2/tasks/t16_zero_phase_ccd_lifelong/__init__.py",
+      "source_blob_sha256": "3d1b0aa14f6b02dae624e429fdab730f14318d581b95002a8f2983152057d2b4"
+    },
+    {
+      "path": "LightGenV2/tasks/t16_zero_phase_ccd_lifelong/model.py",
+      "source_blob_sha256": "82e740f7242099bcc481de59266c09cfb87df37edd65ba2211392cef553e4c6c"
+    },
+    {
+      "path": "LightGenV2/tasks/t16_zero_phase_ccd_lifelong/train_eurosat.py",
+      "source_blob_sha256": "1f5920e5f55197a70dc438eb5f400a218fcc1ded62e988938551fb14672f54a2"
+    },
+    {
+      "path": "LightGenV2/tasks/t16_zero_phase_ccd_lifelong/train_other_tasks.py",
+      "source_blob_sha256": "1fe5dddf78f1ccde8e2ae6c60e83681ae63d5e0f477fcc75ed20a36950ab3052"
+    },
+    {
+      "path": "LightGenV2/tasks/t09_multimodal_matching/prepare.py",
+      "source_blob_sha256": "24e6ae102cff753b62d9d3da3b1050b0feca90ea874add3400b502cb248df52e"
+    },
+    {
+      "path": "LightGenV2/tasks/t09_multimodal_matching/vision.py",
+      "source_blob_sha256": "630ad5273911f8f6069602788eb5f71cd9ac2f0e9a0040b7c1211a694376761f"
+    },
+    {
+      "path": "LightGenV2/tasks/t16_zero_phase_ccd_lifelong/data.py",
+      "source_blob_sha256": "d0750909c1fbd2e746b466d9c110b7564c9f6bc61c1923487c882140366e5e99"
+    },
+    {
+      "path": "LightGenV2/tasks/t16_zero_phase_ccd_lifelong/audit_phase_dependence.py",
+      "source_blob_sha256": "ec512b7f1b2d91fedb6ad0e18ee34919a1e60da4bacb9193bf95accef3c1cf49"
+    },
+    {
+      "path": "LightGenV2/tasks/t16_zero_phase_ccd_lifelong/frozen_vision.py",
+      "source_blob_sha256": "cecadfc8a0fd502d97a231a0085892e5c152c4c6178c73745c3ec63a9f50b5c0"
+    },
+    {
+      "path": "LightGenV2/tasks/t13_four_modal_lifelong/model.py",
+      "source_blob_sha256": "36839d1edadb37526227d6bc7db2514dc8e149437c2046de40d76a8b3835c961"
+    },
+    {
+      "path": "LightGenV2/tasks/t14_shared_readout_lifelong/data.py",
+      "source_blob_sha256": "7e6c3beea5c8e869d007ed2df7168908a9332828d0d69476da8b38e6e394a9be"
+    },
+    {
+      "path": "LightGenV2/tasks/t13_four_modal_lifelong/data.py",
+      "source_blob_sha256": "96390cf02aa3e6869125fe4a0c5d6887a6c7600bcc25456c2852c254f1d4e057"
+    },
+    {
+      "path": "LightGenV2/tasks/t13_four_modal_lifelong/__init__.py",
+      "source_blob_sha256": "16a2fefa7cfeb497a96473ed1832a9798361d722b59284a80ccdd0cdd2f51ac2"
+    },
+    {
+      "path": "LightGenV2/tasks/t14_shared_readout_lifelong/__init__.py",
+      "source_blob_sha256": "62eee1c3d919ddd44644f46f47ffef60c4d0a45f1de9b044631eeca7c395554f"
+    }
+  ],
+  "additional_existing_dependencies": [
+    "LightGenV2/demo_check/adrenal_softsign_code_export_20260915_145336/code/optical_reference/optics.py",
+    "LightGenV2/demo_check/adrenal_softsign_code_export_20260915_145336/code/optical_reference/__init__.py"
+  ],
+  "additional_dependency_hashes": [
+    {"path": "LightGenV2/demo_check/adrenal_softsign_code_export_20260915_145336/code/optical_reference/optics.py", "source_blob_sha256": "b250627b14357a254eb12c785caf20f3aff2bf3fe30121a05321094803c73a7d"},
+    {"path": "LightGenV2/demo_check/adrenal_softsign_code_export_20260915_145336/code/optical_reference/__init__.py", "source_blob_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"}
+  ],
+  "validation": {
+    "command": "python -s -m pytest LightGenV2/tasks/t16_zero_phase_ccd_lifelong/tests -q",
+    "environment": "qwen3vl-cifar10, PyTorch 2.11.0+cu128, CPU only",
+    "passed": 29
+  },
+  "main_published": false,
+  "artifacts_moved": false
+}

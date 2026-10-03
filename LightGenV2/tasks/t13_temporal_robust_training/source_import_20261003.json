@@ -1,0 +1,295 @@
+{
+  "schema_version": 1,
+  "audited_on": "2026-10-03",
+  "source_head": "493eb38375f3bd9e4e8e7edfe278468b351365f1",
+  "training_commit": "1aa3842c01ddb54c8b0d61f8428de391e11cdaaa",
+  "source_ref": "refs/archive/server-authoritative-20261002/t13_temporal_robust_20260927",
+  "scope": "Pinned runtime, adapters, configs, structural tests and curated reports; no experimental artifacts copied or removed",
+  "publication_pending": true,
+  "files": [
+    {
+      "path": "LightGenV2/tasks/t13_temporal_robust_training/.gitattributes",
+      "source_blob_sha256": "aeb93822e1d5ee0a2e91072edf70927cd773afde95026695ebbb9c68517e4d14",
+      "hash_normalization": "crlf_to_lf"
+    },
+    {
+      "path": "LightGenV2/tasks/t13_temporal_robust_training/amplitude.py",
+      "source_blob_sha256": "03480cdf3e16536dace5dbdfbaa218021aa604d98a7d005e9994b40172b98669"
+    },
+    {
+      "path": "LightGenV2/tasks/t13_temporal_robust_training/audit_teacher.py",
+      "source_blob_sha256": "cfc99a68f4336e7ee56717f964b63b5100b97b32adb08b6a53a718fc250326bb"
+    },
+    {
+      "path": "LightGenV2/tasks/t13_temporal_robust_training/build_lab_package.py",
+      "source_blob_sha256": "b8d41e8a3fdeae470a39b8053f5060239b1d82b583dc5d9caed554ee51b035f5",
+      "hash_normalization": "crlf_to_lf"
+    },
+    {
+      "path": "LightGenV2/tasks/t13_temporal_robust_training/build_projects.py",
+      "source_blob_sha256": "a373e55b4f552afeb195f7561f7088d105bccc0fd92baa076159c3b2912b85ec"
+    },
+    {
+      "path": "LightGenV2/tasks/t13_temporal_robust_training/cache_builder/__init__.py",
+      "source_blob_sha256": "31012ca618cdfaa082eef9e25c7d57032ade4067cf74ff7f53eb35e4aece932f"
+    },
+    {
+      "path": "LightGenV2/tasks/t13_temporal_robust_training/cache_builder/cache_qwen_front.py",
+      "source_blob_sha256": "24c9277766c94e506a0b6d9884408204640dfbfea7e80698f474889275867dfb"
+    },
+    {
+      "path": "LightGenV2/tasks/t13_temporal_robust_training/cache_builder/prepare_manifest.py",
+      "source_blob_sha256": "7ac34162aab5afcb7f8b0d35d3041b93e63cca97eb745297ebb2cef90a3ee35a"
+    },
+    {
+      "path": "LightGenV2/tasks/t13_temporal_robust_training/ccd.py",
+      "source_blob_sha256": "f6c6f6105fd42f2b4f05e52af981641d05225306530c801919910b5feaf5a13d"
+    },
+    {
+      "path": "LightGenV2/tasks/t13_temporal_robust_training/configs/ccd_poisson_gaussian.json",
+      "source_blob_sha256": "cb71f8c87cef709f9f27cf20736e1dafdf3c706a359fe9fb52422cb91fe5d2bc"
+    },
+    {
+      "path": "LightGenV2/tasks/t13_temporal_robust_training/configs/paths.example.json",
+      "source_blob_sha256": "d7ad790ed83f23efe6aad507028e14d8e6cf9d7e9f1dadea0ee3ff505c5ed69b",
+      "hash_normalization": "crlf_to_lf"
+    },
+    {
+      "path": "LightGenV2/tasks/t13_temporal_robust_training/configs/study.json",
+      "source_blob_sha256": "6502bbbcf9c8ca9219c86ca715e20f472871f520a1f02d9b4c3578864a2afdf2",
+      "hash_normalization": "crlf_to_lf"
+    },
+    {
+      "path": "LightGenV2/tasks/t13_temporal_robust_training/configs/study_full2250_testbest.json",
+      "source_blob_sha256": "e69bd1c998350fb150a59f10057a967f3684e47e462ad5326da6aa43ad6f511d"
+    },
+    {
+      "path": "LightGenV2/tasks/t13_temporal_robust_training/experiment.py",
+      "source_blob_sha256": "c608fd3fd933eae6539f7ff4abd04724a89c29576d5c515b8db22c9ae4c33f47",
+      "hash_normalization": "crlf_to_lf"
+    },
+    {
+      "path": "LightGenV2/tasks/t13_temporal_robust_training/finetune.py",
+      "source_blob_sha256": "80276f914febd55428667a882de2ef9a3b7e851b3df711eecb9a1c3ccd68f6f0"
+    },
+    {
+      "path": "LightGenV2/tasks/t13_temporal_robust_training/hardware.py",
+      "source_blob_sha256": "e211773e99a4c8fb5b598d4e48f51ef7e338a3baa82cbcd69dbca15a14c630ee",
+      "hash_normalization": "crlf_to_lf"
+    },
+    {
+      "path": "LightGenV2/tasks/t13_temporal_robust_training/infer.py",
+      "source_blob_sha256": "db3677c444fa20fe11bee62c5bebc3ef6be160b4c5321820d69af896025fc5cb"
+    },
+    {
+      "path": "LightGenV2/tasks/t13_temporal_robust_training/prepare_cache.py",
+      "source_blob_sha256": "27ab5f20301d56a5476bbeb8245e7d9eaba3adb0820fb4ed874204587edb597f"
+    },
+    {
+      "path": "LightGenV2/tasks/t13_temporal_robust_training/project.py",
+      "source_blob_sha256": "74cbf02c6db997b532451afc543bc6d7453ff707b83a8e72fbc3335226f97d37"
+    },
+    {
+      "path": "LightGenV2/tasks/t13_temporal_robust_training/reference/golden_first_field.json",
+      "source_blob_sha256": "f4df933e5cd821d02e4b637ed41d45c2737f5bc81ea354b290fdd33a0e4760cb",
+      "hash_normalization": "crlf_to_lf"
+    },
+    {
+      "path": "LightGenV2/tasks/t13_temporal_robust_training/reference/source_manifest.json",
+      "source_blob_sha256": "537b94416c737a98dbf4674191ebba32c370af15311c0132526458705287edf6",
+      "hash_normalization": "crlf_to_lf"
+    },
+    {
+      "path": "LightGenV2/tasks/t13_temporal_robust_training/reference/teacher_v2.yaml",
+      "source_blob_sha256": "46790448ec037edbf1942428ddb197129e31fd892a15a6ab5d29eeee519fd685"
+    },
+    {
+      "path": "LightGenV2/tasks/t13_temporal_robust_training/reports/BOUNDED_AMPLITUDE_FIX.md",
+      "source_blob_sha256": "af7221ee1a4e6036573f8e2734c57ad6922c1ebe698fc6f089d7707e43e23d4a"
+    },
+    {
+      "path": "LightGenV2/tasks/t13_temporal_robust_training/reports/BOUNDED_DC30_FIRST_RUN.md",
+      "source_blob_sha256": "d3a7d26ee7fd984b040f30195d6f62ffca64e88f474e9e44c9f30e887c9795cb"
+    },
+    {
+      "path": "LightGenV2/tasks/t13_temporal_robust_training/reports/ENGINEERING_AUDIT.md",
+      "source_blob_sha256": "156fc1a1d15fa74b4b0ac971331e61fa9819374e87e3df73cc429277130686b1"
+    },
+    {
+      "path": "LightGenV2/tasks/t13_temporal_robust_training/reports/EXPERIMENT_AND_FIGURE_PLAN.md",
+      "source_blob_sha256": "a44168bb5d8a0b6b7bd215016bc2860d9857c4caccd84d2835e87aa6c3ed05b3",
+      "hash_normalization": "crlf_to_lf"
+    },
+    {
+      "path": "LightGenV2/tasks/t13_temporal_robust_training/reports/teacher_zip_audit.json",
+      "source_blob_sha256": "ae1db2bb29a8bf89161807c67a018194fea12dc38a5296bc64d3c530439bde5f",
+      "hash_normalization": "crlf_to_lf"
+    },
+    {
+      "path": "LightGenV2/tasks/t13_temporal_robust_training/requirements-dev.txt",
+      "source_blob_sha256": "34cb5dd6dc30ec2589d84100e44cbfe4220a3b94503d7539c3bc91f13915f920",
+      "hash_normalization": "crlf_to_lf"
+    },
+    {
+      "path": "LightGenV2/tasks/t13_temporal_robust_training/requirements.txt",
+      "source_blob_sha256": "10300b8bf6c39ceeebb6345e46075a9090a588cb6305523eae426bd7ae4b9f9c",
+      "hash_normalization": "crlf_to_lf"
+    },
+    {
+      "path": "LightGenV2/tasks/t13_temporal_robust_training/run.py",
+      "source_blob_sha256": "a7ff67fedd0e58b688455a205c22abe9e149006af0aa5eaae6f339f248419864",
+      "hash_normalization": "crlf_to_lf"
+    },
+    {
+      "path": "LightGenV2/tasks/t13_temporal_robust_training/runtime/LightGenV2/__init__.py",
+      "source_blob_sha256": "22f1d762857916ed1e5a173a60fa7d864cd10139f40fa9c249c38fbeb86ea92e"
+    },
+    {
+      "path": "LightGenV2/tasks/t13_temporal_robust_training/runtime/LightGenV2/tasks/__init__.py",
+      "source_blob_sha256": "cb7dde6e220a684ccb22efb1d4af40540497d7a7753c6692b24546411515c6f6"
+    },
+    {
+      "path": "LightGenV2/tasks/t13_temporal_robust_training/runtime/LightGenV2/tasks/t06_video_quality_assessment/__init__.py",
+      "source_blob_sha256": "c75051412cbcbe1deb04a93d497630f8264116cce37231b4ae10680fa35920e0"
+    },
+    {
+      "path": "LightGenV2/tasks/t13_temporal_robust_training/runtime/LightGenV2/tasks/t06_video_quality_assessment/lab_runtime.py",
+      "source_blob_sha256": "5d1423c041249af2553f9a68ffed8bfb98e752c5dc42c4ef10b8c6bdcfe85b0f"
+    },
+    {
+      "path": "LightGenV2/tasks/t13_temporal_robust_training/runtime/LightGenV2/tasks/t06_video_quality_assessment/models/__init__.py",
+      "source_blob_sha256": "403b255a753c41a248346aa16256a4075d84ce7dab81692dbb2a45646b215609"
+    },
+    {
+      "path": "LightGenV2/tasks/t13_temporal_robust_training/runtime/LightGenV2/tasks/t06_video_quality_assessment/models/multivideo9x4.py",
+      "source_blob_sha256": "886112996aac0252871448ac31b6fcb7fe1866eb397238cc5f481faa1bb68b24"
+    },
+    {
+      "path": "LightGenV2/tasks/t13_temporal_robust_training/runtime/LightGenV2/tasks/t06_video_quality_assessment/multivideo.py",
+      "source_blob_sha256": "c6978d6486fe786b0bd03609d6b9b62c410a58bc71e81a003cc183e6cee010fe"
+    },
+    {
+      "path": "LightGenV2/tasks/t13_temporal_robust_training/runtime/LightGenV2/tasks/t06_video_quality_assessment/multivideo_data.py",
+      "source_blob_sha256": "bd098aaca18adc6ccb9a6a59fae7124504d0cc794444d159b5349fdc64b49c5c"
+    },
+    {
+      "path": "LightGenV2/tasks/t13_temporal_robust_training/runtime/LightGenV2/tasks/t06_video_quality_assessment/multivideo_settings.py",
+      "source_blob_sha256": "cead67b212947a3f30b97b73bd91406f15ca647ae93d79ac9f900571aae3a433"
+    },
+    {
+      "path": "LightGenV2/tasks/t13_temporal_robust_training/runtime/LightGenV2/tasks/t06_video_quality_assessment/multivideo_training.py",
+      "source_blob_sha256": "b57eb1c5fb304ff2d320b9bcf961711c8730af7e7f9cfcb4a4bb465348141190"
+    },
+    {
+      "path": "LightGenV2/tasks/t13_temporal_robust_training/runtime/experiments/__init__.py",
+      "source_blob_sha256": "75749e81ecc24c9b80e103e22e93682d393ba15972cd34dfc49fb59b77a0a311"
+    },
+    {
+      "path": "LightGenV2/tasks/t13_temporal_robust_training/runtime/experiments/qwen3_vl_2b_lgvq_single_metric_o2_16frame_54/__init__.py",
+      "source_blob_sha256": "f48d41c36f5c57760a0cc9485ad371ffd0f587c63c8b7d1562734195effb6d39"
+    },
+    {
+      "path": "LightGenV2/tasks/t13_temporal_robust_training/runtime/experiments/qwen3_vl_2b_lgvq_single_metric_o2_16frame_54/data.py",
+      "source_blob_sha256": "00e81892370765e19f139a4b60f0c8f6edce0694a1f0790701ffc596014c9c41"
+    },
+    {
+      "path": "LightGenV2/tasks/t13_temporal_robust_training/runtime/experiments/qwen3_vl_2b_lgvq_single_metric_o2_16frame_54/metrics.py",
+      "source_blob_sha256": "6ef93ffc32e8920086bb1d18dde440a577ba134a8db498d17837636d6ef01770"
+    },
+    {
+      "path": "LightGenV2/tasks/t13_temporal_robust_training/runtime/experiments/qwen3_vl_2b_lgvq_single_metric_o2_16frame_54/modeling.py",
+      "source_blob_sha256": "bdedfb842b69cf0b3ee49e87687d5525391605eacfcb7e216e5a71ab1fac6f73"
+    },
+    {
+      "path": "LightGenV2/tasks/t13_temporal_robust_training/runtime/experiments/qwen3_vl_2b_lgvq_single_metric_o2_16frame_54/phase_snapshots.py",
+      "source_blob_sha256": "4928b1c7d9ad369112360524a94d399c5a8508e6ba6e72eafd8784391d9cb75e"
+    },
+    {
+      "path": "LightGenV2/tasks/t13_temporal_robust_training/runtime/experiments/qwen3_vl_2b_lgvq_single_metric_o2_16frame_54/settings.py",
+      "source_blob_sha256": "bfc27ce1da1d33695d0a5afcb37ff66ee0d42bee0f3afed096457e7cb9fcf887"
+    },
+    {
+      "path": "LightGenV2/tasks/t13_temporal_robust_training/runtime/experiments/qwen3_vl_2b_lgvq_single_metric_o2_16frame_54/training.py",
+      "source_blob_sha256": "7c13b3a76a7b9e512936ea618b28f508c4d6b1e947d1afe181b874a34d88d520"
+    },
+    {
+      "path": "LightGenV2/tasks/t13_temporal_robust_training/runtime/lgvq_temporal/__init__.py",
+      "source_blob_sha256": "8e1d173019bf821a7339493777abad0549cd45d96a76bf35e9d9e544a718d15e"
+    },
+    {
+      "path": "LightGenV2/tasks/t13_temporal_robust_training/runtime/lgvq_temporal/contracts.py",
+      "source_blob_sha256": "008179b47b35d4943309f1f801597f58a041c3606103f0771568046c4d132fbe"
+    },
+    {
+      "path": "LightGenV2/tasks/t13_temporal_robust_training/runtime/lgvq_temporal/fixed_weight.py",
+      "source_blob_sha256": "78f9cfd737c1e1d3e8bc0b9d81ae6eb713278bcf8e01c5ee0da1cdb1482d3589"
+    },
+    {
+      "path": "LightGenV2/tasks/t13_temporal_robust_training/settings_adapter.py",
+      "source_blob_sha256": "995707e6c70ba14b2f96c0c5c804ff07866177b6aef01d2b70ecbd37bb59c159"
+    },
+    {
+      "path": "LightGenV2/tasks/t13_temporal_robust_training/study.py",
+      "source_blob_sha256": "fa3f5a88b27ec4b065d0efa5fe12d7efad0e7ba806c06e876e9b4ecbf7cee6d0",
+      "hash_normalization": "crlf_to_lf"
+    },
+    {
+      "path": "LightGenV2/tasks/t13_temporal_robust_training/tests/test_amplitude.py",
+      "source_blob_sha256": "06cbec0f02d175ef87a54da6af5779ed0cdc197064c273b0be4bef02360595e3"
+    },
+    {
+      "path": "LightGenV2/tasks/t13_temporal_robust_training/tests/test_engineering.py",
+      "source_blob_sha256": "a7638eae8c614a99eb4ecf63e27757880566dd2881bf6d187ea055049ffa84f2"
+    },
+    {
+      "path": "LightGenV2/tasks/t13_temporal_robust_training/tests/test_finetune.py",
+      "source_blob_sha256": "542624aedce05d00e12ed87027e8a350269aabefb44d2d227c595512c00f1a6d"
+    },
+    {
+      "path": "LightGenV2/tasks/t13_temporal_robust_training/tests/test_runtime.py",
+      "source_blob_sha256": "3593e40b97b900d73f4a58dc551e7f3d66d1963fe382d9e8600547ae1076e8d0",
+      "hash_normalization": "crlf_to_lf"
+    },
+    {
+      "path": "LightGenV2/tasks/t13_temporal_robust_training/tests/test_study.py",
+      "source_blob_sha256": "1180e8ad17c6b5d99369818c1cfe2dd7f0a882e3b052a517d9e4faacf356f7ee",
+      "hash_normalization": "crlf_to_lf"
+    },
+    {
+      "path": "LightGenV2/tasks/t13_temporal_robust_training/tools/plot_results.py",
+      "source_blob_sha256": "bc3e4d3ce4b8c8b8e753aa002515b7d448c142a4416b069762a3662a47cbf1b8",
+      "hash_normalization": "crlf_to_lf"
+    },
+    {
+      "path": "LightGenV2/tasks/t13_temporal_robust_training/train_four.py",
+      "source_blob_sha256": "ea6c2ecb6b34c1f6105ffe80824c1c9811bf3202e2e50997c3db788a27479087"
+    },
+    {
+      "path": "LightGenV2/tasks/t13_temporal_robust_training/verify_reference.py",
+      "source_blob_sha256": "0d1acd8fc2d5f88b27f1d03f004646df4a63c3b38bc04f9539fc87c07f791df6",
+      "hash_normalization": "crlf_to_lf"
+    },
+    {
+      "path": "LightGenV2/tasks/t13_temporal_robust_training/verify_source.py",
+      "source_blob_sha256": "d0cf2bad27fb1647ab031868a19e8ce2a28ce6bb4c79cd128e0cfae34c7f6299",
+      "hash_normalization": "crlf_to_lf"
+    }
+  ],
+  "amended_documents": [
+    "README.md",
+    "COMMAND.md",
+    "reports/reproduction/README.md",
+    "reports/FULL2250_TESTBEST_RESULTS.md",
+    ".gitignore"
+  ],
+  "excluded_preserved": {
+    "public_simulation": "27 independent export sources remain in pinned Git archive; not claimed as validated training runtime",
+    "private_connection_helper": "tools/server_sync.py retained locally and in archived history, excluded from canonical source",
+    "server_overlay": "baseline_holdout_recovery.py untracked, preserved pending review"
+  },
+  "tests": {
+    "cpu_contract_tests": 33,
+    "full_dataset_reevaluation": false,
+    "hardware_capture": false
+  }
+}
