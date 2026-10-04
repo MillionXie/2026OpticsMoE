@@ -1,0 +1,14 @@
+{
+  "expected_main": "7b186ee0b45207a789f358d0d2f531b6c82ce7c4",
+  "source_commit": "807038b02b8b5b6db6be98afbe8c509a0fc0707e",
+  "task_prefix": "LightGenV2/tasks/t07_abo_image_retrieval/",
+  "paths": [
+    {
+      "path": "LightGenV2/tasks/t07_abo_image_retrieval/README.md",
+      "source_path": "LightGenV2/tasks/t07_abo_image_retrieval/reports/reproduction/MAIN_ENTRY_DRAFT_20261004.md",
+      "source_sha256": "08f51025407fe75f46c1ab2fee57d1f008291662a53a9335061e431c263ee122",
+      "expected_target_sha256": "4a3bb81415d2cdac9e50d0a2f256d10e84ba11b1f3067aea9101aa54100e39b3",
+      "review_reason": "User approved concise final main entry; exact original working history preserved; sealed PT passed CPU strict load"
+    }
+  ]
+}
