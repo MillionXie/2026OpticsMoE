@@ -1,0 +1,65 @@
+{
+  "scope": "Recoverable exact Windows controller dependencies; not a new deployment or main hardware entry",
+  "archive_ref": "refs/archive/windows-source-20261004/abo-controller",
+  "archive_commit": "79c86be24383900bfcdf266cd7f13411e1d9d12c",
+  "required_parent": "8b7e69b823ea377ff999814629d08dc4b06643c1",
+  "source_paths": [
+    {
+      "path": "ABO_Lab_SHS_8um/sdk.py",
+      "original_path": "E:/code/guest/2026OpticsMoE/ABO_Lab_SHS_8um/sdk.py",
+      "bytes": 15078,
+      "sha256": "b3560d9bd0f721a0a10e160fc9728f7225b137fb7feb8d851dd60458352ee895"
+    },
+    {
+      "path": "ABO_Lab_SHS_8um/capture.py",
+      "original_path": "E:/code/guest/2026OpticsMoE/ABO_Lab_SHS_8um/capture.py",
+      "bytes": 6713,
+      "sha256": "443b50297c780ea568b48826ae146edf93fd3a8e1b59205711f6539f1825be8c"
+    },
+    {
+      "path": "ABO_Lab_SHS_8um/slm_camera.py",
+      "original_path": "E:/code/guest/2026OpticsMoE/ABO_Lab_SHS_8um/slm_camera.py",
+      "bytes": 4798,
+      "sha256": "98f7a9e048cf1ac3676de024fcde3abe0b5feff90f07deed8797884461b71ef7"
+    },
+    {
+      "path": "ABO_Lab_SHS_8um/phase_hdmi.py",
+      "original_path": "E:/code/guest/2026OpticsMoE/ABO_Lab_SHS_8um/phase_hdmi.py",
+      "bytes": 7100,
+      "sha256": "5083355db962eeed6514027ebde07621cade3a19da254761c59cfa6fec647fe4"
+    }
+  ],
+  "cpu_audit": {
+    "exact_source_sha_verified": {
+      "sdk.py": "b3560d9bd0f721a0a10e160fc9728f7225b137fb7feb8d851dd60458352ee895",
+      "capture.py": "443b50297c780ea568b48826ae146edf93fd3a8e1b59205711f6539f1825be8c",
+      "slm_camera.py": "98f7a9e048cf1ac3676de024fcde3abe0b5feff90f07deed8797884461b71ef7",
+      "phase_hdmi.py": "5083355db962eeed6514027ebde07621cade3a19da254761c59cfa6fec647fe4"
+    },
+    "cpu_imports": 4,
+    "checks": [
+      "Mono8 padded/offset copy",
+      "unpacked Mono10",
+      "short/packed/out-of-range rejection",
+      "fresh drains buffer_count+2 then returns one",
+      "camera restoration ordering/readback",
+      "hidden phase launch rejected",
+      "invalid phase pixel format rejected"
+    ],
+    "sdk_or_device_opened": false,
+    "files_on_windows_modified": false,
+    "hardware_deployment_complete": false
+  },
+  "bundle_bytes": 12857,
+  "bundle_sha256": "6902fec8aa505e4c91d5196abe9cb05800e4548fe559603d2a1150bf159540aa",
+  "git_archive_verified_on_local_and_training_server": true,
+  "source_files_overwritten": false,
+  "main_hardware_runtime_migrated": false,
+  "remaining_dependencies": [
+    "vendor amplitude driver and optional device implementations",
+    "DVP adapter used by historical imports",
+    "machine-local SDK binaries, LUT and calibration/config identity",
+    "portable explicit-path hardware entry and tests before adoption"
+  ],
+  "scientific_model_or_report_modified": false
+}
