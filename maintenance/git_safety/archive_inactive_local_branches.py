@@ -30,8 +30,17 @@ def digest(path: Path) -> str:
     return value.hexdigest()
 
 
+def metadata_path(root: Path, name: str) -> Path:
+    # --path-format is unavailable on Git 2.25 and can be echoed as plain text.
+    value = git(root, 'rev-parse', '--git-path', name).decode().strip()
+    if not value or '\n' in value or '\r' in value:
+        raise RuntimeError('Ambiguous Git metadata path')
+    path = Path(value)
+    return path if path.is_absolute() else root / path
+
+
 def state(root: Path) -> dict:
-    index = Path(git(root, "rev-parse", "--path-format=absolute", "--git-path", "index").decode().strip())
+    index = metadata_path(root, 'index')
     return {
         "head": git(root, "rev-parse", "HEAD").decode().strip(),
         "main": git(root, "rev-parse", "refs/heads/main").decode().strip(),
@@ -68,14 +77,15 @@ def apply(root: Path, receipt: dict, destination: Path) -> dict:
     if not receipt["branches"]:
         raise RuntimeError("No inactive local branches")
     destination.mkdir(parents=True, exist_ok=False)
-    config = Path(git(root, "rev-parse", "--path-format=absolute", "--git-path", "config").decode().strip())
+    config = metadata_path(root, 'config')
     if config.is_file():
         (destination / "original_git_config.private").write_bytes(config.read_bytes())
-    creations = ["start"]
+    # A single --stdin batch is atomic, including on older server Git versions.
+    # Explicit start/prepare/commit commands require newer Git and are not needed.
+    creations = []
     for row in receipt["branches"]:
         creations.extend((f"verify {row['original_ref']} {row['head']}",
                           f"create {row['archive_ref']} {row['head']}"))
-    creations.extend(("prepare", "commit"))
     git(root, "update-ref", "--stdin", data=("\n".join(creations) + "\n").encode())
     bundle = destination / "inactive_local_branches.bundle"
     # The published main commit is a recorded prerequisite, retained separately.
@@ -89,11 +99,10 @@ def apply(root: Path, receipt: dict, destination: Path) -> dict:
             raise RuntimeError("Bundle ref mismatch; branch names have NOT been removed")
     if state(root) != receipt["before"]:
         raise RuntimeError("Concurrent state change; branch names have NOT been removed")
-    deletions = ["start", f"verify refs/heads/main {receipt['before']['main']}"]
+    deletions = [f"verify refs/heads/main {receipt['before']['main']}"]
     for row in receipt["branches"]:
         deletions.extend((f"verify {row['archive_ref']} {row['head']}",
                           f"delete {row['original_ref']} {row['head']}"))
-    deletions.extend(("prepare", "commit"))
     git(root, "update-ref", "--stdin", data=("\n".join(deletions) + "\n").encode())
     after = state(root)
     if after != receipt["before"]:

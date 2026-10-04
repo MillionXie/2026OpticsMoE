@@ -29,7 +29,12 @@ def snapshot(root, manifest, *, include_documentation=False, include_untracked_s
     exists = subprocess.run(['git', '-C', str(root), 'show-ref', '--verify', '--quiet', ref])
     if exists.returncode != 1:
         raise RuntimeError('Archive ref exists or lookup failed')
-    index = Path(git('rev-parse', '--path-format=absolute', '--git-path', 'index').decode().strip())
+    index_value = git('rev-parse', '--git-path', 'index').decode().strip()
+    if not index_value or '\n' in index_value or '\r' in index_value:
+        raise RuntimeError('Ambiguous Git index path')
+    index = Path(index_value)
+    if not index.is_absolute():
+        index = root / index
     original_index = index.read_bytes() if index.exists() else None
     status = git('status', '--porcelain', '-z', '-uno')
     blobs, seen = [], set()

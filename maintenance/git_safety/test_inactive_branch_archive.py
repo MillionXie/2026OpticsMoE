@@ -3,7 +3,7 @@ from pathlib import Path
 
 import pytest
 
-from maintenance.git_safety.archive_inactive_local_branches import apply, git, plan, state
+from maintenance.git_safety.archive_inactive_local_branches import apply, digest, git, metadata_path, plan, state
 
 
 def repository(tmp_path: Path) -> Path:
@@ -31,6 +31,13 @@ def test_plan_is_read_only_and_protects_main(tmp_path):
     assert state(root) == before
 
 
+def test_metadata_path_resolves_legacy_relative_index(tmp_path):
+    root = repository(tmp_path)
+    index = metadata_path(root, 'index')
+    assert index == root/'.git/index'
+    assert state(root)['index_sha256'] == digest(index)
+
+
 def test_archive_preserves_unique_commit_bundle_and_user_edit(tmp_path):
     root = repository(tmp_path)
     (root / "source.py").write_text("user's unsaved edit\n")
@@ -54,6 +61,32 @@ def test_concurrent_working_edit_aborts_before_archival(tmp_path):
         apply(root, receipt, tmp_path / "must_not_exist")
     assert not (tmp_path / "must_not_exist").exists()
     assert git(root, "rev-parse", "refs/heads/old-trial")
+
+
+def test_plain_stdin_batch_does_not_partially_create_on_conflict(tmp_path):
+    root = repository(tmp_path)
+    head = git(root, 'rev-parse', 'HEAD').decode().strip()
+    git(root, 'update-ref', 'refs/archive/already-exists', head)
+    batch = (f'create refs/archive/new-one {head}\n'
+             f'create refs/archive/already-exists {head}\n').encode()
+    with pytest.raises(RuntimeError):
+        git(root, 'update-ref', '--stdin', data=batch)
+    refs = git(root, 'for-each-ref', '--format=%(refname)', 'refs/archive').decode().splitlines()
+    assert refs == ['refs/archive/already-exists']
+
+
+def test_plain_stdin_conditional_delete_is_atomic_on_changed_identity(tmp_path):
+    root = repository(tmp_path)
+    main = git(root, 'rev-parse', 'main').decode().strip()
+    trial = git(root, 'rev-parse', 'old-trial').decode().strip()
+    git(root, 'update-ref', 'refs/archive/first', main)
+    git(root, 'update-ref', 'refs/archive/second', trial)
+    batch = (f'delete refs/archive/first {main}\n'
+             f'delete refs/archive/second {main}\n').encode()
+    with pytest.raises(RuntimeError):
+        git(root, 'update-ref', '--stdin', data=batch)
+    assert git(root, 'rev-parse', 'refs/archive/first').decode().strip() == main
+    assert git(root, 'rev-parse', 'refs/archive/second').decode().strip() == trial
 
 
 def test_ignore_rules_hide_payload_not_source_or_tracked_evidence(tmp_path):
