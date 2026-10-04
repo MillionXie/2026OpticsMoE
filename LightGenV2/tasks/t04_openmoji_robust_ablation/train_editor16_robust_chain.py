@@ -44,8 +44,35 @@ def randomized_ccd(intensity, scale):
     return (gain*intensity+offset+read+shot).clamp_min(0)
 
 
+def observed_response_ccd(intensity, scale, stats):
+    """TRAIN-observed bounds, not calibrated temporal read/shot noise or PSF.
+
+    Preserve simulation units on output; model finite ADC in normalized camera
+    codes. Partial lowpass response is a domain proxy, never an inference layer.
+    """
+    if scale==0:
+        return intensity
+    import torch.nn.functional as F
+    shape=intensity.shape; x=intensity.reshape(-1,1,*shape[-2:])
+    ref=x.mean((-2,-1),keepdim=True).detach().clamp_min(1e-8)
+    kernel=15
+    assert min(shape[-2:])>kernel
+    filtered=F.avg_pool2d(F.pad(x,(kernel//2,)*4,mode='reflect'),kernel,stride=1)
+    mix=x.new_empty((len(x),1,1,1)).uniform_(0.,min(.5*scale,1.))
+    signal=(1-mix)*x+mix*filtered
+    mean=stats['mean']; background=stats['p01']
+    gain=x.new_empty((len(x),1,1,1)).uniform_(max(0.,1-.1*scale),1+.1*scale)
+    code=gain*signal/ref*mean
+    code=code+x.new_empty((len(x),1,1,1)).uniform_(0.,background*scale)
+    # Read/shot strengths remain explicit hypotheses, not fitted spatial residuals.
+    code=code+.01*scale*mean*torch.randn_like(code)+.01*scale*(code.detach().clamp_min(0)*mean).sqrt()*torch.randn_like(code)
+    clipped=code.clamp(0,1)
+    quantized=clipped+(torch.round(clipped*255)/255-clipped).detach()
+    return (quantized/mean*ref).reshape(shape)
+
+
 def install_training_profile(model,group,*,noise_scale=NOISE_SCALE,
-                             noise_model='legacy',grid_probability=1.):
+                             noise_model='legacy',grid_probability=1.,sensor_stats=None):
     """Clean eval uses exactly r0 bounded propagation, including G5.
 
     Historical grid wrapper was always active; here grid is TRAIN-only, as the
@@ -56,7 +83,7 @@ def install_training_profile(model,group,*,noise_scale=NOISE_SCALE,
     """
     assert group in GROUPS
     profile=PROFILES[group]
-    for path in model._optical_paths():
+    for modality,path in zip(('language','vision'),model._optical_paths()):
         path.gain_min=path.gain_max=1.
         path.offset_fraction=.03*noise_scale
         path.read_noise_fraction=.01*noise_scale
@@ -69,8 +96,14 @@ def install_training_profile(model,group,*,noise_scale=NOISE_SCALE,
             def perturb(intensity):
                 return randomized_ccd(intensity,noise_scale) if model.training else intensity
             path._perturb_ccd=perturb
+        elif noise_model=='observed_response':
+            assert sensor_stats is not None
+            def perturb(intensity,path=path,modality=modality):
+                return observed_response_ccd(intensity,noise_scale,sensor_stats[modality+'_'+path._sensor_stage]) if model.training else intensity
+            path._perturb_ccd=perturb
         original=path._simulate_detector_roi
-        def detector(field,modulation,shifts,*,phase_support=None,original=original):
+        def detector(field,modulation,shifts,*,phase_support=None,original=original,path=path):
+            path._sensor_stage=phase_support
             field=bounded(field)
             if model.training and profile['grid'] and torch.rand(())<grid_probability:
                 field=grid_roundtrip(field,1101 if field.shape[-1]==518 else 1016)
@@ -79,7 +112,7 @@ def install_training_profile(model,group,*,noise_scale=NOISE_SCALE,
         router=path.core.router
         router.input_shift_pixels=router.phase_shift_pixels=router.ccd_shift_pixels=0
         original_router=router._simulate
-        def route(fields,original=original_router):
+        def route(fields,original=original_router,modality=modality):
             fields=bounded(fields)
             if model.training and profile['grid'] and torch.rand(())<grid_probability:
                 fields=grid_roundtrip(fields,1016)
@@ -87,6 +120,8 @@ def install_training_profile(model,group,*,noise_scale=NOISE_SCALE,
             if model.training:
                 if noise_model=='randomized':
                     intensity=randomized_ccd(intensity,noise_scale)
+                elif noise_model=='observed_response':
+                    intensity=observed_response_ccd(intensity,noise_scale,sensor_stats[modality+'_router'])
                 else:
                     ref=intensity.mean((-2,-1),keepdim=True).detach()
                     intensity=(intensity+.03*noise_scale*ref+
@@ -122,7 +157,8 @@ def main():
     parser.add_argument('--source-commit',required=True)
     parser.add_argument('--epochs',type=int,default=120)
     parser.add_argument('--noise-scale',type=float,default=NOISE_SCALE)
-    parser.add_argument('--noise-model',choices=('legacy','randomized'),default='legacy')
+    parser.add_argument('--noise-model',choices=('legacy','randomized','observed_response'),default='legacy')
+    parser.add_argument('--sensor-audit',type=Path)
     parser.add_argument('--grid-probability',type=float,default=1.)
     parser.add_argument('--paired-clean-weight',type=float,default=0.)
     parser.add_argument('--consistency-weight',type=float,default=0.)
@@ -131,6 +167,13 @@ def main():
     assert args.noise_scale>=0 and 0<=args.grid_probability<=1
     assert 0<=args.paired_clean_weight<=1 and args.consistency_weight>=0
     assert not args.consistency_weight or args.paired_clean_weight>0
+    sensor_stats=None
+    if args.noise_model=='observed_response':
+        assert args.sensor_audit is not None and args.paired_clean_weight>0
+        audit=json.loads(args.sensor_audit.read_text(encoding='utf-8'))
+        assert audit['scope']=='train' and audit['status']=='complete' and audit['no_model_updates']
+        sensor_stats={name:row['median'] for name,row in audit['layers'].items()}
+        assert len(sensor_stats)==6 and all(0<r['mean']<1 and 0<=r['p01']<1 for r in sensor_stats.values())
     assert sha(args.source)==SOURCE_SHA
     root=Path(__file__).resolve().parents[3]
     relative=Path(__file__).relative_to(root).as_posix()
@@ -161,7 +204,7 @@ def main():
         for n,p in model.named_parameters():
             if n in gates: p.requires_grad_(False)
         install_training_profile(model,args.group,noise_scale=args.noise_scale,
-                                 noise_model=args.noise_model,grid_probability=args.grid_probability)
+                                 noise_model=args.noise_model,grid_probability=args.grid_probability,sensor_stats=sensor_stats)
         train,test=t.build_loaders(cfg)
         assert len(train.dataset)==5000 and len(test.dataset)==1000
         epochs=1 if args.smoke else args.epochs
@@ -177,6 +220,9 @@ def main():
             train_count=5000,test_count=1000,seed=73,selection='complete clean TEST every5 highest development',
             test_gradient=False,validation_selection=False,profile=PROFILES[args.group],
             noise_scale=args.noise_scale,noise_model=args.noise_model,
+            sensor_audit_sha256=sha(args.sensor_audit) if args.sensor_audit else None,
+            sensor_stats=sensor_stats,spatial_response_kernel=15 if sensor_stats else None,
+            spatial_response_max_mix=.5 if sensor_stats else None,adc_bits=8 if sensor_stats else None,
             noise_offset_fraction=.03*args.noise_scale,noise_read_fraction=.01*args.noise_scale,
             noise_shot_fraction=.01*args.noise_scale if args.noise_model=='randomized' else 0.,
             grid_probability=args.grid_probability,

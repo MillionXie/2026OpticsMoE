@@ -7,6 +7,21 @@ import torch
 
 
 class PairingTest(unittest.TestCase):
+    def test_observed_response_finite_and_identity(self):
+        source=Path(__file__).with_name('train_editor16_robust_chain.py')
+        tree=ast.parse(source.read_text(encoding='utf-8'))
+        fn=next(n for n in tree.body if isinstance(n,ast.FunctionDef) and n.name=='observed_response_ccd')
+        scope={'torch':torch}
+        exec(compile(ast.Module(body=[fn],type_ignores=[]),str(source),'exec'),scope)
+        stats={'mean':.2,'p01':.04}
+        for value in (0.,.5):
+            x=torch.full((2,32,32),value,requires_grad=True)
+            self.assertIs(scope['observed_response_ccd'](x,0,stats),x)
+            y=scope['observed_response_ccd'](x,1,stats)
+            self.assertTrue(torch.isfinite(y).all())
+            y.sum().backward()
+            self.assertTrue(torch.isfinite(x.grad).all())
+
     def test_finite_and_teacher_detached(self):
         source=Path(__file__).with_name('train_editor16_robust_chain.py')
         tree=ast.parse(source.read_text(encoding='utf-8'))
