@@ -1,0 +1,23 @@
+{
+  "seed": 17,
+  "train_per_class": 160,
+  "val_per_class": 30,
+  "batch": 8,
+  "batch_by_stage": [8, 8, 12, 16],
+  "eval_batch": 8,
+  "source_epochs": 25,
+  "warmup_epochs": 3,
+  "stage_epochs": 25,
+  "adapt_epochs": 40,
+  "head_batch": 128,
+  "optical_lr": 0.003,
+  "head_lr": 0.001,
+  "adapt_head_lr": 0.001,
+  "head_weight_decay": 0.001,
+  "phase_dropout": 0.05,
+  "num_classes": 9,
+  "input_encoding": "RGB -> 112x112 per channel -> [R,G;B,0] 224x224 amplitude -> unit optical power",
+  "oeo": "after each of two phase/propagation layers: intensity -> mean normalization -> spatial LayerNorm -> LeakyReLU(0.1) -> Softsign -> unit-power coherent reload",
+  "readout": "full active CCD -> adaptive average pool 16x16 -> log1p mean normalization -> LayerNorm(256)-Linear(256,64)-GELU-Linear(64,9)",
+  "selection": "validation only; test is evaluated once after checkpoint selection"
+}

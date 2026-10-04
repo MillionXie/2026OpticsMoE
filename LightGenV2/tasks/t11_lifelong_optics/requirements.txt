@@ -1,0 +1,4 @@
+numpy
+pillow
+datasets>=2.18
+torch>=2.1

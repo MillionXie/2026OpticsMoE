@@ -1,0 +1,19 @@
+{
+  "seed": 17,
+  "expert_size": 224,
+  "gap": 30,
+  "border": 20,
+  "wavelength_m": 5.32e-07,
+  "pixel_size_m": 1.7e-05,
+  "distance_m": 0.1,
+  "router_detector_size": 60,
+  "detector_size": 32,
+  "batch_size": 20,
+  "replay_capacity": 256,
+  "replay_fraction": 0.2,
+  "epochs_A": 20,
+  "epochs_warmup": 3,
+  "epochs_B": 20,
+  "lr_expert": 0.01,
+  "lr_shared": 0.002
+}
