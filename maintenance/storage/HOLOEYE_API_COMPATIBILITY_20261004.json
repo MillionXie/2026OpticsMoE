@@ -1,0 +1,77 @@
+{
+  "source_commit": "0e2287afc176b99e9c2acfb933c7030e2cd65837",
+  "source_path": "experiments/hardware_sdk/devices.py",
+  "runtime_source_path": "E:/code/guest/2026OpticsMoE/ABO_Lab_SHS_8um/vendor_driver.py",
+  "runtime_sha256": "ba858591d2d71ad5e6fdea34427a503093ae60d742b54951503671f648bb3df7",
+  "hash_normalization": "crlf_to_lf",
+  "scope": "Only configurable Holoeye API contract, default5 unchanged; actual current machine configuration uses5. Not an ABO acquisition rerun or hardware migration completion.",
+  "cpu_tests": {
+    "fake_sdk_contract_checks": 5,
+    "existing_hardware_sdk_tests_passed": 45,
+    "devices_opened": false
+  },
+  "source_changes": {
+    "constructor": "explicit sdk_api_version with default5",
+    "open": "requiresVersion uses explicit configured version",
+    "metadata": "records configured version",
+    "factory": "passes explicit config with default5"
+  },
+  "machine_config_identities": [
+    {
+      "path": "E:/code/guest/2026OpticsMoE/ABO_Lab_SHS_8um/LAB.local.json",
+      "bytes": 1242,
+      "sha256": "4d0cdb3f29d619c56be07ea6224c025785edf2b03342d4cd237efc34a2a9049a",
+      "safe_fields": {
+        "amplitude_slm": {
+          "driver": "holoeye",
+          "sdk_path": "vendor/holoeye_python",
+          "binary_folder": "C:/Program Files/HOLOEYE SLM SDK SlideshowPlayer 2.0",
+          "sdk_api_version": 5,
+          "expected_resolution_wh": [
+            1920,
+            1080
+          ]
+        },
+        "camera": {
+          "sdk_root": "E:/\u9ad8\u901f\u76f8\u673a/Magewell FlexIO",
+          "expected_model": "SHS-202-M",
+          "expected_pixel_format": "Mono8",
+          "gain": null,
+          "exposure_us": 150.0,
+          "frame_rate_hz": 100,
+          "buffer_count": 4
+        }
+      }
+    },
+    {
+      "path": "E:/code/guest/2026OpticsMoE/LGVQ_Spatial_Lab_SHS_8um/LAB.local.json",
+      "bytes": 3198,
+      "sha256": "29bb02363adfd689b7d17e0b8e8b44997ab0cd187c2599eac9259c2f12fa78e4",
+      "safe_fields": {
+        "amplitude_slm": {
+          "driver": "holoeye",
+          "sdk_path": "vendor/holoeye_python",
+          "binary_folder": "C:/Program Files/HOLOEYE SLM SDK SlideshowPlayer 2.0",
+          "sdk_api_version": 5,
+          "expected_resolution_wh": [
+            1920,
+            1080
+          ]
+        },
+        "camera": {
+          "sdk_root": "E:/\u9ad8\u901f\u76f8\u673a/Magewell FlexIO",
+          "expected_model": "SHS-202-M",
+          "expected_pixel_format": "Mono8",
+          "gain": "Gain_X4",
+          "exposure_us": 400.0,
+          "frame_rate_hz": 100,
+          "buffer_count": 4
+        }
+      }
+    }
+  ],
+  "config_scope": "Machine base config identity only; sealed SHSBench runtime override remains400us Gain_X4 wait240; base ABO150us must not be treated as acquisition exposure.",
+  "windows_runtime_overwritten": false,
+  "scientific_contract_changed": false,
+  "hardware_deployment_complete": false
+}
