@@ -1,0 +1,117 @@
+{
+  "archives": [
+    {
+      "source_head": "3f85510285e5ffdfca28def93eef2eb082b1655c",
+      "archive_commit": "fb6ca4c20cf0fe4927f6cb735b8a97612a55602b",
+      "archive_ref": "refs/archive/runtime-preservation-20261004/sister_bounded_20260927",
+      "files": [
+        {
+          "entry_kind": "untracked",
+          "sha256": "6fdc2cf69eef5fc326a3c16875b3b3a3c41600abc9649ebf77fe67db11e1f620",
+          "path": "LightGenV2/tasks/t04_semantic_interaction/bounded_recover.py"
+        }
+      ],
+      "working_head_unchanged": true,
+      "user_index_unchanged": true,
+      "source_files_changed": false,
+      "development_branch_created": false,
+      "runtime_verified": false
+    },
+    {
+      "source_head": "73e2febdc94e4cb280c6ada1e0e7881826f3c7f2",
+      "archive_commit": "ac6c762181313969054cb49d01af5d382d617ff7",
+      "archive_ref": "refs/archive/runtime-preservation-20261004/sister_t08_bounded_20260927",
+      "files": [
+        {
+          "entry_kind": "untracked",
+          "sha256": "5fcbd883a0d1f44c90df649a778b9bbf5523007636220b68c41c2afc71d99888",
+          "path": "LightGenV2/tasks/t08_abo_image_text_retrieval/bounded_recover.py"
+        },
+        {
+          "entry_kind": "tracked",
+          "sha256": "ebf026e5aa2eaf6dc32ef7b5c5f18c5ac2eaea8515fe2d5a3431427d67e97869",
+          "path": "LightGenV2/tasks/t08_abo_image_text_retrieval/optical_moe.py"
+        },
+        {
+          "entry_kind": "untracked",
+          "sha256": "e34c9012c52f1c843a4e40afb709d81a8636d288dc09597c140cc7ec4936b8da",
+          "path": "LightGenV2/tasks/t08_abo_image_text_retrieval/sister_fixed10cm.yaml"
+        },
+        {
+          "entry_kind": "untracked",
+          "sha256": "ed7d79b85a103b4fcbe8a178c8fbf4cf5c33f286afd536d7890fd1cb15adb0b4",
+          "path": "LightGenV2/tasks/t08_abo_image_text_retrieval/sister_source_config.yaml"
+        },
+        {
+          "entry_kind": "untracked",
+          "sha256": "640fa432d3e553ca8a654ab7a5b9fccaedfcf5efbabe127811cb06f965c29e5f",
+          "path": "LightGenV2/tasks/t08_abo_image_text_retrieval/sister_teacher10cm.yaml"
+        }
+      ],
+      "working_head_unchanged": true,
+      "user_index_unchanged": true,
+      "source_files_changed": false,
+      "development_branch_created": false,
+      "runtime_verified": false
+    },
+    {
+      "source_head": "73e2febdc94e4cb280c6ada1e0e7881826f3c7f2",
+      "archive_commit": "6b8e5fc3a85978444f0eb25818fa53f3c4c76708",
+      "archive_ref": "refs/archive/runtime-preservation-20261004/t08_text_to_image_10cm_compact_20260923",
+      "files": [
+        {
+          "entry_kind": "untracked",
+          "sha256": "c415dc647cceae9064c08e78d86280ebd91aa55a66908ac5e85fc42b3f96caa7",
+          "path": "LightGenV2/tasks/t08_abo_image_text_retrieval/configs/optical_text_to_image_64_10cm_compact_e0p4_alpha030.yaml"
+        },
+        {
+          "entry_kind": "untracked",
+          "sha256": "0e5d8dd1f18000ea4bf04d0ebb23bd585e59ee585c1d9eafe86651a3ff1cb6e2",
+          "path": "LightGenV2/tasks/t08_abo_image_text_retrieval/configs/optical_text_to_image_64_10cm_compact_e0p5_alpha030_refine.yaml"
+        },
+        {
+          "entry_kind": "untracked",
+          "sha256": "5bb6b9ed65fd0013a57024186f75f471068e21a68295a2c43b81847e6ab31c6c",
+          "path": "LightGenV2/tasks/t08_abo_image_text_retrieval/configs/optical_text_to_image_64_10cm_compact_e0p5_rephase.yaml"
+        },
+        {
+          "entry_kind": "untracked",
+          "sha256": "9ab637fe9143341a50b2a0d14988f4b1875593f8e6a550929673042f94936d8e",
+          "path": "LightGenV2/tasks/t08_abo_image_text_retrieval/configs/optical_text_to_image_64_10cm_compact_e0p5_target088.yaml"
+        },
+        {
+          "entry_kind": "tracked",
+          "sha256": "bfab266d8af86fb47de32ee8c78e6daadab076fc98be879c9be28d54b4791032",
+          "path": "LightGenV2/tasks/t08_abo_image_text_retrieval/optical_moe.py"
+        }
+      ],
+      "working_head_unchanged": true,
+      "user_index_unchanged": true,
+      "source_files_changed": false,
+      "development_branch_created": false,
+      "runtime_verified": false
+    }
+  ],
+  "bundle_path": "/DATA/DATA1/guest3/storage_cleanup_manifests/runtime_preservation_20261004.bundle",
+  "bundle_bytes": 16893,
+  "bundle_sha256": "8b5fd78cf5f1ace93576a8875160eb7aaa8095046319ed40549c7d86173166a9",
+  "archive_requires_original_parent_history": [
+    "3f85510285e5ffdfca28def93eef2eb082b1655c",
+    "73e2febdc94e4cb280c6ada1e0e7881826f3c7f2"
+  ],
+  "source_files_deleted": false,
+  "runtime_changed": false,
+  "schema_version": 1,
+  "purpose": "Recovery identities for independent runtime changes; not final model publication or directory removal clearance",
+  "recovery_tool_main_commit": "4337aeaefb41df10f729f2ec9337d1278a3b9d14",
+  "local_bundle_verified": true,
+  "local_archive_file_identities_checked": 11,
+  "recovery_tool_tests_passed": 18,
+  "worktree_inventory": {
+    "registered_server_worktrees": 83,
+    "no_extra_files_observed": 8,
+    "removal_clearance_complete": false
+  },
+  "original_runtime_directories_retained": true,
+  "experiment_assets_in_bundle": false
+}
