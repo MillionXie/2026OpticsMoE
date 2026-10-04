@@ -1,0 +1,63 @@
+{
+  "source_commit": "d979b53ed509907a3630bd2a36c317dfb3aac965",
+  "runtime_root": "/DATA/DATA1/guest3/2026OpticsMoE/.worktrees/t07_latestfresh35_20260929",
+  "scope": "Sealed rank72 model and CLI relative dependency closure; not adoption of historical metrics",
+  "actual_runtime_sha_checked_core_modules": 15,
+  "paths": [
+    {
+      "path": "LightGenV2/tasks/t07_abo_image_retrieval/standalone/__init__.py",
+      "bytes": 86,
+      "sha256": "53db7bdf4277ec72c9af012c50dcded4a7d116f62425f073d3b6a9538a92da63"
+    },
+    {
+      "path": "LightGenV2/tasks/t07_abo_image_retrieval/standalone/__main__.py",
+      "bytes": 61,
+      "sha256": "f38fd2f2c920c29c828645e87ed64743d567aaaef7fba7a15d2c7d7f8094f91f"
+    },
+    {
+      "path": "LightGenV2/tasks/t07_abo_image_retrieval/standalone/bounded_export.py",
+      "bytes": 2108,
+      "sha256": "a98b1922fd13e80323175379099f267ad85c981a2e6bbaec77de17984804608b"
+    },
+    {
+      "path": "LightGenV2/tasks/t07_abo_image_retrieval/standalone/cli.py",
+      "bytes": 15969,
+      "sha256": "6a44675bd14e606e6bcada29bdf07bd9fa933eb422dd0f259f3d664cae9c0c58"
+    },
+    {
+      "path": "LightGenV2/tasks/t07_abo_image_retrieval/standalone/curriculum.py",
+      "bytes": 8779,
+      "sha256": "f0f5a998c54f69115f86948d374e04b03ba613d8df2e26a551f967a596de46b5"
+    },
+    {
+      "path": "LightGenV2/tasks/t07_abo_image_retrieval/standalone/data.py",
+      "bytes": 10409,
+      "sha256": "985bb7efc3fba06a9ba22e566d0c196b67e3378ab091206050b59820f5d83b03"
+    },
+    {
+      "path": "LightGenV2/tasks/t07_abo_image_retrieval/standalone/frontend.py",
+      "bytes": 3334,
+      "sha256": "6759ee3d8893388590d5952f0819b64c88db5380f4b8c964174bbd6b08de53b1"
+    },
+    {
+      "path": "LightGenV2/tasks/t07_abo_image_retrieval/standalone/io.py",
+      "bytes": 3930,
+      "sha256": "67d1dd84182d772473f88321da9105fcc9d8cd58fcca6eca4eee9de7dfe31d01"
+    },
+    {
+      "path": "LightGenV2/tasks/t07_abo_image_retrieval/standalone/learning_curves.py",
+      "bytes": 6848,
+      "sha256": "80e49e8fc8000aaa78d47c1f93356f8e0db315c14425667d40a6c16c585154f4"
+    },
+    {
+      "path": "LightGenV2/tasks/t07_abo_image_retrieval/standalone/model.py",
+      "bytes": 15136,
+      "sha256": "bd89044e8e516d3935c0315680d47205285c62e7cc1302549f39c66b532a4bd3"
+    },
+    {
+      "path": "LightGenV2/tasks/t07_abo_image_retrieval/standalone/optics.py",
+      "bytes": 14971,
+      "sha256": "ff07716e09337520a5f338be6097522226bb8f9d42b1e39feb3e2c15eab3d67f"
+    }
+  ]
+}
