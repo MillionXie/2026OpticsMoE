@@ -1,0 +1,191 @@
+{
+  "source_commit": "ac7e3ecce0bef96ae7d91f8de6e478542913bd4e",
+  "runtime_root": "/DATA/DATA1/guest3/2026OpticsMoE/.worktrees/t12_physical_robust_v2_20260927",
+  "runtime_head": "7093ec46082eed2fae127ec5028d3e2e8548b592",
+  "purpose": "Historical 2026-09-23 baseline and seven-model timing report, not current T12 model. Missing-only exact-byte preservation.",
+  "paths": [
+    {
+      "path": "LightGenV2/reports/20260923_t12_three_task_large_small/README.md",
+      "bytes": 9082,
+      "sha256": "ab615c3e7fc6804eed542058492a020463fcf3548fbdf7dff5b19ba363aa0565"
+    }
+  ],
+  "assets": [
+    {
+      "path": "LightGenV2/reports/20260923_t12_three_task_large_small/large_background.jpg",
+      "bytes": 461209,
+      "sha256": "53c2a859ceb27d39290b77ca5ad8f1067b1b58d6ecb1c1611377404cf10f90bd",
+      "server_sha256": "53c2a859ceb27d39290b77ca5ad8f1067b1b58d6ecb1c1611377404cf10f90bd",
+      "identity": "server_equal"
+    },
+    {
+      "path": "LightGenV2/reports/20260923_t12_three_task_large_small/large_background_summary.json",
+      "bytes": 8427,
+      "sha256": "7d6896800afec2e687bce53547fb14ab1cb532a2b54e0c47ca12cb0f53c46e0f",
+      "server_sha256": "7d6896800afec2e687bce53547fb14ab1cb532a2b54e0c47ca12cb0f53c46e0f",
+      "identity": "server_equal"
+    },
+    {
+      "path": "LightGenV2/reports/20260923_t12_three_task_large_small/large_premium_material.jpg",
+      "bytes": 496154,
+      "sha256": "dec2038301e5923e89a48c5c7055dec9f88d4297cc6e7adfc9b386b3597a4332",
+      "server_sha256": "dec2038301e5923e89a48c5c7055dec9f88d4297cc6e7adfc9b386b3597a4332",
+      "identity": "server_equal"
+    },
+    {
+      "path": "LightGenV2/reports/20260923_t12_three_task_large_small/large_premium_summary.json",
+      "bytes": 3813,
+      "sha256": "e97d529fe11e3fc6ad38ea14159ea0d04b80dc5224757da47ec3b20490422a6c",
+      "server_sha256": "e97d529fe11e3fc6ad38ea14159ea0d04b80dc5224757da47ec3b20490422a6c",
+      "identity": "server_equal"
+    },
+    {
+      "path": "LightGenV2/reports/20260923_t12_three_task_large_small/large_redesign.jpg",
+      "bytes": 424862,
+      "sha256": "0cff3f6144e440b820c9b6f42b40976f1630a400539dfc1086b58d34f9ce0160",
+      "server_sha256": "0cff3f6144e440b820c9b6f42b40976f1630a400539dfc1086b58d34f9ce0160",
+      "identity": "server_equal"
+    },
+    {
+      "path": "LightGenV2/reports/20260923_t12_three_task_large_small/large_redesign_summary.json",
+      "bytes": 3777,
+      "sha256": "7488a939388ff183c4643bd044af23e9f7a8704f8de05dd5d6c19a30d287f3d2",
+      "server_sha256": "7488a939388ff183c4643bd044af23e9f7a8704f8de05dd5d6c19a30d287f3d2",
+      "identity": "server_equal"
+    },
+    {
+      "path": "LightGenV2/reports/20260923_t12_three_task_large_small/latency_a100_matched.json",
+      "bytes": 4956,
+      "sha256": "9bf2e9816778c9ec4694253a6e6240499edf522fdf09d07c4f36e3b9bb44248b",
+      "server_sha256": "9bf2e9816778c9ec4694253a6e6240499edf522fdf09d07c4f36e3b9bb44248b",
+      "identity": "server_equal"
+    },
+    {
+      "path": "LightGenV2/reports/20260923_t12_three_task_large_small/open_prompt_ivory_lamp.png",
+      "bytes": 8254,
+      "sha256": "bf475be2f173acc7707266babf9a8c0cf2b7ba68176fe7a806654b7bc7b40073",
+      "server_sha256": null,
+      "identity": "local_only_preserve"
+    },
+    {
+      "path": "LightGenV2/reports/20260923_t12_three_task_large_small/open_prompt_protocol_input.png",
+      "bytes": 19825,
+      "sha256": "b74930707ac0a4016a880ef28c1ae0a708749255301ed6642d453eeacb153bf1",
+      "server_sha256": null,
+      "identity": "local_only_preserve"
+    },
+    {
+      "path": "LightGenV2/reports/20260923_t12_three_task_large_small/premium8_small_epoch1.jpg",
+      "bytes": 213571,
+      "sha256": "4ecb5dfc2d999b92c9c621ed2a03cd56e838c55fdf52a75dc373527121248b4e",
+      "server_sha256": null,
+      "identity": "local_only_preserve"
+    },
+    {
+      "path": "LightGenV2/reports/20260923_t12_three_task_large_small/protocol_reference.png",
+      "bytes": 19842,
+      "sha256": "11b4378c9472a594683000c70f2ecd1df627f18f490439ab644da02fc7ec524b",
+      "server_sha256": null,
+      "identity": "local_only_preserve"
+    },
+    {
+      "path": "LightGenV2/reports/20260923_t12_three_task_large_small/qwenmini_background.jpg",
+      "bytes": 260495,
+      "sha256": "9d078f771eb9855b592d1e21c9368d24507897aab7e7ccbd745db9ca2fcca124",
+      "server_sha256": null,
+      "identity": "local_only_preserve"
+    },
+    {
+      "path": "LightGenV2/reports/20260923_t12_three_task_large_small/qwenmini_background_v2.jpg",
+      "bytes": 256331,
+      "sha256": "b1f95f144c1466b42a272aecee38403437cdc0bd7a1d01c3fc3727329702b4af",
+      "server_sha256": null,
+      "identity": "local_only_preserve"
+    },
+    {
+      "path": "LightGenV2/reports/20260923_t12_three_task_large_small/qwenmini_premium.jpg",
+      "bytes": 186290,
+      "sha256": "c69959aa0600bf7d281b650283f146ec9ba8dc53f0118185c3e6a252a0eca5d7",
+      "server_sha256": null,
+      "identity": "local_only_preserve"
+    },
+    {
+      "path": "LightGenV2/reports/20260923_t12_three_task_large_small/qwenmini_premium8_v2.jpg",
+      "bytes": 197525,
+      "sha256": "639dd268b012dfc401f934b3a941c85b4ceabaf2e302c2152bc639936e50beb9",
+      "server_sha256": null,
+      "identity": "local_only_preserve"
+    },
+    {
+      "path": "LightGenV2/reports/20260923_t12_three_task_large_small/qwenmini_redesign.jpg",
+      "bytes": 257500,
+      "sha256": "1ed34331d966c927448a5d6ad8b17dcfb891b881452bb27f30e3a3c872986456",
+      "server_sha256": null,
+      "identity": "local_only_preserve"
+    },
+    {
+      "path": "LightGenV2/reports/20260923_t12_three_task_large_small/qwenmini_redesign_v2.jpg",
+      "bytes": 257206,
+      "sha256": "77d08ed3641a99647b542da60b75be159d124911c2f166ad583c290c7e7ce262",
+      "server_sha256": null,
+      "identity": "local_only_preserve"
+    },
+    {
+      "path": "LightGenV2/reports/20260923_t12_three_task_large_small/small_background.jpg",
+      "bytes": 240836,
+      "sha256": "1cecbff9eff21800bf0f0e0a0ef8121d0255e1209422b3592071658cb4d6a032",
+      "server_sha256": "1cecbff9eff21800bf0f0e0a0ef8121d0255e1209422b3592071658cb4d6a032",
+      "identity": "server_equal"
+    },
+    {
+      "path": "LightGenV2/reports/20260923_t12_three_task_large_small/small_background_summary.json",
+      "bytes": 7629,
+      "sha256": "07734e7494a759b46b70d647ff230484c046abb8d2307e5cfc5ae1374fa4899a",
+      "server_sha256": "07734e7494a759b46b70d647ff230484c046abb8d2307e5cfc5ae1374fa4899a",
+      "identity": "server_equal"
+    },
+    {
+      "path": "LightGenV2/reports/20260923_t12_three_task_large_small/small_premium_material.jpg",
+      "bytes": 196326,
+      "sha256": "e0369a58028f8b793071d8de48c61d27e5dc93053cb9c1010905102c01716a93",
+      "server_sha256": "e0369a58028f8b793071d8de48c61d27e5dc93053cb9c1010905102c01716a93",
+      "identity": "server_equal"
+    },
+    {
+      "path": "LightGenV2/reports/20260923_t12_three_task_large_small/small_premium_summary.json",
+      "bytes": 7701,
+      "sha256": "aacbaca6ac3bf722c84f5c9cecd90a27ab57c0330d7dbf785ba2a1adb7b943fa",
+      "server_sha256": "aacbaca6ac3bf722c84f5c9cecd90a27ab57c0330d7dbf785ba2a1adb7b943fa",
+      "identity": "server_equal"
+    },
+    {
+      "path": "LightGenV2/reports/20260923_t12_three_task_large_small/small_redesign.jpg",
+      "bytes": 238172,
+      "sha256": "18a962cb3deb2675013ebf24459c581fa90119928da2e1d2f8436217189f1bef",
+      "server_sha256": "18a962cb3deb2675013ebf24459c581fa90119928da2e1d2f8436217189f1bef",
+      "identity": "server_equal"
+    },
+    {
+      "path": "LightGenV2/reports/20260923_t12_three_task_large_small/small_redesign_summary.json",
+      "bytes": 7649,
+      "sha256": "229816bc4ea2659b0707e5cb8b6677cca927fdcd77119c32a3b5fc9aff3e4146",
+      "server_sha256": "229816bc4ea2659b0707e5cb8b6677cca927fdcd77119c32a3b5fc9aff3e4146",
+      "identity": "server_equal"
+    },
+    {
+      "path": "LightGenV2/reports/20260923_t12_three_task_large_small/user_lamp_cool_study.png",
+      "bytes": 20767,
+      "sha256": "b7fe5b19446ae1571a2d33830a7557f2dbae3c01db3ffe6497c057b12d152e01",
+      "server_sha256": null,
+      "identity": "local_only_preserve"
+    },
+    {
+      "path": "LightGenV2/reports/20260923_t12_three_task_large_small/user_lamp_cool_study_seed2027.png",
+      "bytes": 20805,
+      "sha256": "55c7696ede8f4fcb16fb540f22681c76e7c73d6aa761b32c0df2a6606813b8e6",
+      "server_sha256": null,
+      "identity": "local_only_preserve"
+    }
+  ],
+  "asset_policy": "All original assets remain outside Git; equal and local-only assets preserved, no deletions, no experiment rerun."
+}
