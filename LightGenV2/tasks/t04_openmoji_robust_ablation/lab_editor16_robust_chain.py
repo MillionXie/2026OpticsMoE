@@ -18,6 +18,20 @@ from .train import sha
 
 GROUPS = ('r1_ccd', 'r2_ccd_dc30', 'r3_ccd_dc30_grid')
 PREFIX = 'editor16_robust_chain_20261003'
+LEGACY_PREFIX = PREFIX
+
+
+def selected_rows(manifest, groups, prefix):
+    """Require an explicit fresh namespace for any partial-group rerun."""
+    assert prefix.isascii() and prefix.replace('_', '').isalnum(), 'Unsafe run prefix'
+    assert tuple(groups) == tuple(g for g in GROUPS if g in groups), 'Duplicate or unordered groups'
+    assert groups, 'No groups selected'
+    if tuple(groups) != GROUPS:
+        assert prefix != LEGACY_PREFIX, 'Partial reruns must not use sealed run prefix'
+    rows = manifest['groups']
+    assert [r['group'] for r in rows] == list(groups), 'Manifest must contain exactly selected groups'
+    assert len({r['sha256'] for r in rows}) == len(rows), 'Duplicate weights'
+    return rows
 
 
 def factory(project, row):
@@ -100,18 +114,22 @@ def capture(project, row, mode, resume):
 
 
 def main():
+    global PREFIX
     parser = argparse.ArgumentParser()
     parser.add_argument('--project', type=Path, required=True)
     parser.add_argument('--manifest', type=Path, required=True)
     parser.add_argument('--phase', choices=('selftest', 'pilot', 'all'), default='all')
     parser.add_argument('--epochs', type=int, default=160)
     parser.add_argument('--resume', action='store_true')
+    parser.add_argument('--groups', choices=GROUPS, nargs='+', default=list(GROUPS))
+    parser.add_argument('--prefix', default=LEGACY_PREFIX)
+    parser.add_argument('--capture-only', action='store_true',
+                        help='Finish after direct TEST captures; never collect TRAIN or tune decoder')
     args = parser.parse_args()
     project = args.project.resolve()
     manifest = json.loads(args.manifest.read_text())
-    rows = manifest['groups']
-    assert [r['group'] for r in rows] == list(GROUPS)
-    assert len({r['sha256'] for r in rows}) == 3
+    rows = selected_rows(manifest, args.groups, args.prefix)
+    PREFIX = args.prefix
     torch.set_num_threads(4)
     started = time.time()
     status_path = project / 'runs' / (PREFIX + '_pipeline_status.json')
@@ -139,6 +157,9 @@ def main():
             pipeline.write(project/'runs'/(PREFIX+'_comparison.json'), results)
         if args.phase != 'all':
             status(args.phase, 'complete'); return
+        if args.capture_only:
+            status('complete', 'complete', adaptation='explicitly disabled', development_only=True)
+            return
         row = rows[-1]; configure(project, row)
         target = row['simulation'] * .975
         if results[-1]['direct'] >= target:
