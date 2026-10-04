@@ -1,0 +1,51 @@
+{
+  "source_runtime": "/DATA/DATA1/guest3/demo_reproduction_20260915",
+  "overlay_snapshot": {
+    "source_head": "1c7222a1119385475e1b464ca7efdb67cdc21a4c",
+    "archive_commit": "190ceb9da7add8d93ea75c3086ace9ce58019d71",
+    "archive_ref": "refs/archive/t09-reviewed-overlay-20261004",
+    "files": [
+      {
+        "path": "LightGenV2/tasks/t09_multimodal_matching/vision.py",
+        "sha256": "4cad72e1445f3a16373c4f697916a89b2526b4a900285eac6393928012052a1f"
+      },
+      {
+        "path": "LightGenV2/tasks/t09_multimodal_matching/test_selected.py",
+        "sha256": "5c4dfc1fcc211e7c79eb340bcf6eb4c4fd2db5a9efc2556c51379ad6e1ecdac2"
+      },
+      {
+        "path": "LightGenV2/demo_check/pure_optical/models.py",
+        "sha256": "a9685984d1f80cdcf97dcaccb2beb1216e60575d91df8708144d6b3e360bb76c"
+      }
+    ],
+    "working_head_unchanged": true,
+    "user_index_unchanged": true,
+    "source_files_changed": false,
+    "development_branch_created": false,
+    "runtime_verified": false
+  },
+  "bundle": {
+    "sha256": "d81b8efc15468f21fe7dbd0df6ff697414f650de87c98062cc81daea32f1222f",
+    "bytes": 1703,
+    "required_parent": "1c7222a1119385475e1b464ca7efdb67cdc21a4c",
+    "standalone": false,
+    "server_path": "/DATA/DATA1/guest3/storage_cleanup_manifests/t09_reviewed_overlay_20261004.bundle",
+    "local_path": ".codex_tmp/t11_source_20261004/t09_reviewed_overlay.bundle"
+  },
+  "default_vision_compatibility": {
+    "old_vision_sha256": "630ad5273911f8f6069602788eb5f71cd9ac2f0e9a0040b7c1211a694376761f",
+    "overlay_vision_sha256": "4cad72e1445f3a16373c4f697916a89b2526b4a900285eac6393928012052a1f",
+    "exact_default_output_cases": 12,
+    "default_initialization_and_buffers_identical": true,
+    "strict_default_state_load": true,
+    "declared_narrow_widths_shape_pass": true,
+    "device": "cpu",
+    "data_read": false,
+    "checkpoint_evaluated": false,
+    "t16_runtime_metrics_revalidated": false
+  },
+  "original_runtime_retained": true,
+  "full_t09_main_import_complete": false,
+  "t16_formal_checkpoint_reload_pending": true,
+  "source_cleanup_authorized_by_this_receipt": false
+}
