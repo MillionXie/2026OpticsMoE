@@ -96,3 +96,49 @@ def test_documentation_mode_still_refuses_artifacts_untracked_and_escape(repo, p
     manifest['paths'] = [dict(path=path, sha256='0'*64)]
     with pytest.raises(RuntimeError):
         snapshot(root, manifest, include_documentation=True)
+
+
+@pytest.mark.parametrize('suffix,content', [('.py', b'value = 3\n'), ('.yaml', b'alpha: 0.3\n')])
+def test_explicit_untracked_recovery_preserves_original_checkout(repo, suffix, content):
+    root, _, manifest = repo
+    path = 'LightGenV2/tasks/t09_multimodal_matching/recovery' + suffix
+    file = root/path
+    file.write_bytes(content)
+    manifest['paths'] = [dict(path=path, sha256=hashlib.sha256(content).hexdigest(), entry_kind='untracked')]
+    before = git(root, 'status', '--porcelain')
+    index = (root/'.git/index').read_bytes()
+    with pytest.raises(RuntimeError):
+        snapshot(root, manifest)
+    result = snapshot(root, manifest, include_untracked_source=True)
+    assert git(root, 'status', '--porcelain') == before
+    assert (root/'.git/index').read_bytes() == index
+    assert file.read_bytes() == content
+    assert git(root, 'rev-parse', 'HEAD') == manifest['expected_head']
+    stored = subprocess.check_output(['git', '-C', str(root), 'show', result['archive_commit']+':'+path])
+    assert stored == content
+
+
+@pytest.mark.parametrize('case', ['missing_kind', 'ignored', 'staged', 'artifact', 'tracked_kind'])
+def test_untracked_opt_in_is_not_blanket_permission(repo, case):
+    root, original, manifest = repo
+    path = 'LightGenV2/tasks/t09_multimodal_matching/recovery.py'
+    file = root/path
+    file.write_bytes(b'value = 3\n')
+    kind = 'untracked'
+    if case == 'missing_kind':
+        kind = 'tracked'
+    elif case == 'ignored':
+        (root/'.git/info/exclude').write_text('recovery.py\n')
+    elif case == 'staged':
+        git(root, 'add', path)
+    elif case == 'artifact':
+        path = 'LightGenV2/results.pt'
+        file = root/path
+        file.write_bytes(b'not a source file')
+    elif case == 'tracked_kind':
+        file = original
+        path = manifest['paths'][0]['path']
+    manifest['paths'] = [dict(path=path, sha256=hashlib.sha256(file.read_bytes()).hexdigest(), entry_kind=kind)]
+    with pytest.raises(RuntimeError):
+        snapshot(root, manifest, include_untracked_source=True)
+    assert not git(root, 'for-each-ref', '--format=%(refname)', 'refs/archive')

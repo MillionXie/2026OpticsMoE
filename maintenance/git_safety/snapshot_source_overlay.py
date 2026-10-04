@@ -12,7 +12,7 @@ import subprocess
 import tempfile
 
 
-def snapshot(root, manifest, *, include_documentation=False):
+def snapshot(root, manifest, *, include_documentation=False, include_untracked_source=False):
     root = Path(root).resolve()
     def git(*args, data=None, env=None):
         safe_env = dict(os.environ if env is None else env, GIT_OPTIONAL_LOCKS='0')
@@ -36,15 +36,25 @@ def snapshot(root, manifest, *, include_documentation=False):
     for row in manifest['paths']:
         path = row['path']; pure = PurePosixPath(path)
         prefix_allowed = path.startswith('LightGenV2/') or (include_documentation and path.startswith('LightGenPublic/'))
-        suffix_allowed = path.endswith('.py') or (include_documentation and path.endswith('.md'))
+        suffix_allowed = (path.endswith('.py') or (include_documentation and path.endswith('.md'))
+                          or (include_untracked_source and path.endswith(('.yaml', '.yml'))))
         if (not prefix_allowed or str(pure) != path or '..' in pure.parts
                 or '\\' in path or ':' in path or path in seen or not suffix_allowed):
-            raise RuntimeError('Only explicit tracked source/documentation allowed')
+            raise RuntimeError('Only explicit reviewed source/documentation allowed')
         seen.add(path)
         entry = git('ls-tree', '-z', head, '--', path)
         if not entry:
-            raise RuntimeError('Not tracked in original HEAD')
-        mode, kind, old = entry.split(b'\t', 1)[0].split()
+            if not include_untracked_source or row.get('entry_kind') != 'untracked':
+                raise RuntimeError('Not tracked in original HEAD')
+            # Never silently include ignored assets, staged additions or arbitrary directories.
+            observed = git('ls-files', '--others', '--exclude-standard', '-z', '--', path)
+            if observed != path.encode('utf-8') + b'\0':
+                raise RuntimeError('Not an explicit untracked non-ignored file')
+            mode, kind, old = b'100644', b'blob', None
+        else:
+            if row.get('entry_kind', 'tracked') != 'tracked':
+                raise RuntimeError('Tracked/untracked identity changed')
+            mode, kind, old = entry.split(b'\t', 1)[0].split()
         if mode not in (b'100644', b'100755') or kind != b'blob':
             raise RuntimeError('Special Git entry')
         source = root / path
@@ -56,7 +66,7 @@ def snapshot(root, manifest, *, include_documentation=False):
         decoded = content.decode('utf-8')
         if path.endswith('.py'):
             compile(decoded, path, 'exec')
-        if content == git('cat-file', 'blob', old.decode()):
+        if old is not None and content == git('cat-file', 'blob', old.decode()):
             raise RuntimeError('Not an overlay')
         oid = git('hash-object', '-w', '--stdin', data=content).decode().strip()
         blobs.append((path, mode.decode(), oid, content))
@@ -66,7 +76,7 @@ def snapshot(root, manifest, *, include_documentation=False):
         env = dict(os.environ, GIT_INDEX_FILE=str(Path(temp)/'index'))
         git('read-tree', head, env=env)
         for path, mode, oid, _ in blobs:
-            git('update-index', '--cacheinfo', mode, oid, path, env=env)
+            git('update-index', '--add', '--cacheinfo', mode, oid, path, env=env)
         changed = set(filter(None, git('diff', '--cached', '--name-only', '-z', head, env=env).decode().split('\0')))
         if changed != seen:
             raise RuntimeError('Unexpected paths')
@@ -75,7 +85,10 @@ def snapshot(root, manifest, *, include_documentation=False):
     if (head != git('rev-parse', 'HEAD').decode().strip()
             or status != git('status', '--porcelain', '-z', '-uno')
             or original_index != (index.read_bytes() if index.exists() else None)
-            or any((root/path).read_bytes() != content for path, _, _, content in blobs)):
+            or any((root/path).read_bytes() != content for path, _, _, content in blobs)
+            or any(git('ls-files', '--others', '--exclude-standard', '-z', '--', row['path'])
+                   != row['path'].encode('utf-8') + b'\0'
+                   for row in manifest['paths'] if row.get('entry_kind') == 'untracked')):
         raise RuntimeError('Concurrent source/index change; archive not published')
     git('update-ref', ref, commit, '0'*40)
     return dict(source_head=head, archive_commit=commit, archive_ref=ref,
@@ -90,6 +103,9 @@ if __name__ == '__main__':
     p.add_argument('--manifest', type=Path, required=True)
     p.add_argument('--include-documentation', action='store_true',
                    help='Also permit reviewed tracked .md and LightGenPublic source; never data or untracked files')
+    p.add_argument('--include-untracked-source', action='store_true',
+                   help='Permit SHA-reviewed non-ignored .py/.yaml/.yml additions explicitly marked entry_kind=untracked; archive only')
     args = p.parse_args()
     print(json.dumps(snapshot(args.root, json.loads(args.manifest.read_text()),
-                              include_documentation=args.include_documentation), indent=2))
+                              include_documentation=args.include_documentation,
+                              include_untracked_source=args.include_untracked_source), indent=2))
