@@ -40,7 +40,7 @@ def randomized_ccd(intensity, scale):
     gain=intensity.new_empty(frame_shape).uniform_(.9,1.1)
     offset=intensity.new_empty(frame_shape).uniform_(0.,.03*scale)*ref
     read=.01*scale*ref*torch.randn_like(intensity)
-    shot=.01*scale*(intensity.clamp_min(0)*ref).sqrt()*torch.randn_like(intensity)
+    shot=.01*scale*(intensity.detach().clamp_min(0)*ref).sqrt()*torch.randn_like(intensity)
     return (gain*intensity+offset+read+shot).clamp_min(0)
 
 
