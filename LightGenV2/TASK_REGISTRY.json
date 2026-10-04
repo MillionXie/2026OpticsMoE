@@ -69,7 +69,10 @@
       "id": "t06_video_quality_assessment",
       "entry": "tasks/t06_video_quality_assessment/README.md",
       "source_status": "canonical_entry_existing_legacy_backend_audit_pending",
-      "evidence": ["reports/20260928_nine_task_a100_table/README.md"],
+      "evidence": ["reports/20260928_nine_task_a100_table/README.md", "tasks/t06_video_quality_assessment/CURRENT_VERSION_20261004.md", "tasks/t06_video_quality_assessment/reports/reproduction/TEMPORAL_SHS_20260914.md", "tasks/t06_video_quality_assessment/reports/reproduction/SPATIAL_SHS_20260914.md", "tasks/t06_video_quality_assessment/reports/reproduction/SPATIAL_SHS_READOUT_ADAPT_20260914.md"],
+      "verified_physical_runtime_commit": "8e869473787f4ffceb2a6a77f4430b94c206f459",
+      "legacy_default_profiles_verified": false,
+      "runtime_identity_audit": "../maintenance/storage/T06_RUNTIME_IDENTITY_20261004.json",
       "data_status": "preserve_original_videos_manifests_and_frontend_caches",
       "timing_status": "version_specific_historical_segment_timings_not_hardware_end_to_end",
       "current_version_latency_verified": false

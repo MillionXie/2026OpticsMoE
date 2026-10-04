@@ -1,0 +1,20 @@
+{
+  "source_commit": "c6a675d3ab1f62449fb29283fe1ad3cf53631008",
+  "paths": [
+    {
+      "path": "LightGenV2/tasks/t06_video_quality_assessment/reports/reproduction/SPATIAL_SHS_20260914.md",
+      "sha256": "e618bbace33d777d53635e9cbc34cc196cf3966f303370a64461f555cb0c64a6",
+      "bytes": 5125
+    },
+    {
+      "path": "LightGenV2/tasks/t06_video_quality_assessment/reports/reproduction/TEMPORAL_SHS_20260914.md",
+      "sha256": "42c262fe29bf8ecefb7e2528dd509394361b4d585b650545e45b602f7845304c",
+      "bytes": 4531
+    },
+    {
+      "path": "LightGenV2/tasks/t06_video_quality_assessment/reports/reproduction/SPATIAL_SHS_READOUT_ADAPT_20260914.md",
+      "sha256": "9ac3eb298c28e30e1fa5f819dbe18edb1029b5101837fcb024845da4ec358d07",
+      "bytes": 18625
+    }
+  ]
+}
