@@ -69,11 +69,13 @@ def main():
         module = types.ModuleType(name)
         module.__path__ = []
         sys.modules[name] = module
+    sys.modules["LightGenV2"].tasks = sys.modules["LightGenV2.tasks"]
     sys.meta_path.insert(0, TreeImporter(blobs))
     suite = unittest.TestSuite()
     for name in ("LightGenV2.tasks.t11_lifelong_optics.tests.test_contract",
                  "LightGenV2.tasks.t11_lifelong_optics.tests.test_crc9_contract"):
-        suite.addTests(unittest.defaultTestLoader.loadTestsFromName(name))
+        module = importlib.import_module(name)
+        suite.addTests(unittest.defaultTestLoader.loadTestsFromModule(module))
     result = unittest.TextTestRunner(verbosity=1).run(suite)
     print(json.dumps({"commit": args.commit, "python_blobs_compiled": len(blobs),
                       "tests_run": result.testsRun, "success": result.wasSuccessful(),
