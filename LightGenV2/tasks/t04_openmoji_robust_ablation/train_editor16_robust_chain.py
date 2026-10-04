@@ -99,6 +99,21 @@ def gate_state(model):
     return {n:p.detach().cpu().clone() for n,p in model.named_parameters() if 'optical_fusion_logit' in n}
 
 
+def paired_consistency(noisy, clean):
+    """TRAIN-only stability target; clean predictions never act as TEST labels.
+
+    Stop-gradient teacher avoids changing both outputs just to agree. This is
+    an auxiliary objective, not a new inference layer or a CCD calibration.
+    """
+    import torch.nn.functional as F
+    category = F.kl_div(noisy['category_logits'].log_softmax(1),
+                        clean['category_logits'].detach().softmax(1),
+                        reduction='none').sum(1).mean()
+    edit = F.mse_loss(noisy['edit_logits'].sigmoid(),
+                     clean['edit_logits'].detach().sigmoid())
+    return category + edit
+
+
 def main():
     parser=argparse.ArgumentParser()
     parser.add_argument('--source',type=Path,required=True)
@@ -109,9 +124,13 @@ def main():
     parser.add_argument('--noise-scale',type=float,default=NOISE_SCALE)
     parser.add_argument('--noise-model',choices=('legacy','randomized'),default='legacy')
     parser.add_argument('--grid-probability',type=float,default=1.)
+    parser.add_argument('--paired-clean-weight',type=float,default=0.)
+    parser.add_argument('--consistency-weight',type=float,default=0.)
     parser.add_argument('--smoke',action='store_true')
     args=parser.parse_args()
     assert args.noise_scale>=0 and 0<=args.grid_probability<=1
+    assert 0<=args.paired_clean_weight<=1 and args.consistency_weight>=0
+    assert not args.consistency_weight or args.paired_clean_weight>0
     assert sha(args.source)==SOURCE_SHA
     root=Path(__file__).resolve().parents[3]
     relative=Path(__file__).relative_to(root).as_posix()
@@ -161,6 +180,8 @@ def main():
             noise_offset_fraction=.03*args.noise_scale,noise_read_fraction=.01*args.noise_scale,
             noise_shot_fraction=.01*args.noise_scale if args.noise_model=='randomized' else 0.,
             grid_probability=args.grid_probability,
+            paired_clean_weight=args.paired_clean_weight,consistency_weight=args.consistency_weight,
+            consistency_teacher='detached current clean TRAIN output; no extra model',
             noise_proxy_not_calibrated=True,dc_phase_leakage_intensity=.30 if PROFILES[args.group]['dc30'] else 0.,
             dc_planes='expert/global, historical backend',grid='TRAIN-only differentiable17→8→17 proxy, not true8um propagation',
             inference_profile='clean r0; no training noise/DC/grid/phase-dropout',phase_dropout=False,
@@ -189,6 +210,15 @@ def main():
                     optimizer.zero_grad(set_to_none=True)
                     result=model(batch['source_image'],batch['prompt_hidden'])
                     loss=t.editing_objective(result,batch,cfg)['total']
+                    if args.paired_clean_weight:
+                        # eval disables detector/DC/grid perturbations but not gradients.
+                        # Restore train mode before regularization and the next batch.
+                        model.eval(); t._set_phase_dropout(model,False)
+                        clean=model(batch['source_image'],batch['prompt_hidden'])
+                        clean_loss=t.editing_objective(clean,batch,cfg)['total']
+                        model.train(); model.vision_stem.eval(); t._set_phase_dropout(model,False)
+                        loss=(1-args.paired_clean_weight)*loss+args.paired_clean_weight*clean_loss
+                        loss+=args.consistency_weight*paired_consistency(result,clean)
                     loss+=cfg.router_importance_weight*model.router_importance_loss()
                     loss+=cfg.phase_dc_weight*t._phase_regularization(model,cfg)
                     assert torch.isfinite(loss)
