@@ -1,0 +1,53 @@
+{
+  "paths": [
+    {
+      "original_path": "E:/code/guest/2026OpticsMoE/ABO_Lab_SHS_8um/sdk.py",
+      "archive_path": "ABO_Lab_SHS_8um/sdk.py",
+      "archive_commit": "79c86be24383900bfcdf266cd7f13411e1d9d12c",
+      "source_sha256": "b3560d9bd0f721a0a10e160fc9728f7225b137fb7feb8d851dd60458352ee895",
+      "published_path": "LightGenV2/hardware_common/shs/sdk.py",
+      "published_sha256": "b3560d9bd0f721a0a10e160fc9728f7225b137fb7feb8d851dd60458352ee895",
+      "published_hash_normalization": "crlf_to_lf",
+      "reviewed_changes": "none"
+    },
+    {
+      "original_path": "E:/code/guest/2026OpticsMoE/ABO_Lab_SHS_8um/capture.py",
+      "archive_path": "ABO_Lab_SHS_8um/capture.py",
+      "archive_commit": "79c86be24383900bfcdf266cd7f13411e1d9d12c",
+      "source_sha256": "443b50297c780ea568b48826ae146edf93fd3a8e1b59205711f6539f1825be8c",
+      "published_path": "LightGenV2/hardware_common/shs/capture.py",
+      "published_sha256": "9334817063479ab063cdd21ec8b65bb6b7d529fa43206d93e775bd36360df52b",
+      "published_hash_normalization": "crlf_to_lf",
+      "reviewed_changes": "package relative import only"
+    },
+    {
+      "original_path": "E:/code/guest/2026OpticsMoE/ABO_Lab_SHS_8um/phase_hdmi.py",
+      "archive_path": "ABO_Lab_SHS_8um/phase_hdmi.py",
+      "archive_commit": "79c86be24383900bfcdf266cd7f13411e1d9d12c",
+      "source_sha256": "5083355db962eeed6514027ebde07621cade3a19da254761c59cfa6fec647fe4",
+      "published_path": "LightGenV2/hardware_common/shs/phase_hdmi.py",
+      "published_sha256": "5083355db962eeed6514027ebde07621cade3a19da254761c59cfa6fec647fe4",
+      "published_hash_normalization": "crlf_to_lf",
+      "reviewed_changes": "none"
+    },
+    {
+      "original_path": "E:/code/guest/2026OpticsMoE/ABO_Lab_SHS_8um/slm_camera.py",
+      "archive_path": "ABO_Lab_SHS_8um/slm_camera.py",
+      "archive_commit": "79c86be24383900bfcdf266cd7f13411e1d9d12c",
+      "source_sha256": "98f7a9e048cf1ac3676de024fcde3abe0b5feff90f07deed8797884461b71ef7",
+      "published_path": "LightGenV2/hardware_common/shs/slm_camera.py",
+      "published_sha256": "d67eee62f0485679d66d5750a7b5c3d092c31675690a52e07709bb37d6629045",
+      "published_hash_normalization": "crlf_to_lf",
+      "reviewed_changes": "package relative imports; canonical exact-tested Holoeye driver; explicit machine config base and CLI config parent"
+    }
+  ],
+  "source_archive_ref": "refs/archive/windows-source-20261004/abo-controller",
+  "controller_contract_cpu_tests": 15,
+  "existing_hardware_sdk_tests": 45,
+  "hardware_or_vendor_binaries_opened": false,
+  "machine_config_relocated": false,
+  "model_phase_geometry_exposure_changed": false,
+  "original_windows_runtime_changed": false,
+  "task_acquisition_runner_migration_complete": false,
+  "scope": "Canonical control dependencies only; original machine SDK binaries/LUT/calibration and existing task-specific acquisition remain protected."
+}
