@@ -12,7 +12,7 @@ import subprocess
 import tempfile
 
 
-def snapshot(root, manifest):
+def snapshot(root, manifest, *, include_documentation=False):
     root = Path(root).resolve()
     def git(*args, data=None, env=None):
         safe_env = dict(os.environ if env is None else env, GIT_OPTIONAL_LOCKS='0')
@@ -35,9 +35,11 @@ def snapshot(root, manifest):
     blobs, seen = [], set()
     for row in manifest['paths']:
         path = row['path']; pure = PurePosixPath(path)
-        if (not path.startswith('LightGenV2/') or str(pure) != path or '..' in pure.parts
-                or '\\' in path or ':' in path or path in seen or not path.endswith('.py')):
-            raise RuntimeError('Only explicit existing Python source allowed')
+        prefix_allowed = path.startswith('LightGenV2/') or (include_documentation and path.startswith('LightGenPublic/'))
+        suffix_allowed = path.endswith('.py') or (include_documentation and path.endswith('.md'))
+        if (not prefix_allowed or str(pure) != path or '..' in pure.parts
+                or '\\' in path or ':' in path or path in seen or not suffix_allowed):
+            raise RuntimeError('Only explicit tracked source/documentation allowed')
         seen.add(path)
         entry = git('ls-tree', '-z', head, '--', path)
         if not entry:
@@ -51,7 +53,9 @@ def snapshot(root, manifest):
         content = source.read_bytes()
         if len(content) > 1_000_000 or hashlib.sha256(content).hexdigest() != row['sha256']:
             raise RuntimeError('Unreviewed source SHA/size')
-        compile(content.decode('utf-8'), path, 'exec')
+        decoded = content.decode('utf-8')
+        if path.endswith('.py'):
+            compile(decoded, path, 'exec')
         if content == git('cat-file', 'blob', old.decode()):
             raise RuntimeError('Not an overlay')
         oid = git('hash-object', '-w', '--stdin', data=content).decode().strip()
@@ -67,7 +71,7 @@ def snapshot(root, manifest):
         if changed != seen:
             raise RuntimeError('Unexpected paths')
         tree = git('write-tree', env=env).decode().strip()
-        commit = git('commit-tree', tree, '-p', head, data=b'Archive reviewed T09 working source overlay; not a runtime publication\n').decode().strip()
+        commit = git('commit-tree', tree, '-p', head, data=b'Archive reviewed working source overlay; not a runtime publication\n').decode().strip()
     if (head != git('rev-parse', 'HEAD').decode().strip()
             or status != git('status', '--porcelain', '-z', '-uno')
             or original_index != (index.read_bytes() if index.exists() else None)
@@ -84,5 +88,8 @@ if __name__ == '__main__':
     p = argparse.ArgumentParser(description=__doc__)
     p.add_argument('--root', required=True)
     p.add_argument('--manifest', type=Path, required=True)
+    p.add_argument('--include-documentation', action='store_true',
+                   help='Also permit reviewed tracked .md and LightGenPublic source; never data or untracked files')
     args = p.parse_args()
-    print(json.dumps(snapshot(args.root, json.loads(args.manifest.read_text())), indent=2))
+    print(json.dumps(snapshot(args.root, json.loads(args.manifest.read_text()),
+                              include_documentation=args.include_documentation), indent=2))

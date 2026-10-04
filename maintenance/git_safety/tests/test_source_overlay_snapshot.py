@@ -71,3 +71,28 @@ def test_existing_archive_never_overwritten(repo):
     with pytest.raises(RuntimeError):
         snapshot(root, manifest)
     assert git(root, 'rev-parse', manifest['archive_ref']) == first['archive_commit']
+
+
+def test_documentation_requires_explicit_opt_in_and_preserves_bytes(repo):
+    root, _, manifest = repo
+    doc = root/'LightGenPublic/README.md'
+    doc.parent.mkdir()
+    doc.write_bytes(b'# Historical method\n')
+    git(root, 'add', 'LightGenPublic/README.md')
+    git(root, 'commit', '-qm', 'tracked documentation')
+    doc.write_bytes(b'# Historical method\r\nRetain baseline.\r\n')
+    manifest['expected_head'] = git(root, 'rev-parse', 'HEAD')
+    manifest['paths'] = [dict(path='LightGenPublic/README.md', sha256=hashlib.sha256(doc.read_bytes()).hexdigest())]
+    with pytest.raises(RuntimeError):
+        snapshot(root, manifest)
+    result = snapshot(root, manifest, include_documentation=True)
+    stored = subprocess.check_output(['git', '-C', str(root), 'show', result['archive_commit']+':LightGenPublic/README.md'])
+    assert stored == doc.read_bytes()
+
+
+@pytest.mark.parametrize('path', ['LightGenV2/results.pt', 'LightGenV2/unknown.py', '../escape.md'])
+def test_documentation_mode_still_refuses_artifacts_untracked_and_escape(repo, path):
+    root, _, manifest = repo
+    manifest['paths'] = [dict(path=path, sha256='0'*64)]
+    with pytest.raises(RuntimeError):
+        snapshot(root, manifest, include_documentation=True)
