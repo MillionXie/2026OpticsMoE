@@ -1,0 +1,217 @@
+{
+  "schema_version": 1,
+  "source_head": "1c7222a1119385475e1b464ca7efdb67cdc21a4c",
+  "source_overlay_commit": "190ceb9da7add8d93ea75c3086ace9ce58019d71",
+  "source_runtime": "/DATA/DATA1/guest3/demo_reproduction_20260915",
+  "files": [
+    {
+      "path": "LightGenV2/demo_check/adrenal_softsign_code_export_20260915_145336/code/optical_reference/__init__.py",
+      "source_blob_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "LightGenV2/demo_check/adrenal_softsign_code_export_20260915_145336/code/optical_reference/optics.py",
+      "source_blob_sha256": "b250627b14357a254eb12c785caf20f3aff2bf3fe30121a05321094803c73a7d"
+    },
+    {
+      "path": "LightGenV2/demo_check/pure_optical/config.json",
+      "source_blob_sha256": "727feeb7976f6ef99896dec1c8336894e4adda1399abc8e4c310b54d97c9eb6b"
+    },
+    {
+      "path": "LightGenV2/demo_check/pure_optical/models.py",
+      "source_blob_sha256": "a9685984d1f80cdcf97dcaccb2beb1216e60575d91df8708144d6b3e360bb76c"
+    },
+    {
+      "path": "LightGenV2/tasks/t09_multimodal_matching/README.md",
+      "source_blob_sha256": "3d88ec128ae25885f7ecb78113a9a0ecbc2eab6fd48945943278c797b4e5aa57"
+    },
+    {
+      "path": "LightGenV2/tasks/t09_multimodal_matching/audio_frontend.py",
+      "source_blob_sha256": "3822bc84244bf75341b0020bbd86378b5c0dc6e15ba562350d773c88ad8bf66a"
+    },
+    {
+      "path": "LightGenV2/tasks/t09_multimodal_matching/audio_prepare.py",
+      "source_blob_sha256": "d11eb3c442041109af211ca1e39e41635173b7221f3530bec2244ab39f285e7d"
+    },
+    {
+      "path": "LightGenV2/tasks/t09_multimodal_matching/audit.py",
+      "source_blob_sha256": "056782090c0ce92f0a2bf62ead5d5c2ced67caeb300e9075f24a5088bcff6f97"
+    },
+    {
+      "path": "LightGenV2/tasks/t09_multimodal_matching/check_features.py",
+      "source_blob_sha256": "4d960c89ef3e5f6f0d45350c490902724ddd42c5668ef73c288c06581e2dbabb"
+    },
+    {
+      "path": "LightGenV2/tasks/t09_multimodal_matching/diagnose.py",
+      "source_blob_sha256": "a8189af943be7ebae5276d889355986a319a49845b364972410ccc756c16289c"
+    },
+    {
+      "path": "LightGenV2/tasks/t09_multimodal_matching/examples.py",
+      "source_blob_sha256": "c65c7d498e55a911256735e538454c003f6e9bf264b866c274623b054a4fc30f"
+    },
+    {
+      "path": "LightGenV2/tasks/t09_multimodal_matching/model.py",
+      "source_blob_sha256": "8299ad614178e5ea99047270227e092e9eb97c2e0348a648661ac707d4d2ef34"
+    },
+    {
+      "path": "LightGenV2/tasks/t09_multimodal_matching/plot.py",
+      "source_blob_sha256": "62c99441ef7870222e94260f5eab1c9b9768a0732a4885afa9ca39db59807512"
+    },
+    {
+      "path": "LightGenV2/tasks/t09_multimodal_matching/plot_audio.py",
+      "source_blob_sha256": "708fa833ad278b7b76793dcbc1c788f4ecf0c71d51d0ddf450b97fb84074634d"
+    },
+    {
+      "path": "LightGenV2/tasks/t09_multimodal_matching/plot_budget.py",
+      "source_blob_sha256": "c27cf64e57fea4128e15075086ec60a0a62afb433e053104466342f13162d878"
+    },
+    {
+      "path": "LightGenV2/tasks/t09_multimodal_matching/plot_controls.py",
+      "source_blob_sha256": "dca26d000fc2935d47ef94b927753c4f50c282613ebf5c1ce9159e9c6329cb79"
+    },
+    {
+      "path": "LightGenV2/tasks/t09_multimodal_matching/plot_input_contract.py",
+      "source_blob_sha256": "8dc87428818a05f8a018f739d32190595bbdc567de1dc3d790ce7dba278ee706"
+    },
+    {
+      "path": "LightGenV2/tasks/t09_multimodal_matching/plot_oeo_recovery.py",
+      "source_blob_sha256": "20600859ddff2d65d4fd0fddecaf58065e21050e64a509ef0c6817d1258b363f"
+    },
+    {
+      "path": "LightGenV2/tasks/t09_multimodal_matching/plot_raw_audio.py",
+      "source_blob_sha256": "b87f77d1df0be82815f148a264375d11eacab54e5253543b9fe85bf4325768bc"
+    },
+    {
+      "path": "LightGenV2/tasks/t09_multimodal_matching/plot_selected_test.py",
+      "source_blob_sha256": "a0cf496a17e1e70f522b6ab6096e7c8766fab99e398bd2f2496ed8472ddab395"
+    },
+    {
+      "path": "LightGenV2/tasks/t09_multimodal_matching/plot_test.py",
+      "source_blob_sha256": "68bac677ce18e85aae0d755dbec1fa3f67be08936ba8adea75371006f8321d04"
+    },
+    {
+      "path": "LightGenV2/tasks/t09_multimodal_matching/prepare.py",
+      "source_blob_sha256": "24e6ae102cff753b62d9d3da3b1050b0feca90ea874add3400b502cb248df52e"
+    },
+    {
+      "path": "LightGenV2/tasks/t09_multimodal_matching/probe_oeo.py",
+      "source_blob_sha256": "205f01c546e61203d397f547082714bc54a943fdf33b4cd29e740f4cc60a86a1"
+    },
+    {
+      "path": "LightGenV2/tasks/t09_multimodal_matching/reports/reproduction/README.md",
+      "source_blob_sha256": "a33956614ea476b19e743c18cc809070ff8bb249f1d1a90b1c01dd584c6cdcfc"
+    },
+    {
+      "path": "LightGenV2/tasks/t09_multimodal_matching/run.py",
+      "source_blob_sha256": "a18ca843b26d67a209c19f9f4a827043fbfffed0e2e40415c97ccb31b4107bec"
+    },
+    {
+      "path": "LightGenV2/tasks/t09_multimodal_matching/smoke_layout.py",
+      "source_blob_sha256": "e7c455a868d0cdd76079752d5eb7b5e48970ca16033b906acffb319fe28d24ea"
+    },
+    {
+      "path": "LightGenV2/tasks/t09_multimodal_matching/test_frozen.py",
+      "source_blob_sha256": "afaec114defebef6df49575684cd0231676378764dd9a4507ffdd1b200008b0a"
+    },
+    {
+      "path": "LightGenV2/tasks/t09_multimodal_matching/test_selected.py",
+      "source_blob_sha256": "5c4dfc1fcc211e7c79eb340bcf6eb4c4fd2db5a9efc2556c51379ad6e1ecdac2"
+    },
+    {
+      "path": "LightGenV2/tasks/t09_multimodal_matching/vision.py",
+      "source_blob_sha256": "4cad72e1445f3a16373c4f697916a89b2526b4a900285eac6393928012052a1f"
+    }
+  ],
+  "cpu_contract_evidence": {
+    "commit": "5a413827bc0cb4c80d8034bb915de8169bf3a197",
+    "python_blobs_compiled": 47,
+    "optical_gradient_cases": [
+      {
+        "layout": "legacy",
+        "architecture": "moe"
+      },
+      {
+        "layout": "legacy",
+        "architecture": "d2nn"
+      },
+      {
+        "layout": "two_band",
+        "architecture": "moe"
+      },
+      {
+        "layout": "two_band",
+        "architecture": "d2nn"
+      },
+      {
+        "layout": "interleaved",
+        "architecture": "moe"
+      },
+      {
+        "layout": "interleaved",
+        "architecture": "d2nn"
+      },
+      {
+        "layout": "left_right",
+        "architecture": "moe"
+      },
+      {
+        "layout": "left_right",
+        "architecture": "d2nn"
+      }
+    ],
+    "strict_reloads": [
+      {
+        "run": "clevr_visual_softsign_pd005_s17_v1",
+        "architecture": "moe",
+        "sha256": "a9e4c93284248b21afbe936b6caa42defedcf27a89a62f228dedb6c802a9ed27",
+        "strict": true
+      },
+      {
+        "run": "clevr_visual_softsign_pd005_s17_v1",
+        "architecture": "d2nn",
+        "sha256": "c157717d2545bf8de481f01c812cf8c11ebeb713d8136f191e87a5b7de46943b",
+        "strict": true
+      },
+      {
+        "run": "audio_raw_leftright_positive_unbalanced_s17_v1",
+        "architecture": "moe",
+        "sha256": "c07fab54a52a6556558553221e8b5efcf295ae19bd37dbaaaf9f9d4f6cb361b0",
+        "strict": true
+      },
+      {
+        "run": "audio_raw_leftright_positive_unbalanced_s17_v1",
+        "architecture": "d2nn",
+        "sha256": "f79f8f6a0d00a5186ec9d080cca2bb428b46b47502c0bf63e5b631d5f7ed1e06",
+        "strict": true
+      },
+      {
+        "run": "clevr_visual_aux_s17_v1",
+        "sha256": "8b54d51efce92c525e22fec6d4a95af0a7d56c36d2fb3cdf210cec97e4b4aa0d",
+        "strict": true
+      },
+      {
+        "run": "clevr_visual_lite_aux_s17_v1",
+        "sha256": "6a7ccb82242ab75212883cf07b351d4dff2d0318c8df69f76d147d919b4c2898",
+        "strict": true
+      },
+      {
+        "run": "audio_frontend_s17_v1",
+        "sha256": "ce733c832a1bc7629cf9b5f63f22d46668fc5e1a5b0442cb97b092fca0a9b2b3",
+        "strict": true
+      }
+    ],
+    "t16_test_exit_code": 0,
+    "candidate_model_sha256": "8299ad614178e5ea99047270227e092e9eb97c2e0348a648661ac707d4d2ef34",
+    "config_fixture_verified": true,
+    "dataset_evaluated": false,
+    "runtime_metrics_revalidated": false,
+    "new_checkout_created": false,
+    "cuda_visible_devices": ""
+  },
+  "t16_tests_passed": 29,
+  "shared_t16_default_compatibility": "maintenance/storage/T09_T16_VISION_COMPATIBILITY_20261004.json",
+  "protected_assets": "maintenance/storage/T09_RUNTIME_IDENTITY_20261004.json",
+  "datasets_and_run_assets_moved": false,
+  "historical_metrics_replayed": false,
+  "source_import_is_not_permission_to_delete_original_runtime": true,
+  "historical_protocol_warning": "Current server D2NN forward uses whole-field bilinear enlarge_full_aperture. Older reports describe separate modality/tile nearest-neighbor enlargement. Strict PT loading only proves tensor compatibility, not historical forward equivalence; reproducing those metrics requires the original per-run source commit and contract."
+}

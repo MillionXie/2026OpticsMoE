@@ -107,11 +107,12 @@
     },
     {
       "id": "t09_multimodal_matching",
-      "entry": "../maintenance/storage/SERVER_AUTHORITATIVE_INDEX_20261002.md",
-      "source_status": "external_source_not_yet_integrated",
+      "entry": "tasks/t09_multimodal_matching/README.md",
+      "source_status": "actual_runtime_overlay_published_original_assets_retained",
       "training_source": "/DATA/DATA1/guest3/demo_reproduction_20260915/LightGenV2/tasks/t09_multimodal_matching",
-      "source_head": "1c7222a1119385475e1b464ca7efdb67cdc21a4c",
-      "evidence": [],
+      "source_head": "190ceb9da7add8d93ea75c3086ace9ce58019d71",
+      "source_parent": "1c7222a1119385475e1b464ca7efdb67cdc21a4c",
+      "evidence": ["tasks/t09_multimodal_matching/CURRENT_VERSION_20261004.md", "tasks/t09_multimodal_matching/source_import_20261004.json", "../maintenance/storage/T09_RUNTIME_IDENTITY_20261004.json"],
       "data_status": "preserve_CLEVR_and_SpeechCommands_pilot_do_not_claim_full_dataset",
       "current_version_latency_verified": false
     },

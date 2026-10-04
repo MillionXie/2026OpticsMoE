@@ -63,6 +63,7 @@ def main():
         "LightGenV2/tasks/t11_lifelong_optics/source_import_20261004.json",
         "LightGenV2/tasks/t06_video_quality_assessment/source_import_20261004.json",
         "LightGenV2/tasks/t06_video_quality_assessment/adaptation_source_import_20261004.json",
+        "LightGenV2/tasks/t09_multimodal_matching/source_import_20261004.json",
         "LightGenV2/tasks/t13_temporal_robust_training/source_import_20261003.json"])
     reviewed = verify_reviewed_publications(root, args.commit, [
         "maintenance/storage/T03_REVIEWED_CORE_20261003.json",

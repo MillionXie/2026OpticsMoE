@@ -1,0 +1,136 @@
+{
+  "source_commit": "190ceb9da7add8d93ea75c3086ace9ce58019d71",
+  "paths": [
+    {
+      "path": "LightGenV2/demo_check/pure_optical/config.json",
+      "sha256": "727feeb7976f6ef99896dec1c8336894e4adda1399abc8e4c310b54d97c9eb6b",
+      "bytes": 1225
+    },
+    {
+      "path": "LightGenV2/demo_check/pure_optical/models.py",
+      "sha256": "a9685984d1f80cdcf97dcaccb2beb1216e60575d91df8708144d6b3e360bb76c",
+      "bytes": 6544
+    },
+    {
+      "path": "LightGenV2/tasks/t09_multimodal_matching/README.md",
+      "sha256": "3d88ec128ae25885f7ecb78113a9a0ecbc2eab6fd48945943278c797b4e5aa57",
+      "bytes": 29708
+    },
+    {
+      "path": "LightGenV2/tasks/t09_multimodal_matching/audio_frontend.py",
+      "sha256": "3822bc84244bf75341b0020bbd86378b5c0dc6e15ba562350d773c88ad8bf66a",
+      "bytes": 3228
+    },
+    {
+      "path": "LightGenV2/tasks/t09_multimodal_matching/audio_prepare.py",
+      "sha256": "d11eb3c442041109af211ca1e39e41635173b7221f3530bec2244ab39f285e7d",
+      "bytes": 6444
+    },
+    {
+      "path": "LightGenV2/tasks/t09_multimodal_matching/audit.py",
+      "sha256": "056782090c0ce92f0a2bf62ead5d5c2ced67caeb300e9075f24a5088bcff6f97",
+      "bytes": 5466
+    },
+    {
+      "path": "LightGenV2/tasks/t09_multimodal_matching/check_features.py",
+      "sha256": "4d960c89ef3e5f6f0d45350c490902724ddd42c5668ef73c288c06581e2dbabb",
+      "bytes": 2618
+    },
+    {
+      "path": "LightGenV2/tasks/t09_multimodal_matching/diagnose.py",
+      "sha256": "a8189af943be7ebae5276d889355986a319a49845b364972410ccc756c16289c",
+      "bytes": 5162
+    },
+    {
+      "path": "LightGenV2/tasks/t09_multimodal_matching/examples.py",
+      "sha256": "c65c7d498e55a911256735e538454c003f6e9bf264b866c274623b054a4fc30f",
+      "bytes": 2697
+    },
+    {
+      "path": "LightGenV2/tasks/t09_multimodal_matching/model.py",
+      "sha256": "8299ad614178e5ea99047270227e092e9eb97c2e0348a648661ac707d4d2ef34",
+      "bytes": 9071
+    },
+    {
+      "path": "LightGenV2/tasks/t09_multimodal_matching/plot.py",
+      "sha256": "62c99441ef7870222e94260f5eab1c9b9768a0732a4885afa9ca39db59807512",
+      "bytes": 2024
+    },
+    {
+      "path": "LightGenV2/tasks/t09_multimodal_matching/plot_audio.py",
+      "sha256": "708fa833ad278b7b76793dcbc1c788f4ecf0c71d51d0ddf450b97fb84074634d",
+      "bytes": 2582
+    },
+    {
+      "path": "LightGenV2/tasks/t09_multimodal_matching/plot_budget.py",
+      "sha256": "c27cf64e57fea4128e15075086ec60a0a62afb433e053104466342f13162d878",
+      "bytes": 1633
+    },
+    {
+      "path": "LightGenV2/tasks/t09_multimodal_matching/plot_controls.py",
+      "sha256": "dca26d000fc2935d47ef94b927753c4f50c282613ebf5c1ce9159e9c6329cb79",
+      "bytes": 1553
+    },
+    {
+      "path": "LightGenV2/tasks/t09_multimodal_matching/plot_input_contract.py",
+      "sha256": "8dc87428818a05f8a018f739d32190595bbdc567de1dc3d790ce7dba278ee706",
+      "bytes": 2375
+    },
+    {
+      "path": "LightGenV2/tasks/t09_multimodal_matching/plot_oeo_recovery.py",
+      "sha256": "20600859ddff2d65d4fd0fddecaf58065e21050e64a509ef0c6817d1258b363f",
+      "bytes": 3233
+    },
+    {
+      "path": "LightGenV2/tasks/t09_multimodal_matching/plot_raw_audio.py",
+      "sha256": "b87f77d1df0be82815f148a264375d11eacab54e5253543b9fe85bf4325768bc",
+      "bytes": 3602
+    },
+    {
+      "path": "LightGenV2/tasks/t09_multimodal_matching/plot_selected_test.py",
+      "sha256": "a0cf496a17e1e70f522b6ab6096e7c8766fab99e398bd2f2496ed8472ddab395",
+      "bytes": 3202
+    },
+    {
+      "path": "LightGenV2/tasks/t09_multimodal_matching/plot_test.py",
+      "sha256": "68bac677ce18e85aae0d755dbec1fa3f67be08936ba8adea75371006f8321d04",
+      "bytes": 2616
+    },
+    {
+      "path": "LightGenV2/tasks/t09_multimodal_matching/probe_oeo.py",
+      "sha256": "205f01c546e61203d397f547082714bc54a943fdf33b4cd29e740f4cc60a86a1",
+      "bytes": 3762
+    },
+    {
+      "path": "LightGenV2/tasks/t09_multimodal_matching/reports/reproduction/README.md",
+      "sha256": "a33956614ea476b19e743c18cc809070ff8bb249f1d1a90b1c01dd584c6cdcfc",
+      "bytes": 24317
+    },
+    {
+      "path": "LightGenV2/tasks/t09_multimodal_matching/run.py",
+      "sha256": "a18ca843b26d67a209c19f9f4a827043fbfffed0e2e40415c97ccb31b4107bec",
+      "bytes": 18609
+    },
+    {
+      "path": "LightGenV2/tasks/t09_multimodal_matching/smoke_layout.py",
+      "sha256": "e7c455a868d0cdd76079752d5eb7b5e48970ca16033b906acffb319fe28d24ea",
+      "bytes": 3256
+    },
+    {
+      "path": "LightGenV2/tasks/t09_multimodal_matching/test_frozen.py",
+      "sha256": "afaec114defebef6df49575684cd0231676378764dd9a4507ffdd1b200008b0a",
+      "bytes": 6105
+    },
+    {
+      "path": "LightGenV2/tasks/t09_multimodal_matching/test_selected.py",
+      "sha256": "5c4dfc1fcc211e7c79eb340bcf6eb4c4fd2db5a9efc2556c51379ad6e1ecdac2",
+      "bytes": 7881
+    }
+  ],
+  "existing_identical_dependencies": [
+    "LightGenV2/demo_check/adrenal_softsign_code_export_20260915_145336/code/optical_reference/__init__.py",
+    "LightGenV2/demo_check/adrenal_softsign_code_export_20260915_145336/code/optical_reference/optics.py",
+    "LightGenV2/tasks/t09_multimodal_matching/prepare.py"
+  ],
+  "source_runtime": "/DATA/DATA1/guest3/demo_reproduction_20260915"
+}

@@ -70,7 +70,11 @@
     },
     {
       "path": "LightGenV2/tasks/t09_multimodal_matching/vision.py",
-      "source_blob_sha256": "630ad5273911f8f6069602788eb5f71cd9ac2f0e9a0040b7c1211a694376761f"
+      "source_blob_sha256": "4cad72e1445f3a16373c4f697916a89b2526b4a900285eac6393928012052a1f",
+      "original_source_blob_sha256": "630ad5273911f8f6069602788eb5f71cd9ac2f0e9a0040b7c1211a694376761f",
+      "dependency_migration_commit": "190ceb9da7add8d93ea75c3086ace9ce58019d71",
+      "dependency_migration_reason": "T09 actual server widths metadata support; T16 still uses identical default16/32/64, actual frozen PT strictly reloads and synthetic outputs are bit-identical. T16 model/source/result unchanged.",
+      "compatibility_evidence": "maintenance/storage/T09_T16_VISION_COMPATIBILITY_20261004.json"
     },
     {
       "path": "LightGenV2/tasks/t16_zero_phase_ccd_lifelong/data.py",

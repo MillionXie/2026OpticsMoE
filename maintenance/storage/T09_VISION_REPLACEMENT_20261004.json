@@ -1,0 +1,13 @@
+{
+  "source_commit": "190ceb9da7add8d93ea75c3086ace9ce58019d71",
+  "expected_main": "2eb306f8044d413057af050e6e89be072de05985",
+  "task_prefix": "LightGenV2/tasks/t09_multimodal_matching/",
+  "paths": [
+    {
+      "path": "LightGenV2/tasks/t09_multimodal_matching/vision.py",
+      "source_sha256": "4cad72e1445f3a16373c4f697916a89b2526b4a900285eac6393928012052a1f",
+      "expected_target_sha256": "630ad5273911f8f6069602788eb5f71cd9ac2f0e9a0040b7c1211a694376761f",
+      "review_reason": "Actual server widths metadata support; default state/output exact and actual T16 shared frontend PT strict compatibility verified."
+    }
+  ]
+}
