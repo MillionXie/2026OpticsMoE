@@ -1,0 +1,51 @@
+{
+  "date": "2026-10-05",
+  "status": "preflight_and_current_byte_backup_complete_checkout_not_performed",
+  "inspected_working_head": "0b755202d37ce6642382b77ceed21f4b5c710dc8",
+  "inspected_main": "8263fbda886afd4eb9143b511b00517a0dfde96c",
+  "main_file_difference_count": 1507,
+  "tracked_user_edits": {
+    "total": 18,
+    "byte_identical_to_main": 5,
+    "different_from_main": 12,
+    "absent_from_main": 1
+  },
+  "existing_files_at_new_main_paths": {
+    "total": 41,
+    "byte_identical_to_main": 16,
+    "crlf_only_difference_from_main": 17,
+    "different_from_main": 8,
+    "directory_blockers": 0
+  },
+  "tracked_paths_no_longer_in_main": 1318,
+  "protected_timing_paths_no_longer_in_main": 104,
+  "private_backup": {
+    "receipt": ".codex_tmp/main_checkout_preservation_20261005/receipt.json",
+    "archive": ".codex_tmp/main_checkout_preservation_20261005/current_files.zip",
+    "files": 1376,
+    "source_bytes": 151301311,
+    "archive_bytes": 121073874,
+    "archive_sha256": "dce191730e45231f194f25e138378b1ae31378a6f34a4085623b2dedbe3bebc8",
+    "crc_and_every_file_sha256_verified": true,
+    "source_sha256_rechecked_after_backup": true,
+    "missing_files": 0,
+    "originals_moved_or_deleted": false
+  },
+  "server_inventory": {
+    "registered_worktrees": 83,
+    "existing_worktrees": 83,
+    "missing_registrations": 0,
+    "six_fresh_clean_candidates_all_have_timing_files": true,
+    "candidate_process_or_main_executable_references_found": 0,
+    "server_worktrees_removed_this_batch": 0
+  },
+  "required_followup": [
+    "Obtain the pending original-checkout versus main choice; do not treat a backup as overwrite approval.",
+    "Review the 12 different tracked user files and eight differing pre-existing main destinations without discarding either version.",
+    "Keep the 104 timing paths and necessary baseline assets available at original paths during any approved checkout transition.",
+    "Re-run preflight immediately before transition because refs, processes and other-window edits can change."
+  ],
+  "scientific_models_changed": false,
+  "main_checkout_complete": false,
+  "whole_project_migration_complete": false
+}
