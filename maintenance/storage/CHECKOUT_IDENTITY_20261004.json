@@ -1,0 +1,158 @@
+{
+  "head": "25c9e43394e3e827b8b4a8c31f8f0ab60da9229d",
+  "main": "3c186a8514375bdda2eb8e1889d43e1037c1b416",
+  "rows": [
+    {
+      "path": "LightGenPublic/README.md",
+      "status": " M",
+      "classification": "unique_working_change_preserve",
+      "working_sha256": "6457298a879641fac0a6cd0c8266e2ad922cafde3ae16f8c9731345455152174",
+      "head_sha256": "72de33fd2bd78599577af7e0f5b8441870610f63a2f3eb168a1c8dc4f102b6ef",
+      "main_sha256": null
+    },
+    {
+      "path": "LightGenV2/common/README.md",
+      "status": " M",
+      "classification": "unique_working_change_preserve",
+      "working_sha256": "6e6e43c4569642c6fec7070faddbc144e8652ea3c5093c02dc842ac245e35f95",
+      "head_sha256": "470ff7266247961ef0771cd09b7dc244ec83961ea22833ada41516e41a0e30a6",
+      "main_sha256": "470ff7266247961ef0771cd09b7dc244ec83961ea22833ada41516e41a0e30a6"
+    },
+    {
+      "path": "LightGenV2/common/__init__.py",
+      "status": " M",
+      "classification": "unique_working_change_preserve",
+      "working_sha256": "3ac50d6f440682e7d57995edac72f98a894c0dc77ea191b04caa4c52425f3387",
+      "head_sha256": "9c45fcd75fdf41e73a9bf81e29f3c8ef9179704a494357d054896df7b33befb5",
+      "main_sha256": "9c45fcd75fdf41e73a9bf81e29f3c8ef9179704a494357d054896df7b33befb5"
+    },
+    {
+      "path": "LightGenV2/reports/20260923_t12_three_task_large_small/README.md",
+      "status": " M",
+      "classification": "unique_working_change_preserve",
+      "working_sha256": "ab615c3e7fc6804eed542058492a020463fcf3548fbdf7dff5b19ba363aa0565",
+      "head_sha256": "64f9931ab9d6c37a062499dd3eb976ead9e45de29e5fa039b8bc3e746ca9df2a",
+      "main_sha256": null
+    },
+    {
+      "path": "LightGenV2/scripts/profile_narrow_optical_electronics_a100.py",
+      "status": " M",
+      "classification": "unique_working_change_preserve",
+      "working_sha256": "975d1cd7073e9d6bcec97753f39d1a9f527680b2b0f2e4c59b18c2f91bfead61",
+      "head_sha256": "6162c7cd4c158424dc0b1709b95f34335bf10457f75141a615c70c244167c0b9",
+      "main_sha256": null
+    },
+    {
+      "path": "LightGenV2/tasks/t07_abo_image_retrieval/standalone/retrieval_adapt.py",
+      "status": " M",
+      "classification": "unique_working_change_preserve",
+      "working_sha256": "fd57e19e19645a9c6f0d4faa325d115905974135240248e08e6c4b02dcc63794",
+      "head_sha256": "898436ea8896c702958994f12ff6b09d89606dfc935e6e0e1a3176a160e19ce3",
+      "main_sha256": null
+    },
+    {
+      "path": "LightGenV2/tasks/t07_abo_image_retrieval/standalone/retrieval_refine.py",
+      "status": " M",
+      "classification": "unique_working_change_preserve",
+      "working_sha256": "1697ccd107a7c8c319d472954d885f9908035254fd01af6b1055b7e59ff9d1db",
+      "head_sha256": "0c19295c9f025b88c594aabe92eaab00e550c05c08e3095e82824810e18ec442",
+      "main_sha256": null
+    },
+    {
+      "path": "LightGenV2/tasks/t11_lifelong_optics/model.py",
+      "status": " M",
+      "classification": "head_identical_after_eol_normalization",
+      "working_sha256": "223f24930be3eb86725d0c9d073698c96bda01e0ed14e53d88436cea5f8fba19",
+      "head_sha256": "9a19e867be7838776e7a9546aec6a1a6ccfa88fc331ecfc4feafea718c03c7ff",
+      "main_sha256": null
+    },
+    {
+      "path": "LightGenV2/tasks/t11_lifelong_optics/tests/test_contract.py",
+      "status": " M",
+      "classification": "head_identical_after_eol_normalization",
+      "working_sha256": "3176ae7b885f810391ba386f8d5c5d76db7f2b2f61ba8409922c386068cbc858",
+      "head_sha256": "7373b20e9b0cb51336222e05d0023cbfbd4e89d8d55776899298c2d03ccc7df9",
+      "main_sha256": null
+    },
+    {
+      "path": "LightGenV2/tasks/t12_text_to_image/README.md",
+      "status": " M",
+      "classification": "unique_working_change_preserve",
+      "working_sha256": "4082a134b4afaf5d8bf5924345369d0c7b8033ed3539d05f13966641d0f2d1d7",
+      "head_sha256": "15296bd66f55a734b7ca9c9ec51005d24cfb77c2578619a1b64b10f8113dcbdb",
+      "main_sha256": "361906d1ce2af17622aa37be565a45b1b41de35e646425f967c9c512362f41b4"
+    },
+    {
+      "path": "LightGenV2/tasks/t12_text_to_image/__init__.py",
+      "status": " M",
+      "classification": "unique_working_change_preserve",
+      "working_sha256": "b16db9a737f4c407c278657e93058ad1429a6d61ab4706cb6f1dd430379dc299",
+      "head_sha256": "e47cf77eed3fcf9be4d8df4c52497dca404ac4602b29e3073746e55e34a02ca7",
+      "main_sha256": "e47cf77eed3fcf9be4d8df4c52497dca404ac4602b29e3073746e55e34a02ca7"
+    },
+    {
+      "path": "LightGenV2/tasks/t12_text_to_image/product_global_redesign_training.py",
+      "status": " M",
+      "classification": "unique_working_change_preserve",
+      "working_sha256": "4e4cfbe06f9df7839aca7423d688d20b039353286a412f860d452633aca6eada",
+      "head_sha256": "09dcb9642ec64dcdb1a33f6ec799997acfb07636fa99a8414d18c7a2bd664101",
+      "main_sha256": null
+    },
+    {
+      "path": "LightGenV2/tasks/t12_text_to_image/product_object_replace_data.py",
+      "status": " M",
+      "classification": "already_matches_published_main",
+      "working_sha256": "b2994a4901a7c0a39d87eedbbc605f12f5aad5c471f03e7a30ace9f03dcd3017",
+      "head_sha256": "05506a223c1510b0a8189383cdbf07e979f7017ae6128a6fa73faa3ac193eb30",
+      "main_sha256": "b2994a4901a7c0a39d87eedbbc605f12f5aad5c471f03e7a30ace9f03dcd3017"
+    },
+    {
+      "path": "LightGenV2/tasks/t12_text_to_image/qwen_mini_small.py",
+      "status": " M",
+      "classification": "unique_working_change_preserve",
+      "working_sha256": "72f60a6c4d32ae5d95eded2a31728284420683d4f966e063796c198697afe826",
+      "head_sha256": "6c3030b4f31d1aacc6b80b6584cc1c0f44238b37062e46c9a2d4082084b80a7e",
+      "main_sha256": "fc7dee42ed26505fe461930ef3adc0f795740911da8d7dcca4bd5acd991bf323"
+    },
+    {
+      "path": "LightGenV2/tasks/t12_text_to_image/qwen_mini_small_run.py",
+      "status": " M",
+      "classification": "unique_working_change_preserve",
+      "working_sha256": "d528a1d5c7553fe9366bb981f0078063f0ff36e1728fb06b01052840591784b7",
+      "head_sha256": "65647fe34343b503e9260032d8381869682f2224bb55957a3a513e07c164adb1",
+      "main_sha256": null
+    },
+    {
+      "path": "LightGenV2/tasks/t12_text_to_image/reports/reproduction/README.md",
+      "status": " M",
+      "classification": "unique_working_change_preserve",
+      "working_sha256": "609d45a0734490699c35b5a96bf0183d78fef426210cf93720c2e517872414c9",
+      "head_sha256": "53593baf560e413c73279b288738a36c9032531f4efd3509650eea4495619cf5",
+      "main_sha256": "2edbf2f0a2cb533f734bd0b9c6de4598aa2588f012f9a33602cea9d5c4c8eceb"
+    },
+    {
+      "path": "LightGenV2/tasks/t12_text_to_image/settings.py",
+      "status": " M",
+      "classification": "unique_working_change_preserve",
+      "working_sha256": "92505f3ad6a8de31e913fe9539e499045c558b0b823c8cf56f9bfae1421e1a80",
+      "head_sha256": "6d68d642042be9ddb12fafc344313720a9d568e23b63b099e2cc7c0987bebdeb",
+      "main_sha256": "6d68d642042be9ddb12fafc344313720a9d568e23b63b099e2cc7c0987bebdeb"
+    },
+    {
+      "path": "LightGenV2/tasks/t12_text_to_image/small_fullframe.py",
+      "status": " M",
+      "classification": "already_matches_published_main",
+      "working_sha256": "0fdc1c37b2e5411465b72c8fa2c8fb4d2fd9f2db5ecea7263987023cbf8e91a8",
+      "head_sha256": "b22bbef4d27af11f924895ff6f0c30638ac45fb657aa5bfe332d6eb2dce5d8db",
+      "main_sha256": "0fdc1c37b2e5411465b72c8fa2c8fb4d2fd9f2db5ecea7263987023cbf8e91a8"
+    }
+  ],
+  "counts": {
+    "unique_working_change_preserve": 14,
+    "head_identical_after_eol_normalization": 2,
+    "already_matches_published_main": 2
+  },
+  "read_only": true,
+  "safe_to_overwrite": false,
+  "scope": "Tracked working changes only; not full runtime/dependency or untracked-source audit"
+}

@@ -37,6 +37,22 @@ def verify(root, ref, manifests):
             "errors": errors, "read_only": True, "runtime_tests_rerun": False}
 
 
+def verify_reviewed_publications(root, ref, manifests):
+    """Enforce already-reviewed T03/T10 imports as well as T13/T16 snapshots."""
+    checked, errors = [], []
+    for name in manifests:
+        manifest = json.loads(read(root, ref, name))
+        for row in manifest["paths"]:
+            expected = row.get("source_sha256", row.get("sha256"))
+            if not expected:
+                raise ValueError("Missing published identity: " + row["path"])
+            actual = hashlib.sha256(read(root, ref, row["path"])).hexdigest()
+            if actual != expected:
+                errors.append("reviewed publication mismatch: " + row["path"])
+            checked.append(row["path"])
+    return {"reviewed_publication_hashes_checked": len(checked), "errors": errors}
+
+
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--commit", required=True)
@@ -45,6 +61,14 @@ def main():
     report = verify(root, args.commit, [
         "LightGenV2/tasks/t16_zero_phase_ccd_lifelong/source_import_20261002.json",
         "LightGenV2/tasks/t13_temporal_robust_training/source_import_20261003.json"])
+    reviewed = verify_reviewed_publications(root, args.commit, [
+        "maintenance/storage/T03_REVIEWED_CORE_20261003.json",
+        "maintenance/storage/T03_REVIEWED_ENTRY_20261003.json",
+        "maintenance/storage/T03_PINNED_ADDITIONS_20261003.json",
+        "maintenance/storage/T03_ENTRY_ADDITIONS_20261003.json",
+        "maintenance/storage/T10_RUNTIME_ADDITIONS_20261003.json"])
+    report["reviewed_publication_hashes_checked"] = reviewed["reviewed_publication_hashes_checked"]
+    report["errors"].extend(reviewed["errors"])
     print(json.dumps(report, indent=2))
     raise SystemExit(bool(report["errors"]))
 
