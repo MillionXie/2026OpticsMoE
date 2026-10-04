@@ -1,0 +1,25 @@
+{
+  "commit": "8d6445e28c88346c692acfaef788cd9d4a4e86fe",
+  "python_blobs_compiled": 90,
+  "backend_test_exit_code": 0,
+  "strict_reloads": [
+    {
+      "target": "spatial",
+      "strict": true,
+      "sha256": "95e12397ccf8c960fa30ba9dfb400b69d2c2ebd02288ac6a4879870ab592828b",
+      "architecture": "qwenfront_spatial_o2_4f196_vexpert109_alpha42_no_attention_v1_spatiallowrankprunedgridcompactresidual_k144_r160-64-96-144_v1_readoutmoments_v1_qwenonly_v1_strict2branch_v1_residual_conv2_v1_electronicqualityresidual85_v1_srouterstandardize_v1_sroutervisualgain110_v1",
+      "parameters": 3786407
+    },
+    {
+      "target": "temporal",
+      "strict": true,
+      "sha256": "5303b574b200e14bf943af21c60a246720be453b9cf8847cd93c0eaaa243a77c",
+      "architecture": "lightgenv2_t06_temporal_multivideo16x4_visualrouter_o6_top2_no_attention_v3",
+      "parameters": 6804011
+    }
+  ],
+  "candidate_model_sha256": "d6b09c803e814e4fda79019c5b1ee2d45fe790310f195b8e7a52a2b4c6f5a09c",
+  "new_checkout_created": false,
+  "dataset_evaluated": false,
+  "cuda_visible_devices": ""
+}

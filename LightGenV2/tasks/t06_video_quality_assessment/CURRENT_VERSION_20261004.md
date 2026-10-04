@@ -15,7 +15,7 @@
 [时间实测](reports/reproduction/TEMPORAL_SHS_20260914.md)。空间末端适配的不同划分、
 混合test适配、重代入指标另见原读出报告，不能用不同分母的最高分替代上表。
 
-## 代码及交付包已核验，但不冒称main已经完全兼容
+## 正式核心已收敛到main，历史入口和后续适配仍分开核验
 
 两项实际离线推理包的源码commit为
 `8e869473787f4ffceb2a6a77f4430b94c206f459`。各包15份运行Python与其内部SHA清单
@@ -28,9 +28,14 @@ CPU上直接从既有ZIP读取源码和PT做strict reload，两模型均通过�
 - `20260914_shs_spatial06710.zip`，SHA `fe90b0ac2cdedbe9b71f1d21c1f6cc5dcd6f2e237cefdd9bed1c9e94cde61d2c`。
 - `20260914_shs_temporal08044.zip`，SHA `8421e7418ade4c9ec59f924cdad8e274db4100600c001cf802a8291ab7a67aff`。
 
-源码从Git迁移、数据/PT从manifest+SHA管理；ZIP留作已验证旧部署与恢复证据，不把其代码
-直接覆盖main或当前设备工程。七项运行文件仍与当前main不同，需连同训练/适配依赖逐项
-兼容检查后才迁入，不能直接换PT冒称新入口已能复现。
+源码从Git迁移、数据/PT从manifest+SHA管理；ZIP留作已验证旧部署与恢复证据。
+主线 `8d6445e28c88346c692acfaef788cd9d4a4e86fe` 已按52项依赖闭包审核，
+迁入19项缺失文件和10项正式模型/训练依赖，保留已有原子JSON设备读写修复。
+服务器CPU直接加载发布Git树：90份Python编译通过，原57项模型/训练合同测试通过，
+上表两份正式PT均strict reload通过；没有新建工程、调用设备或重评数据集。
+机器可读来源见 [source_import_20261004.json](source_import_20261004.json)。
+这些测试不等于新机硬件复现；更晚的实拍读出微调脚本、旧默认profile及设备辅助入口
+仍待逐项兼容，不能把主线核心恢复称为全部工程/资产迁移完毕。
 
 ## 历史默认profile的实际问题
 

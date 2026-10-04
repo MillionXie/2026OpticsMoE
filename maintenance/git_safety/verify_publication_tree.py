@@ -61,6 +61,7 @@ def main():
     report = verify(root, args.commit, [
         "LightGenV2/tasks/t16_zero_phase_ccd_lifelong/source_import_20261002.json",
         "LightGenV2/tasks/t11_lifelong_optics/source_import_20261004.json",
+        "LightGenV2/tasks/t06_video_quality_assessment/source_import_20261004.json",
         "LightGenV2/tasks/t13_temporal_robust_training/source_import_20261003.json"])
     reviewed = verify_reviewed_publications(root, args.commit, [
         "maintenance/storage/T03_REVIEWED_CORE_20261003.json",
