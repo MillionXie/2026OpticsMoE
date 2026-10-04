@@ -1,0 +1,23 @@
+{
+  "paths": [
+    {
+      "path": "maintenance/git_safety/prepare_reviewed_replacements.py",
+      "historical_sha256": "d3737d8600188c8905a17231d307347e630b06a9f2b6281a1a0ff6f785061f5d",
+      "historical_source_commit": "7b186ee0b45207a789f358d0d2f531b6c82ce7c4",
+      "source_commit": "1d415b4f36a9ded180ab4c446fbac4d0c2fee3f6",
+      "sha256": "cafbf84ba1ba7156344d98ddadd96a6f07bedc1f230f12adf2ac47628da1f820",
+      "bytes": 6011,
+      "review_reason": "Same-task Markdown mapping only; seven replacement safety tests pass; protected working history unchanged"
+    },
+    {
+      "path": "maintenance/git_safety/tests/test_reviewed_replacements.py",
+      "historical_sha256": "8cf2edb06f8885a3b6e1064acf5590edadd3218ccf9b7c73837106002ea3005c",
+      "historical_source_commit": "7b186ee0b45207a789f358d0d2f531b6c82ce7c4",
+      "source_commit": "1d415b4f36a9ded180ab4c446fbac4d0c2fee3f6",
+      "sha256": "998163d9bb443f60ff8091df58a642a96f5c1e03af011b5e6e2f0a5de78c0aad",
+      "bytes": 4225,
+      "review_reason": "Same-task Markdown mapping only; seven replacement safety tests pass; protected working history unchanged"
+    }
+  ],
+  "historical_import_manifests_unchanged": true
+}

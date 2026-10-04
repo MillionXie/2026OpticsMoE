@@ -40,6 +40,14 @@ def verify(root, ref, manifests):
 def verify_reviewed_publications(root, ref, manifests):
     """Enforce already-reviewed T03/T10 imports as well as T13/T16 snapshots."""
     checked, errors = [], []
+    evolution_path = 'maintenance/storage/GOVERNANCE_TOOL_EVOLUTION_20261004.json'
+    present = subprocess.check_output(['git','-C',str(root),'ls-tree',ref,'--',evolution_path])
+    evolutions = (json.loads(read(root,ref,evolution_path))['paths'] if present else [])
+    evolved = {row['path']:row for row in evolutions}
+    for path,row in evolved.items():
+        assert path.startswith('maintenance/git_safety/') and row['review_reason']
+        assert hashlib.sha256(read(root,row['historical_source_commit'],path)).hexdigest() == row['historical_sha256']
+        assert hashlib.sha256(read(root,row['source_commit'],path)).hexdigest() == row['sha256']
     for name in manifests:
         manifest = json.loads(read(root, ref, name))
         for row in manifest["paths"]:
@@ -48,6 +56,10 @@ def verify_reviewed_publications(root, ref, manifests):
                         else row.get("source_sha256", row.get("sha256")))
             if not expected:
                 raise ValueError("Missing published identity: " + str(path))
+            if path in evolved:
+                if expected != evolved[path]['historical_sha256']:
+                    raise ValueError('Unreviewed governance history: '+path)
+                expected = evolved[path]['sha256']
             actual = hashlib.sha256(read(root, ref, path)).hexdigest()
             if actual != expected:
                 errors.append("reviewed publication mismatch: " + path)
@@ -76,7 +88,8 @@ def main():
         "maintenance/storage/T08_PHYSICAL_TOOLS_IMPORT_20261004.json",
         "maintenance/storage/T12_PRESERVED_ENTRY_ADDITIONS_20261004.json",
         "maintenance/storage/T12_PRESERVED_ENTRY_DEPENDENCIES_20261004.json",
-        "maintenance/storage/T07_RANK72_SOURCE_ADDITIONS_20261004.json"])
+        "maintenance/storage/T07_RANK72_SOURCE_ADDITIONS_20261004.json",
+        "maintenance/storage/T07_REVIEWED_MAIN_ENTRY_20261004.json"])
     report["reviewed_publication_hashes_checked"] = reviewed["reviewed_publication_hashes_checked"]
     report["errors"].extend(reviewed["errors"])
     print(json.dumps(report, indent=2))
