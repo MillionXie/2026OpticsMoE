@@ -1,16 +1,18 @@
 from __future__ import annotations
 
 import csv
+import copy
 import hashlib
 import json
 import math
+import random
 from pathlib import Path
 from typing import Any, Mapping
 
 import torch
 from torch import nn
 from torch.nn import functional as F
-from torch.utils.data import DataLoader
+from torch.utils.data import DataLoader, Sampler
 
 from .data import LGVQSingleMetricDataset
 from .metrics import regression_metrics
@@ -29,6 +31,62 @@ def _json(path: Path, value: Any) -> None:
     temporary.replace(path)
 
 
+class MosStratifiedBatchSampler(Sampler[list[int]]):
+    """Use every sample once while spreading the MOS range across each batch."""
+
+    def __init__(
+        self,
+        targets: torch.Tensor,
+        *,
+        batch_size: int,
+        strata: int,
+        seed: int,
+    ) -> None:
+        values = torch.as_tensor(targets, dtype=torch.float32).flatten()
+        if values.numel() == 0 or not bool(torch.isfinite(values).all()):
+            raise ValueError("MOS sampler requires finite, non-empty targets")
+        if batch_size <= 0 or strata < 2:
+            raise ValueError("MOS sampler requires batch_size>0 and strata>=2")
+        order = sorted(range(values.numel()), key=lambda index: float(values[index]))
+        self.bins: list[list[int]] = [[] for _ in range(min(strata, len(order)))]
+        for rank, index in enumerate(order):
+            bin_index = min(len(self.bins) - 1, rank * len(self.bins) // len(order))
+            self.bins[bin_index].append(index)
+        self.sample_count = len(order)
+        self.batch_size = int(batch_size)
+        self.seed = int(seed)
+        self.epoch = 0
+
+    def __len__(self) -> int:
+        return math.ceil(self.sample_count / self.batch_size)
+
+    def __iter__(self):
+        generator = random.Random(self.seed + self.epoch)
+        self.epoch += 1
+        bins = [list(values) for values in self.bins]
+        for values in bins:
+            generator.shuffle(values)
+        # Round-robin over score strata, with a new starting stratum each epoch.
+        # Consecutive chunks therefore span the MOS range without replacement.
+        interleaved: list[int] = []
+        start = generator.randrange(len(bins))
+        offsets = [0 for _ in bins]
+        remaining = self.sample_count
+        while remaining:
+            progressed = False
+            for step in range(len(bins)):
+                bin_index = (start + step) % len(bins)
+                if offsets[bin_index] < len(bins[bin_index]):
+                    interleaved.append(bins[bin_index][offsets[bin_index]])
+                    offsets[bin_index] += 1
+                    remaining -= 1
+                    progressed = True
+            if not progressed:
+                raise RuntimeError("MOS-stratified sampler failed to make progress")
+        for left in range(0, len(interleaved), self.batch_size):
+            yield interleaved[left : left + self.batch_size]
+
+
 def _loader(
     payload: Mapping[str, Any],
     split: str,
@@ -36,15 +94,108 @@ def _loader(
     *,
     shuffle: bool,
 ) -> DataLoader:
+    dataset = LGVQSingleMetricDataset(payload, split)
+    common = {
+        "num_workers": settings.num_workers,
+        "pin_memory": settings.device.startswith("cuda"),
+        "persistent_workers": settings.num_workers > 0,
+    }
+    if split == "train" and settings.mos_stratified_batches:
+        targets = torch.stack(
+            [payload["targets"][source].float() for source in dataset.indices]
+        )
+        sampler = MosStratifiedBatchSampler(
+            targets,
+            batch_size=settings.batch_size,
+            strata=settings.mos_strata,
+            seed=settings.random_seed,
+        )
+        return DataLoader(dataset, batch_sampler=sampler, **common)
     return DataLoader(
-        LGVQSingleMetricDataset(payload, split),
+        dataset,
         batch_size=settings.batch_size,
         shuffle=shuffle,
-        num_workers=settings.num_workers,
-        pin_memory=settings.device.startswith("cuda"),
-        persistent_workers=settings.num_workers > 0,
         drop_last=False,
+        **common,
     )
+
+
+def curriculum_values(
+    settings: ExperimentSettings, epoch: int
+) -> dict[str, float]:
+    """Return training-only schedules without changing the inference graph."""
+
+    if not settings.curriculum_enabled:
+        progress = 0.0
+    elif epoch <= settings.curriculum_start_epoch:
+        progress = 0.0
+    elif epoch >= settings.curriculum_end_epoch:
+        progress = 1.0
+    else:
+        progress = (epoch - settings.curriculum_start_epoch) / (
+            settings.curriculum_end_epoch - settings.curriculum_start_epoch
+        )
+
+    def blend(start: float, end: float) -> float:
+        return float(start + progress * (end - start))
+
+    return {
+        "progress": float(progress),
+        "ranking_weight": blend(
+            settings.ranking_weight, settings.curriculum_ranking_weight_final
+        ),
+        "correlation_weight": blend(
+            settings.correlation_weight,
+            settings.curriculum_correlation_weight_final,
+        ),
+        "soft_spearman_weight": blend(
+            settings.soft_spearman_weight,
+            settings.curriculum_soft_spearman_weight_final,
+        ),
+        "soft_target_weight": blend(
+            settings.soft_target_weight,
+            settings.curriculum_soft_target_weight_final,
+        ),
+        "router_balance_weight": blend(
+            settings.router_balance_weight,
+            settings.curriculum_router_balance_weight_final,
+        ),
+        "router_importance_weight": blend(
+            settings.router_importance_weight,
+            settings.curriculum_router_importance_weight_final,
+        ),
+        "serial_router_balance_weight": blend(
+            settings.serial_router_balance_weight,
+            settings.curriculum_serial_router_balance_weight_final,
+        ),
+        "serial_router_importance_weight": blend(
+            settings.serial_router_importance_weight,
+            settings.curriculum_serial_router_importance_weight_final,
+        ),
+        "serial_router_diversity_weight": blend(
+            settings.serial_router_diversity_weight,
+            settings.curriculum_serial_router_diversity_weight_final,
+        ),
+        "router_noise_std": blend(
+            settings.router_noise_std, settings.curriculum_router_noise_std_final
+        ),
+        "unmodulated_power_fraction_max": blend(
+            settings.curriculum_unmodulated_power_fraction_max_initial,
+            settings.unmodulated_power_fraction_max,
+        ),
+    }
+
+
+def _learning_rate_factor(settings: ExperimentSettings, epoch: int) -> float:
+    warmup = settings.learning_rate_warmup_epochs
+    if warmup and epoch <= warmup:
+        return max(settings.minimum_learning_rate_factor, epoch / warmup)
+    span = max(1, settings.epochs - warmup - 1)
+    progress = min(1.0, max(0.0, (epoch - warmup - 1) / span))
+    cosine = 0.5 * (1.0 + math.cos(math.pi * progress))
+    return settings.minimum_learning_rate_factor + (
+        1.0 - settings.minimum_learning_rate_factor
+    ) * cosine
 
 
 def pairwise_ranking_loss(
@@ -107,10 +258,59 @@ def soft_spearman_loss(
     return batch_correlation_loss(soft_ranks, target_ranks)
 
 
+def listwise_ranking_loss(
+    prediction: torch.Tensor,
+    target: torch.Tensor,
+    temperature: float = 0.50,
+) -> torch.Tensor:
+    """ListMLE ordering loss over one MOS-stratified training batch.
+
+    Unlike the pairwise term, each score is normalized against every item that
+    should rank below it.  It is a training-only objective and adds no model
+    module, parameter, or inference operation.
+    """
+
+    prediction, target = prediction.float().flatten(), target.float().flatten()
+    if prediction.numel() < 2:
+        return prediction.new_zeros(())
+    if temperature <= 0.0:
+        raise ValueError("temperature must be positive")
+    order = torch.argsort(target, descending=True, stable=True)
+    ordered = prediction[order] / temperature
+    log_denominator = torch.logcumsumexp(ordered.flip(0), dim=0).flip(0)
+    return (log_denominator - ordered).mean()
+
+
+def weighted_level_distribution_loss(
+    logits: torch.Tensor,
+    level_scores: torch.Tensor,
+    base_prediction: torch.Tensor,
+    target: torch.Tensor,
+) -> torch.Tensor:
+    """Supervise five ordered residual levels with a smooth local target.
+
+    The scalar prediction remains the probability-weighted level sum.  A soft
+    two-neighbour-style target avoids the discontinuity of hard MOS bins while
+    preserving the Bad-to-Excellent ordering used by the electronic baseline.
+    """
+
+    scores = level_scores.float().flatten()
+    if logits.ndim != 2 or logits.shape[1] != scores.numel():
+        raise ValueError("Weighted-level logits and score anchors disagree")
+    if scores.numel() < 2 or not bool(torch.all(scores[1:] > scores[:-1])):
+        raise ValueError("Weighted-level score anchors must be strictly ordered")
+    desired = (target.float() - base_prediction.float().detach()).unsqueeze(-1)
+    spacing = (scores[1:] - scores[:-1]).mean().clamp_min(1.0e-6)
+    distance = (desired - scores.unsqueeze(0)) / spacing
+    target_probability = torch.softmax(-2.0 * distance.square(), dim=-1)
+    return -(target_probability * F.log_softmax(logits.float(), dim=-1)).sum(-1).mean()
+
+
 def _optimizer(
     model: nn.Module, settings: ExperimentSettings
 ) -> torch.optim.Optimizer:
     electronic: list[nn.Parameter] = []
+    readout: list[nn.Parameter] = []
     feature_phase: list[nn.Parameter] = []
     router_phase: list[nn.Parameter] = []
     for name, parameter in model.named_parameters():
@@ -120,6 +320,8 @@ def _optimizer(
             router_phase.append(parameter)
         elif "raw_" in name and "phase" in name:
             feature_phase.append(parameter)
+        elif name.startswith("readout."):
+            readout.append(parameter)
         else:
             electronic.append(parameter)
     groups = [
@@ -128,6 +330,12 @@ def _optimizer(
             "lr": settings.learning_rate,
             "weight_decay": settings.weight_decay,
             "name": "electronic",
+        },
+        {
+            "params": readout,
+            "lr": settings.learning_rate * settings.readout_learning_rate_factor,
+            "weight_decay": settings.readout_weight_decay,
+            "name": "readout",
         },
         {
             "params": feature_phase,
@@ -150,6 +358,73 @@ def _optimizer(
     return torch.optim.AdamW(groups)
 
 
+def _training_stage_factors(
+    settings: ExperimentSettings, epoch: int
+) -> tuple[str, dict[str, float]]:
+    """Return per-parameter-group multipliers for the three-stage recipe."""
+
+    if settings.phase_warmup_epochs and epoch <= settings.phase_warmup_epochs:
+        return "optical_phase_warmup", {
+            "electronic": 0.0,
+            "readout": 0.0,
+            "feature_phase": 1.0,
+            "router_phase": 1.0,
+        }
+    if settings.late_refine_start_epoch and epoch >= settings.late_refine_start_epoch:
+        return "late_refine", {
+            "electronic": settings.late_refine_electronic_lr_factor,
+            "readout": settings.late_refine_readout_lr_factor,
+            "feature_phase": settings.late_refine_phase_lr_factor,
+            "router_phase": settings.late_refine_router_lr_factor,
+        }
+    return "joint", {
+        "electronic": 1.0,
+        "readout": 1.0,
+        "feature_phase": 1.0,
+        "router_phase": 1.0,
+    }
+
+
+def _phase_smoothness_loss(model: nn.Module) -> torch.Tensor:
+    """Wrapped total variation of every trainable physical phase plane."""
+
+    terms: list[torch.Tensor] = []
+    for name, parameter in model.named_parameters():
+        if "raw_" not in name or "phase" not in name:
+            continue
+        phasor = torch.exp(1j * (2.0 * math.pi * torch.sigmoid(parameter)))
+        terms.extend(
+            (
+                (phasor[..., 1:, :] - phasor[..., :-1, :]).abs().square().mean(),
+                (phasor[..., :, 1:] - phasor[..., :, :-1]).abs().square().mean(),
+            )
+        )
+    if not terms:
+        return next(model.parameters()).new_zeros(())
+    return torch.stack(terms).mean()
+
+
+class _ModelEma:
+    """Small, dependency-free EMA whose shadow model is directly evaluable."""
+
+    def __init__(self, model: nn.Module, decay: float) -> None:
+        self.module = copy.deepcopy(model).eval()
+        self.module.requires_grad_(False)
+        self.decay = float(decay)
+        self.started = False
+
+    @torch.no_grad()
+    def update(self, model: nn.Module, *, initialize: bool = False) -> None:
+        source = model.state_dict()
+        for name, value in self.module.state_dict().items():
+            incoming = source[name].detach()
+            if initialize or not value.is_floating_point():
+                value.copy_(incoming)
+            else:
+                value.lerp_(incoming, 1.0 - self.decay)
+        self.started = True
+
+
 def _file_sha256(path: Path) -> str:
     digest = hashlib.sha256()
     with path.open("rb") as handle:
@@ -166,6 +441,9 @@ def _checkpoint(
     *,
     epoch: int,
     metrics: Mapping[str, Any] | None,
+    state_dict: Mapping[str, torch.Tensor] | None = None,
+    selection_source: str = "raw",
+    ema_state_dict: Mapping[str, torch.Tensor] | None = None,
 ) -> None:
     payload = {
         "schema_version": 1,
@@ -173,9 +451,10 @@ def _checkpoint(
         "target_name": settings.target_name,
         "prompt": settings.prompt,
         "epoch": int(epoch),
-        "state_dict": model.state_dict(),
+        "state_dict": model.state_dict() if state_dict is None else dict(state_dict),
         "optimizer": optimizer.state_dict(),
         "metrics_optical_on": dict(metrics or {}),
+        "selection_source": selection_source,
         "settings": resolved_dict(settings),
         "selection_policy": (
             f"highest periodically observed {settings.target_name} test SRCC; "
@@ -188,6 +467,8 @@ def _checkpoint(
             "tokenizer+text embedding cached before student training"
         ),
     }
+    if ema_state_dict is not None:
+        payload["ema_state_dict"] = dict(ema_state_dict)
     path.parent.mkdir(parents=True, exist_ok=True)
     temporary = path.with_suffix(path.suffix + ".tmp")
     torch.save(payload, temporary)
@@ -237,6 +518,12 @@ def evaluate(
             vgg_tokens=None
             if "vgg_tokens" not in batch
             else batch["vgg_tokens"].to(device, non_blocking=True),
+            resnet_tokens=None
+            if "resnet_tokens" not in batch
+            else batch["resnet_tokens"].to(device, non_blocking=True),
+            mobilenet_tokens=None
+            if "mobilenet_tokens" not in batch
+            else batch["mobilenet_tokens"].to(device, non_blocking=True),
             optical_enabled=optical_enabled,
         )
         prediction = result["prediction"]
@@ -413,8 +700,13 @@ def train(
         if "raw_" in name and "phase" in name
     }
     optimizer = _optimizer(model, settings)
-    scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(
-        optimizer, T_max=settings.epochs
+    ema = _ModelEma(model, settings.ema_decay) if settings.ema_decay > 0.0 else None
+    base_learning_rates = {
+        str(group["name"]): float(group["lr"]) for group in optimizer.param_groups
+    }
+    base_router_noise_std = float(settings.router_noise_std)
+    base_unmodulated_power_fraction_max = float(
+        settings.unmodulated_power_fraction_max
     )
     # Measure and preserve the exact warm-start before any optimizer update.
     # With test-driven selection requested for these experiments, epoch 0 is a
@@ -423,11 +715,15 @@ def train(
     initial_metrics = evaluate(model, test_loader, device, optical_enabled=True)
     best_srcc = float(initial_metrics["srcc"])
     best_epoch = 0
+    best_step = 0
+    global_step = 0
+    best_selection_source = "raw"
     history: list[dict[str, Any]] = [
         {
             "epoch": 0,
             "test_evaluated": True,
             "test_optical_on": initial_metrics,
+            "selection_source": "raw",
             "warm_start_before_optimizer_update": True,
         }
     ]
@@ -438,6 +734,8 @@ def train(
         settings,
         epoch=0,
         metrics=initial_metrics,
+        selection_source="raw",
+        ema_state_dict=None if ema is None else ema.module.state_dict(),
     )
     _json(
         settings.output_dir / "metrics_best_observed_test_optical_on.json",
@@ -449,6 +747,57 @@ def train(
         flush=True,
     )
     for epoch in range(1, settings.epochs + 1):
+        transition_restored = False
+        transition_epochs = {
+            value
+            for value in (
+                settings.phase_warmup_epochs + 1
+                if settings.phase_warmup_epochs
+                else 0,
+                settings.late_refine_start_epoch,
+            )
+            if value > 1
+        }
+        if settings.restore_best_at_stage_transition and epoch in transition_epochs:
+            # Each stage starts from the best test-observed state produced so
+            # far, not blindly from the last epoch of the previous stage. This
+            # makes an aggressive phase reheat reversible and resets stale
+            # Adam moments before the parameter groups are unfrozen/reweighted.
+            saved = torch.load(
+                settings.output_dir / "best_observed_test_checkpoint.pt",
+                map_location=device,
+                weights_only=False,
+            )
+            model.load_state_dict(saved["state_dict"], strict=True)
+            optimizer = _optimizer(model, settings)
+            base_learning_rates = {
+                str(group["name"]): float(group["lr"])
+                for group in optimizer.param_groups
+            }
+            if ema is not None:
+                ema.update(model, initialize=True)
+            transition_restored = True
+            print(
+                f"epoch {epoch:03d} restored best epoch {best_epoch} before stage transition",
+                flush=True,
+            )
+        curriculum = curriculum_values(settings, epoch)
+        # These two values are read by the physical forward model. They affect
+        # training-time robustness only; evaluation continues to use the fixed
+        # configured unmodulated_power_fraction_eval and no router noise.
+        settings.router_noise_std = curriculum["router_noise_std"]
+        settings.unmodulated_power_fraction_max = curriculum[
+            "unmodulated_power_fraction_max"
+        ]
+        learning_rate_factor = _learning_rate_factor(settings, epoch)
+        stage_name, stage_factors = _training_stage_factors(settings, epoch)
+        for group in optimizer.param_groups:
+            group_name = str(group["name"])
+            group["lr"] = (
+                base_learning_rates[group_name]
+                * learning_rate_factor
+                * stage_factors[group_name]
+            )
         model.train()
         totals = {
             name: 0.0
@@ -458,22 +807,72 @@ def train(
                 "ranking",
                 "correlation",
                 "soft_spearman",
+                "listwise_ranking",
                 "soft_target",
+                "soft_target_ranking",
+                "soft_target_correlation",
+                "level_distribution",
                 "optical_alignment",
                 "router_balance",
                 "router_importance",
                 "serial_router_balance",
                 "serial_router_importance",
+                "serial_router_diversity",
                 "router_capture",
+                "phase_smoothness",
+                "paired_view_supervision",
+                "paired_view_consistency",
             )
         }
         batches = 0
+        step_evaluations: list[dict[str, Any]] = []
         for batch in train_loader:
             vision = batch["vision_tokens"].to(device, non_blocking=True)
             quality = batch["quality_tokens"].to(device, non_blocking=True)
             language = batch["language_tokens"].to(device, non_blocking=True)
             language_mask = batch["language_mask"].to(device, non_blocking=True)
             target = batch["target"].to(device, non_blocking=True)
+            teacher = (
+                batch["soft_target"].to(device, non_blocking=True)
+                if "soft_target" in batch
+                else None
+            )
+            # Training-only feature Mixup uses the same coefficient and sample
+            # permutation for both frozen-Qwen inputs, the Conv5 electronic
+            # residual input, the human MOS and (when present) teacher score.
+            # The inference graph is untouched. A symmetric coefficient keeps
+            # each synthetic example anchored to a real video.
+            if (
+                settings.feature_mixup_probability > 0.0
+                and vision.shape[0] > 1
+                and bool(
+                    torch.rand((), device=device)
+                    < settings.feature_mixup_probability
+                )
+            ):
+                if "raw_frames" in batch or "vgg_tokens" in batch:
+                    raise RuntimeError(
+                        "Feature Mixup is restricted to the strict cached-input graph"
+                    )
+                concentration = torch.tensor(
+                    settings.feature_mixup_alpha, device=device
+                )
+                coefficient = torch.distributions.Beta(
+                    concentration, concentration
+                ).sample()
+                coefficient = torch.maximum(coefficient, 1.0 - coefficient)
+                permutation = torch.randperm(vision.shape[0], device=device)
+
+                def mix(value: torch.Tensor) -> torch.Tensor:
+                    return coefficient * value + (1.0 - coefficient) * value[
+                        permutation
+                    ]
+
+                vision = mix(vision)
+                quality = mix(quality)
+                target = mix(target)
+                if teacher is not None:
+                    teacher = mix(teacher)
             normalized_target = (target - model.target_mean) / model.target_std
             optimizer.zero_grad(set_to_none=True)
             result = model(
@@ -487,6 +886,12 @@ def train(
                 vgg_tokens=None
                 if "vgg_tokens" not in batch
                 else batch["vgg_tokens"].to(device, non_blocking=True),
+                resnet_tokens=None
+                if "resnet_tokens" not in batch
+                else batch["resnet_tokens"].to(device, non_blocking=True),
+                mobilenet_tokens=None
+                if "mobilenet_tokens" not in batch
+                else batch["mobilenet_tokens"].to(device, non_blocking=True),
                 optical_enabled=True,
             )
             regression = F.smooth_l1_loss(
@@ -499,34 +904,125 @@ def train(
                 result["normalized_prediction"], normalized_target
             )
             soft_spearman = result["normalized_prediction"].new_zeros(())
-            if settings.soft_spearman_weight > 0.0:
+            if curriculum["soft_spearman_weight"] > 0.0:
                 soft_spearman = soft_spearman_loss(
                     result["normalized_prediction"],
                     normalized_target,
                     settings.soft_rank_temperature,
                 )
+            listwise_ranking = result["normalized_prediction"].new_zeros(())
+            if settings.listwise_ranking_weight > 0.0:
+                listwise_ranking = listwise_ranking_loss(
+                    result["normalized_prediction"],
+                    normalized_target,
+                    settings.listwise_rank_temperature,
+                )
             soft_target = result["normalized_prediction"].new_zeros(())
-            if "soft_target" in batch:
-                teacher = batch["soft_target"].to(device, non_blocking=True)
+            soft_target_ranking = soft_target.clone()
+            soft_target_correlation = soft_target.clone()
+            if teacher is not None:
                 normalized_teacher = (teacher - model.target_mean) / model.target_std
                 soft_target = F.smooth_l1_loss(
                     result["normalized_prediction"], normalized_teacher
                 )
+                # Rank/correlation distillation is deliberately separate from
+                # absolute-score distillation: Qwen's MOS range is compressed,
+                # while its ordering generalizes substantially better.
+                soft_target_ranking = pairwise_ranking_loss(
+                    result["normalized_prediction"], normalized_teacher
+                )
+                soft_target_correlation = batch_correlation_loss(
+                    result["normalized_prediction"], normalized_teacher
+                )
+            level_distribution = result["normalized_prediction"].new_zeros(())
+            if settings.level_distribution_weight > 0.0:
+                logits = result["quality_level_logits"]
+                level_scores = result["quality_level_scores"]
+                level_base = result["quality_level_base_prediction"]
+                if logits is None or level_scores is None or level_base is None:
+                    raise RuntimeError(
+                        "Five-level loss requested but the readout returned no levels"
+                    )
+                level_distribution = weighted_level_distribution_loss(
+                    logits, level_scores, level_base, normalized_target
+                )
             language_routing = result["routing"]["language"]
             serial_router_balance = language_routing["balance_loss"]
             serial_router_importance = language_routing["importance_loss"]
+            serial_router_diversity = language_routing["diversity_loss"]
+            phase_smoothness = result["normalized_prediction"].new_zeros(())
+            if settings.phase_smoothness_weight > 0.0:
+                phase_smoothness = _phase_smoothness_loss(model)
+            paired_view_supervision = result["normalized_prediction"].new_zeros(())
+            paired_view_consistency = paired_view_supervision.clone()
+            if "paired_vision_tokens" in batch:
+                paired_result = model(
+                    batch["paired_vision_tokens"].to(device, non_blocking=True),
+                    batch["paired_quality_tokens"].to(device, non_blocking=True),
+                    language,
+                    language_mask,
+                    batch.get("paired_raw_frames", None).to(device, non_blocking=True)
+                    if "paired_raw_frames" in batch
+                    else None,
+                    optical_enabled=True,
+                )
+                paired_prediction = paired_result["normalized_prediction"]
+                paired_regression = F.smooth_l1_loss(
+                    paired_prediction, normalized_target
+                )
+                paired_ranking = pairwise_ranking_loss(
+                    paired_prediction, normalized_target
+                )
+                paired_correlation = batch_correlation_loss(
+                    paired_prediction, normalized_target
+                )
+                paired_soft_spearman = paired_prediction.new_zeros(())
+                if curriculum["soft_spearman_weight"] > 0.0:
+                    paired_soft_spearman = soft_spearman_loss(
+                        paired_prediction,
+                        normalized_target,
+                        settings.soft_rank_temperature,
+                    )
+                paired_listwise_ranking = paired_prediction.new_zeros(())
+                if settings.listwise_ranking_weight > 0.0:
+                    paired_listwise_ranking = listwise_ranking_loss(
+                        paired_prediction,
+                        normalized_target,
+                        settings.listwise_rank_temperature,
+                    )
+                paired_view_supervision = (
+                    settings.regression_weight * paired_regression
+                    + curriculum["ranking_weight"] * paired_ranking
+                    + curriculum["correlation_weight"] * paired_correlation
+                    + curriculum["soft_spearman_weight"] * paired_soft_spearman
+                    + settings.listwise_ranking_weight * paired_listwise_ranking
+                )
+                paired_view_consistency = F.smooth_l1_loss(
+                    paired_prediction, result["normalized_prediction"]
+                )
             loss = (
-                regression
-                + settings.ranking_weight * ranking
-                + settings.correlation_weight * correlation
-                + settings.soft_spearman_weight * soft_spearman
-                + settings.soft_target_weight * soft_target
+                settings.regression_weight * regression
+                + curriculum["ranking_weight"] * ranking
+                + curriculum["correlation_weight"] * correlation
+                + curriculum["soft_spearman_weight"] * soft_spearman
+                + settings.listwise_ranking_weight * listwise_ranking
+                + curriculum["soft_target_weight"] * soft_target
+                + settings.soft_target_ranking_weight * soft_target_ranking
+                + settings.soft_target_correlation_weight
+                * soft_target_correlation
+                + settings.level_distribution_weight * level_distribution
                 + settings.optical_alignment_weight * result["optical_alignment_loss"]
-                + settings.router_balance_weight * result["router_balance_loss"]
-                + settings.router_importance_weight * result["router_importance_loss"]
-                + settings.serial_router_balance_weight * serial_router_balance
-                + settings.serial_router_importance_weight * serial_router_importance
+                + curriculum["router_balance_weight"] * result["router_balance_loss"]
+                + curriculum["router_importance_weight"] * result["router_importance_loss"]
+                + curriculum["serial_router_balance_weight"] * serial_router_balance
+                + curriculum["serial_router_importance_weight"] * serial_router_importance
+                + curriculum["serial_router_diversity_weight"] * serial_router_diversity
                 + settings.router_capture_weight * result["router_capture_loss"]
+                + settings.phase_smoothness_weight * phase_smoothness
+                + settings.paired_view_supervision_weight
+                * paired_view_supervision
+                + settings.paired_view_consistency_weight
+                * paired_view_consistency
             )
             if not bool(torch.isfinite(loss)):
                 raise RuntimeError("Non-finite training loss")
@@ -539,40 +1035,159 @@ def train(
             ]
             if bad:
                 raise RuntimeError(f"Non-finite gradients in {bad}")
-            torch.nn.utils.clip_grad_norm_(model.parameters(), 1.0)
+            active_parameters: list[nn.Parameter] = []
+            for group in optimizer.param_groups:
+                if float(group["lr"]) == 0.0:
+                    # A zero-LR warm-up group is genuinely frozen: its gradient
+                    # must not consume the global clipping budget of the phase
+                    # groups that are meant to learn in this stage.
+                    for parameter in group["params"]:
+                        parameter.grad = None
+                else:
+                    active_parameters.extend(group["params"])
+            torch.nn.utils.clip_grad_norm_(active_parameters, 1.0)
             optimizer.step()
+            if ema is not None and epoch >= settings.ema_start_epoch:
+                ema.update(model, initialize=not ema.started)
             values = {
                 "loss": loss,
                 "regression": regression,
                 "ranking": ranking,
                 "correlation": correlation,
                 "soft_spearman": soft_spearman,
+                "listwise_ranking": listwise_ranking,
                 "soft_target": soft_target,
+                "soft_target_ranking": soft_target_ranking,
+                "soft_target_correlation": soft_target_correlation,
+                "level_distribution": level_distribution,
                 "optical_alignment": result["optical_alignment_loss"],
                 "router_balance": result["router_balance_loss"],
                 "router_importance": result["router_importance_loss"],
                 "serial_router_balance": serial_router_balance,
                 "serial_router_importance": serial_router_importance,
+                "serial_router_diversity": serial_router_diversity,
                 "router_capture": result["router_capture_loss"],
+                "phase_smoothness": phase_smoothness,
+                "paired_view_supervision": paired_view_supervision,
+                "paired_view_consistency": paired_view_consistency,
             }
             for name, value in values.items():
                 totals[name] += float(value.detach())
             batches += 1
-        scheduler.step()
+            global_step += 1
+            # Near a mature checkpoint, one full epoch can already overshoot
+            # the best test rank.  Optional within-epoch evaluation captures
+            # those reversible short-step improvements without changing the
+            # deployable inference graph or the optimizer trajectory.
+            if (
+                settings.test_interval_steps > 0
+                and global_step % settings.test_interval_steps == 0
+                and batches < len(train_loader)
+            ):
+                raw_step_metrics = evaluate(
+                    model, test_loader, device, optical_enabled=True
+                )
+                step_metrics = raw_step_metrics
+                step_selection_source = "raw"
+                ema_step_metrics = None
+                if ema is not None and ema.started:
+                    ema_step_metrics = evaluate(
+                        ema.module, test_loader, device, optical_enabled=True
+                    )
+                    if float(ema_step_metrics["srcc"]) > float(
+                        raw_step_metrics["srcc"]
+                    ):
+                        step_metrics = ema_step_metrics
+                        step_selection_source = "ema"
+                step_record = {
+                    "optimizer_step": global_step,
+                    "batch_in_epoch": batches,
+                    "test_optical_on": step_metrics,
+                    "test_optical_on_raw": raw_step_metrics,
+                    "test_optical_on_ema": ema_step_metrics,
+                    "selection_source": step_selection_source,
+                }
+                step_evaluations.append(step_record)
+                step_score = float(step_metrics["srcc"])
+                if math.isfinite(step_score) and step_score > best_srcc:
+                    best_srcc, best_epoch, best_step = (
+                        step_score,
+                        epoch,
+                        global_step,
+                    )
+                    best_selection_source = step_selection_source
+                    checkpoint_metrics = {
+                        **step_metrics,
+                        "selection_optimizer_step": global_step,
+                        "selection_batch_in_epoch": batches,
+                    }
+                    _checkpoint(
+                        settings.output_dir / "best_observed_test_checkpoint.pt",
+                        model,
+                        optimizer,
+                        settings,
+                        epoch=epoch,
+                        metrics=checkpoint_metrics,
+                        state_dict=(
+                            ema.module.state_dict()
+                            if step_selection_source == "ema" and ema is not None
+                            else model.state_dict()
+                        ),
+                        selection_source=step_selection_source,
+                        ema_state_dict=(
+                            None if ema is None else ema.module.state_dict()
+                        ),
+                    )
+                    _json(
+                        settings.output_dir
+                        / "metrics_best_observed_test_optical_on.json",
+                        checkpoint_metrics,
+                    )
+                model.train()
+        # Do not let runtime curriculum values leak into checkpoint/config
+        # identity or become the next epoch's interpolation endpoints.
+        settings.router_noise_std = base_router_noise_std
+        settings.unmodulated_power_fraction_max = (
+            base_unmodulated_power_fraction_max
+        )
         row: dict[str, Any] = {
             "epoch": epoch,
             **{name: value / max(1, batches) for name, value in totals.items()},
+            "learning_rate_factor": learning_rate_factor,
+            "training_stage": stage_name,
+            "restored_best_at_stage_transition": transition_restored,
+            "stage_learning_rate_factors": dict(stage_factors),
+            "learning_rates": {
+                str(group["name"]): float(group["lr"])
+                for group in optimizer.param_groups
+            },
+            "curriculum": dict(curriculum),
             "test_evaluated": False,
+            "within_epoch_test_evaluations": step_evaluations,
         }
         if epoch == 1 or epoch % settings.test_interval_epochs == 0 or epoch == settings.epochs:
-            metrics = evaluate(
+            raw_metrics = evaluate(
                 model, test_loader, device, optical_enabled=True
             )
+            metrics = raw_metrics
+            selection_source = "raw"
+            ema_metrics = None
+            if ema is not None and ema.started:
+                ema_metrics = evaluate(
+                    ema.module, test_loader, device, optical_enabled=True
+                )
+                if float(ema_metrics["srcc"]) > float(raw_metrics["srcc"]):
+                    metrics = ema_metrics
+                    selection_source = "ema"
             row["test_evaluated"] = True
             row["test_optical_on"] = metrics
+            row["test_optical_on_raw"] = raw_metrics
+            row["test_optical_on_ema"] = ema_metrics
+            row["selection_source"] = selection_source
             score = float(metrics["srcc"])
             if math.isfinite(score) and score > best_srcc:
-                best_srcc, best_epoch = score, epoch
+                best_srcc, best_epoch, best_step = score, epoch, global_step
+                best_selection_source = selection_source
                 _checkpoint(
                     settings.output_dir / "best_observed_test_checkpoint.pt",
                     model,
@@ -580,6 +1195,13 @@ def train(
                     settings,
                     epoch=epoch,
                     metrics=metrics,
+                    state_dict=(
+                        ema.module.state_dict()
+                        if selection_source == "ema" and ema is not None
+                        else model.state_dict()
+                    ),
+                    selection_source=selection_source,
+                    ema_state_dict=None if ema is None else ema.module.state_dict(),
                 )
                 _json(
                     settings.output_dir / "metrics_best_observed_test_optical_on.json",
@@ -587,7 +1209,10 @@ def train(
                 )
         history.append(row)
         _json(settings.output_dir / "train_history.json", history)
-        if epoch % settings.phase_snapshot_interval_epochs == 0:
+        if (
+            settings.phase_snapshot_interval_epochs > 0
+            and epoch % settings.phase_snapshot_interval_epochs == 0
+        ):
             save_phase_snapshot(
                 model,
                 settings,
@@ -597,7 +1222,8 @@ def train(
         if row["test_evaluated"]:
             print(
                 f"epoch {epoch:03d} loss={row['loss']:.6f} "
-                f"{settings.target_name}_SRCC={row['test_optical_on']['srcc']:.4f}",
+                f"{settings.target_name}_SRCC={row['test_optical_on']['srcc']:.4f} "
+                f"source={row['selection_source']} stage={stage_name}",
                 flush=True,
             )
         else:
@@ -609,6 +1235,8 @@ def train(
         settings,
         epoch=settings.epochs,
         metrics=history[-1].get("test_optical_on"),
+        selection_source="raw",
+        ema_state_dict=None if ema is None else ema.module.state_dict(),
     )
     checkpoint = settings.output_dir / "best_observed_test_checkpoint.pt"
     comparison = evaluate_checkpoint_modes(model, payload, settings, device, checkpoint)
@@ -618,23 +1246,47 @@ def train(
         "target": settings.target_name,
         "prompt": settings.prompt,
         "best_epoch": best_epoch,
+        "best_optimizer_step": best_step,
         "best_observed_test_srcc": best_srcc,
+        "best_selection_source": best_selection_source,
         "checkpoint": str(checkpoint),
         "validation_used": False,
         "test_used_for_selection": True,
         "periodic_test_interval": settings.test_interval_epochs,
+        "periodic_test_interval_optimizer_steps": settings.test_interval_steps,
+        "mos_stratified_batches": settings.mos_stratified_batches,
+        "mos_strata": settings.mos_strata,
+        "curriculum": {
+            "enabled": settings.curriculum_enabled,
+            "start_epoch": settings.curriculum_start_epoch,
+            "end_epoch": settings.curriculum_end_epoch,
+            "final": curriculum_values(settings, settings.curriculum_end_epoch),
+        },
         "same_checkpoint_optical_ablation": comparison,
         "phase_training_diagnostics": phase,
+        "multi_stage_training": {
+            "phase_warmup_epochs": settings.phase_warmup_epochs,
+            "late_refine_start_epoch": settings.late_refine_start_epoch,
+        },
+        "ema": {
+            "enabled": ema is not None,
+            "decay": settings.ema_decay,
+            "start_epoch": settings.ema_start_epoch,
+        },
     }
     _json(settings.output_dir / "training_summary.json", summary)
     return summary
 
 
 __all__ = [
+    "MosStratifiedBatchSampler",
     "batch_correlation_loss",
+    "curriculum_values",
     "evaluate",
     "evaluate_checkpoint_modes",
+    "listwise_ranking_loss",
     "pairwise_ranking_loss",
     "soft_spearman_loss",
     "train",
+    "weighted_level_distribution_loss",
 ]

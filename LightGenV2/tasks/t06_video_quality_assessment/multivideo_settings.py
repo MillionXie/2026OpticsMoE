@@ -180,7 +180,22 @@ class MultiVideoSettings:
     quality_feature_cache_path: Path | None = None
     raw_frame_cache_path: Path | None = None
     vgg_feature_cache_path: Path | None = None
+    resnet_feature_cache_path: Path | None = None
+    mobilenet_feature_cache_path: Path | None = None
+    mobilenet_feature_width: int = 64
     qwen_model_path: Path | None = None
+    # Compatibility with the shared cache loader.  The formal 16x4 model uses
+    # one frozen Qwen/quality view; these remain empty unless a separately
+    # named temporal-sampling study supplies additional views.
+    vision_cache_view_paths: tuple[Path, ...] = ()
+    quality_feature_cache_view_paths: tuple[Path, ...] = ()
+    raw_frame_cache_view_paths: tuple[Path, ...] = ()
+    training_view_probabilities: tuple[float, ...] = ()
+    paired_view_supervision_weight: float = 0.0
+    paired_view_consistency_weight: float = 0.0
+    training_horizontal_flip_probability: float = 0.0
+    paired_opposite_horizontal_flip_probability: float = 0.0
+    training_temporal_reverse_probability: float = 0.0
     geometry: MultiVideoGeometry = field(default_factory=MultiVideoGeometry)
     target_name: str = "temporal"
     prompt: str = TEMPORAL_PROMPT
@@ -196,6 +211,9 @@ class MultiVideoSettings:
     model_width: int = 192
     detector_projection_size: int = 96
     head_width: int = 512
+    temporal_readout_mode: str = "dense"
+    temporal_readout_hidden_width: int = 1024
+    temporal_readout_rank: int = 512
     dropout: float = 0.10
     quality_gate_initial: float = 0.25
     electronic_skip_enabled: bool = False
@@ -216,6 +234,10 @@ class MultiVideoSettings:
     ccd_shift_pixels: int = 4
     phase_dropout_p: float = 0.05
     phase_dropout_cell_size: int = 4
+    # Formal simulations optimize continuous phase.  A non-zero value is
+    # reserved for an explicit deployment ablation and is never implied by
+    # the SLM's eventual 8-bit BMP export.
+    phase_quantization_levels: int = 0
     phase_init_std: float = 0.25
     ccd_relative_clip: float = 8.0
     ccd_log_compression: float = 1.0
@@ -256,11 +278,16 @@ class MultiVideoSettings:
 
     @property
     def architecture_label(self) -> str:
-        return (
+        label = (
             "lightgenv2_t06_temporal_multivideo"
             f"{self.videos_per_field}x{self.frame_count}_visualrouter_"
             "o6_top2_no_attention_v3"
         )
+        if self.temporal_readout_mode == "pruned":
+            label += f"_readout_h{self.temporal_readout_hidden_width}"
+        elif self.temporal_readout_mode == "low_rank":
+            label += f"_readout_r{self.temporal_readout_rank}"
+        return label
 
     # Compatibility attributes consumed by the audited frozen-cache loader.
     @property
@@ -283,6 +310,19 @@ class MultiVideoSettings:
             raise ValueError("Formal semantics must be 9x4 or 16x4")
         if self.top_k != 2:
             raise ValueError("The formal optical router is Top-2")
+        if self.temporal_readout_mode not in {"dense", "pruned", "low_rank"}:
+            raise ValueError("temporal_readout_mode must be dense, pruned, or low_rank")
+        if self.temporal_readout_hidden_width <= 0:
+            raise ValueError("temporal_readout_hidden_width must be positive")
+        if (
+            self.temporal_readout_mode == "dense"
+            and self.temporal_readout_hidden_width != self.head_width * 2
+        ):
+            raise ValueError(
+                "dense Temporal readout hidden width must equal 2*head_width"
+            )
+        if not 0 < self.temporal_readout_rank <= self.head_width * 2:
+            raise ValueError("temporal_readout_rank exceeds the dense hidden width")
         if self.frame_count >= self.geometry.video_field_size:
             raise ValueError("The video field cannot hold the frame summary tokens")
         if not 0 <= self.alpha_min < self.alpha_initial < self.alpha_max < 1:
@@ -299,6 +339,8 @@ class MultiVideoSettings:
             raise ValueError("Training counts must be positive")
         if self.phase_snapshot_interval_epochs < 0:
             raise ValueError("phase_snapshot_interval_epochs cannot be negative")
+        if self.phase_quantization_levels != 0:
+            raise ValueError("Formal multivideo training uses continuous phase")
         if self.num_workers < 0:
             raise ValueError("num_workers cannot be negative")
         if self.router_diversity_weight < 0:

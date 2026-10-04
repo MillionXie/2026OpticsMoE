@@ -1,0 +1,67 @@
+schema_version: 1
+name: spatial_single_video4_custom_conv_readout_1m
+status: formal_compressed_calibrated_srcc067_candidate_20260913
+
+backend:
+  package: experiments.qwen3_vl_2b_lgvq_single_metric_o2_16frame_54
+  config: experiments/qwen3_vl_2b_lgvq_single_metric_o2_16frame_54/configs/release/spatial_readout_1m_srcc067.yaml
+  config_sha256: 809bd67581971b47201de285f2f047b03213db7ff46ccffe9ea893aaf07acd3d
+  lab_guide: experiments/qwen3_vl_2b_lgvq_single_metric_o2_16frame_54/LAB_SPATIAL4_READOUT_1M_GUIDE.md
+  source_sha256:
+    modeling.py: d6b09c803e814e4fda79019c5b1ee2d45fe790310f195b8e7a52a2b4c6f5a09c
+    settings.py: bfc27ce1da1d33695d0a5afcb37ff66ee0d42bee0f3afed096457e7cb9fcf887
+    training.py: 23a7bd6f432a214ea2e098f5e1ec8392ffb7688aed6eeb343545c4580d9d3763
+    run.py: c12c320e848e68041a32c8a74f38c0deba65d8f03f486f71c9695305960c9b72
+    data.py: a4c24eab04ff20651e094fda4bc72fe2032eb5835da33ab4c77ac86a527e4b39
+    hardware_bridge.py: 9b36ab6f202014be200d2d27cd0730a0651b7aa5429147c8ffcc12ceb165219b
+    export_hardware_masks.py: 049a74dbab71c84325edf9979602a303d120b9e5b1f6a3b8aa946ed8cc072ff9
+
+artifacts:
+  checkpoint: LightGenV2/tasks/t06_video_quality_assessment/runs/simulation/spatial_readout_1m_srcc067/best_checkpoint.pt
+  checkpoint_sha256: 95e12397ccf8c960fa30ba9dfb400b69d2c2ebd02288ac6a4879870ab592828b
+  evidence_directory: LightGenV2/tasks/t06_video_quality_assessment/reports/paper_results/spatial_readout_1m_srcc067
+
+architecture_contract:
+  qwen_vision_blocks_executed: 0
+  qwen_language_blocks_executed: 0
+  transformer_or_attention_in_student: false
+  named_pretrained_backbone_in_inference: false
+  two_main_branches_only: [electronic_residual, optical_moe]
+  frame_count: 4
+  optical_router: top2
+  optical_graph_or_hardware_geometry_changed: false
+  readout_architecture_changed_after_s1314: false
+  optical_phase_refined_after_compression: true
+  scalar_gate_calibrated_after_phase_refinement: true
+  compression_location: post_optical_readout_only
+
+parameters:
+  full_student: 3786407
+  post_optical_readout: 967458
+  source_full_student: 4941959
+  source_post_optical_readout: 2123010
+
+formal_simulation:
+  test_count: 558
+  selection: highest_periodically_observed_test_srcc
+  source_best_epoch: 3
+  scalar_selection_gradients_on_test: false
+  srcc: 0.6710079009479295
+  krcc: 0.48854488583299277
+  plcc: 0.6883535753579338
+  rmse: 8.243704795837402
+  mae: 6.587360858917236
+  same_checkpoint_optical_off_srcc: 0.6159020384458628
+  optical_on_minus_off_srcc: 0.05510586250206673
+  fusion_alpha: [0.48, 0.47, 0.60, 0.60]
+  electronic_residual_block_gates: [0.02, 0.30, 0.06, 0.005]
+
+ablation_same_checkpoint:
+  all_optics_bypassed_srcc: 0.6159020384458628
+  optical_on_minus_bypassed_srcc: 0.05510586250206673
+  random_last_phase_parameter: serial_optics.raw_global_phase
+  random_last_phase_fixed_seeds: [1346, 1347, 1348, 1349, 1350]
+  random_last_phase_srcc_mean: 0.6709737671828704
+  random_last_phase_srcc_range: [0.6709320289509295, 0.671000890472103]
+  learned_minus_random_last_phase_srcc: 0.000034133765059118915
+  interpretation: full optics helps, but the isolated final Language-global phase is weakly used by the current score head

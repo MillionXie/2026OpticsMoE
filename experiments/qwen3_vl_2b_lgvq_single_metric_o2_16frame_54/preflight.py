@@ -39,6 +39,7 @@ def run_preflight(
         "separate_spatial_temporal_models": True,
         "validation_used": False,
         "test_selection_interval_epochs": settings.test_interval_epochs,
+        "test_selection_interval_optimizer_steps": settings.test_interval_steps,
         "qwen_front": {
             "checkpoint_family": "Qwen3-VL-2B-Instruct",
             "official_processor": True,
@@ -54,9 +55,29 @@ def run_preflight(
             "attention_modules": 0,
             "transformer_blocks": 0,
             "frame_count": settings.frame_count,
-            "qwen_vision_token_shape_per_video": [settings.frame_count, 49, 1024],
-            "quality_side_shape_per_video": [settings.frame_count, 49, 14],
-            "quality_channels": list(QUALITY_CHANNELS),
+            "qwen_vision_token_shape_per_video": [
+                settings.frame_count,
+                settings.token_grid * settings.token_grid,
+                settings.vision_input_width,
+            ],
+            "quality_side_shape_per_video": [
+                settings.frame_count,
+                settings.token_grid * settings.token_grid,
+                settings.quality_input_width,
+            ],
+            "quality_input_role": (
+                "precomputed Conv5 representation contained only inside the "
+                "single electronic residual route"
+                if settings.electronic_quality_residual_enabled
+                else "shared quality input"
+            ),
+            "quality_feature_source_channels": list(QUALITY_CHANNELS),
+            "quality_feature_preprocessor": (
+                "frozen offline Conv5 cache; it does not produce an independent "
+                "prediction and is injected only into E1"
+                if settings.electronic_quality_residual_enabled
+                else "shared raw quality representation"
+            ),
             "internal_width": settings.model_width,
         },
         "geometry": {
@@ -122,6 +143,20 @@ def run_preflight(
             "interval_epochs": settings.phase_snapshot_interval_epochs,
             "format": "optical_phase_evolution_snapshot_v1",
         },
+        "optimization": {
+            "mos_stratified_batches": settings.mos_stratified_batches,
+            "mos_strata": settings.mos_strata,
+            "learning_rate_warmup_epochs": settings.learning_rate_warmup_epochs,
+            "minimum_learning_rate_factor": settings.minimum_learning_rate_factor,
+            "curriculum_enabled": settings.curriculum_enabled,
+            "curriculum_epoch_range": [
+                settings.curriculum_start_epoch,
+                settings.curriculum_end_epoch,
+            ],
+            "curriculum_changes_inference_graph": False,
+            "phase_learning_rate": settings.phase_learning_rate,
+            "router_phase_learning_rate": settings.router_phase_learning_rate,
+        },
     }
 
     if settings.manifest_path is None or not settings.manifest_path.is_file():
@@ -145,7 +180,25 @@ def run_preflight(
     cache_paths = {
         "vision": settings.vision_cache_path,
         "language": settings.language_cache_path,
+        **{
+            f"vision_view_{index + 1}": path
+            for index, path in enumerate(settings.vision_cache_view_paths)
+        },
+        **{
+            f"quality_view_{index + 1}": path
+            for index, path in enumerate(
+                settings.quality_feature_cache_view_paths
+            )
+        },
     }
+    if settings.quality_feature_cache_path is not None:
+        cache_paths["quality"] = settings.quality_feature_cache_path
+    if settings.resnet_feature_cache_path is not None:
+        cache_paths["resnet18_layer3"] = settings.resnet_feature_cache_path
+    if settings.mobilenet_feature_cache_path is not None:
+        cache_paths["mobilenetv2_block10"] = settings.mobilenet_feature_cache_path
+    if settings.raw_frame_cache_path is not None:
+        cache_paths["raw_frames"] = settings.raw_frame_cache_path
     missing = [name for name, path in cache_paths.items() if path is None or not path.is_file()]
     if missing and require_cache and not settings.synthetic:
         report["status"] = "blocked"

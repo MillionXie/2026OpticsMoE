@@ -77,6 +77,17 @@ def _path(value: Any, config_path: Path) -> Path | None:
     return result.resolve()
 
 
+def _paths(value: Any, config_path: Path) -> tuple[Path, ...]:
+    if value in (None, ""):
+        return ()
+    if not isinstance(value, (list, tuple)):
+        raise ValueError("A multi-view cache field must be a YAML list")
+    result = tuple(_path(item, config_path) for item in value)
+    if any(path is None for path in result):
+        raise ValueError("A multi-view cache list cannot contain null paths")
+    return tuple(path for path in result if path is not None)
+
+
 @dataclass(frozen=True)
 class Geometry:
     """518 simulation canvas with a centered 478-pixel hardware active field.
@@ -217,14 +228,21 @@ class ExperimentSettings:
     manifest_path: Path | None
     vision_cache_path: Path | None
     language_cache_path: Path | None
+    vision_cache_view_paths: tuple[Path, ...] = ()
+    quality_feature_cache_view_paths: tuple[Path, ...] = ()
+    raw_frame_cache_view_paths: tuple[Path, ...] = ()
+    training_view_probabilities: tuple[float, ...] = ()
     quality_feature_cache_path: Path | None = None
     raw_frame_cache_path: Path | None = None
     vgg_feature_cache_path: Path | None = None
+    resnet_feature_cache_path: Path | None = None
+    mobilenet_feature_cache_path: Path | None = None
     training_soft_targets_path: Path | None = None
     initialization_checkpoint: Path | None = None
     frame_stem_checkpoint: Path | None = None
     qwen_model_path: Path | None = None
     reset_serial_router_phase_on_initialization: bool = False
+    reset_feature_phase_on_initialization: bool = False
     target_name: str = "spatial"
     prompt: str = TARGET_PROMPTS["spatial"]
     device: str = "cuda"
@@ -240,6 +258,24 @@ class ExperimentSettings:
     detector_projection_size: int = 96
     spatial_readout_mode: str = "statistics"
     spatial_residual_max: float = 0.10
+    spatial_compact_residual_scale: float = 1.0
+    spatial_residual_receptive_field: str = "local7"
+    spatial_readout_refiner_enabled: bool = False
+    spatial_readout_moment_refiner_enabled: bool = False
+    spatial_level_score_min: float = -2.75
+    spatial_level_score_max: float = 2.25
+    spatial_level_blend_initial: float = 0.10
+    spatial_readout_image_focus_max: float = 0.0
+    spatial_compact_channels: int = 80
+    spatial_compact_frame_width: int = 256
+    spatial_compact_language_width: int = 128
+    spatial_compact_head_width: int = 384
+    spatial_low_rank_frame_rank: int = 192
+    spatial_low_rank_language_rank: int = 128
+    spatial_low_rank_compact_frame_rank: int = 64
+    spatial_low_rank_compact_head_rank: int = 96
+    strict_two_branch: bool = False
+    quality_branch_enabled: bool = True
     quality_adapter_mode: str = "linear"
     quality_gate_initial: float = 0.25
     qwen_gate_enabled: bool = False
@@ -247,19 +283,38 @@ class ExperimentSettings:
     electronic_skip_enabled: bool = False
     electronic_skip_initial: float = 0.0
     electronic_skip_max: float = 1.0
+    electronic_route_variant: str = "legacy"
+    electronic_route_depth: int = 1
+    electronic_quality_residual_enabled: bool = False
+    electronic_quality_residual_initial: float = 0.70
+    tiny_rgb_electronic_adapter_enabled: bool = False
+    tiny_rgb_electronic_adapter_max: float = 0.50
+    custom_conv_electronic_enabled: bool = False
+    custom_conv_electronic_max: float = 1.40
+    electronic_quality_reinjection_enabled: bool = False
+    electronic_quality_reinjection_max: float = 0.50
+    electronic_cross_stage_skip_enabled: bool = False
+    electronic_cross_stage_skip_max: float = 0.50
     quality_refiner_enabled: bool = False
     quality_refiner_max: float = 0.50
     late_input_correction_enabled: bool = False
     late_input_correction_max: float = 0.50
     trainable_frame_stem_enabled: bool = False
+    frame_stem_refiner_depth: int = 0
     vgg_correction_max: float = 0.50
     vgg_correction_mode: str = "local"
+    resnet_electronic_max: float = 0.50
+    mobilenet_electronic_max: float = 0.50
+    mobilenet_feature_width: int = 64
     top_k: int = 2
     router_temperature: float = 1.0
+    parallel_router_temperature: float = 1.0
+    serial_router_temperature: float = 1.0
     router_noise_std: float = 0.03
     serial_router_input_size: int = 109
     serial_router_flatfield_calibration: bool = False
     serial_router_channel_standardization: bool = False
+    serial_router_visual_token_gain: float = 1.0
     parallel_router_intervals: tuple[tuple[int, int], tuple[int, int]] = ((37, 55), (59, 77))
     serial_router_intervals: tuple[tuple[int, int], tuple[int, int]] = ((164, 223), (255, 314))
     wavelength_nm: float = 532.0
@@ -273,6 +328,7 @@ class ExperimentSettings:
     phase_dropout_p: float = 0.05
     phase_dropout_cell_size: int = 4
     phase_init_std: float = 0.25
+    phase_quantization_levels: int = 0
     ccd_relative_clip: float = 8.0
     ccd_log_compression: float = 1.0
     unmodulated_power_fraction_min: float = 0.20
@@ -292,18 +348,63 @@ class ExperimentSettings:
     phase_learning_rate: float = 8.0e-3
     router_phase_learning_rate: float = 1.2e-2
     weight_decay: float = 1.0e-4
+    readout_learning_rate_factor: float = 1.0
+    readout_weight_decay: float = 1.0e-4
+    phase_warmup_epochs: int = 0
+    late_refine_start_epoch: int = 0
+    restore_best_at_stage_transition: bool = False
+    late_refine_electronic_lr_factor: float = 1.0
+    late_refine_readout_lr_factor: float = 1.0
+    late_refine_phase_lr_factor: float = 1.0
+    late_refine_router_lr_factor: float = 1.0
+    ema_decay: float = 0.0
+    ema_start_epoch: int = 1
+    regression_weight: float = 1.0
     ranking_weight: float = 0.20
     correlation_weight: float = 0.30
     soft_spearman_weight: float = 0.0
     soft_rank_temperature: float = 0.10
+    listwise_ranking_weight: float = 0.0
+    listwise_rank_temperature: float = 0.50
     optical_alignment_weight: float = 0.05
     router_balance_weight: float = 0.02
     router_importance_weight: float = 0.002
     serial_router_balance_weight: float = 0.0
     serial_router_importance_weight: float = 0.0
+    serial_router_diversity_weight: float = 0.0
+    phase_smoothness_weight: float = 0.0
     router_capture_weight: float = 0.02
     soft_target_weight: float = 0.0
+    soft_target_ranking_weight: float = 0.0
+    soft_target_correlation_weight: float = 0.0
+    level_distribution_weight: float = 0.0
+    feature_mixup_probability: float = 0.0
+    feature_mixup_alpha: float = 0.20
+    paired_view_supervision_weight: float = 0.0
+    paired_view_consistency_weight: float = 0.0
+    training_horizontal_flip_probability: float = 0.0
+    paired_opposite_horizontal_flip_probability: float = 0.0
+    training_temporal_reverse_probability: float = 0.0
+    mos_stratified_batches: bool = False
+    mos_strata: int = 8
+    learning_rate_warmup_epochs: int = 0
+    minimum_learning_rate_factor: float = 0.0
+    curriculum_enabled: bool = False
+    curriculum_start_epoch: int = 1
+    curriculum_end_epoch: int = 100
+    curriculum_ranking_weight_final: float = 0.20
+    curriculum_correlation_weight_final: float = 0.30
+    curriculum_soft_spearman_weight_final: float = 0.0
+    curriculum_soft_target_weight_final: float = 0.0
+    curriculum_router_balance_weight_final: float = 0.02
+    curriculum_router_importance_weight_final: float = 0.002
+    curriculum_serial_router_balance_weight_final: float = 0.0
+    curriculum_serial_router_importance_weight_final: float = 0.0
+    curriculum_serial_router_diversity_weight_final: float = 0.0
+    curriculum_router_noise_std_final: float = 0.03
+    curriculum_unmodulated_power_fraction_max_initial: float = 0.35
     test_interval_epochs: int = 5
+    test_interval_steps: int = 0
     phase_snapshot_interval_epochs: int = 5
     synthetic: bool = False
 
@@ -342,34 +443,110 @@ class ExperimentSettings:
         elif self.spatial_readout_mode == "spatial_deep_residual":
             residual_tag = int(round(self.spatial_residual_max * 1000.0))
             suffixes.append(f"spatialdeepresidual_rmax{residual_tag:03d}_v1")
-        if self.quality_adapter_mode == "spatial_conv":
+        elif self.spatial_readout_mode == "spatial_weighted_level_residual":
+            residual_tag = int(round(self.spatial_residual_max * 1000.0))
+            suffixes.append(f"spatialweighted5_rmax{residual_tag:03d}_v1")
+        elif self.spatial_readout_mode == "spatial_crossframe_residual":
+            residual_tag = int(round(self.spatial_residual_max * 1000.0))
+            suffixes.append(f"spatialcrossframe_rmax{residual_tag:03d}_v1")
+        elif self.spatial_readout_mode == "spatial_dual_level_residual":
+            residual_tag = int(round(self.spatial_residual_max * 1000.0))
+            suffixes.append(f"spatialduallevel_rmax{residual_tag:03d}_v1")
+        elif self.spatial_readout_mode == "spatial_weighted_level_absolute":
+            suffixes.append("spatialweighted5absolute_v1")
+        elif self.spatial_readout_mode == "spatial_weighted_level_blend":
+            blend_tag = int(round(self.spatial_level_blend_initial * 100.0))
+            suffixes.append(f"spatialweighted5blend{blend_tag:02d}_v1")
+        elif self.spatial_readout_mode == "spatial_compact_weighted":
+            suffixes.append(
+                "spatialcompactweighted_"
+                f"c{self.spatial_compact_channels}_"
+                f"f{self.spatial_compact_frame_width}_"
+                f"l{self.spatial_compact_language_width}_"
+                f"h{self.spatial_compact_head_width}_v1"
+            )
+        elif self.spatial_readout_mode == "spatial_pruned_grid_compact_residual":
+            suffix = (
+                "spatialprunedgridcompactresidual_"
+                f"k{self.spatial_compact_head_width}_v1"
+            )
+            if self.spatial_compact_residual_scale != 1.0:
+                scale_tag = int(round(self.spatial_compact_residual_scale * 100.0))
+                suffix += f"_scale{scale_tag:03d}_v1"
+            suffixes.append(suffix)
+        elif self.spatial_readout_mode == "spatial_low_rank_pruned_grid_compact_residual":
+            suffixes.append(
+                "spatiallowrankprunedgridcompactresidual_"
+                f"k{self.spatial_compact_head_width}_"
+                f"r{self.spatial_low_rank_frame_rank}-"
+                f"{self.spatial_low_rank_language_rank}-"
+                f"{self.spatial_low_rank_compact_frame_rank}-"
+                f"{self.spatial_low_rank_compact_head_rank}_v1"
+            )
+        if self.spatial_readout_mode.startswith("spatial_weighted_level"):
+            suffixes.append(f"rf{self.spatial_residual_receptive_field}_v1")
+        if self.spatial_readout_refiner_enabled:
+            suffixes.append("readoutlk7refine_v1")
+        if self.spatial_readout_moment_refiner_enabled:
+            suffixes.append("readoutmoments_v1")
+        if self.spatial_readout_image_focus_max > 0.0:
+            focus_tag = int(round(self.spatial_readout_image_focus_max * 100.0))
+            suffixes.append(f"imagefocus{focus_tag:03d}_v1")
+        if not self.quality_branch_enabled:
+            suffixes.append("qwenonly_v1")
+        elif self.quality_adapter_mode == "spatial_conv":
             suffixes.append("qualityconv_v1")
         elif self.quality_adapter_mode == "identity":
             suffixes.append("qualityidentity_v1")
+        if self.strict_two_branch:
+            suffixes.append("strict2branch_v1")
         if self.qwen_gate_enabled:
             qwen_tag = int(round(self.qwen_gate_initial * 100.0))
             suffixes.append(f"qwentrim{qwen_tag:02d}_v1")
         if self.electronic_skip_enabled:
             skip_tag = int(round(self.electronic_skip_initial * 100.0))
             suffixes.append(f"eskip{skip_tag:02d}_v1")
+        if self.electronic_route_variant != "legacy":
+            suffixes.append(
+                f"{self.electronic_route_variant}{self.electronic_route_depth}_v1"
+            )
+        if self.electronic_quality_residual_enabled:
+            quality_tag = int(round(self.electronic_quality_residual_initial * 100.0))
+            suffixes.append(f"electronicqualityresidual{quality_tag:02d}_v1")
+        if self.electronic_quality_reinjection_enabled:
+            suffixes.append("electronicqualitye2skip_v1")
+        if self.electronic_cross_stage_skip_enabled:
+            suffixes.append("electroniccrossstageskip_v1")
         if self.quality_refiner_enabled:
             suffixes.append("qualityrefine_v1")
         if self.late_input_correction_enabled:
             correction_tag = int(round(self.late_input_correction_max * 100.0))
             suffixes.append(f"lateinputcorr{correction_tag:03d}_v1")
         if self.trainable_frame_stem_enabled:
-            suffixes.append("trainableconv5_v1")
+            suffixes.append(f"trainableconv5r{self.frame_stem_refiner_depth}_v1")
         if self.vgg_feature_cache_path is not None:
             correction_tag = int(round(self.vgg_correction_max * 100.0))
             suffixes.append(
                 f"plainvgg16corr{correction_tag:02d}_{self.vgg_correction_mode}_v1"
             )
+        if self.resnet_feature_cache_path is not None:
+            correction_tag = int(round(self.resnet_electronic_max * 100.0))
+            suffixes.append(f"resnet18l3_e1corr{correction_tag:02d}_v1")
+        if self.mobilenet_feature_cache_path is not None:
+            correction_tag = int(round(self.mobilenet_electronic_max * 100.0))
+            block = 10 if self.mobilenet_feature_width == 64 else 11
+            suffixes.append(f"mobilenetv2b{block}_e1corr{correction_tag:02d}_v1")
         if self.serial_router_input_size != self.geometry.serial_expert_size:
             suffixes.append(f"sroutercrop{self.serial_router_input_size}_v1")
         if self.serial_router_flatfield_calibration:
             suffixes.append("srouterflatfield_v1")
         if self.serial_router_channel_standardization:
             suffixes.append("srouterstandardize_v1")
+        if self.serial_router_visual_token_gain != 1.0:
+            gain_tag = int(round(self.serial_router_visual_token_gain * 100.0))
+            suffixes.append(f"sroutervisualgain{gain_tag:03d}_v1")
+        if self.phase_quantization_levels:
+            suffixes.append(f"phaseq{self.phase_quantization_levels}_v1")
         return base if not suffixes else f"{base}_{'_'.join(suffixes)}"
 
     def validate(self) -> None:
@@ -401,7 +578,12 @@ class ExperimentSettings:
             192,
         ):
             raise ValueError("Formal widths are locked to Vision 1024, Language 2048, model 192")
-        expected_quality_width = 192 if self.quality_feature_cache_path is not None else 14
+        expected_quality_width = (
+            192
+            if self.quality_feature_cache_path is not None
+            or self.trainable_frame_stem_enabled
+            else 14
+        )
         if self.quality_input_width != expected_quality_width:
             raise ValueError(
                 "quality_input_width must be 14 for the fixed bank or 192 when "
@@ -420,19 +602,229 @@ class ExperimentSettings:
             "spatial_grid_residual",
             "spatial_pyramid_residual",
             "spatial_deep_residual",
+            "spatial_weighted_level_residual",
+            "spatial_crossframe_residual",
+            "spatial_dual_level_residual",
+            "spatial_weighted_level_absolute",
+            "spatial_weighted_level_blend",
+            "spatial_compact_weighted",
+            "spatial_pruned_grid_compact_residual",
+            "spatial_low_rank_pruned_grid_compact_residual",
         }:
             raise ValueError(
                 "model.spatial_readout_mode must be statistics, spatial_grid, "
                 "spatial_multiscale, spatial_grid_residual, or "
-                "spatial_pyramid_residual, or spatial_deep_residual"
+                "spatial_pyramid_residual, spatial_deep_residual, or "
+                "spatial_weighted_level_residual, or "
+                "spatial_crossframe_residual, or "
+                "spatial_dual_level_residual, or "
+                "spatial_weighted_level_absolute, or "
+                "spatial_weighted_level_blend, or "
+                "spatial_compact_weighted, or "
+                "spatial_pruned_grid_compact_residual, or "
+                "spatial_low_rank_pruned_grid_compact_residual"
             )
+        for name, value in (
+            ("spatial_compact_channels", self.spatial_compact_channels),
+            ("spatial_compact_frame_width", self.spatial_compact_frame_width),
+            ("spatial_compact_language_width", self.spatial_compact_language_width),
+            ("spatial_compact_head_width", self.spatial_compact_head_width),
+            ("spatial_low_rank_frame_rank", self.spatial_low_rank_frame_rank),
+            ("spatial_low_rank_language_rank", self.spatial_low_rank_language_rank),
+            (
+                "spatial_low_rank_compact_frame_rank",
+                self.spatial_low_rank_compact_frame_rank,
+            ),
+            (
+                "spatial_low_rank_compact_head_rank",
+                self.spatial_low_rank_compact_head_rank,
+            ),
+        ):
+            if value <= 0:
+                raise ValueError(f"model.{name} must be positive")
+        if self.spatial_compact_channels % 8:
+            raise ValueError("model.spatial_compact_channels must be divisible by 8")
         if self.spatial_residual_max <= 0.0:
             raise ValueError("model.spatial_residual_max must be positive")
+        if self.spatial_compact_residual_scale <= 0.0:
+            raise ValueError("model.spatial_compact_residual_scale must be positive")
+        if self.spatial_residual_receptive_field not in {
+            "local7",
+            "dilated15",
+            "hybrid15",
+        }:
+            raise ValueError(
+                "model.spatial_residual_receptive_field must be local7, "
+                "dilated15, or hybrid15"
+            )
+        if self.spatial_readout_refiner_enabled and self.target_name != "spatial":
+            raise ValueError("The large-kernel readout refiner is only valid for Spatial")
+        if self.spatial_readout_moment_refiner_enabled and self.target_name != "spatial":
+            raise ValueError("The moment readout refiner is only valid for Spatial")
+        if self.spatial_level_score_min >= self.spatial_level_score_max:
+            raise ValueError(
+                "model.spatial_level_score_min must be below spatial_level_score_max"
+            )
+        if not 0.0 < self.spatial_level_blend_initial < 1.0:
+            raise ValueError(
+                "model.spatial_level_blend_initial must lie strictly within (0,1)"
+            )
         if self.quality_adapter_mode not in {"linear", "spatial_conv", "identity"}:
             raise ValueError(
                 "model.quality_adapter_mode must be linear, spatial_conv, or identity"
             )
+        if self.electronic_route_variant not in {
+            "legacy",
+            "residual_conv",
+            "residual_convnext",
+        }:
+            raise ValueError(
+                "model.electronic_route_variant must be legacy, residual_conv, "
+                "or residual_convnext"
+            )
+        if not 1 <= self.electronic_route_depth <= 4:
+            raise ValueError("model.electronic_route_depth must be within [1,4]")
+        if not 0.0 < self.electronic_quality_residual_initial < 1.0:
+            raise ValueError(
+                "model.electronic_quality_residual_initial must be within (0,1)"
+            )
+        if self.electronic_quality_residual_enabled and (
+            (
+                self.quality_feature_cache_path is None
+                and not self.trainable_frame_stem_enabled
+            )
+            or self.quality_input_width != self.model_width
+        ):
+            raise ValueError(
+                "The electronic quality residual requires a model-width quality cache"
+            )
+        if self.tiny_rgb_electronic_adapter_enabled:
+            if self.target_name != "spatial" or self.frame_count != 4 or self.token_grid != 14:
+                raise ValueError(
+                    "The tiny RGB E1 adapter requires Spatial, four frames, and a 14x14 grid"
+                )
+            if self.raw_frame_cache_path is None:
+                raise ValueError("The tiny RGB E1 adapter requires data.raw_frame_cache")
+            if self.tiny_rgb_electronic_adapter_max <= 0.0:
+                raise ValueError("model.tiny_rgb_electronic_adapter_max must be positive")
+        if self.custom_conv_electronic_enabled:
+            if (
+                self.target_name != "spatial"
+                or self.frame_count != 4
+                or self.token_grid != 14
+            ):
+                raise ValueError(
+                    "The custom Conv E1 correction requires Spatial, four frames, "
+                    "and a 14x14 grid"
+                )
+            if self.raw_frame_cache_path is None:
+                raise ValueError(
+                    "The custom Conv E1 correction requires data.raw_frame_cache"
+                )
+            if self.custom_conv_electronic_max <= 0.0:
+                raise ValueError("model.custom_conv_electronic_max must be positive")
+        if self.electronic_quality_reinjection_enabled and not (
+            self.electronic_quality_residual_enabled
+        ):
+            raise ValueError(
+                "Electronic quality reinjection requires the E1 quality residual"
+            )
+        if self.electronic_quality_reinjection_max <= 0.0:
+            raise ValueError("model.electronic_quality_reinjection_max must be positive")
+        if self.electronic_cross_stage_skip_max <= 0.0:
+            raise ValueError("model.electronic_cross_stage_skip_max must be positive")
+        if self.vision_cache_view_paths and (
+            self.target_name != "spatial" or self.frame_count != 4
+        ):
+            raise ValueError(
+                "Additional temporal-sampling views are currently formalized only "
+                "for the four-frame Spatial model"
+            )
+        if self.training_view_probabilities:
+            expected = 1 + len(self.vision_cache_view_paths)
+            if len(self.training_view_probabilities) != expected:
+                raise ValueError(
+                    "data.training_view_probabilities must contain one weight for "
+                    "the primary cache plus one for every additional view"
+                )
+            if any(value < 0.0 for value in self.training_view_probabilities):
+                raise ValueError("data.training_view_probabilities must be nonnegative")
+            if sum(self.training_view_probabilities) <= 0.0:
+                raise ValueError("data.training_view_probabilities must have positive sum")
+        if self.electronic_quality_residual_enabled and len(
+            self.quality_feature_cache_view_paths
+        ) != len(self.vision_cache_view_paths):
+            raise ValueError(
+                "Every additional Vision sampling view requires its matching "
+                "Conv5 quality-feature view"
+            )
         if (
+            not self.electronic_quality_residual_enabled
+            and self.quality_feature_cache_view_paths
+        ):
+            raise ValueError(
+                "Conv5 quality-feature views require the electronic quality residual"
+            )
+        if self.raw_frame_cache_view_paths:
+            if self.raw_frame_cache_path is None:
+                raise ValueError(
+                    "Raw-frame sampling views require data.raw_frame_cache"
+                )
+            if len(self.raw_frame_cache_view_paths) != len(
+                self.vision_cache_view_paths
+            ):
+                raise ValueError(
+                    "Every additional Vision sampling view requires its matching "
+                    "raw-frame view"
+                )
+        if (
+            (self.custom_conv_electronic_enabled or self.tiny_rgb_electronic_adapter_enabled)
+            and self.vision_cache_view_paths
+            and len(self.raw_frame_cache_view_paths)
+            != len(self.vision_cache_view_paths)
+        ):
+            raise ValueError(
+                "A raw-RGB electronic correction requires one aligned raw-frame "
+                "cache for every additional Vision sampling view"
+            )
+        if self.strict_two_branch:
+            invalid = []
+            if self.quality_branch_enabled:
+                invalid.append("quality_branch_enabled")
+            if (
+                self.quality_feature_cache_path is not None
+                and not self.electronic_quality_residual_enabled
+            ):
+                invalid.append("data.quality_feature_cache")
+            if self.vgg_feature_cache_path is not None:
+                invalid.append("data.vgg_feature_cache")
+            if (
+                self.quality_refiner_enabled
+                and not self.electronic_quality_residual_enabled
+            ):
+                invalid.append("quality_refiner_enabled")
+            if (
+                self.trainable_frame_stem_enabled
+                and not self.electronic_quality_residual_enabled
+            ):
+                invalid.append("trainable_frame_stem_enabled")
+            if self.late_input_correction_enabled:
+                invalid.append("late_input_correction_enabled")
+            if self.qwen_gate_enabled:
+                invalid.append("qwen_gate_enabled")
+            if self.electronic_route_variant not in {
+                "residual_conv",
+                "residual_convnext",
+            }:
+                invalid.append("electronic_route_variant")
+            if invalid:
+                raise ValueError(
+                    "strict two-branch inference forbids auxiliary/bypass branches: "
+                    + ", ".join(invalid)
+                )
+        if (
+            self.quality_branch_enabled
+            and
             self.quality_adapter_mode == "identity"
             and self.quality_input_width != self.model_width
         ):
@@ -455,6 +847,12 @@ class ExperimentSettings:
             raise ValueError("model.late_input_correction_max must be positive")
         if self.late_input_correction_enabled and self.target_name != "spatial":
             raise ValueError("The late input correction is only valid for Spatial")
+        if not 0 <= self.frame_stem_refiner_depth <= 8:
+            raise ValueError("model.frame_stem_refiner_depth must be within [0,8]")
+        if self.frame_stem_refiner_depth and not self.trainable_frame_stem_enabled:
+            raise ValueError(
+                "model.frame_stem_refiner_depth requires trainable_frame_stem_enabled=true"
+            )
         if self.trainable_frame_stem_enabled:
             if self.target_name != "spatial" or self.frame_count != 4 or self.token_grid != 14:
                 raise ValueError(
@@ -474,14 +872,41 @@ class ExperimentSettings:
                 raise ValueError("model.vgg_correction_max must be positive")
             if self.vgg_correction_mode not in {"local", "context"}:
                 raise ValueError("model.vgg_correction_mode must be local or context")
+        if self.resnet_feature_cache_path is not None:
+            if self.target_name != "spatial" or self.frame_count != 4 or self.token_grid != 14:
+                raise ValueError(
+                    "The ResNet18 electronic residual requires Spatial, four frames, and a 14x14 grid"
+                )
+            if self.resnet_electronic_max <= 0.0:
+                raise ValueError("model.resnet_electronic_max must be positive")
+        if self.mobilenet_feature_cache_path is not None:
+            if self.target_name != "spatial" or self.frame_count != 4 or self.token_grid != 14:
+                raise ValueError(
+                    "The MobileNetV2 electronic residual requires Spatial, four frames, "
+                    "and a 14x14 grid"
+                )
+            if self.mobilenet_electronic_max <= 0.0:
+                raise ValueError("model.mobilenet_electronic_max must be positive")
+            if self.mobilenet_feature_width not in {64, 96}:
+                raise ValueError("model.mobilenet_feature_width must be 64 or 96")
         if not 0 < self.serial_router_input_size <= self.geometry.serial_expert_size:
             raise ValueError(
                 "router.serial_input_size must be within the serial expert field"
             )
+        if self.serial_router_visual_token_gain <= 0.0:
+            raise ValueError("router.serial_visual_token_gain must be positive")
         if self.target_name != "spatial" and self.spatial_readout_mode != "statistics":
             raise ValueError("The spatial-grid readout is only valid for the Spatial target")
+        if not 0.0 <= self.spatial_readout_image_focus_max <= 1.0:
+            raise ValueError("model.spatial_readout_image_focus_max must lie within [0,1]")
         if self.top_k != 2:
             raise ValueError("The formal router is optical Top-2")
+        if min(
+            self.router_temperature,
+            self.parallel_router_temperature,
+            self.serial_router_temperature,
+        ) <= 0.0:
+            raise ValueError("All router temperatures must be positive")
         for intervals, limit in (
             (self.parallel_router_intervals, self.geometry.lane_size),
             (self.serial_router_intervals, self.geometry.active_size),
@@ -517,36 +942,146 @@ class ExperimentSettings:
                 "Unmodulated power fractions must satisfy "
                 "0 <= min <= eval <= max < 1"
             )
-        if not self.synthetic and self.unmodulated_power_fraction_min < 0.20:
-            raise ValueError("Formal runs require at least 20% nominal unmodulated power")
+        if self.phase_quantization_levels not in {0} and self.phase_quantization_levels < 2:
+            raise ValueError("optics.phase_quantization_levels must be 0 or at least 2")
         if min(
             self.epochs,
             self.batch_size,
             self.num_workers + 1,
             self.test_interval_epochs,
-            self.phase_snapshot_interval_epochs,
-        ) <= 0:
-            raise ValueError("Training counts must be positive (num_workers may be zero)")
+        ) <= 0 or min(
+            self.test_interval_steps, self.phase_snapshot_interval_epochs
+        ) < 0:
+            raise ValueError(
+                "Training counts must be positive; num_workers and the optional "
+                "optimizer-step test/phase snapshot intervals may be zero"
+            )
+        if self.mos_strata < 2:
+            raise ValueError("training.mos_strata must be at least two")
+        if not 0 <= self.learning_rate_warmup_epochs < self.epochs:
+            raise ValueError(
+                "training.learning_rate_warmup_epochs must be within [0, epochs)"
+            )
+        if not 0.0 <= self.minimum_learning_rate_factor <= 1.0:
+            raise ValueError(
+                "training.minimum_learning_rate_factor must be within [0,1]"
+            )
+        if self.readout_learning_rate_factor <= 0.0:
+            raise ValueError("training.readout_learning_rate_factor must be positive")
+        if self.readout_weight_decay < 0.0:
+            raise ValueError("training.readout_weight_decay must be nonnegative")
+        if not 0 <= self.phase_warmup_epochs < self.epochs:
+            raise ValueError("training.phase_warmup_epochs must be within [0,epochs)")
+        if self.late_refine_start_epoch and not (
+            self.phase_warmup_epochs < self.late_refine_start_epoch <= self.epochs
+        ):
+            raise ValueError(
+                "training.late_refine_start_epoch must follow phase warmup and lie within the run"
+            )
+        stage_factors = (
+            self.late_refine_electronic_lr_factor,
+            self.late_refine_readout_lr_factor,
+            self.late_refine_phase_lr_factor,
+            self.late_refine_router_lr_factor,
+        )
+        if min(stage_factors) < 0.0:
+            raise ValueError("late-refine learning-rate factors must be nonnegative")
+        if not 0.0 <= self.ema_decay < 1.0:
+            raise ValueError("training.ema_decay must be within [0,1)")
+        if not 1 <= self.ema_start_epoch <= self.epochs:
+            raise ValueError("training.ema_start_epoch must lie within [1,epochs]")
+        if self.curriculum_enabled and not (
+            1 <= self.curriculum_start_epoch <= self.curriculum_end_epoch <= self.epochs
+        ):
+            raise ValueError(
+                "curriculum start/end epochs must satisfy 1 <= start <= end <= epochs"
+            )
+        curriculum_weights = (
+            self.curriculum_ranking_weight_final,
+            self.curriculum_correlation_weight_final,
+            self.curriculum_soft_spearman_weight_final,
+            self.curriculum_soft_target_weight_final,
+            self.curriculum_router_balance_weight_final,
+            self.curriculum_router_importance_weight_final,
+            self.curriculum_serial_router_balance_weight_final,
+            self.curriculum_serial_router_importance_weight_final,
+            self.curriculum_serial_router_diversity_weight_final,
+            self.curriculum_router_noise_std_final,
+        )
+        if min(curriculum_weights) < 0.0:
+            raise ValueError("curriculum final weights/noise must be non-negative")
+        if self.curriculum_enabled and not (
+            self.unmodulated_power_fraction_min
+            <= self.curriculum_unmodulated_power_fraction_max_initial
+            <= self.unmodulated_power_fraction_max
+        ):
+            raise ValueError(
+                "curriculum.unmodulated_power_fraction_max_initial must lie "
+                "between the optical train minimum and maximum"
+            )
         if self.trainable_scope not in {
             "all",
             "readout_only",
             "residual_only",
+            "crossframe_only",
+            "dual_refiner_only",
+            "appended_electronic_and_crossframe",
+            "appended_electronic_only",
+            "appended_vision_only",
+            "appended_language_only",
+            "quality_reinjection_only",
+            "cross_stage_skip_only",
+            "readout_refiner_only",
+            "readout_refiner_and_residual",
+            "moment_refiner_only",
+            "moment_refiner_and_residual",
             "quality_refiner_only",
             "quality_refiner_readout",
             "late_input_correction_only",
             "frame_stem_only",
             "frame_stem_and_readout",
+            "electronic_path_only",
+            "optical_phase_only",
             "vgg_correction_only",
             "vgg_correction_and_readout",
             "vgg_correction_and_vision_path",
+            "resnet_electronic_only",
+            "resnet_electronic_and_readout",
+            "resnet_electronic_path_and_readout",
+            "mobilenet_electronic_only",
+            "mobilenet_electronic_and_readout",
+            "mobilenet_electronic_path_and_readout",
+            "tiny_rgb_adapter_only",
+            "tiny_rgb_adapter_and_readout",
+            "tiny_rgb_adapter_path_and_readout",
+            "custom_conv_only",
+            "custom_conv_and_readout",
+            "custom_conv_joint",
             "serial_router_and_readout",
         }:
             raise ValueError(
                 "training.trainable_scope must be all, readout_only, residual_only, "
+                "crossframe_only, "
+                "dual_refiner_only, "
+                "appended_electronic_and_crossframe, "
+                "appended_electronic_only, "
+                "appended_vision_only, appended_language_only, "
+                "quality_reinjection_only, "
+                "cross_stage_skip_only, "
+                "readout_refiner_only, readout_refiner_and_residual, "
+                "moment_refiner_only, moment_refiner_and_residual, "
                 "quality_refiner_only, quality_refiner_readout, or "
                 "late_input_correction_only, frame_stem_only, or "
                 "frame_stem_and_readout, vgg_correction_only, or "
                 "vgg_correction_and_readout, vgg_correction_and_vision_path, or "
+                "resnet_electronic_only, or "
+                "resnet_electronic_and_readout, or "
+                "resnet_electronic_path_and_readout, or "
+                "mobilenet_electronic_only, mobilenet_electronic_and_readout, or "
+                "mobilenet_electronic_path_and_readout, or "
+                "tiny_rgb_adapter_only, tiny_rgb_adapter_and_readout, or "
+                "tiny_rgb_adapter_path_and_readout, or "
+                "custom_conv_only, custom_conv_and_readout, custom_conv_joint, or "
                 "serial_router_and_readout"
             )
         if self.trainable_scope == "late_input_correction_only" and not (
@@ -568,28 +1103,163 @@ class ExperimentSettings:
             raise ValueError(
                 "A vgg_correction training scope requires data.vgg_feature_cache"
             )
+        if self.trainable_scope == "resnet_electronic_only" and (
+            self.resnet_feature_cache_path is None
+        ):
+            raise ValueError(
+                "resnet_electronic_only requires data.resnet_feature_cache"
+            )
+        if self.trainable_scope.startswith("mobilenet_electronic") and (
+            self.mobilenet_feature_cache_path is None
+        ):
+            raise ValueError(
+                "A mobilenet_electronic training scope requires "
+                "data.mobilenet_feature_cache"
+            )
+        if self.trainable_scope.startswith("tiny_rgb_adapter") and not (
+            self.tiny_rgb_electronic_adapter_enabled
+        ):
+            raise ValueError(
+                "A tiny_rgb_adapter training scope requires "
+                "model.tiny_rgb_electronic_adapter_enabled=true"
+            )
+        if self.trainable_scope.startswith("custom_conv") and not (
+            self.custom_conv_electronic_enabled
+        ):
+            raise ValueError(
+                "A custom_conv training scope requires "
+                "model.custom_conv_electronic_enabled=true"
+            )
         if self.trainable_scope == "residual_only" and self.spatial_readout_mode not in {
             "spatial_grid_residual",
             "spatial_pyramid_residual",
             "spatial_deep_residual",
+            "spatial_weighted_level_residual",
+            "spatial_crossframe_residual",
+            "spatial_dual_level_residual",
+            "spatial_weighted_level_absolute",
+            "spatial_weighted_level_blend",
         }:
             raise ValueError(
                 "training.trainable_scope=residual_only requires a residual spatial readout"
             )
-        if not self.synthetic and self.phase_snapshot_interval_epochs != 5:
-            raise ValueError("Formal runs must save phase-only snapshots every 5 epochs")
-        if self.soft_target_weight < 0.0:
-            raise ValueError("soft_target_weight must be nonnegative")
+        if self.trainable_scope.startswith("readout_refiner") and not (
+            self.spatial_readout_refiner_enabled
+        ):
+            raise ValueError(
+                "A readout_refiner training scope requires "
+                "model.spatial_readout_refiner_enabled=true"
+            )
+        if self.trainable_scope == "cross_stage_skip_only" and not (
+            self.electronic_cross_stage_skip_enabled
+        ):
+            raise ValueError(
+                "training.trainable_scope=cross_stage_skip_only requires "
+                "model.electronic_cross_stage_skip_enabled=true"
+            )
+        if self.trainable_scope.startswith("moment_refiner") and not (
+            self.spatial_readout_moment_refiner_enabled
+        ):
+            raise ValueError(
+                "A moment_refiner training scope requires "
+                "model.spatial_readout_moment_refiner_enabled=true"
+            )
+        if min(
+            self.regression_weight,
+            self.ranking_weight,
+            self.correlation_weight,
+            self.soft_spearman_weight,
+            self.listwise_ranking_weight,
+            self.soft_target_weight,
+            self.soft_target_ranking_weight,
+            self.soft_target_correlation_weight,
+        ) < 0.0:
+            raise ValueError("All supervised and soft-target loss weights must be nonnegative")
+        if self.level_distribution_weight < 0.0:
+            raise ValueError("level_distribution_weight must be nonnegative")
+        if (
+            self.level_distribution_weight > 0.0
+            and self.spatial_readout_mode
+            not in {
+                "spatial_weighted_level_residual",
+                "spatial_crossframe_residual",
+                "spatial_dual_level_residual",
+                "spatial_weighted_level_absolute",
+                "spatial_weighted_level_blend",
+            }
+        ):
+            raise ValueError(
+                "level_distribution_weight requires the five-level weighted readout"
+            )
         if self.serial_router_balance_weight < 0.0:
             raise ValueError("serial_router_balance_weight must be nonnegative")
         if self.serial_router_importance_weight < 0.0:
             raise ValueError("serial_router_importance_weight must be nonnegative")
+        if self.serial_router_diversity_weight < 0.0:
+            raise ValueError("serial_router_diversity_weight must be nonnegative")
+        if self.phase_smoothness_weight < 0.0:
+            raise ValueError("phase_smoothness_weight must be nonnegative")
         if self.soft_spearman_weight < 0.0:
             raise ValueError("soft_spearman_weight must be nonnegative")
         if self.soft_rank_temperature <= 0.0:
             raise ValueError("soft_rank_temperature must be positive")
-        if self.soft_target_weight > 0.0 and self.training_soft_targets_path is None:
-            raise ValueError("A positive soft_target_weight requires data.training_soft_targets")
+        if self.listwise_rank_temperature <= 0.0:
+            raise ValueError("listwise_rank_temperature must be positive")
+        if not 0.0 <= self.feature_mixup_probability <= 1.0:
+            raise ValueError("training.feature_mixup_probability must lie in [0,1]")
+        if self.feature_mixup_alpha <= 0.0:
+            raise ValueError("training.feature_mixup_alpha must be positive")
+        if min(
+            self.paired_view_supervision_weight,
+            self.paired_view_consistency_weight,
+        ) < 0.0:
+            raise ValueError("Paired-view loss weights must be nonnegative")
+        if (
+            self.paired_view_supervision_weight > 0.0
+            or self.paired_view_consistency_weight > 0.0
+        ):
+            if not self.vision_cache_view_paths:
+                raise ValueError(
+                    "Paired-view training requires at least two aligned temporal views"
+                )
+            if self.feature_mixup_probability > 0.0:
+                raise ValueError(
+                    "Paired-view training and feature Mixup cannot be enabled together"
+                )
+        for name, probability in (
+            ("training_horizontal_flip_probability", self.training_horizontal_flip_probability),
+            (
+                "paired_opposite_horizontal_flip_probability",
+                self.paired_opposite_horizontal_flip_probability,
+            ),
+            ("training_temporal_reverse_probability", self.training_temporal_reverse_probability),
+        ):
+            if not 0.0 <= probability <= 1.0:
+                raise ValueError(f"training.{name} must lie in [0,1]")
+        if (
+            self.training_horizontal_flip_probability > 0.0
+            or self.paired_opposite_horizontal_flip_probability > 0.0
+            or self.training_temporal_reverse_probability > 0.0
+        ) and any(
+            path is not None
+            for path in (
+                self.vgg_feature_cache_path,
+                self.resnet_feature_cache_path,
+                self.mobilenet_feature_cache_path,
+            )
+        ):
+            raise ValueError(
+                "Synchronized video augmentation cannot be combined with an "
+                "unaligned named-backbone feature cache"
+            )
+        if (
+            self.soft_target_weight > 0.0
+            or self.soft_target_ranking_weight > 0.0
+            or self.soft_target_correlation_weight > 0.0
+        ) and self.training_soft_targets_path is None:
+            raise ValueError(
+                "A positive soft-target loss weight requires data.training_soft_targets"
+            )
 
 
 def load_settings(path: str | Path, *, synthetic: bool = False) -> ExperimentSettings:
@@ -605,11 +1275,30 @@ def load_settings(path: str | Path, *, synthetic: bool = False) -> ExperimentSet
         manifest_path=_path(get("data", "manifest"), config_path),
         vision_cache_path=_path(get("data", "vision_cache"), config_path),
         language_cache_path=_path(get("data", "language_cache"), config_path),
+        vision_cache_view_paths=_paths(
+            get("data", "vision_cache_views"), config_path
+        ),
+        quality_feature_cache_view_paths=_paths(
+            get("data", "quality_feature_cache_views"), config_path
+        ),
+        raw_frame_cache_view_paths=_paths(
+            get("data", "raw_frame_cache_views"), config_path
+        ),
+        training_view_probabilities=tuple(
+            float(value)
+            for value in (get("data", "training_view_probabilities", ()) or ())
+        ),
         quality_feature_cache_path=_path(
             get("data", "quality_feature_cache"), config_path
         ),
         raw_frame_cache_path=_path(get("data", "raw_frame_cache"), config_path),
         vgg_feature_cache_path=_path(get("data", "vgg_feature_cache"), config_path),
+        resnet_feature_cache_path=_path(
+            get("data", "resnet_feature_cache"), config_path
+        ),
+        mobilenet_feature_cache_path=_path(
+            get("data", "mobilenet_feature_cache"), config_path
+        ),
         training_soft_targets_path=_path(get("data", "training_soft_targets"), config_path),
         initialization_checkpoint=_path(get("training", "initialization_checkpoint"), config_path),
         frame_stem_checkpoint=_path(
@@ -618,6 +1307,9 @@ def load_settings(path: str | Path, *, synthetic: bool = False) -> ExperimentSet
         qwen_model_path=_path(get("initialization", "qwen_model_path"), config_path),
         reset_serial_router_phase_on_initialization=bool(
             get("initialization", "reset_serial_router_phase", False)
+        ),
+        reset_feature_phase_on_initialization=bool(
+            get("initialization", "reset_feature_phase", False)
         ),
         target_name=target_name,
         prompt=str(get("task", "prompt", TARGET_PROMPTS.get(target_name, ""))),
@@ -634,6 +1326,56 @@ def load_settings(path: str | Path, *, synthetic: bool = False) -> ExperimentSet
         detector_projection_size=int(get("model", "detector_projection_size", 96)),
         spatial_readout_mode=str(get("model", "spatial_readout_mode", "statistics")),
         spatial_residual_max=float(get("model", "spatial_residual_max", 0.10)),
+        spatial_compact_residual_scale=float(
+            get("model", "spatial_compact_residual_scale", 1.0)
+        ),
+        spatial_residual_receptive_field=str(
+            get("model", "spatial_residual_receptive_field", "local7")
+        ),
+        spatial_readout_refiner_enabled=bool(
+            get("model", "spatial_readout_refiner_enabled", False)
+        ),
+        spatial_readout_moment_refiner_enabled=bool(
+            get("model", "spatial_readout_moment_refiner_enabled", False)
+        ),
+        spatial_level_score_min=float(
+            get("model", "spatial_level_score_min", -2.75)
+        ),
+        spatial_level_score_max=float(
+            get("model", "spatial_level_score_max", 2.25)
+        ),
+        spatial_level_blend_initial=float(
+            get("model", "spatial_level_blend_initial", 0.10)
+        ),
+        spatial_readout_image_focus_max=float(
+            get("model", "spatial_readout_image_focus_max", 0.0)
+        ),
+        spatial_compact_channels=int(
+            get("model", "spatial_compact_channels", 80)
+        ),
+        spatial_compact_frame_width=int(
+            get("model", "spatial_compact_frame_width", 256)
+        ),
+        spatial_compact_language_width=int(
+            get("model", "spatial_compact_language_width", 128)
+        ),
+        spatial_compact_head_width=int(
+            get("model", "spatial_compact_head_width", 384)
+        ),
+        spatial_low_rank_frame_rank=int(
+            get("model", "spatial_low_rank_frame_rank", 192)
+        ),
+        spatial_low_rank_language_rank=int(
+            get("model", "spatial_low_rank_language_rank", 128)
+        ),
+        spatial_low_rank_compact_frame_rank=int(
+            get("model", "spatial_low_rank_compact_frame_rank", 64)
+        ),
+        spatial_low_rank_compact_head_rank=int(
+            get("model", "spatial_low_rank_compact_head_rank", 96)
+        ),
+        strict_two_branch=bool(get("model", "strict_two_branch", False)),
+        quality_branch_enabled=bool(get("model", "quality_branch_enabled", True)),
         quality_adapter_mode=str(get("model", "quality_adapter_mode", "linear")),
         quality_gate_initial=float(get("model", "quality_gate_initial", 0.25)),
         qwen_gate_enabled=bool(get("model", "qwen_gate_enabled", False)),
@@ -641,6 +1383,40 @@ def load_settings(path: str | Path, *, synthetic: bool = False) -> ExperimentSet
         electronic_skip_enabled=bool(get("model", "electronic_skip_enabled", False)),
         electronic_skip_initial=float(get("model", "electronic_skip_initial", 0.0)),
         electronic_skip_max=float(get("model", "electronic_skip_max", 1.0)),
+        electronic_route_variant=str(
+            get("model", "electronic_route_variant", "legacy")
+        ),
+        electronic_route_depth=int(get("model", "electronic_route_depth", 1)),
+        electronic_quality_residual_enabled=bool(
+            get("model", "electronic_quality_residual_enabled", False)
+        ),
+        electronic_quality_residual_initial=float(
+            get("model", "electronic_quality_residual_initial", 0.70)
+        ),
+        tiny_rgb_electronic_adapter_enabled=bool(
+            get("model", "tiny_rgb_electronic_adapter_enabled", False)
+        ),
+        tiny_rgb_electronic_adapter_max=float(
+            get("model", "tiny_rgb_electronic_adapter_max", 0.50)
+        ),
+        custom_conv_electronic_enabled=bool(
+            get("model", "custom_conv_electronic_enabled", False)
+        ),
+        custom_conv_electronic_max=float(
+            get("model", "custom_conv_electronic_max", 1.40)
+        ),
+        electronic_quality_reinjection_enabled=bool(
+            get("model", "electronic_quality_reinjection_enabled", False)
+        ),
+        electronic_quality_reinjection_max=float(
+            get("model", "electronic_quality_reinjection_max", 0.50)
+        ),
+        electronic_cross_stage_skip_enabled=bool(
+            get("model", "electronic_cross_stage_skip_enabled", False)
+        ),
+        electronic_cross_stage_skip_max=float(
+            get("model", "electronic_cross_stage_skip_max", 0.50)
+        ),
         quality_refiner_enabled=bool(get("model", "quality_refiner_enabled", False)),
         quality_refiner_max=float(get("model", "quality_refiner_max", 0.50)),
         late_input_correction_enabled=bool(
@@ -652,12 +1428,30 @@ def load_settings(path: str | Path, *, synthetic: bool = False) -> ExperimentSet
         trainable_frame_stem_enabled=bool(
             get("model", "trainable_frame_stem_enabled", False)
         ),
+        frame_stem_refiner_depth=int(
+            get("model", "frame_stem_refiner_depth", 0)
+        ),
         vgg_correction_max=float(get("model", "vgg_correction_max", 0.50)),
         vgg_correction_mode=str(get("model", "vgg_correction_mode", "local")),
+        resnet_electronic_max=float(
+            get("model", "resnet_electronic_max", 0.50)
+        ),
+        mobilenet_electronic_max=float(
+            get("model", "mobilenet_electronic_max", 0.50)
+        ),
+        mobilenet_feature_width=int(
+            get("model", "mobilenet_feature_width", 64)
+        ),
         head_width=int(get("model", "head_width", 256)),
         dropout=float(get("model", "dropout", 0.15)),
         top_k=int(get("router", "top_k", 2)),
         router_temperature=float(get("router", "temperature", 1.0)),
+        parallel_router_temperature=float(
+            get("router", "parallel_temperature", get("router", "temperature", 1.0))
+        ),
+        serial_router_temperature=float(
+            get("router", "serial_temperature", get("router", "temperature", 1.0))
+        ),
         router_noise_std=float(get("router", "noise_std", 0.03)),
         serial_router_input_size=int(
             get("router", "serial_input_size", geometry.serial_expert_size)
@@ -668,6 +1462,9 @@ def load_settings(path: str | Path, *, synthetic: bool = False) -> ExperimentSet
         serial_router_channel_standardization=bool(
             get("router", "serial_channel_standardization", False)
         ),
+        serial_router_visual_token_gain=float(
+            get("router", "serial_visual_token_gain", 1.0)
+        ),
         parallel_router_intervals=tuple(tuple(map(int, pair)) for pair in get("router", "parallel_intervals", [[37, 55], [59, 77]])),
         serial_router_intervals=tuple(tuple(map(int, pair)) for pair in get("router", "serial_intervals", [[164, 223], [255, 314]])),
         wavelength_nm=float(get("optics", "wavelength_nm", 532.0)),
@@ -676,6 +1473,9 @@ def load_settings(path: str | Path, *, synthetic: bool = False) -> ExperimentSet
         k_space_enabled=bool(get("optics", "k_space_enabled", True)),
         theta_max_deg=float(get("optics", "theta_max_deg", 1.0)),
         phase_init_std=float(get("optics", "phase_init_std", 0.25)),
+        phase_quantization_levels=int(
+            get("optics", "phase_quantization_levels", 0)
+        ),
         ccd_relative_clip=float(get("optics", "ccd_relative_clip", 8.0)),
         ccd_log_compression=float(get("optics", "ccd_log_compression", 1.0)),
         unmodulated_power_fraction_min=float(
@@ -704,10 +1504,42 @@ def load_settings(path: str | Path, *, synthetic: bool = False) -> ExperimentSet
         phase_learning_rate=float(get("training", "phase_learning_rate", 8.0e-3)),
         router_phase_learning_rate=float(get("training", "router_phase_learning_rate", 1.2e-2)),
         weight_decay=float(get("training", "weight_decay", 1.0e-4)),
+        readout_learning_rate_factor=float(
+            get("training", "readout_learning_rate_factor", 1.0)
+        ),
+        readout_weight_decay=float(
+            get("training", "readout_weight_decay", get("training", "weight_decay", 1.0e-4))
+        ),
+        phase_warmup_epochs=int(get("training", "phase_warmup_epochs", 0)),
+        late_refine_start_epoch=int(
+            get("training", "late_refine_start_epoch", 0)
+        ),
+        restore_best_at_stage_transition=bool(
+            get("training", "restore_best_at_stage_transition", False)
+        ),
+        late_refine_electronic_lr_factor=float(
+            get("training", "late_refine_electronic_lr_factor", 1.0)
+        ),
+        late_refine_readout_lr_factor=float(
+            get("training", "late_refine_readout_lr_factor", 1.0)
+        ),
+        late_refine_phase_lr_factor=float(
+            get("training", "late_refine_phase_lr_factor", 1.0)
+        ),
+        late_refine_router_lr_factor=float(
+            get("training", "late_refine_router_lr_factor", 1.0)
+        ),
+        ema_decay=float(get("training", "ema_decay", 0.0)),
+        ema_start_epoch=int(get("training", "ema_start_epoch", 1)),
+        regression_weight=float(get("loss", "regression_weight", 1.0)),
         ranking_weight=float(get("loss", "ranking_weight", 0.20)),
         correlation_weight=float(get("loss", "correlation_weight", 0.30)),
         soft_spearman_weight=float(get("loss", "soft_spearman_weight", 0.0)),
         soft_rank_temperature=float(get("loss", "soft_rank_temperature", 0.10)),
+        listwise_ranking_weight=float(get("loss", "listwise_ranking_weight", 0.0)),
+        listwise_rank_temperature=float(
+            get("loss", "listwise_rank_temperature", 0.50)
+        ),
         optical_alignment_weight=float(get("loss", "optical_alignment_weight", 0.05)),
         router_balance_weight=float(get("loss", "router_balance_weight", 0.02)),
         router_importance_weight=float(get("loss", "router_importance_weight", 0.002)),
@@ -717,9 +1549,100 @@ def load_settings(path: str | Path, *, synthetic: bool = False) -> ExperimentSet
         serial_router_importance_weight=float(
             get("loss", "serial_router_importance_weight", 0.0)
         ),
+        serial_router_diversity_weight=float(
+            get("loss", "serial_router_diversity_weight", 0.0)
+        ),
+        phase_smoothness_weight=float(
+            get("loss", "phase_smoothness_weight", 0.0)
+        ),
         router_capture_weight=float(get("loss", "router_capture_weight", 0.02)),
         soft_target_weight=float(get("loss", "soft_target_weight", 0.0)),
+        soft_target_ranking_weight=float(
+            get("loss", "soft_target_ranking_weight", 0.0)
+        ),
+        soft_target_correlation_weight=float(
+            get("loss", "soft_target_correlation_weight", 0.0)
+        ),
+        level_distribution_weight=float(
+            get("loss", "level_distribution_weight", 0.0)
+        ),
+        feature_mixup_probability=float(
+            get("training", "feature_mixup_probability", 0.0)
+        ),
+        feature_mixup_alpha=float(get("training", "feature_mixup_alpha", 0.20)),
+        paired_view_supervision_weight=float(
+            get("loss", "paired_view_supervision_weight", 0.0)
+        ),
+        paired_view_consistency_weight=float(
+            get("loss", "paired_view_consistency_weight", 0.0)
+        ),
+        training_horizontal_flip_probability=float(
+            get("training", "horizontal_flip_probability", 0.0)
+        ),
+        paired_opposite_horizontal_flip_probability=float(
+            get("training", "paired_opposite_horizontal_flip_probability", 0.0)
+        ),
+        training_temporal_reverse_probability=float(
+            get("training", "temporal_reverse_probability", 0.0)
+        ),
+        mos_stratified_batches=bool(
+            get("training", "mos_stratified_batches", False)
+        ),
+        mos_strata=int(get("training", "mos_strata", 8)),
+        learning_rate_warmup_epochs=int(
+            get("training", "learning_rate_warmup_epochs", 0)
+        ),
+        minimum_learning_rate_factor=float(
+            get("training", "minimum_learning_rate_factor", 0.0)
+        ),
+        curriculum_enabled=bool(get("curriculum", "enabled", False)),
+        curriculum_start_epoch=int(get("curriculum", "start_epoch", 1)),
+        curriculum_end_epoch=int(
+            get("curriculum", "end_epoch", get("training", "epochs", 100))
+        ),
+        curriculum_ranking_weight_final=float(
+            get("curriculum", "ranking_weight_final", get("loss", "ranking_weight", 0.20))
+        ),
+        curriculum_correlation_weight_final=float(
+            get("curriculum", "correlation_weight_final", get("loss", "correlation_weight", 0.30))
+        ),
+        curriculum_soft_spearman_weight_final=float(
+            get("curriculum", "soft_spearman_weight_final", get("loss", "soft_spearman_weight", 0.0))
+        ),
+        curriculum_soft_target_weight_final=float(
+            get("curriculum", "soft_target_weight_final", get("loss", "soft_target_weight", 0.0))
+        ),
+        curriculum_router_balance_weight_final=float(
+            get("curriculum", "router_balance_weight_final", get("loss", "router_balance_weight", 0.02))
+        ),
+        curriculum_router_importance_weight_final=float(
+            get("curriculum", "router_importance_weight_final", get("loss", "router_importance_weight", 0.002))
+        ),
+        curriculum_serial_router_balance_weight_final=float(
+            get("curriculum", "serial_router_balance_weight_final", get("loss", "serial_router_balance_weight", 0.0))
+        ),
+        curriculum_serial_router_importance_weight_final=float(
+            get("curriculum", "serial_router_importance_weight_final", get("loss", "serial_router_importance_weight", 0.0))
+        ),
+        curriculum_serial_router_diversity_weight_final=float(
+            get(
+                "curriculum",
+                "serial_router_diversity_weight_final",
+                get("loss", "serial_router_diversity_weight", 0.0),
+            )
+        ),
+        curriculum_router_noise_std_final=float(
+            get("curriculum", "router_noise_std_final", get("router", "noise_std", 0.03))
+        ),
+        curriculum_unmodulated_power_fraction_max_initial=float(
+            get(
+                "curriculum",
+                "unmodulated_power_fraction_max_initial",
+                get("optics", "unmodulated_power_fraction_max", 0.35),
+            )
+        ),
         test_interval_epochs=int(get("training", "test_interval_epochs", 5)),
+        test_interval_steps=int(get("training", "test_interval_steps", 0)),
         phase_snapshot_interval_epochs=int(
             get("training", "phase_snapshot_interval_epochs", 5)
         ),
@@ -743,12 +1666,20 @@ def resolved_dict(settings: ExperimentSettings) -> dict[str, Any]:
         "quality_feature_cache_path",
         "raw_frame_cache_path",
         "vgg_feature_cache_path",
+        "resnet_feature_cache_path",
+        "mobilenet_feature_cache_path",
         "training_soft_targets_path",
         "initialization_checkpoint",
         "frame_stem_checkpoint",
         "qwen_model_path",
     ):
         result[key] = None if result[key] is None else str(result[key])
+    for key in (
+        "vision_cache_view_paths",
+        "quality_feature_cache_view_paths",
+        "raw_frame_cache_view_paths",
+    ):
+        result[key] = [str(path) for path in result[key]]
     result.update(
         {
             "token_count": settings.token_count,

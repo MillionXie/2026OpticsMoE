@@ -1,0 +1,35 @@
+base_config: spatial_custom_conv_pruned_compact_alpha42_scale040_s935.yaml
+output_dir: ../../runs/lgvq_spatial_custom_conv_aligned_multiview_s967
+random_seed: 967
+
+# Training-only temporal augmentation.  Each selected view is an atomic tuple:
+# frozen Qwen tokens, Conv5 features and the raw RGB frames consumed by the
+# project-owned custom Conv E1 correction.  Formal test/inference still uses
+# exactly one central four-frame view and one forward pass.
+data:
+  vision_cache_views:
+    - ../../artifacts/multiview/qwen3vl_front_4f_196x1024_view_m005.pt
+    - ../../artifacts/multiview/qwen3vl_front_4f_196x1024_view_p005.pt
+  quality_feature_cache_views:
+    - ../../artifacts/multiview/lgvq_quality_conv5_4f_196x192_view_m005.pt
+    - ../../artifacts/multiview/lgvq_quality_conv5_4f_196x192_view_p005.pt
+  raw_frame_cache_views:
+    - ../../artifacts/multiview/lgvq_raw_4f_224_view_m005.pt
+    - ../../artifacts/multiview/lgvq_raw_4f_224_view_p005.pt
+  training_view_probabilities: [0.34, 0.33, 0.33]
+
+training:
+  initialization_checkpoint: ../../../../LightGenV2/tasks/t06_video_quality_assessment/runs/simulation/spatial_compact_alpha42_s929/scale040_all_ultralow_s941/alpha_calibrated/best_alpha_calibrated_checkpoint.pt
+  trainable_scope: custom_conv_and_readout
+  epochs: 80
+  batch_size: 64
+  learning_rate: 0.000003
+  readout_learning_rate_factor: 0.15
+  weight_decay: 0.0001
+  learning_rate_warmup_epochs: 3
+  minimum_learning_rate_factor: 0.05
+  ema_decay: 0.999
+  ema_start_epoch: 1
+  test_interval_epochs: 1
+  phase_snapshot_interval_epochs: 0
+

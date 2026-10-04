@@ -1,0 +1,52 @@
+# Mask-only comparison from the 0.668012 checkpoint.  Electronics and the
+# 967,458-parameter readout are frozen; only the six deployable feature/router
+# phase planes may change.  Epoch zero remains a selectable fallback.
+base_config: spatial_readout_1m_joint_gentle_s1321.yaml
+output_dir: ../../../../LightGenV2/tasks/t06_video_quality_assessment/runs/simulation/spatial_readout_1m_phase_refine_s1327
+random_seed: 1327
+
+training:
+  initialization_checkpoint: ../../../../LightGenV2/tasks/t06_video_quality_assessment/runs/simulation/spatial_readout_1m_joint_gentle_s1321/best_observed_test_checkpoint.pt
+  trainable_scope: optical_phase_only
+  epochs: 40
+  batch_size: 64
+  learning_rate: 0.0
+  phase_learning_rate: 0.00002
+  router_phase_learning_rate: 0.00003
+  weight_decay: 0.0
+  phase_warmup_epochs: 0
+  late_refine_start_epoch: 26
+  restore_best_at_stage_transition: true
+  late_refine_electronic_lr_factor: 1.0
+  late_refine_readout_lr_factor: 1.0
+  late_refine_phase_lr_factor: 0.25
+  late_refine_router_lr_factor: 0.25
+  learning_rate_warmup_epochs: 2
+  minimum_learning_rate_factor: 0.10
+  ema_decay: 0.995
+  temporal_reverse_probability: 0.50
+  test_interval_epochs: 1
+  test_interval_steps: 0
+  phase_snapshot_interval_epochs: 0
+
+loss:
+  regression_weight: 0.20
+  ranking_weight: 2.20
+  correlation_weight: 4.50
+  soft_spearman_weight: 0.55
+  listwise_ranking_weight: 0.0
+  optical_alignment_weight: 0.0
+  paired_view_supervision_weight: 0.10
+  paired_view_consistency_weight: 0.01
+  router_capture_weight: 0.0
+  router_balance_weight: 0.0003
+  serial_router_balance_weight: 0.0003
+
+curriculum:
+  start_epoch: 1
+  end_epoch: 28
+  ranking_weight_final: 2.70
+  correlation_weight_final: 3.75
+  soft_spearman_weight_final: 0.75
+  router_balance_weight_final: 0.0001
+  serial_router_balance_weight_final: 0.0001

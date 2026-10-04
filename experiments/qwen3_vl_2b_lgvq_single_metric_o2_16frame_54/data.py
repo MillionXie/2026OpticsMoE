@@ -457,6 +457,61 @@ def load_vgg_feature_cache(
     return payload
 
 
+def load_resnet_feature_cache(
+    path: str | Path, *, sample_ids: Sequence[str], frame_count: int, token_grid: int
+) -> dict[str, Any]:
+    """Load the frozen attention-free ResNet18 layer-3 screening cache."""
+
+    source = Path(path).expanduser().resolve()
+    payload = _load_torch(source, mmap=True)
+    contract = "lgvq_frozen_resnet18_layer3_4f_14x14x256_v1"
+    if not isinstance(payload, dict) or payload.get("contract") != contract:
+        raise RuntimeError(f"Unsupported ResNet18 feature cache: {source}")
+    source_ids = list(map(str, payload.get("sample_ids", [])))
+    if len(source_ids) != len(set(source_ids)) or set(source_ids) != set(sample_ids):
+        raise RuntimeError("ResNet18 feature cache IDs differ from the manifest")
+    tokens = payload.get("tokens")
+    expected = (len(sample_ids), frame_count, token_grid * token_grid, 256)
+    if not torch.is_tensor(tokens) or tokens.dtype != torch.float16 or tuple(tokens.shape) != expected:
+        raise ValueError(f"ResNet18 tokens must be float16 {expected}")
+    # The raw-frame cache and formal manifest use different stable orderings;
+    # align by unique sample ID rather than silently joining by position.
+    lookup = {sample_id: index for index, sample_id in enumerate(source_ids)}
+    order = torch.tensor([lookup[str(sample_id)] for sample_id in sample_ids])
+    aligned = tokens.index_select(0, order)
+    return {**payload, "tokens": aligned, "manifest_aligned_by_sample_id": True}
+
+
+def load_mobilenet_feature_cache(
+    path: str | Path, *, sample_ids: Sequence[str], frame_count: int,
+    token_grid: int, width: int = 64
+) -> dict[str, Any]:
+    """Load a declared pretrained MobileNetV2 14x14 feature boundary."""
+
+    source = Path(path).expanduser().resolve()
+    payload = _load_torch(source, mmap=True)
+    contracts = {
+        64: "lgvq_frozen_mobilenetv2_b10_4f_14x14x64_v1",
+        96: "lgvq_frozen_mobilenetv2_b11_4f_14x14x96_v1",
+    }
+    if width not in contracts:
+        raise ValueError("MobileNetV2 cache width must be 64 or 96")
+    contract = contracts[width]
+    if not isinstance(payload, dict) or payload.get("contract") != contract:
+        raise RuntimeError(f"Unsupported MobileNetV2 feature cache: {source}")
+    source_ids = list(map(str, payload.get("sample_ids", [])))
+    if len(source_ids) != len(set(source_ids)) or set(source_ids) != set(sample_ids):
+        raise RuntimeError("MobileNetV2 feature cache IDs differ from the manifest")
+    tokens = payload.get("tokens")
+    expected = (len(sample_ids), frame_count, token_grid * token_grid, width)
+    if not torch.is_tensor(tokens) or tokens.dtype != torch.float16 or tuple(tokens.shape) != expected:
+        raise ValueError(f"MobileNetV2 tokens must be float16 {expected}")
+    lookup = {sample_id: index for index, sample_id in enumerate(source_ids)}
+    order = torch.tensor([lookup[str(sample_id)] for sample_id in sample_ids])
+    aligned = tokens.index_select(0, order)
+    return {**payload, "tokens": aligned, "manifest_aligned_by_sample_id": True}
+
+
 def _align_soft_targets(
     path: Path,
     *,
@@ -528,6 +583,36 @@ def load_single_metric_cache(settings: ExperimentSettings) -> dict[str, Any]:
     manifest_splits = [row.split for row in rows]
     if manifest_splits != list(vision["splits"]):
         raise RuntimeError("Manifest and Vision cache split assignments differ")
+    vision_views = [vision]
+    vision_view_paths = [settings.vision_cache_path]
+    for view_path in settings.vision_cache_view_paths:
+        view = load_vision_cache(
+            view_path,
+            frame_count=settings.frame_count,
+            token_grid=settings.token_grid,
+        )
+        view_identity = _validate_cache_front_identity(view, language)
+        if view_identity["pair"] != front_identity["pair"]:
+            raise RuntimeError(
+                "All temporal-sampling views must use the same frozen Qwen front"
+            )
+        if [str(value) for value in view["sample_ids"]] != manifest_ids:
+            raise RuntimeError(
+                "A temporal-sampling Vision view has a different sample order"
+            )
+        if list(view["splits"]) != manifest_splits:
+            raise RuntimeError(
+                "A temporal-sampling Vision view has different split assignments"
+            )
+        vision_views.append(view)
+        vision_view_paths.append(view_path)
+    frame_sampling_offsets = [
+        float(view.get("frame_sampling_offset", 0.0)) for view in vision_views
+    ]
+    if len(set(frame_sampling_offsets)) != len(frame_sampling_offsets):
+        raise RuntimeError(
+            "Temporal-sampling Vision views must have distinct offsets"
+        )
     targets = torch.tensor(
         [row.target(settings.target_name) for row in rows], dtype=torch.float32
     )
@@ -539,6 +624,12 @@ def load_single_metric_cache(settings: ExperimentSettings) -> dict[str, Any]:
         "prompt": settings.prompt,
         "vision_tokens": vision["vision_tokens"],
         "quality_tokens": vision["quality_tokens"],
+        "vision_token_views": tuple(
+            view["vision_tokens"] for view in vision_views
+        ),
+        "quality_token_views": tuple(
+            view["quality_tokens"] for view in vision_views
+        ),
         "language_tokens": language["language_tokens"],
         "language_mask": language["attention_mask"],
         "input_ids": language["input_ids"],
@@ -549,6 +640,22 @@ def load_single_metric_cache(settings: ExperimentSettings) -> dict[str, Any]:
         "manifest_path": str(settings.manifest_path),
         "manifest_sha256": file_sha256(settings.manifest_path),
         "vision_cache_path": str(settings.vision_cache_path),
+        "vision_cache_view_paths": [str(path) for path in vision_view_paths],
+        "frame_sampling_offsets": frame_sampling_offsets,
+        "training_view_probabilities": settings.training_view_probabilities,
+        "paired_training_views": bool(
+            settings.paired_view_supervision_weight > 0.0
+            or settings.paired_view_consistency_weight > 0.0
+        ),
+        "training_horizontal_flip_probability": (
+            settings.training_horizontal_flip_probability
+        ),
+        "paired_opposite_horizontal_flip_probability": (
+            settings.paired_opposite_horizontal_flip_probability
+        ),
+        "training_temporal_reverse_probability": (
+            settings.training_temporal_reverse_probability
+        ),
         "language_cache_path": str(settings.language_cache_path),
         "qwen_front_identity": front_identity,
     }
@@ -561,6 +668,28 @@ def load_single_metric_cache(settings: ExperimentSettings) -> dict[str, Any]:
             width=settings.quality_input_width,
         )
         result["quality_tokens"] = auxiliary["quality_tokens"]
+        quality_views = [auxiliary["quality_tokens"]]
+        for view_path in settings.quality_feature_cache_view_paths:
+            quality_view = load_quality_feature_cache(
+                view_path,
+                sample_ids=manifest_ids,
+                frame_count=settings.frame_count,
+                token_grid=settings.token_grid,
+                width=settings.quality_input_width,
+            )
+            expected_offset = frame_sampling_offsets[len(quality_views)]
+            actual_offset = float(quality_view.get("frame_sampling_offset", 0.0))
+            if actual_offset != expected_offset:
+                raise RuntimeError(
+                    "A Conv5 quality view does not match its Vision sampling offset: "
+                    f"expected {expected_offset}, got {actual_offset}"
+                )
+            quality_views.append(quality_view["quality_tokens"])
+        if len(quality_views) != len(vision_views):
+            raise RuntimeError(
+                "Vision and Conv5 temporal-sampling view counts differ"
+            )
+        result["quality_token_views"] = tuple(quality_views)
         result["quality_feature_provenance"] = {
             key: auxiliary.get(key)
             for key in (
@@ -580,6 +709,29 @@ def load_single_metric_cache(settings: ExperimentSettings) -> dict[str, Any]:
         result["raw_frames"] = raw_frames["frames"]
         result["raw_frame_cache_path"] = str(settings.raw_frame_cache_path)
         result["raw_frame_cache_sha256"] = file_sha256(settings.raw_frame_cache_path)
+        raw_frame_views = [raw_frames["frames"]]
+        for view_path in settings.raw_frame_cache_view_paths:
+            raw_view = load_raw_frame_cache(
+                view_path,
+                sample_ids=manifest_ids,
+                frame_count=settings.frame_count,
+            )
+            expected_offset = frame_sampling_offsets[len(raw_frame_views)]
+            actual_offset = float(raw_view.get("frame_sampling_offset", 0.0))
+            if actual_offset != expected_offset:
+                raise RuntimeError(
+                    "A raw-frame view does not match its Vision sampling offset: "
+                    f"expected {expected_offset}, got {actual_offset}"
+                )
+            raw_frame_views.append(raw_view["frames"])
+        if len(raw_frame_views) not in {1, len(vision_views)}:
+            raise RuntimeError(
+                "Vision and raw-frame temporal-sampling view counts differ"
+            )
+        result["raw_frame_views"] = tuple(raw_frame_views)
+        result["raw_frame_cache_view_paths"] = [
+            str(path) for path in settings.raw_frame_cache_view_paths
+        ]
     if settings.vgg_feature_cache_path is not None:
         vgg = load_vgg_feature_cache(
             settings.vgg_feature_cache_path,
@@ -590,6 +742,33 @@ def load_single_metric_cache(settings: ExperimentSettings) -> dict[str, Any]:
         result["vgg_tokens"] = vgg["tokens"]
         result["vgg_feature_cache_path"] = str(settings.vgg_feature_cache_path)
         result["vgg_feature_cache_sha256"] = file_sha256(settings.vgg_feature_cache_path)
+    if settings.resnet_feature_cache_path is not None:
+        resnet = load_resnet_feature_cache(
+            settings.resnet_feature_cache_path,
+            sample_ids=manifest_ids,
+            frame_count=settings.frame_count,
+            token_grid=settings.token_grid,
+        )
+        result["resnet_tokens"] = resnet["tokens"]
+        result["resnet_feature_cache_path"] = str(settings.resnet_feature_cache_path)
+        result["resnet_feature_cache_sha256"] = file_sha256(
+            settings.resnet_feature_cache_path
+        )
+    if settings.mobilenet_feature_cache_path is not None:
+        mobilenet = load_mobilenet_feature_cache(
+            settings.mobilenet_feature_cache_path,
+            sample_ids=manifest_ids,
+            frame_count=settings.frame_count,
+            token_grid=settings.token_grid,
+            width=settings.mobilenet_feature_width,
+        )
+        result["mobilenet_tokens"] = mobilenet["tokens"]
+        result["mobilenet_feature_cache_path"] = str(
+            settings.mobilenet_feature_cache_path
+        )
+        result["mobilenet_feature_cache_sha256"] = file_sha256(
+            settings.mobilenet_feature_cache_path
+        )
     if settings.training_soft_targets_path is not None:
         soft, present, provenance = _align_soft_targets(
             settings.training_soft_targets_path,
@@ -608,6 +787,10 @@ def cache_report(payload: Mapping[str, Any]) -> dict[str, Any]:
         "target_name": payload["target_name"],
         "vision_shape": list(tokens.shape),
         "vision_dtype": str(tokens.dtype),
+        "temporal_sampling_view_count": len(
+            payload.get("vision_token_views", (tokens,))
+        ),
+        "frame_sampling_offsets": list(payload.get("frame_sampling_offsets", [0.0])),
         "language_shape": list(payload["language_tokens"].shape),
         "quality_shape": list(payload["quality_tokens"].shape),
         "raw_frame_shape": None
@@ -616,6 +799,9 @@ def cache_report(payload: Mapping[str, Any]) -> dict[str, Any]:
         "vgg_shape": None
         if "vgg_tokens" not in payload
         else list(payload["vgg_tokens"].shape),
+        "mobilenet_shape": None
+        if "mobilenet_tokens" not in payload
+        else list(payload["mobilenet_tokens"].shape),
         "language_dtype": str(payload["language_tokens"].dtype),
         "input_ids_shape": list(payload["input_ids"].shape),
         "split_counts": {
@@ -642,6 +828,7 @@ class LGVQSingleMetricDataset(Dataset[dict[str, Any]]):
         if split not in {"train", "validation", "test"}:
             raise ValueError(f"Unknown split {split!r}")
         self.payload = payload
+        self.split = split
         self.indices = [
             index for index, value in enumerate(payload["splits"]) if value == split
         ]
@@ -651,11 +838,67 @@ class LGVQSingleMetricDataset(Dataset[dict[str, Any]]):
     def __len__(self) -> int:
         return len(self.indices)
 
+    @staticmethod
+    def _flip_token_grid(value: torch.Tensor) -> torch.Tensor:
+        if value.ndim != 3:
+            raise RuntimeError("A video token tensor must be [frames,tokens,width]")
+        frames, tokens, width = value.shape
+        grid = int(tokens**0.5)
+        if grid * grid != tokens:
+            raise RuntimeError("Horizontal flip requires a square token grid")
+        return value.reshape(frames, grid, grid, width).flip(2).reshape_as(value)
+
+    @classmethod
+    def _augment_video_tuple(
+        cls,
+        item: dict[str, Any],
+        *,
+        horizontal_flip: bool,
+        temporal_reverse: bool,
+        prefixes: tuple[str, ...] = ("", "paired_"),
+    ) -> None:
+        for prefix in prefixes:
+            vision_key = f"{prefix}vision_tokens"
+            quality_key = f"{prefix}quality_tokens"
+            raw_key = f"{prefix}raw_frames"
+            if vision_key not in item:
+                continue
+            if horizontal_flip:
+                item[vision_key] = cls._flip_token_grid(item[vision_key])
+                item[quality_key] = cls._flip_token_grid(item[quality_key])
+                if raw_key in item:
+                    item[raw_key] = item[raw_key].flip(-1)
+            if temporal_reverse:
+                item[vision_key] = item[vision_key].flip(0)
+                item[quality_key] = item[quality_key].flip(0)
+                if raw_key in item:
+                    item[raw_key] = item[raw_key].flip(0)
+
     def __getitem__(self, index: int) -> dict[str, Any]:
         source = self.indices[index]
+        vision_views = self.payload.get(
+            "vision_token_views", (self.payload["vision_tokens"],)
+        )
+        quality_views = self.payload.get(
+            "quality_token_views", (self.payload["quality_tokens"],)
+        )
+        if len(vision_views) != len(quality_views):
+            raise RuntimeError("Vision and quality sampling-view counts differ")
+        view_index = 0
+        if self.split == "train" and len(vision_views) > 1:
+            probabilities = self.payload.get("training_view_probabilities", ())
+            if probabilities:
+                weights = torch.as_tensor(probabilities, dtype=torch.float32)
+                if weights.numel() != len(vision_views):
+                    raise RuntimeError(
+                        "Training sampling weights do not match the loaded views"
+                    )
+                view_index = int(torch.multinomial(weights, 1).item())
+            else:
+                view_index = int(torch.randint(len(vision_views), ()).item())
         item: dict[str, Any] = {
-            "vision_tokens": self.payload["vision_tokens"][source].float(),
-            "quality_tokens": self.payload["quality_tokens"][source].float(),
+            "vision_tokens": vision_views[view_index][source].float(),
+            "quality_tokens": quality_views[view_index][source].float(),
             "language_tokens": self.payload["language_tokens"][0].float(),
             "language_mask": self.payload["language_mask"][0].bool(),
             "input_ids": self.payload["input_ids"][0].long(),
@@ -663,13 +906,82 @@ class LGVQSingleMetricDataset(Dataset[dict[str, Any]]):
             "target_name": self.payload["target_name"],
             "sample_id": self.payload["sample_ids"][source],
             "video_path": self.payload["video_paths"][source],
+            "sampling_view_index": view_index,
         }
         if "soft_target_present" in self.payload and bool(self.payload["soft_target_present"][source]):
             item["soft_target"] = self.payload["soft_targets"][source].float()
         if "raw_frames" in self.payload:
-            item["raw_frames"] = self.payload["raw_frames"][source]
+            raw_views = self.payload.get(
+                "raw_frame_views", (self.payload["raw_frames"],)
+            )
+            if len(raw_views) not in {1, len(vision_views)}:
+                raise RuntimeError(
+                    "Vision and raw-frame sampling-view counts differ"
+                )
+            raw_view_index = view_index if len(raw_views) > 1 else 0
+            item["raw_frames"] = raw_views[raw_view_index][source]
+        if (
+            self.split == "train"
+            and bool(self.payload.get("paired_training_views", False))
+        ):
+            if len(vision_views) < 2:
+                raise RuntimeError("Paired-view training requires multiple views")
+            candidates = [value for value in range(len(vision_views)) if value != view_index]
+            paired_index = candidates[int(torch.randint(len(candidates), ()).item())]
+            item["paired_vision_tokens"] = vision_views[paired_index][source].float()
+            item["paired_quality_tokens"] = quality_views[paired_index][source].float()
+            item["paired_sampling_view_index"] = paired_index
+            if "raw_frames" in self.payload:
+                raw_views = self.payload.get(
+                    "raw_frame_views", (self.payload["raw_frames"],)
+                )
+                raw_index = paired_index if len(raw_views) > 1 else 0
+                item["paired_raw_frames"] = raw_views[raw_index][source]
         if "vgg_tokens" in self.payload:
             item["vgg_tokens"] = self.payload["vgg_tokens"][source].float()
+        if "resnet_tokens" in self.payload:
+            item["resnet_tokens"] = self.payload["resnet_tokens"][source].float()
+        if "mobilenet_tokens" in self.payload:
+            item["mobilenet_tokens"] = self.payload["mobilenet_tokens"][source].float()
+        if self.split == "train":
+            horizontal_flip = bool(
+                torch.rand(())
+                < float(
+                    self.payload.get("training_horizontal_flip_probability", 0.0)
+                )
+            )
+            temporal_reverse = bool(
+                torch.rand(())
+                < float(
+                    self.payload.get("training_temporal_reverse_probability", 0.0)
+                )
+            )
+            if horizontal_flip or temporal_reverse:
+                self._augment_video_tuple(
+                    item,
+                    horizontal_flip=horizontal_flip,
+                    temporal_reverse=temporal_reverse,
+                )
+            if (
+                "paired_vision_tokens" in item
+                and bool(
+                    torch.rand(())
+                    < float(
+                        self.payload.get(
+                            "paired_opposite_horizontal_flip_probability", 0.0
+                        )
+                    )
+                )
+            ):
+                # Make the paired temporal view the opposite left-right
+                # orientation.  Existing paired supervision/consistency then
+                # teaches reflection invariance without another forward pass.
+                self._augment_video_tuple(
+                    item,
+                    horizontal_flip=True,
+                    temporal_reverse=False,
+                    prefixes=("paired_",),
+                )
         return item
 
 
@@ -680,6 +992,8 @@ __all__ = [
     "file_sha256",
     "load_language_cache",
     "load_raw_frame_cache",
+    "load_resnet_feature_cache",
+    "load_mobilenet_feature_cache",
     "load_vgg_feature_cache",
     "load_single_metric_cache",
     "load_vision_cache",

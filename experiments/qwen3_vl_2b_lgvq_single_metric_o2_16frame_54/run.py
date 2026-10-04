@@ -60,6 +60,20 @@ def _load_compatible_initialization(
     skipped_by_policy = []
     if settings.reset_serial_router_phase_on_initialization:
         skipped_by_policy.append("serial_router.raw_router_phase")
+    if settings.reset_feature_phase_on_initialization:
+        # Feature-producing masks start from the model constructor. With
+        # optics.phase_init_std=0 this is raw_phase=0 exactly, hence physical
+        # phase=pi under the 2*pi*sigmoid(raw_phase) parameterization. Router
+        # focusing phases are intentionally retained: resetting those to a
+        # flat pi plane would destroy the four-spot optical routing geometry.
+        skipped_by_policy.extend(
+            (
+                "parallel_optics.raw_expert_phase",
+                "parallel_optics.raw_global_phase",
+                "serial_optics.raw_expert_phase",
+                "serial_optics.raw_global_phase",
+            )
+        )
     compatible = {
         name: value
         for name, value in source.items()
@@ -103,13 +117,25 @@ def _load_frame_stem_initialization(
     }
     if not stem_state:
         raise RuntimeError("Frame-stem checkpoint contains no frame_stem tensors")
-    model.frame_stem.load_state_dict(stem_state, strict=True)
+    result = model.frame_stem.load_state_dict(stem_state, strict=False)
+    non_refiner_missing = [
+        name for name in result.missing_keys if not name.startswith("refiners.")
+    ]
+    if result.unexpected_keys or non_refiner_missing:
+        raise RuntimeError(
+            "Frame-stem checkpoint is incompatible: "
+            f"missing={non_refiner_missing}, unexpected={list(result.unexpected_keys)}"
+        )
     return {
         "used": True,
         "path": str(path),
         "loaded_tensors": len(stem_state),
         "loaded_parameters": sum(value.numel() for value in stem_state.values()),
-        "policy": "exact conv5 stem restore; no resizing",
+        "initialized_refiner_tensors": len(result.missing_keys),
+        "policy": (
+            "exact base Conv5 restore; absent zero-start compact refiners keep "
+            "their constructor initialization; no resizing"
+        ),
     }
 
 
@@ -133,6 +159,42 @@ def _apply_trainable_scope(
             trainable = name.startswith("readout.")
         elif scope == "residual_only":
             trainable = name.startswith("readout.residual_")
+        elif scope == "crossframe_only":
+            trainable = name.startswith("readout.crossframe_")
+        elif scope == "dual_refiner_only":
+            trainable = name.startswith("readout.dual_")
+        elif scope == "appended_electronic_and_crossframe":
+            trainable = name.startswith("readout.crossframe_") or (
+                name.startswith(("vision_routes.", "language_routes."))
+                and ".blocks.1." in name
+            )
+        elif scope == "appended_electronic_only":
+            trainable = name.startswith(("vision_routes.", "language_routes.")) and (
+                ".blocks.1." in name
+            )
+        elif scope == "appended_vision_only":
+            trainable = name.startswith("vision_routes.") and ".blocks.1." in name
+        elif scope == "appended_language_only":
+            trainable = name.startswith("language_routes.") and ".blocks.1." in name
+        elif scope == "quality_reinjection_only":
+            trainable = name == "raw_electronic_quality_reinjection"
+        elif scope == "cross_stage_skip_only":
+            trainable = name in {
+                "raw_vision_cross_stage_skip",
+                "raw_language_cross_stage_skip",
+            }
+        elif scope == "readout_refiner_only":
+            trainable = name.startswith("readout.large_kernel_refiner.")
+        elif scope == "readout_refiner_and_residual":
+            trainable = name.startswith("readout.large_kernel_refiner.") or (
+                name.startswith("readout.residual_")
+            )
+        elif scope == "moment_refiner_only":
+            trainable = name.startswith("readout.moment_frame.")
+        elif scope == "moment_refiner_and_residual":
+            trainable = name.startswith("readout.moment_frame.") or (
+                name.startswith("readout.residual_")
+            )
         elif scope == "quality_refiner_only":
             trainable = name.startswith("quality_refiner.")
         elif scope == "quality_refiner_readout":
@@ -145,6 +207,30 @@ def _apply_trainable_scope(
             trainable = name.startswith("frame_stem.")
         elif scope == "frame_stem_and_readout":
             trainable = name.startswith("frame_stem.") or name.startswith("readout.")
+        elif scope == "electronic_path_only":
+            # Micro-refine the already existing electronic path while the
+            # physical masks and final MOS calibration remain fixed.
+            trainable = name.startswith(
+                (
+                    "vision_adapter.",
+                    "visual_input_norm.",
+                    "language_adapter.",
+                    "prompt_to_visual.",
+                    "vision_routes.",
+                    "language_routes.",
+                    "electronic_quality_norm.",
+                    "raw_electronic_quality_scale",
+                    "fusions.",
+                    "frame_merger.",
+                    "frame_position",
+                    "sequence_position",
+                )
+            )
+        elif scope == "optical_phase_only":
+            # Train only the deployable phase masks, including both optical
+            # routers. Optical/electronic projections and the MOS readout are
+            # frozen, so any SRCC change is attributable to physical masks.
+            trainable = "raw_" in name and "phase" in name
         elif scope == "vgg_correction_only":
             trainable = name.startswith("vgg_correction.")
         elif scope == "vgg_correction_and_readout":
@@ -159,6 +245,87 @@ def _apply_trainable_scope(
                     "fusions.0.",
                     "fusions.1.",
                     "frame_merger.",
+                )
+            )
+        elif scope == "resnet_electronic_only":
+            trainable = name.startswith("resnet_electronic_correction.")
+        elif scope == "resnet_electronic_and_readout":
+            # Second half of the staged recipe: keep the four optical stages
+            # and their electronic transforms fixed, and let the already
+            # learned E1 correction co-adapt with the sole final MOS head.
+            trainable = name.startswith(
+                ("resnet_electronic_correction.", "readout.")
+            )
+        elif scope == "resnet_electronic_path_and_readout":
+            trainable = name.startswith(
+                (
+                    "resnet_electronic_correction.",
+                    "vision_routes.",
+                    "language_routes.",
+                    "frame_merger.",
+                    "readout.",
+                )
+            )
+        elif scope == "mobilenet_electronic_only":
+            trainable = name.startswith("mobilenet_electronic_correction.")
+        elif scope == "mobilenet_electronic_and_readout":
+            trainable = name.startswith(
+                ("mobilenet_electronic_correction.", "readout.")
+            )
+        elif scope == "mobilenet_electronic_path_and_readout":
+            trainable = name.startswith(
+                (
+                    "mobilenet_electronic_correction.",
+                    "vision_routes.",
+                    "language_routes.",
+                    "frame_merger.",
+                    "readout.",
+                )
+            )
+        elif scope == "custom_conv_only":
+            trainable = name.startswith("custom_conv_electronic_correction.")
+        elif scope == "custom_conv_and_readout":
+            trainable = name.startswith(
+                ("custom_conv_electronic_correction.", "readout.")
+            )
+        elif scope == "custom_conv_joint":
+            # Jointly adapt the project-owned convolutional E1 correction and
+            # the complete O/E/O predictor. Frozen Qwen front tensors are
+            # inputs, not transformer blocks inside this trainable graph.
+            trainable = name.startswith(
+                (
+                    "custom_conv_electronic_correction.",
+                    "vision_adapter.",
+                    "visual_input_norm.",
+                    "language_adapter.",
+                    "prompt_to_visual.",
+                    "vision_routes.",
+                    "language_routes.",
+                    "parallel_optics.",
+                    "serial_optics.",
+                    "parallel_router.",
+                    "serial_router.",
+                    "fusions.",
+                    "frame_merger.",
+                    "frame_position",
+                    "sequence_position",
+                    "readout.",
+                )
+            )
+        elif scope == "tiny_rgb_adapter_only":
+            trainable = name.startswith("tiny_rgb_electronic_adapter.")
+        elif scope == "tiny_rgb_adapter_and_readout":
+            trainable = name.startswith(
+                ("tiny_rgb_electronic_adapter.", "readout.")
+            )
+        elif scope == "tiny_rgb_adapter_path_and_readout":
+            trainable = name.startswith(
+                (
+                    "tiny_rgb_electronic_adapter.",
+                    "vision_routes.",
+                    "language_routes.",
+                    "frame_merger.",
+                    "readout.",
                 )
             )
         elif scope == "serial_router_and_readout":
@@ -260,6 +427,8 @@ def synthetic_smoke(settings: ExperimentSettings) -> dict[str, Any]:
         raw_frame_cache_path=None,
         frame_stem_checkpoint=None,
         vgg_feature_cache_path=None,
+        resnet_feature_cache_path=None,
+        mobilenet_feature_cache_path=None,
         serial_router_input_size=min(24, geometry.serial_expert_size),
         trainable_scope="all",
         batch_size=2,
@@ -362,13 +531,17 @@ def main() -> int:
 
     payload = load_single_metric_cache(settings)
     model = build_model(settings)
-    initialization = _load_compatible_initialization(model, settings)
-    _json(settings.output_dir / "initialization_report.json", initialization)
+    # The stand-alone stem checkpoint is the fallback/base initializer.  Load
+    # it first so a later full student checkpoint can deliberately replace the
+    # stem with its distilled weights.  The previous order silently restored
+    # the old Conv5 after loading a distilled full checkpoint.
     stem_initialization = _load_frame_stem_initialization(model, settings)
     _json(
         settings.output_dir / "frame_stem_initialization_report.json",
         stem_initialization,
     )
+    initialization = _load_compatible_initialization(model, settings)
+    _json(settings.output_dir / "initialization_report.json", initialization)
     training_scope = _apply_trainable_scope(model, settings)
     _json(settings.output_dir / "trainable_scope_report.json", training_scope)
     _json(settings.output_dir / "parameter_breakdown.json", model.parameter_breakdown())

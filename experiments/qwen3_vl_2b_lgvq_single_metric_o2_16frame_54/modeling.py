@@ -46,7 +46,15 @@ def _phase_modulation(
     settings: ExperimentSettings,
     training: bool,
 ) -> torch.Tensor:
-    modulation = torch.exp(1j * _phase(raw)).to(torch.complex64)
+    phase = _phase(raw)
+    levels = settings.phase_quantization_levels
+    if levels:
+        step = (2.0 * math.pi) / float(levels - 1)
+        quantized = torch.round(phase / step) * step
+        # The forward pass sees exactly the 8-bit phase levels exported to the
+        # physical SLM.  The straight-through gradient still updates raw_phase.
+        phase = phase + (quantized - phase).detach() if training else quantized
+    modulation = torch.exp(1j * phase).to(torch.complex64)
     if training and settings.phase_dropout_p > 0.0:
         leading = raw.shape[:-2]
         cell_size = settings.phase_dropout_cell_size
@@ -158,15 +166,23 @@ def _routing_statistics(
     flat_s = selected.float().reshape(-1, 4)
     importance = flat_p.mean(0)
     load = flat_s.mean(0) / 2.0
+    conditional_entropy = -(
+        flat_p.clamp_min(1.0e-8).log() * flat_p
+    ).sum(-1).mean() / math.log(4.0)
+    marginal_entropy = -(
+        importance.clamp_min(1.0e-8).log() * importance
+    ).sum() / math.log(4.0)
     return {
         "importance": importance,
         "load": load,
         "balance_loss": 4.0 * torch.sum(importance * load),
         "importance_loss": 4.0 * importance.square().sum() - 1.0,
-        "normalized_entropy": -(
-            flat_p.clamp_min(1.0e-8).log() * flat_p
-        ).sum(-1).mean()
-        / math.log(4.0),
+        "normalized_entropy": conditional_entropy,
+        "marginal_entropy": marginal_entropy,
+        # Negative normalized mutual information. Minimizing this term asks
+        # different samples to make different, confident optical routing
+        # decisions; unlike hard load counts, it remains differentiable.
+        "diversity_loss": conditional_entropy - marginal_entropy,
     }
 
 
@@ -270,7 +286,7 @@ class OpticalRouterParallel16(nn.Module):
         if self.training and self.settings.router_noise_std > 0.0:
             logits = logits + torch.randn_like(logits) * self.settings.router_noise_std
         probabilities = torch.softmax(
-            logits / self.settings.router_temperature, dim=-1
+            logits / self.settings.parallel_router_temperature, dim=-1
         )
         weights, selected, indices = _sparse_top2(probabilities)
         captured = energy.sum(-1) / torch.stack(lane_energy, 1).clamp_min(1.0e-8)
@@ -424,7 +440,7 @@ class OpticalRouterSerial(nn.Module):
         if self.training and self.settings.router_noise_std > 0.0:
             logits = logits + torch.randn_like(logits) * self.settings.router_noise_std
         probabilities = torch.softmax(
-            logits / self.settings.router_temperature, dim=-1
+            logits / self.settings.serial_router_temperature, dim=-1
         )
         weights, selected, indices = _sparse_top2(probabilities)
         captured = raw_energy.sum(-1) / active.sum((-2, -1)).clamp_min(1.0e-8)
@@ -839,6 +855,234 @@ class LanguageElectronicRoute(nn.Module):
         return output.masked_fill(~mask.unsqueeze(-1), 0.0)
 
 
+class _VisionResidualConvBlock(nn.Module):
+    """One sequential attention-free block inside the sole electronic route."""
+
+    def __init__(self, width: int) -> None:
+        super().__init__()
+        self.norm = nn.LayerNorm(width)
+        self.depthwise = nn.Conv2d(
+            width, width, 5, padding=2, groups=width, bias=False
+        )
+        self.expand = nn.Conv2d(width, width * 2, 1)
+        self.project = nn.Conv2d(width * 2, width, 1)
+        self.raw_scale = nn.Parameter(torch.tensor(-2.0))
+        # A newly appended residual block must be an exact identity at warm
+        # start. Older blocks are restored from the checkpoint by exact name;
+        # only genuinely new blocks keep this zero-output initialization.
+        nn.init.zeros_(self.project.weight)
+        nn.init.zeros_(self.project.bias)
+
+    def forward(self, value: torch.Tensor, grid: int) -> torch.Tensor:
+        batch, frames, _, width = value.shape
+        image = self.norm(value).reshape(
+            batch * frames, grid, grid, width
+        ).permute(0, 3, 1, 2)
+        residual = self.project(F.gelu(self.expand(self.depthwise(image))))
+        residual = residual.permute(0, 2, 3, 1).reshape_as(value)
+        return value + torch.sigmoid(self.raw_scale) * residual
+
+
+class _GlobalResponseNorm2d(nn.Module):
+    """ConvNeXt-V2 style response normalization; no attention or token mixing."""
+
+    def __init__(self, channels: int) -> None:
+        super().__init__()
+        self.gamma = nn.Parameter(torch.zeros(1, channels, 1, 1))
+        self.beta = nn.Parameter(torch.zeros(1, channels, 1, 1))
+
+    def forward(self, value: torch.Tensor) -> torch.Tensor:
+        response = torch.linalg.vector_norm(value.float(), dim=(-2, -1), keepdim=True)
+        normalized = response / response.mean(1, keepdim=True).clamp_min(1.0e-6)
+        normalized = normalized.to(value.dtype)
+        return value + self.gamma * (value * normalized) + self.beta
+
+
+class _VisionLargeKernelResidualBlock(nn.Module):
+    """One lightweight 7x7 ConvNeXt-style block inside the electronic route."""
+
+    def __init__(self, width: int) -> None:
+        super().__init__()
+        expanded = width * 4
+        self.norm = nn.LayerNorm(width)
+        self.depthwise = nn.Conv2d(
+            width, width, 7, padding=3, groups=width, bias=False
+        )
+        self.expand = nn.Conv2d(width, expanded, 1)
+        self.grn = _GlobalResponseNorm2d(expanded)
+        self.project = nn.Conv2d(expanded, width, 1)
+        self.raw_scale = nn.Parameter(torch.tensor(-2.0))
+        # Exact identity at checkpoint load. This makes the architecture search
+        # reversible and prevents a random new block from erasing the formal run.
+        nn.init.zeros_(self.project.weight)
+        nn.init.zeros_(self.project.bias)
+
+    def forward(self, value: torch.Tensor, grid: int) -> torch.Tensor:
+        batch, frames, _, width = value.shape
+        image = self.norm(value).reshape(
+            batch * frames, grid, grid, width
+        ).permute(0, 3, 1, 2)
+        residual = self.depthwise(image)
+        residual = self.grn(F.gelu(self.expand(residual)))
+        residual = self.project(residual)
+        residual = residual.permute(0, 2, 3, 1).reshape_as(value)
+        return value + torch.sigmoid(self.raw_scale) * residual
+
+
+class VisionElectronicResidualRoute(nn.Module):
+    """One electronic route with a checkpoint-compatible convolutional stem."""
+
+    def __init__(self, settings: ExperimentSettings) -> None:
+        super().__init__()
+        self.grid = settings.token_grid
+        self.width = settings.model_width
+        # Keep these names and tensor shapes identical to VisionElectronicRoute.
+        # The formal two-branch model can therefore inherit the already trained
+        # electronic transform instead of silently randomizing the whole E path.
+        self.norm = nn.LayerNorm(self.width)
+        self.depthwise = nn.Conv2d(
+            self.width,
+            self.width,
+            5,
+            padding=2,
+            groups=self.width,
+            bias=False,
+        )
+        self.pointwise = nn.Conv2d(self.width, self.width, 1)
+        blocks: list[nn.Module] = []
+        for index in range(settings.electronic_route_depth - 1):
+            # Block 0 retains the checkpoint-compatible 5x5 implementation.
+            # Only newly appended blocks use the larger lightweight kernel.
+            block_type = (
+                _VisionLargeKernelResidualBlock
+                if settings.electronic_route_variant == "residual_convnext"
+                and index >= 1
+                else _VisionResidualConvBlock
+            )
+            blocks.append(block_type(self.width))
+        self.blocks = nn.ModuleList(blocks)
+        self.skip_max = float(settings.electronic_skip_max)
+        if settings.electronic_skip_enabled:
+            ratio = settings.electronic_skip_initial / self.skip_max
+            self.raw_skip = nn.Parameter(torch.atanh(torch.tensor(ratio)))
+
+    @property
+    def skip(self) -> torch.Tensor | None:
+        raw = getattr(self, "raw_skip", None)
+        return None if raw is None else self.skip_max * torch.tanh(raw)
+
+    def forward(self, value: torch.Tensor) -> torch.Tensor:
+        batch, frames, tokens, width = value.shape
+        if tokens != self.grid * self.grid or width != self.width:
+            raise ValueError("Vision electronic grid contract changed")
+        identity = value
+        image = self.norm(value).reshape(
+            batch * frames, self.grid, self.grid, width
+        ).permute(0, 3, 1, 2)
+        value = self.pointwise(F.gelu(self.depthwise(image)))
+        value = value.permute(0, 2, 3, 1).reshape(
+            batch, frames, tokens, width
+        )
+        for block in self.blocks:
+            value = block(value, self.grid)
+        skip = self.skip
+        if skip is not None:
+            value = value + skip * identity
+        return value
+
+
+class _LanguageResidualConvBlock(nn.Module):
+    """One sequential causal block inside the sole sequence electronic route."""
+
+    def __init__(self, width: int) -> None:
+        super().__init__()
+        self.norm = nn.LayerNorm(width)
+        self.depthwise = nn.Conv1d(width, width, 5, groups=width, bias=False)
+        self.expand = nn.Conv1d(width, width * 2, 1)
+        self.project = nn.Conv1d(width * 2, width, 1)
+        self.raw_scale = nn.Parameter(torch.tensor(-2.0))
+        nn.init.zeros_(self.project.weight)
+        nn.init.zeros_(self.project.bias)
+
+    def forward(self, value: torch.Tensor, mask: torch.Tensor) -> torch.Tensor:
+        sequence = self.norm(value).masked_fill(~mask.unsqueeze(-1), 0.0)
+        sequence = F.pad(sequence.transpose(1, 2), (4, 0))
+        residual = self.project(F.gelu(self.expand(self.depthwise(sequence))))
+        result = value + torch.sigmoid(self.raw_scale) * residual.transpose(1, 2)
+        return result.masked_fill(~mask.unsqueeze(-1), 0.0)
+
+
+class _LanguageLargeKernelResidualBlock(nn.Module):
+    """Causal 7-tap counterpart of the lightweight vision residual block."""
+
+    def __init__(self, width: int) -> None:
+        super().__init__()
+        expanded = width * 4
+        self.norm = nn.LayerNorm(width)
+        self.depthwise = nn.Conv1d(width, width, 7, groups=width, bias=False)
+        self.expand = nn.Conv1d(width, expanded, 1)
+        self.project = nn.Conv1d(expanded, width, 1)
+        self.raw_scale = nn.Parameter(torch.tensor(-2.0))
+        nn.init.zeros_(self.project.weight)
+        nn.init.zeros_(self.project.bias)
+
+    def forward(self, value: torch.Tensor, mask: torch.Tensor) -> torch.Tensor:
+        sequence = self.norm(value).masked_fill(~mask.unsqueeze(-1), 0.0)
+        sequence = F.pad(sequence.transpose(1, 2), (6, 0))
+        residual = self.project(F.gelu(self.expand(self.depthwise(sequence))))
+        result = value + torch.sigmoid(self.raw_scale) * residual.transpose(1, 2)
+        return result.masked_fill(~mask.unsqueeze(-1), 0.0)
+
+
+class LanguageElectronicResidualRoute(nn.Module):
+    """One causal electronic route with a compatible convolutional stem."""
+
+    def __init__(self, settings: ExperimentSettings) -> None:
+        super().__init__()
+        self.width = settings.model_width
+        # These three modules exactly match LanguageElectronicRoute so the
+        # warm-start keeps the trained causal electronic transform.
+        self.norm = nn.LayerNorm(self.width)
+        self.depthwise = nn.Conv1d(
+            self.width, self.width, 5, groups=self.width, bias=False
+        )
+        self.pointwise = nn.Conv1d(self.width, self.width, 1)
+        blocks: list[nn.Module] = []
+        for index in range(settings.electronic_route_depth - 1):
+            block_type = (
+                _LanguageLargeKernelResidualBlock
+                if settings.electronic_route_variant == "residual_convnext"
+                and index >= 1
+                else _LanguageResidualConvBlock
+            )
+            blocks.append(block_type(self.width))
+        self.blocks = nn.ModuleList(blocks)
+        self.skip_max = float(settings.electronic_skip_max)
+        if settings.electronic_skip_enabled:
+            ratio = settings.electronic_skip_initial / self.skip_max
+            self.raw_skip = nn.Parameter(torch.atanh(torch.tensor(ratio)))
+
+    @property
+    def skip(self) -> torch.Tensor | None:
+        raw = getattr(self, "raw_skip", None)
+        return None if raw is None else self.skip_max * torch.tanh(raw)
+
+    def forward(self, value: torch.Tensor, mask: torch.Tensor) -> torch.Tensor:
+        identity = value
+        sequence = self.norm(value).masked_fill(
+            ~mask.unsqueeze(-1), 0.0
+        ).transpose(1, 2)
+        sequence = F.pad(sequence, (4, 0))
+        value = self.pointwise(F.gelu(self.depthwise(sequence))).transpose(1, 2)
+        value = value.masked_fill(~mask.unsqueeze(-1), 0.0)
+        for block in self.blocks:
+            value = block(value, mask)
+        skip = self.skip
+        if skip is not None:
+            value = value + skip * identity
+        return value
+
+
 class RmsConvexFusion(nn.Module):
     def __init__(self, settings: ExperimentSettings) -> None:
         super().__init__()
@@ -953,12 +1197,19 @@ class SpatialReadout(nn.Module):
 
 
 class SpatialGridReadout(nn.Module):
-    """Attention-free electronic head that preserves the final 7x7 token layout."""
+    """Attention-free electronic head preserving the configured square token grid."""
 
     def __init__(self, settings: ExperimentSettings) -> None:
         super().__init__()
         width, hidden = settings.model_width, settings.head_width
         self.grid = settings.token_grid
+        self.frame_count = settings.frame_count
+        self.image_focus_max = settings.spatial_readout_image_focus_max
+        if self.image_focus_max > 0.0:
+            # Zero gives an exact warm start from the established all-sequence
+            # readout. Fine-tuning may then emphasize the four sample-varying
+            # image tokens without deleting the text-conditioned optical path.
+            self.raw_image_focus = nn.Parameter(torch.zeros(()))
         spatial_width = 64
         self.token_norm = nn.LayerNorm(width)
         self.spatial_depthwise = nn.Conv2d(
@@ -988,7 +1239,7 @@ class SpatialGridReadout(nn.Module):
     ) -> torch.Tensor:
         batch, frames, tokens, width = vision.shape
         if tokens != self.grid * self.grid:
-            raise ValueError("Spatial-grid readout requires the formal 7x7 token grid")
+            raise ValueError("Spatial-grid readout requires the configured square token grid")
         grid = self.token_norm(vision).reshape(
             batch * frames, self.grid, self.grid, width
         ).permute(0, 3, 1, 2)
@@ -1010,7 +1261,17 @@ class SpatialGridReadout(nn.Module):
             ),
             -1,
         )
-        prompt = self.language(_masked_statistics(language, mask))
+        all_sequence = self.language(_masked_statistics(language, mask))
+        prompt = all_sequence
+        if self.image_focus_max > 0.0:
+            image_sequence = self.language(
+                _masked_statistics(
+                    language[:, : self.frame_count],
+                    mask[:, : self.frame_count],
+                )
+            )
+            image_focus = self.image_focus_max * torch.tanh(self.raw_image_focus)
+            prompt = all_sequence + image_focus * (image_sequence - all_sequence)
         return self.output(torch.cat((video, prompt), -1)).squeeze(-1)
 
 
@@ -1269,6 +1530,45 @@ class SpatialPyramidResidualReadout(SpatialGridReadout):
         return base_prediction + bounded_correction
 
 
+class _DilatedResidualConvStack(nn.Module):
+    """Local-to-global 15x15 field with explicit local residual retention."""
+
+    def __init__(self, input_width: int, channels: int) -> None:
+        super().__init__()
+        self.conv1 = nn.Conv2d(input_width, channels, 3, padding=1)
+        self.norm1 = nn.GroupNorm(8, channels)
+        self.conv2 = nn.Conv2d(channels, channels, 3, padding=2, dilation=2)
+        self.norm2 = nn.GroupNorm(8, channels)
+        self.conv3 = nn.Conv2d(channels, channels, 3, padding=4, dilation=4)
+        self.norm3 = nn.GroupNorm(8, channels)
+
+    def forward(self, value: torch.Tensor) -> torch.Tensor:
+        local = F.gelu(self.norm1(self.conv1(value)))
+        medium = local + F.gelu(self.norm2(self.conv2(local)))
+        return medium + F.gelu(self.norm3(self.conv3(medium)))
+
+
+class _ReadoutLargeKernelRefiner(nn.Module):
+    """A zero-start 7x7 depthwise refinement inside the existing MOS head."""
+
+    def __init__(self, channels: int) -> None:
+        super().__init__()
+        self.depthwise = nn.Conv2d(
+            channels, channels, 7, padding=3, groups=channels, bias=False
+        )
+        self.norm = nn.GroupNorm(8, channels)
+        self.expand = nn.Conv2d(channels, channels * 2, 1)
+        self.project = nn.Conv2d(channels * 2, channels, 1)
+        nn.init.zeros_(self.project.weight)
+        nn.init.zeros_(self.project.bias)
+
+    def forward(self, value: torch.Tensor) -> torch.Tensor:
+        correction = self.project(
+            F.gelu(self.expand(self.norm(self.depthwise(value))))
+        )
+        return value + correction
+
+
 class SpatialDeepResidualReadout(SpatialGridReadout):
     """Higher-capacity convolutional correction after all optical stages.
 
@@ -1283,17 +1583,58 @@ class SpatialDeepResidualReadout(SpatialGridReadout):
         width, hidden = settings.model_width, settings.head_width
         self.residual_max = float(settings.spatial_residual_max)
         channels = 128
-        self.residual_conv = nn.Sequential(
-            nn.Conv2d(width, channels, 3, padding=1),
-            nn.GroupNorm(8, channels),
-            nn.GELU(),
-            nn.Conv2d(channels, channels, 3, padding=1),
-            nn.GroupNorm(8, channels),
-            nn.GELU(),
-            nn.Conv2d(channels, channels, 3, padding=1),
-            nn.GroupNorm(8, channels),
-            nn.GELU(),
+        if settings.spatial_residual_receptive_field == "hybrid15":
+            self.residual_conv = _DilatedResidualConvStack(width, channels)
+        else:
+            dilations = (
+                (1, 2, 4)
+                if settings.spatial_residual_receptive_field == "dilated15"
+                else (1, 1, 1)
+            )
+            self.residual_conv = nn.Sequential(
+                nn.Conv2d(
+                    width, channels, 3, padding=dilations[0], dilation=dilations[0]
+                ),
+                nn.GroupNorm(8, channels),
+                nn.GELU(),
+                nn.Conv2d(
+                    channels,
+                    channels,
+                    3,
+                    padding=dilations[1],
+                    dilation=dilations[1],
+                ),
+                nn.GroupNorm(8, channels),
+                nn.GELU(),
+                nn.Conv2d(
+                    channels,
+                    channels,
+                    3,
+                    padding=dilations[2],
+                    dilation=dilations[2],
+                ),
+                nn.GroupNorm(8, channels),
+                nn.GELU(),
+            )
+        self.large_kernel_refiner = (
+            _ReadoutLargeKernelRefiner(channels)
+            if settings.spatial_readout_refiner_enabled
+            else nn.Identity()
         )
+        self.moment_frame = None
+        if settings.spatial_readout_moment_refiner_enabled:
+            # Channel-wise spatial contrast and gradient energy are useful IQA
+            # cues. The zero output projection makes this an exact warm start.
+            moment_hidden = min(192, hidden // 2)
+            self.moment_frame = nn.Sequential(
+                nn.LayerNorm(channels * 3),
+                nn.Linear(channels * 3, moment_hidden),
+                nn.GELU(),
+                nn.Dropout(settings.dropout),
+                nn.Linear(moment_hidden, hidden),
+            )
+            nn.init.zeros_(self.moment_frame[-1].weight)
+            nn.init.zeros_(self.moment_frame[-1].bias)
         pooled_width = channels * 2 * (1 + 4 + 16)
         self.residual_frame = nn.Sequential(
             nn.LayerNorm(pooled_width),
@@ -1316,15 +1657,14 @@ class SpatialDeepResidualReadout(SpatialGridReadout):
         nn.init.zeros_(self.residual_output[-1].weight)
         nn.init.zeros_(self.residual_output[-1].bias)
 
-    def forward(
+    def _residual_features(
         self, vision: torch.Tensor, language: torch.Tensor, mask: torch.Tensor
     ) -> torch.Tensor:
-        base_prediction = super().forward(vision, language, mask)
         batch, frames, tokens, width = vision.shape
         grid = self.token_norm(vision).reshape(
             batch * frames, self.grid, self.grid, width
         ).permute(0, 3, 1, 2)
-        feature = self.residual_conv(grid)
+        feature = self.large_kernel_refiner(self.residual_conv(grid))
         pooled = torch.cat(
             tuple(
                 pool(feature, size).flatten(1)
@@ -1334,6 +1674,13 @@ class SpatialDeepResidualReadout(SpatialGridReadout):
             1,
         )
         frame = self.residual_frame(pooled).reshape(batch, frames, -1)
+        if self.moment_frame is not None:
+            centered = feature - feature.mean((-2, -1), keepdim=True)
+            contrast = centered.float().square().mean((-2, -1)).sqrt().to(feature.dtype)
+            gradient_x = (feature[..., 1:] - feature[..., :-1]).abs().mean((-2, -1))
+            gradient_y = (feature[..., 1:, :] - feature[..., :-1, :]).abs().mean((-2, -1))
+            moments = torch.cat((contrast, gradient_x, gradient_y), -1)
+            frame = frame + self.moment_frame(moments).reshape(batch, frames, -1)
         difference = (frame[:, 1:] - frame[:, :-1]).abs()
         video = torch.cat(
             (
@@ -1347,9 +1694,528 @@ class SpatialDeepResidualReadout(SpatialGridReadout):
             -1,
         )
         prompt = self.residual_language(_masked_statistics(language, mask))
-        correction = self.residual_output(torch.cat((video, prompt), -1)).squeeze(-1)
+        return torch.cat((video, prompt), -1)
+
+    def forward(
+        self, vision: torch.Tensor, language: torch.Tensor, mask: torch.Tensor
+    ) -> torch.Tensor:
+        base_prediction = super().forward(vision, language, mask)
+        correction = self.residual_output(
+            self._residual_features(vision, language, mask)
+        ).squeeze(-1)
         correction = self.residual_max * torch.tanh(correction / self.residual_max)
         return base_prediction + correction
+
+
+class SpatialWeightedLevelResidualReadout(SpatialDeepResidualReadout):
+    """One post-optical head using five ordered levels for a bounded correction.
+
+    This mirrors the frozen-Qwen baseline's useful inductive bias: softmax
+    probabilities over Bad/Poor/Fair/Good/Excellent become a continuous score
+    by a weighted sum.  The five scores correct the already trained scalar
+    readout, giving an exact warm start. Every input is after the four optical
+    stages; no raw-frame, pre-optical, attention, or Transformer bypass exists.
+    """
+
+    def __init__(self, settings: ExperimentSettings) -> None:
+        super().__init__(settings)
+        input_width = self.residual_output[-1].in_features
+        self.residual_output[-1] = nn.Linear(input_width, 5)
+        nn.init.zeros_(self.residual_output[-1].weight)
+        nn.init.zeros_(self.residual_output[-1].bias)
+        self.register_buffer(
+            "level_scores",
+            torch.linspace(-self.residual_max, self.residual_max, 5),
+        )
+        self.last_level_logits: torch.Tensor | None = None
+        self.last_level_base_prediction: torch.Tensor | None = None
+
+    def forward(
+        self, vision: torch.Tensor, language: torch.Tensor, mask: torch.Tensor
+    ) -> torch.Tensor:
+        base_prediction = SpatialGridReadout.forward(self, vision, language, mask)
+        logits = self.residual_output(
+            self._residual_features(vision, language, mask)
+        )
+        probabilities = logits.float().softmax(-1).to(logits.dtype)
+        correction = probabilities @ self.level_scores.to(probabilities.dtype)
+        self.last_level_logits = logits
+        self.last_level_base_prediction = base_prediction
+        return base_prediction + correction
+
+
+class SpatialCompactWeightedReadout(nn.Module):
+    """Compact five-level MOS head operating only after all optical stages.
+
+    The former deep readout expanded every frame to a 5,376-value pyramid and
+    then used two wide fully-connected mappings.  This replacement keeps a
+    small spatial convolutional field, pools only to 1x1 and 2x2, and retains
+    mean/std/extrema/change summaries over the four frames.  It contains only
+    project-owned convolution, pooling and fully-connected operations: no
+    attention, Transformer, recurrent unit, or named pretrained backbone.
+    """
+
+    def __init__(self, settings: ExperimentSettings) -> None:
+        super().__init__()
+        width = settings.model_width
+        channels = settings.spatial_compact_channels
+        frame_width = settings.spatial_compact_frame_width
+        language_width = settings.spatial_compact_language_width
+        head_width = settings.spatial_compact_head_width
+        self.grid = settings.token_grid
+        self.token_norm = nn.LayerNorm(width)
+        self.spatial_projection = nn.Conv2d(width, channels, 1)
+        self.spatial_local = nn.Conv2d(
+            channels, channels, 5, padding=2, groups=channels, bias=False
+        )
+        self.spatial_context = nn.Conv2d(
+            channels,
+            channels,
+            3,
+            padding=2,
+            dilation=2,
+            groups=channels,
+            bias=False,
+        )
+        pooled_width = channels * 2 * (1 + 4)
+        self.frame = nn.Sequential(
+            nn.LayerNorm(pooled_width),
+            nn.Linear(pooled_width, frame_width),
+            nn.GELU(),
+            nn.Dropout(settings.dropout),
+        )
+        self.language = nn.Sequential(
+            nn.LayerNorm(width * 3),
+            nn.Linear(width * 3, language_width),
+            nn.GELU(),
+        )
+        joint_width = frame_width * 6 + language_width
+        self.output = nn.Sequential(
+            nn.LayerNorm(joint_width),
+            nn.Linear(joint_width, head_width),
+            nn.GELU(),
+            nn.Dropout(settings.dropout),
+            nn.Linear(head_width, 5),
+        )
+        self.register_buffer(
+            "level_scores",
+            torch.linspace(
+                settings.spatial_level_score_min,
+                settings.spatial_level_score_max,
+                5,
+            ),
+        )
+        self.last_level_logits: torch.Tensor | None = None
+        self.last_level_base_prediction: torch.Tensor | None = None
+
+    def forward(
+        self, vision: torch.Tensor, language: torch.Tensor, mask: torch.Tensor
+    ) -> torch.Tensor:
+        batch, frames, tokens, width = vision.shape
+        if tokens != self.grid * self.grid:
+            raise ValueError("Compact Spatial readout requires a square token grid")
+        grid = self.token_norm(vision).reshape(
+            batch * frames, self.grid, self.grid, width
+        ).permute(0, 3, 1, 2)
+        feature = F.gelu(self.spatial_projection(grid))
+        feature = feature + F.gelu(self.spatial_local(feature))
+        feature = feature + F.gelu(self.spatial_context(feature))
+        pooled = torch.cat(
+            tuple(
+                pool(feature, size).flatten(1)
+                for size in (1, 2)
+                for pool in (F.adaptive_avg_pool2d, F.adaptive_max_pool2d)
+            ),
+            1,
+        )
+        frame = self.frame(pooled).reshape(batch, frames, -1)
+        difference = (frame[:, 1:] - frame[:, :-1]).abs()
+        video = torch.cat(
+            (
+                frame.mean(1),
+                frame.float().std(1, unbiased=False).to(frame.dtype),
+                frame.amax(1),
+                frame.amin(1),
+                difference.mean(1),
+                difference.amax(1),
+            ),
+            -1,
+        )
+        prompt = self.language(_masked_statistics(language, mask))
+        logits = self.output(torch.cat((video, prompt), -1))
+        probabilities = logits.float().softmax(-1).to(logits.dtype)
+        prediction = probabilities @ self.level_scores.to(probabilities.dtype)
+        self.last_level_logits = logits
+        self.last_level_base_prediction = torch.zeros_like(prediction)
+        return prediction
+
+
+class SpatialPrunedGridCompactResidualReadout(SpatialGridReadout):
+    """Structured-pruned grid head plus a small post-optical correction.
+
+    The established grid branch is retained, but its 1,024-neuron terminal
+    hidden layer is reduced to ``spatial_compact_head_width`` neurons.  The
+    training utility initializes those neurons from the most influential
+    source units.  A zero-start convolutional correction then recovers detail
+    using only tensors that have already traversed the four optical stages.
+    """
+
+    def __init__(self, settings: ExperimentSettings) -> None:
+        super().__init__(settings)
+        width, hidden = settings.model_width, settings.head_width
+        pruned_width = settings.spatial_compact_head_width
+        self.output[1] = nn.Linear(hidden * 4, pruned_width)
+        self.output[-1] = nn.Linear(pruned_width, 1)
+        self.residual_max = float(settings.spatial_residual_max)
+        self.residual_scale = float(settings.spatial_compact_residual_scale)
+        channels, frame_width = 64, 128
+        self.compact_projection = nn.Conv2d(width, channels, 1)
+        self.compact_local = nn.Conv2d(
+            channels, channels, 5, padding=2, groups=channels, bias=False
+        )
+        pooled_width = channels * 2 * (1 + 4)
+        self.compact_frame = nn.Sequential(
+            nn.LayerNorm(pooled_width),
+            nn.Linear(pooled_width, frame_width),
+            nn.GELU(),
+            nn.Dropout(settings.dropout),
+        )
+        self.compact_output = nn.Sequential(
+            nn.LayerNorm(frame_width * 6 + hidden),
+            nn.Linear(frame_width * 6 + hidden, 256),
+            nn.GELU(),
+            nn.Dropout(settings.dropout),
+            nn.Linear(256, 1),
+        )
+        nn.init.zeros_(self.compact_output[-1].weight)
+        nn.init.zeros_(self.compact_output[-1].bias)
+
+    def forward(
+        self, vision: torch.Tensor, language: torch.Tensor, mask: torch.Tensor
+    ) -> torch.Tensor:
+        base_prediction = SpatialGridReadout.forward(self, vision, language, mask)
+        batch, frames, tokens, width = vision.shape
+        grid = self.token_norm(vision).reshape(
+            batch * frames, self.grid, self.grid, width
+        ).permute(0, 3, 1, 2)
+        feature = F.gelu(self.compact_projection(grid))
+        feature = feature + F.gelu(self.compact_local(feature))
+        pooled = torch.cat(
+            tuple(
+                pool(feature, size).flatten(1)
+                for size in (1, 2)
+                for pool in (F.adaptive_avg_pool2d, F.adaptive_max_pool2d)
+            ),
+            1,
+        )
+        frame = self.compact_frame(pooled).reshape(batch, frames, -1)
+        difference = (frame[:, 1:] - frame[:, :-1]).abs()
+        video = torch.cat(
+            (
+                frame.mean(1),
+                frame.float().std(1, unbiased=False).to(frame.dtype),
+                frame.amax(1),
+                frame.amin(1),
+                difference.mean(1),
+                difference.amax(1),
+            ),
+            -1,
+        )
+        prompt = self.language(_masked_statistics(language, mask))
+        correction = self.compact_output(torch.cat((video, prompt), -1)).squeeze(-1)
+        correction = self.residual_max * torch.tanh(correction / self.residual_max)
+        return base_prediction + self.residual_scale * correction
+
+
+class _LowRankLinear(nn.Module):
+    """A plain two-linear factorization used only to compress a dense readout.
+
+    This is not a new feature branch: ``expand(reduce(x))`` replaces one dense
+    matrix at the same point in the post-optical readout.  The compression
+    utility initializes both factors from the truncated SVD of the trained
+    dense matrix.
+    """
+
+    def __init__(self, input_width: int, output_width: int, rank: int) -> None:
+        super().__init__()
+        if not 0 < rank <= min(input_width, output_width):
+            raise ValueError(
+                f"Low-rank width must be in [1, {min(input_width, output_width)}]"
+            )
+        self.reduce = nn.Linear(input_width, rank, bias=False)
+        self.expand = nn.Linear(rank, output_width, bias=True)
+
+    def forward(self, value: torch.Tensor) -> torch.Tensor:
+        return self.expand(self.reduce(value))
+
+
+class SpatialLowRankPrunedGridCompactResidualReadout(
+    SpatialPrunedGridCompactResidualReadout
+):
+    """The deployed grid readout with its four largest matrices factorized.
+
+    Input tensors, optical layers, router, fusion, pooling, nonlinearities and
+    output semantics are unchanged.  Only four post-optical dense maps are
+    represented by two smaller ordinary linear layers each.
+    """
+
+    def __init__(self, settings: ExperimentSettings) -> None:
+        super().__init__(settings)
+        width, hidden = settings.model_width, settings.head_width
+        spatial_width, compact_frame_width = 64, 128
+        self.frame[1] = _LowRankLinear(
+            spatial_width * 3 * 3 * 2,
+            hidden,
+            settings.spatial_low_rank_frame_rank,
+        )
+        self.language[1] = _LowRankLinear(
+            width * 3,
+            hidden,
+            settings.spatial_low_rank_language_rank,
+        )
+        self.compact_frame[1] = _LowRankLinear(
+            64 * 2 * (1 + 4),
+            compact_frame_width,
+            settings.spatial_low_rank_compact_frame_rank,
+        )
+        self.compact_output[1] = _LowRankLinear(
+            compact_frame_width * 6 + hidden,
+            256,
+            settings.spatial_low_rank_compact_head_rank,
+        )
+
+
+class _CrossFrameSpatialBlock(nn.Module):
+    """A small ConvNeXt-style block without attention or a new input branch."""
+
+    def __init__(self, channels: int) -> None:
+        super().__init__()
+        self.depthwise = nn.Conv2d(
+            channels, channels, 5, padding=2, groups=channels, bias=False
+        )
+        self.norm = nn.GroupNorm(8, channels)
+        self.expand = nn.Conv2d(channels, channels * 2, 1)
+        self.project = nn.Conv2d(channels * 2, channels, 1)
+        self.scale = nn.Parameter(torch.tensor(0.10))
+
+    def forward(self, value: torch.Tensor) -> torch.Tensor:
+        residual = self.project(
+            F.gelu(self.expand(self.norm(self.depthwise(value))))
+        )
+        return value + self.scale * residual
+
+
+class SpatialCrossFrameResidualReadout(SpatialWeightedLevelResidualReadout):
+    """Warm-start weighted readout plus a lightweight spatial-video correction.
+
+    Every input has already passed through all four optical/electronic stages.
+    Cross-frame statistics are computed at corresponding 14x14 locations before
+    spatial pooling, retaining persistent blur/noise/texture evidence that is
+    lost when each frame is pooled independently. The final layer starts at
+    exactly zero, so loading the formal weighted checkpoint is functionally
+    identical until this small correction is trained.
+    """
+
+    def __init__(self, settings: ExperimentSettings) -> None:
+        super().__init__(settings)
+        width = settings.model_width
+        channels = 32
+        hidden = min(128, settings.head_width // 2)
+        prompt_width = 64
+        self.crossframe_norm = nn.LayerNorm(width)
+        # Per-location mean/std/max/min plus mean absolute consecutive change.
+        self.crossframe_projection = nn.Conv2d(width * 5, channels, 1)
+        self.crossframe_blocks = nn.Sequential(
+            _CrossFrameSpatialBlock(channels),
+            _CrossFrameSpatialBlock(channels),
+        )
+        pooled_width = channels * 2 * (1 + 4 + 16)
+        self.crossframe_spatial = nn.Sequential(
+            nn.LayerNorm(pooled_width),
+            nn.Linear(pooled_width, hidden),
+            nn.GELU(),
+            nn.Dropout(settings.dropout),
+        )
+        self.crossframe_language = nn.Sequential(
+            nn.LayerNorm(width * 3),
+            nn.Linear(width * 3, prompt_width),
+            nn.GELU(),
+        )
+        self.crossframe_output = nn.Sequential(
+            nn.LayerNorm(hidden + prompt_width + 1),
+            nn.Linear(hidden + prompt_width + 1, hidden),
+            nn.GELU(),
+            nn.Dropout(settings.dropout),
+            nn.Linear(hidden, 1),
+        )
+        nn.init.zeros_(self.crossframe_output[-1].weight)
+        nn.init.zeros_(self.crossframe_output[-1].bias)
+
+    def forward(
+        self, vision: torch.Tensor, language: torch.Tensor, mask: torch.Tensor
+    ) -> torch.Tensor:
+        base_prediction = super().forward(vision, language, mask)
+        batch, frames, tokens, width = vision.shape
+        if tokens != self.grid * self.grid:
+            raise ValueError("Cross-frame readout requires a square token grid")
+        grid = self.crossframe_norm(vision).reshape(
+            batch, frames, self.grid, self.grid, width
+        ).permute(0, 1, 4, 2, 3)
+        consecutive = (
+            (grid[:, 1:] - grid[:, :-1]).abs().mean(1)
+            if frames > 1
+            else torch.zeros_like(grid[:, 0])
+        )
+        summary = torch.cat(
+            (
+                grid.mean(1),
+                grid.float().std(1, unbiased=False).to(grid.dtype),
+                grid.amax(1),
+                grid.amin(1),
+                consecutive,
+            ),
+            1,
+        )
+        feature = F.gelu(self.crossframe_projection(summary))
+        feature = self.crossframe_blocks(feature)
+        pooled = torch.cat(
+            tuple(
+                pool(feature, size).flatten(1)
+                for size in (1, 2, 4)
+                for pool in (F.adaptive_avg_pool2d, F.adaptive_max_pool2d)
+            ),
+            1,
+        )
+        spatial = self.crossframe_spatial(pooled)
+        prompt = self.crossframe_language(_masked_statistics(language, mask))
+        raw = self.crossframe_output(
+            torch.cat((spatial, prompt, base_prediction.unsqueeze(-1)), -1)
+        ).squeeze(-1)
+        correction = self.residual_max * torch.tanh(raw / self.residual_max)
+        return base_prediction + correction
+
+
+class SpatialDualLevelResidualReadout(SpatialWeightedLevelResidualReadout):
+    """Five-level correction plus a small complementary scalar regressor.
+
+    Both predictions consume exactly the same post-optical tensor inside one
+    readout.  The scalar output is zero initialized, so this is an exact
+    warm-start of the formal five-level model rather than another branch.
+    """
+
+    def __init__(self, settings: ExperimentSettings) -> None:
+        super().__init__(settings)
+        input_width = self.residual_output[1].in_features
+        hidden = min(256, settings.head_width)
+        self.dual_output = nn.Sequential(
+            nn.LayerNorm(input_width),
+            nn.Linear(input_width, hidden),
+            nn.GELU(),
+            nn.Dropout(settings.dropout),
+            nn.Linear(hidden, 1),
+        )
+        self.dual_gate_logit = nn.Parameter(torch.tensor(-1.38629436))
+        nn.init.zeros_(self.dual_output[-1].weight)
+        nn.init.zeros_(self.dual_output[-1].bias)
+
+    def forward(
+        self, vision: torch.Tensor, language: torch.Tensor, mask: torch.Tensor
+    ) -> torch.Tensor:
+        base_prediction = SpatialGridReadout.forward(self, vision, language, mask)
+        features = self._residual_features(vision, language, mask)
+        logits = self.residual_output(features)
+        probabilities = logits.float().softmax(-1).to(logits.dtype)
+        level_correction = probabilities @ self.level_scores.to(probabilities.dtype)
+        scalar_raw = self.dual_output(features).squeeze(-1)
+        scalar_correction = self.residual_max * torch.tanh(
+            scalar_raw / self.residual_max
+        )
+        scalar_gate = self.dual_gate_logit.sigmoid().to(scalar_correction.dtype)
+        self.last_level_logits = logits
+        self.last_level_base_prediction = base_prediction
+        return base_prediction + level_correction + scalar_gate * scalar_correction
+
+
+class SpatialWeightedLevelAbsoluteReadout(SpatialDeepResidualReadout):
+    """Five ordered logits directly predict normalized MOS.
+
+    This is the strict logits-only counterpart of
+    :class:`SpatialWeightedLevelResidualReadout`: it uses the same post-optical
+    convolutional features but does not consume or fuse the legacy scalar
+    prediction. The fixed anchors span the training MOS range in normalized
+    coordinates and keep the result continuous and ordered.
+    """
+
+    def __init__(self, settings: ExperimentSettings) -> None:
+        super().__init__(settings)
+        input_width = self.residual_output[-1].in_features
+        self.residual_output[-1] = nn.Linear(input_width, 5)
+        nn.init.zeros_(self.residual_output[-1].weight)
+        nn.init.zeros_(self.residual_output[-1].bias)
+        self.register_buffer(
+            "level_scores",
+            torch.linspace(
+                settings.spatial_level_score_min,
+                settings.spatial_level_score_max,
+                5,
+            ),
+        )
+        self.last_level_logits: torch.Tensor | None = None
+        self.last_level_base_prediction: torch.Tensor | None = None
+
+    def forward(
+        self, vision: torch.Tensor, language: torch.Tensor, mask: torch.Tensor
+    ) -> torch.Tensor:
+        logits = self.residual_output(
+            self._residual_features(vision, language, mask)
+        )
+        probabilities = logits.float().softmax(-1).to(logits.dtype)
+        prediction = probabilities @ self.level_scores.to(probabilities.dtype)
+        self.last_level_logits = logits
+        self.last_level_base_prediction = torch.zeros_like(prediction)
+        return prediction
+
+
+class SpatialWeightedLevelBlendReadout(SpatialDeepResidualReadout):
+    """Convex fusion of the legacy scalar and an absolute five-level score."""
+
+    def __init__(self, settings: ExperimentSettings) -> None:
+        super().__init__(settings)
+        input_width = self.residual_output[-1].in_features
+        self.residual_output[-1] = nn.Linear(input_width, 5)
+        nn.init.zeros_(self.residual_output[-1].weight)
+        nn.init.zeros_(self.residual_output[-1].bias)
+        self.register_buffer(
+            "level_scores",
+            torch.linspace(
+                settings.spatial_level_score_min,
+                settings.spatial_level_score_max,
+                5,
+            ),
+        )
+        initial = float(settings.spatial_level_blend_initial)
+        self.residual_blend_logit = nn.Parameter(
+            torch.tensor(math.log(initial / (1.0 - initial)))
+        )
+        self.last_level_logits: torch.Tensor | None = None
+        self.last_level_base_prediction: torch.Tensor | None = None
+        self.last_level_blend: torch.Tensor | None = None
+
+    def forward(
+        self, vision: torch.Tensor, language: torch.Tensor, mask: torch.Tensor
+    ) -> torch.Tensor:
+        base_prediction = SpatialGridReadout.forward(self, vision, language, mask)
+        logits = self.residual_output(
+            self._residual_features(vision, language, mask)
+        )
+        probabilities = logits.float().softmax(-1).to(logits.dtype)
+        level_prediction = probabilities @ self.level_scores.to(probabilities.dtype)
+        blend = self.residual_blend_logit.sigmoid().to(level_prediction.dtype)
+        prediction = base_prediction.lerp(level_prediction, blend)
+        self.last_level_logits = logits
+        self.last_level_base_prediction = torch.zeros_like(prediction)
+        self.last_level_blend = blend
+        return prediction
 
 
 class QualitySpatialAdapter(nn.Module):
@@ -1387,10 +2253,41 @@ class QualitySpatialAdapter(nn.Module):
         )
 
 
+class CompactFrameStemRefiner(nn.Module):
+    """Cheap 14x14 spatial correction used for progressive compression.
+
+    The unit is a pair of depthwise convolutions followed by pointwise mixing.
+    Its last projection starts at zero, so inserting any number of units leaves
+    the established Conv5 output bit-identical before distillation.  It is not
+    a predictor and has no path around the four optical/electronic stages.
+    """
+
+    def __init__(self, width: int = 192, hidden: int = 256) -> None:
+        super().__init__()
+        self.norm = nn.GroupNorm(24, width)
+        self.depthwise3 = nn.Conv2d(
+            width, width, 3, padding=1, groups=width, bias=False
+        )
+        self.depthwise5 = nn.Conv2d(
+            width, width, 5, padding=2, groups=width, bias=False
+        )
+        self.mix = nn.Conv2d(width * 2, hidden, 1)
+        self.project = nn.Conv2d(hidden, width, 1)
+        nn.init.zeros_(self.project.weight)
+        nn.init.zeros_(self.project.bias)
+
+    def forward(self, value: torch.Tensor) -> torch.Tensor:
+        normalized = self.norm(value)
+        context = torch.cat(
+            (self.depthwise3(normalized), self.depthwise5(normalized)), dim=1
+        )
+        return value + self.project(F.gelu(self.mix(context)))
+
+
 class TrainableQualityFrameStem(nn.Module):
     """Five plain convolutions mapping four RGB frames to 14x14x192 tokens."""
 
-    def __init__(self) -> None:
+    def __init__(self, refiner_depth: int = 0) -> None:
         super().__init__()
         self.conv1 = nn.Conv2d(14, 48, 3, stride=2, padding=1)
         self.norm1 = nn.GroupNorm(8, 48)
@@ -1402,6 +2299,9 @@ class TrainableQualityFrameStem(nn.Module):
         self.norm4 = nn.GroupNorm(12, 96)
         self.conv5 = nn.Conv2d(96, 192, 3, stride=2, padding=1)
         self.norm5 = nn.GroupNorm(24, 192)
+        self.refiners = nn.ModuleList(
+            [CompactFrameStemRefiner() for _ in range(refiner_depth)]
+        )
         sobel_x = torch.tensor(
             ((-1.0, 0.0, 1.0), (-2.0, 0.0, 2.0), (-1.0, 0.0, 1.0))
         ) / 4.0
@@ -1483,19 +2383,22 @@ class TrainableQualityFrameStem(nn.Module):
         value = F.gelu(self.norm3(self.conv3(value)))
         value = F.gelu(self.norm4(self.conv4(value)))
         value = F.gelu(self.norm5(self.conv5(value)))
+        for refiner in self.refiners:
+            value = refiner(value)
         return value.flatten(2).transpose(1, 2).reshape(
             batch, frame_count, -1, value.shape[1]
         )
 
 
 class QualitySpatialRefiner(nn.Module):
-    """Zero-start spatial correction applied before optical stage one.
+    """Zero-start spatial correction for a declared quality tensor.
 
-    The branch sees only the already declared quality input tensor.  Its final
-    projection is initialized to zero, so adding the module to a warm-started
-    checkpoint preserves every prediction exactly until optimization begins.
-    It contains only normalization and convolutions; no attention or bypass to
-    the MOS readout is introduced.
+    In the strict two-branch profile this module lives entirely inside E1 and
+    refines only the existing electronic quality residual.  Its final
+    projection is initialized to zero, so adding it to a warm-started checkpoint
+    preserves every prediction exactly until optimization begins.  It contains
+    only normalization and convolutions; no attention or MOS-readout bypass is
+    introduced.
     """
 
     def __init__(self, settings: ExperimentSettings) -> None:
@@ -1573,6 +2476,178 @@ class FrozenVGGSpatialCorrection(nn.Module):
             value = torch.cat((value, local, mean, maximum), -1)
         correction = self.adapter(value)
         return self.maximum * torch.tanh(correction / self.maximum)
+
+
+class FrozenResNetElectronicCorrection(nn.Module):
+    """Zero-start adapter from frozen ResNet18-L3 tokens into electronic E1.
+
+    The adapted tensor is added only to the existing electronic residual route
+    and must traverse O2 plus both language stages before the single readout.
+    It is therefore not a direct MOS or pre-optical-output bypass.
+    """
+
+    def __init__(self, settings: ExperimentSettings) -> None:
+        super().__init__()
+        self.maximum = float(settings.resnet_electronic_max)
+        hidden = 384
+        self.adapter = nn.Sequential(
+            nn.LayerNorm(256),
+            nn.Linear(256, hidden),
+            nn.GELU(),
+            nn.Linear(hidden, settings.model_width),
+        )
+        nn.init.zeros_(self.adapter[-1].weight)
+        nn.init.zeros_(self.adapter[-1].bias)
+
+    def forward(self, tokens: torch.Tensor) -> torch.Tensor:
+        correction = self.adapter(tokens.float())
+        return self.maximum * torch.tanh(correction / self.maximum)
+
+
+class FrozenMobileNetElectronicCorrection(nn.Module):
+    """Small E1 adapter for a truncated pretrained MobileNetV2 front.
+
+    Width 64 corresponds to blocks 0..10 (0.289 M total); width 96 corresponds
+    to blocks 0..11 (0.362 M total). It has no classifier, score head,
+    attention, or path around the optical stages.
+    """
+
+    def __init__(self, settings: ExperimentSettings) -> None:
+        super().__init__()
+        self.maximum = float(settings.mobilenet_electronic_max)
+        self.input_width = settings.mobilenet_feature_width
+        self.adapter = nn.Sequential(
+            nn.LayerNorm(self.input_width),
+            nn.Linear(self.input_width, settings.model_width),
+            nn.GELU(),
+            nn.Linear(settings.model_width, settings.model_width),
+        )
+        nn.init.zeros_(self.adapter[-1].weight)
+        nn.init.zeros_(self.adapter[-1].bias)
+
+    def forward(self, tokens: torch.Tensor) -> torch.Tensor:
+        correction = self.adapter(tokens.float())
+        return self.maximum * torch.tanh(correction / self.maximum)
+
+
+class CustomConvE1Correction(nn.Module):
+    """Project-owned RGB convolutional correction inside electronic E1.
+
+    This is intentionally written from elementary Conv2d, GroupNorm, GELU and
+    Linear layers.  It has no imported backbone, classifier, attention,
+    pooling-to-score path, or route around the four optical/electronic stages.
+    Four stride-2 convolutions map each 224x224 frame to the model's 14x14
+    token grid; one local residual pair increases spatial context before a
+    per-token projection produces the bounded E1 correction.
+    """
+
+    def __init__(self, settings: ExperimentSettings) -> None:
+        super().__init__()
+        self.grid = settings.token_grid
+        self.maximum = float(settings.custom_conv_electronic_max)
+        self.downsample = nn.Sequential(
+            nn.Conv2d(3, 24, 3, stride=2, padding=1, bias=False),
+            nn.GroupNorm(6, 24),
+            nn.GELU(),
+            nn.Conv2d(24, 48, 3, stride=2, padding=1, bias=False),
+            nn.GroupNorm(8, 48),
+            nn.GELU(),
+            nn.Conv2d(48, 64, 3, stride=2, padding=1, bias=False),
+            nn.GroupNorm(8, 64),
+            nn.GELU(),
+            nn.Conv2d(64, 96, 3, stride=2, padding=1, bias=False),
+            nn.GroupNorm(12, 96),
+            nn.GELU(),
+        )
+        self.local_residual = nn.Sequential(
+            nn.Conv2d(96, 96, 3, padding=1, bias=False),
+            nn.GroupNorm(12, 96),
+            nn.GELU(),
+            nn.Conv2d(96, 96, 3, padding=1, bias=False),
+            nn.GroupNorm(12, 96),
+        )
+        self.token_projection = nn.Sequential(
+            nn.LayerNorm(96),
+            nn.Linear(96, settings.model_width),
+            nn.GELU(),
+            nn.Linear(settings.model_width, settings.model_width),
+        )
+        nn.init.zeros_(self.token_projection[-1].weight)
+        nn.init.zeros_(self.token_projection[-1].bias)
+
+    def forward(self, frames: torch.Tensor) -> torch.Tensor:
+        if frames.ndim != 5 or tuple(frames.shape[1:3]) != (4, 3):
+            raise ValueError("Custom Conv E1 correction requires [B,4,3,H,W]")
+        batch, frame_count = frames.shape[:2]
+        value = frames.float().div(127.5).sub(1.0).flatten(0, 1)
+        value = self.downsample(value)
+        value = F.gelu(value + self.local_residual(value))
+        if tuple(value.shape[-2:]) != (self.grid, self.grid):
+            raise ValueError("Custom Conv E1 correction expects 224x224 input frames")
+        tokens = value.flatten(2).transpose(1, 2)
+        correction = self.token_projection(tokens)
+        correction = self.maximum * torch.tanh(correction / self.maximum)
+        return correction.reshape(
+            batch, frame_count, self.grid * self.grid, -1
+        )
+
+
+class TinyRgbE1Adapter(nn.Module):
+    """Tiny, zero-start RGB front contained inside the E1 residual route.
+
+    This module has no pretrained weights and no score output.  Three
+    depthwise-separable downsampling steps map 224x224 RGB frames to the same
+    14x14 token grid as the optical path.  The zero-initialized projection is
+    injected only into E1 before the first optical/electronic fusion.
+    """
+
+    def __init__(self, settings: ExperimentSettings) -> None:
+        super().__init__()
+        self.grid = settings.token_grid
+        self.maximum = float(settings.tiny_rgb_electronic_adapter_max)
+        self.stem = nn.Conv2d(3, 16, 3, stride=2, padding=1, bias=False)
+        self.norm1 = nn.GroupNorm(4, 16)
+        self.depthwise2 = nn.Conv2d(
+            16, 16, 3, stride=2, padding=1, groups=16, bias=False
+        )
+        self.pointwise2 = nn.Conv2d(16, 24, 1, bias=False)
+        self.norm2 = nn.GroupNorm(6, 24)
+        self.depthwise3 = nn.Conv2d(
+            24, 24, 3, stride=2, padding=1, groups=24, bias=False
+        )
+        self.pointwise3 = nn.Conv2d(24, 32, 1, bias=False)
+        self.norm3 = nn.GroupNorm(8, 32)
+        self.depthwise4 = nn.Conv2d(
+            32, 32, 3, stride=2, padding=1, groups=32, bias=False
+        )
+        self.pointwise4 = nn.Conv2d(32, 48, 1, bias=False)
+        self.norm4 = nn.GroupNorm(8, 48)
+        self.local5 = nn.Conv2d(48, 48, 5, padding=2, groups=48, bias=False)
+        self.context3 = nn.Conv2d(
+            48, 48, 3, padding=2, dilation=2, groups=48, bias=False
+        )
+        self.project = nn.Conv2d(96, settings.model_width, 1)
+        nn.init.zeros_(self.project.weight)
+        nn.init.zeros_(self.project.bias)
+
+    def forward(self, frames: torch.Tensor) -> torch.Tensor:
+        if frames.ndim != 5 or tuple(frames.shape[1:3]) != (4, 3):
+            raise ValueError("Tiny RGB E1 adapter requires [B,4,3,H,W]")
+        batch, frame_count = frames.shape[:2]
+        value = frames.float().div(127.5).sub(1.0).flatten(0, 1)
+        value = F.gelu(self.norm1(self.stem(value)))
+        value = F.gelu(self.norm2(self.pointwise2(self.depthwise2(value))))
+        value = F.gelu(self.norm3(self.pointwise3(self.depthwise3(value))))
+        base = F.gelu(self.norm4(self.pointwise4(self.depthwise4(value))))
+        if tuple(base.shape[-2:]) != (self.grid, self.grid):
+            raise ValueError("Tiny RGB E1 adapter expects 224x224 input frames")
+        correction = self.project(
+            torch.cat((F.gelu(self.local5(base)), F.gelu(self.context3(base))), 1)
+        )
+        correction = self.maximum * torch.tanh(correction / self.maximum)
+        return correction.flatten(2).transpose(1, 2).reshape(
+            batch, frame_count, self.grid * self.grid, -1
+        )
 
 
 class SpatialLateInputCorrection(nn.Module):
@@ -1727,11 +2802,12 @@ class LGVQSingleMetricOEO16(nn.Module):
             nn.LayerNorm(settings.vision_input_width),
             nn.Linear(settings.vision_input_width, settings.model_width),
         )
-        # Qwen patch+position tokens remain the primary visual input. The
-        # deterministic 14-channel bank is only a quality-sensitive residual
-        # (RGB, gradients, local contrast and frame difference).
-        self.quality_adapter: nn.Module
-        if settings.quality_adapter_mode == "spatial_conv":
+        # The formal two-branch profile disables every auxiliary visual source:
+        # Qwen patch+position is then the one shared input to the E and O paths.
+        self.quality_adapter: nn.Module | None
+        if not settings.quality_branch_enabled:
+            self.quality_adapter = None
+        elif settings.quality_adapter_mode == "spatial_conv":
             self.quality_adapter = QualitySpatialAdapter(settings)
         elif settings.quality_adapter_mode == "identity":
             self.quality_adapter = nn.Identity()
@@ -1746,7 +2822,7 @@ class LGVQSingleMetricOEO16(nn.Module):
             else nn.Identity()
         )
         self.frame_stem = (
-            TrainableQualityFrameStem()
+            TrainableQualityFrameStem(settings.frame_stem_refiner_depth)
             if settings.trainable_frame_stem_enabled
             else None
         )
@@ -1755,9 +2831,30 @@ class LGVQSingleMetricOEO16(nn.Module):
             if settings.vgg_feature_cache_path is not None
             else None
         )
-        self.raw_quality_gate = nn.Parameter(
-            torch.logit(torch.tensor(settings.quality_gate_initial))
+        self.resnet_electronic_correction = (
+            FrozenResNetElectronicCorrection(settings)
+            if settings.resnet_feature_cache_path is not None
+            else None
         )
+        self.mobilenet_electronic_correction = (
+            FrozenMobileNetElectronicCorrection(settings)
+            if settings.mobilenet_feature_cache_path is not None
+            else None
+        )
+        self.custom_conv_electronic_correction = (
+            CustomConvE1Correction(settings)
+            if settings.custom_conv_electronic_enabled
+            else None
+        )
+        self.tiny_rgb_electronic_adapter = (
+            TinyRgbE1Adapter(settings)
+            if settings.tiny_rgb_electronic_adapter_enabled
+            else None
+        )
+        if settings.quality_branch_enabled:
+            self.raw_quality_gate = nn.Parameter(
+                torch.logit(torch.tensor(settings.quality_gate_initial))
+            )
         if settings.qwen_gate_enabled:
             self.raw_qwen_gate = nn.Parameter(
                 torch.logit(torch.tensor(settings.qwen_gate_initial))
@@ -1774,25 +2871,62 @@ class LGVQSingleMetricOEO16(nn.Module):
             nn.LayerNorm(settings.model_width),
             nn.Linear(settings.model_width, settings.model_width * 2),
         )
-        self.vision_routes = nn.ModuleList(
-            [VisionElectronicRoute(settings), VisionElectronicRoute(settings)]
+        if settings.electronic_route_variant in {
+            "residual_conv",
+            "residual_convnext",
+        }:
+            self.vision_routes = nn.ModuleList(
+                [
+                    VisionElectronicResidualRoute(settings),
+                    VisionElectronicResidualRoute(settings),
+                ]
+            )
+            self.language_routes = nn.ModuleList(
+                [
+                    LanguageElectronicResidualRoute(settings),
+                    LanguageElectronicResidualRoute(settings),
+                ]
+            )
+        else:
+            self.vision_routes = nn.ModuleList(
+                [VisionElectronicRoute(settings), VisionElectronicRoute(settings)]
+            )
+            self.language_routes = nn.ModuleList(
+                [
+                    LanguageElectronicRoute(
+                        settings.model_width,
+                        skip_enabled=settings.electronic_skip_enabled,
+                        skip_initial=settings.electronic_skip_initial,
+                        skip_max=settings.electronic_skip_max,
+                    ),
+                    LanguageElectronicRoute(
+                        settings.model_width,
+                        skip_enabled=settings.electronic_skip_enabled,
+                        skip_initial=settings.electronic_skip_initial,
+                        skip_max=settings.electronic_skip_max,
+                    ),
+                ]
+            )
+        self.electronic_quality_norm = (
+            nn.LayerNorm(settings.quality_input_width)
+            if settings.electronic_quality_residual_enabled
+            else None
         )
-        self.language_routes = nn.ModuleList(
-            [
-                LanguageElectronicRoute(
-                    settings.model_width,
-                    skip_enabled=settings.electronic_skip_enabled,
-                    skip_initial=settings.electronic_skip_initial,
-                    skip_max=settings.electronic_skip_max,
-                ),
-                LanguageElectronicRoute(
-                    settings.model_width,
-                    skip_enabled=settings.electronic_skip_enabled,
-                    skip_initial=settings.electronic_skip_initial,
-                    skip_max=settings.electronic_skip_max,
-                ),
-            ]
-        )
+        if settings.electronic_quality_residual_enabled:
+            self.raw_electronic_quality_scale = nn.Parameter(
+                torch.logit(
+                    torch.tensor(settings.electronic_quality_residual_initial)
+                )
+            )
+        if settings.electronic_quality_reinjection_enabled:
+            # Zero is an exact warm start. Unlike a sigmoid gate, tanh permits
+            # the optimizer to learn either a corrective addition or removal.
+            self.raw_electronic_quality_reinjection = nn.Parameter(
+                torch.zeros(())
+            )
+        if settings.electronic_cross_stage_skip_enabled:
+            self.raw_vision_cross_stage_skip = nn.Parameter(torch.zeros(()))
+            self.raw_language_cross_stage_skip = nn.Parameter(torch.zeros(()))
         self.parallel_optics = ParallelOpticalFeaturePath(settings)
         self.serial_optics = SerialOpticalFeaturePath(settings)
         self.parallel_router = OpticalRouterParallel16(settings)
@@ -1823,6 +2957,25 @@ class LGVQSingleMetricOEO16(nn.Module):
                 self.readout = SpatialPyramidResidualReadout(settings)
             elif settings.spatial_readout_mode == "spatial_deep_residual":
                 self.readout = SpatialDeepResidualReadout(settings)
+            elif settings.spatial_readout_mode == "spatial_weighted_level_residual":
+                self.readout = SpatialWeightedLevelResidualReadout(settings)
+            elif settings.spatial_readout_mode == "spatial_crossframe_residual":
+                self.readout = SpatialCrossFrameResidualReadout(settings)
+            elif settings.spatial_readout_mode == "spatial_dual_level_residual":
+                self.readout = SpatialDualLevelResidualReadout(settings)
+            elif settings.spatial_readout_mode == "spatial_weighted_level_absolute":
+                self.readout = SpatialWeightedLevelAbsoluteReadout(settings)
+            elif settings.spatial_readout_mode == "spatial_weighted_level_blend":
+                self.readout = SpatialWeightedLevelBlendReadout(settings)
+            elif settings.spatial_readout_mode == "spatial_compact_weighted":
+                self.readout = SpatialCompactWeightedReadout(settings)
+            elif settings.spatial_readout_mode == "spatial_pruned_grid_compact_residual":
+                self.readout = SpatialPrunedGridCompactResidualReadout(settings)
+            elif (
+                settings.spatial_readout_mode
+                == "spatial_low_rank_pruned_grid_compact_residual"
+            ):
+                self.readout = SpatialLowRankPrunedGridCompactResidualReadout(settings)
             else:
                 self.readout = SpatialReadout(settings)
         elif settings.target_name == "temporal":
@@ -1850,6 +3003,8 @@ class LGVQSingleMetricOEO16(nn.Module):
         raw_frames: torch.Tensor | None = None,
         *,
         vgg_tokens: torch.Tensor | None = None,
+        resnet_tokens: torch.Tensor | None = None,
+        mobilenet_tokens: torch.Tensor | None = None,
         optical_enabled: bool = True,
     ) -> dict[str, Any]:
         if self.frame_stem is not None:
@@ -1859,12 +3014,21 @@ class LGVQSingleMetricOEO16(nn.Module):
             # the same quantization boundary makes epoch 0 reproducible while
             # retaining gradients through the cast during fine-tuning.
             quality_tokens = self.frame_stem(raw_frames).to(torch.float16).float()
-        if tuple(vision_tokens.shape[:-1]) != tuple(quality_tokens.shape[:-1]):
+        quality_is_used = (
+            self.settings.quality_branch_enabled
+            or self.settings.electronic_quality_residual_enabled
+        )
+        if quality_is_used and tuple(
+            vision_tokens.shape[:-1]
+        ) != tuple(quality_tokens.shape[:-1]):
             raise ValueError("Qwen and fixed-quality token grids must match")
         if vision_tokens.shape[-1] != self.settings.vision_input_width:
             raise ValueError("Qwen Vision front width must be 1024")
-        if quality_tokens.shape[-1] != self.settings.quality_input_width:
-            raise ValueError("Fixed quality side-input width must be 14")
+        if (
+            quality_is_used
+            and quality_tokens.shape[-1] != self.settings.quality_input_width
+        ):
+            raise ValueError("Quality token width differs from the configured width")
         if tuple(language_mask.shape) != tuple(language_tokens.shape[:-1]):
             raise ValueError("Language mask must match the prompt token sequence")
 
@@ -1874,16 +3038,20 @@ class LGVQSingleMetricOEO16(nn.Module):
         prompt_scale, prompt_shift = self.prompt_to_visual(prompt_summary).chunk(2, -1)
 
         qwen_vision = self.vision_adapter(vision_tokens.float())
-        quality = self.quality_refiner(
-            self.quality_adapter(quality_tokens.float())
-        )
+        quality_gate = qwen_vision.new_zeros(())
+        quality = qwen_vision.new_zeros(qwen_vision.shape)
+        if self.quality_adapter is not None:
+            quality = self.quality_refiner(
+                self.quality_adapter(quality_tokens.float())
+            )
+            quality_gate = torch.sigmoid(self.raw_quality_gate)
         raw_qwen_gate = getattr(self, "raw_qwen_gate", None)
         qwen_gate = (
             qwen_vision.new_ones(())
             if raw_qwen_gate is None
             else torch.sigmoid(raw_qwen_gate)
         )
-        vision = qwen_gate * qwen_vision + torch.sigmoid(self.raw_quality_gate) * quality
+        vision = qwen_gate * qwen_vision + quality_gate * quality
         vgg_correction = qwen_vision.new_zeros(qwen_vision.shape)
         if self.vgg_correction is not None:
             if vgg_tokens is None:
@@ -1902,6 +3070,62 @@ class LGVQSingleMetricOEO16(nn.Module):
 
         fields1 = self.parallel_optics.fields(vision)
         electronic1 = self.vision_routes[0](vision)
+        tiny_rgb_electronic = electronic1.new_zeros(electronic1.shape)
+        if self.tiny_rgb_electronic_adapter is not None:
+            if raw_frames is None:
+                raise ValueError("The tiny RGB E1 adapter requires raw_frames")
+            tiny_rgb_electronic = self.tiny_rgb_electronic_adapter(raw_frames)
+            electronic1 = electronic1 + tiny_rgb_electronic
+        resnet_electronic = electronic1.new_zeros(electronic1.shape)
+        if self.resnet_electronic_correction is not None:
+            if resnet_tokens is None:
+                raise ValueError("The ResNet18 electronic residual requires resnet_tokens")
+            if tuple(resnet_tokens.shape[:-1]) != tuple(electronic1.shape[:-1]) or resnet_tokens.shape[-1] != 256:
+                raise ValueError("ResNet18 token contract must be [B,4,196,256]")
+            resnet_electronic = self.resnet_electronic_correction(resnet_tokens)
+            electronic1 = electronic1 + resnet_electronic
+        mobilenet_electronic = electronic1.new_zeros(electronic1.shape)
+        if self.mobilenet_electronic_correction is not None:
+            if mobilenet_tokens is None:
+                raise ValueError(
+                    "The MobileNetV2 electronic residual requires mobilenet_tokens"
+                )
+            if (
+                tuple(mobilenet_tokens.shape[:-1]) != tuple(electronic1.shape[:-1])
+                or mobilenet_tokens.shape[-1]
+                != self.settings.mobilenet_feature_width
+            ):
+                raise ValueError(
+                    "MobileNetV2 token width differs from the configured boundary"
+                )
+            mobilenet_electronic = self.mobilenet_electronic_correction(
+                mobilenet_tokens
+            )
+            electronic1 = electronic1 + mobilenet_electronic
+        custom_conv_electronic = electronic1.new_zeros(electronic1.shape)
+        if self.custom_conv_electronic_correction is not None:
+            if raw_frames is None:
+                raise ValueError("The custom Conv E1 correction requires raw_frames")
+            custom_conv_electronic = self.custom_conv_electronic_correction(
+                raw_frames
+            )
+            electronic1 = electronic1 + custom_conv_electronic
+        electronic_quality_scale = electronic1.new_zeros(())
+        if self.electronic_quality_norm is not None:
+            electronic_quality_scale = torch.sigmoid(
+                self.raw_electronic_quality_scale
+            )
+            electronic_quality = self.electronic_quality_norm(
+                quality_tokens.float()
+            )
+            if (
+                self.settings.quality_refiner_enabled
+                and self.quality_adapter is None
+            ):
+                electronic_quality = self.quality_refiner(electronic_quality)
+            electronic1 = (
+                electronic1 + electronic_quality_scale * electronic_quality
+            )
         if optical_enabled:
             routing["vision"] = self.parallel_router(fields1)
             optical1 = self.parallel_optics.expert(fields1, routing["vision"]["weights"])
@@ -1912,6 +3136,32 @@ class LGVQSingleMetricOEO16(nn.Module):
 
         fields2 = self.parallel_optics.fields(vision)
         electronic2 = self.vision_routes[1](vision)
+        vision_cross_stage_skip = electronic2.new_zeros(())
+        raw_vision_cross_stage_skip = getattr(
+            self, "raw_vision_cross_stage_skip", None
+        )
+        if raw_vision_cross_stage_skip is not None:
+            vision_cross_stage_skip = (
+                self.settings.electronic_cross_stage_skip_max
+                * torch.tanh(raw_vision_cross_stage_skip)
+            )
+            electronic2 = electronic2 + vision_cross_stage_skip * electronic1
+        electronic_quality_reinjection = electronic2.new_zeros(())
+        raw_reinjection = getattr(
+            self, "raw_electronic_quality_reinjection", None
+        )
+        if raw_reinjection is not None:
+            electronic_quality_reinjection = (
+                self.settings.electronic_quality_reinjection_max
+                * torch.tanh(raw_reinjection)
+            )
+            # This is a skip connection inside the sole electronic residual
+            # route. The result must still traverse O2 and both language O/E
+            # stages before the single MOS head, so it is not a third branch.
+            electronic2 = (
+                electronic2
+                + electronic_quality_reinjection * electronic_quality
+            )
         if optical_enabled:
             optical2 = self.parallel_optics.global_path(fields2)
             vision = self.fusions[1](electronic2, optical2)
@@ -1944,7 +3194,22 @@ class LGVQSingleMetricOEO16(nn.Module):
         fields3 = self.serial_optics.fields(sequence)
         electronic3 = self.language_routes[0](sequence, mask)
         if optical_enabled:
-            routing["language"] = self.serial_router(fields3, sequence.shape[1])
+            router_fields3 = fields3
+            if self.settings.serial_router_visual_token_gain != 1.0:
+                # The language-stage optical router sees the same physical
+                # sequence field, but the four image summary rows are exposed
+                # more strongly than the fixed prompt rows. This is a fixed
+                # amplitude encoding rule, not an electronic router or a new
+                # inference branch; the feature-producing expert path below
+                # still receives the unmodified sequence.
+                router_sequence = sequence.clone()
+                router_sequence[:, : self.settings.frame_count] *= (
+                    self.settings.serial_router_visual_token_gain
+                )
+                router_fields3 = self.serial_optics.fields(router_sequence)
+            routing["language"] = self.serial_router(
+                router_fields3, sequence.shape[1]
+            )
             optical3 = self.serial_optics.expert(
                 fields3, routing["language"]["weights"], sequence.shape[1]
             )
@@ -1955,6 +3220,16 @@ class LGVQSingleMetricOEO16(nn.Module):
 
         fields4 = self.serial_optics.fields(sequence)
         electronic4 = self.language_routes[1](sequence, mask)
+        language_cross_stage_skip = electronic4.new_zeros(())
+        raw_language_cross_stage_skip = getattr(
+            self, "raw_language_cross_stage_skip", None
+        )
+        if raw_language_cross_stage_skip is not None:
+            language_cross_stage_skip = (
+                self.settings.electronic_cross_stage_skip_max
+                * torch.tanh(raw_language_cross_stage_skip)
+            )
+            electronic4 = electronic4 + language_cross_stage_skip * electronic3
         if optical_enabled:
             optical4 = self.serial_optics.global_path(fields4, sequence.shape[1])
             sequence = self.fusions[3](electronic4, optical4, mask)
@@ -1963,6 +3238,17 @@ class LGVQSingleMetricOEO16(nn.Module):
             sequence = electronic4
 
         normalized = self.readout(vision, sequence, mask)
+        quality_level_logits = getattr(self.readout, "last_level_logits", None)
+        quality_level_scores = getattr(self.readout, "level_scores", None)
+        quality_level_base_prediction = getattr(
+            self.readout, "last_level_base_prediction", None
+        )
+        readout_image_focus = normalized.new_zeros(())
+        if hasattr(self.readout, "raw_image_focus"):
+            readout_image_focus = (
+                self.settings.spatial_readout_image_focus_max
+                * torch.tanh(self.readout.raw_image_focus)
+            )
         input_correction = normalized.new_zeros(normalized.shape)
         if self.late_input_correction is not None:
             input_correction = self.late_input_correction(pre_optical_vision)
@@ -1987,11 +3273,23 @@ class LGVQSingleMetricOEO16(nn.Module):
         return {
             "prediction": prediction,
             "normalized_prediction": normalized,
+            "quality_level_logits": quality_level_logits,
+            "quality_level_scores": quality_level_scores,
+            "quality_level_base_prediction": quality_level_base_prediction,
             "target_name": self.settings.target_name,
-            "quality_gate": torch.sigmoid(self.raw_quality_gate),
+            "quality_gate": quality_gate,
+            "electronic_quality_residual_scale": electronic_quality_scale,
+            "electronic_quality_reinjection_scale": electronic_quality_reinjection,
+            "vision_cross_stage_skip_scale": vision_cross_stage_skip,
+            "language_cross_stage_skip_scale": language_cross_stage_skip,
             "qwen_gate": qwen_gate,
             "late_input_correction": input_correction,
+            "spatial_readout_image_focus": readout_image_focus,
             "vgg_correction_rms": vgg_correction.float().square().mean().sqrt(),
+            "resnet_electronic_rms": resnet_electronic.float().square().mean().sqrt(),
+            "mobilenet_electronic_rms": mobilenet_electronic.float().square().mean().sqrt(),
+            "custom_conv_electronic_rms": custom_conv_electronic.float().square().mean().sqrt(),
+            "tiny_rgb_electronic_rms": tiny_rgb_electronic.float().square().mean().sqrt(),
             "routing": routing,
             "optical_enabled": optical_enabled,
             "optical_alignment_loss": torch.stack(alignments).mean()
@@ -2014,7 +3312,6 @@ class LGVQSingleMetricOEO16(nn.Module):
             "qwen_boundary_adapters": nn.ModuleList(
                 [
                     self.vision_adapter,
-                    self.quality_adapter,
                     self.visual_input_norm,
                     self.language_adapter,
                     self.prompt_to_visual,
@@ -2036,16 +3333,61 @@ class LGVQSingleMetricOEO16(nn.Module):
             ),
             "single_metric_readout": self.readout,
         }
+        if self.quality_adapter is not None:
+            groups["quality_input_adapter"] = self.quality_adapter
+        if self.electronic_quality_norm is not None:
+            components = [self.electronic_quality_norm]
+            if (
+                self.settings.quality_refiner_enabled
+                and self.quality_adapter is None
+            ):
+                components.append(self.quality_refiner)
+            groups["electronic_quality_residual"] = nn.ModuleList(components)
+        if (
+            self.settings.quality_refiner_enabled
+            and self.quality_adapter is not None
+        ):
+            groups["quality_input_refiner"] = self.quality_refiner
         if self.frame_stem is not None:
             groups["trainable_quality_frame_stem"] = self.frame_stem
         if self.vgg_correction is not None:
             groups["plain_vgg16_spatial_correction"] = self.vgg_correction
+        if self.resnet_electronic_correction is not None:
+            groups["resnet18_layer3_electronic_residual"] = (
+                self.resnet_electronic_correction
+            )
+        if self.mobilenet_electronic_correction is not None:
+            block_name = {
+                64: "mobilenetv2_b10_electronic_residual",
+                96: "mobilenetv2_b11_electronic_residual",
+            }.get(
+                self.settings.mobilenet_feature_width,
+                "mobilenetv2_electronic_residual",
+            )
+            groups[block_name] = (
+                self.mobilenet_electronic_correction
+            )
+        if self.custom_conv_electronic_correction is not None:
+            groups["custom_conv_e1_correction"] = (
+                self.custom_conv_electronic_correction
+            )
+        if self.tiny_rgb_electronic_adapter is not None:
+            groups["tiny_rgb_e1_adapter"] = self.tiny_rgb_electronic_adapter
         if self.late_input_correction is not None:
             groups["late_input_correction"] = self.late_input_correction
         result = {
             name: sum(parameter.numel() for parameter in module.parameters())
             for name, module in groups.items()
         }
+        if hasattr(self, "raw_electronic_quality_scale"):
+            result["electronic_quality_residual"] += (
+                self.raw_electronic_quality_scale.numel()
+            )
+        if hasattr(self, "raw_vision_cross_stage_skip"):
+            result["electronic_cross_stage_skips"] = (
+                self.raw_vision_cross_stage_skip.numel()
+                + self.raw_language_cross_stage_skip.numel()
+            )
         result["total_trainable"] = sum(
             parameter.numel() for parameter in self.parameters() if parameter.requires_grad
         )
@@ -2059,4 +3401,4 @@ def build_model(settings: ExperimentSettings) -> LGVQSingleMetricOEO16:
     return LGVQSingleMetricOEO16(settings)
 
 
-__all__ = ["LGVQSingleMetricOEO16", "build_model"]
+__all__ = ["CustomConvE1Correction", "LGVQSingleMetricOEO16", "build_model"]
