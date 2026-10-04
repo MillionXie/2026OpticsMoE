@@ -24,7 +24,11 @@
 五个run的 `manifests/caltech101_10class_subset.csv` 文件SHA相同：
 `87be127ae3099f0a0c5f8f276ed45e990fa012111ac5978b8f58ed9a1eca2ef3`。
 各有2625 TRAIN、30 gallery、200 TEST，共2855条；样本ID无重复，全部图片路径存在。
-本次不逐原图重算内容SHA，不将“路径存在”冒称原图字节完整审计。
+2026-10-03盘点只核验路径存在；2026-10-04已补齐2855张原图逐文件字节SHA，
+总37,073,576字节，按样本身份排序的内容清单SHA为
+`c3861482bec69b05e53c13faf2c4a94e75fe06fd4bb38bb52044e8597e07ab17`。
+新增[内容资产收据](../../../../../maintenance/storage/T01_CONTENT_ASSETS_20261004.json)
+记录原图清单协议、8份best/last、初始化PT和冻结前端18个文件的大小与SHA；未复制或删除原图。
 
 报告中的逻辑记录SHA `c8accd596cd418bbef65834ac75b11cd35ce7cdd4ebe418aa51d942e00701d11`
 不是CSV原文件SHA。已按原 `sha256_records` 协议重新计算：恢复int/bool类型，
@@ -44,4 +48,11 @@ T01 DC20训练 `environment.json` 实际记录训练commit
 命令、配置、原始结果仍在上述run；旧后端 `experiments/` 尚有运行依赖，不删除。
 
 测速、功耗、baseline身份与原遥测全部原位保护；当前精确PT的实验台端到端延迟未核定。
+冻结前端当前缓存revision为 `9f2f7e710d6d81056aa5c0a4f04764fec6bb7bda`，
+模型文件SHA为 `c73fa9caeddeb3ff831d46c085a7a5708343248ca777e90f2d486964464509c1`。
+初始化PT已确认匹配配置中的 `6a27f54d…1e55d`。原run只记录模型ID、未固定前端revision，
+因此不能倒推声称当时训练一定使用当前缓存版本。新复现应使用已核验的不可变本地snapshot，
+不修改旧run来补造历史身份。检查资产用 `python maintenance/storage/check_t01_assets.py`，
+它只读文件，不执行任务入口、不初始化模型、不写原配置或指标。
+
 剩余工作是动态/环境依赖及全部测速绑定核验，不因本页就宣称三端完整复现完成。
