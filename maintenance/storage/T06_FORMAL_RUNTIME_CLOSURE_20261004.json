@@ -1,0 +1,576 @@
+{
+  "schema_version": 1,
+  "source_commit": "8e869473787f4ffceb2a6a77f4430b94c206f459",
+  "main_commit": "d2e6703e899d097f8e5708e1f1aaaaf438692258",
+  "working_head": "458142c1bcb7e802ceed50ac9f0949c5bc48dc22",
+  "entries": [
+    "LightGenV2/tasks/t06_video_quality_assessment/multivideo.py",
+    "LightGenV2/tasks/t06_video_quality_assessment/lab_bundle.py",
+    "LightGenV2/tasks/t06_video_quality_assessment/lab_bench.py",
+    "experiments/qwen3_vl_2b_lgvq_single_metric_o2_16frame_54/run.py",
+    "experiments/qwen3_vl_2b_lgvq_single_metric_o2_16frame_54/tests/test_model_and_training.py"
+  ],
+  "profiles": [
+    "LightGenV2/tasks/t06_video_quality_assessment/configs/lightgen/temporal_multivideo16x4_formal.yaml",
+    "LightGenV2/tasks/t06_video_quality_assessment/configs/lightgen/temporal_multivideo9x4_formal.yaml",
+    "LightGenV2/tasks/t06_video_quality_assessment/configs/lightgen/spatial_single_video4_custom_conv_readout_1m.yaml"
+  ],
+  "files": [
+    {
+      "path": "LightGenV2/__init__.py",
+      "bytes": 91,
+      "source_sha256": "22f1d762857916ed1e5a173a60fa7d864cd10139f40fa9c249c38fbeb86ea92e",
+      "main_sha256": "22f1d762857916ed1e5a173a60fa7d864cd10139f40fa9c249c38fbeb86ea92e",
+      "main_relation": "identical",
+      "working_sha256": "22f1d762857916ed1e5a173a60fa7d864cd10139f40fa9c249c38fbeb86ea92e",
+      "python_compiles": true
+    },
+    {
+      "path": "LightGenV2/tasks/__init__.py",
+      "bytes": 44,
+      "source_sha256": "cb7dde6e220a684ccb22efb1d4af40540497d7a7753c6692b24546411515c6f6",
+      "main_sha256": "cb7dde6e220a684ccb22efb1d4af40540497d7a7753c6692b24546411515c6f6",
+      "main_relation": "identical",
+      "working_sha256": "cb7dde6e220a684ccb22efb1d4af40540497d7a7753c6692b24546411515c6f6",
+      "python_compiles": true
+    },
+    {
+      "path": "LightGenV2/tasks/t06_video_quality_assessment/__init__.py",
+      "bytes": 119,
+      "source_sha256": "1e6115fff47ba794a7f91847108c637c73b6701fba34a8d9f7a47025ef5a2bd8",
+      "main_sha256": "1e6115fff47ba794a7f91847108c637c73b6701fba34a8d9f7a47025ef5a2bd8",
+      "main_relation": "identical",
+      "working_sha256": "1e6115fff47ba794a7f91847108c637c73b6701fba34a8d9f7a47025ef5a2bd8",
+      "python_compiles": true
+    },
+    {
+      "path": "LightGenV2/tasks/t06_video_quality_assessment/configs/lightgen/spatial_single_video4_custom_conv_readout_1m.yaml",
+      "bytes": 3188,
+      "source_sha256": "91060e4720da35b67a58cc87dd51f40525051a593ff0d083e3e88e92317cdc73",
+      "main_sha256": null,
+      "main_relation": "missing",
+      "working_sha256": "8ecd2fe5da5cf5212721cb72706afe2f540853563eb9563ae6e893684e61d9e8",
+      "python_compiles": null
+    },
+    {
+      "path": "LightGenV2/tasks/t06_video_quality_assessment/configs/lightgen/temporal_multivideo16x4_base.yaml",
+      "bytes": 1583,
+      "source_sha256": "3452ec2427bca2ceeb0e5badd824da5d4896562fc258db3c1215bc27b5ee07ef",
+      "main_sha256": "3452ec2427bca2ceeb0e5badd824da5d4896562fc258db3c1215bc27b5ee07ef",
+      "main_relation": "identical",
+      "working_sha256": "3452ec2427bca2ceeb0e5badd824da5d4896562fc258db3c1215bc27b5ee07ef",
+      "python_compiles": null
+    },
+    {
+      "path": "LightGenV2/tasks/t06_video_quality_assessment/configs/lightgen/temporal_multivideo16x4_formal.yaml",
+      "bytes": 490,
+      "source_sha256": "1dfbb14ea16524e817b8f3d32581b1d22c0bb128d2f113893d0bcc4ab67d3155",
+      "main_sha256": "1dfbb14ea16524e817b8f3d32581b1d22c0bb128d2f113893d0bcc4ab67d3155",
+      "main_relation": "identical",
+      "working_sha256": "1dfbb14ea16524e817b8f3d32581b1d22c0bb128d2f113893d0bcc4ab67d3155",
+      "python_compiles": null
+    },
+    {
+      "path": "LightGenV2/tasks/t06_video_quality_assessment/configs/lightgen/temporal_multivideo9x4_base.yaml",
+      "bytes": 3410,
+      "source_sha256": "bf196d8b85c2ec4133263614cdaa6ebc55165fef0aed51396cb08d0b23e1ca42",
+      "main_sha256": "bf196d8b85c2ec4133263614cdaa6ebc55165fef0aed51396cb08d0b23e1ca42",
+      "main_relation": "identical",
+      "working_sha256": "bf196d8b85c2ec4133263614cdaa6ebc55165fef0aed51396cb08d0b23e1ca42",
+      "python_compiles": null
+    },
+    {
+      "path": "LightGenV2/tasks/t06_video_quality_assessment/configs/lightgen/temporal_multivideo9x4_formal.yaml",
+      "bytes": 818,
+      "source_sha256": "3598de5b646a914004a0b7f7f3e989835a27d7559e2d423afeda55f4c413493c",
+      "main_sha256": "3598de5b646a914004a0b7f7f3e989835a27d7559e2d423afeda55f4c413493c",
+      "main_relation": "identical",
+      "working_sha256": "3598de5b646a914004a0b7f7f3e989835a27d7559e2d423afeda55f4c413493c",
+      "python_compiles": null
+    },
+    {
+      "path": "LightGenV2/tasks/t06_video_quality_assessment/lab_bench.py",
+      "bytes": 12068,
+      "source_sha256": "43f861f38e9dc032048a246719d4f4e903d7f62e1410ae109a2e14d333260cfa",
+      "main_sha256": null,
+      "main_relation": "missing",
+      "working_sha256": "9ca851cd8c978fd1889ca0a4e7f679b20446f9bf000f168d0d673c9f6776f5d0",
+      "python_compiles": true
+    },
+    {
+      "path": "LightGenV2/tasks/t06_video_quality_assessment/lab_bundle.py",
+      "bytes": 7014,
+      "source_sha256": "fe40a1c205ed39e08af7c0cdfc120e293eb327e5bcc5373fc141e1d39b317125",
+      "main_sha256": null,
+      "main_relation": "missing",
+      "working_sha256": "09c4622f40891312d705e6bb9c234d139262827a044f915ace27004b3ddc500d",
+      "python_compiles": true
+    },
+    {
+      "path": "LightGenV2/tasks/t06_video_quality_assessment/lab_runtime.py",
+      "bytes": 8490,
+      "source_sha256": "5d1423c041249af2553f9a68ffed8bfb98e752c5dc42c4ef10b8c6bdcfe85b0f",
+      "main_sha256": "015dac71d45c7b0f4332ce221400400f58a98c098c749b0d517b5f9dcc9663b4",
+      "main_relation": "different_requires_review",
+      "working_sha256": "015dac71d45c7b0f4332ce221400400f58a98c098c749b0d517b5f9dcc9663b4",
+      "python_compiles": true
+    },
+    {
+      "path": "LightGenV2/tasks/t06_video_quality_assessment/models/__init__.py",
+      "bytes": 154,
+      "source_sha256": "403b255a753c41a248346aa16256a4075d84ce7dab81692dbb2a45646b215609",
+      "main_sha256": "403b255a753c41a248346aa16256a4075d84ce7dab81692dbb2a45646b215609",
+      "main_relation": "identical",
+      "working_sha256": "403b255a753c41a248346aa16256a4075d84ce7dab81692dbb2a45646b215609",
+      "python_compiles": true
+    },
+    {
+      "path": "LightGenV2/tasks/t06_video_quality_assessment/models/multivideo9x4.py",
+      "bytes": 41311,
+      "source_sha256": "86973a85419c25b49074ee9af65b78e2cae08cdb1e159f25a5456109f273b0b9",
+      "main_sha256": "fce24fca2bc22957187ef10c5ef67bc0d4c02c10e09c0487d5d1a99980e11350",
+      "main_relation": "different_requires_review",
+      "working_sha256": "d2642c3b6c3e3544856ce458de220d0f5289c82b79569f85ae67fe30d3eec9a0",
+      "python_compiles": true
+    },
+    {
+      "path": "LightGenV2/tasks/t06_video_quality_assessment/multivideo.py",
+      "bytes": 7216,
+      "source_sha256": "2f0d9a907f955804f916e5a98500a437f76de744c61b6b1345718ce1bf5ba77f",
+      "main_sha256": "2f0d9a907f955804f916e5a98500a437f76de744c61b6b1345718ce1bf5ba77f",
+      "main_relation": "identical",
+      "working_sha256": "2f0d9a907f955804f916e5a98500a437f76de744c61b6b1345718ce1bf5ba77f",
+      "python_compiles": true
+    },
+    {
+      "path": "LightGenV2/tasks/t06_video_quality_assessment/multivideo_data.py",
+      "bytes": 3879,
+      "source_sha256": "29e6de91c808f099e40cffa25c17294877a8a9deebbaf6a3f24578256fa185e2",
+      "main_sha256": "29e6de91c808f099e40cffa25c17294877a8a9deebbaf6a3f24578256fa185e2",
+      "main_relation": "identical",
+      "working_sha256": "29e6de91c808f099e40cffa25c17294877a8a9deebbaf6a3f24578256fa185e2",
+      "python_compiles": true
+    },
+    {
+      "path": "LightGenV2/tasks/t06_video_quality_assessment/multivideo_settings.py",
+      "bytes": 17727,
+      "source_sha256": "77751b516571e87b636517cfbca9627e28f61d168fb479a77e542589218cd980",
+      "main_sha256": "46d42360e62fafbe97e5f3551a64efcf530da3daf8a22fa7aa497d65f821f6b7",
+      "main_relation": "different_requires_review",
+      "working_sha256": "4d3c19e78b818281bf97406c83529a4ba85e8c012edaebd0cf84b6f4d6ad7062",
+      "python_compiles": true
+    },
+    {
+      "path": "LightGenV2/tasks/t06_video_quality_assessment/multivideo_training.py",
+      "bytes": 24015,
+      "source_sha256": "6b98c7ce7cb3a735fad7897e713f51093ab16d4c838b1a049dab2852261cacb1",
+      "main_sha256": "6b98c7ce7cb3a735fad7897e713f51093ab16d4c838b1a049dab2852261cacb1",
+      "main_relation": "identical",
+      "working_sha256": "2027b45050e2eeb3c0d73fb942ab72268ea1dff583f66849d346cb661ac1198d",
+      "python_compiles": true
+    },
+    {
+      "path": "experiments/__init__.py",
+      "bytes": 563,
+      "source_sha256": "75749e81ecc24c9b80e103e22e93682d393ba15972cd34dfc49fb59b77a0a311",
+      "main_sha256": "75749e81ecc24c9b80e103e22e93682d393ba15972cd34dfc49fb59b77a0a311",
+      "main_relation": "identical",
+      "working_sha256": "bd6d222317a51523647d0112d34718339aebc538392123a5ce3b66463493848d",
+      "python_compiles": true
+    },
+    {
+      "path": "experiments/lgvq_four_stage_optical_electronic_109_no_attention_vqa/__init__.py",
+      "bytes": 119,
+      "source_sha256": "8e1403d6cf59bb8b6958f27d21025d0fda25420c7d7a7ad71869840cc6487da0",
+      "main_sha256": "8e1403d6cf59bb8b6958f27d21025d0fda25420c7d7a7ad71869840cc6487da0",
+      "main_relation": "identical",
+      "working_sha256": "8e1403d6cf59bb8b6958f27d21025d0fda25420c7d7a7ad71869840cc6487da0",
+      "python_compiles": true
+    },
+    {
+      "path": "experiments/lgvq_four_stage_optical_electronic_109_no_attention_vqa/modeling.py",
+      "bytes": 39079,
+      "source_sha256": "ef7fa70e76b91681037c72beb8d9f522805e3a672b752a5c0eb6319179f6bb52",
+      "main_sha256": "ef7fa70e76b91681037c72beb8d9f522805e3a672b752a5c0eb6319179f6bb52",
+      "main_relation": "identical",
+      "working_sha256": "ef7fa70e76b91681037c72beb8d9f522805e3a672b752a5c0eb6319179f6bb52",
+      "python_compiles": true
+    },
+    {
+      "path": "experiments/lgvq_four_stage_optical_electronic_109_no_attention_vqa/settings.py",
+      "bytes": 13975,
+      "source_sha256": "980c762645d1381b955baf493449a276e358fac8dadcd65d95559bb7c3d6029c",
+      "main_sha256": "980c762645d1381b955baf493449a276e358fac8dadcd65d95559bb7c3d6029c",
+      "main_relation": "identical",
+      "working_sha256": "980c762645d1381b955baf493449a276e358fac8dadcd65d95559bb7c3d6029c",
+      "python_compiles": true
+    },
+    {
+      "path": "experiments/qwen3_vl_2b_lgvq_single_metric_o2_16frame_54/__init__.py",
+      "bytes": 468,
+      "source_sha256": "f48d41c36f5c57760a0cc9485ad371ffd0f587c63c8b7d1562734195effb6d39",
+      "main_sha256": "f48d41c36f5c57760a0cc9485ad371ffd0f587c63c8b7d1562734195effb6d39",
+      "main_relation": "identical",
+      "working_sha256": "f48d41c36f5c57760a0cc9485ad371ffd0f587c63c8b7d1562734195effb6d39",
+      "python_compiles": true
+    },
+    {
+      "path": "experiments/qwen3_vl_2b_lgvq_single_metric_o2_16frame_54/calibrate_spatial_levels.py",
+      "bytes": 7915,
+      "source_sha256": "204daf917236fb42685a5449e16cc040c8477b7213c4bc9a741f6a5bf3b85397",
+      "main_sha256": null,
+      "main_relation": "missing",
+      "working_sha256": "204daf917236fb42685a5449e16cc040c8477b7213c4bc9a741f6a5bf3b85397",
+      "python_compiles": true
+    },
+    {
+      "path": "experiments/qwen3_vl_2b_lgvq_single_metric_o2_16frame_54/configs/release/spatial.yaml",
+      "bytes": 2670,
+      "source_sha256": "406f4fcb8d86f589527e4ada9ef2f8d5f82c01c77754af9d194c414536418b44",
+      "main_sha256": "406f4fcb8d86f589527e4ada9ef2f8d5f82c01c77754af9d194c414536418b44",
+      "main_relation": "identical",
+      "working_sha256": "406f4fcb8d86f589527e4ada9ef2f8d5f82c01c77754af9d194c414536418b44",
+      "python_compiles": null
+    },
+    {
+      "path": "experiments/qwen3_vl_2b_lgvq_single_metric_o2_16frame_54/configs/release/spatial_custom_conv_aligned_multiview_s967.yaml",
+      "bytes": 1559,
+      "source_sha256": "78017a5ae87add61b4d67a564f685e04d7b0840a42696e5f219b5ec9b1f40be2",
+      "main_sha256": null,
+      "main_relation": "missing",
+      "working_sha256": "78017a5ae87add61b4d67a564f685e04d7b0840a42696e5f219b5ec9b1f40be2",
+      "python_compiles": null
+    },
+    {
+      "path": "experiments/qwen3_vl_2b_lgvq_single_metric_o2_16frame_54/configs/release/spatial_custom_conv_aug_flip_rank_curriculum_s1117.yaml",
+      "bytes": 1177,
+      "source_sha256": "05f068d38b8dcf9cfc35c11e56744dd50e0ccb6be251071bedbdb77970f42171",
+      "main_sha256": null,
+      "main_relation": "missing",
+      "working_sha256": "05f068d38b8dcf9cfc35c11e56744dd50e0ccb6be251071bedbdb77970f42171",
+      "python_compiles": null
+    },
+    {
+      "path": "experiments/qwen3_vl_2b_lgvq_single_metric_o2_16frame_54/configs/release/spatial_custom_conv_aug_flip_s1019.yaml",
+      "bytes": 696,
+      "source_sha256": "d4b0c35bd56a8d760effd22bbf727f8424d5315d6ef17dbf3d8842ecd5153022",
+      "main_sha256": null,
+      "main_relation": "missing",
+      "working_sha256": "d4b0c35bd56a8d760effd22bbf727f8424d5315d6ef17dbf3d8842ecd5153022",
+      "python_compiles": null
+    },
+    {
+      "path": "experiments/qwen3_vl_2b_lgvq_single_metric_o2_16frame_54/configs/release/spatial_custom_conv_formal_s749.yaml",
+      "bytes": 3220,
+      "source_sha256": "7451fb9cff433338008d86c476c94adbf304db493d5713143b53bbcd698afd24",
+      "main_sha256": null,
+      "main_relation": "missing",
+      "working_sha256": "7451fb9cff433338008d86c476c94adbf304db493d5713143b53bbcd698afd24",
+      "python_compiles": null
+    },
+    {
+      "path": "experiments/qwen3_vl_2b_lgvq_single_metric_o2_16frame_54/configs/release/spatial_custom_conv_paired_opposite_flip100_s1193.yaml",
+      "bytes": 379,
+      "source_sha256": "39712a2c1137e0d44c0addd4fa562ee4c452fd08ee7bf4687e2f2d829b85d458",
+      "main_sha256": null,
+      "main_relation": "missing",
+      "working_sha256": "39712a2c1137e0d44c0addd4fa562ee4c452fd08ee7bf4687e2f2d829b85d458",
+      "python_compiles": null
+    },
+    {
+      "path": "experiments/qwen3_vl_2b_lgvq_single_metric_o2_16frame_54/configs/release/spatial_custom_conv_paired_opposite_flip_dropout18_s1201.yaml",
+      "bytes": 375,
+      "source_sha256": "40e66d10343cb368cba4e168d84c9d4eb3bd3214dcb8999ad4d154138dd51748",
+      "main_sha256": null,
+      "main_relation": "missing",
+      "working_sha256": "40e66d10343cb368cba4e168d84c9d4eb3bd3214dcb8999ad4d154138dd51748",
+      "python_compiles": null
+    },
+    {
+      "path": "experiments/qwen3_vl_2b_lgvq_single_metric_o2_16frame_54/configs/release/spatial_custom_conv_pruned_compact_alpha42_s929.yaml",
+      "bytes": 924,
+      "source_sha256": "7f318bb592adfc011c7637b2b8a9b7bfc28c3ac1ffa9852b7daa706db40d2e09",
+      "main_sha256": null,
+      "main_relation": "missing",
+      "working_sha256": "7f318bb592adfc011c7637b2b8a9b7bfc28c3ac1ffa9852b7daa706db40d2e09",
+      "python_compiles": null
+    },
+    {
+      "path": "experiments/qwen3_vl_2b_lgvq_single_metric_o2_16frame_54/configs/release/spatial_custom_conv_pruned_compact_alpha42_scale040_s935.yaml",
+      "bytes": 495,
+      "source_sha256": "6548277cd9485233aea7f03b161ac231d536e4e140e32f89ef19302b49c9e600",
+      "main_sha256": null,
+      "main_relation": "missing",
+      "working_sha256": "6548277cd9485233aea7f03b161ac231d536e4e140e32f89ef19302b49c9e600",
+      "python_compiles": null
+    },
+    {
+      "path": "experiments/qwen3_vl_2b_lgvq_single_metric_o2_16frame_54/configs/release/spatial_custom_conv_pruned_compact_readout_s919.yaml",
+      "bytes": 541,
+      "source_sha256": "aa89171911953dbf46ae0e2dfd29585c2b1f4dc7a51352999dee333b578ddde7",
+      "main_sha256": null,
+      "main_relation": "missing",
+      "working_sha256": "9b5057adc9a55746e25cf605dbad35f53a9395b52ab73c8bc3f86a42cabd76c0",
+      "python_compiles": null
+    },
+    {
+      "path": "experiments/qwen3_vl_2b_lgvq_single_metric_o2_16frame_54/configs/release/spatial_custom_conv_readout_lowrank1550k_s1291.yaml",
+      "bytes": 437,
+      "source_sha256": "37f772bd29ff998d22e4d6ee6b44abd2924511383f5643491257b84ade82b48b",
+      "main_sha256": null,
+      "main_relation": "missing",
+      "working_sha256": "37f772bd29ff998d22e4d6ee6b44abd2924511383f5643491257b84ade82b48b",
+      "python_compiles": null
+    },
+    {
+      "path": "experiments/qwen3_vl_2b_lgvq_single_metric_o2_16frame_54/configs/release/spatial_readout_1m_compact_preserve_c_s1314.yaml",
+      "bytes": 502,
+      "source_sha256": "93bd4b6accaa610e1b80e4e98f149e6b9b084de0e23231aaa998a996ffb7c74b",
+      "main_sha256": null,
+      "main_relation": "missing",
+      "working_sha256": "93bd4b6accaa610e1b80e4e98f149e6b9b084de0e23231aaa998a996ffb7c74b",
+      "python_compiles": null
+    },
+    {
+      "path": "experiments/qwen3_vl_2b_lgvq_single_metric_o2_16frame_54/configs/release/spatial_readout_1m_joint_gentle_s1321.yaml",
+      "bytes": 1913,
+      "source_sha256": "d2c4f76aa0543bb9dd911d774aeff96bf9fc13912bffd4cf72e912ad666979b2",
+      "main_sha256": null,
+      "main_relation": "missing",
+      "working_sha256": "d2c4f76aa0543bb9dd911d774aeff96bf9fc13912bffd4cf72e912ad666979b2",
+      "python_compiles": null
+    },
+    {
+      "path": "experiments/qwen3_vl_2b_lgvq_single_metric_o2_16frame_54/configs/release/spatial_readout_1m_phase_refine_s1327.yaml",
+      "bytes": 1822,
+      "source_sha256": "10c4da099d2d94f58b1f68afd50141c263eeb65749cb49f72f6279d58a0539e6",
+      "main_sha256": null,
+      "main_relation": "missing",
+      "working_sha256": "c57ac7f9d5b631cf78d113ea9e887e1230bab759ae9efbced2296d196a5a8566",
+      "python_compiles": null
+    },
+    {
+      "path": "experiments/qwen3_vl_2b_lgvq_single_metric_o2_16frame_54/configs/release/spatial_readout_1m_srcc067.yaml",
+      "bytes": 833,
+      "source_sha256": "809bd67581971b47201de285f2f047b03213db7ff46ccffe9ea893aaf07acd3d",
+      "main_sha256": null,
+      "main_relation": "missing",
+      "working_sha256": "809bd67581971b47201de285f2f047b03213db7ff46ccffe9ea893aaf07acd3d",
+      "python_compiles": null
+    },
+    {
+      "path": "experiments/qwen3_vl_2b_lgvq_single_metric_o2_16frame_54/data.py",
+      "bytes": 43615,
+      "source_sha256": "a4c24eab04ff20651e094fda4bc72fe2032eb5835da33ab4c77ac86a527e4b39",
+      "main_sha256": "5fe3d85a247758f94beeabbeb3b8b94fd61d5e929acffd50a66e30b8e1b44599",
+      "main_relation": "different_requires_review",
+      "working_sha256": "a4c24eab04ff20651e094fda4bc72fe2032eb5835da33ab4c77ac86a527e4b39",
+      "python_compiles": true
+    },
+    {
+      "path": "experiments/qwen3_vl_2b_lgvq_single_metric_o2_16frame_54/evaluate_last_phase_ablation.py",
+      "bytes": 11835,
+      "source_sha256": "8265c6266d6dbf004ed402a7e43eaa8252dfe6c94045ebafea3107925f950289",
+      "main_sha256": null,
+      "main_relation": "missing",
+      "working_sha256": "8265c6266d6dbf004ed402a7e43eaa8252dfe6c94045ebafea3107925f950289",
+      "python_compiles": true
+    },
+    {
+      "path": "experiments/qwen3_vl_2b_lgvq_single_metric_o2_16frame_54/export_hardware_masks.py",
+      "bytes": 25850,
+      "source_sha256": "049a74dbab71c84325edf9979602a303d120b9e5b1f6a3b8aa946ed8cc072ff9",
+      "main_sha256": "049a74dbab71c84325edf9979602a303d120b9e5b1f6a3b8aa946ed8cc072ff9",
+      "main_relation": "identical",
+      "working_sha256": "049a74dbab71c84325edf9979602a303d120b9e5b1f6a3b8aa946ed8cc072ff9",
+      "python_compiles": true
+    },
+    {
+      "path": "experiments/qwen3_vl_2b_lgvq_single_metric_o2_16frame_54/hardware_bridge.py",
+      "bytes": 28801,
+      "source_sha256": "9b36ab6f202014be200d2d27cd0730a0651b7aa5429147c8ffcc12ceb165219b",
+      "main_sha256": "9b36ab6f202014be200d2d27cd0730a0651b7aa5429147c8ffcc12ceb165219b",
+      "main_relation": "identical",
+      "working_sha256": "9b36ab6f202014be200d2d27cd0730a0651b7aa5429147c8ffcc12ceb165219b",
+      "python_compiles": true
+    },
+    {
+      "path": "experiments/qwen3_vl_2b_lgvq_single_metric_o2_16frame_54/metrics.py",
+      "bytes": 2430,
+      "source_sha256": "6ef93ffc32e8920086bb1d18dde440a577ba134a8db498d17837636d6ef01770",
+      "main_sha256": "6ef93ffc32e8920086bb1d18dde440a577ba134a8db498d17837636d6ef01770",
+      "main_relation": "identical",
+      "working_sha256": "6ef93ffc32e8920086bb1d18dde440a577ba134a8db498d17837636d6ef01770",
+      "python_compiles": true
+    },
+    {
+      "path": "experiments/qwen3_vl_2b_lgvq_single_metric_o2_16frame_54/modeling.py",
+      "bytes": 145263,
+      "source_sha256": "d6b09c803e814e4fda79019c5b1ee2d45fe790310f195b8e7a52a2b4c6f5a09c",
+      "main_sha256": "3230670b3ce1e59b2401f7e5b14501bcbc6bb34d2ec8b9a78f6bce6e0039954b",
+      "main_relation": "different_requires_review",
+      "working_sha256": "780c1bf3904b75459126f426a29fdc0fbb17de90a376cedd31d42e85a57657a9",
+      "python_compiles": true
+    },
+    {
+      "path": "experiments/qwen3_vl_2b_lgvq_single_metric_o2_16frame_54/phase_snapshots.py",
+      "bytes": 7545,
+      "source_sha256": "db61319cd81c9c1fe8d205e1a71bb7261256541e5549e0464f3e125fe87da168",
+      "main_sha256": "db61319cd81c9c1fe8d205e1a71bb7261256541e5549e0464f3e125fe87da168",
+      "main_relation": "identical",
+      "working_sha256": "db61319cd81c9c1fe8d205e1a71bb7261256541e5549e0464f3e125fe87da168",
+      "python_compiles": true
+    },
+    {
+      "path": "experiments/qwen3_vl_2b_lgvq_single_metric_o2_16frame_54/preflight.py",
+      "bytes": 9715,
+      "source_sha256": "38d82b75e31efb4d2a4622d5a6b1c867fff6e5c89206e1b25020128b3525dd9c",
+      "main_sha256": "f9cff5532ff4854c948480e52da907e48c3e57ebe66beb488cbec1ddc9b87f27",
+      "main_relation": "different_requires_review",
+      "working_sha256": "38d82b75e31efb4d2a4622d5a6b1c867fff6e5c89206e1b25020128b3525dd9c",
+      "python_compiles": true
+    },
+    {
+      "path": "experiments/qwen3_vl_2b_lgvq_single_metric_o2_16frame_54/run.py",
+      "bytes": 23209,
+      "source_sha256": "c12c320e848e68041a32c8a74f38c0deba65d8f03f486f71c9695305960c9b72",
+      "main_sha256": "b755b85c9f09191fd01e63b54a5c4f80c2f605f8998f6d7df079297f2485d8f4",
+      "main_relation": "different_requires_review",
+      "working_sha256": "c12c320e848e68041a32c8a74f38c0deba65d8f03f486f71c9695305960c9b72",
+      "python_compiles": true
+    },
+    {
+      "path": "experiments/qwen3_vl_2b_lgvq_single_metric_o2_16frame_54/settings.py",
+      "bytes": 79446,
+      "source_sha256": "bfc27ce1da1d33695d0a5afcb37ff66ee0d42bee0f3afed096457e7cb9fcf887",
+      "main_sha256": "f24260628b2572577cd97cc77ed516122a30bb4f5538175404244c9b0e233c98",
+      "main_relation": "different_requires_review",
+      "working_sha256": "4a436b9630d6fb3ed702d6bc85f1f7ef701875d618efd3eed9e4ab7d597e7dd0",
+      "python_compiles": true
+    },
+    {
+      "path": "experiments/qwen3_vl_2b_lgvq_single_metric_o2_16frame_54/tests/__init__.py",
+      "bytes": 66,
+      "source_sha256": "3fa885be94d5051ff0354a887fa2d683db0fa68c470949e644538b8d230ad90e",
+      "main_sha256": "3fa885be94d5051ff0354a887fa2d683db0fa68c470949e644538b8d230ad90e",
+      "main_relation": "identical",
+      "working_sha256": "3fa885be94d5051ff0354a887fa2d683db0fa68c470949e644538b8d230ad90e",
+      "python_compiles": true
+    },
+    {
+      "path": "experiments/qwen3_vl_2b_lgvq_single_metric_o2_16frame_54/tests/test_model_and_training.py",
+      "bytes": 61707,
+      "source_sha256": "892aace1531100449f94b6b3d04d4134bd56c7fce3647f42cf14248050540f2d",
+      "main_sha256": "2cc11f6adb348f9f7d7a6ee091cfd09d52163e8e76273765161abc383aa94ee1",
+      "main_relation": "different_requires_review",
+      "working_sha256": "a1e042d13aa21bfc0edd680f5a0255bfda9b1c585bc1479814b9c687bebde172",
+      "python_compiles": true
+    },
+    {
+      "path": "experiments/qwen3_vl_2b_lgvq_single_metric_o2_16frame_54/train_cached_deep_readout.py",
+      "bytes": 28632,
+      "source_sha256": "eca926d0b2a050f76fb4f3c331f0260867da38b80254eee3fa42088b8bd943f4",
+      "main_sha256": "601708a14468ea1873be26cf1085c496ce05ee7a9dff92bad006b46b4fff0b1c",
+      "main_relation": "different_requires_review",
+      "working_sha256": "1d79b1db7cbc197936dec9374df0f179e2b69a0be028fba2e98646df0730121f",
+      "python_compiles": true
+    },
+    {
+      "path": "experiments/qwen3_vl_2b_lgvq_single_metric_o2_16frame_54/training.py",
+      "bytes": 54687,
+      "source_sha256": "23a7bd6f432a214ea2e098f5e1ec8392ffb7688aed6eeb343545c4580d9d3763",
+      "main_sha256": "95c4a780389b7728933c8db0afac8f3d37dd2a48fc9b54e2ca0a9bf3e9bb712c",
+      "main_relation": "different_requires_review",
+      "working_sha256": "23a7bd6f432a214ea2e098f5e1ec8392ffb7688aed6eeb343545c4580d9d3763",
+      "python_compiles": true
+    }
+  ],
+  "profile_source_contracts": [
+    {
+      "profile": "LightGenV2/tasks/t06_video_quality_assessment/configs/lightgen/spatial_single_video4_custom_conv_readout_1m.yaml",
+      "path": "experiments/qwen3_vl_2b_lgvq_single_metric_o2_16frame_54/modeling.py",
+      "expected_sha256": "d6b09c803e814e4fda79019c5b1ee2d45fe790310f195b8e7a52a2b4c6f5a09c",
+      "source_sha256": "d6b09c803e814e4fda79019c5b1ee2d45fe790310f195b8e7a52a2b4c6f5a09c",
+      "matches": true
+    },
+    {
+      "profile": "LightGenV2/tasks/t06_video_quality_assessment/configs/lightgen/spatial_single_video4_custom_conv_readout_1m.yaml",
+      "path": "experiments/qwen3_vl_2b_lgvq_single_metric_o2_16frame_54/settings.py",
+      "expected_sha256": "bfc27ce1da1d33695d0a5afcb37ff66ee0d42bee0f3afed096457e7cb9fcf887",
+      "source_sha256": "bfc27ce1da1d33695d0a5afcb37ff66ee0d42bee0f3afed096457e7cb9fcf887",
+      "matches": true
+    },
+    {
+      "profile": "LightGenV2/tasks/t06_video_quality_assessment/configs/lightgen/spatial_single_video4_custom_conv_readout_1m.yaml",
+      "path": "experiments/qwen3_vl_2b_lgvq_single_metric_o2_16frame_54/training.py",
+      "expected_sha256": "23a7bd6f432a214ea2e098f5e1ec8392ffb7688aed6eeb343545c4580d9d3763",
+      "source_sha256": "23a7bd6f432a214ea2e098f5e1ec8392ffb7688aed6eeb343545c4580d9d3763",
+      "matches": true
+    },
+    {
+      "profile": "LightGenV2/tasks/t06_video_quality_assessment/configs/lightgen/spatial_single_video4_custom_conv_readout_1m.yaml",
+      "path": "experiments/qwen3_vl_2b_lgvq_single_metric_o2_16frame_54/run.py",
+      "expected_sha256": "c12c320e848e68041a32c8a74f38c0deba65d8f03f486f71c9695305960c9b72",
+      "source_sha256": "c12c320e848e68041a32c8a74f38c0deba65d8f03f486f71c9695305960c9b72",
+      "matches": true
+    },
+    {
+      "profile": "LightGenV2/tasks/t06_video_quality_assessment/configs/lightgen/spatial_single_video4_custom_conv_readout_1m.yaml",
+      "path": "experiments/qwen3_vl_2b_lgvq_single_metric_o2_16frame_54/data.py",
+      "expected_sha256": "a4c24eab04ff20651e094fda4bc72fe2032eb5835da33ab4c77ac86a527e4b39",
+      "source_sha256": "a4c24eab04ff20651e094fda4bc72fe2032eb5835da33ab4c77ac86a527e4b39",
+      "matches": true
+    },
+    {
+      "profile": "LightGenV2/tasks/t06_video_quality_assessment/configs/lightgen/spatial_single_video4_custom_conv_readout_1m.yaml",
+      "path": "experiments/qwen3_vl_2b_lgvq_single_metric_o2_16frame_54/hardware_bridge.py",
+      "expected_sha256": "9b36ab6f202014be200d2d27cd0730a0651b7aa5429147c8ffcc12ceb165219b",
+      "source_sha256": "9b36ab6f202014be200d2d27cd0730a0651b7aa5429147c8ffcc12ceb165219b",
+      "matches": true
+    },
+    {
+      "profile": "LightGenV2/tasks/t06_video_quality_assessment/configs/lightgen/spatial_single_video4_custom_conv_readout_1m.yaml",
+      "path": "experiments/qwen3_vl_2b_lgvq_single_metric_o2_16frame_54/export_hardware_masks.py",
+      "expected_sha256": "049a74dbab71c84325edf9979602a303d120b9e5b1f6a3b8aa946ed8cc072ff9",
+      "source_sha256": "049a74dbab71c84325edf9979602a303d120b9e5b1f6a3b8aa946ed8cc072ff9",
+      "matches": true
+    }
+  ],
+  "cross_task_static_consumers": [
+    "d2e6703e899d097f8e5708e1f1aaaaf438692258:LightGenV2/tasks/t13_temporal_robust_training/cache_builder/cache_qwen_front.py:16:from experiments.qwen3_vl_2b_lgvq_single_metric_o2_16frame_54.data import (",
+    "d2e6703e899d097f8e5708e1f1aaaaf438692258:LightGenV2/tasks/t13_temporal_robust_training/cache_builder/cache_qwen_front.py:25:from experiments.qwen3_vl_2b_lgvq_single_metric_o2_16frame_54.settings import (",
+    "d2e6703e899d097f8e5708e1f1aaaaf438692258:LightGenV2/tasks/t13_temporal_robust_training/experiment.py:39:    from experiments.qwen3_vl_2b_lgvq_single_metric_o2_16frame_54.modeling import AngularSpectrum",
+    "d2e6703e899d097f8e5708e1f1aaaaf438692258:LightGenV2/tasks/t13_temporal_robust_training/reference/source_manifest.json:17:    \"runtime/experiments/qwen3_vl_2b_lgvq_single_metric_o2_16frame_54/training.py\": \"7c13b3a76a7b9e512936ea618b28f508c4d6b1e947d1afe181b874a34d88d520\",",
+    "d2e6703e899d097f8e5708e1f1aaaaf438692258:LightGenV2/tasks/t13_temporal_robust_training/reference/source_manifest.json:18:    \"runtime/experiments/qwen3_vl_2b_lgvq_single_metric_o2_16frame_54/data.py\": \"00e81892370765e19f139a4b60f0c8f6edce0694a1f0790701ffc596014c9c41\",",
+    "d2e6703e899d097f8e5708e1f1aaaaf438692258:LightGenV2/tasks/t13_temporal_robust_training/reference/source_manifest.json:22:    \"runtime/experiments/qwen3_vl_2b_lgvq_single_metric_o2_16frame_54/metrics.py\": \"6ef93ffc32e8920086bb1d18dde440a577ba134a8db498d17837636d6ef01770\",",
+    "d2e6703e899d097f8e5708e1f1aaaaf438692258:LightGenV2/tasks/t13_temporal_robust_training/reference/source_manifest.json:26:    \"runtime/experiments/qwen3_vl_2b_lgvq_single_metric_o2_16frame_54/phase_snapshots.py\": \"4928b1c7d9ad369112360524a94d399c5a8508e6ba6e72eafd8784391d9cb75e\",",
+    "d2e6703e899d097f8e5708e1f1aaaaf438692258:LightGenV2/tasks/t13_temporal_robust_training/reference/source_manifest.json:27:    \"runtime/experiments/qwen3_vl_2b_lgvq_single_metric_o2_16frame_54/modeling.py\": \"bdedfb842b69cf0b3ee49e87687d5525391605eacfcb7e216e5a71ab1fac6f73\",",
+    "d2e6703e899d097f8e5708e1f1aaaaf438692258:LightGenV2/tasks/t13_temporal_robust_training/reference/source_manifest.json:31:    \"runtime/experiments/qwen3_vl_2b_lgvq_single_metric_o2_16frame_54/__init__.py\": \"f48d41c36f5c57760a0cc9485ad371ffd0f587c63c8b7d1562734195effb6d39\",",
+    "d2e6703e899d097f8e5708e1f1aaaaf438692258:LightGenV2/tasks/t13_temporal_robust_training/reference/source_manifest.json:32:    \"runtime/experiments/qwen3_vl_2b_lgvq_single_metric_o2_16frame_54/settings.py\": \"bfc27ce1da1d33695d0a5afcb37ff66ee0d42bee0f3afed096457e7cb9fcf887\",",
+    "d2e6703e899d097f8e5708e1f1aaaaf438692258:LightGenV2/tasks/t13_temporal_robust_training/run.py:119:    from experiments.qwen3_vl_2b_lgvq_single_metric_o2_16frame_54.data import load_single_metric_cache",
+    "d2e6703e899d097f8e5708e1f1aaaaf438692258:LightGenV2/tasks/t13_temporal_robust_training/runtime/LightGenV2/tasks/t06_video_quality_assessment/lab_runtime.py:38:  from experiments.qwen3_vl_2b_lgvq_single_metric_o2_16frame_54.settings import ExperimentSettings as Settings, Geometry",
+    "d2e6703e899d097f8e5708e1f1aaaaf438692258:LightGenV2/tasks/t13_temporal_robust_training/runtime/LightGenV2/tasks/t06_video_quality_assessment/lab_runtime.py:57:  from experiments.qwen3_vl_2b_lgvq_single_metric_o2_16frame_54.modeling import build_model",
+    "d2e6703e899d097f8e5708e1f1aaaaf438692258:LightGenV2/tasks/t13_temporal_robust_training/runtime/LightGenV2/tasks/t06_video_quality_assessment/models/multivideo9x4.py:18:from experiments.qwen3_vl_2b_lgvq_single_metric_o2_16frame_54.modeling import (",
+    "d2e6703e899d097f8e5708e1f1aaaaf438692258:LightGenV2/tasks/t13_temporal_robust_training/runtime/LightGenV2/tasks/t06_video_quality_assessment/multivideo.py:16:from experiments.qwen3_vl_2b_lgvq_single_metric_o2_16frame_54.data import load_single_metric_cache",
+    "d2e6703e899d097f8e5708e1f1aaaaf438692258:LightGenV2/tasks/t13_temporal_robust_training/runtime/LightGenV2/tasks/t06_video_quality_assessment/multivideo_training.py:17:from experiments.qwen3_vl_2b_lgvq_single_metric_o2_16frame_54.metrics import regression_metrics",
+    "d2e6703e899d097f8e5708e1f1aaaaf438692258:LightGenV2/tasks/t13_temporal_robust_training/runtime/LightGenV2/tasks/t06_video_quality_assessment/multivideo_training.py:18:from experiments.qwen3_vl_2b_lgvq_single_metric_o2_16frame_54.training import (",
+    "d2e6703e899d097f8e5708e1f1aaaaf438692258:LightGenV2/tasks/t13_temporal_robust_training/runtime/lgvq_temporal/fixed_weight.py:35:    from experiments.qwen3_vl_2b_lgvq_single_metric_o2_16frame_54.metrics import (",
+    "d2e6703e899d097f8e5708e1f1aaaaf438692258:LightGenV2/tasks/t13_temporal_robust_training/source_import_20261003.json:188:      \"path\": \"LightGenV2/tasks/t13_temporal_robust_training/runtime/experiments/qwen3_vl_2b_lgvq_single_metric_o2_16frame_54/__init__.py\",",
+    "d2e6703e899d097f8e5708e1f1aaaaf438692258:LightGenV2/tasks/t13_temporal_robust_training/source_import_20261003.json:192:      \"path\": \"LightGenV2/tasks/t13_temporal_robust_training/runtime/experiments/qwen3_vl_2b_lgvq_single_metric_o2_16frame_54/data.py\",",
+    "d2e6703e899d097f8e5708e1f1aaaaf438692258:LightGenV2/tasks/t13_temporal_robust_training/source_import_20261003.json:196:      \"path\": \"LightGenV2/tasks/t13_temporal_robust_training/runtime/experiments/qwen3_vl_2b_lgvq_single_metric_o2_16frame_54/metrics.py\",",
+    "d2e6703e899d097f8e5708e1f1aaaaf438692258:LightGenV2/tasks/t13_temporal_robust_training/source_import_20261003.json:200:      \"path\": \"LightGenV2/tasks/t13_temporal_robust_training/runtime/experiments/qwen3_vl_2b_lgvq_single_metric_o2_16frame_54/modeling.py\",",
+    "d2e6703e899d097f8e5708e1f1aaaaf438692258:LightGenV2/tasks/t13_temporal_robust_training/source_import_20261003.json:204:      \"path\": \"LightGenV2/tasks/t13_temporal_robust_training/runtime/experiments/qwen3_vl_2b_lgvq_single_metric_o2_16frame_54/phase_snapshots.py\",",
+    "d2e6703e899d097f8e5708e1f1aaaaf438692258:LightGenV2/tasks/t13_temporal_robust_training/source_import_20261003.json:208:      \"path\": \"LightGenV2/tasks/t13_temporal_robust_training/runtime/experiments/qwen3_vl_2b_lgvq_single_metric_o2_16frame_54/settings.py\",",
+    "d2e6703e899d097f8e5708e1f1aaaaf438692258:LightGenV2/tasks/t13_temporal_robust_training/source_import_20261003.json:212:      \"path\": \"LightGenV2/tasks/t13_temporal_robust_training/runtime/experiments/qwen3_vl_2b_lgvq_single_metric_o2_16frame_54/training.py\",",
+    "d2e6703e899d097f8e5708e1f1aaaaf438692258:LightGenV2/tasks/t13_temporal_robust_training/train_four.py:118:        from experiments.qwen3_vl_2b_lgvq_single_metric_o2_16frame_54.data import load_single_metric_cache"
+  ],
+  "separate_later_source_review_required": [
+    "LightGenV2/tasks/t06_video_quality_assessment/adapt_measured_readout.py"
+  ],
+  "static_imports_only": true,
+  "dynamic_imports_complete": false,
+  "runtime_tests_passed": false,
+  "approved_for_overwrite": false,
+  "working_files_changed": false,
+  "data_or_weights_changed": false
+}
