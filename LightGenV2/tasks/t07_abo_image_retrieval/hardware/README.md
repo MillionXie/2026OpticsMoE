@@ -64,3 +64,14 @@ python -m LightGenV2.tasks.t07_abo_image_retrieval.hardware.ccd_store --run /pat
 临时振幅BMP当时已清除，因此只检查其收据SHA格式，不冒称可从收据重新验证原BMP。
 `read(stage, ids)` 返回未做归一化的uint8数组，供明确选择的上层回放；
 它本身不会调用模型或设备。
+
+## 显式配置的原SHS控制层
+
+`bench.SHSBench` 与 `geometry` 已收拢最终版实际使用的控制层，显式传入
+`machine_config`（原Controller JSON）、`phase_sdk` 和 `phase_lut`，不再自动寻找
+LGVQ视频项目或旧DVP工程。JSON相对设备路径按其所在目录解析，SDK/LUT/数据不进Git。
+七个原几何函数和Bench的进入／退出／捕获方法AST一致；SHS ROI、1016像素原生映射、
+400µs/Gain_X4/wait240、相位更新后fresh、持续清帧与1%饱和守卫保持原含义。
+九项纯CPU模拟设备测试通过，未打开SDK，未替换实验室代码；记录见仓库
+`maintenance/storage/T07_BENCH_SOURCE_IMPORT_20261005.json`。
+它仍不是完整逐层接续CLI，阶段编排、前端／protocol路径和运行目录切换继续审计。

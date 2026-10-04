@@ -1,0 +1,46 @@
+{
+  "scope": "Sealed rank72 bench and native geometry source projection; not hardware regression",
+  "archive_ref": "refs/archive/windows-source-20261004/abo-rank72",
+  "source_files": [
+    {
+      "path": "ABO_I2I_Lab_DVP_8um/lab_dvp8um/four_image_flow.py",
+      "sha256": "26265e6b238c4e8f4062f250720b2e2144f4ff37bf864a5700af93ae3f3120fb"
+    },
+    {
+      "path": "ABO_I2I_Lab_DVP_8um/lab_dvp8um/shs_physical2400.py",
+      "sha256": "5976d3e152dada1f6cf9f93d73d72bff32c4557dd03056b8e63e07f65d6dc859"
+    }
+  ],
+  "geometry_functions_ast_unchanged": [
+    "sha",
+    "write",
+    "camera_variants",
+    "warp",
+    "orient",
+    "active_to_native",
+    "phase_gray"
+  ],
+  "bench_methods_ast_unchanged": [
+    "__enter__",
+    "__exit__",
+    "capture"
+  ],
+  "reviewed_changes": [
+    "Remove unused Bench inheritance and historical hardware CLI",
+    "Replace hardcoded sibling LAB.local.json and phase SDK/LUT with explicit arguments",
+    "Bind canonical shared Controller config_base and phase class",
+    "Use sealed SHS ROI instead of obsolete DVP geometry default"
+  ],
+  "hardware_runner_migration_complete": false,
+  "devices_opened": false,
+  "published_paths": [
+    {
+      "path": "LightGenV2/tasks/t07_abo_image_retrieval/hardware/geometry.py",
+      "sha256_lf": "0ed3385c7d6e5e7f5b4c214ffbfe3ed675ba7c2b9824a8180fba57ea6cd6e4c4"
+    },
+    {
+      "path": "LightGenV2/tasks/t07_abo_image_retrieval/hardware/bench.py",
+      "sha256_lf": "e693061b40e1be7f79ede9520d5c1605103db67e04f77d8a371988f6c0b74e9f"
+    }
+  ]
+}
