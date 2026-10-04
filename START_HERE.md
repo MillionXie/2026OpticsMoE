@@ -23,7 +23,7 @@
 | 视频质量/LGVQ | [T06](LightGenV2/tasks/t06_video_quality_assessment/README.md) |
 | ABO 图搜图 | [T07](LightGenV2/tasks/t07_abo_image_retrieval/README.md) |
 | ABO 图搜文、文搜图 | [T08](LightGenV2/tasks/t08_abo_image_text_retrieval/README.md) |
-| 多模态匹配（自身入口尚待完整迁移） | [T09 现用源码位置](maintenance/storage/SERVER_AUTHORITATIVE_INDEX_20261002.md) |
+| 图文／音文匹配（核心源码已归主线，原资产保留） | [T09](LightGenV2/tasks/t09_multimodal_matching/README.md) |
 | 专家数扩展 | [T10](LightGenV2/tasks/t10_expert_scaling/README.md) |
 | 病理终身学习 | [T11](LightGenV2/tasks/t11_lifelong_optics/README.md) |
 | 图文编辑/文生图 | [T12](LightGenV2/tasks/t12_text_to_image/README.md) |

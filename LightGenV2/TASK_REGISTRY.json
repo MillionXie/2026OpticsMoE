@@ -4,7 +4,7 @@
   "purpose": "Source and artifact identity index; metrics remain in task README/report and PROJECT_SCORECARD.md",
   "migration_complete": false,
   "reconciliation_plan": "../maintenance/storage/REMAINING_CLEANUP_PLAN_20261003.md",
-  "reconciliation_counts": {"runtime_source_published": 2, "partially_consolidated": 8, "pending_runtime_and_assets": 3, "unstarted": 1, "scope": "includes T03/T06/T10/T11 runtime source consolidation; complete assets, later adapters and fresh hardware reproduction remain separate"},
+  "reconciliation_counts": {"runtime_source_published": 3, "partially_consolidated": 9, "pending_runtime_and_assets": 1, "unstarted": 1, "as_of": "2026-10-04", "scope": "Source consolidation stages only: T09/T13/T16 audited core runtime; nine other tasks retain asset, hardware or historical-entry tails; T04 protected active integration pending; T05 unstarted. These counts do not imply complete asset closure or checkout cutover."},
   "navigation_documents": ["README.md", "PROJECT_SCORECARD.md", "tasks/t04_openmoji_robust_ablation/README.md", "tasks/t04_openmoji_robust_ablation/reports/reproduction/README.md", "tasks/t16_zero_phase_ccd_lifelong/README.md", "tasks/t16_zero_phase_ccd_lifelong/reports/reproduction/README.md"],
   "source_import_manifests": ["tasks/t16_zero_phase_ccd_lifelong/source_import_20261002.json", "tasks/t13_temporal_robust_training/source_import_20261003.json", "tasks/t11_lifelong_optics/source_import_20261004.json", "tasks/t06_video_quality_assessment/source_import_20261004.json"],
   "artifact_manifests": ["tasks/t07_abo_image_retrieval/reports/reproduction/FINAL_IDENTITY_20261002.json", "tasks/t04_openmoji_robust_ablation/reports/reproduction/FINAL_IDENTITY_20261002.json"],
@@ -14,7 +14,7 @@
     {
       "id": "t01_object_retrieval",
       "entry": "tasks/t01_object_retrieval/README.md",
-      "source_status": "runtime_source_published_partial_asset_audit",
+      "source_status": "runtime_source_published_image_content_audited_frontend_binding_and_checkout_pending",
       "data_status": "preserve_original_manifest_and_gallery",
       "evidence": ["PROJECT_SCORECARD.md"],
       "current_version_latency_verified": false
@@ -22,7 +22,7 @@
     {
       "id": "t02_keypoint_detection",
       "entry": "tasks/t02_keypoint_detection/README.md",
-      "source_status": "runtime_source_published_partial_asset_audit",
+      "source_status": "runtime_source_published_official_and_personal_image_content_audited_checkout_pending",
       "additional_source": "/DATA/DATA1/guest3/t02_personal_source_20260928",
       "source_head": "2fa901dc7800d8798658b29e242e38bebac97989",
       "data_status": "preserve_LSP_and_per_sample_evidence",
@@ -81,7 +81,7 @@
     {
       "id": "t07_abo_image_retrieval",
       "entry": "tasks/t07_abo_image_retrieval/README.md",
-      "source_status": "canonical_entry_existing_rank72_runtime_integration_pending",
+      "source_status": "rank72_training_and_offline_replay_published_hardware_orchestration_pending",
       "training_source": "/DATA/DATA1/guest3/2026OpticsMoE/.worktrees/t07_latestfresh35_20260929",
       "protected_git_ref": "refs/archive/server-authoritative-20261002/t07_latestfresh35_20260929",
       "source_head": "d979b53ed509907a3630bd2a36c317dfb3aac965",
@@ -99,7 +99,7 @@
     {
       "id": "t08_abo_image_text_retrieval",
       "entry": "tasks/t08_abo_image_text_retrieval/README.md",
-      "source_status": "canonical_identity_map_published_direction_dependencies_pending",
+      "source_status": "both_direction_entries_fixed_cache_guard_and_adopted_DVP_capture_published_adapter_and_asset_binding_pending",
       "identity_map_publication_commit": "19c3b0555b42608af35a4ee531dde76c2bb47773",
       "evidence": ["reports/20260928_nine_task_a100_table/README.md"],
       "data_status": "image_to_text_and_text_to_image_are_distinct_protocols_preserve_both",
