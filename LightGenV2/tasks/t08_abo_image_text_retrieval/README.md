@@ -44,8 +44,12 @@ python -m LightGenV2.tasks.t08_abo_image_text_retrieval.text_to_image \
 固定入口现在先核验既有教师缓存的方向、提示词、四份数据CSV、样本顺序、
 模型路径和64维张量；缓存缺失或不符时，在大模型加载与输出创建前停止，
 不会静默重新生成缓存。旧缓存的逻辑模型名与显式本地路径不自动视为同一身份，
-不能改缓存身份字段绕过检查。当前两处历史任务run目录均未找到原教师缓存；
-完整复评仍需定位或另行明确重建正确方向的缓存，不声称依赖已经全部齐全。
+不能改缓存身份字段绕过检查。2026-10-05扩展核查已找到原反向教师缓存：
+`runs/shared/abo_easy100_qwen64_true_text_to_image.pt`，SHA `a1cde686...`。
+CPU只读检查确认方向、提示词、四份CSV哈希、4800/2400/100个身份顺序和64维有限张量
+完全符合历史合同。此前“未找到”是搜索漏项，现已纠正，不需要重新生成缓存。
+它仍记录逻辑模型名 `Qwen/Qwen3-VL-Embedding-2B`，本机冻结snapshot绑定尚未核验；
+不得改缓存identity绕过入口的本地模型路径检查，不声称依赖已全部齐全。
 原图7,200张、划分及三组正式best/last和报告的内容身份见
 `maintenance/storage/T08_CONTENT_ASSETS_20261004.json`；只读核验命令为
 `python maintenance/storage/check_t08_assets.py --repo-root /absolute/path/to/2026OpticsMoE`。

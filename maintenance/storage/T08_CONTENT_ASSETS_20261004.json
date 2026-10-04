@@ -84,7 +84,9 @@
       }
     }
   },
-  "teacher_cache_locations": [],
+  "teacher_cache_locations": [
+    "LightGenV2/tasks/t08_abo_image_text_retrieval/runs/shared/abo_easy100_qwen64_true_text_to_image.pt"
+  ],
   "cache_search_scope": [
     "/DATA/DATA1/guest3/2026OpticsMoE/LightGenV2/tasks/t08_abo_image_text_retrieval/runs",
     "/DATA/DATA1/guest3/2026OpticsMoE/.worktrees/t08_text_to_image_20260920/LightGenV2/tasks/t08_abo_image_text_retrieval/runs"
@@ -92,17 +94,26 @@
   "runtime_state_unchanged": true,
   "scientific_metrics_recomputed": false,
   "teacher_cache_status": {
-    "found_in_audited_task_run_roots": false,
+    "found_in_audited_task_run_roots": true,
+    "identity_audit": "maintenance/storage/T08_TEACHER_CACHE_IDENTITY_20261005.json",
     "cache_regenerated": false,
     "full_disk_absence_proven": false,
     "entry_portability_issue": "Historical cache identity includes model_id; the new fixed entry resolves a local model path. Existing cache identity must be verified before reuse, not silently edited.",
     "remaining_work": [
-      "Locate or explicitly reconstruct direction-specific frozen teacher cache under a separately recorded contract.",
+      "Correct reverse cache located and verified; do not regenerate or rewrite its literal model identity.",
       "Verify cache model identity and local snapshot binding before any full fixed evaluation.",
       "Finish Windows adopted readout and acquisition entry consolidation without changing historical amplitude mapping."
     ]
   },
   "adopted_readout_artifacts": {
+    "LightGenV2/tasks/t08_abo_image_text_retrieval/runs/shared/abo_easy100_qwen64_true_text_to_image.pt": {
+      "bytes": 1125883,
+      "sha256": "a1cde686cb1f4bad3359668df800401fefcf089c5b6e42ba6ced937cecc1d19a"
+    },
+    "LightGenV2/tasks/t08_abo_image_text_retrieval/runs/shared/abo_easy100_qwen64/teacher_image_title_embeddings.pt": {
+      "bytes": 1125770,
+      "sha256": "c9eab6f29edf420147d51adaa1797cf55529beae12663adf9f79f697a733aebd"
+    },
     "LightGenV2/tasks/t08_abo_image_text_retrieval/runs/simulation/optical_text_to_image_64_10cm_compact_e0p5_seed42_20260925/best_checkpoint.pt": {
       "bytes": 29778889,
       "sha256": "cc977b83286a8e90398ebd30064428886bc3c06f1eb0557e470060f7ff5c1cae"

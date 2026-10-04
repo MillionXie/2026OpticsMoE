@@ -1,0 +1,35 @@
+{
+  "read_only": true,
+  "source_commit": "5ce3ba256e4fea0f0dc94c4af845bf86a5c71336",
+  "cache_preflight_source_sha256": "09d1ed4b63f5b678e6c5a8e44c10da9415e2f75481b5bd3e2a8d08ae94716a11",
+  "reverse_cache": {
+    "path": "LightGenV2/tasks/t08_abo_image_text_retrieval/runs/shared/abo_easy100_qwen64_true_text_to_image.pt",
+    "bytes": 1125883,
+    "sha256": "a1cde686cb1f4bad3359668df800401fefcf089c5b6e42ba6ced937cecc1d19a",
+    "direction": "text_to_image",
+    "model_id": "Qwen/Qwen3-VL-Embedding-2B",
+    "image_instruction": "Represent the user's input.",
+    "title_instruction": "Retrieve product images that match the following product description.",
+    "complete_identity_matches_original_dataset_csv_and_id_order": true,
+    "train_shape": [4800, 64],
+    "test_shape": [2400, 64],
+    "titles_shape": [100, 64],
+    "dtype": "torch.float16",
+    "all_tensors_finite": true,
+    "original_elapsed_seconds": 110.12132522463799
+  },
+  "forward_cache_not_interchangeable": {
+    "path": "LightGenV2/tasks/t08_abo_image_text_retrieval/runs/shared/abo_easy100_qwen64/teacher_image_title_embeddings.pt",
+    "bytes": 1125770,
+    "sha256": "c9eab6f29edf420147d51adaa1797cf55529beae12663adf9f79f697a733aebd",
+    "query_instruction": "Retrieve the product title that best describes this product image.",
+    "document_instruction": "Represent the user's input.",
+    "legacy_identity_has_no_explicit_retrieval_direction": true
+  },
+  "correction": "Earlier filename search missed the reverse shared cache. Missing-cache statements are superseded; local model snapshot binding remains unverified.",
+  "backbone_loaded": false,
+  "metrics_recomputed": false,
+  "cache_rewritten": false,
+  "local_model_path_binding_verified": false,
+  "full_reproduction_ready": false
+}
