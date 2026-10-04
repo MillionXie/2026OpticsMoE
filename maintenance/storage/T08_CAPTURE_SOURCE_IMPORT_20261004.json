@@ -55,11 +55,11 @@
     },
     {
       "path": "LightGenV2/tasks/t08_abo_image_text_retrieval/physical10cm/capture_full_stage.py",
-      "sha256_lf": "d35713ba54e1f3a32ca0e4e3fb2e23631d2eabb921f870d89bdc00a64f41d670"
+      "sha256_lf": "2e1be46199529c4eeed38852b5457dc1f11c18d9536f33436852f42b3df0d200"
     },
     {
       "path": "LightGenV2/tasks/t08_abo_image_text_retrieval/tests/test_capture_contract.py",
-      "sha256_lf": "eb2b53e5808cd66b8fc8534738414507ede11837abb4039c389d1f3c329596d5"
+      "sha256_lf": "195bf6a97743f641d91e22aee6c2edb39f18b19bfe22e80c17e294d68a859c46"
     }
   ],
   "capture_numerical_body_preserved": true,
@@ -67,13 +67,14 @@
   "shared_holoeye_class_and_base_AST_identical": true,
   "shared_phase_source_identical": true,
   "native_camera_AST_identical": true,
-  "local_CPU_contract_cases_passed": 11,
+  "local_CPU_contract_cases_passed": 18,
   "torch_or_model_import_in_capture_bench": false,
   "reviewed_changes": [
     "Explicit existing asset project argument, no sibling project search",
     "Explicit external SDK/LUT JSON paths",
     "Package imports of identical camera/SLM dependencies",
-    "Device construction refused before explicit configuration"
+    "Device construction refused before explicit configuration",
+    "Metadata-only support for original indexed TEST vision-router manifest; exact 0..2399 indices and filenames, no change to physical inputs or capture loop"
   ],
   "devices_opened": false,
   "windows_runtime_changed": false,

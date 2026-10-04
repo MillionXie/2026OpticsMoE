@@ -90,6 +90,47 @@ def test_help_does_not_configure_or_open_hardware(bench_module, monkeypatch, cap
     assert '--project' in text and '--machine-config' in text and '--stage' in text
 
 
+def test_original_indexed_test_router_manifest(bench_module, tmp_path):
+    from LightGenV2.tasks.t08_abo_image_text_retrieval.physical10cm import capture_full_stage
+    records = [{'index': i, 'sample_id': f'synthetic-{i}', 'file': f'image_{i:04d}.png',
+                'sha256': 'original-amplitude-hash', 'checkpoint_sha256': capture_full_stage.EXPECTED}
+               for i in reversed(range(2400))]
+    path = tmp_path / 'manifest.jsonl'
+    path.write_text('\n'.join(json.dumps(row) for row in records), encoding='utf-8-sig')
+    actual = capture_full_stage.read_capture_manifest(path, 'vision_router', 'full_test')
+    assert list(actual) == [f'image_{i:04d}' for i in range(2400)]
+    assert actual['image_0000']['sample_id'] == 'synthetic-0'
+    assert actual['image_0000']['sha256'] == 'original-amplitude-hash'
+    assert 'key' not in records[0]
+
+
+@pytest.mark.parametrize('problem', ['duplicate_index', 'filename', 'other_stage', 'train', 'mixed'])
+def test_reject_invalid_indexed_capture_manifest(bench_module, tmp_path, problem):
+    from LightGenV2.tasks.t08_abo_image_text_retrieval.physical10cm import capture_full_stage
+    records = [{'index': i, 'file': f'image_{i:04d}.png'} for i in range(2400)]
+    stage, run = 'vision_router', 'full_test'
+    if problem == 'duplicate_index': records[-1]['index'] = 0
+    if problem == 'filename': records[0]['file'] = 'wrong.png'
+    if problem == 'other_stage': stage = 'vision_expert'
+    if problem == 'train': run = 'finetune_train800'
+    if problem == 'mixed': records[0]['key'] = 'image_0000'
+    path = tmp_path / 'manifest.jsonl'
+    path.write_text('\n'.join(json.dumps(row) for row in records))
+    with pytest.raises(ValueError):
+        capture_full_stage.read_capture_manifest(path, stage, run)
+
+
+def test_current_manifest_keys_preserved_and_duplicates_rejected(bench_module, tmp_path):
+    from LightGenV2.tasks.t08_abo_image_text_retrieval.physical10cm import capture_full_stage
+    records = [{'key': 'train_0001', 'file': 'train_0001.png', 'sha256': 'original'}]
+    path = tmp_path / 'manifest.jsonl'
+    path.write_text(json.dumps(records[0]))
+    assert capture_full_stage.read_capture_manifest(path, 'vision_router', 'finetune_train800') == {'train_0001': records[0]}
+    path.write_text('\n'.join(json.dumps(row) for row in records * 2))
+    with pytest.raises(ValueError, match='Duplicate'):
+        capture_full_stage.read_capture_manifest(path, 'vision_router', 'finetune_train800')
+
+
 def test_bench_six_frames_order_and_gain(bench_module, tmp_path, monkeypatch):
     events = []
     class Device:

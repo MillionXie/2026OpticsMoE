@@ -49,6 +49,32 @@ def native_bmp(compact, output):
     Image.fromarray(canvas).save(output)
 
 
+def read_capture_manifest(path, stage, run_name):
+    """Read current keys or the original TEST router's indexed manifest.
+
+    Adapt metadata only: original files, sample IDs and amplitude hashes remain
+    unchanged. The indexed format is accepted only for the historical first
+    TEST stage, whose dedicated capture iterated indices 0..2399 in order.
+    """
+    records = [json.loads(line) for line in path.read_text(encoding='utf-8-sig').splitlines()
+               if line.strip()]
+    if any('key' not in row for row in records):
+        if stage != 'vision_router' or run_name != 'full_test' or any('key' in row for row in records):
+            raise ValueError('Indexed manifest is only valid for the original TEST vision router')
+        indices = [row.get('index') for row in records]
+        if (len(records) != 2400 or any(type(index) is not int for index in indices)
+                or set(indices) != set(range(2400))):
+            raise ValueError('Indexed TEST router manifest must contain exactly indices 0..2399')
+        records = sorted(records, key=lambda row: row['index'])
+        records = [dict(row, key=f'image_{row["index"]:04d}') for row in records]
+        if any(row['file'] != row['key'] + '.png' for row in records):
+            raise ValueError('Indexed TEST router filename does not match its index')
+    keys = [row['key'] for row in records]
+    if len(keys) != len(set(keys)):
+        raise ValueError('Duplicate capture sample key')
+    return {row['key']: row for row in records}
+
+
 def main():
     global PROJECT
     parser = argparse.ArgumentParser()
@@ -73,8 +99,7 @@ def main():
     compact = stage / 'compact_amplitude'
     captured = stage / 'ccd_captured'
     phase = PROJECT / 'phase_bmp_provisional' / f'{args.stage}.bmp'
-    lines = (stage / 'manifest.jsonl').read_text(encoding='utf-8').splitlines()
-    rows = {row['key']: row for row in map(json.loads, lines)}
+    rows = read_capture_manifest(stage / 'manifest.jsonl', args.stage, args.run_name)
     expected = ((2400 if index < 3 else 2500) if args.run_name == 'full_test'
                 else (800 if index < 3 else 900))
     if len(rows) != expected:

@@ -1,0 +1,314 @@
+{
+  "schema_version": 1,
+  "audited_on": "2026-10-04",
+  "scope": "Adopted T08 title-to-image Windows CCD/amplitude/manifest/journal content identities; not new performance evaluation",
+  "root": "E:\\code\\guest\\2026OpticsMoE\\ABO_T2I_10cm_alpha040_20260925",
+  "body_sha256": "cc977b83286a8e90398ebd30064428886bc3c06f1eb0557e470060f7ff5c1cae",
+  "stages": [
+    {
+      "run": "full_test",
+      "stage": "vision_router",
+      "expected": 2400,
+      "ccd_count": 2400,
+      "manifest_rows": 2400,
+      "journal_rows": 2400,
+      "journal_unique_keys": 2400,
+      "phase_sha256": "1480d2c60c22aa04fbcd704164610bd79678f999b39e3da72e6718942a635937",
+      "journal_p99_median": 18
+    },
+    {
+      "run": "finetune_train800",
+      "stage": "vision_router",
+      "expected": 800,
+      "ccd_count": 800,
+      "manifest_rows": 800,
+      "journal_rows": 800,
+      "journal_unique_keys": 800,
+      "phase_sha256": "1480d2c60c22aa04fbcd704164610bd79678f999b39e3da72e6718942a635937",
+      "journal_p99_median": 18
+    },
+    {
+      "run": "full_test",
+      "stage": "vision_expert",
+      "expected": 2400,
+      "ccd_count": 2400,
+      "manifest_rows": 2400,
+      "journal_rows": 2400,
+      "journal_unique_keys": 2400,
+      "phase_sha256": "09e5f77f476dc20327720a4b20256fe2b2361a058b395e54abd0a87163011e1f",
+      "journal_p99_median": 27
+    },
+    {
+      "run": "finetune_train800",
+      "stage": "vision_expert",
+      "expected": 800,
+      "ccd_count": 800,
+      "manifest_rows": 800,
+      "journal_rows": 800,
+      "journal_unique_keys": 800,
+      "phase_sha256": "09e5f77f476dc20327720a4b20256fe2b2361a058b395e54abd0a87163011e1f",
+      "journal_p99_median": 27
+    },
+    {
+      "run": "full_test",
+      "stage": "vision_global",
+      "expected": 2400,
+      "ccd_count": 2400,
+      "manifest_rows": 2400,
+      "journal_rows": 2400,
+      "journal_unique_keys": 2400,
+      "phase_sha256": "2ef72af7e731c44f10e27c6c0cf6e1bd146f8d59758af8c7bcde9c9fe136c6f9",
+      "journal_p99_median": 23
+    },
+    {
+      "run": "finetune_train800",
+      "stage": "vision_global",
+      "expected": 800,
+      "ccd_count": 800,
+      "manifest_rows": 800,
+      "journal_rows": 800,
+      "journal_unique_keys": 800,
+      "phase_sha256": "2ef72af7e731c44f10e27c6c0cf6e1bd146f8d59758af8c7bcde9c9fe136c6f9",
+      "journal_p99_median": 24
+    },
+    {
+      "run": "full_test",
+      "stage": "language_router",
+      "expected": 2500,
+      "ccd_count": 2500,
+      "manifest_rows": 2500,
+      "journal_rows": 2500,
+      "journal_unique_keys": 2500,
+      "phase_sha256": "0db68651052958d300cf7171aa2fcf8ab0dddd19721093e7222ebf8bc23c437f",
+      "journal_p99_median": 15
+    },
+    {
+      "run": "finetune_train800",
+      "stage": "language_router",
+      "expected": 900,
+      "ccd_count": 900,
+      "manifest_rows": 900,
+      "journal_rows": 900,
+      "journal_unique_keys": 900,
+      "phase_sha256": "0db68651052958d300cf7171aa2fcf8ab0dddd19721093e7222ebf8bc23c437f",
+      "journal_p99_median": 15
+    },
+    {
+      "run": "full_test",
+      "stage": "language_expert",
+      "expected": 2500,
+      "ccd_count": 2500,
+      "manifest_rows": 2500,
+      "journal_rows": 2500,
+      "journal_unique_keys": 2500,
+      "phase_sha256": "30be304cf7d44474b25098b2128cafbd5889bd047a67afe009592d64140d9b0f",
+      "journal_p99_median": 13
+    },
+    {
+      "run": "finetune_train800",
+      "stage": "language_expert",
+      "expected": 900,
+      "ccd_count": 900,
+      "manifest_rows": 900,
+      "journal_rows": 900,
+      "journal_unique_keys": 900,
+      "phase_sha256": "30be304cf7d44474b25098b2128cafbd5889bd047a67afe009592d64140d9b0f",
+      "journal_p99_median": 13
+    },
+    {
+      "run": "full_test",
+      "stage": "language_global",
+      "expected": 2500,
+      "ccd_count": 2500,
+      "manifest_rows": 2500,
+      "journal_rows": 2500,
+      "journal_unique_keys": 2500,
+      "phase_sha256": "5755f7ca1dfb8cf25daf55d9466360e6305479d10d1a46ddee65f5e1955dc891",
+      "journal_p99_median": 16
+    },
+    {
+      "run": "finetune_train800",
+      "stage": "language_global",
+      "expected": 900,
+      "ccd_count": 900,
+      "manifest_rows": 900,
+      "journal_rows": 900,
+      "journal_unique_keys": 900,
+      "phase_sha256": "5755f7ca1dfb8cf25daf55d9466360e6305479d10d1a46ddee65f5e1955dc891",
+      "journal_p99_median": 15.5
+    }
+  ],
+  "file_hashes_checked": 39631,
+  "ccd_files_checked": 19800,
+  "amplitude_files_checked": 19800,
+  "metadata_or_weight_files_checked": 31,
+  "total_bytes_hashed": 2619343960,
+  "content_identity_sha256": "b46dc96f38b25241f435536ec2821dde297dde0114536c499ac5e6460fde447e",
+  "content_identity_encoding": "UTF-8 LF final newline; ordinal-sorted normalized-relative-path TAB bytes TAB SHA256",
+  "metadata": [
+    {
+      "path": "best_checkpoint.pt",
+      "bytes": 29778889,
+      "sha256": "cc977b83286a8e90398ebd30064428886bc3c06f1eb0557e470060f7ff5c1cae"
+    },
+    {
+      "path": "phase_bmp_provisional/vision_router.bmp",
+      "bytes": 2305078,
+      "sha256": "1480d2c60c22aa04fbcd704164610bd79678f999b39e3da72e6718942a635937"
+    },
+    {
+      "path": "full_test/01_vision_router/manifest.jsonl",
+      "bytes": 727873,
+      "sha256": "e9aa8aa150a5593d21241300e75e318f7a6e88f9df3f6f644518b3847cb955c5"
+    },
+    {
+      "path": "full_test/01_vision_router/capture_journal.jsonl",
+      "bytes": 1315861,
+      "sha256": "57f740c0ee5b9b2119077065c21333b18b616a9ae0c552d4dc4fde61934f7e45"
+    },
+    {
+      "path": "finetune_train800/01_vision_router/manifest.jsonl",
+      "bytes": 219796,
+      "sha256": "94e2504a5ab9497685b256d097ac7e12ca9b58f21add7273ea1511295fbee72d"
+    },
+    {
+      "path": "finetune_train800/01_vision_router/capture_journal.jsonl",
+      "bytes": 434783,
+      "sha256": "e88d1aa68ebc01157fba1d603f09fcd67f427b15d2e8fd62cef4a790a9e53e22"
+    },
+    {
+      "path": "phase_bmp_provisional/vision_expert.bmp",
+      "bytes": 2305078,
+      "sha256": "09e5f77f476dc20327720a4b20256fe2b2361a058b395e54abd0a87163011e1f"
+    },
+    {
+      "path": "full_test/02_vision_expert/manifest.jsonl",
+      "bytes": 659372,
+      "sha256": "9f789cf476ab699eac36cca3aaa14c4cefc8d18ca38abd9601a67a53088c0cc6"
+    },
+    {
+      "path": "full_test/02_vision_expert/capture_journal.jsonl",
+      "bytes": 1321503,
+      "sha256": "23ca7bc24aa10409de9355bd0bacc96d98c1526f8d1dfcd04262bcd52e894265"
+    },
+    {
+      "path": "finetune_train800/02_vision_expert/manifest.jsonl",
+      "bytes": 219795,
+      "sha256": "3d0cd492eff7ddba8eae955415fab3d05c3b4a5e3b4d5833c00306ae79f7e7d9"
+    },
+    {
+      "path": "finetune_train800/02_vision_expert/capture_journal.jsonl",
+      "bytes": 437217,
+      "sha256": "11ea466a02de1c460ad93249e70843202678a1b305da6dd1bc7e5ed2f2075a65"
+    },
+    {
+      "path": "phase_bmp_provisional/vision_global.bmp",
+      "bytes": 2305078,
+      "sha256": "2ef72af7e731c44f10e27c6c0cf6e1bd146f8d59758af8c7bcde9c9fe136c6f9"
+    },
+    {
+      "path": "full_test/03_vision_global/manifest.jsonl",
+      "bytes": 659421,
+      "sha256": "1f03a13802ea34d472fdf699e82c615c9befb049a06c2414bcbf425964325530"
+    },
+    {
+      "path": "full_test/03_vision_global/capture_journal.jsonl",
+      "bytes": 1320250,
+      "sha256": "e945704a2ff636bb744319bed02946799c5dde91371aae2b01504e4bdeafcac3"
+    },
+    {
+      "path": "finetune_train800/03_vision_global/manifest.jsonl",
+      "bytes": 219800,
+      "sha256": "df4feaefc074eaed4115a78a4ff7684154bb18b149e76b818f7c0bf5a4cb11d6"
+    },
+    {
+      "path": "finetune_train800/03_vision_global/capture_journal.jsonl",
+      "bytes": 436712,
+      "sha256": "5d1dc20ad5ae4cadb02d657049d577f3fddf6e61c95ea8c222ad1e321ad5e70e"
+    },
+    {
+      "path": "phase_bmp_provisional/language_router.bmp",
+      "bytes": 2305078,
+      "sha256": "0db68651052958d300cf7171aa2fcf8ab0dddd19721093e7222ebf8bc23c437f"
+    },
+    {
+      "path": "full_test/04_language_router/manifest.jsonl",
+      "bytes": 691100,
+      "sha256": "ce82e9e686cfbb829148dc075b7c74fd52114d5ca705378112fc752ad2253c1d"
+    },
+    {
+      "path": "full_test/04_language_router/capture_journal.jsonl",
+      "bytes": 1375606,
+      "sha256": "fc863f92d5122ad2fc8f764809c30ec3dd16bff6239ec5b0ea8e5a465a61a61a"
+    },
+    {
+      "path": "finetune_train800/04_language_router/manifest.jsonl",
+      "bytes": 248664,
+      "sha256": "f5a1019f6553a0fe29205db1ebb953ddc912a3952a8c34d450c6d62eb214b9ac"
+    },
+    {
+      "path": "finetune_train800/04_language_router/capture_journal.jsonl",
+      "bytes": 491448,
+      "sha256": "8305abc3b6c7dcc1f44fd6d89465459a0b80ede6e074edb4696270945c4bae70"
+    },
+    {
+      "path": "phase_bmp_provisional/language_expert.bmp",
+      "bytes": 2305078,
+      "sha256": "30be304cf7d44474b25098b2128cafbd5889bd047a67afe009592d64140d9b0f"
+    },
+    {
+      "path": "full_test/05_language_expert/manifest.jsonl",
+      "bytes": 691050,
+      "sha256": "2d623c39bcae9113a671e36f039d4ac0410d8e95b72b84a3b2409031417d06a9"
+    },
+    {
+      "path": "full_test/05_language_expert/capture_journal.jsonl",
+      "bytes": 1375600,
+      "sha256": "b609c0319efe66f74f7a146e4e4f52939b6888e27fe65b990e0298e1ce4cefdd"
+    },
+    {
+      "path": "finetune_train800/05_language_expert/manifest.jsonl",
+      "bytes": 248646,
+      "sha256": "fcb9fa865b6a0ea2c4d731caa0742f4a812480dfd34ccd7433e3fbced2891099"
+    },
+    {
+      "path": "finetune_train800/05_language_expert/capture_journal.jsonl",
+      "bytes": 491410,
+      "sha256": "f1f40faa48d4b76f09e6382191c238566dea1729c273dcf21e56b8c1ed05b00b"
+    },
+    {
+      "path": "phase_bmp_provisional/language_global.bmp",
+      "bytes": 2305078,
+      "sha256": "5755f7ca1dfb8cf25daf55d9466360e6305479d10d1a46ddee65f5e1955dc891"
+    },
+    {
+      "path": "full_test/06_language_global/manifest.jsonl",
+      "bytes": 691041,
+      "sha256": "15fe6df71082939bbdb3bfd599027d3c6ebd5f893a460f2fae8f67db55cfa879"
+    },
+    {
+      "path": "full_test/06_language_global/capture_journal.jsonl",
+      "bytes": 1376228,
+      "sha256": "28691ebdbad005b2304b6e10c55f843b74af1870d2bfad1f1ac4df7b5dc897cf"
+    },
+    {
+      "path": "finetune_train800/06_language_global/manifest.jsonl",
+      "bytes": 248659,
+      "sha256": "cc5dced42d206651a60ec36fb4855064b62d2d497339f380cb8a8f12a92c6a39"
+    },
+    {
+      "path": "finetune_train800/06_language_global/capture_journal.jsonl",
+      "bytes": 491551,
+      "sha256": "a46cba2198a619feba0d562152984747b61b9426ae1627ae169c24be4df14939"
+    }
+  ],
+  "evidence_private_manifest": ".codex_tmp/t08_windows_full_identity_20261004.json",
+  "evidence_private_manifest_sha256": "8efecf030a81fe6f0853a91a1ef028a4e8adaf6b06c929b854f872c2b4a7e3a4",
+  "errors": [],
+  "png_validation": "IHDR header, not pixel decode or CRC proof",
+  "model_loaded": false,
+  "metrics_recomputed": false,
+  "devices_touched": false,
+  "assets_modified": false,
+  "remaining": "Adopted readout strict load/asset binding and original frozen feature cache; runtime checkout/SDK configuration cutover are not proved by this content audit"
+}
