@@ -1,0 +1,29 @@
+{
+  "common": {
+    "adapt": {
+      "epochs": 30, "steps": 64, "electronic_lr": 0.00003, "adapter_lr": 0.00001,
+      "optical_electronic_lr": 0.00006, "readout_lr": 0.00010,
+      "phase_lr": 0.0020, "router_lr": 0.00025, "alpha_lr": 0.0001,
+      "optical_warmup_epochs": 0, "readout_polish_epochs": 5
+    },
+    "augmentation": {
+      "minimum_crop_side_fraction": 1.0, "rotation_degrees": 0,
+      "contain_jitter_min_scale": 0.85, "horizontal_flip_probability": 0.25,
+      "brightness_min": 0.85, "brightness_max": 1.15,
+      "contrast_min": 0.85, "contrast_max": 1.15,
+      "color_min": 0.9, "color_max": 1.1,
+      "blur_probability": 0.15, "blur_radius": 0.4
+    },
+    "input_preprocessing": "contain_white",
+    "ccd_readout_modes": {"vision": "prefix_rows", "language": "prefix_rows"},
+    "electronic_weight_decay": 0.01,
+    "track_clean_train": true,
+    "independent_phase_dropout": true,
+    "test_every": 5, "sam_rho": 0.0, "sam_warmup_epochs": 1,
+    "protocol": "Matched augmentation/weight-decay controls from same 69.7917% checkpoint. No crop, teacher or added inference head. Train-only phase dropout independent of 25% noisy batches. Same-weight clean train/test logged; test-selected best/last."
+  },
+  "profiles": {
+    "regularized_control": {"phase_dropout": {"expert_global_probability": 0.0, "router_probability": 0.0, "block_size": 8}},
+    "regularized_phase05": {"phase_dropout": {"expert_global_probability": 0.05, "router_probability": 0.02, "block_size": 8}}
+  }
+}

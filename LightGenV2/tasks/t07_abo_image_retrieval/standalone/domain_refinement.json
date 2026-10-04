@@ -1,0 +1,36 @@
+{
+  "common": {
+    "adapt": {
+      "epochs": 24, "steps": 128,
+      "electronic_lr": 0.000015, "adapter_lr": 0.000005,
+      "optical_electronic_lr": 0.00004, "readout_lr": 0.00004,
+      "phase_lr": 0.001, "router_lr": 0.0002, "alpha_lr": 0.0001,
+      "optical_warmup_epochs": 0, "readout_polish_epochs": 0
+    },
+    "domain_mode": "mixed",
+    "test_every": 4,
+    "view_consistency_weight": 0.0,
+    "view_consistency_warmup_epochs": 3,
+    "protocol": "Continue the 75.2083% high-alpha best. Same ten categories, original 120-product evaluation gallery and 480 test queries. No test/val training, no teacher. Control uses the 922-product pool; wide/views use the separately audited cap250 pool. Same 24x128 primary steps; views adds one training-only alternate-view forward, so training FLOPs differ. Same single-image inference and optical geometry."
+  },
+  "profiles": {
+    "domain_refine_control": {"expected_pool_products_per_category": 100},
+    "domain_refine_wide": {"expected_pool_products_per_category": 250},
+    "domain_refine_views": {"expected_pool_products_per_category": 250, "view_consistency_weight": 0.15},
+    "domain_refine_balanced": {
+      "expected_pool_products_per_category": 250,
+      "gallery_class_balance": true,
+      "protocol": "Continue verified76.25% best; cap250 pool and1:1 sampling. Only training gallery NLL divides each class exp-score sum by its valid product count after own-product exclusion. Raw-score margin/hit and original480-query/120-gallery inference unchanged. No teacher, no extra inference parameters, same physical optics/Top2/alpha>0.4."
+    },
+    "domain_refine_context7": {
+      "expected_pool_products_per_category": 250,
+      "electronic_context_kernels": {"vision": 7, "language": 5},
+      "protocol": "Continue verified76.25% best on cap250 pool, same training as wide. Only existing two V electronic depthwise kernels enlarge3x3 to7x7 (15360 parameters); centered zero initialization preserves source function. No new branch, attention, Transformer or teacher; language, readout, physical optics, Top2 and alpha>0.4 unchanged. Original480-query/120-gallery evaluation."
+    },
+    "domain_refine_pool500_mix13": {
+      "expected_pool_products_per_category": 500,
+      "domain_target_products_per_class": 1,
+      "protocol": "Continue verified 76.25% best; cap500 pool, original/external products 1:3 in each category. Combined data+sampling intervention, not an isolated causal ablation. 24 epochs, minimum167 steps to visit every external product; no teacher. Original480 query/120 product gallery, optical geometry, Top2 and alpha>0.4 unchanged."
+    }
+  }
+}

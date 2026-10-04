@@ -1,0 +1,201 @@
+{
+  "common": {
+    "adapt": {"epochs": 24, "steps": 128},
+    "view_consistency_weight": 0.0,
+    "relation_teacher_weight": 0.10,
+    "relation_teacher_warmup_epochs": 3,
+    "relation_teacher_temperature": 0.10,
+    "protocol": "Training-only confidence-gated frozen Qwen2048 relations over training product centroids. Teacher never enters student inference. Reject target/pool/order mismatch; val/test images excluded from teacher cache. Same optical contract, input head and 64D readout."
+  },
+  "profiles": {
+    "domain_distill_joint_patch": {
+      "frontend_training": "patch",
+      "patch_learning_rate_multiplier": 0.05,
+      "protocol": "Adapt only EXISTING Qwen input Conv3d patch weight+bias in addition to original student trainables; no added layer, branch, attention, Transformer or inference parameters.1573888 formerly frozen parameters become trainable FP32 masters, computation retains original BF16 Conv3d/position interface; position, token embedding, merger and all other frontend parameters remain frozen. Total4356373 trainable/27578368 frozen, same total parameter count and original optical propagation/ROI/phase geometry/Top2/alpha>0.4. Initial CPU/GPU outputs and unchanged optical source hash must be checked, not assumed. Patch LR0.05 times existing electronic LR=7.5e-7 before schedule; original baseLrs elsewhere. Same pinned uncalibrated79.375 source, restored auxiliaries/teacher64 basis, original2:2 cap250two-view joint_restart losses/GT/16x128seed42, originalprefix readouts and linear64 head. No merger adaptation, mix13, fullfield, projection or whitezoom stacking. Frozen Qwen baseline is unchanged; report explicitly that student patch frontend is now trained. Original480-query/120-gallery, best/last and normal/remove-light verification."
+    },
+    "domain_distill_joint_mix13": {
+      "domain_target_products_per_class": 1,
+      "protocol": "Training sampling ONLY: from pinned uncalibrated79.375% source with all original auxiliaries and teacher64 basis, change each category batch quota from2 original+2 external products to1 original+3 external. Ten categories,40 images/batch,16x128seed42, same cap250two-view2178-product5556-image TRAIN pool. No added/deleted dataset members, labels, test/gallery, teacher cache, inference/head/CCD readout/phase geometry/optical path change. Original products retain positive sampling probability and all active external products are cycled each epoch; all1440 originals remain in clean train and teacher basis. Original draw count per128-step epoch halves2560->1280 and external2560->3840; unique images need not be all visited. Same joint_restart teacher2/KL0.3/GT curriculum/baseLR/rawRouter; do NOT stack whitezoom/fullfield/projection/wider residual. Top2/alpha>0.4, original480-query/120-gallery and best/last only. Earlier cap500/no-teacher mix13 used different data/source and is not this paired sampling ablation. Full initial/normal/remove-light verification required; train-only recipe change requires no new frozen Qwen baseline."
+    },
+    "domain_distill_joint_languagefull": {
+      "ccd_readout_modes": {"vision": "prefix_rows", "language": "fullfield_rows"},
+      "protocol": "Change ONLY language electronic CCD pooling footprint: existing fullfield_rows pools full478x478 normalized/log CCD to77x224 instead of224x224 followed by prefix77 rows. Both language expert/global decoders share this mode; router intensity regional integration is unchanged. Vision prefix196, all propagation/masks/ROI/phase geometry/Top2/alpha>0.4/parameter shapes unchanged; no new network or inference branch. This IS an inference electronic readout contract change, not a training-only augmentation; initialization is not function-preserving and must be independently evaluated, never assigned the old79.375 score. Start pinned uncalibrated79.375 weight, restore original auxiliaries, use original fixed train-only teacher64 basis to guide adaptation. Same joint_restart teacher2/KL0.3/GT curriculum/rawRouter/baseLR/cap250two-view/16x128seed42; no SAM, projection, whitezoom or wider residual stacking. Original480-query/120-gallery unchanged. Earlier weak-source fullfield experiments were not this paired teacher recipe. No crop deletes CCD rows, but pooling can still lose high-frequency detail; benefit is not guaranteed. Best/last only, final normal/remove-light and phase-update audit required."
+    },
+    "domain_distill_light": {"relation_teacher_weight": 0.10},
+    "domain_distill_strong": {"relation_teacher_weight": 0.30},
+    "domain_distill_stronger": {"relation_teacher_weight": 0.60},
+    "domain_distill_readout256": {
+      "retrieval_head": "linear256",
+      "protocol": "Same source/pool/losses/12x250 recipe as refit250, but final LN384/Linear64/L2 becomes LN384/Linear256/L2. Initialize [old64,zeros192] and extend training category proxies with zeros, preserving initial cosine geometry algebraically; independently recheck floating-point behavior. Use corresponding frozen teacher prefix256 and fit its basis on original1440 training rows only. Adds73920 inference parameters, no branch/attention/Transformer, no change to optics, Top2, alpha>0.4 or original480-query/120-gallery. Descriptor and teacher supervision dimension change together; not a pure inference-dimension ablation."
+    },
+    "domain_distill_refit250": {
+      "expected_pool_products_per_category": 250,
+      "protocol": "Cap250 paired dataset control from fixed78.75% live source with all training auxiliaries restored. Refit training-only orthogonal teacher64 basis using original1440 train/student features at this source, NOT the old77.9167% basis. Teacher cosine2/GT1, quarter learning rates,12x250, no SAM or FP32-gallery variant. Use250 updates to match cap500 coverage; not the shorter128-step continuation. Compare with refit500; unchanged input, inference, optics, Top2, alpha>0.4 and original480-query/120-gallery."
+    },
+    "domain_distill_refit500": {
+      "expected_pool_products_per_category": 500,
+      "protocol": "Cap500 paired dataset expansion from fixed78.75% live source; same recipe as refit250, but3390 external products/6780 images plus original120 products/1440 images. Use separately validated train-only teacher cache; refit teacher64 basis on original1440 train features only, not expanded/test rows. Teacher cosine2/GT1, quarter learning rates,12x250, no SAM/FP32-gallery change.250 updates cover500 external products with2 external products/class/batch; paired250 control also uses250. Test/gallery, input, inference and all optical contracts unchanged; expanded products never enter evaluation gallery."
+    },
+    "domain_distill_teacher_continue_fp32gallery": {
+      "gallery_loss_full_precision": true,
+      "protocol": "Matched teacher_continue control: same pinned78.75% source, teacher alignment/auxiliaries, data, losses, quarter learning rates and12x128 updates. Disable autocast ONLY inside training product-gallery similarity/NLL/margin/hit calculation; convert query and detached bank toFP32 while retaining query gradients. Model/optics/teacher-loss forward and evaluation remain unchanged. No SAM or GT rescaling, no new inference network. Original480-query/120-gallery, best/last only."
+    },
+    "domain_distill_teacher_continue_softgt": {
+      "supervised_warmup_epochs": 12,
+      "supervised_recovery_epochs": 0,
+      "supervised_warmup_scale": 0.5,
+      "protocol": "Matched teacher_continue control, fixed verified78.75% source and original train-only teacher alignment/auxiliaries. For all12 planned epochs multiply ONLY final proxy CE, SupCon and training-gallery NLL/margin by0.5. Preserve teacher cosine2, optical auxiliary and physical regularizers; same quarter learning rates, full cap250,128 updates per epoch. No SAM, relabeling, sample filtering, new layers or optical change. Original480-query/120-gallery; test-selected best/last. If explicitly extended beyond12epochs the existing schedule restores GT scale1."
+    },
+    "domain_distill_teacher_continue_sam": {
+      "sam_rho": 0.02,
+      "sam_warmup_epochs": 3,
+      "protocol": "Matched teacher_continue control: same pinned78.75% live source, all restored training auxiliaries, fixed training-only teacher alignment, full cap250, quarter learning rates and12x128 updates. Only use two-pass SAM with global L2 rho0.02 warmed over3 epochs, then AdamW; replay stochastic optical noise, restore perturbed weights before the base step. Same inference/optics/Top2/alpha>0.4 and original480-query/120-gallery; approximately twice forward/backward work, not a compute-matched control."
+    },
+    "domain_distill_vision_patch": {
+      "vision_patch_teacher_weight": 0.2,
+      "vision_patch_teacher_every": 4,
+      "vision_patch_teacher_warmup_epochs": 3,
+      "protocol": "Pinned78.75% linear64 source and same recipe as teacher_continue, with one training-only addition: clean contain_white image -> existing student V path/merger -> cosine to frozen Qwen visual49x2048 cache. Every4steps run an extra V-only forward with the current optical noise mode, weight0.8 after3epoch warmup (=mean0.2 per step). No augmented/translated token correspondence. Preserve primary forward router statistics. Cache builder alone loads a frozen vision Transformer, never student training/inference. Full cap250, original global teacher cosine2/GT1, fixed64D alignment, restored auxiliaries, quarter learning rates, planned16x128. No new inference layer/branch/parameter, unchanged optics/ROI/Top2/alpha>0.4 and480-query/120-gallery. Extra training compute and optical RNG draws are explicit."
+    },
+    "domain_distill_joint_curriculum": {
+      "relation_teacher_weight": 0.30,
+      "learning_rate_multiplier": 1.0,
+      "supervised_warmup_epochs": 4,
+      "supervised_recovery_epochs": 4,
+      "supervised_warmup_scale": 0.2,
+      "protocol": "Joint training-only teacher curriculum from pinned verified78.75% live source; restore all auxiliaries and original64D teacher alignment. Feature cosine2 plus full2048 teacher product-relation KL0.3 (3epoch KL warmup). Final GT losses0.2 for4epochs, then0.4/0.6/0.8/1 and1 thereafter; optical auxiliary/regularizers unchanged. Return to original base learning rates, fresh AdamW/EMA/cosine, planned16x128 updates. This is a combined optimization recipe, NOT a single-factor ablation. Same cap250, linear64 readout, frozen compact frontend, optical propagation/ROI/phase geometry, Top2 and alpha>0.4. No inference teacher/attention/TF; original480 queries/120 gallery."
+    },
+    "domain_distill_joint_teacherproject": {
+      "teacher_gradient_projection": true,
+      "protocol": "One-sided training-only teacher gradient projection inspired by PCGrad, not full symmetric PCGrad. Primary comprises scaled GT losses, optical auxiliary and physical regularizers; teacher is existing weighted feature cosine2 plus relation KL0.3. On shared active raw parameters, remove teacher component opposing primary when dot<0; primary-only auxiliary gradients untouched. One optical forward/two reverse traversals with same stochastic realization, then existing global clip1/AdamW/EMA. Raw-space nonconflict does NOT guarantee AdamW decreases primary loss or improves generalization. No teacher target, source, inference or optical change. Same pinned uncalibrated79.375% joint_restart, V3/L5/MLP384/linear64, frozen frontend, teacher alignment/auxiliaries/cap250two-view/GT curriculum/baseLR/16x128seed42. No SAM, radian optimizer, extra views, vision13 or whitezoom stacking. Log mean conflict fraction/cosines per epoch. Original480-query/120-gallery, Top2/alpha>0.4, best/last and independent normal/removal verification."
+    },
+    "domain_distill_joint_whitezoom": {
+      "augmentation": {"white_margin_zoom_probability": 0.5},
+      "protocol": "Training-only image augmentation from uncalibrated79.375% pinned joint_restart. With50% probability on training224 contain_white image, detect near-white RGB>=254 margins; require>90% white border, foreground bbox>=15% area/minside8, retain4pixel guard, remove at most44pixels per side and require>=5% long-side enlargement. Preserve ALL pixels with any channel<254 before resampling, not a semantic guarantee for pure-white object parts. Resize cropped box with aspect-preserving contain back to224; other50% preserve placement. Existing flips/photometry follow. No arbitrary crop/rotation/jitter combination. Original test/gallery inputs and all dataset members/labels/splits unchanged, no TTA. Teacher cache/baseline eval remain original, no new baseline needed for training-only augmentation. Same originalV3/L5/MLP384, teacher2/KL0.3/GT/baseLR/rawRouter/cap250two-view/16x128seed42. No new inference operations, geometry or parameter changes; Top2/alpha>0.4, original480-query/120-gallery. No calibrated readout or vision13 stacking; full initial/normal/removal tests and best/last only."
+    },
+    "domain_distill_joint_vision13": {
+      "electronic_context_kernels": {"vision": 13, "language": 5},
+      "protocol": "Widen only TWO existing vision depthwise residual kernels3x3 to13x13, zero-padding old central coefficients to preserve initialization algebraically. Language causal5 and MLP384 remain unchanged. Adds61440 trainable/inference parameters, total2843925 trainable and29152256 frozen; no additional layer, branch, attention or TF. Existing14x14 token-grid receptive field expands; optical propagation/ROI/phase geometry/192D interfaces/Top2/alpha>0.4 and linear64 readout unchanged. Start pinned79.375% uncalibrated checkpoint with original auxiliary/teacher coordinates; do NOT use calibrated readout basis or inherit its79.5833% score. Same joint_restart cosine2/KL0.3/GT/baseLR/rawRouter/cap250two-view/16x128seed42. Full initial protocol reevaluation mandatory despite zero padding; normal/removal and final phase changes required. Old context7 used a different source/training recipe and is not a paired ablation. Original480-query/120-gallery, best/last only."
+    },
+    "domain_distill_joint_mlp768": {
+      "electronic_mlp_width": 768,
+      "protocol": "Controlled serial electronic residual capacity increase from pinned79.375% joint_restart: widen ONLY each existing192->384->192 MLP to192->768->192 in the four V/L residual units. Duplicate hidden neurons and halve duplicated output weights, preserving eval function algebraically (full initial protocol rechecked). Independent hidden dropout breaks duplicate symmetry and changes training variance/RNG; not a pure parameter-count-only ablation. Adds591360 electronic trainable/inference parameters: total3373845 trainable,29152256 frozen. No new depth/layer/branch/TF/attention; original optical192D interface, phase tensors/propagation/ROI/Top2/alpha>0.4 and final64D readout unchanged. Same teacher cosine2/KL0.3/GT/baseLR/cap250two-view/16x128seed42. Original raw-coordinate optimizer, no phase-first/phase-origin/strong-teacher/merger adaptation. Original480-query/120-gallery and normal/remove-light reports required; gains cannot be attributed solely to optics. Best/last only."
+    },
+    "domain_distill_joint_routerradian_fast": {
+      "router_learning_rate_multiplier": 10.0,
+      "protocol": "Paired training-only step-size control relative to joint_routerradian: increase ONLY the TWO Router radian Adam initial learning rates from0.0002 to0.002 (10x). Same cosine schedule, global norm clip1, circular Router EMA, raw-sigmoid forward/checkpoint encoding, ordinary384-wide electronic MLP and frozen frontend. Expert/global phase and all electronic/alpha/auxiliary learning rates unchanged. Same pinned79.375% source, original teacher alignment/heads, feature2/KL0.3/GT curriculum, cap250two-view,16x128seed42. No optical propagation/phase geometry/ROI/detector/Top2/alpha>0.4 or480-query/120-gallery change. Larger steps may reduce performance; no claim that Router step size explains the generalization gap. No phase-first, initial phase shift, MLP expansion, new teacher or inference layer. Full initial/final normal and removal evaluation, best/last only; queue after existing GPU1 radian control, no fourth GPU."
+    },
+    "domain_distill_joint_routerradian": {
+      "router_optimizer_coordinates": "radians",
+      "protocol": "Pinned79.375% joint_restart training, changing only optimizer coordinates of TWO Router phase tensors: transform raw gradients by1/(2*pi*s*(1-s)), run AdamW/clipping in radians, wrap2pi then inverse-logit back to ordinary FP32 raw tensors before ANY forward/save. Router LR0.0002 is radians-coordinate LR (not numerically same physical step as raw LR). Router EMA uses shortest angular difference to avoid raw averaging across0/2pi; other EMA/parameters unchanged. No initial phase shift or mask resize, no optical propagation/ROI/detector/Top2/alpha>0.4 or inference encoding/module change. Checkpoints remain raw sigmoid and deploy with unmodified model/optics code. Reject SAM/phase-origin combinations, no optimizer resume. Same teacher cosine2/KL0.3/GT curriculum, cap250two-view,16x128seed42 and original480-query/120-gallery. No guarantee of improved performance; compare initialized output, real gradients, phase updates and final normal/removal metrics. Best/last only."
+    },
+    "domain_distill_joint_feature8": {
+      "teacher_feature_weight": 8.0,
+      "protocol": "Paired loss-strength control from pinned79.375% joint_restart: ONLY increase original gated aligned64D teacher cosine weight from2 to8. Same source/auxiliaries/teacher basis, cap250two-view, GT curriculum, relationKL0.3, baseLR/cosine,16x128seed42, augmentations and optical noise. No phase-only warmup, phase-origin shift, merger adaptation, centered target or category-KL. Frontend remains frozen; no teacher/TF/attention at inference, no optical/ROI/Top2/alpha>0.4 or480-query/120-gallery change. Stronger teacher may constrain students negatively; test, do not assume improvement. Global norm clipping remains1, so effective optimization can change beyond the un-clipped teacher gradient magnitude. Best/last only."
+    },
+    "domain_distill_joint_phasefirst": {
+      "phase_only_warmup_epochs": 4,
+      "protocol": "Same pinned79.375% joint_restart source, cap250two-view, original teacher basis/auxiliaries, losses/GT curriculum/baseLR and16x128seed42. First4epochs update ONLY expert/global phase and router phase parameters. Freeze alpha, adapters, electronic residuals, optical electronic projections, final readout and ALL auxiliary heads; retain backprop through them, set gradients None before AdamW (no momentum/decay update). Epoch5 onward restore original joint schedule without resetting optimizer; original cosine clock continues. No phase shift/reinitialization, altered noise, frontend unfreeze, new inference parameter/branch/TF/attention, optical propagation/ROI/Top2 change or gallery/test change. Gradients/numerical mask updates must be checked; no performance promise. Best/last only."
+    },
+    "domain_distill_joint_routerorigin": {
+      "router_initial_phase_offset_turns": 0.25,
+      "protocol": "Same pinned79.375% joint_restart recipe, but one-time add pi/2 modulo2pi to each entire224x224 V/L router phase and inverse-logit into ordinary FP32 raw parameters. Intended to move a saturated half-aperture away from sigmoid boundaries. Ideal single-aperture CCD is globally phase invariant up to numeric rounding; initial480-query/120-gallery MUST be recomputed. Unmodulated/bypassed light is NOT shifted, so relative phase during existing noisy training changes: explicitly NOT a pure optimizer reparameterization or hardware equivalence under leakage. No change to propagation, ROI, detector positions, Top2, alpha>0.4, expert/global masks, electronics or inference modules. Same raw sigmoid forward, baseLR, losses, cap250two-view, original teacher basis and auxiliaries,16x128seed42. Entire frontend frozen; no centering, category-KL or merger adaptation. Best/last only; initial optical training weights change, not the optical layout or processing code."
+    },
+    "domain_distill_joint_categorykd": {
+      "teacher_relation_level": "category",
+      "protocol": "Matched pinned79.375% joint_restart training, except relation KL compares CATEGORY MARGINALS of the same teacher/student other-training-product softmax distributions. Sum probabilities within each category (student logsumexp), removing within-category product-order KL. Preserve original product-top1 correctness/confidence gate, self-product exclusion, temperatures, KL0.3, feature cosine2/raw64 basis, restored auxiliaries, GT curriculum/baseLR, cap250two-view/16x128seed42. No class reweighting, label changes, teacher centering, merger adaptation, new inference head or gallery filtering. Frozen frontend, same480-query/120-gallery category-relevant task and all optical geometry/Top2/alpha>0.4. This is training-only distillation; not inference category prefiltering."
+    },
+    "domain_distill_joint_merger": {
+      "frontend_training": "merger_fc2",
+      "merger_learning_rate_multiplier": 0.05,
+      "protocol": "Same pinned79.375% joint_restart recipe, except unfreeze ONLY the existing4096->2048 frontend.merger_fc2 weight/bias. FP32 master weights with unchanged BF16 output interface; learning rate0.05 times electronic LR. No new inference module, branch, attention or TF; existing merger_norm/fc1/patch/position/text embeddings remain frozen. Adds8390656 TRAINABLE parameters but zero inference parameters (same state keys/shapes); total11173141 trainable,20761600 frozen. Same cap250 two-view pool, raw teacher basis, auxiliaries, original GT/teacher curriculum,16x128seed42; no centering/vision-patch teacher. Original480-query/120-gallery, optical propagation/phase geometry/ROI/Top2/alpha>0.4 unchanged. Initial precision behavior and final normal/removal metrics require verification; additional trainability is explicit, not a pure optical-only improvement."
+    },
+    "domain_distill_joint_centerhalf": {
+      "teacher_feature_center_fraction": 0.5,
+      "protocol": "Training-only partial teacher centering from pinned79.375% live best. Start with joint_restart recipe, but normalize frozen teacher prefix64, subtract0.5 times its mean over ORIGINAL1440 TRAIN rows, normalize again, and refit orthogonal64D teacher basis on those same original train/student descriptors. External rows use the original-train mean; val/test excluded. Save mean, fraction, fit identities and rotation in a teacher-only artifact; never load them into student inference or reuse the raw old basis. Feature cosine2, unmodified full2048 relationKL0.3/gating, original GT curriculum, cap250 two-view pool,16x128/seed42/baseLR. No optical DC/noise, geometry, inference head or data/gallery change. Centering and basis refit change together, not a pure centering ablation; gradient-probe improvement is not a performance claim."
+    },
+    "domain_distill_joint_restart": {
+      "restore_auxiliary_source_sha256": "7c7bc601b1048be13316a9e4863780fa5d49cf2f66b3bf3e3d68ced2d8f172f4",
+      "protocol": "Repeat the joint curriculum from SHA-pinned independently verified79.375% live epoch8, NOT old78.75%. Restore all same-label auxiliaries and reuse original train-only64D teacher basis; fresh AdamW/EMA/cosine with original base learning rates, planned16x128, seed42. Same cap250 two-view pool, feature cosine2 plus relationKL0.3, GT0.2 first4epochs then recover over4. No vision-patch teacher, new head, dataset/gallery change, inference transformer/attention or optical geometry change. Extra training budget is explicit; not a fresh independent run or single-factor proof."
+    },
+    "domain_distill_joint_restart_softgt": {
+      "supervised_warmup_epochs": 16,
+      "supervised_recovery_epochs": 0,
+      "protocol": "Paired recipe to SHA-pinned79.375% joint_restart, but final GT proxy CE/SupCon/gallery NLL/margin stay multiplied0.2 for all16 planned epochs. Teacher feature2/relation0.3, optical auxiliary and physical regularizers unchanged. Same source/auxiliaries/teacher basis, cap250 two-view data, base learning rates,128steps,seed42 and original480-query/120-gallery. No label filtering or inference/optics changes. If explicitly extended beyond16epochs the existing schedule restoresGT1. GPU3090 versus4090 precision must be disclosed and any improved candidate independently re-evaluated on4090."
+    },
+    "domain_distill_teacher_continue": {
+      "relation_teacher_weight": 0.0,
+      "teacher_feature_weight": 2.0,
+      "teacher_feature_warmup_epochs": 1,
+      "learning_rate_multiplier": 0.25,
+      "restore_auxiliary_source_sha256": "67a9c71d321720e5735afc9dc5214dbeeee017b6e4135912f92ed8fdabe3f3df",
+      "preserve_restored_category_proxies": true,
+      "teacher_alignment_sha256": "6c1fc98c3f666a550a3b2131aac3ede9ebb9db4aab1b6e7914936f25bfd6b74f",
+      "teacher_alignment_origin_checkpoint_sha256": "4fafe41ec23fcf0cb917f275ddab3be5c1686705c549ca1f58d68aa3c4829d3e",
+      "test_every": 1,
+      "protocol": "Continue pinned verified78.75% live epoch11. Restore all same-label training auxiliary heads, retain category proxies, reuse SHA-pinned original training-only teacher rotation instead of refitting. Teacher cosine2/GT1 throughout, all base learning rates multiplied0.25, fresh AdamW and cosine schedule (not an exact optimizer/RNG resume). Full cap250, original contain_white/linear64/physical optics/Top2/alpha>0.4 unchanged. No new inference modules; best/last only, original480-query/120-gallery."
+    },
+    "domain_distill_position_jitter": {
+      "relation_teacher_weight": 0.30,
+      "test_every": 1,
+      "augmentation": {
+        "minimum_crop_side_fraction": 1.0, "rotation_degrees": 0,
+        "contain_jitter_min_scale": 0.90, "contain_jitter_probability": 0.5,
+        "horizontal_flip_probability": 0.25,
+        "brightness_min": 0.9, "brightness_max": 1.1,
+        "contrast_min": 0.9, "contrast_max": 1.1,
+        "blur_probability": 0.0, "blur_radius": 0.3
+      },
+      "protocol": "Continue verified77.9167% linear-head source on full cap250. Training-only whole224 image shrink90-100% and random white-canvas placement on50% of samples; other50% retain placement. No crop/rotation, existing flip/photometry unchanged. Relation teacher KL0.3, not feature cosine. Eval contain_white and all physical optics/Top2/alpha>0.4 unchanged; original480-query/120-gallery. Test every epoch; best/last only."
+    },
+    "domain_distill_bounded_aspect": {
+      "relation_teacher_weight": 0.0,
+      "teacher_feature_weight": 0.5,
+      "teacher_feature_warmup_epochs": 3,
+      "input_preprocessing": "contain_min_half",
+      "test_every": 1,
+      "protocol": "Continue verified77.9167% linear-head weight with changed INPUT contract: keep whole RGB image, bound aspect ratio to2:1 only for extreme images, white-pad224. Ordinary images identical to contain_white. This anisotropic resizing is explicit, not a crop or optical change. Full cap250, aligned teacher0.5, no teacher-first GT schedule or extra head. Original480-query/120-gallery and all optical geometry/Top2/alpha>0.4 unchanged. Re-evaluate initial within new input contract; never inherit old-input score."
+    },
+    "domain_distill_teacher_first": {
+      "relation_teacher_weight": 0.0,
+      "teacher_feature_weight": 2.0,
+      "teacher_feature_warmup_epochs": 1,
+      "supervised_warmup_epochs": 4,
+      "supervised_recovery_epochs": 4,
+      "supervised_warmup_scale": 0.2,
+      "test_every": 1,
+      "protocol": "Continue verified77.9167% linear-head best on full cap250 pool. Training-only aligned teacher cosine weight2, correctness gate retained. First4 epochs multiply final proxy CE, SupCon and gallery NLL/margin by0.2; recover0.4/0.6/0.8/1 overepochs5-8. Optical auxiliary and physical regularizers retain their weights. Test live/EMA each epoch, best/last only, explicit test-selected. No new inference layers or optical changes; original480-query/120-gallery, Top2, alpha>0.4. Combined curriculum optimization, not an isolated loss-weight ablation."
+    },
+    "domain_distill_feature_mlp": {
+      "relation_teacher_weight": 0.0,
+      "teacher_feature_weight": 0.5,
+      "teacher_feature_warmup_epochs": 3,
+      "retrieval_head": "relu128",
+      "protocol": "Same aligned-feature training as domain_distill_aligned_feature, fixed77.5% source and full cap250 pool. Only final LN384/Linear64 becomes LN384/Linear128/ReLU/Linear64, initialized by signed pairs to preserve source outputs. Adds32896 parameters, one serial head not a new branch. Default V3/L5 residuals, all optical geometry/Top2/alpha>0.4 unchanged. No inference teacher/TF/attention; original480-query/120-gallery."
+    },
+    "domain_distill_aligned_feature": {
+      "relation_teacher_weight": 0.0,
+      "teacher_feature_weight": 0.5,
+      "teacher_feature_warmup_epochs": 3,
+      "protocol": "Continue fixed77.5% best, original inference and full cap250 training pool. Align frozen teacher prefix64 to student coordinates using original1440 training features only (orthogonal Procrustes), without changing student weights. Per-image cosine teacher loss0.5 warmed over3 epochs, gated by full teacher leave-own-product category correctness. No relation KL, no extra inference layers or teacher, no optical changes. Original480-query/120-gallery fixed."
+    },
+    "domain_distill_teacher_agreement": {
+      "relation_teacher_weight": 0.30,
+      "teacher_agreement_external_only": true,
+      "protocol": "Continue fixed77.5% live best for16 epochs. All1440 original train images remain. External training images require frozen train-only Qwen nearest-other-product category agreement; selection once before filtering, manifest recorded, no labels/files changed. Teacher cache validated against full cap250 pool before subsetting. Same optical path, Top2, alpha>0.4, no new inference network; original480-query/120-gallery unchanged."
+    },
+    "domain_distill_sharpteacher": {
+      "relation_teacher_weight": 0.30,
+      "relation_teacher_target_temperature": 0.03
+    },
+    "domain_distill_resumeaux": {
+      "relation_teacher_weight": 0.30,
+      "restore_auxiliary_source_sha256": "0e523f3a08631e0d248032c58534761758841e23702e155df8f2d3f4cd472f85"
+    },
+    "domain_distill_resumeaux_full": {
+      "relation_teacher_weight": 0.30,
+      "restore_auxiliary_source_sha256": "0e523f3a08631e0d248032c58534761758841e23702e155df8f2d3f4cd472f85",
+      "preserve_restored_category_proxies": true
+    }
+  }
+}
