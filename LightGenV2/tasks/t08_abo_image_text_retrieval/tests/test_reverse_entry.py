@@ -69,6 +69,8 @@ def test_dispatch_is_evaluation_only_and_refuses_existing_run(tmp_path, monkeypa
     def checksum(data):
         return SimpleNamespace(hexdigest=lambda: entry.BODY_SHA256) if data == b'synthetic weight fixture\n' else real_hash(data)
     monkeypatch.setattr(entry.hashlib, 'sha256', checksum)
+    from LightGenV2.tasks.t08_abo_image_text_retrieval import cache_preflight
+    monkeypatch.setattr(cache_preflight, 'validate_teacher_cache', lambda raw, path: None)
     calls = []
     mock = SimpleNamespace(run=lambda options: calls.append(options) or {'status': 'synthetic dispatch only'})
     monkeypatch.setitem(sys.modules, 'LightGenV2.tasks.t08_abo_image_text_retrieval.reverse_runtime', mock)

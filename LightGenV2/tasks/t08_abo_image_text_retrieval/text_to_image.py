@@ -88,6 +88,8 @@ def main(argv=None):
     digest = hashlib.sha256(args.checkpoint.read_bytes()).hexdigest()
     if digest != BODY_SHA256:
         raise RuntimeError('Adopted body SHA mismatch; no run started')
+    from .cache_preflight import validate_teacher_cache
+    validate_teacher_cache(raw, args.teacher_cache.expanduser().resolve())
     # Parse/import before creating a destination. Model construction is left to
     # the exact runtime and its existing strict metadata checks.
     from . import reverse_runtime
