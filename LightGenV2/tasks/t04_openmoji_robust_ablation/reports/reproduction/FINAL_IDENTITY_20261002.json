@@ -1,0 +1,21 @@
+{
+  "audited_on": "2026-10-02",
+  "architecture": "rank64, original shared head 271384 parameters; only existing decoder 30162 parameters adapted",
+  "checkpoint_identities": [
+    {"role": "G5 bias-calibrated", "sha256": "1fa31ec7b30a554280d9115b54f580d40b9c754f805db4ec9714ec28d22af41f"},
+    {"role": "G5 uncalibrated alternative", "sha256": "018470e4e2a21cf572ac8faf5f9884af810ce5e53321aa3fa8c70e6deb26a825"},
+    {"role": "G2 bias-calibrated", "sha256": "1cbc3d2574827272dafee7102a4a402ace7eab3f373ea177cbc02e66d90fe6db"},
+    {"role": "G2 uncalibrated alternative", "sha256": "c822d430e24ffa971636c71abb1ef6daa872b189e7ad3f5768d6ba039b138e36"}
+  ],
+  "reports": [
+    {"repository_relative_path": "handoffs/openmoji_robust_ablation_20260928/midrank48_candidate/rank64_train2000_decoder_report_20261002.json", "sha256": "41b320b510837b40d5e156fc91a9cabc0998b572667543600e96c54f83511e37"},
+    {"repository_relative_path": "handoffs/openmoji_robust_ablation_20260928/midrank48_candidate/rank64_train2000_bias_calibration_report_20261002.json", "sha256": "e3b8b62d4f0362d785d5cc5d355b716e248436ec4457f042002b4d6d016eca9f"},
+    {"repository_relative_path": "handoffs/openmoji_robust_ablation_20260928/midrank48_candidate/rank64_g2_train2000_report_20261002.json", "sha256": "74f7f4057311d61832fec05f073f6c4fefa7192253a2c92d1b1be076e61c7c6c"},
+    {"repository_relative_path": "handoffs/openmoji_robust_ablation_20260928/midrank48_candidate/rank64_g2_train2000_bias_report_20261002.json", "sha256": "e6eb2ae90b6279138874624e023dd13f01d9df9d4d51019865c1d2a151f1b6e3"}
+  ],
+  "metrics_location": "LightGenV2/tasks/t04_openmoji_robust_ablation/README.md",
+  "artifact_policy": "Keep original best/last, calibrated and uncalibrated candidates, per-sample reports, history, each group TEST1000 and TRAIN2000 six-layer CCD and receipts; no datasets or weights in Git",
+  "selection_disclosure": "Independent TRAIN2000 supplies gradients; user-authorized TEST1000 every5epoch and calibration select candidate; development metrics, not independent generalization",
+  "current_version_latency_verified": false,
+  "source_status": "canonical runtime integration pending; preserve source plus uncommitted overlay"
+}

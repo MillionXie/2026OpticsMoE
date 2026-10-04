@@ -1,0 +1,17 @@
+{
+  "audited_on": "2026-10-02",
+  "checkpoint": {
+    "repository_relative_path": "handoffs/abo_latestfresh35_lab_20260930/rank72_epoch13_best_snapshot.pt",
+    "sha256": "25f23260864a00a0f32b5de209c27f5876166018c8d8ab0e880de81e0d2c2c22"
+  },
+  "reports": [{
+    "repository_relative_path": "handoffs/abo_latestfresh35_lab_20260930/rank72_physical_full_report_20261001.json",
+    "sha256": "94947127262ead3fc440b5e67b513f0038949b25795c5be0b916305d251e6eef"
+  }],
+  "metrics_location": "LightGenV2/tasks/t07_abo_image_retrieval/README.md",
+  "source_status": "rank72 actual runtime import pending; preserve existing runtime",
+  "artifact_policy": "Original report, per-query predictions, weights, 14400 valid CCD and receipts remain in original locations; no duplicate dataset or checkpoint in Git",
+  "selection_disclosure": "Original query800 used in development, not independent generalization",
+  "current_version_latency_verified": false,
+  "sealed_by_user": true
+}
