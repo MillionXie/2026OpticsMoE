@@ -1,0 +1,82 @@
+{
+  "scope": "Adopted T08 DVP capture source projection, not hardware regression",
+  "source_rows": [
+    {
+      "relative": "ABO_T2I_10cm_alpha040_20260925/capture_full_stage.py",
+      "exists": true,
+      "bytes": 6946,
+      "sha256": "0efcc8cfd9d0fc9267501df102dff70cf5e215315e2c6b013d51db8889e05883"
+    },
+    {
+      "relative": "ABO_T2I_10cm_alpha040_20260925/capture_full_vision_router.py",
+      "exists": true,
+      "bytes": 5148,
+      "sha256": "089a7d8d7ad380945161010f53882f64395e5d195a6239efb7792e7156d84896"
+    },
+    {
+      "relative": "ABO_T2I_10cm_alpha040_20260925/capture_router_pilot.py",
+      "exists": true,
+      "bytes": 2823,
+      "sha256": "1e980047b4314b2a3790bfca9b95bf6b8a52b185cd4acb04b0936277e1c48f35"
+    },
+    {
+      "relative": "ABO_I2I_DVP_adapter_20260922/lab_dvp.py",
+      "exists": true,
+      "bytes": 4407,
+      "sha256": "cab6e0ef3cdbf0840666e5f0d17baa26821011772d394a1c0b1a3f386028ca06"
+    },
+    {
+      "relative": "ABO_Lab_SHS_8um/vendor_driver.py",
+      "exists": true,
+      "bytes": 51826,
+      "sha256": "ba858591d2d71ad5e6fdea34427a503093ae60d742b54951503671f648bb3df7"
+    },
+    {
+      "relative": "ABO_Lab_SHS_8um/phase_hdmi.py",
+      "exists": true,
+      "bytes": 7100,
+      "sha256": "5083355db962eeed6514027ebde07621cade3a19da254761c59cfa6fec647fe4"
+    },
+    {
+      "relative": "ABO_I2I_Lab_DVP_8um/lab_dvp8um/four_image_flow.py",
+      "exists": true,
+      "bytes": 19884,
+      "sha256": "26265e6b238c4e8f4062f250720b2e2144f4ff37bf864a5700af93ae3f3120fb"
+    }
+  ],
+  "published_paths": [
+    {
+      "path": "LightGenV2/hardware_common/dvp_legacy.py",
+      "sha256_lf": "cab6e0ef3cdbf0840666e5f0d17baa26821011772d394a1c0b1a3f386028ca06"
+    },
+    {
+      "path": "LightGenV2/tasks/t08_abo_image_text_retrieval/physical10cm/bench.py",
+      "sha256_lf": "195598b0e741da86ae88e8477cfece772c9e47cfa4c7937131428466bde1d3ef"
+    },
+    {
+      "path": "LightGenV2/tasks/t08_abo_image_text_retrieval/physical10cm/capture_full_stage.py",
+      "sha256_lf": "d35713ba54e1f3a32ca0e4e3fb2e23631d2eabb921f870d89bdc00a64f41d670"
+    },
+    {
+      "path": "LightGenV2/tasks/t08_abo_image_text_retrieval/tests/test_capture_contract.py",
+      "sha256_lf": "eb2b53e5808cd66b8fc8534738414507ede11837abb4039c389d1f3c329596d5"
+    }
+  ],
+  "capture_numerical_body_preserved": true,
+  "bench_lifecycle_and_six_frame_drain_preserved": true,
+  "shared_holoeye_class_and_base_AST_identical": true,
+  "shared_phase_source_identical": true,
+  "native_camera_AST_identical": true,
+  "local_CPU_contract_cases_passed": 11,
+  "torch_or_model_import_in_capture_bench": false,
+  "reviewed_changes": [
+    "Explicit existing asset project argument, no sibling project search",
+    "Explicit external SDK/LUT JSON paths",
+    "Package imports of identical camera/SLM dependencies",
+    "Device construction refused before explicit configuration"
+  ],
+  "devices_opened": false,
+  "windows_runtime_changed": false,
+  "historical_exposure_gain_roi_orientation_changed": false,
+  "hardware_regression_complete": false
+}

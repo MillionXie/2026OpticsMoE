@@ -20,4 +20,31 @@ ABO/OpenMoji的保零bounded tanh合同；不要套给其他主体或已有新�
 
 这些是原运行工具，原输出写入/接续行为保留；仅在明确授权的新实验目录下运行，
 不能用整理工作触发重采、重评或覆盖已封存报告。本次只进行了源码和有界合成CPU检查。
-Windows SLM/CCD采集助手及私人连接/接力脚本尚未迁入本包，当前不能称整个硬件工程已闭包。
+
+## 采用版DVP逐层采集入口
+
+`capture_full_stage` 现直接调用本包 `bench` 和
+`LightGenV2.hardware_common.dvp_legacy.Camera`，不再导入外部图搜图模型或Torch。
+振幅与相位控制仍使用AST/源码一致的共享Holoeye、PhaseHDMI实现。
+其原DVP相机不是后来SHS高速相机，不能互换相机类或套用400µs/GainX4合同。
+来源、逐源码SHA和审核边界见 `maintenance/storage/T08_CAPTURE_SOURCE_IMPORT_20261004.json`。
+
+以下只是已有资产的采集入口说明，本次整理未执行：
+
+```bash
+python -m LightGenV2.tasks.t08_abo_image_text_retrieval.physical10cm.capture_full_stage \
+  --project /absolute/path/to/existing/ABO_T2I_10cm_alpha040_20260925 \
+  --machine-config /absolute/path/to/private/t08_dvp_machine.json \
+  --stage vision_router --run-name full_test
+```
+
+外部JSON必须显式提供 `camera_dll`、`phase_sdk`、`phase_lut`、`amplitude_sdk`、
+`amplitude_bin` 五个实际文件/目录路径；相对路径按此JSON所在目录解释。机器SDK、
+LUT和现有数据不进Git，不从示例猜测路径。默认仍为原10,000µs、gain=1.0、wait240ms、
+六帧取最后帧、固定原ROI及各层方向；本次未改变原1%饱和守卫或添加新归一化。
+TEST前三层各2400图、后三层各2500项（含100标题）；TRAIN为800/900项。
+新入口仍保留原断点接续行为，只能用于明确授权的运行目录，不能为整理重拍。
+
+11项纯CPU合同检查和原采集函数/Bench生命周期AST比较通过，未加载SDK或打开设备。
+实验室原脚本保持原样；机器二进制身份、真实设备回归和Git部署切换尚未完成。
+私人连接/服务器接力脚本不公开归入包，不能将其存在当作主线部署已完成的证据。
