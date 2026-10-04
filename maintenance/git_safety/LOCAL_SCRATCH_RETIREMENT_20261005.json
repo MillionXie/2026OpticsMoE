@@ -1,0 +1,54 @@
+{
+  "date": "2026-10-05",
+  "status": "complete_for_two_reviewed_scratch_checkouts_only",
+  "local_registered_worktrees_before": 16,
+  "local_registered_worktrees_after": 14,
+  "local_branch_names_before": 17,
+  "local_branch_names_after": 15,
+  "targets": [
+    {
+      "former_path": ".codex_tmp/t07_robust_git",
+      "purpose": "Temporary ABO robustness source publication checkout, not the sealed rank72 deployment",
+      "head": "398eeaaecfa76b05fd0b3656ca387024007a4f52",
+      "retired_branch_name": "codex/t07-robust35-20260926",
+      "archive_ref": "refs/archive/retired-local-20261005/t07_robust_git",
+      "tracked_files_before": 4306,
+      "timing_files_archived_byte_for_byte": 163,
+      "remaining_source_files_verified_before_recoverable_move": 4304
+    },
+    {
+      "former_path": ".codex_tmp/t08_physical_git",
+      "purpose": "Temporary bidirectional ABO physical source publication checkout, not the Windows experiment/data directory",
+      "head": "8e293d8731ba1fbb17b4a77e4d6ade3b0e785846",
+      "retired_branch_name": "codex/t08-physical-test-20260926",
+      "archive_ref": "refs/archive/retired-local-20261005/t08_physical_git",
+      "tracked_files_before": 3266,
+      "timing_files_archived_byte_for_byte": 126,
+      "remaining_source_files_verified_before_recoverable_move": 3264
+    }
+  ],
+  "recovery": {
+    "private_receipt": ".codex_tmp/retired_worktrees_20261005/receipt.json",
+    "bundle": ".codex_tmp/retired_worktrees_20261005/committed_sources.bundle",
+    "bundle_sha256": "9cbb8a436103d2c558c4756965b7e0e618203dfe4cff924f5b9f4bf9965e17f2",
+    "timing_zip": ".codex_tmp/retired_worktrees_20261005/all_timing_files.zip",
+    "timing_zip_sha256": "093189867ec92f7b74e7ad38897e5884c6cc3410cdd7e4f530a2c900094ed663",
+    "filesystem_residuals": ".codex_tmp/retired_worktrees_20261005/residual",
+    "inactive_git_metadata": ".codex_tmp/retired_worktrees_20261005/git_admin",
+    "onedrive_permission_failure": "Git deregistered the worktrees but could not delete remaining files. Every remaining non-cache file was verified against the archived Git blobs before a native PowerShell recoverable move. Remaining inactive metadata was also preserved. No force removal was used."
+  },
+  "verification": {
+    "clean_targets_before_retirement": true,
+    "independent_untracked_or_noncache_ignored_assets": 0,
+    "process_commandline_references": 0,
+    "bundle_verified": true,
+    "timing_zip_crc_and_all_289_file_sha_verified": true,
+    "original_18_tracked_user_files_sha_mismatches": 0,
+    "root_head_unchanged": "a6832ddfd863896818414dcdbfb62e0bb8cfa6eb",
+    "sealed_models_or_data_changed": false,
+    "source_bytes_retained_in_archives": true,
+    "disk_space_reclamation_claimed": false,
+    "main_checkout_cutover_complete": false,
+    "server_runtime_checkout_cutover_complete": false
+  }
+}
