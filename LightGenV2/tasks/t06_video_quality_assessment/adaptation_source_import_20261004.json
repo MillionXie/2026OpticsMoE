@@ -1,0 +1,164 @@
+{
+  "source_head": "81fe403e896a4310c077a26e5c33ee8317752609",
+  "publication_commit": "5247f84b2b29a2b10616411fa7fb9af4c6a70148",
+  "files": [
+    {
+      "path": "LightGenV2/tasks/t06_video_quality_assessment/adapt_measured_readout.py",
+      "bytes": 33097,
+      "source_blob_sha256": "9807d7373d7751a021ad8119c1dffafa5149813eda0e67e34a102246660bb341",
+      "origin": "pinned later adapter"
+    },
+    {
+      "path": "LightGenV2/tasks/t06_video_quality_assessment/test_adapt_measured_readout.py",
+      "bytes": 6039,
+      "source_blob_sha256": "3313f37da7de95a8a76058eb89ba549c556337443ff9208000a4fd4c79a67edd",
+      "origin": "pinned later adapter"
+    },
+    {
+      "path": "LightGenV2/tasks/t06_video_quality_assessment/tune_measured_readout.py",
+      "bytes": 2780,
+      "source_blob_sha256": "1e07e32c98ab0394b21ee190349d0b3dae387807ac41c14b8fc45b84110d80fa",
+      "origin": "pinned later adapter"
+    },
+    {
+      "path": "LightGenV2/tasks/t06_video_quality_assessment/configs/spatial_hardware_readout_tuning.json",
+      "bytes": 351,
+      "source_blob_sha256": "e1303728475661587aa721c504002c97b77b211c6d96039e7c53f39ca65d1fbc",
+      "origin": "pinned later adapter"
+    },
+    {
+      "path": "LightGenV2/tasks/t06_video_quality_assessment/configs/spatial_measured_readout_rank.json",
+      "bytes": 363,
+      "source_blob_sha256": "a134b1518e44e73b04f87bb1c37a045e71e537794023b3228d8f7f8e23dca55b",
+      "origin": "pinned later adapter"
+    },
+    {
+      "path": "LightGenV2/tasks/t06_video_quality_assessment/configs/spatial_measured_partial_test20.json",
+      "bytes": 627,
+      "source_blob_sha256": "cf33e50ffd4a1ca4627fd04efcc71af9579686bad272da67de193910d60f37be",
+      "origin": "pinned later adapter"
+    },
+    {
+      "path": "LightGenV2/tasks/t06_video_quality_assessment/configs/spatial_measured_partial_test20_weighted.json",
+      "bytes": 449,
+      "source_blob_sha256": "25caae64adf3e0c416174080c027e792ebf3e7c48b0faefb0ceaa324ce85ae17",
+      "origin": "pinned later adapter"
+    },
+    {
+      "path": "LightGenV2/__init__.py",
+      "bytes": 91,
+      "source_blob_sha256": "22f1d762857916ed1e5a173a60fa7d864cd10139f40fa9c249c38fbeb86ea92e",
+      "origin": "exact source dependency already in main"
+    },
+    {
+      "path": "LightGenV2/tasks/__init__.py",
+      "bytes": 44,
+      "source_blob_sha256": "cb7dde6e220a684ccb22efb1d4af40540497d7a7753c6692b24546411515c6f6",
+      "origin": "exact source dependency already in main"
+    },
+    {
+      "path": "LightGenV2/tasks/t06_video_quality_assessment/__init__.py",
+      "bytes": 119,
+      "source_blob_sha256": "1e6115fff47ba794a7f91847108c637c73b6701fba34a8d9f7a47025ef5a2bd8",
+      "origin": "exact source dependency already in main"
+    },
+    {
+      "path": "LightGenV2/tasks/t06_video_quality_assessment/lab_bench.py",
+      "bytes": 12068,
+      "source_blob_sha256": "43f861f38e9dc032048a246719d4f4e903d7f62e1410ae109a2e14d333260cfa",
+      "origin": "retain main; offline extractor uses unchanged identity/verified_ccd APIs"
+    },
+    {
+      "path": "LightGenV2/tasks/t06_video_quality_assessment/lab_runtime.py",
+      "bytes": 9099,
+      "source_blob_sha256": "015dac71d45c7b0f4332ce221400400f58a98c098c749b0d517b5f9dcc9663b4",
+      "origin": "exact source dependency already in main"
+    },
+    {
+      "path": "LightGenV2/tasks/t06_video_quality_assessment/models/__init__.py",
+      "bytes": 154,
+      "source_blob_sha256": "403b255a753c41a248346aa16256a4075d84ce7dab81692dbb2a45646b215609",
+      "origin": "exact source dependency already in main"
+    },
+    {
+      "path": "LightGenV2/tasks/t06_video_quality_assessment/models/multivideo9x4.py",
+      "bytes": 41311,
+      "source_blob_sha256": "86973a85419c25b49074ee9af65b78e2cae08cdb1e159f25a5456109f273b0b9",
+      "origin": "exact source dependency already in main"
+    },
+    {
+      "path": "LightGenV2/tasks/t06_video_quality_assessment/multivideo_settings.py",
+      "bytes": 17727,
+      "source_blob_sha256": "77751b516571e87b636517cfbca9627e28f61d168fb479a77e542589218cd980",
+      "origin": "exact source dependency already in main"
+    },
+    {
+      "path": "experiments/__init__.py",
+      "bytes": 563,
+      "source_blob_sha256": "75749e81ecc24c9b80e103e22e93682d393ba15972cd34dfc49fb59b77a0a311",
+      "origin": "exact source dependency already in main"
+    },
+    {
+      "path": "experiments/qwen3_vl_2b_lgvq_single_metric_o2_16frame_54/__init__.py",
+      "bytes": 468,
+      "source_blob_sha256": "f48d41c36f5c57760a0cc9485ad371ffd0f587c63c8b7d1562734195effb6d39",
+      "origin": "exact source dependency already in main"
+    },
+    {
+      "path": "experiments/qwen3_vl_2b_lgvq_single_metric_o2_16frame_54/metrics.py",
+      "bytes": 2430,
+      "source_blob_sha256": "6ef93ffc32e8920086bb1d18dde440a577ba134a8db498d17837636d6ef01770",
+      "origin": "exact source dependency already in main"
+    },
+    {
+      "path": "experiments/qwen3_vl_2b_lgvq_single_metric_o2_16frame_54/modeling.py",
+      "bytes": 145263,
+      "source_blob_sha256": "d6b09c803e814e4fda79019c5b1ee2d45fe790310f195b8e7a52a2b4c6f5a09c",
+      "origin": "exact source dependency already in main"
+    },
+    {
+      "path": "experiments/qwen3_vl_2b_lgvq_single_metric_o2_16frame_54/settings.py",
+      "bytes": 79446,
+      "source_blob_sha256": "bfc27ce1da1d33695d0a5afcb37ff66ee0d42bee0f3afed096457e7cb9fcf887",
+      "origin": "exact source dependency already in main"
+    }
+  ],
+  "cpu_evidence": {
+    "commit": "5247f84b2b29a2b10616411fa7fb9af4c6a70148",
+    "python_blobs_compiled": 93,
+    "backend_test_exit_code": 0,
+    "strict_reloads": [
+      {
+        "target": "spatial",
+        "strict": true,
+        "sha256": "95e12397ccf8c960fa30ba9dfb400b69d2c2ebd02288ac6a4879870ab592828b",
+        "architecture": "qwenfront_spatial_o2_4f196_vexpert109_alpha42_no_attention_v1_spatiallowrankprunedgridcompactresidual_k144_r160-64-96-144_v1_readoutmoments_v1_qwenonly_v1_strict2branch_v1_residual_conv2_v1_electronicqualityresidual85_v1_srouterstandardize_v1_sroutervisualgain110_v1",
+        "parameters": 3786407
+      },
+      {
+        "target": "temporal",
+        "strict": true,
+        "sha256": "5303b574b200e14bf943af21c60a246720be453b9cf8847cd93c0eaaa243a77c",
+        "architecture": "lightgenv2_t06_temporal_multivideo16x4_visualrouter_o6_top2_no_attention_v3",
+        "parameters": 6804011
+      }
+    ],
+    "adaptation_protocol_tests": {
+      "tests_run": 12,
+      "skipped": 0,
+      "successful": true,
+      "source_sha256": "3313f37da7de95a8a76058eb89ba549c556337443ff9208000a4fd4c79a67edd"
+    },
+    "candidate_model_sha256": "d6b09c803e814e4fda79019c5b1ee2d45fe790310f195b8e7a52a2b4c6f5a09c",
+    "new_checkout_created": false,
+    "dataset_evaluated": false,
+    "cuda_visible_devices": ""
+  },
+  "historical_train_package_adapter_commit": "d89223b7d3b9dd3e1b76122fd26fb14cffb6a0a8",
+  "historical_train_package_adapter_sha256": "5fa9b372000719eb62c0d381b00cb3de5c20e9a89e84e6a49ac9967626f05b99",
+  "later_weighted_adapter_sha256": "9807d7373d7751a021ad8119c1dffafa5149813eda0e67e34a102246660bb341",
+  "scientific_source_changed": false,
+  "assets_or_timings_changed": false,
+  "hardware_acquisition_helpers_complete": false,
+  "new_training_or_dataset_evaluation_performed": false
+}
