@@ -1,5 +1,11 @@
 # T06 视频质量评价
 
+**2026-10-04整理覆盖：**下文保留历史仿真、baseline和测速协议，不代表所有默认命令已适配。
+正式Spatial/Temporal实拍版本、各自权重及已发布核心代码见
+[当前版本与待收敛边界](CURRENT_VERSION_20261004.md)。主线核心通过57项CPU合同测试、
+两份正式PT严格加载；旧Temporal-36默认profile和后续实拍微调入口仍须单独核验。
+
+
 ## 当前结论
 
 Spatial 的当前正式归档是 `spatial_single_video4_balanced`：一条视频均匀取 4 帧并排成
