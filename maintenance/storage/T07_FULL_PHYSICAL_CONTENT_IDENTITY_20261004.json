@@ -1,0 +1,77 @@
+{
+  "root": "E:\\code\\guest\\2026OpticsMoE\\ABO_I2I_Lab_DVP_8um\\candidate_latergb_rank72_20260930\\runs\\layerwise_selected2400_20260929",
+  "checkpoint_sha256": "25f23260864a00a0f32b5de209c27f5876166018c8d8ab0e880de81e0d2c2c22",
+  "contract_sha256": "bdc0d96745c144bd5dbe2865534ff40aceb9d4d3764e3d7b506f2ddfaed07df9",
+  "published_auditor_sha256": "8e3a2c37ab4d73b0d8e3e054d8f630ac7b0f0656878f6ae29f9e063680276403",
+  "stage_summaries": [
+    {
+      "stage": "vision_router",
+      "ccd_count": 2400,
+      "receipt_count": 2400,
+      "phase_sha256": "2a423c00dd9dc8745868057c24237d1da44618e3860675bfce94cba2d1eff32c",
+      "minimum_p99": 130,
+      "median_p99": 153,
+      "maximum_saturation_fraction": 0.0012954955270390925
+    },
+    {
+      "stage": "vision_expert",
+      "ccd_count": 2400,
+      "receipt_count": 2400,
+      "phase_sha256": "46476b63f4efa683e3fe0e703198a73d98beff572c8a2965cc80b1e389117d50",
+      "minimum_p99": 81,
+      "median_p99": 141,
+      "maximum_saturation_fraction": 0.0009103482081896326
+    },
+    {
+      "stage": "vision_global",
+      "ccd_count": 2400,
+      "receipt_count": 2400,
+      "phase_sha256": "1112656a2f92a0a34db08617b6a9903f43dae2d5fc77a6d558ddcd6d5452b54d",
+      "minimum_p99": 82,
+      "median_p99": 143,
+      "maximum_saturation_fraction": 0.0011335585861592058
+    },
+    {
+      "stage": "language_router",
+      "ccd_count": 2400,
+      "receipt_count": 2400,
+      "phase_sha256": "2465761e738b714df2ed68a87058f32aa5fcb17fbe8dd4bf316193960d7dc20d",
+      "minimum_p99": 38,
+      "median_p99": 46,
+      "maximum_saturation_fraction": 0.0001400535704907127
+    },
+    {
+      "stage": "language_expert",
+      "ccd_count": 2400,
+      "receipt_count": 2400,
+      "phase_sha256": "f5fef5da0f97ec9b86e4b254c27d073ec902682dfbb99b6b33cbeb81d397015d",
+      "minimum_p99": 36,
+      "median_p99": 44,
+      "maximum_saturation_fraction": 0
+    },
+    {
+      "stage": "language_global",
+      "ccd_count": 2400,
+      "receipt_count": 2400,
+      "phase_sha256": "a28fbd6f4d7856ac5244deda369e0c95836bfaa0fff85b4b92711b2387de18ba",
+      "minimum_p99": 36,
+      "median_p99": 42,
+      "maximum_saturation_fraction": 0
+    }
+  ],
+  "full_14400_ccd_audited": true,
+  "pixel_decode_and_receipt_statistics_checked": true,
+  "historical_png_sha_available": false,
+  "temporary_amplitude_rehashed": false,
+  "model_loaded": false,
+  "devices_opened": false,
+  "query_metrics_computed": false,
+  "original_files_modified": false,
+  "torch_loaded": false,
+  "errors": [],
+  "full_private_witness_sha256": "943e4f56ce67a713c540e073cdf40dd2484a193d45bd5636fe273f10fb961199",
+  "asset_files_checked": 28807,
+  "total_asset_bytes": 1775242403,
+  "sample_id_count": 2400,
+  "audit_source_main": "082cecb505fed34cfe923a700ab15697e17258a6"
+}

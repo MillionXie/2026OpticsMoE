@@ -53,8 +53,13 @@ python -m LightGenV2.tasks.t07_abo_image_retrieval.hardware.ccd_store --run /pat
 ```
 
 仅审计存储，不加载权重、不执行推理或计算检索指标。
-20项合成测试和一张正式TRAIN样本的六层PNG/收据抽查通过；
-这一抽查不冒称重新审计全部14400张。
+20项合成测试和一张正式TRAIN样本的六层PNG/收据抽查通过。
+2026-10-04追加对封存Windows会话的完整只读核验：六层各2400张、14400张PNG
+全部解码并与各自收据的mean/p99/maximum/饱和比例一致；2400个样本身份和六层
+相位、400µs/Gain_X4/wait240合同一致，六层最低p99为130/81/82/38/36/36。
+28807份PNG／收据／相位／合同的当前内容哈希已记录，摘要见仓库
+`maintenance/storage/T07_FULL_PHYSICAL_CONTENT_IDENTITY_20261004.json`。
+未重评检索精度、加载模型或打开设备；这不等于新硬件回归或runner迁移完成。
 原收据没有PNG哈希，当前计算的SHA只标识当前文件，不能倒称采集当时已有哈希。
 临时振幅BMP当时已清除，因此只检查其收据SHA格式，不冒称可从收据重新验证原BMP。
 `read(stage, ids)` 返回未做归一化的uint8数组，供明确选择的上层回放；
