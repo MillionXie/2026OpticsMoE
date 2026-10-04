@@ -1,0 +1,34 @@
+{
+  "archive_commit": "4e17cd91290b877a258a4f7dff5381206d37f101",
+  "sources": [
+    {
+      "role": "pipeline",
+      "path": "ABO_I2I_Lab_DVP_8um/candidate_latergb_rank72_20260930/abo_full_query_flow_snapshot_20260928.py",
+      "sha256": "d208c9a1ce01d07c54efbfd0ae352b7fa78701fa90b2ae94d97432659c71dec3"
+    },
+    {
+      "role": "geometry",
+      "path": "ABO_I2I_Lab_DVP_8um/lab_dvp8um/four_image_flow.py",
+      "sha256": "26265e6b238c4e8f4062f250720b2e2144f4ff37bf864a5700af93ae3f3120fb"
+    }
+  ],
+  "published_replay_sha256": "c1d56550169d02aa92e32246a5bc08848fd21d43c229bdcd9b963701f5a7b49d",
+  "adapted_graph_ast_sha256": "bb00f2cd0a3e4bd46515fa7f1044269dec2cf37f93b6c909c475edd1c0545e9b",
+  "unchanged_function_ast_sha256": {
+    "pcc": "ab252ada371432c6bbd6037065576329cecc6864bad52955dde83ddf38ae3efb",
+    "snapshot_simulation": "5f8cd748a329225c14e8339b756d8290a6c32776b6dc9d61be313c2a05f87567"
+  },
+  "reviewed_changes": [
+    "Replace processor/path/bench/calibration globals with batch and explicit CCD callback",
+    "Use the already adopted exact bounded stage_active and model fuse",
+    "CPU and unique sample identity guards; no numerical graph change"
+  ],
+  "sealed_checkpoint_sha256": "25f23260864a00a0f32b5de209c27f5876166018c8d8ab0e880de81e0d2c2c22",
+  "strict_cpu_load": true,
+  "synthetic_ideal_bridge_maximum_descriptor_error": 0,
+  "repeated_replay_bit_identical": true,
+  "synthetic_samples": 1,
+  "dataset_queries_evaluated": false,
+  "devices_opened": false,
+  "hardware_acquisition_migration_complete": false
+}
