@@ -13,13 +13,13 @@ from .prepare import COLORS, SHAPES, save, digest
 
 
 class VisionEncoder(nn.Module):
-    def __init__(self, num_classes=24):
+    def __init__(self, num_classes=24, widths=(16, 32, 64)):
         super().__init__()
         layers=[];cin=3
-        for cout in [16,32,64]:
+        for cout in widths:
             layers.extend([nn.Conv2d(cin,cout,3,padding=1),nn.BatchNorm2d(cout),nn.ReLU(),nn.MaxPool2d(2)])
             cin=cout
-        layers.extend([nn.Conv2d(64,128,1),nn.ReLU(),nn.AdaptiveAvgPool2d(1),nn.Flatten()])
+        layers.extend([nn.Conv2d(cin,128,1),nn.ReLU(),nn.AdaptiveAvgPool2d(1),nn.Flatten()])
         self.features=nn.Sequential(*layers)
         self.head=nn.Linear(128,num_classes)
 
@@ -49,7 +49,7 @@ def evaluate(model,data):
 @torch.no_grad()
 def frozen_features(checkpoint, images):
     state=torch.load(checkpoint,map_location='cuda',weights_only=False)
-    model=VisionEncoder(state['model']['head.weight'].shape[0]).cuda()
+    model=VisionEncoder(state['model']['head.weight'].shape[0],tuple(state.get('architecture',{}).get('widths',[16,32,64]))).cuda()
     model.load_state_dict(state['model']);model.requires_grad_(False).eval()
     result=torch.cat([model(x)[0] for x in images.split(64)])
     return result
@@ -58,9 +58,11 @@ def frozen_features(checkpoint, images):
 def main():
     p=argparse.ArgumentParser();p.add_argument('--data',type=Path,required=True)
     p.add_argument('--out',type=Path,required=True);p.add_argument('--epochs',type=int,default=60)
+    p.add_argument('--widths',type=str,default='16,32,64')
     a=p.parse_args();a.out.mkdir(parents=True,exist_ok=False)
     torch.set_num_threads(4);torch.manual_seed(17);np.random.seed(17)
-    model=VisionEncoder().cuda();train=load(a.data,'train');val=load(a.data,'val')
+    widths=tuple(int(x) for x in a.widths.split(','));assert widths and min(widths)>0
+    model=VisionEncoder(widths=widths).cuda();train=load(a.data,'train');val=load(a.data,'val')
     # Each image has exactly six questions (three positive, three negative).
     assert torch.equal(train[1],torch.arange(len(train[0]),device='cuda').repeat_interleave(6))
     opt=torch.optim.AdamW(model.parameters(),lr=.001,weight_decay=.0001)
@@ -70,7 +72,7 @@ def main():
          purpose='Visual auxiliary diagnostic, not an optical result; head is discarded before optical training',
          git_commit=__import__('subprocess').check_output(['git','rev-parse','HEAD'],text=True).strip(),
          data_manifest_sha256=digest((a.data/'manifest.json').read_bytes()),
-         all_parameters=sum(p.numel() for p in model.parameters()),
+         architecture=dict(widths=list(widths),feature_dim=128),all_parameters=sum(p.numel() for p in model.parameters()),
          retained_feature_parameters=sum(p.numel() for p in model.features.parameters()),test_accessed=False))
     for epoch in range(1,a.epochs+1):
         start=time.time();model.train()
@@ -87,7 +89,8 @@ def main():
             opt.zero_grad();cost.backward();nn.utils.clip_grad_norm_(model.parameters(),1.);opt.step()
         sched.step();row=dict(epoch=epoch,train=evaluate(model,train),val=evaluate(model,val),seconds=time.time()-start)
         history.append(row);save(a.out/'history.json',history)
-        checkpoint=dict(model=model.state_dict(),optimizer=opt.state_dict(),epoch=epoch,metrics=row)
+        checkpoint=dict(model=model.state_dict(),optimizer=opt.state_dict(),epoch=epoch,metrics=row,
+                        architecture=dict(widths=list(widths),feature_dim=128))
         torch.save(checkpoint,a.out/'last_checkpoint.pt')
         if row['val']['nll']<best:
             best=row['val']['nll'];torch.save(checkpoint,a.out/'best_checkpoint.pt')
