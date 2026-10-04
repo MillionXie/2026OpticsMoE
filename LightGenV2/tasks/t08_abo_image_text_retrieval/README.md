@@ -47,6 +47,11 @@ python -m LightGenV2.tasks.t08_abo_image_text_retrieval.text_to_image \
 证据见仓库 `maintenance/storage/T08_BACKEND_COMPATIBILITY_20261004.json` 和
 `maintenance/storage/T08_EVAL_PROFILE_IDENTITY_20261004.json`。
 
+当时服务器实际运行的导出、真实CCD回放、末端读出微调七项工具也已归入
+[文搜图实拍工具](physical10cm/README.md)，不再依赖散落的服务器临时源码目录。
+仅重新绑定包内导入和正确反向实现，历史计算函数未改；有界CPU合同检查通过。
+Windows采集助手仍待核验迁移，不能仅因回放工具就声称硬件依赖全部闭包。
+
 用户采用的是主体 `cc977b83...` + 10轮读出 `89e25360...` 的 .85 版本。
 更长微调对照、旧相位/CCD/预测和所有测速文件原位保留；另有 .88 仿真的计时
 PT `8a96132d...`，不是这份实拍主体，不拼接其精度和时间。本项目历史 TEST

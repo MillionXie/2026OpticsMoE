@@ -43,13 +43,15 @@ def verify_reviewed_publications(root, ref, manifests):
     for name in manifests:
         manifest = json.loads(read(root, ref, name))
         for row in manifest["paths"]:
-            expected = row.get("source_sha256", row.get("sha256"))
+            path = row.get("published_path", row.get("path"))
+            expected = (row.get("published_sha256") if "published_path" in row
+                        else row.get("source_sha256", row.get("sha256")))
             if not expected:
-                raise ValueError("Missing published identity: " + row["path"])
-            actual = hashlib.sha256(read(root, ref, row["path"])).hexdigest()
+                raise ValueError("Missing published identity: " + str(path))
+            actual = hashlib.sha256(read(root, ref, path)).hexdigest()
             if actual != expected:
-                errors.append("reviewed publication mismatch: " + row["path"])
-            checked.append(row["path"])
+                errors.append("reviewed publication mismatch: " + path)
+            checked.append(path)
     return {"reviewed_publication_hashes_checked": len(checked), "errors": errors}
 
 
@@ -70,7 +72,8 @@ def main():
         "maintenance/storage/T03_REVIEWED_ENTRY_20261003.json",
         "maintenance/storage/T03_PINNED_ADDITIONS_20261003.json",
         "maintenance/storage/T03_ENTRY_ADDITIONS_20261003.json",
-        "maintenance/storage/T10_RUNTIME_ADDITIONS_20261003.json"])
+        "maintenance/storage/T10_RUNTIME_ADDITIONS_20261003.json",
+        "maintenance/storage/T08_PHYSICAL_TOOLS_IMPORT_20261004.json"])
     report["reviewed_publication_hashes_checked"] = reviewed["reviewed_publication_hashes_checked"]
     report["errors"].extend(reviewed["errors"])
     print(json.dumps(report, indent=2))

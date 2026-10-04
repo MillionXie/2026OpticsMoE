@@ -1,0 +1,65 @@
+{
+  "actual_source_repository": "server main runtime .codex_tmp/t08_full_test_20260925",
+  "body_sha256": "cc977b83286a8e90398ebd30064428886bc3c06f1eb0557e470060f7ff5c1cae",
+  "paths": [
+    {
+      "source_path": ".codex_tmp/t08_full_test_20260925/audit_physical_router.py",
+      "source_sha256": "7f72c9f4344c5d0a4e2d1fbeb9cf9802583f94078d66b0e627d2e52ba6fa30f4",
+      "source_bytes": 2174,
+      "published_path": "LightGenV2/tasks/t08_abo_image_text_retrieval/physical10cm/audit_physical_router.py",
+      "published_sha256": "a4f3db06725c69f5ad739700e07d67858b7668ee69063579e9a621a349f57a45",
+      "change": "package-relative local imports and explicit reverse runtime only; AST body unchanged"
+    },
+    {
+      "source_path": ".codex_tmp/t08_full_test_20260925/cache_physical_readout.py",
+      "source_sha256": "12fb46fb2bbb3512aebc57e34b044680eab9e1ff15464a8f2e4f8533536421d0",
+      "source_bytes": 5365,
+      "published_path": "LightGenV2/tasks/t08_abo_image_text_retrieval/physical10cm/cache_physical_readout.py",
+      "published_sha256": "346a3c79325386d9dd4316ce0c506badec4b573b493e297426ae5924cd9cf35e",
+      "change": "package-relative local imports and explicit reverse runtime only; AST body unchanged"
+    },
+    {
+      "source_path": ".codex_tmp/t08_full_test_20260925/evaluate_full_physical.py",
+      "source_sha256": "e564718e20413cdd13597e133118e42f0f8850972d1b3103621fbf264b47197c",
+      "source_bytes": 4173,
+      "published_path": "LightGenV2/tasks/t08_abo_image_text_retrieval/physical10cm/evaluate_full_physical.py",
+      "published_sha256": "fde4a52bbc752747e7358a6e8c1b4286b85beeaa90d22065652a30e2dfdecf1a",
+      "change": "package-relative local imports and explicit reverse runtime only; AST body unchanged"
+    },
+    {
+      "source_path": ".codex_tmp/t08_full_test_20260925/export_full_next_stage.py",
+      "source_sha256": "d1b5b15042959d828cafb0c6a6eb3051791c8bd5f1ffdbeb2b64e9b9e0e73f0d",
+      "source_bytes": 12075,
+      "published_path": "LightGenV2/tasks/t08_abo_image_text_retrieval/physical10cm/export_full_next_stage.py",
+      "published_sha256": "97938a4af025d74bba85e2d2aa3e4200eb9770e3535791e09874a68c6863a073",
+      "change": "package-relative local imports and explicit reverse runtime only; AST body unchanged"
+    },
+    {
+      "source_path": ".codex_tmp/t08_full_test_20260925/export_full_vision_router.py",
+      "source_sha256": "3897756c027d537614bfbbde024a333e370b9d77ccee3adfbe15fea79b46447a",
+      "source_bytes": 5102,
+      "published_path": "LightGenV2/tasks/t08_abo_image_text_retrieval/physical10cm/export_full_vision_router.py",
+      "published_sha256": "36860fdb4291408dcb9b38279a4a2e121ad15666321381aa1073d925c06c1cbc",
+      "change": "package-relative local imports and explicit reverse runtime only; AST body unchanged"
+    },
+    {
+      "source_path": ".codex_tmp/t08_full_test_20260925/export_router_pilot.py",
+      "source_sha256": "3d59acbb71e11f449f8fd3e174fb73c75f09b2682d67c00797ce589ce7dd8675",
+      "source_bytes": 5228,
+      "published_path": "LightGenV2/tasks/t08_abo_image_text_retrieval/physical10cm/export_router_pilot.py",
+      "published_sha256": "e435da5116e1165fbc72e0b16621a70569fe7a89cde051259290ce4aeb38944b",
+      "change": "package-relative local imports and explicit reverse runtime only; AST body unchanged"
+    },
+    {
+      "source_path": ".codex_tmp/t08_full_test_20260925/finetune_readout.py",
+      "source_sha256": "49505432285f03823b5283d80ac6cd4e251a7b5c3f219d4e0b42a35c5c6a128d",
+      "source_bytes": 10395,
+      "published_path": "LightGenV2/tasks/t08_abo_image_text_retrieval/physical10cm/finetune_readout.py",
+      "published_sha256": "49505432285f03823b5283d80ac6cd4e251a7b5c3f219d4e0b42a35c5c6a128d",
+      "change": "package-relative local imports and explicit reverse runtime only; AST body unchanged"
+    }
+  ],
+  "private_connection_helpers_imported": false,
+  "hardware_capture_migrated": false,
+  "dataset_re_evaluated": false
+}
