@@ -2,7 +2,7 @@ from pathlib import Path
 import tempfile
 import unittest
 
-from check_t08_assets import relative_image_content, audit_split
+from check_t08_assets import relative_image_content, audit_split, asset_path
 
 
 class T08Assets(unittest.TestCase):
@@ -18,6 +18,14 @@ class T08Assets(unittest.TestCase):
         actual = relative_image_content([self.row], self.root)
         self.assertEqual(actual['count'], 1)
         self.assertEqual(actual['split_counts'], {'train': 1})
+
+    def test_asset_path(self):
+        self.assertEqual(asset_path(self.root, 'runs/best.pt'), self.root / 'runs/best.pt')
+
+    def test_asset_path_escape_rejected(self):
+        for value in ['../best.pt', '/best.pt', 'C:/best.pt', 'runs/../../best.pt', 'runs\\best.pt']:
+            with self.assertRaises(ValueError):
+                asset_path(self.root, value)
 
     def test_relative_content_is_sensitive_to_bytes(self):
         first = relative_image_content([self.row], self.root)

@@ -3,12 +3,22 @@ from __future__ import annotations
 import argparse
 import csv
 import json
-from pathlib import Path
+from pathlib import Path, PurePosixPath, PureWindowsPath
 
 try:
     from .check_t01_assets import file_identity, image_content
 except ImportError:
     from check_t01_assets import file_identity, image_content
+
+
+def asset_path(root, value):
+    relative = PurePosixPath(value)
+    windows = PureWindowsPath(value)
+    if relative.is_absolute() or windows.drive or '\\' in value or '..' in relative.parts:
+        raise ValueError('Expected a repository-relative asset path')
+    target = root / relative
+    target.resolve().relative_to(root.resolve())
+    return target
 
 
 def relative_image_content(rows, dataset_root):
@@ -73,6 +83,11 @@ def check(receipt, repo_root):
     for run, files in receipt['student_artifacts'].items():
         for filename, expected in files.items():
             compare(runs / run / filename, expected)
+    for relative, expected in receipt.get('adopted_readout_artifacts', {}).items():
+        try:
+            compare(asset_path(repo_root, relative), expected)
+        except ValueError as exc:
+            errors.append(f'Asset path: {exc}')
     # Cache absence is an explicit reproduction dependency, not permission to
     # regenerate embeddings, change prompts, or substitute the reverse cache.
     return {'read_only': True, 'files_checked': checked, 'errors': errors,

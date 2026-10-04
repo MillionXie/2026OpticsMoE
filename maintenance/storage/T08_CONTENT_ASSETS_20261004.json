@@ -101,5 +101,35 @@
       "Verify cache model identity and local snapshot binding before any full fixed evaluation.",
       "Finish Windows adopted readout and acquisition entry consolidation without changing historical amplitude mapping."
     ]
+  },
+  "adopted_readout_artifacts": {
+    "LightGenV2/tasks/t08_abo_image_text_retrieval/runs/simulation/optical_text_to_image_64_10cm_compact_e0p5_seed42_20260925/best_checkpoint.pt": {
+      "bytes": 29778889,
+      "sha256": "cc977b83286a8e90398ebd30064428886bc3c06f1eb0557e470060f7ff5c1cae"
+    },
+    "LightGenV2/tasks/t08_abo_image_text_retrieval/runs/physical/alpha040_10cm_20260925/finetune_train800/readout_finetune10/finetune_report.json": {
+      "bytes": 2397,
+      "sha256": "bd716ab18f01c7d4adbd060da31dd04dc7594a40dfab55fb4654e26b6af94c4d"
+    },
+    "LightGenV2/tasks/t08_abo_image_text_retrieval/runs/physical/alpha040_10cm_20260925/finetune_train800/readout_finetune10/best_readout_checkpoint.pt": {
+      "bytes": 10980094,
+      "sha256": "89e25360c8f12c9d13dbceba49e8d81073d4dd75c6acf667ab12a38b8fd293c5"
+    },
+    "LightGenV2/tasks/t08_abo_image_text_retrieval/runs/physical/alpha040_10cm_20260925/finetune_train800/readout_finetune10/last_readout_checkpoint.pt": {
+      "bytes": 10980094,
+      "sha256": "ec33813485237562241c9d2f0631b6d90bc6f0d74830d33edb379906a39e0be2"
+    },
+    "LightGenV2/tasks/t08_abo_image_text_retrieval/runs/physical/alpha040_10cm_20260925/finetune_train800/readout_finetune10/history.csv": {
+      "bytes": 1026,
+      "sha256": "0f0a9e13e1cd8e07bbaf1208facfcc00c3bb60a16313f73e8f7e4fc8259ee07a"
+    },
+    "LightGenV2/tasks/t08_abo_image_text_retrieval/runs/physical/alpha040_10cm_20260925/finetune_train800/train_readout_features.pt": {
+      "bytes": 1403378,
+      "sha256": "9e59b60f5edcf5368b96d486ed1dd5b636dd0c7239cddde5850bb559bc1718ed"
+    },
+    "LightGenV2/tasks/t08_abo_image_text_retrieval/runs/physical/alpha040_10cm_20260925/test_readout_features.pt": {
+      "bytes": 3896044,
+      "sha256": "f0387d9ad5187f728cc2bc7da56c4ff0a27c179992045d7b3c22e9744ac8d2ed"
+    }
   }
 }

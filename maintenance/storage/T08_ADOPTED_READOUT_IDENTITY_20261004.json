@@ -1,0 +1,123 @@
+{
+  "read_only": true,
+  "published_main": "9239b9f144e7ce3638711cb217bceeab92d9b5a1",
+  "body_sha256": "cc977b83286a8e90398ebd30064428886bc3c06f1eb0557e470060f7ff5c1cae",
+  "assets": [
+    {
+      "path": "/DATA/DATA1/guest3/2026OpticsMoE/LightGenV2/tasks/t08_abo_image_text_retrieval/runs/simulation/optical_text_to_image_64_10cm_compact_e0p5_seed42_20260925/best_checkpoint.pt",
+      "bytes": 29778889,
+      "sha256": "cc977b83286a8e90398ebd30064428886bc3c06f1eb0557e470060f7ff5c1cae"
+    },
+    {
+      "path": "/DATA/DATA1/guest3/2026OpticsMoE/LightGenV2/tasks/t08_abo_image_text_retrieval/runs/physical/alpha040_10cm_20260925/finetune_train800/readout_finetune10/finetune_report.json",
+      "bytes": 2397,
+      "sha256": "bd716ab18f01c7d4adbd060da31dd04dc7594a40dfab55fb4654e26b6af94c4d"
+    },
+    {
+      "path": "/DATA/DATA1/guest3/2026OpticsMoE/LightGenV2/tasks/t08_abo_image_text_retrieval/runs/physical/alpha040_10cm_20260925/finetune_train800/readout_finetune10/best_readout_checkpoint.pt",
+      "bytes": 10980094,
+      "sha256": "89e25360c8f12c9d13dbceba49e8d81073d4dd75c6acf667ab12a38b8fd293c5"
+    },
+    {
+      "path": "/DATA/DATA1/guest3/2026OpticsMoE/LightGenV2/tasks/t08_abo_image_text_retrieval/runs/physical/alpha040_10cm_20260925/finetune_train800/readout_finetune10/last_readout_checkpoint.pt",
+      "bytes": 10980094,
+      "sha256": "ec33813485237562241c9d2f0631b6d90bc6f0d74830d33edb379906a39e0be2"
+    },
+    {
+      "path": "/DATA/DATA1/guest3/2026OpticsMoE/LightGenV2/tasks/t08_abo_image_text_retrieval/runs/physical/alpha040_10cm_20260925/finetune_train800/readout_finetune10/history.csv",
+      "bytes": 1026,
+      "sha256": "0f0a9e13e1cd8e07bbaf1208facfcc00c3bb60a16313f73e8f7e4fc8259ee07a"
+    },
+    {
+      "path": "/DATA/DATA1/guest3/2026OpticsMoE/LightGenV2/tasks/t08_abo_image_text_retrieval/runs/physical/alpha040_10cm_20260925/finetune_train800/train_readout_features.pt",
+      "bytes": 1403378,
+      "sha256": "9e59b60f5edcf5368b96d486ed1dd5b636dd0c7239cddde5850bb559bc1718ed"
+    },
+    {
+      "path": "/DATA/DATA1/guest3/2026OpticsMoE/LightGenV2/tasks/t08_abo_image_text_retrieval/runs/physical/alpha040_10cm_20260925/test_readout_features.pt",
+      "bytes": 3896044,
+      "sha256": "f0387d9ad5187f728cc2bc7da56c4ff0a27c179992045d7b3c22e9744ac8d2ed"
+    }
+  ],
+  "strict_adapter_loads": [
+    {
+      "role": "best",
+      "strict_readout_load": true,
+      "input_dim": 384,
+      "output_dim": 64,
+      "unchanged_upstream_tensors": {
+        "vision_optical": 51,
+        "language_optical": 51
+      },
+      "metadata": {
+        "source_checkpoint_sha256": "cc977b83286a8e90398ebd30064428886bc3c06f1eb0557e470060f7ff5c1cae",
+        "epoch": 9,
+        "selection": "measured TRAIN 200-image validation hit_at_1, mrr, map",
+        "test_used_for_selection": false,
+        "only_trainable_module": "retrieval_readout",
+        "fit_images": 600,
+        "validation_images": 200,
+        "untouched_test_images": 2400
+      }
+    },
+    {
+      "role": "last",
+      "strict_readout_load": true,
+      "input_dim": 384,
+      "output_dim": 64,
+      "unchanged_upstream_tensors": {
+        "vision_optical": 51,
+        "language_optical": 51
+      },
+      "metadata": {
+        "source_checkpoint_sha256": "cc977b83286a8e90398ebd30064428886bc3c06f1eb0557e470060f7ff5c1cae",
+        "epoch": 10,
+        "selection": "measured TRAIN 200-image validation hit_at_1, mrr, map",
+        "test_used_for_selection": false,
+        "only_trainable_module": "retrieval_readout",
+        "fit_images": 600,
+        "validation_images": 200,
+        "untouched_test_images": 2400
+      }
+    }
+  ],
+  "caches": [
+    {
+      "split": "train",
+      "image_features_shape": [
+        800,
+        384
+      ],
+      "title_features_shape": [
+        100,
+        384
+      ],
+      "finite": true,
+      "balanced_images_per_product": 8,
+      "checkpoint_sha256": "cc977b83286a8e90398ebd30064428886bc3c06f1eb0557e470060f7ff5c1cae"
+    },
+    {
+      "split": "test",
+      "image_features_shape": [
+        2400,
+        384
+      ],
+      "title_features_shape": [
+        100,
+        384
+      ],
+      "finite": true,
+      "balanced_images_per_product": 24,
+      "checkpoint_sha256": "cc977b83286a8e90398ebd30064428886bc3c06f1eb0557e470060f7ff5c1cae"
+    }
+  ],
+  "history_rows": 10,
+  "history_selected_epoch": 9,
+  "adopted_report_test_hit1": 0.8499999642372131,
+  "test_features_ranked": false,
+  "metrics_recomputed": false,
+  "devices_touched": false,
+  "cuda_visible_devices": "",
+  "source_or_asset_modified": false,
+  "raw_ccd_to_feature_cache_recomputed": false
+}
