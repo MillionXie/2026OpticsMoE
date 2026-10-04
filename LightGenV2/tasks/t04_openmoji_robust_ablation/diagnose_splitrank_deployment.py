@@ -72,6 +72,13 @@ def comparison(a, b):
     x, y = a.flatten(), b.flatten()
     xc, yc = x-x.mean(), y-y.mean()
     an, bn = a/a.mean().clamp_min(1e-8), b/b.mean().clamp_min(1e-8)
+    # Affine response on non-clipped pixels at the exact measured-prefix input.
+    # Residual includes deterministic optical mismatch, NOT pure temporal noise.
+    valid = (y < 254/255) & (y > 0)
+    vx, vy = x[valid], y[valid]
+    slope = ((vx-vx.mean())*(vy-vy.mean())).sum()/(vx-vx.mean()).square().sum().clamp_min(1e-12)
+    intercept = vy.mean()-slope*vx.mean()
+    residual = vy-(slope*vx+intercept)
     return {
         'pcc': float((xc*yc).sum()/(xc.norm()*yc.norm()).clamp_min(1e-8)),
         'cosine': float((x*y).sum()/(x.norm()*y.norm()).clamp_min(1e-8)),
@@ -79,6 +86,10 @@ def comparison(a, b):
         'simulation_mean': float(a.mean()), 'measured_mean': float(b.mean()),
         'measured_background_p01': float(torch.quantile(y, .01)),
         'measured_dynamic_p99_p01': float(torch.quantile(y,.99)-torch.quantile(y,.01)),
+        'affine_slope': float(slope), 'affine_intercept': float(intercept),
+        'affine_residual_rms': float(residual.square().mean().sqrt()),
+        'measured_saturation': float((y>=1).float().mean()),
+        'affine_valid_fraction': float(valid.float().mean()),
     }
 
 
@@ -140,6 +151,7 @@ def main():
     parser.add_argument('--output', type=Path, required=True)
     parser.add_argument('--samples-per-task', type=int, default=8)
     parser.add_argument('--candidate', choices=('splitrank48', 'original_g2', 'modality55'), default='splitrank48')
+    parser.add_argument('--scope', choices=('test','train'), default='test')
     args = parser.parse_args()
     project, output = args.project.resolve(), args.output.resolve()
     if output.exists():
@@ -148,6 +160,9 @@ def main():
     torch.set_num_threads(4)
     torch.manual_seed(73)
     tune, weight_sha, capture_name, cache_name = candidate_setup(project, args.candidate)
+    if args.scope == 'train':
+        assert args.candidate == 'original_g2', 'TRAIN response audit currently supports sealed G2 only'
+        capture_name = 'g2_train1000'
     capture = project/'runs'/capture_name
     formal = json.loads((capture/'report.json').read_text())
     assert formal['status'] == 'complete' and formal['contract']['checkpoint_sha256'] == weight_sha
@@ -163,15 +178,18 @@ def main():
         'source_sha256':sha(Path(__file__)), 'device':'cpu', 'sdk':False,
         'partial_prefix_is_diagnostic_not_formal_physical_metric':True,
     })
-    cached_gate(project, tune, model, output, cache_name, weight_sha,
-                formal['physical_metrics']['overall']['changed_cell_accuracy'])
-    data = OpenMojiEditingDataset(cfg.test_manifest,cfg,load_prompt_cache(cfg.prompt_cache_path))
+    if args.scope == 'test':
+        cached_gate(project, tune, model, output, cache_name, weight_sha,
+                    formal['physical_metrics']['overall']['changed_cell_accuracy'])
+    data = OpenMojiEditingDataset(cfg.train_manifest if args.scope=='train' else cfg.test_manifest,
+                                 cfg,load_prompt_cache(cfg.prompt_cache_path))
     selected = []
     for task in ('add','replace','move','remove'):
         indices = [i for i,r in enumerate(data.records) if r['task'] == task]
         selected += [indices[i] for i in np.linspace(0,len(indices)-1,args.samples_per_task,dtype=int)]
     contract = json.loads((capture/'contract.json').read_text())
     assert contract['checkpoint_sha256'] == weight_sha
+    assert contract['scope'] == args.scope
     sys.path.insert(0,str(project.parent/'ABO_I2I_Lab_DVP_8um/lab_dvp8um'))
     import four_image_flow as flow  # raster utility only, never instantiate devices
     phase_sha = {s: sha(capture/'phase'/f'{s}.bmp') for s in STAGES}
@@ -180,7 +198,7 @@ def main():
     stage_rows, upstream_rows = [], []
     started = time.time()
     for n,index in enumerate(selected):
-        sid = f'test_{index:05d}'
+        sid = f'{args.scope}_{index:05d}'
         batch = collate_samples([data[index]])
         measured = {}
         for stage in STAGES:
@@ -248,8 +266,12 @@ def main():
             'bmp_mismatches':sum(not r['input_bmp_sha_match'] for r in rows),
             **{k:float(np.mean([r[k] for r in rows])) for k in
                ('pcc','cosine','mean_normalized_rmse','measured_background_p01','measured_dynamic_p99_p01')}}
+        stage_summary[stage].update({k:float(np.median([r[k] for r in rows])) for k in
+            ('affine_slope','affine_intercept','affine_residual_rms','measured_saturation','affine_valid_fraction')})
     write(output/'report.json',convert({
         'status':'complete','weight_sha256':weight_sha,'candidate':args.candidate,'samples':len(selected),
+        'scope':args.scope,'temporal_noise_not_identifiable_from_spatial_residual':True,
+        'response_fit_usable':all(r['input_bmp_sha_match'] for r in stage_rows),
         'formal_full_test':{k:formal[k]['overall'] for k in ('simulation_metrics','physical_metrics')},
         'selected_indices':selected, 'selection':'even spacing within all four operations, not score-based',
         'protected_before':protected,'protected_after':tune.protected_sha(model),
