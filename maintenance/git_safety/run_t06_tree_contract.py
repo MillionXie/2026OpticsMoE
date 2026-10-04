@@ -64,6 +64,8 @@ def main():
     parser.add_argument("--commit", required=True)
     parser.add_argument("--fixture-root", required=True, type=Path)
     parser.add_argument("--checkpoint-root", required=True, type=Path)
+    parser.add_argument("--adaptation-tests", action="store_true",
+                        help="Also test the candidate's original offline readout protocol")
     args = parser.parse_args()
     def git(*parts):
         return subprocess.check_output(["git", "-C", str(args.repository), *parts])
@@ -107,12 +109,25 @@ def main():
                         "parameters": sum(p.numel() for p in model.parameters())})
         del model
     code = int(pytest.main([str(fixture), "-q", "-p", "no:cacheprovider"]))
+    adaptation = None
+    if args.adaptation_tests:
+        import unittest
+        test_module = importlib.import_module(
+            "LightGenV2.tasks.t06_video_quality_assessment.test_adapt_measured_readout")
+        suite = unittest.defaultTestLoader.loadTestsFromModule(test_module)
+        result = unittest.TextTestRunner(verbosity=2).run(suite)
+        if result.testsRun != 12 or result.skipped or not result.wasSuccessful():
+            code = 1
+        adaptation = {"tests_run": result.testsRun, "skipped": len(result.skipped),
+                      "successful": result.wasSuccessful(),
+                      "source_sha256": test_module.__git_blob_sha256__}
     imported = sys.modules["experiments.qwen3_vl_2b_lgvq_single_metric_o2_16frame_54.modeling"]
     expected = hashlib.sha256(blobs[PREFIXES[1] + "modeling.py"]).hexdigest()
     if imported.__git_blob_sha256__ != expected:
         raise RuntimeError("Tests did not use candidate model")
     print(json.dumps({"commit": args.commit, "python_blobs_compiled": len(blobs),
                       "backend_test_exit_code": code, "strict_reloads": reloads,
+                      "adaptation_protocol_tests": adaptation,
                       "candidate_model_sha256": expected, "new_checkout_created": False,
                       "dataset_evaluated": False, "cuda_visible_devices": ""}))
     raise SystemExit(code)
