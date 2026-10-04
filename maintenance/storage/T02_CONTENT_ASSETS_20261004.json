@@ -1,0 +1,484 @@
+{
+  "audit_date": "2026-10-04",
+  "read_only": true,
+  "published_checker_commit": "f3e6461ece41851b00c0b70894608c6c2555a938",
+  "official": {
+    "dataset_root": "/DATA/DATA1/guest3/2026OpticsMoE/data/lsp_pose",
+    "run_manifests": {
+      "moe_router_scale_dc20_seed42": {
+        "bytes": 1267764,
+        "sha256": "2cb33989b3a5436408edad5e9e7452245814ec0724bc5ae20637cc40b4ba1d79"
+      },
+      "d2nn_matched_dc20_seed42": {
+        "bytes": 1267764,
+        "sha256": "2cb33989b3a5436408edad5e9e7452245814ec0724bc5ae20637cc40b4ba1d79"
+      },
+      "alpha40_distill_seed42_20260911": {
+        "bytes": 1267764,
+        "sha256": "2cb33989b3a5436408edad5e9e7452245814ec0724bc5ae20637cc40b4ba1d79"
+      },
+      "refinement_20260909/staged_heatmap": {
+        "bytes": 1267764,
+        "sha256": "2cb33989b3a5436408edad5e9e7452245814ec0724bc5ae20637cc40b4ba1d79"
+      },
+      "qwen_deconv40_seed42_20260909": {
+        "bytes": 1267764,
+        "sha256": "2cb33989b3a5436408edad5e9e7452245814ec0724bc5ae20637cc40b4ba1d79"
+      }
+    },
+    "image_content": {
+      "count": 11428,
+      "split_counts": {
+        "train": 10428,
+        "periodic_test": 1000
+      },
+      "total_bytes": 2876095861,
+      "content_manifest_sha256": "f143ff286cd43000ad086f3ff0ca268a1c8a0ca3d19155d6289dac6797a59fc2"
+    },
+    "annotations": {
+      "lsp_dataset/joints.mat": {
+        "bytes": 440523,
+        "sha256": "ddcfcbe904106bfbf26561c8d11720ca62a11c7a861548064b3bae84cb396b2a"
+      },
+      "lspet_dataset/hr-lspet/joints.mat": {
+        "bytes": 408149,
+        "sha256": "e0cb5663a0c618b7ca5c2863deea4085c57e854c0202b9d7875c6d7dd53d36ca"
+      }
+    },
+    "artifacts": {
+      "moe_router_scale_dc20_seed42": {
+        "best_checkpoint.pt": {
+          "bytes": 6087906,
+          "sha256": "e905d1f8a9e6196dd1bd69b1cda93f7ea1b1ad8964d0e246892c5e3e9d6a9873"
+        },
+        "selected_checkpoint_test_evaluation.json": {
+          "bytes": 1872,
+          "sha256": "a8a899c4b56ed616cdf77275d7b687b383070a51c50f3745658ce572fd7a0bfa"
+        },
+        "pose_protocol.json": {
+          "bytes": 1175,
+          "sha256": "a8021ab33763195562886334b9525a4ba8170d74927e4e2e2838c9a830207d99"
+        },
+        "resolved_config.yaml": {
+          "bytes": 5976,
+          "sha256": "4cc0aec438cad6af5bddebf5d68f0785463896280bf8627c8d35bb1d0edcf858"
+        },
+        "last_checkpoint.pt": {
+          "bytes": 6086854,
+          "sha256": "d2dff41d9b95c054570bd258eebe8b6233e19fbf1b4ef6f8d58d992d442bbaaf"
+        },
+        "run_manifest.json": {
+          "bytes": 342,
+          "sha256": "0dbed5a48175dc07207566ba80347cf86138dd68250bd0b1da56823cd1aa686e"
+        },
+        "training_report.json": {
+          "bytes": 747,
+          "sha256": "ac83a3d033ab1e3392ffba52e445e9b3f200efba2466297be325881f0590adab"
+        }
+      },
+      "d2nn_matched_dc20_seed42": {
+        "best_checkpoint.pt": {
+          "bytes": 4569954,
+          "sha256": "8b2ab497c24ec2c097ff896d9889aaafbedbb1d04dff4e92c7b146339d76cb4e"
+        },
+        "selected_checkpoint_test_evaluation.json": {
+          "bytes": 1868,
+          "sha256": "b3258b39b20ba0401b438c29512be8baeaa2561c23f1cc17c1872c4d139662c1"
+        },
+        "pose_protocol.json": {
+          "bytes": 1175,
+          "sha256": "a8021ab33763195562886334b9525a4ba8170d74927e4e2e2838c9a830207d99"
+        },
+        "resolved_config.yaml": {
+          "bytes": 5958,
+          "sha256": "d5d9d790966d3286dc1fe1d0c21185cf9fa6a57904bd7afff932a02c02e5580b"
+        },
+        "last_checkpoint.pt": {
+          "bytes": 4568882,
+          "sha256": "fd20b7d6cb71bad4c2fbcd78386e96f234057b725ecba77666195002e2d96db7"
+        },
+        "run_manifest.json": {
+          "bytes": 336,
+          "sha256": "8499d28238728a861dd6dcaf7f847a1c41a1cf45ececdff7abb0d87ae92e8c94"
+        },
+        "training_report.json": {
+          "bytes": 742,
+          "sha256": "cae7c97d10b1d3419dba3021b92db611c58a3e5d96dbc2116b0f6adffac765f1"
+        }
+      },
+      "alpha40_distill_seed42_20260911": {
+        "best_checkpoint.pt": {
+          "bytes": 6311942,
+          "sha256": "dbc059e2a7eddefac73d3b9bb158bf0140d440dfb396e0aa2956ad41670fc96a"
+        },
+        "pose_protocol.json": {
+          "bytes": 1175,
+          "sha256": "a8021ab33763195562886334b9525a4ba8170d74927e4e2e2838c9a830207d99"
+        },
+        "resolved_config.yaml": {
+          "bytes": 6252,
+          "sha256": "c5e33f626fe1d28f1f1121e2fa4f480e57ee99206eccd7e7d89c19f4cb326d90"
+        },
+        "last_checkpoint.pt": {
+          "bytes": 6311878,
+          "sha256": "2d842aa4e3cb35417ca81c7aaefc82ea56858c8fc2291d0daec3bd17c8bedfa7"
+        },
+        "final_report.json": {
+          "bytes": 6180,
+          "sha256": "a8c94876299d4df5a3018a1ac5f3ee2889f44dafa69e5a7c412a21a9c35dd15d"
+        },
+        "run_manifest.json": {
+          "bytes": 231636,
+          "sha256": "e917a48f972bccc7b9e151c4e1df69c2074721c414d7859258aa0b0d5790a1a3"
+        }
+      },
+      "refinement_20260909/staged_heatmap": {
+        "best_checkpoint.pt": {
+          "bytes": 6093958,
+          "sha256": "495b9c2c4e3df15d3715f1ce8f2faea7cb9156275b31103ec684f4e96a328518"
+        },
+        "pose_protocol.json": {
+          "bytes": 1175,
+          "sha256": "a8021ab33763195562886334b9525a4ba8170d74927e4e2e2838c9a830207d99"
+        },
+        "resolved_config.yaml": {
+          "bytes": 6302,
+          "sha256": "352f0d00a2fe992ccff7bb45b9afd69506b95fcf958a9d08f6c97948dea9e59a"
+        },
+        "last_checkpoint.pt": {
+          "bytes": 6093958,
+          "sha256": "b39f7b26fe117d5d975603180a171c8f17a48a35ea4f19738f86f865bd7c5cb6"
+        },
+        "final_report.json": {
+          "bytes": 5747,
+          "sha256": "2d4fa51be6b2347ea888258523a47044ae17279da7ad5138a4a9358a7e54ccde"
+        },
+        "run_manifest.json": {
+          "bytes": 17738,
+          "sha256": "3a5afe54070eaf5e81ebaf9327b5d21d9852d76dc48132b709793ae49d8ebebd"
+        }
+      },
+      "qwen_deconv40_seed42_20260909": {
+        "best_checkpoint.pt": {
+          "bytes": 570527,
+          "sha256": "2968d9f3bfed3bc2e712834484a49a928eb91c5d20ede264081a9a4fe8c2ca27"
+        },
+        "pose_protocol.json": {
+          "bytes": 1175,
+          "sha256": "a8021ab33763195562886334b9525a4ba8170d74927e4e2e2838c9a830207d99"
+        },
+        "resolved_config.yaml": {
+          "bytes": 3785,
+          "sha256": "dddd1503752753d4754861b69030a0052cba561e855ceeb5d77e3b40829612be"
+        },
+        "last_checkpoint.pt": {
+          "bytes": 570527,
+          "sha256": "51d680cb6e1851fe4d7da73148d9717c6c2c3a5e07e2df5d9b21346fdae016b8"
+        },
+        "final_report.json": {
+          "bytes": 1769,
+          "sha256": "9e832107478c4d78a6702619daac1a6db4c67edddccd2e3ae61f0e1790159fd7"
+        },
+        "run_manifest.json": {
+          "bytes": 6920,
+          "sha256": "0aa7cd90ae0aa4933d903c4eef3cc906b670b6e5e8986917e12320bc20a27504"
+        }
+      }
+    }
+  },
+  "shared_initialization": {
+    "path": "/DATA/DATA1/guest3/2026OpticsMoE/experiments/qwen3_vl_embedding_2b_lsp_pose_optical_router/runs/shared_untrained_initialization.pt",
+    "exists": true,
+    "bytes": 5878577,
+    "sha256": "ddae8788647d77df072a1e5ed43c6d9e559e8ec06130fffd225e72aa4366d2c0"
+  },
+  "distillation_teacher_cache": {
+    "path": "/DATA/DATA1/guest3/2026OpticsMoE/LightGenV2/tasks/t02_keypoint_detection/runs/simulation/alpha40_distill_seed42_20260911/training_cache/teacher_heatmaps.npy",
+    "exists": true,
+    "bytes": 1831323776,
+    "sha256": "62f07101dbbcdf0913ed92a8ae934990263b63281641a370dd0d305ee830e2c4",
+    "matches_original_run_manifest": true
+  },
+  "personal_provisional": {
+    "personal_20260928": {
+      "annotations": {
+        "bytes": 607657,
+        "sha256": "6dbb0745e6a4a4b0f5468f8622b3782deac325fd9560c853d0982b35575b47d2"
+      },
+      "image_count": 101,
+      "all_image_sha256_match_annotations": true,
+      "image_content_manifest_sha256": "102b07eb1489a82dc8076a71d4a6bdec206e8297a7f3fa6397765036e0f79dd6",
+      "formal_ground_truth_evaluation": false,
+      "metadata_files": {
+        "annotations_provisional.json": {
+          "bytes": 607657,
+          "sha256": "6dbb0745e6a4a4b0f5468f8622b3782deac325fd9560c853d0982b35575b47d2"
+        }
+      }
+    },
+    "personal_curated20_20260928": {
+      "annotations": {
+        "bytes": 370600,
+        "sha256": "c442100dabf7e2fc9e213e3f4cef53a9e7155c1a12bac9dce276dfc5d0843422"
+      },
+      "image_count": 74,
+      "all_image_sha256_match_annotations": true,
+      "image_content_manifest_sha256": "51661b9b17c3c60c6791cef797e8e7e24054c0c8b8022d2f3da526da70ce1e52",
+      "formal_ground_truth_evaluation": false,
+      "metadata_files": {
+        "summary.json": {
+          "bytes": 660,
+          "sha256": "4020df15f8968d2df053091c8ad35895afa73a3a730d3c11189c76820754f642"
+        },
+        "annotations_provisional.json": {
+          "bytes": 370600,
+          "sha256": "c442100dabf7e2fc9e213e3f4cef53a9e7155c1a12bac9dce276dfc5d0843422"
+        },
+        "exclusions.json": {
+          "bytes": 989,
+          "sha256": "1d1b9166398709b66bb024ccc68c6faf20f944098ed64d7ba89cdc209cbeb304"
+        },
+        "id_mapping.json": {
+          "bytes": 9303,
+          "sha256": "4200636b464c275d93727f4cd612e738ebf388b2667c55fcb229f1d7740beb0c"
+        }
+      }
+    }
+  },
+  "frozen_frontend": {
+    "model_id": "Qwen/Qwen3-VL-Embedding-2B",
+    "recorded_cache_dir": "/DATA/DATA1/guest3/2026OpticsMoE/cache/qwen",
+    "recorded_cache_dir_exists_now": false,
+    "resolved_snapshot_now": "/DATA/DATA1/guest3/.cache/huggingface/hub/models--Qwen--Qwen3-VL-Embedding-2B/snapshots/9f2f7e710d6d81056aa5c0a4f04764fec6bb7bda",
+    "current_runtime_resolver_has_working_fallback": true,
+    "historical_training_revision_proven": false
+  },
+  "scientific_metrics_recomputed": false,
+  "whole_project_complete": false,
+  "schema_version": 1,
+  "dataset_hash_protocol": "Same canonical content protocol as T01_CONTENT_ASSETS_20261004.json; includes the exact periodic_test split string.",
+  "personal_runs": [
+    {
+      "run": "personal_curated20_head_testselect100_pilot_s42_20260928",
+      "exists": true,
+      "assets": {
+        "best_checkpoint.pt": {
+          "bytes": 6088838,
+          "sha256": "d8287ddb8dc4ae8e06a502cc4037b1c459a9e5f4452f952dd1ef543f2b7e5c7a"
+        },
+        "last_checkpoint.pt": {
+          "bytes": 6088838,
+          "sha256": "fc73477a1c74d27c3cdb0ee8c8b54764ba96aeb699b9fd41d9cbe96bedd4c6ea"
+        },
+        "final_report.json": {
+          "bytes": 3814,
+          "sha256": "80cd8e1964aacb06f1aee60800e1bd3b12cca8df4aa5d5f696df8914631167e9"
+        },
+        "run_manifest.json": {
+          "bytes": 4481,
+          "sha256": "ae6eb29cb7a28272cbf04d1a78588e83540ce94aa8372a35c70813c36ab74f0e"
+        },
+        "training_history.json": {
+          "bytes": 366464,
+          "sha256": "12bbe4fbd071e89045d0bee2a131caa1c6570a83688469dc7630f7e17b9b8ce7"
+        }
+      },
+      "summary": {
+        "best_epoch": 0,
+        "core_unchanged": true,
+        "formal_ground_truth_evaluation": false,
+        "metric_warning": "PILOT: agreement with independent pseudo labels, NOT ground-truth accuracy",
+        "checkpoint_sha256": "d8287ddb8dc4ae8e06a502cc4037b1c459a9e5f4452f952dd1ef543f2b7e5c7a"
+      },
+      "metrics": {
+        "before": {
+          "pck_at_0.2_torso": 0.8333333333333334,
+          "samples": 55,
+          "pck_evaluated_joints": 654,
+          "mean_pixel_error": 14.465265827088272
+        },
+        "after": {
+          "pck_at_0.2_torso": 0.8333333333333334,
+          "samples": 55,
+          "pck_evaluated_joints": 654,
+          "mean_pixel_error": 14.465265827088272
+        }
+      }
+    },
+    {
+      "run": "personal_curated20_ours_head_evalcore_pilot_s42_20260928",
+      "exists": true,
+      "assets": {
+        "best_checkpoint.pt": {
+          "bytes": 6088518,
+          "sha256": "0c57938c87deef3d901605214e69514f2b43c8464447db25ed6f8278e1c2fe13"
+        },
+        "last_checkpoint.pt": {
+          "bytes": 6088518,
+          "sha256": "d9ab6edc210a69b7c754a6b6e48d0dcbb71d8fea74d2881960ed680c59609acb"
+        },
+        "final_report.json": {
+          "bytes": 3594,
+          "sha256": "55d12f6c6918ae82c2ce47eabed40cda30af08a577288e20dc462fe8dbf3953b"
+        },
+        "run_manifest.json": {
+          "bytes": 4177,
+          "sha256": "f1d788e77856e3218b80e4a83e6eaa10cd7187845665eba1cf20c1cca9813390"
+        },
+        "training_history.json": {
+          "bytes": 199075,
+          "sha256": "e1b90eaed51952373112bec694f98d6f95e64ba70797bd3e50723ce80e3fd717"
+        }
+      },
+      "summary": {
+        "best_epoch": 60,
+        "core_unchanged": true,
+        "formal_ground_truth_evaluation": false,
+        "metric_warning": "PILOT: agreement with independent pseudo labels, NOT ground-truth accuracy",
+        "checkpoint_sha256": "0c57938c87deef3d901605214e69514f2b43c8464447db25ed6f8278e1c2fe13"
+      },
+      "metrics": {
+        "before": {
+          "pck_at_0.2_torso": 0.8042813455657493,
+          "samples": 55,
+          "pck_evaluated_joints": 654,
+          "mean_pixel_error": 16.416190185324954
+        },
+        "after": {
+          "pck_at_0.2_torso": 0.8333333333333334,
+          "samples": 55,
+          "pck_evaluated_joints": 654,
+          "mean_pixel_error": 14.465265827088272
+        }
+      }
+    },
+    {
+      "run": "personal_curated20_baseline_head_pilot_s42_20260928",
+      "exists": true,
+      "assets": {
+        "final_report.json": {
+          "bytes": 1878,
+          "sha256": "073f829b22c413457805b96c2720df1d955e891ceaf8a9c0d33056b8a4b9595f"
+        },
+        "run_manifest.json": {
+          "bytes": 4129,
+          "sha256": "bf96e7a86352f5d7d5ed8437e4f7118e4b95521380029c2f34be62678992ca54"
+        }
+      },
+      "summary": {
+        "formal_ground_truth_evaluation": false,
+        "metric_warning": "PILOT: agreement with independent pseudo labels, NOT ground-truth accuracy"
+      },
+      "metrics": {
+        "fixed_evaluation": {
+          "pck_at_0_2_torso": 0.8746177370030581,
+          "samples": 55
+        }
+      }
+    },
+    {
+      "run": "personal_few10_ours_pilot_s42_20260928",
+      "exists": true,
+      "assets": {
+        "best_checkpoint.pt": {
+          "bytes": 6088838,
+          "sha256": "4b634796d271b6e564413bb4c353c0e9d6b965882a6e16112f4a56fd624ea91e"
+        },
+        "last_checkpoint.pt": {
+          "bytes": 6088838,
+          "sha256": "c37ddd3c3de3667b107a71997f22af96162ca7b865175aa24c04a48ffe1263de"
+        },
+        "final_report.json": {
+          "bytes": 3583,
+          "sha256": "ad8cbc2cd9972268e5f613aa0e460f2101f6c9e5530211329b87e8c7d453b414"
+        },
+        "run_manifest.json": {
+          "bytes": 4568,
+          "sha256": "0ed478c33e41bd5eed13b48798bf5a82c3d78a333efafe923339451f1012e455"
+        },
+        "training_history.json": {
+          "bytes": 196268,
+          "sha256": "0d6d68d2f56c63217982134b15105bb87be8d0777e86cd1800208ba2bd956828"
+        }
+      },
+      "summary": {
+        "best_epoch": 60,
+        "formal_ground_truth_evaluation": false,
+        "metric_warning": "PILOT: agreement with independent pseudo labels, NOT ground-truth accuracy",
+        "checkpoint_sha256": "4b634796d271b6e564413bb4c353c0e9d6b965882a6e16112f4a56fd624ea91e"
+      },
+      "metrics": {
+        "before": {
+          "pck_at_0.2_torso": 0.7470956210902592,
+          "samples": 94,
+          "pck_evaluated_joints": 1119,
+          "mean_pixel_error": 17.38285682149318
+        },
+        "after": {
+          "pck_at_0.2_torso": 0.7613941018766756,
+          "samples": 94,
+          "pck_evaluated_joints": 1119,
+          "mean_pixel_error": 16.135449387762325
+        }
+      }
+    },
+    {
+      "run": "personal_few10_baseline_pilot_s42_20260928",
+      "exists": true,
+      "assets": {
+        "best_checkpoint.pt": {
+          "bytes": 4424095,
+          "sha256": "b1a8f655433beba94bea6852dea2e3cd1288b34d36b600d457f3a3626d4555e2"
+        },
+        "last_checkpoint.pt": {
+          "bytes": 4424095,
+          "sha256": "7f40efcbbeb97166c25b02134b919164830cf75d2a7647f0c5d8681a1b24f6b9"
+        },
+        "final_report.json": {
+          "bytes": 3483,
+          "sha256": "eb4ec211c6ba2ef11f877d7e0947ebfb5f08288bc161db8b1b97b4dbfafb6d08"
+        },
+        "run_manifest.json": {
+          "bytes": 4523,
+          "sha256": "effe17a7b283ed66f5fc8137768b5d6979ed6171a3b09882b28c8c46b5ad91b8"
+        },
+        "training_history.json": {
+          "bytes": 193154,
+          "sha256": "70c92b2693a8380e3ea0cad4f84cce0b4e8779951867b85e6b9b8f1664b3d627"
+        }
+      },
+      "summary": {
+        "best_epoch": 60,
+        "formal_ground_truth_evaluation": false,
+        "metric_warning": "PILOT: agreement with independent pseudo labels, NOT ground-truth accuracy",
+        "checkpoint_sha256": "b1a8f655433beba94bea6852dea2e3cd1288b34d36b600d457f3a3626d4555e2"
+      },
+      "metrics": {
+        "before": {
+          "pck_at_0.2_torso": 0.8516532618409294,
+          "samples": 94,
+          "pck_evaluated_joints": 1119,
+          "mean_pixel_error": 11.124005331793489
+        },
+        "after": {
+          "pck_at_0.2_torso": 0.8927613941018767,
+          "samples": 94,
+          "pck_evaluated_joints": 1119,
+          "mean_pixel_error": 9.842737626524057
+        }
+      }
+    }
+  ],
+  "baseline_deconv128": {
+    "path": "/DATA/DATA1/guest3/2026OpticsMoE/experiments/qwen3_vl_embedding_2b_lsp_pose_optical_moe16/runs/lsp_pose_optical_moe16_opt2/checkpoints/teacher_best_train_loss.pt",
+    "exists": true,
+    "bytes": 4424871,
+    "sha256": "0a4569f288f6de424b1b412452fa804a96e58d8f7e8655efaa23f461ab8cc735"
+  },
+  "remaining_boundaries": [
+    "No new model loading or metric evaluation; historical results are not recomputed.",
+    "Official TRAIN and periodic TEST share the audited protocol; personal provisional labels are not ground truth.",
+    "Historical model ID did not pin a frontend revision; immutable current cache identity is shared with T01.",
+    "Complete timing-to-model bindings and end-to-end runtime cutover still require review."
+  ]
+}
