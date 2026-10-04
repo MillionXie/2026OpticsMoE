@@ -1,0 +1,18 @@
+{
+  "protocol": "Deployment adaptation: 2250 original train + fixed random 112 original-test videos; select on remaining 446. Full 558 is mixed, not independent test.",
+  "target_holdout_srcc": 0.65,
+  "common": {
+    "test_adapt_fraction": 0.2,
+    "epochs": 100,
+    "batch_size": 128,
+    "seed": 20260914,
+    "anchor": 0.03,
+    "ema": 0.98,
+    "scope": "head",
+    "batch_order": "mos_stratified"
+  },
+  "arms": [
+    {"name": "ranking", "lr": 0.00001, "reg_weight": 0.5, "rank_weight": 1.0, "corr_weight": 0.5},
+    {"name": "regression", "lr": 0.00003, "reg_weight": 1.0, "rank_weight": 0.2, "corr_weight": 0.1}
+  ]
+}

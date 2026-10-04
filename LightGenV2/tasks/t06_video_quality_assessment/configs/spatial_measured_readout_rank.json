@@ -1,0 +1,14 @@
+{
+  "description": "Training-only MOS stratification and ranking-focused original readout adaptation; six measured CCD stages frozen",
+  "epochs": 100,
+  "lr": 0.00001,
+  "batch_size": 128,
+  "seed": 20260914,
+  "anchor": 0.03,
+  "ema": 0.98,
+  "scope": "head",
+  "reg_weight": 0.5,
+  "rank_weight": 1.0,
+  "corr_weight": 0.5,
+  "batch_order": "mos_stratified"
+}

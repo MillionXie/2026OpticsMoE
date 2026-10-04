@@ -1,0 +1,10 @@
+{
+  "seed": 20260914,
+  "epochs": 100,
+  "train_fraction": 0.8,
+  "trials": [
+    {"name": "low_lr_ema", "lr": 0.00001, "batch_size": 64, "ema": 0.98, "anchor": 0.1},
+    {"name": "anchored_ema", "lr": 0.00003, "batch_size": 64, "ema": 0.98, "anchor": 1.0},
+    {"name": "slow_ema", "lr": 0.000003, "batch_size": 32, "ema": 0.95, "anchor": 1.0}
+  ]
+}
