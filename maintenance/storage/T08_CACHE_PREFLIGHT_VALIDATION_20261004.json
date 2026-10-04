@@ -1,0 +1,40 @@
+{
+  "candidate": "7105528c4a71c817e40cec3f19d62c2ee93c3b17",
+  "cpu_synthetic_cases_passed": 16,
+  "cases": [
+    "valid-cache-CPU-readonly",
+    "reject-model_id",
+    "reject-retrieval_direction",
+    "reject-image_instruction",
+    "reject-data-change",
+    "reject-order-change",
+    "reject-tensor-shape",
+    "reject-tensor-dtype",
+    "reject-tensor-nan",
+    "missing-cache-before-torch-load",
+    "test_profile_architecture_and_prompt_values_are_preserved",
+    "test_modified_profile_is_rejected_before_run",
+    "test_missing_local_model_does_not_download_or_create_run",
+    "test_wrong_body_is_rejected_without_outputs",
+    "dispatch-evaluate-only-refuse-existing-run",
+    "entry-missing-cache-no-output-no-model"
+  ],
+  "runtime_checkout_changed": false,
+  "runtime_state_unchanged": true,
+  "models_loaded": false,
+  "scientific_metrics_recomputed": false,
+  "torch_version": "2.6.0+cu124",
+  "local_test_environment": {
+    "executed": false,
+    "reason": "Default Windows user-site PyTorch import failed with c10.dll initialization; no passing claim for that environment."
+  },
+  "old_runtime_unchanged": true,
+  "cache_identity_rewritten": false,
+  "models_downloaded": false,
+  "changed_paths": [
+    "LightGenV2/tasks/t08_abo_image_text_retrieval/cache_preflight.py",
+    "LightGenV2/tasks/t08_abo_image_text_retrieval/tests/test_cache_preflight.py",
+    "LightGenV2/tasks/t08_abo_image_text_retrieval/tests/test_reverse_entry.py",
+    "LightGenV2/tasks/t08_abo_image_text_retrieval/text_to_image.py"
+  ]
+}

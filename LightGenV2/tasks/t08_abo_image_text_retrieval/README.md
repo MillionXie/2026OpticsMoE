@@ -41,6 +41,14 @@ python -m LightGenV2.tasks.t08_abo_image_text_retrieval.text_to_image \
 ```
 
 去掉 `--inspect` 才执行固定主体评估；默认 CPU，可显式指定空闲设备。
+固定入口现在先核验既有教师缓存的方向、提示词、四份数据CSV、样本顺序、
+模型路径和64维张量；缓存缺失或不符时，在大模型加载与输出创建前停止，
+不会静默重新生成缓存。旧缓存的逻辑模型名与显式本地路径不自动视为同一身份，
+不能改缓存身份字段绕过检查。当前两处历史任务run目录均未找到原教师缓存；
+完整复评仍需定位或另行明确重建正确方向的缓存，不声称依赖已经全部齐全。
+原图7,200张、划分及三组正式best/last和报告的内容身份见
+`maintenance/storage/T08_CONTENT_ASSETS_20261004.json`；只读核验命令为
+`python maintenance/storage/check_t08_assets.py --repo-root /absolute/path/to/2026OpticsMoE`。
 这不是 Windows 光路采集或 .85 读出适配版部署命令。迁移验证已完成真实主体 PT
 严格加载和有界合成 token 的旧/新后端逐值等价，尚未新重评全数据或迁移 Windows
 流程，不将这些检查冒称新的实拍或精度复现。
