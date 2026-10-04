@@ -1,0 +1,22 @@
+{
+  "old_vision_sha256": "630ad5273911f8f6069602788eb5f71cd9ac2f0e9a0040b7c1211a694376761f",
+  "overlay_vision_sha256": "4cad72e1445f3a16373c4f697916a89b2526b4a900285eac6393928012052a1f",
+  "exact_default_output_cases": 12,
+  "default_initialization_and_buffers_identical": true,
+  "strict_default_state_load": true,
+  "declared_narrow_widths_shape_pass": true,
+  "device": "cpu",
+  "data_read": false,
+  "checkpoint_evaluated": false,
+  "formal_checkpoint_compatibility": {
+    "path": "/DATA/DATA1/guest3/t12_cross_modal_20260920/LightGenV2/tasks/t16_zero_phase_ccd_lifelong/runs/simulation/clevr_vision24_full_frozen_candidate_s17_f34f/best_checkpoint.pt",
+    "sha256": "d20273e1828fec4e5a7a5545fd892a722f3909f7205a791e0e682b437526aa11",
+    "old_and_new_strict_load": true,
+    "synthetic_outputs_identical": true
+  },
+  "t16_runtime_metrics_revalidated": false,
+  "old_source_ref": "1c7222a1119385475e1b464ca7efdb67cdc21a4c",
+  "new_overlay_ref": "190ceb9da7add8d93ea75c3086ace9ce58019d71",
+  "formal_dataset_metrics_replayed": false,
+  "main_shared_source_changed": false
+}

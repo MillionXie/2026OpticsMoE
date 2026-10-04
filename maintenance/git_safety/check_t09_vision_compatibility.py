@@ -2,12 +2,13 @@
 import argparse
 import hashlib
 import json
+from pathlib import Path
 import subprocess
 import sys
 import types
 
 
-def check(repository, old_ref, new_ref):
+def check(repository, old_ref, new_ref, checkpoint=None, checkpoint_sha256=None):
     import torch
     torch.set_num_threads(2)
     def blob(ref, name):
@@ -50,10 +51,25 @@ def check(repository, old_ref, new_ref):
     narrow.load_state_dict(narrow.state_dict(), strict=True)
     feature, logits = narrow(torch.zeros(2, 32, 32, 3, dtype=torch.uint8))
     assert feature.shape == (2, 128) and logits.shape == (2, 24)
+    checkpoint_report = None
+    if checkpoint is not None:
+        raw = Path(checkpoint).read_bytes()
+        if not checkpoint_sha256 or hashlib.sha256(raw).hexdigest() != checkpoint_sha256:
+            raise RuntimeError('Unreviewed formal checkpoint SHA')
+        state = torch.load(checkpoint, map_location='cpu', weights_only=False)
+        old = models[0]().eval(); new = models[1]().eval()
+        old.load_state_dict(state['model'], strict=True)
+        new.load_state_dict(state['model'], strict=True)
+        inputs = torch.randint(0, 256, (2, 32, 32, 3), dtype=torch.uint8)
+        if any(not torch.equal(a, b) for a, b in zip(old(inputs), new(inputs))):
+            raise RuntimeError('Formal checkpoint outputs changed')
+        checkpoint_report = dict(path=str(checkpoint), sha256=checkpoint_sha256,
+                                 old_and_new_strict_load=True, synthetic_outputs_identical=True)
     return dict(old_vision_sha256=identities[0], overlay_vision_sha256=identities[1],
                 exact_default_output_cases=count, default_initialization_and_buffers_identical=True,
                 strict_default_state_load=True, declared_narrow_widths_shape_pass=True,
                 device='cpu', data_read=False, checkpoint_evaluated=False,
+                formal_checkpoint_compatibility=checkpoint_report,
                 t16_runtime_metrics_revalidated=False)
 
 
@@ -62,5 +78,7 @@ if __name__ == '__main__':
     p.add_argument('--repository', required=True)
     p.add_argument('--old-ref', required=True)
     p.add_argument('--new-ref', required=True)
+    p.add_argument('--checkpoint')
+    p.add_argument('--checkpoint-sha256')
     a = p.parse_args()
-    print(json.dumps(check(a.repository, a.old_ref, a.new_ref), indent=2))
+    print(json.dumps(check(a.repository, a.old_ref, a.new_ref, a.checkpoint, a.checkpoint_sha256), indent=2))
