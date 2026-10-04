@@ -1,0 +1,18 @@
+{
+  "purpose": "Read-only sealed rank72 CCD receipt and resume identity checks",
+  "checkpoint_sha256": "25f23260864a00a0f32b5de209c27f5876166018c8d8ab0e880de81e0d2c2c22",
+  "contract_sha256": "bdc0d96745c144bd5dbe2865534ff40aceb9d4d3764e3d7b506f2ddfaed07df9",
+  "synthetic_tests_passed": 20,
+  "bounded_real_train_samples_checked": 1,
+  "bounded_real_ccd_receipt_pairs_checked": 6,
+  "phase_files_sha_and_native_format_checked": 6,
+  "full_14400_ccd_audit_claimed": false,
+  "historical_png_hash_present": false,
+  "temporary_amplitude_bmp_reverified": false,
+  "original_files_modified": false,
+  "devices_opened": false,
+  "model_loaded": false,
+  "query_metrics_computed": false,
+  "hardware_acquisition_runner_migration_complete": false,
+  "private_fixture_manifest": ".codex_tmp/t11_source_20261004/rank72_ccd_fixture/fixture_manifest.json"
+}

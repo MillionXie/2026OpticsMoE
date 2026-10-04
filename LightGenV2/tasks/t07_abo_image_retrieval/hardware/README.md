@@ -39,3 +39,23 @@ python maintenance/git_safety/check_t07_hardware_replay.py --repository /path/to
 
 来源及边界见 `maintenance/storage/T07_OFFLINE_REPLAY_SOURCE_20261004.json`。
 这不是训练或正式检索命令，也不改变最终版指标。
+
+## 只读 CCD 收据和断点检查
+
+`ccd_store.CCDStore` 读取已存在的正式会话。默认独立绑定封存会话的
+contract SHA `bdc0d96745c144bd5dbe2865534ff40aceb9d4d3764e3d7b506f2ddfaed07df9`，
+核对六层相位文件、原几何、400µs/Gain_X4/wait240、hv_inverse/flip_v、
+样本身份、Mono8尺寸，以及图片与收据的亮度统计。成对缺失标为待补，
+单边缺失、额外身份、暗帧或合同不一致直接报错，不擅自修复、移动或重拍。
+
+```bash
+python -m LightGenV2.tasks.t07_abo_image_retrieval.hardware.ccd_store --run /path/to/layerwise_selected2400_20260929
+```
+
+仅审计存储，不加载权重、不执行推理或计算检索指标。
+20项合成测试和一张正式TRAIN样本的六层PNG/收据抽查通过；
+这一抽查不冒称重新审计全部14400张。
+原收据没有PNG哈希，当前计算的SHA只标识当前文件，不能倒称采集当时已有哈希。
+临时振幅BMP当时已清除，因此只检查其收据SHA格式，不冒称可从收据重新验证原BMP。
+`read(stage, ids)` 返回未做归一化的uint8数组，供明确选择的上层回放；
+它本身不会调用模型或设备。
