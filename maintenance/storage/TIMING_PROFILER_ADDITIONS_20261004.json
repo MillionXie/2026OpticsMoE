@@ -1,0 +1,15 @@
+{
+  "source_commit": "43bf2f1d214c252b48e8104ef5816643ce6a7f4f",
+  "runtime_root": "/DATA/DATA1/guest3/2026OpticsMoE",
+  "runtime_head": "3f85510285e5ffdfca28def93eef2eb082b1655c",
+  "scope": "Missing-only historical timing profiler and PositionReadout dependency, not a new OpenMoji model selection or new measurement",
+  "paths": [
+    {"path": "LightGenV2/scripts/profile_narrow_optical_electronics_a100.py", "bytes": 32022, "sha256": "71ebc1e164023094ae880bafc0ed6f96a9f93c3ccc0c227a2ab28143b5dce100"},
+    {"path": "LightGenV2/scripts/profile_latest_optical_electronics_a100.py", "bytes": 44720, "sha256": "0e069027700c665b6a21064242e8635ad5348c185b6be6a006ddfd61638d5ed9"},
+    {"path": "LightGenV2/tasks/t04_semantic_interaction/embedding_model.py", "bytes": 8947, "sha256": "0b7922acaf7135f73438459bce60b95339bbc253f790fab02c362e84a3718dea"}
+  ],
+  "protected_local_narrow_source_sha256": "975d1cd7073e9d6bcec97753f39d1a9f527680b2b0f2e4c59b18c2f91bfead61",
+  "main_t04_modeling_and_settings_replaced": false,
+  "current_openmoji_runtime_touched": false,
+  "historical_results_replayed": false
+}

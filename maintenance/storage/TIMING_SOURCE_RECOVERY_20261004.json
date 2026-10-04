@@ -1,0 +1,41 @@
+{
+  "source_commit": "43bf2f1d214c252b48e8104ef5816643ce6a7f4f",
+  "source_runtime": "/DATA/DATA1/guest3/2026OpticsMoE",
+  "source_head": "3f85510285e5ffdfca28def93eef2eb082b1655c",
+  "archive_ref": "refs/archive/timing-source-20261004/server-two-profiler",
+  "private_bundle_sha256": "8ba9dfc5cc761879843d232f2e3b0e510f189dd9a805349e4553242c6c433906",
+  "private_bundle_bytes": 20356,
+  "local_bundle": ".codex_tmp/t11_source_20261004/timing_sources_reviewed_20261004.bundle",
+  "server_bundle": "storage_cleanup_manifests/timing_sources_reviewed_20261004.bundle",
+  "paths": [
+    {
+      "path": "LightGenV2/scripts/profile_narrow_optical_electronics_a100.py",
+      "bytes": 32022,
+      "sha256": "71ebc1e164023094ae880bafc0ed6f96a9f93c3ccc0c227a2ab28143b5dce100",
+      "protected_different_local_sha256": "975d1cd7073e9d6bcec97753f39d1a9f527680b2b0f2e4c59b18c2f91bfead61"
+    },
+    {
+      "path": "LightGenV2/scripts/profile_latest_optical_electronics_a100.py",
+      "bytes": 44720,
+      "sha256": "0e069027700c665b6a21064242e8635ad5348c185b6be6a006ddfd61638d5ed9",
+      "local_identical": true
+    }
+  ],
+  "evidence": {
+    "recovery_tool_tests_passed": 6,
+    "overlay_and_recovery_tests_passed": 17,
+    "server_and_local_git_bundle_verified": true,
+    "archive_contains_exact_runtime_bytes": true,
+    "both_sources_compile_without_execution": true,
+    "source_files_user_index_runtime_head_unchanged": true
+  },
+  "pending": [
+    "Read and audit full dependency profiler and dynamic legacy loaders",
+    "Confirm source snapshot identity for each historical timing report",
+    "Verify required imports before missing-only publication to main"
+  ],
+  "benchmark_executed": false,
+  "profiler_sources_published_to_main": false,
+  "scientific_assets_deleted": false,
+  "external_upload_resumed": false
+}
