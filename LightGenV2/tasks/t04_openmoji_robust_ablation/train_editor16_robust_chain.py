@@ -27,7 +27,25 @@ GROUPS=('r1_ccd','r2_ccd_dc30','r3_ccd_dc30_grid')
 NOISE_SCALE=5.
 
 
-def install_training_profile(model,group):
+def randomized_ccd(intensity, scale):
+    """Exploratory shared router/expert sensor proxy, not a calibrated sensor.
+
+    Sample frame-level gain/background and signal-dependent plus read noise.
+    Zero scale is exactly identity. Reference is detached, never TEST-fitted.
+    """
+    if scale == 0:
+        return intensity
+    ref=intensity.mean((-2,-1),keepdim=True).detach().clamp_min(1e-8)
+    frame_shape=(*intensity.shape[:-2],1,1)
+    gain=intensity.new_empty(frame_shape).uniform_(.9,1.1)
+    offset=intensity.new_empty(frame_shape).uniform_(0.,.03*scale)*ref
+    read=.01*scale*ref*torch.randn_like(intensity)
+    shot=.01*scale*(intensity.clamp_min(0)*ref).sqrt()*torch.randn_like(intensity)
+    return (gain*intensity+offset+read+shot).clamp_min(0)
+
+
+def install_training_profile(model,group,*,noise_scale=NOISE_SCALE,
+                             noise_model='legacy',grid_probability=1.):
     """Clean eval uses exactly r0 bounded propagation, including G5.
 
     Historical grid wrapper was always active; here grid is TRAIN-only, as the
@@ -40,17 +58,21 @@ def install_training_profile(model,group):
     profile=PROFILES[group]
     for path in model._optical_paths():
         path.gain_min=path.gain_max=1.
-        path.offset_fraction=.03*NOISE_SCALE
-        path.read_noise_fraction=.01*NOISE_SCALE
+        path.offset_fraction=.03*noise_scale
+        path.read_noise_fraction=.01*noise_scale
         path.ccd_noise_distribution='none'
         path.input_shift_pixels=path.phase_shift_pixels=path.ccd_shift_pixels=0
         path.zero_order_enabled=profile['dc30']
         path.amplitude_zero_order_intensity_min=path.amplitude_zero_order_intensity_max=0.
         path.phase_zero_order_intensity_min=path.phase_zero_order_intensity_max=.30 if profile['dc30'] else 0.
+        if noise_model=='randomized':
+            def perturb(intensity):
+                return randomized_ccd(intensity,noise_scale) if model.training else intensity
+            path._perturb_ccd=perturb
         original=path._simulate_detector_roi
         def detector(field,modulation,shifts,*,phase_support=None,original=original):
             field=bounded(field)
-            if model.training and profile['grid']:
+            if model.training and profile['grid'] and torch.rand(())<grid_probability:
                 field=grid_roundtrip(field,1101 if field.shape[-1]==518 else 1016)
             return original(field,modulation,shifts,phase_support=phase_support)
         path._simulate_detector_roi=detector
@@ -59,12 +81,16 @@ def install_training_profile(model,group):
         original_router=router._simulate
         def route(fields,original=original_router):
             fields=bounded(fields)
-            if model.training and profile['grid']: fields=grid_roundtrip(fields,1016)
+            if model.training and profile['grid'] and torch.rand(())<grid_probability:
+                fields=grid_roundtrip(fields,1016)
             intensity=original(fields)
             if model.training:
-                ref=intensity.mean((-2,-1),keepdim=True).detach()
-                intensity=(intensity+.03*NOISE_SCALE*ref+
-                           .01*NOISE_SCALE*ref*torch.randn_like(intensity)).clamp_min(0)
+                if noise_model=='randomized':
+                    intensity=randomized_ccd(intensity,noise_scale)
+                else:
+                    ref=intensity.mean((-2,-1),keepdim=True).detach()
+                    intensity=(intensity+.03*noise_scale*ref+
+                               .01*noise_scale*ref*torch.randn_like(intensity)).clamp_min(0)
             return intensity
         router._simulate=route
 
@@ -80,8 +106,12 @@ def main():
     parser.add_argument('--group',choices=GROUPS,required=True)
     parser.add_argument('--source-commit',required=True)
     parser.add_argument('--epochs',type=int,default=120)
+    parser.add_argument('--noise-scale',type=float,default=NOISE_SCALE)
+    parser.add_argument('--noise-model',choices=('legacy','randomized'),default='legacy')
+    parser.add_argument('--grid-probability',type=float,default=1.)
     parser.add_argument('--smoke',action='store_true')
     args=parser.parse_args()
+    assert args.noise_scale>=0 and 0<=args.grid_probability<=1
     assert sha(args.source)==SOURCE_SHA
     root=Path(__file__).resolve().parents[3]
     relative=Path(__file__).relative_to(root).as_posix()
@@ -111,7 +141,8 @@ def main():
         assert len(gates)==4
         for n,p in model.named_parameters():
             if n in gates: p.requires_grad_(False)
-        install_training_profile(model,args.group)
+        install_training_profile(model,args.group,noise_scale=args.noise_scale,
+                                 noise_model=args.noise_model,grid_probability=args.grid_probability)
         train,test=t.build_loaders(cfg)
         assert len(train.dataset)==5000 and len(test.dataset)==1000
         epochs=1 if args.smoke else args.epochs
@@ -126,7 +157,10 @@ def main():
             fixed_alpha_logits={n:float(v) for n,v in gates.items()},epochs=epochs,steps_per_epoch=steps,
             train_count=5000,test_count=1000,seed=73,selection='complete clean TEST every5 highest development',
             test_gradient=False,validation_selection=False,profile=PROFILES[args.group],
-            noise_scale=NOISE_SCALE,noise_offset_fraction=.15,noise_read_fraction=.05,
+            noise_scale=args.noise_scale,noise_model=args.noise_model,
+            noise_offset_fraction=.03*args.noise_scale,noise_read_fraction=.01*args.noise_scale,
+            noise_shot_fraction=.01*args.noise_scale if args.noise_model=='randomized' else 0.,
+            grid_probability=args.grid_probability,
             noise_proxy_not_calibrated=True,dc_phase_leakage_intensity=.30 if PROFILES[args.group]['dc30'] else 0.,
             dc_planes='expert/global, historical backend',grid='TRAIN-only differentiable17→8→17 proxy, not true8um propagation',
             inference_profile='clean r0; no training noise/DC/grid/phase-dropout',phase_dropout=False,
