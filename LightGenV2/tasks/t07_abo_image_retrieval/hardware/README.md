@@ -75,3 +75,27 @@ LGVQ视频项目或旧DVP工程。JSON相对设备路径按其所在目录解析
 九项纯CPU模拟设备测试通过，未打开SDK，未替换实验室代码；记录见仓库
 `maintenance/storage/T07_BENCH_SOURCE_IMPORT_20261005.json`。
 它仍不是完整逐层接续CLI，阶段编排、前端／protocol路径和运行目录切换继续审计。
+
+## 逐层编排源码已收拢，尚未替换正式设备入口
+
+`layerwise` 现已收拢实际最终runner：显式指定封存PT及SHA、processor目录、
+protocol、图片根目录、geometry、运行目录和设备配置／SDK／LUT，不再引用外部
+ABO工程。默认 `--mode inspect` 只核验路径、2400身份及固定几何，不加载Torch、
+processor或SDK，不创建输出目录。已完成会话只能inspect，其他模式拒绝重新启动。
+
+原六层外循环、四样本CPU回放、仅缺失帧打开阶段SDK、每层两暖帧及原检索评价函数
+保持原逻辑；接续帧改用已审计CCDStore严格核对收据与像素统计。
+16项新CPU前检／模拟编排测试通过，与控制层合计25项；**没有打开设备、
+重评800查询或替换实验室正式源码**。不能据此删除旧工程。正式设备回归／Git切换
+仍须单独安排，并且当前用户封存状态不允许启动selftest/pilot/full。
+
+源码SHA与三项原函数AST检查：
+
+```bash
+python maintenance/git_safety/check_t07_layerwise_source.py --commit main
+```
+
+持有私有恢复记录的维护机可加 `--audit-archive`。来源记录见
+`maintenance/storage/T07_LAYERWISE_SOURCE_IMPORT_20261005.json`。
+新入口的 `full` 是完整真图库和查询的历史计算逻辑，不是清理工作的测试命令；
+不允许为了整理重算封存指标。原800查询仍属于开发期指标，非独立泛化。

@@ -1,0 +1,34 @@
+{
+  "source_ref": "refs/archive/windows-source-20261004/abo-rank72",
+  "sources": [
+    {
+      "path": "ABO_I2I_Lab_DVP_8um/candidate_latergb_rank72_20260930/layerwise_stage_sessions.py",
+      "sha256": "bf5fa082ec21b42de55f3852c2f34f0e4774394ba99e67a21688884edbdf0e1b"
+    },
+    {
+      "path": "ABO_I2I_Lab_DVP_8um/candidate_latergb_rank72_20260930/abo_full_query_flow_snapshot_20260928.py",
+      "sha256": "d208c9a1ce01d07c54efbfd0ae352b7fa78701fa90b2ae94d97432659c71dec3"
+    },
+    {
+      "path": "ABO_I2I_Lab_DVP_8um/lab_dvp8um/four_image_flow.py",
+      "sha256": "26265e6b238c4e8f4062f250720b2e2144f4ff37bf864a5700af93ae3f3120fb"
+    }
+  ],
+  "published_path": "LightGenV2/tasks/t07_abo_image_retrieval/hardware/layerwise.py",
+  "sha256_lf": "5d372cffecd48d03837eba957da8fd1c41fab4ae50ec1cf7e237c63cab4df296",
+  "unchanged_functions_ast": [
+    "phase_planes",
+    "selected_phase",
+    "evaluate"
+  ],
+  "reviewed_changes": [
+    "Explicit pinned assets and machine paths; default read-only inspect before model/output",
+    "Canonical CPU replay callback instead of legacy globals, no optical graph change",
+    "Existing canonical CCDStore validates receipt identity, gain, orientation and pixel statistics",
+    "Keep original six outer layer loops, four sample CPU batches, two warmups and lazy per-stage SDK sessions",
+    "Preserve current-thread awake power request only during real capture; no machine policy writes"
+  ],
+  "real_hardware_regression_completed": false,
+  "sealed_run_restarted": false,
+  "query_metrics_recomputed": false
+}
