@@ -102,7 +102,7 @@ def run(repository, commit, fixture):
         raise RuntimeError('Formal body PT changed')
     payload = torch.load(pt, map_location='cpu', weights_only=False)
     assert payload['metadata']['optical_architecture'] == model.checkpoint_architecture(settings)
-    strict = []
+    strict, synthetic = [], {}
     for direction, cls in (('vision', model.BalancedVisionReplacement), ('language', model.BalancedLanguageReplacement)):
         state = payload[direction+'_optical']
         hidden = int(state['core.input_adapter.weight'].shape[1])
@@ -110,11 +110,29 @@ def run(repository, commit, fixture):
         model._install_optical_router(surrogate, settings)
         surrogate.load_state_dict(state, strict=True)
         strict.append(dict(modality=direction, hidden_size=hidden, strict=True))
+        surrogate.eval()
+        torch.manual_seed(17)
+        tokens = torch.randn(4, hidden)
+        with torch.no_grad():
+            if direction == 'vision':
+                packed, latent = surrogate.core.forward_groups([tokens], causal=False, spatial_shapes=[(1, 2, 2)])
+            else:
+                first, _ = surrogate.core.forward_stage_groups(0, [tokens], causal=True)
+                packed, latent = surrogate.core.forward_stage_groups(1, [first], causal=True)
+        assert torch.isfinite(packed).all() and torch.isfinite(latent).all()
+        synthetic[direction] = dict(packed_shape=list(packed.shape), latent_shape=list(latent.shape),
+                                   packed_sha256=hashlib.sha256(packed.contiguous().numpy().tobytes()).hexdigest(),
+                                   latent_sha256=hashlib.sha256(latent.contiguous().numpy().tobytes()).hexdigest())
     readout = model.ElectronicRetrievalReadout(settings.detector_output_size, settings.embedding_dim)
     readout.load_state_dict(payload['retrieval_readout'], strict=True)
+    torch.manual_seed(29)
+    with torch.no_grad():
+        output = readout(torch.randn(2, settings.detector_output_size))
+    synthetic['readout'] = hashlib.sha256(output.contiguous().numpy().tobytes()).hexdigest()
     return dict(commit=commit, original_runtime=SOURCE, config_fixtures_verified=len(seen),
                 geometry_m=0.10, body_sha256=digest, strict_reloads=strict+['readout'],
                 architecture_label_identical_at_10cm=True, imports=importer.loaded,
+                synthetic_forward=synthetic,
                 dataset_evaluated=False, scientific_metrics_revalidated=False,
                 model_forward_equivalence_verified=False, windows_deployment_verified=False,
                 runtime_assets_modified=False, cuda_visible_devices='')
