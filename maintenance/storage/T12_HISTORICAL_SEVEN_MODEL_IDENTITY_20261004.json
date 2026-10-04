@@ -1,0 +1,448 @@
+{
+  "schema_version": 1,
+  "purpose": "Preserve September23 historical seven-model T12 identities and timing; not current final T12 editors.",
+  "timing_report": {
+    "path": "LightGenV2/reports/20260923_t12_three_task_large_small/latency_a100_matched.json",
+    "sha256": "9bf2e9816778c9ec4694253a6e6240499edf522fdf09d07c4f36e3b9bb44248b",
+    "boundary": "first retained language Transformer block input -> generated RGB tensor",
+    "excluded": [
+      "model loading",
+      "tokenization",
+      "token embedding lookup",
+      "host-to-device input copy"
+    ],
+    "device": "NVIDIA A100-PCIE-40GB",
+    "optical_accounting": "software FFT bypassed; add 1.0447 * 6 ms; parallel residual is not added",
+    "preserve_outside_git": true
+  },
+  "checkpoints": [
+    {
+      "path": "/DATA/DATA1/guest3/t12_assets/runs/abo_scene_replace_28layer_electronic_baseline_v1/best_model.pt",
+      "bytes": 682749004,
+      "sha256": "48e548894e31b5f9f56631d68ecfed819c6e0c38b1b29af14f0eda59119a6de3",
+      "server_sha_verified": true,
+      "cpu_weights_only_structure_read": true,
+      "epoch_in_checkpoint": 1,
+      "checkpoint_keys": [
+        "adapter",
+        "attribute_router",
+        "epoch",
+        "model_config",
+        "schema_version",
+        "training_config",
+        "unet",
+        "validation"
+      ],
+      "tensor_components": {
+        "unet": {
+          "tensor_count": 358,
+          "elements": 326837124
+        },
+        "adapter": {
+          "tensor_count": 30,
+          "elements": 14444928
+        },
+        "attribute_router": {
+          "tensor_count": 10,
+          "elements": 26635
+        }
+      },
+      "training_summary_path": "/DATA/DATA1/guest3/t12_assets/runs/abo_scene_replace_28layer_electronic_baseline_v1/training_summary.json",
+      "current_server_summary_sha256": "f5024c8386a4bf4e6067d6f20e5d1c54631bf2a7213a80c9170adb82c4d18352",
+      "training_lineage_references": [
+        {
+          "key": ".warm_start_checkpoint",
+          "value": "/DATA/DATA1/guest3/t12_assets/runs/abo_lamp_scene_big_optical_v4/best_model.pt"
+        }
+      ],
+      "timing_name": "baseline_qwen28_electronic_decoder",
+      "counted_parameters_in_original_report": 1824200950,
+      "measured_bypass_mean_ms": 63.7379275894165,
+      "estimated_hardware_mean_ms": 63.7379275894165
+    },
+    {
+      "path": "/DATA/DATA1/guest3/t12_assets/runs/abo_scene_replace_2layer_progressive_282m_v1/best_model.pt",
+      "bytes": 216628721,
+      "sha256": "db7508427c27ec6aa188d981a8907ad5bc04a0baa4c387360839bcba933c6eeb",
+      "server_sha_verified": true,
+      "cpu_weights_only_structure_read": true,
+      "epoch_in_checkpoint": null,
+      "checkpoint_keys": [
+        "adapter",
+        "attribute_router",
+        "model_config",
+        "qwen_layers",
+        "schema_version",
+        "student_widths",
+        "training_config",
+        "unet",
+        "validation"
+      ],
+      "tensor_components": {
+        "unet": {
+          "tensor_count": 203,
+          "elements": 93803689
+        },
+        "adapter": {
+          "tensor_count": 30,
+          "elements": 14444928
+        },
+        "attribute_router": {
+          "tensor_count": 10,
+          "elements": 26635
+        }
+      },
+      "training_summary_path": "/DATA/DATA1/guest3/t12_assets/runs/abo_scene_replace_2layer_progressive_282m_v1/training_summary.json",
+      "current_server_summary_sha256": "7d6896800afec2e687bce53547fb14ab1cb532a2b54e0c47ca12cb0f53c46e0f",
+      "training_lineage_references": [
+        {
+          "key": ".teacher",
+          "value": "/DATA/DATA1/guest3/t12_assets/runs/abo_scene_replace_3layer_compact_optical_v1/best_model.pt"
+        }
+      ],
+      "timing_name": "large_background_qwen2_optical",
+      "counted_parameters_in_original_report": 282431515,
+      "measured_bypass_mean_ms": 31.917230110168457,
+      "estimated_hardware_mean_ms": 38.185430110168454
+    },
+    {
+      "path": "/DATA/DATA1/guest3/t12_assets/runs/abo_global_redesign_2layer_282m_v1/best_model.pt",
+      "bytes": 216598315,
+      "sha256": "e081485f9846b161bb3f41ad76e9eb11a022fee56a092113a8115c4b4a9987e0",
+      "server_sha_verified": true,
+      "cpu_weights_only_structure_read": true,
+      "epoch_in_checkpoint": 4,
+      "checkpoint_keys": [
+        "adapter",
+        "design_router",
+        "epoch",
+        "model_config",
+        "qwen_layers",
+        "schema_version",
+        "student_widths",
+        "training_config",
+        "unet",
+        "validation"
+      ],
+      "tensor_components": {
+        "unet": {
+          "tensor_count": 203,
+          "elements": 93803689
+        },
+        "adapter": {
+          "tensor_count": 30,
+          "elements": 14444928
+        },
+        "design_router": {
+          "tensor_count": 4,
+          "elements": 12292
+        }
+      },
+      "training_summary_path": "/DATA/DATA1/guest3/t12_assets/runs/abo_global_redesign_2layer_282m_v1/training_summary.json",
+      "current_server_summary_sha256": "7488a939388ff183c4643bd044af23e9f7a8704f8de05dd5d6c19a30d287f3d2",
+      "training_lineage_references": [
+        {
+          "key": ".warm_start_checkpoint",
+          "value": "/DATA/DATA1/guest3/t12_assets/runs/abo_scene_replace_2layer_progressive_282m_v1/best_model.pt"
+        }
+      ],
+      "timing_name": "large_redesign_qwen2_optical",
+      "counted_parameters_in_original_report": 282417172,
+      "measured_bypass_mean_ms": 32.88726526260376,
+      "estimated_hardware_mean_ms": 39.15546526260376
+    },
+    {
+      "path": "/DATA/DATA1/guest3/t12_assets/runs/abo_premium_material_2layer_282m_v1/best_model.pt",
+      "bytes": 216631083,
+      "sha256": "f1b61f756eab98998d1f1547f1f8eee97bfaa3c4f9ba2292d107abe3b15c5dfb",
+      "server_sha_verified": true,
+      "cpu_weights_only_structure_read": true,
+      "epoch_in_checkpoint": 4,
+      "checkpoint_keys": [
+        "adapter",
+        "design_router",
+        "epoch",
+        "model_config",
+        "qwen_layers",
+        "schema_version",
+        "student_widths",
+        "training_config",
+        "unet",
+        "validation"
+      ],
+      "tensor_components": {
+        "unet": {
+          "tensor_count": 203,
+          "elements": 93803689
+        },
+        "adapter": {
+          "tensor_count": 30,
+          "elements": 14444928
+        },
+        "design_router": {
+          "tensor_count": 4,
+          "elements": 28684
+        }
+      },
+      "training_summary_path": "/DATA/DATA1/guest3/t12_assets/runs/abo_premium_material_2layer_282m_v1/training_summary.json",
+      "current_server_summary_sha256": "e97d529fe11e3fc6ad38ea14159ea0d04b80dc5224757da47ec3b20490422a6c",
+      "training_lineage_references": [
+        {
+          "key": ".warm_start_checkpoint",
+          "value": "/DATA/DATA1/guest3/t12_assets/runs/abo_global_redesign_2layer_282m_v1/best_model.pt"
+        }
+      ],
+      "timing_name": "large_premium_qwen2_optical",
+      "counted_parameters_in_original_report": 282433564,
+      "measured_bypass_mean_ms": 32.06263822555542,
+      "estimated_hardware_mean_ms": 38.33083822555542
+    },
+    {
+      "path": "/DATA/DATA1/guest3/t12_assets/runs/abo_background_qwenmini2_optical_under50m_v2/best_model.pt",
+      "bytes": 37981859,
+      "sha256": "0483ac81c74e767c57b1468f52914d09a3d8d506b2378253d6efa6140d684f46",
+      "server_sha_verified": true,
+      "cpu_weights_only_structure_read": true,
+      "epoch_in_checkpoint": 20,
+      "checkpoint_keys": [
+        "counted_parameters",
+        "editor_config",
+        "epoch",
+        "gan_used",
+        "generator_condition",
+        "hard_pixel_composite",
+        "inference_iterations",
+        "model",
+        "qwen_mini_config",
+        "qwen_transformer_layers",
+        "schema_version",
+        "shared_qwen_token_embedding_excluded",
+        "task",
+        "validation"
+      ],
+      "tensor_components": {
+        "model": {
+          "tensor_count": 101,
+          "elements": 18975128
+        }
+      },
+      "training_summary_path": "/DATA/DATA1/guest3/t12_assets/runs/abo_background_qwenmini2_optical_under50m_v2/training_summary.json",
+      "current_server_summary_sha256": "7e4cf17be78d19b6bba1a89347236b3128b542addb6ad9d12bcb016312588536",
+      "training_lineage_references": [],
+      "timing_name": "small_background_qwenmini2_optical",
+      "counted_parameters_in_original_report": 18975128,
+      "measured_bypass_mean_ms": 6.77406720161438,
+      "estimated_hardware_mean_ms": 13.04226720161438
+    },
+    {
+      "path": "/DATA/DATA1/guest3/t12_assets/runs/abo_redesign_qwenmini2_optical_under50m_v2/best_model.pt",
+      "bytes": 37981859,
+      "sha256": "0ce7396ba74f2d6b82836df547a0d5968a1c1e39f4c9286b09e838df5baa92ec",
+      "server_sha_verified": true,
+      "cpu_weights_only_structure_read": true,
+      "epoch_in_checkpoint": 20,
+      "checkpoint_keys": [
+        "counted_parameters",
+        "editor_config",
+        "epoch",
+        "gan_used",
+        "generator_condition",
+        "hard_pixel_composite",
+        "inference_iterations",
+        "model",
+        "qwen_mini_config",
+        "qwen_transformer_layers",
+        "schema_version",
+        "shared_qwen_token_embedding_excluded",
+        "task",
+        "validation"
+      ],
+      "tensor_components": {
+        "model": {
+          "tensor_count": 101,
+          "elements": 18975128
+        }
+      },
+      "training_summary_path": "/DATA/DATA1/guest3/t12_assets/runs/abo_redesign_qwenmini2_optical_under50m_v2/training_summary.json",
+      "current_server_summary_sha256": "3ca808ba05d57aa47323d6e81d9c4d2b8ef70513e2f2ab46f82521f9b9a23a74",
+      "training_lineage_references": [],
+      "timing_name": "small_redesign_qwenmini2_optical",
+      "counted_parameters_in_original_report": 18975128,
+      "measured_bypass_mean_ms": 6.744453105926514,
+      "estimated_hardware_mean_ms": 13.012653105926514
+    },
+    {
+      "path": "/DATA/DATA1/guest3/t12_assets/runs/abo_premium8_qwenmini2_optical_under50m_v2/best_model.pt",
+      "bytes": 37981859,
+      "sha256": "6e70e476f461376ccc7fc10445bb7e810a6a6d391e52d3e47de6525b5e9c5d15",
+      "server_sha_verified": true,
+      "cpu_weights_only_structure_read": true,
+      "epoch_in_checkpoint": 14,
+      "checkpoint_keys": [
+        "counted_parameters",
+        "editor_config",
+        "epoch",
+        "gan_used",
+        "generator_condition",
+        "hard_pixel_composite",
+        "inference_iterations",
+        "model",
+        "qwen_mini_config",
+        "qwen_transformer_layers",
+        "schema_version",
+        "shared_qwen_token_embedding_excluded",
+        "task",
+        "validation"
+      ],
+      "tensor_components": {
+        "model": {
+          "tensor_count": 101,
+          "elements": 18975128
+        }
+      },
+      "training_summary_path": "/DATA/DATA1/guest3/t12_assets/runs/abo_premium8_qwenmini2_optical_under50m_v2/training_summary.json",
+      "current_server_summary_sha256": "4f11ad054913401b0ec6f6e8b57af4472410e665e0c90900227641b01f2b0dd8",
+      "training_lineage_references": [],
+      "timing_name": "small_premium_qwenmini2_optical",
+      "counted_parameters_in_original_report": 18975128,
+      "measured_bypass_mean_ms": 6.704885759353638,
+      "estimated_hardware_mean_ms": 12.973085759353637
+    }
+  ],
+  "frozen_dependencies": {
+    "historical_benchmark_argv_verified": false,
+    "scope": "Referenced candidate dependencies from preserved launchers and benchmark loader, full file SHA verified; does not establish which files the old benchmark actually opened.",
+    "files": [
+      {
+        "path": "/DATA/DATA1/guest3/t12_assets/models/bk-sdm-v2-tiny/unet/config.json",
+        "resolved_path": "/DATA/DATA1/guest3/t12_assets/models/bk-sdm-v2-tiny/unet/config.json",
+        "bytes": 1428,
+        "sha256": "5457a38409592c645288d796e955151c83bab1a9998fa5042346821146c5672a",
+        "stable_while_reading": true,
+        "hash_seconds": 0.0
+      },
+      {
+        "path": "/DATA/DATA1/guest3/t12_assets/models/bk-sdm-v2-tiny/unet/diffusion_pytorch_model.fp16.safetensors",
+        "resolved_path": "/DATA/DATA1/guest3/t12_assets/models/bk-sdm-v2-tiny/unet/diffusion_pytorch_model.fp16.safetensors",
+        "bytes": 653694536,
+        "sha256": "23a70270f3ee099bd42647944a2c9ad5e4eecc09eb4b9e193b0fac8898389591",
+        "stable_while_reading": true,
+        "hash_seconds": 7.897
+      },
+      {
+        "path": "/DATA/DATA1/guest3/t12_assets/models/sd-turbo-fp16/vae/config.json",
+        "resolved_path": "/DATA/DATA1/guest3/t12_assets/models/sd-turbo-fp16/vae/config.json",
+        "bytes": 655,
+        "sha256": "699a58ef7ecf3bffa201a507a3eaa3eed7efabab457ac547bf82df798b52a9be",
+        "stable_while_reading": true,
+        "hash_seconds": 0.002
+      },
+      {
+        "path": "/DATA/DATA1/guest3/t12_assets/models/sd-turbo-fp16/vae/diffusion_pytorch_model.fp16.safetensors",
+        "resolved_path": "/DATA/DATA1/guest3/t12_assets/models/sd-turbo-fp16/vae/diffusion_pytorch_model.fp16.safetensors",
+        "bytes": 167335342,
+        "sha256": "3e4c08995484ee61270175e9e7a072b66a6e4eeb5f0c266667fe1f45b90daf9a",
+        "stable_while_reading": true,
+        "hash_seconds": 1.467
+      },
+      {
+        "path": "/DATA/DATA1/guest3/t12_assets/models/sd-turbo-fp16/scheduler/scheduler_config.json",
+        "resolved_path": "/DATA/DATA1/guest3/t12_assets/models/sd-turbo-fp16/scheduler/scheduler_config.json",
+        "bytes": 553,
+        "sha256": "5599066c725fc2747a201fa3165ad7c8c3de3be629ce325451752e8f94c0d1ae",
+        "stable_while_reading": true,
+        "hash_seconds": 0.033
+      },
+      {
+        "path": "/DATA/DATA1/guest3/.cache/huggingface/hub/models--Qwen--Qwen3-VL-2B-Instruct/snapshots/89644892e4d85e24eaac8bacfd4f463576704203/chat_template.json",
+        "resolved_path": "/DATA/DATA1/guest3/.cache/huggingface/hub/models--Qwen--Qwen3-VL-2B-Instruct/blobs/e49e75bdda104c8de941eb20e0b3765184fb27bc",
+        "bytes": 5502,
+        "sha256": "6f8a6a55027e3da5160105556cda5dd69f6423f1c32645f6730d32de7773d0c4",
+        "stable_while_reading": true,
+        "hash_seconds": 0.013
+      },
+      {
+        "path": "/DATA/DATA1/guest3/.cache/huggingface/hub/models--Qwen--Qwen3-VL-2B-Instruct/snapshots/89644892e4d85e24eaac8bacfd4f463576704203/config.json",
+        "resolved_path": "/DATA/DATA1/guest3/.cache/huggingface/hub/models--Qwen--Qwen3-VL-2B-Instruct/blobs/0cd8c646eb55794594b14fefcd1d3acea5cc000f",
+        "bytes": 1505,
+        "sha256": "bec4b3d446efa05807365c9e1cec03ac590836879d02f3a6da879971154bdd3b",
+        "stable_while_reading": true,
+        "hash_seconds": 0.0
+      },
+      {
+        "path": "/DATA/DATA1/guest3/.cache/huggingface/hub/models--Qwen--Qwen3-VL-2B-Instruct/snapshots/89644892e4d85e24eaac8bacfd4f463576704203/generation_config.json",
+        "resolved_path": "/DATA/DATA1/guest3/.cache/huggingface/hub/models--Qwen--Qwen3-VL-2B-Instruct/blobs/7bb37933d2d86e4ceaabcc6540be989658f238e9",
+        "bytes": 269,
+        "sha256": "1e241830b48b397cb0900101421df5450baddc7adf01e5fc86b5615865f3bae4",
+        "stable_while_reading": true,
+        "hash_seconds": 0.0
+      },
+      {
+        "path": "/DATA/DATA1/guest3/.cache/huggingface/hub/models--Qwen--Qwen3-VL-2B-Instruct/snapshots/89644892e4d85e24eaac8bacfd4f463576704203/merges.txt",
+        "resolved_path": "/DATA/DATA1/guest3/.cache/huggingface/hub/models--Qwen--Qwen3-VL-2B-Instruct/blobs/20024bfe7c83998e9aeaf98a0cd6a2ce6306c2f0",
+        "bytes": 1671839,
+        "sha256": "599bab54075088774b1733fde865d5bd747cbcc7a547c5bc12610e874e26f5e3",
+        "stable_while_reading": true,
+        "hash_seconds": 0.024
+      },
+      {
+        "path": "/DATA/DATA1/guest3/.cache/huggingface/hub/models--Qwen--Qwen3-VL-2B-Instruct/snapshots/89644892e4d85e24eaac8bacfd4f463576704203/model.safetensors",
+        "resolved_path": "/DATA/DATA1/guest3/.cache/huggingface/hub/models--Qwen--Qwen3-VL-2B-Instruct/blobs/7de1838c87a5349b016c26a1c3f7d2bc400a3d485f95ef39a7059ffd734977a0",
+        "bytes": 4255140312,
+        "sha256": "7de1838c87a5349b016c26a1c3f7d2bc400a3d485f95ef39a7059ffd734977a0",
+        "stable_while_reading": true,
+        "hash_seconds": 35.247
+      },
+      {
+        "path": "/DATA/DATA1/guest3/.cache/huggingface/hub/models--Qwen--Qwen3-VL-2B-Instruct/snapshots/89644892e4d85e24eaac8bacfd4f463576704203/preprocessor_config.json",
+        "resolved_path": "/DATA/DATA1/guest3/.cache/huggingface/hub/models--Qwen--Qwen3-VL-2B-Instruct/blobs/2ea84a437d448ff71b08df68fdd949d5cc4ebb64",
+        "bytes": 390,
+        "sha256": "27225450ac9c6529872ee1924fcb0962ff5634834f817040f444118116f4e516",
+        "stable_while_reading": true,
+        "hash_seconds": 0.002
+      },
+      {
+        "path": "/DATA/DATA1/guest3/.cache/huggingface/hub/models--Qwen--Qwen3-VL-2B-Instruct/snapshots/89644892e4d85e24eaac8bacfd4f463576704203/tokenizer.json",
+        "resolved_path": "/DATA/DATA1/guest3/.cache/huggingface/hub/models--Qwen--Qwen3-VL-2B-Instruct/blobs/c6cc1014128b19d1fc46b1d30a23e3b1d35db421",
+        "bytes": 7032403,
+        "sha256": "a5d85b6dcc535e6b93115a9ef287e6132fdbf30270da6218194ba742261173c7",
+        "stable_while_reading": true,
+        "hash_seconds": 0.112
+      },
+      {
+        "path": "/DATA/DATA1/guest3/.cache/huggingface/hub/models--Qwen--Qwen3-VL-2B-Instruct/snapshots/89644892e4d85e24eaac8bacfd4f463576704203/tokenizer_config.json",
+        "resolved_path": "/DATA/DATA1/guest3/.cache/huggingface/hub/models--Qwen--Qwen3-VL-2B-Instruct/blobs/d3d3763207692c78780f4bf42d4dadf49a5c8012",
+        "bytes": 10868,
+        "sha256": "c2da771801886ad9ae98181793ffd3dfb7f1af30f6f7c6a4e15d7dbba52e2399",
+        "stable_while_reading": true,
+        "hash_seconds": 0.0
+      },
+      {
+        "path": "/DATA/DATA1/guest3/.cache/huggingface/hub/models--Qwen--Qwen3-VL-2B-Instruct/snapshots/89644892e4d85e24eaac8bacfd4f463576704203/video_preprocessor_config.json",
+        "resolved_path": "/DATA/DATA1/guest3/.cache/huggingface/hub/models--Qwen--Qwen3-VL-2B-Instruct/blobs/3ba673a5ad7d4d13f54155ecd38b2a94a6dac8fe",
+        "bytes": 385,
+        "sha256": "7768af27c1fafa9cc9011c1dc20067e03f8915e03b63504550e11d5066986d13",
+        "stable_while_reading": true,
+        "hash_seconds": 0.009
+      },
+      {
+        "path": "/DATA/DATA1/guest3/.cache/huggingface/hub/models--Qwen--Qwen3-VL-2B-Instruct/snapshots/89644892e4d85e24eaac8bacfd4f463576704203/vocab.json",
+        "resolved_path": "/DATA/DATA1/guest3/.cache/huggingface/hub/models--Qwen--Qwen3-VL-2B-Instruct/blobs/4783fe10ac3adce15ac8f358ef5462739852c569",
+        "bytes": 2776833,
+        "sha256": "ca10d7e9fb3ed18575dd1e277a2579c16d108e32f27439684afa0e10b1440910",
+        "stable_while_reading": true,
+        "hash_seconds": 0.034
+      },
+      {
+        "path": "/DATA/DATA1/guest3/t12_assets/runs/677deac6/qwen_sd_turbo_one_step_text_aug_seed42/best_adapter.pt",
+        "bytes": 57793254,
+        "sha256": "1bc016efa179690047b229658a7b3c347be9f6afcdd233b02ffceeffcea8ecfd"
+      }
+    ]
+  },
+  "historical_full_model_reload_performed": false,
+  "timing_rerun_performed": false,
+  "gpu_used": false,
+  "asset_deletion_performed": false,
+  "preservation_policy": "Keep original timing assets, all seven PTs, referenced pretrained assets and training lineage. Do not assign these timings to current 149.76M/9.96M/17.03M models. Current training_summary hashes are not a replacement for preserved report summary hashes."
+}
