@@ -1,0 +1,1992 @@
+{
+  "root": "/DATA/DATA1/guest3/demo_reproduction_20260915",
+  "head": "1c7222a1119385475e1b464ca7efdb67cdc21a4c",
+  "source_files": [
+    {
+      "path": "LightGenV2/tasks/t09_multimodal_matching/README.md",
+      "bytes": 29708,
+      "sha256": "3d88ec128ae25885f7ecb78113a9a0ecbc2eab6fd48945943278c797b4e5aa57",
+      "git_sha256": "3d88ec128ae25885f7ecb78113a9a0ecbc2eab6fd48945943278c797b4e5aa57",
+      "different_from_commit": false
+    },
+    {
+      "path": "LightGenV2/tasks/t09_multimodal_matching/audio_frontend.py",
+      "bytes": 3228,
+      "sha256": "3822bc84244bf75341b0020bbd86378b5c0dc6e15ba562350d773c88ad8bf66a",
+      "git_sha256": "3822bc84244bf75341b0020bbd86378b5c0dc6e15ba562350d773c88ad8bf66a",
+      "different_from_commit": false
+    },
+    {
+      "path": "LightGenV2/tasks/t09_multimodal_matching/audio_prepare.py",
+      "bytes": 6444,
+      "sha256": "d11eb3c442041109af211ca1e39e41635173b7221f3530bec2244ab39f285e7d",
+      "git_sha256": "d11eb3c442041109af211ca1e39e41635173b7221f3530bec2244ab39f285e7d",
+      "different_from_commit": false
+    },
+    {
+      "path": "LightGenV2/tasks/t09_multimodal_matching/audit.py",
+      "bytes": 5466,
+      "sha256": "056782090c0ce92f0a2bf62ead5d5c2ced67caeb300e9075f24a5088bcff6f97",
+      "git_sha256": "056782090c0ce92f0a2bf62ead5d5c2ced67caeb300e9075f24a5088bcff6f97",
+      "different_from_commit": false
+    },
+    {
+      "path": "LightGenV2/tasks/t09_multimodal_matching/check_features.py",
+      "bytes": 2618,
+      "sha256": "4d960c89ef3e5f6f0d45350c490902724ddd42c5668ef73c288c06581e2dbabb",
+      "git_sha256": "4d960c89ef3e5f6f0d45350c490902724ddd42c5668ef73c288c06581e2dbabb",
+      "different_from_commit": false
+    },
+    {
+      "path": "LightGenV2/tasks/t09_multimodal_matching/diagnose.py",
+      "bytes": 5162,
+      "sha256": "a8189af943be7ebae5276d889355986a319a49845b364972410ccc756c16289c",
+      "git_sha256": "a8189af943be7ebae5276d889355986a319a49845b364972410ccc756c16289c",
+      "different_from_commit": false
+    },
+    {
+      "path": "LightGenV2/tasks/t09_multimodal_matching/examples.py",
+      "bytes": 2697,
+      "sha256": "c65c7d498e55a911256735e538454c003f6e9bf264b866c274623b054a4fc30f",
+      "git_sha256": "c65c7d498e55a911256735e538454c003f6e9bf264b866c274623b054a4fc30f",
+      "different_from_commit": false
+    },
+    {
+      "path": "LightGenV2/tasks/t09_multimodal_matching/model.py",
+      "bytes": 9071,
+      "sha256": "8299ad614178e5ea99047270227e092e9eb97c2e0348a648661ac707d4d2ef34",
+      "git_sha256": "8299ad614178e5ea99047270227e092e9eb97c2e0348a648661ac707d4d2ef34",
+      "different_from_commit": false
+    },
+    {
+      "path": "LightGenV2/tasks/t09_multimodal_matching/plot.py",
+      "bytes": 2024,
+      "sha256": "62c99441ef7870222e94260f5eab1c9b9768a0732a4885afa9ca39db59807512",
+      "git_sha256": "62c99441ef7870222e94260f5eab1c9b9768a0732a4885afa9ca39db59807512",
+      "different_from_commit": false
+    },
+    {
+      "path": "LightGenV2/tasks/t09_multimodal_matching/plot_audio.py",
+      "bytes": 2582,
+      "sha256": "708fa833ad278b7b76793dcbc1c788f4ecf0c71d51d0ddf450b97fb84074634d",
+      "git_sha256": "708fa833ad278b7b76793dcbc1c788f4ecf0c71d51d0ddf450b97fb84074634d",
+      "different_from_commit": false
+    },
+    {
+      "path": "LightGenV2/tasks/t09_multimodal_matching/plot_budget.py",
+      "bytes": 1633,
+      "sha256": "c27cf64e57fea4128e15075086ec60a0a62afb433e053104466342f13162d878",
+      "git_sha256": "c27cf64e57fea4128e15075086ec60a0a62afb433e053104466342f13162d878",
+      "different_from_commit": false
+    },
+    {
+      "path": "LightGenV2/tasks/t09_multimodal_matching/plot_controls.py",
+      "bytes": 1553,
+      "sha256": "dca26d000fc2935d47ef94b927753c4f50c282613ebf5c1ce9159e9c6329cb79",
+      "git_sha256": "dca26d000fc2935d47ef94b927753c4f50c282613ebf5c1ce9159e9c6329cb79",
+      "different_from_commit": false
+    },
+    {
+      "path": "LightGenV2/tasks/t09_multimodal_matching/plot_input_contract.py",
+      "bytes": 2375,
+      "sha256": "8dc87428818a05f8a018f739d32190595bbdc567de1dc3d790ce7dba278ee706",
+      "git_sha256": "8dc87428818a05f8a018f739d32190595bbdc567de1dc3d790ce7dba278ee706",
+      "different_from_commit": false
+    },
+    {
+      "path": "LightGenV2/tasks/t09_multimodal_matching/plot_oeo_recovery.py",
+      "bytes": 3233,
+      "sha256": "20600859ddff2d65d4fd0fddecaf58065e21050e64a509ef0c6817d1258b363f",
+      "git_sha256": "20600859ddff2d65d4fd0fddecaf58065e21050e64a509ef0c6817d1258b363f",
+      "different_from_commit": false
+    },
+    {
+      "path": "LightGenV2/tasks/t09_multimodal_matching/plot_raw_audio.py",
+      "bytes": 3602,
+      "sha256": "b87f77d1df0be82815f148a264375d11eacab54e5253543b9fe85bf4325768bc",
+      "git_sha256": "b87f77d1df0be82815f148a264375d11eacab54e5253543b9fe85bf4325768bc",
+      "different_from_commit": false
+    },
+    {
+      "path": "LightGenV2/tasks/t09_multimodal_matching/plot_selected_test.py",
+      "bytes": 3202,
+      "sha256": "a0cf496a17e1e70f522b6ab6096e7c8766fab99e398bd2f2496ed8472ddab395",
+      "git_sha256": "a0cf496a17e1e70f522b6ab6096e7c8766fab99e398bd2f2496ed8472ddab395",
+      "different_from_commit": false
+    },
+    {
+      "path": "LightGenV2/tasks/t09_multimodal_matching/plot_test.py",
+      "bytes": 2616,
+      "sha256": "68bac677ce18e85aae0d755dbec1fa3f67be08936ba8adea75371006f8321d04",
+      "git_sha256": "68bac677ce18e85aae0d755dbec1fa3f67be08936ba8adea75371006f8321d04",
+      "different_from_commit": false
+    },
+    {
+      "path": "LightGenV2/tasks/t09_multimodal_matching/prepare.py",
+      "bytes": 8756,
+      "sha256": "24e6ae102cff753b62d9d3da3b1050b0feca90ea874add3400b502cb248df52e",
+      "git_sha256": "24e6ae102cff753b62d9d3da3b1050b0feca90ea874add3400b502cb248df52e",
+      "different_from_commit": false
+    },
+    {
+      "path": "LightGenV2/tasks/t09_multimodal_matching/probe_oeo.py",
+      "bytes": 3762,
+      "sha256": "205f01c546e61203d397f547082714bc54a943fdf33b4cd29e740f4cc60a86a1",
+      "git_sha256": "205f01c546e61203d397f547082714bc54a943fdf33b4cd29e740f4cc60a86a1",
+      "different_from_commit": false
+    },
+    {
+      "path": "LightGenV2/tasks/t09_multimodal_matching/reports/figures/audio_input_s17_20260918/readout_audit_summary.json",
+      "bytes": 23849,
+      "sha256": "e0962518a29297ec22deed704b812cbabc19773502ca0c3928b56b8e76415e3e",
+      "git_sha256": "e0962518a29297ec22deed704b812cbabc19773502ca0c3928b56b8e76415e3e",
+      "different_from_commit": false
+    },
+    {
+      "path": "LightGenV2/tasks/t09_multimodal_matching/reports/figures/audio_input_s17_20260918/transfer_manifest.json",
+      "bytes": 8459,
+      "sha256": "b74d354e32ea5ea08b7c4237429f72af8e291452e956571b880fcab26e8f3c9f",
+      "git_sha256": "b74d354e32ea5ea08b7c4237429f72af8e291452e956571b880fcab26e8f3c9f",
+      "different_from_commit": false
+    },
+    {
+      "path": "LightGenV2/tasks/t09_multimodal_matching/reports/figures/audio_input_s17_20260918/verified_results.json",
+      "bytes": 10343,
+      "sha256": "d3dd49b20fce813b8c9429d4937c2e5a06771323fdf796bc869cebe3156ed162",
+      "git_sha256": "d3dd49b20fce813b8c9429d4937c2e5a06771323fdf796bc869cebe3156ed162",
+      "different_from_commit": false
+    },
+    {
+      "path": "LightGenV2/tasks/t09_multimodal_matching/reports/figures/audio_matching_s17_20260917/canonical_cache_manifest.json",
+      "bytes": 585,
+      "sha256": "d96a3e1c105062051184f4400691fbbd3aa63f18e6f1ca6005ec5cbd81e6f843",
+      "git_sha256": "d96a3e1c105062051184f4400691fbbd3aa63f18e6f1ca6005ec5cbd81e6f843",
+      "different_from_commit": false
+    },
+    {
+      "path": "LightGenV2/tasks/t09_multimodal_matching/reports/figures/audio_matching_s17_20260917/d2nn_history.json",
+      "bytes": 26488,
+      "sha256": "ed96909030144d8064bfb9fe8532961b3348e08d1aeed84e17e4ca39ddd8d3f4",
+      "git_sha256": "ed96909030144d8064bfb9fe8532961b3348e08d1aeed84e17e4ca39ddd8d3f4",
+      "different_from_commit": false
+    },
+    {
+      "path": "LightGenV2/tasks/t09_multimodal_matching/reports/figures/audio_matching_s17_20260917/d2nn_metadata.json",
+      "bytes": 3557,
+      "sha256": "8af82073865ea4ea32777e28d8e0563094b264b946bcede6fcaa24a7c19b9cf9",
+      "git_sha256": "8af82073865ea4ea32777e28d8e0563094b264b946bcede6fcaa24a7c19b9cf9",
+      "different_from_commit": false
+    },
+    {
+      "path": "LightGenV2/tasks/t09_multimodal_matching/reports/figures/audio_matching_s17_20260917/d2nn_shared_visual_frontend.json",
+      "bytes": 279,
+      "sha256": "0ea76ce72c18aaac0ab4ab82138a6a3944ea01087b0371827a33cdc6bbe80dc2",
+      "git_sha256": "0ea76ce72c18aaac0ab4ab82138a6a3944ea01087b0371827a33cdc6bbe80dc2",
+      "different_from_commit": false
+    },
+    {
+      "path": "LightGenV2/tasks/t09_multimodal_matching/reports/figures/audio_matching_s17_20260917/d2nn_status.json",
+      "bytes": 70,
+      "sha256": "5277aa1fb1d022afffee82aafb9d7eddd6e9a29344c643614edd3d09f73b70a5",
+      "git_sha256": "5277aa1fb1d022afffee82aafb9d7eddd6e9a29344c643614edd3d09f73b70a5",
+      "different_from_commit": false
+    },
+    {
+      "path": "LightGenV2/tasks/t09_multimodal_matching/reports/figures/audio_matching_s17_20260917/data_audit.json",
+      "bytes": 335,
+      "sha256": "7cf8764c8adf51337a8401f03b01ccab73a26f4648e4ca1361479eb120fba7d8",
+      "git_sha256": "7cf8764c8adf51337a8401f03b01ccab73a26f4648e4ca1361479eb120fba7d8",
+      "different_from_commit": false
+    },
+    {
+      "path": "LightGenV2/tasks/t09_multimodal_matching/reports/figures/audio_matching_s17_20260917/diagnostics.json",
+      "bytes": 5660,
+      "sha256": "0645eff6ca9510cf65ab145b41ecaf55abe943911a61b0f86cd08e1d298ba74b",
+      "git_sha256": "0645eff6ca9510cf65ab145b41ecaf55abe943911a61b0f86cd08e1d298ba74b",
+      "different_from_commit": false
+    },
+    {
+      "path": "LightGenV2/tasks/t09_multimodal_matching/reports/figures/audio_matching_s17_20260917/feature_equivalence.json",
+      "bytes": 1716,
+      "sha256": "56e5421ba7721646d5afe9d72516413a7b808a65f90f9870adf8b07e1863b77a",
+      "git_sha256": "56e5421ba7721646d5afe9d72516413a7b808a65f90f9870adf8b07e1863b77a",
+      "different_from_commit": false
+    },
+    {
+      "path": "LightGenV2/tasks/t09_multimodal_matching/reports/figures/audio_matching_s17_20260917/frontend_history.json",
+      "bytes": 6197,
+      "sha256": "498b9638394d88056460bc3cc8e565820db6321337536b85ac47311831e8a9dd",
+      "git_sha256": "498b9638394d88056460bc3cc8e565820db6321337536b85ac47311831e8a9dd",
+      "different_from_commit": false
+    },
+    {
+      "path": "LightGenV2/tasks/t09_multimodal_matching/reports/figures/audio_matching_s17_20260917/frontend_metadata.json",
+      "bytes": 767,
+      "sha256": "c99569d30bb600ee86404f755631064c3a2abdb58378bab22ca77958007cec54",
+      "git_sha256": "c99569d30bb600ee86404f755631064c3a2abdb58378bab22ca77958007cec54",
+      "different_from_commit": false
+    },
+    {
+      "path": "LightGenV2/tasks/t09_multimodal_matching/reports/figures/audio_matching_s17_20260917/license_evidence.json",
+      "bytes": 409,
+      "sha256": "76b2ef4f3eb6ed5746a9e4ce72f91b2e36921c37b9fb28c91993f04a094e5611",
+      "git_sha256": "76b2ef4f3eb6ed5746a9e4ce72f91b2e36921c37b9fb28c91993f04a094e5611",
+      "different_from_commit": false
+    },
+    {
+      "path": "LightGenV2/tasks/t09_multimodal_matching/reports/figures/audio_matching_s17_20260917/moe_history.json",
+      "bytes": 37506,
+      "sha256": "ca4b9f0cfdc4594aa1d7fc9819289e53a14aa4745dfd1a4d8278379a0aa6965e",
+      "git_sha256": "ca4b9f0cfdc4594aa1d7fc9819289e53a14aa4745dfd1a4d8278379a0aa6965e",
+      "different_from_commit": false
+    },
+    {
+      "path": "LightGenV2/tasks/t09_multimodal_matching/reports/figures/audio_matching_s17_20260917/moe_metadata.json",
+      "bytes": 3144,
+      "sha256": "fce8d451d83b4aa971783fa0b72b160c67523279f658e527ad924c763bead0db",
+      "git_sha256": "fce8d451d83b4aa971783fa0b72b160c67523279f658e527ad924c763bead0db",
+      "different_from_commit": false
+    },
+    {
+      "path": "LightGenV2/tasks/t09_multimodal_matching/reports/figures/audio_matching_s17_20260917/moe_shared_visual_frontend.json",
+      "bytes": 279,
+      "sha256": "0ea76ce72c18aaac0ab4ab82138a6a3944ea01087b0371827a33cdc6bbe80dc2",
+      "git_sha256": "0ea76ce72c18aaac0ab4ab82138a6a3944ea01087b0371827a33cdc6bbe80dc2",
+      "different_from_commit": false
+    },
+    {
+      "path": "LightGenV2/tasks/t09_multimodal_matching/reports/figures/audio_matching_s17_20260917/moe_status.json",
+      "bytes": 69,
+      "sha256": "e7b5001bfff59d38d630e3d0e0accd1b541f043d98f860250c306e00c13ccbef",
+      "git_sha256": "e7b5001bfff59d38d630e3d0e0accd1b541f043d98f860250c306e00c13ccbef",
+      "different_from_commit": false
+    },
+    {
+      "path": "LightGenV2/tasks/t09_multimodal_matching/reports/figures/audio_matching_s17_20260917/transfer_manifest.json",
+      "bytes": 1138,
+      "sha256": "38c2d260e5b611fd6172af07a76d2709232b13d097631fdb3749c9caf117a7ab",
+      "git_sha256": "38c2d260e5b611fd6172af07a76d2709232b13d097631fdb3749c9caf117a7ab",
+      "different_from_commit": false
+    },
+    {
+      "path": "LightGenV2/tasks/t09_multimodal_matching/reports/figures/audio_matching_s17_20260917/verification.json",
+      "bytes": 4863,
+      "sha256": "3493f772306e37ff1dd2147ec37c2fbe8ac35351f9b9b28af330c057cd4ee7e9",
+      "git_sha256": "3493f772306e37ff1dd2147ec37c2fbe8ac35351f9b9b28af330c057cd4ee7e9",
+      "different_from_commit": false
+    },
+    {
+      "path": "LightGenV2/tasks/t09_multimodal_matching/reports/figures/current_profiles_s17_20260918/transfer_manifest.json",
+      "bytes": 10270,
+      "sha256": "de71030d6ecf7950a617d9f8c6784ebf04edf87d1749ef03fab82b188a3af00a",
+      "git_sha256": "de71030d6ecf7950a617d9f8c6784ebf04edf87d1749ef03fab82b188a3af00a",
+      "different_from_commit": false
+    },
+    {
+      "path": "LightGenV2/tasks/t09_multimodal_matching/reports/figures/current_profiles_s17_20260918/verified_results.json",
+      "bytes": 719,
+      "sha256": "71036c4702de670a814fa3824e725ac4bcbc8cb2b68752559a2c8c5120133a07",
+      "git_sha256": "71036c4702de670a814fa3824e725ac4bcbc8cb2b68752559a2c8c5120133a07",
+      "different_from_commit": false
+    },
+    {
+      "path": "LightGenV2/tasks/t09_multimodal_matching/reports/figures/generalization_s17_20260917/baseline.json",
+      "bytes": 14338,
+      "sha256": "08ae687b57c5980b01500613c6400c09325c9412cda86397393d9bb276adc511",
+      "git_sha256": "08ae687b57c5980b01500613c6400c09325c9412cda86397393d9bb276adc511",
+      "different_from_commit": false
+    },
+    {
+      "path": "LightGenV2/tasks/t09_multimodal_matching/reports/figures/generalization_s17_20260917/drop01.json",
+      "bytes": 4699,
+      "sha256": "4cae44af14b79680e9047666a332f54ba1cdebe2016b6749acf75057c00ff2ae",
+      "git_sha256": "4cae44af14b79680e9047666a332f54ba1cdebe2016b6749acf75057c00ff2ae",
+      "different_from_commit": false
+    },
+    {
+      "path": "LightGenV2/tasks/t09_multimodal_matching/reports/figures/generalization_s17_20260917/drop01_metadata.json",
+      "bytes": 2683,
+      "sha256": "a2281c1f2b97c7b267c04808ec396b4a110388b27427ded90eaa7c0e3f7e3062",
+      "git_sha256": "a2281c1f2b97c7b267c04808ec396b4a110388b27427ded90eaa7c0e3f7e3062",
+      "different_from_commit": false
+    },
+    {
+      "path": "LightGenV2/tasks/t09_multimodal_matching/reports/figures/generalization_s17_20260917/drop01_shared_visual_frontend.json",
+      "bytes": 279,
+      "sha256": "0c0acd409f3cbfc2d160e1ec29f63c41dd14401d09cdda0b30527e46e5966f8d",
+      "git_sha256": "0c0acd409f3cbfc2d160e1ec29f63c41dd14401d09cdda0b30527e46e5966f8d",
+      "different_from_commit": false
+    },
+    {
+      "path": "LightGenV2/tasks/t09_multimodal_matching/reports/figures/generalization_s17_20260917/drop01_status.json",
+      "bytes": 69,
+      "sha256": "18309de694f4ea5f3d57bf63d9695ae06e2d172df9f4a7150bad96db9255b7e3",
+      "git_sha256": "18309de694f4ea5f3d57bf63d9695ae06e2d172df9f4a7150bad96db9255b7e3",
+      "different_from_commit": false
+    },
+    {
+      "path": "LightGenV2/tasks/t09_multimodal_matching/reports/figures/generalization_s17_20260917/flip.json",
+      "bytes": 4687,
+      "sha256": "3e2ae3163dcb28572d850e44f980549948c4f24bbb9a0f934491f66007340eda",
+      "git_sha256": "3e2ae3163dcb28572d850e44f980549948c4f24bbb9a0f934491f66007340eda",
+      "different_from_commit": false
+    },
+    {
+      "path": "LightGenV2/tasks/t09_multimodal_matching/reports/figures/generalization_s17_20260917/flip_metadata.json",
+      "bytes": 2689,
+      "sha256": "ead715b6d6aa779c3f7810370d5c7c0962d360c140d86e91a8bc11ee600648ab",
+      "git_sha256": "ead715b6d6aa779c3f7810370d5c7c0962d360c140d86e91a8bc11ee600648ab",
+      "different_from_commit": false
+    },
+    {
+      "path": "LightGenV2/tasks/t09_multimodal_matching/reports/figures/generalization_s17_20260917/flip_shared_visual_frontend.json",
+      "bytes": 381,
+      "sha256": "94a14c0f9933273a5855d9ff6b28f442b850ef7484bcdaf578cd6a9e544657c8",
+      "git_sha256": "94a14c0f9933273a5855d9ff6b28f442b850ef7484bcdaf578cd6a9e544657c8",
+      "different_from_commit": false
+    },
+    {
+      "path": "LightGenV2/tasks/t09_multimodal_matching/reports/figures/generalization_s17_20260917/flip_status.json",
+      "bytes": 69,
+      "sha256": "c9d7927a7f1f670de77905d4b2fa90cb53fe1c75cb0881a1ef4c45f07c84f3d3",
+      "git_sha256": "c9d7927a7f1f670de77905d4b2fa90cb53fe1c75cb0881a1ef4c45f07c84f3d3",
+      "different_from_commit": false
+    },
+    {
+      "path": "LightGenV2/tasks/t09_multimodal_matching/reports/figures/generalization_s17_20260917/flipdrop01.json",
+      "bytes": 4640,
+      "sha256": "dbedbec707dbda20dd9b4b0c20de0764c649cc125578997038ad0fca34fe28b6",
+      "git_sha256": "dbedbec707dbda20dd9b4b0c20de0764c649cc125578997038ad0fca34fe28b6",
+      "different_from_commit": false
+    },
+    {
+      "path": "LightGenV2/tasks/t09_multimodal_matching/reports/figures/generalization_s17_20260917/flipdrop01_metadata.json",
+      "bytes": 2737,
+      "sha256": "0ac08a20bb83bac7752f17ab1962927235c561fc27b07a8da1a132c61ba3d587",
+      "git_sha256": "0ac08a20bb83bac7752f17ab1962927235c561fc27b07a8da1a132c61ba3d587",
+      "different_from_commit": false
+    },
+    {
+      "path": "LightGenV2/tasks/t09_multimodal_matching/reports/figures/generalization_s17_20260917/flipdrop01_shared_visual_frontend.json",
+      "bytes": 381,
+      "sha256": "94a14c0f9933273a5855d9ff6b28f442b850ef7484bcdaf578cd6a9e544657c8",
+      "git_sha256": "94a14c0f9933273a5855d9ff6b28f442b850ef7484bcdaf578cd6a9e544657c8",
+      "different_from_commit": false
+    },
+    {
+      "path": "LightGenV2/tasks/t09_multimodal_matching/reports/figures/generalization_s17_20260917/flipdrop01_status.json",
+      "bytes": 69,
+      "sha256": "5366be6ba1828eac753b9e02b98e054f33731bb967a223159b05cdd9ce479294",
+      "git_sha256": "5366be6ba1828eac753b9e02b98e054f33731bb967a223159b05cdd9ce479294",
+      "different_from_commit": false
+    },
+    {
+      "path": "LightGenV2/tasks/t09_multimodal_matching/reports/figures/generalization_s17_20260917/lr003.json",
+      "bytes": 4620,
+      "sha256": "0f9087c6f7af8321f4921e3c55059d56b71a5130ec931ab64770b0c0e3d4d05e",
+      "git_sha256": "0f9087c6f7af8321f4921e3c55059d56b71a5130ec931ab64770b0c0e3d4d05e",
+      "different_from_commit": false
+    },
+    {
+      "path": "LightGenV2/tasks/t09_multimodal_matching/reports/figures/generalization_s17_20260917/lr003_metadata.json",
+      "bytes": 2671,
+      "sha256": "54a337bbf0380d2c786b0f87a0de60ce3c745d264b0542de58db7539587a66c2",
+      "git_sha256": "54a337bbf0380d2c786b0f87a0de60ce3c745d264b0542de58db7539587a66c2",
+      "different_from_commit": false
+    },
+    {
+      "path": "LightGenV2/tasks/t09_multimodal_matching/reports/figures/generalization_s17_20260917/lr003_shared_visual_frontend.json",
+      "bytes": 279,
+      "sha256": "0c0acd409f3cbfc2d160e1ec29f63c41dd14401d09cdda0b30527e46e5966f8d",
+      "git_sha256": "0c0acd409f3cbfc2d160e1ec29f63c41dd14401d09cdda0b30527e46e5966f8d",
+      "different_from_commit": false
+    },
+    {
+      "path": "LightGenV2/tasks/t09_multimodal_matching/reports/figures/generalization_s17_20260917/lr003_status.json",
+      "bytes": 69,
+      "sha256": "06791bac593114cf21149cc9204eb1bf5e924d27a1a55e1b941a94d1d998cc09",
+      "git_sha256": "06791bac593114cf21149cc9204eb1bf5e924d27a1a55e1b941a94d1d998cc09",
+      "different_from_commit": false
+    },
+    {
+      "path": "LightGenV2/tasks/t09_multimodal_matching/reports/figures/generalization_s17_20260917/transfer_manifest.json",
+      "bytes": 1522,
+      "sha256": "ef5a6f3a876a94c7d6038605d5787d0d026bcfd63df5864048cea0f8d0fbe8dc",
+      "git_sha256": "ef5a6f3a876a94c7d6038605d5787d0d026bcfd63df5864048cea0f8d0fbe8dc",
+      "different_from_commit": false
+    },
+    {
+      "path": "LightGenV2/tasks/t09_multimodal_matching/reports/figures/oeo_recovery_s17_20260918/mechanism_summary.json",
+      "bytes": 3355,
+      "sha256": "5b200e8a4d9d47f1ca6fc206fe5673961310e30504b8739dcdc28bb5631f59e8",
+      "git_sha256": "5b200e8a4d9d47f1ca6fc206fe5673961310e30504b8739dcdc28bb5631f59e8",
+      "different_from_commit": false
+    },
+    {
+      "path": "LightGenV2/tasks/t09_multimodal_matching/reports/figures/oeo_recovery_s17_20260918/transfer_manifest.json",
+      "bytes": 18203,
+      "sha256": "1e5d62498619334803d67e53426e8d84a4c122152468c7ecd727be32b27f4a1e",
+      "git_sha256": "1e5d62498619334803d67e53426e8d84a4c122152468c7ecd727be32b27f4a1e",
+      "different_from_commit": false
+    },
+    {
+      "path": "LightGenV2/tasks/t09_multimodal_matching/reports/figures/oeo_recovery_s17_20260918/verified_results.json",
+      "bytes": 11135,
+      "sha256": "695f1677cc0dbf2136730f44e27ce75a4c526f950f165fab17b29d86696a2758",
+      "git_sha256": "695f1677cc0dbf2136730f44e27ce75a4c526f950f165fab17b29d86696a2758",
+      "different_from_commit": false
+    },
+    {
+      "path": "LightGenV2/tasks/t09_multimodal_matching/reports/figures/phase_budget_s17_20260917/long30.json",
+      "bytes": 4765,
+      "sha256": "5f30f91b6a008f3291743ddaf40e15dfd96c0be0274613abf0c51d79c830a87c",
+      "git_sha256": "5f30f91b6a008f3291743ddaf40e15dfd96c0be0274613abf0c51d79c830a87c",
+      "different_from_commit": false
+    },
+    {
+      "path": "LightGenV2/tasks/t09_multimodal_matching/reports/figures/phase_budget_s17_20260917/long30_d2nn_history.json",
+      "bytes": 26356,
+      "sha256": "0b86162a5992f9dd79d592c34dbf05f32036f3a1ba7766da18b8ec578449ba27",
+      "git_sha256": "0b86162a5992f9dd79d592c34dbf05f32036f3a1ba7766da18b8ec578449ba27",
+      "different_from_commit": false
+    },
+    {
+      "path": "LightGenV2/tasks/t09_multimodal_matching/reports/figures/phase_budget_s17_20260917/long30_moe_history.json",
+      "bytes": 36527,
+      "sha256": "d0cf5282073a05de38554172afb32957298d7438119de910e9021b9edd5b25d6",
+      "git_sha256": "d0cf5282073a05de38554172afb32957298d7438119de910e9021b9edd5b25d6",
+      "different_from_commit": false
+    },
+    {
+      "path": "LightGenV2/tasks/t09_multimodal_matching/reports/figures/phase_budget_s17_20260917/long30_phase05.json",
+      "bytes": 4821,
+      "sha256": "71a8b406a43d5e04019fa4c4e8137c329f6267f459a63caed4d1f3187be3e3a2",
+      "git_sha256": "71a8b406a43d5e04019fa4c4e8137c329f6267f459a63caed4d1f3187be3e3a2",
+      "different_from_commit": false
+    },
+    {
+      "path": "LightGenV2/tasks/t09_multimodal_matching/reports/figures/phase_budget_s17_20260917/long30_phase05_d2nn_history.json",
+      "bytes": 26246,
+      "sha256": "d31074cd73d2436df054a03b69f0f3e658a7971c299e678a62462fd0771f0fef",
+      "git_sha256": "d31074cd73d2436df054a03b69f0f3e658a7971c299e678a62462fd0771f0fef",
+      "different_from_commit": false
+    },
+    {
+      "path": "LightGenV2/tasks/t09_multimodal_matching/reports/figures/phase_budget_s17_20260917/long30_phase05_moe_history.json",
+      "bytes": 37563,
+      "sha256": "ff781e77e535936004c3597925708bf2e8c359bedd8f41fcc36bb21cd1ad5424",
+      "git_sha256": "ff781e77e535936004c3597925708bf2e8c359bedd8f41fcc36bb21cd1ad5424",
+      "different_from_commit": false
+    },
+    {
+      "path": "LightGenV2/tasks/t09_multimodal_matching/reports/figures/selected_test_s17_20260917/sonyc_feasibility.json",
+      "bytes": 530,
+      "sha256": "cc0e8b0dd37c48a78724f99a53f0188ed5d6eef6464397a61e502a6691c8987c",
+      "git_sha256": "cc0e8b0dd37c48a78724f99a53f0188ed5d6eef6464397a61e502a6691c8987c",
+      "different_from_commit": false
+    },
+    {
+      "path": "LightGenV2/tasks/t09_multimodal_matching/reports/figures/selected_test_s17_20260917/transfer_manifest.json",
+      "bytes": 2089,
+      "sha256": "81dc57da44e629a978ba5ed4db412eaaf5947e4f9c6bcfaa5ba31fd7de9eec4c",
+      "git_sha256": "81dc57da44e629a978ba5ed4db412eaaf5947e4f9c6bcfaa5ba31fd7de9eec4c",
+      "different_from_commit": false
+    },
+    {
+      "path": "LightGenV2/tasks/t09_multimodal_matching/reports/figures/selected_test_s17_20260917/verified_summary.json",
+      "bytes": 1671,
+      "sha256": "3209b41fbc39aa66713b81c17f56f15a2ac75069e36dcd881d61319000d3dc36",
+      "git_sha256": "3209b41fbc39aa66713b81c17f56f15a2ac75069e36dcd881d61319000d3dc36",
+      "different_from_commit": false
+    },
+    {
+      "path": "LightGenV2/tasks/t09_multimodal_matching/reports/figures/test_s17_20260917/test_verified.json",
+      "bytes": 4789,
+      "sha256": "d53541aea9230bae4a0dea0a64113b64d31e3944c868a41184ae31f0c8d73c11",
+      "git_sha256": "d53541aea9230bae4a0dea0a64113b64d31e3944c868a41184ae31f0c8d73c11",
+      "different_from_commit": false
+    },
+    {
+      "path": "LightGenV2/tasks/t09_multimodal_matching/reports/figures/text_encoding_s17_20260917_v2/artifact_manifest.json",
+      "bytes": 574,
+      "sha256": "710bb9ba6271b803325358bb833acc5d7bf70626c90e32017ee0b68d0a25bd3a",
+      "git_sha256": "710bb9ba6271b803325358bb833acc5d7bf70626c90e32017ee0b68d0a25bd3a",
+      "different_from_commit": false
+    },
+    {
+      "path": "LightGenV2/tasks/t09_multimodal_matching/reports/figures/text_encoding_s17_20260917_v2/run_artifact_manifest.json",
+      "bytes": 2701,
+      "sha256": "220c2c35cfc26406703d0e2123857290e190f9fcd29ab6215231fbcb48c5a2ae",
+      "git_sha256": "220c2c35cfc26406703d0e2123857290e190f9fcd29ab6215231fbcb48c5a2ae",
+      "different_from_commit": false
+    },
+    {
+      "path": "LightGenV2/tasks/t09_multimodal_matching/reports/figures/text_encoding_s17_20260917_v2/validation_examples.json",
+      "bytes": 3622,
+      "sha256": "9138c2aed67ebf96399607d6cad49471470ae5e12467e5ec011d006d027b0dc5",
+      "git_sha256": "9138c2aed67ebf96399607d6cad49471470ae5e12467e5ec011d006d027b0dc5",
+      "different_from_commit": false
+    },
+    {
+      "path": "LightGenV2/tasks/t09_multimodal_matching/reports/figures/text_encoding_s17_20260917_v2/verification.json",
+      "bytes": 14338,
+      "sha256": "08ae687b57c5980b01500613c6400c09325c9412cda86397393d9bb276adc511",
+      "git_sha256": "08ae687b57c5980b01500613c6400c09325c9412cda86397393d9bb276adc511",
+      "different_from_commit": false
+    },
+    {
+      "path": "LightGenV2/tasks/t09_multimodal_matching/reports/reproduction/README.md",
+      "bytes": 24317,
+      "sha256": "a33956614ea476b19e743c18cc809070ff8bb249f1d1a90b1c01dd584c6cdcfc",
+      "git_sha256": "a33956614ea476b19e743c18cc809070ff8bb249f1d1a90b1c01dd584c6cdcfc",
+      "different_from_commit": false
+    },
+    {
+      "path": "LightGenV2/tasks/t09_multimodal_matching/run.py",
+      "bytes": 18609,
+      "sha256": "a18ca843b26d67a209c19f9f4a827043fbfffed0e2e40415c97ccb31b4107bec",
+      "git_sha256": "a18ca843b26d67a209c19f9f4a827043fbfffed0e2e40415c97ccb31b4107bec",
+      "different_from_commit": false
+    },
+    {
+      "path": "LightGenV2/tasks/t09_multimodal_matching/smoke_layout.py",
+      "bytes": 3256,
+      "sha256": "e7c455a868d0cdd76079752d5eb7b5e48970ca16033b906acffb319fe28d24ea",
+      "git_sha256": "e7c455a868d0cdd76079752d5eb7b5e48970ca16033b906acffb319fe28d24ea",
+      "different_from_commit": false
+    },
+    {
+      "path": "LightGenV2/tasks/t09_multimodal_matching/test_frozen.py",
+      "bytes": 6105,
+      "sha256": "afaec114defebef6df49575684cd0231676378764dd9a4507ffdd1b200008b0a",
+      "git_sha256": "afaec114defebef6df49575684cd0231676378764dd9a4507ffdd1b200008b0a",
+      "different_from_commit": false
+    },
+    {
+      "path": "LightGenV2/tasks/t09_multimodal_matching/test_selected.py",
+      "bytes": 7881,
+      "sha256": "5c4dfc1fcc211e7c79eb340bcf6eb4c4fd2db5a9efc2556c51379ad6e1ecdac2",
+      "git_sha256": "c957a9809bf045403523a56b89d41604ba884b40e4ce51c3b65ac97b3081e448",
+      "different_from_commit": true
+    },
+    {
+      "path": "LightGenV2/tasks/t09_multimodal_matching/vision.py",
+      "bytes": 5053,
+      "sha256": "4cad72e1445f3a16373c4f697916a89b2526b4a900285eac6393928012052a1f",
+      "git_sha256": "630ad5273911f8f6069602788eb5f71cd9ac2f0e9a0040b7c1211a694376761f",
+      "different_from_commit": true
+    }
+  ],
+  "protected_asset_records": [
+    {
+      "path": "LightGenV2/tasks/t09_multimodal_matching/runs/clevr_main_leaky_d2nn_s17_20260918/fixed/d2nn/best_checkpoint.pt",
+      "bytes": 5488096,
+      "sha256": "ee8dc58f6ee74c3300cf7a405d6c01fd4c73b30c7f19464156b229aaf9b98d38"
+    },
+    {
+      "path": "LightGenV2/tasks/t09_multimodal_matching/runs/clevr_main_leaky_d2nn_s17_20260918/fixed/d2nn/last_checkpoint.pt",
+      "bytes": 5488096,
+      "sha256": "166b68260fa32a5848e90fcd6b614e23abd8874aa3dbb08293e9e5e682c561f6"
+    },
+    {
+      "path": "LightGenV2/tasks/t09_multimodal_matching/runs/clevr_main_leaky_d2nn_s17_20260918/fixed/d2nn/result.json",
+      "bytes": 1498,
+      "sha256": "10b9e097e7ffa64fd21cff393deba6087a5a33d95db156f832b6c0531122ac90"
+    },
+    {
+      "path": "LightGenV2/tasks/t09_multimodal_matching/runs/clevr_main_leaky_d2nn_s17_20260918/metadata.json",
+      "bytes": 4131,
+      "sha256": "3c0120c46277da72d04c592c38414cc3d3ee45a2c3f51afc62ecb1a47b48bc6d"
+    },
+    {
+      "path": "LightGenV2/tasks/t09_multimodal_matching/runs/clevr_main_leaky_moe_s17_20260918/fixed/moe/best_checkpoint.pt",
+      "bytes": 5758002,
+      "sha256": "31128dc8d5f004e255dedb943ba5a70019966c49b03a818227d64d7648725697"
+    },
+    {
+      "path": "LightGenV2/tasks/t09_multimodal_matching/runs/clevr_main_leaky_moe_s17_20260918/fixed/moe/last_checkpoint.pt",
+      "bytes": 5758002,
+      "sha256": "0893cfd28f3f1d6cfbe1c858b085592fe098196a344b8335d78d3e5c3d2a2836"
+    },
+    {
+      "path": "LightGenV2/tasks/t09_multimodal_matching/runs/clevr_main_leaky_moe_s17_20260918/fixed/moe/result.json",
+      "bytes": 1875,
+      "sha256": "d3bd97a8731ad449b2fc0a521e9b520e58bebe20b5c1581727994db31355e99a"
+    },
+    {
+      "path": "LightGenV2/tasks/t09_multimodal_matching/runs/clevr_main_leaky_moe_s17_20260918/metadata.json",
+      "bytes": 4129,
+      "sha256": "a49fa23dfbfed7caa89b04bbf928d4df5e7a45e3c4c585837fc9da67122c7db6"
+    },
+    {
+      "path": "LightGenV2/tasks/t09_multimodal_matching/runs/simulation/audio_frontend_s17_v1/best_checkpoint.pt",
+      "bytes": 142323,
+      "sha256": "ce733c832a1bc7629cf9b5f63f22d46668fc5e1a5b0442cb97b092fca0a9b2b3"
+    },
+    {
+      "path": "LightGenV2/tasks/t09_multimodal_matching/runs/simulation/audio_frontend_s17_v1/last_checkpoint.pt",
+      "bytes": 142323,
+      "sha256": "04aa21df6e6f71e125cf5ead8638fd57fac20a26a87af625d82b90461c3d8f81"
+    },
+    {
+      "path": "LightGenV2/tasks/t09_multimodal_matching/runs/simulation/audio_frontend_s17_v1/metadata.json",
+      "bytes": 767,
+      "sha256": "c99569d30bb600ee86404f755631064c3a2abdb58378bab22ca77958007cec54"
+    },
+    {
+      "path": "LightGenV2/tasks/t09_multimodal_matching/runs/simulation/audio_leftright_new_oeo_test_s17_v1/locked_selection.json",
+      "bytes": 1210,
+      "sha256": "8e40c83c40510fd17166520a05cbf4885b5324745d14ad0e64e2d49e0de43092"
+    },
+    {
+      "path": "LightGenV2/tasks/t09_multimodal_matching/runs/simulation/audio_leftright_new_oeo_test_s17_v1/metadata.json",
+      "bytes": 353,
+      "sha256": "4ce73dd3d0aadf29996ca3cab5a6336c2d002a1881f0461c984d6d81a1c29c82"
+    },
+    {
+      "path": "LightGenV2/tasks/t09_multimodal_matching/runs/simulation/audio_leftright_new_oeo_test_s17_v1/results.json",
+      "bytes": 3389,
+      "sha256": "1c19f098eddedb16752c7fee297abda2399f937a0295af390ffedc60bee4491d"
+    },
+    {
+      "path": "LightGenV2/tasks/t09_multimodal_matching/runs/simulation/audio_leftright_test_s17_v1/locked_selection.json",
+      "bytes": 1258,
+      "sha256": "83116659fa35ad59458c938fb7d042323b20aa77f05ed55e0bf920b483f7ce7f"
+    },
+    {
+      "path": "LightGenV2/tasks/t09_multimodal_matching/runs/simulation/audio_leftright_test_s17_v1/metadata.json",
+      "bytes": 353,
+      "sha256": "8d789c250cdfa9633851540098295878ec812f15984972b5913c99ba76b0899c"
+    },
+    {
+      "path": "LightGenV2/tasks/t09_multimodal_matching/runs/simulation/audio_leftright_test_s17_v1/results.json",
+      "bytes": 3440,
+      "sha256": "ce37d35a1b06eca421dbf66a6b418c6890e7e0179d9596586f5409e316210ac8"
+    },
+    {
+      "path": "LightGenV2/tasks/t09_multimodal_matching/runs/simulation/audio_matching_d2nn_canonical_s17_v1/fixed/d2nn/best_checkpoint.pt",
+      "bytes": 5487904,
+      "sha256": "b0d1ed440dbb9f396e4ab43415373b73421f04847eee14596b69c0d30a1b975b"
+    },
+    {
+      "path": "LightGenV2/tasks/t09_multimodal_matching/runs/simulation/audio_matching_d2nn_canonical_s17_v1/fixed/d2nn/last_checkpoint.pt",
+      "bytes": 5487904,
+      "sha256": "abf39c0b2275c2025863a09b1f2696455e62c219746ea298d37c9559df098589"
+    },
+    {
+      "path": "LightGenV2/tasks/t09_multimodal_matching/runs/simulation/audio_matching_d2nn_canonical_s17_v1/fixed/d2nn/result.json",
+      "bytes": 1276,
+      "sha256": "1a827e58db0cf5ac1df1c5e13b078fce141a53e0a7dfa9549923036e52b20a76"
+    },
+    {
+      "path": "LightGenV2/tasks/t09_multimodal_matching/runs/simulation/audio_matching_d2nn_canonical_s17_v1/metadata.json",
+      "bytes": 3557,
+      "sha256": "8af82073865ea4ea32777e28d8e0563094b264b946bcede6fcaa24a7c19b9cf9"
+    },
+    {
+      "path": "LightGenV2/tasks/t09_multimodal_matching/runs/simulation/audio_matching_d2nn_s17_v1/fixed/d2nn/best_checkpoint.pt",
+      "bytes": 5487904,
+      "sha256": "8ba4f39cf9713b414425c842349c0059290bf19c6097a847eaf256126f6320da"
+    },
+    {
+      "path": "LightGenV2/tasks/t09_multimodal_matching/runs/simulation/audio_matching_d2nn_s17_v1/fixed/d2nn/last_checkpoint.pt",
+      "bytes": 5487904,
+      "sha256": "6dee76f8e3487ebf984c21ddd05d9771fef47c063aa1558fbdae3f0eeacd3e8a"
+    },
+    {
+      "path": "LightGenV2/tasks/t09_multimodal_matching/runs/simulation/audio_matching_d2nn_s17_v1/fixed/d2nn/result.json",
+      "bytes": 1269,
+      "sha256": "6d6fc78b72143f22e300eb4a16153d6823cc86266ff869579aff995e9bc0b938"
+    },
+    {
+      "path": "LightGenV2/tasks/t09_multimodal_matching/runs/simulation/audio_matching_d2nn_s17_v1/metadata.json",
+      "bytes": 3146,
+      "sha256": "d123b7a3f0b829c6cd411f43a0933e3db4ee9eeae1ead828a0478a8c2f4fed2f"
+    },
+    {
+      "path": "LightGenV2/tasks/t09_multimodal_matching/runs/simulation/audio_matching_moe_s17_v1/fixed/moe/best_checkpoint.pt",
+      "bytes": 5757810,
+      "sha256": "bc83bf7dce92c71fc3b416e0b0b609d865d00a90e35a7369ffbfa75f3398d80e"
+    },
+    {
+      "path": "LightGenV2/tasks/t09_multimodal_matching/runs/simulation/audio_matching_moe_s17_v1/fixed/moe/last_checkpoint.pt",
+      "bytes": 5757810,
+      "sha256": "c1bc585d187800a48a3416a32948fe367c560d7d15967c28b982d39d3f4524e8"
+    },
+    {
+      "path": "LightGenV2/tasks/t09_multimodal_matching/runs/simulation/audio_matching_moe_s17_v1/fixed/moe/result.json",
+      "bytes": 1829,
+      "sha256": "1508a542ceebd426e807df568cb731c7d8f079981493b6c822a649416260391f"
+    },
+    {
+      "path": "LightGenV2/tasks/t09_multimodal_matching/runs/simulation/audio_matching_moe_s17_v1/metadata.json",
+      "bytes": 3144,
+      "sha256": "fce8d451d83b4aa971783fa0b72b160c67523279f658e527ad924c763bead0db"
+    },
+    {
+      "path": "LightGenV2/tasks/t09_multimodal_matching/runs/simulation/audio_raw_interleaved_s17_v1/fixed/d2nn/best_checkpoint.pt",
+      "bytes": 5487968,
+      "sha256": "4683f89bd1ba0c17663bed5d1a6ba79becb5159a4eb6e5939fa4dc959cd5d588"
+    },
+    {
+      "path": "LightGenV2/tasks/t09_multimodal_matching/runs/simulation/audio_raw_interleaved_s17_v1/fixed/d2nn/last_checkpoint.pt",
+      "bytes": 5487968,
+      "sha256": "285de78cbc7f2c6db7c072b5107b1b9b7747f47e9aadd1426834d4eed55a0175"
+    },
+    {
+      "path": "LightGenV2/tasks/t09_multimodal_matching/runs/simulation/audio_raw_interleaved_s17_v1/fixed/d2nn/result.json",
+      "bytes": 1274,
+      "sha256": "8cc17464ab9fb6accd9660a8aecb760a0ea66f3f9478e990fa04d1d49d7c1c95"
+    },
+    {
+      "path": "LightGenV2/tasks/t09_multimodal_matching/runs/simulation/audio_raw_interleaved_s17_v1/fixed/moe/best_checkpoint.pt",
+      "bytes": 5757810,
+      "sha256": "2d868b54a77352b0796ac1a7b161e0c24d3111ee1e50c850979a76c30779a43d"
+    },
+    {
+      "path": "LightGenV2/tasks/t09_multimodal_matching/runs/simulation/audio_raw_interleaved_s17_v1/fixed/moe/last_checkpoint.pt",
+      "bytes": 5757810,
+      "sha256": "446fc64e980832f7b55c3a61097aae4cff6a9c182357425a7090652c77dad9a2"
+    },
+    {
+      "path": "LightGenV2/tasks/t09_multimodal_matching/runs/simulation/audio_raw_interleaved_s17_v1/fixed/moe/result.json",
+      "bytes": 1829,
+      "sha256": "d1c46e75dcfeda7eef9c7254b48e2d92797c0989631204ef9c98e99048395384"
+    },
+    {
+      "path": "LightGenV2/tasks/t09_multimodal_matching/runs/simulation/audio_raw_interleaved_s17_v1/metadata.json",
+      "bytes": 3650,
+      "sha256": "1ad4122c89dc232d59dc20a2763dc3b2d1488f62227872fb15dbd37cb42668be"
+    },
+    {
+      "path": "LightGenV2/tasks/t09_multimodal_matching/runs/simulation/audio_raw_interleaved_s17_v1_test/locked_selection.json",
+      "bytes": 562,
+      "sha256": "416b731165b36fcf6e9787175b3b7bd3f0b57db6b69c6c100603eb9cf6ebee86"
+    },
+    {
+      "path": "LightGenV2/tasks/t09_multimodal_matching/runs/simulation/audio_raw_interleaved_s17_v1_test/metadata.json",
+      "bytes": 391,
+      "sha256": "ea8af4c8ed273663cbda495d6dcdc8f477ef671606e1197ae57c69fea3c84d7e"
+    },
+    {
+      "path": "LightGenV2/tasks/t09_multimodal_matching/runs/simulation/audio_raw_interleaved_s17_v1_test/results.json",
+      "bytes": 1690,
+      "sha256": "2d1e75440a111d1f9bc42f5ba68685188d53ad2206cb3c2fdd6da618ec092de2"
+    },
+    {
+      "path": "LightGenV2/tasks/t09_multimodal_matching/runs/simulation/audio_raw_leftright_leaky_s17_v1/fixed/d2nn/best_checkpoint.pt",
+      "bytes": 5488096,
+      "sha256": "8593a26cacd2f3e0351a208500dea47bfb205a8d11911effff6d7a0b8f8c8c5c"
+    },
+    {
+      "path": "LightGenV2/tasks/t09_multimodal_matching/runs/simulation/audio_raw_leftright_leaky_s17_v1/fixed/d2nn/last_checkpoint.pt",
+      "bytes": 5488096,
+      "sha256": "8f974ce0b2a5e5e26afb11abdc819012269418e68053536378c4a79ad535e14d"
+    },
+    {
+      "path": "LightGenV2/tasks/t09_multimodal_matching/runs/simulation/audio_raw_leftright_leaky_s17_v1/fixed/d2nn/result.json",
+      "bytes": 1508,
+      "sha256": "6bfe5e3c714772de2ab29b57bc6e14fd00f04fca69f934bd0c058d87c09bce63"
+    },
+    {
+      "path": "LightGenV2/tasks/t09_multimodal_matching/runs/simulation/audio_raw_leftright_leaky_s17_v1/fixed/moe/best_checkpoint.pt",
+      "bytes": 5758002,
+      "sha256": "796456ec82815577f1ec84257ecbcf342e12f204739838db912471a455cf96f9"
+    },
+    {
+      "path": "LightGenV2/tasks/t09_multimodal_matching/runs/simulation/audio_raw_leftright_leaky_s17_v1/fixed/moe/last_checkpoint.pt",
+      "bytes": 5758002,
+      "sha256": "bc51529eb2f43a9dd7c60b425db5d77d8fb10c58d3b432a45e48cda7707e69bc"
+    },
+    {
+      "path": "LightGenV2/tasks/t09_multimodal_matching/runs/simulation/audio_raw_leftright_leaky_s17_v1/fixed/moe/result.json",
+      "bytes": 1885,
+      "sha256": "82fa5a26543984f4fdc3efddfcee9de28c93992db3e52dd40f78c79000fca9f0"
+    },
+    {
+      "path": "LightGenV2/tasks/t09_multimodal_matching/runs/simulation/audio_raw_leftright_leaky_s17_v1/metadata.json",
+      "bytes": 4103,
+      "sha256": "97687380daa874366023d859c76c152aa5c97485cb858387d792970406092138"
+    },
+    {
+      "path": "LightGenV2/tasks/t09_multimodal_matching/runs/simulation/audio_raw_leftright_positive_balanced02_s17_v1/fixed/d2nn/best_checkpoint.pt",
+      "bytes": 5488096,
+      "sha256": "f79f8f6a0d00a5186ec9d080cca2bb428b46b47502c0bf63e5b631d5f7ed1e06"
+    },
+    {
+      "path": "LightGenV2/tasks/t09_multimodal_matching/runs/simulation/audio_raw_leftright_positive_balanced02_s17_v1/fixed/d2nn/last_checkpoint.pt",
+      "bytes": 5488096,
+      "sha256": "bb9755ba7e8a086cd367a16effc65e475af272aa788bba8eb0e2cc79c8b98d1a"
+    },
+    {
+      "path": "LightGenV2/tasks/t09_multimodal_matching/runs/simulation/audio_raw_leftright_positive_balanced02_s17_v1/fixed/d2nn/result.json",
+      "bytes": 1507,
+      "sha256": "111013d462a644b19b33e63da19705af5a176a8c582aa48f3eda25ca0b7d01c3"
+    },
+    {
+      "path": "LightGenV2/tasks/t09_multimodal_matching/runs/simulation/audio_raw_leftright_positive_balanced02_s17_v1/fixed/moe/best_checkpoint.pt",
+      "bytes": 5758002,
+      "sha256": "ca4769df7308a2f87bc61b113410421494449cf6d832f4b693cacbb428458a79"
+    },
+    {
+      "path": "LightGenV2/tasks/t09_multimodal_matching/runs/simulation/audio_raw_leftright_positive_balanced02_s17_v1/fixed/moe/last_checkpoint.pt",
+      "bytes": 5758002,
+      "sha256": "584ec17bba237e459a700d046f35c5265631f9110d2bdef217b00fd8a6b6252c"
+    },
+    {
+      "path": "LightGenV2/tasks/t09_multimodal_matching/runs/simulation/audio_raw_leftright_positive_balanced02_s17_v1/fixed/moe/result.json",
+      "bytes": 2016,
+      "sha256": "c05d4fe1d6a97b7748f2f0bc0a7da34b9c545d9c59337bdbe3934b9159b13f8d"
+    },
+    {
+      "path": "LightGenV2/tasks/t09_multimodal_matching/runs/simulation/audio_raw_leftright_positive_balanced02_s17_v1/metadata.json",
+      "bytes": 4131,
+      "sha256": "a6f6e88e5781eb3313f401e06d08bff7b25f77b1f3ddf010db0fac307c365947"
+    },
+    {
+      "path": "LightGenV2/tasks/t09_multimodal_matching/runs/simulation/audio_raw_leftright_positive_balanced_s17_v1/fixed/d2nn/best_checkpoint.pt",
+      "bytes": 5488096,
+      "sha256": "f79f8f6a0d00a5186ec9d080cca2bb428b46b47502c0bf63e5b631d5f7ed1e06"
+    },
+    {
+      "path": "LightGenV2/tasks/t09_multimodal_matching/runs/simulation/audio_raw_leftright_positive_balanced_s17_v1/fixed/d2nn/last_checkpoint.pt",
+      "bytes": 5488096,
+      "sha256": "bb9755ba7e8a086cd367a16effc65e475af272aa788bba8eb0e2cc79c8b98d1a"
+    },
+    {
+      "path": "LightGenV2/tasks/t09_multimodal_matching/runs/simulation/audio_raw_leftright_positive_balanced_s17_v1/fixed/d2nn/result.json",
+      "bytes": 1507,
+      "sha256": "111013d462a644b19b33e63da19705af5a176a8c582aa48f3eda25ca0b7d01c3"
+    },
+    {
+      "path": "LightGenV2/tasks/t09_multimodal_matching/runs/simulation/audio_raw_leftright_positive_balanced_s17_v1/fixed/moe/best_checkpoint.pt",
+      "bytes": 5758002,
+      "sha256": "c3797bfe3faddf5ab2628b4c2deac206788152025a93350a7ca880a687b18bdd"
+    },
+    {
+      "path": "LightGenV2/tasks/t09_multimodal_matching/runs/simulation/audio_raw_leftright_positive_balanced_s17_v1/fixed/moe/last_checkpoint.pt",
+      "bytes": 5758002,
+      "sha256": "02cd06a2c892e86e71b7c50a126550fe95a886f626189e437b29dd681f97e7a9"
+    },
+    {
+      "path": "LightGenV2/tasks/t09_multimodal_matching/runs/simulation/audio_raw_leftright_positive_balanced_s17_v1/fixed/moe/result.json",
+      "bytes": 2020,
+      "sha256": "96474ea4dc1ec5b37daff7afc12047f475bfb52c8add5b2e481a7c07ce2e1ca1"
+    },
+    {
+      "path": "LightGenV2/tasks/t09_multimodal_matching/runs/simulation/audio_raw_leftright_positive_balanced_s17_v1/metadata.json",
+      "bytes": 4129,
+      "sha256": "b2db644990df724ce34cd8fa582a1f697d2e75ec622d289cd0f1eba9aefc9aa2"
+    },
+    {
+      "path": "LightGenV2/tasks/t09_multimodal_matching/runs/simulation/audio_raw_leftright_positive_unbalanced_s17_v1/fixed/d2nn/best_checkpoint.pt",
+      "bytes": 5488096,
+      "sha256": "f79f8f6a0d00a5186ec9d080cca2bb428b46b47502c0bf63e5b631d5f7ed1e06"
+    },
+    {
+      "path": "LightGenV2/tasks/t09_multimodal_matching/runs/simulation/audio_raw_leftright_positive_unbalanced_s17_v1/fixed/d2nn/last_checkpoint.pt",
+      "bytes": 5488096,
+      "sha256": "bb9755ba7e8a086cd367a16effc65e475af272aa788bba8eb0e2cc79c8b98d1a"
+    },
+    {
+      "path": "LightGenV2/tasks/t09_multimodal_matching/runs/simulation/audio_raw_leftright_positive_unbalanced_s17_v1/fixed/d2nn/result.json",
+      "bytes": 1507,
+      "sha256": "111013d462a644b19b33e63da19705af5a176a8c582aa48f3eda25ca0b7d01c3"
+    },
+    {
+      "path": "LightGenV2/tasks/t09_multimodal_matching/runs/simulation/audio_raw_leftright_positive_unbalanced_s17_v1/fixed/moe/best_checkpoint.pt",
+      "bytes": 5758002,
+      "sha256": "c07fab54a52a6556558553221e8b5efcf295ae19bd37dbaaaf9f9d4f6cb361b0"
+    },
+    {
+      "path": "LightGenV2/tasks/t09_multimodal_matching/runs/simulation/audio_raw_leftright_positive_unbalanced_s17_v1/fixed/moe/last_checkpoint.pt",
+      "bytes": 5758002,
+      "sha256": "0eea836b61064903213f73c6951bb8e8645898aaee67562d00bca344d6537be2"
+    },
+    {
+      "path": "LightGenV2/tasks/t09_multimodal_matching/runs/simulation/audio_raw_leftright_positive_unbalanced_s17_v1/fixed/moe/result.json",
+      "bytes": 1891,
+      "sha256": "4f4a52611cf4f9b3ebe1ff5f7bcc936c82e63c4ee63f2433948f11b71a786720"
+    },
+    {
+      "path": "LightGenV2/tasks/t09_multimodal_matching/runs/simulation/audio_raw_leftright_positive_unbalanced_s17_v1/metadata.json",
+      "bytes": 4129,
+      "sha256": "9da16c5255215a50f17e3de3ea09ee0f24a1966cc39ec3591a43ff0eed3aa460"
+    },
+    {
+      "path": "LightGenV2/tasks/t09_multimodal_matching/runs/simulation/audio_raw_legacy_s17_v1/fixed/d2nn/best_checkpoint.pt",
+      "bytes": 5487968,
+      "sha256": "74d82a2a2e4d6f474bdf3a1ba56e90a24a21a2b7f5779eb41b80c03f57b96001"
+    },
+    {
+      "path": "LightGenV2/tasks/t09_multimodal_matching/runs/simulation/audio_raw_legacy_s17_v1/fixed/d2nn/last_checkpoint.pt",
+      "bytes": 5487968,
+      "sha256": "340fedf25e22dd7ff6bf4dec32d1e0f2853700c2e5efbe04c7df529275f1fb4f"
+    },
+    {
+      "path": "LightGenV2/tasks/t09_multimodal_matching/runs/simulation/audio_raw_legacy_s17_v1/fixed/d2nn/result.json",
+      "bytes": 1279,
+      "sha256": "5ef7ac4fbb24b0b053cd0428a115b02c61bce96a15c93ec08130a9fa84dca091"
+    },
+    {
+      "path": "LightGenV2/tasks/t09_multimodal_matching/runs/simulation/audio_raw_legacy_s17_v1/fixed/moe/best_checkpoint.pt",
+      "bytes": 5757810,
+      "sha256": "c5bbfa1409d10210a3922136bbeec869f93a6a1e2c406be21cbfcbc2cf8251e9"
+    },
+    {
+      "path": "LightGenV2/tasks/t09_multimodal_matching/runs/simulation/audio_raw_legacy_s17_v1/fixed/moe/last_checkpoint.pt",
+      "bytes": 5757810,
+      "sha256": "91ba5c3a1aba426708b7cd96610e0461cacc52710131f39b11db118e39c5564c"
+    },
+    {
+      "path": "LightGenV2/tasks/t09_multimodal_matching/runs/simulation/audio_raw_legacy_s17_v1/fixed/moe/result.json",
+      "bytes": 1739,
+      "sha256": "7d192e5cbd4368394b46a0f68420a457de8679fe549c7e92b6721259ff04276a"
+    },
+    {
+      "path": "LightGenV2/tasks/t09_multimodal_matching/runs/simulation/audio_raw_legacy_s17_v1/metadata.json",
+      "bytes": 3534,
+      "sha256": "35f13de0785da2b0517b761bba003e115025db6681b2c5ddc5b34c152df20d48"
+    },
+    {
+      "path": "LightGenV2/tasks/t09_multimodal_matching/runs/simulation/audio_raw_legacy_s17_v1_test/locked_selection.json",
+      "bytes": 542,
+      "sha256": "182d6e539567945b125f66f50f21944b0fffa6045f90346245b4c5c12497d5b9"
+    },
+    {
+      "path": "LightGenV2/tasks/t09_multimodal_matching/runs/simulation/audio_raw_legacy_s17_v1_test/metadata.json",
+      "bytes": 391,
+      "sha256": "d6c77fb7c1449d7fe38336b32b5b7007e7495ee4656b2cbb1cd63a1e94332c85"
+    },
+    {
+      "path": "LightGenV2/tasks/t09_multimodal_matching/runs/simulation/audio_raw_legacy_s17_v1_test/results.json",
+      "bytes": 1476,
+      "sha256": "c0b2e39eec2aa9ff16fc85bc2f1f0a314d645725eba2fca06f3f3b1a3314addd"
+    },
+    {
+      "path": "LightGenV2/tasks/t09_multimodal_matching/runs/simulation/audio_raw_twoband_positive_d2nn_s17_v1/fixed/d2nn/best_checkpoint.pt",
+      "bytes": 5488096,
+      "sha256": "a3483c93f17cd66195a8c63e1ab5fec4a69b44e788cc7ddcd43e5184aa56bdb9"
+    },
+    {
+      "path": "LightGenV2/tasks/t09_multimodal_matching/runs/simulation/audio_raw_twoband_positive_d2nn_s17_v1/fixed/d2nn/last_checkpoint.pt",
+      "bytes": 5488096,
+      "sha256": "99f8f9068f581bb679156c6573e619853074af2ae41f16988717c3f1c32eb3f3"
+    },
+    {
+      "path": "LightGenV2/tasks/t09_multimodal_matching/runs/simulation/audio_raw_twoband_positive_d2nn_s17_v1/fixed/d2nn/result.json",
+      "bytes": 1505,
+      "sha256": "0df2b5a9eca23c8b161913402136b3b5c83b869b290d0bf9abe8a4d0b9321dad"
+    },
+    {
+      "path": "LightGenV2/tasks/t09_multimodal_matching/runs/simulation/audio_raw_twoband_positive_d2nn_s17_v1/metadata.json",
+      "bytes": 3941,
+      "sha256": "b4b51bf52bbf37ffcf0a1e3059324c208db6701d176d0541c1bc656a06440ebf"
+    },
+    {
+      "path": "LightGenV2/tasks/t09_multimodal_matching/runs/simulation/audio_raw_twoband_positive_d2nn_s17_v1_test/locked_selection.json",
+      "bytes": 303,
+      "sha256": "46bf0bd2e09ab63484855fd49aecce4bd6fd645782e610a5d3c98d8b4de0eed5"
+    },
+    {
+      "path": "LightGenV2/tasks/t09_multimodal_matching/runs/simulation/audio_raw_twoband_positive_d2nn_s17_v1_test/metadata.json",
+      "bytes": 391,
+      "sha256": "9988f06b3c5c09aa643e13568e7cca4aee61ea19dd818225bbfd74b4611b82c5"
+    },
+    {
+      "path": "LightGenV2/tasks/t09_multimodal_matching/runs/simulation/audio_raw_twoband_positive_d2nn_s17_v1_test/results.json",
+      "bytes": 772,
+      "sha256": "dba4b5ab4f3bf310be9a3cec68d1f256bc8fbdc3810e15b7021108608990e00a"
+    },
+    {
+      "path": "LightGenV2/tasks/t09_multimodal_matching/runs/simulation/audio_raw_twoband_positive_moe_s17_v1/fixed/moe/best_checkpoint.pt",
+      "bytes": 5758002,
+      "sha256": "dcd0baec6e206fd1e32c91a86e34edbdb65c847a5e92596ba876468ce4d112a0"
+    },
+    {
+      "path": "LightGenV2/tasks/t09_multimodal_matching/runs/simulation/audio_raw_twoband_positive_moe_s17_v1/fixed/moe/last_checkpoint.pt",
+      "bytes": 5758002,
+      "sha256": "49ff716a8587918585d8e572d5197f8189d191c409a013085cef0676ac7167a7"
+    },
+    {
+      "path": "LightGenV2/tasks/t09_multimodal_matching/runs/simulation/audio_raw_twoband_positive_moe_s17_v1/fixed/moe/result.json",
+      "bytes": 1974,
+      "sha256": "b17b9a920cb6d0fec4b3de1f3c7f12f620b74748952b6c47b9fad6deb5122272"
+    },
+    {
+      "path": "LightGenV2/tasks/t09_multimodal_matching/runs/simulation/audio_raw_twoband_positive_moe_s17_v1/metadata.json",
+      "bytes": 3937,
+      "sha256": "e4610980179145704e40580e8a1362bacdab06fee37c4ad61e717a7920acc63b"
+    },
+    {
+      "path": "LightGenV2/tasks/t09_multimodal_matching/runs/simulation/audio_raw_twoband_positive_moe_s17_v1_test/locked_selection.json",
+      "bytes": 299,
+      "sha256": "f25fb6c6da79033e08f14600371c47a27e44348972b029ec77998d2ed42dd5a2"
+    },
+    {
+      "path": "LightGenV2/tasks/t09_multimodal_matching/runs/simulation/audio_raw_twoband_positive_moe_s17_v1_test/metadata.json",
+      "bytes": 391,
+      "sha256": "23f92e05652e13b9d08469d1fad6b270ef7a27865f2f87ae43261707f6645311"
+    },
+    {
+      "path": "LightGenV2/tasks/t09_multimodal_matching/runs/simulation/audio_raw_twoband_positive_moe_s17_v1_test/results.json",
+      "bytes": 925,
+      "sha256": "9f0015707dff003123ae7ebd923b437f0964ceda6037fff9f7d32c022321b6e0"
+    },
+    {
+      "path": "LightGenV2/tasks/t09_multimodal_matching/runs/simulation/audio_raw_twoband_s17_v1/fixed/d2nn/best_checkpoint.pt",
+      "bytes": 5487968,
+      "sha256": "e1b5225d311bc8d0f2d4df594f2e2d7270993f5eefefe6ef0b05dafd4464e225"
+    },
+    {
+      "path": "LightGenV2/tasks/t09_multimodal_matching/runs/simulation/audio_raw_twoband_s17_v1/fixed/d2nn/last_checkpoint.pt",
+      "bytes": 5487968,
+      "sha256": "d75b176d753dd5e56ada24c3dc088a1d09b0daba44d4627a5f8585822240597e"
+    },
+    {
+      "path": "LightGenV2/tasks/t09_multimodal_matching/runs/simulation/audio_raw_twoband_s17_v1/fixed/d2nn/result.json",
+      "bytes": 1276,
+      "sha256": "d8772a86ee767fba4d8f68375aa73ef1996571ab374cc67e777111ae1d5939ff"
+    },
+    {
+      "path": "LightGenV2/tasks/t09_multimodal_matching/runs/simulation/audio_raw_twoband_s17_v1/fixed/moe/best_checkpoint.pt",
+      "bytes": 5757810,
+      "sha256": "647aabb6ee0125378de929a1585245c6aecb2e89fdbf33240880b6bca875cff7"
+    },
+    {
+      "path": "LightGenV2/tasks/t09_multimodal_matching/runs/simulation/audio_raw_twoband_s17_v1/fixed/moe/last_checkpoint.pt",
+      "bytes": 5757810,
+      "sha256": "264dd6d562dd5d0875dc33fa4c7a62ec0b145ec22ac3a360ffdfce0339536a82"
+    },
+    {
+      "path": "LightGenV2/tasks/t09_multimodal_matching/runs/simulation/audio_raw_twoband_s17_v1/fixed/moe/result.json",
+      "bytes": 1684,
+      "sha256": "dbdd27a0ec274ff92ecfb9b1068de7666f4d216c321a3c2f8731efbdc14d4e35"
+    },
+    {
+      "path": "LightGenV2/tasks/t09_multimodal_matching/runs/simulation/audio_raw_twoband_s17_v1/metadata.json",
+      "bytes": 3540,
+      "sha256": "732de2c9e6cdd84cda744f5a31c076d06bd76486ad43f5502383c628a57f6ce3"
+    },
+    {
+      "path": "LightGenV2/tasks/t09_multimodal_matching/runs/simulation/audio_raw_twoband_s17_v1_test/locked_selection.json",
+      "bytes": 545,
+      "sha256": "d5dc3f9808cc7f6df72aed7fde1ab77dd178f3dce58e7326cca72ccd6d845f9b"
+    },
+    {
+      "path": "LightGenV2/tasks/t09_multimodal_matching/runs/simulation/audio_raw_twoband_s17_v1_test/metadata.json",
+      "bytes": 391,
+      "sha256": "6d3aa45d0f35156dc914dcf1c9d4bbe8004619917252f9810714c4347bca7c2b"
+    },
+    {
+      "path": "LightGenV2/tasks/t09_multimodal_matching/runs/simulation/audio_raw_twoband_s17_v1_test/results.json",
+      "bytes": 1485,
+      "sha256": "da9327bd90c09cd4bd9c8c02e652be7f84d821bd6ffde107b05a5008ecb9e029"
+    },
+    {
+      "path": "LightGenV2/tasks/t09_multimodal_matching/runs/simulation/audio_raw_twoband_softplus_d2nn_s17_v1/fixed/d2nn/best_checkpoint.pt",
+      "bytes": 5488096,
+      "sha256": "157b0cf693429cc79702bdf458bf66e53d5e462d8ed7f225d4cefb3fa01ec9a6"
+    },
+    {
+      "path": "LightGenV2/tasks/t09_multimodal_matching/runs/simulation/audio_raw_twoband_softplus_d2nn_s17_v1/fixed/d2nn/last_checkpoint.pt",
+      "bytes": 5488096,
+      "sha256": "65556fee0048e4f7514fd192b7f291dd0195507a980477e0fa45ea60c9015fb9"
+    },
+    {
+      "path": "LightGenV2/tasks/t09_multimodal_matching/runs/simulation/audio_raw_twoband_softplus_d2nn_s17_v1/fixed/d2nn/result.json",
+      "bytes": 1504,
+      "sha256": "0729f799f95cd4db1ba399eda4cd5e758f6e90b95b8bfd2a1c67a3051518eb0f"
+    },
+    {
+      "path": "LightGenV2/tasks/t09_multimodal_matching/runs/simulation/audio_raw_twoband_softplus_d2nn_s17_v1/metadata.json",
+      "bytes": 3921,
+      "sha256": "32eabeb19e00c20aab2227bf64b05af193fb51d7a40b147c3c4a8f1d5cbd8ef6"
+    },
+    {
+      "path": "LightGenV2/tasks/t09_multimodal_matching/runs/simulation/audio_raw_twoband_softplus_d2nn_s17_v1_test/locked_selection.json",
+      "bytes": 303,
+      "sha256": "76d071595f3b8509f51415cc397b19ce9048f184194a7445f16432c9a608704c"
+    },
+    {
+      "path": "LightGenV2/tasks/t09_multimodal_matching/runs/simulation/audio_raw_twoband_softplus_d2nn_s17_v1_test/metadata.json",
+      "bytes": 391,
+      "sha256": "020b3f2c206abff953ba36c1b00a3528724023a39313409996f1105b6de84065"
+    },
+    {
+      "path": "LightGenV2/tasks/t09_multimodal_matching/runs/simulation/audio_raw_twoband_softplus_d2nn_s17_v1_test/results.json",
+      "bytes": 772,
+      "sha256": "46407bfa662d4744f7ef87bfe9ff84f8f033008314c06b9fe24e53fb0bc85c5c"
+    },
+    {
+      "path": "LightGenV2/tasks/t09_multimodal_matching/runs/simulation/audio_raw_twoband_softplus_moe_s17_v1/fixed/moe/best_checkpoint.pt",
+      "bytes": 5757938,
+      "sha256": "f66f946374788d3f00dcab2e21ec74a75825aab379effe160c9fe4fa9cb3cf68"
+    },
+    {
+      "path": "LightGenV2/tasks/t09_multimodal_matching/runs/simulation/audio_raw_twoband_softplus_moe_s17_v1/fixed/moe/last_checkpoint.pt",
+      "bytes": 5757938,
+      "sha256": "1f8902579a100e88ac7585c32113c553993becb75d13f12bd2ae598478a29495"
+    },
+    {
+      "path": "LightGenV2/tasks/t09_multimodal_matching/runs/simulation/audio_raw_twoband_softplus_moe_s17_v1/fixed/moe/result.json",
+      "bytes": 2010,
+      "sha256": "ad8293bd020885b0031869e3921c37187a367c86e640701990bffb1c50762c46"
+    },
+    {
+      "path": "LightGenV2/tasks/t09_multimodal_matching/runs/simulation/audio_raw_twoband_softplus_moe_s17_v1/metadata.json",
+      "bytes": 3917,
+      "sha256": "be01d62137a38cc85f5997a2a53db163e23246b7ff710531904810a5e5c59bea"
+    },
+    {
+      "path": "LightGenV2/tasks/t09_multimodal_matching/runs/simulation/audio_raw_twoband_softplus_moe_s17_v1_test/locked_selection.json",
+      "bytes": 299,
+      "sha256": "727d2aef51c30c027bca4618eb18643b2e3975c2218a14f8b56973cfe2704994"
+    },
+    {
+      "path": "LightGenV2/tasks/t09_multimodal_matching/runs/simulation/audio_raw_twoband_softplus_moe_s17_v1_test/metadata.json",
+      "bytes": 391,
+      "sha256": "13966b1f108feeb859b0dd43e0fca627d46d68d8fa059193cfb1d1082084c0f0"
+    },
+    {
+      "path": "LightGenV2/tasks/t09_multimodal_matching/runs/simulation/audio_raw_twoband_softplus_moe_s17_v1_test/results.json",
+      "bytes": 940,
+      "sha256": "d843263c72c4b21837aa0adafe463d6224091432c6e376f68b7e67714adbf136"
+    },
+    {
+      "path": "LightGenV2/tasks/t09_multimodal_matching/runs/simulation/audio_test_s17_v1/locked_selection.json",
+      "bytes": 520,
+      "sha256": "6d183b61a5a121e829c57a71bf82112f71c53bc3e696022e904a7c4097bf56cc"
+    },
+    {
+      "path": "LightGenV2/tasks/t09_multimodal_matching/runs/simulation/audio_test_s17_v1/metadata.json",
+      "bytes": 453,
+      "sha256": "3c1efde1ebbb78838ddb1fa56c2768e045be439242b10ae96e2da3991df659eb"
+    },
+    {
+      "path": "LightGenV2/tasks/t09_multimodal_matching/runs/simulation/audio_test_s17_v1/results.json",
+      "bytes": 1487,
+      "sha256": "ac97b01bd8d0f0eac4baddef4a7f3fc73cecebe0f98fd60586e372504dd7b008"
+    },
+    {
+      "path": "LightGenV2/tasks/t09_multimodal_matching/runs/simulation/clevr_fixed_s17_v1/fixed/d2nn/best_checkpoint.pt",
+      "bytes": 5487904,
+      "sha256": "b7b53f46aea7051ef881f14359f0af9a6b12f642aa2b78c774519452d35ea1f7"
+    },
+    {
+      "path": "LightGenV2/tasks/t09_multimodal_matching/runs/simulation/clevr_fixed_s17_v1/fixed/d2nn/last_checkpoint.pt",
+      "bytes": 5487904,
+      "sha256": "14816eae2d57bdea9a31c2c7fd8912a61f340344afc6bb8d94307c6d3be22890"
+    },
+    {
+      "path": "LightGenV2/tasks/t09_multimodal_matching/runs/simulation/clevr_fixed_s17_v1/fixed/d2nn/result.json",
+      "bytes": 1264,
+      "sha256": "20fd15dac662e7f145585580caa6e847507ded6dfaa0f571b3e42457edd83232"
+    },
+    {
+      "path": "LightGenV2/tasks/t09_multimodal_matching/runs/simulation/clevr_fixed_s17_v1/fixed/moe/best_checkpoint.pt",
+      "bytes": 5757810,
+      "sha256": "1f8c4ce3f18188bc9e837951e5364ea6fa1e3867bc9994772357663353c5e493"
+    },
+    {
+      "path": "LightGenV2/tasks/t09_multimodal_matching/runs/simulation/clevr_fixed_s17_v1/fixed/moe/last_checkpoint.pt",
+      "bytes": 5757810,
+      "sha256": "6f4cc2f28cad5a987c328e97214aaeddb4296887e0ebe7b90171d6b844e05f71"
+    },
+    {
+      "path": "LightGenV2/tasks/t09_multimodal_matching/runs/simulation/clevr_fixed_s17_v1/fixed/moe/result.json",
+      "bytes": 1646,
+      "sha256": "6630346d6a71b77c8d528e98f9069e656f1ed0c106ff1b95215f2bacf221424f"
+    },
+    {
+      "path": "LightGenV2/tasks/t09_multimodal_matching/runs/simulation/clevr_fixed_s17_v1/metadata.json",
+      "bytes": 1724,
+      "sha256": "fae7e00bdda94d1cbaf9f6d25f49ddac2657e3701d7edbefac8b4826b8aeba5e"
+    },
+    {
+      "path": "LightGenV2/tasks/t09_multimodal_matching/runs/simulation/clevr_frozen_test_s17_v1/locked_selection.json",
+      "bytes": 1558,
+      "sha256": "d51379f7f05d46ef75125c08484b1a7774db7e9cf56af4f86c3e656df2d50769"
+    },
+    {
+      "path": "LightGenV2/tasks/t09_multimodal_matching/runs/simulation/clevr_frozen_test_s17_v1/results.json",
+      "bytes": 4366,
+      "sha256": "67580ae6d43090f9b4735896c2eb747fa863a97383ea7a3ab997473e4d1183e1"
+    },
+    {
+      "path": "LightGenV2/tasks/t09_multimodal_matching/runs/simulation/clevr_learned_s17_v1/learned/d2nn/best_checkpoint.pt",
+      "bytes": 5487904,
+      "sha256": "5a9ebef450b05439d503e0e2e976c7a2ee2085967e8cebe9cd1b575a6e08dfb3"
+    },
+    {
+      "path": "LightGenV2/tasks/t09_multimodal_matching/runs/simulation/clevr_learned_s17_v1/learned/d2nn/last_checkpoint.pt",
+      "bytes": 5487904,
+      "sha256": "baf88cbccb5e0558602a43a6718c9fe885c40e1062bc420394596579ac412d90"
+    },
+    {
+      "path": "LightGenV2/tasks/t09_multimodal_matching/runs/simulation/clevr_learned_s17_v1/learned/d2nn/result.json",
+      "bytes": 1264,
+      "sha256": "35486c65f221d5016cfb87b851ca0f525b6ede5b321ba2b4bc104bed5d3dc53a"
+    },
+    {
+      "path": "LightGenV2/tasks/t09_multimodal_matching/runs/simulation/clevr_learned_s17_v1/learned/moe/best_checkpoint.pt",
+      "bytes": 5757810,
+      "sha256": "bbce3367c1294361199f8d8df1db71090ec3aa21ce2969cda05e01ffab22c523"
+    },
+    {
+      "path": "LightGenV2/tasks/t09_multimodal_matching/runs/simulation/clevr_learned_s17_v1/learned/moe/last_checkpoint.pt",
+      "bytes": 5757810,
+      "sha256": "42768fc1538c3a3ee44a76b620e7cd1d514a500083eb1093dc49eab3e1a1a69d"
+    },
+    {
+      "path": "LightGenV2/tasks/t09_multimodal_matching/runs/simulation/clevr_learned_s17_v1/learned/moe/result.json",
+      "bytes": 1635,
+      "sha256": "d32f66e86ad7bb66f6aa3afe512ab59f9143906c90da3a81f2f94f382e4e09ff"
+    },
+    {
+      "path": "LightGenV2/tasks/t09_multimodal_matching/runs/simulation/clevr_learned_s17_v1/learned/warmup/best_checkpoint.pt",
+      "bytes": 11334383,
+      "sha256": "55d87c44abaea2633f83b9ef6e5236ed57d4af40bc13a4bcf8cf8c6040d650cf"
+    },
+    {
+      "path": "LightGenV2/tasks/t09_multimodal_matching/runs/simulation/clevr_learned_s17_v1/learned/warmup/last_checkpoint.pt",
+      "bytes": 11334383,
+      "sha256": "6e34b38b043142a6f130c6ca77163575cfd2fdaa530e3bcc79ce82bc62cb88fa"
+    },
+    {
+      "path": "LightGenV2/tasks/t09_multimodal_matching/runs/simulation/clevr_learned_s17_v1/metadata.json",
+      "bytes": 1732,
+      "sha256": "ec51da7660443910931ca5691676e57aed98466e58336d8b9e1daeadaea80238"
+    },
+    {
+      "path": "LightGenV2/tasks/t09_multimodal_matching/runs/simulation/clevr_long30_test_s17_v1/locked_selection.json",
+      "bytes": 1081,
+      "sha256": "0cab330dc528667beb1a10bc75ecac34a39c323e39e417b5061d27732011f642"
+    },
+    {
+      "path": "LightGenV2/tasks/t09_multimodal_matching/runs/simulation/clevr_long30_test_s17_v1/metadata.json",
+      "bytes": 453,
+      "sha256": "1616b29e74064b1e6256f4fbf1f4bdad89bda2402f1f165b21b94bd0514bd688"
+    },
+    {
+      "path": "LightGenV2/tasks/t09_multimodal_matching/runs/simulation/clevr_long30_test_s17_v1/results.json",
+      "bytes": 2994,
+      "sha256": "9efd6aa7474b97e333b7b2af9faeafb2ee98685c97c952550379470b2c25bd27"
+    },
+    {
+      "path": "LightGenV2/tasks/t09_multimodal_matching/runs/simulation/clevr_visual_aux_s17_v1/best_checkpoint.pt",
+      "bytes": 446499,
+      "sha256": "8b54d51efce92c525e22fec6d4a95af0a7d56c36d2fb3cdf210cec97e4b4aa0d"
+    },
+    {
+      "path": "LightGenV2/tasks/t09_multimodal_matching/runs/simulation/clevr_visual_aux_s17_v1/last_checkpoint.pt",
+      "bytes": 446499,
+      "sha256": "ff0e767bddb28f592d20cb41a19e220198067b9839462b0f10cc8ad469d68753"
+    },
+    {
+      "path": "LightGenV2/tasks/t09_multimodal_matching/runs/simulation/clevr_visual_aux_s17_v1/metadata.json",
+      "bytes": 452,
+      "sha256": "aecb14f5611e7fdf363580d6eefe1063c518ffe68cdb49f0acdbbeba92139cc8"
+    },
+    {
+      "path": "LightGenV2/tasks/t09_multimodal_matching/runs/simulation/clevr_visual_dense_s17_v1/fixed_dense/d2nn/best_checkpoint.pt",
+      "bytes": 5487904,
+      "sha256": "2599c864c7586fdb606d54c857772df0f9d9d0cb59f70d4b5e880ecaae8bf265"
+    },
+    {
+      "path": "LightGenV2/tasks/t09_multimodal_matching/runs/simulation/clevr_visual_dense_s17_v1/fixed_dense/d2nn/last_checkpoint.pt",
+      "bytes": 5487904,
+      "sha256": "048743975c2f0404e9ef74814060d8469ac077f4431e2298db0c5f488edb987d"
+    },
+    {
+      "path": "LightGenV2/tasks/t09_multimodal_matching/runs/simulation/clevr_visual_dense_s17_v1/fixed_dense/d2nn/result.json",
+      "bytes": 1264,
+      "sha256": "04fc218a3a141d3ee4a14cc4ff109f1f55d40e7517b229a53353d625b8030ddb"
+    },
+    {
+      "path": "LightGenV2/tasks/t09_multimodal_matching/runs/simulation/clevr_visual_dense_s17_v1/fixed_dense/moe/best_checkpoint.pt",
+      "bytes": 5757810,
+      "sha256": "b598add6a885067f0986ff96548fb94213bf589cb65ca394e56c66a6f24ea63c"
+    },
+    {
+      "path": "LightGenV2/tasks/t09_multimodal_matching/runs/simulation/clevr_visual_dense_s17_v1/fixed_dense/moe/last_checkpoint.pt",
+      "bytes": 5757810,
+      "sha256": "a4d710f231514648bea4a57099f29c8c33b147368bbd59e1934687c00982df90"
+    },
+    {
+      "path": "LightGenV2/tasks/t09_multimodal_matching/runs/simulation/clevr_visual_dense_s17_v1/fixed_dense/moe/result.json",
+      "bytes": 1637,
+      "sha256": "9ef9bc0854679908b7cf386b06b73a6534b686792eb765ac4c86f9cf20733530"
+    },
+    {
+      "path": "LightGenV2/tasks/t09_multimodal_matching/runs/simulation/clevr_visual_dense_s17_v1/metadata.json",
+      "bytes": 2351,
+      "sha256": "dbb6f4221f7d5b2ccc2fc6f31637f5966a553005d101d9897a04d0fb064d2a1c"
+    },
+    {
+      "path": "LightGenV2/tasks/t09_multimodal_matching/runs/simulation/clevr_visual_fixed_drop01_s17_v1/fixed/d2nn/best_checkpoint.pt",
+      "bytes": 5487904,
+      "sha256": "b4987d1f556db3c52c42af4254089efc6c47a11155726711a24c983fc6e36349"
+    },
+    {
+      "path": "LightGenV2/tasks/t09_multimodal_matching/runs/simulation/clevr_visual_fixed_drop01_s17_v1/fixed/d2nn/last_checkpoint.pt",
+      "bytes": 5487904,
+      "sha256": "9752820716ebeacaccff531891760c0446bbf6f3947adde4d413776af27bf350"
+    },
+    {
+      "path": "LightGenV2/tasks/t09_multimodal_matching/runs/simulation/clevr_visual_fixed_drop01_s17_v1/fixed/d2nn/result.json",
+      "bytes": 1267,
+      "sha256": "3cc2b0967a33409718f6874baa452fd8843e454b81edd6acced33277d2ba6b42"
+    },
+    {
+      "path": "LightGenV2/tasks/t09_multimodal_matching/runs/simulation/clevr_visual_fixed_drop01_s17_v1/fixed/moe/best_checkpoint.pt",
+      "bytes": 5757810,
+      "sha256": "be6daab19a85d8ce0893fe9ce8cf347793c856b1899e4866549a35fda63d5651"
+    },
+    {
+      "path": "LightGenV2/tasks/t09_multimodal_matching/runs/simulation/clevr_visual_fixed_drop01_s17_v1/fixed/moe/last_checkpoint.pt",
+      "bytes": 5757810,
+      "sha256": "bdf84ed42ba0afa7c4bd573d83eeca3145982b3b96cc7593b764ef349e3b5b0d"
+    },
+    {
+      "path": "LightGenV2/tasks/t09_multimodal_matching/runs/simulation/clevr_visual_fixed_drop01_s17_v1/fixed/moe/result.json",
+      "bytes": 1727,
+      "sha256": "2b71e7cef3643c46f213ca05dd57b95df7d3390eff3677d34946ace96fd2e812"
+    },
+    {
+      "path": "LightGenV2/tasks/t09_multimodal_matching/runs/simulation/clevr_visual_fixed_drop01_s17_v1/metadata.json",
+      "bytes": 2683,
+      "sha256": "a2281c1f2b97c7b267c04808ec396b4a110388b27427ded90eaa7c0e3f7e3062"
+    },
+    {
+      "path": "LightGenV2/tasks/t09_multimodal_matching/runs/simulation/clevr_visual_fixed_flip_s17_v1/fixed/d2nn/best_checkpoint.pt",
+      "bytes": 5487904,
+      "sha256": "f92ab9c29ad546482b1715845535f0448a1d1716ff2991e4fde3ff59f8bb1bf3"
+    },
+    {
+      "path": "LightGenV2/tasks/t09_multimodal_matching/runs/simulation/clevr_visual_fixed_flip_s17_v1/fixed/d2nn/last_checkpoint.pt",
+      "bytes": 5487904,
+      "sha256": "66cbb5e71264ba226f2d6049934ad52ff88e0ca21971a3354d012db9ba440380"
+    },
+    {
+      "path": "LightGenV2/tasks/t09_multimodal_matching/runs/simulation/clevr_visual_fixed_flip_s17_v1/fixed/d2nn/result.json",
+      "bytes": 1266,
+      "sha256": "029e75f7991da9561fef2f5f9a1e035a29dedd1f8fd407530746e9f9f28bbc18"
+    },
+    {
+      "path": "LightGenV2/tasks/t09_multimodal_matching/runs/simulation/clevr_visual_fixed_flip_s17_v1/fixed/moe/best_checkpoint.pt",
+      "bytes": 5757810,
+      "sha256": "0a1ab4ea99cbb86225378fe0d0ffce0a908c6b01aa6e6dc0a2674e5433671b09"
+    },
+    {
+      "path": "LightGenV2/tasks/t09_multimodal_matching/runs/simulation/clevr_visual_fixed_flip_s17_v1/fixed/moe/last_checkpoint.pt",
+      "bytes": 5757810,
+      "sha256": "52f287a3d551c5023e40509c26e57d29d5b4f3237af1419bda75add66555753e"
+    },
+    {
+      "path": "LightGenV2/tasks/t09_multimodal_matching/runs/simulation/clevr_visual_fixed_flip_s17_v1/fixed/moe/result.json",
+      "bytes": 1734,
+      "sha256": "d0dcdd15a9a7e4483473b2d4e834a7250d8bff5b7ad0cb0dc497b313af48e9ee"
+    },
+    {
+      "path": "LightGenV2/tasks/t09_multimodal_matching/runs/simulation/clevr_visual_fixed_flip_s17_v1/metadata.json",
+      "bytes": 2689,
+      "sha256": "ead715b6d6aa779c3f7810370d5c7c0962d360c140d86e91a8bc11ee600648ab"
+    },
+    {
+      "path": "LightGenV2/tasks/t09_multimodal_matching/runs/simulation/clevr_visual_fixed_flipdrop01_s17_v1/fixed/d2nn/best_checkpoint.pt",
+      "bytes": 5487904,
+      "sha256": "7848d70766c20f38264dcd06e2133862729c4979c010ada432b737588eaf5ab8"
+    },
+    {
+      "path": "LightGenV2/tasks/t09_multimodal_matching/runs/simulation/clevr_visual_fixed_flipdrop01_s17_v1/fixed/d2nn/last_checkpoint.pt",
+      "bytes": 5487904,
+      "sha256": "204916602b25dc61462b02e624bc0b3358a1050102550a31fd9fee6edaea6cd4"
+    },
+    {
+      "path": "LightGenV2/tasks/t09_multimodal_matching/runs/simulation/clevr_visual_fixed_flipdrop01_s17_v1/fixed/d2nn/result.json",
+      "bytes": 1267,
+      "sha256": "6d32cbd30ac4ce5d31c15a4c305d7c1a87ae4bf688104f2ce53c299e982ac6b0"
+    },
+    {
+      "path": "LightGenV2/tasks/t09_multimodal_matching/runs/simulation/clevr_visual_fixed_flipdrop01_s17_v1/fixed/moe/best_checkpoint.pt",
+      "bytes": 5757810,
+      "sha256": "f273dee96a4cc6e783125e3cc1f42d8183944a286df89e71cbbc689c987d9b48"
+    },
+    {
+      "path": "LightGenV2/tasks/t09_multimodal_matching/runs/simulation/clevr_visual_fixed_flipdrop01_s17_v1/fixed/moe/last_checkpoint.pt",
+      "bytes": 5757810,
+      "sha256": "d890eab87e56184427257e1bc3c5de08f12ff216b463a439fa2c2812ef0614b1"
+    },
+    {
+      "path": "LightGenV2/tasks/t09_multimodal_matching/runs/simulation/clevr_visual_fixed_flipdrop01_s17_v1/fixed/moe/result.json",
+      "bytes": 1673,
+      "sha256": "ef032004f388e3e5fe26099b918b0987eb72796b86295c11b3210eb3809c160a"
+    },
+    {
+      "path": "LightGenV2/tasks/t09_multimodal_matching/runs/simulation/clevr_visual_fixed_flipdrop01_s17_v1/metadata.json",
+      "bytes": 2737,
+      "sha256": "0ac08a20bb83bac7752f17ab1962927235c561fc27b07a8da1a132c61ba3d587"
+    },
+    {
+      "path": "LightGenV2/tasks/t09_multimodal_matching/runs/simulation/clevr_visual_fixed_long30_phase05_s17_v1/fixed/d2nn/best_checkpoint.pt",
+      "bytes": 5487904,
+      "sha256": "2e5c8928a2c9b57eb1b2a346d6c113bf0c1a1d9624500acfbf881e765c7a1a6a"
+    },
+    {
+      "path": "LightGenV2/tasks/t09_multimodal_matching/runs/simulation/clevr_visual_fixed_long30_phase05_s17_v1/fixed/d2nn/last_checkpoint.pt",
+      "bytes": 5487904,
+      "sha256": "84919083657e89789be3fb9378a1713313c54d59167f86ccae335a3293319952"
+    },
+    {
+      "path": "LightGenV2/tasks/t09_multimodal_matching/runs/simulation/clevr_visual_fixed_long30_phase05_s17_v1/fixed/d2nn/result.json",
+      "bytes": 1267,
+      "sha256": "79a10d6754c059a8ab04dfcd4a423a8d43d4a38a0339508b88bc4dc28439736a"
+    },
+    {
+      "path": "LightGenV2/tasks/t09_multimodal_matching/runs/simulation/clevr_visual_fixed_long30_phase05_s17_v1/fixed/moe/best_checkpoint.pt",
+      "bytes": 5757810,
+      "sha256": "e2e32a3b59cc0e16d6443c5f8c59d5899492d3550dbe0d55f22c651ec7b9c66a"
+    },
+    {
+      "path": "LightGenV2/tasks/t09_multimodal_matching/runs/simulation/clevr_visual_fixed_long30_phase05_s17_v1/fixed/moe/last_checkpoint.pt",
+      "bytes": 5757810,
+      "sha256": "d2c62ae2da75f1241aa3efbad4100772bb74d64a17814c5884016c471f8a83c0"
+    },
+    {
+      "path": "LightGenV2/tasks/t09_multimodal_matching/runs/simulation/clevr_visual_fixed_long30_phase05_s17_v1/fixed/moe/result.json",
+      "bytes": 1833,
+      "sha256": "fb3fbd21fe167e5c997ae6f9937c581c58f4fd2128519b1b7200cce10504b95d"
+    },
+    {
+      "path": "LightGenV2/tasks/t09_multimodal_matching/runs/simulation/clevr_visual_fixed_long30_phase05_s17_v1/metadata.json",
+      "bytes": 2867,
+      "sha256": "10aa5bf7762e28d724227d463ba9ac3acb3cdcb4727fbe924c4c5f47f460ac8c"
+    },
+    {
+      "path": "LightGenV2/tasks/t09_multimodal_matching/runs/simulation/clevr_visual_fixed_long30_s17_v1/fixed/d2nn/best_checkpoint.pt",
+      "bytes": 5487904,
+      "sha256": "e53d6c1120c903c9bd23fd594ec409ba89f3af208406c34d7183a2b68a87137a"
+    },
+    {
+      "path": "LightGenV2/tasks/t09_multimodal_matching/runs/simulation/clevr_visual_fixed_long30_s17_v1/fixed/d2nn/last_checkpoint.pt",
+      "bytes": 5487904,
+      "sha256": "0aa0b3336d42a4468af882c1d7b3843c7db0120b3c89d49f0ba85bf6ee94ef35"
+    },
+    {
+      "path": "LightGenV2/tasks/t09_multimodal_matching/runs/simulation/clevr_visual_fixed_long30_s17_v1/fixed/d2nn/result.json",
+      "bytes": 1272,
+      "sha256": "f6c4336b668f83e23b0d47a4a6c2cde0311a32cf792c527d8cbc9b2101e8d993"
+    },
+    {
+      "path": "LightGenV2/tasks/t09_multimodal_matching/runs/simulation/clevr_visual_fixed_long30_s17_v1/fixed/moe/best_checkpoint.pt",
+      "bytes": 5757810,
+      "sha256": "9b1a228fdb0d331e85e1e4b5f3ef707f1a2915aa57d0078f51d27aab7a4ff006"
+    },
+    {
+      "path": "LightGenV2/tasks/t09_multimodal_matching/runs/simulation/clevr_visual_fixed_long30_s17_v1/fixed/moe/last_checkpoint.pt",
+      "bytes": 5757810,
+      "sha256": "5712cf4c351a6bc9d9f9d06305650edd91e6f13ff791a2cd0a183fb33dfe4583"
+    },
+    {
+      "path": "LightGenV2/tasks/t09_multimodal_matching/runs/simulation/clevr_visual_fixed_long30_s17_v1/fixed/moe/result.json",
+      "bytes": 1785,
+      "sha256": "48ec269488385f44a220985fcb03fe5ae80f693e4238414c94d05ebc6b8ce631"
+    },
+    {
+      "path": "LightGenV2/tasks/t09_multimodal_matching/runs/simulation/clevr_visual_fixed_long30_s17_v1/metadata.json",
+      "bytes": 2817,
+      "sha256": "2625044d60afe2b76a30100a3894efd14f92f08c02faff9308f3cf475aeb59f9"
+    },
+    {
+      "path": "LightGenV2/tasks/t09_multimodal_matching/runs/simulation/clevr_visual_fixed_lr003_s17_v1/fixed/d2nn/best_checkpoint.pt",
+      "bytes": 5487904,
+      "sha256": "c1f8dfe34bc42e028d5151911575d8d9fbbaf8c197ff6bcf746aaf0dc3ebcec5"
+    },
+    {
+      "path": "LightGenV2/tasks/t09_multimodal_matching/runs/simulation/clevr_visual_fixed_lr003_s17_v1/fixed/d2nn/last_checkpoint.pt",
+      "bytes": 5487904,
+      "sha256": "8e3decb5c117eda5b0e493aabc76a563b963136604ac9559a31a1a316018189c"
+    },
+    {
+      "path": "LightGenV2/tasks/t09_multimodal_matching/runs/simulation/clevr_visual_fixed_lr003_s17_v1/fixed/d2nn/result.json",
+      "bytes": 1266,
+      "sha256": "b70db6c7aa542c3c9f6cac6fee2300cd19fe50cd9248899762b178c0371b06b5"
+    },
+    {
+      "path": "LightGenV2/tasks/t09_multimodal_matching/runs/simulation/clevr_visual_fixed_lr003_s17_v1/fixed/moe/best_checkpoint.pt",
+      "bytes": 5757810,
+      "sha256": "5197778234285c8551113a2cc84212abb186e0d61370c27601ae9dd7823902b7"
+    },
+    {
+      "path": "LightGenV2/tasks/t09_multimodal_matching/runs/simulation/clevr_visual_fixed_lr003_s17_v1/fixed/moe/last_checkpoint.pt",
+      "bytes": 5757810,
+      "sha256": "66759b59ec65eabdafd6130fd4c5a5aa0921a332dc18bbdee289e94a96410e44"
+    },
+    {
+      "path": "LightGenV2/tasks/t09_multimodal_matching/runs/simulation/clevr_visual_fixed_lr003_s17_v1/fixed/moe/result.json",
+      "bytes": 1651,
+      "sha256": "3660b794d69dd25847f066fb701c1fedd191c93a651bf9f62a716d80305a5bdb"
+    },
+    {
+      "path": "LightGenV2/tasks/t09_multimodal_matching/runs/simulation/clevr_visual_fixed_lr003_s17_v1/metadata.json",
+      "bytes": 2671,
+      "sha256": "54a337bbf0380d2c786b0f87a0de60ce3c745d264b0542de58db7539587a66c2"
+    },
+    {
+      "path": "LightGenV2/tasks/t09_multimodal_matching/runs/simulation/clevr_visual_fixed_s17_v1/fixed/d2nn/best_checkpoint.pt",
+      "bytes": 5487904,
+      "sha256": "30ae50edaa4748b6d1abb76663ae15fbe6dd30b5f6892cbd59251786495deb81"
+    },
+    {
+      "path": "LightGenV2/tasks/t09_multimodal_matching/runs/simulation/clevr_visual_fixed_s17_v1/fixed/d2nn/last_checkpoint.pt",
+      "bytes": 5487904,
+      "sha256": "8a938dfc802b411d2844fff4f0537e040e496bbeb7656f9af8d1ee925d8d5757"
+    },
+    {
+      "path": "LightGenV2/tasks/t09_multimodal_matching/runs/simulation/clevr_visual_fixed_s17_v1/fixed/d2nn/result.json",
+      "bytes": 1264,
+      "sha256": "e743696dc725dfbbcdc8c12cca1b4c7dc651db2a84495069795fe3f83b384a69"
+    },
+    {
+      "path": "LightGenV2/tasks/t09_multimodal_matching/runs/simulation/clevr_visual_fixed_s17_v1/fixed/moe/best_checkpoint.pt",
+      "bytes": 5757810,
+      "sha256": "9f64f4f2292a7cef7171bbe3d5bf986ff3dda06b33f19389e61b2826e8b5525b"
+    },
+    {
+      "path": "LightGenV2/tasks/t09_multimodal_matching/runs/simulation/clevr_visual_fixed_s17_v1/fixed/moe/last_checkpoint.pt",
+      "bytes": 5757810,
+      "sha256": "e37f174598291ef00726165535b2cf7f5b34a3fa3b522df0cca6c352fb60040b"
+    },
+    {
+      "path": "LightGenV2/tasks/t09_multimodal_matching/runs/simulation/clevr_visual_fixed_s17_v1/fixed/moe/result.json",
+      "bytes": 1778,
+      "sha256": "a7996f31af0618a7c2d769c4124f75b65e2ebd8930d30897b9750e1f66e76cbe"
+    },
+    {
+      "path": "LightGenV2/tasks/t09_multimodal_matching/runs/simulation/clevr_visual_fixed_s17_v1/metadata.json",
+      "bytes": 2169,
+      "sha256": "e878d779e6ebce3bcbff1545c85906080044b3a4103acbf7e14f6f8828ec261f"
+    },
+    {
+      "path": "LightGenV2/tasks/t09_multimodal_matching/runs/simulation/clevr_visual_learned_s17_v1/learned/d2nn/best_checkpoint.pt",
+      "bytes": 5487904,
+      "sha256": "a29e0bae1d955868436c0dcdbd5e5fd13fab9953a158f4039e5be0b7173290ef"
+    },
+    {
+      "path": "LightGenV2/tasks/t09_multimodal_matching/runs/simulation/clevr_visual_learned_s17_v1/learned/d2nn/last_checkpoint.pt",
+      "bytes": 5487904,
+      "sha256": "8bb48654a481f3807e3a603cefad0c604edcf767fc7b2e9cad136ff427a098be"
+    },
+    {
+      "path": "LightGenV2/tasks/t09_multimodal_matching/runs/simulation/clevr_visual_learned_s17_v1/learned/d2nn/result.json",
+      "bytes": 1268,
+      "sha256": "78df6362db38225e7d92e1e36cec6affd9759bb5c048972f9a4cd5fb2f482f81"
+    },
+    {
+      "path": "LightGenV2/tasks/t09_multimodal_matching/runs/simulation/clevr_visual_learned_s17_v1/learned/moe/best_checkpoint.pt",
+      "bytes": 5757810,
+      "sha256": "829c8b372e263ef055e80fe168e1b3551c4ad9b2105bbfd1fb68b5677cb87402"
+    },
+    {
+      "path": "LightGenV2/tasks/t09_multimodal_matching/runs/simulation/clevr_visual_learned_s17_v1/learned/moe/last_checkpoint.pt",
+      "bytes": 5757810,
+      "sha256": "fc947bb5e3b488e00160b8e61836c129887cf0c7a83279453e242c335f18c9bf"
+    },
+    {
+      "path": "LightGenV2/tasks/t09_multimodal_matching/runs/simulation/clevr_visual_learned_s17_v1/learned/moe/result.json",
+      "bytes": 1670,
+      "sha256": "9a46bb2ae461af6502c50dedd214a0acc80cd42f8f54f1e94c2a59988c8a35e7"
+    },
+    {
+      "path": "LightGenV2/tasks/t09_multimodal_matching/runs/simulation/clevr_visual_learned_s17_v1/learned/warmup/best_checkpoint.pt",
+      "bytes": 11334383,
+      "sha256": "8f1a41bf6d2ead4c4ec074f943dfe236339c1b0ddc2ffdbc02528ff03203e452"
+    },
+    {
+      "path": "LightGenV2/tasks/t09_multimodal_matching/runs/simulation/clevr_visual_learned_s17_v1/learned/warmup/last_checkpoint.pt",
+      "bytes": 11334383,
+      "sha256": "a6ca4b754dbbf9d1ab213d300e8ac012ee3de23eba4a61df7a0e5293b7b2500d"
+    },
+    {
+      "path": "LightGenV2/tasks/t09_multimodal_matching/runs/simulation/clevr_visual_learned_s17_v1/metadata.json",
+      "bytes": 2177,
+      "sha256": "a3526684fef3d1bd57a47f9149c531f3aad5868a6efba316115cedf05fdf76e9"
+    },
+    {
+      "path": "LightGenV2/tasks/t09_multimodal_matching/runs/simulation/clevr_visual_lite_aux_s17_v1/best_checkpoint.pt",
+      "bytes": 97412,
+      "sha256": "6a7ccb82242ab75212883cf07b351d4dff2d0318c8df69f76d147d919b4c2898"
+    },
+    {
+      "path": "LightGenV2/tasks/t09_multimodal_matching/runs/simulation/clevr_visual_lite_aux_s17_v1/last_checkpoint.pt",
+      "bytes": 97412,
+      "sha256": "4ee5647e1bdbdc1b7349eba18bca47bce0aefef5d3a5f774efcc7dc96bf6c66a"
+    },
+    {
+      "path": "LightGenV2/tasks/t09_multimodal_matching/runs/simulation/clevr_visual_lite_aux_s17_v1/metadata.json",
+      "bytes": 539,
+      "sha256": "59da49811014d1873caa88d3d19cfefc57bf183e6aeee647172a84dd9d3f1a04"
+    },
+    {
+      "path": "LightGenV2/tasks/t09_multimodal_matching/runs/simulation/clevr_visual_lite_featuredrop05_60ep_s17_v1/fixed/d2nn/best_checkpoint.pt",
+      "bytes": 5488096,
+      "sha256": "9fc7b08fcbbc17d567953cdf5fc60285b400376ee59c7c7f99022e02974a7552"
+    },
+    {
+      "path": "LightGenV2/tasks/t09_multimodal_matching/runs/simulation/clevr_visual_lite_featuredrop05_60ep_s17_v1/fixed/d2nn/last_checkpoint.pt",
+      "bytes": 5488096,
+      "sha256": "4802a4e6f5e017cf2b6bc32f49ca105c7f785ae4b21232f881be188191df663a"
+    },
+    {
+      "path": "LightGenV2/tasks/t09_multimodal_matching/runs/simulation/clevr_visual_lite_featuredrop05_60ep_s17_v1/fixed/d2nn/result.json",
+      "bytes": 1506,
+      "sha256": "35bd6e7364350b2b2c7cb624d35f9c57f7f951524aceb32e24abee5bdca3670c"
+    },
+    {
+      "path": "LightGenV2/tasks/t09_multimodal_matching/runs/simulation/clevr_visual_lite_featuredrop05_60ep_s17_v1/fixed/moe/best_checkpoint.pt",
+      "bytes": 5758002,
+      "sha256": "578935120cc0f0130fbf4cc67b7acf36c09bc15a8fbed83c50ee1d786dc3f7c7"
+    },
+    {
+      "path": "LightGenV2/tasks/t09_multimodal_matching/runs/simulation/clevr_visual_lite_featuredrop05_60ep_s17_v1/fixed/moe/last_checkpoint.pt",
+      "bytes": 5758002,
+      "sha256": "4955421682c6f3980b4b733c1d3e23f1f9fc2adacaec48d419c5c4d7a6857e9f"
+    },
+    {
+      "path": "LightGenV2/tasks/t09_multimodal_matching/runs/simulation/clevr_visual_lite_featuredrop05_60ep_s17_v1/fixed/moe/result.json",
+      "bytes": 2054,
+      "sha256": "3bca83ff111fffdf3676963234bd02ec9b5d2f3c2fa8945edfe993e2861dc527"
+    },
+    {
+      "path": "LightGenV2/tasks/t09_multimodal_matching/runs/simulation/clevr_visual_lite_featuredrop05_60ep_s17_v1/metadata.json",
+      "bytes": 4410,
+      "sha256": "149727d5d0d223bd3da63d18042c99c303746152369b40c4b4918ad2509ae501"
+    },
+    {
+      "path": "LightGenV2/tasks/t09_multimodal_matching/runs/simulation/clevr_visual_lite_featuredrop05_60ep_s17_v1_test/locked_selection.json",
+      "bytes": 714,
+      "sha256": "efeee5313ca99a06cd7b1a0688ccc94525643943d5b8dd90e518ee4540b51b95"
+    },
+    {
+      "path": "LightGenV2/tasks/t09_multimodal_matching/runs/simulation/clevr_visual_lite_featuredrop05_60ep_s17_v1_test/metadata.json",
+      "bytes": 414,
+      "sha256": "9cbc7842b19b8cb2bb86bc0e761563e73c2727b007e825a057efc0bb60429fd6"
+    },
+    {
+      "path": "LightGenV2/tasks/t09_multimodal_matching/runs/simulation/clevr_visual_lite_featuredrop05_60ep_s17_v1_test/results.json",
+      "bytes": 1839,
+      "sha256": "8600182f6f5bc48ad6390592959f088f6558bd0b469a449e861679250c28b1c9"
+    },
+    {
+      "path": "LightGenV2/tasks/t09_multimodal_matching/runs/simulation/clevr_visual_lite_softsign_50ep_s17_v1/fixed/d2nn/best_checkpoint.pt",
+      "bytes": 5488096,
+      "sha256": "7aafb53c1fb727630272974db89a0c8747720691ce4b7e68df13cf92769e78cf"
+    },
+    {
+      "path": "LightGenV2/tasks/t09_multimodal_matching/runs/simulation/clevr_visual_lite_softsign_50ep_s17_v1/fixed/d2nn/last_checkpoint.pt",
+      "bytes": 5488096,
+      "sha256": "4249ca0eb2cab895251b1ddb7975bb94788f6fd8578d2bd351faad5e16e19762"
+    },
+    {
+      "path": "LightGenV2/tasks/t09_multimodal_matching/runs/simulation/clevr_visual_lite_softsign_50ep_s17_v1/fixed/d2nn/result.json",
+      "bytes": 1507,
+      "sha256": "1217974f76855bcc0d947a8c5e034ea0f1469cdb85dcc3a8796271ef900e4871"
+    },
+    {
+      "path": "LightGenV2/tasks/t09_multimodal_matching/runs/simulation/clevr_visual_lite_softsign_50ep_s17_v1/fixed/moe/best_checkpoint.pt",
+      "bytes": 5758002,
+      "sha256": "19a1fe5be31d3f145576177c44b400a5a4f335357136b0a681e0b3882f4ba7d6"
+    },
+    {
+      "path": "LightGenV2/tasks/t09_multimodal_matching/runs/simulation/clevr_visual_lite_softsign_50ep_s17_v1/fixed/moe/last_checkpoint.pt",
+      "bytes": 5758002,
+      "sha256": "56ecc98f1284e45f724773fbf3c705c4fbaa41bd603dccb36ee325f8b4dcb502"
+    },
+    {
+      "path": "LightGenV2/tasks/t09_multimodal_matching/runs/simulation/clevr_visual_lite_softsign_50ep_s17_v1/fixed/moe/result.json",
+      "bytes": 2049,
+      "sha256": "50d6eafb304c9042ce3d29c12f096b7bbb581d88f3cb6696832eac984e4f28f4"
+    },
+    {
+      "path": "LightGenV2/tasks/t09_multimodal_matching/runs/simulation/clevr_visual_lite_softsign_50ep_s17_v1/metadata.json",
+      "bytes": 4270,
+      "sha256": "a89626e4966feb97987dc49c57ec08cb58525fbded167c81830a97810949e6ea"
+    },
+    {
+      "path": "LightGenV2/tasks/t09_multimodal_matching/runs/simulation/clevr_visual_lite_softsign_50ep_s17_v1_test/locked_selection.json",
+      "bytes": 694,
+      "sha256": "bd3c21bd9f3b9effb13cf61cf5ea2cb8712deb297f83ad0e588241f6d4660999"
+    },
+    {
+      "path": "LightGenV2/tasks/t09_multimodal_matching/runs/simulation/clevr_visual_lite_softsign_50ep_s17_v1_test/metadata.json",
+      "bytes": 414,
+      "sha256": "9cbc7842b19b8cb2bb86bc0e761563e73c2727b007e825a057efc0bb60429fd6"
+    },
+    {
+      "path": "LightGenV2/tasks/t09_multimodal_matching/runs/simulation/clevr_visual_lite_softsign_50ep_s17_v1_test/results.json",
+      "bytes": 1814,
+      "sha256": "5c3de6929a350b2214341a222cc2e755c05170d6d741e5572594ae3299c2acd7"
+    },
+    {
+      "path": "LightGenV2/tasks/t09_multimodal_matching/runs/simulation/clevr_visual_softsign_nodrop_s17_v2/fixed/d2nn/best_checkpoint.pt",
+      "bytes": 5488096,
+      "sha256": "16703f71bbd65e10c7655e84c7024792866d47899e5c10feaac6b87fdf78addc"
+    },
+    {
+      "path": "LightGenV2/tasks/t09_multimodal_matching/runs/simulation/clevr_visual_softsign_nodrop_s17_v2/fixed/d2nn/last_checkpoint.pt",
+      "bytes": 5488096,
+      "sha256": "e9e0119681ff076af8bcc28de6e937c5e4f2413fb6f4ebda6a8b28388d10602f"
+    },
+    {
+      "path": "LightGenV2/tasks/t09_multimodal_matching/runs/simulation/clevr_visual_softsign_nodrop_s17_v2/fixed/d2nn/result.json",
+      "bytes": 1506,
+      "sha256": "0a0aebe5d0f08d0e4b0069b01df3e14dd91a85bdbf1bb6b5acaeee60f80300e0"
+    },
+    {
+      "path": "LightGenV2/tasks/t09_multimodal_matching/runs/simulation/clevr_visual_softsign_nodrop_s17_v2/fixed/moe/best_checkpoint.pt",
+      "bytes": 5758002,
+      "sha256": "010770d3bd1184d850620bc17835d69d7499f4e9c2bfe2558f28ad25638dcb9a"
+    },
+    {
+      "path": "LightGenV2/tasks/t09_multimodal_matching/runs/simulation/clevr_visual_softsign_nodrop_s17_v2/fixed/moe/last_checkpoint.pt",
+      "bytes": 5758002,
+      "sha256": "d594c45d580f3a97876dd10524bffadc37de223f1778b671cd62ba6378632555"
+    },
+    {
+      "path": "LightGenV2/tasks/t09_multimodal_matching/runs/simulation/clevr_visual_softsign_nodrop_s17_v2/fixed/moe/result.json",
+      "bytes": 2057,
+      "sha256": "90fcf63505bcbaa8f4ea9f782106612219c699cc24761d7764736f0bb40bf7bf"
+    },
+    {
+      "path": "LightGenV2/tasks/t09_multimodal_matching/runs/simulation/clevr_visual_softsign_nodrop_s17_v2/metadata.json",
+      "bytes": 4254,
+      "sha256": "8d71063d2d4377807d9b2453f1150dc7af7bfc6c83d5278178a0ef66a1016c4c"
+    },
+    {
+      "path": "LightGenV2/tasks/t09_multimodal_matching/runs/simulation/clevr_visual_softsign_nodrop_s17_v2_test/locked_selection.json",
+      "bytes": 682,
+      "sha256": "6729d19b78b20635803f205a8c0ea9559383fdd492e74d04d7ce139491a3a8ce"
+    },
+    {
+      "path": "LightGenV2/tasks/t09_multimodal_matching/runs/simulation/clevr_visual_softsign_nodrop_s17_v2_test/metadata.json",
+      "bytes": 414,
+      "sha256": "063d035e172bc1394657f76e01db56675c35a556666a4d214c8d600e61d734a2"
+    },
+    {
+      "path": "LightGenV2/tasks/t09_multimodal_matching/runs/simulation/clevr_visual_softsign_nodrop_s17_v2_test/results.json",
+      "bytes": 1805,
+      "sha256": "76f2ee939743fd5d498562e2b9bd7983fcf9582df2898f0f0c96f42d24a0857e"
+    },
+    {
+      "path": "LightGenV2/tasks/t09_multimodal_matching/runs/simulation/clevr_visual_softsign_pd005_s17_v1/fixed/d2nn/best_checkpoint.pt",
+      "bytes": 5488096,
+      "sha256": "c157717d2545bf8de481f01c812cf8c11ebeb713d8136f191e87a5b7de46943b"
+    },
+    {
+      "path": "LightGenV2/tasks/t09_multimodal_matching/runs/simulation/clevr_visual_softsign_pd005_s17_v1/fixed/d2nn/last_checkpoint.pt",
+      "bytes": 5488096,
+      "sha256": "ec30c85cada6b6ed387f8b39ad48b0d82544c7b7dae1d0cec3902b202b8cf97c"
+    },
+    {
+      "path": "LightGenV2/tasks/t09_multimodal_matching/runs/simulation/clevr_visual_softsign_pd005_s17_v1/fixed/d2nn/result.json",
+      "bytes": 1501,
+      "sha256": "75cdab54bf7651f8af3c07a7054a5182622d3b9bcec94cf607766bca311bd331"
+    },
+    {
+      "path": "LightGenV2/tasks/t09_multimodal_matching/runs/simulation/clevr_visual_softsign_pd005_s17_v1/fixed/moe/best_checkpoint.pt",
+      "bytes": 5758002,
+      "sha256": "a9e4c93284248b21afbe936b6caa42defedcf27a89a62f228dedb6c802a9ed27"
+    },
+    {
+      "path": "LightGenV2/tasks/t09_multimodal_matching/runs/simulation/clevr_visual_softsign_pd005_s17_v1/fixed/moe/last_checkpoint.pt",
+      "bytes": 5758002,
+      "sha256": "ab1d4c27ea141ae09c8d77b5f6b2d0f1b25cb3b363bf552650a92102af218c16"
+    },
+    {
+      "path": "LightGenV2/tasks/t09_multimodal_matching/runs/simulation/clevr_visual_softsign_pd005_s17_v1/fixed/moe/result.json",
+      "bytes": 2047,
+      "sha256": "d32f924452edf75eba7a4399f50cc3b25c2dd9a18451520eb58433dbd98eaef8"
+    },
+    {
+      "path": "LightGenV2/tasks/t09_multimodal_matching/runs/simulation/clevr_visual_softsign_pd005_s17_v1/metadata.json",
+      "bytes": 4279,
+      "sha256": "e04092f2475eb7dd79c9e648f4b553876c6cdea593a94c0f9a7dd0072b8465b7"
+    },
+    {
+      "path": "LightGenV2/tasks/t09_multimodal_matching/runs/simulation/clevr_visual_softsign_pd005_s17_v1_test/locked_selection.json",
+      "bytes": 586,
+      "sha256": "e5065d4489b7b521559761e44c4d1dc08d38f063c60ef3485238f496b5d9abfb"
+    },
+    {
+      "path": "LightGenV2/tasks/t09_multimodal_matching/runs/simulation/clevr_visual_softsign_pd005_s17_v1_test/metadata.json",
+      "bytes": 453,
+      "sha256": "8a0e5efd5036b352c1f039a7d79b19e4bdf71912b7e71495accbcde002a187ed"
+    },
+    {
+      "path": "LightGenV2/tasks/t09_multimodal_matching/runs/simulation/clevr_visual_softsign_pd005_s17_v1_test/results.json",
+      "bytes": 1708,
+      "sha256": "2e3e04bf234a0a4e81c4237e0b2dbeeee6f7571c7f941421541582344585fd1b"
+    },
+    {
+      "path": "LightGenV2/tasks/t09_multimodal_matching/runs/smoke/audio_layout_interleaved_s17_v1/verification.json",
+      "bytes": 2022,
+      "sha256": "3766356d4aa4988531e7f924d0f4f847e6e2a6849cde0ac112daf670b405c94d"
+    },
+    {
+      "path": "LightGenV2/tasks/t09_multimodal_matching/runs/smoke/audio_layout_s17_v1/verification.json",
+      "bytes": 1365,
+      "sha256": "500edfe17addf0f3b0297a52c8e8cceceeadd9f0dcde690d0deee710def65662"
+    },
+    {
+      "path": "LightGenV2/tasks/t09_multimodal_matching/runs/smoke/audio_leftright_balanced02_audit_s17_v1/verification.json",
+      "bytes": 5359,
+      "sha256": "08762fdb9d0b6894549fc2f1a693dd2121b91a1ba199fba543f2e9e95e0a6262"
+    },
+    {
+      "path": "LightGenV2/tasks/t09_multimodal_matching/runs/smoke/audio_leftright_layout_contract_s17_v1/verification.json",
+      "bytes": 2677,
+      "sha256": "0f1b771af7778843a9016042ff2303222f642acb3de62776c9aa76db73e0edbe"
+    },
+    {
+      "path": "LightGenV2/tasks/t09_multimodal_matching/runs/smoke/audio_leftright_leaky_audit_s17_v1/verification.json",
+      "bytes": 5201,
+      "sha256": "4606b327e91178d34b35851b31aba1aa72b8c0b4e0694af3bb91e422f3438aef"
+    },
+    {
+      "path": "LightGenV2/tasks/t09_multimodal_matching/runs/smoke/audio_leftright_positive_audit_s17_v1/verification.json",
+      "bytes": 5359,
+      "sha256": "3998a8d15ff699397574a46684ae064bd1da25545c0a60a96a1922c8f8209dc0"
+    },
+    {
+      "path": "LightGenV2/tasks/t09_multimodal_matching/runs/smoke/audio_leftright_unbalanced_audit_s17_v1/verification.json",
+      "bytes": 5235,
+      "sha256": "3cc934eb7182b8c673a3ee2d8d4c1cdd276cefb03ddb46e0cc2b94e73076c9fe"
+    },
+    {
+      "path": "LightGenV2/tasks/t09_multimodal_matching/runs/smoke/audio_matching_audit_s17_v2/verification.json",
+      "bytes": 4863,
+      "sha256": "3493f772306e37ff1dd2147ec37c2fbe8ac35351f9b9b28af330c057cd4ee7e9"
+    },
+    {
+      "path": "LightGenV2/tasks/t09_multimodal_matching/runs/smoke/audio_matching_s17_v1/metadata.json",
+      "bytes": 3068,
+      "sha256": "a6c37a338b2aaaee8c5d671a563f90782080410e9a9e89c4ef477a7f2f061d4c"
+    },
+    {
+      "path": "LightGenV2/tasks/t09_multimodal_matching/runs/smoke/audio_raw_interleaved_s17_v1_audit/verification.json",
+      "bytes": 4859,
+      "sha256": "40106debf64cc3ca55f2f02ac85eae7278757e5a7a964410db85cd699e9de946"
+    },
+    {
+      "path": "LightGenV2/tasks/t09_multimodal_matching/runs/smoke/audio_raw_legacy_s17_v1_audit/verification.json",
+      "bytes": 4762,
+      "sha256": "7f0a21fdf52f7ded3fe7e6d9831370d77190e66d9923efbe332341ab524dd018"
+    },
+    {
+      "path": "LightGenV2/tasks/t09_multimodal_matching/runs/smoke/audio_raw_twoband_s17_v1_audit/verification.json",
+      "bytes": 4704,
+      "sha256": "dff9306e69a6c089aa29c7fe8b8c3db57bb5cba33a67d9ed57472afe0e7e0e42"
+    },
+    {
+      "path": "LightGenV2/tasks/t09_multimodal_matching/runs/smoke/audio_twoband_positive_audit_s17_v1/verification.json",
+      "bytes": 5296,
+      "sha256": "8dbcc9245476a024e1a8668a8ad943c54a78f2d24cd5f32fb84e47c78db2dfb6"
+    },
+    {
+      "path": "LightGenV2/tasks/t09_multimodal_matching/runs/smoke/audio_twoband_softplus_audit_s17_v1/verification.json",
+      "bytes": 5333,
+      "sha256": "0be60cfe979d00849c93aa0cc0829bbe692710bca4136d68e373ac03ed2e0e50"
+    },
+    {
+      "path": "LightGenV2/tasks/t09_multimodal_matching/runs/smoke/clevr_dense_encoding_s17_v1/metadata.json",
+      "bytes": 2333,
+      "sha256": "89ccbefa641975f8d177c14775f1f503fd7309ba6168dc425fb312a971361d6c"
+    },
+    {
+      "path": "LightGenV2/tasks/t09_multimodal_matching/runs/smoke/clevr_drop01_audit_s17_v1/verification.json",
+      "bytes": 4699,
+      "sha256": "4cae44af14b79680e9047666a332f54ba1cdebe2016b6749acf75057c00ff2ae"
+    },
+    {
+      "path": "LightGenV2/tasks/t09_multimodal_matching/runs/smoke/clevr_flip_audit_s17_v1/verification.json",
+      "bytes": 4687,
+      "sha256": "3e2ae3163dcb28572d850e44f980549948c4f24bbb9a0f934491f66007340eda"
+    },
+    {
+      "path": "LightGenV2/tasks/t09_multimodal_matching/runs/smoke/clevr_flipdrop01_audit_s17_v1/verification.json",
+      "bytes": 4640,
+      "sha256": "dbedbec707dbda20dd9b4b0c20de0764c649cc125578997038ad0fca34fe28b6"
+    },
+    {
+      "path": "LightGenV2/tasks/t09_multimodal_matching/runs/smoke/clevr_long30_audit_s17_v1/verification.json",
+      "bytes": 4765,
+      "sha256": "5f30f91b6a008f3291743ddaf40e15dfd96c0be0274613abf0c51d79c830a87c"
+    },
+    {
+      "path": "LightGenV2/tasks/t09_multimodal_matching/runs/smoke/clevr_long30_phase05_audit_s17_v1/verification.json",
+      "bytes": 4821,
+      "sha256": "71a8b406a43d5e04019fa4c4e8137c329f6267f459a63caed4d1f3187be3e3a2"
+    },
+    {
+      "path": "LightGenV2/tasks/t09_multimodal_matching/runs/smoke/clevr_lr003_audit_s17_v1/verification.json",
+      "bytes": 4620,
+      "sha256": "0f9087c6f7af8321f4921e3c55059d56b71a5130ec931ab64770b0c0e3d4d05e"
+    },
+    {
+      "path": "LightGenV2/tasks/t09_multimodal_matching/runs/smoke/clevr_raw_audit_s17_v1/verification.json",
+      "bytes": 8913,
+      "sha256": "cf9ca711a3fe73141b5cd13d0bea091e309613be36c52495a527d95589870161"
+    },
+    {
+      "path": "LightGenV2/tasks/t09_multimodal_matching/runs/smoke/clevr_raw_audit_s17_v2/verification.json",
+      "bytes": 9143,
+      "sha256": "439220227aabb6e8a2cd960c0086fd1c378c6ad73f96daf2a5161ff40bf0a9fd"
+    },
+    {
+      "path": "LightGenV2/tasks/t09_multimodal_matching/runs/smoke/clevr_visual_audit_s17_v1/verification.json",
+      "bytes": 9314,
+      "sha256": "8545b8e6649cf1e1ef14eff01561a7a6c85be7a677d1ca25294ff30fb1a99eb4"
+    },
+    {
+      "path": "LightGenV2/tasks/t09_multimodal_matching/runs/smoke/clevr_visual_audit_s17_v2/verification.json",
+      "bytes": 14338,
+      "sha256": "08ae687b57c5980b01500613c6400c09325c9412cda86397393d9bb276adc511"
+    },
+    {
+      "path": "LightGenV2/tasks/t09_multimodal_matching/runs/smoke/clevr_visual_encoding_s17_v1/metadata.json",
+      "bytes": 2165,
+      "sha256": "3b7392fa0387340231e3474802632fdbf2ad47b6783e73c47c68e5fe5ac1b1d8"
+    },
+    {
+      "path": "LightGenV2/tasks/t09_multimodal_matching/runs/smoke/phase_dropout_s17_v1/metadata.json",
+      "bytes": 2793,
+      "sha256": "99939b9f613ecb6d7ab164a5b68407d2402fe7d07f8831f01e8fb9f3071485fd"
+    },
+    {
+      "path": "LightGenV2/tasks/t09_multimodal_matching/runs/smoke/text_encoding_s17_20260917/metadata.json",
+      "bytes": 1730,
+      "sha256": "c1c6da1af33b55bc1629bf28d013ecd4e094cc3f4d22cbc44071544beaec7cc9"
+    }
+  ],
+  "process_cwds": [
+    {
+      "pid": 3386971,
+      "cwd": "/DATA/DATA1/guest3/demo_reproduction_20260915"
+    },
+    {
+      "pid": 3386972,
+      "cwd": "/DATA/DATA1/guest3/demo_reproduction_20260915"
+    },
+    {
+      "pid": 3481902,
+      "cwd": "/DATA/DATA1/guest3/demo_reproduction_20260915"
+    }
+  ],
+  "read_only": true,
+  "assets_moved": false,
+  "source_changed": false,
+  "source_overlay_complete": false,
+  "closure_runtime_verified": false,
+  "note": "Shared demo_check backend is dirty and not included in task-only source inventory; retain original runtime until audited. Process cwd list is an observation, not ownership or safe-deletion proof."
+}
