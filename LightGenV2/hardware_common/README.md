@@ -34,3 +34,13 @@ python -m pytest LightGenV2/hardware_common/tests/test_shs_contract.py experimen
 本次归并仅完成控制依赖，**不表示 main 已可完整接管 ABO/OpenMoji 实拍**。
 任务的六层 runner、几何、数据前端、精确权重和断点收据仍须按各任务核验。
 实验室原入口及其有效采集保持原样；不要为整理而启动设备或重拍已有数据。
+
+发布源码身份检查不要求旧工作树或私有恢复引用，可在普通 main clone 中执行：
+
+```bash
+python maintenance/git_safety/check_shs_source_identity.py --commit main
+```
+
+持有原始恢复记录的维护机器可额外加 `--audit-archive`，核验归并前源码。
+这两种检查均不打开设备；普通检查只证明发布文件与已登记 SHA 一致，
+不声称重新核验了实验室原文件、机器资产或整套采集流程。
