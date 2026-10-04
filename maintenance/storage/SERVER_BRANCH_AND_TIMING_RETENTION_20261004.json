@@ -1,0 +1,328 @@
+{
+  "schema_version": 1,
+  "audited_on": "2026-10-04",
+  "purpose": "Server-local branch-name retirement and explicit measurement-copy retention; not whole-project migration completion",
+  "tool_main_commit": "ed8e84a3059f242d7355806498210259cd787be3",
+  "git_compatibility": {
+    "server_git": "2.25.1",
+    "local_recovery_tests_passed": 25,
+    "server_atomic_conflict_fixture_passed": true,
+    "real_server_index_hash_checked": true
+  },
+  "server_branch_retirement": {
+    "before": 50,
+    "after": 21,
+    "retired_count": 29,
+    "rows": [
+      {
+        "branch": "benchmark/a100-formal",
+        "original_ref": "refs/heads/benchmark/a100-formal",
+        "head": "ea573180b6846e7c5edbc81808990d2fb44ea8ce",
+        "archive_ref": "refs/archive/server-inactive-20261004/benchmark/a100-formal",
+        "purpose_from_commit_subject": "Document formal A100 cross-task results",
+        "merged_into_main": false
+      },
+      {
+        "branch": "benchmark/t07-abo-a100-baseline",
+        "original_ref": "refs/heads/benchmark/t07-abo-a100-baseline",
+        "head": "86b2a6a79e517f6a4a14d99d826bbd4ab68b1372",
+        "archive_ref": "refs/archive/server-inactive-20261004/benchmark/t07-abo-a100-baseline",
+        "purpose_from_commit_subject": "Record formal T07 A100 baseline",
+        "merged_into_main": false
+      },
+      {
+        "branch": "codex/abo-backbone-baselines",
+        "original_ref": "refs/heads/codex/abo-backbone-baselines",
+        "head": "c93fad700a1da4b30ceeac9af2afc7985934eb00",
+        "archive_ref": "refs/archive/server-inactive-20261004/codex/abo-backbone-baselines",
+        "purpose_from_commit_subject": "Add task-specific ABO alignment diagnostics",
+        "merged_into_main": false
+      },
+      {
+        "branch": "codex/fa-reorg",
+        "original_ref": "refs/heads/codex/fa-reorg",
+        "head": "046588b445ca86419a1d2bba74926d4a63f631ba",
+        "archive_ref": "refs/archive/server-inactive-20261004/codex/fa-reorg",
+        "purpose_from_commit_subject": "docs(fa): record recovery and ImageNet-large validation",
+        "merged_into_main": false
+      },
+      {
+        "branch": "codex/lgvq-clip-yolo-baselines",
+        "original_ref": "refs/heads/codex/lgvq-clip-yolo-baselines",
+        "head": "cfa6ac6cb229da40981d2f12cd5663227abb64a4",
+        "archive_ref": "refs/archive/server-inactive-20261004/codex/lgvq-clip-yolo-baselines",
+        "purpose_from_commit_subject": "Record CLIP and YOLO11 LGVQ results",
+        "merged_into_main": false
+      },
+      {
+        "branch": "codex/lsp-salicon-openmoji-backbones",
+        "original_ref": "refs/heads/codex/lsp-salicon-openmoji-backbones",
+        "head": "d53d82ab49743fb05022a4b93a31b7d7e37a9066",
+        "archive_ref": "refs/archive/server-inactive-20261004/codex/lsp-salicon-openmoji-backbones",
+        "purpose_from_commit_subject": "Add fixed low-rate SALICON protocol",
+        "merged_into_main": false
+      },
+      {
+        "branch": "codex/t04-qwen-baseline-20260920",
+        "original_ref": "refs/heads/codex/t04-qwen-baseline-20260920",
+        "head": "84e59a6880c19df9993d713d5bb0d06680559a53",
+        "archive_ref": "refs/archive/server-inactive-20261004/codex/t04-qwen-baseline-20260920",
+        "purpose_from_commit_subject": "Add publication-ready T04 figures",
+        "merged_into_main": false
+      },
+      {
+        "branch": "codex/t11-joint-d2nn-baseline",
+        "original_ref": "refs/heads/codex/t11-joint-d2nn-baseline",
+        "head": "1430e8331739b0fd640c23d3adba244991408abc",
+        "archive_ref": "refs/archive/server-inactive-20261004/codex/t11-joint-d2nn-baseline",
+        "purpose_from_commit_subject": "Use local propagator in CRC9 model",
+        "merged_into_main": false
+      },
+      {
+        "branch": "experiment/salicon-gsam-20260913",
+        "original_ref": "refs/heads/experiment/salicon-gsam-20260913",
+        "head": "17d334564f60fbfdda9bcaaae8d4d2b8d977c7a5",
+        "archive_ref": "refs/archive/server-inactive-20261004/experiment/salicon-gsam-20260913",
+        "purpose_from_commit_subject": "t03: close GSAM trial and complete cross-sample candidate audit",
+        "merged_into_main": false
+      },
+      {
+        "branch": "experiment/salicon-noise-consistency-20260913",
+        "original_ref": "refs/heads/experiment/salicon-noise-consistency-20260913",
+        "head": "6089d5c74b7eb488b6d91384b208b51ebfda86cd",
+        "archive_ref": "refs/archive/server-inactive-20261004/experiment/salicon-noise-consistency-20260913",
+        "purpose_from_commit_subject": "t03: add paired optical-noise consistency training without inference changes",
+        "merged_into_main": false
+      },
+      {
+        "branch": "experiment/t10-scaling-20260917",
+        "original_ref": "refs/heads/experiment/t10-scaling-20260917",
+        "head": "752d2995a9022e29017698fc8c8085a5d03cc7e5",
+        "archive_ref": "refs/archive/server-inactive-20261004/experiment/t10-scaling-20260917",
+        "purpose_from_commit_subject": "Bind GPU queue by physical UUID to match idle-device checks",
+        "merged_into_main": false
+      },
+      {
+        "branch": "fix/abo-handoff-dependencies",
+        "original_ref": "refs/heads/fix/abo-handoff-dependencies",
+        "head": "d5dd7a3a8b9e0b43e865b37b322869860332708e",
+        "archive_ref": "refs/archive/server-inactive-20261004/fix/abo-handoff-dependencies",
+        "purpose_from_commit_subject": "Keep Qwen checkpoint identity when resolving local handoff weights",
+        "merged_into_main": false
+      },
+      {
+        "branch": "handoff/lsp-20260909",
+        "original_ref": "refs/heads/handoff/lsp-20260909",
+        "head": "8d11f0f1a3122245278cfd021e2f98864d3ae9c7",
+        "archive_ref": "refs/archive/server-inactive-20261004/handoff/lsp-20260909",
+        "purpose_from_commit_subject": "Add complete LSP source data and checkpoint handoff builder",
+        "merged_into_main": false
+      },
+      {
+        "branch": "t03-evidence-completed-20260913",
+        "original_ref": "refs/heads/t03-evidence-completed-20260913",
+        "head": "6c4a2984143061c3b907ca2ad263db297af08962",
+        "archive_ref": "refs/archive/server-inactive-20261004/t03-evidence-completed-20260913",
+        "purpose_from_commit_subject": "t03: record completed noise trial and verified local candidate evidence",
+        "merged_into_main": false
+      },
+      {
+        "branch": "t03-mixup-20260913",
+        "original_ref": "refs/heads/t03-mixup-20260913",
+        "head": "27d6d49cbb338309825ea6d1975be05e6f6115fb",
+        "archive_ref": "refs/archive/server-inactive-20261004/t03-mixup-20260913",
+        "purpose_from_commit_subject": "t03: add bounded train-only input mixup with paired saliency supervision",
+        "merged_into_main": false
+      },
+      {
+        "branch": "t03-mixup-epoch1-audit-20260913",
+        "original_ref": "refs/heads/t03-mixup-epoch1-audit-20260913",
+        "head": "46fe66183e1ee22acb03cc54921198c40f16d0fd",
+        "archive_ref": "refs/archive/server-inactive-20261004/t03-mixup-epoch1-audit-20260913",
+        "purpose_from_commit_subject": "t03: audit mixup epoch one and paired baseline gap",
+        "merged_into_main": false
+      },
+      {
+        "branch": "t03-mixup-launch-20260913",
+        "original_ref": "refs/heads/t03-mixup-launch-20260913",
+        "head": "07904548e3e4401c5d98e69704e66a9da175a4b2",
+        "archive_ref": "refs/archive/server-inactive-20261004/t03-mixup-launch-20260913",
+        "purpose_from_commit_subject": "t03: record verified mixup preflight and one-GPU launch",
+        "merged_into_main": false
+      },
+      {
+        "branch": "t03-optical-lr-launch-20260913",
+        "original_ref": "refs/heads/t03-optical-lr-launch-20260913",
+        "head": "811414d24d7ff485105782e4ef2ff9363cc8b812",
+        "archive_ref": "refs/archive/server-inactive-20261004/t03-optical-lr-launch-20260913",
+        "purpose_from_commit_subject": "t03: record optical-priority step audit and one-GPU launch",
+        "merged_into_main": false
+      },
+      {
+        "branch": "t03-optical-lr-priority-20260913",
+        "original_ref": "refs/heads/t03-optical-lr-priority-20260913",
+        "head": "fd19b5a0d78f01042443607002a814962eb81655",
+        "archive_ref": "refs/archive/server-inactive-20261004/t03-optical-lr-priority-20260913",
+        "purpose_from_commit_subject": "t03: prioritize optical learning rates and slow all electronic groups",
+        "merged_into_main": false
+      },
+      {
+        "branch": "transport/t07-audit-20260910",
+        "original_ref": "refs/heads/transport/t07-audit-20260910",
+        "head": "706b57057adf659f186b598eac045c20a8a610cd",
+        "archive_ref": "refs/archive/server-inactive-20261004/transport/t07-audit-20260910",
+        "purpose_from_commit_subject": "feat(t07): audit product-level data and fixed-model errors for review",
+        "merged_into_main": false
+      },
+      {
+        "branch": "transport/t07-domain-20260911",
+        "original_ref": "refs/heads/transport/t07-domain-20260911",
+        "head": "b262a48b984040da953cc316c363ce36cd94491c",
+        "archive_ref": "refs/archive/server-inactive-20261004/transport/t07-domain-20260911",
+        "purpose_from_commit_subject": "Record ABO domain pool and bounded server experiment launches",
+        "merged_into_main": false
+      },
+      {
+        "branch": "transport/t07-goal81-20260912",
+        "original_ref": "refs/heads/transport/t07-goal81-20260912",
+        "head": "4c34a0e686741ac7dc2676edf393640d3f085e66",
+        "archive_ref": "refs/archive/server-inactive-20261004/transport/t07-goal81-20260912",
+        "purpose_from_commit_subject": "feat(t07): package pinned83125 standalone colleague handoff",
+        "merged_into_main": false
+      },
+      {
+        "branch": "transport/t07-high-alpha-20260910",
+        "original_ref": "refs/heads/transport/t07-high-alpha-20260910",
+        "head": "3eb20ae21bc69c6af124d8867a787818e5fae69c",
+        "archive_ref": "refs/archive/server-inactive-20261004/transport/t07-high-alpha-20260910",
+        "purpose_from_commit_subject": "feat(t07): train strict high-alpha optical retrieval with staged supervision",
+        "merged_into_main": false
+      },
+      {
+        "branch": "transport/t07-refine-20260912",
+        "original_ref": "refs/heads/transport/t07-refine-20260912",
+        "head": "6935f80bbdfeacf61c3ee59549cd89994108d061",
+        "archive_ref": "refs/archive/server-inactive-20261004/transport/t07-refine-20260912",
+        "purpose_from_commit_subject": "Record admitted ABO refinement GPUs and actual run paths",
+        "merged_into_main": false
+      },
+      {
+        "branch": "transport/t07-retrieval-20260910",
+        "original_ref": "refs/heads/transport/t07-retrieval-20260910",
+        "head": "e59fc45fbec17938e76f4bfd527e5540003bb255",
+        "archive_ref": "refs/archive/server-inactive-20261004/transport/t07-retrieval-20260910",
+        "purpose_from_commit_subject": "feat(t07): align high-alpha training with cross-product retrieval",
+        "merged_into_main": false
+      },
+      {
+        "branch": "transport/t07-review-20260911",
+        "original_ref": "refs/heads/transport/t07-review-20260911",
+        "head": "29e16bed0392dd87cd2aa9bec3ec2bb4cd89edfb",
+        "archive_ref": "refs/archive/server-inactive-20261004/transport/t07-review-20260911",
+        "purpose_from_commit_subject": "Organize independent T07 high-alpha review package and evidence-led meeting audit",
+        "merged_into_main": false
+      },
+      {
+        "branch": "transport/t07-review-final-20260911",
+        "original_ref": "refs/heads/transport/t07-review-final-20260911",
+        "head": "e0732f74338af0cee3cb4463df9a320b09f2b24d",
+        "archive_ref": "refs/archive/server-inactive-20261004/transport/t07-review-final-20260911",
+        "purpose_from_commit_subject": "Document verified T07 diagnosis, equivalence and curated review evidence",
+        "merged_into_main": false
+      },
+      {
+        "branch": "transport/t07-sam-20260911",
+        "original_ref": "refs/heads/transport/t07-sam-20260911",
+        "head": "4f61050ff9d2afc2f7fc6236c7c2ff956710bacc",
+        "archive_ref": "refs/archive/server-inactive-20261004/transport/t07-sam-20260911",
+        "purpose_from_commit_subject": "Record clean train-test gap audit and queued regularization experiments",
+        "merged_into_main": false
+      },
+      {
+        "branch": "transport/t08-text-to-image-20260920",
+        "original_ref": "refs/heads/transport/t08-text-to-image-20260920",
+        "head": "8427a280642440a9dfff5f6825530e3d6dcdb0ec",
+        "archive_ref": "refs/archive/server-inactive-20261004/transport/t08-text-to-image-20260920",
+        "purpose_from_commit_subject": "feat(t08): add high optical share text retrieval continuation",
+        "merged_into_main": false
+      }
+    ],
+    "bundle_path": "/DATA/DATA1/guest3/storage_cleanup_manifests/server_inactive_branch_archive_20261004_retry1/inactive_local_branches.bundle",
+    "bundle_sha256": "176ae245d4b923c9c570a67050b8f9d1f7fedae490b10df7c60e13503ff9c1ee",
+    "bundle_bytes": 117392607,
+    "bundle_prerequisite_main": "b1285f0e0ecbfa21b3acbf797d643f5d52aaf36e",
+    "local_verified_backup": ".codex_tmp/t11_source_20261004/server_inactive_branches_20261004.bundle",
+    "local_archive_head_identities_verified": 29,
+    "runtime_head_unchanged": true,
+    "user_index_unchanged": true,
+    "working_files_changed": false,
+    "remote_branch_names_changed": false,
+    "experiment_data_deleted": false,
+    "note": "These historical branches are not declared integrated into main; old local server main remains a recorded bundle prerequisite."
+  },
+  "worktree_retention": {
+    "registered_server_worktrees": 83,
+    "removed_this_batch": 0,
+    "policy": "Keep all measurement-related files and duplicate copies in place; no directory removal based solely on clean Git status or lack of observed process references.",
+    "rows": [
+      {
+        "name": "fa_vtab_20260914",
+        "tracked_measurement_named_count": 161,
+        "decision": "retain_original_directory",
+        "reason": "Contains historical measurement/baseline paths; protected by user instruction"
+      },
+      {
+        "name": "t03_handoff_20260915",
+        "tracked_measurement_named_count": 161,
+        "decision": "retain_original_directory",
+        "reason": "Contains historical measurement/baseline paths; protected by user instruction"
+      },
+      {
+        "name": "t07_gallery_fp32_20260912",
+        "tracked_measurement_named_count": 152,
+        "decision": "retain_original_directory",
+        "reason": "Contains historical measurement/baseline paths; protected by user instruction"
+      },
+      {
+        "name": "t07_goal81_verify_20260912",
+        "tracked_measurement_named_count": 152,
+        "decision": "retain_original_directory",
+        "reason": "Contains historical measurement/baseline paths; protected by user instruction"
+      },
+      {
+        "name": "t07_joint_best_restart_20260912",
+        "tracked_measurement_named_count": 152,
+        "decision": "retain_original_directory",
+        "reason": "Contains historical measurement/baseline paths; protected by user instruction"
+      },
+      {
+        "name": "t07_retail_audit_20260913",
+        "tracked_measurement_named_count": 161,
+        "decision": "retain_original_directory",
+        "reason": "Contains historical measurement/baseline paths; protected by user instruction"
+      },
+      {
+        "name": "t07_vision13_20260913",
+        "tracked_measurement_named_count": 161,
+        "decision": "retain_original_directory",
+        "reason": "Contains historical measurement/baseline paths; protected by user instruction"
+      },
+      {
+        "name": "t12_physical_robust_20260926",
+        "tracked_measurement_named_count": 167,
+        "decision": "retain_original_directory",
+        "reason": "Contains historical measurement/baseline paths; protected by user instruction"
+      }
+    ],
+    "name_match_is_not_exhaustive_measurement_audit": true,
+    "runtime_dependency_audit_complete": false
+  },
+  "consolidation_complete": false,
+  "unchanged_constraints": [
+    "ABO sealed model and datasets",
+    "OpenMoji running experiments",
+    "original user edits",
+    "source-only Git synchronization",
+    "external data upload paused"
+  ]
+}
