@@ -1,0 +1,105 @@
+{
+  "read_only": true,
+  "dataset_root": "/DATA/DATA1/guest3/2026OpticsMoE/data/abo_easy100_dataset_20260906",
+  "dataset_csv": {
+    "manifest.csv": {
+      "bytes": 2522558,
+      "sha256": "880b4f34a411df1bfbd98adc91b1c19651480323ee43e62ae4b84c36ca06c543"
+    },
+    "train.csv": {
+      "bytes": 1683414,
+      "sha256": "f742fc9e2314b7fb2858ad486505c943f7b7e37493e5d601d8dcbf7740b5707b"
+    },
+    "test.csv": {
+      "bytes": 839270,
+      "sha256": "4ca5834abf4bb4d614b41f05b5b2481b3d41720dd78c1c37b05923c97657dfb8"
+    },
+    "titles.csv": {
+      "bytes": 10533,
+      "sha256": "c97e8da3c6c608a706f2cc0d284aeafb873fc6cc17d04a7c9f9f66b2135846c1"
+    }
+  },
+  "image_content": {
+    "count": 7200,
+    "split_counts": {
+      "test": 2400,
+      "train": 4800
+    },
+    "total_bytes": 389222242,
+    "content_manifest_sha256": "1bc9dde3407a3a288973d760cc3c62326d502f5d73728a9cca0754bf42b2739e"
+  },
+  "student_artifacts": {
+    "optical_router_moe_dc20_seed42": {
+      "best_checkpoint.pt": {
+        "bytes": 35104565,
+        "sha256": "7b49b8b7a942939d0819130460b0fbeaa1887921e151c5fa2154dff4e576bf30"
+      },
+      "last_checkpoint.pt": {
+        "bytes": 35104501,
+        "sha256": "a893bfa009681ca32893f7ea4699ebfbaf7c014cb7d0ef72ffb19c41c27783aa"
+      },
+      "final_report.json": {
+        "bytes": 3535,
+        "sha256": "9116f02476fe9503ed334c6b5ec7cefb8712dcdc15c88c0196b6fb9f26d612f3"
+      },
+      "run_manifest.json": {
+        "bytes": 706,
+        "sha256": "6931d9d07f52011f9ea2745c79b961773558465bc03b9bff1e5acc59b4aa531e"
+      }
+    },
+    "optical_router_moe_dc20_kd1_balance1_seed42": {
+      "best_checkpoint.pt": {
+        "bytes": 35104565,
+        "sha256": "b64689eb792da483486f721d4adf879f0a083107d7cbee63ad8ed7718c8b7144"
+      },
+      "last_checkpoint.pt": {
+        "bytes": 35104501,
+        "sha256": "4c39835ac46d2034a2918a64b3e95d31426686091110d19523283035b61e4c80"
+      },
+      "final_report.json": {
+        "bytes": 3540,
+        "sha256": "b28d2684ee43e86bdfae39c252836161bde2f4c0f84a638fa07c9b673ad68c79"
+      },
+      "run_manifest.json": {
+        "bytes": 706,
+        "sha256": "ac739f3f69bf1e3937b693a5d0ad83414fef1bc0b3dc2068651140c6049f548f"
+      }
+    },
+    "optical_text_to_image_64_10cm_compact_e0p5_seed42_20260925": {
+      "best_checkpoint.pt": {
+        "bytes": 29778889,
+        "sha256": "cc977b83286a8e90398ebd30064428886bc3c06f1eb0557e470060f7ff5c1cae"
+      },
+      "last_checkpoint.pt": {
+        "bytes": 29778825,
+        "sha256": "1c60ff8e6ce152aafbb9fa2e8a1fd6c66ffef24ef5aea3683d7d15568b937f21"
+      },
+      "final_report.json": {
+        "bytes": 5784,
+        "sha256": "745484fdca96cd4835982b9747bfed1a82a38e2b05d04818db330ac2f9bcca57"
+      },
+      "run_manifest.json": {
+        "bytes": 1527,
+        "sha256": "2afaed9b9a5d21a716abbf92693b013663ca4880ba19a51a6d558d194f80f102"
+      }
+    }
+  },
+  "teacher_cache_locations": [],
+  "cache_search_scope": [
+    "/DATA/DATA1/guest3/2026OpticsMoE/LightGenV2/tasks/t08_abo_image_text_retrieval/runs",
+    "/DATA/DATA1/guest3/2026OpticsMoE/.worktrees/t08_text_to_image_20260920/LightGenV2/tasks/t08_abo_image_text_retrieval/runs"
+  ],
+  "runtime_state_unchanged": true,
+  "scientific_metrics_recomputed": false,
+  "teacher_cache_status": {
+    "found_in_audited_task_run_roots": false,
+    "cache_regenerated": false,
+    "full_disk_absence_proven": false,
+    "entry_portability_issue": "Historical cache identity includes model_id; the new fixed entry resolves a local model path. Existing cache identity must be verified before reuse, not silently edited.",
+    "remaining_work": [
+      "Locate or explicitly reconstruct direction-specific frozen teacher cache under a separately recorded contract.",
+      "Verify cache model identity and local snapshot binding before any full fixed evaluation.",
+      "Finish Windows adopted readout and acquisition entry consolidation without changing historical amplitude mapping."
+    ]
+  }
+}
