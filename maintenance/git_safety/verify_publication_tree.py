@@ -73,7 +73,9 @@ def main():
         "maintenance/storage/T03_PINNED_ADDITIONS_20261003.json",
         "maintenance/storage/T03_ENTRY_ADDITIONS_20261003.json",
         "maintenance/storage/T10_RUNTIME_ADDITIONS_20261003.json",
-        "maintenance/storage/T08_PHYSICAL_TOOLS_IMPORT_20261004.json"])
+        "maintenance/storage/T08_PHYSICAL_TOOLS_IMPORT_20261004.json",
+        "maintenance/storage/T12_PRESERVED_ENTRY_ADDITIONS_20261004.json",
+        "maintenance/storage/T12_PRESERVED_ENTRY_DEPENDENCIES_20261004.json"])
     report["reviewed_publication_hashes_checked"] = reviewed["reviewed_publication_hashes_checked"]
     report["errors"].extend(reviewed["errors"])
     print(json.dumps(report, indent=2))

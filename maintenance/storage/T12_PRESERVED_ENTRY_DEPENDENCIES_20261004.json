@@ -1,0 +1,9 @@
+{
+  "source_commit": "7093ec46082eed2fae127ec5028d3e2e8548b592",
+  "runtime_root": "/DATA/DATA1/guest3/2026OpticsMoE/.worktrees/t12_physical_robust_v2_20260927",
+  "method": "Static 57-source closure and actual server SHA inspection; add only two missing dependencies, preserve existing published models",
+  "paths": [
+    {"path": "LightGenV2/tasks/t12_text_to_image/compact_turbo.py", "bytes": 2464, "sha256": "0e665c757eca3b62d5a42deec8e2bad5112e86bbd14a473032bcd33a8cf26f37"},
+    {"path": "LightGenV2/tasks/t12_text_to_image/product_scene_training.py", "bytes": 26506, "sha256": "daa696d8ab23ab966489a43eb5f28394036a5c53fe6fc282bcb31e5da9b26f60"}
+  ]
+}

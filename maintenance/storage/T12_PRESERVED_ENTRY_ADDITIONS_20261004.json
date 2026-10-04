@@ -1,0 +1,10 @@
+{
+  "source_commit": "ac7e3ecce0bef96ae7d91f8de6e478542913bd4e",
+  "runtime_root": "/DATA/DATA1/guest3/2026OpticsMoE/.worktrees/t12_physical_robust_v2_20260927",
+  "runtime_head": "7093ec46082eed2fae127ec5028d3e2e8548b592",
+  "method": "Read-only actual server bytes matched preserved working archive; missing-only additions, no model replacement",
+  "paths": [
+    {"path": "LightGenV2/tasks/t12_text_to_image/product_global_redesign_training.py", "bytes": 20294, "sha256": "4e4cfbe06f9df7839aca7423d688d20b039353286a412f860d452633aca6eada"},
+    {"path": "LightGenV2/tasks/t12_text_to_image/qwen_mini_small_run.py", "bytes": 2974, "sha256": "d528a1d5c7553fe9366bb981f0078063f0ff36e1728fb06b01052840591784b7"}
+  ]
+}
