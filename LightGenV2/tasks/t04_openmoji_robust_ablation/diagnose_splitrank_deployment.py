@@ -184,8 +184,11 @@ def main():
     data = OpenMojiEditingDataset(cfg.train_manifest if args.scope=='train' else cfg.test_manifest,
                                  cfg,load_prompt_cache(cfg.prompt_cache_path))
     selected = []
+    captured_train_ids = {p.stem for p in (capture/'ccd'/'language_router').glob('*.json')} if args.scope=='train' else None
     for task in ('add','replace','move','remove'):
-        indices = [i for i,r in enumerate(data.records) if r['task'] == task]
+        indices = [i for i,r in enumerate(data.records) if r['task'] == task and
+                   (captured_train_ids is None or r['sample_id'] in captured_train_ids)]
+        assert len(indices)>=args.samples_per_task
         selected += [indices[i] for i in np.linspace(0,len(indices)-1,args.samples_per_task,dtype=int)]
     contract = json.loads((capture/'contract.json').read_text())
     assert contract['checkpoint_sha256'] == weight_sha
@@ -198,7 +201,7 @@ def main():
     stage_rows, upstream_rows = [], []
     started = time.time()
     for n,index in enumerate(selected):
-        sid = f'{args.scope}_{index:05d}'
+        sid = data.records[index]['sample_id'] if args.scope=='train' else f'test_{index:05d}'
         batch = collate_samples([data[index]])
         measured = {}
         for stage in STAGES:
