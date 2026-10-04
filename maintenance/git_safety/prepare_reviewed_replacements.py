@@ -43,12 +43,21 @@ def prepare(root: Path, manifest: dict, message: str, base_commit: str | None = 
                 or any(ord(c)<32 for c in path) or pure.name == 'server_sync.py'):
             raise RuntimeError('Unsafe/duplicate path: '+path)
         seen.add(path)
+        source_path = row.get('source_path', path)
+        source_pure = PurePosixPath(source_path)
+        if source_path != path and (not source_path.startswith(prefix)
+                or not source_path.endswith('.md') or not path.endswith('.md')
+                or '..' in source_pure.parts or str(source_pure) != source_path
+                or ':' in source_path or '\\' in source_path
+                or any(ord(c)<32 for c in source_path)):
+            raise RuntimeError('Unsafe documentation source mapping')
         if not row.get('review_reason', '').strip():
             raise RuntimeError('Missing review reason')
         for key in ('source_sha256', 'expected_target_sha256'):
             if not re.fullmatch('[0-9a-f]{64}', row[key]):
                 raise RuntimeError('Missing SHA')
-        entries = [git(root, 'ls-tree', '-z', ref, '--', path) for ref in (base, source)]
+        entries = [git(root, 'ls-tree', '-z', base, '--', path),
+                   git(root, 'ls-tree', '-z', source, '--', source_path)]
         if not all(entries):
             raise RuntimeError('Replacements require existing source AND target')
         blobs = []

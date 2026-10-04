@@ -62,3 +62,32 @@ def test_rejects_stale_main(tmp_path):
     manifest['expected_main'] = '0'*40
     with pytest.raises(RuntimeError,match='main changed'):
         prepare(tmp_path,manifest,'refused')
+
+
+def test_document_mapping_preserves_working_history(tmp_path):
+    manifest,_ = fixture(tmp_path)
+    prefix=manifest['task_prefix']
+    target=prefix+'README.md'; source=prefix+'reports/reproduction/entry.md'
+    (tmp_path/target).write_bytes(b'old entry\n')
+    git(tmp_path,'add',target);git(tmp_path,'commit','-m','old docs')
+    main=git(tmp_path,'rev-parse','HEAD').decode().strip()
+    git(tmp_path,'update-ref','refs/heads/main',main)
+    (tmp_path/source).parent.mkdir(parents=True)
+    (tmp_path/source).write_bytes(b'reviewed entry\n')
+    git(tmp_path,'add',source);git(tmp_path,'commit','-m','reviewed docs')
+    (tmp_path/target).write_bytes(b'protected long history\n')
+    manifest.update(expected_main=main,source_commit='HEAD',paths=[dict(
+        path=target,source_path=source,source_sha256=hashlib.sha256(b'reviewed entry\n').hexdigest(),
+        expected_target_sha256=hashlib.sha256(b'old entry\n').hexdigest(),review_reason='Approved concise main navigation')])
+    before=git(tmp_path,'status','--porcelain')
+    result=prepare(tmp_path,manifest,'document candidate')
+    assert git(tmp_path,'show',result['candidate_commit']+':'+target)==b'reviewed entry\n'
+    assert (tmp_path/target).read_bytes()==b'protected long history\n'
+    assert git(tmp_path,'status','--porcelain')==before
+
+
+def test_document_mapping_rejects_cross_task_source(tmp_path):
+    manifest,_=fixture(tmp_path)
+    manifest['paths'][0]['source_path']='LightGenV2/tasks/t08_abo_image_text_retrieval/README.md'
+    with pytest.raises(RuntimeError,match='Unsafe documentation'):
+        prepare(tmp_path,manifest,'refused')
