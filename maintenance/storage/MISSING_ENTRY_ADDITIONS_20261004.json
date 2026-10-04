@@ -1,0 +1,35 @@
+{
+  "source_commit": "fb5fedae568e341bcb429a742ecae7b52dcc5865",
+  "paths": [
+    {
+      "path": "maintenance/git_safety/check_task_registry.py",
+      "sha256": "5ae6bd7cbafff71839e0f4ee9cea3a17388f5ad3b89543ad2f35beaae7ae0392",
+      "bytes": 12404
+    },
+    {
+      "path": "maintenance/git_safety/tests/test_task_registry.py",
+      "sha256": "17c43178c0f107073e2f33d8fd2049ee9c14c8ee68eaa64c2bba1d59a23880b2",
+      "bytes": 7029
+    },
+    {
+      "path": "maintenance/git_safety/plan_source_import.py",
+      "sha256": "977087cbd9190accc1936048d8d96217ca3903e736ba7662a3250a7ce55c183d",
+      "bytes": 4122
+    },
+    {
+      "path": "LightGenV2/tasks/t04_openmoji_robust_ablation/reports/reproduction/README.md",
+      "sha256": "25bc780160054b02c6c481a0437dd233c086cf4ff336b713602e7227f48529b0",
+      "bytes": 1135
+    },
+    {
+      "path": "LightGenV2/tasks/t04_openmoji_robust_ablation/reports/reproduction/FINAL_IDENTITY_20261002.json",
+      "sha256": "197eceb7fffcc62e5a9a960930879c7dfe318a630bced086d2fea737a92188e6",
+      "bytes": 2207
+    },
+    {
+      "path": "LightGenV2/tasks/t07_abo_image_retrieval/reports/reproduction/FINAL_IDENTITY_20261002.json",
+      "sha256": "8823293822bfe57ada6be7a0dc1343637f98983ddc81bccbd4ffd5ebc17e0777",
+      "bytes": 970
+    }
+  ]
+}

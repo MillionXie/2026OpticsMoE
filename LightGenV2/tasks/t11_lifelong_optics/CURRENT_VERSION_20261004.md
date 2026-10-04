@@ -47,8 +47,10 @@
 55项源码/配置/协议从精确服务器Git树纳入main，PNG报告图仍保留原位置，不为整理重复
 提交数据。31份Python可编译；服务器原源码18项CPU合同测试通过。候选main同源码的
 CPU测试工具支持从Git blob直接加载，避免创建新的工程副本或覆盖用户工作目录。
-本地现有Python的torch DLL初始化失败，未修改该环境；将在服务器既有CPU环境检查
-发布树。不能把本地依赖环境问题说成模型合同失败，也不能把未运行测试说成通过。
+本地现有Python的torch DLL初始化失败，未修改该环境。服务器既有CPU环境已直接从
+发布树 `ba0effba9ab867206d95c1c0292246cc8d347d70` 读取31份Python，18项合同测试通过。
+原任务目录没有切换或覆盖。第一次Git加载工具的namespace错误已修正并复测；不把
+工具错误归为模型失败。发布收据见仓库 `maintenance/storage/T11_PUBLICATION_20261004.md`。
 
 CRC9测试历史使用 `tasks.*` 导入，纯光测试使用 `LightGenV2.tasks.*`，因此正常磁盘运行
 要从仓库根执行并设置 `PYTHONPATH=<仓库>/LightGenV2`，不能把少设路径误判模型错误。
