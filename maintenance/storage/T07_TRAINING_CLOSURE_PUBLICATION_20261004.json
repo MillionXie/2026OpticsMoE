@@ -1,0 +1,42 @@
+{
+  "published_commit": "f1cb7899fee6fe8df3fc74748e24183544394620",
+  "source_commit": "d979b53ed509907a3630bd2a36c317dfb3aac965",
+  "source_manifest": "maintenance/storage/T07_TRAINING_CLOSURE_ADDITIONS_20261004.json",
+  "actual_server_sources_and_dynamic_controls_sha_verified": 14,
+  "cpu_validation": {
+    "relative_training_modules_imported": 9,
+    "historical_dynamic_profiles_read": 55,
+    "dynamic_control_files_read": 5,
+    "synthetic_split": [1200, 400, 800],
+    "finite_ranking_gradient_checks": 4,
+    "sam_restoration_passed": true,
+    "sealed_rank72_checkpoint_strict_reload_passed": true,
+    "checkpoint_sha256": "25f23260864a00a0f32b5de209c27f5876166018c8d8ab0e880de81e0d2c2c22",
+    "datasets_evaluated": false,
+    "historical_training_reproduced": false,
+    "hardware_touched": false
+  },
+  "github_and_local_main_at_publication": "f1cb7899fee6fe8df3fc74748e24183544394620",
+  "server_origin_main_fetched": "f1cb7899fee6fe8df3fc74748e24183544394620",
+  "server_working_head_and_tracked_state_preserved": true,
+  "original_18_local_user_files_unchanged": true,
+  "windows_read_only_audit": {
+    "runtime_root": "E:/code/guest/2026OpticsMoE/ABO_I2I_Lab_DVP_8um/candidate_latergb_rank72_20260930",
+    "git_managed_runtime": false,
+    "standalone_modules_equal_main_after_explicit_crlf_to_lf_normalization": 7,
+    "final_report_sha256": "94947127262ead3fc440b5e67b513f0038949b25795c5be0b916305d251e6eef",
+    "final_report_counts": {"gallery":1600,"query":800,"layers":6,"ccd_per_layer":2400},
+    "final_report_r1": 0.81125,
+    "final_report_r5": 0.94125,
+    "query_scope": "Previously used during development; not independent generalization",
+    "seven_reviewed_runner_sources_recovery_ref": "refs/archive/windows-source-20261004/abo-rank72",
+    "recovery_commit": "4e17cd91290b877a258a4f7dff5381206d37f101",
+    "recovery_bundle_sha256": "f38fdf9f9fb63b4a36a056bbfc2b75f0bceeeda1574ffc159ceb3ac6572078fe",
+    "recovery_bundle_bytes": 24162,
+    "recovery_bundle_requires_parent": "f1cb7899fee6fe8df3fc74748e24183544394620",
+    "git_recovery_ref_and_bundle_verified_on_local_and_training_server": true,
+    "remaining": "External Windows controller/camera/phase/vendor-driver source and local SDK/config closure; not published as a deployment-ready hardware entry",
+    "devices_or_original_windows_files_modified": false
+  },
+  "full_repository_migration_complete": false
+}
