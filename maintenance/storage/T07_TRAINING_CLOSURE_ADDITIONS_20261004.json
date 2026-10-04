@@ -1,0 +1,21 @@
+{
+  "source_commit": "d979b53ed509907a3630bd2a36c317dfb3aac965",
+  "runtime_root": "/DATA/DATA1/guest3/2026OpticsMoE/.worktrees/t07_latestfresh35_20260929",
+  "scope": "Missing server training dependencies and dynamically read historical controls; sealed final weights unchanged. CPU compatibility is not training reproduction.",
+  "paths": [
+    {"path":"LightGenV2/tasks/t07_abo_image_retrieval/standalone/enrolled_regularization.py","bytes":11335,"sha256":"85f8056e1073258fb9badf3b63cac070f931f97f08a1badad89990f25dda98fc"},
+    {"path":"LightGenV2/tasks/t07_abo_image_retrieval/standalone/generalization.py","bytes":25824,"sha256":"014c99661e2a044910683928485e1d588a80d1b11bde572506f4281e35d4adf1"},
+    {"path":"LightGenV2/tasks/t07_abo_image_retrieval/standalone/prepare_broad_abo.py","bytes":8468,"sha256":"23f49c55ba910fd8886ea4b38b088a9420693422dcbad622e28fa95fe161788a"},
+    {"path":"LightGenV2/tasks/t07_abo_image_retrieval/standalone/retail_sources.py","bytes":16100,"sha256":"a8a56c5a987a21a16b8b951dea5815b54272778ced8ffd0b1ccc018b7d0c3c4d"},
+    {"path":"LightGenV2/tasks/t07_abo_image_retrieval/standalone/retrieval_adapt.py","bytes":49021,"sha256":"2f6baf0e758ce77977e27615cdf1c0cfd8df37f606e4e70c5deb56b7e6641ead"},
+    {"path":"LightGenV2/tasks/t07_abo_image_retrieval/standalone/retrieval_refine.py","bytes":30992,"sha256":"cdb4d92b80f818907fb16e6cfe3a17339f2a34920c3b9c73d0d413cc034b0e4b"},
+    {"path":"LightGenV2/tasks/t07_abo_image_retrieval/standalone/retrieval_screen.py","bytes":26685,"sha256":"f2b655de4303d823c3256338af099aefa785d27809ce877bc667c02213750a75"},
+    {"path":"LightGenV2/tasks/t07_abo_image_retrieval/standalone/robust_holdout.py","bytes":2411,"sha256":"f1756df82cf23be03150e06641e14a28d32b1d5e2410b3dc6856099d025385bb"},
+    {"path":"LightGenV2/tasks/t07_abo_image_retrieval/standalone/robust_training.py","bytes":2929,"sha256":"92887017e3c2b16a0b4ee749467c82da5f50923a7afda766dae4bf992e6caa85"},
+    {"path":"LightGenV2/tasks/t07_abo_image_retrieval/standalone/generalization.json","bytes":1300,"sha256":"2816829bd12d11917dc5a1faaf967c9a2680589828f4910db13e96096a2a300a"},
+    {"path":"LightGenV2/tasks/t07_abo_image_retrieval/standalone/regularization.json","bytes":1505,"sha256":"32a650d2221e7bbaae434e5888de580f0b23193425a10d1de09828490d9b26a3"},
+    {"path":"LightGenV2/tasks/t07_abo_image_retrieval/standalone/domain_expansion.json","bytes":1474,"sha256":"b2b8bbd4bf5681bab2933531e37b00a3fed6f4a7acc1deb6d40ca31de8e2d921"},
+    {"path":"LightGenV2/tasks/t07_abo_image_retrieval/standalone/domain_refinement.json","bytes":2641,"sha256":"de8850d404e4da95b5b78f6bd9f137afd3c924ed0a723969438336a66e8c3a1f"},
+    {"path":"LightGenV2/tasks/t07_abo_image_retrieval/standalone/domain_distillation.json","bytes":30456,"sha256":"e8d69fc27d68e4a6fc744dda4d1a025e3b048549cc404265bde7d7f95d7c998b"}
+  ]
+}
