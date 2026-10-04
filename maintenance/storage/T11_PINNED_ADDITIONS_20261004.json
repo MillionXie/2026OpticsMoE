@@ -1,0 +1,275 @@
+{
+  "source_commit": "72180033c6edd605c7151b2faa8a599dc15910ee",
+  "paths": [
+    {
+      "path": "LightGenV2/tasks/t11_lifelong_optics/__init__.py",
+      "sha256": "a85d764ddd8a871bbfdca699b87e7255821f4cc7289cd36ae4bf89a67584b2b9",
+      "bytes": 59
+    },
+    {
+      "path": "LightGenV2/tasks/t11_lifelong_optics/__main__.py",
+      "sha256": "7c86b1281643b718915bfa2a6489fc97ca04932e696d169d233840f5e09a7025",
+      "bytes": 29
+    },
+    {
+      "path": "LightGenV2/tasks/t11_lifelong_optics/configs/crc9_oeo_mlp_distill_s17.json",
+      "sha256": "c393905f27c7811d08fcf9b53d68616f6b546522249d015e33c9b7621ee0448e",
+      "bytes": 1093
+    },
+    {
+      "path": "LightGenV2/tasks/t11_lifelong_optics/configs/crc9_oeo_mlp_routed_distill_s17.json",
+      "sha256": "0db1baafb27da9cb60c8cde5cc6f53a1f2ef407841fbb5acddd2a4a349d50453",
+      "bytes": 1017
+    },
+    {
+      "path": "LightGenV2/tasks/t11_lifelong_optics/configs/crc9_oeo_mlp_routed_s17.json",
+      "sha256": "37138a3fce41c3e45cf39580a5a100a404e99e441910912a77f5ace43583f3aa",
+      "bytes": 1017
+    },
+    {
+      "path": "LightGenV2/tasks/t11_lifelong_optics/configs/crc9_oeo_mlp_routed_strong_s17.json",
+      "sha256": "c343b5af5d9e27056d18f63016b2f31a772ff97f0c295ca671d457860a486d06",
+      "bytes": 1278
+    },
+    {
+      "path": "LightGenV2/tasks/t11_lifelong_optics/configs/crc9_oeo_mlp_s17.json",
+      "sha256": "c980dcfbc9beb7027d640ec796f10578ab8ba0f2f175915ed9824acecfae77f7",
+      "bytes": 888
+    },
+    {
+      "path": "LightGenV2/tasks/t11_lifelong_optics/configs/cross_kather_deepweeds.json",
+      "sha256": "8aaaec107dcd0ab784b7fad1abbaffb6c5247226d7ce7e995d79ecf6a441bcd1",
+      "bytes": 438
+    },
+    {
+      "path": "LightGenV2/tasks/t11_lifelong_optics/configs/cross_kather_eurosat.json",
+      "sha256": "430ca06ef1a2947f465960b0ac9f2a252181e28f18dc907e33105d41bd1be399",
+      "bytes": 439
+    },
+    {
+      "path": "LightGenV2/tasks/t11_lifelong_optics/configs/kather.json",
+      "sha256": "2fc0c8c45f78b697b92a5262eb344695eb714a8b80ac433b5135c82ffc44013a",
+      "bytes": 369
+    },
+    {
+      "path": "LightGenV2/tasks/t11_lifelong_optics/configs/kather_lc25000.json",
+      "sha256": "062bd24fee39cc6c9582dfc43c83d7f4ecda08c609a6a5e6d5fb3e89855282e2",
+      "bytes": 526
+    },
+    {
+      "path": "LightGenV2/tasks/t11_lifelong_optics/configs/kather_lc25000_kather2018.json",
+      "sha256": "8bd1c885c29736b0aab08fc361184c813a74971c02947dfcb6f887e7024866d8",
+      "bytes": 696
+    },
+    {
+      "path": "LightGenV2/tasks/t11_lifelong_optics/configs/kather_lc25000_kather2018_hepato.json",
+      "sha256": "fad5e058be99f72bc56a03ea170404eea989285dc834fc09675b8fe398fd6b54",
+      "bytes": 865
+    },
+    {
+      "path": "LightGenV2/tasks/t11_lifelong_optics/configs/kather_lc25000_kather2018_hepato_d2nn_full_replay.json",
+      "sha256": "55fd1f6e5e3c556c62d098927c7be911069b7acff24e3daa3a9822d71c430df7",
+      "bytes": 747
+    },
+    {
+      "path": "LightGenV2/tasks/t11_lifelong_optics/configs/kather_lc25000_kather2018_hepato_d2nn_small_replay.json",
+      "sha256": "cbf2f4cdbc9b6324983be24c7bb391bf7fac74aff1cf6421b1e983a0c3981833",
+      "bytes": 856
+    },
+    {
+      "path": "LightGenV2/tasks/t11_lifelong_optics/configs/kather_lc25000_kather2018_hepato_full_replay.json",
+      "sha256": "d5835c81ab9a302443bfd2e4c889c5eeb5d5877bbbe1f3ce1c9843a5d150fa5e",
+      "bytes": 782
+    },
+    {
+      "path": "LightGenV2/tasks/t11_lifelong_optics/configs/kather_lc25000_kather2018_hepato_joint_d2nn.json",
+      "sha256": "eda5ac887677eadf0b818646993bd99631f53e8faa9ed0e886700d9187320f19",
+      "bytes": 552
+    },
+    {
+      "path": "LightGenV2/tasks/t11_lifelong_optics/configs/kather_lc25000_kather2018_hepato_joint_moe.json",
+      "sha256": "4f6fa416da91e3e192e88d3c934818b5c4a6cfb088ee1342e780d82fac4317d9",
+      "bytes": 609
+    },
+    {
+      "path": "LightGenV2/tasks/t11_lifelong_optics/configs/kather_lc25000_kather2018_hepato_single_d2nn.json",
+      "sha256": "f0e152b65472c8c4bb28dab29c2b221c3dd3e90c2d8b7613b41da330ec1fd37c",
+      "bytes": 526
+    },
+    {
+      "path": "LightGenV2/tasks/t11_lifelong_optics/configs/kather_lc25000_no_replay.json",
+      "sha256": "7871f9c56c1cf07a26acc6bdfb23e392f1bbf3c830afc5ad7ac00f2185a2d62f",
+      "bytes": 546
+    },
+    {
+      "path": "LightGenV2/tasks/t11_lifelong_optics/configs/kather_rgb_edges.json",
+      "sha256": "568f1947c952687038813822f62862a7bfd4cfbe45834b336d5d482b413e7bef",
+      "bytes": 422
+    },
+    {
+      "path": "LightGenV2/tasks/t11_lifelong_optics/configs/kather_rgb_gray.json",
+      "sha256": "e6c876e5c59bdcf3f51d98f531a3d0b5e34981e1b435c9eafbe50dd3ba1c32df",
+      "bytes": 421
+    },
+    {
+      "path": "LightGenV2/tasks/t11_lifelong_optics/configs/kather_ring.json",
+      "sha256": "eba8abfd7a89dc4ae8dd22a14c2d52a5f5304fa2ddef8b2271b0d6e420e6abcc",
+      "bytes": 396
+    },
+    {
+      "path": "LightGenV2/tasks/t11_lifelong_optics/continual_d2nn.py",
+      "sha256": "931ff7b59ceb650573face546fb00686e88dec9164430afbf155fcfe71c08368",
+      "bytes": 11895
+    },
+    {
+      "path": "LightGenV2/tasks/t11_lifelong_optics/continual_four_dataset.py",
+      "sha256": "63bd4b0190e4886fa19e5af1f481e1822e2f95b5620308bac09439295b7b0f3a",
+      "bytes": 9182
+    },
+    {
+      "path": "LightGenV2/tasks/t11_lifelong_optics/continual_four_full_replay.py",
+      "sha256": "10e180c8bb4e56f4ab593549dec67ea59f3d10aa8b06b2629169a063af46b1a3",
+      "bytes": 9572
+    },
+    {
+      "path": "LightGenV2/tasks/t11_lifelong_optics/continual_three_dataset.py",
+      "sha256": "f4f313c6d56fec0c3b3e885dcc1b7a9249395d867a3a657226291c8d44e1f067",
+      "bytes": 8620
+    },
+    {
+      "path": "LightGenV2/tasks/t11_lifelong_optics/crc9_d2nn_continual_head.py",
+      "sha256": "fe6e271503b3096e06b5bec3cc31e9c30608186825c062a64c515de6a52a9daa",
+      "bytes": 5671
+    },
+    {
+      "path": "LightGenV2/tasks/t11_lifelong_optics/crc9_data.py",
+      "sha256": "c2114924f1e814fb1fca172eca18273b2c89c2f6c9cac30c93c473304470d8e8",
+      "bytes": 2631
+    },
+    {
+      "path": "LightGenV2/tasks/t11_lifelong_optics/crc9_model.py",
+      "sha256": "9d0ea8af869edacf6cbf3473acca66cd6a9c7541f03bc3e612f72d267f28d014",
+      "bytes": 9959
+    },
+    {
+      "path": "LightGenV2/tasks/t11_lifelong_optics/crc9_moe_head_polish.py",
+      "sha256": "4c18385f8359e655b7ef24ab4eff063f1d7c7837dbd9da5a426d7cebf44af663",
+      "bytes": 5073
+    },
+    {
+      "path": "LightGenV2/tasks/t11_lifelong_optics/crc9_train.py",
+      "sha256": "5cbd3080477e9313793251811cad86e9a4c9a037934a3e02217ad9e315625a78",
+      "bytes": 21087
+    },
+    {
+      "path": "LightGenV2/tasks/t11_lifelong_optics/cross_dataset.py",
+      "sha256": "3fc63c072ca81478d0e5b112b1413c6275d74301e9c79b7afae6506c83933652",
+      "bytes": 15225
+    },
+    {
+      "path": "LightGenV2/tasks/t11_lifelong_optics/cross_kather_eurosat.py",
+      "sha256": "7ed13167826499f97998c9faf0c91add188d58b76dfbb76bf3381c1a270e90bb",
+      "bytes": 4958
+    },
+    {
+      "path": "LightGenV2/tasks/t11_lifelong_optics/data.py",
+      "sha256": "93b23703df694fb08ee6d16836ca7f3a32bd9626b7624ce7a254694230720a7e",
+      "bytes": 3382
+    },
+    {
+      "path": "LightGenV2/tasks/t11_lifelong_optics/evaluate.py",
+      "sha256": "00d34c389749bac9d852db27159eafff9a1c50f306620717f50bd8a23557adb4",
+      "bytes": 1963
+    },
+    {
+      "path": "LightGenV2/tasks/t11_lifelong_optics/evaluate_four_dataset.py",
+      "sha256": "61c832e099e3acc422e9a52e860d6609f54bc3cebe92c68ce1936e85e60dccd8",
+      "bytes": 3053
+    },
+    {
+      "path": "LightGenV2/tasks/t11_lifelong_optics/evaluate_three_dataset.py",
+      "sha256": "1836c51e920880df346613cd3ed8983d19e31155dd2b8a1335ac70d558bc162d",
+      "bytes": 3571
+    },
+    {
+      "path": "LightGenV2/tasks/t11_lifelong_optics/joint_d2nn.py",
+      "sha256": "f097a57b7eb910578788ff971ac0069ac2ef4f4b218e51c5eee56e84f01f4a38",
+      "bytes": 10014
+    },
+    {
+      "path": "LightGenV2/tasks/t11_lifelong_optics/joint_moe.py",
+      "sha256": "ea815944f2d68a22195ee389334df5f5b2382d6f4841951d18e64e04752aeb9e",
+      "bytes": 7042
+    },
+    {
+      "path": "LightGenV2/tasks/t11_lifelong_optics/model.py",
+      "sha256": "2efb5f69ecdab3facbc336a16934b23e0c9b95719fcb0d01d1e305cabc62dd30",
+      "bytes": 11206
+    },
+    {
+      "path": "LightGenV2/tasks/t11_lifelong_optics/optics.py",
+      "sha256": "6ac5340c63040b00b131ec47734a83b307c40265e0ea351e53819c2c992cd059",
+      "bytes": 4111
+    },
+    {
+      "path": "LightGenV2/tasks/t11_lifelong_optics/prepare_crc9_domains.py",
+      "sha256": "76bf2332859cd6cab72024092b34884cce3d02266c2703534955e834b16addb8",
+      "bytes": 3585
+    },
+    {
+      "path": "LightGenV2/tasks/t11_lifelong_optics/prepare_hepatobench.py",
+      "sha256": "c23bb0aac6decd6acabc977caec920c3b7dec1740703683864cf884ceaa1101c",
+      "bytes": 3546
+    },
+    {
+      "path": "LightGenV2/tasks/t11_lifelong_optics/prepare_kather2018_val7k.py",
+      "sha256": "d94a65d162c18e736b41e6721072b661a694862281f01774d589ebf328509d17",
+      "bytes": 2152
+    },
+    {
+      "path": "LightGenV2/tasks/t11_lifelong_optics/prepare_kather_lc25000.py",
+      "sha256": "92239fe5b7ebf379248a5e3430ce15a2fd0e1dc6b69bf094bf4e1939e56c916b",
+      "bytes": 4600
+    },
+    {
+      "path": "LightGenV2/tasks/t11_lifelong_optics/report.py",
+      "sha256": "ec1941a194bbdcf9bc8116d137550089e5600ab2214da30bc1026ecfff98e5ec",
+      "bytes": 2145
+    },
+    {
+      "path": "LightGenV2/tasks/t11_lifelong_optics/reports/reproduction/README.md",
+      "sha256": "3434c516e558e19d748149241dda988c3fc0ff54bf2e45972a70250ae7ef0fd2",
+      "bytes": 29117
+    },
+    {
+      "path": "LightGenV2/tasks/t11_lifelong_optics/requirements.txt",
+      "sha256": "2288d3eaa787273f5a9a4447bb9f4e2708e2f74f4af01cf5c50e0a050fc16938",
+      "bytes": 39
+    },
+    {
+      "path": "LightGenV2/tasks/t11_lifelong_optics/run.py",
+      "sha256": "4220c6c25f117d4876fc6935bfb7b780c4db9f7256351858e209a1ab46e7579e",
+      "bytes": 8670
+    },
+    {
+      "path": "LightGenV2/tasks/t11_lifelong_optics/single_task_d2nn_transfer.py",
+      "sha256": "c8ed090d9c5c3e4adbc93eaf1e1a428ebdc9b34ad54a2c59b61b311b71fb2008",
+      "bytes": 5551
+    },
+    {
+      "path": "LightGenV2/tasks/t11_lifelong_optics/tests/test_contract.py",
+      "sha256": "ac2731c865dd1ac562204247242ff76dd959eb0ec734f892bd3b7e4459473d56",
+      "bytes": 11353
+    },
+    {
+      "path": "LightGenV2/tasks/t11_lifelong_optics/tests/test_crc9_contract.py",
+      "sha256": "b94f7e149387343460508c793ffcf9509840935bbd022453a1e754cbac382e74",
+      "bytes": 1972
+    },
+    {
+      "path": "LightGenV2/tasks/t11_lifelong_optics/verify_joint_d2nn.py",
+      "sha256": "1cfbf18652f1476a04fae606e7ac2719717943050c5b7cfa47a8778fa70b2876",
+      "bytes": 3066
+    }
+  ]
+}

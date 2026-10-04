@@ -1,0 +1,3668 @@
+{
+  "roots": [
+    "/DATA/DATA1/guest3/t11_optical_20260919/LightGenV2/tasks/t11_lifelong_optics/runs/simulation",
+    "/DATA/DATA1/guest3/t11_joint_d2nn_20260920/LightGenV2/tasks/t11_lifelong_optics/runs/simulation",
+    "/DATA/DATA1/guest3/t11_crc9_runs"
+  ],
+  "files": [
+    {
+      "path": "/DATA/DATA1/guest3/t11_optical_20260919/LightGenV2/tasks/t11_lifelong_optics/runs/simulation/four_task_b0ce0836/A/best_checkpoint.pt",
+      "bytes": 17098799,
+      "sha256": "be1594d82f00e23f606836e20ea8fe1627c0f50cbd19f9fea8ef3a9758c8d462",
+      "kind": "weight"
+    },
+    {
+      "path": "/DATA/DATA1/guest3/t11_optical_20260919/LightGenV2/tasks/t11_lifelong_optics/runs/simulation/four_task_b0ce0836/A/last_checkpoint.pt",
+      "bytes": 17098799,
+      "sha256": "2611550cb3eee72d80b52f0bafbccab0f4e1c69009c18f2759de9b6fe2c9d50b",
+      "kind": "weight"
+    },
+    {
+      "path": "/DATA/DATA1/guest3/t11_optical_20260919/LightGenV2/tasks/t11_lifelong_optics/runs/simulation/four_task_b0ce0836/B/best_checkpoint.pt",
+      "bytes": 17099247,
+      "sha256": "0c4666d9d0c4aa3cefe42ff5dee47f825dfb1dad56f7aedcb533d9ba00f48b6d",
+      "kind": "weight"
+    },
+    {
+      "path": "/DATA/DATA1/guest3/t11_optical_20260919/LightGenV2/tasks/t11_lifelong_optics/runs/simulation/four_task_b0ce0836/B/last_checkpoint.pt",
+      "bytes": 17099247,
+      "sha256": "132a4b2ffb721523e9a95326a14de194e656f80f8e714c6352ade6febe9204b5",
+      "kind": "weight"
+    },
+    {
+      "path": "/DATA/DATA1/guest3/t11_optical_20260919/LightGenV2/tasks/t11_lifelong_optics/runs/simulation/four_task_b0ce0836/C/best_checkpoint.pt",
+      "bytes": 17099695,
+      "sha256": "ad189453f30f882dc342cc46f39b00359fe7bda86d96ac6de385472998e65210",
+      "kind": "weight"
+    },
+    {
+      "path": "/DATA/DATA1/guest3/t11_optical_20260919/LightGenV2/tasks/t11_lifelong_optics/runs/simulation/four_task_b0ce0836/C/last_checkpoint.pt",
+      "bytes": 17099695,
+      "sha256": "5311500b83cc13c98384118cc82ccf45cc3d492f3a5dcb525ab5e279c49bfa96",
+      "kind": "weight"
+    },
+    {
+      "path": "/DATA/DATA1/guest3/t11_optical_20260919/LightGenV2/tasks/t11_lifelong_optics/runs/simulation/four_task_b0ce0836/D/best_checkpoint.pt",
+      "bytes": 17100143,
+      "sha256": "93b26ae6f0688c96a88dac1c2af69a0031e114a3ad206aa17899a95dccc16dcf",
+      "kind": "weight"
+    },
+    {
+      "path": "/DATA/DATA1/guest3/t11_optical_20260919/LightGenV2/tasks/t11_lifelong_optics/runs/simulation/four_task_b0ce0836/D/last_checkpoint.pt",
+      "bytes": 17100143,
+      "sha256": "896bf3df176f462265234d2a8eb033c88665abd3144bd296f2d4d62516eb2f6b",
+      "kind": "weight"
+    },
+    {
+      "path": "/DATA/DATA1/guest3/t11_optical_20260919/LightGenV2/tasks/t11_lifelong_optics/runs/simulation/four_task_b0ce0836/config.json",
+      "bytes": 864,
+      "sha256": "6d33515c2382b2e6446eaef01e5bed6b70d7774d12632dbb06f02abf5eacbc51",
+      "kind": "record",
+      "summary": []
+    },
+    {
+      "path": "/DATA/DATA1/guest3/t11_optical_20260919/LightGenV2/tasks/t11_lifelong_optics/runs/simulation/four_task_b0ce0836/metadata.json",
+      "bytes": 4659,
+      "sha256": "16a2bcf10fc62885d3b151e16fbf4d81f96d339501dcc4c84c4ceff37e4d7e94",
+      "kind": "record",
+      "summary": [
+        {
+          "field": "commit",
+          "value": "b0ce083641cd13bf6dd9d26150e978b591b54dbb"
+        }
+      ]
+    },
+    {
+      "path": "/DATA/DATA1/guest3/t11_optical_20260919/LightGenV2/tasks/t11_lifelong_optics/runs/simulation/four_task_b0ce0836/metrics.json",
+      "bytes": 34075,
+      "sha256": "183d9fb4f0efe738004b4c25cea08129898810edc94f7088585e672eac925633",
+      "kind": "record",
+      "summary": []
+    },
+    {
+      "path": "/DATA/DATA1/guest3/t11_optical_20260919/LightGenV2/tasks/t11_lifelong_optics/runs/simulation/four_task_b0ce0836/split.json",
+      "bytes": 372621,
+      "sha256": "e7400b677814228c1672f2eac532000bfa268da66a0ee51054fa0ea946e08fc2",
+      "kind": "record",
+      "summary": []
+    },
+    {
+      "path": "/DATA/DATA1/guest3/t11_optical_20260919/LightGenV2/tasks/t11_lifelong_optics/runs/simulation/four_task_b0ce0836/status.json",
+      "bytes": 25,
+      "sha256": "eaa7c704f662f109da0eaee611f279444cc8377159702041b24a4c977a6c887b",
+      "kind": "record",
+      "summary": [
+        {
+          "field": "state",
+          "value": "complete"
+        }
+      ]
+    },
+    {
+      "path": "/DATA/DATA1/guest3/t11_optical_20260919/LightGenV2/tasks/t11_lifelong_optics/runs/simulation/kather_lc25000_8b0b69f2/A/best_checkpoint.pt",
+      "bytes": 5502465,
+      "sha256": "66c308b493a5586693a2fad233abd3d406265cb4d837fcdcd321a22db345ebe6",
+      "kind": "weight"
+    },
+    {
+      "path": "/DATA/DATA1/guest3/t11_optical_20260919/LightGenV2/tasks/t11_lifelong_optics/runs/simulation/kather_lc25000_8b0b69f2/A/last_checkpoint.pt",
+      "bytes": 5502465,
+      "sha256": "d150fa0fa4a2d0a099a2563c2c1fc0694145ff499d9006a2b3e29996833eae8a",
+      "kind": "weight"
+    },
+    {
+      "path": "/DATA/DATA1/guest3/t11_optical_20260919/LightGenV2/tasks/t11_lifelong_optics/runs/simulation/kather_lc25000_8b0b69f2/B/best_checkpoint.pt",
+      "bytes": 13290075,
+      "sha256": "c228207550f5989fd40687792ea1ae1a61a56b035aa9a4ac319a945cf4d43ce9",
+      "kind": "weight"
+    },
+    {
+      "path": "/DATA/DATA1/guest3/t11_optical_20260919/LightGenV2/tasks/t11_lifelong_optics/runs/simulation/kather_lc25000_8b0b69f2/B/last_checkpoint.pt",
+      "bytes": 13290075,
+      "sha256": "6abe0bbcd25f3f34dc014ae7a91f3787cf7ba27927712e6f0dc387e06e4f9841",
+      "kind": "weight"
+    },
+    {
+      "path": "/DATA/DATA1/guest3/t11_optical_20260919/LightGenV2/tasks/t11_lifelong_optics/runs/simulation/kather_lc25000_8b0b69f2/config.json",
+      "bytes": 525,
+      "sha256": "f2a4a9d69fa842f394ef4f161d67b73daa3c267cf289fd6185335d2988b3fff7",
+      "kind": "record",
+      "summary": []
+    },
+    {
+      "path": "/DATA/DATA1/guest3/t11_optical_20260919/LightGenV2/tasks/t11_lifelong_optics/runs/simulation/kather_lc25000_8b0b69f2/metadata.json",
+      "bytes": 2465,
+      "sha256": "a4ea2e34abc897a3e25543068b9c6c4ad3bd9dfad30cde13123e53b9c2f89d3a",
+      "kind": "record",
+      "summary": [
+        {
+          "field": "commit",
+          "value": "8b0b69f26a8e425ce01627f6b9c4ad92aa945a2e"
+        }
+      ]
+    },
+    {
+      "path": "/DATA/DATA1/guest3/t11_optical_20260919/LightGenV2/tasks/t11_lifelong_optics/runs/simulation/kather_lc25000_8b0b69f2/metrics.json",
+      "bytes": 6409,
+      "sha256": "583fa90c3163f5c0fdf4e889aba43270e9502f3670fda9c182c3292996606348",
+      "kind": "record",
+      "summary": []
+    },
+    {
+      "path": "/DATA/DATA1/guest3/t11_optical_20260919/LightGenV2/tasks/t11_lifelong_optics/runs/simulation/kather_lc25000_8b0b69f2/split.json",
+      "bytes": 190013,
+      "sha256": "977eaea648b5c29889af98c4ad0c1c6bdc7a5b66dd15395d3a8bb9c359bc25a5",
+      "kind": "record",
+      "summary": []
+    },
+    {
+      "path": "/DATA/DATA1/guest3/t11_optical_20260919/LightGenV2/tasks/t11_lifelong_optics/runs/simulation/kather_lc25000_8b0b69f2/status.json",
+      "bytes": 25,
+      "sha256": "eaa7c704f662f109da0eaee611f279444cc8377159702041b24a4c977a6c887b",
+      "kind": "record",
+      "summary": [
+        {
+          "field": "state",
+          "value": "complete"
+        }
+      ]
+    },
+    {
+      "path": "/DATA/DATA1/guest3/t11_optical_20260919/LightGenV2/tasks/t11_lifelong_optics/runs/simulation/kather_lc25000_8b0b69f2/warmup/last_checkpoint.pt",
+      "bytes": 5502017,
+      "sha256": "d5e51a152a8a38cc4f630f438c5f3043977f5955eb2bf0dd3aab022e2af5ea9c",
+      "kind": "weight"
+    },
+    {
+      "path": "/DATA/DATA1/guest3/t11_optical_20260919/LightGenV2/tasks/t11_lifelong_optics/runs/simulation/kather_lc25000_no_replay_a846e1d6/A/best_checkpoint.pt",
+      "bytes": 5502529,
+      "sha256": "56bdb48d9bca31ec932f0e87ef2129ef15d76df4f770e1f3b1532ae9f5c7efe3",
+      "kind": "weight"
+    },
+    {
+      "path": "/DATA/DATA1/guest3/t11_optical_20260919/LightGenV2/tasks/t11_lifelong_optics/runs/simulation/kather_lc25000_no_replay_a846e1d6/A/last_checkpoint.pt",
+      "bytes": 5502529,
+      "sha256": "2eb0dcfe15d3e11445cab5ab2ddf039ea0c4a0579bf824cc3f0258637b4eaf20",
+      "kind": "weight"
+    },
+    {
+      "path": "/DATA/DATA1/guest3/t11_optical_20260919/LightGenV2/tasks/t11_lifelong_optics/runs/simulation/kather_lc25000_no_replay_a846e1d6/B/best_checkpoint.pt",
+      "bytes": 13290139,
+      "sha256": "dc446b536cd59b22b40d4c4ebebb32f58f2c84bf7a70a3a20023fe34ae6a0965",
+      "kind": "weight"
+    },
+    {
+      "path": "/DATA/DATA1/guest3/t11_optical_20260919/LightGenV2/tasks/t11_lifelong_optics/runs/simulation/kather_lc25000_no_replay_a846e1d6/B/last_checkpoint.pt",
+      "bytes": 13290139,
+      "sha256": "2da6d5e9dd537971ed701aa0883b2c42dbbbb479acc36675b56b1731dbdacb21",
+      "kind": "weight"
+    },
+    {
+      "path": "/DATA/DATA1/guest3/t11_optical_20260919/LightGenV2/tasks/t11_lifelong_optics/runs/simulation/kather_lc25000_no_replay_a846e1d6/config.json",
+      "bytes": 545,
+      "sha256": "1a22dd92c59e63468edfaa4629238846de457afdb2c80fbdb91b561b0f051975",
+      "kind": "record",
+      "summary": []
+    },
+    {
+      "path": "/DATA/DATA1/guest3/t11_optical_20260919/LightGenV2/tasks/t11_lifelong_optics/runs/simulation/kather_lc25000_no_replay_a846e1d6/metadata.json",
+      "bytes": 2485,
+      "sha256": "5a6496e39bf8658a4c2f775398390c26e0aa218fc5dc76e99f35aff93148e453",
+      "kind": "record",
+      "summary": [
+        {
+          "field": "commit",
+          "value": "a846e1d69385dc9a5ae111014b69c2e8378b4fd9"
+        }
+      ]
+    },
+    {
+      "path": "/DATA/DATA1/guest3/t11_optical_20260919/LightGenV2/tasks/t11_lifelong_optics/runs/simulation/kather_lc25000_no_replay_a846e1d6/metrics.json",
+      "bytes": 6387,
+      "sha256": "274c6d770d3973484ad64433716ea7231576a8b22571efc57fbc177ac8369835",
+      "kind": "record",
+      "summary": []
+    },
+    {
+      "path": "/DATA/DATA1/guest3/t11_optical_20260919/LightGenV2/tasks/t11_lifelong_optics/runs/simulation/kather_lc25000_no_replay_a846e1d6/split.json",
+      "bytes": 190013,
+      "sha256": "977eaea648b5c29889af98c4ad0c1c6bdc7a5b66dd15395d3a8bb9c359bc25a5",
+      "kind": "record",
+      "summary": []
+    },
+    {
+      "path": "/DATA/DATA1/guest3/t11_optical_20260919/LightGenV2/tasks/t11_lifelong_optics/runs/simulation/kather_lc25000_no_replay_a846e1d6/status.json",
+      "bytes": 25,
+      "sha256": "eaa7c704f662f109da0eaee611f279444cc8377159702041b24a4c977a6c887b",
+      "kind": "record",
+      "summary": [
+        {
+          "field": "state",
+          "value": "complete"
+        }
+      ]
+    },
+    {
+      "path": "/DATA/DATA1/guest3/t11_optical_20260919/LightGenV2/tasks/t11_lifelong_optics/runs/simulation/kather_lc25000_no_replay_a846e1d6/warmup/last_checkpoint.pt",
+      "bytes": 5502017,
+      "sha256": "f61cdbb0cda5374531a18dd64c82abe0333b0ac6aa12ee79f6662bce7119921c",
+      "kind": "weight"
+    },
+    {
+      "path": "/DATA/DATA1/guest3/t11_optical_20260919/LightGenV2/tasks/t11_lifelong_optics/runs/simulation/kather_lc25000_no_replay_fb8257bd/status.json",
+      "bytes": 26,
+      "sha256": "24a9e4b44218afab7fa1c92ba633ef4c3f6ebba23af1879f8de39556f5b30187",
+      "kind": "record",
+      "summary": [
+        {
+          "field": "state",
+          "value": "preparing"
+        }
+      ]
+    },
+    {
+      "path": "/DATA/DATA1/guest3/t11_optical_20260919/LightGenV2/tasks/t11_lifelong_optics/runs/simulation/kather_rgb_edges_s17_8f17ebf9/A/best_checkpoint.pt",
+      "bytes": 13289499,
+      "sha256": "88a4f12c63d5f7f588d09104e92a3350f226e9c5017f2703a59d38404c538413",
+      "kind": "weight"
+    },
+    {
+      "path": "/DATA/DATA1/guest3/t11_optical_20260919/LightGenV2/tasks/t11_lifelong_optics/runs/simulation/kather_rgb_edges_s17_8f17ebf9/A/last_checkpoint.pt",
+      "bytes": 13289499,
+      "sha256": "4be135643d6cfefbdc95020ad16e6e3751cc3ee1116f7dec33d225c2a385e5ec",
+      "kind": "weight"
+    },
+    {
+      "path": "/DATA/DATA1/guest3/t11_optical_20260919/LightGenV2/tasks/t11_lifelong_optics/runs/simulation/kather_rgb_edges_s17_8f17ebf9/B/best_checkpoint.pt",
+      "bytes": 13289499,
+      "sha256": "5a5982d6af27ae787b06885a9de4f9f0eda7d860688629cdb2354de744130de5",
+      "kind": "weight"
+    },
+    {
+      "path": "/DATA/DATA1/guest3/t11_optical_20260919/LightGenV2/tasks/t11_lifelong_optics/runs/simulation/kather_rgb_edges_s17_8f17ebf9/B/last_checkpoint.pt",
+      "bytes": 13289499,
+      "sha256": "da0b27095421785de81c7d6a935f4c0b87fe02dd10d7c28ae393136ce1a53af1",
+      "kind": "weight"
+    },
+    {
+      "path": "/DATA/DATA1/guest3/t11_optical_20260919/LightGenV2/tasks/t11_lifelong_optics/runs/simulation/kather_rgb_edges_s17_8f17ebf9/config.json",
+      "bytes": 422,
+      "sha256": "568f1947c952687038813822f62862a7bfd4cfbe45834b336d5d482b413e7bef",
+      "kind": "record",
+      "summary": []
+    },
+    {
+      "path": "/DATA/DATA1/guest3/t11_optical_20260919/LightGenV2/tasks/t11_lifelong_optics/runs/simulation/kather_rgb_edges_s17_8f17ebf9/metadata.json",
+      "bytes": 103949,
+      "sha256": "3408f7e6173e0d276adba83caeee79ddaa67b7140b07476091ab17a546014a44",
+      "kind": "record",
+      "summary": [
+        {
+          "field": "commit",
+          "value": "8f17ebf901ffd513740d110942d8cd3f31750f1e"
+        }
+      ]
+    },
+    {
+      "path": "/DATA/DATA1/guest3/t11_optical_20260919/LightGenV2/tasks/t11_lifelong_optics/runs/simulation/kather_rgb_edges_s17_8f17ebf9/metrics.json",
+      "bytes": 11410,
+      "sha256": "5efa7db351013bef23cedcbb30437d49d55f4e1f9e7f618b2e8ca1097cf47f9d",
+      "kind": "record",
+      "summary": []
+    },
+    {
+      "path": "/DATA/DATA1/guest3/t11_optical_20260919/LightGenV2/tasks/t11_lifelong_optics/runs/simulation/kather_rgb_edges_s17_8f17ebf9/split.json",
+      "bytes": 72462,
+      "sha256": "3de486f6394955480c5783823b84190c28ef884e8153ec1185c51aa7de79941a",
+      "kind": "record",
+      "summary": []
+    },
+    {
+      "path": "/DATA/DATA1/guest3/t11_optical_20260919/LightGenV2/tasks/t11_lifelong_optics/runs/simulation/kather_rgb_edges_s17_8f17ebf9/status.json",
+      "bytes": 25,
+      "sha256": "eaa7c704f662f109da0eaee611f279444cc8377159702041b24a4c977a6c887b",
+      "kind": "record",
+      "summary": [
+        {
+          "field": "state",
+          "value": "complete"
+        }
+      ]
+    },
+    {
+      "path": "/DATA/DATA1/guest3/t11_optical_20260919/LightGenV2/tasks/t11_lifelong_optics/runs/simulation/kather_rgb_edges_s17_8f17ebf9/warmup/best_checkpoint.pt",
+      "bytes": 7112317,
+      "sha256": "78b132a3cfdde2caea542dd377046e86fd0e790d9898cf9ba827840c9473d022",
+      "kind": "weight"
+    },
+    {
+      "path": "/DATA/DATA1/guest3/t11_optical_20260919/LightGenV2/tasks/t11_lifelong_optics/runs/simulation/kather_rgb_edges_s17_8f17ebf9/warmup/last_checkpoint.pt",
+      "bytes": 7112317,
+      "sha256": "76a1d08659fb328c05212f1f65acd43a1e741cce688a0ea7bee4998b33372d6b",
+      "kind": "weight"
+    },
+    {
+      "path": "/DATA/DATA1/guest3/t11_optical_20260919/LightGenV2/tasks/t11_lifelong_optics/runs/simulation/kather_rgb_gray_s17_8f17ebf9/A/best_checkpoint.pt",
+      "bytes": 13289499,
+      "sha256": "5edab34182172a2ad83da9d11f1a804ca47ddf1c4b99a41e6c8b4ff1d6c74370",
+      "kind": "weight"
+    },
+    {
+      "path": "/DATA/DATA1/guest3/t11_optical_20260919/LightGenV2/tasks/t11_lifelong_optics/runs/simulation/kather_rgb_gray_s17_8f17ebf9/A/last_checkpoint.pt",
+      "bytes": 13289499,
+      "sha256": "33d9ed71f05f5677b007f412251f112ee2c57808d11ec1b4105701437ceb2a99",
+      "kind": "weight"
+    },
+    {
+      "path": "/DATA/DATA1/guest3/t11_optical_20260919/LightGenV2/tasks/t11_lifelong_optics/runs/simulation/kather_rgb_gray_s17_8f17ebf9/B/best_checkpoint.pt",
+      "bytes": 13289499,
+      "sha256": "2ae8ff1c5c6c5770655f0d8a50b7f3e68ed934742b00804b413be0faad3b9a13",
+      "kind": "weight"
+    },
+    {
+      "path": "/DATA/DATA1/guest3/t11_optical_20260919/LightGenV2/tasks/t11_lifelong_optics/runs/simulation/kather_rgb_gray_s17_8f17ebf9/B/last_checkpoint.pt",
+      "bytes": 13289499,
+      "sha256": "b31b31238c71c10777d4d109f77d90014d05e30249b5dea63e6fc4a4ecd2cb98",
+      "kind": "weight"
+    },
+    {
+      "path": "/DATA/DATA1/guest3/t11_optical_20260919/LightGenV2/tasks/t11_lifelong_optics/runs/simulation/kather_rgb_gray_s17_8f17ebf9/config.json",
+      "bytes": 421,
+      "sha256": "e6c876e5c59bdcf3f51d98f531a3d0b5e34981e1b435c9eafbe50dd3ba1c32df",
+      "kind": "record",
+      "summary": []
+    },
+    {
+      "path": "/DATA/DATA1/guest3/t11_optical_20260919/LightGenV2/tasks/t11_lifelong_optics/runs/simulation/kather_rgb_gray_s17_8f17ebf9/metadata.json",
+      "bytes": 103947,
+      "sha256": "ece561d591a1e858e4b46c84d8b59de912280c854b67667d7bf4d8d6e7687568",
+      "kind": "record",
+      "summary": [
+        {
+          "field": "commit",
+          "value": "8f17ebf901ffd513740d110942d8cd3f31750f1e"
+        }
+      ]
+    },
+    {
+      "path": "/DATA/DATA1/guest3/t11_optical_20260919/LightGenV2/tasks/t11_lifelong_optics/runs/simulation/kather_rgb_gray_s17_8f17ebf9/metrics.json",
+      "bytes": 11377,
+      "sha256": "93d2aac9474b773a008600b9f23202004db7400d3c3bac1bd0b5edad262397c6",
+      "kind": "record",
+      "summary": []
+    },
+    {
+      "path": "/DATA/DATA1/guest3/t11_optical_20260919/LightGenV2/tasks/t11_lifelong_optics/runs/simulation/kather_rgb_gray_s17_8f17ebf9/split.json",
+      "bytes": 72462,
+      "sha256": "3de486f6394955480c5783823b84190c28ef884e8153ec1185c51aa7de79941a",
+      "kind": "record",
+      "summary": []
+    },
+    {
+      "path": "/DATA/DATA1/guest3/t11_optical_20260919/LightGenV2/tasks/t11_lifelong_optics/runs/simulation/kather_rgb_gray_s17_8f17ebf9/status.json",
+      "bytes": 25,
+      "sha256": "eaa7c704f662f109da0eaee611f279444cc8377159702041b24a4c977a6c887b",
+      "kind": "record",
+      "summary": [
+        {
+          "field": "state",
+          "value": "complete"
+        }
+      ]
+    },
+    {
+      "path": "/DATA/DATA1/guest3/t11_optical_20260919/LightGenV2/tasks/t11_lifelong_optics/runs/simulation/kather_rgb_gray_s17_8f17ebf9/warmup/best_checkpoint.pt",
+      "bytes": 7112317,
+      "sha256": "3b7af18337eceda54b3419432e4c7a73d8fb76bfaa9998f3aae6db95c5195777",
+      "kind": "weight"
+    },
+    {
+      "path": "/DATA/DATA1/guest3/t11_optical_20260919/LightGenV2/tasks/t11_lifelong_optics/runs/simulation/kather_rgb_gray_s17_8f17ebf9/warmup/last_checkpoint.pt",
+      "bytes": 7112317,
+      "sha256": "f73901e97265f500550b18801fa5d27f39736926b3408c3266f77845b828df08",
+      "kind": "weight"
+    },
+    {
+      "path": "/DATA/DATA1/guest3/t11_optical_20260919/LightGenV2/tasks/t11_lifelong_optics/runs/simulation/kather_ring_s17_7c1a07e9/A/best_checkpoint.pt",
+      "bytes": 13289435,
+      "sha256": "be94f08a1a66407092125aaa7796273d9cad4fa10c4aedf57a080038d2b49495",
+      "kind": "weight"
+    },
+    {
+      "path": "/DATA/DATA1/guest3/t11_optical_20260919/LightGenV2/tasks/t11_lifelong_optics/runs/simulation/kather_ring_s17_7c1a07e9/A/last_checkpoint.pt",
+      "bytes": 13289435,
+      "sha256": "9dcd7b90929039252c8ab4a45fe5d1913ce348251c6033b771ba5b0eae3b5b8d",
+      "kind": "weight"
+    },
+    {
+      "path": "/DATA/DATA1/guest3/t11_optical_20260919/LightGenV2/tasks/t11_lifelong_optics/runs/simulation/kather_ring_s17_7c1a07e9/B/best_checkpoint.pt",
+      "bytes": 13289435,
+      "sha256": "6d2558de79a17c3f0a4e3936fd7a6213d30779df48a1ea1b83d409fc4f86d90c",
+      "kind": "weight"
+    },
+    {
+      "path": "/DATA/DATA1/guest3/t11_optical_20260919/LightGenV2/tasks/t11_lifelong_optics/runs/simulation/kather_ring_s17_7c1a07e9/B/last_checkpoint.pt",
+      "bytes": 13289435,
+      "sha256": "4c9d9f2fe2d3249145f48996467797ff7a68d5f80c03e222c4785d856b1a00db",
+      "kind": "weight"
+    },
+    {
+      "path": "/DATA/DATA1/guest3/t11_optical_20260919/LightGenV2/tasks/t11_lifelong_optics/runs/simulation/kather_ring_s17_7c1a07e9/config.json",
+      "bytes": 396,
+      "sha256": "eba8abfd7a89dc4ae8dd22a14c2d52a5f5304fa2ddef8b2271b0d6e420e6abcc",
+      "kind": "record",
+      "summary": []
+    },
+    {
+      "path": "/DATA/DATA1/guest3/t11_optical_20260919/LightGenV2/tasks/t11_lifelong_optics/runs/simulation/kather_ring_s17_7c1a07e9/metadata.json",
+      "bytes": 103854,
+      "sha256": "ee82ba58c2e144ef0c075cc6db2fc7bf804b1649c40910bbfdb9c1e7b8f67e63",
+      "kind": "record",
+      "summary": [
+        {
+          "field": "commit",
+          "value": "7c1a07e90f20b7e02d1836d2e90d03cae78eddf3"
+        }
+      ]
+    },
+    {
+      "path": "/DATA/DATA1/guest3/t11_optical_20260919/LightGenV2/tasks/t11_lifelong_optics/runs/simulation/kather_ring_s17_7c1a07e9/metrics.json",
+      "bytes": 11381,
+      "sha256": "a3fe9a684a328d0d1af90225e415864a826a8b3912e7f3c13d17f246f718a5fb",
+      "kind": "record",
+      "summary": []
+    },
+    {
+      "path": "/DATA/DATA1/guest3/t11_optical_20260919/LightGenV2/tasks/t11_lifelong_optics/runs/simulation/kather_ring_s17_7c1a07e9/split.json",
+      "bytes": 72462,
+      "sha256": "3de486f6394955480c5783823b84190c28ef884e8153ec1185c51aa7de79941a",
+      "kind": "record",
+      "summary": []
+    },
+    {
+      "path": "/DATA/DATA1/guest3/t11_optical_20260919/LightGenV2/tasks/t11_lifelong_optics/runs/simulation/kather_ring_s17_7c1a07e9/status.json",
+      "bytes": 25,
+      "sha256": "eaa7c704f662f109da0eaee611f279444cc8377159702041b24a4c977a6c887b",
+      "kind": "record",
+      "summary": [
+        {
+          "field": "state",
+          "value": "complete"
+        }
+      ]
+    },
+    {
+      "path": "/DATA/DATA1/guest3/t11_optical_20260919/LightGenV2/tasks/t11_lifelong_optics/runs/simulation/kather_ring_s17_7c1a07e9/warmup/best_checkpoint.pt",
+      "bytes": 7112253,
+      "sha256": "52c28eb50056a48934a0c677fb3f410f4982e7b7a05c3fb7b2b9e3b80da4d182",
+      "kind": "weight"
+    },
+    {
+      "path": "/DATA/DATA1/guest3/t11_optical_20260919/LightGenV2/tasks/t11_lifelong_optics/runs/simulation/kather_ring_s17_7c1a07e9/warmup/last_checkpoint.pt",
+      "bytes": 7112253,
+      "sha256": "e1078b4ac20524a5654988c05db2ee7964fc24f7f6a92761520fba89fe644fb3",
+      "kind": "weight"
+    },
+    {
+      "path": "/DATA/DATA1/guest3/t11_optical_20260919/LightGenV2/tasks/t11_lifelong_optics/runs/simulation/kather_s17_f7c6fbba/A/best_checkpoint.pt",
+      "bytes": 13289435,
+      "sha256": "a4678e32b64803796c31755e78ab382b7423eeeac2cba867e492e3584da8870a",
+      "kind": "weight"
+    },
+    {
+      "path": "/DATA/DATA1/guest3/t11_optical_20260919/LightGenV2/tasks/t11_lifelong_optics/runs/simulation/kather_s17_f7c6fbba/A/last_checkpoint.pt",
+      "bytes": 13289435,
+      "sha256": "27948771d0a78ae203a2bad2ce2f38e49b70ae590ee87b4715783bcae9e43e00",
+      "kind": "weight"
+    },
+    {
+      "path": "/DATA/DATA1/guest3/t11_optical_20260919/LightGenV2/tasks/t11_lifelong_optics/runs/simulation/kather_s17_f7c6fbba/B/best_checkpoint.pt",
+      "bytes": 13289435,
+      "sha256": "9524eae3f79ba81c20d089717822b704abe9d1e2e3c245b8505f9c4163a3e473",
+      "kind": "weight"
+    },
+    {
+      "path": "/DATA/DATA1/guest3/t11_optical_20260919/LightGenV2/tasks/t11_lifelong_optics/runs/simulation/kather_s17_f7c6fbba/B/last_checkpoint.pt",
+      "bytes": 13289435,
+      "sha256": "009d8a1d3ed7f5aa8179ad186bfe861401c58d2d7df72fd6d4110f3fa78b058d",
+      "kind": "weight"
+    },
+    {
+      "path": "/DATA/DATA1/guest3/t11_optical_20260919/LightGenV2/tasks/t11_lifelong_optics/runs/simulation/kather_s17_f7c6fbba/config.json",
+      "bytes": 369,
+      "sha256": "2fc0c8c45f78b697b92a5262eb344695eb714a8b80ac433b5135c82ffc44013a",
+      "kind": "record",
+      "summary": []
+    },
+    {
+      "path": "/DATA/DATA1/guest3/t11_optical_20260919/LightGenV2/tasks/t11_lifelong_optics/runs/simulation/kather_s17_f7c6fbba/metadata.json",
+      "bytes": 103677,
+      "sha256": "a807d44fb8c4c71ff626e795ff34f0661117d6649769c81e59103312e4b9d616",
+      "kind": "record",
+      "summary": [
+        {
+          "field": "commit",
+          "value": "f7c6fbba91aa2041c1f41b0b5ccbf28fb65badfb"
+        }
+      ]
+    },
+    {
+      "path": "/DATA/DATA1/guest3/t11_optical_20260919/LightGenV2/tasks/t11_lifelong_optics/runs/simulation/kather_s17_f7c6fbba/metrics.json",
+      "bytes": 11382,
+      "sha256": "e32089a221c542a56749c4b18a021b3b5005a0acbe4bbce205f675a15e56c537",
+      "kind": "record",
+      "summary": []
+    },
+    {
+      "path": "/DATA/DATA1/guest3/t11_optical_20260919/LightGenV2/tasks/t11_lifelong_optics/runs/simulation/kather_s17_f7c6fbba/split.json",
+      "bytes": 72462,
+      "sha256": "3de486f6394955480c5783823b84190c28ef884e8153ec1185c51aa7de79941a",
+      "kind": "record",
+      "summary": []
+    },
+    {
+      "path": "/DATA/DATA1/guest3/t11_optical_20260919/LightGenV2/tasks/t11_lifelong_optics/runs/simulation/kather_s17_f7c6fbba/status.json",
+      "bytes": 25,
+      "sha256": "eaa7c704f662f109da0eaee611f279444cc8377159702041b24a4c977a6c887b",
+      "kind": "record",
+      "summary": [
+        {
+          "field": "state",
+          "value": "complete"
+        }
+      ]
+    },
+    {
+      "path": "/DATA/DATA1/guest3/t11_optical_20260919/LightGenV2/tasks/t11_lifelong_optics/runs/simulation/kather_s17_f7c6fbba/warmup/best_checkpoint.pt",
+      "bytes": 7112253,
+      "sha256": "a2bd0a8832b12f8c568f3c7eec54cf339d3d18ba6e34f92e11f8d978ece8ddad",
+      "kind": "weight"
+    },
+    {
+      "path": "/DATA/DATA1/guest3/t11_optical_20260919/LightGenV2/tasks/t11_lifelong_optics/runs/simulation/kather_s17_f7c6fbba/warmup/last_checkpoint.pt",
+      "bytes": 7112253,
+      "sha256": "8cdb0d49c291c7104efa190b22372e5ffbb82702843aadf8252343a31cfc27cb",
+      "kind": "weight"
+    },
+    {
+      "path": "/DATA/DATA1/guest3/t11_optical_20260919/LightGenV2/tasks/t11_lifelong_optics/runs/simulation/kather_to_eurosat_76846f94/metadata.json",
+      "bytes": 967,
+      "sha256": "ac008aa41b5937bb90a976df8ef1ecf111c295ebaf0ef84d1b6d082bea99421a",
+      "kind": "record",
+      "summary": [
+        {
+          "field": "commit",
+          "value": "76846f94409c6974e4a13005a0b3cc627c01ad2e"
+        }
+      ]
+    },
+    {
+      "path": "/DATA/DATA1/guest3/t11_optical_20260919/LightGenV2/tasks/t11_lifelong_optics/runs/simulation/kather_to_eurosat_76846f94/metrics.json",
+      "bytes": 1874,
+      "sha256": "859a80d2a6a835d9573b782737240b6680e3154c53c169c2100d74bd6da627ca",
+      "kind": "record",
+      "summary": []
+    },
+    {
+      "path": "/DATA/DATA1/guest3/t11_optical_20260919/LightGenV2/tasks/t11_lifelong_optics/runs/simulation/kather_to_eurosat_76846f94/split.json",
+      "bytes": 297,
+      "sha256": "bc5bfd21a5dbe4cd76bb708935cdc31f71eb54ed57855fbb542bfacb722ceae2",
+      "kind": "record",
+      "summary": []
+    },
+    {
+      "path": "/DATA/DATA1/guest3/t11_optical_20260919/LightGenV2/tasks/t11_lifelong_optics/runs/simulation/kather_to_eurosat_f16e8508/metadata.json",
+      "bytes": 967,
+      "sha256": "727258b028f0912577dc00000d24a9b968ab6bbb632c7e6dfdc50359d3ad2415",
+      "kind": "record",
+      "summary": [
+        {
+          "field": "commit",
+          "value": "f16e85086dfd7dad28d7c78bd04980c3339ef305"
+        }
+      ]
+    },
+    {
+      "path": "/DATA/DATA1/guest3/t11_optical_20260919/LightGenV2/tasks/t11_lifelong_optics/runs/simulation/kather_to_eurosat_f16e8508/split.json",
+      "bytes": 297,
+      "sha256": "bc5bfd21a5dbe4cd76bb708935cdc31f71eb54ed57855fbb542bfacb722ceae2",
+      "kind": "record",
+      "summary": []
+    },
+    {
+      "path": "/DATA/DATA1/guest3/t11_optical_20260919/LightGenV2/tasks/t11_lifelong_optics/runs/simulation/three_task_feef2710/A/best_checkpoint.pt",
+      "bytes": 13289115,
+      "sha256": "9ad1d3158b86baca2fc828da3d24bda49a9b42970f6a75173377b37b549d8d9d",
+      "kind": "weight"
+    },
+    {
+      "path": "/DATA/DATA1/guest3/t11_optical_20260919/LightGenV2/tasks/t11_lifelong_optics/runs/simulation/three_task_feef2710/A/last_checkpoint.pt",
+      "bytes": 13289115,
+      "sha256": "2769d2c441d21aa1c6e750533359ab6d68f9b418a6a8c6232604b48b4e4aeec1",
+      "kind": "weight"
+    },
+    {
+      "path": "/DATA/DATA1/guest3/t11_optical_20260919/LightGenV2/tasks/t11_lifelong_optics/runs/simulation/three_task_feef2710/B/best_checkpoint.pt",
+      "bytes": 13289499,
+      "sha256": "f7c941238c98d93e3e564796da8b9dc668a509ef7e4d47a381cbab57316826e2",
+      "kind": "weight"
+    },
+    {
+      "path": "/DATA/DATA1/guest3/t11_optical_20260919/LightGenV2/tasks/t11_lifelong_optics/runs/simulation/three_task_feef2710/B/last_checkpoint.pt",
+      "bytes": 13289499,
+      "sha256": "50ea262cb1a2dc884d2232ceffec2ad3f25072a2df173c2c81643524b41d5d1e",
+      "kind": "weight"
+    },
+    {
+      "path": "/DATA/DATA1/guest3/t11_optical_20260919/LightGenV2/tasks/t11_lifelong_optics/runs/simulation/three_task_feef2710/C/best_checkpoint.pt",
+      "bytes": 13289883,
+      "sha256": "40c63e401e6ac83f23fcf08d3d06c3ea850e5e1f2d1182b8da494cba52b6f241",
+      "kind": "weight"
+    },
+    {
+      "path": "/DATA/DATA1/guest3/t11_optical_20260919/LightGenV2/tasks/t11_lifelong_optics/runs/simulation/three_task_feef2710/C/last_checkpoint.pt",
+      "bytes": 13289883,
+      "sha256": "dc3ae9a0318cd89e4ce7686b6a791884c619d83cc44d0ce85575d847b6307ca2",
+      "kind": "weight"
+    },
+    {
+      "path": "/DATA/DATA1/guest3/t11_optical_20260919/LightGenV2/tasks/t11_lifelong_optics/runs/simulation/three_task_feef2710/config.json",
+      "bytes": 695,
+      "sha256": "a2be5f983ba93fcb145b14a527e7dce7963e2af816489675b7c78c0a4a0f0a9b",
+      "kind": "record",
+      "summary": []
+    },
+    {
+      "path": "/DATA/DATA1/guest3/t11_optical_20260919/LightGenV2/tasks/t11_lifelong_optics/runs/simulation/three_task_feef2710/metadata.json",
+      "bytes": 3557,
+      "sha256": "b95d503a1c35fb4d7af92c4dd5e4e979fcbfbb2589906898b665b786b421db1a",
+      "kind": "record",
+      "summary": [
+        {
+          "field": "commit",
+          "value": "feef271094e465545689e364e63a8d75b2144045"
+        }
+      ]
+    },
+    {
+      "path": "/DATA/DATA1/guest3/t11_optical_20260919/LightGenV2/tasks/t11_lifelong_optics/runs/simulation/three_task_feef2710/metrics.json",
+      "bytes": 17333,
+      "sha256": "e6820a5b35fe3651461f4362f4c4f0fd0c146773f3ef45b8bbe00ab4a15e6cc1",
+      "kind": "record",
+      "summary": []
+    },
+    {
+      "path": "/DATA/DATA1/guest3/t11_optical_20260919/LightGenV2/tasks/t11_lifelong_optics/runs/simulation/three_task_feef2710/split.json",
+      "bytes": 314119,
+      "sha256": "c6ee78c1d59202995834031706bc6ad216ba01c52d04eefea8fc2ccbdd200909",
+      "kind": "record",
+      "summary": []
+    },
+    {
+      "path": "/DATA/DATA1/guest3/t11_optical_20260919/LightGenV2/tasks/t11_lifelong_optics/runs/simulation/three_task_feef2710/status.json",
+      "bytes": 25,
+      "sha256": "eaa7c704f662f109da0eaee611f279444cc8377159702041b24a4c977a6c887b",
+      "kind": "record",
+      "summary": [
+        {
+          "field": "state",
+          "value": "complete"
+        }
+      ]
+    },
+    {
+      "path": "/DATA/DATA1/guest3/t11_joint_d2nn_20260920/LightGenV2/tasks/t11_lifelong_optics/runs/simulation/d2nn_full_s17_9c1a8f78/A/best_checkpoint.pt",
+      "bytes": 23337248,
+      "sha256": "6d2d8e6729fd4ce467dd0d2d75aad6bd2ab07eedcd2061decc31c9923a0258dc",
+      "kind": "weight"
+    },
+    {
+      "path": "/DATA/DATA1/guest3/t11_joint_d2nn_20260920/LightGenV2/tasks/t11_lifelong_optics/runs/simulation/d2nn_full_s17_9c1a8f78/A/last_checkpoint.pt",
+      "bytes": 23337248,
+      "sha256": "944c7a700adc0a5c854af6efeca93e9bcbcfb4da60c8c932da8e765a6b697d17",
+      "kind": "weight"
+    },
+    {
+      "path": "/DATA/DATA1/guest3/t11_joint_d2nn_20260920/LightGenV2/tasks/t11_lifelong_optics/runs/simulation/d2nn_full_s17_9c1a8f78/B/best_checkpoint.pt",
+      "bytes": 23337312,
+      "sha256": "8795605b1c79b22a250de8b2c27beb91d08d7df98a09c74d7b82e51e50861d1b",
+      "kind": "weight"
+    },
+    {
+      "path": "/DATA/DATA1/guest3/t11_joint_d2nn_20260920/LightGenV2/tasks/t11_lifelong_optics/runs/simulation/d2nn_full_s17_9c1a8f78/B/last_checkpoint.pt",
+      "bytes": 23337312,
+      "sha256": "69197191576953c3948a0241721d58869bc36c5b966326929c128b645c28574d",
+      "kind": "weight"
+    },
+    {
+      "path": "/DATA/DATA1/guest3/t11_joint_d2nn_20260920/LightGenV2/tasks/t11_lifelong_optics/runs/simulation/d2nn_full_s17_9c1a8f78/C/best_checkpoint.pt",
+      "bytes": 23337440,
+      "sha256": "0d7edfdf2fa4e03297ace55223c4ca8f97d7c62a56c057298f0b8f1038533f3c",
+      "kind": "weight"
+    },
+    {
+      "path": "/DATA/DATA1/guest3/t11_joint_d2nn_20260920/LightGenV2/tasks/t11_lifelong_optics/runs/simulation/d2nn_full_s17_9c1a8f78/C/last_checkpoint.pt",
+      "bytes": 23337440,
+      "sha256": "34cbb54984ba91e7adccaa0933ec6af1fe094de9ca42f826412442c636221b2f",
+      "kind": "weight"
+    },
+    {
+      "path": "/DATA/DATA1/guest3/t11_joint_d2nn_20260920/LightGenV2/tasks/t11_lifelong_optics/runs/simulation/d2nn_full_s17_9c1a8f78/D/best_checkpoint.pt",
+      "bytes": 23337504,
+      "sha256": "4a101416a5b1f8327c8494e63b459b0567989a5103f48d7349288016d0309b14",
+      "kind": "weight"
+    },
+    {
+      "path": "/DATA/DATA1/guest3/t11_joint_d2nn_20260920/LightGenV2/tasks/t11_lifelong_optics/runs/simulation/d2nn_full_s17_9c1a8f78/D/last_checkpoint.pt",
+      "bytes": 23337504,
+      "sha256": "eb8deeef78230472d7f9b7a00cdf9229e3b3bc762bf1923f7493a1509af7a329",
+      "kind": "weight"
+    },
+    {
+      "path": "/DATA/DATA1/guest3/t11_joint_d2nn_20260920/LightGenV2/tasks/t11_lifelong_optics/runs/simulation/d2nn_full_s17_9c1a8f78/config.json",
+      "bytes": 746,
+      "sha256": "b6564fb214d9c7d58bc2058ceaee6301ed0c4597c351075148226f79b1afd3ee",
+      "kind": "record",
+      "summary": []
+    },
+    {
+      "path": "/DATA/DATA1/guest3/t11_joint_d2nn_20260920/LightGenV2/tasks/t11_lifelong_optics/runs/simulation/d2nn_full_s17_9c1a8f78/metadata.json",
+      "bytes": 5106,
+      "sha256": "eac14f012230dc917ca3a1ae8749eb9ea19d1936e78144d1853ebc0ed942f5a2",
+      "kind": "record",
+      "summary": [
+        {
+          "field": "commit",
+          "value": "9c1a8f7893fa6cbeae078bf1f98e0b7eba966d2f"
+        }
+      ]
+    },
+    {
+      "path": "/DATA/DATA1/guest3/t11_joint_d2nn_20260920/LightGenV2/tasks/t11_lifelong_optics/runs/simulation/d2nn_full_s17_9c1a8f78/metrics.json",
+      "bytes": 8005,
+      "sha256": "855cbb98dadf9a6e3d5e0d3ffa4bc4d3de30e64ec973fa0610279a1f2b43303c",
+      "kind": "record",
+      "summary": [
+        {
+          "field": "selected_epoch",
+          "value": 12
+        },
+        {
+          "field": "selection_rule",
+          "value": "at each stage, maximum mean validation balanced accuracy over all seen tasks"
+        },
+        {
+          "field": "A.validation.accuracy",
+          "value": 0.8111110925674438
+        },
+        {
+          "field": "A.validation.balanced_accuracy",
+          "value": 0.8111110925674438
+        },
+        {
+          "field": "B.validation.accuracy",
+          "value": 0.9729999899864197
+        },
+        {
+          "field": "B.validation.balanced_accuracy",
+          "value": 0.9730000495910645
+        },
+        {
+          "field": "C.validation.accuracy",
+          "value": 0.625
+        },
+        {
+          "field": "C.validation.balanced_accuracy",
+          "value": 0.625
+        },
+        {
+          "field": "D.validation.accuracy",
+          "value": 0.6875
+        },
+        {
+          "field": "D.validation.balanced_accuracy",
+          "value": 0.6875
+        }
+      ]
+    },
+    {
+      "path": "/DATA/DATA1/guest3/t11_joint_d2nn_20260920/LightGenV2/tasks/t11_lifelong_optics/runs/simulation/d2nn_full_s17_9c1a8f78/split.json",
+      "bytes": 325736,
+      "sha256": "9d25a2866958dfb1949a618d5b1f521f8f9fc9c79e56a48f6f169ff67244fb8d",
+      "kind": "record",
+      "summary": []
+    },
+    {
+      "path": "/DATA/DATA1/guest3/t11_joint_d2nn_20260920/LightGenV2/tasks/t11_lifelong_optics/runs/simulation/d2nn_full_s17_9c1a8f78/status.json",
+      "bytes": 49,
+      "sha256": "be5772b138bb13fa223732c78bcbfe043716e81267678d8891c26fd0f4cdfe39",
+      "kind": "record",
+      "summary": [
+        {
+          "field": "state",
+          "value": "complete"
+        },
+        {
+          "field": "selected_epoch",
+          "value": 12
+        }
+      ]
+    },
+    {
+      "path": "/DATA/DATA1/guest3/t11_joint_d2nn_20260920/LightGenV2/tasks/t11_lifelong_optics/runs/simulation/d2nn_matched_full_s17_e300686c/A/best_checkpoint.pt",
+      "bytes": 23337376,
+      "sha256": "1e1655c1b658c903770278232f2978e9f1a549d781e45196f48e3368186ce6d7",
+      "kind": "weight"
+    },
+    {
+      "path": "/DATA/DATA1/guest3/t11_joint_d2nn_20260920/LightGenV2/tasks/t11_lifelong_optics/runs/simulation/d2nn_matched_full_s17_e300686c/A/last_checkpoint.pt",
+      "bytes": 23337376,
+      "sha256": "908bc2c83cd563feeefc8d20dd85a08ad3897e6cb6ef0e1c65200e81f4f9bbb6",
+      "kind": "weight"
+    },
+    {
+      "path": "/DATA/DATA1/guest3/t11_joint_d2nn_20260920/LightGenV2/tasks/t11_lifelong_optics/runs/simulation/d2nn_matched_full_s17_e300686c/B/best_checkpoint.pt",
+      "bytes": 23337440,
+      "sha256": "643fa8e2fa6519d14dace2d706eb311d5fd999e30d3e14e2703c7befe906ee6d",
+      "kind": "weight"
+    },
+    {
+      "path": "/DATA/DATA1/guest3/t11_joint_d2nn_20260920/LightGenV2/tasks/t11_lifelong_optics/runs/simulation/d2nn_matched_full_s17_e300686c/B/last_checkpoint.pt",
+      "bytes": 23337440,
+      "sha256": "d9bfcb8f6c2bde093d5b4852a0aac1e6cc7899c8f6ff80b9d577f77578d0d4ed",
+      "kind": "weight"
+    },
+    {
+      "path": "/DATA/DATA1/guest3/t11_joint_d2nn_20260920/LightGenV2/tasks/t11_lifelong_optics/runs/simulation/d2nn_matched_full_s17_e300686c/C/best_checkpoint.pt",
+      "bytes": 23337568,
+      "sha256": "c56057a5e8757f3a1328acd41e5abf271ec93edde2ca2a76c7ac26b4e237952e",
+      "kind": "weight"
+    },
+    {
+      "path": "/DATA/DATA1/guest3/t11_joint_d2nn_20260920/LightGenV2/tasks/t11_lifelong_optics/runs/simulation/d2nn_matched_full_s17_e300686c/C/last_checkpoint.pt",
+      "bytes": 23337568,
+      "sha256": "b90a0f9aca6560e0ec269e9209fed64ad6915f87d3b85b89590023255797ffc0",
+      "kind": "weight"
+    },
+    {
+      "path": "/DATA/DATA1/guest3/t11_joint_d2nn_20260920/LightGenV2/tasks/t11_lifelong_optics/runs/simulation/d2nn_matched_full_s17_e300686c/D/best_checkpoint.pt",
+      "bytes": 23337632,
+      "sha256": "a50490e838c758223587b80b79b2c289062abd8c699125d5a7cc4d9914b3b938",
+      "kind": "weight"
+    },
+    {
+      "path": "/DATA/DATA1/guest3/t11_joint_d2nn_20260920/LightGenV2/tasks/t11_lifelong_optics/runs/simulation/d2nn_matched_full_s17_e300686c/D/last_checkpoint.pt",
+      "bytes": 23337632,
+      "sha256": "6e99ff4ba2ef47a847f0937d8fbf87a1c5120fb26b98e709fe0735ada7c79f8f",
+      "kind": "weight"
+    },
+    {
+      "path": "/DATA/DATA1/guest3/t11_joint_d2nn_20260920/LightGenV2/tasks/t11_lifelong_optics/runs/simulation/d2nn_matched_full_s17_e300686c/config.json",
+      "bytes": 879,
+      "sha256": "f57c3d4b3e1a6f312784125d497022b0a9cd4b877d2ceedc663c7a27d66a1055",
+      "kind": "record",
+      "summary": []
+    },
+    {
+      "path": "/DATA/DATA1/guest3/t11_joint_d2nn_20260920/LightGenV2/tasks/t11_lifelong_optics/runs/simulation/d2nn_matched_full_s17_e300686c/metadata.json",
+      "bytes": 5122,
+      "sha256": "579ba93e3a6c9cac199bdbe7100d994ee3f8bcff9b34106aba24ee3ac8673b93",
+      "kind": "record",
+      "summary": [
+        {
+          "field": "commit",
+          "value": "e300686c5353ba13f9cec793fc7b33ad355af901"
+        }
+      ]
+    },
+    {
+      "path": "/DATA/DATA1/guest3/t11_joint_d2nn_20260920/LightGenV2/tasks/t11_lifelong_optics/runs/simulation/d2nn_matched_full_s17_e300686c/split.json",
+      "bytes": 325736,
+      "sha256": "9d25a2866958dfb1949a618d5b1f521f8f9fc9c79e56a48f6f169ff67244fb8d",
+      "kind": "record",
+      "summary": []
+    },
+    {
+      "path": "/DATA/DATA1/guest3/t11_joint_d2nn_20260920/LightGenV2/tasks/t11_lifelong_optics/runs/simulation/d2nn_matched_full_s17_e300686c/status.json",
+      "bytes": 121,
+      "sha256": "6b49bbae01a6c6ee232735e2e3ebb34b35341aeb5f99d3373528991e7cdaca20",
+      "kind": "record",
+      "summary": [
+        {
+          "field": "state",
+          "value": "training"
+        }
+      ]
+    },
+    {
+      "path": "/DATA/DATA1/guest3/t11_joint_d2nn_20260920/LightGenV2/tasks/t11_lifelong_optics/runs/simulation/d2nn_matched_small_s17_e300686c/A/best_checkpoint.pt",
+      "bytes": 23337440,
+      "sha256": "40bce69d471b9f50aa071241c1b2f3e85f9cf52308555683f0ae8d7a2b57ae6c",
+      "kind": "weight"
+    },
+    {
+      "path": "/DATA/DATA1/guest3/t11_joint_d2nn_20260920/LightGenV2/tasks/t11_lifelong_optics/runs/simulation/d2nn_matched_small_s17_e300686c/A/last_checkpoint.pt",
+      "bytes": 23337440,
+      "sha256": "7eaa2ccad588f7b9f64555e85a60d045c5d1a34f1198983847e7e1198eaa463a",
+      "kind": "weight"
+    },
+    {
+      "path": "/DATA/DATA1/guest3/t11_joint_d2nn_20260920/LightGenV2/tasks/t11_lifelong_optics/runs/simulation/d2nn_matched_small_s17_e300686c/B/best_checkpoint.pt",
+      "bytes": 23337568,
+      "sha256": "ee84bcaf53e2dac8d3c6ff9661102b36f8b435fee94a46fb9ae9c71ce362db2a",
+      "kind": "weight"
+    },
+    {
+      "path": "/DATA/DATA1/guest3/t11_joint_d2nn_20260920/LightGenV2/tasks/t11_lifelong_optics/runs/simulation/d2nn_matched_small_s17_e300686c/B/last_checkpoint.pt",
+      "bytes": 23337568,
+      "sha256": "147a6b96a25ec406e8158c228e2d293c39561cb6c7f51c22651666c7a4c2dea8",
+      "kind": "weight"
+    },
+    {
+      "path": "/DATA/DATA1/guest3/t11_joint_d2nn_20260920/LightGenV2/tasks/t11_lifelong_optics/runs/simulation/d2nn_matched_small_s17_e300686c/C/best_checkpoint.pt",
+      "bytes": 23337632,
+      "sha256": "db407ce2096617d47eb1050f5f4907f413e9ef54f9e5aff6d0cd2b58e4c3a371",
+      "kind": "weight"
+    },
+    {
+      "path": "/DATA/DATA1/guest3/t11_joint_d2nn_20260920/LightGenV2/tasks/t11_lifelong_optics/runs/simulation/d2nn_matched_small_s17_e300686c/C/last_checkpoint.pt",
+      "bytes": 23337632,
+      "sha256": "1abd15db8be4ae733010030992e97200a012554b4ec8f1191ca107a9d3d25173",
+      "kind": "weight"
+    },
+    {
+      "path": "/DATA/DATA1/guest3/t11_joint_d2nn_20260920/LightGenV2/tasks/t11_lifelong_optics/runs/simulation/d2nn_matched_small_s17_e300686c/D/best_checkpoint.pt",
+      "bytes": 23337760,
+      "sha256": "5ffffd2180c7ce2eb0e0960259ab7f2c7c457e2beee55886e565fd2997d53d2b",
+      "kind": "weight"
+    },
+    {
+      "path": "/DATA/DATA1/guest3/t11_joint_d2nn_20260920/LightGenV2/tasks/t11_lifelong_optics/runs/simulation/d2nn_matched_small_s17_e300686c/D/last_checkpoint.pt",
+      "bytes": 23337760,
+      "sha256": "d55e6cef131e6974a7920c5508a237981b044575856db4b044d0252ac12a6785",
+      "kind": "weight"
+    },
+    {
+      "path": "/DATA/DATA1/guest3/t11_joint_d2nn_20260920/LightGenV2/tasks/t11_lifelong_optics/runs/simulation/d2nn_matched_small_s17_e300686c/config.json",
+      "bytes": 988,
+      "sha256": "fe3ea6af420eee9f94d6c293f3636e6778a1d27206fff9fc8638427cbb3fa01a",
+      "kind": "record",
+      "summary": []
+    },
+    {
+      "path": "/DATA/DATA1/guest3/t11_joint_d2nn_20260920/LightGenV2/tasks/t11_lifelong_optics/runs/simulation/d2nn_matched_small_s17_e300686c/metadata.json",
+      "bytes": 5125,
+      "sha256": "3c997917824daae87735b7a1eeb546ed701e5122cb027b874aa45c2c8e7275f5",
+      "kind": "record",
+      "summary": [
+        {
+          "field": "commit",
+          "value": "e300686c5353ba13f9cec793fc7b33ad355af901"
+        }
+      ]
+    },
+    {
+      "path": "/DATA/DATA1/guest3/t11_joint_d2nn_20260920/LightGenV2/tasks/t11_lifelong_optics/runs/simulation/d2nn_matched_small_s17_e300686c/metrics.json",
+      "bytes": 8547,
+      "sha256": "63267dad43ce5fe893cb264e5c4eb706c02494bda9283f3b8eb9ab7e479b3ed2",
+      "kind": "record",
+      "summary": [
+        {
+          "field": "selected_epoch",
+          "value": 12
+        },
+        {
+          "field": "selection_rule",
+          "value": "at each stage, maximum mean validation balanced accuracy over all seen tasks"
+        },
+        {
+          "field": "A.validation.accuracy",
+          "value": 0.8277778029441833
+        },
+        {
+          "field": "A.validation.balanced_accuracy",
+          "value": 0.8277777433395386
+        },
+        {
+          "field": "B.validation.accuracy",
+          "value": 0.9710000157356262
+        },
+        {
+          "field": "B.validation.balanced_accuracy",
+          "value": 0.9709999561309814
+        },
+        {
+          "field": "C.validation.accuracy",
+          "value": 0.5562499761581421
+        },
+        {
+          "field": "C.validation.balanced_accuracy",
+          "value": 0.5562499761581421
+        },
+        {
+          "field": "D.validation.accuracy",
+          "value": 0.7250000238418579
+        },
+        {
+          "field": "D.validation.balanced_accuracy",
+          "value": 0.7250000238418579
+        }
+      ]
+    },
+    {
+      "path": "/DATA/DATA1/guest3/t11_joint_d2nn_20260920/LightGenV2/tasks/t11_lifelong_optics/runs/simulation/d2nn_matched_small_s17_e300686c/split.json",
+      "bytes": 372684,
+      "sha256": "e48655e404d21de71e9972b4295a41c866cd8e71081ca47c121663507372c6df",
+      "kind": "record",
+      "summary": []
+    },
+    {
+      "path": "/DATA/DATA1/guest3/t11_joint_d2nn_20260920/LightGenV2/tasks/t11_lifelong_optics/runs/simulation/d2nn_matched_small_s17_e300686c/status.json",
+      "bytes": 49,
+      "sha256": "be5772b138bb13fa223732c78bcbfe043716e81267678d8891c26fd0f4cdfe39",
+      "kind": "record",
+      "summary": [
+        {
+          "field": "state",
+          "value": "complete"
+        },
+        {
+          "field": "selected_epoch",
+          "value": 12
+        }
+      ]
+    },
+    {
+      "path": "/DATA/DATA1/guest3/t11_joint_d2nn_20260920/LightGenV2/tasks/t11_lifelong_optics/runs/simulation/d2nn_small_s17_9c1a8f78/A/best_checkpoint.pt",
+      "bytes": 23337312,
+      "sha256": "5c792ea37569d9def386644054cfacbb17a1353fb1a943cb6e8a9afb525296c7",
+      "kind": "weight"
+    },
+    {
+      "path": "/DATA/DATA1/guest3/t11_joint_d2nn_20260920/LightGenV2/tasks/t11_lifelong_optics/runs/simulation/d2nn_small_s17_9c1a8f78/A/last_checkpoint.pt",
+      "bytes": 23337312,
+      "sha256": "dfe103745fa355820d681c7fd8f6385c631470d46d9cd25dd0b3a2d5a838153b",
+      "kind": "weight"
+    },
+    {
+      "path": "/DATA/DATA1/guest3/t11_joint_d2nn_20260920/LightGenV2/tasks/t11_lifelong_optics/runs/simulation/d2nn_small_s17_9c1a8f78/B/best_checkpoint.pt",
+      "bytes": 23337440,
+      "sha256": "b756e7902ef54d3b732b029285a08ac0fdd847688d037c388f3705438b84906a",
+      "kind": "weight"
+    },
+    {
+      "path": "/DATA/DATA1/guest3/t11_joint_d2nn_20260920/LightGenV2/tasks/t11_lifelong_optics/runs/simulation/d2nn_small_s17_9c1a8f78/B/last_checkpoint.pt",
+      "bytes": 23337440,
+      "sha256": "879667b77f75f3ff311cad35ae24faf1d308c496512e5cf3681218fb410662c1",
+      "kind": "weight"
+    },
+    {
+      "path": "/DATA/DATA1/guest3/t11_joint_d2nn_20260920/LightGenV2/tasks/t11_lifelong_optics/runs/simulation/d2nn_small_s17_9c1a8f78/C/best_checkpoint.pt",
+      "bytes": 23337504,
+      "sha256": "b00c1fb2249acdb25d4dda9a20298990c2d710e302032879212e331f65e22e68",
+      "kind": "weight"
+    },
+    {
+      "path": "/DATA/DATA1/guest3/t11_joint_d2nn_20260920/LightGenV2/tasks/t11_lifelong_optics/runs/simulation/d2nn_small_s17_9c1a8f78/C/last_checkpoint.pt",
+      "bytes": 23337504,
+      "sha256": "743669572794e670e9431c00b364ba2b9022e2b20ce2c5778f0cf859a89b3fb1",
+      "kind": "weight"
+    },
+    {
+      "path": "/DATA/DATA1/guest3/t11_joint_d2nn_20260920/LightGenV2/tasks/t11_lifelong_optics/runs/simulation/d2nn_small_s17_9c1a8f78/D/best_checkpoint.pt",
+      "bytes": 23337632,
+      "sha256": "b35f136bf7b975e012361d77edbec4a45df3be2373444a3366f41cb2ecc40be1",
+      "kind": "weight"
+    },
+    {
+      "path": "/DATA/DATA1/guest3/t11_joint_d2nn_20260920/LightGenV2/tasks/t11_lifelong_optics/runs/simulation/d2nn_small_s17_9c1a8f78/D/last_checkpoint.pt",
+      "bytes": 23337632,
+      "sha256": "a576b290bbf5678ae8472bef5dfd606d49aab928ed23701b3fed7c9112e0884f",
+      "kind": "weight"
+    },
+    {
+      "path": "/DATA/DATA1/guest3/t11_joint_d2nn_20260920/LightGenV2/tasks/t11_lifelong_optics/runs/simulation/d2nn_small_s17_9c1a8f78/config.json",
+      "bytes": 855,
+      "sha256": "c4f5fbe7a32291361b3397d51926f79df2ece6f15f70e0886f39e44df24fc9dd",
+      "kind": "record",
+      "summary": []
+    },
+    {
+      "path": "/DATA/DATA1/guest3/t11_joint_d2nn_20260920/LightGenV2/tasks/t11_lifelong_optics/runs/simulation/d2nn_small_s17_9c1a8f78/metadata.json",
+      "bytes": 5109,
+      "sha256": "654f56d09c53afa88535d006a210823c63456e6056d1be2d90f88c9b6776fcff",
+      "kind": "record",
+      "summary": [
+        {
+          "field": "commit",
+          "value": "9c1a8f7893fa6cbeae078bf1f98e0b7eba966d2f"
+        }
+      ]
+    },
+    {
+      "path": "/DATA/DATA1/guest3/t11_joint_d2nn_20260920/LightGenV2/tasks/t11_lifelong_optics/runs/simulation/d2nn_small_s17_9c1a8f78/metrics.json",
+      "bytes": 8036,
+      "sha256": "be765623059090c3e217b08330fe6a44233d7132edf1f7cf8854a663c76d9f99",
+      "kind": "record",
+      "summary": [
+        {
+          "field": "selected_epoch",
+          "value": 2
+        },
+        {
+          "field": "selection_rule",
+          "value": "at each stage, maximum mean validation balanced accuracy over all seen tasks"
+        },
+        {
+          "field": "A.validation.accuracy",
+          "value": 0.8111110925674438
+        },
+        {
+          "field": "A.validation.balanced_accuracy",
+          "value": 0.8111110925674438
+        },
+        {
+          "field": "B.validation.accuracy",
+          "value": 0.9729999899864197
+        },
+        {
+          "field": "B.validation.balanced_accuracy",
+          "value": 0.9730000495910645
+        },
+        {
+          "field": "C.validation.accuracy",
+          "value": 0.643750011920929
+        },
+        {
+          "field": "C.validation.balanced_accuracy",
+          "value": 0.643750011920929
+        },
+        {
+          "field": "D.validation.accuracy",
+          "value": 0.6875
+        },
+        {
+          "field": "D.validation.balanced_accuracy",
+          "value": 0.6875
+        }
+      ]
+    },
+    {
+      "path": "/DATA/DATA1/guest3/t11_joint_d2nn_20260920/LightGenV2/tasks/t11_lifelong_optics/runs/simulation/d2nn_small_s17_9c1a8f78/split.json",
+      "bytes": 372684,
+      "sha256": "e48655e404d21de71e9972b4295a41c866cd8e71081ca47c121663507372c6df",
+      "kind": "record",
+      "summary": []
+    },
+    {
+      "path": "/DATA/DATA1/guest3/t11_joint_d2nn_20260920/LightGenV2/tasks/t11_lifelong_optics/runs/simulation/d2nn_small_s17_9c1a8f78/status.json",
+      "bytes": 48,
+      "sha256": "2b16792910ea85ff756072b7f2bc47f7b6428b629513ca0220d0457574788e58",
+      "kind": "record",
+      "summary": [
+        {
+          "field": "state",
+          "value": "complete"
+        },
+        {
+          "field": "selected_epoch",
+          "value": 2
+        }
+      ]
+    },
+    {
+      "path": "/DATA/DATA1/guest3/t11_joint_d2nn_20260920/LightGenV2/tasks/t11_lifelong_optics/runs/simulation/full_replay_moe_s17_2f0900f8/A/best_checkpoint.pt",
+      "bytes": 17098671,
+      "sha256": "ee885bde3ef90b37ffb9349a423663ed785b4d8edd0ec8464389eae9d401d9de",
+      "kind": "weight"
+    },
+    {
+      "path": "/DATA/DATA1/guest3/t11_joint_d2nn_20260920/LightGenV2/tasks/t11_lifelong_optics/runs/simulation/full_replay_moe_s17_2f0900f8/A/last_checkpoint.pt",
+      "bytes": 17098671,
+      "sha256": "640e16c1664584af8eec253a9989f911e84f4e58e6bab938da51c7266f069847",
+      "kind": "weight"
+    },
+    {
+      "path": "/DATA/DATA1/guest3/t11_joint_d2nn_20260920/LightGenV2/tasks/t11_lifelong_optics/runs/simulation/full_replay_moe_s17_2f0900f8/B/best_checkpoint.pt",
+      "bytes": 17099119,
+      "sha256": "c28ee377328e0b33809f5f4b401070fe7e0d33baf018c26febd9bbeddd31b661",
+      "kind": "weight"
+    },
+    {
+      "path": "/DATA/DATA1/guest3/t11_joint_d2nn_20260920/LightGenV2/tasks/t11_lifelong_optics/runs/simulation/full_replay_moe_s17_2f0900f8/B/last_checkpoint.pt",
+      "bytes": 17099119,
+      "sha256": "dabeb9c45bb23eb780d3446e9cafd5b56e015ce9777fb28f8515e180a9e84e7a",
+      "kind": "weight"
+    },
+    {
+      "path": "/DATA/DATA1/guest3/t11_joint_d2nn_20260920/LightGenV2/tasks/t11_lifelong_optics/runs/simulation/full_replay_moe_s17_2f0900f8/C/best_checkpoint.pt",
+      "bytes": 17099567,
+      "sha256": "7093713c5ae3c611a27e43c53fb555590b460ba58a277f70bd3f0a9d81c3eb15",
+      "kind": "weight"
+    },
+    {
+      "path": "/DATA/DATA1/guest3/t11_joint_d2nn_20260920/LightGenV2/tasks/t11_lifelong_optics/runs/simulation/full_replay_moe_s17_2f0900f8/C/last_checkpoint.pt",
+      "bytes": 17099567,
+      "sha256": "31dd4714dd325f02d3aeb13ad2f8bc05d79ce3173761bde2209ff60bec0b4160",
+      "kind": "weight"
+    },
+    {
+      "path": "/DATA/DATA1/guest3/t11_joint_d2nn_20260920/LightGenV2/tasks/t11_lifelong_optics/runs/simulation/full_replay_moe_s17_2f0900f8/D/best_checkpoint.pt",
+      "bytes": 17100015,
+      "sha256": "a18cb6b762a731d3cdfef7a852853ca7b34fd010e19532930eb119794cdb5f40",
+      "kind": "weight"
+    },
+    {
+      "path": "/DATA/DATA1/guest3/t11_joint_d2nn_20260920/LightGenV2/tasks/t11_lifelong_optics/runs/simulation/full_replay_moe_s17_2f0900f8/D/last_checkpoint.pt",
+      "bytes": 17100015,
+      "sha256": "c39e9c970b6b52a5db20a965f18e7fe3c7cce0464d8dfa855fe25e49df4e6a57",
+      "kind": "weight"
+    },
+    {
+      "path": "/DATA/DATA1/guest3/t11_joint_d2nn_20260920/LightGenV2/tasks/t11_lifelong_optics/runs/simulation/full_replay_moe_s17_2f0900f8/config.json",
+      "bytes": 781,
+      "sha256": "e1dc6b3835132ea99cffa154b5c9b8627d4694c35af0d1d36b774df547704a83",
+      "kind": "record",
+      "summary": []
+    },
+    {
+      "path": "/DATA/DATA1/guest3/t11_joint_d2nn_20260920/LightGenV2/tasks/t11_lifelong_optics/runs/simulation/full_replay_moe_s17_2f0900f8/metadata.json",
+      "bytes": 5111,
+      "sha256": "6720d971014d4fecbccc3f9af9806eed05a62c7190278b430f0fdd122f7770c6",
+      "kind": "record",
+      "summary": [
+        {
+          "field": "commit",
+          "value": "2f0900f8c8b7983516a52e7dab0844a2d9bf569e"
+        }
+      ]
+    },
+    {
+      "path": "/DATA/DATA1/guest3/t11_joint_d2nn_20260920/LightGenV2/tasks/t11_lifelong_optics/runs/simulation/full_replay_moe_s17_2f0900f8/metrics.json",
+      "bytes": 29411,
+      "sha256": "39b19be8dc1d0e0320f5cdd4bf3d28174b439608a41ee59c95134ce47be4c8cc",
+      "kind": "record",
+      "summary": [
+        {
+          "field": "selected_epoch",
+          "value": 10
+        },
+        {
+          "field": "selection_rule",
+          "value": "at each stage, maximum mean validation balanced accuracy over all seen tasks"
+        },
+        {
+          "field": "A.validation.accuracy",
+          "value": 0.8055555820465088
+        },
+        {
+          "field": "A.validation.balanced_accuracy",
+          "value": 0.8055555820465088
+        },
+        {
+          "field": "B.validation.accuracy",
+          "value": 0.9639999866485596
+        },
+        {
+          "field": "B.validation.balanced_accuracy",
+          "value": 0.9639999866485596
+        },
+        {
+          "field": "C.validation.accuracy",
+          "value": 0.762499988079071
+        },
+        {
+          "field": "C.validation.balanced_accuracy",
+          "value": 0.762499988079071
+        },
+        {
+          "field": "D.validation.accuracy",
+          "value": 0.668749988079071
+        },
+        {
+          "field": "D.validation.balanced_accuracy",
+          "value": 0.668749988079071
+        }
+      ]
+    },
+    {
+      "path": "/DATA/DATA1/guest3/t11_joint_d2nn_20260920/LightGenV2/tasks/t11_lifelong_optics/runs/simulation/full_replay_moe_s17_2f0900f8/split.json",
+      "bytes": 325736,
+      "sha256": "9d25a2866958dfb1949a618d5b1f521f8f9fc9c79e56a48f6f169ff67244fb8d",
+      "kind": "record",
+      "summary": []
+    },
+    {
+      "path": "/DATA/DATA1/guest3/t11_joint_d2nn_20260920/LightGenV2/tasks/t11_lifelong_optics/runs/simulation/full_replay_moe_s17_2f0900f8/status.json",
+      "bytes": 49,
+      "sha256": "acce894db1664f2aee33dabdbf4d6d105b4c3193da3c466ca6ada2e44b971d75",
+      "kind": "record",
+      "summary": [
+        {
+          "field": "state",
+          "value": "complete"
+        },
+        {
+          "field": "selected_epoch",
+          "value": 10
+        }
+      ]
+    },
+    {
+      "path": "/DATA/DATA1/guest3/t11_joint_d2nn_20260920/LightGenV2/tasks/t11_lifelong_optics/runs/simulation/joint_d2nn_s17_9265d151/best_checkpoint.pt",
+      "bytes": 23337312,
+      "sha256": "2d0c72fde9c29aa5ee806ed8422da4c59cc5cb740963a8394b90864199d7c682",
+      "kind": "weight"
+    },
+    {
+      "path": "/DATA/DATA1/guest3/t11_joint_d2nn_20260920/LightGenV2/tasks/t11_lifelong_optics/runs/simulation/joint_d2nn_s17_9265d151/config.json",
+      "bytes": 551,
+      "sha256": "7d193be58c87757b5f1f12af39f3d4a3aa04cbf7b3fa3e38345733fedf1fe812",
+      "kind": "record",
+      "summary": []
+    },
+    {
+      "path": "/DATA/DATA1/guest3/t11_joint_d2nn_20260920/LightGenV2/tasks/t11_lifelong_optics/runs/simulation/joint_d2nn_s17_9265d151/last_checkpoint.pt",
+      "bytes": 23337312,
+      "sha256": "ea82c449f6af6af03d3aaa0091b7373492c76600245a119ee284836cf9c9907a",
+      "kind": "weight"
+    },
+    {
+      "path": "/DATA/DATA1/guest3/t11_joint_d2nn_20260920/LightGenV2/tasks/t11_lifelong_optics/runs/simulation/joint_d2nn_s17_9265d151/metadata.json",
+      "bytes": 5099,
+      "sha256": "991897b6fc3a5a018261d36fbe396d48f92590b055a9691b66574c0d2ab4c013",
+      "kind": "record",
+      "summary": [
+        {
+          "field": "commit",
+          "value": "9265d15104b36b37bf1cfc3f02ef6d25ecf3809d"
+        }
+      ]
+    },
+    {
+      "path": "/DATA/DATA1/guest3/t11_joint_d2nn_20260920/LightGenV2/tasks/t11_lifelong_optics/runs/simulation/joint_d2nn_s17_9265d151/metrics.json",
+      "bytes": 3084,
+      "sha256": "a22cace7410850f7580be64643f82a0c652402ba392e48b982ea98be32a2afed",
+      "kind": "record",
+      "summary": [
+        {
+          "field": "selected_epoch",
+          "value": 10
+        },
+        {
+          "field": "selection_rule",
+          "value": "maximum mean validation balanced accuracy across A/B/C/D"
+        },
+        {
+          "field": "A.validation.accuracy",
+          "value": 0.800000011920929
+        },
+        {
+          "field": "A.validation.balanced_accuracy",
+          "value": 0.800000011920929
+        },
+        {
+          "field": "B.validation.accuracy",
+          "value": 0.968999981880188
+        },
+        {
+          "field": "B.validation.balanced_accuracy",
+          "value": 0.968999981880188
+        },
+        {
+          "field": "C.validation.accuracy",
+          "value": 0.637499988079071
+        },
+        {
+          "field": "C.validation.balanced_accuracy",
+          "value": 0.637499988079071
+        },
+        {
+          "field": "D.validation.accuracy",
+          "value": 0.7124999761581421
+        },
+        {
+          "field": "D.validation.balanced_accuracy",
+          "value": 0.7124999761581421
+        }
+      ]
+    },
+    {
+      "path": "/DATA/DATA1/guest3/t11_joint_d2nn_20260920/LightGenV2/tasks/t11_lifelong_optics/runs/simulation/joint_d2nn_s17_9265d151/split.json",
+      "bytes": 325682,
+      "sha256": "2d49bfdd89bad6a0af67f69f7be375b8caaad1a9ec893891d4075a96db57f8d2",
+      "kind": "record",
+      "summary": []
+    },
+    {
+      "path": "/DATA/DATA1/guest3/t11_joint_d2nn_20260920/LightGenV2/tasks/t11_lifelong_optics/runs/simulation/joint_d2nn_s17_9265d151/status.json",
+      "bytes": 49,
+      "sha256": "acce894db1664f2aee33dabdbf4d6d105b4c3193da3c466ca6ada2e44b971d75",
+      "kind": "record",
+      "summary": [
+        {
+          "field": "state",
+          "value": "complete"
+        },
+        {
+          "field": "selected_epoch",
+          "value": 10
+        }
+      ]
+    },
+    {
+      "path": "/DATA/DATA1/guest3/t11_joint_d2nn_20260920/LightGenV2/tasks/t11_lifelong_optics/runs/simulation/joint_d2nn_s17_9265d151/verification.json",
+      "bytes": 2123,
+      "sha256": "6535e2b3648f251e54478aa8b484736344a64f8f5eee45c8f571b951fbe75824",
+      "kind": "record",
+      "summary": [
+        {
+          "field": "state",
+          "value": "verified"
+        },
+        {
+          "field": "selected_epoch",
+          "value": 10
+        },
+        {
+          "field": "validation.A.accuracy",
+          "value": 0.800000011920929
+        },
+        {
+          "field": "validation.A.balanced_accuracy",
+          "value": 0.800000011920929
+        },
+        {
+          "field": "validation.B.accuracy",
+          "value": 0.968999981880188
+        },
+        {
+          "field": "validation.B.balanced_accuracy",
+          "value": 0.968999981880188
+        },
+        {
+          "field": "validation.C.accuracy",
+          "value": 0.637499988079071
+        },
+        {
+          "field": "validation.C.balanced_accuracy",
+          "value": 0.637499988079071
+        },
+        {
+          "field": "validation.D.accuracy",
+          "value": 0.7124999761581421
+        },
+        {
+          "field": "validation.D.balanced_accuracy",
+          "value": 0.7124999761581421
+        }
+      ]
+    },
+    {
+      "path": "/DATA/DATA1/guest3/t11_joint_d2nn_20260920/LightGenV2/tasks/t11_lifelong_optics/runs/simulation/joint_moe_s17_2f0900f8/best_checkpoint.pt",
+      "bytes": 21926883,
+      "sha256": "be13f42db38b1cda37d1c0e3bede33e8639f1ced3b654376b7e6596e4e32888a",
+      "kind": "weight"
+    },
+    {
+      "path": "/DATA/DATA1/guest3/t11_joint_d2nn_20260920/LightGenV2/tasks/t11_lifelong_optics/runs/simulation/joint_moe_s17_2f0900f8/config.json",
+      "bytes": 608,
+      "sha256": "f9fec6973126d1329783b4154d298612049d32363e79d6dd4391edfcdbd6bc2d",
+      "kind": "record",
+      "summary": []
+    },
+    {
+      "path": "/DATA/DATA1/guest3/t11_joint_d2nn_20260920/LightGenV2/tasks/t11_lifelong_optics/runs/simulation/joint_moe_s17_2f0900f8/last_checkpoint.pt",
+      "bytes": 21926883,
+      "sha256": "af37ae0b93b0c939a0cf724a8e6876df1aef6efa04333d9f3ceecc495a68118f",
+      "kind": "weight"
+    },
+    {
+      "path": "/DATA/DATA1/guest3/t11_joint_d2nn_20260920/LightGenV2/tasks/t11_lifelong_optics/runs/simulation/joint_moe_s17_2f0900f8/metadata.json",
+      "bytes": 5095,
+      "sha256": "169eed28f4c02279ace757eed48784d074cce854e47470a1f7bd59c8e6238137",
+      "kind": "record",
+      "summary": [
+        {
+          "field": "commit",
+          "value": "2f0900f8c8b7983516a52e7dab0844a2d9bf569e"
+        }
+      ]
+    },
+    {
+      "path": "/DATA/DATA1/guest3/t11_joint_d2nn_20260920/LightGenV2/tasks/t11_lifelong_optics/runs/simulation/joint_moe_s17_2f0900f8/metrics.json",
+      "bytes": 12318,
+      "sha256": "058260a7807df55ce6b1dd1d89422743f903d21b31c65d7d239ffc2528ddb2c5",
+      "kind": "record",
+      "summary": [
+        {
+          "field": "selected_epoch",
+          "value": 10
+        },
+        {
+          "field": "selection_rule",
+          "value": "maximum mean validation balanced accuracy across A/B/C/D"
+        },
+        {
+          "field": "A.validation.accuracy",
+          "value": 0.8277778029441833
+        },
+        {
+          "field": "A.validation.balanced_accuracy",
+          "value": 0.8277777433395386
+        },
+        {
+          "field": "B.validation.accuracy",
+          "value": 0.9679999947547913
+        },
+        {
+          "field": "B.validation.balanced_accuracy",
+          "value": 0.9679999947547913
+        },
+        {
+          "field": "C.validation.accuracy",
+          "value": 0.6937500238418579
+        },
+        {
+          "field": "C.validation.balanced_accuracy",
+          "value": 0.6937500238418579
+        },
+        {
+          "field": "D.validation.accuracy",
+          "value": 0.6875
+        },
+        {
+          "field": "D.validation.balanced_accuracy",
+          "value": 0.6875
+        }
+      ]
+    },
+    {
+      "path": "/DATA/DATA1/guest3/t11_joint_d2nn_20260920/LightGenV2/tasks/t11_lifelong_optics/runs/simulation/joint_moe_s17_2f0900f8/split.json",
+      "bytes": 325682,
+      "sha256": "2d49bfdd89bad6a0af67f69f7be375b8caaad1a9ec893891d4075a96db57f8d2",
+      "kind": "record",
+      "summary": []
+    },
+    {
+      "path": "/DATA/DATA1/guest3/t11_joint_d2nn_20260920/LightGenV2/tasks/t11_lifelong_optics/runs/simulation/joint_moe_s17_2f0900f8/status.json",
+      "bytes": 49,
+      "sha256": "acce894db1664f2aee33dabdbf4d6d105b4c3193da3c466ca6ada2e44b971d75",
+      "kind": "record",
+      "summary": [
+        {
+          "field": "state",
+          "value": "complete"
+        },
+        {
+          "field": "selected_epoch",
+          "value": 10
+        }
+      ]
+    },
+    {
+      "path": "/DATA/DATA1/guest3/t11_joint_d2nn_20260920/LightGenV2/tasks/t11_lifelong_optics/runs/simulation/single_d2nn_transfer_s17_9c1a8f78/A/best_checkpoint.pt",
+      "bytes": 23336992,
+      "sha256": "29fae4a5fb340edb87fad4544026f14d1a035a50e17685fe81da53ba402c60f3",
+      "kind": "weight"
+    },
+    {
+      "path": "/DATA/DATA1/guest3/t11_joint_d2nn_20260920/LightGenV2/tasks/t11_lifelong_optics/runs/simulation/single_d2nn_transfer_s17_9c1a8f78/A/last_checkpoint.pt",
+      "bytes": 23336992,
+      "sha256": "27fd094c90fc51e9b9970169ca2a3f896016db2ebd9f920456ba454967341ff2",
+      "kind": "weight"
+    },
+    {
+      "path": "/DATA/DATA1/guest3/t11_joint_d2nn_20260920/LightGenV2/tasks/t11_lifelong_optics/runs/simulation/single_d2nn_transfer_s17_9c1a8f78/B/best_checkpoint.pt",
+      "bytes": 23336992,
+      "sha256": "57efe8cf8e82f7fd03c79a5b07f67322cb7773e1beee19b3a2f2c4fae2b7f752",
+      "kind": "weight"
+    },
+    {
+      "path": "/DATA/DATA1/guest3/t11_joint_d2nn_20260920/LightGenV2/tasks/t11_lifelong_optics/runs/simulation/single_d2nn_transfer_s17_9c1a8f78/B/last_checkpoint.pt",
+      "bytes": 23336992,
+      "sha256": "4199ac857d27ece16b3a55d2590f49c6d0aec02d7cb085c0cfce54bdee49b47d",
+      "kind": "weight"
+    },
+    {
+      "path": "/DATA/DATA1/guest3/t11_joint_d2nn_20260920/LightGenV2/tasks/t11_lifelong_optics/runs/simulation/single_d2nn_transfer_s17_9c1a8f78/C/best_checkpoint.pt",
+      "bytes": 23336992,
+      "sha256": "0cffe887e78641d2dbb18f327a4bbe6cb1ad36b79b7a2dba1e6acc6a5cb4a48d",
+      "kind": "weight"
+    },
+    {
+      "path": "/DATA/DATA1/guest3/t11_joint_d2nn_20260920/LightGenV2/tasks/t11_lifelong_optics/runs/simulation/single_d2nn_transfer_s17_9c1a8f78/C/last_checkpoint.pt",
+      "bytes": 23336992,
+      "sha256": "4384708fbce28eaa3e6d91b79fb4664a598dd972773f9076b095232f3cfed8f2",
+      "kind": "weight"
+    },
+    {
+      "path": "/DATA/DATA1/guest3/t11_joint_d2nn_20260920/LightGenV2/tasks/t11_lifelong_optics/runs/simulation/single_d2nn_transfer_s17_9c1a8f78/D/best_checkpoint.pt",
+      "bytes": 23336992,
+      "sha256": "9e1691280454e94c8491a14379af790c87ebcbcdd44b7628731b0a119b99a42e",
+      "kind": "weight"
+    },
+    {
+      "path": "/DATA/DATA1/guest3/t11_joint_d2nn_20260920/LightGenV2/tasks/t11_lifelong_optics/runs/simulation/single_d2nn_transfer_s17_9c1a8f78/D/last_checkpoint.pt",
+      "bytes": 23336992,
+      "sha256": "0082725c020cfcbe4a19dfb12268ff02b1863f32c54b15d1f0da30e7fa2231fa",
+      "kind": "weight"
+    },
+    {
+      "path": "/DATA/DATA1/guest3/t11_joint_d2nn_20260920/LightGenV2/tasks/t11_lifelong_optics/runs/simulation/single_d2nn_transfer_s17_9c1a8f78/config.json",
+      "bytes": 525,
+      "sha256": "c74fee1e92f80658d39f20e0fc46dd47caf68b1906eddd31fbde0486965260ad",
+      "kind": "record",
+      "summary": []
+    },
+    {
+      "path": "/DATA/DATA1/guest3/t11_joint_d2nn_20260920/LightGenV2/tasks/t11_lifelong_optics/runs/simulation/single_d2nn_transfer_s17_9c1a8f78/metadata.json",
+      "bytes": 5022,
+      "sha256": "a7027c137dedc2c17a52b2b022a9da90b14a9f8ea5ba48e856c4e03a5265f3cd",
+      "kind": "record",
+      "summary": [
+        {
+          "field": "commit",
+          "value": "9c1a8f7893fa6cbeae078bf1f98e0b7eba966d2f"
+        }
+      ]
+    },
+    {
+      "path": "/DATA/DATA1/guest3/t11_joint_d2nn_20260920/LightGenV2/tasks/t11_lifelong_optics/runs/simulation/single_d2nn_transfer_s17_9c1a8f78/metrics.json",
+      "bytes": 7162,
+      "sha256": "3c5cd6491262c844912a493faaf0091ea3e1899379312f429f4fdff890be0017",
+      "kind": "record",
+      "summary": [
+        {
+          "field": "selection_rule",
+          "value": "each D2NN selected only by its own-domain validation balanced accuracy"
+        }
+      ]
+    },
+    {
+      "path": "/DATA/DATA1/guest3/t11_joint_d2nn_20260920/LightGenV2/tasks/t11_lifelong_optics/runs/simulation/single_d2nn_transfer_s17_9c1a8f78/split.json",
+      "bytes": 325682,
+      "sha256": "2d49bfdd89bad6a0af67f69f7be375b8caaad1a9ec893891d4075a96db57f8d2",
+      "kind": "record",
+      "summary": []
+    },
+    {
+      "path": "/DATA/DATA1/guest3/t11_joint_d2nn_20260920/LightGenV2/tasks/t11_lifelong_optics/runs/simulation/single_d2nn_transfer_s17_9c1a8f78/status.json",
+      "bytes": 25,
+      "sha256": "eaa7c704f662f109da0eaee611f279444cc8377159702041b24a4c977a6c887b",
+      "kind": "record",
+      "summary": [
+        {
+          "field": "state",
+          "value": "complete"
+        }
+      ]
+    },
+    {
+      "path": "/DATA/DATA1/guest3/t11_crc9_runs/formal_s17_distill_v1/moe_full_replay_distill/config.json",
+      "bytes": 1113,
+      "sha256": "384b0861be44b58f833c844795f98d3518001e8dd2d1735513b9875bcf039b14",
+      "kind": "record",
+      "summary": []
+    },
+    {
+      "path": "/DATA/DATA1/guest3/t11_crc9_runs/formal_s17_distill_v1/moe_full_replay_distill/metadata.json",
+      "bytes": 1860,
+      "sha256": "af26d7ff75e5476bbad1370ea62b34aba5a2281e31e350a8f1050005469a33e0",
+      "kind": "record",
+      "summary": []
+    },
+    {
+      "path": "/DATA/DATA1/guest3/t11_crc9_runs/formal_s17_distill_v1/moe_full_replay_distill/split.json",
+      "bytes": 579240,
+      "sha256": "ac6d74898c1a465a4009cca80f468aecac25ef35bb0f4bf9e1e382ac3daee3c7",
+      "kind": "record",
+      "summary": []
+    },
+    {
+      "path": "/DATA/DATA1/guest3/t11_crc9_runs/formal_s17_distill_v1/moe_full_replay_distill/stage_1_A_original/best_checkpoint.pt",
+      "bytes": 7381299,
+      "sha256": "38b87be7aca2fccf767fe2293dd92d436f5b3a4a418fcc5d4a227f8da5a9ed67",
+      "kind": "weight"
+    },
+    {
+      "path": "/DATA/DATA1/guest3/t11_crc9_runs/formal_s17_distill_v1/moe_full_replay_distill/stage_1_A_original/last_checkpoint.pt",
+      "bytes": 7381299,
+      "sha256": "e10f679794f3cf45c60496da13920fee8fe2ae924904e9f23f8589d0faf8aa4c",
+      "kind": "weight"
+    },
+    {
+      "path": "/DATA/DATA1/guest3/t11_crc9_runs/formal_s17_distill_v1/moe_full_replay_distill/stage_2_B_stain_h/best_checkpoint.pt",
+      "bytes": 7382003,
+      "sha256": "86e792dfad4fc73c257209e6c2883ff6f10e34fa26a4f5eeb70882639339269a",
+      "kind": "weight"
+    },
+    {
+      "path": "/DATA/DATA1/guest3/t11_crc9_runs/formal_s17_distill_v1/moe_full_replay_distill/stage_2_B_stain_h/last_checkpoint.pt",
+      "bytes": 7382003,
+      "sha256": "4a71ddb3e5a584e64fc37e11b80d10dfe95fe4da58ba6232c62b34ccaa2eb01d",
+      "kind": "weight"
+    },
+    {
+      "path": "/DATA/DATA1/guest3/t11_crc9_runs/formal_s17_distill_v1/moe_full_replay_distill/stage_3_C_stain_e/best_checkpoint.pt",
+      "bytes": 7382707,
+      "sha256": "7af26041603c0257a371892d20321d4fd036afb951f3ad1a7769d3e4fff40ccb",
+      "kind": "weight"
+    },
+    {
+      "path": "/DATA/DATA1/guest3/t11_crc9_runs/formal_s17_distill_v1/moe_full_replay_distill/stage_3_C_stain_e/last_checkpoint.pt",
+      "bytes": 7382707,
+      "sha256": "f1bdf09b231e5bb99babbcd8889f1f217fc1be35b88f724962a1cef9e7ca0536",
+      "kind": "weight"
+    },
+    {
+      "path": "/DATA/DATA1/guest3/t11_crc9_runs/formal_s17_distill_v1/moe_full_replay_distill/status.json",
+      "bytes": 64,
+      "sha256": "bd1510926232f8278f6454ebaefa948759a90171285e541c5757a47f4aa21756",
+      "kind": "record",
+      "summary": [
+        {
+          "field": "state",
+          "value": "training"
+        }
+      ]
+    },
+    {
+      "path": "/DATA/DATA1/guest3/t11_crc9_runs/formal_s17_routed_distill_v1/head_polish/best_checkpoint.pt",
+      "bytes": 7380851,
+      "sha256": "522b289b5629b24eccd5fd5df9afe9812b357d45e977f0ad8dc3c5fadb33881a",
+      "kind": "weight"
+    },
+    {
+      "path": "/DATA/DATA1/guest3/t11_crc9_runs/formal_s17_routed_distill_v1/head_polish/results.json",
+      "bytes": 13076,
+      "sha256": "ef679afa8a810cda7b008a68f195784e0b2eaa86631441a5c47f884f4239b328",
+      "kind": "record",
+      "summary": [
+        {
+          "field": "selected_epoch",
+          "value": 33
+        },
+        {
+          "field": "validation.A_original.accuracy",
+          "value": 0.8074074074074075
+        },
+        {
+          "field": "validation.A_original.balanced_accuracy",
+          "value": 0.8074074074074075
+        },
+        {
+          "field": "validation.B_stain_h.accuracy",
+          "value": 0.7851851851851852
+        },
+        {
+          "field": "validation.B_stain_h.balanced_accuracy",
+          "value": 0.7851851851851852
+        },
+        {
+          "field": "validation.C_stain_e.accuracy",
+          "value": 0.7037037037037037
+        },
+        {
+          "field": "validation.C_stain_e.balanced_accuracy",
+          "value": 0.7037037037037037
+        },
+        {
+          "field": "validation.D_scanner.accuracy",
+          "value": 0.7851851851851852
+        },
+        {
+          "field": "validation.D_scanner.balanced_accuracy",
+          "value": 0.7851851851851852
+        },
+        {
+          "field": "test.A_original.accuracy",
+          "value": 0.7945682451253482
+        },
+        {
+          "field": "test.A_original.balanced_accuracy",
+          "value": 0.7934663170565203
+        },
+        {
+          "field": "test.B_stain_h.accuracy",
+          "value": 0.7597493036211699
+        },
+        {
+          "field": "test.B_stain_h.balanced_accuracy",
+          "value": 0.7410027075012592
+        },
+        {
+          "field": "test.C_stain_e.accuracy",
+          "value": 0.7318941504178273
+        },
+        {
+          "field": "test.C_stain_e.balanced_accuracy",
+          "value": 0.7366570619069908
+        },
+        {
+          "field": "test.D_scanner.accuracy",
+          "value": 0.8071030640668524
+        },
+        {
+          "field": "test.D_scanner.balanced_accuracy",
+          "value": 0.7869427474017073
+        },
+        {
+          "field": "selection_rule",
+          "value": "mean validation balanced accuracy across all four domains"
+        }
+      ]
+    },
+    {
+      "path": "/DATA/DATA1/guest3/t11_crc9_runs/formal_s17_routed_distill_v1/head_polish/status.json",
+      "bytes": 50,
+      "sha256": "edb9d33d041519415b7ed6a13806640efe637edf9bf0bef01d1a830802e13645",
+      "kind": "record",
+      "summary": [
+        {
+          "field": "state",
+          "value": "complete"
+        },
+        {
+          "field": "selected_epoch",
+          "value": 33
+        }
+      ]
+    },
+    {
+      "path": "/DATA/DATA1/guest3/t11_crc9_runs/formal_s17_routed_distill_v1/moe_full_replay/config.json",
+      "bytes": 1037,
+      "sha256": "71ed849cd75962b91757c3e862b392b808dcb6900e0f9f55c7080c005a0f97be",
+      "kind": "record",
+      "summary": []
+    },
+    {
+      "path": "/DATA/DATA1/guest3/t11_crc9_runs/formal_s17_routed_distill_v1/moe_full_replay/metadata.json",
+      "bytes": 1810,
+      "sha256": "44ee5119ef0ebf5414c63dd24c08f151d8d57f3bf0d2d611aac4dfad31cd89a1",
+      "kind": "record",
+      "summary": []
+    },
+    {
+      "path": "/DATA/DATA1/guest3/t11_crc9_runs/formal_s17_routed_distill_v1/moe_full_replay/results.json",
+      "bytes": 53144,
+      "sha256": "351d66eef1aaf34178e074983d8e6b99dce6e4fe20c3c1dd510d8aa6e21e160d",
+      "kind": "record",
+      "summary": [
+        {
+          "field": "final.A_original.val.accuracy",
+          "value": 0.7222222222222222
+        },
+        {
+          "field": "final.A_original.val.balanced_accuracy",
+          "value": 0.7222222222222222
+        },
+        {
+          "field": "final.A_original.test.accuracy",
+          "value": 0.7144846796657381
+        },
+        {
+          "field": "final.A_original.test.balanced_accuracy",
+          "value": 0.7158784471150786
+        },
+        {
+          "field": "final.B_stain_h.val.accuracy",
+          "value": 0.7703703703703704
+        },
+        {
+          "field": "final.B_stain_h.val.balanced_accuracy",
+          "value": 0.7703703703703704
+        },
+        {
+          "field": "final.B_stain_h.test.accuracy",
+          "value": 0.7332869080779945
+        },
+        {
+          "field": "final.B_stain_h.test.balanced_accuracy",
+          "value": 0.7235382915760952
+        },
+        {
+          "field": "final.C_stain_e.val.accuracy",
+          "value": 0.5814814814814815
+        },
+        {
+          "field": "final.C_stain_e.val.balanced_accuracy",
+          "value": 0.5814814814814815
+        },
+        {
+          "field": "final.C_stain_e.test.accuracy",
+          "value": 0.5647632311977716
+        },
+        {
+          "field": "final.C_stain_e.test.balanced_accuracy",
+          "value": 0.572596842954245
+        },
+        {
+          "field": "final.D_scanner.val.accuracy",
+          "value": 0.7185185185185186
+        },
+        {
+          "field": "final.D_scanner.val.balanced_accuracy",
+          "value": 0.7185185185185186
+        },
+        {
+          "field": "final.D_scanner.test.accuracy",
+          "value": 0.7381615598885793
+        },
+        {
+          "field": "final.D_scanner.test.balanced_accuracy",
+          "value": 0.7336612468981761
+        },
+        {
+          "field": "selection_rule",
+          "value": "mean validation balanced accuracy across all seen domains"
+        }
+      ]
+    },
+    {
+      "path": "/DATA/DATA1/guest3/t11_crc9_runs/formal_s17_routed_distill_v1/moe_full_replay/split.json",
+      "bytes": 579240,
+      "sha256": "ac6d74898c1a465a4009cca80f468aecac25ef35bb0f4bf9e1e382ac3daee3c7",
+      "kind": "record",
+      "summary": []
+    },
+    {
+      "path": "/DATA/DATA1/guest3/t11_crc9_runs/formal_s17_routed_distill_v1/moe_full_replay/stage_1_A_original/best_checkpoint.pt",
+      "bytes": 7381235,
+      "sha256": "5a119eb46a58925f2645fb1abfab4b64cd894a165537d36d52f0837347f835ee",
+      "kind": "weight"
+    },
+    {
+      "path": "/DATA/DATA1/guest3/t11_crc9_runs/formal_s17_routed_distill_v1/moe_full_replay/stage_1_A_original/last_checkpoint.pt",
+      "bytes": 7381235,
+      "sha256": "48bc934f342b678173f80ada178c7b5abe6a984546148d09c700948b6979ebee",
+      "kind": "weight"
+    },
+    {
+      "path": "/DATA/DATA1/guest3/t11_crc9_runs/formal_s17_routed_distill_v1/moe_full_replay/stage_2_B_stain_h/best_checkpoint.pt",
+      "bytes": 7381939,
+      "sha256": "5b3774ca4d81c591d5db6d0c2819c3e7bbca3a3339e74a68d6b3f6b061e40e2e",
+      "kind": "weight"
+    },
+    {
+      "path": "/DATA/DATA1/guest3/t11_crc9_runs/formal_s17_routed_distill_v1/moe_full_replay/stage_2_B_stain_h/last_checkpoint.pt",
+      "bytes": 7381939,
+      "sha256": "10d00019207e4ffc2765d6318ac018f7bd8841b733a13e3bd151eca7cce96623",
+      "kind": "weight"
+    },
+    {
+      "path": "/DATA/DATA1/guest3/t11_crc9_runs/formal_s17_routed_distill_v1/moe_full_replay/stage_3_C_stain_e/best_checkpoint.pt",
+      "bytes": 7382643,
+      "sha256": "cab820485fd14a1d2c7851c979c1ba8985e89ecf480ee171c099e6e852f8f69a",
+      "kind": "weight"
+    },
+    {
+      "path": "/DATA/DATA1/guest3/t11_crc9_runs/formal_s17_routed_distill_v1/moe_full_replay/stage_3_C_stain_e/last_checkpoint.pt",
+      "bytes": 7382643,
+      "sha256": "de994de81604a02ad89bb57538f16d2da1d9049de26d7bf405bfae063beacfca",
+      "kind": "weight"
+    },
+    {
+      "path": "/DATA/DATA1/guest3/t11_crc9_runs/formal_s17_routed_distill_v1/moe_full_replay/stage_4_D_scanner/best_checkpoint.pt",
+      "bytes": 7383347,
+      "sha256": "f4fe29019e3dc08d05d234bbde69c6580a8c68643b44159923c9464b62ee845a",
+      "kind": "weight"
+    },
+    {
+      "path": "/DATA/DATA1/guest3/t11_crc9_runs/formal_s17_routed_distill_v1/moe_full_replay/stage_4_D_scanner/last_checkpoint.pt",
+      "bytes": 7383347,
+      "sha256": "2ab681a576bf21bceb1f5e40502737cde2579c20dcd3705f2e934f72205bd5db",
+      "kind": "weight"
+    },
+    {
+      "path": "/DATA/DATA1/guest3/t11_crc9_runs/formal_s17_routed_distill_v1/moe_full_replay/status.json",
+      "bytes": 26,
+      "sha256": "903c809eb8740476258b5172942c356c9c56e21fe0487cd18def4ba74f2f7c4f",
+      "kind": "record",
+      "summary": [
+        {
+          "field": "state",
+          "value": "complete"
+        }
+      ]
+    },
+    {
+      "path": "/DATA/DATA1/guest3/t11_crc9_runs/formal_s17_routed_strong_v1/head_polish/best_checkpoint.pt",
+      "bytes": 7380851,
+      "sha256": "ca03cc367ccd86289b9467c5d6f6a9a32664eafc997177ed20e6895d0929826e",
+      "kind": "weight"
+    },
+    {
+      "path": "/DATA/DATA1/guest3/t11_crc9_runs/formal_s17_routed_strong_v1/head_polish/results.json",
+      "bytes": 13073,
+      "sha256": "7562327174ca430967c33bdaa607f7969c81528b99a970b04037a4804e75c6a2",
+      "kind": "record",
+      "summary": [
+        {
+          "field": "selected_epoch",
+          "value": 25
+        },
+        {
+          "field": "validation.A_original.accuracy",
+          "value": 0.8185185185185185
+        },
+        {
+          "field": "validation.A_original.balanced_accuracy",
+          "value": 0.8185185185185185
+        },
+        {
+          "field": "validation.B_stain_h.accuracy",
+          "value": 0.7703703703703704
+        },
+        {
+          "field": "validation.B_stain_h.balanced_accuracy",
+          "value": 0.7703703703703703
+        },
+        {
+          "field": "validation.C_stain_e.accuracy",
+          "value": 0.7555555555555555
+        },
+        {
+          "field": "validation.C_stain_e.balanced_accuracy",
+          "value": 0.7555555555555556
+        },
+        {
+          "field": "validation.D_scanner.accuracy",
+          "value": 0.774074074074074
+        },
+        {
+          "field": "validation.D_scanner.balanced_accuracy",
+          "value": 0.7740740740740741
+        },
+        {
+          "field": "test.A_original.accuracy",
+          "value": 0.8057103064066853
+        },
+        {
+          "field": "test.A_original.balanced_accuracy",
+          "value": 0.8097586589501836
+        },
+        {
+          "field": "test.B_stain_h.accuracy",
+          "value": 0.7444289693593314
+        },
+        {
+          "field": "test.B_stain_h.balanced_accuracy",
+          "value": 0.7338289106144252
+        },
+        {
+          "field": "test.C_stain_e.accuracy",
+          "value": 0.7263231197771588
+        },
+        {
+          "field": "test.C_stain_e.balanced_accuracy",
+          "value": 0.7434612898258313
+        },
+        {
+          "field": "test.D_scanner.accuracy",
+          "value": 0.7931754874651811
+        },
+        {
+          "field": "test.D_scanner.balanced_accuracy",
+          "value": 0.7772732507295324
+        },
+        {
+          "field": "selection_rule",
+          "value": "mean validation balanced accuracy across all four domains"
+        }
+      ]
+    },
+    {
+      "path": "/DATA/DATA1/guest3/t11_crc9_runs/formal_s17_routed_strong_v1/head_polish/status.json",
+      "bytes": 50,
+      "sha256": "d9672a718fc2e48f30678dba6eae35d44aa1c3eda0f3f706b25d70e70d9f0f28",
+      "kind": "record",
+      "summary": [
+        {
+          "field": "state",
+          "value": "complete"
+        },
+        {
+          "field": "selected_epoch",
+          "value": 25
+        }
+      ]
+    },
+    {
+      "path": "/DATA/DATA1/guest3/t11_crc9_runs/formal_s17_routed_strong_v1/moe_full_replay/config.json",
+      "bytes": 1035,
+      "sha256": "d2577bc3754902ef1d67769452129e799f2dc7f9dacb3676925101aed1f4cc98",
+      "kind": "record",
+      "summary": []
+    },
+    {
+      "path": "/DATA/DATA1/guest3/t11_crc9_runs/formal_s17_routed_strong_v1/moe_full_replay/metadata.json",
+      "bytes": 1810,
+      "sha256": "f9e9b50565196e1d51f335a6d6f9448ad7fd8b6787fa998ac2316ae8753f4678",
+      "kind": "record",
+      "summary": []
+    },
+    {
+      "path": "/DATA/DATA1/guest3/t11_crc9_runs/formal_s17_routed_strong_v1/moe_full_replay/results.json",
+      "bytes": 53132,
+      "sha256": "d381e305ac50eb8d68a85deafd8630bb2cf387f0f3019462546974f824e09946",
+      "kind": "record",
+      "summary": [
+        {
+          "field": "final.A_original.val.accuracy",
+          "value": 0.7296296296296296
+        },
+        {
+          "field": "final.A_original.val.balanced_accuracy",
+          "value": 0.7296296296296296
+        },
+        {
+          "field": "final.A_original.test.accuracy",
+          "value": 0.6963788300835655
+        },
+        {
+          "field": "final.A_original.test.balanced_accuracy",
+          "value": 0.7042507193023382
+        },
+        {
+          "field": "final.B_stain_h.val.accuracy",
+          "value": 0.7407407407407407
+        },
+        {
+          "field": "final.B_stain_h.val.balanced_accuracy",
+          "value": 0.7407407407407408
+        },
+        {
+          "field": "final.B_stain_h.test.accuracy",
+          "value": 0.7026462395543176
+        },
+        {
+          "field": "final.B_stain_h.test.balanced_accuracy",
+          "value": 0.698744071628294
+        },
+        {
+          "field": "final.C_stain_e.val.accuracy",
+          "value": 0.5777777777777777
+        },
+        {
+          "field": "final.C_stain_e.val.balanced_accuracy",
+          "value": 0.5777777777777778
+        },
+        {
+          "field": "final.C_stain_e.test.accuracy",
+          "value": 0.5466573816155988
+        },
+        {
+          "field": "final.C_stain_e.test.balanced_accuracy",
+          "value": 0.5716601580828593
+        },
+        {
+          "field": "final.D_scanner.val.accuracy",
+          "value": 0.6777777777777778
+        },
+        {
+          "field": "final.D_scanner.val.balanced_accuracy",
+          "value": 0.6777777777777777
+        },
+        {
+          "field": "final.D_scanner.test.accuracy",
+          "value": 0.6908077994428969
+        },
+        {
+          "field": "final.D_scanner.test.balanced_accuracy",
+          "value": 0.6895619996635434
+        },
+        {
+          "field": "selection_rule",
+          "value": "mean validation balanced accuracy across all seen domains"
+        }
+      ]
+    },
+    {
+      "path": "/DATA/DATA1/guest3/t11_crc9_runs/formal_s17_routed_strong_v1/moe_full_replay/split.json",
+      "bytes": 579240,
+      "sha256": "ac6d74898c1a465a4009cca80f468aecac25ef35bb0f4bf9e1e382ac3daee3c7",
+      "kind": "record",
+      "summary": []
+    },
+    {
+      "path": "/DATA/DATA1/guest3/t11_crc9_runs/formal_s17_routed_strong_v1/moe_full_replay/stage_1_A_original/best_checkpoint.pt",
+      "bytes": 7381235,
+      "sha256": "0b65eabdd5e65df7a281f004a5496b537f5d1bdee6324c74ac1217136d65d641",
+      "kind": "weight"
+    },
+    {
+      "path": "/DATA/DATA1/guest3/t11_crc9_runs/formal_s17_routed_strong_v1/moe_full_replay/stage_1_A_original/last_checkpoint.pt",
+      "bytes": 7381235,
+      "sha256": "8b489147dad41a5db29957af8100c77d664858be8fd456a2969007347a10d83b",
+      "kind": "weight"
+    },
+    {
+      "path": "/DATA/DATA1/guest3/t11_crc9_runs/formal_s17_routed_strong_v1/moe_full_replay/stage_2_B_stain_h/best_checkpoint.pt",
+      "bytes": 7381939,
+      "sha256": "c6adfb108378357685288f13a9fc629b4d6880028eb72233f789f2bec85efa57",
+      "kind": "weight"
+    },
+    {
+      "path": "/DATA/DATA1/guest3/t11_crc9_runs/formal_s17_routed_strong_v1/moe_full_replay/stage_2_B_stain_h/last_checkpoint.pt",
+      "bytes": 7381939,
+      "sha256": "27b8eabf9b29283d3b5cdbd8ed950864f98fdcbadc2e663d17fe6b30c3edf286",
+      "kind": "weight"
+    },
+    {
+      "path": "/DATA/DATA1/guest3/t11_crc9_runs/formal_s17_routed_strong_v1/moe_full_replay/stage_3_C_stain_e/best_checkpoint.pt",
+      "bytes": 7382643,
+      "sha256": "edd7775e0d97a74295428b24207ce3ee8f9f1af820eb09c1083775241f931c5e",
+      "kind": "weight"
+    },
+    {
+      "path": "/DATA/DATA1/guest3/t11_crc9_runs/formal_s17_routed_strong_v1/moe_full_replay/stage_3_C_stain_e/last_checkpoint.pt",
+      "bytes": 7382643,
+      "sha256": "6a64b30acf6fe343737aff933e634f0ab36abef45c7c78c6f2e45fc69b71735e",
+      "kind": "weight"
+    },
+    {
+      "path": "/DATA/DATA1/guest3/t11_crc9_runs/formal_s17_routed_strong_v1/moe_full_replay/stage_4_D_scanner/best_checkpoint.pt",
+      "bytes": 7383347,
+      "sha256": "75e9c6ca4370898e81a8246489d7c58bd36a1c67b14f401502249bb6b986b656",
+      "kind": "weight"
+    },
+    {
+      "path": "/DATA/DATA1/guest3/t11_crc9_runs/formal_s17_routed_strong_v1/moe_full_replay/stage_4_D_scanner/last_checkpoint.pt",
+      "bytes": 7383347,
+      "sha256": "6915e55d3ffb231558e977d07bbed892280ec45ef30d100dd06a90988212db5c",
+      "kind": "weight"
+    },
+    {
+      "path": "/DATA/DATA1/guest3/t11_crc9_runs/formal_s17_routed_strong_v1/moe_full_replay/status.json",
+      "bytes": 26,
+      "sha256": "903c809eb8740476258b5172942c356c9c56e21fe0487cd18def4ba74f2f7c4f",
+      "kind": "record",
+      "summary": [
+        {
+          "field": "state",
+          "value": "complete"
+        }
+      ]
+    },
+    {
+      "path": "/DATA/DATA1/guest3/t11_crc9_runs/formal_s17_routed_v1/head_polish/best_checkpoint.pt",
+      "bytes": 7380851,
+      "sha256": "6d75277eb8596a32041174666fb09ddc3fdb65f2e3a9a8b78e1c5d769b339f2f",
+      "kind": "weight"
+    },
+    {
+      "path": "/DATA/DATA1/guest3/t11_crc9_runs/formal_s17_routed_v1/head_polish/results.json",
+      "bytes": 13044,
+      "sha256": "44e4e5c94bb53bd1f05e529d099f58810a7f67c53f64b8f615e6540c69025354",
+      "kind": "record",
+      "summary": [
+        {
+          "field": "selected_epoch",
+          "value": 37
+        },
+        {
+          "field": "validation.A_original.accuracy",
+          "value": 0.8037037037037037
+        },
+        {
+          "field": "validation.A_original.balanced_accuracy",
+          "value": 0.8037037037037038
+        },
+        {
+          "field": "validation.B_stain_h.accuracy",
+          "value": 0.8074074074074075
+        },
+        {
+          "field": "validation.B_stain_h.balanced_accuracy",
+          "value": 0.8074074074074074
+        },
+        {
+          "field": "validation.C_stain_e.accuracy",
+          "value": 0.737037037037037
+        },
+        {
+          "field": "validation.C_stain_e.balanced_accuracy",
+          "value": 0.7370370370370369
+        },
+        {
+          "field": "validation.D_scanner.accuracy",
+          "value": 0.8
+        },
+        {
+          "field": "validation.D_scanner.balanced_accuracy",
+          "value": 0.8
+        },
+        {
+          "field": "test.A_original.accuracy",
+          "value": 0.7924791086350975
+        },
+        {
+          "field": "test.A_original.balanced_accuracy",
+          "value": 0.7961422273964104
+        },
+        {
+          "field": "test.B_stain_h.accuracy",
+          "value": 0.7562674094707521
+        },
+        {
+          "field": "test.B_stain_h.balanced_accuracy",
+          "value": 0.7496866724798273
+        },
+        {
+          "field": "test.C_stain_e.accuracy",
+          "value": 0.7200557103064067
+        },
+        {
+          "field": "test.C_stain_e.balanced_accuracy",
+          "value": 0.7307462995402761
+        },
+        {
+          "field": "test.D_scanner.accuracy",
+          "value": 0.8119777158774373
+        },
+        {
+          "field": "test.D_scanner.balanced_accuracy",
+          "value": 0.802752911877503
+        },
+        {
+          "field": "selection_rule",
+          "value": "mean validation balanced accuracy across all four domains"
+        }
+      ]
+    },
+    {
+      "path": "/DATA/DATA1/guest3/t11_crc9_runs/formal_s17_routed_v1/head_polish/status.json",
+      "bytes": 50,
+      "sha256": "f13205634b93bfd705bb6406698f12562670fbcec31213443a2ffd93131f610f",
+      "kind": "record",
+      "summary": [
+        {
+          "field": "state",
+          "value": "complete"
+        },
+        {
+          "field": "selected_epoch",
+          "value": 37
+        }
+      ]
+    },
+    {
+      "path": "/DATA/DATA1/guest3/t11_crc9_runs/formal_s17_routed_v1/moe_full_replay/config.json",
+      "bytes": 1037,
+      "sha256": "5379d2272957410b8769881550ddfbfe397e83a1d0c8cc79c6f3c55073de549a",
+      "kind": "record",
+      "summary": []
+    },
+    {
+      "path": "/DATA/DATA1/guest3/t11_crc9_runs/formal_s17_routed_v1/moe_full_replay/metadata.json",
+      "bytes": 1796,
+      "sha256": "815ec420d44a6796b4bf7741a912be67ab6ce5d9d64c5b011b49c3bc7e252f28",
+      "kind": "record",
+      "summary": []
+    },
+    {
+      "path": "/DATA/DATA1/guest3/t11_crc9_runs/formal_s17_routed_v1/moe_full_replay/results.json",
+      "bytes": 53260,
+      "sha256": "3ec3ae5b20ec10e768f4b02707067f0cf584c1376a7cb409d3438d98aeb82fc4",
+      "kind": "record",
+      "summary": [
+        {
+          "field": "final.A_original.val.accuracy",
+          "value": 0.7296296296296296
+        },
+        {
+          "field": "final.A_original.val.balanced_accuracy",
+          "value": 0.7296296296296296
+        },
+        {
+          "field": "final.A_original.test.accuracy",
+          "value": 0.6713091922005571
+        },
+        {
+          "field": "final.A_original.test.balanced_accuracy",
+          "value": 0.6931344295052769
+        },
+        {
+          "field": "final.B_stain_h.val.accuracy",
+          "value": 0.7592592592592593
+        },
+        {
+          "field": "final.B_stain_h.val.balanced_accuracy",
+          "value": 0.7592592592592592
+        },
+        {
+          "field": "final.B_stain_h.test.accuracy",
+          "value": 0.7235376044568245
+        },
+        {
+          "field": "final.B_stain_h.test.balanced_accuracy",
+          "value": 0.7339367384159208
+        },
+        {
+          "field": "final.C_stain_e.val.accuracy",
+          "value": 0.5962962962962963
+        },
+        {
+          "field": "final.C_stain_e.val.balanced_accuracy",
+          "value": 0.5962962962962963
+        },
+        {
+          "field": "final.C_stain_e.test.accuracy",
+          "value": 0.5717270194986073
+        },
+        {
+          "field": "final.C_stain_e.test.balanced_accuracy",
+          "value": 0.6005279182092376
+        },
+        {
+          "field": "final.D_scanner.val.accuracy",
+          "value": 0.7111111111111111
+        },
+        {
+          "field": "final.D_scanner.val.balanced_accuracy",
+          "value": 0.7111111111111111
+        },
+        {
+          "field": "final.D_scanner.test.accuracy",
+          "value": 0.7151810584958217
+        },
+        {
+          "field": "final.D_scanner.test.balanced_accuracy",
+          "value": 0.7230853414514272
+        },
+        {
+          "field": "selection_rule",
+          "value": "mean validation balanced accuracy across all seen domains"
+        }
+      ]
+    },
+    {
+      "path": "/DATA/DATA1/guest3/t11_crc9_runs/formal_s17_routed_v1/moe_full_replay/split.json",
+      "bytes": 579240,
+      "sha256": "ac6d74898c1a465a4009cca80f468aecac25ef35bb0f4bf9e1e382ac3daee3c7",
+      "kind": "record",
+      "summary": []
+    },
+    {
+      "path": "/DATA/DATA1/guest3/t11_crc9_runs/formal_s17_routed_v1/moe_full_replay/stage_1_A_original/best_checkpoint.pt",
+      "bytes": 7381235,
+      "sha256": "1895116dd066347f457b8abf5878ef4ee414b82b692a362451ec32f5bb52f8cc",
+      "kind": "weight"
+    },
+    {
+      "path": "/DATA/DATA1/guest3/t11_crc9_runs/formal_s17_routed_v1/moe_full_replay/stage_1_A_original/last_checkpoint.pt",
+      "bytes": 7381235,
+      "sha256": "1276a429fabe672b31e48002d36990183be6855da3b5f7c10cc63d6532b182ed",
+      "kind": "weight"
+    },
+    {
+      "path": "/DATA/DATA1/guest3/t11_crc9_runs/formal_s17_routed_v1/moe_full_replay/stage_2_B_stain_h/best_checkpoint.pt",
+      "bytes": 7381939,
+      "sha256": "048f32582fff64f1eabe768d5546367cf9add1b26deb4b6678521a438f53ce25",
+      "kind": "weight"
+    },
+    {
+      "path": "/DATA/DATA1/guest3/t11_crc9_runs/formal_s17_routed_v1/moe_full_replay/stage_2_B_stain_h/last_checkpoint.pt",
+      "bytes": 7381939,
+      "sha256": "dd0dbda95e99f65a28d9deeb83c9e37908c2be82194acfba994494614a9cd065",
+      "kind": "weight"
+    },
+    {
+      "path": "/DATA/DATA1/guest3/t11_crc9_runs/formal_s17_routed_v1/moe_full_replay/stage_3_C_stain_e/best_checkpoint.pt",
+      "bytes": 7382643,
+      "sha256": "6c137d833119330d1768022649c4a9151799d2fbe4416583990b4bcd0d26435e",
+      "kind": "weight"
+    },
+    {
+      "path": "/DATA/DATA1/guest3/t11_crc9_runs/formal_s17_routed_v1/moe_full_replay/stage_3_C_stain_e/last_checkpoint.pt",
+      "bytes": 7382643,
+      "sha256": "63f2d3c7ea98c3527a158a5e12ceddff2cacb93640165deece18d3389db7973e",
+      "kind": "weight"
+    },
+    {
+      "path": "/DATA/DATA1/guest3/t11_crc9_runs/formal_s17_routed_v1/moe_full_replay/stage_4_D_scanner/best_checkpoint.pt",
+      "bytes": 7383347,
+      "sha256": "1bb0e8bdebd8c0540665c379809117a59390ec5a1c8e33695cd88034d25e7390",
+      "kind": "weight"
+    },
+    {
+      "path": "/DATA/DATA1/guest3/t11_crc9_runs/formal_s17_routed_v1/moe_full_replay/stage_4_D_scanner/last_checkpoint.pt",
+      "bytes": 7383347,
+      "sha256": "ebb6839b3e9d156fb4af6dff43d176b4082b8dc512b15f2619011ef11647f7fc",
+      "kind": "weight"
+    },
+    {
+      "path": "/DATA/DATA1/guest3/t11_crc9_runs/formal_s17_routed_v1/moe_full_replay/status.json",
+      "bytes": 26,
+      "sha256": "903c809eb8740476258b5172942c356c9c56e21fe0487cd18def4ba74f2f7c4f",
+      "kind": "record",
+      "summary": [
+        {
+          "field": "state",
+          "value": "complete"
+        }
+      ]
+    },
+    {
+      "path": "/DATA/DATA1/guest3/t11_crc9_runs/formal_s17_v1/d2nn_A_continual_head/best_checkpoint.pt",
+      "bytes": 7854756,
+      "sha256": "cec93db4b09ab84cff37994d3e0a58ff9b82a6bc0cff558a1c98ce65951ddb3d",
+      "kind": "weight"
+    },
+    {
+      "path": "/DATA/DATA1/guest3/t11_crc9_runs/formal_s17_v1/d2nn_A_continual_head/results.json",
+      "bytes": 36251,
+      "sha256": "efd16ed5f6aa57ca443ab39bb77298e9cd418c8bd76d071a4419b19502975b73",
+      "kind": "record",
+      "summary": [
+        {
+          "field": "final.A_original.val.accuracy",
+          "value": 0.6518518518518519
+        },
+        {
+          "field": "final.A_original.val.balanced_accuracy",
+          "value": 0.6518518518518519
+        },
+        {
+          "field": "final.A_original.test.accuracy",
+          "value": 0.7228412256267409
+        },
+        {
+          "field": "final.A_original.test.balanced_accuracy",
+          "value": 0.6954161752919865
+        },
+        {
+          "field": "final.B_stain_h.val.accuracy",
+          "value": 0.7074074074074074
+        },
+        {
+          "field": "final.B_stain_h.val.balanced_accuracy",
+          "value": 0.7074074074074074
+        },
+        {
+          "field": "final.B_stain_h.test.accuracy",
+          "value": 0.7123955431754875
+        },
+        {
+          "field": "final.B_stain_h.test.balanced_accuracy",
+          "value": 0.6741119128991523
+        },
+        {
+          "field": "final.C_stain_e.val.accuracy",
+          "value": 0.6037037037037037
+        },
+        {
+          "field": "final.C_stain_e.val.balanced_accuracy",
+          "value": 0.6037037037037037
+        },
+        {
+          "field": "final.C_stain_e.test.accuracy",
+          "value": 0.6532033426183844
+        },
+        {
+          "field": "final.C_stain_e.test.balanced_accuracy",
+          "value": 0.6367583419153802
+        },
+        {
+          "field": "final.D_scanner.val.accuracy",
+          "value": 0.6111111111111112
+        },
+        {
+          "field": "final.D_scanner.val.balanced_accuracy",
+          "value": 0.6111111111111112
+        },
+        {
+          "field": "final.D_scanner.test.accuracy",
+          "value": 0.6866295264623955
+        },
+        {
+          "field": "final.D_scanner.test.balanced_accuracy",
+          "value": 0.6458414766422396
+        },
+        {
+          "field": "selection_rule",
+          "value": "mean validation balanced accuracy across all seen domains"
+        }
+      ]
+    },
+    {
+      "path": "/DATA/DATA1/guest3/t11_crc9_runs/formal_s17_v1/d2nn_A_continual_head/status.json",
+      "bytes": 26,
+      "sha256": "903c809eb8740476258b5172942c356c9c56e21fe0487cd18def4ba74f2f7c4f",
+      "kind": "record",
+      "summary": [
+        {
+          "field": "state",
+          "value": "complete"
+        }
+      ]
+    },
+    {
+      "path": "/DATA/DATA1/guest3/t11_crc9_runs/formal_s17_v1/d2nn_A_shared_head/best_checkpoint.pt",
+      "bytes": 7852836,
+      "sha256": "d2ecdc7c04a8a273bd07ddd507460853a0914d31bae6247e943a88a461d234db",
+      "kind": "weight"
+    },
+    {
+      "path": "/DATA/DATA1/guest3/t11_crc9_runs/formal_s17_v1/d2nn_A_shared_head/results.json",
+      "bytes": 13050,
+      "sha256": "c18b87685e258f368b16202eb72413705c6df7f88fef802f55eedff5fc21d627",
+      "kind": "record",
+      "summary": [
+        {
+          "field": "selected_epoch",
+          "value": 27
+        },
+        {
+          "field": "validation.A_original.accuracy",
+          "value": 0.6666666666666666
+        },
+        {
+          "field": "validation.A_original.balanced_accuracy",
+          "value": 0.6666666666666666
+        },
+        {
+          "field": "validation.B_stain_h.accuracy",
+          "value": 0.7
+        },
+        {
+          "field": "validation.B_stain_h.balanced_accuracy",
+          "value": 0.7
+        },
+        {
+          "field": "validation.C_stain_e.accuracy",
+          "value": 0.5888888888888889
+        },
+        {
+          "field": "validation.C_stain_e.balanced_accuracy",
+          "value": 0.5888888888888889
+        },
+        {
+          "field": "validation.D_scanner.accuracy",
+          "value": 0.6703703703703704
+        },
+        {
+          "field": "validation.D_scanner.balanced_accuracy",
+          "value": 0.6703703703703704
+        },
+        {
+          "field": "test.A_original.accuracy",
+          "value": 0.7221448467966574
+        },
+        {
+          "field": "test.A_original.balanced_accuracy",
+          "value": 0.6972145927850586
+        },
+        {
+          "field": "test.B_stain_h.accuracy",
+          "value": 0.7228412256267409
+        },
+        {
+          "field": "test.B_stain_h.balanced_accuracy",
+          "value": 0.6931009472061669
+        },
+        {
+          "field": "test.C_stain_e.accuracy",
+          "value": 0.6385793871866295
+        },
+        {
+          "field": "test.C_stain_e.balanced_accuracy",
+          "value": 0.6287274264324701
+        },
+        {
+          "field": "test.D_scanner.accuracy",
+          "value": 0.7019498607242339
+        },
+        {
+          "field": "test.D_scanner.balanced_accuracy",
+          "value": 0.6614851143346827
+        },
+        {
+          "field": "selection_rule",
+          "value": "mean validation balanced accuracy across all four domains"
+        }
+      ]
+    },
+    {
+      "path": "/DATA/DATA1/guest3/t11_crc9_runs/formal_s17_v1/d2nn_A_shared_head/status.json",
+      "bytes": 50,
+      "sha256": "9f6a1fcbfd1e63f7cc83f89856b33ac18544f519c66834a55e795f12e484a600",
+      "kind": "record",
+      "summary": [
+        {
+          "field": "state",
+          "value": "complete"
+        },
+        {
+          "field": "selected_epoch",
+          "value": 27
+        }
+      ]
+    },
+    {
+      "path": "/DATA/DATA1/guest3/t11_crc9_runs/formal_s17_v1/d2nn_adapt_A/config.json",
+      "bytes": 908,
+      "sha256": "0cd9ec504f972952d9654dfeebff961d4fc5854e9bf6338d42f0c0252cfadec2",
+      "kind": "record",
+      "summary": []
+    },
+    {
+      "path": "/DATA/DATA1/guest3/t11_crc9_runs/formal_s17_v1/d2nn_adapt_A/metadata.json",
+      "bytes": 1945,
+      "sha256": "09b733afc0b3085b86d7aa589efaac072901185d367ac29273d77275a9f4ffa6",
+      "kind": "record",
+      "summary": []
+    },
+    {
+      "path": "/DATA/DATA1/guest3/t11_crc9_runs/formal_s17_v1/d2nn_adapt_A/results.json",
+      "bytes": 397362,
+      "sha256": "5b9ae77bdb13431018982ce8e8bc46e38246beac2f600584b8715b3d3ca267dc",
+      "kind": "record",
+      "summary": [
+        {
+          "field": "selection_rule",
+          "value": "target validation balanced accuracy, then macro-F1, then lower NLL"
+        }
+      ]
+    },
+    {
+      "path": "/DATA/DATA1/guest3/t11_crc9_runs/formal_s17_v1/d2nn_adapt_A/split.json",
+      "bytes": 579240,
+      "sha256": "ac6d74898c1a465a4009cca80f468aecac25ef35bb0f4bf9e1e382ac3daee3c7",
+      "kind": "record",
+      "summary": []
+    },
+    {
+      "path": "/DATA/DATA1/guest3/t11_crc9_runs/formal_s17_v1/d2nn_adapt_A/status.json",
+      "bytes": 26,
+      "sha256": "903c809eb8740476258b5172942c356c9c56e21fe0487cd18def4ba74f2f7c4f",
+      "kind": "record",
+      "summary": [
+        {
+          "field": "state",
+          "value": "complete"
+        }
+      ]
+    },
+    {
+      "path": "/DATA/DATA1/guest3/t11_crc9_runs/formal_s17_v1/d2nn_adapt_B/config.json",
+      "bytes": 908,
+      "sha256": "0cd9ec504f972952d9654dfeebff961d4fc5854e9bf6338d42f0c0252cfadec2",
+      "kind": "record",
+      "summary": []
+    },
+    {
+      "path": "/DATA/DATA1/guest3/t11_crc9_runs/formal_s17_v1/d2nn_adapt_B/metadata.json",
+      "bytes": 1945,
+      "sha256": "f36771e2c82906b01eb8267361c1c0ee0c6d3caeb99cf51cc09e4bcb372608d8",
+      "kind": "record",
+      "summary": []
+    },
+    {
+      "path": "/DATA/DATA1/guest3/t11_crc9_runs/formal_s17_v1/d2nn_adapt_B/results.json",
+      "bytes": 397379,
+      "sha256": "fc2b182ea5d0be90292d8a56482752e4ec9e6d28b94569013db357e36df3d310",
+      "kind": "record",
+      "summary": [
+        {
+          "field": "selection_rule",
+          "value": "target validation balanced accuracy, then macro-F1, then lower NLL"
+        }
+      ]
+    },
+    {
+      "path": "/DATA/DATA1/guest3/t11_crc9_runs/formal_s17_v1/d2nn_adapt_B/split.json",
+      "bytes": 579240,
+      "sha256": "ac6d74898c1a465a4009cca80f468aecac25ef35bb0f4bf9e1e382ac3daee3c7",
+      "kind": "record",
+      "summary": []
+    },
+    {
+      "path": "/DATA/DATA1/guest3/t11_crc9_runs/formal_s17_v1/d2nn_adapt_B/status.json",
+      "bytes": 26,
+      "sha256": "903c809eb8740476258b5172942c356c9c56e21fe0487cd18def4ba74f2f7c4f",
+      "kind": "record",
+      "summary": [
+        {
+          "field": "state",
+          "value": "complete"
+        }
+      ]
+    },
+    {
+      "path": "/DATA/DATA1/guest3/t11_crc9_runs/formal_s17_v1/d2nn_adapt_C/config.json",
+      "bytes": 908,
+      "sha256": "0cd9ec504f972952d9654dfeebff961d4fc5854e9bf6338d42f0c0252cfadec2",
+      "kind": "record",
+      "summary": []
+    },
+    {
+      "path": "/DATA/DATA1/guest3/t11_crc9_runs/formal_s17_v1/d2nn_adapt_C/metadata.json",
+      "bytes": 1945,
+      "sha256": "1abb72d3ed539cd85d6b3825afbcf2dfc084ad7e00b3537e0202dc2490ca9863",
+      "kind": "record",
+      "summary": []
+    },
+    {
+      "path": "/DATA/DATA1/guest3/t11_crc9_runs/formal_s17_v1/d2nn_adapt_C/results.json",
+      "bytes": 397428,
+      "sha256": "234995534d388f3d86ef02f7d4938776e6947991fac345bfd5169bc16be1b8ec",
+      "kind": "record",
+      "summary": [
+        {
+          "field": "selection_rule",
+          "value": "target validation balanced accuracy, then macro-F1, then lower NLL"
+        }
+      ]
+    },
+    {
+      "path": "/DATA/DATA1/guest3/t11_crc9_runs/formal_s17_v1/d2nn_adapt_C/split.json",
+      "bytes": 579240,
+      "sha256": "ac6d74898c1a465a4009cca80f468aecac25ef35bb0f4bf9e1e382ac3daee3c7",
+      "kind": "record",
+      "summary": []
+    },
+    {
+      "path": "/DATA/DATA1/guest3/t11_crc9_runs/formal_s17_v1/d2nn_adapt_C/status.json",
+      "bytes": 26,
+      "sha256": "903c809eb8740476258b5172942c356c9c56e21fe0487cd18def4ba74f2f7c4f",
+      "kind": "record",
+      "summary": [
+        {
+          "field": "state",
+          "value": "complete"
+        }
+      ]
+    },
+    {
+      "path": "/DATA/DATA1/guest3/t11_crc9_runs/formal_s17_v1/d2nn_adapt_D/config.json",
+      "bytes": 908,
+      "sha256": "0cd9ec504f972952d9654dfeebff961d4fc5854e9bf6338d42f0c0252cfadec2",
+      "kind": "record",
+      "summary": []
+    },
+    {
+      "path": "/DATA/DATA1/guest3/t11_crc9_runs/formal_s17_v1/d2nn_adapt_D/metadata.json",
+      "bytes": 1945,
+      "sha256": "67e35f58edd98bebc72d54772393ab88f860f5a94fc36dc74b29e5832f754f08",
+      "kind": "record",
+      "summary": []
+    },
+    {
+      "path": "/DATA/DATA1/guest3/t11_crc9_runs/formal_s17_v1/d2nn_adapt_D/results.json",
+      "bytes": 397468,
+      "sha256": "18a8154d13d544975696ea19330e16b950b88e0c6622f3edfbfa379eec992b32",
+      "kind": "record",
+      "summary": [
+        {
+          "field": "selection_rule",
+          "value": "target validation balanced accuracy, then macro-F1, then lower NLL"
+        }
+      ]
+    },
+    {
+      "path": "/DATA/DATA1/guest3/t11_crc9_runs/formal_s17_v1/d2nn_adapt_D/split.json",
+      "bytes": 579240,
+      "sha256": "ac6d74898c1a465a4009cca80f468aecac25ef35bb0f4bf9e1e382ac3daee3c7",
+      "kind": "record",
+      "summary": []
+    },
+    {
+      "path": "/DATA/DATA1/guest3/t11_crc9_runs/formal_s17_v1/d2nn_adapt_D/status.json",
+      "bytes": 26,
+      "sha256": "903c809eb8740476258b5172942c356c9c56e21fe0487cd18def4ba74f2f7c4f",
+      "kind": "record",
+      "summary": [
+        {
+          "field": "state",
+          "value": "complete"
+        }
+      ]
+    },
+    {
+      "path": "/DATA/DATA1/guest3/t11_crc9_runs/formal_s17_v1/d2nn_source_A/best_checkpoint.pt",
+      "bytes": 7852772,
+      "sha256": "ba728c2fd802f6833518d01b83abf69cde97fe30f84d4d9a2d82e09415957c72",
+      "kind": "weight"
+    },
+    {
+      "path": "/DATA/DATA1/guest3/t11_crc9_runs/formal_s17_v1/d2nn_source_A/config.json",
+      "bytes": 908,
+      "sha256": "0cd9ec504f972952d9654dfeebff961d4fc5854e9bf6338d42f0c0252cfadec2",
+      "kind": "record",
+      "summary": []
+    },
+    {
+      "path": "/DATA/DATA1/guest3/t11_crc9_runs/formal_s17_v1/d2nn_source_A/last_checkpoint.pt",
+      "bytes": 7852772,
+      "sha256": "71cf413f10e4ec5cc1a6c7652efb37713326278d92a33a149d80e4bbc0425225",
+      "kind": "weight"
+    },
+    {
+      "path": "/DATA/DATA1/guest3/t11_crc9_runs/formal_s17_v1/d2nn_source_A/metadata.json",
+      "bytes": 1859,
+      "sha256": "46f40afd640cab849531ab859d27171a80ada147b8d77654e2422653dd23af35",
+      "kind": "record",
+      "summary": []
+    },
+    {
+      "path": "/DATA/DATA1/guest3/t11_crc9_runs/formal_s17_v1/d2nn_source_A/results.json",
+      "bytes": 14968,
+      "sha256": "7378479f944da733e40a5dcdb4094a428e321c28baf56a5550d93e55542caa0c",
+      "kind": "record",
+      "summary": [
+        {
+          "field": "selected_epoch",
+          "value": 12
+        },
+        {
+          "field": "selection_rule",
+          "value": "own-domain validation balanced accuracy, then macro-F1, then lower NLL"
+        }
+      ]
+    },
+    {
+      "path": "/DATA/DATA1/guest3/t11_crc9_runs/formal_s17_v1/d2nn_source_A/split.json",
+      "bytes": 579240,
+      "sha256": "ac6d74898c1a465a4009cca80f468aecac25ef35bb0f4bf9e1e382ac3daee3c7",
+      "kind": "record",
+      "summary": []
+    },
+    {
+      "path": "/DATA/DATA1/guest3/t11_crc9_runs/formal_s17_v1/d2nn_source_A/status.json",
+      "bytes": 50,
+      "sha256": "9679374b038da9e22a6ac849556e4a7e5ebd90b1e860ce76d2da201bff985908",
+      "kind": "record",
+      "summary": [
+        {
+          "field": "state",
+          "value": "complete"
+        },
+        {
+          "field": "selected_epoch",
+          "value": 12
+        }
+      ]
+    },
+    {
+      "path": "/DATA/DATA1/guest3/t11_crc9_runs/formal_s17_v1/d2nn_source_B/best_checkpoint.pt",
+      "bytes": 7852772,
+      "sha256": "718f18639c9b45f7b6c7b13e4fca688fcfed916915ff45beb3d926d8544f009e",
+      "kind": "weight"
+    },
+    {
+      "path": "/DATA/DATA1/guest3/t11_crc9_runs/formal_s17_v1/d2nn_source_B/config.json",
+      "bytes": 908,
+      "sha256": "0cd9ec504f972952d9654dfeebff961d4fc5854e9bf6338d42f0c0252cfadec2",
+      "kind": "record",
+      "summary": []
+    },
+    {
+      "path": "/DATA/DATA1/guest3/t11_crc9_runs/formal_s17_v1/d2nn_source_B/last_checkpoint.pt",
+      "bytes": 7852772,
+      "sha256": "774950ec9f18b80659e00ea450c6cbc968ae556da17cae545fc3a7f93c7a30d3",
+      "kind": "weight"
+    },
+    {
+      "path": "/DATA/DATA1/guest3/t11_crc9_runs/formal_s17_v1/d2nn_source_B/metadata.json",
+      "bytes": 1859,
+      "sha256": "28263a45e698e697e01babc44b674ecd317993e2be77bcec89775cbb4a3c4720",
+      "kind": "record",
+      "summary": []
+    },
+    {
+      "path": "/DATA/DATA1/guest3/t11_crc9_runs/formal_s17_v1/d2nn_source_B/results.json",
+      "bytes": 14965,
+      "sha256": "4888278f5b649882cf3de0f6d57126f8612974db88713ee413b46accd8805320",
+      "kind": "record",
+      "summary": [
+        {
+          "field": "selected_epoch",
+          "value": 11
+        },
+        {
+          "field": "selection_rule",
+          "value": "own-domain validation balanced accuracy, then macro-F1, then lower NLL"
+        }
+      ]
+    },
+    {
+      "path": "/DATA/DATA1/guest3/t11_crc9_runs/formal_s17_v1/d2nn_source_B/split.json",
+      "bytes": 579240,
+      "sha256": "ac6d74898c1a465a4009cca80f468aecac25ef35bb0f4bf9e1e382ac3daee3c7",
+      "kind": "record",
+      "summary": []
+    },
+    {
+      "path": "/DATA/DATA1/guest3/t11_crc9_runs/formal_s17_v1/d2nn_source_B/status.json",
+      "bytes": 50,
+      "sha256": "b853de49983e199816a8478113a14e79b52a91910185f834b405ab28401cdc1a",
+      "kind": "record",
+      "summary": [
+        {
+          "field": "state",
+          "value": "complete"
+        },
+        {
+          "field": "selected_epoch",
+          "value": 11
+        }
+      ]
+    },
+    {
+      "path": "/DATA/DATA1/guest3/t11_crc9_runs/formal_s17_v1/d2nn_source_C/best_checkpoint.pt",
+      "bytes": 7852772,
+      "sha256": "2fff53f5758e9aa2006863c326fe96756622c11df15b73e5c5b93a5626292d33",
+      "kind": "weight"
+    },
+    {
+      "path": "/DATA/DATA1/guest3/t11_crc9_runs/formal_s17_v1/d2nn_source_C/config.json",
+      "bytes": 908,
+      "sha256": "0cd9ec504f972952d9654dfeebff961d4fc5854e9bf6338d42f0c0252cfadec2",
+      "kind": "record",
+      "summary": []
+    },
+    {
+      "path": "/DATA/DATA1/guest3/t11_crc9_runs/formal_s17_v1/d2nn_source_C/last_checkpoint.pt",
+      "bytes": 7852772,
+      "sha256": "c08a2e1edf20c5b662f45d4d546bd890e7737a338215e7c2aaef6a080e00cbdd",
+      "kind": "weight"
+    },
+    {
+      "path": "/DATA/DATA1/guest3/t11_crc9_runs/formal_s17_v1/d2nn_source_C/metadata.json",
+      "bytes": 1859,
+      "sha256": "c611f4c8613831b87a16c2e8b76af2046a11ab5fb1e7ae75b00665a97d8e3097",
+      "kind": "record",
+      "summary": []
+    },
+    {
+      "path": "/DATA/DATA1/guest3/t11_crc9_runs/formal_s17_v1/d2nn_source_C/results.json",
+      "bytes": 14956,
+      "sha256": "bf5ec511e0d91a4f4edbf724dd228059429312a4993e0df200233e27decfaadb",
+      "kind": "record",
+      "summary": [
+        {
+          "field": "selected_epoch",
+          "value": 12
+        },
+        {
+          "field": "selection_rule",
+          "value": "own-domain validation balanced accuracy, then macro-F1, then lower NLL"
+        }
+      ]
+    },
+    {
+      "path": "/DATA/DATA1/guest3/t11_crc9_runs/formal_s17_v1/d2nn_source_C/split.json",
+      "bytes": 579240,
+      "sha256": "ac6d74898c1a465a4009cca80f468aecac25ef35bb0f4bf9e1e382ac3daee3c7",
+      "kind": "record",
+      "summary": []
+    },
+    {
+      "path": "/DATA/DATA1/guest3/t11_crc9_runs/formal_s17_v1/d2nn_source_C/status.json",
+      "bytes": 50,
+      "sha256": "9679374b038da9e22a6ac849556e4a7e5ebd90b1e860ce76d2da201bff985908",
+      "kind": "record",
+      "summary": [
+        {
+          "field": "state",
+          "value": "complete"
+        },
+        {
+          "field": "selected_epoch",
+          "value": 12
+        }
+      ]
+    },
+    {
+      "path": "/DATA/DATA1/guest3/t11_crc9_runs/formal_s17_v1/d2nn_source_D/best_checkpoint.pt",
+      "bytes": 7852772,
+      "sha256": "f920e596d498a6975d05ccb58f2b166d0f0d8f1e65e1fcc2d4fa93d195cf97a2",
+      "kind": "weight"
+    },
+    {
+      "path": "/DATA/DATA1/guest3/t11_crc9_runs/formal_s17_v1/d2nn_source_D/config.json",
+      "bytes": 908,
+      "sha256": "0cd9ec504f972952d9654dfeebff961d4fc5854e9bf6338d42f0c0252cfadec2",
+      "kind": "record",
+      "summary": []
+    },
+    {
+      "path": "/DATA/DATA1/guest3/t11_crc9_runs/formal_s17_v1/d2nn_source_D/last_checkpoint.pt",
+      "bytes": 7852772,
+      "sha256": "27005bb240513150578343a96f70d23dc7479e28f18cc3381ac6b9828032f158",
+      "kind": "weight"
+    },
+    {
+      "path": "/DATA/DATA1/guest3/t11_crc9_runs/formal_s17_v1/d2nn_source_D/metadata.json",
+      "bytes": 1859,
+      "sha256": "03db2ef02fe59e9dd738d89708064c88f3e0e00200abd29f81f3602dcc3e3e53",
+      "kind": "record",
+      "summary": []
+    },
+    {
+      "path": "/DATA/DATA1/guest3/t11_crc9_runs/formal_s17_v1/d2nn_source_D/results.json",
+      "bytes": 14974,
+      "sha256": "880ba20ceae59ef04f91113fbc89b901640937212b043e49b6b4a8f1e0906957",
+      "kind": "record",
+      "summary": [
+        {
+          "field": "selected_epoch",
+          "value": 25
+        },
+        {
+          "field": "selection_rule",
+          "value": "own-domain validation balanced accuracy, then macro-F1, then lower NLL"
+        }
+      ]
+    },
+    {
+      "path": "/DATA/DATA1/guest3/t11_crc9_runs/formal_s17_v1/d2nn_source_D/split.json",
+      "bytes": 579240,
+      "sha256": "ac6d74898c1a465a4009cca80f468aecac25ef35bb0f4bf9e1e382ac3daee3c7",
+      "kind": "record",
+      "summary": []
+    },
+    {
+      "path": "/DATA/DATA1/guest3/t11_crc9_runs/formal_s17_v1/d2nn_source_D/status.json",
+      "bytes": 50,
+      "sha256": "d9672a718fc2e48f30678dba6eae35d44aa1c3eda0f3f706b25d70e70d9f0f28",
+      "kind": "record",
+      "summary": [
+        {
+          "field": "state",
+          "value": "complete"
+        },
+        {
+          "field": "selected_epoch",
+          "value": 25
+        }
+      ]
+    },
+    {
+      "path": "/DATA/DATA1/guest3/t11_crc9_runs/formal_s17_v1/moe_full_replay/config.json",
+      "bytes": 908,
+      "sha256": "0cd9ec504f972952d9654dfeebff961d4fc5854e9bf6338d42f0c0252cfadec2",
+      "kind": "record",
+      "summary": []
+    },
+    {
+      "path": "/DATA/DATA1/guest3/t11_crc9_runs/formal_s17_v1/moe_full_replay/metadata.json",
+      "bytes": 1834,
+      "sha256": "10c021d71dfcb3c04f330866fd5c381b36a4048c0f1fee4b11ecf79b8b0eb0d5",
+      "kind": "record",
+      "summary": []
+    },
+    {
+      "path": "/DATA/DATA1/guest3/t11_crc9_runs/formal_s17_v1/moe_full_replay/results.json",
+      "bytes": 52859,
+      "sha256": "75aca7f0a51c3b7a29e5ad9490dcfbdb40777a070328f63fdf9c014cc6e4154d",
+      "kind": "record",
+      "summary": [
+        {
+          "field": "final.A_original.val.accuracy",
+          "value": 0.5074074074074074
+        },
+        {
+          "field": "final.A_original.val.balanced_accuracy",
+          "value": 0.5074074074074074
+        },
+        {
+          "field": "final.A_original.test.accuracy",
+          "value": 0.5334261838440112
+        },
+        {
+          "field": "final.A_original.test.balanced_accuracy",
+          "value": 0.48808564037773383
+        },
+        {
+          "field": "final.B_stain_h.val.accuracy",
+          "value": 0.5555555555555556
+        },
+        {
+          "field": "final.B_stain_h.val.balanced_accuracy",
+          "value": 0.5555555555555556
+        },
+        {
+          "field": "final.B_stain_h.test.accuracy",
+          "value": 0.5536211699164345
+        },
+        {
+          "field": "final.B_stain_h.test.balanced_accuracy",
+          "value": 0.49594960212276035
+        },
+        {
+          "field": "final.C_stain_e.val.accuracy",
+          "value": 0.43703703703703706
+        },
+        {
+          "field": "final.C_stain_e.val.balanced_accuracy",
+          "value": 0.43703703703703695
+        },
+        {
+          "field": "final.C_stain_e.test.accuracy",
+          "value": 0.5034818941504178
+        },
+        {
+          "field": "final.C_stain_e.test.balanced_accuracy",
+          "value": 0.48138008500006574
+        },
+        {
+          "field": "final.D_scanner.val.accuracy",
+          "value": 0.3888888888888889
+        },
+        {
+          "field": "final.D_scanner.val.balanced_accuracy",
+          "value": 0.38888888888888895
+        },
+        {
+          "field": "final.D_scanner.test.accuracy",
+          "value": 0.4561281337047354
+        },
+        {
+          "field": "final.D_scanner.test.balanced_accuracy",
+          "value": 0.407967982148372
+        },
+        {
+          "field": "selection_rule",
+          "value": "mean validation balanced accuracy across all seen domains"
+        }
+      ]
+    },
+    {
+      "path": "/DATA/DATA1/guest3/t11_crc9_runs/formal_s17_v1/moe_full_replay/split.json",
+      "bytes": 579240,
+      "sha256": "ac6d74898c1a465a4009cca80f468aecac25ef35bb0f4bf9e1e382ac3daee3c7",
+      "kind": "record",
+      "summary": []
+    },
+    {
+      "path": "/DATA/DATA1/guest3/t11_crc9_runs/formal_s17_v1/moe_full_replay/stage_1_A_original/best_checkpoint.pt",
+      "bytes": 7381107,
+      "sha256": "344e25b952de8b76c11fd8ad97392cf4fe2f85289d63cca6daaaa70d44bf314c",
+      "kind": "weight"
+    },
+    {
+      "path": "/DATA/DATA1/guest3/t11_crc9_runs/formal_s17_v1/moe_full_replay/stage_1_A_original/last_checkpoint.pt",
+      "bytes": 7381107,
+      "sha256": "8ca02ef495bc840cd87caf76abe4e1e889104b4cb48d0cb4155d8c52be630b1e",
+      "kind": "weight"
+    },
+    {
+      "path": "/DATA/DATA1/guest3/t11_crc9_runs/formal_s17_v1/moe_full_replay/stage_2_B_stain_h/best_checkpoint.pt",
+      "bytes": 7381811,
+      "sha256": "7e04b6a45709ae03f7133d82efbfcc1db8d1ac5f8bf955a33376f55f07ebcbe4",
+      "kind": "weight"
+    },
+    {
+      "path": "/DATA/DATA1/guest3/t11_crc9_runs/formal_s17_v1/moe_full_replay/stage_2_B_stain_h/last_checkpoint.pt",
+      "bytes": 7381811,
+      "sha256": "427f3d3f6938e7be3a39bfaed82995de29b4225cca28f888bd483335ce1fb932",
+      "kind": "weight"
+    },
+    {
+      "path": "/DATA/DATA1/guest3/t11_crc9_runs/formal_s17_v1/moe_full_replay/stage_3_C_stain_e/best_checkpoint.pt",
+      "bytes": 7382451,
+      "sha256": "74a7f3f42cf3423cfc0b83e76fdc87983d957cdc8ab5d548c860a14fd6cf9ccc",
+      "kind": "weight"
+    },
+    {
+      "path": "/DATA/DATA1/guest3/t11_crc9_runs/formal_s17_v1/moe_full_replay/stage_3_C_stain_e/last_checkpoint.pt",
+      "bytes": 7382451,
+      "sha256": "2b1b01b09d3e80214a1a8957523ecd9ba70e9a03366ca206cbf5bebeb5d137be",
+      "kind": "weight"
+    },
+    {
+      "path": "/DATA/DATA1/guest3/t11_crc9_runs/formal_s17_v1/moe_full_replay/stage_4_D_scanner/best_checkpoint.pt",
+      "bytes": 7383155,
+      "sha256": "51ede68386852401c48a66d8dfb460bb4c0754eca8ac8eca77dfcee411b98a8a",
+      "kind": "weight"
+    },
+    {
+      "path": "/DATA/DATA1/guest3/t11_crc9_runs/formal_s17_v1/moe_full_replay/stage_4_D_scanner/last_checkpoint.pt",
+      "bytes": 7383155,
+      "sha256": "e7cdc82ac2d8e7216f6ada2259e01e6ac28cd95f1084a133ff561a96665c43f3",
+      "kind": "weight"
+    },
+    {
+      "path": "/DATA/DATA1/guest3/t11_crc9_runs/formal_s17_v1/moe_full_replay/status.json",
+      "bytes": 26,
+      "sha256": "903c809eb8740476258b5172942c356c9c56e21fe0487cd18def4ba74f2f7c4f",
+      "kind": "record",
+      "summary": [
+        {
+          "field": "state",
+          "value": "complete"
+        }
+      ]
+    },
+    {
+      "path": "/DATA/DATA1/guest3/t11_crc9_runs/formal_s17_v1/moe_head_polish/best_checkpoint.pt",
+      "bytes": 7380851,
+      "sha256": "be4f086e524596dd71e41821dd426656b43272ed9b761b8fdc4d515d4242b453",
+      "kind": "weight"
+    },
+    {
+      "path": "/DATA/DATA1/guest3/t11_crc9_runs/formal_s17_v1/moe_head_polish/results.json",
+      "bytes": 13030,
+      "sha256": "23c5d88ae2c4f9564afa7aba1e8bbf2f57c9780e6fa47191f6370f2f3d67b552",
+      "kind": "record",
+      "summary": [
+        {
+          "field": "selected_epoch",
+          "value": 32
+        },
+        {
+          "field": "validation.A_original.accuracy",
+          "value": 0.7703703703703704
+        },
+        {
+          "field": "validation.A_original.balanced_accuracy",
+          "value": 0.7703703703703704
+        },
+        {
+          "field": "validation.B_stain_h.accuracy",
+          "value": 0.7666666666666667
+        },
+        {
+          "field": "validation.B_stain_h.balanced_accuracy",
+          "value": 0.7666666666666667
+        },
+        {
+          "field": "validation.C_stain_e.accuracy",
+          "value": 0.6296296296296297
+        },
+        {
+          "field": "validation.C_stain_e.balanced_accuracy",
+          "value": 0.6296296296296295
+        },
+        {
+          "field": "validation.D_scanner.accuracy",
+          "value": 0.7
+        },
+        {
+          "field": "validation.D_scanner.balanced_accuracy",
+          "value": 0.7
+        },
+        {
+          "field": "test.A_original.accuracy",
+          "value": 0.7855153203342619
+        },
+        {
+          "field": "test.A_original.balanced_accuracy",
+          "value": 0.7683991062856854
+        },
+        {
+          "field": "test.B_stain_h.accuracy",
+          "value": 0.7409470752089137
+        },
+        {
+          "field": "test.B_stain_h.balanced_accuracy",
+          "value": 0.7255290929891417
+        },
+        {
+          "field": "test.C_stain_e.accuracy",
+          "value": 0.6671309192200557
+        },
+        {
+          "field": "test.C_stain_e.balanced_accuracy",
+          "value": 0.6660908137028354
+        },
+        {
+          "field": "test.D_scanner.accuracy",
+          "value": 0.7534818941504178
+        },
+        {
+          "field": "test.D_scanner.balanced_accuracy",
+          "value": 0.7214421545715822
+        },
+        {
+          "field": "selection_rule",
+          "value": "mean validation balanced accuracy across all four domains"
+        }
+      ]
+    },
+    {
+      "path": "/DATA/DATA1/guest3/t11_crc9_runs/formal_s17_v1/moe_head_polish/status.json",
+      "bytes": 50,
+      "sha256": "aca38619a580f5e1d9fc72424c72f0afc7e13e098be3cc14a1a6e3a30fcbd2e7",
+      "kind": "record",
+      "summary": [
+        {
+          "field": "state",
+          "value": "complete"
+        },
+        {
+          "field": "selected_epoch",
+          "value": 32
+        }
+      ]
+    },
+    {
+      "path": "/DATA/DATA1/guest3/t11_crc9_runs/pilot_d2nn_A/best_checkpoint.pt",
+      "bytes": 7852260,
+      "sha256": "03e10eb0a23b8de339a5d048ff04d0d59401d874097b82087d3bc1e29cc47197",
+      "kind": "weight"
+    },
+    {
+      "path": "/DATA/DATA1/guest3/t11_crc9_runs/pilot_d2nn_A/config.json",
+      "bytes": 403,
+      "sha256": "ff9e4c705ee5147ffd0c806f5310fde4120c0d68d8f70a26ef2ef471000e229d",
+      "kind": "record",
+      "summary": []
+    },
+    {
+      "path": "/DATA/DATA1/guest3/t11_crc9_runs/pilot_d2nn_A/last_checkpoint.pt",
+      "bytes": 7852260,
+      "sha256": "1700fe38bcf7d0dd5ce82d7b6527875be1e9d22c051f7f4117e6b20a1304852b",
+      "kind": "weight"
+    },
+    {
+      "path": "/DATA/DATA1/guest3/t11_crc9_runs/pilot_d2nn_A/metadata.json",
+      "bytes": 1785,
+      "sha256": "9c4d06273eed82e2f771c0bb8c764e786cfb1eba8cbc51e5d572216b664483b5",
+      "kind": "record",
+      "summary": []
+    },
+    {
+      "path": "/DATA/DATA1/guest3/t11_crc9_runs/pilot_d2nn_A/results.json",
+      "bytes": 14916,
+      "sha256": "3f93b5f5ad4225a89135bd88c8ac705d5f21f9f0ccd74f3f217c4082bdf380e2",
+      "kind": "record",
+      "summary": [
+        {
+          "field": "selected_epoch",
+          "value": 1
+        },
+        {
+          "field": "selection_rule",
+          "value": "own-domain validation balanced accuracy, then macro-F1, then lower NLL"
+        }
+      ]
+    },
+    {
+      "path": "/DATA/DATA1/guest3/t11_crc9_runs/pilot_d2nn_A/split.json",
+      "bytes": 306000,
+      "sha256": "bcd1ee8707ab260d42ea49938b812c18e008ca9b8698b68a61c4f9934f4bcb24",
+      "kind": "record",
+      "summary": []
+    },
+    {
+      "path": "/DATA/DATA1/guest3/t11_crc9_runs/pilot_d2nn_A/status.json",
+      "bytes": 49,
+      "sha256": "685a08bba93f3e51ebde5ab1a82a75ea415f899b49f34a74ce943a94e022fbfb",
+      "kind": "record",
+      "summary": [
+        {
+          "field": "state",
+          "value": "complete"
+        },
+        {
+          "field": "selected_epoch",
+          "value": 1
+        }
+      ]
+    },
+    {
+      "path": "/DATA/DATA1/guest3/t11_crc9_runs/pilot_moe/config.json",
+      "bytes": 403,
+      "sha256": "ff9e4c705ee5147ffd0c806f5310fde4120c0d68d8f70a26ef2ef471000e229d",
+      "kind": "record",
+      "summary": []
+    },
+    {
+      "path": "/DATA/DATA1/guest3/t11_crc9_runs/pilot_moe/metadata.json",
+      "bytes": 1753,
+      "sha256": "1612310803e018fd3f3b2ac442ce7329928d45d01f7e8489f9e24bd6bc474aaa",
+      "kind": "record",
+      "summary": []
+    },
+    {
+      "path": "/DATA/DATA1/guest3/t11_crc9_runs/pilot_moe/results.json",
+      "bytes": 52726,
+      "sha256": "1d3911165ef4c73a30b06a700cb6bb33820b4897ff84f20dc5afe2fc0246d81d",
+      "kind": "record",
+      "summary": [
+        {
+          "field": "final.A_original.val.accuracy",
+          "value": 0.35555555555555557
+        },
+        {
+          "field": "final.A_original.val.balanced_accuracy",
+          "value": 0.3555555555555555
+        },
+        {
+          "field": "final.A_original.test.accuracy",
+          "value": 0.36768802228412256
+        },
+        {
+          "field": "final.A_original.test.balanced_accuracy",
+          "value": 0.3480724528584952
+        },
+        {
+          "field": "final.B_stain_h.val.accuracy",
+          "value": 0.2222222222222222
+        },
+        {
+          "field": "final.B_stain_h.val.balanced_accuracy",
+          "value": 0.2222222222222222
+        },
+        {
+          "field": "final.B_stain_h.test.accuracy",
+          "value": 0.2513927576601671
+        },
+        {
+          "field": "final.B_stain_h.test.balanced_accuracy",
+          "value": 0.2267028102933019
+        },
+        {
+          "field": "final.C_stain_e.val.accuracy",
+          "value": 0.4222222222222222
+        },
+        {
+          "field": "final.C_stain_e.val.balanced_accuracy",
+          "value": 0.4222222222222222
+        },
+        {
+          "field": "final.C_stain_e.test.accuracy",
+          "value": 0.36768802228412256
+        },
+        {
+          "field": "final.C_stain_e.test.balanced_accuracy",
+          "value": 0.3532120393689379
+        },
+        {
+          "field": "final.D_scanner.val.accuracy",
+          "value": 0.37777777777777777
+        },
+        {
+          "field": "final.D_scanner.val.balanced_accuracy",
+          "value": 0.3777777777777778
+        },
+        {
+          "field": "final.D_scanner.test.accuracy",
+          "value": 0.3697771587743733
+        },
+        {
+          "field": "final.D_scanner.test.balanced_accuracy",
+          "value": 0.35307492964198217
+        },
+        {
+          "field": "selection_rule",
+          "value": "mean validation balanced accuracy across all seen domains"
+        }
+      ]
+    },
+    {
+      "path": "/DATA/DATA1/guest3/t11_crc9_runs/pilot_moe/split.json",
+      "bytes": 306000,
+      "sha256": "bcd1ee8707ab260d42ea49938b812c18e008ca9b8698b68a61c4f9934f4bcb24",
+      "kind": "record",
+      "summary": []
+    },
+    {
+      "path": "/DATA/DATA1/guest3/t11_crc9_runs/pilot_moe/stage_1_A_original/best_checkpoint.pt",
+      "bytes": 7380531,
+      "sha256": "56a2e954e63c2d65e90fd2a04c80351cad7fbb3ca2f6f1fff3cad19a2f48d4fd",
+      "kind": "weight"
+    },
+    {
+      "path": "/DATA/DATA1/guest3/t11_crc9_runs/pilot_moe/stage_1_A_original/last_checkpoint.pt",
+      "bytes": 7380531,
+      "sha256": "14b5d62e90f0d36cb4ea0823c081c4e61ba1fd72a09f966e724a2b0be2648c8e",
+      "kind": "weight"
+    },
+    {
+      "path": "/DATA/DATA1/guest3/t11_crc9_runs/pilot_moe/stage_2_B_stain_h/best_checkpoint.pt",
+      "bytes": 7381235,
+      "sha256": "d62fbf25bfcc59741224edb6baacfe57b459ffd8fc10b01f361f7ac4573aa987",
+      "kind": "weight"
+    },
+    {
+      "path": "/DATA/DATA1/guest3/t11_crc9_runs/pilot_moe/stage_2_B_stain_h/last_checkpoint.pt",
+      "bytes": 7381235,
+      "sha256": "8fc960245cf25603c9612b4d75b72f412fe2a58bdc16851ade4fcf304ed7e8e3",
+      "kind": "weight"
+    },
+    {
+      "path": "/DATA/DATA1/guest3/t11_crc9_runs/pilot_moe/stage_3_C_stain_e/best_checkpoint.pt",
+      "bytes": 7381939,
+      "sha256": "200696d2f901e09fa4176de55a5b87211b7747041ed137e0a2e85f27f901b9a7",
+      "kind": "weight"
+    },
+    {
+      "path": "/DATA/DATA1/guest3/t11_crc9_runs/pilot_moe/stage_3_C_stain_e/last_checkpoint.pt",
+      "bytes": 7381939,
+      "sha256": "5c2975186211259845fd3b07db6a3842f2557ff15c649882c6a0f64f5856f694",
+      "kind": "weight"
+    },
+    {
+      "path": "/DATA/DATA1/guest3/t11_crc9_runs/pilot_moe/stage_4_D_scanner/best_checkpoint.pt",
+      "bytes": 7382643,
+      "sha256": "821f928c729c4f964b8f7db47fc947ae1b1d30999ab2053fab7405a12b4f599a",
+      "kind": "weight"
+    },
+    {
+      "path": "/DATA/DATA1/guest3/t11_crc9_runs/pilot_moe/stage_4_D_scanner/last_checkpoint.pt",
+      "bytes": 7382643,
+      "sha256": "c50f5bbad0bdc830b40ad1e5660fec84449819c53b56536ac821df5924c353e2",
+      "kind": "weight"
+    },
+    {
+      "path": "/DATA/DATA1/guest3/t11_crc9_runs/pilot_moe/status.json",
+      "bytes": 26,
+      "sha256": "903c809eb8740476258b5172942c356c9c56e21fe0487cd18def4ba74f2f7c4f",
+      "kind": "record",
+      "summary": [
+        {
+          "field": "state",
+          "value": "complete"
+        }
+      ]
+    }
+  ],
+  "matching_process_pids": [],
+  "read_only": true,
+  "all_data_retained": true
+}

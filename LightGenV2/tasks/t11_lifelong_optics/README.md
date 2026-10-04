@@ -1,5 +1,10 @@
 # T11：固定几何的光学终身学习
 
+**2026-10-04 源码收敛入口：**实际服务器固定源码及必要对照正在纳入main，
+身份、三种架构用途、数据和权重位置见 [当前版本与复现边界](CURRENT_VERSION_20261004.md)。
+CRC9光电蒸馏使用 `crc9_model.py`，不是下面纯光二分类计算图；不同架构的PT不能混用。
+本地旧模型/测试修改及全部历史结果仍保留，整理不重训、不重新评价TEST。
+
 本工程替换此前的线性占位后端。此前 100%、62.5%、25% 和 0% 的试验不构成本任务结果：存在单类取样、训练集自评、未训练前向、错误任务切分等问题。
 
 ## 固定的物理计算图
@@ -123,6 +128,81 @@ TUM 与正常组织 NOR，许可证 CC BY 4.0，DOI 10.57967/hf/8231。公开数
 不能加载 12 槽 checkpoint。D warmup 只训练 E13–E16；D 主训练冻结 E1–E12，同时更新
 E13–E16、router、global。每次 D 更新包含 6 张 D，以及 A/B/C replay 各 2 张。由此，
 router/global 在每个主任务 A/B/C/D 都重新训练，只在新专家 warmup 期间暂时冻结。
+
+## 四病理数据集离线联合 D2NN 基线
+
+`joint_d2nn.py` 是跨数据集分类对照，不属于终身学习协议。Kather2016、LC25000 lung、
+Kather2018 VAL7K 和 HepatoBench 的二分类训练样本从第一轮开始共同参与优化；模型不接收
+数据集编号，也没有任务顺序、replay、router、专家槽位或遗忘指标。
+
+标准 D2NN 使用与 16 专家 MoE 相同的 1026×1026 传播画布、17 µm 采样、532 nm 波长、
+两段 0.1 m 传播和两个 32×32 CCD 分类窗口。RGB uint8 输入先按 MoE 的固定
+`[R,G; B,0]` 规则编码为 224×224 单位功率振幅，再经 bicubic 插值覆盖 986×986 有效孔径并
+重新归一化为单位功率。随后依次经过 986×986 相位层、传播、986×986 相位层和传播。
+没有输入复制、空间分区、OEO 或电子分类头。两相位层共 1,944,392 个可训练参数；对应
+MoE 的 16 个专家、router 和 global phase 共 1,825,188 个参数，D2NN 多 6.53%。
+
+每个 batch 固定含四个数据集各 3 张图，batch size 为 12。每轮 667 步；较小数据集耗尽后
+独立重排并循环，使四域具有相同的梯度权重。正式配置训练 12 轮，第一、第二相位层的 Adam
+学习率分别为 .01 和 .002。每轮在四个验证集上评估，以四域验证 balanced accuracy 的算术
+平均值选择唯一 checkpoint；不读取 test。训练集指标只在选定 checkpoint 上复评，用于判断
+拟合差距，不参与选模。
+
+```text
+python -m LightGenV2.tasks.t11_lifelong_optics.joint_d2nn \
+  --config LightGenV2/tasks/t11_lifelong_optics/configs/kather_lc25000_kather2018_hepato_joint_d2nn.json \
+  --task-a <kather2016_binary.npz> --task-a-manifest <kather2016_binary_manifest.json> \
+  --task-b <lc25000_lung_binary.npz> --task-b-manifest <lc25000_lung_binary_manifest.json> \
+  --task-c <kather2018_val7k_binary.npz> --task-c-manifest <kather2018_val7k_binary_manifest.json> \
+  --task-d <hepatobench_binary.npz> --task-d-manifest <hepatobench_binary_manifest.json> \
+  --out LightGenV2/tasks/t11_lifelong_optics/runs/simulation/<run_id>
+```
+
+同一离线联合协议的 MoE 使用 `joint_moe.py`：从第一轮起激活并更新全部 16 个专家、router
+和 global phase，每批同样包含 A/B/C/D 各 3 张，训练轮数、更新步数、验证选模和数据划分与
+联合 D2NN 一致。输入由 router 动态分配至 16 个专家，没有任务 ID、固定四区输入、OEO、
+MLP 或电子读出头。
+
+`continual_four_full_replay.py` 保持 A→B→C→D 的四专家逐段扩展方式，但不再使用每个旧任务
+每类 128 张的 memory；每个主阶段直接使用全部已选旧任务训练样本。batch size 固定为 12：
+A 阶段 12 张 A，B 阶段 A/B 各 6 张，C 阶段 A/B/C 各 4 张，D 阶段四任务各 3 张。每个域
+耗尽后独立重排循环，每轮至少完整覆盖当前最大训练集；对应主阶段每轮为 67/334/500/667
+步。旧专家仍逐元素冻结，新四专家、router 和 global phase 更新；三轮 warmup 只训练新四
+专家。该设置是“全旧数据可访问”的上界，不再属于有限 replay memory 协议。
+
+## 固定容量 D2NN 的顺序学习与冻结迁移
+
+`continual_d2nn.py` 使用同一个标准全孔径两层 D2NN 按 A→B→C→D 顺序学习。它没有专家、
+router 或新增容量；因此 B/C/D 的三轮适应阶段会更新原有两层相位，而 MoE 的对应阶段只更新
+新增四专家。随后两者使用相同的 12 轮主训练、batch 组成和验证选模规则。少量 replay 配置为
+`kather_lc25000_kather2018_hepato_d2nn_small_replay.json`；全量旧数据配置为
+`kather_lc25000_kather2018_hepato_d2nn_full_replay.json`。每阶段以所有已见任务的验证 BA 均值
+选择 checkpoint，并在 D 结束后报告各任务 BWT。该对照用于检验固定容量模型的累计遗忘，
+不能用离线联合 D2NN 代替。
+
+`single_task_d2nn_transfer.py` 从同一初始化分别训练 A/B/C/D 四套 D2NN，每套只按自己的验证
+BA 选模，然后冻结并计算完整 4×4 跨域矩阵。它检验单任务固定权重的零样本域迁移，不等价于
+终生学习；某个非对角结果低只能说明该源域权重不适用于该目标域。
+
+两种入口使用相同的四组 `--task-*` 和 `--task-*-manifest` 参数：
+
+```text
+python -m LightGenV2.tasks.t11_lifelong_optics.continual_d2nn \
+  --config LightGenV2/tasks/t11_lifelong_optics/configs/kather_lc25000_kather2018_hepato_d2nn_small_replay.json \
+  --task-a <A.npz> --task-a-manifest <A_manifest.json> \
+  --task-b <B.npz> --task-b-manifest <B_manifest.json> \
+  --task-c <C.npz> --task-c-manifest <C_manifest.json> \
+  --task-d <D.npz> --task-d-manifest <D_manifest.json> \
+  --out LightGenV2/tasks/t11_lifelong_optics/runs/simulation/<run_id>
+
+python -m LightGenV2.tasks.t11_lifelong_optics.single_task_d2nn_transfer \
+  --config LightGenV2/tasks/t11_lifelong_optics/configs/kather_lc25000_kather2018_hepato_single_d2nn.json \
+  --task-a <A.npz> --task-a-manifest <A_manifest.json> \
+  --task-b <B.npz> --task-b-manifest <B_manifest.json> \
+  --task-c <C.npz> --task-c-manifest <C_manifest.json> \
+  --task-d <D.npz> --task-d-manifest <D_manifest.json> \
+  --out LightGenV2/tasks/t11_lifelong_optics/runs/simulation/<run_id>
+```
 
 ## 探测器几何对照
 

@@ -1,0 +1,13 @@
+{
+  "source_commit": "72180033c6edd605c7151b2faa8a599dc15910ee",
+  "expected_main": "770dc27da315159ffcc3892b461dea1cbae828cd",
+  "task_prefix": "LightGenV2/tasks/t11_lifelong_optics/",
+  "paths": [
+    {
+      "path": "LightGenV2/tasks/t11_lifelong_optics/README.md",
+      "source_sha256": "e75b976c789fa784feb821e651209765295dc71c0e026e9289fd3fb53636d1a5",
+      "expected_target_sha256": "81089761c3baa92de00ddf39060dcfa9dc16fa7619fb19f2ec971341ed2562a5",
+      "review_reason": "Preserve original protocols and add actual server joint/sequential D2NN controls; model code remains separately identified"
+    }
+  ]
+}
