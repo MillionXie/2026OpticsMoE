@@ -67,7 +67,7 @@ def run(repository, commit, fixture):
     model = importlib.import_module('LightGenV2.tasks.t01_object_retrieval.modeling')
     # Exact original config fixtures, recursively inherited; no fallback to a
     # different profile when an absolute historical parent has disappeared.
-    config = fixture/TASK/'configs/optical_text_to_image_64_10cm_compact_e0p5_no_alpha_curriculum.yaml'
+    config = fixture/TASK/'configs/optical_text_to_image_64_10cm_compact_e0p5.yaml'
     seen = set()
     import yaml
     current = config
@@ -86,7 +86,7 @@ def run(repository, commit, fixture):
         config = current
     else:
         raise RuntimeError('Cyclic config fixtures')
-    config = fixture/TASK/'configs/optical_text_to_image_64_10cm_compact_e0p5_no_alpha_curriculum.yaml'
+    config = fixture/TASK/'configs/optical_text_to_image_64_10cm_compact_e0p5.yaml'
     settings = settings_module.load_settings(config)
     assert settings.language_optical_distance_m == 0.10
     assert settings.language_optical_pixel_pitch_um == 17.0
@@ -96,7 +96,7 @@ def run(repository, commit, fixture):
     namespace = {'Any': object}
     exec(compile(ast.Module(body=[fn], type_ignores=[]), MODEL, 'exec'), namespace)
     assert namespace['checkpoint_architecture'](settings) == model.checkpoint_architecture(settings)
-    pt = Path('/DATA/DATA1/guest3/2026OpticsMoE')/TASK/'runs/simulation/optical_text_to_image_64_10cm_compact_e0p5_no_alpha_curriculum_seed42_20260925/best_checkpoint.pt'
+    pt = Path('/DATA/DATA1/guest3/2026OpticsMoE')/TASK/'runs/simulation/optical_text_to_image_64_10cm_compact_e0p5_seed42_20260925/best_checkpoint.pt'
     digest = hashlib.sha256(pt.read_bytes()).hexdigest()
     if digest != 'cc977b83286a8e90398ebd30064428886bc3c06f1eb0557e470060f7ff5c1cae':
         raise RuntimeError('Formal body PT changed')
