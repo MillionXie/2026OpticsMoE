@@ -1,0 +1,21 @@
+{
+  "source_commit": "d0662a7d240340817948a3496c2cd43f4240e76d",
+  "task_prefix": "LightGenV2/tasks/t08_abo_image_text_retrieval/",
+  "paths": [
+    {
+      "source_path": "LightGenV2/tasks/t08_abo_image_text_retrieval/optical_moe.py",
+      "target_path": "LightGenV2/tasks/t08_abo_image_text_retrieval/reverse_runtime.py",
+      "sha256": "ebf026e5aa2eaf6dc32ef7b5c5f18c5ac2eaea8515fe2d5a3431427d67e97869",
+      "bytes": 57018
+    }
+  ],
+  "purpose": "Preserve actual text-to-image implementation separately from existing image-to-title entry.",
+  "source_rewritten": false,
+  "runtime_verified": false,
+  "published": false,
+  "pending": [
+    "Explicit reverse-direction launcher and portable configuration",
+    "10cm shared backend strict PT and synthetic compatibility",
+    "Original Windows deployment dependency closure"
+  ]
+}
