@@ -93,6 +93,24 @@ def comparison(a, b):
     }
 
 
+def spatial_response_screen(a, b):
+    """Fixed finite TRAIN-only box-response probe; not a new inference filter.
+
+    Sizes are predeclared, not swept by TEST accuracy. Held-out TRAIN samples
+    must confirm any reduction before the response is used during training.
+    """
+    import torch.nn.functional as F
+    a, b = a.detach().cpu().float(), b.detach().cpu().float()
+    assert a.shape == b.shape
+    result = {}
+    for kernel in (1,3,7,15):
+        x = a if kernel==1 else F.avg_pool2d(
+            F.pad(a.unsqueeze(1),(kernel//2,)*4,mode='reflect'),kernel,stride=1).squeeze(1)
+        row = comparison(x,b)
+        result[str(kernel)] = {k:row[k] for k in ('pcc','affine_residual_rms','affine_slope','affine_intercept')}
+    return result
+
+
 def candidate_setup(project, candidate):
     """Each comparison replays only the CCD captured with its own upstream."""
     if candidate == 'splitrank48':
@@ -252,7 +270,9 @@ def main():
                         stage_rows.append({'sample_id':sid,'stage':stage,
                             'input_bmp_sha_match':actual_sha==receipt['amplitude_sha256'],
                             'amplitude_mean':float(amplitude.mean()),
-                            **comparison(matched_sim[stage],measured[stage])})
+                            **comparison(matched_sim[stage],measured[stage]),
+                            **({'spatial_response_screen':spatial_response_screen(matched_sim[stage],measured[stage])}
+                               if args.scope=='train' else {})})
         write(output/'progress.json',{'status':'diagnosing','samples':n+1,'total':len(selected),
                                      'elapsed_seconds':time.time()-started})
         print(json.dumps({'completed':n+1,'total':len(selected)}),flush=True)
@@ -274,6 +294,8 @@ def main():
     write(output/'report.json',convert({
         'status':'complete','weight_sha256':weight_sha,'candidate':args.candidate,'samples':len(selected),
         'scope':args.scope,'temporal_noise_not_identifiable_from_spatial_residual':True,
+        'spatial_response_kernels_predeclared':[1,3,7,15] if args.scope=='train' else [],
+        'response_holdout_rule':'each operation first two samples fit; third holdout, no TEST' if args.scope=='train' else None,
         'response_fit_usable':all(r['input_bmp_sha_match'] for r in stage_rows),
         'formal_full_test':{k:formal[k]['overall'] for k in ('simulation_metrics','physical_metrics')},
         'selected_indices':selected, 'selection':'even spacing within all four operations, not score-based',
