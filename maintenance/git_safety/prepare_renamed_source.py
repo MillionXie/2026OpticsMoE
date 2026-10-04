@@ -15,10 +15,12 @@ from prepare_scoped_main import git
 from review_git import forbidden_artifact
 
 
-def prepare(root, manifest, message):
+def prepare(root, manifest, message, base_commit=None):
     root = Path(root).resolve()
     main = git(root, 'rev-parse', 'main').decode().strip()
     head = git(root, 'rev-parse', 'HEAD').decode().strip()
+    base = git(root, 'rev-parse', '--verify', (base_commit or main)+'^{commit}').decode().strip()
+    git(root, 'merge-base', '--is-ancestor', main, base)
     if 'branch refs/heads/main\n' in git(root, 'worktree', 'list', '--porcelain').decode():
         raise RuntimeError('main is checked out')
     index = Path(git(root, 'rev-parse', '--path-format=absolute', '--git-path', 'index').decode().strip())
@@ -48,7 +50,7 @@ def prepare(root, manifest, message):
             raise RuntimeError('Unsafe source content')
         if len(data) != row['bytes'] or hashlib.sha256(data).hexdigest() != row['sha256']:
             raise RuntimeError('Source SHA/size mismatch')
-        if git(root, 'ls-tree', main, '--', target):
+        if git(root, 'ls-tree', base, '--', target):
             raise RuntimeError('Target already exists; never overwrite')
         if target.endswith('.py'):
             compile(data.decode('utf-8'), target, 'exec')
@@ -59,15 +61,15 @@ def prepare(root, manifest, message):
         raise RuntimeError('No source additions')
     with tempfile.TemporaryDirectory(prefix='lightgen_renamed_index_') as scratch:
         env = dict(os.environ, GIT_INDEX_FILE=str(Path(scratch)/'index'))
-        git(root, 'read-tree', main, env=env)
+        git(root, 'read-tree', base, env=env)
         for path, mode, oid in rows:
             git(root, 'update-index', '--add', '--cacheinfo', mode, oid, path, env=env)
         tree = git(root, 'write-tree', env=env).decode().strip()
-        candidate = git(root, 'commit-tree', tree, '-p', main, env=env, data=(message+'\n').encode()).decode().strip()
+        candidate = git(root, 'commit-tree', tree, '-p', base, env=env, data=(message+'\n').encode()).decode().strip()
     after = hashlib.sha256(index.read_bytes()).hexdigest() if index.exists() else None
     if before != after or head != git(root, 'rev-parse', 'HEAD').decode().strip() or main != git(root, 'rev-parse', 'main').decode().strip():
         raise RuntimeError('Concurrent index/HEAD/main change')
-    return dict(base_main=main, candidate_commit=candidate, source_commit=source,
+    return dict(base_main=main, candidate_parent=base, candidate_commit=candidate, source_commit=source,
                 renamed_paths=[r[0] for r in rows], working_files_unchanged=True,
                 user_index_unchanged=True, refs_updated=False, pushed=False)
 
@@ -76,5 +78,6 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--manifest', type=Path, required=True)
     parser.add_argument('--message', required=True)
+    parser.add_argument('--base-commit')
     args = parser.parse_args()
-    print(json.dumps(prepare(Path(__file__).resolve().parents[2], json.loads(args.manifest.read_text()), args.message), indent=2))
+    print(json.dumps(prepare(Path(__file__).resolve().parents[2], json.loads(args.manifest.read_text()), args.message, args.base_commit), indent=2))

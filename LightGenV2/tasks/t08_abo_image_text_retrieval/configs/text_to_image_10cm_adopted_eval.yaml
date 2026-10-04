@@ -1,0 +1,353 @@
+# Fixed adopted T08 text-to-image body. Generated from the pinned source configuration chain.
+# Use text_to_image.py with explicit assets and a fresh run directory; not a new training profile.
+dataset:
+  dataset_root: ../../../../data/abo_easy100_dataset_20260906
+  download: false
+  download_url: https://data.caltech.edu/records/mzrjq-6wc02/files/caltech-101.zip?download=1
+  selected_skus:
+  - airplanes
+  - Motorbikes
+  - Faces
+  - Leopards
+  - accordion
+  - grand_piano
+  - scorpion
+  - sunflower
+  - watch
+  - yin_yang
+  merge_official_validation_into_train: false
+  train_limit_per_sku: null
+  test_limit_per_sku: 20
+  gallery_images_per_sku: 3
+  use_all_categories: false
+  reserve_test_before_train: true
+qwen:
+  model_id: Qwen/Qwen3-VL-Embedding-2B
+  cache_dir: null
+  local_files_only: true
+  instruction: Retrieve the product title that best describes this product image.
+  processor_min_pixels: 50176
+  processor_max_pixels: 50176
+  dtype: bfloat16
+  attn_implementation: sdpa
+  device: cuda
+retrieval:
+  image_size: 224
+  embedding_dim: 64
+  gallery_aggregation: mean_prototype
+batching:
+  teacher_batch_size: 8
+  batch_size: 30
+  pk_skus_per_batch: 10
+  pk_images_per_sku: 3
+  inference_batch_size: 4
+  num_workers: 4
+  optimizer_steps_per_epoch: null
+training:
+  epochs: 18
+  learning_rate: 1.2e-05
+  adapter_learning_rate: 6.0e-06
+  readout_learning_rate: 1.2e-05
+  weight_decay: 0.0
+  lambda_kd: 0.3
+  lambda_relational_kd: 0.0
+  lambda_ret: 0.25
+  lambda_gallery: 1.0
+  lambda_teacher_gallery: 0.0
+  lambda_router_balance: 0.14
+  lambda_router_importance: 0.035
+  phase_dc:
+    enabled: true
+    weight: 0.005
+    start_epoch: 1
+  temperature: 0.07
+  gallery_temperature: 0.15
+  gallery_prototype_stop_gradient: true
+  router_learning_rate: 0.0015
+  phase_learning_rate: 0.0015
+  gradient_clip_norm: 1.0
+  phase_focus:
+    enabled: false
+    warmup_epochs: 0
+    interval_epochs: 2
+  phase_diagnostics:
+    gradient_measure_interval_batches: 10
+    motion_warning_epoch: 4
+    motion_warning_threshold_rad: 0.08
+    preview_interval_epochs: 40
+  ema_decay: 0.99
+  resume_optimizer_state: false
+  random_seed: 42
+  amp_enabled: true
+  evaluate_test_each_epoch: false
+  log_interval_batches: 5
+  episodic_prototype_loss: true
+  learning_rate_schedule: cosine
+  learning_rate_warmup_ratio: 0.05
+  teacher_enabled: true
+  lambda_ccd_operating_point: 0.02
+  lambda_router_hard_load_balance: 0.9
+  router_load_bias_update_rate: 0.0
+augmentation:
+  enabled: true
+  crop_scale_min: 0.82
+  brightness_jitter: 0.15
+  contrast_jitter: 0.15
+  rotation_degrees: 7.0
+optical:
+  input_adapter_dim: 224
+  max_visual_tokens: 224
+  max_language_tokens: 224
+  vision_tap_stages:
+  - 1
+  native_pre_attention_enabled: false
+  initialize_attention_from_teacher: false
+  native_pre_attention_trainable: false
+  residual_enabled: false
+  geometry:
+    canvas_size: 518
+    active_size: 478
+    expert_size: 224
+    expert_pitch: 254
+    num_experts: 4
+    grid_rows: 2
+    grid_cols: 2
+    layers_per_expert: 1
+  router:
+    top_k: 2
+    pool_size: 14
+    temperature: 2.0
+    input_layernorm_enabled: true
+    input_layernorm_eps: 1.0e-05
+    amplitude_weight_domain: amplitude
+    input_normalization: none
+    noise_std: 0.1
+  physics:
+    wavelength_nm: 532.0
+    pixel_pitch_um: 16.0
+    inter_layer_distance_m: 0.05
+    last_expert_to_global_distance_m: 0.05
+    global_to_detector_distance_m: 0.05
+  phase:
+    parameterization: sigmoid
+    init: small_normal
+    init_std: 0.02
+    dropout_mode: block_phase_bypass
+    dropout_p: 0.05
+    dropout_block_size: 8
+    dropout_batch_shared: true
+  k_space:
+    enabled: true
+    theta_max_deg: 0.65
+  oeo:
+    enabled: true
+    per_expert_enabled: true
+    elementwise_affine: false
+    hard_route_mask: true
+    reapply_routing_weights: true
+    preserve_response_amplitude: true
+    response_gain_min: 0.5
+    response_gain_max: 2.0
+    detector_integration_factor: 2
+    layernorm_eps: 1.0e-05
+    nonlinearity: relu
+  detector:
+    output_size: 224
+    layernorm_eps: 1.0e-05
+    layernorm_affine: false
+    layernorm_scope: per_token
+    nonlinearity: relu
+visualization:
+  sample_count: 8
+output_dir: ../runs/simulation/text_to_image_10cm_fixed_eval
+robust_hybrid:
+  residual:
+    initial_input_weight: 0.8
+  electronic_refiner:
+    width: 16
+    second_dilation: 2
+    dropout: 0.05
+  embedding_head:
+    bottleneck_dim: 96
+    dropout: 0.1
+  alignment:
+    enabled: true
+    apply_during_eval: false
+    input_shift_max_logical_px: 12
+    phase_shift_max_logical_px: 12
+    ccd_shift_max_logical_px: 12
+    batch_shared: true
+teacher_cache:
+  directory: ../runs/shared/abo_easy100_qwen64
+  derive_from: null
+electronic:
+  width: 192
+  layers: 2
+  expansion: 0.5
+  dropout: 0.1
+  initial_residual_weight: 0.1
+  pooling: mean_max
+  deepstack_enabled: false
+  token_mixer:
+    enabled: true
+    kernel_size: 5
+  vision_token_mixer:
+    type: depthwise_conv2d
+    kernel_size: 3
+  language_token_mixer:
+    type: depthwise_conv1d
+    kernel_size: 5
+hybrid:
+  initial_electronic_checkpoint: null
+  freeze_electronic: false
+  initial_fusion: 0.055
+  minimum_optical_fusion: 0.05
+language_optical:
+  grid_size: 224
+  canvas_size: 518
+  wavelength_nm: 532.0
+  pixel_pitch_um: 17.0
+  distance_m: 0.1
+  input_rms: 0.5
+  ccd_target_mean: 0.25
+  k_space:
+    enabled: true
+    theta_max_deg: 0.65
+  phase:
+    parameterization: sigmoid
+    init: small_normal
+    init_std: 0.02
+    dropout_mode: block_phase_bypass
+    dropout_p: 0.08
+    dropout_block_size: 8
+  normalization:
+    relative_clip: 12.0
+    log_compression: 1.0
+  perturbation:
+    max_shift_pixels: 16
+    phase_shift_pixels: 16
+    ccd_shift_pixels: 16
+    gain_min: 0.4
+    gain_max: 2.5
+    offset_fraction: 0.05
+    read_noise_fraction: 0.015
+    ccd_noise:
+      distribution: truncated_biased_gaussian
+      mean_fraction: 0.03
+      std_fraction: 0.03
+      min_fraction: -0.03
+      max_fraction: 0.12
+    zero_order:
+      enabled: true
+      amplitude_intensity_fraction_min: 0.2
+      amplitude_intensity_fraction_max: 0.3
+      phase_intensity_fraction_min: 0.2
+      phase_intensity_fraction_max: 0.3
+      random_relative_phase: true
+  allow_distance_override: true
+hardware:
+  phase_mask:
+    flip_vertical: true
+    flip_horizontal: false
+    width: 1920
+    height: 1200
+    pixel_pitch_um: 8.0
+    center_x: 980.0
+    center_y: 590.0
+  ccd:
+    flip_vertical: false
+    flip_horizontal: false
+    physical_binning_factor: 1
+    target_size: 478
+    transport_size: 478
+  amplitude_slm:
+    width: 1024
+    height: 1024
+    pixel_pitch_um: 17.0
+    center_x: 512.0
+    center_y: 512.0
+    bright_value_uint8: 255
+    dark_value_uint8: 0
+    invert_before_export: false
+warmstart:
+  stage: joint
+  electronic_checkpoint: null
+  electronic_sha256: null
+  optical_checkpoint: null
+  optical_sha256: null
+  stage_a_checkpoint: ../../runs/caltech101_warmstart5_stage1_optical_calibration/ema_best_train_loss_checkpoint.pt
+router_experiment:
+  optimization_seed: 42
+  source_checkpoint: ../../../../experiments/qwen3_vl_embedding_2b_caltech101_four_layer_optical_retrieval_10cm_warmstart5/runs/caltech101_warmstart5_stage2_joint_sealed_test/ema_best_train_loss_checkpoint.pt
+  source_sha256: 6a27f54d8c869cce46150583383a127b0ba47b3d34503f5753aa23974ac1e55d
+  protocol: equal_budget_adaptation
+  reset_router_parameters: true
+  weight_normalization: power_l2
+  straight_through: true
+  optical:
+    detector_intervals:
+    - - 164
+      - 223
+    - - 255
+      - 314
+    score_normalization: standardized_region_energy
+    energy_eps: 1.0e-08
+    capture_loss_scale: 0.1
+    hardware_quality:
+      maximum_saturated_pixel_fraction: 0.02
+      minimum_p99_uint8: 8.0
+      minimum_dynamic_range_uint8: 4.0
+      minimum_topk_probability_margin: 0.01
+    phase_dropout_p: 0.05
+    phase_dropout_block_size: 8
+    input_shift_pixels: 16
+    phase_shift_pixels: 16
+    ccd_shift_pixels: 16
+    distance_m: 0.1
+  backend: optical
+  top_k: 2
+  contract:
+    optical:
+      distance_m: 0.1
+balanced_fusion:
+  mode: scale_matched_convex
+  alpha_min: 0.01
+  alpha_max: 0.95
+  alpha_initial: 0.15
+  rms_epsilon: 1.0e-06
+  detach_scale_statistics: true
+lightgen:
+  model_variant: optical_router_scale_matched_moe
+  selection:
+    use_periodic_test: true
+    test_interval_epochs: 2
+    primary_checkpoint: best_checkpoint.pt
+  robustness_contract:
+    displacement_pixels: 16
+    k_space_theta_max_deg: 0.65
+    coherent_zero_order_intensity_range:
+    - 0.2
+    - 0.3
+    ccd_noise: truncated_biased_gaussian
+    evaluation: deterministic_ideal_optics
+d2nn:
+  phase_size: 224
+  phase_layers_per_modality: 2
+abo_image_text:
+  title_instruction: Represent the user's input.
+  temperature: 0.07
+  symmetric_title_to_image_weight: 1.25
+  teacher_kd_weight: 0.65
+  cache_file: ../runs/shared/abo_easy100_qwen64_true_text_to_image.pt
+  retrieval_direction: text_to_image
+  selection_direction: text_to_image
+  resume_checkpoint: ../runs/simulation/optical_text_to_image_64_10cm_compact_e0p5_seed42_20260925/best_checkpoint.pt
+  resume_checkpoint_sha256: cc977b83286a8e90398ebd30064428886bc3c06f1eb0557e470060f7ff5c1cae
+  allow_propagation_distance_transition: false
+  alpha_curriculum:
+    start: 0.15
+    end: 0.4
+    warmup_epochs: 8
+    minimum_selected: 0.39
+  allow_electronic_compaction_transition: false
+  allow_alpha_range_transition: false

@@ -14,6 +14,7 @@ import os
 from pathlib import Path
 import subprocess
 import sys
+import tempfile
 
 SOURCE = 'd0662a7d240340817948a3496c2cd43f4240e76d'
 TASK = 'LightGenV2/tasks/t08_abo_image_text_retrieval/'
@@ -125,6 +126,24 @@ def run(repository, commit, fixture):
                                    latent_sha256=hashlib.sha256(latent.contiguous().numpy().tobytes()).hexdigest())
     readout = model.ElectronicRetrievalReadout(settings.detector_output_size, settings.embedding_dim)
     readout.load_state_dict(payload['retrieval_readout'], strict=True)
+    reverse_entry = None
+    if TASK+'reverse_runtime.py' in importer.tree:
+        reverse = importlib.import_module('LightGenV2.tasks.t08_abo_image_text_retrieval.reverse_runtime')
+        assert importer.loaded[TASK+'reverse_runtime.py'] == 'ebf026e5aa2eaf6dc32ef7b5c5f18c5ac2eaea8515fe2d5a3431427d67e97869'
+        entry = importlib.import_module('LightGenV2.tasks.t08_abo_image_text_retrieval.text_to_image')
+        profile_bytes = importer.git('show', commit+':'+TASK+'configs/text_to_image_10cm_adopted_eval.yaml')
+        with tempfile.TemporaryDirectory(prefix='t08_config_contract_') as scratch:
+            profile = Path(scratch)/'fixed.yaml'
+            profile.write_bytes(profile_bytes)
+            values = entry.configuration(profile, model=Path(scratch)/'model', data_root=Path(scratch)/'data',
+                                         checkpoint=pt, teacher_cache=Path(scratch)/'cache.pt', run_dir=Path(scratch)/'no_run')
+            assert values['abo_image_text']['retrieval_direction'] == 'text_to_image'
+            assert values['abo_image_text']['resume_checkpoint_sha256'] == digest
+            assert not (Path(scratch)/'no_run').exists()
+        assert callable(reverse.run)
+        reverse_entry = dict(exact_runtime_sha256=importer.loaded[TASK+'reverse_runtime.py'],
+                             profile_sha256=hashlib.sha256(profile_bytes).hexdigest(),
+                             fixed_configuration_validated=True, dataset_executed=False)
     torch.manual_seed(29)
     with torch.no_grad():
         output = readout(torch.randn(2, settings.detector_output_size))
@@ -132,7 +151,7 @@ def run(repository, commit, fixture):
     return dict(commit=commit, original_runtime=SOURCE, config_fixtures_verified=len(seen),
                 geometry_m=0.10, body_sha256=digest, strict_reloads=strict+['readout'],
                 architecture_label_identical_at_10cm=True, imports=importer.loaded,
-                synthetic_forward=synthetic,
+                synthetic_forward=synthetic, reverse_entry=reverse_entry,
                 dataset_evaluated=False, scientific_metrics_revalidated=False,
                 model_forward_equivalence_verified=False, windows_deployment_verified=False,
                 runtime_assets_modified=False, cuda_visible_devices='')

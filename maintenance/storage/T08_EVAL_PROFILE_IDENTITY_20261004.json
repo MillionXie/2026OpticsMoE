@@ -1,0 +1,139 @@
+{
+  "source_commit": "d0662a7d240340817948a3496c2cd43f4240e76d",
+  "original_profile": "LightGenV2/tasks/t08_abo_image_text_retrieval/configs/optical_text_to_image_64_10cm_compact_e0p5.yaml",
+  "profile": "LightGenV2/tasks/t08_abo_image_text_retrieval/configs/text_to_image_10cm_adopted_eval.yaml",
+  "profile_sha256": "59435a148c02a60d84792408436e08e3d5dbef7716cfd8eefa729918dbc22c1a",
+  "inherited_configs": [
+    {
+      "path": "LightGenV2/tasks/t08_abo_image_text_retrieval/configs/optical_text_to_image_64_10cm_compact_e0p5.yaml",
+      "sha256": "721d49867d114e61f8b0b11567c6946afb05e08c824ff9d0ff95652c42cdbe8c"
+    },
+    {
+      "path": "LightGenV2/tasks/t08_abo_image_text_retrieval/configs/optical_text_to_image_64_15cm_compact_e0p5.yaml",
+      "sha256": "2b444e07f5aacd94872ee5de26ae8acb91930307dc6d2d53ea57b2e5b6b91f8d"
+    },
+    {
+      "path": "LightGenV2/tasks/t08_abo_image_text_retrieval/configs/optical_text_to_image_64_15cm_true.yaml",
+      "sha256": "b3f800984666b1558327ae7f0042b0ddef2a5e359e95b46c2617975377399a96"
+    },
+    {
+      "path": "LightGenV2/tasks/t08_abo_image_text_retrieval/configs/optical_router_moe_dc20_kd1_balance1.yaml",
+      "sha256": "933293b6aa20e83e9cdfc322048fb1f231b1491a9f848030697efab72c7347c4"
+    },
+    {
+      "path": "LightGenV2/tasks/t08_abo_image_text_retrieval/configs/optical_router_moe_dc20.yaml",
+      "sha256": "636dcf8c42602b1d3cb2d03818d02fed53ba435ed1a82fbe68e814c3793885d1"
+    },
+    {
+      "path": "LightGenV2/tasks/t01_object_retrieval/configs/common_dc20.yaml",
+      "sha256": "44b54b007a24f712e4135dbf4f780134cf159484e46ad1f25419e24793be26d8"
+    },
+    {
+      "path": "LightGenV2/tasks/t01_object_retrieval/configs/common.yaml",
+      "sha256": "7077bf94bfad8602a610ef96a83f701ede80d08576ec6a38544e2ede910c0f4f"
+    },
+    {
+      "path": "experiments/qwen3_vl_embedding_2b_caltech101_four_layer_optical_router_retrieval/configs/release/optical_power_topk2.yaml",
+      "sha256": "22c7a32fa0a232570dd9e272562fd29e3a9305d206d56d71886aab15605efdcd"
+    },
+    {
+      "path": "experiments/qwen3_vl_embedding_2b_caltech101_four_layer_optical_router_retrieval/configs/release/common.yaml",
+      "sha256": "551d95b08c4b83a63cba08666a7cb633806f3a8bf236879ac559a61d53d9741e"
+    },
+    {
+      "path": "experiments/qwen3_vl_embedding_2b_caltech101_four_layer_optical_retrieval_10cm_warmstart5/configs/release/stage2_joint_sealed_test.yaml",
+      "sha256": "7831548824abd9bf3893f0300d41cf20a2f02c8a2a047c928addc3d83a8c7c47"
+    },
+    {
+      "path": "experiments/qwen3_vl_embedding_2b_caltech101_four_layer_optical_retrieval_10cm_warmstart5/configs/release/stage1_optical_calibration.yaml",
+      "sha256": "a48c16e6f31100f6c958c31c916b188aa5ec477f82436339df7dfe215704fc88"
+    },
+    {
+      "path": "experiments/qwen3_vl_embedding_2b_caltech101_four_layer_optical_retrieval_10cm_robust/configs/release/caltech101_four_layer_optical_joint_17um_10cm_robust.yaml",
+      "sha256": "7a3233907134893d893065e1a9dcf5cb51f6958d3803137b478200b986d6559a"
+    },
+    {
+      "path": "experiments/qwen3_vl_embedding_2b_caltech101_four_layer_optical_retrieval/configs/release/caltech101_four_layer_optical_joint_17um.yaml",
+      "sha256": "5ec6bb3e1a8d06986dda2349647ca98511b17f0e45129b8dcfa821a292a433a5"
+    },
+    {
+      "path": "experiments/qwen3_vl_embedding_2b_caltech101_four_layer_optical_retrieval/configs/release/caltech101_four_layer_optical_joint.yaml",
+      "sha256": "102ff9f55627c2743463ab6af75dffe004d5dd127e2b818c3aaff2ced7899d1a"
+    },
+    {
+      "path": "experiments/qwen3_vl_embedding_2b_caltech101_electronic_retrieval/configs/release/caltech101_target10_electronic_vision2d.yaml",
+      "sha256": "9b3641cbc896bc6269763d5dc5db2757dff23a2192f6029af5c00fd0c8187e0e"
+    },
+    {
+      "path": "experiments/qwen3_vl_embedding_2b_caltech101_electronic_retrieval/configs/release/caltech101_target10_electronic_token_mixer.yaml",
+      "sha256": "8deaaffe7b544713fe8511266cec8c1a8c4be01c5239c7f7f8e37e076af78bb8"
+    },
+    {
+      "path": "experiments/qwen3_vl_embedding_2b_caltech101_electronic_retrieval/configs/release/caltech101_target10_electronic.yaml",
+      "sha256": "4953500d7b9517dfcdaf65f5c41a43655eedc5fe8ce25c90280ac7d99d4d31fa"
+    },
+    {
+      "path": "experiments/qwen3_vl_embedding_2b_caltech101_robust_hybrid_retrieval/configs/release/caltech101_target10_finetune.yaml",
+      "sha256": "7b998e34a0b8e36c7d28b2164286b27d1ce3f414d61036b3f9c663e9f66efac7"
+    },
+    {
+      "path": "experiments/qwen3_vl_embedding_2b_caltech101_robust_hybrid_retrieval/configs/release/caltech101_robust_hybrid_moe4.yaml",
+      "sha256": "70e61c7272b2ab7f9715ac5ed4f038d9f07d8f73eaee2fccca81192e55adc1eb"
+    },
+    {
+      "path": "experiments/qwen3_vl_embedding_2b_grocery10_robust_hybrid_retrieval/configs/release/robust_hybrid_moe4.yaml",
+      "sha256": "cab85e8c90b01feef38e913992903fcb1d95768f513f37b5ba9bd5a37563c2ab"
+    },
+    {
+      "path": "experiments/qwen3_vl_embedding_2b_grocery10_optical_retrieval/configs/release/model_moe4.yaml",
+      "sha256": "02adbb47372bffb8695c99ccb46bb45e9c30179a5f1d472855a697689f5b1c04"
+    }
+  ],
+  "reviewed_changes": [
+    {
+      "key": "output_dir",
+      "original": "/DATA/DATA1/guest3/2026OpticsMoE/LightGenV2/tasks/t08_abo_image_text_retrieval/runs/simulation/optical_text_to_image_64_10cm_compact_e0p5_seed42_20260925",
+      "value": "../runs/simulation/optical_text_to_image_64_10cm_compact_e0p5_seed42_20260925",
+      "reason": "Relocate original repository asset reference; no asset is copied."
+    },
+    {
+      "key": "abo_image_text.resume_checkpoint",
+      "original": "/DATA/DATA1/guest3/2026OpticsMoE/LightGenV2/tasks/t08_abo_image_text_retrieval/runs/simulation/optical_text_to_image_64_15cm_compact_e0p5_seed42_20260921/best_checkpoint.pt",
+      "value": "../runs/simulation/optical_text_to_image_64_15cm_compact_e0p5_seed42_20260921/best_checkpoint.pt",
+      "reason": "Relocate original repository asset reference; no asset is copied."
+    },
+    {
+      "key": "output_dir",
+      "original": "../runs/simulation/optical_text_to_image_64_10cm_compact_e0p5_seed42_20260925",
+      "value": "../runs/simulation/text_to_image_10cm_fixed_eval",
+      "reason": "CLI requires a fresh run directory, never the original run."
+    },
+    {
+      "key": "abo_image_text.resume_checkpoint",
+      "original": "../runs/simulation/optical_text_to_image_64_15cm_compact_e0p5_seed42_20260921/best_checkpoint.pt",
+      "value": "../runs/simulation/optical_text_to_image_64_10cm_compact_e0p5_seed42_20260925/best_checkpoint.pt",
+      "reason": "Fixed adopted body, not 15cm training initialization."
+    },
+    {
+      "key": "abo_image_text.resume_checkpoint_sha256",
+      "original": "ae92995b49eaf7d49165d7816f876e831d9ab070a482f94e849d2f16e9ebb50f",
+      "value": "cc977b83286a8e90398ebd30064428886bc3c06f1eb0557e470060f7ff5c1cae",
+      "reason": "Exact adopted body identity."
+    },
+    {
+      "key": "abo_image_text.allow_propagation_distance_transition",
+      "original": true,
+      "value": false,
+      "reason": "Fixed inference must not reset phase/gates or transplant training initialization."
+    },
+    {
+      "key": "abo_image_text.allow_alpha_range_transition",
+      "original": null,
+      "value": false,
+      "reason": "Fixed inference must not reset phase/gates or transplant training initialization."
+    }
+  ],
+  "architecture_parameters_changed": false,
+  "metric_reproduction_verified": false,
+  "windows_deployment_verified": false
+}

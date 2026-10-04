@@ -21,7 +21,31 @@ T07；**文搜图**曾在同名 T08 的另一个运行工作树实现，不能�
 源码 commit `d0662a7d240340817948a3496c2cd43f4240e76d` 的 `optical_moe.py`
 与服务器工作文件、本机交接源码 SHA 相同；历史 run manifest 仍如实保留
 `9485674...` 加 dirty 的记录。两份共享几何/架构身份依赖与 main 不同，未覆盖。
-main 目前还不是这份文搜图的独立部署入口；原运行工作树和 Windows 工程保护。
+文搜图在 main 的独立固定评估入口见下节；原运行工作树和 Windows 工程保护。
+
+## 2026-10-04 文搜图固定评估入口
+
+`text_to_image.py` 加载封存的 10cm 主体 `cc977b83...`，调用单独保留的
+`reverse_runtime.py`；不替换本页图搜文 `optical_moe.py`。21 层旧配置继承已
+机械展开为 `configs/text_to_image_10cm_adopted_eval.yaml`，保留原结构和光学参数。
+入口只允许固定评估，不训练、不重置相位或融合门，拒绝覆盖已有输出目录；
+模型、数据、教师缓存和权重须显式指定，不自动下载模型。先只读检查：
+
+```bash
+python -m LightGenV2.tasks.t08_abo_image_text_retrieval.text_to_image \
+  --model /absolute/path/to/local/Qwen3-VL-Embedding-2B \
+  --data-root /absolute/path/to/abo_easy100_dataset \
+  --checkpoint /absolute/path/to/adopted/best_checkpoint.pt \
+  --teacher-cache /absolute/path/to/teacher_cache.pt \
+  --run-dir /absolute/path/to/new_fixed_eval_run --inspect
+```
+
+去掉 `--inspect` 才执行固定主体评估；默认 CPU，可显式指定空闲设备。
+这不是 Windows 光路采集或 .85 读出适配版部署命令。迁移验证已完成真实主体 PT
+严格加载和有界合成 token 的旧/新后端逐值等价，尚未新重评全数据或迁移 Windows
+流程，不将这些检查冒称新的实拍或精度复现。
+证据见仓库 `maintenance/storage/T08_BACKEND_COMPATIBILITY_20261004.json` 和
+`maintenance/storage/T08_EVAL_PROFILE_IDENTITY_20261004.json`。
 
 用户采用的是主体 `cc977b83...` + 10轮读出 `89e25360...` 的 .85 版本。
 更长微调对照、旧相位/CCD/预测和所有测速文件原位保留；另有 .88 仿真的计时

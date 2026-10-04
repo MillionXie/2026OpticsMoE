@@ -46,3 +46,13 @@ def test_refuses_unsafe_import(tmp_path, bad):
         manifest['paths'] *= 2
     with pytest.raises(RuntimeError):
         prepare(tmp_path, manifest, 'refused')
+
+
+def test_composes_on_descendant_without_switching_main(tmp_path):
+    main, manifest = fixture(tmp_path)
+    tree = git(tmp_path, 'rev-parse', main+'^{tree}').decode().strip()
+    parent = git(tmp_path, 'commit-tree', tree, '-p', main, '-m', 'metadata').decode().strip()
+    result = prepare(tmp_path, manifest, 'composed entry', parent)
+    assert result['candidate_parent'] == parent
+    assert git(tmp_path, 'rev-parse', result['candidate_commit']+'^').decode().strip() == parent
+    assert git(tmp_path, 'rev-parse', 'main').decode().strip() == main
