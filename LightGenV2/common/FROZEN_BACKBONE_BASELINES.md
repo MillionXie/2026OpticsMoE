@@ -20,6 +20,10 @@ PT 严格加载、参数量及有界合成输入输出通过。没有重新读�
 
 原报告、PT SHA 和源提交逐项见仓库
 `maintenance/storage/DENSE_BASELINE_ASSET_IDENTITY_20261005.json`。
+OpenMoji 原 `layered_scene_qwen_shared.yaml` 的七层继承已机械展开为
+`tasks/t04_semantic_interaction/configs/baseline_layered_scene_frozen_backbones.yaml`；
+相对资产路径仍按同一 configs 目录解析，数值与原继承结果相同。这是原源码配置
+入口恢复，原 PT 未内嵌完整配置／命令，不能据此声称每份 PT 的完整启动身份已闭环。
 其中 13 份报告含必要最终对照及历史试错，不代表 13 份最终版：OpenMoji 应区分
 `final_seed73` 与早期 EMA 保存错误／seed42 对照；LSP 低 PCK 仍属待诊断结果。
 SALICON 固定低学习率对照和原分段训练不能混成同一预算。

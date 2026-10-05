@@ -1,0 +1,83 @@
+# Historical d53d82ab seven-layer config inheritance, mechanically expanded.
+# JSON syntax is valid YAML. No base_config lookup into old worktrees.
+# Dataset/model/cache identities must be checked before executing a new run.
+{
+  "seed": 73,
+  "dataset": {
+    "data_dir": "../dataset/openmoji_layered_anchor6_svg_v3",
+    "asset_dir": "../../../../experiments/qwen3_vl_2b_openmoji_instruction_four_stage_optical_editing/assets/openmoji-17.0.0-72-color",
+    "image_size": 224,
+    "grid_size": 6,
+    "icon_size": 30,
+    "icon_classes": 16,
+    "train_samples": 5000,
+    "test_samples": 1000,
+    "prompt_templates_per_operation": 3,
+    "layout_version": "layered_anchor6_svg_v3",
+    "svg_asset_dir": "../assets/openmoji-17.0.0-svg"
+  },
+  "qwen": {
+    "model_id": "Qwen/Qwen3-VL-2B-Instruct",
+    "checkpoint": "auto",
+    "prompt_cache": "token_embeddings_v1.pt",
+    "prompt_cache_batch_size": 16,
+    "prompt_max_tokens": 64
+  },
+  "model": {
+    "electronic_width": 192,
+    "max_language_tokens": 64,
+    "optical_fusion_initial": 0.6,
+    "embedding_only": false,
+    "fusion_alpha_minimum": 0.4001,
+    "fusion_alpha_maximum": 0.95,
+    "editor_depth": 2,
+    "position_scale": 0.1,
+    "shared_readout": true,
+    "phase_dropout_p": 0
+  },
+  "training": {
+    "epochs": 100,
+    "batch_size": 32,
+    "num_workers": 0,
+    "learning_rate": 0.0003,
+    "adapter_learning_rate": 0.0003,
+    "phase_learning_rate": 0.006,
+    "router_learning_rate": 0.006,
+    "readout_learning_rate": 0.0003,
+    "decoder_learning_rate": 0.0003,
+    "weight_decay": 0.02,
+    "warmup_electronic_epochs": 0,
+    "gradient_clip_norm": 1,
+    "ema_decay": 0.997,
+    "amp_enabled": true,
+    "resume": false
+  },
+  "loss": {
+    "changed_cell_weight": 12,
+    "foreground_cell_weight": 3,
+    "category": 1,
+    "edit": 1.25,
+    "preservation": 0.15,
+    "task": 0.1,
+    "ccd": 0,
+    "router_balance": 0,
+    "router_importance": 0,
+    "router_hard_load_balance": 0,
+    "router_semantic_code": 0,
+    "phase_dc": 0
+  },
+  "protocol": {
+    "test_interval_epochs": 5,
+    "legacy_warmstart_checkpoint": "../../../../experiments/qwen3_vl_2b_openmoji_instruction_four_stage_optical_editing/runs/pilot_gpu/checkpoints/last.pt",
+    "router_min_share": 0.05,
+    "router_max_share": 0.45
+  },
+  "logging": {
+    "interval_batches": 20,
+    "visualization_samples_per_task": 8
+  },
+  "output_dir": "../runs/simulation/layered_scene_qwen_shared_s73_e100",
+  "lightgen": {
+    "model_variant": "qwen_frozen_shared_readout"
+  }
+}
