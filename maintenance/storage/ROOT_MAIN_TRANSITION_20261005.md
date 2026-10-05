@@ -7,7 +7,9 @@
 - 原主目录历史保存于 `refs/archive/root-before-main-20261005`，完整历史 bundle SHA256 为 `e413e7681063f6d4de49461876e68a6a8a10cae4445289954baa9988b6e870ac`。
 - 切换前 1385 个文件的恢复包已逐文件核验，SHA256 为 `5fb0f8acf3d6e355c15fa6204573c5de5991d2b78a8f0b49571a0837db4bba37`。私有收据及恢复包位于 `.codex_tmp/main_checkout_transition_preservation_20261005/`，不进入 Git。
 - 旧 T12 根目录分支名已退出；旧 `t12_cross_modal` 工作树退出开发分支，5411 个文件及其原修改保持不变，历史保存在 `refs/archive/frozen-local-20261005/t12-cross-modal-lifelong-overlay`。目录尚未删除。
-- 本地开发分支现为 5 个；这不代表工作树、服务器运行目录或所有未提交修改已收敛。
+- 旧 `.worktrees/t04-qwen` 对照工作树也已退出开发分支：核验 4680 个文件及原修改保持不变，未检测到本机进程引用该目录；历史保存于 `refs/archive/frozen-local-20261005/t04-qwen-baseline-overlay`，完整历史 bundle SHA256 为 `706942a3ea46cc708284569de1c11a703ea05667af8bfa104ad92e29747cf645`，独有文件恢复包 SHA256 为 `eb4b9d9cd482980ff341dc59845eedb0968ff4663973eafe7d912581894ae23a`。必要对照与全部测速仍在原位，不因退出分支而失效。
+- 旧 `.codex_tmp/demo_reproduction_worktree` 已退出开发分支，5392 个文件及原修改前后身份一致；完整历史保存于 `refs/archive/frozen-local-20261005/demo-reproduction-overlay`，bundle SHA256 为 `bf41bf489dc1802494e14b1e7d9646a767ec4b4f99a5cc2f906d188c604c9121`。独有内容恢复包 SHA256 为 `f96c2eaf64f16288478237785699644e7001f6ab2af89b0fcfd810a54c0ac375`。未删除目录或文件，独有 OEO / 共享前端差异仍待语义审计。
+- 本地开发分支现为 3 个：`main`、受保护的 OpenMoji robust 分支、历史 Qwen5090 报告分支；这不代表工作树、服务器运行目录或所有未提交修改已收敛。
 
 ## 尚未完成
 
