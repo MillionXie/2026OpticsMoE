@@ -20,6 +20,10 @@
   "dependency_closure_verified": false,
   "data_weights_results_verified_by_this_batch": false,
   "migration_complete": false,
+  "source_import_commit": "18ae9903f89b82590554ed0510aa90704afbd992",
+  "source_import_manifest": "maintenance/storage/T04_ROBUST_SOURCE_ADDITIONS_20261005.json",
+  "source_import_count": 31,
+  "source_import_status": "Published to main; historical compared_main counts below remain unchanged as evidence. Current Windows runtime closure is not complete.",
   "limitations": [
     "Archive tree contains only 32 task source files; not a runnable complete repository.",
     "Five CPU tests do not prove model accuracy, hardware readiness or full dependency closure.",
