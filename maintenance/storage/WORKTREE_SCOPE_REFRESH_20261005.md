@@ -109,6 +109,26 @@ SHA256 `aa063302d091af23eae898c4a434d87a66de0201bf748878afcb32e97f65151f`。
 
 ## 为什么不能按数量批量删除
 
+### 旧 T04／T07 开发分支退出（2026-10-06，后续覆盖）
+
+最新只读检查和操作前重复检查确认下列两项无同UID进程cwd、命令或打开文件占用，
+且无tracked修改。先完成全历史Git包server verify、下载与SHA核验，再取消分支名；
+不checkout其他版本、不改索引、不移动数据。各目录仍原位固定下列提交。
+
+| 历史工程用途 | 原分支末段／冻结HEAD | 保留文件数 |
+| --- | --- | ---: |
+| OpenMoji 旧DC30／CCD噪声阶段，不是现用rank64运行目录 | `t04-dc30-ccdnoise` / `a61a3746d39765991048d95e40812d1028d70c93` | 34609 |
+| ABO旧fresh35阶段，不是封存rank72的latestfresh35目录 | `t07-fresh35-20260929` / `bd1fcf136ac23ff2f1a4f3f9fc5c1f8bfc614239` | 4327 |
+
+恢复引用：`refs/archive/frozen-server-20261006/<原分支末段>`；完整包SHA256
+`c997416ea56a749f7834dc360d862975a71a27860fcfda387942e06ebf713fd5`。
+服务器包：`storage_cleanup_manifests/old_t04_t07_frozen_history_20261006.bundle`；
+本机包：`.codex_tmp/storage_git_backup_20261002/old_t04_t07_server_frozen_full_20261006.bundle`。
+收据：`.codex_tmp/server_old_t04_t07_frozen_20261006.json`。
+两目录全部文件stat、索引摘要及原Git状态前后一致，服务器根运行HEAD和改动未变。
+分支11→9，注册工作树仍83；未删除科学文件／测速，磁盘释放为0。
+Git包保存历史源码，不等于这些目录的未跟踪数据也已打包，后者仍原位保留。
+
 10个工作树有已跟踪修改，62个有未跟踪内容，73个有忽略内容；类别重叠，不能相加。
 忽略内容可能是正式数据、run或缓存，不等于垃圾。按本用户同UID的`/proc/*/cwd`
 只读检查，有2个注册目录被进程作为工作目录使用；这不等于只有2个任务运行，
