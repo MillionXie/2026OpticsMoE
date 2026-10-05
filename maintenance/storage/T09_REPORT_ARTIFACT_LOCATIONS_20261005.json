@@ -1,0 +1,15 @@
+{
+  "schema_version": 1,
+  "scope": "Read-only navigation audit of eight T09 report targets missing from source-only main. All exist in the original server report tree. No plots copied to Git, no models evaluated, no embedded checkpoint identities freshly verified. Directory existence is not a recursive content identity proof.",
+  "server_root": "/DATA/DATA1/guest3/demo_reproduction_20260915/LightGenV2/tasks/t09_multimodal_matching/reports/figures",
+  "files": [
+    {"path":"text_encoding_s17_20260917_v2/verification.json","bytes":14338,"sha256":"08ae687b57c5980b01500613c6400c09325c9412cda86397393d9bb276adc511"},
+    {"path":"test_s17_20260917/test_verified.json","bytes":4789,"sha256":"d53541aea9230bae4a0dea0a64113b64d31e3944c868a41184ae31f0c8d73c11"},
+    {"path":"test_s17_20260917/train_val_test.png","bytes":95526,"sha256":"ba9b63b0c808d2c7d7420ccc68ef18d95bd5081a962edc1cf6c6725160f66b95"},
+    {"path":"text_encoding_s17_20260917_v2/validation_examples.png","bytes":996909,"sha256":"b4ebc5174d0e1710477b6b2cb947924d04d9dd75ec58c3882eab29fab9bfb63f"},
+    {"path":"phase_budget_s17_20260917/phase_budget.png","bytes":288796,"sha256":"ab1a82c3ecee6d48c502ce8f191e857854de661cace1c1fd236bc138760506f9"},
+    {"path":"audio_matching_s17_20260917/audio_matching.png","bytes":178176,"sha256":"0fc3bb8ce5a042a32cd1dc1656174c611551f6f415fa5e6f36167f89164d71be"}
+  ],
+  "directories_observed": ["generalization_s17_20260917", "phase_budget_s17_20260917"],
+  "preservation": "Original figures, records and runs remain in place. A source-only checkout does not include these private artifacts; unresolved relative links do not establish data loss."
+}
