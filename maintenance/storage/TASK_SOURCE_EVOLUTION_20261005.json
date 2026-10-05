@@ -3,6 +3,14 @@
   "scope": "Reviewed task source evolution; historical hashes remain enforced",
   "paths": [
     {
+      "path": "LightGenV2/tasks/t10_expert_scaling/plan.py",
+      "historical_source_commit": "38afd43c1e28aeaff28e33bad58177ae09a0f156",
+      "historical_sha256": "ee1fd82de0dd86c70ed52837b68c223de2d75cbaccbdceab510f77a4ea9cfb98",
+      "source_commit": "5a6e154d43b973391aba52be2890b670a3b5d7cd",
+      "sha256": "8edb50ee63f38a24604ccef5535325d506317f00e33ef62ded7a08cd9a31a23a",
+      "review_reason": "Preserved local planning-only repair fixes undefined reference router variable and verifies reference physics. Six CPU tests show identical geometry/router/k/matrix outputs against archived runtime; no model, training, data, historical tables or metrics altered."
+    },
+    {
       "path": "LightGenV2/tasks/t03_saliency/README.md",
       "historical_source_commit": "6650d2bb3ca6566ce781b4b9de488227f67717f8",
       "historical_sha256": "ae5f430c71379aae02087bd408d1eb32f2394f7b890007e696477633319f6af4",
