@@ -1,13 +1,20 @@
 from pathlib import Path
 
+import numpy as np
 import torch
 
+from LightGenV2.tasks.t04_semantic_interaction.baseline_5090d import (
+    _parse as parse_native_generation,
+    _prompt as native_generation_prompt,
+)
 from LightGenV2.tasks.t04_semantic_interaction.settings import load_settings
 from LightGenV2.tasks.t04_semantic_interaction.training import (
     _semantic_router_code_loss,
 )
 from LightGenV2.tasks.t04_semantic_interaction.baseline_structured_5090d import (
+    AlignedStructuredOpenMojiHead,
     StructuredOpenMojiHead,
+    _aligned_loss,
     _loss,
 )
 
@@ -112,3 +119,37 @@ def test_structured_qwen_baseline_head_contract() -> None:
     loss.backward()
     assert head.category.weight.grad is not None
     assert head.edit.weight.grad is not None
+
+
+def test_aligned_qwen_baseline_changes_only_head_and_label_objective() -> None:
+    head = AlignedStructuredOpenMojiHead(hidden_size=32, width=16)
+    output = head(torch.randn(2, 49, 32), torch.randn(2, 32))
+    assert output["category_logits"].shape == (2, 17, 6, 6)
+    assert output["edit_logits"].shape == (2, 6, 6)
+    assert output["task_logits"].shape == (2, 4)
+
+    target = torch.randint(0, 17, (2, 6, 6))
+    edit = torch.zeros(2, 6, 6)
+    edit[:, 2, 3] = 1.0
+    loss = _aligned_loss(output, target, edit, torch.tensor([0, 3]))
+    assert loss.ndim == 0
+    loss.backward()
+    assert head.category.weight.grad is not None
+    assert head.edit.weight.grad is not None
+    assert head.task.weight.grad is not None
+
+
+def test_native_qwen_sparse_change_contract_is_short_and_deterministic() -> None:
+    source = np.zeros((6, 6), dtype=np.int64)
+    source[1, 2] = 4
+    prediction, edit = parse_native_generation(
+        '{"changes":[[1,2,0],[3,4,7]]}',
+        source_grid=source,
+        output_contract="sparse_changes",
+    )
+    assert prediction[1, 2] == 0
+    assert prediction[3, 4] == 7
+    assert int(edit.sum()) == 2
+    prompt = native_generation_prompt("Move tree below house", "sparse_changes")
+    assert "zero-based" in prompt
+    assert '"changes"' in prompt
