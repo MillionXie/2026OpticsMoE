@@ -1,0 +1,330 @@
+{
+  "audited_on": "2026-10-06",
+  "scope": "Five remaining historical tracked source overlays, not a complete machine or dependency audit",
+  "source_transport": "Git full-history bundle verified on server and locally; archive refs imported locally",
+  "bundle_sha256": "4807e4515eadd74c50981ee8a2454988c55e03314ab8054cca6ed79bd9342115",
+  "runtime_checkout_changed": false,
+  "main_source_replaced": false,
+  "untracked_sources_and_assets_audited": false,
+  "exception_count": 5,
+  "rows": [
+    {
+      "purpose": "Historical A100 OpenMoji/Qwen aligned baseline, not current rank64 hardware model",
+      "directory": "/DATA/DATA1/guest3/2026OpticsMoE_a100_formal",
+      "original_head": "0db3b583925ec688d2fba09957905d8e1cd9bec8",
+      "archive_ref": "refs/archive/tracked-overlay-20261006/2026OpticsMoE_a100_formal",
+      "archive_commit": "36b1e2f696f06149e5812282036416a50bad8fef",
+      "tracked_overlay_files": 7,
+      "working_source_and_status_unchanged": true,
+      "next_action": "Audit untracked source/dependencies and compare semantics with canonical task before source integration or checkout retirement; preserve all measurements",
+      "tracked_files": [
+        {
+          "path": "LightGenV2/tasks/t04_semantic_interaction/baseline_5090d.py",
+          "head_sha256": "778ab88b4fb49d8316f1947d25dde84139284f12b4c256ad790b143491d2cb21",
+          "exists": true,
+          "working_sha256": "d4fd251a33d76d2189ea1df4c9b2d93a1811f8a594d68c6ae0309bb0f59a2274",
+          "bytes": 15932,
+          "same_path_in_main": true,
+          "main_sha256": "778ab88b4fb49d8316f1947d25dde84139284f12b4c256ad790b143491d2cb21",
+          "working_equals_main": false,
+          "working_LF_equals_main": false
+        },
+        {
+          "path": "LightGenV2/tasks/t04_semantic_interaction/baseline_structured_5090d.py",
+          "head_sha256": "771321103905941d84f53a46c701e000cdcd7cfd220efdf4cd1b96716174f11f",
+          "exists": true,
+          "working_sha256": "c697a699009e47ee022f5600c5ec00b1a913a4708f86a002593efac1fb9d025b",
+          "bytes": 32201,
+          "same_path_in_main": true,
+          "main_sha256": "3817f115f7b9da5783a1f7244f5c63db55aae6aa2122843d11eb8b2396b4bc43",
+          "working_equals_main": false,
+          "working_LF_equals_main": false
+        },
+        {
+          "path": "LightGenV2/tasks/t04_semantic_interaction/modeling.py",
+          "head_sha256": "1ac3403693601cd3c7b25e20dcec19b89c7661bbda7324d7da8a665c8d417d80",
+          "exists": true,
+          "working_sha256": "1cbe12b344fb667f8381181bbb88bc019c5418a3139e322bf02141f1c5e98e3b",
+          "bytes": 9539,
+          "same_path_in_main": true,
+          "main_sha256": "7c110fcbdbaab306b324def19051de7e5ff9c8f2e83139fee1d28e4164c1d5a3",
+          "working_equals_main": false,
+          "working_LF_equals_main": false
+        },
+        {
+          "path": "LightGenV2/tasks/t04_semantic_interaction/run.py",
+          "head_sha256": "fb7dba1071014b1fb46755658be1d9be70d82b73c808ac8c29509518966b2d9d",
+          "exists": true,
+          "working_sha256": "a1a4fa8f7318267e946cbe1734f52d96667dc613d303ca051709e065a5be58a7",
+          "bytes": 5653,
+          "same_path_in_main": true,
+          "main_sha256": "2b729e49bd9be037e8491f7d72b2a343f9dd4cdac54bf415771d446e8c31f4b1",
+          "working_equals_main": false,
+          "working_LF_equals_main": false
+        },
+        {
+          "path": "LightGenV2/tasks/t04_semantic_interaction/tests/test_contract.py",
+          "head_sha256": "258394364ac2af6cb537c49864da8580653a43e83b67679a52cab6826c0af11d",
+          "exists": true,
+          "working_sha256": "dbcd6b56de6fafa520388e52bdac5a8a77e571af6bd06f90ab9006f02fed1535",
+          "bytes": 5411,
+          "same_path_in_main": true,
+          "main_sha256": "b3baa09fccb81fd6cbc96780385715908ff206688c680b4effd6f0a6d109638a",
+          "working_equals_main": false,
+          "working_LF_equals_main": false
+        },
+        {
+          "path": "LightGenV2/tasks/t04_semantic_interaction/training.py",
+          "head_sha256": "0a2007e3ffdb46455c6db5b86f4f20ca6d451d3d9dd1f21ffe57cefdd98ccdd7",
+          "exists": true,
+          "working_sha256": "b354c41edac79fdf9e2a3de44191feec5195235a12797988cc10937cd4480e91",
+          "bytes": 16400,
+          "same_path_in_main": true,
+          "main_sha256": "ef5d45a7b8f5d5c861d6ccd21419b2245890c0eb6e47feac44e8473aed3f744c",
+          "working_equals_main": false,
+          "working_LF_equals_main": false
+        },
+        {
+          "path": "experiments/qwen3_vl_2b_openmoji_instruction_four_stage_optical_editing/training.py",
+          "head_sha256": "b08a1b33bf9fc09ed597dd25287e8c4293adb55b7efa495009b00e0e60e3c454",
+          "exists": true,
+          "working_sha256": "f7428235d7bf1ff2ea6b2659afac0ffe6ae28e732c6425dc64fb3d5c1f1d550d",
+          "bytes": 21200,
+          "same_path_in_main": true,
+          "main_sha256": "b08a1b33bf9fc09ed597dd25287e8c4293adb55b7efa495009b00e0e60e3c454",
+          "working_equals_main": false,
+          "working_LF_equals_main": false
+        }
+      ]
+    },
+    {
+      "purpose": "Historical LGVQ quality-token A100 batch scaling and dataset-once measurement",
+      "directory": "/DATA/DATA1/guest3/2026OpticsMoE_t06_a100_batch",
+      "original_head": "3fab90b363e3d49f02fa68acdc6c363b991097e7",
+      "archive_ref": "refs/archive/tracked-overlay-20261006/2026OpticsMoE_t06_a100_batch",
+      "archive_commit": "e9cd94790d2421ff60abf4d09e9e146b193ff245",
+      "tracked_overlay_files": 2,
+      "working_source_and_status_unchanged": true,
+      "next_action": "Audit untracked source/dependencies and compare semantics with canonical task before source integration or checkout retirement; preserve all measurements",
+      "tracked_files": [
+        {
+          "path": "LightGenV2/tasks/t06_video_quality_assessment/quality_token_batch_benchmark.py",
+          "head_sha256": "0ab945e1e4bece17ba859ff5d015277d1ee77ff8b48b8071be272d1068b6e747",
+          "exists": true,
+          "working_sha256": "f975d5f56df606d2f642371048145ec36463bcecadd72c3ad61b2a91a08e53e5",
+          "bytes": 31024,
+          "same_path_in_main": false
+        },
+        {
+          "path": "LightGenV2/tasks/t06_video_quality_assessment/quality_token_dataset_once.py",
+          "head_sha256": "8a9693b72d7ae8689e24d89c0374ae734e00a46762ec2c6e5c68350fdbc4fd23",
+          "exists": true,
+          "working_sha256": "cf5467fd4077ed99d9ee593af548de62fc25f8a6629c9bf39849e16d7d1d773b",
+          "bytes": 14159,
+          "same_path_in_main": true,
+          "main_sha256": "a0e2da9fb3230f4c802058072c0eb64b354af661978858916b8996f41d78b529",
+          "working_equals_main": false,
+          "working_LF_equals_main": false
+        }
+      ]
+    },
+    {
+      "purpose": "Historical sister T08 bounded amplitude recovery variant; external upload remains paused",
+      "directory": "/DATA/DATA1/guest3/2026OpticsMoE/.worktrees/sister_t08_bounded_20260927",
+      "original_head": "73e2febdc94e4cb280c6ada1e0e7881826f3c7f2",
+      "archive_ref": "refs/archive/tracked-overlay-20261006/sister_t08_bounded_20260927",
+      "archive_commit": "19bbbec7520244b182faec34e25e0390c7c53985",
+      "tracked_overlay_files": 1,
+      "working_source_and_status_unchanged": true,
+      "next_action": "Audit untracked source/dependencies and compare semantics with canonical task before source integration or checkout retirement; preserve all measurements",
+      "tracked_files": [
+        {
+          "path": "LightGenV2/tasks/t08_abo_image_text_retrieval/optical_moe.py",
+          "head_sha256": "28e4cc9c47b8b3f01a173dc5d6f0fbf3f3b7448574bc227caeb9396d91ba40e6",
+          "exists": true,
+          "working_sha256": "ebf026e5aa2eaf6dc32ef7b5c5f18c5ac2eaea8515fe2d5a3431427d67e97869",
+          "bytes": 57018,
+          "same_path_in_main": true,
+          "main_sha256": "f7e069ada63dee8ff34fab5858976abe40742c4056cbc26c7b426f9539031cfc",
+          "working_equals_main": false,
+          "working_LF_equals_main": false
+        }
+      ]
+    },
+    {
+      "purpose": "Historical Spatial SRCC optimization implementation and release configuration",
+      "directory": "/DATA/DATA1/guest3/lightgen_spatial_065",
+      "original_head": "23612d55106cb8c817cf4b4e7b38ea5bc138361a",
+      "archive_ref": "refs/archive/tracked-overlay-20261006/lightgen_spatial_065",
+      "archive_commit": "78798a6a2dc3408522d22309c96bc125e3865d98",
+      "tracked_overlay_files": 11,
+      "working_source_and_status_unchanged": true,
+      "next_action": "Audit untracked source/dependencies and compare semantics with canonical task before source integration or checkout retirement; preserve all measurements",
+      "tracked_files": [
+        {
+          "path": "experiments/qwen3_vl_2b_lgvq_single_metric_o2_16frame_54/SPATIAL_OPTIMIZATION_RESULT.md",
+          "head_sha256": "83a2b00ba4ced49c72c91a1615f07d3856d5cdcca50e21c8f3e4db52bb3ba748",
+          "exists": true,
+          "working_sha256": "f0e69352c2586e588ebd38e8bcba35e08518838c9241f74857cdc3e23034eefa",
+          "bytes": 4712,
+          "same_path_in_main": true,
+          "main_sha256": "83a2b00ba4ced49c72c91a1615f07d3856d5cdcca50e21c8f3e4db52bb3ba748",
+          "working_equals_main": false,
+          "working_LF_equals_main": false
+        },
+        {
+          "path": "experiments/qwen3_vl_2b_lgvq_single_metric_o2_16frame_54/configs/release/spatial_srcc_best_s586.yaml",
+          "head_sha256": "79156e7f5c60568b7c72c361e667b47326323baab73cf86965d2d4061347e246",
+          "exists": true,
+          "working_sha256": "df26e8647d8c9e5e167f22238228027890ad68e61fa1ed214e0676ecaa58836a",
+          "bytes": 408,
+          "same_path_in_main": false
+        },
+        {
+          "path": "experiments/qwen3_vl_2b_lgvq_single_metric_o2_16frame_54/data.py",
+          "head_sha256": "eaa6b94996b2f275509bd143f0f1c78b01e809e07f626a813cc2ccb71aa1c7bd",
+          "exists": true,
+          "working_sha256": "f727b8aff3ddb3239a62d2df7684e096b99ef13d6680a7397009f7c63f72e1f0",
+          "bytes": 37624,
+          "same_path_in_main": true,
+          "main_sha256": "a4c24eab04ff20651e094fda4bc72fe2032eb5835da33ab4c77ac86a527e4b39",
+          "working_equals_main": false,
+          "working_LF_equals_main": false
+        },
+        {
+          "path": "experiments/qwen3_vl_2b_lgvq_single_metric_o2_16frame_54/modeling.py",
+          "head_sha256": "bad3a49a7691f6cddb5ea2da681eaad356edd526630eb3d4b1698304d9541723",
+          "exists": true,
+          "working_sha256": "9687abfc330afcd49977aab46f4397593047603804ae31cf122f1baf1a0ae283",
+          "bytes": 131031,
+          "same_path_in_main": true,
+          "main_sha256": "d6b09c803e814e4fda79019c5b1ee2d45fe790310f195b8e7a52a2b4c6f5a09c",
+          "working_equals_main": false,
+          "working_LF_equals_main": false
+        },
+        {
+          "path": "experiments/qwen3_vl_2b_lgvq_single_metric_o2_16frame_54/preflight.py",
+          "head_sha256": "27415433c30ef381d8bd2ae241070577a083729528555c8040d4ebbcfcabfda1",
+          "exists": true,
+          "working_sha256": "34bac70354b1eaabab02254d259f1706f5f230fc4d0ff9f78005a6ecc8b068fe",
+          "bytes": 9599,
+          "same_path_in_main": true,
+          "main_sha256": "38d82b75e31efb4d2a4622d5a6b1c867fff6e5c89206e1b25020128b3525dd9c",
+          "working_equals_main": false,
+          "working_LF_equals_main": false
+        },
+        {
+          "path": "experiments/qwen3_vl_2b_lgvq_single_metric_o2_16frame_54/run.py",
+          "head_sha256": "2b8f4bfa6c17086605376703db294000d1f09368215a708438e70d4c3aabd271",
+          "exists": true,
+          "working_sha256": "74c1ec20190dd9f6e9e0fb1c4548c2171d6308b5ab28068f4aa1af850d9b35c2",
+          "bytes": 21923,
+          "same_path_in_main": true,
+          "main_sha256": "c12c320e848e68041a32c8a74f38c0deba65d8f03f486f71c9695305960c9b72",
+          "working_equals_main": false,
+          "working_LF_equals_main": false
+        },
+        {
+          "path": "experiments/qwen3_vl_2b_lgvq_single_metric_o2_16frame_54/settings.py",
+          "head_sha256": "63ef1733e54cafcd67b426734765351cc7f6fa99a71ddacf42bff4f3f707c6ab",
+          "exists": true,
+          "working_sha256": "1af56d17a12a7bf4ea1b6ca26f6780430be6d4abf6836c789fe2c7ec552c1cef",
+          "bytes": 69234,
+          "same_path_in_main": true,
+          "main_sha256": "bfc27ce1da1d33695d0a5afcb37ff66ee0d42bee0f3afed096457e7cb9fcf887",
+          "working_equals_main": false,
+          "working_LF_equals_main": false
+        },
+        {
+          "path": "experiments/qwen3_vl_2b_lgvq_single_metric_o2_16frame_54/spatial_optimization_result.json",
+          "head_sha256": "e38d0e97031e44118a8b637379bf06edd3f1c023ef2eb472c3b3fe0157b8e531",
+          "exists": true,
+          "working_sha256": "ac498341c08cd0037900305fdda7e96460a4c32e8cc6d397dc25f7d233313b2d",
+          "bytes": 2052,
+          "same_path_in_main": true,
+          "main_sha256": "e38d0e97031e44118a8b637379bf06edd3f1c023ef2eb472c3b3fe0157b8e531",
+          "working_equals_main": false,
+          "working_LF_equals_main": false
+        },
+        {
+          "path": "experiments/qwen3_vl_2b_lgvq_single_metric_o2_16frame_54/tests/test_model_and_training.py",
+          "head_sha256": "eee854d74a3fd9d74052b307498547de39bf2a69508eae13c1b2c3971d2204fd",
+          "exists": true,
+          "working_sha256": "dca4e106c0948e669c64de7d9eaeed956124133e6e5b507e07050212b3e36224",
+          "bytes": 49694,
+          "same_path_in_main": true,
+          "main_sha256": "892aace1531100449f94b6b3d04d4134bd56c7fce3647f42cf14248050540f2d",
+          "working_equals_main": false,
+          "working_LF_equals_main": false
+        },
+        {
+          "path": "experiments/qwen3_vl_2b_lgvq_single_metric_o2_16frame_54/train_cached_deep_readout.py",
+          "head_sha256": "21c889f7c28811832847ef6959775adb99107c86084f7c8a5c2cb4600e7ae0ed",
+          "exists": true,
+          "working_sha256": "70f4a45ef75a691fad4c00bba2be8e9170abf211e44a2f3d2cabd609cbdf3d39",
+          "bytes": 23612,
+          "same_path_in_main": true,
+          "main_sha256": "eca926d0b2a050f76fb4f3c331f0260867da38b80254eee3fa42088b8bd943f4",
+          "working_equals_main": false,
+          "working_LF_equals_main": false
+        },
+        {
+          "path": "experiments/qwen3_vl_2b_lgvq_single_metric_o2_16frame_54/training.py",
+          "head_sha256": "fe6aa0f2f80c7f00f1340014315fa5004e8eaa8fe85fc0cf0e1f52bae41047f9",
+          "exists": true,
+          "working_sha256": "9fa5e14be21822936dbb21bee4904ea146a79a434c18c40da89701f1d152e51a",
+          "bytes": 50357,
+          "same_path_in_main": true,
+          "main_sha256": "23a7bd6f432a214ea2e098f5e1ec8392ffb7688aed6eeb343545c4580d9d3763",
+          "working_equals_main": false,
+          "working_LF_equals_main": false
+        }
+      ]
+    },
+    {
+      "purpose": "Historical Spatial custom-convolution/readout-capacity contrast",
+      "directory": "/DATA/DATA1/guest3/2026OpticsMoE/.worktrees/spatial_custom_conv",
+      "original_head": "557c10d38ffd685793f25d697fb887497720af24",
+      "archive_ref": "refs/archive/tracked-overlay-20261006/spatial_custom_conv",
+      "archive_commit": "d5c6c3b7b6089c8104d0a296c3c5e08d8534282b",
+      "tracked_overlay_files": 3,
+      "working_source_and_status_unchanged": true,
+      "next_action": "Audit untracked source/dependencies and compare semantics with canonical task before source integration or checkout retirement; preserve all measurements",
+      "tracked_files": [
+        {
+          "path": "experiments/qwen3_vl_2b_lgvq_single_metric_o2_16frame_54/modeling.py",
+          "head_sha256": "711f8eb40c546317821cf777f6858a3ce4e9f443ba459b4dde5858dc7fbf26a1",
+          "exists": true,
+          "working_sha256": "fe543a54208243c70a41eac8df77bd2f7d69118205912dd602fcff0aa42fca9e",
+          "bytes": 146176,
+          "same_path_in_main": true,
+          "main_sha256": "d6b09c803e814e4fda79019c5b1ee2d45fe790310f195b8e7a52a2b4c6f5a09c",
+          "working_equals_main": false,
+          "working_LF_equals_main": false
+        },
+        {
+          "path": "experiments/qwen3_vl_2b_lgvq_single_metric_o2_16frame_54/settings.py",
+          "head_sha256": "d1b620192f2455ea62ba5059cd983f69ab7ce1ffcd878006f9bdcdfb95228c32",
+          "exists": true,
+          "working_sha256": "382dc615d1a2815276c5d0745d54b09983024bcd0d8acc0da4ad384c60a88ada",
+          "bytes": 79231,
+          "same_path_in_main": true,
+          "main_sha256": "bfc27ce1da1d33695d0a5afcb37ff66ee0d42bee0f3afed096457e7cb9fcf887",
+          "working_equals_main": false,
+          "working_LF_equals_main": false
+        },
+        {
+          "path": "experiments/qwen3_vl_2b_lgvq_single_metric_o2_16frame_54/tests/test_model_and_training.py",
+          "head_sha256": "972d9baf61eeed78f2dc764a33d900b3c35c83f56240f669f0d907a6ae8e2224",
+          "exists": true,
+          "working_sha256": "0d4b0b7228cd11e72dd36644d5963a7cdae5638b0f11fc15efd151af60c54831",
+          "bytes": 61047,
+          "same_path_in_main": true,
+          "main_sha256": "892aace1531100449f94b6b3d04d4134bd56c7fce3647f42cf14248050540f2d",
+          "working_equals_main": false,
+          "working_LF_equals_main": false
+        }
+      ]
+    }
+  ]
+}

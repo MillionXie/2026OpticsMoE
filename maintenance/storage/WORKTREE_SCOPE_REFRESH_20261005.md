@@ -1,5 +1,35 @@
 # 服务器运行目录只读复核
 
+## 2026-10-06 最新补充：两条历史交付分支退出，五套独有 overlay 保全
+
+服务器 `codex/sister-bounded-20260927`（旧 OpenMoji 有界恢复交付目录，HEAD
+`3f85510285e5ffdfca28def93eef2eb082b1655c`）和 `codex/t08-publish-retrieval`
+（文搜图历史目录，HEAD `d0662a7d240340817948a3496c2cd43f4240e76d`）已固定原提交、
+退出开发分支，分别保留 3609／4301 个文件；文件 stat、索引和原状态前后一致。
+同 UID cwd、命令、打开文件检查无占用后才执行，根运行 checkout 不变。服务器分支
+**13→11**；83 个目录继续保留，不增加磁盘释放数，不重训或操作设备。
+
+完整双端 Git 恢复包 SHA256 `7e752530ad4b904bdd87c40d1d6752e004198887204a59ae3ddd2aa82638f4cb`，
+服务器 `storage_cleanup_manifests/t08_frozen_history_20261006.bundle`，本机
+`.codex_tmp/storage_git_backup_20261002/t08_server_frozen_full_20261006.bundle`。
+恢复引用 `refs/archive/frozen-server-20261006/<原分支末段>`；私有操作收据
+`.codex_tmp/server_t08_frozen_20261006.json`。旧有界恢复脚本的独有未跟踪来源另在
+`RUNTIME_RECOVERY_IDENTITIES_20261004.json` 登记，原文件本轮没有移动。
+
+另核查五套历史 A100／T08／Spatial 工程：共 **24 份已跟踪修改**，全部与同路径
+main 不同，两份路径在 main 缺失（批量测速脚本与 Spatial 配置）。不能把这些差异当
+垃圾或直接覆盖正式实现。五套已跟踪 overlay 在独立私有 Git archive 引用中保全，
+工作文件、原 HEAD／状态未改变；完整历史包服务器 verify、本机 SHA 及 verify 通过，
+本机已通过 Git 导入五项恢复引用。包 SHA256
+`4807e4515eadd74c50981ee8a2454988c55e03314ab8054cca6ed79bd9342115`，
+双端包名 `dirty_tracked_history_20261006.bundle`。用途、原提交、逐文件 SHA 和下一步
+见 [剩余源码例外](REMAINING_SOURCE_EXCEPTIONS_20261006.json)。
+
+这次仅封存已跟踪差异，不证明未跟踪源码／资产或全部依赖闭合；五个开发分支尚未
+退出，也没有将其科学源码整仓合入 main。保全不是迁移完成。随后额外只读分支盘点
+两次 SSH 握手失败，未重启任何实验；11 条来自刚成功的冻结事务实际计数，不冒称
+已经取得额外全机器盘点。
+
 ## 2026-10-06：七个候选的保留决策
 
 重新核验上述七目录，均无 tracked 修改、未跟踪或忽略文件；同 UID 进程的 cwd、

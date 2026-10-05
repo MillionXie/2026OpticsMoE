@@ -104,6 +104,8 @@
     {
       "id": "t08_abo_image_text_retrieval",
       "entry": "tasks/t08_abo_image_text_retrieval/README.md",
+      "historical_reverse_checkout_status": "Original d0662a7d240340817948a3496c2cd43f4240e76d frozen detached; original files and measurements retained; not a main runtime cutover.",
+      "historical_reverse_archive_ref": "refs/archive/frozen-server-20261006/t08-publish-retrieval",
       "source_status": "both_direction_entries_fixed_cache_guard_and_adopted_DVP_capture_published_adapter_and_asset_binding_pending",
       "identity_map_publication_commit": "19c3b0555b42608af35a4ee531dde76c2bb47773",
       "evidence": ["reports/20260928_nine_task_a100_table/README.md"],
