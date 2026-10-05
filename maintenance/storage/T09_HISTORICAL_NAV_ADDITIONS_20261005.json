@@ -1,0 +1,8 @@
+{
+  "source_commit": "1c7222a1119385475e1b464ca7efdb67cdc21a4c",
+  "scope": "Missing links from T09 to historical 2026-09-18 multimodal planning documents. Preserve original content; these are not current task status or new license verification.",
+  "paths": [
+    {"path":"LightGenV2/tasks/MULTIMODAL_NATURE_PLAN.md","bytes":6646,"sha256":"e3f216de9c2beeb47daa47e9661358727be1a78e60558d72094a20d717972c81"},
+    {"path":"LightGenV2/tasks/dataset_registry_multimodal.json","bytes":1305,"sha256":"545ec358447e5524351d642d5cd42c7c2820655d25962ffdc837c9b00cdff85e"}
+  ]
+}
