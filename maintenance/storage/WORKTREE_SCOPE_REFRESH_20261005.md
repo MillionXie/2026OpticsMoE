@@ -109,6 +109,25 @@ SHA256 `aa063302d091af23eae898c4a434d87a66de0201bf748878afcb32e97f65151f`。
 
 ## 为什么不能按数量批量删除
 
+### T06 历史批量测速工程冻结（2026-10-06，分支9→8）
+
+原 `benchmark/t06-a100-batch-scaling` 工程
+`/DATA/DATA1/guest3/2026OpticsMoE_t06_a100_batch` 固定原HEAD
+`3fab90b363e3d49f02fa68acdc6c363b991097e7`，仅退出开发分支名。
+原两份未提交源码按SHA及恢复Git对象重复核验，源码功能已迁入T06任务主线。
+操作前重复检查同UID的cwd／命令／打开文件无占用；操作后3285份文件stat、
+索引SHA和原Git状态相同。服务器根HEAD／改动未变，未删除文件，空间释放0。
+
+完整恢复包含原HEAD与实际未提交源码：
+`refs/archive/frozen-server-20261006/t06-a100-batch-scaling` 和
+`refs/archive/tracked-overlay-20261006/2026OpticsMoE_t06_a100_batch`。
+包SHA256 `a87e415ea13915f9836f8fa72e66f79117f2ab01c559ce5d930ede20a5b69679`，
+服务器包 `storage_cleanup_manifests/t06_baseline_overlay_frozen_history_20261006.bundle`，
+本机包 `.codex_tmp/storage_git_backup_20261002/t06_baseline_overlay_server_frozen_full_20261006.bundle`。
+收据 `.codex_tmp/server_t06_baseline_overlay_frozen_20261006.json`。
+非忽略且排除产物／数据目录的未跟踪Python/shell/YAML检查为空；忽略资产未因此删除。
+原测速、数据和产物仍原位保留，Git包不代表这些资产已完整打包。
+
 ### 旧 T04／T07 开发分支退出（2026-10-06，后续覆盖）
 
 最新只读检查和操作前重复检查确认下列两项无同UID进程cwd、命令或打开文件占用，
