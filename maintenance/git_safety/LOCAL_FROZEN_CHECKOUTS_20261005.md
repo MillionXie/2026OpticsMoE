@@ -1,5 +1,20 @@
 # 历史工作目录原位冻结：分支名 15 → 12
 
+## 最新覆盖：9 → 8，T12 鲁棒图文编辑本地历史目录
+
+`.worktrees/t12_physical_robust_v2_20260927` 固定于原提交
+`7093ec46082eed2fae127ec5028d3e2e8548b592`，取消本机开发分支名
+`codex/t12-physical-robust-v2-20260927`。它保存17M鲁棒商品编辑、末端适配及
+大版／Qwen／pix2pix对照的历史代码；实际服务器对应运行目录不变。
+本机4806个内容文件操作前后SHA一致，完整历史bundle已verify；全部源码、
+数据、权重、baseline、结果、缓存、测速均原位保留，不声明旧入口全部进入main。
+核验无跟踪／未跟踪修改、无进程命令引用，根HEAD和跟踪修改未变化。
+
+恢复引用：`refs/archive/frozen-local-20261005/t12-physical-robust-v2-20260927`。
+bundle SHA256：`f924e19896cb22c67ed73be6c02510899410d5117b2ebd8a3d657e8d3e53b5cf`；
+私有收据：`.codex_tmp/t12_physical_frozen_identity_20261005`。
+本机14个工作树不减少，不计新增空间释放，主目录切main仍待版本取舍。
+
 ## 最新覆盖：10 → 9，T12 图文编辑审计历史目录
 
 `.worktrees/t12_audited_editors` 已原位固定于
