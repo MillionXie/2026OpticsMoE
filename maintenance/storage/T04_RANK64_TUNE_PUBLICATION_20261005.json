@@ -1,0 +1,18 @@
+{
+  "schema_version": 1,
+  "source_commit": "20b8e46951a334a6414aca23578cef26356111b4",
+  "historical_windows_snapshot": "bc1951cfbd0bcbd60a6111884286b506790e20fb",
+  "scope": "Explicit rank64 G2/G5 identity for original TRAIN2000 decoder tuning and existing edit-bias calibration; runtime checkout unchanged",
+  "paths": [
+    {"path": "LightGenV2/tasks/t04_openmoji_robust_ablation/lab_tune2000.py", "sha256": "aaade18bc836c36c4a58678149a3307cea19c034b9212377d8495c0bd7e51ce0"},
+    {"path": "LightGenV2/tasks/t04_openmoji_robust_ablation/lab_calibrate_rank64.py", "sha256": "4e4a6ed4732a56bcbfd61f08ceb68714e02924ad9c28df257670948c8ea9ec9a"},
+    {"path": "LightGenV2/tasks/t04_openmoji_robust_ablation/tests/test_lab_train2000_contract.py", "sha256": "672f6958be2bdb3f277eb551bf8ac2acab2dc3ec99ce05c350dce3f27fba57f1"}
+  ],
+  "validation": {
+    "portable_contract_tests": 5,
+    "actual_server_cpu_checks": 9,
+    "scope": "Candidate Git imports, synthetic CCD, original rank64 decoder bias/default gate strict roundtrip and protected upstream hash; no trained PT, dataset, accuracy or SDK evaluation"
+  },
+  "preserved_protocol": ["TRAIN2000 gradients only", "TEST development selection every five epochs", "original decoder only", "existing edit_head.bias calibration", "upstream, optical phases and alpha frozen"],
+  "limitations": ["Remaining preparation and dispatch entries not consolidated", "Machine assets and field regression pending", "Published main refs are not switched runtime checkouts", "TEST-selected results are development metrics, not independent generalization"]
+}

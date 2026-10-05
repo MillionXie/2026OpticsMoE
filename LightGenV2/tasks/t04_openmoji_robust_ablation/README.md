@@ -55,9 +55,19 @@ rank64原G2/G5权重的精确身份现集中在
 统一 `lab_shs_capture` 已接入显式 `--lab-identity`，不传仍是历史rank16，不能只换PT来
 复现rank64。rank64要求CPU／2000us，并采用实验台原有保存前暗帧守卫；22项无设备单元
 检查和实际服务器依赖导入／六项合成CCD边界检查通过。尚未做现场采集回归，
-TRAIN2000微调及bias校准入口仍在迁移。现用rank64原工程继续保护，
+TRAIN2000微调及bias校准入口已按实际代码归入主线。现用rank64原工程继续保护，
 完整迁移、设备依赖和现场回归尚未完成；这些治理检查不代表重新测量准确率。
 
 统一入口的rank64选择参数为：
 `--lab-identity LightGenV2/tasks/t04_openmoji_robust_ablation/configs/lab/rank64_20261002.json`。
 项目／数据／设备依赖仍需提供原审计配置；本轮不自动执行该入口或替换现用脚本。
+
+TRAIN2000入口为 `lab_tune2000.py`，已有bias校准入口为
+`lab_calibrate_rank64.py`，均显式使用 `--group g2` 或 `--group g5`；不再依赖
+运行过程中偷偷替换组别映射。保留原TRAIN2000梯度、每五轮TEST开发选模、仅原decoder
+微调及现有edit_head.bias校准，不增加网络模块。TEST选模结果不是独立泛化指标。
+五项入口合同测试及实际服务器九项CPU依赖／合成边界检查通过，包括原rank64 decoder
+30162参数、bias保存后严格重载和默认门限等价、上游修改识别。这些测试未加载正式PT，
+未重评数据集或打开设备，不能替代完整资产配置与现场回归。
+源码发布 `20b8e46951a334a6414aca23578cef26356111b4` 已同步本机、GitHub及服务器main引用；
+实际运行checkout、原数据与权重没有切换或修改。
