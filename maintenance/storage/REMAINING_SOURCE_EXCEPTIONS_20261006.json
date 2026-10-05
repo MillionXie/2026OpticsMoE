@@ -10,6 +10,16 @@
   "exception_count": 5,
   "latest_closure_overrides": [
     {
+      "directory": "/DATA/DATA1/guest3/lightgen_spatial_065",
+      "source_and_branch_status": "Historical source fully archived; changed model nodes represented in main with bounded profile equivalence checked; branch retired; nine legacy misaligned RGB trial configs remain historical only",
+      "evidence": "SPATIAL_SOURCE_CLOSURE_20261006.json"
+    },
+    {
+      "directory": "/DATA/DATA1/guest3/2026OpticsMoE/.worktrees/spatial_custom_conv",
+      "source_and_branch_status": "Historical source fully archived; bounded old/main model equivalence checked; branch retired; assets and all timing retained",
+      "evidence": "SPATIAL_SOURCE_CLOSURE_20261006.json"
+    },
+    {
       "directory": "/DATA/DATA1/guest3/2026OpticsMoE_a100_formal",
       "source_and_branch_status": "Historical changed source projected into main and tested; development branch retired; full assets/timing retained in place",
       "evidence": "A100_BRANCH_RETIREMENT_20261006.json"

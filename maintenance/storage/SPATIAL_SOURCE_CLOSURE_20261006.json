@@ -42,5 +42,36 @@
     "remaining_different_nodes": "Must verify settings, optional-model dispatch and later training extensions; matching names are not semantic-equivalence proof"
   },
   "next_action": "Classify untracked trial/config/incoming sources against necessary final profiles and baselines; preserve archive originals, do not merge whole directories or replace current final model",
-  "scientific_or_machine_reproduction_completed": false
+  "scientific_or_machine_reproduction_completed": false,
+  "checkout_retirement": {
+    "retired_branches":["experiment/spatial-065","experiment/spatial-readout-compression"],
+    "archive_refs":["refs/archive/frozen-server-20261006/spatial-065","refs/archive/frozen-server-20261006/spatial-readout-compression"],
+    "full_history_bundle_sha256":"477e21be6406d1745504179aa61a7bed596db2c6ef83556655883ef70f1cf815",
+    "local_bundle_verify_and_fetch":"passed",
+    "files_preserved_in_place":9606,
+    "file_stat_index_status_unchanged":true,
+    "scientific_files_deleted":0,
+    "server_branches_after":4,
+    "server_worktrees_after":83
+  },
+  "subsequent_cpu_validation": {
+    "executed_on": "Local existing qwen3vl-cifar10 environment, Torch 2.10.0+cpu",
+    "canonical_commit": "a5171ff36c83299e17e6f923624aa4b579ff1eb6",
+    "model_contract_tests": {"passed":57,"warnings":1},
+    "git_read_old_main_synthetic_models": [
+      {"profile":"spatial_srcc_best_s586.yaml","original_settings_fields_equal":true,"architecture_equal":true,"strict_state_keys_equal":true,"prediction_max_abs_error":0.0},
+      {"profile":"spatial_custom_conv_readout128_s1247.yaml","original_settings_fields_equal":true,"architecture_equal":true,"strict_state_keys_equal":true,"prediction_max_abs_error":0.0}
+    ],
+    "historical_release_config_audit": {
+      "total":101,
+      "original_fields_and_architecture_equal":92,
+      "rejected_by_main_alignment_guard":9,
+      "rejection_reason":"A raw-RGB electronic correction requires one aligned raw-frame cache for every additional Vision sampling view",
+      "historical_rejected_configs":["spatial_tiny_quality_e1_s710.yaml","spatial_tiny_quality_e1_s711.yaml","spatial_tiny_quality_e1_s712.yaml","spatial_tiny_rgb_distilled_s720.yaml","spatial_tiny_rgb_e1_s710.yaml","spatial_tiny_rgb_e1_s711.yaml","spatial_tiny_rgb_e1_s712.yaml","spatial_tiny_rgb_joint_s713.yaml","spatial_tiny_rgb_path_s714.yaml"],
+      "rejected_configs_and_runs":"Original archived and retained; not silently repaired or adopted as default"
+    },
+    "dataset_or_formal_checkpoint_loaded":false,
+    "hardware_or_gpu_called":false,
+    "new_scientific_metric_claimed":false
+  }
 }
