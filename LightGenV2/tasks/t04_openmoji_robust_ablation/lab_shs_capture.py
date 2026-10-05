@@ -24,6 +24,7 @@ from experiments.qwen3_vl_2b_openmoji_instruction_four_stage_optical_editing.dat
 )
 from experiments.qwen3_vl_2b_openmoji_instruction_four_stage_optical_editing.metrics import MetricAccumulator
 from .profiles import install
+from .lab_checkpoint_identity import load_identity, verify_payload_variant
 
 
 GROUPS = {
@@ -57,10 +58,40 @@ def write(path: Path, value: object) -> None:
             time.sleep(.25 * (attempt + 1))
 
 
+def checkpoint_identity(group: str, lab_identity: Path | None = None) -> dict:
+    """Historical callers retain rank16; rank64 always requires an explicit profile."""
+    if lab_identity is not None:
+        return load_identity(lab_identity, group)
+    filename, digest = GROUPS[group]
+    return {"group": group, "filename": filename, "sha256": digest,
+            "shared_readout_variant": "lowrank16"}
+
+
+def signal_guard(bench_class):
+    """Preserve the deployed rank64 guard: reject dark batches before persistence."""
+    class SignalGuardBench(bench_class):
+        def capture(self, stage, phase_path, amplitude_paths, ids, camera_orientation, save=True):
+            before = len(self.rows)
+            values, receipt = super().capture(stage, phase_path, amplitude_paths, ids, camera_orientation, save=False)
+            rows = self.rows[before:]
+            if len(rows) != len(ids) or any(row["p99"] < 15 for row in rows):
+                raise RuntimeError("Rank64 dark-signal guard: batch not persisted; inspect display chain")
+            if save:
+                folder = self.out / "ccd" / stage
+                folder.mkdir(parents=True, exist_ok=True)
+                for value, row in zip(values, rows):
+                    Image.fromarray(value).save(folder / (row["sample_id"] + ".png"))
+                    write(folder / (row["sample_id"] + ".json"), row)
+            return values, receipt
+    return SignalGuardBench
+
+
 def main() -> None:
     parser = argparse.ArgumentParser()
     parser.add_argument("--project", type=Path, required=True)
     parser.add_argument("--group", choices=GROUPS, required=True)
+    parser.add_argument("--lab-identity", type=Path,
+                        help="Explicit capacity/checkpoint profile; omit only for historical rank16")
     parser.add_argument("--scope", choices=("test", "train"), default="test")
     parser.add_argument("--output", type=Path, required=True)
     parser.add_argument("--limit", type=int, default=1000)
@@ -69,6 +100,9 @@ def main() -> None:
     parser.add_argument("--selftest", action="store_true")
     parser.add_argument("--resume", action="store_true")
     args = parser.parse_args()
+    identity = checkpoint_identity(args.group, args.lab_identity)
+    if args.lab_identity is not None and (args.device != "cpu" or args.exposure_us != 2000):
+        raise ValueError("Audited rank64 capture requires CPU and 2000 us; use a new audited contract otherwise")
     torch.set_num_threads(4)
     project = args.project.resolve()
     output = args.output.resolve()
@@ -132,8 +166,11 @@ def main() -> None:
     else:
         BenchClass = SHSBench
 
+    if identity["shared_readout_variant"] == "lowrank64":
+        BenchClass = signal_guard(BenchClass)
+
     flow.BASE_CORNERS = CORNERS.copy()
-    weight_name, expected_sha = GROUPS[args.group]
+    weight_name, expected_sha = identity["filename"], identity["sha256"]
     checkpoint = project / "weights" / weight_name
     if sha(checkpoint) != expected_sha:
         raise ValueError("Weight SHA mismatch")
@@ -149,13 +186,12 @@ def main() -> None:
     cfg.svg_asset_dir = cfg.asset_dir / "openmoji-17.0.0-svg"
     cfg.qwen_checkpoint = original_lab / "frontend"
     cfg.optical_base_config = project / "source/experiments/qwen3_vl_embedding_2b_caltech101_four_layer_optical_retrieval/configs/release/caltech101_four_layer_optical_joint.yaml"
-    cfg.shared_readout_variant = "lowrank16"
+    cfg.shared_readout_variant = identity["shared_readout_variant"]
     cfg.num_workers = 0
     device = torch.device(args.device)
     model = t.build_model(cfg, device)
     payload = torch.load(checkpoint, map_location="cpu", weights_only=False)
-    if payload.get("settings", {}).get("shared_readout_variant") != "lowrank16":
-        raise ValueError("Checkpoint readout variant mismatch")
+    verify_payload_variant(payload, identity)
     model.load_state_dict(payload["model"], strict=True)
     install(model, "r0_base")  # same clean inference profile as the published five-row simulation
     model.eval().requires_grad_(False)
