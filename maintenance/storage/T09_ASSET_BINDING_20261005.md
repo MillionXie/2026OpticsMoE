@@ -55,6 +55,21 @@ manifest SHA256 为 `e20d789937a44512ce4c91f222ba99145e36c63f3ee386295585d61cc01
 尚未核验官方场景原文件的落地副本或重新生成问题，不能把本次身份核验称从零重建。
 未加载模型、重评准确率或混入T13数据。
 
+### 测试run与原权重绑定补核
+
+五个实际评估run的metadata均绑定同一准备manifest，问题SHA全部匹配。
+`clevr_frozen_test_s17_v1` 自身是输入缓存，不是带评估metadata的结果run。
+五个run共12项锁定checkpoint全部在原任务运行目录存在，逐SHA匹配
+`locked_selection.json`；其中六项历史记录使用仓库相对路径，需以原工程根解析，
+不能以SSH命令当前目录解析后误报权重丢失。本次仅核对位置／SHA／记录epoch，
+没有更改选择或原报告。
+
+三个原源码身份分别为 `fe5f5d8b87c5933eee001b9674ae51655eecafc8`、
+`1c7222a1119385475e1b464ca7efdb67cdc21a4c`、
+`ceb694652183530af7405a2b0b5b2efc884f957c`，不能统一套当前main计算图。
+测试manifest只有特征张量SHA记录，本轮没有重建该张量，仍是明确剩余例外。
+详细只读收据：`.codex_tmp/t09_test_run_binding_20261005.json`。
+
 ## 限制与保护
 
 原 manifest 中 `test_accessed=false` / `retained_test_decoded=false` 是准备时的状态，
