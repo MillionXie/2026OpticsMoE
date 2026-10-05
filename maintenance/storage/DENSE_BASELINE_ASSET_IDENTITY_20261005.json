@@ -1,0 +1,913 @@
+{
+  "schema_version": 1,
+  "audited_on": "2026-10-05",
+  "purpose": "Historical dense baseline asset identity, not new evaluation or completed source migration",
+  "source_commit": "d53d82ab49743fb05022a4b93a31b7d7e37a9066",
+  "runner_sha256": "5d2feeb5d83c6ff56adbf6241ab8d6af876d4b92e3ead4548a8a7342780b3682",
+  "runner_compile_pass": true,
+  "registered_worktree_runner_found": false,
+  "source_recovery": "refs/archive/server-inactive-20261004/codex/lsp-salicon-openmoji-backbones",
+  "asset_root": "/DATA/DATA1/guest3/LightGenV2_baseline_runs_20260923",
+  "reports": [
+    {
+      "run": "lsp_clip",
+      "file": "selected_checkpoint_test_evaluation.json",
+      "sha256": "71b4246abc53aaf95e0fb571ac924d105aff332c9a9628a4cc282920ec1f85c5",
+      "evaluation": {
+        "schema_version": 1,
+        "status": "complete",
+        "task": "lsp",
+        "model_kind": "clip",
+        "backbone_frozen": true,
+        "backbone_metadata": {
+          "backbone": "OpenAI CLIP ViT-B/32",
+          "checkpoint": "/DATA/DATA1/guest3/models/openai-clip/ViT-B-32.pt",
+          "image_feature": "final 7x7 ViT patch tokens interpolated to 14x14",
+          "text_feature": "native final CLIP text embedding as one token",
+          "backbone_total_parameters": 151277313,
+          "backbone_trainable_parameters": 0,
+          "image_width": 768,
+          "text_width": 512
+        },
+        "git_commit": "960799c603c9aee7f020c22cfb699528dc5492c0",
+        "cache": "/DATA/DATA1/guest3/LightGenV2_baseline_cache_20260923/lsp_clip.pt",
+        "selected_epoch": 32,
+        "metrics": {
+          "samples": 1000,
+          "heatmap_loss": 0,
+          "coordinate_loss": 0.2575924465656281,
+          "pck_at_0.2_torso": 0.021285714285714286,
+          "pckh_at_0.5_head": 0.08071428571428571,
+          "mean_pixel_error": 81.02282729763219,
+          "normalized_mean_error_torso": 1.2487414143552837,
+          "evaluated_joints": 14000,
+          "pck_evaluated_joints": 14000,
+          "pckh_evaluated_joints": 14000,
+          "per_joint_pck_at_0.2_torso": {
+            "right_ankle": 0.003,
+            "right_knee": 0.021,
+            "right_hip": 0.04,
+            "left_hip": 0.04,
+            "left_knee": 0.017,
+            "left_ankle": 0.102,
+            "right_wrist": 0.002,
+            "right_elbow": 0.033,
+            "right_shoulder": 0.007,
+            "left_shoulder": 0.007,
+            "left_elbow": 0.022,
+            "left_wrist": 0,
+            "neck": 0.001,
+            "head_top": 0.003
+          },
+          "per_joint_counts": {
+            "right_ankle": 1000,
+            "right_knee": 1000,
+            "right_hip": 1000,
+            "left_hip": 1000,
+            "left_knee": 1000,
+            "left_ankle": 1000,
+            "right_wrist": 1000,
+            "right_elbow": 1000,
+            "right_shoulder": 1000,
+            "left_shoulder": 1000,
+            "left_elbow": 1000,
+            "left_wrist": 1000,
+            "neck": 1000,
+            "head_top": 1000
+          },
+          "normalization": {
+            "PCK": "mean distance of the two shoulder-to-opposite-hip torso diagonals",
+            "PCKh": "2 * distance(neck, head_top)"
+          }
+        },
+        "head_parameters": 1069710,
+        "selection": "minimum training loss"
+      },
+      "best_sha256": "d509cbd5f27a11ac033e7b4908b80c8f015e609629976ccb39424c03ccb78da9"
+    },
+    {
+      "run": "lsp_deepseek",
+      "file": "selected_checkpoint_test_evaluation.json",
+      "sha256": "cef51e57b9531035340718e2415d8daf5b1bf5681854d5245bd7d24419f24f3f",
+      "evaluation": {
+        "schema_version": 1,
+        "status": "complete",
+        "task": "lsp",
+        "model_kind": "deepseek",
+        "backbone_frozen": true,
+        "backbone_metadata": {
+          "backbone": "DeepSeek-VL2-Tiny",
+          "checkpoint": "/DATA/DATA1/guest3/models/deepseek-vl2-tiny",
+          "image_feature": "final SigLIP-So400M global-view 27x27 tokens interpolated to 14x14",
+          "text_feature": "final DeepSeek decoder instruction-token hidden states",
+          "backbone_total_parameters": 3370501440,
+          "backbone_trainable_parameters": 0,
+          "image_width": 1152,
+          "text_width": 1280
+        },
+        "git_commit": "960799c603c9aee7f020c22cfb699528dc5492c0",
+        "cache": "/DATA/DATA1/guest3/LightGenV2_baseline_cache_20260923/lsp_deepseek.pt",
+        "selected_epoch": 19,
+        "metrics": {
+          "samples": 1000,
+          "heatmap_loss": 0,
+          "coordinate_loss": 0.2571899027824402,
+          "pck_at_0.2_torso": 0.02592857142857143,
+          "pckh_at_0.5_head": 0.13235714285714287,
+          "mean_pixel_error": 99.49620090500798,
+          "normalized_mean_error_torso": 1.5372634329697423,
+          "evaluated_joints": 14000,
+          "pck_evaluated_joints": 14000,
+          "pckh_evaluated_joints": 14000,
+          "per_joint_pck_at_0.2_torso": {
+            "right_ankle": 0.004,
+            "right_knee": 0.108,
+            "right_hip": 0.065,
+            "left_hip": 0.072,
+            "left_knee": 0.099,
+            "left_ankle": 0.008,
+            "right_wrist": 0,
+            "right_elbow": 0,
+            "right_shoulder": 0,
+            "left_shoulder": 0,
+            "left_elbow": 0,
+            "left_wrist": 0.004,
+            "neck": 0,
+            "head_top": 0.003
+          },
+          "per_joint_counts": {
+            "right_ankle": 1000,
+            "right_knee": 1000,
+            "right_hip": 1000,
+            "left_hip": 1000,
+            "left_knee": 1000,
+            "left_ankle": 1000,
+            "right_wrist": 1000,
+            "right_elbow": 1000,
+            "right_shoulder": 1000,
+            "left_shoulder": 1000,
+            "left_elbow": 1000,
+            "left_wrist": 1000,
+            "neck": 1000,
+            "head_top": 1000
+          },
+          "normalization": {
+            "PCK": "mean distance of the two shoulder-to-opposite-hip torso diagonals",
+            "PCKh": "2 * distance(neck, head_top)"
+          }
+        },
+        "head_parameters": 1119630,
+        "selection": "minimum training loss"
+      },
+      "best_sha256": "68c7349e782a0ab6ad49497d3747bdafae4b00d744585bde87c36b69d593f47e"
+    },
+    {
+      "run": "lsp_yolo11s",
+      "file": "selected_checkpoint_test_evaluation.json",
+      "sha256": "2429f72dbd66afdb8647bf1bd1b4278a475756fd7c346618206db236f3dd68e2",
+      "evaluation": {
+        "schema_version": 1,
+        "status": "complete",
+        "task": "lsp",
+        "model_kind": "yolo11s",
+        "backbone_frozen": true,
+        "backbone_metadata": {
+          "backbone": "Ultralytics YOLO11s + frozen CLIP text tower for OpenMoji",
+          "checkpoint": "/DATA/DATA1/guest3/models/yolo11s.pt",
+          "image_feature": "YOLO11s layer-10 C2PSA map interpolated to 14x14",
+          "text_feature": "native final CLIP text embedding as one token",
+          "backbone_total_parameters": 9458752,
+          "backbone_trainable_parameters": 0,
+          "image_width": 512,
+          "text_width": 512
+        },
+        "git_commit": "960799c603c9aee7f020c22cfb699528dc5492c0",
+        "cache": "/DATA/DATA1/guest3/LightGenV2_baseline_cache_20260923/lsp_yolo11s.pt",
+        "selected_epoch": 16,
+        "metrics": {
+          "samples": 1000,
+          "heatmap_loss": 0,
+          "coordinate_loss": 0.2569920995235443,
+          "pck_at_0.2_torso": 0.07628571428571429,
+          "pckh_at_0.5_head": 0.2525,
+          "mean_pixel_error": 60.56359946322228,
+          "normalized_mean_error_torso": 0.927184862122813,
+          "evaluated_joints": 14000,
+          "pck_evaluated_joints": 14000,
+          "pckh_evaluated_joints": 14000,
+          "per_joint_pck_at_0.2_torso": {
+            "right_ankle": 0.055,
+            "right_knee": 0,
+            "right_hip": 0.025,
+            "left_hip": 0.074,
+            "left_knee": 0.07,
+            "left_ankle": 0.004,
+            "right_wrist": 0.057,
+            "right_elbow": 0.132,
+            "right_shoulder": 0.196,
+            "left_shoulder": 0.065,
+            "left_elbow": 0.138,
+            "left_wrist": 0.002,
+            "neck": 0.181,
+            "head_top": 0.069
+          },
+          "per_joint_counts": {
+            "right_ankle": 1000,
+            "right_knee": 1000,
+            "right_hip": 1000,
+            "left_hip": 1000,
+            "left_knee": 1000,
+            "left_ankle": 1000,
+            "right_wrist": 1000,
+            "right_elbow": 1000,
+            "right_shoulder": 1000,
+            "left_shoulder": 1000,
+            "left_elbow": 1000,
+            "left_wrist": 1000,
+            "neck": 1000,
+            "head_top": 1000
+          },
+          "normalization": {
+            "PCK": "mean distance of the two shoulder-to-opposite-hip torso diagonals",
+            "PCKh": "2 * distance(neck, head_top)"
+          }
+        },
+        "head_parameters": 1036430,
+        "selection": "minimum training loss"
+      },
+      "best_sha256": "5a9bb9e07489951b9e01cbf339b631450f58cedfe829af4225a79dbab3a799fe"
+    },
+    {
+      "run": "openmoji_clip",
+      "file": "selected_checkpoint_test_evaluation.json",
+      "sha256": "70080818dd828f7acca5097bbbae29b6972d1afca15cbe31362d2a79ffeb3c9a",
+      "evaluation": {
+        "schema_version": 1,
+        "status": "complete",
+        "task": "openmoji",
+        "model_kind": "clip",
+        "backbone_frozen": true,
+        "backbone_metadata": {
+          "backbone": "OpenAI CLIP ViT-B/32",
+          "checkpoint": "/DATA/DATA1/guest3/models/openai-clip/ViT-B-32.pt",
+          "image_feature": "final 7x7 ViT patch tokens interpolated to 14x14",
+          "text_feature": "native final CLIP text embedding as one token",
+          "backbone_total_parameters": 151277313,
+          "backbone_trainable_parameters": 0,
+          "image_width": 768,
+          "text_width": 512
+        },
+        "git_commit": "eb2ff1d49aca01c8b1bc0273951f603f1b7478e5",
+        "cache": "/DATA/DATA1/guest3/LightGenV2_baseline_cache_20260923/openmoji_clip.pt",
+        "selected_epoch": 45,
+        "metrics": {
+          "overall": {
+            "samples": 1000,
+            "cell_accuracy": 0.9836111097335816,
+            "changed_cell_accuracy": 0.6585,
+            "foreground_category_accuracy": 0.9017000051438808,
+            "preserved_cell_accuracy": 0.9959672285914422,
+            "edit_grid_iou": 0.6697833333333333,
+            "object_f1": 0.9166395604395612,
+            "scene_exact_match": 0.546,
+            "task_accuracy": 1
+          },
+          "add": {
+            "samples": 250,
+            "cell_accuracy": 0.978999997138977,
+            "changed_cell_accuracy": 0.432,
+            "foreground_category_accuracy": 0.8832000112533569,
+            "preserved_cell_accuracy": 0.9946285717487335,
+            "edit_grid_iou": 0.4213333333333334,
+            "object_f1": 0.9188628482628483,
+            "scene_exact_match": 0.372,
+            "task_accuracy": 1
+          },
+          "replace": {
+            "samples": 250,
+            "cell_accuracy": 0.9905555520057678,
+            "changed_cell_accuracy": 0.728,
+            "foreground_category_accuracy": 0.9212666696310043,
+            "preserved_cell_accuracy": 0.9980571429729461,
+            "edit_grid_iou": 0.802,
+            "object_f1": 0.9192317460317462,
+            "scene_exact_match": 0.676,
+            "task_accuracy": 1
+          },
+          "move": {
+            "samples": 250,
+            "cell_accuracy": 0.9675555577278138,
+            "changed_cell_accuracy": 0.562,
+            "foreground_category_accuracy": 0.8053333396911622,
+            "preserved_cell_accuracy": 0.9914117710590362,
+            "edit_grid_iou": 0.5518000000000002,
+            "object_f1": 0.8412636474636479,
+            "scene_exact_match": 0.232,
+            "task_accuracy": 1
+          },
+          "remove": {
+            "samples": 250,
+            "cell_accuracy": 0.9973333320617676,
+            "changed_cell_accuracy": 0.912,
+            "foreground_category_accuracy": 0.997,
+            "preserved_cell_accuracy": 0.9997714285850525,
+            "edit_grid_iou": 0.904,
+            "object_f1": 0.9872,
+            "scene_exact_match": 0.904,
+            "task_accuracy": 1
+          }
+        },
+        "head_parameters": 628888,
+        "selection": "maximum test changed-cell accuracy at epoch 1/every 5/final"
+      },
+      "best_sha256": "2ad0ebc341f0b3dc93354a005db04a4f62dd3d00fd60a72173bc409ede20cb5f"
+    },
+    {
+      "run": "openmoji_clip_final_seed73",
+      "file": "selected_checkpoint_test_evaluation.json",
+      "sha256": "93ead9756fa6930bfbcb6ca91dc8fa2a8926191034304d9ac263dea964cd8146",
+      "evaluation": {
+        "schema_version": 1,
+        "status": "complete",
+        "task": "openmoji",
+        "model_kind": "clip",
+        "backbone_frozen": true,
+        "backbone_metadata": {
+          "backbone": "OpenAI CLIP ViT-B/32",
+          "checkpoint": "/DATA/DATA1/guest3/models/openai-clip/ViT-B-32.pt",
+          "image_feature": "final 7x7 ViT patch tokens interpolated to 14x14",
+          "text_feature": "native final CLIP text embedding as one token",
+          "backbone_total_parameters": 151277313,
+          "backbone_trainable_parameters": 0,
+          "image_width": 768,
+          "text_width": 512
+        },
+        "git_commit": "9694990ef97542ca6a65468782d43758f9bfc5a8",
+        "cache": "/DATA/DATA1/guest3/LightGenV2_baseline_cache_20260923/openmoji_clip.pt",
+        "selected_epoch": 45,
+        "metrics": {
+          "overall": {
+            "samples": 1000,
+            "cell_accuracy": 0.9815833323597908,
+            "changed_cell_accuracy": 0.6285,
+            "foreground_category_accuracy": 0.8915166721045971,
+            "preserved_cell_accuracy": 0.9949159687757492,
+            "edit_grid_iou": 0.6215333333333333,
+            "object_f1": 0.9032392329892334,
+            "scene_exact_match": 0.499,
+            "task_accuracy": 1
+          },
+          "add": {
+            "samples": 250,
+            "cell_accuracy": 0.9778888850212097,
+            "changed_cell_accuracy": 0.392,
+            "foreground_category_accuracy": 0.8731333448886871,
+            "preserved_cell_accuracy": 0.9946285717487335,
+            "edit_grid_iou": 0.3539999999999999,
+            "object_f1": 0.9107784215784216,
+            "scene_exact_match": 0.316,
+            "task_accuracy": 1
+          },
+          "replace": {
+            "samples": 250,
+            "cell_accuracy": 0.9887777738571167,
+            "changed_cell_accuracy": 0.684,
+            "foreground_category_accuracy": 0.904933336853981,
+            "preserved_cell_accuracy": 0.9974857144355774,
+            "edit_grid_iou": 0.76,
+            "object_f1": 0.9030759018759023,
+            "scene_exact_match": 0.62,
+            "task_accuracy": 1
+          },
+          "move": {
+            "samples": 250,
+            "cell_accuracy": 0.9630000054836273,
+            "changed_cell_accuracy": 0.534,
+            "foreground_category_accuracy": 0.7970000064373016,
+            "preserved_cell_accuracy": 0.9882353031635285,
+            "edit_grid_iou": 0.4968,
+            "object_f1": 0.8174899100899103,
+            "scene_exact_match": 0.18,
+            "task_accuracy": 1
+          },
+          "remove": {
+            "samples": 250,
+            "cell_accuracy": 0.9966666650772095,
+            "changed_cell_accuracy": 0.904,
+            "foreground_category_accuracy": 0.9910000002384186,
+            "preserved_cell_accuracy": 0.9993142857551575,
+            "edit_grid_iou": 0.8753333333333334,
+            "object_f1": 0.9816126984126984,
+            "scene_exact_match": 0.88,
+            "task_accuracy": 1
+          }
+        },
+        "head_parameters": 628888,
+        "selection": "maximum test changed-cell accuracy at epoch 1/every 5/final"
+      },
+      "best_sha256": "552833bd74768e0d283a635152a0c342770752ab8afe7eafa63e8df65b093edd"
+    },
+    {
+      "run": "openmoji_deepseek_final_seed73",
+      "file": "selected_checkpoint_test_evaluation.json",
+      "sha256": "f817fd6d2a1f8d8e8b0a9340dd58ba76defd17552f875d10af36fac29ab3370d",
+      "evaluation": {
+        "schema_version": 1,
+        "status": "complete",
+        "task": "openmoji",
+        "model_kind": "deepseek",
+        "backbone_frozen": true,
+        "backbone_metadata": {
+          "backbone": "DeepSeek-VL2-Tiny",
+          "checkpoint": "/DATA/DATA1/guest3/models/deepseek-vl2-tiny",
+          "image_feature": "final SigLIP-So400M global-view 27x27 tokens interpolated to 14x14",
+          "text_feature": "final DeepSeek decoder instruction-token hidden states",
+          "backbone_total_parameters": 3370501440,
+          "backbone_trainable_parameters": 0,
+          "image_width": 1152,
+          "text_width": 1280
+        },
+        "git_commit": "9694990ef97542ca6a65468782d43758f9bfc5a8",
+        "cache": "/DATA/DATA1/guest3/LightGenV2_baseline_cache_20260923/openmoji_deepseek.pt",
+        "selected_epoch": 45,
+        "metrics": {
+          "overall": {
+            "samples": 1000,
+            "cell_accuracy": 0.9859722205996513,
+            "changed_cell_accuracy": 0.7195,
+            "foreground_category_accuracy": 0.9144333381056785,
+            "preserved_cell_accuracy": 0.9960277329683304,
+            "edit_grid_iou": 0.7312666666666668,
+            "object_f1": 0.9310623820623821,
+            "scene_exact_match": 0.589,
+            "task_accuracy": 1
+          },
+          "add": {
+            "samples": 250,
+            "cell_accuracy": 0.9771111090183258,
+            "changed_cell_accuracy": 0.428,
+            "foreground_category_accuracy": 0.8847333445549012,
+            "preserved_cell_accuracy": 0.9928000004291534,
+            "edit_grid_iou": 0.418,
+            "object_f1": 0.9133069597069595,
+            "scene_exact_match": 0.336,
+            "task_accuracy": 1
+          },
+          "replace": {
+            "samples": 250,
+            "cell_accuracy": 0.9948888864517212,
+            "changed_cell_accuracy": 0.816,
+            "foreground_category_accuracy": 0.9518666687011719,
+            "preserved_cell_accuracy": 1,
+            "edit_grid_iou": 0.936,
+            "object_f1": 0.9525777777777776,
+            "scene_exact_match": 0.816,
+            "task_accuracy": 1
+          },
+          "move": {
+            "samples": 250,
+            "cell_accuracy": 0.9728888874053955,
+            "changed_cell_accuracy": 0.65,
+            "foreground_category_accuracy": 0.8288000056743622,
+            "preserved_cell_accuracy": 0.9918823599815368,
+            "edit_grid_iou": 0.5970666666666666,
+            "object_f1": 0.865767965367966,
+            "scene_exact_match": 0.24,
+            "task_accuracy": 1
+          },
+          "remove": {
+            "samples": 250,
+            "cell_accuracy": 0.9989999995231629,
+            "changed_cell_accuracy": 0.984,
+            "foreground_category_accuracy": 0.992333333492279,
+            "preserved_cell_accuracy": 0.9994285714626312,
+            "edit_grid_iou": 0.974,
+            "object_f1": 0.9925968253968255,
+            "scene_exact_match": 0.964,
+            "task_accuracy": 1
+          }
+        },
+        "head_parameters": 850072,
+        "selection": "maximum test changed-cell accuracy at epoch 1/every 5/final"
+      },
+      "best_sha256": "45e1f0a49d4422c6af3b9f42f7866e7d71c25c4388a717090a4ab106836da35a"
+    },
+    {
+      "run": "openmoji_deepseek_r2",
+      "file": "selected_checkpoint_test_evaluation.json",
+      "sha256": "92f3899c343ef92bbd3eb41947a0fb13e5a25e163ffd48ff586ff286c1946777",
+      "evaluation": {
+        "schema_version": 1,
+        "status": "complete",
+        "task": "openmoji",
+        "model_kind": "deepseek",
+        "backbone_frozen": true,
+        "backbone_metadata": {
+          "backbone": "DeepSeek-VL2-Tiny",
+          "checkpoint": "/DATA/DATA1/guest3/models/deepseek-vl2-tiny",
+          "image_feature": "final SigLIP-So400M global-view 27x27 tokens interpolated to 14x14",
+          "text_feature": "final DeepSeek decoder instruction-token hidden states",
+          "backbone_total_parameters": 3370501440,
+          "backbone_trainable_parameters": 0,
+          "image_width": 1152,
+          "text_width": 1280
+        },
+        "git_commit": "eb2ff1d49aca01c8b1bc0273951f603f1b7478e5",
+        "cache": "/DATA/DATA1/guest3/LightGenV2_baseline_cache_20260923/openmoji_deepseek.pt",
+        "selected_epoch": 40,
+        "metrics": {
+          "overall": {
+            "samples": 1000,
+            "cell_accuracy": 0.9866388872265816,
+            "changed_cell_accuracy": 0.721,
+            "foreground_category_accuracy": 0.9154500048458576,
+            "preserved_cell_accuracy": 0.996757144510746,
+            "edit_grid_iou": 0.7370833333333334,
+            "object_f1": 0.9361285936285945,
+            "scene_exact_match": 0.603,
+            "task_accuracy": 1
+          },
+          "add": {
+            "samples": 250,
+            "cell_accuracy": 0.976888885974884,
+            "changed_cell_accuracy": 0.4,
+            "foreground_category_accuracy": 0.8788000116348267,
+            "preserved_cell_accuracy": 0.9933714289665222,
+            "edit_grid_iou": 0.39466666666666667,
+            "object_f1": 0.9112895548895547,
+            "scene_exact_match": 0.316,
+            "task_accuracy": 1
+          },
+          "replace": {
+            "samples": 250,
+            "cell_accuracy": 0.9958888871669769,
+            "changed_cell_accuracy": 0.864,
+            "foreground_category_accuracy": 0.9640666680335999,
+            "preserved_cell_accuracy": 0.9996571428775788,
+            "edit_grid_iou": 0.948,
+            "object_f1": 0.9650063492063492,
+            "scene_exact_match": 0.856,
+            "task_accuracy": 1
+          },
+          "move": {
+            "samples": 250,
+            "cell_accuracy": 0.9743333315849304,
+            "changed_cell_accuracy": 0.64,
+            "foreground_category_accuracy": 0.8189333397150039,
+            "preserved_cell_accuracy": 0.9940000061988831,
+            "edit_grid_iou": 0.6196666666666666,
+            "object_f1": 0.8706946608946616,
+            "scene_exact_match": 0.26,
+            "task_accuracy": 1
+          },
+          "remove": {
+            "samples": 250,
+            "cell_accuracy": 0.9994444441795349,
+            "changed_cell_accuracy": 0.98,
+            "foreground_category_accuracy": 1,
+            "preserved_cell_accuracy": 1,
+            "edit_grid_iou": 0.986,
+            "object_f1": 0.9975238095238095,
+            "scene_exact_match": 0.98,
+            "task_accuracy": 1
+          }
+        },
+        "head_parameters": 850072,
+        "selection": "maximum test changed-cell accuracy at epoch 1/every 5/final"
+      },
+      "best_sha256": "3754bbc6d73a577608ce3137c365869bf8df763041204cca5b8f554985c72722"
+    },
+    {
+      "run": "openmoji_yolo11s",
+      "file": "selected_checkpoint_test_evaluation.json",
+      "sha256": "f4ced2fec6d374a023f60af53c5c9beaf73cfe6c783ce0ff75f6b6828091e836",
+      "evaluation": {
+        "schema_version": 1,
+        "status": "complete",
+        "task": "openmoji",
+        "model_kind": "yolo11s",
+        "backbone_frozen": true,
+        "backbone_metadata": {
+          "backbone": "Ultralytics YOLO11s + frozen CLIP text tower for OpenMoji",
+          "checkpoint": "/DATA/DATA1/guest3/models/yolo11s.pt",
+          "image_feature": "YOLO11s layer-10 C2PSA map interpolated to 14x14",
+          "text_feature": "native final CLIP text embedding as one token",
+          "backbone_total_parameters": 9458752,
+          "backbone_trainable_parameters": 0,
+          "image_width": 512,
+          "text_width": 512
+        },
+        "git_commit": "eb2ff1d49aca01c8b1bc0273951f603f1b7478e5",
+        "cache": "/DATA/DATA1/guest3/LightGenV2_baseline_cache_20260923/openmoji_yolo11s.pt",
+        "selected_epoch": 30,
+        "metrics": {
+          "overall": {
+            "samples": 1000,
+            "cell_accuracy": 0.9831666671633721,
+            "changed_cell_accuracy": 0.7005,
+            "foreground_category_accuracy": 0.9299666707515717,
+            "preserved_cell_accuracy": 0.9942941204309463,
+            "edit_grid_iou": 0.7044499999999999,
+            "object_f1": 0.9210910367410368,
+            "scene_exact_match": 0.579,
+            "task_accuracy": 1
+          },
+          "add": {
+            "samples": 250,
+            "cell_accuracy": 0.9807777764797211,
+            "changed_cell_accuracy": 0.504,
+            "foreground_category_accuracy": 0.900866676568985,
+            "preserved_cell_accuracy": 0.9944000003337861,
+            "edit_grid_iou": 0.4993333333333333,
+            "object_f1": 0.9245201243201246,
+            "scene_exact_match": 0.44,
+            "task_accuracy": 1
+          },
+          "replace": {
+            "samples": 250,
+            "cell_accuracy": 0.9931111087799073,
+            "changed_cell_accuracy": 0.812,
+            "foreground_category_accuracy": 0.9426666688919068,
+            "preserved_cell_accuracy": 0.9982857143878937,
+            "edit_grid_iou": 0.826,
+            "object_f1": 0.9413518037518037,
+            "scene_exact_match": 0.768,
+            "task_accuracy": 1
+          },
+          "move": {
+            "samples": 250,
+            "cell_accuracy": 0.9614444510936737,
+            "changed_cell_accuracy": 0.558,
+            "foreground_category_accuracy": 0.8836666707992553,
+            "preserved_cell_accuracy": 0.9851764812469482,
+            "edit_grid_iou": 0.5611333333333335,
+            "object_f1": 0.8333811077811084,
+            "scene_exact_match": 0.2,
+            "task_accuracy": 1
+          },
+          "remove": {
+            "samples": 250,
+            "cell_accuracy": 0.9973333323001862,
+            "changed_cell_accuracy": 0.928,
+            "foreground_category_accuracy": 0.9926666667461396,
+            "preserved_cell_accuracy": 0.9993142857551575,
+            "edit_grid_iou": 0.9313333333333333,
+            "object_f1": 0.9851111111111112,
+            "scene_exact_match": 0.908,
+            "task_accuracy": 1
+          }
+        },
+        "head_parameters": 579736,
+        "selection": "maximum test changed-cell accuracy at epoch 1/every 5/final"
+      },
+      "best_sha256": "a8a25de9b0a1cadd75ac37453c601b5b9dd3f95193aff9586d93a992cb7ffab7"
+    },
+    {
+      "run": "openmoji_yolo11s_final_seed73",
+      "file": "selected_checkpoint_test_evaluation.json",
+      "sha256": "ef41ffba53bd8087cd794171edb0d06cf8e80e6c0665f4f88d7a5f689d76f83e",
+      "evaluation": {
+        "schema_version": 1,
+        "status": "complete",
+        "task": "openmoji",
+        "model_kind": "yolo11s",
+        "backbone_frozen": true,
+        "backbone_metadata": {
+          "backbone": "Ultralytics YOLO11s + frozen CLIP text tower for OpenMoji",
+          "checkpoint": "/DATA/DATA1/guest3/models/yolo11s.pt",
+          "image_feature": "YOLO11s layer-10 C2PSA map interpolated to 14x14",
+          "text_feature": "native final CLIP text embedding as one token",
+          "backbone_total_parameters": 9458752,
+          "backbone_trainable_parameters": 0,
+          "image_width": 512,
+          "text_width": 512
+        },
+        "git_commit": "9694990ef97542ca6a65468782d43758f9bfc5a8",
+        "cache": "/DATA/DATA1/guest3/LightGenV2_baseline_cache_20260923/openmoji_yolo11s.pt",
+        "selected_epoch": 40,
+        "metrics": {
+          "overall": {
+            "samples": 1000,
+            "cell_accuracy": 0.9820277785658836,
+            "changed_cell_accuracy": 0.7225,
+            "foreground_category_accuracy": 0.9105333376079797,
+            "preserved_cell_accuracy": 0.9923462215662002,
+            "edit_grid_iou": 0.6942333333333333,
+            "object_f1": 0.9112637529137524,
+            "scene_exact_match": 0.572,
+            "task_accuracy": 0.999
+          },
+          "add": {
+            "samples": 250,
+            "cell_accuracy": 0.9802222199440003,
+            "changed_cell_accuracy": 0.56,
+            "foreground_category_accuracy": 0.9060000088214875,
+            "preserved_cell_accuracy": 0.9922285718917847,
+            "edit_grid_iou": 0.515,
+            "object_f1": 0.9220356754356757,
+            "scene_exact_match": 0.428,
+            "task_accuracy": 0.996
+          },
+          "replace": {
+            "samples": 250,
+            "cell_accuracy": 0.9923333311080933,
+            "changed_cell_accuracy": 0.808,
+            "foreground_category_accuracy": 0.9356666688919067,
+            "preserved_cell_accuracy": 0.9976000001430512,
+            "edit_grid_iou": 0.8166666666666667,
+            "object_f1": 0.9353079365079364,
+            "scene_exact_match": 0.748,
+            "task_accuracy": 1
+          },
+          "move": {
+            "samples": 250,
+            "cell_accuracy": 0.9578888976573944,
+            "changed_cell_accuracy": 0.574,
+            "foreground_category_accuracy": 0.8098000059723854,
+            "preserved_cell_accuracy": 0.9804705998897553,
+            "edit_grid_iou": 0.5346000000000001,
+            "object_f1": 0.8013367965367972,
+            "scene_exact_match": 0.196,
+            "task_accuracy": 1
+          },
+          "remove": {
+            "samples": 250,
+            "cell_accuracy": 0.9976666655540466,
+            "changed_cell_accuracy": 0.948,
+            "foreground_category_accuracy": 0.9906666667461396,
+            "preserved_cell_accuracy": 0.99908571434021,
+            "edit_grid_iou": 0.9106666666666666,
+            "object_f1": 0.9863746031746036,
+            "scene_exact_match": 0.916,
+            "task_accuracy": 1
+          }
+        },
+        "head_parameters": 579736,
+        "selection": "maximum test changed-cell accuracy at epoch 1/every 5/final"
+      },
+      "best_sha256": "809ebfa3771425817b4b11502488a8a7bb764a158a989782ff25bb7da975b838"
+    },
+    {
+      "run": "salicon_clip",
+      "file": "selected_checkpoint_test_evaluation.json",
+      "sha256": "6b1f95e521b6554d996b80ba5cbdf445638aa3d3083001d288bd726abf8ac0f4",
+      "evaluation": {
+        "schema_version": 1,
+        "status": "complete",
+        "task": "salicon",
+        "model_kind": "clip",
+        "backbone_frozen": true,
+        "backbone_metadata": {
+          "backbone": "OpenAI CLIP ViT-B/32",
+          "checkpoint": "/DATA/DATA1/guest3/models/openai-clip/ViT-B-32.pt",
+          "image_feature": "final 7x7 ViT patch tokens interpolated to 14x14",
+          "text_feature": "native final CLIP text embedding as one token",
+          "backbone_total_parameters": 151277313,
+          "backbone_trainable_parameters": 0,
+          "image_width": 768,
+          "text_width": 512
+        },
+        "git_commit": "960799c603c9aee7f020c22cfb699528dc5492c0",
+        "cache": "/DATA/DATA1/guest3/LightGenV2_baseline_cache_20260923/salicon_clip.pt",
+        "selected_epoch": 35,
+        "metrics": {
+          "samples": 5000,
+          "kld": 0.12240485303401948,
+          "cc": 0.872336316871643,
+          "sim": 0.8217239575386047,
+          "nss": 0.9744608280181885,
+          "auc_judd": 0.7689306379394195,
+          "mae": 0.07200167421102524
+        },
+        "head_parameters": 233444,
+        "selection": "maximum public validation CC at epoch 1/every 5/final"
+      },
+      "best_sha256": "c97f838c6f4c4ca65d04c2c91fed4bbaf66fcd73f4c0ae927f6ea2f7655828bb"
+    },
+    {
+      "run": "salicon_deepseek",
+      "file": "selected_checkpoint_test_evaluation.json",
+      "sha256": "bfa1032fd81fca594da2f75d890020d41138c68be2aa4633db467b8337f4d4ff",
+      "evaluation": {
+        "schema_version": 1,
+        "status": "complete",
+        "task": "salicon",
+        "model_kind": "deepseek",
+        "backbone_frozen": true,
+        "backbone_metadata": {
+          "backbone": "DeepSeek-VL2-Tiny",
+          "checkpoint": "/DATA/DATA1/guest3/models/deepseek-vl2-tiny",
+          "image_feature": "final SigLIP-So400M global-view 27x27 tokens interpolated to 14x14",
+          "text_feature": "final DeepSeek decoder instruction-token hidden states",
+          "backbone_total_parameters": 3370501440,
+          "backbone_trainable_parameters": 0,
+          "image_width": 1152,
+          "text_width": 1280
+        },
+        "git_commit": "960799c603c9aee7f020c22cfb699528dc5492c0",
+        "cache": "/DATA/DATA1/guest3/LightGenV2_baseline_cache_20260923/salicon_deepseek.pt",
+        "selected_epoch": 5,
+        "metrics": {
+          "samples": 5000,
+          "kld": 0.08964144376516342,
+          "cc": 0.9093131978988648,
+          "sim": 0.8480838417053222,
+          "nss": 1.037221410560608,
+          "auc_judd": 0.7782384124121332,
+          "mae": 0.06060356880426407
+        },
+        "head_parameters": 307172,
+        "selection": "maximum public validation CC at epoch 1/every 5/final"
+      },
+      "best_sha256": "605a84ffef5fa40d5a8fb2503f3e67d9b31a9ccbfd6fc9bb5abfe6176387d72b"
+    },
+    {
+      "run": "salicon_deepseek_fixed_lr1e4_eval10",
+      "file": "selected_checkpoint_test_evaluation.json",
+      "sha256": "58f9d14eb11234a37431268fed96eee5dea7394aaaf1770ceb51b154860011ad",
+      "evaluation": {
+        "schema_version": 1,
+        "status": "complete",
+        "task": "salicon",
+        "model_kind": "deepseek",
+        "backbone_frozen": true,
+        "backbone_metadata": {
+          "backbone": "DeepSeek-VL2-Tiny",
+          "checkpoint": "/DATA/DATA1/guest3/models/deepseek-vl2-tiny",
+          "image_feature": "final SigLIP-So400M global-view 27x27 tokens interpolated to 14x14",
+          "text_feature": "final DeepSeek decoder instruction-token hidden states",
+          "backbone_total_parameters": 3370501440,
+          "backbone_trainable_parameters": 0,
+          "image_width": 1152,
+          "text_width": 1280
+        },
+        "git_commit": "d53d82ab49743fb05022a4b93a31b7d7e37a9066",
+        "cache": "/DATA/DATA1/guest3/LightGenV2_baseline_cache_20260923/salicon_deepseek.pt",
+        "selected_epoch": 30,
+        "metrics": {
+          "samples": 5000,
+          "kld": 0.08941643815040588,
+          "cc": 0.909706034374237,
+          "sim": 0.8483328172683716,
+          "nss": 1.04114940700531,
+          "auc_judd": 0.7781755299884088,
+          "mae": 0.06036779537200928
+        },
+        "head_parameters": 307172,
+        "selection": "maximum public validation CC every 10 epochs/final",
+        "training_protocol": {
+          "epochs": 50,
+          "fixed_learning_rate": 0.0001,
+          "evaluation_interval_epochs": 10,
+          "weight_decay": 0,
+          "backbone_frozen": true
+        }
+      },
+      "best_sha256": "5f9f64bcd41e2d71c79c3dc935a183017717a129cd874e4713d96b9f018dcb12"
+    },
+    {
+      "run": "salicon_yolo11s",
+      "file": "selected_checkpoint_test_evaluation.json",
+      "sha256": "944a7427c16eeab36cf352989f16bd56073e795265753133dc846329a1e4db46",
+      "evaluation": {
+        "schema_version": 1,
+        "status": "complete",
+        "task": "salicon",
+        "model_kind": "yolo11s",
+        "backbone_frozen": true,
+        "backbone_metadata": {
+          "backbone": "Ultralytics YOLO11s + frozen CLIP text tower for OpenMoji",
+          "checkpoint": "/DATA/DATA1/guest3/models/yolo11s.pt",
+          "image_feature": "YOLO11s layer-10 C2PSA map interpolated to 14x14",
+          "text_feature": "native final CLIP text embedding as one token",
+          "backbone_total_parameters": 9458752,
+          "backbone_trainable_parameters": 0,
+          "image_width": 512,
+          "text_width": 512
+        },
+        "git_commit": "960799c603c9aee7f020c22cfb699528dc5492c0",
+        "cache": "/DATA/DATA1/guest3/LightGenV2_baseline_cache_20260923/salicon_yolo11s.pt",
+        "selected_epoch": 20,
+        "metrics": {
+          "samples": 5000,
+          "kld": 0.11688079065084457,
+          "cc": 0.8887360204696655,
+          "sim": 0.8326114709854125,
+          "nss": 1.010446160030365,
+          "auc_judd": 0.772761453554296,
+          "mae": 0.06644993356466293
+        },
+        "head_parameters": 184292,
+        "selection": "maximum public validation CC at epoch 1/every 5/final"
+      },
+      "best_sha256": "fe338488eeeae20bba961ebea68381e72d8f136b890e219fd4f04997b99f43a7"
+    }
+  ],
+  "limitations": [
+    "PTs hashed but not loaded; model and original dataset identity not yet closed.",
+    "Old feature cache cleanup was separately authorized; do not claim remaining caches are complete.",
+    "Runner depends on legacy task modules; main dependency compatibility remains pending.",
+    "OpenMoji old reports include superseded experiments; final_seed73 rows must be distinguished.",
+    "No training, dataset evaluation, timing, file relocation or deletion performed."
+  ]
+}
