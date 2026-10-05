@@ -13,14 +13,26 @@
 |---|---|---|---|---|
 | T01 | 物品检索 | Caltech101（可替换） | DC20 正式复跑完成 | `tasks/t01_object_retrieval` |
 | T02 | 关键点检测 | LSP（可替换） | DC20 正式复跑完成 | `tasks/t02_keypoint_detection` |
-| T03 | 显著性分析 | SALICON（可替换） | DC20 仿真三组协议完成；Qwen 待5090D | `tasks/t03_saliency` |
-| T04 | 语义交互 | OpenMoji（可替换） | DC20 仿真三组协议完成；Qwen 待5090D | `tasks/t04_semantic_interaction` |
+| T03 | 显著性分析 | SALICON（可替换） | 核心源码已归主线；历史资产及部署边界见任务说明 | `tasks/t03_saliency` |
+| T04 | OpenMoji robust 消融 | OpenMoji（可替换） | 仿真及硬件源码分版本登记；现用实验目录保护 | `tasks/t04_openmoji_robust_ablation` |
 | T05 | 视频分类 | 未确定 | 规划中 | `tasks/t05_video_classification` |
-| T06 | 视频质量评价 | LGVQ（可替换） | **当前主任务** | `tasks/t06_video_quality_assessment` |
-| T07 | 商品图搜图 | ABO（可替换） | 待迁移 | `tasks/t07_abo_image_retrieval` |
-| T08 | 商品图搜文 | ABO easy100 | 光仿真与冻结 Qwen baseline 已完成 | `tasks/t08_abo_image_text_retrieval` |
+| T06 | 视频质量评价 | LGVQ（可替换） | Spatial／Temporal 核心及适配入口已归主线 | `tasks/t06_video_quality_assessment` |
+| T07 | 商品图搜图 | ABO（可替换） | rank72 最终模型封存；训练及回放源码已归主线 | `tasks/t07_abo_image_retrieval` |
+| T08 | 商品图搜文、文搜图 | ABO easy100 | 双向模型与 baseline 分别保留 | `tasks/t08_abo_image_text_retrieval` |
+| T09 | 图文／音文匹配 | CLEVR／SpeechCommands | 核心运行源码已归主线；资产闭包仍有待办 | `tasks/t09_multimodal_matching` |
+| T10 | 专家数扩展 | 各任务固定预算实验 | 修正后源码及结果复用身份已登记 | `tasks/t10_expert_scaling` |
+| T11 | 病理终身学习 | 原病理四任务 | 最终源码及必要对照已归主线 | `tasks/t11_lifelong_optics` |
+| T12 | 图文编辑／文生图 | 任务正式划分 | 最终、历史版本及 baseline 分别保留 | `tasks/t12_text_to_image` |
+| T13 | 时序鲁棒训练 | 任务正式划分 | 核心源码及教师依赖已归主线 | `tasks/t13_temporal_robust_training` |
+| T16 | 多模态终身学习 | 遥感／图文／语音／物理 | 最终版及必要对照已归主线 | `tasks/t16_zero_phase_ccd_lifelong` |
 
 目录名按任务而非数据集命名，因此以后更换可公开发表的数据集时，不需要重命名工程。
+
+本表是工程导航，不是完整迁移验收表。旧 `t04_semantic_interaction` 保留为兼容后端及
+历史对照，新的 robust 实验从 T04 robust 入口进入。精确源码、PT、数据身份及剩余例外
+见 [`TASK_REGISTRY.json`](TASK_REGISTRY.json)；各版本指标以任务 README／原报告为准。
+本机主文件夹已在 `main` 上；服务器及实验室运行 checkout 尚未全部切换，不能因源码
+引用已同步而覆盖现用实验目录。
 
 ## 现在从哪里开始
 
