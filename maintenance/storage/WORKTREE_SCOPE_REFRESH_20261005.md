@@ -40,6 +40,14 @@ HEAD 元数据并条件式取消 `codex/t06-readout-compress-20260912` 分支名
 服务器分支 19→18；工作目录数量未减，没有释放空间或删除测速。
 现用 OpenMoji 与根运行目录仍有进程引用，未改它们的 HEAD、源码、数据或任务。
 
+同日旧整体压缩目录 `/DATA/DATA1/guest3/.codex_worktrees/t06_compress_all_20260912`
+也在原 `630d09367219a4bddd70ed098d2cbdbe8040b617` 上冻结，取消对应
+`codex/t06-compress-all-20260912` 分支名。4426 个文件的 stat、索引及 Git 状态前后
+一致，未操作科学文件。历史引用为 `refs/archive/frozen-server-20261006/t06-compress-all-20260912`。
+两端完整恢复包 SHA256 `20ea40156418adbc107cb0b47c0b6bd50cd053d61bcbc8849b80533ca9916c19`，
+私有本机包 `.codex_tmp/storage_git_backup_20261002/t06_all_server_full_20261006.bundle`。
+服务器分支 18→17，工作目录和全部旧测速仍在原位。
+
 2026-10-05实查83个注册工作树全部存在，19条分支名；当前main引用
 `aa78b93cbafbcd9c8a64c1ff10247468aa8429b9`，服务器根运行HEAD仍为
 `3f85510285e5ffdfca28def93eef2eb082b1655c`。没有切换checkout或删除目录。

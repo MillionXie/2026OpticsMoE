@@ -14,7 +14,14 @@
     },
     {
       "path": "LightGenV2/demo_check/pure_optical/config.json",
-      "source_blob_sha256": "727feeb7976f6ef99896dec1c8336894e4adda1399abc8e4c310b54d97c9eb6b"
+      "source_blob_sha256": "23ce500196769b7f2690e63ff68805cdcbc90440a377cda885469436c4021cf7",
+      "original_import_blob_sha256": "727feeb7976f6ef99896dec1c8336894e4adda1399abc8e4c310b54d97c9eb6b",
+      "post_import_review": {
+        "commit": "a6a8143ae3f694a25d8de83d6b36af6ac8ce1a66",
+        "purpose": "Preserve local explicit oeo_activation=none, equal to the existing model default; all other configuration values unchanged.",
+        "original_import_commit": "479877944cf6d364e0571eaf34578f05ccfb2171",
+        "scope": "Current configuration hash only; original runtime source identity and historical results are not rewritten."
+      }
     },
     {
       "path": "LightGenV2/demo_check/pure_optical/models.py",

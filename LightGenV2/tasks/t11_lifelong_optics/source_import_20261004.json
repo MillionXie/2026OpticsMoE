@@ -204,6 +204,8 @@
     {
       "path": "LightGenV2/tasks/t11_lifelong_optics/model.py",
       "source_blob_sha256": "2efb5f69ecdab3facbc336a16934b23e0c9b95719fcb0d01d1e305cabc62dd30",
+      "hash_normalization": "crlf_to_lf",
+      "normalization_review": "Windows checkout has CRLF only; normalized content equals the published Git blob, without changing the imported source hash.",
       "bytes": 11206
     },
     {
@@ -259,6 +261,8 @@
     {
       "path": "LightGenV2/tasks/t11_lifelong_optics/tests/test_contract.py",
       "source_blob_sha256": "ac2731c865dd1ac562204247242ff76dd959eb0ec734f892bd3b7e4459473d56",
+      "hash_normalization": "crlf_to_lf",
+      "normalization_review": "Windows checkout has CRLF only; normalized content equals the published Git blob, without changing the imported source hash.",
       "bytes": 11353
     },
     {
