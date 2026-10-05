@@ -1,0 +1,17 @@
+{
+  "schema_version": 1,
+  "source_runtime": "/DATA/DATA1/guest3/2026OpticsMoE_a100_formal",
+  "source_archive_commit": "36b1e2f696f06149e5812282036416a50bad8fef",
+  "source_archive_ref": "refs/archive/tracked-overlay-20261006/2026OpticsMoE_a100_formal",
+  "files": [
+    {"path": "modeling.py", "original_archive_sha256": "1cbe12b344fb667f8381181bbb88bc019c5418a3139e322bf02141f1c5e98e3b", "projected_lf_sha256": "4125e728d81f5917570b18d42a28c471bbd359f2ce5f43fa37d9c7a0a7039a6d"},
+    {"path": "run.py", "original_archive_sha256": "a1a4fa8f7318267e946cbe1734f52d96667dc613d303ca051709e065a5be58a7", "projected_lf_sha256": "c53fd2f04802527a376e16df9f9ae670c0e99cd388cb32444892e61e6a5c9ce7"},
+    {"path": "training.py", "original_archive_sha256": "b354c41edac79fdf9e2a3de44191feec5195235a12797988cc10937cd4480e91", "projected_lf_sha256": "b49f0617bf4c23a2fe11eefd8595009a9f10d36dbfb59a6008e64404330f033e"}
+  ],
+  "restored_features": ["same-checkpoint none/remove_optical/remove_electronic evaluation", "skip optical router losses when optics removed", "separate per-mode report and predictions"],
+  "preserved_main_features": ["embedding and shared-head model dispatch", "existing training and loader protocols", "router acceptance audit", "default embedding same-checkpoint remove-optical comparison"],
+  "projection_guards": ["ablation is evaluation-only", "reject unsupported baseline models", "reject existing report and predictions before data/device access", "separate per-mode metadata, architecture and gallery", "do not report stale optical routing when optics removed"],
+  "validation": {"no_torch_cpu_protocol_tests": 11, "passed": true, "train_function_ast_unchanged_from_parent_main": "b0637e04a2620450bc70eba81aef65fe7cb5169a", "full_model_dataset_checkpoint_gpu_execution": false},
+  "existing_runtime_or_scientific_artifacts_changed": false,
+  "all_a100_source_migration_complete": false
+}

@@ -37,6 +37,14 @@
 
 ## 运行
 
+历史A100同权重消融入口已收回主线（2026-10-06）。只在 `--phase evaluate` 使用
+`--fusion-ablation remove_optical` 或 `remove_electronic`；默认 `none`。两模态内部
+融合核心使用同一PT，不重训；去光时电子系数恢复为1。纯完整Qwen baseline没有
+对应融合核心，拒绝消融选项。报告、逐样本、配置和图库按模式分开，已有评估输出
+拒绝覆盖。11项无Torch CPU协议测试通过，训练函数与迁移前主线AST一致；没有新
+实拍、测速或完整模型评估。源码身份见 [恢复清单](fusion_ablation_import_20261006.json)。
+现用rank64设备工程未修改；本页历史入口与其不是同一部署版本。
+
 ```bash
 python -m LightGenV2.tasks.t04_semantic_interaction.run --profile main_dc20 --phase all
 python -m LightGenV2.tasks.t04_semantic_interaction.run --profile d2nn_dc20 --phase all

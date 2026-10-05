@@ -181,7 +181,8 @@ def _phase_regularization(model, settings):
 
 @torch.inference_mode()
 def evaluate_with_routes(model, loader, settings, device):
-    if not settings.shared_readout_enabled or model.router_backend != 'optical':
+    if (not settings.shared_readout_enabled or model.router_backend != 'optical'
+            or (callable(getattr(model, '_optics_are_ablated', None)) and model._optics_are_ablated())):
         return legacy._evaluate(model, loader, settings, device)
     bins = {name: torch.zeros(16, dtype=torch.long) for name in ('language', 'vision')}
     handles = []
@@ -392,8 +393,29 @@ def train(settings: Settings, device: torch.device) -> dict[str, Any]:
     return report
 
 
+def _set_fusion_ablation(model: Any, mode: str) -> None:
+    if mode not in {'none', 'remove_optical', 'remove_electronic'}:
+        raise ValueError(f'Unknown fusion ablation mode: {mode}')
+    cores = [getattr(model, name, None) for name in ('language_core', 'vision_core')]
+    supported = all(callable(getattr(core, 'set_fusion_ablation', None)) for core in cores)
+    if not supported:
+        if mode != 'none':
+            raise ValueError('This model has no paired optical/electronic fusion cores')
+        return
+    for core in cores:
+        core.set_fusion_ablation(mode)
+
+
 @torch.inference_mode()
-def evaluate_selected(settings: Settings, device: torch.device, checkpoint: Path) -> dict[str, Any]:
+def evaluate_selected(settings: Settings, device: torch.device, checkpoint: Path,
+                      fusion_ablation: str = 'none') -> dict[str, Any]:
+    if fusion_ablation not in {'none', 'remove_optical', 'remove_electronic'}:
+        raise ValueError(f'Unknown fusion ablation mode: {fusion_ablation}')
+    suffix = '' if fusion_ablation == 'none' else f'_{fusion_ablation}'
+    report_path = settings.output_dir / f'selected_checkpoint_test_evaluation{suffix}.json'
+    predictions_path = settings.output_dir / f'test_predictions{suffix}.jsonl'
+    if report_path.exists() or predictions_path.exists():
+        raise FileExistsError('Evaluation output already exists; use a new run directory')
     _, loader = build_loaders(settings)
     model = build_model(settings, device)
     payload = torch.load(checkpoint, map_location="cpu", weights_only=False)
@@ -401,9 +423,10 @@ def evaluate_selected(settings: Settings, device: torch.device, checkpoint: Path
         raise RuntimeError("T04 checkpoint architecture mismatch")
     model.load_state_dict(payload["model"], strict=True)
     model.eval()
+    _set_fusion_ablation(model, fusion_ablation)
     _set_phase_dropout(model, False)
     _json(
-        settings.output_dir / "student_architecture.json",
+        settings.output_dir / f"student_architecture{suffix}.json",
         model.architecture_report(),
     )
     router_counts: dict[str, torch.Tensor] = {}
@@ -411,7 +434,7 @@ def evaluate_selected(settings: Settings, device: torch.device, checkpoint: Path
     router_probability_sums: dict[str, torch.Tensor] = {}
     router_sample_counts: dict[str, int] = {}
     handles = []
-    if model.router_backend == "optical":
+    if model.router_backend == "optical" and fusion_ablation != 'remove_optical':
         for label, path in zip(("language", "vision"), model._optical_paths()):
             counts = torch.zeros(4, dtype=torch.long)
             router_counts[label] = counts
@@ -460,6 +483,7 @@ def evaluate_selected(settings: Settings, device: torch.device, checkpoint: Path
         "split": "deterministic disjoint test",
         "test_samples": settings.test_samples,
         "selection_biased": True,
+        "fusion_ablation": fusion_ablation,
         "metrics": metrics,
         "router_audit": (
             {
@@ -485,12 +509,12 @@ def evaluate_selected(settings: Settings, device: torch.device, checkpoint: Path
             else None
         ),
     }
-    _json(settings.output_dir / "selected_checkpoint_test_evaluation.json", result)
-    with (settings.output_dir / "test_predictions.jsonl").open("w", encoding="utf-8") as handle:
+    _json(report_path, result)
+    with predictions_path.open("w", encoding="utf-8") as handle:
         for row in predictions:
             handle.write(json.dumps(row, ensure_ascii=False) + "\n")
-    legacy._save_gallery(settings.output_dir / "best_visualization" / "test_examples", galleries, settings)
-    if settings.embedding_only:
+    legacy._save_gallery(settings.output_dir / f"best_visualization{suffix}" / "test_examples", galleries, settings)
+    if settings.embedding_only and fusion_ablation == 'none':
         for core in (model.language_core, model.vision_core):
             core.set_fusion_ablation('remove_optical')
         removed, _, _ = legacy._evaluate(model, loader, settings, device)

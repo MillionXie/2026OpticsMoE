@@ -99,19 +99,27 @@ def _pending_qwen(settings: Any) -> dict[str, Any]:
 
 
 def run(args: argparse.Namespace) -> dict[str, Any]:
+    fusion_ablation = getattr(args, 'fusion_ablation', 'none')
+    if fusion_ablation != 'none' and args.phase != 'evaluate':
+        raise ValueError('Fusion ablation is evaluation-only; it must not trigger training')
     settings = load_settings(TASK_DIR / "configs" / PROFILES[args.profile])
     if args.run_dir:
         settings.output_dir = Path(args.run_dir).expanduser().resolve()
+    suffix = '' if fusion_ablation == 'none' else f'_{fusion_ablation}'
+    if args.phase == 'evaluate' and any((settings.output_dir / name).exists() for name in (
+        f'selected_checkpoint_test_evaluation{suffix}.json', f'test_predictions{suffix}.jsonl'
+    )):
+        raise FileExistsError('Evaluation output already exists; use a new run directory')
     settings.output_dir.mkdir(parents=True, exist_ok=True)
     if (settings.embedding_only or settings.qwen_shared_baseline) and args.phase in {'train', 'all'} and any(
         (settings.output_dir / name).exists() for name in ('best_checkpoint.pt', 'last_checkpoint.pt')
     ):
         raise FileExistsError('Training output already contains weights; use a new --run-dir to preserve the run')
     device = torch.device(args.device or ("cuda" if torch.cuda.is_available() else "cpu"))
-    _json(settings.output_dir / "resolved_config.json", settings.to_dict())
-    _json(settings.output_dir / "environment.json", _environment(device))
+    _json(settings.output_dir / f"resolved_config{suffix}.json", settings.to_dict())
+    _json(settings.output_dir / f"environment{suffix}.json", _environment(device))
     _json(
-        settings.output_dir / "run_manifest.json",
+        settings.output_dir / f"run_manifest{suffix}.json",
         {
             "schema_version": 1,
             "task": "t04_semantic_interaction",
@@ -127,7 +135,7 @@ def run(args: argparse.Namespace) -> dict[str, Any]:
     )
     summary = _ensure_data(settings, device)
     _json(
-        settings.output_dir / "split_contract.json",
+        settings.output_dir / f"split_contract{suffix}.json",
         {
             "dataset": summary.get('type', 'OpenMoji semantic interaction v1'),
             "train": 5000,
@@ -153,7 +161,7 @@ def run(args: argparse.Namespace) -> dict[str, Any]:
         if args.checkpoint
         else settings.output_dir / "best_checkpoint.pt"
     )
-    return evaluate_selected(settings, device, checkpoint)
+    return evaluate_selected(settings, device, checkpoint, fusion_ablation=fusion_ablation)
 
 
 def main() -> int:
@@ -163,6 +171,7 @@ def main() -> int:
     parser.add_argument("--device", default=None)
     parser.add_argument("--run-dir", default=None)
     parser.add_argument("--checkpoint", default=None)
+    parser.add_argument('--fusion-ablation', choices=('none', 'remove_optical', 'remove_electronic'), default='none')
     args = parser.parse_args()
     print(json.dumps(run(args), ensure_ascii=False, indent=2), flush=True)
     return 0
