@@ -1,0 +1,8 @@
+{
+  "source_commit": "2f2f6946f38c7d06320eb29314654a6260f3d618",
+  "scope": "Two historical T16 analysis documents linked by the final report. Actual files in the original t12_cross_modal_20260920 runtime match source Git bytes. Preserve exploratory/validation-only limitations; no new training or evaluation. Associated plots and raw JSON remain original private artifacts, not included in this source-only publication.",
+  "paths": [
+    {"path":"LightGenV2/tasks/t16_zero_phase_ccd_lifelong/reports/refinement_20260926/README.md","bytes":2821,"sha256":"b808fb43d4d6e5ceebea6af0286880d8ed5f87d14306a2908ab59f7671f49f40"},
+    {"path":"LightGenV2/tasks/t16_zero_phase_ccd_lifelong/reports/expert_distribution_20260926/README.md","bytes":2986,"sha256":"f500b7e94f0e12916244c2e7f44a4daf190b3f1437a205642f43a67abf25e7b9"}
+  ]
+}

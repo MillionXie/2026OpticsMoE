@@ -1,0 +1,18 @@
+# 阶段 D 已选 MoE 的验证集路由分布
+
+来源：`stage4_moe_balanced_sharedvision_s17_e696` 的 `best_checkpoint.pt`／`result.json`，选中第 4 轮；四项均为**完整验证集**。`baseline_result.json` 是对应 run 的结果摘要副本；`baseline_validation.png` 只可视化其中的 `validation[*].router`，没有重训或再次使用测试集。图上编号 1–16 是固定物理专家槽，与 router CCD 端口一一对应。上半图为平均光功率占比，下半图为该槽在单样本中成为最大权重的频率；后者不是 Top-1 推理，模型仍让全部 16 个专家以不同权重参与。
+
+| 验证任务 | 样本数 | 平均光功率最大的四槽 | 最常成为最大权重的槽 |
+|---|---:|---|---|
+| EuroSAT | 5,465 | 13: 28.6%，12: 11.9%，10: 9.6%，15: 9.5% | 13: 100.0% |
+| CLEVR | 15,000 | 13: 18.9%，12: 13.5%，7: 13.4%，5: 11.2% | 13: 74.5%，7: 25.5% |
+| Speech | 1,686 | 2: 20.4%，5: 17.4%，7: 12.7%，12: 11.8% | 2: 56.5%，5: 37.8% |
+| Physical | 29,304 | 2: 18.1%，12: 15.8%，5: 15.7%，7: 14.0% | 2: 59.6%，7: 16.2%，5: 15.8%，12: 8.4% |
+
+最后新开放的四槽是 1、6、11、16；Physical 的平均路由功率合计仅约 **3.46%**，且从未成为最大权重。可见 16 槽在计算图中存在，并不等于阶段 D 的新专家得到了充分使用。这是调整训练期路由利用率的直接依据，但不能保证调整后准确率提升。`argmax` 集中也不能单独推断其它专家完全无贡献，因为该模型是 dense soft routing。
+
+后续候选须用完整验证集同时核对 Physical 两类召回、四任务平均表现和新四槽功率，不根据已查看的测试集挑模型。原阶段 D 验证 Physical 两类召回为 90.52%／57.15%，测试为 89.66%／57.25%。
+
+`expert_examples_validation.png` 另画四任务各前两条验证样本的 16 槽路由权重；对应真值、预测、逐槽数值与 router 收光比例在 `expert_examples_validation.json`，checkpoint 与划分在 `source.json`。这些索引在查看结果前固定为 0、1，**不是挑选成功案例**，因此图里也有预测错误。CLEVR、Speech 和 Physical 的 0、1 是同一原始对象的正负文字配对；两条的路由图相近并不奇怪，也不能仅凭两例判定文本没有贡献。个例只辅助理解，整体结论以上述完整验证集统计为准。
+
+训练期加入 Physical 成对排序损失后的获选模型 `stage4_moe_physical_pairwise2_sharedvision_s17_e19a` 也按**同一验证集、相同固定样本索引**绘出 `pairwise_validation.png` 和 `pairwise_expert_examples_validation.png`；统计原始摘要在 `pairwise_validation_summary.json`，逐样本值在 `pairwise_expert_examples_validation.json`。Physical 新四槽平均功率由 3.46% 升到 4.55%，仍未充分激活；类别召回与准确率的改变详见[训练候选报告](../moe_physical_optimization_20260926.md)。两图仅用于检视路由，绝不参与选模。
