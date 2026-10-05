@@ -71,3 +71,9 @@ TRAIN2000入口为 `lab_tune2000.py`，已有bias校准入口为
 未重评数据集或打开设备，不能替代完整资产配置与现场回归。
 源码发布 `20b8e46951a334a6414aca23578cef26356111b4` 已同步本机、GitHub及服务器main引用；
 实际运行checkout、原数据与权重没有切换或修改。
+
+补充TRAIN准备入口为 `lab_prepare_extra_train1000.py` 和
+`lab_prepare_extra2_train1000.py`，按实验台原脚本原逻辑保留（仅文件名归入任务目录）。
+依次使用seed1002／1003、每种操作250条，排除TEST和此前TRAIN的ID及原图SHA重复；
+输出已存在时拒绝覆盖。这两个入口不会调用设备或选择模型。仍需提供原project及
+相邻 `OpenMoji_Lab_SHS_8um/data` 数据位置；本轮仅用临时合成文件验证，未生成正式新划分。

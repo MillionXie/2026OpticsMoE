@@ -1,0 +1,12 @@
+{
+  "source_commit": "bc1951cfbd0bcbd60a6111884286b506790e20fb",
+  "scope": "Original Windows source-disjoint supplemental TRAIN preparation, renamed into task; no protocol change",
+  "paths": [
+    {"published_path": "LightGenV2/tasks/t04_openmoji_robust_ablation/lab_prepare_extra_train1000.py", "source_path": "runtime_entries/prepare_extra_train1000.py", "published_sha256": "f9fa019ade0b8b3df7a0ca0e6d390386506920616ab6f4f853c84e49d1e16b96"},
+    {"published_path": "LightGenV2/tasks/t04_openmoji_robust_ablation/lab_prepare_extra2_train1000.py", "source_path": "runtime_entries/prepare_extra2_train1000.py", "published_sha256": "c61714a5084ae693a5161292d216a5ffeb963d08829b73715cda7fed0cb652e9"}
+  ],
+  "validation": "LF-normalized source equality; synthetic two-round preparation/copy/audit/no-overwrite integration test passed",
+  "formal_data_changed": false,
+  "hardware_called": false,
+  "remaining": "Original project-relative assets still required; no new formal split or hardware acquisition"
+}
