@@ -1,0 +1,14 @@
+{
+  "source_commit": "3b931ccdcbd398f1c73f57d46621eccbddeff4f0",
+  "main_tested": "6650d2bb3ca6566ce781b4b9de488227f67717f8",
+  "scope": "Five legacy Meadowlark/manual-phase/TUCam handoff files already identical in main; shared hardware_sdk tree also unchanged between commits",
+  "paths": [
+    {"path": "LightGenV2/tasks/t03_saliency/COMMAND_MEADOWLARK.md", "sha256": "aa66063fd5069defb8dd843ff43a1a2df48e465d4c53d712f40b49a99a99289a"},
+    {"path": "LightGenV2/tasks/t03_saliency/HANDOFF_08625.md", "sha256": "cc75e444a5392319cc1f5c2858ffa64e3b328ea52275e1aac569dfdd58db807b"},
+    {"path": "LightGenV2/tasks/t03_saliency/build_lab_package.py", "sha256": "5280620abb5fd63f8648f4a8eb3ab77a387eb8002c4bd829bb8ca440edd6ffed"},
+    {"path": "LightGenV2/tasks/t03_saliency/meadowlark_cli.py", "sha256": "7f98a8e6b2773d88fb368eaec5c4b18d5ba5a321102bfc9fbd44f12ef54ea90f"},
+    {"path": "LightGenV2/tasks/t03_saliency/tests/test_meadowlark_handoff.py", "sha256": "e0d1b5272da11790d27de87c2455069b74289635ec393d6b41ea20fb733869a6"}
+  ],
+  "validation": {"actual_server_cpu_tests": 4, "source_loader": "Published main Git objects, not old checkout imports", "scope": "Synthetic LUT/geometry/binding/PNG/receipt fixtures; no formal PT or dataset, no SDK calls"},
+  "limitations": ["This is not SHS field regression", "Machine calibration, LUT, geometry, vendor drivers and formal dataset/cache assets still required", "Old handoff directory retained; no deletion approval inferred"]
+}
