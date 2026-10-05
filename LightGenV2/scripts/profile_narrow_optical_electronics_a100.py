@@ -10,7 +10,8 @@ The measured scope is intentionally narrower than the deployment audit:
 * the electronic residual route is timed separately because it runs in parallel with optics.
 
 Every CUDA-event and synchronized-wall observation is retained.  The paper value is
-the pooled CUDA-event median, never the minimum observation.
+the pooled CUDA-event median by default, never the minimum observation.
+Historical ABO contracts are explicit options, not timing for the sealed rank72 model.
 """
 
 from __future__ import annotations
@@ -206,7 +207,10 @@ def add_standard(
     trial: int,
     warmup: int,
     repeats: int,
+    abo_i2i_contract: str = "legacy77_linear64",
 ) -> dict[str, int]:
+    if abo_i2i_contract not in {"legacy77_linear64", "20260927_71_spatial64"}:
+        raise ValueError(f"Unknown historical ABO timing contract: {abo_i2i_contract}")
     spec = full.legacy.SPECS[legacy_key]
     detector = torch.rand(1, 478, 478, device=device)
     energy = torch.rand(1, 4, device=device)
@@ -220,6 +224,10 @@ def add_standard(
     ]
     if spec.language:
         modalities.append(("language", spec.language_tokens, True, 5))
+    if task == "abo_image_to_image" and abo_i2i_contract == "20260927_71_spatial64":
+        # Historical 20260927 R@1=0.8225 checkpoint: 196 vision tokens with V5
+        # context and the fixed 71-token prompt with L5 context.
+        modalities = [("vision", 196, False, 5), ("language", 71, True, 5)]
 
     for modality, tokens, causal, kernel in modalities:
         readout = full.legacy.StandardCCDReadout(tokens).to(device).eval()
@@ -238,11 +246,18 @@ def add_standard(
             trial=trial, warmup=warmup, repeats=repeats,
             shape_contract=f"GPU-resident [{1},{tokens},192] -> learned residual network only")
 
-    if task == "abo_image_to_text":
+    if task in {"abo_image_to_text", "abo_text_to_image"}:
         head = full.legacy.RetrievalHead().to(device).eval()
         value = torch.randn(1, 224, device=device)
         head_call = lambda: head(value)
         head_shape = "GPU-resident [1,224] -> retrieval LN/Linear64/L2"
+    elif task == "abo_image_to_image" and abo_i2i_contract == "20260927_71_spatial64":
+        head = full.AboI2IHead("spatial2x2_64").to(device).eval()
+        value = torch.randn(1, 71, 192, device=device)
+        image_positions = torch.zeros(1, 71, dtype=torch.bool, device=device)
+        image_positions[:, 20:69] = True
+        head_call = lambda: head(value, image_positions)
+        head_shape = "GPU-resident [1,71,192] + 49 image positions -> mean/max + fixed2x2 pooling/LN/Linear64/L2"
     elif task == "abo_image_to_image":
         head = full.AboI2IHead("linear64").to(device).eval()
         value = torch.randn(1, 77, 192, device=device)
@@ -512,13 +527,43 @@ def main() -> int:
     parser.add_argument("--nvidia-smi-index", type=int, default=6)
     parser.add_argument("--idle-seconds", type=float, default=10.0)
     parser.add_argument("--power-dwell-seconds", type=float, default=3.0)
+    parser.add_argument(
+        "--only-task",
+        choices=(
+            "lgvq_temporal", "lgvq_spatial", "abo_image_to_text",
+            "abo_text_to_image", "abo_image_to_image", "lsp", "salicon",
+            "openmoji", "through_abo_text_to_image",
+        ),
+        help="Profile just one task while preserving the same component definitions.",
+    )
+    parser.add_argument(
+        "--allow-200-no-warmup",
+        action="store_true",
+        help="Allow the dataset-run audit protocol: one trial, 200 calls, zero explicit warm-up.",
+    )
+    parser.add_argument(
+        "--formal-statistic", choices=("median", "mean"), default="median",
+        help="Statistic used to compose formal per-task electronic latency.",
+    )
+    parser.add_argument(
+        "--abo-i2i-contract",
+        choices=("legacy77_linear64", "20260927_71_spatial64"),
+        default="legacy77_linear64",
+        help="Explicit historical token/head identity; neither option profiles sealed rank72.",
+    )
     args = parser.parse_args()
     if not torch.cuda.is_available():
         raise RuntimeError("CUDA is required")
     device = torch.device("cuda:0")
     if "A100" not in torch.cuda.get_device_name(device):
         raise RuntimeError(f"A100 required, got {torch.cuda.get_device_name(device)}")
-    if args.repeats < 1000 or args.trials < 2:
+    if (args.repeats < 1000 or args.trials < 2) and not (
+        args.allow_200_no_warmup
+        and args.repeats == 200
+        and args.trials == 1
+        and args.warmup == 0
+        and args.device_warmup_seconds == 0
+    ):
         raise ValueError("Paper run requires >=1000 calls and >=2 trials")
     torch.manual_seed(20260914)
     torch.cuda.manual_seed_all(20260914)
@@ -541,18 +586,30 @@ def main() -> int:
     try:
         for trial in range(1, args.trials + 1):
             print(f"[trial {trial}/{args.trials}]", flush=True)
-            occurrence_contracts["lgvq_temporal"] = add_temporal(device, trial=trial, warmup=args.warmup, repeats=args.repeats)
-            occurrence_contracts["lgvq_spatial"] = add_spatial(device, trial=trial, warmup=args.warmup, repeats=args.repeats)
+            if args.only_task in (None, "lgvq_temporal", "through_abo_text_to_image"):
+                occurrence_contracts["lgvq_temporal"] = add_temporal(device, trial=trial, warmup=args.warmup, repeats=args.repeats)
+            if args.only_task in (None, "lgvq_spatial", "through_abo_text_to_image"):
+                occurrence_contracts["lgvq_spatial"] = add_spatial(device, trial=trial, warmup=args.warmup, repeats=args.repeats)
             for task, legacy_key in (
                 ("abo_image_to_text", "t08"),
+                ("abo_text_to_image", "t08"),
                 ("abo_image_to_image", "t08"),
                 ("lsp", "t02"),
                 ("salicon", "t03"),
                 ("openmoji", "t04"),
             ):
+                if task == "abo_text_to_image" and args.only_task is None:
+                    continue  # Preserve the published default task set.
+                if args.only_task == "through_abo_text_to_image" and task not in {
+                    "abo_image_to_text", "abo_text_to_image"
+                }:
+                    continue
+                if args.only_task not in (None, task, "through_abo_text_to_image"):
+                    continue
                 print(f"  {task}", flush=True)
                 occurrence_contracts[task] = add_standard(task, legacy_key, device,
-                    trial=trial, warmup=args.warmup, repeats=args.repeats)
+                    trial=trial, warmup=args.warmup, repeats=args.repeats,
+                    abo_i2i_contract=args.abo_i2i_contract)
     finally:
         POWER_SAMPLER = None
         if sampler is not None:
@@ -588,14 +645,17 @@ def main() -> int:
         writer.writeheader()
         writer.writerows(summaries)
 
-    medians = {(row["task"], row["component"]): float(row["cuda_median_ms"]) for row in summaries}
+    selected = {
+        (row["task"], row["component"]): float(row[f"cuda_{args.formal_statistic}_ms"])
+        for row in summaries
+    }
     formal: list[dict[str, Any]] = []
     for task, occurrences in occurrence_contracts.items():
-        router = sum(medians[task, name] * count for name, count in occurrences.items() if "router_core" in name)
-        layer = sum(medians[task, name] * count for name, count in occurrences.items() if "ccd_nonlinearity_readout_nn" in name)
-        residual = sum(medians[task, name] * count for name, count in occurrences.items() if "parallel_residual_nn" in name)
-        bridge = sum(medians[task, name] * count for name, count in occurrences.items() if name == "bridge_nn_only")
-        head = sum(medians[task, name] * count for name, count in occurrences.items() if name == "task_head_nn")
+        router = sum(selected[task, name] * count for name, count in occurrences.items() if "router_core" in name)
+        layer = sum(selected[task, name] * count for name, count in occurrences.items() if "ccd_nonlinearity_readout_nn" in name)
+        residual = sum(selected[task, name] * count for name, count in occurrences.items() if "parallel_residual_nn" in name)
+        bridge = sum(selected[task, name] * count for name, count in occurrences.items() if name == "bridge_nn_only")
+        head = sum(selected[task, name] * count for name, count in occurrences.items() if name == "task_head_nn")
         formal.append({
             "task": task,
             "router_core_cuda_ms": router,
@@ -635,6 +695,9 @@ def main() -> int:
         "warmup_per_component_per_trial": args.warmup,
         "measured_calls_per_component_per_trial": args.repeats,
         "trials": args.trials,
+        "formal_statistic": args.formal_statistic,
+        "abo_i2i_contract": args.abo_i2i_contract,
+        "sealed_rank72_profiled": False,
         "scope": {
             "included": ["router arithmetic from four GPU-resident energies", "CCD nonlinearity and learned readout", "learned bridge", "actual task head"],
             "separate": ["parallel electronic residual network", "bridge"],
@@ -659,7 +722,7 @@ def main() -> int:
     }, indent=2, ensure_ascii=False) + "\n", encoding="utf-8")
     (output / "README.md").write_text(
         "# A100 narrow optical-MoE electronics timing\n\n"
-        "Formal values are pooled CUDA-event medians from all trials. Inputs are preloaded "
+        f"Formal values use the pooled CUDA-event {args.formal_statistic} from all measured calls. Inputs are preloaded "
         "and pre-shaped on GPU. Fusion, transfers, layout, SLM encoding and I/O are excluded. "
         "Bridge and parallel residual are retained as separate columns.\n",
         encoding="utf-8",

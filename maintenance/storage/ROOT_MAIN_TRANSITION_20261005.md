@@ -17,8 +17,14 @@
 
 T12 的本地 lazy import 和窄 Qwen-style 层说明已审计：配置导入不加载 Torch，公开模型导出保持原身份，2 项隔离测试通过；共享合同的 3 项测试也通过。说明明确自定义窄层不是原预训练 Qwen decoder 层，不修改计算图或正式 PT。随本次提交归主线后，主目录剩 12 个实际源码/文档差异待审计。
 
+后续 T12 的 audited_unified、CCD bridge、训练数据标注、sealed loader 与合同测试五份旧文件，以及两份旧 README 已补齐为精确已发布主线。原文件仍有恢复包；主线中的 17M 与 9.96M、不同 alpha 下限和 baseline/测速历史分别保留，不用一个版本口径覆盖其他版本。服务器从 `a5521baf933bbccb467276c38c1d30fba3adc27b` Git blob 运行 12 项 CPU 合同测试全部通过，未读取科学数据、加载正式 PT、使用 GPU 或改运行 checkout。主目录现在剩 5 处真实差异：pure_optical/config、旧 profiler、ABO retrieval_adapt/retrieval_refine/robust_training。以上不是全工程验收完成。
+
 Git 索引的换行/文件状态噪声已按逐文件 HEAD/index/归一化内容三者相同的条件刷新：96 条 tracked 修改提示降至 16 条真实差异，工作文件未改写、无 staged 内容变化、未设置忽略修改标记。随后 T11 两处补齐，剩 14 条。这不是删除文件或压低真实差异计数。
 
 服务器及实验室运行目录尚未统一切换；已发布 Git 引用同步不等于运行目录切换。其余历史目录必须在确认无运行占用、独有代码和下游依赖，并保有可恢复备份后再退出。全部测速、必要 baseline、最终模型及有效数据继续保留。
 
 因此本次是主目录统一入口的实际落地，不是整个治理任务验收完成。
+
+旧 narrow profiler 的独有单任务、均值统计与短协议选项已保留；ABO 的 77-token/linear64 与 20260927 的 71-token/spatial2x2 两种历史身份改为显式选择，默认维持原主线口径。环境报告记录所选身份并明确没有测试封存 rank72；默认任务集合不新增反向检索。无 Torch/GPU 的合成接口测试检查两种 token/head/kernel 身份及未知身份拒绝，不重跑任何历史测速。此项源码提交不意味着服务器运行目录已切换。
+
+ABO 的 retrieval_adapt、retrieval_refine、robust_training 三份旧源码也已逐文件补齐为已发布 main 的内容。原旧版缺少新版 TRAIN 留出、rank72 与训练辅助接口，不能与新版其他文件拼接使用；旧源码仍在切换前恢复包及历史引用中，不删除历史实验语义。此次仅修复主目录源码一致性，未修改封存权重、数据、相位或实验室运行目录，也未训练或评估查询集。主目录剩余两处实际源码差异为旧测速 profiler 和 pure_optical/config，仍需分别审计；全部测速记录保持原位。
