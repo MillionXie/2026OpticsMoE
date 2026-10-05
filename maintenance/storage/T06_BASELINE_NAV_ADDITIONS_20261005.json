@@ -1,0 +1,9 @@
+{
+  "source_commit": "7093ec46082eed2fae127ec5028d3e2e8548b592",
+  "scope": "Missing historical baseline handoff and T06 SHS navigation documents only. Actual server files in the preserved t12_physical_robust_v2_20260927 checkout match this commit and local bytes. Original historical contracts and metrics are retained, not promoted as new measurements or current hardware instructions. Other earlier SHS document variants remain preserved.",
+  "paths": [
+    {"path":"LightGenV2/reports/20260915_baseline_methods/CODE_HANDOFF.md","bytes":1818,"sha256":"fd1176d8fc361626faafa7325dd0ce91e6d5b0571c6efe4131047a55301abdb1"},
+    {"path":"LightGenV2/tasks/t06_video_quality_assessment/reports/reproduction/SHS_LAB_INDEX.md","bytes":4258,"sha256":"0cc837b2d7539bd70045ce52b7b74830957744863ac156de4a52047110cbc8f7"},
+    {"path":"LightGenV2/tasks/t06_video_quality_assessment/hardware/COMMAND_SHS.md","bytes":7683,"sha256":"610561924da5e6c04f2bffa637568c9b4107f685ee27080d91597c2d6fecbf94"}
+  ]
+}
