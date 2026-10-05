@@ -1,0 +1,30 @@
+{
+  "schema_version": 1,
+  "source_runtime": "/DATA/DATA1/guest3/2026OpticsMoE_a100_formal",
+  "original_runtime_head": "0db3b583925ec688d2fba09957905d8e1cd9bec8",
+  "source_archive_commit": "6aee834b7f49904328ff05f00f2185f5bb910696",
+  "source_archive_ref": "refs/archive/source-closure-20261006/a100-electronic-control",
+  "verified_full_history_bundle_sha256": "23708b582ab954d8546cf56d4483cd0097c152f05c2bc5194c8171fe12f0f349",
+  "files": [
+    {
+      "path": "benchmark_electronic_control.py",
+      "original_sha256": "6a60094f61c1dba644c0af86a56d93f99b60d65ee2289b34ff8c2d800b252efe",
+      "projected_lf_sha256": "d8530663c5451a49f9b83f42d0b83a6e4c50c6394aebe457974de4d12a02694c",
+      "changes": ["reject missing and unexpected checkpoint keys", "support EMA-only payload", "reject existing output and invalid options before device access", "record actual visible GPU power limit"]
+    },
+    {
+      "path": "configs/qwen_matched_electronic_control.yaml",
+      "original_and_projected_lf_sha256": "310ae9b3d474f8bd3a85d881783a65bcbb4e405b90a2e9eeef36c719051969b4",
+      "changes": []
+    }
+  ],
+  "backend_comparison": {
+    "git_diff_archive_to_main": "empty",
+    "paths": ["experiments/qwen3_vl_2b_openmoji_instruction_four_stage_optical_editing/modeling.py", "experiments/qwen3_vl_2b_openmoji_instruction_four_stage_optical_editing/settings.py", "experiments/qwen3_vl_2b_openmoji_instruction_four_stage_optical_editing/datasets.py"]
+  },
+  "validation": {"cpu_ast_contract_tests": 7, "passed": true, "gpu_model_checkpoint_dataset_or_timing_executed": false},
+  "historical_measurements_changed": false,
+  "runtime_checkout_changed": false,
+  "all_a100_source_migration_complete": false,
+  "scope": "Historical four-block electronic control, not native full-Qwen baseline or rank64 hardware model"
+}

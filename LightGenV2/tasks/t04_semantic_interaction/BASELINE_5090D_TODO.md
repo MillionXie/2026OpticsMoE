@@ -10,6 +10,16 @@
 
 ## 模型与性能
 
+### 历史匹配电子对照（2026-10-06 源码恢复）
+
+`benchmark_electronic_control.py` 与 `configs/qwen_matched_electronic_control.yaml`
+是旧 A100 工程的四块纯电子任务对照，不是完整原生 Qwen baseline，也不是当前
+rank64 光路模型。其计时使用预计算指令 hidden，不包含指令主干执行；没有显式预热，
+第一条 TEST 计入计时。这些历史边界保留，不与上面的正式5090D数字混用。
+迁移版拒绝缺项／多项权重和已存在输出目录，按实际可见GPU记录功率上限。
+仅完成CPU协议检查，未运行模型、读取PT或重新测速；原始源码与恢复身份见
+`electronic_control_import_20261006.json`。原测速和运行产物未修改。
+
 ### 历史 A100 零样本诊断源码收敛（2026-10-06）
 
 `baseline_5090d` 已恢复实际服务器的 `--output-contract sparse_changes` 和
