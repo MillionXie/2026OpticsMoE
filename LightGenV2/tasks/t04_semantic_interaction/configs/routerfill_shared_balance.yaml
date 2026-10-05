@@ -1,0 +1,6 @@
+base_config: routerfill_shared.yaml
+loss:
+  router_importance: 0.30
+  router_hard_load_balance: 1.0
+  router_semantic_code: 0.25
+output_dir: ../runs/simulation/routerfill_shared_balance_s73

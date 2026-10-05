@@ -1,0 +1,13 @@
+base_config: routerfill_shared.yaml
+lightgen:
+  model_variant: qwen_frozen_shared_readout
+model:
+  embedding_only: false
+loss:
+  ccd: 0.0
+  router_balance: 0.0
+  router_importance: 0.0
+  router_hard_load_balance: 0.0
+  router_semantic_code: 0.0
+  phase_dc: 0.0
+output_dir: ../runs/simulation/qwen_shared_s73

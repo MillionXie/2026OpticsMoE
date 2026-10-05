@@ -1,0 +1,4 @@
+base_config: embedding_alpha40.yaml
+model:
+  editor_depth: 2
+output_dir: ../runs/simulation/embedding_alpha40_lean_s73

@@ -1,0 +1,41 @@
+{
+  "source_commit": "3b956503a4ecae9b6c20c789ead28621e42e6eeb",
+  "expected_main": "7203bec07410ec3389aa29bd179cf4704adac789",
+  "task_prefix": "LightGenV2/tasks/t04_semantic_interaction/",
+  "paths": [
+    {
+      "path": "LightGenV2/tasks/t04_semantic_interaction/modeling.py",
+      "source_sha256": "7c110fcbdbaab306b324def19051de7e5ff9c8f2e83139fee1d28e4164c1d5a3",
+      "expected_target_sha256": "1ac3403693601cd3c7b25e20dcec19b89c7661bbda7324d7da8a665c8d417d80",
+      "review_reason": "Actual runtime implementation; prior AST/default-settings audits preserve legacy model branch. New profiles explicitly dispatched; source remains recoverable in historical main."
+    },
+    {
+      "path": "LightGenV2/tasks/t04_semantic_interaction/run.py",
+      "source_sha256": "2b729e49bd9be037e8491f7d72b2a343f9dd4cdac54bf415771d446e8c31f4b1",
+      "expected_target_sha256": "fb7dba1071014b1fb46755658be1d9be70d82b73c808ac8c29509518966b2d9d",
+      "review_reason": "Actual runtime implementation; prior AST/default-settings audits preserve legacy model branch. New profiles explicitly dispatched; source remains recoverable in historical main."
+    },
+    {
+      "path": "LightGenV2/tasks/t04_semantic_interaction/settings.py",
+      "source_sha256": "0c1c7a70b9bfd0f01a5e68bed050416f71dd82bfbb8e77a5f962cceb14cc4b3d",
+      "expected_target_sha256": "2a1b55a1f63c4156dc31f476a0864b321f8d69c1ac85d5f92b7f22685a4b9324",
+      "review_reason": "Actual runtime implementation; prior AST/default-settings audits preserve legacy model branch. New profiles explicitly dispatched; source remains recoverable in historical main."
+    },
+    {
+      "path": "LightGenV2/tasks/t04_semantic_interaction/training.py",
+      "source_sha256": "ef5d45a7b8f5d5c861d6ccd21419b2245890c0eb6e47feac44e8473aed3f744c",
+      "expected_target_sha256": "0a2007e3ffdb46455c6db5b86f4f20ca6d451d3d9dd1f21ffe57cefdd98ccdd7",
+      "review_reason": "Actual runtime implementation; prior AST/default-settings audits preserve legacy model branch. New profiles explicitly dispatched; source remains recoverable in historical main."
+    }
+  ],
+  "scope": "Four reviewed task-core replacements; no shared common module or runtime checkout changes",
+  "candidate_cpu_audit": {
+    "tree": "d838b6e51a64f7385f7f2c86b4bdd121577130ef",
+    "contract_checks_passed": 15,
+    "nine_profiles_declared": true,
+    "legacy_settings_common_fields_equal": {"profiles": 4, "fields_per_profile": 56},
+    "legacy_ast_mock_checks_passed": 5,
+    "scope": "CPU synthetic and constructor/dispatch checks; no complete pretrained model, training, data, SDK or new accuracy result"
+  },
+  "migration_complete": false
+}

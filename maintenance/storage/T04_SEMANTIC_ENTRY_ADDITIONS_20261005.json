@@ -1,0 +1,57 @@
+{
+  "source_commit": "3b956503a4ecae9b6c20c789ead28621e42e6eeb",
+  "paths": [
+    {
+      "path": "LightGenV2/tasks/t04_semantic_interaction/checkpoint_audit.py",
+      "bytes": 11216,
+      "sha256": "e6c2471529903a989a6fefa68d0bfc021bf2d7745bdcdf2bd1ea25257df41af4"
+    },
+    {
+      "path": "LightGenV2/tasks/t04_semantic_interaction/configs/embedding_alpha40.yaml",
+      "bytes": 537,
+      "sha256": "163b45a98f13496c586779c3227d4b6c0b5248b9f3143ec1dd46a9d2294ffe58"
+    },
+    {
+      "path": "LightGenV2/tasks/t04_semantic_interaction/configs/embedding_alpha40_lean.yaml",
+      "bytes": 119,
+      "sha256": "5f7baad80bc8bfd53b4041f5a54cf7d73d4623b182a813956d4c326f91a1a0a0"
+    },
+    {
+      "path": "LightGenV2/tasks/t04_semantic_interaction/configs/embedding_d2nn_alpha40.yaml",
+      "bytes": 261,
+      "sha256": "bfeec8615c4a0dcb5ea82992964dd2cf5a30f71c403202473dcab4ad2f455c04"
+    },
+    {
+      "path": "LightGenV2/tasks/t04_semantic_interaction/configs/qwen_shared.yaml",
+      "bytes": 308,
+      "sha256": "2ff543209e7179473ba86b0e5df275418d27aa3fe2629bd0076d56e8ecaa4ad7"
+    },
+    {
+      "path": "LightGenV2/tasks/t04_semantic_interaction/configs/routerfill_shared.yaml",
+      "bytes": 184,
+      "sha256": "6719f6f0831088f838b5d5bb7c2f81f08bfa146a93c0cea2d1273dd4c8224c68"
+    },
+    {
+      "path": "LightGenV2/tasks/t04_semantic_interaction/configs/routerfill_shared_balance.yaml",
+      "bytes": 190,
+      "sha256": "d7361c1494fec968c044e851a923fc337b106536e7bcb0f7561deef2a026700f"
+    },
+    {
+      "path": "LightGenV2/tasks/t04_semantic_interaction/smoke_embedding.py",
+      "bytes": 1860,
+      "sha256": "a6b778315e7292b1b5d579e70afe33fc5a25419a109003d692fdd92070612a70"
+    },
+    {
+      "path": "LightGenV2/tasks/t04_semantic_interaction/tests/test_embedding_contract.py",
+      "bytes": 2272,
+      "sha256": "8f981bb2af47634487b79894c0854632e473992aa4c5279412f61b9218ccfe26"
+    },
+    {
+      "path": "LightGenV2/tasks/t04_semantic_interaction/tests/test_router_shared.py",
+      "bytes": 3023,
+      "sha256": "31938a1f583b89c8bfd872f0da236b7ecbaf3b173837e4779f0f23f42fb8d60e"
+    }
+  ],
+  "migration_complete": false,
+  "scope": "Six declared configs and four audit/test entry sources; existing files not overwritten"
+}

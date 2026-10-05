@@ -1,0 +1,9 @@
+base_config: embedding_alpha40.yaml
+lightgen:
+  model_variant: d2nn_active_expert_matched
+loss:
+  router_balance: 0.0
+  router_importance: 0.0
+  router_hard_load_balance: 0.0
+  router_semantic_code: 0.0
+output_dir: ../runs/simulation/embedding_d2nn_alpha40_s73

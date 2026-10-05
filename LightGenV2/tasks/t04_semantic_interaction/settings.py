@@ -19,6 +19,7 @@ VARIANTS = {
     "optical_router_scale_matched_moe",
     "d2nn_active_expert_matched",
     "qwen_frozen_pending_5090d",
+    "qwen_frozen_shared_readout",
 }
 
 
@@ -40,6 +41,10 @@ class Settings:
         self.grid_size = int(d("dataset.grid_size", 6))
         self.icon_size = int(d("dataset.icon_size", 30))
         self.icon_classes = int(d("dataset.icon_classes", 16))
+        self.layout_version = str(d("dataset.layout_version", "grid_v2"))
+        self.svg_asset_dir = _resolve(
+            d("dataset.svg_asset_dir", "../assets/openmoji-17.0.0-svg"), base
+        )
         self.train_samples = int(d("dataset.train_samples", 5000))
         self.test_samples = int(d("dataset.test_samples", 1000))
         self.prompt_templates_per_operation = int(
@@ -65,8 +70,29 @@ class Settings:
         self.electronic_width = int(d("model.electronic_width", 192))
         self.max_language_tokens = int(d("model.max_language_tokens", 64))
         self.optical_fusion_initial = float(d("model.optical_fusion_initial", 0.055))
+        self.embedding_only = bool(d("model.embedding_only", False))
+        self.shared_readout_enabled = bool(d('model.shared_readout', False))
+        self.shared_readout_variant = str(d('model.shared_readout_variant', 'standard'))
+        if self.shared_readout_variant not in ('standard', 'lowrank16', 'lowrank24', 'lowrank32', 'lowrank48', 'lowrank64', 'lite', 'lite_one', 'slim', 'slim_norm', 'slim_one'):
+            raise ValueError('unsupported shared_readout_variant')
+        self.qwen_shared_baseline = str(d('lightgen.model_variant', '')) == 'qwen_frozen_shared_readout'
+        self.router_acceptance_min_share = float(d('protocol.router_min_share', 0.05))
+        self.router_acceptance_max_share = float(d('protocol.router_max_share', 0.45))
+        self.fusion_alpha_minimum = float(d("model.fusion_alpha_minimum", 0.01))
+        self.fusion_alpha_maximum = float(d("model.fusion_alpha_maximum", 0.95))
+        self.editor_depth = int(d("model.editor_depth", 3))
+        self.position_scale = float(d("model.position_scale", 0.1))
+        if self.embedding_only:
+            if not 0.4 < self.fusion_alpha_minimum < self.optical_fusion_initial < self.fusion_alpha_maximum < 1:
+                raise ValueError('Embedding-only contract requires 0.4 < alpha_min < initial < alpha_max < 1')
+            if self.editor_depth not in (1, 2, 3):
+                raise ValueError('editor_depth must be 1, 2, or 3')
+            if self.prompt_cache_path.name == 'prompt_hidden.pt':
+                raise ValueError('Embedding-only profile must not reuse contextual prompt_hidden.pt')
         self.optical_shift_pixels = 16
-        self.phase_dropout_p = 0.08
+        self.phase_dropout_p = float(d("model.phase_dropout_p", 0.08))
+        if not 0.0 <= self.phase_dropout_p < 1.0:
+            raise ValueError('model.phase_dropout_p must be in [0, 1)')
         self.epochs = int(d("training.epochs", 40))
         self.batch_size = int(d("training.batch_size", 16))
         self.num_workers = int(d("training.num_workers", 4))

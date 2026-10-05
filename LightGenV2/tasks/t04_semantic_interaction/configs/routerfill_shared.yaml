@@ -1,0 +1,7 @@
+base_config: embedding_alpha40_lean.yaml
+model:
+  shared_readout: true
+protocol:
+  router_min_share: 0.05
+  router_max_share: 0.45
+output_dir: ../runs/simulation/routerfill_shared_s73

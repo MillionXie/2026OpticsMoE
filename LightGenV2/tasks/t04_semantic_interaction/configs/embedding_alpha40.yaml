@@ -1,0 +1,23 @@
+base_config: common_dc20.yaml
+dataset:
+  data_dir: ../dataset/openmoji_grid_v2
+qwen:
+  prompt_cache: token_embeddings_v1.pt
+model:
+  embedding_only: true
+  fusion_alpha_minimum: 0.4001
+  fusion_alpha_maximum: 0.95
+  optical_fusion_initial: 0.60
+  editor_depth: 3
+  position_scale: 0.1
+training:
+  epochs: 100
+  batch_size: 32
+  num_workers: 4
+  learning_rate: 0.0003
+  adapter_learning_rate: 0.0003
+  readout_learning_rate: 0.0003
+loss:
+  router_semantic_code: 0.10
+  phase_dc: 0.001
+output_dir: ../runs/simulation/embedding_alpha40_s73

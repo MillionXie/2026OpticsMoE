@@ -1,5 +1,22 @@
 # T04 语义交互（OpenMoji）
 
+## 2026-10-05 源码收敛边界
+
+本批将实际服务器的语义核心、共享电子头和六份已有配置纳入主线，未修改运行目录、
+数据、权重或光学合同。旧 `main_dc20`、`d2nn_dc20`、`qwen_pending` 入口保留；
+增加已有的 `embedding_alpha40`、`embedding_alpha40_lean`、`embedding_d2nn_alpha40`、
+`routerfill_shared`、`routerfill_shared_balance`、`qwen_shared` 入口。
+共享读出配置中的光学方法和冻结 Qwen baseline 使用同结构、同种子初始化的电子头。
+新增配置对应 TRAIN5000/TEST1000 的历史开发协议；TEST 选模不称独立泛化。
+
+本批候选通过15项CPU合同检查、4套旧配置各56项共同字段对比和5项AST/默认分派检查。
+这不是重新训练、完整Qwen执行或新的实拍精度；下方性能与测速仍属原历史版本，
+不能套到共享头或robust新权重。主线入口同步也不表示Windows设备工程已切换。
+正在使用的 robust 实验源码仍单独保护，最新未提交源码与恢复边界见
+[源码保护记录](../../../maintenance/storage/T04_CURRENT_SOURCE_OVERLAY_20261005.json)；
+不要从本页旧历史指标推断其最终效果。复现入口及数据、PT与硬件依赖仍需继续收敛。
+
+
 输入是 `224×224` OpenMoji 场景和文本指令，指令任务为 `add / replace / move / remove`；输出是 `6×6` 类别网格和编辑网格，再由固定 OpenMoji 合成器得到目标图像。
 
 本目录固定比较三组系统：
