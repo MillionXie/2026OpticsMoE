@@ -1,0 +1,15 @@
+{
+  "source_commit": "1c7222a1119385475e1b464ca7efdb67cdc21a4c",
+  "scope": "Historical reports and audit entrypoints; not a new metric verification. Audit scripts write independent_verification.json when used on a run; do not run against original records during migration.",
+  "paths": [
+    {"path":"LightGenV2/demo_check/reports/reproduction/EUROSAT_HANDOFF_20260916.md","bytes":2220,"sha256":"fcad3e621943a8ffc1223920b95a9a3d5c5d7242b6bd72a138953d6101d0c46b"},
+    {"path":"LightGenV2/demo_check/reports/reproduction/EUROSAT_CONTINUATION_HOLDOUT_20260916.md","bytes":7474,"sha256":"7dfee580a02e71660df4e3b3395d3d9564e16f7882d2dc5d60d40905fb5e265b"},
+    {"path":"LightGenV2/demo_check/reports/reproduction/EUROSAT_SHARED_FRONTEND_20260916.md","bytes":6073,"sha256":"c4cb77b62977335d25e366276ee562b946bce2603299db4e18c0f9976f62e04c"},
+    {"path":"LightGenV2/demo_check/reports/reproduction/EUROSAT_TRAINING_DIAGNOSIS_20260916.md","bytes":6248,"sha256":"42cb7a84f448f5f0927f770811ff6f00a8bd22e5fe42fc233785fbedd6300b91"},
+    {"path":"LightGenV2/demo_check/reports/reproduction/EUROSAT_FROZEN_ELECTRONIC_20260916.md","bytes":6492,"sha256":"cd7c8ba75c82e221cc7fc7371ce07afad817e9e391cda87b9b642c47d20d0c07"},
+    {"path":"LightGenV2/demo_check/reports/reproduction/PURE_OPTICAL_PILOT_20260916.md","bytes":8984,"sha256":"9c216a9b3cf621cfaa1e804b310028953d410864b191354dcf52addc0814d0ba"},
+    {"path":"LightGenV2/demo_check/shared_frontend/verify.py","bytes":5755,"sha256":"542bb82dddbc569ce6789b657748d0827091121346e5a871a2c6455da14f9571"},
+    {"path":"LightGenV2/demo_check/shared_frontend/verify_continuation.py","bytes":5044,"sha256":"4ae406d8396dae227777067db2a735d3299f19cf13d6d6bba372114d64e5f361"},
+    {"path":"LightGenV2/demo_check/shared_frontend/verify_holdout.py","bytes":4354,"sha256":"9103484b62423ac171bad568b0b0c29c9ee52e777e07f3f3b97e51570a10919c"}
+  ]
+}
