@@ -25,6 +25,14 @@ T07；**文搜图**曾在同名 T08 的另一个运行工作树实现，不能�
 
 ## 2026-10-04 文搜图固定评估入口
 
+2026-10-06已核清另一个 `sister_t08_bounded_20260927` 旧工程：其主体工作源码与
+本页 `reverse_runtime.py` 完全相同，不再维护第二份主体。四份有界振幅恢复试验源码
+及配置已存入可恢复Git历史；三次已完成试验的仿真Hit@1分别为.75/.75/.77，
+不是采用的.85实拍版，不据此替换正式模型。原best/last、数据、结果和全部测速
+原位保留。原脚本将局部留出报告写成 `selection_biased=false`，不能据此声称
+全项目独立泛化；归档身份及用途见
+[`T08_BOUNDED_RECOVERY_SOURCE_20261006.json`](../../../maintenance/storage/T08_BOUNDED_RECOVERY_SOURCE_20261006.json)。
+
 `text_to_image.py` 加载封存的 10cm 主体 `cc977b83...`，调用单独保留的
 `reverse_runtime.py`；不替换本页图搜文 `optical_moe.py`。21 层旧配置继承已
 机械展开为 `configs/text_to_image_10cm_adopted_eval.yaml`，保留原结构和光学参数。

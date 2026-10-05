@@ -1,0 +1,40 @@
+{
+  "scope": "Historical bounded-amplitude continuation trials, not adopted T08 inference or sealed T07",
+  "original_runtime": "/DATA/DATA1/guest3/2026OpticsMoE/.worktrees/sister_t08_bounded_20260927",
+  "original_head": "73e2febdc94e4cb280c6ada1e0e7881826f3c7f2",
+  "tracked_overlay_ref": "refs/archive/tracked-overlay-20261006/sister_t08_bounded_20260927",
+  "tracked_optical_moe_sha256": "ebf026e5aa2eaf6dc32ef7b5c5f18c5ac2eaea8515fe2d5a3431427d67e97869",
+  "canonical_byte_identical_runtime": "LightGenV2/tasks/t08_abo_image_text_retrieval/reverse_runtime.py",
+  "canonical_entry_tests_passed": 7,
+  "source_archive_ref": "refs/archive/source-closure-20261006/t08-bounded-recovery",
+  "source_archive_commit": "0998d59b031214172477e4fd5e0a0ce7abd15750",
+  "full_history_source_bundle_sha256": "7c6d6b616f89957ee5f2b5d4cfd00818705e3ea9a0bf9f334c714c08711f821a",
+  "local_bundle_verify_and_fetch": "passed",
+  "checkout_retirement": {
+    "branch_retired": "codex/sister-t08-bounded-20260927",
+    "archive_ref": "refs/archive/frozen-server-20261006/sister-t08-bounded-20260927",
+    "full_history_bundle_sha256": "85fbc51066694734f039a7fdba4868fb007a702129ba9c699ed5d44ec30cd6e9",
+    "local_bundle_verify_and_fetch": "passed",
+    "files_preserved_in_place": 4354,
+    "file_stat_index_status_unchanged": true,
+    "scientific_files_deleted": 0,
+    "server_branches_after": 6,
+    "server_worktrees_after": 83
+  },
+  "archived_sources": {
+    "bounded_recover.py": "5fcbd883a0d1f44c90df649a778b9bbf5523007636220b68c41c2afc71d99888",
+    "sister_fixed10cm.yaml": "e34c9012c52f1c843a4e40afb709d81a8636d288dc09597c140cc7ec4936b8da",
+    "sister_source_config.yaml": "ed7d79b85a103b4fcbe8a178c8fbf4cf5c33f286afd536d7890fd1cb15adb0b4",
+    "sister_teacher10cm.yaml": "640fa432d3e553ca8a654ab7a5b9fccaedfcf5efbabe127811cb06f965c29e5f"
+  },
+  "historical_completed_trials": [
+    {"run": "sister_bounded_preservealpha_20260927", "simulation_hit_at_1": 0.75, "best_epoch": 3, "reported_best_sha256": "fe9ffafe58c5d414f4d79e6ab2f4f1913ac75974f3deb1646ca1d02d3329441f"},
+    {"run": "sister_bounded_teacher_recovery_20260927", "simulation_hit_at_1": 0.75, "best_epoch": 2, "reported_best_sha256": "1b7ec0fbf0783b63de5fc894e40c4965f276c3b7271eaadf3d597ac578bf1dcb"},
+    {"run": "sister_bounded_recovery10cm_fixed_20260927", "simulation_hit_at_1": 0.77, "best_epoch": 10, "reported_best_sha256": "c2c71a46d05e3503f2fdf7ea21362a593296b55277355b7a0b4c9319c63b58c0"}
+  ],
+  "selection_scope": "80% original TRAIN fit / 20% TRAIN holdout; warm start saw TRAIN; project TEST was used previously, so not independent generalization",
+  "trial_result_source": "Read original final_report.json, no re-evaluation or new PT hash audit",
+  "scientific_assets_and_all_timing": "Retained in original directories",
+  "historical_code_caveats": ["Legacy recovery monkeypatches optical_moe globally and hardcodes machine paths", "Legacy report selection_biased=false does not prove project-level independent TEST", "Prototype must not replace adopted fixed evaluation entry"],
+  "full_machine_asset_migration_complete": false
+}
