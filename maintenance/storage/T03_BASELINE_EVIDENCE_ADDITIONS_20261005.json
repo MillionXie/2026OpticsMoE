@@ -1,0 +1,10 @@
+{
+  "source_commit": "b75a56203b47818810e0a45dceecf9cea4c6aa9f",
+  "scope": "Restore four historical T03 evidence links from the actual preserved t03_licensed_figures_20260929 checkout, matching source Git bytes. These are historical audit/report metadata, not raw datasets or new measurements. Preserve TEST-selection bias and not-measured timing statements; package inventory is historical, not an installation request. Embedded asset hashes have not been freshly revalidated by this navigation repair.",
+  "paths": [
+    {"path":"LightGenV2/tasks/t03_saliency/reports/reproduction/evidence/baseline_retrain_20260908.json","bytes":2741,"sha256":"27423dee0818a7b5eb6afa46defd6e9ca54c31335d0db2270aa1b2ddcd3ca742"},
+    {"path":"LightGenV2/tasks/t03_saliency/reports/reproduction/EVIDENCE_20260908.json","bytes":11773,"sha256":"b2c75b7dc685722aebf6b4c5b6292cdb6f5cf3b2591e7c40b8b048db65feb1bf"},
+    {"path":"LightGenV2/tasks/t03_saliency/reports/reproduction/evidence/baseline_environment.txt","bytes":2251,"sha256":"74e16aea83905834c231dfe80f906a8317b53098127286a4ca76e41ee95c1e39"},
+    {"path":"LightGenV2/tasks/t03_saliency/reports/reproduction/evidence/baseline_recheck_20260908.json","bytes":2478,"sha256":"f63ee50bf5db29b868c196e17178f91958c995531a6efa2d511f18980077af05"}
+  ]
+}
