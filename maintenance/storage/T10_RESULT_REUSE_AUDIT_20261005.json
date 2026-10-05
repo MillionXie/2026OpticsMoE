@@ -1,0 +1,53 @@
+{
+  "schema_version": 1,
+  "scope": "Read-only snapshot of fixed478 jobs and their existing result/lock/checkpoint identities",
+  "runtime_root": "/DATA/DATA1/guest3/t10_fixed478_3datasets_20260921_runs",
+  "jobs_sha256": "419750ad66501c3d866a3dd0d1ca82ea94c66fa015a978b51e06a90b45f972ea",
+  "planned_jobs": 45,
+  "direct_training_result_files": 35,
+  "direct_test_result_files": 28,
+  "reused_symlink_jobs": 8,
+  "training_results_including_reuse": 43,
+  "test_results_including_reuse": 36,
+  "best_checkpoint_files_present_including_reuse": 45,
+  "last_checkpoint_files_present_including_reuse": 45,
+  "training_result_best_sha_matches": 43,
+  "test_result_best_sha_matches": 36,
+  "current_lock_checkpoint_matches": 36,
+  "direct_test_original_lock_sha_matches": 28,
+  "reused_test_original_lock_sha_matches": 8,
+  "reused_original_lock": {
+    "path": "/DATA/DATA1/guest3/t10_topk32_20260920_runs/kather/full_test_scan_lock.json",
+    "sha256": "717eae4e198e68f8391502a927ae0f7de7e90a3fccdc21ebf122c7c08dc3bb21",
+    "note": "Six resolved run paths match directly; two k3 aliases resolve further into corrected_20260918_runs. All eight original locked checkpoint hashes match existing best PTs."
+  },
+  "missing_training_completion_reports": [
+    "organcmnist__d2nn_same_aperture_N4_k4_L4_lr0.002_s27",
+    "organcmnist__d2nn_same_aperture_N4_k4_L4_lr0.002_s37"
+  ],
+  "missing_test_reports": {
+    "architecture": "d2nn_same_aperture",
+    "datasets": ["kather2016", "bloodmnist", "organcmnist"],
+    "seeds": [17, 27, 37],
+    "count": 9
+  },
+  "incomplete_run_recorded_pids": {
+    "3501197": "absent during audit",
+    "3536265": "absent during audit"
+  },
+  "matched_t10_processes_during_audit": [],
+  "interpretation": "Existing checkpoints do not prove training completion. Old status still says training; no task is restarted. The full baseline TEST matrix is incomplete.",
+  "private_receipts": [
+    ".codex_tmp/t10_fixed478_reuse_audit_20261005.json",
+    ".codex_tmp/t10_reuse_lock_sha_20261005.json",
+    ".codex_tmp/t10_reuse_full_scan_lock_20261005.json",
+    ".codex_tmp/t10_nested_reuse_aliases_20261005.json",
+    ".codex_tmp/t10_incomplete_pid_probe_retry_20261005.json"
+  ],
+  "read_only": true,
+  "models_loaded": false,
+  "metrics_rerun": false,
+  "data_or_weights_changed": false,
+  "timings_removed": false,
+  "all_experiments_complete": false
+}

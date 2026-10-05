@@ -26,9 +26,16 @@ main按此快照追加29份源码/配置/协议/设计文件；不整分支合�
 | t10_topk32_20260920_runs | 42 / 42 | 专家数与Top-k扩展、必要D2NN对照 |
 | t10_fixed478_3datasets_20260921_runs | 35 / 28 | 固定478光场三数据集、多seed对照；还涉及复用条目 |
 
-文件数不是完整设计点数：固定478旧status还写“training/43完成”，
-但本轮未发现相关Python训练进程；不得据旧PID/status重新启动。
-需要继续逐jobs/reuse/lock映射核对全部设计点与已有汇总，缺项明确保留待核验。
+文件数不是完整设计点数。2026-10-05已逐一核对固定478的45项jobs：8项Kather复用
+旧目录（其中k3还有一层别名），所以按任务读取为43份训练结果、36份TEST结果，
+而直接目录扫描仍是上表35／28。43份训练报告和36份TEST报告均匹配当前best SHA；
+36份TEST对应锁定checkpoint均匹配，28份用本组原锁、8份用原full-grid锁，未重评。
+全部45项best/last均存在，但两项organ D2NN seed27／37缺训练完成报告；九项
+同孔径D2NN（3数据集×3seed）缺TEST报告，不能把完整矩阵说成已完成。
+旧status仍写“training/43完成”，两项原PID已不存在，未发现相关T10进程。
+只保留并标明历史状态，不自动重启。逐项私有收据及公开摘要见仓库
+`maintenance/storage/T10_RESULT_REUSE_AUDIT_20261005.json`。
+这项审计也说明旧topk32／corrected结果目录仍被复用，不能作为冗余副本删除。
 
 固定478目录35个原训练结果的best SHA均与记录匹配，best/last都保留。
 已有逐TEST报告、数据SHA、测试锁定清单也原位保护。
