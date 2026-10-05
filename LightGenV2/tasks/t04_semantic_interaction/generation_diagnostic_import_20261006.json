@@ -1,0 +1,24 @@
+{
+  "audited_on": "2026-10-06",
+  "source_archive_commit": "36b1e2f696f06149e5812282036416a50bad8fef",
+  "source_archive_ref": "refs/archive/tracked-overlay-20261006/2026OpticsMoE_a100_formal",
+  "source_path": "LightGenV2/tasks/t04_semantic_interaction/baseline_5090d.py",
+  "archived_sha256": "d4fd251a33d76d2189ea1df4c9b2d93a1811f8a594d68c6ae0309bb0f59a2274",
+  "projected_sha256_lf": "a046eb11c861a807d22f4c94a33f02d9437f28596802902c2be5b6b793e140df",
+  "purpose": "Restore historical zero-shot generation diagnostics, not structured formal baseline",
+  "changes_from_archived_source": [
+    "Preserve main CLI default expected GPU 5090 instead of archived empty unrestricted default",
+    "Compatibility defaults for direct run callers",
+    "Reject existing run directory and invalid options before GPU/model use",
+    "Explicit CUDA-visible physical GPU mapping and actual power limit, without changing shared defaults",
+    "Schema 2 diagnostic label and actual device power provenance; no existing report rewritten"
+  ],
+  "tests": {
+    "cpu_only_count": 8,
+    "model_loaded": false,
+    "dataset_or_checkpoint_loaded": false,
+    "CUDA_called": false
+  },
+  "formal_structured_baseline_changed": false,
+  "remaining_a100_overlay_files_not_integrated": 6
+}

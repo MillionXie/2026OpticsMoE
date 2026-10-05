@@ -10,6 +10,16 @@
 
 ## 模型与性能
 
+### 历史 A100 零样本诊断源码收敛（2026-10-06）
+
+`baseline_5090d` 已恢复实际服务器的 `--output-contract sparse_changes` 和
+`--max-samples` 选项；二者仅为显式诊断，不替代正式结构化 baseline。默认仍为
+`full_grid`、224输入、50次预热和 `--expected-gpu 5090`；A100诊断须显式传
+`--expected-gpu A100`，不得沿用5090D测速数字。已有输出目录会在查询GPU前拒绝。
+新报告使用schema 2明确标注诊断与实际可见GPU的功率上限；旧报告不转换、不覆盖。
+8项无Torch／设备CPU协议测试通过，没有运行Qwen、训练、读取数据或测速。
+源Git身份及投影SHA见 [恢复清单](generation_diagnostic_import_20261006.json)。
+
 - 模型：`Qwen/Qwen3-VL-2B-Instruct`，Vision/Language 权重全部冻结。
 - 输入是同一 OpenMoji 图像和完整文本指令，使用同一个 5,000/1,000 split contract。
 - 正常 baseline 仅训练结构化任务读出头，输出 `6×6` 类别网格和编辑网格；报告
