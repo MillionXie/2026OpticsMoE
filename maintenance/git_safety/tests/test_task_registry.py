@@ -123,6 +123,29 @@ def test_source_normalization_is_explicit_and_only_line_endings(tmp_path):
     assert any("unknown source hash" in error for error in checker.inspect(tmp_path)["errors"])
 
 
+def test_eol_diagnostic_does_not_waive_exact_source_identity(tmp_path):
+    base, registry = fixture_registry(tmp_path)
+    registry["source_import_manifests"] = ["source.json"]
+    expected = hashlib.sha256(b"# Task\n").hexdigest()
+    manifest = {"files": [{"path": "LightGenV2/README.md",
+                           "source_blob_sha256": expected}]}
+    (base / "source.json").write_text(json.dumps(manifest), encoding="utf8")
+    (base / "TASK_REGISTRY.json").write_text(json.dumps(registry), encoding="utf8")
+    original = b"# Task\r\n"
+    (base / "README.md").write_bytes(original)
+    report = checker.inspect(tmp_path)
+    assert report["errors"] == ["imported source SHA mismatch: LightGenV2/README.md"]
+    diagnostic = report["source_hash_mismatches"][0]
+    assert diagnostic["classification"] == "line_endings_only"
+    assert diagnostic["accepted"] is False
+    assert diagnostic["raw_sha256"] == hashlib.sha256(original).hexdigest()
+    assert (base / "README.md").read_bytes() == original
+    (base / "README.md").write_bytes(b"# Different\r\n")
+    report = checker.inspect(tmp_path)
+    assert report["errors"]
+    assert report["source_hash_mismatches"][0]["classification"] == "content_or_manifest_difference"
+
+
 def test_source_planner_follows_relative_imports_and_refuses_overwrite(tmp_path, monkeypatch):
     blobs = {"pkg/__init__.py": b"", "pkg/main.py": b"from .helper import value\n",
              "pkg/helper.py": b"value = 1\n"}

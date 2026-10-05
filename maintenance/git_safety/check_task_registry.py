@@ -11,6 +11,22 @@ import subprocess
 from urllib.parse import unquote
 
 
+def source_hash_diagnostic(path: str, payload: bytes, expected: str,
+                           normalization: str | None) -> dict:
+    """Describe a failed identity check without accepting alternate hashes.
+
+    Raw bytes remain evidence, even when Git's checkout conversion changed EOL.
+    A line-ending-only result is not a waiver of the manifest's byte contract.
+    """
+    raw = hashlib.sha256(payload).hexdigest()
+    lf = hashlib.sha256(payload.replace(b"\r\n", b"\n")).hexdigest()
+    return {"path": path, "expected_sha256": expected, "raw_sha256": raw,
+            "crlf_to_lf_sha256": lf, "declared_normalization": normalization,
+            "classification": "line_endings_only" if normalization is None and lf == expected
+                              else "content_or_manifest_difference",
+            "accepted": False}
+
+
 def inspect_tree(root: Path, commit: str) -> dict:
     """Check the published tree, independently of a protected dirty checkout."""
     resolved = subprocess.check_output(["git", "-C", str(root), "rev-parse", "--verify",
@@ -88,6 +104,7 @@ def inspect(root: Path, verify_weights: bool = False, verify_private: bool = Fal
     base = root / "LightGenV2"
     registry = json.loads((base / "TASK_REGISTRY.json").read_text(encoding="utf-8"))
     errors, pending, checked, unavailable_private = [], [], [], []
+    source_hash_mismatches = []
     verify_private = verify_private or verify_weights
     identifiers = set()
     for task in registry["tasks"]:
@@ -164,6 +181,7 @@ def inspect(root: Path, verify_weights: bool = False, verify_private: bool = Fal
                 errors.append(f"missing imported source: {row['path']}")
                 continue
             payload = path.read_bytes()
+            original_payload = payload
             normalization = row.get("hash_normalization")
             if normalization == "crlf_to_lf":
                 payload = payload.replace(b"\r\n", b"\n")
@@ -171,6 +189,8 @@ def inspect(root: Path, verify_weights: bool = False, verify_private: bool = Fal
                 errors.append(f"unknown source hash normalization: {row['path']}")
             if hashlib.sha256(payload).hexdigest() != row["source_blob_sha256"]:
                 errors.append(f"imported source SHA mismatch: {row['path']}")
+                source_hash_mismatches.append(source_hash_diagnostic(
+                    row["path"], original_payload, row["source_blob_sha256"], normalization))
         for relative in source.get("additional_existing_dependencies", []):
             target = (root / relative).resolve()
             if not target.is_relative_to(root.resolve()):
@@ -197,7 +217,8 @@ def inspect(root: Path, verify_weights: bool = False, verify_private: bool = Fal
     return {"entries_checked": len(checked), "errors": errors, "pending_source_integration": pending,
             "migration_complete": registry["migration_complete"], "weights_checked": verify_weights,
             "read_only": True, "private_artifact_validation_required": unavailable_private,
-            "private_artifacts_required": verify_private}
+            "private_artifacts_required": verify_private,
+            "source_hash_mismatches": source_hash_mismatches}
 
 
 def main() -> None:
