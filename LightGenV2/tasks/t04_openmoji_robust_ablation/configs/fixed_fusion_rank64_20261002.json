@@ -1,0 +1,15 @@
+{
+  "experiment": "rank64_no_trick_fixed_fusion_initial_training",
+  "seed": 73,
+  "epochs": 15,
+  "steps_per_epoch": 100,
+  "candidates": {"alpha65": {"alpha": 0.65}, "alpha80": {"alpha": 0.8}},
+  "selection": "Highest normal simulation TEST every 5 epochs, including epoch 0; development metric, no TEST gradients. Never choose a worse PT to force a sub-90 baseline.",
+  "architecture": "Original rank64 shared head and original decoder; fixed existing blockwise optical alpha before gradients; no added branches or layers.",
+  "warmstart_caveat": "Common original fullhead checkpoint was trained on original TRAIN and previously TEST-evaluated; not a fresh independent benchmark.",
+  "geometry": "17um input,10cm propagation,tanh(abs/.5),zero-preserving BMP round255a without peak rescale",
+  "hardware_contract": "Normal 2000us/GainX4/wait240/verified ROI and direction; no artificial baseline degradation.",
+  "targets_not_guarantees": {"simulation_upper_exclusive": 0.9, "direct_physical_upper_exclusive": 0.6, "adapted_relative_gap_max": 0.03},
+  "deployment": "Lock best checkpoint then new six-layer TEST and independent TRAIN CCD. Changed upstream/phase never reuses prior CCD. Finetune only original decoder, TEST selection development/no TEST gradients.",
+  "protection": "ABO/G5/prior G2 untouched, external upload paused. No new branch, worktree or project copy."
+}

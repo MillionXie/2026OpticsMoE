@@ -1,0 +1,178 @@
+{
+  "source_commit": "0512414a69eb4f2433b48c14bfd1e12ddafc86c6",
+  "runtime_root": "/DATA/DATA1/guest3/2026OpticsMoE/.worktrees/t04_openmoji_robust_20260928",
+  "runtime_head": "3b956503a4ecae9b6c20c789ead28621e42e6eeb",
+  "compared_main": "5284df90d4219ace2acd66cf12498f58d89e402c",
+  "paths": [
+    {
+      "path": "LightGenV2/tasks/t04_openmoji_robust_ablation/__init__.py",
+      "bytes": 71,
+      "sha256": "c8adba87032df023ce39b039f4b406e67d3fa57d2bb8c582aa7ed292d202ec82"
+    },
+    {
+      "path": "LightGenV2/tasks/t04_openmoji_robust_ablation/audit_electronics.py",
+      "bytes": 885,
+      "sha256": "8a9651ef5c666266848593088f7b9f2293b1206b64e7f5632b5b194505d71d21"
+    },
+    {
+      "path": "LightGenV2/tasks/t04_openmoji_robust_ablation/audit_fixed_cpu.py",
+      "bytes": 3544,
+      "sha256": "ac4d76c2cd978cfc319ac9cf1daced5c6964cf7e01b37938ff830f9242d553b1"
+    },
+    {
+      "path": "LightGenV2/tasks/t04_openmoji_robust_ablation/audit_modality_cpu.py",
+      "bytes": 3620,
+      "sha256": "4ad0871fd11aa55b74c9e2589ee46a6adc2544bea7bf9134bfe6f7ce31dd17a6"
+    },
+    {
+      "path": "LightGenV2/tasks/t04_openmoji_robust_ablation/audit_train_sensor.py",
+      "bytes": 3029,
+      "sha256": "bb5381ebd110a380b9de1032b8bdcd3db8e9f06fd3f725925d5d565b951edcac"
+    },
+    {
+      "path": "LightGenV2/tasks/t04_openmoji_robust_ablation/configs/fixed_fusion_rank64_20261002.json",
+      "bytes": 1380,
+      "sha256": "7ff76420b2960f8be4ee36f90375f74d75757b4559567fa67fb717c29ebfbf94"
+    },
+    {
+      "path": "LightGenV2/tasks/t04_openmoji_robust_ablation/configs/fixed_fusion_rank64_continuation_20261002.json",
+      "bytes": 1326,
+      "sha256": "6573e57402b74ca9ddc39b5bced2f9d706f980e02f91a21d732544c932fb7631"
+    },
+    {
+      "path": "LightGenV2/tasks/t04_openmoji_robust_ablation/configs/modality_fusion_20261003.json",
+      "bytes": 1699,
+      "sha256": "fa49a0b5b61aa378864240f82788a3ac33c767193146436e7293ebb7ed1acb74"
+    },
+    {
+      "path": "LightGenV2/tasks/t04_openmoji_robust_ablation/configs/r0_base.json",
+      "bytes": 94,
+      "sha256": "f2a4784a1da9b9017ba5b8d507817a0f548a0154a2d09975e32a19e1ed36e848"
+    },
+    {
+      "path": "LightGenV2/tasks/t04_openmoji_robust_ablation/configs/r1_ccd.json",
+      "bytes": 92,
+      "sha256": "604208c136918883e2afe8edc78b8602bb76fc7061664c390926b5f6ea6f8bae"
+    },
+    {
+      "path": "LightGenV2/tasks/t04_openmoji_robust_ablation/configs/r2_ccd_dc30.json",
+      "bytes": 96,
+      "sha256": "e9fc5442b2f1798596d8da233218ef0a05557b2430150a586763ae11319c985f"
+    },
+    {
+      "path": "LightGenV2/tasks/t04_openmoji_robust_ablation/configs/r3_ccd_dc30_grid.json",
+      "bytes": 100,
+      "sha256": "cb7351409ca89361e7c5308e4dc17857d887cf994cd304cb8711379434facdd8"
+    },
+    {
+      "path": "LightGenV2/tasks/t04_openmoji_robust_ablation/configs/splitrank_decoder64_20261003.json",
+      "bytes": 1475,
+      "sha256": "60804621e194938442dc6f4f0bb006c1c56d1d093e5e8ef4e8cf6a5fe08a1162"
+    },
+    {
+      "path": "LightGenV2/tasks/t04_openmoji_robust_ablation/evaluate_conditions.py",
+      "bytes": 4502,
+      "sha256": "30eba0d6dded78a894dcb62eef23c299322b0409d9aa050ca6780e24ca02c279"
+    },
+    {
+      "path": "LightGenV2/tasks/t04_openmoji_robust_ablation/evaluate_fullhead889_clean_test.py",
+      "bytes": 2999,
+      "sha256": "f6fae99c0a8410bde26b9a0ea58e28204be4b4604bc8bb53cf62e8bcb6b7ad27"
+    },
+    {
+      "path": "LightGenV2/tasks/t04_openmoji_robust_ablation/evaluate_matched_stress.py",
+      "bytes": 10198,
+      "sha256": "a4c51465819a3a255af7c291eacc94a5baba12757c358546eac4653e9bcc68bd"
+    },
+    {
+      "path": "LightGenV2/tasks/t04_openmoji_robust_ablation/evaluate_recovery_clean.py",
+      "bytes": 4770,
+      "sha256": "b8fd4d8a5d4238a0fc3c164c87774eff5de0b158deb95d6f75af3a870173ada3"
+    },
+    {
+      "path": "LightGenV2/tasks/t04_openmoji_robust_ablation/lab_shs_capture.py",
+      "bytes": 15389,
+      "sha256": "6ef3d137c07afde384970abf9d644aa0d0092fa954cc549dd524cbec70419522"
+    },
+    {
+      "path": "LightGenV2/tasks/t04_openmoji_robust_ablation/lab_tune_decoder.py",
+      "bytes": 14253,
+      "sha256": "97a349f01afe4d7b557e3997b8a058c5c66af968e830ed7fab39552712ae7b75"
+    },
+    {
+      "path": "LightGenV2/tasks/t04_openmoji_robust_ablation/profiles.py",
+      "bytes": 4343,
+      "sha256": "87f4f515cdb866f67aa20185f1897ccb4c3da0909553c45a9cadb120a4d30c8f"
+    },
+    {
+      "path": "LightGenV2/tasks/t04_openmoji_robust_ablation/recover_clean.py",
+      "bytes": 6260,
+      "sha256": "fa473f2287133fc7bad3622e4c11142f81681c31391dcad4581792347e663e96"
+    },
+    {
+      "path": "LightGenV2/tasks/t04_openmoji_robust_ablation/recover_fullhead_stress.py",
+      "bytes": 11193,
+      "sha256": "07837dcc0393b079e66fbf1b7d446351396bc64185a7e375e9e64d7be8b64646"
+    },
+    {
+      "path": "LightGenV2/tasks/t04_openmoji_robust_ablation/split_rank_head.py",
+      "bytes": 1727,
+      "sha256": "49fb2828a97e3dcf68fc19633ab89bc14cc4d0383a1705ecac4fd8ac24928726"
+    },
+    {
+      "path": "LightGenV2/tasks/t04_openmoji_robust_ablation/test_sensor_pairing.py",
+      "bytes": 2095,
+      "sha256": "e8892c737129c812b33da0c275c27eb6cff24c5390218f18538ff37252a98b95"
+    },
+    {
+      "path": "LightGenV2/tasks/t04_openmoji_robust_ablation/tests/test_fixed_fusion_entry.py",
+      "bytes": 2027,
+      "sha256": "51f4ebda01c7013a1cece82cb96768a2c0d7d54db475ab7d3d694f091e56deeb"
+    },
+    {
+      "path": "LightGenV2/tasks/t04_openmoji_robust_ablation/tests/test_split_rank_head.py",
+      "bytes": 1926,
+      "sha256": "e5058b6798797d7b819c29ff195876cffd4a282c26fa088f1981d268f09d2398"
+    },
+    {
+      "path": "LightGenV2/tasks/t04_openmoji_robust_ablation/train.py",
+      "bytes": 10200,
+      "sha256": "8813cf2ce5997ca65ba508aebb1a31e1210dd82f9979b7749324d65e71d29a24"
+    },
+    {
+      "path": "LightGenV2/tasks/t04_openmoji_robust_ablation/train_editor16_robust_chain.py",
+      "bytes": 17623,
+      "sha256": "5ae413bba6bebe34496e38e923877104f2243664e9373fe708bedf1445abf140"
+    },
+    {
+      "path": "LightGenV2/tasks/t04_openmoji_robust_ablation/train_fixed_fusion.py",
+      "bytes": 11143,
+      "sha256": "8d5603539836e0703c7e3cba929b184629784ba7085dce54726f8fdb95ec6560"
+    },
+    {
+      "path": "LightGenV2/tasks/t04_openmoji_robust_ablation/train_modality_fusion.py",
+      "bytes": 10285,
+      "sha256": "eaf4abd3443ab69ca4327dc917ab843bf56c68cf45c9126ae3d4fa82dab5c63f"
+    },
+    {
+      "path": "LightGenV2/tasks/t04_openmoji_robust_ablation/train_preserved_upstream.py",
+      "bytes": 10344,
+      "sha256": "d13c0e81b2332bcffa885605c981ae0227abc5e7215ca90f055c93c7f8ec1b07"
+    }
+  ],
+  "verification": {
+    "candidate_tree": "34c1ce11af52491375f2fce563912bc882a74d20",
+    "live_source_bytes_match": true,
+    "cpu_contract_tests_passed": 5,
+    "bounded_amplitude_contract_passed": true,
+    "training_or_hardware_started": false
+  },
+  "limitations": [
+    "Source preservation/import is not complete current-rank64 hardware deployment closure.",
+    "lab_shs_capture.py and lab_tune_decoder.py are historical rank16 entrypoints, not rank64 defaults; preserved unchanged.",
+    "Historical lab_tune_decoder.py selects TRAIN VAL; current authorized TEST-development selection is a separate lab implementation.",
+    "lab_runtime, four_image_flow and shs_physical2400 need exact lab-source migration; SDK execution not verified.",
+    "Some simulation entrypoints retain historical absolute server paths and pinned checkpoints; do not run against a new dataset without explicit config.",
+    "Canonical task README and all existing experiment data, timing, weights and runtime checkouts remain unchanged."
+  ]
+}

@@ -1,0 +1,18 @@
+{
+  "experiment": "pretraining_editor_compression_original_decoder64",
+  "seed": 73,
+  "epochs": 45,
+  "steps_per_epoch": 100,
+  "candidates": {
+    "editor32": {"alpha": 0.8, "editor_rank": 32},
+    "editor48": {"alpha": 0.8, "editor_rank": 48}
+  },
+  "selection": "Highest full original normal TEST1000 every5epoch including0; user-authorized development metric, no TEST gradients. Never select a worse epoch or lower-scoring subset to force sub90.",
+  "architecture": "Before first gradient: original two editors at rank32/48, original rank64 decoder retained, four optical alpha=.80 fixed. No new layers or branches during physical adaptation.",
+  "warmstart_caveat": "Same fullhead bounded checkpoint SVD, previously TRAIN-trained and TEST-exposed; not independent generalization.",
+  "geometry": "17um input,10cm propagation,tanh(abs/.5),zero-preserving BMP round255a without peak scaling",
+  "hardware_contract": "Unchanged normal2000us/GainX4/wait240/ROI/direction; no artificial degradation.",
+  "targets_not_guarantees": {"simulation_upper_exclusive": 0.9, "direct_physical_upper_exclusive": 0.6, "adapted_relative_gap_max": 0.03},
+  "deployment": "Strict split-rank rebuild, ideal six-layer bridge0 and bounded pilot first; changed upstream requires all new six-layer CCD. Adapt only the original decoder using TRAIN gradients and TEST selection development.",
+  "protection": "ABO/G5/oldG2/previous candidates protected; no upload, new branch or project copy."
+}

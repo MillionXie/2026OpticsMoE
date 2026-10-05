@@ -1,0 +1,91 @@
+"""Evaluate presentation rows and the matched-stress reference separately."""
+from __future__ import annotations
+
+import json
+import argparse
+from pathlib import Path
+
+import torch
+
+from LightGenV2.tasks.t04_semantic_interaction import training as t
+from LightGenV2.tasks.t04_semantic_interaction.settings import Settings
+from .profiles import install
+from .train import BASE, OUTPUTS, save_json
+
+CONDITIONS = (
+    ('G1_ideal_17um', 'r0_base', 'r0_base'),
+    ('G2_direct_deployment_simulation', 'r0_base', 'r0_base'),
+    ('G3_detector_noise', 'r1_ccd', 'r3_ccd_dc30_grid'),
+    ('G4_coherent_dc30', 'r2_ccd_dc30', 'r3_ccd_dc30_grid'),
+    ('G5_train_grid_proxy', 'r3_ccd_dc30_grid', 'r3_ccd_dc30_grid'),
+)
+MATCHED_STRESS_REFERENCE = ('basic_model_under_common_stress', 'r0_base', 'r3_ccd_dc30_grid')
+CLEAN_CONDITIONS = (
+    ('G1_ideal_17um', 'r0_base', 'r0_base'),
+    ('G2_direct_deployment_simulation', 'r0_base', 'r0_base'),
+    ('G3_detector_noise_training', 'r1_ccd', 'r0_base'),
+    ('G4_coherent_dc30_training', 'r2_ccd_dc30', 'r0_base'),
+    ('G5_train_grid_training', 'r3_ccd_dc30_grid', 'r0_base'),
+)
+
+
+def main():
+    parser = argparse.ArgumentParser()
+    parser.add_argument('--variant', default='standard')
+    parser.add_argument('--run-prefix', default='')
+    parser.add_argument('--clean-only', action='store_true',
+                        help='Evaluate every group under identical unperturbed simulation')
+    args = parser.parse_args()
+    cfg = Settings.__new__(Settings)
+    cfg.__dict__.update(json.loads((BASE / 'resolved_config.json').read_text()))
+    for key in ('config_path', 'data_dir', 'asset_dir', 'output_dir', 'qwen_checkpoint',
+                'prompt_cache_path', 'optical_base_config', 'legacy_warmstart_checkpoint'):
+        setattr(cfg, key, Path(getattr(cfg, key)))
+    cfg.num_workers = 0
+    cfg.shared_readout_variant = args.variant
+    _, test = t.build_loaders(cfg)
+    assert len(test.dataset) == 1000
+    device = torch.device('cuda')
+    results = []
+
+    def evaluate(label, trained, inference_profile):
+        run = OUTPUTS / (args.run_prefix + trained)
+        ckpt = run / 'best.pt'
+        report = json.loads((run / 'report.json').read_text())
+        assert report.get('shared_readout_variant', 'standard') == args.variant, trained
+        payload = torch.load(ckpt, map_location='cpu', weights_only=False)
+        model = t.build_model(cfg, device).eval()
+        model.load_state_dict(payload['model'], strict=True)
+        install(model, inference_profile)
+        t._set_phase_dropout(model, False)
+        metrics = t.evaluate_with_routes(model, test, cfg, device)[0]
+        row = {'condition': label, 'trained_group': trained,
+               'inference_profile': inference_profile,
+               'checkpoint_epoch': payload['epoch'], 'metrics': metrics,
+               'grid_proxy_not_exact_8um_propagation': inference_profile != 'r0_base'}
+        print(json.dumps({'condition': label,
+                          'changed_cell_accuracy': metrics['overall']['changed_cell_accuracy']}), flush=True)
+        del model
+        torch.cuda.empty_cache()
+        return row
+
+    conditions = CLEAN_CONDITIONS if args.clean_only else CONDITIONS
+    for label, trained, inference_profile in conditions:
+        results.append(evaluate(label, trained, inference_profile))
+    assert results[0]['checkpoint_epoch'] == results[1]['checkpoint_epoch']
+    assert results[0]['metrics'] == results[1]['metrics'], 'G1 and G2 simulations must be identical'
+    stress_reference = None if args.clean_only else evaluate(*MATCHED_STRESS_REFERENCE)
+    suffix = f'_{args.variant}' if args.variant != 'standard' else ''
+    stem = 'five_conditions_clean' if args.clean_only else 'five_conditions_presentation'
+    save_json(OUTPUTS / f'{stem}{suffix}.json', {'status': 'complete',
+              'shared_readout_variant': args.variant,
+              'source_reference_simulation_changed_cell_accuracy': 0.889,
+              'conditions': results, 'matched_stress_reference': stress_reference,
+              'inference_contract': 'all r0_base; no CCD offset/read noise, no coherent DC, no raster proxy'
+                                    if args.clean_only else 'matched compound stress for G3-G5',
+              'g2_experiment_status': 'not_measured; simulation reuses G1 weights and ideal profile',
+              'selection': 'Each checkpoint selected only on original TRAIN holdout; TEST did not select epochs.'})
+
+
+if __name__ == '__main__':
+    main()

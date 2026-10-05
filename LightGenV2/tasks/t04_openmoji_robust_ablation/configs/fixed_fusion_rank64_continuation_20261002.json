@@ -1,0 +1,15 @@
+{
+  "experiment": "rank64_no_trick_alpha80_convergence_continuation",
+  "seed": 73,
+  "epochs": 30,
+  "steps_per_epoch": 100,
+  "candidates": {"alpha80": {"alpha": 0.8}},
+  "selection": "Highest normal simulation TEST every5 epochs including initial resume, development/no TEST gradients. Never select a worse PT to force sub90.",
+  "reason": "Initial equal-budget15epoch screen gave alpha65=.9495 (fails requested simulation upper limit); alpha80=.7075 still improving (.5435 at e5,.615 at e10). Continue alpha80 to assess convergence; do not deploy an undertrained low baseline.",
+  "architecture": "Unchanged rank64 original decoder, four alpha80 gates fixed from initial training; no added layers/tricks.",
+  "geometry": "17um10cm,zero-preserving tanh(abs/.5),BMP round255a without peak rescale",
+  "hardware_contract": "Normal2000us/GainX4/wait240/verifiedROI/direction; no artificial baseline degradation.",
+  "targets_not_guarantees": {"simulation_upper_exclusive": 0.9, "direct_physical_upper_exclusive": 0.6, "adapted_relative_gap_max": 0.03},
+  "optimizer": "Restart optimizer at original experiment learning rates; continuation is not claimed identical to uninterrupted45epochs.",
+  "protection": "Preserve prior screen outputs and all final ABO/G5/G2; external upload paused. New upstream must capture new CCD."
+}

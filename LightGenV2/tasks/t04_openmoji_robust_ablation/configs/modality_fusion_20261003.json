@@ -1,0 +1,18 @@
+{
+  "experiment": "language_gap_guided_modality_fusion",
+  "seed": 73,
+  "epochs": 45,
+  "steps_per_epoch": 100,
+  "candidates": {
+    "language55_vision80": {"language_alpha": 0.55, "vision_alpha": 0.8, "editor_rank": 48},
+    "language65_vision75": {"language_alpha": 0.65, "vision_alpha": 0.75, "editor_rank": 48}
+  },
+  "evidence": "Saved-CCD 32 uniformly sampled scenes: contiguous real language prefix reduced changed-cell .875 to .265625; all 192 regenerated BMP hashes match receipts. Not a unique physical root cause or a formal mixed-domain accuracy.",
+  "selection": "Highest full original TEST1000 every5epoch including0; authorized development, no TEST gradients, no VAL selection. No score-selected subset or poor early checkpoint to force target.",
+  "architecture": "Same editor48 and original decoder64, no new layers/branches; modality gates fixed before first gradient. Common fullhead SVD warmstart and equal budget.",
+  "warmstart_caveat": "Previously TRAIN-trained and TEST-exposed warmstart; not independent generalization.",
+  "geometry": "17um input/10cm propagation/tanh(abs/.5)/zero-preserving round255a without peak scaling; normal hardware settings unchanged.",
+  "targets_not_guarantees": {"preferred_simulation_lower": 0.88, "simulation_upper_exclusive": 0.9, "direct_gap_percentage_points": [30, 40], "adapted_relative_gap_max": 0.03},
+  "deployment": "Fresh strict CPU full TEST audit and exact four gates; new loader/ideal six-layer bridge0/pilot before all-new TEST and disjoint TRAIN CCD. Original decoder adaptation only.",
+  "protection": "ABO/G5/oldG2 and all previous data/checkpoints preserved. External upload paused. No new branches/worktrees/projects."
+}
