@@ -1,0 +1,45 @@
+{
+  "schema_version": 1,
+  "source_commit": "0e0b2079e84559b0ab495828273da9fffb2fe3bb",
+  "paths": [
+    {
+      "path": "LightGenV2/tasks/t04_openmoji_robust_ablation/configs/lab/rank64_20261002.json",
+      "bytes": 982,
+      "sha256": "1285a6720f810c848aee32c4397e84fbfa983116ba220bc9f203de1f7e8babbc"
+    },
+    {
+      "path": "LightGenV2/tasks/t04_openmoji_robust_ablation/lab_checkpoint_identity.py",
+      "bytes": 2077,
+      "sha256": "68ae251758b563b38a9895a0c4c92d139703bc35711771d819f939faff6ce126"
+    },
+    {
+      "path": "LightGenV2/tasks/t04_openmoji_robust_ablation/tests/test_lab_checkpoint_identity.py",
+      "bytes": 2645,
+      "sha256": "de1a85a6243fea4541d96710b580090e94f342cc3f03a85e53a09c04ee1d9d9a"
+    }
+  ],
+  "validation": {
+    "unit_tests_passed": 9,
+    "current_windows_effective_groups_match": true,
+    "current_windows_original_weights": [
+      {
+        "group": "g2",
+        "filename": "g2_lowrank64.pt",
+        "bytes": 27900246,
+        "sha256": "2acc2f58c9d38b78fe329d98af0e884b90834c6a0aa2496cf199830fb10d7194"
+      },
+      {
+        "group": "g5",
+        "filename": "g5_lowrank64.pt",
+        "bytes": 27900246,
+        "sha256": "fa0e02965351918b47a492e2fb87024db4b3351e5599ad217cef01212f113d85"
+      }
+    ]
+  },
+  "runtime_checkout_changed": false,
+  "limitations": [
+    "Identity configuration and mismatch guards published; capture/tune integration still pending",
+    "No PT deserialization, optical acquisition, training or accuracy rerun",
+    "Historical rank16 capture defaults unchanged"
+  ]
+}
