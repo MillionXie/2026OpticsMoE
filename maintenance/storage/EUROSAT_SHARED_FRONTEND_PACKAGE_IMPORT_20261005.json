@@ -1,0 +1,19 @@
+{
+  "source_commit": "1c7222a1119385475e1b464ca7efdb67cdc21a4c",
+  "paths": [
+    {"path": "LightGenV2/demo_check/pure_optical/prepare.py", "bytes": 5332, "sha256": "b42f34afc70f8b71785588b7120087648cd59097f4b8bef07dd90a739811fcb3"},
+    {"path": "LightGenV2/demo_check/EuroSAT_MoE_D2NN/code/download_archives.py", "bytes": 3756, "sha256": "0e63fdf382ed25d6f6e691c16306f9812b2b529ffee424266fc035ab1054353e"},
+    {"path": "LightGenV2/demo_check/shared_frontend/prepare_holdout.py", "bytes": 3820, "sha256": "fd6685518f45f895b5dfa0a95be644fa4528223ae92380886bf64cdce47e14f5"},
+    {"path": "LightGenV2/demo_check/shared_frontend/package_builder.py", "bytes": 9532, "sha256": "3298b434d95f54c71a6da40684e1ce00d8fe9c1044269640d00b286d244f9b2b"},
+    {"path": "LightGenV2/demo_check/shared_frontend/handoff_entry.py", "bytes": 5839, "sha256": "2b1a37272d0e12c62877217506c7bad2304daf1d5901e2f277d8536e0d6e8cbf"},
+    {"path": "LightGenV2/demo_check/shared_frontend/HANDOFF_README.md", "bytes": 5492, "sha256": "2de8b837c5d583575c3e7a7c95d2311945ef9cd99965ffd13d143f40f0a6ec18"},
+    {"path": "LightGenV2/demo_check/shared_frontend/README.md", "bytes": 6461, "sha256": "d0c2857a8807d86bd7c167b8d05e26e90bfd5c0cb9f8a157ad538d702fdad796"},
+    {"path": "LightGenV2/demo_check/build_lab_package.py", "bytes": 7212, "sha256": "ae1138db2ef50354ba8147feb6140a26ca97871032f06789a7b4519c110ffbab"},
+    {"path": "LightGenV2/demo_check/EuroSAT_MoE_D2NN/code/DATA_LICENSES.json", "bytes": 1758, "sha256": "ca894838e604dfc7c95eda621a361b9880d2eb5214f98065d1fbc1af55f8fba1"},
+    {"path": "LightGenV2/demo_check/EuroSAT_MoE_D2NN/code/DATA_PREPROCESSING.json", "bytes": 1939, "sha256": "45baf925d92ad6a9d56ec65d59d2736809339ea48cb299ec2d00b33c22e3c225"},
+    {"path": "LightGenV2/demo_check/EuroSAT_MoE_D2NN/code/licenses/EuroSAT_MIT_LICENSE.txt", "bytes": 1071, "sha256": "73b8c5d100ff46a84845702b9e78d76ddb1effaacdb386b91dc07061c6123362"},
+    {"path": "LightGenV2/demo_check/EuroSAT_MoE_D2NN/code/licenses/EuroSAT_README.md", "bytes": 3843, "sha256": "e9c4e82e7edc2d9fe47b023bbdc450f341694f94aac6bcef5c5e47b71c49859f"},
+    {"path": "LightGenV2/demo_check/EuroSAT_MoE_D2NN/code/licenses/EuroSAT_SAR_README.md", "bytes": 1238, "sha256": "60fbf85cf189ca843f8bcf193cd5b0d4e8599edd6a8e461555570f6f35edec46"},
+    {"path": "LightGenV2/demo_check/EuroSAT_MoE_D2NN/code/licenses/FGMAE_APACHE_LICENSE.txt", "bytes": 11324, "sha256": "50e6751797c50dedd75ef1b8a0d9e42f5f8472e9fbce91f34718e9f97b0c780a"}
+  ]
+}

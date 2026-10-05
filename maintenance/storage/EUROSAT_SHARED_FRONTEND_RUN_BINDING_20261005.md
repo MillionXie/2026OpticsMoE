@@ -76,6 +76,28 @@ run记录的源码范围，不代表所有动态依赖、原图、环境及测�
 `maintenance/git_safety/check_shared_frontend_entries.py`核验上述六文件及四份模型依赖
 SHA、编译/配置解析、四入口CLI导入全部通过；未读数据、未新建run或重评精度。
 私有收据`.codex_tmp/shared_frontend_entry_gate_20261005.json`。
-仍需补齐prepare_holdout、pure_optical.prepare及下载依赖、打包和验证工具；原资产/测速
-与旧独有代码继续原位保留。现有数据固定复评入口的依赖已收拢，但整套从原图准备
-到交付包的闭包还未验收；实验室Git统一仍为独立待办。
+数据准备和打包依赖按下节补齐；原资产/测速与旧独有代码继续原位保留。
+现有数据固定复评入口的依赖已收拢，但整套从原图准备到交付包的真实重跑还未验收；
+实验室Git统一仍为独立待办。
+
+## 数据准备与共享前端打包源码已迁入
+
+main commit `92db5c61c413ccf91ef693d3f180e5e09aef09a4`补入14份源文件，
+均与服务器实际文件及原HEAD字节一致，精确清单在
+`EUROSAT_SHARED_FRONTEND_PACKAGE_IMPORT_20261005.json`。包含原图/holdout准备、
+校验下载器、shared_frontend打包器、独立包入口模板、两份说明及数据许可/预处理记录。
+没有提交原图、NPZ、PT、ZIP或复制任何测速产物。
+
+`maintenance/git_safety/check_shared_frontend_package.py`在服务器xml环境核验14份SHA，
+四CLI帮助/导入、打包函数导入和六份固定历史导出源码解析通过。未下载、未读数据集、
+未构建包或复评精度；私有结果`.codex_tmp/shared_frontend_package_gate_20261005.json`。
+`handoff_entry.py`是包生成后的入口模板，依赖生成的utils/training等模块，不能在仓库
+源码目录直接运行。仓库打包统一调用`build_lab_package.py --variant shared_frontend`。
+其固定导出源为`cc4a0f17`，固定训练源为`8cb125cf...`；这两个历史对象必须保留，
+不能将当前main模型源码自动套到原交付PT。其他kather/pure_optical包分支未在本轮验收。
+
+`DATA_PREPROCESSING.json`是更早数据项目的预处理说明，含原项目ColorJitter描述；
+共享冻结前端的实际训练增强以本组config/run和README为准（仅水平翻转）。
+数据许可快照只原样迁移，不将旧verified字段冒称本轮重新完成许可核验。
+目前剩余：其余历史审计/验证辅助与报告链接闭包、无覆盖真实打包验收、三端默认入口
+切换和各旧副本最终退役条件；不得据本节宣称整个工程整理完成。
