@@ -27,7 +27,19 @@ manifest SHA256 为 `e20d789937a44512ce4c91f222ba99145e36c63f3ee386295585d61cc01
 - TRAIN/VAL 问答数分别为 12526/1686。
 - 原始 ZIP 仍在 `mini_speech_matching_s17_v1/mini_speech_commands.zip`，182082353 字节，
   SHA256 `49650f2341b26d886b46b3f4fb8fed59e30300b17550f1ee4a768b3106cf93a0`，与 v3 manifest 一致。
-- 本次核验 ZIP 整包身份；尚未逐 WAV 解压核验，也未重建 log-mel 或执行测试。
+- 后续只读补核已从原 ZIP 内存读取全部登记 WAV：TRAIN 6263 / VAL 843 /
+  TEST 867，共7973条，每条SHA与登记一致，缺失和不符均为零。
+  没有落盘解压、重建 log-mel、模型推理或指标重评。
+
+## TEST 与其他任务资产的边界补核
+
+实际准备目录 `clevr_attribute_s17_v1` 只有 TRAIN/VAL 数组和问题文件、1250张
+原图及保留TEST身份清单；未发现该目录下的TEST图像数组／问题／场景文件。
+源码 `prepare.py` 明确只下载所选TRAIN/VAL原图，官方场景通过远程ZIP读取。
+因此这250个保留身份不能直接算作本目录已落地的TEST资产。
+服务器另有 `t12_clevr_s17_v2` 与 `t13_four_modal_features/clevr` 的TEST文件，
+属于另一个准备／实验链，尚未核对身份和预处理，不混用来补齐T09依赖。
+此处是缺项定位，不推断它们曾被删除，也不在治理中自行下载或重建科学数据。
 
 ## 限制与保护
 
@@ -38,3 +50,6 @@ manifest SHA256 为 `e20d789937a44512ce4c91f222ba99145e36c63f3ee386295585d61cc01
 原图、原 ZIP、所有准备文件、特征缓存、预测、历史 run 和测速继续原位保留。
 私有详细收据为 `.codex_tmp/t09_asset_hashes_20261005.json`，只读核验程序在同目录；
 不将源数据内容提交 Git。
+逐WAV补核收据：`.codex_tmp/t09_wav_archive_audit_20261005.json`；
+TEST路径盘点：`.codex_tmp/t09_test_asset_paths_20261005.json`、
+`.codex_tmp/t09_all_test_paths_20261005.json`。路径盘点本身不证明资产语义相同。
