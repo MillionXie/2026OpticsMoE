@@ -38,6 +38,21 @@ def staged_review(root):
     return issues
 
 
+def tree_difference_scope(root, reference, main="main"):
+    """Distinguish old-only content from main additions; not a deletion approval."""
+    main_paths = set(filter(None, git(root, "ls-tree", "-r", "--name-only", "-z", main).split("\0")))
+    ref_paths = set(filter(None, git(root, "ls-tree", "-r", "--name-only", "-z", reference).split("\0")))
+    changed = set(filter(None, git(root, "diff", "--name-only", "--no-renames", "-z", main, reference).split("\0")))
+    return {
+        "main_only_paths": len(main_paths - ref_paths),
+        "reference_only_paths": len(ref_paths - main_paths),
+        "shared_paths_with_changed_content": len(changed & main_paths & ref_paths),
+        "total_changed_paths": len(changed),
+        "working_overlay_included": False,
+        "interpretation": "Path differences are not missing commits or evidence of failed synchronization; reference-only and changed shared paths still require source/asset review.",
+    }
+
+
 def audit(root):
     status = git(root, "status", "--porcelain", "-uno").splitlines()
     branch = git(root, "branch", "--show-current").strip() or "(detached)"
@@ -60,12 +75,14 @@ def audit(root):
         authorities.append({"ref": ref, "head": git(root, "rev-parse", ref).strip(),
                             "changed_paths_vs_main": len(delta),
                             "areas": dict(areas.most_common()),
-                            "requires_overlay_review": True})
+                            "requires_overlay_review": True,
+                            "difference_scope": tree_difference_scope(root, ref)})
     merged = git(root, "for-each-ref", "--merged=main", "--format=%(refname)",
                  "refs/heads").splitlines()
     return {
         "repo": str(root), "branch": branch, "head": git(root, "rev-parse", "HEAD").strip(),
         "main": git(root, "rev-parse", "main").strip(),
+        "working_head_vs_main": tree_difference_scope(root, "HEAD"),
         "tracked_dirty_count": len(status), "tracked_dirty_status": status,
         "local_branch_count": len(branches),
         "registered_worktree_count": sum(tree.startswith("worktree ") for tree in trees),
