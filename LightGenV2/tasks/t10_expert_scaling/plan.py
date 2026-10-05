@@ -6,11 +6,19 @@ import csv
 import hashlib
 import json
 import math
+import sys
 from collections import Counter
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent
+REPO_ROOT = ROOT.parents[2]
+if str(REPO_ROOT) not in sys.path:
+    sys.path.insert(0, str(REPO_ROOT))
 
+from LightGenV2.common.optical_contract import (
+    OpticalContract,
+    REFERENCE_532NM_17UM_10CM,
+)
 
 def load_protocol():
     return json.loads((ROOT / "configs/study.json").read_text(encoding="utf-8"))
@@ -118,6 +126,12 @@ def matrix(cfg, datasets, pilot=False, fixed_global=False):
 
 
 def check(cfg):
+    physical = OpticalContract(
+        wavelength_nm=cfg["geometry"]["wavelength_nm"],
+        logical_pixel_pitch_um=cfg["geometry"]["pixel_pitch_um"],
+        propagation_distance_m=cfg["geometry"]["propagation_distance_m"],
+    )
+    physical.require_same_physics(REFERENCE_532NM_17UM_10CM)
     assert cfg["geometry"]["expert_side_px"] == 224
     assert cfg["geometry"]["gap_px"] == 30
     assert cfg["geometry"]["pixel_pitch_um"] == 17
@@ -125,8 +139,9 @@ def check(cfg):
     assert cfg["geometry"]["hardware_size_limit_applied"] is False
     assert 2 * cfg["model"]["rgb_channel_side_px"] == 224
     assert cfg["model"]["oeo_after_every_feature_layer"]
-    regions = router_regions(cfg, n)
-    assert len(regions) == n
+    reference_router_experts = 49
+    regions = router_regions(cfg, reference_router_experts)
+    assert len(regions) == reference_router_experts
     pixels = set()
     for y0, y1, x0, x1 in regions:
         assert 0 <= y0 < y1 <= 224 and 0 <= x0 < x1 <= 224
