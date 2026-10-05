@@ -1,0 +1,42 @@
+{
+  "source_commit": "3b956503a4ecae9b6c20c789ead28621e42e6eeb",
+  "paths": [
+    {
+      "path": "LightGenV2/tasks/t04_semantic_interaction/shared_readout.py",
+      "bytes": 5453,
+      "sha256": "0a1044df020bf0170eee657beabb3fa7347bb37d51b23e809cd5f7d7869243d1"
+    },
+    {
+      "path": "LightGenV2/tasks/t04_semantic_interaction/qwen_shared.py",
+      "bytes": 9762,
+      "sha256": "f192802a8c60d93aeecfc588ef073bcb4c338f1bfcda5eb1d73dff88013f103c"
+    },
+    {
+      "path": "LightGenV2/tasks/t04_semantic_interaction/router_repair.py",
+      "bytes": 4038,
+      "sha256": "3bb3a6e5a8df742f01c7dbc68bc4cb4eb99aa51359923d61d55799a1599453ed"
+    },
+    {
+      "path": "LightGenV2/tasks/t04_semantic_interaction/embedding_data.py",
+      "bytes": 6456,
+      "sha256": "7dd7c75d9a3173963da57218999cb2472a30c8ce74ed3f2b8aabf685d58bca41"
+    }
+  ],
+  "purpose": "Restore four actual runtime dependencies without replacing existing main code",
+  "runtime_root": "/DATA/DATA1/guest3/2026OpticsMoE/.worktrees/t04_openmoji_robust_20260928",
+  "dependency_tests": "Existing exact-runtime split-rank CPU strict-load/count test passed; five legacy AST/mock compatibility tests passed separately",
+  "candidate_cpu_audit": {
+    "tree": "1632895c0ac8fe1a6a25e6ac519af9d05ef35493",
+    "shared_head_strict_roundtrip_bitwise_equal_variants": ["standard", "lowrank16", "lowrank24", "lowrank32", "lowrank48", "lowrank64"],
+    "parameter_counts": [381976, 160792, 179224, 197656, 234520, 271384],
+    "router_power_preserved": true,
+    "unique_instruction_span_guard": true,
+    "scope": "Synthetic shared heads and pure helpers on exact candidate tree; no complete model/native Qwen/data/SDK execution"
+  },
+  "limitations": [
+    "Missing-only import, not full OpenMoji runtime migration.",
+    "No hardware execution, native Qwen execution or model accuracy retest.",
+    "Three existing core files still differ and current robust task sources are not imported by this batch."
+  ],
+  "migration_complete": false
+}

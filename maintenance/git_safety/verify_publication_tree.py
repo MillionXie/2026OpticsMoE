@@ -84,6 +84,7 @@ def main():
         "LightGenV2/tasks/t13_temporal_robust_training/source_import_20261003.json"])
     reviewed = verify_reviewed_publications(root, args.commit, [
         "maintenance/storage/T03_REVIEWED_CORE_20261003.json",
+        "maintenance/storage/T04_SHARED_DEPENDENCY_ADDITIONS_20261005.json",
         "maintenance/storage/T03_REVIEWED_ENTRY_20261003.json",
         "maintenance/storage/T03_PINNED_ADDITIONS_20261003.json",
         "maintenance/storage/T03_ENTRY_ADDITIONS_20261003.json",
