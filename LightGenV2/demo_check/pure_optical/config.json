@@ -28,6 +28,7 @@
   "no_electronic_residual": true,
   "no_trainable_electronic_adapter_or_head": true,
   "no_alpha": true,
+  "oeo_activation": "none",
   "no_intermediate_oeo": true,
   "no_domain_auxiliary_loss": true,
   "test_set_used": false
