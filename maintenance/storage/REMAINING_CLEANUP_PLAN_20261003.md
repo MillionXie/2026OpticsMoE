@@ -49,6 +49,16 @@ vendor/holoeye_python目录3项，逐文件大小/SHA已私有登记。
 剩余事项是机器配置字段与主线显式参数绑定、SDK授权／加载环境以及获准后的现场
 回归；原工程仍保留。私有收据：`.codex_tmp/t07_machine_assets_20261005.json`。
 
+**参数绑定实查发现（同日）：**两份配置的相机SDK绝对路径均存在，HOLOEYE为
+API5、1920×1080、preload及wait_until_visible开启。LGVQ配置为400us/Gain_X4/
+wait240，与封存合同一致；旧ABO配置默认150us／gain未设置／wait200，不能不加覆盖
+就作为正式采集合同。两份振幅SDK字段都是相对 `vendor/holoeye_python`，实际仅
+ABO目录下存在；LGVQ目录下不存在。主线Controller按machine_config.parent解析，
+直接给它LGVQ配置会解析到缺失路径。部署需显式绑定已核验ABO振幅SDK绝对位置，
+而不是复制vendor、改原配置或悄悄退回另一个光学合同。
+只读检查没有加载DLL或修改任何配置；UTF8读取已校正，不能将控制台编码误判为
+真实相机SDK缺失。此项尚未修复／现场验证，禁止把当前main硬件入口称直接可用。
+
 **最新覆盖：**T03和T10实际运行源码继续收敛。T03已发布main；T10的1份修改和8份未跟踪源码
 已纳入可恢复Git快照并通过18份编译、4种架构有界CPU检查，发布收据见最新backlog。
 阶段为2项源码已审计发布、6项部分收敛、5项待审计、1项未开展；完整资产待收尾仍11项。
