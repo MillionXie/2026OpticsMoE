@@ -29,7 +29,8 @@
     "Remove unused Bench inheritance and historical hardware CLI",
     "Replace hardcoded sibling LAB.local.json and phase SDK/LUT with explicit arguments",
     "Bind canonical shared Controller config_base and phase class",
-    "Use sealed SHS ROI instead of obsolete DVP geometry default"
+    "Use sealed SHS ROI instead of obsolete DVP geometry default",
+    "Optional explicit amplitude SDK override changes only in-memory configuration; directory validated before device construction"
   ],
   "hardware_runner_migration_complete": false,
   "devices_opened": false,
@@ -40,7 +41,7 @@
     },
     {
       "path": "LightGenV2/tasks/t07_abo_image_retrieval/hardware/bench.py",
-      "sha256_lf": "e693061b40e1be7f79ede9520d5c1605103db67e04f77d8a371988f6c0b74e9f"
+      "sha256_lf": "0acd5535ede56a696d620d857477b7c2dc17d880491d13bf667276cf1bbce4b4"
     }
   ]
 }

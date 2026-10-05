@@ -82,6 +82,24 @@ class BenchTests(unittest.TestCase):
             self.assertEqual(value.rows[0]['settle_drained_frames'],53)
         self.assertEqual(self.events,['phase_enter','controller_enter','phase_show','amplitude_capture','controller_exit','phase_exit'])
 
+    def test_amplitude_sdk_override_preserves_machine_file(self):
+        before=self.config.read_bytes()
+        sdk=self.root/'vendor'
+        sdk.mkdir()
+        value=bench.SHSBench(self.root,400,240,{},machine_config=self.config,
+                             phase_sdk=self.root,phase_lut=self.phase,amplitude_sdk=sdk)
+        self.assertEqual(value.controller.c['amplitude_slm']['sdk_path'],str(sdk.resolve()))
+        self.assertEqual(self.config.read_bytes(),before)
+        self.assertEqual(self.events,[])
+
+    def test_missing_amplitude_sdk_rejected_before_device_construction(self):
+        with patch.object(bench,'Controller') as controller, patch.object(bench,'PhaseHDMI') as phase:
+            with self.assertRaises(FileNotFoundError):
+                bench.SHSBench(self.root,400,240,{},machine_config=self.config,
+                              phase_sdk=self.root,phase_lut=self.phase,amplitude_sdk=self.root/'missing')
+            controller.assert_not_called()
+            phase.assert_not_called()
+
     def test_same_phase_not_reshown(self):
         with self.construct() as value:
             for _ in range(2):

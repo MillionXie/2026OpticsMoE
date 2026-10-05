@@ -42,6 +42,8 @@ def protocol_rows(protocol,data_root):
 
 
 def inspect_paths(args):
+    amplitude_sdk=getattr(args,'amplitude_sdk',None)
+    if amplitude_sdk is not None and not amplitude_sdk.is_dir():raise FileNotFoundError(amplitude_sdk)
     if args.checkpoint_sha256!=CHECKPOINT or digest(args.checkpoint)!=CHECKPOINT:
         raise ValueError('Require the sealed rank72 checkpoint SHA')
     for name in ('protocol','geometry','machine_config','phase_lut'):
@@ -148,6 +150,7 @@ def main():
     for name in ('checkpoint','processor','protocol','data-root','geometry','run-dir','machine-config','phase-sdk','phase-lut'):
         parser.add_argument('--'+name, type=Path, required=True)
     parser.add_argument('--checkpoint-sha256', required=True)
+    parser.add_argument('--amplitude-sdk', type=Path, help='Explicit amplitude SDK directory; overrides only in-memory config')
     parser.add_argument('--mode', choices=('inspect','selftest','pilot','full'), default='inspect')
     args = parser.parse_args()
     inspected = inspect_paths(args)
@@ -314,7 +317,8 @@ def main():
         def capture(self, *capture_args, **capture_kwargs):
             if self.inner is None:
                 self.inner = SHSBench(out, 400, 240, phase_paths,
-                                      machine_config=args.machine_config,phase_sdk=args.phase_sdk,phase_lut=args.phase_lut)
+                                      machine_config=args.machine_config,phase_sdk=args.phase_sdk,phase_lut=args.phase_lut,
+                                      amplitude_sdk=getattr(args,'amplitude_sdk',None))
                 self.inner.__enter__()
                 print(json.dumps({'hardware_session': 'opened', 'stage': current[0]}), flush=True)
             return self.inner.capture(*capture_args, **capture_kwargs)

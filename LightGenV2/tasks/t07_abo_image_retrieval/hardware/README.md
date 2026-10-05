@@ -70,6 +70,10 @@ python -m LightGenV2.tasks.t07_abo_image_retrieval.hardware.ccd_store --run /pat
 `bench.SHSBench` 与 `geometry` 已收拢最终版实际使用的控制层，显式传入
 `machine_config`（原Controller JSON）、`phase_sdk` 和 `phase_lut`，不再自动寻找
 LGVQ视频项目或旧DVP工程。JSON相对设备路径按其所在目录解析，SDK/LUT/数据不进Git。
+若现有机器JSON的相对振幅SDK实际位于另一工程，须显式传入
+`--amplitude-sdk /absolute/path/to/holoeye_python`。它只覆盖内存中的
+`amplitude_slm.sdk_path`，不修改机器JSON；默认仍按JSON所在目录解析，不猜测旧工程。
+2026-10-05此路径修复与原编排合计28项无设备测试通过，未启动真实SDK或采集。
 七个原几何函数和Bench的进入／退出／捕获方法AST一致；SHS ROI、1016像素原生映射、
 400µs/Gain_X4/wait240、相位更新后fresh、持续清帧与1%饱和守卫保持原含义。
 九项纯CPU模拟设备测试通过，未打开SDK，未替换实验室代码；记录见仓库

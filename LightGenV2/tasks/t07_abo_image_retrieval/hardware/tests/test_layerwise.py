@@ -50,6 +50,13 @@ class LayerwiseTests(unittest.TestCase):
         self.args.checkpoint_sha256 = '0'*64
         with self.assertRaisesRegex(ValueError, 'checkpoint SHA'): self.inspect()
 
+    def test_explicit_amplitude_sdk_preflight(self):
+        self.args.amplitude_sdk=self.root/'missing'
+        with self.assertRaises(FileNotFoundError):self.inspect()
+        self.args.amplitude_sdk.mkdir()
+        self.inspect()
+        self.assertFalse(self.args.run_dir.exists())
+
     def test_wrong_checkpoint_bytes(self):
         with patch.object(runner, 'digest', return_value='0'*64):
             with self.assertRaisesRegex(ValueError, 'checkpoint SHA'): runner.inspect_paths(self.args)

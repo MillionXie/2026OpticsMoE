@@ -13,11 +13,15 @@ from LightGenV2.hardware_common.shs.capture import snapshot
 from LightGenV2.hardware_common.shs.slm_camera import Controller
 from LightGenV2.hardware_common.shs.phase_hdmi import PhaseHDMI
 class SHSBench:
-    def __init__(self, out, exposure, wait_ms, phase_paths, *, machine_config, phase_sdk, phase_lut):
+    def __init__(self, out, exposure, wait_ms, phase_paths, *, machine_config, phase_sdk, phase_lut, amplitude_sdk=None):
         self.out=out;self.exposure=exposure;self.wait=wait_ms/1000
         self.phase_paths=phase_paths;self.rows=[]
         machine_config=Path(machine_config).resolve()
         config=json.loads(machine_config.read_text(encoding='utf-8-sig'))
+        if amplitude_sdk is not None:
+            amplitude_sdk=Path(amplitude_sdk).resolve()
+            if not amplitude_sdk.is_dir():raise FileNotFoundError(amplitude_sdk)
+            config['amplitude_slm']['sdk_path']=str(amplitude_sdk)
         config['camera']['exposure_us']=exposure
         config['camera']['gain']='Gain_X4'
         config['settle_delay_ms']=wait_ms

@@ -15,7 +15,7 @@
     }
   ],
   "published_path": "LightGenV2/tasks/t07_abo_image_retrieval/hardware/layerwise.py",
-  "sha256_lf": "5d372cffecd48d03837eba957da8fd1c41fab4ae50ec1cf7e237c63cab4df296",
+  "sha256_lf": "bd227cad5b91e2c83f722d5572f2e0f1fcd364f12ea3525efb5b2eb014c14b4d",
   "unchanged_functions_ast": [
     "phase_planes",
     "selected_phase",
@@ -26,7 +26,8 @@
     "Canonical CPU replay callback instead of legacy globals, no optical graph change",
     "Existing canonical CCDStore validates receipt identity, gain, orientation and pixel statistics",
     "Keep original six outer layer loops, four sample CPU batches, two warmups and lazy per-stage SDK sessions",
-    "Preserve current-thread awake power request only during real capture; no machine policy writes"
+    "Preserve current-thread awake power request only during real capture; no machine policy writes",
+    "Optional --amplitude-sdk preflight and explicit forwarding to SHSBench; never modify machine JSON"
   ],
   "real_hardware_regression_completed": false,
   "sealed_run_restarted": false,
