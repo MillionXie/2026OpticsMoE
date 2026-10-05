@@ -47,6 +47,7 @@ from .modeling import (
     parameter_fairness_contract,
 )
 from .settings import load_settings, save_resolved_config
+from .asset_binding import bind_frontend
 
 
 TASK_DIR = Path(__file__).resolve().parent
@@ -108,6 +109,7 @@ def _configure_run(settings: Any, args: argparse.Namespace) -> None:
             "command": "python -m LightGenV2.tasks.t01_object_retrieval.run "
             f"--profile {args.profile} --phase {args.phase} --seed {args.seed}",
             "started_at": dt.datetime.now(dt.timezone.utc).isoformat(),
+            "frontend_binding": getattr(settings, "lightgen_frontend_binding", None),
             "test_selection": (
                 "maximum periodically observed EMA test Top-1 every 5 epochs"
                 if args.profile != "qwen"
@@ -251,6 +253,7 @@ def _curate_student_artifacts(
 def run(args: argparse.Namespace) -> dict[str, Any]:
     config = TASK_DIR / "configs" / PROFILES[args.profile]
     settings = load_settings(config)
+    bind_frontend(settings, args)
     _configure_run(settings, args)
     seed_everything(int(args.seed))
     bundle = prepare_caltech101_subset(settings, persist=True)
@@ -328,6 +331,8 @@ def main() -> int:
     parser.add_argument("--checkpoint", default=None)
     parser.add_argument("--resume-checkpoint", default=None)
     parser.add_argument("--force-teacher-cache", action="store_true")
+    parser.add_argument("--frontend-snapshot", help="Explicit offline Qwen snapshot; requires a fresh run directory")
+    parser.add_argument("--frontend-identity", help="SHA manifest with frozen_frontend/files; required with snapshot")
     args = parser.parse_args()
     if args.resume_checkpoint and args.phase not in {"train", "all"}:
         parser.error("--resume-checkpoint is only valid for train/all")

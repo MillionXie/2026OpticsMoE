@@ -1,0 +1,138 @@
+{
+  "schema_version": 1,
+  "audit_date": "2026-10-05",
+  "task": "t01_object_retrieval",
+  "read_only_historical_audit": true,
+  "model_id": "Qwen/Qwen3-VL-Embedding-2B",
+  "current_asset_identity_manifest": "maintenance/storage/T01_CONTENT_ASSETS_20261004.json",
+  "current_observed_revision": "9f2f7e710d6d81056aa5c0a4f04764fec6bb7bda",
+  "historical_run_revision_proven": false,
+  "reason": "Historical configs specify logical model_id, cache_dir=null and local_files_only=false; inspected run manifests and checkpoint metadata do not pin a frontend revision. Current snapshot identity is not retroactive evidence.",
+  "runs": [
+    {
+      "run": "moe_router_scale_dc20_strict_seed42",
+      "config_identity": {
+        "bytes": 9795,
+        "sha256": "1df0f21b18eadcd5c210d9951afe64f6976bc01f0eba48827a39f1817e5ffd05"
+      },
+      "model_id": "Qwen/Qwen3-VL-Embedding-2B",
+      "local_files_only": false,
+      "run_manifest_identity": {
+        "bytes": 453,
+        "sha256": "498447ba3179d255a40a3d1e202026ebc26230b256d7830ba698cb0928c6aa09"
+      },
+      "logical_dataset_sha256": "c8accd596cd418bbef65834ac75b11cd35ce7cdd4ebe418aa51d942e00701d11",
+      "checkpoint_metadata_keys": [
+        "checkpoint_version",
+        "epoch",
+        "language_optical",
+        "metadata",
+        "optimizer",
+        "retrieval_readout",
+        "train_loss",
+        "vision_optical"
+      ],
+      "frontend_revision_recorded": false
+    },
+    {
+      "run": "d2nn_matched_dc20_seed42",
+      "config_identity": {
+        "bytes": 9737,
+        "sha256": "3c34010d4414f6d2a9c3de901d92affcc0e47c0709f7e9077a762926e9519128"
+      },
+      "model_id": "Qwen/Qwen3-VL-Embedding-2B",
+      "local_files_only": false,
+      "run_manifest_identity": {
+        "bytes": 447,
+        "sha256": "3e4ec15086bf63856980ceb492b4c6004671da58df5ec90a985fc553f0064eec"
+      },
+      "logical_dataset_sha256": "c8accd596cd418bbef65834ac75b11cd35ce7cdd4ebe418aa51d942e00701d11",
+      "checkpoint_metadata_keys": [
+        "checkpoint_version",
+        "epoch",
+        "language_optical",
+        "metadata",
+        "optimizer",
+        "retrieval_readout",
+        "train_loss",
+        "vision_optical"
+      ],
+      "frontend_revision_recorded": false
+    },
+    {
+      "run": "qwen_frozen",
+      "config_identity": {
+        "bytes": 9738,
+        "sha256": "e7e5619170533e42dc96f6a802b51199b3db1ff6af5ba3ab774766d8e831e0a4"
+      },
+      "model_id": "Qwen/Qwen3-VL-Embedding-2B",
+      "local_files_only": false,
+      "run_manifest_identity": {
+        "bytes": 416,
+        "sha256": "8b30e80e030240189e28d7db309fc6e654a81c622e405a6773a24cafb92a8fde"
+      },
+      "logical_dataset_sha256": "c8accd596cd418bbef65834ac75b11cd35ce7cdd4ebe418aa51d942e00701d11",
+      "checkpoint_metadata_keys": [],
+      "frontend_revision_recorded": false
+    },
+    {
+      "run": "moe_router_scale_seed42",
+      "config_identity": {
+        "bytes": 9761,
+        "sha256": "5c01861c59c81f8a96d31ee6d67efdcd64470c7c7332781bae36e752ade9db13"
+      },
+      "model_id": "Qwen/Qwen3-VL-Embedding-2B",
+      "local_files_only": false,
+      "run_manifest_identity": {
+        "bytes": 443,
+        "sha256": "ff759d24388684be04c1a65b840c10dbf8ef932001b03e65fa3c2bf776aad288"
+      },
+      "logical_dataset_sha256": "c8accd596cd418bbef65834ac75b11cd35ce7cdd4ebe418aa51d942e00701d11",
+      "checkpoint_metadata_keys": [
+        "checkpoint_version",
+        "epoch",
+        "language_optical",
+        "metadata",
+        "optimizer",
+        "retrieval_readout",
+        "train_loss",
+        "vision_optical"
+      ],
+      "frontend_revision_recorded": false
+    },
+    {
+      "run": "d2nn_matched_seed42",
+      "config_identity": {
+        "bytes": 9748,
+        "sha256": "1a82ff0f789fc422f9e5c60571e8632ca95489e2876bf2f8ebb669461eafcf0b"
+      },
+      "model_id": "Qwen/Qwen3-VL-Embedding-2B",
+      "local_files_only": false,
+      "run_manifest_identity": {
+        "bytes": 437,
+        "sha256": "18d225d9624cc972b9f4bbd6b94b343136c95ff1727296670b20db52a65eea79"
+      },
+      "logical_dataset_sha256": "c8accd596cd418bbef65834ac75b11cd35ce7cdd4ebe418aa51d942e00701d11",
+      "checkpoint_metadata_keys": [
+        "checkpoint_version",
+        "epoch",
+        "language_optical",
+        "metadata",
+        "optimizer",
+        "retrieval_readout",
+        "train_loss",
+        "vision_optical"
+      ],
+      "frontend_revision_recorded": false
+    }
+  ],
+  "new_entry_contract": {
+    "optional_snapshot_and_identity_required_together": true,
+    "all_recorded_model_processor_files_sha_verified": true,
+    "fresh_explicit_run_directory_required": true,
+    "old_teacher_cache_not_reused": true,
+    "default_behavior_unchanged": true,
+    "historical_runs_or_weights_modified": false,
+    "training_evaluation_or_backbone_loading_executed": false
+  }
+}

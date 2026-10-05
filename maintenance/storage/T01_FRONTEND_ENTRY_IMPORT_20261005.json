@@ -1,0 +1,18 @@
+{
+  "source_commit": "6089efa693ed986154ddec0a50becddb29c70779",
+  "paths": [
+    {
+      "path": "LightGenV2/tasks/t01_object_retrieval/asset_binding.py",
+      "bytes": 3459,
+      "sha256": "77d0bd3dde3234ed033ef0332b94aa5efc648828c3af2c8ee72b57ed903bc8dc"
+    },
+    {
+      "path": "LightGenV2/tasks/t01_object_retrieval/run.py",
+      "bytes": 13040,
+      "sha256": "1316334c2c15e4d33cdd41bc05367038b57d1374e1a410905bdfcb03eb9b3794"
+    }
+  ],
+  "scope": "Optional offline asset binding only; original profiles and optical model unchanged",
+  "local_asset_tests_passed": 7,
+  "historical_frontend_revision_proven": false
+}
