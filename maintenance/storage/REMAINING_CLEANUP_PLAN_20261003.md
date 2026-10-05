@@ -33,6 +33,22 @@ T05没有实验。**这不是14项的完整复现完成率，也不是剩下9次
 
 ### 下方是历史过程记录，不再用于判断当前完成数量
 
+#### 2026-10-05 ABO Windows机器依赖补核
+
+只读师弟机文件，没有打开SDK、相机或SLM，也没有更改配置。旧SHS相机配置、
+实际沿用的LGVQ控制器配置及相位LUT均存在，当前SHA分别为：
+
+- `ABO_Lab_SHS_8um/LAB.local.json`：`4d0cdb3f29d619c56be07ea6224c025785edf2b03342d4cd237efc34a2a9049a`。
+- `LGVQ_Spatial_Lab_SHS_8um/LAB.local.json`：`29bb02363adfd689b7d17e0b8e8b44997ab0cd187c2599eac9259c2f12fa78e4`。
+- Blink的`19x12_8bit_linearVoltage.lut`：`6a968b970fc81b035788534fc6ab7236a59e25e1a73068de393d90720a52efb6`。
+
+Meadowlark相位SDK目录含12项DLL/Python依赖，HOLOEYE安装目录41项，旧工程
+vendor/holoeye_python目录3项，逐文件大小/SHA已私有登记。
+这些是当前文件身份，不是当时采集已有的身份记录或设备回归证明；不得仅凭存在
+就称跨机器可运行。没有复制vendor SDK入Git或调整曝光／ROI／LUT。
+剩余事项是机器配置字段与主线显式参数绑定、SDK授权／加载环境以及获准后的现场
+回归；原工程仍保留。私有收据：`.codex_tmp/t07_machine_assets_20261005.json`。
+
 **最新覆盖：**T03和T10实际运行源码继续收敛。T03已发布main；T10的1份修改和8份未跟踪源码
 已纳入可恢复Git快照并通过18份编译、4种架构有界CPU检查，发布收据见最新backlog。
 阶段为2项源码已审计发布、6项部分收敛、5项待审计、1项未开展；完整资产待收尾仍11项。
