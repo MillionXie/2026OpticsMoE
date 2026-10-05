@@ -1,5 +1,21 @@
 # 历史工作目录原位冻结：分支名 15 → 12
 
+## 最新覆盖：10 → 9，T12 图文编辑审计历史目录
+
+`.worktrees/t12_audited_editors` 已原位固定于
+`a3f5e6fe7027e92fe29be2934750f427cdfd91e7`，取消旧开发分支名
+`codex/t12-audited-editors-20260926`。这是图文编辑的历史审计／baseline源码，
+不是当前服务器最终训练入口；服务器同身份目录此前已按相同保护方式冻结。
+本轮4779个内容文件前后SHA一致，无跟踪／未跟踪修改及进程命令引用。
+全部历史代码、baseline、数据、结果、缓存和测速原位保留；不声明所有历史入口
+已经迁入main，也不将旧测速套给最终模型。
+
+恢复引用：`refs/archive/frozen-local-20261005/t12-audited-editors-20260926`。
+完整Git包verify通过，SHA256为
+`8993d128fae4bebdfc77b4bc5b6e1a8a1355623dd5988fd9e08274256090ee17`；
+私有收据在 `.codex_tmp/t12_audited_frozen_identity_20261005`。
+主目录HEAD、索引中的用户修改未改变，14个工作树仍保留，不计新增空间释放。
+
 ## 最新覆盖：11 → 10，T13 时序鲁棒历史目录
 
 `.worktrees/t13_temporal_robust_20260927` 原位冻结于
