@@ -42,3 +42,21 @@ def test_empty_schema_rejected(monkeypatch):
     monkeypatch.setattr(module, "read", lambda *args: b'{"source_files": []}')
     with pytest.raises(ValueError, match="Missing reviewed source rows"):
         module.verify_reviewed_publications(None, "main", ["manifest"])
+
+
+@pytest.mark.parametrize("corrupt", ["history", "new", "reason"])
+def test_task_evolution_rejects_unverified_history(monkeypatch, corrupt):
+    path = "LightGenV2/tasks/t04_openmoji_robust_ablation/lab_shs_capture.py"
+    old, new = hashlib.sha256(b"old").hexdigest(), hashlib.sha256(b"new").hexdigest()
+    row = {"path": path, "historical_source_commit": "old", "historical_sha256": old,
+           "source_commit": "new", "sha256": new, "review_reason": "audited"}
+    if corrupt == "reason":
+        row["review_reason"] = ""
+    def read(root, ref, name):
+        if name.endswith("TASK_SOURCE_EVOLUTION_20261005.json"):
+            return json.dumps({"paths": [row]}).encode()
+        return b"wrong" if ref == {"history": "old", "new": "new"}.get(corrupt) else ref.encode()
+    monkeypatch.setattr(module, "read", read)
+    monkeypatch.setattr(module.subprocess, "check_output", lambda args: b"present" if args[-1].endswith("TASK_SOURCE_EVOLUTION_20261005.json") else b"")
+    with pytest.raises(ValueError):
+        module.verify_reviewed_publications(None, "main", [])

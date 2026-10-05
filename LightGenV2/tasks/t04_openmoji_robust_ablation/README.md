@@ -52,6 +52,12 @@ rank64原G2/G5权重的精确身份现集中在
 [`configs/lab/rank64_20261002.json`](configs/lab/rank64_20261002.json)，两份原PT在实验台
 重新计算SHA与该配置一致。`lab_checkpoint_identity.py`提供不加载模型／设备的文件SHA和
 架构身份检查，九项测试通过；测试无需私有归档Git引用。
-**这尚未接通完整采集／微调入口**：主线历史采集默认仍为rank16，不能只换PT或调用
-该旧默认入口来复现rank64。现用rank64捕获、TRAIN2000微调及bias校准原工程继续保护，
+统一 `lab_shs_capture` 已接入显式 `--lab-identity`，不传仍是历史rank16，不能只换PT来
+复现rank64。rank64要求CPU／2000us，并采用实验台原有保存前暗帧守卫；22项无设备单元
+检查和实际服务器依赖导入／六项合成CCD边界检查通过。尚未做现场采集回归，
+TRAIN2000微调及bias校准入口仍在迁移。现用rank64原工程继续保护，
 完整迁移、设备依赖和现场回归尚未完成；这些治理检查不代表重新测量准确率。
+
+统一入口的rank64选择参数为：
+`--lab-identity LightGenV2/tasks/t04_openmoji_robust_ablation/configs/lab/rank64_20261002.json`。
+项目／数据／设备依赖仍需提供原审计配置；本轮不自动执行该入口或替换现用脚本。

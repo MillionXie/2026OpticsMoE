@@ -1,0 +1,14 @@
+{
+  "schema_version": 1,
+  "scope": "Reviewed task source evolution; historical hashes remain enforced",
+  "paths": [
+    {
+      "path": "LightGenV2/tasks/t04_openmoji_robust_ablation/lab_shs_capture.py",
+      "historical_source_commit": "410d8ded23883ba1ef26803baf08c5be55e0756c",
+      "historical_sha256": "6ef3d137c07afde384970abf9d644aa0d0092fa954cc549dd524cbec70419522",
+      "source_commit": "0f413c739e0259ce55b10f664843d0bcd72a9407",
+      "sha256": "625ed250be5771136356c57ff8a6be1a775b1e2a742dd09ee21ce248f0784ca9",
+      "review_reason": "Rank16 default and legacy physical contract retained; explicit audited rank64 selection and deployed pre-persistence signal guard added. Current runtime source is not overwritten."
+    }
+  ]
+}

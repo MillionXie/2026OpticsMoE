@@ -1,0 +1,13 @@
+{
+  "expected_main": "410d8ded23883ba1ef26803baf08c5be55e0756c",
+  "source_commit": "c6148f135804c4f8b3f2e58ea952cf749b8a7521",
+  "task_prefix": "LightGenV2/tasks/t04_openmoji_robust_ablation/",
+  "paths": [
+    {
+      "path": "LightGenV2/tasks/t04_openmoji_robust_ablation/lab_shs_capture.py",
+      "expected_target_sha256": "6ef3d137c07afde384970abf9d644aa0d0092fa954cc549dd524cbec70419522",
+      "source_sha256": "625ed250be5771136356c57ff8a6be1a775b1e2a742dd09ee21ce248f0784ca9",
+      "review_reason": "Explicit audited rank64 identity and exact deployed pre-persistence dark guard; rank16 GROUPS/default, bounded BMP, phase/ROI/gain/wait and six-stage order retained. No live checkout cutover."
+    }
+  ]
+}

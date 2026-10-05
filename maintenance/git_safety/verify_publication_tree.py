@@ -48,6 +48,19 @@ def verify_reviewed_publications(root, ref, manifests):
         assert path.startswith('maintenance/git_safety/') and row['review_reason']
         assert hashlib.sha256(read(root,row['historical_source_commit'],path)).hexdigest() == row['historical_sha256']
         assert hashlib.sha256(read(root,row['source_commit'],path)).hexdigest() == row['sha256']
+    task_evolution_path = 'maintenance/storage/TASK_SOURCE_EVOLUTION_20261005.json'
+    present = subprocess.check_output(['git','-C',str(root),'ls-tree',ref,'--',task_evolution_path])
+    task_evolutions = json.loads(read(root,ref,task_evolution_path))['paths'] if present else []
+    for row in task_evolutions:
+        path = row['path']
+        if (not path.startswith('LightGenV2/tasks/') or '..' in PurePosixPath(path).parts
+                or path in evolved or not row.get('review_reason')):
+            raise ValueError('Unsafe/unreviewed task evolution: '+path)
+        if hashlib.sha256(read(root,row['historical_source_commit'],path)).hexdigest() != row['historical_sha256']:
+            raise ValueError('Task historical identity mismatch: '+path)
+        if hashlib.sha256(read(root,row['source_commit'],path)).hexdigest() != row['sha256']:
+            raise ValueError('Task evolution identity mismatch: '+path)
+        evolved[path] = row
     for name in manifests:
         manifest = json.loads(read(root, ref, name))
         rows = manifest.get("paths", manifest.get("source_files"))
@@ -61,7 +74,7 @@ def verify_reviewed_publications(root, ref, manifests):
                 raise ValueError("Missing published identity: " + str(path))
             if path in evolved:
                 if expected != evolved[path]['historical_sha256']:
-                    raise ValueError('Unreviewed governance history: '+path)
+                    raise ValueError('Unreviewed source history: '+path)
                 expected = evolved[path]['sha256']
             actual = hashlib.sha256(read(root, ref, path)).hexdigest()
             if actual != expected:
