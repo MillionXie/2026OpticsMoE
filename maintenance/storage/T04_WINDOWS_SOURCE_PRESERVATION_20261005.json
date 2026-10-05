@@ -1,0 +1,313 @@
+{
+  "schema_version": 1,
+  "audited_on": "2026-10-05",
+  "scope": "Exact Windows source preservation, not default hardware deployment or metric reproduction",
+  "runtime_root": "E:/code/guest/2026OpticsMoE/OpenMoji_Robust_Rank64_SHS_20261002",
+  "source_commit": "bc1951cfbd0bcbd60a6111884286b506790e20fb",
+  "parent_commit": "75eeaa29503b5e87d22b75ec4db939a7068ec67b",
+  "archive_ref": "refs/archive/source-overlay-20261005/openmoji-windows-36-source",
+  "bundle_sha256": "494236b270b2d7751a8e2535f7185c45fc221babb48336d6bc95483e7aafdb24",
+  "files_checked": 36,
+  "compile_passed": 36,
+  "runtime_source_unchanged": true,
+  "new_branch": false,
+  "sdk_called": false,
+  "canonical_main_base": "685b6b1e49eb678b2a63f92ef006d9024dcb975b",
+  "limitations": [
+    "Partial source snapshot tree; parent Git history retained",
+    "Not all archived scripts are finalized rank64 dependencies; new experiment files stay protected",
+    "Current main capture/tune remain historical rank16 and are not valid substitutes",
+    "Raw Windows CRLF hashes intentionally preserved for existing backend SHA guards",
+    "No optical acquisition, training, PT evaluation or checkout cutover performed"
+  ],
+  "files": [
+    {
+      "path": "LightGenV2/tasks/t04_semantic_interaction/lab_runtime.py",
+      "runtime_relative_path": "source/LightGenV2/tasks/t04_semantic_interaction/lab_runtime.py",
+      "bytes": 5962,
+      "sha256": "f7329c39bb756870714ff7596b482333f527350fdb3c1c29ec1e77c327fcef85",
+      "runtime_sha_match": true,
+      "main_state": "absent"
+    },
+    {
+      "path": "LightGenV2/tasks/t04_semantic_interaction/standalone.py",
+      "runtime_relative_path": "source/LightGenV2/tasks/t04_semantic_interaction/standalone.py",
+      "bytes": 8329,
+      "sha256": "1179869202b81a22dcf51e993005f6dd2d63e24d1f5e5965ce9f697d983ac35b",
+      "runtime_sha_match": true,
+      "main_state": "absent"
+    },
+    {
+      "path": "LightGenV2/tasks/t04_openmoji_robust_ablation/lab_shs_capture.py",
+      "runtime_relative_path": "source/LightGenV2/tasks/t04_openmoji_robust_ablation/lab_shs_capture.py",
+      "bytes": 16837,
+      "sha256": "605d17590c5947fedec030fd913c19a4ee31be08b1ae832c99377ebb015fe5c6",
+      "runtime_sha_match": true,
+      "main_state": "different"
+    },
+    {
+      "path": "LightGenV2/tasks/t04_openmoji_robust_ablation/lab_tune_decoder.py",
+      "runtime_relative_path": "source/LightGenV2/tasks/t04_openmoji_robust_ablation/lab_tune_decoder.py",
+      "bytes": 14512,
+      "sha256": "39951d0567855219eb10132746c886768f3c9f7e7d7d97e32997b3f0606d1e79",
+      "runtime_sha_match": true,
+      "main_state": "different"
+    },
+    {
+      "path": "runtime_entries/calibrate_existing_edit_bias.py",
+      "runtime_relative_path": "calibrate_existing_edit_bias.py",
+      "bytes": 5973,
+      "sha256": "557fafecfdd9288c65065478070d9b927b9769b1b99cbe61ea6c8aa262be934a",
+      "runtime_sha_match": true,
+      "main_state": "external_root_entry_needs_role_review"
+    },
+    {
+      "path": "runtime_entries/prepare_extra2_train1000.py",
+      "runtime_relative_path": "prepare_extra2_train1000.py",
+      "bytes": 3756,
+      "sha256": "c61714a5084ae693a5161292d216a5ffeb963d08829b73715cda7fed0cb652e9",
+      "runtime_sha_match": true,
+      "main_state": "external_root_entry_needs_role_review"
+    },
+    {
+      "path": "runtime_entries/prepare_extra_train1000.py",
+      "runtime_relative_path": "prepare_extra_train1000.py",
+      "bytes": 3430,
+      "sha256": "f9fa019ade0b8b3df7a0ca0e6d390386506920616ab6f4f853c84e49d1e16b96",
+      "runtime_sha_match": true,
+      "main_state": "external_root_entry_needs_role_review"
+    },
+    {
+      "path": "runtime_entries/queue_rank64_bench_20261002.py",
+      "runtime_relative_path": "queue_rank64_bench_20261002.py",
+      "bytes": 3917,
+      "sha256": "d2348fdf8a094d8444edcd3014d586869b49e0bcdd8d3b18be45cf89d455002a",
+      "runtime_sha_match": true,
+      "main_state": "external_root_entry_needs_role_review"
+    },
+    {
+      "path": "runtime_entries/queue_rank64_extra_tune_20261002.py",
+      "runtime_relative_path": "queue_rank64_extra_tune_20261002.py",
+      "bytes": 3397,
+      "sha256": "8d2ce11f5e5df4de462fdae51a4ec5f5735c80f9edd4de2788b0f18bc306430a",
+      "runtime_sha_match": true,
+      "main_state": "external_root_entry_needs_role_review"
+    },
+    {
+      "path": "runtime_entries/queue_rank64_g2_resume_tune_20261002.py",
+      "runtime_relative_path": "queue_rank64_g2_resume_tune_20261002.py",
+      "bytes": 3364,
+      "sha256": "2edaef938f65889387eae166de92ed4463e1bba365f483f54e126c0aa6f47449",
+      "runtime_sha_match": true,
+      "main_state": "external_root_entry_needs_role_review"
+    },
+    {
+      "path": "runtime_entries/queue_rank64_g2_tune_20261002.py",
+      "runtime_relative_path": "queue_rank64_g2_tune_20261002.py",
+      "bytes": 3348,
+      "sha256": "ed367086d3f0f2f48244960b8816e9bf2a6a74704147149bb60cd283da2c9bec",
+      "runtime_sha_match": true,
+      "main_state": "external_root_entry_needs_role_review"
+    },
+    {
+      "path": "runtime_entries/verify_g2_rank64_saved_decoder_20261002.py",
+      "runtime_relative_path": "verify_g2_rank64_saved_decoder_20261002.py",
+      "bytes": 2020,
+      "sha256": "20f4ff9663387b29758436187424c9b2474ca7fec64f7a3fe4a27b9fa87c536e",
+      "runtime_sha_match": true,
+      "main_state": "external_root_entry_needs_role_review"
+    },
+    {
+      "path": "runtime_entries/verify_rank64_adapted_sim_20261002.py",
+      "runtime_relative_path": "verify_rank64_adapted_sim_20261002.py",
+      "bytes": 2772,
+      "sha256": "5d7e33b9cde05f25b26fb8aa2fc8df4f7bbdb906122212147f1995789020da1b",
+      "runtime_sha_match": true,
+      "main_state": "external_root_entry_needs_role_review"
+    },
+    {
+      "path": "LightGenV2/tasks/t04_openmoji_robust_ablation/__init__.py",
+      "runtime_relative_path": "source/LightGenV2/tasks/t04_openmoji_robust_ablation/__init__.py",
+      "bytes": 72,
+      "sha256": "ae82e1f06772cef26af9e2d4d2db7a2e2094ad4128e3eff121cc53a5ad3f7610",
+      "runtime_sha_match": true,
+      "main_state": "CRLF_only"
+    },
+    {
+      "path": "LightGenV2/tasks/t04_openmoji_robust_ablation/audit_electronics.py",
+      "runtime_relative_path": "source/LightGenV2/tasks/t04_openmoji_robust_ablation/audit_electronics.py",
+      "bytes": 912,
+      "sha256": "f7adbab8ebb4cdaa4a397bae5a7ca0deb4f89283e74ef95faeee9ad1a0f4b185",
+      "runtime_sha_match": true,
+      "main_state": "CRLF_only"
+    },
+    {
+      "path": "LightGenV2/tasks/t04_openmoji_robust_ablation/audit_train_sensor.py",
+      "runtime_relative_path": "source/LightGenV2/tasks/t04_openmoji_robust_ablation/audit_train_sensor.py",
+      "bytes": 3091,
+      "sha256": "cc5e81bfd7fbff9d5404ec140c5331872528a757792317ee4547c60d8e1df694",
+      "runtime_sha_match": true,
+      "main_state": "CRLF_only"
+    },
+    {
+      "path": "LightGenV2/tasks/t04_openmoji_robust_ablation/diagnose_splitrank_deployment.py",
+      "runtime_relative_path": "source/LightGenV2/tasks/t04_openmoji_robust_ablation/diagnose_splitrank_deployment.py",
+      "bytes": 17609,
+      "sha256": "bc54943685daa738cf6e8779af146e7a320c620542fba910c0f43b92ca023ea6",
+      "runtime_sha_match": true,
+      "main_state": "absent"
+    },
+    {
+      "path": "LightGenV2/tasks/t04_openmoji_robust_ablation/evaluate_conditions.py",
+      "runtime_relative_path": "source/LightGenV2/tasks/t04_openmoji_robust_ablation/evaluate_conditions.py",
+      "bytes": 4593,
+      "sha256": "046378b16c3d25bab6136dbc444d63e6ac1f7735b08ba91b2d996e5b2180ba7e",
+      "runtime_sha_match": true,
+      "main_state": "CRLF_only"
+    },
+    {
+      "path": "LightGenV2/tasks/t04_openmoji_robust_ablation/evaluate_recovery_clean.py",
+      "runtime_relative_path": "source/LightGenV2/tasks/t04_openmoji_robust_ablation/evaluate_recovery_clean.py",
+      "bytes": 4866,
+      "sha256": "a653e6bfd0d6599d82d11d31d7dcfdb79b2e3155d190f5023ab78ddf31c3d5db",
+      "runtime_sha_match": true,
+      "main_state": "CRLF_only"
+    },
+    {
+      "path": "LightGenV2/tasks/t04_openmoji_robust_ablation/lab_editor16_robust_chain.py",
+      "runtime_relative_path": "source/LightGenV2/tasks/t04_openmoji_robust_ablation/lab_editor16_robust_chain.py",
+      "bytes": 10204,
+      "sha256": "0adc3fc6b13e7e8ad4fb0bc97ba7d692917a3305b6a6779bedf512b721bccb62",
+      "runtime_sha_match": true,
+      "main_state": "absent"
+    },
+    {
+      "path": "LightGenV2/tasks/t04_openmoji_robust_ablation/lab_modality_pipeline.py",
+      "runtime_relative_path": "source/LightGenV2/tasks/t04_openmoji_robust_ablation/lab_modality_pipeline.py",
+      "bytes": 16483,
+      "sha256": "842625a92456e0350c65cf4ae7e493433f9cfb8b35f64051df21a7e86b5a9885",
+      "runtime_sha_match": true,
+      "main_state": "absent"
+    },
+    {
+      "path": "LightGenV2/tasks/t04_openmoji_robust_ablation/lab_preserved_upstream.py",
+      "runtime_relative_path": "source/LightGenV2/tasks/t04_openmoji_robust_ablation/lab_preserved_upstream.py",
+      "bytes": 18275,
+      "sha256": "a6222370f862b0b4268e79757dae9e81dc5f8193daef240dcaada39d4294c9f5",
+      "runtime_sha_match": true,
+      "main_state": "absent"
+    },
+    {
+      "path": "LightGenV2/tasks/t04_openmoji_robust_ablation/lab_shs_capture_extra.py",
+      "runtime_relative_path": "source/LightGenV2/tasks/t04_openmoji_robust_ablation/lab_shs_capture_extra.py",
+      "bytes": 17610,
+      "sha256": "449cee6539dbf58b52291076474e5de3a413ae52d686e77c4b33bd0380513bc9",
+      "runtime_sha_match": true,
+      "main_state": "absent"
+    },
+    {
+      "path": "LightGenV2/tasks/t04_openmoji_robust_ablation/lab_shs_capture_g2_saturation.py",
+      "runtime_relative_path": "source/LightGenV2/tasks/t04_openmoji_robust_ablation/lab_shs_capture_g2_saturation.py",
+      "bytes": 17076,
+      "sha256": "8d08a13b0cfca0bec28b5a531535b45420caf257aea91f46d49ef162ea92b89b",
+      "runtime_sha_match": true,
+      "main_state": "absent"
+    },
+    {
+      "path": "LightGenV2/tasks/t04_openmoji_robust_ablation/lab_split_rank_capture.py",
+      "runtime_relative_path": "source/LightGenV2/tasks/t04_openmoji_robust_ablation/lab_split_rank_capture.py",
+      "bytes": 4620,
+      "sha256": "86a133785321e46f4c61c88cf9cf0ce078c8ea39e5fb1cb1b336140f777a5e02",
+      "runtime_sha_match": true,
+      "main_state": "absent"
+    },
+    {
+      "path": "LightGenV2/tasks/t04_openmoji_robust_ablation/lab_split_rank_tune.py",
+      "runtime_relative_path": "source/LightGenV2/tasks/t04_openmoji_robust_ablation/lab_split_rank_tune.py",
+      "bytes": 6108,
+      "sha256": "27ae8af7b2c1a86618023a25cb7d136f9eeb29594ee6d186ace7f4df73239dd4",
+      "runtime_sha_match": true,
+      "main_state": "absent"
+    },
+    {
+      "path": "LightGenV2/tasks/t04_openmoji_robust_ablation/lab_tune2000.py",
+      "runtime_relative_path": "source/LightGenV2/tasks/t04_openmoji_robust_ablation/lab_tune2000.py",
+      "bytes": 18968,
+      "sha256": "c724058d9ac84b69cecf0ec329a3bf29067bf04c64f979525cf42041a204def9",
+      "runtime_sha_match": true,
+      "main_state": "absent"
+    },
+    {
+      "path": "LightGenV2/tasks/t04_openmoji_robust_ablation/lab_tune_g2_test.py",
+      "runtime_relative_path": "source/LightGenV2/tasks/t04_openmoji_robust_ablation/lab_tune_g2_test.py",
+      "bytes": 16712,
+      "sha256": "d4c0c4fd59096bd627cc621ce7019a0f989841885b2c198659efd622812c9a0f",
+      "runtime_sha_match": true,
+      "main_state": "absent"
+    },
+    {
+      "path": "LightGenV2/tasks/t04_openmoji_robust_ablation/lab_tune_test.py",
+      "runtime_relative_path": "source/LightGenV2/tasks/t04_openmoji_robust_ablation/lab_tune_test.py",
+      "bytes": 17002,
+      "sha256": "7d8f905672a506d2856aa960b5817ae3a703d98156f40636aef331f5cec03622",
+      "runtime_sha_match": true,
+      "main_state": "absent"
+    },
+    {
+      "path": "LightGenV2/tasks/t04_openmoji_robust_ablation/profiles.py",
+      "runtime_relative_path": "source/LightGenV2/tasks/t04_openmoji_robust_ablation/profiles.py",
+      "bytes": 3928,
+      "sha256": "d685b4100e81594862d60f8ced441a10e0a0ac8672e683bdc35fe238a225a6f7",
+      "runtime_sha_match": true,
+      "main_state": "different"
+    },
+    {
+      "path": "LightGenV2/tasks/t04_openmoji_robust_ablation/recover_clean.py",
+      "runtime_relative_path": "source/LightGenV2/tasks/t04_openmoji_robust_ablation/recover_clean.py",
+      "bytes": 6394,
+      "sha256": "80ce3177f9a0695217b55b805d275ba475d0d295d8bdba9ae394d1f4944d2838",
+      "runtime_sha_match": true,
+      "main_state": "CRLF_only"
+    },
+    {
+      "path": "LightGenV2/tasks/t04_openmoji_robust_ablation/split_rank_head.py",
+      "runtime_relative_path": "source/LightGenV2/tasks/t04_openmoji_robust_ablation/split_rank_head.py",
+      "bytes": 1765,
+      "sha256": "fef57cb331c7860d07f88b9bec9f112e5b074ad249578c2edd556736059b2030",
+      "runtime_sha_match": true,
+      "main_state": "CRLF_only"
+    },
+    {
+      "path": "LightGenV2/tasks/t04_openmoji_robust_ablation/train.py",
+      "runtime_relative_path": "source/LightGenV2/tasks/t04_openmoji_robust_ablation/train.py",
+      "bytes": 10416,
+      "sha256": "afa87283918d6083353ea6bcf3b2a9b6479017c9742ee836cfc00e2444084dd3",
+      "runtime_sha_match": true,
+      "main_state": "CRLF_only"
+    },
+    {
+      "path": "LightGenV2/tasks/t04_openmoji_robust_ablation/train_editor16_robust_chain.py",
+      "runtime_relative_path": "source/LightGenV2/tasks/t04_openmoji_robust_ablation/train_editor16_robust_chain.py",
+      "bytes": 11145,
+      "sha256": "7c7a31c0d0dfa8d1da2886b4b06024136c5da9ec2a58f803eaff3a2b2122a37c",
+      "runtime_sha_match": true,
+      "main_state": "different"
+    },
+    {
+      "path": "LightGenV2/tasks/t04_openmoji_robust_ablation/train_modality_fusion.py",
+      "runtime_relative_path": "source/LightGenV2/tasks/t04_openmoji_robust_ablation/train_modality_fusion.py",
+      "bytes": 10492,
+      "sha256": "23cf8a219ca589722eac08d7c2e7186f1c3bd319f62a579361aec26af602ac4c",
+      "runtime_sha_match": true,
+      "main_state": "CRLF_only"
+    },
+    {
+      "path": "LightGenV2/tasks/t04_openmoji_robust_ablation/train_preserved_upstream.py",
+      "runtime_relative_path": "source/LightGenV2/tasks/t04_openmoji_robust_ablation/train_preserved_upstream.py",
+      "bytes": 10552,
+      "sha256": "b36294e9806135e50f1884681b02cc04b0353bc2518b52aaa6d5aa3f68684ba8",
+      "runtime_sha_match": true,
+      "main_state": "CRLF_only"
+    }
+  ]
+}
