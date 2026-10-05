@@ -41,5 +41,22 @@ run记录的源码范围，不代表所有动态依赖、原图、环境及测�
 
 本次未读取数据、未前向、未评估或训练、未占GPU。严格加载仅证明参数接口兼容，
 不证明当前源码与历史计算结果逐位等价，也不替代原commit身份；前向/梯度等价与
-主线完整依赖迁入仍待完成。当前服务器前端可从卷积核推断32/64/128或窄通道，
+主线完整运行入口迁入仍待完成。当前服务器前端可从卷积核推断32/64/128或窄通道，
 本地旧副本不支持该接口；保留本地独有内容，不能以旧副本覆盖服务器实现。
+
+## 模型源码已收拢，历史行为门禁通过
+
+服务器两份实际模型（shared_frontend/model.py、frozen_electronic/model.py）已
+按精确SHA归档至`d4bd5f94d019d60ff3bdc753c56566bebdaad6e5`，通过Git bundle
+传入而非直接覆盖文件，并发布main模型迁入commit
+`f6caaf60e226edaca22c7af6d89be275e42252be`。本地原工作文件和服务器运行目录未改。
+
+`maintenance/git_safety/check_shared_frontend_models.py`配套
+`EUROSAT_SHARED_FRONTEND_MODEL_GATE_20261005.json`在服务器CPU执行通过：
+四份原光学PT在相同冻结前端的合成输入上，与各run原commit光学实现的类别概率
+及全部相位梯度逐位一致；冻结前端train(True)仍保持eval，光场逐样本单位功率。
+四份依赖源码先逐SHA核验，历史角谱后端还与当前文件按原字节比较相等。
+完整私有结果：`.codex_tmp/shared_frontend_behavior_gate_20261005.json`。
+
+这不是原图精度复评或测速，不覆盖原数值。两份模型及依赖已进入main，但run、
+continue_training、打包及holdout辅助入口尚未完整迁入，不能宣称该baseline已全迁移。

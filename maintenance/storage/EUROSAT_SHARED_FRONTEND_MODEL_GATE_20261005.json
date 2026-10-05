@@ -1,0 +1,17 @@
+{
+  "source_archive_commit": "d4bd5f94d019d60ff3bdc753c56566bebdaad6e5",
+  "source_files": [
+    {"path": "LightGenV2/demo_check/shared_frontend/model.py", "sha256": "d2b9ffd4cf5c6aef7d4d4d217d2644cdae016fa49b6176faff32cc5b6bb1a12a"},
+    {"path": "LightGenV2/demo_check/frozen_electronic/model.py", "sha256": "b919cd34c193f7613822e1dd3c31c54a1f00d6926d4a94695e24ad7c084a1469"},
+    {"path": "LightGenV2/demo_check/pure_optical/models.py", "sha256": "a9685984d1f80cdcf97dcaccb2beb1216e60575d91df8708144d6b3e360bb76c"},
+    {"path": "LightGenV2/demo_check/adrenal_softsign_code_export_20260915_145336/code/optical_reference/optics.py", "sha256": "b250627b14357a254eb12c785caf20f3aff2bf3fe30121a05321094803c73a7d"}
+  ],
+  "runs": [
+    {"run": "eurosat_shared_frontend_20260916", "commit": "8cb125cfaa4829e7714b5b23389f0c96e4844a72",
+     "frontend_sha256": "61d3c189a18d814a22e5ffea2986cd0902c8e9b2cb4de6dbd90aae94e9ace15f",
+     "optical_sha256": {"dynamic_four": "635ff1258ef3c7dc153f6ca28df78b6d65a2edc055c09a9108ebd5700c252e1c", "full_d2nn": "8863471b1a75199d8b4876a7653d82d331230ddb70d7c090cd54bbba4bfa98f9"}},
+    {"run": "eurosat_shared_frontend_continuation_20260916", "commit": "ef70e50f802302a900e321be5f5188a258631990",
+     "frontend_sha256": "61d3c189a18d814a22e5ffea2986cd0902c8e9b2cb4de6dbd90aae94e9ace15f",
+     "optical_sha256": {"dynamic_four": "c8ac9663722ab067515c62eaa6998dadb9ab8beb10040376b34309c3129ff317", "full_d2nn": "3f12f173b30b8796bc8112ca44176a6c20528fde6c1cb33d1821744cd665d5ba"}}
+  ]
+}
