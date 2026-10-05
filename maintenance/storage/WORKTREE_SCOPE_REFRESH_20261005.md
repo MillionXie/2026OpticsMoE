@@ -48,6 +48,31 @@ HEAD 元数据并条件式取消 `codex/t06-readout-compress-20260912` 分支名
 私有本机包 `.codex_tmp/storage_git_backup_20261002/t06_all_server_full_20261006.bundle`。
 服务器分支 18→17，工作目录和全部旧测速仍在原位。
 
+### T11／T12 四条历史分支统一退出（2026-10-06）
+
+四目录在各自原 HEAD 上冻结为 detached，先验证服务器完整 Git bundle，下载本机并
+核对同 SHA 后，再逐目录重复检查 cwd／命令／打开文件无占用、无 tracked 修改。
+仅变更 HEAD 元数据及条件式取消分支名；目录及全部数据／测速不移动。
+
+| 原分支末段 | 冻结 HEAD | 保留文件数 |
+| --- | --- | ---: |
+| t11-optical-lifelong | `604cd89e3e4a88ed0b580eaa41f88af7de2da86c` | 4608 |
+| t12-physical-robust-20260926 | `197beba57440dff0ca2082fd3449635ce7d91c5a` | 4848 |
+| t12-physical-robust-v2-20260927 | `7093ec46082eed2fae127ec5028d3e2e8548b592` | 31188 |
+| t12-text-to-image-20260920 | `9502371917e33e1e45388010208d510c0688f9bf` | 4967 |
+
+各恢复引用为 `refs/archive/frozen-server-20261006/<表中末段>`。
+完整包：服务器 `storage_cleanup_manifests/t11_t12_frozen_history_20261006.bundle`，
+本机 `.codex_tmp/storage_git_backup_20261002/t11_t12_server_frozen_full_20261006.bundle`；
+SHA256 `aa063302d091af23eae898c4a434d87a66de0201bf748878afcb32e97f65151f`。
+逐目录文件 stat、索引摘要和原 Git 状态前后一致，服务器根 HEAD 和原改动状态不变。
+服务器分支 **17→13**，工作树仍保留；没有空间释放、重训、重评或设备操作。
+私有逐目录收据 `.codex_tmp/server_t11_t12_frozen_20261006.json`。
+
+本机另以 `check_task_registry.py --verify-local-weights --verify-local-artifacts`
+复核全部14项登记，已登记本机 PT 的流式 SHA、私有报告／引用检查无错误；不加载
+模型、不读取科学数据。此检查的范围仅为登记条目，不能证明所有任务资产闭包完整。
+
 2026-10-05实查83个注册工作树全部存在，19条分支名；当前main引用
 `aa78b93cbafbcd9c8a64c1ff10247468aa8429b9`，服务器根运行HEAD仍为
 `3f85510285e5ffdfca28def93eef2eb082b1655c`。没有切换checkout或删除目录。
