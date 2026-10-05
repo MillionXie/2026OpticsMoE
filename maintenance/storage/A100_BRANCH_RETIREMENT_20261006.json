@@ -1,0 +1,19 @@
+{
+  "runtime": "/DATA/DATA1/guest3/2026OpticsMoE_a100_formal",
+  "original_head": "0db3b583925ec688d2fba09957905d8e1cd9bec8",
+  "retired_branch": "benchmark/t04-a100-aligned-qwen-baseline",
+  "archive_ref": "refs/archive/frozen-server-20261006/t04-a100-aligned-qwen-baseline",
+  "tracked_overlay": "36b1e2f696f06149e5812282036416a50bad8fef",
+  "extra_source_archive": "6aee834b7f49904328ff05f00f2185f5bb910696",
+  "full_history_bundle_sha256": "d95297d8801d3c57d601c3f55e2b262be8f13f1eb8c1f997de59777ccfc6fae4",
+  "local_bundle_verify_and_fetch": "passed",
+  "files_preserved_in_place": 13952,
+  "file_stat_index_status_unchanged": true,
+  "scientific_files_deleted": 0,
+  "timing_evidence": "all retained in place",
+  "source_validation": {"protocol_tests": 42, "cpu_tensor_contract_tests": 7, "candidate_commit": "94ede15c7dbe30702ef682e583267946fb1ab81d"},
+  "server_branches_after": 7,
+  "server_worktrees_after": 83,
+  "complete_machine_asset_migration": false,
+  "current_openmoji_changed": false
+}
