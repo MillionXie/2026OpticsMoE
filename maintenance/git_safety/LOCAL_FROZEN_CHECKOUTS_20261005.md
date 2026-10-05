@@ -1,5 +1,21 @@
 # 历史工作目录原位冻结：分支名 15 → 12
 
+## 最新覆盖：11 → 10，T13 时序鲁棒历史目录
+
+`.worktrees/t13_temporal_robust_20260927` 原位冻结于
+`493eb38375f3bd9e4e8e7edfe278468b351365f1`；取消开发分支名
+`codex/t13-temporal-robust-20260927`。3400个内容文件操作前后SHA相同，
+无跟踪修改、无未跟踪文件、未发现进程命令引用；完整bundle已verify。
+恢复引用为 `refs/archive/frozen-local-20261005/t13-temporal-robust-20260927`，
+bundle SHA为 `f4644eb193e965de2ab1bd04bbf74cecfb152ca07fda78c61558f84eb3b24bdc`，
+私有清单／收据／包位于 `.codex_tmp/t13_history_frozen_identity_20261005`。
+
+此处保留一项明确例外：`public_simulation/` 是重新组织的独立仿真导出，
+不是正式训练运行时；27项源码仍留在冻结目录和恢复历史中，未覆盖 main。
+主线已有正式运行源码、教师依赖及结果说明。私有连接脚本也未公开纳入 main。
+本次只退出旧开发线，不宣称导出包已完成完整训练复现。
+源码、数据、PT、报告、全部测速及缓存均未移动或删除，14个工作树仍在。
+
 ## 后续覆盖：12 → 11，T02 个人照片历史工程
 
 `.worktrees/t02_personal_pose` 已在原提交
