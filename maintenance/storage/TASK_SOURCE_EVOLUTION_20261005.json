@@ -3,6 +3,14 @@
   "scope": "Reviewed task source evolution; historical hashes remain enforced",
   "paths": [
     {
+      "path": "LightGenV2/tasks/t03_saliency/README.md",
+      "historical_source_commit": "6650d2bb3ca6566ce781b4b9de488227f67717f8",
+      "historical_sha256": "ae5f430c71379aae02087bd408d1eb32f2394f7b890007e696477633319f6af4",
+      "source_commit": "14e5eff6dea41aeba6ebe8572d6bef66ec07b331",
+      "sha256": "5a46aef82790e4fddf87adf9cc466ea1fcbd63df0eda03729cdbb05bd527e587",
+      "review_reason": "Append existing handoff/main source equality and four synthetic CPU contract tests with explicit machine and field limitations; no model, data or metric changes. Historical imported README hash remains checked."
+    },
+    {
       "path": "LightGenV2/tasks/t04_openmoji_robust_ablation/lab_shs_capture.py",
       "historical_source_commit": "410d8ded23883ba1ef26803baf08c5be55e0756c",
       "historical_sha256": "6ef3d137c07afde384970abf9d644aa0d0092fa954cc549dd524cbec70419522",
