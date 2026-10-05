@@ -10,11 +10,12 @@
   "artifact_manifests": ["tasks/t07_abo_image_retrieval/reports/reproduction/FINAL_IDENTITY_20261002.json", "tasks/t04_openmoji_robust_ablation/reports/reproduction/FINAL_IDENTITY_20261002.json"],
   "policy": "Do not delete any referenced source, dependency, dataset, capture or weight until replacement is verified. No new branches or worktrees. External upload paused.",
   "server_repository": "/DATA/DATA1/guest3/2026OpticsMoE",
+  "server_root_checkout": {"updated_on":"2026-10-06","branch":"main","materialized_commit":"c9a8b70fc82c2cb5cdead44de757058f85523cd9","evidence":"../maintenance/storage/SERVER_ROOT_MAIN_CUTOVER_20261006.json","scientific_record_exceptions":9,"protected_ABO_OpenMoji_worktrees_unchanged":true,"all_task_assets_complete":false},
   "tasks": [
     {
       "id": "t01_object_retrieval",
       "entry": "tasks/t01_object_retrieval/README.md",
-      "source_status": "runtime_source_published_optional_frontend_SHA_binding_verified_historical_revision_and_checkout_pending",
+      "source_status": "runtime_source_on_main_optional_frontend_SHA_binding_verified_historical_revision_pending",
       "frontend_binding_evidence": "../maintenance/storage/T01_FRONTEND_ENTRY_IMPORT_20261005.json",
       "historical_frontend_revision_proven": false,
       "data_status": "preserve_original_manifest_and_gallery",
@@ -24,7 +25,7 @@
     {
       "id": "t02_keypoint_detection",
       "entry": "tasks/t02_keypoint_detection/README.md",
-      "source_status": "runtime_source_published_official_and_personal_image_content_audited_checkout_pending",
+      "source_status": "runtime_source_on_main_official_and_personal_image_content_audited_asset_closure_pending",
       "additional_source": "/DATA/DATA1/guest3/t02_personal_source_20260928",
       "source_head": "2fa901dc7800d8798658b29e242e38bebac97989",
       "data_status": "preserve_LSP_and_per_sample_evidence",

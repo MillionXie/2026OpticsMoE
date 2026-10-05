@@ -1,0 +1,39 @@
+{
+  "server_root": "/DATA/DATA1/guest3/2026OpticsMoE",
+  "original_head": "3f85510285e5ffdfca28def93eef2eb082b1655c",
+  "materialized_main": "c9a8b70fc82c2cb5cdead44de757058f85523cd9",
+  "root_branch_after": "main",
+  "retired_branch": "experiment/static-expert-caltech",
+  "original_head_archive_ref": "refs/archive/root-before-main-20261006",
+  "tracked_overlay_archive_commit": "4fafce0f96306894d3d71e30b1298f469f35ef0e",
+  "tracked_overlay_full_bundle_sha256": "73321a47fed1b9750031326a75bd31b3545b1cf35b1c25fed84f1b4fe3cfb6b3",
+  "collision_source_archive_commit": "238c1d2cfddff1989f17b731540e5ac71a8b7225",
+  "collision_full_bundle_sha256": "862e8d56e4fc13b060a3a43a1c2e2b9206148427f45e1754e2f189cbe425f341",
+  "local_backup_verify_and_fetch": "passed",
+  "incoming_existing_files_audited": 20,
+  "incoming_existing_files_LF_equal": 18,
+  "two_reviewed_differences": ["Explicit optional historical timing contracts retain legacy defaults", "s586 YAML changes comments only"],
+  "main_files_materialized": 1011,
+  "old_only_files_retained_in_place_and_SHA_unchanged": 295,
+  "scientific_files_deleted": 0,
+  "timing_files_deleted_or_moved": 0,
+  "protected_ABO_OpenMoji_worktrees_modified": false,
+  "server_branches_after": 3,
+  "server_worktrees_after": 83,
+  "preserved_root_record_exceptions": {
+    "modified_records": ["experiments/qwen3_vl_2b_lgvq_single_metric_o2_16frame_54/SPATIAL_OPTIMIZATION_RESULT.md", "experiments/qwen3_vl_2b_lgvq_single_metric_o2_16frame_54/spatial_optimization_result.json"],
+    "already_deleted_audit_files": 7,
+    "original_deletion_intent": "Preserved, not newly deleted; full original Git objects and deletion state archived",
+    "root_tracked_source_code_differences_after": 0,
+    "root_tracked_record_status_entries_after": 9
+  },
+  "actual_checkout_validation": {
+    "T06_runtime_source_files_blob_checked": 7,
+    "T06_CPU_model_contract_tests_passed": 57,
+    "historical_timing_protocol_tests_passed_locally": 7,
+    "dataset_or_formal_weight_re_evaluation": false,
+    "hardware_or_gpu_used": false,
+    "tracked_state_unchanged_by_tests": true
+  },
+  "complete_task_machine_and_asset_migration": false
+}
