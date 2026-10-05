@@ -88,6 +88,7 @@ def main():
         "maintenance/storage/T04_SEMANTIC_ENTRY_ADDITIONS_20261005.json",
         "maintenance/storage/T04_SEMANTIC_CORE_REPLACEMENTS_20261005.json",
         "maintenance/storage/T04_ROBUST_SOURCE_ADDITIONS_20261005.json",
+        "maintenance/storage/T04_LAB_BOUNDARY_ADDITIONS_20261005.json",
         "maintenance/storage/T01_FRONTEND_ENTRY_IMPORT_20261005.json",
         "maintenance/storage/T03_REVIEWED_ENTRY_20261003.json",
         "maintenance/storage/T03_PINNED_ADDITIONS_20261003.json",

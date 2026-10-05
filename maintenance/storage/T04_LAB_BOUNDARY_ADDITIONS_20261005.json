@@ -1,0 +1,31 @@
+{
+  "schema_version": 1,
+  "source_commit": "bc1951cfbd0bcbd60a6111884286b506790e20fb",
+  "scope": "Missing shared Windows CPU CCD boundary and historical standard-head standalone entry; no default rank64 deployment cutover",
+  "paths": [
+    {
+      "path": "LightGenV2/tasks/t04_semantic_interaction/lab_runtime.py",
+      "bytes": 5962,
+      "sha256": "f7329c39bb756870714ff7596b482333f527350fdb3c1c29ec1e77c327fcef85"
+    },
+    {
+      "path": "LightGenV2/tasks/t04_semantic_interaction/standalone.py",
+      "bytes": 8329,
+      "sha256": "1179869202b81a22dcf51e993005f6dd2d63e24d1f5e5965ce9f697d983ac35b"
+    }
+  ],
+  "runtime_source_unchanged": true,
+  "validation": {
+    "candidate_tested": "0e698897f4f8c2945102191da8756c0ae3e87a68",
+    "actual_server_cpu_dependency_import": "passed",
+    "cpu_boundary_checks_passed": 6,
+    "checks": ["six_phase_order", "six_stage_capture_and_restore", "reject_noncontiguous_CCD", "measured_intensity_sqrt_replay", "reject_NaN_and_restore", "bounded_stage_stop"],
+    "scope": "Synthetic fields and measured-intensity arrays only; no PT, dataset, accuracy, GPU or SDK evaluation"
+  },
+  "limitations": [
+    "standalone pins historical standard head; rank64 capture builds its own model",
+    "standalone ROOT needs package/project context before commands; not a turnkey main command",
+    "OpticalBoundary uses language-first six-stage order and contiguous CCD prefix",
+    "No dataset, model accuracy, GPU or SDK evaluation performed"
+  ]
+}
