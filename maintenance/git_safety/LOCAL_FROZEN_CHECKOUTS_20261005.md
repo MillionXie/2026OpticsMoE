@@ -1,5 +1,31 @@
 # 历史工作目录原位冻结：分支名 15 → 12
 
+## 最新覆盖：8 → 7，旧 OpenMoji e45 DVP 部署目录
+
+`.worktrees/t04-dc30` 固定于原提交
+`74c82d3782e1b1e3287f0e50798057bd1aa6e6f1`，取消旧开发分支名
+`codex/t04-e45-dvp-deploy`。这是旧e45/DVP控制合同与低参考PCC审核代码，
+不是当前rank64/SHS训练或部署入口。无跟踪修改、无未跟踪文件、未发现进程命令引用；
+15份字节码缓存也原位保留。4519个内容文件冻结前后逐SHA相同，完整Git包verify通过。
+恢复引用为 `refs/archive/frozen-local-20261005/t04-e45-dvp-deploy`，bundle SHA256为
+`afdc2dcc1bb7a1b8afa0d15d0a7364436b523f84686d9f8bcf3bb276ae8233b4`。
+私有清单和收据在 `.codex_tmp/t04_dc_history_frozen_identity_20261005`。
+14个工作树仍保留，不删除源码、数据、测速，也不计空间释放；当前实验目录不动。
+
+### 空临时报告目录单独保护，不作干净副本退出
+
+`C:/Users/Xml12/AppData/Local/Temp/optics_qwen5090_report_20260906` 当前只有Git指针
+和空子目录：3130项跟踪文件显示缺失，未发现现存内容文件、未跟踪或忽略数据。
+这不是本轮删掉的文件，不恢复或覆盖这些既有删除状态，也没有清退该目录或分支。
+旧完整Git历史已额外封存在
+`refs/archive/protected-empty-checkout-20261005/qwen5090d-baselines`，提交为
+`119243dc68800b5eb2e6304474a4abde0a14e021`。
+完整恢复bundle已verify，SHA256为
+`e0eb6f2ffed9b0a0f634d66c32c5550cb0039e13e9725a978639032fddd4ebc9`；
+私有包 `.codex_tmp/storage_git_backup_20261002/qwen5090_report_history_20261005.bundle`。
+Git历史只保护已提交内容，不证明以前未提交数据或测速也可恢复；后续先核用途和其他
+资产位置再处理登记，不能把3130项删除状态当作清退许可。
+
 ## 最新覆盖：9 → 8，T12 鲁棒图文编辑本地历史目录
 
 `.worktrees/t12_physical_robust_v2_20260927` 固定于原提交
