@@ -99,7 +99,11 @@ def main():
         "maintenance/storage/EUROSAT_SHARED_FRONTEND_MODEL_GATE_20261005.json",
         "maintenance/storage/EUROSAT_SHARED_FRONTEND_ENTRY_IMPORT_20261005.json",
         "maintenance/storage/EUROSAT_SHARED_FRONTEND_PACKAGE_IMPORT_20261005.json",
-        "maintenance/storage/EUROSAT_SHARED_FRONTEND_REPORT_IMPORT_20261005.json"])
+        "maintenance/storage/EUROSAT_SHARED_FRONTEND_REPORT_IMPORT_20261005.json",
+        "maintenance/storage/T09_HISTORICAL_NAV_ADDITIONS_20261005.json",
+        "maintenance/storage/T06_BASELINE_NAV_ADDITIONS_20261005.json",
+        "maintenance/storage/T16_ANALYSIS_NAV_ADDITIONS_20261005.json",
+        "maintenance/storage/T03_BASELINE_EVIDENCE_ADDITIONS_20261005.json"])
     report["reviewed_publication_hashes_checked"] = reviewed["reviewed_publication_hashes_checked"]
     report["errors"].extend(reviewed["errors"])
     print(json.dumps(report, indent=2))
