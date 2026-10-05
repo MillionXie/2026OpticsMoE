@@ -1,0 +1,28 @@
+{
+  "schema_version": 1,
+  "shared_readout_variant": "lowrank64",
+  "source_commit": "bc1951cfbd0bcbd60a6111884286b506790e20fb",
+  "source_path": "LightGenV2/tasks/t04_openmoji_robust_ablation/lab_shs_capture.py",
+  "source_sha256": "605d17590c5947fedec030fd913c19a4ee31be08b1ae832c99377ebb015fe5c6",
+  "groups": {
+    "g2": {
+      "filename": "g2_lowrank64.pt",
+      "sha256": "2acc2f58c9d38b78fe329d98af0e884b90834c6a0aa2496cf199830fb10d7194"
+    },
+    "g5": {
+      "filename": "g5_lowrank64.pt",
+      "sha256": "fa0e02965351918b47a492e2fb87024db4b3351e5599ad217cef01212f113d85"
+    }
+  },
+  "inference_profile": "r0_base",
+  "physical_contract": {
+    "exposure_us": 2000,
+    "gain": "Gain_X4",
+    "wait_ms": 240,
+    "camera_orientation": "flip_v",
+    "phase_orientation": "hv",
+    "phase_inverse": true,
+    "amplitude_encoding": "round(255*bounded_amplitude), no peak rescale"
+  },
+  "status": "audited identity configuration; capture/tune entry migration pending"
+}
