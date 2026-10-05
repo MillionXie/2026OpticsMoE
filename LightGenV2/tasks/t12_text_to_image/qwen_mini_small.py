@@ -1,8 +1,9 @@
-"""Sub-50M editor that keeps a real, width-distilled Qwen language front-end.
+"""Sub-50M editor with a compact, trained Qwen-style language front-end.
 
 The shared Qwen tokenizer and token embedding table are frozen and excluded
 from the counted task parameters by the project convention.  Two trainable
 Qwen-style causal Transformer blocks remain inside every task checkpoint.
+They are custom narrow blocks, not two original pretrained Qwen decoder layers.
 """
 
 from __future__ import annotations
@@ -65,7 +66,11 @@ def _rope(value: torch.Tensor) -> torch.Tensor:
 
 
 class QwenMiniBlock(nn.Module):
-    """Qwen-compatible pre-norm causal attention plus gated SwiGLU MLP."""
+    """Qwen-style pre-norm causal attention plus gated SwiGLU MLP.
+
+    Uses full multi-head attention and standard RoPE; it does not reproduce
+    every Qwen3-VL attention/config detail or inherit its original layer weights.
+    """
 
     def __init__(self, config: QwenMiniConfig) -> None:
         super().__init__(); width=config.width; self.heads=config.heads; self.head_width=width//config.heads
