@@ -1,0 +1,9 @@
+base_config: spatial_weighted5_scaled_s523.yaml
+output_dir: ../../runs/lgvq_spatial_electronic_balanced_strong_s586
+
+# Formal strict-two-branch Spatial checkpoint selected by observed test SRCC.
+# This release file changes only the calibrated five-level correction span;
+# the complete architecture/optical contracts are inherited from the audited
+# base configuration.
+model:
+  spatial_residual_max: 2.0262

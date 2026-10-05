@@ -1,0 +1,17 @@
+base_config: spatial_two_branch_equality_d2_s320.yaml
+output_dir: ../../runs/lgvq_spatial_two_branch_equality_d2_s322
+random_seed: 322
+
+model:
+  electronic_quality_residual_initial: 0.85
+
+training:
+  learning_rate: 0.00014
+  phase_learning_rate: 0.004
+  router_phase_learning_rate: 0.010
+
+loss:
+  router_balance_weight: 0.03
+  router_importance_weight: 0.008
+  serial_router_balance_weight: 0.12
+  serial_router_importance_weight: 0.06

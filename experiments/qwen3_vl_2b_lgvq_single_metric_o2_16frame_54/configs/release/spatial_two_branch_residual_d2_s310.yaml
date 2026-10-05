@@ -1,0 +1,58 @@
+base_config: spatial_balanced_router_std_strong.yaml
+output_dir: ../../runs/lgvq_spatial_two_branch_residual_d2_s310
+random_seed: 310
+
+# Strict inference graph: one shared frozen-Qwen input, one electronic residual
+# route and one optical route.  No quality Conv5, VGG, late correction or other
+# visual side input may be enabled while this contract is true.
+data:
+  quality_feature_cache: null
+  vgg_feature_cache: null
+
+model:
+  strict_two_branch: true
+  quality_branch_enabled: false
+  quality_input_width: 14
+  qwen_gate_enabled: false
+  quality_refiner_enabled: false
+  trainable_frame_stem_enabled: false
+  late_input_correction_enabled: false
+  electronic_route_variant: residual_conv
+  electronic_route_depth: 2
+  spatial_readout_mode: spatial_grid
+  head_width: 512
+  dropout: 0.12
+
+robustness:
+  input_shift_pixels: 0
+  phase_shift_pixels: 0
+  ccd_shift_pixels: 0
+  phase_dropout_p: 0.00
+
+fusion:
+  alpha_min: 0.40
+  alpha_initial: 0.52
+  alpha_max: 0.90
+
+router:
+  temperature: 1.20
+  noise_std: 0.08
+  serial_channel_standardization: true
+
+training:
+  initialization_checkpoint: ../../runs/lgvq_spatial_balanced_router_std_strong/last_checkpoint_router_stats_calibrated.pt
+  trainable_scope: all
+  epochs: 100
+  batch_size: 32
+  learning_rate: 0.00030
+  phase_learning_rate: 0.006
+  router_phase_learning_rate: 0.015
+  test_interval_epochs: 2
+  phase_snapshot_interval_epochs: 0
+
+loss:
+  router_balance_weight: 0.04
+  router_importance_weight: 0.01
+  serial_router_balance_weight: 0.20
+  serial_router_importance_weight: 0.10
+

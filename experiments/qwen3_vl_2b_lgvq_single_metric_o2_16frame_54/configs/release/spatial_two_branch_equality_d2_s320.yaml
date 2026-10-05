@@ -1,0 +1,21 @@
+base_config: spatial_two_branch_residual_d2_s310.yaml
+output_dir: ../../runs/lgvq_spatial_two_branch_equality_d2_s320
+random_seed: 320
+
+# The learned Conv5 quality representation is contained inside the one E route:
+# it is never added to the shared input, sent to the O route, or connected to
+# the final score. VGG and every other inference side path remain forbidden.
+data:
+  quality_feature_cache: ../../artifacts/lgvq_quality_conv5_4f_196x192.pt
+
+model:
+  quality_input_width: 192
+  electronic_quality_residual_enabled: true
+  electronic_quality_residual_initial: 0.70
+  electronic_route_depth: 2
+
+training:
+  learning_rate: 0.00025
+  phase_learning_rate: 0.006
+  router_phase_learning_rate: 0.015
+

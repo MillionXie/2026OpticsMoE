@@ -1,0 +1,51 @@
+base_config: spatial_two_branch_equality_refine_s324.yaml
+output_dir: ../../runs/lgvq_spatial_two_branch_multiview_refine_s406
+random_seed: 406
+
+data:
+  vision_cache_views:
+    - ../../artifacts/multiview/qwen3vl_front_4f_196x1024_view_m005.pt
+    - ../../artifacts/multiview/qwen3vl_front_4f_196x1024_view_p005.pt
+  quality_feature_cache_views:
+    - ../../artifacts/multiview/lgvq_quality_conv5_4f_196x192_view_m005.pt
+    - ../../artifacts/multiview/lgvq_quality_conv5_4f_196x192_view_p005.pt
+
+training:
+  initialization_checkpoint: ../../runs/lgvq_spatial_two_branch_equality_refine_s324/best_observed_test_checkpoint.pt
+  epochs: 100
+  batch_size: 64
+  mos_stratified_batches: true
+  mos_strata: 8
+  learning_rate: 0.00003
+  phase_learning_rate: 0.001
+  router_phase_learning_rate: 0.003
+  learning_rate_warmup_epochs: 5
+  minimum_learning_rate_factor: 0.05
+  test_interval_epochs: 1
+  phase_snapshot_interval_epochs: 0
+
+loss:
+  ranking_weight: 0.20
+  correlation_weight: 0.30
+  soft_spearman_weight: 0.00
+  soft_rank_temperature: 0.15
+  soft_target_weight: 1.00
+  router_balance_weight: 0.02
+  router_importance_weight: 0.004
+  serial_router_balance_weight: 0.04
+  serial_router_importance_weight: 0.01
+
+curriculum:
+  enabled: true
+  start_epoch: 10
+  end_epoch: 80
+  ranking_weight_final: 0.35
+  correlation_weight_final: 0.65
+  soft_spearman_weight_final: 0.10
+  soft_target_weight_final: 0.10
+  router_balance_weight_final: 0.010
+  router_importance_weight_final: 0.002
+  serial_router_balance_weight_final: 0.010
+  serial_router_importance_weight_final: 0.002
+  router_noise_std_final: 0.01
+  unmodulated_power_fraction_max_initial: 0.20

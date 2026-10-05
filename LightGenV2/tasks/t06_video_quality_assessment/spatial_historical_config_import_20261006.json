@@ -1,0 +1,182 @@
+{
+  "audited_on": "2026-10-06",
+  "source_archive_commit": "78798a6a2dc3408522d22309c96bc125e3865d98",
+  "source_archive_ref": "refs/archive/tracked-overlay-20261006/lightgen_spatial_065",
+  "purpose": "Restore complete inheritance of documented historical s586 Spatial reference, not replace later physical Spatial model",
+  "configuration_chain": [
+    {
+      "path": "experiments/qwen3_vl_2b_lgvq_single_metric_o2_16frame_54/configs/release/spatial_srcc_best_s586.yaml",
+      "sha256_lf": "df26e8647d8c9e5e167f22238228027890ad68e61fa1ed214e0676ecaa58836a",
+      "base_config": "spatial_weighted5_scaled_s523.yaml",
+      "newly_tracked": true
+    },
+    {
+      "path": "experiments/qwen3_vl_2b_lgvq_single_metric_o2_16frame_54/configs/release/spatial_weighted5_scaled_s523.yaml",
+      "sha256_lf": "7839e5781a5b2d25ae5fa2ad31d112e975df6f79bc8afc368ecb70b1096140cb",
+      "base_config": "spatial_weighted5_best_s495.yaml",
+      "newly_tracked": true
+    },
+    {
+      "path": "experiments/qwen3_vl_2b_lgvq_single_metric_o2_16frame_54/configs/release/spatial_weighted5_best_s495.yaml",
+      "sha256_lf": "5dc8302906c8403ea172d9f2c23f24c140ffcad0128174d65cdb590c4faf131b",
+      "base_config": "spatial_trainonly_fixed20_step2_rank_s460.yaml",
+      "newly_tracked": true
+    },
+    {
+      "path": "experiments/qwen3_vl_2b_lgvq_single_metric_o2_16frame_54/configs/release/spatial_trainonly_fixed20_step2_rank_s460.yaml",
+      "sha256_lf": "9aed3f7e78a7dd07984a1e72a8a741d41a50a30be4b510d289f06fc8158a1ff6",
+      "base_config": "spatial_trainonly_fixed20_step_phase_s456.yaml",
+      "newly_tracked": true
+    },
+    {
+      "path": "experiments/qwen3_vl_2b_lgvq_single_metric_o2_16frame_54/configs/release/spatial_trainonly_fixed20_step_phase_s456.yaml",
+      "sha256_lf": "8981cdd8d122dafea74791026fcc2265b4392abb36e6b2fba72b763aac6ed2f9",
+      "base_config": "spatial_trainonly_fixed20_rankstrong_s447.yaml",
+      "newly_tracked": true
+    },
+    {
+      "path": "experiments/qwen3_vl_2b_lgvq_single_metric_o2_16frame_54/configs/release/spatial_trainonly_fixed20_rankstrong_s447.yaml",
+      "sha256_lf": "55b96fbac75e6446358046fe080e8a7300c498baec699ac9dd380b27f39e735f",
+      "base_config": "spatial_trainonly_fixed20_micro_s445.yaml",
+      "newly_tracked": true
+    },
+    {
+      "path": "experiments/qwen3_vl_2b_lgvq_single_metric_o2_16frame_54/configs/release/spatial_trainonly_fixed20_micro_s445.yaml",
+      "sha256_lf": "db7428e75d27ff3dedb1d8d4b75a997ce89fc441cbfc7248664fb9f563a5aab9",
+      "base_config": "spatial_continuous_s414_refine_s437.yaml",
+      "newly_tracked": true
+    },
+    {
+      "path": "experiments/qwen3_vl_2b_lgvq_single_metric_o2_16frame_54/configs/release/spatial_continuous_s414_refine_s437.yaml",
+      "sha256_lf": "174e5e05a86ca4e3ab10a9bde7935f713df574f17f7de8cbc9ff561fad29a147",
+      "base_config": "spatial_two_branch_weighted_multiview_hot_s414.yaml",
+      "newly_tracked": true
+    },
+    {
+      "path": "experiments/qwen3_vl_2b_lgvq_single_metric_o2_16frame_54/configs/release/spatial_two_branch_weighted_multiview_hot_s414.yaml",
+      "sha256_lf": "474fe17a63c802fedcb9408d165282ec903ac15ba710693ce00cc82145db256e",
+      "base_config": "spatial_two_branch_multiview_refine_s406.yaml",
+      "newly_tracked": true
+    },
+    {
+      "path": "experiments/qwen3_vl_2b_lgvq_single_metric_o2_16frame_54/configs/release/spatial_two_branch_multiview_refine_s406.yaml",
+      "sha256_lf": "c7ae5c6a9327c5046ae43f30ec485635dc25a7d575676c62598b4b10fbb4a13d",
+      "base_config": "spatial_two_branch_equality_refine_s324.yaml",
+      "newly_tracked": true
+    },
+    {
+      "path": "experiments/qwen3_vl_2b_lgvq_single_metric_o2_16frame_54/configs/release/spatial_two_branch_equality_refine_s324.yaml",
+      "sha256_lf": "0c1082f76d7cf322c51c2eb7268c17f28da265dd9a05416c8079e91adbe3d351",
+      "base_config": "spatial_two_branch_equality_d2_s322.yaml",
+      "newly_tracked": true
+    },
+    {
+      "path": "experiments/qwen3_vl_2b_lgvq_single_metric_o2_16frame_54/configs/release/spatial_two_branch_equality_d2_s322.yaml",
+      "sha256_lf": "4a18c71f49c70dda629660a237b189d21a38350844f60b26ed25f244f2e21e19",
+      "base_config": "spatial_two_branch_equality_d2_s320.yaml",
+      "newly_tracked": true
+    },
+    {
+      "path": "experiments/qwen3_vl_2b_lgvq_single_metric_o2_16frame_54/configs/release/spatial_two_branch_equality_d2_s320.yaml",
+      "sha256_lf": "786d36d371871c46debd4c674e0ec9757533b16486081605a2f45156299022e1",
+      "base_config": "spatial_two_branch_residual_d2_s310.yaml",
+      "newly_tracked": true
+    },
+    {
+      "path": "experiments/qwen3_vl_2b_lgvq_single_metric_o2_16frame_54/configs/release/spatial_two_branch_residual_d2_s310.yaml",
+      "sha256_lf": "7c163b363049e2a2d43f15b8ced7eba63d7dd19cb9f44b6a0dcb82f048954d5f",
+      "base_config": "spatial_balanced_router_std_strong.yaml",
+      "newly_tracked": true
+    },
+    {
+      "path": "experiments/qwen3_vl_2b_lgvq_single_metric_o2_16frame_54/configs/release/spatial_balanced_router_std_strong.yaml",
+      "sha256_lf": "eb206f414f88b9e16352af1d9a2d035381c6a4c982d32ff7067776a0708f96a9",
+      "base_config": "spatial_vggcorr_scaled475_final.yaml",
+      "newly_tracked": false
+    },
+    {
+      "path": "experiments/qwen3_vl_2b_lgvq_single_metric_o2_16frame_54/configs/release/spatial_vggcorr_scaled475_final.yaml",
+      "sha256_lf": "98a5b400e8f267eef69656d3529687215348437c1aae365882f2100ee4b815f5",
+      "base_config": "spatial_vggcorr_only_lr1000_s75.yaml",
+      "newly_tracked": false
+    },
+    {
+      "path": "experiments/qwen3_vl_2b_lgvq_single_metric_o2_16frame_54/configs/release/spatial_vggcorr_only_lr1000_s75.yaml",
+      "sha256_lf": "82a26df60339f8eaeb970bce366a2b81fcd05b4a5c3109b35d0a2c1568713a7d",
+      "base_config": "spatial_vggcorr_only_lr1000.yaml",
+      "newly_tracked": false
+    },
+    {
+      "path": "experiments/qwen3_vl_2b_lgvq_single_metric_o2_16frame_54/configs/release/spatial_vggcorr_only_lr1000.yaml",
+      "sha256_lf": "4a3917f0a9ca27c549d9c9bbeec9322e02c0e784906e5781ed3b4d132f92b875",
+      "base_config": "spatial_vggcorr_only_lr100.yaml",
+      "newly_tracked": false
+    },
+    {
+      "path": "experiments/qwen3_vl_2b_lgvq_single_metric_o2_16frame_54/configs/release/spatial_vggcorr_only_lr100.yaml",
+      "sha256_lf": "00e9a14e4ecc8969d2a083e22062278c88982babf1e2af566d74ff5a10222808",
+      "base_config": "spatial_identity_q25_a40_clean.yaml",
+      "newly_tracked": false
+    },
+    {
+      "path": "experiments/qwen3_vl_2b_lgvq_single_metric_o2_16frame_54/configs/release/spatial_identity_q25_a40_clean.yaml",
+      "sha256_lf": "31fe13e67b76dac06db2afe35fd752e7627aee9f238473002ff2cb60e0969f91",
+      "base_config": "spatial_identity_q10_a40_clean.yaml",
+      "newly_tracked": false
+    },
+    {
+      "path": "experiments/qwen3_vl_2b_lgvq_single_metric_o2_16frame_54/configs/release/spatial_identity_q10_a40_clean.yaml",
+      "sha256_lf": "77658f4651836a1ebdbd049605e2be0086fe2bbc75201584b774b643c8ea2441",
+      "base_config": "spatial_fresh_a40_clean_s62.yaml",
+      "newly_tracked": false
+    },
+    {
+      "path": "experiments/qwen3_vl_2b_lgvq_single_metric_o2_16frame_54/configs/release/spatial_fresh_a40_clean_s62.yaml",
+      "sha256_lf": "a2f9ea9ec3bcc66e64f8ec1eacfb21a270e9ded55abf40ea47231d65c031ce04",
+      "base_config": "spatial_fresh_a50_clean_s60.yaml",
+      "newly_tracked": false
+    },
+    {
+      "path": "experiments/qwen3_vl_2b_lgvq_single_metric_o2_16frame_54/configs/release/spatial_fresh_a50_clean_s60.yaml",
+      "sha256_lf": "ebf3f15b0b907c5872e38b378ece0d2c05a6590164d24cb24a42f4760230416c",
+      "base_config": "spatial_stem_warmstart.yaml",
+      "newly_tracked": false
+    },
+    {
+      "path": "experiments/qwen3_vl_2b_lgvq_single_metric_o2_16frame_54/configs/release/spatial_stem_warmstart.yaml",
+      "sha256_lf": "ff61d3dd200fbf58090fac5051777a77d692f2c82d7cb08ed1e49285195bee14",
+      "base_config": "spatial_highres_balanced.yaml",
+      "newly_tracked": false
+    },
+    {
+      "path": "experiments/qwen3_vl_2b_lgvq_single_metric_o2_16frame_54/configs/release/spatial_highres_balanced.yaml",
+      "sha256_lf": "3d26b338635dd61a0127924a1204c62f7788caa0081ee167d1b4cb54d8b300f9",
+      "base_config": "spatial_highres.yaml",
+      "newly_tracked": false
+    },
+    {
+      "path": "experiments/qwen3_vl_2b_lgvq_single_metric_o2_16frame_54/configs/release/spatial_highres.yaml",
+      "sha256_lf": "37765e8989aa25340d3e923ee66bbfe974c5e573a2ddf149e38c2f4d910030dc",
+      "base_config": "spatial_accuracy.yaml",
+      "newly_tracked": false
+    },
+    {
+      "path": "experiments/qwen3_vl_2b_lgvq_single_metric_o2_16frame_54/configs/release/spatial_accuracy.yaml",
+      "sha256_lf": "0837fde7188b271a7114f72cd946033e13f2fd263c9c14009275bd60c45a453d",
+      "base_config": "spatial.yaml",
+      "newly_tracked": false
+    },
+    {
+      "path": "experiments/qwen3_vl_2b_lgvq_single_metric_o2_16frame_54/configs/release/spatial.yaml",
+      "sha256_lf": "406f4fcb8d86f589527e4ada9ef2f8d5f82c01c77754af9d194c414536418b44",
+      "base_config": null,
+      "newly_tracked": false
+    }
+  ],
+  "unchanged_working_sources": true,
+  "model_source_replaced": false,
+  "checkpoint_or_dataset_loaded": false,
+  "hardware_or_gpu_used": false,
+  "historical_test_selection": "development_metric_not_independent_generalization",
+  "validation": "Main settings load_settings synthetic=True resolves spatial_weighted_level_residual, residual_max=2.0262, strict_two_branch=True; no model or dataset loaded"
+}

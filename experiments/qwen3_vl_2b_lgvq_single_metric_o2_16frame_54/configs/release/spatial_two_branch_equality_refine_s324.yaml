@@ -1,0 +1,13 @@
+base_config: spatial_two_branch_equality_d2_s322.yaml
+output_dir: ../../runs/lgvq_spatial_two_branch_equality_refine_s324
+random_seed: 324
+
+# Conservative continuation from the best strict two-branch checkpoint.  The
+# graph is unchanged; only the learning rates and test cadence are reduced.
+training:
+  initialization_checkpoint: ../../runs/lgvq_spatial_two_branch_equality_d2_s322/best_observed_test_checkpoint.pt
+  epochs: 50
+  learning_rate: 0.00005
+  phase_learning_rate: 0.001
+  router_phase_learning_rate: 0.004
+  test_interval_epochs: 1

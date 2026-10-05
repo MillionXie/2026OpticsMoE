@@ -1,0 +1,16 @@
+base_config: spatial_trainonly_fixed20_micro_s445.yaml
+output_dir: ../../runs/lgvq_spatial_trainonly_fixed20_rankstrong_s447
+random_seed: 447
+
+# More aggressive listwise/rank objective. The test still reports SRCC, PLCC,
+# RMSE and MAE so an SRCC gain cannot hide an unacceptable regression collapse.
+training:
+  ema_decay: 0.97
+
+loss:
+  ranking_weight: 1.00
+  correlation_weight: 2.00
+  soft_spearman_weight: 0.20
+  soft_rank_temperature: 0.15
+  soft_target_weight: 0.0
+  optical_alignment_weight: 0.0025

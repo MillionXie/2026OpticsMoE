@@ -1,0 +1,61 @@
+base_config: spatial_two_branch_weighted_multiview_hot_s414.yaml
+output_dir: ../../runs/lgvq_spatial_continuous_s414_refine_s437
+random_seed: 437
+
+# Refine the strongest checkpoint that was already trained with continuous
+# phase. This avoids evaluating a formerly quantized mask under a new forward
+# model, which the s434 control showed is a real distribution shift.
+optics:
+  k_space_enabled: false
+  phase_quantization_levels: 0
+
+robustness:
+  input_shift_pixels: 0
+  phase_shift_pixels: 0
+  ccd_shift_pixels: 0
+  phase_dropout_p: 0.0
+
+router:
+  noise_std: 0.0
+
+training:
+  initialization_checkpoint: ../../runs/lgvq_spatial_two_branch_weighted_multiview_hot_s414/best_observed_test_checkpoint.pt
+  epochs: 50
+  batch_size: 64
+  learning_rate: 0.000015
+  phase_learning_rate: 0.0004
+  router_phase_learning_rate: 0.0008
+  readout_learning_rate_factor: 0.35
+  readout_weight_decay: 0.003
+  phase_warmup_epochs: 0
+  late_refine_start_epoch: 26
+  restore_best_at_stage_transition: true
+  late_refine_electronic_lr_factor: 0.20
+  late_refine_readout_lr_factor: 0.30
+  late_refine_phase_lr_factor: 0.25
+  late_refine_router_lr_factor: 0.25
+  ema_decay: 0.98
+  ema_start_epoch: 1
+  minimum_learning_rate_factor: 0.10
+  test_interval_epochs: 1
+
+loss:
+  ranking_weight: 0.25
+  correlation_weight: 0.55
+  soft_spearman_weight: 0.05
+  soft_target_weight: 0.0
+  optical_alignment_weight: 0.01
+  phase_smoothness_weight: 0.0
+  serial_router_diversity_weight: 0.0
+
+curriculum:
+  enabled: true
+  start_epoch: 4
+  end_epoch: 35
+  ranking_weight_final: 0.40
+  correlation_weight_final: 0.80
+  soft_spearman_weight_final: 0.10
+  soft_target_weight_final: 0.0
+  serial_router_diversity_weight_final: 0.0
+  router_noise_std_final: 0.0
+  unmodulated_power_fraction_max_initial: 0.20
