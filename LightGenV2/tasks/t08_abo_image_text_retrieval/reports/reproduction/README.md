@@ -24,3 +24,19 @@ best 第9轮、last 第10轮，384→64读出严格CPU加载通过；两份PT的
 
 
 图搜文及文搜图原 baseline 技术说明、原始测速与历史日志均保护；尚未完成的 baseline 入口迁移不得当作已完整复现。
+
+## 2026-10-05 历史冻结 backbone 对照入口恢复
+
+三方向的原始 CLIP / DeepSeek / YOLO baseline 已从服务器实际运行提交
+`c93fad700a1da4b30ceeac9af2afc7985934eb00` 原样纳入主线：
+[协议](../../ABO_BACKBONE_BASELINES.md)、
+[原结果与取舍](../backbone_baselines_20260923/ABO_RESULTS.md)、
+[执行源码](../../abo_backbone_baselines.py)。这是历史对照，不替代 T07 封存模型
+或 T08 光电模型。原运行目录源码 SHA 与提交相同，五项 CPU 合同测试通过；
+本次没有重新提取特征、训练、评估全数据或测速度。
+
+原结果页区分完全冻结的三方向 baseline、训练过的 rank-64 校准诊断及被拒绝的
+高容量对照。YOLO 只原生支持图搜图；YOLO+CLIP 文本+拟合对齐不是 zero-shot YOLO。
+easy100 是已登记商品的不同视图，不是未见商品泛化。历史报告里的 Ours 行是当时
+引用，不能当作当前封存版指标。特征、PT、原报告与测速仍保留原位；资产及模型环境
+尚未逐项闭环，不因源码恢复就宣称整套复现完成。
