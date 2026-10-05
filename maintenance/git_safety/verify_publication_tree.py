@@ -50,7 +50,10 @@ def verify_reviewed_publications(root, ref, manifests):
         assert hashlib.sha256(read(root,row['source_commit'],path)).hexdigest() == row['sha256']
     for name in manifests:
         manifest = json.loads(read(root, ref, name))
-        for row in manifest["paths"]:
+        rows = manifest.get("paths", manifest.get("source_files"))
+        if not isinstance(rows, list) or not rows:
+            raise ValueError("Missing reviewed source rows: " + name)
+        for row in rows:
             path = row.get("published_path", row.get("path"))
             expected = (row.get("published_sha256") if "published_path" in row
                         else row.get("source_sha256", row.get("sha256")))
@@ -92,7 +95,11 @@ def main():
         "maintenance/storage/T07_TRAINING_CLOSURE_ADDITIONS_20261004.json",
         "maintenance/storage/T07_REVIEWED_MAIN_ENTRY_20261004.json",
         "maintenance/storage/T12_HISTORIC_TIMING_PRESERVATION_20261004.json",
-        "maintenance/storage/TIMING_PROFILER_ADDITIONS_20261004.json"])
+        "maintenance/storage/TIMING_PROFILER_ADDITIONS_20261004.json",
+        "maintenance/storage/EUROSAT_SHARED_FRONTEND_MODEL_GATE_20261005.json",
+        "maintenance/storage/EUROSAT_SHARED_FRONTEND_ENTRY_IMPORT_20261005.json",
+        "maintenance/storage/EUROSAT_SHARED_FRONTEND_PACKAGE_IMPORT_20261005.json",
+        "maintenance/storage/EUROSAT_SHARED_FRONTEND_REPORT_IMPORT_20261005.json"])
     report["reviewed_publication_hashes_checked"] = reviewed["reviewed_publication_hashes_checked"]
     report["errors"].extend(reviewed["errors"])
     print(json.dumps(report, indent=2))
