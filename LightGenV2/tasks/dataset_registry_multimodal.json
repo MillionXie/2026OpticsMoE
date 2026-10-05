@@ -1,0 +1,37 @@
+{
+  "version": "multimodal_nature_v1_2026-09-18",
+  "primary": {
+    "image_image": {
+      "name": "SEN12MS",
+      "modalities": ["Sentinel-1 SAR", "Sentinel-2 multispectral"],
+      "license": "CC BY 4.0",
+      "source": "https://github.com/schmitt-muc/SEN12MS",
+      "paper": "https://arxiv.org/abs/1906.07789",
+      "status": "candidate_pending_download_and_split_audit"
+    },
+    "image_text": {
+      "name": "CLEVR v1.0",
+      "modalities": ["RGB image", "natural-language question"],
+      "license": "CC BY 4.0",
+      "source": "https://cs.stanford.edu/people/jcjohns/clevr/",
+      "status": "pilot_complete_unified_oeo_retrain_complete"
+    },
+    "audio_text": {
+      "name": "SONYC-UST v2.3",
+      "modalities": ["urban audio", "event query text"],
+      "license": "CC BY 4.0",
+      "source": "https://zenodo.org/records/3966543",
+      "status": "candidate_metadata_audited_training_pending"
+    }
+  },
+  "pilot_only": {
+    "speech_commands": {
+      "license": "CC BY 4.0 as recorded in current project attribution; recheck original release before publication",
+      "status": "limited_keyword_matching_pilot"
+    },
+    "eurosat_rgb_sar": {
+      "license": "MIT in current project attribution",
+      "status": "engineering_pilot_excluded_from_CC_BY4_main_table"
+    }
+  }
+}
