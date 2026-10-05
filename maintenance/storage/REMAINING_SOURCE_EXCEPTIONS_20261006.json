@@ -8,6 +8,23 @@
   "subsequent_canonical_projections": ["../../LightGenV2/tasks/t06_video_quality_assessment/batch_baseline_source_import_20261006.json"],
   "untracked_sources_and_assets_audited": false,
   "exception_count": 5,
+  "latest_closure_overrides": [
+    {
+      "directory": "/DATA/DATA1/guest3/2026OpticsMoE_a100_formal",
+      "source_and_branch_status": "Historical changed source projected into main and tested; development branch retired; full assets/timing retained in place",
+      "evidence": "A100_BRANCH_RETIREMENT_20261006.json"
+    },
+    {
+      "directory": "/DATA/DATA1/guest3/2026OpticsMoE_t06_a100_batch",
+      "source_and_branch_status": "Historical benchmark source projected into main and tested; development branch retired; full assets/timing retained in place",
+      "evidence": "../../LightGenV2/tasks/t06_video_quality_assessment/batch_baseline_source_import_20261006.json"
+    },
+    {
+      "directory": "/DATA/DATA1/guest3/2026OpticsMoE/.worktrees/sister_t08_bounded_20260927",
+      "source_and_branch_status": "Working optical_moe byte-identical to canonical reverse_runtime; four prototype sources archived; development branch retired; historical artifacts retained",
+      "evidence": "T08_BOUNDED_RECOVERY_SOURCE_20261006.json"
+    }
+  ],
   "rows": [
     {
       "purpose": "Historical A100 OpenMoji/Qwen aligned baseline, not current rank64 hardware model",

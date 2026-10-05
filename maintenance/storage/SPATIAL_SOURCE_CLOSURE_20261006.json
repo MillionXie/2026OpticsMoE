@@ -1,0 +1,46 @@
+{
+  "scope": "Historical source preservation and AST gap audit; not full migration acceptance or scientific re-evaluation",
+  "canonical_commit_audited": "acd5c093540d8b2e2e75b5198470e0746efb5dfe",
+  "source_scope": "Nonignored Python/shell/YAML under historical directories, excluding run/data/release/artifact/private subdirectories; files at most 2 MB",
+  "rows": [
+    {
+      "runtime": "/DATA/DATA1/guest3/lightgen_spatial_065",
+      "original_head": "23612d55106cb8c817cf4b4e7b38ea5bc138361a",
+      "tracked_overlay_commit": "78798a6a2dc3408522d22309c96bc125e3865d98",
+      "untracked_source_files_preserved": 123,
+      "same_path_exact_LF_in_main": 1,
+      "same_path_missing_in_main": 122,
+      "source_archive_ref": "refs/archive/source-closure-20261006/lightgen_spatial_065",
+      "source_archive_commit": "25855b537872031c66639ade890daa480ea3af1f",
+      "full_history_bundle_sha256": "345e83e2dc741572d3d4e69ea0abe8056f0355d0e89bebcadf992aaf8620c3b0",
+      "local_bundle_verify_and_fetch": "passed"
+    },
+    {
+      "runtime": "/DATA/DATA1/guest3/2026OpticsMoE/.worktrees/spatial_custom_conv",
+      "original_head": "557c10d38ffd685793f25d697fb887497720af24",
+      "tracked_overlay_commit": "d5c6c3b7b6089c8104d0a296c3c5e08d8534282b",
+      "untracked_source_files_preserved": 18,
+      "same_path_exact_LF_in_main": 1,
+      "same_path_missing_in_main": 17,
+      "source_archive_ref": "refs/archive/source-closure-20261006/spatial_custom_conv",
+      "source_archive_commit": "78a657419ee8f2219ed0dd98def5e012049282ed",
+      "full_history_bundle_sha256": "681325baee6b674ecd5be54a40cf4a46433c34979d4e9389c1ad4b3ea658c211",
+      "local_bundle_verify_and_fetch": "passed"
+    }
+  ],
+  "runtime_and_original_indexes_unchanged": true,
+  "development_branch_created": false,
+  "scientific_assets_deleted": 0,
+  "all_timing_retained_in_place": true,
+  "historical_ast_gap_audit": {
+    "files_per_runtime": 8,
+    "missing_historical_function_or_class_names_in_main": 0,
+    "historical_model_nodes_065": {"total":151,"AST_exact_in_main":147},
+    "historical_model_nodes_custom": {"total":160,"AST_exact_in_main":158},
+    "historical_model_test_functions_065": {"total":46,"AST_exact_in_main":46},
+    "historical_model_test_functions_custom": {"total":55,"AST_exact_in_main":55},
+    "remaining_different_nodes": "Must verify settings, optional-model dispatch and later training extensions; matching names are not semantic-equivalence proof"
+  },
+  "next_action": "Classify untracked trial/config/incoming sources against necessary final profiles and baselines; preserve archive originals, do not merge whole directories or replace current final model",
+  "scientific_or_machine_reproduction_completed": false
+}
