@@ -48,8 +48,9 @@ python -m LightGenV2.tasks.t08_abo_image_text_retrieval.text_to_image \
 `runs/shared/abo_easy100_qwen64_true_text_to_image.pt`，SHA `a1cde686...`。
 CPU只读检查确认方向、提示词、四份CSV哈希、4800/2400/100个身份顺序和64维有限张量
 完全符合历史合同。此前“未找到”是搜索漏项，现已纠正，不需要重新生成缓存。
-它仍记录逻辑模型名 `Qwen/Qwen3-VL-Embedding-2B`，本机冻结snapshot绑定尚未核验；
-不得改缓存identity绕过入口的本地模型路径检查，不声称依赖已全部齐全。
+它仍记录逻辑模型名 `Qwen/Qwen3-VL-Embedding-2B`。当前冻结snapshot的16个文件已完整核SHA，
+见 `maintenance/storage/T08_LOCAL_SNAPSHOT_BINDING_20261005.md`；但缓存没有revision，
+历史生成时的快照绑定仍未证明。不得改缓存identity绕过本地路径检查，不声称依赖已全部闭环。
 原图7,200张、划分及三组正式best/last和报告的内容身份见
 `maintenance/storage/T08_CONTENT_ASSETS_20261004.json`；只读核验命令为
 `python maintenance/storage/check_t08_assets.py --repo-root /absolute/path/to/2026OpticsMoE`。
