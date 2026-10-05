@@ -62,3 +62,21 @@ main 中 T14 目前明确只保留最终T16实际导入的 `data.py`／包入口
    导入本批 Git bundle。主目录没有切 main，整体迁移未完成。
 
 全部测速仍原位保留；本批释放空间为零，不增加历史清理释放量。
+
+## Qwen 分层场景来源进一步定位
+
+核对83个服务器已登记目录后，找到已有
+`/DATA/DATA1/guest3/LightGenV2_worktrees/t04_layered_1bc120428`，HEAD为
+`a61a3746d39765991048d95e40812d1028d70c93`。8份本机目标中5份与该目录忽略CRLF后
+逐字节相同；modeling、settings及论文选定报告仍未匹配，不能整体覆盖main。
+
+实际run不在该源码目录，而在服务器主目录的T04 `runs/simulation` 中。
+已有完整报告的Qwen baseline为epoch30／修改格0.8120；电子expansion0.5的100轮
+方案best为epoch70／0.9365。它们都是历史仿真开发指标，不是当前rank64实拍。
+原论文选定0.8715又是另一种固定选定口径，不能用100轮best冒充。
+另一个30轮paper目录虽有best/last，但缺标准训练完成报告、选中PT测试报告及逐样本
+文件，暂不能将其中PT与论文选定0.8715绑定。所有现存文件保留，未重新跑TEST。
+
+三套run的原提交、best/last与报告／逐样本SHA已登记在
+[分层场景baseline身份](T04_LAYERED_BASELINE_IDENTITY_20261005.json)。
+当前源码目录HEAD不能倒填为旧run的源码身份；同类名称不等于同一模型、PT或测速。

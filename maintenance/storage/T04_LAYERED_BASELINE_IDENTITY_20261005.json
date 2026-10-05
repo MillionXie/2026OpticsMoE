@@ -1,0 +1,53 @@
+{
+  "scope": "Historical layered SVG scene / shared-head Qwen baseline, not current rank64 robust deployment",
+  "read_only_audit": true,
+  "pt_loaded": false,
+  "test_reevaluated": false,
+  "runtime_source_checkout": "/DATA/DATA1/guest3/LightGenV2_worktrees/t04_layered_1bc120428",
+  "runtime_source_head": "a61a3746d39765991048d95e40812d1028d70c93",
+  "actual_run_parent": "/DATA/DATA1/guest3/2026OpticsMoE/LightGenV2/tasks/t04_semantic_interaction/runs/simulation",
+  "dataset": "openmoji_layered_anchor6_proportional_svg_v3",
+  "split": {"train": 5000, "test": 1000, "validation": null, "selection_biased": true},
+  "runs": [
+    {
+      "run": "layered_scene_qwen_shared_s73_e100_20260920",
+      "recorded_run_git_commit": "41a5fdaff43cc039e81d6bc9ab779a3ea89daf02",
+      "selected_epoch": 30,
+      "changed_cell_accuracy": 0.812,
+      "scene_exact_match": 0.634,
+      "selection": "maximum periodic-test changed-cell accuracy; development metric",
+      "best_sha256": "0be775796d5f64df3fab6359eb354ec6666dfc29329484a620b619a6f7ec7cf8",
+      "last_sha256": "94e8a1a5b934b4d2e5fd9aab6205da3bffd4417ccb4144c4393d493d60ab6225",
+      "training_report_sha256": "1e8a6e5e38d5fac840296179f68500e30ba10d7366b23707b0b3077557dec37e",
+      "evaluation_sha256": "dd22cbdc39e5e6b77606ee11b45c1dbcf49e5d4dd7791485afbb56870c1482f1",
+      "predictions_sha256": "d9125c859f15936c3e60a7cb0787060a519ffbf6e722ca455988509b614b45c7",
+      "architecture": "complete frozen native Qwen vision/language stack, two dimension adapters, standard shared readout"
+    },
+    {
+      "run": "layered_scene_electronic_exp05_s73_e100_20260920",
+      "recorded_run_git_commit": "2acb5bcf5de5a902d153e29e885131227ea61914",
+      "selected_epoch": 70,
+      "changed_cell_accuracy": 0.9365,
+      "scene_exact_match": 0.898,
+      "selection": "prefer Router-accepted candidates then maximum periodic-test changed-cell accuracy; development metric",
+      "best_sha256": "dae370fff51a0d175a5c73d7b7a19d455c3f27f56232af800b85ecfe026a8a25",
+      "last_sha256": "d6d788ad96292749544a32f8b74b44c5c2bbf4e62ab0439f4dbbb14a74edb653",
+      "training_report_sha256": "800564cdba249c3e8cad6e1c430211105c967e4bea34f30d28825038774c66cb",
+      "evaluation_sha256": "3437bbecf4c835899899c5775f33ec24b948a9839234848470a469cace922f66",
+      "predictions_sha256": "bfa7a724fd51668c02b5a139df767e45bd4da24a43556da17a99162eb043d964",
+      "architecture": "six optical boundaries, original electronic residual MLP expansion 0.5, standard shared readout"
+    },
+    {
+      "run": "layered_scene_electronic_exp05_s73_e30_paper_20260921",
+      "recorded_run_git_commit": "596c9fd4fe9fd0b5f06acb70d40e3e1737360617",
+      "best_sha256": "6164b505547618a219dbb2693782a4655ad683d74fc95599bc94af28cb3b4539",
+      "last_sha256": "277f0a4b8442c04e221a53dee2dec6f537854991cd42faa763e4c20c6e6e078c",
+      "completion_proven": false,
+      "missing_standard_files": ["training_report.json", "selected_checkpoint_test_evaluation.json", "test_predictions.jsonl"],
+      "warning": "Existing PT does not prove this rerun reproduces the paper's selected epoch-30 value 0.8715; do not silently bind that metric to this PT. Preserve metrics and original files for further audit."
+    }
+  ],
+  "boundary": "Current checkout HEAD is not the source commit of every historical run. No source replacement, model adaptation, timing reassignment or asset deletion performed.",
+  "private_receipt": ".codex_tmp/qwen_layered_artifact_identity_20261005.json",
+  "migration_complete": false
+}
