@@ -8,6 +8,11 @@ from typing import Any
 
 import yaml
 
+from LightGenV2.common.optical_contract import (
+    OpticalContract,
+    REFERENCE_532NM_17UM_10CM,
+)
+
 
 TASK_DIR = Path(__file__).resolve().parent
 VARIANTS = {"lightgen_parallel", "qwen_vae_baseline"}
@@ -125,6 +130,18 @@ class Settings:
     @property
     def cache_dir(self) -> Path:
         return self.data_dir / "feature_cache"
+
+    @property
+    def optical_contract(self) -> OpticalContract | None:
+        """Return physical optics only for the formal audited backend.
+
+        ``compact_fft`` is a dimensionless Fourier smoke backend and must not
+        be assigned a fabricated propagation distance.
+        """
+
+        if self.optical_backend == "audited_dc20":
+            return REFERENCE_532NM_17UM_10CM
+        return None
 
     def to_dict(self) -> dict[str, Any]:
         return {
