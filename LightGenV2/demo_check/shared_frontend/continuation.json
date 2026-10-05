@@ -1,0 +1,16 @@
+{
+  "protocol": "eurosat_shared_frontend_low_lr_continuation_v1",
+  "resume_epoch": 20,
+  "maximum_epoch": 60,
+  "learning_rate": 0.001,
+  "minimum_learning_rate": 0.0001,
+  "early_stopping_patience": 12,
+  "early_stopping_min_nll_improvement": 0.001,
+  "selection": "retain previous best; improve validation accuracy, then NLL; candidate NLL must not exceed previous best-accuracy checkpoint NLL",
+  "monitor": "full unaugmented train and validation at identical frozen epoch-end weights every epoch",
+  "optimizer": "restore all Adam moments and steps from epoch20; replace only learning-rate schedule",
+  "augmentation": "unchanged deterministic image horizontal flip",
+  "frontend": "same frozen pretrained checkpoint for both architectures",
+  "regularization": "no added penalty in this controlled convergence experiment",
+  "test_set_used": false
+}
