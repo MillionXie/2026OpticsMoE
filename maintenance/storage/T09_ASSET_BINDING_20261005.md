@@ -39,7 +39,21 @@ manifest SHA256 为 `e20d789937a44512ce4c91f222ba99145e36c63f3ee386295585d61cc01
 因此这250个保留身份不能直接算作本目录已落地的TEST资产。
 服务器另有 `t12_clevr_s17_v2` 与 `t13_four_modal_features/clevr` 的TEST文件，
 属于另一个准备／实验链，尚未核对身份和预处理，不混用来补齐T09依赖。
-此处是缺项定位，不推断它们曾被删除，也不在治理中自行下载或重建科学数据。
+此处只定位早期准备目录的边界，不推断数据被删除，也不自行下载或重建科学数据。
+
+### 后续正式TEST缓存已定位并核验
+
+真正的T09测试图像落在原任务运行目录的
+`runs/simulation/clevr_frozen_test_s17_v1/images`，而非准备目录。
+对应 `data_manifest.json` SHA256为
+`9876b3c6573163bf10aa72b4ac244f0064b914250a24696ea10509c2443d2ebe`。
+250张原图逐SHA全部匹配；1500条问题SHA匹配manifest，且父manifest匹配上述准备数据。
+250个图像身份与保留TEST清单完全相同，和TRAIN/VAL图像身份交叉为零。
+另五个后续CLEVR测试run的问题文件与该缓存逐内容一致，全部六份问题SHA为
+`ba19956992118edbc5cb680a27647fbba409026f11ad16a60a552b7a386a3a6e`。
+因此不是最终TEST原图缺失；已证明原运行缓存与准备划分的绑定。
+尚未核验官方场景原文件的落地副本或重新生成问题，不能把本次身份核验称从零重建。
+未加载模型、重评准确率或混入T13数据。
 
 ## 限制与保护
 
@@ -53,3 +67,5 @@ manifest SHA256 为 `e20d789937a44512ce4c91f222ba99145e36c63f3ee386295585d61cc01
 逐WAV补核收据：`.codex_tmp/t09_wav_archive_audit_20261005.json`；
 TEST路径盘点：`.codex_tmp/t09_test_asset_paths_20261005.json`、
 `.codex_tmp/t09_all_test_paths_20261005.json`。路径盘点本身不证明资产语义相同。
+正式TEST缓存补核收据：`.codex_tmp/t09_clevr_test_audit_20261005.json`，
+记录六个run的问题身份及250张图像与父manifest／保留划分绑定。
