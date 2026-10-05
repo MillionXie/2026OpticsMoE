@@ -11,6 +11,7 @@ from __future__ import annotations
 import csv
 import hashlib
 import json
+import os
 import platform
 import subprocess
 import threading
@@ -24,6 +25,59 @@ import torch
 
 
 RTX5090D_POWER_LIMIT_W = 575.0
+
+
+def validate_cuda_device(expected_name_substring: str | None = None) -> str:
+    """Return the selected CUDA device name and enforce an optional contract."""
+
+    if not torch.cuda.is_available():
+        raise RuntimeError("CUDA is required for a formal GPU benchmark")
+    actual = torch.cuda.get_device_name(0)
+    expected = (expected_name_substring or "").strip()
+    if expected and expected.casefold() not in actual.casefold():
+        raise RuntimeError(
+            f"Formal benchmark requires a GPU name containing {expected!r}, got {actual!r}"
+        )
+    return actual
+
+
+def nvidia_smi_gpu_id() -> str:
+    """Return the physical GPU identifier selected by CUDA_VISIBLE_DEVICES.
+
+    PyTorch renumbers a single visible physical GPU to ``cuda:0`` while
+    ``nvidia-smi --id`` keeps the host's physical numbering.  Formal power
+    evidence must therefore use the first CUDA-visible physical identifier.
+    """
+
+    visible = os.environ.get("CUDA_VISIBLE_DEVICES", "").strip()
+    if not visible:
+        return "0"
+    selected = visible.split(",", 1)[0].strip()
+    if not selected or selected == "-1":
+        raise RuntimeError(f"Invalid CUDA_VISIBLE_DEVICES={visible!r}")
+    return selected
+
+
+def gpu_power_limit_w(gpu_index: int | str | None = None) -> float:
+    """Read the active board power limit instead of assuming a GPU model."""
+
+    result = subprocess.run(
+        [
+            "nvidia-smi",
+            f"--id={nvidia_smi_gpu_id() if gpu_index is None else gpu_index}",
+            "--query-gpu=power.limit",
+            "--format=csv,noheader,nounits",
+        ],
+        check=True,
+        capture_output=True,
+        text=True,
+    )
+    try:
+        return float(result.stdout.strip().splitlines()[0])
+    except (IndexError, ValueError) as error:
+        raise RuntimeError(
+            f"Could not parse nvidia-smi power limit: {result.stdout!r}"
+        ) from error
 
 
 def sha256_file(path: Path) -> str:
@@ -69,10 +123,10 @@ class PowerSample:
 class NvidiaSmiPowerSampler:
     """Read board power at 20 Hz and retain only explicitly tagged windows."""
 
-    def __init__(self, gpu_index: int = 0, interval_ms: int = 50) -> None:
+    def __init__(self, gpu_index: int | str = 0, interval_ms: int = 50) -> None:
         if interval_ms > 50:
             raise ValueError("Formal power sampling must run at least at 20 Hz")
-        self.gpu_index = int(gpu_index)
+        self.gpu_index = gpu_index if isinstance(gpu_index, str) else int(gpu_index)
         self.interval_ms = int(interval_ms)
         self._phase: str | None = None
         self._phase_lock = threading.Lock()
@@ -264,9 +318,12 @@ __all__ = [
     "PowerSample",
     "RTX5090D_POWER_LIMIT_W",
     "environment_report",
+    "gpu_power_limit_w",
+    "nvidia_smi_gpu_id",
     "power_report",
     "save_power_samples",
     "sha256_file",
     "summarize",
+    "validate_cuda_device",
     "write_json",
 ]

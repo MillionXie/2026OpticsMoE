@@ -1,10 +1,11 @@
 {
   "audited_on": "2026-10-06",
-  "scope": "Five remaining historical tracked source overlays, not a complete machine or dependency audit",
+  "scope": "Original preservation snapshot of five historical tracked source overlays; subsequent canonical projections are listed separately; not a complete machine or dependency audit",
   "source_transport": "Git full-history bundle verified on server and locally; archive refs imported locally",
   "bundle_sha256": "4807e4515eadd74c50981ee8a2454988c55e03314ab8054cca6ed79bd9342115",
   "runtime_checkout_changed": false,
-  "main_source_replaced": false,
+  "preservation_operation_main_source_replaced": false,
+  "subsequent_canonical_projections": ["../../LightGenV2/tasks/t06_video_quality_assessment/batch_baseline_source_import_20261006.json"],
   "untracked_sources_and_assets_audited": false,
   "exception_count": 5,
   "rows": [

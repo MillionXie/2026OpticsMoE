@@ -262,6 +262,29 @@ python -m LightGenV2.tasks.t06_video_quality_assessment.quality_token_resolution
 当前 5090D 的 448×448 正式结果、完整指标表、token 几何、计时边界和论文图见
 [`reports/paper_results/qwen3vl_quality_token_baseline_r448`](reports/paper_results/qwen3vl_quality_token_baseline_r448/README.md)。
 
+## 历史 A100 批量与 dataset-once baseline 已收敛（2026-10-06）
+
+实际 `2026OpticsMoE_t06_a100_batch` 的两份未提交运行源码现已归入本任务，
+不再需要到旁边的独立工程找测速脚本：
+
+- `quality_token_batch_benchmark`：每批不同视频、每视频4帧、448×448；`sweep` 与
+  `formal` 分开，558条正式TEST的首批计入，没有正式 warmup。主计时为全部输入已在
+  GPU 上、完整Qwen前向至质量分数；Vision block0计时仅为并列的次要诊断。
+- `quality_token_dataset_once`：4/9/16帧单视频的既有方案1/2入口，恢复原服务器
+  schema 2（同步墙钟为主、CUDA-event并列）。原 schema 1 报告保留，不转换或重写，
+  两种时钟与不同批量不能混作一个速度数字。
+
+两入口恢复 GPU 型号与实际功率上限校验，显式使用 CUDA-visible 的物理编号／UUID。
+批量入口默认要求 A100，dataset-once 默认要求 RTX5090D；跨GPU必须显式指定
+`--expected-gpu`，不以绕过校验或套用575W来生成 A100 报告。新增输出保护会在
+查询 GPU 前拒绝已有目标目录，旧结果不覆盖。入口参数可用相应模块的 `--help` 查看。
+
+本次没有加载Qwen、PT或视频，没有测速、训练或触碰GPU。12项无Torch/设备的 CPU
+依赖、身份、预处理审计及旧输出保护测试通过；13项批量性能函数、5项dataset-once
+非入口定义与封存源码AST相同，已有共享函数和计时器默认行为另核验。
+来源、投影范围和SHA见 [历史baseline迁入记录](batch_baseline_source_import_20261006.json)。
+它不代表另一机器已完成实际功率/吞吐复测，也不能拿这些历史计时套给正式实拍模型。
+
 ## RTX 5090 D 光学 MoE 分段计时
 
 T01–T04 与 T06 的 CCD 后串行电子处理、并行残差、跨层 SLM 场重建、bridge 和任务头已经

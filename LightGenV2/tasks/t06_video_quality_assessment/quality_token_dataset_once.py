@@ -5,6 +5,7 @@ import csv
 import hashlib
 import json
 import platform
+import subprocess
 import time
 from pathlib import Path
 from typing import Any
@@ -15,8 +16,11 @@ from torch import nn
 
 from LightGenV2.common.baseline_measurement import (
     NvidiaSmiPowerSampler,
+    gpu_power_limit_w,
+    nvidia_smi_gpu_id,
     power_report,
     save_power_samples,
+    validate_cuda_device,
 )
 from . import quality_token_common as core
 
@@ -40,6 +44,12 @@ def sha256(path: Path) -> str:
         for chunk in iter(lambda: stream.read(1024 * 1024), b""):
             digest.update(chunk)
     return digest.hexdigest()
+
+
+def git_value(*args: str) -> str:
+    return subprocess.run(
+        ["git", *args], check=True, capture_output=True, text=True
+    ).stdout.strip()
 
 
 def summarize(values: list[float]) -> dict[str, float]:
@@ -101,9 +111,16 @@ def main() -> int:
     parser.add_argument("--manifest", type=Path, required=True)
     parser.add_argument("--checkpoint", type=Path, required=True)
     parser.add_argument("--output", type=Path, required=True)
+    parser.add_argument("--expected-gpu", default="NVIDIA GeForce RTX 5090 D")
     args = parser.parse_args()
-    if not torch.cuda.is_available():
-        raise RuntimeError("CUDA is required")
+    protected_output = (
+        args.output.expanduser().resolve()
+        / f"resolution{args.image_size}" / f"frames{args.frames}" / args.scheme
+    )
+    if protected_output.exists():
+        raise FileExistsError("Use a new output directory; existing measurement evidence is protected")
+    gpu_name = validate_cuda_device(args.expected_gpu)
+    rated_power_w = gpu_power_limit_w()
     from transformers import AutoProcessor, Qwen3VLForConditionalGeneration
 
     device = torch.device("cuda:0")
@@ -168,7 +185,7 @@ def main() -> int:
 
     prompt = core.render_prompt(processor, args.target)
     timer = core.BoundaryTimer(model)
-    sampler = NvidiaSmiPowerSampler(gpu_index=0, interval_ms=50)
+    sampler = NvidiaSmiPowerSampler(gpu_index=nvidia_smi_gpu_id(), interval_ms=50)
     sampler.start()
     sampler.set_phase("idle")
     time.sleep(2.0)
@@ -205,6 +222,9 @@ def main() -> int:
                 "target_mos": float(row[args.target]),
                 "prediction": prediction,
                 "model_internal_cuda_ms": latency,
+                "model_internal_synchronized_wall_ms": float(
+                    timing["vision_first_block_to_score_host_ms"]
+                ),
                 "preprocessing_ms": preprocessing_ms,
                 "sequence_length": int(inputs["input_ids"].shape[1]),
                 "selected_frame_positions": positions,
@@ -225,8 +245,21 @@ def main() -> int:
     targets = np.asarray([record["target_mos"] for record in records], dtype=np.float64)
     predictions = np.asarray([record["prediction"] for record in records], dtype=np.float64)
     latencies = [record["model_internal_cuda_ms"] for record in records]
+    wall_latencies = [
+        record["model_internal_synchronized_wall_ms"] for record in records
+    ]
+    wall_power = power_report(power_samples, wall_latencies, power_limit_w=rated_power_w)
+    wall_power["energy_basis"] = (
+        "board power sampled only while model inference was active; energy uses "
+        "the synchronized-wall first-block-to-task-output mean latency"
+    )
+    event_power = power_report(power_samples, latencies, power_limit_w=rated_power_w)
+    event_power["energy_basis"] = (
+        "secondary audit only; energy uses the CUDA-event "
+        "first-block-to-task-output mean latency"
+    )
     report = {
-        "schema_version": 1,
+        "schema_version": 2,
         "status": "complete",
         "protocol": "one_process_one_model_load_full_test_no_explicit_warmup",
         "scheme": args.scheme,
@@ -253,11 +286,17 @@ def main() -> int:
             "vision patch embedding before Vision block 0",
         ],
         "model_internal_cuda_ms_all_558_first_included": summarize(latencies),
+        "model_internal_synchronized_wall_ms_all_558_first_included": summarize(
+            wall_latencies
+        ),
         "first_measured_video_cuda_ms": latencies[0],
+        "first_measured_video_synchronized_wall_ms": wall_latencies[0],
         "preprocessing_ms": summarize([record["preprocessing_ms"] for record in records]),
         "performance": core.metrics(targets, predictions),
         f"{args.target}_performance": core.metrics(targets, predictions),
-        "power": power_report(power_samples, latencies),
+        "primary_clock": "synchronized_wall",
+        "power": wall_power,
+        "power_cuda_event_secondary": event_power,
         "processor_load_seconds": processor_load_seconds,
         "model_load_seconds": model_load_seconds,
         "test_loop_wall_seconds": loop_wall_seconds,
@@ -266,7 +305,15 @@ def main() -> int:
         "manifest_sha256": sha256(manifest_path),
         "checkpoint": str(checkpoint),
         "checkpoint_sha256": sha256(checkpoint),
-        "gpu": torch.cuda.get_device_name(0),
+        "script_sha256": sha256(Path(__file__)),
+        "git_commit": git_value("rev-parse", "HEAD"),
+        "git_worktree_clean": git_value("status", "--porcelain") == "",
+        "gpu": gpu_name,
+        "hardware_contract": {
+            "expected_gpu_name_substring": args.expected_gpu,
+            "actual_gpu_name": gpu_name,
+            "rated_power_limit_w": rated_power_w,
+        },
         "software": {
             "python": platform.python_version(),
             "torch": torch.__version__,

@@ -75,6 +75,7 @@
       "entry": "tasks/t06_video_quality_assessment/README.md",
       "source_status": "formal_runtime_closure_published_57_CPU_tests_partial_asset_and_legacy_profile_audit",
       "source_import_manifest": "tasks/t06_video_quality_assessment/source_import_20261004.json",
+      "historical_batch_baseline_source_manifest": "tasks/t06_video_quality_assessment/batch_baseline_source_import_20261006.json",
       "evidence": ["reports/20260928_nine_task_a100_table/README.md", "tasks/t06_video_quality_assessment/CURRENT_VERSION_20261004.md", "tasks/t06_video_quality_assessment/reports/reproduction/TEMPORAL_SHS_20260914.md", "tasks/t06_video_quality_assessment/reports/reproduction/SPATIAL_SHS_20260914.md", "tasks/t06_video_quality_assessment/reports/reproduction/SPATIAL_SHS_READOUT_ADAPT_20260914.md"],
       "verified_physical_runtime_commit": "8e869473787f4ffceb2a6a77f4430b94c206f459",
       "legacy_default_profiles_verified": false,

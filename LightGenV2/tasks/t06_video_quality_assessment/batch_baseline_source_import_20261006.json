@@ -1,0 +1,63 @@
+{
+  "audited_on": "2026-10-06",
+  "purpose": "Restore actual historical LGVQ quality-token batch and dataset-once baseline sources to canonical task, not perform measurements",
+  "scientific_evaluation_run": false,
+  "hardware_touched": false,
+  "runtime_checkout_changed": false,
+  "source_rows": [
+    {
+      "source_ref": "refs/archive/tracked-overlay-20261006/2026OpticsMoE_t06_a100_batch",
+      "source_commit": "e9cd94790d2421ff60abf4d09e9e146b193ff245",
+      "path": "LightGenV2/tasks/t06_video_quality_assessment/quality_token_batch_benchmark.py",
+      "source_blob_sha256": "f975d5f56df606d2f642371048145ec36463bcecadd72c3ad61b2a91a08e53e5",
+      "projected_LF_sha256": "3e251ba8ffdf0593477702aaaec5fa52975716d3f79b0ae2c0ffd3f474bccce5"
+    },
+    {
+      "source_ref": "refs/archive/tracked-overlay-20261006/2026OpticsMoE_t06_a100_batch",
+      "source_commit": "e9cd94790d2421ff60abf4d09e9e146b193ff245",
+      "path": "LightGenV2/tasks/t06_video_quality_assessment/quality_token_dataset_once.py",
+      "source_blob_sha256": "cf5467fd4077ed99d9ee593af548de62fc25f8a6629c9bf39849e16d7d1d773b",
+      "projected_LF_sha256": "07076a83bc03de74234c7c19d174d25f486c9416921749e4f2e308d465835f72"
+    },
+    {
+      "source_ref": "refs/archive/tracked-overlay-20261006/2026OpticsMoE_t06_a100_batch",
+      "source_commit": "e9cd94790d2421ff60abf4d09e9e146b193ff245",
+      "path": "LightGenV2/tasks/t06_video_quality_assessment/quality_token_common.py",
+      "source_blob_sha256": "6b2f44652fa1156919bba2ab7bf9a3a911a2f6b15b4fb2f616b706d38e8f9f4a",
+      "projected_LF_sha256": "bfeec599ffecb105338b6f185ff6d6cbff2730024d0b195704e72c2a7cd082ba"
+    },
+    {
+      "source_ref": "refs/archive/tracked-overlay-20261006/2026OpticsMoE_t06_a100_batch",
+      "source_commit": "e9cd94790d2421ff60abf4d09e9e146b193ff245",
+      "path": "LightGenV2/common/baseline_measurement.py",
+      "source_blob_sha256": "f42a68dceddbc9eef1b9cf32196fe24a5f747b6005547c4cda131ce8b03c3d5a",
+      "projected_LF_sha256": "4c8d94a592372515edee20862cf8aa367d671b18e1fa0bed668d672714b6aeb0"
+    }
+  ],
+  "projection_changes": [
+    "batch entry refuses preexisting sweep or formal batch artifact directory before GPU validation",
+    "dataset-once entry preserves archived schema 2 wall and CUDA-event clocks, refuses preexisting artifact directory and explicitly passes CUDA-visible physical identifier to sampler",
+    "shared GPU queries restored; sampler default remains physical ID 0, explicit string IDs supported without changing other sampler methods",
+    "decode optional audit_trace restored exactly from archived helper; decoded pixels/positions and return tuple unchanged"
+  ],
+  "validation": {
+    "local_CPU_contract_tests": 12,
+    "AST_equivalence": {
+      "benchmark_performance_definitions_preserved": 13,
+      "dataset_once_forward_and_other_definitions_preserved": 5,
+      "existing_core_definitions_preserved": 10,
+      "existing_shared_definitions_preserved": 8,
+      "sampler_methods_preserved_except_additive_identifier_constructor": 6,
+      "historical_helpers_restored": 3,
+      "decode_matches_archived_helper": true,
+      "model_imported": false,
+      "GPU_used": false
+    },
+    "no_Torch_or_model_import_in_tests": true
+  },
+  "limits": [
+    "No CUDA benchmark, GPU allocation, video decoding or PT/model load performed",
+    "Historical schema 1 and schema 2 reports are retained unchanged and are not interchangeable",
+    "Other untracked sources/dependencies in the historical checkout still require audit"
+  ]
+}
