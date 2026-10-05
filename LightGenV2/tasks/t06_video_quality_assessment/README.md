@@ -273,3 +273,13 @@ Qwen 对照和论文图统一见
 该报告明确区分物理光场时间、可被光路覆盖的并行残差、必须串行的 CCD 后处理和任务尾部。
 其中 80.388 W 只能计算光学设备能量代理；在没有同步采集电子处理 GPU 功率前，不把它写成
 完整光电系统能耗。
+
+## 冻结 CLIP／YOLO 视频质量历史 baseline
+
+旧 CLIP ViT-B/32 与 YOLO11s 的四帧 Temporal／Spatial baseline 运行入口已从其原
+运行提交 `95904ecf97bcefe4a7ae76a6eab08a1d7cb217f0` 原样恢复到本任务。
+命令、冻结参数与数据合同见 [VISUAL_BACKBONE_BASELINES.md](VISUAL_BACKBONE_BASELINES.md)。
+两模型只拟合五个无偏置质量输出行，共10240参数；按原无VAL划分的TEST SRCC选模，
+属于开发指标，不称独立泛化。本轮未重训、未读取视频、未重评性能或测速。
+原报告和本地中转源码仍原位保留，来源及CPU合同核验见
+[恢复记录](../../../maintenance/storage/T06_VISUAL_BASELINE_IMPORT_20261005.md)。
