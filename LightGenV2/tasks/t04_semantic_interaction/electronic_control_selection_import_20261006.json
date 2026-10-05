@@ -1,0 +1,24 @@
+{
+  "schema_version": 1,
+  "source_runtime": "/DATA/DATA1/guest3/2026OpticsMoE_a100_formal",
+  "source_archive_commit": "36b1e2f696f06149e5812282036416a50bad8fef",
+  "source_archive_ref": "refs/archive/tracked-overlay-20261006/2026OpticsMoE_a100_formal",
+  "source_path": "experiments/qwen3_vl_2b_openmoji_instruction_four_stage_optical_editing/training.py",
+  "original_archive_sha256": "f7428235d7bf1ff2ea6b2659afac0ffe6ae28e732c6425dc64fb3d5c1f1d550d",
+  "projected_lf_sha256": "815cac5435feb099a57a7ba56d75b74e22e548f48ffa84dcc4dfb9c8de6a31c4",
+  "lightgen_entry": "LightGenV2/tasks/t04_semantic_interaction/electronic_control.py",
+  "entry_lf_sha256": "384376e44b4dd97ea8cb3bb781ff18adb5b9724f3d6ced8ade394d5a99ee268a",
+  "restored_selection": "maximum per-epoch TEST changed-cell accuracy, strict greater-than update",
+  "compatibility_projection": "backend defaults to original last_epoch; explicit LightGenV2 control uses test_development",
+  "validation": {
+    "cpu_ast_contract_tests": 8,
+    "passed": true,
+    "unchanged_ast_from_parent_main": ["_parameter_groups", "_schedule", "_checkpoint", "_run_epoch_test", "_evaluate", "_move"],
+    "parent_main": "798a44a1ddf1ce173c711367fe4781a84f2142d1",
+    "actual_training_dataset_checkpoint_or_gpu_execution": false
+  },
+  "historical_runs_and_weights_changed": false,
+  "runtime_checkout_changed": false,
+  "test_selection_is_independent_generalization": false,
+  "all_a100_source_migration_complete": false
+}

@@ -31,6 +31,16 @@ rank64 光路模型。其计时使用预计算指令 hidden，不包含指令主
 仅完成CPU协议检查，未运行模型、读取PT或重新测速；原始源码与恢复身份见
 `electronic_control_import_20261006.json`。原测速和运行产物未修改。
 
+训练／复评入口是 `python -m LightGenV2.tasks.t04_semantic_interaction.electronic_control
+--phase train`（或 `evaluate`），可用 `--run-dir` 指向新的独立运行产物目录；不是新
+工程副本。它显式使用原A100的最高每轮TEST changed-cell选择，保存并严格要求加载
+`checkpoints/best_test_changed.pt`，不得悄悄回退为last；TEST不用于梯度，但属于开发
+选模指标。兼容后端的默认仍是 `last_epoch`，其他任务不自动改选模协议。已有训练
+产物拒绝覆盖；新入口续训不同选模协议会拒绝，不能直接重跑覆盖原历史目录。
+八项无Torch CPU选模合同检查通过，六个梯度／优化器／EMA评估相关函数与迁移前
+主线AST相同；未执行训练或真实PT加载。源码身份见
+[选模恢复清单](electronic_control_selection_import_20261006.json)。
+
 ### 历史 A100 零样本诊断源码收敛（2026-10-06）
 
 `baseline_5090d` 已恢复实际服务器的 `--output-contract sparse_changes` 和

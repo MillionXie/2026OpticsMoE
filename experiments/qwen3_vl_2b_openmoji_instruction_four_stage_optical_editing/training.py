@@ -336,7 +336,21 @@ def _run_epoch_test(
     return result
 
 
-def train(settings: Settings, device: torch.device) -> dict[str, Any]:
+def selected_checkpoint_path(settings: Settings, selection: str = 'last_epoch') -> Path:
+    if selection not in {'last_epoch', 'test_development'}:
+        raise ValueError(f'Unknown checkpoint selection: {selection}')
+    filename = 'best_test_changed.pt' if selection == 'test_development' else 'last.pt'
+    return settings.output_dir / 'checkpoints' / filename
+
+
+def train(settings: Settings, device: torch.device, *, checkpoint_selection: str = 'last_epoch') -> dict[str, Any]:
+    selected_checkpoint_path(settings, checkpoint_selection)
+    checkpoint_path = settings.output_dir / 'checkpoints' / 'last.pt'
+    if not settings.resume and any((settings.output_dir / name).exists() for name in (
+        'checkpoints/last.pt', 'checkpoints/best_train_loss.pt', 'checkpoints/best_test_changed.pt',
+        'training_summary.json', 'train_log.csv', 'test_log.csv'
+    )):
+        raise FileExistsError('Training output already contains a checkpoint; use a new run directory')
     seed_everything(settings.seed)
     settings.output_dir.mkdir(parents=True, exist_ok=True)
     _json(settings.output_dir / "resolved_config.json", settings.to_dict())
@@ -354,6 +368,9 @@ def train(settings: Settings, device: torch.device) -> dict[str, Any]:
     global_step = 0
     if settings.resume and checkpoint_path.exists():
         payload = torch.load(checkpoint_path, map_location="cpu", weights_only=False)
+        prior_selection = payload.get('train_metrics', {}).get('checkpoint_selection', 'last_epoch')
+        if prior_selection != checkpoint_selection:
+            raise ValueError('Cannot resume with a different checkpoint selection protocol')
         model.load_state_dict(payload["model"])
         optimizer.load_state_dict(payload["optimizer"])
         scheduler.load_state_dict(payload["scheduler"])
@@ -363,6 +380,11 @@ def train(settings: Settings, device: torch.device) -> dict[str, Any]:
         print(f"resumed epoch={start_epoch-1} global_step={global_step}", flush=True)
     initial_phase = _phase_snapshot(model)
     best_loss = min((float(row["total"]) for row in history), default=float("inf"))
+    best_test_changed = max((float(row['changed_cell_accuracy']) for row in test_history), default=float('-inf'))
+    best_test_epoch = max((int(float(row['epoch'])) for row in test_history
+                           if float(row['changed_cell_accuracy']) == best_test_changed), default=-1)
+    if checkpoint_selection == 'test_development' and test_history and not selected_checkpoint_path(settings, checkpoint_selection).is_file():
+        raise FileNotFoundError('TEST-selected resume requires the saved best checkpoint, not history alone')
     started = time.perf_counter()
     for epoch in range(start_epoch, settings.epochs + 1):
         phase_trainable = epoch > settings.warmup_electronic_epochs
@@ -413,6 +435,8 @@ def train(settings: Settings, device: torch.device) -> dict[str, Any]:
             "learning_rate": scheduler.get_last_lr()[0],
             "epoch_seconds": time.perf_counter() - epoch_started,
         }
+        if checkpoint_selection == 'test_development':
+            row['checkpoint_selection'] = checkpoint_selection
         _checkpoint(checkpoint_path, model, optimizer, scheduler, ema, epoch, global_step, settings, row)
         test_result = _run_epoch_test(epoch, model, ema, test_loader, settings, device)
         for name, value in test_result["metrics"]["overall"].items():
@@ -427,6 +451,11 @@ def train(settings: Settings, device: torch.device) -> dict[str, Any]:
             best_loss = float(row["total"])
             _checkpoint(settings.output_dir / "checkpoints" / "best_train_loss.pt", model, optimizer, scheduler, ema, epoch, global_step, settings, row)
         overall = test_result["metrics"]["overall"]
+        if checkpoint_selection == 'test_development' and float(overall['changed_cell_accuracy']) > best_test_changed:
+            best_test_changed = float(overall['changed_cell_accuracy'])
+            best_test_epoch = epoch
+            _checkpoint(selected_checkpoint_path(settings, checkpoint_selection), model, optimizer, scheduler,
+                        ema, epoch, global_step, settings, row)
         print(
             f"epoch={epoch}/{settings.epochs} test scene_exact={overall['scene_exact_match']:.5f} "
             f"changed_accuracy={overall['changed_cell_accuracy']:.5f} "
@@ -455,12 +484,15 @@ def train(settings: Settings, device: torch.device) -> dict[str, Any]:
         "elapsed_seconds": time.perf_counter() - started,
         "final": history[-1],
     }
+    if checkpoint_selection == 'test_development':
+        summary.update(best_test_changed_cell_accuracy=best_test_changed, best_test_epoch=best_test_epoch,
+                       selection_biased=True, checkpoint_policy='best_test_changed.pt selects maximum per-epoch TEST changed-cell accuracy; development metric')
     _json(settings.output_dir / "training_summary.json", summary)
     return summary
 
 
-def _load_official(settings: Settings, device: torch.device) -> tuple[OpenMojiOpticalEditor, dict[str, Any]]:
-    path = settings.output_dir / "checkpoints" / "last.pt"
+def _load_official(settings: Settings, device: torch.device, *, checkpoint_selection: str = 'last_epoch') -> tuple[OpenMojiOpticalEditor, dict[str, Any]]:
+    path = selected_checkpoint_path(settings, checkpoint_selection)
     payload = torch.load(path, map_location="cpu", weights_only=False)
     model = build_model(settings, device)
     model.load_state_dict(payload["model"])
@@ -474,18 +506,20 @@ def _load_official(settings: Settings, device: torch.device) -> tuple[OpenMojiOp
 
 
 @torch.inference_mode()
-def test(settings: Settings, device: torch.device) -> dict[str, Any]:
+def test(settings: Settings, device: torch.device, *, checkpoint_selection: str = 'last_epoch') -> dict[str, Any]:
     _, loader = build_loaders(settings)
-    model, payload = _load_official(settings, device)
+    model, payload = _load_official(settings, device, checkpoint_selection=checkpoint_selection)
     started = time.perf_counter()
     metrics, predictions, galleries = _evaluate(model, loader, settings, device)
     result = {
-        "checkpoint": str(settings.output_dir / "checkpoints" / "last.pt"),
+        "checkpoint": str(selected_checkpoint_path(settings, checkpoint_selection)),
         "checkpoint_epoch": payload["epoch"],
         "weights": "final epoch EMA",
         "elapsed_seconds": time.perf_counter() - started,
         "metrics": metrics,
     }
+    if checkpoint_selection == 'test_development':
+        result.update(weights='selected checkpoint EMA', selection_biased=True)
     _json(settings.output_dir / "test_metrics.json", result)
     with (settings.output_dir / "test_predictions.jsonl").open("w", encoding="utf-8") as handle:
         for row in predictions:
