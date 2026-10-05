@@ -58,5 +58,24 @@ run记录的源码范围，不代表所有动态依赖、原图、环境及测�
 四份依赖源码先逐SHA核验，历史角谱后端还与当前文件按原字节比较相等。
 完整私有结果：`.codex_tmp/shared_frontend_behavior_gate_20261005.json`。
 
-这不是原图精度复评或测速，不覆盖原数值。两份模型及依赖已进入main，但run、
-continue_training、打包及holdout辅助入口尚未完整迁入，不能宣称该baseline已全迁移。
+这不是原图精度复评或测速，不覆盖原数值。两份模型及依赖已进入main；下述训练
+核心也已迁入，但数据准备、打包和其他holdout辅助尚缺，不能宣称该baseline已全迁移。
+
+## 训练/续训/固定评估核心已迁入
+
+实际服务器run.py独有overlay归档至`29f474cab23a0eb5ebd13085d75031e6699ef6d9`，
+其余五份源码/配置与服务器原HEAD字节相同。六文件按
+`EUROSAT_SHARED_FRONTEND_ENTRY_IMPORT_20261005.json`身份迁入main commit
+`a8a01cf0ce1969402caff4db59ad678197526b3d`，没有覆盖本地旧run.py。
+
+对应入口为shared_frontend/run.py（smoke/train/evaluate）、continue_training.py
+（原20轮低学习率续训）、evaluate_holdout.py（原/续训封存权重的测试评估）；
+其base工具来自已迁入pure_optical/run.py，配置config.json及continuation.json保持原值。
+这些历史训练命令要求CUDA；迁移检查使用CPU禁GPU的`--help`，不把导入检查冒充训练。
+
+`maintenance/git_safety/check_shared_frontend_entries.py`核验上述六文件及四份模型依赖
+SHA、编译/配置解析、四入口CLI导入全部通过；未读数据、未新建run或重评精度。
+私有收据`.codex_tmp/shared_frontend_entry_gate_20261005.json`。
+仍需补齐prepare_holdout、pure_optical.prepare及下载依赖、打包和验证工具；原资产/测速
+与旧独有代码继续原位保留。现有数据固定复评入口的依赖已收拢，但整套从原图准备
+到交付包的闭包还未验收；实验室Git统一仍为独立待办。

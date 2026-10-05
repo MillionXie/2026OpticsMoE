@@ -1,0 +1,11 @@
+{
+  "source_commit": "29f474cab23a0eb5ebd13085d75031e6699ef6d9",
+  "paths": [
+    {"path": "LightGenV2/demo_check/shared_frontend/run.py", "bytes": 15986, "sha256": "4bc924b9a8d140bf3f72665928ee395a1239096c2efaaf0603b8a35d97794461"},
+    {"path": "LightGenV2/demo_check/shared_frontend/continue_training.py", "bytes": 12287, "sha256": "e8b4a93f52ddf9a2b4147a7fe41d81631ebcfc83bef5bcf9af8b54e104f9e71d"},
+    {"path": "LightGenV2/demo_check/shared_frontend/evaluate_holdout.py", "bytes": 4610, "sha256": "e11688baac1fa2473670d4a1a8a614dc152657f4356d009f886c1c40263e1ae0"},
+    {"path": "LightGenV2/demo_check/pure_optical/run.py", "bytes": 11076, "sha256": "1b5abe1f6e891f6946a32969a474a32440ed0218940b24e09ee986bb08da6441"},
+    {"path": "LightGenV2/demo_check/shared_frontend/config.json", "bytes": 1185, "sha256": "8816fb2c817df90dc3f82fb8a79f3a1f74b76b51d6a97c0f81148fe56404c946"},
+    {"path": "LightGenV2/demo_check/shared_frontend/continuation.json", "bytes": 856, "sha256": "a411400f9bef15ec8f3278724d728c0a6e379e657276a9d83bf7942079ebea83"}
+  ]
+}
