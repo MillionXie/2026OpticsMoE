@@ -1,5 +1,45 @@
 # 服务器运行目录只读复核
 
+## 2026-10-06：七个候选的保留决策
+
+重新核验上述七目录，均无 tracked 修改、未跟踪或忽略文件；同 UID 进程的 cwd、
+启动命令及打开文件均未发现引用。对全部 83 个登记工作树的已跟踪 Python、shell、
+YAML、JSON、Markdown 合并搜索，`fa_vtab_20260914` 在 25 个树的固定反馈 VTAB
+命令／优化记录中被引用，其余六个名字未匹配。此搜索不覆盖未跟踪启动器、外部
+工程或所有动态引用，不能据此证明完整依赖解除。
+
+七目录各有 582–626 条名称涉及报告／测速／功耗的已跟踪路径，并非只有源码。
+例如 `t07_gallery_fp32_20260912` 含 T06 的原光学组件 timing CSV、T08 的原
+power_samples／timing_per_sample，以及历史 timing_recheck／historical_timing
+证据。这是文件用途核查，不是这些报告指标的再次验证。
+
+**按用户全部测速及其副本保留原位的要求，本批七目录保留为冻结历史证据例外，
+不再列为待整目录删除候选。**源码日常入口仍为 main；保留旧证据目录不表示继续
+维护七条开发线。没有删除文件、运行训练、读取 PT 或触碰 GPU/设备。
+
+私有收据：`.codex_tmp/clean_candidate_all_tracked_dependency_audit_20261006.json`
+与 `.codex_tmp/clean_candidate_evidence_audit_20261006.json`。首次逐项重复扫描超时，
+核查原检查进程已结束后改为合并搜索取得结果；没有同时启动重复检查。
+
+下方为 10月5日历史快照，main 身份和用途待审状态由本段及后续发布记录覆盖。
+
+### 服务器旧 T06 读出压缩分支已退出开发线
+
+2026-10-06，服务器 `/DATA/DATA1/guest3/.codex_worktrees/t06_readout_compress_20260912`
+在原提交 `de866ff8b890b77b18a4f873f5be2d216ae4c7fa` 上冻结为 detached。
+该目录是历史读出容量压缩试验，不是当前正式 Spatial／Temporal PT；本轮不选择或
+修改科学模型。再次确认无 tracked 修改、同 UID cwd／命令／打开文件引用后，仅更改
+HEAD 元数据并条件式取消 `codex/t06-readout-compress-20260912` 分支名。
+3588 个文件的大小、mtime、类型与索引摘要、原 Git 状态前后一致，没有操作内容文件。
+
+提交保留于 `refs/archive/frozen-server-20261006/t06-readout-compress-20260912`。
+完整历史 bundle 在服务器 `storage_cleanup_manifests/t06_readout_full_history_20261006.bundle`
+及本机 `.codex_tmp/storage_git_backup_20261002/t06_readout_server_full_20261006.bundle`，
+两端 SHA256 `9e9ae0c5b6b2c885e6ea9d7ee8619f21ea2cd6d696e0fea5a1239cfb6b50bc9f`。
+服务器 bundle verify 通过，下载内容 SHA 一致后才退出分支。
+服务器分支 19→18；工作目录数量未减，没有释放空间或删除测速。
+现用 OpenMoji 与根运行目录仍有进程引用，未改它们的 HEAD、源码、数据或任务。
+
 2026-10-05实查83个注册工作树全部存在，19条分支名；当前main引用
 `aa78b93cbafbcd9c8a64c1ff10247468aa8429b9`，服务器根运行HEAD仍为
 `3f85510285e5ffdfca28def93eef2eb082b1655c`。没有切换checkout或删除目录。
