@@ -1,0 +1,21 @@
+{
+  "schema_version": 1,
+  "source_runtime": "/DATA/DATA1/guest3/2026OpticsMoE_a100_formal",
+  "source_archive_commit": "36b1e2f696f06149e5812282036416a50bad8fef",
+  "source_archive_ref": "refs/archive/tracked-overlay-20261006/2026OpticsMoE_a100_formal",
+  "source_path": "LightGenV2/tasks/t04_semantic_interaction/baseline_structured_5090d.py",
+  "original_sha256": "c697a699009e47ee022f5600c5ec00b1a913a4708f86a002593efac1fb9d025b",
+  "projected_lf_sha256": "810e9e83482495fa24f26d00fde67d0c205107803c76dbac0e73d0f282a276d6",
+  "restored_features": ["explicit aligned_label_only head and objective", "checkpoint protocol identity and strict reload", "prepare images and H2D outside timed forward", "explicit expected GPU"],
+  "projection_guards": ["legacy remains default including old direct-call namespaces", "reject unknown protocol", "reject existing weights and training report", "reject existing measurement report and telemetry", "actual visible GPU power limit", "report actual head class"],
+  "validation": {
+    "cpu_protocol_tests": 8,
+    "scientific_nodes_ast_identical_to_archive": ["StructuredOpenMojiHead", "ConditionedReadoutBlock", "AlignedStructuredOpenMojiHead", "_loss", "_dice_loss", "_aligned_loss"],
+    "server_cpu_shape_finite_loss_and_gradient_check": {"legacy": "pass", "aligned_label_only": "pass"},
+    "qwen_checkpoint_dataset_or_gpu_executed": false,
+    "end_to_end_native_qwen_measurement_repeated": false
+  },
+  "existing_run_or_measurement_changed": false,
+  "runtime_checkout_changed": false,
+  "all_a100_source_migration_complete": false
+}

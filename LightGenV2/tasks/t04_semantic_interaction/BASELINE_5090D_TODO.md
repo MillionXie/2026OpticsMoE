@@ -10,6 +10,17 @@
 
 ## 模型与性能
 
+### 历史完整 Qwen 对齐监督变体（2026-10-06 源码恢复）
+
+`baseline_structured_5090d.py --baseline-protocol aligned_label_only` 恢复旧A100
+运行代码的可选监督协议：原结构化头加四类操作线性读出，使用原有类别、编辑、Dice、
+保留格与任务损失；完整Qwen仍冻结。默认 `legacy` 不变，旧PT未记录协议时按普通头
+严格复载。两种协议不能合成一条性能或测速记录；下方0.5475仍是原5090D普通头。
+八项CPU协议测试、两种头CPU形状／损失／梯度测试通过；六个科学定义与归档源码
+AST一致。没有重跑完整Qwen、实拍、训练或测速。迁移版保护已有best/last与报告，
+记录实际GPU功率上限，数据准备及H2D放在计时区外；旧测速不转换不覆盖。
+恢复身份见 [源码清单](structured_baseline_import_20261006.json)。
+
 ### 历史匹配电子对照（2026-10-06 源码恢复）
 
 `benchmark_electronic_control.py` 与 `configs/qwen_matched_electronic_control.yaml`
