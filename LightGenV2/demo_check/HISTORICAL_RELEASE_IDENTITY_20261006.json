@@ -1,0 +1,123 @@
+{
+  "zip_sha256": "bc58f30803437232d3398a883127b9c98dca07e9845f6b5284d83e0d1c602639",
+  "entries_checked": 13,
+  "sources_checked": 5,
+  "extracted_entries_identical": true,
+  "archive_crc_pass": true,
+  "original_training_commit": "8c48e5caacb5cd2a8f82d18eaad41d5cb7a80d5f",
+  "original_export_commit": "558cfcebbbcc768345cf0a6dc3f909ae51495675",
+  "canonical_source_identity": [
+    {
+      "path": "pure_optical/models.py",
+      "expected_historical_sha256": "58b04679fb27686298126cfc8eb809658d050f95d324ab4d3f57b51f098a17ec",
+      "current_lf_sha256": "a9685984d1f80cdcf97dcaccb2beb1216e60575d91df8708144d6b3e360bb76c",
+      "same": false
+    },
+    {
+      "path": "pure_optical/run.py",
+      "expected_historical_sha256": "1b5abe1f6e891f6946a32969a474a32440ed0218940b24e09ee986bb08da6441",
+      "current_lf_sha256": "1b5abe1f6e891f6946a32969a474a32440ed0218940b24e09ee986bb08da6441",
+      "same": true
+    },
+    {
+      "path": "pure_optical/config.json",
+      "expected_historical_sha256": "727feeb7976f6ef99896dec1c8336894e4adda1399abc8e4c310b54d97c9eb6b",
+      "current_lf_sha256": "23ce500196769b7f2690e63ff68805cdcbc90440a377cda885469436c4021cf7",
+      "same": false
+    },
+    {
+      "path": "pure_optical/prepare.py",
+      "expected_historical_sha256": "5337c1d4480a4c19943211050e637dd98ed2adf1b50ef098b4f70df26b7d0858",
+      "current_lf_sha256": "b42f34afc70f8b71785588b7120087648cd59097f4b8bef07dd90a739811fcb3",
+      "same": false
+    },
+    {
+      "path": "adrenal_softsign_code_export_20260915_145336/code/optical_reference/optics.py",
+      "expected_historical_sha256": "b250627b14357a254eb12c785caf20f3aff2bf3fe30121a05321094803c73a7d",
+      "current_lf_sha256": "9c49da42d3a381dd3e7ab8cc31536315ee1243e557fc00daf37873531f5b4e0c",
+      "same": false
+    },
+    {
+      "path": "EuroSAT_MoE_D2NN/code/download_archives.py",
+      "expected_historical_sha256": "0e63fdf382ed25d6f6e691c16306f9812b2b529ffee424266fc035ab1054353e",
+      "current_lf_sha256": "0e63fdf382ed25d6f6e691c16306f9812b2b529ffee424266fc035ab1054353e",
+      "same": true
+    },
+    {
+      "path": "pure_optical/HANDOFF_README.md",
+      "expected_historical_sha256": "aae114216df847948b50e5d6893e514a0a1bb4a5931fb637b0de67ef90b8388d",
+      "current_lf_sha256": "aae114216df847948b50e5d6893e514a0a1bb4a5931fb637b0de67ef90b8388d",
+      "same": true
+    }
+  ],
+  "files": [
+    {
+      "path": "PROVENANCE.json",
+      "sha256": "bfa5d8532ab2023aec02de24cb4a029e53f038dede67466c2b315c249d3d4cf3",
+      "bytes": 1440
+    },
+    {
+      "path": "README.md",
+      "sha256": "aae114216df847948b50e5d6893e514a0a1bb4a5931fb637b0de67ef90b8388d",
+      "bytes": 6564
+    },
+    {
+      "path": "config.json",
+      "sha256": "f47be970d78b5fbc85f77ded5708ab6514a1279cff898a43b11c6795afbab511",
+      "bytes": 1225
+    },
+    {
+      "path": "data/SPLIT.json",
+      "sha256": "cfe8373dd33cc0fe64f083b9ca32377e767c21b078c3f1d91f2dacecc25cb776",
+      "bytes": 13895324
+    },
+    {
+      "path": "download_archives.py",
+      "sha256": "314aec875575e7c3141cd17a8c708e5862a93199cede7a243a4f6293505b07ef",
+      "bytes": 3716
+    },
+    {
+      "path": "models.py",
+      "sha256": "d0881c17497e1540b3afc91d4e874c19c3e29f20dd5bd2346d9911fe2cbe7542",
+      "bytes": 5353
+    },
+    {
+      "path": "optics.py",
+      "sha256": "a222515d58c5829bdae9bc9d0d9b564864b6fae8f9bed7db398999623ce32cf9",
+      "bytes": 4032
+    },
+    {
+      "path": "prepare.py",
+      "sha256": "66ba4dd16abf0646bc9b9785debea7b8ad715abdc0d45c51b329d284cbcf22c8",
+      "bytes": 5262
+    },
+    {
+      "path": "reference_data_manifest.json",
+      "sha256": "f15e2a8e40257eb6fde0be060992a54a09f94fcf884b5226e64d580358996d70",
+      "bytes": 1846970
+    },
+    {
+      "path": "reported_results.json",
+      "sha256": "3cab088012893056e2b49aa331637dbbfd40fdde996f82eaf0429ea1ee0276ac",
+      "bytes": 10159
+    },
+    {
+      "path": "requirements.txt",
+      "sha256": "d8b27a983c60d0210aa309ec70195869ee8208cfd1ab47335b2d71d2cb52f093",
+      "bytes": 90
+    },
+    {
+      "path": "run.py",
+      "sha256": "717f75257321e3148203d2fafac216e142d644e61d1192748f531a468c6a0a13",
+      "bytes": 10763
+    },
+    {
+      "path": "training_environment.json",
+      "sha256": "540aa96e3b5152d57355818fc3b99260493ef9b0550bd2ccf8dfe6bc258a3113",
+      "bytes": 2747
+    }
+  ],
+  "package_is_not_new_model_or_runtime": true,
+  "mutations": [],
+  "model_or_device_executed": false
+}
