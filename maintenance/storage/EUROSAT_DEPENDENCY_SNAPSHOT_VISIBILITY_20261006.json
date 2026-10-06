@@ -1,0 +1,12 @@
+{
+  "scope": "Git visibility of immutable historical package dependencies only; no move or deletion",
+  "path": "LightGenV2/demo_check/EuroSAT_MoE_D2NN/code/experiments",
+  "manifest": "LightGenV2/demo_check/EuroSAT_MoE_D2NN/FILES_SHA256.json",
+  "manifest_sha256": "6a3d595645168ff3ad5045c2dc468220779a1e1c5f90d95c15c7385b254c7fe9",
+  "members_in_selected_subtree": 390,
+  "sha256_matched": 390,
+  "missing_or_extra_in_selected_subtree": 0,
+  "whole_code_snapshot": {"manifest_members": 422, "sha256_matched": 416, "mismatched": 6},
+  "exceptions_not_ignored": ["code/download_archives.py", "code/DATA_PREPROCESSING.json", "code/licenses/EuroSAT_MIT_LICENSE.txt", "code/licenses/EuroSAT_README.md", "code/licenses/EuroSAT_SAR_README.md", "code/licenses/FGMAE_APACHE_LICENSE.txt"],
+  "preserved": "All package bytes, source entry points, manifests, analysis tools, data, timing and result records remain in place. This is not a whole-package identity or deployment claim."
+}

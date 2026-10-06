@@ -49,6 +49,7 @@ class ArtifactIgnoreTests(unittest.TestCase):
         images += ['handoffs/t12_small_baseline_handoff_20260928/stage/model_release/source/LightGenV2/tasks/t12_text_to_image/sealed_editor.py']
         images += ['ABO_Lab_8um/original_a100/backend/experiments/model.py',
                    'ABO_Lab_8um/original_optics/backend/experiments/model.py']
+        images += ['LightGenV2/demo_check/EuroSAT_MoE_D2NN/code/experiments/vision_transfer/model.py']
         self.assertEqual(self.ignored(images), set(images))
         sources = ['LightGenV2/tasks/t04_semantic_interaction/dataset/openmoji_grid_v2/prepare.py',
                    'LightGenV2/tasks/t04_semantic_interaction/dataset/openmoji_grid_v2/manifest.json',
@@ -63,6 +64,9 @@ class ArtifactIgnoreTests(unittest.TestCase):
                     'LightGenV2/reports/timing/source_snapshot/measure.py',
                     'LightGenV2/tasks/t07_abo_image_retrieval/reports/bringup/manifest.json']
         sources += ['handoffs/t12_small_baseline_handoff_20260928/stage/materialize_pairs.py',
+                    'LightGenV2/demo_check/EuroSAT_MoE_D2NN/code/train_eurosat.py',
+                    'LightGenV2/demo_check/EuroSAT_MoE_D2NN/code/download_archives.py',
+                    'LightGenV2/demo_check/EuroSAT_MoE_D2NN/FILES_SHA256.json',
                     'ABO_Lab_8um/original_a100/BACKEND_MANIFEST.json',
                     'ABO_Lab_8um/original_optics/SOFTWARE_MANIFEST.json',
                     'handoffs/t12_small_baseline_handoff_20260928/stage/model_release/manifest.json',

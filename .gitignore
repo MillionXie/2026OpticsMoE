@@ -225,3 +225,8 @@ node_modules/
 # Keep manifests and top-level deployment wrappers visible; keep bytes on disk.
 /ABO_Lab_8um/original_a100/backend/
 /ABO_Lab_8um/original_optics/backend/
+
+# Historical EuroSAT package dependency snapshot: all 390 members match its
+# FILES_SHA256 manifest. Original package/runtime files remain in place.
+# Do not hide top-level training/analysis tools or modified package metadata.
+/LightGenV2/demo_check/EuroSAT_MoE_D2NN/code/experiments/
