@@ -4,6 +4,7 @@
   "source_commit": "bc1951cfbd0bcbd60a6111884286b506790e20fb",
   "source_path": "LightGenV2/tasks/t04_openmoji_robust_ablation/lab_shs_capture.py",
   "source_sha256": "605d17590c5947fedec030fd913c19a4ee31be08b1ae832c99377ebb015fe5c6",
+  "source_identity_role": "Historical deployed source snapshot, not a hash of the evolving canonical main entry. Bind new runs to their actual published Git commit.",
   "groups": {
     "g2": {
       "filename": "g2_lowrank64.pt",
@@ -24,5 +25,5 @@
     "phase_inverse": true,
     "amplitude_encoding": "round(255*bounded_amplitude), no peak rescale"
   },
-  "status": "audited identity configuration; capture/tune entry migration pending"
+  "status": "audited original PT identity; canonical capture/tune entries published; assets, field regression and actual runtime cutover pending"
 }

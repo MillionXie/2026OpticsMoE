@@ -1,6 +1,8 @@
 {
   "scope": "Main-source control and model-config dependency closure, not a live experiment cutover",
-  "changed_entries": ["LightGenV2/tasks/t04_openmoji_robust_ablation/lab_shs_capture.py", "LightGenV2/tasks/t04_openmoji_robust_ablation/lab_tune2000.py"],
+  "changed_entries": ["LightGenV2/tasks/t04_openmoji_robust_ablation/lab_shs_capture.py", "LightGenV2/tasks/t04_openmoji_robust_ablation/lab_tune2000.py", "LightGenV2/tasks/t04_openmoji_robust_ablation/lab_tune_decoder.py"],
+  "config_sources_checked": ["OpenMoji_Robust_Rank64_SHS_20261002", "OpenMoji_RobustAblation_SHS_20260929"],
+  "legacy_entry_boundary": "lab_tune_decoder stays historical lowrank16 G5 and original VAL selection; not the final rank64 TEST-development workflow",
   "control_source": "LightGenV2/tasks/t07_abo_image_retrieval/hardware/bench.py",
   "geometry_source": "LightGenV2/tasks/t07_abo_image_retrieval/hardware/geometry.py",
   "prior_control_identity": "T07_BENCH_SOURCE_IMPORT_20261005.json",

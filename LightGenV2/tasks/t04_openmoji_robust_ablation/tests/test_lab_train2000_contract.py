@@ -19,6 +19,16 @@ def test_model_configs_do_not_import_external_source_copy():
     assert "project / 'source/" not in text
 
 
+def test_legacy_rank16_config_source_is_canonical_but_protocol_stays_legacy():
+    legacy=ast.parse((TASK / 'lab_tune_decoder.py').read_text(encoding='utf8'))
+    text=ast.unparse(legacy)
+    assert 'source_root = Path(__file__).resolve().parents[3]' in text
+    assert "project / 'source/" not in text
+    assert "cfg.shared_readout_variant = 'lowrank16'" in text
+    assert "GROUPS['g5']" in text
+    assert "validation" in text
+
+
 @pytest.mark.parametrize("group", ["g2", "g5"])
 def test_group_uses_audited_rank64_profile(group):
     function = next(n for n in tune.body if isinstance(n, ast.FunctionDef) and n.name == "group_checkpoint")
