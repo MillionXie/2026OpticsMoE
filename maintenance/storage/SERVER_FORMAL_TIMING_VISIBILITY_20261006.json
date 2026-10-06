@@ -1,0 +1,510 @@
+{
+  "manifest": "LightGenV2/reports/20260917_redbox_timing_energy_audit/server_2026OpticsMoE_a100_formal/SHA256SUMS.txt",
+  "manifest_sha256": "013d0ac909f63bcb11babe4dd48b64842d51f1feb5635660d880d33166cbffa2",
+  "members_verified": 111,
+  "files": [
+    {
+      "path": "LightGenV2/reports/20260917_redbox_timing_energy_audit/server_2026OpticsMoE_a100_formal/01_LGVQ_temporal/Baseline/baseline_manifest.json",
+      "sha256": "01c920fb6e643c57e7f09fd41b1aca4225b921a4189ef970367232588d6fb4ba",
+      "bytes": 497
+    },
+    {
+      "path": "LightGenV2/reports/20260917_redbox_timing_energy_audit/server_2026OpticsMoE_a100_formal/01_LGVQ_temporal/Baseline/redbox_source_report.json",
+      "sha256": "445b81e4a3a3c837d560e5c8dc06800b388f71ca2a336ce94d236f1b0f7ced37",
+      "bytes": 4010
+    },
+    {
+      "path": "LightGenV2/reports/20260917_redbox_timing_energy_audit/server_2026OpticsMoE_a100_formal/01_LGVQ_temporal/Baseline/server_evaluation/per_video_predictions_and_timing.csv",
+      "sha256": "11c2773ea522e8fc461e1201be65b60f79bdd830a9db3fa07087bae5f6719545",
+      "bytes": 102598
+    },
+    {
+      "path": "LightGenV2/reports/20260917_redbox_timing_energy_audit/server_2026OpticsMoE_a100_formal/01_LGVQ_temporal/Baseline/server_evaluation/power_samples.csv",
+      "sha256": "2e11cf7699e3a8c8758ba5e5a8e1ba845bab4a2345b8dee5813e6debe130fa37",
+      "bytes": 50141
+    },
+    {
+      "path": "LightGenV2/reports/20260917_redbox_timing_energy_audit/server_2026OpticsMoE_a100_formal/01_LGVQ_temporal/Baseline/server_evaluation/report.json",
+      "sha256": "7e7c49784004275f9e58fb265632ab3a8b67723090ebe69af9758eed763e16f8",
+      "bytes": 3915
+    },
+    {
+      "path": "LightGenV2/reports/20260917_redbox_timing_energy_audit/server_2026OpticsMoE_a100_formal/01_LGVQ_temporal/Ours/all_per_call_timings.csv",
+      "sha256": "e7680eace4f420962cfbb8306c526c70216f91c49e9fdafc5bf905daf941ce77",
+      "bytes": 5363390
+    },
+    {
+      "path": "LightGenV2/reports/20260917_redbox_timing_energy_audit/server_2026OpticsMoE_a100_formal/01_LGVQ_temporal/Ours/component_energy.csv",
+      "sha256": "f9fd2c8b0d5447e8f86c5e424aba2dc89733938646e8efad442b90b6244f02b0",
+      "bytes": 1163
+    },
+    {
+      "path": "LightGenV2/reports/20260917_redbox_timing_energy_audit/server_2026OpticsMoE_a100_formal/01_LGVQ_temporal/Ours/latency_component_summary.csv",
+      "sha256": "538e75359579461b137f654491ea31e933144382414b2179cc34352a87406e86",
+      "bytes": 3408
+    },
+    {
+      "path": "LightGenV2/reports/20260917_redbox_timing_energy_audit/server_2026OpticsMoE_a100_formal/01_LGVQ_temporal/Ours/power_samples.csv",
+      "sha256": "762c9b3f6ebcaf73ce9fbb90f5042325dbf06de1a83a1bd14b2082d0a5accbba",
+      "bytes": 654380
+    },
+    {
+      "path": "LightGenV2/reports/20260917_redbox_timing_energy_audit/server_2026OpticsMoE_a100_formal/01_LGVQ_temporal/Ours/power_summary.json",
+      "sha256": "4743f852bdd6cf7bf52d926eff31c0a3829da2ea4d5c2c948054f38d25aece11",
+      "bytes": 22652
+    },
+    {
+      "path": "LightGenV2/reports/20260917_redbox_timing_energy_audit/server_2026OpticsMoE_a100_formal/01_LGVQ_temporal/Ours/report.json",
+      "sha256": "7ca8c0c3c734b01734a16f80e1eced7f32b7452acc4bc7a243c9c58988d8edca",
+      "bytes": 2953
+    },
+    {
+      "path": "LightGenV2/reports/20260917_redbox_timing_energy_audit/server_2026OpticsMoE_a100_formal/01_LGVQ_temporal/source_manifest.json",
+      "sha256": "dc468cb9864db3a9c4f3f9cf8f15310654d3259e5954bf303b486a224e83e8f5",
+      "bytes": 2208
+    },
+    {
+      "path": "LightGenV2/reports/20260917_redbox_timing_energy_audit/server_2026OpticsMoE_a100_formal/01_LGVQ_temporal/table_rows.csv",
+      "sha256": "d84275ec855bf03e4ced367f3164f46b7837bb938804dcb9444ac5e08cceb786",
+      "bytes": 895
+    },
+    {
+      "path": "LightGenV2/reports/20260917_redbox_timing_energy_audit/server_2026OpticsMoE_a100_formal/02_LGVQ_spatial/Baseline/baseline_manifest.json",
+      "sha256": "73773c87909d006b7ffb14f89846924bb33d3d2f05715699987c4eecfc837005",
+      "bytes": 488
+    },
+    {
+      "path": "LightGenV2/reports/20260917_redbox_timing_energy_audit/server_2026OpticsMoE_a100_formal/02_LGVQ_spatial/Baseline/redbox_source_report.json",
+      "sha256": "b3765a4e13ec1976888d5df615513a224bd804a534d919624bccc6a010435282",
+      "bytes": 4006
+    },
+    {
+      "path": "LightGenV2/reports/20260917_redbox_timing_energy_audit/server_2026OpticsMoE_a100_formal/02_LGVQ_spatial/Baseline/server_evaluation/per_video_predictions_and_timing.csv",
+      "sha256": "a9046d883cac42ee567ea76d4cec28d564625bb12acba00fe135036159e44316",
+      "bytes": 102494
+    },
+    {
+      "path": "LightGenV2/reports/20260917_redbox_timing_energy_audit/server_2026OpticsMoE_a100_formal/02_LGVQ_spatial/Baseline/server_evaluation/power_samples.csv",
+      "sha256": "1455a4e827961a0f77624324edca982a9f2bfa3d9f208e8f6119e167a966e696",
+      "bytes": 50051
+    },
+    {
+      "path": "LightGenV2/reports/20260917_redbox_timing_energy_audit/server_2026OpticsMoE_a100_formal/02_LGVQ_spatial/Baseline/server_evaluation/report.json",
+      "sha256": "9c8e5a90cc0df0defc0fcba6736b2b59ef76cfdee602706c7926bc0240ada45c",
+      "bytes": 3911
+    },
+    {
+      "path": "LightGenV2/reports/20260917_redbox_timing_energy_audit/server_2026OpticsMoE_a100_formal/02_LGVQ_spatial/Ours/all_per_call_timings.csv",
+      "sha256": "9b7c858080d38b393584621d9f56add9615a36c1c983dded54f1e5e2249c130f",
+      "bytes": 4363963
+    },
+    {
+      "path": "LightGenV2/reports/20260917_redbox_timing_energy_audit/server_2026OpticsMoE_a100_formal/02_LGVQ_spatial/Ours/component_energy.csv",
+      "sha256": "4353a922ae9cdbcbe07594f529a73ff3657e703b4b74598dc92c3c088da633a9",
+      "bytes": 1018
+    },
+    {
+      "path": "LightGenV2/reports/20260917_redbox_timing_energy_audit/server_2026OpticsMoE_a100_formal/02_LGVQ_spatial/Ours/latency_component_summary.csv",
+      "sha256": "11e569f7aecb5262e3108cebbc0c07bcc2d9537e2efe390dc842f1e9bc013e56",
+      "bytes": 2922
+    },
+    {
+      "path": "LightGenV2/reports/20260917_redbox_timing_energy_audit/server_2026OpticsMoE_a100_formal/02_LGVQ_spatial/Ours/power_samples.csv",
+      "sha256": "02c9240f1fc533e527e6b95960f9fbb6246b29dc35c22bbc6e24abd9fcf2a15c",
+      "bytes": 573455
+    },
+    {
+      "path": "LightGenV2/reports/20260917_redbox_timing_energy_audit/server_2026OpticsMoE_a100_formal/02_LGVQ_spatial/Ours/power_summary.json",
+      "sha256": "f7e1532c4beb1ac7745c67072bf2e5088826b4857e6f53e77fa44a99be2814f7",
+      "bytes": 22651
+    },
+    {
+      "path": "LightGenV2/reports/20260917_redbox_timing_energy_audit/server_2026OpticsMoE_a100_formal/02_LGVQ_spatial/Ours/report.json",
+      "sha256": "02644d19c18a776bc73b49aba4e3ef462bc42b09e43db7325cf56c9a6e89c249",
+      "bytes": 2950
+    },
+    {
+      "path": "LightGenV2/reports/20260917_redbox_timing_energy_audit/server_2026OpticsMoE_a100_formal/02_LGVQ_spatial/source_manifest.json",
+      "sha256": "53da64eeaaa9e92b84e459cd02fb86d7a1048ae0e6d9b5a1c884e3e702020f5c",
+      "bytes": 2207
+    },
+    {
+      "path": "LightGenV2/reports/20260917_redbox_timing_energy_audit/server_2026OpticsMoE_a100_formal/02_LGVQ_spatial/table_rows.csv",
+      "sha256": "acc82462f59061901908ea15933a936cb54c0881d76d8ea238ba84849989d21f",
+      "bytes": 791
+    },
+    {
+      "path": "LightGenV2/reports/20260917_redbox_timing_energy_audit/server_2026OpticsMoE_a100_formal/03_ABO_image_to_text/Baseline/baseline_manifest.json",
+      "sha256": "4fe6130fe322ded72b29efbf737a6849133c69420991222019537fdd6d6fd239",
+      "bytes": 519
+    },
+    {
+      "path": "LightGenV2/reports/20260917_redbox_timing_energy_audit/server_2026OpticsMoE_a100_formal/03_ABO_image_to_text/Baseline/current_firstblock_formal/power_utilization_samples.csv",
+      "sha256": "bf61a2a5b9a217f25b41c39f3ea204e2aecc960ca6c8706347bfdb26d304db95",
+      "bytes": 169644
+    },
+    {
+      "path": "LightGenV2/reports/20260917_redbox_timing_energy_audit/server_2026OpticsMoE_a100_formal/03_ABO_image_to_text/Baseline/current_firstblock_formal/process_audit.json",
+      "sha256": "2a08dd97899f48dadb70369739ac9d6596f0331b34c901205c66178bc2c33289",
+      "bytes": 596
+    },
+    {
+      "path": "LightGenV2/reports/20260917_redbox_timing_energy_audit/server_2026OpticsMoE_a100_formal/03_ABO_image_to_text/Baseline/current_firstblock_formal/report.json",
+      "sha256": "e9c078f1251e1a163b6cb8f64327e4f1044e2c5f6e5cd5f69b4a285550631404",
+      "bytes": 4938
+    },
+    {
+      "path": "LightGenV2/reports/20260917_redbox_timing_energy_audit/server_2026OpticsMoE_a100_formal/03_ABO_image_to_text/Baseline/current_firstblock_formal/timing_per_sample.csv",
+      "sha256": "dd40ca838e865759f1398dca8b3c97b3fe1405091b2f11e8576352d700c0c740",
+      "bytes": 28824
+    },
+    {
+      "path": "LightGenV2/reports/20260917_redbox_timing_energy_audit/server_2026OpticsMoE_a100_formal/03_ABO_image_to_text/Baseline/redbox_source_report.json",
+      "sha256": "b13c5dba1b9494dc0c1260e72c11f8eaec05d2a856a446438d1c20d4beae9dcb",
+      "bytes": 3845
+    },
+    {
+      "path": "LightGenV2/reports/20260917_redbox_timing_energy_audit/server_2026OpticsMoE_a100_formal/03_ABO_image_to_text/Ours/all_per_call_timings.csv",
+      "sha256": "7485a328325868f5bcf0de610e8277560cdab371c45cbe2cf855e375b4e58942",
+      "bytes": 3950115
+    },
+    {
+      "path": "LightGenV2/reports/20260917_redbox_timing_energy_audit/server_2026OpticsMoE_a100_formal/03_ABO_image_to_text/Ours/component_energy.csv",
+      "sha256": "0bd1ba1bd7fcd9a3c2b2bb7270bce65cdee3208658d574718e045f8280e92b92",
+      "bytes": 941
+    },
+    {
+      "path": "LightGenV2/reports/20260917_redbox_timing_energy_audit/server_2026OpticsMoE_a100_formal/03_ABO_image_to_text/Ours/latency_component_summary.csv",
+      "sha256": "4bafc7a00ffa787468999df7efbc85147be57b8b43be6fb71f1b45b87c20eac9",
+      "bytes": 2646
+    },
+    {
+      "path": "LightGenV2/reports/20260917_redbox_timing_energy_audit/server_2026OpticsMoE_a100_formal/03_ABO_image_to_text/Ours/power_samples.csv",
+      "sha256": "accbd317e3dadf40456fc9be2e5e4d70f0d53bbc5b19f466e363a36bf90535cf",
+      "bytes": 525724
+    },
+    {
+      "path": "LightGenV2/reports/20260917_redbox_timing_energy_audit/server_2026OpticsMoE_a100_formal/03_ABO_image_to_text/Ours/power_summary.json",
+      "sha256": "d303ec915c2f8306015a2d12724348cf354482d9b30da2143bfccebaaef599c5",
+      "bytes": 22656
+    },
+    {
+      "path": "LightGenV2/reports/20260917_redbox_timing_energy_audit/server_2026OpticsMoE_a100_formal/03_ABO_image_to_text/Ours/report.json",
+      "sha256": "3732517cbdb1c3ca81c917616cc02244175fafbfdc0ecc97ce3f09cc34eaf500",
+      "bytes": 2917
+    },
+    {
+      "path": "LightGenV2/reports/20260917_redbox_timing_energy_audit/server_2026OpticsMoE_a100_formal/03_ABO_image_to_text/source_manifest.json",
+      "sha256": "c8c902d9e4a7c1817f36dc27e8cde96f50fdf60c85ca4cbc2f08e76259099052",
+      "bytes": 2777
+    },
+    {
+      "path": "LightGenV2/reports/20260917_redbox_timing_energy_audit/server_2026OpticsMoE_a100_formal/03_ABO_image_to_text/table_rows.csv",
+      "sha256": "223fd42d52303c4b11e75756090f19db0b2fb032679c019c929a20ff35de7a10",
+      "bytes": 790
+    },
+    {
+      "path": "LightGenV2/reports/20260917_redbox_timing_energy_audit/server_2026OpticsMoE_a100_formal/04_ABO_image_to_image/Baseline/baseline_manifest.json",
+      "sha256": "fc3f52ddd6c3daa5f19072f6bbf183ad98bb896379f43e0d2c9f2089c55907c4",
+      "bytes": 533
+    },
+    {
+      "path": "LightGenV2/reports/20260917_redbox_timing_energy_audit/server_2026OpticsMoE_a100_formal/04_ABO_image_to_image/Baseline/current_firstblock_formal/power_utilization_samples.csv",
+      "sha256": "3ca1b45d4fd2272be1c5b62f63a023f2fc8ee3c7c75a0910a9d2b351a0910941",
+      "bytes": 169066
+    },
+    {
+      "path": "LightGenV2/reports/20260917_redbox_timing_energy_audit/server_2026OpticsMoE_a100_formal/04_ABO_image_to_image/Baseline/current_firstblock_formal/process_audit.json",
+      "sha256": "e755f9b765cb9c434dd6e88aef34e549f5b87993a8368db20c575d2ced54ff3f",
+      "bytes": 596
+    },
+    {
+      "path": "LightGenV2/reports/20260917_redbox_timing_energy_audit/server_2026OpticsMoE_a100_formal/04_ABO_image_to_image/Baseline/current_firstblock_formal/report.json",
+      "sha256": "d80a752573fdcc8c81c205e7b8aff9d48d2a6611fdbf6f8dcccb8a94518340eb",
+      "bytes": 4979
+    },
+    {
+      "path": "LightGenV2/reports/20260917_redbox_timing_energy_audit/server_2026OpticsMoE_a100_formal/04_ABO_image_to_image/Baseline/current_firstblock_formal/timing_per_sample.csv",
+      "sha256": "d8ca97ec0de0f14f30a5b1bdef89bb599853a857735260a8d8f204575d691e15",
+      "bytes": 34420
+    },
+    {
+      "path": "LightGenV2/reports/20260917_redbox_timing_energy_audit/server_2026OpticsMoE_a100_formal/04_ABO_image_to_image/Baseline/redbox_source_report.json",
+      "sha256": "bb714cea1669c1d1ba021dca332fb2b4cdb69a47cf27ae85e478883be35a0447",
+      "bytes": 12397
+    },
+    {
+      "path": "LightGenV2/reports/20260917_redbox_timing_energy_audit/server_2026OpticsMoE_a100_formal/04_ABO_image_to_image/Ours/all_per_call_timings.csv",
+      "sha256": "dbec30b751412b070ee78281151c0e459254158ee40164dffdf38e49cc056a3b",
+      "bytes": 3982158
+    },
+    {
+      "path": "LightGenV2/reports/20260917_redbox_timing_energy_audit/server_2026OpticsMoE_a100_formal/04_ABO_image_to_image/Ours/component_energy.csv",
+      "sha256": "cc80d41d865f563f7f09d3a6e2c57ce04f874bcb878ccada725a5011ccc4bd0f",
+      "bytes": 946
+    },
+    {
+      "path": "LightGenV2/reports/20260917_redbox_timing_energy_audit/server_2026OpticsMoE_a100_formal/04_ABO_image_to_image/Ours/latency_component_summary.csv",
+      "sha256": "32b1901fcafccd8780c6d1e37860f006a4840a6359e9a72600206a1f7ebb11fc",
+      "bytes": 2618
+    },
+    {
+      "path": "LightGenV2/reports/20260917_redbox_timing_energy_audit/server_2026OpticsMoE_a100_formal/04_ABO_image_to_image/Ours/power_samples.csv",
+      "sha256": "b79da55f40052cc71fe25c17c6192a9df2b971878506c8da2576dc365047dcf7",
+      "bytes": 528961
+    },
+    {
+      "path": "LightGenV2/reports/20260917_redbox_timing_energy_audit/server_2026OpticsMoE_a100_formal/04_ABO_image_to_image/Ours/power_summary.json",
+      "sha256": "133956f98f60ac6708f8824d1e8811b9db6cb6346cccfd7d24b32daf01509d1a",
+      "bytes": 22657
+    },
+    {
+      "path": "LightGenV2/reports/20260917_redbox_timing_energy_audit/server_2026OpticsMoE_a100_formal/04_ABO_image_to_image/Ours/report.json",
+      "sha256": "dd0a36be2ffb986a5cca8e4158305d88a6afa224edb6376dce6cf2b7741a9b25",
+      "bytes": 2922
+    },
+    {
+      "path": "LightGenV2/reports/20260917_redbox_timing_energy_audit/server_2026OpticsMoE_a100_formal/04_ABO_image_to_image/source_manifest.json",
+      "sha256": "30a0e53491a135d7541c57a3040776717ba525281138dd00bb1941e8805e6bba",
+      "bytes": 2778
+    },
+    {
+      "path": "LightGenV2/reports/20260917_redbox_timing_energy_audit/server_2026OpticsMoE_a100_formal/04_ABO_image_to_image/table_rows.csv",
+      "sha256": "2b9a2c9c52bced4c2500bd19e4ea4ddeba093141e1ed6155c17fd8bbc731d450",
+      "bytes": 810
+    },
+    {
+      "path": "LightGenV2/reports/20260917_redbox_timing_energy_audit/server_2026OpticsMoE_a100_formal/05_LSP/Baseline/baseline_manifest.json",
+      "sha256": "ee50076c33856d0cbc36526cbf24640db5f55907a78de436de06bbb27bc6eaa7",
+      "bytes": 505
+    },
+    {
+      "path": "LightGenV2/reports/20260917_redbox_timing_energy_audit/server_2026OpticsMoE_a100_formal/05_LSP/Baseline/current_firstblock_formal/power_utilization_samples.csv",
+      "sha256": "4d55eccf530a7253a9bf6c6d336deaddb9a6ffb090ed87d3b5971933b52dc0b3",
+      "bytes": 169049
+    },
+    {
+      "path": "LightGenV2/reports/20260917_redbox_timing_energy_audit/server_2026OpticsMoE_a100_formal/05_LSP/Baseline/current_firstblock_formal/process_audit.json",
+      "sha256": "12188fbeb811451bbdba079afbda7b85a39c62d9bfd016be4da080f2bbaa8055",
+      "bytes": 596
+    },
+    {
+      "path": "LightGenV2/reports/20260917_redbox_timing_energy_audit/server_2026OpticsMoE_a100_formal/05_LSP/Baseline/current_firstblock_formal/report.json",
+      "sha256": "d6392572cac7c1f36affddcba01cb357d389262863e678a4199dd378f348dbbd",
+      "bytes": 5077
+    },
+    {
+      "path": "LightGenV2/reports/20260917_redbox_timing_energy_audit/server_2026OpticsMoE_a100_formal/05_LSP/Baseline/current_firstblock_formal/timing_per_sample.csv",
+      "sha256": "38f8042bb06d36d5d671cf08a9d1718543657c68ae0b3f27459aad309d482b38",
+      "bytes": 38735
+    },
+    {
+      "path": "LightGenV2/reports/20260917_redbox_timing_energy_audit/server_2026OpticsMoE_a100_formal/05_LSP/Baseline/redbox_source_report.json",
+      "sha256": "0cd9873009eac48fce3158f25cf519658ea39f2682c81cc47e80a7090809ed0a",
+      "bytes": 4192
+    },
+    {
+      "path": "LightGenV2/reports/20260917_redbox_timing_energy_audit/server_2026OpticsMoE_a100_formal/05_LSP/Ours/all_per_call_timings.csv",
+      "sha256": "2059912a00068bb1ec1f43a98e81c9205bdbe72f79fd2af38b1ac64f606d27b1",
+      "bytes": 2334788
+    },
+    {
+      "path": "LightGenV2/reports/20260917_redbox_timing_energy_audit/server_2026OpticsMoE_a100_formal/05_LSP/Ours/component_energy.csv",
+      "sha256": "69bea451607c1f3dd520385cfaa8e2b44ad9c34bd7cf73b416868e382eb38990",
+      "bytes": 598
+    },
+    {
+      "path": "LightGenV2/reports/20260917_redbox_timing_energy_audit/server_2026OpticsMoE_a100_formal/05_LSP/Ours/latency_component_summary.csv",
+      "sha256": "ae5fdc306a027686a51f7ac96a0ee25e595f922bec1b471f774315da152c42bf",
+      "bytes": 1773
+    },
+    {
+      "path": "LightGenV2/reports/20260917_redbox_timing_energy_audit/server_2026OpticsMoE_a100_formal/05_LSP/Ours/power_samples.csv",
+      "sha256": "ab89befef2569a1a3a213178c7a01d609692c45508e325930640386a2830ae64",
+      "bytes": 338574
+    },
+    {
+      "path": "LightGenV2/reports/20260917_redbox_timing_energy_audit/server_2026OpticsMoE_a100_formal/05_LSP/Ours/power_summary.json",
+      "sha256": "1c1ab297db3f0a16105038a564e3d07df63a9c33e334834235fd9d24e7a779b6",
+      "bytes": 22642
+    },
+    {
+      "path": "LightGenV2/reports/20260917_redbox_timing_energy_audit/server_2026OpticsMoE_a100_formal/05_LSP/Ours/report.json",
+      "sha256": "60d83b82aed5fd7372d854635c147f6e076a30dc729ac41998a023ace63f738f",
+      "bytes": 2896
+    },
+    {
+      "path": "LightGenV2/reports/20260917_redbox_timing_energy_audit/server_2026OpticsMoE_a100_formal/05_LSP/source_manifest.json",
+      "sha256": "6877be71d7fd0df810c95c8cb300d3582c252897f9e9532e6e6b66538f0d54bb",
+      "bytes": 2763
+    },
+    {
+      "path": "LightGenV2/reports/20260917_redbox_timing_energy_audit/server_2026OpticsMoE_a100_formal/05_LSP/table_rows.csv",
+      "sha256": "139116b73f956c66d6d4d7f7d4ef9da4cb4be1ceb805033f27120f871de1167f",
+      "bytes": 721
+    },
+    {
+      "path": "LightGenV2/reports/20260917_redbox_timing_energy_audit/server_2026OpticsMoE_a100_formal/06_SALICON/Baseline/baseline_manifest.json",
+      "sha256": "2270000212ca712b1f05893f252e80353b8e77ebdd09f16b18621fdb61067c10",
+      "bytes": 513
+    },
+    {
+      "path": "LightGenV2/reports/20260917_redbox_timing_energy_audit/server_2026OpticsMoE_a100_formal/06_SALICON/Baseline/current_firstblock_formal/power_utilization_samples.csv",
+      "sha256": "1cc12ae16d8973cb2b90930cf385f3436a27833368ec8d9868710c39dff9f9f9",
+      "bytes": 167704
+    },
+    {
+      "path": "LightGenV2/reports/20260917_redbox_timing_energy_audit/server_2026OpticsMoE_a100_formal/06_SALICON/Baseline/current_firstblock_formal/process_audit.json",
+      "sha256": "e86537f8fd925a7753140faefc55f315d9f612ed96a2be05013d2bfe374cd14c",
+      "bytes": 596
+    },
+    {
+      "path": "LightGenV2/reports/20260917_redbox_timing_energy_audit/server_2026OpticsMoE_a100_formal/06_SALICON/Baseline/current_firstblock_formal/report.json",
+      "sha256": "9c7316917a57a582123244486299a98e57286762439456cfe421223768950116",
+      "bytes": 5119
+    },
+    {
+      "path": "LightGenV2/reports/20260917_redbox_timing_energy_audit/server_2026OpticsMoE_a100_formal/06_SALICON/Baseline/current_firstblock_formal/timing_per_sample.csv",
+      "sha256": "b750c21d47b519b045e3f12e350b375a9e2521e8cfac4b19ab8e4fb4dc9bbf39",
+      "bytes": 34101
+    },
+    {
+      "path": "LightGenV2/reports/20260917_redbox_timing_energy_audit/server_2026OpticsMoE_a100_formal/06_SALICON/Baseline/redbox_source_report.json",
+      "sha256": "0cfff8587377ae05e3e52fb5f74d974d790b33589f8390ce12bfeffa8b013ae4",
+      "bytes": 2871
+    },
+    {
+      "path": "LightGenV2/reports/20260917_redbox_timing_energy_audit/server_2026OpticsMoE_a100_formal/06_SALICON/Ours/all_per_call_timings.csv",
+      "sha256": "231c5c3c930348e0a970466794b6edfd5281b4fae20c8114b1b2ce4f047b8e05",
+      "bytes": 2414555
+    },
+    {
+      "path": "LightGenV2/reports/20260917_redbox_timing_energy_audit/server_2026OpticsMoE_a100_formal/06_SALICON/Ours/component_energy.csv",
+      "sha256": "d292f28e7e412bdb584f5f3b60f1adcae6ad6e926e1b53ab15916bd440ee56e6",
+      "bytes": 612
+    },
+    {
+      "path": "LightGenV2/reports/20260917_redbox_timing_energy_audit/server_2026OpticsMoE_a100_formal/06_SALICON/Ours/latency_component_summary.csv",
+      "sha256": "fd07010524ec1602a2e8c5e97135063832232b3fdc746410e2d89658bd1a68d5",
+      "bytes": 1777
+    },
+    {
+      "path": "LightGenV2/reports/20260917_redbox_timing_energy_audit/server_2026OpticsMoE_a100_formal/06_SALICON/Ours/power_samples.csv",
+      "sha256": "ba5d664a7351ebb433d9adc9f5b51462e2cc5b6699e59a4c0b83ce944dc7cc5d",
+      "bytes": 348032
+    },
+    {
+      "path": "LightGenV2/reports/20260917_redbox_timing_energy_audit/server_2026OpticsMoE_a100_formal/06_SALICON/Ours/power_summary.json",
+      "sha256": "0ae5dce4037431b28862de753d6385763a331984d6aaa3c3ca93721e900f5692",
+      "bytes": 22646
+    },
+    {
+      "path": "LightGenV2/reports/20260917_redbox_timing_energy_audit/server_2026OpticsMoE_a100_formal/06_SALICON/Ours/report.json",
+      "sha256": "8b65a82dc5bef94f8fd09f79f5be8214ba16bb8e49e63b28c0700972a3cba855",
+      "bytes": 2897
+    },
+    {
+      "path": "LightGenV2/reports/20260917_redbox_timing_energy_audit/server_2026OpticsMoE_a100_formal/06_SALICON/source_manifest.json",
+      "sha256": "88c9a4b35a8785470e64ba53e74cb2335d2ae5ad30c9aea0ddfc3c535eeddd14",
+      "bytes": 2766
+    },
+    {
+      "path": "LightGenV2/reports/20260917_redbox_timing_energy_audit/server_2026OpticsMoE_a100_formal/06_SALICON/table_rows.csv",
+      "sha256": "9ad6695e44383d5d302e94cd145145eaad89bb5fd9783f0ed85e582fef36f12f",
+      "bytes": 731
+    },
+    {
+      "path": "LightGenV2/reports/20260917_redbox_timing_energy_audit/server_2026OpticsMoE_a100_formal/07_OpenMoji/Baseline/baseline_manifest.json",
+      "sha256": "8983db34078960d6dcb7b8b719f349ee5f7e2b9193d27320d187a3710845da29",
+      "bytes": 477
+    },
+    {
+      "path": "LightGenV2/reports/20260917_redbox_timing_energy_audit/server_2026OpticsMoE_a100_formal/07_OpenMoji/Baseline/current_firstblock_formal/power_utilization_samples.csv",
+      "sha256": "f7b9f0aec116007e9550018c817e3c0648d0bfe28a081bcf046e703575a38dc7",
+      "bytes": 169904
+    },
+    {
+      "path": "LightGenV2/reports/20260917_redbox_timing_energy_audit/server_2026OpticsMoE_a100_formal/07_OpenMoji/Baseline/current_firstblock_formal/process_audit.json",
+      "sha256": "2751ffdd49b61c353d0f4b9459c27698c87544a60c9dff56661c1db6d0cdc267",
+      "bytes": 596
+    },
+    {
+      "path": "LightGenV2/reports/20260917_redbox_timing_energy_audit/server_2026OpticsMoE_a100_formal/07_OpenMoji/Baseline/current_firstblock_formal/report.json",
+      "sha256": "d52a8bb9f5eb490d8f65d3409c73107ab7c1a4218e38be0960402a21ade585c5",
+      "bytes": 5411
+    },
+    {
+      "path": "LightGenV2/reports/20260917_redbox_timing_energy_audit/server_2026OpticsMoE_a100_formal/07_OpenMoji/Baseline/current_firstblock_formal/timing_per_sample.csv",
+      "sha256": "acf4cd8390411e9fcf932c543df10f80af756b6b5d3c9e4ddb578a6eecf84d3a",
+      "bytes": 40867
+    },
+    {
+      "path": "LightGenV2/reports/20260917_redbox_timing_energy_audit/server_2026OpticsMoE_a100_formal/07_OpenMoji/Baseline/redbox_source_report.json",
+      "sha256": "abc13cbbe8b3bd5e78ff7c2df4290f30496b84385bc4b97dbad5b1e4a4d2665e",
+      "bytes": 2957
+    },
+    {
+      "path": "LightGenV2/reports/20260917_redbox_timing_energy_audit/server_2026OpticsMoE_a100_formal/07_OpenMoji/Ours/all_per_call_timings.csv",
+      "sha256": "719eee9ea739b2e5bb8f6c1e41d8584774ce78515f4150a786213d501ae2be66",
+      "bytes": 4522994
+    },
+    {
+      "path": "LightGenV2/reports/20260917_redbox_timing_energy_audit/server_2026OpticsMoE_a100_formal/07_OpenMoji/Ours/component_energy.csv",
+      "sha256": "1d7d59ac4f83dfaba90315761f697b8f1eb804bd6973434b9ed749f96c0b0069",
+      "bytes": 993
+    },
+    {
+      "path": "LightGenV2/reports/20260917_redbox_timing_energy_audit/server_2026OpticsMoE_a100_formal/07_OpenMoji/Ours/latency_component_summary.csv",
+      "sha256": "7b83930710d0f19ae565af8c97ffab35083f454ac371d9ed7d9d14dd9b63b40e",
+      "bytes": 2982
+    },
+    {
+      "path": "LightGenV2/reports/20260917_redbox_timing_energy_audit/server_2026OpticsMoE_a100_formal/07_OpenMoji/Ours/power_samples.csv",
+      "sha256": "d4f2526fe6ad895ebeac26236fa717d54fdfdb35730ccc1cc27fc2dbd9e87231",
+      "bytes": 556791
+    },
+    {
+      "path": "LightGenV2/reports/20260917_redbox_timing_energy_audit/server_2026OpticsMoE_a100_formal/07_OpenMoji/Ours/power_summary.json",
+      "sha256": "08bcecec3a2c4cd215fe1e1eace0a2083bd1ec2da3f3e7be3327b81ba23b3573",
+      "bytes": 22647
+    },
+    {
+      "path": "LightGenV2/reports/20260917_redbox_timing_energy_audit/server_2026OpticsMoE_a100_formal/07_OpenMoji/Ours/report.json",
+      "sha256": "9c8703a4680a455b60a2ebaa586dfa6df394a058dd328f41843b5fe9a3e16785",
+      "bytes": 2944
+    },
+    {
+      "path": "LightGenV2/reports/20260917_redbox_timing_energy_audit/server_2026OpticsMoE_a100_formal/07_OpenMoji/source_manifest.json",
+      "sha256": "d6885f9c2b71ca8e6a256582637f7edc6e7bac05bbc68ad386969109e33946eb",
+      "bytes": 2767
+    },
+    {
+      "path": "LightGenV2/reports/20260917_redbox_timing_energy_audit/server_2026OpticsMoE_a100_formal/07_OpenMoji/table_rows.csv",
+      "sha256": "3322d6118cedd0a55ffa59b0abba8582e3c082b112750832dba6857134df3916",
+      "bytes": 769
+    },
+    {
+      "path": "LightGenV2/reports/20260917_redbox_timing_energy_audit/server_2026OpticsMoE_a100_formal/audit_summary.json",
+      "sha256": "c058dc13bb90294e16e2c01938d56b88afa86bcc8b919700d69e41ead98d37c3",
+      "bytes": 1724
+    },
+    {
+      "path": "LightGenV2/reports/20260917_redbox_timing_energy_audit/server_2026OpticsMoE_a100_formal/comparison.csv",
+      "sha256": "0e621de6cae0e5e44c31091adb4afda2a8f325b1a8456a7714aaea917e6d5d61",
+      "bytes": 1028
+    },
+    {
+      "path": "LightGenV2/reports/20260917_redbox_timing_energy_audit/server_2026OpticsMoE_a100_formal/redbox_values.csv",
+      "sha256": "82646de6e957d02c872887cb2d91feed1c7a3e7e64435881cda5d95431ee106a",
+      "bytes": 4433
+    }
+  ],
+  "manifest_original_windows_sha256": "013d0ac909f63bcb11babe4dd48b64842d51f1feb5635660d880d33166cbffa2",
+  "manifest_entries_verified": 111,
+  "scope": "Sep 17 static server-formal timing organization copy; existing original manifest verified. Not fresh measurements or scientific recomputation.",
+  "files_deleted": false,
+  "files_moved": false,
+  "named_payloads_ignored": 99,
+  "source_configs_future_files_and_docs_hidden": false,
+  "historical_missing_raw_data_note": "Historical redbox per-sample CSV absent for ABO I2T, ABO I2I, LSP, SALICON and OpenMoji; newer firstblock captures cannot substitute that measurement."
+}

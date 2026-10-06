@@ -147,8 +147,14 @@ def main():
                         help='Audit Sep 27 historical payloads including explicit relocations; requires local files and reports unresolved members')
     parser.add_argument('--t12-share-payloads', action='store_true',
                         help='Verify retained local T12 share export files; requires private payloads')
+    parser.add_argument('--server-formal-timing-payloads', action='store_true',
+                        help='Verify all 111 original Sep 17 timing organization-copy members; requires local files')
     args = parser.parse_args()
     result = inspect(args.repo)
+    if args.server_formal_timing_payloads:
+        descriptor = json.loads((args.repo/'maintenance/storage/SERVER_FORMAL_TIMING_VISIBILITY_20261006.json').read_text(encoding='utf8'))
+        result['server_formal_timing_payloads'] = inspect_timing_manifest(args.repo, descriptor)
+        result['errors'].extend(result['server_formal_timing_payloads']['errors'])
     if args.t12_share_payloads:
         descriptor = json.loads((args.repo/'maintenance/storage/T12_SHARE_SOURCE_PAYLOAD_VISIBILITY_20261006.json').read_text(encoding='utf8'))
         result['t12_share_payloads'] = inspect_export_payload(args.repo, descriptor)

@@ -10,6 +10,16 @@ ROOT = Path(__file__).resolve().parents[3]
 
 
 class ArtifactIgnoreTests(unittest.TestCase):
+    def test_server_formal_timing_copy_is_exactly_named_not_folder_hidden(self):
+        prefix = 'LightGenV2/reports/20260917_redbox_timing_energy_audit/server_2026OpticsMoE_a100_formal/'
+        private = [prefix + '01_LGVQ_temporal/Ours/all_per_call_timings.csv',
+                   prefix + '07_OpenMoji/Baseline/redbox_source_report.json']
+        visible = [prefix + 'README_CN.md', prefix + 'RAW_DATA_STATUS.md',
+                   prefix + 'SHA256SUMS.txt', prefix + 'future_run/report.json',
+                   prefix + '07_OpenMoji/Baseline/future_measurement.csv',
+                   prefix + 'measure.py']
+        self.assertEqual(self.ignored(private + visible), set(private))
+
     def test_named_demo_source_export_not_main_or_future_source(self):
         prefix = 'LightGenV2/reports/20260927_demo_energy_efficiency_a100/ours/01_lgvq/source_snapshot/'
         private = [prefix + 'tasks/t06_video_quality_assessment/run.py']
