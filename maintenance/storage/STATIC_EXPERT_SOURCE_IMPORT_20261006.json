@@ -405,5 +405,12 @@
   "original_assets_and_timing_preserved": true,
   "full_asset_migration_complete": false,
   "cpu_tests_passed": 29,
+  "actual_server_root_cpu_tests_passed": 29,
+  "server_root_synchronized_commit": "a93a37e04a27e518f80d24c4cabf54e206c3c613",
+  "server_existing_files_adopted_without_byte_changes": 63,
+  "server_missing_report_tool_materialized": "TransferFromElectricity/tasks/t01_object_retrieval/report_unseen.py",
+  "server_original_tracked_record_status_preserved": true,
+  "server_index_backup_sha256": "ad92488ec79854831836af06814a50c167041a681d90658c8e622539ecf2cc39",
+  "force_reset_or_source_deletion_used": false,
   "cpu_test_exclusion": "Connection-only collection test requires unavailable Paramiko; no connection tool published"
 }
