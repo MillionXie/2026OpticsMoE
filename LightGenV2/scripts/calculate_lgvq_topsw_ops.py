@@ -189,7 +189,7 @@ def count_qwen(args: argparse.Namespace, device: torch.device) -> dict[str, Any]
     quality_scores = payload["level_scores"].float().to(device)
     rows = core.read_manifest(manifest_path)
     sample = next(row for row in rows if row["split"] == "test")
-    prompt = core.render_prompt(processor, args.target)
+    prompt = core.render_prompt(processor, "temporal")
     inputs, positions = core.prepare_inputs(
         sample, core.FRAME_FRACTIONS[4], processor, prompt, device, 448
     )
@@ -466,7 +466,6 @@ def main() -> int:
     parser.add_argument("--manifest", type=Path, required=True)
     parser.add_argument("--output", type=Path, required=True)
     parser.add_argument("--device", default="cuda:0")
-    parser.add_argument("--target", choices=("temporal", "spatial"), default="temporal")
     parser.add_argument("--ours-time-ms", type=float, default=8.660)
     parser.add_argument("--ours-energy-j", type=float, default=1.162)
     parser.add_argument("--qwen-time-ms-16", type=float, default=1200.053)

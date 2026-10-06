@@ -1,0 +1,18 @@
+{
+  "schema": 1,
+  "canonical_source": "LightGenV2/scripts/calculate_lgvq_topsw_ops.py",
+  "server_source": "/DATA/DATA1/guest3/2026OpticsMoE/LightGenV2/scripts/calculate_lgvq_topsw_ops.py",
+  "server_original_sha256": "3ccd0c4f34cf78c3e002f9d89f49178f9902f059c91212d36e7728c9c74afa62",
+  "local_original_extension_sha256": "51db28a87539d8ddab0a979b31761e9d0e53912cb0fbf3332892e427d2a4fe75",
+  "local_extension_recovery_commit": "0da55839ce47c65edd987d5e4873f880c457b7db",
+  "local_extension_delta": "CLI --target temporal|spatial with temporal default, forwarded to render_prompt; server original fixed temporal",
+  "local_original_server_source_snapshot": "LightGenV2/reports/20260915_lgvq_topsw/source_snapshot/calculate_lgvq_topsw_ops.py",
+  "local_result": "LightGenV2/reports/20260915_lgvq_topsw/operation_count_and_topsw.json",
+  "local_result_sha256": "a2773ce8b9330f7e8df59f3f7d6e8773143d35e877d4bfc9750b0144efbf755c",
+  "local_snapshot_and_result_in_git": false,
+  "server_report_at_root_same_path": false,
+  "scope": "Read-only comparison established server source equals preserved local report source snapshot. Canonical code adopts that original source; local extension preserved in Git history. CPU fixture checks do not prove Qwen/asset/runtime closure or historical timing accuracy.",
+  "timing_data_changed": false,
+  "gpu_or_hardware_executed": false,
+  "original_report_and_source_snapshot_deleted": false
+}
