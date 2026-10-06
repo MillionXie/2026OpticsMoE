@@ -1,0 +1,213 @@
+{
+  "source_commit": "5f731fae979ef81a09770c1dd721b5cecd8b3392",
+  "files": [
+    {
+      "path": "LightGenV2/__init__.py",
+      "git_blob": "3767fd235e5677e4d10dac4b73c58d7669b5dfe0",
+      "sha256": "22f1d762857916ed1e5a173a60fa7d864cd10139f40fa9c249c38fbeb86ea92e"
+    },
+    {
+      "path": "LightGenV2/tasks/__init__.py",
+      "git_blob": "af86adebbff7eef2c3d97e22e6eaa0e1c5d6b860",
+      "sha256": "cb7dde6e220a684ccb22efb1d4af40540497d7a7753c6692b24546411515c6f6"
+    },
+    {
+      "path": "LightGenV2/tasks/t01_object_retrieval/configs/common.yaml",
+      "git_blob": "6eb300f54620d3282d5fa3d8911050db469828ef",
+      "sha256": "7077bf94bfad8602a610ef96a83f701ede80d08576ec6a38544e2ede910c0f4f"
+    },
+    {
+      "path": "LightGenV2/tasks/t01_object_retrieval/configs/common_dc20.yaml",
+      "git_blob": "d8bba83df785c331ccb83950eb6684697e0c1074",
+      "sha256": "44b54b007a24f712e4135dbf4f780134cf159484e46ad1f25419e24793be26d8"
+    },
+    {
+      "path": "LightGenV2/tasks/t07_abo_image_retrieval/__init__.py",
+      "git_blob": "a6712088b460be32deb9b185c399fdddb0204a01",
+      "sha256": "e918797eb8f5566512f309af431f6e009608f4cbdb497ba1f6d6d05e98de7dcd"
+    },
+    {
+      "path": "LightGenV2/tasks/t07_abo_image_retrieval/configs/optical_top2_dc20.yaml",
+      "git_blob": "f200f2cf5eb0fbc194c2577304d1892d27c35329",
+      "sha256": "fd45a958e9b9056f0aa9798b761a29e8f5c2ff2f31260653fe8d853ae39bbd77"
+    },
+    {
+      "path": "LightGenV2/tasks/t07_abo_image_retrieval/configs/optical_top2_dc20_anchor.yaml",
+      "git_blob": "e0a37812c627540423cd7611c9dc1359775954fe",
+      "sha256": "19e71a79c00a8b6b19efb165bbc6cfe46f4cfec2c636dd0aa91c4a0b38d5af77"
+    },
+    {
+      "path": "LightGenV2/tasks/t07_abo_image_retrieval/configs/polish_low_lr.yaml",
+      "git_blob": "aadf8e24863acfad15bc4992a9d8d9bafa186171",
+      "sha256": "c4411506b5f4fe4620f2b6bc82772667e92c8667dd894f2d30262da9fbc053c5"
+    },
+    {
+      "path": "LightGenV2/tasks/t07_abo_image_retrieval/configs/polish_phase_reheat.yaml",
+      "git_blob": "d90af4d904626130f9f50ae18c1d280b2e72b8be",
+      "sha256": "b67427d7509e89e89a742796050c42378f145f22d11af4ee8a506f4387d91ea8"
+    },
+    {
+      "path": "LightGenV2/tasks/t07_abo_image_retrieval/configs/polish_smoothing.yaml",
+      "git_blob": "14ce496e8ec6403cc1128ae934c9b2c427e2c867",
+      "sha256": "ed9ac674c86f297d9e1b2af4b83b1cf7d8961b16cee7f12b42cf953347811977"
+    },
+    {
+      "path": "LightGenV2/tasks/t07_abo_image_retrieval/configs/refine_electronics.yaml",
+      "git_blob": "1b394885f45c2e97ef69d0f28307bf5d9ffb32b6",
+      "sha256": "c7b288651ef22b5cb2c10c5f53e98e96d2bea7ab1c4324f0c9fcb347ea5ffbe7"
+    },
+    {
+      "path": "LightGenV2/tasks/t07_abo_image_retrieval/configs/refine_gallery.yaml",
+      "git_blob": "b7ad14def5d1e18fb687944bf0ad68a5dd9ed1cf",
+      "sha256": "d402917a16f6d46a6d6f86bb8bc909f99022a8588b488507995ed6577666dd00"
+    },
+    {
+      "path": "LightGenV2/tasks/t07_abo_image_retrieval/configs/refine_gallery_relation.yaml",
+      "git_blob": "0f1c044120d186c515ecf49d93d7f9e1576aa0aa",
+      "sha256": "d44422bd5a1666899b1bad7c416fe5db6200ae4abe564395256c3e1ffa6a8a53"
+    },
+    {
+      "path": "LightGenV2/tasks/t07_abo_image_retrieval/configs/refine_training.yaml",
+      "git_blob": "e743c85182b482bcc515df0e2b067d87c0a6040c",
+      "sha256": "3739722ba5c323772243080eeb8050467a67c76a982a971fb639ed9374fcdcc8"
+    },
+    {
+      "path": "LightGenV2/tasks/t07_abo_image_retrieval/standalone/__init__.py",
+      "git_blob": "11a667cbfa8c59a98dfecbbc950787e5062dc28d",
+      "sha256": "53db7bdf4277ec72c9af012c50dcded4a7d116f62425f073d3b6a9538a92da63"
+    },
+    {
+      "path": "LightGenV2/tasks/t07_abo_image_retrieval/standalone/cli.py",
+      "git_blob": "9b8772c893d91155f7020b8fe1df13ed39f44e8d",
+      "sha256": "6a44675bd14e606e6bcada29bdf07bd9fa933eb422dd0f259f3d664cae9c0c58"
+    },
+    {
+      "path": "LightGenV2/tasks/t07_abo_image_retrieval/standalone/curriculum.py",
+      "git_blob": "93bd953d206c753eddeec6bb5364590844965630",
+      "sha256": "f0f5a998c54f69115f86948d374e04b03ba613d8df2e26a551f967a596de46b5"
+    },
+    {
+      "path": "LightGenV2/tasks/t07_abo_image_retrieval/standalone/data.py",
+      "git_blob": "b18ef5657e4033b4b8afa369a2c651e7802093e3",
+      "sha256": "985bb7efc3fba06a9ba22e566d0c196b67e3378ab091206050b59820f5d83b03"
+    },
+    {
+      "path": "LightGenV2/tasks/t07_abo_image_retrieval/standalone/enrolled_abo.py",
+      "git_blob": "1259f9720ae3205e864e059ef6b53b9f1a65ea06",
+      "sha256": "0344436032f2e492f6af602ad95fe6afff1d85ce74d740896bacfc4185137f4e"
+    },
+    {
+      "path": "LightGenV2/tasks/t07_abo_image_retrieval/standalone/frontend.py",
+      "git_blob": "6b717e05535744f81a107d9caf65bf3b46f494bb",
+      "sha256": "6759ee3d8893388590d5952f0819b64c88db5380f4b8c964174bbd6b08de53b1"
+    },
+    {
+      "path": "LightGenV2/tasks/t07_abo_image_retrieval/standalone/io.py",
+      "git_blob": "913b289ab34bef15d9fd26f8895267002c82986d",
+      "sha256": "67d1dd84182d772473f88321da9105fcc9d8cd58fcca6eca4eee9de7dfe31d01"
+    },
+    {
+      "path": "LightGenV2/tasks/t07_abo_image_retrieval/standalone/learning_curves.py",
+      "git_blob": "69b8839ae7260dc221605318d6e60e27ade066c0",
+      "sha256": "80e49e8fc8000aaa78d47c1f93356f8e0db315c14425667d40a6c16c585154f4"
+    },
+    {
+      "path": "LightGenV2/tasks/t07_abo_image_retrieval/standalone/model.py",
+      "git_blob": "1ce0c5b3ec7e8b729d40c796a6d56468b3c1c044",
+      "sha256": "ec19ea0675b8931ae19918fb92286ccdd8bc566e49c62c59e98348080a17772b"
+    },
+    {
+      "path": "LightGenV2/tasks/t07_abo_image_retrieval/standalone/optics.py",
+      "git_blob": "cb1575a90d16e7524fcd9243d935b96f15bb9ed5",
+      "sha256": "6490c6ee0ccc7501572fbae722aafbd7d4a016425d21af454019e7b60625433d"
+    },
+    {
+      "path": "LightGenV2/tasks/t07_abo_image_retrieval/standalone/retail_sources.py",
+      "git_blob": "27e55a2a6ce1f216b276bddb5eee76931c3082aa",
+      "sha256": "a4c8a6c21dee4484633ab57b63c33e5a84702635412d64d27d8bdbdd0e197149"
+    },
+    {
+      "path": "LightGenV2/tasks/t07_abo_image_retrieval/standalone/retrieval_screen.py",
+      "git_blob": "beb24579ea4ae7b8dc075b5b62688c408b1222bb",
+      "sha256": "4dd5c999e70c05c4b48ce6d5150c4785fa0b8050b16ffacce990c8c884234151"
+    },
+    {
+      "path": "experiments/qwen3_vl_embedding_2b_caltech101_electronic_retrieval/configs/release/caltech101_target10_electronic.yaml",
+      "git_blob": "8907a903c07f25595bb192ad5d854bdaf3e6b7d5",
+      "sha256": "4953500d7b9517dfcdaf65f5c41a43655eedc5fe8ce25c90280ac7d99d4d31fa"
+    },
+    {
+      "path": "experiments/qwen3_vl_embedding_2b_caltech101_electronic_retrieval/configs/release/caltech101_target10_electronic_token_mixer.yaml",
+      "git_blob": "072c77592483b3724cd8d1afdf120ee0905d3a5c",
+      "sha256": "8deaaffe7b544713fe8511266cec8c1a8c4be01c5239c7f7f8e37e076af78bb8"
+    },
+    {
+      "path": "experiments/qwen3_vl_embedding_2b_caltech101_electronic_retrieval/configs/release/caltech101_target10_electronic_vision2d.yaml",
+      "git_blob": "34f48cacf31f0f80b423c75e98efff362421779c",
+      "sha256": "9b3641cbc896bc6269763d5dc5db2757dff23a2192f6029af5c00fd0c8187e0e"
+    },
+    {
+      "path": "experiments/qwen3_vl_embedding_2b_caltech101_four_layer_optical_retrieval/configs/release/caltech101_four_layer_optical_joint.yaml",
+      "git_blob": "00ff927940b261e9e533a1125ddfac7fd9fcca01",
+      "sha256": "102ff9f55627c2743463ab6af75dffe004d5dd127e2b818c3aaff2ced7899d1a"
+    },
+    {
+      "path": "experiments/qwen3_vl_embedding_2b_caltech101_four_layer_optical_retrieval/configs/release/caltech101_four_layer_optical_joint_17um.yaml",
+      "git_blob": "ab549e11f5e71bdc23ad8887fdd03f3e48dec1b1",
+      "sha256": "5ec6bb3e1a8d06986dda2349647ca98511b17f0e45129b8dcfa821a292a433a5"
+    },
+    {
+      "path": "experiments/qwen3_vl_embedding_2b_caltech101_four_layer_optical_retrieval_10cm_robust/configs/release/caltech101_four_layer_optical_joint_17um_10cm_robust.yaml",
+      "git_blob": "e55ce8178b629758eb9d2504964b66acbceeafd0",
+      "sha256": "7a3233907134893d893065e1a9dcf5cb51f6958d3803137b478200b986d6559a"
+    },
+    {
+      "path": "experiments/qwen3_vl_embedding_2b_caltech101_four_layer_optical_retrieval_10cm_warmstart5/configs/release/stage1_optical_calibration.yaml",
+      "git_blob": "bda3c9a88676112ea40f39faab8d649b983305ae",
+      "sha256": "a48c16e6f31100f6c958c31c916b188aa5ec477f82436339df7dfe215704fc88"
+    },
+    {
+      "path": "experiments/qwen3_vl_embedding_2b_caltech101_four_layer_optical_retrieval_10cm_warmstart5/configs/release/stage2_joint_sealed_test.yaml",
+      "git_blob": "59de0b934c88a318010d13e6fccd1280a0b86d4c",
+      "sha256": "7831548824abd9bf3893f0300d41cf20a2f02c8a2a047c928addc3d83a8c7c47"
+    },
+    {
+      "path": "experiments/qwen3_vl_embedding_2b_caltech101_four_layer_optical_router_retrieval/configs/release/common.yaml",
+      "git_blob": "bfb4919a6186fc1292b8ed58dca5ef678f779c76",
+      "sha256": "551d95b08c4b83a63cba08666a7cb633806f3a8bf236879ac559a61d53d9741e"
+    },
+    {
+      "path": "experiments/qwen3_vl_embedding_2b_caltech101_four_layer_optical_router_retrieval/configs/release/optical_power_topk2.yaml",
+      "git_blob": "729a9d9c816e0acbbaf15709d0a7e79ab42828b5",
+      "sha256": "22c7a32fa0a232570dd9e272562fd29e3a9305d206d56d71886aab15605efdcd"
+    },
+    {
+      "path": "experiments/qwen3_vl_embedding_2b_caltech101_robust_hybrid_retrieval/configs/release/caltech101_robust_hybrid_moe4.yaml",
+      "git_blob": "7f8567f813471bacfe3b2314b7ab849f80c06df4",
+      "sha256": "70e61c7272b2ab7f9715ac5ed4f038d9f07d8f73eaee2fccca81192e55adc1eb"
+    },
+    {
+      "path": "experiments/qwen3_vl_embedding_2b_caltech101_robust_hybrid_retrieval/configs/release/caltech101_target10_finetune.yaml",
+      "git_blob": "89dc5ca14cb7ef6c4bd023b10bf6a22f5a0689fc",
+      "sha256": "7b998e34a0b8e36c7d28b2164286b27d1ce3f414d61036b3f9c663e9f66efac7"
+    },
+    {
+      "path": "experiments/qwen3_vl_embedding_2b_grocery10_optical_retrieval/configs/release/model_moe4.yaml",
+      "git_blob": "eab13dee6aa1b5142ad3bef2598f76db0a1ceca3",
+      "sha256": "02adbb47372bffb8695c99ccb46bb45e9c30179a5f1d472855a697689f5b1c04"
+    },
+    {
+      "path": "experiments/qwen3_vl_embedding_2b_grocery10_robust_hybrid_retrieval/configs/release/robust_hybrid_moe4.yaml",
+      "git_blob": "a042925faaddfcdef88afbf404cf7a00e9b6a836",
+      "sha256": "cab85e8c90b01feef38e913992903fcb1d95768f513f37b5ba9bd5a37563c2ab"
+    }
+  ],
+  "external_import_roots": [
+    "PIL",
+    "matplotlib",
+    "numpy",
+    "torch",
+    "transformers"
+  ],
+  "verification": "Original Git bytes and Python syntax checked; no new full-dataset inference or retraining."
+}

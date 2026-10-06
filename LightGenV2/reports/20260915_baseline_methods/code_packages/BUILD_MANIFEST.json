@@ -1,0 +1,96 @@
+{
+  "tasks": [
+    {
+      "task": "01_lgvq",
+      "source_files": 30,
+      "zip_bytes": 60483,
+      "sha256": "615d72fb001bc9a720b99e74ed6e20c1f88c6cbeb77d4590d432d21f1b4e3fb7",
+      "source_commit": "4b24e9ad4df027db3bac92a7721ae8cf052a6f50",
+      "external_import_roots": [
+        "PIL",
+        "cv2",
+        "numpy",
+        "scipy",
+        "torch",
+        "transformers",
+        "yaml"
+      ]
+    },
+    {
+      "task": "02_abo_image_text",
+      "source_files": 118,
+      "zip_bytes": 228172,
+      "sha256": "704a53bcd4d56c6a139af18329e7f0cc3c9fc497a61e4e9af962d992ab3c693f",
+      "source_commit": "b9a4be689f198f55ee0caaf4e5bcddd4dfc80200",
+      "external_import_roots": [
+        "PIL",
+        "matplotlib",
+        "numpy",
+        "torch",
+        "yaml"
+      ]
+    },
+    {
+      "task": "03_abo_image_image",
+      "source_files": 40,
+      "zip_bytes": 75918,
+      "sha256": "22672d56f62715b3edff8ff9a48164ccb537bbebfe2796e01ad9bc52286a5054",
+      "source_commit": "5f731fae979ef81a09770c1dd721b5cecd8b3392",
+      "external_import_roots": [
+        "PIL",
+        "matplotlib",
+        "numpy",
+        "torch",
+        "transformers"
+      ]
+    },
+    {
+      "task": "04_lsp",
+      "source_files": 87,
+      "zip_bytes": 154148,
+      "sha256": "a11aab261c9d2df5a1e8d218a88bf817ee8395b3a03edaa76dcb235f432d32d9",
+      "source_commit": "bcec3a5977ccf00c71c6b5e8c00bf436cc3e305e",
+      "external_import_roots": [
+        "PIL",
+        "huggingface_hub",
+        "matplotlib",
+        "numpy",
+        "scipy",
+        "torch",
+        "yaml"
+      ]
+    },
+    {
+      "task": "05_salicon",
+      "source_files": 298,
+      "zip_bytes": 487849,
+      "sha256": "4b7721d096dbb2100c421281c2ac47032b0638f8ff9766965fc1db097967f79d",
+      "source_commit": "d8653fa6057f96b52d53259999343ff2117c1526",
+      "external_import_roots": [
+        "PIL",
+        "huggingface_hub",
+        "matplotlib",
+        "numpy",
+        "scipy",
+        "torch",
+        "yaml"
+      ]
+    },
+    {
+      "task": "06_openmoji",
+      "source_files": 165,
+      "zip_bytes": 319783,
+      "sha256": "f36ba2ccf6ff50df24e7a09164bb6c324c4e51298ba097f6c729da03fb68d7e2",
+      "source_commit": "966f407000c5ecef4c7c6415d8995065aeed7484",
+      "external_import_roots": [
+        "PIL",
+        "matplotlib",
+        "numpy",
+        "safetensors",
+        "torch",
+        "transformers",
+        "yaml"
+      ]
+    }
+  ]
+}

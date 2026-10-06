@@ -1,0 +1,165 @@
+{
+  "source_commit": "4b24e9ad4df027db3bac92a7721ae8cf052a6f50",
+  "files": [
+    {
+      "path": "LightGenV2/__init__.py",
+      "git_blob": "3767fd235e5677e4d10dac4b73c58d7669b5dfe0",
+      "sha256": "22f1d762857916ed1e5a173a60fa7d864cd10139f40fa9c249c38fbeb86ea92e"
+    },
+    {
+      "path": "LightGenV2/common/__init__.py",
+      "git_blob": "29f9a264918707856afee337213b3d3af99da1f2",
+      "sha256": "9c45fcd75fdf41e73a9bf81e29f3c8ef9179704a494357d054896df7b33befb5"
+    },
+    {
+      "path": "LightGenV2/common/baseline_measurement.py",
+      "git_blob": "1ad9171e5e1cfeca4a3cbbe9ee74a6db49246fdd",
+      "sha256": "f42a68dceddbc9eef1b9cf32196fe24a5f747b6005547c4cda131ce8b03c3d5a"
+    },
+    {
+      "path": "LightGenV2/tasks/__init__.py",
+      "git_blob": "af86adebbff7eef2c3d97e22e6eaa0e1c5d6b860",
+      "sha256": "cb7dde6e220a684ccb22efb1d4af40540497d7a7753c6692b24546411515c6f6"
+    },
+    {
+      "path": "LightGenV2/tasks/t06_video_quality_assessment/__init__.py",
+      "git_blob": "b96c40556bbd0809ed6a3fba0cec9ba314005c75",
+      "sha256": "1e6115fff47ba794a7f91847108c637c73b6701fba34a8d9f7a47025ef5a2bd8"
+    },
+    {
+      "path": "LightGenV2/tasks/t06_video_quality_assessment/configs/baselines/qwen3vl_quality_tokens_r448.yaml",
+      "git_blob": "7ad9b23345c39127445f7f6ed479d25775ece8b0",
+      "sha256": "6aed3f7212aed6815e2c94953cf553e481b53c4acc73a42fdf70811b9e746da7"
+    },
+    {
+      "path": "LightGenV2/tasks/t06_video_quality_assessment/configs/baselines/qwen3vl_quality_tokens_r448_a100.yaml",
+      "git_blob": "6fd73e74e9c7b4aafc90afdfee63633790c1168c",
+      "sha256": "24451d75e6137a50a0472a83bd909e4e9bda7946c13531cfd6ec3ef7720499d5"
+    },
+    {
+      "path": "LightGenV2/tasks/t06_video_quality_assessment/configs/baselines/qwen3vl_spatial_quality_tokens_4f_r448.yaml",
+      "git_blob": "97253923dad177d77245ddd9ca9ba4d390006cbb",
+      "sha256": "e1fa6dd75bdd635ff922cedf2994f7fe4e0d73569436726dc9135f401222e249"
+    },
+    {
+      "path": "LightGenV2/tasks/t06_video_quality_assessment/configs/baselines/qwen3vl_spatial_quality_tokens_4f_r448_a100.yaml",
+      "git_blob": "f426c6ce64ac7686343b14d4e94f7766b09924bf",
+      "sha256": "69de5a8481b94c8c5ae65db004c29ae2b22c0c454b9465908e2350e9d70616fb"
+    },
+    {
+      "path": "LightGenV2/tasks/t06_video_quality_assessment/configs/lightgen/spatial_single_video4_balanced.yaml",
+      "git_blob": "4453fe45d2661e9d263003e65b463fcc3b4ce691",
+      "sha256": "3da3466930f7f6eae7aa29bb703d51deaa0cb14893ee0c92af49d4cedc8aed13"
+    },
+    {
+      "path": "LightGenV2/tasks/t06_video_quality_assessment/configs/lightgen/temporal36_balanced.yaml",
+      "git_blob": "aa54cfbe17773576da094f2e2c8cd99eb0ee4cbe",
+      "sha256": "49ef871ff3d41783cc798a7fe9f4ac9ada38b5c264ebbd919d92a798340d6d58"
+    },
+    {
+      "path": "LightGenV2/tasks/t06_video_quality_assessment/configs/lightgen/temporal_multivideo16x4_base.yaml",
+      "git_blob": "f9e6e91500632eb82a3a5d275765041bf76cf76c",
+      "sha256": "3452ec2427bca2ceeb0e5badd824da5d4896562fc258db3c1215bc27b5ee07ef"
+    },
+    {
+      "path": "LightGenV2/tasks/t06_video_quality_assessment/configs/lightgen/temporal_multivideo16x4_formal.yaml",
+      "git_blob": "21dd181fcd631cdc9cf463bfb873ca76a688113a",
+      "sha256": "1dfbb14ea16524e817b8f3d32581b1d22c0bb128d2f113893d0bcc4ab67d3155"
+    },
+    {
+      "path": "LightGenV2/tasks/t06_video_quality_assessment/configs/lightgen/temporal_multivideo9x4_base.yaml",
+      "git_blob": "ea79851a5ece7352e122d1142f13948b6a20e6b3",
+      "sha256": "bf196d8b85c2ec4133263614cdaa6ebc55165fef0aed51396cb08d0b23e1ca42"
+    },
+    {
+      "path": "LightGenV2/tasks/t06_video_quality_assessment/configs/lightgen/temporal_multivideo9x4_formal.yaml",
+      "git_blob": "c29375b405ae9232d46add6fca36be478d5644f1",
+      "sha256": "3598de5b646a914004a0b7f7f3e989835a27d7559e2d423afeda55f4c413493c"
+    },
+    {
+      "path": "LightGenV2/tasks/t06_video_quality_assessment/project.py",
+      "git_blob": "6dc920164f35b857710cf410b979731e094662e1",
+      "sha256": "bc78c0f6acd24e2a6d738fc8baf8db1b85887ebb82a5ccc0c8243ccacbac0989"
+    },
+    {
+      "path": "LightGenV2/tasks/t06_video_quality_assessment/quality_token_common.py",
+      "git_blob": "db935a02f140dfb7c88b6d9362680d901bed6ace",
+      "sha256": "58a5fb721632863638d52e9b6ff2762f0125c997269bfea6834b9df4fef407d7"
+    },
+    {
+      "path": "LightGenV2/tasks/t06_video_quality_assessment/quality_token_dataset_once.py",
+      "git_blob": "f8a073576dad2dcd35ab0202d6724a4ac70ce480",
+      "sha256": "266890f3ddc220e9aab6f8d2bdfa82bc5ef543acff29a73434ef797d1a44a523"
+    },
+    {
+      "path": "LightGenV2/tasks/t06_video_quality_assessment/quality_token_extract.py",
+      "git_blob": "5b958e0b4fa87c5d4fa718c646f1fb7c5c11da2a",
+      "sha256": "dc4a7bfea4e52ebe1976b31481ffb51324dcfdb288cfa85a81d93e4ce9db9ca5"
+    },
+    {
+      "path": "LightGenV2/tasks/t06_video_quality_assessment/quality_token_resolution.py",
+      "git_blob": "719016abe3d8104f4b7cfe747fd4edc7859f4986",
+      "sha256": "19e69938109cb7dafc0639771a95e342145a68465063cb704572704032e54cda"
+    },
+    {
+      "path": "LightGenV2/tasks/t06_video_quality_assessment/quality_token_train.py",
+      "git_blob": "6d1fa3ffdfd9f41ce3661a55416166caa5218409",
+      "sha256": "26aa1035f3cc332041f4916d4d0f9de02c03124e51cc72e211b32c346552eff2"
+    },
+    {
+      "path": "experiments/__init__.py",
+      "git_blob": "ffaffcd5aa118051e3c5c236d8f40a9a64f2285d",
+      "sha256": "75749e81ecc24c9b80e103e22e93682d393ba15972cd34dfc49fb59b77a0a311"
+    },
+    {
+      "path": "experiments/qwen3_vl_2b_lgvq_spatiotemporal_optical_router_vqa/__init__.py",
+      "git_blob": "f3edadf0d04f676a8eecad7731739bd26486abce",
+      "sha256": "08f4d93262955c2c4716b77810029844429220ea19dd82a74d0a29e1f9c7ffa7"
+    },
+    {
+      "path": "experiments/qwen3_vl_2b_lgvq_spatiotemporal_optical_router_vqa/configs/release/common.yaml",
+      "git_blob": "7df2626eab011550a9c8245c62ce6b25f7705102",
+      "sha256": "28cc54859701895da14087be8446cd39835c0177f0178fbb8a6757cf7bed915f"
+    },
+    {
+      "path": "experiments/qwen3_vl_2b_lgvq_spatiotemporal_optical_router_vqa/configs/release/e1.yaml",
+      "git_blob": "49b5a128358487f2ec78eff2938db5199761a9e2",
+      "sha256": "2e468f15bb69be92b9b90bddb7895ffe66d026fefc8c6f7117dba2752a21f5d5"
+    },
+    {
+      "path": "experiments/qwen3_vl_2b_lgvq_spatiotemporal_optical_router_vqa/configs/release/e2.yaml",
+      "git_blob": "143ee5c2949139993a36960ff0a16f9fc7903e43",
+      "sha256": "fd3ea5f39b6795c92c1bacfb26a4b550c1f62f12ac1e12b17b10ea9502d62da5"
+    },
+    {
+      "path": "experiments/qwen3_vl_2b_lgvq_spatiotemporal_optical_router_vqa/configs/release/e4.yaml",
+      "git_blob": "156f696a3cf9049d04c87e8954e4fb57e6cbb9ea",
+      "sha256": "aa0cad3aeb342dc0d9b9dedbdb7f900eccd19babc29b592599c5a87e8ebb03eb"
+    },
+    {
+      "path": "experiments/qwen3_vl_2b_lgvq_spatiotemporal_optical_router_vqa/configs/release/o2.yaml",
+      "git_blob": "804c53753c85df6dfe9ff8abe9abb02af0c88dfe",
+      "sha256": "b0359b97db627b1e58f49e5ee5b48f5e6ed4bb082ae826102c8568e15cdbf9b6"
+    },
+    {
+      "path": "experiments/qwen3_vl_2b_lgvq_spatiotemporal_optical_router_vqa/prepare_manifest.py",
+      "git_blob": "cab7716813cbf1f822f9a904c2c90241cd0edc4f",
+      "sha256": "4a000abcc28e4f336903546f0c06fe9b7217dad664df24ff1fea4ab4d0c8d146"
+    },
+    {
+      "path": "experiments/qwen3_vl_2b_lgvq_spatiotemporal_optical_router_vqa/settings.py",
+      "git_blob": "ddbcd6d9489cf8a5ce615d9fd6d04196d1f570bd",
+      "sha256": "4883292bad102f932b072652c1ddeb8e080c502dfb8dbfbd6c17541a192bf0ca"
+    }
+  ],
+  "external_import_roots": [
+    "PIL",
+    "cv2",
+    "numpy",
+    "scipy",
+    "torch",
+    "transformers",
+    "yaml"
+  ],
+  "verification": "Original Git bytes and Python syntax checked; no new full-dataset inference or retraining."
+}

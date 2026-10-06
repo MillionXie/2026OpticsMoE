@@ -1,0 +1,1505 @@
+{
+  "source_commit": "d8653fa6057f96b52d53259999343ff2117c1526",
+  "files": [
+    {
+      "path": "LightGenV2/__init__.py",
+      "git_blob": "3767fd235e5677e4d10dac4b73c58d7669b5dfe0",
+      "sha256": "22f1d762857916ed1e5a173a60fa7d864cd10139f40fa9c249c38fbeb86ea92e"
+    },
+    {
+      "path": "LightGenV2/common/__init__.py",
+      "git_blob": "29f9a264918707856afee337213b3d3af99da1f2",
+      "sha256": "9c45fcd75fdf41e73a9bf81e29f3c8ef9179704a494357d054896df7b33befb5"
+    },
+    {
+      "path": "LightGenV2/common/baseline_measurement.py",
+      "git_blob": "04bc8b952b5017ba3d85a05d59b434df65bee3be",
+      "sha256": "0036bfca8d9590b55a2a303e4ac7b6fbf11eb51d22be8377472e9e0e7d9e623f"
+    },
+    {
+      "path": "LightGenV2/tasks/__init__.py",
+      "git_blob": "af86adebbff7eef2c3d97e22e6eaa0e1c5d6b860",
+      "sha256": "cb7dde6e220a684ccb22efb1d4af40540497d7a7753c6692b24546411515c6f6"
+    },
+    {
+      "path": "LightGenV2/tasks/t01_object_retrieval/__init__.py",
+      "git_blob": "fc23689f7025e70fbf74220fde86c2073bc48f44",
+      "sha256": "5b586504607056e3c696f94a46491426c9d0640293f6a7c4bc4c4b8e90e53227"
+    },
+    {
+      "path": "LightGenV2/tasks/t01_object_retrieval/configs/common.yaml",
+      "git_blob": "6eb300f54620d3282d5fa3d8911050db469828ef",
+      "sha256": "7077bf94bfad8602a610ef96a83f701ede80d08576ec6a38544e2ede910c0f4f"
+    },
+    {
+      "path": "LightGenV2/tasks/t01_object_retrieval/configs/common_dc20.yaml",
+      "git_blob": "d8bba83df785c331ccb83950eb6684697e0c1074",
+      "sha256": "44b54b007a24f712e4135dbf4f780134cf159484e46ad1f25419e24793be26d8"
+    },
+    {
+      "path": "LightGenV2/tasks/t01_object_retrieval/configs/d2nn_active_expert_matched.yaml",
+      "git_blob": "45bfcc8b4a44887540dd11f74f0dd99d3bf7dea0",
+      "sha256": "45e0ce56a6e656cb4393f0b6178a8f2d74b747f44b8de0d2527056223c744dc6"
+    },
+    {
+      "path": "LightGenV2/tasks/t01_object_retrieval/configs/d2nn_active_expert_matched_dc20.yaml",
+      "git_blob": "7e2ed0ea81b14826eb9cfe28458c46e68ab4474c",
+      "sha256": "3009af6e16471805d9ff2537318d024d32ad9570e7f5a19eec50696a4e9604d1"
+    },
+    {
+      "path": "LightGenV2/tasks/t01_object_retrieval/configs/moe_optical_router_scale_matched.yaml",
+      "git_blob": "09b3da8349daaa899625ac66051a6b2078238652",
+      "sha256": "d708772c1ce3322d03b4a22e6d7d67f582f4042bdfefa2f396a5d3f0579b893f"
+    },
+    {
+      "path": "LightGenV2/tasks/t01_object_retrieval/configs/moe_optical_router_scale_matched_dc20.yaml",
+      "git_blob": "1cbb9e311d4c2d041df8e902c99bd744578f0c81",
+      "sha256": "82be1ec970d592e135c6e55a82c1750b8fed714b808cafebe12afad8b66efe65"
+    },
+    {
+      "path": "LightGenV2/tasks/t01_object_retrieval/configs/qwen_frozen_embedding.yaml",
+      "git_blob": "e6424c579281d6879b0b4ea3eb0f0d4ae0cf4047",
+      "sha256": "b28adffb3018a0f41aeb647b2b87c8e5890a086ff59839b0491df5ff4ede34e4"
+    },
+    {
+      "path": "LightGenV2/tasks/t01_object_retrieval/modeling.py",
+      "git_blob": "cc8c443eca25bbc7c210bde4328575b9d4bbb2f0",
+      "sha256": "d126c2fd7917af8de4c7068b41cbc2fed064211fa6fd957b3cb18057cc4c3838"
+    },
+    {
+      "path": "LightGenV2/tasks/t02_keypoint_detection/__init__.py",
+      "git_blob": "46ba0c5bee81f5adb81da527b944128275a0c529",
+      "sha256": "fe6c93fb8f90a03fc322ce3634100967723961b4f80acbe73545b82ac49882a4"
+    },
+    {
+      "path": "LightGenV2/tasks/t02_keypoint_detection/configs/common_dc20.yaml",
+      "git_blob": "16db5fcd6b199fca12a1d26404f5db29c5997e8c",
+      "sha256": "c6c77e9f30aec8af89ba50f873c398be9b2bf5bcb3526e422a1d41c42012b8e6"
+    },
+    {
+      "path": "LightGenV2/tasks/t02_keypoint_detection/configs/d2nn_active_expert_matched_dc20.yaml",
+      "git_blob": "7379cec82ed8e5d5589ed5f2047ec1d780f8ff23",
+      "sha256": "6fe475bb2dd5fd3ae37f206b0e6a365b1f431839317294c0f8d69b9d4e51c011"
+    },
+    {
+      "path": "LightGenV2/tasks/t02_keypoint_detection/configs/moe_optical_router_scale_matched_dc20.yaml",
+      "git_blob": "1cbb9e311d4c2d041df8e902c99bd744578f0c81",
+      "sha256": "82be1ec970d592e135c6e55a82c1750b8fed714b808cafebe12afad8b66efe65"
+    },
+    {
+      "path": "LightGenV2/tasks/t02_keypoint_detection/configs/moe_optical_router_scale_matched_dc20_no_shift.yaml",
+      "git_blob": "1d55e7671b92be7942496e899b8ccaa947c71f08",
+      "sha256": "d014f43b6f57df272b672272aa3969afdd361ccec6bb11ff954641ab6dad80ab"
+    },
+    {
+      "path": "LightGenV2/tasks/t02_keypoint_detection/configs/moe_optical_router_scale_matched_dc20_no_shift_warmstart.yaml",
+      "git_blob": "ee1121697f9f6fead0a83ec59a58aa9d315dd4d5",
+      "sha256": "18b99d131452275a7b6f8493871d4c48f8c0576863982470d0891d80c5e7619d"
+    },
+    {
+      "path": "LightGenV2/tasks/t02_keypoint_detection/modeling.py",
+      "git_blob": "53f1c964d374bb03c402d4ccedf0d10fcdaf460f",
+      "sha256": "6c3c71763b969b3d41af6b251441789ad5abe3bc9ee6a77abed9ed7b3391df4e"
+    },
+    {
+      "path": "LightGenV2/tasks/t02_keypoint_detection/settings.py",
+      "git_blob": "0ea3de4369ab353c89eadb7596827ae82d2e914b",
+      "sha256": "479f54bcab1e32fe583ad0b50ae5f7b8a90c13301ef47197c045c576d7be7e61"
+    },
+    {
+      "path": "LightGenV2/tasks/t03_saliency/__init__.py",
+      "git_blob": "a5c63d62052e62377ccb6e35cd99a3620a2d855d",
+      "sha256": "b12e447ef175e0e62ee46a6e1775c1b4907e77ab6e4db4673307c2c2bc27b410"
+    },
+    {
+      "path": "LightGenV2/tasks/t03_saliency/aligned_baseline.py",
+      "git_blob": "2e8b40f7defa2668d97924ad81168002bd591170",
+      "sha256": "70bfbcd56e2b8305cd6b462160306cbf7af2e3763cd450ac4372cdcf3f9b67ee"
+    },
+    {
+      "path": "LightGenV2/tasks/t03_saliency/baseline_5090d.py",
+      "git_blob": "46ac9598f25ebd467ad42fb39dd3c1ebec163a93",
+      "sha256": "473d9e7c578299fa5d38582824d20c41cfb5fd2634f8cac65ca27d4582422e31"
+    },
+    {
+      "path": "LightGenV2/tasks/t03_saliency/configs/common_dc20.yaml",
+      "git_blob": "192cfeb726ee6c938d84a6e9941c908e021794bf",
+      "sha256": "5649ee51bf9cc53f5c66fa55ff04f1f86bdb14410cc1ad1d978ce020e7c8b0c8"
+    },
+    {
+      "path": "LightGenV2/tasks/t03_saliency/configs/d2nn_active_expert_matched_dc20.yaml",
+      "git_blob": "a29f320e67d1e8c1e931bbbdf65be6c000575304",
+      "sha256": "b6351c965a463d0f7feb49fedbc64b28975538edcd436b9c9e23e9df34c52e9a"
+    },
+    {
+      "path": "LightGenV2/tasks/t03_saliency/configs/moe_alpha40_adaptive_keepkd.yaml",
+      "git_blob": "a2996ca932715f2817e115f7efa8f1369b053b2d",
+      "sha256": "a385adbdd6f170ea86c2761534d488f69ba84fa47e32faac1c16a5e65ef725b6"
+    },
+    {
+      "path": "LightGenV2/tasks/t03_saliency/configs/moe_alpha40_adaptive_releasekd.yaml",
+      "git_blob": "75f9efce4ea32cb9d7cd91e5e391e061900ad3fd",
+      "sha256": "ab6e7e96d772951c5fa83aadf55c9d783da223fd22d21e8a1fb85966f4e3db8b"
+    },
+    {
+      "path": "LightGenV2/tasks/t03_saliency/configs/moe_alpha40_adaptive_releasekd_cc.yaml",
+      "git_blob": "1d7512bf0ccb18064482a42ad7c03e5ba7deaaf8",
+      "sha256": "db86cc42eb3976fe3640ffb2422489c492b01dc4a5f22b6d50d5536e751f0acc"
+    },
+    {
+      "path": "LightGenV2/tasks/t03_saliency/configs/moe_alpha40_cffn_control.yaml",
+      "git_blob": "b56b378d3464983d49615cf6691681ccd96b2000",
+      "sha256": "58db174c9f992b281782c96b2dd4f7556537f8fcecf2e855e193cd6c096066bc"
+    },
+    {
+      "path": "LightGenV2/tasks/t03_saliency/configs/moe_alpha40_cffn_d1.yaml",
+      "git_blob": "e6c145f6f4e9566b852d8e4f724a97b51c50f15b",
+      "sha256": "e12d6692f62855d759e748b4a5a1786462ce9f2e6d7d53442e800d638f134ca5"
+    },
+    {
+      "path": "LightGenV2/tasks/t03_saliency/configs/moe_alpha40_cffn_d2.yaml",
+      "git_blob": "f9407c33f245befe6470f17e23a917ceedc24130",
+      "sha256": "5f8911ed70f0b1b3251d4f6a7da505b4026efe48971421cc2ae622763ec27c7d"
+    },
+    {
+      "path": "LightGenV2/tasks/t03_saliency/configs/moe_alpha40_crop_actual_short20.yaml",
+      "git_blob": "9526c2f770b0ec2c5982666bbac987219a2511f3",
+      "sha256": "3c03e3ba962447e7a94cdb3bcd83d61d668448854925b5471d2a0aaa612e9198"
+    },
+    {
+      "path": "LightGenV2/tasks/t03_saliency/configs/moe_alpha40_crop_proxy_short20.yaml",
+      "git_blob": "45695b61fe47e01e9f4dbb618df9fee61cc4aee4",
+      "sha256": "0cfab280841469001826eccdcd83df53ad0209747999d387cbde8a8406b7a9ba"
+    },
+    {
+      "path": "LightGenV2/tasks/t03_saliency/configs/moe_alpha40_dc_only.yaml",
+      "git_blob": "b9b230e1b2cf814d364e8b2953e19f8756813c7a",
+      "sha256": "3cf736aaf5436a0432b9b72e8974992545fca7df424c1b940ae03ab6047e24d6"
+    },
+    {
+      "path": "LightGenV2/tasks/t03_saliency/configs/moe_alpha40_early_control.yaml",
+      "git_blob": "d53a1722eb59b4220959b19b03a803f0d7277524",
+      "sha256": "491fcfdd9641c2c16b6483543f48b312c70e238d2c54b474975864902d287d47"
+    },
+    {
+      "path": "LightGenV2/tasks/t03_saliency/configs/moe_alpha40_early_flip.yaml",
+      "git_blob": "03abc9db04ceefb28b0e4d312f9a252d4779ce60",
+      "sha256": "457c31c87eee69e4e9db2ed10bdca2616f6b86dd6ac7fa5a7e3ef95eee2387ea"
+    },
+    {
+      "path": "LightGenV2/tasks/t03_saliency/configs/moe_alpha40_early_grn.yaml",
+      "git_blob": "610b3e3b63a9ba3b8c1c9bdd8bc19082579e96c9",
+      "sha256": "0bde0b1607ef60b8877f6a355dc30027fbcc8fe11da53ab965da1c14282727a0"
+    },
+    {
+      "path": "LightGenV2/tasks/t03_saliency/configs/moe_alpha40_early_kernel5.yaml",
+      "git_blob": "9592f70f746350ebab2506bf14b35a4d329df561",
+      "sha256": "9fe6bf1112a09099a58897669e2d58d36a64c597b2a4c9ab40b2b55d7622dabd"
+    },
+    {
+      "path": "LightGenV2/tasks/t03_saliency/configs/moe_alpha40_early_kernel5_grn.yaml",
+      "git_blob": "5f4c223fc233c187b55953222564dbc44e661b73",
+      "sha256": "e0bafe8ab70f7fe96d137210c61eca69a0b2f3483b583348d7e46e45f72f6773"
+    },
+    {
+      "path": "LightGenV2/tasks/t03_saliency/configs/moe_alpha40_extra_coco20k.yaml",
+      "git_blob": "07133f3f7842af7f47919a50d485120c46114508",
+      "sha256": "31b347af3906a2d0a49b4b144d53ce277e01519caa24036762aa4bca655209f8"
+    },
+    {
+      "path": "LightGenV2/tasks/t03_saliency/configs/moe_alpha40_extra_control.yaml",
+      "git_blob": "11a85e041f5020fa1aa0b7d8e857cd90472cb8d5",
+      "sha256": "ad0fe696470cde944e27ae4a93af78622b759d63cfe177420e8644a35366d443"
+    },
+    {
+      "path": "LightGenV2/tasks/t03_saliency/configs/moe_alpha40_extra_early_coco20k.yaml",
+      "git_blob": "55e615d69d81434b92d04bfd80fe83cc73850602",
+      "sha256": "a18622fec4ae3a35174f2344cc1932a8f2712e3f27b00acafdda668832768d05"
+    },
+    {
+      "path": "LightGenV2/tasks/t03_saliency/configs/moe_alpha40_extra_early_control.yaml",
+      "git_blob": "fb778d8a6f1d7558a18062dc7a08409d0fafca05",
+      "sha256": "f44db1ec90fc623c854a69d5c2345645cc6157d6c7c37db4d683963492133bd7"
+    },
+    {
+      "path": "LightGenV2/tasks/t03_saliency/configs/moe_alpha40_extra_regions.yaml",
+      "git_blob": "7a06663c1f2b77aae114a5c4cced8f6683f4e786",
+      "sha256": "92bba1c03b51f1925fc80c56f4d9d2d1a907f73284078d2dbd57201a932dbbcb"
+    },
+    {
+      "path": "LightGenV2/tasks/t03_saliency/configs/moe_alpha40_extra_semantic.yaml",
+      "git_blob": "b7aebf3f5f9a023d04e47c364b46aa32b120ac93",
+      "sha256": "c979f391c8eb3b0189e7372cb5ed35a003951b731062c6fda5b3159dea748736"
+    },
+    {
+      "path": "LightGenV2/tasks/t03_saliency/configs/moe_alpha40_feature_joint_router_low_lr.yaml",
+      "git_blob": "bbd43b5a3a80525f0267a441f20a2b3a630e503a",
+      "sha256": "511944ddfe21f04027ccb2253f893197f1a182ffa55ca9405158e7190826318f"
+    },
+    {
+      "path": "LightGenV2/tasks/t03_saliency/configs/moe_alpha40_feature_pretrain.yaml",
+      "git_blob": "614801b3ddd25b58da0149d93bf357fadaed2bfa",
+      "sha256": "d5d4572e0e55cf35b8de9ea4b813dafd1fe4bb006227284f6f8da263213bf9d7"
+    },
+    {
+      "path": "LightGenV2/tasks/t03_saliency/configs/moe_alpha40_feature_pretrain_stable_router.yaml",
+      "git_blob": "218b1741caaa3ebe647cb46cbf8ac7eaff665081",
+      "sha256": "a1964260da657a8faad1aeda5540cb059f4301c9dc39b89d77b1f1d3927d8668"
+    },
+    {
+      "path": "LightGenV2/tasks/t03_saliency/configs/moe_alpha40_feature_pretrain_strong.yaml",
+      "git_blob": "32137df8c65c38b3637fddb722bce30ca57f571c",
+      "sha256": "3b5e4002cbf057e3d96a99aa33bbebb0c1f67f019386dd25c4ad5cd2b3a6e23e"
+    },
+    {
+      "path": "LightGenV2/tasks/t03_saliency/configs/moe_alpha40_first_stage_gt.yaml",
+      "git_blob": "c3cc54c28a9d7f3b7f1f9205238f4e751597b252",
+      "sha256": "ef01179a25a65a2f7c372687aadeb31668fa3f1ce1821c91842113f51dd1b64a"
+    },
+    {
+      "path": "LightGenV2/tasks/t03_saliency/configs/moe_alpha40_fixed_crop_actual.yaml",
+      "git_blob": "1dfa297667189b7685d9cd1a590e3250b374ae96",
+      "sha256": "83b02ca7f3f8df2bcd5d3a09c2dda5581054c7a3ec6ceee5aac13c7430240887"
+    },
+    {
+      "path": "LightGenV2/tasks/t03_saliency/configs/moe_alpha40_fixed_crop_proxy.yaml",
+      "git_blob": "41d1659b7ccc38420fac305ec0b4d7e14f3a70e6",
+      "sha256": "356f50f7376eeeef263e062335b670a7e981b8dafd6d84e9815f255ad310619b"
+    },
+    {
+      "path": "LightGenV2/tasks/t03_saliency/configs/moe_alpha40_generalize_aligned.yaml",
+      "git_blob": "de29c7c5e83623da5620dc2e832478132b747c66",
+      "sha256": "d633799a70d9649af86156ab583a1e62d13a33b4be9ff564602a064527894683"
+    },
+    {
+      "path": "LightGenV2/tasks/t03_saliency/configs/moe_alpha40_generalize_kd020.yaml",
+      "git_blob": "c42be35653a50f0dc145799687d6f1b98dc40454",
+      "sha256": "2e966024434fc2b7e3fb19fc736bf346cda402b9485d7a95d119cf512d8250bb"
+    },
+    {
+      "path": "LightGenV2/tasks/t03_saliency/configs/moe_alpha40_generalize_kd060.yaml",
+      "git_blob": "05771679f8f06136ebe2f81b0805bb271834729e",
+      "sha256": "17aeca0631cacbe139814b802788ebc2df81c20de5608a2f88d665b2d2d05f19"
+    },
+    {
+      "path": "LightGenV2/tasks/t03_saliency/configs/moe_alpha40_generalize_regularized.yaml",
+      "git_blob": "183cad9cd054dd4c8c2cd0eb0b73c4cb25ee6a5a",
+      "sha256": "dd0efdd3aed1408d8c27103bc85d7cd04610d2011fe1682e7f114540bc916875"
+    },
+    {
+      "path": "LightGenV2/tasks/t03_saliency/configs/moe_alpha40_hardcc_bounded30.yaml",
+      "git_blob": "452f36f1bb626af97c6f8281f353e0a3c997a65f",
+      "sha256": "714a6e200fc19feee43287f21313340f2f5b650e414071479644b939e6a50d8c"
+    },
+    {
+      "path": "LightGenV2/tasks/t03_saliency/configs/moe_alpha40_hardcc_uniform30.yaml",
+      "git_blob": "25ab7811f6ecd6b3332a764e3b0577b18f27e7e3",
+      "sha256": "b31f341df1c2be62bf43c83274587cd54bfa39d8e8e88c1b641598cb51042259"
+    },
+    {
+      "path": "LightGenV2/tasks/t03_saliency/configs/moe_alpha40_hint_centered.yaml",
+      "git_blob": "32403295cffa9c03c35290244873ee1371886a10",
+      "sha256": "c30f383096fcc3eb7ea97533b513c1130c4fd2a410452cdd781dfa771d6d941b"
+    },
+    {
+      "path": "LightGenV2/tasks/t03_saliency/configs/moe_alpha40_hint_control.yaml",
+      "git_blob": "f5bf3264f6d5b8163f1b22741fb9f1c7dbfd5e4f",
+      "sha256": "c23699adfe23450c4962ac2f2d025ea79ff95ce25b98c03fb445c1fe749e8092"
+    },
+    {
+      "path": "LightGenV2/tasks/t03_saliency/configs/moe_alpha40_hint_cosine.yaml",
+      "git_blob": "86518afceaeb4019502f45c221decc49ed02f949",
+      "sha256": "9ac727e120db2e979d4a33d6f7c553bd45105c98e366dc9976af5049ce7abe07"
+    },
+    {
+      "path": "LightGenV2/tasks/t03_saliency/configs/moe_alpha40_masked_kd.yaml",
+      "git_blob": "84e18164f911e4fd01dfd9f6107865b0fbf36ac2",
+      "sha256": "ba13101216621ef24d283543f31d61051a53a0bde44874eb12dc0b9135f13a76"
+    },
+    {
+      "path": "LightGenV2/tasks/t03_saliency/configs/moe_alpha40_masked_kd_p25.yaml",
+      "git_blob": "4c0c533fb6044a6791dcae60b350923e34d9e15b",
+      "sha256": "4ccfbeb60e7f288dbe2581b35f7a448e225f84dba025b4432c0d5de74c84911d"
+    },
+    {
+      "path": "LightGenV2/tasks/t03_saliency/configs/moe_alpha40_refine_cc.yaml",
+      "git_blob": "23ba8fcddfb9e09971c6673e471d5690771ba95e",
+      "sha256": "b27f08e6c53e3c53e4002803cef866825a4540080df5a166ec3fb6abb2b176a8"
+    },
+    {
+      "path": "LightGenV2/tasks/t03_saliency/configs/moe_alpha40_refine_control.yaml",
+      "git_blob": "49d40f127a4d19d9d2c07b61cb28ace392eb3cc9",
+      "sha256": "d0d9da2c1edb93a138cf8935cfaa9930ec642b9747c9e9ad7d6dec1c104df4b2"
+    },
+    {
+      "path": "LightGenV2/tasks/t03_saliency/configs/moe_alpha40_refine_reheat.yaml",
+      "git_blob": "df43766416e8ac1300bda335aaefd2ce1fa1d83e",
+      "sha256": "11d647bc05f0fa8e144cc3bdc060c3106ddb3dc88c38cc3b0e2a5522e666305a"
+    },
+    {
+      "path": "LightGenV2/tasks/t03_saliency/configs/moe_alpha40_refine_weakaug.yaml",
+      "git_blob": "1a40dc19f1d307eae586600e5c6c1da16a23c67e",
+      "sha256": "fc9b6b17a7f608c4f64d44025b80bbba44f4dc0e84bb450699869ad244252325"
+    },
+    {
+      "path": "LightGenV2/tasks/t03_saliency/configs/moe_alpha40_reheat_joint.yaml",
+      "git_blob": "8cfde3de86d99f1f5e61f1e719e8a93754b9e602",
+      "sha256": "6723d6a4ef3d7790ee33e83487f9b7010bb9bf7a572fe53f61cbf07db3c2f0b2"
+    },
+    {
+      "path": "LightGenV2/tasks/t03_saliency/configs/moe_alpha40_relational_kd.yaml",
+      "git_blob": "508e402537ea65a01f471d1c8aaf5e0e3163d680",
+      "sha256": "8796f21b47ddd8e4e1c3f07d7277aac661b4eb24c2f846c95f1cbba5a8032dcb"
+    },
+    {
+      "path": "LightGenV2/tasks/t03_saliency/configs/moe_alpha40_reliable_teacher50.yaml",
+      "git_blob": "b669cf023be92436dc991a671badee18568d6c7c",
+      "sha256": "c7b00d7e7a26b497ea70f07596f1bc4acf26f3b2df7a65a6d3dea7e03ca2e272"
+    },
+    {
+      "path": "LightGenV2/tasks/t03_saliency/configs/moe_alpha40_rfstage_control.yaml",
+      "git_blob": "090207bf13d7666717113077dcf16338c41765ea",
+      "sha256": "dadd3349094b26f4f01f513e83dc560574f7c3421367425c4533db72a0c28f37"
+    },
+    {
+      "path": "LightGenV2/tasks/t03_saliency/configs/moe_alpha40_rfstage_flip.yaml",
+      "git_blob": "9d34a390bdd3d21482fd6dc6cf103bef56fe406d",
+      "sha256": "d026c5e60ec2416f758c50eb375809f3c442af62b7383f74ae734ac09a411f44"
+    },
+    {
+      "path": "LightGenV2/tasks/t03_saliency/configs/moe_alpha40_rfstage_kernel5.yaml",
+      "git_blob": "c3bffcad2a2154f2da07beb69b3490dd0f757952",
+      "sha256": "bb8fd6120841d5036f83dd36e8948c42bf61c07c32979c4c0c01694fc6c3181c"
+    },
+    {
+      "path": "LightGenV2/tasks/t03_saliency/configs/moe_alpha40_rfstage_staged.yaml",
+      "git_blob": "bff95e2b74f201d71c37ac9604d8c91601e9bf90",
+      "sha256": "1d47b5782fe4bd3fe17fa6d50a4da3f802a81e89c8e8d8834d302ad98c9b530f"
+    },
+    {
+      "path": "LightGenV2/tasks/t03_saliency/configs/moe_alpha40_router_radians.yaml",
+      "git_blob": "42e48020728b9ecccba338d7e1edeb0f960539c5",
+      "sha256": "fdd956bea3d7cfa302e9d5cdde5e274a33e1e2cf30760d84d16a5a15295e1d91"
+    },
+    {
+      "path": "LightGenV2/tasks/t03_saliency/configs/moe_alpha40_sam001.yaml",
+      "git_blob": "32d087d0446143ed5551bffb0634e4ab9dda5192",
+      "sha256": "5c8e10dd8470e87aa8f23f564ec81ca248cad9469e9165f05d3f295d11f86c88"
+    },
+    {
+      "path": "LightGenV2/tasks/t03_saliency/configs/moe_alpha40_sam005.yaml",
+      "git_blob": "314cac5ebbeb2b5537628270dea458032d28f8f8",
+      "sha256": "b74dcbe4a1972958d2f6db55c7af7b4b1f2cbddaf8f0ad61cf64e9523e7bc5a2"
+    },
+    {
+      "path": "LightGenV2/tasks/t03_saliency/configs/moe_alpha40_sam010.yaml",
+      "git_blob": "1c00c6c5b2f965e34e638e3bfbfe411d6fb2da1f",
+      "sha256": "73842ca44a6d2e929acf47154662713abb3664d509dd4bb5da3174c9d8c95e06"
+    },
+    {
+      "path": "LightGenV2/tasks/t03_saliency/configs/moe_alpha40_sam_control.yaml",
+      "git_blob": "3842a93dbe9b5a1a4b47fe95ba71801582d2e8c6",
+      "sha256": "a3c3f9b3cf91ca2634aefa6ac0acdbc90f895d34e2e082a545cb21b0866ec6b0"
+    },
+    {
+      "path": "LightGenV2/tasks/t03_saliency/configs/moe_alpha40_sam_exactfusion.yaml",
+      "git_blob": "697d19b06fd60c1dfed1a7dba5dbc3680f2c9daf",
+      "sha256": "1f30d03d80fda6412ba32ce2239269f8ec8269c390de65e5bb3a664a1e0e6d69"
+    },
+    {
+      "path": "LightGenV2/tasks/t03_saliency/configs/moe_alpha40_sam_group64.yaml",
+      "git_blob": "a22ae208133726eba631c6cdddb0f6be186d5c4d",
+      "sha256": "03ae10a08f538d2656fe95aae6f6cc135afd310cbe890319197a417ca2657253"
+    },
+    {
+      "path": "LightGenV2/tasks/t03_saliency/configs/moe_alpha40_sam_spatialcc.yaml",
+      "git_blob": "1a7dc85593f57af3a1af6867b101af26c80f15e5",
+      "sha256": "ca509d92d2349778690dc2a11b42baa83e084df1fcd60ad926ee6d3dd916b92c"
+    },
+    {
+      "path": "LightGenV2/tasks/t03_saliency/configs/moe_alpha40_sam_spatialcc_kd2.yaml",
+      "git_blob": "50e339d5d5e74f25597fd96357b4b5f06e38ef50",
+      "sha256": "78b70a850cff1a10b1e546475fb08dbbaa77dab37229cb4515294a1741b69251"
+    },
+    {
+      "path": "LightGenV2/tasks/t03_saliency/configs/moe_alpha40_sam_spatialcc_kd2_global16.yaml",
+      "git_blob": "aed835d4c4aec18d1fd1993614e59b0ae50507aa",
+      "sha256": "f9719982ab4b0e24562362eb4289a67fe1758757fdf9750f93ccd8d25ce91837"
+    },
+    {
+      "path": "LightGenV2/tasks/t03_saliency/configs/moe_alpha40_sam_spatialcc_kd2_global64.yaml",
+      "git_blob": "bb77d18412bbf03da29ec299d63be2ba3e5809ab",
+      "sha256": "ab9c4c394dcf2c899fe27fde89d0b3707a4fce4700136ced9405a781135a74ee"
+    },
+    {
+      "path": "LightGenV2/tasks/t03_saliency/configs/moe_alpha40_sam_wide576.yaml",
+      "git_blob": "0331a6db2a612d6fb7415b6ae7cb560d0d6f9f7c",
+      "sha256": "a87d4a32767742a6bd11674d271556b0f4f8bb578d03eb3c8ab4526e4bea5671"
+    },
+    {
+      "path": "LightGenV2/tasks/t03_saliency/configs/moe_alpha40_soften_hard_balance.yaml",
+      "git_blob": "9ec6c027d38a9db20b23ccb11c922cceeeb75ec4",
+      "sha256": "d042e2d4cc374bbf1cc0cc9b999490fda58858f9318189534c894a2c3fd36ecc"
+    },
+    {
+      "path": "LightGenV2/tasks/t03_saliency/configs/moe_alpha40_teacher_pretrain15.yaml",
+      "git_blob": "5a43393121761d6881dc423af53f29f6521baa86",
+      "sha256": "075464b53e67499ee804da9354e5d107c181d7438ba92bcf51c239cbee04c8c3"
+    },
+    {
+      "path": "LightGenV2/tasks/t03_saliency/configs/moe_alpha40_viewreg_cffn.yaml",
+      "git_blob": "6555da67eeecd5ee377da8a40f3972ed768776b0",
+      "sha256": "a4f94b51a909097d87cbebbd9b10a41408909fa367c6ad47ab78048238e30198"
+    },
+    {
+      "path": "LightGenV2/tasks/t03_saliency/configs/moe_alpha40_viewreg_cffn_kd2.yaml",
+      "git_blob": "8dfe351ab00651fc92796c3bfe5add4c69b8bf89",
+      "sha256": "a3f0313261f029c15c3f9514a0797606368904e07b9b31fa1cf1b89ec37ce372"
+    },
+    {
+      "path": "LightGenV2/tasks/t03_saliency/configs/moe_alpha40_viewreg_control.yaml",
+      "git_blob": "c7600b4a5895dc80654a5ec6a93f5573d1ecd947",
+      "sha256": "f7edf3e67c32949334567073fc53be3fff8933c40a05dac6d3c886385e3cdd9a"
+    },
+    {
+      "path": "LightGenV2/tasks/t03_saliency/configs/moe_alpha40_viewreg_global16.yaml",
+      "git_blob": "e6253cb1c8bc55cef389f40889d8ffe83d849cee",
+      "sha256": "6e6dd56ef9d47e9c450df7f8468dec64298f09904f4eb97af02b400d9679618f"
+    },
+    {
+      "path": "LightGenV2/tasks/t03_saliency/configs/moe_alpha40_viewreg_kernel13.yaml",
+      "git_blob": "4bee91a4e0183ffd74c03184ba10a86d0d2b0b80",
+      "sha256": "3262957fdf3331511a54e284b44baa3e52a9bd40b8ba2c30c3a67b94a2b6a6d7"
+    },
+    {
+      "path": "LightGenV2/tasks/t03_saliency/configs/moe_alpha40_viewreg_mix50.yaml",
+      "git_blob": "95d0bb639c87fa6b052e5587bf7ca04297cc657f",
+      "sha256": "4d752b2313a15f77af0f128ba3d8d3a631b6f94f0b256aa8769650522cdfeea0"
+    },
+    {
+      "path": "LightGenV2/tasks/t03_saliency/configs/moe_alpha40_viewreg_sam005.yaml",
+      "git_blob": "b3d17635dbee32f7dbde545909ba75bfd5d33749",
+      "sha256": "43737e7d8649fdd54537b93181b61b6425021cfa24aafa424f38d8696d21abef"
+    },
+    {
+      "path": "LightGenV2/tasks/t03_saliency/configs/moe_alpha40_viewreg_sam_crop90.yaml",
+      "git_blob": "fe404add80ab221ef1854fb4c7b23b6447630c13",
+      "sha256": "c48ab77c065e32de996592ab241774e24f4dca8798850d12a7d411310ee04985"
+    },
+    {
+      "path": "LightGenV2/tasks/t03_saliency/configs/moe_alpha40_viewreg_sam_spatialcc.yaml",
+      "git_blob": "8f02ba54b841b0658bed8f5b95f4a0751406a33c",
+      "sha256": "2efbe619d51c8459f4200efd71fa046219390be16a6814ebdb66bab373a8e5db"
+    },
+    {
+      "path": "LightGenV2/tasks/t03_saliency/configs/moe_dc20_cc_continue.yaml",
+      "git_blob": "72fcc0b95ffd6a3e113410e34da1dd13d0197322",
+      "sha256": "b43d862a34ddbe435e9565a6c051b0330b8540549f0d01b9b44f7091554c8f76"
+    },
+    {
+      "path": "LightGenV2/tasks/t03_saliency/configs/moe_dc20_mean_only_cc_continue.yaml",
+      "git_blob": "59521281838dcf322e66d46b8e0a641d7948f1ff",
+      "sha256": "50982f0f91a612d0a6c6be14e8f5dba76860f063deee61a4ac0139a72a492864"
+    },
+    {
+      "path": "LightGenV2/tasks/t03_saliency/configs/moe_dc20_mean_only_continue.yaml",
+      "git_blob": "6ccd0232a810f1879ab950640678479868707e6c",
+      "sha256": "e5a5275de6e6f1c9161be13a0101128069265f01cef73e16c1c9098a207d6116"
+    },
+    {
+      "path": "LightGenV2/tasks/t03_saliency/configs/moe_dc20_no_shift_continue.yaml",
+      "git_blob": "e3a0b20465650034fb23056971f33891703782ac",
+      "sha256": "c6739e121716290e505fde4dfc7bb7b23fbb50b763cd918eded3a35773af4c3a"
+    },
+    {
+      "path": "LightGenV2/tasks/t03_saliency/configs/moe_optical_router_scale_matched_dc20.yaml",
+      "git_blob": "1cbb9e311d4c2d041df8e902c99bd744578f0c81",
+      "sha256": "82be1ec970d592e135c6e55a82c1750b8fed714b808cafebe12afad8b66efe65"
+    },
+    {
+      "path": "LightGenV2/tasks/t03_saliency/configs/moe_staged_alpha_free.yaml",
+      "git_blob": "e8444cc5a91be1f6bc5ea6441c1f4bf3276ac7c0",
+      "sha256": "77690ea8133e1ffc4b910e21578dbe71601becd364e06733963914c3cfe6dd33"
+    },
+    {
+      "path": "LightGenV2/tasks/t03_saliency/configs/moe_staged_alpha_ge040.yaml",
+      "git_blob": "92d41b91f30b76d5d88d872054fb301b591a0c20",
+      "sha256": "fa41a72963bdaee7a49f04a3f596dd37ed3f73c182a5d13b1fca35d0ba82b2db"
+    },
+    {
+      "path": "LightGenV2/tasks/t03_saliency/configs/qwen_aligned_head_50.yaml",
+      "git_blob": "2434aba4c5c3b7b23be3ac9037bc844aa0d93ab1",
+      "sha256": "9cf016dca0d563fd2d040f8ad39335c02c473756bfbdc34b4400bb09a38b9e7f"
+    },
+    {
+      "path": "LightGenV2/tasks/t03_saliency/configs/qwen_frozen_pending_5090d.yaml",
+      "git_blob": "19993f41519fce908f47eaf066f3f70db8023891",
+      "sha256": "e607285083f28d767b07ce9d007d6910bc9178381e83e1834567c9a712a4ae82"
+    },
+    {
+      "path": "LightGenV2/tasks/t03_saliency/feature_hints.py",
+      "git_blob": "adda2e4e4a37beb05c9c2f6b9fb60ef942af106c",
+      "sha256": "5d174fba4496a24d9c43942e6776f2ff817582b5b056c70721e603fd391fe0df"
+    },
+    {
+      "path": "LightGenV2/tasks/t03_saliency/feature_pretraining.py",
+      "git_blob": "04bb7d9ea87d6a625dc46eb63185093639fbe74e",
+      "sha256": "65596cadd9b3288a7e90d89f97b24c515077dde01efd6efe3a3fa31e90e17ea8"
+    },
+    {
+      "path": "LightGenV2/tasks/t03_saliency/first_stage_supervision.py",
+      "git_blob": "f061ebd1eedefe309fd65be97002147739048fe8",
+      "sha256": "d52691019a12a6a1c0c37ab26cfe6733b4eff3bc38323b6d88dca7198b477a6e"
+    },
+    {
+      "path": "LightGenV2/tasks/t03_saliency/fixed_crop_teacher.py",
+      "git_blob": "d3d1cfd1e1841cfc5bb2ee427471b2e7f32896b9",
+      "sha256": "8fb6e058d2ad4ffcc24e8fb135b5c75b997b39efaf66863b0741501eec9f62cb"
+    },
+    {
+      "path": "LightGenV2/tasks/t03_saliency/fixed_crop_training.py",
+      "git_blob": "d2a8f3e9a0d6f96ad1a3ea58c51314fdc77119da",
+      "sha256": "b2d7edef7de43b37d6b04dbb641c21e1ecf64a36645fe7acc0ef2db9b5d23db5"
+    },
+    {
+      "path": "LightGenV2/tasks/t03_saliency/fusion_training.py",
+      "git_blob": "42d7c4189c8f983dc26a07b795ae66b16b167760",
+      "sha256": "25075a9d0faad36e0660cc077b0cfbefe32458338fb4df6787a1e02347dfdbd3"
+    },
+    {
+      "path": "LightGenV2/tasks/t03_saliency/hard_example_cc.py",
+      "git_blob": "bd49a750a3e3d9f092d111c138132a46371e1c5a",
+      "sha256": "63c444c5372a47ce8a805c6236f3c12b086da06d48c168ff096e7b8bb5c8ef88"
+    },
+    {
+      "path": "LightGenV2/tasks/t03_saliency/lightweight_residual.py",
+      "git_blob": "74b50505d3930dc996364a55a55689a6b41433f5",
+      "sha256": "9f152d7cacc07e0f1ad309582367cb54774fd9698389ac0174afdad5227c821b"
+    },
+    {
+      "path": "LightGenV2/tasks/t03_saliency/masked_distillation.py",
+      "git_blob": "ab520e5de62d3207395b07192c4253b27ef5cb3f",
+      "sha256": "b1fe829664211ee6212b4349cc13382ef05ca4200a13fc6c1bc4ddc8302c89f0"
+    },
+    {
+      "path": "LightGenV2/tasks/t03_saliency/modeling.py",
+      "git_blob": "dfcee9ef20ac043b463b3dd25a48a394929d8589",
+      "sha256": "c0007ab738c9df27c6dbcf6954c916742de7219d763fd9b522f0425693184733"
+    },
+    {
+      "path": "LightGenV2/tasks/t03_saliency/plateau.py",
+      "git_blob": "d12e20c1b062b15a3310771e9f3dcffd5456c9c5",
+      "sha256": "2b8924226515ecaee503b49295f53ba44c90b920b8694f457d5672b808fb9a64"
+    },
+    {
+      "path": "LightGenV2/tasks/t03_saliency/prepare_unlabeled_pool.py",
+      "git_blob": "29b97ba962e40feb58bd9ef61dc385de3331eeb6",
+      "sha256": "445b74f2ae7140d1aea55aec3b08faa4fb0974c0e82a48522c4dbbcaa5839808"
+    },
+    {
+      "path": "LightGenV2/tasks/t03_saliency/recheck_aligned.py",
+      "git_blob": "34826a71fa5488c78eb7cb92ebe0b2e897c552ac",
+      "sha256": "76209d17f64c48161e3bbda44fad17e01a618abf62abf8ec6eeaba07fad89675"
+    },
+    {
+      "path": "LightGenV2/tasks/t03_saliency/relational_distillation.py",
+      "git_blob": "61e8f9e9a6eac9655f663a7ec5b67a7558ae3c60",
+      "sha256": "2124d5ed019b5ec2c2c103a8291b6b827700288302b94a6d68c27d53c005b9d8"
+    },
+    {
+      "path": "LightGenV2/tasks/t03_saliency/reproduce_baseline.py",
+      "git_blob": "fa5d8a75b96be11cc21297f8e26b38c6dd5aed03",
+      "sha256": "cdddce3377a4b786c34213316e090b44e004f757452f81b82bfafea360a8d75b"
+    },
+    {
+      "path": "LightGenV2/tasks/t03_saliency/router_phase.py",
+      "git_blob": "0015e4723fcc4eb151a59a1ceb189a6d433e0c02",
+      "sha256": "b0547da8e8ed4cd9ae9eb56ba92ee807882d8162ab329a6a938586263e66b265"
+    },
+    {
+      "path": "LightGenV2/tasks/t03_saliency/run.py",
+      "git_blob": "08695a6f13f9db42adecdebac6b46b3748a4750f",
+      "sha256": "eba192e5de5fa5ee2c947a6ceb9e2a271f017bc4027175397f57da7e438c0115"
+    },
+    {
+      "path": "LightGenV2/tasks/t03_saliency/sam_training.py",
+      "git_blob": "7c02280150fc07cf53756151bb6a1a2c3b92e429",
+      "sha256": "8c078c457d9a3af86ef29009717bcb5845b9b977e042236d64c0277a401a8236"
+    },
+    {
+      "path": "LightGenV2/tasks/t03_saliency/semantic_auxiliary.py",
+      "git_blob": "e774c1155038c76ffc847640bb3df6e7456a11dd",
+      "sha256": "c5c2738b12ea8d2151af9bff86df473aa0b61a286705dfa44575571ae657fa54"
+    },
+    {
+      "path": "LightGenV2/tasks/t03_saliency/semisupervised.py",
+      "git_blob": "daf6d8467fea9c148814e61daea3dde8ced63d1f",
+      "sha256": "47d364ea567514062673d546647387df07d14bff6884ca7394ba675b87696843"
+    },
+    {
+      "path": "LightGenV2/tasks/t03_saliency/settings.py",
+      "git_blob": "bed3ebf77fd9acb44f50fc61ba78fce95608c1be",
+      "sha256": "75c6a415a06f32a01e6482ea13c1bd608b3bb26c1f92ca3611d7056212bba7ce"
+    },
+    {
+      "path": "LightGenV2/tasks/t03_saliency/teacher_reliability.py",
+      "git_blob": "91954ac087e9bc9a17bf994e4fcd1c2e8f92fab3",
+      "sha256": "fc6ad29930219aad219095fe57670f1302837a4d0716b4123bcf5acba8fb8840"
+    },
+    {
+      "path": "LightGenV2/tasks/t03_saliency/training.py",
+      "git_blob": "d53710914640de08f49a41cebb31c0e771ad0571",
+      "sha256": "78580c509d69ea83ad179fd5b64948c52ab90502819d7ea58b36a53981cd4f6d"
+    },
+    {
+      "path": "LightGenV2/tasks/t03_saliency/training_support.py",
+      "git_blob": "d6aa387977858a09f07f8ef2b0ad151fdaadc0fa",
+      "sha256": "1df422c15164b0f74d6770f298a708f7514f83491b7dbd9c9906c4648ad2b908"
+    },
+    {
+      "path": "LightGenV2/tasks/t03_saliency/unlabeled_data.py",
+      "git_blob": "18c4008c65b7bd3ba3ce5428538853bd2a5376eb",
+      "sha256": "1a5c9c206a03420939aff9a7ce666495e1a83eb634c3d68e1bdd5fbc1db23a70"
+    },
+    {
+      "path": "LightGenV2/tasks/t03_saliency/visualize.py",
+      "git_blob": "8adfd8db3d089b13a74faddfa878c8be03cd7b41",
+      "sha256": "7704580266bfd16ab4ab194535d0c1a6b1e79eb193f33270ebce421c02097984"
+    },
+    {
+      "path": "experiments/__init__.py",
+      "git_blob": "ffaffcd5aa118051e3c5c236d8f40a9a64f2285d",
+      "sha256": "75749e81ecc24c9b80e103e22e93682d393ba15972cd34dfc49fb59b77a0a311"
+    },
+    {
+      "path": "experiments/qwen3_vl_embedding_2b_caltech101_balanced_optical_fusion_ablation/__init__.py",
+      "git_blob": "10111bf18962431f1b2f82d5695f07137cd32118",
+      "sha256": "b02b25c1ba6e460238dad434be328d1884eb429d24b872b61caa4fd2056eb5f3"
+    },
+    {
+      "path": "experiments/qwen3_vl_embedding_2b_caltech101_balanced_optical_fusion_ablation/configs/release/alpha_free.yaml",
+      "git_blob": "62b86a45baa971ad22b06c2e4264acbbc13a0e71",
+      "sha256": "2f0682d625d79618f7152f9700d6095d446a67f702e84d7f4cda76823e5e7159"
+    },
+    {
+      "path": "experiments/qwen3_vl_embedding_2b_caltech101_balanced_optical_fusion_ablation/configs/release/alpha_high_gt_0p5.yaml",
+      "git_blob": "4fa7c7f1fce40f36869cc095ce33750708280da8",
+      "sha256": "36da174162897107da4d7c18f73f702c8e58726126dc95f50949a3dab38e7593"
+    },
+    {
+      "path": "experiments/qwen3_vl_embedding_2b_caltech101_balanced_optical_fusion_ablation/configs/release/alpha_low_lt_0p5.yaml",
+      "git_blob": "c90012f0a34485768665876df1b7947f7166d861",
+      "sha256": "dbb12b2d0363eef3c06785343ba1d9b6653e30cf752b4b6567076d2c0ef88651"
+    },
+    {
+      "path": "experiments/qwen3_vl_embedding_2b_caltech101_balanced_optical_fusion_ablation/configs/release/common.yaml",
+      "git_blob": "8466ee5c811ca6786342cdd77e9c09bf8502ec67",
+      "sha256": "d2c2a7106b08b18dc6b8694d800befd6edd6eb2ab4be658755dbeca0e5e19b36"
+    },
+    {
+      "path": "experiments/qwen3_vl_embedding_2b_caltech101_balanced_optical_fusion_ablation/configs/release/electronic_only.yaml",
+      "git_blob": "b13541f6677a700bf17b0ebe02bb3b807659a6b7",
+      "sha256": "354f00762fc5b2382984b3e57e7a65bcba72687ffc653f07dcc4a78e9e2d6262"
+    },
+    {
+      "path": "experiments/qwen3_vl_embedding_2b_caltech101_balanced_optical_fusion_ablation/modeling.py",
+      "git_blob": "0e1a21e74e3953d37f34c3bc4f1b8f777bb86a59",
+      "sha256": "08df0f2aaa2f397ec10fbb3355507c138deae4e3b5f5d65e10e33d0a8e78e6dd"
+    },
+    {
+      "path": "experiments/qwen3_vl_embedding_2b_caltech101_electronic_retrieval/__init__.py",
+      "git_blob": "403b06fc35060ae9278e865351463a2438bc742e",
+      "sha256": "4a1d42a84c1a9f4bf8f59c7810a13196b807ea6eabfccdd268e2d571b02f425e"
+    },
+    {
+      "path": "experiments/qwen3_vl_embedding_2b_caltech101_electronic_retrieval/configs/release/caltech101_target10_electronic.yaml",
+      "git_blob": "8907a903c07f25595bb192ad5d854bdaf3e6b7d5",
+      "sha256": "4953500d7b9517dfcdaf65f5c41a43655eedc5fe8ce25c90280ac7d99d4d31fa"
+    },
+    {
+      "path": "experiments/qwen3_vl_embedding_2b_caltech101_electronic_retrieval/configs/release/caltech101_target10_electronic_token_mixer.yaml",
+      "git_blob": "072c77592483b3724cd8d1afdf120ee0905d3a5c",
+      "sha256": "8deaaffe7b544713fe8511266cec8c1a8c4be01c5239c7f7f8e37e076af78bb8"
+    },
+    {
+      "path": "experiments/qwen3_vl_embedding_2b_caltech101_electronic_retrieval/configs/release/caltech101_target10_electronic_token_mixer_3layer.yaml",
+      "git_blob": "8602ac55239c9ba9f3b4dc053518f598dadb850c",
+      "sha256": "65c5501401b7da889c09b12a3b903c05fd7675308fda68002fb9242d612b6692"
+    },
+    {
+      "path": "experiments/qwen3_vl_embedding_2b_caltech101_electronic_retrieval/configs/release/caltech101_target10_electronic_token_mixer_single_deepstack.yaml",
+      "git_blob": "c42497906377ac36264c3aad1432a90fd0d04fad",
+      "sha256": "c662f41a372fdf664b5dfbc539757d2b8ccbfeb6a65c26ed90b4f986ec607c74"
+    },
+    {
+      "path": "experiments/qwen3_vl_embedding_2b_caltech101_electronic_retrieval/configs/release/caltech101_target10_electronic_vision2d.yaml",
+      "git_blob": "34f48cacf31f0f80b423c75e98efff362421779c",
+      "sha256": "9b3641cbc896bc6269763d5dc5db2757dff23a2192f6029af5c00fd0c8187e0e"
+    },
+    {
+      "path": "experiments/qwen3_vl_embedding_2b_caltech101_electronic_retrieval/configs/release/caltech101_target10_mlp_teacher_kd.yaml",
+      "git_blob": "662e9164d3132f62248a6eeda2a9fc7155fbc4cb",
+      "sha256": "74f76b696b34df297ad4aba0d4e45ade05cba9d7e6e74b68741f6ac3644e0260"
+    },
+    {
+      "path": "experiments/qwen3_vl_embedding_2b_caltech101_electronic_retrieval/configs/smoke/electronic_target10_smoke.yaml",
+      "git_blob": "1b818701a2d6be203b1133e2303e5f1a91e0fd59",
+      "sha256": "a4b3a9cbbb9c1da9fbfe711d32f3585bc9bc9dc380fcb5a60e3a0420a334c0da"
+    },
+    {
+      "path": "experiments/qwen3_vl_embedding_2b_caltech101_electronic_retrieval/configs/smoke/electronic_target10_teacher_kd_smoke.yaml",
+      "git_blob": "4b9987e1a617e50a63884127e666a9395ddd2212",
+      "sha256": "62405893f3e6cc3402998ac1edfcae62aa041b6287db270faa2fc14aa563cd33"
+    },
+    {
+      "path": "experiments/qwen3_vl_embedding_2b_caltech101_electronic_retrieval/configs/smoke/electronic_target10_token_mixer_smoke.yaml",
+      "git_blob": "4164bdbaff94df5ea72d68d0491d755dd0d3fed7",
+      "sha256": "f7dcf31becd3956d536c4e23191189fcabf025cd9ca69ee1cde872a9ba388812"
+    },
+    {
+      "path": "experiments/qwen3_vl_embedding_2b_caltech101_electronic_retrieval/configs/smoke/electronic_target10_vision2d_smoke.yaml",
+      "git_blob": "d19459b4131db597ac673407d0cb735e14599d19",
+      "sha256": "9d6b9ca9e48e9d89a0aeb3c7de2ee5352e7269ed5bcd37636c8906bc49a0b097"
+    },
+    {
+      "path": "experiments/qwen3_vl_embedding_2b_caltech101_electronic_retrieval/electronic_blocks.py",
+      "git_blob": "361aad9f119588fb73b80b16caa42a0cf47ee099",
+      "sha256": "2b67e0501b6f86cf057f099c783b60d64a6c10513f9f1557249fe09d427fa290"
+    },
+    {
+      "path": "experiments/qwen3_vl_embedding_2b_caltech101_electronic_retrieval/modeling.py",
+      "git_blob": "becb30012a269e2821aee0f2bb319893409f7f63",
+      "sha256": "37df96748e6fe6997630be0e2a6ba62586b403028b6ce1cf0849f6792b6cd9a7"
+    },
+    {
+      "path": "experiments/qwen3_vl_embedding_2b_caltech101_electronic_retrieval/settings.py",
+      "git_blob": "74c1912d5c564fe396c66eadea198edfda296355",
+      "sha256": "4085e4b216f755b644a52c44cf7e8b3bc6b216f74e0b560dac9843dd7e1ca3ab"
+    },
+    {
+      "path": "experiments/qwen3_vl_embedding_2b_caltech101_four_layer_optical_retrieval/__init__.py",
+      "git_blob": "567f857629b60e2a8fda2cc68f1974901fac9ec1",
+      "sha256": "072f4b5d9e1f122c9f2f55d1e0ba1521b447b32d920afbb8502425186c3e2c53"
+    },
+    {
+      "path": "experiments/qwen3_vl_embedding_2b_caltech101_four_layer_optical_retrieval/configs/release/caltech101_four_layer_optical_joint.yaml",
+      "git_blob": "00ff927940b261e9e533a1125ddfac7fd9fcca01",
+      "sha256": "102ff9f55627c2743463ab6af75dffe004d5dd127e2b818c3aaff2ced7899d1a"
+    },
+    {
+      "path": "experiments/qwen3_vl_embedding_2b_caltech101_four_layer_optical_retrieval/configs/release/caltech101_four_layer_optical_joint_17um.yaml",
+      "git_blob": "ab549e11f5e71bdc23ad8887fdd03f3e48dec1b1",
+      "sha256": "5ec6bb3e1a8d06986dda2349647ca98511b17f0e45129b8dcfa821a292a433a5"
+    },
+    {
+      "path": "experiments/qwen3_vl_embedding_2b_caltech101_four_layer_optical_retrieval/configs/release/caltech101_four_layer_optical_joint_17um_strong_phase.yaml",
+      "git_blob": "fb974a67502f46b81d9787c8158bc8b22aaae413",
+      "sha256": "ef333eaf7abdf0f84fd4796954fb908e1e6b1b8895a5dd150aa4769a756b8476"
+    },
+    {
+      "path": "experiments/qwen3_vl_embedding_2b_caltech101_four_layer_optical_retrieval/configs/smoke/four_layer_optical_17um_smoke.yaml",
+      "git_blob": "75431a389e3378ad7ceaa17f70194a37dea13746",
+      "sha256": "af702339263077958df13c9ad3d0e58ec49ca3395518c20f36ae8a2661e824f0"
+    },
+    {
+      "path": "experiments/qwen3_vl_embedding_2b_caltech101_four_layer_optical_retrieval/configs/smoke/four_layer_optical_17um_strong_phase_smoke.yaml",
+      "git_blob": "2880ec7415a287054c28201fa12cad8c31747cf4",
+      "sha256": "04fba751a4676bd1c2e7eb338e1066932ce5b2f49a91b26f851f15a659b3f41a"
+    },
+    {
+      "path": "experiments/qwen3_vl_embedding_2b_caltech101_four_layer_optical_retrieval/configs/smoke/four_layer_optical_smoke.yaml",
+      "git_blob": "39aa5f494cc091bd989d4e86a9140abc8ea5dfd0",
+      "sha256": "5a0438b15032e44d6f60dc4517e0045dccc8bf54629351b22fdecf3a293e5972"
+    },
+    {
+      "path": "experiments/qwen3_vl_embedding_2b_caltech101_four_layer_optical_retrieval/optical_blocks.py",
+      "git_blob": "3df3da616e7e38be2f312caaab859311adf33913",
+      "sha256": "691edf8f01afe6dc67c4370957a953a2add2dce79797aaee3aab81d1e86f5395"
+    },
+    {
+      "path": "experiments/qwen3_vl_embedding_2b_caltech101_four_layer_optical_retrieval_10cm_robust/__init__.py",
+      "git_blob": "30db6efb01bd0a2d8239b787af40163402a72f9e",
+      "sha256": "8a80357bf864c03eef98491db71e56dd0a5f41ba7ab41366c475e25839906452"
+    },
+    {
+      "path": "experiments/qwen3_vl_embedding_2b_caltech101_four_layer_optical_retrieval_10cm_robust/configs/release/caltech101_four_layer_optical_joint_17um_10cm_robust.yaml",
+      "git_blob": "e55ce8178b629758eb9d2504964b66acbceeafd0",
+      "sha256": "7a3233907134893d893065e1a9dcf5cb51f6958d3803137b478200b986d6559a"
+    },
+    {
+      "path": "experiments/qwen3_vl_embedding_2b_caltech101_four_layer_optical_retrieval_10cm_robust/configs/release/caltech101_four_layer_optical_joint_17um_10cm_robust_fast_2h.yaml",
+      "git_blob": "f4b5602e566725e44d70e9000c66cfe51b096a1a",
+      "sha256": "875299eba5825d3dd6d65be2f6242c830bc3faf52a0310b91bf75f081e40a569"
+    },
+    {
+      "path": "experiments/qwen3_vl_embedding_2b_caltech101_four_layer_optical_retrieval_10cm_robust/configs/release/caltech101_four_layer_optical_joint_17um_10cm_robust_fast_remaining20.yaml",
+      "git_blob": "dc00a78a03d73f168ca1883b2e140f6af6e6d963",
+      "sha256": "6de3d73b66fc52ee9990e817e5bf0a0afc3145ca64d063fc7ee6c603d529e6b9"
+    },
+    {
+      "path": "experiments/qwen3_vl_embedding_2b_caltech101_four_layer_optical_retrieval_10cm_robust/configs/release/caltech101_four_layer_optical_quick_last_stage_10x10.yaml",
+      "git_blob": "92d6038ffdab4a1ef5dc9b4df5051b34604bb417",
+      "sha256": "a5778375cfe6136d139af024dec94f72e5908e26920dc2e99bc6b655b90ffbc8"
+    },
+    {
+      "path": "experiments/qwen3_vl_embedding_2b_caltech101_four_layer_optical_retrieval_10cm_robust/configs/smoke/four_layer_optical_17um_10cm_robust_smoke.yaml",
+      "git_blob": "b8d2c5ae4288cd31b3ae29511254df921b697645",
+      "sha256": "58429532be1959c24c0473c860aaf09cf7ff926bdaaebcb058245c304a8a63f4"
+    },
+    {
+      "path": "experiments/qwen3_vl_embedding_2b_caltech101_four_layer_optical_retrieval_10cm_robust/modeling.py",
+      "git_blob": "ee78a8926e786d3ae0b5fe356058576aae11b9d1",
+      "sha256": "b4cf6c02d7061a1f099894c0b02a33714c37ad0626a476124a0da26b7839eafc"
+    },
+    {
+      "path": "experiments/qwen3_vl_embedding_2b_caltech101_four_layer_optical_retrieval_10cm_robust/optical_blocks.py",
+      "git_blob": "b901dbaa80fb2db7648b41f59c6e54e801d41ef6",
+      "sha256": "139a161ac6820e415885598e14f0337ef27292e4b6c9f51232f5ba87a8d06b33"
+    },
+    {
+      "path": "experiments/qwen3_vl_embedding_2b_caltech101_four_layer_optical_retrieval_10cm_robust/settings.py",
+      "git_blob": "e65fb6e30ff0c1d6a2acf304e2f82f8aa2c124cf",
+      "sha256": "0382adbb1c4938a825fafc6033faad2cfb9f51cd940cb3945f7a9dc5df5cf69f"
+    },
+    {
+      "path": "experiments/qwen3_vl_embedding_2b_caltech101_four_layer_optical_retrieval_10cm_warmstart5/__init__.py",
+      "git_blob": "35ec030aae9994f4d5e54749a3ca0e6956b2e213",
+      "sha256": "80ac8951c9213c175386ca20fba4e3225dd0d954df016e7ccb837bdfa26bcf45"
+    },
+    {
+      "path": "experiments/qwen3_vl_embedding_2b_caltech101_four_layer_optical_retrieval_10cm_warmstart5/configs/release/agreement_quick_language_global.yaml",
+      "git_blob": "e050f0cbf3c089396239fea32c6e856a9ee4c330",
+      "sha256": "94caffe0aa918f5e9bee95f073756de5ff7320b1d6221feab2da8e6694ed95ef"
+    },
+    {
+      "path": "experiments/qwen3_vl_embedding_2b_caltech101_four_layer_optical_retrieval_10cm_warmstart5/configs/release/quick_last_stage_10x10.yaml",
+      "git_blob": "13d72c8e64154349e5fe4e97678c80f235d93777",
+      "sha256": "6acd420f58d47c7d57d7c63d077969bc73be8d73baaf04961d906ab9d4b1e7dc"
+    },
+    {
+      "path": "experiments/qwen3_vl_embedding_2b_caltech101_four_layer_optical_retrieval_10cm_warmstart5/configs/release/quick_last_stage_10x10_canonical_ccd.yaml",
+      "git_blob": "e6036266cdabadfaea4f2504450f7aa2546d736e",
+      "sha256": "109b1a62a000720a9ef455f5812fd791a31fdba9c418480dc5f9f3d268abd937"
+    },
+    {
+      "path": "experiments/qwen3_vl_embedding_2b_caltech101_four_layer_optical_retrieval_10cm_warmstart5/configs/release/stage1_optical_calibration.yaml",
+      "git_blob": "bda3c9a88676112ea40f39faab8d649b983305ae",
+      "sha256": "a48c16e6f31100f6c958c31c916b188aa5ec477f82436339df7dfe215704fc88"
+    },
+    {
+      "path": "experiments/qwen3_vl_embedding_2b_caltech101_four_layer_optical_retrieval_10cm_warmstart5/configs/release/stage2_joint_hardware_canonical_ccd.yaml",
+      "git_blob": "e088e95ef82f81216d6a2cec14c5eb0107ffbf6e",
+      "sha256": "fe3a4c5de8311a09e7fa5843aa65d6dcc0cd35334632ba8fd1df2b1587b63953"
+    },
+    {
+      "path": "experiments/qwen3_vl_embedding_2b_caltech101_four_layer_optical_retrieval_10cm_warmstart5/configs/release/stage2_joint_sealed_test.yaml",
+      "git_blob": "59de0b934c88a318010d13e6fccd1280a0b86d4c",
+      "sha256": "7831548824abd9bf3893f0300d41cf20a2f02c8a2a047c928addc3d83a8c7c47"
+    },
+    {
+      "path": "experiments/qwen3_vl_embedding_2b_caltech101_four_layer_optical_retrieval_10cm_warmstart5/configs/smoke/stage1_smoke.yaml",
+      "git_blob": "420a1a8d5d774551444c2bd9fe2feea3113cf2be",
+      "sha256": "576af21c91c461666710627c0536bf54e44e2e33dae73f73e275ae0d111c93a3"
+    },
+    {
+      "path": "experiments/qwen3_vl_embedding_2b_caltech101_four_layer_optical_retrieval_10cm_warmstart5/configs/smoke/stage2_smoke.yaml",
+      "git_blob": "c2ed2bd308f259361e95a8152b251cfd215995f5",
+      "sha256": "e38fbac8333a4f658fd897be8f6d1ecb403209b10dbb73c453db606416d70d92"
+    },
+    {
+      "path": "experiments/qwen3_vl_embedding_2b_caltech101_four_layer_optical_retrieval_10cm_warmstart5/modeling.py",
+      "git_blob": "624497b9d70636a9a96e04d822d2148d10e82c3a",
+      "sha256": "aa85388332b44e4636f69d3288e0bb94d03cf9962423cf2065616e9173249023"
+    },
+    {
+      "path": "experiments/qwen3_vl_embedding_2b_caltech101_four_layer_optical_retrieval_10cm_warmstart5/run.py",
+      "git_blob": "eb6f5bf2bffa0cbc829dfd394c498dd620a4fa7a",
+      "sha256": "8be165d0843bf01ec333c4ad199a3debb71f7ced8e479056904eb61b9d849152"
+    },
+    {
+      "path": "experiments/qwen3_vl_embedding_2b_caltech101_four_layer_optical_retrieval_10cm_warmstart5/settings.py",
+      "git_blob": "0f79859eedcdc7fef710f11a03181c9dae5230e7",
+      "sha256": "c47374733e17b9283a4d079fef8cc9f38e55818fe6cd63c192323665614e1510"
+    },
+    {
+      "path": "experiments/qwen3_vl_embedding_2b_caltech101_four_layer_optical_router_retrieval/__init__.py",
+      "git_blob": "fc43ab416150a1b05d908dc224bb9dd2a6bd9f47",
+      "sha256": "e1b1eaddffbd36d2d1202295bef3c6c1988c4a4f675fa5d25b9b3b38c764e23f"
+    },
+    {
+      "path": "experiments/qwen3_vl_embedding_2b_caltech101_four_layer_optical_router_retrieval/artifacts.py",
+      "git_blob": "d8c56a187a4f6ed4cd846e5841f7f2602b6c31a2",
+      "sha256": "e1326dbe7a223e1be878850a23448cb5767a4c20d4a7d71a6444b5f729c31f3b"
+    },
+    {
+      "path": "experiments/qwen3_vl_embedding_2b_caltech101_four_layer_optical_router_retrieval/configs/release/common.yaml",
+      "git_blob": "bfb4919a6186fc1292b8ed58dca5ef678f779c76",
+      "sha256": "551d95b08c4b83a63cba08666a7cb633806f3a8bf236879ac559a61d53d9741e"
+    },
+    {
+      "path": "experiments/qwen3_vl_embedding_2b_caltech101_four_layer_optical_router_retrieval/configs/release/electronic_legacy_topk2_anchor.yaml",
+      "git_blob": "6e6a055c2715932956b95daa9a276c001f32b733",
+      "sha256": "0846f0e1e820f4963f37a43a8be04b00113252e351e21de94811d772a90d5709"
+    },
+    {
+      "path": "experiments/qwen3_vl_embedding_2b_caltech101_four_layer_optical_router_retrieval/configs/release/electronic_power_topk1.yaml",
+      "git_blob": "dd81cd10e4817bc6fdc8e13f98ddb63dbc3d1021",
+      "sha256": "d3eaecad45282a1ca42fb74c54ca657904c84428e67ac9409f424b6156ba3673"
+    },
+    {
+      "path": "experiments/qwen3_vl_embedding_2b_caltech101_four_layer_optical_router_retrieval/configs/release/electronic_power_topk1_seed43.yaml",
+      "git_blob": "a0bf2c4abc61e3deecea619977b2e3db09f4e3ef",
+      "sha256": "b807c140e3052c15c13f6202d9af1b0c8944db7df0342d57395bb3e56a2d93a0"
+    },
+    {
+      "path": "experiments/qwen3_vl_embedding_2b_caltech101_four_layer_optical_router_retrieval/configs/release/electronic_power_topk1_seed44.yaml",
+      "git_blob": "85c246f0a912714d6c33910003b47c061b113122",
+      "sha256": "959697e3c348d4ceea126a21db905eabfa8dde33514ecd95df06b8059a0a8ee6"
+    },
+    {
+      "path": "experiments/qwen3_vl_embedding_2b_caltech101_four_layer_optical_router_retrieval/configs/release/electronic_power_topk2.yaml",
+      "git_blob": "878b4d823012770204be0e529a968eba920a3794",
+      "sha256": "e770f431b2505473f22efdfff197a48f0fc6d5ef9b01c7232743301f080f1eba"
+    },
+    {
+      "path": "experiments/qwen3_vl_embedding_2b_caltech101_four_layer_optical_router_retrieval/configs/release/electronic_power_topk2_seed43.yaml",
+      "git_blob": "9712205e59e9a69d8dd57265eeb15fa2577f1f77",
+      "sha256": "fc0fa5fc30da84e6879faaef750d0ad03d712f8fd6bd43f9670bef1a74b3159e"
+    },
+    {
+      "path": "experiments/qwen3_vl_embedding_2b_caltech101_four_layer_optical_router_retrieval/configs/release/electronic_power_topk2_seed44.yaml",
+      "git_blob": "1f0a202a7180bf0d7456d7f2eab5f80471f5ff27",
+      "sha256": "a0abb6a5776ff72675ba950dff33fe68e597933a3b53ff8b7817d51bce93a1e7"
+    },
+    {
+      "path": "experiments/qwen3_vl_embedding_2b_caltech101_four_layer_optical_router_retrieval/configs/release/electronic_power_topk4.yaml",
+      "git_blob": "ab5b608b42f947a4725bd7b0e96b1fec98d81809",
+      "sha256": "6dfe84b113890b5fbfa98fd627537548bc0cb6da92c2cc9c75e55ddc4c8ef77c"
+    },
+    {
+      "path": "experiments/qwen3_vl_embedding_2b_caltech101_four_layer_optical_router_retrieval/configs/release/electronic_power_topk4_seed43.yaml",
+      "git_blob": "f6bd48d8f1d60f462468ec47a2169b793b698c87",
+      "sha256": "298e1b51f7b0636d2896397ffa097284068534bf805e31741a70090dade87fff"
+    },
+    {
+      "path": "experiments/qwen3_vl_embedding_2b_caltech101_four_layer_optical_router_retrieval/configs/release/electronic_power_topk4_seed44.yaml",
+      "git_blob": "06ee7368f41a2cd000ef26c1980c185271e34ef3",
+      "sha256": "f685e253c185496b534d512a34baf1d277d0619ee70cba62ba92061f0a909e6a"
+    },
+    {
+      "path": "experiments/qwen3_vl_embedding_2b_caltech101_four_layer_optical_router_retrieval/configs/release/optical_power_topk2.yaml",
+      "git_blob": "729a9d9c816e0acbbaf15709d0a7e79ab42828b5",
+      "sha256": "22c7a32fa0a232570dd9e272562fd29e3a9305d206d56d71886aab15605efdcd"
+    },
+    {
+      "path": "experiments/qwen3_vl_embedding_2b_caltech101_four_layer_optical_router_retrieval/configs/release/optical_power_topk2_seed43.yaml",
+      "git_blob": "8b7129c368431ee76ed67cea8e9d5a582272b1e2",
+      "sha256": "bba1b269f0ddf7e000d1ccacf2850f46b38eeefeb019ec0e54e801c32b85dc8e"
+    },
+    {
+      "path": "experiments/qwen3_vl_embedding_2b_caltech101_four_layer_optical_router_retrieval/configs/release/optical_power_topk2_seed44.yaml",
+      "git_blob": "535f19bc6a743af223555573206861bd0074b9f2",
+      "sha256": "b8b99599a5aa5a5edd49e5b9870c93b2ca6722bc5cea0558cde59e498df0d617"
+    },
+    {
+      "path": "experiments/qwen3_vl_embedding_2b_caltech101_four_layer_optical_router_retrieval/modeling.py",
+      "git_blob": "5d5209ee0ff8a950d174a3c348dca70b7a7c96a3",
+      "sha256": "3dd84f5d54ab131199b087829b23c14b1800f1ee3d7c412c314ffcbc885657dd"
+    },
+    {
+      "path": "experiments/qwen3_vl_embedding_2b_caltech101_four_layer_optical_router_retrieval/router.py",
+      "git_blob": "d6bfd6693e98d33ad72e265d140c809357e6fcc8",
+      "sha256": "00f0f3013986f976a22f2fafe6b60b715773e8744450d9953fca3a9bb3e73593"
+    },
+    {
+      "path": "experiments/qwen3_vl_embedding_2b_caltech101_robust_hybrid_retrieval/__init__.py",
+      "git_blob": "20e38430f80b8595079292db631ef2c35b3d20f4",
+      "sha256": "e55d1da8e38568306d1f0fcac05be47384b5cc3d6e43a836e33403ac5ad876be"
+    },
+    {
+      "path": "experiments/qwen3_vl_embedding_2b_caltech101_robust_hybrid_retrieval/categories.py",
+      "git_blob": "286071c6eae40b79e35019d8695e28d1976df136",
+      "sha256": "43afe8acaf60b2f6a5fb6dd012bdfb63fa643ec26c2240cbf2a3865a61bfa5f4"
+    },
+    {
+      "path": "experiments/qwen3_vl_embedding_2b_caltech101_robust_hybrid_retrieval/configs/hardware/caltech101_target10_hardware.yaml",
+      "git_blob": "754eaa5e4cbf35f04ec9b691b5f844cfccefb713",
+      "sha256": "8968c7e37c27ea84fb0c69df899d2327279268b3c82a938096d51454218f2db6"
+    },
+    {
+      "path": "experiments/qwen3_vl_embedding_2b_caltech101_robust_hybrid_retrieval/configs/release/caltech101_robust_hybrid_moe4.yaml",
+      "git_blob": "7f8567f813471bacfe3b2314b7ab849f80c06df4",
+      "sha256": "70e61c7272b2ab7f9715ac5ed4f038d9f07d8f73eaee2fccca81192e55adc1eb"
+    },
+    {
+      "path": "experiments/qwen3_vl_embedding_2b_caltech101_robust_hybrid_retrieval/configs/release/caltech101_target10_finetune.yaml",
+      "git_blob": "89dc5ca14cb7ef6c4bd023b10bf6a22f5a0689fc",
+      "sha256": "7b998e34a0b8e36c7d28b2164286b27d1ce3f414d61036b3f9c663e9f66efac7"
+    },
+    {
+      "path": "experiments/qwen3_vl_embedding_2b_caltech101_robust_hybrid_retrieval/prepare_caltech101_retrieval.py",
+      "git_blob": "15157feeac0efa4250e25417159393cee167ac52",
+      "sha256": "e9c68c0d1a14115ddc143c8a9d0e387f4d3b12ea531420e725548fdfe1d35fdd"
+    },
+    {
+      "path": "experiments/qwen3_vl_embedding_2b_caltech101_robust_hybrid_retrieval/settings.py",
+      "git_blob": "a7dffc813b2943e3222bd3edfa6d2cf2660e0311",
+      "sha256": "35978d5f15ee089b25f3493fd350dae4284e180f537ea6e20cc9e41c0ccd7b7b"
+    },
+    {
+      "path": "experiments/qwen3_vl_embedding_2b_fss1000_vision_optical_saliency/__init__.py",
+      "git_blob": "17c07327a1557a8f46aad4ef5cefeab6d9b630ea",
+      "sha256": "2c5cbc7e303b6f19c38a87786bf5435821f0684ac950f1bb8bba566958e2926e"
+    },
+    {
+      "path": "experiments/qwen3_vl_embedding_2b_fss1000_vision_optical_saliency/configs/fss1000_saliency.yaml",
+      "git_blob": "702f050780c35ba5d5ad485d9b58b5a75ec55d89",
+      "sha256": "2c10ef6c49df3ddc3a9d135df466a3a8544a02e4bfec6b590bbef48f4d87ef4d"
+    },
+    {
+      "path": "experiments/qwen3_vl_embedding_2b_fss1000_vision_optical_saliency/configs/fss1000_saliency_mask_kd.yaml",
+      "git_blob": "106e1f92d51c08d3b3dbb362dcfcd7dad10c1bdc",
+      "sha256": "231f578b7a78b4bc29e911102680ec629b58ffd8c5995eaa6e82f7cdfe09c514"
+    },
+    {
+      "path": "experiments/qwen3_vl_embedding_2b_fss1000_vision_optical_saliency/configs/fss1000_saliency_mask_kd_smoke.yaml",
+      "git_blob": "ceebe9cb9e8ffc22cf5c7660e86f1ae1cea0c551",
+      "sha256": "369e6216034b00d4ffa96713aeee925e2a62d570740ed5b09e81d8830c806334"
+    },
+    {
+      "path": "experiments/qwen3_vl_embedding_2b_fss1000_vision_optical_saliency/configs/fss1000_saliency_seen100_finetune.yaml",
+      "git_blob": "fee0df6a6bec5799c454c47b1b781447f51578cc",
+      "sha256": "68965219f65858ddfe727776b6aad990638eb6cfdc538432235527afeb6a74cf"
+    },
+    {
+      "path": "experiments/qwen3_vl_embedding_2b_fss1000_vision_optical_saliency/configs/fss1000_saliency_seen100_finetune_smoke.yaml",
+      "git_blob": "fad2b18969e0737e5665d2822d649b42823bbf1b",
+      "sha256": "0f7ded35c6d84380a57e53045df4e7e7369d78de1e59de9af40a5801399c1584"
+    },
+    {
+      "path": "experiments/qwen3_vl_embedding_2b_fss1000_vision_optical_saliency/configs/fss1000_saliency_single_layer_from_scratch_100ep.yaml",
+      "git_blob": "982b656e47d2991992b0a621934bbeef30162153",
+      "sha256": "8cf4601762f52e650b909c6f02fe969cce130030e6cc7543c4534036663582b5"
+    },
+    {
+      "path": "experiments/qwen3_vl_embedding_2b_fss1000_vision_optical_saliency/configs/fss1000_saliency_smoke.yaml",
+      "git_blob": "cba76df15dfda97f0c568bab0ed91d3564ec9497",
+      "sha256": "7b94c005811c6833d79c8ad467dcffe30d9120102a9d69f9c1892e92e4f82e32"
+    },
+    {
+      "path": "experiments/qwen3_vl_embedding_2b_fss1000_vision_optical_saliency/io_utils.py",
+      "git_blob": "b3645ccef1b18f1b0d168d963a1c177b054c9e71",
+      "sha256": "9bd8d45416f8ceaf757af6d959fc8f7be46dd5c127006c9b87290fda25eaa25c"
+    },
+    {
+      "path": "experiments/qwen3_vl_embedding_2b_fss1000_vision_optical_saliency/modeling.py",
+      "git_blob": "92d4c6922f1eb98541f17b0a469fea855447cd2e",
+      "sha256": "993374f880fce356ceba71b9de1bde457568135d677f45843f65d92c346e73bd"
+    },
+    {
+      "path": "experiments/qwen3_vl_embedding_2b_fss1000_vision_optical_saliency/visualization.py",
+      "git_blob": "f4cc887b020b3f3c4526f3371998be8d39c68f44",
+      "sha256": "1ec0d24695d2fa181ed0f40acc221f3ebb663f03ea804221d8ad78c1879a0dc1"
+    },
+    {
+      "path": "experiments/qwen3_vl_embedding_2b_grocery10_optical_retrieval/__init__.py",
+      "git_blob": "11b3131679ebad382fba9f05032f4a190fc96274",
+      "sha256": "0e6ef91372f185badc456086b703b1e3467f938f74be7d23be37caff4b35dc5e"
+    },
+    {
+      "path": "experiments/qwen3_vl_embedding_2b_grocery10_optical_retrieval/cache_teacher_embeddings.py",
+      "git_blob": "ba4dff767fc5a676cb4806e95bd1c3b4572902ab",
+      "sha256": "08c44a9f3677db072466e2656041e3c3bd4e51343ee52329d8641569c50396ab"
+    },
+    {
+      "path": "experiments/qwen3_vl_embedding_2b_grocery10_optical_retrieval/configs/archive/historical_moe16_best.yaml",
+      "git_blob": "9dd3df1a3606adc8fd1744d99ca77ee1af2afba4",
+      "sha256": "0376ec43788d35e54bdb2aa7141fd8cb22f0ac8bbc31eda797c0063075dbd60d"
+    },
+    {
+      "path": "experiments/qwen3_vl_embedding_2b_grocery10_optical_retrieval/configs/optimization/hardware_response_preserving.yaml",
+      "git_blob": "069c52aafa31ea6a9af99f19b68572b615d4a514",
+      "sha256": "bc8c1139af70af0373666dafb3d6314c82f09fb35bd1d34747fb7245a95631f5"
+    },
+    {
+      "path": "experiments/qwen3_vl_embedding_2b_grocery10_optical_retrieval/configs/optimization/response_preserving_stage1_grocery31.yaml",
+      "git_blob": "3b741dacc3e79da0e5e81932b26a2fdd7f441793",
+      "sha256": "77f28866ae04b72280117b192c3f9e9c7d1cf1acc17bdbf0d6f1593b1765222d"
+    },
+    {
+      "path": "experiments/qwen3_vl_embedding_2b_grocery10_optical_retrieval/configs/optimization/response_preserving_stage2_grocery10.yaml",
+      "git_blob": "6199251c0ab68c70d653afcb86c5ad7826632844",
+      "sha256": "f5541c7a4ed4af9bd469209d9e112ac86e2e7cb77f25a6a288ac1cf1c4b3ec54"
+    },
+    {
+      "path": "experiments/qwen3_vl_embedding_2b_grocery10_optical_retrieval/configs/release/hardware_moe4.yaml",
+      "git_blob": "1689cbe956166fa830f19f21986e969259e2f546",
+      "sha256": "39dcbeff68fba2216fa15e173445d256067adb46225584b36eab5b3948c78dc8"
+    },
+    {
+      "path": "experiments/qwen3_vl_embedding_2b_grocery10_optical_retrieval/configs/release/model_moe4.yaml",
+      "git_blob": "eab13dee6aa1b5142ad3bef2598f76db0a1ceca3",
+      "sha256": "02adbb47372bffb8695c99ccb46bb45e9c30179a5f1d472855a697689f5b1c04"
+    },
+    {
+      "path": "experiments/qwen3_vl_embedding_2b_grocery10_optical_retrieval/configs/release/stage1_grocery31_pretrain.yaml",
+      "git_blob": "a6bf0e806803a63b247035eb06f8d7931c4e1a8e",
+      "sha256": "70ba77c72156b16856578ef5d6a741da8b79fbc20a636af75fdc99eba26d3fb8"
+    },
+    {
+      "path": "experiments/qwen3_vl_embedding_2b_grocery10_optical_retrieval/configs/release/stage2_grocery10_finetune.yaml",
+      "git_blob": "6e6c494e3c5f9989736dd778d6ae07421e1d6606",
+      "sha256": "c92bff5211ac2b443095a081ce1d3e04ff0cdf73880366b416ffa2766ac94906"
+    },
+    {
+      "path": "experiments/qwen3_vl_embedding_2b_grocery10_optical_retrieval/evaluate_retrieval.py",
+      "git_blob": "9b145d7f9a8591b15cfb5e5b462846d75dd5e263",
+      "sha256": "ebef243f0ba2f043374a59cc5e4ff34a1af653afd867f457fca3da5fc4d7132c"
+    },
+    {
+      "path": "experiments/qwen3_vl_embedding_2b_grocery10_optical_retrieval/features.py",
+      "git_blob": "46e710a9cb4cc5e7d7122acd6a207faf20093043",
+      "sha256": "6a8628c2ee1506cff2f25f33d93eb35d6485cc0dfce1bb12f809c48392c5b5da"
+    },
+    {
+      "path": "experiments/qwen3_vl_embedding_2b_grocery10_optical_retrieval/io_utils.py",
+      "git_blob": "99d5d398fc8139f4f0b2151fd829896bb83a1e95",
+      "sha256": "65c0bd4dfa33bf727d2d73f666bc5423b632f9448b550d6a37fc68925eb9ceb6"
+    },
+    {
+      "path": "experiments/qwen3_vl_embedding_2b_grocery10_optical_retrieval/modeling.py",
+      "git_blob": "aee23c340f61eea95051dc9d93a0fad2d5e3e2b6",
+      "sha256": "9f23a48d34a579a740e4e8f414a65012d2cffe49929947e73b0e92589169aae4"
+    },
+    {
+      "path": "experiments/qwen3_vl_embedding_2b_grocery10_optical_retrieval/optical_artifacts.py",
+      "git_blob": "b74efe7065ca5601f70d069af65264c8c6d02d7f",
+      "sha256": "62f35ff459e5ab47542cb16b3a4c047268f1d552e7ca955243744eb321d55e7c"
+    },
+    {
+      "path": "experiments/qwen3_vl_embedding_2b_grocery10_optical_retrieval/optics/__init__.py",
+      "git_blob": "987d8ae4fd7077bf2fbea34dac85fa359fa5443f",
+      "sha256": "a895dead1150bf685136eff46bff7b3dda970d5e5f4561a9c35f054842947d18"
+    },
+    {
+      "path": "experiments/qwen3_vl_embedding_2b_grocery10_optical_retrieval/optics/geometry.py",
+      "git_blob": "268551faacebefb16ed66dc4c4e5f1708fa21eee",
+      "sha256": "dfbe0a9be3e064dd5c2114ad7a2d6d888e9814926b8b7551745189c736c00a4b"
+    },
+    {
+      "path": "experiments/qwen3_vl_embedding_2b_grocery10_optical_retrieval/optics/moe.py",
+      "git_blob": "4fc293344f2ea16084edf622ba1282f81fadaef5",
+      "sha256": "3b2404801aede15b9c052a423d0cd6e0d7d852bf678176be27693e1b8ef92d11"
+    },
+    {
+      "path": "experiments/qwen3_vl_embedding_2b_grocery10_optical_retrieval/optics/physical.py",
+      "git_blob": "f339b967b8faa6dcad8e970d72355ee72cc286d1",
+      "sha256": "a1bb5b63b3a7b1acbf323ad70e5f8a34b5bcee91b8f5aaa26df82bef6ef15ecc"
+    },
+    {
+      "path": "experiments/qwen3_vl_embedding_2b_grocery10_optical_retrieval/optics/replacement.py",
+      "git_blob": "ec59a6d3a30b4e4d940eff0caccf87f1bd7284f3",
+      "sha256": "c8a051417c3951ecd0a7dd4bc4acdfdce7160fdb0d9f797665565a76048294e9"
+    },
+    {
+      "path": "experiments/qwen3_vl_embedding_2b_grocery10_optical_retrieval/optics/router.py",
+      "git_blob": "a2123f19e686619e72b553011a31168981428b0e",
+      "sha256": "0961698358971c58b300c193139978b210efd9b493c54307d439e8915c130c09"
+    },
+    {
+      "path": "experiments/qwen3_vl_embedding_2b_grocery10_optical_retrieval/prepare_grocery_retrieval_subset.py",
+      "git_blob": "a261a42583d30a2013c93908be9cf7d6fe9261b7",
+      "sha256": "221c49d0bec8dc5d9683bea25b1025fd6cc2d89b23d99e1e767c650b583e64b4"
+    },
+    {
+      "path": "experiments/qwen3_vl_embedding_2b_grocery10_optical_retrieval/retrieval_metrics.py",
+      "git_blob": "d03c87d176b4bf2746fe1dbd54055e38bb9878d1",
+      "sha256": "d19096dd96a7f386814c8a98dc7c52af38dcfd91550aeb9ad50cc0642f353806"
+    },
+    {
+      "path": "experiments/qwen3_vl_embedding_2b_grocery10_optical_retrieval/settings.py",
+      "git_blob": "83abab72845c367c441337e6a0b41fb1cdd1ba7c",
+      "sha256": "6511b8ddc632370538a6c92be215eda5f4a202a4b63fcaccd953bcad8e6a81a7"
+    },
+    {
+      "path": "experiments/qwen3_vl_embedding_2b_grocery10_optical_retrieval/train_optical_retrieval.py",
+      "git_blob": "548de80b921c2369a032a40b33e0cda9a66cfd44",
+      "sha256": "8fd2236423d87691d196eba79467e98a4859941a96ade26506f2226f446fd3c2"
+    },
+    {
+      "path": "experiments/qwen3_vl_embedding_2b_grocery10_robust_hybrid_retrieval/__init__.py",
+      "git_blob": "002aa9d73114f221424601a64fc58a18ffd26f07",
+      "sha256": "c3746a76cc9ebeef7d49b882822739b36be75ae8154c83bf50075fa975b4fb2b"
+    },
+    {
+      "path": "experiments/qwen3_vl_embedding_2b_grocery10_robust_hybrid_retrieval/configs/continuation/regularized_electronic_finetune.yaml",
+      "git_blob": "e549cf706a76677988491aff9d5c6e58c9d9c46c",
+      "sha256": "44bb5599e624c40e3f9857e686bbf9fef2b0b2d3d5b8593222a8b3b2f0426510"
+    },
+    {
+      "path": "experiments/qwen3_vl_embedding_2b_grocery10_robust_hybrid_retrieval/configs/release/robust_hybrid_moe4.yaml",
+      "git_blob": "a042925faaddfcdef88afbf404cf7a00e9b6a836",
+      "sha256": "cab85e8c90b01feef38e913992903fcb1d95768f513f37b5ba9bd5a37563c2ab"
+    },
+    {
+      "path": "experiments/qwen3_vl_embedding_2b_grocery10_robust_hybrid_retrieval/configs/retrain/stage1_grocery31_pretrain.yaml",
+      "git_blob": "cea52197c6203a8ff9aebd2fdeef9aea427c5e71",
+      "sha256": "9a5cf4f6f272c2f201dc8d4d8a1d009101c004229ae6ef6d7c44ca392015d1c7"
+    },
+    {
+      "path": "experiments/qwen3_vl_embedding_2b_grocery10_robust_hybrid_retrieval/configs/retrain/stage2_grocery10_finetune.yaml",
+      "git_blob": "b5894b8fe62cbecbcc8bb505c93f335ea008897c",
+      "sha256": "4566a3bdbe92426c39ebf68eb8eac7cfc805b022d2a65a73e7419359cd978f78"
+    },
+    {
+      "path": "experiments/qwen3_vl_embedding_2b_grocery10_robust_hybrid_retrieval/settings.py",
+      "git_blob": "e39c711c3ae99cf86ce0d726eb24153593d75dc7",
+      "sha256": "0f6a85918721c9fe0f62eee2fd053d0c70f017e8de5b1ff98c022fb16261b742"
+    },
+    {
+      "path": "experiments/qwen3_vl_embedding_2b_lsp_pose_optical_moe16/__init__.py",
+      "git_blob": "9b3fd90a38fbf55239fe13728aab9e0f94569c82",
+      "sha256": "a258ee878c15d2b76a53d216c3c515ab3a2801ff28e85e10422d1b9873cec9ad"
+    },
+    {
+      "path": "experiments/qwen3_vl_embedding_2b_lsp_pose_optical_moe16/configs/lsp_pose.yaml",
+      "git_blob": "88208f3456316b80bfe868dbeb55b5ca0ce6bc1a",
+      "sha256": "530d6572bd1234ea591fa46234ec66b47bc913060ce0d9b9ea3571a19f3e63a6"
+    },
+    {
+      "path": "experiments/qwen3_vl_embedding_2b_lsp_pose_optical_moe16/configs/lsp_pose_opt.yaml",
+      "git_blob": "c2d6cda310fd6be4a7213b7fd3aa7e7c0464ea40",
+      "sha256": "4c1c327a9c4dd893d21dfb950653e828b69979a17bb0b22814002a47e27397e2"
+    },
+    {
+      "path": "experiments/qwen3_vl_embedding_2b_lsp_pose_optical_moe16/configs/lsp_pose_opt2.yaml",
+      "git_blob": "9391898ca7803647b83ba1170c005ff3fefdeaef",
+      "sha256": "a725fa8cc3354bd9654d75e8379f0b2ec31e36e6c94552e5bde17540d58a3ddf"
+    },
+    {
+      "path": "experiments/qwen3_vl_embedding_2b_lsp_pose_optical_moe16/configs/lsp_pose_opt2_smoke.yaml",
+      "git_blob": "fa91ead9f163dfc132a9373d2620e891f588a8bb",
+      "sha256": "d288ca1a649e278a2aee7507ffac72e8325e24e4f0cf3cce57c9c305d0c4ca25"
+    },
+    {
+      "path": "experiments/qwen3_vl_embedding_2b_lsp_pose_optical_moe16/configs/lsp_pose_opt3.yaml",
+      "git_blob": "5b2442728a64e54474ee97e423d2eeb08a379269",
+      "sha256": "f1fdbf28881755195ee4cafc72ffd441ed79f79dc7adc4423799f4c86daece25"
+    },
+    {
+      "path": "experiments/qwen3_vl_embedding_2b_lsp_pose_optical_moe16/configs/lsp_pose_opt3_smoke.yaml",
+      "git_blob": "8970a10dc26ebcefdf8745e255296c5ccc3f2c49",
+      "sha256": "462907be8eddd2df234646fba9a1676d143fef1782590e92d48af2dfcfcd6528"
+    },
+    {
+      "path": "experiments/qwen3_vl_embedding_2b_lsp_pose_optical_moe16/configs/lsp_pose_opt4.yaml",
+      "git_blob": "8f5bf79ef512a95ff874ecaa5aaba781e0827b5b",
+      "sha256": "99e8524db458f4c2aaeef881e85c20826b06ea36c3766c257b857462987fe06e"
+    },
+    {
+      "path": "experiments/qwen3_vl_embedding_2b_lsp_pose_optical_moe16/configs/lsp_pose_opt4_noema.yaml",
+      "git_blob": "ea5190ad7c7c38f4ca93cc5a01c9483dd513ca25",
+      "sha256": "35de435053b328871841e74a7e80016a315e7a8fc14eddc3a9811c6626adf04a"
+    },
+    {
+      "path": "experiments/qwen3_vl_embedding_2b_lsp_pose_optical_moe16/configs/lsp_pose_opt4_nonorm.yaml",
+      "git_blob": "8370bad36d44dc9944b6482967bb8989c7c2aba6",
+      "sha256": "de5c54e56b7f062fe7a2deb85fdae8e88cbef64ae7f93bef5c3fb044e5ac733c"
+    },
+    {
+      "path": "experiments/qwen3_vl_embedding_2b_lsp_pose_optical_moe16/configs/lsp_pose_opt4_noroute.yaml",
+      "git_blob": "5a25bfd9aebbec099af6e3f6f2255934cd9cb88e",
+      "sha256": "af2466ddb9be7b89f1a879b18ed63bb35a5f01d2cf52f7d99a2ddfca390d61a8"
+    },
+    {
+      "path": "experiments/qwen3_vl_embedding_2b_lsp_pose_optical_moe16/configs/lsp_pose_opt4_smoke.yaml",
+      "git_blob": "7c8e30f6b812a760ee45e66dc47e10e5f25163a7",
+      "sha256": "180e5de220267a4ff96f1e7fa574046a4bb115e17e486854a1aca5728892ecca"
+    },
+    {
+      "path": "experiments/qwen3_vl_embedding_2b_lsp_pose_optical_moe16/configs/lsp_pose_opt_smoke.yaml",
+      "git_blob": "1b5cda846f1968c85665ee021986b5f37622eccc",
+      "sha256": "82dcaa0882fd74b0af3e25e9a922910799fc68d2de6905d3d8fe8ce55d5d042d"
+    },
+    {
+      "path": "experiments/qwen3_vl_embedding_2b_lsp_pose_optical_moe16/configs/lsp_pose_smoke.yaml",
+      "git_blob": "432cfc07802c1e1e4cf6bbe2fd1bc501caad9fca",
+      "sha256": "cb5922776691db39622370e938aa7c2c7cc963c7b5109f4673a526881c7f0d61"
+    },
+    {
+      "path": "experiments/qwen3_vl_embedding_2b_lsp_pose_optical_moe16/configs/lsp_pose_vision2_hybrid.yaml",
+      "git_blob": "175654b93ac5d22f673035ee2e491ca99e3ce6b3",
+      "sha256": "671ac02065687802afc68eea8ed9e1af1828e2bb30b2f3b1b23971ee1ea5b589"
+    },
+    {
+      "path": "experiments/qwen3_vl_embedding_2b_lsp_pose_optical_moe16/datasets.py",
+      "git_blob": "94dcb0d10cd79fce444ca01dc88cdc3dba2efa29",
+      "sha256": "4d1c83c87e8c82169f387bc828eaa312382cc4c78f476b0cfd686cbb1d2821c5"
+    },
+    {
+      "path": "experiments/qwen3_vl_embedding_2b_lsp_pose_optical_moe16/losses.py",
+      "git_blob": "c5ed39a85030a8982a939ac89979c1f9a77bdb73",
+      "sha256": "917e8e36f3b906e406ef21073c567260e24a3d775b87680a9267d8a1d69b38cf"
+    },
+    {
+      "path": "experiments/qwen3_vl_embedding_2b_lsp_pose_optical_moe16/metrics.py",
+      "git_blob": "2ee960f4342d67fb584d7f57d1274ffd57230e1f",
+      "sha256": "b290a70eba649f190362950286fd710899bd9e7c63f77f20dd30102ef30e5ab1"
+    },
+    {
+      "path": "experiments/qwen3_vl_embedding_2b_lsp_pose_optical_moe16/modeling.py",
+      "git_blob": "27b56be8eceaf05b492aa0e4f410248d9573f8bb",
+      "sha256": "88112f99c4cbe6376994d1896a45120339081659254dc151ffacd66a7a1f96da"
+    },
+    {
+      "path": "experiments/qwen3_vl_embedding_2b_lsp_pose_optical_moe16/settings.py",
+      "git_blob": "e1189d203033374084ce83e418ad234d2c5fe9c4",
+      "sha256": "1732d425b3e891f59243adbe68fcad8ddbbc7e954938d9793136d36fb2a985da"
+    },
+    {
+      "path": "experiments/qwen3_vl_embedding_2b_lsp_pose_optical_moe16/training.py",
+      "git_blob": "430ca0feb919c9b8e8dfd7f46fcff9bc5136ade7",
+      "sha256": "c433bbe051cdfceb063bee3433b6c5da24dd189d106e2aa6f6a38196a430c00c"
+    },
+    {
+      "path": "experiments/qwen3_vl_embedding_2b_lsp_pose_optical_router/__init__.py",
+      "git_blob": "14c585eb1b52f133e018987402780c802fd50972",
+      "sha256": "55c52b0a51d7b5bd1b2e4e50c0e363bfd7274923d18cfd6866dd67c507b0bf70"
+    },
+    {
+      "path": "experiments/qwen3_vl_embedding_2b_lsp_pose_optical_router/configs/release/common.yaml",
+      "git_blob": "e648e4527d551b4e41050a67464a35826fa9213c",
+      "sha256": "4f5e4fe8571f3b551736be3a51fe6cc874b029c06e23a400a5c157017c8e82a6"
+    },
+    {
+      "path": "experiments/qwen3_vl_embedding_2b_lsp_pose_optical_router/configs/release/electronic_power_topk1.yaml",
+      "git_blob": "773d87ee0331e77d68c3f6d855035b3423a086c2",
+      "sha256": "247a238447407e48d4733ca9d2b4ee269d632117ed0462f85e63aaa8d5d7b1ff"
+    },
+    {
+      "path": "experiments/qwen3_vl_embedding_2b_lsp_pose_optical_router/configs/release/electronic_power_topk2.yaml",
+      "git_blob": "37a1edcd8769ba4221735a14f32d6cc80b866878",
+      "sha256": "f12a1806c8faa02719e5c4d521bc04f277a511fe3ebee35d1c32e4044f35257a"
+    },
+    {
+      "path": "experiments/qwen3_vl_embedding_2b_lsp_pose_optical_router/configs/release/electronic_power_topk4.yaml",
+      "git_blob": "7742c8375188a3ac8ddea44e77b08377bd453201",
+      "sha256": "40253957ed944b2493891dbaa575bca87e9fcd48ca04a6064232dd3c4a81fb82"
+    },
+    {
+      "path": "experiments/qwen3_vl_embedding_2b_lsp_pose_optical_router/configs/release/optical_power_topk2.yaml",
+      "git_blob": "08a18afc99f31e9d8497e538da71528a5eab893e",
+      "sha256": "a95f8466ab38297d8cfc0cfc0aa2e1f3369cb4b34011cf686f5047085847357b"
+    },
+    {
+      "path": "experiments/qwen3_vl_embedding_2b_lsp_pose_optical_router/modeling.py",
+      "git_blob": "5652f60250566ec254cb606ce7c26d8983a35a34",
+      "sha256": "c630d9db173d4b831f9a70502350e6b8322e7d98b2048fa380a1876cc77c8102"
+    },
+    {
+      "path": "experiments/qwen3_vl_embedding_2b_lsp_pose_optical_router/protocol.py",
+      "git_blob": "efd73cf16365eac3a2150678e18fe7be001ac6b3",
+      "sha256": "28313ae10cb10f58e35314a41f580f332dd11231572307ccf83d7e2d0908c69d"
+    },
+    {
+      "path": "experiments/qwen3_vl_embedding_2b_lsp_pose_optical_router/run.py",
+      "git_blob": "dcb292e30397152b5a367821631212719c6e89a0",
+      "sha256": "1e1b8bacaf53709f2d6d16ce369fb396b51ccd85504df7104980c3c452a4a5ae"
+    },
+    {
+      "path": "experiments/qwen3_vl_embedding_2b_lsp_pose_optical_router/settings.py",
+      "git_blob": "d9b300c4e4d67f475aad4b3b0fb3a5c1b633c462",
+      "sha256": "710f8faa669add824daf395911ab621c2f3cc4e2ace0d5ae45383fd207576e07"
+    },
+    {
+      "path": "experiments/qwen3_vl_embedding_2b_lsp_pose_optical_router/training.py",
+      "git_blob": "5288b2f7dfad5129bfde2959bdd43a79722ea6ad",
+      "sha256": "d35f1611bc7be0cf4797b07af91f0a79c6afcc3651d575b10ce0a4fbb49114d2"
+    },
+    {
+      "path": "experiments/qwen3_vl_embedding_2b_salicon_vision_optical_saliency/__init__.py",
+      "git_blob": "a98373de882337b1ccf82e79678fa5fd7babb5b5",
+      "sha256": "04b72d9f0669e1193c7f715bbc66aa2abd832a1d535393f7edf0d50607c6589c"
+    },
+    {
+      "path": "experiments/qwen3_vl_embedding_2b_salicon_vision_optical_saliency/configs/salicon.yaml",
+      "git_blob": "b063572520f1286e4fe6966ddd1c13a33b420c3a",
+      "sha256": "47a9a03bf3014661a831c989cfde765babb6cc2bf910e9d2c904a31471fe9053"
+    },
+    {
+      "path": "experiments/qwen3_vl_embedding_2b_salicon_vision_optical_saliency/configs/salicon_mask_kd.yaml",
+      "git_blob": "71c9c6ce0ab5f0b397624a0f2d41d6f42df16f21",
+      "sha256": "0cd35aa4339a8c041aad90693f83dad168487e54756f8cd6d7961972d0b38063"
+    },
+    {
+      "path": "experiments/qwen3_vl_embedding_2b_salicon_vision_optical_saliency/configs/salicon_smoke.yaml",
+      "git_blob": "6c9a9fe52425d312844e4182b972c300e7fe893f",
+      "sha256": "4f389f41d469ee013452027d6daf4ec897b338fc84bddfa7fbf55cba2f84affa"
+    },
+    {
+      "path": "experiments/qwen3_vl_embedding_2b_salicon_vision_optical_saliency/configs/salicon_vision2_hybrid.yaml",
+      "git_blob": "846f19dcaf161e4f5c4f012ad604d2c9dc41b170",
+      "sha256": "3f880420a859ecdc57b5e39bee27ee485df6dc30faf1cddb00cd1dbc4cd5bedf"
+    },
+    {
+      "path": "experiments/qwen3_vl_embedding_2b_salicon_vision_optical_saliency/datasets.py",
+      "git_blob": "48d9cb99285182fdf29874266a4331b1fc100365",
+      "sha256": "fd3c384f603ba7446e0833d6e117837b9e0a92cbdeeb623d8cdf383f16d5b396"
+    },
+    {
+      "path": "experiments/qwen3_vl_embedding_2b_salicon_vision_optical_saliency/io_utils.py",
+      "git_blob": "2e191aa347e1308b5d8276b1ef17d97df6c48f83",
+      "sha256": "af7e72251d4aae08f1e8707aafdf0845b8416a8fe6fdf447de98692a6fe6c33b"
+    },
+    {
+      "path": "experiments/qwen3_vl_embedding_2b_salicon_vision_optical_saliency/modeling.py",
+      "git_blob": "cc09ca134be96c236d009ee36d23343fb0d24531",
+      "sha256": "4dbdac4a922b8d34f900ea63a5e05a2ae8890f85584bc4228c5371cf18c5a9e7"
+    },
+    {
+      "path": "experiments/qwen3_vl_embedding_2b_salicon_vision_optical_saliency/objectives.py",
+      "git_blob": "7cffdb575e5a2b4a2438445d1b5b13b73555fe1f",
+      "sha256": "2ec33541e5310e01c40914b1bfbe92e1af786f3cd6b0f1b59d693a265495983d"
+    },
+    {
+      "path": "experiments/qwen3_vl_embedding_2b_salicon_vision_optical_saliency/settings.py",
+      "git_blob": "f7012612ba6578c5c798bef597fd9be35fc0d092",
+      "sha256": "a884263450d0b8593a9934b4ec656a87dc003f858de43dea9acb57564bdfe0cd"
+    },
+    {
+      "path": "experiments/qwen3_vl_embedding_2b_salicon_vision_optical_saliency/training.py",
+      "git_blob": "961d19ca963d5fcf494d9e6fa5d358da004dd2af",
+      "sha256": "f8ae09b5854dfa21ea74abf3fbd9106c8808ba6bf1af6bb7f52f1696042c0fed"
+    },
+    {
+      "path": "experiments/qwen3_vl_embedding_2b_salicon_vision_optical_saliency/visualization.py",
+      "git_blob": "11ba517dd2d614688c10f03b8f841fae36bb3bdb",
+      "sha256": "bc186c9bf38bf338d19811b5d2160734fb163edef53c27e95e916c6b0bc08474"
+    },
+    {
+      "path": "experiments/vision2_hybrid_dense/__init__.py",
+      "git_blob": "8eaad0b498c568db3b4613c05ac196feec1dfb05",
+      "sha256": "2391e0de73759d98ed2b945458e828ce893513d1b4b45d936e610ab3111c0383"
+    },
+    {
+      "path": "experiments/vision2_hybrid_dense/modeling.py",
+      "git_blob": "5189b7711fa6e65df7e8382e3e2fa374cf595b05",
+      "sha256": "45f4da37322ced79ebe302748cf4895d91a6ff65464c0a7240278cf4ce841e60"
+    },
+    {
+      "path": "experiments/vision2_hybrid_dense/settings.py",
+      "git_blob": "6a8e22541cb555172405fbff503b2b62133ab195",
+      "sha256": "658d4ff8cc35d2a97b6bd418a0365f0eccdca8286d43184d7773496f62236db4"
+    }
+  ],
+  "external_import_roots": [
+    "PIL",
+    "huggingface_hub",
+    "matplotlib",
+    "numpy",
+    "scipy",
+    "torch",
+    "yaml"
+  ],
+  "verification": "Original Git bytes and Python syntax checked; no new full-dataset inference or retraining."
+}
