@@ -20,4 +20,9 @@
 `python -m LightGenV2.tasks.t12_text_to_image.perceptual.assemble_three_task_scores --input <旧CSV目录> --output <新CSV路径>`。
 它只拼接已有摘要，不计算新指标；拒绝重复model/mode键及非768样本，输出采用独占创建，
 不会覆盖历史CSV。15行各字段已与原表逐项核对一致，源CSV的SHA在测试前后不变。
-旧汇总器及作图器仍作为原交付包保留；作图器会在导入时打开ZIP，尚不作为新模块执行入口。
+固定样本作图入口：
+`python -m LightGenV2.tasks.t12_text_to_image.perceptual.build_annotated_figures --repo <主工程> --metrics <旧CSV目录> --output <新图目录>`。
+它从原figure_indices读取固定索引，不按质量选图；只在执行入口打开ZIP，结束关闭资源。
+要求新输出目录，各图独占创建。原指标标注及绘图函数经AST核验未改变，
+但本轮未渲染新图，不宣称不同Matplotlib环境的像素级结果一致。
+旧汇总器及作图器继续原位保留，不是默认开发入口。
