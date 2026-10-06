@@ -1,0 +1,41 @@
+{
+  "date": "2026-10-06",
+  "original_directory": "maintenance/storage",
+  "archive_directory": "archive/source_staging_20261006/legacy_maintenance",
+  "files": [
+    {
+      "name": "archive_code_worktrees_20261002.py",
+      "sha256": "450e0fd194eba70cf6ca2382860c6107da351faa1c04c9652a55bd154ae71e84"
+    },
+    {
+      "name": "audit_guest3_20261002.py",
+      "sha256": "f1d9bc11e5d2259f0e6cfe8f72f44badee6cd5ba5ed08323ec09bdd4faaf677f"
+    },
+    {
+      "name": "classify_worktrees_20261002.py",
+      "sha256": "ebc6efbd02215ffbf7d1d6b14945cae86e222bb39b6e813f677de6f81459bd51"
+    },
+    {
+      "name": "clear_old_baseline_features_20261002.py",
+      "sha256": "0f0a291f54b6a29479733f70bcc44871094b7a777d454fae3672f14264f16be1"
+    },
+    {
+      "name": "git_snapshot_20261002.py",
+      "sha256": "9a917f75511db6fa1e1f6e67c3615bdbf5df40714cccb417ffa4c1a929da60ed"
+    },
+    {
+      "name": "safe_cleanup_guest3_20261002.py",
+      "sha256": "ed34daa6848912d36ba180bff928323fc2158b09da7e94d2b5f536e601559149"
+    },
+    {
+      "name": "snapshot_authoritative_overlays_20261002.py",
+      "sha256": "4eff64dd5188a2d77e79788778957155b8fa3b29b07b1ca8c87d25a08c45b355"
+    }
+  ],
+  "purpose": "Historical October 2 inventory, recovery snapshots and previously authorized cleanup implementation; never execute again from old assumptions",
+  "current_source_call_references_found": false,
+  "local_running_python_calls_found": false,
+  "receipt_json_files_moved": false,
+  "data_weights_results_timings_moved_or_deleted": false,
+  "restore": "Verify SHA and restore selected source only if original path remains absent"
+}
