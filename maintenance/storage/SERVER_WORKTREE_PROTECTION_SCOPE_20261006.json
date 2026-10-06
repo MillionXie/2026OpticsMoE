@@ -1,0 +1,761 @@
+{
+  "checked_root_commit": "b65485263679dc20c6da85b7553cbedfb04283f5",
+  "registered_directories": 83,
+  "registered_branch_names": 3,
+  "missing_directories": 0,
+  "all_contain_timing_named_tracked_results": true,
+  "minimum_timing_named_tracked_result_paths": 60,
+  "scope": "Pinned HEAD and tracked filenames; same-UID readable live process cwd/exe/cmdline/fd. Not full metrics, all users, ignored assets or external/dynamic dependencies.",
+  "rows": [
+    {
+      "path": "/DATA/DATA1/guest3/2026OpticsMoE",
+      "head": "b65485263679dc20c6da85b7553cbedfb04283f5",
+      "timing_result_named_tracked_paths": 65,
+      "tracked_changes": 9,
+      "untracked_roots": 92,
+      "ignored_roots": 264,
+      "process_refs": 2
+    },
+    {
+      "path": "/DATA/DATA1/guest3/.codex_worktrees/t06_compress_all_20260912",
+      "head": "630d09367219a4bddd70ed098d2cbdbe8040b617",
+      "timing_result_named_tracked_paths": 77,
+      "tracked_changes": 0,
+      "untracked_roots": 4,
+      "ignored_roots": 31,
+      "process_refs": 0
+    },
+    {
+      "path": "/DATA/DATA1/guest3/.codex_worktrees/t06_readout_compress_20260912",
+      "head": "de866ff8b890b77b18a4f873f5be2d216ae4c7fa",
+      "timing_result_named_tracked_paths": 77,
+      "tracked_changes": 0,
+      "untracked_roots": 1,
+      "ignored_roots": 16,
+      "process_refs": 0
+    },
+    {
+      "path": "/DATA/DATA1/guest3/2026OpticsMoE/.worktrees/abo8-deploy",
+      "head": "e10925f1254376e59c1fae4e1149091a1472ee55",
+      "timing_result_named_tracked_paths": 77,
+      "tracked_changes": 0,
+      "untracked_roots": 4,
+      "ignored_roots": 8,
+      "process_refs": 0
+    },
+    {
+      "path": "/DATA/DATA1/guest3/2026OpticsMoE/.worktrees/fa_vtab_20260914",
+      "head": "a2e6096fbe6ce43e6bbbc55b88f8ceb95aa4fd8b",
+      "timing_result_named_tracked_paths": 79,
+      "tracked_changes": 0,
+      "untracked_roots": 0,
+      "ignored_roots": 0,
+      "process_refs": 0
+    },
+    {
+      "path": "/DATA/DATA1/guest3/2026OpticsMoE/.worktrees/lgvq_shs_20260914",
+      "head": "acb72fbe75dacf250341e565030e9172cec67978",
+      "timing_result_named_tracked_paths": 79,
+      "tracked_changes": 0,
+      "untracked_roots": 0,
+      "ignored_roots": 1,
+      "process_refs": 0
+    },
+    {
+      "path": "/DATA/DATA1/guest3/2026OpticsMoE/.worktrees/sister_bounded_20260927",
+      "head": "3f85510285e5ffdfca28def93eef2eb082b1655c",
+      "timing_result_named_tracked_paths": 77,
+      "tracked_changes": 0,
+      "untracked_roots": 1,
+      "ignored_roots": 17,
+      "process_refs": 0
+    },
+    {
+      "path": "/DATA/DATA1/guest3/2026OpticsMoE/.worktrees/sister_t08_bounded_20260927",
+      "head": "73e2febdc94e4cb280c6ada1e0e7881826f3c7f2",
+      "timing_result_named_tracked_paths": 79,
+      "tracked_changes": 1,
+      "untracked_roots": 4,
+      "ignored_roots": 15,
+      "process_refs": 0
+    },
+    {
+      "path": "/DATA/DATA1/guest3/2026OpticsMoE/.worktrees/spatial_custom_conv",
+      "head": "557c10d38ffd685793f25d697fb887497720af24",
+      "timing_result_named_tracked_paths": 77,
+      "tracked_changes": 3,
+      "untracked_roots": 20,
+      "ignored_roots": 15,
+      "process_refs": 0
+    },
+    {
+      "path": "/DATA/DATA1/guest3/2026OpticsMoE/.worktrees/t03_adaptive",
+      "head": "3cd5f08ddbad7b7d9dd4fbab65f7f36c9f416ad2",
+      "timing_result_named_tracked_paths": 77,
+      "tracked_changes": 0,
+      "untracked_roots": 2,
+      "ignored_roots": 1,
+      "process_refs": 0
+    },
+    {
+      "path": "/DATA/DATA1/guest3/2026OpticsMoE/.worktrees/t03_balance",
+      "head": "27d6d49cbb338309825ea6d1975be05e6f6115fb",
+      "timing_result_named_tracked_paths": 79,
+      "tracked_changes": 0,
+      "untracked_roots": 2,
+      "ignored_roots": 1,
+      "process_refs": 0
+    },
+    {
+      "path": "/DATA/DATA1/guest3/2026OpticsMoE/.worktrees/t03_baseline50_20260912",
+      "head": "d55eaf17c8d20770e0ece9df976110b1e5896cce",
+      "timing_result_named_tracked_paths": 79,
+      "tracked_changes": 0,
+      "untracked_roots": 2,
+      "ignored_roots": 1,
+      "process_refs": 0
+    },
+    {
+      "path": "/DATA/DATA1/guest3/2026OpticsMoE/.worktrees/t03_calibration",
+      "head": "4723a0d519e23deb58402b7b57f94865be838301",
+      "timing_result_named_tracked_paths": 77,
+      "tracked_changes": 0,
+      "untracked_roots": 2,
+      "ignored_roots": 1,
+      "process_refs": 0
+    },
+    {
+      "path": "/DATA/DATA1/guest3/2026OpticsMoE/.worktrees/t03_centered",
+      "head": "b3f88069bdc6864c0d4a3338152fbed6402a3045",
+      "timing_result_named_tracked_paths": 77,
+      "tracked_changes": 0,
+      "untracked_roots": 2,
+      "ignored_roots": 1,
+      "process_refs": 0
+    },
+    {
+      "path": "/DATA/DATA1/guest3/2026OpticsMoE/.worktrees/t03_cffn",
+      "head": "f09ac85a965c470b1a3fd1ef7d83bdabc316d41c",
+      "timing_result_named_tracked_paths": 77,
+      "tracked_changes": 0,
+      "untracked_roots": 2,
+      "ignored_roots": 1,
+      "process_refs": 0
+    },
+    {
+      "path": "/DATA/DATA1/guest3/2026OpticsMoE/.worktrees/t03_early_grn",
+      "head": "04204b9c367c0f2af2e3a25000c3a87e1f9de3a4",
+      "timing_result_named_tracked_paths": 77,
+      "tracked_changes": 0,
+      "untracked_roots": 2,
+      "ignored_roots": 1,
+      "process_refs": 0
+    },
+    {
+      "path": "/DATA/DATA1/guest3/2026OpticsMoE/.worktrees/t03_global16",
+      "head": "961907d182a23fc3882a19139cd89b4563fe41f7",
+      "timing_result_named_tracked_paths": 77,
+      "tracked_changes": 0,
+      "untracked_roots": 2,
+      "ignored_roots": 1,
+      "process_refs": 0
+    },
+    {
+      "path": "/DATA/DATA1/guest3/2026OpticsMoE/.worktrees/t03_handoff_20260915",
+      "head": "3b931ccdcbd398f1c73f57d46621eccbddeff4f0",
+      "timing_result_named_tracked_paths": 79,
+      "tracked_changes": 0,
+      "untracked_roots": 0,
+      "ignored_roots": 0,
+      "process_refs": 0
+    },
+    {
+      "path": "/DATA/DATA1/guest3/2026OpticsMoE/.worktrees/t03_hints",
+      "head": "9bc65286e03d327c962abaa0e35a52770b2a8dab",
+      "timing_result_named_tracked_paths": 77,
+      "tracked_changes": 0,
+      "untracked_roots": 2,
+      "ignored_roots": 1,
+      "process_refs": 0
+    },
+    {
+      "path": "/DATA/DATA1/guest3/2026OpticsMoE/.worktrees/t03_kernel13",
+      "head": "f5b29fc9db304daffbfa3df1d34f8975098d1c5f",
+      "timing_result_named_tracked_paths": 77,
+      "tracked_changes": 0,
+      "untracked_roots": 2,
+      "ignored_roots": 1,
+      "process_refs": 0
+    },
+    {
+      "path": "/DATA/DATA1/guest3/2026OpticsMoE/.worktrees/t03_licensed_figures_20260929",
+      "head": "b75a56203b47818810e0a45dceecf9cea4c6aa9f",
+      "timing_result_named_tracked_paths": 126,
+      "tracked_changes": 0,
+      "untracked_roots": 0,
+      "ignored_roots": 29,
+      "process_refs": 0
+    },
+    {
+      "path": "/DATA/DATA1/guest3/2026OpticsMoE/.worktrees/t03_mix50",
+      "head": "49fb6fd8734f625dc05d258b167d633956875040",
+      "timing_result_named_tracked_paths": 77,
+      "tracked_changes": 0,
+      "untracked_roots": 2,
+      "ignored_roots": 1,
+      "process_refs": 0
+    },
+    {
+      "path": "/DATA/DATA1/guest3/2026OpticsMoE/.worktrees/t03_recheck",
+      "head": "8e093743bf4756a2fedd598fec3ba52f010e8a3b",
+      "timing_result_named_tracked_paths": 77,
+      "tracked_changes": 0,
+      "untracked_roots": 2,
+      "ignored_roots": 1,
+      "process_refs": 0
+    },
+    {
+      "path": "/DATA/DATA1/guest3/2026OpticsMoE/.worktrees/t03_recheck_sam",
+      "head": "30145efdfa2371b3882cc39aa52e1eba882bfda3",
+      "timing_result_named_tracked_paths": 77,
+      "tracked_changes": 0,
+      "untracked_roots": 2,
+      "ignored_roots": 1,
+      "process_refs": 0
+    },
+    {
+      "path": "/DATA/DATA1/guest3/2026OpticsMoE/.worktrees/t03_rfstage",
+      "head": "21fc0c1444c8f7c837fba127af5433aa1f0bd10a",
+      "timing_result_named_tracked_paths": 77,
+      "tracked_changes": 0,
+      "untracked_roots": 1,
+      "ignored_roots": 2,
+      "process_refs": 0
+    },
+    {
+      "path": "/DATA/DATA1/guest3/2026OpticsMoE/.worktrees/t03_rfstage_ek5",
+      "head": "dea0f494b0e7c3dd638e9f7011bb535e2e0874ea",
+      "timing_result_named_tracked_paths": 77,
+      "tracked_changes": 0,
+      "untracked_roots": 2,
+      "ignored_roots": 1,
+      "process_refs": 0
+    },
+    {
+      "path": "/DATA/DATA1/guest3/2026OpticsMoE/.worktrees/t03_sam",
+      "head": "a05ce1bcac9ecf4614b45f4df65a0f7e3dd342e5",
+      "timing_result_named_tracked_paths": 77,
+      "tracked_changes": 0,
+      "untracked_roots": 2,
+      "ignored_roots": 1,
+      "process_refs": 0
+    },
+    {
+      "path": "/DATA/DATA1/guest3/2026OpticsMoE/.worktrees/t03_sam_crop90",
+      "head": "3d5b520ad9f27bf05eacf222c7cc7becd7113a2f",
+      "timing_result_named_tracked_paths": 77,
+      "tracked_changes": 0,
+      "untracked_roots": 2,
+      "ignored_roots": 1,
+      "process_refs": 0
+    },
+    {
+      "path": "/DATA/DATA1/guest3/2026OpticsMoE/.worktrees/t03_sam_early",
+      "head": "23b2cd4639f639790de1db3ed4d9531d599764e4",
+      "timing_result_named_tracked_paths": 77,
+      "tracked_changes": 0,
+      "untracked_roots": 2,
+      "ignored_roots": 1,
+      "process_refs": 0
+    },
+    {
+      "path": "/DATA/DATA1/guest3/2026OpticsMoE/.worktrees/t03_sam_radius",
+      "head": "066ed0c46874e3611bb062f76503e6e925b7bbc8",
+      "timing_result_named_tracked_paths": 77,
+      "tracked_changes": 0,
+      "untracked_roots": 2,
+      "ignored_roots": 1,
+      "process_refs": 0
+    },
+    {
+      "path": "/DATA/DATA1/guest3/2026OpticsMoE/.worktrees/t03_viewreg",
+      "head": "966fb80087776a9a22982a82e684fff32d52e71f",
+      "timing_result_named_tracked_paths": 77,
+      "tracked_changes": 0,
+      "untracked_roots": 2,
+      "ignored_roots": 1,
+      "process_refs": 0
+    },
+    {
+      "path": "/DATA/DATA1/guest3/2026OpticsMoE/.worktrees/t03_wide576",
+      "head": "b3dc44a8437b3f432161fa4cfd247e917ea57abd",
+      "timing_result_named_tracked_paths": 77,
+      "tracked_changes": 0,
+      "untracked_roots": 2,
+      "ignored_roots": 1,
+      "process_refs": 0
+    },
+    {
+      "path": "/DATA/DATA1/guest3/2026OpticsMoE/.worktrees/t04_openmoji_robust_20260928",
+      "head": "3b956503a4ecae9b6c20c789ead28621e42e6eeb",
+      "timing_result_named_tracked_paths": 77,
+      "tracked_changes": 2,
+      "untracked_roots": 21,
+      "ignored_roots": 18,
+      "process_refs": 0
+    },
+    {
+      "path": "/DATA/DATA1/guest3/2026OpticsMoE/.worktrees/t07_abo_20260909",
+      "head": "40544b2b32ff37da543ec60cb1966e3abe24a904",
+      "timing_result_named_tracked_paths": 77,
+      "tracked_changes": 0,
+      "untracked_roots": 0,
+      "ignored_roots": 1,
+      "process_refs": 0
+    },
+    {
+      "path": "/DATA/DATA1/guest3/2026OpticsMoE/.worktrees/t07_abo_anchor_20260909",
+      "head": "e59fc45fbec17938e76f4bfd527e5540003bb255",
+      "timing_result_named_tracked_paths": 77,
+      "tracked_changes": 0,
+      "untracked_roots": 0,
+      "ignored_roots": 1,
+      "process_refs": 0
+    },
+    {
+      "path": "/DATA/DATA1/guest3/2026OpticsMoE/.worktrees/t07_fresh35_20260929",
+      "head": "bd1fcf136ac23ff2f1a4f3f9fc5c1f8bfc614239",
+      "timing_result_named_tracked_paths": 79,
+      "tracked_changes": 0,
+      "untracked_roots": 8,
+      "ignored_roots": 4,
+      "process_refs": 0
+    },
+    {
+      "path": "/DATA/DATA1/guest3/2026OpticsMoE/.worktrees/t07_gallery_fp32_20260912",
+      "head": "c8ec81ced7f1c4d54b848ec99f747ac38c77bae5",
+      "timing_result_named_tracked_paths": 77,
+      "tracked_changes": 0,
+      "untracked_roots": 0,
+      "ignored_roots": 0,
+      "process_refs": 0
+    },
+    {
+      "path": "/DATA/DATA1/guest3/2026OpticsMoE/.worktrees/t07_goal81_verify_20260912",
+      "head": "5f3c704ad93ee8baade05ea2fc13823119c21d84",
+      "timing_result_named_tracked_paths": 77,
+      "tracked_changes": 0,
+      "untracked_roots": 0,
+      "ignored_roots": 0,
+      "process_refs": 0
+    },
+    {
+      "path": "/DATA/DATA1/guest3/2026OpticsMoE/.worktrees/t07_joint_best_restart_20260912",
+      "head": "35055dc78d9ddd585e3d39357312f2f508cd287d",
+      "timing_result_named_tracked_paths": 77,
+      "tracked_changes": 0,
+      "untracked_roots": 0,
+      "ignored_roots": 0,
+      "process_refs": 0
+    },
+    {
+      "path": "/DATA/DATA1/guest3/2026OpticsMoE/.worktrees/t07_latestfresh35_20260929",
+      "head": "d979b53ed509907a3630bd2a36c317dfb3aac965",
+      "timing_result_named_tracked_paths": 79,
+      "tracked_changes": 0,
+      "untracked_roots": 9,
+      "ignored_roots": 4,
+      "process_refs": 0
+    },
+    {
+      "path": "/DATA/DATA1/guest3/2026OpticsMoE/.worktrees/t07_retail_audit_20260913",
+      "head": "5a7bf527a1b4a479180097f493c5ac648057ab31",
+      "timing_result_named_tracked_paths": 79,
+      "tracked_changes": 0,
+      "untracked_roots": 0,
+      "ignored_roots": 0,
+      "process_refs": 0
+    },
+    {
+      "path": "/DATA/DATA1/guest3/2026OpticsMoE/.worktrees/t07_review_20260910",
+      "head": "e0732f74338af0cee3cb4463df9a320b09f2b24d",
+      "timing_result_named_tracked_paths": 77,
+      "tracked_changes": 0,
+      "untracked_roots": 0,
+      "ignored_roots": 1,
+      "process_refs": 0
+    },
+    {
+      "path": "/DATA/DATA1/guest3/2026OpticsMoE/.worktrees/t07_robust_20260926",
+      "head": "62ac6c52b0bef264edabdd25d41200820ac8fc01",
+      "timing_result_named_tracked_paths": 79,
+      "tracked_changes": 0,
+      "untracked_roots": 23,
+      "ignored_roots": 28,
+      "process_refs": 0
+    },
+    {
+      "path": "/DATA/DATA1/guest3/2026OpticsMoE/.worktrees/t07_vision13_20260913",
+      "head": "6c1320c2ff798321404a5e6060852033130b52b2",
+      "timing_result_named_tracked_paths": 79,
+      "tracked_changes": 0,
+      "untracked_roots": 0,
+      "ignored_roots": 0,
+      "process_refs": 0
+    },
+    {
+      "path": "/DATA/DATA1/guest3/2026OpticsMoE/.worktrees/t08_text_to_image_10cm_compact_20260923",
+      "head": "73e2febdc94e4cb280c6ada1e0e7881826f3c7f2",
+      "timing_result_named_tracked_paths": 79,
+      "tracked_changes": 1,
+      "untracked_roots": 5,
+      "ignored_roots": 0,
+      "process_refs": 0
+    },
+    {
+      "path": "/DATA/DATA1/guest3/2026OpticsMoE/.worktrees/t08_text_to_image_20260920",
+      "head": "d0662a7d240340817948a3496c2cd43f4240e76d",
+      "timing_result_named_tracked_paths": 79,
+      "tracked_changes": 0,
+      "untracked_roots": 1,
+      "ignored_roots": 0,
+      "process_refs": 0
+    },
+    {
+      "path": "/DATA/DATA1/guest3/2026OpticsMoE/.worktrees/t12_physical_robust_20260926",
+      "head": "197beba57440dff0ca2082fd3449635ce7d91c5a",
+      "timing_result_named_tracked_paths": 81,
+      "tracked_changes": 0,
+      "untracked_roots": 0,
+      "ignored_roots": 14,
+      "process_refs": 0
+    },
+    {
+      "path": "/DATA/DATA1/guest3/2026OpticsMoE/.worktrees/t12_physical_robust_v2_20260927",
+      "head": "7093ec46082eed2fae127ec5028d3e2e8548b592",
+      "timing_result_named_tracked_paths": 81,
+      "tracked_changes": 0,
+      "untracked_roots": 1,
+      "ignored_roots": 18,
+      "process_refs": 0
+    },
+    {
+      "path": "/DATA/DATA1/guest3/2026OpticsMoE/.worktrees/t13_temporal_robust_20260927",
+      "head": "493eb38375f3bd9e4e8e7edfe278468b351365f1",
+      "timing_result_named_tracked_paths": 60,
+      "tracked_changes": 0,
+      "untracked_roots": 1,
+      "ignored_roots": 14,
+      "process_refs": 0
+    },
+    {
+      "path": "/DATA/DATA1/guest3/2026OpticsMoE_a100_formal",
+      "head": "0db3b583925ec688d2fba09957905d8e1cd9bec8",
+      "timing_result_named_tracked_paths": 60,
+      "tracked_changes": 7,
+      "untracked_roots": 9,
+      "ignored_roots": 38,
+      "process_refs": 0
+    },
+    {
+      "path": "/DATA/DATA1/guest3/2026OpticsMoE_t06_a100_batch",
+      "head": "3fab90b363e3d49f02fa68acdc6c363b991097e7",
+      "timing_result_named_tracked_paths": 61,
+      "tracked_changes": 2,
+      "untracked_roots": 0,
+      "ignored_roots": 9,
+      "process_refs": 0
+    },
+    {
+      "path": "/DATA/DATA1/guest3/LightGenV2_worktrees/t04_layered_1bc120428",
+      "head": "a61a3746d39765991048d95e40812d1028d70c93",
+      "timing_result_named_tracked_paths": 79,
+      "tracked_changes": 0,
+      "untracked_roots": 1,
+      "ignored_roots": 21,
+      "process_refs": 0
+    },
+    {
+      "path": "/DATA/DATA1/guest3/abo_figures_checkout_20260928",
+      "head": "c93fad700a1da4b30ceeac9af2afc7985934eb00",
+      "timing_result_named_tracked_paths": 79,
+      "tracked_changes": 0,
+      "untracked_roots": 1,
+      "ignored_roots": 0,
+      "process_refs": 0
+    },
+    {
+      "path": "/DATA/DATA1/guest3/demo_reproduction_20260915",
+      "head": "1c7222a1119385475e1b464ca7efdb67cdc21a4c",
+      "timing_result_named_tracked_paths": 79,
+      "tracked_changes": 7,
+      "untracked_roots": 16,
+      "ignored_roots": 26,
+      "process_refs": 1
+    },
+    {
+      "path": "/DATA/DATA1/guest3/lightgen_spatial_065",
+      "head": "23612d55106cb8c817cf4b4e7b38ea5bc138361a",
+      "timing_result_named_tracked_paths": 77,
+      "tracked_changes": 11,
+      "untracked_roots": 93,
+      "ignored_roots": 27,
+      "process_refs": 0
+    },
+    {
+      "path": "/DATA/DATA1/guest3/t02_personal_source_20260928",
+      "head": "2fa901dc7800d8798658b29e242e38bebac97989",
+      "timing_result_named_tracked_paths": 77,
+      "tracked_changes": 0,
+      "untracked_roots": 0,
+      "ignored_roots": 22,
+      "process_refs": 0
+    },
+    {
+      "path": "/DATA/DATA1/guest3/t10_corrected_20260918",
+      "head": "5a1178ef09be40f45b58a20a8633a6e1add2d75d",
+      "timing_result_named_tracked_paths": 79,
+      "tracked_changes": 1,
+      "untracked_roots": 8,
+      "ignored_roots": 3,
+      "process_refs": 0
+    },
+    {
+      "path": "/DATA/DATA1/guest3/t11_joint_d2nn_20260920",
+      "head": "1430e8331739b0fd640c23d3adba244991408abc",
+      "timing_result_named_tracked_paths": 79,
+      "tracked_changes": 0,
+      "untracked_roots": 1,
+      "ignored_roots": 4,
+      "process_refs": 0
+    },
+    {
+      "path": "/DATA/DATA1/guest3/t11_optical_20260919",
+      "head": "604cd89e3e4a88ed0b580eaa41f88af7de2da86c",
+      "timing_result_named_tracked_paths": 79,
+      "tracked_changes": 0,
+      "untracked_roots": 1,
+      "ignored_roots": 4,
+      "process_refs": 0
+    },
+    {
+      "path": "/DATA/DATA1/guest3/t12_compare_20260920",
+      "head": "3d87c006a22206d90b3f5cf6217cecccfb35ba9d",
+      "timing_result_named_tracked_paths": 79,
+      "tracked_changes": 0,
+      "untracked_roots": 1,
+      "ignored_roots": 3,
+      "process_refs": 0
+    },
+    {
+      "path": "/DATA/DATA1/guest3/t12_cross_modal_20260920",
+      "head": "2f2f6946f38c7d06320eb29314654a6260f3d618",
+      "timing_result_named_tracked_paths": 79,
+      "tracked_changes": 0,
+      "untracked_roots": 2,
+      "ignored_roots": 12,
+      "process_refs": 0
+    },
+    {
+      "path": "/DATA/DATA1/guest3/t12_cross_modal_capacity_20260920",
+      "head": "fea3b079d04745a2aa5d181c7dfb4da37a81a922",
+      "timing_result_named_tracked_paths": 79,
+      "tracked_changes": 0,
+      "untracked_roots": 1,
+      "ignored_roots": 7,
+      "process_refs": 0
+    },
+    {
+      "path": "/DATA/DATA1/guest3/t12_cross_modal_video_20260920",
+      "head": "e99846b8590550f2b02d11e8630e7cf12ebb9fab",
+      "timing_result_named_tracked_paths": 79,
+      "tracked_changes": 0,
+      "untracked_roots": 1,
+      "ignored_roots": 7,
+      "process_refs": 0
+    },
+    {
+      "path": "/DATA/DATA1/guest3/t12_d2nn_baselines_20260920",
+      "head": "5d1ee1174ba445fb807380f7dd0c28c03a592f9d",
+      "timing_result_named_tracked_paths": 79,
+      "tracked_changes": 0,
+      "untracked_roots": 1,
+      "ignored_roots": 7,
+      "process_refs": 0
+    },
+    {
+      "path": "/DATA/DATA1/guest3/t12_git_audited_20260926",
+      "head": "a3f5e6fe7027e92fe29be2934750f427cdfd91e7",
+      "timing_result_named_tracked_paths": 81,
+      "tracked_changes": 0,
+      "untracked_roots": 0,
+      "ignored_roots": 16,
+      "process_refs": 0
+    },
+    {
+      "path": "/DATA/DATA1/guest3/t12_sequential_d2nn_20260920",
+      "head": "0e791798f8ec69bc9dc1c9b2f82dc4452e6cf3f6",
+      "timing_result_named_tracked_paths": 79,
+      "tracked_changes": 0,
+      "untracked_roots": 1,
+      "ignored_roots": 7,
+      "process_refs": 0
+    },
+    {
+      "path": "/DATA/DATA1/guest3/t12_text_to_image_20260920",
+      "head": "9502371917e33e1e45388010208d510c0688f9bf",
+      "timing_result_named_tracked_paths": 81,
+      "tracked_changes": 0,
+      "untracked_roots": 17,
+      "ignored_roots": 18,
+      "process_refs": 0
+    },
+    {
+      "path": "/DATA/DATA1/guest3/worktrees/2026OpticsMoE_cifar100_6ce31e05",
+      "head": "6ce31e0514f90efbb11f548b5f024dcd28a07896",
+      "timing_result_named_tracked_paths": 60,
+      "tracked_changes": 0,
+      "untracked_roots": 1,
+      "ignored_roots": 19,
+      "process_refs": 0
+    },
+    {
+      "path": "/DATA/DATA1/guest3/worktrees/2026OpticsMoE_static_cifar",
+      "head": "8063ed16bac540758f7ba226dbeadac005def8d6",
+      "timing_result_named_tracked_paths": 60,
+      "tracked_changes": 0,
+      "untracked_roots": 1,
+      "ignored_roots": 19,
+      "process_refs": 0
+    },
+    {
+      "path": "/DATA/DATA1/guest3/worktrees/2026OpticsMoE_static_experts_8c354986",
+      "head": "8c35498660b874b257a33ae7d376de0c328a6139",
+      "timing_result_named_tracked_paths": 60,
+      "tracked_changes": 0,
+      "untracked_roots": 1,
+      "ignored_roots": 19,
+      "process_refs": 0
+    },
+    {
+      "path": "/DATA/DATA1/guest3/worktrees/static_control_v3",
+      "head": "dee34f07aa2f8aadbcfbc2600d49bd76783abb41",
+      "timing_result_named_tracked_paths": 60,
+      "tracked_changes": 0,
+      "untracked_roots": 1,
+      "ignored_roots": 19,
+      "process_refs": 0
+    },
+    {
+      "path": "/DATA/DATA1/guest3/worktrees/static_control_v3_deterministic",
+      "head": "14eb8e8d07083bff740009b2c9a8145bc06a56bb",
+      "timing_result_named_tracked_paths": 60,
+      "tracked_changes": 0,
+      "untracked_roots": 1,
+      "ignored_roots": 19,
+      "process_refs": 0
+    },
+    {
+      "path": "/DATA/DATA1/guest3/worktrees/static_control_v3_timing",
+      "head": "cc00af1b01f16c8c4417b26e7e228db51f3a7508",
+      "timing_result_named_tracked_paths": 60,
+      "tracked_changes": 0,
+      "untracked_roots": 1,
+      "ignored_roots": 19,
+      "process_refs": 0
+    },
+    {
+      "path": "/DATA/DATA1/guest3/worktrees/static_spatial_v4",
+      "head": "2d291bbfe484e4c8395db6c6ccfc78d21a829cae",
+      "timing_result_named_tracked_paths": 71,
+      "tracked_changes": 0,
+      "untracked_roots": 1,
+      "ignored_roots": 19,
+      "process_refs": 0
+    },
+    {
+      "path": "/DATA/DATA1/guest3/worktrees/static_spatial_v4_formal",
+      "head": "c024b9280433f6e7fe31fc0122a1b8aadf342b38",
+      "timing_result_named_tracked_paths": 71,
+      "tracked_changes": 0,
+      "untracked_roots": 1,
+      "ignored_roots": 19,
+      "process_refs": 0
+    },
+    {
+      "path": "/DATA/DATA1/guest3/worktrees/static_spatial_v4_timing",
+      "head": "c558fd03054c9abc6e5db245a1017106a2549a1b",
+      "timing_result_named_tracked_paths": 71,
+      "tracked_changes": 0,
+      "untracked_roots": 1,
+      "ignored_roots": 19,
+      "process_refs": 0
+    },
+    {
+      "path": "/DATA/DATA1/guest3/worktrees/static_unseen_v1",
+      "head": "0d854376cca29e16143ad1eb7762860770e59459",
+      "timing_result_named_tracked_paths": 77,
+      "tracked_changes": 0,
+      "untracked_roots": 1,
+      "ignored_roots": 20,
+      "process_refs": 0
+    },
+    {
+      "path": "/tmp/t16_audit_4bf",
+      "head": "d4ea23cf1b13940e2513a06cb74ccdd0b2dcd22a",
+      "timing_result_named_tracked_paths": 79,
+      "tracked_changes": 0,
+      "untracked_roots": 0,
+      "ignored_roots": 8,
+      "process_refs": 0
+    },
+    {
+      "path": "/tmp/t16_aug_6b3e",
+      "head": "6b3ebfea36d0882e9213a19685b129144a78600c",
+      "timing_result_named_tracked_paths": 79,
+      "tracked_changes": 0,
+      "untracked_roots": 1,
+      "ignored_roots": 8,
+      "process_refs": 0
+    },
+    {
+      "path": "/tmp/t16_aug_ce8",
+      "head": "ce8fe0f48637c94ce77b389582b2d1c4aae67b2a",
+      "timing_result_named_tracked_paths": 79,
+      "tracked_changes": 0,
+      "untracked_roots": 0,
+      "ignored_roots": 7,
+      "process_refs": 0
+    },
+    {
+      "path": "/tmp/t16_ft_6d7",
+      "head": "46984d9dfc8f12d9a1def3a1b4ea95f225082c6d",
+      "timing_result_named_tracked_paths": 79,
+      "tracked_changes": 0,
+      "untracked_roots": 0,
+      "ignored_roots": 8,
+      "process_refs": 0
+    },
+    {
+      "path": "/tmp/t16_physical_binary_977",
+      "head": "8841d3c9181a4ed68bb666eed2f44ee06d708eae",
+      "timing_result_named_tracked_paths": 79,
+      "tracked_changes": 0,
+      "untracked_roots": 0,
+      "ignored_roots": 8,
+      "process_refs": 0
+    },
+    {
+      "path": "/tmp/t16_train_8f28",
+      "head": "8f280a5d661d37b43d40eace585c43bd00d819d0",
+      "timing_result_named_tracked_paths": 79,
+      "tracked_changes": 0,
+      "untracked_roots": 0,
+      "ignored_roots": 7,
+      "process_refs": 0
+    }
+  ],
+  "deletion_approved": false,
+  "mutations": [],
+  "data_weights_timing_changed": false
+}
