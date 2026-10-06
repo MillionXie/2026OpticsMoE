@@ -1,4 +1,25 @@
 {
+  "local_openmoji_overlay_20261006": {
+    "source_head": "9d6b24f01b877d4f4594adbedde65be3502ab44d",
+    "archive_commit": "53d9dd3e205506fd78ec0efc528716ae9bdd50ed",
+    "archive_ref": "refs/archive/local-openmoji-overlay-20261006",
+    "local_bundle": ".codex_tmp/storage_git_backup_20261002/local_openmoji_overlay_20261006.bundle",
+    "bundle_sha256": "14c1d34fe5dbc7c56bafd67d76d184bf309323f66862431ad69fe7207e8461a3",
+    "bundle_bytes": 1667,
+    "prerequisite_commit": "9d6b24f01b877d4f4594adbedde65be3502ab44d",
+    "files": {
+      "README.md": "0c8d9ed828bbf19a12f7d626f64e6ad42bce5069b23595993c4dffd37b16250b",
+      "evaluate_matched_stress.py": "a4c51465819a3a255af7c291eacc94a5baba12757c358546eac4653e9bcc68bd",
+      "recover_fullhead_stress.py": "07837dcc0393b079e66fbf1b7d446351396bc64185a7e375e9e64d7be8b64646"
+    },
+    "file_prefix": "LightGenV2/tasks/t04_openmoji_robust_ablation/",
+    "main_comparison_commit": "bfc12b301c2bad1e6a993cd58409e454367fda88",
+    "python_files_equal_main_after_crlf_normalization": true,
+    "readme_differs_and_preserved": true,
+    "working_head_index_and_files_unchanged": true,
+    "other_hosts_bundle_verified": false,
+    "scope": "Local source recovery only, incremental bundle requires original commit; not runtime migration, data backup or permission to retire active OpenMoji branch"
+  },
   "archives": [
     {
       "source_head": "3f85510285e5ffdfca28def93eef2eb082b1655c",
