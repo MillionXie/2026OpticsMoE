@@ -27,7 +27,8 @@ def main():
     assert flow.sha(a.project/'assets/small.pt')==contract['checkpoint_sha256']
     saved=torch.load(a.project/'assets/small.pt',map_location='cpu',weights_only=False)
     model=build_sealed(saved).cuda().eval().requires_grad_(False)
-    assert architecture_report(model)['counted_parameters']==9958098
+    parameters=architecture_report(model)['counted_parameters']
+    assert parameters==contract.get('counted_parameters',9958098) and parameters<=20_000_000
     input_path=a.inputs or a.project/'assets/pilot_inputs.pt'
     x=torch.load(input_path,map_location='cpu',weights_only=False)
     values=[x[k].cuda() for k in ['reference','embeddings','mask','noise']]

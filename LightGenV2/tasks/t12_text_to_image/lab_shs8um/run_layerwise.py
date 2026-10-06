@@ -20,6 +20,8 @@ def main():
     p=argparse.ArgumentParser();p.add_argument('--project',type=Path,required=True)
     p.add_argument('--abo-project',type=Path,required=True);p.add_argument('--output',type=Path,required=True)
     p.add_argument('--reuse',type=Path,required=True);p.add_argument('--selftest',action='store_true')
+    p.add_argument('--split',choices=('test','val'),default='test')
+    p.add_argument('--max-samples',type=int)
     a=p.parse_args();a.output.mkdir(parents=True,exist_ok=True);torch.set_num_threads(4)
     sys.path.insert(0,str(a.abo_project/'lab_dvp8um'))
     import four_image_flow as flow
@@ -28,27 +30,31 @@ def main():
     contract=json.loads((a.project/'assets/contract.json').read_text())
     assert flow.sha(a.project/'assets/small.pt')==contract['checkpoint_sha256']
     model=build_sealed(torch.load(a.project/'assets/small.pt',map_location='cpu',weights_only=False)).cuda().eval().requires_grad_(False)
-    assert architecture_report(model)['counted_parameters']==9958098
+    parameters=architecture_report(model)['counted_parameters']
+    assert parameters==contract.get('counted_parameters',9958098) and parameters<=20_000_000
     assert model.bounded_amplitude==dict(kind='tanh',scale=.5)
     data=a.project/'assets/datasets'
-    dataset=ExpandedUnifiedProductEditDataset(data/'abo_cleanrender_lamp_table_pillow_256_v1','test',256,data/'abo_unified_expanded_instructions_qwen2_v2.pt')
+    dataset=ExpandedUnifiedProductEditDataset(data/'abo_cleanrender_lamp_table_pillow_256_v1',a.split,256,data/'abo_unified_expanded_instructions_qwen2_v2.pt')
     lookup=PromptEmbeddingLookup(data/'abo_unified_expanded_qwen_embeddings_v2.pt')
-    total=len(dataset);assert total==2304
+    assert len(dataset)==2304
+    selected_indices=list(range(len(dataset))) if a.max_samples is None else torch.linspace(0,len(dataset)-1,min(a.max_samples,len(dataset))).long().tolist()
+    total=len(selected_indices)
     phase_dir=a.output/'phase';phase_dir.mkdir(exist_ok=True)
     reused={}
     for start in range(0,total,6):
         folder=a.reuse/f'batch_{start:05d}_{min(start+6,total):05d}'
         if not (folder/'report.json').exists():break
+        if a.split!='test' or a.max_samples is not None:raise ValueError('Subset/VAL captures cannot reuse original TEST capture folders')
         report=json.loads((folder/'report.json').read_text())
         assert report['contract']['checkpoint_sha256']==contract['checkpoint_sha256'] and report['status']=='complete'
         for index in range(start,min(start+6,total)):reused[index]=(folder,index-start)
     def inputs(start,stop):
-        rows=[dataset[i] for i in range(start,stop)]
+        rows=[dataset[selected_indices[i]] for i in range(start,stop)]
         embeddings,mask,_=lookup.batch([r['prompt'] for r in rows],torch.device('cpu'))
         ref=torch.stack([r['reference'] for r in rows])
         return dict(reference=ref,target=torch.stack([r['target'] for r in rows]),embeddings=embeddings,mask=mask,
-            noise=torch.stack([torch.randn(ref[0].shape,generator=torch.Generator().manual_seed(1042+i)) for i in range(start,stop)]),
-            indices=list(range(start,stop)),metadata=[{k:r[k] for k in ('sample_id','prompt','category','mode')} for r in rows],scope='entire original TEST member')
+            noise=torch.stack([torch.randn(ref[0].shape,generator=torch.Generator().manual_seed(1042+selected_indices[i])) for i in range(start,stop)]),
+            indices=selected_indices[start:stop],metadata=[{k:r[k] for k in ('sample_id','prompt','category','mode')} for r in rows],scope=a.split+' members; fixed indices recorded')
     def ccd_path(stage,index):
         if index in reused:
             folder,row=reused[index];return folder/'ccd'/stage/f'pilot_{row:03d}.png'
@@ -139,11 +145,11 @@ def main():
                         Image.fromarray(gray).save(folder/f'pilot_{j:03d}_{label}.png')
                 torch.save(dict(actual=actual.cpu(),simulation=simulation.cpu()),folder/'outputs.pt')
                 inp=folder/'inputs.pt';torch.save(x,inp)
-                write(folder/'report.json',dict(status='complete',selftest=False,sample_count=stop-start,sample_metadata=x['metadata'],indices=x['indices'],stages=STAGES,contract=contract,scope='complete TEST member; layerwise capture'))
+                write(folder/'report.json',dict(status='complete',selftest=False,sample_count=stop-start,sample_metadata=x['metadata'],indices=x['indices'],stages=STAGES,contract=contract,scope=a.split+' members; layerwise capture'))
                 export(a.project,folder,inp);inp.unlink()
             rows=json.loads((folder/'sample_metrics.json').read_text())
             for i,row in zip(range(start,stop),rows):
-                row['test_index']=i;row['sample_id']=f'test_{i:05d}'
+                row[a.split+'_index']=selected_indices[i];row['dataset_split']=a.split;row['sample_id']=f'{a.split}_{selected_indices[i]:05d}'
                 for label in ('reference','target','simulation','physical'):row[label+'_image']=name+'/'+row[label+'_image']
         all_rows.extend(rows);write(a.output/'progress.json',dict(status='decoding',completed=stop,total=total))
     restore();assert len(all_rows)==total
@@ -151,7 +157,7 @@ def main():
     with (a.output/'sample_metrics.csv').open('w',encoding='utf-8-sig',newline='') as f:
         w=csv.DictWriter(f,fieldnames=list(all_rows[0]));w.writeheader();w.writerows(all_rows)
     metrics={key:sum(row[key] for row in all_rows)/total for key in ('physical_mse_0_1','physical_mae_0_1','physical_psnr_db','physical_ssim','simulation_mse_0_1','simulation_mae_0_1','simulation_psnr_db','simulation_ssim')}
-    write(a.output/'report.json',dict(status='complete',scope='entire original TEST; reused valid same-checkpoint captures',sample_count=total,reused_samples=len(reused),metrics=metrics,elapsed_seconds=time.time()-started))
+    write(a.output/'report.json',dict(status='complete',scope=a.split+' fixed members; layerwise capture',split=a.split,indices=selected_indices,contract=contract,sample_count=total,reused_samples=len(reused),metrics=metrics,elapsed_seconds=time.time()-started))
     write(a.output/'progress.json',dict(status='complete',completed=total,total=total))
 
 if __name__=='__main__':main()
