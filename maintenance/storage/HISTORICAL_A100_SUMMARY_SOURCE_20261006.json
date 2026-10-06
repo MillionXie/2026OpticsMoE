@@ -1,0 +1,23 @@
+{
+  "audited_on": "2026-10-06",
+  "purpose": "Preserve existing cross-task A100 latency/power summary source on main, not rerun benchmarks",
+  "server_root": "/DATA/DATA1/guest3/2026OpticsMoE",
+  "source_identity_method": "Existing server sha256sum versus actual local byte hashes",
+  "files": [
+    {"path":"LightGenV2/scripts/consolidate_latest_a100_electronics.py","original_server_and_local_sha256":"2ad033702315650220696acf418131821cd53a412632344e322d37b35ccd9aac","adoption":"unchanged original bytes; stdlib summary and evidence copying"},
+    {"path":"LightGenV2/scripts/consolidate_latest_qwen_baselines_a100.py","original_server_and_local_sha256":"53b38ec05f3427994b8cf07258560e63d2dfa2eaae38ced64530f9c4ff893274","adoption":"unchanged original bytes; stdlib summary, lazy matplotlib plotting and evidence copying"}
+  ],
+  "measurement_script_not_adopted": "LightGenV2/scripts/profile_latest_qwen_changed_a100.py",
+  "tests": "Synthetic CPU statistics, per-batch workload scaling and copy refusal only",
+  "formal_reports_changed": false,
+  "timing_executed": false,
+  "model_or_gpu_used": false,
+  "runtime_or_asset_closure_proven": false,
+  "remaining_risks": [
+    "Names say latest but their contracts and report text are historical, not current sealed models",
+    "Original main functions can write summaries to an existing directory; do not execute them on preserved report directories",
+    "Qwen main expects existing fresh/work evidence below output; entire-main non-overwrite safety is not proven",
+    "Power-times-latency proxy is not whole-system waveform-integrated energy",
+    "Original measurement script and all model/data/environment closures remain separately protected and audited"
+  ]
+}
