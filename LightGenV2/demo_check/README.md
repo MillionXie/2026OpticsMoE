@@ -20,6 +20,17 @@
 
 独立发布包内五份改写源码保留为交付版本，不能用包内源码SHA替换训练源SHA。其余历史分析/绘图/数据准备工具仍待用途核对，本轮未删除任何文件。
 
+EuroSAT 53,784张图像包的校验使用主线只读入口，不再依赖分析目录里的
+`.codex_plot_deps`、机器私有 `IMAGE_EXPORT_LOCAL.json` 或自动重命名/解压：
+
+```bash
+python LightGenV2/demo_check/verify_eurosat_image_archive.py --archive /path/images.zip --export-report /path/SERVER_EXPORT_RESULT.json --split /path/SPLIT.json --image-manifest /path/IMAGE_MANIFEST.json
+```
+
+依赖 Pillow；校验 ZIP/每图文件及像素SHA、56×56 RGB、固定划分与CRC。
+只向终端输出结果，不写报告、不解压、不替换 `.partial`。旧验证脚本和原报告保留；
+本轮仅用合成小样本测试安全行为，没有重新读取整个正式图片包或复评模型。
+
 旧纯光学 ZIP 的 SHA、13份文件清单、CRC与解压目录逐字节核验通过，见 [发布包身份](HISTORICAL_RELEASE_IDENTITY_20261006.json)。原训练提交为 `8c48e5caacb5cd2a8f82d18eaad41d5cb7a80d5f`，打包提交为 `558cfcebbbcc768345cf0a6dc3f909ae51495675`。当前main的模型已增加可选OEO/共用振幅入口，配置增加默认 `oeo_activation=none`，准备源码抽出 `decode_pair`；因此旧包不是当前源码逐字节副本。
 
 原打包入口按原metadata的来源SHA校验；当前来源不匹配时应失败，不应改摘要绕过。此次只核验旧发布物完整性，没有重新构建、运行或上传包，没有重新证明当前扩展模型与旧版数值等价。
