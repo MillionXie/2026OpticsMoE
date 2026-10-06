@@ -148,6 +148,7 @@
     {
       "id": "t10_expert_scaling",
       "data_archive_binding_evidence": "../maintenance/storage/T10_DATA_ARCHIVE_BINDING_20261006.json",
+      "test_source_binding_evidence": "../maintenance/storage/T10_TEST_SOURCE_BINDING_20261006.json",
       "entry": "tasks/t10_expert_scaling/README.md",
       "source_status": "actual_runtime_overlay_published_partial_asset_audit",
       "training_source": "/DATA/DATA1/guest3/t10_corrected_20260918",

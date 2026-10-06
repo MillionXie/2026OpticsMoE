@@ -66,3 +66,10 @@ Organ train12975/val2392，RGB uint8。后两份训练缓存不含TEST，TEST另
 不能把训练缓存SHA一致当成完整TEST来源闭包。原始测试归档及有序ID仍待核验。
 本轮仅流式哈希和NPY头部读取，没有解码图片、加载模型或复评。
 证据：仓库`maintenance/storage/T10_DATA_ARCHIVE_BINDING_20261006.json`。
+
+同日继续核验原TEST来源：Blood3421、Organ8216的原归档SHA、manifest及有序ID
+与各12份现有报告完全对应；Kather752有序ID与12份报告对应，但旧报告没有单列
+test_source_sha256字段，不能补造历史字段。三组ID均唯一、与manifest的TRAIN/VAL ID无交集。
+Blood/Organ ID由原评估协议的dataset/split/索引构造，不证明图像近重复或患者独立性。
+只读取标签和ID，没有读取图像数组；缺失的九项TEST报告仍缺失，没有替代评估。
+证据：仓库`maintenance/storage/T10_TEST_SOURCE_BINDING_20261006.json`。

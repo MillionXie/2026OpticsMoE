@@ -1,0 +1,337 @@
+{
+  "datasets": [
+    {
+      "dataset": "bloodmnist",
+      "source": "/DATA/DATA1/guest3/demo_reproduction_data/bloodmnist/bloodmnist.npz",
+      "source_sha256": "062023e186f537e26b3c21ea3b2614ddfc475e8a14825dfd20663bbb7e37bddc",
+      "manifest_sha256": "0f619df492c734d98b7d765fddfa0c629e022a1b6ae8032a748e0754c546a339",
+      "test_samples": 3421,
+      "test_ids_sha256": "ab8594d60b8802fd94c00cf3c255da215875bcfdbc399f111c0150de9947b82d",
+      "unique_ids": 3421,
+      "train_overlap": 0,
+      "val_overlap": 0,
+      "manifest_test_order_matches": null,
+      "test_class_counts": [
+        244,
+        624,
+        311,
+        579,
+        243,
+        284,
+        666,
+        470
+      ],
+      "reports": [
+        {
+          "run": "bloodmnist__moe_oeo_N4_k1_L4_lr0.002_s17",
+          "manifest_matches": true,
+          "source_matches": true,
+          "ordered_ids_match": true,
+          "sample_count_matches": true
+        },
+        {
+          "run": "bloodmnist__moe_oeo_N4_k2_L4_lr0.002_s17",
+          "manifest_matches": true,
+          "source_matches": true,
+          "ordered_ids_match": true,
+          "sample_count_matches": true
+        },
+        {
+          "run": "bloodmnist__moe_oeo_N4_k3_L4_lr0.002_s17",
+          "manifest_matches": true,
+          "source_matches": true,
+          "ordered_ids_match": true,
+          "sample_count_matches": true
+        },
+        {
+          "run": "bloodmnist__moe_oeo_N4_k4_L4_lr0.002_s17",
+          "manifest_matches": true,
+          "source_matches": true,
+          "ordered_ids_match": true,
+          "sample_count_matches": true
+        },
+        {
+          "run": "bloodmnist__moe_oeo_N4_k1_L4_lr0.002_s27",
+          "manifest_matches": true,
+          "source_matches": true,
+          "ordered_ids_match": true,
+          "sample_count_matches": true
+        },
+        {
+          "run": "bloodmnist__moe_oeo_N4_k2_L4_lr0.002_s27",
+          "manifest_matches": true,
+          "source_matches": true,
+          "ordered_ids_match": true,
+          "sample_count_matches": true
+        },
+        {
+          "run": "bloodmnist__moe_oeo_N4_k3_L4_lr0.002_s27",
+          "manifest_matches": true,
+          "source_matches": true,
+          "ordered_ids_match": true,
+          "sample_count_matches": true
+        },
+        {
+          "run": "bloodmnist__moe_oeo_N4_k4_L4_lr0.002_s27",
+          "manifest_matches": true,
+          "source_matches": true,
+          "ordered_ids_match": true,
+          "sample_count_matches": true
+        },
+        {
+          "run": "bloodmnist__moe_oeo_N4_k1_L4_lr0.002_s37",
+          "manifest_matches": true,
+          "source_matches": true,
+          "ordered_ids_match": true,
+          "sample_count_matches": true
+        },
+        {
+          "run": "bloodmnist__moe_oeo_N4_k2_L4_lr0.002_s37",
+          "manifest_matches": true,
+          "source_matches": true,
+          "ordered_ids_match": true,
+          "sample_count_matches": true
+        },
+        {
+          "run": "bloodmnist__moe_oeo_N4_k3_L4_lr0.002_s37",
+          "manifest_matches": true,
+          "source_matches": true,
+          "ordered_ids_match": true,
+          "sample_count_matches": true
+        },
+        {
+          "run": "bloodmnist__moe_oeo_N4_k4_L4_lr0.002_s37",
+          "manifest_matches": true,
+          "source_matches": true,
+          "ordered_ids_match": true,
+          "sample_count_matches": true
+        }
+      ]
+    },
+    {
+      "dataset": "kather2016",
+      "source": "/DATA/DATA1/guest3/demo_reproduction_data/kather2016/kather2016_fixed_split.npz",
+      "source_sha256": "b6d887d8dfc890f5829639b47dd63e7fe22d1fee100119617a36756e32631ce7",
+      "manifest_sha256": "f859b19f58b95eea781d6b9305ce064209fcb6b8c5f8637df5545913db22dcfd",
+      "test_samples": 752,
+      "test_ids_sha256": "033cb2f4cceab126936674c81682ecfddbc20db7d5f142b9d71990355978d9b0",
+      "unique_ids": 752,
+      "train_overlap": 0,
+      "val_overlap": 0,
+      "manifest_test_order_matches": true,
+      "test_class_counts": [
+        94,
+        94,
+        94,
+        94,
+        94,
+        94,
+        94,
+        94
+      ],
+      "reports": [
+        {
+          "run": "kather2016__moe_oeo_N4_k1_L4_lr0.002_s17",
+          "manifest_matches": true,
+          "source_matches": null,
+          "ordered_ids_match": true,
+          "sample_count_matches": true
+        },
+        {
+          "run": "kather2016__moe_oeo_N4_k2_L4_lr0.002_s17",
+          "manifest_matches": true,
+          "source_matches": null,
+          "ordered_ids_match": true,
+          "sample_count_matches": true
+        },
+        {
+          "run": "kather2016__moe_oeo_N4_k3_L4_lr0.002_s17",
+          "manifest_matches": true,
+          "source_matches": null,
+          "ordered_ids_match": true,
+          "sample_count_matches": true
+        },
+        {
+          "run": "kather2016__moe_oeo_N4_k4_L4_lr0.002_s17",
+          "manifest_matches": true,
+          "source_matches": null,
+          "ordered_ids_match": true,
+          "sample_count_matches": true
+        },
+        {
+          "run": "kather2016__moe_oeo_N4_k1_L4_lr0.002_s27",
+          "manifest_matches": true,
+          "source_matches": null,
+          "ordered_ids_match": true,
+          "sample_count_matches": true
+        },
+        {
+          "run": "kather2016__moe_oeo_N4_k2_L4_lr0.002_s27",
+          "manifest_matches": true,
+          "source_matches": null,
+          "ordered_ids_match": true,
+          "sample_count_matches": true
+        },
+        {
+          "run": "kather2016__moe_oeo_N4_k3_L4_lr0.002_s27",
+          "manifest_matches": true,
+          "source_matches": null,
+          "ordered_ids_match": true,
+          "sample_count_matches": true
+        },
+        {
+          "run": "kather2016__moe_oeo_N4_k4_L4_lr0.002_s27",
+          "manifest_matches": true,
+          "source_matches": null,
+          "ordered_ids_match": true,
+          "sample_count_matches": true
+        },
+        {
+          "run": "kather2016__moe_oeo_N4_k1_L4_lr0.002_s37",
+          "manifest_matches": true,
+          "source_matches": null,
+          "ordered_ids_match": true,
+          "sample_count_matches": true
+        },
+        {
+          "run": "kather2016__moe_oeo_N4_k2_L4_lr0.002_s37",
+          "manifest_matches": true,
+          "source_matches": null,
+          "ordered_ids_match": true,
+          "sample_count_matches": true
+        },
+        {
+          "run": "kather2016__moe_oeo_N4_k3_L4_lr0.002_s37",
+          "manifest_matches": true,
+          "source_matches": null,
+          "ordered_ids_match": true,
+          "sample_count_matches": true
+        },
+        {
+          "run": "kather2016__moe_oeo_N4_k4_L4_lr0.002_s37",
+          "manifest_matches": true,
+          "source_matches": null,
+          "ordered_ids_match": true,
+          "sample_count_matches": true
+        }
+      ]
+    },
+    {
+      "dataset": "organcmnist",
+      "source": "/DATA/DATA1/guest3/demo_reproduction_data/organcmnist/organcmnist.npz",
+      "source_sha256": "69cd6d6b6343adc25f916c1c6e2fc786e82443670e25d5da275b1c4e32e8da7a",
+      "manifest_sha256": "e4f6d7cd307448836e0e65b5402468a01ec1faf6c8d28f2b99c8e4564fd1086e",
+      "test_samples": 8216,
+      "test_ids_sha256": "c717b142d877f56d8e301873da5a0adedeb71d8a5d0b708830f692579dd33466",
+      "unique_ids": 8216,
+      "train_overlap": 0,
+      "val_overlap": 0,
+      "manifest_test_order_matches": null,
+      "test_class_counts": [
+        828,
+        431,
+        421,
+        421,
+        727,
+        735,
+        1835,
+        549,
+        557,
+        750,
+        962
+      ],
+      "reports": [
+        {
+          "run": "organcmnist__moe_oeo_N4_k1_L4_lr0.002_s17",
+          "manifest_matches": true,
+          "source_matches": true,
+          "ordered_ids_match": true,
+          "sample_count_matches": true
+        },
+        {
+          "run": "organcmnist__moe_oeo_N4_k2_L4_lr0.002_s17",
+          "manifest_matches": true,
+          "source_matches": true,
+          "ordered_ids_match": true,
+          "sample_count_matches": true
+        },
+        {
+          "run": "organcmnist__moe_oeo_N4_k3_L4_lr0.002_s17",
+          "manifest_matches": true,
+          "source_matches": true,
+          "ordered_ids_match": true,
+          "sample_count_matches": true
+        },
+        {
+          "run": "organcmnist__moe_oeo_N4_k4_L4_lr0.002_s17",
+          "manifest_matches": true,
+          "source_matches": true,
+          "ordered_ids_match": true,
+          "sample_count_matches": true
+        },
+        {
+          "run": "organcmnist__moe_oeo_N4_k1_L4_lr0.002_s27",
+          "manifest_matches": true,
+          "source_matches": true,
+          "ordered_ids_match": true,
+          "sample_count_matches": true
+        },
+        {
+          "run": "organcmnist__moe_oeo_N4_k2_L4_lr0.002_s27",
+          "manifest_matches": true,
+          "source_matches": true,
+          "ordered_ids_match": true,
+          "sample_count_matches": true
+        },
+        {
+          "run": "organcmnist__moe_oeo_N4_k3_L4_lr0.002_s27",
+          "manifest_matches": true,
+          "source_matches": true,
+          "ordered_ids_match": true,
+          "sample_count_matches": true
+        },
+        {
+          "run": "organcmnist__moe_oeo_N4_k4_L4_lr0.002_s27",
+          "manifest_matches": true,
+          "source_matches": true,
+          "ordered_ids_match": true,
+          "sample_count_matches": true
+        },
+        {
+          "run": "organcmnist__moe_oeo_N4_k1_L4_lr0.002_s37",
+          "manifest_matches": true,
+          "source_matches": true,
+          "ordered_ids_match": true,
+          "sample_count_matches": true
+        },
+        {
+          "run": "organcmnist__moe_oeo_N4_k2_L4_lr0.002_s37",
+          "manifest_matches": true,
+          "source_matches": true,
+          "ordered_ids_match": true,
+          "sample_count_matches": true
+        },
+        {
+          "run": "organcmnist__moe_oeo_N4_k3_L4_lr0.002_s37",
+          "manifest_matches": true,
+          "source_matches": true,
+          "ordered_ids_match": true,
+          "sample_count_matches": true
+        },
+        {
+          "run": "organcmnist__moe_oeo_N4_k4_L4_lr0.002_s37",
+          "manifest_matches": true,
+          "source_matches": true,
+          "ordered_ids_match": true,
+          "sample_count_matches": true
+        }
+      ]
+    }
+  ],
+  "read_only": true,
+  "image_arrays_loaded": false,
+  "models_loaded": false,
+  "patient_independence_audited": false,
+  "audited_on": "2026-10-06",
+  "scope": "Fixed478 jobs with existing TEST reports; original TEST archive SHA and ordered IDs, not model or pixel reproduction"
+}
