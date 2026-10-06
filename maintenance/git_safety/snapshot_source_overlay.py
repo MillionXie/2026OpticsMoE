@@ -18,7 +18,7 @@ USER_D2NN_SOURCES = frozenset('TransferFromElectricity/d2nn_pack/' + name for na
 
 
 def snapshot(root, manifest, *, include_documentation=False, include_untracked_source=False,
-             include_user_d2nn_source=False):
+             include_user_d2nn_source=False, include_reviewed_launchers=False):
     root = Path(root).resolve()
     def git(*args, data=None, env=None):
         safe_env = dict(os.environ if env is None else env, GIT_OPTIONAL_LOCKS='0')
@@ -50,7 +50,9 @@ def snapshot(root, manifest, *, include_documentation=False, include_untracked_s
                           or (include_documentation and path.startswith('LightGenPublic/'))
                           or (include_user_d2nn_source and path in USER_D2NN_SOURCES))
         suffix_allowed = (path.endswith('.py') or (include_documentation and path.endswith('.md'))
-                          or (include_untracked_source and path.endswith(('.yaml', '.yml'))))
+                          or (include_untracked_source and path.endswith(('.yaml', '.yml')))
+                          or (include_reviewed_launchers and path.startswith('LightGenV2/')
+                              and path.endswith('.cmd')))
         if (not prefix_allowed or str(pure) != path or '..' in pure.parts
                 or '\\' in path or ':' in path or path in seen or not suffix_allowed):
             raise RuntimeError('Only explicit reviewed source/documentation allowed')
@@ -118,7 +120,10 @@ if __name__ == '__main__':
                    help='Also permit reviewed tracked .md and LightGenPublic source; never data or untracked files')
     p.add_argument('--include-untracked-source', action='store_true',
                    help='Permit SHA-reviewed non-ignored .py/.yaml/.yml additions explicitly marked entry_kind=untracked; archive only')
+    p.add_argument('--include-reviewed-launchers', action='store_true',
+                   help='Archive explicitly SHA-reviewed LightGenV2 .cmd source only; never execute launchers')
     args = p.parse_args()
     print(json.dumps(snapshot(args.root, json.loads(args.manifest.read_text()),
                               include_documentation=args.include_documentation,
-                              include_untracked_source=args.include_untracked_source), indent=2))
+                              include_untracked_source=args.include_untracked_source,
+                              include_reviewed_launchers=args.include_reviewed_launchers), indent=2))

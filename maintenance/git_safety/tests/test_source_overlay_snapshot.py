@@ -60,6 +60,29 @@ def test_named_user_source_requires_opt_in_and_preserves_bytes(repo):
     assert result['working_head_unchanged'] and result['user_index_unchanged']
 
 
+def test_launcher_opt_in_archives_without_running_or_changing_checkout(repo):
+    root, _, manifest = repo
+    path = 'LightGenV2/tasks/t07_abo_image_retrieval/run_old.cmd'
+    file = root/path
+    file.parent.mkdir(parents=True)
+    file.write_bytes(b'@echo off\r\necho should_not_run > marker.txt\r\n')
+    manifest['paths'] = [dict(path=path, sha256=hashlib.sha256(file.read_bytes()).hexdigest(), entry_kind='untracked')]
+    before = git(root, 'status', '--porcelain')
+    with pytest.raises(RuntimeError):
+        snapshot(root, manifest, include_untracked_source=True)
+    result = snapshot(root, manifest, include_untracked_source=True, include_reviewed_launchers=True)
+    assert git(root, 'status', '--porcelain') == before
+    assert not (root/'marker.txt').exists()
+    assert subprocess.check_output(['git','-C',str(root),'show',result['archive_commit']+':'+path]) == file.read_bytes()
+
+
+def test_launcher_mode_does_not_allow_private_handoff_paths(repo):
+    root, _, manifest = repo
+    manifest['paths'] = [dict(path='handoffs/connect.cmd', sha256='0'*64, entry_kind='untracked')]
+    with pytest.raises(RuntimeError):
+        snapshot(root, manifest, include_untracked_source=True, include_reviewed_launchers=True)
+
+
 def test_user_source_mode_does_not_enable_other_directories(repo):
     root, _, manifest = repo
     manifest['paths'] = [dict(path='TransferFromElectricity/unknown.py', sha256='0'*64, entry_kind='untracked')]
