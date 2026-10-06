@@ -10,6 +10,13 @@ ROOT = Path(__file__).resolve().parents[3]
 
 
 class ArtifactIgnoreTests(unittest.TestCase):
+    def test_named_mnist_assets_keep_sources_timing_and_future_files_visible(self):
+        prefix = 'MNIST_10cm_8um_Bench_Test_20260923/'
+        private = [prefix + '02_mnist_10cm/phase/B_RECOMMENDED_native8_best.bmp']
+        visible = [prefix + '02_mnist_10cm/phase/future.bmp',
+                   prefix + 'measure.py', prefix + 'timing.csv', prefix + 'report.json']
+        self.assertEqual(self.ignored(private + visible), set(private))
+
     def test_t12_share_only_reviewed_source_export_is_private(self):
         prefix = 'handoffs/t12_small_baseline_share_20260928/package/'
         private = [prefix + 'source/LightGenV2/common/__init__.py']
