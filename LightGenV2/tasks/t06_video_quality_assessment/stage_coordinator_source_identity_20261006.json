@@ -1,0 +1,26 @@
+{
+  "purpose": "Restore main-only T03/T06 test dependencies without importing the historical connection/scheduled-task controller",
+  "historical_commit": "7093ec46082eed2fae127ec5028d3e2e8548b592",
+  "historical_sources": {
+    "LightGenV2/tasks/t06_video_quality_assessment/lab_manual_stage.py": "cd612caa81faa76f4e3ad38c985855b77d0737ead1424addbb52fbe5f59ced7d",
+    "LightGenV2/tasks/t06_video_quality_assessment/lab_bench.py": "9ca851cd8c978fd1889ca0a4e7f679b20446f9bf000f168d0d673c9f6776f5d0",
+    "LightGenV2/tasks/t06_video_quality_assessment/tests/test_stage_exposure.py": "1969b3ab66bc7a4c8b75856abbc396001e603ed9b00c833ca8035b0cd4a961da"
+  },
+  "projection": {
+    "lab_stage_coordinator.py": ["STAGES", "desktop_code"],
+    "lab_bench.py": ["stage_config", "effective_stage_identity"],
+    "tests/test_stage_exposure.py": "historical test unchanged apart from checkout line endings",
+    "../t03_saliency/tests/test_lab_runtime.py": "import desktop_code from the published pure generator rather than an untracked controller"
+  },
+  "prior_main": "d858b5b57f617650cdb0f1918875868b6d4ac7bf",
+  "invariants": [
+    "projected function ASTs unchanged from historical commit",
+    "all pre-existing lab_bench functions/classes unchanged",
+    "no connection credentials, SDK imports or top-level calls in generator",
+    "generated capture code compiled but not executed",
+    "historical full controller preserved, not adopted or deleted",
+    "no camera exposure, gain, ROI, amplitude encoding, checkpoint or capture changes",
+    "configuration helper tests do not prove acquisition uses stage overrides"
+  ],
+  "runtime_or_hardware_validation_proven": false
+}

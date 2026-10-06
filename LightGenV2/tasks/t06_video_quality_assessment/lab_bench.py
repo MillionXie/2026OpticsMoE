@@ -15,6 +15,20 @@ from .lab_runtime import PINS,STAGES,read,write,sha
 
 def identity(value):return hashlib.sha256(json.dumps(value,sort_keys=True).encode()).hexdigest()
 
+def stage_config(c,stage,stages=STAGES):
+ """Resolve explicit stage exposure without mutating the frozen session config."""
+ d=json.loads(json.dumps(c));overrides=d.pop('camera_exposure_us_by_stage',{})
+ if set(overrides)-set(stages):raise ValueError('Unknown exposure stage')
+ for value in overrides.values():
+  if not math.isfinite(float(value)) or float(value)<=0:raise ValueError('Invalid stage exposure')
+ d['camera']['exposure_us']=float(overrides.get(stage,d['camera']['exposure_us']))
+ return d
+
+def effective_stage_identity(c,stage):
+ d=stage_config(c,stage)
+ d['detector_intensity_scale']={stage:float(d.get('detector_intensity_scale',{}).get(stage,1/255))}
+ return identity(d)
+
 def raster(active,device,kind):
  """Resample physical pitch once, then apply explicit device orientation once."""
  a=np.asarray(active,np.float32)

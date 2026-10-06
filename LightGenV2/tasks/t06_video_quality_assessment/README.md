@@ -5,6 +5,13 @@
 [当前版本与待收敛边界](CURRENT_VERSION_20261004.md)。主线核心通过57项CPU合同测试、
 两份正式PT严格加载；旧Temporal-36默认profile和后续实拍微调入口仍须单独核验。
 
+2026-10-06补齐主线测试依赖：`lab_stage_coordinator.desktop_code` 仅返回历史阶段脚本
+字符串，不连接机器、不打开SDK、不启动采集；T03测试不再依赖未跟踪的
+`lab_manual_stage.py`。同时恢复历史 `stage_config` / `effective_stage_identity` 纯配置
+函数及原测试，既有 `lab_bench` 函数未改。来源见
+[函数投影身份](stage_coordinator_source_identity_20261006.json)。这不是迁入完整旧控制器，
+也不是宣称现有采集入口已经应用逐层曝光；未改变硬件合同或正式模型。
+
 
 ## 历史仿真结论（不替代上方当前实拍版本）
 

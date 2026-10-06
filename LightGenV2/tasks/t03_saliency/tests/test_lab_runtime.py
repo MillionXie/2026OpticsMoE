@@ -3,7 +3,7 @@ from pathlib import Path
 import torch
 from LightGenV2.tasks.t03_saliency.settings import load_settings
 from LightGenV2.tasks.t03_saliency.lab_runtime import CachedStudent, STAGES, replay, phase_planes, OpticalBoundary
-from LightGenV2.tasks.t06_video_quality_assessment.lab_manual_stage import desktop_code
+from LightGenV2.tasks.t06_video_quality_assessment.lab_stage_coordinator import desktop_code
 from LightGenV2.tasks.t06_video_quality_assessment.lab_bench import stage_config
 
 
