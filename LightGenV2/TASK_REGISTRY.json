@@ -145,6 +145,7 @@
     },
     {
       "id": "t11_lifelong_optics",
+      "crc9_split_identity_evidence": "../maintenance/storage/T11_CRC9_SPLIT_IDENTITY_20261006.json",
       "entry": "tasks/t11_lifelong_optics/README.md",
       "reproduction": "tasks/t11_lifelong_optics/reports/reproduction/README.md",
       "source_status": "runtime_source_published_partial_asset_audit",

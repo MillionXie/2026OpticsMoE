@@ -1,0 +1,43 @@
+{
+  "audited_on": "2026-10-06",
+  "mode": "read_only_no_models_no_image_decode",
+  "root": "/DATA/DATA1/guest3/demo_reproduction_data/kather2018_crc9_domains_v1",
+  "npz_sha256": {
+    "A_original": "287441e12c9f05c8257bf44b12b0157e77e934b88e5596e2dd9f85068484b51b",
+    "B_stain_h": "67a2337919e06ce5d3a59101f7f9097478a1f48bca9c2b03c65b7de0a6f4901c",
+    "C_stain_e": "3607b6e9fc0ad3dc6437d6ed83eccfc5d02c8a99b8c3d7330216fec6103c5407",
+    "D_scanner": "914525fa5d62ebceae39991ef6575864e6263f6bc95bf0d9b6c0c9de72a6689a"
+  },
+  "all_four_match_historical_run_hashes": true,
+  "same_ordered_ids_and_labels_across_four_domains": true,
+  "shared_splits": {
+    "train": {
+      "count": 5026,
+      "image_header_shape": [5026,224,224,3],
+      "ids_sha256": "d916b9e00651bc9a8e3850009666f187fa99f1fa39f2220824dbaedc19c12810",
+      "labels_sha256": "ba502c92f5b6df37e6d44f45c79bc7bf4f8087c051fc36b733e7f2982312c3bd",
+      "class_counts": [873,411,288,446,240,517,931,596,724]
+    },
+    "validation": {
+      "count": 718,
+      "image_header_shape": [718,224,224,3],
+      "ids_sha256": "97c4a2440a83aaaac7ad9767174e5f466e9af42ade13ef7c48f2aa1950fde192",
+      "labels_sha256": "cba705ff667e8cd238438739d6a08e52c10c73fe46e568cefb89fbbea1ec0017",
+      "class_counts": [113,63,49,61,31,76,139,82,104]
+    },
+    "test": {
+      "count": 1436,
+      "image_header_shape": [1436,224,224,3],
+      "ids_sha256": "825f479e344dccc358a6beca55dd3371594a86ba20a1ff9d3d6cce1683a4e13e",
+      "labels_sha256": "679b8464b0bb17a881d5a2b21920ce9e5f24ee2117d81daafe11a37233f2b837",
+      "class_counts": [247,118,84,127,68,148,268,169,207]
+    }
+  },
+  "image_header_dtype": "uint8",
+  "within_each_domain_split_id_overlaps": 0,
+  "unique_ids_within_each_split": true,
+  "file_size_and_mtime_unchanged_during_audit": true,
+  "passed": true,
+  "not_verified": ["Image pixel transformation reconstruction", "Official raw image equivalence", "Patient independence", "Model metrics or hardware"],
+  "interpretation": "Four transformed views of the same image identities, not four independent datasets or four times as many independent test images. Existing scientific artifacts and all timing remain unchanged."
+}
