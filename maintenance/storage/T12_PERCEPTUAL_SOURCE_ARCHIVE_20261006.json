@@ -1,0 +1,59 @@
+{
+  "date": "2026-10-06",
+  "reference_main": "2733c6a2a45dfefda8979d1269a1a765dc97ebee",
+  "original_directory": "outputs/t12_perceptual_comparison_20260928",
+  "archive_directory": "archive/source_staging_20261006/t12_perceptual",
+  "files": [
+    {
+      "name": "assemble_three_task_scores.py",
+      "sha256": "fde887495ec14aae7ff0d2513da2aaae832688d77edbd102ef5046c7389dfe0c",
+      "main_path": "LightGenV2/tasks/t12_text_to_image/perceptual/assemble_three_task_scores.py",
+      "main_blob_sha256": "92d034b3ae80cbc0ef2bc047a4a7cc7f9644ea97e68ec176979b4558c2f37bc2"
+    },
+    {
+      "name": "build_annotated_figures.py",
+      "sha256": "b5d514da76320af182e843cc38365dc827ac5abce70e94376bf76c82881e8314",
+      "main_path": "LightGenV2/tasks/t12_text_to_image/perceptual/build_annotated_figures.py",
+      "main_blob_sha256": "3f9c75982cd30bf696b0cfd311e89914c16b7c28161a850073bfdd090def5557"
+    },
+    {
+      "name": "eval_dists.py",
+      "sha256": "ea0756841b95b0f26bf78cd69cfc7741e54397ad5cb8b48a5d7db66e827308ce",
+      "main_path": "LightGenV2/tasks/t12_text_to_image/perceptual/eval_dists.py",
+      "main_blob_sha256": "ac13e02805a00716c89f2e602a6aebce33c4de55e90e063edff202a09e98b505"
+    },
+    {
+      "name": "eval_lpips.py",
+      "sha256": "952e3f4c5add32c41ebece215daa400f0c38580220bf739317208cb8e1a8bdb9",
+      "main_path": "LightGenV2/tasks/t12_text_to_image/perceptual/eval_lpips.py",
+      "main_blob_sha256": "952e3f4c5add32c41ebece215daa400f0c38580220bf739317208cb8e1a8bdb9"
+    },
+    {
+      "name": "eval_regions.py",
+      "sha256": "d4462ef1888511d578184743cca3e799187bdcd0ae6ec03a9d8b6884ee37e0b6",
+      "main_path": "LightGenV2/tasks/t12_text_to_image/perceptual/eval_regions.py",
+      "main_blob_sha256": "159fbaff52ebd655a803d6156702020a4d66319722ec0828e2cd062a209f7944"
+    }
+  ],
+  "preserved_original_reports": {
+    "outputs/t12_perceptual_comparison_20260928/annotated_background_clean_sim.png": "a7a0b848990686080cead73513b82fe4dedbc78a9e9e8904c1b804555adf64d9",
+    "outputs/t12_perceptual_comparison_20260928/annotated_background_with_exp.png": "130c37184f934c4b8f01a6eef4dba003ff5e70fe088683f0f7873f9dd176db57",
+    "outputs/t12_perceptual_comparison_20260928/annotated_joint_clean_sim.png": "cb16ef7297149c9f2e5604bfe60c2b29e6ab7d6c5416d2f596e4b1189500a1c9",
+    "outputs/t12_perceptual_comparison_20260928/annotated_joint_with_exp.png": "10d1901c3923e90f0a810c21db8e8c7b47fc5724fb2807cfc7affcc0db71517f",
+    "outputs/t12_perceptual_comparison_20260928/annotated_object_clean_sim.png": "381335de31a889a6e6aabe20bf54adc74bc7f8d42294215c6a6158d3838577b7",
+    "outputs/t12_perceptual_comparison_20260928/annotated_object_with_exp.png": "9fababb4521b7b2845792b3835b27301b8f72c66d356aacd32792464d70452fa",
+    "outputs/t12_perceptual_comparison_20260928/per_image_dists.csv": "ab736379fa1f21c733eefa14b17cbe49bf4dc926b3a094b6e9f694f9c9290fac",
+    "outputs/t12_perceptual_comparison_20260928/per_image_lpips.csv": "080c32b8acbc7204d13f763b7b672978bd1e91c74c4915ce618e7aa1200aed3c",
+    "outputs/t12_perceptual_comparison_20260928/per_image_regions.csv": "4beab8b0e18a68fbb80f96f70b94f233bac495968a80eefb9727a523601e3fc4",
+    "outputs/t12_perceptual_comparison_20260928/README.md": "e5867dfe6ac5865c20034209df0587915db2b5093d42313c6f644603d82629e4",
+    "outputs/t12_perceptual_comparison_20260928/summary_dists.csv": "4822e19eb75503d01e2a520a7d32b3e2234e53d1a69bc7cf51227d190b6ba228",
+    "outputs/t12_perceptual_comparison_20260928/summary_lpips.csv": "00d3582767a7c0d7026b1c1d23de25cb6a6824ca47fe71a6235fb2e48dd1d7a2",
+    "outputs/t12_perceptual_comparison_20260928/summary_regions.csv": "9f7354fd016066288831f1fbf44c886e65ad4eb905dd3cad0748a057074653e0",
+    "outputs/t12_perceptual_comparison_20260928/three_task_scores.csv": "bd56015185eb2aec7cbd713282615ddabe889688634c0ed9e0deebf82ca5863c"
+  },
+  "source_only_move": true,
+  "timing_or_data_files_moved": false,
+  "files_deleted": false,
+  "scope": "Local Windows old metric/figure sources only; all scientific output remains at its original location",
+  "restore": "Verify SHA then move individual source to original path without overwriting"
+}

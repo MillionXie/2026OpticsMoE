@@ -1,8 +1,11 @@
 # 已保存PNG的T12指标工具
 
 这是2026-09-28 TEST2304五模型比较的指标源码入口，不是训练或重新生成图片。
-原始源码、全部CSV及六张对照图仍保留在仓库根
+全部CSV、六张对照图和原始报告仍保留在仓库根
 `outputs/t12_perceptual_comparison_20260928`；不修改原结果。
+2026-10-06五份旧导出源码已可恢复地归档至
+`archive/source_staging_20261006/t12_perceptual`，不再作为第二套开发入口。
+逐文件SHA和恢复位置见 `maintenance/storage/T12_PERCEPTUAL_SOURCE_ARCHIVE_20261006.json`。
 
 使用模块入口 `python -m LightGenV2.tasks.t12_text_to_image.perceptual.eval_lpips`
 （或 `eval_dists`、`eval_regions`），参数沿用原脚本；必须给新 `--output`。
@@ -25,4 +28,4 @@
 它从原figure_indices读取固定索引，不按质量选图；只在执行入口打开ZIP，结束关闭资源。
 要求新输出目录，各图独占创建。原指标标注及绘图函数经AST核验未改变，
 但本轮未渲染新图，不宣称不同Matplotlib环境的像素级结果一致。
-旧汇总器及作图器继续原位保留，不是默认开发入口。
+旧汇总器及作图器的原字节保留在上述归档，不是默认开发入口。

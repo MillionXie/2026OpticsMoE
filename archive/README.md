@@ -11,8 +11,8 @@ Git-history snapshots should normally be represented by an `archive/*` tag
 instead of a copied working tree.
 
 The source-only staging retirements on 2026-10-06 are local Windows archives,
-not new projects and not archives copied to every host. Verify their 15 sources
-and six retained original reports with
+not new projects and not archives copied to every host. Including the retired
+T12 metric export, verify their 20 sources and 20 retained original result files with
 `python maintenance/git_safety/check_source_archives.py` on that machine.
 The checker is read-only, rejects changed hashes and reoccupied restoration
 paths, and does not restore files or approve deletions. Missing private archives

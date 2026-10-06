@@ -22,5 +22,18 @@
     "no camera exposure, gain, ROI, amplitude encoding, checkpoint or capture changes",
     "configuration helper tests do not prove acquisition uses stage overrides"
   ],
+  "validation": {
+    "tested_main": "2733c6a2a45dfefda8979d1269a1a765dc97ebee",
+    "local_source_and_configuration_tests_passed": 7,
+    "local_complete_t03_tests": "not run successfully: existing CPU environment lacks scipy; no dependency installation performed",
+    "server_existing_xml_cpu_tests_passed": 10,
+    "server_test_modules": [
+      "maintenance.git_safety.test_stage_coordinator_adoption",
+      "LightGenV2.tasks.t03_saliency.tests.test_lab_runtime",
+      "LightGenV2.tasks.t06_video_quality_assessment.tests.test_stage_exposure"
+    ],
+    "formal_assets_or_generated_capture_script_executed": false,
+    "gpu_or_sdk_used": false
+  },
   "runtime_or_hardware_validation_proven": false
 }
