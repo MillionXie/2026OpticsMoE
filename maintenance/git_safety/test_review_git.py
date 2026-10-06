@@ -9,6 +9,22 @@ spec.loader.exec_module(review)
 
 
 class ArtifactChecks(unittest.TestCase):
+    def test_literal_connection_credentials_are_redacted(self):
+        raw = b"client.connect('example.invalid', password='fixture-value')"
+        issues = review.credential_issues('helper.py', raw)
+        self.assertEqual(issues[0]['line'], 1)
+        self.assertNotIn('fixture-value', str(issues))
+
+    def test_private_configuration_connection_is_allowed(self):
+        self.assertEqual(review.credential_issues('helper.py', b"client.connect(host, password=private_config.password)"), [])
+        self.assertEqual(review.credential_issues('helper.py', b"client.connect(host, password=None)"), [])
+
+    def test_private_key_header_is_redacted(self):
+        raw = b'-----BEGIN ' + b'OPENSSH PRIVATE KEY-----\nfixture\n'
+        issues = review.credential_issues('key.txt', raw)
+        self.assertTrue(issues)
+        self.assertNotIn('fixture', str(issues))
+
     def test_normal_source(self):
         self.assertIsNone(review.forbidden_artifact("LightGenV2/tasks/t04/models/model.py", 8000))
 

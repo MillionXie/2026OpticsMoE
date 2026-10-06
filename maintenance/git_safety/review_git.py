@@ -1,6 +1,8 @@
 """Read-only Git reconciliation and staged-artifact checks; never edits Git refs."""
 import argparse
+import ast
 import json
+import re
 from collections import Counter
 from pathlib import Path, PurePosixPath
 import subprocess
@@ -26,6 +28,29 @@ def forbidden_artifact(path, size):
     return None
 
 
+def credential_issues(path, payload):
+    """Flag obvious credential material for review, without returning values.
+
+    Narrow heuristic, not a comprehensive secret scanner or an installed hook.
+    """
+    text = payload.decode('utf-8', errors='replace')
+    issues = []
+    if re.search(r'^-----BEGIN (?:RSA |EC |OPENSSH |DSA )?PRIVATE KEY-----', text, re.MULTILINE):
+        issues.append({'reason': 'private key material; do not publish'})
+    if PurePosixPath(path).suffix.lower() == '.py':
+        try:
+            tree = ast.parse(text)
+        except SyntaxError:
+            return issues
+        for node in ast.walk(tree):
+            if not isinstance(node, ast.Call) or getattr(node.func, 'attr', None) != 'connect':
+                continue
+            for keyword in node.keywords:
+                if keyword.arg in {'password', 'passwd', 'passphrase'} and isinstance(keyword.value, ast.Constant) and isinstance(keyword.value.value, str) and keyword.value.value:
+                    issues.append({'line': node.lineno, 'reason': 'literal connection credential; private configuration required'})
+    return issues
+
+
 def staged_review(root):
     files = filter(None, git(root, "diff", "--cached", "--name-only",
                              "--diff-filter=ACMRT", "-z").split("\0"))
@@ -35,6 +60,9 @@ def staged_review(root):
         reason = forbidden_artifact(path, size)
         if reason:
             issues.append({"path": path, "bytes": size, "reason": reason})
+        if size <= 10 * 1024 * 1024:
+            payload = subprocess.check_output(['git', '-C', str(root), 'cat-file', 'blob', ':' + path])
+            issues.extend({'path': path, 'bytes': size, **issue} for issue in credential_issues(path, payload))
     return issues
 
 
