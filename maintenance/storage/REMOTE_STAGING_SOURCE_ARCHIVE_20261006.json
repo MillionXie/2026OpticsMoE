@@ -1,0 +1,27 @@
+{
+  "date": "2026-10-06",
+  "scope": "Local reviewed source-only staging retirement; original reports stay in place",
+  "archive_directory": "archive/source_staging_20261006",
+  "original_directory": "remote_staging",
+  "operation": "Native PowerShell Move-Item with pre/post SHA checks and no overwrite",
+  "files": [
+    {"name": "abo_backbone_baselines.py", "sha256": "e3b98c42ec9fbe0575c31a12631b7767794041c7637a14578c82e8c92a457961", "canonical_source": "LightGenV2/tasks/t08_abo_image_text_retrieval/abo_backbone_baselines.py"},
+    {"name": "test_abo_backbone_baselines.py", "sha256": "6f68e1c6a1a7223290e1dc82e42a612d783cbb69393dfe9834117debf837dbf5", "note": "Already identical to T08 main test at prior source review"},
+    {"name": "frozen_backbone_dense_tasks.py", "sha256": "5d2feeb5d83c6ff56adbf6241ab8d6af876d4b92e3ead4548a8a7342780b3682", "recovery_commit": "d53d82ab49743fb05022a4b93a31b7d7e37a9066", "recovery_path": "LightGenV2/common/frozen_backbone_dense_tasks.py"},
+    {"name": "aligned_baseline.py", "sha256": "77f17a40e162f39b5a0ed1f1cba8e41e30b3b345317676a77e0e3095c3eabf33", "recovery_commit": "d53d82ab49743fb05022a4b93a31b7d7e37a9066", "recovery_path": "LightGenV2/tasks/t03_saliency/aligned_baseline.py"}
+  ],
+  "preserved_original_report_sha256": {
+    "remote_staging/ABO_RESULTS.md": "0f9c9fc7c766b76ac7f97bf5b68e46ccaff945beb1c851f436492ee38f1a964a",
+    "remote_staging/ABO_BACKBONE_BASELINES.md": "3eb4113dd7f7abdb53cbf43152b7990248630af614c22240187865aece22043c",
+    "remote_staging/abo_summary.json": "86c84759387c2daa0894ccea4f339b87c1702890f745532fee54f09141b41c12",
+    "remote_staging/RESULTS.md": "04fb09acf0e8356f4687475ce5c1314bafc64e245128c4be2f3653580a7ee03e"
+  },
+  "restore": "Verify archived SHA then move the selected source back to its original path only if that destination does not exist",
+  "running_python_or_node_using_path_observed": false,
+  "static_runtime_reference_found_in_LightGenV2_or_maintenance": false,
+  "external_dynamic_references_exhaustively_proven_absent": false,
+  "files_deleted": false,
+  "timings_deleted_or_moved": false,
+  "new_branches_or_worktrees": false,
+  "disk_space_released": 0
+}

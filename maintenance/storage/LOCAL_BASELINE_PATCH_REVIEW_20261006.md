@@ -1,5 +1,10 @@
 # remote_staging baseline补丁：用途和主线取舍
 
+2026-10-06后续：四份经本页审查的旧暂存源码已原样移入
+`archive/source_staging_20261006`，SHA保持不变；报告与指标仍在原目录。
+这不是删除整个目录或旧baseline，也没有移动测速。恢复清单见
+`REMOTE_STAGING_SOURCE_ARCHIVE_20261006.json`。下文文件路径代表审查时原位置。
+
 2026-10-06；比较基准main `fc2e8f556d200aeffdfd3cf12e6c0f2cd52f9783`。
 原补丁目录和其所有报告／数据原位保留。本轮不采集、不训练、不测GPU、不改正式PT。
 
