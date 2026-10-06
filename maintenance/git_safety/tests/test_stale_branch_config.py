@@ -56,6 +56,23 @@ class StaleConfigTest(unittest.TestCase):
         self.assertNotEqual(self.run_tool('--apply', '--backup-dir', 'public').returncode, 0)
         self.assertEqual((self.root / '.git/config').read_bytes(), before)
 
+    def test_exact_alias_and_bad_commit(self):
+        self.git('update-ref', 'refs/archive/fixture/renamed', 'HEAD')
+        mapping = {'aliases': [{'branch': 'unknown', 'archive_ref': 'refs/archive/fixture/renamed',
+                               'commit': self.git('rev-parse', 'HEAD').decode().strip(),
+                               'evidence': 'fixture retirement identity'}]}
+        path = self.root / 'aliases.json'
+        path.write_text(json.dumps(mapping), encoding='utf8')
+        result = self.run_tool('--aliases', str(path))
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertEqual(json.loads(result.stdout)['unbound_preserved'], [])
+        mapping['aliases'][0]['commit'] = '0' * 40
+        path.write_text(json.dumps(mapping), encoding='utf8')
+        before = (self.root / '.git/config').read_bytes()
+        self.assertNotEqual(self.run_tool('--aliases', str(path), '--apply',
+                                         '--backup-dir', '.codex_tmp/bad_alias').returncode, 0)
+        self.assertEqual((self.root / '.git/config').read_bytes(), before)
+
 
 if __name__ == '__main__':
     unittest.main()

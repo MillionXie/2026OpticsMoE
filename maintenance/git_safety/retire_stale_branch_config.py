@@ -32,6 +32,7 @@ def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--apply', action='store_true')
     parser.add_argument('--backup-dir', type=Path)
+    parser.add_argument('--aliases', type=Path, help='Audited old branch to exact existing archive ref/commit mapping')
     args = parser.parse_args()
     config_path = Path(git('rev-parse', '--git-common-dir').decode().strip()) / 'config'
     raw = config_path.read_bytes()
@@ -40,11 +41,22 @@ def main():
     used = {line[len('branch refs/heads/'):] for line in worktrees.splitlines()
             if line.startswith('branch refs/heads/')}
     refs = git('for-each-ref', '--format=%(refname) %(objectname)', 'refs/archive').decode().splitlines()
+    aliases = {}
+    if args.aliases:
+        for item in json.loads(args.aliases.read_text(encoding='utf8'))['aliases']:
+            name, ref, commit = item['branch'], item['archive_ref'], item['commit']
+            if name in aliases or not ref.startswith('refs/archive/') or not item.get('evidence'):
+                raise ValueError('Ambiguous or unscoped alias')
+            if ref + ' ' + commit not in refs:
+                raise ValueError('Archive alias commit does not match an existing reference')
+            aliases[name] = ref + ' ' + commit
     keys = git('config', '--local', '--name-only', '--get-regexp', '^branch\.', optional=True).decode().splitlines()
     names = {key[len('branch.'):].rsplit('.', 1)[0] for key in keys}
     candidates, unbound = [], []
     for name in sorted(names - heads - used):
         matches = [line for line in refs if line.split(' ', 1)[0].endswith('/' + name)]
+        if name in aliases:
+            matches.append(aliases[name])
         if not matches:
             unbound.append(name)
         else:

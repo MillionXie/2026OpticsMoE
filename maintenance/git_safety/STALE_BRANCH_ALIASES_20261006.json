@@ -1,0 +1,17 @@
+{
+  "scope": "Local already-retired branch config only; exact existing archive references, no deletion of refs or content",
+  "aliases": [
+    {"branch":"codex/mnist-dvp-20260924","archive_ref":"refs/archive/frozen-local-20261005/mnist-dvp-20260924","commit":"52db52d19dfd35382e62d1cc9bda3373be5cff81","evidence":"maintenance/git_safety/LOCAL_FROZEN_CHECKOUTS_20261005.md"},
+    {"branch":"codex/t02-personal-pose-20260928","archive_ref":"refs/archive/frozen-local-20261005/t02-personal-pose-20260928","commit":"2fa901dc7800d8798658b29e242e38bebac97989","evidence":"maintenance/git_safety/LOCAL_FROZEN_CHECKOUTS_20261005.md"},
+    {"branch":"codex/t04-e45-dvp-deploy","archive_ref":"refs/archive/frozen-local-20261005/t04-e45-dvp-deploy","commit":"74c82d3782e1b1e3287f0e50798057bd1aa6e6f1","evidence":"maintenance/git_safety/LOCAL_FROZEN_CHECKOUTS_20261005.md"},
+    {"branch":"codex/t08-physical-test-20260926","archive_ref":"refs/archive/retired-local-20261005/t08_physical_git","commit":"8e293d8731ba1fbb17b4a77e4d6ade3b0e785846","evidence":"maintenance/git_safety/LOCAL_SCRATCH_RETIREMENT_20261005.json"},
+    {"branch":"codex/t12-audited-editors-20260926","archive_ref":"refs/archive/frozen-local-20261005/t12-audited-editors-20260926","commit":"a3f5e6fe7027e92fe29be2934750f427cdfd91e7","evidence":"maintenance/git_safety/LOCAL_FROZEN_CHECKOUTS_20261005.md"},
+    {"branch":"codex/t12-cross-modal-lifelong","archive_ref":"refs/archive/frozen-local-20261005/t12-cross-modal-lifelong-overlay","commit":"11ca2e7e388a7dd07be5614d07027afd769c9315","evidence":"maintenance/storage/ROOT_MAIN_TRANSITION_20261005.md"},
+    {"branch":"codex/t12-d2nn-baselines","archive_ref":"refs/archive/frozen-local-20261005/t12-d2nn-baselines","commit":"5d1ee1174ba445fb807380f7dd0c28c03a592f9d","evidence":"maintenance/git_safety/LOCAL_FROZEN_CHECKOUTS_20261005.md"},
+    {"branch":"codex/t12-physical-robust-v2-20260927","archive_ref":"refs/archive/frozen-local-20261005/t12-physical-robust-v2-20260927","commit":"7093ec46082eed2fae127ec5028d3e2e8548b592","evidence":"maintenance/git_safety/LOCAL_FROZEN_CHECKOUTS_20261005.md"},
+    {"branch":"codex/t12-text-to-image-20260920","archive_ref":"refs/archive/root-before-main-20261005","commit":"c83300bc941c65addf6007a620c090b60245e549","evidence":"maintenance/storage/ROOT_MAIN_TRANSITION_20261005.md; .codex_tmp/root_main_transition_20261005.json"},
+    {"branch":"codex/t13-temporal-robust-20260927","archive_ref":"refs/archive/frozen-local-20261005/t13-temporal-robust-20260927","commit":"493eb38375f3bd9e4e8e7edfe278468b351365f1","evidence":"maintenance/git_safety/LOCAL_FROZEN_CHECKOUTS_20261005.md"},
+    {"branch":"report/qwen5090d-baselines","archive_ref":"refs/archive/protected-empty-checkout-20261005/qwen5090d-baselines","commit":"119243dc68800b5eb2e6304474a4abde0a14e021","evidence":"maintenance/git_safety/QWEN_EMPTY_CHECKOUT_RETIREMENT_20261006.md"},
+    {"branch":"review/demo-reproduction-20260915","archive_ref":"refs/archive/frozen-local-20261005/demo-reproduction-overlay","commit":"1c7222a1119385475e1b464ca7efdb67cdc21a4c","evidence":"maintenance/storage/ROOT_MAIN_TRANSITION_20261005.md"}
+  ]
+}
