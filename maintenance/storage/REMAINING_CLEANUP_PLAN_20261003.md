@@ -22,6 +22,12 @@
 
 下方带固定commit的数量均是历史证据，不应相加、当作当前余额或完成百分比。
 
+随后16份已审阅旧ABO/MNIST启动CMD完成三端Git恢复身份及逐原字节SHA核验，
+不是新增开发分支，也未删除/隐藏原文件。恢复提交为
+`8afcf98702f35473cd1970fcbc1bc4f2ef30bcb5`，具体范围和增量包前置条件见
+[历史启动区说明](../../LightGenV2/tasks/t07_abo_image_retrieval/lab_dvp8um/README.md)。
+旧“49份尚无恢复身份”不能再当作当前余额；未重扫其他新增或修改源码，不直接报新总数。
+
 日常只打开仓库根目录的 [START_HERE](../../START_HERE.md)，从
 [LightGenV2任务表](../../LightGenV2/README.md)进入具体任务。
 

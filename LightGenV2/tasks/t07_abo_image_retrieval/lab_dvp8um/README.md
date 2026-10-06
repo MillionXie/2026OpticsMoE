@@ -33,3 +33,14 @@
 
 后续只在确认独有代码、依赖和占用并验证恢复包之后归档冗余启动副本。
 正式rank72的仿真、实拍、权重和测速口径以任务页为准，不能从这些旧命令推断。
+
+2026-10-06追加：已阅读的16份旧ABO/MNIST CMD保存于
+`refs/archive/reviewed-t07-launchers-20261006`，恢复提交
+`8afcf98702f35473cd1970fcbc1bc4f2ef30bcb5`。本机原文件不变，训练服务器和实验室
+源码对象库均逐文件核验16份原始字节SHA相同；HEAD及开发分支未改变，不执行CMD。
+增量恢复包3229字节，SHA256
+`c0240a6fecdcbb9dabe22356a3bf6389b7cb099bc1318d65d16997812b3b3350`，
+前置提交为`d8d9bf4015942f3cbf55cfd1ee0c37a2df052977`，不是完整数据或独立仓库备份。
+私有清单和收据为`.codex_tmp/reviewed_t07_launchers_manifest_20261006.json`及
+`.codex_tmp/reviewed_t07_launchers_recovery_sync_20261006.json`。
+原CMD仍可见，尚未证明可删除或可现场运行；两份MNIST timing启动命令同样原样保留。
