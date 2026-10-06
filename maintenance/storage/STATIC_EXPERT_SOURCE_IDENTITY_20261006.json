@@ -1,0 +1,492 @@
+{
+  "server_head": "e29e9823df4aeb1fe47f881146b1c072082b5684",
+  "files": [
+    {
+      "path": "TransferFromElectricity/tasks/t01_object_retrieval/allocate_spatial_dataset.py",
+      "sha256": "ea57ddca94a0d6111372b4fe3e716493bdc9f84425a03697cdc139c97e776c8b",
+      "server_present": true,
+      "server_sha256": "ea57ddca94a0d6111372b4fe3e716493bdc9f84425a03697cdc139c97e776c8b",
+      "exact_local_match": true
+    },
+    {
+      "path": "TransferFromElectricity/tasks/t01_object_retrieval/collect_results.py",
+      "sha256": "76b8f739302fefd2078f848f456df3d883045a80750802e984c66170d81eaece",
+      "server_present": true,
+      "server_sha256": "76b8f739302fefd2078f848f456df3d883045a80750802e984c66170d81eaece",
+      "exact_local_match": true
+    },
+    {
+      "path": "TransferFromElectricity/tasks/t01_object_retrieval/collect_unseen_audits.py",
+      "sha256": "c1faf207ef2bf9ca85faa8096578c7c6d9b36801aa1e1a40d97d39b1306774bf",
+      "server_present": false,
+      "server_sha256": null,
+      "exact_local_match": false
+    },
+    {
+      "path": "TransferFromElectricity/tasks/t01_object_retrieval/datasets.py",
+      "sha256": "12e36d63238e6dd037643316e079840b82bcb9b35a68c74eb90f9de0f274c1df",
+      "server_present": true,
+      "server_sha256": "12e36d63238e6dd037643316e079840b82bcb9b35a68c74eb90f9de0f274c1df",
+      "exact_local_match": true
+    },
+    {
+      "path": "TransferFromElectricity/tasks/t01_object_retrieval/deterministic_ops.py",
+      "sha256": "4269cf6bcd8135eeb7b29a4f4b4e85a3d64735b8ad18eb0cf08b66d4806b2f7c",
+      "server_present": true,
+      "server_sha256": "4269cf6bcd8135eeb7b29a4f4b4e85a3d64735b8ad18eb0cf08b66d4806b2f7c",
+      "exact_local_match": true
+    },
+    {
+      "path": "TransferFromElectricity/tasks/t01_object_retrieval/diagnose.py",
+      "sha256": "ad14c971e15611ff415416548654fb1a2a0e67b0e3c7305b9167cf9349fe9a55",
+      "server_present": true,
+      "server_sha256": "ad14c971e15611ff415416548654fb1a2a0e67b0e3c7305b9167cf9349fe9a55",
+      "exact_local_match": true
+    },
+    {
+      "path": "TransferFromElectricity/tasks/t01_object_retrieval/inspect_training.py",
+      "sha256": "ccb6d20cea238da06d1514e2e308269a99c4dc5a63114a4328b9533e0ea873a7",
+      "server_present": true,
+      "server_sha256": "ccb6d20cea238da06d1514e2e308269a99c4dc5a63114a4328b9533e0ea873a7",
+      "exact_local_match": true
+    },
+    {
+      "path": "TransferFromElectricity/tasks/t01_object_retrieval/launch_rtx.py",
+      "sha256": "8738bf022f311dee5357d3c422ff4b8bf8efd089b6d322b1ee7eccda13e50650",
+      "server_present": true,
+      "server_sha256": "8738bf022f311dee5357d3c422ff4b8bf8efd089b6d322b1ee7eccda13e50650",
+      "exact_local_match": true
+    },
+    {
+      "path": "TransferFromElectricity/tasks/t01_object_retrieval/prepare_assets.py",
+      "sha256": "edde4bc13946b44840e227c9902a918d8f73e5c1fbd0f44a90a9e688fcf7e1cc",
+      "server_present": true,
+      "server_sha256": "edde4bc13946b44840e227c9902a918d8f73e5c1fbd0f44a90a9e688fcf7e1cc",
+      "exact_local_match": true
+    },
+    {
+      "path": "TransferFromElectricity/tasks/t01_object_retrieval/protocol.py",
+      "sha256": "24986b3b563b1df113ca2a9c30c72964b296bc230b17db157f136af88a35e749",
+      "server_present": true,
+      "server_sha256": "24986b3b563b1df113ca2a9c30c72964b296bc230b17db157f136af88a35e749",
+      "exact_local_match": true
+    },
+    {
+      "path": "TransferFromElectricity/tasks/t01_object_retrieval/report.py",
+      "sha256": "20ec1719c198495eb46055870e4cebaefb544b0866a8288651fae842de40b136",
+      "server_present": true,
+      "server_sha256": "20ec1719c198495eb46055870e4cebaefb544b0866a8288651fae842de40b136",
+      "exact_local_match": true
+    },
+    {
+      "path": "TransferFromElectricity/tasks/t01_object_retrieval/report_control.py",
+      "sha256": "e1495a5ab7c80b77f16cb506e1016f4227107d8a1b0835f28b0fed0dec9f80db",
+      "server_present": true,
+      "server_sha256": "e1495a5ab7c80b77f16cb506e1016f4227107d8a1b0835f28b0fed0dec9f80db",
+      "exact_local_match": true
+    },
+    {
+      "path": "TransferFromElectricity/tasks/t01_object_retrieval/report_seeds.py",
+      "sha256": "4b76986227df7a958fc9aee5f165a21a783f48b64e549ed7ee74d676e7b874ed",
+      "server_present": true,
+      "server_sha256": "4b76986227df7a958fc9aee5f165a21a783f48b64e549ed7ee74d676e7b874ed",
+      "exact_local_match": true
+    },
+    {
+      "path": "TransferFromElectricity/tasks/t01_object_retrieval/report_spatial.py",
+      "sha256": "f4d02055d0f47246aedfd2d6dade79e4a71d853945019a2b633e4c77b0cf9b88",
+      "server_present": true,
+      "server_sha256": "f4d02055d0f47246aedfd2d6dade79e4a71d853945019a2b633e4c77b0cf9b88",
+      "exact_local_match": true
+    },
+    {
+      "path": "TransferFromElectricity/tasks/t01_object_retrieval/report_spatial_timing.py",
+      "sha256": "1113e9a5f4e0f59e6c0e3e12a3dba49232862afeed4bcb40f74e862748acea10",
+      "server_present": true,
+      "server_sha256": "1113e9a5f4e0f59e6c0e3e12a3dba49232862afeed4bcb40f74e862748acea10",
+      "exact_local_match": true
+    },
+    {
+      "path": "TransferFromElectricity/tasks/t01_object_retrieval/report_staged.py",
+      "sha256": "41deda731a803bb8df5a2a11c22da88c0a813b3971c921aca208bc70a38d1cfe",
+      "server_present": true,
+      "server_sha256": "41deda731a803bb8df5a2a11c22da88c0a813b3971c921aca208bc70a38d1cfe",
+      "exact_local_match": true
+    },
+    {
+      "path": "TransferFromElectricity/tasks/t01_object_retrieval/report_suite.py",
+      "sha256": "09cbe9f01ea4e5a104cac2b86c9e5908f253cb209cc0355006ab586bcaa61d44",
+      "server_present": true,
+      "server_sha256": "09cbe9f01ea4e5a104cac2b86c9e5908f253cb209cc0355006ab586bcaa61d44",
+      "exact_local_match": true
+    },
+    {
+      "path": "TransferFromElectricity/tasks/t01_object_retrieval/report_unseen.py",
+      "sha256": "99e4aef852c31d6291568a9a6f29b96e6450347f1b5bdc54237e0846e6d5388f",
+      "server_present": false,
+      "server_sha256": null,
+      "exact_local_match": false
+    },
+    {
+      "path": "TransferFromElectricity/tasks/t01_object_retrieval/run.py",
+      "sha256": "8c895da355632de8e004607df0ef0ec53f41d046d429cd2987f661f35298476a",
+      "server_present": true,
+      "server_sha256": "8c895da355632de8e004607df0ef0ec53f41d046d429cd2987f661f35298476a",
+      "exact_local_match": true
+    },
+    {
+      "path": "TransferFromElectricity/tasks/t01_object_retrieval/run_spatial_suite.py",
+      "sha256": "b078304fd5284eebdd8762ae318d018d52546af3728d5368557c5d4508a390d1",
+      "server_present": true,
+      "server_sha256": "b078304fd5284eebdd8762ae318d018d52546af3728d5368557c5d4508a390d1",
+      "exact_local_match": true
+    },
+    {
+      "path": "TransferFromElectricity/tasks/t01_object_retrieval/run_unseen.py",
+      "sha256": "6a8d7538c0f08d5cbb2694c50b00f6772bb3bf75ed8047b442d9582ef50aaf40",
+      "server_present": true,
+      "server_sha256": "6a8d7538c0f08d5cbb2694c50b00f6772bb3bf75ed8047b442d9582ef50aaf40",
+      "exact_local_match": true
+    },
+    {
+      "path": "TransferFromElectricity/tasks/t01_object_retrieval/run_unseen_suite.py",
+      "sha256": "fa8058040c209f3aecceb4a0aebe0527f65ca7a32cdca24f357e45e314c45237",
+      "server_present": true,
+      "server_sha256": "fa8058040c209f3aecceb4a0aebe0527f65ca7a32cdca24f357e45e314c45237",
+      "exact_local_match": true
+    },
+    {
+      "path": "TransferFromElectricity/tasks/t01_object_retrieval/source_audit.py",
+      "sha256": "daab8dc0aac9f235abf0151d02a9ccde715ee7caceccfcf2ed90fd71ecb01d32",
+      "server_present": true,
+      "server_sha256": "daab8dc0aac9f235abf0151d02a9ccde715ee7caceccfcf2ed90fd71ecb01d32",
+      "exact_local_match": true
+    },
+    {
+      "path": "TransferFromElectricity/tasks/t01_object_retrieval/train_staged.py",
+      "sha256": "83e8209daa07b25c47201b8bd74a7b0d5081d00bab6857d80d66a02fad2b5f29",
+      "server_present": true,
+      "server_sha256": "83e8209daa07b25c47201b8bd74a7b0d5081d00bab6857d80d66a02fad2b5f29",
+      "exact_local_match": true
+    },
+    {
+      "path": "TransferFromElectricity/tasks/t01_object_retrieval/unseen_protocol.py",
+      "sha256": "374331e3d4c53860bb4098c919cd86dd8c7962115b66a956dc9f815b3322edac",
+      "server_present": true,
+      "server_sha256": "374331e3d4c53860bb4098c919cd86dd8c7962115b66a956dc9f815b3322edac",
+      "exact_local_match": true
+    },
+    {
+      "path": "TransferFromElectricity/tasks/t01_object_retrieval/__init__.py",
+      "sha256": "973344deaa0fa75fe128ed3eb07ad070a2b4487f1203c0a3e97a2a034e49af2c",
+      "server_present": true,
+      "server_sha256": "973344deaa0fa75fe128ed3eb07ad070a2b4487f1203c0a3e97a2a034e49af2c",
+      "exact_local_match": true
+    },
+    {
+      "path": "TransferFromElectricity/tasks/t01_object_retrieval/configs/cifar100_separate_heads_ideal.yaml",
+      "sha256": "1c843b626222699ab67d35418dee96096f1eaf6ae0533f29fdd6b0d50de7f533",
+      "server_present": true,
+      "server_sha256": "1c843b626222699ab67d35418dee96096f1eaf6ae0533f29fdd6b0d50de7f533",
+      "exact_local_match": true
+    },
+    {
+      "path": "TransferFromElectricity/tasks/t01_object_retrieval/configs/cifar100_ten_separate_heads_ideal.yaml",
+      "sha256": "a7bdde837b1bd752a6513b0aa8d2765dcbc99825d653975d9baf70a5d01e1a61",
+      "server_present": true,
+      "server_sha256": "a7bdde837b1bd752a6513b0aa8d2765dcbc99825d653975d9baf70a5d01e1a61",
+      "exact_local_match": true
+    },
+    {
+      "path": "TransferFromElectricity/tasks/t01_object_retrieval/configs/pilot.yaml",
+      "sha256": "99014825cceaf1192471a90e23cd112d6fe2265ba17db055a6f4edd9639568b0",
+      "server_present": true,
+      "server_sha256": "99014825cceaf1192471a90e23cd112d6fe2265ba17db055a6f4edd9639568b0",
+      "exact_local_match": true
+    },
+    {
+      "path": "TransferFromElectricity/tasks/t01_object_retrieval/configs/separate_heads_ideal.yaml",
+      "sha256": "bd2f5a790cc151f9300f5494eae958dc253c60b9cf3a46829fcf41e5efe309a8",
+      "server_present": true,
+      "server_sha256": "bd2f5a790cc151f9300f5494eae958dc253c60b9cf3a46829fcf41e5efe309a8",
+      "exact_local_match": true
+    },
+    {
+      "path": "TransferFromElectricity/tasks/t01_object_retrieval/configs/staged_alpha40.yaml",
+      "sha256": "682a15a61a6a1c0ce52895098b49591c95861526060098e9bd160e9d425abc23",
+      "server_present": true,
+      "server_sha256": "682a15a61a6a1c0ce52895098b49591c95861526060098e9bd160e9d425abc23",
+      "exact_local_match": true
+    },
+    {
+      "path": "TransferFromElectricity/tasks/t01_object_retrieval/configs/staged_alpha40_caltech30.yaml",
+      "sha256": "6354eb340f071acb33693afc3a8b018b927b3bc44c1d27eef4a3328e6efac615",
+      "server_present": true,
+      "server_sha256": "6354eb340f071acb33693afc3a8b018b927b3bc44c1d27eef4a3328e6efac615",
+      "exact_local_match": true
+    },
+    {
+      "path": "TransferFromElectricity/tasks/t01_object_retrieval/configs/staged_alpha40_caltech30_ideal.yaml",
+      "sha256": "b6f589a28ceead5329d9f72c8fd1198b7cffb265524d34527ace320f93228dfb",
+      "server_present": true,
+      "server_sha256": "b6f589a28ceead5329d9f72c8fd1198b7cffb265524d34527ace320f93228dfb",
+      "exact_local_match": true
+    },
+    {
+      "path": "TransferFromElectricity/tasks/t01_object_retrieval/configs/staged_alpha40_ideal.yaml",
+      "sha256": "f1d9e436377952dcb0181566ac5e652336c50c21be613e7c98fdb37b7307c742",
+      "server_present": true,
+      "server_sha256": "f1d9e436377952dcb0181566ac5e652336c50c21be613e7c98fdb37b7307c742",
+      "exact_local_match": true
+    },
+    {
+      "path": "TransferFromElectricity/tasks/t01_object_retrieval/configs/control_v3/base.yaml",
+      "sha256": "7308b3f6e22f6ec4d8fbd568aedd75aab1a24988f104192dec019d305ed431a5",
+      "server_present": true,
+      "server_sha256": "7308b3f6e22f6ec4d8fbd568aedd75aab1a24988f104192dec019d305ed431a5",
+      "exact_local_match": true
+    },
+    {
+      "path": "TransferFromElectricity/tasks/t01_object_retrieval/configs/control_v3/caltech.yaml",
+      "sha256": "ae74808c69ee63ec42724a5a51dc357e6aeed8b68aa022aecefdf23696a308d0",
+      "server_present": true,
+      "server_sha256": "ae74808c69ee63ec42724a5a51dc357e6aeed8b68aa022aecefdf23696a308d0",
+      "exact_local_match": true
+    },
+    {
+      "path": "TransferFromElectricity/tasks/t01_object_retrieval/configs/control_v3/cifar.yaml",
+      "sha256": "ac024ed041121d03c8ca10e08ceeb00cfdd8bea58760363898d9b106486a5bd9",
+      "server_present": true,
+      "server_sha256": "ac024ed041121d03c8ca10e08ceeb00cfdd8bea58760363898d9b106486a5bd9",
+      "exact_local_match": true
+    },
+    {
+      "path": "TransferFromElectricity/tasks/t01_object_retrieval/configs/control_v3/formal_caltech.yaml",
+      "sha256": "2f21cedf4a16103055c0226b77ad7222ef95b9e53faa3a500a5399bdef62249c",
+      "server_present": true,
+      "server_sha256": "233a61e6ac16f3530eb0c16609dc57701ded622ae4e798c6f807bebe85652544",
+      "exact_local_match": false
+    },
+    {
+      "path": "TransferFromElectricity/tasks/t01_object_retrieval/configs/control_v3/formal_cifar.yaml",
+      "sha256": "895f15693c84b31a0ad3ce790c2e6a2a76ff08f63c6dde5e879d8fbee91ab68a",
+      "server_present": true,
+      "server_sha256": "bb3a92de586930364078a23e412f9e7d97dbd23ef57fe64a6b6679075c99c3de",
+      "exact_local_match": false
+    },
+    {
+      "path": "TransferFromElectricity/tasks/t01_object_retrieval/configs/control_v3/formal_imagenette.yaml",
+      "sha256": "fc4d67ed8d3c139ec9d3a2b4f442cf89a4713009ba087ba568c0a8d910410d4f",
+      "server_present": true,
+      "server_sha256": "32560627cdcd90db7ebb6c1d19793885da52e8b03925d88dc1a8f131e75e2e23",
+      "exact_local_match": false
+    },
+    {
+      "path": "TransferFromElectricity/tasks/t01_object_retrieval/configs/control_v3/imagenette.yaml",
+      "sha256": "2ef11eb48290130ed4b91ee56ecf60e395c477202869885351aaf8a0acdd55c5",
+      "server_present": true,
+      "server_sha256": "2ef11eb48290130ed4b91ee56ecf60e395c477202869885351aaf8a0acdd55c5",
+      "exact_local_match": true
+    },
+    {
+      "path": "TransferFromElectricity/tasks/t01_object_retrieval/configs/control_v3/pilot_base.yaml",
+      "sha256": "e95c4d507870b2b7f384dceb73afc6ab574e155e9838aeadd6b5a94feecaf877",
+      "server_present": true,
+      "server_sha256": "e95c4d507870b2b7f384dceb73afc6ab574e155e9838aeadd6b5a94feecaf877",
+      "exact_local_match": true
+    },
+    {
+      "path": "TransferFromElectricity/tasks/t01_object_retrieval/configs/control_v3/pilot_encoder_focus.yaml",
+      "sha256": "3b37e71db6c99d75509f0507bca8919d59129ee6fcb5fc7e56913d0bb816cb3d",
+      "server_present": true,
+      "server_sha256": "3b37e71db6c99d75509f0507bca8919d59129ee6fcb5fc7e56913d0bb816cb3d",
+      "exact_local_match": true
+    },
+    {
+      "path": "TransferFromElectricity/tasks/t01_object_retrieval/configs/control_v3/pilot_frozen_e.yaml",
+      "sha256": "467a10e53a153d3fe71ad2fcc55efb8b3920317ca26ca2dd217cfbbd53d0210f",
+      "server_present": true,
+      "server_sha256": "467a10e53a153d3fe71ad2fcc55efb8b3920317ca26ca2dd217cfbbd53d0210f",
+      "exact_local_match": true
+    },
+    {
+      "path": "TransferFromElectricity/tasks/t01_object_retrieval/configs/control_v3/pilot_high_g.yaml",
+      "sha256": "254837562a8ba40346f8535d5375bd2b2cde3a00ae4ad6689a3e91565b3320a1",
+      "server_present": true,
+      "server_sha256": "254837562a8ba40346f8535d5375bd2b2cde3a00ae4ad6689a3e91565b3320a1",
+      "exact_local_match": true
+    },
+    {
+      "path": "TransferFromElectricity/tasks/t01_object_retrieval/configs/control_v3/pilot_slow_e.yaml",
+      "sha256": "144f432e1ae695fa60f419202ee8fef76cb2c8d6545aab092934ab5c127a7e5c",
+      "server_present": true,
+      "server_sha256": "144f432e1ae695fa60f419202ee8fef76cb2c8d6545aab092934ab5c127a7e5c",
+      "exact_local_match": true
+    },
+    {
+      "path": "TransferFromElectricity/tasks/t01_object_retrieval/configs/control_v3/pilot_slow_e_high_g.yaml",
+      "sha256": "ed509c81cbc702a84af3d36dcd274fa0b101fefcb3293b251568c66b85543ca3",
+      "server_present": true,
+      "server_sha256": "ed509c81cbc702a84af3d36dcd274fa0b101fefcb3293b251568c66b85543ca3",
+      "exact_local_match": true
+    },
+    {
+      "path": "TransferFromElectricity/tasks/t01_object_retrieval/configs/control_v3/timing_cifar.yaml",
+      "sha256": "e09617810911f84ca860e21f0007a425d57d22532f90ea4c563a62b50bc2b246",
+      "server_present": true,
+      "server_sha256": "e09617810911f84ca860e21f0007a425d57d22532f90ea4c563a62b50bc2b246",
+      "exact_local_match": true
+    },
+    {
+      "path": "TransferFromElectricity/tasks/t01_object_retrieval/configs/spatial_v4/caltech.yaml",
+      "sha256": "e1843a8dfa8348c66029903e5501a4ec9cc72a6363850afca0779415b7eaf04d",
+      "server_present": true,
+      "server_sha256": "e1843a8dfa8348c66029903e5501a4ec9cc72a6363850afca0779415b7eaf04d",
+      "exact_local_match": true
+    },
+    {
+      "path": "TransferFromElectricity/tasks/t01_object_retrieval/configs/spatial_v4/cifar.yaml",
+      "sha256": "1a6766b1f664cb76299cc06f5f31a3541b0c9623d1b30fa3a3707f3f27a42256",
+      "server_present": true,
+      "server_sha256": "1a6766b1f664cb76299cc06f5f31a3541b0c9623d1b30fa3a3707f3f27a42256",
+      "exact_local_match": true
+    },
+    {
+      "path": "TransferFromElectricity/tasks/t01_object_retrieval/configs/spatial_v4/imagenette.yaml",
+      "sha256": "8b92541489464f3dd162cca07c2ec5c270373be2ff632b3a1ae21fa0dc1c165c",
+      "server_present": true,
+      "server_sha256": "8b92541489464f3dd162cca07c2ec5c270373be2ff632b3a1ae21fa0dc1c165c",
+      "exact_local_match": true
+    },
+    {
+      "path": "TransferFromElectricity/tasks/t01_object_retrieval/configs/spatial_v4/timing_cifar.yaml",
+      "sha256": "4064c2407b73724d6ecdc2d3675afeb0d71c6167c33b6c409b5b9a7bc0bcc31e",
+      "server_present": true,
+      "server_sha256": "4064c2407b73724d6ecdc2d3675afeb0d71c6167c33b6c409b5b9a7bc0bcc31e",
+      "exact_local_match": true
+    },
+    {
+      "path": "TransferFromElectricity/tasks/t01_object_retrieval/configs/unseen_v1/cifar.yaml",
+      "sha256": "b5c90b671deeccadfa1d688ecc997cb73629f7dfc9d9759e4874c9c096f050f5",
+      "server_present": true,
+      "server_sha256": "b5c90b671deeccadfa1d688ecc997cb73629f7dfc9d9759e4874c9c096f050f5",
+      "exact_local_match": true
+    },
+    {
+      "path": "TransferFromElectricity/tasks/t01_object_retrieval/models/generator.py",
+      "sha256": "1804fcc3f32d35c782e4e2e3b689aec46bf0f79cb799ac7d9ae18ca240a3b6b9",
+      "server_present": true,
+      "server_sha256": "1804fcc3f32d35c782e4e2e3b689aec46bf0f79cb799ac7d9ae18ca240a3b6b9",
+      "exact_local_match": true
+    },
+    {
+      "path": "TransferFromElectricity/tasks/t01_object_retrieval/models/injection.py",
+      "sha256": "71c69e399de383e27947ec81b44e9f5faa7ef24207075bf37476766b1384ad67",
+      "server_present": true,
+      "server_sha256": "71c69e399de383e27947ec81b44e9f5faa7ef24207075bf37476766b1384ad67",
+      "exact_local_match": true
+    },
+    {
+      "path": "TransferFromElectricity/tasks/t01_object_retrieval/models/spatial_generator.py",
+      "sha256": "e43f303e8d3ff5070a54698e66c8b4f79c52c163918cf980eef4309c526ee9a0",
+      "server_present": true,
+      "server_sha256": "e43f303e8d3ff5070a54698e66c8b4f79c52c163918cf980eef4309c526ee9a0",
+      "exact_local_match": true
+    },
+    {
+      "path": "TransferFromElectricity/tasks/t01_object_retrieval/models/__init__.py",
+      "sha256": "021b6fc23e6197af45fa13e3a35472a82c4e1060a8228ebca20d84dbd560e2b5",
+      "server_present": true,
+      "server_sha256": "021b6fc23e6197af45fa13e3a35472a82c4e1060a8228ebca20d84dbd560e2b5",
+      "exact_local_match": true
+    },
+    {
+      "path": "TransferFromElectricity/tasks/t01_object_retrieval/tests/test_audit.py",
+      "sha256": "171f3adc735cca74892f4c7898b576bb486952937c5854e0e8d8325ac00f9240",
+      "server_present": true,
+      "server_sha256": "171f3adc735cca74892f4c7898b576bb486952937c5854e0e8d8325ac00f9240",
+      "exact_local_match": true
+    },
+    {
+      "path": "TransferFromElectricity/tasks/t01_object_retrieval/tests/test_cifar_generation.py",
+      "sha256": "41cd7517d329cdce77c9437347c9db9c8b7152af7b165b57fbdf605a77d10217",
+      "server_present": true,
+      "server_sha256": "41cd7517d329cdce77c9437347c9db9c8b7152af7b165b57fbdf605a77d10217",
+      "exact_local_match": true
+    },
+    {
+      "path": "TransferFromElectricity/tasks/t01_object_retrieval/tests/test_collection.py",
+      "sha256": "71ce74fccfcf70abbe9a3b25152ba278320c2d60dc7e173d5a0539ebe11d45d9",
+      "server_present": true,
+      "server_sha256": "71ce74fccfcf70abbe9a3b25152ba278320c2d60dc7e173d5a0539ebe11d45d9",
+      "exact_local_match": true
+    },
+    {
+      "path": "TransferFromElectricity/tasks/t01_object_retrieval/tests/test_control_v3.py",
+      "sha256": "69cb1aa46bf86fbd1b980f4ec41812aa6cb1bc1e473b37e3f0fd300f4111e65d",
+      "server_present": true,
+      "server_sha256": "69cb1aa46bf86fbd1b980f4ec41812aa6cb1bc1e473b37e3f0fd300f4111e65d",
+      "exact_local_match": true
+    },
+    {
+      "path": "TransferFromElectricity/tasks/t01_object_retrieval/tests/test_seed_report.py",
+      "sha256": "75c3b76922f312682fcdce40fcda1b430ccd2ba506134f6aca130c1416ead17a",
+      "server_present": true,
+      "server_sha256": "75c3b76922f312682fcdce40fcda1b430ccd2ba506134f6aca130c1416ead17a",
+      "exact_local_match": true
+    },
+    {
+      "path": "TransferFromElectricity/tasks/t01_object_retrieval/tests/test_spatial_allocation.py",
+      "sha256": "218684018842fd2ae16311a509891cbe60422525b50eecffaa45c6dd7f150cee",
+      "server_present": true,
+      "server_sha256": "218684018842fd2ae16311a509891cbe60422525b50eecffaa45c6dd7f150cee",
+      "exact_local_match": true
+    },
+    {
+      "path": "TransferFromElectricity/tasks/t01_object_retrieval/tests/test_spatial_generator.py",
+      "sha256": "7b10e7cbeff45d982b403c1efd553f648a0ec2b4e4c04bd28e2cd296e4ad056c",
+      "server_present": true,
+      "server_sha256": "7b10e7cbeff45d982b403c1efd553f648a0ec2b4e4c04bd28e2cd296e4ad056c",
+      "exact_local_match": true
+    },
+    {
+      "path": "TransferFromElectricity/tasks/t01_object_retrieval/tests/test_staged_protocol.py",
+      "sha256": "791bbb86fb278c5d21ca9c8de0573df4a7632c507280a802368cbb18bf7f901f",
+      "server_present": true,
+      "server_sha256": "791bbb86fb278c5d21ca9c8de0573df4a7632c507280a802368cbb18bf7f901f",
+      "exact_local_match": true
+    },
+    {
+      "path": "TransferFromElectricity/tasks/t01_object_retrieval/tests/test_static_experts.py",
+      "sha256": "6178241e558d1bb3bffcee91e3188a8351086431f15ee762c8e74e63a2442160",
+      "server_present": true,
+      "server_sha256": "6178241e558d1bb3bffcee91e3188a8351086431f15ee762c8e74e63a2442160",
+      "exact_local_match": true
+    },
+    {
+      "path": "TransferFromElectricity/tasks/t01_object_retrieval/tests/test_unseen_protocol.py",
+      "sha256": "5a78de6a237660554c82dca50d04113674dcf4d64acf298b7ee090f1cb1764f9",
+      "server_present": true,
+      "server_sha256": "5a78de6a237660554c82dca50d04113674dcf4d64acf298b7ee090f1cb1764f9",
+      "exact_local_match": true
+    }
+  ],
+  "read_only": true,
+  "model_evaluated": false,
+  "devices_opened": false,
+  "audited_on": "2026-10-06",
+  "role": "Historical fixed expert-generation research; distinct from official T01 DC20 comparison",
+  "main_adoption_complete": false,
+  "all_timing_preserved": true,
+  "original_reference_pack_policy": "User-provided d2nn_pack retained unchanged; not a replacement trainer or deletion candidate",
+  "known_declared_training_commits": {
+    "spatial_v4": "c024b9280433f6e7fe31fc0122a1b8aadf342b38",
+    "unseen_v1": "0d854376cca29e16143ad1eb7762860770e59459"
+  },
+  "limitations": [
+    "Actual server root files compared, not every historical runtime worktree or PT",
+    "Two local report collectors are absent from server root; retain as local unique tools",
+    "Three formal configs differ; no version selected or overwritten",
+    "No model, data or timing reevaluation, and no cleanup approved by SHA matches"
+  ]
+}

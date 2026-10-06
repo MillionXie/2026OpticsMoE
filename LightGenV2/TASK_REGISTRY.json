@@ -14,6 +14,9 @@
   "tasks": [
     {
       "id": "t01_object_retrieval",
+      "historical_expert_generation_evidence": "../maintenance/storage/STATIC_EXPERT_SOURCE_IDENTITY_20261006.json",
+      "historical_expert_generation_entry": "../TransferFromElectricity/tasks/t01_object_retrieval/README.md",
+      "historical_expert_generation_main_adoption_complete": false,
       "entry": "tasks/t01_object_retrieval/README.md",
       "source_status": "runtime_source_on_main_optional_frontend_SHA_binding_verified_historical_revision_pending",
       "frontend_binding_evidence": "../maintenance/storage/T01_FRONTEND_ENTRY_IMPORT_20261005.json",

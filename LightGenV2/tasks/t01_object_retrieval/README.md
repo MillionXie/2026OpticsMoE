@@ -3,6 +3,18 @@
 2026-10-03整理核验：[已有版本、正式PT与数据身份](reports/reproduction/IDENTITIES_20261003.md)。
 原DC20/无DC20两套主方法和D2NN、冻结Qwen对照均保留；整理未重新训练或采集。
 
+另有“固定专家相位生成／未见类别迁移”历史研究，入口在仓库
+`TransferFromElectricity/tasks/t01_object_retrieval/README.md`及其
+`reports/reproduction/README.md`，不是下方正式DC20三模型协议。
+第五轮空间生成源码为`c024b9280433f6e7fe31fc0122a1b8aadf342b38`，第六轮
+未见类别适配为`0d854376cca29e16143ad1eb7762860770e59459`；原结果、全部计时、
+best/last及必要对照保留，不把生成器训练开销当本页模型推理时间。
+2026-10-06本地／实际服务器主目录67份源码配置对照：62份字节相同，2份本地
+汇总工具在服务器根缺失，3份旧正式配置不同，尚未选边或覆盖。来源及剩余差异见
+`maintenance/storage/STATIC_EXPERT_SOURCE_IDENTITY_20261006.json`。
+`TransferFromElectricity/d2nn_pack`是用户提供的原始参考包，保持原样，不作为垃圾
+清理或原样接入正式trainer；上述研究源码／依赖迁移尚未完成，不重复训练。
+
 本目录只维护论文正式对照的入口、配置和结果索引；历史实现仍由
 `experiments/` 提供兼容后端。当前固定比较三套系统，除此之外的试验不得混入正式表。
 
