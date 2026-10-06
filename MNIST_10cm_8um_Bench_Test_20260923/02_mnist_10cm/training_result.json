@@ -1,0 +1,132 @@
+{
+  "status": "complete",
+  "best_epoch": 10,
+  "baseline_A": {
+    "validation": {
+      "accuracy": 0.8505050505050505,
+      "loss": 1.0053743583987458,
+      "n": 2475,
+      "confusion": [
+        [
+          553,
+          2,
+          27,
+          10
+        ],
+        [
+          1,
+          568,
+          101,
+          4
+        ],
+        [
+          26,
+          17,
+          512,
+          41
+        ],
+        [
+          54,
+          59,
+          28,
+          472
+        ]
+      ]
+    },
+    "test": {
+      "accuracy": 0.8655280250180418,
+      "loss": 0.9970426372189002,
+      "n": 4157,
+      "confusion": [
+        [
+          935,
+          0,
+          37,
+          8
+        ],
+        [
+          3,
+          983,
+          147,
+          2
+        ],
+        [
+          38,
+          52,
+          892,
+          50
+        ],
+        [
+          75,
+          111,
+          36,
+          788
+        ]
+      ]
+    },
+    "export": {
+      "bmp": "A_old_fixed_native8_xy_inverse.bmp",
+      "sha256": "395d2c60abb72ae9735d47e1fc7ec303c370662127f7571f5dbd24ba45fb9c0b",
+      "center_xy": [
+        960,
+        600
+      ],
+      "size_wh": [
+        1920,
+        1200
+      ],
+      "flip_horizontal": true,
+      "flip_vertical": true,
+      "gray_encoding": "255-minus-g",
+      "native_size": 1016
+    }
+  },
+  "test_B": {
+    "accuracy": 0.8876593697377917,
+    "loss": 0.8469151269079029,
+    "n": 4157,
+    "confusion": [
+      [
+        924,
+        0,
+        30,
+        26
+      ],
+      [
+        3,
+        1071,
+        56,
+        5
+      ],
+      [
+        34,
+        115,
+        826,
+        57
+      ],
+      [
+        35,
+        77,
+        29,
+        869
+      ]
+    ]
+  },
+  "export_B": {
+    "bmp": "B_native8_best_xy_inverse.bmp",
+    "sha256": "9a5db11329f1fe397d7bed40f348651321850e1a11309e4ecf0a79690aa9aa54",
+    "center_xy": [
+      960,
+      600
+    ],
+    "size_wh": [
+      1920,
+      1200
+    ],
+    "flip_horizontal": true,
+    "flip_vertical": true,
+    "gray_encoding": "255-minus-g",
+    "native_size": 1016
+  },
+  "note": "Simulation only; separate paired hardware test required. No measured 60% results overwritten."
+}

@@ -1,6 +1,10 @@
 # 历史 DVP 调试区，不是封存 rank72 的运行入口
 
 本目录原文件保留于本机，用于解释2026-09-23至26日的设备调试和历史命令。
+静态MNIST/菲涅尔/双SLM对齐包的原始说明和原训练摘要，见
+[历史测试包](../../../../MNIST_10cm_8um_Bench_Test_20260923/README.md)。
+其67张BMP保留为私有资产，逐文件SHA见仓库
+`maintenance/storage/MNIST_BMP_PAYLOAD_IDENTITY_20261006.json`；新克隆不包含BMP。
 目录名在T07下，不表示里面所有实验都是ABO检索，也不表示这些本机文件已全部发布main。
 不要直接从这里启动采集；封存rank72请从[任务页](../README.md)和
 [正式硬件源码入口](../hardware/README.md)进入。
