@@ -1,0 +1,48 @@
+{
+  "audited_on": "2026-10-06",
+  "scope": "Existing internal review packages; integrity and identity only, no model evaluation",
+  "root": "LightGenPublic/tasks/t06_lgvq_temporal_consistency",
+  "checkpoint_sha256": "5303b574b200e14bf943af21c60a246720be453b9cf8847cd93c0eaaa243a77c",
+  "same_checkpoint": true,
+  "same_frozen_inputs": true,
+  "fields_per_package": 35,
+  "unique_valid_videos_per_package": 558,
+  "packages": {
+    "teacher_release/lgvq_temporal_08044": {
+      "manifest_sha256": "c60275d5180bdaaa33958894523c9c973b84674ac740bd1d4ab9401f4a4f2506",
+      "files_checked": 75,
+      "recorded_simulation_srcc": 0.8043868643075132,
+      "integrity_passed": true
+    },
+    "teacher_release_final/lgvq_temporal_08044": {
+      "manifest_sha256": "146dc969dc6f5efba252f9b3a794722d49985e7cf0a026ab7bbd31cb1ff052ed",
+      "files_checked": 77,
+      "recorded_simulation_srcc": 0.8043868643075132,
+      "integrity_passed": true
+    },
+    "teacher_release_final_v2/lgvq_temporal_08044": {
+      "manifest_sha256": "f2ec9e7bdb9d8837aaa61b8849a03f52d34c6c1cb7baabc193d65bae1522d44b",
+      "files_checked": 77,
+      "recorded_simulation_srcc": 0.8022806420367042,
+      "integrity_passed": true,
+      "not_equivalent_to_original": true,
+      "differences": ["8um propagation-grid resampling", "detector perturbation implementation"],
+      "inherited_runtime_commit_not_sufficient_identity": true
+    }
+  },
+  "selection_boundary": "Existing TEST-selected epoch 30, every 5 epochs; development metric, not independent generalization",
+  "source_recovery": {
+    "files": 109,
+    "archive_ref": "refs/archive/source-closure-20261006/t06-review-packages",
+    "commit": "e573f739fc5c3fc5b8f8457c495466bb410b42ec",
+    "base": "cefa560a79b293f89cf1fd95b7b33457a71fa179",
+    "bundle_sha256": "5e74874b49cb3fd21081033c343fa0c1161b334ed0e90847f9a19a93ce21e78c",
+    "local_and_server_blob_sha_verified": true,
+    "incremental_bundle_requires_base": true,
+    "data_backup": false
+  },
+  "model_evaluated": false,
+  "original_files_moved_or_deleted": false,
+  "official_model_changed": false,
+  "all_timing_evidence_preserved": true
+}
