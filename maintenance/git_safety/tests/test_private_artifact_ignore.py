@@ -10,6 +10,16 @@ ROOT = Path(__file__).resolve().parents[3]
 
 
 class ArtifactIgnoreTests(unittest.TestCase):
+    def test_fixed478_records_keep_future_results_and_table_sources_visible(self):
+        import json
+        descriptor = json.loads((ROOT/'maintenance/storage/T10_FIXED478_REPORT_VISIBILITY_20261007.json').read_text())
+        private = [row['path'] for row in descriptor['files']]
+        self.assertEqual(len(private), 36)
+        prefix = 'LightGenV2/tasks/t10_expert_scaling/reports/plotting/fixed478_topk_test_20260922/'
+        visible = [prefix + name for name in ('README.md', 'test_per_seed.csv', 'test_summary.json',
+                   'evidence/future_test_result.json', 'evidence/analyze.py')]
+        self.assertEqual(self.ignored(private + visible), set(private))
+
     def test_lgvq_timing_payloads_keep_derivation_and_future_evidence_visible(self):
         import json
         descriptor = json.loads((ROOT/'maintenance/storage/LGVQ_TEMPORAL_TIMING_VISIBILITY_20261006.json').read_text())

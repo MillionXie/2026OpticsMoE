@@ -1,0 +1,157 @@
+{
+  "scope": "Exactly 36 retained fixed478 top-k historical per-run TEST JSON records, not source or future reports",
+  "audited_on": "2026-10-07",
+  "files": [
+    {
+      "path": "LightGenV2/tasks/t10_expert_scaling/reports/plotting/fixed478_topk_test_20260922/evidence/bloodmnist__moe_oeo_N4_k1_L4_lr0.002_s17__test_result.json",
+      "sha256": "de2b4cf7a5a55ea074c9c2be3ab9c3d0b91b0522e30ca4f1f7dcf2ae5d0d2a26"
+    },
+    {
+      "path": "LightGenV2/tasks/t10_expert_scaling/reports/plotting/fixed478_topk_test_20260922/evidence/bloodmnist__moe_oeo_N4_k1_L4_lr0.002_s27__test_result.json",
+      "sha256": "f99dab865fd6599f47fd62fc33b51a5e859814be060ffe50c473ad4b26178e01"
+    },
+    {
+      "path": "LightGenV2/tasks/t10_expert_scaling/reports/plotting/fixed478_topk_test_20260922/evidence/bloodmnist__moe_oeo_N4_k1_L4_lr0.002_s37__test_result.json",
+      "sha256": "493f0b592135dfd303f6f81a3cab8092797bf8a6678baee7177799a42c0fc7b1"
+    },
+    {
+      "path": "LightGenV2/tasks/t10_expert_scaling/reports/plotting/fixed478_topk_test_20260922/evidence/bloodmnist__moe_oeo_N4_k2_L4_lr0.002_s17__test_result.json",
+      "sha256": "f4eecd11bced604ccc1a59f78bf0eca266a1ebf32f2b8a2a2d95cca79923c535"
+    },
+    {
+      "path": "LightGenV2/tasks/t10_expert_scaling/reports/plotting/fixed478_topk_test_20260922/evidence/bloodmnist__moe_oeo_N4_k2_L4_lr0.002_s27__test_result.json",
+      "sha256": "81a5121dcee7ac24f9bb7ec948f2fe901a4221c412ed8b576d1d8c08227a8556"
+    },
+    {
+      "path": "LightGenV2/tasks/t10_expert_scaling/reports/plotting/fixed478_topk_test_20260922/evidence/bloodmnist__moe_oeo_N4_k2_L4_lr0.002_s37__test_result.json",
+      "sha256": "a104742e48da461186c531d3f365d110238c0f0de9b21670213eb23e8cddbcbc"
+    },
+    {
+      "path": "LightGenV2/tasks/t10_expert_scaling/reports/plotting/fixed478_topk_test_20260922/evidence/bloodmnist__moe_oeo_N4_k3_L4_lr0.002_s17__test_result.json",
+      "sha256": "bc1ab1cacb6b90ea03d08909a8375c067f1c9cee74c9f25fea4259845eab512c"
+    },
+    {
+      "path": "LightGenV2/tasks/t10_expert_scaling/reports/plotting/fixed478_topk_test_20260922/evidence/bloodmnist__moe_oeo_N4_k3_L4_lr0.002_s27__test_result.json",
+      "sha256": "52eb3a9a11a73207ca89ab3c22a536619d11c535ff6c95525ed2118ab8781ef6"
+    },
+    {
+      "path": "LightGenV2/tasks/t10_expert_scaling/reports/plotting/fixed478_topk_test_20260922/evidence/bloodmnist__moe_oeo_N4_k3_L4_lr0.002_s37__test_result.json",
+      "sha256": "2c0726f06ab33d59045e2ec2e913b58315743169da7ce8f86fa5499d0ee129a2"
+    },
+    {
+      "path": "LightGenV2/tasks/t10_expert_scaling/reports/plotting/fixed478_topk_test_20260922/evidence/bloodmnist__moe_oeo_N4_k4_L4_lr0.002_s17__test_result.json",
+      "sha256": "c7790d7e908d5bde717c4b360f24659f94894d55cf6492e40dc9cac7101de9f5"
+    },
+    {
+      "path": "LightGenV2/tasks/t10_expert_scaling/reports/plotting/fixed478_topk_test_20260922/evidence/bloodmnist__moe_oeo_N4_k4_L4_lr0.002_s27__test_result.json",
+      "sha256": "f3a31b5061b50d4af36261af382f506634d76f5aae936ec8160fe11ac40020ba"
+    },
+    {
+      "path": "LightGenV2/tasks/t10_expert_scaling/reports/plotting/fixed478_topk_test_20260922/evidence/bloodmnist__moe_oeo_N4_k4_L4_lr0.002_s37__test_result.json",
+      "sha256": "777405a067798aeb60a8e8f9facb5e1dd1dcf1becad9eefb99682ab6c022a170"
+    },
+    {
+      "path": "LightGenV2/tasks/t10_expert_scaling/reports/plotting/fixed478_topk_test_20260922/evidence/kather2016__moe_oeo_N4_k1_L4_lr0.002_s17__test_result.json",
+      "sha256": "a62c61c29b8a04615baf96bce2e8da2d1f3685da26e58a044331cf50822b48f8"
+    },
+    {
+      "path": "LightGenV2/tasks/t10_expert_scaling/reports/plotting/fixed478_topk_test_20260922/evidence/kather2016__moe_oeo_N4_k1_L4_lr0.002_s27__test_result.json",
+      "sha256": "2081aeb56e5194680259f41cc11d6471b3947d56111cd5d41e8922ff188a4d23"
+    },
+    {
+      "path": "LightGenV2/tasks/t10_expert_scaling/reports/plotting/fixed478_topk_test_20260922/evidence/kather2016__moe_oeo_N4_k1_L4_lr0.002_s37__test_result.json",
+      "sha256": "046ba95ab5ac70c41ed02b3d54bb49decc8f6773c821baa387c0ecc6c6495a09"
+    },
+    {
+      "path": "LightGenV2/tasks/t10_expert_scaling/reports/plotting/fixed478_topk_test_20260922/evidence/kather2016__moe_oeo_N4_k2_L4_lr0.002_s17__test_result.json",
+      "sha256": "193929b2d7771784e7e990f177f9dbc8cff17db3056d9a14e05432045ff25c64"
+    },
+    {
+      "path": "LightGenV2/tasks/t10_expert_scaling/reports/plotting/fixed478_topk_test_20260922/evidence/kather2016__moe_oeo_N4_k2_L4_lr0.002_s27__test_result.json",
+      "sha256": "2039ee00600aeea9aa3e84b6c95a6f45cc627ce6bbd816cbf1e5f4c7aed993cc"
+    },
+    {
+      "path": "LightGenV2/tasks/t10_expert_scaling/reports/plotting/fixed478_topk_test_20260922/evidence/kather2016__moe_oeo_N4_k2_L4_lr0.002_s37__test_result.json",
+      "sha256": "2a9205c715147b5146c97101e28e622928d4af38816296adecf9e61713dc5cbf"
+    },
+    {
+      "path": "LightGenV2/tasks/t10_expert_scaling/reports/plotting/fixed478_topk_test_20260922/evidence/kather2016__moe_oeo_N4_k3_L4_lr0.002_s17__test_result.json",
+      "sha256": "335e8cca7cad8b35d720815688e774073e1aea0128cf0070bb50867c957e9a85"
+    },
+    {
+      "path": "LightGenV2/tasks/t10_expert_scaling/reports/plotting/fixed478_topk_test_20260922/evidence/kather2016__moe_oeo_N4_k3_L4_lr0.002_s27__test_result.json",
+      "sha256": "8c2142723584b09ef0ed448c1ee1e9f2f920bdf8dd0923bc2c443b58c66ac443"
+    },
+    {
+      "path": "LightGenV2/tasks/t10_expert_scaling/reports/plotting/fixed478_topk_test_20260922/evidence/kather2016__moe_oeo_N4_k3_L4_lr0.002_s37__test_result.json",
+      "sha256": "1788b9c7fa52dc5ad6c17c85da21c9e83f66e17501f204b4dea38c4e69794a82"
+    },
+    {
+      "path": "LightGenV2/tasks/t10_expert_scaling/reports/plotting/fixed478_topk_test_20260922/evidence/kather2016__moe_oeo_N4_k4_L4_lr0.002_s17__test_result.json",
+      "sha256": "cf4bca84991ac10955333dda2c32e82d9a01fcd29573bcaddc9af542494d91e2"
+    },
+    {
+      "path": "LightGenV2/tasks/t10_expert_scaling/reports/plotting/fixed478_topk_test_20260922/evidence/kather2016__moe_oeo_N4_k4_L4_lr0.002_s27__test_result.json",
+      "sha256": "e0ab2a9a3d6bbf7d227abf0f5a21bdb3cf38e65a340c7460e3f1a0c9bd59523e"
+    },
+    {
+      "path": "LightGenV2/tasks/t10_expert_scaling/reports/plotting/fixed478_topk_test_20260922/evidence/kather2016__moe_oeo_N4_k4_L4_lr0.002_s37__test_result.json",
+      "sha256": "f9cfbd0b5185b6ce60ad3d2daa00ea5751420d4776930c684165863ec3ca1261"
+    },
+    {
+      "path": "LightGenV2/tasks/t10_expert_scaling/reports/plotting/fixed478_topk_test_20260922/evidence/organcmnist__moe_oeo_N4_k1_L4_lr0.002_s17__test_result.json",
+      "sha256": "da03973cec1bb1fb0483929b822ed0e864ab5892c1d3a5a28d4b8f18b223cbaa"
+    },
+    {
+      "path": "LightGenV2/tasks/t10_expert_scaling/reports/plotting/fixed478_topk_test_20260922/evidence/organcmnist__moe_oeo_N4_k1_L4_lr0.002_s27__test_result.json",
+      "sha256": "f60d89b0afea4ff8943cd531743716381b5893ca9f8125de894d8225c1e064f0"
+    },
+    {
+      "path": "LightGenV2/tasks/t10_expert_scaling/reports/plotting/fixed478_topk_test_20260922/evidence/organcmnist__moe_oeo_N4_k1_L4_lr0.002_s37__test_result.json",
+      "sha256": "0fbd56a265d5708b1df39fbb0362638e484d4bb9149d20d70a0408b27693af9f"
+    },
+    {
+      "path": "LightGenV2/tasks/t10_expert_scaling/reports/plotting/fixed478_topk_test_20260922/evidence/organcmnist__moe_oeo_N4_k2_L4_lr0.002_s17__test_result.json",
+      "sha256": "aa2296cc6acdf1e827afa132739967beb1fb1facbfd92ad9442ffc277d896342"
+    },
+    {
+      "path": "LightGenV2/tasks/t10_expert_scaling/reports/plotting/fixed478_topk_test_20260922/evidence/organcmnist__moe_oeo_N4_k2_L4_lr0.002_s27__test_result.json",
+      "sha256": "22a83527b3028010c5961b1896b9c0f90769c878a5db221f929789d4a3f8da20"
+    },
+    {
+      "path": "LightGenV2/tasks/t10_expert_scaling/reports/plotting/fixed478_topk_test_20260922/evidence/organcmnist__moe_oeo_N4_k2_L4_lr0.002_s37__test_result.json",
+      "sha256": "b34892bfcef7f8915f76ac3ca190c8e233828c71bbc4546173ccec4942c787f8"
+    },
+    {
+      "path": "LightGenV2/tasks/t10_expert_scaling/reports/plotting/fixed478_topk_test_20260922/evidence/organcmnist__moe_oeo_N4_k3_L4_lr0.002_s17__test_result.json",
+      "sha256": "61bceb6c6a29366cbffd2952aa769a26a78916f11981e5e56262587fc85c6847"
+    },
+    {
+      "path": "LightGenV2/tasks/t10_expert_scaling/reports/plotting/fixed478_topk_test_20260922/evidence/organcmnist__moe_oeo_N4_k3_L4_lr0.002_s27__test_result.json",
+      "sha256": "f8712cb8576e163ba282ec4e236aafeb7f2c3934788fab6fac4ede649dc215a6"
+    },
+    {
+      "path": "LightGenV2/tasks/t10_expert_scaling/reports/plotting/fixed478_topk_test_20260922/evidence/organcmnist__moe_oeo_N4_k3_L4_lr0.002_s37__test_result.json",
+      "sha256": "009c53f998f0aa0cbf7a78444dc9dfe5c73e95c64465372bf3f992d681bec391"
+    },
+    {
+      "path": "LightGenV2/tasks/t10_expert_scaling/reports/plotting/fixed478_topk_test_20260922/evidence/organcmnist__moe_oeo_N4_k4_L4_lr0.002_s17__test_result.json",
+      "sha256": "e843cc470c8ad589e690446169b4ed15dc33a4a9228056e51396de8b18756d37"
+    },
+    {
+      "path": "LightGenV2/tasks/t10_expert_scaling/reports/plotting/fixed478_topk_test_20260922/evidence/organcmnist__moe_oeo_N4_k4_L4_lr0.002_s27__test_result.json",
+      "sha256": "440138ae52de6896bc3a7a2e4947b1058ab49f8b2f0df183e460018d60a78ea6"
+    },
+    {
+      "path": "LightGenV2/tasks/t10_expert_scaling/reports/plotting/fixed478_topk_test_20260922/evidence/organcmnist__moe_oeo_N4_k4_L4_lr0.002_s37__test_result.json",
+      "sha256": "5bdd83583bce50c70f4913be786e79d3ab3d2903d1d147798d5188d0b059469d"
+    }
+  ],
+  "originals_deleted_or_moved": false,
+  "metrics_recomputed": false,
+  "notes": [
+    "Three datasets, four top-k settings, seeds17/27/37; original evidence kept in place",
+    "Current SHA inventory only; no new accuracy evaluation or claim of complete original asset closure",
+    "README, per-seed CSV, aggregate summary and future evidence remain visible"
+  ]
+}

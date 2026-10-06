@@ -153,8 +153,14 @@ def main():
                         help='Verify retained Sep 14 Qwen and optical-component timing packages; requires original private files')
     parser.add_argument('--lgvq-timing-payloads', action='store_true',
                         help='Verify retained Sep 27 LGVQ temporal raw timing CSV/JSON; requires local originals')
+    parser.add_argument('--t10-fixed478-reports', action='store_true',
+                        help='Verify 36 locally retained fixed478 original evaluation records without re-evaluation')
     args = parser.parse_args()
     result = inspect(args.repo)
+    if args.t10_fixed478_reports:
+        descriptor = json.loads((args.repo/'maintenance/storage/T10_FIXED478_REPORT_VISIBILITY_20261007.json').read_text(encoding='utf8'))
+        result['t10_fixed478_reports'] = inspect_export_payload(args.repo, descriptor)
+        result['errors'].extend(result['t10_fixed478_reports']['errors'])
     if args.lgvq_timing_payloads:
         descriptor = json.loads((args.repo/'maintenance/storage/LGVQ_TEMPORAL_TIMING_VISIBILITY_20261006.json').read_text(encoding='utf8'))
         result['lgvq_timing_payloads'] = inspect_export_payload(args.repo, descriptor)
