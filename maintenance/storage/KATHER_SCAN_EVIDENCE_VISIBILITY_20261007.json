@@ -1,0 +1,131 @@
+{
+  "scope": "Historical Kather expert-count/top-k transfer records; not fixed478 results or new evaluations",
+  "root": "LightGenV2/tasks/t10_expert_scaling/reports/plotting/kather_expert_count_20260921",
+  "files": [
+    {
+      "path": "LightGenV2/tasks/t10_expert_scaling/reports/plotting/kather_expert_count_20260921/evidence/dataset/data_manifest.json",
+      "sha256": "f859b19f58b95eea781d6b9305ce064209fcb6b8c5f8637df5545913db22dcfd",
+      "bytes": 97248
+    },
+    {
+      "path": "LightGenV2/tasks/t10_expert_scaling/reports/plotting/kather_expert_count_20260921/evidence/protocol/study.json",
+      "sha256": "084b49a4f45488974b3ca682fdf1cbc4ee966cfb632d74ad5cd54fd4d7bc3e4e",
+      "bytes": 2340
+    },
+    {
+      "path": "LightGenV2/tasks/t10_expert_scaling/reports/plotting/kather_expert_count_20260921/evidence/locked_selection_runs/moe_oeo_N4_k3_L4_lr0.002_s17/test_result.json",
+      "sha256": "78dfb49444c42547fd56c90631e8baa5275f2dec38deda3bd9d480b1904cc72d",
+      "bytes": 2054
+    },
+    {
+      "path": "LightGenV2/tasks/t10_expert_scaling/reports/plotting/kather_expert_count_20260921/evidence/locked_selection_runs/d2nn_expert_global_N4_k4_L4_lr0.002_s17/test_result.json",
+      "sha256": "7d8b5ec3bc2dda169bcd403171d41fd10c7753b544e5b6bf2b16cbafdb035b2d",
+      "bytes": 1807
+    },
+    {
+      "path": "LightGenV2/tasks/t10_expert_scaling/reports/plotting/kather_expert_count_20260921/evidence/locked_selection_runs/moe_oeo_N4_k3_L4_lr0.002_s27/test_result.json",
+      "sha256": "024fbfe2b831e92489fd470c2e5c3fa24b9b6d2d86e0b02995ee72dba25a86e1",
+      "bytes": 2083
+    },
+    {
+      "path": "LightGenV2/tasks/t10_expert_scaling/reports/plotting/kather_expert_count_20260921/evidence/locked_selection_runs/d2nn_expert_global_N4_k4_L4_lr0.002_s27/test_result.json",
+      "sha256": "4019c30403fe63fb824d9d2526bc9c7a9469b6202431819d8a70e2a2b1b6f368",
+      "bytes": 1807
+    },
+    {
+      "path": "LightGenV2/tasks/t10_expert_scaling/reports/plotting/kather_expert_count_20260921/evidence/locked_selection_runs/moe_oeo_N16_k16_L4_lr0.002_s17/test_result.json",
+      "sha256": "922c4301fc2c99287ead4bee19427956f788095acbfa0e655e807eb280b129d1",
+      "bytes": 2511
+    },
+    {
+      "path": "LightGenV2/tasks/t10_expert_scaling/reports/plotting/kather_expert_count_20260921/evidence/locked_selection_runs/d2nn_expert_global_N16_k16_L4_lr0.002_s17/test_result.json",
+      "sha256": "46b253afd8813023a6e79834d7971beac000370cda1d435e2f5581e94bdbb3ab",
+      "bytes": 1809
+    },
+    {
+      "path": "LightGenV2/tasks/t10_expert_scaling/reports/plotting/kather_expert_count_20260921/evidence/locked_selection_runs/moe_oeo_N16_k16_L4_lr0.002_s27/test_result.json",
+      "sha256": "2d918a4b5f1626098fb3f8bb2e3c0d677cd6358e13e4ba4de194030202696e9e",
+      "bytes": 2506
+    },
+    {
+      "path": "LightGenV2/tasks/t10_expert_scaling/reports/plotting/kather_expert_count_20260921/evidence/locked_selection_runs/d2nn_expert_global_N16_k16_L4_lr0.002_s27/test_result.json",
+      "sha256": "71d8d9d5ceca949752c617a08dc4ae56f1b5d8d807810809fa105f0b9415ba50",
+      "bytes": 1807
+    },
+    {
+      "path": "LightGenV2/tasks/t10_expert_scaling/reports/plotting/kather_expert_count_20260921/evidence/locked_selection_runs/moe_oeo_N25_k12_L4_lr0.002_s17/test_result.json",
+      "sha256": "7883ca726573f90fa49544293fc268ff61789dd2059ec05606486d68f4360cf3",
+      "bytes": 3191
+    },
+    {
+      "path": "LightGenV2/tasks/t10_expert_scaling/reports/plotting/kather_expert_count_20260921/evidence/locked_selection_runs/d2nn_expert_global_N25_k25_L4_lr0.002_s17/test_result.json",
+      "sha256": "511c33c3417bf1722f9e2a56cecb6d5cdbf6c86493b50641b8424ecca6b42f9b",
+      "bytes": 1810
+    },
+    {
+      "path": "LightGenV2/tasks/t10_expert_scaling/reports/plotting/kather_expert_count_20260921/evidence/locked_selection_runs/moe_oeo_N25_k12_L4_lr0.002_s27/test_result.json",
+      "sha256": "2af1c177a534d667cc0cda860d4f5aa14375711ebdb1997802b89e7257a1238f",
+      "bytes": 3183
+    },
+    {
+      "path": "LightGenV2/tasks/t10_expert_scaling/reports/plotting/kather_expert_count_20260921/evidence/locked_selection_runs/d2nn_expert_global_N25_k25_L4_lr0.002_s27/test_result.json",
+      "sha256": "b7dec399f00ce641bd7e694d9579f56c88ee1817cffd404669e155a4d93d3592",
+      "bytes": 1808
+    },
+    {
+      "path": "LightGenV2/tasks/t10_expert_scaling/reports/plotting/kather_expert_count_20260921/evidence/locked_selection_runs/moe_oeo_N49_k24_L4_lr0.002_s17/test_result.json",
+      "sha256": "b74cc1e3849663c5e684440b468294d6adc3acfc723388b84532caffd8c3a55b",
+      "bytes": 4532
+    },
+    {
+      "path": "LightGenV2/tasks/t10_expert_scaling/reports/plotting/kather_expert_count_20260921/evidence/locked_selection_runs/d2nn_expert_global_N49_k49_L4_lr0.002_s17_recheck/test_result.json",
+      "sha256": "2f797b7b5b7367009c6d50f125cd513976bf15c463566ae2b753cf88f8939365",
+      "bytes": 1813
+    },
+    {
+      "path": "LightGenV2/tasks/t10_expert_scaling/reports/plotting/kather_expert_count_20260921/evidence/locked_selection_runs/moe_oeo_N49_k24_L4_lr0.002_s27/test_result.json",
+      "sha256": "f55480ac31b2be7b531a9d3d142299c1d8cb09d016e7f21387a282b143a97cc6",
+      "bytes": 4518
+    },
+    {
+      "path": "LightGenV2/tasks/t10_expert_scaling/reports/plotting/kather_expert_count_20260921/evidence/locked_selection_runs/d2nn_expert_global_N49_k49_L4_lr0.002_s27_recheck/test_result.json",
+      "sha256": "7daf1a12d9f926e4f617594f71384345f21d922bf49535dea722ff471e987818",
+      "bytes": 1809
+    },
+    {
+      "path": "LightGenV2/tasks/t10_expert_scaling/reports/plotting/kather_expert_count_20260921/evidence/full_test_scan_status.json",
+      "sha256": "1ae7ce1bfcfc7b34b452caf91a70b72d779a5914b29aa5f3af4ab0424e339aaa",
+      "bytes": 170
+    },
+    {
+      "path": "LightGenV2/tasks/t10_expert_scaling/reports/plotting/kather_expert_count_20260921/evidence/full_test_scan_status_release.json",
+      "sha256": "53e3a25f542ce3b0f299b2acd4825d85b1ab24363198fd2cc52fbc2c1f9e3e28",
+      "bytes": 159
+    }
+  ],
+  "manifests": [
+    {
+      "path": "LightGenV2/tasks/t10_expert_scaling/reports/plotting/kather_expert_count_20260921/TRANSFER_MANIFEST.json",
+      "sha256": "c75c9dc79e59c07979536a35966b3541167df0bffc049a9547d3e9a331ff8323",
+      "entries": 202
+    },
+    {
+      "path": "LightGenV2/tasks/t10_expert_scaling/reports/plotting/kather_expert_count_20260921/TEST_TRANSFER_MANIFEST.json",
+      "sha256": "e854576e5b60b44c0792ae5442586a41279be847d1142fa8e75ba66665bd4ce5",
+      "entries": 32
+    },
+    {
+      "path": "LightGenV2/tasks/t10_expert_scaling/reports/plotting/kather_expert_count_20260921/FULL_TEST_TRANSFER_MANIFEST.json",
+      "sha256": "37db043a96316fe411778a81c1f1ada5cb25069ec9c8b6f65cca23304707156a",
+      "entries": 83
+    }
+  ],
+  "all_evidence_files_verified": 260,
+  "originals_deleted_or_moved": false,
+  "metrics_recomputed": false,
+  "limitations": [
+    "Only JSON members under evidence were checked; NPZ/images/weights outside this check",
+    "20 currently untracked original copies named for visibility only; table summaries, manifests and future files remain visible",
+    "No source, architecture, selection or experimental metric changed"
+  ]
+}

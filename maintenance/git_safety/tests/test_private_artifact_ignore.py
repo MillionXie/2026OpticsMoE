@@ -10,6 +10,16 @@ ROOT = Path(__file__).resolve().parents[3]
 
 
 class ArtifactIgnoreTests(unittest.TestCase):
+    def test_kather_transfer_evidence_not_tables_manifests_or_future_files(self):
+        import json
+        d=json.loads((ROOT/'maintenance/storage/KATHER_SCAN_EVIDENCE_VISIBILITY_20261007.json').read_text(encoding='utf8'))
+        private=[row['path'] for row in d['files']]
+        visible=[row['path'] for row in d['manifests']]
+        visible += [d['root']+'/'+name for name in ('README.md','full_test_per_seed.csv',
+                    'full_test_scan_lock.json','evidence/future_run/test_result.json','analyze.py')]
+        self.assertEqual(len(private),20)
+        self.assertEqual(self.ignored(private+visible),set(private))
+
     def test_large_result_records_not_source_new_results_or_manual_assets(self):
         import json
         descriptor=json.loads((ROOT/'maintenance/storage/LARGE_RESULT_PAYLOAD_VISIBILITY_20261007.json').read_text(encoding='utf8'))
