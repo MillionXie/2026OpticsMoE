@@ -23,10 +23,12 @@ TEST 不进梯度，但这些是开发指标，不是独立测试。保留未校
 
 | 最终候选 | SHA256 | 原证据入口 |
 | --- | --- | --- |
-| G5校准最佳 | `1fa31ec7b30a554280d9115b54f580d40b9c754f805db4ec9714ec28d22af41f` | [G5最终报告](../../../handoffs/openmoji_robust_ablation_20260928/midrank48_candidate/FINAL_RANK64_VERSION_20261002.md) |
-| G2校准最佳 | `1cbc3d2574827272dafee7102a4a402ace7eab3f373ea177cbc02e66d90fe6db` | [G2 TRAIN2000报告](../../../handoffs/openmoji_robust_ablation_20260928/midrank48_candidate/G2_RANK64_TRAIN2000_RESULT_20261002.md) |
+| G5校准最佳 | `1fa31ec7b30a554280d9115b54f580d40b9c754f805db4ec9714ec28d22af41f` | [主线G5版本及原报告身份](reports/reproduction/RANK64_SEALED_20261002.md) |
+| G2校准最佳 | `1cbc3d2574827272dafee7102a4a402ace7eab3f373ea177cbc02e66d90fe6db` | [主线G2版本及原报告身份](reports/reproduction/RANK64_SEALED_20261002.md) |
 
-上述目录包含 PT、report、history、逐样本和严格默认推理重载记录；不复制大权重进 Git。
+原私有资产目录`handoffs/openmoji_robust_ablation_20260928/midrank48_candidate/`
+包含 PT、report、history、逐样本和严格默认推理重载记录；不复制大权重进 Git。
+主线入口不要求新机器先拥有该私有目录才能阅读版本说明；原完整报告按封存页SHA定位。
 每组 TEST1000 与独立 TRAIN2000 各六层，分别6000与12000真实CCD，保留源身份及收据，不跨组复用。
 2000us/GainX4/wait240、既定ROI和方向、保零 bounded BMP；原捕获合同不变。
 当前 rank64 精确版本的单样本延迟尚未测量，不能借用旧完整头或rank48时间。

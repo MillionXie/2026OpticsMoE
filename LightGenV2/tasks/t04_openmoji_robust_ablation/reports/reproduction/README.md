@@ -5,10 +5,12 @@
 
 原已验证复现证据：
 
-- [主线内rank64封存版本、三类指标和PT位置](RANK64_SEALED_20261002.md)：必要版本信息已纳入Git，原完整私有报告仍按下方链接保留。
-- [rank64 G5 最终权重、strict reload、冻结参数与原数据位置](../../../../../handoffs/openmoji_robust_ablation_20260928/midrank48_candidate/FINAL_RANK64_VERSION_20261002.md)。
-- [rank64 G2 TRAIN2000、最佳/last及校准权重SHA](../../../../../handoffs/openmoji_robust_ablation_20260928/midrank48_candidate/G2_RANK64_TRAIN2000_RESULT_20261002.md)。
-- [rank48 历史两路线记录](../../../../../handoffs/openmoji_robust_ablation_20260928/midrank48_candidate/TWO_ROUTES_20261002.md)，仅作重要容量对照，不覆盖 rank64 结果。
+- [主线内rank64封存版本、三类指标和PT位置](RANK64_SEALED_20261002.md)：包含G2/G5、冻结边界和原完整报告SHA，不依赖私有文件才能阅读。
+- [rank48历史容量对照](RANK48_HISTORY_20261002.md)，不覆盖rank64或其他窗口的新实验。
+
+原完整报告和两路线过程日志仍原位保存在私有资产目录
+`handoffs/openmoji_robust_ablation_20260928/midrank48_candidate`，通过登记SHA查找，
+不将包含旧定时作业指令的过程日志当成当前执行入口。
 
 复现所需：精确代码/overlay、配置、原G2/G5 PT与适配 PT、OpenMoji素材许可、
 源身份互斥 TRAIN/TEST manifests、词嵌入/视觉前端、各层真实CCD与收据及设备合同。
