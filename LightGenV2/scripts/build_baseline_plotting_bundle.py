@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import argparse
 import csv
 import hashlib
 import json
@@ -484,10 +485,67 @@ def build_readme(summary: list[dict]) -> None:
     (OUT / "README_CN.md").write_text(text, encoding="utf-8")
 
 
-def main() -> None:
-    if OUT.exists():
-        shutil.rmtree(OUT)
-    OUT.mkdir(parents=True)
+def required_inputs(raw: Path, qwen: Path) -> list[Path]:
+    """Required original files; optional example PNGs are not fabricated."""
+    return [raw / relative for relative in (
+        "abo_image_to_text/baseline_report.json",
+        "abo_image_to_text/retrieval_predictions.csv",
+        "abo_image_to_text/timing_per_sample.csv",
+        "abo_image_to_text/per_product_metrics.json",
+        "abo_image_to_text/baseline_overview.png",
+        "abo_image_to_image/final_report.json",
+        "abo_image_to_image/normal_predictions.csv",
+        "abo_text_to_image/report.json",
+        "abo_text_to_image/dynamic_2048_predictions.json",
+        "lsp/teacher_inference_predictions.csv",
+        "lsp/teacher_inference.json",
+        "salicon/selected_checkpoint_test_evaluation.json",
+        "salicon/per_image_cc.csv",
+        "openmoji/selected_checkpoint_test_evaluation.json",
+        "openmoji/test_predictions.jsonl",
+        "openmoji/run_manifest.json",
+    )] + [qwen / relative for relative in (
+        "evidence/T06_temporal_batch1_batch2/batch_01/report.json",
+        "evidence/T06_temporal_batch1_batch2/batch_01/predictions.csv",
+        "evidence/T06_temporal_batch1_batch2/batch_01/batch_timing.csv",
+        "evidence/T06_spatial/report.json",
+        "evidence/T06_spatial/per_video_predictions_and_timing.csv",
+        "fresh/T07_abo_image_image/timing_per_sample.csv",
+        "evidence/performance_sources/T02_lsp_baseline_report.json",
+        "fresh/T02_lsp/timing_per_sample.csv",
+        "fresh/T03_salicon/timing_per_sample.csv",
+    )]
+
+
+def prepare_output(output: Path, inputs: list[Path], protected: list[Path]) -> Path:
+    """Fail before writing if the output exists, overlaps inputs or lacks evidence."""
+    if output.exists() or output.is_symlink():
+        raise FileExistsError(f"Existing output is protected: {output}")
+    target = output.resolve()
+    for source in protected:
+        source = source.resolve()
+        if target == source or source in target.parents:
+            raise ValueError(f"Output overlaps original input tree: {source}")
+    missing = [str(path) for path in inputs if not path.is_file()]
+    if missing:
+        raise FileNotFoundError("Missing original evidence; output not created: " + "; ".join(missing))
+    target.mkdir(parents=True, exist_ok=False)
+    return target
+
+
+def main(argv: list[str] | None = None) -> None:
+    global OUT, RAW, QWEN_A100
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument("--output", type=Path, required=True,
+                        help="New derived delivery directory; existing paths are never removed or overwritten")
+    parser.add_argument("--raw", type=Path, default=RAW, help="Original baseline raw evidence tree")
+    parser.add_argument("--qwen-report", type=Path, default=QWEN_A100,
+                        help="Original historical Qwen A100 report tree, not a new model's report")
+    args = parser.parse_args(argv)
+    # Assign only after validation; all old per-task metric/join rules remain unchanged.
+    target = prepare_output(args.output, required_inputs(args.raw, args.qwen_report),
+                            [args.raw, args.qwen_report])
+    OUT, RAW, QWEN_A100 = target, args.raw, args.qwen_report
     summary = [
         build_lgvq("temporal"),
         build_lgvq("spatial"),
