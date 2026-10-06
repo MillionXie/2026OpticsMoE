@@ -58,9 +58,10 @@
       "local_artifact_directory": "../handoffs/openmoji_robust_ablation_20260928/midrank48_candidate",
       "weights": [
         {"path": "../handoffs/openmoji_robust_ablation_20260928/midrank48_candidate/rank64_g2_train2000_bias_best_20261002.pt", "sha256": "1cbc3d2574827272dafee7102a4a402ace7eab3f373ea177cbc02e66d90fe6db"},
-        {"sha256": "1fa31ec7b30a554280d9115b54f580d40b9c754f805db4ec9714ec28d22af41f", "identity": "G5 rank64 TRAIN2000 original decoder existing-bias calibrated best; path recorded in final report"}
+        {"path": "../handoffs/openmoji_robust_ablation_20260928/midrank48_candidate/rank64_train2000_bias_calibrated_best_20261002.pt", "sha256": "1fa31ec7b30a554280d9115b54f580d40b9c754f805db4ec9714ec28d22af41f", "identity": "G5 rank64 TRAIN2000 original decoder existing-bias calibrated best; local SHA reverified 2026-10-06"},
+        {"path": "../handoffs/openmoji_robust_ablation_20260928/midrank48_candidate/rank64_train2000_decoder_best_20261002.pt", "sha256": "018470e4e2a21cf572ac8faf5f9884af810ce5e53321aa3fa8c70e6deb26a825", "identity": "G5 rank64 uncalibrated original-decoder alternative; scene-exact tradeoff retained"}
       ],
-      "evidence": ["../handoffs/openmoji_robust_ablation_20260928/midrank48_candidate/FINAL_RANK64_VERSION_20261002.md", "../handoffs/openmoji_robust_ablation_20260928/midrank48_candidate/G2_RANK64_TRAIN2000_RESULT_20261002.md"],
+      "evidence": ["tasks/t04_openmoji_robust_ablation/reports/reproduction/RANK64_SEALED_20261002.md", "../handoffs/openmoji_robust_ablation_20260928/midrank48_candidate/FINAL_RANK64_VERSION_20261002.md", "../handoffs/openmoji_robust_ablation_20260928/midrank48_candidate/G2_RANK64_TRAIN2000_RESULT_20261002.md"],
       "data_status": "preserve_each_group_TEST1000_TRAIN2000_raw_six_layer_CCD_and_receipts",
       "current_version_latency_verified": false
     },

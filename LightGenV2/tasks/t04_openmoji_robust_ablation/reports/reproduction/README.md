@@ -5,6 +5,7 @@
 
 原已验证复现证据：
 
+- [主线内rank64封存版本、三类指标和PT位置](RANK64_SEALED_20261002.md)：必要版本信息已纳入Git，原完整私有报告仍按下方链接保留。
 - [rank64 G5 最终权重、strict reload、冻结参数与原数据位置](../../../../../handoffs/openmoji_robust_ablation_20260928/midrank48_candidate/FINAL_RANK64_VERSION_20261002.md)。
 - [rank64 G2 TRAIN2000、最佳/last及校准权重SHA](../../../../../handoffs/openmoji_robust_ablation_20260928/midrank48_candidate/G2_RANK64_TRAIN2000_RESULT_20261002.md)。
 - [rank48 历史两路线记录](../../../../../handoffs/openmoji_robust_ablation_20260928/midrank48_candidate/TWO_ROUTES_20261002.md)，仅作重要容量对照，不覆盖 rank64 结果。
