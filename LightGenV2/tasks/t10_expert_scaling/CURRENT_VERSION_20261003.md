@@ -73,3 +73,9 @@ test_source_sha256字段，不能补造历史字段。三组ID均唯一、与man
 Blood/Organ ID由原评估协议的dataset/split/索引构造，不证明图像近重复或患者独立性。
 只读取标签和ID，没有读取图像数组；缺失的九项TEST报告仍缺失，没有替代评估。
 证据：仓库`maintenance/storage/T10_TEST_SOURCE_BINDING_20261006.json`。
+
+已有36份TEST报告的预测NPZ全部存在：有序ID、标签、分类分数尺寸和有限性、
+argmax预测均对应；从已有预测计数所得accuracy与原报告在1e-6内一致。
+逐预测文件SHA及复用真实目录已登记于
+`maintenance/storage/T10_PREDICTION_BINDING_20261006.json`。
+这不是重新执行模型，也不补齐缺失九项TEST或证明患者/近重复独立性。
