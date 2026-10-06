@@ -2,10 +2,28 @@ import hashlib
 import tempfile
 import unittest
 from pathlib import Path
-from maintenance.git_safety.check_source_archives import confined, inspect_manifest, inspect_timing_manifest
+from maintenance.git_safety.check_source_archives import confined, inspect_manifest, inspect_timing_manifest, inspect_export_payload
 
 
 class ArchiveTests(unittest.TestCase):
+    def test_private_export_is_byte_exact_and_read_only(self):
+        with tempfile.TemporaryDirectory() as folder:
+            root = Path(folder); path = root/'source.py'; path.write_bytes(b'original\r\n')
+            row = dict(path='source.py', sha256=hashlib.sha256(path.read_bytes()).hexdigest())
+            self.assertEqual(inspect_export_payload(root, dict(files=[row]))['errors'], [])
+            path.write_bytes(b'changed')
+            self.assertEqual(len(inspect_export_payload(root, dict(files=[row]))['errors']), 1)
+            self.assertEqual(path.read_bytes(), b'changed')
+            path.unlink()
+            self.assertEqual(len(inspect_export_payload(root, dict(files=[row]))['errors']), 1)
+
+    def test_private_export_duplicate_or_escape_is_rejected(self):
+        with tempfile.TemporaryDirectory() as folder:
+            root = Path(folder); row = dict(path='../outside.py', sha256='0'*64)
+            with self.assertRaises(ValueError): inspect_export_payload(root, dict(files=[row]))
+            row['path'] = 'missing.py'
+            with self.assertRaises(ValueError): inspect_export_payload(root, dict(files=[row,row]))
+
     def test_explicit_relocation_keeps_original_hash_and_does_not_modify_files(self):
         with tempfile.TemporaryDirectory() as folder:
             root = Path(folder); (root/'archive').mkdir()

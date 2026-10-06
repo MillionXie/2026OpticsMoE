@@ -20,6 +20,8 @@
 原文件、数据、权重及全部测速不删，仅退出Git待同步列表。两个交付辅助脚本及两份不同的
 历史说明继续可见，未被整目录忽略。精确范围见
 [旧交付快照身份](../../../maintenance/storage/T12_SHARE_SOURCE_PAYLOAD_VISIBILITY_20261006.json)。
+保留本地交付文件的机器可用 `python maintenance/git_safety/check_source_archives.py --t12-share-payloads`
+只读检查这231份原字节是否变化；源码新克隆未附私有载荷时会失败，不自动重建或覆盖。
 
 ## 2026-09-27/28 同任务 baseline 补训与五组汇总
 

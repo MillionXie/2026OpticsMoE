@@ -109,6 +109,35 @@ def inspect_timing_manifest(root, descriptor):
             'scope': 'Declared original timing export bytes only; not new measurements or unlisted files'}
 
 
+def inspect_export_payload(root, descriptor):
+    """Verify immutable local export bytes without rebuilding or editing them."""
+    errors = []; checked = 0; seen = set()
+    for row in descriptor['files']:
+        name = row['path']; pure = PurePosixPath(name)
+        if (pure.is_absolute() or '..' in pure.parts or '\\' in name or ':' in name
+                or name in ('', '.') or name in seen
+                or not re.fullmatch('[0-9a-fA-F]{64}', row['sha256'])):
+            raise ValueError('Invalid or duplicate export payload identity')
+        seen.add(name)
+        path = confined(root, name)
+        if os.name == 'nt':
+            absolute = str(path)
+            path = Path('\\\\?\\UNC\\' + absolute[2:] if absolute.startswith('\\\\')
+                        else '\\\\?\\' + absolute)
+        if not path.is_file():
+            errors.append('Missing preserved export payload: ' + name); continue
+        h = hashlib.sha256()
+        with path.open('rb') as stream:
+            for chunk in iter(lambda: stream.read(1024 * 1024), b''):
+                h.update(chunk)
+        if h.hexdigest() != row['sha256'].lower():
+            errors.append('Preserved export SHA mismatch: ' + name)
+        else:
+            checked += 1
+    return {'payloads_checked': checked, 'errors': errors,
+            'scope': 'Declared local immutable export bytes only; not Git object availability, dependencies or deployment readiness'}
+
+
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--repo', type=Path, default=Path(__file__).resolve().parents[2])
@@ -116,8 +145,14 @@ def main():
                         help='Also verify locally retained historical timing payloads; requires private files')
     parser.add_argument('--demo-timing-payloads', action='store_true',
                         help='Audit Sep 27 historical payloads including explicit relocations; requires local files and reports unresolved members')
+    parser.add_argument('--t12-share-payloads', action='store_true',
+                        help='Verify retained local T12 share export files; requires private payloads')
     args = parser.parse_args()
     result = inspect(args.repo)
+    if args.t12_share_payloads:
+        descriptor = json.loads((args.repo/'maintenance/storage/T12_SHARE_SOURCE_PAYLOAD_VISIBILITY_20261006.json').read_text(encoding='utf8'))
+        result['t12_share_payloads'] = inspect_export_payload(args.repo, descriptor)
+        result['errors'].extend(result['t12_share_payloads']['errors'])
     if args.demo_timing_payloads:
         descriptor = json.loads((args.repo/'maintenance/storage/DEMO_TIMING_MANIFEST_AUDIT_20261006.json').read_text(encoding='utf8'))['descriptor']
         result['demo_timing_payloads'] = inspect_timing_manifest(args.repo, descriptor)
