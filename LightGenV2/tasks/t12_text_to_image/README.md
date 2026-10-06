@@ -29,6 +29,10 @@
 拒绝覆盖已有输出；GT只用于导出目标，不能交给baseline推理。三项合成CPU测试不读取正式数据。
 该入口使用当前main的数据实现；未做历史渲染逐像素等价核验，不能宣称重建原交付PNG。
 原交付export_pairs.py及其冻结source、数据、结果继续保留，不替换历史引用。
+旧stage/materialize_pairs.py所用的单split `input/target/pairs.csv`布局，可在同一主线
+导出入口加`--manifest-format csv`得到；保留prompt和原配对列，不再另依赖交付source路径。
+CSV不支持all，避免旧目录布局混用。原物化脚本和已导出数据仍保留；这里只验证格式合同，
+未重新导出正式数据或声称历史像素逐一复核。
 
 原17M单样本干净仿真另有明确入口：`python -m LightGenV2.tasks.t12_text_to_image.infer_formal_sample --help`。
 显式提供原5b4f PT、数据、指令缓存和embedding缓存，固定CPU、不调用设备，拒绝其他权重及覆盖输出；

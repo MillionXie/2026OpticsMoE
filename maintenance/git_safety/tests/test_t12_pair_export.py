@@ -1,4 +1,5 @@
 import json
+import csv
 from pathlib import Path
 import tempfile
 import unittest
@@ -22,6 +23,24 @@ class Dataset:
 
 
 class PairExportTests(unittest.TestCase):
+    def test_old_csv_layout_and_prompt_column(self):
+        with tempfile.TemporaryDirectory() as folder:
+            out = Path(folder)/'new'
+            export_pairs({'test': Dataset()}, out, limit=1, manifest_format='csv')
+            with (out/'pairs.csv').open(newline='') as stream:
+                row = next(csv.DictReader(stream))
+            self.assertEqual(row['prompt'], 'prompt')
+            self.assertEqual(row['index'], '0')
+            self.assertTrue((out/row['input_png']).is_file())
+            self.assertFalse((out/'test').exists())
+
+    def test_csv_rejects_all_splits_before_writing(self):
+        with tempfile.TemporaryDirectory() as folder:
+            out = Path(folder)/'new'
+            with self.assertRaises(ValueError):
+                export_pairs({'test': Dataset(), 'val': Dataset()}, out, manifest_format='csv')
+            self.assertFalse(out.exists())
+
     def test_export_preserves_roles_quantization_and_metadata(self):
         with tempfile.TemporaryDirectory() as folder:
             out = Path(folder) / 'new'
