@@ -94,9 +94,12 @@ def audit(root, reference="HEAD"):
 def history_refs(root):
     """Pin existing recovery references only; never create or change refs."""
     records = git(root, "for-each-ref", "--format=%(refname) %(objectname)", "refs/archive/").decode().splitlines()
-    if len(records) > 256:
-        raise ValueError("More than 256 recovery references: choose a separately reviewed scope")
-    return dict(line.split(" ", 1) for line in records)
+    refs = dict(line.split(" ", 1) for line in records)
+    # Multiple recovery aliases can point to the same commit. Bound actual
+    # trees inspected, without deleting aliases or miscounting them as work.
+    if len(refs) > 4096 or len(set(refs.values())) > 512:
+        raise ValueError("Recovery inventory exceeds 4096 refs or 512 unique commits; choose a reviewed scope")
+    return refs
 
 
 def audit_history(root, reference="HEAD"):
@@ -147,7 +150,7 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--repo", default=".")
     parser.add_argument("--reference", default="HEAD")
-    parser.add_argument("--history", action="store_true", help="Also check nonmatching selected sources against at most 256 existing archive refs")
+    parser.add_argument("--history", action="store_true", help="Check existing recovery history (bounded to 512 unique commits, without creating refs)")
     args = parser.parse_args()
     result = audit_history(args.repo, args.reference) if args.history else audit(args.repo, args.reference)
     print(json.dumps(result, ensure_ascii=False, indent=2))
