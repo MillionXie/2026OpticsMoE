@@ -5,8 +5,9 @@ import tempfile
 import unittest
 
 import torch
+import numpy as np
 from PIL import Image
-from LightGenV2.tasks.t12_text_to_image.export_baseline_pairs import export_pairs, METADATA_KEYS
+from LightGenV2.tasks.t12_text_to_image.export_baseline_pairs import export_pairs, save_tensor, METADATA_KEYS
 
 
 class Dataset:
@@ -23,6 +24,17 @@ class Dataset:
 
 
 class PairExportTests(unittest.TestCase):
+    def test_matches_original_csv_numpy_rounding_and_clipping(self):
+        # The historical materialize_pairs.save_rgb formula; no private data needed.
+        values = torch.linspace(-2, 2, 3 * 16 * 1024).reshape(3, 16, 1024).requires_grad_(True)
+        pixels = (values.detach().cpu().numpy().transpose(1, 2, 0) + 1.0) * 127.5
+        expected = np.clip(np.rint(pixels), 0, 255).astype(np.uint8)
+        with tempfile.TemporaryDirectory() as folder:
+            path = Path(folder)/'image.png'
+            save_tensor(values, path)
+            with Image.open(path) as image:
+                self.assertTrue(np.array_equal(np.asarray(image), expected))
+
     def test_old_csv_layout_and_prompt_column(self):
         with tempfile.TemporaryDirectory() as folder:
             out = Path(folder)/'new'

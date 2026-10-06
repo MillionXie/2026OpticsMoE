@@ -12,7 +12,7 @@ METADATA_KEYS = ('sample_id', 'source_id', 'target_id', 'category', 'mode',
 
 
 def save_tensor(value, path):
-    array = value.clamp(-1, 1).add(1).mul(127.5).round().byte().permute(1, 2, 0).numpy()
+    array = value.detach().cpu().clamp(-1, 1).add(1).mul(127.5).round().byte().permute(1, 2, 0).numpy()
     Image.fromarray(array).save(path)
 
 
