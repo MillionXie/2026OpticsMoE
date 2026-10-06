@@ -1,0 +1,218 @@
+{
+  "schema": 1,
+  "scope": "45 server main untracked source files absent from prior Git byte identities",
+  "prerequisite_commit": "d1530d34218e56f38057b796125059d0018cac91",
+  "archives": [
+    {
+      "archive_ref": "refs/archive/server-untracked-safe-source-20261006",
+      "archive_commit": "87ab6c9561b7be5a7b96afea88764dc030a1f637",
+      "bundle_sha256": "1feb274b4eda70c032468b5f0fe9ab1a66149f0470a438383a4cfe168237b46b",
+      "files": [
+        {
+          "path": "ABO_Lab_8um/original_a100/abo_dual/__init__.py",
+          "sha256": "cba26f49040ff632cc836613918736f7e036ebd1f863e2cc7d16b902a1b47824"
+        },
+        {
+          "path": "ABO_Lab_8um/original_a100/abo_dual/backend.py",
+          "sha256": "2660e31a7aee25b624ce6b52f0d3113a092a748fa5b02f5b03e0c33f1e2ef805"
+        },
+        {
+          "path": "ABO_Lab_8um/original_a100/abo_dual/client.py",
+          "sha256": "c30e6388392f4554436393f74500548b20ddc9d6f930b616ffa2774937928aac"
+        },
+        {
+          "path": "ABO_Lab_8um/original_a100/abo_dual/common.py",
+          "sha256": "187a09a748860baccbc61905fad8214309ea6bcc5cc62639baff8815d088714a"
+        },
+        {
+          "path": "ABO_Lab_8um/original_a100/abo_dual/optics.py",
+          "sha256": "549d9468e4c48a3315da6a37554e607aa08f4f59beda55571a5c343edce544a9"
+        },
+        {
+          "path": "ABO_Lab_8um/original_a100/abo_dual/server.py",
+          "sha256": "6c3f21c4a0082efbce437d52feec804408b7c86dbbd2a9af1039f79ac2f49b37"
+        },
+        {
+          "path": "ABO_Lab_8um/original_a100/check_local.py",
+          "sha256": "7c150276dee220a0669263e04d7289c112f210f7ba31ae8bc1f385495e4b68b7"
+        },
+        {
+          "path": "ABO_Lab_8um/original_a100/install_a100.cmd",
+          "sha256": "d0ec425dd0e4f2f6401efbdd8f0c92bf081418fc191ec7bccf5e98ba8e65e9f3"
+        },
+        {
+          "path": "ABO_Lab_8um/original_a100/run_a100.py",
+          "sha256": "0dedae04dc6f0c1ef7b4b5e2e430b1df04ea19eac624f95f328f1983b26f2807"
+        },
+        {
+          "path": "ABO_Lab_8um/original_a100/run_optics.py",
+          "sha256": "4fb8ea3ab955c5bbbca4873a38e3af7a2ba4bef329c1a21b019566c50b32e82a"
+        },
+        {
+          "path": "ABO_Lab_8um/original_a100/start_a100_10.cmd",
+          "sha256": "46474df6140d9d45ad426d0110870c5a6382b2c09c4740513fce7469820be135"
+        },
+        {
+          "path": "ABO_Lab_8um/original_a100/start_a100_full.cmd",
+          "sha256": "64838ba020c146872c9c7abc76bed47a629447c04376700693900bda6d899729"
+        },
+        {
+          "path": "ABO_Lab_8um/original_a100/tests/verify_backend.py",
+          "sha256": "cd73cde27b91e60ca3fa4a0aa83543785f4b130be73a1fedf035e5bece13ccc8"
+        },
+        {
+          "path": "ABO_Lab_8um/original_a100/tests/verify_camera_pipeline.py",
+          "sha256": "f2ef686f3376430191a2b35d8d55d7d660cefe4b32bbd7e27458b19c7f855769"
+        },
+        {
+          "path": "ABO_Lab_8um/original_inference/backend/LightGenV2/tasks/t08_abo_image_text_retrieval/configs/optical_router_moe_dc20_kd1_balance1_optimized.yaml",
+          "sha256": "146ad18d75b1f58ab0df8204039fef46626fb55f3b42c50f6e3e9e54986022f7"
+        },
+        {
+          "path": "ABO_Lab_8um/original_inference/infer.py",
+          "sha256": "9499bd5200925d4e73a21028a027e6b68348b020ad3be826b69ef91efbbe9a8b"
+        },
+        {
+          "path": "ABO_Lab_8um/original_optics/abo_dual/__init__.py",
+          "sha256": "cba26f49040ff632cc836613918736f7e036ebd1f863e2cc7d16b902a1b47824"
+        },
+        {
+          "path": "ABO_Lab_8um/original_optics/abo_dual/backend.py",
+          "sha256": "2660e31a7aee25b624ce6b52f0d3113a092a748fa5b02f5b03e0c33f1e2ef805"
+        },
+        {
+          "path": "ABO_Lab_8um/original_optics/abo_dual/client.py",
+          "sha256": "c30e6388392f4554436393f74500548b20ddc9d6f930b616ffa2774937928aac"
+        },
+        {
+          "path": "ABO_Lab_8um/original_optics/abo_dual/common.py",
+          "sha256": "187a09a748860baccbc61905fad8214309ea6bcc5cc62639baff8815d088714a"
+        },
+        {
+          "path": "ABO_Lab_8um/original_optics/abo_dual/optics.py",
+          "sha256": "549d9468e4c48a3315da6a37554e607aa08f4f59beda55571a5c343edce544a9"
+        },
+        {
+          "path": "ABO_Lab_8um/original_optics/abo_dual/server.py",
+          "sha256": "6c3f21c4a0082efbce437d52feec804408b7c86dbbd2a9af1039f79ac2f49b37"
+        },
+        {
+          "path": "ABO_Lab_8um/original_optics/check_local.py",
+          "sha256": "7c150276dee220a0669263e04d7289c112f210f7ba31ae8bc1f385495e4b68b7"
+        },
+        {
+          "path": "ABO_Lab_8um/original_optics/config/generated/formal_hardware.yaml",
+          "sha256": "db8ebd9f1dfd7c2accf165eb28d6143747193b34f9a138c66795f72ce0563c1e"
+        },
+        {
+          "path": "ABO_Lab_8um/original_optics/config/reference/LAB_CONFIG.yaml",
+          "sha256": "aa1cb803ab6238d96d44ae4d1d54f2cf65b0c2a4c4dcee8446bee30510aba28c"
+        },
+        {
+          "path": "ABO_Lab_8um/original_optics/config/reference/generated/bootstrap_hardware.yaml",
+          "sha256": "f05ce8fd74273c12dbd270c34bf94a900e0b4f70005f02f520bc6de223025df9"
+        },
+        {
+          "path": "ABO_Lab_8um/original_optics/config/reference/generated/formal_hardware.yaml",
+          "sha256": "b68e1bd8c0fd9f406a1c183267b721cac6a57f5793ff891dd427033c31451265"
+        },
+        {
+          "path": "ABO_Lab_8um/original_optics/config/reference/generated/geometry_source.generated.yaml",
+          "sha256": "81aa352f9c11ebb83667fe77c88057715d2c61e219ffc96837c08d58e9b1710e"
+        },
+        {
+          "path": "ABO_Lab_8um/original_optics/install_optics.cmd",
+          "sha256": "3755dece44faa16448e3ab4bfb34f45f2eb8b16373c4f84339f2fe372c0ee3b4"
+        },
+        {
+          "path": "ABO_Lab_8um/original_optics/run_a100.py",
+          "sha256": "0dedae04dc6f0c1ef7b4b5e2e430b1df04ea19eac624f95f328f1983b26f2807"
+        },
+        {
+          "path": "ABO_Lab_8um/original_optics/run_optics.py",
+          "sha256": "4fb8ea3ab955c5bbbca4873a38e3af7a2ba4bef329c1a21b019566c50b32e82a"
+        },
+        {
+          "path": "ABO_Lab_8um/original_optics/start_optics.cmd",
+          "sha256": "09a054875a2bd7b734320315a2860c0340cb811589115b17dd3d3672a3b5443d"
+        },
+        {
+          "path": "ABO_Lab_8um/original_optics/tests/verify_backend.py",
+          "sha256": "cd73cde27b91e60ca3fa4a0aa83543785f4b130be73a1fedf035e5bece13ccc8"
+        },
+        {
+          "path": "ABO_Lab_8um/original_optics/tests/verify_camera_pipeline.py",
+          "sha256": "f2ef686f3376430191a2b35d8d55d7d660cefe4b32bbd7e27458b19c7f855769"
+        },
+        {
+          "path": "LightGenV2/reports/20260927_lgvq_temporal_multi_baseline_a100/build_analysis.py",
+          "sha256": "418cb591c3a7703ac0eb12d40d22271c330e3fdef77488e81954b443c4ddfa99"
+        },
+        {
+          "path": "LightGenV2/tasks/t06_video_quality_assessment/configs/lightgen/spatial_single_video4_srcc06665.yaml",
+          "sha256": "8773fffabe97a690704c05a180a6ec7f6b9ceef865fb847d02304955c1bb0eff"
+        },
+        {
+          "path": "LightGenV2/tasks/t06_video_quality_assessment/quality_token_batch_benchmark_200.py",
+          "sha256": "4c87d619527a1faaf1109c5bed56ee12557ca589a4ffe6d93570af0306033a65"
+        },
+        {
+          "path": "experiments/qwen3_vl_2b_lgvq_single_metric_o2_16frame_54/configs/release/spatial_electronic_balanced_strong_s586.yaml",
+          "sha256": "739302fc2674558500a4fa4dd02e160115e65f4959e0872fdd24d65324b1189b"
+        },
+        {
+          "path": "experiments/qwen3_vl_2b_lgvq_single_metric_o2_16frame_54/configs/release/spatial_phase_polish_seed570.yaml",
+          "sha256": "e7143fb839ff97888d29edf06666726ef77e8a88a6eaaa4eff09e0d7cf54f56c"
+        }
+      ]
+    },
+    {
+      "archive_ref": "refs/archive/server-untracked-fixture-source-20261006",
+      "archive_commit": "82be01dcb1b25cdcd6eb74c7a20c853860a2a3b9",
+      "bundle_sha256": "2629ae841bd30962664930c5858b25d43408b894e02153f49f993f3f77602964",
+      "files": [
+        {
+          "path": "ABO_Lab_8um/original_a100/models/Qwen3-VL-Embedding-2B/scripts/qwen3_vl_embedding.py",
+          "sha256": "8ffa74a1a6bb759610c57865ea416fd4daf9936cb787520e1112a3e1d547f36a"
+        },
+        {
+          "path": "ABO_Lab_8um/original_a100/tests/test_protocol.py",
+          "sha256": "7decd6e54be809af2511689cb5a408eb63e7265f93f845a163f6f5c79cb944fb"
+        },
+        {
+          "path": "ABO_Lab_8um/original_a100/tests/verify_mock_runtime.py",
+          "sha256": "449001f93391b18c6e6dbe59b1176ae67b7691532052b866465a19ffe9440dfe"
+        },
+        {
+          "path": "ABO_Lab_8um/original_inference/models/Qwen3-VL-Embedding-2B/scripts/qwen3_vl_embedding.py",
+          "sha256": "8ffa74a1a6bb759610c57865ea416fd4daf9936cb787520e1112a3e1d547f36a"
+        },
+        {
+          "path": "ABO_Lab_8um/original_optics/tests/test_protocol.py",
+          "sha256": "7decd6e54be809af2511689cb5a408eb63e7265f93f845a163f6f5c79cb944fb"
+        },
+        {
+          "path": "ABO_Lab_8um/original_optics/tests/verify_mock_runtime.py",
+          "sha256": "449001f93391b18c6e6dbe59b1176ae67b7691532052b866465a19ffe9440dfe"
+        }
+      ]
+    }
+  ],
+  "host_verification": {
+    "training_server": "45 original blobs and bundle SHA verified; originals and main unchanged",
+    "local": "Both Git bundles imported; 45 original blob SHA verified",
+    "lab_source_store": "Both Git bundles imported; 45 blob SHA verified; runtime and development branches unchanged"
+  },
+  "purpose_groups": {
+    "abo": "Historical epoch25 strong-balanced image-to-text dual-machine deployment; not sealed rank72 image retrieval.",
+    "qwen": "Vendor PAD_TOKEN is a model special symbol, not service credential.",
+    "tests": "Temporary loopback mock tokens; six flagged files checked not to contain either real shared_token value. Real shared_token.txt excluded from Git.",
+    "timing": "Unique batch200 quality-token benchmark, multi-baseline builder and spatial configs. All retained, none executed."
+  },
+  "limitations": [
+    "Recovery identity only; package dependency closure and current process occupancy not proven.",
+    "No original source, credential, data, weight or timing file deleted, moved, ignored or overwritten.",
+    "Server spatial_single_video4_srcc06665.yaml differs from local same-path file; both retained.",
+    "No performance evaluation, training, acquisition or runtime cutover performed."
+  ]
+}
