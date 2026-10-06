@@ -1,0 +1,31 @@
+{
+  "reference_commit": "0c348155c8bf0b9196852b22aa854c7c463b93c7",
+  "scope": "Nonignored untracked regular files up to 2 MiB in the local Windows main workspace; includes reports and documents, not just source extensions",
+  "files_checked": 3806,
+  "files_over_2_mib_not_checked": 45,
+  "main_identity": {"exact_bytes": 170, "crlf_text_only": 98},
+  "additional_history_identity": {"exact_bytes": 1265, "crlf_text_only": 352},
+  "without_matching_git_bytes": 1921,
+  "local_recovery": {
+    "archive": ".codex_tmp/storage_git_backup_20261002/untracked_asset_records_20261006.zip",
+    "receipt": ".codex_tmp/storage_git_backup_20261002/untracked_asset_records_20261006.json",
+    "archive_sha256": "ec7fc89b4294ca2c89cd7589bc727317e4c2e105395cbcd7f65ff8ee22784777",
+    "members": 1921,
+    "original_bytes": 187338473,
+    "zip_crc_and_each_member_sha_verified": true,
+    "original_files_sha_rechecked": true
+  },
+  "originals_deleted_or_moved": false,
+  "ignore_rules_changed": false,
+  "external_upload": false,
+  "runtime_models_or_experiments_changed": false,
+  "source_tool_tests": {"passed": 16, "scope": "4 identity fixtures and 12 existing ignore-boundary tests; not model reproduction"},
+  "limitations": [
+    "Counts pin this audit, not an assertion that concurrent future files are classified",
+    "Existing Git identity is not an independent complete data backup or main adoption",
+    "Local ZIP recovery is not a remote disaster recovery copy",
+    "Large files, ignored files, runtime use and downstream dependencies remain outside the audit",
+    "No deletion, move, ignore or runtime cutover is approved by this recovery receipt",
+    "Overall migration and asset dependency closure remain incomplete"
+  ]
+}
