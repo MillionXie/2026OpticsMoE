@@ -22,6 +22,16 @@
 在包含上述历史提交的仓库中运行：
 
 ```bash
+python LightGenV2/scripts/build_baseline_handoff.py --inspect-history
+```
+
+这是只读检查，不生成包；缺少固定历史提交时明确失败，不以当前 main 替代。
+仅克隆 main 不保证包含这些非祖先历史提交。已有三端对象已保留在
+`refs/archive/historical-baseline-20261006/<任务目录>`，它们是恢复引用，不是开发分支。
+新机器可使用上面已校验的原始 ZIP；若必须重新导出，先恢复所需历史 Git 对象。
+实验室补齐三份缺失历史的增量 bundle 依赖原有对象，不是独立完整恢复包。
+
+```bash
 python LightGenV2/scripts/build_baseline_handoff.py --output LightGenV2/reports/20260915_baseline_methods/code_packages
 ```
 

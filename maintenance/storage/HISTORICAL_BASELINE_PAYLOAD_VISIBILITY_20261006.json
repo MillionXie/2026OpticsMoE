@@ -2,6 +2,19 @@
   "scope": "Git visibility only for immutable historical baseline release source payloads; all files and timing retained in place",
   "manifest_source_files": 738,
   "additional_origin_records": 6,
+  "historical_object_retention": {
+    "archive_ref_prefix": "refs/archive/historical-baseline-20261006/",
+    "hosts": ["local", "training_server", "laboratory_source_object_store"],
+    "laboratory_source_blobs_sha256_verified": 738,
+    "laboratory_missing_versions_restored": ["01_lgvq", "02_abo_image_text", "04_lsp"],
+    "incremental_bundle_bytes": 18186,
+    "incremental_bundle_sha256": "0de91536dbaf83ca9ad61cb219d3f7fdbb1a75cf99e7fbaeae48f728b041455f",
+    "incremental_bundle_prerequisite": "b1285f0e0ecbfa21b3acbf797d643f5d52aaf36e",
+    "standalone_full_history_bundle": false,
+    "runtime_checkout_changed": false,
+    "development_branches_changed": false,
+    "fresh_main_clone_contains_all_historical_objects": false
+  },
   "origin_records_match_zip_and_source_commit": true,
   "packages": [
     {
