@@ -10,6 +10,15 @@ ROOT = Path(__file__).resolve().parents[3]
 
 
 class ArtifactIgnoreTests(unittest.TestCase):
+    def test_private_machine_inventory_not_public_identity(self):
+        private = ['maintenance/storage/20261002_server_snapshots.json',
+                   'maintenance/storage/20261003_server_status.json']
+        public = ['maintenance/storage/HISTORICAL_BASELINE_PAYLOAD_VISIBILITY_20261006.json',
+                  'maintenance/storage/T02_PROTOCOL_ENTRY_IMPORT_20261003.json',
+                  'LightGenV2/tasks/t07_abo_image_retrieval/reports/report.json',
+                  'maintenance/storage/20261006_future_source_review.json']
+        self.assertEqual(self.ignored(private + public), set(private))
+
     def ignored(self, paths):
         result = subprocess.run(['git', '-C', str(ROOT), 'check-ignore', '--no-index', '-z', '--stdin'],
                                 input=('\0'.join(paths)+'\0').encode(), capture_output=True)

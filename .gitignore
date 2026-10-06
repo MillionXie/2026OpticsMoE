@@ -240,3 +240,9 @@ node_modules/
 /LightGenV2/reports/20260915_baseline_methods/code_packages/04_lsp/source/
 /LightGenV2/reports/20260915_baseline_methods/code_packages/05_salicon/source/
 /LightGenV2/reports/20260915_baseline_methods/code_packages/06_openmoji/source/
+
+# Private 2026-10-02/03 machine inventory and cleanup transaction receipts.
+# Keep original bytes locally; curated named identity/retention reports remain
+# versioned. This is not a blanket ignore for maintenance JSON or task metrics.
+/maintenance/storage/20261002_*.json
+/maintenance/storage/20261003_*.json
