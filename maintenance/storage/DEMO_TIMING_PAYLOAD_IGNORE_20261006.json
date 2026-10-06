@@ -1,0 +1,329 @@
+{
+  "schema": 1,
+  "scope": "80 individually verified existing historical timing/power payloads; visibility only",
+  "retention": "Original files remain in place. No deletion, relocation or changes to measurements.",
+  "source_configs_and_future_files": "Not ignored",
+  "package_integrity": "Full historical package not certified: superseded documents differ from original manifest; unresolved/moved and long-path members require separate review.",
+  "files": [
+    {
+      "path": "LightGenV2/reports/20260927_demo_energy_efficiency_a100/ours/01_lgvq_spatial/raw_200/all_per_call_timings.csv",
+      "sha256": "198e09f0fda9c39110d28675880712588d5694e017c95c56c582f710fe94b011"
+    },
+    {
+      "path": "LightGenV2/reports/20260927_demo_energy_efficiency_a100/ours/01_lgvq_spatial/raw_200/component_summary.csv",
+      "sha256": "2251816f7567458e04cc213d1d7e626278524db637538415b45792bc2d017401"
+    },
+    {
+      "path": "LightGenV2/reports/20260927_demo_energy_efficiency_a100/ours/01_lgvq_spatial/raw_200/paper_narrow_summary.csv",
+      "sha256": "ec8d798531241bae0b8ecc71077c0c27e82a4395ed36763308ae8c4ed8895e00"
+    },
+    {
+      "path": "LightGenV2/reports/20260927_demo_energy_efficiency_a100/ours/01_lgvq_spatial/raw_200/shared_components_report.json",
+      "sha256": "002a359f6b1bc9611ec3718c32fe3441eb5d0037d8f3851fda5815afc8e9abed"
+    },
+    {
+      "path": "LightGenV2/reports/20260927_demo_energy_efficiency_a100/ours/01_lgvq_temporal/raw_200/all_per_call_timings.csv",
+      "sha256": "198e09f0fda9c39110d28675880712588d5694e017c95c56c582f710fe94b011"
+    },
+    {
+      "path": "LightGenV2/reports/20260927_demo_energy_efficiency_a100/ours/01_lgvq_temporal/raw_200/component_summary.csv",
+      "sha256": "2251816f7567458e04cc213d1d7e626278524db637538415b45792bc2d017401"
+    },
+    {
+      "path": "LightGenV2/reports/20260927_demo_energy_efficiency_a100/ours/01_lgvq_temporal/raw_200/paper_narrow_summary.csv",
+      "sha256": "ec8d798531241bae0b8ecc71077c0c27e82a4395ed36763308ae8c4ed8895e00"
+    },
+    {
+      "path": "LightGenV2/reports/20260927_demo_energy_efficiency_a100/ours/01_lgvq_temporal/raw_200/shared_components_report.json",
+      "sha256": "002a359f6b1bc9611ec3718c32fe3441eb5d0037d8f3851fda5815afc8e9abed"
+    },
+    {
+      "path": "LightGenV2/reports/20260927_demo_energy_efficiency_a100/ours/02_abo_image_to_text/raw_200/all_per_call_timings.csv",
+      "sha256": "198e09f0fda9c39110d28675880712588d5694e017c95c56c582f710fe94b011"
+    },
+    {
+      "path": "LightGenV2/reports/20260927_demo_energy_efficiency_a100/ours/02_abo_image_to_text/raw_200/component_summary.csv",
+      "sha256": "2251816f7567458e04cc213d1d7e626278524db637538415b45792bc2d017401"
+    },
+    {
+      "path": "LightGenV2/reports/20260927_demo_energy_efficiency_a100/ours/02_abo_image_to_text/raw_200/paper_narrow_summary.csv",
+      "sha256": "ec8d798531241bae0b8ecc71077c0c27e82a4395ed36763308ae8c4ed8895e00"
+    },
+    {
+      "path": "LightGenV2/reports/20260927_demo_energy_efficiency_a100/ours/02_abo_image_to_text/raw_200/shared_components_report.json",
+      "sha256": "002a359f6b1bc9611ec3718c32fe3441eb5d0037d8f3851fda5815afc8e9abed"
+    },
+    {
+      "path": "LightGenV2/reports/20260927_demo_energy_efficiency_a100/ours/03_abo_image_to_image/raw_200/all_per_call_timings.csv",
+      "sha256": "198e09f0fda9c39110d28675880712588d5694e017c95c56c582f710fe94b011"
+    },
+    {
+      "path": "LightGenV2/reports/20260927_demo_energy_efficiency_a100/ours/03_abo_image_to_image/raw_200/component_summary.csv",
+      "sha256": "2251816f7567458e04cc213d1d7e626278524db637538415b45792bc2d017401"
+    },
+    {
+      "path": "LightGenV2/reports/20260927_demo_energy_efficiency_a100/ours/03_abo_image_to_image/raw_200/paper_narrow_summary.csv",
+      "sha256": "ec8d798531241bae0b8ecc71077c0c27e82a4395ed36763308ae8c4ed8895e00"
+    },
+    {
+      "path": "LightGenV2/reports/20260927_demo_energy_efficiency_a100/ours/03_abo_image_to_image/raw_200/shared_components_report.json",
+      "sha256": "002a359f6b1bc9611ec3718c32fe3441eb5d0037d8f3851fda5815afc8e9abed"
+    },
+    {
+      "path": "LightGenV2/reports/20260927_demo_energy_efficiency_a100/ours/05_lsp/raw_200/all_per_call_timings.csv",
+      "sha256": "198e09f0fda9c39110d28675880712588d5694e017c95c56c582f710fe94b011"
+    },
+    {
+      "path": "LightGenV2/reports/20260927_demo_energy_efficiency_a100/ours/05_lsp/raw_200/component_summary.csv",
+      "sha256": "2251816f7567458e04cc213d1d7e626278524db637538415b45792bc2d017401"
+    },
+    {
+      "path": "LightGenV2/reports/20260927_demo_energy_efficiency_a100/ours/05_lsp/raw_200/paper_narrow_summary.csv",
+      "sha256": "ec8d798531241bae0b8ecc71077c0c27e82a4395ed36763308ae8c4ed8895e00"
+    },
+    {
+      "path": "LightGenV2/reports/20260927_demo_energy_efficiency_a100/ours/05_lsp/raw_200/shared_components_report.json",
+      "sha256": "002a359f6b1bc9611ec3718c32fe3441eb5d0037d8f3851fda5815afc8e9abed"
+    },
+    {
+      "path": "LightGenV2/reports/20260927_demo_energy_efficiency_a100/ours/06_salicon/raw_200/all_per_call_timings.csv",
+      "sha256": "198e09f0fda9c39110d28675880712588d5694e017c95c56c582f710fe94b011"
+    },
+    {
+      "path": "LightGenV2/reports/20260927_demo_energy_efficiency_a100/ours/06_salicon/raw_200/component_summary.csv",
+      "sha256": "2251816f7567458e04cc213d1d7e626278524db637538415b45792bc2d017401"
+    },
+    {
+      "path": "LightGenV2/reports/20260927_demo_energy_efficiency_a100/ours/06_salicon/raw_200/paper_narrow_summary.csv",
+      "sha256": "ec8d798531241bae0b8ecc71077c0c27e82a4395ed36763308ae8c4ed8895e00"
+    },
+    {
+      "path": "LightGenV2/reports/20260927_demo_energy_efficiency_a100/ours/06_salicon/raw_200/shared_components_report.json",
+      "sha256": "002a359f6b1bc9611ec3718c32fe3441eb5d0037d8f3851fda5815afc8e9abed"
+    },
+    {
+      "path": "LightGenV2/reports/20260927_demo_energy_efficiency_a100/ours/07_openmoji_new_layout/raw_200/all_per_call_timings.csv",
+      "sha256": "198e09f0fda9c39110d28675880712588d5694e017c95c56c582f710fe94b011"
+    },
+    {
+      "path": "LightGenV2/reports/20260927_demo_energy_efficiency_a100/ours/07_openmoji_new_layout/raw_200/component_summary.csv",
+      "sha256": "2251816f7567458e04cc213d1d7e626278524db637538415b45792bc2d017401"
+    },
+    {
+      "path": "LightGenV2/reports/20260927_demo_energy_efficiency_a100/ours/07_openmoji_new_layout/raw_200/paper_narrow_summary.csv",
+      "sha256": "ec8d798531241bae0b8ecc71077c0c27e82a4395ed36763308ae8c4ed8895e00"
+    },
+    {
+      "path": "LightGenV2/reports/20260927_demo_energy_efficiency_a100/ours/07_openmoji_new_layout/raw_200/shared_components_report.json",
+      "sha256": "002a359f6b1bc9611ec3718c32fe3441eb5d0037d8f3851fda5815afc8e9abed"
+    },
+    {
+      "path": "LightGenV2/reports/20260927_demo_energy_efficiency_a100/raw_remote/audit_rejected_wrong_gpu0_power/01_lgvq_spatial/resolution448/frames4/scheme2_five_quality_tokens/per_video_predictions_and_timing.csv",
+      "sha256": "36f254f01602bc903d233001891265a37ffc4c51834d215be1d69b4fc37d13e9"
+    },
+    {
+      "path": "LightGenV2/reports/20260927_demo_energy_efficiency_a100/raw_remote/audit_rejected_wrong_gpu0_power/01_lgvq_spatial/resolution448/frames4/scheme2_five_quality_tokens/power_samples.csv",
+      "sha256": "cd86e69579d60941967d9c850de18841925bc0e20ee31e4f5fe47b71973832d7"
+    },
+    {
+      "path": "LightGenV2/reports/20260927_demo_energy_efficiency_a100/raw_remote/audit_rejected_wrong_gpu0_power/01_lgvq_spatial/resolution448/frames4/scheme2_five_quality_tokens/report.json",
+      "sha256": "cd2d8fd8ad14812f22a19fe1b30a7f08f4a5b0ce9beac7ba861de8a34061a79f"
+    },
+    {
+      "path": "LightGenV2/reports/20260927_demo_energy_efficiency_a100/raw_remote/audit_rejected_wrong_gpu0_power/01_lgvq_temporal/resolution448/frames4/scheme2_five_quality_tokens/per_video_predictions_and_timing.csv",
+      "sha256": "9140c0ff008ab29f3a4a9874bfbb26aec3759923e4ae147795151666993dbc4f"
+    },
+    {
+      "path": "LightGenV2/reports/20260927_demo_energy_efficiency_a100/raw_remote/audit_rejected_wrong_gpu0_power/01_lgvq_temporal/resolution448/frames4/scheme2_five_quality_tokens/power_samples.csv",
+      "sha256": "f8cdca9df8e4ece985b71b7649d38d0268e9ab72b3999f06f15f7709d7816c07"
+    },
+    {
+      "path": "LightGenV2/reports/20260927_demo_energy_efficiency_a100/raw_remote/audit_rejected_wrong_gpu0_power/01_lgvq_temporal/resolution448/frames4/scheme2_five_quality_tokens/report.json",
+      "sha256": "b1acdbb70c4d073b9684e47e95f1b9c288613cdcbe9b62e469d9e20bdd718db7"
+    },
+    {
+      "path": "LightGenV2/reports/20260927_demo_energy_efficiency_a100/raw_remote/baseline/01_lgvq_spatial/resolution448/frames4/scheme2_five_quality_tokens/per_video_predictions_and_timing.csv",
+      "sha256": "59e89e07eb97409f5a08f1a34929c1cec0e026db3f345df551f5ef5eb220c9f8"
+    },
+    {
+      "path": "LightGenV2/reports/20260927_demo_energy_efficiency_a100/raw_remote/baseline/01_lgvq_spatial/resolution448/frames4/scheme2_five_quality_tokens/power_samples.csv",
+      "sha256": "66f6fd0690f6d748cbd8c2905345f53bdb3268a2de29bb9fddb863f37c835a95"
+    },
+    {
+      "path": "LightGenV2/reports/20260927_demo_energy_efficiency_a100/raw_remote/baseline/01_lgvq_spatial/resolution448/frames4/scheme2_five_quality_tokens/report.json",
+      "sha256": "74be37edbada17e693de90e25f9ca110392789e32c701057683c27cf60ab39c4"
+    },
+    {
+      "path": "LightGenV2/reports/20260927_demo_energy_efficiency_a100/raw_remote/baseline/01_lgvq_temporal/resolution448/frames4/scheme2_five_quality_tokens/per_video_predictions_and_timing.csv",
+      "sha256": "de623316fc5a6d81ac39a59ec031b9c212246df6c0415acf99fa89718e2d4480"
+    },
+    {
+      "path": "LightGenV2/reports/20260927_demo_energy_efficiency_a100/raw_remote/baseline/01_lgvq_temporal/resolution448/frames4/scheme2_five_quality_tokens/power_samples.csv",
+      "sha256": "4acecf7ca19bc4ac9c3de3d823a950f0a43dfa413b25f775402d1ddfd2c6fb9b"
+    },
+    {
+      "path": "LightGenV2/reports/20260927_demo_energy_efficiency_a100/raw_remote/baseline/01_lgvq_temporal/resolution448/frames4/scheme2_five_quality_tokens/report.json",
+      "sha256": "870dbd02bb8ebabf2af50ed311b8ddd5d03d4070d82aa46ecc39fe3a61545e04"
+    },
+    {
+      "path": "LightGenV2/reports/20260927_demo_energy_efficiency_a100/raw_remote/baseline/02_abo_image_to_text/power_utilization_samples.csv",
+      "sha256": "95c886bcd0d43a80d896e508c2dd1314db3fa72e3ecf07d74d560e164696802d"
+    },
+    {
+      "path": "LightGenV2/reports/20260927_demo_energy_efficiency_a100/raw_remote/baseline/02_abo_image_to_text/process_audit.json",
+      "sha256": "4c388a56423a945086e9c9634a419a0707d7a7f16efa8770043f3880f74c4837"
+    },
+    {
+      "path": "LightGenV2/reports/20260927_demo_energy_efficiency_a100/raw_remote/baseline/02_abo_image_to_text/report.json",
+      "sha256": "aa1aa56c35ccfacf3c678aa854aba42c38bc11b38f7a4e163be0f893bc124057"
+    },
+    {
+      "path": "LightGenV2/reports/20260927_demo_energy_efficiency_a100/raw_remote/baseline/02_abo_image_to_text/timing_per_sample.csv",
+      "sha256": "daedf8aa933c54a32152002856733963885eaf6758a42d204930bdd06a15c374"
+    },
+    {
+      "path": "LightGenV2/reports/20260927_demo_energy_efficiency_a100/raw_remote/baseline/03_abo_image_to_image/power_utilization_samples.csv",
+      "sha256": "32424cc1066ab3aa8203ca99a6a9c68c85ea66922db971d0780c955fef3b7864"
+    },
+    {
+      "path": "LightGenV2/reports/20260927_demo_energy_efficiency_a100/raw_remote/baseline/03_abo_image_to_image/process_audit.json",
+      "sha256": "38473c8c184c6349ac8b5f74d5a18c91fb7680d73785bacdcc8fc3667c493023"
+    },
+    {
+      "path": "LightGenV2/reports/20260927_demo_energy_efficiency_a100/raw_remote/baseline/03_abo_image_to_image/report.json",
+      "sha256": "d30508aaac2f67da2ddb2c75d6a25dd19dd70dc32d1dff50859b304ff71c31d8"
+    },
+    {
+      "path": "LightGenV2/reports/20260927_demo_energy_efficiency_a100/raw_remote/baseline/03_abo_image_to_image/timing_per_sample.csv",
+      "sha256": "0524bfc2eb742b54381097389abc676837cd140fa70c29ed146c9e050a0f09b1"
+    },
+    {
+      "path": "LightGenV2/reports/20260927_demo_energy_efficiency_a100/raw_remote/baseline/05_lsp/power_utilization_samples.csv",
+      "sha256": "366d79bcfbdc6ac799a98629117541dd07dd09f3a222338893d002a22a3b0a3f"
+    },
+    {
+      "path": "LightGenV2/reports/20260927_demo_energy_efficiency_a100/raw_remote/baseline/05_lsp/process_audit.json",
+      "sha256": "57c1d9528c6f91d05ca85402eb68a18523eb3c664b93601bae0beee363c22e02"
+    },
+    {
+      "path": "LightGenV2/reports/20260927_demo_energy_efficiency_a100/raw_remote/baseline/05_lsp/report.json",
+      "sha256": "d19763f61a6af7b26c79ebaad6d02a64325b02e2dd9c644abebfe7242bf9df85"
+    },
+    {
+      "path": "LightGenV2/reports/20260927_demo_energy_efficiency_a100/raw_remote/baseline/05_lsp/timing_per_sample.csv",
+      "sha256": "16a687173608f8893522440f4bf0ebcddf2775787ec927a35581c000d8de1d6a"
+    },
+    {
+      "path": "LightGenV2/reports/20260927_demo_energy_efficiency_a100/raw_remote/baseline/06_salicon/power_utilization_samples.csv",
+      "sha256": "73aaccbdfb4ade0d2043f755e85fea33da4d8ff872a0fe8eab41ba60ccd1b27e"
+    },
+    {
+      "path": "LightGenV2/reports/20260927_demo_energy_efficiency_a100/raw_remote/baseline/06_salicon/process_audit.json",
+      "sha256": "fcfb31e6c4a79a8b62fe5cec2a322ee0e113dcb28cdd301451b43d2634269590"
+    },
+    {
+      "path": "LightGenV2/reports/20260927_demo_energy_efficiency_a100/raw_remote/baseline/06_salicon/report.json",
+      "sha256": "cea31f33886641713bf38d25fec3609da6ff4c5d11fc77337f8e1bb89b6f2fdf"
+    },
+    {
+      "path": "LightGenV2/reports/20260927_demo_energy_efficiency_a100/raw_remote/baseline/06_salicon/timing_per_sample.csv",
+      "sha256": "e2fa0e0ab8f1464e4fb5e406d6c49f1cc388eeee5d2d43f61cab16dd5478c679"
+    },
+    {
+      "path": "LightGenV2/reports/20260927_demo_energy_efficiency_a100/raw_remote/baseline/07_openmoji_new_layout/power_utilization_samples.csv",
+      "sha256": "677f816457b8157c94478728c41b9b5e480d9b495a08cf50be253d1b6c04d7f6"
+    },
+    {
+      "path": "LightGenV2/reports/20260927_demo_energy_efficiency_a100/raw_remote/baseline/07_openmoji_new_layout/process_audit.json",
+      "sha256": "be4a6edd2ab81432c890ef0eaae97dab58e60c05da92669fb5cccaee0030a6f5"
+    },
+    {
+      "path": "LightGenV2/reports/20260927_demo_energy_efficiency_a100/raw_remote/baseline/07_openmoji_new_layout/report.json",
+      "sha256": "bc208d5f9577b5c299a512f631c945de5e5addfb30c9f4731b19a5d481fdf855"
+    },
+    {
+      "path": "LightGenV2/reports/20260927_demo_energy_efficiency_a100/raw_remote/baseline/07_openmoji_new_layout/timing_per_sample.csv",
+      "sha256": "ea26ea064a8e2b6926f8458ec024de9066b3805889158d303b1d560897b2c0c1"
+    },
+    {
+      "path": "LightGenV2/reports/20260927_demo_energy_efficiency_a100/raw_remote/baseline_ops/abo_image_image.json",
+      "sha256": "44e5eb444ce7686b44c49425a911d37a3b2c99a05cef3d0d6a9efb867c5c4610"
+    },
+    {
+      "path": "LightGenV2/reports/20260927_demo_energy_efficiency_a100/raw_remote/baseline_ops/abo_image_text.json",
+      "sha256": "d7490f410387e05c947d77212af77aaab42df89943fc80ff388606b0acc5224d"
+    },
+    {
+      "path": "LightGenV2/reports/20260927_demo_energy_efficiency_a100/raw_remote/baseline_ops/lsp.json",
+      "sha256": "06c0811f98289bfac3a6e3ff6a986bcce80c0c9a1eccf71e8bc6de68bfa66c4f"
+    },
+    {
+      "path": "LightGenV2/reports/20260927_demo_energy_efficiency_a100/raw_remote/baseline_ops/openmoji.json",
+      "sha256": "941699d1db59bb4b3ac2f154108c06de9838b188f06df70b6023117c8149f3cc"
+    },
+    {
+      "path": "LightGenV2/reports/20260927_demo_energy_efficiency_a100/raw_remote/baseline_ops/salicon.json",
+      "sha256": "445051cdb648e77d474b4be4e4381ac3fd582c443ac7ccfc53af4aa491f5bbee"
+    },
+    {
+      "path": "LightGenV2/reports/20260927_demo_energy_efficiency_a100/raw_remote/baseline_ops/lgvq_spatial/operation_count_and_topsw.json",
+      "sha256": "3bf11b8a02108319a818d2b2bfd5aeea30bff3b89b0bd1d821435e8a52ec46e4"
+    },
+    {
+      "path": "LightGenV2/reports/20260927_demo_energy_efficiency_a100/raw_remote/baseline_ops/lgvq_spatial/ours_electronic_module_macs.csv",
+      "sha256": "da938e7e51228d4f9d90ef3298b64507a782aaf2afa17925b94ba95a35ee0ec6"
+    },
+    {
+      "path": "LightGenV2/reports/20260927_demo_energy_efficiency_a100/raw_remote/baseline_ops/lgvq_spatial/qwen_module_macs.csv",
+      "sha256": "cbdad1cb287138c12b29ff0330a99fece9834541cbf3cbb2936efd082b959de0"
+    },
+    {
+      "path": "LightGenV2/reports/20260927_demo_energy_efficiency_a100/raw_remote/baseline_ops/lgvq_temporal/operation_count_and_topsw.json",
+      "sha256": "369a18bd552127b6c7d1bbe84e713c40431b74958e31629d1db26abf15c690ba"
+    },
+    {
+      "path": "LightGenV2/reports/20260927_demo_energy_efficiency_a100/raw_remote/baseline_ops/lgvq_temporal/ours_electronic_module_macs.csv",
+      "sha256": "da938e7e51228d4f9d90ef3298b64507a782aaf2afa17925b94ba95a35ee0ec6"
+    },
+    {
+      "path": "LightGenV2/reports/20260927_demo_energy_efficiency_a100/raw_remote/baseline_ops/lgvq_temporal/qwen_module_macs.csv",
+      "sha256": "cbdad1cb287138c12b29ff0330a99fece9834541cbf3cbb2936efd082b959de0"
+    },
+    {
+      "path": "LightGenV2/reports/20260927_demo_energy_efficiency_a100/raw_remote/ours/components_v3/component_summary.csv",
+      "sha256": "2774fe2dc5e8e5a511b1a3749ba960bb1b1cb8bdb481af6b6b29fb277b4c6a6a"
+    },
+    {
+      "path": "LightGenV2/reports/20260927_demo_energy_efficiency_a100/raw_remote/ours/components_v3/per_call_timings.csv",
+      "sha256": "470ccec59a9ad008c2bac59d8368a9d25b8af16729314844e3413d64751b372c"
+    },
+    {
+      "path": "LightGenV2/reports/20260927_demo_energy_efficiency_a100/raw_remote/ours/components_v3/report.json",
+      "sha256": "b7d33fc189c94922f757abad037ee57102f099db49eb34c89c159a3847476919"
+    },
+    {
+      "path": "LightGenV2/reports/20260927_demo_energy_efficiency_a100/raw_remote/ours/components_v3/source_and_artifact_sha256.csv",
+      "sha256": "5e04e52e7af088ea849e6cd84a26a232c27b21827803b22498bc3bd9dd68da65"
+    },
+    {
+      "path": "LightGenV2/reports/20260927_demo_energy_efficiency_a100/raw_remote/ours/narrow_200_no_warmup/all_per_call_timings.csv",
+      "sha256": "198e09f0fda9c39110d28675880712588d5694e017c95c56c582f710fe94b011"
+    },
+    {
+      "path": "LightGenV2/reports/20260927_demo_energy_efficiency_a100/raw_remote/ours/narrow_200_no_warmup/component_summary.csv",
+      "sha256": "2251816f7567458e04cc213d1d7e626278524db637538415b45792bc2d017401"
+    },
+    {
+      "path": "LightGenV2/reports/20260927_demo_energy_efficiency_a100/raw_remote/ours/narrow_200_no_warmup/paper_narrow_summary.csv",
+      "sha256": "ec8d798531241bae0b8ecc71077c0c27e82a4395ed36763308ae8c4ed8895e00"
+    },
+    {
+      "path": "LightGenV2/reports/20260927_demo_energy_efficiency_a100/raw_remote/ours/narrow_200_no_warmup/report.json",
+      "sha256": "002a359f6b1bc9611ec3718c32fe3441eb5d0037d8f3851fda5815afc8e9abed"
+    },
+    {
+      "path": "LightGenV2/reports/20260927_demo_energy_efficiency_a100/raw_remote/ours_ops/operation_counts.json",
+      "sha256": "fb772ae674311240e56b5760617f6302f3ab3ef85cdd6f4fd58ccf8b026d45b7"
+    }
+  ]
+}

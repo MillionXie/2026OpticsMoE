@@ -10,6 +10,13 @@ ROOT = Path(__file__).resolve().parents[3]
 
 
 class ArtifactIgnoreTests(unittest.TestCase):
+    def test_demo_payload_ignore_keeps_source_and_future_evidence_visible(self):
+        prefix = 'LightGenV2/reports/20260927_demo_energy_efficiency_a100/'
+        private = [prefix + 'raw_remote/ours/narrow_200_no_warmup/all_per_call_timings.csv']
+        visible = [prefix + 'build_summary.py', prefix + 'calculated_summary.json',
+                   prefix + 'ours/01_lgvq/source_snapshot/tasks/t06_video_quality_assessment/configs/spatial_hardware_readout_tuning.json',
+                   prefix + 'raw_remote/future_run/report.json']
+        self.assertEqual(self.ignored(private + visible), set(private))
     def test_named_historical_timing_payload_not_code_or_future_evidence(self):
         private = ['LightGenV2/reports/20260917_redbox_timing_energy_audit/evidence/ours_narrow_clean_final/report.json']
         visible = ['LightGenV2/reports/20260917_redbox_timing_energy_audit/evidence/ours_narrow_clean_final/consolidate_narrow_optical_power.py',
