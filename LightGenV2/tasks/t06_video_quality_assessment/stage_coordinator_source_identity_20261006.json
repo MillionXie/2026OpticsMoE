@@ -37,5 +37,17 @@
     "formal_assets_or_generated_capture_script_executed": false,
     "gpu_or_sdk_used": false
   },
+  "capture_dependency_validation": {
+    "tested_main": "cb9e00068dc381aed8290e63aaea98454954237a",
+    "server_existing_xml_cpu_tests_passed": 14,
+    "local_capture_precondition_tests_passed": 4,
+    "capture_or_sdk_executed": false,
+    "static_git_tree_audit": {
+      "task_python_sources": 484,
+      "internal_from_import_symbols_checked": 2296,
+      "missing_static_bindings": 0,
+      "scope": "Only explicit named from-import bindings to tracked internal Python modules; conditional bindings overapproximated; no runtime imports or external dependency validation"
+    }
+  },
   "runtime_or_hardware_validation_proven": false
 }
