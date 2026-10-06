@@ -85,5 +85,8 @@ TRAIN 微调、VAL 选模，保留干净教师约束和干净/扰动双前向。
 
 原17M实拍权重可从主线只读核验：
 `python -m LightGenV2.tasks.t12_text_to_image.verify_formal_checkpoint --checkpoint <原5b4f权重路径>`。
-该入口仅CPU检查SHA、原构建器严格加载及参数数目，不读取数据/调用SDK；不接受eeec适配权重，
-也不重新测精度。配置与光学实现仍复用T01及历史后端，相关依赖未解除前不能删除。
+该入口默认仅接受原5b4f；核验适配eeec时必须显式加`--variant decoder-adapted`。
+2026-10-07实验室原eeec文件已用发布提交`3e414950bcabcaf7edfefa65f831645170201b12`
+的构建器在CPU严格加载，参数17,026,642、文件SHA前后不变；不读取数据或调用SDK。
+这不是重新测精度，也不是实验室入口切换。配置与光学实现仍复用T01及历史后端，
+相关依赖未解除前不能删除。
