@@ -106,6 +106,11 @@ image/title键顺序、CSV标签及product映射逐项相同；以原seed2026092
 `maintenance/storage/T08_READOUT_CACHE_BINDING_20261006.json`。
 未重算排名、加载模型或改权重；这些检查证明缓存样本绑定，不证明已从原CCD
 数值重建出同一特征，因此完整CCD→缓存重建仍列为未完成项。
+上述样本/张量身份可重复只读核验：
+`python maintenance/git_safety/check_t08_readout_cache.py --data-root <原easy100目录>
+--train-cache <原train_readout_features.pt> --test-cache <原test_readout_features.pt>`。
+检查在反序列化前核对三份CSV及两份缓存SHA，再检查原选择seed、顺序、标签、384维
+张量内容与零交叉；只用CPU，不加载模型、不排序、不写结果，也不证明CCD数值重建。
 更长微调对照、旧相位/CCD/预测和所有测速文件原位保留；另有 .88 仿真的计时
 PT `8a96132d...`，不是这份实拍主体，不拼接其精度和时间。本项目历史 TEST
 曾用于开发，不能把10轮训练内未用TEST选模说成全项目独立泛化验证。
