@@ -1,0 +1,290 @@
+{
+  "schema": 1,
+  "groups": [
+    {
+      "manifest": "LightGenV2/reports/20260914_latest_optical_electronics_a100_FINAL/SHA256SUMS.txt",
+      "manifest_original_windows_sha256": "6e103a52e02c27a975ff27d14b16b2a5bff311a21a32c55e3a04414e9c1026af",
+      "manifest_entries_verified": 31,
+      "errors": [],
+      "files": [
+        {
+          "path": "LightGenV2/reports/20260914_latest_optical_electronics_a100_FINAL/all_per_call_timings.csv",
+          "sha256": "4dc400806e18585347c348f58e80a9233b70463723a5735315fdca752f54ccc1",
+          "bytes": 18681702
+        },
+        {
+          "path": "LightGenV2/reports/20260914_latest_optical_electronics_a100_FINAL/consolidated_report.json",
+          "sha256": "3d25b97679ee108f4e80bee3df9f79301ff7fb7b02ccf3c3933443b43487a41a",
+          "bytes": 29177
+        },
+        {
+          "path": "LightGenV2/reports/20260914_latest_optical_electronics_a100_FINAL/paper_summary.csv",
+          "sha256": "b906fbc32a4b1504a7943ee5cdc1ffd2ea01adf35f5763d58347686c44f0ac56",
+          "bytes": 2142
+        },
+        {
+          "path": "LightGenV2/reports/20260914_latest_optical_electronics_a100_FINAL/pooled_component_summary.csv",
+          "sha256": "12e01ee5fb01e8d8aa48d66ee91027810b0412e0382adfd408099e1fd8a1874f",
+          "bytes": 16921
+        },
+        {
+          "path": "LightGenV2/reports/20260914_latest_optical_electronics_a100_FINAL/power_samples.csv",
+          "sha256": "bebfdf0ff7751b8d7ad6de73d95b6cc94e78792c5905497871967943b1874332",
+          "bytes": 1176465
+        },
+        {
+          "path": "LightGenV2/reports/20260914_latest_optical_electronics_a100_FINAL/source_runs/latency_trial_1/component_summary.csv",
+          "sha256": "87aaf3030c2ec32fc001107cc80e647aeafa972a5b337913b8251a0115bf1ede",
+          "bytes": 13418
+        },
+        {
+          "path": "LightGenV2/reports/20260914_latest_optical_electronics_a100_FINAL/source_runs/latency_trial_1/report.json",
+          "sha256": "316cea9149c58d6c538fa47a97fa4e89a827b746fda217d946c558efd6b6ee33",
+          "bytes": 96571
+        },
+        {
+          "path": "LightGenV2/reports/20260914_latest_optical_electronics_a100_FINAL/source_runs/latency_trial_2/component_summary.csv",
+          "sha256": "588f654ea73c40eb2f173ac0f580910f09130bd4be59d9b6a984177f08795442",
+          "bytes": 13396
+        },
+        {
+          "path": "LightGenV2/reports/20260914_latest_optical_electronics_a100_FINAL/source_runs/latency_trial_2/report.json",
+          "sha256": "71d96ef839bd8a38605fc02b1e30a79a9e4f043eebb5a2a796d96eb7be869e8f",
+          "bytes": 96790
+        },
+        {
+          "path": "LightGenV2/reports/20260914_latest_optical_electronics_a100_FINAL/source_runs/power_trial/component_summary.csv",
+          "sha256": "cad6d728afa524958aa5704f012b5c68d6e15bb7f68e6917d8a8534f57338746",
+          "bytes": 13380
+        },
+        {
+          "path": "LightGenV2/reports/20260914_latest_optical_electronics_a100_FINAL/source_runs/power_trial/report.json",
+          "sha256": "244e81da982650d3154f0dd3e00cf26970778a237b3fc9c866e4474b32817c70",
+          "bytes": 105366
+        }
+      ]
+    },
+    {
+      "manifest": "LightGenV2/reports/20260914_latest_optical_electronics_a100_NARROW_CLEAN_FINAL/SHA256SUMS.txt",
+      "manifest_original_windows_sha256": "9201087cce9b47e024c4f1a4585ca9848bb1c1996c119406358778ac1769dbdc",
+      "manifest_entries_verified": 10,
+      "errors": [],
+      "files": [
+        {
+          "path": "LightGenV2/reports/20260914_latest_optical_electronics_a100_NARROW_CLEAN_FINAL/all_per_call_timings.csv",
+          "sha256": "0f36b5148ce5425f523d5c742222c16cbd0fed94c2f0e79e815651355ba4f871",
+          "bytes": 24811373
+        },
+        {
+          "path": "LightGenV2/reports/20260914_latest_optical_electronics_a100_NARROW_CLEAN_FINAL/component_energy.csv",
+          "sha256": "69268b07b6dfee9aebe554827251e05df69286d06869ab92968c24ae9bcadb86",
+          "bytes": 4895
+        },
+        {
+          "path": "LightGenV2/reports/20260914_latest_optical_electronics_a100_NARROW_CLEAN_FINAL/latency_component_summary.csv",
+          "sha256": "1393f7880102366bc30b17aa877a3d76cc2993f8f6fc9f9ff288c83a11ae87ec",
+          "bytes": 14906
+        },
+        {
+          "path": "LightGenV2/reports/20260914_latest_optical_electronics_a100_NARROW_CLEAN_FINAL/paper_energy_summary.csv",
+          "sha256": "75318e0f757ff4eae892396e2eca8a7842a842a4a48842b2bb0bcd3c50d13783",
+          "bytes": 4365
+        },
+        {
+          "path": "LightGenV2/reports/20260914_latest_optical_electronics_a100_NARROW_CLEAN_FINAL/power_samples.csv",
+          "sha256": "2069551bd1c1ef84c9be32b3cac65cd21984f28891f7c5d164ea2042f462eea3",
+          "bytes": 2714979
+        },
+        {
+          "path": "LightGenV2/reports/20260914_latest_optical_electronics_a100_NARROW_CLEAN_FINAL/power_summary.json",
+          "sha256": "0434875f1066570a6813eb07fa6f6efc744b1746903da78fd64c9409bf3f4a90",
+          "bytes": 20686
+        },
+        {
+          "path": "LightGenV2/reports/20260914_latest_optical_electronics_a100_NARROW_CLEAN_FINAL/report.json",
+          "sha256": "664a6139ee8e8d55d397ed07234a1aca47c0111534b35c869f0bca037a843809",
+          "bytes": 13698
+        }
+      ]
+    },
+    {
+      "manifest": "LightGenV2/reports/20260914_latest_optical_electronics_a100_NARROW_FINAL/SHA256SUMS.txt",
+      "manifest_original_windows_sha256": "6fc19246102389cad2945367cf2438114626eaa8a269c7e1bfe9defff50390b2",
+      "manifest_entries_verified": 10,
+      "errors": [],
+      "files": [
+        {
+          "path": "LightGenV2/reports/20260914_latest_optical_electronics_a100_NARROW_FINAL/all_per_call_timings.csv",
+          "sha256": "038531f0da158fc6b68bf734ce1c6f6cd89422875ec3dd3c73b418469367c94b",
+          "bytes": 24816869
+        },
+        {
+          "path": "LightGenV2/reports/20260914_latest_optical_electronics_a100_NARROW_FINAL/component_energy.csv",
+          "sha256": "d0fad4ae0a671810b50c0673546a3036addd65c312dd359416c01cf37ab20bb6",
+          "bytes": 4897
+        },
+        {
+          "path": "LightGenV2/reports/20260914_latest_optical_electronics_a100_NARROW_FINAL/latency_component_summary.csv",
+          "sha256": "6fa34199506c8f88e8d181062fed040ef142d6f3839c33252811028ac99cff63",
+          "bytes": 14906
+        },
+        {
+          "path": "LightGenV2/reports/20260914_latest_optical_electronics_a100_NARROW_FINAL/paper_energy_summary.csv",
+          "sha256": "ae01d4044318e203d13386ba886c6efa19887b0de274db903284914713e8936b",
+          "bytes": 3996
+        },
+        {
+          "path": "LightGenV2/reports/20260914_latest_optical_electronics_a100_NARROW_FINAL/power_samples.csv",
+          "sha256": "c60c8f9cdc6b2920e2657c61a7d1a4702073fc65b4ac3fb3910794244a088d6b",
+          "bytes": 2307902
+        },
+        {
+          "path": "LightGenV2/reports/20260914_latest_optical_electronics_a100_NARROW_FINAL/power_summary.json",
+          "sha256": "dfa46b4002d5528ade05a86a3bd9fd07d3379ffcc46ac74d2f87ea8a5b3a2642",
+          "bytes": 9048
+        },
+        {
+          "path": "LightGenV2/reports/20260914_latest_optical_electronics_a100_NARROW_FINAL/report.json",
+          "sha256": "7f5f7b2acd1ab0463d65dd13e61e9f32fde89d84abf677a61d2f09f289ecb439",
+          "bytes": 12487
+        }
+      ]
+    },
+    {
+      "manifest": "LightGenV2/reports/20260914_latest_optical_electronics_a100_NARROW_POWER_v1/SHA256SUMS.txt",
+      "manifest_original_windows_sha256": "170121b2d516dbeb560ac2548d9c505a2510af277693b191782dd749f059a6eb",
+      "manifest_entries_verified": 14,
+      "errors": [],
+      "files": [
+        {
+          "path": "LightGenV2/reports/20260914_latest_optical_electronics_a100_NARROW_POWER_v1/all_per_call_timings.csv",
+          "sha256": "46fbaf8624eaa317c8b0868227ad2723fe816b678347384edea0a876c321f500",
+          "bytes": 12351570
+        },
+        {
+          "path": "LightGenV2/reports/20260914_latest_optical_electronics_a100_NARROW_POWER_v1/component_summary.csv",
+          "sha256": "1f6e162badb457cd7baa5f09c4dba0b20a88bc2c82b1ba443f70f2e2c069ab00",
+          "bytes": 14796
+        },
+        {
+          "path": "LightGenV2/reports/20260914_latest_optical_electronics_a100_NARROW_POWER_v1/paper_narrow_summary.csv",
+          "sha256": "e588c021af2718d3f96a331eb9ddddc5db5979526df679ce4213198e2105aef5",
+          "bytes": 1241
+        },
+        {
+          "path": "LightGenV2/reports/20260914_latest_optical_electronics_a100_NARROW_POWER_v1/power_samples.csv",
+          "sha256": "c60c8f9cdc6b2920e2657c61a7d1a4702073fc65b4ac3fb3910794244a088d6b",
+          "bytes": 2307902
+        },
+        {
+          "path": "LightGenV2/reports/20260914_latest_optical_electronics_a100_NARROW_POWER_v1/power_summary.json",
+          "sha256": "dfa46b4002d5528ade05a86a3bd9fd07d3379ffcc46ac74d2f87ea8a5b3a2642",
+          "bytes": 9048
+        },
+        {
+          "path": "LightGenV2/reports/20260914_latest_optical_electronics_a100_NARROW_POWER_v1/report.json",
+          "sha256": "3afebf773e1d2d466aaa3613202dd7eadfbfa5d6bfdc284731f8f055a2d18660",
+          "bytes": 16562
+        }
+      ]
+    },
+    {
+      "manifest": "LightGenV2/reports/20260914_latest_optical_electronics_a100_NARROW_POWER_v2_TELEMETRY/SHA256SUMS.txt",
+      "manifest_original_windows_sha256": "52fab28fec55caed14dee6c3011907c9393b0f1ec0b5cffb9aee96225d39e8da",
+      "manifest_entries_verified": 13,
+      "errors": [],
+      "files": [
+        {
+          "path": "LightGenV2/reports/20260914_latest_optical_electronics_a100_NARROW_POWER_v2_TELEMETRY/all_per_call_timings.csv",
+          "sha256": "68450a6d73daa7cf23faccd1c1f8a2f52e65e5ba0526273aa965e463217cb92f",
+          "bytes": 12350786
+        },
+        {
+          "path": "LightGenV2/reports/20260914_latest_optical_electronics_a100_NARROW_POWER_v2_TELEMETRY/component_summary.csv",
+          "sha256": "c3c8645b017b8b7bd8fc6e8612ad18bf7b6fc4bc00f5d62b8d90b09afac3605d",
+          "bytes": 14773
+        },
+        {
+          "path": "LightGenV2/reports/20260914_latest_optical_electronics_a100_NARROW_POWER_v2_TELEMETRY/paper_narrow_summary.csv",
+          "sha256": "b3cf7735636748ba46b218e6f53d1f1a1a3018f2c12ac611b8cbe60a8dcdfe31",
+          "bytes": 1232
+        },
+        {
+          "path": "LightGenV2/reports/20260914_latest_optical_electronics_a100_NARROW_POWER_v2_TELEMETRY/power_samples.csv",
+          "sha256": "2069551bd1c1ef84c9be32b3cac65cd21984f28891f7c5d164ea2042f462eea3",
+          "bytes": 2714979
+        },
+        {
+          "path": "LightGenV2/reports/20260914_latest_optical_electronics_a100_NARROW_POWER_v2_TELEMETRY/power_summary.json",
+          "sha256": "0434875f1066570a6813eb07fa6f6efc744b1746903da78fd64c9409bf3f4a90",
+          "bytes": 20686
+        },
+        {
+          "path": "LightGenV2/reports/20260914_latest_optical_electronics_a100_NARROW_POWER_v2_TELEMETRY/report.json",
+          "sha256": "a104cc38e2848c9cf047d6b09b820033a65f42f254442373f59571fe8212791d",
+          "bytes": 29134
+        }
+      ]
+    },
+    {
+      "manifest": "LightGenV2/reports/20260914_latest_optical_electronics_a100_NARROW_v1/SHA256SUMS.txt",
+      "manifest_original_windows_sha256": "fe656eefb67e05b43c63b4fd261890740bbfeaf084df834e86f12a55baf502d3",
+      "manifest_entries_verified": 12,
+      "errors": [],
+      "files": [
+        {
+          "path": "LightGenV2/reports/20260914_latest_optical_electronics_a100_NARROW_v1/all_per_call_timings.csv",
+          "sha256": "038531f0da158fc6b68bf734ce1c6f6cd89422875ec3dd3c73b418469367c94b",
+          "bytes": 24816869
+        },
+        {
+          "path": "LightGenV2/reports/20260914_latest_optical_electronics_a100_NARROW_v1/component_summary.csv",
+          "sha256": "6fa34199506c8f88e8d181062fed040ef142d6f3839c33252811028ac99cff63",
+          "bytes": 14906
+        },
+        {
+          "path": "LightGenV2/reports/20260914_latest_optical_electronics_a100_NARROW_v1/paper_narrow_summary.csv",
+          "sha256": "3f3a8179ed2bb239eaa2adb15fa11f5b37066528a2d014cf04e3be268f4a3822",
+          "bytes": 1249
+        },
+        {
+          "path": "LightGenV2/reports/20260914_latest_optical_electronics_a100_NARROW_v1/report.json",
+          "sha256": "ba026442a8b516582843baf2786110e6b330b5472f78980402bf407c7c853604",
+          "bytes": 6629
+        }
+      ]
+    },
+    {
+      "manifest": "LightGenV2/reports/20260914_latest_optical_electronics_a100_NARROW_v2_CLEAN/SHA256SUMS.txt",
+      "manifest_original_windows_sha256": "53824c98af2df525e733cd3d52d4aeb0633c66e5728feed2d9e26039584b36ed",
+      "manifest_entries_verified": 11,
+      "errors": [],
+      "files": [
+        {
+          "path": "LightGenV2/reports/20260914_latest_optical_electronics_a100_NARROW_v2_CLEAN/all_per_call_timings.csv",
+          "sha256": "0f36b5148ce5425f523d5c742222c16cbd0fed94c2f0e79e815651355ba4f871",
+          "bytes": 24811373
+        },
+        {
+          "path": "LightGenV2/reports/20260914_latest_optical_electronics_a100_NARROW_v2_CLEAN/component_summary.csv",
+          "sha256": "1393f7880102366bc30b17aa877a3d76cc2993f8f6fc9f9ff288c83a11ae87ec",
+          "bytes": 14906
+        },
+        {
+          "path": "LightGenV2/reports/20260914_latest_optical_electronics_a100_NARROW_v2_CLEAN/paper_narrow_summary.csv",
+          "sha256": "dd95a6cc318d259effdea1c5b240ee224bf91349452403f3bad9de8ac2795638",
+          "bytes": 1243
+        },
+        {
+          "path": "LightGenV2/reports/20260914_latest_optical_electronics_a100_NARROW_v2_CLEAN/report.json",
+          "sha256": "fc7a863d1b09e51bee1d329f051951f0b3e02574e719c92a650a2a1e718722e2",
+          "bytes": 7249
+        }
+      ]
+    }
+  ],
+  "original_files_deleted": false,
+  "original_files_moved": false,
+  "scope": "Exact static CSV/JSON timing payloads only; all source, documentation and future records visible",
+  "measurement_boundary": "Historical A100 eager FP32 pooled CUDA-event component medians and separate board-power trials. Narrow vs full inclusion policies are separate; physical 1.0447ms is an assumed constant, not a new acquisition measurement. No new-model latency claim."
+}
