@@ -10,6 +10,14 @@ README stating its source, date, purpose, and whether it can be regenerated.
 Git-history snapshots should normally be represented by an `archive/*` tag
 instead of a copied working tree.
 
+The source-only staging retirements on 2026-10-06 are local Windows archives,
+not new projects and not archives copied to every host. Verify their 15 sources
+and six retained original reports with
+`python maintenance/git_safety/check_source_archives.py` on that machine.
+The checker is read-only, rejects changed hashes and reoccupied restoration
+paths, and does not restore files or approve deletions. Missing private archives
+on a different host are not evidence that its source synchronization failed.
+
 The 2026-10-04 sibling-directory consolidation preserves complete legacy
 exports, including unique uncommitted files and all timing evidence. It is a
 recoverable relocation, not approval to delete those exports or their data.
