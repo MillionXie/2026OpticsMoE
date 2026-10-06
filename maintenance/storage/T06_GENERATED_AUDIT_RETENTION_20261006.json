@@ -1,0 +1,19 @@
+{
+  "scope": "Stop versioning seven generated audit products; never delete filesystem data",
+  "original_git_commit": "7834dda191ab408c69da4eb42f1e1b67563c9f77",
+  "prefix": "experiments/qwen3_vl_2b_lgvq_single_metric_o2_16frame_54/artifacts/",
+  "files": [
+    {"path": "storage_cleanup_20260904/checkpoint_prune_manifest.csv", "git_blob_sha256": "b2ab374e242fe68f16663fbe561017fcce13aecfb92f3fbc7f1fbea15d925948", "local_raw_sha256": "932e41e462ba64dbb2c91cdf2236090dd7bc98f463884becdc41d34d1518af2b"},
+    {"path": "storage_cleanup_20260904/checkpoint_prune_plan.json", "git_blob_sha256": "0744ed9b5e41c94e833babafa459508b6fc979a0965fc0c65fdf9feec7a43553", "local_raw_sha256": "0744ed9b5e41c94e833babafa459508b6fc979a0965fc0c65fdf9feec7a43553"},
+    {"path": "storage_cleanup_20260904/checkpoint_prune_report.json", "git_blob_sha256": "8a10e77ebe751a75ceca4bae1f2d13810beaf2be6c9e6441830eb3dff1ff9c73", "local_raw_sha256": "8a10e77ebe751a75ceca4bae1f2d13810beaf2be6c9e6441830eb3dff1ff9c73"},
+    {"path": "storage_cleanup_20260904/lab_bundle_index.csv", "git_blob_sha256": "05e9fa38afa2067d94c47ef9dfd719a0e6aea992b004951339109f93d1e6fe6d", "local_raw_sha256": "e371e3993a5dfbabd5d251c86b359ff1e71a0038361237713f0f0d08722d98f1"},
+    {"path": "storage_cleanup_20260904/post_prune_verification.json", "git_blob_sha256": "79f51cd8d9261c13bf8a82e5985b02477a840a573ad9b8d5f850a03c9473ee88", "local_raw_sha256": "79f51cd8d9261c13bf8a82e5985b02477a840a573ad9b8d5f850a03c9473ee88"},
+    {"path": "storage_cleanup_20260904/retained_checkpoint_closure.csv", "git_blob_sha256": "2b3ffeba2cb46d502b9552b500ae1893e6d80cf20357e1fef33b4fbfa104ef5b", "local_raw_sha256": "6b5ec826fdb15e72580685d1af9777c6c6a6dd02e3216c67bef7007406c27bf8"},
+    {"path": "temporal9_final_figures/temporal_dataset_summary.json", "git_blob_sha256": "5afc76cb3dd98ad1e5d9ed2a5b8fff0e290fd6f6189f7e69446f09b9cda8d6c8", "local_raw_sha256": "5afc76cb3dd98ad1e5d9ed2a5b8fff0e290fd6f6189f7e69446f09b9cda8d6c8"}
+  ],
+  "local_files": "All seven retained in place; CSV raw/LF hashes differ only by checkout line endings",
+  "server_files": "Already absent before this cleanup; original absence state archived in 4fafce0f96306894d3d71e30b1298f469f35ef0e. No new filesystem deletion.",
+  "ignore_rule": "/experiments/**/artifacts/ already present; tracked files previously bypassed it",
+  "recovery": "Read exact original bytes with git show <original_git_commit>:<prefix><path>. Full original Git history also retained in verified recovery bundles.",
+  "timing_data_models_CCD_removed": false
+}
