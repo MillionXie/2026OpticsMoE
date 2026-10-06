@@ -1,0 +1,19 @@
+{
+  "audited_on": "2026-10-06",
+  "mode": "read_only_no_models_no_download_no_reprepare",
+  "prepared_data": "/DATA/DATA1/guest3/demo_reproduction_data/clevr_attribute_s17_v1",
+  "official_scene": "/DATA/DATA1/guest3/demo_reproduction_data/clevr_v1_full_ccby4/extracted/CLEVR_v1.0/scenes/CLEVR_train_scenes.json",
+  "official_scene_sha256": "b2a49a3e61f5f0c05c21156e4b88471d1b646d22acc343f32b36f736ef9ff7ad",
+  "matches_original_manifest_scene_sha": true,
+  "prepared_manifest_sha256": "a5826f81d530e41e776eac528886936d64b5ad413e62268510fa62c0f09e5ade",
+  "prepared_metadata_matches_previous_audit": true,
+  "metadata_identity_scope": ["manifest.json", "train_questions.json", "val_questions.json", "source_files.json", "test_reserved_ids.json"],
+  "generator_contract": "seed17 shuffle first1500 official train image indices;1000TRAIN/250VAL/250reserved;per-image Random(17*100000+index);sorted positives/negatives;three paired positive/negative queries;four original templates;same image-local order",
+  "train": {"images":1000,"questions":6000,"exact_generated_rows_match":true,"scene_label_failures":0},
+  "validation": {"images":250,"questions":1500,"exact_generated_rows_match":true,"scene_label_failures":0},
+  "reserved_test_ids_exact": true,
+  "passed": true,
+  "files_written_or_deleted": 0,
+  "not_verified": ["TEST question generation in this audit", "raw PNG to NPZ pixel reconstruction", "CNN feature-cache reconstruction", "full official CLEVR dataset completeness", "model accuracy or hardware deployment"],
+  "preservation": "Original scene, all raw/prepared data, feature caches, weights, runs and timing evidence remain in place. This receipt is not deletion approval."
+}

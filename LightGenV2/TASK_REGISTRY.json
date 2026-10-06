@@ -118,6 +118,7 @@
     },
     {
       "id": "t09_multimodal_matching",
+      "official_scene_binding_evidence": "../maintenance/storage/T09_CLEVR_SCENE_BINDING_20261006.json",
       "entry": "tasks/t09_multimodal_matching/README.md",
       "source_status": "actual_runtime_overlay_published_original_assets_retained",
       "training_source": "/DATA/DATA1/guest3/demo_reproduction_20260915/LightGenV2/tasks/t09_multimodal_matching",

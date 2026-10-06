@@ -4,6 +4,13 @@
 [`reports/reproduction/README.md`](reports/reproduction/README.md)。
 跨任务主线和 CC BY 4.0 数据登记见 [`../MULTIMODAL_NATURE_PLAN.md`](../MULTIMODAL_NATURE_PLAN.md) 与 [`../dataset_registry_multimodal.json`](../dataset_registry_multimodal.json)。
 
+2026-10-06整理补核：原官方CLEVR场景JSON已在服务器找到，SHA与本任务原manifest一致；
+保持seed17／原图顺序／模板，重建TRAIN6000及VAL1500条问题与现存记录逐项相同，
+7500条标签与官方场景对象一致、保留TEST身份顺序一致。原准备metadata的五份SHA也未变。
+证据见 [`T09_CLEVR_SCENE_BINDING_20261006.json`](../../../maintenance/storage/T09_CLEVR_SCENE_BINDING_20261006.json)。
+这是只读数据来源核验，不下载或重新准备数据；NPZ像素及CNN缓存重建、TEST问题生成
+仍未在此次核验，不称整个官方CLEVR或完整任务迁移已完成。旧数据、模型、结果和测速不动。
+
 只比较两层主光路的 MoE+逐层OEO 与 D2NN+逐层OEO；MoE额外路由相位单列。
 首先比较 CLEVR 图文任务中的固定词编码与共享可训练 Embedding+GRU；
 Speech Commands 音文已完成有CNN、无CNN三种布局及上下布局OEO恢复训练，详见复现入口。
