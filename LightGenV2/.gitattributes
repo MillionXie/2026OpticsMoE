@@ -11,3 +11,20 @@ tasks/t09_multimodal_matching/vision.py text eol=lf
 demo_check/adrenal_softsign_code_export_20260915_145336/code/optical_reference/*.py -text whitespace=cr-at-eol
 # Pinned upstream __init__ contains a final empty line; retain its exact SHA.
 tasks/t13_four_modal_lifelong/__init__.py whitespace=-blank-at-eof
+
+# Restored historical timing snapshots must keep original raw/mixed line-ending SHA.
+reports/20260927_demo_energy_efficiency_a100/baseline/01_lgvq/source_snapshot/tasks/t06_video_quality_assessment/quality_token_common.py -text whitespace=cr-at-eol
+reports/20260927_demo_energy_efficiency_a100/baseline/01_lgvq/source_snapshot/tasks/t06_video_quality_assessment/quality_token_train.py -text whitespace=cr-at-eol
+reports/20260927_demo_energy_efficiency_a100/baseline/01_lgvq/source_snapshot/tasks/t06_video_quality_assessment/configs/baselines/qwen3vl_quality_tokens_r448_a100.yaml -text whitespace=cr-at-eol
+reports/20260927_demo_energy_efficiency_a100/baseline/01_lgvq/source_snapshot/tasks/t06_video_quality_assessment/configs/baselines/qwen3vl_spatial_quality_tokens_4f_r448_a100.yaml -text whitespace=cr-at-eol
+reports/20260927_demo_energy_efficiency_a100/baseline/02_abo_image_to_text/source_snapshot/tasks/t08_abo_image_text_retrieval/baseline_5090d.py -text whitespace=cr-at-eol
+reports/20260927_demo_energy_efficiency_a100/baseline/03_abo_image_to_image/source_snapshot/tasks/t07_abo_image_retrieval/standalone/enrolled_abo.py -text whitespace=cr-at-eol
+reports/20260927_demo_energy_efficiency_a100/baseline/03_abo_image_to_image/source_snapshot/tasks/t07_abo_image_retrieval/standalone/retrieval_screen.py -text whitespace=cr-at-eol
+reports/20260927_demo_energy_efficiency_a100/baseline/05_lsp/source_snapshot/tasks/t02_keypoint_detection/baseline_5090d.py -text whitespace=cr-at-eol
+reports/20260927_demo_energy_efficiency_a100/baseline/06_salicon/source_snapshot/tasks/t03_saliency/aligned_baseline.py -text whitespace=cr-at-eol
+reports/20260927_demo_energy_efficiency_a100/baseline/06_salicon/source_snapshot/tasks/t03_saliency/configs/qwen_aligned_head_50.yaml -text whitespace=cr-at-eol
+reports/20260927_demo_energy_efficiency_a100/baseline/07_openmoji_new_layout/source_snapshot/tasks/t04_semantic_interaction/qwen_shared.py -text whitespace=cr-at-eol
+reports/20260927_demo_energy_efficiency_a100/baseline/07_openmoji_new_layout/source_snapshot/tasks/t04_semantic_interaction/run.py -text whitespace=cr-at-eol
+reports/20260927_demo_energy_efficiency_a100/baseline/07_openmoji_new_layout/source_snapshot/tasks/t04_semantic_interaction/settings.py -text whitespace=cr-at-eol
+reports/20260927_demo_energy_efficiency_a100/baseline/07_openmoji_new_layout/source_snapshot/tasks/t04_semantic_interaction/shared_readout.py -text whitespace=cr-at-eol
+reports/20260927_demo_energy_efficiency_a100/baseline/07_openmoji_new_layout/source_snapshot/tasks/t04_semantic_interaction/configs/layered_scene_qwen_shared.yaml -text whitespace=cr-at-eol

@@ -1,0 +1,100 @@
+{
+  "audited_on": "2026-10-07",
+  "scope": "15 formerly missing historical A100 timing source/config snapshots restored at original export locations",
+  "files": [
+    {
+      "path": "LightGenV2/reports/20260927_demo_energy_efficiency_a100/baseline/01_lgvq/source_snapshot/tasks/t06_video_quality_assessment/quality_token_common.py",
+      "sha256": "2da9334f06b5a5a13e726116201c897c96f8cce635fac667474fccabefa86810",
+      "original_commit": "4b24e9ad4df027db3bac92a7721ae8cf052a6f50",
+      "original_git_path": "LightGenV2/tasks/t06_video_quality_assessment/quality_token_common.py"
+    },
+    {
+      "path": "LightGenV2/reports/20260927_demo_energy_efficiency_a100/baseline/01_lgvq/source_snapshot/tasks/t06_video_quality_assessment/quality_token_train.py",
+      "sha256": "45461af82af0da13b5fa8da79d287ba4750264438553e90d8bd3157567eb4737",
+      "original_commit": "4b24e9ad4df027db3bac92a7721ae8cf052a6f50",
+      "original_git_path": "LightGenV2/tasks/t06_video_quality_assessment/quality_token_train.py"
+    },
+    {
+      "path": "LightGenV2/reports/20260927_demo_energy_efficiency_a100/baseline/01_lgvq/source_snapshot/tasks/t06_video_quality_assessment/configs/baselines/qwen3vl_quality_tokens_r448_a100.yaml",
+      "sha256": "b160ac86021c3530897eeaf1409c475801bd622b700a365ec4f5b250a32ea4fc",
+      "original_commit": "4b24e9ad4df027db3bac92a7721ae8cf052a6f50",
+      "original_git_path": "LightGenV2/tasks/t06_video_quality_assessment/configs/baselines/qwen3vl_quality_tokens_r448_a100.yaml"
+    },
+    {
+      "path": "LightGenV2/reports/20260927_demo_energy_efficiency_a100/baseline/01_lgvq/source_snapshot/tasks/t06_video_quality_assessment/configs/baselines/qwen3vl_spatial_quality_tokens_4f_r448_a100.yaml",
+      "sha256": "37fc5acb473e52445a463392f81d334d910fab6cdf0c8ba5886673332d6d1ebe",
+      "original_commit": "4b24e9ad4df027db3bac92a7721ae8cf052a6f50",
+      "original_git_path": "LightGenV2/tasks/t06_video_quality_assessment/configs/baselines/qwen3vl_spatial_quality_tokens_4f_r448_a100.yaml"
+    },
+    {
+      "path": "LightGenV2/reports/20260927_demo_energy_efficiency_a100/baseline/02_abo_image_to_text/source_snapshot/tasks/t08_abo_image_text_retrieval/baseline_5090d.py",
+      "sha256": "0bb0e8b4ec42626872e51965e4d4f10e4856322fe2fd0db87d0fb3cea99359eb",
+      "original_commit": "b9a4be689f198f55ee0caaf4e5bcddd4dfc80200",
+      "original_git_path": "LightGenV2/tasks/t08_abo_image_text_retrieval/baseline_5090d.py"
+    },
+    {
+      "path": "LightGenV2/reports/20260927_demo_energy_efficiency_a100/baseline/03_abo_image_to_image/source_snapshot/tasks/t07_abo_image_retrieval/standalone/enrolled_abo.py",
+      "sha256": "de8504876f04d98c090738783c40106d50c85138a53ccd6e9d554c857d452852",
+      "original_commit": "5f731fae979ef81a09770c1dd721b5cecd8b3392",
+      "original_git_path": "LightGenV2/tasks/t07_abo_image_retrieval/standalone/enrolled_abo.py"
+    },
+    {
+      "path": "LightGenV2/reports/20260927_demo_energy_efficiency_a100/baseline/03_abo_image_to_image/source_snapshot/tasks/t07_abo_image_retrieval/standalone/retrieval_screen.py",
+      "sha256": "d176b02db65978ee1db507f0b82594c05369633b480ac45c6f4ef26d0f14c065",
+      "original_commit": "5f731fae979ef81a09770c1dd721b5cecd8b3392",
+      "original_git_path": "LightGenV2/tasks/t07_abo_image_retrieval/standalone/retrieval_screen.py"
+    },
+    {
+      "path": "LightGenV2/reports/20260927_demo_energy_efficiency_a100/baseline/05_lsp/source_snapshot/tasks/t02_keypoint_detection/baseline_5090d.py",
+      "sha256": "e0add85037713cb5a21a5e7dd46ab9207ffb31b77d7a5be1da03196e6960156f",
+      "original_commit": "bcec3a5977ccf00c71c6b5e8c00bf436cc3e305e",
+      "original_git_path": "LightGenV2/tasks/t02_keypoint_detection/baseline_5090d.py"
+    },
+    {
+      "path": "LightGenV2/reports/20260927_demo_energy_efficiency_a100/baseline/06_salicon/source_snapshot/tasks/t03_saliency/aligned_baseline.py",
+      "sha256": "368f5f4a9e51c53d6a93180eac29b96ab4a5b4a02e55979ade345e1aae739e0a",
+      "original_commit": "d8653fa6057f96b52d53259999343ff2117c1526",
+      "original_git_path": "LightGenV2/tasks/t03_saliency/aligned_baseline.py"
+    },
+    {
+      "path": "LightGenV2/reports/20260927_demo_energy_efficiency_a100/baseline/06_salicon/source_snapshot/tasks/t03_saliency/configs/qwen_aligned_head_50.yaml",
+      "sha256": "32f2be85c0e8e30cbb7c95727b97daa808c11af4a416c06132f84e8f958679d7",
+      "original_commit": "d8653fa6057f96b52d53259999343ff2117c1526",
+      "original_git_path": "LightGenV2/tasks/t03_saliency/configs/qwen_aligned_head_50.yaml"
+    },
+    {
+      "path": "LightGenV2/reports/20260927_demo_energy_efficiency_a100/baseline/07_openmoji_new_layout/source_snapshot/tasks/t04_semantic_interaction/qwen_shared.py",
+      "sha256": "02091bb9f33f0ace72bc5921276c458e843243572fc18c673663e278711e4be3",
+      "original_commit": "41a5fdaff43cc039e81d6bc9ab779a3ea89daf02",
+      "original_git_path": "LightGenV2/tasks/t04_semantic_interaction/qwen_shared.py"
+    },
+    {
+      "path": "LightGenV2/reports/20260927_demo_energy_efficiency_a100/baseline/07_openmoji_new_layout/source_snapshot/tasks/t04_semantic_interaction/run.py",
+      "sha256": "a38106697bda4fb5c671adb9cdb71237071d86305cf15b313f648050cfe96238",
+      "original_commit": "41a5fdaff43cc039e81d6bc9ab779a3ea89daf02",
+      "original_git_path": "LightGenV2/tasks/t04_semantic_interaction/run.py"
+    },
+    {
+      "path": "LightGenV2/reports/20260927_demo_energy_efficiency_a100/baseline/07_openmoji_new_layout/source_snapshot/tasks/t04_semantic_interaction/settings.py",
+      "sha256": "a8bf57088ddf91a88a580718bcb8f306d4129c2b7664e8ddbd8cd76e5ef1eeca",
+      "original_commit": "41a5fdaff43cc039e81d6bc9ab779a3ea89daf02",
+      "original_git_path": "LightGenV2/tasks/t04_semantic_interaction/settings.py"
+    },
+    {
+      "path": "LightGenV2/reports/20260927_demo_energy_efficiency_a100/baseline/07_openmoji_new_layout/source_snapshot/tasks/t04_semantic_interaction/shared_readout.py",
+      "sha256": "71be7d46d2d07fa58ed34b4af018edbf0fafdae551a6d5c54199d59075698282",
+      "original_commit": "41a5fdaff43cc039e81d6bc9ab779a3ea89daf02",
+      "original_git_path": "LightGenV2/tasks/t04_semantic_interaction/shared_readout.py"
+    },
+    {
+      "path": "LightGenV2/reports/20260927_demo_energy_efficiency_a100/baseline/07_openmoji_new_layout/source_snapshot/tasks/t04_semantic_interaction/configs/layered_scene_qwen_shared.yaml",
+      "sha256": "1bae42b75f5e87b6d1571e591b214184df7b7585f213a1ab68a0b7470df2cca8",
+      "original_commit": "41a5fdaff43cc039e81d6bc9ab779a3ea89daf02",
+      "original_git_path": "LightGenV2/tasks/t04_semantic_interaction/configs/layered_scene_qwen_shared.yaml"
+    }
+  ],
+  "sha_manifest_changed": false,
+  "original_existing_files_overwritten": false,
+  "runtime_or_metrics_changed": false,
+  "remaining_manifest_errors_expected": 9
+}

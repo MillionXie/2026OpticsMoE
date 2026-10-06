@@ -293,6 +293,11 @@ python -m LightGenV2.tasks.t06_video_quality_assessment.quality_token_resolution
 
 ## 历史 A100 批量与 dataset-once baseline 已收敛（2026-10-06）
 
+2026-10-07补回旧A100综合测速导出缺失的15份baseline源码／配置快照，逐文件匹配
+其原SHA（含混合CRLF行尾），没有替换现用模型、重测或更新旧SHA清单。
+该导出仍有9项文档／渲染图缺失或检查文件变化，不称完整；原README也保持不变。
+具体恢复身份见 [测速源码恢复](../../../maintenance/storage/DEMO_TIMING_SOURCE_RESTORATION_20261007.json)。
+
 历史 Spatial s586 报告的28级配置继承链亦已核对，14份此前仅在工作目录／Git归档中的
 必要配置纳入主线，内容不变。来源见 [配置闭包](spatial_historical_config_import_20261006.json)。
 该候选是既有历史对照，TEST选模属开发指标；不是上方当前实拍Spatial权重，不用旧代码
