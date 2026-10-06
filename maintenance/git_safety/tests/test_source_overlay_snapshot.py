@@ -161,6 +161,23 @@ def test_historical_abo_configuration_is_named_not_directory_permission(repo):
         snapshot(root, manifest, include_untracked_source=True, include_reviewed_historical_tools=True)
 
 
+def test_named_openmoji_shell_launcher_is_archived_not_executed(repo):
+    root, _, manifest = repo
+    path = 'handoffs/openmoji_robust_ablation_20260928/midrank48_candidate/launch_rank64_clean_20261002.sh'
+    file = root/path
+    file.parent.mkdir(parents=True)
+    content = b'#!/bin/sh\nexit 99\n'
+    file.write_bytes(content)
+    manifest['paths'] = [dict(path=path, sha256=hashlib.sha256(content).hexdigest(), entry_kind='untracked')]
+    result = snapshot(root, manifest, include_untracked_source=True, include_reviewed_historical_tools=True)
+    assert subprocess.check_output(['git', '-C', str(root), 'show', result['archive_commit']+':'+path]) == content
+    assert git(root, 'rev-parse', 'HEAD') == manifest['expected_head']
+    manifest['archive_ref'] = 'refs/archive/other-shell'
+    manifest['paths'][0]['path'] = path.replace('launch_rank64_clean', 'connect')
+    with pytest.raises(RuntimeError):
+        snapshot(root, manifest, include_untracked_source=True, include_reviewed_historical_tools=True)
+
+
 def test_user_source_mode_does_not_enable_other_directories(repo):
     root, _, manifest = repo
     manifest['paths'] = [dict(path='TransferFromElectricity/unknown.py', sha256='0'*64, entry_kind='untracked')]

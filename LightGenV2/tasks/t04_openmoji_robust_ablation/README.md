@@ -34,6 +34,10 @@ TEST 不进梯度，但这些是开发指标，不是独立测试。保留未校
 
 原私有资产目录`handoffs/openmoji_robust_ablation_20260928/midrank48_candidate/`
 包含 PT、report、history、逐样本和严格默认推理重载记录；不复制大权重进 Git。
+该目录16份此前无恢复身份的历史辅助程序已原字节三端保全，见
+[用途与恢复清单](../../../maintenance/storage/OPENMOJI_HISTORICAL_TOOLS_20261006.json)。
+它们含rank48诊断、早期rank64准备、已过期队列及被拒绝的额外residual试验，
+不是16个当前入口，也不能替代本页rank64最终协议；原PT/CCD/结果与测速均保留。
 主线入口不要求新机器先拥有该私有目录才能阅读版本说明；原完整报告按封存页SHA定位。
 每组 TEST1000 与独立 TRAIN2000 各六层，分别6000与12000真实CCD，保留源身份及收据，不跨组复用。
 2000us/GainX4/wait240、既定ROI和方向、保零 bounded BMP；原捕获合同不变。

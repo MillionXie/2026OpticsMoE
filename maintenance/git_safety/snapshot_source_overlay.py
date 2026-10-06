@@ -31,7 +31,15 @@ REVIEWED_HISTORICAL_TOOLS = frozenset({
     'handoffs/abo_text_to_image_10cm_alpha040_20260925/capture_router_pilot.py',
     'handoffs/abo_text_to_image_10cm_alpha040_20260925/config.yaml',
     'handoffs/abo_text_to_image_10cm_alpha040_20260925/phase_response_probe.py',
-})
+}) | frozenset('handoffs/openmoji_robust_ablation_20260928/midrank48_candidate/' + name for name in (
+    'cached_decoder_focus_probe.py', 'diagnose_edit_gate_20261002.py',
+    'fixed_category_probe_20261002.py', 'fixed_rank48_alltrain_20261002.py',
+    'focus_probe_fixed_eval.py', 'g2_lab_shs_capture.py', 'g2_lab_tune_decoder.py',
+    'launch_rank64_clean_20261002.sh', 'launch_rank64_common_20261002.sh',
+    'overnight_electronic_suite_20261002.py', 'prepare_rank64_bench_20261002.py',
+    'queue_fixed_refine_20261002.py', 'test_selected_decoder.py',
+    'train_rank64_common_20261002.py', 'verify_gate_pt_20261002.py',
+    'verify_rank48_normal_sim_20261002.py'))
 
 
 def snapshot(root, manifest, *, include_documentation=False, include_untracked_source=False,
