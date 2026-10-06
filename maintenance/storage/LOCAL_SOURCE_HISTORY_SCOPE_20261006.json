@@ -1,0 +1,959 @@
+{
+  "head": "04e624dfa91cb33361c488dc0525a28154d5d988",
+  "reference_commit": "04e624dfa91cb33361c488dc0525a28154d5d988",
+  "archive_refs_checked": 176,
+  "unique_archive_commits": 163,
+  "source_counts_against_main": {
+    "no_byte_identity_in_reference": 1847,
+    "crlf_normalized_git_blob": 290,
+    "exact_git_blob": 2699
+  },
+  "nonmatching_sources_checked": 1847,
+  "history_counts": {
+    "exact_git_blob": 1376,
+    "crlf_normalized_git_blob": 258,
+    "no_byte_identity_in_reference": 213
+  },
+  "mutations": [],
+  "limitations": [
+    "Matches prove existing local Git blob provenance, not main adoption or runtime compatibility.",
+    "Archive refs are not proof of an independent complete data backup.",
+    "No match does not mean garbage or an unneeded algorithm.",
+    "No deletion, move, ignore or source replacement is authorized by this audit."
+  ],
+  "audited_on": "2026-10-06",
+  "unresolved_group_counts": {
+    "LightGenPublic/tasks/t06_lgvq_temporal_consistency": 28,
+    "LightGenV2/demo_check/EuroSAT_MoE_D2NN": 9,
+    "LightGenV2/demo_check/adrenal_softsign_code_export_20260915_145336": 2,
+    "LightGenV2/demo_check/frozen_electronic": 1,
+    "LightGenV2/demo_check/pure_optical": 1,
+    "LightGenV2/demo_check/releases": 5,
+    "LightGenV2/demo_check/shared_frontend": 1,
+    "LightGenV2/projects/lgvq_temporal": 8,
+    "LightGenV2/reports/20260914_latest_optical_electronics_a100_FINAL": 1,
+    "LightGenV2/reports/20260914_latest_optical_electronics_a100_NARROW_CLEAN_FINAL": 1,
+    "LightGenV2/reports/20260914_latest_optical_electronics_a100_NARROW_FINAL": 2,
+    "LightGenV2/reports/20260914_latest_optical_electronics_a100_NARROW_POWER_v1": 2,
+    "LightGenV2/reports/20260914_latest_optical_electronics_a100_NARROW_POWER_v2_TELEMETRY": 1,
+    "LightGenV2/reports/20260914_latest_optical_electronics_a100_NARROW_v1": 2,
+    "LightGenV2/reports/20260914_latest_optical_electronics_a100_NARROW_v2_CLEAN": 1,
+    "LightGenV2/reports/20260914_latest_qwen_baselines_a100_FIRSTBLOCK_FINAL": 3,
+    "LightGenV2/reports/20260915_baseline_methods": 10,
+    "LightGenV2/reports/20260915_lgvq_topsw": 1,
+    "LightGenV2/reports/20260917_redbox_timing_energy_audit": 4,
+    "LightGenV2/reports/baseline_plotting_20260922": 1,
+    "LightGenV2/scripts/build_baseline_plotting_bundle.py": 1,
+    "LightGenV2/scripts/calculate_lgvq_topsw_ops.py": 1,
+    "LightGenV2/scripts/consolidate_latest_a100_electronics.py": 1,
+    "LightGenV2/scripts/consolidate_latest_qwen_baselines_a100.py": 1,
+    "LightGenV2/scripts/consolidate_narrow_optical_power.py": 1,
+    "LightGenV2/scripts/profile_latest_qwen_changed_a100.py": 1,
+    "LightGenV2/tasks/t07_abo_image_retrieval": 24,
+    "LightGenV2/tasks/t10_expert_scaling": 3,
+    "LightGenV2/tasks/t12_text_to_image": 4,
+    "TransferFromElectricity/d2nn_pack/config.yaml": 1,
+    "TransferFromElectricity/d2nn_pack/data.py": 1,
+    "TransferFromElectricity/d2nn_pack/extract_clip_features.py": 1,
+    "TransferFromElectricity/d2nn_pack/losses.py": 1,
+    "TransferFromElectricity/d2nn_pack/mask_generator.py": 1,
+    "TransferFromElectricity/d2nn_pack/model_adapt.py": 1,
+    "TransferFromElectricity/d2nn_pack/train_d2nn_adapt_grid.py": 1,
+    "TransferFromElectricity/d2nn_pack/train_d2nn_mnist256.py": 1,
+    "handoffs/abo_latestfresh35_lab_20260930/display_boundary_probe.py": 1,
+    "handoffs/abo_latestfresh35_lab_20260930/display_chain_audit.py": 1,
+    "handoffs/abo_latestfresh35_lab_20260930/model_rank192_bench.py": 1,
+    "handoffs/abo_latestfresh35_lab_20260930/rank72_global_control.py": 1,
+    "handoffs/abo_latestfresh35_lab_20260930/run_display_audit.cmd": 1,
+    "handoffs/abo_latestfresh35_lab_20260930/run_distinct_controls.cmd": 1,
+    "handoffs/abo_latestfresh35_lab_20260930/run_rank72_alternate.cmd": 1,
+    "handoffs/abo_latestfresh35_lab_20260930/run_rank72_alternate_retry2.cmd": 1,
+    "handoffs/abo_latestfresh35_lab_20260930/run_rank72_full.cmd": 1,
+    "handoffs/abo_latestfresh35_lab_20260930/run_rank72_global_control.cmd": 1,
+    "handoffs/abo_latestfresh35_lab_20260930/run_rank72_global_raw.cmd": 1,
+    "handoffs/abo_latestfresh35_lab_20260930/run_rank72_global_retry2.cmd": 1,
+    "handoffs/abo_latestfresh35_lab_20260930/run_rank72_pilot.cmd": 1,
+    "handoffs/abo_latestfresh35_lab_20260930/run_rank72_selftest.cmd": 1,
+    "handoffs/abo_latestfresh35_lab_20260930/run_rank72_stage_sessions.cmd": 1,
+    "handoffs/abo_latestfresh35_lab_20260930/run_rank72_testselected_tune.cmd": 1,
+    "handoffs/abo_latestfresh35_lab_20260930/run_reboot_control.cmd": 1,
+    "handoffs/abo_latestfresh35_lab_20260930/run_unlock_check.cmd": 1,
+    "handoffs/abo_latestfresh35_lab_20260930/stage_control_diagnostic_old.py": 1,
+    "handoffs/abo_text_to_image_10cm_alpha040_20260925/calibrate_router_pilot.py": 1,
+    "handoffs/abo_text_to_image_10cm_alpha040_20260925/capture_router_pilot.py": 1,
+    "handoffs/abo_text_to_image_10cm_alpha040_20260925/config.yaml": 1,
+    "handoffs/abo_text_to_image_10cm_alpha040_20260925/phase_response_probe.py": 1,
+    "handoffs/abo_text_to_image_figure_pack_20260928/build_pack.py": 1,
+    "handoffs/openmoji_robust_ablation_20260928/midrank48_candidate": 43,
+    "handoffs/t12_channel_robust_20260927/run_original_val96.cmd": 1,
+    "handoffs/t12_small_baseline_handoff_20260928/stage": 1,
+    "handoffs/t12_small_baseline_share_20260928/package": 2,
+    "maintenance/storage/archive_code_worktrees_20261002.py": 1,
+    "maintenance/storage/audit_guest3_20261002.py": 1,
+    "maintenance/storage/classify_worktrees_20261002.py": 1,
+    "maintenance/storage/clear_old_baseline_features_20261002.py": 1,
+    "maintenance/storage/git_snapshot_20261002.py": 1,
+    "maintenance/storage/safe_cleanup_guest3_20261002.py": 1,
+    "maintenance/storage/snapshot_authoritative_overlays_20261002.py": 1,
+    "outputs/t12_perceptual_comparison_20260928/assemble_three_task_scores.py": 1,
+    "outputs/t12_perceptual_comparison_20260928/build_annotated_figures.py": 1,
+    "outputs/t12_perceptual_comparison_20260928/eval_dists.py": 1,
+    "outputs/t12_perceptual_comparison_20260928/eval_lpips.py": 1,
+    "outputs/t12_perceptual_comparison_20260928/eval_regions.py": 1,
+    "tmp/pdfs/timing_manual_audit.py": 1
+  },
+  "unresolved_sources": [
+    {
+      "path": "LightGenPublic/tasks/t06_lgvq_temporal_consistency/simulate.py",
+      "sha256": "39aa17a8665fa2e3fb2f2b3dca7f81a0bf832629e66a92194967359a31d3c1f5"
+    },
+    {
+      "path": "LightGenPublic/tasks/t06_lgvq_temporal_consistency/teacher_release/lgvq_temporal_08044/configs/temporal_16x4_s163.yaml",
+      "sha256": "c9ec04d0305ac153eb5b6d4d0e96a7fa12193b2153d89ecc025699244f905894"
+    },
+    {
+      "path": "LightGenPublic/tasks/t06_lgvq_temporal_consistency/teacher_release/lgvq_temporal_08044/simulate.py",
+      "sha256": "d0e8a38b9d049db1d6b8a389ab8668c0788d20ca4d1e28f706d577deca4d518e"
+    },
+    {
+      "path": "LightGenPublic/tasks/t06_lgvq_temporal_consistency/teacher_release/lgvq_temporal_08044/tests/test_source_contract.py",
+      "sha256": "e1e58154f26f513c4cb75a24d215041326a6a7ddf712e338e0e01d8fa219ab57"
+    },
+    {
+      "path": "LightGenPublic/tasks/t06_lgvq_temporal_consistency/teacher_release/lgvq_temporal_08044/tools/build_teacher_release.py",
+      "sha256": "84730de30f96d81f10af8dea88ebca53733c4b73c6deb6a6971ad84109097b18"
+    },
+    {
+      "path": "LightGenPublic/tasks/t06_lgvq_temporal_consistency/teacher_release/lgvq_temporal_08044/train.py",
+      "sha256": "79c9b43877f6fc524c0ecfdc00c148b2ea71613938285485cbabcbdd66591633"
+    },
+    {
+      "path": "LightGenPublic/tasks/t06_lgvq_temporal_consistency/teacher_release/lgvq_temporal_08044/verify_release.py",
+      "sha256": "a30246dcda0b7bc3cfafa4de6daa9a2aba8bb04c7cb73471837b6203d5fc3c74"
+    },
+    {
+      "path": "LightGenPublic/tasks/t06_lgvq_temporal_consistency/teacher_release_final/lgvq_temporal_08044/configs/temporal_16x4_s163.yaml",
+      "sha256": "d631b2bdbf3ad4a6570858570101c9eb6bba899a9f74a8f9a5fd4b18c6f9c398"
+    },
+    {
+      "path": "LightGenPublic/tasks/t06_lgvq_temporal_consistency/teacher_release_final/lgvq_temporal_08044/runtime/LightGenV2/tasks/t06_video_quality_assessment/models/multivideo9x4.py",
+      "sha256": "a7e39ea387724ac7182950e60f75903b40555a87a0b46847e82182f81984d496"
+    },
+    {
+      "path": "LightGenPublic/tasks/t06_lgvq_temporal_consistency/teacher_release_final/lgvq_temporal_08044/runtime/LightGenV2/tasks/t06_video_quality_assessment/multivideo_settings.py",
+      "sha256": "fa89cb367e123653fc6f09ac497e87d6340779206023f104d2f7448ce2a552c9"
+    },
+    {
+      "path": "LightGenPublic/tasks/t06_lgvq_temporal_consistency/teacher_release_final/lgvq_temporal_08044/simulate.py",
+      "sha256": "0a56658e40dca8fde05986f2f057f013b7796552f53b51ec163679ce316f0db1"
+    },
+    {
+      "path": "LightGenPublic/tasks/t06_lgvq_temporal_consistency/teacher_release_final/lgvq_temporal_08044/tests/test_ccd_noise.py",
+      "sha256": "2bb34c2f02d311d8a8bbd14a888e298f2cfbb8cbde94d507b3fa9cdd5891169e"
+    },
+    {
+      "path": "LightGenPublic/tasks/t06_lgvq_temporal_consistency/teacher_release_final/lgvq_temporal_08044/tests/test_physical_contract.py",
+      "sha256": "f8beb03cf1d0550ad877d3547ac401c9235572cbb50cd5f2f47e2a6ebc5e561a"
+    },
+    {
+      "path": "LightGenPublic/tasks/t06_lgvq_temporal_consistency/teacher_release_final/lgvq_temporal_08044/tests/test_source_contract.py",
+      "sha256": "e1e58154f26f513c4cb75a24d215041326a6a7ddf712e338e0e01d8fa219ab57"
+    },
+    {
+      "path": "LightGenPublic/tasks/t06_lgvq_temporal_consistency/teacher_release_final/lgvq_temporal_08044/train.py",
+      "sha256": "79c9b43877f6fc524c0ecfdc00c148b2ea71613938285485cbabcbdd66591633"
+    },
+    {
+      "path": "LightGenPublic/tasks/t06_lgvq_temporal_consistency/teacher_release_final/lgvq_temporal_08044/verify_release.py",
+      "sha256": "a30246dcda0b7bc3cfafa4de6daa9a2aba8bb04c7cb73471837b6203d5fc3c74"
+    },
+    {
+      "path": "LightGenPublic/tasks/t06_lgvq_temporal_consistency/teacher_release_final_v2/lgvq_temporal_08044/simulate.py",
+      "sha256": "39aa17a8665fa2e3fb2f2b3dca7f81a0bf832629e66a92194967359a31d3c1f5"
+    },
+    {
+      "path": "LightGenPublic/tasks/t06_lgvq_temporal_consistency/teacher_release_final_v2/lgvq_temporal_08044/tests/test_ccd_noise.py",
+      "sha256": "56464884f0627887d1548a46188c92ecb0c064e48bf81bc7644377204e63a0b2"
+    },
+    {
+      "path": "LightGenPublic/tasks/t06_lgvq_temporal_consistency/teacher_release_final_v2/lgvq_temporal_08044/tests/test_physical_contract.py",
+      "sha256": "ee99bb0f78c3520bfef69d6e2817ea4ed2f9a2e7cbf841a411e684c206b89c8d"
+    },
+    {
+      "path": "LightGenPublic/tasks/t06_lgvq_temporal_consistency/teacher_release_final_v2/lgvq_temporal_08044/tests/test_source_contract.py",
+      "sha256": "657b2cd0564bff3e075637bcbc16d96151ad37babdc2373c905d69a2c7b0049d"
+    },
+    {
+      "path": "LightGenPublic/tasks/t06_lgvq_temporal_consistency/teacher_release_final_v2/lgvq_temporal_08044/train.py",
+      "sha256": "79c9b43877f6fc524c0ecfdc00c148b2ea71613938285485cbabcbdd66591633"
+    },
+    {
+      "path": "LightGenPublic/tasks/t06_lgvq_temporal_consistency/teacher_release_final_v2/lgvq_temporal_08044/verify_release.py",
+      "sha256": "a30246dcda0b7bc3cfafa4de6daa9a2aba8bb04c7cb73471837b6203d5fc3c74"
+    },
+    {
+      "path": "LightGenPublic/tasks/t06_lgvq_temporal_consistency/tests/test_ccd_noise.py",
+      "sha256": "56464884f0627887d1548a46188c92ecb0c064e48bf81bc7644377204e63a0b2"
+    },
+    {
+      "path": "LightGenPublic/tasks/t06_lgvq_temporal_consistency/tests/test_physical_contract.py",
+      "sha256": "ee99bb0f78c3520bfef69d6e2817ea4ed2f9a2e7cbf841a411e684c206b89c8d"
+    },
+    {
+      "path": "LightGenPublic/tasks/t06_lgvq_temporal_consistency/tests/test_source_contract.py",
+      "sha256": "657b2cd0564bff3e075637bcbc16d96151ad37babdc2373c905d69a2c7b0049d"
+    },
+    {
+      "path": "LightGenPublic/tasks/t06_lgvq_temporal_consistency/tools/build_teacher_release.py",
+      "sha256": "1fd3b222c99f57e610879134480b5d444a6199d87ecf6cbec271fb26c5678602"
+    },
+    {
+      "path": "LightGenPublic/tasks/t06_lgvq_temporal_consistency/train.py",
+      "sha256": "79c9b43877f6fc524c0ecfdc00c148b2ea71613938285485cbabcbdd66591633"
+    },
+    {
+      "path": "LightGenPublic/tasks/t06_lgvq_temporal_consistency/verify_release.py",
+      "sha256": "a30246dcda0b7bc3cfafa4de6daa9a2aba8bb04c7cb73471837b6203d5fc3c74"
+    },
+    {
+      "path": "LightGenV2/demo_check/EuroSAT_MoE_D2NN/analysis_tools/analyze_completed_results.py",
+      "sha256": "a7a6f75c2655c9a58d0f20dcdbd901d6ce3811448e5d6f5513232e53a0327e39"
+    },
+    {
+      "path": "LightGenV2/demo_check/EuroSAT_MoE_D2NN/analysis_tools/export_experiment_images_20260914.py",
+      "sha256": "3dc4bab95b907a289afa0f5123e328bf1fdb1fcfb596196a7a691382d14e71e8"
+    },
+    {
+      "path": "LightGenV2/demo_check/EuroSAT_MoE_D2NN/analysis_tools/plot_three_models_20260914.py",
+      "sha256": "5f48eb17e21aa57f974aec3f3d892bdbf60f4039b6924995fdb69700cad0a0ed"
+    },
+    {
+      "path": "LightGenV2/demo_check/EuroSAT_MoE_D2NN/analysis_tools/render_ab_image_examples_20260914.py",
+      "sha256": "d42e4951a258504edb167b5a1759e6fd23eabe7f934c10ad5df0f4ce896d5669"
+    },
+    {
+      "path": "LightGenV2/demo_check/EuroSAT_MoE_D2NN/analysis_tools/render_nonlinear_phase_package_20260914.py",
+      "sha256": "25f4542fbbbe98b6bb80076c6b623e600de2ed50f0e4560156f1a74b24e2ee32"
+    },
+    {
+      "path": "LightGenV2/demo_check/EuroSAT_MoE_D2NN/analysis_tools/verify_completed_results.py",
+      "sha256": "d6fcf51162c1a8bf1f36023fd930a21a2db13b4e379fb0a0c96f90697e027334"
+    },
+    {
+      "path": "LightGenV2/demo_check/EuroSAT_MoE_D2NN/analysis_tools/verify_downloaded_image_package_20260914.py",
+      "sha256": "8864f90c2a1cd73df93d64d6dba8cffb84f5a2d167640a78d2e12b71d6fd96b0"
+    },
+    {
+      "path": "LightGenV2/demo_check/EuroSAT_MoE_D2NN/code/experiments/qwen3_vl_embedding_2b_cifar10_four_layer_optical_router_classification/run_server_pair.sh",
+      "sha256": "71b7ffe6585d58a0a2dd151f0f58f1c85a64fe9c64d538e043a86c0338a580d5"
+    },
+    {
+      "path": "LightGenV2/demo_check/EuroSAT_MoE_D2NN/provenance/package_code_for_delivery.py",
+      "sha256": "8977a033bb678fb9ba1f84897fad073775e7ab5f57c75109966bfc860b60570d"
+    },
+    {
+      "path": "LightGenV2/demo_check/adrenal_softsign_code_export_20260915_145336/data_tools/common.py",
+      "sha256": "1eac0c313369ae0c52ade293f876d1618120c3fdd2937aaf74ef8e69b106aacc"
+    },
+    {
+      "path": "LightGenV2/demo_check/adrenal_softsign_code_export_20260915_145336/data_tools/preparation.py",
+      "sha256": "13eeeff30748c8fbd6a4a6d04faf13138aa532c55dc95278314f8f429f971e13"
+    },
+    {
+      "path": "LightGenV2/demo_check/frozen_electronic/run.py",
+      "sha256": "60673d9d0d866fab74f57fad42e50c7a78ccc13bfae21624e4a6434bc0284333"
+    },
+    {
+      "path": "LightGenV2/demo_check/pure_optical/evaluate_holdout.py",
+      "sha256": "b786aca6ca826faa2056c754a765b1a1c4b15d50bc6209bee2a69aa616119632"
+    },
+    {
+      "path": "LightGenV2/demo_check/releases/eurosat_phase_only_moe_d2nn_20260916/eurosat_phase_only_moe_d2nn/download_archives.py",
+      "sha256": "314aec875575e7c3141cd17a8c708e5862a93199cede7a243a4f6293505b07ef"
+    },
+    {
+      "path": "LightGenV2/demo_check/releases/eurosat_phase_only_moe_d2nn_20260916/eurosat_phase_only_moe_d2nn/models.py",
+      "sha256": "d0881c17497e1540b3afc91d4e874c19c3e29f20dd5bd2346d9911fe2cbe7542"
+    },
+    {
+      "path": "LightGenV2/demo_check/releases/eurosat_phase_only_moe_d2nn_20260916/eurosat_phase_only_moe_d2nn/optics.py",
+      "sha256": "a222515d58c5829bdae9bc9d0d9b564864b6fae8f9bed7db398999623ce32cf9"
+    },
+    {
+      "path": "LightGenV2/demo_check/releases/eurosat_phase_only_moe_d2nn_20260916/eurosat_phase_only_moe_d2nn/prepare.py",
+      "sha256": "66ba4dd16abf0646bc9b9785debea7b8ad715abdc0d45c51b329d284cbcf22c8"
+    },
+    {
+      "path": "LightGenV2/demo_check/releases/eurosat_phase_only_moe_d2nn_20260916/eurosat_phase_only_moe_d2nn/run.py",
+      "sha256": "717f75257321e3148203d2fafac216e142d644e61d1192748f531a468c6a0a13"
+    },
+    {
+      "path": "LightGenV2/demo_check/shared_frontend/evaluate_single_holdout.py",
+      "sha256": "4942d7130ba16fcb0139da353a71ef1856824b58652cc764a6f26cadff63b474"
+    },
+    {
+      "path": "LightGenV2/projects/lgvq_temporal/inspect_fields.py",
+      "sha256": "fc215ed237a95b08166dd68495ebd5e5484e753ed015ecaddbd5ba3fdfa7229b"
+    },
+    {
+      "path": "LightGenV2/projects/lgvq_temporal/simulate.py",
+      "sha256": "738996c9c5cb40274bf69fab49afbd77f78c99f94fd1d3734e375beb84533587"
+    },
+    {
+      "path": "LightGenV2/projects/lgvq_temporal/sync_reference.py",
+      "sha256": "129ff4c115035a2706ec1d17548949d20d3317348f1f21af7316ec00015705ee"
+    },
+    {
+      "path": "LightGenV2/projects/lgvq_temporal/tests/test_ccd_noise.py",
+      "sha256": "56464884f0627887d1548a46188c92ecb0c064e48bf81bc7644377204e63a0b2"
+    },
+    {
+      "path": "LightGenV2/projects/lgvq_temporal/tests/test_physical_contract.py",
+      "sha256": "ee99bb0f78c3520bfef69d6e2817ea4ed2f9a2e7cbf841a411e684c206b89c8d"
+    },
+    {
+      "path": "LightGenV2/projects/lgvq_temporal/tests/test_source_contract.py",
+      "sha256": "657b2cd0564bff3e075637bcbc16d96151ad37babdc2373c905d69a2c7b0049d"
+    },
+    {
+      "path": "LightGenV2/projects/lgvq_temporal/train.py",
+      "sha256": "79c9b43877f6fc524c0ecfdc00c148b2ea71613938285485cbabcbdd66591633"
+    },
+    {
+      "path": "LightGenV2/projects/lgvq_temporal/verify_release.py",
+      "sha256": "8ced9b0e0ce48a481699bf85363234da534f6e10c064066fdacd91c5ac63e6cf"
+    },
+    {
+      "path": "LightGenV2/reports/20260914_latest_optical_electronics_a100_FINAL/profile_latest_optical_electronics_a100.py",
+      "sha256": "47676b1046e59d184cf894fd20318df160c94c7ef8bc6df288c8003d1f7fa8ca"
+    },
+    {
+      "path": "LightGenV2/reports/20260914_latest_optical_electronics_a100_NARROW_CLEAN_FINAL/consolidate_narrow_optical_power.py",
+      "sha256": "cbb74d736677f64f4df6407e44ecf64be3678e81e862362550ba40872e46313a"
+    },
+    {
+      "path": "LightGenV2/reports/20260914_latest_optical_electronics_a100_NARROW_FINAL/consolidate_narrow_optical_power.py",
+      "sha256": "e8df8382d40f6b769d2823ea1e27c1d6ec585d165c3c93c68ce2af4d0ef33a7e"
+    },
+    {
+      "path": "LightGenV2/reports/20260914_latest_optical_electronics_a100_NARROW_FINAL/profile_narrow_optical_electronics_a100.py",
+      "sha256": "ed956dadc0a6ab70b84ebd2ae53ac0d588f95ddf25ea379e63e5ca80f33a2c04"
+    },
+    {
+      "path": "LightGenV2/reports/20260914_latest_optical_electronics_a100_NARROW_POWER_v1/source_snapshot/LightGenV2/scripts/profile_latest_optical_electronics_a100.py",
+      "sha256": "47676b1046e59d184cf894fd20318df160c94c7ef8bc6df288c8003d1f7fa8ca"
+    },
+    {
+      "path": "LightGenV2/reports/20260914_latest_optical_electronics_a100_NARROW_POWER_v1/source_snapshot/LightGenV2/scripts/profile_narrow_optical_electronics_a100.py",
+      "sha256": "ed956dadc0a6ab70b84ebd2ae53ac0d588f95ddf25ea379e63e5ca80f33a2c04"
+    },
+    {
+      "path": "LightGenV2/reports/20260914_latest_optical_electronics_a100_NARROW_POWER_v2_TELEMETRY/source_snapshot/LightGenV2/scripts/profile_latest_optical_electronics_a100.py",
+      "sha256": "47676b1046e59d184cf894fd20318df160c94c7ef8bc6df288c8003d1f7fa8ca"
+    },
+    {
+      "path": "LightGenV2/reports/20260914_latest_optical_electronics_a100_NARROW_v1/source_snapshot/LightGenV2/scripts/profile_latest_optical_electronics_a100.py",
+      "sha256": "47676b1046e59d184cf894fd20318df160c94c7ef8bc6df288c8003d1f7fa8ca"
+    },
+    {
+      "path": "LightGenV2/reports/20260914_latest_optical_electronics_a100_NARROW_v1/source_snapshot/LightGenV2/scripts/profile_narrow_optical_electronics_a100.py",
+      "sha256": "75bbd2df870831d16f6a6c0af6bdf8beee6d91f7fe4957be5d5da0ac0c17b074"
+    },
+    {
+      "path": "LightGenV2/reports/20260914_latest_optical_electronics_a100_NARROW_v2_CLEAN/source_snapshot/LightGenV2/scripts/profile_latest_optical_electronics_a100.py",
+      "sha256": "47676b1046e59d184cf894fd20318df160c94c7ef8bc6df288c8003d1f7fa8ca"
+    },
+    {
+      "path": "LightGenV2/reports/20260914_latest_qwen_baselines_a100_FIRSTBLOCK_FINAL/source_snapshot/consolidate_latest_qwen_baselines_a100.py",
+      "sha256": "53b38ec05f3427994b8cf07258560e63d2dfa2eaae38ced64530f9c4ff893274"
+    },
+    {
+      "path": "LightGenV2/reports/20260914_latest_qwen_baselines_a100_FIRSTBLOCK_FINAL/source_snapshot/profile_latest_qwen_changed_a100.py",
+      "sha256": "298956ccd4a792fedf8fbaad6448676bff067270d8b92e1a68dd66804e7fb244"
+    },
+    {
+      "path": "LightGenV2/reports/20260914_latest_qwen_baselines_a100_FIRSTBLOCK_FINAL/source_snapshot/profile_latest_qwen_changed_a100_three_tasks_sha07cbc28c.py",
+      "sha256": "07cbc28c97d4cd841583881b70b3859595005351173c48f2d99b873c960f37fd"
+    },
+    {
+      "path": "LightGenV2/reports/20260915_baseline_methods/code_packages/01_lgvq/run_baseline.py",
+      "sha256": "4f81f13e3f5560e7db55e91dc198580e0b4bd114c84033ae3b3b6e942039c19c"
+    },
+    {
+      "path": "LightGenV2/reports/20260915_baseline_methods/code_packages/01_lgvq/source/LightGenV2/tasks/t06_video_quality_assessment/quality_token_dataset_once.py",
+      "sha256": "266890f3ddc220e9aab6f8d2bdfa82bc5ef543acff29a73434ef797d1a44a523"
+    },
+    {
+      "path": "LightGenV2/reports/20260915_baseline_methods/code_packages/02_abo_image_text/run_baseline.py",
+      "sha256": "4f81f13e3f5560e7db55e91dc198580e0b4bd114c84033ae3b3b6e942039c19c"
+    },
+    {
+      "path": "LightGenV2/reports/20260915_baseline_methods/code_packages/03_abo_image_image/run_baseline.py",
+      "sha256": "4f81f13e3f5560e7db55e91dc198580e0b4bd114c84033ae3b3b6e942039c19c"
+    },
+    {
+      "path": "LightGenV2/reports/20260915_baseline_methods/code_packages/03_abo_image_image/source/LightGenV2/tasks/t07_abo_image_retrieval/standalone/retail_sources.py",
+      "sha256": "a4c8a6c21dee4484633ab57b63c33e5a84702635412d64d27d8bdbdd0e197149"
+    },
+    {
+      "path": "LightGenV2/reports/20260915_baseline_methods/code_packages/04_lsp/run_baseline.py",
+      "sha256": "4f81f13e3f5560e7db55e91dc198580e0b4bd114c84033ae3b3b6e942039c19c"
+    },
+    {
+      "path": "LightGenV2/reports/20260915_baseline_methods/code_packages/05_salicon/run_baseline.py",
+      "sha256": "4f81f13e3f5560e7db55e91dc198580e0b4bd114c84033ae3b3b6e942039c19c"
+    },
+    {
+      "path": "LightGenV2/reports/20260915_baseline_methods/code_packages/05_salicon/source/LightGenV2/tasks/t03_saliency/settings.py",
+      "sha256": "75c6a415a06f32a01e6482ea13c1bd608b3bb26c1f92ca3611d7056212bba7ce"
+    },
+    {
+      "path": "LightGenV2/reports/20260915_baseline_methods/code_packages/05_salicon/source/LightGenV2/tasks/t03_saliency/training_support.py",
+      "sha256": "1df422c15164b0f74d6770f298a708f7514f83491b7dbd9c9906c4648ad2b908"
+    },
+    {
+      "path": "LightGenV2/reports/20260915_baseline_methods/code_packages/06_openmoji/run_baseline.py",
+      "sha256": "4f81f13e3f5560e7db55e91dc198580e0b4bd114c84033ae3b3b6e942039c19c"
+    },
+    {
+      "path": "LightGenV2/reports/20260915_lgvq_topsw/source_snapshot/calculate_lgvq_topsw_ops.py",
+      "sha256": "3ccd0c4f34cf78c3e002f9d89f49178f9902f059c91212d36e7728c9c74afa62"
+    },
+    {
+      "path": "LightGenV2/reports/20260917_redbox_timing_energy_audit/evidence/current_qwen_firstblock_final/source_snapshot/consolidate_latest_qwen_baselines_a100.py",
+      "sha256": "53b38ec05f3427994b8cf07258560e63d2dfa2eaae38ced64530f9c4ff893274"
+    },
+    {
+      "path": "LightGenV2/reports/20260917_redbox_timing_energy_audit/evidence/current_qwen_firstblock_final/source_snapshot/profile_latest_qwen_changed_a100.py",
+      "sha256": "298956ccd4a792fedf8fbaad6448676bff067270d8b92e1a68dd66804e7fb244"
+    },
+    {
+      "path": "LightGenV2/reports/20260917_redbox_timing_energy_audit/evidence/current_qwen_firstblock_final/source_snapshot/profile_latest_qwen_changed_a100_three_tasks_sha07cbc28c.py",
+      "sha256": "07cbc28c97d4cd841583881b70b3859595005351173c48f2d99b873c960f37fd"
+    },
+    {
+      "path": "LightGenV2/reports/20260917_redbox_timing_energy_audit/evidence/ours_narrow_clean_final/consolidate_narrow_optical_power.py",
+      "sha256": "cbb74d736677f64f4df6407e44ecf64be3678e81e862362550ba40872e46313a"
+    },
+    {
+      "path": "LightGenV2/reports/baseline_plotting_20260922/_server_raw/lsp/resolved_config.yaml",
+      "sha256": "9571466d803881ac44a3c6a032ceefc414ca116727a73d287870fbad6b13a6f8"
+    },
+    {
+      "path": "LightGenV2/scripts/build_baseline_plotting_bundle.py",
+      "sha256": "3473e332c377323e86b3b78f58ed7a843718c138ed40e4c9c7f45b262bc24776"
+    },
+    {
+      "path": "LightGenV2/scripts/calculate_lgvq_topsw_ops.py",
+      "sha256": "51db28a87539d8ddab0a979b31761e9d0e53912cb0fbf3332892e427d2a4fe75"
+    },
+    {
+      "path": "LightGenV2/scripts/consolidate_latest_a100_electronics.py",
+      "sha256": "2ad033702315650220696acf418131821cd53a412632344e322d37b35ccd9aac"
+    },
+    {
+      "path": "LightGenV2/scripts/consolidate_latest_qwen_baselines_a100.py",
+      "sha256": "53b38ec05f3427994b8cf07258560e63d2dfa2eaae38ced64530f9c4ff893274"
+    },
+    {
+      "path": "LightGenV2/scripts/consolidate_narrow_optical_power.py",
+      "sha256": "cbb74d736677f64f4df6407e44ecf64be3678e81e862362550ba40872e46313a"
+    },
+    {
+      "path": "LightGenV2/scripts/profile_latest_qwen_changed_a100.py",
+      "sha256": "298956ccd4a792fedf8fbaad6448676bff067270d8b92e1a68dd66804e7fb244"
+    },
+    {
+      "path": "LightGenV2/tasks/t07_abo_image_retrieval/analysis/analyze_bringup4.py",
+      "sha256": "3079fedb119a8f0f006727d3074bcc4bf1e71f6d50214bec7cc0ea2b4b45798a"
+    },
+    {
+      "path": "LightGenV2/tasks/t07_abo_image_retrieval/analysis/audit_stage_orientations.py",
+      "sha256": "b0a2a624189fe1a831bad58810d9a3c0c1518e7c40f60add1fd7b54f823cb387"
+    },
+    {
+      "path": "LightGenV2/tasks/t07_abo_image_retrieval/lab_dvp8um/abo_full_sensor_health.py",
+      "sha256": "280106861792d5f631289c2e835750ca82b1538c2ebc1d08c75685ed7971e0f0"
+    },
+    {
+      "path": "LightGenV2/tasks/t07_abo_image_retrieval/lab_dvp8um/abo_illumination_map.py",
+      "sha256": "22ae3bc12cfa56f8a6bd3c927e80a4abb046f30267a03c46514380eaf54e5543"
+    },
+    {
+      "path": "LightGenV2/tasks/t07_abo_image_retrieval/lab_dvp8um/abo_input_replay_probe.py",
+      "sha256": "4de0ebb158d4ca8b76a58dd90fdfe95d0e294e53fdd551acfcf7437f52d2108b"
+    },
+    {
+      "path": "LightGenV2/tasks/t07_abo_image_retrieval/lab_dvp8um/abo_sdk_preload_probe.py",
+      "sha256": "267d5655f701113aa1955418f79fb79749dc6f95ea3bfdd11e1f7b2c19821387"
+    },
+    {
+      "path": "LightGenV2/tasks/t07_abo_image_retrieval/lab_dvp8um/check_dvp_enumeration.py",
+      "sha256": "1cd1e7e011f5acec58fdf82793cfe34aa03037733de258cdb0fcc8c184cda52d"
+    },
+    {
+      "path": "LightGenV2/tasks/t07_abo_image_retrieval/lab_dvp8um/generate_fresnel_sets.py",
+      "sha256": "7eda25f3e6e4f2fd56a3eac377ad67fdb0ee72537c964fec5e4b2af05e801d7d"
+    },
+    {
+      "path": "LightGenV2/tasks/t07_abo_image_retrieval/lab_dvp8um/run_abo_brightness_health_20260924.cmd",
+      "sha256": "eaa641a9f1a55c558b5eca7f7445543b978966853b5bf4e743152e5d1042b18f"
+    },
+    {
+      "path": "LightGenV2/tasks/t07_abo_image_retrieval/lab_dvp8um/run_abo_illumination_20260924.cmd",
+      "sha256": "26808928e8cbb9fa0476fee806b8a304136bf4de71b7c7337a66c159edf51864"
+    },
+    {
+      "path": "LightGenV2/tasks/t07_abo_image_retrieval/lab_dvp8um/run_abo_input_replay_20260924.cmd",
+      "sha256": "980dfcabc9943982671985554b69488b3a2a66d53bd61f0c2b2f5161e0643cb7"
+    },
+    {
+      "path": "LightGenV2/tasks/t07_abo_image_retrieval/lab_dvp8um/run_abo_sdk_preload_probe_20260924.cmd",
+      "sha256": "20a686d7c1c17d99ff79078f96b80a0b8d32be65e8ccfe4417dd7c0adbd69c66"
+    },
+    {
+      "path": "LightGenV2/tasks/t07_abo_image_retrieval/lab_dvp8um/run_exposure_scan.cmd",
+      "sha256": "7b51802daf1b467fbac6c00697a66c8302f176d8077f85090a1622e3052beae2"
+    },
+    {
+      "path": "LightGenV2/tasks/t07_abo_image_retrieval/lab_dvp8um/run_four_image_flow.cmd",
+      "sha256": "c1f312cf80418ceb64d31dcacae0db286559e71f25759f727d400ad223d2d10e"
+    },
+    {
+      "path": "LightGenV2/tasks/t07_abo_image_retrieval/lab_dvp8um/run_full_query_flow.cmd",
+      "sha256": "9f011a8befb0d99e9731cab9a6574e2bdf7a888b21a3f72f5fe50f8b73e9aa12"
+    },
+    {
+      "path": "LightGenV2/tasks/t07_abo_image_retrieval/lab_dvp8um/run_full_query_flow_20260924.cmd",
+      "sha256": "ceecde8e1c9a82359ce9528b3364203e45d0a32c58265f4459e6f731b244bbc0"
+    },
+    {
+      "path": "LightGenV2/tasks/t07_abo_image_retrieval/lab_dvp8um/run_mnist_digit_exposure_20260924.cmd",
+      "sha256": "d25e03cd21cdca7fd8273d034004854bafa10654c2d0a147bdf30daed54f7b2a"
+    },
+    {
+      "path": "LightGenV2/tasks/t07_abo_image_retrieval/lab_dvp8um/run_mnist_dvp_20260924.cmd",
+      "sha256": "1efac7129384394a972fe1fb51c2c8d43330437899aabdca3acd4f7d28000b90"
+    },
+    {
+      "path": "LightGenV2/tasks/t07_abo_image_retrieval/lab_dvp8um/run_mnist_exposure_20260924.cmd",
+      "sha256": "cc27e305895349b5401e197fcada7c3b8bbf5f8b5e9877fab73a3423c5958793"
+    },
+    {
+      "path": "LightGenV2/tasks/t07_abo_image_retrieval/lab_dvp8um/run_mnist_full40_15ms_20260924.cmd",
+      "sha256": "9085b1025626a36c41de3677c03e535ad3be94786d824925e6468e6d70b7ed77"
+    },
+    {
+      "path": "LightGenV2/tasks/t07_abo_image_retrieval/lab_dvp8um/run_mnist_full40_20260924.cmd",
+      "sha256": "2be520e22c29a5d9a7fcb46ab55eec44f43f54876105558dba3914be0f566d59"
+    },
+    {
+      "path": "LightGenV2/tasks/t07_abo_image_retrieval/lab_dvp8um/run_mnist_phase_20260924.cmd",
+      "sha256": "be5b951b60bdec9a387a5c26f601f9b53f919918580ebe66487deac73b5b7977"
+    },
+    {
+      "path": "LightGenV2/tasks/t07_abo_image_retrieval/lab_dvp8um/run_mnist_timing_20260924.cmd",
+      "sha256": "678f486fb956c290f50b56848addc7b935aefe25ad0d065356e9dbd987782054"
+    },
+    {
+      "path": "LightGenV2/tasks/t07_abo_image_retrieval/lab_dvp8um/run_mnist_timing_retry1_20260924.cmd",
+      "sha256": "b23b5f41d0558eacbb3c993f74094a311cf8bee4e2bff71c7153d715ef9f41b1"
+    },
+    {
+      "path": "LightGenV2/tasks/t10_expert_scaling/export_topk32_handoff.py",
+      "sha256": "ee1e7edf56e4df09ac9ea169348f1ae919e67735da18790214d6364bf7bfbc82"
+    },
+    {
+      "path": "LightGenV2/tasks/t10_expert_scaling/update_topk32_full_test_handoff.py",
+      "sha256": "fbc91df3789639fdc0e0594f2674ffa5d3898edff5a949955825f47df809a5a2"
+    },
+    {
+      "path": "LightGenV2/tasks/t10_expert_scaling/update_topk32_test_handoff.py",
+      "sha256": "84814ad58d33a21a4a883bac717a8343b09b4cf4111ced2757bd6899d8631daf"
+    },
+    {
+      "path": "LightGenV2/tasks/t12_text_to_image/lab_shs8um/check_inputs.py",
+      "sha256": "e59b25c07b236645e463a3b1c339fc516b2bab498056b1bf8593bdc911f54642"
+    },
+    {
+      "path": "LightGenV2/tasks/t12_text_to_image/lab_shs8um/diagnose_exposure.cmd",
+      "sha256": "dcd83933f356392e154f1c6bf7a40ac0d9fcaf541692dc2d48681f23a8d81de5"
+    },
+    {
+      "path": "LightGenV2/tasks/t12_text_to_image/lab_shs8um/run_layerwise.py",
+      "sha256": "7d69b00ec627bf8f4ade5123a3d08aa5e49df2f49406099cdc14bc21e684527f"
+    },
+    {
+      "path": "LightGenV2/tasks/t12_text_to_image/lab_shs8um/run_pilot.py",
+      "sha256": "3c38d961fa8ee44397c0f1380e9ba52ffd11300042201709f6381a1c7bb7e2ed"
+    },
+    {
+      "path": "TransferFromElectricity/d2nn_pack/config.yaml",
+      "sha256": "420ec97e2006b1e2068c60317168acdd2b47125de6b4b496f5803217fa50c4c1"
+    },
+    {
+      "path": "TransferFromElectricity/d2nn_pack/data.py",
+      "sha256": "c5381367dc00dba2570f78a4d0c4c2047d549d3f92eb3ceae3bf039e319cfd9a"
+    },
+    {
+      "path": "TransferFromElectricity/d2nn_pack/extract_clip_features.py",
+      "sha256": "1cbf98a7f0a015fe8bd4806664532934d7cd0446a41e09861dc8abe494eaf41e"
+    },
+    {
+      "path": "TransferFromElectricity/d2nn_pack/losses.py",
+      "sha256": "8a2b8bc58ca13ffd12272937469f87e8beb225d3af965a002f630b6bf1c04835"
+    },
+    {
+      "path": "TransferFromElectricity/d2nn_pack/mask_generator.py",
+      "sha256": "3cf8b5c3c71febac388aff002f5bfaaa46de1af3c0de8459524f19ca18a3b09c"
+    },
+    {
+      "path": "TransferFromElectricity/d2nn_pack/model_adapt.py",
+      "sha256": "4134b4b6531c91e09ee505a5aa2294ed313b58c4a86061099e86a18ab995eb3b"
+    },
+    {
+      "path": "TransferFromElectricity/d2nn_pack/train_d2nn_adapt_grid.py",
+      "sha256": "2432dc76ad4f8170728894157b34cb3e66a8e3a9a1d3b78858dbd12f5ec95d37"
+    },
+    {
+      "path": "TransferFromElectricity/d2nn_pack/train_d2nn_mnist256.py",
+      "sha256": "78e2d91e611d16b9d79584e2c2b4523ec816694fa6724f9865a44c89b214237d"
+    },
+    {
+      "path": "handoffs/abo_latestfresh35_lab_20260930/display_boundary_probe.py",
+      "sha256": "f33e8fae5d4bcae317220ecca19a57c3e03c901064bb9fe9fc580dd711d582f5"
+    },
+    {
+      "path": "handoffs/abo_latestfresh35_lab_20260930/display_chain_audit.py",
+      "sha256": "8906cfd95ad0601434d70380136672dc1255890b239b31448978b9c91702d6f1"
+    },
+    {
+      "path": "handoffs/abo_latestfresh35_lab_20260930/model_rank192_bench.py",
+      "sha256": "f505f4c138260dbb82e65d321767f7cd4e81cc04a0b4aa9dd0adfa3dbdce9ed3"
+    },
+    {
+      "path": "handoffs/abo_latestfresh35_lab_20260930/rank72_global_control.py",
+      "sha256": "04f377fd51749cd31ca300093c2706b8a7f239eac263c9d253f1fbf4ee9a4c18"
+    },
+    {
+      "path": "handoffs/abo_latestfresh35_lab_20260930/run_display_audit.cmd",
+      "sha256": "1c3ceede1ea8865185355d0bf669a802ffb8db257078b1979d1126116f11361f"
+    },
+    {
+      "path": "handoffs/abo_latestfresh35_lab_20260930/run_distinct_controls.cmd",
+      "sha256": "20fee904cd7e3b22d3b0877e0088eb9892652369ae8e7c89a248d2b008988319"
+    },
+    {
+      "path": "handoffs/abo_latestfresh35_lab_20260930/run_rank72_alternate.cmd",
+      "sha256": "8dd1ec69a232a8d29a9ff685578945201e708a9b66209d4e581760228961b3ef"
+    },
+    {
+      "path": "handoffs/abo_latestfresh35_lab_20260930/run_rank72_alternate_retry2.cmd",
+      "sha256": "00f23b40f7e2dc3f2181ff45c460b492bfd6eaa42dffd3f17ae96f119cb1f605"
+    },
+    {
+      "path": "handoffs/abo_latestfresh35_lab_20260930/run_rank72_full.cmd",
+      "sha256": "27f43eba21fa1eeead5eafff3d6aaefd816f96ccc39f7dc022e3b81acb351cda"
+    },
+    {
+      "path": "handoffs/abo_latestfresh35_lab_20260930/run_rank72_global_control.cmd",
+      "sha256": "c36cab55b74306cc944f2634610579fff82a835ecfce96b52cf22afa261e5e23"
+    },
+    {
+      "path": "handoffs/abo_latestfresh35_lab_20260930/run_rank72_global_raw.cmd",
+      "sha256": "b5339cdec3ff84027ec2f143d3ac2ef79f1a12cf0be53b2b459db72b1ae0b1e0"
+    },
+    {
+      "path": "handoffs/abo_latestfresh35_lab_20260930/run_rank72_global_retry2.cmd",
+      "sha256": "385690317aaeb36fd4b0fa66a68038fd868be3f1326b8d7feeee4a9a2f14cea0"
+    },
+    {
+      "path": "handoffs/abo_latestfresh35_lab_20260930/run_rank72_pilot.cmd",
+      "sha256": "5a514ae34f1c1aeffe41061b240f6e270930ebcc9acdf95b90a46fdc17e72a6e"
+    },
+    {
+      "path": "handoffs/abo_latestfresh35_lab_20260930/run_rank72_selftest.cmd",
+      "sha256": "8ca4cfa876f506bbd822afc7b3573a23a8bdd326be11a3f0bf692190e1083978"
+    },
+    {
+      "path": "handoffs/abo_latestfresh35_lab_20260930/run_rank72_stage_sessions.cmd",
+      "sha256": "6082a816d17eb407a76678c177d407488254bb45ca1b0b83cd4a966e709b960b"
+    },
+    {
+      "path": "handoffs/abo_latestfresh35_lab_20260930/run_rank72_testselected_tune.cmd",
+      "sha256": "633bbaa6dd7cb0782fb3a387cfe6840aac2458549f589995154a1752f71a0ae8"
+    },
+    {
+      "path": "handoffs/abo_latestfresh35_lab_20260930/run_reboot_control.cmd",
+      "sha256": "939ed4fbed84f6d78333854c1cc93b1e8018e842bb788ce9c1bc65dd0194f5e4"
+    },
+    {
+      "path": "handoffs/abo_latestfresh35_lab_20260930/run_unlock_check.cmd",
+      "sha256": "86fb5572a6c99f59f108a23fc16ca717ca1144347f4f8a592f23066d39dc6fbb"
+    },
+    {
+      "path": "handoffs/abo_latestfresh35_lab_20260930/stage_control_diagnostic_old.py",
+      "sha256": "7bbb509538171179f5295769343cd351d0950907b73deb7ee4949cd45c68e2fc"
+    },
+    {
+      "path": "handoffs/abo_text_to_image_10cm_alpha040_20260925/calibrate_router_pilot.py",
+      "sha256": "072c6493e88138d203c4e2618d5b5af3a201baf0321f1a4103495fec2e7e4726"
+    },
+    {
+      "path": "handoffs/abo_text_to_image_10cm_alpha040_20260925/capture_router_pilot.py",
+      "sha256": "1e980047b4314b2a3790bfca9b95bf6b8a52b185cd4acb04b0936277e1c48f35"
+    },
+    {
+      "path": "handoffs/abo_text_to_image_10cm_alpha040_20260925/config.yaml",
+      "sha256": "be07e969b7aad79e2df4f0b246cbeb8141e102c83c062882dd2e73d23771a3cc"
+    },
+    {
+      "path": "handoffs/abo_text_to_image_10cm_alpha040_20260925/phase_response_probe.py",
+      "sha256": "b40d30dbf1bda1add51783d9656b52e3e9f8510194397a08d5fcacd7039ef5cd"
+    },
+    {
+      "path": "handoffs/abo_text_to_image_figure_pack_20260928/build_pack.py",
+      "sha256": "f54f77c60fe2083b1d2aba3bc982bea3c818c52346fc4991369b27ef7ff6ced3"
+    },
+    {
+      "path": "handoffs/openmoji_robust_ablation_20260928/midrank48_candidate/cached_decoder_focus_probe.py",
+      "sha256": "33e8838819dbf9c67cb95821942db9b210d1ce96c02a6132b32b4fecd1ccf5d4"
+    },
+    {
+      "path": "handoffs/openmoji_robust_ablation_20260928/midrank48_candidate/diagnose_edit_gate_20261002.py",
+      "sha256": "3adf5300d901b40f75eef3919d6510b284fd16723708f8305a00b4aaeea930d4"
+    },
+    {
+      "path": "handoffs/openmoji_robust_ablation_20260928/midrank48_candidate/fixed_category_probe_20261002.py",
+      "sha256": "de3d07782353f38b414dd5db14980e164b31297c2ce0607ac4f33c34a97b5f4e"
+    },
+    {
+      "path": "handoffs/openmoji_robust_ablation_20260928/midrank48_candidate/fixed_rank48_alltrain_20261002.py",
+      "sha256": "12dad5340ea6e826371a3bfd403e6e026b7a652050dc14ff1b1dfddb633b9007"
+    },
+    {
+      "path": "handoffs/openmoji_robust_ablation_20260928/midrank48_candidate/focus_probe_fixed_eval.py",
+      "sha256": "f4bc42347807f08f1aa1658efbf131916946bbe441e2915d7f5d0e19cb22a517"
+    },
+    {
+      "path": "handoffs/openmoji_robust_ablation_20260928/midrank48_candidate/g2_lab_shs_capture.py",
+      "sha256": "edf71fc2913b6dc0231197fa5ce751b330001905f059e45b07d2ad010db59e0f"
+    },
+    {
+      "path": "handoffs/openmoji_robust_ablation_20260928/midrank48_candidate/g2_lab_tune_decoder.py",
+      "sha256": "a3bc6c123d87751d4546d5120d496c27a3d0ce6c2f978a9ab523d43f4918cbd2"
+    },
+    {
+      "path": "handoffs/openmoji_robust_ablation_20260928/midrank48_candidate/launch_rank64_clean_20261002.sh",
+      "sha256": "3232a58869de0897d4c783dd6791dcf1408fb4fdf624313c1b80a5e923fcd36d"
+    },
+    {
+      "path": "handoffs/openmoji_robust_ablation_20260928/midrank48_candidate/launch_rank64_common_20261002.sh",
+      "sha256": "443b28af671af80d6eec3c9ec97f1ab0947ec841a757d9a01c89ad020d40b634"
+    },
+    {
+      "path": "handoffs/openmoji_robust_ablation_20260928/midrank48_candidate/overnight_electronic_suite_20261002.py",
+      "sha256": "da462e8ea009aab5e0fe70deea2243e9cae01ae98a14867d6e57e8baf7c1c248"
+    },
+    {
+      "path": "handoffs/openmoji_robust_ablation_20260928/midrank48_candidate/prepare_rank64_bench_20261002.py",
+      "sha256": "a8c34ebab133cfd1f3c9e7ef5b15bf3e5ec31eb47fdf183c1841685985c613c3"
+    },
+    {
+      "path": "handoffs/openmoji_robust_ablation_20260928/midrank48_candidate/queue_fixed_refine_20261002.py",
+      "sha256": "e33ee005c16dc060924e578515e9b0d7257d44c8ebf45e997bc7c1aff7ac4b27"
+    },
+    {
+      "path": "handoffs/openmoji_robust_ablation_20260928/midrank48_candidate/run_fixed_alltrain_20261002.cmd",
+      "sha256": "15bc58b8d731b0e5e97602e665a3af0e3368af17304050ef187e5ecac5f968a9"
+    },
+    {
+      "path": "handoffs/openmoji_robust_ablation_20260928/midrank48_candidate/run_fixed_category_probe_20261002.cmd",
+      "sha256": "99f92453c0a3bfadd9fd8a95d6cefd86c8a1b8996a5bc5ecd05be81c554001f8"
+    },
+    {
+      "path": "handoffs/openmoji_robust_ablation_20260928/midrank48_candidate/run_fixed_refine_queue_20261002.cmd",
+      "sha256": "d03636edce63be084eb7a2cfa3bffa70d834a5ab61cc8e97e5b0dc49ad8b761b"
+    },
+    {
+      "path": "handoffs/openmoji_robust_ablation_20260928/midrank48_candidate/run_focus_probe.cmd",
+      "sha256": "2b1b009f76894eef5f65d54576f4376093a2984993587c28831423ad25f04732"
+    },
+    {
+      "path": "handoffs/openmoji_robust_ablation_20260928/midrank48_candidate/run_focus_test.cmd",
+      "sha256": "bdca1d9e41b6960568c3efdf39d4bd8a290450afcb8d9d82a90400b4aeeb522d"
+    },
+    {
+      "path": "handoffs/openmoji_robust_ablation_20260928/midrank48_candidate/run_g2_rank48_full.cmd",
+      "sha256": "2e892b5a60d209c47433d845a0d5eaacd56e92783c8a8c20029b9f23eb7adddd"
+    },
+    {
+      "path": "handoffs/openmoji_robust_ablation_20260928/midrank48_candidate/run_g2_rank48_pilot.cmd",
+      "sha256": "f4bc106abe8937400846ef3523a88c0d1b2bb534287ac6ad2ff675f899a28a7e"
+    },
+    {
+      "path": "handoffs/openmoji_robust_ablation_20260928/midrank48_candidate/run_g2_rank48_train.cmd",
+      "sha256": "6cf786e31f6fab1781f122e89babd6a9203115ee927d5d542e95c18cfb32f526"
+    },
+    {
+      "path": "handoffs/openmoji_robust_ablation_20260928/midrank48_candidate/run_g2_rank48_tune.cmd",
+      "sha256": "9d50c0619e91ee1757aa91fa2667ec0589576dcc7be80e0b631ce26c83391be3"
+    },
+    {
+      "path": "handoffs/openmoji_robust_ablation_20260928/midrank48_candidate/run_overnight_suite_20261002.cmd",
+      "sha256": "06732ad437092152ceddf2f41590e0d8bfe4d85aa29b6c364c63689b7f0efb7c"
+    },
+    {
+      "path": "handoffs/openmoji_robust_ablation_20260928/midrank48_candidate/run_rank48_normal_sim_20261002.cmd",
+      "sha256": "c1151c14b5f19442158fb4d54e5e75cab153a1e84399c43cbfa7f1880d3decb1"
+    },
+    {
+      "path": "handoffs/openmoji_robust_ablation_20260928/midrank48_candidate/run_rank64_adapted_sim_audit_20261002.cmd",
+      "sha256": "b1623e642558d6d1e5d3cbf30b677e8d6827cd5bba9bfac7c5cfb0f14b3f9feb"
+    },
+    {
+      "path": "handoffs/openmoji_robust_ablation_20260928/midrank48_candidate/run_rank64_bias_calibration_20261002.cmd",
+      "sha256": "dffea3a72d29a245bc3eef50bb1663d8c38c2bbc554493a462973c0fccc5c338"
+    },
+    {
+      "path": "handoffs/openmoji_robust_ablation_20260928/midrank48_candidate/run_rank64_extra_train1000_20261002.cmd",
+      "sha256": "ad9b7662830dd16fef61083f02ad5d615e0efc71d2e284a50eb7cc1e5715c54c"
+    },
+    {
+      "path": "handoffs/openmoji_robust_ablation_20260928/midrank48_candidate/run_rank64_extra_tune_queue_20261002.cmd",
+      "sha256": "7194512405274b93ac5981c7ab8d391a1d9aca9daaa7b213c95a49a4b5b46844"
+    },
+    {
+      "path": "handoffs/openmoji_robust_ablation_20260928/midrank48_candidate/run_rank64_g2_control_20261002.cmd",
+      "sha256": "2a76e8c7dd089af5a5ee67c9bacfdf66af530aba8b3588a98ed4298b0401e25f"
+    },
+    {
+      "path": "handoffs/openmoji_robust_ablation_20260928/midrank48_candidate/run_rank64_g2_resumequeue_20261002.cmd",
+      "sha256": "3bffbe9230fe7be88b1e5d6963da59beab1b5e403be0b27ae9d367400440be22"
+    },
+    {
+      "path": "handoffs/openmoji_robust_ablation_20260928/midrank48_candidate/run_rank64_g2_test_tune_20261002.cmd",
+      "sha256": "2878a9f1bbcc5502b5d959e7fe85f692ac1832eca5c20fef1522e8bcc1bbe31d"
+    },
+    {
+      "path": "handoffs/openmoji_robust_ablation_20260928/midrank48_candidate/run_rank64_g2_trainpilot_20261002.cmd",
+      "sha256": "a0a2b709b34ddf0ec6afb84ed6338c30a8919f9a5bf5190527afcb89d46e69c8"
+    },
+    {
+      "path": "handoffs/openmoji_robust_ablation_20260928/midrank48_candidate/run_rank64_g2_trainpilot_retry1_20261002.cmd",
+      "sha256": "49c8df8302b17bb9475bdc6d196561139b9ece84ce619cbc95c95d2a7b8ff9fb"
+    },
+    {
+      "path": "handoffs/openmoji_robust_ablation_20260928/midrank48_candidate/run_rank64_g2_trainresume_20261002.cmd",
+      "sha256": "c0ce0288b362084ae88f199c606ca6538ef8fdf03682eac97eba5e0767d23a61"
+    },
+    {
+      "path": "handoffs/openmoji_robust_ablation_20260928/midrank48_candidate/run_rank64_g2_tune_queue_20261002.cmd",
+      "sha256": "6fda30a856b076cdc737c5ade6fe937b0dc697b8d987e49bcb33ee0524a6c027"
+    },
+    {
+      "path": "handoffs/openmoji_robust_ablation_20260928/midrank48_candidate/run_rank64_queue_20261002.cmd",
+      "sha256": "1ad31c95913c7e4d25c920517c1cdb22213feb921d383bf68628ed4d38595a54"
+    },
+    {
+      "path": "handoffs/openmoji_robust_ablation_20260928/midrank48_candidate/run_rank64_test_tune_20261002.cmd",
+      "sha256": "fcf38f6d352a940528c88177aaba765c6c3ac6799e391ce859ea21259874dc24"
+    },
+    {
+      "path": "handoffs/openmoji_robust_ablation_20260928/midrank48_candidate/run_rank64_train2000_bias_calibration_20261002.cmd",
+      "sha256": "9c5e25b12e5842c4fdfb740a56595c7142cb085813d19e5f6c6896658c4cf229"
+    },
+    {
+      "path": "handoffs/openmoji_robust_ablation_20260928/midrank48_candidate/run_rank64_tune2000_20261002.cmd",
+      "sha256": "86125901e46dc264964620d1dac8b95e89447918ae7e78efeb81dae5e02dc57e"
+    },
+    {
+      "path": "handoffs/openmoji_robust_ablation_20260928/midrank48_candidate/run_test_select.cmd",
+      "sha256": "c8318f17be9b73d9610d59ffbde406b2167d45fe026dc06de6bf74b127ce89bc"
+    },
+    {
+      "path": "handoffs/openmoji_robust_ablation_20260928/midrank48_candidate/test_selected_decoder.py",
+      "sha256": "3fc3cf2e3d5adb55f621ce5fa7ae06b271d6e74197b86623592afcb9ea27085f"
+    },
+    {
+      "path": "handoffs/openmoji_robust_ablation_20260928/midrank48_candidate/train_rank64_common_20261002.py",
+      "sha256": "f8e0786a90a1b45a911020251dfddffa34436aa1890a3ba622c2a7b44d23eef1"
+    },
+    {
+      "path": "handoffs/openmoji_robust_ablation_20260928/midrank48_candidate/verify_gate_pt_20261002.py",
+      "sha256": "706139cb6be806a897d14bcb032af0a2488947ceaa470b55f811ddfaaeaae491"
+    },
+    {
+      "path": "handoffs/openmoji_robust_ablation_20260928/midrank48_candidate/verify_rank48_normal_sim_20261002.py",
+      "sha256": "15ebea388511649c02256c51e18e60d3a28ff4b66bd2ca9c14f35cd0e76ad869"
+    },
+    {
+      "path": "handoffs/t12_channel_robust_20260927/run_original_val96.cmd",
+      "sha256": "12ffe5a583dcd0e45479dbc01bd99f9fee7d0bb41acdd34c152c2b8a434a33d0"
+    },
+    {
+      "path": "handoffs/t12_small_baseline_handoff_20260928/stage/materialize_pairs.py",
+      "sha256": "e3cca629d94a0b21abf0c1233d2b8c8e836c546fb83be57dba1388e7b17c6a7d"
+    },
+    {
+      "path": "handoffs/t12_small_baseline_share_20260928/package/export_pairs.py",
+      "sha256": "a667668b6a27143cbd3087b8f69157ca1be44e5ed827d039932125c7942e4824"
+    },
+    {
+      "path": "handoffs/t12_small_baseline_share_20260928/package/infer_ours.py",
+      "sha256": "25ecc7d0444caf5910da4d700935aaf4a554cc82b34ebc64f68f2a98436cc5bc"
+    },
+    {
+      "path": "maintenance/storage/archive_code_worktrees_20261002.py",
+      "sha256": "450e0fd194eba70cf6ca2382860c6107da351faa1c04c9652a55bd154ae71e84"
+    },
+    {
+      "path": "maintenance/storage/audit_guest3_20261002.py",
+      "sha256": "f1d9bc11e5d2259f0e6cfe8f72f44badee6cd5ba5ed08323ec09bdd4faaf677f"
+    },
+    {
+      "path": "maintenance/storage/classify_worktrees_20261002.py",
+      "sha256": "ebc6efbd02215ffbf7d1d6b14945cae86e222bb39b6e813f677de6f81459bd51"
+    },
+    {
+      "path": "maintenance/storage/clear_old_baseline_features_20261002.py",
+      "sha256": "0f0a291f54b6a29479733f70bcc44871094b7a777d454fae3672f14264f16be1"
+    },
+    {
+      "path": "maintenance/storage/git_snapshot_20261002.py",
+      "sha256": "9a917f75511db6fa1e1f6e67c3615bdbf5df40714cccb417ffa4c1a929da60ed"
+    },
+    {
+      "path": "maintenance/storage/safe_cleanup_guest3_20261002.py",
+      "sha256": "ed34daa6848912d36ba180bff928323fc2158b09da7e94d2b5f536e601559149"
+    },
+    {
+      "path": "maintenance/storage/snapshot_authoritative_overlays_20261002.py",
+      "sha256": "4eff64dd5188a2d77e79788778957155b8fa3b29b07b1ca8c87d25a08c45b355"
+    },
+    {
+      "path": "outputs/t12_perceptual_comparison_20260928/assemble_three_task_scores.py",
+      "sha256": "fde887495ec14aae7ff0d2513da2aaae832688d77edbd102ef5046c7389dfe0c"
+    },
+    {
+      "path": "outputs/t12_perceptual_comparison_20260928/build_annotated_figures.py",
+      "sha256": "b5d514da76320af182e843cc38365dc827ac5abce70e94376bf76c82881e8314"
+    },
+    {
+      "path": "outputs/t12_perceptual_comparison_20260928/eval_dists.py",
+      "sha256": "ea0756841b95b0f26bf78cd69cfc7741e54397ad5cb8b48a5d7db66e827308ce"
+    },
+    {
+      "path": "outputs/t12_perceptual_comparison_20260928/eval_lpips.py",
+      "sha256": "952e3f4c5add32c41ebece215daa400f0c38580220bf739317208cb8e1a8bdb9"
+    },
+    {
+      "path": "outputs/t12_perceptual_comparison_20260928/eval_regions.py",
+      "sha256": "d4462ef1888511d578184743cca3e799187bdcd0ae6ec03a9d8b6884ee37e0b6"
+    },
+    {
+      "path": "tmp/pdfs/timing_manual_audit.py",
+      "sha256": "ea8631e6a40f19367c5b76fbe75103fc141e09ceb3edaa623025b005ec279673"
+    }
+  ]
+}

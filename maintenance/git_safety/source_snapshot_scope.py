@@ -79,9 +79,63 @@ def audit(root, reference="HEAD"):
                             "No file may be removed solely from this report."]}
 
 
+def history_refs(root):
+    """Pin existing recovery references only; never create or change refs."""
+    records = git(root, "for-each-ref", "--format=%(refname) %(objectname)", "refs/archive/").decode().splitlines()
+    if len(records) > 256:
+        raise ValueError("More than 256 recovery references: choose a separately reviewed scope")
+    return dict(line.split(" ", 1) for line in records)
+
+
+def audit_history(root, reference="HEAD"):
+    root = Path(root).resolve()
+    refs = history_refs(root)
+    current = audit(root, reference)
+    index = defaultdict(list)
+    by_commit = defaultdict(list)
+    for name, commit in refs.items():
+        by_commit[commit].append(name)
+    for commit, names in by_commit.items():
+        for record in git(root, "ls-tree", "-r", "-z", commit).split(b"\0"):
+            if not record:
+                continue
+            metadata, path = record.split(b"\t", 1)
+            mode, kind, oid = metadata.split()
+            relative = path.decode("utf8")
+            if mode not in (b"100644", b"100755") or kind != b"blob" or Path(relative).suffix.lower() not in SOURCE_SUFFIXES:
+                continue
+            index[oid.decode()].append({"commit": commit, "archive_refs": names, "path": relative})
+    rows = []
+    for row in current["files"]:
+        if row["identity"] != "no_byte_identity_in_reference":
+            continue
+        path = root / row["path"]
+        if path.is_symlink() or not path.is_file():
+            raise RuntimeError("Source type changed during history audit: " + row["path"])
+        data = path.read_bytes()
+        if hashlib.sha256(data).hexdigest() != row["sha256"]:
+            raise RuntimeError("Source changed during history audit: " + row["path"])
+        state, matches = identity(data, index)
+        rows.append({"path": row["path"], "sha256": row["sha256"],
+                     "history_identity": state, "archive_matches": matches})
+    if history_refs(root) != refs or git(root, "rev-parse", "HEAD").decode().strip() != current["head"]:
+        raise RuntimeError("Git identity changed during history audit; discard snapshot")
+    return {"schema": 1, "head": current["head"], "reference_commit": current["reference_commit"],
+            "archive_refs_checked": len(refs), "unique_archive_commits": len(by_commit),
+            "source_counts_against_main": current["counts"], "nonmatching_sources_checked": len(rows),
+            "history_counts": dict(Counter(row["history_identity"] for row in rows)),
+            "files": rows, "mutations": [],
+            "limitations": ["Matches prove existing local Git blob provenance, not main adoption or runtime compatibility.",
+                            "Archive refs are not proof of an independent complete data backup.",
+                            "No match does not mean garbage or an unneeded algorithm.",
+                            "No deletion, move, ignore or source replacement is authorized by this audit."]}
+
+
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--repo", default=".")
     parser.add_argument("--reference", default="HEAD")
+    parser.add_argument("--history", action="store_true", help="Also check nonmatching selected sources against at most 256 existing archive refs")
     args = parser.parse_args()
-    print(json.dumps(audit(args.repo, args.reference), ensure_ascii=False, indent=2))
+    result = audit_history(args.repo, args.reference) if args.history else audit(args.repo, args.reference)
+    print(json.dumps(result, ensure_ascii=False, indent=2))
