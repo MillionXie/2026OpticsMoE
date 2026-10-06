@@ -151,8 +151,17 @@ def main():
                         help='Verify all 111 original Sep 17 timing organization-copy members; requires local files')
     parser.add_argument('--component-timing-payloads', action='store_true',
                         help='Verify retained Sep 14 Qwen and optical-component timing packages; requires original private files')
+    parser.add_argument('--lgvq-timing-payloads', action='store_true',
+                        help='Verify retained Sep 27 LGVQ temporal raw timing CSV/JSON; requires local originals')
     args = parser.parse_args()
     result = inspect(args.repo)
+    if args.lgvq_timing_payloads:
+        descriptor = json.loads((args.repo/'maintenance/storage/LGVQ_TEMPORAL_TIMING_VISIBILITY_20261006.json').read_text(encoding='utf8'))
+        result['lgvq_timing_payloads'] = inspect_export_payload(args.repo, descriptor)
+        manifest = confined(args.repo, descriptor['manifest'])
+        if hashlib.sha256(manifest.read_bytes()).hexdigest() != descriptor['manifest_sha256']:
+            result['lgvq_timing_payloads']['errors'].append('Original LGVQ CSV manifest SHA mismatch')
+        result['errors'].extend(result['lgvq_timing_payloads']['errors'])
     if args.component_timing_payloads:
         folder = args.repo/'maintenance/storage'
         qwen = json.loads((folder/'QWEN_FIRSTBLOCK_TIMING_VISIBILITY_20261006.json').read_text(encoding='utf8'))

@@ -1,0 +1,313 @@
+{
+  "schema_version": 1,
+  "scope": "Existing 2026-09-27 LGVQ temporal multi-baseline A100 historical raw CSV/JSON only",
+  "manifest": "LightGenV2/reports/20260927_lgvq_temporal_multi_baseline_a100/SHA256SUMS.csv",
+  "manifest_sha256": "0c713e792cd6e7758e97a27589884bc128e5331d0161ac312f022b647c002cfe",
+  "manifest_entries_verified": 81,
+  "files": [
+    {
+      "path": "LightGenV2/reports/20260927_lgvq_temporal_multi_baseline_a100/raw_remote/clip_vit_b32/batch_01/power_samples.csv",
+      "sha256": "7fb7058df118676206c2a3b9110b938a43dbfa8b3ff8daa68d7b4d0af8e6a4e8"
+    },
+    {
+      "path": "LightGenV2/reports/20260927_lgvq_temporal_multi_baseline_a100/raw_remote/clip_vit_b32/batch_01/timing_per_call.csv",
+      "sha256": "e88aa56c4ff569dbb3c31e882a196e4d9b03e47d3c9c7f3e23325edb009d0403"
+    },
+    {
+      "path": "LightGenV2/reports/20260927_lgvq_temporal_multi_baseline_a100/raw_remote/clip_vit_b32/batch_02/power_samples.csv",
+      "sha256": "e04da7b95efe9dcd145accc7b162683f23bce27a9cb4d885453794eedbaf4130"
+    },
+    {
+      "path": "LightGenV2/reports/20260927_lgvq_temporal_multi_baseline_a100/raw_remote/clip_vit_b32/batch_02/timing_per_call.csv",
+      "sha256": "80aa3a5776661fae855ba2afbee5602e99c031a17eedea22ab97dde0e31c4c34"
+    },
+    {
+      "path": "LightGenV2/reports/20260927_lgvq_temporal_multi_baseline_a100/raw_remote/clip_vit_b32/batch_04/power_samples.csv",
+      "sha256": "4891ca58ace00ae93a487fa4f96a333054fc128d6acf446a669669c898be107e"
+    },
+    {
+      "path": "LightGenV2/reports/20260927_lgvq_temporal_multi_baseline_a100/raw_remote/clip_vit_b32/batch_04/timing_per_call.csv",
+      "sha256": "6acf00ef2c052b71900d103b07e883c39de4df53dd68f49bc4664dfa876e87a0"
+    },
+    {
+      "path": "LightGenV2/reports/20260927_lgvq_temporal_multi_baseline_a100/raw_remote/clip_vit_b32/batch_08/power_samples.csv",
+      "sha256": "4aa5d14490e2ef5cf77a8d0b00752cfc10e3771ad051d0403e02ffe515cb556a"
+    },
+    {
+      "path": "LightGenV2/reports/20260927_lgvq_temporal_multi_baseline_a100/raw_remote/clip_vit_b32/batch_08/timing_per_call.csv",
+      "sha256": "6d4a999c1f3a39eab1cdada6a4286efccf7f7202f19ca0a30888fec2581f316b"
+    },
+    {
+      "path": "LightGenV2/reports/20260927_lgvq_temporal_multi_baseline_a100/raw_remote/clip_vit_b32/report.json",
+      "sha256": "729838370a9fc0d86e4886283dbef3f34e88e13bd69dee217d5991a5169b6557"
+    },
+    {
+      "path": "LightGenV2/reports/20260927_lgvq_temporal_multi_baseline_a100/raw_remote/clip_vit_b32_independent/batch_2/batch_02/power_samples.csv",
+      "sha256": "97c2ba3412665ed09a2dad51eff9e35134b73cc15cb99568e9a7c86976acaa12"
+    },
+    {
+      "path": "LightGenV2/reports/20260927_lgvq_temporal_multi_baseline_a100/raw_remote/clip_vit_b32_independent/batch_2/batch_02/timing_per_call.csv",
+      "sha256": "659709c41f6e38be00a7dbd180306b14f8df3b96c577563ef10e634b46c9cb2b"
+    },
+    {
+      "path": "LightGenV2/reports/20260927_lgvq_temporal_multi_baseline_a100/raw_remote/clip_vit_b32_independent/batch_2/report.json",
+      "sha256": "1442e1e5ed354c0e54f9b66635cd50b8ba0c1f78e246506c66dfce691bc83427"
+    },
+    {
+      "path": "LightGenV2/reports/20260927_lgvq_temporal_multi_baseline_a100/raw_remote/clip_vit_b32_independent/batch_4/batch_04/power_samples.csv",
+      "sha256": "412b6190e7885e3ffc9bb3d839882b8bb4d47e3a217745a175a509172ccdfb0f"
+    },
+    {
+      "path": "LightGenV2/reports/20260927_lgvq_temporal_multi_baseline_a100/raw_remote/clip_vit_b32_independent/batch_4/batch_04/timing_per_call.csv",
+      "sha256": "453df168b9dabdf8e7496dc3fe848f537dc19be421bc3d66bdd986541731ac75"
+    },
+    {
+      "path": "LightGenV2/reports/20260927_lgvq_temporal_multi_baseline_a100/raw_remote/clip_vit_b32_independent/batch_4/report.json",
+      "sha256": "822de270059051fd233cea036e01829e473c3e35f923f484d8776e96cfa80f03"
+    },
+    {
+      "path": "LightGenV2/reports/20260927_lgvq_temporal_multi_baseline_a100/raw_remote/clip_vit_b32_independent/batch_8/batch_08/power_samples.csv",
+      "sha256": "044e1e88ad201480090462295f4f8dc7e3fbfb14f5689ff7823f93495b1c62da"
+    },
+    {
+      "path": "LightGenV2/reports/20260927_lgvq_temporal_multi_baseline_a100/raw_remote/clip_vit_b32_independent/batch_8/batch_08/timing_per_call.csv",
+      "sha256": "2ff32f8fdf66d98e8f5cefdce2086e74383a3a8cd6143de99febb7950c7ce00f"
+    },
+    {
+      "path": "LightGenV2/reports/20260927_lgvq_temporal_multi_baseline_a100/raw_remote/clip_vit_b32_independent/batch_8/report.json",
+      "sha256": "f9e65c79dda0b56f7a518bd03747d81e882b657c8cc1975d08634121cce9c91f"
+    },
+    {
+      "path": "LightGenV2/reports/20260927_lgvq_temporal_multi_baseline_a100/raw_remote/deepseek_vl2_tiny_independent/batch_1/batch_01/power_samples.csv",
+      "sha256": "9c790eb33530a549bdc6f699a8624771539c5c2102a9a393a68e94dc7799c0af"
+    },
+    {
+      "path": "LightGenV2/reports/20260927_lgvq_temporal_multi_baseline_a100/raw_remote/deepseek_vl2_tiny_independent/batch_1/batch_01/timing_per_call.csv",
+      "sha256": "323c2561d3b1b0c5fc8b2c889e95bc2342f5fdd0f1f58652188a545147fe6fa3"
+    },
+    {
+      "path": "LightGenV2/reports/20260927_lgvq_temporal_multi_baseline_a100/raw_remote/deepseek_vl2_tiny_independent/batch_1/report.json",
+      "sha256": "9e249cb0275b5fc75f889f0c4df99daf0a94da1bbd03da394dde91c34b6c501a"
+    },
+    {
+      "path": "LightGenV2/reports/20260927_lgvq_temporal_multi_baseline_a100/raw_remote/deepseek_vl2_tiny_independent/batch_2/batch_02/power_samples.csv",
+      "sha256": "79c7877011c1894942e53060220637644d6ce55cc5c6dfbecc81425563bbfff2"
+    },
+    {
+      "path": "LightGenV2/reports/20260927_lgvq_temporal_multi_baseline_a100/raw_remote/deepseek_vl2_tiny_independent/batch_2/batch_02/timing_per_call.csv",
+      "sha256": "bbdd653adc9d9a39f950251faa2dd546566aee87de52ad3744f24310fa164920"
+    },
+    {
+      "path": "LightGenV2/reports/20260927_lgvq_temporal_multi_baseline_a100/raw_remote/deepseek_vl2_tiny_independent/batch_2/report.json",
+      "sha256": "0f7492b5d60f1738b37dad3ea47b18eca3a59e126a915b6f0a135eda0e137c25"
+    },
+    {
+      "path": "LightGenV2/reports/20260927_lgvq_temporal_multi_baseline_a100/raw_remote/deepseek_vl2_tiny_independent/batch_4/batch_04/power_samples.csv",
+      "sha256": "64aea972dbcb7c44473ed53ca9eb9bae9f4051472c4c02de144bcb14a84c85b4"
+    },
+    {
+      "path": "LightGenV2/reports/20260927_lgvq_temporal_multi_baseline_a100/raw_remote/deepseek_vl2_tiny_independent/batch_4/batch_04/timing_per_call.csv",
+      "sha256": "e11669663fb24df2038b7946ebebd16312b8a10b95e1ddbfd3648633dc13b306"
+    },
+    {
+      "path": "LightGenV2/reports/20260927_lgvq_temporal_multi_baseline_a100/raw_remote/deepseek_vl2_tiny_independent/batch_4/report.json",
+      "sha256": "23a7ea8f8e4361e35bf32edc71acc4faf44bc10c5e29207de7beaf61f0af6644"
+    },
+    {
+      "path": "LightGenV2/reports/20260927_lgvq_temporal_multi_baseline_a100/raw_remote/deepseek_vl2_tiny_independent/batch_8/batch_08/power_samples.csv",
+      "sha256": "8125ca19cdbb29f02c1af986619882c25480501b7f5168a884f8178d63bb4e1d"
+    },
+    {
+      "path": "LightGenV2/reports/20260927_lgvq_temporal_multi_baseline_a100/raw_remote/deepseek_vl2_tiny_independent/batch_8/batch_08/timing_per_call.csv",
+      "sha256": "92264a6819f470fde49655a7e80cb78cc835da13088eb4c58ae3f9c5bc23e7bd"
+    },
+    {
+      "path": "LightGenV2/reports/20260927_lgvq_temporal_multi_baseline_a100/raw_remote/deepseek_vl2_tiny_independent/batch_8/report.json",
+      "sha256": "0e39a32736c8197343839d6575cdac0337abfaca75fad0e61bd13ba895d65582"
+    },
+    {
+      "path": "LightGenV2/reports/20260927_lgvq_temporal_multi_baseline_a100/raw_remote/qwen3_vl_2b_independent/batch_1/formal/batch_01/batch_timing.csv",
+      "sha256": "9cf225c4c0ee79d8e23ac4d0fae7a489a8ecb8243c7f3091a40cef8e9293a41a"
+    },
+    {
+      "path": "LightGenV2/reports/20260927_lgvq_temporal_multi_baseline_a100/raw_remote/qwen3_vl_2b_independent/batch_1/formal/batch_01/predictions.csv",
+      "sha256": "f0bcc5f964ea49d539061bd21de81fe767f89840639626246398e04f3184ac52"
+    },
+    {
+      "path": "LightGenV2/reports/20260927_lgvq_temporal_multi_baseline_a100/raw_remote/qwen3_vl_2b_independent/batch_1/formal/batch_01/report.json",
+      "sha256": "5703241d29625aa519c0d64f4c25cfab7396d00004b1e07913b6073b3ecf836b"
+    },
+    {
+      "path": "LightGenV2/reports/20260927_lgvq_temporal_multi_baseline_a100/raw_remote/qwen3_vl_2b_independent/batch_1/formal/batch_01/telemetry.csv",
+      "sha256": "17c8ab27db066a5c70f4ad39e47944322fb72426a87e60ec0d5e63f393a4fef6"
+    },
+    {
+      "path": "LightGenV2/reports/20260927_lgvq_temporal_multi_baseline_a100/raw_remote/qwen3_vl_2b_independent/batch_2/formal/batch_02/batch_timing.csv",
+      "sha256": "f6fe6afbc1817d869ab09daf5ef6e04ccddd0c0b8c6133be8d1d0cd4f76d0a35"
+    },
+    {
+      "path": "LightGenV2/reports/20260927_lgvq_temporal_multi_baseline_a100/raw_remote/qwen3_vl_2b_independent/batch_2/formal/batch_02/predictions.csv",
+      "sha256": "8372c561486c228a748402f3fcffedc2a93ff912a33b9c7a112967d263133b17"
+    },
+    {
+      "path": "LightGenV2/reports/20260927_lgvq_temporal_multi_baseline_a100/raw_remote/qwen3_vl_2b_independent/batch_2/formal/batch_02/report.json",
+      "sha256": "dc44c8285260415bb512ccc9db81fd33015aa42fee0c270430a7eae9cd01da20"
+    },
+    {
+      "path": "LightGenV2/reports/20260927_lgvq_temporal_multi_baseline_a100/raw_remote/qwen3_vl_2b_independent/batch_2/formal/batch_02/telemetry.csv",
+      "sha256": "bb01860db0b4d75ccc11fc3078ef34114e16d12733f2d6a9062cd2ce42890af9"
+    },
+    {
+      "path": "LightGenV2/reports/20260927_lgvq_temporal_multi_baseline_a100/raw_remote/qwen3_vl_2b_independent/batch_4/formal/batch_04/batch_timing.csv",
+      "sha256": "f2cfb75f4ca8457bc56f5e32bcc0bf38f14b7e0c64e6e9f0fa42946461983601"
+    },
+    {
+      "path": "LightGenV2/reports/20260927_lgvq_temporal_multi_baseline_a100/raw_remote/qwen3_vl_2b_independent/batch_4/formal/batch_04/predictions.csv",
+      "sha256": "7ddf2e7baa09c9e06669c236de7739a083c3a4669bae929b0848fb5b3ce9a555"
+    },
+    {
+      "path": "LightGenV2/reports/20260927_lgvq_temporal_multi_baseline_a100/raw_remote/qwen3_vl_2b_independent/batch_4/formal/batch_04/report.json",
+      "sha256": "c18d1f357acfcc83d66b32a9071b0c51cc192c19ac8946e62e6d6c9815669a5b"
+    },
+    {
+      "path": "LightGenV2/reports/20260927_lgvq_temporal_multi_baseline_a100/raw_remote/qwen3_vl_2b_independent/batch_4/formal/batch_04/telemetry.csv",
+      "sha256": "7d6b104e6c1709b83958a81f5890d435452c70fe55f6fd24b85f018929b5b4dc"
+    },
+    {
+      "path": "LightGenV2/reports/20260927_lgvq_temporal_multi_baseline_a100/raw_remote/qwen3_vl_2b_independent/batch_8/formal/batch_08/batch_timing.csv",
+      "sha256": "9c31f29292a73b2912888c8fc89689a384851b64623f4ba00072486cf9440a4e"
+    },
+    {
+      "path": "LightGenV2/reports/20260927_lgvq_temporal_multi_baseline_a100/raw_remote/qwen3_vl_2b_independent/batch_8/formal/batch_08/predictions.csv",
+      "sha256": "61ec410ddb92e66ddeb2216c694fbe8ae7effa53a3b9b5984dd01a22d8a2eaf0"
+    },
+    {
+      "path": "LightGenV2/reports/20260927_lgvq_temporal_multi_baseline_a100/raw_remote/qwen3_vl_2b_independent/batch_8/formal/batch_08/report.json",
+      "sha256": "da78cfaeb7a5de55e84d48ff9481793e11a81bc6d27b183e3e86d5b39bdd7727"
+    },
+    {
+      "path": "LightGenV2/reports/20260927_lgvq_temporal_multi_baseline_a100/raw_remote/qwen3_vl_2b_independent/batch_8/formal/batch_08/telemetry.csv",
+      "sha256": "fe813d6977da965b8c8de13f8b3c1f9c75b2ffdf63859b83105d98f5e768975a"
+    },
+    {
+      "path": "LightGenV2/reports/20260927_lgvq_temporal_multi_baseline_a100/raw_remote/qwen3_vl_2b_wall_independent/batch_1/formal/batch_01/batch_timing.csv",
+      "sha256": "1383c4628fd08c05e0181eab58bf100e7b1c1fc8b3aacbb8a6cd19bc13c817dc"
+    },
+    {
+      "path": "LightGenV2/reports/20260927_lgvq_temporal_multi_baseline_a100/raw_remote/qwen3_vl_2b_wall_independent/batch_1/formal/batch_01/predictions.csv",
+      "sha256": "f0bcc5f964ea49d539061bd21de81fe767f89840639626246398e04f3184ac52"
+    },
+    {
+      "path": "LightGenV2/reports/20260927_lgvq_temporal_multi_baseline_a100/raw_remote/qwen3_vl_2b_wall_independent/batch_1/formal/batch_01/report.json",
+      "sha256": "d1bddb5cb090871a9993adf3fa891c5011b02566fed12ed35342c9b39e70d1b2"
+    },
+    {
+      "path": "LightGenV2/reports/20260927_lgvq_temporal_multi_baseline_a100/raw_remote/qwen3_vl_2b_wall_independent/batch_1/formal/batch_01/telemetry.csv",
+      "sha256": "0111cf770618ec059f12c8883ca90d4af60d9a6e880253eacfece16c1854192d"
+    },
+    {
+      "path": "LightGenV2/reports/20260927_lgvq_temporal_multi_baseline_a100/raw_remote/qwen3_vl_2b_wall_independent/batch_2/formal/batch_02/batch_timing.csv",
+      "sha256": "fc014ad81441ffa17f56ccc4d70c5d525a51558f07c470fb64984389bf486f7c"
+    },
+    {
+      "path": "LightGenV2/reports/20260927_lgvq_temporal_multi_baseline_a100/raw_remote/qwen3_vl_2b_wall_independent/batch_2/formal/batch_02/predictions.csv",
+      "sha256": "8372c561486c228a748402f3fcffedc2a93ff912a33b9c7a112967d263133b17"
+    },
+    {
+      "path": "LightGenV2/reports/20260927_lgvq_temporal_multi_baseline_a100/raw_remote/qwen3_vl_2b_wall_independent/batch_2/formal/batch_02/report.json",
+      "sha256": "b0a053706c1949d3b0f59777f4e319cf738935fbca129e6cd0dd518420e6d1de"
+    },
+    {
+      "path": "LightGenV2/reports/20260927_lgvq_temporal_multi_baseline_a100/raw_remote/qwen3_vl_2b_wall_independent/batch_2/formal/batch_02/telemetry.csv",
+      "sha256": "7b2851a967229be6293fad61faf36c8ac3a92de859fed18103db514054f78f3b"
+    },
+    {
+      "path": "LightGenV2/reports/20260927_lgvq_temporal_multi_baseline_a100/raw_remote/qwen3_vl_2b_wall_independent/batch_4/formal/batch_04/batch_timing.csv",
+      "sha256": "eff0be4701d972faa27d2e170bf777b9a9fbee6f306faf90d582d237eff5438b"
+    },
+    {
+      "path": "LightGenV2/reports/20260927_lgvq_temporal_multi_baseline_a100/raw_remote/qwen3_vl_2b_wall_independent/batch_4/formal/batch_04/predictions.csv",
+      "sha256": "7ddf2e7baa09c9e06669c236de7739a083c3a4669bae929b0848fb5b3ce9a555"
+    },
+    {
+      "path": "LightGenV2/reports/20260927_lgvq_temporal_multi_baseline_a100/raw_remote/qwen3_vl_2b_wall_independent/batch_4/formal/batch_04/report.json",
+      "sha256": "050003f1bcf55f76df9c13aa9625cacc68fb5bb97aabceab3e8d3233886ee864"
+    },
+    {
+      "path": "LightGenV2/reports/20260927_lgvq_temporal_multi_baseline_a100/raw_remote/qwen3_vl_2b_wall_independent/batch_4/formal/batch_04/telemetry.csv",
+      "sha256": "53d8a4208936f783885910aad16433203f71683ea893f47a33c86fb5802dc61a"
+    },
+    {
+      "path": "LightGenV2/reports/20260927_lgvq_temporal_multi_baseline_a100/raw_remote/qwen3_vl_2b_wall_independent/batch_8/formal/batch_08/batch_timing.csv",
+      "sha256": "d4aa9f8e51d80739c0555c3a7e2c8b18c5f7568ddb89cbb839d60197d1828b12"
+    },
+    {
+      "path": "LightGenV2/reports/20260927_lgvq_temporal_multi_baseline_a100/raw_remote/qwen3_vl_2b_wall_independent/batch_8/formal/batch_08/predictions.csv",
+      "sha256": "61ec410ddb92e66ddeb2216c694fbe8ae7effa53a3b9b5984dd01a22d8a2eaf0"
+    },
+    {
+      "path": "LightGenV2/reports/20260927_lgvq_temporal_multi_baseline_a100/raw_remote/qwen3_vl_2b_wall_independent/batch_8/formal/batch_08/report.json",
+      "sha256": "f455521c44c66692beb762ae927709876d6ddcef3289eba829542c4171f9515f"
+    },
+    {
+      "path": "LightGenV2/reports/20260927_lgvq_temporal_multi_baseline_a100/raw_remote/qwen3_vl_2b_wall_independent/batch_8/formal/batch_08/telemetry.csv",
+      "sha256": "cf56256dacc5f36bafdf4cb942616731f5c9aed3d8c62f222907e1b7821eac7c"
+    },
+    {
+      "path": "LightGenV2/reports/20260927_lgvq_temporal_multi_baseline_a100/raw_remote/yolo11s_independent/batch_1/batch_01/power_samples.csv",
+      "sha256": "d842348743c31cc5ee93c0c9e397e31b35ae24093d1f9acb2ebc5b42d178c039"
+    },
+    {
+      "path": "LightGenV2/reports/20260927_lgvq_temporal_multi_baseline_a100/raw_remote/yolo11s_independent/batch_1/batch_01/timing_per_call.csv",
+      "sha256": "2656f5dd874a7e25fa7779469d277d30628a2689fd9dd35184ca87b3404b4826"
+    },
+    {
+      "path": "LightGenV2/reports/20260927_lgvq_temporal_multi_baseline_a100/raw_remote/yolo11s_independent/batch_1/report.json",
+      "sha256": "6f4dbb977ea848178ba5c21d225126258b075228a2c50f2c02bb57bcd9a13247"
+    },
+    {
+      "path": "LightGenV2/reports/20260927_lgvq_temporal_multi_baseline_a100/raw_remote/yolo11s_independent/batch_2/batch_02/power_samples.csv",
+      "sha256": "6743b03f3de5a0270441b3d17fd00f29e61866daa56f69383d3dd1fb95ca3b4a"
+    },
+    {
+      "path": "LightGenV2/reports/20260927_lgvq_temporal_multi_baseline_a100/raw_remote/yolo11s_independent/batch_2/batch_02/timing_per_call.csv",
+      "sha256": "21db7bdcdb33d15022e7c2bd950144cf538cae8e8d64fe92695a6814725a063d"
+    },
+    {
+      "path": "LightGenV2/reports/20260927_lgvq_temporal_multi_baseline_a100/raw_remote/yolo11s_independent/batch_2/report.json",
+      "sha256": "f8e5de6eff62735ea6ec5454616c46325c8775f66bd24ced2bf3c99e73104eed"
+    },
+    {
+      "path": "LightGenV2/reports/20260927_lgvq_temporal_multi_baseline_a100/raw_remote/yolo11s_independent/batch_4/batch_04/power_samples.csv",
+      "sha256": "20e04491bdd36c3fac5b8ade43c7d3b390fe45d20b45ef1af336d6e00c18758c"
+    },
+    {
+      "path": "LightGenV2/reports/20260927_lgvq_temporal_multi_baseline_a100/raw_remote/yolo11s_independent/batch_4/batch_04/timing_per_call.csv",
+      "sha256": "48f7377e8c73672969120eee5e8afcb46f9651ea6f52c9e7f4628ac9fedde3f5"
+    },
+    {
+      "path": "LightGenV2/reports/20260927_lgvq_temporal_multi_baseline_a100/raw_remote/yolo11s_independent/batch_4/report.json",
+      "sha256": "6eb0a9055f4b724565695b3d76832b98c01ed333acaafe6164c2a7a7cd856e8c"
+    },
+    {
+      "path": "LightGenV2/reports/20260927_lgvq_temporal_multi_baseline_a100/raw_remote/yolo11s_independent/batch_8/batch_08/power_samples.csv",
+      "sha256": "c403747dc7ecd3069f1956c0f59af753d01b8f7e8b1dabd3563e053bb917464c"
+    },
+    {
+      "path": "LightGenV2/reports/20260927_lgvq_temporal_multi_baseline_a100/raw_remote/yolo11s_independent/batch_8/batch_08/timing_per_call.csv",
+      "sha256": "381cbf26feaac551707efa1d4474d8e992acc0a646fb1c15d20f489348caea2e"
+    },
+    {
+      "path": "LightGenV2/reports/20260927_lgvq_temporal_multi_baseline_a100/raw_remote/yolo11s_independent/batch_8/report.json",
+      "sha256": "dbca3de35ece567dd0a68af59c08416be92f17dce7cda9d89dcc4e25f4edbeb4"
+    }
+  ],
+  "originals_deleted_or_moved": false,
+  "source_or_future_files_hidden": false,
+  "timing_scope": "Synchronized wall, first native backbone block input to scalar quality ready on GPU, no warm-up, first 200 fixed test videos. Performance from original full-test reports, not random timing-only head.",
+  "limitations": [
+    "Local original bytes only; not new measurements or asset dependency closure",
+    "All timing originals retained",
+    "README, protocol, derivation source, calculated summary and original SHA manifest remain visible"
+  ]
+}

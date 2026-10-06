@@ -10,6 +10,17 @@ ROOT = Path(__file__).resolve().parents[3]
 
 
 class ArtifactIgnoreTests(unittest.TestCase):
+    def test_lgvq_timing_payloads_keep_derivation_and_future_evidence_visible(self):
+        import json
+        descriptor = json.loads((ROOT/'maintenance/storage/LGVQ_TEMPORAL_TIMING_VISIBILITY_20261006.json').read_text())
+        private = [row['path'] for row in descriptor['files']]
+        self.assertEqual(len(private), 74)
+        prefix = 'LightGenV2/reports/20260927_lgvq_temporal_multi_baseline_a100/'
+        visible = [prefix + name for name in ('README.md', 'build_analysis.py', 'protocol.json',
+                   'SHA256SUMS.csv', 'calculated_summary.json', 'raw_remote/future/report.json',
+                   'raw_remote/future/timing_per_call.csv', 'raw_remote/new_benchmark.py')]
+        self.assertEqual(self.ignored(private + visible), set(private))
+
     def test_server_formal_timing_copy_is_exactly_named_not_folder_hidden(self):
         prefix = 'LightGenV2/reports/20260917_redbox_timing_energy_audit/server_2026OpticsMoE_a100_formal/'
         private = [prefix + '01_LGVQ_temporal/Ours/all_per_call_timings.csv',
