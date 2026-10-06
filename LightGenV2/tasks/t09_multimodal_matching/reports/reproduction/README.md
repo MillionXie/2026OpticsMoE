@@ -1,5 +1,15 @@
 # 复现入口
 
+## 历史图表的保留位置（2026-10-06整理）
+
+本页历史图表、审计 JSON 和原 run 不随纯源码 Git checkout 分发。下文图表文件名
+均相对于原 `reports/figures/`，实际服务器目录及六份文件的大小/SHA见
+[资产位置清单](../../../../../maintenance/storage/T09_REPORT_ARTIFACT_LOCATIONS_20261005.json)，
+本地旧副本位置见
+[保留说明](../../../../../maintenance/storage/T09_PRESERVED_REPORT_LOCATIONS_20261005.md)。
+服务器资产位于原 `demo_reproduction_20260915` 工程，而非当前主工程同名目录。
+这里只修正导航，不移动图表、删除旧副本、重评模型或改变下文历史指标。
+
 ## 2026-09-18：上下布局OEO恢复训练
 
 直接原因已由逐层探针确认：光传播到窗口的能量非零，但原OEO按全场做中心化LayerNorm，再ReLU，会将窗口内低于全场均值的响应全部截为0。两个窗口都为0时，带epsilon的能量归一化输出0.5/0.5；对应ReLU的导数也为0。布局改变与路由分配会改变光强分布，但不能据此说上下布局必然失败。
@@ -60,7 +70,7 @@
 
 训练run：runs/simulation/clevr_visual_aux_s17_v1（CNN），clevr_visual_fixed_s17_v1、clevr_visual_dense_s17_v1、clevr_visual_learned_s17_v1。fixed/learned源码b86c35b5，dense源码cfbb0118。原始RGB为clevr_fixed_s17_v1、clevr_learned_s17_v1。完整命令、环境、源文件SHA及完整commit在各run metadata.json。
 
-独立复核：runs/smoke/clevr_visual_audit_s17_v2/verification.json。报告中的[审计副本](../figures/text_encoding_s17_20260917_v2/verification.json)包含每个best checkpoint SHA256、逐样本指标核验、验证选模及共享前端身份核验。测试run：runs/simulation/clevr_frozen_test_s17_v1，评估源码b6c57c3a；locked_selection.json为事先锁定权重，data_manifest.json为测试数据SHA；[测试核验摘要](../figures/test_s17_20260917/test_verified.json)。
+独立复核：runs/smoke/clevr_visual_audit_s17_v2/verification.json。审计副本 `text_encoding_s17_20260917_v2/verification.json` 包含每个best checkpoint SHA256、逐样本指标核验、验证选模及共享前端身份核验。测试run：runs/simulation/clevr_frozen_test_s17_v1，评估源码b6c57c3a；locked_selection.json为事先锁定权重，data_manifest.json为测试数据SHA；测试核验摘要为 `test_s17_20260917/test_verified.json`。两份文件位置及SHA见本页顶部资产位置清单。
 
 数据目录：/DATA/DATA1/guest3/demo_reproduction_data/clevr_attribute_s17_v1。父manifest SHA256：a5826f81d530e41e776eac528886936d64b5ad413e62268510fa62c0f09e5ade。
 
@@ -74,7 +84,7 @@
 |水平翻转|81.27|71.40|59.00|
 |翻转＋dropout|80.15|71.13|57.13|
 
-新增组未评估测试。run命名为clevr_visual_fixed_{lr003,drop01,flip,flipdrop01}_s17_v1；前两组源码095abdaf，后两组8f57db74。独立审计、权重SHA、实际命令与环境在[泛化图目录](../figures/generalization_s17_20260917/)。没有明确解决过拟合，原版本保留为准确率参考。
+新增组未评估测试。run命名为clevr_visual_fixed_{lr003,drop01,flip,flipdrop01}_s17_v1；前两组源码095abdaf，后两组8f57db74。独立审计、权重SHA、实际命令与环境在原 `generalization_s17_20260917/` 图目录，保留位置见本页顶部清单。没有明确解决过拟合，原版本保留为准确率参考。
 
 ## 运行方式
 
@@ -88,7 +98,7 @@ python -m LightGenV2.tasks.t09_multimodal_matching.run --phase train --mode fixe
 
 文字GRU使用--mode learned及默认8轮共享前端预热；稠密固定码用--mode fixed_dense。30轮对照使用--epochs 30，phase dropout组另加--phase-dropout 0.05。所有训练默认关闭phase dropout和其他增强。phase dropout smoke在runs/smoke/phase_dropout_s17_v1，验证单位模透射、评估关闭、相位梯度及更新。
 
-[训练/验证/测试图](../figures/test_s17_20260917/train_val_test.png)；[原始示例](../figures/text_encoding_s17_20260917_v2/validation_examples.png)。原始权重、数据、逐样本预测不提交Git；下载的结果副本随附SHA清单。
+训练/验证/测试图为 `test_s17_20260917/train_val_test.png`；原始示例为 `text_encoding_s17_20260917_v2/validation_examples.png`，位置及SHA见本页顶部清单。原始权重、数据、逐样本预测不提交Git；下载的结果副本随附SHA清单。
 
 ## 30轮预算与phase dropout复核
 
@@ -102,7 +112,7 @@ python -m LightGenV2.tasks.t09_multimodal_matching.run --phase train --mode fixe
 |phase dropout 5%|D2NN|30|62.35%|57.40%|0.6567|
 
 D2NN原12轮预算训练不足；延长后准确率明显提高。不能继续把原13个百分点差距视为充分训练的架构优势。phase dropout对MoE有帮助，但显著抑制D2NN，必须同时保留不加dropout的强D2NN。不同配置间也不能仅按差距挑选。MoE phase-dropout组仍有8.50个百分点训练/验证差距，未消除过拟合。
-run：clevr_visual_fixed_long30_s17_v1和clevr_visual_fixed_long30_phase05_s17_v1。两组独立核验通过，权重SHA及逐轮曲线在[图目录](../figures/phase_budget_s17_20260917/)。[训练充分性曲线](../figures/phase_budget_s17_20260917/phase_budget.png)。
+run：clevr_visual_fixed_long30_s17_v1和clevr_visual_fixed_long30_phase05_s17_v1。两组独立核验通过，权重SHA及逐轮曲线在原 `phase_budget_s17_20260917/` 图目录；训练充分性曲线为该目录的 `phase_budget.png`。保留位置及该图SHA见本页顶部清单。
 
 ## 音文预实验
 
@@ -129,7 +139,7 @@ MoE−D2NN为0.30个百分点；按验证说话人聚类重采样的条件95%区
 
 独立核验runs/smoke/audio_matching_audit_s17_v2通过：重算预测准确率/NLL、验证最优轮次、权重SHA及精确特征身份。输入依赖诊断runs/smoke/audio_modality_diagnosis_s17_v1：固定文字后两模型均50%；固定音频特征后49.47%/49.88%；随机打乱音频后48.75%/48.93%。均保留原标签，是扰动诊断，不是新任务成绩。MoE推理时将路由强制等功率，准确率从94.31%降到86.83%；这是同一权重的推理干预，不是重新训练的固定路由baseline。正常路由的各支路功率均值约31.28%、21.52%、30.27%、16.93%，仍为四支路密集加权。
 
-[音文曲线与双模态诊断图](../figures/audio_matching_s17_20260917/audio_matching.png)。图目录保留独立审计、数据互斥检查、实际命令/环境、前端哈希与传输SHA清单。所有本轮训练及诊断进程已退出。
+音文曲线与双模态诊断图为 `audio_matching_s17_20260917/audio_matching.png`，位置及SHA见本页顶部清单。图目录保留独立审计、数据互斥检查、实际命令/环境、前端哈希与传输SHA清单。所有本轮训练及诊断进程已退出。
 
 音频复现入口：
 ```bash
