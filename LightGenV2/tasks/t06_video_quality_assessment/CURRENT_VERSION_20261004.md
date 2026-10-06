@@ -84,6 +84,15 @@ Temporal-36旧默认路径的PT在本次限定名称搜索中未找到；不能�
 基底，不是完整数据备份。具体身份见仓库
 `maintenance/storage/T06_REVIEW_PACKAGE_IDENTITY_20261006.json`。
 
+另有未跟踪的旧独立目录`LightGenV2/projects/lgvq_temporal`，其README记录的是
+8µm重采样版本SRCC 0.8022806420，不是本页正式0.8043868643实现。本轮核对
+46项manifest文件、同一权重和35场／558有效视频；发现`release.json`没有被
+manifest绑定，完整性门不能宣称通过。目录内`sync_reference.py`会重写逐视频
+参考及汇总，本轮没有运行、修补manifest或替换原报告。30份现存源码／配置已
+在本地和训练服务器Git恢复引用内逐SHA保全，原资产仍原位；既有主入口中未发现
+对该目录的直接静态路径引用，不代表排除了外部动态调用，暂不移除目录。
+见`maintenance/storage/T06_WORKING_PROJECT_IDENTITY_20261006.json`。
+
 2026-10-06历史Spatial收尾核验：两套旧工程的141份未跟踪源码及配置已完整Git归档，
 原文件和所有结果／测速保留。主线57项模型合同测试通过；s586及旧卷积128读出候选的
 历史／主线原有配置字段、架构和权重键一致，有界合成输入预测误差为0。

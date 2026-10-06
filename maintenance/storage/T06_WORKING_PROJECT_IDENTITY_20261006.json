@@ -1,0 +1,182 @@
+{
+  "audited_on": "2026-10-06",
+  "root": "LightGenV2/projects/lgvq_temporal",
+  "role": "Historical standalone 8um-resampled simulation/inspection project; not official 0.8044 runtime",
+  "manifest_sha256": "38b0f5c4ca0c09450d234dd1392dc94d5ce455acef40792d55ffd69574faee11",
+  "manifest_files_checked": 46,
+  "checkpoint_sha256": "5303b574b200e14bf943af21c60a246720be453b9cf8847cd93c0eaaa243a77c",
+  "fields": 35,
+  "valid_unique_videos": 558,
+  "recorded_srcc": 0.8022806420367042,
+  "integrity_passed": false,
+  "failures": [
+    {
+      "path": "release.json",
+      "reason": "not_manifest_bound"
+    }
+  ],
+  "metadata_rewriter": "sync_reference.py updates release.json from optical_inspection predictions; not executed in this audit",
+  "inherited_runtime_commit_not_sufficient_identity": true,
+  "archive_ref": "refs/archive/source-closure-20261006/t06-working-project",
+  "archive_commit": "632ff03226c1e69b7a335730aca05d49af7e9bce",
+  "archive_base": "4b456d46195ebdb6a235d3b143f6b23625eb2da4",
+  "bundle_sha256": "025923fcbb4e05daae3b5dfbee4f330f64f1e38a8a2a6d82a302868a7964fe0a",
+  "source_files": [
+    {
+      "path": "LightGenV2/projects/lgvq_temporal/configs/temporal_16x4_s163.yaml",
+      "sha256": "46790448ec037edbf1942428ddb197129e31fd892a15a6ab5d29eeee519fd685",
+      "entry_kind": "untracked"
+    },
+    {
+      "path": "LightGenV2/projects/lgvq_temporal/inspect_fields.py",
+      "sha256": "fc215ed237a95b08166dd68495ebd5e5484e753ed015ecaddbd5ba3fdfa7229b",
+      "entry_kind": "untracked"
+    },
+    {
+      "path": "LightGenV2/projects/lgvq_temporal/runtime/LightGenV2/__init__.py",
+      "sha256": "22f1d762857916ed1e5a173a60fa7d864cd10139f40fa9c249c38fbeb86ea92e",
+      "entry_kind": "untracked"
+    },
+    {
+      "path": "LightGenV2/projects/lgvq_temporal/runtime/LightGenV2/tasks/__init__.py",
+      "sha256": "cb7dde6e220a684ccb22efb1d4af40540497d7a7753c6692b24546411515c6f6",
+      "entry_kind": "untracked"
+    },
+    {
+      "path": "LightGenV2/projects/lgvq_temporal/runtime/LightGenV2/tasks/t06_video_quality_assessment/__init__.py",
+      "sha256": "c75051412cbcbe1deb04a93d497630f8264116cce37231b4ae10680fa35920e0",
+      "entry_kind": "untracked"
+    },
+    {
+      "path": "LightGenV2/projects/lgvq_temporal/runtime/LightGenV2/tasks/t06_video_quality_assessment/lab_runtime.py",
+      "sha256": "5d1423c041249af2553f9a68ffed8bfb98e752c5dc42c4ef10b8c6bdcfe85b0f",
+      "entry_kind": "untracked"
+    },
+    {
+      "path": "LightGenV2/projects/lgvq_temporal/runtime/LightGenV2/tasks/t06_video_quality_assessment/models/__init__.py",
+      "sha256": "403b255a753c41a248346aa16256a4075d84ce7dab81692dbb2a45646b215609",
+      "entry_kind": "untracked"
+    },
+    {
+      "path": "LightGenV2/projects/lgvq_temporal/runtime/LightGenV2/tasks/t06_video_quality_assessment/models/multivideo9x4.py",
+      "sha256": "886112996aac0252871448ac31b6fcb7fe1866eb397238cc5f481faa1bb68b24",
+      "entry_kind": "untracked"
+    },
+    {
+      "path": "LightGenV2/projects/lgvq_temporal/runtime/LightGenV2/tasks/t06_video_quality_assessment/multivideo.py",
+      "sha256": "c6978d6486fe786b0bd03609d6b9b62c410a58bc71e81a003cc183e6cee010fe",
+      "entry_kind": "untracked"
+    },
+    {
+      "path": "LightGenV2/projects/lgvq_temporal/runtime/LightGenV2/tasks/t06_video_quality_assessment/multivideo_data.py",
+      "sha256": "bd098aaca18adc6ccb9a6a59fae7124504d0cc794444d159b5349fdc64b49c5c",
+      "entry_kind": "untracked"
+    },
+    {
+      "path": "LightGenV2/projects/lgvq_temporal/runtime/LightGenV2/tasks/t06_video_quality_assessment/multivideo_settings.py",
+      "sha256": "cead67b212947a3f30b97b73bd91406f15ca647ae93d79ac9f900571aae3a433",
+      "entry_kind": "untracked"
+    },
+    {
+      "path": "LightGenV2/projects/lgvq_temporal/runtime/LightGenV2/tasks/t06_video_quality_assessment/multivideo_training.py",
+      "sha256": "b57eb1c5fb304ff2d320b9bcf961711c8730af7e7f9cfcb4a4bb465348141190",
+      "entry_kind": "untracked"
+    },
+    {
+      "path": "LightGenV2/projects/lgvq_temporal/runtime/experiments/__init__.py",
+      "sha256": "75749e81ecc24c9b80e103e22e93682d393ba15972cd34dfc49fb59b77a0a311",
+      "entry_kind": "untracked"
+    },
+    {
+      "path": "LightGenV2/projects/lgvq_temporal/runtime/experiments/qwen3_vl_2b_lgvq_single_metric_o2_16frame_54/__init__.py",
+      "sha256": "f48d41c36f5c57760a0cc9485ad371ffd0f587c63c8b7d1562734195effb6d39",
+      "entry_kind": "untracked"
+    },
+    {
+      "path": "LightGenV2/projects/lgvq_temporal/runtime/experiments/qwen3_vl_2b_lgvq_single_metric_o2_16frame_54/data.py",
+      "sha256": "00e81892370765e19f139a4b60f0c8f6edce0694a1f0790701ffc596014c9c41",
+      "entry_kind": "untracked"
+    },
+    {
+      "path": "LightGenV2/projects/lgvq_temporal/runtime/experiments/qwen3_vl_2b_lgvq_single_metric_o2_16frame_54/metrics.py",
+      "sha256": "6ef93ffc32e8920086bb1d18dde440a577ba134a8db498d17837636d6ef01770",
+      "entry_kind": "untracked"
+    },
+    {
+      "path": "LightGenV2/projects/lgvq_temporal/runtime/experiments/qwen3_vl_2b_lgvq_single_metric_o2_16frame_54/modeling.py",
+      "sha256": "bdedfb842b69cf0b3ee49e87687d5525391605eacfcb7e216e5a71ab1fac6f73",
+      "entry_kind": "untracked"
+    },
+    {
+      "path": "LightGenV2/projects/lgvq_temporal/runtime/experiments/qwen3_vl_2b_lgvq_single_metric_o2_16frame_54/phase_snapshots.py",
+      "sha256": "4928b1c7d9ad369112360524a94d399c5a8508e6ba6e72eafd8784391d9cb75e",
+      "entry_kind": "untracked"
+    },
+    {
+      "path": "LightGenV2/projects/lgvq_temporal/runtime/experiments/qwen3_vl_2b_lgvq_single_metric_o2_16frame_54/settings.py",
+      "sha256": "bfc27ce1da1d33695d0a5afcb37ff66ee0d42bee0f3afed096457e7cb9fcf887",
+      "entry_kind": "untracked"
+    },
+    {
+      "path": "LightGenV2/projects/lgvq_temporal/runtime/experiments/qwen3_vl_2b_lgvq_single_metric_o2_16frame_54/training.py",
+      "sha256": "7c13b3a76a7b9e512936ea618b28f508c4d6b1e947d1afe181b874a34d88d520",
+      "entry_kind": "untracked"
+    },
+    {
+      "path": "LightGenV2/projects/lgvq_temporal/runtime/lgvq_temporal/__init__.py",
+      "sha256": "8e1d173019bf821a7339493777abad0549cd45d96a76bf35e9d9e544a718d15e",
+      "entry_kind": "untracked"
+    },
+    {
+      "path": "LightGenV2/projects/lgvq_temporal/runtime/lgvq_temporal/contracts.py",
+      "sha256": "008179b47b35d4943309f1f801597f58a041c3606103f0771568046c4d132fbe",
+      "entry_kind": "untracked"
+    },
+    {
+      "path": "LightGenV2/projects/lgvq_temporal/runtime/lgvq_temporal/fixed_weight.py",
+      "sha256": "78f9cfd737c1e1d3e8bc0b9d81ae6eb713278bcf8e01c5ee0da1cdb1482d3589",
+      "entry_kind": "untracked"
+    },
+    {
+      "path": "LightGenV2/projects/lgvq_temporal/simulate.py",
+      "sha256": "738996c9c5cb40274bf69fab49afbd77f78c99f94fd1d3734e375beb84533587",
+      "entry_kind": "untracked"
+    },
+    {
+      "path": "LightGenV2/projects/lgvq_temporal/sync_reference.py",
+      "sha256": "129ff4c115035a2706ec1d17548949d20d3317348f1f21af7316ec00015705ee",
+      "entry_kind": "untracked"
+    },
+    {
+      "path": "LightGenV2/projects/lgvq_temporal/tests/test_ccd_noise.py",
+      "sha256": "56464884f0627887d1548a46188c92ecb0c064e48bf81bc7644377204e63a0b2",
+      "entry_kind": "untracked"
+    },
+    {
+      "path": "LightGenV2/projects/lgvq_temporal/tests/test_physical_contract.py",
+      "sha256": "ee99bb0f78c3520bfef69d6e2817ea4ed2f9a2e7cbf841a411e684c206b89c8d",
+      "entry_kind": "untracked"
+    },
+    {
+      "path": "LightGenV2/projects/lgvq_temporal/tests/test_source_contract.py",
+      "sha256": "657b2cd0564bff3e075637bcbc16d96151ad37babdc2373c905d69a2c7b0049d",
+      "entry_kind": "untracked"
+    },
+    {
+      "path": "LightGenV2/projects/lgvq_temporal/train.py",
+      "sha256": "79c9b43877f6fc524c0ecfdc00c148b2ea71613938285485cbabcbdd66591633",
+      "entry_kind": "untracked"
+    },
+    {
+      "path": "LightGenV2/projects/lgvq_temporal/verify_release.py",
+      "sha256": "8ced9b0e0ce48a481699bf85363234da534f6e10c064066fdacd91c5ac63e6cf",
+      "entry_kind": "untracked"
+    }
+  ],
+  "local_and_server_blob_sha_verified": true,
+  "incremental_bundle_requires_base": true,
+  "data_backup": false,
+  "original_files_moved_or_deleted": false,
+  "model_evaluated": false,
+  "official_model_changed": false
+}
