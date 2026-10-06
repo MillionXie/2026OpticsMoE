@@ -1,0 +1,247 @@
+{
+  "manifest": "LightGenV2/reports/20260914_latest_qwen_baselines_a100_FIRSTBLOCK_FINAL/SHA256SUMS.txt",
+  "manifest_original_windows_sha256": "0bf24f550e5559954a7016cfc1bfd00f0aa0ff8ca5708a1c56a1503d8e466a1c",
+  "members_verified": 72,
+  "manifest_entries_verified": 72,
+  "files": [
+    {
+      "path": "LightGenV2/reports/20260914_latest_qwen_baselines_a100_FIRSTBLOCK_FINAL/evidence/performance_sources/T02_lsp_baseline_report.json",
+      "sha256": "4a3b57679f2786839dceadf33775b240498c1c5d838b426e1aa032443988746b",
+      "bytes": 4073
+    },
+    {
+      "path": "LightGenV2/reports/20260914_latest_qwen_baselines_a100_FIRSTBLOCK_FINAL/evidence/performance_sources/T03_salicon_selected_checkpoint_test.json",
+      "sha256": "121899505294ce5efa819e20104eeb930c07741fcdd313f41f6d937f251ad32f",
+      "bytes": 1546
+    },
+    {
+      "path": "LightGenV2/reports/20260914_latest_qwen_baselines_a100_FIRSTBLOCK_FINAL/evidence/performance_sources/T04_openmoji_selected_checkpoint_test.json",
+      "sha256": "fb11f8ee8430185f3ef1c5cec2d7ad3476751ba1376ee6d7248dc7aa92191e4f",
+      "bytes": 2178
+    },
+    {
+      "path": "LightGenV2/reports/20260914_latest_qwen_baselines_a100_FIRSTBLOCK_FINAL/evidence/performance_sources/T07_abo_image_image_final_report.json",
+      "sha256": "0f8a23f8f029d8578ed2da60fe1be98de68b589dcf9036ca53b562e93f481a27",
+      "bytes": 2500
+    },
+    {
+      "path": "LightGenV2/reports/20260914_latest_qwen_baselines_a100_FIRSTBLOCK_FINAL/evidence/performance_sources/T08_abo_image_text_baseline_report.json",
+      "sha256": "dc1cc8d23895bc35ff9fcbbac0ceae4f95efd8495395b169565d4ea9ac0198ba",
+      "bytes": 3750
+    },
+    {
+      "path": "LightGenV2/reports/20260914_latest_qwen_baselines_a100_FIRSTBLOCK_FINAL/evidence/T06_spatial/per_video_predictions_and_timing.csv",
+      "sha256": "0ad9916b485f6de30cc42fe46ad5a18c0ae53ee45a2530af1a77cebe2b6e6791",
+      "bytes": 112610
+    },
+    {
+      "path": "LightGenV2/reports/20260914_latest_qwen_baselines_a100_FIRSTBLOCK_FINAL/evidence/T06_spatial/power_samples.csv",
+      "sha256": "bf0856c64ffe2f68948dd47ea4a0b30a788b51c2840bfbf9eeea99633c0e2feb",
+      "bytes": 55741
+    },
+    {
+      "path": "LightGenV2/reports/20260914_latest_qwen_baselines_a100_FIRSTBLOCK_FINAL/evidence/T06_spatial/report.json",
+      "sha256": "9858954de368171e4736607cd8f2340b871191799e10d3068b3576b73cdd20e6",
+      "bytes": 4906
+    },
+    {
+      "path": "LightGenV2/reports/20260914_latest_qwen_baselines_a100_FIRSTBLOCK_FINAL/evidence/T06_temporal_batch1_batch2/batch_01/batch_timing.csv",
+      "sha256": "b6d2b9b2970bc5871eb3f626c653f5d36d16fdbb8eca118daadba6511027ad2f",
+      "bytes": 309228
+    },
+    {
+      "path": "LightGenV2/reports/20260914_latest_qwen_baselines_a100_FIRSTBLOCK_FINAL/evidence/T06_temporal_batch1_batch2/batch_01/predictions.csv",
+      "sha256": "6b62ad169ca81d861455593dfa2df405d6761081ec80bdd763beee9716a0194f",
+      "bytes": 739105
+    },
+    {
+      "path": "LightGenV2/reports/20260914_latest_qwen_baselines_a100_FIRSTBLOCK_FINAL/evidence/T06_temporal_batch1_batch2/batch_01/report.json",
+      "sha256": "9809a3defed1ba4c541486bc436f7da26c6e8435ffd89714b423570b52d3fa23",
+      "bytes": 6491
+    },
+    {
+      "path": "LightGenV2/reports/20260914_latest_qwen_baselines_a100_FIRSTBLOCK_FINAL/evidence/T06_temporal_batch1_batch2/batch_01/telemetry.csv",
+      "sha256": "bd0237fe881e62da0e15d51c37358378689abcf0341e3726eaceff933f4a3517",
+      "bytes": 31330
+    },
+    {
+      "path": "LightGenV2/reports/20260914_latest_qwen_baselines_a100_FIRSTBLOCK_FINAL/evidence/T06_temporal_batch1_batch2/batch_02/batch_timing.csv",
+      "sha256": "9aec889ace7560c18c3cd3b31c1b19fa3de95994d03963a5790e040c8fd122b0",
+      "bytes": 154657
+    },
+    {
+      "path": "LightGenV2/reports/20260914_latest_qwen_baselines_a100_FIRSTBLOCK_FINAL/evidence/T06_temporal_batch1_batch2/batch_02/predictions.csv",
+      "sha256": "bd83cb73f80b8f5058b3d7ad55ea4d9cbe9fdbc8b35bc669c79ebf0ced644ee1",
+      "bytes": 738979
+    },
+    {
+      "path": "LightGenV2/reports/20260914_latest_qwen_baselines_a100_FIRSTBLOCK_FINAL/evidence/T06_temporal_batch1_batch2/batch_02/report.json",
+      "sha256": "cfaa78a74ac231262565b5cdf6fe6fd3073e7ecbcc54d9cf84be00730e5b7a31",
+      "bytes": 6491
+    },
+    {
+      "path": "LightGenV2/reports/20260914_latest_qwen_baselines_a100_FIRSTBLOCK_FINAL/evidence/T06_temporal_batch1_batch2/batch_02/telemetry.csv",
+      "sha256": "ee0397b509d9b430212c5d87d9fef67226bf6b3b992cc95b59ac55f16b988cbf",
+      "bytes": 20526
+    },
+    {
+      "path": "LightGenV2/reports/20260914_latest_qwen_baselines_a100_FIRSTBLOCK_FINAL/fresh/T02_lsp/power_utilization_samples.csv",
+      "sha256": "4d55eccf530a7253a9bf6c6d336deaddb9a6ffb090ed87d3b5971933b52dc0b3",
+      "bytes": 169049
+    },
+    {
+      "path": "LightGenV2/reports/20260914_latest_qwen_baselines_a100_FIRSTBLOCK_FINAL/fresh/T02_lsp/process_audit.json",
+      "sha256": "12188fbeb811451bbdba079afbda7b85a39c62d9bfd016be4da080f2bbaa8055",
+      "bytes": 596
+    },
+    {
+      "path": "LightGenV2/reports/20260914_latest_qwen_baselines_a100_FIRSTBLOCK_FINAL/fresh/T02_lsp/report.json",
+      "sha256": "8b8894da91a06db5c3177fddf4ca256b7abe17125e7c339bf3a09b1c8d9832bb",
+      "bytes": 5075
+    },
+    {
+      "path": "LightGenV2/reports/20260914_latest_qwen_baselines_a100_FIRSTBLOCK_FINAL/fresh/T02_lsp/timing_per_sample.csv",
+      "sha256": "38f8042bb06d36d5d671cf08a9d1718543657c68ae0b3f27459aad309d482b38",
+      "bytes": 38735
+    },
+    {
+      "path": "LightGenV2/reports/20260914_latest_qwen_baselines_a100_FIRSTBLOCK_FINAL/fresh/T03_salicon/power_utilization_samples.csv",
+      "sha256": "1cc12ae16d8973cb2b90930cf385f3436a27833368ec8d9868710c39dff9f9f9",
+      "bytes": 167704
+    },
+    {
+      "path": "LightGenV2/reports/20260914_latest_qwen_baselines_a100_FIRSTBLOCK_FINAL/fresh/T03_salicon/process_audit.json",
+      "sha256": "e86537f8fd925a7753140faefc55f315d9f612ed96a2be05013d2bfe374cd14c",
+      "bytes": 596
+    },
+    {
+      "path": "LightGenV2/reports/20260914_latest_qwen_baselines_a100_FIRSTBLOCK_FINAL/fresh/T03_salicon/report.json",
+      "sha256": "bc04a0d3f74274a4930ddc9dcdf38c4c35881668d599fa36bb68554da684c922",
+      "bytes": 5117
+    },
+    {
+      "path": "LightGenV2/reports/20260914_latest_qwen_baselines_a100_FIRSTBLOCK_FINAL/fresh/T03_salicon/timing_per_sample.csv",
+      "sha256": "b750c21d47b519b045e3f12e350b375a9e2521e8cfac4b19ab8e4fb4dc9bbf39",
+      "bytes": 34101
+    },
+    {
+      "path": "LightGenV2/reports/20260914_latest_qwen_baselines_a100_FIRSTBLOCK_FINAL/fresh/T04_openmoji/power_utilization_samples.csv",
+      "sha256": "f7b9f0aec116007e9550018c817e3c0648d0bfe28a081bcf046e703575a38dc7",
+      "bytes": 169904
+    },
+    {
+      "path": "LightGenV2/reports/20260914_latest_qwen_baselines_a100_FIRSTBLOCK_FINAL/fresh/T04_openmoji/process_audit.json",
+      "sha256": "2751ffdd49b61c353d0f4b9459c27698c87544a60c9dff56661c1db6d0cdc267",
+      "bytes": 596
+    },
+    {
+      "path": "LightGenV2/reports/20260914_latest_qwen_baselines_a100_FIRSTBLOCK_FINAL/fresh/T04_openmoji/report.json",
+      "sha256": "1629fa07027434d2b22ad83b95e6a891458fb4b09cdd34fb31f41e33009ecbbe",
+      "bytes": 5409
+    },
+    {
+      "path": "LightGenV2/reports/20260914_latest_qwen_baselines_a100_FIRSTBLOCK_FINAL/fresh/T04_openmoji/timing_per_sample.csv",
+      "sha256": "acf4cd8390411e9fcf932c543df10f80af756b6b5d3c9e4ddb578a6eecf84d3a",
+      "bytes": 40867
+    },
+    {
+      "path": "LightGenV2/reports/20260914_latest_qwen_baselines_a100_FIRSTBLOCK_FINAL/fresh/T07_abo_image_image/power_utilization_samples.csv",
+      "sha256": "3ca1b45d4fd2272be1c5b62f63a023f2fc8ee3c7c75a0910a9d2b351a0910941",
+      "bytes": 169066
+    },
+    {
+      "path": "LightGenV2/reports/20260914_latest_qwen_baselines_a100_FIRSTBLOCK_FINAL/fresh/T07_abo_image_image/process_audit.json",
+      "sha256": "e755f9b765cb9c434dd6e88aef34e549f5b87993a8368db20c575d2ced54ff3f",
+      "bytes": 596
+    },
+    {
+      "path": "LightGenV2/reports/20260914_latest_qwen_baselines_a100_FIRSTBLOCK_FINAL/fresh/T07_abo_image_image/report.json",
+      "sha256": "54ee1aaff0c5dfb038f55cb74025b47e26507cde537ffabda9bbd8c6ba913f93",
+      "bytes": 4977
+    },
+    {
+      "path": "LightGenV2/reports/20260914_latest_qwen_baselines_a100_FIRSTBLOCK_FINAL/fresh/T07_abo_image_image/timing_per_sample.csv",
+      "sha256": "d8ca97ec0de0f14f30a5b1bdef89bb599853a857735260a8d8f204575d691e15",
+      "bytes": 34420
+    },
+    {
+      "path": "LightGenV2/reports/20260914_latest_qwen_baselines_a100_FIRSTBLOCK_FINAL/fresh/T08_abo_image_text/power_utilization_samples.csv",
+      "sha256": "bf61a2a5b9a217f25b41c39f3ea204e2aecc960ca6c8706347bfdb26d304db95",
+      "bytes": 169644
+    },
+    {
+      "path": "LightGenV2/reports/20260914_latest_qwen_baselines_a100_FIRSTBLOCK_FINAL/fresh/T08_abo_image_text/process_audit.json",
+      "sha256": "2a08dd97899f48dadb70369739ac9d6596f0331b34c901205c66178bc2c33289",
+      "bytes": 596
+    },
+    {
+      "path": "LightGenV2/reports/20260914_latest_qwen_baselines_a100_FIRSTBLOCK_FINAL/fresh/T08_abo_image_text/report.json",
+      "sha256": "4a4a7b6cf42572d3c7b2ae8289fc0d8bc3a44b51ba863bd8c169c611cbf45a97",
+      "bytes": 4936
+    },
+    {
+      "path": "LightGenV2/reports/20260914_latest_qwen_baselines_a100_FIRSTBLOCK_FINAL/fresh/T08_abo_image_text/timing_per_sample.csv",
+      "sha256": "dd40ca838e865759f1398dca8b3c97b3fe1405091b2f11e8576352d700c0c740",
+      "bytes": 28824
+    },
+    {
+      "path": "LightGenV2/reports/20260914_latest_qwen_baselines_a100_FIRSTBLOCK_FINAL/work/abo_qwen_reproduction/evidence/abo_similarity10_manifest.csv",
+      "sha256": "2949a4035150a9f8718f2a6cace164c17394613d24fb9d0234c553bee8d77c97",
+      "bytes": 837520
+    },
+    {
+      "path": "LightGenV2/reports/20260914_latest_qwen_baselines_a100_FIRSTBLOCK_FINAL/work/abo_qwen_reproduction/evidence/enrolled/final_report.json",
+      "sha256": "0f8a23f8f029d8578ed2da60fe1be98de68b589dcf9036ca53b562e93f481a27",
+      "bytes": 2500
+    },
+    {
+      "path": "LightGenV2/reports/20260914_latest_qwen_baselines_a100_FIRSTBLOCK_FINAL/work/abo_qwen_reproduction/evidence/enrolled_protocol.json",
+      "sha256": "f1749d5fc22d2dfee6a1333ce2b35e9fa600a070f949eba8420b4def41906dde",
+      "bytes": 875248
+    },
+    {
+      "path": "LightGenV2/reports/20260914_latest_qwen_baselines_a100_FIRSTBLOCK_FINAL/work/abo_qwen_reproduction/evidence/independent/enrolled_sku/predictions_2048d.csv",
+      "sha256": "576968ccf71959c0e15028069b5f1ed542e5acdc60a54545adadeae7132e7d9c",
+      "bytes": 40094
+    },
+    {
+      "path": "LightGenV2/reports/20260914_latest_qwen_baselines_a100_FIRSTBLOCK_FINAL/work/abo_qwen_reproduction/evidence/independent/enrolled_sku/predictions_64d.csv",
+      "sha256": "97d07b614186cb7320c3ea97f4584b80542ee2b76f7ed5548ad19ed2397980bc",
+      "bytes": 40094
+    },
+    {
+      "path": "LightGenV2/reports/20260914_latest_qwen_baselines_a100_FIRSTBLOCK_FINAL/work/abo_qwen_reproduction/evidence/independent/enrolled_sku/report.json",
+      "sha256": "52200640412037845f534db3cc92a7349a47b5fea21be0f49d90c930c437f9bc",
+      "bytes": 224771
+    },
+    {
+      "path": "LightGenV2/reports/20260914_latest_qwen_baselines_a100_FIRSTBLOCK_FINAL/work/abo_qwen_reproduction/evidence/independent/legacy_category/predictions_2048d.csv",
+      "sha256": "8e8e6ba1f4f892b340634ba40c59bfa7fae517fce45abeda3dc3594b459bfeac",
+      "bytes": 24094
+    },
+    {
+      "path": "LightGenV2/reports/20260914_latest_qwen_baselines_a100_FIRSTBLOCK_FINAL/work/abo_qwen_reproduction/evidence/independent/legacy_category/predictions_64d.csv",
+      "sha256": "31089d00dac233685545d4af82fbfe85381d4a2ae9ab718038fa7c6cbe9e92e9",
+      "bytes": 24094
+    },
+    {
+      "path": "LightGenV2/reports/20260914_latest_qwen_baselines_a100_FIRSTBLOCK_FINAL/work/abo_qwen_reproduction/evidence/independent/legacy_category/report.json",
+      "sha256": "a2e5caa69db887f529e820b2366265c941668aacf8e52db60c4389cd4b06a7dd",
+      "bytes": 180757
+    },
+    {
+      "path": "LightGenV2/reports/20260914_latest_qwen_baselines_a100_FIRSTBLOCK_FINAL/work/abo_qwen_reproduction/evidence/legacy/baseline_report.json",
+      "sha256": "5678c420aa3bc3b5508edee338e20185d95a5e87b1b51ca07b4de295543d43da",
+      "bytes": 3334
+    },
+    {
+      "path": "LightGenV2/reports/20260914_latest_qwen_baselines_a100_FIRSTBLOCK_FINAL/work/abo_qwen_reproduction/evidence/legacy/run_manifest.json",
+      "sha256": "6905bdcc14dd50298672e7e65940178e8f3621d85fb0a3acc2a0656b4cac2451",
+      "bytes": 51808
+    }
+  ],
+  "original_files_deleted": false,
+  "original_files_moved": false,
+  "ignore_scope": "Exact named static JSON/CSV payload copies only; future files, sources, summaries and documentation remain visible",
+  "measurement_scope": "Historical 2026-09-14 frozen Qwen first-native-block-through-final-output A100 wall timing. Temporal batch1/2 equivalent16 is conversion, not native batch16 timing. Not new model timing."
+}
