@@ -80,6 +80,7 @@
     },
     {
       "id": "t06_video_quality_assessment",
+      "stage_test_dependency_evidence": "tasks/t06_video_quality_assessment/stage_coordinator_source_identity_20261006.json",
       "review_package_identity_evidence": "../maintenance/storage/T06_REVIEW_PACKAGE_IDENTITY_20261006.json",
       "standalone_8um_variant_identity_evidence": "../maintenance/storage/T06_WORKING_PROJECT_IDENTITY_20261006.json",
       "standalone_8um_variant_is_official_physical_runtime": false,

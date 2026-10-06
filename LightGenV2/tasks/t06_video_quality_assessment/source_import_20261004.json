@@ -44,8 +44,15 @@
     },
     {
       "path": "LightGenV2/tasks/t06_video_quality_assessment/lab_bench.py",
-      "bytes": 12068,
-      "source_blob_sha256": "43f861f38e9dc032048a246719d4f4e903d7f62e1410ae109a2e14d333260cfa"
+      "bytes": 12757,
+      "source_blob_sha256": "a888ab0480c062e9a3bef66fbf7b20df7d3962ad5fc4b2ba6293f5765b9d57a9",
+      "original_import_blob_sha256": "43f861f38e9dc032048a246719d4f4e903d7f62e1410ae109a2e14d333260cfa",
+      "original_import_bytes": 12068,
+      "subsequent_projection": {
+        "commit": "2733c6a2a45dfefda8979d1269a1a765dc97ebee",
+        "evidence": "stage_coordinator_source_identity_20261006.json",
+        "scope": "Add two historically identical pure configuration helpers; pre-existing function/class ASTs remain unchanged; no acquisition entrypoints rewired"
+      }
     },
     {
       "path": "LightGenV2/tasks/t06_video_quality_assessment/lab_bundle.py",
