@@ -80,6 +80,11 @@ python -m LightGenV2.tasks.t06_video_quality_assessment.verify_formal_checkpoint
 沿用 `lab_runtime` 的原SHA、架构和strict state检查，不改默认Temporal-36，不加载数据、
 不调用SDK或GPU。权重缺失/不匹配仍失败；通过也不代表性能、数据或光路复现完成。
 
+2026-10-06已在服务器 main `f54e8b2d...` 对两个真实PT执行上面入口：
+Spatial 3,786,407参数、Temporal 6,804,011参数均通过原SHA/架构/strict state检查。
+未运行forward或数据集，未占GPU、未改文件；结果记入本任务[source_import清单](source_import_20261004.json)。
+这补齐的是主线实际权重加载，不是恢复旧Temporal-36资产或重新证明实拍性能。
+
 ## 数据、baseline与测速保留
 
 ### LightGenPublic 三份内部交付快照的区别（2026-10-06）
