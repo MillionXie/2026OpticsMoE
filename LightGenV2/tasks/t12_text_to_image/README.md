@@ -23,6 +23,13 @@
 保留本地交付文件的机器可用 `python maintenance/git_safety/check_source_archives.py --t12-share-payloads`
 只读检查这231份原字节是否变化；源码新克隆未附私有载荷时会失败，不自动重建或覆盖。
 
+配对数据导出工具已归任务：`python -m LightGenV2.tasks.t12_text_to_image.export_baseline_pairs
+--dataset-root <原数据目录> --instruction-cache <原指令缓存> --split test --output <新目录>`。
+它不再寻找交付包里的source/assets，保留原round量化、配对字段及20736/2304/2304数量守卫，
+拒绝覆盖已有输出；GT只用于导出目标，不能交给baseline推理。三项合成CPU测试不读取正式数据。
+该入口使用当前main的数据实现；未做历史渲染逐像素等价核验，不能宣称重建原交付PNG。
+原交付export_pairs.py及其冻结source、数据、结果继续保留，不替换历史引用。
+
 ## 2026-09-27/28 同任务 baseline 补训与五组汇总
 
 新增外部baseline：官方pix2pix-Turbo，upstream锁定 `86f54146590ffb4543c8cf85b5a36657da670924`。沿用当前20736/2304/2304配对数据及256输出；SD-Turbo预训练骨干，不从零训练主干。CLIP文本编码器冻结，微调UNet/VAE LoRA、输入卷积及官方VAE skip卷积。完整推理参数1,299,445,747，按约定排除词嵌入50,593,792后1,248,851,955；实际微调9,505,160。没有Qwen或PCA条件接口，不把它标作Qwen baseline。3轮训练在完整VAL选中step31104，固定权重TEST2304取得PSNR20.746391dB/SSIM0.740299；权重SHA256 `3a347c58affb53d8e7efc583bb5aecdaa2ac33bd316d792c12c805fa837b4c7c`。这一外部baseline明显弱于当前模型，不能宣称凭参数规模质量必然更好。来源、实现差异及命令见复现入口。
