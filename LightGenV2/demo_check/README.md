@@ -23,3 +23,5 @@
 旧纯光学 ZIP 的 SHA、13份文件清单、CRC与解压目录逐字节核验通过，见 [发布包身份](HISTORICAL_RELEASE_IDENTITY_20261006.json)。原训练提交为 `8c48e5caacb5cd2a8f82d18eaad41d5cb7a80d5f`，打包提交为 `558cfcebbbcc768345cf0a6dc3f909ae51495675`。当前main的模型已增加可选OEO/共用振幅入口，配置增加默认 `oeo_activation=none`，准备源码抽出 `decode_pair`；因此旧包不是当前源码逐字节副本。
 
 原打包入口按原metadata的来源SHA校验；当前来源不匹配时应失败，不应改摘要绕过。此次只核验旧发布物完整性，没有重新构建、运行或上传包，没有重新证明当前扩展模型与旧版数值等价。
+
+原包的冗余解压目录现已可恢复归档至本机 `archive/legacy_code_snapshots/eurosat_phase_only_delivery_20261006`，14份原文件逐SHA不变；原ZIP保留在原releases位置。见 [搬迁与恢复收据](../../maintenance/storage/EUROSAT_RELEASE_EXTRACTION_ARCHIVE_20261006.json)。不删除数据，不计新增磁盘释放；其他主机不必持有这份本地归档。

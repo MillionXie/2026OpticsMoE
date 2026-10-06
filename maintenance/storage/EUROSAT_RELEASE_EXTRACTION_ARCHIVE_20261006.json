@@ -1,0 +1,86 @@
+{
+  "scope": "Local recoverable relocation of exact old release extraction; not deletion or whole-project cleanup",
+  "source": "LightGenV2/demo_check/releases/eurosat_phase_only_moe_d2nn_20260916",
+  "archive": "archive/legacy_code_snapshots/eurosat_phase_only_delivery_20261006",
+  "files": [
+    {
+      "path": "eurosat_phase_only_moe_d2nn/config.json",
+      "bytes": 1225,
+      "sha256": "f47be970d78b5fbc85f77ded5708ab6514a1279cff898a43b11c6795afbab511"
+    },
+    {
+      "path": "eurosat_phase_only_moe_d2nn/download_archives.py",
+      "bytes": 3716,
+      "sha256": "314aec875575e7c3141cd17a8c708e5862a93199cede7a243a4f6293505b07ef"
+    },
+    {
+      "path": "eurosat_phase_only_moe_d2nn/MANIFEST.json",
+      "bytes": 1863,
+      "sha256": "dbb467776d062586e0a9f0193c767428250466981b8f1675eebb18129bab6fda"
+    },
+    {
+      "path": "eurosat_phase_only_moe_d2nn/models.py",
+      "bytes": 5353,
+      "sha256": "d0881c17497e1540b3afc91d4e874c19c3e29f20dd5bd2346d9911fe2cbe7542"
+    },
+    {
+      "path": "eurosat_phase_only_moe_d2nn/optics.py",
+      "bytes": 4032,
+      "sha256": "a222515d58c5829bdae9bc9d0d9b564864b6fae8f9bed7db398999623ce32cf9"
+    },
+    {
+      "path": "eurosat_phase_only_moe_d2nn/prepare.py",
+      "bytes": 5262,
+      "sha256": "66ba4dd16abf0646bc9b9785debea7b8ad715abdc0d45c51b329d284cbcf22c8"
+    },
+    {
+      "path": "eurosat_phase_only_moe_d2nn/PROVENANCE.json",
+      "bytes": 1440,
+      "sha256": "bfa5d8532ab2023aec02de24cb4a029e53f038dede67466c2b315c249d3d4cf3"
+    },
+    {
+      "path": "eurosat_phase_only_moe_d2nn/README.md",
+      "bytes": 6564,
+      "sha256": "aae114216df847948b50e5d6893e514a0a1bb4a5931fb637b0de67ef90b8388d"
+    },
+    {
+      "path": "eurosat_phase_only_moe_d2nn/reference_data_manifest.json",
+      "bytes": 1846970,
+      "sha256": "f15e2a8e40257eb6fde0be060992a54a09f94fcf884b5226e64d580358996d70"
+    },
+    {
+      "path": "eurosat_phase_only_moe_d2nn/reported_results.json",
+      "bytes": 10159,
+      "sha256": "3cab088012893056e2b49aa331637dbbfd40fdde996f82eaf0429ea1ee0276ac"
+    },
+    {
+      "path": "eurosat_phase_only_moe_d2nn/requirements.txt",
+      "bytes": 90,
+      "sha256": "d8b27a983c60d0210aa309ec70195869ee8208cfd1ab47335b2d71d2cb52f093"
+    },
+    {
+      "path": "eurosat_phase_only_moe_d2nn/run.py",
+      "bytes": 10763,
+      "sha256": "717f75257321e3148203d2fafac216e142d644e61d1192748f531a468c6a0a13"
+    },
+    {
+      "path": "eurosat_phase_only_moe_d2nn/training_environment.json",
+      "bytes": 2747,
+      "sha256": "540aa96e3b5152d57355818fc3b99260493ef9b0550bd2ccf8dfe6bc258a3113"
+    },
+    {
+      "path": "eurosat_phase_only_moe_d2nn/data/SPLIT.json",
+      "bytes": 13895324,
+      "sha256": "cfe8373dd33cc0fe64f083b9ca32377e767c21b078c3f1d91f2dacecc25cb776"
+    }
+  ],
+  "files_checked": 14,
+  "bytes_preserved": 15795508,
+  "original_zip": "LightGenV2/demo_check/releases/eurosat_phase_only_moe_d2nn_20260916.zip",
+  "original_zip_sha256": "bc58f30803437232d3398a883127b9c98dca07e9845f6b5284d83e0d1c602639",
+  "runtime_path_search_matches": 0,
+  "process_command_line_matches_excluding_audit_shell": 0,
+  "hashes_unchanged": true,
+  "deleted": false,
+  "net_disk_bytes_freed": 0
+}
