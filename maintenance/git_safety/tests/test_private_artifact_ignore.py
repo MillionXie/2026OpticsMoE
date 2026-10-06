@@ -10,6 +10,13 @@ ROOT = Path(__file__).resolve().parents[3]
 
 
 class ArtifactIgnoreTests(unittest.TestCase):
+    def test_named_demo_source_export_not_main_or_future_source(self):
+        prefix = 'LightGenV2/reports/20260927_demo_energy_efficiency_a100/ours/01_lgvq/source_snapshot/'
+        private = [prefix + 'tasks/t06_video_quality_assessment/run.py']
+        visible = [prefix + 'future_source.py', 'LightGenV2/tasks/t06_video_quality_assessment/run.py',
+                   prefix + 'timing.csv', prefix + 'report.json']
+        self.assertEqual(self.ignored(private + visible), set(private))
+
     def test_named_mnist_assets_keep_sources_timing_and_future_files_visible(self):
         prefix = 'MNIST_10cm_8um_Bench_Test_20260923/'
         private = [prefix + '02_mnist_10cm/phase/B_RECOMMENDED_native8_best.bmp']

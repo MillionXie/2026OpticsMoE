@@ -1,0 +1,1442 @@
+{
+  "reference_commit": "dad32fee0bd6e43d2d586cbde05be96bfba54d9a",
+  "files": [
+    {
+      "path": "LightGenV2/reports/20260927_demo_energy_efficiency_a100/ours/01_lgvq/source_snapshot/experiments/modeling.py",
+      "sha256": "da5f43daa2a92db057348487b18ce932c24dcf29d71cbc62f0c9f47d62d289c5",
+      "identity": "crlf_normalized_git_blob",
+      "reference_path": "experiments/qwen3_vl_2b_lgvq_single_metric_o2_16frame_54/modeling.py"
+    },
+    {
+      "path": "LightGenV2/reports/20260927_demo_energy_efficiency_a100/ours/01_lgvq/source_snapshot/tasks/t06_video_quality_assessment/__init__.py",
+      "sha256": "b2a3ad664c713edaf2480af53a84fcf796f7a39022ec0bec34654e9d34195079",
+      "identity": "crlf_normalized_git_blob",
+      "reference_path": "LightGenV2/tasks/t06_video_quality_assessment/__init__.py"
+    },
+    {
+      "path": "LightGenV2/reports/20260927_demo_energy_efficiency_a100/ours/01_lgvq/source_snapshot/tasks/t06_video_quality_assessment/__main__.py",
+      "sha256": "d250214a48ccad886356669528eaf93a777fb98eb4a95491848da3c9ebc8726b",
+      "identity": "crlf_normalized_git_blob",
+      "reference_path": "LightGenV2/tasks/t01_object_retrieval/__main__.py"
+    },
+    {
+      "path": "LightGenV2/reports/20260927_demo_energy_efficiency_a100/ours/01_lgvq/source_snapshot/tasks/t06_video_quality_assessment/adapt_measured_readout.py",
+      "sha256": "6ea08898f795095d66422fe8ea875345c6a6078e78ccf31ffba92ef3169cc866",
+      "identity": "crlf_normalized_git_blob",
+      "reference_path": "LightGenV2/tasks/t06_video_quality_assessment/adapt_measured_readout.py"
+    },
+    {
+      "path": "LightGenV2/reports/20260927_demo_energy_efficiency_a100/ours/01_lgvq/source_snapshot/tasks/t06_video_quality_assessment/configs/baselines/qwen3vl_quality_tokens_r448.yaml",
+      "sha256": "abfd6c954f2cd4da17ec88dc1709926c9faead46b8f24335669c40090886bd6f",
+      "identity": "crlf_normalized_git_blob",
+      "reference_path": "LightGenV2/tasks/t06_video_quality_assessment/configs/baselines/qwen3vl_quality_tokens_r448.yaml"
+    },
+    {
+      "path": "LightGenV2/reports/20260927_demo_energy_efficiency_a100/ours/01_lgvq/source_snapshot/tasks/t06_video_quality_assessment/configs/baselines/qwen3vl_spatial_quality_tokens_4f_r448.yaml",
+      "sha256": "eb112a65c80a199195092fea3cfc56d470f74ed453c9046c5acd8e9aa95fa49c",
+      "identity": "crlf_normalized_git_blob",
+      "reference_path": "LightGenV2/tasks/t06_video_quality_assessment/configs/baselines/qwen3vl_spatial_quality_tokens_4f_r448.yaml"
+    },
+    {
+      "path": "LightGenV2/reports/20260927_demo_energy_efficiency_a100/ours/01_lgvq/source_snapshot/tasks/t06_video_quality_assessment/configs/lightgen/spatial_single_video4_custom_conv_readout_1m.yaml",
+      "sha256": "539208d928af5ff7172da615d8855e07ff80f24f190dc06bd1597fb48f00c2fe",
+      "identity": "crlf_normalized_git_blob",
+      "reference_path": "LightGenV2/tasks/t06_video_quality_assessment/configs/lightgen/spatial_single_video4_custom_conv_readout_1m.yaml"
+    },
+    {
+      "path": "LightGenV2/reports/20260927_demo_energy_efficiency_a100/ours/01_lgvq/source_snapshot/tasks/t06_video_quality_assessment/configs/lightgen/temporal_multivideo16x4_base.yaml",
+      "sha256": "2a2b398b776aeaabaf7b2c345c2f6940ecbc85a9143747f2d9f402346b6f6793",
+      "identity": "crlf_normalized_git_blob",
+      "reference_path": "LightGenV2/tasks/t06_video_quality_assessment/configs/lightgen/temporal_multivideo16x4_base.yaml"
+    },
+    {
+      "path": "LightGenV2/reports/20260927_demo_energy_efficiency_a100/ours/01_lgvq/source_snapshot/tasks/t06_video_quality_assessment/configs/lightgen/temporal_multivideo16x4_formal.yaml",
+      "sha256": "84bddc7a46267d7c6026c707ac8c7ca0a48f044aed2a3fb0facf0744e0bb7c4f",
+      "identity": "crlf_normalized_git_blob",
+      "reference_path": "LightGenV2/tasks/t06_video_quality_assessment/configs/lightgen/temporal_multivideo16x4_formal.yaml"
+    },
+    {
+      "path": "LightGenV2/reports/20260927_demo_energy_efficiency_a100/ours/01_lgvq/source_snapshot/tasks/t06_video_quality_assessment/configs/lightgen/temporal_multivideo9x4_base.yaml",
+      "sha256": "3ae94e35b6473cd4b165c1f8f715b249fa635a0d3a815b8debb673b516b44db0",
+      "identity": "crlf_normalized_git_blob",
+      "reference_path": "LightGenV2/tasks/t06_video_quality_assessment/configs/lightgen/temporal_multivideo9x4_base.yaml"
+    },
+    {
+      "path": "LightGenV2/reports/20260927_demo_energy_efficiency_a100/ours/01_lgvq/source_snapshot/tasks/t06_video_quality_assessment/configs/lightgen/temporal_multivideo9x4_formal.yaml",
+      "sha256": "27ed2bbd5c5b53a7407ffcb2b400e25c51665500afae880df17a2e5562d52eb8",
+      "identity": "crlf_normalized_git_blob",
+      "reference_path": "LightGenV2/tasks/t06_video_quality_assessment/configs/lightgen/temporal_multivideo9x4_formal.yaml"
+    },
+    {
+      "path": "LightGenV2/reports/20260927_demo_energy_efficiency_a100/ours/01_lgvq/source_snapshot/tasks/t06_video_quality_assessment/hardware.py",
+      "sha256": "6c52ea20c84c36f01606510e18222cdbec25c1122d8a20da8d21382874bb2e85",
+      "identity": "crlf_normalized_git_blob",
+      "reference_path": "LightGenV2/tasks/t06_video_quality_assessment/hardware.py"
+    },
+    {
+      "path": "LightGenV2/reports/20260927_demo_energy_efficiency_a100/ours/01_lgvq/source_snapshot/tasks/t06_video_quality_assessment/lab_runtime.py",
+      "sha256": "cae96d9593589124f336aa9e340ea77ecdb6c14ba9d61f8722f47178d124949d",
+      "identity": "crlf_normalized_git_blob",
+      "reference_path": "LightGenV2/tasks/t06_video_quality_assessment/lab_runtime.py"
+    },
+    {
+      "path": "LightGenV2/reports/20260927_demo_energy_efficiency_a100/ours/01_lgvq/source_snapshot/tasks/t06_video_quality_assessment/models/__init__.py",
+      "sha256": "246817b138f60882cedebfe5ae8f37f5a4532021abb4c8c5384b4b7191fcc974",
+      "identity": "crlf_normalized_git_blob",
+      "reference_path": "LightGenV2/tasks/t06_video_quality_assessment/models/__init__.py"
+    },
+    {
+      "path": "LightGenV2/reports/20260927_demo_energy_efficiency_a100/ours/01_lgvq/source_snapshot/tasks/t06_video_quality_assessment/models/multivideo9x4.py",
+      "sha256": "0cab11362aceaea58b915634da76ae2af3436359aeeaec841d02948158146f18",
+      "identity": "crlf_normalized_git_blob",
+      "reference_path": "LightGenV2/tasks/t06_video_quality_assessment/models/multivideo9x4.py"
+    },
+    {
+      "path": "LightGenV2/reports/20260927_demo_energy_efficiency_a100/ours/01_lgvq/source_snapshot/tasks/t06_video_quality_assessment/multivideo.py",
+      "sha256": "c5e04762c33eb69fbb1fb0159afb1841cd1d7718695bd8253356be68c9001c9b",
+      "identity": "crlf_normalized_git_blob",
+      "reference_path": "LightGenV2/tasks/t06_video_quality_assessment/multivideo.py"
+    },
+    {
+      "path": "LightGenV2/reports/20260927_demo_energy_efficiency_a100/ours/01_lgvq/source_snapshot/tasks/t06_video_quality_assessment/multivideo_audit.py",
+      "sha256": "87f71f6c49345b6e20f4b9311c1782160aa48a7467641c43ddf6a1c494c8f97d",
+      "identity": "crlf_normalized_git_blob",
+      "reference_path": "LightGenV2/tasks/t06_video_quality_assessment/multivideo_audit.py"
+    },
+    {
+      "path": "LightGenV2/reports/20260927_demo_energy_efficiency_a100/ours/01_lgvq/source_snapshot/tasks/t06_video_quality_assessment/multivideo_data.py",
+      "sha256": "bd098aaca18adc6ccb9a6a59fae7124504d0cc794444d159b5349fdc64b49c5c",
+      "identity": "exact_git_blob",
+      "reference_path": "LightGenV2/tasks/t13_temporal_robust_training/runtime/LightGenV2/tasks/t06_video_quality_assessment/multivideo_data.py"
+    },
+    {
+      "path": "LightGenV2/reports/20260927_demo_energy_efficiency_a100/ours/01_lgvq/source_snapshot/tasks/t06_video_quality_assessment/multivideo_settings.py",
+      "sha256": "8faf5b691401f1185081972fc0b1a819dd0eba9e5823fa7b46f8218b957a5ee7",
+      "identity": "crlf_normalized_git_blob",
+      "reference_path": "LightGenV2/tasks/t06_video_quality_assessment/multivideo_settings.py"
+    },
+    {
+      "path": "LightGenV2/reports/20260927_demo_energy_efficiency_a100/ours/01_lgvq/source_snapshot/tasks/t06_video_quality_assessment/multivideo_training.py",
+      "sha256": "b57eb1c5fb304ff2d320b9bcf961711c8730af7e7f9cfcb4a4bb465348141190",
+      "identity": "exact_git_blob",
+      "reference_path": "LightGenV2/tasks/t13_temporal_robust_training/runtime/LightGenV2/tasks/t06_video_quality_assessment/multivideo_training.py"
+    },
+    {
+      "path": "LightGenV2/reports/20260927_demo_energy_efficiency_a100/ours/01_lgvq/source_snapshot/tasks/t06_video_quality_assessment/plot_quality_token_baseline.py",
+      "sha256": "c550fc7acb5d8606fb0fca43538949087b60bd94eecde81862aabe1c84b8352a",
+      "identity": "crlf_normalized_git_blob",
+      "reference_path": "LightGenV2/tasks/t06_video_quality_assessment/plot_quality_token_baseline.py"
+    },
+    {
+      "path": "LightGenV2/reports/20260927_demo_energy_efficiency_a100/ours/01_lgvq/source_snapshot/tasks/t06_video_quality_assessment/project.py",
+      "sha256": "cc29aaacffc381891183bce4550cd4c7b8ba064e4e564d7a26f0c8babc9ad118",
+      "identity": "crlf_normalized_git_blob",
+      "reference_path": "LightGenV2/tasks/t06_video_quality_assessment/project.py"
+    },
+    {
+      "path": "LightGenV2/reports/20260927_demo_energy_efficiency_a100/ours/01_lgvq/source_snapshot/tasks/t06_video_quality_assessment/quality_token_extract.py",
+      "sha256": "5e86c321b1951c3205d7c5bad0ccaae995c21c27194da4eddc7a24fa66cb8c36",
+      "identity": "crlf_normalized_git_blob",
+      "reference_path": "LightGenV2/tasks/t06_video_quality_assessment/quality_token_extract.py"
+    },
+    {
+      "path": "LightGenV2/reports/20260927_demo_energy_efficiency_a100/ours/01_lgvq/source_snapshot/tasks/t06_video_quality_assessment/quality_token_resolution.py",
+      "sha256": "0cbe704b490de07f1a765f44fdb51aa00fdaa225001b8671bcafe94610f55c21",
+      "identity": "crlf_normalized_git_blob",
+      "reference_path": "LightGenV2/tasks/t06_video_quality_assessment/quality_token_resolution.py"
+    },
+    {
+      "path": "LightGenV2/reports/20260927_demo_energy_efficiency_a100/ours/01_lgvq/source_snapshot/tasks/t06_video_quality_assessment/quality_token_train.py",
+      "sha256": "24a617b38839fa789a40fe47f4747798403d2ebe1a28df10dcac40893b181fc5",
+      "identity": "crlf_normalized_git_blob",
+      "reference_path": "LightGenV2/tasks/t06_video_quality_assessment/quality_token_train.py"
+    },
+    {
+      "path": "LightGenV2/reports/20260927_demo_energy_efficiency_a100/ours/01_lgvq/source_snapshot/tasks/t06_video_quality_assessment/reports/5090d_moe_and_qwen_baselines_20260907/plot.py",
+      "sha256": "652767875e9a016d5714e2c57da8d3e848fc90a87158e1efe428a34e651018a2",
+      "identity": "crlf_normalized_git_blob",
+      "reference_path": "LightGenV2/tasks/t06_video_quality_assessment/reports/5090d_moe_and_qwen_baselines_20260907/plot.py"
+    },
+    {
+      "path": "LightGenV2/reports/20260927_demo_energy_efficiency_a100/ours/01_lgvq/source_snapshot/tasks/t06_video_quality_assessment/reports/plot_multivideo_tradeoff.py",
+      "sha256": "6ba1c465ce980c8b0b8801d83a5d95876dc3b16628598337685b6b84ae802773",
+      "identity": "crlf_normalized_git_blob",
+      "reference_path": "LightGenV2/tasks/t06_video_quality_assessment/reports/plot_multivideo_tradeoff.py"
+    },
+    {
+      "path": "LightGenV2/reports/20260927_demo_energy_efficiency_a100/ours/01_lgvq/source_snapshot/tasks/t06_video_quality_assessment/reports/qwen5090d_cross_task_baselines_20260906/plot.py",
+      "sha256": "c7edcb197a92a0437aaec53c85bdb648f66546b930d77d59aa03ce7c67443209",
+      "identity": "crlf_normalized_git_blob",
+      "reference_path": "LightGenV2/tasks/t06_video_quality_assessment/reports/qwen5090d_cross_task_baselines_20260906/plot.py"
+    },
+    {
+      "path": "LightGenV2/reports/20260927_demo_energy_efficiency_a100/ours/01_lgvq/source_snapshot/tasks/t06_video_quality_assessment/run.py",
+      "sha256": "226f1780476ab8400c4914d0777ee872d367aea8ad5fa8612ab9a8ab8a1ac3fa",
+      "identity": "crlf_normalized_git_blob",
+      "reference_path": "LightGenV2/tasks/t06_video_quality_assessment/run.py"
+    },
+    {
+      "path": "LightGenV2/reports/20260927_demo_energy_efficiency_a100/ours/01_lgvq/source_snapshot/tasks/t06_video_quality_assessment/test_adapt_measured_readout.py",
+      "sha256": "4d83c49546689e2991a338c2357321d4029a0cb141dcc26b1afe35a9977939ae",
+      "identity": "crlf_normalized_git_blob",
+      "reference_path": "LightGenV2/tasks/t06_video_quality_assessment/test_adapt_measured_readout.py"
+    },
+    {
+      "path": "LightGenV2/reports/20260927_demo_energy_efficiency_a100/ours/01_lgvq/source_snapshot/tasks/t06_video_quality_assessment/tests/__init__.py",
+      "sha256": "ecc9aa9b36ab02e9c8a0a032968dc0d9c4773cb705eb27c522a8592b1c03bc08",
+      "identity": "crlf_normalized_git_blob",
+      "reference_path": "LightGenV2/tasks/t06_video_quality_assessment/tests/__init__.py"
+    },
+    {
+      "path": "LightGenV2/reports/20260927_demo_energy_efficiency_a100/ours/01_lgvq/source_snapshot/tasks/t06_video_quality_assessment/tests/test_project.py",
+      "sha256": "4ffda45c093b7e0bfceb00ee3adfcf9f03bd91f91a87ca52104b188f91b66b51",
+      "identity": "crlf_normalized_git_blob",
+      "reference_path": "LightGenV2/tasks/t06_video_quality_assessment/tests/test_project.py"
+    },
+    {
+      "path": "LightGenV2/reports/20260927_demo_energy_efficiency_a100/ours/01_lgvq/source_snapshot/tasks/t06_video_quality_assessment/tests/test_quality_token_resolution.py",
+      "sha256": "4ba082a5162dfb23160ec8a926c51e3d705dd6219697ce7383a510f91bb09804",
+      "identity": "crlf_normalized_git_blob",
+      "reference_path": "LightGenV2/tasks/t06_video_quality_assessment/tests/test_quality_token_resolution.py"
+    },
+    {
+      "path": "LightGenV2/reports/20260927_demo_energy_efficiency_a100/ours/01_lgvq/source_snapshot/tasks/t06_video_quality_assessment/tests/test_stage_exposure.py",
+      "sha256": "3d28a5b8a81eee86f0434641f36cb331ca8e631dccf3683e26586a15cbd8c157",
+      "identity": "crlf_normalized_git_blob",
+      "reference_path": "LightGenV2/tasks/t06_video_quality_assessment/tests/test_stage_exposure.py"
+    },
+    {
+      "path": "LightGenV2/reports/20260927_demo_energy_efficiency_a100/ours/01_lgvq/source_snapshot/tasks/t06_video_quality_assessment/tune_measured_readout.py",
+      "sha256": "e53ef91c776f96408d2e0a4fad1c65cf34d69edd9c0bab81fc36e216a74ef8dc",
+      "identity": "crlf_normalized_git_blob",
+      "reference_path": "LightGenV2/tasks/t06_video_quality_assessment/tune_measured_readout.py"
+    },
+    {
+      "path": "LightGenV2/reports/20260927_demo_energy_efficiency_a100/ours/01_lgvq/source_snapshot/tasks/t06_video_quality_assessment/visualize_multivideo_masks.py",
+      "sha256": "09147355cdce74b9ef6140355d7cc067a1a4423c8520d81bfd2cce5358deab57",
+      "identity": "crlf_normalized_git_blob",
+      "reference_path": "LightGenV2/tasks/t06_video_quality_assessment/visualize_multivideo_masks.py"
+    },
+    {
+      "path": "LightGenV2/reports/20260927_demo_energy_efficiency_a100/ours/05_lsp/source_snapshot/experiments/modeling.py",
+      "sha256": "232c641519eae94a954af0e1f8c642103395c0bbf306738bf7449ee0e6fbaef2",
+      "identity": "crlf_normalized_git_blob",
+      "reference_path": "experiments/vision2_hybrid_dense/modeling.py"
+    },
+    {
+      "path": "LightGenV2/reports/20260927_demo_energy_efficiency_a100/ours/05_lsp/source_snapshot/tasks/t02_keypoint_detection/__init__.py",
+      "sha256": "348b062a3043f73d841fd1f6d02f4c905b88a35840d1a0a3a65d4cd3103cc269",
+      "identity": "crlf_normalized_git_blob",
+      "reference_path": "LightGenV2/tasks/t02_keypoint_detection/__init__.py"
+    },
+    {
+      "path": "LightGenV2/reports/20260927_demo_energy_efficiency_a100/ours/05_lsp/source_snapshot/tasks/t02_keypoint_detection/baseline_5090d.py",
+      "sha256": "6bae6db0acc6e8b335394f1c0ee568f64ecfe9ee620a05501e08233fcd337b13",
+      "identity": "crlf_normalized_git_blob",
+      "reference_path": "LightGenV2/tasks/t02_keypoint_detection/baseline_5090d.py"
+    },
+    {
+      "path": "LightGenV2/reports/20260927_demo_energy_efficiency_a100/ours/05_lsp/source_snapshot/tasks/t02_keypoint_detection/configs/common_dc20.yaml",
+      "sha256": "4b828a49ca619c7c9f2dc26136170f1414b2a2fd65b4d40060d2e794675945f7",
+      "identity": "crlf_normalized_git_blob",
+      "reference_path": "LightGenV2/tasks/t02_keypoint_detection/configs/common_dc20.yaml"
+    },
+    {
+      "path": "LightGenV2/reports/20260927_demo_energy_efficiency_a100/ours/05_lsp/source_snapshot/tasks/t02_keypoint_detection/configs/d2nn_active_expert_matched_dc20.yaml",
+      "sha256": "09b25abc41204af2cd46ab5e3bcaeb197558a95065bbce8be39427ac03abb749",
+      "identity": "crlf_normalized_git_blob",
+      "reference_path": "LightGenV2/tasks/t02_keypoint_detection/configs/d2nn_active_expert_matched_dc20.yaml"
+    },
+    {
+      "path": "LightGenV2/reports/20260927_demo_energy_efficiency_a100/ours/05_lsp/source_snapshot/tasks/t02_keypoint_detection/configs/moe_optical_router_scale_matched_dc20.yaml",
+      "sha256": "9d207f609276c2332be7371de0643837ca82a6dc82eed66e149bbdaaaef77845",
+      "identity": "crlf_normalized_git_blob",
+      "reference_path": "LightGenV2/tasks/t01_object_retrieval/configs/moe_optical_router_scale_matched_dc20.yaml"
+    },
+    {
+      "path": "LightGenV2/reports/20260927_demo_energy_efficiency_a100/ours/05_lsp/source_snapshot/tasks/t02_keypoint_detection/configs/moe_optical_router_scale_matched_dc20_no_shift.yaml",
+      "sha256": "98b0bea2ebb64adb49abde589208a3713818970a1976654f2daca58d2a564243",
+      "identity": "crlf_normalized_git_blob",
+      "reference_path": "LightGenV2/tasks/t02_keypoint_detection/configs/moe_optical_router_scale_matched_dc20_no_shift.yaml"
+    },
+    {
+      "path": "LightGenV2/reports/20260927_demo_energy_efficiency_a100/ours/05_lsp/source_snapshot/tasks/t02_keypoint_detection/configs/moe_optical_router_scale_matched_dc20_no_shift_warmstart.yaml",
+      "sha256": "fea7a70e89b33b30246c46a2ae848ca2121b6aa7c357dd776c4613abd31ef5a3",
+      "identity": "crlf_normalized_git_blob",
+      "reference_path": "LightGenV2/tasks/t02_keypoint_detection/configs/moe_optical_router_scale_matched_dc20_no_shift_warmstart.yaml"
+    },
+    {
+      "path": "LightGenV2/reports/20260927_demo_energy_efficiency_a100/ours/05_lsp/source_snapshot/tasks/t02_keypoint_detection/report.py",
+      "sha256": "ca8c15fb30c77ac42bf8be813fb698a0520ed98cadeb1e7f2b464446a0e866c3",
+      "identity": "crlf_normalized_git_blob",
+      "reference_path": "LightGenV2/tasks/t02_keypoint_detection/report.py"
+    },
+    {
+      "path": "LightGenV2/reports/20260927_demo_energy_efficiency_a100/ours/05_lsp/source_snapshot/tasks/t02_keypoint_detection/settings.py",
+      "sha256": "23939986e85ebf2b55774b89d710aee1fc1d7bc3e93b6db2f8bf62fd66478a79",
+      "identity": "crlf_normalized_git_blob",
+      "reference_path": "LightGenV2/tasks/t02_keypoint_detection/settings.py"
+    },
+    {
+      "path": "LightGenV2/reports/20260927_demo_energy_efficiency_a100/ours/05_lsp/source_snapshot/tasks/t02_keypoint_detection/tests/test_lsp_contract.py",
+      "sha256": "fd92f2e0ae42f412fc1f62bfa384c3f421f4fd9f167f34d6d041ce93ce6b1ed6",
+      "identity": "crlf_normalized_git_blob",
+      "reference_path": "LightGenV2/tasks/t02_keypoint_detection/tests/test_lsp_contract.py"
+    },
+    {
+      "path": "LightGenV2/reports/20260927_demo_energy_efficiency_a100/ours/05_lsp/source_snapshot/tasks/t02_keypoint_detection/training.py",
+      "sha256": "88adb8dce2433017442193a41af6c84e3c8f6b2ce0786996ece2a789fd55c7ec",
+      "identity": "crlf_normalized_git_blob",
+      "reference_path": "LightGenV2/tasks/t02_keypoint_detection/training.py"
+    },
+    {
+      "path": "LightGenV2/reports/20260927_demo_energy_efficiency_a100/ours/05_lsp/source_snapshot/tasks/t02_keypoint_detection/visualize.py",
+      "sha256": "aa7c2e5bbe45b86e8e2c17e2be3a8758c8f1a0b21d0803a87f15ae6a51de889a",
+      "identity": "crlf_normalized_git_blob",
+      "reference_path": "LightGenV2/tasks/t02_keypoint_detection/visualize.py"
+    },
+    {
+      "path": "LightGenV2/reports/20260927_demo_energy_efficiency_a100/ours/06_salicon/source_snapshot/experiments/modeling.py",
+      "sha256": "232c641519eae94a954af0e1f8c642103395c0bbf306738bf7449ee0e6fbaef2",
+      "identity": "crlf_normalized_git_blob",
+      "reference_path": "experiments/vision2_hybrid_dense/modeling.py"
+    },
+    {
+      "path": "LightGenV2/reports/20260927_demo_energy_efficiency_a100/ours/06_salicon/source_snapshot/tasks/t03_saliency/__init__.py",
+      "sha256": "e035d0ee6e5b4e89a97bb5771f141702f8fc49f1a39b1852e41fcc3d9f48effa",
+      "identity": "crlf_normalized_git_blob",
+      "reference_path": "LightGenV2/tasks/t03_saliency/__init__.py"
+    },
+    {
+      "path": "LightGenV2/reports/20260927_demo_energy_efficiency_a100/ours/06_salicon/source_snapshot/tasks/t03_saliency/alternating_preflight.py",
+      "sha256": "4c2632eb9b7c340a41e7ccd756c4345ce71a4c74ee00aba4672369722c5c37ae",
+      "identity": "crlf_normalized_git_blob",
+      "reference_path": "LightGenV2/tasks/t03_saliency/alternating_preflight.py"
+    },
+    {
+      "path": "LightGenV2/reports/20260927_demo_energy_efficiency_a100/ours/06_salicon/source_snapshot/tasks/t03_saliency/alternating_training.py",
+      "sha256": "72d21686e0eb8450e581bad7b6936b3dd14e119aee77440d7d6d07632dd7100c",
+      "identity": "crlf_normalized_git_blob",
+      "reference_path": "LightGenV2/tasks/t03_saliency/alternating_training.py"
+    },
+    {
+      "path": "LightGenV2/reports/20260927_demo_energy_efficiency_a100/ours/06_salicon/source_snapshot/tasks/t03_saliency/audit_checkpoint.py",
+      "sha256": "74d915baf19205ba84bbe090d0fb08c51a159f7efc48ac5b3ef24d0a74124bbd",
+      "identity": "crlf_normalized_git_blob",
+      "reference_path": "LightGenV2/tasks/t03_saliency/audit_checkpoint.py"
+    },
+    {
+      "path": "LightGenV2/reports/20260927_demo_energy_efficiency_a100/ours/06_salicon/source_snapshot/tasks/t03_saliency/baseline_5090d.py",
+      "sha256": "a53d20565c257cacfd1d61d7fa83ce489fbcbabb0e86ae5dd419279eec684d7a",
+      "identity": "crlf_normalized_git_blob",
+      "reference_path": "LightGenV2/tasks/t03_saliency/baseline_5090d.py"
+    },
+    {
+      "path": "LightGenV2/reports/20260927_demo_energy_efficiency_a100/ours/06_salicon/source_snapshot/tasks/t03_saliency/build_lab_package.py",
+      "sha256": "5877a2278b43a55b6c166832a9ad25890646e021784e77cfa5914ad0eb51296c",
+      "identity": "crlf_normalized_git_blob",
+      "reference_path": "LightGenV2/tasks/t03_saliency/build_lab_package.py"
+    },
+    {
+      "path": "LightGenV2/reports/20260927_demo_energy_efficiency_a100/ours/06_salicon/source_snapshot/tasks/t03_saliency/calibration_probe.py",
+      "sha256": "d51711a2bddae61798ad14c0cd64a1d67598362ab3bcfb41d3d3b3100567acff",
+      "identity": "crlf_normalized_git_blob",
+      "reference_path": "LightGenV2/tasks/t03_saliency/calibration_probe.py"
+    },
+    {
+      "path": "LightGenV2/reports/20260927_demo_energy_efficiency_a100/ours/06_salicon/source_snapshot/tasks/t03_saliency/configs/common_dc20.yaml",
+      "sha256": "ab8916e160b07df4103c10df6c3d5cb8251da0cb6c4a1740a8b8fd8ee1006a88",
+      "identity": "crlf_normalized_git_blob",
+      "reference_path": "LightGenV2/tasks/t03_saliency/configs/common_dc20.yaml"
+    },
+    {
+      "path": "LightGenV2/reports/20260927_demo_energy_efficiency_a100/ours/06_salicon/source_snapshot/tasks/t03_saliency/configs/d2nn_active_expert_matched_dc20.yaml",
+      "sha256": "7f0041db14fae05aed2cba328b7fba86c08dde7ef0bce312ae31686a9ba080b4",
+      "identity": "crlf_normalized_git_blob",
+      "reference_path": "LightGenV2/tasks/t03_saliency/configs/d2nn_active_expert_matched_dc20.yaml"
+    },
+    {
+      "path": "LightGenV2/reports/20260927_demo_energy_efficiency_a100/ours/06_salicon/source_snapshot/tasks/t03_saliency/configs/moe_alpha40_adaptive_keepkd.yaml",
+      "sha256": "d54cbf4fa6d40f7e12027d14f7c07cfde1b9b5cf56065b4bf6410ad3c6ec32b0",
+      "identity": "crlf_normalized_git_blob",
+      "reference_path": "LightGenV2/tasks/t03_saliency/configs/moe_alpha40_adaptive_keepkd.yaml"
+    },
+    {
+      "path": "LightGenV2/reports/20260927_demo_energy_efficiency_a100/ours/06_salicon/source_snapshot/tasks/t03_saliency/configs/moe_alpha40_adaptive_releasekd.yaml",
+      "sha256": "4da38e55005f10f6b58918498deb8d5537e5c91008b48a183e965a3e7f33bfda",
+      "identity": "crlf_normalized_git_blob",
+      "reference_path": "LightGenV2/tasks/t03_saliency/configs/moe_alpha40_adaptive_releasekd.yaml"
+    },
+    {
+      "path": "LightGenV2/reports/20260927_demo_energy_efficiency_a100/ours/06_salicon/source_snapshot/tasks/t03_saliency/configs/moe_alpha40_adaptive_releasekd_cc.yaml",
+      "sha256": "0b7b7183cd6214d162e55ddc62ef05d8210f775b3414dfbbb7b8597e21333e70",
+      "identity": "crlf_normalized_git_blob",
+      "reference_path": "LightGenV2/tasks/t03_saliency/configs/moe_alpha40_adaptive_releasekd_cc.yaml"
+    },
+    {
+      "path": "LightGenV2/reports/20260927_demo_energy_efficiency_a100/ours/06_salicon/source_snapshot/tasks/t03_saliency/configs/moe_alpha40_alternating_20260914.yaml",
+      "sha256": "09dc795ce1616a757c97b3b193ac0739882c0f2af0128be6477a75da509162c2",
+      "identity": "crlf_normalized_git_blob",
+      "reference_path": "LightGenV2/tasks/t03_saliency/configs/moe_alpha40_alternating_20260914.yaml"
+    },
+    {
+      "path": "LightGenV2/reports/20260927_demo_energy_efficiency_a100/ours/06_salicon/source_snapshot/tasks/t03_saliency/configs/moe_alpha40_asam010.yaml",
+      "sha256": "f87d582f98d1bdb74493cbafee0a99afc19ada94cd3388ee1483560c840ad4fe",
+      "identity": "crlf_normalized_git_blob",
+      "reference_path": "LightGenV2/tasks/t03_saliency/configs/moe_alpha40_asam010.yaml"
+    },
+    {
+      "path": "LightGenV2/reports/20260927_demo_energy_efficiency_a100/ours/06_salicon/source_snapshot/tasks/t03_saliency/configs/moe_alpha40_asam050.yaml",
+      "sha256": "0eb1b971e11672cdf1b27b6446fa48db9310d2923bd534dfd2623e900548ade9",
+      "identity": "crlf_normalized_git_blob",
+      "reference_path": "LightGenV2/tasks/t03_saliency/configs/moe_alpha40_asam050.yaml"
+    },
+    {
+      "path": "LightGenV2/reports/20260927_demo_energy_efficiency_a100/ours/06_salicon/source_snapshot/tasks/t03_saliency/configs/moe_alpha40_cc_fullgrid_20260913.yaml",
+      "sha256": "20665c3a8c46ad49af53a7a274aa9f3483a5a8a79525cee900f37a95acb5eeca",
+      "identity": "crlf_normalized_git_blob",
+      "reference_path": "LightGenV2/tasks/t03_saliency/configs/moe_alpha40_cc_fullgrid_20260913.yaml"
+    },
+    {
+      "path": "LightGenV2/reports/20260927_demo_energy_efficiency_a100/ours/06_salicon/source_snapshot/tasks/t03_saliency/configs/moe_alpha40_cc_only_polish_20260913.yaml",
+      "sha256": "f4a040c82241b2219a2809a9bf8b0d9321a6f9287825f564c74a0bf548814bd5",
+      "identity": "crlf_normalized_git_blob",
+      "reference_path": "LightGenV2/tasks/t03_saliency/configs/moe_alpha40_cc_only_polish_20260913.yaml"
+    },
+    {
+      "path": "LightGenV2/reports/20260927_demo_energy_efficiency_a100/ours/06_salicon/source_snapshot/tasks/t03_saliency/configs/moe_alpha40_cc_pyramid_20260913.yaml",
+      "sha256": "7ccf6cfc63bcf45b355d99a44168834af4d3f3894f7320c43d5a090a29408df5",
+      "identity": "crlf_normalized_git_blob",
+      "reference_path": "LightGenV2/tasks/t03_saliency/configs/moe_alpha40_cc_pyramid_20260913.yaml"
+    },
+    {
+      "path": "LightGenV2/reports/20260927_demo_energy_efficiency_a100/ours/06_salicon/source_snapshot/tasks/t03_saliency/configs/moe_alpha40_cffn_control.yaml",
+      "sha256": "9909108d4d0121dd8d5824de718c2c718b04fa1ffd90e4884c94a0dd4607e9de",
+      "identity": "crlf_normalized_git_blob",
+      "reference_path": "LightGenV2/tasks/t03_saliency/configs/moe_alpha40_cffn_control.yaml"
+    },
+    {
+      "path": "LightGenV2/reports/20260927_demo_energy_efficiency_a100/ours/06_salicon/source_snapshot/tasks/t03_saliency/configs/moe_alpha40_cffn_d1.yaml",
+      "sha256": "3470312752bb4f44a0a4e1711bfb8060a67d087fa719c230d7f1922224c22ee5",
+      "identity": "crlf_normalized_git_blob",
+      "reference_path": "LightGenV2/tasks/t03_saliency/configs/moe_alpha40_cffn_d1.yaml"
+    },
+    {
+      "path": "LightGenV2/reports/20260927_demo_energy_efficiency_a100/ours/06_salicon/source_snapshot/tasks/t03_saliency/configs/moe_alpha40_cffn_d2.yaml",
+      "sha256": "d6403ddbf8c81144415304043c667b682c7417a755849551c56d1a2a6b047222",
+      "identity": "crlf_normalized_git_blob",
+      "reference_path": "LightGenV2/tasks/t03_saliency/configs/moe_alpha40_cffn_d2.yaml"
+    },
+    {
+      "path": "LightGenV2/reports/20260927_demo_energy_efficiency_a100/ours/06_salicon/source_snapshot/tasks/t03_saliency/configs/moe_alpha40_crop_actual_short20.yaml",
+      "sha256": "a2c0ce01162d64f8fae6bec8db93426ad4fceffca101916bc79d964d6d88593c",
+      "identity": "crlf_normalized_git_blob",
+      "reference_path": "LightGenV2/tasks/t03_saliency/configs/moe_alpha40_crop_actual_short20.yaml"
+    },
+    {
+      "path": "LightGenV2/reports/20260927_demo_energy_efficiency_a100/ours/06_salicon/source_snapshot/tasks/t03_saliency/configs/moe_alpha40_crop_proxy_short20.yaml",
+      "sha256": "9f5853cced5a9b7fba2e9048ab3393f6e10a894cdacc689c48b44a6b1e0349a8",
+      "identity": "crlf_normalized_git_blob",
+      "reference_path": "LightGenV2/tasks/t03_saliency/configs/moe_alpha40_crop_proxy_short20.yaml"
+    },
+    {
+      "path": "LightGenV2/reports/20260927_demo_energy_efficiency_a100/ours/06_salicon/source_snapshot/tasks/t03_saliency/configs/moe_alpha40_dc_only.yaml",
+      "sha256": "058a76984445938c39785be7d4742cb9ff1f23b098b4254414bf7bb1fcc23bd4",
+      "identity": "crlf_normalized_git_blob",
+      "reference_path": "LightGenV2/tasks/t03_saliency/configs/moe_alpha40_dc_only.yaml"
+    },
+    {
+      "path": "LightGenV2/reports/20260927_demo_energy_efficiency_a100/ours/06_salicon/source_snapshot/tasks/t03_saliency/configs/moe_alpha40_early_control.yaml",
+      "sha256": "2953f694de0be48c6ba4743822fe2cfcc7442fbaeb209309d5b26a06623678f9",
+      "identity": "crlf_normalized_git_blob",
+      "reference_path": "LightGenV2/tasks/t03_saliency/configs/moe_alpha40_early_control.yaml"
+    },
+    {
+      "path": "LightGenV2/reports/20260927_demo_energy_efficiency_a100/ours/06_salicon/source_snapshot/tasks/t03_saliency/configs/moe_alpha40_early_flip.yaml",
+      "sha256": "3e1e01d4b27e23717f08c5386f0feeba06501748d356df6e9dffbf2e13230295",
+      "identity": "crlf_normalized_git_blob",
+      "reference_path": "LightGenV2/tasks/t03_saliency/configs/moe_alpha40_early_flip.yaml"
+    },
+    {
+      "path": "LightGenV2/reports/20260927_demo_energy_efficiency_a100/ours/06_salicon/source_snapshot/tasks/t03_saliency/configs/moe_alpha40_early_grn.yaml",
+      "sha256": "f413b981cdfc0003ff842018a20c2973ae27e5a2354a8895026a99c8648aadd0",
+      "identity": "crlf_normalized_git_blob",
+      "reference_path": "LightGenV2/tasks/t03_saliency/configs/moe_alpha40_early_grn.yaml"
+    },
+    {
+      "path": "LightGenV2/reports/20260927_demo_energy_efficiency_a100/ours/06_salicon/source_snapshot/tasks/t03_saliency/configs/moe_alpha40_early_kernel5.yaml",
+      "sha256": "3f6aee74a035d94c961d5d5766b1da2a4693e3efd6b54303e31512832003faf4",
+      "identity": "crlf_normalized_git_blob",
+      "reference_path": "LightGenV2/tasks/t03_saliency/configs/moe_alpha40_early_kernel5.yaml"
+    },
+    {
+      "path": "LightGenV2/reports/20260927_demo_energy_efficiency_a100/ours/06_salicon/source_snapshot/tasks/t03_saliency/configs/moe_alpha40_early_kernel5_grn.yaml",
+      "sha256": "692cec771426438ddeceae619a64d34b0d1406bd08e02aa0a7268c4ef0e580f9",
+      "identity": "crlf_normalized_git_blob",
+      "reference_path": "LightGenV2/tasks/t03_saliency/configs/moe_alpha40_early_kernel5_grn.yaml"
+    },
+    {
+      "path": "LightGenV2/reports/20260927_demo_energy_efficiency_a100/ours/06_salicon/source_snapshot/tasks/t03_saliency/configs/moe_alpha40_extra_coco20k.yaml",
+      "sha256": "1cccfeb229a65e0ea030d740cff7fa4bb885265a41d6caca8869a6368f99b0cd",
+      "identity": "crlf_normalized_git_blob",
+      "reference_path": "LightGenV2/tasks/t03_saliency/configs/moe_alpha40_extra_coco20k.yaml"
+    },
+    {
+      "path": "LightGenV2/reports/20260927_demo_energy_efficiency_a100/ours/06_salicon/source_snapshot/tasks/t03_saliency/configs/moe_alpha40_extra_control.yaml",
+      "sha256": "515d5b4b981efe11d40610d37d720df3dd8d631f0737ed9b45757e03515fa363",
+      "identity": "crlf_normalized_git_blob",
+      "reference_path": "LightGenV2/tasks/t03_saliency/configs/moe_alpha40_extra_control.yaml"
+    },
+    {
+      "path": "LightGenV2/reports/20260927_demo_energy_efficiency_a100/ours/06_salicon/source_snapshot/tasks/t03_saliency/configs/moe_alpha40_extra_early_coco20k.yaml",
+      "sha256": "232d7fa353678d569a6c69ddac8924ca16248c6b23fc259ab4e7002bca51649e",
+      "identity": "crlf_normalized_git_blob",
+      "reference_path": "LightGenV2/tasks/t03_saliency/configs/moe_alpha40_extra_early_coco20k.yaml"
+    },
+    {
+      "path": "LightGenV2/reports/20260927_demo_energy_efficiency_a100/ours/06_salicon/source_snapshot/tasks/t03_saliency/configs/moe_alpha40_extra_early_control.yaml",
+      "sha256": "3f33e65fab600c13d52679920be1fb366c6d02f050b59561016ac08fc461e855",
+      "identity": "crlf_normalized_git_blob",
+      "reference_path": "LightGenV2/tasks/t03_saliency/configs/moe_alpha40_extra_early_control.yaml"
+    },
+    {
+      "path": "LightGenV2/reports/20260927_demo_energy_efficiency_a100/ours/06_salicon/source_snapshot/tasks/t03_saliency/configs/moe_alpha40_extra_regions.yaml",
+      "sha256": "ed7c928fb0334b549976366e1c33c5435001435eb42385df9b75276840ac68ff",
+      "identity": "crlf_normalized_git_blob",
+      "reference_path": "LightGenV2/tasks/t03_saliency/configs/moe_alpha40_extra_regions.yaml"
+    },
+    {
+      "path": "LightGenV2/reports/20260927_demo_energy_efficiency_a100/ours/06_salicon/source_snapshot/tasks/t03_saliency/configs/moe_alpha40_extra_semantic.yaml",
+      "sha256": "030bf2d881789a00b076f3869e6804690fd0107ca757b07dea04c992d2abb7f8",
+      "identity": "crlf_normalized_git_blob",
+      "reference_path": "LightGenV2/tasks/t03_saliency/configs/moe_alpha40_extra_semantic.yaml"
+    },
+    {
+      "path": "LightGenV2/reports/20260927_demo_energy_efficiency_a100/ours/06_salicon/source_snapshot/tasks/t03_saliency/configs/moe_alpha40_feature_joint_router_low_lr.yaml",
+      "sha256": "c8a7a5868dbe0aecc00ebe3f9540234d1eaee4b5f5239f46b99696ea34571efb",
+      "identity": "crlf_normalized_git_blob",
+      "reference_path": "LightGenV2/tasks/t03_saliency/configs/moe_alpha40_feature_joint_router_low_lr.yaml"
+    },
+    {
+      "path": "LightGenV2/reports/20260927_demo_energy_efficiency_a100/ours/06_salicon/source_snapshot/tasks/t03_saliency/configs/moe_alpha40_feature_pretrain.yaml",
+      "sha256": "5c309171aacc8d63a68d88801f3edbcd3930fdc8f100b14fccc5ce87aaac7a5b",
+      "identity": "crlf_normalized_git_blob",
+      "reference_path": "LightGenV2/tasks/t03_saliency/configs/moe_alpha40_feature_pretrain.yaml"
+    },
+    {
+      "path": "LightGenV2/reports/20260927_demo_energy_efficiency_a100/ours/06_salicon/source_snapshot/tasks/t03_saliency/configs/moe_alpha40_feature_pretrain_stable_router.yaml",
+      "sha256": "190ac89f1d752a293d38eb61ace758a93a1d84a98f38439c62ac9df600605f91",
+      "identity": "crlf_normalized_git_blob",
+      "reference_path": "LightGenV2/tasks/t03_saliency/configs/moe_alpha40_feature_pretrain_stable_router.yaml"
+    },
+    {
+      "path": "LightGenV2/reports/20260927_demo_energy_efficiency_a100/ours/06_salicon/source_snapshot/tasks/t03_saliency/configs/moe_alpha40_feature_pretrain_strong.yaml",
+      "sha256": "60215bb18c9cd02fb102f18acc02fcce78a56abc16794031c5b98a6839e83868",
+      "identity": "crlf_normalized_git_blob",
+      "reference_path": "LightGenV2/tasks/t03_saliency/configs/moe_alpha40_feature_pretrain_strong.yaml"
+    },
+    {
+      "path": "LightGenV2/reports/20260927_demo_energy_efficiency_a100/ours/06_salicon/source_snapshot/tasks/t03_saliency/configs/moe_alpha40_first_stage_gt.yaml",
+      "sha256": "20933a497ee3ef85bbe27559a65d642c6c5afe2a588c0a3b3b9a855236bfba17",
+      "identity": "crlf_normalized_git_blob",
+      "reference_path": "LightGenV2/tasks/t03_saliency/configs/moe_alpha40_first_stage_gt.yaml"
+    },
+    {
+      "path": "LightGenV2/reports/20260927_demo_energy_efficiency_a100/ours/06_salicon/source_snapshot/tasks/t03_saliency/configs/moe_alpha40_fixed_crop_actual.yaml",
+      "sha256": "8b5c23b4e9095e52abab57778da90c264453c62a595aa515a84a3d44d0a418aa",
+      "identity": "crlf_normalized_git_blob",
+      "reference_path": "LightGenV2/tasks/t03_saliency/configs/moe_alpha40_fixed_crop_actual.yaml"
+    },
+    {
+      "path": "LightGenV2/reports/20260927_demo_energy_efficiency_a100/ours/06_salicon/source_snapshot/tasks/t03_saliency/configs/moe_alpha40_fixed_crop_proxy.yaml",
+      "sha256": "757c596862dc36949c39006953a51f5c2111f05da7ba95dee988ffed2ba1f2bf",
+      "identity": "crlf_normalized_git_blob",
+      "reference_path": "LightGenV2/tasks/t03_saliency/configs/moe_alpha40_fixed_crop_proxy.yaml"
+    },
+    {
+      "path": "LightGenV2/reports/20260927_demo_energy_efficiency_a100/ours/06_salicon/source_snapshot/tasks/t03_saliency/configs/moe_alpha40_generalize_aligned.yaml",
+      "sha256": "5d9747597cb20dabe0b493f5cf5d1298b277ea5d6370b816e14abb15c98a8948",
+      "identity": "crlf_normalized_git_blob",
+      "reference_path": "LightGenV2/tasks/t03_saliency/configs/moe_alpha40_generalize_aligned.yaml"
+    },
+    {
+      "path": "LightGenV2/reports/20260927_demo_energy_efficiency_a100/ours/06_salicon/source_snapshot/tasks/t03_saliency/configs/moe_alpha40_generalize_kd020.yaml",
+      "sha256": "17af11b732796d4083d4b77a87a44d253102130a70cdc5ed770ce8aac13b13e8",
+      "identity": "crlf_normalized_git_blob",
+      "reference_path": "LightGenV2/tasks/t03_saliency/configs/moe_alpha40_generalize_kd020.yaml"
+    },
+    {
+      "path": "LightGenV2/reports/20260927_demo_energy_efficiency_a100/ours/06_salicon/source_snapshot/tasks/t03_saliency/configs/moe_alpha40_generalize_kd060.yaml",
+      "sha256": "18b63d67aeb2ecc0c43309c7f4abe042be594fda9951ad6d6f48e7746eedaa4b",
+      "identity": "crlf_normalized_git_blob",
+      "reference_path": "LightGenV2/tasks/t03_saliency/configs/moe_alpha40_generalize_kd060.yaml"
+    },
+    {
+      "path": "LightGenV2/reports/20260927_demo_energy_efficiency_a100/ours/06_salicon/source_snapshot/tasks/t03_saliency/configs/moe_alpha40_generalize_regularized.yaml",
+      "sha256": "11e0453105998bc95ad6dcf9ba1142ac591060453cf2b30fb281480954c93551",
+      "identity": "crlf_normalized_git_blob",
+      "reference_path": "LightGenV2/tasks/t03_saliency/configs/moe_alpha40_generalize_regularized.yaml"
+    },
+    {
+      "path": "LightGenV2/reports/20260927_demo_energy_efficiency_a100/ours/06_salicon/source_snapshot/tasks/t03_saliency/configs/moe_alpha40_gsam_20260913.yaml",
+      "sha256": "d56ddf35dcc0e71356e6650551d612181d95d1dfb2c30a7dad1161e6bec5afa6",
+      "identity": "crlf_normalized_git_blob",
+      "reference_path": "LightGenV2/tasks/t03_saliency/configs/moe_alpha40_gsam_20260913.yaml"
+    },
+    {
+      "path": "LightGenV2/reports/20260927_demo_energy_efficiency_a100/ours/06_salicon/source_snapshot/tasks/t03_saliency/configs/moe_alpha40_hardcc_bounded30.yaml",
+      "sha256": "de2a84791c892e292f8de0e731eefea1d9eaf24c8f79830982a1c2f7541412e8",
+      "identity": "crlf_normalized_git_blob",
+      "reference_path": "LightGenV2/tasks/t03_saliency/configs/moe_alpha40_hardcc_bounded30.yaml"
+    },
+    {
+      "path": "LightGenV2/reports/20260927_demo_energy_efficiency_a100/ours/06_salicon/source_snapshot/tasks/t03_saliency/configs/moe_alpha40_hardcc_uniform30.yaml",
+      "sha256": "1ce0b3aea72242672534a84eb507f0a26ec9496f00e0277f835fd7977f03a17b",
+      "identity": "crlf_normalized_git_blob",
+      "reference_path": "LightGenV2/tasks/t03_saliency/configs/moe_alpha40_hardcc_uniform30.yaml"
+    },
+    {
+      "path": "LightGenV2/reports/20260927_demo_energy_efficiency_a100/ours/06_salicon/source_snapshot/tasks/t03_saliency/configs/moe_alpha40_hint_centered.yaml",
+      "sha256": "3877beb581e418e3362b8bead0de4ddf880903e15e24851a483695543830f92b",
+      "identity": "crlf_normalized_git_blob",
+      "reference_path": "LightGenV2/tasks/t03_saliency/configs/moe_alpha40_hint_centered.yaml"
+    },
+    {
+      "path": "LightGenV2/reports/20260927_demo_energy_efficiency_a100/ours/06_salicon/source_snapshot/tasks/t03_saliency/configs/moe_alpha40_hint_control.yaml",
+      "sha256": "0c4ca81dfcee4056d2e102aca3d042c4247d997272e2fb8e037312030ed75a9d",
+      "identity": "crlf_normalized_git_blob",
+      "reference_path": "LightGenV2/tasks/t03_saliency/configs/moe_alpha40_hint_control.yaml"
+    },
+    {
+      "path": "LightGenV2/reports/20260927_demo_energy_efficiency_a100/ours/06_salicon/source_snapshot/tasks/t03_saliency/configs/moe_alpha40_hint_cosine.yaml",
+      "sha256": "2a48d0c1660a3cfe03fc047e1392c3d15650322193f6c66d0bd4530f0b26d235",
+      "identity": "crlf_normalized_git_blob",
+      "reference_path": "LightGenV2/tasks/t03_saliency/configs/moe_alpha40_hint_cosine.yaml"
+    },
+    {
+      "path": "LightGenV2/reports/20260927_demo_energy_efficiency_a100/ours/06_salicon/source_snapshot/tasks/t03_saliency/configs/moe_alpha40_masked_kd.yaml",
+      "sha256": "d4f22c25d72fa852bd6b6a6c43e3df1888f6bdbbebdc425bf6ca8ad2ba5264b6",
+      "identity": "crlf_normalized_git_blob",
+      "reference_path": "LightGenV2/tasks/t03_saliency/configs/moe_alpha40_masked_kd.yaml"
+    },
+    {
+      "path": "LightGenV2/reports/20260927_demo_energy_efficiency_a100/ours/06_salicon/source_snapshot/tasks/t03_saliency/configs/moe_alpha40_masked_kd_p25.yaml",
+      "sha256": "3c19f9533fff9036e3ec0b8450a907dfe9d4ae797e0386c6222d612e32e7742c",
+      "identity": "crlf_normalized_git_blob",
+      "reference_path": "LightGenV2/tasks/t03_saliency/configs/moe_alpha40_masked_kd_p25.yaml"
+    },
+    {
+      "path": "LightGenV2/reports/20260927_demo_energy_efficiency_a100/ours/06_salicon/source_snapshot/tasks/t03_saliency/configs/moe_alpha40_mixup_20260913.yaml",
+      "sha256": "ace3df066508c1de3f4987e9025db1ed8fa14621c33002b387a5171effe1af9a",
+      "identity": "crlf_normalized_git_blob",
+      "reference_path": "LightGenV2/tasks/t03_saliency/configs/moe_alpha40_mixup_20260913.yaml"
+    },
+    {
+      "path": "LightGenV2/reports/20260927_demo_energy_efficiency_a100/ours/06_salicon/source_snapshot/tasks/t03_saliency/configs/moe_alpha40_noise_consistency_20260913.yaml",
+      "sha256": "ef1b21061c435ee3da9ced600719d9f2a9bc37f1c621774f3bd679a2a038c848",
+      "identity": "crlf_normalized_git_blob",
+      "reference_path": "LightGenV2/tasks/t03_saliency/configs/moe_alpha40_noise_consistency_20260913.yaml"
+    },
+    {
+      "path": "LightGenV2/reports/20260927_demo_energy_efficiency_a100/ours/06_salicon/source_snapshot/tasks/t03_saliency/configs/moe_alpha40_optical_lr_priority_20260913.yaml",
+      "sha256": "21bcc5cd388ae233a6a257de0af1f9dd49fa95a76ab2f21e5efb101b957cf3c0",
+      "identity": "crlf_normalized_git_blob",
+      "reference_path": "LightGenV2/tasks/t03_saliency/configs/moe_alpha40_optical_lr_priority_20260913.yaml"
+    },
+    {
+      "path": "LightGenV2/reports/20260927_demo_energy_efficiency_a100/ours/06_salicon/source_snapshot/tasks/t03_saliency/configs/moe_alpha40_refine_cc.yaml",
+      "sha256": "7e7b78f2a01b2117822329c0a9c29d0b3f7496cee49af4bbde5d7fb89a4834d2",
+      "identity": "crlf_normalized_git_blob",
+      "reference_path": "LightGenV2/tasks/t03_saliency/configs/moe_alpha40_refine_cc.yaml"
+    },
+    {
+      "path": "LightGenV2/reports/20260927_demo_energy_efficiency_a100/ours/06_salicon/source_snapshot/tasks/t03_saliency/configs/moe_alpha40_refine_control.yaml",
+      "sha256": "9231199d958ea12d32b842a0deb508f63158de283f589c03b444c4a39a8a0794",
+      "identity": "crlf_normalized_git_blob",
+      "reference_path": "LightGenV2/tasks/t03_saliency/configs/moe_alpha40_refine_control.yaml"
+    },
+    {
+      "path": "LightGenV2/reports/20260927_demo_energy_efficiency_a100/ours/06_salicon/source_snapshot/tasks/t03_saliency/configs/moe_alpha40_refine_reheat.yaml",
+      "sha256": "53d0094c88f187039dfea24fcd2b89d2ce2693e5ed16030ebc292cdff1768a8b",
+      "identity": "crlf_normalized_git_blob",
+      "reference_path": "LightGenV2/tasks/t03_saliency/configs/moe_alpha40_refine_reheat.yaml"
+    },
+    {
+      "path": "LightGenV2/reports/20260927_demo_energy_efficiency_a100/ours/06_salicon/source_snapshot/tasks/t03_saliency/configs/moe_alpha40_refine_weakaug.yaml",
+      "sha256": "a1f3ae856c508194a3a07ffe2bcd594defde7da521e05abca7c917255caef430",
+      "identity": "crlf_normalized_git_blob",
+      "reference_path": "LightGenV2/tasks/t03_saliency/configs/moe_alpha40_refine_weakaug.yaml"
+    },
+    {
+      "path": "LightGenV2/reports/20260927_demo_energy_efficiency_a100/ours/06_salicon/source_snapshot/tasks/t03_saliency/configs/moe_alpha40_reheat_joint.yaml",
+      "sha256": "98e1b9cec4dc6c9da3d33668878110d11e910c0522b5b8131fad58db918e705b",
+      "identity": "crlf_normalized_git_blob",
+      "reference_path": "LightGenV2/tasks/t03_saliency/configs/moe_alpha40_reheat_joint.yaml"
+    },
+    {
+      "path": "LightGenV2/reports/20260927_demo_energy_efficiency_a100/ours/06_salicon/source_snapshot/tasks/t03_saliency/configs/moe_alpha40_relational_kd.yaml",
+      "sha256": "bb21442c9f122fe654a44a83fd810dc61bcd2e498637055e183a6cb52cf5479f",
+      "identity": "crlf_normalized_git_blob",
+      "reference_path": "LightGenV2/tasks/t03_saliency/configs/moe_alpha40_relational_kd.yaml"
+    },
+    {
+      "path": "LightGenV2/reports/20260927_demo_energy_efficiency_a100/ours/06_salicon/source_snapshot/tasks/t03_saliency/configs/moe_alpha40_reliable_teacher50.yaml",
+      "sha256": "1af00a3da45f0a71f940930838321df0bb0d36bf21e02834a1106edc566ed462",
+      "identity": "crlf_normalized_git_blob",
+      "reference_path": "LightGenV2/tasks/t03_saliency/configs/moe_alpha40_reliable_teacher50.yaml"
+    },
+    {
+      "path": "LightGenV2/reports/20260927_demo_energy_efficiency_a100/ours/06_salicon/source_snapshot/tasks/t03_saliency/configs/moe_alpha40_rfstage_control.yaml",
+      "sha256": "27d66abf778d7e05542af90607b2a24663155765aa7377bfc81bdd85ba45166a",
+      "identity": "crlf_normalized_git_blob",
+      "reference_path": "LightGenV2/tasks/t03_saliency/configs/moe_alpha40_rfstage_control.yaml"
+    },
+    {
+      "path": "LightGenV2/reports/20260927_demo_energy_efficiency_a100/ours/06_salicon/source_snapshot/tasks/t03_saliency/configs/moe_alpha40_rfstage_flip.yaml",
+      "sha256": "8d79c9905e9fbeeba1f7f50ea576ee7afa37ccf10e506241eca8bc656e6648cc",
+      "identity": "crlf_normalized_git_blob",
+      "reference_path": "LightGenV2/tasks/t03_saliency/configs/moe_alpha40_rfstage_flip.yaml"
+    },
+    {
+      "path": "LightGenV2/reports/20260927_demo_energy_efficiency_a100/ours/06_salicon/source_snapshot/tasks/t03_saliency/configs/moe_alpha40_rfstage_kernel5.yaml",
+      "sha256": "c20334fc3874692624961c2d5c71d17e721b51e67c3b58b87f73cd1969a60432",
+      "identity": "crlf_normalized_git_blob",
+      "reference_path": "LightGenV2/tasks/t03_saliency/configs/moe_alpha40_rfstage_kernel5.yaml"
+    },
+    {
+      "path": "LightGenV2/reports/20260927_demo_energy_efficiency_a100/ours/06_salicon/source_snapshot/tasks/t03_saliency/configs/moe_alpha40_rfstage_staged.yaml",
+      "sha256": "f0f2fc2f018b6a554c930ed847ff507f165d1a5a364d65bfdc9297d62f853837",
+      "identity": "crlf_normalized_git_blob",
+      "reference_path": "LightGenV2/tasks/t03_saliency/configs/moe_alpha40_rfstage_staged.yaml"
+    },
+    {
+      "path": "LightGenV2/reports/20260927_demo_energy_efficiency_a100/ours/06_salicon/source_snapshot/tasks/t03_saliency/configs/moe_alpha40_router_radians.yaml",
+      "sha256": "de6f6c1632c2b8838f3d0476bce7d8b4db95996fff2925733c6cf9b7cae20c69",
+      "identity": "crlf_normalized_git_blob",
+      "reference_path": "LightGenV2/tasks/t03_saliency/configs/moe_alpha40_router_radians.yaml"
+    },
+    {
+      "path": "LightGenV2/reports/20260927_demo_energy_efficiency_a100/ours/06_salicon/source_snapshot/tasks/t03_saliency/configs/moe_alpha40_sam001.yaml",
+      "sha256": "6909c6d9d9b1bf4b63a1466ad87b9e88d902b8b84c056e249c70980c912ab45c",
+      "identity": "crlf_normalized_git_blob",
+      "reference_path": "LightGenV2/tasks/t03_saliency/configs/moe_alpha40_sam001.yaml"
+    },
+    {
+      "path": "LightGenV2/reports/20260927_demo_energy_efficiency_a100/ours/06_salicon/source_snapshot/tasks/t03_saliency/configs/moe_alpha40_sam005.yaml",
+      "sha256": "98836d176da04f653e0ae55ec470c04a09ab8b4296cc879b4eae3a0ea4ef236e",
+      "identity": "crlf_normalized_git_blob",
+      "reference_path": "LightGenV2/tasks/t03_saliency/configs/moe_alpha40_sam005.yaml"
+    },
+    {
+      "path": "LightGenV2/reports/20260927_demo_energy_efficiency_a100/ours/06_salicon/source_snapshot/tasks/t03_saliency/configs/moe_alpha40_sam010.yaml",
+      "sha256": "fef58865871e3e8be296d89858ef40205be49916128e055d19fca1537498ebfa",
+      "identity": "crlf_normalized_git_blob",
+      "reference_path": "LightGenV2/tasks/t03_saliency/configs/moe_alpha40_sam010.yaml"
+    },
+    {
+      "path": "LightGenV2/reports/20260927_demo_energy_efficiency_a100/ours/06_salicon/source_snapshot/tasks/t03_saliency/configs/moe_alpha40_sam_batch8_20260913.yaml",
+      "sha256": "ea140ed4a904b5db25df93a0184f1964aa9d18e0d579ae5d1298c9733bbd133f",
+      "identity": "crlf_normalized_git_blob",
+      "reference_path": "LightGenV2/tasks/t03_saliency/configs/moe_alpha40_sam_batch8_20260913.yaml"
+    },
+    {
+      "path": "LightGenV2/reports/20260927_demo_energy_efficiency_a100/ours/06_salicon/source_snapshot/tasks/t03_saliency/configs/moe_alpha40_sam_batch8_crosssample_20260913.yaml",
+      "sha256": "249f9c1f832c8ae9d68eee95756bdc9fb24d041fd0b78e45f941392beac5f35c",
+      "identity": "crlf_normalized_git_blob",
+      "reference_path": "LightGenV2/tasks/t03_saliency/configs/moe_alpha40_sam_batch8_crosssample_20260913.yaml"
+    },
+    {
+      "path": "LightGenV2/reports/20260927_demo_energy_efficiency_a100/ours/06_salicon/source_snapshot/tasks/t03_saliency/configs/moe_alpha40_sam_control.yaml",
+      "sha256": "24153a86c8f909457a73064094f014868e9a4f741000c0dce882bba981a0b01c",
+      "identity": "crlf_normalized_git_blob",
+      "reference_path": "LightGenV2/tasks/t03_saliency/configs/moe_alpha40_sam_control.yaml"
+    },
+    {
+      "path": "LightGenV2/reports/20260927_demo_energy_efficiency_a100/ours/06_salicon/source_snapshot/tasks/t03_saliency/configs/moe_alpha40_sam_exactfusion.yaml",
+      "sha256": "afdc1b8d46a25300d6c19e5e7a5820e261a3951211101af50de5b136ff9330de",
+      "identity": "crlf_normalized_git_blob",
+      "reference_path": "LightGenV2/tasks/t03_saliency/configs/moe_alpha40_sam_exactfusion.yaml"
+    },
+    {
+      "path": "LightGenV2/reports/20260927_demo_energy_efficiency_a100/ours/06_salicon/source_snapshot/tasks/t03_saliency/configs/moe_alpha40_sam_group64.yaml",
+      "sha256": "b39a770fa8f0925445e56bef75348e3e1eb9f9d855dd07290edd6525af104488",
+      "identity": "crlf_normalized_git_blob",
+      "reference_path": "LightGenV2/tasks/t03_saliency/configs/moe_alpha40_sam_group64.yaml"
+    },
+    {
+      "path": "LightGenV2/reports/20260927_demo_energy_efficiency_a100/ours/06_salicon/source_snapshot/tasks/t03_saliency/configs/moe_alpha40_sam_spatialcc.yaml",
+      "sha256": "4c3c23885cdbd036cd98cbc046eae023d6fe429976a141591d64d7a0ddb8b4d5",
+      "identity": "crlf_normalized_git_blob",
+      "reference_path": "LightGenV2/tasks/t03_saliency/configs/moe_alpha40_sam_spatialcc.yaml"
+    },
+    {
+      "path": "LightGenV2/reports/20260927_demo_energy_efficiency_a100/ours/06_salicon/source_snapshot/tasks/t03_saliency/configs/moe_alpha40_sam_spatialcc_kd2.yaml",
+      "sha256": "14b66f908150b0e44e6787ab7d8d66d2b637015e9651c278680ec1f3badef1f1",
+      "identity": "crlf_normalized_git_blob",
+      "reference_path": "LightGenV2/tasks/t03_saliency/configs/moe_alpha40_sam_spatialcc_kd2.yaml"
+    },
+    {
+      "path": "LightGenV2/reports/20260927_demo_energy_efficiency_a100/ours/06_salicon/source_snapshot/tasks/t03_saliency/configs/moe_alpha40_sam_spatialcc_kd2_global16.yaml",
+      "sha256": "c430f6c7cc8773d6969b9a5a95f3679d03b9670c56585d6eaa4ef805bb5fb35e",
+      "identity": "crlf_normalized_git_blob",
+      "reference_path": "LightGenV2/tasks/t03_saliency/configs/moe_alpha40_sam_spatialcc_kd2_global16.yaml"
+    },
+    {
+      "path": "LightGenV2/reports/20260927_demo_energy_efficiency_a100/ours/06_salicon/source_snapshot/tasks/t03_saliency/configs/moe_alpha40_sam_spatialcc_kd2_global64.yaml",
+      "sha256": "3768fb80653ca60ad14d1395eee2fa7ad096c183d97d503e6f28704cda5e37c8",
+      "identity": "crlf_normalized_git_blob",
+      "reference_path": "LightGenV2/tasks/t03_saliency/configs/moe_alpha40_sam_spatialcc_kd2_global64.yaml"
+    },
+    {
+      "path": "LightGenV2/reports/20260927_demo_energy_efficiency_a100/ours/06_salicon/source_snapshot/tasks/t03_saliency/configs/moe_alpha40_sam_wide576.yaml",
+      "sha256": "7b46a8ff1df6dac008d44721a7fd8e65eadeeb454230256969415d00fc2becf2",
+      "identity": "crlf_normalized_git_blob",
+      "reference_path": "LightGenV2/tasks/t03_saliency/configs/moe_alpha40_sam_wide576.yaml"
+    },
+    {
+      "path": "LightGenV2/reports/20260927_demo_energy_efficiency_a100/ours/06_salicon/source_snapshot/tasks/t03_saliency/configs/moe_alpha40_soften_hard_balance.yaml",
+      "sha256": "c5fea71a9b76d29bc8080ea48737f11aece681c2f5c6a82e525abdb1334ea8c1",
+      "identity": "crlf_normalized_git_blob",
+      "reference_path": "LightGenV2/tasks/t03_saliency/configs/moe_alpha40_soften_hard_balance.yaml"
+    },
+    {
+      "path": "LightGenV2/reports/20260927_demo_energy_efficiency_a100/ours/06_salicon/source_snapshot/tasks/t03_saliency/configs/moe_alpha40_teacher_pretrain15.yaml",
+      "sha256": "46976951839a14fe4d4d7dfc4e2cc9dc45ac1c00f44a33cf3bb34fd28b8947a1",
+      "identity": "crlf_normalized_git_blob",
+      "reference_path": "LightGenV2/tasks/t03_saliency/configs/moe_alpha40_teacher_pretrain15.yaml"
+    },
+    {
+      "path": "LightGenV2/reports/20260927_demo_energy_efficiency_a100/ours/06_salicon/source_snapshot/tasks/t03_saliency/configs/moe_alpha40_viewreg_cffn.yaml",
+      "sha256": "5d1c0fb742b8ed6f959feb5292e346e49ee0eb9619795f017caaff6fbb16f64d",
+      "identity": "crlf_normalized_git_blob",
+      "reference_path": "LightGenV2/tasks/t03_saliency/configs/moe_alpha40_viewreg_cffn.yaml"
+    },
+    {
+      "path": "LightGenV2/reports/20260927_demo_energy_efficiency_a100/ours/06_salicon/source_snapshot/tasks/t03_saliency/configs/moe_alpha40_viewreg_cffn_kd2.yaml",
+      "sha256": "c0431ced9cc9bb2e08bf647e1ec8cce4fb4f62c0773e129c246df1e4f72611fe",
+      "identity": "crlf_normalized_git_blob",
+      "reference_path": "LightGenV2/tasks/t03_saliency/configs/moe_alpha40_viewreg_cffn_kd2.yaml"
+    },
+    {
+      "path": "LightGenV2/reports/20260927_demo_energy_efficiency_a100/ours/06_salicon/source_snapshot/tasks/t03_saliency/configs/moe_alpha40_viewreg_control.yaml",
+      "sha256": "84de2ce787c7de8c5c7a0b91f8b7ed02e67f16caab009bcc061e2442767549e4",
+      "identity": "crlf_normalized_git_blob",
+      "reference_path": "LightGenV2/tasks/t03_saliency/configs/moe_alpha40_viewreg_control.yaml"
+    },
+    {
+      "path": "LightGenV2/reports/20260927_demo_energy_efficiency_a100/ours/06_salicon/source_snapshot/tasks/t03_saliency/configs/moe_alpha40_viewreg_global16.yaml",
+      "sha256": "21b32deb7e8a5d53de5cc3cee3534574391d30e3fad79b9cfa03ff17545ea3d8",
+      "identity": "crlf_normalized_git_blob",
+      "reference_path": "LightGenV2/tasks/t03_saliency/configs/moe_alpha40_viewreg_global16.yaml"
+    },
+    {
+      "path": "LightGenV2/reports/20260927_demo_energy_efficiency_a100/ours/06_salicon/source_snapshot/tasks/t03_saliency/configs/moe_alpha40_viewreg_kernel13.yaml",
+      "sha256": "37c05f3a491f4deda4b392a11cfc12ab0b40e2c61465e95b5426b1d70a8543d3",
+      "identity": "crlf_normalized_git_blob",
+      "reference_path": "LightGenV2/tasks/t03_saliency/configs/moe_alpha40_viewreg_kernel13.yaml"
+    },
+    {
+      "path": "LightGenV2/reports/20260927_demo_energy_efficiency_a100/ours/06_salicon/source_snapshot/tasks/t03_saliency/configs/moe_alpha40_viewreg_mix50.yaml",
+      "sha256": "c92d7ae8997d0dc1158722bb40d902d8a7e60447c9ca0a30ce1fbd018c6aa8f2",
+      "identity": "crlf_normalized_git_blob",
+      "reference_path": "LightGenV2/tasks/t03_saliency/configs/moe_alpha40_viewreg_mix50.yaml"
+    },
+    {
+      "path": "LightGenV2/reports/20260927_demo_energy_efficiency_a100/ours/06_salicon/source_snapshot/tasks/t03_saliency/configs/moe_alpha40_viewreg_sam005.yaml",
+      "sha256": "5c6a46fe55d2082997f5184da52c02ae68ab92a1a1b8bb7ed3b2f4eebf14eb0c",
+      "identity": "crlf_normalized_git_blob",
+      "reference_path": "LightGenV2/tasks/t03_saliency/configs/moe_alpha40_viewreg_sam005.yaml"
+    },
+    {
+      "path": "LightGenV2/reports/20260927_demo_energy_efficiency_a100/ours/06_salicon/source_snapshot/tasks/t03_saliency/configs/moe_alpha40_viewreg_sam_crop90.yaml",
+      "sha256": "4fcc31d935a1f4e542454b007ddd16b56d4bbbc8cc6c70872b76ad6bf4724a9d",
+      "identity": "crlf_normalized_git_blob",
+      "reference_path": "LightGenV2/tasks/t03_saliency/configs/moe_alpha40_viewreg_sam_crop90.yaml"
+    },
+    {
+      "path": "LightGenV2/reports/20260927_demo_energy_efficiency_a100/ours/06_salicon/source_snapshot/tasks/t03_saliency/configs/moe_alpha40_viewreg_sam_spatialcc.yaml",
+      "sha256": "b910344b4da18f77ea6670b41b6b8f06cc1427f5541b410f0c0f1aeb9eacff74",
+      "identity": "crlf_normalized_git_blob",
+      "reference_path": "LightGenV2/tasks/t03_saliency/configs/moe_alpha40_viewreg_sam_spatialcc.yaml"
+    },
+    {
+      "path": "LightGenV2/reports/20260927_demo_energy_efficiency_a100/ours/06_salicon/source_snapshot/tasks/t03_saliency/configs/moe_dc20_cc_continue.yaml",
+      "sha256": "d789fbee4c7223170045e0a3061985c5ee6b6b2f5058a205e95cb5d8e415e901",
+      "identity": "crlf_normalized_git_blob",
+      "reference_path": "LightGenV2/tasks/t03_saliency/configs/moe_dc20_cc_continue.yaml"
+    },
+    {
+      "path": "LightGenV2/reports/20260927_demo_energy_efficiency_a100/ours/06_salicon/source_snapshot/tasks/t03_saliency/configs/moe_dc20_mean_only_cc_continue.yaml",
+      "sha256": "ac6217f6cc3cce825d4cb9a28b281bf88398a621df75f9ffe78883607ec0bc14",
+      "identity": "crlf_normalized_git_blob",
+      "reference_path": "LightGenV2/tasks/t03_saliency/configs/moe_dc20_mean_only_cc_continue.yaml"
+    },
+    {
+      "path": "LightGenV2/reports/20260927_demo_energy_efficiency_a100/ours/06_salicon/source_snapshot/tasks/t03_saliency/configs/moe_dc20_mean_only_continue.yaml",
+      "sha256": "9acc2c4bbd5f254224825008ffbcf43ae15e56e05eb87b50a45a6775d133d57e",
+      "identity": "crlf_normalized_git_blob",
+      "reference_path": "LightGenV2/tasks/t03_saliency/configs/moe_dc20_mean_only_continue.yaml"
+    },
+    {
+      "path": "LightGenV2/reports/20260927_demo_energy_efficiency_a100/ours/06_salicon/source_snapshot/tasks/t03_saliency/configs/moe_dc20_no_shift_continue.yaml",
+      "sha256": "fea7eee19b13974a8119c622a185e93d4ffa765b8f9bc7f9b22c0f4b3f960798",
+      "identity": "crlf_normalized_git_blob",
+      "reference_path": "LightGenV2/tasks/t03_saliency/configs/moe_dc20_no_shift_continue.yaml"
+    },
+    {
+      "path": "LightGenV2/reports/20260927_demo_energy_efficiency_a100/ours/06_salicon/source_snapshot/tasks/t03_saliency/configs/moe_optical_router_scale_matched_dc20.yaml",
+      "sha256": "9d207f609276c2332be7371de0643837ca82a6dc82eed66e149bbdaaaef77845",
+      "identity": "crlf_normalized_git_blob",
+      "reference_path": "LightGenV2/tasks/t01_object_retrieval/configs/moe_optical_router_scale_matched_dc20.yaml"
+    },
+    {
+      "path": "LightGenV2/reports/20260927_demo_energy_efficiency_a100/ours/06_salicon/source_snapshot/tasks/t03_saliency/configs/moe_staged_alpha_free.yaml",
+      "sha256": "023092439ac752994af61eaf7afa7070853e8acce490235b85a6a7d4d6833634",
+      "identity": "crlf_normalized_git_blob",
+      "reference_path": "LightGenV2/tasks/t03_saliency/configs/moe_staged_alpha_free.yaml"
+    },
+    {
+      "path": "LightGenV2/reports/20260927_demo_energy_efficiency_a100/ours/06_salicon/source_snapshot/tasks/t03_saliency/configs/moe_staged_alpha_ge040.yaml",
+      "sha256": "044c2fecc8355f542c278d23853d0387f049967b8dc825d74c9746dfa964345f",
+      "identity": "crlf_normalized_git_blob",
+      "reference_path": "LightGenV2/tasks/t03_saliency/configs/moe_staged_alpha_ge040.yaml"
+    },
+    {
+      "path": "LightGenV2/reports/20260927_demo_energy_efficiency_a100/ours/06_salicon/source_snapshot/tasks/t03_saliency/configs/qwen_aligned_head_50.yaml",
+      "sha256": "32f2be85c0e8e30cbb7c95727b97daa808c11af4a416c06132f84e8f958679d7",
+      "identity": "crlf_normalized_git_blob",
+      "reference_path": "LightGenV2/tasks/t03_saliency/configs/qwen_aligned_head_50.yaml"
+    },
+    {
+      "path": "LightGenV2/reports/20260927_demo_energy_efficiency_a100/ours/06_salicon/source_snapshot/tasks/t03_saliency/configs/qwen_frozen_pending_5090d.yaml",
+      "sha256": "7fc789dd81c8c6a7021f993ed1eddf16d8b9dfc1e4565af901c51e753859ac3c",
+      "identity": "crlf_normalized_git_blob",
+      "reference_path": "LightGenV2/tasks/t03_saliency/configs/qwen_frozen_pending_5090d.yaml"
+    },
+    {
+      "path": "LightGenV2/reports/20260927_demo_energy_efficiency_a100/ours/06_salicon/source_snapshot/tasks/t03_saliency/cross_sample_balance.py",
+      "sha256": "0b5f8d83a6dd41774d6c2b3a3b964372a9950204a4505752615af27027924588",
+      "identity": "crlf_normalized_git_blob",
+      "reference_path": "LightGenV2/tasks/t03_saliency/cross_sample_balance.py"
+    },
+    {
+      "path": "LightGenV2/reports/20260927_demo_energy_efficiency_a100/ours/06_salicon/source_snapshot/tasks/t03_saliency/export_teacher_features.py",
+      "sha256": "54f70472c5927ef2a3677be4ca6a3846bc0da6af1bdb33abaaf92ada5f5e4402",
+      "identity": "crlf_normalized_git_blob",
+      "reference_path": "LightGenV2/tasks/t03_saliency/export_teacher_features.py"
+    },
+    {
+      "path": "LightGenV2/reports/20260927_demo_energy_efficiency_a100/ours/06_salicon/source_snapshot/tasks/t03_saliency/export_teacher_maps.py",
+      "sha256": "2763b1f6911d62fb496eeabdbfec258c0f475a97f9bee541ba43f2e6e805936a",
+      "identity": "crlf_normalized_git_blob",
+      "reference_path": "LightGenV2/tasks/t03_saliency/export_teacher_maps.py"
+    },
+    {
+      "path": "LightGenV2/reports/20260927_demo_energy_efficiency_a100/ours/06_salicon/source_snapshot/tasks/t03_saliency/export_unlabeled_teacher.py",
+      "sha256": "a294ed4b854346f453a218b557942d8312be6971b67ced395e7a7c020989b657",
+      "identity": "crlf_normalized_git_blob",
+      "reference_path": "LightGenV2/tasks/t03_saliency/export_unlabeled_teacher.py"
+    },
+    {
+      "path": "LightGenV2/reports/20260927_demo_energy_efficiency_a100/ours/06_salicon/source_snapshot/tasks/t03_saliency/feature_hints.py",
+      "sha256": "9950353d05082d15d2a4e8cc541cd7c66499aba4ff62ff165562e133b75d47ba",
+      "identity": "crlf_normalized_git_blob",
+      "reference_path": "LightGenV2/tasks/t03_saliency/feature_hints.py"
+    },
+    {
+      "path": "LightGenV2/reports/20260927_demo_energy_efficiency_a100/ours/06_salicon/source_snapshot/tasks/t03_saliency/feature_pretraining.py",
+      "sha256": "67d879f315a3896ceea7fe7cdfeb73a5f12e85d3b24141e08cdaaf4e3c847c45",
+      "identity": "crlf_normalized_git_blob",
+      "reference_path": "LightGenV2/tasks/t03_saliency/feature_pretraining.py"
+    },
+    {
+      "path": "LightGenV2/reports/20260927_demo_energy_efficiency_a100/ours/06_salicon/source_snapshot/tasks/t03_saliency/first_stage_supervision.py",
+      "sha256": "cbda83da8de4b20f2e79dac58f9db4716700e886ebe0a8231c32b83e4e74a3f5",
+      "identity": "crlf_normalized_git_blob",
+      "reference_path": "LightGenV2/tasks/t03_saliency/first_stage_supervision.py"
+    },
+    {
+      "path": "LightGenV2/reports/20260927_demo_energy_efficiency_a100/ours/06_salicon/source_snapshot/tasks/t03_saliency/fixed_crop_teacher.py",
+      "sha256": "a42932bf64d95333e976841c3de3ae72ab0c8ff8448fb203f248354b0f72643f",
+      "identity": "crlf_normalized_git_blob",
+      "reference_path": "LightGenV2/tasks/t03_saliency/fixed_crop_teacher.py"
+    },
+    {
+      "path": "LightGenV2/reports/20260927_demo_energy_efficiency_a100/ours/06_salicon/source_snapshot/tasks/t03_saliency/fixed_crop_training.py",
+      "sha256": "2f3a8435640a9d8a612330e53e18bf5426fe6eafcd564fe938a26b9526bdbe3b",
+      "identity": "crlf_normalized_git_blob",
+      "reference_path": "LightGenV2/tasks/t03_saliency/fixed_crop_training.py"
+    },
+    {
+      "path": "LightGenV2/reports/20260927_demo_energy_efficiency_a100/ours/06_salicon/source_snapshot/tasks/t03_saliency/fusion_training.py",
+      "sha256": "9a0202dde882ad486eec26589243080cd5d89d2c6de4f9cc03e249071d954673",
+      "identity": "crlf_normalized_git_blob",
+      "reference_path": "LightGenV2/tasks/t03_saliency/fusion_training.py"
+    },
+    {
+      "path": "LightGenV2/reports/20260927_demo_energy_efficiency_a100/ours/06_salicon/source_snapshot/tasks/t03_saliency/handoff_cli.py",
+      "sha256": "77e1b9f1b35d1b223202466f28f4ad3fa57ff73a2422bbff3751f9edec29fa2d",
+      "identity": "crlf_normalized_git_blob",
+      "reference_path": "LightGenV2/tasks/t03_saliency/handoff_cli.py"
+    },
+    {
+      "path": "LightGenV2/reports/20260927_demo_energy_efficiency_a100/ours/06_salicon/source_snapshot/tasks/t03_saliency/hard_example_cc.py",
+      "sha256": "9f158f44064b8bd40b2e388d6e61a6a095b68e1b4c8bae63114bc84e9422045d",
+      "identity": "crlf_normalized_git_blob",
+      "reference_path": "LightGenV2/tasks/t03_saliency/hard_example_cc.py"
+    },
+    {
+      "path": "LightGenV2/reports/20260927_demo_energy_efficiency_a100/ours/06_salicon/source_snapshot/tasks/t03_saliency/lab_bench.py",
+      "sha256": "2e0384beea7bd27be9633bd0a0693c986d21752b98dcc39549c88988e405c910",
+      "identity": "crlf_normalized_git_blob",
+      "reference_path": "LightGenV2/tasks/t03_saliency/lab_bench.py"
+    },
+    {
+      "path": "LightGenV2/reports/20260927_demo_energy_efficiency_a100/ours/06_salicon/source_snapshot/tasks/t03_saliency/lab_runtime.py",
+      "sha256": "c94d582ea14814c75cfa12d0690bd6561898111ac1daab20085c1d70c40dbcb2",
+      "identity": "crlf_normalized_git_blob",
+      "reference_path": "LightGenV2/tasks/t03_saliency/lab_runtime.py"
+    },
+    {
+      "path": "LightGenV2/reports/20260927_demo_energy_efficiency_a100/ours/06_salicon/source_snapshot/tasks/t03_saliency/lab_supervise.py",
+      "sha256": "5db42ff3c8abba8beb3ab7a26cc660847b2d781ae57017bdc13a6860232fc531",
+      "identity": "crlf_normalized_git_blob",
+      "reference_path": "LightGenV2/tasks/t03_saliency/lab_supervise.py"
+    },
+    {
+      "path": "LightGenV2/reports/20260927_demo_energy_efficiency_a100/ours/06_salicon/source_snapshot/tasks/t03_saliency/lightweight_residual.py",
+      "sha256": "89875a12e6ac1ff96c902b6bc137a975758964374723883ccb9c76493d16af2b",
+      "identity": "crlf_normalized_git_blob",
+      "reference_path": "LightGenV2/tasks/t03_saliency/lightweight_residual.py"
+    },
+    {
+      "path": "LightGenV2/reports/20260927_demo_energy_efficiency_a100/ours/06_salicon/source_snapshot/tasks/t03_saliency/masked_distillation.py",
+      "sha256": "65c14e9042cf7630b2e9875f4293fb11f658f3e01d741e55021ebe4279a1cb25",
+      "identity": "crlf_normalized_git_blob",
+      "reference_path": "LightGenV2/tasks/t03_saliency/masked_distillation.py"
+    },
+    {
+      "path": "LightGenV2/reports/20260927_demo_energy_efficiency_a100/ours/06_salicon/source_snapshot/tasks/t03_saliency/meadowlark_cli.py",
+      "sha256": "c11f305276c359d2e2ef7e5fec78d6a74ea9c0253dae516d03bdbaacf0c96466",
+      "identity": "crlf_normalized_git_blob",
+      "reference_path": "LightGenV2/tasks/t03_saliency/meadowlark_cli.py"
+    },
+    {
+      "path": "LightGenV2/reports/20260927_demo_energy_efficiency_a100/ours/06_salicon/source_snapshot/tasks/t03_saliency/mixup_training.py",
+      "sha256": "35ceff850503a3cc91e628ae10bdb31d5b463fcdfeb44b6ca576061c8564065e",
+      "identity": "crlf_normalized_git_blob",
+      "reference_path": "LightGenV2/tasks/t03_saliency/mixup_training.py"
+    },
+    {
+      "path": "LightGenV2/reports/20260927_demo_energy_efficiency_a100/ours/06_salicon/source_snapshot/tasks/t03_saliency/modeling.py",
+      "sha256": "402a8961bb1cc093d5046ab24fe40467b13f3d914cb13a41c36eacf1318c7154",
+      "identity": "crlf_normalized_git_blob",
+      "reference_path": "LightGenV2/tasks/t03_saliency/modeling.py"
+    },
+    {
+      "path": "LightGenV2/reports/20260927_demo_energy_efficiency_a100/ours/06_salicon/source_snapshot/tasks/t03_saliency/plateau.py",
+      "sha256": "b401267a379e01e7dc74a08aa60c1a3aa563ab0e5761a53a919fc97c79277772",
+      "identity": "crlf_normalized_git_blob",
+      "reference_path": "LightGenV2/tasks/t03_saliency/plateau.py"
+    },
+    {
+      "path": "LightGenV2/reports/20260927_demo_energy_efficiency_a100/ours/06_salicon/source_snapshot/tasks/t03_saliency/prepare_semantic_targets.py",
+      "sha256": "0f24e33fc1d747919197cd47c0d78d4c5464d20c0deef7e0da616ed99b00dd5d",
+      "identity": "crlf_normalized_git_blob",
+      "reference_path": "LightGenV2/tasks/t03_saliency/prepare_semantic_targets.py"
+    },
+    {
+      "path": "LightGenV2/reports/20260927_demo_energy_efficiency_a100/ours/06_salicon/source_snapshot/tasks/t03_saliency/prepare_unlabeled_pool.py",
+      "sha256": "a04cc0ba3315c5e567ca9ae68550a705f14e9c53655e8dcc9a58723e7c60a29c",
+      "identity": "crlf_normalized_git_blob",
+      "reference_path": "LightGenV2/tasks/t03_saliency/prepare_unlabeled_pool.py"
+    },
+    {
+      "path": "LightGenV2/reports/20260927_demo_energy_efficiency_a100/ours/06_salicon/source_snapshot/tasks/t03_saliency/pyramid_supervision.py",
+      "sha256": "dd066d2c8ab30e2537176b630fd3703540b2bb6b4be5e8dcb1e7ee959c7cc397",
+      "identity": "crlf_normalized_git_blob",
+      "reference_path": "LightGenV2/tasks/t03_saliency/pyramid_supervision.py"
+    },
+    {
+      "path": "LightGenV2/reports/20260927_demo_energy_efficiency_a100/ours/06_salicon/source_snapshot/tasks/t03_saliency/recheck_aligned.py",
+      "sha256": "ecfc23d21e39207985836dd6e8b983858db8fb6da2047884ac489f97855dd07b",
+      "identity": "crlf_normalized_git_blob",
+      "reference_path": "LightGenV2/tasks/t03_saliency/recheck_aligned.py"
+    },
+    {
+      "path": "LightGenV2/reports/20260927_demo_energy_efficiency_a100/ours/06_salicon/source_snapshot/tasks/t03_saliency/relational_distillation.py",
+      "sha256": "b8a36d644d621bb9886f9692153f9980dbfb0e7e1dca5af248e871f9b4ce0d57",
+      "identity": "crlf_normalized_git_blob",
+      "reference_path": "LightGenV2/tasks/t03_saliency/relational_distillation.py"
+    },
+    {
+      "path": "LightGenV2/reports/20260927_demo_energy_efficiency_a100/ours/06_salicon/source_snapshot/tasks/t03_saliency/report.py",
+      "sha256": "f8ffaed3e08ae12544b814b131a46b79521f6079cd600d2508326ef5ee863826",
+      "identity": "crlf_normalized_git_blob",
+      "reference_path": "LightGenV2/tasks/t03_saliency/report.py"
+    },
+    {
+      "path": "LightGenV2/reports/20260927_demo_energy_efficiency_a100/ours/06_salicon/source_snapshot/tasks/t03_saliency/reproduce_baseline.py",
+      "sha256": "c48f1fc427396916a0d3b08338f8ded42876ce1d21ceeaf626cb586554f352d7",
+      "identity": "crlf_normalized_git_blob",
+      "reference_path": "LightGenV2/tasks/t03_saliency/reproduce_baseline.py"
+    },
+    {
+      "path": "LightGenV2/reports/20260927_demo_energy_efficiency_a100/ours/06_salicon/source_snapshot/tasks/t03_saliency/router_phase.py",
+      "sha256": "1aa5e34d497a5ec3da191bc08c324c886681cc6271d2540b1a9566bf2726582e",
+      "identity": "crlf_normalized_git_blob",
+      "reference_path": "LightGenV2/tasks/t03_saliency/router_phase.py"
+    },
+    {
+      "path": "LightGenV2/reports/20260927_demo_energy_efficiency_a100/ours/06_salicon/source_snapshot/tasks/t03_saliency/run.py",
+      "sha256": "966725de2bc3e39f53df0eda18ab787135e7009ffed2d8319d5d96ce88f87638",
+      "identity": "crlf_normalized_git_blob",
+      "reference_path": "LightGenV2/tasks/t03_saliency/run.py"
+    },
+    {
+      "path": "LightGenV2/reports/20260927_demo_energy_efficiency_a100/ours/06_salicon/source_snapshot/tasks/t03_saliency/sam_training.py",
+      "sha256": "fc35c58e27439a593007a64758f17c5c74c84bf712a9a15da20fd1b786763a3c",
+      "identity": "crlf_normalized_git_blob",
+      "reference_path": "LightGenV2/tasks/t03_saliency/sam_training.py"
+    },
+    {
+      "path": "LightGenV2/reports/20260927_demo_energy_efficiency_a100/ours/06_salicon/source_snapshot/tasks/t03_saliency/semantic_auxiliary.py",
+      "sha256": "2bcc1aa450a8c128476131c54eb0ff830165ab4edd70f5d1682e7e9a4e57515d",
+      "identity": "crlf_normalized_git_blob",
+      "reference_path": "LightGenV2/tasks/t03_saliency/semantic_auxiliary.py"
+    },
+    {
+      "path": "LightGenV2/reports/20260927_demo_energy_efficiency_a100/ours/06_salicon/source_snapshot/tasks/t03_saliency/semisupervised.py",
+      "sha256": "cc870e51a06d80da82d8d5ac66dfacbb0f6829d7cb5f4b16276d4525622577ed",
+      "identity": "crlf_normalized_git_blob",
+      "reference_path": "LightGenV2/tasks/t03_saliency/semisupervised.py"
+    },
+    {
+      "path": "LightGenV2/reports/20260927_demo_energy_efficiency_a100/ours/06_salicon/source_snapshot/tasks/t03_saliency/settings.py",
+      "sha256": "705ff50bbe57faf385a9ed89051ab748bbf646b7fb1d9909a5012d7c323f6231",
+      "identity": "crlf_normalized_git_blob",
+      "reference_path": "LightGenV2/tasks/t03_saliency/settings.py"
+    },
+    {
+      "path": "LightGenV2/reports/20260927_demo_energy_efficiency_a100/ours/06_salicon/source_snapshot/tasks/t03_saliency/teacher_reliability.py",
+      "sha256": "85e5da331ef8ad87633e7eb669550b48549c6586c2334250d0407b0366eba206",
+      "identity": "crlf_normalized_git_blob",
+      "reference_path": "LightGenV2/tasks/t03_saliency/teacher_reliability.py"
+    },
+    {
+      "path": "LightGenV2/reports/20260927_demo_energy_efficiency_a100/ours/06_salicon/source_snapshot/tasks/t03_saliency/tests/__init__.py",
+      "sha256": "db36a691f1ffbab6307ba7c969d9f000930bca24d6667e03f6323697ac291440",
+      "identity": "crlf_normalized_git_blob",
+      "reference_path": "LightGenV2/tasks/t03_saliency/tests/__init__.py"
+    },
+    {
+      "path": "LightGenV2/reports/20260927_demo_energy_efficiency_a100/ours/06_salicon/source_snapshot/tasks/t03_saliency/tests/test_aligned_weak.py",
+      "sha256": "70fdfc29559c804359256e552768f039d2ae04932d92fc2f0f62c204ec79f62a",
+      "identity": "crlf_normalized_git_blob",
+      "reference_path": "LightGenV2/tasks/t03_saliency/tests/test_aligned_weak.py"
+    },
+    {
+      "path": "LightGenV2/reports/20260927_demo_energy_efficiency_a100/ours/06_salicon/source_snapshot/tasks/t03_saliency/tests/test_alpha_and_aligned_head.py",
+      "sha256": "7c65f684355c07a4219ca2a97c3127e10de929307d2725fc2aae96cc461991d6",
+      "identity": "crlf_normalized_git_blob",
+      "reference_path": "LightGenV2/tasks/t03_saliency/tests/test_alpha_and_aligned_head.py"
+    },
+    {
+      "path": "LightGenV2/reports/20260927_demo_energy_efficiency_a100/ours/06_salicon/source_snapshot/tasks/t03_saliency/tests/test_alternating_training.py",
+      "sha256": "5bd2e1576345060e71b6eae9a7eebfe27c43d52dd282d9c695621c35f159b33f",
+      "identity": "crlf_normalized_git_blob",
+      "reference_path": "LightGenV2/tasks/t03_saliency/tests/test_alternating_training.py"
+    },
+    {
+      "path": "LightGenV2/reports/20260927_demo_energy_efficiency_a100/ours/06_salicon/source_snapshot/tasks/t03_saliency/tests/test_calibration_probe.py",
+      "sha256": "17d76902778d7a42003f11a6382bbe5b90c3ab94f5dc30c7e4bc58b9550d1e9a",
+      "identity": "crlf_normalized_git_blob",
+      "reference_path": "LightGenV2/tasks/t03_saliency/tests/test_calibration_probe.py"
+    },
+    {
+      "path": "LightGenV2/reports/20260927_demo_energy_efficiency_a100/ours/06_salicon/source_snapshot/tasks/t03_saliency/tests/test_checkpoint_audit.py",
+      "sha256": "10aee71abb03c0da43771e7ba8e1f35ee3d871baf2dd017491b865f67b479070",
+      "identity": "crlf_normalized_git_blob",
+      "reference_path": "LightGenV2/tasks/t03_saliency/tests/test_checkpoint_audit.py"
+    },
+    {
+      "path": "LightGenV2/reports/20260927_demo_energy_efficiency_a100/ours/06_salicon/source_snapshot/tasks/t03_saliency/tests/test_contract.py",
+      "sha256": "33ba0a51181a22db6ce2e1cc316ed9e393eeba6729eb1281e93b9759217b576a",
+      "identity": "crlf_normalized_git_blob",
+      "reference_path": "LightGenV2/tasks/t03_saliency/tests/test_contract.py"
+    },
+    {
+      "path": "LightGenV2/reports/20260927_demo_energy_efficiency_a100/ours/06_salicon/source_snapshot/tasks/t03_saliency/tests/test_cross_sample_balance.py",
+      "sha256": "9e7afd64752796d7d02c25e2c6c432213b0913af656df46763953238d5506a5b",
+      "identity": "crlf_normalized_git_blob",
+      "reference_path": "LightGenV2/tasks/t03_saliency/tests/test_cross_sample_balance.py"
+    },
+    {
+      "path": "LightGenV2/reports/20260927_demo_energy_efficiency_a100/ours/06_salicon/source_snapshot/tasks/t03_saliency/tests/test_feature_hints.py",
+      "sha256": "f03d170763abee4fe84372040c06a1a9c5deceecd2188aad04e746845489d4ed",
+      "identity": "crlf_normalized_git_blob",
+      "reference_path": "LightGenV2/tasks/t03_saliency/tests/test_feature_hints.py"
+    },
+    {
+      "path": "LightGenV2/reports/20260927_demo_energy_efficiency_a100/ours/06_salicon/source_snapshot/tasks/t03_saliency/tests/test_feature_pretraining.py",
+      "sha256": "69d780744739ee6af3806b4b0c4285a0e3da0eb40ef96f848b48b2ed82dabf65",
+      "identity": "crlf_normalized_git_blob",
+      "reference_path": "LightGenV2/tasks/t03_saliency/tests/test_feature_pretraining.py"
+    },
+    {
+      "path": "LightGenV2/reports/20260927_demo_energy_efficiency_a100/ours/06_salicon/source_snapshot/tasks/t03_saliency/tests/test_ffn_widening.py",
+      "sha256": "0562ef88cf34875a405fc7575104ea26d6c96b7f0d80062d23b399e53ed1ce4a",
+      "identity": "crlf_normalized_git_blob",
+      "reference_path": "LightGenV2/tasks/t03_saliency/tests/test_ffn_widening.py"
+    },
+    {
+      "path": "LightGenV2/reports/20260927_demo_energy_efficiency_a100/ours/06_salicon/source_snapshot/tasks/t03_saliency/tests/test_first_stage_supervision.py",
+      "sha256": "2ed4d5aa97eb089dc1945daad5d0bfc87350abfaebd4a2e73a481014bc5458bf",
+      "identity": "crlf_normalized_git_blob",
+      "reference_path": "LightGenV2/tasks/t03_saliency/tests/test_first_stage_supervision.py"
+    },
+    {
+      "path": "LightGenV2/reports/20260927_demo_energy_efficiency_a100/ours/06_salicon/source_snapshot/tasks/t03_saliency/tests/test_fixed_crop_teacher.py",
+      "sha256": "86e56a42578a1c5e7a600a1a28859fd50ce063ce2a3178d85795ef02bc19ea38",
+      "identity": "crlf_normalized_git_blob",
+      "reference_path": "LightGenV2/tasks/t03_saliency/tests/test_fixed_crop_teacher.py"
+    },
+    {
+      "path": "LightGenV2/reports/20260927_demo_energy_efficiency_a100/ours/06_salicon/source_snapshot/tasks/t03_saliency/tests/test_fixed_crop_training.py",
+      "sha256": "cd4865f96b229e684f8bcae8af4da85ac432e908a59615ecd1c48c0035f1ae51",
+      "identity": "crlf_normalized_git_blob",
+      "reference_path": "LightGenV2/tasks/t03_saliency/tests/test_fixed_crop_training.py"
+    },
+    {
+      "path": "LightGenV2/reports/20260927_demo_energy_efficiency_a100/ours/06_salicon/source_snapshot/tasks/t03_saliency/tests/test_fusion_training.py",
+      "sha256": "5fe2e6ab2e49828352988eadf57803948e2d505204c07e3b48b18aa5e78dca7b",
+      "identity": "crlf_normalized_git_blob",
+      "reference_path": "LightGenV2/tasks/t03_saliency/tests/test_fusion_training.py"
+    },
+    {
+      "path": "LightGenV2/reports/20260927_demo_energy_efficiency_a100/ours/06_salicon/source_snapshot/tasks/t03_saliency/tests/test_global_spatial.py",
+      "sha256": "3507c797fcf3866671536c13ba2b39ca2cfbec280e90b34e71ea8295f4bce3b5",
+      "identity": "crlf_normalized_git_blob",
+      "reference_path": "LightGenV2/tasks/t03_saliency/tests/test_global_spatial.py"
+    },
+    {
+      "path": "LightGenV2/reports/20260927_demo_energy_efficiency_a100/ours/06_salicon/source_snapshot/tasks/t03_saliency/tests/test_grouped_ffn.py",
+      "sha256": "78f9a5afb3718d6da4fe71fac5592022f6e6c388aaece18d0dc0130ab04de425",
+      "identity": "crlf_normalized_git_blob",
+      "reference_path": "LightGenV2/tasks/t03_saliency/tests/test_grouped_ffn.py"
+    },
+    {
+      "path": "LightGenV2/reports/20260927_demo_energy_efficiency_a100/ours/06_salicon/source_snapshot/tasks/t03_saliency/tests/test_gsam_training.py",
+      "sha256": "c5f933785f15fde3e584332360e8f878e070fe258ddf14d3595288ad81518d9d",
+      "identity": "crlf_normalized_git_blob",
+      "reference_path": "LightGenV2/tasks/t03_saliency/tests/test_gsam_training.py"
+    },
+    {
+      "path": "LightGenV2/reports/20260927_demo_energy_efficiency_a100/ours/06_salicon/source_snapshot/tasks/t03_saliency/tests/test_hard_example_cc.py",
+      "sha256": "9d2ade3cf391f4dc5c3f20da7cbc9400e5a4e1660e2e3225d6e4723abb9eb9a6",
+      "identity": "crlf_normalized_git_blob",
+      "reference_path": "LightGenV2/tasks/t03_saliency/tests/test_hard_example_cc.py"
+    },
+    {
+      "path": "LightGenV2/reports/20260927_demo_energy_efficiency_a100/ours/06_salicon/source_snapshot/tasks/t03_saliency/tests/test_kernel13.py",
+      "sha256": "f59e5b63a97e1922b3b0528f6aa9029832e567d0b45ba6468295420838658ff7",
+      "identity": "crlf_normalized_git_blob",
+      "reference_path": "LightGenV2/tasks/t03_saliency/tests/test_kernel13.py"
+    },
+    {
+      "path": "LightGenV2/reports/20260927_demo_energy_efficiency_a100/ours/06_salicon/source_snapshot/tasks/t03_saliency/tests/test_lightweight_residual.py",
+      "sha256": "e537e64c03d88f84459e79b9dc4788a96457d4e1d487f11e9d6d9d05151018d6",
+      "identity": "crlf_normalized_git_blob",
+      "reference_path": "LightGenV2/tasks/t03_saliency/tests/test_lightweight_residual.py"
+    },
+    {
+      "path": "LightGenV2/reports/20260927_demo_energy_efficiency_a100/ours/06_salicon/source_snapshot/tasks/t03_saliency/tests/test_masked_distillation.py",
+      "sha256": "3ac777c430a270239b2dc7f0c809fc44fdc6ba857ce33b82fcd378ef87f0d79a",
+      "identity": "crlf_normalized_git_blob",
+      "reference_path": "LightGenV2/tasks/t03_saliency/tests/test_masked_distillation.py"
+    },
+    {
+      "path": "LightGenV2/reports/20260927_demo_energy_efficiency_a100/ours/06_salicon/source_snapshot/tasks/t03_saliency/tests/test_meadowlark_handoff.py",
+      "sha256": "93cc24e0ec2f793e9718c695d5e994b132186cefc546d9cc84976866d970da4e",
+      "identity": "crlf_normalized_git_blob",
+      "reference_path": "LightGenV2/tasks/t03_saliency/tests/test_meadowlark_handoff.py"
+    },
+    {
+      "path": "LightGenV2/reports/20260927_demo_energy_efficiency_a100/ours/06_salicon/source_snapshot/tasks/t03_saliency/tests/test_mixup_training.py",
+      "sha256": "c4d63db7427d89dfeaf59b65b227afd2df74195d9ff2f807e7a47d50706aff97",
+      "identity": "crlf_normalized_git_blob",
+      "reference_path": "LightGenV2/tasks/t03_saliency/tests/test_mixup_training.py"
+    },
+    {
+      "path": "LightGenV2/reports/20260927_demo_energy_efficiency_a100/ours/06_salicon/source_snapshot/tasks/t03_saliency/tests/test_noise_ablation.py",
+      "sha256": "e43c4c8fd023ab89adf6b452aa7ac9667c7650799d08f3a7dadff2dbe0230b2d",
+      "identity": "crlf_normalized_git_blob",
+      "reference_path": "LightGenV2/tasks/t03_saliency/tests/test_noise_ablation.py"
+    },
+    {
+      "path": "LightGenV2/reports/20260927_demo_energy_efficiency_a100/ours/06_salicon/source_snapshot/tasks/t03_saliency/tests/test_noise_consistency.py",
+      "sha256": "1e16968237d325f7e5211b66789523c2c1e8ac9735d4aaadb6c202cc1cbcf6ce",
+      "identity": "crlf_normalized_git_blob",
+      "reference_path": "LightGenV2/tasks/t03_saliency/tests/test_noise_consistency.py"
+    },
+    {
+      "path": "LightGenV2/reports/20260927_demo_energy_efficiency_a100/ours/06_salicon/source_snapshot/tasks/t03_saliency/tests/test_optical_lr_priority.py",
+      "sha256": "4fcc77da54f80597dc59450ee1ee1baf910869da624a5ecab4ff7719c01c3a92",
+      "identity": "crlf_normalized_git_blob",
+      "reference_path": "LightGenV2/tasks/t03_saliency/tests/test_optical_lr_priority.py"
+    },
+    {
+      "path": "LightGenV2/reports/20260927_demo_energy_efficiency_a100/ours/06_salicon/source_snapshot/tasks/t03_saliency/tests/test_plateau.py",
+      "sha256": "09108d91efb2e54c7a5d1bbf43020206a49ccf54d2340cca47c0110ff24ad9f7",
+      "identity": "crlf_normalized_git_blob",
+      "reference_path": "LightGenV2/tasks/t03_saliency/tests/test_plateau.py"
+    },
+    {
+      "path": "LightGenV2/reports/20260927_demo_energy_efficiency_a100/ours/06_salicon/source_snapshot/tasks/t03_saliency/tests/test_pyramid_supervision.py",
+      "sha256": "26d1dc37031bf147ce6c5db4fbc34795309fe76989373ab6b3a2df6cb289be9b",
+      "identity": "crlf_normalized_git_blob",
+      "reference_path": "LightGenV2/tasks/t03_saliency/tests/test_pyramid_supervision.py"
+    },
+    {
+      "path": "LightGenV2/reports/20260927_demo_energy_efficiency_a100/ours/06_salicon/source_snapshot/tasks/t03_saliency/tests/test_recheck_snapshot.py",
+      "sha256": "c2868e5b39c4b4bfcace98e6ff787ce9c20a20d564214b957e1dd522f8f46948",
+      "identity": "crlf_normalized_git_blob",
+      "reference_path": "LightGenV2/tasks/t03_saliency/tests/test_recheck_snapshot.py"
+    },
+    {
+      "path": "LightGenV2/reports/20260927_demo_energy_efficiency_a100/ours/06_salicon/source_snapshot/tasks/t03_saliency/tests/test_recheck_split.py",
+      "sha256": "f204937690c9da7fcbc4994d7c8959eae55d4eae7e6e1ec73daacd2fbd5f3e97",
+      "identity": "crlf_normalized_git_blob",
+      "reference_path": "LightGenV2/tasks/t03_saliency/tests/test_recheck_split.py"
+    },
+    {
+      "path": "LightGenV2/reports/20260927_demo_energy_efficiency_a100/ours/06_salicon/source_snapshot/tasks/t03_saliency/tests/test_relational_distillation.py",
+      "sha256": "138d1ebe082523a1763f2d54b4fbe331992f21320c851cac02d4041a6697384b",
+      "identity": "crlf_normalized_git_blob",
+      "reference_path": "LightGenV2/tasks/t03_saliency/tests/test_relational_distillation.py"
+    },
+    {
+      "path": "LightGenV2/reports/20260927_demo_energy_efficiency_a100/ours/06_salicon/source_snapshot/tasks/t03_saliency/tests/test_reproduction.py",
+      "sha256": "ea0a5cee3ca2171da06dfb74b276ef5208bedf27138a6fbe79e8db54c2f35a37",
+      "identity": "crlf_normalized_git_blob",
+      "reference_path": "LightGenV2/tasks/t03_saliency/tests/test_reproduction.py"
+    },
+    {
+      "path": "LightGenV2/reports/20260927_demo_energy_efficiency_a100/ours/06_salicon/source_snapshot/tasks/t03_saliency/tests/test_rfstage.py",
+      "sha256": "890d7a767a58764ce43cf47f9b696edb929af4680f4c21e9e2947d3349f10010",
+      "identity": "crlf_normalized_git_blob",
+      "reference_path": "LightGenV2/tasks/t03_saliency/tests/test_rfstage.py"
+    },
+    {
+      "path": "LightGenV2/reports/20260927_demo_energy_efficiency_a100/ours/06_salicon/source_snapshot/tasks/t03_saliency/tests/test_router_phase.py",
+      "sha256": "b41360e6ca9779b47559525784ffac24dc29bee507c4aa33bf69aa9f04b2cdba",
+      "identity": "crlf_normalized_git_blob",
+      "reference_path": "LightGenV2/tasks/t03_saliency/tests/test_router_phase.py"
+    },
+    {
+      "path": "LightGenV2/reports/20260927_demo_energy_efficiency_a100/ours/06_salicon/source_snapshot/tasks/t03_saliency/tests/test_sam_training.py",
+      "sha256": "45ed3dabb6d9543f5b8efd92af87a8d18066696955690c980ab7fb7e30952d34",
+      "identity": "crlf_normalized_git_blob",
+      "reference_path": "LightGenV2/tasks/t03_saliency/tests/test_sam_training.py"
+    },
+    {
+      "path": "LightGenV2/reports/20260927_demo_energy_efficiency_a100/ours/06_salicon/source_snapshot/tasks/t03_saliency/tests/test_semantic_auxiliary.py",
+      "sha256": "7227e0e1cdaca0d344448ed8fd928373cddffb878b89d89372577fffa803c931",
+      "identity": "crlf_normalized_git_blob",
+      "reference_path": "LightGenV2/tasks/t03_saliency/tests/test_semantic_auxiliary.py"
+    },
+    {
+      "path": "LightGenV2/reports/20260927_demo_energy_efficiency_a100/ours/06_salicon/source_snapshot/tasks/t03_saliency/tests/test_semantic_targets.py",
+      "sha256": "29f75bcc3b3657f605679b8f94fcb66c73233d91fa80a22048d540b289c82eb5",
+      "identity": "crlf_normalized_git_blob",
+      "reference_path": "LightGenV2/tasks/t03_saliency/tests/test_semantic_targets.py"
+    },
+    {
+      "path": "LightGenV2/reports/20260927_demo_energy_efficiency_a100/ours/06_salicon/source_snapshot/tasks/t03_saliency/tests/test_semisupervised.py",
+      "sha256": "831de479cd18f18fb285eb3589aa62376b062056780c48edab5424591239eff6",
+      "identity": "crlf_normalized_git_blob",
+      "reference_path": "LightGenV2/tasks/t03_saliency/tests/test_semisupervised.py"
+    },
+    {
+      "path": "LightGenV2/reports/20260927_demo_energy_efficiency_a100/ours/06_salicon/source_snapshot/tasks/t03_saliency/tests/test_soften_hard_balance.py",
+      "sha256": "19a1be0a3d7e7ff148fef7463fddd68bf147dada70345b2631133bedf3a40dd4",
+      "identity": "crlf_normalized_git_blob",
+      "reference_path": "LightGenV2/tasks/t03_saliency/tests/test_soften_hard_balance.py"
+    },
+    {
+      "path": "LightGenV2/reports/20260927_demo_energy_efficiency_a100/ours/06_salicon/source_snapshot/tasks/t03_saliency/tests/test_spatial_cc_distillation.py",
+      "sha256": "4b47ef8ce1be9600029a3964d32f95d72152605f550648469379d07d0c687fca",
+      "identity": "crlf_normalized_git_blob",
+      "reference_path": "LightGenV2/tasks/t03_saliency/tests/test_spatial_cc_distillation.py"
+    },
+    {
+      "path": "LightGenV2/reports/20260927_demo_energy_efficiency_a100/ours/06_salicon/source_snapshot/tasks/t03_saliency/tests/test_spatial_ffn.py",
+      "sha256": "6ffd3ccfff44222da21485adb45e609123260b4fcf3ec0c0f058030b912b1421",
+      "identity": "crlf_normalized_git_blob",
+      "reference_path": "LightGenV2/tasks/t03_saliency/tests/test_spatial_ffn.py"
+    },
+    {
+      "path": "LightGenV2/reports/20260927_demo_energy_efficiency_a100/ours/06_salicon/source_snapshot/tasks/t03_saliency/tests/test_teacher_curriculum.py",
+      "sha256": "bb7b0697626923d270338cb6dcb0b3ea0298cb24ef819b7553b4a03ad60eef28",
+      "identity": "crlf_normalized_git_blob",
+      "reference_path": "LightGenV2/tasks/t03_saliency/tests/test_teacher_curriculum.py"
+    },
+    {
+      "path": "LightGenV2/reports/20260927_demo_energy_efficiency_a100/ours/06_salicon/source_snapshot/tasks/t03_saliency/tests/test_teacher_reliability.py",
+      "sha256": "ba73e948062fe3817f5bad59676839fb3ce0c0f9f682e5e1bf0a5f3c9fa20e50",
+      "identity": "crlf_normalized_git_blob",
+      "reference_path": "LightGenV2/tasks/t03_saliency/tests/test_teacher_reliability.py"
+    },
+    {
+      "path": "LightGenV2/reports/20260927_demo_energy_efficiency_a100/ours/06_salicon/source_snapshot/tasks/t03_saliency/tests/test_training_support.py",
+      "sha256": "3d589ece36988319de0f793660388c017955f6f2cae9cb965eb2173efd3881f9",
+      "identity": "crlf_normalized_git_blob",
+      "reference_path": "LightGenV2/tasks/t03_saliency/tests/test_training_support.py"
+    },
+    {
+      "path": "LightGenV2/reports/20260927_demo_energy_efficiency_a100/ours/06_salicon/source_snapshot/tasks/t03_saliency/tests/test_unlabeled_data.py",
+      "sha256": "5f35a4a47543aeac870e8a809fa540445328004d90e87d6ea69cd79ce0756fc6",
+      "identity": "crlf_normalized_git_blob",
+      "reference_path": "LightGenV2/tasks/t03_saliency/tests/test_unlabeled_data.py"
+    },
+    {
+      "path": "LightGenV2/reports/20260927_demo_energy_efficiency_a100/ours/06_salicon/source_snapshot/tasks/t03_saliency/tests/test_unlabeled_pool.py",
+      "sha256": "aac3550203effba1e1a66240eb36131fa55e193386618375ebfdfa5100202722",
+      "identity": "crlf_normalized_git_blob",
+      "reference_path": "LightGenV2/tasks/t03_saliency/tests/test_unlabeled_pool.py"
+    },
+    {
+      "path": "LightGenV2/reports/20260927_demo_energy_efficiency_a100/ours/06_salicon/source_snapshot/tasks/t03_saliency/training.py",
+      "sha256": "a05584dbaed85d3cee10651e23f56bf21588eb23942c8063955288b639fa7297",
+      "identity": "crlf_normalized_git_blob",
+      "reference_path": "LightGenV2/tasks/t03_saliency/training.py"
+    },
+    {
+      "path": "LightGenV2/reports/20260927_demo_energy_efficiency_a100/ours/06_salicon/source_snapshot/tasks/t03_saliency/training_support.py",
+      "sha256": "4031ba186af1b64ef8be207ee55e8f7685c6dce30970063bd663b1bcca4a9086",
+      "identity": "crlf_normalized_git_blob",
+      "reference_path": "LightGenV2/tasks/t03_saliency/training_support.py"
+    },
+    {
+      "path": "LightGenV2/reports/20260927_demo_energy_efficiency_a100/ours/06_salicon/source_snapshot/tasks/t03_saliency/unlabeled_data.py",
+      "sha256": "beb343bb81789ea4dbf39ffed3ee24353a8d3d568bcdcb0e9690addc02587dfd",
+      "identity": "crlf_normalized_git_blob",
+      "reference_path": "LightGenV2/tasks/t03_saliency/unlabeled_data.py"
+    },
+    {
+      "path": "LightGenV2/reports/20260927_demo_energy_efficiency_a100/ours/06_salicon/source_snapshot/tasks/t03_saliency/visualize.py",
+      "sha256": "7a009c6db679c7b6bfec81153502fa2dd306f30aa8be073989905753700abf24",
+      "identity": "crlf_normalized_git_blob",
+      "reference_path": "LightGenV2/tasks/t03_saliency/visualize.py"
+    },
+    {
+      "path": "LightGenV2/reports/20260927_demo_energy_efficiency_a100/ours/07_openmoji_new_layout/source_snapshot/tasks/t04_semantic_interaction/shared_readout.py",
+      "sha256": "71be7d46d2d07fa58ed34b4af018edbf0fafdae551a6d5c54199d59075698282",
+      "identity": "crlf_normalized_git_blob",
+      "reference_path": "LightGenV2/tasks/t04_semantic_interaction/baseline_shared_readout.py"
+    }
+  ],
+  "scope": "Exact named local historical source export duplicates; original files retained, not runtime adoption or removal approval",
+  "files_deleted": false,
+  "files_moved": false
+}

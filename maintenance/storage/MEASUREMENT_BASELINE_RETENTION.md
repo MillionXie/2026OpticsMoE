@@ -37,6 +37,13 @@ TEST选模若曾获用户授权，仍标为开发指标，不改变旧记录的�
 
 ## 本轮实际核查
 
+旧9月27日能效包239份具名source_snapshot导出载荷已绑定main
+`dad32fee0bd6e43d2d586cbde05be96bfba54d9a`的源码/配置，逐原字节SHA保存于
+`DEMO_SOURCE_PAYLOAD_VISIBILITY_20261006.json`。仅这些已核对的文件退出Git待同步，
+原路径字节不变，不删除或移动；main源码、独有导出、报告、测速和未来新增文件仍可见。
+其中有显式CRLF换行差异，不能把对应main文件的原始SHA当作导出SHA。
+这不改变原681项测速清单的24项缺失/变化，也不证明整包运行或全部历史依赖已闭合。
+
 10月6日进一步把 [9月27日历史能效包说明与旧版边界](../../LightGenV2/reports/20260927_demo_energy_efficiency_a100/SUPERSEDED_TABLE_NOTICE.md)、
 原协议、版本身份、计算摘要及原SHA清单纳入main。657/681项原SHA可核验，其中30项
 只是显式同SHA旧路径映射；24项仍有缺失/变化，逐项保留在
