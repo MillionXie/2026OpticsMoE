@@ -1,0 +1,41 @@
+{
+  "archive_ref": "refs/archive/reviewed-historical-tools-20261006",
+  "archive_commit": "80f49b50f94ba831066372fa026655147a2f939e",
+  "prerequisite_commit": "e8ab368c52606bed8ee135f1dc86bb86d62442c0",
+  "bundle_sha256": "8d8b8f42523fe651339bf4a2b2e67a4f71eb3b9035593b66976aaf58003ca47a",
+  "bundle_bytes": 6157,
+  "files": [
+    {
+      "path": "handoffs/abo_text_to_image_figure_pack_20260928/build_pack.py",
+      "sha256": "f54f77c60fe2083b1d2aba3bc982bea3c818c52346fc4991369b27ef7ff6ced3",
+      "purpose": "Historical T08 text-to-image figure preparation/rendering from saved rankings, not model inference",
+      "selection_boundary": "Ten fixed titles selected where Ours Top-1 is correct and all three frozen baselines are wrong; illustrative, not overall win-rate evidence",
+      "dependencies": "Original source CSV/JSON, selection.json, raw_dataset/images, Pillow and fonts; source/results/images retained",
+      "execution_boundary": "prepare/render write or overwrite original pack outputs; not executed during cleanup and not approved as current default entry"
+    },
+    {
+      "path": "handoffs/t12_channel_robust_20260927/run_original_val96.cmd",
+      "sha256": "12ffe5a583dcd0e45479dbc01bd99f9fee7d0bb41acdd34c152c2b8a434a33d0",
+      "purpose": "Historical T12 channel-original VAL96 layerwise capture launcher",
+      "dependencies": "Original ch27_ref source/assets, external ABO DVP SDK project, GPU-environment Python, original no_reuse directory",
+      "execution_boundary": "Would operate laboratory devices and redirect an original log; never run during cleanup, not a new capture request"
+    },
+    {
+      "path": "tmp/pdfs/timing_manual_audit.py",
+      "sha256": "ea8631e6a40f19367c5b76fbe75103fc141e09ceb3edaa623025b005ec279673",
+      "purpose": "Historical SLM/PCIe/SHS device-manual page text and preview audit, not measured inference latency",
+      "dependencies": "Original external equipment PDF locations, local SHS manual, PyMuPDF and original tmp/pdfs/timing_audit previews",
+      "execution_boundary": "Top-level writes preview PNGs when imported/executed; not imported or executed. Original script and every timing file retained. New explicit read-only page utility does not replace original evidence"
+    }
+  ],
+  "host_verification": {
+    "local": "SHA-bound Git recovery; original HEAD/index/source preserved",
+    "training_server": "Three original Git blobs SHA verified; checkout and development branches unchanged",
+    "lab_source_store": "Three original Git blobs SHA verified; runtime checkout and development branches unchanged"
+  },
+  "original_files_deleted": false,
+  "original_files_moved": false,
+  "original_files_ignored": false,
+  "hardware_or_training_executed": false,
+  "runtime_dependency_closure_proven": false
+}

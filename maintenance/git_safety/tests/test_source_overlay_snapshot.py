@@ -118,6 +118,33 @@ def test_t12_stage_export_recovery_is_explicit_and_preserves_bytes(repo):
     assert git(root, 'rev-parse', 'HEAD') == manifest['expected_head']
 
 
+@pytest.mark.parametrize('path', [
+    'handoffs/abo_text_to_image_figure_pack_20260928/build_pack.py',
+    'handoffs/t12_channel_robust_20260927/run_original_val96.cmd',
+    'tmp/pdfs/timing_manual_audit.py',
+])
+def test_named_historical_tools_preserved_without_execution(repo, path):
+    root, _, manifest = repo
+    file = root/path
+    file.parent.mkdir(parents=True)
+    content = b'@echo off\r\necho fail > marker.txt\r\n' if path.endswith('.cmd') else b'raise RuntimeError("must never execute")\r\n'
+    file.write_bytes(content)
+    manifest['paths'] = [dict(path=path, sha256=hashlib.sha256(content).hexdigest(), entry_kind='untracked')]
+    with pytest.raises(RuntimeError):
+        snapshot(root, manifest, include_untracked_source=True)
+    result = snapshot(root, manifest, include_untracked_source=True, include_reviewed_historical_tools=True)
+    assert subprocess.check_output(['git', '-C', str(root), 'show', result['archive_commit']+':'+path]) == content
+    assert not (root/'marker.txt').exists()
+    assert git(root, 'rev-parse', 'HEAD') == manifest['expected_head']
+
+
+def test_historical_opt_in_rejects_neighbouring_private_tool(repo):
+    root, _, manifest = repo
+    manifest['paths'] = [dict(path='tmp/pdfs/connect.py', sha256='0'*64, entry_kind='untracked')]
+    with pytest.raises(RuntimeError):
+        snapshot(root, manifest, include_untracked_source=True, include_reviewed_historical_tools=True)
+
+
 def test_user_source_mode_does_not_enable_other_directories(repo):
     root, _, manifest = repo
     manifest['paths'] = [dict(path='TransferFromElectricity/unknown.py', sha256='0'*64, entry_kind='untracked')]

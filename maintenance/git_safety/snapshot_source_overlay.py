@@ -18,11 +18,16 @@ USER_D2NN_SOURCES = frozenset('TransferFromElectricity/d2nn_pack/' + name for na
 T12_DELIVERY_TOOLS = frozenset('handoffs/t12_small_baseline_share_20260928/package/' + name
                               for name in ('export_pairs.py', 'infer_ours.py')) | frozenset({
     'handoffs/t12_small_baseline_handoff_20260928/stage/materialize_pairs.py'})
+REVIEWED_HISTORICAL_TOOLS = frozenset({
+    'handoffs/abo_text_to_image_figure_pack_20260928/build_pack.py',
+    'handoffs/t12_channel_robust_20260927/run_original_val96.cmd',
+    'tmp/pdfs/timing_manual_audit.py',
+})
 
 
 def snapshot(root, manifest, *, include_documentation=False, include_untracked_source=False,
              include_user_d2nn_source=False, include_reviewed_launchers=False,
-             include_t12_delivery_tools=False):
+             include_t12_delivery_tools=False, include_reviewed_historical_tools=False):
     root = Path(root).resolve()
     def git(*args, data=None, env=None):
         safe_env = dict(os.environ if env is None else env, GIT_OPTIONAL_LOCKS='0')
@@ -53,11 +58,14 @@ def snapshot(root, manifest, *, include_documentation=False, include_untracked_s
         prefix_allowed = (path.startswith('LightGenV2/')
                           or (include_documentation and path.startswith('LightGenPublic/'))
                           or (include_user_d2nn_source and path in USER_D2NN_SOURCES)
-                          or (include_t12_delivery_tools and path in T12_DELIVERY_TOOLS))
+                          or (include_t12_delivery_tools and path in T12_DELIVERY_TOOLS)
+                          or (include_reviewed_historical_tools and path in REVIEWED_HISTORICAL_TOOLS))
         suffix_allowed = (path.endswith('.py') or (include_documentation and path.endswith('.md'))
                           or (include_untracked_source and path.endswith(('.yaml', '.yml')))
                           or (include_reviewed_launchers and path.startswith('LightGenV2/')
                               and path.endswith('.cmd')))
+        if include_reviewed_historical_tools and path in REVIEWED_HISTORICAL_TOOLS:
+            suffix_allowed = True
         if (not prefix_allowed or str(pure) != path or '..' in pure.parts
                 or '\\' in path or ':' in path or path in seen or not suffix_allowed):
             raise RuntimeError('Only explicit reviewed source/documentation allowed')
@@ -129,9 +137,12 @@ if __name__ == '__main__':
                    help='Archive explicitly SHA-reviewed LightGenV2 .cmd source only; never execute launchers')
     p.add_argument('--include-t12-delivery-tools', action='store_true',
                    help='Permit only the three named reviewed T12 delivery helper Python files')
+    p.add_argument('--include-reviewed-historical-tools', action='store_true',
+                   help='Permit only three named reviewed figure/export/manual tools; never run them')
     args = p.parse_args()
     print(json.dumps(snapshot(args.root, json.loads(args.manifest.read_text()),
                               include_documentation=args.include_documentation,
                               include_untracked_source=args.include_untracked_source,
                               include_reviewed_launchers=args.include_reviewed_launchers,
-                              include_t12_delivery_tools=args.include_t12_delivery_tools), indent=2))
+                              include_t12_delivery_tools=args.include_t12_delivery_tools,
+                              include_reviewed_historical_tools=args.include_reviewed_historical_tools), indent=2))
