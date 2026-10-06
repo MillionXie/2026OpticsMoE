@@ -16,7 +16,8 @@ USER_D2NN_SOURCES = frozenset('TransferFromElectricity/d2nn_pack/' + name for na
     'config.yaml', 'data.py', 'extract_clip_features.py', 'losses.py', 'mask_generator.py',
     'model_adapt.py', 'train_d2nn_adapt_grid.py', 'train_d2nn_mnist256.py'))
 T12_DELIVERY_TOOLS = frozenset('handoffs/t12_small_baseline_share_20260928/package/' + name
-                              for name in ('export_pairs.py', 'infer_ours.py'))
+                              for name in ('export_pairs.py', 'infer_ours.py')) | frozenset({
+    'handoffs/t12_small_baseline_handoff_20260928/stage/materialize_pairs.py'})
 
 
 def snapshot(root, manifest, *, include_documentation=False, include_untracked_source=False,
@@ -127,7 +128,7 @@ if __name__ == '__main__':
     p.add_argument('--include-reviewed-launchers', action='store_true',
                    help='Archive explicitly SHA-reviewed LightGenV2 .cmd source only; never execute launchers')
     p.add_argument('--include-t12-delivery-tools', action='store_true',
-                   help='Permit only the two named reviewed T12 share helper Python files')
+                   help='Permit only the three named reviewed T12 delivery helper Python files')
     args = p.parse_args()
     print(json.dumps(snapshot(args.root, json.loads(args.manifest.read_text()),
                               include_documentation=args.include_documentation,

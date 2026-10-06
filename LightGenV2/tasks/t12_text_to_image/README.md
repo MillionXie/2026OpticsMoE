@@ -33,6 +33,10 @@
 导出入口加`--manifest-format csv`得到；保留prompt和原配对列，不再另依赖交付source路径。
 CSV不支持all，避免旧目录布局混用。原物化脚本和已导出数据仍保留；这里只验证格式合同，
 未重新导出正式数据或声称历史像素逐一复核。
+原stage脚本已有三端Git恢复身份：`refs/archive/reviewed-t12-stage-export-20261006`，
+提交`19c6cebcae3ca3326db7605f43f106f5573288e8`，原字节SHA256
+`e3cca629d94a0b21abf0c1233d2b8c8e836c546fb83be57dba1388e7b17c6a7d`。
+它是历史数据物化工具，不是额外模型或新的开发分支；不执行、不删除原工具及已有PNG。
 
 原17M单样本干净仿真另有明确入口：`python -m LightGenV2.tasks.t12_text_to_image.infer_formal_sample --help`。
 显式提供原5b4f PT、数据、指令缓存和embedding缓存，固定CPU、不调用设备，拒绝其他权重及覆盖输出；

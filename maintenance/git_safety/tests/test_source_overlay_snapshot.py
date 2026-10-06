@@ -104,6 +104,20 @@ def test_t12_opt_in_rejects_arbitrary_connection_script(repo):
         snapshot(root, manifest, include_untracked_source=True, include_t12_delivery_tools=True)
 
 
+def test_t12_stage_export_recovery_is_explicit_and_preserves_bytes(repo):
+    root, _, manifest = repo
+    path = 'handoffs/t12_small_baseline_handoff_20260928/stage/materialize_pairs.py'
+    file = root/path
+    file.parent.mkdir(parents=True)
+    file.write_bytes(b'# historical data-only exporter\r\nvalue = 7\r\n')
+    manifest['paths'] = [dict(path=path, sha256=hashlib.sha256(file.read_bytes()).hexdigest(), entry_kind='untracked')]
+    with pytest.raises(RuntimeError):
+        snapshot(root, manifest, include_untracked_source=True)
+    result = snapshot(root, manifest, include_untracked_source=True, include_t12_delivery_tools=True)
+    assert subprocess.check_output(['git', '-C', str(root), 'show', result['archive_commit']+':'+path]) == file.read_bytes()
+    assert git(root, 'rev-parse', 'HEAD') == manifest['expected_head']
+
+
 def test_user_source_mode_does_not_enable_other_directories(repo):
     root, _, manifest = repo
     manifest['paths'] = [dict(path='TransferFromElectricity/unknown.py', sha256='0'*64, entry_kind='untracked')]
