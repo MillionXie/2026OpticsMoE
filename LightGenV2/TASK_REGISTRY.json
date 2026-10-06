@@ -29,6 +29,7 @@
     },
     {
       "id": "t02_keypoint_detection",
+      "historical_deconv128_timing_evidence": "../maintenance/storage/T02_BASELINE_TIMING_BINDING_20261006.json",
       "entry": "tasks/t02_keypoint_detection/README.md",
       "source_status": "runtime_source_on_main_official_and_personal_image_content_audited_asset_closure_pending",
       "additional_source": "/DATA/DATA1/guest3/t02_personal_source_20260928",

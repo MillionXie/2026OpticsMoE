@@ -1,0 +1,160 @@
+{
+  "date": "2026-10-06",
+  "purpose": "Preserve and correctly scope the historical corrected LSP baseline measurement",
+  "server_archive": "/DATA/DATA1/guest3/2026OpticsMoE/LightGenV2/tasks/t06_video_quality_assessment/runs/simulation/baseline_corrections_5090d_20260907/qwen_baseline_corrections_20260907.tar.gz",
+  "archive_bytes": 13113744,
+  "archive_sha256": "c30114e1580a3bf5a66497edcbb86bf18a4e064a98df1b19bbf901b679968a4f",
+  "original_run_directory_present_on_checked_server": false,
+  "members": {
+    "report": {
+      "member": "LightGenV2/tasks/t02_keypoint_detection/runs/simulation/qwen_frozen_deconv_5090d_20260907_v2/baseline_report.json",
+      "bytes": 3724,
+      "sha256": "5c18f2dfb23c2e31e50a8f59a68c308f28857ad68cc3e03de800272f9096fae7"
+    },
+    "timing": {
+      "member": "LightGenV2/tasks/t02_keypoint_detection/runs/simulation/qwen_frozen_deconv_5090d_20260907_v2/timing_per_sample.csv",
+      "bytes": 20522,
+      "sha256": "caf58274daaafbedc31f6c6232eeec8a5689bba651fe15029d76375af81ca3d0"
+    },
+    "power": {
+      "member": "LightGenV2/tasks/t02_keypoint_detection/runs/simulation/qwen_frozen_deconv_5090d_20260907_v2/power_samples.csv",
+      "bytes": 4374,
+      "sha256": "1a5fd28252df7a9a52956599b9e6f074e3ff8e3bb05a57c858fafaefa06bb9d4"
+    },
+    "command": {
+      "member": "LightGenV2/tasks/t02_keypoint_detection/runs/simulation/qwen_frozen_deconv_5090d_20260907_v2/command.txt",
+      "bytes": 580,
+      "sha256": "04f1934b053f29fad9b7c8dee32be432b21039f7bc02c59257c857a623711e7b"
+    },
+    "head": {
+      "member": "lsp_opt2/teacher_best_train_loss.pt",
+      "bytes": 4424871,
+      "sha256": "0a4569f288f6de424b1b412452fa804a96e58d8f7e8655efaa23f461ab8cc735"
+    }
+  },
+  "source_commit": "50294388b4c59a881083a1b3460d475a4bc4834d",
+  "historical_source_sha256": {
+    "LightGenV2/tasks/t02_keypoint_detection/baseline_5090d.py": "c12f990e7ab11b8d49cb3e2cf58960c8f9646c7c964a9eff7ee289c07c571277",
+    "LightGenV2/common/baseline_measurement.py": "0036bfca8d9590b55a2a303e4ac7b6fbf11eb51d22be8377472e9e0e7d9e623f"
+  },
+  "official_manifest_sha256": "2cb33989b3a5436408edad5e9e7452245814ec0724bc5ae20637cc40b4ba1d79",
+  "report_fields": {
+    "test_samples": 1000,
+    "timing_samples": 200,
+    "explicit_warmup_forwards": 50,
+    "first_test_sample_included": false,
+    "git_commit": "50294388b4c59a881083a1b3460d475a4bc4834d",
+    "readout_trainable_parameters": 1102990,
+    "pose_head_mode": "deconv"
+  },
+  "performance": {
+    "loss": 0.027233955338597297,
+    "heatmap_loss": 0.0022111224150285127,
+    "coordinate_loss": 0.2502283263206482,
+    "pck_at_0.2_torso": 0.7217142857142858,
+    "pckh_at_0.5_head": 0.8846428571428572,
+    "mean_pixel_error": 13.515868584360927,
+    "normalized_mean_error_torso": 0.20837872689642067,
+    "evaluated_joints": 14000,
+    "pck_evaluated_joints": 14000,
+    "pckh_evaluated_joints": 14000,
+    "per_joint_pck_at_0.2_torso": {
+      "right_ankle": 0.692,
+      "right_knee": 0.705,
+      "right_hip": 0.776,
+      "left_hip": 0.75,
+      "left_knee": 0.697,
+      "left_ankle": 0.696,
+      "right_wrist": 0.591,
+      "right_elbow": 0.636,
+      "right_shoulder": 0.801,
+      "left_shoulder": 0.788,
+      "left_elbow": 0.619,
+      "left_wrist": 0.558,
+      "neck": 0.898,
+      "head_top": 0.897
+    },
+    "per_joint_counts": {
+      "right_ankle": 1000,
+      "right_knee": 1000,
+      "right_hip": 1000,
+      "left_hip": 1000,
+      "left_knee": 1000,
+      "left_ankle": 1000,
+      "right_wrist": 1000,
+      "right_elbow": 1000,
+      "right_shoulder": 1000,
+      "left_shoulder": 1000,
+      "left_elbow": 1000,
+      "left_wrist": 1000,
+      "neck": 1000,
+      "head_top": 1000
+    },
+    "normalization": {
+      "PCK": "mean distance of the two shoulder-to-opposite-hip torso diagonals",
+      "PCKh": "2 * distance(neck, head_top)"
+    },
+    "samples": 1000,
+    "phase": "qwen_5090d_baseline",
+    "epoch": 37,
+    "model": "teacher"
+  },
+  "latency_cuda_ms": {
+    "mean": 9.504461159706116,
+    "median": 9.46996784210205,
+    "std": 0.16758813055752472,
+    "p05": 9.392459392547607,
+    "p95": 9.631963539123536,
+    "min": 9.34665584564209,
+    "max": 11.125760078430176
+  },
+  "latency_host_ms": {
+    "mean": 9.510759462136775,
+    "median": 9.47628472931683,
+    "std": 0.1685947879363352,
+    "p05": 9.398220060393214,
+    "p95": 9.638078836724162,
+    "min": 9.353147819638252,
+    "max": 11.130700819194317
+  },
+  "power": {
+    "sampler": "nvidia-smi board power.draw",
+    "sampling_interval_ms": 50,
+    "idle_samples": 40,
+    "active_samples": 43,
+    "idle_mean_w": 123.5565,
+    "active_mean_w": 140.12790697674419,
+    "active_peak_w": 145.03,
+    "rated_power_limit_w": 575,
+    "measured_active_energy_j_per_sample": 1.3318402492513768,
+    "idle_subtracted_energy_j_per_sample": 0.15750229397214807,
+    "rated_upper_bound_energy_j_per_sample": 5.465065166831017,
+    "energy_basis": "board power sampled only while model inference was active; energy uses the measured first-block-to-task-output mean latency"
+  },
+  "command_options": {
+    "--model": "/root/autodl-tmp/models/Qwen3-VL-Embedding-2B",
+    "--data-root": "/root/autodl-tmp/qwen5090_baseline_inputs/data/lsp_pose",
+    "--config": "experiments/qwen3_vl_embedding_2b_lsp_pose_optical_moe16/configs/lsp_pose_opt2.yaml",
+    "--checkpoint": "/root/autodl-tmp/qwen5090_baseline_inputs/lsp_opt2/teacher_best_train_loss.pt",
+    "--run-dir": "LightGenV2/tasks/t02_keypoint_detection/runs/simulation/qwen_frozen_deconv_5090d_20260907_v2",
+    "--timing-samples": "200",
+    "--warmup-forwards": "50",
+    "--performance-batch-size": "8",
+    "--num-workers": "4"
+  },
+  "limits": [
+    "Source hashes identify the reported Git commit only; the original report records a dirty worktree, so exact runtime overlay equality is not proven",
+    "Historical source evaluates performance before the explicit 50 warmup forwards; the timing is already model-warmed and excludes cold start",
+    "Original run directory absent at the checked path; complete corrected archive and exact head remain preserved",
+    "Performance evaluated on 1000 TEST images; timed subset has 200 rows after 50 warmup forwards, not an unwarmed all-TEST latency",
+    "Performance evaluation batch size 8 and timed inference batch size 1 must not be conflated",
+    "first_test_sample_included=false is the original report flag; historical source times dataset index 0 again after warmup, so it is not proof that the first image ID is absent",
+    "Timing includes a width-only heatmap argmax in historical source and is not validated complete 2D keypoint decoding",
+    "Original active mean power times mean latency is an energy proxy, not waveform-integrated per-image wall-system energy",
+    "Head/source/report binding does not close original frozen Qwen revision, model assets or exact original dataset pixel content",
+    "No original report, weights, CSV, archive, camera contract or current experiment changed"
+  ],
+  "archive_extracted": false,
+  "model_loaded": false,
+  "benchmark_executed": false
+}

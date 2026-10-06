@@ -1,23 +1,49 @@
-# LightGenV2 八任务总清单
+# LightGenV2 任务版本、性能与测速索引
 
-更新时间：2026-09-07
+更新日期：2026-10-06。这里只汇总**主线已登记的版本**，不替另一窗口尚未交付的
+OpenMoji新实验选模型。每项任务一行，精确PT/SHA、划分、原run和复现命令从任务页查。
 
-本表是老师查看整体进展时的唯一跨任务入口。每个任务固定一行；详细事实和证据仍放在
-对应任务目录。`—` 表示尚无合格证据，不表示数值为零。旧工程结果统一标为“历史候选”，
-迁移并复核前不能写成 LightGenV2 正式结果。
+仿真、未微调实拍、电子适配后的实拍分开；同权重去光不是重训电子baseline。
+不同容量、划分或微调PT不能拼成“同权重仿真—实测差距”。TEST选模按既有人工授权
+标为开发指标，不称独立泛化。本次不训练、不重新评估数据集或测速。
 
-## 一页总表
+## 当前版本一页表
 
-| 优先级 | 任务 | 当前数据/协议 | 主指标 | 我们的仿真性能 | 我们的实测性能 | 我们的速度 | Baseline 性能 | Baseline 速度 | 功耗与能耗 | 仿真—实测一致性 | 当前状态与下一闭环 |
-|---:|---|---|---|---|---|---|---|---|---|---|---|
-| P1 | **T06 视频质量评价** | LGVQ；Spatial-4、Temporal-36、9视频×4帧、16视频×4帧为独立协议；test 558 | SRCC↑；同时报 KRCC/PLCC↑、RMSE/MAE↓ | **Temporal-36：SRCC 0.8454**；**9×4：SRCC 0.8082、PLCC 0.8131**；**16×4：SRCC 0.8044、PLCC 0.8180**；**单视频 Spatial-4：SRCC 0.6393、PLCC 0.6743** | — | RTX 5090D 计算图估算：16×4 一幅场 **28.744 ms/16视频**（1.796 ms/video 折算）；含 6 次物理光场、CCD 后串行电处理、bridge 与任务头；实验台端到端仍未测 | 冻结 Qwen3-VL-2B：Temporal-36 线性头 SRCC 0.7820；448px 五质量词 4/9/16 帧 SRCC **0.7693/0.7745/0.7787**；Spatial-4 SRCC 0.6440 | RTX 5090D：4帧方案二均值 **65.433 ms/video**；16视频顺序固定采用原始证据 **1046.928 ms** | 光学 80.388 W：6 次物理光场 **0.634 J/field**；全临界路径持续上电代理 **2.311 J/16视频**。Qwen 16视频原始实测 **120.680 J**，反算平均功率 **115.271 W**，575 W 上界 601.984 J | 16×4 无全局专家坍缩，但帧路由样本变化率仅 8.2%；实测仍需 PCC、SSIM、gain-aligned NMAE、强度比与饱和率 | **单视频 Spatial-4 已归档；16×4 已完成但未达到 0.81（实测 0.8044）。**分段计时每分量 1000 次、共 16,000 video workload；下一步测实验台端到端和 GPU/整机功率 |
-| P2 | **T07 商品检索（图搜图）** | ABO；正式子集、gallery/query 划分尚未冻结 | Top-1/Top-5/Top-10、MRR、Recall@K↑ | — | — | — | — | — | — | — | **尚未运行。**先冻结可发表的数据协议和电子 baseline，再做同协议光电模型；不能引用仓库中旧 ABO 文件作为本任务结果 |
-| P3 | **T08 商品检索（图搜文）** | ABO easy100；100 商品；train 4800/test 2400；100 个官方英文标题为固定候选库；每 5 epoch 看完整 test 选 EMA best | R@1/R@5/R@10、MRR、median rank↓ | **DC20 光 Router Top-2：R@1 0.7988、R@5 0.9479、R@10 0.9825、MRR 0.8617**；强均衡版 R@1 0.7983、MRR **0.8676** | — | — | Frozen `Qwen3-VL-Embedding-2B`：**R@1 0.7371、R@5 0.9337、R@10 0.9604、MRR 0.8230** | RTX 5090D、batch 1；首个 Vision block→2048D 归一化→100 标题完整排序：**26.052 ms/图** | active mean **152.50 W**；peak 156.84 W；idle-subtracted **2.209 J/图** | — | **光仿真与电子 baseline 均已完成。**光模型固定 224×224、64D，Qwen 主干冻结；强均衡候选只少命中 1 张 Top-1，但 R@5/R@10/MRR 更高，优先用于硬件部署；硬件速度、功耗和一致性尚未测 |
-| P4 | T01 物品检索 | Caltech101 target-10：train 2625、gallery 30、query 200；单 seed；周期 test 选模 | Top-1/Top-3、MRR↑ | **DC20 光 Router Top-2：Top-1 90.0%、Top-3 96.5%、MRR 0.9344** | — | RTX 5090D 计算图估算 **10.061 ms/query**；4 特征 + 2 router | 同协议/激活相位预算匹配 D2NN：Top-1 89.5%；冻结 Qwen embedding：Top-1 **99.5%** | 冻结 Qwen：mean/median/P95 **26.407/25.731/28.985 ms/query** | 光学物理/墙上代理 **0.634/0.809 J/query**；Qwen 实测 **151.252 W、3.994 J/query** | 尚未做统一硬件实测 | **正式复跑完成。**分段计时每分量 1000 次，电残差 0.275 ms 均值可被 1.314 ms 光路覆盖；硬件端到端未测 |
-| P5 | T02 关键点检测 | LSP；固定 test 1000；单 seed；周期 test 选模 | PCK@0.2、PCKh@0.5↑；MPE/NME↓ | **DC20 光 Router Top-2：PCK 0.5773、PCKh 0.7363、NME 0.3488** | — | RTX 5090D 计算图估算 **5.537 ms/image**；2 特征 + 1 router | 同协议、激活相位预算匹配 D2NN：PCK 0.6751；冻结完整 Qwen Vision + DeconvPoseHead：PCK **0.7217**、PCKh **0.8846** | 冻结 Qwen+反卷积头：mean/median/P95 **9.504/9.470/9.632 ms/image** | 光学物理/墙上代理 **0.317/0.445 J/image**；Qwen 实测 **140.128 W、1.332 J/image** | — | **正常大模型 baseline 已纠正。**1000 张 test 全量评估；Qwen 原生 Vision blocks 全部执行，只有 1,102,990 参数反卷积读出头可训练；旧 0.5114 来自欠容量双线性头，不再作为正式 baseline |
-| P6 | T03 显著性分析 | SALICON train2014 10000；val2014 5000 作 public test；无 validation | CC/SIM/NSS/AUC-Judd↑；KLD/MAE↓ | **DC20 光 Router Top-2：CC 0.8291、SIM 0.8063、NSS 0.9283、AUC-Judd 0.7631** | — | RTX 5090D 计算图估算 **5.654 ms/image**；2 特征 + 1 router | 参数匹配 D2NN：CC **0.8346**；Frozen Qwen+头：CC **0.8811**、SIM 0.8327 | 冻结 Qwen+头：mean/median/P95 **10.176/9.687/12.544 ms/image** | 光学物理/墙上代理 **0.317/0.455 J/image**；Qwen 实测 **117.837 W、1.199 J/image** | — | **正式仿真完成。**分段计时每分量 1000 次；任务头 0.693 ms；硬件端到端未测 |
-| P7 | T04 语义交互 | OpenMoji train 5000/test 1000；四操作各自均衡；无 validation | changed-cell accuracy、edit-grid IoU、object F1、scene exact match↑ | **DC20 光 Router Top-2：changed 0.9800、IoU 0.9350、F1 0.9837、exact 0.8950** | — | RTX 5090D 计算图估算 **10.862 ms/sample**；4 特征 + 2 router，含 bridge/head | 参数匹配 D2NN：changed **0.9895**；冻结完整 Qwen Vision/Language + 结构化头：changed **0.5475**、IoU 0.2909、exact 0.0160 | 正常 Qwen baseline：mean/median/P95 **27.166/26.628/30.280 ms/sample** | 光学物理/墙上代理 **0.634/0.873 J/sample**；Qwen 实测 **171.370 W、4.656 J/sample** | — | **正常大模型 baseline 已纠正。**Qwen 主干全冻结，只有 1,212,434 参数任务头可训练；旧 3172 ms/parse failure 100% 仅为零样本生成诊断，不再进入 baseline 表 |
-| P8 | T05 视频分类 | 数据集与论文问题尚未确定 | Top-1/Top-5 或 mAP（待协议确定） | — | — | — | — | — | — | — | **未开始。**在数据集确定前不建空模型、不产生 runs |
+| 任务/入口 | 登记版本 | 仿真主指标 | 未微调实拍 | 适配/校准实拍 | 必要baseline与对照 | 该版本测速与限制 |
+| --- | --- | --- | --- | --- | --- | --- |
+| [T01 物品检索](tasks/t01_object_retrieval/README.md) | Caltech101 target-10，DC20正式对照 | Top-1 .9000，Top-3 .9650，MRR .9344 | 尚未核验 | 尚未核验 | matched D2NN Top-1 .8950；冻结Qwen .9950；固定专家相位迁移是另一个历史研究 | 旧DC20计算图估算10.061ms/query，旧Qwen模型核心26.407ms；不是实验台端到端 |
+| [T02 关键点](tasks/t02_keypoint_detection/README.md) | 官方LSP三类光学候选分别保留；个人照片另列 | DC20 PCK .5772857；低alpha交付 .7347857；alpha40蒸馏 .7282857 | 官方全量实拍尚未核验 | 个人pilot仅伪标签一致性，不作官方成绩 | DC20 D2NN .6751429；旧Deconv128 Qwen .7217143，Deconv40 .6381429，头容量不可混用 | 旧Deconv128 9.504ms：性能1000/batch8，计时200/batch1，显式预热50次；不套后续光电候选 |
+| [T03 显著性](tasks/t03_saliency/README.md) | 指定cross-sample best，SHA起始036bc8ca | CC .8624925082；同权重去光 .84229470 | 5000图三层CC .8597739692 | 指定结果未微调 | 同头Qwen历史100轮 .88968469、50轮 .87483828；早期DC20/D2NN .8291/.8346另保留 | 新指定候选未绑定专属测速；旧DC20计算图5.654ms和旧头Qwen10.176ms不移用于新模型 |
+| [T04 OpenMoji robust](tasks/t04_openmoji_robust_ablation/README.md) | 2026-10-02封存rank64 G2/G5；现用新实验保护 | 实验台CPU G2 .9390/G5 .9270；服务器 .9385/.9290另列 | G2 .6185/G5 .6910 | 原decoder .9015/.9180；已有bias校准 .9045/.9305 | G1与G2同原PT；旧DC20 D2NN .9895、旧Qwen .5475不是rank64同容量对照 | rank64专属延迟未测；旧DC20 10.862ms、旧Qwen27.166ms仍为历史证据；TEST选PT/校准属开发指标 |
+| [T05 视频分类](tasks/t05_video_classification/README.md) | 尚未开展，协议未定 | — | — | — | — | 不为整理自动建模型或启动训练 |
+| [T06 视频质量](tasks/t06_video_quality_assessment/CURRENT_VERSION_20261004.md) | Spatial单视频4帧/1M头与Temporal16视频×4帧，两份独立PT | Spatial SRCC .6710968960；Temporal .8043868643 | Spatial .5786364901；Temporal .7977138739 | Spatial不同划分适配见原报告，不取混合TEST最高数替换 | Temporal-36、9×4、旧Spatial及Frozen Qwen分别保留；原Qwen4帧SRCC .7693 | 旧16×4计算图估算28.744ms/场；原Qwen16顺序视频1046.928ms；非SHS端到端、非新Spatial头的时间 |
+| [T07 ABO图搜图](tasks/t07_abo_image_retrieval/README.md) | 用户封存rank72/epoch13，SHA起始25f23260；1600真实图库+800查询 | R@1 .83375；同权重去光 .8000 | R@1 .81125/R@5 .94125/MRR .8694430763 | 未微调已达到既定80%门槛，不改最终PT | 原480-query/120商品中心及其他模型对照保持原协议，不拼到本行 | rank72专属测速尚未核验；800查询曾参与开发，不称独立泛化 |
+| [T08 ABO双向](tasks/t08_abo_image_text_retrieval/README.md) | 图搜文性能/均衡两版；文搜图10cm主体+10轮读出独立保留 | 图搜文R@1 .79875/.7983333333；文搜图Hit@1 .86、去光 .73 | 图搜文尚未核验；文搜图 .79 | 文搜图采用版 .85，TRAIN拟合/VAL第9轮选模；全项目TEST曾参与开发 | 图搜文Frozen Qwen动态2048D R@1 .7371；固定64D .5358/动态64D .5979，预处理不同 | 旧图搜文Qwen26.052ms；另有仿真.88计时PT，不是文搜图实拍主体，不能套用 |
+| [T09 图文/音文判断](tasks/t09_multimodal_matching/CURRENT_VERSION_20261004.md) | seed17探索，逐层OEO；不是自由问答 | 图文MoE .6927；无CNN左右音文MoE .8501 | 未硬件验证 | — | 对应D2NN .5747/.7324；共享CNN音文 .9423/.9487是另一协议 | 历史D2NN前向布局不同，PT形状兼容不代表精度复现；原测速保留，不混作当前版本时间 |
+| [T10 专家扩展](tasks/t10_expert_scaling/CURRENT_VERSION_20261003.md) | 多数据集/N/k/seed矩阵，不选择一个数字代替整组 | 按原四组结果矩阵读取 | 未核验 | — | 参数/孔径/源带宽对照分开；固定478九项旧TEST报告仍缺 | 原全部测速保留；源码或矩阵登记通过不等于全部实验完成 |
+| [T11 病理终身学习](tasks/t11_lifelong_optics/CURRENT_VERSION_20261004.md) | 纯光二分类协议与CRC9光电蒸馏分别保留 | 历史纯光全量replay四域验证平均BA .8002；CRC9另查原矩阵 | 非实拍 | — | 对应纯光D2NN全量replay .7742；其他联合/有限记忆/冻结迁移对照保留 | CRC9四域是同批图像的变换，不是四个独立数据集；旧时间不套给CRC9 |
+| [T12 图文编辑](tasks/t12_text_to_image/README.md) | 17M小版5b4f与电子适配eeec为不同PT；大版及baseline保留 | 原小版PSNR34.277751dB；适配PT自身仿真28.890612dB | 原5b4f EXP27.551289dB | eeec EXP31.552886dB | 大版31.428599dB；同任务Qwen28 27.260453dB；pix2pix-Turbo20.746391dB | 未有统一跨架构新测速；旧9.96M时间不套17M；不能把34.28与31.55当同权重差距 |
+| [T13 时序鲁棒消融](tasks/t13_temporal_robust_training/README.md) | full2250 phase-only15四组，schema4 | 原共同条件SRCC .792741/.785567/.803539/.800796，均为仿真 | 尚未完成新一轮实拍 | — | 导师v2同PT重评 .8022806420，名称0.8044是历史标识 | TEST参与选模，末组best为父epoch0；不强造G5最高、不套T06旧计时 |
+| [T16 多模态终身学习](tasks/t16_zero_phase_ccd_lifelong/README.md) | 最终A/B/C/D序列及必要对照；不同于T11 | 最终D四任务宏平均召回率均值：MoE全replay .7838 | 非实拍 | — | D2NN无replay .4877、全replay .7579、每旧任务300记忆 .6202；排序探索 .7862不替换主矩阵 | 本版本计时尚未核定；不借其他模型A100/相机时间 |
+
+## 如何查证及保留历史
+
+- 本表数值来自上述任务页及其原报告，未在整理时重新计算模型性能。
+  发布源码、PT、原数据与机器依赖的覆盖见 [TASK_REGISTRY.json](TASK_REGISTRY.json)；
+  `migration_complete=false` 不因本表更新而改变。
+- 当前时间只绑定相应版本与边界；“未测”不等于0，也不以CPU测试时长代替模型延迟。
+- 旧八任务总表完整保存在Git提交 `4df4a1e5c7d4b57d621a46039010262c0200aee2`
+  的同一路径；所有原计时/功率CSV、模型/PT、报告和图未删除或搬走。
+- 历史光学/Qwen时间和功耗仍见
+  [5090D分段报告](tasks/t06_video_quality_assessment/reports/5090d_moe_and_qwen_baselines_20260907/README.md)、
+  [旧跨任务baseline](tasks/t06_video_quality_assessment/reports/qwen5090d_cross_task_baselines_20260906/README.md)。
+  光学80.388W及持续上电代理不是完整系统实测能耗；GPU平均功率乘均值时间也不是逐样本整机积分。
+- LSP原修正归档的头/PT/report与200条计时、83条功率记录可用
+  `python maintenance/storage/check_t02_baseline_archive.py --archive <原tar.gz>`
+  只读核验；不会解压、测速或运行模型。
+- OpenMoji两个目标不可拼接：封存G2直接较G1下降32.05个百分点，校准后距G1
+  3.45个百分点；G5直接下降24.80个百分点，校准后距G1 .85个百分点。
+  后者接近1%，但不满足“直接下降30个百分点”这一条件。两者均是TEST开发指标。
 
 ## “做完一行”的最低标准
 
@@ -50,7 +76,9 @@
 | Baseline 功耗 | GPU/整机 idle W、active mean W、peak W、J/sample；`nvidia-smi` 只能作为 GPU 侧证据，不能冒充整机功耗 |
 | 可靠性 | warm-up 次数、重复次数、均值/标准差或置信区间、失败/超时/饱和比例 |
 
-## 推进顺序
+## 历史实验推进顺序（保留记录，不是当前待执行任务）
+
+以下是早期八任务计划，不能据此重启已经封存的 ABO 或覆盖后续版本。当前整理顺序和未完成项以 `../maintenance/storage/REMAINING_CLEANUP_PLAN_20261003.md` 为准。
 
 1. **T06 硬件闭环**：Temporal-36 优先，随后 Spatial-4。先完成速度/功耗/一致性，再报告
    直接部署和微调后性能；这是目前最接近完整论文表格的一行。
@@ -58,7 +86,9 @@
 3. **T08 ABO 图搜文**：协议必须独立于 T07，不能把分类准确率或图搜图结果代替跨模态检索。
 4. T01–T04 只迁移可追溯的正式候选并补齐公平 baseline；T05 等数据集确定后再启动。
 
-## 当前证据入口
+## 历史对照与测速证据入口（全部保留）
+
+以下旧对照不自动代表上表的最新模型；对应权重、数据和计时边界必须分别核对。
 
 - RTX 5090D 跨任务光学 MoE 分段电处理与冻结 Qwen 汇总：
   `tasks/t06_video_quality_assessment/reports/5090d_moe_and_qwen_baselines_20260907/README.md`

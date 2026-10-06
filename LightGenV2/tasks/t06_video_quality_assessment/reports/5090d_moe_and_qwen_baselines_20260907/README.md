@@ -94,6 +94,10 @@ T04 现在使用同一个 changed-cell 指标，可直接比较；旧的 3172 ms
 `120.680 J / 1.046928 s = 115.271 W`，575 W 额定上界为 601.984 J。
 
 完整 baseline 的 median/P95、额定 575 W 上界、输入尺寸和性能次指标仍以相邻归档 `../qwen5090d_cross_task_baselines_20260906/summary.csv` 为准。本目录的 `baseline_and_moe_summary.csv` 只把论文常用字段整理到同一张表。
+2026-10-06原归档核验补充：LSP性能为TEST1000/batch8，9.504ms计时为200张/batch1、
+另有50次预热；不是与全部性能样本同分母的无预热时长。
+原头及CSV身份见 [LSP测速绑定](../../../../../maintenance/storage/T02_BASELINE_TIMING_BINDING_20261006.json)。
+保留原数值，不把CUDA-event模型时间或功率乘均值代理改称整机积分能耗。
 
 ## 图表与复现
 

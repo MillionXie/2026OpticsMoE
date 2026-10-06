@@ -74,5 +74,11 @@ alpha40蒸馏原run记录训练commit `8de890f316e3c58d50eff2e3a900a676c2d6ad68`
 `9f2f7e710d6d81056aa5c0a4f04764fec6bb7bda` snapshot。不是模型丢失，也不修改旧配置补造历史。
 新复现应显式使用已校验的不可变snapshot；历史训练revision尚不能倒推证明。
 本轮只补内容身份，动态运行与完整测速绑定仍未全部核定。
+2026-10-06已单独核验旧Deconv128/1102990参数Qwen baseline的纠正归档：
+归档SHA `c30114e1…68a4f`、内部原头SHA `0a4569f2…cc735` 与旧report完全一致。
+PCK .7217143来自1000张性能评估；9.504461ms来自200条计时、另有50次显式预热。
+两套样本/批次及头容量不能混作上述Deconv40、alpha40或低alpha候选的测速。
+原run目录在已查位置不存在，归档未解压、原数据未删；冻结Qwen revision及旧环境
+完整重建仍未证明。见 [测速与权重绑定](../../../../../maintenance/storage/T02_BASELINE_TIMING_BINDING_20261006.json)。
 资产只读复核：`python maintenance/storage/check_t02_assets.py`；冻结前端另用
 `check_t01_assets.py` 核对同一snapshot。两者不运行任务入口、不加载模型、不写原run。
