@@ -1,0 +1,11 @@
+{
+  "source_archive_commit": "4fafce0f96306894d3d71e30b1298f469f35ef0e",
+  "previous_main_records_recoverable_at": "f34b6bf0381457f115940ce681d190c168ddb11b",
+  "server_working_sha256": {
+    "experiments/qwen3_vl_2b_lgvq_single_metric_o2_16frame_54/SPATIAL_OPTIMIZATION_RESULT.md": "f0e69352c2586e588ebd38e8bcba35e08518838c9241f74857cdc3e23034eefa",
+    "experiments/qwen3_vl_2b_lgvq_single_metric_o2_16frame_54/spatial_optimization_result.json": "ac498341c08cd0037900305fdda7e96460a4c32e8cc6d397dc25f7d233313b2d"
+  },
+  "scope": "Adopt exact already-preserved server historical four-stage ResNet-E1 Spatial records. Not the six-stage 95e12397 current hardware model; not a new measurement.",
+  "historical_configuration_status": "spatial_resnet_range140_final.yaml and original model dependencies must be resolved in the original lightgen_spatial_065 runtime; this record adoption does not claim main can run its original command",
+  "preserved": "Previous VGG report remains in Git history; all original data, weights, timing and current deployment code unchanged. Seven pre-existing deleted audit-file exceptions not restored or newly deleted."
+}

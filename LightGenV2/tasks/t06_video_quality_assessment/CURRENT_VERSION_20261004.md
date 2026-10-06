@@ -55,6 +55,12 @@ PT仍严格加载通过。测试不训练、不重新评估视频数据、不占
 
 ## 历史默认profile的实际问题
 
+服务器另有2026-09-10四阶段ResNet-E1历史Spatial候选，报告SRCC .666503，
+PT为 `6b05961f...`。其两份结果说明已按服务器原字节收敛至兼容后端，旧VGG
+报告仍在Git历史；见 [历史报告身份](../../../maintenance/storage/T06_HISTORICAL_SERVER_RECORD_ADOPTION_20261006.json)。
+它不是上表六阶段 `95e12397...` 实拍模型，也不替换当前默认profile。
+原 `lightgen_spatial_065` 的配置／实现闭包未据这两份报告证明可在main运行。
+
 Temporal-36是“单视频36帧”独立历史baseline，不是上述16视频×4帧实拍版本。
 当前默认profile及部分Spatial旧profile锁定的源码SHA与多个实际工作目录不匹配。
 部分权重只是移到别处，并未丢失：paired-flip Spatial best/last在服务器
