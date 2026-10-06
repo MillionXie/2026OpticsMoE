@@ -20,3 +20,9 @@ relocations. The remaining 24 entries are unresolved/missing/changed; this is
 not a complete release. No original file or expected SHA was changed to make
 the manifest pass. Git may normalize published text line endings; original
 payload SHA checks are byte-exact.
+
+The audit additionally locates all 15 missing baseline source/config members in
+their original Git commits. Their original SHA values match either stored bytes
+or explicitly reconstructed Windows CRLF bytes; all commits have existing refs.
+These files were not materialized, and the 24 local-export failures remain
+reported rather than silently treated as a complete package.
