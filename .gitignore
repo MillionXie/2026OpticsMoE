@@ -247,6 +247,15 @@ node_modules/
 /maintenance/storage/20261002_*.json
 /maintenance/storage/20261003_*.json
 
+# Copied T12 dataset split payloads are transferred with the dataset manifest,
+# not as source. Keep all metrics, predictions and timing JSONL visible.
+/handoffs/t12_small_baseline_handoff_20260928/stage/datasets/abo_cleanrender_lamp_table_pillow_256_v1/train.jsonl
+/handoffs/t12_small_baseline_handoff_20260928/stage/datasets/abo_cleanrender_lamp_table_pillow_256_v1/val.jsonl
+/handoffs/t12_small_baseline_handoff_20260928/stage/datasets/abo_cleanrender_lamp_table_pillow_256_v1/test.jsonl
+/handoffs/t12_small_baseline_share_20260928/package/assets/datasets/abo_cleanrender_lamp_table_pillow_256_v1/train.jsonl
+/handoffs/t12_small_baseline_share_20260928/package/assets/datasets/abo_cleanrender_lamp_table_pillow_256_v1/val.jsonl
+/handoffs/t12_small_baseline_share_20260928/package/assets/datasets/abo_cleanrender_lamp_table_pillow_256_v1/test.jsonl
+
 # 42 audited machine-local launch wrappers (fixed Windows interpreter/project
 # bindings only). Retain bytes and command history locally; no wildcard hiding
 # of future launchers, algorithms, configs, results or timing evidence.

@@ -10,6 +10,13 @@ ROOT = Path(__file__).resolve().parents[3]
 
 
 class ArtifactIgnoreTests(unittest.TestCase):
+    def test_dataset_split_payload_not_timing_or_predictions(self):
+        private = ['handoffs/t12_small_baseline_handoff_20260928/stage/datasets/abo_cleanrender_lamp_table_pillow_256_v1/' + split + '.jsonl' for split in ('train', 'val', 'test')]
+        public = ['LightGenV2/reports/timing/sample_preprocessing.jsonl',
+                  'LightGenV2/reports/baseline_plotting_20260922/_server_raw/openmoji/test_predictions.jsonl',
+                  'handoffs/future_dataset/train.jsonl']
+        self.assertEqual(self.ignored(private + public), set(private))
+
     def test_only_named_private_launchers_hidden(self):
         private = ['handoffs/abo_latestfresh35_lab_20260930/run_rank72_full.cmd',
                    'handoffs/openmoji_robust_ablation_20260928/midrank48_candidate/run_rank64_queue_20261002.cmd']
