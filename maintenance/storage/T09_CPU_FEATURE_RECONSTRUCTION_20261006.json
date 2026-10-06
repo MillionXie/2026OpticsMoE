@@ -1,0 +1,66 @@
+{
+  "read_only": true,
+  "device": "cpu",
+  "gradients": false,
+  "test_accessed": false,
+  "accuracy_evaluated": false,
+  "cache_written": false,
+  "rtol": 0.00001,
+  "atol": 0.00001,
+  "files_sha256": {
+    "/DATA/DATA1/guest3/demo_reproduction_20260915/LightGenV2/tasks/t09_multimodal_matching/runs/smoke/audio_feature_canonical_s17_v1/feature_cache.json": "d96a3e1c105062051184f4400691fbbd3aa63f18e6f1ca6005ec5cbd81e6f843",
+    "/DATA/DATA1/guest3/demo_reproduction_data/mini_speech_matching_s17_v3/manifest.json": "e20d789937a44512ce4c91f222ba99145e36c63f3ee386295585d61cc018c0c1",
+    "/DATA/DATA1/guest3/demo_reproduction_20260915/LightGenV2/tasks/t09_multimodal_matching/runs/simulation/audio_frontend_s17_v1/best_checkpoint.pt": "ce733c832a1bc7629cf9b5f63f22d46668fc5e1a5b0442cb97b092fca0a9b2b3",
+    "/DATA/DATA1/guest3/demo_reproduction_20260915/LightGenV2/tasks/t09_multimodal_matching/runs/smoke/audio_feature_canonical_s17_v1/feature_cache.npz": "45c71b367fe8602358d53c972ea852252e30f04bd379d675bf3a2eef7fda17ab",
+    "/DATA/DATA1/guest3/2026OpticsMoE/LightGenV2/tasks/t09_multimodal_matching/vision.py": "4cad72e1445f3a16373c4f697916a89b2526b4a900285eac6393928012052a1f",
+    "/DATA/DATA1/guest3/demo_reproduction_20260915/LightGenV2/tasks/t09_multimodal_matching/vision.py": "4cad72e1445f3a16373c4f697916a89b2526b4a900285eac6393928012052a1f",
+    "/DATA/DATA1/guest3/demo_reproduction_data/mini_speech_matching_s17_v3/train_images.npz": "ede6751c78d3b6234148a6e780890a3959c6350275429131e6e15def9fc81cda",
+    "/DATA/DATA1/guest3/demo_reproduction_data/mini_speech_matching_s17_v3/val_images.npz": "95502ae04741f7e66866b5fb63bc70fbe699acef82f86fd5e9e185a8b287d7f7"
+  },
+  "splits": {
+    "train": {
+      "images": 6263,
+      "shape": [
+        6263,
+        128
+      ],
+      "exact_bytes": false,
+      "allclose": false,
+      "max_absolute_error": 0.003530740737915039,
+      "mean_absolute_error": 0.00041712535146860483,
+      "outside_tolerance": 758838
+    },
+    "val": {
+      "images": 843,
+      "shape": [
+        843,
+        128
+      ],
+      "exact_bytes": false,
+      "allclose": false,
+      "max_absolute_error": 0.006251096725463867,
+      "mean_absolute_error": 0.0004226282865365209,
+      "outside_tolerance": 102082
+    }
+  },
+  "errors": [
+    "Numerical reconstruction differs: train",
+    "Numerical reconstruction differs: val"
+  ],
+  "frontend_source_equal_lf": true,
+  "original_assets_unchanged": true,
+  "passed": false,
+  "full_task_reproduction_proven": false,
+  "source_commit": "4d3f97cfbbcdc30325e0b2700febe18806d8f561",
+  "original_runtime_checkout_changed": false,
+  "physical_devices_used": false,
+  "recorded_accuracy_changed": false,
+  "interpretation": "Strict frontend PT load and exact source/input/cache identities pass. CPU reconstruction does not match canonical historical audio TRAIN/VAL cache at the fixed predeclared tolerance. Original cache remains a mandatory immutable historical replay asset; numerical device/kernel cause has not been isolated.",
+  "not_proven": [
+    "Historical CUDA arithmetic equivalence",
+    "TEST reconstruction",
+    "CLEVR CNN numeric reconstruction",
+    "Optical/model accuracy reproduction",
+    "Full T09 migration"
+  ]
+}

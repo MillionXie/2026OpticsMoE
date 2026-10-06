@@ -15,6 +15,14 @@
 这是只读来源与保存身份核验，不下载或重新准备数据；CNN数值重建、TEST特征重建及历史
 前向等价仍未证明，不称整个官方CLEVR或完整任务迁移已完成。旧数据、模型、结果和测速不动。
 
+随后只用CPU核对音文canonical CNN缓存：TRAIN6263／VAL843条输入、冻结前端PT及源码
+身份通过，但相对原缓存最大绝对差分别0.003531／0.006251，未通过预先固定的
+rtol=atol=1e-5；原缓存不能视为可无损重建的临时文件。复用历史结果必须保留
+`smoke/audio_feature_canonical_s17_v1/feature_cache.npz`及JSON侧车，SHA见上述缓存绑定记录。
+这不是精度复评，不能据此认定历史指标错误，也不能把CPU误差归因于某个GPU设置。
+证据见[CPU数值核对](../../../maintenance/storage/T09_CPU_FEATURE_RECONSTRUCTION_20261006.json)。
+TEST、CLEVR CNN数值与完整前向等价仍未覆盖；不改旧缓存、PT或测量口径。
+
 只比较两层主光路的 MoE+逐层OEO 与 D2NN+逐层OEO；MoE额外路由相位单列。
 首先比较 CLEVR 图文任务中的固定词编码与共享可训练 Embedding+GRU；
 Speech Commands 音文已完成有CNN、无CNN三种布局及上下布局OEO恢复训练，详见复现入口。
