@@ -195,3 +195,22 @@ node_modules/
 /ABO_Lab_8um/*/assets/test_dataset/images/**/*.jpg
 /ABO_Lab_8um/*/assets/test_dataset/images/**/*.jpeg
 /ABO_Lab_8um/*/reference_phases/*.bmp
+
+# Generated per-sample scene labels; dataset_summary/native-cache manifests
+# and all builders/configs stay visible. Labels remain on disk with imagery.
+/LightGenV2/tasks/t04_semantic_interaction/dataset/openmoji_grid_v2/train/train_*/scene.json
+/LightGenV2/tasks/t04_semantic_interaction/dataset/openmoji_grid_v2/test/test_*/scene.json
+
+# Machine-local experiment plates and capture previews, not Python sources or
+# metric/identity records. Already tracked publication figures remain tracked.
+/LightGenV2/tasks/*/reports/**/*.png
+/LightGenV2/tasks/*/reports/**/*.jpg
+/LightGenV2/tasks/*/reports/**/*.jpeg
+/LightGenV2/tasks/*/reports/**/*.bmp
+/LightGenV2/reports/**/*.png
+/LightGenV2/reports/**/*.jpg
+/LightGenV2/reports/**/*.jpeg
+/LightGenV2/reports/**/*.bmp
+/ABO_Lab_8um/reports/**/*.png
+/ABO_Lab_SHS_8um/reports/**/*.png
+/TransferFromElectricity/tasks/*/reports/**/*.png

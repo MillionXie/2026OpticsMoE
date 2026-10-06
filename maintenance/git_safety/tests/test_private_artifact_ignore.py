@@ -42,6 +42,10 @@ class ArtifactIgnoreTests(unittest.TestCase):
                   'ABO_Lab_8um/original_a100/assets/test_dataset/images/product/image.jpg',
                   'ABO_Lab_8um/original_inference/assets/test_dataset/images/product/image.jpeg',
                   'ABO_Lab_8um/original_optics/reference_phases/vision_router.bmp']
+        images += ['LightGenV2/tasks/t04_semantic_interaction/dataset/openmoji_grid_v2/train/train_000001/scene.json',
+                   'LightGenV2/tasks/t04_semantic_interaction/dataset/openmoji_grid_v2/test/test_000001/scene.json',
+                   'LightGenV2/tasks/t07_abo_image_retrieval/reports/bringup/ccd.png',
+                   'LightGenV2/reports/timing/latency_plot.png']
         self.assertEqual(self.ignored(images), set(images))
         sources = ['LightGenV2/tasks/t04_semantic_interaction/dataset/openmoji_grid_v2/prepare.py',
                    'LightGenV2/tasks/t04_semantic_interaction/dataset/openmoji_grid_v2/manifest.json',
@@ -50,6 +54,11 @@ class ArtifactIgnoreTests(unittest.TestCase):
                    'ABO_Lab_8um/original_a100/assets/test_dataset/manifest.json',
                    'ABO_Lab_8um/original_a100/reference_phases/manifest.json',
                    'ABO_Lab_8um/original_a100/reports/timing.csv']
+        sources += ['LightGenV2/tasks/t04_semantic_interaction/dataset/openmoji_grid_v2/dataset_summary.json',
+                    'LightGenV2/tasks/t04_semantic_interaction/dataset/openmoji_grid_v2/train/train_000001/config.yaml',
+                    'LightGenV2/reports/timing/timing_per_sample.csv',
+                    'LightGenV2/reports/timing/source_snapshot/measure.py',
+                    'LightGenV2/tasks/t07_abo_image_retrieval/reports/bringup/manifest.json']
         self.assertEqual(self.ignored(sources), set())
 
 
