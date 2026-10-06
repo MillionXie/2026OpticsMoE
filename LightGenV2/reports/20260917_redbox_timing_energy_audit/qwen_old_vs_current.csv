@@ -1,0 +1,10 @@
+task,old_redbox_time_ms,old_redbox_energy_j,old_clock,current_time_ms,current_energy_j,current_clock,current_variant,current_evidence
+LGVQ temporal,1200.0529824533771,103.78361277310392,CUDA Event batch1 x16,850.5559262409005,136.552869125074,Synchronized Wall,batch1 x16,evidence/current_qwen_firstblock_final/formal_summary.csv
+LGVQ temporal,1200.0529824533771,103.78361277310392,CUDA Event batch1 x16,507.7244620169363,100.8037278758245,Synchronized Wall,batch2 x8 to 16 videos,evidence/current_qwen_firstblock_final/formal_summary.csv
+LGVQ temporal,1200.0529824533771,103.78361277310392,CUDA Event batch1 x16,405.3076629638672,96.53687646824007,CUDA Event native batch16,historical audited native batch16,evidence/historical_git_7d5b05e9/LightGenV2/tasks/t06_video_quality_assessment/reports/a100_audited_table_20260907/summary.csv
+LGVQ spatial,74.43764681115373,6.241979920032041,CUDA Event,81.11779447845234,6.990707474819282,Synchronized Wall,fresh consolidated,evidence/current_qwen_firstblock_final/formal_summary.csv
+ABO image-to-text,43.963330574035645,3.792156762959513,CUDA Event,40.24229593,3.2469410554372984,Synchronized Wall,fresh consolidated,evidence/current_qwen_firstblock_final/formal_summary.csv
+ABO image-to-image,49.17415945053101,4.079499988282035,CUDA Event,48.6280039,3.4904579234503115,Synchronized Wall,fresh consolidated,evidence/current_qwen_firstblock_final/formal_summary.csv
+LSP,18.015795187950133,1.4524269738399729,CUDA Event,16.97132458,1.0704773814368713,Synchronized Wall,fresh consolidated,evidence/current_qwen_firstblock_final/formal_summary.csv
+SALICON,19.14109441757202,1.5514480724024267,CUDA Event,20.03824173,1.1013534233181081,Synchronized Wall,fresh consolidated,evidence/current_qwen_firstblock_final/formal_summary.csv
+OpenMoji,49.053312212228775,4.476461878901882,historical model-boundary mean,47.146785984999994,3.367611913436664,Synchronized Wall,fresh consolidated,evidence/current_qwen_firstblock_final/formal_summary.csv
