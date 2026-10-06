@@ -13,5 +13,18 @@
   "artifact_policy": "Original report, per-query predictions, weights, 14400 valid CCD and receipts remain in original locations; no duplicate dataset or checkpoint in Git",
   "selection_disclosure": "Original query800 used in development, not independent generalization",
   "current_version_latency_verified": false,
-  "sealed_by_user": true
+  "sealed_by_user": true,
+  "capture_storage_read_only_recheck_20261006": {
+    "runtime_run": "E:/code/guest/2026OpticsMoE/ABO_I2I_Lab_DVP_8um/candidate_latergb_rank72_20260930/runs/layerwise_selected2400_20260929",
+    "report_sha256": "94947127262ead3fc440b5e67b513f0038949b25795c5be0b916305d251e6eef",
+    "report_bytes": 186815,
+    "formal_stages": ["vision_router", "vision_expert", "vision_global", "language_router", "language_expert", "language_global"],
+    "png_per_formal_stage": 2400,
+    "json_receipts_per_formal_stage": 2400,
+    "formal_png_total": 14400,
+    "warmup_directories_separate": true,
+    "rejected_dark_attempt_directories_present": 3,
+    "runtime_or_assets_modified": false,
+    "scope": "Known report bytes and directory counts only; not per-CCD SHA, pairing, signal quality or fresh accuracy evaluation"
+  }
 }
