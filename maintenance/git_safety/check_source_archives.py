@@ -41,7 +41,10 @@ def inspect_manifest(root, manifest):
             errors.append('Original path reoccupied; review before restoring: '+name)
     reports = manifest.get('preserved_original_report_sha256', manifest.get('preserved_original_reports', {}))
     for relative, digest in reports.items():
-        path = confined(root, relative)
+        if manifest.get('preserved_report_location') == 'archive_directory_with_original_basename':
+            path = confined(root, str(archive / Path(relative).name))
+        else:
+            path = confined(root, relative)
         if not path.is_file() or hashlib.sha256(path.read_bytes()).hexdigest() != digest:
             errors.append('Preserved report missing or changed: '+relative)
     return {'sources_checked': checked, 'reports_checked': len(reports), 'errors': errors}

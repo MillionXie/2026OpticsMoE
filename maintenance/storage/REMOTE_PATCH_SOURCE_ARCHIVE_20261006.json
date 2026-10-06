@@ -32,8 +32,10 @@
     "remote_patch/VISUAL_BACKBONE_BASELINES.md": "c21b60c74ccb38bb0054f26c00523b3c494af5198234c82184b3f754a799fc78",
     "remote_patch/VISUAL_BACKBONE_LGVQ_20260922.md": "57dc0486f4e03db909d9aab11389f79173c1e93a93bb1a9730feaab7e0090ec1"
   },
-  "source_only_move": true,
-  "timing_or_data_files_moved": false,
+  "preserved_report_location": "archive_directory_with_original_basename",
+  "report_followup": "Two original reports moved recoverably after canonical T06 documentation publication; SHA unchanged. Original timing statements remain in archived bytes; no measurement data deleted.",
+  "source_only_move": false,
+  "timing_or_data_files_moved": "Two historical protocol/result documents moved; raw timing/data not moved",
   "files_deleted": false,
   "restore": "Verify SHA then move individual source to original path without overwriting"
 }

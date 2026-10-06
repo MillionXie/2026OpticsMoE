@@ -16,7 +16,9 @@
     "remote_staging/abo_summary.json": "86c84759387c2daa0894ccea4f339b87c1702890f745532fee54f09141b41c12",
     "remote_staging/RESULTS.md": "04fb09acf0e8356f4687475ce5c1314bafc64e245128c4be2f3653580a7ee03e"
   },
-  "restore": "Verify archived SHA then move the selected source back to its original path only if that destination does not exist",
+  "preserved_report_location": "archive_directory_with_original_basename",
+  "report_followup": "Four original reports moved recoverably after their canonical baseline records were published; original SHA unchanged, no metric or measurement bytes deleted.",
+  "restore": "Verify archived SHA then move the selected source or report back to its original path only if that destination does not exist",
   "running_python_or_node_using_path_observed": false,
   "static_runtime_reference_found_in_LightGenV2_or_maintenance": false,
   "external_dynamic_references_exhaustively_proven_absent": false,
