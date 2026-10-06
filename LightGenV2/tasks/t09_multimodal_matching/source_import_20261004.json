@@ -113,7 +113,15 @@
     },
     {
       "path": "LightGenV2/tasks/t09_multimodal_matching/reports/reproduction/README.md",
-      "source_blob_sha256": "a33956614ea476b19e743c18cc809070ff8bb249f1d1a90b1c01dd584c6cdcfc"
+      "source_blob_sha256": "0a7cd8447eb20f6dd6d25a40cfe23f452214ec4e589dfb37714169d437345a30",
+      "hash_normalization": "crlf_to_lf",
+      "original_import_blob_sha256": "a33956614ea476b19e743c18cc809070ff8bb249f1d1a90b1c01dd584c6cdcfc",
+      "post_import_review": {
+        "commit": "33e0f9798f98294a9728a4dea0cebbead4864b5a",
+        "purpose": "Redirect eight unavailable source-checkout asset links to the existing preserved-location ledger, retaining filenames and all historical result tables.",
+        "original_import_commit": "479877944cf6d364e0571eaf34578f05ccfb2171",
+        "scope": "Current documentation hash only. Historical runtime and artifact identity manifests remain unchanged; no model, data, figures or metrics altered."
+      }
     },
     {
       "path": "LightGenV2/tasks/t09_multimodal_matching/run.py",
