@@ -40,15 +40,17 @@ ABO/OpenMoji工作树尚未全部切换，不能因源码引用已同步而覆�
 Set-Location C:\path\to\2026OpticsMoE
 conda activate xml
 
-# 检查新工程和 T06 后端
-python -m LightGenV2.scripts.check_environment --task t06
+# 检查基础Python/Torch环境；不代表任务数据或硬件已就绪
+python -m LightGenV2.scripts.check_environment
 
-# 不读取数据的 CPU 结构冒烟测试
-python -m LightGenV2.tasks.t06_video_quality_assessment --phase smoke
+# 不读取正式数据/PT的T06 CPU模型合同检查
+python -m pytest experiments/qwen3_vl_2b_lgvq_single_metric_o2_16frame_54/tests/test_model_and_training.py -q
 ```
 
 T06 的训练、评估、硬件六阶段和打包命令全部集中在
 [`tasks/t06_video_quality_assessment/README.md`](tasks/t06_video_quality_assessment/README.md)。
+T06旧兼容profile可用 `check_environment --task t06 --profile <名称>` 检查。
+缺失PT/输入或源码SHA不匹配会返回失败，不能把基础环境检查通过当作当前实拍版就绪。
 
 ## 数据和运行产物放在哪里
 

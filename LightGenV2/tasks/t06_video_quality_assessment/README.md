@@ -6,7 +6,7 @@
 两份正式PT严格加载；旧Temporal-36默认profile和后续实拍微调入口仍须单独核验。
 
 
-## 当前结论
+## 历史仿真结论（不替代上方当前实拍版本）
 
 Spatial 的当前正式归档是 `spatial_single_video4_balanced`：一条视频均匀取 4 帧并排成
 2×2，**没有多视频复用**。它使用两套物理光 Router Top-2、六次光传播和 20% 名义
@@ -75,6 +75,14 @@ configs/lightgen/temporal36_balanced.yaml
 ## 仿真操作顺序
 
 以下命令都从 `2026OpticsMoE` 根目录执行。
+
+2026-10-06预检修正：`check_environment --task t06` 仍检查历史Temporal-36，
+但不再仅因Torch可用就返回成功。后端/config/PT身份及已列输入路径有问题时返回2，
+错误以JSON报告；`--profile <旧兼容profile名称>` 可显式选择，不自动换成另一架构。
+本机实查默认PT和缓存缺失，五份后端SHA不匹配，因此当前默认预检失败；
+这不是宣布文件被删除，也不是允许更新SHA绕过检查。检查范围不含缓存语义或SDK。
+正式Spatial/Temporal实拍版本仍从上方 `CURRENT_VERSION_20261004.md` 查精确入口，
+不据旧默认预检或下方历史命令称它们已在本机可运行。
 
 ```powershell
 # 1. 环境和文件检查
