@@ -202,7 +202,20 @@
       "hardware_source_entry": "tasks/t12_text_to_image/lab_shs8um/SOURCE_STATUS_20261006.md",
       "protected_dependencies": ["/DATA/DATA1/guest3/t12_git_audited_20260926", "/DATA/DATA1/guest3/t12_text_to_image_20260920"],
       "evidence": ["../handoffs/t12_lab_robust17m_20260927/README.md", "../handoffs/t12_lab_robust17m_20260927/report.json", "tasks/t12_text_to_image/reports/reproduction/README.md"],
-      "weights": [{"sha256": "5b4f9a37f19ce95cf23e4b874badc8e88955559553d47929fb80cd3cbf527cac", "identity": "17M robust physical full TEST2304; distinct from 149.76M/9.96M audited editors"}],
+      "weights": [
+        {"sha256": "5b4f9a37f19ce95cf23e4b874badc8e88955559553d47929fb80cd3cbf527cac", "identity": "17M robust physical full TEST2304; distinct from 149.76M/9.96M audited editors"},
+        {
+          "sha256": "eeeca764b11a23613459fdae0a190fdba362a6e3bdeed9180279d9031c297a14",
+          "identity": "17M VAL-selected epoch20 terminal decoder adaptation on original CCD; separate PT from original 5b4f",
+          "remote_path": "E:/code/guest/2026OpticsMoE/T12_Small_Lab_SHS_8um/runs/decoder20_trainonly_20260927/best.pt",
+          "remote_sha_verified_date": "2026-10-07",
+          "main_strict_cpu_load_verified": false,
+          "report": "../handoffs/t12_lab_robust17m_20260927/decoder20_trainonly/report.json",
+          "physical_psnr_db": 31.552886477155695,
+          "same_weight_simulation_psnr_db": 28.89061229453152,
+          "current_version_latency_verified": false
+        }
+      ],
       "data_status": "preserve_TEST2304_13824_CCD_and_all_native_output_images",
       "timing_status": "6056s_capture_plus_final_inference_not_per_sample_latency",
       "current_version_latency_verified": false
