@@ -1,5 +1,10 @@
 # T06 冻结 CLIP／YOLO baseline 入口恢复
 
+2026-10-06后续：本地remote_patch四份旧源码/配置与当前main逐内容复核后，
+已原样移入`archive/source_staging_20261006/remote_patch`；不是重新运行baseline。
+两份原说明及含测速的结果报告仍在remote_patch原位、SHA不变。
+恢复清单见`REMOTE_PATCH_SOURCE_ARCHIVE_20261006.json`，下文“不移动”的描述是之前审查时状态。
+
 2026-10-05，发现当前 main 缺少旧已运行视觉 baseline 的运行模块、两份配置、原测试和
 协议说明。本轮从原运行提交 `95904ecf97bcefe4a7ae76a6eab08a1d7cb217f0` 逐文件原样纳入：
 

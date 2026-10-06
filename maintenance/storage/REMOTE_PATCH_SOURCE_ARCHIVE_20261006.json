@@ -1,0 +1,39 @@
+{
+  "date": "2026-10-06",
+  "original_directory": "remote_patch",
+  "archive_directory": "archive/source_staging_20261006/remote_patch",
+  "files": [
+    {
+      "name": "visual_backbone_quality.py",
+      "sha256": "a67b38b0665c5e2ee76eec156cb7887a32117bcb66fde1f8849c7c672a77b09c",
+      "main_path": "LightGenV2/tasks/t06_video_quality_assessment/visual_backbone_quality.py",
+      "main_blob_sha256": "a67b38b0665c5e2ee76eec156cb7887a32117bcb66fde1f8849c7c672a77b09c"
+    },
+    {
+      "name": "test_visual_backbone_quality.py",
+      "sha256": "20eb5ab5c02576a57ae79be175c814eebb7de98b38ca82557e4700d57d025983",
+      "main_path": "LightGenV2/tasks/t06_video_quality_assessment/tests/test_visual_backbone_quality.py",
+      "main_blob_sha256": "20eb5ab5c02576a57ae79be175c814eebb7de98b38ca82557e4700d57d025983"
+    },
+    {
+      "name": "clip_vit_b32_lgvq_4f_r224.yaml",
+      "sha256": "43b246eadb4cebab1af21e7449f50e7ff276dd035c7a797ec42fd8c63a768a46",
+      "main_path": "LightGenV2/tasks/t06_video_quality_assessment/configs/baselines/clip_vit_b32_lgvq_4f_r224.yaml",
+      "main_blob_sha256": "43b246eadb4cebab1af21e7449f50e7ff276dd035c7a797ec42fd8c63a768a46"
+    },
+    {
+      "name": "yolo11s_lgvq_4f_r640.yaml",
+      "sha256": "fbabfc1ebd91722b5cc5a010bb66b7a71c0dc801da535728f2864f113c929e91",
+      "main_path": "LightGenV2/tasks/t06_video_quality_assessment/configs/baselines/yolo11s_lgvq_4f_r640.yaml",
+      "main_blob_sha256": "fbabfc1ebd91722b5cc5a010bb66b7a71c0dc801da535728f2864f113c929e91"
+    }
+  ],
+  "preserved_original_reports": {
+    "remote_patch/VISUAL_BACKBONE_BASELINES.md": "c21b60c74ccb38bb0054f26c00523b3c494af5198234c82184b3f754a799fc78",
+    "remote_patch/VISUAL_BACKBONE_LGVQ_20260922.md": "57dc0486f4e03db909d9aab11389f79173c1e93a93bb1a9730feaab7e0090ec1"
+  },
+  "source_only_move": true,
+  "timing_or_data_files_moved": false,
+  "files_deleted": false,
+  "restore": "Verify SHA then move individual source to original path without overwriting"
+}
