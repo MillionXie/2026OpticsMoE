@@ -10,6 +10,15 @@ ROOT = Path(__file__).resolve().parents[3]
 
 
 class ArtifactIgnoreTests(unittest.TestCase):
+    def test_t12_share_only_reviewed_source_export_is_private(self):
+        prefix = 'handoffs/t12_small_baseline_share_20260928/package/'
+        private = [prefix + 'source/LightGenV2/common/__init__.py']
+        visible = [prefix + 'export_pairs.py', prefix + 'infer_ours.py',
+                   prefix + 'source/LightGenV2/tasks/t12_text_to_image/README.md',
+                   prefix + 'source/LightGenV2/tasks/t12_text_to_image/reports/reproduction/README.md',
+                   prefix + 'source/LightGenV2/tasks/t12_text_to_image/future_experiment.py',
+                   'LightGenV2/tasks/t12_text_to_image/sealed_editor.py']
+        self.assertEqual(self.ignored(private + visible), set(private))
     def test_demo_payload_ignore_keeps_source_and_future_evidence_visible(self):
         prefix = 'LightGenV2/reports/20260927_demo_energy_efficiency_a100/'
         private = [prefix + 'raw_remote/ours/narrow_200_no_warmup/all_per_call_timings.csv']

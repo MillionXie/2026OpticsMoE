@@ -1,0 +1,2109 @@
+{
+  "scope": "231 individually reviewed immutable T12 share-package source exports; Git visibility only",
+  "authoritative_source": "Main or historical 7093ec46082eed2fae127ec5028d3e2e8548b592; no model/data contract changes",
+  "historical_recovery": {
+    "archive_ref": "refs/archive/server-authoritative-20261002/t12_physical_robust_v2_20260927",
+    "commit": "7093ec46082eed2fae127ec5028d3e2e8548b592",
+    "bundle_bytes": 136274854,
+    "bundle_sha256": "6b363586ea59854358aee434b65506e57f7d284b7180131cd102767d37b6fed5",
+    "prerequisite_main": "b8a236630ea74fb5e02bd31646aaf2814d98bef5",
+    "hosts_verified": [
+      "local",
+      "training_server",
+      "laboratory_source_object_store"
+    ],
+    "historical_files_verified_per_host": 186,
+    "meaning": "Historical Git object recovery, not a complete dataset/weight/environment backup"
+  },
+  "main_files_verified": 45,
+  "all_files_original_locations_retained": true,
+  "files_deleted_or_moved": false,
+  "active_runtime_checkout_changed": false,
+  "preserved_visible": [
+    "package/export_pairs.py",
+    "package/infer_ours.py",
+    "package/source/LightGenV2/tasks/t12_text_to_image/README.md",
+    "package/source/LightGenV2/tasks/t12_text_to_image/reports/reproduction/README.md"
+  ],
+  "files": [
+    {
+      "path": "handoffs/t12_small_baseline_share_20260928/package/source/LightGenV2/__init__.py",
+      "sha256": "7583c0f8f7d32980ef12d636f6880dbaa4640d7229ed0392c4ef73ba8187b700",
+      "bytes": 94,
+      "git_commit": "b8a236630ea74fb5e02bd31646aaf2814d98bef5",
+      "git_path": "LightGenV2/__init__.py",
+      "git_sha256": "22f1d762857916ed1e5a173a60fa7d864cd10139f40fa9c249c38fbeb86ea92e",
+      "identity": "CRLF_only"
+    },
+    {
+      "path": "handoffs/t12_small_baseline_share_20260928/package/source/LightGenV2/common/README.md",
+      "sha256": "f797e2fc08e99d8098c0bc2eb17f1bc035311a7d60f52d85dfa7f42477468855",
+      "bytes": 414,
+      "git_commit": "7093ec46082eed2fae127ec5028d3e2e8548b592",
+      "git_path": "LightGenV2/common/README.md",
+      "git_sha256": "470ff7266247961ef0771cd09b7dc244ec83961ea22833ada41516e41a0e30a6",
+      "identity": "CRLF_only"
+    },
+    {
+      "path": "handoffs/t12_small_baseline_share_20260928/package/source/LightGenV2/common/__init__.py",
+      "sha256": "dbc2bc5e8ceae111501eac4eb3bb6451b465d88561858288e4cb9073fec7b864",
+      "bytes": 66,
+      "git_commit": "7093ec46082eed2fae127ec5028d3e2e8548b592",
+      "git_path": "LightGenV2/common/__init__.py",
+      "git_sha256": "9c45fcd75fdf41e73a9bf81e29f3c8ef9179704a494357d054896df7b33befb5",
+      "identity": "CRLF_only"
+    },
+    {
+      "path": "handoffs/t12_small_baseline_share_20260928/package/source/LightGenV2/common/baseline_measurement.py",
+      "sha256": "4b2ea89f9ae5ee486eae08c74f5675c6dab5e7eea074d6f49a4c793052c55e87",
+      "bytes": 9528,
+      "git_commit": "7093ec46082eed2fae127ec5028d3e2e8548b592",
+      "git_path": "LightGenV2/common/baseline_measurement.py",
+      "git_sha256": "0036bfca8d9590b55a2a303e4ac7b6fbf11eb51d22be8377472e9e0e7d9e623f",
+      "identity": "CRLF_only"
+    },
+    {
+      "path": "handoffs/t12_small_baseline_share_20260928/package/source/LightGenV2/tasks/__init__.py",
+      "sha256": "0ebf9e5b6849f401cc11e58afa619bd6fbb2869d1a09c72039c2f2cb7a147c75",
+      "bytes": 45,
+      "git_commit": "b8a236630ea74fb5e02bd31646aaf2814d98bef5",
+      "git_path": "LightGenV2/tasks/__init__.py",
+      "git_sha256": "cb7dde6e220a684ccb22efb1d4af40540497d7a7753c6692b24546411515c6f6",
+      "identity": "CRLF_only"
+    },
+    {
+      "path": "handoffs/t12_small_baseline_share_20260928/package/source/LightGenV2/tasks/t12_text_to_image/__init__.py",
+      "sha256": "ef066090348a49e3703294be455b3d901b7c58fc02ac610ff2b9e94d0f275a1c",
+      "bytes": 175,
+      "git_commit": "7093ec46082eed2fae127ec5028d3e2e8548b592",
+      "git_path": "LightGenV2/tasks/t12_text_to_image/__init__.py",
+      "git_sha256": "e47cf77eed3fcf9be4d8df4c52497dca404ac4602b29e3073746e55e34a02ca7",
+      "identity": "CRLF_only"
+    },
+    {
+      "path": "handoffs/t12_small_baseline_share_20260928/package/source/LightGenV2/tasks/t12_text_to_image/__main__.py",
+      "sha256": "c9038eb769f734c630b92af9280e133e47f5457a4097bbb252b8ef64ed308aaf",
+      "bytes": 51,
+      "git_commit": "7093ec46082eed2fae127ec5028d3e2e8548b592",
+      "git_path": "LightGenV2/tasks/t12_text_to_image/__main__.py",
+      "git_sha256": "554f8b7213c6212748e01b23467b7539aa7b14827dc2bfa4ba0982369a4b69fb",
+      "identity": "CRLF_only"
+    },
+    {
+      "path": "handoffs/t12_small_baseline_share_20260928/package/source/LightGenV2/tasks/t12_text_to_image/audit_checkpoint_components.py",
+      "sha256": "ecda6d2bf4f60ec376e4003f8454b46080b0b211ab477a61ac762d5b183f4b1b",
+      "bytes": 3952,
+      "git_commit": "7093ec46082eed2fae127ec5028d3e2e8548b592",
+      "git_path": "LightGenV2/tasks/t12_text_to_image/audit_checkpoint_components.py",
+      "git_sha256": "eeaa7a446c97d00f1605954b40d051aa6034e2027c3a10d9b6b12c34b5657f1d",
+      "identity": "CRLF_only"
+    },
+    {
+      "path": "handoffs/t12_small_baseline_share_20260928/package/source/LightGenV2/tasks/t12_text_to_image/audit_unified_ablation.py",
+      "sha256": "e317c54f426e52e5a90f4b03e84558b000bb35e27abf521f3dab534007c774df",
+      "bytes": 6780,
+      "git_commit": "7093ec46082eed2fae127ec5028d3e2e8548b592",
+      "git_path": "LightGenV2/tasks/t12_text_to_image/audit_unified_ablation.py",
+      "git_sha256": "07af44d4445a8909a19faa54f21a9b18735ba691708d3378ffed1d4fa9f2b010",
+      "identity": "CRLF_only"
+    },
+    {
+      "path": "handoffs/t12_small_baseline_share_20260928/package/source/LightGenV2/tasks/t12_text_to_image/audit_unified_optics.py",
+      "sha256": "ea51001b56d325fb404fc39fd93cfe8034813280d0f2fad09e70ea09f3779ef3",
+      "bytes": 10002,
+      "git_commit": "7093ec46082eed2fae127ec5028d3e2e8548b592",
+      "git_path": "LightGenV2/tasks/t12_text_to_image/audit_unified_optics.py",
+      "git_sha256": "dd815a0a2deb2757b9bbcc12e6b0219c3522113aa11c4eb8bb46de3b33400551",
+      "identity": "CRLF_only"
+    },
+    {
+      "path": "handoffs/t12_small_baseline_share_20260928/package/source/LightGenV2/tasks/t12_text_to_image/audit_unified_seed.py",
+      "sha256": "0ea722d46094d5f9a1f2c6e4fa683901b165822bf4fc4a1071aa57bf643cb1fb",
+      "bytes": 7417,
+      "git_commit": "7093ec46082eed2fae127ec5028d3e2e8548b592",
+      "git_path": "LightGenV2/tasks/t12_text_to_image/audit_unified_seed.py",
+      "git_sha256": "eb876241f01a8cc5403fc7abfb9e69020d355e8f7a36907837ad00b487f30895",
+      "identity": "CRLF_only"
+    },
+    {
+      "path": "handoffs/t12_small_baseline_share_20260928/package/source/LightGenV2/tasks/t12_text_to_image/audited_unified.py",
+      "sha256": "1bdbdd1382bf0b53f715ccfe30f8dbf62ca214571763235d3f8cf937893b31b0",
+      "bytes": 22148,
+      "git_commit": "b8a236630ea74fb5e02bd31646aaf2814d98bef5",
+      "git_path": "LightGenV2/tasks/t12_text_to_image/audited_unified.py",
+      "git_sha256": "eff3e15db314f80bce3b28dd5c4835e69292238fbdec9b4f984f2638b2f7f0cd",
+      "identity": "CRLF_only"
+    },
+    {
+      "path": "handoffs/t12_small_baseline_share_20260928/package/source/LightGenV2/tasks/t12_text_to_image/audited_unified_run.py",
+      "sha256": "ff9922bf0c9528345a19ee3849d3fdb133b5c0bc83ea7edd7c43aaffaa76370d",
+      "bytes": 40111,
+      "git_commit": "b8a236630ea74fb5e02bd31646aaf2814d98bef5",
+      "git_path": "LightGenV2/tasks/t12_text_to_image/audited_unified_run.py",
+      "git_sha256": "80303fbff056d9bb3d0e0f8c3de5ba15a9fd0f97a1146afe91ac08b331c4f43b",
+      "identity": "CRLF_only"
+    },
+    {
+      "path": "handoffs/t12_small_baseline_share_20260928/package/source/LightGenV2/tasks/t12_text_to_image/benchmark_audited_editors.py",
+      "sha256": "b6c7b3cb6f5ef9ab21b08734deff1a459537c792b1ecfaf3a825ec9ba68cb00d",
+      "bytes": 13245,
+      "git_commit": "7093ec46082eed2fae127ec5028d3e2e8548b592",
+      "git_path": "LightGenV2/tasks/t12_text_to_image/benchmark_audited_editors.py",
+      "git_sha256": "722a006915785502761baab4d5f2230c5651f6d6996c7e05fe77b037ccaa470a",
+      "identity": "CRLF_only"
+    },
+    {
+      "path": "handoffs/t12_small_baseline_share_20260928/package/source/LightGenV2/tasks/t12_text_to_image/benchmark_product_editors.py",
+      "sha256": "9462682f8800031364d82f698e91aaff7a6a268415c65e14329fd87e15aec24e",
+      "bytes": 7800,
+      "git_commit": "7093ec46082eed2fae127ec5028d3e2e8548b592",
+      "git_path": "LightGenV2/tasks/t12_text_to_image/benchmark_product_editors.py",
+      "git_sha256": "0a0209e2926eeda7cf5f0aaf4eeb8a46e691e66cc6190bdefacccd14e1133e94",
+      "identity": "CRLF_only"
+    },
+    {
+      "path": "handoffs/t12_small_baseline_share_20260928/package/source/LightGenV2/tasks/t12_text_to_image/benchmark_three_task_bundle.py",
+      "sha256": "6587421c6707ae362ba4da05fe8b4c646cd7cb0fb4e80af87a19a8b06c149e2e",
+      "bytes": 14419,
+      "git_commit": "7093ec46082eed2fae127ec5028d3e2e8548b592",
+      "git_path": "LightGenV2/tasks/t12_text_to_image/benchmark_three_task_bundle.py",
+      "git_sha256": "4034ee3b0625ee2178931b194007f3394e17dfbd1b4eb327267b1b2debada56f",
+      "identity": "CRLF_only"
+    },
+    {
+      "path": "handoffs/t12_small_baseline_share_20260928/package/source/LightGenV2/tasks/t12_text_to_image/benchmark_unified_256.py",
+      "sha256": "40de331d3d47bdbb0fd1a9e6781d9032956420240d34fce5c4257fc329e0b787",
+      "bytes": 6062,
+      "git_commit": "7093ec46082eed2fae127ec5028d3e2e8548b592",
+      "git_path": "LightGenV2/tasks/t12_text_to_image/benchmark_unified_256.py",
+      "git_sha256": "4a1acc6d96875728663ce45e1c0534e5b06d15266c5efdccd60b02a81d3e851f",
+      "identity": "CRLF_only"
+    },
+    {
+      "path": "handoffs/t12_small_baseline_share_20260928/package/source/LightGenV2/tasks/t12_text_to_image/build_lab_package.py",
+      "sha256": "5ebceff5231a0f3a5c67eac22a87043f11fbca541a58a5cfc44726f2aa912c71",
+      "bytes": 4951,
+      "git_commit": "7093ec46082eed2fae127ec5028d3e2e8548b592",
+      "git_path": "LightGenV2/tasks/t12_text_to_image/build_lab_package.py",
+      "git_sha256": "2adb10d365b23d0c77a363b6d4ec45da82be4783286219ee7976d078f377653a",
+      "identity": "CRLF_only"
+    },
+    {
+      "path": "handoffs/t12_small_baseline_share_20260928/package/source/LightGenV2/tasks/t12_text_to_image/chair_style_cache.py",
+      "sha256": "b90eb9a7e30ee6d3bea5f386cd7c890c09cf271eae50fb7e1c742263e8d429da",
+      "bytes": 1767,
+      "git_commit": "7093ec46082eed2fae127ec5028d3e2e8548b592",
+      "git_path": "LightGenV2/tasks/t12_text_to_image/chair_style_cache.py",
+      "git_sha256": "b4e1adaeb90ed2549414493d024f8a5a9ad4b4643a46f396fb5df9285f9b472f",
+      "identity": "CRLF_only"
+    },
+    {
+      "path": "handoffs/t12_small_baseline_share_20260928/package/source/LightGenV2/tasks/t12_text_to_image/chair_style_infer.py",
+      "sha256": "eb0a9301c2cec5f245af1e56e59ca72ee739aab26ee9ea5d9089461ec0157af5",
+      "bytes": 1557,
+      "git_commit": "7093ec46082eed2fae127ec5028d3e2e8548b592",
+      "git_path": "LightGenV2/tasks/t12_text_to_image/chair_style_infer.py",
+      "git_sha256": "50cd0be2958ca89dda002ffede8d9fe87569b4fcf11854f951d993957ae4e6f8",
+      "identity": "CRLF_only"
+    },
+    {
+      "path": "handoffs/t12_small_baseline_share_20260928/package/source/LightGenV2/tasks/t12_text_to_image/chair_style_run.py",
+      "sha256": "c8538bda5fc350dda04324dc18b4c342415fadec5f014f7240648bc163953933",
+      "bytes": 1767,
+      "git_commit": "7093ec46082eed2fae127ec5028d3e2e8548b592",
+      "git_path": "LightGenV2/tasks/t12_text_to_image/chair_style_run.py",
+      "git_sha256": "2e4c09548c656e1a89b28e08a2315d3e63b2051fc553007cf11db9a79e71127d",
+      "identity": "CRLF_only"
+    },
+    {
+      "path": "handoffs/t12_small_baseline_share_20260928/package/source/LightGenV2/tasks/t12_text_to_image/chair_style_training.py",
+      "sha256": "c65c4051d9591aaea084cb6cb0d0917a40df20ab8355685d77ae179dc27d7797",
+      "bytes": 14417,
+      "git_commit": "7093ec46082eed2fae127ec5028d3e2e8548b592",
+      "git_path": "LightGenV2/tasks/t12_text_to_image/chair_style_training.py",
+      "git_sha256": "52e7c229733f8266f3d35f80111c9ec5899001f92bd00a3d10de58e7a98e633d",
+      "identity": "CRLF_only"
+    },
+    {
+      "path": "handoffs/t12_small_baseline_share_20260928/package/source/LightGenV2/tasks/t12_text_to_image/chair_style_transfer.py",
+      "sha256": "a53ac3210230136dcf7aed2813a7e8e4685e5277d88a29b02e53dcd3fbe15d00",
+      "bytes": 13064,
+      "git_commit": "7093ec46082eed2fae127ec5028d3e2e8548b592",
+      "git_path": "LightGenV2/tasks/t12_text_to_image/chair_style_transfer.py",
+      "git_sha256": "a72a2ffc5f755a3903f25c9d4908d99f88f0535d4f63be43a23592d47de91aac",
+      "identity": "CRLF_only"
+    },
+    {
+      "path": "handoffs/t12_small_baseline_share_20260928/package/source/LightGenV2/tasks/t12_text_to_image/cleanrender_cache.py",
+      "sha256": "0172704500270716232610aad210b51976044816543a4f64984f0003233391c8",
+      "bytes": 2723,
+      "git_commit": "7093ec46082eed2fae127ec5028d3e2e8548b592",
+      "git_path": "LightGenV2/tasks/t12_text_to_image/cleanrender_cache.py",
+      "git_sha256": "0edd369708fc671cfc043506440ba315f42a4a113afddc69fb3784c7941e9395",
+      "identity": "CRLF_only"
+    },
+    {
+      "path": "handoffs/t12_small_baseline_share_20260928/package/source/LightGenV2/tasks/t12_text_to_image/cleanrender_gan.py",
+      "sha256": "2cb56bbbacc61fc6ffa3a3bc231992ae5390e89db5cd9096bb71e57a4cf37626",
+      "bytes": 13078,
+      "git_commit": "7093ec46082eed2fae127ec5028d3e2e8548b592",
+      "git_path": "LightGenV2/tasks/t12_text_to_image/cleanrender_gan.py",
+      "git_sha256": "66d02a7032ff435c0839c6f40b65032d95005a02ce1ec24609891e20ca3dc4d5",
+      "identity": "CRLF_only"
+    },
+    {
+      "path": "handoffs/t12_small_baseline_share_20260928/package/source/LightGenV2/tasks/t12_text_to_image/cleanrender_infer.py",
+      "sha256": "22a4e0e5ce3172a7c2e8d60ce05729c3eaba6b7d869310ea0767e5aa1b716566",
+      "bytes": 4599,
+      "git_commit": "7093ec46082eed2fae127ec5028d3e2e8548b592",
+      "git_path": "LightGenV2/tasks/t12_text_to_image/cleanrender_infer.py",
+      "git_sha256": "1d71d3ab0cc9209a1ca8000a0d6682432a1df36aa68ae7d074a4c4292a9e4221",
+      "identity": "CRLF_only"
+    },
+    {
+      "path": "handoffs/t12_small_baseline_share_20260928/package/source/LightGenV2/tasks/t12_text_to_image/cleanrender_run.py",
+      "sha256": "ac6ec30ff84341097b52615e6eaae17e604cfae57715223f8915a33997f009ae",
+      "bytes": 1792,
+      "git_commit": "7093ec46082eed2fae127ec5028d3e2e8548b592",
+      "git_path": "LightGenV2/tasks/t12_text_to_image/cleanrender_run.py",
+      "git_sha256": "6662bf64a8a1d71ee01b59865f3cf8dfaf478600fc32df73ec082dfc87e6c7fc",
+      "identity": "CRLF_only"
+    },
+    {
+      "path": "handoffs/t12_small_baseline_share_20260928/package/source/LightGenV2/tasks/t12_text_to_image/cleanrender_training.py",
+      "sha256": "6b9438a39042661a75c15bba9fa4c99d4d45e538da971c933f1472d44cb5b171",
+      "bytes": 19217,
+      "git_commit": "7093ec46082eed2fae127ec5028d3e2e8548b592",
+      "git_path": "LightGenV2/tasks/t12_text_to_image/cleanrender_training.py",
+      "git_sha256": "b0290a4c801708c25121548057923c84894f3f847470eac34fb09b20b2e6429d",
+      "identity": "CRLF_only"
+    },
+    {
+      "path": "handoffs/t12_small_baseline_share_20260928/package/source/LightGenV2/tasks/t12_text_to_image/cleanrender_vae.py",
+      "sha256": "d1a03a6b001e4663ab3cd4c18831e4eab0ed30905e1418ad96cacdd52923e5e7",
+      "bytes": 7505,
+      "git_commit": "7093ec46082eed2fae127ec5028d3e2e8548b592",
+      "git_path": "LightGenV2/tasks/t12_text_to_image/cleanrender_vae.py",
+      "git_sha256": "5b4fe3efa000ad7a1262f698735017cb9fd3846fef00f137e0a6662d797fc573",
+      "identity": "CRLF_only"
+    },
+    {
+      "path": "handoffs/t12_small_baseline_share_20260928/package/source/LightGenV2/tasks/t12_text_to_image/cleanrender_vae_infer.py",
+      "sha256": "426cdceb5482a1ab49235840cfa2e0d02fc61cf71a455af6eb7a0dae69b4a735",
+      "bytes": 5142,
+      "git_commit": "7093ec46082eed2fae127ec5028d3e2e8548b592",
+      "git_path": "LightGenV2/tasks/t12_text_to_image/cleanrender_vae_infer.py",
+      "git_sha256": "aaba324eaf63d4f1dc5c5c89a277c746fabf104236fb2c8bf3908ffb24a7e66b",
+      "identity": "CRLF_only"
+    },
+    {
+      "path": "handoffs/t12_small_baseline_share_20260928/package/source/LightGenV2/tasks/t12_text_to_image/cleanrender_vae_run.py",
+      "sha256": "b3beafe359d0c5066613922f8196be0ca74d8de24b4d429cea89ba2bbfb77099",
+      "bytes": 2010,
+      "git_commit": "7093ec46082eed2fae127ec5028d3e2e8548b592",
+      "git_path": "LightGenV2/tasks/t12_text_to_image/cleanrender_vae_run.py",
+      "git_sha256": "59e277fc8b6c1856c7773e30b6efb8eeda98beeaa4642d895e76f626f75c2f96",
+      "identity": "CRLF_only"
+    },
+    {
+      "path": "handoffs/t12_small_baseline_share_20260928/package/source/LightGenV2/tasks/t12_text_to_image/cleanrender_vae_training.py",
+      "sha256": "c2ef21b42ce9aea6a39256fd3d9a78c1407dbe6197acc4225331031aebe46074",
+      "bytes": 20111,
+      "git_commit": "7093ec46082eed2fae127ec5028d3e2e8548b592",
+      "git_path": "LightGenV2/tasks/t12_text_to_image/cleanrender_vae_training.py",
+      "git_sha256": "5a6446f511ae1b06df6dff055a4335c39a6f714384a089671e368a681a14e9e5",
+      "identity": "CRLF_only"
+    },
+    {
+      "path": "handoffs/t12_small_baseline_share_20260928/package/source/LightGenV2/tasks/t12_text_to_image/cleanup_obsolete_checkpoints.py",
+      "sha256": "168fb6dd9607f2fcca0770613a8e5bfc556fa1dbb20262c0dce0897fd1d01937",
+      "bytes": 4301,
+      "git_commit": "7093ec46082eed2fae127ec5028d3e2e8548b592",
+      "git_path": "LightGenV2/tasks/t12_text_to_image/cleanup_obsolete_checkpoints.py",
+      "git_sha256": "daca5f137332d4e24159b1ba2eed73553130f12fdcac99f278acecc9b97f9e82",
+      "identity": "CRLF_only"
+    },
+    {
+      "path": "handoffs/t12_small_baseline_share_20260928/package/source/LightGenV2/tasks/t12_text_to_image/compact_product_model.py",
+      "sha256": "5a5031775732394371594d93638e7d9484b8bc17f822b0ece08d91bd340cff37",
+      "bytes": 8537,
+      "git_commit": "b8a236630ea74fb5e02bd31646aaf2814d98bef5",
+      "git_path": "LightGenV2/tasks/t12_text_to_image/compact_product_model.py",
+      "git_sha256": "0719fa1655b5551018e86fe5a7fa51cfc6501cee9585677d6f9b33ad61311a4c",
+      "identity": "CRLF_only"
+    },
+    {
+      "path": "handoffs/t12_small_baseline_share_20260928/package/source/LightGenV2/tasks/t12_text_to_image/compact_turbo.py",
+      "sha256": "97fd044780fb66175fb159464db5f644e79abbd23e4758377556ae8d84f1b04e",
+      "bytes": 2544,
+      "git_commit": "b8a236630ea74fb5e02bd31646aaf2814d98bef5",
+      "git_path": "LightGenV2/tasks/t12_text_to_image/compact_turbo.py",
+      "git_sha256": "0e665c757eca3b62d5a42deec8e2bad5112e86bbd14a473032bcd33a8cf26f37",
+      "identity": "CRLF_only"
+    },
+    {
+      "path": "handoffs/t12_small_baseline_share_20260928/package/source/LightGenV2/tasks/t12_text_to_image/compact_turbo_infer.py",
+      "sha256": "62a3307f53b8442284eb4f16fec22057a56d5d223a13c05177b8a5098353fa0a",
+      "bytes": 5932,
+      "git_commit": "7093ec46082eed2fae127ec5028d3e2e8548b592",
+      "git_path": "LightGenV2/tasks/t12_text_to_image/compact_turbo_infer.py",
+      "git_sha256": "3b449a48b7a7888c96958beadba4fcda9feaabc51ec4f283d822e7fcf43727e4",
+      "identity": "CRLF_only"
+    },
+    {
+      "path": "handoffs/t12_small_baseline_share_20260928/package/source/LightGenV2/tasks/t12_text_to_image/compact_turbo_run.py",
+      "sha256": "2cfed8983a41f6afa3e76ea81e870878a78d7a584941e41f47cdcd350cfd23f7",
+      "bytes": 1715,
+      "git_commit": "7093ec46082eed2fae127ec5028d3e2e8548b592",
+      "git_path": "LightGenV2/tasks/t12_text_to_image/compact_turbo_run.py",
+      "git_sha256": "0e5d92dd774f122b065b11f9fc989e0973811900d7186fb253a97a5a7130f697",
+      "identity": "CRLF_only"
+    },
+    {
+      "path": "handoffs/t12_small_baseline_share_20260928/package/source/LightGenV2/tasks/t12_text_to_image/compact_turbo_training.py",
+      "sha256": "c1fdd799bd677d829798271cf92c66864d284132322c12fc2e58948fcc044bb9",
+      "bytes": 8248,
+      "git_commit": "7093ec46082eed2fae127ec5028d3e2e8548b592",
+      "git_path": "LightGenV2/tasks/t12_text_to_image/compact_turbo_training.py",
+      "git_sha256": "8d39bb9aa5aa9cbea0ec3588def63df9aeebf3d669b8c635eee8c2d86ef1e7f0",
+      "identity": "CRLF_only"
+    },
+    {
+      "path": "handoffs/t12_small_baseline_share_20260928/package/source/LightGenV2/tasks/t12_text_to_image/compare.py",
+      "sha256": "427f9970a7ec2386787e10ac3dc84bdc1a3645a20290c29a05976195dcd287d9",
+      "bytes": 6860,
+      "git_commit": "7093ec46082eed2fae127ec5028d3e2e8548b592",
+      "git_path": "LightGenV2/tasks/t12_text_to_image/compare.py",
+      "git_sha256": "cdafcff454ee980ac89406c04b9d7d05e71e1d854b43a80fbca70b0592e00876",
+      "identity": "CRLF_only"
+    },
+    {
+      "path": "handoffs/t12_small_baseline_share_20260928/package/source/LightGenV2/tasks/t12_text_to_image/configs/abo_lamp_scene_big_optical.yaml",
+      "sha256": "89b212caadbe60de22e26c46ef6a93a1f637da237342d386964ba9c1944941e0",
+      "bytes": 695,
+      "git_commit": "7093ec46082eed2fae127ec5028d3e2e8548b592",
+      "git_path": "LightGenV2/tasks/t12_text_to_image/configs/abo_lamp_scene_big_optical.yaml",
+      "git_sha256": "0ee97c41c962c98e4ef0dd3ddce2fced984a77084fe43f77f2232a0658f69cd3",
+      "identity": "CRLF_only"
+    },
+    {
+      "path": "handoffs/t12_small_baseline_share_20260928/package/source/LightGenV2/tasks/t12_text_to_image/configs/abo_lamp_scene_big_optical_matte.yaml",
+      "sha256": "6303f42c392ca4dcf5fe84d74148543bd74bb749445575493879cd981eb9cf0f",
+      "bytes": 695,
+      "git_commit": "7093ec46082eed2fae127ec5028d3e2e8548b592",
+      "git_path": "LightGenV2/tasks/t12_text_to_image/configs/abo_lamp_scene_big_optical_matte.yaml",
+      "git_sha256": "b130d30e00b2a68a1adc0cef0d59cf35ccca4c8bc4c5329d219362aa755241dc",
+      "identity": "CRLF_only"
+    },
+    {
+      "path": "handoffs/t12_small_baseline_share_20260928/package/source/LightGenV2/tasks/t12_text_to_image/configs/abo_lamp_scene_replace_half_qwen.yaml",
+      "sha256": "89b212caadbe60de22e26c46ef6a93a1f637da237342d386964ba9c1944941e0",
+      "bytes": 695,
+      "git_commit": "7093ec46082eed2fae127ec5028d3e2e8548b592",
+      "git_path": "LightGenV2/tasks/t12_text_to_image/configs/abo_lamp_scene_replace_half_qwen.yaml",
+      "git_sha256": "0ee97c41c962c98e4ef0dd3ddce2fced984a77084fe43f77f2232a0658f69cd3",
+      "identity": "CRLF_only"
+    },
+    {
+      "path": "handoffs/t12_small_baseline_share_20260928/package/source/LightGenV2/tasks/t12_text_to_image/configs/abo_morphology_large_optical.yaml",
+      "sha256": "bd0bb7eb35d228f38d4e98ee00a4f78a9745d1e5c3f00b9d9bb77f21906a67da",
+      "bytes": 697,
+      "git_commit": "7093ec46082eed2fae127ec5028d3e2e8548b592",
+      "git_path": "LightGenV2/tasks/t12_text_to_image/configs/abo_morphology_large_optical.yaml",
+      "git_sha256": "6f07184d126fc4d972a43598d35bfc24a3147c7d0c7d6dc45ffef11586f92342",
+      "identity": "CRLF_only"
+    },
+    {
+      "path": "handoffs/t12_small_baseline_share_20260928/package/source/LightGenV2/tasks/t12_text_to_image/configs/abo_premium8_local2.yaml",
+      "sha256": "2836bc7c0ccd77d84f6c39fb960ec1e167bd31196c4e4f1a26a1c1a49a147782",
+      "bytes": 695,
+      "git_commit": "7093ec46082eed2fae127ec5028d3e2e8548b592",
+      "git_path": "LightGenV2/tasks/t12_text_to_image/configs/abo_premium8_local2.yaml",
+      "git_sha256": "535d5fda3f1584aa55983f5852bc79024c53cb0fc1c2fcc7ca3f5a6aa200e19b",
+      "identity": "CRLF_only"
+    },
+    {
+      "path": "handoffs/t12_small_baseline_share_20260928/package/source/LightGenV2/tasks/t12_text_to_image/configs/abo_product_repair_big_optical.yaml",
+      "sha256": "f95638e389da255480f8027961b49b908a5efa43937a2e2fe0796603a8a310f4",
+      "bytes": 629,
+      "git_commit": "7093ec46082eed2fae127ec5028d3e2e8548b592",
+      "git_path": "LightGenV2/tasks/t12_text_to_image/configs/abo_product_repair_big_optical.yaml",
+      "git_sha256": "903dd031bdcdea765d0c9d10a1a8953820e6bbe7daf0a40db2f77cd18a833c15",
+      "identity": "CRLF_only"
+    },
+    {
+      "path": "handoffs/t12_small_baseline_share_20260928/package/source/LightGenV2/tasks/t12_text_to_image/configs/abo_standard_chair_sequences.json",
+      "sha256": "efc9e35365ce2ce54dc8a096574eeaf42061b9ba7766ae19a8a5e04965b16269",
+      "bytes": 782,
+      "git_commit": "7093ec46082eed2fae127ec5028d3e2e8548b592",
+      "git_path": "LightGenV2/tasks/t12_text_to_image/configs/abo_standard_chair_sequences.json",
+      "git_sha256": "f5b84dc2cb50fc167a90f09f0dfcd9ead5cadc9a83a225da4d0451f395a58b8b",
+      "identity": "CRLF_only"
+    },
+    {
+      "path": "handoffs/t12_small_baseline_share_20260928/package/source/LightGenV2/tasks/t12_text_to_image/configs/abo_unified_150m_highres_alpha_pilot.yaml",
+      "sha256": "b84072efa8a8f9c70312bd7d5a7ff39fbb7a720bb32821b75a43930470b06aa1",
+      "bytes": 695,
+      "git_commit": "7093ec46082eed2fae127ec5028d3e2e8548b592",
+      "git_path": "LightGenV2/tasks/t12_text_to_image/configs/abo_unified_150m_highres_alpha_pilot.yaml",
+      "git_sha256": "77efe5e11dcceb246c771e2c4765f209f9ab891087edc516eee8b86ee4f92aba",
+      "identity": "CRLF_only"
+    },
+    {
+      "path": "handoffs/t12_small_baseline_share_20260928/package/source/LightGenV2/tasks/t12_text_to_image/configs/abo_unified_150m_pilot.yaml",
+      "sha256": "2836bc7c0ccd77d84f6c39fb960ec1e167bd31196c4e4f1a26a1c1a49a147782",
+      "bytes": 695,
+      "git_commit": "7093ec46082eed2fae127ec5028d3e2e8548b592",
+      "git_path": "LightGenV2/tasks/t12_text_to_image/configs/abo_unified_150m_pilot.yaml",
+      "git_sha256": "535d5fda3f1584aa55983f5852bc79024c53cb0fc1c2fcc7ca3f5a6aa200e19b",
+      "identity": "CRLF_only"
+    },
+    {
+      "path": "handoffs/t12_small_baseline_share_20260928/package/source/LightGenV2/tasks/t12_text_to_image/configs/abo_unified_expanded_refine_1epoch.yaml",
+      "sha256": "e6019f69f2441097aba443abc0ff9b7e8ea9ed99b2bfc903d1c7aec165caf157",
+      "bytes": 695,
+      "git_commit": "7093ec46082eed2fae127ec5028d3e2e8548b592",
+      "git_path": "LightGenV2/tasks/t12_text_to_image/configs/abo_unified_expanded_refine_1epoch.yaml",
+      "git_sha256": "5682943644dc07a1c76e7432619a8a2dac03849c04db4a18e275e8c0c3c53cd3",
+      "identity": "CRLF_only"
+    },
+    {
+      "path": "handoffs/t12_small_baseline_share_20260928/package/source/LightGenV2/tasks/t12_text_to_image/configs/backpack_style_decoder_optical.yaml",
+      "sha256": "9ac4f55fd5d4b23e851471fb7f5f256204fb02a1bbf367b0162e45cc5b2b3447",
+      "bytes": 607,
+      "git_commit": "7093ec46082eed2fae127ec5028d3e2e8548b592",
+      "git_path": "LightGenV2/tasks/t12_text_to_image/configs/backpack_style_decoder_optical.yaml",
+      "git_sha256": "2e3ba38cfc9c586b9aa63cd7ebb366dd38546c1c2d0e7f823ee3f9e1f91ed882",
+      "identity": "CRLF_only"
+    },
+    {
+      "path": "handoffs/t12_small_baseline_share_20260928/package/source/LightGenV2/tasks/t12_text_to_image/configs/backpack_style_electronic.yaml",
+      "sha256": "d71aba269bd983fe8162b45559113ad803d4afd29a7be4f83025daebd7096f38",
+      "bytes": 608,
+      "git_commit": "7093ec46082eed2fae127ec5028d3e2e8548b592",
+      "git_path": "LightGenV2/tasks/t12_text_to_image/configs/backpack_style_electronic.yaml",
+      "git_sha256": "727a7f4b263f4ce4fb9bf412a550e3e06c6022c7264bb1ba609057652c72e815",
+      "identity": "CRLF_only"
+    },
+    {
+      "path": "handoffs/t12_small_baseline_share_20260928/package/source/LightGenV2/tasks/t12_text_to_image/configs/chair_style_electronic.yaml",
+      "sha256": "32f6570a0f9192301dc3a2aaebefb939a6fe9fdb2e318122ca7ba640dcd7f0c3",
+      "bytes": 658,
+      "git_commit": "7093ec46082eed2fae127ec5028d3e2e8548b592",
+      "git_path": "LightGenV2/tasks/t12_text_to_image/configs/chair_style_electronic.yaml",
+      "git_sha256": "fcd3c917e924e5c92ec62188a68e464187c5527cab908055eb069bc813433ea2",
+      "identity": "CRLF_only"
+    },
+    {
+      "path": "handoffs/t12_small_baseline_share_20260928/package/source/LightGenV2/tasks/t12_text_to_image/configs/chair_style_optical.yaml",
+      "sha256": "339ec95c02f5b9ce6e658f1416440fd394c461210263619dd4943b289887d464",
+      "bytes": 656,
+      "git_commit": "7093ec46082eed2fae127ec5028d3e2e8548b592",
+      "git_path": "LightGenV2/tasks/t12_text_to_image/configs/chair_style_optical.yaml",
+      "git_sha256": "fa759b21229bd020d8c29b6de0c2a2368e3a8e306fa458ed476da59a2e73999c",
+      "identity": "CRLF_only"
+    },
+    {
+      "path": "handoffs/t12_small_baseline_share_20260928/package/source/LightGenV2/tasks/t12_text_to_image/configs/chair_view_decoder_optical.yaml",
+      "sha256": "67acee82db716b729e7a95440bae1e0eaf4c02d37b709e1a34683b468ee4bc20",
+      "bytes": 686,
+      "git_commit": "7093ec46082eed2fae127ec5028d3e2e8548b592",
+      "git_path": "LightGenV2/tasks/t12_text_to_image/configs/chair_view_decoder_optical.yaml",
+      "git_sha256": "93440619c7617cd5f411be1acebde19a46716a7831ee1d73885248314afc7aca",
+      "identity": "CRLF_only"
+    },
+    {
+      "path": "handoffs/t12_small_baseline_share_20260928/package/source/LightGenV2/tasks/t12_text_to_image/configs/chair_view_electronic.yaml",
+      "sha256": "58b97e150fa2603c7f6e8b0a51969a29b3a17711dc733e4324d5613f488c5e2b",
+      "bytes": 687,
+      "git_commit": "7093ec46082eed2fae127ec5028d3e2e8548b592",
+      "git_path": "LightGenV2/tasks/t12_text_to_image/configs/chair_view_electronic.yaml",
+      "git_sha256": "3f3fea86776827f8cddb81f3f5fcecfd3f2d0ef4f7c42e09f5f6577375cc6378",
+      "identity": "CRLF_only"
+    },
+    {
+      "path": "handoffs/t12_small_baseline_share_20260928/package/source/LightGenV2/tasks/t12_text_to_image/configs/common.yaml",
+      "sha256": "a69639a9af4ab39d35bdf430a55a73751b48f21d8c799332bec731ddddce0df6",
+      "bytes": 696,
+      "git_commit": "7093ec46082eed2fae127ec5028d3e2e8548b592",
+      "git_path": "LightGenV2/tasks/t12_text_to_image/configs/common.yaml",
+      "git_sha256": "1d6e8c198f49921ea75876125e8f441d583c81637fbb8d7a128edcbc213a4501",
+      "identity": "CRLF_only"
+    },
+    {
+      "path": "handoffs/t12_small_baseline_share_20260928/package/source/LightGenV2/tasks/t12_text_to_image/configs/lightgen_parallel.yaml",
+      "sha256": "4e891135d749d315458bbc3da0d7300716e79eed2d44f87d8d468a7243eaf1b1",
+      "bytes": 154,
+      "git_commit": "7093ec46082eed2fae127ec5028d3e2e8548b592",
+      "git_path": "LightGenV2/tasks/t12_text_to_image/configs/lightgen_parallel.yaml",
+      "git_sha256": "96e7c7d4ddfc8daca674d10e5cc35a21649d5d5444730ccc6d5616e686b7a423",
+      "identity": "CRLF_only"
+    },
+    {
+      "path": "handoffs/t12_small_baseline_share_20260928/package/source/LightGenV2/tasks/t12_text_to_image/configs/lightgen_parallel_decoder_gan.yaml",
+      "sha256": "8532c638d7976aa305f09a2d5923a2979bac6cab801d194b7bd2a8898bcd8840",
+      "bytes": 566,
+      "git_commit": "7093ec46082eed2fae127ec5028d3e2e8548b592",
+      "git_path": "LightGenV2/tasks/t12_text_to_image/configs/lightgen_parallel_decoder_gan.yaml",
+      "git_sha256": "7e679ab60cb55418e8a1bbde8d5b614a33b88d7a28618f10d88eac76634812df",
+      "identity": "CRLF_only"
+    },
+    {
+      "path": "handoffs/t12_small_baseline_share_20260928/package/source/LightGenV2/tasks/t12_text_to_image/configs/lightgen_parallel_gan.yaml",
+      "sha256": "c24437d0da0d5ed1d4f9433e78de624a2a78b1b12bd8942541d312ddc5e7b6ca",
+      "bytes": 489,
+      "git_commit": "7093ec46082eed2fae127ec5028d3e2e8548b592",
+      "git_path": "LightGenV2/tasks/t12_text_to_image/configs/lightgen_parallel_gan.yaml",
+      "git_sha256": "7120600da58e92b2fc94d5fd4c8f09aa90fcc7bec204717ec29941fe2843d59b",
+      "identity": "CRLF_only"
+    },
+    {
+      "path": "handoffs/t12_small_baseline_share_20260928/package/source/LightGenV2/tasks/t12_text_to_image/configs/optical_channel_robust_v2.json",
+      "sha256": "daf24553b9d97adadb69576443de19c577fe8720995a27d7a3df5bb6dcf7b677",
+      "bytes": 1168,
+      "git_commit": "7093ec46082eed2fae127ec5028d3e2e8548b592",
+      "git_path": "LightGenV2/tasks/t12_text_to_image/configs/optical_channel_robust_v2.json",
+      "git_sha256": "7babe6bb8f707b8634f3b32d36147302b3c210f0e1fcfad3d881111b98686941",
+      "identity": "CRLF_only"
+    },
+    {
+      "path": "handoffs/t12_small_baseline_share_20260928/package/source/LightGenV2/tasks/t12_text_to_image/configs/qwen_bksdm_v2_tiny_one_step.yaml",
+      "sha256": "a3810ef3f09ce214482dfb0ce6bceb75eee09f8a55cbd15589eef43dd95c6edd",
+      "bytes": 233,
+      "git_commit": "7093ec46082eed2fae127ec5028d3e2e8548b592",
+      "git_path": "LightGenV2/tasks/t12_text_to_image/configs/qwen_bksdm_v2_tiny_one_step.yaml",
+      "git_sha256": "87028641efbef9244b8113fc6596845a964be072226bd814d06c88b5a1fe9d7f",
+      "identity": "CRLF_only"
+    },
+    {
+      "path": "handoffs/t12_small_baseline_share_20260928/package/source/LightGenV2/tasks/t12_text_to_image/configs/qwen_bksdm_v2_tiny_parallel_optical_v0.yaml",
+      "sha256": "22c179c4edcd30d54bb3852e1d7aab5d503536285a8193727e89a13bb24ea841",
+      "bytes": 338,
+      "git_commit": "7093ec46082eed2fae127ec5028d3e2e8548b592",
+      "git_path": "LightGenV2/tasks/t12_text_to_image/configs/qwen_bksdm_v2_tiny_parallel_optical_v0.yaml",
+      "git_sha256": "4718e0411a8c56de902d8a7cde4f2c9a0ed07b4d7432433dfc2c685fbfd9e13d",
+      "identity": "CRLF_only"
+    },
+    {
+      "path": "handoffs/t12_small_baseline_share_20260928/package/source/LightGenV2/tasks/t12_text_to_image/configs/qwen_bksdm_v2_tiny_pruned_up1.yaml",
+      "sha256": "685727cc0eec4323874c55824bac65c046b3424322e1152a84d686296b3009dc",
+      "bytes": 138,
+      "git_commit": "7093ec46082eed2fae127ec5028d3e2e8548b592",
+      "git_path": "LightGenV2/tasks/t12_text_to_image/configs/qwen_bksdm_v2_tiny_pruned_up1.yaml",
+      "git_sha256": "3ea3f0c3eb6a3bced7f217b811045da4d0e6a66ac3c8356bf4bc3eae9621e5de",
+      "identity": "CRLF_only"
+    },
+    {
+      "path": "handoffs/t12_small_baseline_share_20260928/package/source/LightGenV2/tasks/t12_text_to_image/configs/qwen_cleanrender_chair_vae_gan.yaml",
+      "sha256": "3030f01b0c38800817796d4eb85c840d0082a40415016c9a85b7af07acb6a01a",
+      "bytes": 1119,
+      "git_commit": "7093ec46082eed2fae127ec5028d3e2e8548b592",
+      "git_path": "LightGenV2/tasks/t12_text_to_image/configs/qwen_cleanrender_chair_vae_gan.yaml",
+      "git_sha256": "933e907faf95d2abb54b752d991d897f0a83277952cda7234d738bbd57cf1568",
+      "identity": "CRLF_only"
+    },
+    {
+      "path": "handoffs/t12_small_baseline_share_20260928/package/source/LightGenV2/tasks/t12_text_to_image/configs/qwen_cleanrender_direct_gan.yaml",
+      "sha256": "a78567e591e4eeb0f3c9e689c638544efc044f59b6ab3d04f54198b09e39c39d",
+      "bytes": 733,
+      "git_commit": "7093ec46082eed2fae127ec5028d3e2e8548b592",
+      "git_path": "LightGenV2/tasks/t12_text_to_image/configs/qwen_cleanrender_direct_gan.yaml",
+      "git_sha256": "9c4c777e4ed5cb27247781bddaf3bf1f25fedf23cecfb0c2df29e7a304f107a9",
+      "identity": "CRLF_only"
+    },
+    {
+      "path": "handoffs/t12_small_baseline_share_20260928/package/source/LightGenV2/tasks/t12_text_to_image/configs/qwen_one_step_student_b128_detail.yaml",
+      "sha256": "e9fa0c9094bb686296a6d25dec17d19b47cb2322b897df45ae57953acd683d58",
+      "bytes": 331,
+      "git_commit": "7093ec46082eed2fae127ec5028d3e2e8548b592",
+      "git_path": "LightGenV2/tasks/t12_text_to_image/configs/qwen_one_step_student_b128_detail.yaml",
+      "git_sha256": "c7086410bcd1d58d328fccef3a39d081447e6641e2cf5aec3f47328d6ef67dd9",
+      "identity": "CRLF_only"
+    },
+    {
+      "path": "handoffs/t12_small_baseline_share_20260928/package/source/LightGenV2/tasks/t12_text_to_image/configs/qwen_one_step_student_b48.yaml",
+      "sha256": "86983b4b8d4a9fc57b34e6a0737724a036aff249bc56572381fccf045af2bd6f",
+      "bytes": 306,
+      "git_commit": "7093ec46082eed2fae127ec5028d3e2e8548b592",
+      "git_path": "LightGenV2/tasks/t12_text_to_image/configs/qwen_one_step_student_b48.yaml",
+      "git_sha256": "4fb93ea553a91566e6d7eda8e8a7f402c719ad8f20e580208bb0193852a5ad45",
+      "identity": "CRLF_only"
+    },
+    {
+      "path": "handoffs/t12_small_baseline_share_20260928/package/source/LightGenV2/tasks/t12_text_to_image/configs/qwen_one_step_student_b64.yaml",
+      "sha256": "11a8225377c5869b18d0ac8037f4f52bf3c27a0647fc33ec43d85e8071e0d1c8",
+      "bytes": 306,
+      "git_commit": "7093ec46082eed2fae127ec5028d3e2e8548b592",
+      "git_path": "LightGenV2/tasks/t12_text_to_image/configs/qwen_one_step_student_b64.yaml",
+      "git_sha256": "847607ecc89601addecaadcef0f5b218e8d810a2ad84778fdf70621478930138",
+      "identity": "CRLF_only"
+    },
+    {
+      "path": "handoffs/t12_small_baseline_share_20260928/package/source/LightGenV2/tasks/t12_text_to_image/configs/qwen_one_step_student_b96_detail.yaml",
+      "sha256": "2ac82d8fdec27d4f9db68ba9f9491fdfdb4e53f10657c83a38fb0fc2da3fe85b",
+      "bytes": 330,
+      "git_commit": "7093ec46082eed2fae127ec5028d3e2e8548b592",
+      "git_path": "LightGenV2/tasks/t12_text_to_image/configs/qwen_one_step_student_b96_detail.yaml",
+      "git_sha256": "cad2e372ec0e7d868ab9b95b88a8c526fbc23337fcc14a7086bb900fb3fd5f4a",
+      "identity": "CRLF_only"
+    },
+    {
+      "path": "handoffs/t12_small_baseline_share_20260928/package/source/LightGenV2/tasks/t12_text_to_image/configs/qwen_sd_turbo_one_step.yaml",
+      "sha256": "4d2b023f029ea07fc97856b3192195353ca3b3d4bf8297a6c45584391f0df48b",
+      "bytes": 328,
+      "git_commit": "7093ec46082eed2fae127ec5028d3e2e8548b592",
+      "git_path": "LightGenV2/tasks/t12_text_to_image/configs/qwen_sd_turbo_one_step.yaml",
+      "git_sha256": "bf3b3750194372ed8d64b564d634f632baa11ffee71503286ca064b656b8db46",
+      "identity": "CRLF_only"
+    },
+    {
+      "path": "handoffs/t12_small_baseline_share_20260928/package/source/LightGenV2/tasks/t12_text_to_image/configs/qwen_vae_baseline.yaml",
+      "sha256": "b7de9c47c169c2ee9c3fa97ff101cf6c15395269d3aa63576675f1038cc8bfbb",
+      "bytes": 146,
+      "git_commit": "7093ec46082eed2fae127ec5028d3e2e8548b592",
+      "git_path": "LightGenV2/tasks/t12_text_to_image/configs/qwen_vae_baseline.yaml",
+      "git_sha256": "6fafaeb8184d43c87553e2660623c88cf74226565207141bc5216b745cae604e",
+      "identity": "CRLF_only"
+    },
+    {
+      "path": "handoffs/t12_small_baseline_share_20260928/package/source/LightGenV2/tasks/t12_text_to_image/configs/qwen_vae_baseline_gan.yaml",
+      "sha256": "84683c7f1c4b2c39ff4670f5ce19f7d974571ad310cc4f690a3f29ad3fd9f067",
+      "bytes": 481,
+      "git_commit": "7093ec46082eed2fae127ec5028d3e2e8548b592",
+      "git_path": "LightGenV2/tasks/t12_text_to_image/configs/qwen_vae_baseline_gan.yaml",
+      "git_sha256": "6b83c5777157adb3ad2ff27264ff14cffeb74d0298259a2dba34aafb0a67d830",
+      "identity": "CRLF_only"
+    },
+    {
+      "path": "handoffs/t12_small_baseline_share_20260928/package/source/LightGenV2/tasks/t12_text_to_image/configs/qwen_vae_prior_gan.yaml",
+      "sha256": "c96abd9f9044eb64a20a1d9d554bdb92ee805b5da4a4e5537752c8ea48c6eb2c",
+      "bytes": 677,
+      "git_commit": "7093ec46082eed2fae127ec5028d3e2e8548b592",
+      "git_path": "LightGenV2/tasks/t12_text_to_image/configs/qwen_vae_prior_gan.yaml",
+      "git_sha256": "c5bea524a3dfd753eac5018a73418f1035aab52870d71bc63038187586949573",
+      "identity": "CRLF_only"
+    },
+    {
+      "path": "handoffs/t12_small_baseline_share_20260928/package/source/LightGenV2/tasks/t12_text_to_image/configs/qwen_vae_prior_gan_refine.yaml",
+      "sha256": "19193d30b6ab6127b4853fd629a80e760f95e9f6b9828980fc934a53766d0633",
+      "bytes": 818,
+      "git_commit": "7093ec46082eed2fae127ec5028d3e2e8548b592",
+      "git_path": "LightGenV2/tasks/t12_text_to_image/configs/qwen_vae_prior_gan_refine.yaml",
+      "git_sha256": "2bd81e0aecf35b31f11082c7c6e7e6873bdc37773fcbb8c609de524c9944ac64",
+      "identity": "CRLF_only"
+    },
+    {
+      "path": "handoffs/t12_small_baseline_share_20260928/package/source/LightGenV2/tasks/t12_text_to_image/configs/smoke.yaml",
+      "sha256": "4e04ca2cc3fb1b5ce8ab750b0e8caefa9032a38b36874b35687802b31baaf689",
+      "bytes": 677,
+      "git_commit": "7093ec46082eed2fae127ec5028d3e2e8548b592",
+      "git_path": "LightGenV2/tasks/t12_text_to_image/configs/smoke.yaml",
+      "git_sha256": "fb905cf752806e21ca04d446b2ff07970bcd48d37d74ba1d37e35bb1597952c2",
+      "identity": "CRLF_only"
+    },
+    {
+      "path": "handoffs/t12_small_baseline_share_20260928/package/source/LightGenV2/tasks/t12_text_to_image/curate_standard_chairs.py",
+      "sha256": "2e4186f25e461ed556b6bde7aa834dcad886404559e69fc8bfb560619b43d1fc",
+      "bytes": 2751,
+      "git_commit": "7093ec46082eed2fae127ec5028d3e2e8548b592",
+      "git_path": "LightGenV2/tasks/t12_text_to_image/curate_standard_chairs.py",
+      "git_sha256": "f746cf7e3fc1a95028b87875b245f2e913912752e3402dd83e2a211517070f53",
+      "identity": "CRLF_only"
+    },
+    {
+      "path": "handoffs/t12_small_baseline_share_20260928/package/source/LightGenV2/tasks/t12_text_to_image/dataset.py",
+      "sha256": "fa5aa187664f81697bdac81542cc4d71185bf2167af9e4889abbcfb140e64bd3",
+      "bytes": 5417,
+      "git_commit": "b8a236630ea74fb5e02bd31646aaf2814d98bef5",
+      "git_path": "LightGenV2/tasks/t12_text_to_image/dataset.py",
+      "git_sha256": "1f3e0559207f541dc4327aaa5264b486ea90df0d493725abab6e724d556c53a4",
+      "identity": "CRLF_only"
+    },
+    {
+      "path": "handoffs/t12_small_baseline_share_20260928/package/source/LightGenV2/tasks/t12_text_to_image/decoder_optical_evaluate.py",
+      "sha256": "c5b57b8e4b294c5683ec0108bb327465e88517d81a444ed976de2f762b9eb845",
+      "bytes": 2372,
+      "git_commit": "7093ec46082eed2fae127ec5028d3e2e8548b592",
+      "git_path": "LightGenV2/tasks/t12_text_to_image/decoder_optical_evaluate.py",
+      "git_sha256": "2c47c28e519229f0f9bed26541d403a0df2691e364aa723c10f61b03afa1d00d",
+      "identity": "CRLF_only"
+    },
+    {
+      "path": "handoffs/t12_small_baseline_share_20260928/package/source/LightGenV2/tasks/t12_text_to_image/decoder_optical_generation.py",
+      "sha256": "df9c385cd7a6e960f835b164d110edfa7708d22d9ef04ed0a47994eab4d7485b",
+      "bytes": 11064,
+      "git_commit": "7093ec46082eed2fae127ec5028d3e2e8548b592",
+      "git_path": "LightGenV2/tasks/t12_text_to_image/decoder_optical_generation.py",
+      "git_sha256": "432028354e034adab37bcd6fda96a7aa0be704754b324901c1b2ee6ccd6e765f",
+      "identity": "CRLF_only"
+    },
+    {
+      "path": "handoffs/t12_small_baseline_share_20260928/package/source/LightGenV2/tasks/t12_text_to_image/decoder_optical_run.py",
+      "sha256": "5d248217e580ea448032769a1152719aae816fd36edd634b2bc3b72d66cc7a2d",
+      "bytes": 1450,
+      "git_commit": "7093ec46082eed2fae127ec5028d3e2e8548b592",
+      "git_path": "LightGenV2/tasks/t12_text_to_image/decoder_optical_run.py",
+      "git_sha256": "b9fcdc95b21d0bf67251489b307fa3125930f0dd594133d236295753ae040de2",
+      "identity": "CRLF_only"
+    },
+    {
+      "path": "handoffs/t12_small_baseline_share_20260928/package/source/LightGenV2/tasks/t12_text_to_image/decoder_optical_training.py",
+      "sha256": "ee79616180c3a8045f6449775fbd4bac85fe7af4c9760ac04b934db976dfe83f",
+      "bytes": 9675,
+      "git_commit": "7093ec46082eed2fae127ec5028d3e2e8548b592",
+      "git_path": "LightGenV2/tasks/t12_text_to_image/decoder_optical_training.py",
+      "git_sha256": "0887fd2a8b2ca231c958b530ab00cc5f224ba11d4a79d7b380e47886a6aba257",
+      "identity": "CRLF_only"
+    },
+    {
+      "path": "handoffs/t12_small_baseline_share_20260928/package/source/LightGenV2/tasks/t12_text_to_image/diagnose_unified_blur.py",
+      "sha256": "8c3f8067fb9d685e36ff63d60d31998280843b3b25b0a239b7bf6b0417d923bb",
+      "bytes": 3694,
+      "git_commit": "7093ec46082eed2fae127ec5028d3e2e8548b592",
+      "git_path": "LightGenV2/tasks/t12_text_to_image/diagnose_unified_blur.py",
+      "git_sha256": "e776ddb2ac0c2023dc4ef10398f6fa57a8e794e7ac03cc98362fa15a7da6f4c4",
+      "identity": "CRLF_only"
+    },
+    {
+      "path": "handoffs/t12_small_baseline_share_20260928/package/source/LightGenV2/tasks/t12_text_to_image/distilled_decoder.py",
+      "sha256": "6dac7a9cd32eafe3c0cf556172dcbf92a4c1594619cc56c43b5530c713c70e59",
+      "bytes": 8863,
+      "git_commit": "7093ec46082eed2fae127ec5028d3e2e8548b592",
+      "git_path": "LightGenV2/tasks/t12_text_to_image/distilled_decoder.py",
+      "git_sha256": "86a4ef6f984f9c8bd8b2be0867cd4574478984088e41b997a85c3f08bbaeb904",
+      "identity": "CRLF_only"
+    },
+    {
+      "path": "handoffs/t12_small_baseline_share_20260928/package/source/LightGenV2/tasks/t12_text_to_image/distilled_decoder_cache.py",
+      "sha256": "81d89cf633fd0d648084d9f4ab9bb091840a3c0d2c3fee85d80091728c090c11",
+      "bytes": 7510,
+      "git_commit": "7093ec46082eed2fae127ec5028d3e2e8548b592",
+      "git_path": "LightGenV2/tasks/t12_text_to_image/distilled_decoder_cache.py",
+      "git_sha256": "c2474479319229f60ee0dc6310f6204bdc0ee6deeb7264c44d00417800b8be7d",
+      "identity": "CRLF_only"
+    },
+    {
+      "path": "handoffs/t12_small_baseline_share_20260928/package/source/LightGenV2/tasks/t12_text_to_image/distilled_decoder_infer.py",
+      "sha256": "c309db3eed6e5eef2e669d4803f3c0debcde97157928e761cfffe6884fe88d4a",
+      "bytes": 5920,
+      "git_commit": "7093ec46082eed2fae127ec5028d3e2e8548b592",
+      "git_path": "LightGenV2/tasks/t12_text_to_image/distilled_decoder_infer.py",
+      "git_sha256": "24e703789190e2ba676b5c5e315375313465405988fc8c29df2cf903cea43635",
+      "identity": "CRLF_only"
+    },
+    {
+      "path": "handoffs/t12_small_baseline_share_20260928/package/source/LightGenV2/tasks/t12_text_to_image/distilled_decoder_run.py",
+      "sha256": "e9f6e74d1d9e1e15bc29d45e591344d753f76edf33ea40bae189fa8312adf9f4",
+      "bytes": 1640,
+      "git_commit": "7093ec46082eed2fae127ec5028d3e2e8548b592",
+      "git_path": "LightGenV2/tasks/t12_text_to_image/distilled_decoder_run.py",
+      "git_sha256": "f212824a1376cca42ea5c7e938b55f446ebcec0296f524980baf6fbb5a23bcd1",
+      "identity": "CRLF_only"
+    },
+    {
+      "path": "handoffs/t12_small_baseline_share_20260928/package/source/LightGenV2/tasks/t12_text_to_image/distilled_decoder_training.py",
+      "sha256": "7d1e91d51342bfd431c67141d988c5f757c5e26c69d8c03f4705e24f091f6d1f",
+      "bytes": 9935,
+      "git_commit": "7093ec46082eed2fae127ec5028d3e2e8548b592",
+      "git_path": "LightGenV2/tasks/t12_text_to_image/distilled_decoder_training.py",
+      "git_sha256": "393dcfa927b03867d6616b3ee5e34d15122b203cea3c051a3c06b8e9f85ee848",
+      "identity": "CRLF_only"
+    },
+    {
+      "path": "handoffs/t12_small_baseline_share_20260928/package/source/LightGenV2/tasks/t12_text_to_image/electronic_baseline.py",
+      "sha256": "ea5ded5a7dc56b2d44487f69b1fba43b338913c51c2b91d9b4091a0ef1fbba81",
+      "bytes": 15552,
+      "git_commit": "7093ec46082eed2fae127ec5028d3e2e8548b592",
+      "git_path": "LightGenV2/tasks/t12_text_to_image/electronic_baseline.py",
+      "git_sha256": "bd329c5422ba6b5ea907494e08ef89592686969e929994ca4508d0aa6d70f86e",
+      "identity": "CRLF_only"
+    },
+    {
+      "path": "handoffs/t12_small_baseline_share_20260928/package/source/LightGenV2/tasks/t12_text_to_image/electronic_baseline_run.py",
+      "sha256": "25bc12f9bb04a0ba51a83416af78aeac1c773ec801b6bb31a8adcce2363750f7",
+      "bytes": 1913,
+      "git_commit": "7093ec46082eed2fae127ec5028d3e2e8548b592",
+      "git_path": "LightGenV2/tasks/t12_text_to_image/electronic_baseline_run.py",
+      "git_sha256": "ab37bbe3eb62157ac00c05f35fc93ae4247a0ea71fce4d71057610220004c59c",
+      "identity": "CRLF_only"
+    },
+    {
+      "path": "handoffs/t12_small_baseline_share_20260928/package/source/LightGenV2/tasks/t12_text_to_image/electronic_baseline_training.py",
+      "sha256": "3597dcc81872dbb34c5f63ce629e590eafd36142a602a0fdfa75df5da035d3d3",
+      "bytes": 21572,
+      "git_commit": "7093ec46082eed2fae127ec5028d3e2e8548b592",
+      "git_path": "LightGenV2/tasks/t12_text_to_image/electronic_baseline_training.py",
+      "git_sha256": "2ffd28cac4817ee57afb12879ab956cb98e95c74a3758dd4654b7a9124bbf35c",
+      "identity": "CRLF_only"
+    },
+    {
+      "path": "handoffs/t12_small_baseline_share_20260928/package/source/LightGenV2/tasks/t12_text_to_image/electronic_turbo.py",
+      "sha256": "751b4392f9a86e6787739665ac10f5d9ce74a04e41400b8a57eab4099a284524",
+      "bytes": 5299,
+      "git_commit": "b8a236630ea74fb5e02bd31646aaf2814d98bef5",
+      "git_path": "LightGenV2/tasks/t12_text_to_image/electronic_turbo.py",
+      "git_sha256": "fd858cd5dae34e40c354fb8e750c9d78ad0d79788ad882d335346762c580c63f",
+      "identity": "CRLF_only"
+    },
+    {
+      "path": "handoffs/t12_small_baseline_share_20260928/package/source/LightGenV2/tasks/t12_text_to_image/electronic_turbo_infer.py",
+      "sha256": "3ed470276e289e65a233d310ffb31d18d34e02a4b79b64a64b5eef4a72d9efe8",
+      "bytes": 5468,
+      "git_commit": "b8a236630ea74fb5e02bd31646aaf2814d98bef5",
+      "git_path": "LightGenV2/tasks/t12_text_to_image/electronic_turbo_infer.py",
+      "git_sha256": "6baca51243298bfd33cf8ec71162ae61a1a209354bd921600b5bda209d55901d",
+      "identity": "CRLF_only"
+    },
+    {
+      "path": "handoffs/t12_small_baseline_share_20260928/package/source/LightGenV2/tasks/t12_text_to_image/electronic_turbo_run.py",
+      "sha256": "c61f1dbaf950b8b393d0c1d1291d2b698ee55974e33cf65c4410dd80c425f583",
+      "bytes": 1613,
+      "git_commit": "7093ec46082eed2fae127ec5028d3e2e8548b592",
+      "git_path": "LightGenV2/tasks/t12_text_to_image/electronic_turbo_run.py",
+      "git_sha256": "e3a161fb001858dfced079c9482ebe23da4b6cad8c433c91cf8577533c361e32",
+      "identity": "CRLF_only"
+    },
+    {
+      "path": "handoffs/t12_small_baseline_share_20260928/package/source/LightGenV2/tasks/t12_text_to_image/electronic_turbo_training.py",
+      "sha256": "e406a471cd84df21da5b5ebb7931cea58d7bb411aa7c8fa6148869f68c078858",
+      "bytes": 16149,
+      "git_commit": "7093ec46082eed2fae127ec5028d3e2e8548b592",
+      "git_path": "LightGenV2/tasks/t12_text_to_image/electronic_turbo_training.py",
+      "git_sha256": "049c8e7c303df04d9062e11eb4f93070c73378014a74a5a688889dceb34efcc8",
+      "identity": "CRLF_only"
+    },
+    {
+      "path": "handoffs/t12_small_baseline_share_20260928/package/source/LightGenV2/tasks/t12_text_to_image/evaluate_unified_editor.py",
+      "sha256": "0d2c16d566b2bb9ad9c496013296a041cd64be38afb24ad32d4018d551cfc20c",
+      "bytes": 7144,
+      "git_commit": "b8a236630ea74fb5e02bd31646aaf2814d98bef5",
+      "git_path": "LightGenV2/tasks/t12_text_to_image/evaluate_unified_editor.py",
+      "git_sha256": "85c6a2aa947ac9fa90996069055a2a4bfee3ae93745042f2bd438edb5cfb9ea8",
+      "identity": "CRLF_only"
+    },
+    {
+      "path": "handoffs/t12_small_baseline_share_20260928/package/source/LightGenV2/tasks/t12_text_to_image/evaluation.py",
+      "sha256": "c370441cb1f4612311093b0b1a629247593fcd1c9d8446107eefda230b02ede2",
+      "bytes": 6443,
+      "git_commit": "7093ec46082eed2fae127ec5028d3e2e8548b592",
+      "git_path": "LightGenV2/tasks/t12_text_to_image/evaluation.py",
+      "git_sha256": "65baf801b61a7d3de120c7e13b5c9ecb7fc2f6153d9c0b241fc2429bd7fad8b7",
+      "identity": "CRLF_only"
+    },
+    {
+      "path": "handoffs/t12_small_baseline_share_20260928/package/source/LightGenV2/tasks/t12_text_to_image/feature_cache.py",
+      "sha256": "1e99d614b2e1a60cc02647b00fc26de5502699bbaa48994dc1f08d38da73d1f3",
+      "bytes": 8153,
+      "git_commit": "b8a236630ea74fb5e02bd31646aaf2814d98bef5",
+      "git_path": "LightGenV2/tasks/t12_text_to_image/feature_cache.py",
+      "git_sha256": "d226c999d92990f2f381b8a8783e57c2ac263ef2389a7cdf7b8c67cacf4feb70",
+      "identity": "CRLF_only"
+    },
+    {
+      "path": "handoffs/t12_small_baseline_share_20260928/package/source/LightGenV2/tasks/t12_text_to_image/half_qwen.py",
+      "sha256": "23c52fdf1e6d15cd2daa3aedf8608be5805fe5e58e9e817b4421c8513a4fcd71",
+      "bytes": 3807,
+      "git_commit": "b8a236630ea74fb5e02bd31646aaf2814d98bef5",
+      "git_path": "LightGenV2/tasks/t12_text_to_image/half_qwen.py",
+      "git_sha256": "7c5d10bba38b563b0984c1b39105f3ece874b7b2abc679d7a7cbbb83861c72e0",
+      "identity": "CRLF_only"
+    },
+    {
+      "path": "handoffs/t12_small_baseline_share_20260928/package/source/LightGenV2/tasks/t12_text_to_image/infer_unified_editor.py",
+      "sha256": "a6cc7bf4a7d2dc444f934d80a9ffbfd0672c5c2218d3f4299e440a3ac2397f8a",
+      "bytes": 5540,
+      "git_commit": "7093ec46082eed2fae127ec5028d3e2e8548b592",
+      "git_path": "LightGenV2/tasks/t12_text_to_image/infer_unified_editor.py",
+      "git_sha256": "66266e4f71e775e5f465228e7a3b6db9d63fa13ce1585af9c008ff0b8c04a1aa",
+      "identity": "CRLF_only"
+    },
+    {
+      "path": "handoffs/t12_small_baseline_share_20260928/package/source/LightGenV2/tasks/t12_text_to_image/inspect_embedding_contract.py",
+      "sha256": "12aa3b58169ec3ce8301c06057689c0c7874219db5c837dc56e2217b7ad8b18d",
+      "bytes": 732,
+      "git_commit": "7093ec46082eed2fae127ec5028d3e2e8548b592",
+      "git_path": "LightGenV2/tasks/t12_text_to_image/inspect_embedding_contract.py",
+      "git_sha256": "4eea716535faeeec87ecfda1e19f0e1ed32ce0649b5b9202bec6aae41560eeab",
+      "identity": "CRLF_only"
+    },
+    {
+      "path": "handoffs/t12_small_baseline_share_20260928/package/source/LightGenV2/tasks/t12_text_to_image/lab_shs8um/bounded_amplitude.py",
+      "sha256": "9a5d06706baad03611fecb9d3bad5e7cf9b1354527b6ea5dd2dbafd4e8cb58d8",
+      "bytes": 1874,
+      "git_commit": "b8a236630ea74fb5e02bd31646aaf2814d98bef5",
+      "git_path": "LightGenV2/tasks/t12_text_to_image/lab_shs8um/bounded_amplitude.py",
+      "git_sha256": "3765097ac7d6387e58b6fbcac3cd235cc1465b5a83c4b24e5807f682b430490c",
+      "identity": "CRLF_only"
+    },
+    {
+      "path": "handoffs/t12_small_baseline_share_20260928/package/source/LightGenV2/tasks/t12_text_to_image/lab_shs8um/ccd_bridge.py",
+      "sha256": "cf352f0e6033470561b83ad89d4ad057a14cdb82a9efe403547c3bfbbcbbec21",
+      "bytes": 2877,
+      "git_commit": "b8a236630ea74fb5e02bd31646aaf2814d98bef5",
+      "git_path": "LightGenV2/tasks/t12_text_to_image/lab_shs8um/ccd_bridge.py",
+      "git_sha256": "18008d614338447d7619498356e3cb85f0705b9976ba2177da7bb5af0afac1ae",
+      "identity": "CRLF_only"
+    },
+    {
+      "path": "handoffs/t12_small_baseline_share_20260928/package/source/LightGenV2/tasks/t12_text_to_image/lab_shs8um/detector_correction.py",
+      "sha256": "2ed73fc1cc62505854812971dd8060e472c42df10e711b91554d9a67070319e8",
+      "bytes": 700,
+      "git_commit": "b8a236630ea74fb5e02bd31646aaf2814d98bef5",
+      "git_path": "LightGenV2/tasks/t12_text_to_image/lab_shs8um/detector_correction.py",
+      "git_sha256": "18d23b00ca8106f0c81013f124aa0adb189a3252caed9210d88798f5f1fb584f",
+      "identity": "CRLF_only"
+    },
+    {
+      "path": "handoffs/t12_small_baseline_share_20260928/package/source/LightGenV2/tasks/t12_text_to_image/lab_shs8um/diagnose_exposure.py",
+      "sha256": "0f782ad133aac109712ce0872a046556a7f950d8483c41f363729c0d9d5258ab",
+      "bytes": 3532,
+      "git_commit": "b8a236630ea74fb5e02bd31646aaf2814d98bef5",
+      "git_path": "LightGenV2/tasks/t12_text_to_image/lab_shs8um/diagnose_exposure.py",
+      "git_sha256": "8e5e64d705b3bd32bb02c57a40a41937a7df8de084d6d9de492f88ac41764fec",
+      "identity": "CRLF_only"
+    },
+    {
+      "path": "handoffs/t12_small_baseline_share_20260928/package/source/LightGenV2/tasks/t12_text_to_image/lab_shs8um/export_samples.py",
+      "sha256": "3cc9c917c0b12804f2fa0c922110d388867e1f4a521c92e1dbaa87609899ff55",
+      "bytes": 3795,
+      "git_commit": "b8a236630ea74fb5e02bd31646aaf2814d98bef5",
+      "git_path": "LightGenV2/tasks/t12_text_to_image/lab_shs8um/export_samples.py",
+      "git_sha256": "33f28aea123e5aa599dbb4ebc7a6524afb22632913a79ccce726ffd265843247",
+      "identity": "CRLF_only"
+    },
+    {
+      "path": "handoffs/t12_small_baseline_share_20260928/package/source/LightGenV2/tasks/t12_text_to_image/lab_shs8um/render_channel_audit.py",
+      "sha256": "d0b91ad8b0add85f55f6da61e47cd4d8890fc9aa204e6b493ebf0e986685a797",
+      "bytes": 7741,
+      "git_commit": "b8a236630ea74fb5e02bd31646aaf2814d98bef5",
+      "git_path": "LightGenV2/tasks/t12_text_to_image/lab_shs8um/render_channel_audit.py",
+      "git_sha256": "2a80dc357a4d361b8c953328aa2018406eaa22302e2c209d9762e075c97278b2",
+      "identity": "CRLF_only"
+    },
+    {
+      "path": "handoffs/t12_small_baseline_share_20260928/package/source/LightGenV2/tasks/t12_text_to_image/lab_shs8um/robust_channel.py",
+      "sha256": "1cb28832080d5b19c029f4eabb0f98955c39bb34430a0376388af1a8e81fc928",
+      "bytes": 6786,
+      "git_commit": "b8a236630ea74fb5e02bd31646aaf2814d98bef5",
+      "git_path": "LightGenV2/tasks/t12_text_to_image/lab_shs8um/robust_channel.py",
+      "git_sha256": "c2a555d10388ae8540e78ca2ba076cd169a109677dadfc85c805100ec4f8597f",
+      "identity": "CRLF_only"
+    },
+    {
+      "path": "handoffs/t12_small_baseline_share_20260928/package/source/LightGenV2/tasks/t12_text_to_image/lab_shs8um/run_full.py",
+      "sha256": "e4ac2593f505e40194c166dc089430edb436e8e13dba88918bdc98fd30d87b52",
+      "bytes": 4666,
+      "git_commit": "b8a236630ea74fb5e02bd31646aaf2814d98bef5",
+      "git_path": "LightGenV2/tasks/t12_text_to_image/lab_shs8um/run_full.py",
+      "git_sha256": "dba5a42ac532f45a6f8e3025de7638a9e4133595610970188b77007e559b7abe",
+      "identity": "CRLF_only"
+    },
+    {
+      "path": "handoffs/t12_small_baseline_share_20260928/package/source/LightGenV2/tasks/t12_text_to_image/lab_shs8um/run_layerwise.py",
+      "sha256": "a8114ae84a41ee3d37dc061dfe68e4febaeb731e5cfc169b08119deb730c0f6c",
+      "bytes": 10922,
+      "git_commit": "b8a236630ea74fb5e02bd31646aaf2814d98bef5",
+      "git_path": "LightGenV2/tasks/t12_text_to_image/lab_shs8um/run_layerwise.py",
+      "git_sha256": "97f264f6f04c325cd5b6f4f8a24aef7a4c623818f45bd16518ab4f11677a16fb",
+      "identity": "CRLF_only"
+    },
+    {
+      "path": "handoffs/t12_small_baseline_share_20260928/package/source/LightGenV2/tasks/t12_text_to_image/lab_shs8um/run_pilot.py",
+      "sha256": "79888cadc7eb87d6aa419aec2896584e9fed4cf345eb922fa3f97065a3425e34",
+      "bytes": 5510,
+      "git_commit": "b8a236630ea74fb5e02bd31646aaf2814d98bef5",
+      "git_path": "LightGenV2/tasks/t12_text_to_image/lab_shs8um/run_pilot.py",
+      "git_sha256": "9e73f937a521b1641d2d6f66c5f09f1342d6483720d1b5b8424d00423429d702",
+      "identity": "CRLF_only"
+    },
+    {
+      "path": "handoffs/t12_small_baseline_share_20260928/package/source/LightGenV2/tasks/t12_text_to_image/lab_shs8um/test_bounded_contract.py",
+      "sha256": "d28e003075bb9feb6f3fc739bd014d55bece4f38b81e90e706024ded8d8a3f86",
+      "bytes": 2084,
+      "git_commit": "b8a236630ea74fb5e02bd31646aaf2814d98bef5",
+      "git_path": "LightGenV2/tasks/t12_text_to_image/lab_shs8um/test_bounded_contract.py",
+      "git_sha256": "dc52bda0d6d118030ed397c1d2ca6f6974cebd55d3c65be089cedb5445f3676b",
+      "identity": "CRLF_only"
+    },
+    {
+      "path": "handoffs/t12_small_baseline_share_20260928/package/source/LightGenV2/tasks/t12_text_to_image/lab_shs8um/train_channel_robust.py",
+      "sha256": "5fc1f936dd7aeff552a87b287e73e7168120b7eb026fa7d98862e59a2bb14be0",
+      "bytes": 21815,
+      "git_commit": "b8a236630ea74fb5e02bd31646aaf2814d98bef5",
+      "git_path": "LightGenV2/tasks/t12_text_to_image/lab_shs8um/train_channel_robust.py",
+      "git_sha256": "7f16343a3e78b1fb1f48fac49f7362e8754e7e541b58795b546e63db8bf085a6",
+      "identity": "CRLF_only"
+    },
+    {
+      "path": "handoffs/t12_small_baseline_share_20260928/package/source/LightGenV2/tasks/t12_text_to_image/lab_shs8um/train_physical_robust.py",
+      "sha256": "3a7422f9d9c2740b22b9ff0368f026ae17192b65f5839f133c4e284c6c90207e",
+      "bytes": 10470,
+      "git_commit": "b8a236630ea74fb5e02bd31646aaf2814d98bef5",
+      "git_path": "LightGenV2/tasks/t12_text_to_image/lab_shs8um/train_physical_robust.py",
+      "git_sha256": "38769b83fc0ff09becffe431f759d4f7b787e08d7e1a1c56bcd9e5573bac9805",
+      "identity": "CRLF_only"
+    },
+    {
+      "path": "handoffs/t12_small_baseline_share_20260928/package/source/LightGenV2/tasks/t12_text_to_image/losses.py",
+      "sha256": "7260ec05f85f7a300591ff00042e2939dfa5c9d9434680dff56dba254fffc828",
+      "bytes": 1313,
+      "git_commit": "7093ec46082eed2fae127ec5028d3e2e8548b592",
+      "git_path": "LightGenV2/tasks/t12_text_to_image/losses.py",
+      "git_sha256": "f3ecff1d51a3e5f1ffcff6beb6bb61ecec4a8e50c71abcea7f5444b40092dbd5",
+      "identity": "CRLF_only"
+    },
+    {
+      "path": "handoffs/t12_small_baseline_share_20260928/package/source/LightGenV2/tasks/t12_text_to_image/modeling.py",
+      "sha256": "d0ff819099fe9393ce80b6434f9dfd7c17e92286dfa14a9637044fd3c8161521",
+      "bytes": 20535,
+      "git_commit": "b8a236630ea74fb5e02bd31646aaf2814d98bef5",
+      "git_path": "LightGenV2/tasks/t12_text_to_image/modeling.py",
+      "git_sha256": "44c98cdaf575e34b480cea78c4e122b6b3d9cb6b250a205308ac98922a9aadc7",
+      "identity": "CRLF_only"
+    },
+    {
+      "path": "handoffs/t12_small_baseline_share_20260928/package/source/LightGenV2/tasks/t12_text_to_image/morphology_data.py",
+      "sha256": "8ff9870576fe7517a67ed2e9f6fed0b1edd01d0936b7915f7a932012933e082c",
+      "bytes": 5377,
+      "git_commit": "7093ec46082eed2fae127ec5028d3e2e8548b592",
+      "git_path": "LightGenV2/tasks/t12_text_to_image/morphology_data.py",
+      "git_sha256": "c95feef5a033297d7a386a359790bdf44f671027fe8501b0b57e45a213e2f78d",
+      "identity": "CRLF_only"
+    },
+    {
+      "path": "handoffs/t12_small_baseline_share_20260928/package/source/LightGenV2/tasks/t12_text_to_image/morphology_run.py",
+      "sha256": "bfd6116450ae2a6a1256b5ce0f16fb51c56d6983183da938c7398cc5392d8b16",
+      "bytes": 3596,
+      "git_commit": "7093ec46082eed2fae127ec5028d3e2e8548b592",
+      "git_path": "LightGenV2/tasks/t12_text_to_image/morphology_run.py",
+      "git_sha256": "de5a754bf1f394368eee88e59cce4958636c206cb7e4e105cab26035f6d0bab0",
+      "identity": "CRLF_only"
+    },
+    {
+      "path": "handoffs/t12_small_baseline_share_20260928/package/source/LightGenV2/tasks/t12_text_to_image/morphology_teacher.py",
+      "sha256": "4ed462fb402e55dc98b75de0039e161145cb10921cb186b423fd6f50e79c7bb6",
+      "bytes": 10981,
+      "git_commit": "7093ec46082eed2fae127ec5028d3e2e8548b592",
+      "git_path": "LightGenV2/tasks/t12_text_to_image/morphology_teacher.py",
+      "git_sha256": "3136f0a6427cc5ef29753f5eff9dca347d4de67337ac0e48936e255f9c8150c5",
+      "identity": "CRLF_only"
+    },
+    {
+      "path": "handoffs/t12_small_baseline_share_20260928/package/source/LightGenV2/tasks/t12_text_to_image/optical_turbo.py",
+      "sha256": "c1a70cd1718e86d1e680bd5784ad545d6cbe689287ca09c427f5f567c1786e01",
+      "bytes": 10569,
+      "git_commit": "7093ec46082eed2fae127ec5028d3e2e8548b592",
+      "git_path": "LightGenV2/tasks/t12_text_to_image/optical_turbo.py",
+      "git_sha256": "73f9900a296a42ac2288586cda3c744fe788f16c5f975de01cef354db437f047",
+      "identity": "CRLF_only"
+    },
+    {
+      "path": "handoffs/t12_small_baseline_share_20260928/package/source/LightGenV2/tasks/t12_text_to_image/optical_turbo_infer.py",
+      "sha256": "7cdf3396eac51618d05c15e2bd5905f70e66c20e5a3d49afafe8c58d1011a7c0",
+      "bytes": 6557,
+      "git_commit": "7093ec46082eed2fae127ec5028d3e2e8548b592",
+      "git_path": "LightGenV2/tasks/t12_text_to_image/optical_turbo_infer.py",
+      "git_sha256": "2d188644f45922bbdb71b052de9ca462311eb5f92061e7afd42bc95a679836bb",
+      "identity": "CRLF_only"
+    },
+    {
+      "path": "handoffs/t12_small_baseline_share_20260928/package/source/LightGenV2/tasks/t12_text_to_image/optical_turbo_run.py",
+      "sha256": "cfb2ef05e9535ad7da1b8a1ce3b83f6dbc3adbff6a083f8ccf175b4d7663171a",
+      "bytes": 2189,
+      "git_commit": "7093ec46082eed2fae127ec5028d3e2e8548b592",
+      "git_path": "LightGenV2/tasks/t12_text_to_image/optical_turbo_run.py",
+      "git_sha256": "d0cef24cf95d9dde8ecafd9cfbbd20ab9a585439b697825f6481f8b5d4f3fcd7",
+      "identity": "CRLF_only"
+    },
+    {
+      "path": "handoffs/t12_small_baseline_share_20260928/package/source/LightGenV2/tasks/t12_text_to_image/optical_turbo_training.py",
+      "sha256": "d86b3499b970a5a97dd4d70adf050fdb3a4ab6c06f96f8f0360d9f4b2c2dc57b",
+      "bytes": 9823,
+      "git_commit": "7093ec46082eed2fae127ec5028d3e2e8548b592",
+      "git_path": "LightGenV2/tasks/t12_text_to_image/optical_turbo_training.py",
+      "git_sha256": "588ceb2b2823f583019a8fc5118c9494f590a8b49a53d5d9b2d5bc375684f8a4",
+      "identity": "CRLF_only"
+    },
+    {
+      "path": "handoffs/t12_small_baseline_share_20260928/package/source/LightGenV2/tasks/t12_text_to_image/pack_unified_editor.py",
+      "sha256": "3c1550ec8c2cba93a2f458a24a7a19c16444f9652a49169cf27f65229223a16c",
+      "bytes": 2085,
+      "git_commit": "7093ec46082eed2fae127ec5028d3e2e8548b592",
+      "git_path": "LightGenV2/tasks/t12_text_to_image/pack_unified_editor.py",
+      "git_sha256": "d822b0139818fc0ac5629f1b592b870aa1c22fa3cd59261cdfaa59fe7c735218",
+      "identity": "CRLF_only"
+    },
+    {
+      "path": "handoffs/t12_small_baseline_share_20260928/package/source/LightGenV2/tasks/t12_text_to_image/premium_material_data.py",
+      "sha256": "cc3b51565fc9ecb71b6f0404454559ae690c8e891f645a0d9a85e8bb36319941",
+      "bytes": 15498,
+      "git_commit": "b8a236630ea74fb5e02bd31646aaf2814d98bef5",
+      "git_path": "LightGenV2/tasks/t12_text_to_image/premium_material_data.py",
+      "git_sha256": "b05e1b0a850fbfe605f859911cc1f112c4f06d03a98ec2b796c3a4715e4f1242",
+      "identity": "CRLF_only"
+    },
+    {
+      "path": "handoffs/t12_small_baseline_share_20260928/package/source/LightGenV2/tasks/t12_text_to_image/premium_material_run.py",
+      "sha256": "31672e0ccadf09860b97324b90e452863d0ae8bdb7db3bca3e255cf0675d849b",
+      "bytes": 3300,
+      "git_commit": "7093ec46082eed2fae127ec5028d3e2e8548b592",
+      "git_path": "LightGenV2/tasks/t12_text_to_image/premium_material_run.py",
+      "git_sha256": "38c6deb1c61ecf3ded0e903d02b2f4568302f9eee0b56b9a9be3131df2187e3f",
+      "identity": "CRLF_only"
+    },
+    {
+      "path": "handoffs/t12_small_baseline_share_20260928/package/source/LightGenV2/tasks/t12_text_to_image/prepare_abo.py",
+      "sha256": "1e4e1daf8fdd3d7a05dd1c6ac4f2bd14e050087852eb4ceb20f573a9f917692d",
+      "bytes": 10957,
+      "git_commit": "7093ec46082eed2fae127ec5028d3e2e8548b592",
+      "git_path": "LightGenV2/tasks/t12_text_to_image/prepare_abo.py",
+      "git_sha256": "29449dc8a1bc1fdc5d20e25e29a268909375d8ef7fbd914443825f3158795a56",
+      "identity": "CRLF_only"
+    },
+    {
+      "path": "handoffs/t12_small_baseline_share_20260928/package/source/LightGenV2/tasks/t12_text_to_image/prepare_abo_cleanrender.py",
+      "sha256": "3c7e4bacb810781c630bddd7b87374064cacea72c16e2176026e5202f0f97922",
+      "bytes": 18464,
+      "git_commit": "7093ec46082eed2fae127ec5028d3e2e8548b592",
+      "git_path": "LightGenV2/tasks/t12_text_to_image/prepare_abo_cleanrender.py",
+      "git_sha256": "5b102065237487224c4e6f8f874a925880e2511a309643af7e4c49f924e43445",
+      "identity": "CRLF_only"
+    },
+    {
+      "path": "handoffs/t12_small_baseline_share_20260928/package/source/LightGenV2/tasks/t12_text_to_image/prepare_chair_turntable.py",
+      "sha256": "ebbc7464c0e142a462a1d77c9b491cc47e9d5a2caaa34b8249a7417519741a63",
+      "bytes": 3901,
+      "git_commit": "7093ec46082eed2fae127ec5028d3e2e8548b592",
+      "git_path": "LightGenV2/tasks/t12_text_to_image/prepare_chair_turntable.py",
+      "git_sha256": "628852c9a7ffd00d0503894427b5767668f05b92c09fe8c0fb3bf1d115f6ff69",
+      "identity": "CRLF_only"
+    },
+    {
+      "path": "handoffs/t12_small_baseline_share_20260928/package/source/LightGenV2/tasks/t12_text_to_image/prepare_uco3d.py",
+      "sha256": "9f1acae1feb1f50953d0dc6acc085b0437755a6ba6c5f24ba36ff065ba387f5d",
+      "bytes": 8547,
+      "git_commit": "7093ec46082eed2fae127ec5028d3e2e8548b592",
+      "git_path": "LightGenV2/tasks/t12_text_to_image/prepare_uco3d.py",
+      "git_sha256": "dc9f7fa55046534955378e6a1a1a37453d23f4e6cda383df6edcda9c6f17c823",
+      "identity": "CRLF_only"
+    },
+    {
+      "path": "handoffs/t12_small_baseline_share_20260928/package/source/LightGenV2/tasks/t12_text_to_image/product_global_redesign_data.py",
+      "sha256": "99457f118120bafc4587d67f97c1ad354c52c318969e5d92beab1c6ccd22c058",
+      "bytes": 9231,
+      "git_commit": "b8a236630ea74fb5e02bd31646aaf2814d98bef5",
+      "git_path": "LightGenV2/tasks/t12_text_to_image/product_global_redesign_data.py",
+      "git_sha256": "d4e558e86d1697946e56598b9d113bef82d4c220ce3da52874f538e9d23fae43",
+      "identity": "CRLF_only"
+    },
+    {
+      "path": "handoffs/t12_small_baseline_share_20260928/package/source/LightGenV2/tasks/t12_text_to_image/product_global_redesign_run.py",
+      "sha256": "dad8390e80db095a63b34018f99f5933a806d408cf82b54c947cc69d9cadb58d",
+      "bytes": 3253,
+      "git_commit": "7093ec46082eed2fae127ec5028d3e2e8548b592",
+      "git_path": "LightGenV2/tasks/t12_text_to_image/product_global_redesign_run.py",
+      "git_sha256": "175c0ba19fa6ca6bd6e447d0310e4673bca2bbb88f131f3e1fc1a95402a3f8ba",
+      "identity": "CRLF_only"
+    },
+    {
+      "path": "handoffs/t12_small_baseline_share_20260928/package/source/LightGenV2/tasks/t12_text_to_image/product_global_redesign_training.py",
+      "sha256": "099ace00de4e0c29bed20ca22313fe5f8d384cf947dc2fe5af9b4fa609d9fb42",
+      "bytes": 20636,
+      "git_commit": "b8a236630ea74fb5e02bd31646aaf2814d98bef5",
+      "git_path": "LightGenV2/tasks/t12_text_to_image/product_global_redesign_training.py",
+      "git_sha256": "4e4cfbe06f9df7839aca7423d688d20b039353286a412f860d452633aca6eada",
+      "identity": "CRLF_only"
+    },
+    {
+      "path": "handoffs/t12_small_baseline_share_20260928/package/source/LightGenV2/tasks/t12_text_to_image/product_instruction_data.py",
+      "sha256": "a3b78a89589e483c7ef8c6edc78e60435b15ff4e2b936b99c6957db7e3b7828c",
+      "bytes": 7349,
+      "git_commit": "7093ec46082eed2fae127ec5028d3e2e8548b592",
+      "git_path": "LightGenV2/tasks/t12_text_to_image/product_instruction_data.py",
+      "git_sha256": "5ed3eb8d6588a79fb6266906a8c13d3f81f909a80cedf98fc1b4d6f4c7fc17d0",
+      "identity": "CRLF_only"
+    },
+    {
+      "path": "handoffs/t12_small_baseline_share_20260928/package/source/LightGenV2/tasks/t12_text_to_image/product_object_replace_data.py",
+      "sha256": "8bdb9e41fdff08baee8f93ef46991047976c2e2cbb44fc569c114b602b7f37c5",
+      "bytes": 9185,
+      "git_commit": "b8a236630ea74fb5e02bd31646aaf2814d98bef5",
+      "git_path": "LightGenV2/tasks/t12_text_to_image/product_object_replace_data.py",
+      "git_sha256": "b2994a4901a7c0a39d87eedbbc605f12f5aad5c471f03e7a30ace9f03dcd3017",
+      "identity": "CRLF_only"
+    },
+    {
+      "path": "handoffs/t12_small_baseline_share_20260928/package/source/LightGenV2/tasks/t12_text_to_image/product_object_replace_run.py",
+      "sha256": "f6ca993a4fcc71583ef8e276740f4a1f8f7c7db26084a62dbc0b02edbbe1ed84",
+      "bytes": 2820,
+      "git_commit": "7093ec46082eed2fae127ec5028d3e2e8548b592",
+      "git_path": "LightGenV2/tasks/t12_text_to_image/product_object_replace_run.py",
+      "git_sha256": "3190eb0c370a80cde49f855e3f9d62e16c4a5f51e36a427cb7fc0dd74f7138c3",
+      "identity": "CRLF_only"
+    },
+    {
+      "path": "handoffs/t12_small_baseline_share_20260928/package/source/LightGenV2/tasks/t12_text_to_image/product_object_replace_training.py",
+      "sha256": "ca241bea4618d154d055d278f40f31901164b625ab7ef43e1e74b9f85541c189",
+      "bytes": 17185,
+      "git_commit": "7093ec46082eed2fae127ec5028d3e2e8548b592",
+      "git_path": "LightGenV2/tasks/t12_text_to_image/product_object_replace_training.py",
+      "git_sha256": "ccb6ddbaafe68e4b9621671e17900f2fcd24805e733282b8d6bc4480237ad2f4",
+      "identity": "CRLF_only"
+    },
+    {
+      "path": "handoffs/t12_small_baseline_share_20260928/package/source/LightGenV2/tasks/t12_text_to_image/product_repair_data.py",
+      "sha256": "1a422d56c8284f766a0030fd137ff19b00623a8a8f096973c9095cec5f4e664d",
+      "bytes": 10282,
+      "git_commit": "7093ec46082eed2fae127ec5028d3e2e8548b592",
+      "git_path": "LightGenV2/tasks/t12_text_to_image/product_repair_data.py",
+      "git_sha256": "4e1bbb609614cb83655067b5f50e80ee3e484227fc935b4fe24fe17545776b2a",
+      "identity": "CRLF_only"
+    },
+    {
+      "path": "handoffs/t12_small_baseline_share_20260928/package/source/LightGenV2/tasks/t12_text_to_image/product_repair_infer.py",
+      "sha256": "44e64541648b4d500a0e7baaf288cde80a4ef368eff9518d07a996fd1d46ff76",
+      "bytes": 5168,
+      "git_commit": "7093ec46082eed2fae127ec5028d3e2e8548b592",
+      "git_path": "LightGenV2/tasks/t12_text_to_image/product_repair_infer.py",
+      "git_sha256": "0a299f9fec4406442059c599e598bb1601ae546e1666f2ae42aa24507625b509",
+      "identity": "CRLF_only"
+    },
+    {
+      "path": "handoffs/t12_small_baseline_share_20260928/package/source/LightGenV2/tasks/t12_text_to_image/product_repair_model.py",
+      "sha256": "c68171c5b6152f2b3cf96f07758acc16bcb6de67d22d2f08d552348290f0a3b0",
+      "bytes": 13201,
+      "git_commit": "b8a236630ea74fb5e02bd31646aaf2814d98bef5",
+      "git_path": "LightGenV2/tasks/t12_text_to_image/product_repair_model.py",
+      "git_sha256": "b46115af5a775ef8a32847a65cee4ca9e72b1cb0bfbdea55aeedc21822cd8186",
+      "identity": "CRLF_only"
+    },
+    {
+      "path": "handoffs/t12_small_baseline_share_20260928/package/source/LightGenV2/tasks/t12_text_to_image/product_repair_run.py",
+      "sha256": "f0825b467dbad6e87d2ec1eb64dfce25acb749b735c071f77dc87ac863fee658",
+      "bytes": 4053,
+      "git_commit": "7093ec46082eed2fae127ec5028d3e2e8548b592",
+      "git_path": "LightGenV2/tasks/t12_text_to_image/product_repair_run.py",
+      "git_sha256": "7cca3479c4789d249925b330692fea77e016aaf92c1d3068c8a72122df3ac13a",
+      "identity": "CRLF_only"
+    },
+    {
+      "path": "handoffs/t12_small_baseline_share_20260928/package/source/LightGenV2/tasks/t12_text_to_image/product_repair_training.py",
+      "sha256": "ec7be2dffce0d6fdd673bd20d5a53daf8edd2909c30dcb5645c02d7e5a7a1d5d",
+      "bytes": 25640,
+      "git_commit": "7093ec46082eed2fae127ec5028d3e2e8548b592",
+      "git_path": "LightGenV2/tasks/t12_text_to_image/product_repair_training.py",
+      "git_sha256": "ca037cfa7cc1531da2281c9bb5584e71553b2349a6234112819cd0331fb2e4bd",
+      "identity": "CRLF_only"
+    },
+    {
+      "path": "handoffs/t12_small_baseline_share_20260928/package/source/LightGenV2/tasks/t12_text_to_image/product_scene_data.py",
+      "sha256": "7bc0952cafb4ef3a1d0c49fb74364b670653ad7db7a5c35de4770482dee919ae",
+      "bytes": 18051,
+      "git_commit": "b8a236630ea74fb5e02bd31646aaf2814d98bef5",
+      "git_path": "LightGenV2/tasks/t12_text_to_image/product_scene_data.py",
+      "git_sha256": "b005bdc06e52d59279906f9bfbb2b4d1e1bf4c46394ebf06a41a767321351dd5",
+      "identity": "CRLF_only"
+    },
+    {
+      "path": "handoffs/t12_small_baseline_share_20260928/package/source/LightGenV2/tasks/t12_text_to_image/product_scene_infer.py",
+      "sha256": "67ca48a5074bec62dce8737b18fc34900b3b7c5eea56f71a2b6f15639848fea6",
+      "bytes": 6058,
+      "git_commit": "7093ec46082eed2fae127ec5028d3e2e8548b592",
+      "git_path": "LightGenV2/tasks/t12_text_to_image/product_scene_infer.py",
+      "git_sha256": "a3c8d9b0c18b7a26376e41268a3485aeee50a4b84c64835e0dce8e4d7b2cd9fe",
+      "identity": "CRLF_only"
+    },
+    {
+      "path": "handoffs/t12_small_baseline_share_20260928/package/source/LightGenV2/tasks/t12_text_to_image/product_scene_replace_data.py",
+      "sha256": "a66df23afe6fb84677e4409b69d08cc6bae76a0616f49ff6e917aed0e023e636",
+      "bytes": 14994,
+      "git_commit": "b8a236630ea74fb5e02bd31646aaf2814d98bef5",
+      "git_path": "LightGenV2/tasks/t12_text_to_image/product_scene_replace_data.py",
+      "git_sha256": "6f294b5448cdecbc2cad2535d795d637e72c3610451d25bb22f49e58c0f33b9a",
+      "identity": "CRLF_only"
+    },
+    {
+      "path": "handoffs/t12_small_baseline_share_20260928/package/source/LightGenV2/tasks/t12_text_to_image/product_scene_replace_infer.py",
+      "sha256": "7541f3a94ec0c2e650274b530e02613f21d9d1fcddc93143fd2f8af7232be36d",
+      "bytes": 7337,
+      "git_commit": "7093ec46082eed2fae127ec5028d3e2e8548b592",
+      "git_path": "LightGenV2/tasks/t12_text_to_image/product_scene_replace_infer.py",
+      "git_sha256": "e07030e3355e37392d60ad02cab6db3565e334f90b5338cd053e62e463dad5f4",
+      "identity": "CRLF_only"
+    },
+    {
+      "path": "handoffs/t12_small_baseline_share_20260928/package/source/LightGenV2/tasks/t12_text_to_image/product_scene_replace_run.py",
+      "sha256": "31c07688216c47d2225afac2e24b88b0f3cd60627d1b84360a2edaaae4dbada4",
+      "bytes": 4334,
+      "git_commit": "7093ec46082eed2fae127ec5028d3e2e8548b592",
+      "git_path": "LightGenV2/tasks/t12_text_to_image/product_scene_replace_run.py",
+      "git_sha256": "a8f6213e4ae0813ec8f5a2304df5c8f0be9951756391e786367901b73fdb719a",
+      "identity": "CRLF_only"
+    },
+    {
+      "path": "handoffs/t12_small_baseline_share_20260928/package/source/LightGenV2/tasks/t12_text_to_image/product_scene_replace_training.py",
+      "sha256": "e0c1e545cc3cb9810ebc0cca19dbce92ceaf820614a29e709286e6bd6c4f55c2",
+      "bytes": 24965,
+      "git_commit": "7093ec46082eed2fae127ec5028d3e2e8548b592",
+      "git_path": "LightGenV2/tasks/t12_text_to_image/product_scene_replace_training.py",
+      "git_sha256": "647eae237c751d983d60a3b7c11dc49646c7c383c864560e840fd2a4f2cfefe8",
+      "identity": "CRLF_only"
+    },
+    {
+      "path": "handoffs/t12_small_baseline_share_20260928/package/source/LightGenV2/tasks/t12_text_to_image/product_scene_run.py",
+      "sha256": "aea0c90cf6b05941c29f5f84b88f333405c4aa1972be79fb2981fdd68d646ecd",
+      "bytes": 3928,
+      "git_commit": "7093ec46082eed2fae127ec5028d3e2e8548b592",
+      "git_path": "LightGenV2/tasks/t12_text_to_image/product_scene_run.py",
+      "git_sha256": "72f7f3d9d2d5a76e641aaf90c5aa879f9b6d80fe79b27ec90dbc1ec5d6da39d9",
+      "identity": "CRLF_only"
+    },
+    {
+      "path": "handoffs/t12_small_baseline_share_20260928/package/source/LightGenV2/tasks/t12_text_to_image/product_scene_training.py",
+      "sha256": "f8deda3bc5a49a590b2c778b2c08b1c2115d7eb50d79243f8bc950712e275ba0",
+      "bytes": 27091,
+      "git_commit": "b8a236630ea74fb5e02bd31646aaf2814d98bef5",
+      "git_path": "LightGenV2/tasks/t12_text_to_image/product_scene_training.py",
+      "git_sha256": "daa696d8ab23ab966489a43eb5f28394036a5c53fe6fc282bcb31e5da9b26f60",
+      "identity": "CRLF_only"
+    },
+    {
+      "path": "handoffs/t12_small_baseline_share_20260928/package/source/LightGenV2/tasks/t12_text_to_image/product_unified_edit_data.py",
+      "sha256": "7955ce2537449bc3b336579b03c6f2b6973f427d1781e8c554034c4f7d7df4be",
+      "bytes": 7967,
+      "git_commit": "b8a236630ea74fb5e02bd31646aaf2814d98bef5",
+      "git_path": "LightGenV2/tasks/t12_text_to_image/product_unified_edit_data.py",
+      "git_sha256": "231f6ac97cf0059ea2f07d743e741f5580bd7151919e0d62e7bf1aaaa9a929c1",
+      "identity": "CRLF_only"
+    },
+    {
+      "path": "handoffs/t12_small_baseline_share_20260928/package/source/LightGenV2/tasks/t12_text_to_image/product_unified_edit_data_v2.py",
+      "sha256": "d5f73177675c46ebea22603e732b70c1394166636b09bc971b465577d6a71f07",
+      "bytes": 10481,
+      "git_commit": "b8a236630ea74fb5e02bd31646aaf2814d98bef5",
+      "git_path": "LightGenV2/tasks/t12_text_to_image/product_unified_edit_data_v2.py",
+      "git_sha256": "1b37d3ea0fe65403848ebaedc13da691a332608f1759e63b61ee314dd6b7e8de",
+      "identity": "CRLF_only"
+    },
+    {
+      "path": "handoffs/t12_small_baseline_share_20260928/package/source/LightGenV2/tasks/t12_text_to_image/product_unified_edit_run.py",
+      "sha256": "8f1d390ed4269874abb0e4e04fc17bb557f15d603a027afc3d5d8019ba1a7489",
+      "bytes": 4283,
+      "git_commit": "7093ec46082eed2fae127ec5028d3e2e8548b592",
+      "git_path": "LightGenV2/tasks/t12_text_to_image/product_unified_edit_run.py",
+      "git_sha256": "5c05e7f69dc2cf777ad27431cc6b8fb518b830a828ca69676c6f03fca810112b",
+      "identity": "CRLF_only"
+    },
+    {
+      "path": "handoffs/t12_small_baseline_share_20260928/package/source/LightGenV2/tasks/t12_text_to_image/progressive_student.py",
+      "sha256": "d43223d00d52e83929921d2a9d378c8200a5d62a286b12e35dddb12498915872",
+      "bytes": 4348,
+      "git_commit": "b8a236630ea74fb5e02bd31646aaf2814d98bef5",
+      "git_path": "LightGenV2/tasks/t12_text_to_image/progressive_student.py",
+      "git_sha256": "173c50c460a34a0d6e83183369e8f04761a77d0ea7749ace0ac31ce963e56b1c",
+      "identity": "CRLF_only"
+    },
+    {
+      "path": "handoffs/t12_small_baseline_share_20260928/package/source/LightGenV2/tasks/t12_text_to_image/progressive_student_run.py",
+      "sha256": "aa48f08830e2b7a37d7927a5c0af280f2fc6c36dc4fa20e292f8cd9afd0593fd",
+      "bytes": 2498,
+      "git_commit": "7093ec46082eed2fae127ec5028d3e2e8548b592",
+      "git_path": "LightGenV2/tasks/t12_text_to_image/progressive_student_run.py",
+      "git_sha256": "db9f6e99da1ed6879e978e8a7c6e6d16b214ec6d3a5d83908498e01791628636",
+      "identity": "CRLF_only"
+    },
+    {
+      "path": "handoffs/t12_small_baseline_share_20260928/package/source/LightGenV2/tasks/t12_text_to_image/progressive_student_training.py",
+      "sha256": "7623991ffb5929eeda265f8033e26f5117214775e195968246e507c85b009b8a",
+      "bytes": 16509,
+      "git_commit": "7093ec46082eed2fae127ec5028d3e2e8548b592",
+      "git_path": "LightGenV2/tasks/t12_text_to_image/progressive_student_training.py",
+      "git_sha256": "ae2b759ab5f82069719fa9ff5db9540634109b7dd750afaad25674829c0ae5ca",
+      "identity": "CRLF_only"
+    },
+    {
+      "path": "handoffs/t12_small_baseline_share_20260928/package/source/LightGenV2/tasks/t12_text_to_image/pruned_turbo.py",
+      "sha256": "5fd500913883b6c6de11266baa10bafa44653c303fcd637697a4b4b220072796",
+      "bytes": 3606,
+      "git_commit": "b8a236630ea74fb5e02bd31646aaf2814d98bef5",
+      "git_path": "LightGenV2/tasks/t12_text_to_image/pruned_turbo.py",
+      "git_sha256": "0de4e4f39421046ae1b342b385541eae217a96a1e849e92a0c3153c182c8f317",
+      "identity": "CRLF_only"
+    },
+    {
+      "path": "handoffs/t12_small_baseline_share_20260928/package/source/LightGenV2/tasks/t12_text_to_image/pruned_turbo_infer.py",
+      "sha256": "d1e600569941576d9f1b1f0f189f6f7856440b86f62c11f3ca42e7a76b04c2f1",
+      "bytes": 5861,
+      "git_commit": "7093ec46082eed2fae127ec5028d3e2e8548b592",
+      "git_path": "LightGenV2/tasks/t12_text_to_image/pruned_turbo_infer.py",
+      "git_sha256": "a39a6b0b4608a9a850fd24b58bdb729fb98369f107d1e9e9150064f4343d8869",
+      "identity": "CRLF_only"
+    },
+    {
+      "path": "handoffs/t12_small_baseline_share_20260928/package/source/LightGenV2/tasks/t12_text_to_image/pruned_turbo_run.py",
+      "sha256": "d1a936075c6d2c79fc3dc20ee48a22f70054455e0b932604f408cead92718e74",
+      "bytes": 1709,
+      "git_commit": "7093ec46082eed2fae127ec5028d3e2e8548b592",
+      "git_path": "LightGenV2/tasks/t12_text_to_image/pruned_turbo_run.py",
+      "git_sha256": "cfa97134454160b7c40c6fcfbac514bc4cf79e60439749319677f44c9a020ace",
+      "identity": "CRLF_only"
+    },
+    {
+      "path": "handoffs/t12_small_baseline_share_20260928/package/source/LightGenV2/tasks/t12_text_to_image/pruned_turbo_training.py",
+      "sha256": "c0cf71d53b88061d86f57848e4453e2efea163d496d51c83bda7150fabccccaa",
+      "bytes": 5503,
+      "git_commit": "7093ec46082eed2fae127ec5028d3e2e8548b592",
+      "git_path": "LightGenV2/tasks/t12_text_to_image/pruned_turbo_training.py",
+      "git_sha256": "e18b599ccdc777275e089ef84da7ffde50b54c46914434d4d76db871ff7f8936",
+      "identity": "CRLF_only"
+    },
+    {
+      "path": "handoffs/t12_small_baseline_share_20260928/package/source/LightGenV2/tasks/t12_text_to_image/qwen_mini_infer.py",
+      "sha256": "ec8f8b07afe2c89d0438fe8429c9323a909ea28abde7c50f700e59695a3a5637",
+      "bytes": 3741,
+      "git_commit": "b8a236630ea74fb5e02bd31646aaf2814d98bef5",
+      "git_path": "LightGenV2/tasks/t12_text_to_image/qwen_mini_infer.py",
+      "git_sha256": "af4e39e95b01a31ee9122ccd404343901aa12306ae2fa88bb5a7f514e6bff158",
+      "identity": "CRLF_only"
+    },
+    {
+      "path": "handoffs/t12_small_baseline_share_20260928/package/source/LightGenV2/tasks/t12_text_to_image/qwen_mini_small.py",
+      "sha256": "5cc41d0c03bfb10b026656c94c657a696d2ae2afd2f8ffc50d5e500fb0478b4b",
+      "bytes": 20704,
+      "git_commit": "7093ec46082eed2fae127ec5028d3e2e8548b592",
+      "git_path": "LightGenV2/tasks/t12_text_to_image/qwen_mini_small.py",
+      "git_sha256": "fc7dee42ed26505fe461930ef3adc0f795740911da8d7dcca4bd5acd991bf323",
+      "identity": "CRLF_only"
+    },
+    {
+      "path": "handoffs/t12_small_baseline_share_20260928/package/source/LightGenV2/tasks/t12_text_to_image/qwen_mini_small_run.py",
+      "sha256": "e1881001110ac0fa74a6e79974b74785ee1e4eff9437df73fc7166daa89dbac0",
+      "bytes": 2997,
+      "git_commit": "b8a236630ea74fb5e02bd31646aaf2814d98bef5",
+      "git_path": "LightGenV2/tasks/t12_text_to_image/qwen_mini_small_run.py",
+      "git_sha256": "d528a1d5c7553fe9366bb981f0078063f0ff36e1728fb06b01052840591784b7",
+      "identity": "CRLF_only"
+    },
+    {
+      "path": "handoffs/t12_small_baseline_share_20260928/package/source/LightGenV2/tasks/t12_text_to_image/render_expanded_large.py",
+      "sha256": "b4141db5c61faddbf64ba5f50c79b8d355412f536c06b6431299bc7992dfbe4f",
+      "bytes": 2997,
+      "git_commit": "7093ec46082eed2fae127ec5028d3e2e8548b592",
+      "git_path": "LightGenV2/tasks/t12_text_to_image/render_expanded_large.py",
+      "git_sha256": "d7350bca450eb99dc616419d50276a8261bfdb2cceac8e9b941966d07d2c7a28",
+      "identity": "CRLF_only"
+    },
+    {
+      "path": "handoffs/t12_small_baseline_share_20260928/package/source/LightGenV2/tasks/t12_text_to_image/render_expanded_small.py",
+      "sha256": "be5a7b9eb27ddc7058461ecddd366017f458175793d85242c7543fc496924449",
+      "bytes": 2173,
+      "git_commit": "7093ec46082eed2fae127ec5028d3e2e8548b592",
+      "git_path": "LightGenV2/tasks/t12_text_to_image/render_expanded_small.py",
+      "git_sha256": "56d2852d1202800816469633c44fba01f939eb9b78d96f2b647d307c5d93d5a2",
+      "identity": "CRLF_only"
+    },
+    {
+      "path": "handoffs/t12_small_baseline_share_20260928/package/source/LightGenV2/tasks/t12_text_to_image/reports/20260920_server_training.md",
+      "sha256": "eb93052c23fa62638d707268ad9534d2d500ca2c38ee2329e9a7863f559bdcaa",
+      "bytes": 2835,
+      "git_commit": "7093ec46082eed2fae127ec5028d3e2e8548b592",
+      "git_path": "LightGenV2/tasks/t12_text_to_image/reports/20260920_server_training.md",
+      "git_sha256": "b8dd5bb5bdd67e745ff5fd6c8bdd86a005043199c02de4014cda7ac98fa0dd0e",
+      "identity": "CRLF_only"
+    },
+    {
+      "path": "handoffs/t12_small_baseline_share_20260928/package/source/LightGenV2/tasks/t12_text_to_image/reports/20260921_abo_cleanrender_direct_gan/README.md",
+      "sha256": "7ba98a7a2f7758b0fa656352767e171fab9c284b6dfb9cedcad7a361ee7c4ca8",
+      "bytes": 5516,
+      "git_commit": "7093ec46082eed2fae127ec5028d3e2e8548b592",
+      "git_path": "LightGenV2/tasks/t12_text_to_image/reports/20260921_abo_cleanrender_direct_gan/README.md",
+      "git_sha256": "547f945e79a965ec9f2d24f5dce3b9e545c6f07a16930170dfc9301a9a2f51f2",
+      "identity": "CRLF_only"
+    },
+    {
+      "path": "handoffs/t12_small_baseline_share_20260928/package/source/LightGenV2/tasks/t12_text_to_image/reports/20260921_abo_cleanrender_direct_gan/results.json",
+      "sha256": "74940cb0b9176f9ffec30811d05fe068e0ca10a61de80c07c07c4b62e8d7b38f",
+      "bytes": 1797,
+      "git_commit": "7093ec46082eed2fae127ec5028d3e2e8548b592",
+      "git_path": "LightGenV2/tasks/t12_text_to_image/reports/20260921_abo_cleanrender_direct_gan/results.json",
+      "git_sha256": "37f4731fb0e7b6fb91131a94103d48b4374995f1a66bc1318ac9fddab2053b93",
+      "identity": "CRLF_only"
+    },
+    {
+      "path": "handoffs/t12_small_baseline_share_20260928/package/source/LightGenV2/tasks/t12_text_to_image/reports/20260921_compact_electronic_baseline/README.md",
+      "sha256": "1c00f28308667ccd5f7316a9e3f0777f646b4099aee77181ab19ad13a0fd8e1b",
+      "bytes": 4923,
+      "git_commit": "7093ec46082eed2fae127ec5028d3e2e8548b592",
+      "git_path": "LightGenV2/tasks/t12_text_to_image/reports/20260921_compact_electronic_baseline/README.md",
+      "git_sha256": "9ade77b77b88baac8b2ed7ad1731e81315f0d539ee37e2beacbf8026900f52f2",
+      "identity": "CRLF_only"
+    },
+    {
+      "path": "handoffs/t12_small_baseline_share_20260928/package/source/LightGenV2/tasks/t12_text_to_image/reports/20260921_compact_electronic_baseline/results.json",
+      "sha256": "725c0eff5fa78022d5a4484936082cf06a2b0d07aabd4d5ea67b42fd13955ba4",
+      "bytes": 1464,
+      "git_commit": "7093ec46082eed2fae127ec5028d3e2e8548b592",
+      "git_path": "LightGenV2/tasks/t12_text_to_image/reports/20260921_compact_electronic_baseline/results.json",
+      "git_sha256": "08aed07f61c6447b8ab5f17eec087ac267e9573745b320b6757a6138019ae1b5",
+      "identity": "CRLF_only"
+    },
+    {
+      "path": "handoffs/t12_small_baseline_share_20260928/package/source/LightGenV2/tasks/t12_text_to_image/reports/20260921_electronic_baseline/README.md",
+      "sha256": "e940c7b054001f04c70acec719d984eb9323a320138d975cf2b57aaf21d01f4b",
+      "bytes": 4466,
+      "git_commit": "7093ec46082eed2fae127ec5028d3e2e8548b592",
+      "git_path": "LightGenV2/tasks/t12_text_to_image/reports/20260921_electronic_baseline/README.md",
+      "git_sha256": "80d571d9669e693df991e7974df57099faee5092ea7aff6c68aec9008bfd4a79",
+      "identity": "CRLF_only"
+    },
+    {
+      "path": "handoffs/t12_small_baseline_share_20260928/package/source/LightGenV2/tasks/t12_text_to_image/reports/20260921_electronic_baseline/novel_prompt_inference.json",
+      "sha256": "22e20222be96f3b19a463923a9b99a4f91af8bb38d5ee2dc08a1641c468256db",
+      "bytes": 2038,
+      "git_commit": "7093ec46082eed2fae127ec5028d3e2e8548b592",
+      "git_path": "LightGenV2/tasks/t12_text_to_image/reports/20260921_electronic_baseline/novel_prompt_inference.json",
+      "git_sha256": "b43ebf2447d866236834de730ae81a169b73567e985e83b4ed76221dfe1bd4f9",
+      "identity": "CRLF_only"
+    },
+    {
+      "path": "handoffs/t12_small_baseline_share_20260928/package/source/LightGenV2/tasks/t12_text_to_image/reports/20260921_electronic_baseline/training_summary.json",
+      "sha256": "2c2576eef53930fce08fb76493fd4c025a0441295ed6f2949f1ee60282249483",
+      "bytes": 938,
+      "git_commit": "7093ec46082eed2fae127ec5028d3e2e8548b592",
+      "git_path": "LightGenV2/tasks/t12_text_to_image/reports/20260921_electronic_baseline/training_summary.json",
+      "git_sha256": "46ca2506846ee6b852f435ca932a19863eb4d753efbfa02c853761b63a36af18",
+      "identity": "CRLF_only"
+    },
+    {
+      "path": "handoffs/t12_small_baseline_share_20260928/package/source/LightGenV2/tasks/t12_text_to_image/reports/20260921_parallel_optical_v0/README.md",
+      "sha256": "f8cb64de6c0f4644893cfbc7d15a996d727fc7c3252eea8e6876f10acbef8c59",
+      "bytes": 3398,
+      "git_commit": "7093ec46082eed2fae127ec5028d3e2e8548b592",
+      "git_path": "LightGenV2/tasks/t12_text_to_image/reports/20260921_parallel_optical_v0/README.md",
+      "git_sha256": "a6cc1d09850a5f97dc5449f2253cb6133a6e56774a69f67429c417cfc5eb6ed8",
+      "identity": "CRLF_only"
+    },
+    {
+      "path": "handoffs/t12_small_baseline_share_20260928/package/source/LightGenV2/tasks/t12_text_to_image/reports/20260921_parallel_optical_v0/results.json",
+      "sha256": "53b63af4b8daab5ed81fd74f859332121cef9036b4fc6f852a0c3df118d500fe",
+      "bytes": 2009,
+      "git_commit": "7093ec46082eed2fae127ec5028d3e2e8548b592",
+      "git_path": "LightGenV2/tasks/t12_text_to_image/reports/20260921_parallel_optical_v0/results.json",
+      "git_sha256": "3de42e063feb01471d89eb7bd3662e1e521bef3a1efc56baedd9b960cae2af8a",
+      "identity": "CRLF_only"
+    },
+    {
+      "path": "handoffs/t12_small_baseline_share_20260928/package/source/LightGenV2/tasks/t12_text_to_image/reports/20260921_pruned_unet_v1/README.md",
+      "sha256": "0d392db2d7e9f5240fca9c96eee8631060b3a06443a7a55bd3ac6a0fe613ab10",
+      "bytes": 3203,
+      "git_commit": "7093ec46082eed2fae127ec5028d3e2e8548b592",
+      "git_path": "LightGenV2/tasks/t12_text_to_image/reports/20260921_pruned_unet_v1/README.md",
+      "git_sha256": "d6cee8f5aaa8281d75015e5816740cb74d8ea16082765b0dbb3801e3775286bc",
+      "identity": "CRLF_only"
+    },
+    {
+      "path": "handoffs/t12_small_baseline_share_20260928/package/source/LightGenV2/tasks/t12_text_to_image/reports/20260921_pruned_unet_v1/results.json",
+      "sha256": "da641e0ffaece96a4805eb86fde5a7273192aac3d652e00abff82a6e41e35cf4",
+      "bytes": 1845,
+      "git_commit": "7093ec46082eed2fae127ec5028d3e2e8548b592",
+      "git_path": "LightGenV2/tasks/t12_text_to_image/reports/20260921_pruned_unet_v1/results.json",
+      "git_sha256": "336e60745d3e9256274e7b69db9a775c51daea3efaddf2e19d80e0b25e3e43c6",
+      "identity": "CRLF_only"
+    },
+    {
+      "path": "handoffs/t12_small_baseline_share_20260928/package/source/LightGenV2/tasks/t12_text_to_image/reports/20260922_abo_lamp_scene_generation/README.md",
+      "sha256": "f3d1844a83d38adf7f6b68db885f608e1aa26a5dfca18073b50488fcb5bb8be3",
+      "bytes": 4224,
+      "git_commit": "7093ec46082eed2fae127ec5028d3e2e8548b592",
+      "git_path": "LightGenV2/tasks/t12_text_to_image/reports/20260922_abo_lamp_scene_generation/README.md",
+      "git_sha256": "55f2a8fbc1e8d48d95208bb4e0fc7060e8ec5f8359cdafb74b25bd74605f298d",
+      "identity": "CRLF_only"
+    },
+    {
+      "path": "handoffs/t12_small_baseline_share_20260928/package/source/LightGenV2/tasks/t12_text_to_image/reports/20260922_abo_lamp_scene_generation/dataset_summary.json",
+      "sha256": "f4f1ce41fece0a7d4ac3d12ba68605d78bd6076fe89b971451e9882ea263cb39",
+      "bytes": 1295,
+      "git_commit": "7093ec46082eed2fae127ec5028d3e2e8548b592",
+      "git_path": "LightGenV2/tasks/t12_text_to_image/reports/20260922_abo_lamp_scene_generation/dataset_summary.json",
+      "git_sha256": "2673738723b2b773b0d0172196ecd9ce51d2b3f940a561447bced8c9f6fa9f7f",
+      "identity": "CRLF_only"
+    },
+    {
+      "path": "handoffs/t12_small_baseline_share_20260928/package/source/LightGenV2/tasks/t12_text_to_image/reports/20260922_abo_lamp_scene_generation/test_results.json",
+      "sha256": "4df4a8bf3225ac385acff4d3d2df50baf57c848acc6764f010cc11857b00f59b",
+      "bytes": 2275,
+      "git_commit": "7093ec46082eed2fae127ec5028d3e2e8548b592",
+      "git_path": "LightGenV2/tasks/t12_text_to_image/reports/20260922_abo_lamp_scene_generation/test_results.json",
+      "git_sha256": "dda3584cb1d9f79415e873e7e941a5a57ae0d21f793927a0a942b0aec34755b9",
+      "identity": "CRLF_only"
+    },
+    {
+      "path": "handoffs/t12_small_baseline_share_20260928/package/source/LightGenV2/tasks/t12_text_to_image/reports/20260922_abo_lamp_scene_generation/training_summary.json",
+      "sha256": "644580ea198ef18fb6300b0ecc0495c78f6400873557fdecd5b5f3c6c3fce125",
+      "bytes": 3637,
+      "git_commit": "7093ec46082eed2fae127ec5028d3e2e8548b592",
+      "git_path": "LightGenV2/tasks/t12_text_to_image/reports/20260922_abo_lamp_scene_generation/training_summary.json",
+      "git_sha256": "3cca3eefa0141d641a1fac37f903156472fffa7c2c1f988ea93d529108131d88",
+      "identity": "CRLF_only"
+    },
+    {
+      "path": "handoffs/t12_small_baseline_share_20260928/package/source/LightGenV2/tasks/t12_text_to_image/reports/20260922_abo_lamp_scene_replace_half_qwen/README.md",
+      "sha256": "70199082ee6ce412e3245b9f8079a34d79c3a8ee5778b50bca109f77d33d1872",
+      "bytes": 3147,
+      "git_commit": "7093ec46082eed2fae127ec5028d3e2e8548b592",
+      "git_path": "LightGenV2/tasks/t12_text_to_image/reports/20260922_abo_lamp_scene_replace_half_qwen/README.md",
+      "git_sha256": "2b95c3426388d55f61e22835c1408b227982291431b123a8a8a17b69d3c0e93f",
+      "identity": "CRLF_only"
+    },
+    {
+      "path": "handoffs/t12_small_baseline_share_20260928/package/source/LightGenV2/tasks/t12_text_to_image/reports/20260922_abo_lamp_scene_replace_half_qwen/test_results.json",
+      "sha256": "d9a1fc52f9bbee4054a0d01a20a6e92fc4e71678e8da60b6c6b877a1c952ae38",
+      "bytes": 3216,
+      "git_commit": "7093ec46082eed2fae127ec5028d3e2e8548b592",
+      "git_path": "LightGenV2/tasks/t12_text_to_image/reports/20260922_abo_lamp_scene_replace_half_qwen/test_results.json",
+      "git_sha256": "927d637fbd7ec737061841b90b34af42d42167574d47213d7b41d2b76e877665",
+      "identity": "CRLF_only"
+    },
+    {
+      "path": "handoffs/t12_small_baseline_share_20260928/package/source/LightGenV2/tasks/t12_text_to_image/reports/20260922_abo_lamp_scene_replace_half_qwen/training_summary.json",
+      "sha256": "75e3b3be24160ef9e4aa1d0dd3835949fe22503ea547b64f9c31714d7ec7fb74",
+      "bytes": 6247,
+      "git_commit": "7093ec46082eed2fae127ec5028d3e2e8548b592",
+      "git_path": "LightGenV2/tasks/t12_text_to_image/reports/20260922_abo_lamp_scene_replace_half_qwen/training_summary.json",
+      "git_sha256": "d2f5d7354207a8377aeebf7ad3c135a7a3545dbbd6e80401077d5d307288bfaa",
+      "identity": "CRLF_only"
+    },
+    {
+      "path": "handoffs/t12_small_baseline_share_20260928/package/source/LightGenV2/tasks/t12_text_to_image/reports/20260922_abo_product_repair_big_optical/README.md",
+      "sha256": "6d16a970e585e8d52d473493775fcc6935f294f51f31b81841c4b81449f1136a",
+      "bytes": 4461,
+      "git_commit": "7093ec46082eed2fae127ec5028d3e2e8548b592",
+      "git_path": "LightGenV2/tasks/t12_text_to_image/reports/20260922_abo_product_repair_big_optical/README.md",
+      "git_sha256": "884e624c6d4272fbe01828c3e2a6602626a9ca8836808a558b937cc45a969536",
+      "identity": "CRLF_only"
+    },
+    {
+      "path": "handoffs/t12_small_baseline_share_20260928/package/source/LightGenV2/tasks/t12_text_to_image/reports/20260922_abo_product_repair_big_optical/test_results.json",
+      "sha256": "85cd39e86d552a13c1833190f099ed8fafa67afd3db2acbd89b6560e4327725a",
+      "bytes": 2132,
+      "git_commit": "7093ec46082eed2fae127ec5028d3e2e8548b592",
+      "git_path": "LightGenV2/tasks/t12_text_to_image/reports/20260922_abo_product_repair_big_optical/test_results.json",
+      "git_sha256": "199a039f2fa8bfec8e742ecdb9ab9dbb1b8e451fabb664eaecd2bd9119f81777",
+      "identity": "CRLF_only"
+    },
+    {
+      "path": "handoffs/t12_small_baseline_share_20260928/package/source/LightGenV2/tasks/t12_text_to_image/reports/20260922_abo_product_repair_big_optical/training_summary.json",
+      "sha256": "db1f49f43a39708ecb9386c6eedffd447c29a6104f4e5d3db3baeea1aec58970",
+      "bytes": 4427,
+      "git_commit": "7093ec46082eed2fae127ec5028d3e2e8548b592",
+      "git_path": "LightGenV2/tasks/t12_text_to_image/reports/20260922_abo_product_repair_big_optical/training_summary.json",
+      "git_sha256": "c47ce8065f44e1916ccd6d840066467b091565a942547e44c294b5d8d5458b22",
+      "identity": "CRLF_only"
+    },
+    {
+      "path": "handoffs/t12_small_baseline_share_20260928/package/source/LightGenV2/tasks/t12_text_to_image/reports/20260922_chair_style_transfer/README.md",
+      "sha256": "ff7679cc4f693fa3c244acc13c29ac7dd876f782a1fa2be764a1ed07925cc02f",
+      "bytes": 4077,
+      "git_commit": "7093ec46082eed2fae127ec5028d3e2e8548b592",
+      "git_path": "LightGenV2/tasks/t12_text_to_image/reports/20260922_chair_style_transfer/README.md",
+      "git_sha256": "faa0eb216d8d737eed7aa6c4b18adf3da5478fb47d6d9dd86bda7a8172b0dfef",
+      "identity": "CRLF_only"
+    },
+    {
+      "path": "handoffs/t12_small_baseline_share_20260928/package/source/LightGenV2/tasks/t12_text_to_image/reports/20260922_chair_style_transfer/results.json",
+      "sha256": "c40a06646363be36608fa8aff0812d741aabd15d211b74484438a06de7de42d7",
+      "bytes": 1318,
+      "git_commit": "7093ec46082eed2fae127ec5028d3e2e8548b592",
+      "git_path": "LightGenV2/tasks/t12_text_to_image/reports/20260922_chair_style_transfer/results.json",
+      "git_sha256": "57c07ee054ff9e38a9a34d791f920d82acd5d2f7cd689ae7cb5787a60537a9f6",
+      "identity": "CRLF_only"
+    },
+    {
+      "path": "handoffs/t12_small_baseline_share_20260928/package/source/LightGenV2/tasks/t12_text_to_image/reports/20260922_decoder_optical_instruction_generation/README.md",
+      "sha256": "f96016f0cd0f8d07e43ee8ad316ee3c0a2a102b0d72954ac9cbe2c8bd1b6bd2c",
+      "bytes": 3140,
+      "git_commit": "7093ec46082eed2fae127ec5028d3e2e8548b592",
+      "git_path": "LightGenV2/tasks/t12_text_to_image/reports/20260922_decoder_optical_instruction_generation/README.md",
+      "git_sha256": "97ab7d4401955cacdde9ab86755acba18b560a27d2722eec226d0569af1b0dee",
+      "identity": "CRLF_only"
+    },
+    {
+      "path": "handoffs/t12_small_baseline_share_20260928/package/source/LightGenV2/tasks/t12_text_to_image/reports/20260922_decoder_optical_instruction_generation/results.json",
+      "sha256": "7aad6fb1fce5816b938515c37389283d97071e772f92082eb660e17a0011cc72",
+      "bytes": 2435,
+      "git_commit": "7093ec46082eed2fae127ec5028d3e2e8548b592",
+      "git_path": "LightGenV2/tasks/t12_text_to_image/reports/20260922_decoder_optical_instruction_generation/results.json",
+      "git_sha256": "0077eb88d06ff7b01ce613a5a514ffe0f8e3c3ccd02fb85a5847fc92e201781a",
+      "identity": "CRLF_only"
+    },
+    {
+      "path": "handoffs/t12_small_baseline_share_20260928/package/source/LightGenV2/tasks/t12_text_to_image/reports/20260922_standard_chair_vae_gan/README.md",
+      "sha256": "15f2577d3afcc7b33c3578012668b3e04141c33659f89cda0d6c46044ca381b0",
+      "bytes": 3032,
+      "git_commit": "7093ec46082eed2fae127ec5028d3e2e8548b592",
+      "git_path": "LightGenV2/tasks/t12_text_to_image/reports/20260922_standard_chair_vae_gan/README.md",
+      "git_sha256": "6a05adabf3d7cc590a9c7454775fa114538b9ad42e08c5d24b7603cd9a968c03",
+      "identity": "CRLF_only"
+    },
+    {
+      "path": "handoffs/t12_small_baseline_share_20260928/package/source/LightGenV2/tasks/t12_text_to_image/reports/20260923_compact_product_editors/README.md",
+      "sha256": "9233f1fb3b3c054369111ae7d896b78c0f92f9ddfed15ca27e5335955eeeb9a3",
+      "bytes": 5745,
+      "git_commit": "7093ec46082eed2fae127ec5028d3e2e8548b592",
+      "git_path": "LightGenV2/tasks/t12_text_to_image/reports/20260923_compact_product_editors/README.md",
+      "git_sha256": "1cf95f1193ca4dc481a1013afa0cd8943cc901a3356dde07770deda77d2f826a",
+      "identity": "CRLF_only"
+    },
+    {
+      "path": "handoffs/t12_small_baseline_share_20260928/package/source/LightGenV2/tasks/t12_text_to_image/reports/20260923_compact_product_editors/catalogue_object_training_summary.json",
+      "sha256": "5b56bb88989f3df25634bafc172b0ca4ae48bbb0f94c03a7ab8b286218608876",
+      "bytes": 5301,
+      "git_commit": "7093ec46082eed2fae127ec5028d3e2e8548b592",
+      "git_path": "LightGenV2/tasks/t12_text_to_image/reports/20260923_compact_product_editors/catalogue_object_training_summary.json",
+      "git_sha256": "62702b0a4e8613fb5061142b3b416a078dcd176095aa1e97548b1babae93a822",
+      "identity": "CRLF_only"
+    },
+    {
+      "path": "handoffs/t12_small_baseline_share_20260928/package/source/LightGenV2/tasks/t12_text_to_image/reports/20260923_compact_product_editors/compact_background_test_results.json",
+      "sha256": "29ea925f081a89aa906e1526442c9a5d3600aeef4aee752d3d577e54a83b7db6",
+      "bytes": 3518,
+      "git_commit": "7093ec46082eed2fae127ec5028d3e2e8548b592",
+      "git_path": "LightGenV2/tasks/t12_text_to_image/reports/20260923_compact_product_editors/compact_background_test_results.json",
+      "git_sha256": "3e8313ff003ffbf4a608846c0e6219031ca8d7930580a48fcd52b41367d62ec7",
+      "identity": "CRLF_only"
+    },
+    {
+      "path": "handoffs/t12_small_baseline_share_20260928/package/source/LightGenV2/tasks/t12_text_to_image/reports/20260923_compact_product_editors/compact_background_training_summary.json",
+      "sha256": "d6edc7707213fb3e6e4efe305cef428f2f3287db071555e0916b98fa53b8899b",
+      "bytes": 21380,
+      "git_commit": "7093ec46082eed2fae127ec5028d3e2e8548b592",
+      "git_path": "LightGenV2/tasks/t12_text_to_image/reports/20260923_compact_product_editors/compact_background_training_summary.json",
+      "git_sha256": "1e853fc2b637eaa6583daab0802aaae437c8820ec2fc39981aaa23f4f37c3dfb",
+      "identity": "CRLF_only"
+    },
+    {
+      "path": "handoffs/t12_small_baseline_share_20260928/package/source/LightGenV2/tasks/t12_text_to_image/reports/20260923_compact_product_editors/electronic_baseline_test_results.json",
+      "sha256": "8ac948de31c884932fe201c8342a482de76df1e4d6bc7449dab43f39522cf4ad",
+      "bytes": 3309,
+      "git_commit": "7093ec46082eed2fae127ec5028d3e2e8548b592",
+      "git_path": "LightGenV2/tasks/t12_text_to_image/reports/20260923_compact_product_editors/electronic_baseline_test_results.json",
+      "git_sha256": "ee5830c351b49293598362ed586cbe3a6f3e29ea6135d0f555a07022eace6ea1",
+      "identity": "CRLF_only"
+    },
+    {
+      "path": "handoffs/t12_small_baseline_share_20260928/package/source/LightGenV2/tasks/t12_text_to_image/reports/20260923_compact_product_editors/electronic_baseline_training_summary.json",
+      "sha256": "a5a6a76763108fd23c8428b681bd72a1890d389d755c1114fa0b442449c41291",
+      "bytes": 6479,
+      "git_commit": "7093ec46082eed2fae127ec5028d3e2e8548b592",
+      "git_path": "LightGenV2/tasks/t12_text_to_image/reports/20260923_compact_product_editors/electronic_baseline_training_summary.json",
+      "git_sha256": "f5024c8386a4bf4e6067d6f20e5d1c54631bf2a7213a80c9170adb82c4d18352",
+      "identity": "CRLF_only"
+    },
+    {
+      "path": "handoffs/t12_small_baseline_share_20260928/package/source/LightGenV2/tasks/t12_text_to_image/reports/20260923_compact_product_editors/latency_comparison.json",
+      "sha256": "0a724caa67c9164176c0896c8514ae54add02373e24432020c0edc6e1cbe78e3",
+      "bytes": 1575,
+      "git_commit": "7093ec46082eed2fae127ec5028d3e2e8548b592",
+      "git_path": "LightGenV2/tasks/t12_text_to_image/reports/20260923_compact_product_editors/latency_comparison.json",
+      "git_sha256": "a74bc70b9d6d9c2f5d0993f41b87ed663a2770e803691974f45fb0013dd6a585",
+      "identity": "CRLF_only"
+    },
+    {
+      "path": "handoffs/t12_small_baseline_share_20260928/package/source/LightGenV2/tasks/t12_text_to_image/run.py",
+      "sha256": "7636f74dae0c450412dce0db9559a737a4abc030840f83fbbda5e8d58a336ac9",
+      "bytes": 5718,
+      "git_commit": "7093ec46082eed2fae127ec5028d3e2e8548b592",
+      "git_path": "LightGenV2/tasks/t12_text_to_image/run.py",
+      "git_sha256": "18893f2b7565131dca6e3de449acba04b79a01921b131ad636280adc36378d6d",
+      "identity": "CRLF_only"
+    },
+    {
+      "path": "handoffs/t12_small_baseline_share_20260928/package/source/LightGenV2/tasks/t12_text_to_image/sealed_editor.py",
+      "sha256": "7e27a2e9a4d83e1d87076b241f95d53bf8bb60faf28ace936a11e51dbf174960",
+      "bytes": 4343,
+      "git_commit": "b8a236630ea74fb5e02bd31646aaf2814d98bef5",
+      "git_path": "LightGenV2/tasks/t12_text_to_image/sealed_editor.py",
+      "git_sha256": "20c1426d60aa31ef6afbe586f39f9c682fc0798b93a18a304fe31987cca61021",
+      "identity": "CRLF_only"
+    },
+    {
+      "path": "handoffs/t12_small_baseline_share_20260928/package/source/LightGenV2/tasks/t12_text_to_image/settings.py",
+      "sha256": "98869332f8753329a283038653d57bc4ef8fa0035d94fe23db6ad51b9013fd7c",
+      "bytes": 8086,
+      "git_commit": "7093ec46082eed2fae127ec5028d3e2e8548b592",
+      "git_path": "LightGenV2/tasks/t12_text_to_image/settings.py",
+      "git_sha256": "6d68d642042be9ddb12fafc344313720a9d568e23b63b099e2cc7c0987bebdeb",
+      "identity": "CRLF_only"
+    },
+    {
+      "path": "handoffs/t12_small_baseline_share_20260928/package/source/LightGenV2/tasks/t12_text_to_image/small_fullframe.py",
+      "sha256": "95a1834a9b785da5e3ad4259668d1347b20f2b5476ed7f8c16c46df58bb52844",
+      "bytes": 20626,
+      "git_commit": "b8a236630ea74fb5e02bd31646aaf2814d98bef5",
+      "git_path": "LightGenV2/tasks/t12_text_to_image/small_fullframe.py",
+      "git_sha256": "0fdc1c37b2e5411465b72c8fa2c8fb4d2fd9f2db5ecea7263987023cbf8e91a8",
+      "identity": "CRLF_only"
+    },
+    {
+      "path": "handoffs/t12_small_baseline_share_20260928/package/source/LightGenV2/tasks/t12_text_to_image/small_fullframe_run.py",
+      "sha256": "9cee1bb78b79ecd197cfcdfd5d71aa25871016bec0fa10d7b0cfc3eb9f26554f",
+      "bytes": 1267,
+      "git_commit": "7093ec46082eed2fae127ec5028d3e2e8548b592",
+      "git_path": "LightGenV2/tasks/t12_text_to_image/small_fullframe_run.py",
+      "git_sha256": "b6e393fd7d43cd809b6d46adf00db7481ac40dfe42e63465c3095508f4873093",
+      "identity": "CRLF_only"
+    },
+    {
+      "path": "handoffs/t12_small_baseline_share_20260928/package/source/LightGenV2/tasks/t12_text_to_image/tests/test_audited_unified.py",
+      "sha256": "c3ce1b918440e6913db47031f0e8351684eb38e2d0af5b575a859ad4cd9be561",
+      "bytes": 8117,
+      "git_commit": "b8a236630ea74fb5e02bd31646aaf2814d98bef5",
+      "git_path": "LightGenV2/tasks/t12_text_to_image/tests/test_audited_unified.py",
+      "git_sha256": "a5f81f9389a4512e2aecfaa4740e503c29f2894635c22497b95d47aa102a9a85",
+      "identity": "CRLF_only"
+    },
+    {
+      "path": "handoffs/t12_small_baseline_share_20260928/package/source/LightGenV2/tasks/t12_text_to_image/tests/test_chair_style_transfer.py",
+      "sha256": "b98bfa3163fae2994f83a5f3519e2e1483e8252ce9ea9abba1cf0b7438c77307",
+      "bytes": 2110,
+      "git_commit": "7093ec46082eed2fae127ec5028d3e2e8548b592",
+      "git_path": "LightGenV2/tasks/t12_text_to_image/tests/test_chair_style_transfer.py",
+      "git_sha256": "251a3863cd436aae6150f1735040f64f556708a5cdde0f902fc42f0536fa0304",
+      "identity": "CRLF_only"
+    },
+    {
+      "path": "handoffs/t12_small_baseline_share_20260928/package/source/LightGenV2/tasks/t12_text_to_image/tests/test_cleanrender_gan.py",
+      "sha256": "01cb9e1a51553ffbca2bcbc386957b5258bb307b1d080cb590e09dc11e127bf0",
+      "bytes": 1440,
+      "git_commit": "7093ec46082eed2fae127ec5028d3e2e8548b592",
+      "git_path": "LightGenV2/tasks/t12_text_to_image/tests/test_cleanrender_gan.py",
+      "git_sha256": "25b5ee43fda1ad8ed36cb256c06d6fc7a74e3176e0698d309bc53222faa04c34",
+      "identity": "CRLF_only"
+    },
+    {
+      "path": "handoffs/t12_small_baseline_share_20260928/package/source/LightGenV2/tasks/t12_text_to_image/tests/test_cleanrender_vae.py",
+      "sha256": "de8465cc5fbcd033de496dfc8eda9d6a2e5ffa8f1b5ceec7a165c41c4507e2a0",
+      "bytes": 1901,
+      "git_commit": "7093ec46082eed2fae127ec5028d3e2e8548b592",
+      "git_path": "LightGenV2/tasks/t12_text_to_image/tests/test_cleanrender_vae.py",
+      "git_sha256": "48d4bb94f18d78c0e47607c0ad8ae20be86600685f42f65da273c3c3dddc8b9d",
+      "identity": "CRLF_only"
+    },
+    {
+      "path": "handoffs/t12_small_baseline_share_20260928/package/source/LightGenV2/tasks/t12_text_to_image/tests/test_compact_turbo.py",
+      "sha256": "4d5d54039b5506bccd5a6101aea0dc2bd4e5588822a8111c77a6279d00bf924f",
+      "bytes": 1366,
+      "git_commit": "7093ec46082eed2fae127ec5028d3e2e8548b592",
+      "git_path": "LightGenV2/tasks/t12_text_to_image/tests/test_compact_turbo.py",
+      "git_sha256": "e14b5369b9fa4093b290600d2bb4a8769680e35538369216a53ae9913c353737",
+      "identity": "CRLF_only"
+    },
+    {
+      "path": "handoffs/t12_small_baseline_share_20260928/package/source/LightGenV2/tasks/t12_text_to_image/tests/test_dataset_contract.py",
+      "sha256": "bb3d02850624a910bc58d412306efad293845b9b944cd1a099cc9a146569d1ef",
+      "bytes": 1898,
+      "git_commit": "7093ec46082eed2fae127ec5028d3e2e8548b592",
+      "git_path": "LightGenV2/tasks/t12_text_to_image/tests/test_dataset_contract.py",
+      "git_sha256": "b5179d822b1f5825ecd89eb9753dacece8baec77dda4964f03c69afac27c76d4",
+      "identity": "CRLF_only"
+    },
+    {
+      "path": "handoffs/t12_small_baseline_share_20260928/package/source/LightGenV2/tasks/t12_text_to_image/tests/test_decoder_optical_generation.py",
+      "sha256": "43bd79087190d1af3208d03b86485728e0610ff045988a16fcb0d79490d078d3",
+      "bytes": 3200,
+      "git_commit": "7093ec46082eed2fae127ec5028d3e2e8548b592",
+      "git_path": "LightGenV2/tasks/t12_text_to_image/tests/test_decoder_optical_generation.py",
+      "git_sha256": "cf0a3e538fff59336ecd3844c6e54894425deb987a56b3a70540b95fbddb7abf",
+      "identity": "CRLF_only"
+    },
+    {
+      "path": "handoffs/t12_small_baseline_share_20260928/package/source/LightGenV2/tasks/t12_text_to_image/tests/test_electronic_baseline.py",
+      "sha256": "255603cd1e5733d2bc4e8ca12adfd38ef2a07c0a280842de21f31cca8248b464",
+      "bytes": 5906,
+      "git_commit": "7093ec46082eed2fae127ec5028d3e2e8548b592",
+      "git_path": "LightGenV2/tasks/t12_text_to_image/tests/test_electronic_baseline.py",
+      "git_sha256": "591030079627f67e352e5a99f7f0f99d0debf96694f2e1dc16f901151b1b0653",
+      "identity": "CRLF_only"
+    },
+    {
+      "path": "handoffs/t12_small_baseline_share_20260928/package/source/LightGenV2/tasks/t12_text_to_image/tests/test_feature_cache.py",
+      "sha256": "2a51c78242dd51f6f3e726d057d45fe1a87d4fce83d68eeda816e7c8a7394254",
+      "bytes": 434,
+      "git_commit": "7093ec46082eed2fae127ec5028d3e2e8548b592",
+      "git_path": "LightGenV2/tasks/t12_text_to_image/tests/test_feature_cache.py",
+      "git_sha256": "90bf538014ea5c079763536e5530287e619fdf4e630f6e3e29774df220e1cd11",
+      "identity": "CRLF_only"
+    },
+    {
+      "path": "handoffs/t12_small_baseline_share_20260928/package/source/LightGenV2/tasks/t12_text_to_image/tests/test_model_contract.py",
+      "sha256": "127386788455b41fc1cff1e8a052dd25e4e3c0354ca53a18bd37733e3312c699",
+      "bytes": 6880,
+      "git_commit": "7093ec46082eed2fae127ec5028d3e2e8548b592",
+      "git_path": "LightGenV2/tasks/t12_text_to_image/tests/test_model_contract.py",
+      "git_sha256": "558167ab91a6cd2613aefa261826e0fa5ac5030646643f92902ae7ec7e472a99",
+      "identity": "CRLF_only"
+    },
+    {
+      "path": "handoffs/t12_small_baseline_share_20260928/package/source/LightGenV2/tasks/t12_text_to_image/tests/test_optical_turbo.py",
+      "sha256": "492640340819a24b2e7d6dfd90ccabeaee615f85dd6e522fd6c53632594f0da5",
+      "bytes": 3266,
+      "git_commit": "7093ec46082eed2fae127ec5028d3e2e8548b592",
+      "git_path": "LightGenV2/tasks/t12_text_to_image/tests/test_optical_turbo.py",
+      "git_sha256": "ffcc56c0d361467632e4e312d9ad58594d0035446e2bf8f5b1508f0ae2b2fae6",
+      "identity": "CRLF_only"
+    },
+    {
+      "path": "handoffs/t12_small_baseline_share_20260928/package/source/LightGenV2/tasks/t12_text_to_image/tests/test_premium_material_data.py",
+      "sha256": "8c202b479d49cd17b9cd8db978d7920b7d5b53f40220c74be15aa25ad8a79d92",
+      "bytes": 2138,
+      "git_commit": "7093ec46082eed2fae127ec5028d3e2e8548b592",
+      "git_path": "LightGenV2/tasks/t12_text_to_image/tests/test_premium_material_data.py",
+      "git_sha256": "8c3e47d7b77c65423019172b7337889e377e2f28c3a04afa5ddae93e63f044e9",
+      "identity": "CRLF_only"
+    },
+    {
+      "path": "handoffs/t12_small_baseline_share_20260928/package/source/LightGenV2/tasks/t12_text_to_image/tests/test_prepare_abo.py",
+      "sha256": "37c90e9c2565ad4a902911f85c3cbd7acb17294b2f97e8055902128992f6e03c",
+      "bytes": 2295,
+      "git_commit": "7093ec46082eed2fae127ec5028d3e2e8548b592",
+      "git_path": "LightGenV2/tasks/t12_text_to_image/tests/test_prepare_abo.py",
+      "git_sha256": "f1cfd14476a42a4569cec75c8d6eff55149ecc72a6b45823ccbbed415b99b830",
+      "identity": "CRLF_only"
+    },
+    {
+      "path": "handoffs/t12_small_baseline_share_20260928/package/source/LightGenV2/tasks/t12_text_to_image/tests/test_prepare_abo_cleanrender.py",
+      "sha256": "a0a70f959c54db2c33e87bb0f5aec884330d3f531d6fbdf424b739a03f91331f",
+      "bytes": 3279,
+      "git_commit": "7093ec46082eed2fae127ec5028d3e2e8548b592",
+      "git_path": "LightGenV2/tasks/t12_text_to_image/tests/test_prepare_abo_cleanrender.py",
+      "git_sha256": "9293f36c2565f6d6921c016765fb7de10250bd75aa5977cecaa2953ba54fcb04",
+      "identity": "CRLF_only"
+    },
+    {
+      "path": "handoffs/t12_small_baseline_share_20260928/package/source/LightGenV2/tasks/t12_text_to_image/tests/test_prepare_uco3d.py",
+      "sha256": "1eab74275179a162289fcae1430a323f24ce9de997c86845c038c7605bd0b8d8",
+      "bytes": 1803,
+      "git_commit": "7093ec46082eed2fae127ec5028d3e2e8548b592",
+      "git_path": "LightGenV2/tasks/t12_text_to_image/tests/test_prepare_uco3d.py",
+      "git_sha256": "04345bf7eca19319752cba5c5213f6c7d3abd65724ca884ffd76a0a35c7d686c",
+      "identity": "CRLF_only"
+    },
+    {
+      "path": "handoffs/t12_small_baseline_share_20260928/package/source/LightGenV2/tasks/t12_text_to_image/tests/test_product_global_redesign.py",
+      "sha256": "4981183756315a017183310a761a01ed95bbb2a927ff936b1f9e27cbb803ad1e",
+      "bytes": 2478,
+      "git_commit": "7093ec46082eed2fae127ec5028d3e2e8548b592",
+      "git_path": "LightGenV2/tasks/t12_text_to_image/tests/test_product_global_redesign.py",
+      "git_sha256": "e3c2175a9ab9572f36bd4c0d36ca47bbc46970cee6fdaa5cbe36a633dc7c50f5",
+      "identity": "CRLF_only"
+    },
+    {
+      "path": "handoffs/t12_small_baseline_share_20260928/package/source/LightGenV2/tasks/t12_text_to_image/tests/test_product_object_replace.py",
+      "sha256": "de5413b55bdab03fbb003ce58aa3293e0a38410fce8a7f03be582b2b0cbe1e85",
+      "bytes": 2580,
+      "git_commit": "7093ec46082eed2fae127ec5028d3e2e8548b592",
+      "git_path": "LightGenV2/tasks/t12_text_to_image/tests/test_product_object_replace.py",
+      "git_sha256": "bd5346b2bc1de061125d64f6eb3afbe0a5bb6f5b8d6d31fd865f346158af031d",
+      "identity": "CRLF_only"
+    },
+    {
+      "path": "handoffs/t12_small_baseline_share_20260928/package/source/LightGenV2/tasks/t12_text_to_image/tests/test_product_repair.py",
+      "sha256": "2aff21db5352c7c435638dd7969a12ee8e9db2b94bae273f31e23ed378d5826f",
+      "bytes": 4702,
+      "git_commit": "7093ec46082eed2fae127ec5028d3e2e8548b592",
+      "git_path": "LightGenV2/tasks/t12_text_to_image/tests/test_product_repair.py",
+      "git_sha256": "7f75310364005c9aae6283293a74d947f3e69159fef0463e38fbab7b6b57dfb5",
+      "identity": "CRLF_only"
+    },
+    {
+      "path": "handoffs/t12_small_baseline_share_20260928/package/source/LightGenV2/tasks/t12_text_to_image/tests/test_product_scene.py",
+      "sha256": "1fddef192d019225df59769c427fc0e16bada17f077c2da017e8426a7566603e",
+      "bytes": 2710,
+      "git_commit": "7093ec46082eed2fae127ec5028d3e2e8548b592",
+      "git_path": "LightGenV2/tasks/t12_text_to_image/tests/test_product_scene.py",
+      "git_sha256": "78e4e9a582e2092f744dfac45078b82cafcbaffcf2523aef62844ace541ba4b9",
+      "identity": "CRLF_only"
+    },
+    {
+      "path": "handoffs/t12_small_baseline_share_20260928/package/source/LightGenV2/tasks/t12_text_to_image/tests/test_product_scene_replace.py",
+      "sha256": "12bbae49b2fc2ca3ee89de6d30f5c5285fc7de703818f59abf1ca2bc0788454d",
+      "bytes": 5183,
+      "git_commit": "7093ec46082eed2fae127ec5028d3e2e8548b592",
+      "git_path": "LightGenV2/tasks/t12_text_to_image/tests/test_product_scene_replace.py",
+      "git_sha256": "8b096b5f3b5a970254c20125a51d09e5db19fab4918c68dd952d43c816e3e189",
+      "identity": "CRLF_only"
+    },
+    {
+      "path": "handoffs/t12_small_baseline_share_20260928/package/source/LightGenV2/tasks/t12_text_to_image/tests/test_progressive_student.py",
+      "sha256": "36bd3950668d0533b0c6bbc2171175399a7c196d2da387c27331cfaed584d29a",
+      "bytes": 1873,
+      "git_commit": "7093ec46082eed2fae127ec5028d3e2e8548b592",
+      "git_path": "LightGenV2/tasks/t12_text_to_image/tests/test_progressive_student.py",
+      "git_sha256": "d5958ea1048a21bbd03050d31d15b5049e415e90eff4ab8c33314e602924aed8",
+      "identity": "CRLF_only"
+    },
+    {
+      "path": "handoffs/t12_small_baseline_share_20260928/package/source/LightGenV2/tasks/t12_text_to_image/tests/test_pruned_turbo.py",
+      "sha256": "8794d07fd00939a48378d7ea19b8ebf0db850f295238d6dd00abd04670b02397",
+      "bytes": 1432,
+      "git_commit": "7093ec46082eed2fae127ec5028d3e2e8548b592",
+      "git_path": "LightGenV2/tasks/t12_text_to_image/tests/test_pruned_turbo.py",
+      "git_sha256": "bbcf43e8cf070fb77dda4fc90a9fc890610e475bef0a631d1bb1fea847bcc664",
+      "identity": "CRLF_only"
+    },
+    {
+      "path": "handoffs/t12_small_baseline_share_20260928/package/source/LightGenV2/tasks/t12_text_to_image/tests/test_qwen_mini_small.py",
+      "sha256": "673ccae91e3ad619b3afd1309f1b609028b6d872da703b359286f4d1b955d430",
+      "bytes": 972,
+      "git_commit": "7093ec46082eed2fae127ec5028d3e2e8548b592",
+      "git_path": "LightGenV2/tasks/t12_text_to_image/tests/test_qwen_mini_small.py",
+      "git_sha256": "79a39ee7ea70015da6cdc5a3633b0e4c20dc729b342e87b3b5033d092fd03e70",
+      "identity": "CRLF_only"
+    },
+    {
+      "path": "handoffs/t12_small_baseline_share_20260928/package/source/LightGenV2/tasks/t12_text_to_image/tests/test_robust_channel.py",
+      "sha256": "a9accb1a90497c71376375f78b6dc1835ca22d398b83d81115086ccc7ab0e923",
+      "bytes": 5688,
+      "git_commit": "b8a236630ea74fb5e02bd31646aaf2814d98bef5",
+      "git_path": "LightGenV2/tasks/t12_text_to_image/tests/test_robust_channel.py",
+      "git_sha256": "6ad6bbb3c55a48cab39a673d8afd46f3d56919560512196595502b7f26a73e1d",
+      "identity": "CRLF_only"
+    },
+    {
+      "path": "handoffs/t12_small_baseline_share_20260928/package/source/LightGenV2/tasks/t12_text_to_image/tests/test_settings.py",
+      "sha256": "c272c90232bd3ec1deb524f41d48c12335a75b919fc294fb96d62727caeb4fa5",
+      "bytes": 2019,
+      "git_commit": "7093ec46082eed2fae127ec5028d3e2e8548b592",
+      "git_path": "LightGenV2/tasks/t12_text_to_image/tests/test_settings.py",
+      "git_sha256": "ab44bbc675f9bb7d5a7d66614cb153dd0971631c3bfa3af33b52d63aff2dfbc5",
+      "identity": "CRLF_only"
+    },
+    {
+      "path": "handoffs/t12_small_baseline_share_20260928/package/source/LightGenV2/tasks/t12_text_to_image/tests/test_small_fullframe.py",
+      "sha256": "5fc098ff78d2a1f312157d1522755f6c94685475bf89ea19989a0429af8a0185",
+      "bytes": 1290,
+      "git_commit": "b8a236630ea74fb5e02bd31646aaf2814d98bef5",
+      "git_path": "LightGenV2/tasks/t12_text_to_image/tests/test_small_fullframe.py",
+      "git_sha256": "1edaedb183b431ae01462a3f4088a3e63a46bdc7b8ff7a87288a9a3c3313f96b",
+      "identity": "CRLF_only"
+    },
+    {
+      "path": "handoffs/t12_small_baseline_share_20260928/package/source/LightGenV2/tasks/t12_text_to_image/training.py",
+      "sha256": "112b85d2998754c27678cd08e564d17c7f5aaa75058ef9c10405af914c6a1af5",
+      "bytes": 16786,
+      "git_commit": "7093ec46082eed2fae127ec5028d3e2e8548b592",
+      "git_path": "LightGenV2/tasks/t12_text_to_image/training.py",
+      "git_sha256": "d3d3b9f5b7514271b147f07756cf7de10ecc624ee0f0b736c53d89d4924705a8",
+      "identity": "CRLF_only"
+    },
+    {
+      "path": "handoffs/t12_small_baseline_share_20260928/package/source/LightGenV2/tasks/t12_text_to_image/unified_text_bridge.py",
+      "sha256": "75376dcb2dc32d5b0eef5421b968ef55da3b04ec2faffea6006a5bdaed0f431e",
+      "bytes": 6381,
+      "git_commit": "7093ec46082eed2fae127ec5028d3e2e8548b592",
+      "git_path": "LightGenV2/tasks/t12_text_to_image/unified_text_bridge.py",
+      "git_sha256": "4dce916914c4756086760c6becda49a8ca548233c785e28decf3bc2da20fe2e8",
+      "identity": "CRLF_only"
+    }
+  ]
+}
