@@ -64,6 +64,31 @@ CSV/JSON/日志路径，最少60条。文件名盘点不是原指标复核，也
 
 ### 10月6日源码提示的实际分解
 
+当前补充核验：固定 main `326c8d06d8879ec25c3dd3f24105945d55c169a4` 的选定
+未跟踪源码集合共1516份（此前已忽略的不可变交付载荷不再包含）：138份逐字节对应main，
+297份仅CRLF差异；其余1081份中，738份逐字节对应既有恢复对象、248份仅CRLF差异、
+95份尚无该恢复身份。下方4738/153是更早快照，不能当作当前余额。
+
+这95份中，38份LightGenV2 Python源码现已语法检查并逐SHA保存到
+`refs/archive/remaining-local-lgv2-source-20261006`，提交
+`640d98b56294c1c783afd8dfc7d934b74e6ef8ea`；本地、训练服务器和实验室源码对象库
+均核验38份原字节一致。没有新增开发分支、工作树或运行工程，也没有移动/忽略这38份原文件。
+这是恢复身份，不是纳入main、运行兼容或可以删除的证明。原盘点中另57份仍需处理。
+私有逐文件清单为 `.codex_tmp/remaining_local_lgv2_source_preservation_20261006.json`，
+三端核验收据为 `.codex_tmp/remaining_source_recovery_sync_20261006.json`。
+增量恢复包 `remaining_local_lgv2_source_20261006.bundle` 为80172字节，SHA256
+`95a877ee25529bf98fe0355d5ef4fbfd3f5e98f4bb0b9b3fc97bae7733072d2f`，
+必须具备前置提交 `326c8d06d8879ec25c3dd3f24105945d55c169a4`；不是独立完整仓库或数据备份。
+
+旧六份baseline包的 `run_baseline.py` 属上述恢复源码：其 `init-source` 会在
+载荷内创建嵌套Git仓库；保留原交付字节，但不作为统一主工程新的日常运行入口。
+现有baseline源码身份和历史ZIP仍保留。不能为使这些旧启动器通过而擅自初始化新仓库。
+
+数据ignore补充已发布至 main `74fa9544a125a36d11dfcf097b6283023638da71`：
+仅六个具名T12交付数据划分JSONL留在机器本地，测速JSONL和逐样本预测仍可见。
+六项ignore检查通过，本地/GitHub/训练服务器main及实验室`published/main`引用已同步；
+实验室实际运行checkout不变。ignore不删除原数据，也不自动取消已跟踪文件。
+
 只读刷新固定于 main `53fe3abebb2fdef5e403a8f328acf7f6ffb5d9df`，选中 4738 份未跟踪
 Python/启动脚本/YAML（不含被忽略资产、大于2MiB源码、其他文件类型）：2702份与main
 逐字节一致，297份仅CRLF差异；另外1586份可对应已有Git恢复对象，153份尚无这种身份。
