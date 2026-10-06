@@ -2,6 +2,9 @@
 
 本页是 main 的正式任务入口。T08 的图搜文、文搜图属于另一任务，不能用本页结果替代。
 历史协议、baseline、测速仍保留，不以最新模型覆盖历史证据。
+冻结 CLIP／YOLO／DeepSeek 的历史图搜图对照见
+[三方向 baseline 历史表](../t08_abo_image_text_retrieval/reports/reproduction/ABO_BACKBONE_RESULTS_20260923.md)，
+该表旧 Ours 行不是下方封存 rank72 结果。
 
 ## 最终身份与结果
 

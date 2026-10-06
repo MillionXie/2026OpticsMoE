@@ -1,0 +1,84 @@
+{
+  "schema_version": 2,
+  "date": "2026-09-23",
+  "task": "ABO retrieval frozen-backbone and light-alignment comparisons",
+  "backbones_frozen": true,
+  "recommended_primary_protocol": "zero_shot_frozen",
+  "references": {
+    "lightgenv2": {
+      "image_to_text_r_at_1": 0.8058,
+      "image_to_image_r_at_1": 0.8313,
+      "text_to_image_hit_at_1": 0.88
+    },
+    "qwen3_vl_embedding_2b": {
+      "image_to_text_r_at_1": 0.7358333333333333,
+      "image_to_image_r_at_1": 0.85125,
+      "text_to_image_hit_at_1": 0.82,
+      "trainable_parameters": 0
+    }
+  },
+  "zero_shot_results": {
+    "deepseek_vl2_tiny": {
+      "image_to_text_r_at_1": 0.1379166692495346,
+      "image_to_image_r_at_1": 0.88875,
+      "text_to_image_hit_at_1": 0.08,
+      "backbone_parameters": 3370501440,
+      "trainable_parameters": 0
+    },
+    "clip_vit_b32": {
+      "image_to_text_r_at_1": 0.5699999928474426,
+      "image_to_image_r_at_1": 0.87125,
+      "text_to_image_hit_at_1": 0.64,
+      "backbone_parameters": 151277313,
+      "trainable_parameters": 0
+    },
+    "yolo11s": {
+      "image_to_text_r_at_1": null,
+      "image_to_image_r_at_1": 0.87125,
+      "text_to_image_hit_at_1": null,
+      "backbone_parameters": 9458752,
+      "trainable_parameters": 0,
+      "cross_modal_exclusion": "visual-only; YOLO+CLIP is not a YOLO-only baseline"
+    }
+  },
+  "task_adapted_diagnostic": {
+    "protocol": {
+      "head": "image-side rank-64 residual calibration",
+      "epochs": 50,
+      "learning_rate": 0.0001,
+      "residual_scale": 0.4,
+      "drift_weight": 1.0,
+      "seed": 42,
+      "checkpoint_selection": "fixed final epoch; test evaluated once",
+      "direction_specific_objectives": true
+    },
+    "deepseek_vl2_tiny": {
+      "image_to_text_r_at_1": 0.5016666650772095,
+      "text_to_image_hit_at_1": 0.05,
+      "trainable_parameters_per_task": 163840,
+      "report_sha256": "bffa31c5d551f7bf0eb26e312812adb349b8b1ffb011fb49d93c550897f2ef6d"
+    },
+    "clip_vit_b32": {
+      "image_to_text_r_at_1": 0.8412500023841858,
+      "text_to_image_hit_at_1": 0.93,
+      "trainable_parameters_per_task": 65536,
+      "report_sha256": "dc09bcb0dd733a2e3085265f1b90b43299ec0e3f82bd125ba887e295f58a2ea3"
+    }
+  },
+  "excluded_overfit_diagnostics": {
+    "dual_64d_readout_5_epochs": {
+      "deepseek_image_to_text": 0.9604166746139526,
+      "deepseek_text_to_image": 1.0,
+      "clip_image_to_text": 0.9066666960716248,
+      "clip_text_to_image": 0.96
+    },
+    "full_square_linear_50_epochs": {
+      "deepseek_image_to_text": 0.9487500190734863,
+      "deepseek_text_to_image": 0.91,
+      "clip_image_to_text": 0.9766666889190674,
+      "clip_text_to_image": 0.98
+    }
+  },
+  "formal_timing_and_energy_measured": false
+}
+

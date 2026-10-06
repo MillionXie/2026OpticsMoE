@@ -1,5 +1,11 @@
 # T08 商品检索（图搜文）
 
+历史冻结 CLIP／DeepSeek／YOLO 对照已收录：[三方向协议](reports/reproduction/ABO_BACKBONE_PROTOCOL_20260923.md)、
+[2026-09-23结果及限制](reports/reproduction/ABO_BACKBONE_RESULTS_20260923.md)、
+[原汇总身份](reports/reproduction/abo_backbone_summary_20260923.json)。
+这些是原中转记录，不是本轮重新评估；其中旧 LightGenV2 参考行不替代当前最终模型。
+原runner SHA与主线源码相同，原数据/权重/预测仍在原run中，不代表完整资产已恢复。
+
 ## 2026-10-03 整理：区分两个检索方向
 
 本页现有训练命令及 `optical_moe.py` 是**图搜文**入口。ABO 图搜图最终版另属
