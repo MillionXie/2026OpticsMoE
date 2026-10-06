@@ -25,10 +25,11 @@ def classify(document,link,paths):
     return dict(document=document,link=link,target=target,kind=kind)
 
 
-def inspect(root,commit):
+def inspect(root,commit,scope='tasks'):
     ref=subprocess.check_output(['git','-C',str(root),'rev-parse',commit+'^{commit}'],text=True).strip()
     paths=set(subprocess.check_output(['git','-C',str(root),'ls-tree','-r','--name-only','-z',ref]).decode().rstrip('\0').split('\0'))
-    docs=sorted(p for p in paths if p.startswith('LightGenV2/tasks/') and p.endswith('.md'))
+    prefix='LightGenV2/tasks/' if scope=='tasks' else 'LightGenV2/'
+    docs=sorted(p for p in paths if p.startswith(prefix) and p.endswith('.md'))
     unresolved=[];links=0
     for p in docs:
         raw=subprocess.check_output(['git','-C',str(root),'show',ref+':'+p]).decode('utf-8')
@@ -36,11 +37,12 @@ def inspect(root,commit):
         for match in re.finditer(r'\]\((<[^>]+>|[^\s)]+)(?:\s+"[^"]*")?\)',raw):
             links+=1;result=classify(p,match.group(1),paths)
             if result:unresolved.append(result)
-    return dict(commit=ref,documents_checked=len(docs),inline_links_checked=links,
+    return dict(commit=ref,scope=scope,documents_checked=len(docs),inline_links_checked=links,
                 unresolved=unresolved,read_only=True,working_files_used=False,
                 limitations='Does not validate anchors, reference-style links, external URLs, private assets or runtime imports')
 
 
 if __name__=='__main__':
     p=argparse.ArgumentParser(description=__doc__);p.add_argument('--commit',required=True)
-    args=p.parse_args();print(json.dumps(inspect(Path(__file__).resolve().parents[2],args.commit),indent=2))
+    p.add_argument('--scope',choices=('tasks','lightgenv2'),default='tasks')
+    args=p.parse_args();print(json.dumps(inspect(Path(__file__).resolve().parents[2],args.commit,args.scope),indent=2))

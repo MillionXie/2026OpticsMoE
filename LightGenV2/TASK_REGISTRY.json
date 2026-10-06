@@ -10,7 +10,7 @@
   "artifact_manifests": ["tasks/t07_abo_image_retrieval/reports/reproduction/FINAL_IDENTITY_20261002.json", "tasks/t04_openmoji_robust_ablation/reports/reproduction/FINAL_IDENTITY_20261002.json"],
   "policy": "Do not delete any referenced source, dependency, dataset, capture or weight until replacement is verified. No new branches or worktrees. External upload paused.",
   "server_repository": "/DATA/DATA1/guest3/2026OpticsMoE",
-  "server_root_checkout": {"updated_on":"2026-10-06","branch":"main","materialized_commit":"c9a8b70fc82c2cb5cdead44de757058f85523cd9","evidence":"../maintenance/storage/SERVER_ROOT_MAIN_CUTOVER_20261006.json","scientific_record_exceptions":9,"protected_ABO_OpenMoji_worktrees_unchanged":true,"all_task_assets_complete":false},
+  "server_root_checkout": {"updated_on":"2026-10-06","branch":"main","materialized_commit":"69464204c1137da2cae6a7e99b019c649b2a0ab2","evidence":"../maintenance/storage/SERVER_ROOT_MAIN_CUTOVER_20261006.json","scientific_record_exceptions":0,"record_reconciliation_evidence":["../maintenance/storage/T06_HISTORICAL_SERVER_RECORD_ADOPTION_20261006.json","../maintenance/storage/T06_GENERATED_AUDIT_RETENTION_20261006.json"],"snapshot_scope":"Observed published main before this registry update; historical cutover receipt is not current HEAD. Two historical reports adopted and seven generated audit files retained outside source tracking.","protected_ABO_OpenMoji_worktrees_unchanged":true,"all_task_assets_complete":false},
   "tasks": [
     {
       "id": "t01_object_retrieval",
