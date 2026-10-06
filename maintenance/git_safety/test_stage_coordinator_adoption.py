@@ -35,7 +35,7 @@ class CoordinatorAdoptionTests(unittest.TestCase):
         def definitions(tree):
             return {n.name: ast.dump(n, include_attributes=False) for n in tree.body if isinstance(n, (ast.FunctionDef, ast.ClassDef))}
         expected, prior, actual = definitions(old), definitions(before), definitions(current)
-        for name in ('stage_config', 'effective_stage_identity'):
+        for name in ('stage_config', 'effective_stage_identity', 'capture_staged'):
             self.assertEqual(expected[name], actual[name])
         for name, node in prior.items():
             self.assertEqual(node, actual[name], name)

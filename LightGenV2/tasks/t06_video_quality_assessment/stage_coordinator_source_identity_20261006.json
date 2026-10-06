@@ -8,7 +8,7 @@
   },
   "projection": {
     "lab_stage_coordinator.py": ["STAGES", "desktop_code"],
-    "lab_bench.py": ["stage_config", "effective_stage_identity"],
+    "lab_bench.py": ["stage_config", "effective_stage_identity", "capture_staged"],
     "tests/test_stage_exposure.py": "historical test unchanged apart from checkout line endings",
     "../t03_saliency/tests/test_lab_runtime.py": "import desktop_code from the published pure generator rather than an untracked controller"
   },
@@ -20,7 +20,9 @@
     "generated capture code compiled but not executed",
     "historical full controller preserved, not adopted or deleted",
     "no camera exposure, gain, ROI, amplitude encoding, checkpoint or capture changes",
-    "configuration helper tests do not prove acquisition uses stage overrides"
+    "configuration helper tests do not prove acquisition uses stage overrides",
+    "capture_staged restored exactly from historical commit for the existing T03 import; no acquisition executed",
+    "existing T06 capture function not rewired"
   ],
   "validation": {
     "tested_main": "2733c6a2a45dfefda8979d1269a1a765dc97ebee",

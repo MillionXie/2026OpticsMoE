@@ -159,6 +159,48 @@ def capture(a):
   write(s/'status.json',dict(status='stage_complete_wait_for_user_phase_change',stage=a.stage,completed=len(mf['entries'])))
  finally:lock.unlink(missing_ok=True)
 
+def capture_staged(a,opener,stages):
+ """Shared device capture; task supplies its checked session and stage order."""
+ import cv2
+ root,s,state,c,release=opener(a);idx=stages.index(a.stage);mf=read(s/'play'/a.stage/'manifest.json')
+ if state['measured_stages']==list(stages[:idx+1]):print('Stage already complete');return
+ if state['measured_stages']!=list(stages[:idx]):raise ValueError('Non-contiguous capture')
+ if mf['hardware_sha256']!=state['hardware_sha256'] or mf['release_sha256']!=state['release_sha256']:raise ValueError('Stale manifest')
+ phase=s/mf['phase_file']
+ if sha(phase)!=mf['phase_sha256']:raise ValueError('Phase BMP changed')
+ if not a.phase_ready:raise ValueError('Load this stage phase first; then explicitly pass --phase-ready. This is NOT optical verification.')
+ if not c.get('geometry_confirmed'):raise ValueError('ROI is not confirmed')
+ bench=Path(a.bench_root).resolve();sys.path.insert(0,str(bench))
+ from slm_camera import Controller
+ # Share the existing desktop-job ownership lock; never steal another capture.
+ lock=bench/'results/dual_jobs/ACTIVE.lock';lock.parent.mkdir(parents=True,exist_ok=True)
+ fd=os.open(lock,os.O_CREAT|os.O_EXCL|os.O_WRONLY);os.write(fd,str(os.getpid()).encode());os.close(fd)
+ try:
+  pts=np.float32([c['logical_corners_full_sensor_xy'][k] for k in ('top_left','top_right','bottom_right','bottom_left')]);H=cv2.getPerspectiveTransform(pts,np.float32([[-.5,-.5],[477.5,-.5],[477.5,477.5],[-.5,477.5]]))
+  with Controller(stage_config(c,a.stage,stages)) as hw:
+   for i,e in enumerate(mf['entries'],1):
+    p=s/'ccd'/a.stage/(e['key']+'.png');record=p.with_suffix('.record.json')
+    if record.exists():
+     _,old=verified_ccd(s,a.stage,e['key'])
+     if old['amplitude_sha256']!=e['sha256'] or old['phase_sha256']!=mf['phase_sha256'] or old['upstream_ccd_sha256']!=e['upstream_ccd_sha256']:raise ValueError('Capture identity mismatch')
+     continue
+    for stage,digest in e['upstream_ccd_sha256'].items():
+     _,rec=verified_ccd(s,stage,e['key'])
+     if rec['sha256']!=digest:raise ValueError('Upstream CCD changed; regenerate this stage')
+    bmp=s/'play'/a.stage/e['bmp']
+    if sha(bmp)!=e['sha256']:raise ValueError('Amplitude BMP changed')
+    raw,meta=hw.capture(bmp);im=np.rint(np.clip(cv2.warpPerspective(raw.astype(np.float32),H,(478,478)),0,255)).astype(np.uint8)
+    q=dict(p99=float(np.percentile(im,99)),std=float(im.std()),saturation=float((im==255).mean()))
+    if (q['p99']<=8 and q['std']<1.5) or q['saturation']>.01:
+     failure=s/'rejected'/a.stage;failure.mkdir(parents=True,exist_ok=True);Image.fromarray(im).save(failure/(e['key']+'.png'));write(failure/(e['key']+'.json'),dict(quality=q,camera=meta))
+     raise RuntimeError('Near-dark/saturated CCD rejected; previous valid samples retained. '+str(q))
+    p.parent.mkdir(parents=True,exist_ok=True);Image.fromarray(im).save(p,compress_level=1)
+    write(record,dict(sha256=sha(p),amplitude_sha256=e['sha256'],phase_sha256=mf['phase_sha256'],upstream_ccd_sha256=e['upstream_ccd_sha256'],hardware_sha256=state['hardware_sha256'],quality=q,camera=meta,phase_confirmation='explicit_flag_not_optical_verification',raw_saved=False))
+    write(s/'status.json',dict(status='capturing',stage=a.stage,completed=i,total=len(mf['entries']),quality=q));print('Captured',a.stage,i,'/',len(mf['entries']),q,flush=True)
+  state['measured_stages']=list(stages[:idx+1]);write(s/'session.json',state)
+  write(s/'status.json',dict(status='stage_complete_wait_for_user_phase_change',stage=a.stage,completed=len(mf['entries'])))
+ finally:lock.unlink(missing_ok=True)
+
 def evaluate(a):
  import torch
  from .lab_runtime import load_model,replay
