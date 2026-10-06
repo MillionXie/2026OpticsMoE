@@ -177,6 +177,22 @@ class ArtifactIgnoreTests(unittest.TestCase):
             with patch(__name__ + '.ROOT', fixture):
                 self.check_audited_dataset_rules()
 
+    def test_vendor_assets_do_not_hide_source_or_new_files(self):
+        with tempfile.TemporaryDirectory() as folder:
+            fixture = Path(folder)
+            subprocess.run(['git', 'init', '-q', str(fixture)], check=True)
+            shutil.copyfile(ROOT / '.gitignore', fixture / '.gitignore')
+            with patch(__name__ + '.ROOT', fixture):
+                self.check_vendor_assets()
+
+    def check_vendor_assets(self):
+        base = 'ABO_Lab_8um/original_a100/models/Qwen3-VL-Embedding-2B/'
+        selected = [base+'config.json', base+'tokenizer.json', base+'ASSET_MANIFEST.json']
+        self.assertEqual(self.ignored(selected), set(selected))
+        visible = [base+'scripts/qwen3_vl_embedding.py', base+'scripts/new_fix.py',
+                   base+'new_config.json', 'ABO_Lab_8um/original_a100/BACKEND_MANIFEST.json']
+        self.assertEqual(self.ignored(visible), set())
+
     def check_audited_dataset_rules(self):
         images = ['LightGenV2/tasks/t04_semantic_interaction/dataset/openmoji_grid_v2/train/input_00001.png',
                   'ABO_Lab_8um/original_a100/assets/test_dataset/images/product/image.jpg',
