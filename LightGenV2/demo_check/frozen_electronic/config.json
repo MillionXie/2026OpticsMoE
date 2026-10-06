@@ -1,0 +1,22 @@
+{
+  "protocol": "eurosat_shared_frozen_cnn_half_v1",
+  "dataset_protocol": "eurosat_phase_only_v1",
+  "seed": 42,
+  "electronic_epochs": 20,
+  "electronic_learning_rate": 0.001,
+  "electronic_weight_decay": 0.0001,
+  "electronic_dropout": 0.2,
+  "optical_epochs": 20,
+  "batch_size": 32,
+  "electronic_weight": 0.5,
+  "optical_weight": 0.5,
+  "architectures": ["dynamic_four", "full_d2nn"],
+  "electronic_model": "three Conv3x3-BatchNorm-ReLU-MaxPool blocks, widths 32/64/128; GAP; dropout 0.2; Linear(128,10), trained from scratch",
+  "electronic_normalization": "per-channel train-only mean/std pooled across both domains",
+  "fusion": "0.5*softmax(CNN logits)+0.5*normalized optical detector energies",
+  "selection": "maximum validation accuracy, then minimum validation NLL; electronic selection once, optical selection by fused output",
+  "augmentation": "identical horizontal flip shared by both branches; no ColorJitter",
+  "optical_optimizer": "unchanged pure_optical config: Adam 0.01, weight_decay 0, cosine to 0.001, gradient clip 1",
+  "electronic_optimizer": "AdamW, cosine to 0.1*initial learning rate, gradient clip 1",
+  "test_set_used": false
+}

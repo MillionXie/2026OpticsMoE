@@ -1,0 +1,23 @@
+{
+  "scope": "Three historical EuroSAT runtime entry sources, not all demo datasets/models or a current LightGen task",
+  "source_status": "exact original runtime bytes retained; full machine assets not verified",
+  "sources": [
+    {
+      "path": "LightGenV2/demo_check/frozen_electronic/run.py",
+      "sha256": "60673d9d0d866fab74f57fad42e50c7a78ccc13bfae21624e4a6434bc0284333",
+      "original_runtime": "/DATA/DATA1/guest3/demo_reproduction_20260915/LightGenV2/demo_check/frozen_electronic/run.py"
+    },
+    {
+      "path": "LightGenV2/demo_check/pure_optical/evaluate_holdout.py",
+      "sha256": "b786aca6ca826faa2056c754a765b1a1c4b15d50bc6209bee2a69aa616119632",
+      "original_runtime": "/DATA/DATA1/guest3/demo_reproduction_20260915/LightGenV2/demo_check/pure_optical/evaluate_holdout.py"
+    },
+    {
+      "path": "LightGenV2/demo_check/shared_frontend/evaluate_single_holdout.py",
+      "sha256": "4942d7130ba16fcb0139da353a71ef1856824b58652cc764a6f26cadff63b474",
+      "original_runtime": "/DATA/DATA1/guest3/demo_reproduction_20260915/LightGenV2/demo_check/shared_frontend/evaluate_single_holdout.py"
+    }
+  ],
+  "model_or_device_executed": false,
+  "original_runtime_modified": false
+}
