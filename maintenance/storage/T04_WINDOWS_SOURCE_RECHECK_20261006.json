@@ -1,0 +1,19 @@
+{
+  "audited_on": "2026-10-06",
+  "runtime_root": "E:/code/guest/2026OpticsMoE/OpenMoji_Robust_Rank64_SHS_20261002",
+  "reference_manifest": "maintenance/storage/T04_WINDOWS_SOURCE_PRESERVATION_20261005.json",
+  "reference_commit": "bc1951cfbd0bcbd60a6111884286b506790e20fb",
+  "known_source_files_checked": 36,
+  "exact_raw_SHA_matches": 36,
+  "changed_or_missing_known_sources": [],
+  "root_source_inventory_count": 32,
+  "method": "Read-only SFTP stream SHA256 with pre/post stat stability checks",
+  "private_receipt": ".codex_tmp/openmoji_lab_source_refresh_20261006.json",
+  "runtime_sources_changed": false,
+  "SDK_called": false,
+  "experiments_started_or_stopped": false,
+  "processes_or_open_handles_audited": false,
+  "checkout_cutover_proven": false,
+  "cleanup_permission": false,
+  "scope": "Known archived source bytes only; not all jobs, full recursive source coverage, data, PT or device reproduction"
+}

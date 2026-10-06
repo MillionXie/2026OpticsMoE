@@ -48,6 +48,7 @@
     },
     {
       "id": "t04_openmoji_robust_ablation",
+      "windows_known_source_recheck_evidence": "../maintenance/storage/T04_WINDOWS_SOURCE_RECHECK_20261006.json",
       "entry": "tasks/t04_openmoji_robust_ablation/README.md",
       "reproduction": "tasks/t04_openmoji_robust_ablation/reports/reproduction/README.md",
       "source_status": "simulation_core_and_31_overlay_sources_published_Windows_runtime_closure_pending",
