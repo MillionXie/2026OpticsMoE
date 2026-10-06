@@ -1,4 +1,7 @@
-# T07 ABO 图搜图：封存 rank72 最终版
+# 历史主入口草稿：已由正式任务页取代
+
+现在只使用[正式任务页](../../README.md)。下面旧草稿保留追溯，不继续维护重复指标。
+原完整草稿见Git `d78d043d1d2d26694f46030724f93a22f4a401d3`的本路径。
 
 本页是 main 的正式任务入口。T08 的图搜文、文搜图属于另一任务，不能用本页结果替代。
 历史协议、baseline、测速仍保留，不以最新模型覆盖历史证据。
@@ -30,7 +33,7 @@ CLI：`python -m LightGenV2.tasks.t07_abo_image_retrieval.standalone --help`。
 main 收录实际服务器提交 `d979b53ed509907a3630bd2a36c317dfb3aac965` 的原始模型及
 CLI相对依赖；没有按时间戳拼接其他权重架构。15个核心运行源码已核验SHA一致。
 封存PT的严格CPU加载、结构审计及两个合成token读出测试通过；这不是重新评估800查询。
-源码清单及审计见 [归并记录](../../../maintenance/storage/T07_RANK72_SOURCE_PUBLICATION_20261004.md)。
+源码清单及审计见 [归并记录](../../../../../maintenance/storage/T07_RANK72_SOURCE_PUBLICATION_20261004.md)。
 
 权重本地：`handoffs/abo_latestfresh35_lab_20260930/rank72_epoch13_best_snapshot.pt`。
 数据及前端/processor 资产按原 manifest 保留，不进Git；CLI的 `--assets`、`--data`
@@ -48,7 +51,7 @@ Windows采集runner与SDK依赖仍处于审计归并阶段，不能只换PT就�
 
 正式报告：`handoffs/abo_latestfresh35_lab_20260930/rank72_physical_full_report_20261001.json`，
 SHA256 `94947127262ead3fc440b5e67b513f0038949b25795c5be0b916305d251e6eef`，含800逐查询预测。
-权重/报告身份见 [FINAL_IDENTITY](reports/reproduction/FINAL_IDENTITY_20261002.json)。
+权重/报告身份见 [FINAL_IDENTITY](FINAL_IDENTITY_20261002.json)。
 原始有效CCD、收据、原数据、best/last及baseline保持原位置，整理不复制或删除。
 
 当前工作目录的完整历史README保持原样；Git `508a1c35447e0ef91de57251ef24750fab715a21`

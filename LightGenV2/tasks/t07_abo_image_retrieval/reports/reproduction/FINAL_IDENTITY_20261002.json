@@ -9,7 +9,7 @@
     "sha256": "94947127262ead3fc440b5e67b513f0038949b25795c5be0b916305d251e6eef"
   }],
   "metrics_location": "LightGenV2/tasks/t07_abo_image_retrieval/README.md",
-  "source_status": "rank72 exact server model and CLI dependency closure imported and strict sealed-PT CPU load passed; Windows capture runner dependency migration pending; preserve existing runtime",
+  "source_status": "rank72 exact server model/CLI, offline replay, SHS control layer and layerwise runner published; strict sealed-PT CPU load passed; machine assets, real-device regression and actual Windows checkout cutover remain pending; preserve existing runtime",
   "artifact_policy": "Original report, per-query predictions, weights, 14400 valid CCD and receipts remain in original locations; no duplicate dataset or checkpoint in Git",
   "selection_disclosure": "Original query800 used in development, not independent generalization",
   "current_version_latency_verified": false,
