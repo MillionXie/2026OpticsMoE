@@ -187,3 +187,11 @@ node_modules/
 /outputs/**/*.xlsx
 /outputs/**/*.pptx
 /outputs/**/*.pdf
+
+# Audited machine-local datasets (2026-10-06). Keep dataset builders, labels,
+# manifests, configs and reports visible. These rules never delete data and
+# do not untrack already versioned files or hide whole experiment directories.
+/LightGenV2/tasks/t04_semantic_interaction/dataset/openmoji_grid_v2/**/*.png
+/ABO_Lab_8um/*/assets/test_dataset/images/**/*.jpg
+/ABO_Lab_8um/*/assets/test_dataset/images/**/*.jpeg
+/ABO_Lab_8um/*/reference_phases/*.bmp

@@ -25,6 +25,21 @@ class ArtifactIgnoreTests(unittest.TestCase):
                  'LightGenV2/tasks/t12_text_to_image/perceptual/eval_regions.py']
         self.assertEqual(self.ignored(paths), set())
 
+    def test_audited_original_dataset_images_not_source(self):
+        images = ['LightGenV2/tasks/t04_semantic_interaction/dataset/openmoji_grid_v2/train/input_00001.png',
+                  'ABO_Lab_8um/original_a100/assets/test_dataset/images/product/image.jpg',
+                  'ABO_Lab_8um/original_inference/assets/test_dataset/images/product/image.jpeg',
+                  'ABO_Lab_8um/original_optics/reference_phases/vision_router.bmp']
+        self.assertEqual(self.ignored(images), set(images))
+        sources = ['LightGenV2/tasks/t04_semantic_interaction/dataset/openmoji_grid_v2/prepare.py',
+                   'LightGenV2/tasks/t04_semantic_interaction/dataset/openmoji_grid_v2/manifest.json',
+                   'LightGenV2/tasks/t04_semantic_interaction/dataset/openmoji_grid_v2/config.yaml',
+                   'ABO_Lab_8um/original_a100/source/model.py',
+                   'ABO_Lab_8um/original_a100/assets/test_dataset/manifest.json',
+                   'ABO_Lab_8um/original_a100/reference_phases/manifest.json',
+                   'ABO_Lab_8um/original_a100/reports/timing.csv']
+        self.assertEqual(self.ignored(sources), set())
+
 
 if __name__ == '__main__':
     unittest.main()
