@@ -29,6 +29,10 @@ def selected_indexes(rows, split):
 
 def inspect(data_root, train_cache, test_cache, evidence):
     data_root = Path(data_root)
+    if set(evidence['dataset_csv_sha256']) != {'train', 'test', 'titles'}:
+        raise ValueError('Incomplete original CSV identity manifest')
+    if sorted(r['split'] for r in evidence['caches']) != ['test', 'train']:
+        raise ValueError('Exactly one TRAIN and TEST cache required')
     paths = {'train': Path(train_cache), 'test': Path(test_cache)}
     rows = {}
     for split, expected in evidence['dataset_csv_sha256'].items():
@@ -70,6 +74,9 @@ def inspect(data_root, train_cache, test_cache, evidence):
         if digest(path) != record['cache_sha256']: raise RuntimeError('Cache changed during inspection')
         results.append({'split': split, 'images': len(indexes), 'cache_sha256': record['cache_sha256']})
     if set(identities['train']) & set(identities['test']): raise ValueError('TRAIN/TEST sample overlap')
+    for record in evidence['caches']:
+        if digest(paths[record['split']]) != record['cache_sha256']:
+            raise RuntimeError('Cache changed before inspection completed: ' + record['split'])
     for split, expected in evidence['dataset_csv_sha256'].items():
         if digest(data_root / (split + '.csv')) != expected:
             raise RuntimeError('CSV changed during inspection: ' + split)
