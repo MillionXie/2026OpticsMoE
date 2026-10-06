@@ -6,4 +6,8 @@
 
 正式报告位于实验室 `runs/robust17m_full_test_20260927/report.json`：2304 TEST、六层 13824 CCD，原权重 SHA256 `5b4f9a37f19ce95cf23e4b874badc8e88955559553d47929fb80cd3cbf527cac`。报告总耗时包括采集和末端推理，不是单样本延迟。
 
-仍待 Git 收录四份后续适配辅助源码：`compare_physical_decoder.py`、`physical_decoder_boundary.py`、`run_train_capture.py`、`tune_physical_decoder.py`。本次是源码收敛，不代表硬件环境完整迁移；不要直接替换实验室运行目录。
+后续四份适配辅助源码也已从原 Git 提交收录：decoder 三份来自 `c5282545c35f47e41f9e4a91615e6e86d1c731c2`，比较导出来自 `6c8cfab4e442488f3e99aa8b0728c5ff91a643b9`。现在本目录 17 份 Python 源码均与实际正式候选逐文件一致，完整身份见 [源码身份清单](SOURCE_IDENTITY_20261006.json)。
+
+CPU 检查覆盖源码 SHA/语法、TRAIN 适配器与固定捕获入口的替换合同、末端 decoder 冻结和上游哈希守卫；不运行正式训练、TEST、GPU 或 SDK。原科学协议保持 TRAIN 拟合、VAL 选模、封存后 TEST，不能套用其他任务的 TEST 开发选模授权。
+
+尚待完整核验运行环境、外部 ABO 设备依赖及全部数据/PT 闭包。因此源码收录完成不代表硬件迁移完成；不要直接替换实验室运行目录。旧 README 为 9.96M 历史试采说明，正式模型身份以上述清单及任务复现页为准。

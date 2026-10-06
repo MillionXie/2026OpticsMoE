@@ -1,0 +1,119 @@
+{
+  "scope": "Deployed T12 17M lab_shs8um Python source identity only; not complete environment or new measurements",
+  "bench_source": "E:/code/guest/2026OpticsMoE/T12_Small_Lab_SHS_8um/candidate_robust17m_20260927/source/LightGenV2/tasks/t12_text_to_image/lab_shs8um",
+  "hardware_opened": false,
+  "sources": [
+    {
+      "path": "LightGenV2/tasks/t12_text_to_image/lab_shs8um/bounded_amplitude.py",
+      "sha256_lf": "3765097ac7d6387e58b6fbcac3cd235cc1465b5a83c4b24e5807f682b430490c"
+    },
+    {
+      "path": "LightGenV2/tasks/t12_text_to_image/lab_shs8um/ccd_bridge.py",
+      "sha256_lf": "18008d614338447d7619498356e3cb85f0705b9976ba2177da7bb5af0afac1ae"
+    },
+    {
+      "path": "LightGenV2/tasks/t12_text_to_image/lab_shs8um/compare_physical_decoder.py",
+      "sha256_lf": "0d6ad272553c1676707c3c88923a5c170b1dd82b9bd700a2f9969d78993856e3"
+    },
+    {
+      "path": "LightGenV2/tasks/t12_text_to_image/lab_shs8um/detector_correction.py",
+      "sha256_lf": "18d23b00ca8106f0c81013f124aa0adb189a3252caed9210d88798f5f1fb584f"
+    },
+    {
+      "path": "LightGenV2/tasks/t12_text_to_image/lab_shs8um/diagnose_exposure.py",
+      "sha256_lf": "8e5e64d705b3bd32bb02c57a40a41937a7df8de084d6d9de492f88ac41764fec"
+    },
+    {
+      "path": "LightGenV2/tasks/t12_text_to_image/lab_shs8um/export_samples.py",
+      "sha256_lf": "33f28aea123e5aa599dbb4ebc7a6524afb22632913a79ccce726ffd265843247"
+    },
+    {
+      "path": "LightGenV2/tasks/t12_text_to_image/lab_shs8um/physical_decoder_boundary.py",
+      "sha256_lf": "e541e4ddd516c97bbdadf005f0dc2846e6ed244fe21630bb3953297ddd6a4a38"
+    },
+    {
+      "path": "LightGenV2/tasks/t12_text_to_image/lab_shs8um/render_channel_audit.py",
+      "sha256_lf": "2a80dc357a4d361b8c953328aa2018406eaa22302e2c209d9762e075c97278b2"
+    },
+    {
+      "path": "LightGenV2/tasks/t12_text_to_image/lab_shs8um/robust_channel.py",
+      "sha256_lf": "c2a555d10388ae8540e78ca2ba076cd169a109677dadfc85c805100ec4f8597f"
+    },
+    {
+      "path": "LightGenV2/tasks/t12_text_to_image/lab_shs8um/run_full.py",
+      "sha256_lf": "dba5a42ac532f45a6f8e3025de7638a9e4133595610970188b77007e559b7abe"
+    },
+    {
+      "path": "LightGenV2/tasks/t12_text_to_image/lab_shs8um/run_layerwise.py",
+      "sha256_lf": "97f264f6f04c325cd5b6f4f8a24aef7a4c623818f45bd16518ab4f11677a16fb"
+    },
+    {
+      "path": "LightGenV2/tasks/t12_text_to_image/lab_shs8um/run_pilot.py",
+      "sha256_lf": "9e73f937a521b1641d2d6f66c5f09f1342d6483720d1b5b8424d00423429d702"
+    },
+    {
+      "path": "LightGenV2/tasks/t12_text_to_image/lab_shs8um/run_train_capture.py",
+      "sha256_lf": "c7bb71298a7718dcbec5b90717c869058665a3965e432031d56a67b2286366f7"
+    },
+    {
+      "path": "LightGenV2/tasks/t12_text_to_image/lab_shs8um/test_bounded_contract.py",
+      "sha256_lf": "dc52bda0d6d118030ed397c1d2ca6f6974cebd55d3c65be089cedb5445f3676b"
+    },
+    {
+      "path": "LightGenV2/tasks/t12_text_to_image/lab_shs8um/train_channel_robust.py",
+      "sha256_lf": "7f16343a3e78b1fb1f48fac49f7362e8754e7e541b58795b546e63db8bf085a6"
+    },
+    {
+      "path": "LightGenV2/tasks/t12_text_to_image/lab_shs8um/train_physical_robust.py",
+      "sha256_lf": "38769b83fc0ff09becffe431f759d4f7b787e08d7e1a1c56bcd9e5573bac9805"
+    },
+    {
+      "path": "LightGenV2/tasks/t12_text_to_image/lab_shs8um/tune_physical_decoder.py",
+      "sha256_lf": "49480a8c1c2e5acc9b680293243935c5435ad7d81137ff4e2d191c7b0d18a025"
+    }
+  ],
+  "git_origins": {
+    "base": "f15e46a6660731d8d73d4438ceb227545566f220",
+    "decoder": "c5282545c35f47e41f9e4a91615e6e86d1c731c2",
+    "comparison": "6c8cfab4e442488f3e99aa8b0728c5ff91a643b9"
+  },
+  "report": {
+    "path": "E:/code/guest/2026OpticsMoE/T12_Small_Lab_SHS_8um/runs/robust17m_full_test_20260927/report.json",
+    "sha256": "a8b910e0b4fc108b78c8ed9cb648538cc7264ff24997eaf53213a8be2c90bd68",
+    "sample_count": 2304,
+    "same_parsed_content_as_local": true,
+    "metrics": {
+      "physical_mse_0_1": 0.002539732966460583,
+      "physical_mae_0_1": 0.02802629566425215,
+      "physical_psnr_db": 27.551289068705486,
+      "physical_ssim": 0.8763246264877833,
+      "simulation_mse_0_1": 0.00046576658337155804,
+      "simulation_mae_0_1": 0.010774497955329329,
+      "simulation_psnr_db": 34.27775097739636,
+      "simulation_ssim": 0.9271403404418379
+    },
+    "contract_checkpoint_sha256": "5b4f9a37f19ce95cf23e4b874badc8e88955559553d47929fb80cd3cbf527cac"
+  },
+  "launchers": [
+    {
+      "path": "E:/code/guest/2026OpticsMoE/T12_Small_Lab_SHS_8um/run_robust17m_full.cmd",
+      "sha256": "178d8bc58644d5e2b2ade7ca34de84403f3ebf9fe0dcfc0bb2e46caeacd2dac2",
+      "referenced_modules_only": [
+        "LightGenV2.tasks.t12_text_to_image.lab_shs8um.run_layerwise"
+      ],
+      "refers_to_17m_candidate": true,
+      "command_executed": false
+    },
+    {
+      "path": "E:/code/guest/2026OpticsMoE/T12_Small_Lab_SHS_8um/run_train_robust17m.cmd",
+      "sha256": "c0e3afeec2ba134cc2f80867d02a33c8de1e6111d0cd27b6df7b23bf39e8e655",
+      "referenced_modules_only": [
+        "LightGenV2.tasks.t12_text_to_image.lab_shs8um.run_train_capture"
+      ],
+      "refers_to_17m_candidate": true,
+      "command_executed": false
+    }
+  ],
+  "legacy_local_source_preserved_commit": "ff0c7a2e1",
+  "runtime_checkout_changed": false
+}
