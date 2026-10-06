@@ -1,0 +1,24 @@
+{
+  "audited_on": "2026-10-06",
+  "source_commit": "8029901bf9cde7e946caf18b85dd199bd7376fca",
+  "source_transport": "Executed diagnostic directly from published Git blob, not copied source or a new checkout",
+  "machine_config": "E:/code/guest/2026OpticsMoE/LGVQ_Spatial_Lab_SHS_8um/LAB.local.json",
+  "amplitude_sdk_override": "E:/code/guest/2026OpticsMoE/ABO_Lab_SHS_8um/vendor/holoeye_python",
+  "default_relative_sdk_binding_passed": false,
+  "explicit_sdk_binding_passed": true,
+  "required_paths_checked": 8,
+  "current_file_sha256": {
+    "camera_wrapper": "a3f788582f2f395da69d943bcc36cacf9266c59e73cbee6eb39e4347c9417e3f",
+    "camera_transport": "35a40990de695644108e42a58074f9caabb89149811ec35cb4f482b77060e925",
+    "amplitude_native_library": "55762b513548187c539df91e65c6694492b839a7f8814f985d76aedd76ad3253",
+    "amplitude_python_wrapper": "c3c551b07fbbf427b24f703e901936e25ddaa353c6220bb7bf285e83a7fb4fa8",
+    "phase_wrapper": "0d3cc283165bb62ed60a4c8b1c1a256af9441e6342654511fd1f80dbe46ce225",
+    "phase_lut": "6a968b970fc81b035788534fc6ab7236a59e25e1a73068de393d90720a52efb6"
+  },
+  "original_config_matches_fixed_capture_settings": true,
+  "effective_capture_settings": {"exposure_us": 400, "gain": "Gain_X4", "wait_ms": 240},
+  "config_unchanged": true,
+  "devices_opened": false,
+  "scope": "Current path/file existence and hash only. No DLL loading, camera/SLM access, ABI/license verification, acquisition, model evaluation or historical file identity proof.",
+  "remaining": ["Authorized Windows runtime checkout cutover", "SDK loading and interactive display regression", "No deletion of original installed assets or sealed experiment"]
+}
