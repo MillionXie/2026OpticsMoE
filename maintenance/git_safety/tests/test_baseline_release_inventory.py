@@ -18,7 +18,11 @@ class BaselineInventoryTests(unittest.TestCase):
         for row in receipt['packages']:
             path = BASE / 'code_packages' / row['task'] / 'SOURCE_MANIFEST.json'
             raw = path.read_bytes()
-            self.assertEqual(hashlib.sha256(raw).hexdigest(), row['source_manifest_sha256'])
+            # Receipt pins original Windows release bytes. Git text checkout
+            # may normalize line endings; recover that representation only,
+            # never change per-source hashes or accept arbitrary content edits.
+            release_bytes = raw.replace(b'\r\n', b'\n').replace(b'\n', b'\r\n')
+            self.assertEqual(hashlib.sha256(release_bytes).hexdigest(), row['source_manifest_sha256'])
             manifest = json.loads(raw)
             self.assertEqual(manifest['source_commit'], row['source_commit'])
             self.assertEqual(len(manifest['files']), row['source_files'])
