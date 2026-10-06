@@ -92,5 +92,16 @@
     "hardware_used": false,
     "limitation": "Original 5b4f checkpoint only, not adapted eeec checkpoint, full inference or lab cutover; virtual path-only attempt failed to locate YAML before clean-main configuration replay succeeded"
   },
+  "published_base_configuration_path_audit": {
+    "verified_source_commit": "05b14b402f771b841677881264a6340911f7544b",
+    "base_config_yaml_references": 553,
+    "configuration_relative_targets_present": 552,
+    "repository_relative_targets_present": 1,
+    "repository_relative_exception": "FixedFeedbackSFT/projects/qwen3_vl_patch_stem_8stage_separable_optical_downstream_fa/configs/phase_only_50e.yaml; phase_only.py uses resolve_repository_path",
+    "unresolved_paths": [],
+    "t12_dependency": "audited_unified.audited_settings reuses T01 configuration/loader; optical_path reuses experiments optical blocks. Retain these implementations until equivalent migration is verified.",
+    "scope": "Explicit base_config YAML path presence in Git plus one loader resolution check; not complete parsing, cycle checks, dynamic imports, machine assets or runtime validation",
+    "source_or_scientific_contract_changed": false
+  },
   "full_goal_complete": false
 }
