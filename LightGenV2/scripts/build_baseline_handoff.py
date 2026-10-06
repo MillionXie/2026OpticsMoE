@@ -169,13 +169,18 @@ def initialize_git():
 def main():
     p=argparse.ArgumentParser(description=__doc__)
     p.add_argument('action',choices=['check','list','init-source']+list(SPEC['actions']))
+    p.add_argument('--allow-new-repository', action='store_true',
+                   help='Explicit permission for a standalone handoff repository; not normal main workflow')
     p.add_argument('arguments',nargs=argparse.REMAINDER)
     a=p.parse_args()
     if a.action=='check': verify(); return
     if a.action=='list':
         for name,command in SPEC['actions'].items(): print(name,': python -m',' '.join(command))
         return
-    if a.action=='init-source': verify(); initialize_git(); return
+    if a.action=='init-source':
+        if not a.allow_new_repository:
+            p.error('Creating a nested repository is disabled. Use the unified main checkout; standalone reproduction requires explicit --allow-new-repository permission.')
+        verify(); initialize_git(); return
     if not (ROOT/'source/.git').is_dir():
         p.error('First run: python run_baseline.py init-source')
     tail=a.arguments[1:] if a.arguments[:1]==['--'] else a.arguments
@@ -273,10 +278,12 @@ def readme(task):
 
 ```bash
 python run_baseline.py check
-python run_baseline.py init-source
 ```
 
-第二条命令为导出的源码建立真实的本地 Git 快照，供原训练器记录运行版本；历史来源仍以 `SOURCE_ORIGIN.json` 为准。
+日常开发使用统一主工程 main，不在包内再建立嵌套仓库。导出包仅用于固定历史源码复现。
+确需在仓库外独立复现并已获得许可时，才执行
+`python run_baseline.py --allow-new-repository init-source`，建立真实的本地 Git 快照；
+历史来源仍以 `SOURCE_ORIGIN.json` 为准。该开关不是自动创建新工程的授权。
 配置路径均相对于 `source/`。数据、Qwen 预训练权重、训练后的任务头及特征缓存需另外提供，包内不含这些文件。
 {task['assets']}
 
