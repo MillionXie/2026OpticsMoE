@@ -71,6 +71,13 @@ def inspect_timing_manifest(root, descriptor):
     if hashlib.sha256(windows_text).hexdigest() != descriptor['manifest_original_windows_sha256']:
         return {'payloads_checked': 0, 'errors': ['Timing manifest identity mismatch']}
     seen = set(); errors = []; checked = 0
+    relocations = descriptor.get('relocations', {})
+    for source, target in relocations.items():
+        for name in (source, target):
+            pure = PurePosixPath(name)
+            if (pure.is_absolute() or '..' in pure.parts or '\\' in name
+                    or ':' in name or name in ('', '.')):
+                raise ValueError('Invalid timing relocation path')
     for line in raw.decode('utf8').splitlines():
         digest, name = line.split(None, 1); name = name.strip()
         pure = PurePosixPath(name)
@@ -78,7 +85,7 @@ def inspect_timing_manifest(root, descriptor):
                 or '..' in pure.parts or '\\' in name or ':' in name or name in seen):
             raise ValueError('Invalid or duplicate timing payload path')
         seen.add(name)
-        path = confined(manifest.parent, name)
+        path = confined(manifest.parent, relocations.get(name, name))
         if os.name == 'nt':
             absolute = str(path)
             path = Path('\\\\?\\UNC\\' + absolute[2:] if absolute.startswith('\\\\')
@@ -95,7 +102,10 @@ def inspect_timing_manifest(root, descriptor):
             checked += 1
     if len(seen) != descriptor['manifest_entries_verified']:
         errors.append('Timing manifest member count mismatch')
+    if set(relocations) - seen:
+        errors.append('Relocation references undeclared timing member')
     return {'payloads_checked': checked, 'errors': errors,
+            'explicit_relocations_checked': len(set(relocations) & seen),
             'scope': 'Declared original timing export bytes only; not new measurements or unlisted files'}
 
 
@@ -104,8 +114,14 @@ def main():
     parser.add_argument('--repo', type=Path, default=Path(__file__).resolve().parents[2])
     parser.add_argument('--timing-payloads', action='store_true',
                         help='Also verify locally retained historical timing payloads; requires private files')
+    parser.add_argument('--demo-timing-payloads', action='store_true',
+                        help='Audit Sep 27 historical payloads including explicit relocations; requires local files and reports unresolved members')
     args = parser.parse_args()
     result = inspect(args.repo)
+    if args.demo_timing_payloads:
+        descriptor = json.loads((args.repo/'maintenance/storage/DEMO_TIMING_MANIFEST_AUDIT_20261006.json').read_text(encoding='utf8'))['descriptor']
+        result['demo_timing_payloads'] = inspect_timing_manifest(args.repo, descriptor)
+        result['errors'].extend(result['demo_timing_payloads']['errors'])
     if args.timing_payloads:
         descriptor = json.loads((args.repo/'maintenance/storage/TIMING_SOURCE_RECOVERY_20261004.json').read_text(encoding='utf8'))['historical_redbox_payload_visibility_20261006']
         result['timing_payloads'] = inspect_timing_manifest(args.repo, descriptor)

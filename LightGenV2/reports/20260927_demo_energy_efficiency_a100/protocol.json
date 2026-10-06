@@ -1,0 +1,29 @@
+{
+  "schema_version": 1,
+  "date": "2026-09-27",
+  "device": "NVIDIA A100-PCIE-40GB",
+  "physical_gpu_index_nvidia_smi": 6,
+  "timing_samples_per_task": 200,
+  "sample_selection": "baseline: first 200 test samples in dataset order; Ours: 200 consecutive shape-matched GPU-resident kernel invocations",
+  "explicit_warmup_samples": 0,
+  "discarded_samples": 0,
+  "performance_scope": "identity-checked full test set",
+  "baseline_clock": "synchronized wall",
+  "ours_electronic_clock": "CUDA Event",
+  "optical_passes": 6,
+  "optical_pass_ms": 1.0447,
+  "optical_components_ms": {
+    "high_speed_slm_refresh": 0.714,
+    "exposure": 0.300,
+    "camera_readout_roi_812x812": 0.0307
+  },
+  "power_w": {
+    "optical_devices": 80.358,
+    "ours_control_chassis": 41.388,
+    "ours_a100_board": 62.842,
+    "baseline_chassis": 338.2,
+    "baseline_a100_board": "measured per task by nvidia-smi"
+  },
+  "operation_convention": "1 real MAC = 2 OP",
+  "reserved_rows": ["04", "08"]
+}

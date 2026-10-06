@@ -30,6 +30,12 @@ TEST选模若曾获用户授权，仍标为开发指标，不改变旧记录的�
 
 ## 本轮实际核查
 
+10月6日进一步把 [9月27日历史能效包说明与旧版边界](../../LightGenV2/reports/20260927_demo_energy_efficiency_a100/SUPERSEDED_TABLE_NOTICE.md)、
+原协议、版本身份、计算摘要及原SHA清单纳入main。657/681项原SHA可核验，其中30项
+只是显式同SHA旧路径映射；24项仍有缺失/变化，逐项保留在
+[核验收据](DEMO_TIMING_MANIFEST_AUDIT_20261006.json)。旧清单不改写，原测速全部保留；
+不把旧ABO/OpenMoji指标或时间套给封存新模型，也不称整包从零复现已通过。
+
 [只读本地清单](MEASUREMENT_BASELINE_INVENTORY_20261003.json)登记16个历史计时/功耗/
 baseline报告目录，2186个文件，共458828551字节；29项顶层身份/说明文件记录SHA256。
 包括9月14日A100各scope/功耗版本、Qwen first-block基线、baseline复现方法、LGVQ

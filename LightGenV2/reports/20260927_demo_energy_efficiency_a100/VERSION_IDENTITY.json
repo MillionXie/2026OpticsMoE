@@ -1,0 +1,77 @@
+{
+  "schema_version": 1,
+  "rows": [
+    {
+      "number": "01",
+      "task": "LGVQ temporal/spatial quality",
+      "ours_performance": {"temporal_srcc": 0.8044, "spatial_srcc": 0.6710},
+      "baseline_performance": {"temporal_srcc": 0.7663428036522781, "spatial_srcc": 0.6907725734336255},
+      "baseline_source_commit": "4b24e9ad4df027db3bac92a7721ae8cf052a6f50",
+      "baseline_model_snapshot": "89644892e4d85e24eaac8bacfd4f463576704203",
+      "baseline_temporal_checkpoint_sha256": "e102adc6a7b33335c8f49ae1cbeea3302a1a10017d282da8d6091a640276d0d2",
+      "baseline_spatial_checkpoint_sha256": "9155ec7a45a19e14ac87661021b44599317d5efb16475df77707d70e866ad913"
+    },
+    {
+      "number": "02",
+      "task": "ABO image-to-text retrieval",
+      "ours_performance_r1": 0.8058333333333333,
+      "baseline_performance_r1": 0.7358333333333333,
+      "baseline_source_commit": "b9a4be689f198f55ee0caaf4e5bcddd4dfc80200",
+      "baseline_model_snapshot": "9f2f7e710d6d81056aa5c0a4f04764fec6bb7bda",
+      "note": "Ours is the documented epoch-25 EMA historical 1934/2400 identity."
+    },
+    {
+      "number": "03",
+      "task": "ABO image-to-image enrolled-SKU retrieval",
+      "ours_performance_r1": 0.83125,
+      "ours_source_commit": "4c34a0e68",
+      "ours_run_id": "abo200_readout_within_sku_verified_20260915",
+      "baseline_performance_r1": 0.85125,
+      "baseline_source_commit": "5f731fae979ef81a09770c1dd721b5cecd8b3392",
+      "baseline_model_snapshot": "9f2f7e710d6d81056aa5c0a4f04764fec6bb7bda",
+      "manifest_sha256": "f1749d5fc22d2dfee6a1333ce2b35e9fa600a070f949eba8420b4def41906dde"
+    },
+    {
+      "number": "04",
+      "task": "ABO text-to-image retrieval",
+      "status": "reserved"
+    },
+    {
+      "number": "05",
+      "task": "LSP keypoint detection",
+      "ours_exact_bound_pck_0_2": 0.7347857143,
+      "requested_table_display": 0.7353,
+      "baseline_performance_pck_0_2": 0.7225714285714285,
+      "baseline_source_commit": "bcec3a5977ccf00c71c6b5e8c00bf436cc3e305e",
+      "baseline_checkpoint_sha256": "0a4569f288f6de424b1b412452fa804a96e58d8f7e8655efaa23f461ab8cc735",
+      "audit_status": "The exact bound Ours artifact does not equal 0.7353; retain the exact value until a matching checkpoint/report is produced."
+    },
+    {
+      "number": "06",
+      "task": "SALICON saliency",
+      "ours_performance_cc": 0.8625,
+      "baseline_performance_cc": 0.8748382970809937,
+      "baseline_source_commit": "d8653fa6057f96b52d53259999343ff2117c1526",
+      "baseline_checkpoint_sha256": "689d086b5a390c399df109d07b73185575cd2245998b7bd427f6ccea5b0fe019"
+    },
+    {
+      "number": "07",
+      "task": "OpenMoji semantic interaction, new layout",
+      "ours_performance_accuracy": 0.8765,
+      "ours_source_commit": "96b816c31",
+      "ours_run_id": "layered_dc30_ccdsmall_selected_e45_s73_20260925",
+      "ours_checkpoint_sha256": "03cb861c3ac344556601eb3eb6d7d1a22b77a54d2e7e68e85d77ee30fb09eb21",
+      "baseline_performance_accuracy": 0.8120,
+      "baseline_source_commit": "41a5fdaff43cc039e81d6bc9ab779a3ea89daf02",
+      "baseline_run_id": "layered_scene_qwen_shared_s73_e100_20260920",
+      "baseline_selected_epoch": 30,
+      "baseline_checkpoint_sha256": "0be775796d5f64df3fab6359eb354ec6666dfc29329484a620b619a6f7ec7cf8",
+      "warning": "Do not substitute the older qwen_shared_s73 result 0.8420."
+    },
+    {
+      "number": "08",
+      "task": "ABO clean text-to-image generation",
+      "status": "reserved"
+    }
+  ]
+}

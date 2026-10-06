@@ -6,6 +6,23 @@ from maintenance.git_safety.check_source_archives import confined, inspect_manif
 
 
 class ArchiveTests(unittest.TestCase):
+    def test_explicit_relocation_keeps_original_hash_and_does_not_modify_files(self):
+        with tempfile.TemporaryDirectory() as folder:
+            root = Path(folder); (root/'archive').mkdir()
+            data = root/'archive/timing.csv'; data.write_bytes(b'original')
+            line = hashlib.sha256(b'original').hexdigest() + '  timing.csv\n'
+            (root/'SHA256SUMS.txt').write_bytes(line.encode())
+            descriptor = dict(manifest='SHA256SUMS.txt', manifest_entries_verified=1,
+                manifest_original_windows_sha256=hashlib.sha256(line.replace('\n','\r\n').encode()).hexdigest(),
+                relocations={'timing.csv':'archive/timing.csv'})
+            self.assertEqual(inspect_timing_manifest(root, descriptor)['errors'], [])
+            self.assertFalse((root/'timing.csv').exists())
+            self.assertEqual(data.read_bytes(), b'original')
+            data.write_bytes(b'changed')
+            self.assertTrue(inspect_timing_manifest(root, descriptor)['errors'])
+            descriptor['relocations'] = {'timing.csv':'../outside.csv'}
+            with self.assertRaises(ValueError): inspect_timing_manifest(root, descriptor)
+
     def test_timing_payload_verification_retains_bytes_and_fails_on_changes(self):
         with tempfile.TemporaryDirectory() as folder:
             root = Path(folder)
