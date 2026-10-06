@@ -2,6 +2,7 @@ import importlib.util
 from pathlib import Path
 import subprocess
 import hashlib
+import os
 import pytest
 
 spec = importlib.util.spec_from_file_location("scope", Path(__file__).with_name("source_snapshot_scope.py"))
@@ -27,6 +28,23 @@ def test_different_content_is_not_equal():
 def test_hash_matches_git():
     actual = subprocess.check_output(["git", "hash-object", "--stdin"], input=b"hello\n").decode().strip()
     assert scope.blob_id(b"hello\n") == actual
+
+
+def test_deep_source_path_is_readable(tmp_path):
+    relative = '/'.join(['long_package_component'] * 14) + '/source.py'
+    path = scope.source_path(tmp_path.resolve(), relative)
+    path.parent.mkdir(parents=True)
+    path.write_bytes(b'original source\n')
+    assert path.is_file()
+    assert path.read_bytes() == b'original source\n'
+    if os.name == 'nt':
+        assert str(path).startswith('\\\\?\\')
+
+
+def test_source_path_does_not_change_relative_identity(tmp_path):
+    path = scope.source_path(tmp_path.resolve(), 'package/source.py')
+    assert path.name == 'source.py'
+    assert path.suffix == '.py'
 
 
 def history_fixture(tmp_path, monkeypatch, payload=b"old implementation\n"):

@@ -3,11 +3,23 @@ import argparse
 from collections import Counter, defaultdict
 import hashlib
 import json
+import os
 from pathlib import Path
 import subprocess
 
 
 SOURCE_SUFFIXES = {".py", ".sh", ".ps1", ".bat", ".cmd", ".yaml", ".yml"}
+
+
+def source_path(root, relative):
+    """Use Windows extended paths so deep package files are not falsely missing."""
+    path = root / relative
+    if os.name == "nt":
+        text = str(path)
+        if not text.startswith("\\\\?\\"):
+            text = "\\\\?\\UNC\\" + text[2:] if text.startswith("\\\\") else "\\\\?\\" + text
+        return Path(text)
+    return path
 
 
 def git(root, *args):
@@ -47,7 +59,7 @@ def audit(root, reference="HEAD"):
         if not name:
             continue
         relative = name.decode("utf-8")
-        path = root / relative
+        path = source_path(root, relative)
         if path.suffix.lower() not in SOURCE_SUFFIXES:
             skipped["not_selected_source_extension"] += 1
             continue
@@ -109,7 +121,7 @@ def audit_history(root, reference="HEAD"):
     for row in current["files"]:
         if row["identity"] != "no_byte_identity_in_reference":
             continue
-        path = root / row["path"]
+        path = source_path(root, row["path"])
         if path.is_symlink() or not path.is_file():
             raise RuntimeError("Source type changed during history audit: " + row["path"])
         data = path.read_bytes()
