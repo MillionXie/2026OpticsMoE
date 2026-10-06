@@ -1,0 +1,226 @@
+{
+  "audited_on": "2026-10-06",
+  "scope": "Fixed478 three datasets: archive byte SHA and NPY headers only, no image decoding or model evaluation",
+  "datasets": [
+    {
+      "path": "/DATA/DATA1/guest3/demo_reproduction_data/bloodmnist_fixed/bloodmnist_fixed_split.npz",
+      "bytes": 28402143,
+      "sha256": "28ee72722de6ef1c8df1d7fe36d2e55f1f081c1d777f12547823ccae336af66f",
+      "array_headers": [
+        {
+          "member": "train_images.npy",
+          "shape": [
+            11959,
+            28,
+            28,
+            3
+          ],
+          "dtype": "uint8",
+          "fortran": false
+        },
+        {
+          "member": "train_labels.npy",
+          "shape": [
+            11959
+          ],
+          "dtype": "int64",
+          "fortran": false
+        },
+        {
+          "member": "train_ids.npy",
+          "shape": [
+            11959
+          ],
+          "dtype": "<U23",
+          "fortran": false
+        },
+        {
+          "member": "val_images.npy",
+          "shape": [
+            1712,
+            28,
+            28,
+            3
+          ],
+          "dtype": "uint8",
+          "fortran": false
+        },
+        {
+          "member": "val_labels.npy",
+          "shape": [
+            1712
+          ],
+          "dtype": "int64",
+          "fortran": false
+        },
+        {
+          "member": "val_ids.npy",
+          "shape": [
+            1712
+          ],
+          "dtype": "<U21",
+          "fortran": false
+        }
+      ],
+      "test_reports_checked": 12,
+      "report_data_sha_matches": true
+    },
+    {
+      "path": "/DATA/DATA1/guest3/demo_reproduction_data/kather2016/kather2016_fixed_split.npz",
+      "bytes": 251963826,
+      "sha256": "b6d887d8dfc890f5829639b47dd63e7fe22d1fee100119617a36756e32631ce7",
+      "array_headers": [
+        {
+          "member": "train_images.npy",
+          "shape": [
+            3496,
+            150,
+            150,
+            3
+          ],
+          "dtype": "uint8",
+          "fortran": false
+        },
+        {
+          "member": "train_labels.npy",
+          "shape": [
+            3496
+          ],
+          "dtype": "int64",
+          "fortran": false
+        },
+        {
+          "member": "train_ids.npy",
+          "shape": [
+            3496
+          ],
+          "dtype": "<U8",
+          "fortran": false
+        },
+        {
+          "member": "val_images.npy",
+          "shape": [
+            752,
+            150,
+            150,
+            3
+          ],
+          "dtype": "uint8",
+          "fortran": false
+        },
+        {
+          "member": "val_labels.npy",
+          "shape": [
+            752
+          ],
+          "dtype": "int64",
+          "fortran": false
+        },
+        {
+          "member": "val_ids.npy",
+          "shape": [
+            752
+          ],
+          "dtype": "<U8",
+          "fortran": false
+        },
+        {
+          "member": "test_images.npy",
+          "shape": [
+            752,
+            150,
+            150,
+            3
+          ],
+          "dtype": "uint8",
+          "fortran": false
+        },
+        {
+          "member": "test_labels.npy",
+          "shape": [
+            752
+          ],
+          "dtype": "int64",
+          "fortran": false
+        },
+        {
+          "member": "test_ids.npy",
+          "shape": [
+            752
+          ],
+          "dtype": "<U8",
+          "fortran": false
+        }
+      ],
+      "test_reports_checked": 12,
+      "report_data_sha_matches": true
+    },
+    {
+      "path": "/DATA/DATA1/guest3/demo_reproduction_data/organcmnist_fixed/organcmnist_fixed_split.npz",
+      "bytes": 14260451,
+      "sha256": "d87270da86f22dfe8aaadee7302b0f3be19992f7bfd9fb4a6b0170923ab35121",
+      "array_headers": [
+        {
+          "member": "train_images.npy",
+          "shape": [
+            12975,
+            28,
+            28,
+            3
+          ],
+          "dtype": "uint8",
+          "fortran": false
+        },
+        {
+          "member": "train_labels.npy",
+          "shape": [
+            12975
+          ],
+          "dtype": "int64",
+          "fortran": false
+        },
+        {
+          "member": "train_ids.npy",
+          "shape": [
+            12975
+          ],
+          "dtype": "<U24",
+          "fortran": false
+        },
+        {
+          "member": "val_images.npy",
+          "shape": [
+            2392,
+            28,
+            28,
+            3
+          ],
+          "dtype": "uint8",
+          "fortran": false
+        },
+        {
+          "member": "val_labels.npy",
+          "shape": [
+            2392
+          ],
+          "dtype": "int64",
+          "fortran": false
+        },
+        {
+          "member": "val_ids.npy",
+          "shape": [
+            2392
+          ],
+          "dtype": "<U22",
+          "fortran": false
+        }
+      ],
+      "test_reports_checked": 12,
+      "report_data_sha_matches": true
+    }
+  ],
+  "training_archives_bound": true,
+  "complete_test_source_binding_proven": false,
+  "remaining": "BloodMNIST and OrganCMNIST TEST comes from separate original archive, not these train/val NPZ files; original source and ordered test IDs still require verification",
+  "mutations": []
+}

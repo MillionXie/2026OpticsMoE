@@ -59,3 +59,10 @@ k值及主／pilot／固定global矩阵与原运行源码相同。没有重新�
 需要完整重训时必须先核对数据/预算/当前GPU授权，不照抄历史GPU0/1/2或A100命令。
 全部原数据、划分、best/last、逐样本结果、路由统计及所有测速/功耗继续保护。
 当前状态：实际源码已收敛、固定478资产部分核验；完整结果矩阵与数据闭包仍待收尾。
+
+2026-10-06补充：固定478三份实际NPZ逐字节SHA与36份既有TEST报告的数据字段一致；
+NPY头部确认Kather train3496/val752/test752，Blood train11959/val1712，
+Organ train12975/val2392，RGB uint8。后两份训练缓存不含TEST，TEST另从原始归档读取；
+不能把训练缓存SHA一致当成完整TEST来源闭包。原始测试归档及有序ID仍待核验。
+本轮仅流式哈希和NPY头部读取，没有解码图片、加载模型或复评。
+证据：仓库`maintenance/storage/T10_DATA_ARCHIVE_BINDING_20261006.json`。
