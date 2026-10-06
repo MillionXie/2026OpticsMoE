@@ -24,12 +24,20 @@ def inspect(machine_config, phase_sdk, phase_lut, amplitude_sdk=None):
         'camera_transport': camera / 'cti/x86_64/cxplink_gentl.cti',
         'amplitude_sdk': amp,
         'amplitude_binary_folder': binary,
+        'amplitude_native_library': binary / 'holoeye_slmdisplaysdk.dll',
         'phase_wrapper': phase / 'Blink_C_wrapper.dll',
         'phase_lut': lut,
     }
     directories = {'amplitude_sdk', 'amplitude_binary_folder'}
     paths = {key: {'path': str(p), 'present': p.is_dir() if key in directories else p.is_file()}
              for key, p in required.items()}
+    wrappers = (amp / 'slmdisplaysdk.py', amp / 'slmdisplaysdk/__init__.py',
+                amp / 'holoeye/slmdisplaysdk/__init__.py')
+    wrapper = next((p for p in wrappers if p.is_file()), None)
+    paths['amplitude_python_wrapper'] = {'candidates': [str(p) for p in wrappers],
+        'path': str(wrapper) if wrapper else None, 'present': wrapper is not None}
+    if wrapper is not None:
+        required['amplitude_python_wrapper'] = wrapper
     for key, p in required.items():
         if key not in directories and paths[key]['present']:
             with p.open('rb') as stream:

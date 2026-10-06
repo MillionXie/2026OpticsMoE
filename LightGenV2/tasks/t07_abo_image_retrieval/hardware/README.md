@@ -108,7 +108,7 @@ python maintenance/git_safety/check_t07_layerwise_source.py --commit main
 
 从唯一主仓库运行`maintenance/git_safety/check_t07_machine_paths.py`，显式指定
 `--machine-config`、`--phase-sdk`、`--phase-lut`，必要时指定`--amplitude-sdk`。
-它按机器JSON所在目录解析相对路径，检查相机DLL/CTI、振幅SDK/二进制目录、相位wrapper
+它按机器JSON所在目录解析相对路径，检查相机DLL/CTI、振幅Python wrapper/原生DLL、相位wrapper
 与LUT，并记录当前文件SHA。缺失返回2；只读，不打开SDK或创建采集目录。
 报告区分原JSON参数与rank72 Bench实际覆盖的400µs/Gain_X4/wait240，不修改原配置。
-四项模拟路径测试通过；存在性不证明SDK授权、ABI、交互桌面、有效光信号或现场回归。
+五项模拟路径测试通过，空SDK目录不再算通过；存在性不证明SDK授权、ABI、交互桌面、有效光信号或现场回归。
