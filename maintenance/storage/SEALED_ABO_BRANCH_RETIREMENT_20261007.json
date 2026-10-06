@@ -1,0 +1,26 @@
+{
+  "date": "2026-10-07",
+  "purpose": "Retire inactive sealed ABO historical development branch without changing model or files",
+  "retired_branch": "refs/heads/codex/t07-latestfresh35-20260929",
+  "source_directory": "/DATA/DATA1/guest3/2026OpticsMoE/.worktrees/t07_latestfresh35_20260929",
+  "original_and_retained_head": "d979b53ed509907a3630bd2a36c317dfb3aac965",
+  "archive_ref": "refs/archive/frozen-server-20261007/t07-latestfresh35-20260929",
+  "full_history_bundle_sha256": "76c6df86c7829b9ef7a50d5b69c28778e18e44f13741bbb9681ddd21dfa5595c",
+  "server_bundle": "storage_cleanup_manifests/sealed_abo_frozen_history_20261007.bundle",
+  "local_bundle": ".codex_tmp/storage_git_backup_20261002/sealed_abo_server_frozen_full_20261007.bundle",
+  "server_and_local_bundle_verify_passed": true,
+  "files_preserved_in_place": 4327,
+  "file_stat_index_and_status_unchanged": true,
+  "same_uid_cwd_command_and_open_file_preflight_passed": true,
+  "scientific_files_deleted": 0,
+  "main_runtime_checkout_unchanged_during_retirement": true,
+  "server_development_branches_remaining": 2,
+  "remaining_branches": ["main", "codex/t04-openmoji-robust-20260928"],
+  "protected_active_openmoji_not_modified": true,
+  "limitations": [
+    "Complete Git history recovery is not a backup of ignored weights, datasets or untracked overlays; these originals remain in place",
+    "Process checks cover same-UID readable processes, not all users or dynamic dependencies",
+    "Only the branch label retired; original historical directory and all timing copies retained, no disk release claimed",
+    "Actual Windows runtime remains unchanged; this is not hardware deployment cutover"
+  ]
+}
