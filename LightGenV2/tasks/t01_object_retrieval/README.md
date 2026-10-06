@@ -13,7 +13,11 @@ best/last及必要对照保留，不把生成器训练开销当本页模型推�
 汇总工具在服务器根缺失，3份旧正式配置不同，尚未选边或覆盖。来源及剩余差异见
 `maintenance/storage/STATIC_EXPERT_SOURCE_IDENTITY_20261006.json`。
 `TransferFromElectricity/d2nn_pack`是用户提供的原始参考包，保持原样，不作为垃圾
-清理或原样接入正式trainer；上述研究源码／依赖迁移尚未完成，不重复训练。
+清理或原样接入正式trainer。上述研究64份核心源码／配置已按服务器实际内容
+纳入main，三份配置明确记录CRLF差异，一份本地独有汇总源码保留；29项CPU
+测试通过，没有重新训练。两份连接工具及相关连接测试不进Git，原位私有保留。
+来源见`maintenance/storage/STATIC_EXPERT_SOURCE_IMPORT_20261006.json`。
+正式数据、全部历史版本与运行资产迁移仍未完成；不声称在新机器复现。
 
 本目录只维护论文正式对照的入口、配置和结果索引；历史实现仍由
 `experiments/` 提供兼容后端。当前固定比较三套系统，除此之外的试验不得混入正式表。

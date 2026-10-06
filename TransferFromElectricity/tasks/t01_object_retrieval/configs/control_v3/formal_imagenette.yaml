@@ -1,0 +1,10 @@
+base_config: imagenette.yaml
+# Locked from the complete deterministic validation grid before formal testing.
+learning_rates:
+  electronic: 0.0001
+  readout: 0.0001
+  generator_context: 0.0001
+development_selection:
+  run_id: 20260908_v3_devdet_base_s42
+  criterion: last_three_validation_top1_then_mrr
+  source_sha: 14eb8e8d

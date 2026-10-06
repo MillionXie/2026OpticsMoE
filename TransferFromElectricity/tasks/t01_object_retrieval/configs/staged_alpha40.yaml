@@ -1,0 +1,31 @@
+# Distinct protocol: never pool these results with the 50-step pilot.
+backend_profile: LightGenV2/tasks/t01_object_retrieval/configs/moe_optical_router_scale_matched_dc20.yaml
+seed: 42
+validation_per_class: 10
+num_workers: 0
+fusion: {minimum: 0.4, initial: 0.5, maximum: 0.95}
+initial_expert_dc_power: 0.25
+stages:
+  - {name: experts, epochs: 4}
+  - {name: optics, epochs: 8}
+  - {name: joint, epochs: 8}
+learning_rates:
+  expert: 0.02
+  global: 0.006
+  router: 0.01
+  generator_context: 0.0005
+  generator_decoder: 0.001
+  electronic: 0.00001
+  readout: 0.00002
+  fusion: 0.0001
+stage_cosine_minimum: 0.2
+warmup_steps: 20
+gradient_clip_per_group: 1.0
+ema_decay: 0.95
+generator:
+  model_id: Qwen/Qwen3-VL-2B-Instruct
+  rank: 8
+  lora_dtype: float32
+  decoder_final_init_std: 0.02
+selection: maximum_live_validation_top1_then_mrr
+test_policy: once_after_training_for_validation_selected_live_and_final_ema

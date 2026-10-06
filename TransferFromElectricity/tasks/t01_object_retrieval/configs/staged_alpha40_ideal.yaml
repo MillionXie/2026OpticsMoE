@@ -1,0 +1,5 @@
+base_config: staged_alpha40.yaml
+# Isolate optimization of deterministic optical propagation before robustness.
+# Geometry, phase modulation, routing, CCD normalization and alpha floor remain.
+training_optical_perturbations: false
+data_seed: 42

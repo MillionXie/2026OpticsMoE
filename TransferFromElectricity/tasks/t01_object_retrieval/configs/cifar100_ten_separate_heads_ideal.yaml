@@ -1,0 +1,6 @@
+base_config: cifar100_separate_heads_ideal.yaml
+dataset:
+  # sorted(random.Random(42).sample(range(100), 10)), fixed before model results.
+  class_ids: [3, 13, 14, 17, 28, 31, 35, 81, 86, 94]
+generator:
+  task_description: CIFAR-100 fixed ten-category subset image retrieval

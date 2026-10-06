@@ -1,0 +1,17 @@
+base_config: separate_heads_ideal.yaml
+dataset:
+  name: cifar100
+  root: data/cifar100_static_experts
+  gallery_per_class: 5
+validation_per_class: 20
+# CIFAR has no task-specific warmstart. Give the inherited electronics more
+# adaptation time and learning rate than the Caltech-only mechanism study.
+stages:
+  - {name: experts, epochs: 2}
+  - {name: optics, epochs: 2}
+  - {name: joint, epochs: 16}
+learning_rates:
+  electronic: 0.0003
+  readout: 0.0003
+generator:
+  task_description: CIFAR-100 hundred-category image retrieval

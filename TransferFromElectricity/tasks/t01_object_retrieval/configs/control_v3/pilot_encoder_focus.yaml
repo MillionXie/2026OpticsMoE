@@ -1,0 +1,2 @@
+base_config: pilot_high_g.yaml
+decoder_freeze_after: 2

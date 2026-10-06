@@ -1,0 +1,9 @@
+base_config: base.yaml
+dataset:
+  name: cifar100
+  root: data/cifar100_static_experts
+  gallery_per_class: 5
+  class_ids: [3, 13, 14, 17, 28, 31, 35, 81, 86, 94]
+validation_per_class: 20
+generator:
+  task_description: CIFAR-100 fixed ten-category subset image retrieval

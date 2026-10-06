@@ -1,0 +1,2 @@
+base_config: staged_alpha40_caltech30.yaml
+training_optical_perturbations: false

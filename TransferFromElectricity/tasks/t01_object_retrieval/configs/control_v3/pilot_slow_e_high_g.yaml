@@ -1,0 +1,4 @@
+base_config: pilot_high_g.yaml
+learning_rates:
+  electronic: 0.00001
+  readout: 0.00001
