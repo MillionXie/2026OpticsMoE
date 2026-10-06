@@ -1,0 +1,30 @@
+{
+  "audited_on": "2026-10-06",
+  "root": "LightGenV2\\demo_check\\EuroSAT_MoE_D2NN",
+  "manifest_sha256": "6a3d595645168ff3ad5045c2dc468220779a1e1c5f90d95c15c7385b254c7fe9",
+  "files_checked": 441,
+  "python_syntax_checked": 244,
+  "sealed_sources": 420,
+  "manifest_failures": [
+    "code/download_archives.py",
+    "code/DATA_PREPROCESSING.json",
+    "code/licenses/EuroSAT_MIT_LICENSE.txt",
+    "code/licenses/EuroSAT_README.md",
+    "code/licenses/EuroSAT_SAR_README.md",
+    "code/licenses/FGMAE_APACHE_LICENSE.txt"
+  ],
+  "sealed_binding_failures": [],
+  "followup": {
+    "all_six_manifest_failures_are_crlf_to_lf_only": true,
+    "exact_file_integrity_passed": false,
+    "normalized_content_identity_passed": true,
+    "manifest_rewritten": false,
+    "files_normalized_or_overwritten": false,
+    "explanation": "Retain original manifest and working bytes; record explicit Windows newline differences rather than claiming byte-identical integrity."
+  },
+  "original_files_changed": false,
+  "model_evaluated": false,
+  "archive_built": false,
+  "remote_server_verified_now": false,
+  "scope": "Local existing distribution snapshot only; not main adoption, external assets closure, or deletion approval"
+}
