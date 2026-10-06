@@ -124,6 +124,14 @@ t13_temporal_robust_training/
 
 ## 同步与安全
 
+2026-10-06治理：主线 `maintenance/git_safety/readonly_server_policy.py` 明确拒绝
+旧 `sync`／`publish-bundle` 自动创建工作树或任务分支的请求；只核验inspect/test参数，
+不连接服务器、不操作Git。其12项纯CPU测试通过。
+本机私有 `tools/server_sync.py` 已去除旧写入实现并绑定此规则，保留只读检查和指定commit的CPU测试；
+该连接脚本被Git忽略，按根规则不公开提交或通过源码传输复制到其他机器。
+不能称其他机器的私有旧脚本已被更新，也不能称此规则强制拦截所有窗口。
+源码发布仍按根AGENTS逐项审核、串行同步main。旧实验数据、PT和教师runtime未更改。
+
 遵守仓库根AGENTS.md的单main规则，不自动新建分支/worktree或独立工程。旧`codex/t13-temporal-robust-20260927`工作树作为已验证身份保护，待逐任务发布核验后收敛，不覆盖未提交修改。源码仅Git同步，资产另走SHA清单；私有连接脚本不进入新源码交付。历史正式训练获4卡授权并已结束，当前不启动训练；新运行重新查空闲资源并遵守当时预算。原协议无validation，退出只核验自己的PID。
 
 当前阶段：四组仿真训练、共同评价与真实PT工程已完成；硬件包仍为staged_not_capture_ready。源码整合发布、四组实采及新版导师硬件交付仍须分别核验，不把仿真完成冒称实采完成。
