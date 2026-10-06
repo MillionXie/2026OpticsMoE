@@ -74,6 +74,16 @@ CSV/JSON/日志路径，最少60条。文件名盘点不是原指标复核，也
 `640d98b56294c1c783afd8dfc7d934b74e6ef8ea`；本地、训练服务器和实验室源码对象库
 均核验38份原字节一致。没有新增开发分支、工作树或运行工程，也没有移动/忽略这38份原文件。
 这是恢复身份，不是纳入main、运行兼容或可以删除的证明。原盘点中另57份仍需处理。
+随后在 main `7c56d22557579cfe6e204ae36229d54f5712b07d` 再查：57份仍无恢复身份，
+其中用户 `TransferFromElectricity/d2nn_pack` 的8份具名源码/配置已追加私有恢复，
+三端逐SHA核验通过；原文件、算法、数据、工作HEAD和开发分支均不变。
+恢复引用 `refs/archive/user-d2nn-source-20261006`，提交
+`0adf21b80f5fbfa6dbaffc47a71b7ee3122e51d7`。增量包20148字节，SHA256
+`583e821ab24850711a57560e6aac2b73361df731937ba418fc45d392c6b8a193`，
+前置提交为上述7c56d225；不是完整仓库或数据备份。逐文件清单和三端收据位于私有
+`.codex_tmp/user_d2nn_source_preservation_20261006.json`、
+`.codex_tmp/user_d2nn_source_recovery_sync_20261006.json`。
+本轮盘点剩余49份无恢复身份；已备份的8份仍未证明应成为正式LightGenV2任务，不改变其实现。
 私有逐文件清单为 `.codex_tmp/remaining_local_lgv2_source_preservation_20261006.json`，
 三端核验收据为 `.codex_tmp/remaining_source_recovery_sync_20261006.json`。
 增量恢复包 `remaining_local_lgv2_source_20261006.bundle` 为80172字节，SHA256

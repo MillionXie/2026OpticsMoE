@@ -46,6 +46,27 @@ def test_snapshot_preserves_working_head_index_and_dirty_source(repo):
     assert git(root, 'for-each-ref', '--format=%(refname)', 'refs/heads').count('\n') == 0
 
 
+def test_named_user_source_requires_opt_in_and_preserves_bytes(repo):
+    root, _, manifest = repo
+    path = 'TransferFromElectricity/d2nn_pack/model_adapt.py'
+    file = root/path
+    file.parent.mkdir(parents=True)
+    file.write_bytes(b'user_value = 42\n')
+    manifest['paths'] = [dict(path=path, sha256=hashlib.sha256(file.read_bytes()).hexdigest(), entry_kind='untracked')]
+    with pytest.raises(RuntimeError):
+        snapshot(root, manifest, include_untracked_source=True)
+    result = snapshot(root, manifest, include_untracked_source=True, include_user_d2nn_source=True)
+    assert subprocess.check_output(['git','-C',str(root),'show',result['archive_commit']+':'+path]) == file.read_bytes()
+    assert result['working_head_unchanged'] and result['user_index_unchanged']
+
+
+def test_user_source_mode_does_not_enable_other_directories(repo):
+    root, _, manifest = repo
+    manifest['paths'] = [dict(path='TransferFromElectricity/unknown.py', sha256='0'*64, entry_kind='untracked')]
+    with pytest.raises(RuntimeError):
+        snapshot(root, manifest, include_untracked_source=True, include_user_d2nn_source=True)
+
+
 @pytest.mark.parametrize('change', ['sha', 'head', 'branch', 'duplicate', 'syntax'])
 def test_snapshot_rejects_unreviewed_inputs(repo, change):
     root, file, manifest = repo

@@ -12,7 +12,13 @@ import subprocess
 import tempfile
 
 
-def snapshot(root, manifest, *, include_documentation=False, include_untracked_source=False):
+USER_D2NN_SOURCES = frozenset('TransferFromElectricity/d2nn_pack/' + name for name in (
+    'config.yaml', 'data.py', 'extract_clip_features.py', 'losses.py', 'mask_generator.py',
+    'model_adapt.py', 'train_d2nn_adapt_grid.py', 'train_d2nn_mnist256.py'))
+
+
+def snapshot(root, manifest, *, include_documentation=False, include_untracked_source=False,
+             include_user_d2nn_source=False):
     root = Path(root).resolve()
     def git(*args, data=None, env=None):
         safe_env = dict(os.environ if env is None else env, GIT_OPTIONAL_LOCKS='0')
@@ -40,7 +46,9 @@ def snapshot(root, manifest, *, include_documentation=False, include_untracked_s
     blobs, seen = [], set()
     for row in manifest['paths']:
         path = row['path']; pure = PurePosixPath(path)
-        prefix_allowed = path.startswith('LightGenV2/') or (include_documentation and path.startswith('LightGenPublic/'))
+        prefix_allowed = (path.startswith('LightGenV2/')
+                          or (include_documentation and path.startswith('LightGenPublic/'))
+                          or (include_user_d2nn_source and path in USER_D2NN_SOURCES))
         suffix_allowed = (path.endswith('.py') or (include_documentation and path.endswith('.md'))
                           or (include_untracked_source and path.endswith(('.yaml', '.yml'))))
         if (not prefix_allowed or str(pure) != path or '..' in pure.parts
