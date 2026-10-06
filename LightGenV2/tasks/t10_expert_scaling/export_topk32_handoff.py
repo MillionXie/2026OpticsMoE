@@ -7,6 +7,7 @@ import math
 import statistics
 from collections import defaultdict
 from pathlib import Path
+from .handoff_output import prepare_output
 
 
 METRICS = [
@@ -48,12 +49,15 @@ def router_cells(n, side, width=24, pitch=32):
     return [(y, x, start+y*pitch+width/2, start+x*pitch+width/2) for y, x in cells]
 
 
-def main():
+def main(argv=None):
     ap = argparse.ArgumentParser()
     ap.add_argument('--package', type=Path, required=True)
-    args = ap.parse_args()
-    package = args.package
-    evidence = package / 'evidence'
+    ap.add_argument('--output', type=Path, required=True)
+    args = ap.parse_args(argv)
+    evidence = args.package / 'evidence'
+    package = prepare_output(args.package, args.output, [
+        'evidence/selected_jobs.json', 'evidence/dataset/data_manifest.json',
+        'evidence/scan/scan_design.json'])
     jobs = json.loads((evidence / 'selected_jobs.json').read_text())
     manifest = json.loads((evidence / 'dataset/data_manifest.json').read_text())
     scan_design = json.loads((evidence / 'scan/scan_design.json').read_text())

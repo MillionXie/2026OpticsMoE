@@ -7,6 +7,7 @@ import math
 import statistics
 from collections import defaultdict
 from pathlib import Path
+from .handoff_output import prepare_output
 
 
 TEST_METRICS = ('accuracy', 'balanced_accuracy', 'macro_f1', 'macro_nll', 'capture_mean')
@@ -40,16 +41,20 @@ def coefficient_of_variation(values):
     return statistics.pstdev(values) / mean if mean else None
 
 
-def main():
+def main(argv=None):
     ap = argparse.ArgumentParser()
     ap.add_argument('--package', type=Path, required=True)
-    args = ap.parse_args()
-    package = args.package
-    evidence = package / 'evidence'
-    lock = json.loads((package / 'test_selection_lock.json').read_text(encoding='utf-8'))
-    lock_hash = hashlib.sha256((package / 'test_selection_lock.json').read_bytes()).hexdigest()
+    ap.add_argument('--output', type=Path, required=True)
+    args = ap.parse_args(argv)
+    source_package = args.package
+    package = prepare_output(source_package, args.output, [
+        'test_selection_lock.json', 'per_seed_runs.csv', 'plotting_summary.json',
+        'evidence/dataset/data_manifest.json'])
+    evidence = source_package / 'evidence'
+    lock = json.loads((source_package / 'test_selection_lock.json').read_text(encoding='utf-8'))
+    lock_hash = hashlib.sha256((source_package / 'test_selection_lock.json').read_bytes()).hexdigest()
     manifest = json.loads((evidence / 'dataset' / 'data_manifest.json').read_text(encoding='utf-8'))
-    per_seed = read_csv(package / 'per_seed_runs.csv')
+    per_seed = read_csv(source_package / 'per_seed_runs.csv')
     by_name = {r['run_name']: r for r in per_seed}
 
     locked_rows, confusions, routes = [], [], []
@@ -156,7 +161,7 @@ def main():
     write_csv(package / 'test_expert_routes.csv', routes)
 
     plotting_path = package / 'plotting_summary.json'
-    plotting = json.loads(plotting_path.read_text(encoding='utf-8'))
+    plotting = json.loads((source_package / 'plotting_summary.json').read_text(encoding='utf-8'))
     plotting['completion']['test_evaluated_runs'] = 16
     plotting['completion']['test_samples_per_run'] = 752
     plotting['completion']['test_policy'] = lock['test_policy']

@@ -7,6 +7,7 @@ import math
 import statistics
 from collections import defaultdict
 from pathlib import Path
+from .handoff_output import prepare_output
 
 
 METRICS = ('accuracy', 'balanced_accuracy', 'macro_f1', 'macro_nll', 'capture_mean')
@@ -39,17 +40,21 @@ def cv(values):
     return statistics.pstdev(values) / mean if mean else None
 
 
-def main():
+def main(argv=None):
     ap = argparse.ArgumentParser()
     ap.add_argument('--package', type=Path, required=True)
-    args = ap.parse_args()
-    package = args.package
-    evidence = package / 'evidence'
-    lock_path = package / 'full_test_scan_lock.json'
+    ap.add_argument('--output', type=Path, required=True)
+    args = ap.parse_args(argv)
+    source_package = args.package
+    package = prepare_output(source_package, args.output, [
+        'full_test_scan_lock.json', 'per_seed_runs.csv', 'plotting_summary.json',
+        'evidence/dataset/data_manifest.json'])
+    evidence = source_package / 'evidence'
+    lock_path = source_package / 'full_test_scan_lock.json'
     lock = json.loads(lock_path.read_text(encoding='utf-8'))
     lock_hash = hashlib.sha256(lock_path.read_bytes()).hexdigest()
     manifest = json.loads((evidence / 'dataset' / 'data_manifest.json').read_text(encoding='utf-8'))
-    training = read_csv(package / 'per_seed_runs.csv')
+    training = read_csv(source_package / 'per_seed_runs.csv')
     training_by_name = {x['run_name']: x for x in training}
 
     rows, confusions, routes = [], [], []
@@ -147,7 +152,7 @@ def main():
     write_csv(package / 'full_test_expert_routes.csv', routes)
 
     plotting_path = package / 'plotting_summary.json'
-    plotting = json.loads(plotting_path.read_text(encoding='utf-8'))
+    plotting = json.loads((source_package / 'plotting_summary.json').read_text(encoding='utf-8'))
     plotting['completion']['test_evaluated_runs'] = 40
     plotting['completion']['test_samples_per_run'] = 752
     plotting['completion']['full_test_scan_policy'] = lock['test_policy']
