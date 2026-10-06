@@ -67,5 +67,14 @@
   "gpu_or_hardware_used": false,
   "data_weights_or_timing_deleted": false,
   "remaining_exceptions": "REMAINING_CLEANUP_PLAN_20261003.md and LightGenV2/TASK_REGISTRY.json",
+  "published_entry_navigation_check": {
+    "verified_source_commit": "9251ac6a31cb6c6bf2b9b91923bd3298ceb6e942",
+    "scope": "START_HERE, root rules, LightGenV2 entry/rules/scorecard, consolidation/externals navigation and immediate task READMEs",
+    "documents_checked": 24,
+    "inline_links_checked": 182,
+    "unresolved": [],
+    "working_files_used": false,
+    "limitations": "Inline relative file links only; not anchors, reference-style links, runtime imports, assets or scientific reproduction"
+  },
   "full_goal_complete": false
 }

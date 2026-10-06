@@ -5,6 +5,14 @@ spec=importlib.util.spec_from_file_location('links',Path(__file__).resolve().par
 m=importlib.util.module_from_spec(spec);spec.loader.exec_module(m)
 
 class LinkTests(unittest.TestCase):
+    def test_entry_scope_includes_root_navigation_not_history_payload(self):
+        paths = {'START_HERE.md', 'AGENTS.md', 'LightGenV2/README.md',
+                 'LightGenV2/tasks/t07_abo_image_retrieval/README.md',
+                 'LightGenV2/tasks/t07_abo_image_retrieval/reports/README.md',
+                 'handoffs/old/README.md'}
+        self.assertEqual(set(m.documents_for_scope(paths, 'entry')),
+                         paths - {'LightGenV2/tasks/t07_abo_image_retrieval/reports/README.md',
+                                  'handoffs/old/README.md'})
     def test_source_missing(self):
         self.assertEqual(m.classify('a/README.md','missing.py',set())['kind'],'missing_source_or_document')
     def test_preserved_not_source(self):

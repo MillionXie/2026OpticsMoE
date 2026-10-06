@@ -25,11 +25,23 @@ def classify(document,link,paths):
     return dict(document=document,link=link,target=target,kind=kind)
 
 
+def documents_for_scope(paths, scope):
+    if scope == 'entry':
+        entries = {'START_HERE.md', 'AGENTS.md', 'LightGenV2/README.md',
+                   'LightGenV2/AI_RULES.md', 'LightGenV2/PROJECT_SCORECARD.md',
+                   'maintenance/storage/REMAINING_CLEANUP_PLAN_20261003.md',
+                   'maintenance/storage/EXTERNAL_PROJECTS_20261004.md'}
+        entries.update(p for p in paths if p.startswith('LightGenV2/tasks/')
+                       and len(p.split('/')) == 4 and p.endswith('/README.md'))
+        return sorted(entries & paths)
+    prefix = 'LightGenV2/tasks/' if scope == 'tasks' else 'LightGenV2/'
+    return sorted(p for p in paths if p.startswith(prefix) and p.endswith('.md'))
+
+
 def inspect(root,commit,scope='tasks'):
     ref=subprocess.check_output(['git','-C',str(root),'rev-parse',commit+'^{commit}'],text=True).strip()
     paths=set(subprocess.check_output(['git','-C',str(root),'ls-tree','-r','--name-only','-z',ref]).decode().rstrip('\0').split('\0'))
-    prefix='LightGenV2/tasks/' if scope=='tasks' else 'LightGenV2/'
-    docs=sorted(p for p in paths if p.startswith(prefix) and p.endswith('.md'))
+    docs=documents_for_scope(paths, scope)
     unresolved=[];links=0
     for p in docs:
         raw=subprocess.check_output(['git','-C',str(root),'show',ref+':'+p]).decode('utf-8')
@@ -44,5 +56,5 @@ def inspect(root,commit,scope='tasks'):
 
 if __name__=='__main__':
     p=argparse.ArgumentParser(description=__doc__);p.add_argument('--commit',required=True)
-    p.add_argument('--scope',choices=('tasks','lightgenv2'),default='tasks')
+    p.add_argument('--scope',choices=('tasks','lightgenv2','entry'),default='tasks')
     args=p.parse_args();print(json.dumps(inspect(Path(__file__).resolve().parents[2],args.commit,args.scope),indent=2))
