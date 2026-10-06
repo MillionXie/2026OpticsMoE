@@ -1,0 +1,30 @@
+{
+  "archive_ref": "refs/archive/reviewed-abo-diagnostics-20261006",
+  "archive_commit": "d7bcc5e57f542658d8b379b6c3fe3beb9854c9d2",
+  "prerequisite_commit": "0189518ff4490bfded81beebae6a80b52c3498f2",
+  "bundle_sha256": "6e726cc60e9ab1c254e569c5277ddb7e126c40209bc1c832546fdd08c8e8d33c",
+  "bundle_bytes": 18402,
+  "files": [
+    {"path":"handoffs/abo_latestfresh35_lab_20260930/display_boundary_probe.py","sha256":"f33e8fae5d4bcae317220ecca19a57c3e03c901064bb9fe9fc580dd711d582f5","purpose":"Camera-only then amplitude/phase SDK reassertion diagnostic; top-level device operation, not safe to import"},
+    {"path":"handoffs/abo_latestfresh35_lab_20260930/display_chain_audit.py","sha256":"8906cfd95ad0601434d70380136672dc1255890b239b31448978b9c91702d6f1","purpose":"Historical monitor/module/session enumeration; imports legacy hardware modules and writes a machine-specific report"},
+    {"path":"handoffs/abo_latestfresh35_lab_20260930/model_rank192_bench.py","sha256":"f505f4c138260dbb82e65d321767f7cd4e81cc04a0b4aa9dd0adfa3dbdce9ed3","purpose":"Earlier six-capture model implementation with rank192 late RGB projection; not the sealed rank72 model and not a measured timing report"},
+    {"path":"handoffs/abo_latestfresh35_lab_20260930/rank72_global_control.py","sha256":"04f377fd51749cd31ca300093c2706b8a7f239eac263c9d253f1fbf4ee9a4c18","purpose":"Historical bounded router/global-stage control using earlier real CCD inputs; top-level model load and hardware capture"},
+    {"path":"handoffs/abo_latestfresh35_lab_20260930/stage_control_diagnostic_old.py","sha256":"7bbb509538171179f5295769343cd351d0950907b73deb7ee4949cd45c68e2fc","purpose":"Earlier latestfresh35 router/expert double capture with warmup; not a request to rerun sealed data"},
+    {"path":"handoffs/abo_text_to_image_10cm_alpha040_20260925/calibrate_router_pilot.py","sha256":"072c6493e88138d203c4e2618d5b5af3a201baf0321f1a4103495fec2e7e4726","purpose":"Four-input T08 DVP orientation/phase encoding scan; 10000us and historical ROI, not current T07 contract"},
+    {"path":"handoffs/abo_text_to_image_10cm_alpha040_20260925/capture_router_pilot.py","sha256":"1e980047b4314b2a3790bfca9b95bf6b8a52b185cd4acb04b0936277e1c48f35","purpose":"Four-input T08 router pilot bound to cc977b83 checkpoint; no full retrieval accuracy claim"},
+    {"path":"handoffs/abo_text_to_image_10cm_alpha040_20260925/config.yaml","sha256":"be07e969b7aad79e2df4f0b246cbeb8141e102c83c062882dd2e73d23771a3cc","purpose":"Original expanded T08 configuration with inherited historical dataset/teacher fields; preserve exact bytes, do not treat every inherited field as active or execute defaults"},
+    {"path":"handoffs/abo_text_to_image_10cm_alpha040_20260925/phase_response_probe.py","sha256":"b40d30dbf1bda1add51783d9656b52e3e9f8510194397a08d5fcacd7039ef5cd","purpose":"One fixed T08 amplitude with flat/trained phase A/B/A/B; historical 10000us device diagnostic"}
+  ],
+  "dependencies": {
+    "t07_controls": "Original candidate assets/processor/protocol, earlier CCD, SHS geometry, LAB.local.json, legacy hardware modules and Windows SDK",
+    "rank192_model": "Relative frontend and optics modules plus original metadata/checkpoint; current rank72 compatibility not claimed",
+    "t08_controls": "Original pilot NPY/BMP/manifests, DVP flow/SDK and historical calibrated corners; no assets removed"
+  },
+  "verification": {"local":"Raw SHA-bound recovery; HEAD/index/source unchanged","training_server":"9 original Git blobs SHA verified","lab_source_store":"9 original Git blobs SHA verified; runtime untouched"},
+  "original_files_deleted": false,
+  "original_files_moved": false,
+  "original_files_ignored": false,
+  "diagnostics_imported_or_executed": false,
+  "sealed_abo_changed": false,
+  "runtime_dependencies_released": false
+}

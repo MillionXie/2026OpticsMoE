@@ -22,6 +22,15 @@ REVIEWED_HISTORICAL_TOOLS = frozenset({
     'handoffs/abo_text_to_image_figure_pack_20260928/build_pack.py',
     'handoffs/t12_channel_robust_20260927/run_original_val96.cmd',
     'tmp/pdfs/timing_manual_audit.py',
+    'handoffs/abo_latestfresh35_lab_20260930/display_boundary_probe.py',
+    'handoffs/abo_latestfresh35_lab_20260930/display_chain_audit.py',
+    'handoffs/abo_latestfresh35_lab_20260930/model_rank192_bench.py',
+    'handoffs/abo_latestfresh35_lab_20260930/rank72_global_control.py',
+    'handoffs/abo_latestfresh35_lab_20260930/stage_control_diagnostic_old.py',
+    'handoffs/abo_text_to_image_10cm_alpha040_20260925/calibrate_router_pilot.py',
+    'handoffs/abo_text_to_image_10cm_alpha040_20260925/capture_router_pilot.py',
+    'handoffs/abo_text_to_image_10cm_alpha040_20260925/config.yaml',
+    'handoffs/abo_text_to_image_10cm_alpha040_20260925/phase_response_probe.py',
 })
 
 
@@ -138,7 +147,7 @@ if __name__ == '__main__':
     p.add_argument('--include-t12-delivery-tools', action='store_true',
                    help='Permit only the three named reviewed T12 delivery helper Python files')
     p.add_argument('--include-reviewed-historical-tools', action='store_true',
-                   help='Permit only three named reviewed figure/export/manual tools; never run them')
+                   help='Permit only exact named reviewed historical tools/configuration; never run them')
     args = p.parse_args()
     print(json.dumps(snapshot(args.root, json.loads(args.manifest.read_text()),
                               include_documentation=args.include_documentation,

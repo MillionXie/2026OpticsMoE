@@ -145,6 +145,22 @@ def test_historical_opt_in_rejects_neighbouring_private_tool(repo):
         snapshot(root, manifest, include_untracked_source=True, include_reviewed_historical_tools=True)
 
 
+def test_historical_abo_configuration_is_named_not_directory_permission(repo):
+    root, _, manifest = repo
+    path = 'handoffs/abo_text_to_image_10cm_alpha040_20260925/config.yaml'
+    file = root/path
+    file.parent.mkdir(parents=True)
+    content = b'optical_distance_m: 0.1\r\n'
+    file.write_bytes(content)
+    manifest['paths'] = [dict(path=path, sha256=hashlib.sha256(content).hexdigest(), entry_kind='untracked')]
+    result = snapshot(root, manifest, include_untracked_source=True, include_reviewed_historical_tools=True)
+    assert subprocess.check_output(['git', '-C', str(root), 'show', result['archive_commit']+':'+path]) == content
+    manifest['archive_ref'] = 'refs/archive/test-neighbour'
+    manifest['paths'][0]['path'] = 'handoffs/abo_text_to_image_10cm_alpha040_20260925/connection.yaml'
+    with pytest.raises(RuntimeError):
+        snapshot(root, manifest, include_untracked_source=True, include_reviewed_historical_tools=True)
+
+
 def test_user_source_mode_does_not_enable_other_directories(repo):
     root, _, manifest = repo
     manifest['paths'] = [dict(path='TransferFromElectricity/unknown.py', sha256='0'*64, entry_kind='untracked')]
