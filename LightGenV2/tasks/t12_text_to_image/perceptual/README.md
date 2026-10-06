@@ -16,4 +16,8 @@
 证据：`maintenance/storage/T12_PERCEPTUAL_DEPENDENCY_IDENTITY_20261006.json`。
 
 源码合同测试不读取数据或模型，不证明已在当前环境复算历史分数。
-旧汇总/作图器会在导入时写CSV或打开ZIP，目前仍作为原交付包保留，不作为新模块执行入口。
+汇总入口现为：
+`python -m LightGenV2.tasks.t12_text_to_image.perceptual.assemble_three_task_scores --input <旧CSV目录> --output <新CSV路径>`。
+它只拼接已有摘要，不计算新指标；拒绝重复model/mode键及非768样本，输出采用独占创建，
+不会覆盖历史CSV。15行各字段已与原表逐项核对一致，源CSV的SHA在测试前后不变。
+旧汇总器及作图器仍作为原交付包保留；作图器会在导入时打开ZIP，尚不作为新模块执行入口。
