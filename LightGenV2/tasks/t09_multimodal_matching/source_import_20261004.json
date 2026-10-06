@@ -29,7 +29,15 @@
     },
     {
       "path": "LightGenV2/tasks/t09_multimodal_matching/README.md",
-      "source_blob_sha256": "3d88ec128ae25885f7ecb78113a9a0ecbc2eab6fd48945943278c797b4e5aa57"
+      "source_blob_sha256": "6e97d9e5a70cafe74658e294cb82d05e5ecc6debdf6fe72ec6ea7582a86bbce4",
+      "hash_normalization": "crlf_to_lf",
+      "original_import_blob_sha256": "3d88ec128ae25885f7ecb78113a9a0ecbc2eab6fd48945943278c797b4e5aa57",
+      "post_import_review": {
+        "date": "2026-10-06",
+        "purpose": "Add read-only official scene, prepared pixel and saved feature identity audit navigation. Original scientific history and all imported executable sources unchanged.",
+        "original_import_commit": "479877944cf6d364e0571eaf34578f05ccfb2171",
+        "scope": "Current documentation hash only; original server runtime identity is preserved separately."
+      }
     },
     {
       "path": "LightGenV2/tasks/t09_multimodal_matching/audio_frontend.py",

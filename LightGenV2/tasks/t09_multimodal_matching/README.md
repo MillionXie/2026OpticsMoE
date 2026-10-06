@@ -8,8 +8,12 @@
 保持seed17／原图顺序／模板，重建TRAIN6000及VAL1500条问题与现存记录逐项相同，
 7500条标签与官方场景对象一致、保留TEST身份顺序一致。原准备metadata的五份SHA也未变。
 证据见 [`T09_CLEVR_SCENE_BINDING_20261006.json`](../../../maintenance/storage/T09_CLEVR_SCENE_BINDING_20261006.json)。
-这是只读数据来源核验，不下载或重新准备数据；NPZ像素及CNN缓存重建、TEST问题生成
-仍未在此次核验，不称整个官方CLEVR或完整任务迁移已完成。旧数据、模型、结果和测速不动。
+后续已按原RGB／64×64 LANCZOS规则逐像素核对1250张TRAIN/VAL与现存NPZ，完全一致；
+见 [`像素绑定记录`](../../../maintenance/storage/T09_CLEVR_PIXEL_BINDING_20261006.json)。
+另已核对20个运行的冻结前端PT身份，音文固定缓存数组SHA与正式MoE及canonical D2NN记录相同；
+见 [`缓存绑定记录`](../../../maintenance/storage/T09_SAVED_FEATURE_BINDING_20261006.json)。
+这是只读来源与保存身份核验，不下载或重新准备数据；CNN数值重建、TEST特征重建及历史
+前向等价仍未证明，不称整个官方CLEVR或完整任务迁移已完成。旧数据、模型、结果和测速不动。
 
 只比较两层主光路的 MoE+逐层OEO 与 D2NN+逐层OEO；MoE额外路由相位单列。
 首先比较 CLEVR 图文任务中的固定词编码与共享可训练 Embedding+GRU；

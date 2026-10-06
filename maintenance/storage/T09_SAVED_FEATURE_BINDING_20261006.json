@@ -1,0 +1,33 @@
+{
+  "audited_on": "2026-10-06",
+  "mode": "read_only_no_models_no_rewrite",
+  "runtime_runs": "/DATA/DATA1/guest3/demo_reproduction_20260915/LightGenV2/tasks/t09_multimodal_matching/runs",
+  "scope": "Existing shared_visual_frontend.json consumers beneath the named runtime runs only; not every T09 experiment on all machines",
+  "consumers_checked": 20,
+  "checkpoint_sha_failures": [],
+  "missing_data_manifests": [],
+  "resolved_frontends": [
+    "simulation/audio_frontend_s17_v1/best_checkpoint.pt",
+    "simulation/clevr_visual_aux_s17_v1/best_checkpoint.pt",
+    "simulation/clevr_visual_lite_aux_s17_v1/best_checkpoint.pt"
+  ],
+  "canonical_audio_cache": {
+    "relative_to_runtime_runs": "smoke/audio_feature_canonical_s17_v1/feature_cache.npz",
+    "sha256": "45c71b367fe8602358d53c972ea852252e30f04bd379d675bf3a2eef7fda17ab",
+    "checkpoint_sha256": "ce733c832a1bc7629cf9b5f63f22d46668fc5e1a5b0442cb97b092fca0a9b2b3",
+    "data_manifest_sha256": "e20d789937a44512ce4c91f222ba99145e36c63f3ee386295585d61cc018c0c1",
+    "train": {"shape": [6263, 128], "dtype": "float32", "finite": true, "sha256": "b47878c5d0c5b04bd5263d1890d09b2e983d450b9ff8b189e423d2965267de16"},
+    "validation": {"shape": [843, 128], "dtype": "float32", "finite": true, "sha256": "9659b2e37a1537980401d43495b09c18d4002148b0048df35da5c734f9a2a0e0"},
+    "archive_and_array_hashes_match_sidecar": true,
+    "same_frontend_data_and_array_hashes_in_runs": [
+      "simulation/audio_matching_d2nn_canonical_s17_v1",
+      "simulation/audio_matching_moe_s17_v1",
+      "smoke/audio_matching_s17_v1"
+    ],
+    "explicit_cache_consumer": "simulation/audio_matching_d2nn_canonical_s17_v1",
+    "legacy_different_features_preserved": "simulation/audio_matching_d2nn_s17_v1"
+  },
+  "passed": true,
+  "not_verified": ["CNN numeric reconstruction", "TEST feature reconstruction", "historical forward equivalence", "model accuracy", "full asset closure"],
+  "preservation": "Original caches, frontends, legacy device-difference trial, best/last, predictions and all timing remain in place. No deletion approval."
+}

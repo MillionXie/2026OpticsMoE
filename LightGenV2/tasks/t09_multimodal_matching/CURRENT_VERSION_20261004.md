@@ -39,6 +39,13 @@ MoE/D2NN为69.27%/57.47%，无CNN左右音文为85.01%/73.24%；
 - 原运行目录、best/last、逐样本输出、历史图、测速：服务器原T09任务目录，未移动或删除。
 - CLEVR派生数据：`/DATA/DATA1/guest3/demo_reproduction_data/clevr_attribute_s17_v1`。
 - 音文派生数据：同父目录的 `mini_speech_matching_s17_v3`。
+- 共享CNN音文正式对照的固定特征缓存：原任务目录
+  `runs/smoke/audio_feature_canonical_s17_v1/feature_cache.npz`及同名JSON。
+  前端是`runs/simulation/audio_frontend_s17_v1/best_checkpoint.pt`。
+  不能把旧`audio_matching_d2nn_s17_v1`的不同设备特征当成该缓存；正式对照为
+  `audio_matching_moe_s17_v1`及`audio_matching_d2nn_canonical_s17_v1`。
+  [保存身份核验](../../../maintenance/storage/T09_SAVED_FEATURE_BINDING_20261006.json)
+  已核对缓存字节、数组、实际前端PT和数据manifest，但不声称CNN跨设备数值重建。
 - 82项源码/摘要与278项run/PT身份：仓库 `maintenance/storage/T09_RUNTIME_IDENTITY_20261004.json`。
 - 该清单不是所有原始数据的完整备份，也不是旧外层工程可删除的许可。
 
