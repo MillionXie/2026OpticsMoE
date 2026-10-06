@@ -10,6 +10,18 @@ ROOT = Path(__file__).resolve().parents[3]
 
 
 class ArtifactIgnoreTests(unittest.TestCase):
+    def test_review_package_copies_not_primary_source_or_changed_descriptors(self):
+        import json
+        d=json.loads((ROOT/'maintenance/storage/T06_REVIEW_SOURCE_VISIBILITY_20261007.json').read_text(encoding='utf8'))
+        selected=[r['path'] for r in d['files']]
+        self.assertEqual(len(selected),80)
+        visible=d['excluded_unmatched']+[
+            'LightGenPublic/tasks/t06_lgvq_temporal_consistency/train.py',
+            'LightGenPublic/tasks/t06_lgvq_temporal_consistency/runtime/lgvq_temporal/fixed_weight.py',
+            'LightGenPublic/tasks/t06_lgvq_temporal_consistency/teacher_release_final/lgvq_temporal_08044/new_fix.py',
+            'LightGenPublic/tasks/t07_abo_image_retrieval/lightgen_abo/model.py']
+        self.assertEqual(self.ignored(selected+visible),set(selected))
+
     def test_abo_handoff_records_keep_contracts_code_and_future_results_visible(self):
         import json
         d=json.loads((ROOT/'maintenance/storage/ABO_HANDOFF_RESULT_VISIBILITY_20261007.json').read_text(encoding='utf8'))

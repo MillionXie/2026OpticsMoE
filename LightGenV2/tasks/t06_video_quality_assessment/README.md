@@ -18,6 +18,17 @@
 
 ## 历史仿真结论（不替代上方当前实拍版本）
 
+旧独立审阅包在 `LightGenPublic/tasks/t06_lgvq_temporal_consistency`，不是另一个
+日常开发工程。原 `teacher_release_final/lgvq_temporal_08044` 使用35个固定field、
+558条视频及PT SHA `5303b574b200e14bf943af21c60a246720be453b9cf8847cd93c0eaaa243a77c`，
+原仿真SRCC .8043868643。其 `teacher_release_final_v2` 改了8µm传播网格与探测器扰动，
+记录 .8022806420，不能按同名PT/继承commit冒称与原版等价。二者仍保留完整原目录、
+固定输入与权重，未做新性能评估；训练缓存缺项和重训练边界继续按原说明保留。
+版本身份见 [审阅包审计](../../../maintenance/storage/T06_REVIEW_PACKAGE_IDENTITY_20261006.json)，
+80份具名包内源码的Git恢复身份见
+[历史源码副本](../../../maintenance/storage/T06_REVIEW_SOURCE_VISIBILITY_20261007.json)。
+忽略副本不删除文件，不改变封存包的SHA清单；后续开发仍从本任务入口进行。
+
 Spatial 的当前正式归档是 `spatial_single_video4_balanced`：一条视频均匀取 4 帧并排成
 2×2，**没有多视频复用**。它使用两套物理光 Router Top-2、六次光传播和 20% 名义
 未调制分量，在 558 条 test 视频上达到 SRCC 0.6393、KRCC 0.4642、PLCC 0.6743、

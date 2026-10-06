@@ -1,0 +1,520 @@
+{
+  "audited_on": "2026-10-07",
+  "scope": "Named T06 historical teacher package source/description copies; originals stay runnable in place",
+  "archive_ref": "refs/archive/source-closure-20261006/t06-review-packages",
+  "archive_commit": "e573f739fc5c3fc5b8f8457c495466bb410b42ec",
+  "files": [
+    {
+      "path": "LightGenPublic/tasks/t06_lgvq_temporal_consistency/teacher_release/lgvq_temporal_08044/configs/temporal_16x4_s163.yaml",
+      "bytes": 2558,
+      "sha256": "c9ec04d0305ac153eb5b6d4d0e96a7fa12193b2153d89ecc025699244f905894",
+      "archive_path": "LightGenPublic/tasks/t06_lgvq_temporal_consistency/teacher_release/lgvq_temporal_08044/configs/temporal_16x4_s163.yaml"
+    },
+    {
+      "path": "LightGenPublic/tasks/t06_lgvq_temporal_consistency/teacher_release/lgvq_temporal_08044/runtime/LightGenV2/__init__.py",
+      "bytes": 91,
+      "sha256": "22f1d762857916ed1e5a173a60fa7d864cd10139f40fa9c249c38fbeb86ea92e",
+      "archive_path": "LightGenPublic/tasks/t06_lgvq_temporal_consistency/teacher_release/lgvq_temporal_08044/runtime/LightGenV2/__init__.py"
+    },
+    {
+      "path": "LightGenPublic/tasks/t06_lgvq_temporal_consistency/teacher_release/lgvq_temporal_08044/runtime/LightGenV2/tasks/__init__.py",
+      "bytes": 44,
+      "sha256": "cb7dde6e220a684ccb22efb1d4af40540497d7a7753c6692b24546411515c6f6",
+      "archive_path": "LightGenPublic/tasks/t06_lgvq_temporal_consistency/teacher_release/lgvq_temporal_08044/runtime/LightGenV2/tasks/__init__.py"
+    },
+    {
+      "path": "LightGenPublic/tasks/t06_lgvq_temporal_consistency/teacher_release/lgvq_temporal_08044/runtime/LightGenV2/tasks/t06_video_quality_assessment/__init__.py",
+      "bytes": 260,
+      "sha256": "c75051412cbcbe1deb04a93d497630f8264116cce37231b4ae10680fa35920e0",
+      "archive_path": "LightGenPublic/tasks/t06_lgvq_temporal_consistency/teacher_release/lgvq_temporal_08044/runtime/LightGenV2/tasks/t06_video_quality_assessment/__init__.py"
+    },
+    {
+      "path": "LightGenPublic/tasks/t06_lgvq_temporal_consistency/teacher_release/lgvq_temporal_08044/runtime/LightGenV2/tasks/t06_video_quality_assessment/lab_runtime.py",
+      "bytes": 8490,
+      "sha256": "5d1423c041249af2553f9a68ffed8bfb98e752c5dc42c4ef10b8c6bdcfe85b0f",
+      "archive_path": "LightGenPublic/tasks/t06_lgvq_temporal_consistency/teacher_release/lgvq_temporal_08044/runtime/LightGenV2/tasks/t06_video_quality_assessment/lab_runtime.py"
+    },
+    {
+      "path": "LightGenPublic/tasks/t06_lgvq_temporal_consistency/teacher_release/lgvq_temporal_08044/runtime/LightGenV2/tasks/t06_video_quality_assessment/models/__init__.py",
+      "bytes": 154,
+      "sha256": "403b255a753c41a248346aa16256a4075d84ce7dab81692dbb2a45646b215609",
+      "archive_path": "LightGenPublic/tasks/t06_lgvq_temporal_consistency/teacher_release/lgvq_temporal_08044/runtime/LightGenV2/tasks/t06_video_quality_assessment/models/__init__.py"
+    },
+    {
+      "path": "LightGenPublic/tasks/t06_lgvq_temporal_consistency/teacher_release/lgvq_temporal_08044/runtime/LightGenV2/tasks/t06_video_quality_assessment/models/multivideo9x4.py",
+      "bytes": 41311,
+      "sha256": "86973a85419c25b49074ee9af65b78e2cae08cdb1e159f25a5456109f273b0b9",
+      "archive_path": "LightGenPublic/tasks/t06_lgvq_temporal_consistency/teacher_release/lgvq_temporal_08044/runtime/LightGenV2/tasks/t06_video_quality_assessment/models/multivideo9x4.py"
+    },
+    {
+      "path": "LightGenPublic/tasks/t06_lgvq_temporal_consistency/teacher_release/lgvq_temporal_08044/runtime/LightGenV2/tasks/t06_video_quality_assessment/multivideo.py",
+      "bytes": 7406,
+      "sha256": "c5e04762c33eb69fbb1fb0159afb1841cd1d7718695bd8253356be68c9001c9b",
+      "archive_path": "LightGenPublic/tasks/t06_lgvq_temporal_consistency/teacher_release/lgvq_temporal_08044/runtime/LightGenV2/tasks/t06_video_quality_assessment/multivideo.py"
+    },
+    {
+      "path": "LightGenPublic/tasks/t06_lgvq_temporal_consistency/teacher_release/lgvq_temporal_08044/runtime/LightGenV2/tasks/t06_video_quality_assessment/multivideo_data.py",
+      "bytes": 3986,
+      "sha256": "bd098aaca18adc6ccb9a6a59fae7124504d0cc794444d159b5349fdc64b49c5c",
+      "archive_path": "LightGenPublic/tasks/t06_lgvq_temporal_consistency/teacher_release/lgvq_temporal_08044/runtime/LightGenV2/tasks/t06_video_quality_assessment/multivideo_data.py"
+    },
+    {
+      "path": "LightGenPublic/tasks/t06_lgvq_temporal_consistency/teacher_release/lgvq_temporal_08044/runtime/LightGenV2/tasks/t06_video_quality_assessment/multivideo_settings.py",
+      "bytes": 17727,
+      "sha256": "77751b516571e87b636517cfbca9627e28f61d168fb479a77e542589218cd980",
+      "archive_path": "LightGenPublic/tasks/t06_lgvq_temporal_consistency/teacher_release/lgvq_temporal_08044/runtime/LightGenV2/tasks/t06_video_quality_assessment/multivideo_settings.py"
+    },
+    {
+      "path": "LightGenPublic/tasks/t06_lgvq_temporal_consistency/teacher_release/lgvq_temporal_08044/runtime/LightGenV2/tasks/t06_video_quality_assessment/multivideo_training.py",
+      "bytes": 24564,
+      "sha256": "b57eb1c5fb304ff2d320b9bcf961711c8730af7e7f9cfcb4a4bb465348141190",
+      "archive_path": "LightGenPublic/tasks/t06_lgvq_temporal_consistency/teacher_release/lgvq_temporal_08044/runtime/LightGenV2/tasks/t06_video_quality_assessment/multivideo_training.py"
+    },
+    {
+      "path": "LightGenPublic/tasks/t06_lgvq_temporal_consistency/teacher_release/lgvq_temporal_08044/runtime/experiments/__init__.py",
+      "bytes": 563,
+      "sha256": "75749e81ecc24c9b80e103e22e93682d393ba15972cd34dfc49fb59b77a0a311",
+      "archive_path": "LightGenPublic/tasks/t06_lgvq_temporal_consistency/teacher_release/lgvq_temporal_08044/runtime/experiments/__init__.py"
+    },
+    {
+      "path": "LightGenPublic/tasks/t06_lgvq_temporal_consistency/teacher_release/lgvq_temporal_08044/runtime/experiments/qwen3_vl_2b_lgvq_single_metric_o2_16frame_54/__init__.py",
+      "bytes": 468,
+      "sha256": "f48d41c36f5c57760a0cc9485ad371ffd0f587c63c8b7d1562734195effb6d39",
+      "archive_path": "LightGenPublic/tasks/t06_lgvq_temporal_consistency/teacher_release/lgvq_temporal_08044/runtime/experiments/qwen3_vl_2b_lgvq_single_metric_o2_16frame_54/__init__.py"
+    },
+    {
+      "path": "LightGenPublic/tasks/t06_lgvq_temporal_consistency/teacher_release/lgvq_temporal_08044/runtime/experiments/qwen3_vl_2b_lgvq_single_metric_o2_16frame_54/data.py",
+      "bytes": 44617,
+      "sha256": "00e81892370765e19f139a4b60f0c8f6edce0694a1f0790701ffc596014c9c41",
+      "archive_path": "LightGenPublic/tasks/t06_lgvq_temporal_consistency/teacher_release/lgvq_temporal_08044/runtime/experiments/qwen3_vl_2b_lgvq_single_metric_o2_16frame_54/data.py"
+    },
+    {
+      "path": "LightGenPublic/tasks/t06_lgvq_temporal_consistency/teacher_release/lgvq_temporal_08044/runtime/experiments/qwen3_vl_2b_lgvq_single_metric_o2_16frame_54/metrics.py",
+      "bytes": 2430,
+      "sha256": "6ef93ffc32e8920086bb1d18dde440a577ba134a8db498d17837636d6ef01770",
+      "archive_path": "LightGenPublic/tasks/t06_lgvq_temporal_consistency/teacher_release/lgvq_temporal_08044/runtime/experiments/qwen3_vl_2b_lgvq_single_metric_o2_16frame_54/metrics.py"
+    },
+    {
+      "path": "LightGenPublic/tasks/t06_lgvq_temporal_consistency/teacher_release/lgvq_temporal_08044/runtime/experiments/qwen3_vl_2b_lgvq_single_metric_o2_16frame_54/modeling.py",
+      "bytes": 145263,
+      "sha256": "d6b09c803e814e4fda79019c5b1ee2d45fe790310f195b8e7a52a2b4c6f5a09c",
+      "archive_path": "LightGenPublic/tasks/t06_lgvq_temporal_consistency/teacher_release/lgvq_temporal_08044/runtime/experiments/qwen3_vl_2b_lgvq_single_metric_o2_16frame_54/modeling.py"
+    },
+    {
+      "path": "LightGenPublic/tasks/t06_lgvq_temporal_consistency/teacher_release/lgvq_temporal_08044/runtime/experiments/qwen3_vl_2b_lgvq_single_metric_o2_16frame_54/phase_snapshots.py",
+      "bytes": 7742,
+      "sha256": "4928b1c7d9ad369112360524a94d399c5a8508e6ba6e72eafd8784391d9cb75e",
+      "archive_path": "LightGenPublic/tasks/t06_lgvq_temporal_consistency/teacher_release/lgvq_temporal_08044/runtime/experiments/qwen3_vl_2b_lgvq_single_metric_o2_16frame_54/phase_snapshots.py"
+    },
+    {
+      "path": "LightGenPublic/tasks/t06_lgvq_temporal_consistency/teacher_release/lgvq_temporal_08044/runtime/experiments/qwen3_vl_2b_lgvq_single_metric_o2_16frame_54/settings.py",
+      "bytes": 79446,
+      "sha256": "bfc27ce1da1d33695d0a5afcb37ff66ee0d42bee0f3afed096457e7cb9fcf887",
+      "archive_path": "LightGenPublic/tasks/t06_lgvq_temporal_consistency/teacher_release/lgvq_temporal_08044/runtime/experiments/qwen3_vl_2b_lgvq_single_metric_o2_16frame_54/settings.py"
+    },
+    {
+      "path": "LightGenPublic/tasks/t06_lgvq_temporal_consistency/teacher_release/lgvq_temporal_08044/runtime/experiments/qwen3_vl_2b_lgvq_single_metric_o2_16frame_54/training.py",
+      "bytes": 55979,
+      "sha256": "7c13b3a76a7b9e512936ea618b28f508c4d6b1e947d1afe181b874a34d88d520",
+      "archive_path": "LightGenPublic/tasks/t06_lgvq_temporal_consistency/teacher_release/lgvq_temporal_08044/runtime/experiments/qwen3_vl_2b_lgvq_single_metric_o2_16frame_54/training.py"
+    },
+    {
+      "path": "LightGenPublic/tasks/t06_lgvq_temporal_consistency/teacher_release/lgvq_temporal_08044/simulate.py",
+      "bytes": 6161,
+      "sha256": "d0e8a38b9d049db1d6b8a389ab8668c0788d20ca4d1e28f706d577deca4d518e",
+      "archive_path": "LightGenPublic/tasks/t06_lgvq_temporal_consistency/teacher_release/lgvq_temporal_08044/simulate.py"
+    },
+    {
+      "path": "LightGenPublic/tasks/t06_lgvq_temporal_consistency/teacher_release/lgvq_temporal_08044/tests/test_source_contract.py",
+      "bytes": 2029,
+      "sha256": "e1e58154f26f513c4cb75a24d215041326a6a7ddf712e338e0e01d8fa219ab57",
+      "archive_path": "LightGenPublic/tasks/t06_lgvq_temporal_consistency/teacher_release/lgvq_temporal_08044/tests/test_source_contract.py"
+    },
+    {
+      "path": "LightGenPublic/tasks/t06_lgvq_temporal_consistency/teacher_release/lgvq_temporal_08044/tools/build_teacher_release.py",
+      "bytes": 6907,
+      "sha256": "84730de30f96d81f10af8dea88ebca53733c4b73c6deb6a6971ad84109097b18",
+      "archive_path": "LightGenPublic/tasks/t06_lgvq_temporal_consistency/teacher_release/lgvq_temporal_08044/tools/build_teacher_release.py"
+    },
+    {
+      "path": "LightGenPublic/tasks/t06_lgvq_temporal_consistency/teacher_release/lgvq_temporal_08044/train.py",
+      "bytes": 413,
+      "sha256": "79c9b43877f6fc524c0ecfdc00c148b2ea71613938285485cbabcbdd66591633",
+      "archive_path": "LightGenPublic/tasks/t06_lgvq_temporal_consistency/teacher_release/lgvq_temporal_08044/train.py"
+    },
+    {
+      "path": "LightGenPublic/tasks/t06_lgvq_temporal_consistency/teacher_release/lgvq_temporal_08044/verify_release.py",
+      "bytes": 1679,
+      "sha256": "a30246dcda0b7bc3cfafa4de6daa9a2aba8bb04c7cb73471837b6203d5fc3c74",
+      "archive_path": "LightGenPublic/tasks/t06_lgvq_temporal_consistency/teacher_release/lgvq_temporal_08044/verify_release.py"
+    },
+    {
+      "path": "LightGenPublic/tasks/t06_lgvq_temporal_consistency/teacher_release_final/lgvq_temporal_08044/configs/temporal_16x4_s163.yaml",
+      "bytes": 3080,
+      "sha256": "d631b2bdbf3ad4a6570858570101c9eb6bba899a9f74a8f9a5fd4b18c6f9c398",
+      "archive_path": "LightGenPublic/tasks/t06_lgvq_temporal_consistency/teacher_release_final/lgvq_temporal_08044/configs/temporal_16x4_s163.yaml"
+    },
+    {
+      "path": "LightGenPublic/tasks/t06_lgvq_temporal_consistency/teacher_release_final/lgvq_temporal_08044/runtime/LightGenV2/__init__.py",
+      "bytes": 91,
+      "sha256": "22f1d762857916ed1e5a173a60fa7d864cd10139f40fa9c249c38fbeb86ea92e",
+      "archive_path": "LightGenPublic/tasks/t06_lgvq_temporal_consistency/teacher_release_final/lgvq_temporal_08044/runtime/LightGenV2/__init__.py"
+    },
+    {
+      "path": "LightGenPublic/tasks/t06_lgvq_temporal_consistency/teacher_release_final/lgvq_temporal_08044/runtime/LightGenV2/tasks/__init__.py",
+      "bytes": 44,
+      "sha256": "cb7dde6e220a684ccb22efb1d4af40540497d7a7753c6692b24546411515c6f6",
+      "archive_path": "LightGenPublic/tasks/t06_lgvq_temporal_consistency/teacher_release_final/lgvq_temporal_08044/runtime/LightGenV2/tasks/__init__.py"
+    },
+    {
+      "path": "LightGenPublic/tasks/t06_lgvq_temporal_consistency/teacher_release_final/lgvq_temporal_08044/runtime/LightGenV2/tasks/t06_video_quality_assessment/__init__.py",
+      "bytes": 260,
+      "sha256": "c75051412cbcbe1deb04a93d497630f8264116cce37231b4ae10680fa35920e0",
+      "archive_path": "LightGenPublic/tasks/t06_lgvq_temporal_consistency/teacher_release_final/lgvq_temporal_08044/runtime/LightGenV2/tasks/t06_video_quality_assessment/__init__.py"
+    },
+    {
+      "path": "LightGenPublic/tasks/t06_lgvq_temporal_consistency/teacher_release_final/lgvq_temporal_08044/runtime/LightGenV2/tasks/t06_video_quality_assessment/lab_runtime.py",
+      "bytes": 8490,
+      "sha256": "5d1423c041249af2553f9a68ffed8bfb98e752c5dc42c4ef10b8c6bdcfe85b0f",
+      "archive_path": "LightGenPublic/tasks/t06_lgvq_temporal_consistency/teacher_release_final/lgvq_temporal_08044/runtime/LightGenV2/tasks/t06_video_quality_assessment/lab_runtime.py"
+    },
+    {
+      "path": "LightGenPublic/tasks/t06_lgvq_temporal_consistency/teacher_release_final/lgvq_temporal_08044/runtime/LightGenV2/tasks/t06_video_quality_assessment/models/__init__.py",
+      "bytes": 154,
+      "sha256": "403b255a753c41a248346aa16256a4075d84ce7dab81692dbb2a45646b215609",
+      "archive_path": "LightGenPublic/tasks/t06_lgvq_temporal_consistency/teacher_release_final/lgvq_temporal_08044/runtime/LightGenV2/tasks/t06_video_quality_assessment/models/__init__.py"
+    },
+    {
+      "path": "LightGenPublic/tasks/t06_lgvq_temporal_consistency/teacher_release_final/lgvq_temporal_08044/runtime/LightGenV2/tasks/t06_video_quality_assessment/models/multivideo9x4.py",
+      "bytes": 44401,
+      "sha256": "a7e39ea387724ac7182950e60f75903b40555a87a0b46847e82182f81984d496",
+      "archive_path": "LightGenPublic/tasks/t06_lgvq_temporal_consistency/teacher_release_final/lgvq_temporal_08044/runtime/LightGenV2/tasks/t06_video_quality_assessment/models/multivideo9x4.py"
+    },
+    {
+      "path": "LightGenPublic/tasks/t06_lgvq_temporal_consistency/teacher_release_final/lgvq_temporal_08044/runtime/LightGenV2/tasks/t06_video_quality_assessment/multivideo.py",
+      "bytes": 7406,
+      "sha256": "c5e04762c33eb69fbb1fb0159afb1841cd1d7718695bd8253356be68c9001c9b",
+      "archive_path": "LightGenPublic/tasks/t06_lgvq_temporal_consistency/teacher_release_final/lgvq_temporal_08044/runtime/LightGenV2/tasks/t06_video_quality_assessment/multivideo.py"
+    },
+    {
+      "path": "LightGenPublic/tasks/t06_lgvq_temporal_consistency/teacher_release_final/lgvq_temporal_08044/runtime/LightGenV2/tasks/t06_video_quality_assessment/multivideo_data.py",
+      "bytes": 3986,
+      "sha256": "bd098aaca18adc6ccb9a6a59fae7124504d0cc794444d159b5349fdc64b49c5c",
+      "archive_path": "LightGenPublic/tasks/t06_lgvq_temporal_consistency/teacher_release_final/lgvq_temporal_08044/runtime/LightGenV2/tasks/t06_video_quality_assessment/multivideo_data.py"
+    },
+    {
+      "path": "LightGenPublic/tasks/t06_lgvq_temporal_consistency/teacher_release_final/lgvq_temporal_08044/runtime/LightGenV2/tasks/t06_video_quality_assessment/multivideo_settings.py",
+      "bytes": 21205,
+      "sha256": "fa89cb367e123653fc6f09ac497e87d6340779206023f104d2f7448ce2a552c9",
+      "archive_path": "LightGenPublic/tasks/t06_lgvq_temporal_consistency/teacher_release_final/lgvq_temporal_08044/runtime/LightGenV2/tasks/t06_video_quality_assessment/multivideo_settings.py"
+    },
+    {
+      "path": "LightGenPublic/tasks/t06_lgvq_temporal_consistency/teacher_release_final/lgvq_temporal_08044/runtime/LightGenV2/tasks/t06_video_quality_assessment/multivideo_training.py",
+      "bytes": 24564,
+      "sha256": "b57eb1c5fb304ff2d320b9bcf961711c8730af7e7f9cfcb4a4bb465348141190",
+      "archive_path": "LightGenPublic/tasks/t06_lgvq_temporal_consistency/teacher_release_final/lgvq_temporal_08044/runtime/LightGenV2/tasks/t06_video_quality_assessment/multivideo_training.py"
+    },
+    {
+      "path": "LightGenPublic/tasks/t06_lgvq_temporal_consistency/teacher_release_final/lgvq_temporal_08044/runtime/experiments/__init__.py",
+      "bytes": 563,
+      "sha256": "75749e81ecc24c9b80e103e22e93682d393ba15972cd34dfc49fb59b77a0a311",
+      "archive_path": "LightGenPublic/tasks/t06_lgvq_temporal_consistency/teacher_release_final/lgvq_temporal_08044/runtime/experiments/__init__.py"
+    },
+    {
+      "path": "LightGenPublic/tasks/t06_lgvq_temporal_consistency/teacher_release_final/lgvq_temporal_08044/runtime/experiments/qwen3_vl_2b_lgvq_single_metric_o2_16frame_54/__init__.py",
+      "bytes": 468,
+      "sha256": "f48d41c36f5c57760a0cc9485ad371ffd0f587c63c8b7d1562734195effb6d39",
+      "archive_path": "LightGenPublic/tasks/t06_lgvq_temporal_consistency/teacher_release_final/lgvq_temporal_08044/runtime/experiments/qwen3_vl_2b_lgvq_single_metric_o2_16frame_54/__init__.py"
+    },
+    {
+      "path": "LightGenPublic/tasks/t06_lgvq_temporal_consistency/teacher_release_final/lgvq_temporal_08044/runtime/experiments/qwen3_vl_2b_lgvq_single_metric_o2_16frame_54/data.py",
+      "bytes": 44617,
+      "sha256": "00e81892370765e19f139a4b60f0c8f6edce0694a1f0790701ffc596014c9c41",
+      "archive_path": "LightGenPublic/tasks/t06_lgvq_temporal_consistency/teacher_release_final/lgvq_temporal_08044/runtime/experiments/qwen3_vl_2b_lgvq_single_metric_o2_16frame_54/data.py"
+    },
+    {
+      "path": "LightGenPublic/tasks/t06_lgvq_temporal_consistency/teacher_release_final/lgvq_temporal_08044/runtime/experiments/qwen3_vl_2b_lgvq_single_metric_o2_16frame_54/metrics.py",
+      "bytes": 2430,
+      "sha256": "6ef93ffc32e8920086bb1d18dde440a577ba134a8db498d17837636d6ef01770",
+      "archive_path": "LightGenPublic/tasks/t06_lgvq_temporal_consistency/teacher_release_final/lgvq_temporal_08044/runtime/experiments/qwen3_vl_2b_lgvq_single_metric_o2_16frame_54/metrics.py"
+    },
+    {
+      "path": "LightGenPublic/tasks/t06_lgvq_temporal_consistency/teacher_release_final/lgvq_temporal_08044/runtime/experiments/qwen3_vl_2b_lgvq_single_metric_o2_16frame_54/modeling.py",
+      "bytes": 145263,
+      "sha256": "d6b09c803e814e4fda79019c5b1ee2d45fe790310f195b8e7a52a2b4c6f5a09c",
+      "archive_path": "LightGenPublic/tasks/t06_lgvq_temporal_consistency/teacher_release_final/lgvq_temporal_08044/runtime/experiments/qwen3_vl_2b_lgvq_single_metric_o2_16frame_54/modeling.py"
+    },
+    {
+      "path": "LightGenPublic/tasks/t06_lgvq_temporal_consistency/teacher_release_final/lgvq_temporal_08044/runtime/experiments/qwen3_vl_2b_lgvq_single_metric_o2_16frame_54/phase_snapshots.py",
+      "bytes": 7742,
+      "sha256": "4928b1c7d9ad369112360524a94d399c5a8508e6ba6e72eafd8784391d9cb75e",
+      "archive_path": "LightGenPublic/tasks/t06_lgvq_temporal_consistency/teacher_release_final/lgvq_temporal_08044/runtime/experiments/qwen3_vl_2b_lgvq_single_metric_o2_16frame_54/phase_snapshots.py"
+    },
+    {
+      "path": "LightGenPublic/tasks/t06_lgvq_temporal_consistency/teacher_release_final/lgvq_temporal_08044/runtime/experiments/qwen3_vl_2b_lgvq_single_metric_o2_16frame_54/settings.py",
+      "bytes": 79446,
+      "sha256": "bfc27ce1da1d33695d0a5afcb37ff66ee0d42bee0f3afed096457e7cb9fcf887",
+      "archive_path": "LightGenPublic/tasks/t06_lgvq_temporal_consistency/teacher_release_final/lgvq_temporal_08044/runtime/experiments/qwen3_vl_2b_lgvq_single_metric_o2_16frame_54/settings.py"
+    },
+    {
+      "path": "LightGenPublic/tasks/t06_lgvq_temporal_consistency/teacher_release_final/lgvq_temporal_08044/runtime/experiments/qwen3_vl_2b_lgvq_single_metric_o2_16frame_54/training.py",
+      "bytes": 55979,
+      "sha256": "7c13b3a76a7b9e512936ea618b28f508c4d6b1e947d1afe181b874a34d88d520",
+      "archive_path": "LightGenPublic/tasks/t06_lgvq_temporal_consistency/teacher_release_final/lgvq_temporal_08044/runtime/experiments/qwen3_vl_2b_lgvq_single_metric_o2_16frame_54/training.py"
+    },
+    {
+      "path": "LightGenPublic/tasks/t06_lgvq_temporal_consistency/teacher_release_final/lgvq_temporal_08044/runtime/lgvq_temporal/__init__.py",
+      "bytes": 219,
+      "sha256": "8e1d173019bf821a7339493777abad0549cd45d96a76bf35e9d9e544a718d15e",
+      "archive_path": "LightGenPublic/tasks/t06_lgvq_temporal_consistency/teacher_release_final/lgvq_temporal_08044/runtime/lgvq_temporal/__init__.py"
+    },
+    {
+      "path": "LightGenPublic/tasks/t06_lgvq_temporal_consistency/teacher_release_final/lgvq_temporal_08044/runtime/lgvq_temporal/contracts.py",
+      "bytes": 3204,
+      "sha256": "008179b47b35d4943309f1f801597f58a041c3606103f0771568046c4d132fbe",
+      "archive_path": "LightGenPublic/tasks/t06_lgvq_temporal_consistency/teacher_release_final/lgvq_temporal_08044/runtime/lgvq_temporal/contracts.py"
+    },
+    {
+      "path": "LightGenPublic/tasks/t06_lgvq_temporal_consistency/teacher_release_final/lgvq_temporal_08044/runtime/lgvq_temporal/fixed_weight.py",
+      "bytes": 1434,
+      "sha256": "78f9cfd737c1e1d3e8bc0b9d81ae6eb713278bcf8e01c5ee0da1cdb1482d3589",
+      "archive_path": "LightGenPublic/tasks/t06_lgvq_temporal_consistency/teacher_release_final/lgvq_temporal_08044/runtime/lgvq_temporal/fixed_weight.py"
+    },
+    {
+      "path": "LightGenPublic/tasks/t06_lgvq_temporal_consistency/teacher_release_final/lgvq_temporal_08044/simulate.py",
+      "bytes": 6041,
+      "sha256": "0a56658e40dca8fde05986f2f057f013b7796552f53b51ec163679ce316f0db1",
+      "archive_path": "LightGenPublic/tasks/t06_lgvq_temporal_consistency/teacher_release_final/lgvq_temporal_08044/simulate.py"
+    },
+    {
+      "path": "LightGenPublic/tasks/t06_lgvq_temporal_consistency/teacher_release_final/lgvq_temporal_08044/tests/test_ccd_noise.py",
+      "bytes": 2001,
+      "sha256": "2bb34c2f02d311d8a8bbd14a888e298f2cfbb8cbde94d507b3fa9cdd5891169e",
+      "archive_path": "LightGenPublic/tasks/t06_lgvq_temporal_consistency/teacher_release_final/lgvq_temporal_08044/tests/test_ccd_noise.py"
+    },
+    {
+      "path": "LightGenPublic/tasks/t06_lgvq_temporal_consistency/teacher_release_final/lgvq_temporal_08044/tests/test_physical_contract.py",
+      "bytes": 3676,
+      "sha256": "f8beb03cf1d0550ad877d3547ac401c9235572cbb50cd5f2f47e2a6ebc5e561a",
+      "archive_path": "LightGenPublic/tasks/t06_lgvq_temporal_consistency/teacher_release_final/lgvq_temporal_08044/tests/test_physical_contract.py"
+    },
+    {
+      "path": "LightGenPublic/tasks/t06_lgvq_temporal_consistency/teacher_release_final/lgvq_temporal_08044/tests/test_source_contract.py",
+      "bytes": 2029,
+      "sha256": "e1e58154f26f513c4cb75a24d215041326a6a7ddf712e338e0e01d8fa219ab57",
+      "archive_path": "LightGenPublic/tasks/t06_lgvq_temporal_consistency/teacher_release_final/lgvq_temporal_08044/tests/test_source_contract.py"
+    },
+    {
+      "path": "LightGenPublic/tasks/t06_lgvq_temporal_consistency/teacher_release_final/lgvq_temporal_08044/train.py",
+      "bytes": 413,
+      "sha256": "79c9b43877f6fc524c0ecfdc00c148b2ea71613938285485cbabcbdd66591633",
+      "archive_path": "LightGenPublic/tasks/t06_lgvq_temporal_consistency/teacher_release_final/lgvq_temporal_08044/train.py"
+    },
+    {
+      "path": "LightGenPublic/tasks/t06_lgvq_temporal_consistency/teacher_release_final/lgvq_temporal_08044/verify_release.py",
+      "bytes": 1679,
+      "sha256": "a30246dcda0b7bc3cfafa4de6daa9a2aba8bb04c7cb73471837b6203d5fc3c74",
+      "archive_path": "LightGenPublic/tasks/t06_lgvq_temporal_consistency/teacher_release_final/lgvq_temporal_08044/verify_release.py"
+    },
+    {
+      "path": "LightGenPublic/tasks/t06_lgvq_temporal_consistency/teacher_release_final_v2/lgvq_temporal_08044/configs/temporal_16x4_s163.yaml",
+      "bytes": 2908,
+      "sha256": "46790448ec037edbf1942428ddb197129e31fd892a15a6ab5d29eeee519fd685",
+      "archive_path": "LightGenPublic/tasks/t06_lgvq_temporal_consistency/teacher_release_final_v2/lgvq_temporal_08044/configs/temporal_16x4_s163.yaml"
+    },
+    {
+      "path": "LightGenPublic/tasks/t06_lgvq_temporal_consistency/teacher_release_final_v2/lgvq_temporal_08044/runtime/LightGenV2/__init__.py",
+      "bytes": 91,
+      "sha256": "22f1d762857916ed1e5a173a60fa7d864cd10139f40fa9c249c38fbeb86ea92e",
+      "archive_path": "LightGenPublic/tasks/t06_lgvq_temporal_consistency/teacher_release_final_v2/lgvq_temporal_08044/runtime/LightGenV2/__init__.py"
+    },
+    {
+      "path": "LightGenPublic/tasks/t06_lgvq_temporal_consistency/teacher_release_final_v2/lgvq_temporal_08044/runtime/LightGenV2/tasks/__init__.py",
+      "bytes": 44,
+      "sha256": "cb7dde6e220a684ccb22efb1d4af40540497d7a7753c6692b24546411515c6f6",
+      "archive_path": "LightGenPublic/tasks/t06_lgvq_temporal_consistency/teacher_release_final_v2/lgvq_temporal_08044/runtime/LightGenV2/tasks/__init__.py"
+    },
+    {
+      "path": "LightGenPublic/tasks/t06_lgvq_temporal_consistency/teacher_release_final_v2/lgvq_temporal_08044/runtime/LightGenV2/tasks/t06_video_quality_assessment/__init__.py",
+      "bytes": 260,
+      "sha256": "c75051412cbcbe1deb04a93d497630f8264116cce37231b4ae10680fa35920e0",
+      "archive_path": "LightGenPublic/tasks/t06_lgvq_temporal_consistency/teacher_release_final_v2/lgvq_temporal_08044/runtime/LightGenV2/tasks/t06_video_quality_assessment/__init__.py"
+    },
+    {
+      "path": "LightGenPublic/tasks/t06_lgvq_temporal_consistency/teacher_release_final_v2/lgvq_temporal_08044/runtime/LightGenV2/tasks/t06_video_quality_assessment/lab_runtime.py",
+      "bytes": 8490,
+      "sha256": "5d1423c041249af2553f9a68ffed8bfb98e752c5dc42c4ef10b8c6bdcfe85b0f",
+      "archive_path": "LightGenPublic/tasks/t06_lgvq_temporal_consistency/teacher_release_final_v2/lgvq_temporal_08044/runtime/LightGenV2/tasks/t06_video_quality_assessment/lab_runtime.py"
+    },
+    {
+      "path": "LightGenPublic/tasks/t06_lgvq_temporal_consistency/teacher_release_final_v2/lgvq_temporal_08044/runtime/LightGenV2/tasks/t06_video_quality_assessment/models/__init__.py",
+      "bytes": 154,
+      "sha256": "403b255a753c41a248346aa16256a4075d84ce7dab81692dbb2a45646b215609",
+      "archive_path": "LightGenPublic/tasks/t06_lgvq_temporal_consistency/teacher_release_final_v2/lgvq_temporal_08044/runtime/LightGenV2/tasks/t06_video_quality_assessment/models/__init__.py"
+    },
+    {
+      "path": "LightGenPublic/tasks/t06_lgvq_temporal_consistency/teacher_release_final_v2/lgvq_temporal_08044/runtime/LightGenV2/tasks/t06_video_quality_assessment/models/multivideo9x4.py",
+      "bytes": 44811,
+      "sha256": "886112996aac0252871448ac31b6fcb7fe1866eb397238cc5f481faa1bb68b24",
+      "archive_path": "LightGenPublic/tasks/t06_lgvq_temporal_consistency/teacher_release_final_v2/lgvq_temporal_08044/runtime/LightGenV2/tasks/t06_video_quality_assessment/models/multivideo9x4.py"
+    },
+    {
+      "path": "LightGenPublic/tasks/t06_lgvq_temporal_consistency/teacher_release_final_v2/lgvq_temporal_08044/runtime/LightGenV2/tasks/t06_video_quality_assessment/multivideo.py",
+      "bytes": 7479,
+      "sha256": "c6978d6486fe786b0bd03609d6b9b62c410a58bc71e81a003cc183e6cee010fe",
+      "archive_path": "LightGenPublic/tasks/t06_lgvq_temporal_consistency/teacher_release_final_v2/lgvq_temporal_08044/runtime/LightGenV2/tasks/t06_video_quality_assessment/multivideo.py"
+    },
+    {
+      "path": "LightGenPublic/tasks/t06_lgvq_temporal_consistency/teacher_release_final_v2/lgvq_temporal_08044/runtime/LightGenV2/tasks/t06_video_quality_assessment/multivideo_data.py",
+      "bytes": 3986,
+      "sha256": "bd098aaca18adc6ccb9a6a59fae7124504d0cc794444d159b5349fdc64b49c5c",
+      "archive_path": "LightGenPublic/tasks/t06_lgvq_temporal_consistency/teacher_release_final_v2/lgvq_temporal_08044/runtime/LightGenV2/tasks/t06_video_quality_assessment/multivideo_data.py"
+    },
+    {
+      "path": "LightGenPublic/tasks/t06_lgvq_temporal_consistency/teacher_release_final_v2/lgvq_temporal_08044/runtime/LightGenV2/tasks/t06_video_quality_assessment/multivideo_settings.py",
+      "bytes": 20327,
+      "sha256": "cead67b212947a3f30b97b73bd91406f15ca647ae93d79ac9f900571aae3a433",
+      "archive_path": "LightGenPublic/tasks/t06_lgvq_temporal_consistency/teacher_release_final_v2/lgvq_temporal_08044/runtime/LightGenV2/tasks/t06_video_quality_assessment/multivideo_settings.py"
+    },
+    {
+      "path": "LightGenPublic/tasks/t06_lgvq_temporal_consistency/teacher_release_final_v2/lgvq_temporal_08044/runtime/LightGenV2/tasks/t06_video_quality_assessment/multivideo_training.py",
+      "bytes": 24564,
+      "sha256": "b57eb1c5fb304ff2d320b9bcf961711c8730af7e7f9cfcb4a4bb465348141190",
+      "archive_path": "LightGenPublic/tasks/t06_lgvq_temporal_consistency/teacher_release_final_v2/lgvq_temporal_08044/runtime/LightGenV2/tasks/t06_video_quality_assessment/multivideo_training.py"
+    },
+    {
+      "path": "LightGenPublic/tasks/t06_lgvq_temporal_consistency/teacher_release_final_v2/lgvq_temporal_08044/runtime/experiments/__init__.py",
+      "bytes": 563,
+      "sha256": "75749e81ecc24c9b80e103e22e93682d393ba15972cd34dfc49fb59b77a0a311",
+      "archive_path": "LightGenPublic/tasks/t06_lgvq_temporal_consistency/teacher_release_final_v2/lgvq_temporal_08044/runtime/experiments/__init__.py"
+    },
+    {
+      "path": "LightGenPublic/tasks/t06_lgvq_temporal_consistency/teacher_release_final_v2/lgvq_temporal_08044/runtime/experiments/qwen3_vl_2b_lgvq_single_metric_o2_16frame_54/__init__.py",
+      "bytes": 468,
+      "sha256": "f48d41c36f5c57760a0cc9485ad371ffd0f587c63c8b7d1562734195effb6d39",
+      "archive_path": "LightGenPublic/tasks/t06_lgvq_temporal_consistency/teacher_release_final_v2/lgvq_temporal_08044/runtime/experiments/qwen3_vl_2b_lgvq_single_metric_o2_16frame_54/__init__.py"
+    },
+    {
+      "path": "LightGenPublic/tasks/t06_lgvq_temporal_consistency/teacher_release_final_v2/lgvq_temporal_08044/runtime/experiments/qwen3_vl_2b_lgvq_single_metric_o2_16frame_54/data.py",
+      "bytes": 44617,
+      "sha256": "00e81892370765e19f139a4b60f0c8f6edce0694a1f0790701ffc596014c9c41",
+      "archive_path": "LightGenPublic/tasks/t06_lgvq_temporal_consistency/teacher_release_final_v2/lgvq_temporal_08044/runtime/experiments/qwen3_vl_2b_lgvq_single_metric_o2_16frame_54/data.py"
+    },
+    {
+      "path": "LightGenPublic/tasks/t06_lgvq_temporal_consistency/teacher_release_final_v2/lgvq_temporal_08044/runtime/experiments/qwen3_vl_2b_lgvq_single_metric_o2_16frame_54/metrics.py",
+      "bytes": 2430,
+      "sha256": "6ef93ffc32e8920086bb1d18dde440a577ba134a8db498d17837636d6ef01770",
+      "archive_path": "LightGenPublic/tasks/t06_lgvq_temporal_consistency/teacher_release_final_v2/lgvq_temporal_08044/runtime/experiments/qwen3_vl_2b_lgvq_single_metric_o2_16frame_54/metrics.py"
+    },
+    {
+      "path": "LightGenPublic/tasks/t06_lgvq_temporal_consistency/teacher_release_final_v2/lgvq_temporal_08044/runtime/experiments/qwen3_vl_2b_lgvq_single_metric_o2_16frame_54/modeling.py",
+      "bytes": 145678,
+      "sha256": "bdedfb842b69cf0b3ee49e87687d5525391605eacfcb7e216e5a71ab1fac6f73",
+      "archive_path": "LightGenPublic/tasks/t06_lgvq_temporal_consistency/teacher_release_final_v2/lgvq_temporal_08044/runtime/experiments/qwen3_vl_2b_lgvq_single_metric_o2_16frame_54/modeling.py"
+    },
+    {
+      "path": "LightGenPublic/tasks/t06_lgvq_temporal_consistency/teacher_release_final_v2/lgvq_temporal_08044/runtime/experiments/qwen3_vl_2b_lgvq_single_metric_o2_16frame_54/phase_snapshots.py",
+      "bytes": 7742,
+      "sha256": "4928b1c7d9ad369112360524a94d399c5a8508e6ba6e72eafd8784391d9cb75e",
+      "archive_path": "LightGenPublic/tasks/t06_lgvq_temporal_consistency/teacher_release_final_v2/lgvq_temporal_08044/runtime/experiments/qwen3_vl_2b_lgvq_single_metric_o2_16frame_54/phase_snapshots.py"
+    },
+    {
+      "path": "LightGenPublic/tasks/t06_lgvq_temporal_consistency/teacher_release_final_v2/lgvq_temporal_08044/runtime/experiments/qwen3_vl_2b_lgvq_single_metric_o2_16frame_54/settings.py",
+      "bytes": 79446,
+      "sha256": "bfc27ce1da1d33695d0a5afcb37ff66ee0d42bee0f3afed096457e7cb9fcf887",
+      "archive_path": "LightGenPublic/tasks/t06_lgvq_temporal_consistency/teacher_release_final_v2/lgvq_temporal_08044/runtime/experiments/qwen3_vl_2b_lgvq_single_metric_o2_16frame_54/settings.py"
+    },
+    {
+      "path": "LightGenPublic/tasks/t06_lgvq_temporal_consistency/teacher_release_final_v2/lgvq_temporal_08044/runtime/experiments/qwen3_vl_2b_lgvq_single_metric_o2_16frame_54/training.py",
+      "bytes": 55979,
+      "sha256": "7c13b3a76a7b9e512936ea618b28f508c4d6b1e947d1afe181b874a34d88d520",
+      "archive_path": "LightGenPublic/tasks/t06_lgvq_temporal_consistency/teacher_release_final_v2/lgvq_temporal_08044/runtime/experiments/qwen3_vl_2b_lgvq_single_metric_o2_16frame_54/training.py"
+    },
+    {
+      "path": "LightGenPublic/tasks/t06_lgvq_temporal_consistency/teacher_release_final_v2/lgvq_temporal_08044/runtime/lgvq_temporal/__init__.py",
+      "bytes": 219,
+      "sha256": "8e1d173019bf821a7339493777abad0549cd45d96a76bf35e9d9e544a718d15e",
+      "archive_path": "LightGenPublic/tasks/t06_lgvq_temporal_consistency/teacher_release_final_v2/lgvq_temporal_08044/runtime/lgvq_temporal/__init__.py"
+    },
+    {
+      "path": "LightGenPublic/tasks/t06_lgvq_temporal_consistency/teacher_release_final_v2/lgvq_temporal_08044/runtime/lgvq_temporal/contracts.py",
+      "bytes": 3204,
+      "sha256": "008179b47b35d4943309f1f801597f58a041c3606103f0771568046c4d132fbe",
+      "archive_path": "LightGenPublic/tasks/t06_lgvq_temporal_consistency/teacher_release_final_v2/lgvq_temporal_08044/runtime/lgvq_temporal/contracts.py"
+    },
+    {
+      "path": "LightGenPublic/tasks/t06_lgvq_temporal_consistency/teacher_release_final_v2/lgvq_temporal_08044/runtime/lgvq_temporal/fixed_weight.py",
+      "bytes": 1434,
+      "sha256": "78f9cfd737c1e1d3e8bc0b9d81ae6eb713278bcf8e01c5ee0da1cdb1482d3589",
+      "archive_path": "LightGenPublic/tasks/t06_lgvq_temporal_consistency/teacher_release_final_v2/lgvq_temporal_08044/runtime/lgvq_temporal/fixed_weight.py"
+    },
+    {
+      "path": "LightGenPublic/tasks/t06_lgvq_temporal_consistency/teacher_release_final_v2/lgvq_temporal_08044/simulate.py",
+      "bytes": 5415,
+      "sha256": "39aa17a8665fa2e3fb2f2b3dca7f81a0bf832629e66a92194967359a31d3c1f5",
+      "archive_path": "LightGenPublic/tasks/t06_lgvq_temporal_consistency/teacher_release_final_v2/lgvq_temporal_08044/simulate.py"
+    },
+    {
+      "path": "LightGenPublic/tasks/t06_lgvq_temporal_consistency/teacher_release_final_v2/lgvq_temporal_08044/tests/test_ccd_noise.py",
+      "bytes": 2572,
+      "sha256": "56464884f0627887d1548a46188c92ecb0c064e48bf81bc7644377204e63a0b2",
+      "archive_path": "LightGenPublic/tasks/t06_lgvq_temporal_consistency/teacher_release_final_v2/lgvq_temporal_08044/tests/test_ccd_noise.py"
+    },
+    {
+      "path": "LightGenPublic/tasks/t06_lgvq_temporal_consistency/teacher_release_final_v2/lgvq_temporal_08044/tests/test_physical_contract.py",
+      "bytes": 3584,
+      "sha256": "ee99bb0f78c3520bfef69d6e2817ea4ed2f9a2e7cbf841a411e684c206b89c8d",
+      "archive_path": "LightGenPublic/tasks/t06_lgvq_temporal_consistency/teacher_release_final_v2/lgvq_temporal_08044/tests/test_physical_contract.py"
+    },
+    {
+      "path": "LightGenPublic/tasks/t06_lgvq_temporal_consistency/teacher_release_final_v2/lgvq_temporal_08044/tests/test_source_contract.py",
+      "bytes": 2029,
+      "sha256": "657b2cd0564bff3e075637bcbc16d96151ad37babdc2373c905d69a2c7b0049d",
+      "archive_path": "LightGenPublic/tasks/t06_lgvq_temporal_consistency/teacher_release_final_v2/lgvq_temporal_08044/tests/test_source_contract.py"
+    },
+    {
+      "path": "LightGenPublic/tasks/t06_lgvq_temporal_consistency/teacher_release_final_v2/lgvq_temporal_08044/train.py",
+      "bytes": 413,
+      "sha256": "79c9b43877f6fc524c0ecfdc00c148b2ea71613938285485cbabcbdd66591633",
+      "archive_path": "LightGenPublic/tasks/t06_lgvq_temporal_consistency/teacher_release_final_v2/lgvq_temporal_08044/train.py"
+    },
+    {
+      "path": "LightGenPublic/tasks/t06_lgvq_temporal_consistency/teacher_release_final_v2/lgvq_temporal_08044/verify_release.py",
+      "bytes": 1679,
+      "sha256": "a30246dcda0b7bc3cfafa4de6daa9a2aba8bb04c7cb73471837b6203d5fc3c74",
+      "archive_path": "LightGenPublic/tasks/t06_lgvq_temporal_consistency/teacher_release_final_v2/lgvq_temporal_08044/verify_release.py"
+    }
+  ],
+  "excluded_unmatched": [
+    "LightGenPublic/tasks/t06_lgvq_temporal_consistency/teacher_release/lgvq_temporal_08044/COMMAND.md",
+    "LightGenPublic/tasks/t06_lgvq_temporal_consistency/teacher_release/lgvq_temporal_08044/MODEL_CARD.md",
+    "LightGenPublic/tasks/t06_lgvq_temporal_consistency/teacher_release/lgvq_temporal_08044/OPEN_SOURCE_CHECKLIST.md",
+    "LightGenPublic/tasks/t06_lgvq_temporal_consistency/teacher_release/lgvq_temporal_08044/README.md",
+    "LightGenPublic/tasks/t06_lgvq_temporal_consistency/teacher_release/lgvq_temporal_08044/SHA256.json",
+    "LightGenPublic/tasks/t06_lgvq_temporal_consistency/teacher_release/lgvq_temporal_08044/START_HERE_CN.md",
+    "LightGenPublic/tasks/t06_lgvq_temporal_consistency/teacher_release/lgvq_temporal_08044/TRAINING_ASSETS.md",
+    "LightGenPublic/tasks/t06_lgvq_temporal_consistency/teacher_release/lgvq_temporal_08044/TRAINING_ASSETS_SHA256.json",
+    "LightGenPublic/tasks/t06_lgvq_temporal_consistency/teacher_release/lgvq_temporal_08044/pyproject.toml",
+    "LightGenPublic/tasks/t06_lgvq_temporal_consistency/teacher_release/lgvq_temporal_08044/release.json",
+    "LightGenPublic/tasks/t06_lgvq_temporal_consistency/teacher_release/lgvq_temporal_08044/requirements.txt",
+    "LightGenPublic/tasks/t06_lgvq_temporal_consistency/teacher_release/lgvq_temporal_08044/verification/README.md",
+    "LightGenPublic/tasks/t06_lgvq_temporal_consistency/teacher_release/lgvq_temporal_08044/verification/server_cuda_full_20260922.json",
+    "LightGenPublic/tasks/t06_lgvq_temporal_consistency/teacher_release_final/lgvq_temporal_08044/README.md",
+    "LightGenPublic/tasks/t06_lgvq_temporal_consistency/teacher_release_final/lgvq_temporal_08044/SHA256.json",
+    "LightGenPublic/tasks/t06_lgvq_temporal_consistency/teacher_release_final/lgvq_temporal_08044/pyproject.toml",
+    "LightGenPublic/tasks/t06_lgvq_temporal_consistency/teacher_release_final/lgvq_temporal_08044/release.json",
+    "LightGenPublic/tasks/t06_lgvq_temporal_consistency/teacher_release_final/lgvq_temporal_08044/requirements.txt",
+    "LightGenPublic/tasks/t06_lgvq_temporal_consistency/teacher_release_final_v2/lgvq_temporal_08044/README.md",
+    "LightGenPublic/tasks/t06_lgvq_temporal_consistency/teacher_release_final_v2/lgvq_temporal_08044/SHA256.json",
+    "LightGenPublic/tasks/t06_lgvq_temporal_consistency/teacher_release_final_v2/lgvq_temporal_08044/pyproject.toml",
+    "LightGenPublic/tasks/t06_lgvq_temporal_consistency/teacher_release_final_v2/lgvq_temporal_08044/release.json",
+    "LightGenPublic/tasks/t06_lgvq_temporal_consistency/teacher_release_final_v2/lgvq_temporal_08044/requirements.txt"
+  ],
+  "originals_deleted_or_moved": false,
+  "assets_changed": false,
+  "limitations": [
+    "Source archive does not back up PT or frozen inputs.",
+    "Original and v2 packages retain different metrics and numerical contracts.",
+    "Root review source, new files and all timing assets remain outside these ignore rules."
+  ]
+}

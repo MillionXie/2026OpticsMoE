@@ -52,6 +52,11 @@ SDK路径前检不等于设备回归或运行工程切换，不能只换PT就宣
 
 ## 报告、baseline与历史保护
 
+`LightGenPublic/tasks/t07_abo_image_retrieval` 是旧独立审阅包：epoch15 EMA、480条查询、
+120个训练商品中心、Hit@1 .689583／去光 .645833，成功定义为同类其他商品。
+它不是本页rank72、不是同一检索协议，也不是实验室硬件入口。原源码、说明和资产
+继续保留，不用其指标或架构覆盖封存版本；日常修改只从本页正式入口进入。
+
 正式报告：`handoffs/abo_latestfresh35_lab_20260930/rank72_physical_full_report_20261001.json`，
 SHA256 `94947127262ead3fc440b5e67b513f0038949b25795c5be0b916305d251e6eef`，含800逐查询预测。
 权重/报告身份见 [FINAL_IDENTITY](reports/reproduction/FINAL_IDENTITY_20261002.json)。
