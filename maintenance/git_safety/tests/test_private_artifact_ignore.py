@@ -1,6 +1,9 @@
 """Ignore rules are visibility controls, never deletion or cleanup approval."""
 from pathlib import Path
 import subprocess
+import shutil
+import tempfile
+from unittest.mock import patch
 import unittest
 
 ROOT = Path(__file__).resolve().parents[3]
@@ -26,6 +29,15 @@ class ArtifactIgnoreTests(unittest.TestCase):
         self.assertEqual(self.ignored(paths), set())
 
     def test_audited_original_dataset_images_not_source(self):
+        # Isolate the published rules from machine-local info/exclude settings.
+        with tempfile.TemporaryDirectory() as folder:
+            fixture = Path(folder)
+            subprocess.run(['git', 'init', '-q', str(fixture)], check=True)
+            shutil.copyfile(ROOT / '.gitignore', fixture / '.gitignore')
+            with patch(__name__ + '.ROOT', fixture):
+                self.check_audited_dataset_rules()
+
+    def check_audited_dataset_rules(self):
         images = ['LightGenV2/tasks/t04_semantic_interaction/dataset/openmoji_grid_v2/train/input_00001.png',
                   'ABO_Lab_8um/original_a100/assets/test_dataset/images/product/image.jpg',
                   'ABO_Lab_8um/original_inference/assets/test_dataset/images/product/image.jpeg',
