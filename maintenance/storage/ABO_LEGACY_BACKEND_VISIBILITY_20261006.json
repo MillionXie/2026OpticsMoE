@@ -1,0 +1,9 @@
+{
+  "scope": "Git visibility only; no deletion, runtime change or scientific migration",
+  "server_root": "/DATA/DATA1/guest3/2026OpticsMoE",
+  "verification": {
+    "ABO_Lab_8um/original_a100/backend": {"manifest": "BACKEND_MANIFEST.json", "files": 1413, "sha256_matched": 1413, "missing": 0, "extra_source": 0},
+    "ABO_Lab_8um/original_optics/backend": {"manifest": "BACKEND_MANIFEST.json", "files": 112, "sha256_matched": 112, "missing": 0, "extra_source": 0}
+  },
+  "preserved": "All existing payload bytes, top-level source and deployment wrappers, manifests, data, models, timing and baselines remain in place. This does not verify whole-package reproducibility."
+}

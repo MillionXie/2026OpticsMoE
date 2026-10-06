@@ -219,3 +219,9 @@ node_modules/
 # source f15e46a..., manifest SHA 1dc6a3c...). This is a release payload, not
 # a development checkout. Top-level exporters/docs/manifests remain visible.
 /handoffs/t12_small_baseline_handoff_20260928/stage/model_release/source/
+
+# Manifest-verified legacy ABO deployment backend payloads: 1413 and 112
+# files respectively, all SHA-256 matched, no extra source files (2026-10-06).
+# Keep manifests and top-level deployment wrappers visible; keep bytes on disk.
+/ABO_Lab_8um/original_a100/backend/
+/ABO_Lab_8um/original_optics/backend/

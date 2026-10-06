@@ -47,6 +47,8 @@ class ArtifactIgnoreTests(unittest.TestCase):
                    'LightGenV2/tasks/t07_abo_image_retrieval/reports/bringup/ccd.png',
                    'LightGenV2/reports/timing/latency_plot.png']
         images += ['handoffs/t12_small_baseline_handoff_20260928/stage/model_release/source/LightGenV2/tasks/t12_text_to_image/sealed_editor.py']
+        images += ['ABO_Lab_8um/original_a100/backend/experiments/model.py',
+                   'ABO_Lab_8um/original_optics/backend/experiments/model.py']
         self.assertEqual(self.ignored(images), set(images))
         sources = ['LightGenV2/tasks/t04_semantic_interaction/dataset/openmoji_grid_v2/prepare.py',
                    'LightGenV2/tasks/t04_semantic_interaction/dataset/openmoji_grid_v2/manifest.json',
@@ -61,6 +63,8 @@ class ArtifactIgnoreTests(unittest.TestCase):
                     'LightGenV2/reports/timing/source_snapshot/measure.py',
                     'LightGenV2/tasks/t07_abo_image_retrieval/reports/bringup/manifest.json']
         sources += ['handoffs/t12_small_baseline_handoff_20260928/stage/materialize_pairs.py',
+                    'ABO_Lab_8um/original_a100/BACKEND_MANIFEST.json',
+                    'ABO_Lab_8um/original_optics/SOFTWARE_MANIFEST.json',
                     'handoffs/t12_small_baseline_handoff_20260928/stage/model_release/manifest.json',
                     'LightGenV2/tasks/t12_text_to_image/sealed_editor.py']
         self.assertEqual(self.ignored(sources), set())
