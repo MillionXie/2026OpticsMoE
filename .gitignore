@@ -230,3 +230,13 @@ node_modules/
 # FILES_SHA256 manifest. Original package/runtime files remain in place.
 # Do not hide top-level training/analysis tools or modified package metadata.
 /LightGenV2/demo_check/EuroSAT_MoE_D2NN/code/experiments/
+
+# Six pinned historical baseline release payloads. All 738 manifest source
+# members and six SOURCE_ORIGIN records match retained ZIPs (2026-10-06).
+# Preserve bytes and timing in place; wrappers/manifests/reports stay visible.
+/LightGenV2/reports/20260915_baseline_methods/code_packages/01_lgvq/source/
+/LightGenV2/reports/20260915_baseline_methods/code_packages/02_abo_image_text/source/
+/LightGenV2/reports/20260915_baseline_methods/code_packages/03_abo_image_image/source/
+/LightGenV2/reports/20260915_baseline_methods/code_packages/04_lsp/source/
+/LightGenV2/reports/20260915_baseline_methods/code_packages/05_salicon/source/
+/LightGenV2/reports/20260915_baseline_methods/code_packages/06_openmoji/source/

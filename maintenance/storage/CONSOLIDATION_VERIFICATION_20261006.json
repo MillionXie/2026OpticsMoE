@@ -1,13 +1,13 @@
 {
-  "verified_source_commit": "be9e9686df24ee0f45c3e11fb7cc527581d5d594",
+  "verified_source_commit": "f2e5087f63bfcf0810f1f8a71d33abb592b4f0c3",
   "host": "local Windows main workspace",
   "checks": [
     {
       "command": "python -m pytest maintenance/git_safety/tests -q --disable-warnings --maxfail=8",
       "environment": "qwen3vl-cifar10",
-      "passed": 176,
+      "passed": 185,
       "failed": 0,
-      "seconds": 71.22,
+      "seconds": 69.22,
       "scope": "Governance helpers, source identities, small CPU fixtures, navigation, archive and safety guards; not full scientific model reproduction"
     },
     {

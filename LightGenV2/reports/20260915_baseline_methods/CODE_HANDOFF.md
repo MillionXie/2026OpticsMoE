@@ -13,6 +13,12 @@
 
 ## 生成代码包
 
+六份已导出的历史包原位保留，不是日常开发工程。2026-10-06核验738份清单源码、
+六份SOURCE_ORIGIN与各自ZIP逐字节一致，ZIP SHA和CRC通过；仅包内source副本
+按交付产物忽略，入口/清单/指标不隐藏。见
+[核验与保留范围](../../../maintenance/storage/HISTORICAL_BASELINE_PAYLOAD_VISIBILITY_20261006.json)。
+本轮未重评性能、重建包或删除任何测速/数据文件。
+
 在包含上述历史提交的仓库中运行：
 
 ```bash
