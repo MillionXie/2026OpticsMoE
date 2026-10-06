@@ -25,3 +25,5 @@
 原打包入口按原metadata的来源SHA校验；当前来源不匹配时应失败，不应改摘要绕过。此次只核验旧发布物完整性，没有重新构建、运行或上传包，没有重新证明当前扩展模型与旧版数值等价。
 
 原包的冗余解压目录现已可恢复归档至本机 `archive/legacy_code_snapshots/eurosat_phase_only_delivery_20261006`，14份原文件逐SHA不变；原ZIP保留在原releases位置。见 [搬迁与恢复收据](../../maintenance/storage/EUROSAT_RELEASE_EXTRACTION_ARCHIVE_20261006.json)。不删除数据，不计新增磁盘释放；其他主机不必持有这份本地归档。
+
+Kather源码包的 `- Copy.zip` 也已确认与正式ZIP逐字节重复并可恢复归档。原包70份manifest成员及CRC核验通过，正式ZIP与全部验证/传输记录原位保留；见 [重复包收据](../../maintenance/storage/KATHER_DUPLICATE_RELEASE_ARCHIVE_20261006.json)。没有移动训练工程、权重、数据或测速。

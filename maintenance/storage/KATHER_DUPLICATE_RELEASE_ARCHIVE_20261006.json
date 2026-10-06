@@ -1,0 +1,18 @@
+{
+  "scope": "Local recoverable relocation of duplicate release ZIP only",
+  "source": "LightGenV2/demo_check/releases/kather_coverage_code_20260917 - Copy.zip",
+  "archive": "archive/legacy_code_snapshots/release_duplicates_20261006/kather_coverage_code_20260917 - Copy.zip",
+  "retained_original": "LightGenV2/demo_check/releases/kather_coverage_code_20260917.zip",
+  "sha256": "d09a9d8bd2d5dd2dfd8a73df671be86df9080504efd690c9e3975807cdba6115",
+  "bytes": 187342,
+  "original_manifest_members_verified": 70,
+  "original_zip_crc_pass": true,
+  "copy_original_and_archived_sha_equal": true,
+  "runtime_reference_search_matches": 0,
+  "process_command_line_matches_excluding_audit_shell": 0,
+  "data_weights_timing_modified": false,
+  "deleted": false,
+  "net_disk_bytes_freed": 0,
+  "recovery": "Verify SHA, confirm original copy path absent, move only this archived file back; never overwrite existing files.",
+  "archive_required_on_other_hosts": false
+}
