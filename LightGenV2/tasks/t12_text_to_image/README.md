@@ -30,6 +30,11 @@
 该入口使用当前main的数据实现；未做历史渲染逐像素等价核验，不能宣称重建原交付PNG。
 原交付export_pairs.py及其冻结source、数据、结果继续保留，不替换历史引用。
 
+原17M单样本干净仿真另有明确入口：`python -m LightGenV2.tasks.t12_text_to_image.infer_formal_sample --help`。
+显式提供原5b4f PT、数据、指令缓存和embedding缓存，固定CPU、不调用设备，拒绝其他权重及覆盖输出；
+保留旧交付工具的1042+index随机种子和floor PNG量化。推理仅接收reference、prompt，不传GT。
+合成测试验证种子与量化，不代表正式图像性能重放或全部资产闭包。旧infer_ours.py仍原样保留。
+
 ## 2026-09-27/28 同任务 baseline 补训与五组汇总
 
 新增外部baseline：官方pix2pix-Turbo，upstream锁定 `86f54146590ffb4543c8cf85b5a36657da670924`。沿用当前20736/2304/2304配对数据及256输出；SD-Turbo预训练骨干，不从零训练主干。CLIP文本编码器冻结，微调UNet/VAE LoRA、输入卷积及官方VAE skip卷积。完整推理参数1,299,445,747，按约定排除词嵌入50,593,792后1,248,851,955；实际微调9,505,160。没有Qwen或PCA条件接口，不把它标作Qwen baseline。3轮训练在完整VAL选中step31104，固定权重TEST2304取得PSNR20.746391dB/SSIM0.740299；权重SHA256 `3a347c58affb53d8e7efc583bb5aecdaa2ac33bd316d792c12c805fa837b4c7c`。这一外部baseline明显弱于当前模型，不能宣称凭参数规模质量必然更好。来源、实现差异及命令见复现入口。
