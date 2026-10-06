@@ -1,0 +1,30 @@
+{
+  "audited_on": "2026-10-06",
+  "mode": "read_only_no_models_no_rewrite",
+  "prepared_data": "/DATA/DATA1/guest3/demo_reproduction_data/clevr_attribute_s17_v1",
+  "prepared_manifest_sha256": "a5826f81d530e41e776eac528886936d64b5ad413e62268510fa62c0f09e5ade",
+  "source_files_sha256": "53a68f6554a8370e16eceaa11ffd458b0a9491e1a3c82d758965cc6d44137428",
+  "source_checks": ["SHA256", "CRC32", "split-local row order"],
+  "pixel_contract": "PIL RGB conversion, 64x64 LANCZOS resize, exact uint8 array equality",
+  "pillow_version": "12.2.0",
+  "numpy_version": "1.26.4",
+  "train": {
+    "checked": 1000,
+    "npz_sha256": "539a836bfda8b5b4f2281adc636996589d9296b80a91ff8362b60bd91f9b85c2",
+    "shape": [1000, 64, 64, 3],
+    "dtype": "uint8",
+    "failures": []
+  },
+  "validation": {
+    "checked": 250,
+    "npz_sha256": "f32c47ae2f8aa0daf6873620a3501ddb5552444541294edbc93f31208ff1442c",
+    "shape": [250, 64, 64, 3],
+    "dtype": "uint8",
+    "failures": []
+  },
+  "passed": true,
+  "original_asset_writes_or_deletions": 0,
+  "scene_binding_receipt": "T09_CLEVR_SCENE_BINDING_20261006.json",
+  "not_verified": ["TEST pixel reconstruction", "CNN feature-cache reconstruction", "full official CLEVR completeness", "model accuracy or hardware deployment"],
+  "preservation": "All original data, caches, weights, runs and timing evidence remain in place. This receipt is not deletion approval."
+}

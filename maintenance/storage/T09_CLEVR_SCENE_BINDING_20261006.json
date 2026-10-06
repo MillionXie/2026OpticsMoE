@@ -14,6 +14,7 @@
   "reserved_test_ids_exact": true,
   "passed": true,
   "files_written_or_deleted": 0,
+  "follow_up_pixel_binding_receipt": "T09_CLEVR_PIXEL_BINDING_20261006.json",
   "not_verified": ["TEST question generation in this audit", "raw PNG to NPZ pixel reconstruction", "CNN feature-cache reconstruction", "full official CLEVR dataset completeness", "model accuracy or hardware deployment"],
   "preservation": "Original scene, all raw/prepared data, feature caches, weights, runs and timing evidence remain in place. This receipt is not deletion approval."
 }
