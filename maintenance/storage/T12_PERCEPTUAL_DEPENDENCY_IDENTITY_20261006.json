@@ -1,0 +1,34 @@
+{
+  "audited_on": "2026-10-06",
+  "reference_main": "15125e00e74f1509a6ef8c80a5d544f5c35f1377",
+  "purpose": "Preserve saved TEST2304 PNG perceptual and region evaluation provenance; not new training or evaluation",
+  "local_package": "outputs/t12_perceptual_comparison_20260928",
+  "missing_import": {
+    "consumer": "outputs/t12_perceptual_comparison_20260928/eval_regions.py",
+    "module": "t12_eval_perceptual_20260928",
+    "original_local_source": ".codex_tmp/t12_eval_perceptual_20260928.py",
+    "exported_source": "outputs/t12_perceptual_comparison_20260928/eval_lpips.py",
+    "original_and_export_exact_bytes": true,
+    "sha256": "952e3f4c5add32c41ebece215daa400f0c38580220bf739317208cb8e1a8bdb9",
+    "required_symbols": ["mask_for", "rgb", "to_tensor"],
+    "diagnosis": "Original script was exported under a shorter filename without updating the region script import"
+  },
+  "server_observation": {
+    "head": "15125e00e74f1509a6ef8c80a5d544f5c35f1377",
+    "same_output_package_path_present": false,
+    "original_module_found_in_checked_locations": false,
+    "scope": "Root top-level, outputs, private temporary directory, T12 main task, protected T12 worktree temporary directory and /tmp; not all server storage"
+  },
+  "source_sha256": {
+    "assemble_three_task_scores.py": "fde887495ec14aae7ff0d2513da2aaae832688d77edbd102ef5046c7389dfe0c",
+    "build_annotated_figures.py": "b5d514da76320af182e843cc38365dc827ac5abce70e94376bf76c82881e8314",
+    "eval_dists.py": "ea0756841b95b0f26bf78cd69cfc7741e54397ad5cb8b48a5d7db66e827308ce",
+    "eval_lpips.py": "952e3f4c5add32c41ebece215daa400f0c38580220bf739317208cb8e1a8bdb9",
+    "eval_regions.py": "d4462ef1888511d578184743cca3e799187bdcd0ae6ec03a9d8b6884ee37e0b6"
+  },
+  "next_action": "Adopt these metric tools under T12 with the verified import-name correction and read-only dependency tests, retaining original export bytes and every CSV/figure",
+  "reproduction_proven": false,
+  "model_or_metrics_executed": false,
+  "original_sources_or_results_changed": false,
+  "assets_deleted": false
+}
