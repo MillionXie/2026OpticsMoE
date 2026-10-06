@@ -89,6 +89,22 @@ class ArtifactIgnoreTests(unittest.TestCase):
         self.assertIn(result.returncode, (0, 1), result.stderr)
         return set(filter(None, result.stdout.decode().split('\0')))
 
+    def test_sha_bound_component_timing_rules_are_exact(self):
+        import json
+        folder = ROOT/'maintenance/storage'
+        qwen = json.loads((folder/'QWEN_FIRSTBLOCK_TIMING_VISIBILITY_20261006.json').read_text())
+        optical = json.loads((folder/'OPTICAL_COMPONENT_TIMING_VISIBILITY_20261006.json').read_text())
+        descriptors = [qwen] + optical['groups']
+        payloads = [row['path'] for d in descriptors for row in d['files']]
+        self.assertEqual(len(payloads), 92)
+        self.assertEqual(self.ignored(payloads), set(payloads))
+        visible = []
+        for d in descriptors:
+            base = Path(d['manifest']).parent.as_posix()
+            visible += [base+'/README.md', base+'/SHA256SUMS.txt',
+                        base+'/source_snapshot/new_benchmark.py', base+'/future_timing.json']
+        self.assertEqual(self.ignored(visible), set())
+
     def test_private_arrays_and_generated_plates(self):
         paths = ['sample/cache.npy', 'sample/cache.npz', 'sample/model.safetensors',
                  'outputs/comparison/plate.png', 'LightGenV2/demo_check/package/ccd.bmp']

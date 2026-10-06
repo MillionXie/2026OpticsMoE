@@ -149,8 +149,19 @@ def main():
                         help='Verify retained local T12 share export files; requires private payloads')
     parser.add_argument('--server-formal-timing-payloads', action='store_true',
                         help='Verify all 111 original Sep 17 timing organization-copy members; requires local files')
+    parser.add_argument('--component-timing-payloads', action='store_true',
+                        help='Verify retained Sep 14 Qwen and optical-component timing packages; requires original private files')
     args = parser.parse_args()
     result = inspect(args.repo)
+    if args.component_timing_payloads:
+        folder = args.repo/'maintenance/storage'
+        qwen = json.loads((folder/'QWEN_FIRSTBLOCK_TIMING_VISIBILITY_20261006.json').read_text(encoding='utf8'))
+        optical = json.loads((folder/'OPTICAL_COMPONENT_TIMING_VISIBILITY_20261006.json').read_text(encoding='utf8'))
+        descriptors = [qwen] + optical['groups']
+        result['component_timing_payloads'] = [
+            {'manifest': descriptor['manifest'], **inspect_timing_manifest(args.repo, descriptor)}
+            for descriptor in descriptors]
+        result['errors'].extend(error for row in result['component_timing_payloads'] for error in row['errors'])
     if args.server_formal_timing_payloads:
         descriptor = json.loads((args.repo/'maintenance/storage/SERVER_FORMAL_TIMING_VISIBILITY_20261006.json').read_text(encoding='utf8'))
         result['server_formal_timing_payloads'] = inspect_timing_manifest(args.repo, descriptor)
