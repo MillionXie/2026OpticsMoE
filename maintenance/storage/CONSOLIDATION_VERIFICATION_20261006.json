@@ -47,6 +47,23 @@
     "all_machine_assets_or_runtime_cutovers_complete": false
   },
   "formal_model_train_or_test_executed": false,
+  "server_main_abo_synthetic_replay_check": {
+    "verified_source_commit": "cc47b68619f18403d6c9de7132fb7c1ab5221850",
+    "checkpoint_sha256": "25f23260864a00a0f32b5de209c27f5876166018c8d8ab0e880de81e0d2c2c22",
+    "source_sha256_verified": true,
+    "unchanged_original_functions": ["phase_planes", "selected_phase", "evaluate"],
+    "strict_checkpoint_load": true,
+    "six_stage_order_verified": true,
+    "synthetic_samples": 1,
+    "maximum_descriptor_error": 0.0,
+    "repeated_replay_bit_identical": true,
+    "invalid_identity_checks": 2,
+    "legacy_device_modules_imported": false,
+    "dataset_evaluated": false,
+    "hardware_used": false,
+    "tracked_status_unchanged": true,
+    "scope": "One synthetic ideal-CCD replay through published Git source; not real CCD signal, full query accuracy or device cutover validation"
+  },
   "gpu_or_hardware_used": false,
   "data_weights_or_timing_deleted": false,
   "remaining_exceptions": "REMAINING_CLEANUP_PLAN_20261003.md and LightGenV2/TASK_REGISTRY.json",
