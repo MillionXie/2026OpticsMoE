@@ -14,8 +14,15 @@ def inspect(machine_config, phase_sdk, phase_lut, amplitude_sdk=None):
             raise ValueError('Required machine path is empty')
         p = Path(value)
         return (p if p.is_absolute() else base / p).resolve()
-    camera = resolve(config['camera']['sdk_root'])
-    amp = resolve(amplitude_sdk or config['amplitude_slm']['sdk_path'])
+    # Camera resolves sdk_root against process CWD, not Controller.config_base.
+    # Bench also resolves an explicit amplitude override against CWD; only the
+    # configured amplitude paths are passed through build_slm(config_base).
+    camera_value = config['camera']['sdk_root']
+    if not camera_value:
+        raise ValueError('Required camera SDK path is empty')
+    camera = Path(camera_value).resolve()
+    amp = (Path(amplitude_sdk).resolve() if amplitude_sdk is not None
+           else resolve(config['amplitude_slm']['sdk_path']))
     binary = resolve(config['amplitude_slm']['binary_folder'])
     phase = Path(phase_sdk).resolve()
     lut = Path(phase_lut).resolve()
@@ -43,6 +50,10 @@ def inspect(machine_config, phase_sdk, phase_lut, amplitude_sdk=None):
             with p.open('rb') as stream:
                 paths[key]['sha256'] = hashlib.file_digest(stream, 'sha256').hexdigest()
     return {'passed': all(r['present'] for r in paths.values()), 'paths': paths,
+            'resolution_bases': {'camera_sdk': 'process_cwd',
+                'configured_amplitude_paths': 'machine_config_parent',
+                'explicit_amplitude_override': 'process_cwd',
+                'phase_sdk_and_lut': 'process_cwd'},
             'read_only': True, 'devices_opened': False,
             'effective_capture_settings': {'exposure_us': 400, 'gain': 'Gain_X4', 'wait_ms': 240},
             'original_config_settings': {'exposure_us': config['camera'].get('exposure_us'),

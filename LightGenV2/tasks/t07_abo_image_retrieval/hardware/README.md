@@ -69,7 +69,9 @@ python -m LightGenV2.tasks.t07_abo_image_retrieval.hardware.ccd_store --run /pat
 
 `bench.SHSBench` 与 `geometry` 已收拢最终版实际使用的控制层，显式传入
 `machine_config`（原Controller JSON）、`phase_sdk` 和 `phase_lut`，不再自动寻找
-LGVQ视频项目或旧DVP工程。JSON相对设备路径按其所在目录解析，SDK/LUT/数据不进Git。
+LGVQ视频项目或旧DVP工程。JSON中振幅SDK及binary路径按其所在目录解析；
+相机sdk_root仍按原Camera行为相对进程工作目录解析，建议显式绝对路径。
+SDK/LUT/数据不进Git。
 若现有机器JSON的相对振幅SDK实际位于另一工程，须显式传入
 `--amplitude-sdk /absolute/path/to/holoeye_python`。它只覆盖内存中的
 `amplitude_slm.sdk_path`，不修改机器JSON；默认仍按JSON所在目录解析，不猜测旧工程。
@@ -108,10 +110,13 @@ python maintenance/git_safety/check_t07_layerwise_source.py --commit main
 
 从唯一主仓库运行`maintenance/git_safety/check_t07_machine_paths.py`，显式指定
 `--machine-config`、`--phase-sdk`、`--phase-lut`，必要时指定`--amplitude-sdk`。
-它按机器JSON所在目录解析相对路径，检查相机DLL/CTI、振幅Python wrapper/原生DLL、相位wrapper
+它按真实运行代码区分路径基准：JSON振幅路径相对配置目录，相机sdk_root、显式
+振幅覆盖及相位SDK/LUT相对进程工作目录。检查相机DLL/CTI、振幅Python wrapper/原生DLL、相位wrapper
 与LUT，并记录当前文件SHA。缺失返回2；只读，不打开SDK或创建采集目录。
 报告区分原JSON参数与rank72 Bench实际覆盖的400µs/Gain_X4/wait240，不修改原配置。
-五项模拟路径测试通过，空SDK目录不再算通过；存在性不证明SDK授权、ABI、交互桌面、有效光信号或现场回归。
+七项模拟路径测试通过，包括相机相对路径及显式振幅覆盖的不同工作目录；
+只修正前检、不改变原采集实现或封存配置。空SDK目录不算通过；存在性不证明
+SDK授权、ABI、交互桌面、有效光信号或现场回归。
 实验室已直接从发布Git对象执行只读核验：原LGVQ机器JSON的相对振幅SDK缺失，
 显式绑定原ABO安装的SDK后八项路径全部存在，六项文件SHA已记录，原JSON未改变。
 见 [`机器路径收据`](../../../../maintenance/storage/T07_MACHINE_PATH_GATE_20261006.json)。
