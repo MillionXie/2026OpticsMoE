@@ -151,6 +151,12 @@ if __name__ == "__main__":
     parser.add_argument("--repo", default=".")
     parser.add_argument("--reference", default="HEAD")
     parser.add_argument("--history", action="store_true", help="Check existing recovery history (bounded to 512 unique commits, without creating refs)")
+    parser.add_argument("--summary", action="store_true", help="Omit repeated provenance rows; retain counts and unresolved source names")
     args = parser.parse_args()
     result = audit_history(args.repo, args.reference) if args.history else audit(args.repo, args.reference)
+    if args.summary:
+        rows = result.pop('files')
+        result['unresolved_source_paths'] = [row['path'] for row in rows
+            if row.get('history_identity', row.get('identity')) == 'no_byte_identity_in_reference']
+        result['detailed_rows_omitted'] = len(rows)
     print(json.dumps(result, ensure_ascii=False, indent=2))
