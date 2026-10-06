@@ -1,0 +1,59 @@
+{
+  "schema_version": 1,
+  "audit_date": "2026-09-08",
+  "task": "T07",
+  "scope": "Read-only source/data/artifact audit; no new model training or full model evaluation. Existing predictions may be recomputed as explicitly recorded.",
+  "local_head": "79bf0f2695949fc5d0353698cfad417c14282f7b",
+  "local_tree_clean": false,
+  "server_main_head": "c313ff807617a75f410246e08d22d5f03b96443b",
+  "server_main_tree_clean": false,
+  "source_files_sha256": {
+    "LightGenV2/tasks/t07_abo_image_retrieval/__init__.py": "e918797eb8f5566512f309af431f6e009608f4cbdb497ba1f6d6d05e98de7dcd"
+  },
+  "remote_record_inventory": [
+    {
+      "path": "/DATA/DATA1/guest3/2026OpticsMoE_t07_a100/LightGenV2/tasks/t07_abo_image_retrieval/reports/a100_frozen_qwen_20260907/result.json",
+      "sha256_of_record": "e5ff135ec522c763ddf803c0ecfd93dcc544b0ce2e7ba8fb5317b7c0d5cd033e",
+      "bytes": 1515,
+      "status": "complete"
+    },
+    {
+      "path": "/DATA/DATA1/guest3/2026OpticsMoE_t07_a100/LightGenV2/tasks/t07_abo_image_retrieval/reports/a100_frozen_qwen_20260907/evidence_manifest.json",
+      "sha256_of_record": "c96eb6b7b1e1df99d6a11e7b58cee1ecef0beea7cceb47d874db637e7bc5291d",
+      "bytes": 517
+    }
+  ],
+  "actual_checkpoint_sha256": {},
+  "server_branch_head": "86b2a6a79e517f6a4a14d99d826bbd4ab68b1372",
+  "run_source_commit": "354c53e54b9d26b1d7835a3ba51b60929425baa8",
+  "recomputed_from_existing_predictions": {
+    "hit_at_1": 0.9520833333333333,
+    "precision_at_1": 0.9520833333333333,
+    "positive_recall_at_1": 0.07934027777777777,
+    "hit_at_5": 0.9875,
+    "precision_at_5": 0.9208333333333333,
+    "positive_recall_at_5": 0.3836805555555556,
+    "hit_at_10": 0.9979166666666667,
+    "precision_at_10": 0.8547916666666667,
+    "positive_recall_at_10": 0.7123263888888889
+  },
+  "prediction_count": 480,
+  "actual_baseline_report_sha256": "18d2d71d8b072d4e0e3d78a7bae4be4acc7d2a0018ee8c73ecf57ad537816176",
+  "incorrect_65_character_report_sha256": "18d2d71d8b072d4e0e3d778a7bae4be4acc7d2a0018ee8c73ecf57ad537816176",
+  "reported_dataset_sha256": {
+    "archive": "c8f0f79cbd8ceb3c42162092136254a1f44f6d13b3329e0e3b1c5dfc458c1485",
+    "manifest_csv": "2949a4035150a9f8718f2a6cace164c17394613d24fb9d0234c553bee8d77c97",
+    "manifest_report_json": "32a1325ae86b2ec37971ffa2e99e754199f71d03015917de80925b1e8c385288"
+  },
+  "reported_environment": {
+    "python": "3.11.15",
+    "torch": "2.6.0+cu124",
+    "cuda": "12.4",
+    "gpu": "NVIDIA A100-PCIE-40GB",
+    "gpu_index": 0,
+    "nvidia_smi_physical_gpu_id": "6",
+    "dtype": "bfloat16",
+    "batch_size": 1,
+    "rated_power_limit_w": 250.0
+  }
+}
