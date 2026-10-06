@@ -1,0 +1,20 @@
+{
+  "scope": "Verified immutable local release-source snapshot, not canonical development source",
+  "path": "handoffs/t12_small_baseline_handoff_20260928/stage/model_release/source",
+  "source_commit": "f15e46a6660731d8d73d4438ceb227545566f220",
+  "manifest": "handoffs/t12_small_baseline_handoff_20260928/stage/model_release/manifest.json",
+  "manifest_sha256": "1dc6a3c9356d31feef20c07985201383b22dc0323ee6a0a2f8d51b8f9f6e3096",
+  "source_files_checked": 2266,
+  "missing": [],
+  "extra": [],
+  "hash_mismatches": [],
+  "windows_long_path_check_required": true,
+  "seven_historical_configurations_materialized_from_original_git": true,
+  "ignored_as_release_payload": true,
+  "canonical_source_hidden": false,
+  "top_level_exporters_and_manifest_visible": true,
+  "dataset_checkpoint_or_model_read": false,
+  "data_weights_or_timing_deleted": false,
+  "release_remains_at_original_path": true,
+  "complete_package_reproduction_proven": false
+}

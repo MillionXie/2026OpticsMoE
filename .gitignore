@@ -214,3 +214,8 @@ node_modules/
 /ABO_Lab_8um/reports/**/*.png
 /ABO_Lab_SHS_8um/reports/**/*.png
 /TransferFromElectricity/tasks/*/reports/**/*.png
+
+# Verified immutable T12 clean-simulation handoff source snapshot (2266 files,
+# source f15e46a..., manifest SHA 1dc6a3c...). This is a release payload, not
+# a development checkout. Top-level exporters/docs/manifests remain visible.
+/handoffs/t12_small_baseline_handoff_20260928/stage/model_release/source/

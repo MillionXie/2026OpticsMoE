@@ -46,6 +46,7 @@ class ArtifactIgnoreTests(unittest.TestCase):
                    'LightGenV2/tasks/t04_semantic_interaction/dataset/openmoji_grid_v2/test/test_000001/scene.json',
                    'LightGenV2/tasks/t07_abo_image_retrieval/reports/bringup/ccd.png',
                    'LightGenV2/reports/timing/latency_plot.png']
+        images += ['handoffs/t12_small_baseline_handoff_20260928/stage/model_release/source/LightGenV2/tasks/t12_text_to_image/sealed_editor.py']
         self.assertEqual(self.ignored(images), set(images))
         sources = ['LightGenV2/tasks/t04_semantic_interaction/dataset/openmoji_grid_v2/prepare.py',
                    'LightGenV2/tasks/t04_semantic_interaction/dataset/openmoji_grid_v2/manifest.json',
@@ -59,6 +60,9 @@ class ArtifactIgnoreTests(unittest.TestCase):
                     'LightGenV2/reports/timing/timing_per_sample.csv',
                     'LightGenV2/reports/timing/source_snapshot/measure.py',
                     'LightGenV2/tasks/t07_abo_image_retrieval/reports/bringup/manifest.json']
+        sources += ['handoffs/t12_small_baseline_handoff_20260928/stage/materialize_pairs.py',
+                    'handoffs/t12_small_baseline_handoff_20260928/stage/model_release/manifest.json',
+                    'LightGenV2/tasks/t12_text_to_image/sealed_editor.py']
         self.assertEqual(self.ignored(sources), set())
 
 
