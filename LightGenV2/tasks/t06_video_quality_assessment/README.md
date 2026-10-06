@@ -325,6 +325,9 @@ Qwen 对照和论文图统一见
 旧 CLIP ViT-B/32 与 YOLO11s 的四帧 Temporal／Spatial baseline 运行入口已从其原
 运行提交 `95904ecf97bcefe4a7ae76a6eab08a1d7cb217f0` 原样恢复到本任务。
 命令、冻结参数与数据合同见 [VISUAL_BACKBONE_BASELINES.md](VISUAL_BACKBONE_BASELINES.md)。
+历史结果、选模口径、原PT/缓存SHA和抽取耗时见
+[CLIP／YOLO历史记录](reports/reproduction/VISUAL_BACKBONE_LGVQ_20260922.md)；
+原中转说明仍保留，不把其2026-09-22成绩或耗时套给当前光电模型。
 两模型只拟合五个无偏置质量输出行，共10240参数；按原无VAL划分的TEST SRCC选模，
 属于开发指标，不称独立泛化。本轮未重训、未读取视频、未重评性能或测速。
 原报告和本地中转源码仍原位保留，来源及CPU合同核验见
