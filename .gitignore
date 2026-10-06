@@ -1376,3 +1376,24 @@ node_modules/
 /handoffs/abo_latestfresh35_lab_20260930/rank72_source/standalone/retrieval_refine.py
 /handoffs/abo_latestfresh35_lab_20260930/rank72_source/standalone/retrieval_screen.py
 /handoffs/abo_latestfresh35_lab_20260930/rank72_source/standalone/robust_holdout.py
+\n+# SHA-inventoried large existing result/split payloads; preserve all original files.
+/LightGenV2/demo_check/EuroSAT_MoE_D2NN/code/SPLIT.json
+/LightGenV2/demo_check/EuroSAT_MoE_D2NN/code/SPLIT_AUDIT.json
+/LightGenV2/reports/20260927_demo_energy_efficiency_a100/A100_demo_energy_efficiency_audit.xlsx.inspect.ndjson
+/LightGenV2/reports/baseline_plotting_20260922/_server_raw/lsp/teacher_inference_predictions.csv
+/LightGenV2/reports/baseline_plotting_20260922/delivery/lsp/per_joint.csv
+/handoffs/t12_five_group_summary_20260928/all_test_metrics.json
+/handoffs/t12_four_group_summary_20260927/all_test_metrics.json
+/handoffs/t12_four_group_summary_20260927/large_baseline_export/sample_metrics.json
+/handoffs/t12_four_group_summary_20260927/original_small_export/sample_metrics.json
+/handoffs/t12_four_group_summary_20260927/small_matched_export/all_test_comparison.csv
+/handoffs/t12_four_group_summary_20260927/small_matched_export/all_test_comparison.json
+/handoffs/t12_lab_robust17m_20260927/decoder20_comparison/all_test_comparison.csv
+/handoffs/t12_lab_robust17m_20260927/decoder20_comparison/all_test_comparison.json
+/handoffs/t12_lab_robust17m_20260927/decoder20_comparison/full_verified/all_test_comparison.csv
+/handoffs/t12_lab_robust17m_20260927/decoder20_comparison/full_verified/all_test_comparison.json
+/handoffs/t12_lab_robust17m_20260927/decoder20_trainonly/sample_metrics.json
+/handoffs/t12_lab_robust17m_20260927/sample_metrics.csv
+/handoffs/t12_lab_robust17m_20260927/sample_metrics.json
+/handoffs/t12_lab_small_20260926/full_test_bounded/sample_metrics.json
+/handoffs/t12_pix2pix_turbo_20260927/test_export/sample_metrics.json

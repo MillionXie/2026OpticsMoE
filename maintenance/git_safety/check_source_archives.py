@@ -155,8 +155,15 @@ def main():
                         help='Verify retained Sep 27 LGVQ temporal raw timing CSV/JSON; requires local originals')
     parser.add_argument('--t10-fixed478-reports', action='store_true',
                         help='Verify 36 locally retained fixed478 original evaluation records without re-evaluation')
+    parser.add_argument('--large-result-payloads', action='store_true',
+                        help='Verify retained large result/split payloads and manual-review assets; no deletion')
     args = parser.parse_args()
     result = inspect(args.repo)
+    if args.large_result_payloads:
+        descriptor = json.loads((args.repo/'maintenance/storage/LARGE_RESULT_PAYLOAD_VISIBILITY_20261007.json').read_text(encoding='utf8'))
+        result['large_result_payloads'] = inspect_export_payload(args.repo,
+            {'files':descriptor['files']+descriptor['manual_review_files']})
+        result['errors'].extend(result['large_result_payloads']['errors'])
     if args.t10_fixed478_reports:
         descriptor = json.loads((args.repo/'maintenance/storage/T10_FIXED478_REPORT_VISIBILITY_20261007.json').read_text(encoding='utf8'))
         result['t10_fixed478_reports'] = inspect_export_payload(args.repo, descriptor)

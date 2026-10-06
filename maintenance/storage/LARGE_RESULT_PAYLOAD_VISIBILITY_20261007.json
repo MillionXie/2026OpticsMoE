@@ -1,0 +1,156 @@
+{
+  "audited_on": "2026-10-07",
+  "commit": "23d49927eebe844af2ab29665e5d5c28bef1f4ac",
+  "scope": "Nonignored untracked regular assets larger than 2 MiB; not ignored assets or full machine inventory",
+  "files": [
+    {
+      "path": "LightGenV2/demo_check/EuroSAT_MoE_D2NN/code/SPLIT.json",
+      "bytes": 13895324,
+      "sha256": "cfe8373dd33cc0fe64f083b9ca32377e767c21b078c3f1d91f2dacecc25cb776",
+      "suffix": ".json"
+    },
+    {
+      "path": "LightGenV2/demo_check/EuroSAT_MoE_D2NN/code/SPLIT_AUDIT.json",
+      "bytes": 19966408,
+      "sha256": "7b222d6b1089a8a6d8fc13bce6ca7fd6b698598dadea485f8306fdc8100fcd53",
+      "suffix": ".json"
+    },
+    {
+      "path": "LightGenV2/reports/20260927_demo_energy_efficiency_a100/A100_demo_energy_efficiency_audit.xlsx.inspect.ndjson",
+      "bytes": 76408449,
+      "sha256": "cf28900445787d41659690c0136f4bcc354df92e50c751ac8168e4512ce28dc7",
+      "suffix": ".ndjson"
+    },
+    {
+      "path": "LightGenV2/reports/baseline_plotting_20260922/_server_raw/lsp/teacher_inference_predictions.csv",
+      "bytes": 2708722,
+      "sha256": "8a32e59f829243c7107b8854e387cb28cdf3f2075f4922341ba71abe7c63297e",
+      "suffix": ".csv"
+    },
+    {
+      "path": "LightGenV2/reports/baseline_plotting_20260922/delivery/lsp/per_joint.csv",
+      "bytes": 2708725,
+      "sha256": "51bfb98d7efdf1e918807929b5c3119d001ec828521e22f6a462f773158483fe",
+      "suffix": ".csv"
+    },
+    {
+      "path": "handoffs/t12_five_group_summary_20260928/all_test_metrics.json",
+      "bytes": 3909174,
+      "sha256": "19a6cab3667c5fae8192e92197b216beb317de1a46c57136a7cdb35569f7991f",
+      "suffix": ".json"
+    },
+    {
+      "path": "handoffs/t12_four_group_summary_20260927/all_test_metrics.json",
+      "bytes": 3504974,
+      "sha256": "a587454fd06d34749c7c70a61fec43cd17fd155d3468fa9070f181a5ff26e23e",
+      "suffix": ".json"
+    },
+    {
+      "path": "handoffs/t12_four_group_summary_20260927/large_baseline_export/sample_metrics.json",
+      "bytes": 2996453,
+      "sha256": "656b2d06e8280f5ea5725ffe27576496203b87946c32dd84be12f1ceef2ded7a",
+      "suffix": ".json"
+    },
+    {
+      "path": "handoffs/t12_four_group_summary_20260927/original_small_export/sample_metrics.json",
+      "bytes": 3852642,
+      "sha256": "f3f54a25638aaf6d25938329507c61bb137bd6b78ff5a715d219b99e4ab1988b",
+      "suffix": ".json"
+    },
+    {
+      "path": "handoffs/t12_four_group_summary_20260927/small_matched_export/all_test_comparison.csv",
+      "bytes": 2703245,
+      "sha256": "9cf229a40d0933e90ba660e5ed3ae776d5443e3c8364ec4f34159bea95c69ac0",
+      "suffix": ".csv"
+    },
+    {
+      "path": "handoffs/t12_four_group_summary_20260927/small_matched_export/all_test_comparison.json",
+      "bytes": 5310617,
+      "sha256": "127646862a132ddb930ba44d59084e7593173a48745884fa0ce45a6ce326734b",
+      "suffix": ".json"
+    },
+    {
+      "path": "handoffs/t12_lab_robust17m_20260927/decoder20_comparison/all_test_comparison.csv",
+      "bytes": 2703245,
+      "sha256": "9cf229a40d0933e90ba660e5ed3ae776d5443e3c8364ec4f34159bea95c69ac0",
+      "suffix": ".csv"
+    },
+    {
+      "path": "handoffs/t12_lab_robust17m_20260927/decoder20_comparison/all_test_comparison.json",
+      "bytes": 5310617,
+      "sha256": "127646862a132ddb930ba44d59084e7593173a48745884fa0ce45a6ce326734b",
+      "suffix": ".json"
+    },
+    {
+      "path": "handoffs/t12_lab_robust17m_20260927/decoder20_comparison/full_verified/all_test_comparison.csv",
+      "bytes": 2703245,
+      "sha256": "9cf229a40d0933e90ba660e5ed3ae776d5443e3c8364ec4f34159bea95c69ac0",
+      "suffix": ".csv"
+    },
+    {
+      "path": "handoffs/t12_lab_robust17m_20260927/decoder20_comparison/full_verified/all_test_comparison.json",
+      "bytes": 5310617,
+      "sha256": "127646862a132ddb930ba44d59084e7593173a48745884fa0ce45a6ce326734b",
+      "suffix": ".json"
+    },
+    {
+      "path": "handoffs/t12_lab_robust17m_20260927/decoder20_trainonly/sample_metrics.json",
+      "bytes": 3108087,
+      "sha256": "3fc5121a059596ae152c30e5147536fdf8e953ca11f26da06fe85ff82062477c",
+      "suffix": ".json"
+    },
+    {
+      "path": "handoffs/t12_lab_robust17m_20260927/sample_metrics.csv",
+      "bytes": 2129739,
+      "sha256": "271273f82099e90bd874c303d151c029a039344471e7ccda98e382c1d867a377",
+      "suffix": ".csv"
+    },
+    {
+      "path": "handoffs/t12_lab_robust17m_20260927/sample_metrics.json",
+      "bytes": 4025443,
+      "sha256": "c093c1432af09cf48c9211319ebb1566ae7e44798d2b10b7be1223cb5fb09147",
+      "suffix": ".json"
+    },
+    {
+      "path": "handoffs/t12_lab_small_20260926/full_test_bounded/sample_metrics.json",
+      "bytes": 3810212,
+      "sha256": "9bd8d24a7ddf762fd52b0de59bb12be42fc28dd835f174c0e36f5b5b7fbb4639",
+      "suffix": ".json"
+    },
+    {
+      "path": "handoffs/t12_pix2pix_turbo_20260927/test_export/sample_metrics.json",
+      "bytes": 2555772,
+      "sha256": "74ea11392791916d8bbdecf47c707fc47fb91d00e4b6c7fbae310f46a0c85508",
+      "suffix": ".json"
+    }
+  ],
+  "manual_review_files": [
+    {
+      "path": "ABO_Lab_8um/control_kit/CCD_SHS/SHS 硬件使用手册 20260309.pdf",
+      "bytes": 2997143,
+      "sha256": "f72ffcaa2cfff21fdd1cb459ed80d9892eef496ac1edea2cb28fde7eedba6641",
+      "suffix": ".pdf"
+    },
+    {
+      "path": "ABO_Lab_8um/control_kit/CCD_SHS/SHS系列FastStream使用手册-20260109.pdf",
+      "bytes": 11975788,
+      "sha256": "4729eefb34f371e2d628c87a0a55d3b4d287d6ed533fae7a938eeebcd9ed128d",
+      "suffix": ".pdf"
+    },
+    {
+      "path": "LightGenV2/demo_check/adrenal_softsign_code_export_20260915_145336/code/assets/simhei.ttf",
+      "bytes": 9753388,
+      "sha256": "aa4560dd8fe5645745fed3ffa301c3ca4d6c03cbd738145b613303961ba733b8",
+      "suffix": ".ttf"
+    }
+  ],
+  "originals_deleted_or_moved": false,
+  "source_hidden": false,
+  "independent_asset_backup_proven": false,
+  "purpose": "Existing large raw per-sample evaluation records, frozen dataset splits and generated workbook inspection output; keep payload originals and exact SHA, do not publish payload into Git",
+  "limitations": [
+    "Current local bytes only, not original experiment rerun or whole-machine inventory",
+    "SDK manuals and font files remain visible pending redistribution/dependency review",
+    "No deletion or runtime change; duplicates retained"
+  ]
+}

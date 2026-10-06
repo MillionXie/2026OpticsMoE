@@ -10,6 +10,17 @@ ROOT = Path(__file__).resolve().parents[3]
 
 
 class ArtifactIgnoreTests(unittest.TestCase):
+    def test_large_result_records_not_source_new_results_or_manual_assets(self):
+        import json
+        descriptor=json.loads((ROOT/'maintenance/storage/LARGE_RESULT_PAYLOAD_VISIBILITY_20261007.json').read_text(encoding='utf8'))
+        private=[row['path'] for row in descriptor['files']]
+        visible=[row['path'] for row in descriptor['manual_review_files']]
+        visible += ['handoffs/t12_lab_robust17m_20260927/future_metrics.json',
+                    'LightGenV2/demo_check/EuroSAT_MoE_D2NN/code/train_eurosat.py',
+                    'LightGenV2/reports/20260927_demo_energy_efficiency_a100/future_timing.csv']
+        self.assertEqual(len(private),20)
+        self.assertEqual(self.ignored(private+visible),set(private))
+
     def test_rank72_delivery_copy_not_unmatched_or_canonical_source(self):
         import json
         descriptor = json.loads((ROOT/'maintenance/storage/RANK72_DELIVERY_SOURCE_VISIBILITY_20261007.json').read_text())
