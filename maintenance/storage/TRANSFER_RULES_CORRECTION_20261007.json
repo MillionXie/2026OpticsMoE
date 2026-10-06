@@ -1,0 +1,31 @@
+{
+  "audited_on": "2026-10-07",
+  "scope": "Two original collaboration documents, source identity preserved before single-main correction",
+  "originals": [
+    {
+      "path": "TransferFromElectricity/README.md",
+      "local_sha256": "11297b63af38f07c0f30c88009289dfe72a16f5c4169253875b5e9e1df4fb6ea",
+      "server_sha256": "11297b63af38f07c0f30c88009289dfe72a16f5c4169253875b5e9e1df4fb6ea",
+      "archive_sha256": "11297b63af38f07c0f30c88009289dfe72a16f5c4169253875b5e9e1df4fb6ea",
+      "archive_commit": "dbc009d7cb64f6cb75acdac069d98626b9fd736c",
+      "local_equals_server": true,
+      "local_equals_archive": true
+    },
+    {
+      "path": "TransferFromElectricity/AI_RULES.md",
+      "local_sha256": "e33b1b47b48b89c473c57bd3e906aa58845e41649d9d75e9d8051013e43f1ea4",
+      "server_sha256": "e33b1b47b48b89c473c57bd3e906aa58845e41649d9d75e9d8051013e43f1ea4",
+      "archive_sha256": "e33b1b47b48b89c473c57bd3e906aa58845e41649d9d75e9d8051013e43f1ea4",
+      "archive_commit": "8e62161460da902a58fe8f138f08ed4af4a6e251",
+      "local_equals_server": true,
+      "local_equals_archive": true
+    }
+  ],
+  "scientific_source_changed": false,
+  "assets_changed": false,
+  "original_recovery": "Existing historical Git commits plus bounded server pre-publication preservation; no branch or worktree creation",
+  "limitations": [
+    "Rules are documented cooperation requirements, not operating-system locks.",
+    "Existing running historical checkouts are not replaced by this correction."
+  ]
+}
