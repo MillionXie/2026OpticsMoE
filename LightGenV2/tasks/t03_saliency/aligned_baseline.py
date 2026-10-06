@@ -3,6 +3,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import math
 import subprocess
 import sys
 from pathlib import Path
@@ -39,13 +40,50 @@ class AlignedReadout(nn.Module):
                 "total": sum(p.numel() for p in self.parameters())}
 
 
+def _resolve_baseline_protocol(settings, fixed_learning_rate=None, test_interval=None):
+    """Preserve defaults; historical fixed-LR snapshot requires explicit opt-in."""
+    if fixed_learning_rate is not None and (
+        not math.isfinite(fixed_learning_rate) or fixed_learning_rate <= 0
+    ):
+        raise ValueError("fixed learning rate must be positive and finite")
+    interval = settings.test_interval_epochs if test_interval is None else test_interval
+    if isinstance(interval, bool) or not isinstance(interval, int) or interval <= 0:
+        raise ValueError("test interval must be a positive integer")
+    return {
+        "fixed_learning_rate": fixed_learning_rate,
+        "evaluation_interval_epochs": interval,
+        "evaluate_epoch1": test_interval is None,
+        "staged_schedule": fixed_learning_rate is None,
+        "backbone_frozen": True,
+    }
+
+
+def _baseline_epoch_stage(optimizer, settings, epoch, protocol):
+    if protocol["staged_schedule"]:
+        return staged_epoch(optimizer, settings, epoch)
+    lr = protocol["fixed_learning_rate"]
+    for group in optimizer.param_groups:
+        group["lr"] = lr
+    return {"stage": "fixed_low_lr", "hard_balance_weight": 0.0,
+            "lr_electronic": lr, "lr_saliency_head": lr}
+
+
+def _baseline_should_evaluate(epoch, final_epoch, protocol):
+    return ((epoch == 1 and protocol["evaluate_epoch1"])
+            or epoch % protocol["evaluation_interval_epochs"] == 0 or epoch == final_epoch)
+
+
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--config", type=Path, default=Path(__file__).parent / "configs/moe_staged_alpha_free.yaml")
     parser.add_argument("--run-dir", type=Path, required=True)
     parser.add_argument("--seed", type=int, default=42)
+    parser.add_argument("--fixed-learning-rate", type=float, default=None)
+    parser.add_argument("--test-interval", type=int, default=None,
+                        help="Explicit historical interval/final policy; default keeps epoch1/config interval/final")
     args = parser.parse_args()
     s = load_settings(args.config)
+    protocol = _resolve_baseline_protocol(s, args.fixed_learning_rate, args.test_interval)
     s.output_dir = args.run_dir.resolve()
     if s.output_dir.exists() and any(s.output_dir.iterdir()):
         raise FileExistsError("Use an empty run directory")
@@ -65,9 +103,11 @@ def main():
     # that context (and must not leave phantom GPU allocations after this run).
     use_spawn_workers(train_loader)
     use_spawn_workers(test_loader)
+    adapter_lr = s.student_learning_rate if args.fixed_learning_rate is None else args.fixed_learning_rate
+    decoder_lr = s.dense_head_learning_rate if args.fixed_learning_rate is None else args.fixed_learning_rate
     optim = torch.optim.AdamW([
-        {"params": [*head.input_adapter.parameters(), *head.input_norm.parameters()], "name": "electronic", "lr": s.student_learning_rate},
-        {"params": list(head.decoder.parameters()), "name": "saliency_head", "lr": s.dense_head_learning_rate},
+        {"params": [*head.input_adapter.parameters(), *head.input_norm.parameters()], "name": "electronic", "lr": adapter_lr},
+        {"params": list(head.decoder.parameters()), "name": "saliency_head", "lr": decoder_lr},
     ], weight_decay=s.weight_decay)
     manifest = {"git_commit": commit, "command": [sys.executable, "-m", __spec__.name, *sys.argv[1:]],
                 "architecture": "frozen_qwen24_adapter192_identical_progressive_decoder_v1",
@@ -77,16 +117,19 @@ def main():
                 "head_initialization": "random; no previous trained head loaded",
                 "epochs_budget": s.student_epochs,
                 "dataset_counts": {"train": len(bundle.train_records), "test": len(bundle.validation_records)},
-                "selection_biased": True, "selection": "public test CC at epoch1/every5/final",
+                "selection_biased": True,
+                "selection": "public test CC at " + ("epoch1/" if protocol["evaluate_epoch1"] else "")
+                             + f"every{protocol['evaluation_interval_epochs']}/final",
+                "training_protocol": protocol,
                 "note": "Both systems have the same 197184-parameter adapter and 85412-parameter decoder; adapter appears before the optical body but after the frozen Qwen body. This is not an identical full-network/train-history ablation."}
     _write_json(s.output_dir / "run_manifest.json", manifest)
     history, best = [], -float("inf")
     try:
         for epoch in range(1, s.student_epochs+1):
-            stage = staged_epoch(optim, s, epoch)
+            stage = _baseline_epoch_stage(optim, s, epoch, protocol)
             metrics = legacy._train_epoch("teacher", model, train_loader, loaded, s, optim)
             test = None
-            if epoch == 1 or epoch % s.test_interval_epochs == 0 or epoch == s.student_epochs:
+            if _baseline_should_evaluate(epoch, s.student_epochs, protocol):
                 test, _ = legacy.evaluate_model(model, test_loader, loaded, s)
             payload = {"architecture": manifest["architecture"], "epoch": epoch, "head": head.state_dict(),
                        "train_metrics": metrics, "test_metrics": test, "manifest": manifest}

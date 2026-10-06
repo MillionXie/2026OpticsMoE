@@ -19,6 +19,14 @@
 以上性能来自既有报告；本次未重新评估5000图，未把CPU测试当作性能复现。
 完整外部资产和实验台依赖仍待收尾，不能据源码已发布就删除旧工程。
 
+2026-10-06已核对本机 `remote_staging/aligned_baseline.py`：它曾增加固定学习率和
+显式测试间隔，但不是上述50轮分阶段baseline。主线现在保留这两个显式选项
+`--fixed-learning-rate` / `--test-interval`；不传时仍执行原分阶段日程和epoch1／配置间隔／末轮评估。
+显式间隔采用该旧补丁的间隔／末轮策略，所有实际选项写入run manifest。
+它是历史复现入口补齐，不是新结果，不将旧100轮／50轮成绩归给固定学习率版本。
+原补丁、报告、权重及全部测速保留；内容差异与测试范围见
+[`LOCAL_BASELINE_PATCH_REVIEW_20261006.md`](../../../maintenance/storage/LOCAL_BASELINE_PATCH_REVIEW_20261006.md)。
+
 2026-10-05额外核对旧 `t03_handoff_20260915`：其Meadowlark／手动相位／TUCam
 交接的五份关键代码与说明已在main且逐字节一致，共用hardware_sdk源码无差异。
 发布main Git对象在实际服务器导入，四项合成绑定／像素导入合同测试通过；
