@@ -76,5 +76,20 @@
     "working_files_used": false,
     "limitations": "Inline relative file links only; not anchors, reference-style links, runtime imports, assets or scientific reproduction"
   },
+  "server_main_t12_17m_checkpoint_load": {
+    "verified_source_commit": "8897f777ffa649b68a930ad4be412cfe9e72e810",
+    "checkpoint_sha256": "5b4f9a37f19ce95cf23e4b874badc8e88955559553d47929fb80cd3cbf527cac",
+    "checkpoint_location": ".worktrees/t12_physical_robust_v2_20260927/LightGenV2/tasks/t12_text_to_image/runs/simulation/20260927_language_balance_input/last_checkpoint.pt",
+    "checkpoint_bytes": 92274638,
+    "strict_original_build_sealed_load": true,
+    "counted_parameters": 17026642,
+    "python_source": "Published Git blobs; configuration files read from clean main checkout",
+    "cpu_only": true,
+    "checkpoint_sha_unchanged_after_load": true,
+    "tracked_status_unchanged": true,
+    "dataset_read": false,
+    "hardware_used": false,
+    "limitation": "Original 5b4f checkpoint only, not adapted eeec checkpoint, full inference or lab cutover; virtual path-only attempt failed to locate YAML before clean-main configuration replay succeeded"
+  },
   "full_goal_complete": false
 }
