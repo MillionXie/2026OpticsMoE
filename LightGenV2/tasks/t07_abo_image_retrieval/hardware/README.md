@@ -21,8 +21,8 @@ rank72 RGB patch旁路的末端图像token .5/.5混合。
   描述子最大误差为0，两次回放逐位相同。没有重评原图或查询集。
 - 原 `abo_full_query_flow_snapshot_20260928.py` 的旧 `main()` 未采用：其CUDA、
   可选模拟图库和默认曝光不能被当作最终实拍入口。
-- **尚未完整迁移逐层采集/断点恢复runner。**不能仅有此模块就删旧工程或宣称
-  main已经可替换实验室正式入口。原14400有效CCD、收据、权重和结果仍原样保留。
+- 离线核心提取时尚无完整runner；后续逐层编排已收拢，见本页末节。仍不能仅凭
+  离线测试删旧工程或宣称main已现场验收。原14400有效CCD、收据、权重和结果仍原样保留。
 
 源码身份审计（不需要私有恢复对象，不打开设备）：
 
@@ -103,3 +103,12 @@ python maintenance/git_safety/check_t07_layerwise_source.py --commit main
 `maintenance/storage/T07_LAYERWISE_SOURCE_IMPORT_20261005.json`。
 新入口的 `full` 是完整真图库和查询的历史计算逻辑，不是清理工作的测试命令；
 不允许为了整理重算封存指标。原800查询仍属于开发期指标，非独立泛化。
+
+## 只读机器路径前检
+
+从唯一主仓库运行`maintenance/git_safety/check_t07_machine_paths.py`，显式指定
+`--machine-config`、`--phase-sdk`、`--phase-lut`，必要时指定`--amplitude-sdk`。
+它按机器JSON所在目录解析相对路径，检查相机DLL/CTI、振幅SDK/二进制目录、相位wrapper
+与LUT，并记录当前文件SHA。缺失返回2；只读，不打开SDK或创建采集目录。
+报告区分原JSON参数与rank72 Bench实际覆盖的400µs/Gain_X4/wait240，不修改原配置。
+四项模拟路径测试通过；存在性不证明SDK授权、ABI、交互桌面、有效光信号或现场回归。
