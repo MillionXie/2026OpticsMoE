@@ -1,0 +1,11 @@
+{
+  "path": "LightGenV2/scripts/profile_latest_qwen_changed_a100.py",
+  "server_source": "/DATA/DATA1/guest3/2026OpticsMoE/LightGenV2/scripts/profile_latest_qwen_changed_a100.py",
+  "bytes": 39964,
+  "sha256": "298956ccd4a792fedf8fbaad6448676bff067270d8b92e1a68dd66804e7fb244",
+  "local_server_byte_match": true,
+  "adoption": "Preserve previously untracked actual server timing source unchanged on main",
+  "scope": "Historical A100 frozen-Qwen profiler, not current sealed ABO/OpenMoji latency. First native Vision block to final GPU readout; data processing and patch embedding excluded. Separate telemetry pass; synchronized wall clock formal, CUDA events audit only.",
+  "verification": "Source identity, syntax and isolated statistics helpers only. No models, official data, GPUs or hardware loaded; not a remeasurement or complete runtime dependency validation.",
+  "existing_results_and_timing_snapshots": "Preserved in place; no deletion, recalculation or metric replacement"
+}
