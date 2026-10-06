@@ -49,13 +49,14 @@ def config(project: Path, device: torch.device, group: str = "g5") -> tuple[Sett
     original_lab = project.parent / "OpenMoji_Lab_SHS_8um"
     for key in ("config_path", "data_dir", "asset_dir", "output_dir", "qwen_checkpoint", "prompt_cache_path", "optical_base_config", "legacy_warmstart_checkpoint"):
         setattr(cfg, key, Path(getattr(cfg, key)))
-    cfg.config_path = project / "source/LightGenV2/tasks/t04_semantic_interaction/configs/routerfill_shared.yaml"
+    source_root = Path(__file__).resolve().parents[3]
+    cfg.config_path = source_root / "LightGenV2/tasks/t04_semantic_interaction/configs/routerfill_shared.yaml"
     cfg.data_dir = original_lab / "data"
     cfg.prompt_cache_path = cfg.data_dir / "token_embeddings_v1.pt"
     cfg.asset_dir = original_lab / "assets"
     cfg.svg_asset_dir = cfg.asset_dir / "openmoji-17.0.0-svg"
     cfg.qwen_checkpoint = original_lab / "frontend"
-    cfg.optical_base_config = project / "source/experiments/qwen3_vl_embedding_2b_caltech101_four_layer_optical_retrieval/configs/release/caltech101_four_layer_optical_joint.yaml"
+    cfg.optical_base_config = source_root / "experiments/qwen3_vl_embedding_2b_caltech101_four_layer_optical_retrieval/configs/release/caltech101_four_layer_optical_joint.yaml"
     cfg.shared_readout_variant = "lowrank64"
     cfg.num_workers = 0
     name, expected = group_checkpoint(group)

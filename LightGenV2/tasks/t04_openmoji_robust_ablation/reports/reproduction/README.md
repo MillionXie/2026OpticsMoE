@@ -27,6 +27,9 @@
    `--group g2|g5` 与 `--lab-identity` 指向本任务 `configs/lab/rank64_20261002.json`。
    缺少身份参数时仍是历史rank16，不是rank64。`--project` 为资产工程，`--scope test|train`、
    `--output`、`--limit` 必须对应本次数据身份；CPU和2000us合同不变。
+   主线采集还必须显式传 `--machine-config`（原机器本地控制配置）、`--phase-sdk`、
+   `--phase-lut`，可传 `--amplitude-sdk`。只读取配置，不改写原文件。
+   控制源码使用主线已审计的SHS bench和几何模块，不再从旧ABO工程导入控制脚本。
 2. 独立TRAIN两轮的准备入口是 `lab_prepare_extra_train1000` 和
    `lab_prepare_extra2_train1000`，不能仅看文件名判断最终TRAIN2000用哪一轮。
    当前 `lab_tune2000` 明确绑定 `data_train_adapt1000` 与 `data_train_extra1000`，
@@ -51,6 +54,7 @@
 ### 资产与配置缺口
 
 当前入口仍要求资产工程的 `resolved_config.json`、`weights/`，其相邻
-`OpenMoji_Lab_SHS_8um` 内data、assets、frontend，以及资产工程source内原光学配置。
+`OpenMoji_Lab_SHS_8um` 内data、assets、frontend。模型配置来自运行主线仓库，
+不再依赖资产工程 `source/` 副本；两份配置与原实验台核验一致（YAML换行差异已分开记录）。
 这不是不带资产即可运行的独立包。设备SDK授权、LUT、相机配置和现场显示状态也未由
 文档或合成测试证明可用。正式运行目录尚未切换；不能把Git引用同步当作现场迁移。

@@ -13,6 +13,12 @@ tune = ast.parse((TASK / "lab_tune2000.py").read_text(encoding="utf-8"))
 calibration = ast.parse((TASK / "lab_calibrate_rank64.py").read_text(encoding="utf-8"))
 
 
+def test_model_configs_do_not_import_external_source_copy():
+    text = ast.unparse(tune)
+    assert 'source_root = Path(__file__).resolve().parents[3]' in text
+    assert "project / 'source/" not in text
+
+
 @pytest.mark.parametrize("group", ["g2", "g5"])
 def test_group_uses_audited_rank64_profile(group):
     function = next(n for n in tune.body if isinstance(n, ast.FunctionDef) and n.name == "group_checkpoint")

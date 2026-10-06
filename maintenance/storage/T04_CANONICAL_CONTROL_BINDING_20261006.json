@@ -1,0 +1,15 @@
+{
+  "scope": "Main-source control and model-config dependency closure, not a live experiment cutover",
+  "changed_entries": ["LightGenV2/tasks/t04_openmoji_robust_ablation/lab_shs_capture.py", "LightGenV2/tasks/t04_openmoji_robust_ablation/lab_tune2000.py"],
+  "control_source": "LightGenV2/tasks/t07_abo_image_retrieval/hardware/bench.py",
+  "geometry_source": "LightGenV2/tasks/t07_abo_image_retrieval/hardware/geometry.py",
+  "prior_control_identity": "T07_BENCH_SOURCE_IMPORT_20261005.json",
+  "config_comparison": [
+    {"path": "LightGenV2/tasks/t04_semantic_interaction/configs/routerfill_shared.yaml", "lab_raw_sha256": "70810703a6407c38127cd2c85b6c3ab59bc6a3140e4038d7ce29a2e1f6c381c2", "main_lf_sha256": "6719f6f0831088f838b5d5bb7c2f81f08bfa146a93c0cea2d1273dd4c8224c68", "lf_bytes_equal": true},
+    {"path": "experiments/qwen3_vl_embedding_2b_caltech101_four_layer_optical_retrieval/configs/release/caltech101_four_layer_optical_joint.yaml", "lab_raw_sha256": "102ff9f55627c2743463ab6af75dffe004d5dd127e2b818c3aaff2ced7899d1a", "main_lf_sha256": "102ff9f55627c2743463ab6af75dffe004d5dd127e2b818c3aaff2ced7899d1a", "raw_bytes_equal": true}
+  ],
+  "unchanged": "Model architecture, selected PTs, TRAIN/TEST protocol, 2000us GainX4 wait240, SHS ROI/orientations, phase/native BMP, darkness and saturation guards. Original lab projects not edited.",
+  "remaining": "Machine asset and SDK availability;现场回归; actual runtime checkout cutover",
+  "devices_opened": false,
+  "official_models_or_datasets_evaluated": false
+}

@@ -8,7 +8,6 @@ from __future__ import annotations
 import argparse
 import hashlib
 import json
-import sys
 import time
 from pathlib import Path
 
@@ -99,6 +98,11 @@ def main() -> None:
     parser.add_argument("--device", choices=("cpu", "cuda"), default="cpu")
     parser.add_argument("--selftest", action="store_true")
     parser.add_argument("--resume", action="store_true")
+    parser.add_argument("--machine-config", type=Path, required=True,
+                        help="Existing machine-local SHS controller configuration; never rewritten")
+    parser.add_argument("--phase-sdk", type=Path, required=True)
+    parser.add_argument("--phase-lut", type=Path, required=True)
+    parser.add_argument("--amplitude-sdk", type=Path)
     args = parser.parse_args()
     identity = checkpoint_identity(args.group, args.lab_identity)
     if args.lab_identity is not None and (args.device != "cpu" or args.exposure_us != 2000):
@@ -107,10 +111,8 @@ def main() -> None:
     project = args.project.resolve()
     output = args.output.resolve()
     original_lab = project.parent / "OpenMoji_Lab_SHS_8um"
-    abo_lab = project.parent / "ABO_I2I_Lab_DVP_8um"
-    sys.path.insert(0, str(abo_lab / "lab_dvp8um"))
-    import four_image_flow as flow
-    from shs_physical2400 import SHSBench, CORNERS
+    from LightGenV2.tasks.t07_abo_image_retrieval.hardware import geometry as flow
+    from LightGenV2.tasks.t07_abo_image_retrieval.hardware.bench import SHSBench
 
     # TRAIN contains some brighter source images than the pinned TEST set.
     # Keep the exact 2000 us/Gain X4 physical contract and record clipping.
@@ -169,7 +171,6 @@ def main() -> None:
     if identity["shared_readout_variant"] == "lowrank64":
         BenchClass = signal_guard(BenchClass)
 
-    flow.BASE_CORNERS = CORNERS.copy()
     weight_name, expected_sha = identity["filename"], identity["sha256"]
     checkpoint = project / "weights" / weight_name
     if sha(checkpoint) != expected_sha:
@@ -178,14 +179,15 @@ def main() -> None:
     cfg.__dict__.update(json.loads((project / "resolved_config.json").read_text(encoding="utf-8")))
     for key in ("config_path", "data_dir", "asset_dir", "output_dir", "qwen_checkpoint", "prompt_cache_path", "optical_base_config", "legacy_warmstart_checkpoint"):
         setattr(cfg, key, Path(getattr(cfg, key)))
-    cfg.config_path = project / "source/LightGenV2/tasks/t04_semantic_interaction/configs/routerfill_shared.yaml"
+    source_root = Path(__file__).resolve().parents[3]
+    cfg.config_path = source_root / "LightGenV2/tasks/t04_semantic_interaction/configs/routerfill_shared.yaml"
     cfg.data_dir = original_lab / "data" if args.scope == "test" else project / "data_train_adapt1000"
     cfg.prompt_cache_path = cfg.data_dir / "token_embeddings_v1.pt"
     cfg.output_dir = output
     cfg.asset_dir = original_lab / "assets"
     cfg.svg_asset_dir = cfg.asset_dir / "openmoji-17.0.0-svg"
     cfg.qwen_checkpoint = original_lab / "frontend"
-    cfg.optical_base_config = project / "source/experiments/qwen3_vl_embedding_2b_caltech101_four_layer_optical_retrieval/configs/release/caltech101_four_layer_optical_joint.yaml"
+    cfg.optical_base_config = source_root / "experiments/qwen3_vl_embedding_2b_caltech101_four_layer_optical_retrieval/configs/release/caltech101_four_layer_optical_joint.yaml"
     cfg.shared_readout_variant = identity["shared_readout_variant"]
     cfg.num_workers = 0
     device = torch.device(args.device)
@@ -262,7 +264,9 @@ def main() -> None:
         else:
             image.save(bmp)
     started = time.time()
-    with BenchClass(output, args.exposure_us, 240, {}) as bench:
+    with BenchClass(output, args.exposure_us, 240, {}, machine_config=args.machine_config,
+                    phase_sdk=args.phase_sdk, phase_lut=args.phase_lut,
+                    amplitude_sdk=args.amplitude_sdk) as bench:
         for stage_index, stage in enumerate(STAGES):
             folder = output / "ccd" / stage
             folder.mkdir(parents=True, exist_ok=True)

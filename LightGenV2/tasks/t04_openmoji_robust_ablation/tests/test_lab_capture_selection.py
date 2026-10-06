@@ -70,5 +70,14 @@ def test_rank64_validation_precedes_device_import():
     validation = next(n.lineno for n in ast.walk(main) if isinstance(n, ast.Call)
                       and isinstance(n.func, ast.Name) and n.func.id == "checkpoint_identity")
     sdk_import = next(n.lineno for n in ast.walk(main) if isinstance(n, ast.ImportFrom)
-                      and n.module == "shs_physical2400")
+                      and n.module == "LightGenV2.tasks.t07_abo_image_retrieval.hardware.bench")
     assert validation < sdk_import
+
+
+def test_capture_uses_only_canonical_control_source():
+    text = ast.unparse(source)
+    assert 'sys.path.insert' not in text
+    assert 'four_image_flow' not in text and 'shs_physical2400' not in text
+    assert 'machine_config=args.machine_config' in text
+    assert 'phase_sdk=args.phase_sdk' in text and 'phase_lut=args.phase_lut' in text
+    assert 'source_root /' in text and 'project / \'source/' not in text
