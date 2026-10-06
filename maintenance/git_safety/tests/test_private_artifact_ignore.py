@@ -10,6 +10,10 @@ ROOT = Path(__file__).resolve().parents[3]
 
 
 class ArtifactIgnoreTests(unittest.TestCase):
+    def test_generated_section_headers_are_comments_not_literal_patterns(self):
+        content=(ROOT/'.gitignore').read_text(encoding='utf8')
+        self.assertNotIn('\\n+# ',content)
+
     def test_review_package_copies_not_primary_source_or_changed_descriptors(self):
         import json
         d=json.loads((ROOT/'maintenance/storage/T06_REVIEW_SOURCE_VISIBILITY_20261007.json').read_text(encoding='utf8'))

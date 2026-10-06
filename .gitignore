@@ -1249,7 +1249,7 @@ node_modules/
 /outputs/kather_expert_count_20260921/Kather_expert_count_topk_ablation.xlsx.inspect.ndjson
 /outputs/t12_five_group_summary_20260928/T12_five_group_performance.xlsx.inspect.ndjson
 /outputs/t12_four_group_summary_20260927/T12_four_group_performance.xlsx.inspect.ndjson
-\n+# Named historical LGVQ timing payloads; keep all originals and future/source files.
+# Named historical LGVQ timing payloads; keep all originals and future/source files.
 /LightGenV2/reports/20260927_lgvq_temporal_multi_baseline_a100/raw_remote/clip_vit_b32/batch_01/power_samples.csv
 /LightGenV2/reports/20260927_lgvq_temporal_multi_baseline_a100/raw_remote/clip_vit_b32/batch_01/timing_per_call.csv
 /LightGenV2/reports/20260927_lgvq_temporal_multi_baseline_a100/raw_remote/clip_vit_b32/batch_02/power_samples.csv
@@ -1324,7 +1324,7 @@ node_modules/
 /LightGenV2/reports/20260927_lgvq_temporal_multi_baseline_a100/raw_remote/yolo11s_independent/batch_8/batch_08/power_samples.csv
 /LightGenV2/reports/20260927_lgvq_temporal_multi_baseline_a100/raw_remote/yolo11s_independent/batch_8/batch_08/timing_per_call.csv
 /LightGenV2/reports/20260927_lgvq_temporal_multi_baseline_a100/raw_remote/yolo11s_independent/batch_8/report.json
-\n+# Exact fixed478 historical evaluation records; original evidence remains in place.
+# Exact fixed478 historical evaluation records; original evidence remains in place.
 /LightGenV2/tasks/t10_expert_scaling/reports/plotting/fixed478_topk_test_20260922/evidence/bloodmnist__moe_oeo_N4_k1_L4_lr0.002_s17__test_result.json
 /LightGenV2/tasks/t10_expert_scaling/reports/plotting/fixed478_topk_test_20260922/evidence/bloodmnist__moe_oeo_N4_k1_L4_lr0.002_s27__test_result.json
 /LightGenV2/tasks/t10_expert_scaling/reports/plotting/fixed478_topk_test_20260922/evidence/bloodmnist__moe_oeo_N4_k1_L4_lr0.002_s37__test_result.json
@@ -1361,7 +1361,7 @@ node_modules/
 /LightGenV2/tasks/t10_expert_scaling/reports/plotting/fixed478_topk_test_20260922/evidence/organcmnist__moe_oeo_N4_k4_L4_lr0.002_s17__test_result.json
 /LightGenV2/tasks/t10_expert_scaling/reports/plotting/fixed478_topk_test_20260922/evidence/organcmnist__moe_oeo_N4_k4_L4_lr0.002_s27__test_result.json
 /LightGenV2/tasks/t10_expert_scaling/reports/plotting/fixed478_topk_test_20260922/evidence/organcmnist__moe_oeo_N4_k4_L4_lr0.002_s37__test_result.json
-\n+# Exact rank72 delivery copies verified against canonical Git; keep unmatched/new files visible.
+# Exact rank72 delivery copies verified against canonical Git; keep unmatched/new files visible.
 /handoffs/abo_latestfresh35_lab_20260930/rank72_source/standalone/__init__.py
 /handoffs/abo_latestfresh35_lab_20260930/rank72_source/standalone/bounded_export.py
 /handoffs/abo_latestfresh35_lab_20260930/rank72_source/standalone/cli.py
@@ -1376,7 +1376,7 @@ node_modules/
 /handoffs/abo_latestfresh35_lab_20260930/rank72_source/standalone/retrieval_refine.py
 /handoffs/abo_latestfresh35_lab_20260930/rank72_source/standalone/retrieval_screen.py
 /handoffs/abo_latestfresh35_lab_20260930/rank72_source/standalone/robust_holdout.py
-\n+# SHA-inventoried large existing result/split payloads; preserve all original files.
+# SHA-inventoried large existing result/split payloads; preserve all original files.
 /LightGenV2/demo_check/EuroSAT_MoE_D2NN/code/SPLIT.json
 /LightGenV2/demo_check/EuroSAT_MoE_D2NN/code/SPLIT_AUDIT.json
 /LightGenV2/reports/20260927_demo_energy_efficiency_a100/A100_demo_energy_efficiency_audit.xlsx.inspect.ndjson
@@ -1397,7 +1397,7 @@ node_modules/
 /handoffs/t12_lab_robust17m_20260927/sample_metrics.json
 /handoffs/t12_lab_small_20260926/full_test_bounded/sample_metrics.json
 /handoffs/t12_pix2pix_turbo_20260927/test_export/sample_metrics.json
-\n+# Named original Kather scan transfer evidence, kept in place with original SHA.
+# Named original Kather scan transfer evidence, kept in place with original SHA.
 /LightGenV2/tasks/t10_expert_scaling/reports/plotting/kather_expert_count_20260921/evidence/dataset/data_manifest.json
 /LightGenV2/tasks/t10_expert_scaling/reports/plotting/kather_expert_count_20260921/evidence/protocol/study.json
 /LightGenV2/tasks/t10_expert_scaling/reports/plotting/kather_expert_count_20260921/evidence/locked_selection_runs/moe_oeo_N4_k3_L4_lr0.002_s17/test_result.json

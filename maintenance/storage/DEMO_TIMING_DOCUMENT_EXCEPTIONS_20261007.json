@@ -1,0 +1,109 @@
+{
+  "audited_on": "2026-10-07",
+  "scope": "Original 681-entry historical A100 report export; missing document artifacts are not replaced with superseded versions",
+  "original_manifest": "LightGenV2/reports/20260927_demo_energy_efficiency_a100/SHA256SUMS.txt",
+  "original_windows_manifest_sha256": "b80f0d225309af7d50d954dfd8b29a619b97c39d5bb8e8e60d3864b91d8c9d35",
+  "payloads_matching_original_sha": 672,
+  "exceptions": [
+    {
+      "original_member": "A100_demo_energy_efficiency_audit.xlsx",
+      "expected_sha256": "1c005690d4e847ad9c0551d97d5c0012a2eb07ff703adb700d0c56659dfc8685",
+      "state": "missing_at_original_location",
+      "non_equivalent_preserved_candidate": {
+        "path": "LightGenV2/reports/20260927_demo_energy_efficiency_a100/archive_superseded_20260927/A100_demo_energy_efficiency_audit.xlsx",
+        "sha256": "a5484c4ad5813a05601e825742df65bf818501d63169b153d83a9c401a736769"
+      },
+      "server_same_name_candidates": [
+        {
+          "path": "/DATA/DATA1/guest3/2026OpticsMoE/.worktrees/t03_licensed_figures_20260929/LightGenV2/reports/20260927_demo_energy_efficiency_a100/archive_superseded_20260927/A100_demo_energy_efficiency_audit.xlsx",
+          "bytes": 958374,
+          "sha256": "a5484c4ad5813a05601e825742df65bf818501d63169b153d83a9c401a736769"
+        }
+      ]
+    },
+    {
+      "original_member": "A100_demo_energy_efficiency_audit.xlsx.inspect.ndjson",
+      "expected_sha256": "88c63131e178f215092086cbf97fc77ff030f87b4bef9c9a4a574371cb81a0cd",
+      "state": "different_bytes",
+      "current_sha256": "cf28900445787d41659690c0136f4bcc354df92e50c751ac8168e4512ce28dc7",
+      "server_same_name_candidates": []
+    },
+    {
+      "original_member": "A100_demo_energy_efficiency_methods.docx",
+      "expected_sha256": "ecbe4b673dff91135cbcf585ed16778be758e5047013c5ee3def55b1885f074e",
+      "state": "missing_at_original_location",
+      "non_equivalent_preserved_candidate": {
+        "path": "LightGenV2/reports/20260927_demo_energy_efficiency_a100/archive_superseded_20260927/A100_demo_energy_efficiency_methods.docx",
+        "sha256": "c1c5d418d7b88f1ca4787b102618f712e37af71ff16d041f177a4cbc17aa13e3"
+      },
+      "server_same_name_candidates": [
+        {
+          "path": "/DATA/DATA1/guest3/2026OpticsMoE/.worktrees/t03_licensed_figures_20260929/LightGenV2/reports/20260927_demo_energy_efficiency_a100/archive_superseded_20260927/A100_demo_energy_efficiency_methods.docx",
+          "bytes": 41709,
+          "sha256": "c1c5d418d7b88f1ca4787b102618f712e37af71ff16d041f177a4cbc17aa13e3"
+        }
+      ]
+    },
+    {
+      "original_member": "A100_demo_energy_efficiency_methods.pdf",
+      "expected_sha256": "271e74839924710db9fef60358bba5cb4da3de927f0b10e92de6ea0b9992d80e",
+      "state": "missing_at_original_location",
+      "non_equivalent_preserved_candidate": {
+        "path": "LightGenV2/reports/20260927_demo_energy_efficiency_a100/archive_superseded_20260927/A100_demo_energy_efficiency_methods.pdf",
+        "sha256": "663529e8a11b3dc21c971fece5c5efc77ba171c2af149dd1c83c205f4544239f"
+      },
+      "server_same_name_candidates": [
+        {
+          "path": "/DATA/DATA1/guest3/2026OpticsMoE/.worktrees/t03_licensed_figures_20260929/LightGenV2/reports/20260927_demo_energy_efficiency_a100/archive_superseded_20260927/A100_demo_energy_efficiency_methods.pdf",
+          "bytes": 457906,
+          "sha256": "663529e8a11b3dc21c971fece5c5efc77ba171c2af149dd1c83c205f4544239f"
+        }
+      ]
+    },
+    {
+      "original_member": "workbook_inspect.txt",
+      "expected_sha256": "4f0206ec71f4d339d23103c72e5978889d7f3ee66fe2041150885ee4aa06ed8e",
+      "state": "different_bytes",
+      "current_sha256": "8309b5283eaa9c7dc2a97507178c902ef04cfe374549cb74a6c999ed61b4277c",
+      "server_same_name_candidates": []
+    },
+    {
+      "original_member": "docx_render/page-1.png",
+      "expected_sha256": "2d1242b1342d9ec3ffb90467b7c7b2ac7d97b9bfe489025fb4e660aa26b0050c",
+      "state": "missing_at_original_location",
+      "server_same_name_candidates": []
+    },
+    {
+      "original_member": "docx_render/page-2.png",
+      "expected_sha256": "aa20ace44aaf3c02c2fbc16ce2cf4b435ec5642350f25801d1a67b335903d663",
+      "state": "missing_at_original_location",
+      "server_same_name_candidates": []
+    },
+    {
+      "original_member": "docx_render_updated/page-1.png",
+      "expected_sha256": "870712e9d97718dd113d5a6e0284cc78d1510fc3ff7f7dded551e1b054a34c23",
+      "state": "missing_at_original_location",
+      "server_same_name_candidates": []
+    },
+    {
+      "original_member": "docx_render_updated/page-2.png",
+      "expected_sha256": "39238cbd391371442a97cb56e550ded95e1a1ee5dccf36b57e6c019affa777ea",
+      "state": "missing_at_original_location",
+      "server_same_name_candidates": []
+    }
+  ],
+  "searched_server_roots": [
+    "/DATA/DATA1/guest3/2026OpticsMoE",
+    "/DATA/DATA1/guest3/.codex_worktrees"
+  ],
+  "searched_local_scope": "Repository including ignored/protected copies; no global home/disk search",
+  "local_zip_recovery_contains_original_document_members": false,
+  "original_sha_manifest_changed": false,
+  "measurements_recomputed": false,
+  "original_or_candidate_files_deleted": false,
+  "limitations": [
+    "No claim that originals never existed or are absent from every other machine.",
+    "Different current inspection payloads and superseded document copies remain intact.",
+    "672 exact identities do not imply the remaining nine artifacts or complete machine deployment are recovered."
+  ]
+}
