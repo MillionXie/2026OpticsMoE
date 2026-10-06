@@ -8,10 +8,10 @@ ROOT = Path(__file__).resolve().parents[3]
 
 class ArtifactIgnoreTests(unittest.TestCase):
     def ignored(self, paths):
-        result = subprocess.run(['git', '-C', str(ROOT), 'check-ignore', '--no-index', '--stdin'],
-                                input='\n'.join(paths)+'\n', text=True, capture_output=True)
+        result = subprocess.run(['git', '-C', str(ROOT), 'check-ignore', '--no-index', '-z', '--stdin'],
+                                input=('\0'.join(paths)+'\0').encode(), capture_output=True)
         self.assertIn(result.returncode, (0, 1), result.stderr)
-        return set(result.stdout.splitlines())
+        return set(filter(None, result.stdout.decode().split('\0')))
 
     def test_private_arrays_and_generated_plates(self):
         paths = ['sample/cache.npy', 'sample/cache.npz', 'sample/model.safetensors',
