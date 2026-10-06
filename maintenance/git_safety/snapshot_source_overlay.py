@@ -15,10 +15,13 @@ import tempfile
 USER_D2NN_SOURCES = frozenset('TransferFromElectricity/d2nn_pack/' + name for name in (
     'config.yaml', 'data.py', 'extract_clip_features.py', 'losses.py', 'mask_generator.py',
     'model_adapt.py', 'train_d2nn_adapt_grid.py', 'train_d2nn_mnist256.py'))
+T12_DELIVERY_TOOLS = frozenset('handoffs/t12_small_baseline_share_20260928/package/' + name
+                              for name in ('export_pairs.py', 'infer_ours.py'))
 
 
 def snapshot(root, manifest, *, include_documentation=False, include_untracked_source=False,
-             include_user_d2nn_source=False, include_reviewed_launchers=False):
+             include_user_d2nn_source=False, include_reviewed_launchers=False,
+             include_t12_delivery_tools=False):
     root = Path(root).resolve()
     def git(*args, data=None, env=None):
         safe_env = dict(os.environ if env is None else env, GIT_OPTIONAL_LOCKS='0')
@@ -48,7 +51,8 @@ def snapshot(root, manifest, *, include_documentation=False, include_untracked_s
         path = row['path']; pure = PurePosixPath(path)
         prefix_allowed = (path.startswith('LightGenV2/')
                           or (include_documentation and path.startswith('LightGenPublic/'))
-                          or (include_user_d2nn_source and path in USER_D2NN_SOURCES))
+                          or (include_user_d2nn_source and path in USER_D2NN_SOURCES)
+                          or (include_t12_delivery_tools and path in T12_DELIVERY_TOOLS))
         suffix_allowed = (path.endswith('.py') or (include_documentation and path.endswith('.md'))
                           or (include_untracked_source and path.endswith(('.yaml', '.yml')))
                           or (include_reviewed_launchers and path.startswith('LightGenV2/')
@@ -122,8 +126,11 @@ if __name__ == '__main__':
                    help='Permit SHA-reviewed non-ignored .py/.yaml/.yml additions explicitly marked entry_kind=untracked; archive only')
     p.add_argument('--include-reviewed-launchers', action='store_true',
                    help='Archive explicitly SHA-reviewed LightGenV2 .cmd source only; never execute launchers')
+    p.add_argument('--include-t12-delivery-tools', action='store_true',
+                   help='Permit only the two named reviewed T12 share helper Python files')
     args = p.parse_args()
     print(json.dumps(snapshot(args.root, json.loads(args.manifest.read_text()),
                               include_documentation=args.include_documentation,
                               include_untracked_source=args.include_untracked_source,
-                              include_reviewed_launchers=args.include_reviewed_launchers), indent=2))
+                              include_reviewed_launchers=args.include_reviewed_launchers,
+                              include_t12_delivery_tools=args.include_t12_delivery_tools), indent=2))

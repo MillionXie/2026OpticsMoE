@@ -83,6 +83,27 @@ def test_launcher_mode_does_not_allow_private_handoff_paths(repo):
         snapshot(root, manifest, include_untracked_source=True, include_reviewed_launchers=True)
 
 
+def test_named_t12_delivery_tool_only_opt_in(repo):
+    root, _, manifest = repo
+    path = 'handoffs/t12_small_baseline_share_20260928/package/export_pairs.py'
+    file = root/path
+    file.parent.mkdir(parents=True)
+    file.write_bytes(b'print("not executed")\n')
+    manifest['paths'] = [dict(path=path, sha256=hashlib.sha256(file.read_bytes()).hexdigest(), entry_kind='untracked')]
+    with pytest.raises(RuntimeError):
+        snapshot(root, manifest, include_untracked_source=True)
+    result = snapshot(root, manifest, include_untracked_source=True, include_t12_delivery_tools=True)
+    assert result['working_head_unchanged'] and result['user_index_unchanged']
+    assert subprocess.check_output(['git','-C',str(root),'show',result['archive_commit']+':'+path]) == file.read_bytes()
+
+
+def test_t12_opt_in_rejects_arbitrary_connection_script(repo):
+    root, _, manifest = repo
+    manifest['paths'] = [dict(path='handoffs/t12_small_baseline_share_20260928/package/connect.py', sha256='0'*64, entry_kind='untracked')]
+    with pytest.raises(RuntimeError):
+        snapshot(root, manifest, include_untracked_source=True, include_t12_delivery_tools=True)
+
+
 def test_user_source_mode_does_not_enable_other_directories(repo):
     root, _, manifest = repo
     manifest['paths'] = [dict(path='TransferFromElectricity/unknown.py', sha256='0'*64, entry_kind='untracked')]
