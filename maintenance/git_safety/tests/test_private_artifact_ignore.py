@@ -10,6 +10,14 @@ ROOT = Path(__file__).resolve().parents[3]
 
 
 class ArtifactIgnoreTests(unittest.TestCase):
+    def test_only_named_private_launchers_hidden(self):
+        private = ['handoffs/abo_latestfresh35_lab_20260930/run_rank72_full.cmd',
+                   'handoffs/openmoji_robust_ablation_20260928/midrank48_candidate/run_rank64_queue_20261002.cmd']
+        visible = ['handoffs/abo_latestfresh35_lab_20260930/future_launcher.cmd',
+                   'handoffs/openmoji_robust_ablation_20260928/midrank48_candidate/train_rank64_common_20261002.py',
+                   'handoffs/t12_channel_robust_20260927/run_original_val96.cmd']
+        self.assertEqual(self.ignored(private + visible), set(private))
+
     def test_private_machine_inventory_not_public_identity(self):
         private = ['maintenance/storage/20261002_server_snapshots.json',
                    'maintenance/storage/20261003_server_status.json']
