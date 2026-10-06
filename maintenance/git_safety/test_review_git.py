@@ -9,6 +9,11 @@ spec.loader.exec_module(review)
 
 
 class ArtifactChecks(unittest.TestCase):
+    def test_known_machine_configs_not_example_templates(self):
+        for path in ('task/LAB.local.json', 'task/dual.local.json', 'task/paths.local.yaml'):
+            self.assertIsNotNone(review.forbidden_artifact(path, 10))
+        for path in ('task/LAB.example.json', 'task/dual.example.json', 'task/paths.example.yaml', 'task/config.yaml'):
+            self.assertIsNone(review.forbidden_artifact(path, 10))
     def test_literal_connection_credentials_are_redacted(self):
         raw = b"client.connect('example.invalid', password='fixture-value')"
         issues = review.credential_issues('helper.py', raw)

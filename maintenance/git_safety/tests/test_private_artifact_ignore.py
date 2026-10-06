@@ -10,6 +10,10 @@ ROOT = Path(__file__).resolve().parents[3]
 
 
 class ArtifactIgnoreTests(unittest.TestCase):
+    def test_known_machine_config_names_only(self):
+        private = ['future_task/LAB.local.json', 'future_task/dual.local.json', 'future_task/paths.local.yaml']
+        public = ['future_task/LAB.example.json', 'future_task/dual.example.json', 'future_task/config.yaml']
+        self.assertEqual(self.ignored(private + public), set(private))
     def test_dataset_split_payload_not_timing_or_predictions(self):
         private = ['handoffs/t12_small_baseline_handoff_20260928/stage/datasets/abo_cleanrender_lamp_table_pillow_256_v1/' + split + '.jsonl' for split in ('train', 'val', 'test')]
         public = ['LightGenV2/reports/timing/sample_preprocessing.jsonl',

@@ -128,6 +128,11 @@ hardware_sessions
 # LightGenV2 keeps source, configs and curated reports in Git.  Machine-local
 # paths, training products, hardware captures and release archives stay local.
 /LightGenV2/paths.local.yaml
+# Known machine-only configuration names, also outside legacy folders with
+# their own ignore rules. Templates and ordinary experiment configs stay visible.
+LAB.local.json
+dual.local.json
+paths.local.yaml
 /LightGenV2/tasks/*/runs/*
 !/LightGenV2/tasks/*/runs/
 !/LightGenV2/tasks/*/runs/README.md

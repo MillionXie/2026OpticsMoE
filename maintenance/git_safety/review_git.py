@@ -17,6 +17,8 @@ def forbidden_artifact(path, size):
     """Conservative staging guard, not a classification of disposable data."""
     relative = PurePosixPath(path.replace("\\", "/"))
     parts = {part.lower() for part in relative.parts}
+    if relative.name.lower() in {'lab.local.json', 'dual.local.json', 'paths.local.yaml'}:
+        return "machine-only configuration; use a credential-free example template"
     if str(relative).lower().endswith(".tar.gz") or relative.suffix.lower() in {".pt", ".pth", ".ckpt", ".safetensors", ".zip",
                                    ".bundle", ".tar", ".tgz", ".npy", ".npz"}:
         return "weight/cache/transport artifact"
