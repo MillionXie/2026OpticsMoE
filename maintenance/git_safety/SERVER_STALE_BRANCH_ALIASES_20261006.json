@@ -1,0 +1,15 @@
+{
+  "scope": "Training-server already-retired branch configuration only; do not use as local mapping or remove archive references",
+  "aliases": [
+    {"branch":"benchmark/t06-a100-batch-scaling","archive_ref":"refs/archive/frozen-server-20261006/t06-a100-batch-scaling","commit":"3fab90b363e3d49f02fa68acdc6c363b991097e7","evidence":"maintenance/storage/WORKTREE_SCOPE_REFRESH_20261005.md"},
+    {"branch":"codex/t04-dc30-ccdnoise","archive_ref":"refs/archive/frozen-server-20261006/t04-dc30-ccdnoise","commit":"a61a3746d39765991048d95e40812d1028d70c93","evidence":"maintenance/storage/WORKTREE_SCOPE_REFRESH_20261005.md"},
+    {"branch":"codex/t07-fresh35-20260929","archive_ref":"refs/archive/frozen-server-20261006/t07-fresh35-20260929","commit":"bd1fcf136ac23ff2f1a4f3f9fc5c1f8bfc614239","evidence":"maintenance/storage/WORKTREE_SCOPE_REFRESH_20261005.md"},
+    {"branch":"codex/t08-publish-retrieval","archive_ref":"refs/archive/frozen-server-20261006/t08-publish-retrieval","commit":"d0662a7d240340817948a3496c2cd43f4240e76d","evidence":"maintenance/storage/WORKTREE_SCOPE_REFRESH_20261005.md"},
+    {"branch":"codex/t11-optical-lifelong","archive_ref":"refs/archive/frozen-server-20261006/t11-optical-lifelong","commit":"604cd89e3e4a88ed0b580eaa41f88af7de2da86c","evidence":"maintenance/storage/T11_SOURCE_AUDIT_20261004.json; server existing frozen ref inspected 2026-10-06"},
+    {"branch":"codex/t12-cross-modal-lifelong-server","archive_ref":"refs/archive/frozen-server-20261005/t12-cross-modal-lifelong-server","commit":"2f2f6946f38c7d06320eb29314654a6260f3d618","evidence":"maintenance/git_safety/SERVER_FROZEN_CHECKOUTS_20261005.md"},
+    {"branch":"codex/t12-text-to-image-20260920","archive_ref":"refs/archive/frozen-server-20261006/t12-text-to-image-20260920","commit":"9502371917e33e1e45388010208d510c0688f9bf","evidence":"maintenance/storage/20261002_server_worktrees.json; server existing frozen ref inspected 2026-10-06"},
+    {"branch":"experiment/spatial-065","archive_ref":"refs/archive/frozen-server-20261006/spatial-065","commit":"23612d55106cb8c817cf4b4e7b38ea5bc138361a","evidence":"maintenance/storage/SPATIAL_SOURCE_CLOSURE_20261006.json"},
+    {"branch":"experiment/spatial-readout-compression","archive_ref":"refs/archive/frozen-server-20261006/spatial-readout-compression","commit":"557c10d38ffd685793f25d697fb887497720af24","evidence":"maintenance/storage/SPATIAL_SOURCE_CLOSURE_20261006.json"},
+    {"branch":"experiment/static-expert-caltech","archive_ref":"refs/archive/root-before-main-20261006","commit":"3f85510285e5ffdfca28def93eef2eb082b1655c","evidence":"maintenance/storage/SERVER_ROOT_MAIN_CUTOVER_20261006.json"}
+  ]
+}
