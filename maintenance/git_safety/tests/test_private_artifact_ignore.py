@@ -10,6 +10,19 @@ ROOT = Path(__file__).resolve().parents[3]
 
 
 class ArtifactIgnoreTests(unittest.TestCase):
+    def test_abo_handoff_records_keep_contracts_code_and_future_results_visible(self):
+        import json
+        d=json.loads((ROOT/'maintenance/storage/ABO_HANDOFF_RESULT_VISIBILITY_20261007.json').read_text(encoding='utf8'))
+        selected=[r['path'] for r in d['files']]
+        self.assertEqual(len(selected),74)
+        visible=['handoffs/abo_latestfresh35_lab_20260930/RANK72_DEPLOYMENT_20260930.md',
+                 'handoffs/abo_latestfresh35_lab_20260930/new_physical_report.json',
+                 'handoffs/abo_i2i_sixhour_strong_20260928/capture_contract.json',
+                 'handoffs/abo_i2i_sixhour_strong_20260928/selection.json',
+                 'handoffs/abo_i2i_sixhour_strong_20260928/new_eval.py',
+                 'handoffs/openmoji_robust_ablation_20260928/new_report.json']
+        self.assertEqual(self.ignored(selected+visible),set(selected))
+
     def test_kather_transfer_evidence_not_tables_manifests_or_future_files(self):
         import json
         d=json.loads((ROOT/'maintenance/storage/KATHER_SCAN_EVIDENCE_VISIBILITY_20261007.json').read_text(encoding='utf8'))
