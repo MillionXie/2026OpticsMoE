@@ -70,6 +70,16 @@ Temporal-36旧默认路径的PT在本次限定名称搜索中未找到；不能�
 因此目前不得把默认 `--phase evaluate` 视为已验证的最终实拍复现入口，也不修改SHA
 或取消检查来强行启动。正式实拍版本按已固定包及原报告读取；默认入口兼容性仍在收敛。
 
+固定实拍模型现在可从主线显式进行只读CPU权重验收：
+
+```bash
+python -m LightGenV2.tasks.t06_video_quality_assessment.verify_formal_checkpoint --target spatial --checkpoint /path/to/spatial_best_checkpoint.pt
+python -m LightGenV2.tasks.t06_video_quality_assessment.verify_formal_checkpoint --target temporal --checkpoint /path/to/temporal_best_checkpoint.pt
+```
+
+沿用 `lab_runtime` 的原SHA、架构和strict state检查，不改默认Temporal-36，不加载数据、
+不调用SDK或GPU。权重缺失/不匹配仍失败；通过也不代表性能、数据或光路复现完成。
+
 ## 数据、baseline与测速保留
 
 ### LightGenPublic 三份内部交付快照的区别（2026-10-06）
