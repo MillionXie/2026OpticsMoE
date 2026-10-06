@@ -176,6 +176,8 @@
     },
     {
       "id": "t12_text_to_image",
+      "saved_png_metric_entry": "tasks/t12_text_to_image/perceptual/README.md",
+      "saved_png_metric_dependency_evidence": "../maintenance/storage/T12_PERCEPTUAL_DEPENDENCY_IDENTITY_20261006.json",
       "entry": "tasks/t12_text_to_image/README.md",
       "reproduction": "tasks/t12_text_to_image/reports/reproduction/README.md",
       "source_status": "canonical_core_published_assets_hardware_and_checkout_cutover_pending",
