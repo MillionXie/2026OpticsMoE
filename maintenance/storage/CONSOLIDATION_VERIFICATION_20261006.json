@@ -21,6 +21,31 @@
     }
   ],
   "tracked_worktree_changes_after_checks": [],
+  "additional_server_main_checks": {
+    "verified_source_commit": "7de15e02f93c15a2937cd678cc3a2f16de6eee1a",
+    "host": "training server main; published Git source read directly",
+    "t07_rank72": {
+      "checkpoint_sha256": "25f23260864a00a0f32b5de209c27f5876166018c8d8ab0e880de81e0d2c2c22",
+      "strict_load": true,
+      "source_entries_verified": 11,
+      "late_rgb_parameters": 92168,
+      "capture_count": 6,
+      "descriptor_dimension": 64,
+      "synthetic_cpu_readout_checked": true,
+      "dataset_evaluated": false,
+      "model_changed": false
+    },
+    "t12_preserved_entries": {
+      "source_entries_verified": 4,
+      "cli_signature_contracts": 2,
+      "training_invoked": false,
+      "dataset_read": false,
+      "model_weights_loaded": false
+    },
+    "gpu_or_hardware_used": false,
+    "tracked_status_unchanged": true,
+    "all_machine_assets_or_runtime_cutovers_complete": false
+  },
   "formal_model_train_or_test_executed": false,
   "gpu_or_hardware_used": false,
   "data_weights_or_timing_deleted": false,
