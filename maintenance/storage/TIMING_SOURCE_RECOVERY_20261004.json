@@ -1,4 +1,17 @@
 {
+  "historical_redbox_payload_visibility_20261006": {
+    "manifest": "LightGenV2/reports/20260917_redbox_timing_energy_audit/SHA256SUMS.txt",
+    "manifest_original_windows_sha256": "427085f95f103b16cb389967b88dae43d76c3929be9dbfcd08ae840adee98693",
+    "manifest_entries_verified": 270,
+    "manifest_mismatches": [],
+    "windows_long_path_api_required": true,
+    "named_payloads_ignored": 110,
+    "payload_types": {"csv": 44, "json": 64, "jsonl": 2},
+    "files_moved_or_deleted": false,
+    "source_configs_and_future_files_hidden": false,
+    "scope": "Original static timing export bytes and explicit local-only payload visibility; not new timing measurements or completeness of every historical run",
+    "manifest_text_note": "Git may normalize only manifest text line endings; per-payload expected SHA values remain original byte identities"
+  },
   "source_commit": "43bf2f1d214c252b48e8104ef5816643ce6a7f4f",
   "source_runtime": "/DATA/DATA1/guest3/2026OpticsMoE",
   "source_head": "3f85510285e5ffdfca28def93eef2eb082b1655c",

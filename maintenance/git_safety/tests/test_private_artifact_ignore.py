@@ -10,6 +10,11 @@ ROOT = Path(__file__).resolve().parents[3]
 
 
 class ArtifactIgnoreTests(unittest.TestCase):
+    def test_named_historical_timing_payload_not_code_or_future_evidence(self):
+        private = ['LightGenV2/reports/20260917_redbox_timing_energy_audit/evidence/ours_narrow_clean_final/report.json']
+        visible = ['LightGenV2/reports/20260917_redbox_timing_energy_audit/evidence/ours_narrow_clean_final/consolidate_narrow_optical_power.py',
+                   'LightGenV2/reports/20260917_redbox_timing_energy_audit/evidence/future_run/report.json']
+        self.assertEqual(self.ignored(private + visible), set(private))
     def test_known_machine_config_names_only(self):
         private = ['future_task/LAB.local.json', 'future_task/dual.local.json', 'future_task/paths.local.yaml']
         public = ['future_task/LAB.example.json', 'future_task/dual.example.json', 'future_task/config.yaml']
