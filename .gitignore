@@ -164,3 +164,26 @@ node_modules/
 /handoffs/**/*.pdf
 /handoffs/**/*.pptx
 /handoffs/**/*.xlsx
+
+# 2026-10-06: remaining private cache arrays and copied review-package imagery.
+# These rules preserve files on disk and do not hide Python/config/JSON/CSV/MD.
+# Already tracked figures remain tracked. No timing or experiment file is deleted.
+*.npy
+*.npz
+*.pth
+*.safetensors
+*.ckpt
+*.onnx
+/LightGenV2/demo_check/**/*.png
+/LightGenV2/demo_check/**/*.jpg
+/LightGenV2/demo_check/**/*.jpeg
+/LightGenV2/demo_check/**/*.bmp
+/LightGenV2/demo_check/**/*.tif
+/LightGenV2/demo_check/**/*.tiff
+/LightGenV2/demo_check/**/*.webp
+/outputs/**/*.png
+/outputs/**/*.jpg
+/outputs/**/*.jpeg
+/outputs/**/*.xlsx
+/outputs/**/*.pptx
+/outputs/**/*.pdf
