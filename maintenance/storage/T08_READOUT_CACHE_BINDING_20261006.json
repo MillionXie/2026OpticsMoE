@@ -1,0 +1,52 @@
+{
+  "audited_on": "2026-10-06",
+  "body_sha256": "cc977b83286a8e90398ebd30064428886bc3c06f1eb0557e470060f7ff5c1cae",
+  "dataset_csv_sha256": {
+    "train": "f742fc9e2314b7fb2858ad486505c943f7b7e37493e5d601d8dcbf7740b5707b",
+    "test": "4ca5834abf4bb4d614b41f05b5b2481b3d41720dd78c1c37b05923c97657dfb8",
+    "titles": "c97e8da3c6c608a706f2cc0d284aeafb873fc6cc17d04a7c9f9f66b2135846c1"
+  },
+  "caches": [
+    {
+      "split": "train",
+      "cache_sha256": "9e59b60f5edcf5368b96d486ed1dd5b636dd0c7239cddde5850bb559bc1718ed",
+      "images": 800,
+      "titles": 100,
+      "image_key_order_matches_csv": true,
+      "label_and_product_mapping_matches_csv": true,
+      "selection_reproduced_from_original_seed": true,
+      "sample_order_sha256": "1d1f1a0935d35eb9f4deaf982a88b696bec98f28aea26096416e2010d5c74c00",
+      "tensor_hashes": {
+        "image_features": "1b52ce82e3e4e3eca766e5cb696310422785b1a8c043d6298e7e4fc02d5c23cb",
+        "title_features": "c6ad5c8f6e851c8fa42293fa3408428179714326f03a88d68b22e6ac96a446fe"
+      },
+      "declared_physical_root": "/DATA/DATA1/guest3/2026OpticsMoE/LightGenV2/tasks/t08_abo_image_text_retrieval/runs/physical/alpha040_10cm_20260925/finetune_train800"
+    },
+    {
+      "split": "test",
+      "cache_sha256": "f0387d9ad5187f728cc2bc7da56c4ff0a27c179992045d7b3c22e9744ac8d2ed",
+      "images": 2400,
+      "titles": 100,
+      "image_key_order_matches_csv": true,
+      "label_and_product_mapping_matches_csv": true,
+      "selection_reproduced_from_original_seed": null,
+      "sample_order_sha256": "4c171e63a62cd959c6ce8951af13bb2a515a2a44455eab899bf4a94190df70f7",
+      "tensor_hashes": {
+        "image_features": "8dd1a89dc5eb1e0d52c2a56ed39bb4968976cdac4f546e30116fb4e53303ecec",
+        "title_features": "cd814710dc625c7278301e4e3dd92086f49a5476ab9f7275eb3226d8d406392e"
+      },
+      "declared_physical_root": "/DATA/DATA1/guest3/2026OpticsMoE/LightGenV2/tasks/t08_abo_image_text_retrieval/runs/physical/alpha040_10cm_20260925"
+    }
+  ],
+  "train_test_sample_identity_overlap": 0,
+  "ranking_computed": false,
+  "model_loaded": false,
+  "devices_opened": false,
+  "source_or_asset_modified": false,
+  "ccd_to_features_numerical_reconstruction_proven": false,
+  "limitations": [
+    "Cache metadata and ordered sample binding only; no numerical replay from raw CCD",
+    "Declared physical_root is historical metadata, not by itself proof of original PNG consumption",
+    "Original TEST has development exposure; no new independent generalization claim"
+  ]
+}

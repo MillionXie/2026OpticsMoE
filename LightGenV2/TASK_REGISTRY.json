@@ -120,6 +120,8 @@
     },
     {
       "id": "t08_abo_image_text_retrieval",
+      "readout_cache_order_binding_evidence": "../maintenance/storage/T08_READOUT_CACHE_BINDING_20261006.json",
+      "ccd_to_readout_cache_numerical_reconstruction_proven": false,
       "entry": "tasks/t08_abo_image_text_retrieval/README.md",
       "historical_reverse_checkout_status": "Original d0662a7d240340817948a3496c2cd43f4240e76d frozen detached; original files and measurements retained; not a main runtime cutover.",
       "historical_reverse_archive_ref": "refs/archive/frozen-server-20261006/t08-publish-retrieval",
