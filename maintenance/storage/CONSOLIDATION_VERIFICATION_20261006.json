@@ -1,14 +1,14 @@
 {
-  "verified_source_commit": "b8a236630ea74fb5e02bd31646aaf2814d98bef5",
-  "previous_verified_source_commit": "17c6b8dbc97db60a5569e79b9fbac9b5eada7681",
+  "verified_source_commit": "73fdff8329ec103914bcab968729e30741df23e6",
+  "previous_verified_source_commit": "b8a236630ea74fb5e02bd31646aaf2814d98bef5",
   "host": "local Windows main workspace",
   "checks": [
     {
       "command": "python -m pytest maintenance/git_safety/tests -q --disable-warnings --maxfail=8",
       "environment": "qwen3vl-cifar10",
-      "passed": 210,
+      "passed": 213,
       "failed": 0,
-      "seconds": 74.75,
+      "seconds": 72.06,
       "scope": "Governance helpers, source identities, small CPU fixtures, navigation, archive and safety guards; not full scientific model reproduction"
     },
     {
@@ -69,10 +69,10 @@
   "data_weights_or_timing_deleted": false,
   "remaining_exceptions": "REMAINING_CLEANUP_PLAN_20261003.md and LightGenV2/TASK_REGISTRY.json",
   "published_entry_navigation_check": {
-    "verified_source_commit": "9251ac6a31cb6c6bf2b9b91923bd3298ceb6e942",
+    "verified_source_commit": "73fdff8329ec103914bcab968729e30741df23e6",
     "scope": "START_HERE, root rules, LightGenV2 entry/rules/scorecard, consolidation/externals navigation and immediate task READMEs",
     "documents_checked": 24,
-    "inline_links_checked": 182,
+    "inline_links_checked": 183,
     "unresolved": [],
     "working_files_used": false,
     "limitations": "Inline relative file links only; not anchors, reference-style links, runtime imports, assets or scientific reproduction"
