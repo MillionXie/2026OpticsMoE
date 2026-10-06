@@ -15,7 +15,7 @@
     {
       "id": "t01_object_retrieval",
       "historical_expert_generation_evidence": "../maintenance/storage/STATIC_EXPERT_SOURCE_IDENTITY_20261006.json",
-      "historical_expert_generation_entry": "../TransferFromElectricity/tasks/t01_object_retrieval/README.md",
+      "historical_expert_generation_entry": "tasks/t01_object_retrieval/reports/reproduction/EXPERT_GENERATION_HISTORY.md",
       "historical_expert_generation_main_adoption_complete": false,
       "historical_expert_generation_core_source_published": true,
       "historical_expert_generation_source_import": "../maintenance/storage/STATIC_EXPERT_SOURCE_IMPORT_20261006.json",

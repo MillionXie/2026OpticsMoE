@@ -44,6 +44,23 @@ def test_duplicate_ids_and_invalid_sha_are_not_silent(tmp_path):
     assert any("invalid SHA256" in item for item in errors)
 
 
+def test_additional_task_evidence_field_is_not_silently_ignored(tmp_path):
+    fixture_registry(tmp_path, {'new_identity_evidence': 'missing.json'})
+    assert any('missing entry/evidence' in e for e in checker.inspect(tmp_path)['errors'])
+
+
+def test_per_task_source_import_checks_bytes_without_top_level_duplicate(tmp_path):
+    base, registry = fixture_registry(tmp_path, {'historical_source_import': 'source.json'})
+    (base / 'source.json').write_text(json.dumps({'files': [
+        {'path': 'LightGenV2/README.md', 'source_blob_sha256': '0'*64}]}))
+    assert any('SHA mismatch' in e for e in checker.inspect(tmp_path)['errors'])
+
+
+def test_additional_reference_escape_is_detected(tmp_path):
+    fixture_registry(tmp_path, {'history_entry': '../../outside.md'})
+    assert any('escapes repository' in e for e in checker.inspect(tmp_path)['errors'])
+
+
 def test_published_tree_check_does_not_use_dirty_working_entry(tmp_path):
     base, registry = fixture_registry(tmp_path)
     subprocess.run(["git", "init", "-q", str(tmp_path)], check=True)

@@ -11,6 +11,25 @@ import subprocess
 from urllib.parse import unquote
 
 
+def task_reference_paths(task: dict) -> list[str]:
+    """Include explicit per-task evidence fields, not just the old evidence list."""
+    paths = [task['entry'], *task.get('evidence', [])]
+    if task.get('reproduction'):
+        paths.append(task['reproduction'])
+    for key, value in task.items():
+        if isinstance(value, str) and key.endswith(('_evidence', '_entry', '_source_import')):
+            paths.append(value)
+    return list(dict.fromkeys(paths))
+
+
+def import_manifests(registry: dict) -> list[str]:
+    paths = list(registry.get('source_import_manifests', []))
+    for task in registry['tasks']:
+        paths.extend(value for key, value in task.items()
+                     if isinstance(value, str) and key.endswith('_source_import'))
+    return list(dict.fromkeys(paths))
+
+
 def source_hash_diagnostic(path: str, payload: bytes, expected: str,
                            normalization: str | None) -> dict:
     """Describe a failed identity check without accepting alternate hashes.
@@ -58,7 +77,7 @@ def inspect_tree(root: Path, commit: str) -> dict:
         if task["id"] in identifiers:
             errors.append("duplicate task id: " + task["id"])
         identifiers.add(task["id"])
-        for path in [task["entry"], *task.get("evidence", []), *([task["reproduction"]] if task.get("reproduction") else [])]:
+        for path in task_reference_paths(task):
             required(relative(path), "entry/evidence")
         for weight in task.get("weights", []):
             if not re.fullmatch(r"[0-9a-f]{64}", weight["sha256"]):
@@ -74,7 +93,7 @@ def inspect_tree(root: Path, commit: str) -> dict:
                         errors.append("navigation escapes repository: " + link)
                     elif target not in blobs and not any(name.startswith(target.rstrip("/") + "/") for name in blobs):
                         required(target, "navigation target")
-    for name in registry.get("source_import_manifests", []):
+    for name in import_manifests(registry):
         path = relative(name)
         required(path, "source manifest")
         if path not in blobs:
@@ -112,9 +131,7 @@ def inspect(root: Path, verify_weights: bool = False, verify_private: bool = Fal
         if task_id in identifiers:
             errors.append(f"duplicate task id: {task_id}")
         identifiers.add(task_id)
-        paths = [task["entry"], *task.get("evidence", [])]
-        if task.get("reproduction"):
-            paths.append(task["reproduction"])
+        paths = task_reference_paths(task)
         for relative in paths:
             target = (base / relative).resolve()
             if not target.is_relative_to(root.resolve()):
@@ -166,7 +183,7 @@ def inspect(root: Path, verify_weights: bool = False, verify_private: bool = Fal
                     unavailable_private.append(f"navigation: {document}: {relative}")
                 else:
                     errors.append(f"broken navigation link: {document}: {relative}")
-    for source_manifest in registry.get("source_import_manifests", []):
+    for source_manifest in import_manifests(registry):
         manifest_path = base / source_manifest
         if not manifest_path.resolve().is_relative_to(root.resolve()) or not manifest_path.is_file():
             errors.append(f"invalid source manifest: {source_manifest}")
