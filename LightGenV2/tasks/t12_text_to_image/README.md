@@ -54,3 +54,8 @@ TRAIN 微调、VAL 选模，保留干净教师约束和干净/扰动双前向。
 原实验整合分支为 `codex/t12-audited-editors-20260926`，这是历史出处，不是当前开发入口。
 当前源码归入main；已有运行目录仍保护，不因此切换或覆盖。权重自带结构配置，严格加载，
 历史兼容源码及必要checkpoint保留用于baseline/旧结果复查。
+
+原17M实拍权重可从主线只读核验：
+`python -m LightGenV2.tasks.t12_text_to_image.verify_formal_checkpoint --checkpoint <原5b4f权重路径>`。
+该入口仅CPU检查SHA、原构建器严格加载及参数数目，不读取数据/调用SDK；不接受eeec适配权重，
+也不重新测精度。配置与光学实现仍复用T01及历史后端，相关依赖未解除前不能删除。
