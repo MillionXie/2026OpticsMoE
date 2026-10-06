@@ -1,0 +1,113 @@
+{
+  "scope": "Exactly named rank72 delivery source copies matching the published canonical Git tree; originals retained, not runtime checkout cutover",
+  "commit": "a81ee5c6dafe151053a6cb1cdcd4dedf37619344",
+  "files": [
+    {
+      "path": "handoffs/abo_latestfresh35_lab_20260930/rank72_source/standalone/__init__.py",
+      "canonical": "LightGenV2/tasks/t07_abo_image_retrieval/standalone/__init__.py",
+      "sha256": "53db7bdf4277ec72c9af012c50dcded4a7d116f62425f073d3b6a9538a92da63",
+      "git_sha256": "53db7bdf4277ec72c9af012c50dcded4a7d116f62425f073d3b6a9538a92da63",
+      "identity": "exact"
+    },
+    {
+      "path": "handoffs/abo_latestfresh35_lab_20260930/rank72_source/standalone/bounded_export.py",
+      "canonical": "LightGenV2/tasks/t07_abo_image_retrieval/standalone/bounded_export.py",
+      "sha256": "a98b1922fd13e80323175379099f267ad85c981a2e6bbaec77de17984804608b",
+      "git_sha256": "a98b1922fd13e80323175379099f267ad85c981a2e6bbaec77de17984804608b",
+      "identity": "exact"
+    },
+    {
+      "path": "handoffs/abo_latestfresh35_lab_20260930/rank72_source/standalone/cli.py",
+      "canonical": "LightGenV2/tasks/t07_abo_image_retrieval/standalone/cli.py",
+      "sha256": "6a44675bd14e606e6bcada29bdf07bd9fa933eb422dd0f259f3d664cae9c0c58",
+      "git_sha256": "6a44675bd14e606e6bcada29bdf07bd9fa933eb422dd0f259f3d664cae9c0c58",
+      "identity": "exact"
+    },
+    {
+      "path": "handoffs/abo_latestfresh35_lab_20260930/rank72_source/standalone/data.py",
+      "canonical": "LightGenV2/tasks/t07_abo_image_retrieval/standalone/data.py",
+      "sha256": "985bb7efc3fba06a9ba22e566d0c196b67e3378ab091206050b59820f5d83b03",
+      "git_sha256": "985bb7efc3fba06a9ba22e566d0c196b67e3378ab091206050b59820f5d83b03",
+      "identity": "exact"
+    },
+    {
+      "path": "handoffs/abo_latestfresh35_lab_20260930/rank72_source/standalone/enrolled_regularization.py",
+      "canonical": "LightGenV2/tasks/t07_abo_image_retrieval/standalone/enrolled_regularization.py",
+      "sha256": "85f8056e1073258fb9badf3b63cac070f931f97f08a1badad89990f25dda98fc",
+      "git_sha256": "85f8056e1073258fb9badf3b63cac070f931f97f08a1badad89990f25dda98fc",
+      "identity": "exact"
+    },
+    {
+      "path": "handoffs/abo_latestfresh35_lab_20260930/rank72_source/standalone/frontend.py",
+      "canonical": "LightGenV2/tasks/t07_abo_image_retrieval/standalone/frontend.py",
+      "sha256": "6759ee3d8893388590d5952f0819b64c88db5380f4b8c964174bbd6b08de53b1",
+      "git_sha256": "6759ee3d8893388590d5952f0819b64c88db5380f4b8c964174bbd6b08de53b1",
+      "identity": "exact"
+    },
+    {
+      "path": "handoffs/abo_latestfresh35_lab_20260930/rank72_source/standalone/generalization.py",
+      "canonical": "LightGenV2/tasks/t07_abo_image_retrieval/standalone/generalization.py",
+      "sha256": "014c99661e2a044910683928485e1d588a80d1b11bde572506f4281e35d4adf1",
+      "git_sha256": "014c99661e2a044910683928485e1d588a80d1b11bde572506f4281e35d4adf1",
+      "identity": "exact"
+    },
+    {
+      "path": "handoffs/abo_latestfresh35_lab_20260930/rank72_source/standalone/io.py",
+      "canonical": "LightGenV2/tasks/t07_abo_image_retrieval/standalone/io.py",
+      "sha256": "67d1dd84182d772473f88321da9105fcc9d8cd58fcca6eca4eee9de7dfe31d01",
+      "git_sha256": "67d1dd84182d772473f88321da9105fcc9d8cd58fcca6eca4eee9de7dfe31d01",
+      "identity": "exact"
+    },
+    {
+      "path": "handoffs/abo_latestfresh35_lab_20260930/rank72_source/standalone/model.py",
+      "canonical": "LightGenV2/tasks/t07_abo_image_retrieval/standalone/model.py",
+      "sha256": "bd89044e8e516d3935c0315680d47205285c62e7cc1302549f39c66b532a4bd3",
+      "git_sha256": "bd89044e8e516d3935c0315680d47205285c62e7cc1302549f39c66b532a4bd3",
+      "identity": "exact"
+    },
+    {
+      "path": "handoffs/abo_latestfresh35_lab_20260930/rank72_source/standalone/optics.py",
+      "canonical": "LightGenV2/tasks/t07_abo_image_retrieval/standalone/optics.py",
+      "sha256": "ff07716e09337520a5f338be6097522226bb8f9d42b1e39feb3e2c15eab3d67f",
+      "git_sha256": "ff07716e09337520a5f338be6097522226bb8f9d42b1e39feb3e2c15eab3d67f",
+      "identity": "exact"
+    },
+    {
+      "path": "handoffs/abo_latestfresh35_lab_20260930/rank72_source/standalone/retrieval_adapt.py",
+      "canonical": "LightGenV2/tasks/t07_abo_image_retrieval/standalone/retrieval_adapt.py",
+      "sha256": "2f6baf0e758ce77977e27615cdf1c0cfd8df37f606e4e70c5deb56b7e6641ead",
+      "git_sha256": "2f6baf0e758ce77977e27615cdf1c0cfd8df37f606e4e70c5deb56b7e6641ead",
+      "identity": "exact"
+    },
+    {
+      "path": "handoffs/abo_latestfresh35_lab_20260930/rank72_source/standalone/retrieval_refine.py",
+      "canonical": "LightGenV2/tasks/t07_abo_image_retrieval/standalone/retrieval_refine.py",
+      "sha256": "cdb4d92b80f818907fb16e6cfe3a17339f2a34920c3b9c73d0d413cc034b0e4b",
+      "git_sha256": "cdb4d92b80f818907fb16e6cfe3a17339f2a34920c3b9c73d0d413cc034b0e4b",
+      "identity": "exact"
+    },
+    {
+      "path": "handoffs/abo_latestfresh35_lab_20260930/rank72_source/standalone/retrieval_screen.py",
+      "canonical": "LightGenV2/tasks/t07_abo_image_retrieval/standalone/retrieval_screen.py",
+      "sha256": "f2b655de4303d823c3256338af099aefa785d27809ce877bc667c02213750a75",
+      "git_sha256": "f2b655de4303d823c3256338af099aefa785d27809ce877bc667c02213750a75",
+      "identity": "exact"
+    },
+    {
+      "path": "handoffs/abo_latestfresh35_lab_20260930/rank72_source/standalone/robust_holdout.py",
+      "canonical": "LightGenV2/tasks/t07_abo_image_retrieval/standalone/robust_holdout.py",
+      "sha256": "f1756df82cf23be03150e06641e14a28d32b1d5e2410b3dc6856099d025385bb",
+      "git_sha256": "f1756df82cf23be03150e06641e14a28d32b1d5e2410b3dc6856099d025385bb",
+      "identity": "exact"
+    }
+  ],
+  "excluded": [
+    "handoffs/abo_latestfresh35_lab_20260930/rank72_source/standalone/randomness.py"
+  ],
+  "originals_deleted_or_moved": false,
+  "model_or_data_modified": false,
+  "limitations": [
+    "randomness.py has no canonical tracked counterpart and remains visible",
+    "Identity of this delivery snapshot does not prove every dependency or actual Windows runtime cutover"
+  ]
+}

@@ -10,6 +10,15 @@ ROOT = Path(__file__).resolve().parents[3]
 
 
 class ArtifactIgnoreTests(unittest.TestCase):
+    def test_rank72_delivery_copy_not_unmatched_or_canonical_source(self):
+        import json
+        descriptor = json.loads((ROOT/'maintenance/storage/RANK72_DELIVERY_SOURCE_VISIBILITY_20261007.json').read_text())
+        private = [row['path'] for row in descriptor['files']]
+        visible = descriptor['excluded'] + [row['canonical'] for row in descriptor['files']]
+        visible += ['handoffs/abo_latestfresh35_lab_20260930/rank72_source/standalone/future.py']
+        self.assertEqual(len(private), 14)
+        self.assertEqual(self.ignored(private + visible), set(private))
+
     def test_fixed478_records_keep_future_results_and_table_sources_visible(self):
         import json
         descriptor = json.loads((ROOT/'maintenance/storage/T10_FIXED478_REPORT_VISIBILITY_20261007.json').read_text())

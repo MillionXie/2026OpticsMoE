@@ -1361,3 +1361,18 @@ node_modules/
 /LightGenV2/tasks/t10_expert_scaling/reports/plotting/fixed478_topk_test_20260922/evidence/organcmnist__moe_oeo_N4_k4_L4_lr0.002_s17__test_result.json
 /LightGenV2/tasks/t10_expert_scaling/reports/plotting/fixed478_topk_test_20260922/evidence/organcmnist__moe_oeo_N4_k4_L4_lr0.002_s27__test_result.json
 /LightGenV2/tasks/t10_expert_scaling/reports/plotting/fixed478_topk_test_20260922/evidence/organcmnist__moe_oeo_N4_k4_L4_lr0.002_s37__test_result.json
+\n+# Exact rank72 delivery copies verified against canonical Git; keep unmatched/new files visible.
+/handoffs/abo_latestfresh35_lab_20260930/rank72_source/standalone/__init__.py
+/handoffs/abo_latestfresh35_lab_20260930/rank72_source/standalone/bounded_export.py
+/handoffs/abo_latestfresh35_lab_20260930/rank72_source/standalone/cli.py
+/handoffs/abo_latestfresh35_lab_20260930/rank72_source/standalone/data.py
+/handoffs/abo_latestfresh35_lab_20260930/rank72_source/standalone/enrolled_regularization.py
+/handoffs/abo_latestfresh35_lab_20260930/rank72_source/standalone/frontend.py
+/handoffs/abo_latestfresh35_lab_20260930/rank72_source/standalone/generalization.py
+/handoffs/abo_latestfresh35_lab_20260930/rank72_source/standalone/io.py
+/handoffs/abo_latestfresh35_lab_20260930/rank72_source/standalone/model.py
+/handoffs/abo_latestfresh35_lab_20260930/rank72_source/standalone/optics.py
+/handoffs/abo_latestfresh35_lab_20260930/rank72_source/standalone/retrieval_adapt.py
+/handoffs/abo_latestfresh35_lab_20260930/rank72_source/standalone/retrieval_refine.py
+/handoffs/abo_latestfresh35_lab_20260930/rank72_source/standalone/retrieval_screen.py
+/handoffs/abo_latestfresh35_lab_20260930/rank72_source/standalone/robust_holdout.py
