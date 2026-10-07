@@ -2581,3 +2581,11 @@ node_modules/
 # Named historical per-query output data, not source or split manifests.
 /handoffs/abo_text_to_image_10cm_alpha040_20260925/physical_test_predictions.csv
 /handoffs/abo_text_to_image_10cm_alpha040_20260925/finetune_train800/finetuned_test_predictions.csv
+# Exact historical source exports already retained in tracked primary source.
+# Original exports remain in place; no wildcard and no timing/data deletion.
+/LightGenV2/reports/20260914_latest_optical_electronics_a100_NARROW_POWER_v1/source_snapshot/LightGenV2/scripts/profile_optical_electronics_5090d.py
+/LightGenV2/reports/20260914_latest_optical_electronics_a100_NARROW_v1/source_snapshot/LightGenV2/scripts/profile_optical_electronics_5090d.py
+/LightGenV2/tasks/t03_saliency/reports/licensed_examples_08625_20260929/source_export.py
+/LightGenV2/tasks/t03_saliency/reports/licensed_overlays_no_gt_20260929/repackage_source.py
+/handoffs/abo_latestfresh35_lab_20260930/model_rank72_server.py
+/handoffs/abo_text_to_image_10cm_alpha040_20260925/finetune_readout.py
