@@ -1,0 +1,610 @@
+{
+  "files": [
+    {
+      "path": "LightGenV2/demo_check/adrenal_softsign_code_export_20260915_145336/code/calibration.py",
+      "raw_sha256": "064663a7b5f4196c4d9e63de4096e55b29457a69343c57afeb029ef72c92fd5f",
+      "source_blob_sha256": "064663a7b5f4196c4d9e63de4096e55b29457a69343c57afeb029ef72c92fd5f",
+      "hash_normalization": "crlf_to_lf",
+      "bytes": 1703,
+      "history": {
+        "commit": "1c7222a1119385475e1b464ca7efdb67cdc21a4c",
+        "archive_refs": [
+          "refs/archive/frozen-local-20261005/demo-reproduction-overlay"
+        ],
+        "path": "LightGenV2/demo_check/adrenal_softsign_code_export_20260915_145336/code/calibration.py"
+      }
+    },
+    {
+      "path": "LightGenV2/demo_check/adrenal_softsign_code_export_20260915_145336/code/config.yaml",
+      "raw_sha256": "8ee2c5cf07ce15c020f41ad8724bd88499fd4d0b9c76a6823fb54065fd095f46",
+      "source_blob_sha256": "409834f4668f0cf88c252d94fcbbd43a74c496d6d3b24a516acb181c9a7ea46a",
+      "hash_normalization": "crlf_to_lf",
+      "bytes": 4127,
+      "history": {
+        "commit": "1c7222a1119385475e1b464ca7efdb67cdc21a4c",
+        "archive_refs": [
+          "refs/archive/frozen-local-20261005/demo-reproduction-overlay"
+        ],
+        "path": "LightGenV2/demo_check/adrenal_softsign_code_export_20260915_145336/code/config.yaml"
+      }
+    },
+    {
+      "path": "LightGenV2/demo_check/adrenal_softsign_code_export_20260915_145336/code/configs/d2nn_L2_oeo_off.yaml",
+      "raw_sha256": "5cfaa741cc221546e6da2dbc756b3d7e3600155774029f0ae48c783740eac9e6",
+      "source_blob_sha256": "0c2113f31bfdf2ffd5456ec4f9b94af4f7bea2f433e71700c3d4c736703d2a44",
+      "hash_normalization": "crlf_to_lf",
+      "bytes": 4888,
+      "history": {
+        "commit": "1c7222a1119385475e1b464ca7efdb67cdc21a4c",
+        "archive_refs": [
+          "refs/archive/frozen-local-20261005/demo-reproduction-overlay"
+        ],
+        "path": "LightGenV2/demo_check/adrenal_softsign_code_export_20260915_145336/code/configs/d2nn_L2_oeo_off.yaml"
+      }
+    },
+    {
+      "path": "LightGenV2/demo_check/adrenal_softsign_code_export_20260915_145336/code/configs/d2nn_L2_oeo_relu_softsign.yaml",
+      "raw_sha256": "0ee02cc1106a3954f0c1f9f255e7bd1100e7d58b14f46d84237243cef78af464",
+      "source_blob_sha256": "58f9f7e6ff473bbcff5cb7d1681b2d4b152a6cec49c7383e01d083689ee0bb50",
+      "hash_normalization": "crlf_to_lf",
+      "bytes": 4915,
+      "history": {
+        "commit": "1c7222a1119385475e1b464ca7efdb67cdc21a4c",
+        "archive_refs": [
+          "refs/archive/frozen-local-20261005/demo-reproduction-overlay"
+        ],
+        "path": "LightGenV2/demo_check/adrenal_softsign_code_export_20260915_145336/code/configs/d2nn_L2_oeo_relu_softsign.yaml"
+      }
+    },
+    {
+      "path": "LightGenV2/demo_check/adrenal_softsign_code_export_20260915_145336/code/configs/d2nn_L2_oeo_relu_tanh.yaml",
+      "raw_sha256": "1d34d74b72fe320f882757540c5b6eeeb803622d67fe8a4ed7929193f74801f6",
+      "source_blob_sha256": "b433629759c54435c7cede8029ee326f8ea6c987ae8fafc58598405eeceee2f8",
+      "hash_normalization": "crlf_to_lf",
+      "bytes": 4899,
+      "history": {
+        "commit": "1c7222a1119385475e1b464ca7efdb67cdc21a4c",
+        "archive_refs": [
+          "refs/archive/frozen-local-20261005/demo-reproduction-overlay"
+        ],
+        "path": "LightGenV2/demo_check/adrenal_softsign_code_export_20260915_145336/code/configs/d2nn_L2_oeo_relu_tanh.yaml"
+      }
+    },
+    {
+      "path": "LightGenV2/demo_check/adrenal_softsign_code_export_20260915_145336/code/configs/d2nn_L2_oeo_softplus2.yaml",
+      "raw_sha256": "619968726a22cbb64eee7629fd2eb044f0c0c75d86620b80d5bac90ba314e64e",
+      "source_blob_sha256": "1d96902b33f8534fa772e0bf780135cedcc39dc5a35b830df0b51e218464f8bf",
+      "hash_normalization": "crlf_to_lf",
+      "bytes": 4899,
+      "history": {
+        "commit": "1c7222a1119385475e1b464ca7efdb67cdc21a4c",
+        "archive_refs": [
+          "refs/archive/frozen-local-20261005/demo-reproduction-overlay"
+        ],
+        "path": "LightGenV2/demo_check/adrenal_softsign_code_export_20260915_145336/code/configs/d2nn_L2_oeo_softplus2.yaml"
+      }
+    },
+    {
+      "path": "LightGenV2/demo_check/adrenal_softsign_code_export_20260915_145336/code/configs/d2nn_L4_oeo_off.yaml",
+      "raw_sha256": "2d9a13126480afb2a02b27a027f7ed967eea1724ce794ec1a6f11d26458e3acc",
+      "source_blob_sha256": "daaca90718f740cf2a3aa67cd2512ebe426b2a21c9a26aebb1e90ef9eaf13943",
+      "hash_normalization": "crlf_to_lf",
+      "bytes": 4901,
+      "history": {
+        "commit": "1c7222a1119385475e1b464ca7efdb67cdc21a4c",
+        "archive_refs": [
+          "refs/archive/frozen-local-20261005/demo-reproduction-overlay"
+        ],
+        "path": "LightGenV2/demo_check/adrenal_softsign_code_export_20260915_145336/code/configs/d2nn_L4_oeo_off.yaml"
+      }
+    },
+    {
+      "path": "LightGenV2/demo_check/adrenal_softsign_code_export_20260915_145336/code/configs/d2nn_L4_oeo_relu_softsign.yaml",
+      "raw_sha256": "ca61e9c894587f65da425b99981f427d452260c31c7993533693e6fac14ae20d",
+      "source_blob_sha256": "ab602e08f6b92baf59911ba466acdc7234b2f99ece5d3eb6c8f05ad327023788",
+      "hash_normalization": "crlf_to_lf",
+      "bytes": 4927,
+      "history": {
+        "commit": "1c7222a1119385475e1b464ca7efdb67cdc21a4c",
+        "archive_refs": [
+          "refs/archive/frozen-local-20261005/demo-reproduction-overlay"
+        ],
+        "path": "LightGenV2/demo_check/adrenal_softsign_code_export_20260915_145336/code/configs/d2nn_L4_oeo_relu_softsign.yaml"
+      }
+    },
+    {
+      "path": "LightGenV2/demo_check/adrenal_softsign_code_export_20260915_145336/code/configs/d2nn_L4_oeo_relu_tanh.yaml",
+      "raw_sha256": "442c8776c858d7a863054b82a2d1c243593ca166a1a56bb4a6734ec7b0c3dd1b",
+      "source_blob_sha256": "a1e64aa765cbbd14bfd98061d85fda3898a48bfe85d3cde66f2cdce5b80a91bd",
+      "hash_normalization": "crlf_to_lf",
+      "bytes": 4911,
+      "history": {
+        "commit": "1c7222a1119385475e1b464ca7efdb67cdc21a4c",
+        "archive_refs": [
+          "refs/archive/frozen-local-20261005/demo-reproduction-overlay"
+        ],
+        "path": "LightGenV2/demo_check/adrenal_softsign_code_export_20260915_145336/code/configs/d2nn_L4_oeo_relu_tanh.yaml"
+      }
+    },
+    {
+      "path": "LightGenV2/demo_check/adrenal_softsign_code_export_20260915_145336/code/configs/d2nn_L4_oeo_softplus2.yaml",
+      "raw_sha256": "3bcbed6ca702814aa5826218049d5c77bb4e2efca7248bff5f1d36c366fd83d5",
+      "source_blob_sha256": "d23e07e75910b50eda00d8faf3a663e88840b73cd3add84f5fba84e751862880",
+      "hash_normalization": "crlf_to_lf",
+      "bytes": 4911,
+      "history": {
+        "commit": "1c7222a1119385475e1b464ca7efdb67cdc21a4c",
+        "archive_refs": [
+          "refs/archive/frozen-local-20261005/demo-reproduction-overlay"
+        ],
+        "path": "LightGenV2/demo_check/adrenal_softsign_code_export_20260915_145336/code/configs/d2nn_L4_oeo_softplus2.yaml"
+      }
+    },
+    {
+      "path": "LightGenV2/demo_check/adrenal_softsign_code_export_20260915_145336/code/configs/d2nn_L6_oeo_off.yaml",
+      "raw_sha256": "23b2018137df3f1126a9dbd8136f4c97be5f2a4874b20a3cb8d2ca22fddeeea6",
+      "source_blob_sha256": "17e9295e90a144378c45fc525944c5770cfdfdab732c8559e20fc7339150b1e7",
+      "hash_normalization": "crlf_to_lf",
+      "bytes": 4916,
+      "history": {
+        "commit": "1c7222a1119385475e1b464ca7efdb67cdc21a4c",
+        "archive_refs": [
+          "refs/archive/frozen-local-20261005/demo-reproduction-overlay"
+        ],
+        "path": "LightGenV2/demo_check/adrenal_softsign_code_export_20260915_145336/code/configs/d2nn_L6_oeo_off.yaml"
+      }
+    },
+    {
+      "path": "LightGenV2/demo_check/adrenal_softsign_code_export_20260915_145336/code/configs/d2nn_L6_oeo_relu_softsign.yaml",
+      "raw_sha256": "510e0e692ca17aa5fb6e8b73dd7b2eefb801c76a9e28d14cb9d4d61e4b0d43c7",
+      "source_blob_sha256": "bf80b8d704d80fc41d7cb61aa655e7e2a65ee965971cc0e2dfa475aa9c430d46",
+      "hash_normalization": "crlf_to_lf",
+      "bytes": 4941,
+      "history": {
+        "commit": "1c7222a1119385475e1b464ca7efdb67cdc21a4c",
+        "archive_refs": [
+          "refs/archive/frozen-local-20261005/demo-reproduction-overlay"
+        ],
+        "path": "LightGenV2/demo_check/adrenal_softsign_code_export_20260915_145336/code/configs/d2nn_L6_oeo_relu_softsign.yaml"
+      }
+    },
+    {
+      "path": "LightGenV2/demo_check/adrenal_softsign_code_export_20260915_145336/code/configs/d2nn_L6_oeo_relu_tanh.yaml",
+      "raw_sha256": "60ece3d6f51443791c3bde87b00bbf11324347d672c393f89bf6df2d15a443d7",
+      "source_blob_sha256": "9675ae3af42056cde146972b1a6e51a5e1a920c679795cfe4867b71122350de4",
+      "hash_normalization": "crlf_to_lf",
+      "bytes": 4925,
+      "history": {
+        "commit": "1c7222a1119385475e1b464ca7efdb67cdc21a4c",
+        "archive_refs": [
+          "refs/archive/frozen-local-20261005/demo-reproduction-overlay"
+        ],
+        "path": "LightGenV2/demo_check/adrenal_softsign_code_export_20260915_145336/code/configs/d2nn_L6_oeo_relu_tanh.yaml"
+      }
+    },
+    {
+      "path": "LightGenV2/demo_check/adrenal_softsign_code_export_20260915_145336/code/configs/d2nn_L6_oeo_softplus2.yaml",
+      "raw_sha256": "1d7ec8f4b60fb64f26906bf5c1b4e1b50b2f496700a57cf4d85000c0c197bfe8",
+      "source_blob_sha256": "a4bd1fd1a3d66058ca137b249915133fc7bdee30daa425f7edeb3760dd2d0818",
+      "hash_normalization": "crlf_to_lf",
+      "bytes": 4925,
+      "history": {
+        "commit": "1c7222a1119385475e1b464ca7efdb67cdc21a4c",
+        "archive_refs": [
+          "refs/archive/frozen-local-20261005/demo-reproduction-overlay"
+        ],
+        "path": "LightGenV2/demo_check/adrenal_softsign_code_export_20260915_145336/code/configs/d2nn_L6_oeo_softplus2.yaml"
+      }
+    },
+    {
+      "path": "LightGenV2/demo_check/adrenal_softsign_code_export_20260915_145336/code/configs/moe_L2_oeo_off.yaml",
+      "raw_sha256": "5638d40f0bbeccf23cb185d5d9a4325a46402d0d8ae8b6a0dfc1f51f1184f2e0",
+      "source_blob_sha256": "9925b57312997c92bff5bc3bab97605684d2fb0244ab69a53b639ae3ac2bddd4",
+      "hash_normalization": "crlf_to_lf",
+      "bytes": 4885,
+      "history": {
+        "commit": "1c7222a1119385475e1b464ca7efdb67cdc21a4c",
+        "archive_refs": [
+          "refs/archive/frozen-local-20261005/demo-reproduction-overlay"
+        ],
+        "path": "LightGenV2/demo_check/adrenal_softsign_code_export_20260915_145336/code/configs/moe_L2_oeo_off.yaml"
+      }
+    },
+    {
+      "path": "LightGenV2/demo_check/adrenal_softsign_code_export_20260915_145336/code/configs/moe_L2_oeo_relu_softsign.yaml",
+      "raw_sha256": "92090f546e6bc79ae640cf0f81f9990991b61b1dc1f774bef80ddd1e5e3ad932",
+      "source_blob_sha256": "e5d3aa79b405a0f8cd25bb5d82b03707ef057ffe824123287ad411377956ccc0",
+      "hash_normalization": "crlf_to_lf",
+      "bytes": 4912,
+      "history": {
+        "commit": "1c7222a1119385475e1b464ca7efdb67cdc21a4c",
+        "archive_refs": [
+          "refs/archive/frozen-local-20261005/demo-reproduction-overlay"
+        ],
+        "path": "LightGenV2/demo_check/adrenal_softsign_code_export_20260915_145336/code/configs/moe_L2_oeo_relu_softsign.yaml"
+      }
+    },
+    {
+      "path": "LightGenV2/demo_check/adrenal_softsign_code_export_20260915_145336/code/configs/moe_L2_oeo_relu_tanh.yaml",
+      "raw_sha256": "56e01d31297023feab78c137be2ea5d88fc75d55760574c62661d8e7ea45ca6e",
+      "source_blob_sha256": "8c1ef0470f0e2fc63cc17ef69c7ce6154be5266f5777483ff163525a20c302ff",
+      "hash_normalization": "crlf_to_lf",
+      "bytes": 4896,
+      "history": {
+        "commit": "1c7222a1119385475e1b464ca7efdb67cdc21a4c",
+        "archive_refs": [
+          "refs/archive/frozen-local-20261005/demo-reproduction-overlay"
+        ],
+        "path": "LightGenV2/demo_check/adrenal_softsign_code_export_20260915_145336/code/configs/moe_L2_oeo_relu_tanh.yaml"
+      }
+    },
+    {
+      "path": "LightGenV2/demo_check/adrenal_softsign_code_export_20260915_145336/code/configs/moe_L2_oeo_softplus2.yaml",
+      "raw_sha256": "2ca293ea9703d88853a2775a26debf729d88f363f905ab9d95d8cb568414b450",
+      "source_blob_sha256": "9dad12420c031b6544388b76513618dc72eb93bc941d8dc428ec7d40e41888d2",
+      "hash_normalization": "crlf_to_lf",
+      "bytes": 4896,
+      "history": {
+        "commit": "1c7222a1119385475e1b464ca7efdb67cdc21a4c",
+        "archive_refs": [
+          "refs/archive/frozen-local-20261005/demo-reproduction-overlay"
+        ],
+        "path": "LightGenV2/demo_check/adrenal_softsign_code_export_20260915_145336/code/configs/moe_L2_oeo_softplus2.yaml"
+      }
+    },
+    {
+      "path": "LightGenV2/demo_check/adrenal_softsign_code_export_20260915_145336/code/configs/moe_L4_oeo_off.yaml",
+      "raw_sha256": "6d9b9f65226c22e1cc79d5cc7531cb2431eb63c1696c9e1502de5f812fef34d2",
+      "source_blob_sha256": "9ea7abd35cf4de45406893454ad97dbffd9dad3ae789e33b6e16601c2a17b1db",
+      "hash_normalization": "crlf_to_lf",
+      "bytes": 4898,
+      "history": {
+        "commit": "1c7222a1119385475e1b464ca7efdb67cdc21a4c",
+        "archive_refs": [
+          "refs/archive/frozen-local-20261005/demo-reproduction-overlay"
+        ],
+        "path": "LightGenV2/demo_check/adrenal_softsign_code_export_20260915_145336/code/configs/moe_L4_oeo_off.yaml"
+      }
+    },
+    {
+      "path": "LightGenV2/demo_check/adrenal_softsign_code_export_20260915_145336/code/configs/moe_L4_oeo_relu_softsign.yaml",
+      "raw_sha256": "6821d2bf8be68f9cf4e94a7c37f0626620ac616272f1a915454d69d8da447b4d",
+      "source_blob_sha256": "031789271b04ede00a3061ee963effa3e1b60b2fefdbc3694ba05172e7e4de65",
+      "hash_normalization": "crlf_to_lf",
+      "bytes": 4924,
+      "history": {
+        "commit": "1c7222a1119385475e1b464ca7efdb67cdc21a4c",
+        "archive_refs": [
+          "refs/archive/frozen-local-20261005/demo-reproduction-overlay"
+        ],
+        "path": "LightGenV2/demo_check/adrenal_softsign_code_export_20260915_145336/code/configs/moe_L4_oeo_relu_softsign.yaml"
+      }
+    },
+    {
+      "path": "LightGenV2/demo_check/adrenal_softsign_code_export_20260915_145336/code/configs/moe_L4_oeo_relu_tanh.yaml",
+      "raw_sha256": "1239a105006b822f29db13463d054ed8e3f24312bec2788c0815acf1abd7a49d",
+      "source_blob_sha256": "0fbad9b101bc120930c95ccf9225ff8780a3d455b3eef942979f6bf9ee96d935",
+      "hash_normalization": "crlf_to_lf",
+      "bytes": 4908,
+      "history": {
+        "commit": "1c7222a1119385475e1b464ca7efdb67cdc21a4c",
+        "archive_refs": [
+          "refs/archive/frozen-local-20261005/demo-reproduction-overlay"
+        ],
+        "path": "LightGenV2/demo_check/adrenal_softsign_code_export_20260915_145336/code/configs/moe_L4_oeo_relu_tanh.yaml"
+      }
+    },
+    {
+      "path": "LightGenV2/demo_check/adrenal_softsign_code_export_20260915_145336/code/configs/moe_L4_oeo_softplus2.yaml",
+      "raw_sha256": "76cd67c7855d8a0adc2403a4f19918bccbac2be8f39baa8fed923a95bc5fd51d",
+      "source_blob_sha256": "1c4013b7184b687a7e296433e866478cbb30a66de5defa1ab0de5b61668eac2d",
+      "hash_normalization": "crlf_to_lf",
+      "bytes": 4908,
+      "history": {
+        "commit": "1c7222a1119385475e1b464ca7efdb67cdc21a4c",
+        "archive_refs": [
+          "refs/archive/frozen-local-20261005/demo-reproduction-overlay"
+        ],
+        "path": "LightGenV2/demo_check/adrenal_softsign_code_export_20260915_145336/code/configs/moe_L4_oeo_softplus2.yaml"
+      }
+    },
+    {
+      "path": "LightGenV2/demo_check/adrenal_softsign_code_export_20260915_145336/code/configs/moe_L6_oeo_off.yaml",
+      "raw_sha256": "046f7647158ff896837e52cb53d526e738ee4f668d68dcd22ce1b264b214396b",
+      "source_blob_sha256": "81b007c988919e518268ab384d604516892e57da2b55ec3c3f755c8be0db814e",
+      "hash_normalization": "crlf_to_lf",
+      "bytes": 4913,
+      "history": {
+        "commit": "1c7222a1119385475e1b464ca7efdb67cdc21a4c",
+        "archive_refs": [
+          "refs/archive/frozen-local-20261005/demo-reproduction-overlay"
+        ],
+        "path": "LightGenV2/demo_check/adrenal_softsign_code_export_20260915_145336/code/configs/moe_L6_oeo_off.yaml"
+      }
+    },
+    {
+      "path": "LightGenV2/demo_check/adrenal_softsign_code_export_20260915_145336/code/configs/moe_L6_oeo_relu_softsign.yaml",
+      "raw_sha256": "f8c99fe608c6e9db3c071ea6a64bc8d3740d29562d1ea5d6a0698c1659d6fb76",
+      "source_blob_sha256": "7e95024e316798c904ee69a76d1ce9e52841ae81c3b36d9595be47c2889b33fc",
+      "hash_normalization": "crlf_to_lf",
+      "bytes": 4938,
+      "history": {
+        "commit": "1c7222a1119385475e1b464ca7efdb67cdc21a4c",
+        "archive_refs": [
+          "refs/archive/frozen-local-20261005/demo-reproduction-overlay"
+        ],
+        "path": "LightGenV2/demo_check/adrenal_softsign_code_export_20260915_145336/code/configs/moe_L6_oeo_relu_softsign.yaml"
+      }
+    },
+    {
+      "path": "LightGenV2/demo_check/adrenal_softsign_code_export_20260915_145336/code/configs/moe_L6_oeo_relu_tanh.yaml",
+      "raw_sha256": "01af85858d4308e648d49c57f2db630236981e7004999bf677ccc9dd397c4a56",
+      "source_blob_sha256": "d55bde5b2a6d79e246a527becee05b9f0dceb58b300c8fa528205a0f8c0330e8",
+      "hash_normalization": "crlf_to_lf",
+      "bytes": 4922,
+      "history": {
+        "commit": "1c7222a1119385475e1b464ca7efdb67cdc21a4c",
+        "archive_refs": [
+          "refs/archive/frozen-local-20261005/demo-reproduction-overlay"
+        ],
+        "path": "LightGenV2/demo_check/adrenal_softsign_code_export_20260915_145336/code/configs/moe_L6_oeo_relu_tanh.yaml"
+      }
+    },
+    {
+      "path": "LightGenV2/demo_check/adrenal_softsign_code_export_20260915_145336/code/configs/moe_L6_oeo_softplus2.yaml",
+      "raw_sha256": "7a078c7f4c4fd7fd42808dca6ff6f1782c74f656982e62fca1e2607ccef79979",
+      "source_blob_sha256": "405f630bc53753ee13dc91575e232733428d1350378d36d9d2e28c3e2032750b",
+      "hash_normalization": "crlf_to_lf",
+      "bytes": 4922,
+      "history": {
+        "commit": "1c7222a1119385475e1b464ca7efdb67cdc21a4c",
+        "archive_refs": [
+          "refs/archive/frozen-local-20261005/demo-reproduction-overlay"
+        ],
+        "path": "LightGenV2/demo_check/adrenal_softsign_code_export_20260915_145336/code/configs/moe_L6_oeo_softplus2.yaml"
+      }
+    },
+    {
+      "path": "LightGenV2/demo_check/adrenal_softsign_code_export_20260915_145336/code/experiments.py",
+      "raw_sha256": "56debf769cf6966105dbc0fd34bdea4037f83fcb0de48bb9986c0c138f460e7b",
+      "source_blob_sha256": "56debf769cf6966105dbc0fd34bdea4037f83fcb0de48bb9986c0c138f460e7b",
+      "hash_normalization": "crlf_to_lf",
+      "bytes": 1379,
+      "history": {
+        "commit": "1c7222a1119385475e1b464ca7efdb67cdc21a4c",
+        "archive_refs": [
+          "refs/archive/frozen-local-20261005/demo-reproduction-overlay"
+        ],
+        "path": "LightGenV2/demo_check/adrenal_softsign_code_export_20260915_145336/code/experiments.py"
+      }
+    },
+    {
+      "path": "LightGenV2/demo_check/adrenal_softsign_code_export_20260915_145336/code/metrics.py",
+      "raw_sha256": "9f17a3a15a89630bbcd294f2e97de3755941fe38bf6f80d8e6e8758b313e496b",
+      "source_blob_sha256": "9f17a3a15a89630bbcd294f2e97de3755941fe38bf6f80d8e6e8758b313e496b",
+      "hash_normalization": "crlf_to_lf",
+      "bytes": 2025,
+      "history": {
+        "commit": "1c7222a1119385475e1b464ca7efdb67cdc21a4c",
+        "archive_refs": [
+          "refs/archive/frozen-local-20261005/demo-reproduction-overlay"
+        ],
+        "path": "LightGenV2/demo_check/adrenal_softsign_code_export_20260915_145336/code/metrics.py"
+      }
+    },
+    {
+      "path": "LightGenV2/demo_check/adrenal_softsign_code_export_20260915_145336/code/models.py",
+      "raw_sha256": "fae0fb551d9111c255041a8f04ba99c0bcf438f877561a1eed2e8f67946b5646",
+      "source_blob_sha256": "f46e9aa1214532aa0a7121ffe0ef191ed656af2de80f7611df121cd9f110bd9c",
+      "hash_normalization": "crlf_to_lf",
+      "bytes": 6646,
+      "history": {
+        "commit": "1c7222a1119385475e1b464ca7efdb67cdc21a4c",
+        "archive_refs": [
+          "refs/archive/frozen-local-20261005/demo-reproduction-overlay"
+        ],
+        "path": "LightGenV2/demo_check/adrenal_softsign_code_export_20260915_145336/code/models.py"
+      }
+    },
+    {
+      "path": "LightGenV2/demo_check/adrenal_softsign_code_export_20260915_145336/code/optical_reference/activations.py",
+      "raw_sha256": "a6be25569d228f4154c7598535d98853e154a21b4ddca755c8cd19ed69f4b4bc",
+      "source_blob_sha256": "a6be25569d228f4154c7598535d98853e154a21b4ddca755c8cd19ed69f4b4bc",
+      "hash_normalization": "crlf_to_lf",
+      "bytes": 823,
+      "history": {
+        "commit": "1c7222a1119385475e1b464ca7efdb67cdc21a4c",
+        "archive_refs": [
+          "refs/archive/frozen-local-20261005/demo-reproduction-overlay"
+        ],
+        "path": "LightGenV2/demo_check/adrenal_softsign_code_export_20260915_145336/code/optical_reference/activations.py"
+      }
+    },
+    {
+      "path": "LightGenV2/demo_check/adrenal_softsign_code_export_20260915_145336/code/optical_reference/experts.py",
+      "raw_sha256": "5ff26c6223631534823b479c3eba98ca2311285e379c933c67ae24a073a37161",
+      "source_blob_sha256": "b1d05e095ca3447978159a82deaba1f7a2f8442675698a8b94b45962650ba2b1",
+      "hash_normalization": "crlf_to_lf",
+      "bytes": 54432,
+      "history": {
+        "commit": "1c7222a1119385475e1b464ca7efdb67cdc21a4c",
+        "archive_refs": [
+          "refs/archive/frozen-local-20261005/demo-reproduction-overlay"
+        ],
+        "path": "LightGenV2/demo_check/adrenal_softsign_code_export_20260915_145336/code/optical_reference/experts.py"
+      }
+    },
+    {
+      "path": "LightGenV2/demo_check/adrenal_softsign_code_export_20260915_145336/code/optical_reference/layout.py",
+      "raw_sha256": "512ed7cf1f62d07cfd2ffc50997285f41d1cf0f9a5c3398e702a45ec37d7db7f",
+      "source_blob_sha256": "74a4b21aeab76caa3e2638c1e93bc0267eb49eaf3b257541dce5e0a180a5418c",
+      "hash_normalization": "crlf_to_lf",
+      "bytes": 4451,
+      "history": {
+        "commit": "1c7222a1119385475e1b464ca7efdb67cdc21a4c",
+        "archive_refs": [
+          "refs/archive/frozen-local-20261005/demo-reproduction-overlay"
+        ],
+        "path": "LightGenV2/demo_check/adrenal_softsign_code_export_20260915_145336/code/optical_reference/layout.py"
+      }
+    },
+    {
+      "path": "LightGenV2/demo_check/adrenal_softsign_code_export_20260915_145336/code/optical_reference/losses.py",
+      "raw_sha256": "0a1e97baf44c9045f607d84aa55dee8660c451e13fbb2cd4696f0ed0690b74c6",
+      "source_blob_sha256": "4c493750aef0367a413f57eef865e3dc7c5f062738cc9bea90236301dcd1ee37",
+      "hash_normalization": "crlf_to_lf",
+      "bytes": 1213,
+      "history": {
+        "commit": "1c7222a1119385475e1b464ca7efdb67cdc21a4c",
+        "archive_refs": [
+          "refs/archive/frozen-local-20261005/demo-reproduction-overlay"
+        ],
+        "path": "LightGenV2/demo_check/adrenal_softsign_code_export_20260915_145336/code/optical_reference/losses.py"
+      }
+    },
+    {
+      "path": "LightGenV2/demo_check/adrenal_softsign_code_export_20260915_145336/code/optical_reference/model.py",
+      "raw_sha256": "afe60ad6cfe42dc8c01d3639112b6d7df47acd2854fff46d6a2da2893d3d1b9f",
+      "source_blob_sha256": "91e86e3eede9323d8c682e4064e82e9ecee7756b193d726710863194316035e6",
+      "hash_normalization": "crlf_to_lf",
+      "bytes": 22433,
+      "history": {
+        "commit": "1c7222a1119385475e1b464ca7efdb67cdc21a4c",
+        "archive_refs": [
+          "refs/archive/frozen-local-20261005/demo-reproduction-overlay"
+        ],
+        "path": "LightGenV2/demo_check/adrenal_softsign_code_export_20260915_145336/code/optical_reference/model.py"
+      }
+    },
+    {
+      "path": "LightGenV2/demo_check/adrenal_softsign_code_export_20260915_145336/code/optical_reference/prompt.py",
+      "raw_sha256": "3a66d0612473ae488a3e3e16a85bdff7f8f2370f6bc8c03687f77b947c953bc6",
+      "source_blob_sha256": "0dec0af0f2e3b55e2728dceb62846910f9e8c3e007dccbc05142fe85f8ad5964",
+      "hash_normalization": "crlf_to_lf",
+      "bytes": 16947,
+      "history": {
+        "commit": "1c7222a1119385475e1b464ca7efdb67cdc21a4c",
+        "archive_refs": [
+          "refs/archive/frozen-local-20261005/demo-reproduction-overlay"
+        ],
+        "path": "LightGenV2/demo_check/adrenal_softsign_code_export_20260915_145336/code/optical_reference/prompt.py"
+      }
+    },
+    {
+      "path": "LightGenV2/demo_check/adrenal_softsign_code_export_20260915_145336/code/optical_reference/readout.py",
+      "raw_sha256": "181cabdc4b7b85c30bdb16b778870afbd6b35d1d365d98924606c5dbe3e487a4",
+      "source_blob_sha256": "348997c54999871cec19577c4a91a7e1acb50c40ead745b82a44ee60e449bc07",
+      "hash_normalization": "crlf_to_lf",
+      "bytes": 1643,
+      "history": {
+        "commit": "1c7222a1119385475e1b464ca7efdb67cdc21a4c",
+        "archive_refs": [
+          "refs/archive/frozen-local-20261005/demo-reproduction-overlay"
+        ],
+        "path": "LightGenV2/demo_check/adrenal_softsign_code_export_20260915_145336/code/optical_reference/readout.py"
+      }
+    },
+    {
+      "path": "LightGenV2/demo_check/adrenal_softsign_code_export_20260915_145336/code/preflight.py",
+      "raw_sha256": "4b5de46ddc1ddc4d96a6fc403cd4a7013a0b0d8fb15d8ac0daa12ed7d36ee9a5",
+      "source_blob_sha256": "98b3df39edc9e352e691b8e92902e739492386a0a3d6e03cfc9b563585140001",
+      "hash_normalization": "crlf_to_lf",
+      "bytes": 8240,
+      "history": {
+        "commit": "1c7222a1119385475e1b464ca7efdb67cdc21a4c",
+        "archive_refs": [
+          "refs/archive/frozen-local-20261005/demo-reproduction-overlay"
+        ],
+        "path": "LightGenV2/demo_check/adrenal_softsign_code_export_20260915_145336/code/preflight.py"
+      }
+    },
+    {
+      "path": "LightGenV2/demo_check/adrenal_softsign_code_export_20260915_145336/code/reference_initialization.yaml",
+      "raw_sha256": "e6833086dd4d15ef352c4b375d559d37c2e2b10194a800941fb0f136197a814d",
+      "source_blob_sha256": "212741d7f31b3dce3f8f7aea023f7848441e36d115411ecdb0688d6335252089",
+      "hash_normalization": "crlf_to_lf",
+      "bytes": 43230,
+      "history": {
+        "commit": "1c7222a1119385475e1b464ca7efdb67cdc21a4c",
+        "archive_refs": [
+          "refs/archive/frozen-local-20261005/demo-reproduction-overlay"
+        ],
+        "path": "LightGenV2/demo_check/adrenal_softsign_code_export_20260915_145336/code/reference_initialization.yaml"
+      }
+    },
+    {
+      "path": "LightGenV2/demo_check/adrenal_softsign_code_export_20260915_145336/code/report.py",
+      "raw_sha256": "9bbc6db6bbd7a2fea9d2a9e7eb8a60271ed353387c0724b19f784baf58da67ea",
+      "source_blob_sha256": "9bbc6db6bbd7a2fea9d2a9e7eb8a60271ed353387c0724b19f784baf58da67ea",
+      "hash_normalization": "crlf_to_lf",
+      "bytes": 11074,
+      "history": {
+        "commit": "1c7222a1119385475e1b464ca7efdb67cdc21a4c",
+        "archive_refs": [
+          "refs/archive/frozen-local-20261005/demo-reproduction-overlay"
+        ],
+        "path": "LightGenV2/demo_check/adrenal_softsign_code_export_20260915_145336/code/report.py"
+      }
+    },
+    {
+      "path": "LightGenV2/demo_check/adrenal_softsign_code_export_20260915_145336/code/run.sh",
+      "raw_sha256": "e7ea306b696c8f88a5dcbd52d75ed25adaa6bd4589e57c0640f9d873d31e1d61",
+      "source_blob_sha256": "e7ea306b696c8f88a5dcbd52d75ed25adaa6bd4589e57c0640f9d873d31e1d61",
+      "hash_normalization": "crlf_to_lf",
+      "bytes": 188,
+      "history": {
+        "commit": "1c7222a1119385475e1b464ca7efdb67cdc21a4c",
+        "archive_refs": [
+          "refs/archive/frozen-local-20261005/demo-reproduction-overlay"
+        ],
+        "path": "LightGenV2/demo_check/adrenal_softsign_code_export_20260915_145336/code/run.sh"
+      }
+    },
+    {
+      "path": "LightGenV2/demo_check/adrenal_softsign_code_export_20260915_145336/code/run_experiment.py",
+      "raw_sha256": "e277aaa67e841594085451c23ca5a082094ca7c6c7f572445ebe43e1f95efe69",
+      "source_blob_sha256": "fcd0a5f7d486a6f6f6767e71e29a6161a9476e5b60e3039aff104408db59e752",
+      "hash_normalization": "crlf_to_lf",
+      "bytes": 9440,
+      "history": {
+        "commit": "1c7222a1119385475e1b464ca7efdb67cdc21a4c",
+        "archive_refs": [
+          "refs/archive/frozen-local-20261005/demo-reproduction-overlay"
+        ],
+        "path": "LightGenV2/demo_check/adrenal_softsign_code_export_20260915_145336/code/run_experiment.py"
+      }
+    },
+    {
+      "path": "LightGenV2/demo_check/adrenal_softsign_code_export_20260915_145336/code/search_pipeline.py",
+      "raw_sha256": "170fec8994e7873e3fc1de8b133d8eeb4729c016e5596123050a721acfcb6f20",
+      "source_blob_sha256": "170fec8994e7873e3fc1de8b133d8eeb4729c016e5596123050a721acfcb6f20",
+      "hash_normalization": "crlf_to_lf",
+      "bytes": 6202,
+      "history": {
+        "commit": "1c7222a1119385475e1b464ca7efdb67cdc21a4c",
+        "archive_refs": [
+          "refs/archive/frozen-local-20261005/demo-reproduction-overlay"
+        ],
+        "path": "LightGenV2/demo_check/adrenal_softsign_code_export_20260915_145336/code/search_pipeline.py"
+      }
+    }
+  ],
+  "excluded": [
+    {
+      "path": "LightGenV2/demo_check/adrenal_softsign_code_export_20260915_145336/code/PROTOCOL.md",
+      "reason": "no_unchanged_cached_source_identity"
+    },
+    {
+      "path": "LightGenV2/demo_check/adrenal_softsign_code_export_20260915_145336/code/assets/simhei.ttf",
+      "reason": "asset_not_source"
+    }
+  ],
+  "flagged_for_manual_review": [],
+  "head": "127e385235723f493b527459b22653523512fd35",
+  "purpose": "Historical pathology code referenced by T10 structural evidence; T16 already uses two separately tracked optical_reference dependencies. Not a new model release or replacement for T11/T16.",
+  "runtime_verification": false,
+  "mutations": [],
+  "original_export_manifest_sha256": "065925b97d54427ef2de77fe47cd5e28d167917f3555242984d7c2447e6cdb35",
+  "protocol_original_sha256": "2165a2bc26a928a3a4b88a3307f2168b245750bb78b9042f12a546e2647af7d6",
+  "main_adoption": "Historical source and configuration only; no training, PT evaluation, baseline replacement or device call"
+}

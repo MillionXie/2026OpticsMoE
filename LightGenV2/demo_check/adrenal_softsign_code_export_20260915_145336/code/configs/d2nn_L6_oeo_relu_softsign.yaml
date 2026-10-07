@@ -1,0 +1,229 @@
+seed: 7
+device: auto
+experiment:
+  data_npz: /root/autodl-tmp/Figure2b_adrenal_L4_5090/data/adrenalmnist3d/projected2d/axis2_mean/data.npz
+  data_sha256: 22bc193a85c43be85f093bf12f3ffdc5ed79b5efda63925bd9e063a70594bf93
+  seeds:
+  - 17
+  - 27
+  - 37
+  - 47
+  - 57
+  epochs: 50
+  batch_size: 8
+  lr: 0.001
+  weight_decay: 0.0
+  step_size: 10
+  gamma: 0.7
+  selection: validation AUROC, then lower normalized detector-plane MSE, then earlier
+    epoch
+  threshold: 0.5
+  augment: false
+  oversample: false
+  router_auxiliary_weights: 0.0
+  models:
+  - moe
+  - d2nn
+  device: cuda:0
+  num_threads: 4
+  loss: 100 * mean((I * 1024 / (sum(I)+1e-8) - target_detector_mask)^2)
+  test_policy: Test only 60 formal checkpoints after candidate, validation thresholds
+    and all weights are locked.
+  baseline_phase_size: 470
+  baseline_canvas_size: 500
+  baseline_layers: 6
+  fanout_power_normalization: true
+  oeo_active_size: 498
+  expected_parameters:
+    moe: 1329544
+    d2nn: 1325400
+  parameter_matching: Nearest total parameter count with an even square phase side
+    symmetrically centered on the common 500x500 canvas.
+  fanout_implementation: ideal_nine_port_image_relay_amplitude_l2_normalized
+  oeo_enabled: true
+model:
+  type: adrenal2d_noqwen_optical_moe9_dense
+  num_cycles: 3
+  canvas_size: 500
+  active_size: 498
+  image_size: 100
+  input_size: 100
+  num_experts: 9
+  expert_size: 146
+  expert_pitch: 176
+optics:
+  wavelength_m: 5.32e-07
+  pixel_size_m: 8.0e-06
+  phase_param: sigmoid
+  phase_init: zeros
+  init_std: 0.02
+  evanescent_mode: zero
+  k_space_constraint_enabled: false
+  theta_max_deg: 1.0
+  prompt_focal_length_m: 0.0722
+  distances_m:
+    input_to_prompt: 0.1444
+    prompt_to_expert: 0.1444
+    expert_to_global_fc: 0.0
+    global_fc_to_oeo: 0.05
+    last_oeo_to_detector: 0.05
+prompt:
+  type: region_amplitude_global_lens
+  mode: region_amplitude_global_lens
+  random_phase_enabled: false
+  train_phase_biases: false
+  routing_type: optical_topk
+  top_k: 9
+  temperature: 1.0
+  router_pool_size: 10
+  grating_sign_x: 1.0
+  grating_sign_y: 1.0
+  min_grating_period_pixels: 0.0
+  enforce_global_convolution_geometry: true
+  convolution_relative_tolerance: 0.02
+optical_router:
+  grid_size: 100
+  wavelength_m: 5.32e-07
+  pixel_size_m: 8.0e-06
+  propagation_distance_m: 0.05
+  phase_trainable: true
+  phase_parameterization: sigmoid
+  phase_init: zeros
+  phase_init_std: 0.02
+  evanescent_mode: zero
+  k_space_constraint_enabled: false
+  theta_max_deg: 1.0
+  detector_reduce: sum
+  temperature: 100.0
+  learnable_temperature: false
+  detector_regions:
+  - - 2
+    - 34
+    - 2
+    - 34
+  - - 2
+    - 34
+    - 34
+    - 66
+  - - 2
+    - 34
+    - 66
+    - 98
+  - - 34
+    - 66
+    - 2
+    - 34
+  - - 34
+    - 66
+    - 34
+    - 66
+  - - 34
+    - 66
+    - 66
+    - 98
+  - - 66
+    - 98
+    - 2
+    - 34
+  - - 66
+    - 98
+    - 34
+    - 66
+  - - 66
+    - 98
+    - 66
+    - 98
+expert_bank:
+  assignments:
+  - d2nn
+  - d2nn
+  - d2nn
+  - d2nn
+  - d2nn
+  - d2nn
+  - d2nn
+  - d2nn
+  - d2nn
+  output_scalar:
+    gain_enabled: false
+    gain_min: 0.0
+    gain_max: 2.0
+    gain_init: 1.0
+    phase_bias_enabled: false
+    phase_bias_init_rad: 0.0
+  d2nn:
+    num_layers: 3
+    nonlinear_schedule:
+    - true
+    - true
+    - true
+    inter_layer_distance_m: 0.05
+    propagation_padding: 30
+    phase_param: sigmoid
+    phase_init: zeros
+    phase_init_std: 0.02
+nonlinearity:
+  enabled: true
+  type: intensity_layernorm_activation
+  normalization:
+    type: layernorm
+    per_expert_enabled: true
+    aperture: full_active_panel
+    eps: 1.0e-06
+    elementwise_affine: false
+    affine_sharing: per_expert
+  activation:
+    type: relu_softsign
+  reencoding:
+    amplitude_source: activation_output
+    zero_phase: true
+    reapply_routing_amplitude: false
+global_fc:
+  enabled: true
+  phase_size: 498
+  num_masks: 3
+global_oeo:
+  enabled: true
+detector:
+  detector_size: 32
+  layout: fixed_2x2
+  start_pos_x: 198
+  start_pos_y: 234
+  N_det_sets:
+  - 2
+  det_steps_x:
+  - 40
+  det_steps_y: 40
+  normalize_detector_energy: true
+readout:
+  enabled: false
+loss:
+  type: detector_plane_mse
+  scale: 100.0
+  normalize_detector_plane_mse: true
+  detector_plane_mse_normalization_eps: 1.0e-08
+  detector_ce_weight: 0.0
+  readout_ce_weight: 0.0
+  router_balance_weight: 0.0
+  router_importance_weight: 0.0
+regularization:
+  phase_dropout:
+    enabled: false
+    mode: none
+    p: 0.0
+    block_size: 8
+    batch_shared: true
+output:
+  dir: ./runs/d2nn_L6_oeo_relu_softsign
+  save_phase_npy: true
+dataset:
+  image_size: 100
+  input_size: 100
+  resize_interpolation: bicubic
+  resize_antialias: true
+variant:
+  id: d2nn_L6_oeo_relu_softsign
+  architecture: d2nn
+  depth: 6
+  oeo: true
+  activation: relu_softsign

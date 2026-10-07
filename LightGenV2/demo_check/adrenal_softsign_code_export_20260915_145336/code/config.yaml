@@ -1,0 +1,173 @@
+experiment:
+  data_npz: /root/autodl-tmp/Figure2b_adrenal_L4_5090/data/adrenalmnist3d/projected2d/axis2_mean/data.npz
+  data_sha256: 22bc193a85c43be85f093bf12f3ffdc5ed79b5efda63925bd9e063a70594bf93
+  seeds:
+  - 17
+  - 27
+  - 37
+  - 47
+  - 57
+  epochs: 50
+  batch_size: 8
+  lr: 0.001
+  weight_decay: 0.0
+  step_size: 10
+  gamma: 0.7
+  selection: validation AUROC, then lower normalized detector-plane MSE, then earlier
+    epoch
+  threshold: 0.5
+  augment: false
+  oversample: false
+  router_auxiliary_weights: 0.0
+  device: cuda:0
+  num_threads: 4
+  loss: 100 * mean((I * 1024 / (sum(I)+1e-8) - target_detector_mask)^2)
+search:
+  candidates:
+  - softplus2
+  - relu_tanh
+  - relu_softsign
+  screen_depth: 4
+  screen_seeds:
+  - 17
+  - 27
+  auroc_tolerance: 0.01
+  selection: Mean best-checkpoint validation AUROC over both architectures and two
+    paired seeds. Shortlist within 0.01 of maximum, then maximize mean fixed-0.5 validation
+    accuracy, balanced accuracy, AUROC, then minimize plane MSE; final tie by candidate
+    order.
+  same_selected_activation_for_all_architectures_and_depths: true
+  formal_runs: 60
+  unique_training_runs: 68
+  screening_runs_reused_in_formal: 4
+  threshold_policies:
+  - fixed_0.5
+  - val_accuracy
+  - val_balanced
+  threshold_selection: All distinct validation score decision boundaries plus 0.5,
+    0, 1. Maximize policy metric, then other metric, then proximity to 0.5, then smaller
+    threshold. Prediction is score1 > threshold.
+  test_policy: Never evaluate rejected screening candidates on test. Lock the selected
+    activation, 60 best weights, and all validation-selected thresholds before first
+    new test evaluation.
+variants:
+- id: moe_L2_oeo_softplus2
+  architecture: moe
+  depth: 2
+  oeo: true
+  activation: softplus2
+- id: moe_L2_oeo_relu_tanh
+  architecture: moe
+  depth: 2
+  oeo: true
+  activation: relu_tanh
+- id: moe_L2_oeo_relu_softsign
+  architecture: moe
+  depth: 2
+  oeo: true
+  activation: relu_softsign
+- id: moe_L2_oeo_off
+  architecture: moe
+  depth: 2
+  oeo: false
+  activation: 'off'
+- id: d2nn_L2_oeo_softplus2
+  architecture: d2nn
+  depth: 2
+  oeo: true
+  activation: softplus2
+- id: d2nn_L2_oeo_relu_tanh
+  architecture: d2nn
+  depth: 2
+  oeo: true
+  activation: relu_tanh
+- id: d2nn_L2_oeo_relu_softsign
+  architecture: d2nn
+  depth: 2
+  oeo: true
+  activation: relu_softsign
+- id: d2nn_L2_oeo_off
+  architecture: d2nn
+  depth: 2
+  oeo: false
+  activation: 'off'
+- id: moe_L4_oeo_softplus2
+  architecture: moe
+  depth: 4
+  oeo: true
+  activation: softplus2
+- id: moe_L4_oeo_relu_tanh
+  architecture: moe
+  depth: 4
+  oeo: true
+  activation: relu_tanh
+- id: moe_L4_oeo_relu_softsign
+  architecture: moe
+  depth: 4
+  oeo: true
+  activation: relu_softsign
+- id: moe_L4_oeo_off
+  architecture: moe
+  depth: 4
+  oeo: false
+  activation: 'off'
+- id: d2nn_L4_oeo_softplus2
+  architecture: d2nn
+  depth: 4
+  oeo: true
+  activation: softplus2
+- id: d2nn_L4_oeo_relu_tanh
+  architecture: d2nn
+  depth: 4
+  oeo: true
+  activation: relu_tanh
+- id: d2nn_L4_oeo_relu_softsign
+  architecture: d2nn
+  depth: 4
+  oeo: true
+  activation: relu_softsign
+- id: d2nn_L4_oeo_off
+  architecture: d2nn
+  depth: 4
+  oeo: false
+  activation: 'off'
+- id: moe_L6_oeo_softplus2
+  architecture: moe
+  depth: 6
+  oeo: true
+  activation: softplus2
+- id: moe_L6_oeo_relu_tanh
+  architecture: moe
+  depth: 6
+  oeo: true
+  activation: relu_tanh
+- id: moe_L6_oeo_relu_softsign
+  architecture: moe
+  depth: 6
+  oeo: true
+  activation: relu_softsign
+- id: moe_L6_oeo_off
+  architecture: moe
+  depth: 6
+  oeo: false
+  activation: 'off'
+- id: d2nn_L6_oeo_softplus2
+  architecture: d2nn
+  depth: 6
+  oeo: true
+  activation: softplus2
+- id: d2nn_L6_oeo_relu_tanh
+  architecture: d2nn
+  depth: 6
+  oeo: true
+  activation: relu_tanh
+- id: d2nn_L6_oeo_relu_softsign
+  architecture: d2nn
+  depth: 6
+  oeo: true
+  activation: relu_softsign
+- id: d2nn_L6_oeo_off
+  architecture: d2nn
+  depth: 6
+  oeo: false
+  activation: 'off'
