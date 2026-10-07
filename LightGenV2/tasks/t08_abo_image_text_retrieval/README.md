@@ -68,6 +68,12 @@ SHA `bfab266d8af86fb47de32ee8c78e6daadab076fc98be879c9be28d54b4791032`
 全项目独立泛化；归档身份及用途见
 [`T08_BOUNDED_RECOVERY_SOURCE_20261006.json`](../../../maintenance/storage/T08_BOUNDED_RECOVERY_SOURCE_20261006.json)。
 
+2026-10-08该旧目录已完整移入服务器历史区，4355文件移前／移后逐SHA一致，
+原主体修改、四份试验工具／配置及`sister_source.pt`全部保留，Git登记未减少。
+完整tar恢复包和冻结目录位置见`maintenance/storage/SERVER_WORKTREE_BALANCE_20261007.json`
+最新sister T08收据。其29.78MB主体副本SHA与主工程采用版cc977b83完全相同；
+主工程原采用版PT、数据、runs和末端读出未移动、未修改，不再从旧日常目录找代码。
+
 `text_to_image.py` 加载封存的 10cm 主体 `cc977b83...`，调用单独保留的
 `reverse_runtime.py`；不替换本页图搜文 `optical_moe.py`。21 层旧配置继承已
 机械展开为 `configs/text_to_image_10cm_adopted_eval.yaml`，保留原结构和光学参数。

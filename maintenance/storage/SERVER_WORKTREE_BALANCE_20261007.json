@@ -1,4 +1,28 @@
 {
+  "latest_sister_t08_frozen_move_20261008": {
+    "purpose": "Old bounded-amplitude recovery and sister-package preparation; main retains the adopted text-to-image body separately",
+    "original": "/DATA/DATA1/guest3/2026OpticsMoE/.worktrees/sister_t08_bounded_20260927",
+    "frozen_worktree": "/DATA/DATA1/guest3/storage_cleanup_manifests/retired_sister_t08_source_20261008/frozen_worktree",
+    "head": "73e2febdc94e4cb280c6ada1e0e7881826f3c7f2",
+    "registered_before": 35,
+    "registered_after": 35,
+    "archive": "/DATA/DATA1/guest3/storage_cleanup_manifests/retired_sister_t08_source_20261008/complete_old_worktree.tar.gz",
+    "archive_sha256": "599e441a5a033735662d2d702f114fe2c7b6ccc85eedd55f8ced1689649f81c4",
+    "archive_bytes": 263222891,
+    "verified_regular_files": 4355,
+    "original_dirty_and_untracked_status_unchanged": true,
+    "source_reference_files_scanned": 105405,
+    "source_name_hits": 0,
+    "external_symlink_target_hits": 0,
+    "owned_process_references": 0,
+    "retained_sister_source_pt_bytes": 29778889,
+    "retained_sister_source_pt_sha256": "cc977b83286a8e90398ebd30064428886bc3c06f1eb0557e470060f7ff5c1cae",
+    "main_adopted_body_PT_rechecked_identical_and_not_moved": true,
+    "existing_recovery_ref": "refs/archive/frozen-server-20261006/sister-t08-bounded-20260927",
+    "method": "Complete tar every-file SHA verification followed by ordinary git worktree move; every moved file rechecked; no force/reset/source overwrite or deletion",
+    "not_a_successful_worktree_removal_or_disk_release": true,
+    "laboratory_contacted": false
+  },
   "latest_pre_final_source_retirement_20261008": {
     "purpose": "Old OpenMoji bounded sister-package preparation and pre-final ABO fresh35/robust training source trials; not the sealed ABO or current OpenMoji runtime",
     "original_parent": "/DATA/DATA1/guest3/2026OpticsMoE/.worktrees",
