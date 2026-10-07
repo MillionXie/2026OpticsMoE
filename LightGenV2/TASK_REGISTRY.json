@@ -229,7 +229,9 @@
       "bench_candidate_source": "E:/code/guest/2026OpticsMoE/T12_Small_Lab_SHS_8um/candidate_robust17m_20260927/source",
       "hardware_source_manifest": "tasks/t12_text_to_image/lab_shs8um/SOURCE_IDENTITY_20261006.json",
       "hardware_source_entry": "tasks/t12_text_to_image/lab_shs8um/SOURCE_STATUS_20261006.md",
-      "protected_dependencies": ["/DATA/DATA1/guest3/t12_git_audited_20260926", "/DATA/DATA1/guest3/t12_text_to_image_20260920"],
+      "protected_dependencies": ["/DATA/DATA1/guest3/t12_git_audited_20260926"],
+      "historical_early_source_archive": "/DATA/DATA1/guest3/storage_cleanup_manifests/retired_t12_early_source_20261007/complete_old_worktree.tar.gz",
+      "historical_early_source_archive_sha256": "ca440579f97514c8f7d54f0da12d3151f47f616d9c17dd7f76ff99a3a66753f8",
       "evidence": ["../handoffs/t12_lab_robust17m_20260927/README.md", "../handoffs/t12_lab_robust17m_20260927/report.json", "tasks/t12_text_to_image/reports/reproduction/README.md"],
       "weights": [
         {"sha256": "5b4f9a37f19ce95cf23e4b874badc8e88955559553d47929fb80cd3cbf527cac", "identity": "17M robust physical full TEST2304; distinct from 149.76M/9.96M audited editors"},
