@@ -4,6 +4,35 @@
   "scientific_evaluation_run": false,
   "hardware_touched": false,
   "runtime_checkout_changed": false,
+  "original_measurement_assets_20261008": {
+    "asset_root": "/DATA/DATA1/guest3/2026OpticsMoE_t06_a100_batch",
+    "relative_run_root": "LightGenV2/tasks/t06_video_quality_assessment/runs/simulation/a100_temporal_batch_scaling_20260907",
+    "source_HEAD": "3fab90b363e3d49f02fa68acdc6c363b991097e7",
+    "two_current_source_overlays_match_registered_recovery_ref": true,
+    "files": [
+      {"path": "formal/batch_16/batch_timing.csv", "bytes": 4164, "sha256": "d27478f789f5451ec76ea41e8d517da6988673c88ddaf95a542c758fe139bf6d"},
+      {"path": "formal/batch_16/predictions.csv", "bytes": 65346, "sha256": "e7a3d7bbc434a0b7fec168f01308042bcde679b79083a2efa89992b4b4438026"},
+      {"path": "formal/batch_16/report.json", "bytes": 4933, "sha256": "a7b9c64b0c300d42f40cb3357677af748026e64817a10dee6653a9bf626aebe9"},
+      {"path": "formal/batch_16/telemetry.csv", "bytes": 14785, "sha256": "b5022413790bbf08e017ad90a34369e3770bbbad7cee9700b1ce661ad9bc85aa"},
+      {"path": "sweep/batch_01/result.json", "bytes": 1405, "sha256": "130b3fad67f1cf3ad2738b2edd05b0498d1214fdfd8f8f60bca91d6800f881e3"},
+      {"path": "sweep/batch_01/telemetry.csv", "bytes": 2783, "sha256": "2469b656630d09d1072a7c683cdc7c579ee1a17702053512405d7b53b93d6349"},
+      {"path": "sweep/batch_02/result.json", "bytes": 1392, "sha256": "e923a935b41a8c9ef237b4d0c67f661a21cf67f7c429abacc8b9486d2468aa1d"},
+      {"path": "sweep/batch_02/telemetry.csv", "bytes": 3053, "sha256": "052b042f5a1faf16d78674d50bd474e0061562e61f5e6d3054ea94103172c215"},
+      {"path": "sweep/batch_04/result.json", "bytes": 1393, "sha256": "a414c2a135904b6d3923956339ef0fcba4bcd8555852bbdaa95c2330790fa572"},
+      {"path": "sweep/batch_04/telemetry.csv", "bytes": 4326, "sha256": "10d99ca7ca2a22e7066c9b56074aeb125b0ce0195c0c7b26ed37b2ee0fd1f9b9"},
+      {"path": "sweep/batch_08/result.json", "bytes": 1383, "sha256": "eb42696b358b999311df85c05125e8fc68a08d7f6791ab104d432be87e7a5654"},
+      {"path": "sweep/batch_08/telemetry.csv", "bytes": 6803, "sha256": "5e7bf20e2f68ff1802c647f079046406ed73d2cddb4f1e65262c3037e4f74362"},
+      {"path": "sweep/batch_16/result.json", "bytes": 1404, "sha256": "ddf76a2d042d00227336c779e80259164fc43e557cceaca5b27c31d8efc9c767"},
+      {"path": "sweep/batch_16/telemetry.csv", "bytes": 11966, "sha256": "851ebb04e8204e8d55004e149ce8859c8fe7f71800d6c558785c3306acbdfdad"},
+      {"path": "sweep/report.json", "bytes": 9492, "sha256": "a9f1cdc6c7c385f05b8eaf725f486693e602dc6106bc965aac9269092a0ed0bc"}
+    ],
+    "file_count": 15,
+    "total_bytes": 134628,
+    "all_original_measurement_files_read_and_SHA_bound": true,
+    "originals_moved_deleted_or_changed": false,
+    "new_measurements_or_metrics_computed": false,
+    "scope": "Noncache ignored measurement files in this historical batch checkout only; not all T06 or A100 assets"
+  },
   "source_rows": [
     {
       "source_ref": "refs/archive/tracked-overlay-20261006/2026OpticsMoE_t06_a100_batch",
