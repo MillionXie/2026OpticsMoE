@@ -4,6 +4,10 @@
 历史协议、baseline、测速仍保留，不以最新模型覆盖历史证据。
 本机旧DVP/MNIST启动脚本不是rank72入口，具体用途和不可直接运行的路径边界见
 [历史调试区说明](lab_dvp8um/README.md)。MNIST测速保留，不套给ABO最终权重。
+历史`build_lab_package --dvp-overlay`仅导出原DVP相机适配器，现从共享目录
+`LightGenV2/hardware_common/dvp_legacy.py`的已提交版本读取，避免依赖本机未跟踪副本。
+原适配器SHA为`cab6e0ef3cdbf0840666e5f0d17baa26821011772d394a1c0b1a3f386028ca06`；
+临时包字节及manifest校验通过，未加载SDK或连接设备，不代表rank72完整部署包。
 冻结 CLIP／YOLO／DeepSeek 的历史图搜图对照见
 [三方向 baseline 历史表](../t08_abo_image_text_retrieval/reports/reproduction/ABO_BACKBONE_RESULTS_20260923.md)，
 该表旧 Ours 行不是下方封存 rank72 结果。
