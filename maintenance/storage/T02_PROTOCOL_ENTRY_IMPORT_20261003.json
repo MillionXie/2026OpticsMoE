@@ -1,0 +1,10 @@
+{
+  "source_commit": "a5ca606c7b53d9b79a9836408f9b3b7e01dbca76",
+  "paths": [
+    {
+      "path": "LightGenV2/tasks/t02_keypoint_detection/reports/reproduction/README.md",
+      "bytes": 1846,
+      "sha256": "c06f5ca7782c0075f5dde8a234a46b46f9773bee450604804b53d3c997b6d8a0"
+    }
+  ]
+}
