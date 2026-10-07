@@ -1,6 +1,7 @@
 {
   "visibility_update_20261007": {
-    "scope": "40 named ABO_Lab_8um historical dual-machine delivery source/config files from the existing archives below; not the five unique timing/spatial source files",
+    "scope": "38 named ABO_Lab_8um historical dual-machine delivery source/config files; the two vendor qwen3_vl_embedding.py files remain visible, as do five unique timing/spatial source files",
+    "vendor_source_visibility_preserved": true,
     "server_current_raw_sha_equal": 40,
     "server_archive_raw_sha_equal": 40,
     "local_archive_raw_sha_equal": 40,
