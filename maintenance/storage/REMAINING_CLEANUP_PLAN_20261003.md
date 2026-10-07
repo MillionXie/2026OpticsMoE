@@ -29,6 +29,10 @@ experiments23、TransferFromElectricity5、outputs3、tmp1。这是文件数，�
 内容已在本机Git历史保全，不证明全都应发布main、Linux有全部恢复对象或能独立运行。
 无需重新为463份源码建立副本／分支；后续只处理用途收敛、依赖和可退出目录。
 JSON、配置及非Python源码不在这个463项结论内，仍按各自身份审计；不批量ignore源码。
+随后单独核验96份未跟踪YAML、CMD、Shell、PowerShell、MJS、TOML、MATLAB及XML
+配置／源码：原字节或显式LF归一后的Git blob身份全部在既有可达历史中，缺失0。
+因此当前559份Python加上述配置／源码均已在本机Git保全；不是559项全部已归入main。
+剩余JSON834份中有现用OpenMoji的新实验记录，仍保护，不为了数量清零整目录隐藏。
 十张旧MNIST／对齐预览及三张测速PDF页渲染按13个具体路径退出Git待提交，原图原地保留，
 当前逐文件SHA记录于.gitignore对应规则注释。31项忽略测试通过，原件SHA未变，
 新源码、新预览和新测速渲染文件仍可见；不删除任何测速，也不声称释放磁盘空间。
