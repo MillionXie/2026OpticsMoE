@@ -1,4 +1,27 @@
 {
+  "latest_t06_readout_trial_retirement_20261007": {
+    "retired": "/DATA/DATA1/guest3/.codex_worktrees/t06_readout_compress_20260912",
+    "purpose": "Historical h512 temporal readout-compression trial with four synthetic smoke metadata files; not the sealed Temporal or Spatial model",
+    "head": "de866ff8b890b77b18a4f873f5be2d216ae4c7fa",
+    "registered_before": 49,
+    "registered_after": 48,
+    "archive": "/DATA/DATA1/guest3/storage_cleanup_manifests/retired_t06_readout_trial_20261007/complete_old_worktree.tar.gz",
+    "archive_sha256": "43dcbfc2561674834068068f53d191f139ffd8853b7fd4fe667cf359d13c2cd1",
+    "archive_bytes": 226512161,
+    "verified_regular_files": 3577,
+    "preserved_link_identities": 13,
+    "archived_nontracked_entries": 44,
+    "existing_server_recovery_ref": "refs/archive/frozen-server-20261006/t06-readout-compress-20260912",
+    "local_commit_object_not_verified": true,
+    "runtime_reference_files_scanned": 136459,
+    "runtime_name_hits": 0,
+    "owned_cwd_exe_cmdline_fd_references": 0,
+    "archived_early_run_metadata": ["command.txt", "resolved_config.json", "run_manifest.json", "synthetic_smoke.json"],
+    "formal_data_and_PT_link_targets_not_deleted": true,
+    "protected_main_ABO_OpenMoji_heads_and_tracked_overlays_unchanged": true,
+    "all_original_timing_preserved": true,
+    "removal_method": "Native complete tar without dereferencing links; all file SHA and link identities matched before removing only archived named nontracked entries and ordinary git worktree remove without force"
+  },
   "latest_t12_early_retirement_20261007": {
     "registered_before": 50,
     "registered_after": 49,

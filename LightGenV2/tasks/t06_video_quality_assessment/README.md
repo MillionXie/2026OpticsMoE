@@ -340,6 +340,13 @@ python -m LightGenV2.tasks.t06_video_quality_assessment.quality_token_resolution
 
 ### 可选历史 Temporal 读出压缩工具（2026-10-07）
 
+旧服务器`t06_readout_compress_20260912` h512试验目录已完整归档退出日常工作目录：
+3577份原文件、13处数据链接身份及全部旧测速保留，四份早期冒烟元数据亦在完整归档中。
+原数据／PT链接目标不删，正式Spatial/Temporal及另一个compress_all原结果目录未变。
+恢复路径、完整SHA及原服务器Git引用见仓库
+[目录恢复收据](../../../maintenance/storage/SERVER_WORKTREE_BALANCE_20261007.json)
+的`latest_t06_readout_trial_retirement_20261007`；不是新的模型成绩或本地独立数据备份。
+
 `compress_temporal_readout` 与三份原 h256/h512/h640 配置已从本地保护历史
 `ac7e3ecc` 纳入主线，保留独有代码，不把它当作服务器正式运行版本。
 核验时训练服务器主目录没有这四份文件，也没有该原历史对象；来源明确记录在
