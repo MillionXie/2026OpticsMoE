@@ -2077,3 +2077,10 @@ node_modules/
 /T12_Small_Lab_SHS_8um/candidate_robust17m_20260927/assets/**/*.png
 /T12_Small_Lab_SHS_8um/ch27_ref/assets/**/*.jpg
 /T12_Small_Lab_SHS_8um/ch27_ref/assets/**/*.png
+
+# Per-sample dataset labels and rejected-frame receipts remain with original
+# data, not source. Keep split audits, manifests, configurations and scripts.
+/OpenMoji_Exp05_SHS_20260927/data/test/test_[0-9][0-9][0-9][0-9][0-9][0-9]/scene.json
+/OpenMoji_Exp05_SHS_20260927/data_train_adapt1000/train/train_[0-9][0-9][0-9][0-9][0-9][0-9]/scene.json
+/OpenMoji_Lab_DVP_8um_e45/data/test/test_[0-9][0-9][0-9][0-9][0-9][0-9]/scene.json
+/LGVQ_Spatial_Train_Lab_SHS_8um/sessions/train2250_language_verified_20260915/rejected_ccd/*/field_*.record.json

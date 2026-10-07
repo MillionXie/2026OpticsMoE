@@ -1,0 +1,13 @@
+{
+  "schema_version": 1,
+  "audited_main": "42ff7cde8e44363ae25afe94279e233a39c5eee4",
+  "scope": "Three named existing OpenMoji datasets' per-sample scene labels and one historical LGVQ rejected CCD receipt area; not source trees",
+  "files": 4743,
+  "original_bytes": 19877490,
+  "groups": {"exp05_test_scene":1000,"exp05_train_scene":1000,"old_dvp_test_scene":1000,"lgvq_rejected_frame_receipts":1743},
+  "current_path_and_sha256_set_digest": "37cb70eafc80c07ca82cefe660559628d974105a77c29debf49fd242756bffc0",
+  "originals_deleted_or_moved": false,
+  "source_config_split_manifest_timing_hidden": false,
+  "complete_backup_proven": false,
+  "limitations": "Visibility change only. Current content hashes identify present labels/receipts, not historical capture-time authentication. Data and rejected evidence remain in original locations."
+}

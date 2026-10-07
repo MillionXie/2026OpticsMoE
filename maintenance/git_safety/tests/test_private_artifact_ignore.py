@@ -238,6 +238,21 @@ class ArtifactIgnoreTests(unittest.TestCase):
                  'outputs/comparison/plate.png', 'LightGenV2/demo_check/package/ccd.bmp']
         self.assertEqual(self.ignored(paths), set(paths))
 
+    def test_named_lab_labels_and_rejected_receipts_preserve_source(self):
+        base='OpenMoji_Exp05_SHS_20260927/'
+        rejected='LGVQ_Spatial_Train_Lab_SHS_8um/sessions/train2250_language_verified_20260915/rejected_ccd/'
+        labels=[base+'data/test/test_000001/scene.json',
+                base+'data_train_adapt1000/train/train_000006/scene.json',
+                'OpenMoji_Lab_DVP_8um_e45/data/test/test_000003/scene.json',
+                rejected+'language_router_interrupted_20260915/field_0001.record.json']
+        self.assertEqual(self.ignored(labels),set(labels))
+        visible=[base+'data/dataset_summary.json',base+'data_train_adapt1000/split_audit.json',
+                 base+'data/test/test_000001/config.yaml',base+'data/test/test_000001/prepare.py',
+                 base+'data/test/new_protocol/scene.json',rejected+'inspect.py',
+                 rejected+'language_router_interrupted_20260915/manifest.json',
+                 rejected+'language_router_interrupted_20260915/timing.csv']
+        self.assertEqual(self.ignored(visible),set())
+
     def test_source_metrics_manifests_and_timing_not_hidden(self):
         paths = ['outputs/comparison/eval.py', 'outputs/comparison/README.md',
                  'outputs/comparison/per_image.csv', 'outputs/comparison/timing.json',
