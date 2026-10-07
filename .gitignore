@@ -2576,6 +2576,12 @@ node_modules/
 # Keep originals on disk; this does not exclude source, config, manifest or summary reports.
 /handoffs/**/history.json
 /handoffs/**/test_samples.json
+# Mutable generated job progress, kept on disk with the run assets.
+# Source, protocol, final report, selection manifest and weights are not covered.
+/handoffs/**/progress.json
+# Legacy four-image CCD receipts are data, not geometry/contract source.
+# Match only the 16-hex sample filenames in this named CCD output; originals stay on disk.
+/LightGenV2/tasks/t07_abo_image_retrieval/reports/20260923_dvp8um_bringup4/review/ccd/**/[0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f].json
 # Generated epoch logs in CSV form; original files stay on disk.
 /handoffs/**/history.csv
 # Named historical per-query output data, not source or split manifests.
