@@ -240,8 +240,12 @@
     },
     {
       "path": "LightGenV2/tasks/t11_lifelong_optics/reports/reproduction/README.md",
-      "source_blob_sha256": "3434c516e558e19d748149241dda988c3fc0ff54bf2e45972a70250ae7ef0fd2",
-      "bytes": 29117
+      "source_blob_sha256": "27548ca2b3790c077f7d4fbedd27bb464f84d0775042fe344130bb7ef8d19023",
+      "bytes": 29373,
+      "original_source_blob_sha256": "3434c516e558e19d748149241dda988c3fc0ff54bf2e45972a70250ae7ef0fd2",
+      "original_bytes": 29117,
+      "documentation_update_commit": "0f9f386cd3850e68a346b6eced03d38af29ad3c0",
+      "documentation_update_reason": "Replace an unpublished private figure embed with its retained-file status; original scientific tables and source identity remain preserved."
     },
     {
       "path": "LightGenV2/tasks/t11_lifelong_optics/requirements.txt",

@@ -30,7 +30,7 @@ python -m LightGenV2.tasks.t12_text_to_image.lab_shs8um.main_layerwise --mode in
 保持20736原TRAIN大小、唯一索引、test_product_overlap/test_source_hash_overlap均为0，
 TRAIN不允许max-samples；只读inspect不写原selection。eeec电子读出仍是单独入口。
 目录存在不证明SDK二进制身份/可用设备/环境完整；原CUDA与显示边界尚未现场回归。
-六项AST/合成文件测试验证绑定与拒绝条件，不代表正式数据、精度或光路验收。
+八项AST/合成文件测试验证绑定、TRAIN重叠/索引拒绝条件及导入边界，不代表正式数据、精度或光路验收。
 
 实验室实际main随后通过该入口的只读inspect：原5b4f PT、合同与机器配置前后SHA
 一致，原正式CCD目录及SDK/LUT路径存在，无模型加载/设备打开/输出创建。

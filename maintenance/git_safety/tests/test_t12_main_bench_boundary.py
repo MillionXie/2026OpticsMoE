@@ -116,3 +116,37 @@ def test_main_train_binding_preserves_original_selection_guard():
     assert "assert a.max_samples is None" in source
     assert "'train_index'" in source
     assert 'a.abo_project' not in source
+
+
+def test_train_inspect_rejects_test_overlap_and_invalid_indices(tmp_path):
+    import argparse
+    import json
+    import pytest
+    from LightGenV2.tasks.t12_text_to_image.lab_shs8um.main_layerwise import inspect
+    selection = tmp_path/'selection.json'
+    args = argparse.Namespace(split='train', selection=selection, max_samples=None)
+    good = {'split':'train','test_product_overlap':0,'test_source_hash_overlap':0,'indices':[0,1]}
+    for update, message in [({'test_product_overlap':1}, 'TEST overlap'),
+                            ({'test_source_hash_overlap':1}, 'TEST overlap'),
+                            ({'split':'test'}, 'TEST overlap'),
+                            ({'indices':[0,0]}, 'indices'),
+                            ({'indices':[-1]}, 'indices'),
+                            ({'indices':[20736]}, 'indices'),
+                            ({'indices':[True]}, 'indices'),
+                            ({'indices':[]}, 'indices')]:
+        selection.write_text(json.dumps({**good, **update}))
+        with pytest.raises(ValueError, match=message):
+            inspect(args)
+    args.max_samples = 1
+    with pytest.raises(ValueError, match='no --max-samples'):
+        inspect(args)
+
+
+def test_write_helper_import_does_not_launch_legacy_capture():
+    # Formal runner only imports this function; run_full.main is not invoked.
+    imported = tree(T12/'run_full.py')
+    assert not any(isinstance(n, ast.Import) and any(a.name in ('four_image_flow','shs_physical2400')
+                                                  for a in n.names) for n in imported.body)
+    for n in imported.body:
+        if isinstance(n, ast.Expr) and isinstance(n.value, ast.Call):
+            raise AssertionError('run_full gained an import-time side effect')
