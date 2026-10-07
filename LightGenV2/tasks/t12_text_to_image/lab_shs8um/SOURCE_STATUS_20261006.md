@@ -11,3 +11,20 @@
 CPU 检查覆盖源码 SHA/语法、TRAIN 适配器与固定捕获入口的替换合同、末端 decoder 冻结和上游哈希守卫；不运行正式训练、TEST、GPU 或 SDK。原科学协议保持 TRAIN 拟合、VAL 选模、封存后 TEST，不能套用其他任务的 TEST 开发选模授权。
 
 尚待完整核验运行环境、外部 ABO 设备依赖及全部数据/PT 闭包。因此源码收录完成不代表硬件迁移完成；不要直接替换实验室运行目录。旧 README 为 9.96M 历史试采说明，正式模型身份以上述清单及任务复现页为准。
+
+## 主线显式设备适配入口（2026-10-07）
+
+新增`main_layerwise.py`不修改上述17份原源码。它先核验原`run_layerwise.py`的LF SHA，
+仅去掉旧ABO项目参数/外部导入，绑定已审计主线geometry及SHSBench的显式构造器；
+原模型CUDA执行、阶段顺序、相位/BMP、400us/GainX4/wait240、旧CCD复用与解码逻辑不改。
+三个实际使用的geometry函数及Bench采集/释放逻辑与旧实现逐AST一致。
+
+```text
+python -m LightGenV2.tasks.t12_text_to_image.lab_shs8um.main_layerwise --mode inspect --project <原17M候选资产目录> --output <不存在的新输出目录> --reuse <原同权重CCD目录> --machine-config <私有SHS配置JSON> --phase-sdk <原SDK文件> --phase-lut <原LUT文件> --amplitude-sdk <振幅SDK目录>
+```
+
+默认inspect仅查源合同、原5b4f权重SHA、路径存在并编译适配代码，不加载模型/SDK、不写输出。
+明确授权的新采集才使用`--mode capture`，本次治理没有执行capture，也不替换原计划任务。
+只支持原17M TEST/VAL逐层入口；TRAIN选集适配和eeec电子读出仍是各自原入口。
+目录存在不证明SDK二进制身份/可用设备/环境完整；原CUDA与显示边界尚未现场回归。
+五项AST/合成文件测试验证绑定与拒绝条件，不代表正式数据、精度或光路验收。

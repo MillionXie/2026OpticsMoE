@@ -48,3 +48,57 @@ def test_capture_lifecycle_unchanged_but_constructor_not_interchangeable():
     calls = [n for n in ast.walk(tree(T12 / 'run_layerwise.py'))
              if isinstance(n, ast.Call) and isinstance(n.func, ast.Name) and n.func.id == 'SHSBench']
     assert len(calls) == 1 and len(calls[0].args) == 4 and not calls[0].keywords
+
+
+def test_new_adapter_changes_only_two_reviewed_binding_fragments():
+    from LightGenV2.tasks.t12_text_to_image.lab_shs8um.main_layerwise import (
+        adapted_source, OLD_ARGUMENT, OLD_BINDING, NEW_BINDING)
+    original = (T12 / 'run_layerwise.py').read_text(encoding='utf8').replace('\r\n', '\n')
+    changed = adapted_source()
+    assert changed == original.replace(OLD_ARGUMENT, '').replace(OLD_BINDING, NEW_BINDING)
+    compile(changed, 'fixture', 'exec')
+    assert 'a.abo_project' not in changed
+    # The model execution and scientific stage body must not be modernized here.
+    assert ".cuda().eval().requires_grad_(False)" in changed
+    assert "SHSBench(a.output,400,240,{})" in changed
+
+
+def test_inspection_creates_no_output_or_device_import(tmp_path, monkeypatch):
+    import argparse
+    import json
+    import sys
+    from LightGenV2.tasks.t12_text_to_image.lab_shs8um import main_layerwise as adapter
+    project = tmp_path / 'project'; (project / 'assets').mkdir(parents=True)
+    (project / 'assets/contract.json').write_text(json.dumps(
+        {'checkpoint_sha256': adapter.FORMAL_SHA, 'counted_parameters': 17026642}))
+    (project / 'assets/small.pt').write_bytes(b'fixture only; hash is mocked')
+    for name in ('machine.json', 'phase.dll', 'phase.lut'):
+        (tmp_path / name).write_bytes(b'fixture')
+    reuse = tmp_path / 'reuse'; reuse.mkdir()
+    out = tmp_path / 'output'
+    args = argparse.Namespace(project=project, output=out, reuse=reuse,
+                             machine_config=tmp_path/'machine.json',
+                             phase_sdk=tmp_path/'phase.dll', phase_lut=tmp_path/'phase.lut',
+                             amplitude_sdk=None)
+    monkeypatch.setattr(adapter, 'digest', lambda p: adapter.FORMAL_SHA)
+    before = set(sys.modules)
+    result = adapter.inspect(args)
+    assert not out.exists() and not result['devices_opened'] and not result['model_loaded']
+    assert 'torch' not in set(sys.modules) - before
+    assert not any('hardware.bench' in p for p in set(sys.modules) - before)
+    out.mkdir()
+    import pytest
+    with pytest.raises(FileExistsError):
+        adapter.inspect(args)
+
+
+def test_inspection_rejects_other_model_contract(tmp_path):
+    import argparse
+    import json
+    import pytest
+    from LightGenV2.tasks.t12_text_to_image.lab_shs8um.main_layerwise import inspect
+    (tmp_path/'assets').mkdir()
+    (tmp_path/'assets/contract.json').write_text(json.dumps(
+        {'checkpoint_sha256': '0'*64, 'counted_parameters': 9958098}))
+    with pytest.raises(ValueError, match='formal 17M'):
+        inspect(argparse.Namespace(project=tmp_path))
