@@ -1,0 +1,518 @@
+[
+  {
+    "remote": "/DATA/DATA1/guest3/t10_topk32_20260920_runs/kather/moe_oeo_N4_k1_L4_lr0.002_s37/result.json",
+    "local": "C:\\Users\\Xml12\\OneDrive\\2026OpticsMoE\\LightGenV2\\tasks\\t10_expert_scaling\\reports\\plotting\\kather_expert_count_20260921\\evidence\\seed37_completion\\moe_oeo_N4_k1_L4_lr0.002_s37\\result.json",
+    "sha256": "988ef51d5320e8c778b023c7d981159b06740d21aa60aa3bdf049cf97789664a",
+    "bytes": 3055
+  },
+  {
+    "remote": "/DATA/DATA1/guest3/t10_topk32_20260920_runs/kather/moe_oeo_N4_k1_L4_lr0.002_s37/test_result.json",
+    "local": "C:\\Users\\Xml12\\OneDrive\\2026OpticsMoE\\LightGenV2\\tasks\\t10_expert_scaling\\reports\\plotting\\kather_expert_count_20260921\\evidence\\seed37_completion\\moe_oeo_N4_k1_L4_lr0.002_s37\\test_result.json",
+    "sha256": "046ba95ab5ac70c41ed02b3d54bb49decc8f6773c821baa387c0ecc6c6495a09",
+    "bytes": 2118
+  },
+  {
+    "remote": "/DATA/DATA1/guest3/t10_topk32_20260920_runs/kather/moe_oeo_N4_k1_L4_lr0.002_s37/metadata.json",
+    "local": "C:\\Users\\Xml12\\OneDrive\\2026OpticsMoE\\LightGenV2\\tasks\\t10_expert_scaling\\reports\\plotting\\kather_expert_count_20260921\\evidence\\seed37_completion\\moe_oeo_N4_k1_L4_lr0.002_s37\\metadata.json",
+    "sha256": "d5e5cf7df24d7acbdde9da4df4601582869def9821c186a9a5a6d2edcd58e2d4",
+    "bytes": 4991
+  },
+  {
+    "remote": "/DATA/DATA1/guest3/t10_topk32_20260920_runs/kather/moe_oeo_N4_k1_L4_lr0.002_s37/status.json",
+    "local": "C:\\Users\\Xml12\\OneDrive\\2026OpticsMoE\\LightGenV2\\tasks\\t10_expert_scaling\\reports\\plotting\\kather_expert_count_20260921\\evidence\\seed37_completion\\moe_oeo_N4_k1_L4_lr0.002_s37\\status.json",
+    "sha256": "b691b9b32a3dc6d5115d0853c4f2d02ed26e623dd48f425e15613de9b317e937",
+    "bytes": 3096
+  },
+  {
+    "remote": "/DATA/DATA1/guest3/t10_topk32_20260920_runs/kather/moe_oeo_N4_k2_L4_lr0.002_s37/result.json",
+    "local": "C:\\Users\\Xml12\\OneDrive\\2026OpticsMoE\\LightGenV2\\tasks\\t10_expert_scaling\\reports\\plotting\\kather_expert_count_20260921\\evidence\\seed37_completion\\moe_oeo_N4_k2_L4_lr0.002_s37\\result.json",
+    "sha256": "a5018b4ce634176cb4d26f75f7bc84e1ac376f12d083a4431a86b0ed57dbc56b",
+    "bytes": 3044
+  },
+  {
+    "remote": "/DATA/DATA1/guest3/t10_topk32_20260920_runs/kather/moe_oeo_N4_k2_L4_lr0.002_s37/test_result.json",
+    "local": "C:\\Users\\Xml12\\OneDrive\\2026OpticsMoE\\LightGenV2\\tasks\\t10_expert_scaling\\reports\\plotting\\kather_expert_count_20260921\\evidence\\seed37_completion\\moe_oeo_N4_k2_L4_lr0.002_s37\\test_result.json",
+    "sha256": "2a9205c715147b5146c97101e28e622928d4af38816296adecf9e61713dc5cbf",
+    "bytes": 2097
+  },
+  {
+    "remote": "/DATA/DATA1/guest3/t10_topk32_20260920_runs/kather/moe_oeo_N4_k2_L4_lr0.002_s37/metadata.json",
+    "local": "C:\\Users\\Xml12\\OneDrive\\2026OpticsMoE\\LightGenV2\\tasks\\t10_expert_scaling\\reports\\plotting\\kather_expert_count_20260921\\evidence\\seed37_completion\\moe_oeo_N4_k2_L4_lr0.002_s37\\metadata.json",
+    "sha256": "1259cc40d853443d0bf27497feb3a246718d4a318db3f2286bb305ce28a4b220",
+    "bytes": 4991
+  },
+  {
+    "remote": "/DATA/DATA1/guest3/t10_topk32_20260920_runs/kather/moe_oeo_N4_k2_L4_lr0.002_s37/status.json",
+    "local": "C:\\Users\\Xml12\\OneDrive\\2026OpticsMoE\\LightGenV2\\tasks\\t10_expert_scaling\\reports\\plotting\\kather_expert_count_20260921\\evidence\\seed37_completion\\moe_oeo_N4_k2_L4_lr0.002_s37\\status.json",
+    "sha256": "75dfabe9ed62c365d1aaadaac7dc65f9b643817f51e48522904790a80c875f84",
+    "bytes": 3085
+  },
+  {
+    "remote": "/DATA/DATA1/guest3/t10_topk32_20260920_runs/kather/moe_oeo_N4_k3_L4_lr0.002_s37/result.json",
+    "local": "C:\\Users\\Xml12\\OneDrive\\2026OpticsMoE\\LightGenV2\\tasks\\t10_expert_scaling\\reports\\plotting\\kather_expert_count_20260921\\evidence\\seed37_completion\\moe_oeo_N4_k3_L4_lr0.002_s37\\result.json",
+    "sha256": "443513f92f122bf3e2d6979bfb52122a2944540fbba1978de1536d50be072193",
+    "bytes": 2957
+  },
+  {
+    "remote": "/DATA/DATA1/guest3/t10_topk32_20260920_runs/kather/moe_oeo_N4_k3_L4_lr0.002_s37/test_result.json",
+    "local": "C:\\Users\\Xml12\\OneDrive\\2026OpticsMoE\\LightGenV2\\tasks\\t10_expert_scaling\\reports\\plotting\\kather_expert_count_20260921\\evidence\\seed37_completion\\moe_oeo_N4_k3_L4_lr0.002_s37\\test_result.json",
+    "sha256": "1788b9c7fa52dc5ad6c17c85da21c9e83f66e17501f204b4dea38c4e69794a82",
+    "bytes": 2050
+  },
+  {
+    "remote": "/DATA/DATA1/guest3/t10_topk32_20260920_runs/kather/moe_oeo_N4_k3_L4_lr0.002_s37/metadata.json",
+    "local": "C:\\Users\\Xml12\\OneDrive\\2026OpticsMoE\\LightGenV2\\tasks\\t10_expert_scaling\\reports\\plotting\\kather_expert_count_20260921\\evidence\\seed37_completion\\moe_oeo_N4_k3_L4_lr0.002_s37\\metadata.json",
+    "sha256": "78489370fef10a462760ec2b8c435cbef78d4d091ccc543bbea7b868f794635c",
+    "bytes": 4991
+  },
+  {
+    "remote": "/DATA/DATA1/guest3/t10_topk32_20260920_runs/kather/moe_oeo_N4_k3_L4_lr0.002_s37/status.json",
+    "local": "C:\\Users\\Xml12\\OneDrive\\2026OpticsMoE\\LightGenV2\\tasks\\t10_expert_scaling\\reports\\plotting\\kather_expert_count_20260921\\evidence\\seed37_completion\\moe_oeo_N4_k3_L4_lr0.002_s37\\status.json",
+    "sha256": "23602b165cf2734bb2d0bfaec6b5933e0a5b20ca5d589d4b4bf2a87596403537",
+    "bytes": 2998
+  },
+  {
+    "remote": "/DATA/DATA1/guest3/t10_topk32_20260920_runs/kather/moe_oeo_N4_k4_L4_lr0.002_s37/result.json",
+    "local": "C:\\Users\\Xml12\\OneDrive\\2026OpticsMoE\\LightGenV2\\tasks\\t10_expert_scaling\\reports\\plotting\\kather_expert_count_20260921\\evidence\\seed37_completion\\moe_oeo_N4_k4_L4_lr0.002_s37\\result.json",
+    "sha256": "c3449676bf370d8beb9cb87f958b87693b939b9c41c09c1c22cc1edbc41abeb3",
+    "bytes": 2924
+  },
+  {
+    "remote": "/DATA/DATA1/guest3/t10_topk32_20260920_runs/kather/moe_oeo_N4_k4_L4_lr0.002_s37/test_result.json",
+    "local": "C:\\Users\\Xml12\\OneDrive\\2026OpticsMoE\\LightGenV2\\tasks\\t10_expert_scaling\\reports\\plotting\\kather_expert_count_20260921\\evidence\\seed37_completion\\moe_oeo_N4_k4_L4_lr0.002_s37\\test_result.json",
+    "sha256": "f9cfbd0b5185b6ce60ad3d2daa00ea5751420d4776930c684165863ec3ca1261",
+    "bytes": 2051
+  },
+  {
+    "remote": "/DATA/DATA1/guest3/t10_topk32_20260920_runs/kather/moe_oeo_N4_k4_L4_lr0.002_s37/metadata.json",
+    "local": "C:\\Users\\Xml12\\OneDrive\\2026OpticsMoE\\LightGenV2\\tasks\\t10_expert_scaling\\reports\\plotting\\kather_expert_count_20260921\\evidence\\seed37_completion\\moe_oeo_N4_k4_L4_lr0.002_s37\\metadata.json",
+    "sha256": "6e3181e29b722d6e3162dd43b4093c228e14ac6268293fad754e5ba417a8b992",
+    "bytes": 4991
+  },
+  {
+    "remote": "/DATA/DATA1/guest3/t10_topk32_20260920_runs/kather/moe_oeo_N4_k4_L4_lr0.002_s37/status.json",
+    "local": "C:\\Users\\Xml12\\OneDrive\\2026OpticsMoE\\LightGenV2\\tasks\\t10_expert_scaling\\reports\\plotting\\kather_expert_count_20260921\\evidence\\seed37_completion\\moe_oeo_N4_k4_L4_lr0.002_s37\\status.json",
+    "sha256": "9c70023cbd977439c0b7d22c3b725b7fbf96fc06d2c10e6f959e2facd4c24f06",
+    "bytes": 2965
+  },
+  {
+    "remote": "/DATA/DATA1/guest3/t10_topk32_20260920_runs/kather/moe_oeo_N16_k1_L4_lr0.002_s37/result.json",
+    "local": "C:\\Users\\Xml12\\OneDrive\\2026OpticsMoE\\LightGenV2\\tasks\\t10_expert_scaling\\reports\\plotting\\kather_expert_count_20260921\\evidence\\seed37_completion\\moe_oeo_N16_k1_L4_lr0.002_s37\\result.json",
+    "sha256": "777d6b6e03330f9a74abfe9ddfeebeec6438c8743f6c81431c23dfcda45d26ed",
+    "bytes": 4366
+  },
+  {
+    "remote": "/DATA/DATA1/guest3/t10_topk32_20260920_runs/kather/moe_oeo_N16_k1_L4_lr0.002_s37/test_result.json",
+    "local": "C:\\Users\\Xml12\\OneDrive\\2026OpticsMoE\\LightGenV2\\tasks\\t10_expert_scaling\\reports\\plotting\\kather_expert_count_20260921\\evidence\\seed37_completion\\moe_oeo_N16_k1_L4_lr0.002_s37\\test_result.json",
+    "sha256": "04bff304b3e4742e704b107d22402c321c8f3ec635e99cb72b1a5194ca67a6d8",
+    "bytes": 2854
+  },
+  {
+    "remote": "/DATA/DATA1/guest3/t10_topk32_20260920_runs/kather/moe_oeo_N16_k1_L4_lr0.002_s37/metadata.json",
+    "local": "C:\\Users\\Xml12\\OneDrive\\2026OpticsMoE\\LightGenV2\\tasks\\t10_expert_scaling\\reports\\plotting\\kather_expert_count_20260921\\evidence\\seed37_completion\\moe_oeo_N16_k1_L4_lr0.002_s37\\metadata.json",
+    "sha256": "5b11b7a42759a56c0feadb0d4675babe7f055e9e87e561183fd3d1025ccca1c6",
+    "bytes": 5005
+  },
+  {
+    "remote": "/DATA/DATA1/guest3/t10_topk32_20260920_runs/kather/moe_oeo_N16_k1_L4_lr0.002_s37/status.json",
+    "local": "C:\\Users\\Xml12\\OneDrive\\2026OpticsMoE\\LightGenV2\\tasks\\t10_expert_scaling\\reports\\plotting\\kather_expert_count_20260921\\evidence\\seed37_completion\\moe_oeo_N16_k1_L4_lr0.002_s37\\status.json",
+    "sha256": "3bb1f8aac2d5294aba5995e1fe57acacda67bfb92f0ddede7e47ab957b0befbf",
+    "bytes": 4406
+  },
+  {
+    "remote": "/DATA/DATA1/guest3/t10_topk32_20260920_runs/kather/moe_oeo_N16_k4_L4_lr0.002_s37/result.json",
+    "local": "C:\\Users\\Xml12\\OneDrive\\2026OpticsMoE\\LightGenV2\\tasks\\t10_expert_scaling\\reports\\plotting\\kather_expert_count_20260921\\evidence\\seed37_completion\\moe_oeo_N16_k4_L4_lr0.002_s37\\result.json",
+    "sha256": "0f37a6c4aca3286b966311e60a7cef4a39173d4689e9d4ab8db53955145e9841",
+    "bytes": 4363
+  },
+  {
+    "remote": "/DATA/DATA1/guest3/t10_topk32_20260920_runs/kather/moe_oeo_N16_k4_L4_lr0.002_s37/test_result.json",
+    "local": "C:\\Users\\Xml12\\OneDrive\\2026OpticsMoE\\LightGenV2\\tasks\\t10_expert_scaling\\reports\\plotting\\kather_expert_count_20260921\\evidence\\seed37_completion\\moe_oeo_N16_k4_L4_lr0.002_s37\\test_result.json",
+    "sha256": "89dd207b49f97936bf8d952147c545ba6a39f9ab96eca0c9b2768c864c42f136",
+    "bytes": 2861
+  },
+  {
+    "remote": "/DATA/DATA1/guest3/t10_topk32_20260920_runs/kather/moe_oeo_N16_k4_L4_lr0.002_s37/metadata.json",
+    "local": "C:\\Users\\Xml12\\OneDrive\\2026OpticsMoE\\LightGenV2\\tasks\\t10_expert_scaling\\reports\\plotting\\kather_expert_count_20260921\\evidence\\seed37_completion\\moe_oeo_N16_k4_L4_lr0.002_s37\\metadata.json",
+    "sha256": "543dcd8527f1981f61401a31c180cc97b71d93e277e022813093150f4a9333c1",
+    "bytes": 5005
+  },
+  {
+    "remote": "/DATA/DATA1/guest3/t10_topk32_20260920_runs/kather/moe_oeo_N16_k4_L4_lr0.002_s37/status.json",
+    "local": "C:\\Users\\Xml12\\OneDrive\\2026OpticsMoE\\LightGenV2\\tasks\\t10_expert_scaling\\reports\\plotting\\kather_expert_count_20260921\\evidence\\seed37_completion\\moe_oeo_N16_k4_L4_lr0.002_s37\\status.json",
+    "sha256": "06547cbeb3e36319f96fd6478f376dc3741a1a87640bdf6dfd98a53378628e04",
+    "bytes": 4403
+  },
+  {
+    "remote": "/DATA/DATA1/guest3/t10_topk32_20260920_runs/kather/moe_oeo_N16_k8_L4_lr0.002_s37/result.json",
+    "local": "C:\\Users\\Xml12\\OneDrive\\2026OpticsMoE\\LightGenV2\\tasks\\t10_expert_scaling\\reports\\plotting\\kather_expert_count_20260921\\evidence\\seed37_completion\\moe_oeo_N16_k8_L4_lr0.002_s37\\result.json",
+    "sha256": "5917a4ccdde7d51ed1e688e444c9e203c90987484b58291fce1747a419acc05f",
+    "bytes": 4330
+  },
+  {
+    "remote": "/DATA/DATA1/guest3/t10_topk32_20260920_runs/kather/moe_oeo_N16_k8_L4_lr0.002_s37/test_result.json",
+    "local": "C:\\Users\\Xml12\\OneDrive\\2026OpticsMoE\\LightGenV2\\tasks\\t10_expert_scaling\\reports\\plotting\\kather_expert_count_20260921\\evidence\\seed37_completion\\moe_oeo_N16_k8_L4_lr0.002_s37\\test_result.json",
+    "sha256": "8a3260be8b94be859006ebb0d49e9148c32a919d2fff8c6760f1d4d3e4d3e31e",
+    "bytes": 2831
+  },
+  {
+    "remote": "/DATA/DATA1/guest3/t10_topk32_20260920_runs/kather/moe_oeo_N16_k8_L4_lr0.002_s37/metadata.json",
+    "local": "C:\\Users\\Xml12\\OneDrive\\2026OpticsMoE\\LightGenV2\\tasks\\t10_expert_scaling\\reports\\plotting\\kather_expert_count_20260921\\evidence\\seed37_completion\\moe_oeo_N16_k8_L4_lr0.002_s37\\metadata.json",
+    "sha256": "ed8a384246f1a5faff08e6d194dd94224ad3b2ffa96b9e26d5fb796535211906",
+    "bytes": 5005
+  },
+  {
+    "remote": "/DATA/DATA1/guest3/t10_topk32_20260920_runs/kather/moe_oeo_N16_k8_L4_lr0.002_s37/status.json",
+    "local": "C:\\Users\\Xml12\\OneDrive\\2026OpticsMoE\\LightGenV2\\tasks\\t10_expert_scaling\\reports\\plotting\\kather_expert_count_20260921\\evidence\\seed37_completion\\moe_oeo_N16_k8_L4_lr0.002_s37\\status.json",
+    "sha256": "a48938d5454fb0dec5395de856de772be97210cfa2c5d0def9052b8c45a4577a",
+    "bytes": 4370
+  },
+  {
+    "remote": "/DATA/DATA1/guest3/t10_topk32_20260920_runs/kather/moe_oeo_N16_k16_L4_lr0.002_s37/result.json",
+    "local": "C:\\Users\\Xml12\\OneDrive\\2026OpticsMoE\\LightGenV2\\tasks\\t10_expert_scaling\\reports\\plotting\\kather_expert_count_20260921\\evidence\\seed37_completion\\moe_oeo_N16_k16_L4_lr0.002_s37\\result.json",
+    "sha256": "74d01983a628fc88e730cee6cf924523b6c460acbc15d811e9759c9f177e1024",
+    "bytes": 3841
+  },
+  {
+    "remote": "/DATA/DATA1/guest3/t10_topk32_20260920_runs/kather/moe_oeo_N16_k16_L4_lr0.002_s37/test_result.json",
+    "local": "C:\\Users\\Xml12\\OneDrive\\2026OpticsMoE\\LightGenV2\\tasks\\t10_expert_scaling\\reports\\plotting\\kather_expert_count_20260921\\evidence\\seed37_completion\\moe_oeo_N16_k16_L4_lr0.002_s37\\test_result.json",
+    "sha256": "4e2421646635fc123e0f5e7abe4983fb568cce9e43fd1eea444f9b876c6949fb",
+    "bytes": 2606
+  },
+  {
+    "remote": "/DATA/DATA1/guest3/t10_topk32_20260920_runs/kather/moe_oeo_N16_k16_L4_lr0.002_s37/metadata.json",
+    "local": "C:\\Users\\Xml12\\OneDrive\\2026OpticsMoE\\LightGenV2\\tasks\\t10_expert_scaling\\reports\\plotting\\kather_expert_count_20260921\\evidence\\seed37_completion\\moe_oeo_N16_k16_L4_lr0.002_s37\\metadata.json",
+    "sha256": "a3fc2cc9895929c495787f6588072b414caf0c46b4cfe61c743bf2cefb6f67d4",
+    "bytes": 5009
+  },
+  {
+    "remote": "/DATA/DATA1/guest3/t10_topk32_20260920_runs/kather/moe_oeo_N16_k16_L4_lr0.002_s37/status.json",
+    "local": "C:\\Users\\Xml12\\OneDrive\\2026OpticsMoE\\LightGenV2\\tasks\\t10_expert_scaling\\reports\\plotting\\kather_expert_count_20260921\\evidence\\seed37_completion\\moe_oeo_N16_k16_L4_lr0.002_s37\\status.json",
+    "sha256": "afbb469bcefe85b2601ace768d79d53295a91446ec9fd63226dcdbab2decee54",
+    "bytes": 3881
+  },
+  {
+    "remote": "/DATA/DATA1/guest3/t10_topk32_20260920_runs/kather/moe_oeo_N25_k1_L4_lr0.002_s37/result.json",
+    "local": "C:\\Users\\Xml12\\OneDrive\\2026OpticsMoE\\LightGenV2\\tasks\\t10_expert_scaling\\reports\\plotting\\kather_expert_count_20260921\\evidence\\seed37_completion\\moe_oeo_N25_k1_L4_lr0.002_s37\\result.json",
+    "sha256": "30e1cb3a84edd62da05fa44516c87d7ca4e5d1dd807a8858117f022ad4d873cb",
+    "bytes": 5353
+  },
+  {
+    "remote": "/DATA/DATA1/guest3/t10_topk32_20260920_runs/kather/moe_oeo_N25_k1_L4_lr0.002_s37/test_result.json",
+    "local": "C:\\Users\\Xml12\\OneDrive\\2026OpticsMoE\\LightGenV2\\tasks\\t10_expert_scaling\\reports\\plotting\\kather_expert_count_20260921\\evidence\\seed37_completion\\moe_oeo_N25_k1_L4_lr0.002_s37\\test_result.json",
+    "sha256": "0c7f24d957068470af39556ff791411faae9ab61ac988317d1bdbdea032ab0a6",
+    "bytes": 3345
+  },
+  {
+    "remote": "/DATA/DATA1/guest3/t10_topk32_20260920_runs/kather/moe_oeo_N25_k1_L4_lr0.002_s37/metadata.json",
+    "local": "C:\\Users\\Xml12\\OneDrive\\2026OpticsMoE\\LightGenV2\\tasks\\t10_expert_scaling\\reports\\plotting\\kather_expert_count_20260921\\evidence\\seed37_completion\\moe_oeo_N25_k1_L4_lr0.002_s37\\metadata.json",
+    "sha256": "8329f68fad90696a876cd1d31454afee45c108b2ff61e8c0e65f505177862a6a",
+    "bytes": 5008
+  },
+  {
+    "remote": "/DATA/DATA1/guest3/t10_topk32_20260920_runs/kather/moe_oeo_N25_k1_L4_lr0.002_s37/status.json",
+    "local": "C:\\Users\\Xml12\\OneDrive\\2026OpticsMoE\\LightGenV2\\tasks\\t10_expert_scaling\\reports\\plotting\\kather_expert_count_20260921\\evidence\\seed37_completion\\moe_oeo_N25_k1_L4_lr0.002_s37\\status.json",
+    "sha256": "0cae26b88163307454913e40cce7453d4f3183bae4134d0181f816d260fcc727",
+    "bytes": 5394
+  },
+  {
+    "remote": "/DATA/DATA1/guest3/t10_topk32_20260920_runs/kather/moe_oeo_N25_k6_L4_lr0.002_s37/result.json",
+    "local": "C:\\Users\\Xml12\\OneDrive\\2026OpticsMoE\\LightGenV2\\tasks\\t10_expert_scaling\\reports\\plotting\\kather_expert_count_20260921\\evidence\\seed37_completion\\moe_oeo_N25_k6_L4_lr0.002_s37\\result.json",
+    "sha256": "28ca5d41dcc7d40e57421b87012ae28fdaf19f796170876c9d29a38309d2ab6b",
+    "bytes": 5335
+  },
+  {
+    "remote": "/DATA/DATA1/guest3/t10_topk32_20260920_runs/kather/moe_oeo_N25_k6_L4_lr0.002_s37/test_result.json",
+    "local": "C:\\Users\\Xml12\\OneDrive\\2026OpticsMoE\\LightGenV2\\tasks\\t10_expert_scaling\\reports\\plotting\\kather_expert_count_20260921\\evidence\\seed37_completion\\moe_oeo_N25_k6_L4_lr0.002_s37\\test_result.json",
+    "sha256": "4edb917ad187b87484f3c31eb40bddbae888109a9e4a60a2fd5b3149726ed526",
+    "bytes": 3331
+  },
+  {
+    "remote": "/DATA/DATA1/guest3/t10_topk32_20260920_runs/kather/moe_oeo_N25_k6_L4_lr0.002_s37/metadata.json",
+    "local": "C:\\Users\\Xml12\\OneDrive\\2026OpticsMoE\\LightGenV2\\tasks\\t10_expert_scaling\\reports\\plotting\\kather_expert_count_20260921\\evidence\\seed37_completion\\moe_oeo_N25_k6_L4_lr0.002_s37\\metadata.json",
+    "sha256": "cb1fc677e640b5e846702204aebd8911a9433677e1b12d0d64b502abda5a4c3d",
+    "bytes": 5008
+  },
+  {
+    "remote": "/DATA/DATA1/guest3/t10_topk32_20260920_runs/kather/moe_oeo_N25_k6_L4_lr0.002_s37/status.json",
+    "local": "C:\\Users\\Xml12\\OneDrive\\2026OpticsMoE\\LightGenV2\\tasks\\t10_expert_scaling\\reports\\plotting\\kather_expert_count_20260921\\evidence\\seed37_completion\\moe_oeo_N25_k6_L4_lr0.002_s37\\status.json",
+    "sha256": "9701417d0695d6782f61fe0c5f89fc7201ce7cfdaba1e645a2f5d3544545bff5",
+    "bytes": 5376
+  },
+  {
+    "remote": "/DATA/DATA1/guest3/t10_topk32_20260920_runs/kather/moe_oeo_N25_k12_L4_lr0.002_s37/result.json",
+    "local": "C:\\Users\\Xml12\\OneDrive\\2026OpticsMoE\\LightGenV2\\tasks\\t10_expert_scaling\\reports\\plotting\\kather_expert_count_20260921\\evidence\\seed37_completion\\moe_oeo_N25_k12_L4_lr0.002_s37\\result.json",
+    "sha256": "b47f35827f67a6c5ebb23a3b5978ed50dad13cef6dd1a5d0cf69fb897d0ecb17",
+    "bytes": 5237
+  },
+  {
+    "remote": "/DATA/DATA1/guest3/t10_topk32_20260920_runs/kather/moe_oeo_N25_k12_L4_lr0.002_s37/test_result.json",
+    "local": "C:\\Users\\Xml12\\OneDrive\\2026OpticsMoE\\LightGenV2\\tasks\\t10_expert_scaling\\reports\\plotting\\kather_expert_count_20260921\\evidence\\seed37_completion\\moe_oeo_N25_k12_L4_lr0.002_s37\\test_result.json",
+    "sha256": "d52ec3d1bc4e21cc0505a118a2e5f55ad3ca72ce5cd3ea5b7f435fe6c404fd8f",
+    "bytes": 3289
+  },
+  {
+    "remote": "/DATA/DATA1/guest3/t10_topk32_20260920_runs/kather/moe_oeo_N25_k12_L4_lr0.002_s37/metadata.json",
+    "local": "C:\\Users\\Xml12\\OneDrive\\2026OpticsMoE\\LightGenV2\\tasks\\t10_expert_scaling\\reports\\plotting\\kather_expert_count_20260921\\evidence\\seed37_completion\\moe_oeo_N25_k12_L4_lr0.002_s37\\metadata.json",
+    "sha256": "711c9fa5ffaf96f5561561c7d7c9207c0940b868eea617aff5907b3cef0e9e6b",
+    "bytes": 5010
+  },
+  {
+    "remote": "/DATA/DATA1/guest3/t10_topk32_20260920_runs/kather/moe_oeo_N25_k12_L4_lr0.002_s37/status.json",
+    "local": "C:\\Users\\Xml12\\OneDrive\\2026OpticsMoE\\LightGenV2\\tasks\\t10_expert_scaling\\reports\\plotting\\kather_expert_count_20260921\\evidence\\seed37_completion\\moe_oeo_N25_k12_L4_lr0.002_s37\\status.json",
+    "sha256": "4813808497eb6fc0b4018bc14ae9a168ad2af18c20ae1ee43f1b0dd21bbdb875",
+    "bytes": 5276
+  },
+  {
+    "remote": "/DATA/DATA1/guest3/t10_topk32_20260920_runs/kather/moe_oeo_N25_k25_L4_lr0.002_s37/result.json",
+    "local": "C:\\Users\\Xml12\\OneDrive\\2026OpticsMoE\\LightGenV2\\tasks\\t10_expert_scaling\\reports\\plotting\\kather_expert_count_20260921\\evidence\\seed37_completion\\moe_oeo_N25_k25_L4_lr0.002_s37\\result.json",
+    "sha256": "576c6982bd5eb6e3555845f21aafd78f115daba47fbe1197bab091ee5a5a6a6f",
+    "bytes": 4531
+  },
+  {
+    "remote": "/DATA/DATA1/guest3/t10_topk32_20260920_runs/kather/moe_oeo_N25_k25_L4_lr0.002_s37/test_result.json",
+    "local": "C:\\Users\\Xml12\\OneDrive\\2026OpticsMoE\\LightGenV2\\tasks\\t10_expert_scaling\\reports\\plotting\\kather_expert_count_20260921\\evidence\\seed37_completion\\moe_oeo_N25_k25_L4_lr0.002_s37\\test_result.json",
+    "sha256": "2e4c313a6ec803c54894a324d62ba2c6d5e42c2fe447f92d52eb8533cf8540c0",
+    "bytes": 2945
+  },
+  {
+    "remote": "/DATA/DATA1/guest3/t10_topk32_20260920_runs/kather/moe_oeo_N25_k25_L4_lr0.002_s37/metadata.json",
+    "local": "C:\\Users\\Xml12\\OneDrive\\2026OpticsMoE\\LightGenV2\\tasks\\t10_expert_scaling\\reports\\plotting\\kather_expert_count_20260921\\evidence\\seed37_completion\\moe_oeo_N25_k25_L4_lr0.002_s37\\metadata.json",
+    "sha256": "37dd6f0964d03a20861bb1f58f12a46e195b26d09f4e731d2318991cb5b22939",
+    "bytes": 5010
+  },
+  {
+    "remote": "/DATA/DATA1/guest3/t10_topk32_20260920_runs/kather/moe_oeo_N25_k25_L4_lr0.002_s37/status.json",
+    "local": "C:\\Users\\Xml12\\OneDrive\\2026OpticsMoE\\LightGenV2\\tasks\\t10_expert_scaling\\reports\\plotting\\kather_expert_count_20260921\\evidence\\seed37_completion\\moe_oeo_N25_k25_L4_lr0.002_s37\\status.json",
+    "sha256": "748816b183e4896960b73964feba183cf5ba8c9e87e754986b4ddb30ced6844f",
+    "bytes": 4570
+  },
+  {
+    "remote": "/DATA/DATA1/guest3/t10_topk32_20260920_runs/kather/moe_oeo_N49_k1_L4_lr0.002_s37/result.json",
+    "local": "C:\\Users\\Xml12\\OneDrive\\2026OpticsMoE\\LightGenV2\\tasks\\t10_expert_scaling\\reports\\plotting\\kather_expert_count_20260921\\evidence\\seed37_completion\\moe_oeo_N49_k1_L4_lr0.002_s37\\result.json",
+    "sha256": "dcad8fd794ea2fb3e3a0f13f22c9eb4c8563ba748425b6f452654d3250d32951",
+    "bytes": 7736
+  },
+  {
+    "remote": "/DATA/DATA1/guest3/t10_topk32_20260920_runs/kather/moe_oeo_N49_k1_L4_lr0.002_s37/test_result.json",
+    "local": "C:\\Users\\Xml12\\OneDrive\\2026OpticsMoE\\LightGenV2\\tasks\\t10_expert_scaling\\reports\\plotting\\kather_expert_count_20260921\\evidence\\seed37_completion\\moe_oeo_N49_k1_L4_lr0.002_s37\\test_result.json",
+    "sha256": "aaaed6227557b24202a1913ca1b8a009f365868d35da73d054853f1716361ecd",
+    "bytes": 4436
+  },
+  {
+    "remote": "/DATA/DATA1/guest3/t10_topk32_20260920_runs/kather/moe_oeo_N49_k1_L4_lr0.002_s37/metadata.json",
+    "local": "C:\\Users\\Xml12\\OneDrive\\2026OpticsMoE\\LightGenV2\\tasks\\t10_expert_scaling\\reports\\plotting\\kather_expert_count_20260921\\evidence\\seed37_completion\\moe_oeo_N49_k1_L4_lr0.002_s37\\metadata.json",
+    "sha256": "b3bc59741f9e6c934617a894b27ff53b5a0a2e3e75da4b2d47ade8cd47fce1e6",
+    "bytes": 5014
+  },
+  {
+    "remote": "/DATA/DATA1/guest3/t10_topk32_20260920_runs/kather/moe_oeo_N49_k1_L4_lr0.002_s37/status.json",
+    "local": "C:\\Users\\Xml12\\OneDrive\\2026OpticsMoE\\LightGenV2\\tasks\\t10_expert_scaling\\reports\\plotting\\kather_expert_count_20260921\\evidence\\seed37_completion\\moe_oeo_N49_k1_L4_lr0.002_s37\\status.json",
+    "sha256": "1979770be51faacf059d40d97575230ce01490e28a148cc846ea7f0263b2c9ca",
+    "bytes": 7777
+  },
+  {
+    "remote": "/DATA/DATA1/guest3/t10_topk32_20260920_runs/kather/moe_oeo_N49_k12_L4_lr0.002_s37/result.json",
+    "local": "C:\\Users\\Xml12\\OneDrive\\2026OpticsMoE\\LightGenV2\\tasks\\t10_expert_scaling\\reports\\plotting\\kather_expert_count_20260921\\evidence\\seed37_completion\\moe_oeo_N49_k12_L4_lr0.002_s37\\result.json",
+    "sha256": "3fbdfd2800fb955670628f510c45b2c0d7548676348462707d21487de1c68991",
+    "bytes": 7935
+  },
+  {
+    "remote": "/DATA/DATA1/guest3/t10_topk32_20260920_runs/kather/moe_oeo_N49_k12_L4_lr0.002_s37/test_result.json",
+    "local": "C:\\Users\\Xml12\\OneDrive\\2026OpticsMoE\\LightGenV2\\tasks\\t10_expert_scaling\\reports\\plotting\\kather_expert_count_20260921\\evidence\\seed37_completion\\moe_oeo_N49_k12_L4_lr0.002_s37\\test_result.json",
+    "sha256": "3a44259ab1074fa655baac33894ca11a103aadc5be6e5348d68de25695d49cb9",
+    "bytes": 4651
+  },
+  {
+    "remote": "/DATA/DATA1/guest3/t10_topk32_20260920_runs/kather/moe_oeo_N49_k12_L4_lr0.002_s37/metadata.json",
+    "local": "C:\\Users\\Xml12\\OneDrive\\2026OpticsMoE\\LightGenV2\\tasks\\t10_expert_scaling\\reports\\plotting\\kather_expert_count_20260921\\evidence\\seed37_completion\\moe_oeo_N49_k12_L4_lr0.002_s37\\metadata.json",
+    "sha256": "a614915299ef7388a68718c96502be7d7b05517f4af5f748bf8cec6d110cb710",
+    "bytes": 5018
+  },
+  {
+    "remote": "/DATA/DATA1/guest3/t10_topk32_20260920_runs/kather/moe_oeo_N49_k12_L4_lr0.002_s37/status.json",
+    "local": "C:\\Users\\Xml12\\OneDrive\\2026OpticsMoE\\LightGenV2\\tasks\\t10_expert_scaling\\reports\\plotting\\kather_expert_count_20260921\\evidence\\seed37_completion\\moe_oeo_N49_k12_L4_lr0.002_s37\\status.json",
+    "sha256": "bb8bd2bddca5c70a3ab30c9f981be88119456e5554327e2f4aca73eeeec7ddeb",
+    "bytes": 7976
+  },
+  {
+    "remote": "/DATA/DATA1/guest3/t10_topk32_20260920_runs/kather/moe_oeo_N49_k24_L4_lr0.002_s37/result.json",
+    "local": "C:\\Users\\Xml12\\OneDrive\\2026OpticsMoE\\LightGenV2\\tasks\\t10_expert_scaling\\reports\\plotting\\kather_expert_count_20260921\\evidence\\seed37_completion\\moe_oeo_N49_k24_L4_lr0.002_s37\\result.json",
+    "sha256": "b144bdd72131502729749a3efbe505bed3a6f15fa07356cdc38bc25e95b5afa2",
+    "bytes": 7855
+  },
+  {
+    "remote": "/DATA/DATA1/guest3/t10_topk32_20260920_runs/kather/moe_oeo_N49_k24_L4_lr0.002_s37/test_result.json",
+    "local": "C:\\Users\\Xml12\\OneDrive\\2026OpticsMoE\\LightGenV2\\tasks\\t10_expert_scaling\\reports\\plotting\\kather_expert_count_20260921\\evidence\\seed37_completion\\moe_oeo_N49_k24_L4_lr0.002_s37\\test_result.json",
+    "sha256": "fe8222939b822271cf33e8d6eb8155dd97f44f80a498e79ae4513a34c1e9e632",
+    "bytes": 4583
+  },
+  {
+    "remote": "/DATA/DATA1/guest3/t10_topk32_20260920_runs/kather/moe_oeo_N49_k24_L4_lr0.002_s37/metadata.json",
+    "local": "C:\\Users\\Xml12\\OneDrive\\2026OpticsMoE\\LightGenV2\\tasks\\t10_expert_scaling\\reports\\plotting\\kather_expert_count_20260921\\evidence\\seed37_completion\\moe_oeo_N49_k24_L4_lr0.002_s37\\metadata.json",
+    "sha256": "7ce7e97513e63483a2c3466665f9092abcc52305fd1b09f025e3f5ab8f15e78f",
+    "bytes": 5018
+  },
+  {
+    "remote": "/DATA/DATA1/guest3/t10_topk32_20260920_runs/kather/moe_oeo_N49_k24_L4_lr0.002_s37/status.json",
+    "local": "C:\\Users\\Xml12\\OneDrive\\2026OpticsMoE\\LightGenV2\\tasks\\t10_expert_scaling\\reports\\plotting\\kather_expert_count_20260921\\evidence\\seed37_completion\\moe_oeo_N49_k24_L4_lr0.002_s37\\status.json",
+    "sha256": "da2b78987b8268ad046f1a6c0203c6ad7f8a993c5e2974a78d41de6c8e76e8b1",
+    "bytes": 7896
+  },
+  {
+    "remote": "/DATA/DATA1/guest3/t10_topk32_20260920_runs/kather/moe_oeo_N49_k49_L4_lr0.002_s37/result.json",
+    "local": "C:\\Users\\Xml12\\OneDrive\\2026OpticsMoE\\LightGenV2\\tasks\\t10_expert_scaling\\reports\\plotting\\kather_expert_count_20260921\\evidence\\seed37_completion\\moe_oeo_N49_k49_L4_lr0.002_s37\\result.json",
+    "sha256": "1f8cdc2eacfeea496721d2063a91adc217260a7f4bee7897eaeb2c299565cd84",
+    "bytes": 6399
+  },
+  {
+    "remote": "/DATA/DATA1/guest3/t10_topk32_20260920_runs/kather/moe_oeo_N49_k49_L4_lr0.002_s37/test_result.json",
+    "local": "C:\\Users\\Xml12\\OneDrive\\2026OpticsMoE\\LightGenV2\\tasks\\t10_expert_scaling\\reports\\plotting\\kather_expert_count_20260921\\evidence\\seed37_completion\\moe_oeo_N49_k49_L4_lr0.002_s37\\test_result.json",
+    "sha256": "1a83728a2d593c80a4158c8872515254fbf00d79cca05ab6226e3d184cb65532",
+    "bytes": 3883
+  },
+  {
+    "remote": "/DATA/DATA1/guest3/t10_topk32_20260920_runs/kather/moe_oeo_N49_k49_L4_lr0.002_s37/metadata.json",
+    "local": "C:\\Users\\Xml12\\OneDrive\\2026OpticsMoE\\LightGenV2\\tasks\\t10_expert_scaling\\reports\\plotting\\kather_expert_count_20260921\\evidence\\seed37_completion\\moe_oeo_N49_k49_L4_lr0.002_s37\\metadata.json",
+    "sha256": "8442d3bcd297c3601c614c2b0ae6c48ac93c2f13ecde33c997a485a157a75dc7",
+    "bytes": 5018
+  },
+  {
+    "remote": "/DATA/DATA1/guest3/t10_topk32_20260920_runs/kather/moe_oeo_N49_k49_L4_lr0.002_s37/status.json",
+    "local": "C:\\Users\\Xml12\\OneDrive\\2026OpticsMoE\\LightGenV2\\tasks\\t10_expert_scaling\\reports\\plotting\\kather_expert_count_20260921\\evidence\\seed37_completion\\moe_oeo_N49_k49_L4_lr0.002_s37\\status.json",
+    "sha256": "9c7d8ce92ba8b9e232015809e633f860efcbacde291337677a71e1fba81077a1",
+    "bytes": 6440
+  },
+  {
+    "remote": "/DATA/DATA1/guest3/t10_topk32_20260920_runs/kather/d2nn_expert_global_N4_k4_L4_lr0.002_s37/result.json",
+    "local": "C:\\Users\\Xml12\\OneDrive\\2026OpticsMoE\\LightGenV2\\tasks\\t10_expert_scaling\\reports\\plotting\\kather_expert_count_20260921\\evidence\\seed37_completion\\d2nn_expert_global_N4_k4_L4_lr0.002_s37\\result.json",
+    "sha256": "de5eda5af9cc9048a171e6a72484ba94bd78b97bef6faaa8b6a75e9ce090e675",
+    "bytes": 2444
+  },
+  {
+    "remote": "/DATA/DATA1/guest3/t10_topk32_20260920_runs/kather/d2nn_expert_global_N4_k4_L4_lr0.002_s37/test_result.json",
+    "local": "C:\\Users\\Xml12\\OneDrive\\2026OpticsMoE\\LightGenV2\\tasks\\t10_expert_scaling\\reports\\plotting\\kather_expert_count_20260921\\evidence\\seed37_completion\\d2nn_expert_global_N4_k4_L4_lr0.002_s37\\test_result.json",
+    "sha256": "74b2530c715c28750d84763dfef5ead40d0e9d2470272673beaf4a64684d1961",
+    "bytes": 1901
+  },
+  {
+    "remote": "/DATA/DATA1/guest3/t10_topk32_20260920_runs/kather/d2nn_expert_global_N4_k4_L4_lr0.002_s37/metadata.json",
+    "local": "C:\\Users\\Xml12\\OneDrive\\2026OpticsMoE\\LightGenV2\\tasks\\t10_expert_scaling\\reports\\plotting\\kather_expert_count_20260921\\evidence\\seed37_completion\\d2nn_expert_global_N4_k4_L4_lr0.002_s37\\metadata.json",
+    "sha256": "30524b0d637f9323e1627900f5e5430d712d7b2e0e6884cb1c025776d2a7af1b",
+    "bytes": 5129
+  },
+  {
+    "remote": "/DATA/DATA1/guest3/t10_topk32_20260920_runs/kather/d2nn_expert_global_N4_k4_L4_lr0.002_s37/status.json",
+    "local": "C:\\Users\\Xml12\\OneDrive\\2026OpticsMoE\\LightGenV2\\tasks\\t10_expert_scaling\\reports\\plotting\\kather_expert_count_20260921\\evidence\\seed37_completion\\d2nn_expert_global_N4_k4_L4_lr0.002_s37\\status.json",
+    "sha256": "dbff8b26ddbfb888f46538c2f2346a14426bfc5d90fe43971ea6d4ef9225fb92",
+    "bytes": 2485
+  },
+  {
+    "remote": "/DATA/DATA1/guest3/t10_topk32_20260920_runs/kather/d2nn_expert_global_N16_k16_L4_lr0.002_s37/result.json",
+    "local": "C:\\Users\\Xml12\\OneDrive\\2026OpticsMoE\\LightGenV2\\tasks\\t10_expert_scaling\\reports\\plotting\\kather_expert_count_20260921\\evidence\\seed37_completion\\d2nn_expert_global_N16_k16_L4_lr0.002_s37\\result.json",
+    "sha256": "aaaa2fa820f0b3bffddc0898ec02a7d1aabc4c39b6ea164b40d5748047adc024",
+    "bytes": 2444
+  },
+  {
+    "remote": "/DATA/DATA1/guest3/t10_topk32_20260920_runs/kather/d2nn_expert_global_N16_k16_L4_lr0.002_s37/test_result.json",
+    "local": "C:\\Users\\Xml12\\OneDrive\\2026OpticsMoE\\LightGenV2\\tasks\\t10_expert_scaling\\reports\\plotting\\kather_expert_count_20260921\\evidence\\seed37_completion\\d2nn_expert_global_N16_k16_L4_lr0.002_s37\\test_result.json",
+    "sha256": "e02b15cc0b45c262d5e975cbffd022e2f5ea0012cc0c177f42d84ede73b64392",
+    "bytes": 1898
+  },
+  {
+    "remote": "/DATA/DATA1/guest3/t10_topk32_20260920_runs/kather/d2nn_expert_global_N16_k16_L4_lr0.002_s37/metadata.json",
+    "local": "C:\\Users\\Xml12\\OneDrive\\2026OpticsMoE\\LightGenV2\\tasks\\t10_expert_scaling\\reports\\plotting\\kather_expert_count_20260921\\evidence\\seed37_completion\\d2nn_expert_global_N16_k16_L4_lr0.002_s37\\metadata.json",
+    "sha256": "fe77ef326283a43fadc53128b3cb6b2819882dd08beb1630a55dfd1f806062f0",
+    "bytes": 5148
+  },
+  {
+    "remote": "/DATA/DATA1/guest3/t10_topk32_20260920_runs/kather/d2nn_expert_global_N16_k16_L4_lr0.002_s37/status.json",
+    "local": "C:\\Users\\Xml12\\OneDrive\\2026OpticsMoE\\LightGenV2\\tasks\\t10_expert_scaling\\reports\\plotting\\kather_expert_count_20260921\\evidence\\seed37_completion\\d2nn_expert_global_N16_k16_L4_lr0.002_s37\\status.json",
+    "sha256": "31b1cde2e45befa9d4ae471b5f5a6138405cc36ab91ba81526c921fdad585700",
+    "bytes": 2485
+  },
+  {
+    "remote": "/DATA/DATA1/guest3/t10_topk32_20260920_runs/kather/d2nn_expert_global_N25_k25_L4_lr0.002_s37/result.json",
+    "local": "C:\\Users\\Xml12\\OneDrive\\2026OpticsMoE\\LightGenV2\\tasks\\t10_expert_scaling\\reports\\plotting\\kather_expert_count_20260921\\evidence\\seed37_completion\\d2nn_expert_global_N25_k25_L4_lr0.002_s37\\result.json",
+    "sha256": "976922994e2768eaa4a65bde56af6e387ce03cb04bb992106bddcfdab4610983",
+    "bytes": 2445
+  },
+  {
+    "remote": "/DATA/DATA1/guest3/t10_topk32_20260920_runs/kather/d2nn_expert_global_N25_k25_L4_lr0.002_s37/test_result.json",
+    "local": "C:\\Users\\Xml12\\OneDrive\\2026OpticsMoE\\LightGenV2\\tasks\\t10_expert_scaling\\reports\\plotting\\kather_expert_count_20260921\\evidence\\seed37_completion\\d2nn_expert_global_N25_k25_L4_lr0.002_s37\\test_result.json",
+    "sha256": "cecc06c3c7af293e1ed517c4be45d388b415fc20bc31a57c2caef10db11ef9d7",
+    "bytes": 1902
+  },
+  {
+    "remote": "/DATA/DATA1/guest3/t10_topk32_20260920_runs/kather/d2nn_expert_global_N25_k25_L4_lr0.002_s37/metadata.json",
+    "local": "C:\\Users\\Xml12\\OneDrive\\2026OpticsMoE\\LightGenV2\\tasks\\t10_expert_scaling\\reports\\plotting\\kather_expert_count_20260921\\evidence\\seed37_completion\\d2nn_expert_global_N25_k25_L4_lr0.002_s37\\metadata.json",
+    "sha256": "30877827617538b5eb1e49c4ae18fcb35faf89c6a34bd771d10b3cbc694cb08c",
+    "bytes": 5149
+  },
+  {
+    "remote": "/DATA/DATA1/guest3/t10_topk32_20260920_runs/kather/d2nn_expert_global_N25_k25_L4_lr0.002_s37/status.json",
+    "local": "C:\\Users\\Xml12\\OneDrive\\2026OpticsMoE\\LightGenV2\\tasks\\t10_expert_scaling\\reports\\plotting\\kather_expert_count_20260921\\evidence\\seed37_completion\\d2nn_expert_global_N25_k25_L4_lr0.002_s37\\status.json",
+    "sha256": "181ebf9942d9a2b16ce19be287a1fa04c8d1900b9244bbc6e11f5cae4c83619c",
+    "bytes": 2485
+  },
+  {
+    "remote": "/DATA/DATA1/guest3/t10_topk32_20260920_runs/kather/d2nn_expert_global_N49_k49_L4_lr0.002_s37/result.json",
+    "local": "C:\\Users\\Xml12\\OneDrive\\2026OpticsMoE\\LightGenV2\\tasks\\t10_expert_scaling\\reports\\plotting\\kather_expert_count_20260921\\evidence\\seed37_completion\\d2nn_expert_global_N49_k49_L4_lr0.002_s37\\result.json",
+    "sha256": "40cf3d0f75521b5873f515aeb9b5d95e2769656ef1ad85571b4b97b356e44e5a",
+    "bytes": 2449
+  },
+  {
+    "remote": "/DATA/DATA1/guest3/t10_topk32_20260920_runs/kather/d2nn_expert_global_N49_k49_L4_lr0.002_s37/test_result.json",
+    "local": "C:\\Users\\Xml12\\OneDrive\\2026OpticsMoE\\LightGenV2\\tasks\\t10_expert_scaling\\reports\\plotting\\kather_expert_count_20260921\\evidence\\seed37_completion\\d2nn_expert_global_N49_k49_L4_lr0.002_s37\\test_result.json",
+    "sha256": "a1f6946efbc35b0df0352fc4a53d343aa3e4a82a099e3242a3c1be57595a3696",
+    "bytes": 1901
+  },
+  {
+    "remote": "/DATA/DATA1/guest3/t10_topk32_20260920_runs/kather/d2nn_expert_global_N49_k49_L4_lr0.002_s37/metadata.json",
+    "local": "C:\\Users\\Xml12\\OneDrive\\2026OpticsMoE\\LightGenV2\\tasks\\t10_expert_scaling\\reports\\plotting\\kather_expert_count_20260921\\evidence\\seed37_completion\\d2nn_expert_global_N49_k49_L4_lr0.002_s37\\metadata.json",
+    "sha256": "953bf6defb98c1241d4ad5f2fbcae4d64133ad7d25bbf433f4274f653d9f5e40",
+    "bytes": 5158
+  },
+  {
+    "remote": "/DATA/DATA1/guest3/t10_topk32_20260920_runs/kather/d2nn_expert_global_N49_k49_L4_lr0.002_s37/status.json",
+    "local": "C:\\Users\\Xml12\\OneDrive\\2026OpticsMoE\\LightGenV2\\tasks\\t10_expert_scaling\\reports\\plotting\\kather_expert_count_20260921\\evidence\\seed37_completion\\d2nn_expert_global_N49_k49_L4_lr0.002_s37\\status.json",
+    "sha256": "beaf925e04190e727ec2f61b77316e8baa53deeba2ea4769ae7fc91ba410a713",
+    "bytes": 2490
+  },
+  {
+    "remote": "/DATA/DATA1/guest3/t10_topk32_20260920_runs/kather/seed37_status.json",
+    "local": "C:\\Users\\Xml12\\OneDrive\\2026OpticsMoE\\LightGenV2\\tasks\\t10_expert_scaling\\reports\\plotting\\kather_expert_count_20260921\\evidence\\seed37_completion\\seed37_status.json",
+    "sha256": "618a295f4dab2e5ba4871de6cfa31127ebb241a536ccb26713f35c059fcf4c19",
+    "bytes": 348
+  },
+  {
+    "remote": "/DATA/DATA1/guest3/t10_topk32_20260920_runs/kather/seed37_release_check.json",
+    "local": "C:\\Users\\Xml12\\OneDrive\\2026OpticsMoE\\LightGenV2\\tasks\\t10_expert_scaling\\reports\\plotting\\kather_expert_count_20260921\\evidence\\seed37_completion\\seed37_release_check.json",
+    "sha256": "8cfbf1956f0c6ca65bb12690c0d5573ec612a2f989c2b5f022ddb66b1ab539f3",
+    "bytes": 84
+  },
+  {
+    "remote": "/DATA/DATA1/guest3/t10_topk32_20260920_runs/kather/seed37_test_lock_0.json",
+    "local": "C:\\Users\\Xml12\\OneDrive\\2026OpticsMoE\\LightGenV2\\tasks\\t10_expert_scaling\\reports\\plotting\\kather_expert_count_20260921\\evidence\\seed37_completion\\seed37_test_lock_0.json",
+    "sha256": "6b24c432e74d98546e92611191b50ddc10428fb5149a0576019c157879a9836d",
+    "bytes": 2473
+  },
+  {
+    "remote": "/DATA/DATA1/guest3/t10_topk32_20260920_runs/kather/seed37_test_lock_1.json",
+    "local": "C:\\Users\\Xml12\\OneDrive\\2026OpticsMoE\\LightGenV2\\tasks\\t10_expert_scaling\\reports\\plotting\\kather_expert_count_20260921\\evidence\\seed37_completion\\seed37_test_lock_1.json",
+    "sha256": "1fef6950e0e73de113ee2984910aec5258d5ffc3d88c7b692207b37ccc6bed87",
+    "bytes": 2480
+  },
+  {
+    "remote": "/DATA/DATA1/guest3/t10_topk32_20260920_runs/kather/seed37_test_status_0.json",
+    "local": "C:\\Users\\Xml12\\OneDrive\\2026OpticsMoE\\LightGenV2\\tasks\\t10_expert_scaling\\reports\\plotting\\kather_expert_count_20260921\\evidence\\seed37_completion\\seed37_test_status_0.json",
+    "sha256": "3c6fa0161eaf696492bfb188a9a23f1486fe8ea4c1deb0dfd88915fa7766830f",
+    "bytes": 140
+  },
+  {
+    "remote": "/DATA/DATA1/guest3/t10_topk32_20260920_runs/kather/seed37_test_status_1.json",
+    "local": "C:\\Users\\Xml12\\OneDrive\\2026OpticsMoE\\LightGenV2\\tasks\\t10_expert_scaling\\reports\\plotting\\kather_expert_count_20260921\\evidence\\seed37_completion\\seed37_test_status_1.json",
+    "sha256": "3c6fa0161eaf696492bfb188a9a23f1486fe8ea4c1deb0dfd88915fa7766830f",
+    "bytes": 140
+  }
+]

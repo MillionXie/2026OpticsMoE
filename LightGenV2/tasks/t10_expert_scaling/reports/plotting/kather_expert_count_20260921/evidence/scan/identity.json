@@ -1,0 +1,24 @@
+{
+  "pid": 869829,
+  "command": [
+    "/DATA/DATA1/guest3/t10_corrected_20260918/LightGenV2/tasks/t10_expert_scaling/topk32_schedule.py",
+    "--data",
+    "/DATA/DATA1/guest3/demo_reproduction_data/kather2016/kather2016_fixed_split.npz",
+    "--out",
+    "/DATA/DATA1/guest3/t10_topk32_20260920_runs/kather",
+    "--reuse",
+    "/DATA/DATA1/guest3/t10_corrected_20260918_runs/kather",
+    "--gpus",
+    "0",
+    "1",
+    "2",
+    "3"
+  ],
+  "gpus": [
+    0,
+    1,
+    2,
+    3
+  ],
+  "source_commit": "5a1178ef09be40f45b58a20a8633a6e1add2d75d"
+}

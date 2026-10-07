@@ -1,0 +1,19 @@
+{
+  "state": "complete",
+  "expected_new_trainings": 16,
+  "reused_n4_moe": [
+    "moe_oeo_N4_k1_L4_lr0.002_s37",
+    "moe_oeo_N4_k2_L4_lr0.002_s37",
+    "moe_oeo_N4_k3_L4_lr0.002_s37",
+    "moe_oeo_N4_k4_L4_lr0.002_s37"
+  ],
+  "complete": 16,
+  "remaining": 0,
+  "running": {},
+  "failed": [],
+  "gpus": [
+    1,
+    2
+  ],
+  "slots_per_gpu": 1
+}

@@ -1,0 +1,5 @@
+{
+  "own_children_exited": true,
+  "remaining_gpu_processes": "gpu_uuid, pid, used_gpu_memory [MiB]\nGPU-afc19890-6209-ee4d-622d-e619da5bd5b2, 2623412, 2512 MiB\n",
+  "failed": []
+}

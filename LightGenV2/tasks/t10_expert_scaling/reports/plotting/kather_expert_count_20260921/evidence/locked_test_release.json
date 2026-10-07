@@ -1,0 +1,10 @@
+{
+  "training_workers_resumed": true,
+  "resumed_pids": [
+    3196824,
+    3196825
+  ],
+  "completed": 16,
+  "failed": [],
+  "timestamp": 1789978789.7698553
+}

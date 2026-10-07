@@ -1,0 +1,157 @@
+{
+  "schema_version": 1,
+  "locked_at": "2026-09-21T08:12:35.851970+00:00",
+  "dataset": "kather2016",
+  "data": "/DATA/DATA1/guest3/demo_reproduction_data/kather2016/kather2016_fixed_split.npz",
+  "selection_source": "summary_mean_sd.csv",
+  "selection_source_sha256": "ff3a630ca95738d7370231c040d5f641d94bbb929f4626bd1f663e945bc2b042",
+  "selection_rule": "For each expert count, select the MoE top-k with maximum mean validation accuracy across seeds 17 and 27; include the parameter-matched D2NN at the same expert count.",
+  "test_policy": "One held-out test evaluation per locked checkpoint; no configuration changes after reading test results.",
+  "runs": [
+    {
+      "run_name": "moe_oeo_N4_k3_L4_lr0.002_s17",
+      "run_dir": "/DATA/DATA1/guest3/t10_topk32_20260920_runs/kather/moe_oeo_N4_k3_L4_lr0.002_s17",
+      "architecture": "moe_oeo",
+      "experts": 4,
+      "top_k": 3,
+      "seed": 17,
+      "checkpoint_sha256": "4c9fa4da3f20e74e36d7b660207e5acc5b3b0b0b7d055498290cf79f1f9941c6"
+    },
+    {
+      "run_name": "d2nn_expert_global_N4_k4_L4_lr0.002_s17",
+      "run_dir": "/DATA/DATA1/guest3/t10_corrected_20260918_runs/kather/d2nn_expert_global_N4_k4_L4_lr0.002_s17",
+      "architecture": "d2nn_expert_global",
+      "experts": 4,
+      "top_k": 4,
+      "seed": 17,
+      "checkpoint_sha256": "2cebb6a92b4ca4f73b009a89cbb061f7fdcffdf8ca42989987b2b75d80353fdf"
+    },
+    {
+      "run_name": "moe_oeo_N4_k3_L4_lr0.002_s27",
+      "run_dir": "/DATA/DATA1/guest3/t10_topk32_20260920_runs/kather/moe_oeo_N4_k3_L4_lr0.002_s27",
+      "architecture": "moe_oeo",
+      "experts": 4,
+      "top_k": 3,
+      "seed": 27,
+      "checkpoint_sha256": "5416a4587dc374095fdad78b8bea118e206c4f3148acb2ecef4c1934d813ef56"
+    },
+    {
+      "run_name": "d2nn_expert_global_N4_k4_L4_lr0.002_s27",
+      "run_dir": "/DATA/DATA1/guest3/t10_corrected_20260918_runs/kather/d2nn_expert_global_N4_k4_L4_lr0.002_s27",
+      "architecture": "d2nn_expert_global",
+      "experts": 4,
+      "top_k": 4,
+      "seed": 27,
+      "checkpoint_sha256": "acb8c6fff692e6ea6bda1c4c2799000f015d1f4b2e68e51b1215d55085481455"
+    },
+    {
+      "run_name": "moe_oeo_N16_k16_L4_lr0.002_s17",
+      "run_dir": "/DATA/DATA1/guest3/t10_topk32_20260920_runs/kather/moe_oeo_N16_k16_L4_lr0.002_s17",
+      "architecture": "moe_oeo",
+      "experts": 16,
+      "top_k": 16,
+      "seed": 17,
+      "checkpoint_sha256": "820c6329d79482e395df44c1bbe5731bf5704c8f03b5c8497194499bdf95b9f4"
+    },
+    {
+      "run_name": "d2nn_expert_global_N16_k16_L4_lr0.002_s17",
+      "run_dir": "/DATA/DATA1/guest3/t10_corrected_20260918_runs/kather/d2nn_expert_global_N16_k16_L4_lr0.002_s17",
+      "architecture": "d2nn_expert_global",
+      "experts": 16,
+      "top_k": 16,
+      "seed": 17,
+      "checkpoint_sha256": "ac1a66a16a91b68fcda6244f26e0e1e8678834c9f693ea4cf5af8d1c36d9152a"
+    },
+    {
+      "run_name": "moe_oeo_N16_k16_L4_lr0.002_s27",
+      "run_dir": "/DATA/DATA1/guest3/t10_topk32_20260920_runs/kather/moe_oeo_N16_k16_L4_lr0.002_s27",
+      "architecture": "moe_oeo",
+      "experts": 16,
+      "top_k": 16,
+      "seed": 27,
+      "checkpoint_sha256": "fa835366c1abe9ee1e98a9d3d18073324ee7515a38c0d14b29966a5d3160a320"
+    },
+    {
+      "run_name": "d2nn_expert_global_N16_k16_L4_lr0.002_s27",
+      "run_dir": "/DATA/DATA1/guest3/t10_corrected_20260918_runs/kather/d2nn_expert_global_N16_k16_L4_lr0.002_s27",
+      "architecture": "d2nn_expert_global",
+      "experts": 16,
+      "top_k": 16,
+      "seed": 27,
+      "checkpoint_sha256": "0e9adfe7eca5a5a6bcbbb846bf17864dce6224a4a234989b11283431f763f6b5"
+    },
+    {
+      "run_name": "moe_oeo_N25_k12_L4_lr0.002_s17",
+      "run_dir": "/DATA/DATA1/guest3/t10_topk32_20260920_runs/kather/moe_oeo_N25_k12_L4_lr0.002_s17",
+      "architecture": "moe_oeo",
+      "experts": 25,
+      "top_k": 12,
+      "seed": 17,
+      "checkpoint_sha256": "e7ff178eb33b59c1f146480c5213dae637ffdf27eb2a6337e6f9fde2afaf90ed"
+    },
+    {
+      "run_name": "d2nn_expert_global_N25_k25_L4_lr0.002_s17",
+      "run_dir": "/DATA/DATA1/guest3/t10_corrected_20260918_runs/kather/d2nn_expert_global_N25_k25_L4_lr0.002_s17",
+      "architecture": "d2nn_expert_global",
+      "experts": 25,
+      "top_k": 25,
+      "seed": 17,
+      "checkpoint_sha256": "678b9d40b621177e9df8d5c38ed87e98c0d1559132993d4e741c9309ec85f88a"
+    },
+    {
+      "run_name": "moe_oeo_N25_k12_L4_lr0.002_s27",
+      "run_dir": "/DATA/DATA1/guest3/t10_topk32_20260920_runs/kather/moe_oeo_N25_k12_L4_lr0.002_s27",
+      "architecture": "moe_oeo",
+      "experts": 25,
+      "top_k": 12,
+      "seed": 27,
+      "checkpoint_sha256": "e897886a915853c6f91004e605c961e3e741d843822f90e7ccc6af60e937a483"
+    },
+    {
+      "run_name": "d2nn_expert_global_N25_k25_L4_lr0.002_s27",
+      "run_dir": "/DATA/DATA1/guest3/t10_corrected_20260918_runs/kather/d2nn_expert_global_N25_k25_L4_lr0.002_s27",
+      "architecture": "d2nn_expert_global",
+      "experts": 25,
+      "top_k": 25,
+      "seed": 27,
+      "checkpoint_sha256": "88c3201a42c4062d4793073b4023aab1bcab17b7ae1ce3c2d2dc6784c50306a7"
+    },
+    {
+      "run_name": "moe_oeo_N49_k24_L4_lr0.002_s17",
+      "run_dir": "/DATA/DATA1/guest3/t10_topk32_20260920_runs/kather/moe_oeo_N49_k24_L4_lr0.002_s17",
+      "architecture": "moe_oeo",
+      "experts": 49,
+      "top_k": 24,
+      "seed": 17,
+      "checkpoint_sha256": "fcdc8134ea58ce93ad24080c6845813fad557a79353a80f86f8ed5428e9f26b3"
+    },
+    {
+      "run_name": "d2nn_expert_global_N49_k49_L4_lr0.002_s17_recheck",
+      "run_dir": "/DATA/DATA1/guest3/t10_topk32_20260920_runs/kather/d2nn_expert_global_N49_k49_L4_lr0.002_s17_recheck",
+      "architecture": "d2nn_expert_global",
+      "experts": 49,
+      "top_k": 49,
+      "seed": 17,
+      "checkpoint_sha256": "7fca823ffbfdbd362d2e4ac3590915dd1dcd6e74a9f1a2cacae0da0d968d3eb9"
+    },
+    {
+      "run_name": "moe_oeo_N49_k24_L4_lr0.002_s27",
+      "run_dir": "/DATA/DATA1/guest3/t10_topk32_20260920_runs/kather/moe_oeo_N49_k24_L4_lr0.002_s27",
+      "architecture": "moe_oeo",
+      "experts": 49,
+      "top_k": 24,
+      "seed": 27,
+      "checkpoint_sha256": "9a511b46d66ea84d9afdaa60e882df7b07cf11a53b7dd6abc30c34dfadb71ce6"
+    },
+    {
+      "run_name": "d2nn_expert_global_N49_k49_L4_lr0.002_s27_recheck",
+      "run_dir": "/DATA/DATA1/guest3/t10_topk32_20260920_runs/kather/d2nn_expert_global_N49_k49_L4_lr0.002_s27_recheck",
+      "architecture": "d2nn_expert_global",
+      "experts": 49,
+      "top_k": 49,
+      "seed": 27,
+      "checkpoint_sha256": "51ff182066f32f032a4ff3231207a25eae36d1b8b51cdbe6ad901712700cf453"
+    }
+  ],
+  "correction": "POSIX path serialization only; no test sample was read before this correction."
+}

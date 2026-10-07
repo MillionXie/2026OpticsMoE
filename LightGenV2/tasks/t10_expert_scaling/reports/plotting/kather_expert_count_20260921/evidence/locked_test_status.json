@@ -1,0 +1,12 @@
+{
+  "state": "complete",
+  "total": 16,
+  "complete": 16,
+  "remaining": 0,
+  "current": null,
+  "paused_training_pids": [
+    3196824,
+    3196825
+  ],
+  "failed": []
+}

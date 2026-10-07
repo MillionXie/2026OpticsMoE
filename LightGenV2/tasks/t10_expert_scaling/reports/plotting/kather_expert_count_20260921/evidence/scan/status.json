@@ -1,0 +1,10 @@
+{
+  "state": "complete",
+  "scan_total": 32,
+  "scan_complete": 32,
+  "cached_scan_runs": 8,
+  "rechecks_complete": 2,
+  "remaining": 0,
+  "running": {},
+  "failed": []
+}

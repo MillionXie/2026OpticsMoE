@@ -1,0 +1,70 @@
+{
+  "purpose": "held_out_test_seed37_completion",
+  "created_unix": 1790129420.2243602,
+  "runs": [
+    {
+      "run_dir": "/DATA/DATA1/guest3/t10_topk32_20260920_runs/kather/moe_oeo_N16_k1_L4_lr0.002_s37",
+      "checkpoint_sha256": "8bfeff1389e47b9da689c6c7e46b8668a7c6fe1b126828cb049e6ab92c0bdd25",
+      "arch": "moe_oeo",
+      "experts": 16,
+      "top_k": 1,
+      "seed": 37
+    },
+    {
+      "run_dir": "/DATA/DATA1/guest3/t10_topk32_20260920_runs/kather/moe_oeo_N16_k8_L4_lr0.002_s37",
+      "checkpoint_sha256": "0e5c158a9180294454a5c3d0f4452d37cf22cbf2b8abe468680a6edac96426af",
+      "arch": "moe_oeo",
+      "experts": 16,
+      "top_k": 8,
+      "seed": 37
+    },
+    {
+      "run_dir": "/DATA/DATA1/guest3/t10_topk32_20260920_runs/kather/moe_oeo_N25_k1_L4_lr0.002_s37",
+      "checkpoint_sha256": "ac74be1ea51009c69845e0c5090c3e34a65c3bc8fc8021faed812baf32b62b20",
+      "arch": "moe_oeo",
+      "experts": 25,
+      "top_k": 1,
+      "seed": 37
+    },
+    {
+      "run_dir": "/DATA/DATA1/guest3/t10_topk32_20260920_runs/kather/moe_oeo_N25_k12_L4_lr0.002_s37",
+      "checkpoint_sha256": "da81201219981f83be82f939ae549ddce325de70885797825fb93e043f514d27",
+      "arch": "moe_oeo",
+      "experts": 25,
+      "top_k": 12,
+      "seed": 37
+    },
+    {
+      "run_dir": "/DATA/DATA1/guest3/t10_topk32_20260920_runs/kather/moe_oeo_N49_k1_L4_lr0.002_s37",
+      "checkpoint_sha256": "f235a372d902dca88df0bba09b6bbca05cacef3f14d613ad41d7c8eca3ca30ba",
+      "arch": "moe_oeo",
+      "experts": 49,
+      "top_k": 1,
+      "seed": 37
+    },
+    {
+      "run_dir": "/DATA/DATA1/guest3/t10_topk32_20260920_runs/kather/moe_oeo_N49_k24_L4_lr0.002_s37",
+      "checkpoint_sha256": "0ce925c354a0deaff58b96ee878d2b791bca6ee078e41dfc34f889af867534c3",
+      "arch": "moe_oeo",
+      "experts": 49,
+      "top_k": 24,
+      "seed": 37
+    },
+    {
+      "run_dir": "/DATA/DATA1/guest3/t10_topk32_20260920_runs/kather/d2nn_expert_global_N4_k4_L4_lr0.002_s37",
+      "checkpoint_sha256": "ba70fc924a74ad3ba77380809053099f4d2831ec228662a316db0f26c155e37f",
+      "arch": "d2nn_expert_global",
+      "experts": 4,
+      "top_k": 4,
+      "seed": 37
+    },
+    {
+      "run_dir": "/DATA/DATA1/guest3/t10_topk32_20260920_runs/kather/d2nn_expert_global_N25_k25_L4_lr0.002_s37",
+      "checkpoint_sha256": "7b41543f21d76972281617dbf5fed29dfb5b67ec7ee6179bbac48c71efbfe3f8",
+      "arch": "d2nn_expert_global",
+      "experts": 25,
+      "top_k": 25,
+      "seed": 37
+    }
+  ]
+}

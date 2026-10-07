@@ -1,0 +1,258 @@
+[
+  {
+    "run": "moe_oeo_N4_k3_L4_lr0.002_s17",
+    "file": "test_result.json",
+    "remote": "/DATA/DATA1/guest3/t10_topk32_20260920_runs/kather/moe_oeo_N4_k3_L4_lr0.002_s17/test_result.json",
+    "local": "evidence/locked_selection_runs/moe_oeo_N4_k3_L4_lr0.002_s17/test_result.json",
+    "bytes": 2054,
+    "sha256": "78dfb49444c42547fd56c90631e8baa5275f2dec38deda3bd9d480b1904cc72d"
+  },
+  {
+    "run": "moe_oeo_N4_k3_L4_lr0.002_s17",
+    "file": "test_predictions.npz",
+    "remote": "/DATA/DATA1/guest3/t10_topk32_20260920_runs/kather/moe_oeo_N4_k3_L4_lr0.002_s17/test_predictions.npz",
+    "local": "evidence/locked_selection_runs/moe_oeo_N4_k3_L4_lr0.002_s17/test_predictions.npz",
+    "bytes": 25563,
+    "sha256": "00ee6d718913b15e31cd7cd100ea09bda602fc1b4a45eb3f0597bce301f18cbb"
+  },
+  {
+    "run": "d2nn_expert_global_N4_k4_L4_lr0.002_s17",
+    "file": "test_result.json",
+    "remote": "/DATA/DATA1/guest3/t10_corrected_20260918_runs/kather/d2nn_expert_global_N4_k4_L4_lr0.002_s17/test_result.json",
+    "local": "evidence/locked_selection_runs/d2nn_expert_global_N4_k4_L4_lr0.002_s17/test_result.json",
+    "bytes": 1807,
+    "sha256": "7d8b5ec3bc2dda169bcd403171d41fd10c7753b544e5b6bf2b16cbafdb035b2d"
+  },
+  {
+    "run": "d2nn_expert_global_N4_k4_L4_lr0.002_s17",
+    "file": "test_predictions.npz",
+    "remote": "/DATA/DATA1/guest3/t10_corrected_20260918_runs/kather/d2nn_expert_global_N4_k4_L4_lr0.002_s17/test_predictions.npz",
+    "local": "evidence/locked_selection_runs/d2nn_expert_global_N4_k4_L4_lr0.002_s17/test_predictions.npz",
+    "bytes": 25595,
+    "sha256": "fbeeb80c14bf120b07ba2dea6ec8c73afe801c8eb4454f28daad819e4019afe1"
+  },
+  {
+    "run": "moe_oeo_N4_k3_L4_lr0.002_s27",
+    "file": "test_result.json",
+    "remote": "/DATA/DATA1/guest3/t10_topk32_20260920_runs/kather/moe_oeo_N4_k3_L4_lr0.002_s27/test_result.json",
+    "local": "evidence/locked_selection_runs/moe_oeo_N4_k3_L4_lr0.002_s27/test_result.json",
+    "bytes": 2083,
+    "sha256": "024fbfe2b831e92489fd470c2e5c3fa24b9b6d2d86e0b02995ee72dba25a86e1"
+  },
+  {
+    "run": "moe_oeo_N4_k3_L4_lr0.002_s27",
+    "file": "test_predictions.npz",
+    "remote": "/DATA/DATA1/guest3/t10_topk32_20260920_runs/kather/moe_oeo_N4_k3_L4_lr0.002_s27/test_predictions.npz",
+    "local": "evidence/locked_selection_runs/moe_oeo_N4_k3_L4_lr0.002_s27/test_predictions.npz",
+    "bytes": 25583,
+    "sha256": "51c7ea17d7ece53d29f2a4a28f098fe0edc91f4f9a37e253e1ee51ebe0a7708d"
+  },
+  {
+    "run": "d2nn_expert_global_N4_k4_L4_lr0.002_s27",
+    "file": "test_result.json",
+    "remote": "/DATA/DATA1/guest3/t10_corrected_20260918_runs/kather/d2nn_expert_global_N4_k4_L4_lr0.002_s27/test_result.json",
+    "local": "evidence/locked_selection_runs/d2nn_expert_global_N4_k4_L4_lr0.002_s27/test_result.json",
+    "bytes": 1807,
+    "sha256": "4019c30403fe63fb824d9d2526bc9c7a9469b6202431819d8a70e2a2b1b6f368"
+  },
+  {
+    "run": "d2nn_expert_global_N4_k4_L4_lr0.002_s27",
+    "file": "test_predictions.npz",
+    "remote": "/DATA/DATA1/guest3/t10_corrected_20260918_runs/kather/d2nn_expert_global_N4_k4_L4_lr0.002_s27/test_predictions.npz",
+    "local": "evidence/locked_selection_runs/d2nn_expert_global_N4_k4_L4_lr0.002_s27/test_predictions.npz",
+    "bytes": 25610,
+    "sha256": "2f5384c839770728f034051648b69e18c7692bada98f092ebba0ecf7adc65e72"
+  },
+  {
+    "run": "moe_oeo_N16_k16_L4_lr0.002_s17",
+    "file": "test_result.json",
+    "remote": "/DATA/DATA1/guest3/t10_topk32_20260920_runs/kather/moe_oeo_N16_k16_L4_lr0.002_s17/test_result.json",
+    "local": "evidence/locked_selection_runs/moe_oeo_N16_k16_L4_lr0.002_s17/test_result.json",
+    "bytes": 2511,
+    "sha256": "922c4301fc2c99287ead4bee19427956f788095acbfa0e655e807eb280b129d1"
+  },
+  {
+    "run": "moe_oeo_N16_k16_L4_lr0.002_s17",
+    "file": "test_predictions.npz",
+    "remote": "/DATA/DATA1/guest3/t10_topk32_20260920_runs/kather/moe_oeo_N16_k16_L4_lr0.002_s17/test_predictions.npz",
+    "local": "evidence/locked_selection_runs/moe_oeo_N16_k16_L4_lr0.002_s17/test_predictions.npz",
+    "bytes": 25579,
+    "sha256": "f5625fec5b8476dd1bdf2e9a9681b5aa5a0d5226f23298d594ba31ec36f5718b"
+  },
+  {
+    "run": "d2nn_expert_global_N16_k16_L4_lr0.002_s17",
+    "file": "test_result.json",
+    "remote": "/DATA/DATA1/guest3/t10_corrected_20260918_runs/kather/d2nn_expert_global_N16_k16_L4_lr0.002_s17/test_result.json",
+    "local": "evidence/locked_selection_runs/d2nn_expert_global_N16_k16_L4_lr0.002_s17/test_result.json",
+    "bytes": 1809,
+    "sha256": "46b253afd8813023a6e79834d7971beac000370cda1d435e2f5581e94bdbb3ab"
+  },
+  {
+    "run": "d2nn_expert_global_N16_k16_L4_lr0.002_s17",
+    "file": "test_predictions.npz",
+    "remote": "/DATA/DATA1/guest3/t10_corrected_20260918_runs/kather/d2nn_expert_global_N16_k16_L4_lr0.002_s17/test_predictions.npz",
+    "local": "evidence/locked_selection_runs/d2nn_expert_global_N16_k16_L4_lr0.002_s17/test_predictions.npz",
+    "bytes": 25720,
+    "sha256": "7b374f6fe434e00e38dc5d58255e807fb73c36faed5579c3327424089fa74e2f"
+  },
+  {
+    "run": "moe_oeo_N16_k16_L4_lr0.002_s27",
+    "file": "test_result.json",
+    "remote": "/DATA/DATA1/guest3/t10_topk32_20260920_runs/kather/moe_oeo_N16_k16_L4_lr0.002_s27/test_result.json",
+    "local": "evidence/locked_selection_runs/moe_oeo_N16_k16_L4_lr0.002_s27/test_result.json",
+    "bytes": 2506,
+    "sha256": "2d918a4b5f1626098fb3f8bb2e3c0d677cd6358e13e4ba4de194030202696e9e"
+  },
+  {
+    "run": "moe_oeo_N16_k16_L4_lr0.002_s27",
+    "file": "test_predictions.npz",
+    "remote": "/DATA/DATA1/guest3/t10_topk32_20260920_runs/kather/moe_oeo_N16_k16_L4_lr0.002_s27/test_predictions.npz",
+    "local": "evidence/locked_selection_runs/moe_oeo_N16_k16_L4_lr0.002_s27/test_predictions.npz",
+    "bytes": 25562,
+    "sha256": "57c3b218cbd850b0af9db1eaa122a082238ad594da85e594f0b03476bc5e83c6"
+  },
+  {
+    "run": "d2nn_expert_global_N16_k16_L4_lr0.002_s27",
+    "file": "test_result.json",
+    "remote": "/DATA/DATA1/guest3/t10_corrected_20260918_runs/kather/d2nn_expert_global_N16_k16_L4_lr0.002_s27/test_result.json",
+    "local": "evidence/locked_selection_runs/d2nn_expert_global_N16_k16_L4_lr0.002_s27/test_result.json",
+    "bytes": 1807,
+    "sha256": "71d8d9d5ceca949752c617a08dc4ae56f1b5d8d807810809fa105f0b9415ba50"
+  },
+  {
+    "run": "d2nn_expert_global_N16_k16_L4_lr0.002_s27",
+    "file": "test_predictions.npz",
+    "remote": "/DATA/DATA1/guest3/t10_corrected_20260918_runs/kather/d2nn_expert_global_N16_k16_L4_lr0.002_s27/test_predictions.npz",
+    "local": "evidence/locked_selection_runs/d2nn_expert_global_N16_k16_L4_lr0.002_s27/test_predictions.npz",
+    "bytes": 25725,
+    "sha256": "a8845115bf54ce16ce6f091ef7076bf9822b42c2b445c5fe7a92242d73fab9f3"
+  },
+  {
+    "run": "moe_oeo_N25_k12_L4_lr0.002_s17",
+    "file": "test_result.json",
+    "remote": "/DATA/DATA1/guest3/t10_topk32_20260920_runs/kather/moe_oeo_N25_k12_L4_lr0.002_s17/test_result.json",
+    "local": "evidence/locked_selection_runs/moe_oeo_N25_k12_L4_lr0.002_s17/test_result.json",
+    "bytes": 3191,
+    "sha256": "7883ca726573f90fa49544293fc268ff61789dd2059ec05606486d68f4360cf3"
+  },
+  {
+    "run": "moe_oeo_N25_k12_L4_lr0.002_s17",
+    "file": "test_predictions.npz",
+    "remote": "/DATA/DATA1/guest3/t10_topk32_20260920_runs/kather/moe_oeo_N25_k12_L4_lr0.002_s17/test_predictions.npz",
+    "local": "evidence/locked_selection_runs/moe_oeo_N25_k12_L4_lr0.002_s17/test_predictions.npz",
+    "bytes": 25682,
+    "sha256": "eabf97bb94022a5ce841ae756c7e9497262ff1ac7348db47d7fb9c22d6352285"
+  },
+  {
+    "run": "d2nn_expert_global_N25_k25_L4_lr0.002_s17",
+    "file": "test_result.json",
+    "remote": "/DATA/DATA1/guest3/t10_corrected_20260918_runs/kather/d2nn_expert_global_N25_k25_L4_lr0.002_s17/test_result.json",
+    "local": "evidence/locked_selection_runs/d2nn_expert_global_N25_k25_L4_lr0.002_s17/test_result.json",
+    "bytes": 1810,
+    "sha256": "511c33c3417bf1722f9e2a56cecb6d5cdbf6c86493b50641b8424ecca6b42f9b"
+  },
+  {
+    "run": "d2nn_expert_global_N25_k25_L4_lr0.002_s17",
+    "file": "test_predictions.npz",
+    "remote": "/DATA/DATA1/guest3/t10_corrected_20260918_runs/kather/d2nn_expert_global_N25_k25_L4_lr0.002_s17/test_predictions.npz",
+    "local": "evidence/locked_selection_runs/d2nn_expert_global_N25_k25_L4_lr0.002_s17/test_predictions.npz",
+    "bytes": 25768,
+    "sha256": "b104b7c877e0941966e37f105613226ccb1125d25f1c67cbc8589dd991e1641f"
+  },
+  {
+    "run": "moe_oeo_N25_k12_L4_lr0.002_s27",
+    "file": "test_result.json",
+    "remote": "/DATA/DATA1/guest3/t10_topk32_20260920_runs/kather/moe_oeo_N25_k12_L4_lr0.002_s27/test_result.json",
+    "local": "evidence/locked_selection_runs/moe_oeo_N25_k12_L4_lr0.002_s27/test_result.json",
+    "bytes": 3183,
+    "sha256": "2af1c177a534d667cc0cda860d4f5aa14375711ebdb1997802b89e7257a1238f"
+  },
+  {
+    "run": "moe_oeo_N25_k12_L4_lr0.002_s27",
+    "file": "test_predictions.npz",
+    "remote": "/DATA/DATA1/guest3/t10_topk32_20260920_runs/kather/moe_oeo_N25_k12_L4_lr0.002_s27/test_predictions.npz",
+    "local": "evidence/locked_selection_runs/moe_oeo_N25_k12_L4_lr0.002_s27/test_predictions.npz",
+    "bytes": 25608,
+    "sha256": "5fcd983505321078347d5ab75db6e0a84a4ad96910bc59c11bde62ae7c74aafb"
+  },
+  {
+    "run": "d2nn_expert_global_N25_k25_L4_lr0.002_s27",
+    "file": "test_result.json",
+    "remote": "/DATA/DATA1/guest3/t10_corrected_20260918_runs/kather/d2nn_expert_global_N25_k25_L4_lr0.002_s27/test_result.json",
+    "local": "evidence/locked_selection_runs/d2nn_expert_global_N25_k25_L4_lr0.002_s27/test_result.json",
+    "bytes": 1808,
+    "sha256": "b7dec399f00ce641bd7e694d9579f56c88ee1817cffd404669e155a4d93d3592"
+  },
+  {
+    "run": "d2nn_expert_global_N25_k25_L4_lr0.002_s27",
+    "file": "test_predictions.npz",
+    "remote": "/DATA/DATA1/guest3/t10_corrected_20260918_runs/kather/d2nn_expert_global_N25_k25_L4_lr0.002_s27/test_predictions.npz",
+    "local": "evidence/locked_selection_runs/d2nn_expert_global_N25_k25_L4_lr0.002_s27/test_predictions.npz",
+    "bytes": 25730,
+    "sha256": "1c16a0d9a80dabb07dba2af42d5cde3c4c090b29d80f7c7939b7f6adfcc47c1f"
+  },
+  {
+    "run": "moe_oeo_N49_k24_L4_lr0.002_s17",
+    "file": "test_result.json",
+    "remote": "/DATA/DATA1/guest3/t10_topk32_20260920_runs/kather/moe_oeo_N49_k24_L4_lr0.002_s17/test_result.json",
+    "local": "evidence/locked_selection_runs/moe_oeo_N49_k24_L4_lr0.002_s17/test_result.json",
+    "bytes": 4532,
+    "sha256": "b74cc1e3849663c5e684440b468294d6adc3acfc723388b84532caffd8c3a55b"
+  },
+  {
+    "run": "moe_oeo_N49_k24_L4_lr0.002_s17",
+    "file": "test_predictions.npz",
+    "remote": "/DATA/DATA1/guest3/t10_topk32_20260920_runs/kather/moe_oeo_N49_k24_L4_lr0.002_s17/test_predictions.npz",
+    "local": "evidence/locked_selection_runs/moe_oeo_N49_k24_L4_lr0.002_s17/test_predictions.npz",
+    "bytes": 25618,
+    "sha256": "204deeee58d197a63f4a2ee9f65e8df29ce38b99b5ad6819223413765ef28b64"
+  },
+  {
+    "run": "d2nn_expert_global_N49_k49_L4_lr0.002_s17_recheck",
+    "file": "test_result.json",
+    "remote": "/DATA/DATA1/guest3/t10_topk32_20260920_runs/kather/d2nn_expert_global_N49_k49_L4_lr0.002_s17_recheck/test_result.json",
+    "local": "evidence/locked_selection_runs/d2nn_expert_global_N49_k49_L4_lr0.002_s17_recheck/test_result.json",
+    "bytes": 1813,
+    "sha256": "2f797b7b5b7367009c6d50f125cd513976bf15c463566ae2b753cf88f8939365"
+  },
+  {
+    "run": "d2nn_expert_global_N49_k49_L4_lr0.002_s17_recheck",
+    "file": "test_predictions.npz",
+    "remote": "/DATA/DATA1/guest3/t10_topk32_20260920_runs/kather/d2nn_expert_global_N49_k49_L4_lr0.002_s17_recheck/test_predictions.npz",
+    "local": "evidence/locked_selection_runs/d2nn_expert_global_N49_k49_L4_lr0.002_s17_recheck/test_predictions.npz",
+    "bytes": 25753,
+    "sha256": "829015bbf6eae06b5a6506422e0dd4532172b27c5d9f85f77902af89cd7e6243"
+  },
+  {
+    "run": "moe_oeo_N49_k24_L4_lr0.002_s27",
+    "file": "test_result.json",
+    "remote": "/DATA/DATA1/guest3/t10_topk32_20260920_runs/kather/moe_oeo_N49_k24_L4_lr0.002_s27/test_result.json",
+    "local": "evidence/locked_selection_runs/moe_oeo_N49_k24_L4_lr0.002_s27/test_result.json",
+    "bytes": 4518,
+    "sha256": "f55480ac31b2be7b531a9d3d142299c1d8cb09d016e7f21387a282b143a97cc6"
+  },
+  {
+    "run": "moe_oeo_N49_k24_L4_lr0.002_s27",
+    "file": "test_predictions.npz",
+    "remote": "/DATA/DATA1/guest3/t10_topk32_20260920_runs/kather/moe_oeo_N49_k24_L4_lr0.002_s27/test_predictions.npz",
+    "local": "evidence/locked_selection_runs/moe_oeo_N49_k24_L4_lr0.002_s27/test_predictions.npz",
+    "bytes": 25613,
+    "sha256": "fc2446ae455fd72c6346c85fe14f5c0ac0bd46456b75f73350309c99bb789b85"
+  },
+  {
+    "run": "d2nn_expert_global_N49_k49_L4_lr0.002_s27_recheck",
+    "file": "test_result.json",
+    "remote": "/DATA/DATA1/guest3/t10_topk32_20260920_runs/kather/d2nn_expert_global_N49_k49_L4_lr0.002_s27_recheck/test_result.json",
+    "local": "evidence/locked_selection_runs/d2nn_expert_global_N49_k49_L4_lr0.002_s27_recheck/test_result.json",
+    "bytes": 1809,
+    "sha256": "7daf1a12d9f926e4f617594f71384345f21d922bf49535dea722ff471e987818"
+  },
+  {
+    "run": "d2nn_expert_global_N49_k49_L4_lr0.002_s27_recheck",
+    "file": "test_predictions.npz",
+    "remote": "/DATA/DATA1/guest3/t10_topk32_20260920_runs/kather/d2nn_expert_global_N49_k49_L4_lr0.002_s27_recheck/test_predictions.npz",
+    "local": "evidence/locked_selection_runs/d2nn_expert_global_N49_k49_L4_lr0.002_s27_recheck/test_predictions.npz",
+    "bytes": 25773,
+    "sha256": "2cc9d6a7402bf282153369cadc7084f0d7deb355f7673e87cc92e5883cefb700"
+  }
+]

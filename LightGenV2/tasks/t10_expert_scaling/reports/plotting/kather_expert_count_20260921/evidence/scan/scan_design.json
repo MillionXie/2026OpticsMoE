@@ -1,0 +1,44 @@
+{
+  "protocol": "corrected_dynamic_router_full_aperture_v1",
+  "expert_counts": [
+    4,
+    16,
+    25,
+    49
+  ],
+  "top_k_grid": {
+    "4": [
+      1,
+      2,
+      3,
+      4
+    ],
+    "16": [
+      1,
+      4,
+      8,
+      16
+    ],
+    "25": [
+      1,
+      6,
+      12,
+      25
+    ],
+    "49": [
+      1,
+      12,
+      24,
+      49
+    ]
+  },
+  "seeds": [
+    17,
+    27
+  ],
+  "total_scan_runs": 32,
+  "cached_scan_runs": 8,
+  "pending_scan_runs": 24,
+  "extra_d2nn_n49_rechecks": 2,
+  "test_read": false
+}
