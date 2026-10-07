@@ -74,6 +74,22 @@ CSV不支持all，避免旧目录布局混用。原物化脚本和已导出数�
 
 ## 2026-09-27/28 同任务 baseline 补训与五组汇总
 
+### 历史紧凑／剪枝电子对照入口已补齐（2026-10-07）
+
+9月21日紧凑BK-SDM-v2-Tiny和结构剪枝UNet的六份训练／推理源码、两份原配置、
+两份原测试、四份原说明／汇总已归主线。14文件与保留服务器v2及原提交`7093ec4608`
+逐LF字节一致；不修改算法、配置、原成绩或测速，原资产仍在`t12_assets`。
+其原报告分别从[紧凑对照](reports/20260921_compact_electronic_baseline/README.md)及
+[结构剪枝对照](reports/20260921_pruned_unet_v1/README.md)进入，原两份results.json和
+紧凑版50.01ms历史4090计时保留；剪枝版未测推理延迟，不能套用紧凑版时间。
+
+接口帮助：`python -m LightGenV2.tasks.t12_text_to_image.compact_turbo_run --help`、
+`compact_turbo_infer`、`pruned_turbo_run`、`pruned_turbo_infer`（后三者使用同一模块前缀）。
+四帮助及五项原合成CPU测试通过，未加载正式PT／Qwen／图片、未训练或重新测速。
+这些是旧800/100/100单物体文生图及蒸馏条件缓存对照，不是当前20736配对编辑、
+完整Qwen28补训baseline或17M光学部署。核验原历史需绑定原adapter、UNet、VAE和缓存，
+不能直接把当前编辑数据或权重塞进这些入口；后续新实验仍从顶部正式复现页进入。
+
 新增外部baseline：官方pix2pix-Turbo，upstream锁定 `86f54146590ffb4543c8cf85b5a36657da670924`。沿用当前20736/2304/2304配对数据及256输出；SD-Turbo预训练骨干，不从零训练主干。CLIP文本编码器冻结，微调UNet/VAE LoRA、输入卷积及官方VAE skip卷积。完整推理参数1,299,445,747，按约定排除词嵌入50,593,792后1,248,851,955；实际微调9,505,160。没有Qwen或PCA条件接口，不把它标作Qwen baseline。3轮训练在完整VAL选中step31104，固定权重TEST2304取得PSNR20.746391dB/SSIM0.740299；权重SHA256 `3a347c58affb53d8e7efc583bb5aecdaa2ac33bd316d792c12c805fa837b4c7c`。这一外部baseline明显弱于当前模型，不能宣称凭参数规模质量必然更好。来源、实现差异及命令见复现入口。
 
 完整 Qwen28 + 原电子 UNet/adapter + 冻结 VAE baseline 已完成当前 TRAIN20736 的3轮补训，VAL2304 按逐图平均PSNR选中step15000，固定后评估TEST2304。没有缩减Qwen层数，没有用窄头缓存代替Qwen28。训练源码 `b813628ea`，导出源码 `c657f959d`，checkpoint SHA256 `599805ad3062bebf67acf3b515f0a812fb843506643e18251004f180131b4b52`。
