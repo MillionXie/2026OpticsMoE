@@ -42,6 +42,12 @@
 [历史源码副本](../../../maintenance/storage/T06_REVIEW_SOURCE_VISIBILITY_20261007.json)。
 忽略副本不删除文件，不改变封存包的SHA清单；后续开发仍从本任务入口进行。
 
+三个旧审阅包的同一份原依赖说明已集中到
+[历史审阅包依赖](reference/temporal_review_requirements_20260922.txt)，原字节SHA为
+`10300b8bf6c39ceeebb6345e46075a9090a588cb6305523eae426bd7ae4b9f9c`。
+这只记录当时numpy/PyYAML/torch版本，不安装软件、不替换当前环境或正式模型合同；
+三份原文件保留，退出Git待提交列表，不再维护重复依赖说明。
+
 历史 Spatial-4 对照归档是 `spatial_single_video4_balanced`：一条视频均匀取 4 帧并排成
 2×2，**没有多视频复用**。它使用两套物理光 Router Top-2、六次光传播和 20% 名义
 未调制分量，在 558 条 test 视频上达到 SRCC 0.6393、KRCC 0.4642、PLCC 0.6743、

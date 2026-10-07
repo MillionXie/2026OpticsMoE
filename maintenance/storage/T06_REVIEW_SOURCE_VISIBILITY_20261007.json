@@ -1,4 +1,17 @@
 {
+  "original_requirements_adoption": {
+    "canonical_path": "LightGenV2/tasks/t06_video_quality_assessment/reference/temporal_review_requirements_20260922.txt",
+    "raw_sha256": "10300b8bf6c39ceeebb6345e46075a9090a588cb6305523eae426bd7ae4b9f9c",
+    "original_paths": [
+      "LightGenPublic/tasks/t06_lgvq_temporal_consistency/teacher_release/lgvq_temporal_08044/requirements.txt",
+      "LightGenPublic/tasks/t06_lgvq_temporal_consistency/teacher_release_final/lgvq_temporal_08044/requirements.txt",
+      "LightGenPublic/tasks/t06_lgvq_temporal_consistency/teacher_release_final_v2/lgvq_temporal_08044/requirements.txt"
+    ],
+    "original_files_preserved": true,
+    "server_original_paths_missing": true,
+    "environment_changed": false,
+    "scope": "Three identical historical review-package dependency files adopted once; not current environment certification"
+  },
   "preserved_package_document_visibility": {
   "scope": "20 original frozen review-package documents/manifests, not the current base task source or three requirements.txt files",
   "recovery_zip": ".codex_tmp/storage_git_backup_20261002/untracked_asset_records_20261006.zip",

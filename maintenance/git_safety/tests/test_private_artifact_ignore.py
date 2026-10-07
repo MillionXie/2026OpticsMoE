@@ -130,7 +130,10 @@ class ArtifactIgnoreTests(unittest.TestCase):
         documents=[r['path'] for r in d['preserved_package_document_visibility']['fields']]
         self.assertEqual(len(documents),20)
         selected += documents
-        visible=[p for p in d['excluded_unmatched'] if p not in documents]+[
+        requirements=d['original_requirements_adoption']['original_paths']
+        self.assertEqual(len(requirements),3)
+        selected += requirements
+        visible=[p for p in d['excluded_unmatched'] if p not in documents+requirements]+[
             'LightGenPublic/tasks/t06_lgvq_temporal_consistency/train.py',
             'LightGenPublic/tasks/t06_lgvq_temporal_consistency/runtime/lgvq_temporal/fixed_weight.py',
             'LightGenPublic/tasks/t06_lgvq_temporal_consistency/teacher_release_final/lgvq_temporal_08044/new_fix.py',

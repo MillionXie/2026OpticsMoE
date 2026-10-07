@@ -2470,6 +2470,11 @@ node_modules/
 /LightGenPublic/tasks/t06_lgvq_temporal_consistency/teacher_release_final_v2/lgvq_temporal_08044/pyproject.toml
 /LightGenPublic/tasks/t06_lgvq_temporal_consistency/teacher_release_final_v2/lgvq_temporal_08044/release.json
 
+# Same original dependency file adopted once in the T06 reference directory.
+/LightGenPublic/tasks/t06_lgvq_temporal_consistency/teacher_release/lgvq_temporal_08044/requirements.txt
+/LightGenPublic/tasks/t06_lgvq_temporal_consistency/teacher_release_final/lgvq_temporal_08044/requirements.txt
+/LightGenPublic/tasks/t06_lgvq_temporal_consistency/teacher_release_final_v2/lgvq_temporal_08044/requirements.txt
+
 # Named historical plotting/meeting outputs; raw measurements and baseline evidence retained.
 # Each original matches the existing asset-record ZIP. No source/config/dataset-directory wildcard.
 /LightGenV2/reports/20260915_lgvq_topsw/operation_count_and_topsw.json
