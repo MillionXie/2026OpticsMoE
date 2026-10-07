@@ -181,6 +181,15 @@ LightGenV2 后不会错误地相对到新 config 目录。
 
 ## 硬件与交付
 
+原服务器compress_all交付材料`hardware/reproduce_simulation.py`和
+`hardware/AI_TEMPORAL08044_HANDOFF.md`已原样纳入main，逐LF SHA分别为
+`a41d1cba72c1644931e8c8fea96852758a39966dc5d15b2dfb55fbeb0e7fd0b4`及
+`6ba683249ed7aa0c1a81a026f91107cf4a40ee80313cd63a5b1921b5739de5b4`。
+脚本是独立包的simulate入口模板，按自身目录找runtime、SHA256、release和固定输入；
+main里的模板位置没有这些包内资产，不能直接运行完整评估。仅帮助检查通过，未读取
+PT或558视频、不改变原数值容差；使用时必须对应完整原包及其清单，不混用原版/v2。
+本轮保留原脚本的输出行为，不把它当新增训练／打包协议，原合同亦不证明另一光路已复现。
+
 2026-10-07补齐既有SHS打包器引用的`lab_phase.py`和`hardware/run_lab.py`，
 不再依赖本地未跟踪源码。两份服务器原Spatial/Temporal交付ZIP中的对应成员已只读核验；
 portable入口原样保留，相位保持器保留后续已有的可选`--release-file`退出控制，
