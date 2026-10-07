@@ -206,3 +206,14 @@ python maintenance/git_safety/check_source_archives.py --server-formal-timing-pa
 现用ABO/OpenMoji与主目录HEAD及已跟踪overlay未变。完整恢复身份在工作目录收据
 `subsequent_verified_retirement_20261007`，上方83行余额现为历史快照。
 这不是全部旧副本已退出，也不报告未实测的净释放量；六份T16归档选择仍待用户回复。
+
+第二批五份旧ABO控制／核验／审计副本也已完整归档并退役，实际目录80→75：
+`t07_gallery_fp32_20260912`、`t07_goal81_verify_20260912`、
+`t07_joint_best_restart_20260912`、`t07_retail_audit_20260913`、`t07_review_20260910`。
+20306原文件及全部旧测速逐SHA核验，五个HEAD仍由两端既有Git归档历史保留；
+原完整文件归档在服务器，不能冒称新建了本地独立数据备份。只有review的共享runs链接
+退出，主数据不动；无force删除前重新检查无源码修改、未跟踪项及同用户进程引用。
+旧83及80行快照仍作为历史，当前注册余额为75，见工作目录收据的
+`latest_verified_retirement_20261007`；最终rank72、旧robust必要运行目录和现用OpenMoji不动。
+主线4c7ec63d的14任务Git树检查无错；本机私有入口／原报告检查亦无错、源SHA无错，
+但七项版本状态仍明确有资产／历史依赖或现用实验边界，不改migration_complete=false。

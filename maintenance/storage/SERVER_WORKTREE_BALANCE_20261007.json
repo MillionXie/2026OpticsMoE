@@ -1,4 +1,34 @@
 {
+  "latest_verified_retirement_20261007": {
+    "registered_before": 80,
+    "registered_after": 75,
+    "retired": [
+      {"name": "t07_gallery_fp32_20260912", "head": "c8ec81ced7f1c4d54b848ec99f747ac38c77bae5", "purpose": "Historical FP32 training-gallery loss control"},
+      {"name": "t07_goal81_verify_20260912", "head": "5f3c704ad93ee8baade05ea2fc13823119c21d84", "purpose": "Historical explicit SHA-pinned checkpoint verification"},
+      {"name": "t07_joint_best_restart_20260912", "head": "35055dc78d9ddd585e3d39357312f2f508cd287d", "purpose": "Historical paired restart from verified joint best"},
+      {"name": "t07_retail_audit_20260913", "head": "5a7bf527a1b4a479180097f493c5ac648057ab31", "purpose": "Historical regularization and SHAPE pilot release audit"},
+      {"name": "t07_review_20260910", "head": "e0732f74338af0cee3cb4463df9a320b09f2b24d", "purpose": "Historical diagnosis, equivalence and curated review evidence"}
+    ],
+    "full_regular_file_archive": "/DATA/DATA1/guest3/storage_cleanup_manifests/retired_abo_five_20261007/complete_old_worktrees.tar.gz",
+    "archive_sha256": "30df21a29c3e7cfbcb2d652ad3e0e6696349228d86a2967222c3a53cbe769093",
+    "archive_bytes": 1138384271,
+    "verified_regular_files": 20306,
+    "all_original_timing_files_in_archive": true,
+    "git_administrative_pointer_excluded": true,
+    "local_existing_recovery_ref_containing_all_heads": "refs/archive/checkout-preservation-20261004/original18",
+    "server_existing_archive_history_containing_all_heads_verified": true,
+    "shared_runs_symlink_archived_not_dereferenced": "t07_review_20260910/LightGenV2/tasks/t07_abo_image_retrieval/runs",
+    "shared_runs_target_not_deleted": true,
+    "tracked_changes_and_untracked_files_before": 0,
+    "owned_process_cwd_exe_cmdline_fd_references_before": 0,
+    "runtime_reference_scan_files": 13094,
+    "runtime_reference_name_hits": 0,
+    "revalidated_before_removal": true,
+    "removal_method": "Unlink only the verified shared-runs symlink; git worktree remove without force",
+    "protected_heads_and_tracked_overlays_unchanged": true,
+    "laboratory_contacted": false,
+    "limits": "Complete regular files and symlink metadata retained on training server; not a new independent local asset backup. Reference scan covers main, protected ABO/OpenMoji and demo reproduction source roots, not unknown future external callers."
+  },
   "subsequent_verified_retirement_20261007": {
     "registered_before": 83,
     "registered_after": 80,
