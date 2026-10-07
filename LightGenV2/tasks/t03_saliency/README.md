@@ -31,7 +31,11 @@
 交接的五份关键代码与说明已在main且逐字节一致，共用hardware_sdk源码无差异。
 发布main Git对象在实际服务器导入，四项合成绑定／像素导入合同测试通过；
 未打开设备、未加载正式PT或复评数据。该适配器不等于上述SHS实拍路径，
-仍依赖本机formal_hardware.yaml、LUT、几何和厂商驱动；旧目录继续保留。
+仍依赖本机formal_hardware.yaml、LUT、几何和厂商驱动；这些外部资产未变。
+2026-10-07确认两份旧交接／许可插图源码副本无未提交内容、非缓存忽略资产或进程引用后，
+完整归档并退出。
+9321个原文件逐SHA核验，全部历史测速及源码可恢复；正式数据、PT、release和插图不动。
+恢复位置和两份原commit见[目录收据](../../../maintenance/storage/SERVER_WORKTREE_BALANCE_20261007.json)。
 
 2026-09-29：[六张许可核验候选的固定权重推理和论文素材包](reports/reproduction/LICENSED_EXAMPLES_20260929.md)。
 原best不变；715为public-test，另外五张为训练样例，必须在论文中区分。

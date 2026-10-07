@@ -1,4 +1,30 @@
 {
+  "latest_salicon_retirement_20261007": {
+    "registered_before": 74,
+    "registered_after": 72,
+    "retired": [
+      {"name": "t03_handoff_20260915", "head": "3b931ccdcbd398f1c73f57d46621eccbddeff4f0", "purpose": "Historical Meadowlark/manual-phase/TUCam handoff; corresponding entry and shared SDK sources already on main"},
+      {"name": "t03_licensed_figures_20260929", "head": "b75a56203b47818810e0a45dceecf9cea4c6aa9f", "purpose": "Historical SALICON license-reviewed illustration export; source adopted on main, original release and figure assets outside this code-only checkout"}
+    ],
+    "full_regular_file_archive": "/DATA/DATA1/guest3/storage_cleanup_manifests/retired_salicon_two_20261007/complete_old_worktrees.tar.gz",
+    "archive_sha256": "df9ba29f36cbaa002761162873d0a4e80cc0748eabe457ff6609cfb6498c428f",
+    "archive_bytes": 491557884,
+    "verified_regular_files": 9321,
+    "verified_symlinks": 0,
+    "file_counts": {"t03_handoff_20260915": 4314, "t03_licensed_figures_20260929": 5007},
+    "archived_python_and_test_cache_files": 176,
+    "all_original_timing_files_in_archive": true,
+    "local_existing_recovery_ref": "refs/archive/checkout-preservation-20261004/original18",
+    "owned_process_references_before_removal": 0,
+    "runtime_reference_scan_registered_roots": 74,
+    "runtime_reference_name_hits": 0,
+    "runtime_reference_file_count": null,
+    "runtime_reference_scan_scope": "Python, YAML, TOML, shell, CMD, PS1 and INI source across registered worktrees; excludes assets/runs/reports/cache; completed before archive creation. Exact file count was not captured after SSH observation timeout.",
+    "removal_method": "Verify complete archive and all current cache SHA; remove only named 176 Python/test cache files, then git worktree remove without force",
+    "protected_heads_and_tracked_overlays_unchanged": true,
+    "laboratory_contacted": false,
+    "limits": "Full archive is on training server, not a new independent local data backup or scientific reproduction. T02 personal source and FA/VTAB source remain retained pending dependency review."
+  },
   "latest_t12_initial_retirement_20261007": {
     "registered_before": 75,
     "registered_after": 74,
