@@ -31,8 +31,10 @@
 本表是工程导航，不是完整迁移验收表。旧 `t04_semantic_interaction` 保留为兼容后端及
 历史对照，新的 robust 实验从 T04 robust 入口进入。精确源码、PT、数据身份及剩余例外
 见 [`TASK_REGISTRY.json`](TASK_REGISTRY.json)；各版本指标以任务 README／原报告为准。
-本机主文件夹和训练服务器主目录已在 `main` 上；实验室实际运行目录及受保护的
-ABO/OpenMoji工作树尚未全部切换，不能因源码引用已同步而覆盖现用实验目录。
+本机、训练服务器和实验室主目录均已实际建立 `main` 源码入口；实验室主目录的
+落地收据见[入口核验](../maintenance/storage/LAB_ROOT_MAIN_ADOPTION_20261007.json)。
+受保护的ABO/OpenMoji历史运行目录尚未全部改用主线配置，不能覆盖现用实验目录；
+主目录源码到位也不等于SDK、数据、PT及现场回归已全部通过。
 
 ## 现在从哪里开始
 

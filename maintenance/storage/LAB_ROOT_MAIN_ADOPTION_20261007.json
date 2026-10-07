@@ -1,0 +1,34 @@
+{
+  "date": "2026-10-07",
+  "root": "E:/code/guest/2026OpticsMoE",
+  "adopted_main_commit": "c94e463a48a77a2c934bf6bed551c5e88c5d85d5",
+  "previous_root_git_present": false,
+  "preflight_conflicts": [],
+  "tracked_files_after": 4498,
+  "new_missing_files_materialized_by_git": 4497,
+  "existing_file_preserved": {
+    "path": ".vscode/settings.json",
+    "sha256": "b48be4a0808834c155006634c1f3e4c32f577ce9e52b30ee608372c4d89850cb"
+  },
+  "verification": {
+    "branch": "main",
+    "tracked_status": "",
+    "registered_task_entries": 14,
+    "registry_errors": [],
+    "migration_complete": false
+  },
+  "transport": "Git bundle to existing object store, Git fetch/read-tree/checkout-index in existing root; no source SCP",
+  "safety": {
+    "existing_files_overwritten": false,
+    "new_project_copy_created": false,
+    "existing_runtime_directories_switched": false,
+    "hardware_called": false,
+    "models_or_experiment_metrics_changed": false
+  },
+  "verification_repair": "The first post-adoption registry command used an unsupported --tree option. Adoption had completed; it was not rerun. A subsequent read-only --commit check confirmed HEAD, clean tracked status, preserved settings SHA and 14 entries.",
+  "remaining": [
+    "Original runtime directories remain protected dependencies and historical assets; main checkout does not mean their SDK/data/PT configuration has been migrated.",
+    "Private handoff reports and actual hardware readiness require separate asset checks; Git tree checks do not prove those.",
+    "Subsequent main updates must fast-forward the actual root as well as the published object-store reference, after collision and tracked-state checks."
+  ]
+}
