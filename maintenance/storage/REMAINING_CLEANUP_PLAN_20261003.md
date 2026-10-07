@@ -95,6 +95,14 @@ OpenMoji robust现用HEAD及2处已跟踪修改/23份未跟踪内容均与保护
 也不是robust消融数据；主线应用入口仍通过显式资产根使用它，因此保留原目录及数据。
 本次没有删除、移动、重新生成数据，也没有把旧目录切换到main。
 
+随后旧 SHS 协调器副本 `lgvq_shs_20260914` 已退出 `.worktrees` 日常目录，
+完整归档34,311文件并逐SHA核验，再通过原生Git移动到
+`storage_cleanup_manifests/retired_lgvq_shs_source_20261008/frozen_worktree`。
+所有原源码、SALICON历史输入缓存及测速保留，移动后再次核对原字节（Git管理指针由Git更新）。
+旧完整控制器没有冒充main当前入口；既有main纯配置/阶段生成器身份不变。
+29处注册数量没有下降，不把此次冻结移动报成删除或腾盘；ABO/OpenMoji保护状态未变。
+完整归档SHA及范围见 `SERVER_WORKTREE_BALANCE_20261007.json` 顶部最新记录。
+
 服务器此前13项私有资产/恢复引用检查错误已通过补齐11份缺失具名私有文件和
 从已有CRC9仓库Git获取登记恢复引用解决，19项导航及私有资产登记测试通过。
 详见 `UNTRACKED_ASSET_RECOVERY_20261006.json`；这不证明全部科学复现完成。
