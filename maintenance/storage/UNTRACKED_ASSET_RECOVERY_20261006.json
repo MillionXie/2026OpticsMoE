@@ -1,4 +1,26 @@
 {
+  "linux_private_artifact_reconciliation_20261008": {
+    "source_commit": "f6a1c5075de204c3e9143c76d6b96c726861e1aa",
+    "previous_global_registry_asset_errors": 13,
+    "missing_unique_asset_paths_completed": 11,
+    "weights_completed": 4,
+    "private_reports_and_delivery_documents_completed": 7,
+    "identity_manifests": ["LightGenV2/TASK_REGISTRY.json", "LightGenV2/tasks/t07_abo_image_retrieval/reports/reproduction/FINAL_IDENTITY_20261002.json", "LightGenV2/tasks/t04_openmoji_robust_ablation/reports/reproduction/FINAL_IDENTITY_20261002.json"],
+    "t12_private_delivery": [
+      {"path": "handoffs/t12_lab_robust17m_20260927/README.md", "bytes": 1394, "sha256": "c75be6637074840b3efb783fe97da661ad6bc3f6582ef710e9342523111db33b"},
+      {"path": "handoffs/t12_lab_robust17m_20260927/report.json", "bytes": 30832, "sha256": "a8b910e0b4fc108b78c8ed9cb648538cc7264ff24997eaf53213a8be2c90bd68"}
+    ],
+    "transfer": "Original local assets retained. Missing exact Linux handoff paths populated through unique partial files, streamed remote SHA verified before non-overwriting rename, then final SHA reverified. No source runtime transferred or overwritten.",
+    "t11_registered_recovery_ref_completed": "refs/archive/server-authoritative-20261004/t11-crc9-runtime",
+    "t11_recovery_commit": "72180033c6edd605c7151b2faa8a599dc15910ee",
+    "t11_recovery_method": "Git fetch from existing independent server CRC9 repository into previously absent registered archive ref; no branch/worktree or source checkout changes",
+    "linux_navigation_and_full_local_asset_registry_tests_passed": 19,
+    "linux_test_seconds": 0.58,
+    "all_scientific_assets_or_runtime_reproduction_proven": false,
+    "final_models_datasets_timing_or_current_experiments_changed": false,
+    "laboratory_contacted": false,
+    "external_sister_upload": false
+  },
   "server_imported_inference_payload_ignore_20261008": {
     "path": "ABO_Lab_8um/original_inference/backend",
     "purpose": "Original imported read-only deployment release backend, not main development source",
