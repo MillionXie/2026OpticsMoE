@@ -1,0 +1,39 @@
+{
+  "scope": "Optional historical Temporal post-optical readout compression tool; not a new final model or measured result",
+  "origin": "Local unique source preserved in refs/archive/checkout-preservation-20261004/original18",
+  "source_commit": "ac7e3ecce0bef96ae7d91f8de6e478542913bd4e",
+  "original_compression_source_sha256_lf": "6dcebca187c23513d101888a56b66c82cadb0e02463fbad1141a9de4cbe6fadd",
+  "actual_training_server_root_files_present_before_adoption": false,
+  "training_server_has_original_historical_object": false,
+  "changes": ["Reject existing cache, companion report and training directory before loading inputs or touching CUDA"],
+  "scientific_functions_unchanged_except_leading_output_guard": true,
+  "models_data_GPU_or_devices_run": false,
+  "final_temporal_checkpoint_changed": false,
+  "new_compression_accuracy_verified": false,
+  "original_function_AST_SHA256": {
+    "_sha256": "d5657dd6c15076069c80ca45db0f35e0047ac6ebcc3dce751a06b87a8f2616f8",
+    "_json": "d805d3bbf177b431acdd456ccc6b0a2e6c37f8c2023f7345d09c6725b05f7c61",
+    "_model_state": "8bbb2247ca7eea6a312ece2daa8494e4f9cca12ab7fa8fb910847b8a9f573911",
+    "extract": "61de58b9faeff02f61f3ef46ade4a0cfe0bdd5f13a6fe762b9a3d8a31b07b676",
+    "_batches": "42c258d69158ac6997fae318823f2d8126755501abc41729d6532524c8b6f085",
+    "_evaluate_readout": "6d959ff42b39b0ca04c2c7ba687211066132bcb9bfe5ee512aec5edbdd035b54",
+    "_initialize_pruned_readout": "c15a21b91ea4bc733ae05af5d9e05f574436fc49fe53468491f020966d99cba7",
+    "train": "f53f434f95092a7096ffb87ba8564b8eb877ca05f0876f40996c79eb14aefa90",
+    "main": "6d6e4ee5155416d4039f3712e45d9c948b55e2952a5620143e452fa0183c1496"
+  },
+  "files": [
+    {"path": "LightGenV2/tasks/t06_video_quality_assessment/compress_temporal_readout.py", "source_blob_sha256": "3c945d0382846103fb6b7bc7768efa7c1ccf02397a9d8ce54dd45dff820ae0b5", "hash_normalization": "crlf_to_lf"},
+    {"path": "LightGenV2/tasks/t06_video_quality_assessment/configs/lightgen/temporal_multivideo16x4_readout_h256_s171.yaml", "source_blob_sha256": "07379f09ce8d1fc4fe68f53a16f7fb8e0b0f96a9e32939d9460e9913ac48d164", "hash_normalization": "crlf_to_lf"},
+    {"path": "LightGenV2/tasks/t06_video_quality_assessment/configs/lightgen/temporal_multivideo16x4_readout_h512_s170.yaml", "source_blob_sha256": "73b11d7383f91b57002f6f1d15f071d3228e2da083c39e7a1f37df834ed2f3a6", "hash_normalization": "crlf_to_lf"},
+    {"path": "LightGenV2/tasks/t06_video_quality_assessment/configs/lightgen/temporal_multivideo16x4_readout_h640_s172.yaml", "source_blob_sha256": "e83de1ce500233a85c8d7b4ee26fe04a947c56543adf86e7d71be3969d4e20c9", "hash_normalization": "crlf_to_lf"}
+  ],
+  "additional_existing_dependencies": [
+    "LightGenV2/tasks/t06_video_quality_assessment/models/multivideo9x4.py",
+    "LightGenV2/tasks/t06_video_quality_assessment/multivideo_data.py",
+    "LightGenV2/tasks/t06_video_quality_assessment/multivideo_settings.py",
+    "LightGenV2/tasks/t06_video_quality_assessment/configs/lightgen/temporal_multivideo16x4_formal.yaml",
+    "experiments/qwen3_vl_2b_lgvq_single_metric_o2_16frame_54/data.py",
+    "experiments/qwen3_vl_2b_lgvq_single_metric_o2_16frame_54/metrics.py",
+    "experiments/qwen3_vl_2b_lgvq_single_metric_o2_16frame_54/training.py"
+  ]
+}

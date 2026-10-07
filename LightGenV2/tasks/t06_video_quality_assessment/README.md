@@ -306,6 +306,23 @@ python -m LightGenV2.tasks.t06_video_quality_assessment.quality_token_resolution
 
 ## 历史 A100 批量与 dataset-once baseline 已收敛（2026-10-06）
 
+### 可选历史 Temporal 读出压缩工具（2026-10-07）
+
+`compress_temporal_readout` 与三份原 h256/h512/h640 配置已从本地保护历史
+`ac7e3ecc` 纳入主线，保留独有代码，不把它当作服务器正式运行版本。
+核验时训练服务器主目录没有这四份文件，也没有该原历史对象；来源明确记录在
+[历史工具身份](temporal_compression_import_20261007.json)。只用于16视频×4帧六层
+光电之后的原电子读出头缩减，不能把其配置名或训练缓存成绩替代封存 .8044 PT。
+本轮未找到并绑定压缩候选正式成绩，未提取缓存、训练、重评视频或使用GPU/设备。
+
+原九项函数的AST保持一致，仅 extract/train 的首行增加已有输出拒绝；缓存文件、
+伴随JSON或训练目录存在时，在读取配置/PT、初始化RNG及CUDA之前失败，保护原结果。
+三份配置继承既有formal，原256/512/640宽度及种子不改，默认为可选历史profile，
+不修改主入口默认Temporal-36或最终16×4模型。原工具按TEST SRCC选模，是开发指标，
+只保存压缩best；它不是新的已验收正式训练协议，不补造历史last或独立泛化结论。
+入口帮助：`python -m LightGenV2.tasks.t06_video_quality_assessment.compress_temporal_readout --help`。
+9项合成CPU/AST/配置/防覆盖检查通过，不等于真实缓存或完整模型复现。
+
 2026-10-07补回旧A100综合测速导出缺失的15份baseline源码／配置快照，逐文件匹配
 其原SHA（含混合CRLF行尾），没有替换现用模型、重测或更新旧SHA清单。
 该导出仍有9项文档／渲染图缺失或检查文件变化，不称完整；原README也保持不变。

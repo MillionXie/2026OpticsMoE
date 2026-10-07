@@ -90,6 +90,8 @@
     },
     {
       "id": "t06_video_quality_assessment",
+      "optional_temporal_compression_source_import": "tasks/t06_video_quality_assessment/temporal_compression_import_20261007.json",
+      "optional_temporal_compression_status": "local_historical_tool_preserved_on_main_not_promoted_to_formal_model_no_verified_new_accuracy",
       "stage_test_dependency_evidence": "tasks/t06_video_quality_assessment/stage_coordinator_source_identity_20261006.json",
       "review_package_identity_evidence": "../maintenance/storage/T06_REVIEW_PACKAGE_IDENTITY_20261006.json",
       "standalone_8um_variant_identity_evidence": "../maintenance/storage/T06_WORKING_PROJECT_IDENTITY_20261006.json",
