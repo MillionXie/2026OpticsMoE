@@ -99,6 +99,7 @@
     },
     {
       "id": "t06_video_quality_assessment",
+      "reproduction": "tasks/t06_video_quality_assessment/reports/reproduction/README.md",
       "optional_temporal_compression_source_import": "tasks/t06_video_quality_assessment/temporal_compression_import_20261007.json",
       "optional_temporal_compression_status": "local_historical_tool_preserved_on_main_not_promoted_to_formal_model_no_verified_new_accuracy",
       "stage_test_dependency_evidence": "tasks/t06_video_quality_assessment/stage_coordinator_source_identity_20261006.json",

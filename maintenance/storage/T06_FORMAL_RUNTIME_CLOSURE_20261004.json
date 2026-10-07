@@ -1,4 +1,16 @@
 {
+  "reproduction_navigation_publication_20261008": {
+    "path": "LightGenV2/tasks/t06_video_quality_assessment/reports/reproduction/README.md",
+    "local_original_sha256": "73a9cdfd5fcc1e44af2d5096f401a22c4fa491944f2ae395b96c3d7fad54b66f",
+    "server_original_sha256": "52cffc1bd14e39595daeedff41b3c844d6da7262d39ff18defe8a309a796ca5d",
+    "server_original_archive": "/DATA/DATA1/guest3/storage_cleanup_manifests/t06_reproduction_navigation_20261008/server_original_readme.tar.gz",
+    "server_archive_sha256": "8d0212a8cb308e62b8609a1776ce1ac66218fb3aaf7d43c3a92d23a27d7eb350",
+    "server_original_retained": "/DATA/DATA1/guest3/storage_cleanup_manifests/t06_reproduction_navigation_20261008/README_server_original.md",
+    "difference": "Server index retained pre-capture no-reproduction wording; local index links already-published capture, adaptation and baseline reports. Added explicit current-version navigation without rewriting historical metrics.",
+    "all_index_links_published": true,
+    "navigation_and_registry_tests_passed": 19,
+    "models_datasets_timing_or_hardware_changed": false
+  },
   "schema_version": 1,
   "source_commit": "8e869473787f4ffceb2a6a77f4430b94c206f459",
   "main_commit": "d2e6703e899d097f8e5708e1f1aaaaf438692258",
