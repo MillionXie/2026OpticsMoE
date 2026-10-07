@@ -35,6 +35,23 @@ def test_real_registry_entries_navigation_weights_and_imported_source():
     assert checker.inspect(root, True)["errors"] == []
 
 
+def test_current_governance_excludes_lab_without_erasing_historical_identity():
+    root = Path(__file__).resolve().parents[3]
+    registry = json.loads((root / 'LightGenV2/TASK_REGISTRY.json').read_text(encoding='utf8'))
+    scope = registry['current_governance_scope']
+    assert scope['included'] == ['local_primary_repository', 'Linux_training_server', 'GitHub_main']
+    assert scope['laboratory_connect_sync_cleanup_or_cutover_authorized'] is False
+    assert scope['all_scientific_assets_or_runtime_dependencies_proven'] is False
+    tasks = {t['id']: t for t in registry['tasks']}
+    for name in ('t04_openmoji_robust_ablation','t07_abo_image_retrieval','t12_text_to_image'):
+        assert tasks[name]['bench_source'].startswith('E:/code/guest/')
+        assert 'lab_cutover_out_of_scope' in tasks[name]['source_status']
+        assert 'pending' in tasks[name]['source_status']
+    assert tasks['t07_abo_image_retrieval']['actual_windows_runtime_cutover'] is False
+    assert tasks['t07_abo_image_retrieval']['new_device_regression_authorized'] is False
+    assert registry['migration_complete'] is False
+
+
 def test_duplicate_ids_and_invalid_sha_are_not_silent(tmp_path):
     base, registry = fixture_registry(tmp_path, {"weights": [{"sha256": "wrong"}]})
     registry["tasks"].append(dict(registry["tasks"][0]))
