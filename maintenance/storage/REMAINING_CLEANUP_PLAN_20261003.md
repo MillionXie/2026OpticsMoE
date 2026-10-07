@@ -7,7 +7,7 @@
 | --- | --- |
 | 本地/Linux/GitHub源码 | 三端main一致：`7e3413ded50301cd2369bfd325c6c1a09b65af9f`；本表之后的文档提交以实际Git为准 |
 | 主目录已跟踪未提交 | 本地0、Linux0；不等于旧运行目录全部clean |
-| 未跟踪文件 | 本地1777、Linux195；仍需继续分类，不能整目录隐藏 |
+| 未跟踪文件 | 本地1764、Linux195；仍需继续分类，不能整目录隐藏 |
 | 开发分支 | 两端均只有main和受保护的OpenMoji分支 |
 | 正式任务入口 | 14任务登记、已登记本机PT SHA及私有报告检查无错误，源文件SHA无不符 |
 | 维护测试 | 源码97a242f00完整pytest 371通过、storage unittest 20通过；后续T06两份原材料帮助和23项登记/链接检查通过 |
@@ -15,8 +15,11 @@
 | 保护对象 | ABO封存d979b53e，tracked0/untracked9；OpenMoji现用3b956503，两处修改/untracked23原样保留 |
 | 外部边界 | 实验室不连接、不整理；外部上传仍暂停 |
 
-本地1777项分组：LightGenV2 878、handoffs 707、旧ABO台架140、MNIST17、
-experiments23、TransferFromElectricity5、outputs3、tmp4。这是文件数，不是模型或算法数。
+本地1764项分组：LightGenV2 878、handoffs 707、旧ABO台架140、MNIST7、
+experiments23、TransferFromElectricity5、outputs3、tmp1。这是文件数，不是模型或算法数。
+十张旧MNIST／对齐预览及三张测速PDF页渲染按13个具体路径退出Git待提交，原图原地保留，
+当前逐文件SHA记录于.gitignore对应规则注释。31项忽略测试通过，原件SHA未变，
+新源码、新预览和新测速渲染文件仍可见；不删除任何测速，也不声称释放磁盘空间。
 当前源码仍有七项具名待绑定状态：T01历史版本、T02资产闭包、T04现用实验、
 T05未开展、T07历史依赖、T08适配资产、T12环境资产；登记仍为`migration_complete=false`。
 
@@ -100,7 +103,7 @@ T06 compress_all仍含253份非缓存资产（含原PT／预测），保留。re
 ## 2. 历史收据与现用目录保护
 
 当前数量只看本页顶部；旧83、75、49、2600等数值均为具名历史快照，不与当前48目录、
-1779本地未跟踪、195服务器未跟踪混用。过往每批退出、逐文件SHA、恢复点及原Git身份
+1764本地未跟踪、195服务器未跟踪混用。过往每批退出、逐文件SHA、恢复点及原Git身份
 保存在[目录收据](SERVER_WORKTREE_BALANCE_20261007.json)，完整旧说明保存在本页Git历史。
 没有删掉这些收据、原实验或测速。
 
