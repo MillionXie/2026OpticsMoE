@@ -1,4 +1,10 @@
 /CLIP
+# Three identical historical T12 per-image figure selection payloads (123 rows).
+# Original files and exact members of the existing 1921-file recovery ZIP retained.
+# SHA256 50d0960f0c4473e71a75fb8bf2cb3177e8f90c57e244ad464cc38910cb2b0d1e
+/handoffs/t12_four_group_summary_20260927/small_matched_export/figure_shortlist.json
+/handoffs/t12_lab_robust17m_20260927/decoder20_comparison/figure_shortlist.json
+/handoffs/t12_lab_robust17m_20260927/decoder20_comparison/full_verified/figure_shortlist.json
 # Named historical preview/render outputs: keep original files and all timing.
 # SHA-256 below records current bytes; not deletion permission. New files stay visible.
 # SHA256 220e4a3884f389552d21ff9d7edad85e0893c2ea0ade5e7dd51148abe4bd08ee MNIST_10cm_8um_Bench_Test_20260923/01_fresnel_10cm/00_teacher_original_30cm_9p2um_1920x1152_preview.png
