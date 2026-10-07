@@ -1,0 +1,15 @@
+{
+  "schema_version": 1,
+  "audit_date": "2026-09-08",
+  "task": "T05",
+  "scope": "Read-only source/data/artifact audit; no new model training or full model evaluation. Existing predictions may be recomputed as explicitly recorded.",
+  "local_head": "79bf0f2695949fc5d0353698cfad417c14282f7b",
+  "local_tree_clean": false,
+  "server_main_head": "c313ff807617a75f410246e08d22d5f03b96443b",
+  "server_main_tree_clean": false,
+  "source_files_sha256": {
+    "LightGenV2/tasks/t05_video_classification/__init__.py": "bfc9700ee6be1854d2e539b174487fed32f9e82998f13510dfcccddeda5dda53"
+  },
+  "remote_record_inventory": [],
+  "actual_checkpoint_sha256": {}
+}
