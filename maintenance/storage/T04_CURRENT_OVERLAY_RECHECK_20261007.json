@@ -1,4 +1,25 @@
 {
+  "latest_readonly_recheck_20261008": {
+    "main_comparison_commit": "739ca6665d607a1c649cded90cc958d67b7ad73e",
+    "runtime_head": "3b956503a4ecae9b6c20c789ead28621e42e6eeb",
+    "tracked_modified_count": 2,
+    "untracked_count": 23,
+    "current_files_checked": 25,
+    "equal_tracked_main_after_explicit_CRLF_normalization": 21,
+    "equal_existing_archive_after_explicit_CRLF_normalization": 4,
+    "unmatched": [],
+    "archive_only_runtime_paths": [
+      "LightGenV2/tasks/t04_openmoji_robust_ablation/README.md",
+      "launch_rank64_clean_20261002.sh",
+      "launch_rank64_common_20261002.sh",
+      "train_rank64_common_20261002.py"
+    ],
+    "archive_commits": ["0512414a69eb4f2433b48c14bfd1e12ddafc86c6", "2e64b6c2ccdcf4a1bd1f6215f0e2adcd4a224062"],
+    "interpretation": "The current 25-file overlay is source-preserved, including the newer spatial alignment source/test already published by the task owner. This is not the old 23-file snapshot below, does not choose a final model or authorize stopping, switching or retiring the runtime.",
+    "runtime_modified": false,
+    "experiments_or_launchers_executed": false,
+    "laboratory_contacted": false
+  },
   "date": "2026-10-07",
   "scope": "Read-only comparison of current Linux OpenMoji overlay against existing local and Linux Git recovery objects; laboratory computer excluded",
   "runtime_directory": "/DATA/DATA1/guest3/2026OpticsMoE/.worktrees/t04_openmoji_robust_20260928",
