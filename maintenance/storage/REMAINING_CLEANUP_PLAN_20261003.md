@@ -67,6 +67,11 @@ OpenMoji旧32份源码/overlay恢复记录见
 见[当前23项复核](T04_CURRENT_OVERLAY_RECHECK_20261007.json)。没有新建归档或修改实验；
 这只证明本次源码可恢复，不证明科学依赖闭包或允许退出现用目录。
 
+SSH恢复后已逐字节实查九个dirty目录的35处已跟踪修改：13处与main原字节相同，
+其余22处与既有本地Git恢复提交原字节相同。没有创建额外源码备份或重置旧目录；
+见[35处当前修改的恢复身份](CURRENT_SERVER_DIRTY_SOURCE_RECOVERY_20261007.json)。
+这不覆盖未跟踪/被忽略资产、目录占用或下游依赖，不据此强制清空旧Git状态。
+
 ## 3. 已关闭的主要入口缺项（不等于全任务复现）
 
 - main任务导航、版本/PT/指标索引已建立；[TASK_REGISTRY](../../LightGenV2/TASK_REGISTRY.json)

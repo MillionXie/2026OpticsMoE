@@ -1,0 +1,453 @@
+{
+  "root_main": "18a11e3fb6b3bdaaddad01f47ec5d440f9a12fa2",
+  "rows": [
+    {
+      "directory": "/DATA/DATA1/guest3/2026OpticsMoE/.worktrees/sister_t08_bounded_20260927",
+      "head": "73e2febdc94e4cb280c6ada1e0e7881826f3c7f2",
+      "changed_files": [
+        {
+          "path": "LightGenV2/tasks/t08_abo_image_text_retrieval/optical_moe.py",
+          "exists": true,
+          "bytes": 57018,
+          "sha256": "ebf026e5aa2eaf6dc32ef7b5c5f18c5ac2eaea8515fe2d5a3431427d67e97869",
+          "main_sha256": "f7e069ada63dee8ff34fab5858976abe40742c4056cbc26c7b426f9539031cfc",
+          "raw_equals_main": false,
+          "lf_equals_main": false,
+          "recovery_commit": "19bbbec7520244b182faec34e25e0390c7c53985",
+          "local_recovery_raw_sha_equal": true
+        }
+      ]
+    },
+    {
+      "directory": "/DATA/DATA1/guest3/2026OpticsMoE/.worktrees/spatial_custom_conv",
+      "head": "557c10d38ffd685793f25d697fb887497720af24",
+      "changed_files": [
+        {
+          "path": "experiments/qwen3_vl_2b_lgvq_single_metric_o2_16frame_54/modeling.py",
+          "exists": true,
+          "bytes": 146176,
+          "sha256": "fe543a54208243c70a41eac8df77bd2f7d69118205912dd602fcff0aa42fca9e",
+          "main_sha256": "d6b09c803e814e4fda79019c5b1ee2d45fe790310f195b8e7a52a2b4c6f5a09c",
+          "raw_equals_main": false,
+          "lf_equals_main": false,
+          "recovery_commit": "d5c6c3b7b6089c8104d0a296c3c5e08d8534282b",
+          "local_recovery_raw_sha_equal": true
+        },
+        {
+          "path": "experiments/qwen3_vl_2b_lgvq_single_metric_o2_16frame_54/settings.py",
+          "exists": true,
+          "bytes": 79231,
+          "sha256": "382dc615d1a2815276c5d0745d54b09983024bcd0d8acc0da4ad384c60a88ada",
+          "main_sha256": "bfc27ce1da1d33695d0a5afcb37ff66ee0d42bee0f3afed096457e7cb9fcf887",
+          "raw_equals_main": false,
+          "lf_equals_main": false,
+          "recovery_commit": "d5c6c3b7b6089c8104d0a296c3c5e08d8534282b",
+          "local_recovery_raw_sha_equal": true
+        },
+        {
+          "path": "experiments/qwen3_vl_2b_lgvq_single_metric_o2_16frame_54/tests/test_model_and_training.py",
+          "exists": true,
+          "bytes": 61047,
+          "sha256": "0d4b0b7228cd11e72dd36644d5963a7cdae5638b0f11fc15efd151af60c54831",
+          "main_sha256": "892aace1531100449f94b6b3d04d4134bd56c7fce3647f42cf14248050540f2d",
+          "raw_equals_main": false,
+          "lf_equals_main": false,
+          "recovery_commit": "d5c6c3b7b6089c8104d0a296c3c5e08d8534282b",
+          "local_recovery_raw_sha_equal": true
+        }
+      ]
+    },
+    {
+      "directory": "/DATA/DATA1/guest3/2026OpticsMoE/.worktrees/t04_openmoji_robust_20260928",
+      "head": "3b956503a4ecae9b6c20c789ead28621e42e6eeb",
+      "changed_files": [
+        {
+          "path": "LightGenV2/tasks/t04_openmoji_robust_ablation/README.md",
+          "exists": true,
+          "bytes": 10963,
+          "sha256": "85fdad7cfd5912dc6895704917700654747371f3e528d6872609023d7549aa22",
+          "main_sha256": "5751e3fce4e0bf20d484bb61b0f1f80cb8212aee62f944886155bdbf9166dc8c",
+          "raw_equals_main": false,
+          "lf_equals_main": false,
+          "recovery_commit": "0512414a69eb4f2433b48c14bfd1e12ddafc86c6",
+          "local_recovery_raw_sha_equal": true
+        },
+        {
+          "path": "LightGenV2/tasks/t04_openmoji_robust_ablation/profiles.py",
+          "exists": true,
+          "bytes": 4343,
+          "sha256": "87f4f515cdb866f67aa20185f1897ccb4c3da0909553c45a9cadb120a4d30c8f",
+          "main_sha256": "87f4f515cdb866f67aa20185f1897ccb4c3da0909553c45a9cadb120a4d30c8f",
+          "raw_equals_main": true,
+          "lf_equals_main": true,
+          "recovery_commit": "18a11e3fb6b3bdaaddad01f47ec5d440f9a12fa2",
+          "local_recovery_raw_sha_equal": true
+        }
+      ]
+    },
+    {
+      "directory": "/DATA/DATA1/guest3/2026OpticsMoE/.worktrees/t08_text_to_image_10cm_compact_20260923",
+      "head": "73e2febdc94e4cb280c6ada1e0e7881826f3c7f2",
+      "changed_files": [
+        {
+          "path": "LightGenV2/tasks/t08_abo_image_text_retrieval/optical_moe.py",
+          "exists": true,
+          "bytes": 58087,
+          "sha256": "bfab266d8af86fb47de32ee8c78e6daadab076fc98be879c9be28d54b4791032",
+          "main_sha256": "f7e069ada63dee8ff34fab5858976abe40742c4056cbc26c7b426f9539031cfc",
+          "raw_equals_main": false,
+          "lf_equals_main": false,
+          "recovery_commit": "6b8e5fc3a85978444f0eb25818fa53f3c4c76708",
+          "local_recovery_raw_sha_equal": true
+        }
+      ]
+    },
+    {
+      "directory": "/DATA/DATA1/guest3/2026OpticsMoE_a100_formal",
+      "head": "0db3b583925ec688d2fba09957905d8e1cd9bec8",
+      "changed_files": [
+        {
+          "path": "LightGenV2/tasks/t04_semantic_interaction/baseline_5090d.py",
+          "exists": true,
+          "bytes": 15932,
+          "sha256": "d4fd251a33d76d2189ea1df4c9b2d93a1811f8a594d68c6ae0309bb0f59a2274",
+          "main_sha256": "a046eb11c861a807d22f4c94a33f02d9437f28596802902c2be5b6b793e140df",
+          "raw_equals_main": false,
+          "lf_equals_main": false,
+          "recovery_commit": "36b1e2f696f06149e5812282036416a50bad8fef",
+          "local_recovery_raw_sha_equal": true
+        },
+        {
+          "path": "LightGenV2/tasks/t04_semantic_interaction/baseline_structured_5090d.py",
+          "exists": true,
+          "bytes": 32201,
+          "sha256": "c697a699009e47ee022f5600c5ec00b1a913a4708f86a002593efac1fb9d025b",
+          "main_sha256": "810e9e83482495fa24f26d00fde67d0c205107803c76dbac0e73d0f282a276d6",
+          "raw_equals_main": false,
+          "lf_equals_main": false,
+          "recovery_commit": "36b1e2f696f06149e5812282036416a50bad8fef",
+          "local_recovery_raw_sha_equal": true
+        },
+        {
+          "path": "LightGenV2/tasks/t04_semantic_interaction/modeling.py",
+          "exists": true,
+          "bytes": 9539,
+          "sha256": "1cbe12b344fb667f8381181bbb88bc019c5418a3139e322bf02141f1c5e98e3b",
+          "main_sha256": "78deb9c5f6d4a6285179236fa295716b459c8885c814c4324da9e04e1d5f202c",
+          "raw_equals_main": false,
+          "lf_equals_main": false,
+          "recovery_commit": "36b1e2f696f06149e5812282036416a50bad8fef",
+          "local_recovery_raw_sha_equal": true
+        },
+        {
+          "path": "LightGenV2/tasks/t04_semantic_interaction/run.py",
+          "exists": true,
+          "bytes": 5653,
+          "sha256": "a1a4fa8f7318267e946cbe1734f52d96667dc613d303ca051709e065a5be58a7",
+          "main_sha256": "8346114a9168d7612dd7ec2af9bfd42172d0cf6cdf41f75d3ab4c24d163d2293",
+          "raw_equals_main": false,
+          "lf_equals_main": false,
+          "recovery_commit": "36b1e2f696f06149e5812282036416a50bad8fef",
+          "local_recovery_raw_sha_equal": true
+        },
+        {
+          "path": "LightGenV2/tasks/t04_semantic_interaction/tests/test_contract.py",
+          "exists": true,
+          "bytes": 5411,
+          "sha256": "dbcd6b56de6fafa520388e52bdac5a8a77e571af6bd06f90ab9006f02fed1535",
+          "main_sha256": "dbcd6b56de6fafa520388e52bdac5a8a77e571af6bd06f90ab9006f02fed1535",
+          "raw_equals_main": true,
+          "lf_equals_main": true,
+          "recovery_commit": "18a11e3fb6b3bdaaddad01f47ec5d440f9a12fa2",
+          "local_recovery_raw_sha_equal": true
+        },
+        {
+          "path": "LightGenV2/tasks/t04_semantic_interaction/training.py",
+          "exists": true,
+          "bytes": 16400,
+          "sha256": "b354c41edac79fdf9e2a3de44191feec5195235a12797988cc10937cd4480e91",
+          "main_sha256": "b82ddb724d67eaa1ad70c68a0a3078ebf697619dad645ec8ce0c5674458fa0e3",
+          "raw_equals_main": false,
+          "lf_equals_main": false,
+          "recovery_commit": "36b1e2f696f06149e5812282036416a50bad8fef",
+          "local_recovery_raw_sha_equal": true
+        },
+        {
+          "path": "experiments/qwen3_vl_2b_openmoji_instruction_four_stage_optical_editing/training.py",
+          "exists": true,
+          "bytes": 21200,
+          "sha256": "f7428235d7bf1ff2ea6b2659afac0ffe6ae28e732c6425dc64fb3d5c1f1d550d",
+          "main_sha256": "815cac5435feb099a57a7ba56d75b74e22e548f48ffa84dcc4dfb9c8de6a31c4",
+          "raw_equals_main": false,
+          "lf_equals_main": false,
+          "recovery_commit": "36b1e2f696f06149e5812282036416a50bad8fef",
+          "local_recovery_raw_sha_equal": true
+        }
+      ]
+    },
+    {
+      "directory": "/DATA/DATA1/guest3/2026OpticsMoE_t06_a100_batch",
+      "head": "3fab90b363e3d49f02fa68acdc6c363b991097e7",
+      "changed_files": [
+        {
+          "path": "LightGenV2/tasks/t06_video_quality_assessment/quality_token_batch_benchmark.py",
+          "exists": true,
+          "bytes": 31024,
+          "sha256": "f975d5f56df606d2f642371048145ec36463bcecadd72c3ad61b2a91a08e53e5",
+          "main_sha256": "3e251ba8ffdf0593477702aaaec5fa52975716d3f79b0ae2c0ffd3f474bccce5",
+          "raw_equals_main": false,
+          "lf_equals_main": false,
+          "recovery_commit": "e9cd94790d2421ff60abf4d09e9e146b193ff245",
+          "local_recovery_raw_sha_equal": true
+        },
+        {
+          "path": "LightGenV2/tasks/t06_video_quality_assessment/quality_token_dataset_once.py",
+          "exists": true,
+          "bytes": 14159,
+          "sha256": "cf5467fd4077ed99d9ee593af548de62fc25f8a6629c9bf39849e16d7d1d773b",
+          "main_sha256": "07076a83bc03de74234c7c19d174d25f486c9416921749e4f2e308d465835f72",
+          "raw_equals_main": false,
+          "lf_equals_main": false,
+          "recovery_commit": "e9cd94790d2421ff60abf4d09e9e146b193ff245",
+          "local_recovery_raw_sha_equal": true
+        }
+      ]
+    },
+    {
+      "directory": "/DATA/DATA1/guest3/demo_reproduction_20260915",
+      "head": "1c7222a1119385475e1b464ca7efdb67cdc21a4c",
+      "changed_files": [
+        {
+          "path": "LightGenV2/demo_check/frozen_electronic/model.py",
+          "exists": true,
+          "bytes": 2196,
+          "sha256": "b919cd34c193f7613822e1dd3c31c54a1f00d6926d4a94695e24ad7c084a1469",
+          "main_sha256": "b919cd34c193f7613822e1dd3c31c54a1f00d6926d4a94695e24ad7c084a1469",
+          "raw_equals_main": true,
+          "lf_equals_main": true,
+          "recovery_commit": "18a11e3fb6b3bdaaddad01f47ec5d440f9a12fa2",
+          "local_recovery_raw_sha_equal": true
+        },
+        {
+          "path": "LightGenV2/demo_check/frozen_electronic/run.py",
+          "exists": true,
+          "bytes": 16385,
+          "sha256": "60673d9d0d866fab74f57fad42e50c7a78ccc13bfae21624e4a6434bc0284333",
+          "main_sha256": "60673d9d0d866fab74f57fad42e50c7a78ccc13bfae21624e4a6434bc0284333",
+          "raw_equals_main": true,
+          "lf_equals_main": true,
+          "recovery_commit": "18a11e3fb6b3bdaaddad01f47ec5d440f9a12fa2",
+          "local_recovery_raw_sha_equal": true
+        },
+        {
+          "path": "LightGenV2/demo_check/pure_optical/models.py",
+          "exists": true,
+          "bytes": 6544,
+          "sha256": "a9685984d1f80cdcf97dcaccb2beb1216e60575d91df8708144d6b3e360bb76c",
+          "main_sha256": "a9685984d1f80cdcf97dcaccb2beb1216e60575d91df8708144d6b3e360bb76c",
+          "raw_equals_main": true,
+          "lf_equals_main": true,
+          "recovery_commit": "18a11e3fb6b3bdaaddad01f47ec5d440f9a12fa2",
+          "local_recovery_raw_sha_equal": true
+        },
+        {
+          "path": "LightGenV2/demo_check/shared_frontend/model.py",
+          "exists": true,
+          "bytes": 3112,
+          "sha256": "d2b9ffd4cf5c6aef7d4d4d217d2644cdae016fa49b6176faff32cc5b6bb1a12a",
+          "main_sha256": "d2b9ffd4cf5c6aef7d4d4d217d2644cdae016fa49b6176faff32cc5b6bb1a12a",
+          "raw_equals_main": true,
+          "lf_equals_main": true,
+          "recovery_commit": "18a11e3fb6b3bdaaddad01f47ec5d440f9a12fa2",
+          "local_recovery_raw_sha_equal": true
+        },
+        {
+          "path": "LightGenV2/demo_check/shared_frontend/run.py",
+          "exists": true,
+          "bytes": 15986,
+          "sha256": "4bc924b9a8d140bf3f72665928ee395a1239096c2efaaf0603b8a35d97794461",
+          "main_sha256": "4bc924b9a8d140bf3f72665928ee395a1239096c2efaaf0603b8a35d97794461",
+          "raw_equals_main": true,
+          "lf_equals_main": true,
+          "recovery_commit": "18a11e3fb6b3bdaaddad01f47ec5d440f9a12fa2",
+          "local_recovery_raw_sha_equal": true
+        },
+        {
+          "path": "LightGenV2/tasks/t09_multimodal_matching/test_selected.py",
+          "exists": true,
+          "bytes": 7881,
+          "sha256": "5c4dfc1fcc211e7c79eb340bcf6eb4c4fd2db5a9efc2556c51379ad6e1ecdac2",
+          "main_sha256": "5c4dfc1fcc211e7c79eb340bcf6eb4c4fd2db5a9efc2556c51379ad6e1ecdac2",
+          "raw_equals_main": true,
+          "lf_equals_main": true,
+          "recovery_commit": "18a11e3fb6b3bdaaddad01f47ec5d440f9a12fa2",
+          "local_recovery_raw_sha_equal": true
+        },
+        {
+          "path": "LightGenV2/tasks/t09_multimodal_matching/vision.py",
+          "exists": true,
+          "bytes": 5053,
+          "sha256": "4cad72e1445f3a16373c4f697916a89b2526b4a900285eac6393928012052a1f",
+          "main_sha256": "4cad72e1445f3a16373c4f697916a89b2526b4a900285eac6393928012052a1f",
+          "raw_equals_main": true,
+          "lf_equals_main": true,
+          "recovery_commit": "18a11e3fb6b3bdaaddad01f47ec5d440f9a12fa2",
+          "local_recovery_raw_sha_equal": true
+        }
+      ]
+    },
+    {
+      "directory": "/DATA/DATA1/guest3/lightgen_spatial_065",
+      "head": "23612d55106cb8c817cf4b4e7b38ea5bc138361a",
+      "changed_files": [
+        {
+          "path": "experiments/qwen3_vl_2b_lgvq_single_metric_o2_16frame_54/SPATIAL_OPTIMIZATION_RESULT.md",
+          "exists": true,
+          "bytes": 4712,
+          "sha256": "f0e69352c2586e588ebd38e8bcba35e08518838c9241f74857cdc3e23034eefa",
+          "main_sha256": "f0e69352c2586e588ebd38e8bcba35e08518838c9241f74857cdc3e23034eefa",
+          "raw_equals_main": true,
+          "lf_equals_main": true,
+          "recovery_commit": "18a11e3fb6b3bdaaddad01f47ec5d440f9a12fa2",
+          "local_recovery_raw_sha_equal": true
+        },
+        {
+          "path": "experiments/qwen3_vl_2b_lgvq_single_metric_o2_16frame_54/configs/release/spatial_srcc_best_s586.yaml",
+          "exists": true,
+          "bytes": 408,
+          "sha256": "df26e8647d8c9e5e167f22238228027890ad68e61fa1ed214e0676ecaa58836a",
+          "main_sha256": "df26e8647d8c9e5e167f22238228027890ad68e61fa1ed214e0676ecaa58836a",
+          "raw_equals_main": true,
+          "lf_equals_main": true,
+          "recovery_commit": "18a11e3fb6b3bdaaddad01f47ec5d440f9a12fa2",
+          "local_recovery_raw_sha_equal": true
+        },
+        {
+          "path": "experiments/qwen3_vl_2b_lgvq_single_metric_o2_16frame_54/data.py",
+          "exists": true,
+          "bytes": 37624,
+          "sha256": "f727b8aff3ddb3239a62d2df7684e096b99ef13d6680a7397009f7c63f72e1f0",
+          "main_sha256": "a4c24eab04ff20651e094fda4bc72fe2032eb5835da33ab4c77ac86a527e4b39",
+          "raw_equals_main": false,
+          "lf_equals_main": false,
+          "recovery_commit": "78798a6a2dc3408522d22309c96bc125e3865d98",
+          "local_recovery_raw_sha_equal": true
+        },
+        {
+          "path": "experiments/qwen3_vl_2b_lgvq_single_metric_o2_16frame_54/modeling.py",
+          "exists": true,
+          "bytes": 131031,
+          "sha256": "9687abfc330afcd49977aab46f4397593047603804ae31cf122f1baf1a0ae283",
+          "main_sha256": "d6b09c803e814e4fda79019c5b1ee2d45fe790310f195b8e7a52a2b4c6f5a09c",
+          "raw_equals_main": false,
+          "lf_equals_main": false,
+          "recovery_commit": "78798a6a2dc3408522d22309c96bc125e3865d98",
+          "local_recovery_raw_sha_equal": true
+        },
+        {
+          "path": "experiments/qwen3_vl_2b_lgvq_single_metric_o2_16frame_54/preflight.py",
+          "exists": true,
+          "bytes": 9599,
+          "sha256": "34bac70354b1eaabab02254d259f1706f5f230fc4d0ff9f78005a6ecc8b068fe",
+          "main_sha256": "38d82b75e31efb4d2a4622d5a6b1c867fff6e5c89206e1b25020128b3525dd9c",
+          "raw_equals_main": false,
+          "lf_equals_main": false,
+          "recovery_commit": "78798a6a2dc3408522d22309c96bc125e3865d98",
+          "local_recovery_raw_sha_equal": true
+        },
+        {
+          "path": "experiments/qwen3_vl_2b_lgvq_single_metric_o2_16frame_54/run.py",
+          "exists": true,
+          "bytes": 21923,
+          "sha256": "74c1ec20190dd9f6e9e0fb1c4548c2171d6308b5ab28068f4aa1af850d9b35c2",
+          "main_sha256": "c12c320e848e68041a32c8a74f38c0deba65d8f03f486f71c9695305960c9b72",
+          "raw_equals_main": false,
+          "lf_equals_main": false,
+          "recovery_commit": "78798a6a2dc3408522d22309c96bc125e3865d98",
+          "local_recovery_raw_sha_equal": true
+        },
+        {
+          "path": "experiments/qwen3_vl_2b_lgvq_single_metric_o2_16frame_54/settings.py",
+          "exists": true,
+          "bytes": 69234,
+          "sha256": "1af56d17a12a7bf4ea1b6ca26f6780430be6d4abf6836c789fe2c7ec552c1cef",
+          "main_sha256": "bfc27ce1da1d33695d0a5afcb37ff66ee0d42bee0f3afed096457e7cb9fcf887",
+          "raw_equals_main": false,
+          "lf_equals_main": false,
+          "recovery_commit": "78798a6a2dc3408522d22309c96bc125e3865d98",
+          "local_recovery_raw_sha_equal": true
+        },
+        {
+          "path": "experiments/qwen3_vl_2b_lgvq_single_metric_o2_16frame_54/spatial_optimization_result.json",
+          "exists": true,
+          "bytes": 2052,
+          "sha256": "ac498341c08cd0037900305fdda7e96460a4c32e8cc6d397dc25f7d233313b2d",
+          "main_sha256": "ac498341c08cd0037900305fdda7e96460a4c32e8cc6d397dc25f7d233313b2d",
+          "raw_equals_main": true,
+          "lf_equals_main": true,
+          "recovery_commit": "18a11e3fb6b3bdaaddad01f47ec5d440f9a12fa2",
+          "local_recovery_raw_sha_equal": true
+        },
+        {
+          "path": "experiments/qwen3_vl_2b_lgvq_single_metric_o2_16frame_54/tests/test_model_and_training.py",
+          "exists": true,
+          "bytes": 49694,
+          "sha256": "dca4e106c0948e669c64de7d9eaeed956124133e6e5b507e07050212b3e36224",
+          "main_sha256": "892aace1531100449f94b6b3d04d4134bd56c7fce3647f42cf14248050540f2d",
+          "raw_equals_main": false,
+          "lf_equals_main": false,
+          "recovery_commit": "78798a6a2dc3408522d22309c96bc125e3865d98",
+          "local_recovery_raw_sha_equal": true
+        },
+        {
+          "path": "experiments/qwen3_vl_2b_lgvq_single_metric_o2_16frame_54/train_cached_deep_readout.py",
+          "exists": true,
+          "bytes": 23612,
+          "sha256": "70f4a45ef75a691fad4c00bba2be8e9170abf211e44a2f3d2cabd609cbdf3d39",
+          "main_sha256": "eca926d0b2a050f76fb4f3c331f0260867da38b80254eee3fa42088b8bd943f4",
+          "raw_equals_main": false,
+          "lf_equals_main": false,
+          "recovery_commit": "78798a6a2dc3408522d22309c96bc125e3865d98",
+          "local_recovery_raw_sha_equal": true
+        },
+        {
+          "path": "experiments/qwen3_vl_2b_lgvq_single_metric_o2_16frame_54/training.py",
+          "exists": true,
+          "bytes": 50357,
+          "sha256": "9fa5e14be21822936dbb21bee4904ea146a79a434c18c40da89701f1d152e51a",
+          "main_sha256": "23a7bd6f432a214ea2e098f5e1ec8392ffb7688aed6eeb343545c4580d9d3763",
+          "raw_equals_main": false,
+          "lf_equals_main": false,
+          "recovery_commit": "78798a6a2dc3408522d22309c96bc125e3865d98",
+          "local_recovery_raw_sha_equal": true
+        }
+      ]
+    },
+    {
+      "directory": "/DATA/DATA1/guest3/t10_corrected_20260918",
+      "head": "5a1178ef09be40f45b58a20a8633a6e1add2d75d",
+      "changed_files": [
+        {
+          "path": "LightGenV2/tasks/t10_expert_scaling/train.py",
+          "exists": true,
+          "bytes": 11158,
+          "sha256": "300b56d292647c263426ef743c7f73290b37509c6beb8794f6b7ef9fced34578",
+          "main_sha256": "300b56d292647c263426ef743c7f73290b37509c6beb8794f6b7ef9fced34578",
+          "raw_equals_main": true,
+          "lf_equals_main": true,
+          "recovery_commit": "18a11e3fb6b3bdaaddad01f47ec5d440f9a12fa2",
+          "local_recovery_raw_sha_equal": true
+        }
+      ]
+    }
+  ],
+  "read_only": true,
+  "laboratory_contacted": false,
+  "limitations": "Tracked current differences only; no occupancy, archive reachability or asset closure proof",
+  "changed_file_count": 35,
+  "raw_equals_main_count": 13,
+  "existing_archive_only_count": 22,
+  "source_files_modified": false,
+  "runtime_checkout_changed": false,
+  "directory_removal_authorized_by_this_check": false
+}
