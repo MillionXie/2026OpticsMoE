@@ -10,6 +10,27 @@ ROOT = Path(__file__).resolve().parents[3]
 
 
 class ArtifactIgnoreTests(unittest.TestCase):
+    def test_named_historical_report_payloads_preserve_source_and_future_results(self):
+        import json
+        record=json.loads((ROOT/'maintenance/storage/HISTORICAL_REPORT_PAYLOAD_VISIBILITY_20261007.json').read_text(encoding='utf8'))
+        selected=[row['path'] for row in record['files']]
+        self.assertTrue(selected)
+        self.assertFalse(record['originals_moved_or_deleted'])
+        self.assertTrue(record['all_timing_preserved'])
+        self.assertFalse(record['openmoji_selected'])
+        for row in record['files']:
+            self.assertIn('/reports/',row['path'])
+            self.assertIn(Path(row['path']).suffix.lower(),{'.csv','.png','.pdf','.svg'})
+            self.assertNotIn('/t04_',row['path'])
+            self.assertEqual(len(row['sha256']),64)
+        visible=record['excluded_changed_or_unbacked']+record['retained_visible_tables_or_nonascii_paths']+[
+            str(Path(selected[0]).parent/'README.md').replace('\\','/'),
+            str(Path(selected[0]).parent/'plot.py').replace('\\','/'),
+            str(Path(selected[0]).parent/'config.yaml').replace('\\','/'),
+            str(Path(selected[0]).parent/'future_result.csv').replace('\\','/'),
+            'handoffs/openmoji_robust_ablation_20260928/current_report.json']
+        self.assertEqual(self.ignored(selected+visible),set(selected))
+
     def test_seed37_named_transfer_records_keep_source_tables_and_future_runs_visible(self):
         import json
         d=json.loads((ROOT/'maintenance/storage/KATHER_SEED37_RECORD_VISIBILITY_20261007.json').read_text(encoding='utf8'))

@@ -1,0 +1,583 @@
+{
+  "schema": 1,
+  "purpose": "Retained named historical report graphics and CSV payloads, not source or configs",
+  "backup_archive": ".codex_tmp\\storage_git_backup_20261002\\untracked_asset_records_20261006.zip",
+  "backup_archive_sha256": "ec7fc89b4294ca2c89cd7589bc727317e4c2e105395cbcd7f65ff8ee22784777",
+  "files": [
+    {
+      "path": "LightGenV2/demo_check/reports/reproduction/figures_20260917/bloodmnist_inputs/initial_phase_coverage.pdf",
+      "bytes": 381823,
+      "sha256": "8ca6dfc8110f8b445ae989bce147baa6dc913dab2bb677eb694f92f9c1038c73"
+    },
+    {
+      "path": "LightGenV2/demo_check/reports/reproduction/figures_20260917/bloodmnist_inputs/initial_phase_coverage.svg",
+      "bytes": 1078025,
+      "sha256": "981f348d61d1aeecbdb3899a4bf9d9a30351c0bd68094361792bdab46e895bf0"
+    },
+    {
+      "path": "LightGenV2/demo_check/reports/reproduction/figures_20260917/bloodmnist_inputs/input_geometry.pdf",
+      "bytes": 204886,
+      "sha256": "42c3978f6826c928adeab0401e8101c475e2cc39a3da6ef45120a1e2993d836a"
+    },
+    {
+      "path": "LightGenV2/demo_check/reports/reproduction/figures_20260917/bloodmnist_inputs/input_geometry.svg",
+      "bytes": 261310,
+      "sha256": "91e31f88d3e25dd993298b3f7e6a5e2a078349221a3be656e95b1dd6f6559ac8"
+    },
+    {
+      "path": "LightGenV2/demo_check/reports/reproduction/figures_20260917/bloodmnist_inputs/real_training_examples.pdf",
+      "bytes": 97614,
+      "sha256": "a965b7133d5d46fc311e58f4406bc23131e25c81ad8688c80acc94640945833e"
+    },
+    {
+      "path": "LightGenV2/demo_check/reports/reproduction/figures_20260917/bloodmnist_inputs/real_training_examples.svg",
+      "bytes": 139127,
+      "sha256": "295d5d42ee72001bde653dc1b927cbf6ca422edc46d8b02057a872ed9c9e44fe"
+    },
+    {
+      "path": "LightGenV2/demo_check/reports/reproduction/figures_20260917/bloodmnist_results/aggregate_metrics.csv",
+      "bytes": 14844,
+      "sha256": "24bbb2b6b8b77dc1609bf731b4bcfe1468946f1cd867ff7e2f51b9153c7f3a24"
+    },
+    {
+      "path": "LightGenV2/demo_check/reports/reproduction/figures_20260917/bloodmnist_results/confusion_L6.csv",
+      "bytes": 8698,
+      "sha256": "9bfbb6415567d443705f8f314e50e3a198ddb7a115c7a85c591a958af501ce91"
+    },
+    {
+      "path": "LightGenV2/demo_check/reports/reproduction/figures_20260917/bloodmnist_results/confusion_L6.pdf",
+      "bytes": 37698,
+      "sha256": "e97dacf9ef0c46dbb6df58b4bf2aa42c4296e6ecaf1c89315caa35dc33ca9167"
+    },
+    {
+      "path": "LightGenV2/demo_check/reports/reproduction/figures_20260917/bloodmnist_results/confusion_L6.svg",
+      "bytes": 108101,
+      "sha256": "090eb49eaeceef9788bfe40358d694c928d9dfc7eeb9c437af93bb84324593a3"
+    },
+    {
+      "path": "LightGenV2/demo_check/reports/reproduction/figures_20260917/bloodmnist_results/d2nn_input_coverage_control.pdf",
+      "bytes": 18729,
+      "sha256": "0232608121f61eb708e14a2b3802942ca5b5ff0df5af589aa8233a5c6a7b2075"
+    },
+    {
+      "path": "LightGenV2/demo_check/reports/reproduction/figures_20260917/bloodmnist_results/d2nn_input_coverage_control.svg",
+      "bytes": 34268,
+      "sha256": "f85e0d3e44d8e56f4122df04e701f5d545e355ad37caf568c76ef95989645994"
+    },
+    {
+      "path": "LightGenV2/demo_check/reports/reproduction/figures_20260917/bloodmnist_results/depth_accuracy.pdf",
+      "bytes": 19630,
+      "sha256": "7e817627b62e33d8a019da9515de9e574f9f698f64bb323933bf3b6d6c1db9e4"
+    },
+    {
+      "path": "LightGenV2/demo_check/reports/reproduction/figures_20260917/bloodmnist_results/depth_accuracy.svg",
+      "bytes": 29728,
+      "sha256": "56d72622d27fd68769e3d0e3fc82e5a2fbccf69f6a7777604419a63424255dfa"
+    },
+    {
+      "path": "LightGenV2/demo_check/reports/reproduction/figures_20260917/bloodmnist_results/examples/prediction_examples.csv",
+      "bytes": 2110,
+      "sha256": "5cd099463c5b366895f999bfabf628f8a338a8ca4c5e72ebeaf8a76025a03c30"
+    },
+    {
+      "path": "LightGenV2/demo_check/reports/reproduction/figures_20260917/bloodmnist_results/examples/prediction_examples.pdf",
+      "bytes": 105755,
+      "sha256": "ac55f8548380af4e811d26a1fdee66212db9e6d5e43bd043d2b754e76ac2c103"
+    },
+    {
+      "path": "LightGenV2/demo_check/reports/reproduction/figures_20260917/bloodmnist_results/examples/prediction_examples.svg",
+      "bytes": 168093,
+      "sha256": "9fccb0cc790a167b866f40c2d534f8485ea4a107b924c1b9f642b44c378b36bb"
+    },
+    {
+      "path": "LightGenV2/demo_check/reports/reproduction/figures_20260917/bloodmnist_results/generalization_curves.pdf",
+      "bytes": 27602,
+      "sha256": "38ba4bdb3dca6e28386e8cede4bbe38f3ca00ada4e0aacb55341f33844234fc8"
+    },
+    {
+      "path": "LightGenV2/demo_check/reports/reproduction/figures_20260917/bloodmnist_results/generalization_curves.svg",
+      "bytes": 87786,
+      "sha256": "c5d4c8335cb303b6e0c5434bbcc7b1aa9183c9f61b6488114042234af72e715e"
+    },
+    {
+      "path": "LightGenV2/demo_check/reports/reproduction/figures_20260917/bloodmnist_results/learning_curve_data.csv",
+      "bytes": 135571,
+      "sha256": "ccb8ee09a293f49ee31655608c8ec5ca300cdcf70e7c59d77fda789527f04a4b"
+    },
+    {
+      "path": "LightGenV2/demo_check/reports/reproduction/figures_20260917/bloodmnist_results/oeo_paired_gain.pdf",
+      "bytes": 15605,
+      "sha256": "0024d90e7ad472d980b757575fb8af65ba854397267dcc88070b57a400395567"
+    },
+    {
+      "path": "LightGenV2/demo_check/reports/reproduction/figures_20260917/bloodmnist_results/oeo_paired_gain.svg",
+      "bytes": 25050,
+      "sha256": "152d0fd582cb8348bb98a5922192307e91b37485fb4dde6bd4a64602f4acd316"
+    },
+    {
+      "path": "LightGenV2/demo_check/reports/reproduction/figures_20260917/bloodmnist_results/paired_differences.csv",
+      "bytes": 2586,
+      "sha256": "32d0da7232917f82af20139945eea47d93e62ac7a8b387a32707f835954e980a"
+    },
+    {
+      "path": "LightGenV2/demo_check/reports/reproduction/figures_20260917/bloodmnist_results/paired_train_validation_curves.pdf",
+      "bytes": 32311,
+      "sha256": "17428f6c57180480a01126ec35b559b14e88fbc84d9765d5d9e33b76e9972898"
+    },
+    {
+      "path": "LightGenV2/demo_check/reports/reproduction/figures_20260917/bloodmnist_results/paired_train_validation_curves.svg",
+      "bytes": 125584,
+      "sha256": "f57b827fc370b151587ef138ae76d16d786b1e66e0963db5748f4723f9e4d086"
+    },
+    {
+      "path": "LightGenV2/demo_check/reports/reproduction/figures_20260917/bloodmnist_results/per_seed_metrics.csv",
+      "bytes": 24543,
+      "sha256": "271eb7e4b7832a78014719135aa419501bed61aa4cd72f8b118e59b1cec4cc56"
+    },
+    {
+      "path": "LightGenV2/demo_check/reports/reproduction/figures_20260917/bloodmnist_results/phase_audit.csv",
+      "bytes": 99328,
+      "sha256": "0e7672e519085f20adea166b645df03427f9a603f38ce4fc25cc4148cb84e4d3"
+    },
+    {
+      "path": "LightGenV2/demo_check/reports/reproduction/figures_20260917/bloodmnist_results/seed_distribution.pdf",
+      "bytes": 19137,
+      "sha256": "143dbe39da664da1a553ccaf8d8ce4259e98369a241b5844fe628f286952c7a0"
+    },
+    {
+      "path": "LightGenV2/demo_check/reports/reproduction/figures_20260917/bloodmnist_results/seed_distribution.svg",
+      "bytes": 30792,
+      "sha256": "1d6a4cf61e3ee434ebc869d56a5be971fbcd154afd6f8ce0c9d7911637e3ce1e"
+    },
+    {
+      "path": "LightGenV2/demo_check/reports/reproduction/figures_20260917/kather2016_inputs/initial_phase_coverage.pdf",
+      "bytes": 386374,
+      "sha256": "199cc93494aa6cadc4858c7d504768e280648a6af1a6f2e9e1786304ccf21f59"
+    },
+    {
+      "path": "LightGenV2/demo_check/reports/reproduction/figures_20260917/kather2016_inputs/initial_phase_coverage.svg",
+      "bytes": 1086497,
+      "sha256": "649dd3b5fd56f1e5d7f566c347a55b6056720306535d87c72ac701d97ce69d1e"
+    },
+    {
+      "path": "LightGenV2/demo_check/reports/reproduction/figures_20260917/kather2016_inputs/input_geometry.pdf",
+      "bytes": 308131,
+      "sha256": "df77a09c6c424ef8c300b8fa396a63c7e12241f9c7a64bb3887d5bf7d3b341b5"
+    },
+    {
+      "path": "LightGenV2/demo_check/reports/reproduction/figures_20260917/kather2016_inputs/input_geometry.svg",
+      "bytes": 444646,
+      "sha256": "22cdb8b257bd0fb3d2e0f39506af3d18dceba8f921aa34056450a3a2402f21d3"
+    },
+    {
+      "path": "LightGenV2/demo_check/reports/reproduction/figures_20260917/kather2016_inputs/real_training_examples.pdf",
+      "bytes": 904181,
+      "sha256": "31812054ccdf9e79969f3599da84b64fc0fcab6a6d239fead1c035b999510a74"
+    },
+    {
+      "path": "LightGenV2/demo_check/reports/reproduction/figures_20260917/kather2016_inputs/real_training_examples.svg",
+      "bytes": 1265143,
+      "sha256": "fc5192b58dc1c23593cddc1dc8535e7abb46ddd11b592f12d4080ecb43ea51ab"
+    },
+    {
+      "path": "LightGenV2/demo_check/reports/reproduction/figures_20260917/kather2016_results/aggregate_metrics.csv",
+      "bytes": 9936,
+      "sha256": "c5348112024139f1b04ed369458e0097d808cdb54c6d1367fc92cf2ce9268aaf"
+    },
+    {
+      "path": "LightGenV2/demo_check/reports/reproduction/figures_20260917/kather2016_results/all_pilot_validation_results.csv",
+      "bytes": 1032,
+      "sha256": "9642427780791eb1ea68d1e40bbaa449f1f28f2e2e2bf8a4cd2a0995e10aa127"
+    },
+    {
+      "path": "LightGenV2/demo_check/reports/reproduction/figures_20260917/kather2016_results/confusion_L6.csv",
+      "bytes": 7724,
+      "sha256": "7b8e16c6e6a268636c3cd3612500e2913b7051207813102e305e0f6ed004571a"
+    },
+    {
+      "path": "LightGenV2/demo_check/reports/reproduction/figures_20260917/kather2016_results/confusion_L6.pdf",
+      "bytes": 34726,
+      "sha256": "b31bd21ac50523841f0ed78e7aba7fa39a3fc2da9855c115d093473e3c4591bb"
+    },
+    {
+      "path": "LightGenV2/demo_check/reports/reproduction/figures_20260917/kather2016_results/confusion_L6.svg",
+      "bytes": 107899,
+      "sha256": "79bc6fbe22832a641ec16209b0f352329def702442d59a723440eeeb12820e37"
+    },
+    {
+      "path": "LightGenV2/demo_check/reports/reproduction/figures_20260917/kather2016_results/depth_accuracy.pdf",
+      "bytes": 19667,
+      "sha256": "bfd46c6475768822672d5939512320209b6d889b5d119f887d784b8c4904c348"
+    },
+    {
+      "path": "LightGenV2/demo_check/reports/reproduction/figures_20260917/kather2016_results/depth_accuracy.svg",
+      "bytes": 29771,
+      "sha256": "381c2590f149b5d9194b3370acb7027926410df3f796c3fb03aad8d1eba8e721"
+    },
+    {
+      "path": "LightGenV2/demo_check/reports/reproduction/figures_20260917/kather2016_results/examples/prediction_examples.csv",
+      "bytes": 2110,
+      "sha256": "51f7bd5f9aac339ce38488203e66175064d957460cd97656dc517a20a76dbee3"
+    },
+    {
+      "path": "LightGenV2/demo_check/reports/reproduction/figures_20260917/kather2016_results/examples/prediction_examples.pdf",
+      "bytes": 932434,
+      "sha256": "eabf98a3c248a9a7d8398571524ce6283d7303b0e1d40bbc6c5fae0239f051f6"
+    },
+    {
+      "path": "LightGenV2/demo_check/reports/reproduction/figures_20260917/kather2016_results/examples/prediction_examples.svg",
+      "bytes": 1319921,
+      "sha256": "e1a1ee29ca8855cfb40e4a4b6d0dd47f9ca6afa3f4040c16e4351d7dd39548da"
+    },
+    {
+      "path": "LightGenV2/demo_check/reports/reproduction/figures_20260917/kather2016_results/generalization_curves.pdf",
+      "bytes": 26294,
+      "sha256": "30f59af100960585015731878889df2a1c00e823ba342a2671f6d9ed333103ad"
+    },
+    {
+      "path": "LightGenV2/demo_check/reports/reproduction/figures_20260917/kather2016_results/generalization_curves.svg",
+      "bytes": 86521,
+      "sha256": "a18751e9858466d2094b1e2df75ba6885c8fdb8177e6a27891158d320845877f"
+    },
+    {
+      "path": "LightGenV2/demo_check/reports/reproduction/figures_20260917/kather2016_results/learning_curve_data.csv",
+      "bytes": 135526,
+      "sha256": "4041aedd45f70336cfd89df6c2f047ef814ce070241fdef0b5fd2d204f794123"
+    },
+    {
+      "path": "LightGenV2/demo_check/reports/reproduction/figures_20260917/kather2016_results/oeo_paired_gain.pdf",
+      "bytes": 15506,
+      "sha256": "7ece8d45a9df6afd567345af612afdac9a21333eba7a3a1685c61218192eaf4c"
+    },
+    {
+      "path": "LightGenV2/demo_check/reports/reproduction/figures_20260917/kather2016_results/oeo_paired_gain.svg",
+      "bytes": 22962,
+      "sha256": "6fd360079e74d0d81e62514d850b1739ff2da6e1252354c5bc43149a7ca907ef"
+    },
+    {
+      "path": "LightGenV2/demo_check/reports/reproduction/figures_20260917/kather2016_results/paired_differences.csv",
+      "bytes": 1853,
+      "sha256": "c174a93f5b7703c3eb132e38791238b5017af84ba2981fe887c5ff5e870e1079"
+    },
+    {
+      "path": "LightGenV2/demo_check/reports/reproduction/figures_20260917/kather2016_results/paired_train_validation_curves.pdf",
+      "bytes": 31104,
+      "sha256": "3a0a24a44f16a57af906b911b30095e945e540d2b23308b81e37571f8a12af82"
+    },
+    {
+      "path": "LightGenV2/demo_check/reports/reproduction/figures_20260917/kather2016_results/paired_train_validation_curves.svg",
+      "bytes": 125592,
+      "sha256": "706ca22a04ea75b154c34e3e3cf46fbf10aef6f56379deebda8783f921bedfe7"
+    },
+    {
+      "path": "LightGenV2/demo_check/reports/reproduction/figures_20260917/kather2016_results/per_seed_metrics.csv",
+      "bytes": 16486,
+      "sha256": "21f1edb9838b68ad7091571f3308c26d0292f5403be6e66b8f7d0b21ffe8b793"
+    },
+    {
+      "path": "LightGenV2/demo_check/reports/reproduction/figures_20260917/kather2016_results/phase_audit.csv",
+      "bytes": 82619,
+      "sha256": "b7a685d2cb01244ea63a0166f07d873a1ebd525a81c8bed4fbe0507300bc3a46"
+    },
+    {
+      "path": "LightGenV2/demo_check/reports/reproduction/figures_20260917/kather2016_results/seed_distribution.pdf",
+      "bytes": 19116,
+      "sha256": "7e0558d8b5fe81c4dbd8149a2335310979830efe810b7342625ba0b08c41805e"
+    },
+    {
+      "path": "LightGenV2/demo_check/reports/reproduction/figures_20260917/kather2016_results/seed_distribution.svg",
+      "bytes": 30805,
+      "sha256": "bdaddd1c05273e7685df7d5dc97777d299ea6e33a7baa5a9d3f13c65d0686bf9"
+    },
+    {
+      "path": "LightGenV2/demo_check/reports/reproduction/figures_20260917/kather_followup/architecture.pdf",
+      "bytes": 36434,
+      "sha256": "f641a218104f8cf5a795c669a0caa821d15d99344109c89845803856b8e8ee35"
+    },
+    {
+      "path": "LightGenV2/demo_check/reports/reproduction/figures_20260917/kather_followup/architecture.svg",
+      "bytes": 124772,
+      "sha256": "d8d88079824e2829a60cc90ef7f858114baa33d84347623e1099200b8c653c81"
+    },
+    {
+      "path": "LightGenV2/demo_check/reports/reproduction/figures_20260917/meeting_coverage/meeting_accuracy.pdf",
+      "bytes": 17997,
+      "sha256": "bd87071a244b107effe8d59ec1275775ef3861f2ec345345f408f16d92387b3e"
+    },
+    {
+      "path": "LightGenV2/demo_check/reports/reproduction/figures_20260917/meeting_coverage/meeting_accuracy.svg",
+      "bytes": 44251,
+      "sha256": "d5b8810b096f74d807f38323b23affe5352bab073ab651dd0f81565f432dd62d"
+    },
+    {
+      "path": "LightGenV2/demo_check/reports/reproduction/figures_20260917/meeting_coverage/meeting_curves.pdf",
+      "bytes": 21318,
+      "sha256": "d65810195073d5e1a10c45311b5891506e3798a0605a2587117082bd3ffa72b2"
+    },
+    {
+      "path": "LightGenV2/demo_check/reports/reproduction/figures_20260917/meeting_coverage/meeting_curves.svg",
+      "bytes": 62152,
+      "sha256": "ae177bceb2a2b949404483563445accecb5fff9ab9aa66a5ea50ce380410fd9b"
+    },
+    {
+      "path": "LightGenV2/demo_check/reports/reproduction/figures_20260917/meeting_coverage/meeting_results.csv",
+      "bytes": 611,
+      "sha256": "88082e123d8b0dddbea658233a5261e191c38bf26f76e165ceb440e6c7e05473"
+    },
+    {
+      "path": "LightGenV2/demo_check/reports/reproduction/figures_20260917/seed17_train_test/metrics.csv",
+      "bytes": 5258,
+      "sha256": "91c942da20138353568ad45bd46d92f74445bd8f1879788979b167695a0f8c3c"
+    },
+    {
+      "path": "LightGenV2/demo_check/reports/reproduction/figures_20260917/seed17_train_test/train_test_L2.pdf",
+      "bytes": 17527,
+      "sha256": "c53036451e39cda962dfcfd5102e6365bbc6e341b382e2ea851eff88e5e969ff"
+    },
+    {
+      "path": "LightGenV2/demo_check/reports/reproduction/figures_20260917/seed17_train_test/train_test_L2.svg",
+      "bytes": 40211,
+      "sha256": "92c478e3ceda0d9798e611b9adde69149fc7db57b15667929837be84e2b6f9d5"
+    },
+    {
+      "path": "LightGenV2/demo_check/reports/reproduction/figures_20260917/seed17_train_test/train_test_L4.pdf",
+      "bytes": 17525,
+      "sha256": "1ca6d6a4ef3cb300ff3569ac97eb7b68ff3eb24355ce9adf8962a13355a1f1c9"
+    },
+    {
+      "path": "LightGenV2/demo_check/reports/reproduction/figures_20260917/seed17_train_test/train_test_L4.svg",
+      "bytes": 40215,
+      "sha256": "28a3e3fec5cdd78cdfcde62fc53c80b195b8d91503cd88ef5301e80b7c2be9b5"
+    },
+    {
+      "path": "LightGenV2/demo_check/reports/reproduction/figures_20260917/seed17_train_test/train_test_L6.pdf",
+      "bytes": 17524,
+      "sha256": "26aacad4879896bee09661b74f93ed13f2e604742215b3d46b35f2dad9607307"
+    },
+    {
+      "path": "LightGenV2/demo_check/reports/reproduction/figures_20260917/seed17_train_test/train_test_L6.svg",
+      "bytes": 40213,
+      "sha256": "6b2789ee994ed91db6d196e15608302f8213380c8c04775cb564a2cf8b08ad6a"
+    },
+    {
+      "path": "LightGenV2/demo_check/reports/reproduction/figures_20260917/seed17_train_test/train_test_all_depths.pdf",
+      "bytes": 19132,
+      "sha256": "d7d0781326a56c1a8354171935b81303b9f3aff32687ad0623f02d51b2348e98"
+    },
+    {
+      "path": "LightGenV2/demo_check/reports/reproduction/figures_20260917/seed17_train_test/train_test_all_depths.svg",
+      "bytes": 72761,
+      "sha256": "45faabfdbe608ed6b643ba64b361b898ecab035b5e0187596f600201fa835612"
+    },
+    {
+      "path": "LightGenV2/reports/20260914_latest_qwen_baselines_a100_FIRSTBLOCK_FINAL/formal_summary.csv",
+      "bytes": 4615,
+      "sha256": "5e49b496aa38df8e01c3c0f1637a7b255ecffe3057be3c391007b6ecc70ade42"
+    },
+    {
+      "path": "LightGenV2/reports/20260914_latest_qwen_baselines_a100_FIRSTBLOCK_FINAL/lgvq_temporal_batch1_batch2_equivalent16.svg",
+      "bytes": 46131,
+      "sha256": "2b3398f15b6b9dff1ee9d4177650cfd44f50c19d24a39f9939a9cfca70bff840"
+    },
+    {
+      "path": "LightGenV2/reports/20260914_latest_qwen_baselines_a100_FIRSTBLOCK_FINAL/qwen_a100_latency_power_energy.svg",
+      "bytes": 79331,
+      "sha256": "d0ea7a86ff08b0a539116e69f1d8cb076fef48ee6400217dc5e7e8ff2b0bb915"
+    },
+    {
+      "path": "LightGenV2/reports/20260915_lgvq_topsw/ours_electronic_module_macs.csv",
+      "bytes": 1293,
+      "sha256": "da938e7e51228d4f9d90ef3298b64507a782aaf2afa17925b94ba95a35ee0ec6"
+    },
+    {
+      "path": "LightGenV2/reports/20260915_lgvq_topsw/qwen_module_macs.csv",
+      "bytes": 35933,
+      "sha256": "cbdad1cb287138c12b29ff0330a99fece9834541cbf3cbb2936efd082b959de0"
+    },
+    {
+      "path": "LightGenV2/reports/20260917_redbox_timing_energy_audit/energy_recalculation_20260920/energy_efficiency_summary.csv",
+      "bytes": 965,
+      "sha256": "974974c3a95fe497e2de37048f579e6e4c94917e4a79c594987384648e6db4d5"
+    },
+    {
+      "path": "LightGenV2/reports/20260917_redbox_timing_energy_audit/energy_recalculation_20260920/energy_recalculation.csv",
+      "bytes": 4570,
+      "sha256": "37687975a3e6b29e1f59477e96bf6577ac1e9ec324b16e89ecc9c2740e83bae5"
+    },
+    {
+      "path": "LightGenV2/reports/20260917_redbox_timing_energy_audit/evidence/current_qwen_firstblock_final/lgvq_temporal_batch1_batch2_equivalent16.svg",
+      "bytes": 46131,
+      "sha256": "2b3398f15b6b9dff1ee9d4177650cfd44f50c19d24a39f9939a9cfca70bff840"
+    },
+    {
+      "path": "LightGenV2/reports/20260917_redbox_timing_energy_audit/evidence/current_qwen_firstblock_final/qwen_a100_latency_power_energy.svg",
+      "bytes": 79331,
+      "sha256": "d0ea7a86ff08b0a539116e69f1d8cb076fef48ee6400217dc5e7e8ff2b0bb915"
+    },
+    {
+      "path": "LightGenV2/reports/20260927_lgvq_temporal_multi_baseline_a100/srcc_vs_energy_16videos.svg",
+      "bytes": 63853,
+      "sha256": "85eb1650442cc25f9949b1d2322efd6f622c562c61d40322181efef2e34d15a5"
+    },
+    {
+      "path": "LightGenV2/reports/20260927_lgvq_temporal_multi_baseline_a100/srcc_vs_latency_16videos.svg",
+      "bytes": 60323,
+      "sha256": "0554ff90c01c13176f60b056a208bb00927c747934d68ec1f418b1d4110c3429"
+    },
+    {
+      "path": "LightGenV2/reports/20260928_nine_task_a100_table/latest_nine_task_summary.csv",
+      "bytes": 2231,
+      "sha256": "fe3c46f7eae7f37bcc3c9b6990b6cc8b6cefbbb3f6648b2eecfbd596e0e71f50"
+    },
+    {
+      "path": "LightGenV2/reports/baseline_plotting_20260922/_server_raw/abo_image_to_image/normal_predictions.csv",
+      "bytes": 47262,
+      "sha256": "a177120a9850cdf1e0680bd7c94d98ed7387d4fc8d3c895dd058cbcfdf4e0cb0"
+    },
+    {
+      "path": "LightGenV2/reports/baseline_plotting_20260922/_server_raw/abo_image_to_text/retrieval_predictions.csv",
+      "bytes": 1100874,
+      "sha256": "d7f98cd2701b7e46b4298e2372483d3208ad78915406dc4f3976c1f93192530a"
+    },
+    {
+      "path": "LightGenV2/reports/baseline_plotting_20260922/_server_raw/abo_image_to_text/timing_per_sample.csv",
+      "bytes": 17638,
+      "sha256": "6924362304927600d1d5cf869b4a05cd5d9d6253b804cb01911869c3260be7fd"
+    },
+    {
+      "path": "LightGenV2/reports/baseline_plotting_20260922/_server_raw/salicon/per_image_cc.csv",
+      "bytes": 219408,
+      "sha256": "a924c6dc3931137d1c1728856f8962b387ff3ff619d2a5bf818613ca10561e1c"
+    },
+    {
+      "path": "LightGenV2/reports/baseline_plotting_20260922/delivery/CODE_AND_WEIGHTS.csv",
+      "bytes": 2230,
+      "sha256": "3b765d2b689db003bc4ca80a51f3037870b16ab348d228f1c65dde41407096ff"
+    },
+    {
+      "path": "LightGenV2/reports/baseline_plotting_20260922/delivery/SHA256SUMS.csv",
+      "bytes": 4601,
+      "sha256": "196be5dd41ee8ba95a2e3f4b71691e76de884894f5cc25345fe840bb8c4238bd"
+    },
+    {
+      "path": "LightGenV2/reports/baseline_plotting_20260922/delivery/abo_image_to_image/data.csv",
+      "bytes": 70746,
+      "sha256": "d5e2a1f21d7174e97bf505264e25bb90fb807b3861ca5997bafa5f019829b425"
+    },
+    {
+      "path": "LightGenV2/reports/baseline_plotting_20260922/delivery/abo_image_to_image/metrics.csv",
+      "bytes": 865,
+      "sha256": "efc5e1c18363199fd27d12b8b80a0e2eb15cc16c7c99ec74205e922fab75f0ab"
+    },
+    {
+      "path": "LightGenV2/reports/baseline_plotting_20260922/delivery/abo_image_to_text/data.csv",
+      "bytes": 1213179,
+      "sha256": "1f2b880bf4ac617239f21a924792ae9d1765086436c79fcbaac0e0a2921b284e"
+    },
+    {
+      "path": "LightGenV2/reports/baseline_plotting_20260922/delivery/abo_image_to_text/metrics.csv",
+      "bytes": 340,
+      "sha256": "77dbcd8dd697c25bab0b16be10c39334651688c9d1bf954dca1ffc2bfc345839"
+    },
+    {
+      "path": "LightGenV2/reports/baseline_plotting_20260922/delivery/abo_text_to_image/data.csv",
+      "bytes": 37640,
+      "sha256": "8e8b6ee3071437695c91c1f9eee8dd8fe3b79a105286b533fb7fabdd6c43e5c8"
+    },
+    {
+      "path": "LightGenV2/reports/baseline_plotting_20260922/delivery/abo_text_to_image/metrics.csv",
+      "bytes": 518,
+      "sha256": "32c77e952d654d43c4f850013f9e7173271bf6a6650d65a18db7b7997c689873"
+    },
+    {
+      "path": "LightGenV2/reports/baseline_plotting_20260922/delivery/lgvq_spatial/data.csv",
+      "bytes": 144154,
+      "sha256": "fcf3fb0be00ef885061208e3b3703c5ec8787f059c9edf2da0b68317f9e8c287"
+    },
+    {
+      "path": "LightGenV2/reports/baseline_plotting_20260922/delivery/lgvq_spatial/metrics.csv",
+      "bytes": 271,
+      "sha256": "9448cb0a4e67206c9a8be94d05ba4d75dc7853d58eff0fb96b5359db84e918e8"
+    },
+    {
+      "path": "LightGenV2/reports/baseline_plotting_20260922/delivery/lgvq_temporal/data.csv",
+      "bytes": 1076052,
+      "sha256": "d1cf80ab8f562d251d7dfaf37f2a6400c53d806b61db19e04216516f80e78161"
+    },
+    {
+      "path": "LightGenV2/reports/baseline_plotting_20260922/delivery/lgvq_temporal/metrics.csv",
+      "bytes": 272,
+      "sha256": "458bccb5acef0930d87fe1608130b1dd46e18390f9c9de9187f39d3805a67b88"
+    },
+    {
+      "path": "LightGenV2/reports/baseline_plotting_20260922/delivery/lsp/data.csv",
+      "bytes": 240385,
+      "sha256": "99c3d331d0fab4db269dd31198b83991574e6c2b84af61e0033e02195167556c"
+    },
+    {
+      "path": "LightGenV2/reports/baseline_plotting_20260922/delivery/lsp/metrics.csv",
+      "bytes": 1674,
+      "sha256": "b8a08ba756b9d5d09f4a33262fd0425640793432710014bcc3cac7abb10075f9"
+    },
+    {
+      "path": "LightGenV2/reports/baseline_plotting_20260922/delivery/openmoji/data.csv",
+      "bytes": 101973,
+      "sha256": "e70f605f55cbe0d7e2ac343197882acaaf2b08b197f8a8fd2ff6a6911dc855d8"
+    },
+    {
+      "path": "LightGenV2/reports/baseline_plotting_20260922/delivery/openmoji/metrics.csv",
+      "bytes": 2352,
+      "sha256": "fa344c8ffab256c1de6e059f89814fe5f43096d8c0bffa2a5898385adbfeebfd"
+    },
+    {
+      "path": "LightGenV2/reports/baseline_plotting_20260922/delivery/salicon/data.csv",
+      "bytes": 309573,
+      "sha256": "17ded8899c1f0e46a7bce7981d96a8d3ce96e6989ce465e1b8d2784f710d859b"
+    },
+    {
+      "path": "LightGenV2/reports/baseline_plotting_20260922/delivery/salicon/metrics.csv",
+      "bytes": 370,
+      "sha256": "f2dea9c1e28a5f43046aca834e5d6ccea5b294656cc50d8f5d090aee309a1790"
+    },
+    {
+      "path": "LightGenV2/reports/baseline_plotting_20260922/delivery/summary.csv",
+      "bytes": 1024,
+      "sha256": "93f44611f3f0b7f00d50c7686ac8de56050c86247d064d881aec99f82bd90303"
+    }
+  ],
+  "excluded_changed_or_unbacked": [],
+  "originals_moved_or_deleted": false,
+  "all_timing_preserved": true,
+  "source_configs_and_readmes_hidden": false,
+  "openmoji_selected": false,
+  "limits": [
+    "Local recovery ZIP verified; not a remote disaster recovery backup",
+    "No model, dataset, metric, experiment or machine configuration changed",
+    "Only listed existing payloads excluded from pending source list; future filenames remain visible"
+  ],
+  "retained_visible_tables_or_nonascii_paths": [
+    "LightGenV2/reports/multimodal_meeting_20260919/\u6d4b\u8bd5\u51c6\u786e\u7387.svg",
+    "LightGenV2/tasks/t10_expert_scaling/reports/plotting/fixed478_topk_test_20260922/test_per_seed.csv",
+    "LightGenV2/tasks/t10_expert_scaling/reports/plotting/fixed478_topk_test_20260922/test_summary.csv",
+    "LightGenV2/tasks/t10_expert_scaling/reports/plotting/kather_expert_count_20260921/best_topk_vs_d2nn.csv",
+    "LightGenV2/tasks/t10_expert_scaling/reports/plotting/kather_expert_count_20260921/confusion_matrices.csv",
+    "LightGenV2/tasks/t10_expert_scaling/reports/plotting/kather_expert_count_20260921/expert_routes.csv",
+    "LightGenV2/tasks/t10_expert_scaling/reports/plotting/kather_expert_count_20260921/full_test_confusion_matrices.csv",
+    "LightGenV2/tasks/t10_expert_scaling/reports/plotting/kather_expert_count_20260921/full_test_expert_routes.csv",
+    "LightGenV2/tasks/t10_expert_scaling/reports/plotting/kather_expert_count_20260921/full_test_per_seed.csv",
+    "LightGenV2/tasks/t10_expert_scaling/reports/plotting/kather_expert_count_20260921/full_test_summary.csv",
+    "LightGenV2/tasks/t10_expert_scaling/reports/plotting/kather_expert_count_20260921/geometry_and_parameters.csv",
+    "LightGenV2/tasks/t10_expert_scaling/reports/plotting/kather_expert_count_20260921/learning_curves.csv",
+    "LightGenV2/tasks/t10_expert_scaling/reports/plotting/kather_expert_count_20260921/locked_test_per_seed.csv",
+    "LightGenV2/tasks/t10_expert_scaling/reports/plotting/kather_expert_count_20260921/locked_test_summary.csv",
+    "LightGenV2/tasks/t10_expert_scaling/reports/plotting/kather_expert_count_20260921/paired_seed_differences.csv",
+    "LightGenV2/tasks/t10_expert_scaling/reports/plotting/kather_expert_count_20260921/per_seed_runs.csv",
+    "LightGenV2/tasks/t10_expert_scaling/reports/plotting/kather_expert_count_20260921/summary_mean_sd.csv",
+    "LightGenV2/tasks/t10_expert_scaling/reports/plotting/kather_expert_count_20260921/test_confusion_matrices.csv",
+    "LightGenV2/tasks/t10_expert_scaling/reports/plotting/kather_expert_count_20260921/test_expert_routes.csv",
+    "LightGenV2/tasks/t10_expert_scaling/reports/plotting/kather_expert_count_20260921/three_seed_best_topk_vs_d2nn.csv",
+    "LightGenV2/tasks/t10_expert_scaling/reports/plotting/kather_expert_count_20260921/three_seed_test_per_seed.csv",
+    "LightGenV2/tasks/t10_expert_scaling/reports/plotting/kather_expert_count_20260921/three_seed_test_summary.csv",
+    "LightGenV2/tasks/t10_expert_scaling/reports/plotting/kather_expert_count_20260921/topk_test_trends.csv"
+  ]
+}
