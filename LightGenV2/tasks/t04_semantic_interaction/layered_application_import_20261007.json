@@ -1,0 +1,86 @@
+{
+  "source_commit": "a61a3746d39765991048d95e40812d1028d70c93",
+  "actual_server_runtime_source": "/DATA/DATA1/guest3/LightGenV2_worktrees/t04_layered_1bc120428",
+  "scope": "Application layered layout renderer, compressed residual profiles and Qwen matched baseline; not G2-G5 robust final weights",
+  "actual_server_files_rechecked": true,
+  "hash_normalization": "CRLF to LF",
+  "files": [
+    {
+      "path": "LightGenV2/tasks/t04_semantic_interaction/layered_scene_data.py",
+      "bytes_lf": 17085,
+      "sha256_lf": "a545d027d9493dfb6ce0721bbc13c7cf48c82cace2d34d35206d9d5435aade71"
+    },
+    {
+      "path": "LightGenV2/tasks/t04_semantic_interaction/layered_scene_gallery.py",
+      "bytes_lf": 4591,
+      "sha256_lf": "e9aaa8f566231e8b3f9ea1309b0f7f9f748e0100db568cbb43361bcc55925a98"
+    },
+    {
+      "path": "LightGenV2/tasks/t04_semantic_interaction/layered_scene_preview.py",
+      "bytes_lf": 9031,
+      "sha256_lf": "0c3666caa5f4051756be0b4633efb661a535990f40071e22de7f6c8a17847aa3"
+    },
+    {
+      "path": "LightGenV2/tasks/t04_semantic_interaction/layout_preview.py",
+      "bytes_lf": 7246,
+      "sha256_lf": "5b1b26b646bb012f011b55d285e7834ab4d7ed033273e92ab8222b0726b74ad3"
+    },
+    {
+      "path": "LightGenV2/tasks/t04_semantic_interaction/configs/layered_scene_electronic_exp05.yaml",
+      "bytes_lf": 292,
+      "sha256_lf": "bef38c2c4607ab0c510066b98b10f483860a68765fe0b239eb7b969bcbfea5cf"
+    },
+    {
+      "path": "LightGenV2/tasks/t04_semantic_interaction/configs/layered_scene_electronic_exp05_e30.yaml",
+      "bytes_lf": 354,
+      "sha256_lf": "7ad46ad9a45741ec1b3fac28b265ed7a1ae198fff7bfc61864bbe6f6bccd7328"
+    },
+    {
+      "path": "LightGenV2/tasks/t04_semantic_interaction/configs/layered_scene_electronic_exp1.yaml",
+      "bytes_lf": 308,
+      "sha256_lf": "37bf65188aeb71b46bc31592f3424f87593bf9dbc3825e29585306868f6fb84c"
+    },
+    {
+      "path": "LightGenV2/tasks/t04_semantic_interaction/configs/layered_scene_exp05_dc30_ccdsmall.yaml",
+      "bytes_lf": 689,
+      "sha256_lf": "91cb9d9e40fc0b1fb3965b185ed3818713a3fe22b229da08f7698cbe8112cea8"
+    },
+    {
+      "path": "LightGenV2/tasks/t04_semantic_interaction/configs/layered_scene_focus_changed_iou.yaml",
+      "bytes_lf": 554,
+      "sha256_lf": "94ab6e4c2f3c77fbffb73f7d498a3d4a158ebbcba4884c87bb845637f3857ff3"
+    },
+    {
+      "path": "LightGenV2/tasks/t04_semantic_interaction/configs/layered_scene_formal.yaml",
+      "bytes_lf": 429,
+      "sha256_lf": "43c57a408280fe6bc546616d03802b1a8f395e112e5dee61675f088b0c3c6a7d"
+    },
+    {
+      "path": "LightGenV2/tasks/t04_semantic_interaction/configs/layered_scene_pilot.yaml",
+      "bytes_lf": 265,
+      "sha256_lf": "aa23bb408cae35d4e3e5bc52b8b2e3962484a9981b608c8d5447ae445ce2455d"
+    },
+    {
+      "path": "LightGenV2/tasks/t04_semantic_interaction/configs/layered_scene_qwen_shared.yaml",
+      "bytes_lf": 832,
+      "sha256_lf": "e292e76ba5c60be27e27a4dbc10560b99f4f68675278e0a4fba8f61adfacacb1"
+    }
+  ],
+  "main_projection": "Add original eight profile entries and original _ensure_data layered dispatch; restore layered gallery routing while preserving newer fusion ablation suffix and output guards",
+  "local_test_difference_preserved": "tests/test_layered_scene_data.py omits the original compression-profile test; not overwritten or adopted as the server test. A separate maintenance test covers configuration and dispatch contracts.",
+  "preserved": [
+    "Original model architecture, training function, train/test counts and selection protocol",
+    "Actual server runtime checkout and OpenMoji running experiments",
+    "All PT, CCD, reports and timing"
+  ],
+  "limits": [
+    "No model training or performance re-evaluation",
+    "SVG renderer/environment/assets and exact final application release still require their own binding",
+    "Historical .8715 paper rerun PT identity remains unproven; configs do not validate that score"
+  ],
+  "projection_guards": {
+    "original_ensure_data_ast_sha256": "7a4a945861153b68697ce74be19284ce1e4758debb299b1825f8fa7a0109af14",
+    "prior_main": "3d15e830b265b09be698b88a7ee726d885c4c8c3",
+    "unchanged_train_ast_sha256": "d59d32fb662ced0cac360fde17e3c6d3480b01cf5810fbfd8b2dd98a1995f4bf"
+  }
+}

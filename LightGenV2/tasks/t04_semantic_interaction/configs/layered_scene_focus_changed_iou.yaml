@@ -1,0 +1,21 @@
+base_config: layered_scene_formal.yaml
+
+# Same inference graph and optical contract as the formal run.  This profile
+# changes training regularization only, targeting the add/move errors observed
+# in the first formal run while retaining test-at-interval checkpointing.
+model:
+  phase_dropout_p: 0.10
+
+training:
+  epochs: 100
+  weight_decay: 0.02
+  ema_decay: 0.997
+
+loss:
+  changed_cell_weight: 12.0
+  foreground_cell_weight: 3.0
+  category: 1.0
+  edit: 1.25
+  preservation: 0.15
+
+output_dir: ../runs/simulation/layered_scene_focus_changed_iou_s73_e100

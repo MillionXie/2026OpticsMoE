@@ -1,0 +1,8 @@
+base_config: layered_scene_focus_changed_iou.yaml
+
+# Stronger residual-MLP compression; depthwise token mixers and every optical
+# component remain identical to the uncompressed model.
+model:
+  electronic_expansion: 0.5
+
+output_dir: ../runs/simulation/layered_scene_electronic_exp05_s73_e100

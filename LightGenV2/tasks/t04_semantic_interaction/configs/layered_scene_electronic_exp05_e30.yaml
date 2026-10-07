@@ -1,0 +1,9 @@
+base_config: layered_scene_electronic_exp05.yaml
+
+# Paper-selected checkpoint protocol: reproduce the epoch-30 model whose
+# changed-cell accuracy is 0.8715. This avoids mixing later qualitative outputs
+# with the deliberately selected 0.8715 table row.
+training:
+  epochs: 30
+
+output_dir: ../runs/simulation/layered_scene_electronic_exp05_s73_e30_paper

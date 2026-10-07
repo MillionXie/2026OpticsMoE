@@ -1,0 +1,8 @@
+base_config: routerfill_shared.yaml
+dataset:
+  data_dir: ../dataset/openmoji_layered_anchor6_svg_v3
+  layout_version: layered_anchor6_svg_v3
+  svg_asset_dir: ../assets/openmoji-17.0.0-svg
+training:
+  epochs: 10
+output_dir: ../runs/smoke/layered_scene_pilot_s73_e10

@@ -23,6 +23,27 @@ robust线比较固定结构下的G2–G5、直接部署及实拍电子微调。
 不能仅按时间选最新目录。下面旧网格及测速说明均属各自历史版本。
 本轮只整理入口和身份，不训练、重评、修改现用实验或连接实验室设备。
 
+### 大小层次应用源码与电子缩减配置已归主线
+
+服务器原运行目录 `LightGenV2_worktrees/t04_layered_1bc120428` 的4份渲染/展示源码与
+8份应用配置已逐LF SHA核对原提交 `a61a3746d39765991048d95e40812d1028d70c93`。
+原 `layered_anchor6_svg_v3` 数据分派现恢复到本任务run入口，光电方法及完整冻结Qwen
+baseline各用对应分层数据；评估展示也使用原分层合成器，不再退回旧同尺寸网格图。
+来源及保留边界见 [应用源码身份](layered_application_import_20261007.json)。
+
+现有历史应用profile包括 `layered_scene_pilot/formal/focus_changed_iou`、
+`layered_scene_qwen_shared`、`layered_scene_electronic_exp1/exp05/exp05_e30`、
+`layered_scene_exp05_dc30_ccdsmall`。exp1/exp05只把原电子残差MLP expansion改成1/.5，
+不把这些profile描述为后续实验室rank48/rank64消融；exp05_e30旧配置注释中的.8715
+仍需正确原PT绑定，不能拿另一个已有30轮PT冒充该成绩。
+
+只恢复原分派，现有防覆盖检查、每种消融的独立输出后缀及训练函数保持。
+7项无Torch的数据分派、配置继承、源码身份和AST测试不读取数据/PT，不代表SVG环境、
+完整Qwen缓存或师姐交付最终版已经复现；原位数据、运行结果与测速仍保留。
+本机单独执行原预览测试的6项因缺 `resvg_py` 失败，尚未完成原SVG预览复现；
+所需历史依赖为 `resvg-py==0.5.0`，本轮未安装软件或换用PNG/其他渲染器掩盖差异。
+全套318项维护测试通过只覆盖工程合同，不覆盖这些需真实SVG环境的预览测试。
+
 ## 2026-10-05 源码收敛边界
 
 本批将实际服务器的语义核心、共享电子头和六份已有配置纳入主线，未修改运行目录、

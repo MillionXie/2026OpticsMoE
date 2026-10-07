@@ -513,7 +513,11 @@ def evaluate_selected(settings: Settings, device: torch.device, checkpoint: Path
     with predictions_path.open("w", encoding="utf-8") as handle:
         for row in predictions:
             handle.write(json.dumps(row, ensure_ascii=False) + "\n")
-    legacy._save_gallery(settings.output_dir / f"best_visualization{suffix}" / "test_examples", galleries, settings)
+    if settings.layout_version == 'layered_anchor6_svg_v3':
+        from .layered_scene_gallery import save_layered_gallery
+        save_layered_gallery(settings.output_dir / f"best_visualization{suffix}" / "test_examples", galleries, settings)
+    else:
+        legacy._save_gallery(settings.output_dir / f"best_visualization{suffix}" / "test_examples", galleries, settings)
     if settings.embedding_only and fusion_ablation == 'none':
         for core in (model.language_core, model.vision_core):
             core.set_fusion_ablation('remove_optical')
