@@ -9,6 +9,17 @@
     "archive_sha256": "b93c9b3441e42f87eef114387676f308d42290a21b123005e331d4ef6b954517",
     "archive_bytes": 1737512598,
     "verified_regular_files": 33889,
+    "server_main_readme_before_publication": {
+      "archive_member_outside_tar": "server_main_README_before_publication.md",
+      "sha256": "9ec0fd41d37c2b51cf00b5428ce2af50c987166bd1d1d1fdbbadcf4803be17a8",
+      "bytes": 65134,
+      "difference": "Local sixth-round completed results supersede server prepared-only paragraph; eight accuracy pairs and 120 epoch timings match already-published original CSV evidence"
+    },
+    "server_reproduction_readme_before_publication": {
+      "archive_member_outside_tar": "server_reproduction_README_before_publication.md",
+      "sha256": "3b74e27780ed8e6f9f1f43ab8b0dff6e7628ce8f53499cdf3f57b7ad18e8691a",
+      "bytes": 11136
+    },
     "preserved_symlink_identities": 30,
     "archived_nontracked_entries": 611,
     "other_worktree_source_files_scanned": 113797,
