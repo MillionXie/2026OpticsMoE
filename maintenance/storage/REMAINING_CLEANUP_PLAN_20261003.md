@@ -77,6 +77,10 @@ OpenMoji旧32份源码/overlay恢复记录见
 | 4 | 最终本地/Linux/GitHub验收 | 实际工作文件、发布commit、导航、守卫和恢复检查，保留例外清单 | 只比较远端引用就宣布所有目录、模型或数据可复现 |
 
 本地ABO旧子目录还有历史整目录ignore，Linux无同规则，需继续核对是否隐藏应保留的源码。
+10月7日另用只读`check_visible_source_recovery.py`复核旧源码索引中仍可见的804项：
+657项与实际Git恢复blob字节完全一致，53项仅CRLF/LF不同，94项仍未核实。
+这不覆盖索引外新增文件、不证明Linux同字节、占用或依赖，也不是删除许可。
+94项包含旧测速脚本和历史现场诊断工具，继续保留；不按“已备份”整目录隐藏。
 实验室checkout/SDK迁移与现场回归现在是范围外，不再放在下一批执行队列。
 保护数据不等于已完成异地备份：
 [1921份原资产恢复](UNTRACKED_ASSET_RECOVERY_20261006.json)只证明本机ZIP，
@@ -118,6 +122,7 @@ python maintenance/git_safety/review_git.py
 python maintenance/git_safety/check_task_registry.py --commit main
 python maintenance/git_safety/check_task_registry.py --verify-local-weights
 python maintenance/storage/check_historical_baseline_assets.py
+python maintenance/storage/check_visible_source_recovery.py --index <本机历史源码索引> --summary
 python maintenance/git_safety/check_source_archives.py --component-timing-payloads
 python maintenance/git_safety/check_source_archives.py --server-formal-timing-payloads
 ```
