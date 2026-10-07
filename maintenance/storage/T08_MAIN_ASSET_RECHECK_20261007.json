@@ -1,0 +1,14 @@
+{
+  "executed_main_commit": "0d6b3d4ad965b6a1a7e6949a471a1a2e090782ea",
+  "machine": "Actual training-server canonical main workspace",
+  "checker": "maintenance/storage/check_t08_assets.py",
+  "reference_identity": "maintenance/storage/T08_CONTENT_ASSETS_20261004.json",
+  "files_checked": 7225,
+  "errors": [],
+  "scope": "7200 original easy100 images plus 25 CSV/student/artifact/readout files selected by the original receipt; byte identity and split binding only",
+  "scientific_metrics_recomputed": false,
+  "full_reproduction_ready": false,
+  "runtime_checkout_or_source_changed": false,
+  "outstanding": ["Historical reverse teacher cache has logical model_id but no pinned revision; do not rewrite its identity", "CCD to 384D readout cache numerical reconstruction not yet proven", "Windows SDK/LUT and actual device-entry cutover remain unverified"],
+  "does_not_cover": ["Every artifact of every T08 run", "New model performance or timing", "Complete environment reproduction", "Permission to delete legacy assets"]
+}

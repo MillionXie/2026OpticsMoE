@@ -1,4 +1,11 @@
-# T08 商品检索（图搜文）
+# T08 商品双向检索：图搜文、文搜图
+
+两方向共用任务编号，不共用可互换的主体PT：图搜文从`optical_moe.py`进入，
+文搜图从`text_to_image.py`及`physical10cm/`进入。图搜图属于T07。
+2026-10-07已用服务器实际main只读核验原7200图片及25份划分／权重／报告／缓存文件，
+7225项原内容身份均相符；未训练、排序、重建缓存或调用设备。该核验不解除
+下方的历史教师snapshot绑定与CCD→缓存数值重建例外，不能称完整复现已通过。
+见[最新资产核验](../../../maintenance/storage/T08_MAIN_ASSET_RECHECK_20261007.json)。
 
 历史冻结 CLIP／DeepSeek／YOLO 对照已收录：[三方向协议](reports/reproduction/ABO_BACKBONE_PROTOCOL_20260923.md)、
 [2026-09-23结果及限制](reports/reproduction/ABO_BACKBONE_RESULTS_20260923.md)、
