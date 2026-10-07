@@ -1,9 +1,10 @@
-"""Explicit main-bench adapter for the preserved formal T12 TEST/VAL runner.
+"""Explicit main-bench adapter for the preserved formal T12 layerwise runner.
 
 Default inspection never imports Torch/SDK or creates output. Capture is an
 explicit operation, not part of repository cleanup or a deployment certification.
 """
 import argparse
+import ast
 import functools
 import hashlib
 import json
@@ -24,7 +25,7 @@ def digest(path):
     return h.hexdigest()
 
 
-def adapted_source():
+def adapted_source(train=False):
     folder = Path(__file__).resolve().parent
     source = (folder / 'run_layerwise.py').read_text(encoding='utf8').replace('\r\n', '\n')
     manifest = json.loads((folder / 'SOURCE_IDENTITY_20261006.json').read_text(encoding='utf8'))
@@ -33,11 +34,33 @@ def adapted_source():
         raise ValueError('Preserved formal runner SHA changed; adapter must be reviewed')
     if source.count(OLD_ARGUMENT) != 1 or source.count(OLD_BINDING) != 1:
         raise ValueError('Preserved runner binding changed')
+    if train:
+        adapter = (folder / 'run_train_capture.py').read_text(encoding='utf8').replace('\r\n', '\n')
+        expected = next(r for r in manifest['sources'] if r['path'].endswith('/run_train_capture.py'))
+        if hashlib.sha256(adapter.encode()).hexdigest() != expected['sha256_lf']:
+            raise ValueError('Preserved TRAIN adapter SHA changed')
+        changes_node = next(n.value for n in ast.walk(ast.parse(adapter))
+                            if isinstance(n, ast.Assign) and any(isinstance(t, ast.Name) and t.id == 'changes' for t in n.targets))
+        changes = ast.literal_eval(changes_node)
+        for old, new in changes.items():
+            if old not in source:
+                raise ValueError('Pinned TRAIN substitution no longer matches')
+            source = source.replace(old, new)
     return source.replace(OLD_ARGUMENT, '').replace(OLD_BINDING, NEW_BINDING)
 
 
 def inspect(args):
-    compile(adapted_source(), 't12_formal_main_adapter', 'exec')
+    train = getattr(args, 'split', 'test') == 'train'
+    compile(adapted_source(train), 't12_formal_main_adapter', 'exec')
+    if train:
+        if args.selection is None or args.max_samples is not None:
+            raise ValueError('TRAIN requires original --selection and no --max-samples')
+        selected = json.loads(args.selection.read_text(encoding='utf8'))
+        indices = selected['indices']
+        if selected['split'] != 'train' or selected['test_product_overlap'] != 0 or selected['test_source_hash_overlap'] != 0:
+            raise ValueError('TRAIN selection declares TEST overlap or wrong split')
+        if not indices or len(indices) != len(set(indices)) or any(type(i) is not int or not 0 <= i < 20736 for i in indices):
+            raise ValueError('Invalid TRAIN selection indices')
     contract_path = args.project / 'assets/contract.json'
     contract = json.loads(contract_path.read_text(encoding='utf8'))
     if contract.get('checkpoint_sha256') != FORMAL_SHA or contract.get('counted_parameters') != 17026642:
@@ -63,7 +86,7 @@ def inspect(args):
             'model_loaded': False, 'output_created': False,
             'full_environment_or_capture_regression_verified': False,
             'limitations': ['Preserves original CUDA model execution',
-                           'TRAIN adapter and adopted decoder evaluation are separate entries',
+                           'TRAIN uses the pinned original selection adapter; decoder evaluation is separate',
                            'SDK file presence is not device availability or full binary validation']}
 
 
@@ -73,7 +96,8 @@ def main():
     for name in ('project', 'output', 'reuse', 'machine-config', 'phase-sdk', 'phase-lut'):
         p.add_argument('--' + name, type=Path, required=True)
     p.add_argument('--amplitude-sdk', type=Path)
-    p.add_argument('--split', choices=('test', 'val'), default='test')
+    p.add_argument('--split', choices=('test', 'val', 'train'), default='test')
+    p.add_argument('--selection', type=Path)
     p.add_argument('--max-samples', type=int)
     args = p.parse_args()
     result = inspect(args)
@@ -90,10 +114,12 @@ def main():
             '--reuse', str(args.reuse), '--split', args.split]
     if args.max_samples is not None:
         argv += ['--max-samples', str(args.max_samples)]
+    if args.split == 'train':
+        argv += ['--selection', str(args.selection)]
     previous = sys.argv
     try:
         sys.argv = argv
-        exec(compile(adapted_source(), str(Path(__file__).with_name('run_layerwise.py')), 'exec'),
+        exec(compile(adapted_source(args.split == 'train'), str(Path(__file__).with_name('run_layerwise.py')), 'exec'),
              {'__name__': '__main__', '__package__': __package__,
               '_main_geometry': geometry, '_main_bench_factory': factory})
     finally:

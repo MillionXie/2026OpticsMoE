@@ -104,3 +104,15 @@ def test_inspection_rejects_other_model_contract(tmp_path):
         {'checkpoint_sha256': '0'*64, 'counted_parameters': 9958098}))
     with pytest.raises(ValueError, match='formal 17M'):
         inspect(argparse.Namespace(project=tmp_path))
+
+
+def test_main_train_binding_preserves_original_selection_guard():
+    from LightGenV2.tasks.t12_text_to_image.lab_shs8um.main_layerwise import adapted_source
+    source = adapted_source(True)
+    compile(source, 'train_fixture', 'exec')
+    assert "assert len(dataset)==20736" in source
+    assert "selection['test_product_overlap']==0" in source
+    assert "selection['test_source_hash_overlap']==0" in source
+    assert "assert a.max_samples is None" in source
+    assert "'train_index'" in source
+    assert 'a.abo_project' not in source

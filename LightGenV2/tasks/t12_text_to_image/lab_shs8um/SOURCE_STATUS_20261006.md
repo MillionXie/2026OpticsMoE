@@ -25,9 +25,12 @@ python -m LightGenV2.tasks.t12_text_to_image.lab_shs8um.main_layerwise --mode in
 
 默认inspect仅查源合同、原5b4f权重SHA、路径存在并编译适配代码，不加载模型/SDK、不写输出。
 明确授权的新采集才使用`--mode capture`，本次治理没有执行capture，也不替换原计划任务。
-只支持原17M TEST/VAL逐层入口；TRAIN选集适配和eeec电子读出仍是各自原入口。
+支持原17M TEST/VAL逐层入口；TRAIN显式加`--split train --selection <原TRAIN选择JSON>`，
+由原`run_train_capture.py`的固定替换字典生成同一采集逻辑，另核该原适配器SHA。
+保持20736原TRAIN大小、唯一索引、test_product_overlap/test_source_hash_overlap均为0，
+TRAIN不允许max-samples；只读inspect不写原selection。eeec电子读出仍是单独入口。
 目录存在不证明SDK二进制身份/可用设备/环境完整；原CUDA与显示边界尚未现场回归。
-五项AST/合成文件测试验证绑定与拒绝条件，不代表正式数据、精度或光路验收。
+六项AST/合成文件测试验证绑定与拒绝条件，不代表正式数据、精度或光路验收。
 
 实验室实际main随后通过该入口的只读inspect：原5b4f PT、合同与机器配置前后SHA
 一致，原正式CCD目录及SDK/LUT路径存在，无模型加载/设备打开/输出创建。
