@@ -1,4 +1,33 @@
 {
+  "subsequent_verified_retirement_20261007": {
+    "registered_before": 83,
+    "registered_after": 80,
+    "retired": [
+      {"name": "t07_abo_20260909", "head": "40544b2b32ff37da543ec60cb1966e3abe24a904", "purpose": "Historical terminal-rate polishing and optical-phase reheating trial"},
+      {"name": "t07_abo_anchor_20260909", "head": "e59fc45fbec17938e76f4bfd527e5540003bb255", "purpose": "Historical high-alpha cross-product retrieval alignment trial"},
+      {"name": "t07_vision13_20260913", "head": "6c1320c2ff798321404a5e6060852033130b52b2", "purpose": "Historical calibrated 79.5833 candidate and bounded vision13 control, not final rank72"}
+    ],
+    "full_regular_file_archive": "/DATA/DATA1/guest3/storage_cleanup_manifests/retired_abo_three_20261007/complete_old_worktrees.tar.gz",
+    "archive_sha256": "2eebef9458e79c4185b6f190c2f9fc213056646c9c5687fec98cabe775abf13e",
+    "archive_bytes": 682052532,
+    "verified_regular_files": 11809,
+    "all_original_timing_files_in_archive": true,
+    "git_administrative_pointer_excluded": true,
+    "original_heads_retained_in_existing_git_archive_history": true,
+    "shared_runs_links_archived_not_dereferenced": 2,
+    "shared_runs_target": "/DATA/DATA1/guest3/2026OpticsMoE/LightGenV2/tasks/t07_abo_image_retrieval/runs",
+    "shared_runs_target_not_deleted": true,
+    "tracked_changes_and_untracked_files_before": 0,
+    "owned_process_cwd_exe_cmdline_fd_references_before": 0,
+    "runtime_reference_scan_files": 13094,
+    "runtime_reference_scan_roots": ["main", "protected ABO", "protected OpenMoji", "demo_reproduction_20260915"],
+    "runtime_reference_name_hits": 0,
+    "revalidated_before_removal": true,
+    "removal_method": "Unlink only the two verified shared-runs symlinks; git worktree remove without force",
+    "protected_heads_and_tracked_overlays_unchanged": true,
+    "laboratory_contacted": false,
+    "limits": "Full archive is on the training server, not a new independent local data backup; bounded source scan does not cover unknown future external callers. Older 83-directory snapshots below are retained as history."
+  },
   "latest_after_ssh_recovery": {
   "root_main": "983b24f2bba8876fdbbf59acd9156ef5e70c0cdb",
   "registered_worktree_count": 83,
