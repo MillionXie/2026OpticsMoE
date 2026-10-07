@@ -10,6 +10,11 @@
 
 唯一入口：[复现与最终产物](reports/reproduction/README.md)。旧报告保留作历史记录，不代表当前部署入口。
 
+原数据合同与caption缓存测试 `tests/test_dataset_contract.py`、`tests/test_feature_cache.py`
+已补入main，原字节与保留服务器v2及7093ec4608逐LF一致。四项合成CPU测试验证
+旧UCO3D许可／对象划分拒绝和caption首次出现顺序；不读取正式数据或缓存，
+不能将这些测试通过视为当前ABO编辑数据许可审计、正式划分无泄漏或完整性能复现。
+
 2026-09-23 七模型 baseline 与测速从[历史身份说明](../../reports/20260923_t12_three_task_large_small/HISTORICAL_IDENTITY_20261004.md)进入。
 原报告中的“current primary/final”只指当时版本；原报告、计时及图片不改不删，
 不能将其旧模型测速套用到当前17.03M实拍版本。
