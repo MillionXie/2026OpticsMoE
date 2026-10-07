@@ -1,0 +1,31 @@
+model:
+  image_size: 128
+  text_dim: 2048
+  condition_dim: 128
+  widths: [32, 48, 64, 96]
+  optical: true
+  optical_experts: 4
+  optical_top_k: 2
+  residual_limit: 0.80
+fusion:
+  alpha_initial: 0.12
+  alpha_minimum: 0.02
+  alpha_maximum: 0.45
+  rms_epsilon: 1.0e-6
+training:
+  batch_size: 32
+  epochs: 35
+  learning_rate: 1.0e-4
+  phase_learning_rate: 5.0e-4
+  weight_decay: 1.0e-4
+  num_workers: 4
+  amp: true
+  adversarial_warmup_epochs: 0
+  sample_every_epochs: 5
+loss:
+  adversarial_weight: 0.03
+  reconstruction_weight: 8.0
+  edge_weight: 2.0
+  identity_edge_weight: 1.0
+  background_weight: 8.0
+  residual_weight: 0.05
