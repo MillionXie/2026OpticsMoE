@@ -1,4 +1,18 @@
 {
+  "server_imported_inference_payload_ignore_20261008": {
+    "path": "ABO_Lab_8um/original_inference/backend",
+    "purpose": "Original imported read-only deployment release backend, not main development source",
+    "manifest": "ABO_Lab_8um/original_inference/PACKAGE_MANIFEST.json",
+    "manifest_sha256": "9561396ace833aaf968f1fbd96a8cbd881f9f91340cf90d734d6def319b2d81c",
+    "manifest_backend_entries": 67,
+    "actual_noncache_files": 67,
+    "missing_extra_or_SHA_size_mismatch": 0,
+    "original_files_changed_moved_or_deleted": false,
+    "top_level_provenance_and_deployment_wrappers_hidden": false,
+    "scientific_model_or_runtime_changed": false,
+    "laboratory_contacted": false,
+    "external_upload": false
+  },
   "historical_runtime_payload_ignore_20261008": {
     "scope": "26 explicitly named 20260920 multimodal meeting retrain metadata, status, fairness, selection and dataset split payload JSON files; not final source or current experiments",
     "archive_sha256_rechecked": "ec7fc89b4294ca2c89cd7589bc727317e4c2e105395cbcd7f65ff8ee22784777",

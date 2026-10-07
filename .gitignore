@@ -702,6 +702,13 @@ node_modules/
 /ABO_Lab_8um/original_a100/backend/
 /ABO_Lab_8um/original_optics/backend/
 
+# Third imported immutable deployment backend: all 67 noncache files match
+# original_inference/PACKAGE_MANIFEST.json (no missing, extra or modified files).
+# Manifest SHA256 9561396ace833aaf968f1fbd96a8cbd881f9f91340cf90d734d6def319b2d81c.
+# Server verified 2026-10-08; original bytes and top-level provenance remain on disk.
+# This is a read-only release payload, not the canonical task source or current experiment.
+/ABO_Lab_8um/original_inference/backend/
+
 # Historical EuroSAT package dependency snapshot: all 390 members match its
 # FILES_SHA256 manifest. Original package/runtime files remain in place.
 # Do not hide top-level training/analysis tools or modified package metadata.
