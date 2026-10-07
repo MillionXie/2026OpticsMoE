@@ -20,6 +20,15 @@ chair style及decoder optical共11份原JSON汇总已补入main，逐LF字节与
 旧UCO3D许可／对象划分拒绝和caption首次出现顺序；不读取正式数据或缓存，
 不能将这些测试通过视为当前ABO编辑数据许可审计、正式划分无泄漏或完整性能复现。
 
+2026-10-08补齐主线缺失的`configs/optical_channel_robust_v2.json`：原字节SHA
+`7babe6bb8f707b8634f3b32d36147302b3c210f0e1fcfad3d881111b98686941`，
+与7093ec4608及实际服务器v2一致；这是恢复原通道配置，不是更改光学合同。
+80份原历史生成／编辑／baseline工具和测试亦逐LF字节核对两处原来源后纳入main，
+包括cleanrender、chair、decoder-optical、电子baseline、product repair/scene等。
+它们保留旧容量及合同，不升格为当前17.03M最终部署模型。
+本机离线CPU完整任务测试99项通过（13.80秒）；未加载正式PT、重算精度、训练或采集。
+另外三份本机独有设备辅助工具未混入此次服务器来源结论，原位继续保留。
+
 2026-09-23 七模型 baseline 与测速从[历史身份说明](../../reports/20260923_t12_three_task_large_small/HISTORICAL_IDENTITY_20261004.md)进入。
 原报告中的“current primary/final”只指当时版本；原报告、计时及图片不改不删，
 不能将其旧模型测速套用到当前17.03M实拍版本。
