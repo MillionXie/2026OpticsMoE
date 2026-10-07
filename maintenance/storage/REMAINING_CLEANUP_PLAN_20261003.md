@@ -97,6 +97,10 @@ SSH恢复后已逐字节实查九个dirty目录的35处已跟踪修改：13处�
 - ABO rank72模型、离线回放、逐层runner与原8图库/4查询划分工具已归主线。
   划分工具与原d979b53e及实际保护服务器源码SHA一致，7项合成测试通过；
   原protocol/2400图/14400CCD与800查询结果没有重新生成或评估。
+- T12更早的条件VAE比较入口五个模块及七份依赖YAML，已按实际服务器旧审计版原字节
+  发布至main `4e14b2ce`。本地及服务器帮助、六配置加载、两种不写run的合成CPU合同通过；
+  该早期latent生成baseline不是当前17M图文编辑或完整Qwen28补训baseline，不互套成绩。
+  未改原模块／算法、数据、PT、指标及测速，只补齐历史源码入口和明确身份。
 - 已具名处理的源码副本/结果产物只按证据退出日常入口或待提交列表。
   [157份报告身份](HISTORICAL_REPORT_PAYLOAD_VISIBILITY_20261007.json)、
   [测速导出源码](DEMO_EMBEDDED_SOURCE_VISIBILITY_20261007.json)、

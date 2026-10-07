@@ -1,4 +1,16 @@
 {
+  "server_main_validation_20261007": {
+    "source_commit": "4e14b2cebc96ee90699555c2efbb7ea859f5ab8c",
+    "cli_help_passed": true,
+    "profiles_loaded": 6,
+    "direct_synthetic_cpu_smoke": "passed",
+    "both_variant_output_shapes": [2, 4, 8, 8],
+    "gradient_parameters": {"lightgen_parallel": 59, "qwen_vae_baseline": 46},
+    "CUDA_VISIBLE_DEVICES": "",
+    "formal_PT_or_dataset_read": false,
+    "hardware_or_GPU_used": false,
+    "run_directory_created": false
+  },
   "source_runtime": "/DATA/DATA1/guest3/t12_git_audited_20260926",
   "source_head": "a3f5e6fe7027e92fe29be2934750f427cdfd91e7",
   "scope": "Original early single-object text-conditioned conditional-VAE comparison CLI and its seven YAMLs; historical baseline only, not the current 17M image-and-text editor or current full-Qwen28 baseline.",
