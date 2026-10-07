@@ -1,0 +1,100 @@
+{
+  "audit_date": "2026-10-07",
+  "scope": "Six historical T16 temporary working copies; not final T16 or necessary contrasts",
+  "read_only": true,
+  "laboratory_contacted": false,
+  "original_files_moved_or_deleted": false,
+  "registered_worktrees_retired": 0,
+  "archive_move_same_filesystem": false,
+  "local_archive_ref_containing_all_six_commits": "refs/archive/frozen-local-20261005/t12-cross-modal-lifelong-overlay",
+  "local_commit_and_ref_checks_passed": true,
+  "rows": [
+    {
+      "path": "/tmp/t16_audit_4bf",
+      "head": "d4ea23cf1b13940e2513a06cb74ccdd0b2dcd22a",
+      "last_commit_subject": "Add fixed CLEVR attribute-query input protocol",
+      "ignored_counts": {
+        "cache": 26
+      },
+      "ignored_bytes": 376022,
+      "noncache_ignored_paths": [],
+      "process_refs": [],
+      "tracked_source_absolute_path_references": [],
+      "symlinks": []
+    },
+    {
+      "path": "/tmp/t16_aug_6b3e",
+      "head": "6b3ebfea36d0882e9213a19685b129144a78600c",
+      "last_commit_subject": "Add synchronized paired augmentation for MoE training candidate",
+      "ignored_counts": {
+        "cache": 25
+      },
+      "ignored_bytes": 241565,
+      "noncache_ignored_paths": [],
+      "process_refs": [],
+      "tracked_source_absolute_path_references": [],
+      "symlinks": []
+    },
+    {
+      "path": "/tmp/t16_aug_ce8",
+      "head": "ce8fe0f48637c94ce77b389582b2d1c4aae67b2a",
+      "last_commit_subject": "Record initial paired EuroSAT single-task results",
+      "ignored_counts": {
+        "cache": 17
+      },
+      "ignored_bytes": 227209,
+      "noncache_ignored_paths": [],
+      "process_refs": [],
+      "tracked_source_absolute_path_references": [],
+      "symlinks": []
+    },
+    {
+      "path": "/tmp/t16_ft_6d7",
+      "head": "46984d9dfc8f12d9a1def3a1b4ea95f225082c6d",
+      "last_commit_subject": "Compare weak slot utilization in eight expert CLEVR",
+      "ignored_counts": {
+        "cache": 22
+      },
+      "ignored_bytes": 336588,
+      "noncache_ignored_paths": [],
+      "process_refs": [],
+      "tracked_source_absolute_path_references": [],
+      "symlinks": []
+    },
+    {
+      "path": "/tmp/t16_physical_binary_977",
+      "head": "8841d3c9181a4ed68bb666eed2f44ee06d708eae",
+      "last_commit_subject": "Allow slower shared-head adaptation in MoE lifelong training",
+      "ignored_counts": {
+        "cache": 24
+      },
+      "ignored_bytes": 414985,
+      "noncache_ignored_paths": [],
+      "process_refs": [],
+      "tracked_source_absolute_path_references": [],
+      "symlinks": []
+    },
+    {
+      "path": "/tmp/t16_train_8f28",
+      "head": "8f280a5d661d37b43d40eace585c43bd00d819d0",
+      "last_commit_subject": "Train paired EuroSAT single tasks with full validation selection",
+      "ignored_counts": {
+        "cache": 18
+      },
+      "ignored_bytes": 218919,
+      "noncache_ignored_paths": [],
+      "process_refs": [],
+      "tracked_source_absolute_path_references": [],
+      "symlinks": []
+    }
+  ],
+  "archive_choice_requested": true,
+  "archive_copy_or_move_started": false,
+  "limits": [
+    "Process checks cover readable same-UID cwd/exe/cmdline/file descriptors at observation time, not all users or future dependencies.",
+    "Absolute path references checked only tracked source/config in main, protected ABO/OpenMoji and active demo reproduction; untracked imports remain outside proof.",
+    "Local Git history preserves source commits, not every ignored file or an independently verified complete asset backup.",
+    "Each copy carries historical timing records; preserve all original bytes during any approved archive transition.",
+    "Cross-filesystem archive requires complete file-set/SHA verification before retiring original duplicates; no blanket prune or force removal."
+  ]
+}
