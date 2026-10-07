@@ -1,4 +1,29 @@
 {
+  "latest_pre_final_source_retirement_20261008": {
+    "purpose": "Old OpenMoji bounded sister-package preparation and pre-final ABO fresh35/robust training source trials; not the sealed ABO or current OpenMoji runtime",
+    "original_parent": "/DATA/DATA1/guest3/2026OpticsMoE/.worktrees",
+    "heads": {
+      "sister_bounded_20260927": "3f85510285e5ffdfca28def93eef2eb082b1655c",
+      "t07_fresh35_20260929": "bd1fcf136ac23ff2f1a4f3f9fc5c1f8bfc614239",
+      "t07_robust_20260926": "62ac6c52b0bef264edabdd25d41200820ac8fc01"
+    },
+    "registered_before": 38,
+    "registered_after": 35,
+    "archive": "/DATA/DATA1/guest3/storage_cleanup_manifests/retired_abo_pre_final_sources_20261008/complete_old_worktrees.tar.gz",
+    "archive_sha256": "b15d7b914d0887f08240b5bb43c665496b060c7db00d4e771a7e9a475a58a2b7",
+    "archive_bytes": 685281703,
+    "verified_regular_files": 12359,
+    "symlinks": 0,
+    "archived_nontracked_entries": 217,
+    "other_runtime_source_files_scanned": 108302,
+    "runtime_name_hits": 0,
+    "owned_process_cwd_exe_cmdline_fd_references": 0,
+    "protected_ABO_OpenMoji_heads_and_status_unchanged": true,
+    "removal_method": "Native complete tar; every file SHA and complete file set reverified before removing only archived named nontracked files and ordinary git worktree remove without force",
+    "all_original_timing_preserved_in_archive": true,
+    "laboratory_contacted": false,
+    "external_upload": false
+  },
   "latest_t01_static_retirement_20261008": {
     "purpose": "Historical fixed-expert CIFAR, unseen-class adaptation and timing source checkouts; scientific assets remain in shared main targets",
     "registered_before": 48,
