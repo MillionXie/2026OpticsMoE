@@ -2895,6 +2895,9 @@ node_modules/
 /handoffs/openmoji_fullhead_original889_20260929/robust_recovery/r3_ccd_dc30_grid_history.json
 
 # Exact 20260927 T12 generated per-run execution receipts, not source configuration.
+# Private authentication material in an imported legacy package; retain locally, never stage.
+/ABO_Lab_8um/original_a100/config/shared_token.txt
+# The remaining entries below are archived execution receipts, not credential contents.
 # 28 valid JSON originals match the existing recovery ZIP byte-for-byte and stay in place.
 # Empty coverage_test/semantic_test receipts, summaries, source, timing and new runs stay visible.
 # SHA256 3badf19da53f53ef67e34493e3adf848a131ee53f36b8a46a3d142486869556d
