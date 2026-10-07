@@ -1,0 +1,2369 @@
+{
+  "audited_on": "2026-10-07",
+  "scope": "Named historical ours source snapshots embedded in the A100 timing report; not primary task implementations",
+  "head": "57a6b1ad43b04e42deb89c84165489794d4e5ab9",
+  "original_manifest": "LightGenV2/reports/20260927_demo_energy_efficiency_a100/SHA256SUMS.txt",
+  "local_recovery_archive_sha256": "ec7fc89b4294ca2c89cd7589bc727317e4c2e105395cbcd7f65ff8ee22784777",
+  "files": [
+    {
+      "path": "LightGenV2/reports/20260927_demo_energy_efficiency_a100/ours/01_lgvq/source_snapshot/tasks/t06_video_quality_assessment/README.md",
+      "bytes": 32311,
+      "sha256": "c8e72fe5b64400226d7618a1146f09201f5e7922fa40bf2afd3924e2bea94360",
+      "recovery": {
+        "kind": "crlf_normalized_git_blob",
+        "commit": "52db52d19dfd35382e62d1cc9bda3373be5cff81",
+        "path": "LightGenV2/tasks/t06_video_quality_assessment/README.md",
+        "archive_ref": "refs/archive/frozen-local-20261005/mnist-dvp-20260924"
+      }
+    },
+    {
+      "path": "LightGenV2/reports/20260927_demo_energy_efficiency_a100/ours/01_lgvq/source_snapshot/tasks/t06_video_quality_assessment/SPATIAL_COMPACT_READOUT.md",
+      "bytes": 1858,
+      "sha256": "3f84a88d02ed761ba6ce512e39837b1ead05948f31397dd9f1fb72eea89a4c62",
+      "recovery": {
+        "kind": "crlf_normalized_git_blob",
+        "commit": "ac7e3ecce0bef96ae7d91f8de6e478542913bd4e",
+        "path": "LightGenV2/tasks/t06_video_quality_assessment/SPATIAL_COMPACT_READOUT.md",
+        "archive_ref": "refs/archive/checkout-preservation-20261004/original18"
+      }
+    },
+    {
+      "path": "LightGenV2/reports/20260927_demo_energy_efficiency_a100/ours/01_lgvq/source_snapshot/tasks/t06_video_quality_assessment/SPATIAL_CUSTOM_OEO_ARCHITECTURE.md",
+      "bytes": 5493,
+      "sha256": "7a56d1f362b64fa9f6eb0f59b4e9742a4763ca4fe045d8a8c756a3f619218c05",
+      "recovery": {
+        "kind": "crlf_normalized_git_blob",
+        "commit": "ac7e3ecce0bef96ae7d91f8de6e478542913bd4e",
+        "path": "LightGenV2/tasks/t06_video_quality_assessment/SPATIAL_CUSTOM_OEO_ARCHITECTURE.md",
+        "archive_ref": "refs/archive/checkout-preservation-20261004/original18"
+      }
+    },
+    {
+      "path": "LightGenV2/reports/20260927_demo_energy_efficiency_a100/ours/01_lgvq/source_snapshot/tasks/t06_video_quality_assessment/build_lab_package.py",
+      "bytes": 5196,
+      "sha256": "a7ef2c6f52855130c1e29042c7f2ed8bc8bcfe77471d962e5727c058fb4fb869",
+      "recovery": {
+        "kind": "crlf_normalized_git_blob",
+        "commit": "ac7e3ecce0bef96ae7d91f8de6e478542913bd4e",
+        "path": "LightGenV2/tasks/t06_video_quality_assessment/build_lab_package.py",
+        "archive_ref": "refs/archive/checkout-preservation-20261004/original18"
+      }
+    },
+    {
+      "path": "LightGenV2/reports/20260927_demo_energy_efficiency_a100/ours/01_lgvq/source_snapshot/tasks/t06_video_quality_assessment/compress_temporal_readout.py",
+      "bytes": 26813,
+      "sha256": "7e474d6c74210ee64fe5515e9db08c0419b6fef77698cd731f12cc7b05a03924",
+      "recovery": {
+        "kind": "crlf_normalized_git_blob",
+        "commit": "ac7e3ecce0bef96ae7d91f8de6e478542913bd4e",
+        "path": "LightGenV2/tasks/t06_video_quality_assessment/compress_temporal_readout.py",
+        "archive_ref": "refs/archive/checkout-preservation-20261004/original18"
+      }
+    },
+    {
+      "path": "LightGenV2/reports/20260927_demo_energy_efficiency_a100/ours/01_lgvq/source_snapshot/tasks/t06_video_quality_assessment/configs/lightgen/spatial_single_video4_balanced.yaml",
+      "bytes": 2312,
+      "sha256": "8a6cb012eacda370a12cfaca6a0285328dac290e9f0309106773e782670621d9",
+      "recovery": {
+        "kind": "crlf_normalized_git_blob",
+        "commit": "ac7e3ecce0bef96ae7d91f8de6e478542913bd4e",
+        "path": "LightGenV2/tasks/t06_video_quality_assessment/configs/lightgen/spatial_single_video4_balanced.yaml",
+        "archive_ref": "refs/archive/checkout-preservation-20261004/original18"
+      }
+    },
+    {
+      "path": "LightGenV2/reports/20260927_demo_energy_efficiency_a100/ours/01_lgvq/source_snapshot/tasks/t06_video_quality_assessment/configs/lightgen/spatial_single_video4_compact_readout.yaml",
+      "bytes": 3640,
+      "sha256": "3b2fbffb3cf24617b3a9bda8b9fe40664000bdd18a5413d97ac928826e79f7d9",
+      "recovery": {
+        "kind": "crlf_normalized_git_blob",
+        "commit": "ac7e3ecce0bef96ae7d91f8de6e478542913bd4e",
+        "path": "LightGenV2/tasks/t06_video_quality_assessment/configs/lightgen/spatial_single_video4_compact_readout.yaml",
+        "archive_ref": "refs/archive/checkout-preservation-20261004/original18"
+      }
+    },
+    {
+      "path": "LightGenV2/reports/20260927_demo_energy_efficiency_a100/ours/01_lgvq/source_snapshot/tasks/t06_video_quality_assessment/configs/lightgen/spatial_single_video4_custom_conv.yaml",
+      "bytes": 4480,
+      "sha256": "197c9edca2483df9a4402bdbe2c72ea28ac46945e6748477fac6286af0c90505",
+      "recovery": {
+        "kind": "crlf_normalized_git_blob",
+        "commit": "ac7e3ecce0bef96ae7d91f8de6e478542913bd4e",
+        "path": "LightGenV2/tasks/t06_video_quality_assessment/configs/lightgen/spatial_single_video4_custom_conv.yaml",
+        "archive_ref": "refs/archive/checkout-preservation-20261004/original18"
+      }
+    },
+    {
+      "path": "LightGenV2/reports/20260927_demo_energy_efficiency_a100/ours/01_lgvq/source_snapshot/tasks/t06_video_quality_assessment/configs/lightgen/spatial_single_video4_custom_conv_compressed.yaml",
+      "bytes": 2160,
+      "sha256": "65673e871fb6fe24a309f8e6fac8b167494e82b270c5d0b848af39d01f4fd9fe",
+      "recovery": {
+        "kind": "crlf_normalized_git_blob",
+        "commit": "ac7e3ecce0bef96ae7d91f8de6e478542913bd4e",
+        "path": "LightGenV2/tasks/t06_video_quality_assessment/configs/lightgen/spatial_single_video4_custom_conv_compressed.yaml",
+        "archive_ref": "refs/archive/checkout-preservation-20261004/original18"
+      }
+    },
+    {
+      "path": "LightGenV2/reports/20260927_demo_energy_efficiency_a100/ours/01_lgvq/source_snapshot/tasks/t06_video_quality_assessment/configs/lightgen/spatial_single_video4_srcc06665.yaml",
+      "bytes": 2482,
+      "sha256": "8d197f4e8f64c99a2142c756991147fc90851dbcaf00c97d97867f0c8398cc1b",
+      "recovery": {
+        "kind": "crlf_normalized_git_blob",
+        "commit": "ac7e3ecce0bef96ae7d91f8de6e478542913bd4e",
+        "path": "LightGenV2/tasks/t06_video_quality_assessment/configs/lightgen/spatial_single_video4_srcc06665.yaml",
+        "archive_ref": "refs/archive/checkout-preservation-20261004/original18"
+      }
+    },
+    {
+      "path": "LightGenV2/reports/20260927_demo_energy_efficiency_a100/ours/01_lgvq/source_snapshot/tasks/t06_video_quality_assessment/configs/lightgen/spatial_single_video4_two_branch.yaml",
+      "bytes": 2342,
+      "sha256": "dbed0b269b9baf457224a797bc2cb06b79eb33e11d9e750db1f9cf8e785caaad",
+      "recovery": {
+        "kind": "crlf_normalized_git_blob",
+        "commit": "ac7e3ecce0bef96ae7d91f8de6e478542913bd4e",
+        "path": "LightGenV2/tasks/t06_video_quality_assessment/configs/lightgen/spatial_single_video4_two_branch.yaml",
+        "archive_ref": "refs/archive/checkout-preservation-20261004/original18"
+      }
+    },
+    {
+      "path": "LightGenV2/reports/20260927_demo_energy_efficiency_a100/ours/01_lgvq/source_snapshot/tasks/t06_video_quality_assessment/configs/lightgen/spatial_single_video4_two_branch_ema_q8.yaml",
+      "bytes": 1743,
+      "sha256": "860cb4fa39e393192f484bfe078f56fe7426b7b67b87707e9bf8cc4ec524322d",
+      "recovery": {
+        "kind": "crlf_normalized_git_blob",
+        "commit": "ac7e3ecce0bef96ae7d91f8de6e478542913bd4e",
+        "path": "LightGenV2/tasks/t06_video_quality_assessment/configs/lightgen/spatial_single_video4_two_branch_ema_q8.yaml",
+        "archive_ref": "refs/archive/checkout-preservation-20261004/original18"
+      }
+    },
+    {
+      "path": "LightGenV2/reports/20260927_demo_energy_efficiency_a100/ours/01_lgvq/source_snapshot/tasks/t06_video_quality_assessment/configs/lightgen/temporal36_balanced.yaml",
+      "bytes": 2275,
+      "sha256": "72f66cd63f6f5696b36a5948e03815fec1516135236dbde67e3fb479e4417df4",
+      "recovery": {
+        "kind": "crlf_normalized_git_blob",
+        "commit": "ac7e3ecce0bef96ae7d91f8de6e478542913bd4e",
+        "path": "LightGenV2/tasks/t06_video_quality_assessment/configs/lightgen/temporal36_balanced.yaml",
+        "archive_ref": "refs/archive/checkout-preservation-20261004/original18"
+      }
+    },
+    {
+      "path": "LightGenV2/reports/20260927_demo_energy_efficiency_a100/ours/01_lgvq/source_snapshot/tasks/t06_video_quality_assessment/configs/lightgen/temporal_multivideo16x4_readout_h256_s171.yaml",
+      "bytes": 406,
+      "sha256": "1e63967a085a68803ea527ff09c008fcb9281db1f5911103c76170ec84bce912",
+      "recovery": {
+        "kind": "crlf_normalized_git_blob",
+        "commit": "ac7e3ecce0bef96ae7d91f8de6e478542913bd4e",
+        "path": "LightGenV2/tasks/t06_video_quality_assessment/configs/lightgen/temporal_multivideo16x4_readout_h256_s171.yaml",
+        "archive_ref": "refs/archive/checkout-preservation-20261004/original18"
+      }
+    },
+    {
+      "path": "LightGenV2/reports/20260927_demo_energy_efficiency_a100/ours/01_lgvq/source_snapshot/tasks/t06_video_quality_assessment/configs/lightgen/temporal_multivideo16x4_readout_h512_s170.yaml",
+      "bytes": 496,
+      "sha256": "f3dd3867c9e5b1781ffe6ca1cbaf3ddb8ad5dc591dc634174c2944f3d9baea77",
+      "recovery": {
+        "kind": "crlf_normalized_git_blob",
+        "commit": "ac7e3ecce0bef96ae7d91f8de6e478542913bd4e",
+        "path": "LightGenV2/tasks/t06_video_quality_assessment/configs/lightgen/temporal_multivideo16x4_readout_h512_s170.yaml",
+        "archive_ref": "refs/archive/checkout-preservation-20261004/original18"
+      }
+    },
+    {
+      "path": "LightGenV2/reports/20260927_demo_energy_efficiency_a100/ours/01_lgvq/source_snapshot/tasks/t06_video_quality_assessment/configs/lightgen/temporal_multivideo16x4_readout_h640_s172.yaml",
+      "bytes": 397,
+      "sha256": "6c7c6955e074a46315d01f8f32497dfc39a83f012544b1e8a1dc83a7366446a2",
+      "recovery": {
+        "kind": "crlf_normalized_git_blob",
+        "commit": "ac7e3ecce0bef96ae7d91f8de6e478542913bd4e",
+        "path": "LightGenV2/tasks/t06_video_quality_assessment/configs/lightgen/temporal_multivideo16x4_readout_h640_s172.yaml",
+        "archive_ref": "refs/archive/checkout-preservation-20261004/original18"
+      }
+    },
+    {
+      "path": "LightGenV2/reports/20260927_demo_energy_efficiency_a100/ours/01_lgvq/source_snapshot/tasks/t06_video_quality_assessment/configs/lightgen/temporal_multivideo16x4_readout_rank128_s178.yaml",
+      "bytes": 396,
+      "sha256": "abb53c7ccca7ceb6ba66214ade345f4d6dcf07b207da4401b0131bda4776c314",
+      "recovery": {
+        "kind": "crlf_normalized_git_blob",
+        "commit": "ac7e3ecce0bef96ae7d91f8de6e478542913bd4e",
+        "path": "LightGenV2/tasks/t06_video_quality_assessment/configs/lightgen/temporal_multivideo16x4_readout_rank128_s178.yaml",
+        "archive_ref": "refs/archive/checkout-preservation-20261004/original18"
+      }
+    },
+    {
+      "path": "LightGenV2/reports/20260927_demo_energy_efficiency_a100/ours/01_lgvq/source_snapshot/tasks/t06_video_quality_assessment/configs/lightgen/temporal_multivideo16x4_readout_rank192_s177.yaml",
+      "bytes": 415,
+      "sha256": "d107c2d0289e3b246b173ac2da5ea1c0fc6485d1e8f8d277ca2ae52f6b51a70d",
+      "recovery": {
+        "kind": "crlf_normalized_git_blob",
+        "commit": "ac7e3ecce0bef96ae7d91f8de6e478542913bd4e",
+        "path": "LightGenV2/tasks/t06_video_quality_assessment/configs/lightgen/temporal_multivideo16x4_readout_rank192_s177.yaml",
+        "archive_ref": "refs/archive/checkout-preservation-20261004/original18"
+      }
+    },
+    {
+      "path": "LightGenV2/reports/20260927_demo_energy_efficiency_a100/ours/01_lgvq/source_snapshot/tasks/t06_video_quality_assessment/configs/lightgen/temporal_multivideo16x4_readout_rank256_s176.yaml",
+      "bytes": 334,
+      "sha256": "fc8b0973c77a92758fc882a1485bec45da2be3b07a9a1255ae5403f09a964c23",
+      "recovery": {
+        "kind": "crlf_normalized_git_blob",
+        "commit": "ac7e3ecce0bef96ae7d91f8de6e478542913bd4e",
+        "path": "LightGenV2/tasks/t06_video_quality_assessment/configs/lightgen/temporal_multivideo16x4_readout_rank256_s176.yaml",
+        "archive_ref": "refs/archive/checkout-preservation-20261004/original18"
+      }
+    },
+    {
+      "path": "LightGenV2/reports/20260927_demo_energy_efficiency_a100/ours/01_lgvq/source_snapshot/tasks/t06_video_quality_assessment/configs/lightgen/temporal_multivideo16x4_readout_rank320_s175.yaml",
+      "bytes": 331,
+      "sha256": "9e9019575ea31aee82a8d66a76fc9403065aaae4947690b28105dcac74d0c92d",
+      "recovery": {
+        "kind": "crlf_normalized_git_blob",
+        "commit": "ac7e3ecce0bef96ae7d91f8de6e478542913bd4e",
+        "path": "LightGenV2/tasks/t06_video_quality_assessment/configs/lightgen/temporal_multivideo16x4_readout_rank320_s175.yaml",
+        "archive_ref": "refs/archive/checkout-preservation-20261004/original18"
+      }
+    },
+    {
+      "path": "LightGenV2/reports/20260927_demo_energy_efficiency_a100/ours/01_lgvq/source_snapshot/tasks/t06_video_quality_assessment/configs/lightgen/temporal_multivideo16x4_readout_rank384_s174.yaml",
+      "bytes": 325,
+      "sha256": "3d89030ba99d9e5f4dcefe3f1cf3a5ad28b482f68ba930dba33439962f6e0c0a",
+      "recovery": {
+        "kind": "crlf_normalized_git_blob",
+        "commit": "ac7e3ecce0bef96ae7d91f8de6e478542913bd4e",
+        "path": "LightGenV2/tasks/t06_video_quality_assessment/configs/lightgen/temporal_multivideo16x4_readout_rank384_s174.yaml",
+        "archive_ref": "refs/archive/checkout-preservation-20261004/original18"
+      }
+    },
+    {
+      "path": "LightGenV2/reports/20260927_demo_energy_efficiency_a100/ours/01_lgvq/source_snapshot/tasks/t06_video_quality_assessment/configs/lightgen/temporal_multivideo16x4_readout_rank48_s180.yaml",
+      "bytes": 478,
+      "sha256": "329ef897975c087ecfaec156aedab99142088426a2ff1364fbe91dcdcb84f7f8",
+      "recovery": {
+        "kind": "crlf_normalized_git_blob",
+        "commit": "ac7e3ecce0bef96ae7d91f8de6e478542913bd4e",
+        "path": "LightGenV2/tasks/t06_video_quality_assessment/configs/lightgen/temporal_multivideo16x4_readout_rank48_s180.yaml",
+        "archive_ref": "refs/archive/checkout-preservation-20261004/original18"
+      }
+    },
+    {
+      "path": "LightGenV2/reports/20260927_demo_energy_efficiency_a100/ours/01_lgvq/source_snapshot/tasks/t06_video_quality_assessment/configs/lightgen/temporal_multivideo16x4_readout_rank512_s173.yaml",
+      "bytes": 328,
+      "sha256": "0e701969da6b2be29770a8dfc3bcd0a5d04cec24f0f8af0dae7c40c252eec2c6",
+      "recovery": {
+        "kind": "crlf_normalized_git_blob",
+        "commit": "ac7e3ecce0bef96ae7d91f8de6e478542913bd4e",
+        "path": "LightGenV2/tasks/t06_video_quality_assessment/configs/lightgen/temporal_multivideo16x4_readout_rank512_s173.yaml",
+        "archive_ref": "refs/archive/checkout-preservation-20261004/original18"
+      }
+    },
+    {
+      "path": "LightGenV2/reports/20260927_demo_energy_efficiency_a100/ours/01_lgvq/source_snapshot/tasks/t06_video_quality_assessment/configs/lightgen/temporal_multivideo16x4_readout_rank64_s179.yaml",
+      "bytes": 482,
+      "sha256": "ff235dcc25ce59e89dee63ed23f8c1e0e380e815babad72e67d40aaf068c1a9f",
+      "recovery": {
+        "kind": "crlf_normalized_git_blob",
+        "commit": "ac7e3ecce0bef96ae7d91f8de6e478542913bd4e",
+        "path": "LightGenV2/tasks/t06_video_quality_assessment/configs/lightgen/temporal_multivideo16x4_readout_rank64_s179.yaml",
+        "archive_ref": "refs/archive/checkout-preservation-20261004/original18"
+      }
+    },
+    {
+      "path": "LightGenV2/reports/20260927_demo_energy_efficiency_a100/ours/01_lgvq/source_snapshot/tasks/t06_video_quality_assessment/configs/spatial_hardware_readout_tuning.json",
+      "bytes": 361,
+      "sha256": "92918f4c2429f7e348e28ce14e658528ae9fa07b10840a946d44b129d6693a22",
+      "recovery": {
+        "kind": "current_main_crlf_normalized_git_blob",
+        "commit": "57a6b1ad43b04e42deb89c84165489794d4e5ab9",
+        "path": "LightGenV2/tasks/t06_video_quality_assessment/configs/spatial_hardware_readout_tuning.json",
+        "git_blob": "00f803f44e8a5e0c0424d9f95e8559f66126c0a2"
+      }
+    },
+    {
+      "path": "LightGenV2/reports/20260927_demo_energy_efficiency_a100/ours/01_lgvq/source_snapshot/tasks/t06_video_quality_assessment/configs/spatial_measured_partial_test20.json",
+      "bytes": 645,
+      "sha256": "6955a216beaa9325abb7d52636ae4446b01beb88b2ee9bfd912a55a7aa4dd533",
+      "recovery": {
+        "kind": "current_main_crlf_normalized_git_blob",
+        "commit": "57a6b1ad43b04e42deb89c84165489794d4e5ab9",
+        "path": "LightGenV2/tasks/t06_video_quality_assessment/configs/spatial_measured_partial_test20.json",
+        "git_blob": "a6fa8441724219b07558546fbd8a6e9ef49e65ca"
+      }
+    },
+    {
+      "path": "LightGenV2/reports/20260927_demo_energy_efficiency_a100/ours/01_lgvq/source_snapshot/tasks/t06_video_quality_assessment/configs/spatial_measured_partial_test20_weighted.json",
+      "bytes": 465,
+      "sha256": "580306346a548b21bae2e4211f13bf1a65e18538442f30488682b6af5e113e5f",
+      "recovery": {
+        "kind": "current_main_crlf_normalized_git_blob",
+        "commit": "57a6b1ad43b04e42deb89c84165489794d4e5ab9",
+        "path": "LightGenV2/tasks/t06_video_quality_assessment/configs/spatial_measured_partial_test20_weighted.json",
+        "git_blob": "18316fc1801637e3a9dd8094366eed79b2d2529c"
+      }
+    },
+    {
+      "path": "LightGenV2/reports/20260927_demo_energy_efficiency_a100/ours/01_lgvq/source_snapshot/tasks/t06_video_quality_assessment/configs/spatial_measured_readout_rank.json",
+      "bytes": 377,
+      "sha256": "0a96cf3284b52b2d6d0013e566dd1af36de93a7af6d8f1c2d5510108ab095628",
+      "recovery": {
+        "kind": "current_main_crlf_normalized_git_blob",
+        "commit": "57a6b1ad43b04e42deb89c84165489794d4e5ab9",
+        "path": "LightGenV2/tasks/t06_video_quality_assessment/configs/spatial_measured_readout_rank.json",
+        "git_blob": "7aa7cd69e1df3c4dc710652ae89b9eaa2c83be6c"
+      }
+    },
+    {
+      "path": "LightGenV2/reports/20260927_demo_energy_efficiency_a100/ours/01_lgvq/source_snapshot/tasks/t06_video_quality_assessment/dataset/README.md",
+      "bytes": 745,
+      "sha256": "9f0f5a52fe1786ad5a4fe672d092febcb51735380d31b7de4cf0fbc8c0b65c30",
+      "recovery": {
+        "kind": "current_main_crlf_normalized_git_blob",
+        "commit": "57a6b1ad43b04e42deb89c84165489794d4e5ab9",
+        "path": "LightGenV2/tasks/t06_video_quality_assessment/dataset/README.md",
+        "git_blob": "2321f51dd52f72c3543bb8d58c75c9a24a3adf40"
+      }
+    },
+    {
+      "path": "LightGenV2/reports/20260927_demo_energy_efficiency_a100/ours/01_lgvq/source_snapshot/tasks/t06_video_quality_assessment/fetch_measured_archive.py",
+      "bytes": 2791,
+      "sha256": "2b897d898eba637561ece96f9ca9e66915d5a18176b43f64e6414df992395e63",
+      "recovery": {
+        "kind": "crlf_normalized_git_blob",
+        "commit": "ac7e3ecce0bef96ae7d91f8de6e478542913bd4e",
+        "path": "LightGenV2/tasks/t06_video_quality_assessment/fetch_measured_archive.py",
+        "archive_ref": "refs/archive/checkout-preservation-20261004/original18"
+      }
+    },
+    {
+      "path": "LightGenV2/reports/20260927_demo_energy_efficiency_a100/ours/01_lgvq/source_snapshot/tasks/t06_video_quality_assessment/hardware/AI_TEMPORAL08044_HANDOFF.md",
+      "bytes": 5050,
+      "sha256": "f76989461e93d7ea94613db47b1950c64dd02879e5d8a7ceda171894d17537c5",
+      "recovery": {
+        "kind": "crlf_normalized_git_blob",
+        "commit": "ac7e3ecce0bef96ae7d91f8de6e478542913bd4e",
+        "path": "LightGenV2/tasks/t06_video_quality_assessment/hardware/AI_TEMPORAL08044_HANDOFF.md",
+        "archive_ref": "refs/archive/checkout-preservation-20261004/original18"
+      }
+    },
+    {
+      "path": "LightGenV2/reports/20260927_demo_energy_efficiency_a100/ours/01_lgvq/source_snapshot/tasks/t06_video_quality_assessment/hardware/COMMAND_SHS.md",
+      "bytes": 7799,
+      "sha256": "961439e6e30dbb029bb05ffb65776236cef4fc88a2a17d9100d7e418ff4386e1",
+      "recovery": {
+        "kind": "current_main_crlf_normalized_git_blob",
+        "commit": "57a6b1ad43b04e42deb89c84165489794d4e5ab9",
+        "path": "LightGenV2/tasks/t06_video_quality_assessment/hardware/COMMAND_SHS.md",
+        "git_blob": "9ecc121ccfc5cc23ec4179b09d32c8d460a42a7c"
+      }
+    },
+    {
+      "path": "LightGenV2/reports/20260927_demo_energy_efficiency_a100/ours/01_lgvq/source_snapshot/tasks/t06_video_quality_assessment/hardware/README.md",
+      "bytes": 1519,
+      "sha256": "7354772276535d4f486b2493e3b3da7dd587e5fabe35d8278139119554aea10b",
+      "recovery": {
+        "kind": "current_main_crlf_normalized_git_blob",
+        "commit": "57a6b1ad43b04e42deb89c84165489794d4e5ab9",
+        "path": "LightGenV2/tasks/t06_video_quality_assessment/hardware/README.md",
+        "git_blob": "61e0cee28acce926ca65441aa74df730e338ec2b"
+      }
+    },
+    {
+      "path": "LightGenV2/reports/20260927_demo_energy_efficiency_a100/ours/01_lgvq/source_snapshot/tasks/t06_video_quality_assessment/hardware/adapt_lab.py",
+      "bytes": 305,
+      "sha256": "a97a323a4f67dbfc47212fc75a0bf69b3ace219924edec1882a388e0eba10a34",
+      "recovery": {
+        "kind": "crlf_normalized_git_blob",
+        "commit": "ac7e3ecce0bef96ae7d91f8de6e478542913bd4e",
+        "path": "LightGenV2/tasks/t06_video_quality_assessment/hardware/adapt_lab.py",
+        "archive_ref": "refs/archive/checkout-preservation-20261004/original18"
+      }
+    },
+    {
+      "path": "LightGenV2/reports/20260927_demo_energy_efficiency_a100/ours/01_lgvq/source_snapshot/tasks/t06_video_quality_assessment/hardware/reproduce_simulation.py",
+      "bytes": 6274,
+      "sha256": "67ee94239b651b733a204797e7a83b032264d6a80227cad3836c3e2539c729f0",
+      "recovery": {
+        "kind": "crlf_normalized_git_blob",
+        "commit": "ac7e3ecce0bef96ae7d91f8de6e478542913bd4e",
+        "path": "LightGenV2/tasks/t06_video_quality_assessment/hardware/reproduce_simulation.py",
+        "archive_ref": "refs/archive/checkout-preservation-20261004/original18"
+      }
+    },
+    {
+      "path": "LightGenV2/reports/20260927_demo_energy_efficiency_a100/ours/01_lgvq/source_snapshot/tasks/t06_video_quality_assessment/hardware/run_lab.py",
+      "bytes": 299,
+      "sha256": "60bf935affa153dd4eb8ae362ebd634164aa5c4c4dc18f08c63cd44f76a0e6e3",
+      "recovery": {
+        "kind": "crlf_normalized_git_blob",
+        "commit": "ac7e3ecce0bef96ae7d91f8de6e478542913bd4e",
+        "path": "LightGenV2/tasks/t06_video_quality_assessment/hardware/run_lab.py",
+        "archive_ref": "refs/archive/checkout-preservation-20261004/original18"
+      }
+    },
+    {
+      "path": "LightGenV2/reports/20260927_demo_energy_efficiency_a100/ours/01_lgvq/source_snapshot/tasks/t06_video_quality_assessment/lab_bench.py",
+      "bytes": 15049,
+      "sha256": "59350025e8c9dcf8f9a7837ed0be6185bde173828dd1e968a9972ef414628a5f",
+      "recovery": {
+        "kind": "crlf_normalized_git_blob",
+        "commit": "ac7e3ecce0bef96ae7d91f8de6e478542913bd4e",
+        "path": "LightGenV2/tasks/t06_video_quality_assessment/lab_bench.py",
+        "archive_ref": "refs/archive/checkout-preservation-20261004/original18"
+      }
+    },
+    {
+      "path": "LightGenV2/reports/20260927_demo_energy_efficiency_a100/ours/01_lgvq/source_snapshot/tasks/t06_video_quality_assessment/lab_bundle.py",
+      "bytes": 8918,
+      "sha256": "b30a09fb336fa4d9f790251352b40922c00e12a28b03e6bf12bdfac59eff5c54",
+      "recovery": {
+        "kind": "crlf_normalized_git_blob",
+        "commit": "ac7e3ecce0bef96ae7d91f8de6e478542913bd4e",
+        "path": "LightGenV2/tasks/t06_video_quality_assessment/lab_bundle.py",
+        "archive_ref": "refs/archive/checkout-preservation-20261004/original18"
+      }
+    },
+    {
+      "path": "LightGenV2/reports/20260927_demo_energy_efficiency_a100/ours/01_lgvq/source_snapshot/tasks/t06_video_quality_assessment/lab_exposure_session.py",
+      "bytes": 4356,
+      "sha256": "0ef01b5c90254c575a272f749c27e7b480507ffc8dd00b4cef10956a4238e5da",
+      "recovery": {
+        "kind": "crlf_normalized_git_blob",
+        "commit": "ac7e3ecce0bef96ae7d91f8de6e478542913bd4e",
+        "path": "LightGenV2/tasks/t06_video_quality_assessment/lab_exposure_session.py",
+        "archive_ref": "refs/archive/checkout-preservation-20261004/original18"
+      }
+    },
+    {
+      "path": "LightGenV2/reports/20260927_demo_energy_efficiency_a100/ours/01_lgvq/source_snapshot/tasks/t06_video_quality_assessment/lab_manual_stage.py",
+      "bytes": 12566,
+      "sha256": "ec9ec326a9347fcb797a081563f6f0343b830572692e5f1878a3044c371dfbeb",
+      "recovery": {
+        "kind": "crlf_normalized_git_blob",
+        "commit": "ac7e3ecce0bef96ae7d91f8de6e478542913bd4e",
+        "path": "LightGenV2/tasks/t06_video_quality_assessment/lab_manual_stage.py",
+        "archive_ref": "refs/archive/checkout-preservation-20261004/original18"
+      }
+    },
+    {
+      "path": "LightGenV2/reports/20260927_demo_energy_efficiency_a100/ours/01_lgvq/source_snapshot/tasks/t06_video_quality_assessment/lab_phase.py",
+      "bytes": 1772,
+      "sha256": "cadcd72710e734577cc1fa86959e0879d46728cb8f2eb6fe80dcb1d1d00bee82",
+      "recovery": {
+        "kind": "crlf_normalized_git_blob",
+        "commit": "ac7e3ecce0bef96ae7d91f8de6e478542913bd4e",
+        "path": "LightGenV2/tasks/t06_video_quality_assessment/lab_phase.py",
+        "archive_ref": "refs/archive/checkout-preservation-20261004/original18"
+      }
+    },
+    {
+      "path": "LightGenV2/reports/20260927_demo_energy_efficiency_a100/ours/01_lgvq/source_snapshot/tasks/t06_video_quality_assessment/lab_phase_verification.py",
+      "bytes": 7764,
+      "sha256": "df01ae729063ee882f1ee697204c602982740a48abe003a1eaaa6c95817c6b9f",
+      "recovery": {
+        "kind": "crlf_normalized_git_blob",
+        "commit": "ac7e3ecce0bef96ae7d91f8de6e478542913bd4e",
+        "path": "LightGenV2/tasks/t06_video_quality_assessment/lab_phase_verification.py",
+        "archive_ref": "refs/archive/checkout-preservation-20261004/original18"
+      }
+    },
+    {
+      "path": "LightGenV2/reports/20260927_demo_energy_efficiency_a100/ours/01_lgvq/source_snapshot/tasks/t06_video_quality_assessment/lab_supervise.py",
+      "bytes": 711,
+      "sha256": "f5bafe5b6e16b9d65345e00ff3f23e10c01f7689e1cc945136485f68078688f1",
+      "recovery": {
+        "kind": "crlf_normalized_git_blob",
+        "commit": "ac7e3ecce0bef96ae7d91f8de6e478542913bd4e",
+        "path": "LightGenV2/tasks/t06_video_quality_assessment/lab_supervise.py",
+        "archive_ref": "refs/archive/checkout-preservation-20261004/original18"
+      }
+    },
+    {
+      "path": "LightGenV2/reports/20260927_demo_energy_efficiency_a100/ours/01_lgvq/source_snapshot/tasks/t06_video_quality_assessment/models/README.md",
+      "bytes": 1473,
+      "sha256": "d79ad198d3c60989caa49325e7704c64e04ee74f7a2602a9c320a3d43de53d7f",
+      "recovery": {
+        "kind": "crlf_normalized_git_blob",
+        "commit": "ac7e3ecce0bef96ae7d91f8de6e478542913bd4e",
+        "path": "LightGenV2/tasks/t06_video_quality_assessment/models/README.md",
+        "archive_ref": "refs/archive/checkout-preservation-20261004/original18"
+      }
+    },
+    {
+      "path": "LightGenV2/reports/20260927_demo_energy_efficiency_a100/ours/01_lgvq/source_snapshot/tasks/t06_video_quality_assessment/quality_token_common.py",
+      "bytes": 9690,
+      "sha256": "2da9334f06b5a5a13e726116201c897c96f8cce635fac667474fccabefa86810",
+      "recovery": {
+        "kind": "current_main_exact_git_blob",
+        "commit": "57a6b1ad43b04e42deb89c84165489794d4e5ab9",
+        "path": "LightGenV2/reports/20260927_demo_energy_efficiency_a100/baseline/01_lgvq/source_snapshot/tasks/t06_video_quality_assessment/quality_token_common.py",
+        "git_blob": "f543bc2347b6004913d6cfde8aeb92dcc7869725"
+      }
+    },
+    {
+      "path": "LightGenV2/reports/20260927_demo_energy_efficiency_a100/ours/01_lgvq/source_snapshot/tasks/t06_video_quality_assessment/quality_token_dataset_once.py",
+      "bytes": 12511,
+      "sha256": "c1af8521e7aedb9564562caa8c7eab268c31c491d48cc41ca341655dfd7f4728",
+      "recovery": {
+        "kind": "crlf_normalized_git_blob",
+        "commit": "ac7e3ecce0bef96ae7d91f8de6e478542913bd4e",
+        "path": "LightGenV2/tasks/t06_video_quality_assessment/quality_token_dataset_once.py",
+        "archive_ref": "refs/archive/checkout-preservation-20261004/original18"
+      }
+    },
+    {
+      "path": "LightGenV2/reports/20260927_demo_energy_efficiency_a100/ours/01_lgvq/source_snapshot/tasks/t06_video_quality_assessment/releases/README.md",
+      "bytes": 203,
+      "sha256": "8e8c243910478eb59d435177929172cef2158ec7bc8ef82e0d6ca737ad50a015",
+      "recovery": {
+        "kind": "current_main_crlf_normalized_git_blob",
+        "commit": "57a6b1ad43b04e42deb89c84165489794d4e5ab9",
+        "path": "LightGenV2/tasks/t06_video_quality_assessment/releases/README.md",
+        "git_blob": "b393f969da4a4087a56d02078b08e6eb87f87d4c"
+      }
+    },
+    {
+      "path": "LightGenV2/reports/20260927_demo_energy_efficiency_a100/ours/01_lgvq/source_snapshot/tasks/t06_video_quality_assessment/reports/5090d_moe_and_qwen_baselines_20260907/README.md",
+      "bytes": 9179,
+      "sha256": "c548f78c99533671b27efbfe9fa98882a0c37b1f00079eba932902920308886b",
+      "recovery": {
+        "kind": "crlf_normalized_git_blob",
+        "commit": "ac7e3ecce0bef96ae7d91f8de6e478542913bd4e",
+        "path": "LightGenV2/tasks/t06_video_quality_assessment/reports/5090d_moe_and_qwen_baselines_20260907/README.md",
+        "archive_ref": "refs/archive/checkout-preservation-20261004/original18"
+      }
+    },
+    {
+      "path": "LightGenV2/reports/20260927_demo_energy_efficiency_a100/ours/01_lgvq/source_snapshot/tasks/t06_video_quality_assessment/reports/5090d_moe_and_qwen_baselines_20260907/baseline_and_moe_summary.csv",
+      "bytes": 1450,
+      "sha256": "40b39f9962b4ad3663c9a63ab65f51e337b882b908bebfb7ecbb7bc3686b1863",
+      "recovery": {
+        "kind": "current_main_crlf_normalized_git_blob",
+        "commit": "57a6b1ad43b04e42deb89c84165489794d4e5ab9",
+        "path": "LightGenV2/tasks/t06_video_quality_assessment/reports/5090d_moe_and_qwen_baselines_20260907/baseline_and_moe_summary.csv",
+        "git_blob": "af73eefba1c055b82ecb3d8cf78cbfa61105b3ce"
+      }
+    },
+    {
+      "path": "LightGenV2/reports/20260927_demo_energy_efficiency_a100/ours/01_lgvq/source_snapshot/tasks/t06_video_quality_assessment/reports/5090d_moe_and_qwen_baselines_20260907/evidence_manifest.json",
+      "bytes": 2120,
+      "sha256": "7d94cc81c04512263870c91b968a62d52dcf5f3ac50f3857b2b93b4639d448b9",
+      "recovery": {
+        "kind": "current_main_crlf_normalized_git_blob",
+        "commit": "57a6b1ad43b04e42deb89c84165489794d4e5ab9",
+        "path": "LightGenV2/tasks/t06_video_quality_assessment/reports/5090d_moe_and_qwen_baselines_20260907/evidence_manifest.json",
+        "git_blob": "3ebf9250a522597fa2672f4cdb4aa11d9a3ebe0d"
+      }
+    },
+    {
+      "path": "LightGenV2/reports/20260927_demo_energy_efficiency_a100/ours/01_lgvq/source_snapshot/tasks/t06_video_quality_assessment/reports/5090d_moe_and_qwen_baselines_20260907/moe_qwen_comparison.pdf",
+      "bytes": 33532,
+      "sha256": "d3e87b7f862f1148b524fa9825cd368061ea750f1de7d5f7e7adbc6b57608392",
+      "recovery": {
+        "kind": "current_main_exact_git_blob",
+        "commit": "57a6b1ad43b04e42deb89c84165489794d4e5ab9",
+        "path": "LightGenV2/tasks/t06_video_quality_assessment/reports/5090d_moe_and_qwen_baselines_20260907/moe_qwen_comparison.pdf",
+        "git_blob": "42a7588bde0e4b5617df18f4eeafebe8f1ad3f1d"
+      }
+    },
+    {
+      "path": "LightGenV2/reports/20260927_demo_energy_efficiency_a100/ours/01_lgvq/source_snapshot/tasks/t06_video_quality_assessment/reports/5090d_moe_and_qwen_baselines_20260907/optical_component_timings_5090d.csv",
+      "bytes": 5773,
+      "sha256": "557e14f587d10750612e7ffc2e692832f0cfbcc92100b16fe6e2c68141c33c77",
+      "recovery": {
+        "kind": "current_main_crlf_normalized_git_blob",
+        "commit": "57a6b1ad43b04e42deb89c84165489794d4e5ab9",
+        "path": "LightGenV2/tasks/t06_video_quality_assessment/reports/5090d_moe_and_qwen_baselines_20260907/optical_component_timings_5090d.csv",
+        "git_blob": "19ba9c7c357d58149bb201a02fab9a5d205529e9"
+      }
+    },
+    {
+      "path": "LightGenV2/reports/20260927_demo_energy_efficiency_a100/ours/01_lgvq/source_snapshot/tasks/t06_video_quality_assessment/reports/5090d_moe_and_qwen_baselines_20260907/optical_moe_stage_timing.pdf",
+      "bytes": 33786,
+      "sha256": "2a472bf6dee182477dad1299ac8cb29d96b7531d93f6c28d7e6f9b2fc496ec3e",
+      "recovery": {
+        "kind": "current_main_exact_git_blob",
+        "commit": "57a6b1ad43b04e42deb89c84165489794d4e5ab9",
+        "path": "LightGenV2/tasks/t06_video_quality_assessment/reports/5090d_moe_and_qwen_baselines_20260907/optical_moe_stage_timing.pdf",
+        "git_blob": "c5b57ff0dad8e00b5cab0055d43f757179a1e76a"
+      }
+    },
+    {
+      "path": "LightGenV2/reports/20260927_demo_energy_efficiency_a100/ours/01_lgvq/source_snapshot/tasks/t06_video_quality_assessment/reports/5090d_moe_and_qwen_baselines_20260907/optical_task_summary.csv",
+      "bytes": 1328,
+      "sha256": "6c72dbdbba61035f3b9c2b37fb360542f5b5411868a785afaf1632f8d2f993a4",
+      "recovery": {
+        "kind": "current_main_crlf_normalized_git_blob",
+        "commit": "57a6b1ad43b04e42deb89c84165489794d4e5ab9",
+        "path": "LightGenV2/tasks/t06_video_quality_assessment/reports/5090d_moe_and_qwen_baselines_20260907/optical_task_summary.csv",
+        "git_blob": "70927df353b218bc9bf2032b3ced19ff0e77ad84"
+      }
+    },
+    {
+      "path": "LightGenV2/reports/20260927_demo_energy_efficiency_a100/ours/01_lgvq/source_snapshot/tasks/t06_video_quality_assessment/reports/architecture/ELECTRONIC_PARAMETER_AUDIT_20260912.md",
+      "bytes": 3650,
+      "sha256": "0b3af859002467e3c8719eb25046f1ff1d1f08eea714cf932362405b74953b44",
+      "recovery": {
+        "kind": "crlf_normalized_git_blob",
+        "commit": "ac7e3ecce0bef96ae7d91f8de6e478542913bd4e",
+        "path": "LightGenV2/tasks/t06_video_quality_assessment/reports/architecture/ELECTRONIC_PARAMETER_AUDIT_20260912.md",
+        "archive_ref": "refs/archive/checkout-preservation-20261004/original18"
+      }
+    },
+    {
+      "path": "LightGenV2/reports/20260927_demo_energy_efficiency_a100/ours/01_lgvq/source_snapshot/tasks/t06_video_quality_assessment/reports/handoff/AI_OPTIMIZATION_AND_STAGED_TRAINING_GROUP_MEETING.md",
+      "bytes": 33634,
+      "sha256": "39a38f59ac373d089b7fc6a1a5694047d2549c3733250ca035166582b4e89897",
+      "recovery": {
+        "kind": "crlf_normalized_git_blob",
+        "commit": "ac7e3ecce0bef96ae7d91f8de6e478542913bd4e",
+        "path": "LightGenV2/tasks/t06_video_quality_assessment/reports/handoff/AI_OPTIMIZATION_AND_STAGED_TRAINING_GROUP_MEETING.md",
+        "archive_ref": "refs/archive/checkout-preservation-20261004/original18"
+      }
+    },
+    {
+      "path": "LightGenV2/reports/20260927_demo_energy_efficiency_a100/ours/01_lgvq/source_snapshot/tasks/t06_video_quality_assessment/reports/handoff/DATASETS_AND_BENCHMARKS_GROUP_MEETING.md",
+      "bytes": 15973,
+      "sha256": "3260ec7895fb1657fef4ca4159b2da50212dda0442f2c877491842c403959e87",
+      "recovery": {
+        "kind": "crlf_normalized_git_blob",
+        "commit": "ac7e3ecce0bef96ae7d91f8de6e478542913bd4e",
+        "path": "LightGenV2/tasks/t06_video_quality_assessment/reports/handoff/DATASETS_AND_BENCHMARKS_GROUP_MEETING.md",
+        "archive_ref": "refs/archive/checkout-preservation-20261004/original18"
+      }
+    },
+    {
+      "path": "LightGenV2/reports/20260927_demo_energy_efficiency_a100/ours/01_lgvq/source_snapshot/tasks/t06_video_quality_assessment/reports/handoff/MASK_LAYOUT_AND_MULTIVIDEO9X4_PLAN.md",
+      "bytes": 7209,
+      "sha256": "46854ed89c25668949879a4fc89d56bf04ecbb5c6e28d28da473b4c856f8b2da",
+      "recovery": {
+        "kind": "current_main_crlf_normalized_git_blob",
+        "commit": "57a6b1ad43b04e42deb89c84165489794d4e5ab9",
+        "path": "LightGenV2/tasks/t06_video_quality_assessment/reports/handoff/MASK_LAYOUT_AND_MULTIVIDEO9X4_PLAN.md",
+        "git_blob": "83886b4b53013c70a8fd06662cfd0a4d5b582d36"
+      }
+    },
+    {
+      "path": "LightGenV2/reports/20260927_demo_energy_efficiency_a100/ours/01_lgvq/source_snapshot/tasks/t06_video_quality_assessment/reports/paper_results/COMPRESSION_AND_REFINEMENT_20260913.md",
+      "bytes": 2963,
+      "sha256": "22c06df94aec483e0cd3921459ccdbed4092eb26b6d07d183ca2e91bcc8e5bd6",
+      "recovery": {
+        "kind": "crlf_normalized_git_blob",
+        "commit": "ac7e3ecce0bef96ae7d91f8de6e478542913bd4e",
+        "path": "LightGenV2/tasks/t06_video_quality_assessment/reports/paper_results/COMPRESSION_AND_REFINEMENT_20260913.md",
+        "archive_ref": "refs/archive/checkout-preservation-20261004/original18"
+      }
+    },
+    {
+      "path": "LightGenV2/reports/20260927_demo_energy_efficiency_a100/ours/01_lgvq/source_snapshot/tasks/t06_video_quality_assessment/reports/paper_results/qwen3vl_quality_token_baseline_r448/README.md",
+      "bytes": 3320,
+      "sha256": "5f2f48e9f023d3704c83b60456dc3e4ef78e18682c9e4151abbd54448afbd869",
+      "recovery": {
+        "kind": "current_main_crlf_normalized_git_blob",
+        "commit": "57a6b1ad43b04e42deb89c84165489794d4e5ab9",
+        "path": "LightGenV2/tasks/t06_video_quality_assessment/reports/paper_results/qwen3vl_quality_token_baseline_r448/README.md",
+        "git_blob": "fddcf1cc58547c3f62b41c7c1845bd8b618c5711"
+      }
+    },
+    {
+      "path": "LightGenV2/reports/20260927_demo_energy_efficiency_a100/ours/01_lgvq/source_snapshot/tasks/t06_video_quality_assessment/reports/paper_results/qwen3vl_quality_token_baseline_r448/framecount_latency_performance.pdf",
+      "bytes": 47118,
+      "sha256": "bbefb3dab3d06299625486483376142facd98909de50237635182cddad89f42e",
+      "recovery": {
+        "kind": "current_main_exact_git_blob",
+        "commit": "57a6b1ad43b04e42deb89c84165489794d4e5ab9",
+        "path": "LightGenV2/tasks/t06_video_quality_assessment/reports/paper_results/qwen3vl_quality_token_baseline_r448/framecount_latency_performance.pdf",
+        "git_blob": "66dba70d45f1b47c7963ecaf6e427704de029c3e"
+      }
+    },
+    {
+      "path": "LightGenV2/reports/20260927_demo_energy_efficiency_a100/ours/01_lgvq/source_snapshot/tasks/t06_video_quality_assessment/reports/paper_results/qwen3vl_quality_token_baseline_r448/latency_ecdf.pdf",
+      "bytes": 45579,
+      "sha256": "8d7c65007f56c44946d005f2795028c563ab266cbc394f9ec496829d3c7e2e83",
+      "recovery": {
+        "kind": "current_main_exact_git_blob",
+        "commit": "57a6b1ad43b04e42deb89c84165489794d4e5ab9",
+        "path": "LightGenV2/tasks/t06_video_quality_assessment/reports/paper_results/qwen3vl_quality_token_baseline_r448/latency_ecdf.pdf",
+        "git_blob": "f17d0e2a0cffbd1757e35a6f4c6b8eaccff95661"
+      }
+    },
+    {
+      "path": "LightGenV2/reports/20260927_demo_energy_efficiency_a100/ours/01_lgvq/source_snapshot/tasks/t06_video_quality_assessment/reports/paper_results/qwen3vl_quality_token_baseline_r448/result.json",
+      "bytes": 8300,
+      "sha256": "92f366d9aa0f8c80cb442b5b7cdb92468ed1eabe9f2e8d341d325314b8e1d054",
+      "recovery": {
+        "kind": "current_main_crlf_normalized_git_blob",
+        "commit": "57a6b1ad43b04e42deb89c84165489794d4e5ab9",
+        "path": "LightGenV2/tasks/t06_video_quality_assessment/reports/paper_results/qwen3vl_quality_token_baseline_r448/result.json",
+        "git_blob": "4c2bb5190ea65c8db58f968e59724bde339446c1"
+      }
+    },
+    {
+      "path": "LightGenV2/reports/20260927_demo_energy_efficiency_a100/ours/01_lgvq/source_snapshot/tasks/t06_video_quality_assessment/reports/paper_results/qwen3vl_quality_token_baseline_r448/scheme2_prediction_scatter.pdf",
+      "bytes": 64721,
+      "sha256": "af49710e82642ac224dc0025e690add0e6c84adf54075ef17c33142f9ff57e36",
+      "recovery": {
+        "kind": "current_main_exact_git_blob",
+        "commit": "57a6b1ad43b04e42deb89c84165489794d4e5ab9",
+        "path": "LightGenV2/tasks/t06_video_quality_assessment/reports/paper_results/qwen3vl_quality_token_baseline_r448/scheme2_prediction_scatter.pdf",
+        "git_blob": "7f423079ce20ff93c105aaa56dbe987b6434bebd"
+      }
+    },
+    {
+      "path": "LightGenV2/reports/20260927_demo_energy_efficiency_a100/ours/01_lgvq/source_snapshot/tasks/t06_video_quality_assessment/reports/paper_results/spatial_compact_readout_20260910/ALIGNED_MULTIVIEW_20260911.md",
+      "bytes": 2719,
+      "sha256": "290e180f3d62f6a6f63f4ec4c67806cf44530ee3faf0451bff41741e5262449d",
+      "recovery": {
+        "kind": "crlf_normalized_git_blob",
+        "commit": "ac7e3ecce0bef96ae7d91f8de6e478542913bd4e",
+        "path": "LightGenV2/tasks/t06_video_quality_assessment/reports/paper_results/spatial_compact_readout_20260910/ALIGNED_MULTIVIEW_20260911.md",
+        "archive_ref": "refs/archive/checkout-preservation-20261004/original18"
+      }
+    },
+    {
+      "path": "LightGenV2/reports/20260927_demo_energy_efficiency_a100/ours/01_lgvq/source_snapshot/tasks/t06_video_quality_assessment/reports/paper_results/spatial_compact_readout_20260910/AUGMENTATION_20260911.md",
+      "bytes": 3251,
+      "sha256": "51ddfcbcc56639173546e800175b598fac249cf26f52c530f16e653ba065d5ad",
+      "recovery": {
+        "kind": "crlf_normalized_git_blob",
+        "commit": "ac7e3ecce0bef96ae7d91f8de6e478542913bd4e",
+        "path": "LightGenV2/tasks/t06_video_quality_assessment/reports/paper_results/spatial_compact_readout_20260910/AUGMENTATION_20260911.md",
+        "archive_ref": "refs/archive/checkout-preservation-20261004/original18"
+      }
+    },
+    {
+      "path": "LightGenV2/reports/20260927_demo_energy_efficiency_a100/ours/01_lgvq/source_snapshot/tasks/t06_video_quality_assessment/reports/paper_results/spatial_compact_readout_20260910/PAIRED_VIEW_20260911.md",
+      "bytes": 1746,
+      "sha256": "334e3d7e26754ff6d8c51432bf1f364fbf5c863060f9480aef67754477c177e1",
+      "recovery": {
+        "kind": "crlf_normalized_git_blob",
+        "commit": "ac7e3ecce0bef96ae7d91f8de6e478542913bd4e",
+        "path": "LightGenV2/tasks/t06_video_quality_assessment/reports/paper_results/spatial_compact_readout_20260910/PAIRED_VIEW_20260911.md",
+        "archive_ref": "refs/archive/checkout-preservation-20261004/original18"
+      }
+    },
+    {
+      "path": "LightGenV2/reports/20260927_demo_energy_efficiency_a100/ours/01_lgvq/source_snapshot/tasks/t06_video_quality_assessment/reports/paper_results/spatial_compact_readout_20260910/README.md",
+      "bytes": 3267,
+      "sha256": "444e0a950720701d607e971c277a085b7adcefabeaeac8b5fa4c3078f1f43387",
+      "recovery": {
+        "kind": "crlf_normalized_git_blob",
+        "commit": "ac7e3ecce0bef96ae7d91f8de6e478542913bd4e",
+        "path": "LightGenV2/tasks/t06_video_quality_assessment/reports/paper_results/spatial_compact_readout_20260910/README.md",
+        "archive_ref": "refs/archive/checkout-preservation-20261004/original18"
+      }
+    },
+    {
+      "path": "LightGenV2/reports/20260927_demo_energy_efficiency_a100/ours/01_lgvq/source_snapshot/tasks/t06_video_quality_assessment/reports/paper_results/spatial_continuous_no_k_20260908/README.md",
+      "bytes": 8959,
+      "sha256": "9de65787733faf73a572ba676acd431aede777dd152e2ad59958057206869bd2",
+      "recovery": {
+        "kind": "crlf_normalized_git_blob",
+        "commit": "ac7e3ecce0bef96ae7d91f8de6e478542913bd4e",
+        "path": "LightGenV2/tasks/t06_video_quality_assessment/reports/paper_results/spatial_continuous_no_k_20260908/README.md",
+        "archive_ref": "refs/archive/checkout-preservation-20261004/original18"
+      }
+    },
+    {
+      "path": "LightGenV2/reports/20260927_demo_energy_efficiency_a100/ours/01_lgvq/source_snapshot/tasks/t06_video_quality_assessment/reports/paper_results/spatial_continuous_no_k_20260908/masks/hardware_mask_export_report.json",
+      "bytes": 24933,
+      "sha256": "31a86e84d3a5f498e8b432dfb62d029bd98ff6ca7ccab622c8fab84bfd3bd0c5",
+      "recovery": {
+        "kind": "crlf_normalized_git_blob",
+        "commit": "ac7e3ecce0bef96ae7d91f8de6e478542913bd4e",
+        "path": "LightGenV2/tasks/t06_video_quality_assessment/reports/paper_results/spatial_continuous_no_k_20260908/masks/hardware_mask_export_report.json",
+        "archive_ref": "refs/archive/checkout-preservation-20261004/original18"
+      }
+    },
+    {
+      "path": "LightGenV2/reports/20260927_demo_energy_efficiency_a100/ours/01_lgvq/source_snapshot/tasks/t06_video_quality_assessment/reports/paper_results/spatial_continuous_no_k_20260908/masks/statistics/phase_statistics.json",
+      "bytes": 14543,
+      "sha256": "fb3cb7cfdf8f23fe0374bf4843dc4abc1892c741417a37c2b613d10e354d6b44",
+      "recovery": {
+        "kind": "crlf_normalized_git_blob",
+        "commit": "ac7e3ecce0bef96ae7d91f8de6e478542913bd4e",
+        "path": "LightGenV2/tasks/t06_video_quality_assessment/reports/paper_results/spatial_continuous_no_k_20260908/masks/statistics/phase_statistics.json",
+        "archive_ref": "refs/archive/checkout-preservation-20261004/original18"
+      }
+    },
+    {
+      "path": "LightGenV2/reports/20260927_demo_energy_efficiency_a100/ours/01_lgvq/source_snapshot/tasks/t06_video_quality_assessment/reports/paper_results/spatial_continuous_no_k_20260908/masks/statistics/phase_tile_statistics.csv",
+      "bytes": 5207,
+      "sha256": "a4f90d9880a8245386f7eb9beb2c8bdd7c0c27d423c96653d3e9a138b450bee2",
+      "recovery": {
+        "kind": "crlf_normalized_git_blob",
+        "commit": "ac7e3ecce0bef96ae7d91f8de6e478542913bd4e",
+        "path": "LightGenV2/tasks/t06_video_quality_assessment/reports/paper_results/spatial_continuous_no_k_20260908/masks/statistics/phase_tile_statistics.csv",
+        "archive_ref": "refs/archive/checkout-preservation-20261004/original18"
+      }
+    },
+    {
+      "path": "LightGenV2/reports/20260927_demo_energy_efficiency_a100/ours/01_lgvq/source_snapshot/tasks/t06_video_quality_assessment/reports/paper_results/spatial_continuous_no_k_20260908/optimization_trials.csv",
+      "bytes": 3529,
+      "sha256": "ac220314216f35f9976f4e31b34f2d8de1217b54cedd95ba5809e7e8c621d6f0",
+      "recovery": {
+        "kind": "crlf_normalized_git_blob",
+        "commit": "ac7e3ecce0bef96ae7d91f8de6e478542913bd4e",
+        "path": "LightGenV2/tasks/t06_video_quality_assessment/reports/paper_results/spatial_continuous_no_k_20260908/optimization_trials.csv",
+        "archive_ref": "refs/archive/checkout-preservation-20261004/original18"
+      }
+    },
+    {
+      "path": "LightGenV2/reports/20260927_demo_energy_efficiency_a100/ours/01_lgvq/source_snapshot/tasks/t06_video_quality_assessment/reports/paper_results/spatial_continuous_no_k_20260908/result.json",
+      "bytes": 4208,
+      "sha256": "416c8f0e3d7ab95b889700b37a9ed8e63b2d3f498389bea0ff2c5c28572904ad",
+      "recovery": {
+        "kind": "crlf_normalized_git_blob",
+        "commit": "ac7e3ecce0bef96ae7d91f8de6e478542913bd4e",
+        "path": "LightGenV2/tasks/t06_video_quality_assessment/reports/paper_results/spatial_continuous_no_k_20260908/result.json",
+        "archive_ref": "refs/archive/checkout-preservation-20261004/original18"
+      }
+    },
+    {
+      "path": "LightGenV2/reports/20260927_demo_energy_efficiency_a100/ours/01_lgvq/source_snapshot/tasks/t06_video_quality_assessment/reports/paper_results/spatial_continuous_no_k_20260908/training_only_checkpoint_interpolation.json",
+      "bytes": 74497,
+      "sha256": "975f181d7428d1dc65fc945502a846f707787c7db412f0d57657df49c3173dc7",
+      "recovery": {
+        "kind": "crlf_normalized_git_blob",
+        "commit": "ac7e3ecce0bef96ae7d91f8de6e478542913bd4e",
+        "path": "LightGenV2/tasks/t06_video_quality_assessment/reports/paper_results/spatial_continuous_no_k_20260908/training_only_checkpoint_interpolation.json",
+        "archive_ref": "refs/archive/checkout-preservation-20261004/original18"
+      }
+    },
+    {
+      "path": "LightGenV2/reports/20260927_demo_energy_efficiency_a100/ours/01_lgvq/source_snapshot/tasks/t06_video_quality_assessment/reports/paper_results/spatial_custom_conv_06672_20260912/README.md",
+      "bytes": 3532,
+      "sha256": "358cabf77d40a0d8c65c8f9aba218221168cc6d035dd6d9b67e869cff9f6e6f9",
+      "recovery": {
+        "kind": "crlf_normalized_git_blob",
+        "commit": "ac7e3ecce0bef96ae7d91f8de6e478542913bd4e",
+        "path": "LightGenV2/tasks/t06_video_quality_assessment/reports/paper_results/spatial_custom_conv_06672_20260912/README.md",
+        "archive_ref": "refs/archive/checkout-preservation-20261004/original18"
+      }
+    },
+    {
+      "path": "LightGenV2/reports/20260927_demo_energy_efficiency_a100/ours/01_lgvq/source_snapshot/tasks/t06_video_quality_assessment/reports/paper_results/spatial_custom_conv_06672_20260912/result.json",
+      "bytes": 2299,
+      "sha256": "62e4a6fc3d1d71844438d0083599d3a40a07018a6d17e16b8247ae965eb86c3e",
+      "recovery": {
+        "kind": "crlf_normalized_git_blob",
+        "commit": "ac7e3ecce0bef96ae7d91f8de6e478542913bd4e",
+        "path": "LightGenV2/tasks/t06_video_quality_assessment/reports/paper_results/spatial_custom_conv_06672_20260912/result.json",
+        "archive_ref": "refs/archive/checkout-preservation-20261004/original18"
+      }
+    },
+    {
+      "path": "LightGenV2/reports/20260927_demo_energy_efficiency_a100/ours/01_lgvq/source_snapshot/tasks/t06_video_quality_assessment/reports/paper_results/spatial_custom_conv_s749_20260910/RESULT.md",
+      "bytes": 2534,
+      "sha256": "2ca5b4c085a02319f6a6021fabcee8ac905af2281e1054be734aa0f45576e707",
+      "recovery": {
+        "kind": "crlf_normalized_git_blob",
+        "commit": "ac7e3ecce0bef96ae7d91f8de6e478542913bd4e",
+        "path": "LightGenV2/tasks/t06_video_quality_assessment/reports/paper_results/spatial_custom_conv_s749_20260910/RESULT.md",
+        "archive_ref": "refs/archive/checkout-preservation-20261004/original18"
+      }
+    },
+    {
+      "path": "LightGenV2/reports/20260927_demo_energy_efficiency_a100/ours/01_lgvq/source_snapshot/tasks/t06_video_quality_assessment/reports/paper_results/spatial_custom_conv_s749_20260910/result.json",
+      "bytes": 2356,
+      "sha256": "5817393d946d539569cb173f0b9194ab55f31f2d853a1175993c085419707820",
+      "recovery": {
+        "kind": "crlf_normalized_git_blob",
+        "commit": "ac7e3ecce0bef96ae7d91f8de6e478542913bd4e",
+        "path": "LightGenV2/tasks/t06_video_quality_assessment/reports/paper_results/spatial_custom_conv_s749_20260910/result.json",
+        "archive_ref": "refs/archive/checkout-preservation-20261004/original18"
+      }
+    },
+    {
+      "path": "LightGenV2/reports/20260927_demo_energy_efficiency_a100/ours/01_lgvq/source_snapshot/tasks/t06_video_quality_assessment/reports/paper_results/spatial_readout_1m_joint_s1321/result.json",
+      "bytes": 1490,
+      "sha256": "21c66bfcc36098c3fcb4d469725cbe3fd026d6827ace353d0b006f7ed2da7422",
+      "recovery": {
+        "kind": "crlf_normalized_git_blob",
+        "commit": "ac7e3ecce0bef96ae7d91f8de6e478542913bd4e",
+        "path": "LightGenV2/tasks/t06_video_quality_assessment/reports/paper_results/spatial_readout_1m_joint_s1321/result.json",
+        "archive_ref": "refs/archive/checkout-preservation-20261004/original18"
+      }
+    },
+    {
+      "path": "LightGenV2/reports/20260927_demo_energy_efficiency_a100/ours/01_lgvq/source_snapshot/tasks/t06_video_quality_assessment/reports/paper_results/spatial_readout_1m_phase_s1327/result.json",
+      "bytes": 1527,
+      "sha256": "0fca29a25416a85cd92f5c45d23d71988c5ac80b1aa0453f97b56b6479fd389e",
+      "recovery": {
+        "kind": "crlf_normalized_git_blob",
+        "commit": "ac7e3ecce0bef96ae7d91f8de6e478542913bd4e",
+        "path": "LightGenV2/tasks/t06_video_quality_assessment/reports/paper_results/spatial_readout_1m_phase_s1327/result.json",
+        "archive_ref": "refs/archive/checkout-preservation-20261004/original18"
+      }
+    },
+    {
+      "path": "LightGenV2/reports/20260927_demo_energy_efficiency_a100/ours/01_lgvq/source_snapshot/tasks/t06_video_quality_assessment/reports/paper_results/spatial_readout_1m_s1314/result.json",
+      "bytes": 757,
+      "sha256": "7bac7b9930b457c43107a59ae477273cef8fc435ee648383d88a61bc830ccee7",
+      "recovery": {
+        "kind": "crlf_normalized_git_blob",
+        "commit": "ac7e3ecce0bef96ae7d91f8de6e478542913bd4e",
+        "path": "LightGenV2/tasks/t06_video_quality_assessment/reports/paper_results/spatial_readout_1m_s1314/result.json",
+        "archive_ref": "refs/archive/checkout-preservation-20261004/original18"
+      }
+    },
+    {
+      "path": "LightGenV2/reports/20260927_demo_energy_efficiency_a100/ours/01_lgvq/source_snapshot/tasks/t06_video_quality_assessment/reports/paper_results/spatial_readout_1m_srcc067/LAST_PHASE_ABLATION.md",
+      "bytes": 4133,
+      "sha256": "f8ae309bfc1a592fea881cd71d7bd0593d586f59143fe2fd02ad342bd992beb3",
+      "recovery": {
+        "kind": "crlf_normalized_git_blob",
+        "commit": "ac7e3ecce0bef96ae7d91f8de6e478542913bd4e",
+        "path": "LightGenV2/tasks/t06_video_quality_assessment/reports/paper_results/spatial_readout_1m_srcc067/LAST_PHASE_ABLATION.md",
+        "archive_ref": "refs/archive/checkout-preservation-20261004/original18"
+      }
+    },
+    {
+      "path": "LightGenV2/reports/20260927_demo_energy_efficiency_a100/ours/01_lgvq/source_snapshot/tasks/t06_video_quality_assessment/reports/paper_results/spatial_readout_1m_srcc067/README.md",
+      "bytes": 1438,
+      "sha256": "92f2f47346d316c27aa96114d4afb174e392f1a9208631a2d836ef894ed108dd",
+      "recovery": {
+        "kind": "crlf_normalized_git_blob",
+        "commit": "ac7e3ecce0bef96ae7d91f8de6e478542913bd4e",
+        "path": "LightGenV2/tasks/t06_video_quality_assessment/reports/paper_results/spatial_readout_1m_srcc067/README.md",
+        "archive_ref": "refs/archive/checkout-preservation-20261004/original18"
+      }
+    },
+    {
+      "path": "LightGenV2/reports/20260927_demo_energy_efficiency_a100/ours/01_lgvq/source_snapshot/tasks/t06_video_quality_assessment/reports/paper_results/spatial_readout_1m_srcc067/result.json",
+      "bytes": 3045,
+      "sha256": "36f7ad2290a21438f562b89834a635ad49e1e7236236543997c6c097c87ada2e",
+      "recovery": {
+        "kind": "crlf_normalized_git_blob",
+        "commit": "ac7e3ecce0bef96ae7d91f8de6e478542913bd4e",
+        "path": "LightGenV2/tasks/t06_video_quality_assessment/reports/paper_results/spatial_readout_1m_srcc067/result.json",
+        "archive_ref": "refs/archive/checkout-preservation-20261004/original18"
+      }
+    },
+    {
+      "path": "LightGenV2/reports/20260927_demo_energy_efficiency_a100/ours/01_lgvq/source_snapshot/tasks/t06_video_quality_assessment/reports/paper_results/spatial_readout_compressed_s1291/result.json",
+      "bytes": 1385,
+      "sha256": "be16260863150ca704bb9e1b3f3031e5121c50421496d8c053ce37923bd09649",
+      "recovery": {
+        "kind": "crlf_normalized_git_blob",
+        "commit": "ac7e3ecce0bef96ae7d91f8de6e478542913bd4e",
+        "path": "LightGenV2/tasks/t06_video_quality_assessment/reports/paper_results/spatial_readout_compressed_s1291/result.json",
+        "archive_ref": "refs/archive/checkout-preservation-20261004/original18"
+      }
+    },
+    {
+      "path": "LightGenV2/reports/20260927_demo_energy_efficiency_a100/ours/01_lgvq/source_snapshot/tasks/t06_video_quality_assessment/reports/paper_results/spatial_rf_fusion_20260909/README.md",
+      "bytes": 3172,
+      "sha256": "79afa56bc0b975294a9476428f19b0f0a6e41b20d0de358ba3d95e89179fb62f",
+      "recovery": {
+        "kind": "crlf_normalized_git_blob",
+        "commit": "ac7e3ecce0bef96ae7d91f8de6e478542913bd4e",
+        "path": "LightGenV2/tasks/t06_video_quality_assessment/reports/paper_results/spatial_rf_fusion_20260909/README.md",
+        "archive_ref": "refs/archive/checkout-preservation-20261004/original18"
+      }
+    },
+    {
+      "path": "LightGenV2/reports/20260927_demo_energy_efficiency_a100/ours/01_lgvq/source_snapshot/tasks/t06_video_quality_assessment/reports/paper_results/spatial_rf_fusion_20260909/ablation.csv",
+      "bytes": 980,
+      "sha256": "80b2e6ebbd67b359ad9443da87027091facd50ab1b347e5f7dbc5803a13bfe58",
+      "recovery": {
+        "kind": "crlf_normalized_git_blob",
+        "commit": "ac7e3ecce0bef96ae7d91f8de6e478542913bd4e",
+        "path": "LightGenV2/tasks/t06_video_quality_assessment/reports/paper_results/spatial_rf_fusion_20260909/ablation.csv",
+        "archive_ref": "refs/archive/checkout-preservation-20261004/original18"
+      }
+    },
+    {
+      "path": "LightGenV2/reports/20260927_demo_energy_efficiency_a100/ours/01_lgvq/source_snapshot/tasks/t06_video_quality_assessment/reports/paper_results/spatial_rf_fusion_20260909/optical_contribution_same_checkpoint.json",
+      "bytes": 3073,
+      "sha256": "df06543023efdfe0bd3d9411de40864dfbced11c562e036d7d930c62b64bef68",
+      "recovery": {
+        "kind": "crlf_normalized_git_blob",
+        "commit": "ac7e3ecce0bef96ae7d91f8de6e478542913bd4e",
+        "path": "LightGenV2/tasks/t06_video_quality_assessment/reports/paper_results/spatial_rf_fusion_20260909/optical_contribution_same_checkpoint.json",
+        "archive_ref": "refs/archive/checkout-preservation-20261004/original18"
+      }
+    },
+    {
+      "path": "LightGenV2/reports/20260927_demo_energy_efficiency_a100/ours/01_lgvq/source_snapshot/tasks/t06_video_quality_assessment/reports/paper_results/spatial_rf_fusion_20260909/readout_scale_calibration.json",
+      "bytes": 683,
+      "sha256": "ecbf16c5ae74a718358a9e3048e0e36a292bbeb33bad75f4fe91b829d0f67f9d",
+      "recovery": {
+        "kind": "crlf_normalized_git_blob",
+        "commit": "ac7e3ecce0bef96ae7d91f8de6e478542913bd4e",
+        "path": "LightGenV2/tasks/t06_video_quality_assessment/reports/paper_results/spatial_rf_fusion_20260909/readout_scale_calibration.json",
+        "archive_ref": "refs/archive/checkout-preservation-20261004/original18"
+      }
+    },
+    {
+      "path": "LightGenV2/reports/20260927_demo_energy_efficiency_a100/ours/01_lgvq/source_snapshot/tasks/t06_video_quality_assessment/reports/paper_results/spatial_rf_fusion_20260909/result.json",
+      "bytes": 978,
+      "sha256": "6e2e05749e472fd6e6494e0124fb729b40f6745ccb2133d04eddb866fb98dd86",
+      "recovery": {
+        "kind": "crlf_normalized_git_blob",
+        "commit": "ac7e3ecce0bef96ae7d91f8de6e478542913bd4e",
+        "path": "LightGenV2/tasks/t06_video_quality_assessment/reports/paper_results/spatial_rf_fusion_20260909/result.json",
+        "archive_ref": "refs/archive/checkout-preservation-20261004/original18"
+      }
+    },
+    {
+      "path": "LightGenV2/reports/20260927_demo_energy_efficiency_a100/ours/01_lgvq/source_snapshot/tasks/t06_video_quality_assessment/reports/paper_results/spatial_rf_fusion_20260909/test_metrics_optical_off.json",
+      "bytes": 284,
+      "sha256": "5b042b9ead760c430984836a8f5ec748f4d0763eceba962f910a1bf7da2f37cd",
+      "recovery": {
+        "kind": "crlf_normalized_git_blob",
+        "commit": "ac7e3ecce0bef96ae7d91f8de6e478542913bd4e",
+        "path": "LightGenV2/tasks/t06_video_quality_assessment/reports/paper_results/spatial_rf_fusion_20260909/test_metrics_optical_off.json",
+        "archive_ref": "refs/archive/checkout-preservation-20261004/original18"
+      }
+    },
+    {
+      "path": "LightGenV2/reports/20260927_demo_energy_efficiency_a100/ours/01_lgvq/source_snapshot/tasks/t06_video_quality_assessment/reports/paper_results/spatial_rf_fusion_20260909/test_metrics_optical_on.json",
+      "bytes": 1977,
+      "sha256": "363de5493b4a258302808bc31e0bca5aa4e4cd605e54c23589a41c206c1b75eb",
+      "recovery": {
+        "kind": "crlf_normalized_git_blob",
+        "commit": "ac7e3ecce0bef96ae7d91f8de6e478542913bd4e",
+        "path": "LightGenV2/tasks/t06_video_quality_assessment/reports/paper_results/spatial_rf_fusion_20260909/test_metrics_optical_on.json",
+        "archive_ref": "refs/archive/checkout-preservation-20261004/original18"
+      }
+    },
+    {
+      "path": "LightGenV2/reports/20260927_demo_energy_efficiency_a100/ours/01_lgvq/source_snapshot/tasks/t06_video_quality_assessment/reports/paper_results/spatial_single_video4_balanced/README.md",
+      "bytes": 2740,
+      "sha256": "91048d17ea216d0b13586d7b639b0a117645dbb51fb7b822f8eb7b3e235af4a4",
+      "recovery": {
+        "kind": "current_main_crlf_normalized_git_blob",
+        "commit": "57a6b1ad43b04e42deb89c84165489794d4e5ab9",
+        "path": "LightGenV2/tasks/t06_video_quality_assessment/reports/paper_results/spatial_single_video4_balanced/README.md",
+        "git_blob": "ad59d52e50d105e53fcc6dffc959676086c49d34"
+      }
+    },
+    {
+      "path": "LightGenV2/reports/20260927_demo_energy_efficiency_a100/ours/01_lgvq/source_snapshot/tasks/t06_video_quality_assessment/reports/paper_results/spatial_single_video4_balanced/result.json",
+      "bytes": 2752,
+      "sha256": "e7695a3a7a77ec661468dbefea6cfc1521f5b45723f95ed7ca68fd49f2471bc2",
+      "recovery": {
+        "kind": "current_main_crlf_normalized_git_blob",
+        "commit": "57a6b1ad43b04e42deb89c84165489794d4e5ab9",
+        "path": "LightGenV2/tasks/t06_video_quality_assessment/reports/paper_results/spatial_single_video4_balanced/result.json",
+        "git_blob": "5fd71658800e30beffad6bc16243c1746de3b3cd"
+      }
+    },
+    {
+      "path": "LightGenV2/reports/20260927_demo_energy_efficiency_a100/ours/01_lgvq/source_snapshot/tasks/t06_video_quality_assessment/reports/paper_results/spatial_single_video4_srcc06665/README.md",
+      "bytes": 1055,
+      "sha256": "91b67e8bb60d24c02613bc2f56c9a3246d5e6918268c2b5e7bd271c3d5499da9",
+      "recovery": {
+        "kind": "crlf_normalized_git_blob",
+        "commit": "ac7e3ecce0bef96ae7d91f8de6e478542913bd4e",
+        "path": "LightGenV2/tasks/t06_video_quality_assessment/reports/paper_results/spatial_single_video4_srcc06665/README.md",
+        "archive_ref": "refs/archive/checkout-preservation-20261004/original18"
+      }
+    },
+    {
+      "path": "LightGenV2/reports/20260927_demo_energy_efficiency_a100/ours/01_lgvq/source_snapshot/tasks/t06_video_quality_assessment/reports/paper_results/spatial_single_video4_srcc06665/result.json",
+      "bytes": 792,
+      "sha256": "cc8c0bb4f87112e1de307db72e0a06e18314eac9ec5bc0a1d7a23d52bdfb0893",
+      "recovery": {
+        "kind": "crlf_normalized_git_blob",
+        "commit": "ac7e3ecce0bef96ae7d91f8de6e478542913bd4e",
+        "path": "LightGenV2/tasks/t06_video_quality_assessment/reports/paper_results/spatial_single_video4_srcc06665/result.json",
+        "archive_ref": "refs/archive/checkout-preservation-20261004/original18"
+      }
+    },
+    {
+      "path": "LightGenV2/reports/20260927_demo_energy_efficiency_a100/ours/01_lgvq/source_snapshot/tasks/t06_video_quality_assessment/reports/paper_results/spatial_single_video4_two_branch/README.md",
+      "bytes": 3103,
+      "sha256": "5106e210c37d1aaffba636cd54f38132e658823fd58993c15e3524cdc72a8020",
+      "recovery": {
+        "kind": "crlf_normalized_git_blob",
+        "commit": "ac7e3ecce0bef96ae7d91f8de6e478542913bd4e",
+        "path": "LightGenV2/tasks/t06_video_quality_assessment/reports/paper_results/spatial_single_video4_two_branch/README.md",
+        "archive_ref": "refs/archive/checkout-preservation-20261004/original18"
+      }
+    },
+    {
+      "path": "LightGenV2/reports/20260927_demo_energy_efficiency_a100/ours/01_lgvq/source_snapshot/tasks/t06_video_quality_assessment/reports/paper_results/spatial_single_video4_two_branch/result.json",
+      "bytes": 3345,
+      "sha256": "f8169d824cb9d6138d749ccf574be02791b5862bff9f046806e27534d78ea313",
+      "recovery": {
+        "kind": "crlf_normalized_git_blob",
+        "commit": "ac7e3ecce0bef96ae7d91f8de6e478542913bd4e",
+        "path": "LightGenV2/tasks/t06_video_quality_assessment/reports/paper_results/spatial_single_video4_two_branch/result.json",
+        "archive_ref": "refs/archive/checkout-preservation-20261004/original18"
+      }
+    },
+    {
+      "path": "LightGenV2/reports/20260927_demo_energy_efficiency_a100/ours/01_lgvq/source_snapshot/tasks/t06_video_quality_assessment/reports/paper_results/spatial_single_video4_two_branch_ema_q8/README.md",
+      "bytes": 3708,
+      "sha256": "d3b64bf0c704d50d26e35b76bc211a039cb44d9e3d0a62ca3d95a6e84bad4974",
+      "recovery": {
+        "kind": "crlf_normalized_git_blob",
+        "commit": "ac7e3ecce0bef96ae7d91f8de6e478542913bd4e",
+        "path": "LightGenV2/tasks/t06_video_quality_assessment/reports/paper_results/spatial_single_video4_two_branch_ema_q8/README.md",
+        "archive_ref": "refs/archive/checkout-preservation-20261004/original18"
+      }
+    },
+    {
+      "path": "LightGenV2/reports/20260927_demo_energy_efficiency_a100/ours/01_lgvq/source_snapshot/tasks/t06_video_quality_assessment/reports/paper_results/spatial_single_video4_two_branch_ema_q8/optimization_trials.csv",
+      "bytes": 1124,
+      "sha256": "f03c3b586eed9f41fb6709a5fb26a6301dad59a885bef953018e530a96989232",
+      "recovery": {
+        "kind": "crlf_normalized_git_blob",
+        "commit": "ac7e3ecce0bef96ae7d91f8de6e478542913bd4e",
+        "path": "LightGenV2/tasks/t06_video_quality_assessment/reports/paper_results/spatial_single_video4_two_branch_ema_q8/optimization_trials.csv",
+        "archive_ref": "refs/archive/checkout-preservation-20261004/original18"
+      }
+    },
+    {
+      "path": "LightGenV2/reports/20260927_demo_energy_efficiency_a100/ours/01_lgvq/source_snapshot/tasks/t06_video_quality_assessment/reports/paper_results/spatial_single_video4_two_branch_ema_q8/result.json",
+      "bytes": 3496,
+      "sha256": "db85392d98f6482e518a350cdfdbae689e51a01e113e6ea0921b62d9eb059893",
+      "recovery": {
+        "kind": "crlf_normalized_git_blob",
+        "commit": "ac7e3ecce0bef96ae7d91f8de6e478542913bd4e",
+        "path": "LightGenV2/tasks/t06_video_quality_assessment/reports/paper_results/spatial_single_video4_two_branch_ema_q8/result.json",
+        "archive_ref": "refs/archive/checkout-preservation-20261004/original18"
+      }
+    },
+    {
+      "path": "LightGenV2/reports/20260927_demo_energy_efficiency_a100/ours/01_lgvq/source_snapshot/tasks/t06_video_quality_assessment/reports/paper_results/spatial_srcc_optimization_20260909/README.md",
+      "bytes": 4991,
+      "sha256": "d7f9855ebbf67f0424a49697d056e3c15107fe4909c5901ad7e16be1a5922365",
+      "recovery": {
+        "kind": "crlf_normalized_git_blob",
+        "commit": "ac7e3ecce0bef96ae7d91f8de6e478542913bd4e",
+        "path": "LightGenV2/tasks/t06_video_quality_assessment/reports/paper_results/spatial_srcc_optimization_20260909/README.md",
+        "archive_ref": "refs/archive/checkout-preservation-20261004/original18"
+      }
+    },
+    {
+      "path": "LightGenV2/reports/20260927_demo_energy_efficiency_a100/ours/01_lgvq/source_snapshot/tasks/t06_video_quality_assessment/reports/paper_results/spatial_srcc_optimization_20260909/ablation.csv",
+      "bytes": 961,
+      "sha256": "d79705b1714e9967d11b64ee7020f98ba06b4854da8a901e7240f024e0d36831",
+      "recovery": {
+        "kind": "crlf_normalized_git_blob",
+        "commit": "ac7e3ecce0bef96ae7d91f8de6e478542913bd4e",
+        "path": "LightGenV2/tasks/t06_video_quality_assessment/reports/paper_results/spatial_srcc_optimization_20260909/ablation.csv",
+        "archive_ref": "refs/archive/checkout-preservation-20261004/original18"
+      }
+    },
+    {
+      "path": "LightGenV2/reports/20260927_demo_energy_efficiency_a100/ours/01_lgvq/source_snapshot/tasks/t06_video_quality_assessment/reports/paper_results/spatial_srcc_optimization_20260909/result.json",
+      "bytes": 2020,
+      "sha256": "93073c98368b7da259472bdf7ffb4455f31b49f79c8cf5bf837422996821f3c6",
+      "recovery": {
+        "kind": "crlf_normalized_git_blob",
+        "commit": "ac7e3ecce0bef96ae7d91f8de6e478542913bd4e",
+        "path": "LightGenV2/tasks/t06_video_quality_assessment/reports/paper_results/spatial_srcc_optimization_20260909/result.json",
+        "archive_ref": "refs/archive/checkout-preservation-20261004/original18"
+      }
+    },
+    {
+      "path": "LightGenV2/reports/20260927_demo_energy_efficiency_a100/ours/01_lgvq/source_snapshot/tasks/t06_video_quality_assessment/reports/paper_results/spatial_weighted_readout_20260909/README.md",
+      "bytes": 3819,
+      "sha256": "efbec3eb2c71fcb56d5173bdf6fe8ae9cc31ab03bd323fa0169979105b3b468a",
+      "recovery": {
+        "kind": "crlf_normalized_git_blob",
+        "commit": "ac7e3ecce0bef96ae7d91f8de6e478542913bd4e",
+        "path": "LightGenV2/tasks/t06_video_quality_assessment/reports/paper_results/spatial_weighted_readout_20260909/README.md",
+        "archive_ref": "refs/archive/checkout-preservation-20261004/original18"
+      }
+    },
+    {
+      "path": "LightGenV2/reports/20260927_demo_energy_efficiency_a100/ours/01_lgvq/source_snapshot/tasks/t06_video_quality_assessment/reports/paper_results/spatial_weighted_readout_20260909/best_test_predictions.csv",
+      "bytes": 57156,
+      "sha256": "eae9760224bbbb22e0d6df67ee29ba607e9d1a161589957150b1b7ed794e177e",
+      "recovery": {
+        "kind": "crlf_normalized_git_blob",
+        "commit": "ac7e3ecce0bef96ae7d91f8de6e478542913bd4e",
+        "path": "LightGenV2/tasks/t06_video_quality_assessment/reports/paper_results/spatial_weighted_readout_20260909/best_test_predictions.csv",
+        "archive_ref": "refs/archive/checkout-preservation-20261004/original18"
+      }
+    },
+    {
+      "path": "LightGenV2/reports/20260927_demo_energy_efficiency_a100/ours/01_lgvq/source_snapshot/tasks/t06_video_quality_assessment/reports/paper_results/spatial_weighted_readout_20260909/optical_contribution_same_checkpoint.json",
+      "bytes": 3072,
+      "sha256": "cea16f643e44143b1746eff7bb0a096121cb3b9772da54042ca9d9c9dd62a2ad",
+      "recovery": {
+        "kind": "crlf_normalized_git_blob",
+        "commit": "ac7e3ecce0bef96ae7d91f8de6e478542913bd4e",
+        "path": "LightGenV2/tasks/t06_video_quality_assessment/reports/paper_results/spatial_weighted_readout_20260909/optical_contribution_same_checkpoint.json",
+        "archive_ref": "refs/archive/checkout-preservation-20261004/original18"
+      }
+    },
+    {
+      "path": "LightGenV2/reports/20260927_demo_energy_efficiency_a100/ours/01_lgvq/source_snapshot/tasks/t06_video_quality_assessment/reports/paper_results/spatial_weighted_readout_20260909/optimization_trials.csv",
+      "bytes": 863,
+      "sha256": "5ee59e71781c95f70f053e1d09b1485e159df2a75b7d8ffc52cbd962ff5fb8d3",
+      "recovery": {
+        "kind": "crlf_normalized_git_blob",
+        "commit": "ac7e3ecce0bef96ae7d91f8de6e478542913bd4e",
+        "path": "LightGenV2/tasks/t06_video_quality_assessment/reports/paper_results/spatial_weighted_readout_20260909/optimization_trials.csv",
+        "archive_ref": "refs/archive/checkout-preservation-20261004/original18"
+      }
+    },
+    {
+      "path": "LightGenV2/reports/20260927_demo_energy_efficiency_a100/ours/01_lgvq/source_snapshot/tasks/t06_video_quality_assessment/reports/paper_results/spatial_weighted_readout_20260909/result.json",
+      "bytes": 1626,
+      "sha256": "9c4cd48871aaef1d5896909b64de37cca78aa8f95fbf86a5edb1bf33c8c26aef",
+      "recovery": {
+        "kind": "crlf_normalized_git_blob",
+        "commit": "ac7e3ecce0bef96ae7d91f8de6e478542913bd4e",
+        "path": "LightGenV2/tasks/t06_video_quality_assessment/reports/paper_results/spatial_weighted_readout_20260909/result.json",
+        "archive_ref": "refs/archive/checkout-preservation-20261004/original18"
+      }
+    },
+    {
+      "path": "LightGenV2/reports/20260927_demo_energy_efficiency_a100/ours/01_lgvq/source_snapshot/tasks/t06_video_quality_assessment/reports/paper_results/spatial_weighted_readout_20260909/test_metrics_optical_off.json",
+      "bytes": 284,
+      "sha256": "1c27d43456e117ffb232e718766655c2fe6b5592542dda976efe268c1fe1ec8c",
+      "recovery": {
+        "kind": "crlf_normalized_git_blob",
+        "commit": "ac7e3ecce0bef96ae7d91f8de6e478542913bd4e",
+        "path": "LightGenV2/tasks/t06_video_quality_assessment/reports/paper_results/spatial_weighted_readout_20260909/test_metrics_optical_off.json",
+        "archive_ref": "refs/archive/checkout-preservation-20261004/original18"
+      }
+    },
+    {
+      "path": "LightGenV2/reports/20260927_demo_energy_efficiency_a100/ours/01_lgvq/source_snapshot/tasks/t06_video_quality_assessment/reports/paper_results/spatial_weighted_readout_20260909/test_metrics_optical_on.json",
+      "bytes": 1979,
+      "sha256": "4b8317d99c76742405f63758a8f437def896cd5fa553af6909bfb667583afbc2",
+      "recovery": {
+        "kind": "crlf_normalized_git_blob",
+        "commit": "ac7e3ecce0bef96ae7d91f8de6e478542913bd4e",
+        "path": "LightGenV2/tasks/t06_video_quality_assessment/reports/paper_results/spatial_weighted_readout_20260909/test_metrics_optical_on.json",
+        "archive_ref": "refs/archive/checkout-preservation-20261004/original18"
+      }
+    },
+    {
+      "path": "LightGenV2/reports/20260927_demo_energy_efficiency_a100/ours/01_lgvq/source_snapshot/tasks/t06_video_quality_assessment/reports/paper_results/temporal36_balanced/README.md",
+      "bytes": 1052,
+      "sha256": "56db72d62fdab2b8179a885a29bdf5c7e53356befacc74bc792caad90bbe6ca1",
+      "recovery": {
+        "kind": "current_main_crlf_normalized_git_blob",
+        "commit": "57a6b1ad43b04e42deb89c84165489794d4e5ab9",
+        "path": "LightGenV2/tasks/t06_video_quality_assessment/reports/paper_results/temporal36_balanced/README.md",
+        "git_blob": "d4284015505ce9b15d38dbea6d4a7a3074075f68"
+      }
+    },
+    {
+      "path": "LightGenV2/reports/20260927_demo_energy_efficiency_a100/ours/01_lgvq/source_snapshot/tasks/t06_video_quality_assessment/reports/paper_results/temporal36_balanced/result.json",
+      "bytes": 2198,
+      "sha256": "d2724ca03d1af6b8e396ffe474b2847beb74f7ad2255972b77babd783a29bba1",
+      "recovery": {
+        "kind": "crlf_normalized_git_blob",
+        "commit": "ac7e3ecce0bef96ae7d91f8de6e478542913bd4e",
+        "path": "LightGenV2/tasks/t06_video_quality_assessment/reports/paper_results/temporal36_balanced/result.json",
+        "archive_ref": "refs/archive/checkout-preservation-20261004/original18"
+      }
+    },
+    {
+      "path": "LightGenV2/reports/20260927_demo_energy_efficiency_a100/ours/01_lgvq/source_snapshot/tasks/t06_video_quality_assessment/reports/paper_results/temporal_multivideo16x4/README.md",
+      "bytes": 3580,
+      "sha256": "85a9d4e42ebd37502fd9ee4ee7b26eb74a1bee481b0ae7a491d39817436d4eaf",
+      "recovery": {
+        "kind": "current_main_crlf_normalized_git_blob",
+        "commit": "57a6b1ad43b04e42deb89c84165489794d4e5ab9",
+        "path": "LightGenV2/tasks/t06_video_quality_assessment/reports/paper_results/temporal_multivideo16x4/README.md",
+        "git_blob": "49a66f803377888ae1e770f796a28c9400ee143b"
+      }
+    },
+    {
+      "path": "LightGenV2/reports/20260927_demo_energy_efficiency_a100/ours/01_lgvq/source_snapshot/tasks/t06_video_quality_assessment/reports/paper_results/temporal_multivideo16x4/multivideo_tradeoff.pdf",
+      "bytes": 33292,
+      "sha256": "c5cfe6573825a4e24b11af327e2915eeec21be73eda34d2b0bba98dd937a7048",
+      "recovery": {
+        "kind": "current_main_exact_git_blob",
+        "commit": "57a6b1ad43b04e42deb89c84165489794d4e5ab9",
+        "path": "LightGenV2/tasks/t06_video_quality_assessment/reports/paper_results/temporal_multivideo16x4/multivideo_tradeoff.pdf",
+        "git_blob": "1f5535915696723df76154e7e83319c327e20e4c"
+      }
+    },
+    {
+      "path": "LightGenV2/reports/20260927_demo_energy_efficiency_a100/ours/01_lgvq/source_snapshot/tasks/t06_video_quality_assessment/reports/paper_results/temporal_multivideo16x4/result.json",
+      "bytes": 3806,
+      "sha256": "72bf523752563247d8469803aa8bfc9af7ba22d5adcffbc562dab42b289ed74c",
+      "recovery": {
+        "kind": "current_main_crlf_normalized_git_blob",
+        "commit": "57a6b1ad43b04e42deb89c84165489794d4e5ab9",
+        "path": "LightGenV2/tasks/t06_video_quality_assessment/reports/paper_results/temporal_multivideo16x4/result.json",
+        "git_blob": "1189014900a1d56a954a3712387a19767401da42"
+      }
+    },
+    {
+      "path": "LightGenV2/reports/20260927_demo_energy_efficiency_a100/ours/01_lgvq/source_snapshot/tasks/t06_video_quality_assessment/reports/paper_results/temporal_multivideo16x4_readout_rank256_s176/result.json",
+      "bytes": 752,
+      "sha256": "9e8d00b27d3f1d64efb9644fc03242ba3919dcb117af6d565a55ad57c53430db",
+      "recovery": {
+        "kind": "crlf_normalized_git_blob",
+        "commit": "ac7e3ecce0bef96ae7d91f8de6e478542913bd4e",
+        "path": "LightGenV2/tasks/t06_video_quality_assessment/reports/paper_results/temporal_multivideo16x4_readout_rank256_s176/result.json",
+        "archive_ref": "refs/archive/checkout-preservation-20261004/original18"
+      }
+    },
+    {
+      "path": "LightGenV2/reports/20260927_demo_energy_efficiency_a100/ours/01_lgvq/source_snapshot/tasks/t06_video_quality_assessment/reports/paper_results/temporal_multivideo16x4_readout_rank48_s180/result.json",
+      "bytes": 1430,
+      "sha256": "732b16a582a2ad641e3acfdfe5f3da8e5d8a7f78c0bd086df9736dd082cd1e51",
+      "recovery": {
+        "kind": "crlf_normalized_git_blob",
+        "commit": "ac7e3ecce0bef96ae7d91f8de6e478542913bd4e",
+        "path": "LightGenV2/tasks/t06_video_quality_assessment/reports/paper_results/temporal_multivideo16x4_readout_rank48_s180/result.json",
+        "archive_ref": "refs/archive/checkout-preservation-20261004/original18"
+      }
+    },
+    {
+      "path": "LightGenV2/reports/20260927_demo_energy_efficiency_a100/ours/01_lgvq/source_snapshot/tasks/t06_video_quality_assessment/reports/paper_results/temporal_multivideo16x4_readout_rank64_s179/result.json",
+      "bytes": 1147,
+      "sha256": "03ce7c12643661113732354a4532f4e00ed1387912476972f9ecabd054d82d0e",
+      "recovery": {
+        "kind": "crlf_normalized_git_blob",
+        "commit": "ac7e3ecce0bef96ae7d91f8de6e478542913bd4e",
+        "path": "LightGenV2/tasks/t06_video_quality_assessment/reports/paper_results/temporal_multivideo16x4_readout_rank64_s179/result.json",
+        "archive_ref": "refs/archive/checkout-preservation-20261004/original18"
+      }
+    },
+    {
+      "path": "LightGenV2/reports/20260927_demo_energy_efficiency_a100/ours/01_lgvq/source_snapshot/tasks/t06_video_quality_assessment/reports/paper_results/temporal_multivideo9x4_contentroute/README.md",
+      "bytes": 3107,
+      "sha256": "fcfc06a59529bff48ad1b505f4601bc700264df33c3cd59a34197efa5a50b96b",
+      "recovery": {
+        "kind": "current_main_crlf_normalized_git_blob",
+        "commit": "57a6b1ad43b04e42deb89c84165489794d4e5ab9",
+        "path": "LightGenV2/tasks/t06_video_quality_assessment/reports/paper_results/temporal_multivideo9x4_contentroute/README.md",
+        "git_blob": "ab840fb0fc1a795822f4ae232cc1613b664b8a64"
+      }
+    },
+    {
+      "path": "LightGenV2/reports/20260927_demo_energy_efficiency_a100/ours/01_lgvq/source_snapshot/tasks/t06_video_quality_assessment/reports/paper_results/temporal_multivideo9x4_contentroute/result.json",
+      "bytes": 3697,
+      "sha256": "dabc903a904a9b1ac8a6249ac6871799c2ff76c4a284dbfd2c4f0e46aeb9d7e2",
+      "recovery": {
+        "kind": "current_main_crlf_normalized_git_blob",
+        "commit": "57a6b1ad43b04e42deb89c84165489794d4e5ab9",
+        "path": "LightGenV2/tasks/t06_video_quality_assessment/reports/paper_results/temporal_multivideo9x4_contentroute/result.json",
+        "git_blob": "ecdb9973426c2cad0b02f79a99c9d280b6ed5883"
+      }
+    },
+    {
+      "path": "LightGenV2/reports/20260927_demo_energy_efficiency_a100/ours/01_lgvq/source_snapshot/tasks/t06_video_quality_assessment/reports/qwen5090d_cross_task_baselines_20260906/README.md",
+      "bytes": 5087,
+      "sha256": "c5b4e743b50743950d0375c41923dbafa10b501cf00fa22d21534a20d3a6a26e",
+      "recovery": {
+        "kind": "crlf_normalized_git_blob",
+        "commit": "ac7e3ecce0bef96ae7d91f8de6e478542913bd4e",
+        "path": "LightGenV2/tasks/t06_video_quality_assessment/reports/qwen5090d_cross_task_baselines_20260906/README.md",
+        "archive_ref": "refs/archive/checkout-preservation-20261004/original18"
+      }
+    },
+    {
+      "path": "LightGenV2/reports/20260927_demo_energy_efficiency_a100/ours/01_lgvq/source_snapshot/tasks/t06_video_quality_assessment/reports/qwen5090d_cross_task_baselines_20260906/evidence_manifest.json",
+      "bytes": 1920,
+      "sha256": "812458a6f031c711a3745c9c3d69fb57dfbad4fe91464b7ac70b6732873e792b",
+      "recovery": {
+        "kind": "current_main_crlf_normalized_git_blob",
+        "commit": "57a6b1ad43b04e42deb89c84165489794d4e5ab9",
+        "path": "LightGenV2/tasks/t06_video_quality_assessment/reports/qwen5090d_cross_task_baselines_20260906/evidence_manifest.json",
+        "git_blob": "92dcffc0f4f17b6b67545bb09d63b091f009452a"
+      }
+    },
+    {
+      "path": "LightGenV2/reports/20260927_demo_energy_efficiency_a100/ours/01_lgvq/source_snapshot/tasks/t06_video_quality_assessment/reports/qwen5090d_cross_task_baselines_20260906/qwen5090d_baseline_overview.pdf",
+      "bytes": 37443,
+      "sha256": "b46e0a3a6f04f690bab71067a3efaecb140c3db099adfdf6c0ed77b5318a89ce",
+      "recovery": {
+        "kind": "current_main_exact_git_blob",
+        "commit": "57a6b1ad43b04e42deb89c84165489794d4e5ab9",
+        "path": "LightGenV2/tasks/t06_video_quality_assessment/reports/qwen5090d_cross_task_baselines_20260906/qwen5090d_baseline_overview.pdf",
+        "git_blob": "d04aa1b29ffe8374a3937ee20675cf1df195735c"
+      }
+    },
+    {
+      "path": "LightGenV2/reports/20260927_demo_energy_efficiency_a100/ours/01_lgvq/source_snapshot/tasks/t06_video_quality_assessment/reports/qwen5090d_cross_task_baselines_20260906/summary.csv",
+      "bytes": 2502,
+      "sha256": "f85592409706cd0bbe53acc19002d7df8095361ac5530da0dc3c28e48ae5d65d",
+      "recovery": {
+        "kind": "current_main_crlf_normalized_git_blob",
+        "commit": "57a6b1ad43b04e42deb89c84165489794d4e5ab9",
+        "path": "LightGenV2/tasks/t06_video_quality_assessment/reports/qwen5090d_cross_task_baselines_20260906/summary.csv",
+        "git_blob": "6290b6813f4bd2e7346e969e03585131f96364b8"
+      }
+    },
+    {
+      "path": "LightGenV2/reports/20260927_demo_energy_efficiency_a100/ours/01_lgvq/source_snapshot/tasks/t06_video_quality_assessment/reports/qwen5090d_cross_task_baselines_20260906/temporal16_power_comparison.pdf",
+      "bytes": 31781,
+      "sha256": "eb7d006dcccdb62d619a913cd7a34fbdea710a2b1d55338b71914d02bb4cb053",
+      "recovery": {
+        "kind": "current_main_exact_git_blob",
+        "commit": "57a6b1ad43b04e42deb89c84165489794d4e5ab9",
+        "path": "LightGenV2/tasks/t06_video_quality_assessment/reports/qwen5090d_cross_task_baselines_20260906/temporal16_power_comparison.pdf",
+        "git_blob": "69059a3ecc1fa80203cb240b02c966a30236f5bd"
+      }
+    },
+    {
+      "path": "LightGenV2/reports/20260927_demo_energy_efficiency_a100/ours/01_lgvq/source_snapshot/tasks/t06_video_quality_assessment/reports/reproduction/BASELINE_METHODS.md",
+      "bytes": 2044,
+      "sha256": "f2f873efd51fd20b13e008e88de49a7d11c99ee32abf8e5d8a6e94df9d1c79a3",
+      "recovery": {
+        "kind": "current_main_crlf_normalized_git_blob",
+        "commit": "57a6b1ad43b04e42deb89c84165489794d4e5ab9",
+        "path": "LightGenV2/tasks/t06_video_quality_assessment/reports/reproduction/BASELINE_METHODS.md",
+        "git_blob": "c30769dc108c7ce9aca4c6197a24626b7e07eb26"
+      }
+    },
+    {
+      "path": "LightGenV2/reports/20260927_demo_energy_efficiency_a100/ours/01_lgvq/source_snapshot/tasks/t06_video_quality_assessment/reports/reproduction/CHECK_20260908.md",
+      "bytes": 8130,
+      "sha256": "7abfcbf7a493cddee9e9804365f4c29cfb06a7d4020c8697e50ea65e3f111849",
+      "recovery": {
+        "kind": "crlf_normalized_git_blob",
+        "commit": "ac7e3ecce0bef96ae7d91f8de6e478542913bd4e",
+        "path": "LightGenV2/tasks/t06_video_quality_assessment/reports/reproduction/CHECK_20260908.md",
+        "archive_ref": "refs/archive/checkout-preservation-20261004/original18"
+      }
+    },
+    {
+      "path": "LightGenV2/reports/20260927_demo_energy_efficiency_a100/ours/01_lgvq/source_snapshot/tasks/t06_video_quality_assessment/reports/reproduction/EVIDENCE_20260908.json",
+      "bytes": 9870,
+      "sha256": "c3c9b8ee1b4f31d1d020745f194f18f1b14808e89ba29d6d1e5a2ae3398af7f0",
+      "recovery": {
+        "kind": "crlf_normalized_git_blob",
+        "commit": "ac7e3ecce0bef96ae7d91f8de6e478542913bd4e",
+        "path": "LightGenV2/tasks/t06_video_quality_assessment/reports/reproduction/EVIDENCE_20260908.json",
+        "archive_ref": "refs/archive/checkout-preservation-20261004/original18"
+      }
+    },
+    {
+      "path": "LightGenV2/reports/20260927_demo_energy_efficiency_a100/ours/01_lgvq/source_snapshot/tasks/t06_video_quality_assessment/reports/reproduction/README.md",
+      "bytes": 2713,
+      "sha256": "73a9cdfd5fcc1e44af2d5096f401a22c4fa491944f2ae395b96c3d7fad54b66f",
+      "recovery": {
+        "kind": "crlf_normalized_git_blob",
+        "commit": "ac7e3ecce0bef96ae7d91f8de6e478542913bd4e",
+        "path": "LightGenV2/tasks/t06_video_quality_assessment/reports/reproduction/README.md",
+        "archive_ref": "refs/archive/checkout-preservation-20261004/original18"
+      }
+    },
+    {
+      "path": "LightGenV2/reports/20260927_demo_energy_efficiency_a100/ours/01_lgvq/source_snapshot/tasks/t06_video_quality_assessment/reports/reproduction/SHS_LAB_INDEX.md",
+      "bytes": 4295,
+      "sha256": "dd4b540855c7fefafa230352e6b5e2dfade50281d446310a7d4e2b99b4201c1f",
+      "recovery": {
+        "kind": "current_main_crlf_normalized_git_blob",
+        "commit": "57a6b1ad43b04e42deb89c84165489794d4e5ab9",
+        "path": "LightGenV2/tasks/t06_video_quality_assessment/reports/reproduction/SHS_LAB_INDEX.md",
+        "git_blob": "260016c13fe4d818b0fb88a896a2ce4eb7cf6b85"
+      }
+    },
+    {
+      "path": "LightGenV2/reports/20260927_demo_energy_efficiency_a100/ours/01_lgvq/source_snapshot/tasks/t06_video_quality_assessment/reports/reproduction/SPATIAL_SHS_20260914.md",
+      "bytes": 5186,
+      "sha256": "abd66828d1afe3bad4a579437ee99140e77b19c733d40f629e71c52dd4ef191e",
+      "recovery": {
+        "kind": "current_main_crlf_normalized_git_blob",
+        "commit": "57a6b1ad43b04e42deb89c84165489794d4e5ab9",
+        "path": "LightGenV2/tasks/t06_video_quality_assessment/reports/reproduction/SPATIAL_SHS_20260914.md",
+        "git_blob": "300a1ecb74219e7b99923055a48e269b08b183d9"
+      }
+    },
+    {
+      "path": "LightGenV2/reports/20260927_demo_energy_efficiency_a100/ours/01_lgvq/source_snapshot/tasks/t06_video_quality_assessment/reports/reproduction/SPATIAL_SHS_READOUT_ADAPT_20260914.md",
+      "bytes": 18846,
+      "sha256": "10da943152bfd163cd11a8035e7eeedf58c5211e614520871209306baf669aa0",
+      "recovery": {
+        "kind": "current_main_crlf_normalized_git_blob",
+        "commit": "57a6b1ad43b04e42deb89c84165489794d4e5ab9",
+        "path": "LightGenV2/tasks/t06_video_quality_assessment/reports/reproduction/SPATIAL_SHS_READOUT_ADAPT_20260914.md",
+        "git_blob": "f3b681cd171f0a53d91cdd83bdcddaec1ca5f2f6"
+      }
+    },
+    {
+      "path": "LightGenV2/reports/20260927_demo_energy_efficiency_a100/ours/01_lgvq/source_snapshot/tasks/t06_video_quality_assessment/reports/reproduction/TEMPORAL_SHS_20260914.md",
+      "bytes": 4597,
+      "sha256": "12f24c87e0b0614e7a563b4504ed2e4651fdc8415ceb00f19aea489e0a1ef391",
+      "recovery": {
+        "kind": "current_main_crlf_normalized_git_blob",
+        "commit": "57a6b1ad43b04e42deb89c84165489794d4e5ab9",
+        "path": "LightGenV2/tasks/t06_video_quality_assessment/reports/reproduction/TEMPORAL_SHS_20260914.md",
+        "git_blob": "328742911a3407925d2a222217f0b7c0b163095d"
+      }
+    },
+    {
+      "path": "LightGenV2/reports/20260927_demo_energy_efficiency_a100/ours/01_lgvq/source_snapshot/tasks/t06_video_quality_assessment/tests/test_lab_atomic_write.py",
+      "bytes": 1254,
+      "sha256": "fbb7e9d55325c858fb7e0ffb0bacb7d59a105695781efd941962ba310a124550",
+      "recovery": {
+        "kind": "crlf_normalized_git_blob",
+        "commit": "ac7e3ecce0bef96ae7d91f8de6e478542913bd4e",
+        "path": "LightGenV2/tasks/t06_video_quality_assessment/tests/test_lab_atomic_write.py",
+        "archive_ref": "refs/archive/checkout-preservation-20261004/original18"
+      }
+    },
+    {
+      "path": "LightGenV2/reports/20260927_demo_energy_efficiency_a100/ours/01_lgvq/source_snapshot/tasks/t06_video_quality_assessment/tests/test_lab_bench.py",
+      "bytes": 1183,
+      "sha256": "d53c4547d4f3ca7b2e81bf6eb088ea8b0e8ede068355df1c97f1fcd71e8106a8",
+      "recovery": {
+        "kind": "crlf_normalized_git_blob",
+        "commit": "ac7e3ecce0bef96ae7d91f8de6e478542913bd4e",
+        "path": "LightGenV2/tasks/t06_video_quality_assessment/tests/test_lab_bench.py",
+        "archive_ref": "refs/archive/checkout-preservation-20261004/original18"
+      }
+    },
+    {
+      "path": "LightGenV2/reports/20260927_demo_energy_efficiency_a100/ours/01_lgvq/source_snapshot/tasks/t06_video_quality_assessment/tests/test_multivideo_settings.py",
+      "bytes": 3647,
+      "sha256": "1fb212048fad4521a54897f73e539366e74e7af022fe5f84fdffbd7412b4b6de",
+      "recovery": {
+        "kind": "crlf_normalized_git_blob",
+        "commit": "ac7e3ecce0bef96ae7d91f8de6e478542913bd4e",
+        "path": "LightGenV2/tasks/t06_video_quality_assessment/tests/test_multivideo_settings.py",
+        "archive_ref": "refs/archive/checkout-preservation-20261004/original18"
+      }
+    },
+    {
+      "path": "LightGenV2/reports/20260927_demo_energy_efficiency_a100/ours/01_lgvq/source_snapshot/tasks/t06_video_quality_assessment/tests/test_phase_verification.py",
+      "bytes": 3143,
+      "sha256": "65780077c8e7cabec2d20399fd07b178f0652fce995bfb7f14ce054aabc607be",
+      "recovery": {
+        "kind": "crlf_normalized_git_blob",
+        "commit": "ac7e3ecce0bef96ae7d91f8de6e478542913bd4e",
+        "path": "LightGenV2/tasks/t06_video_quality_assessment/tests/test_phase_verification.py",
+        "archive_ref": "refs/archive/checkout-preservation-20261004/original18"
+      }
+    },
+    {
+      "path": "LightGenV2/reports/20260927_demo_energy_efficiency_a100/ours/01_lgvq/source_snapshot/tasks/t06_video_quality_assessment/tests/test_supervision_resume.py",
+      "bytes": 1056,
+      "sha256": "1e81330d2da1f7cbb8992705c2e2aadb0cb148995bc387748cccbb285289e694",
+      "recovery": {
+        "kind": "crlf_normalized_git_blob",
+        "commit": "ac7e3ecce0bef96ae7d91f8de6e478542913bd4e",
+        "path": "LightGenV2/tasks/t06_video_quality_assessment/tests/test_supervision_resume.py",
+        "archive_ref": "refs/archive/checkout-preservation-20261004/original18"
+      }
+    },
+    {
+      "path": "LightGenV2/reports/20260927_demo_energy_efficiency_a100/ours/03_abo_image_to_image/source_snapshot/tasks/t07_abo_image_retrieval/delivery_83125/AI_HANDOFF.md",
+      "bytes": 8177,
+      "sha256": "ee83271e6d0df32fb7e9f0b662f602068fbb9f5a0f586b091f0842500f4d0e22",
+      "recovery": {
+        "kind": "crlf_normalized_git_blob",
+        "commit": "73e2febdc94e4cb280c6ada1e0e7881826f3c7f2",
+        "path": "LightGenV2/tasks/t07_abo_image_retrieval/delivery_83125/AI_HANDOFF.md",
+        "archive_ref": "refs/archive/frozen-server-20261006/sister-t08-bounded-20260927"
+      }
+    },
+    {
+      "path": "LightGenV2/reports/20260927_demo_energy_efficiency_a100/ours/03_abo_image_to_image/source_snapshot/tasks/t07_abo_image_retrieval/delivery_83125/README.md",
+      "bytes": 4513,
+      "sha256": "ee85ec75a5dd54bb59f262be2f2777c2e60aa3bd2b71109b9dc455cc1551a6f9",
+      "recovery": {
+        "kind": "crlf_normalized_git_blob",
+        "commit": "73e2febdc94e4cb280c6ada1e0e7881826f3c7f2",
+        "path": "LightGenV2/tasks/t07_abo_image_retrieval/delivery_83125/README.md",
+        "archive_ref": "refs/archive/frozen-server-20261006/sister-t08-bounded-20260927"
+      }
+    },
+    {
+      "path": "LightGenV2/reports/20260927_demo_energy_efficiency_a100/ours/03_abo_image_to_image/source_snapshot/tasks/t07_abo_image_retrieval/delivery_83125/delivery.py",
+      "bytes": 4857,
+      "sha256": "21264d92d358b6fdd3e4bf4ab7956158209ac34c3ac827a8cca78a00e5fb248a",
+      "recovery": {
+        "kind": "crlf_normalized_git_blob",
+        "commit": "73e2febdc94e4cb280c6ada1e0e7881826f3c7f2",
+        "path": "LightGenV2/tasks/t07_abo_image_retrieval/delivery_83125/delivery.py",
+        "archive_ref": "refs/archive/frozen-server-20261006/sister-t08-bounded-20260927"
+      }
+    },
+    {
+      "path": "LightGenV2/reports/20260927_demo_energy_efficiency_a100/ours/03_abo_image_to_image/source_snapshot/tasks/t07_abo_image_retrieval/standalone/model.py",
+      "bytes": 12808,
+      "sha256": "6fb1d8952af316972cfbd1ab7ad368558c6e441209d32f254f1d541a3f5a05a2",
+      "recovery": {
+        "kind": "crlf_normalized_git_blob",
+        "commit": "ac7e3ecce0bef96ae7d91f8de6e478542913bd4e",
+        "path": "LightGenV2/tasks/t07_abo_image_retrieval/standalone/model.py",
+        "archive_ref": "refs/archive/checkout-preservation-20261004/original18"
+      }
+    },
+    {
+      "path": "LightGenV2/reports/20260927_demo_energy_efficiency_a100/ours/03_abo_image_to_image/source_snapshot/tasks/t07_abo_image_retrieval/standalone/optics.py",
+      "bytes": 14244,
+      "sha256": "b2a533d024f040543d1a31fdad8635a7c54a54daa31f37e86530d1809b5ab302",
+      "recovery": {
+        "kind": "crlf_normalized_git_blob",
+        "commit": "ac7e3ecce0bef96ae7d91f8de6e478542913bd4e",
+        "path": "LightGenV2/tasks/t07_abo_image_retrieval/standalone/optics.py",
+        "archive_ref": "refs/archive/checkout-preservation-20261004/original18"
+      }
+    },
+    {
+      "path": "LightGenV2/reports/20260927_demo_energy_efficiency_a100/ours/05_lsp/source_snapshot/tasks/t02_keypoint_detection/README.md",
+      "bytes": 4922,
+      "sha256": "bfa1a772bd058703ff76e9224fc5314d607de2ac141299db22024858aa5dc696",
+      "recovery": {
+        "kind": "crlf_normalized_git_blob",
+        "commit": "1c7222a1119385475e1b464ca7efdb67cdc21a4c",
+        "path": "LightGenV2/tasks/t02_keypoint_detection/README.md",
+        "archive_ref": "refs/archive/frozen-local-20261005/demo-reproduction-overlay"
+      }
+    },
+    {
+      "path": "LightGenV2/reports/20260927_demo_energy_efficiency_a100/ours/05_lsp/source_snapshot/tasks/t02_keypoint_detection/modeling.py",
+      "bytes": 10032,
+      "sha256": "fc537b89188f91c6568052b40f3563ed919b64cc751e611fbdd889460a2014a0",
+      "recovery": {
+        "kind": "crlf_normalized_git_blob",
+        "commit": "1c7222a1119385475e1b464ca7efdb67cdc21a4c",
+        "path": "LightGenV2/tasks/t02_keypoint_detection/modeling.py",
+        "archive_ref": "refs/archive/frozen-local-20261005/demo-reproduction-overlay"
+      }
+    },
+    {
+      "path": "LightGenV2/reports/20260927_demo_energy_efficiency_a100/ours/05_lsp/source_snapshot/tasks/t02_keypoint_detection/reports/LSP_METRIC_AUDIT.md",
+      "bytes": 3080,
+      "sha256": "db73774f07a853b9c1ce8cf8c24207409ca2a0e3de316d67285d293e5e418ea3",
+      "recovery": {
+        "kind": "current_main_crlf_normalized_git_blob",
+        "commit": "57a6b1ad43b04e42deb89c84165489794d4e5ab9",
+        "path": "LightGenV2/tasks/t02_keypoint_detection/reports/LSP_METRIC_AUDIT.md",
+        "git_blob": "dc3fecdd031ab9d0a382f3fc2813f5027545a29a"
+      }
+    },
+    {
+      "path": "LightGenV2/reports/20260927_demo_energy_efficiency_a100/ours/05_lsp/source_snapshot/tasks/t02_keypoint_detection/reports/dc20_comparison/RESULTS.md",
+      "bytes": 1404,
+      "sha256": "6eb098a8ecfd3d045d91cf7c19c54f34fa113fa0969f09c0a7389acc7165f548",
+      "recovery": {
+        "kind": "current_main_crlf_normalized_git_blob",
+        "commit": "57a6b1ad43b04e42deb89c84165489794d4e5ab9",
+        "path": "LightGenV2/tasks/t02_keypoint_detection/reports/dc20_comparison/RESULTS.md",
+        "git_blob": "5b9ea68c70801c0b78e8a2eb237a2e016c589fed"
+      }
+    },
+    {
+      "path": "LightGenV2/reports/20260927_demo_energy_efficiency_a100/ours/05_lsp/source_snapshot/tasks/t02_keypoint_detection/reports/dc20_comparison/comparison.csv",
+      "bytes": 927,
+      "sha256": "a0d010e1485c034b613f8c0bc11d8d30698eed5c0f4475c03c79b485104fcd1b",
+      "recovery": {
+        "kind": "current_main_crlf_normalized_git_blob",
+        "commit": "57a6b1ad43b04e42deb89c84165489794d4e5ab9",
+        "path": "LightGenV2/tasks/t02_keypoint_detection/reports/dc20_comparison/comparison.csv",
+        "git_blob": "0ac90084ef649b1897280e527b844a4025ac5b8f"
+      }
+    },
+    {
+      "path": "LightGenV2/reports/20260927_demo_energy_efficiency_a100/ours/05_lsp/source_snapshot/tasks/t02_keypoint_detection/reports/dc20_comparison/comparison.json",
+      "bytes": 1483,
+      "sha256": "e41467a8101c66d5f235a8ebdc7e28cf793120306426b346dc7c1e2f0eda8147",
+      "recovery": {
+        "kind": "current_main_crlf_normalized_git_blob",
+        "commit": "57a6b1ad43b04e42deb89c84165489794d4e5ab9",
+        "path": "LightGenV2/tasks/t02_keypoint_detection/reports/dc20_comparison/comparison.json",
+        "git_blob": "0f86750f74c8d60327a4879727cf5a0645173b52"
+      }
+    },
+    {
+      "path": "LightGenV2/reports/20260927_demo_energy_efficiency_a100/ours/05_lsp/source_snapshot/tasks/t02_keypoint_detection/reports/dc20_comparison/d2nn_best_phase_overview.pdf",
+      "bytes": 149721,
+      "sha256": "2fc80a333d1459d620b0fdbb01a4158c7003772c88b65336eb342c97ce3d28d2",
+      "recovery": {
+        "kind": "current_main_exact_git_blob",
+        "commit": "57a6b1ad43b04e42deb89c84165489794d4e5ab9",
+        "path": "LightGenV2/tasks/t02_keypoint_detection/reports/dc20_comparison/d2nn_best_phase_overview.pdf",
+        "git_blob": "9565ceffd41d323a9d82fff1de0f4877b27c2e6a"
+      }
+    },
+    {
+      "path": "LightGenV2/reports/20260927_demo_energy_efficiency_a100/ours/05_lsp/source_snapshot/tasks/t02_keypoint_detection/reports/dc20_comparison/d2nn_phase_statistics.json",
+      "bytes": 821,
+      "sha256": "d2acc835a6ab7d46c84bd1710100225d12bd397fda7efaf1dcded58960464b57",
+      "recovery": {
+        "kind": "current_main_crlf_normalized_git_blob",
+        "commit": "57a6b1ad43b04e42deb89c84165489794d4e5ab9",
+        "path": "LightGenV2/tasks/t02_keypoint_detection/reports/dc20_comparison/d2nn_phase_statistics.json",
+        "git_blob": "e86144b8434520ff4bfbfe83992784b712582a6e"
+      }
+    },
+    {
+      "path": "LightGenV2/reports/20260927_demo_energy_efficiency_a100/ours/05_lsp/source_snapshot/tasks/t02_keypoint_detection/reports/dc20_comparison/lsp_pose_comparison.pdf",
+      "bytes": 13646,
+      "sha256": "cc7ec8c69ef9f201c17c146e14608fb92c7da7d3bcb67ae247eb95be8322015e",
+      "recovery": {
+        "kind": "current_main_exact_git_blob",
+        "commit": "57a6b1ad43b04e42deb89c84165489794d4e5ab9",
+        "path": "LightGenV2/tasks/t02_keypoint_detection/reports/dc20_comparison/lsp_pose_comparison.pdf",
+        "git_blob": "3bfa3f92a86249d12400c52a9e6f3cbfcf872666"
+      }
+    },
+    {
+      "path": "LightGenV2/reports/20260927_demo_energy_efficiency_a100/ours/05_lsp/source_snapshot/tasks/t02_keypoint_detection/reports/dc20_comparison/main_best_phase_overview.pdf",
+      "bytes": 428899,
+      "sha256": "4f7c3361d805032ee6237689299388d25f5ceee6025512e0f5e3ae4b4d277f23",
+      "recovery": {
+        "kind": "current_main_exact_git_blob",
+        "commit": "57a6b1ad43b04e42deb89c84165489794d4e5ab9",
+        "path": "LightGenV2/tasks/t02_keypoint_detection/reports/dc20_comparison/main_best_phase_overview.pdf",
+        "git_blob": "40ff81fb4c933ea28c5f9d5cc4271d53ca0f12d8"
+      }
+    },
+    {
+      "path": "LightGenV2/reports/20260927_demo_energy_efficiency_a100/ours/05_lsp/source_snapshot/tasks/t02_keypoint_detection/reports/dc20_comparison/main_phase_statistics.json",
+      "bytes": 2098,
+      "sha256": "ac7d1d84cf1a7cde79fc1d0476fb7603b874bb87dad34592071f0063f6d9e41d",
+      "recovery": {
+        "kind": "current_main_crlf_normalized_git_blob",
+        "commit": "57a6b1ad43b04e42deb89c84165489794d4e5ab9",
+        "path": "LightGenV2/tasks/t02_keypoint_detection/reports/dc20_comparison/main_phase_statistics.json",
+        "git_blob": "f36c8f458fd3978b3284ada8495b0352d77d7fff"
+      }
+    },
+    {
+      "path": "LightGenV2/reports/20260927_demo_energy_efficiency_a100/ours/05_lsp/source_snapshot/tasks/t02_keypoint_detection/reports/reproduction/BASELINE_METHODS.md",
+      "bytes": 1852,
+      "sha256": "caf01a2d2b2af80f3467024c8b47bfcc158e59e1825e00294643d632db436ef0",
+      "recovery": {
+        "kind": "crlf_normalized_git_blob",
+        "commit": "ac7e3ecce0bef96ae7d91f8de6e478542913bd4e",
+        "path": "LightGenV2/tasks/t02_keypoint_detection/reports/reproduction/BASELINE_METHODS.md",
+        "archive_ref": "refs/archive/checkout-preservation-20261004/original18"
+      }
+    },
+    {
+      "path": "LightGenV2/reports/20260927_demo_energy_efficiency_a100/ours/05_lsp/source_snapshot/tasks/t02_keypoint_detection/reports/reproduction/CHECK_20260908.md",
+      "bytes": 5281,
+      "sha256": "cc6853d5113e851add00e9cefac41d1d71d0490fec9cf0381ad8db5c430c9e24",
+      "recovery": {
+        "kind": "current_main_crlf_normalized_git_blob",
+        "commit": "57a6b1ad43b04e42deb89c84165489794d4e5ab9",
+        "path": "LightGenV2/tasks/t02_keypoint_detection/reports/reproduction/CHECK_20260908.md",
+        "git_blob": "488098d884f65528bc3d454033b466db11b3d54a"
+      }
+    },
+    {
+      "path": "LightGenV2/reports/20260927_demo_energy_efficiency_a100/ours/05_lsp/source_snapshot/tasks/t02_keypoint_detection/reports/reproduction/EVIDENCE_20260908.json",
+      "bytes": 9816,
+      "sha256": "3a80150bdebb43709b77a9f21b44a4d40a79abdac8093aa4e49cafaf982a0bdc",
+      "recovery": {
+        "kind": "current_main_crlf_normalized_git_blob",
+        "commit": "57a6b1ad43b04e42deb89c84165489794d4e5ab9",
+        "path": "LightGenV2/tasks/t02_keypoint_detection/reports/reproduction/EVIDENCE_20260908.json",
+        "git_blob": "03221d0df8142ff94e38a4078492d1514f9b3ab1"
+      }
+    },
+    {
+      "path": "LightGenV2/reports/20260927_demo_energy_efficiency_a100/ours/05_lsp/source_snapshot/tasks/t02_keypoint_detection/reports/reproduction/README.md",
+      "bytes": 1289,
+      "sha256": "ec09e274fe2f860c808caa519df93b4606529744835702f97dfaf39da3f5bf64",
+      "recovery": {
+        "kind": "crlf_normalized_git_blob",
+        "commit": "52db52d19dfd35382e62d1cc9bda3373be5cff81",
+        "path": "LightGenV2/tasks/t02_keypoint_detection/reports/reproduction/README.md",
+        "archive_ref": "refs/archive/frozen-local-20261005/mnist-dvp-20260924"
+      }
+    },
+    {
+      "path": "LightGenV2/reports/20260927_demo_energy_efficiency_a100/ours/05_lsp/source_snapshot/tasks/t02_keypoint_detection/run.py",
+      "bytes": 5928,
+      "sha256": "0fcad8f08db6b014728b6e671c0a38ae34ccff25b18886677f38ef346a737bc7",
+      "recovery": {
+        "kind": "crlf_normalized_git_blob",
+        "commit": "1c7222a1119385475e1b464ca7efdb67cdc21a4c",
+        "path": "LightGenV2/tasks/t02_keypoint_detection/run.py",
+        "archive_ref": "refs/archive/frozen-local-20261005/demo-reproduction-overlay"
+      }
+    },
+    {
+      "path": "LightGenV2/reports/20260927_demo_energy_efficiency_a100/ours/06_salicon/source_snapshot/tasks/t03_saliency/BASELINE_5090D_TODO.md",
+      "bytes": 1584,
+      "sha256": "f0ce66b224feaf0b30d9fd19ab223857c1919581848f001b10c97c5f8505ffbd",
+      "recovery": {
+        "kind": "current_main_crlf_normalized_git_blob",
+        "commit": "57a6b1ad43b04e42deb89c84165489794d4e5ab9",
+        "path": "LightGenV2/tasks/t03_saliency/BASELINE_5090D_TODO.md",
+        "git_blob": "b2c6cde8eb0d79c763660c540b8cdfa59d708b29"
+      }
+    },
+    {
+      "path": "LightGenV2/reports/20260927_demo_energy_efficiency_a100/ours/06_salicon/source_snapshot/tasks/t03_saliency/COMMAND_MEADOWLARK.md",
+      "bytes": 6392,
+      "sha256": "4b361c4520605b10c9ccbb8c3f1c86657a933081a42ddf28df75aa669eec6f76",
+      "recovery": {
+        "kind": "current_main_crlf_normalized_git_blob",
+        "commit": "57a6b1ad43b04e42deb89c84165489794d4e5ab9",
+        "path": "LightGenV2/tasks/t03_saliency/COMMAND_MEADOWLARK.md",
+        "git_blob": "1b417ce2e0f22607c1e9445336ba281bd375a871"
+      }
+    },
+    {
+      "path": "LightGenV2/reports/20260927_demo_energy_efficiency_a100/ours/06_salicon/source_snapshot/tasks/t03_saliency/COMMAND_SHS.md",
+      "bytes": 4044,
+      "sha256": "5f00b1e4a04be85d4bfebea1bb63b3cb723347f0c2d9eebfd4ba312ea7436491",
+      "recovery": {
+        "kind": "current_main_crlf_normalized_git_blob",
+        "commit": "57a6b1ad43b04e42deb89c84165489794d4e5ab9",
+        "path": "LightGenV2/tasks/t03_saliency/COMMAND_SHS.md",
+        "git_blob": "9dbb869e0321071d1ea80cf4eb6bf412de6ecd62"
+      }
+    },
+    {
+      "path": "LightGenV2/reports/20260927_demo_energy_efficiency_a100/ours/06_salicon/source_snapshot/tasks/t03_saliency/HANDOFF_08625.md",
+      "bytes": 6189,
+      "sha256": "83154d748fe3ec3acb7447277d277a15b00acee7f46dedebcf1b7ad2ef1111a0",
+      "recovery": {
+        "kind": "current_main_crlf_normalized_git_blob",
+        "commit": "57a6b1ad43b04e42deb89c84165489794d4e5ab9",
+        "path": "LightGenV2/tasks/t03_saliency/HANDOFF_08625.md",
+        "git_blob": "e7d515fb63a11530219c1425f68588381f2dd469"
+      }
+    },
+    {
+      "path": "LightGenV2/reports/20260927_demo_energy_efficiency_a100/ours/06_salicon/source_snapshot/tasks/t03_saliency/README.md",
+      "bytes": 25968,
+      "sha256": "0f2aa6d3232c5e70a6199aeab0d59d26a2b015301672c893dfb3384a2297f9c1",
+      "recovery": {
+        "kind": "crlf_normalized_git_blob",
+        "commit": "1c7222a1119385475e1b464ca7efdb67cdc21a4c",
+        "path": "LightGenV2/tasks/t03_saliency/README.md",
+        "archive_ref": "refs/archive/frozen-local-20261005/demo-reproduction-overlay"
+      }
+    },
+    {
+      "path": "LightGenV2/reports/20260927_demo_energy_efficiency_a100/ours/06_salicon/source_snapshot/tasks/t03_saliency/aligned_baseline.py",
+      "bytes": 6381,
+      "sha256": "368f5f4a9e51c53d6a93180eac29b96ab4a5b4a02e55979ade345e1aae739e0a",
+      "recovery": {
+        "kind": "current_main_exact_git_blob",
+        "commit": "57a6b1ad43b04e42deb89c84165489794d4e5ab9",
+        "path": "LightGenV2/reports/20260927_demo_energy_efficiency_a100/baseline/06_salicon/source_snapshot/tasks/t03_saliency/aligned_baseline.py",
+        "git_blob": "a86cc87074862e12a59767ba1de41e5a21269e96"
+      }
+    },
+    {
+      "path": "LightGenV2/reports/20260927_demo_energy_efficiency_a100/ours/06_salicon/source_snapshot/tasks/t03_saliency/reports/dc20_comparison/RESULTS.md",
+      "bytes": 612,
+      "sha256": "b26d3fc2c1c7b081698a7e5901cee0ae3327ae35bbab7ecb3fde4cfc563393a2",
+      "recovery": {
+        "kind": "current_main_crlf_normalized_git_blob",
+        "commit": "57a6b1ad43b04e42deb89c84165489794d4e5ab9",
+        "path": "LightGenV2/tasks/t03_saliency/reports/dc20_comparison/RESULTS.md",
+        "git_blob": "ba76a0bf307d33648073f2b69e1cdba1b73b66fb"
+      }
+    },
+    {
+      "path": "LightGenV2/reports/20260927_demo_energy_efficiency_a100/ours/06_salicon/source_snapshot/tasks/t03_saliency/reports/dc20_comparison/comparison.csv",
+      "bytes": 1148,
+      "sha256": "1846bd18b16d73f815761f34c15526f926257761325de0d491e51ebc8acfe343",
+      "recovery": {
+        "kind": "current_main_exact_git_blob",
+        "commit": "57a6b1ad43b04e42deb89c84165489794d4e5ab9",
+        "path": "LightGenV2/tasks/t03_saliency/reports/dc20_comparison/comparison.csv",
+        "git_blob": "9d71ea62e4ec1c2b6ee784aa259bee36efa094da"
+      }
+    },
+    {
+      "path": "LightGenV2/reports/20260927_demo_energy_efficiency_a100/ours/06_salicon/source_snapshot/tasks/t03_saliency/reports/dc20_comparison/comparison.json",
+      "bytes": 2408,
+      "sha256": "11334e7ea2b4106d4940cb10530dea69978e9713ff17556d82d608eb2600dae5",
+      "recovery": {
+        "kind": "current_main_crlf_normalized_git_blob",
+        "commit": "57a6b1ad43b04e42deb89c84165489794d4e5ab9",
+        "path": "LightGenV2/tasks/t03_saliency/reports/dc20_comparison/comparison.json",
+        "git_blob": "f368ab3ce5bba47780485435b5a28f568c46716d"
+      }
+    },
+    {
+      "path": "LightGenV2/reports/20260927_demo_energy_efficiency_a100/ours/06_salicon/source_snapshot/tasks/t03_saliency/reports/dc20_comparison/d2nn_best_visualization/best_phase_overview.pdf",
+      "bytes": 70838,
+      "sha256": "40588e9c52a83cbc0bd611279cd86e8e8d3b204b13df8aa2676f46c1212d6749",
+      "recovery": {
+        "kind": "current_main_exact_git_blob",
+        "commit": "57a6b1ad43b04e42deb89c84165489794d4e5ab9",
+        "path": "LightGenV2/tasks/t03_saliency/reports/dc20_comparison/d2nn_best_visualization/best_phase_overview.pdf",
+        "git_blob": "94be55bf49d0029df1718270c11d8a86c010ebc2"
+      }
+    },
+    {
+      "path": "LightGenV2/reports/20260927_demo_energy_efficiency_a100/ours/06_salicon/source_snapshot/tasks/t03_saliency/reports/dc20_comparison/d2nn_best_visualization/phase_statistics.json",
+      "bytes": 781,
+      "sha256": "2ad7e86ad9c5b6f86d1d91d67b29021e6cdf346ef457923e88aa3d2cf97f1824",
+      "recovery": {
+        "kind": "current_main_crlf_normalized_git_blob",
+        "commit": "57a6b1ad43b04e42deb89c84165489794d4e5ab9",
+        "path": "LightGenV2/tasks/t03_saliency/reports/dc20_comparison/d2nn_best_visualization/phase_statistics.json",
+        "git_blob": "26c28d609b2cdcacea6fe0043cc91017406bf581"
+      }
+    },
+    {
+      "path": "LightGenV2/reports/20260927_demo_energy_efficiency_a100/ours/06_salicon/source_snapshot/tasks/t03_saliency/reports/dc20_comparison/main_best_visualization/best_phase_overview.pdf",
+      "bytes": 197540,
+      "sha256": "614a982e5c9b8a90412b76e3dd3aeadfb8a35a40f6c25f452c55ace59c7772d5",
+      "recovery": {
+        "kind": "current_main_exact_git_blob",
+        "commit": "57a6b1ad43b04e42deb89c84165489794d4e5ab9",
+        "path": "LightGenV2/tasks/t03_saliency/reports/dc20_comparison/main_best_visualization/best_phase_overview.pdf",
+        "git_blob": "f46f1964cccb81c5ae23d5b3eb9724849fb75cb0"
+      }
+    },
+    {
+      "path": "LightGenV2/reports/20260927_demo_energy_efficiency_a100/ours/06_salicon/source_snapshot/tasks/t03_saliency/reports/dc20_comparison/main_best_visualization/phase_statistics.json",
+      "bytes": 2063,
+      "sha256": "c42aa139e6e1c03ac6590742b80ae49103dd21f20ed423bbaf6d8e50fd67b335",
+      "recovery": {
+        "kind": "current_main_crlf_normalized_git_blob",
+        "commit": "57a6b1ad43b04e42deb89c84165489794d4e5ab9",
+        "path": "LightGenV2/tasks/t03_saliency/reports/dc20_comparison/main_best_visualization/phase_statistics.json",
+        "git_blob": "31b7a4d2596413ee45a7cde56a80c87edb762a1f"
+      }
+    },
+    {
+      "path": "LightGenV2/reports/20260927_demo_energy_efficiency_a100/ours/06_salicon/source_snapshot/tasks/t03_saliency/reports/dc20_comparison/salicon_performance.pdf",
+      "bytes": 12882,
+      "sha256": "27c8b871beaba3196de87b9beb54a01640af3d78031b3917f89986b356a0c8ae",
+      "recovery": {
+        "kind": "current_main_exact_git_blob",
+        "commit": "57a6b1ad43b04e42deb89c84165489794d4e5ab9",
+        "path": "LightGenV2/tasks/t03_saliency/reports/dc20_comparison/salicon_performance.pdf",
+        "git_blob": "d2871af6d2fafaa995a464355409199adce650a4"
+      }
+    },
+    {
+      "path": "LightGenV2/reports/20260927_demo_energy_efficiency_a100/ours/06_salicon/source_snapshot/tasks/t03_saliency/reports/reproduction/ACCEPTED_086205_AUDIT.md",
+      "bytes": 17419,
+      "sha256": "c3b8385e07971b27c997f2a5492a75278f1fddb2bd15ae0ac9d370d35d292696",
+      "recovery": {
+        "kind": "current_main_crlf_normalized_git_blob",
+        "commit": "57a6b1ad43b04e42deb89c84165489794d4e5ab9",
+        "path": "LightGenV2/tasks/t03_saliency/reports/reproduction/ACCEPTED_086205_AUDIT.md",
+        "git_blob": "8ed285724595103f58181ab1810d25ebe6083e30"
+      }
+    },
+    {
+      "path": "LightGenV2/reports/20260927_demo_energy_efficiency_a100/ours/06_salicon/source_snapshot/tasks/t03_saliency/reports/reproduction/ADAPTIVE_REFINEMENT.md",
+      "bytes": 7052,
+      "sha256": "5e85c1cbfba9812a55c2ca2dbb312d3c1bee6d8c0f9e2c7ac5e14d500e9c8e09",
+      "recovery": {
+        "kind": "current_main_crlf_normalized_git_blob",
+        "commit": "57a6b1ad43b04e42deb89c84165489794d4e5ab9",
+        "path": "LightGenV2/tasks/t03_saliency/reports/reproduction/ADAPTIVE_REFINEMENT.md",
+        "git_blob": "daadac78588237e28059849489fdce159f7ed1e8"
+      }
+    },
+    {
+      "path": "LightGenV2/reports/20260927_demo_energy_efficiency_a100/ours/06_salicon/source_snapshot/tasks/t03_saliency/reports/reproduction/ALIGNED_RECHECK_20260909.md",
+      "bytes": 4607,
+      "sha256": "f90cbe157a609377250bc68bfc1bc84e0824008f89377e988e32d519fab6a862",
+      "recovery": {
+        "kind": "current_main_crlf_normalized_git_blob",
+        "commit": "57a6b1ad43b04e42deb89c84165489794d4e5ab9",
+        "path": "LightGenV2/tasks/t03_saliency/reports/reproduction/ALIGNED_RECHECK_20260909.md",
+        "git_blob": "1a97ab8dcc883911464efc56eb1787b79d01fe17"
+      }
+    },
+    {
+      "path": "LightGenV2/reports/20260927_demo_energy_efficiency_a100/ours/06_salicon/source_snapshot/tasks/t03_saliency/reports/reproduction/ALPHA_AND_HEAD_COMPARISON.md",
+      "bytes": 6110,
+      "sha256": "92a8268a095c329ff9854a87a4590b228abc5463ecaf5c2ae2470d6e34216f62",
+      "recovery": {
+        "kind": "current_main_crlf_normalized_git_blob",
+        "commit": "57a6b1ad43b04e42deb89c84165489794d4e5ab9",
+        "path": "LightGenV2/tasks/t03_saliency/reports/reproduction/ALPHA_AND_HEAD_COMPARISON.md",
+        "git_blob": "0b3198cff30982222600540c3bc1afe1b8be7db4"
+      }
+    },
+    {
+      "path": "LightGenV2/reports/20260927_demo_energy_efficiency_a100/ours/06_salicon/source_snapshot/tasks/t03_saliency/reports/reproduction/ALTERNATING_20260914.md",
+      "bytes": 6028,
+      "sha256": "7473b4809b6cf5587c1d546e602bc91ba9ed04647511e0488a9172dda316ad2e",
+      "recovery": {
+        "kind": "current_main_crlf_normalized_git_blob",
+        "commit": "57a6b1ad43b04e42deb89c84165489794d4e5ab9",
+        "path": "LightGenV2/tasks/t03_saliency/reports/reproduction/ALTERNATING_20260914.md",
+        "git_blob": "45e0654dd34f2155c2ab9e9b2bf3b3f8a3a2a7e2"
+      }
+    },
+    {
+      "path": "LightGenV2/reports/20260927_demo_energy_efficiency_a100/ours/06_salicon/source_snapshot/tasks/t03_saliency/reports/reproduction/BASELINE50_20260912.md",
+      "bytes": 6083,
+      "sha256": "c2304685aec247979f27a57ea2d168641ca1840556dd465c36d24be1f0b80ef3",
+      "recovery": {
+        "kind": "current_main_crlf_normalized_git_blob",
+        "commit": "57a6b1ad43b04e42deb89c84165489794d4e5ab9",
+        "path": "LightGenV2/tasks/t03_saliency/reports/reproduction/BASELINE50_20260912.md",
+        "git_blob": "5eed2057d1dcaf5f3a94f39c99c1bba4610a72e0"
+      }
+    },
+    {
+      "path": "LightGenV2/reports/20260927_demo_energy_efficiency_a100/ours/06_salicon/source_snapshot/tasks/t03_saliency/reports/reproduction/BASELINE_METHODS.md",
+      "bytes": 1763,
+      "sha256": "de4c22e7997fb0ca1eaa163d080f34097dc8483ee0f542ae8893f76292d0e651",
+      "recovery": {
+        "kind": "current_main_crlf_normalized_git_blob",
+        "commit": "57a6b1ad43b04e42deb89c84165489794d4e5ab9",
+        "path": "LightGenV2/tasks/t03_saliency/reports/reproduction/BASELINE_METHODS.md",
+        "git_blob": "fe5887e4734bb6505d3508ebcafeadb59feadc4f"
+      }
+    },
+    {
+      "path": "LightGenV2/reports/20260927_demo_energy_efficiency_a100/ours/06_salicon/source_snapshot/tasks/t03_saliency/reports/reproduction/CC_ONLY_POLISH_20260913.md",
+      "bytes": 4548,
+      "sha256": "62ba39dd8bc893ab3d72263f241f126cc6f4981fe494ab390d681e3f33bf9753",
+      "recovery": {
+        "kind": "current_main_crlf_normalized_git_blob",
+        "commit": "57a6b1ad43b04e42deb89c84165489794d4e5ab9",
+        "path": "LightGenV2/tasks/t03_saliency/reports/reproduction/CC_ONLY_POLISH_20260913.md",
+        "git_blob": "841f0dba3f181bb67c365d4917bba719c221ced5"
+      }
+    },
+    {
+      "path": "LightGenV2/reports/20260927_demo_energy_efficiency_a100/ours/06_salicon/source_snapshot/tasks/t03_saliency/reports/reproduction/CHECK_20260908.md",
+      "bytes": 4594,
+      "sha256": "e1ae909aebf195d531a31624ead41b4ba3eef7e0414a547a06d5513bbdb3832a",
+      "recovery": {
+        "kind": "current_main_crlf_normalized_git_blob",
+        "commit": "57a6b1ad43b04e42deb89c84165489794d4e5ab9",
+        "path": "LightGenV2/tasks/t03_saliency/reports/reproduction/CHECK_20260908.md",
+        "git_blob": "656c023189e7b08dfd0bef10d829db271b160c30"
+      }
+    },
+    {
+      "path": "LightGenV2/reports/20260927_demo_energy_efficiency_a100/ours/06_salicon/source_snapshot/tasks/t03_saliency/reports/reproduction/CROP_SHORT20_20260912.md",
+      "bytes": 4688,
+      "sha256": "f24161b8289bfbb314722f527d70dc257db808b2662ee2eaa93337e990bf6a3e",
+      "recovery": {
+        "kind": "current_main_crlf_normalized_git_blob",
+        "commit": "57a6b1ad43b04e42deb89c84165489794d4e5ab9",
+        "path": "LightGenV2/tasks/t03_saliency/reports/reproduction/CROP_SHORT20_20260912.md",
+        "git_blob": "05ef4637a81597406d4ea6cabfcd8350b858a4eb"
+      }
+    },
+    {
+      "path": "LightGenV2/reports/20260927_demo_energy_efficiency_a100/ours/06_salicon/source_snapshot/tasks/t03_saliency/reports/reproduction/CROSS_SAMPLE_BALANCE_20260913.md",
+      "bytes": 9027,
+      "sha256": "5064e91fc3f58e1d4f106a2fe47e6b121477ffc54a77681e204ad8931dbf8136",
+      "recovery": {
+        "kind": "current_main_crlf_normalized_git_blob",
+        "commit": "57a6b1ad43b04e42deb89c84165489794d4e5ab9",
+        "path": "LightGenV2/tasks/t03_saliency/reports/reproduction/CROSS_SAMPLE_BALANCE_20260913.md",
+        "git_blob": "4c77f3adaccc51b22e4ae092ae7f83d018d87c30"
+      }
+    },
+    {
+      "path": "LightGenV2/reports/20260927_demo_energy_efficiency_a100/ours/06_salicon/source_snapshot/tasks/t03_saliency/reports/reproduction/EARLY_LIGHTWEIGHT_RESIDUAL.md",
+      "bytes": 7300,
+      "sha256": "d0cdd28c371eac4ac734a46da0e60dbcbf5c59278c7aff4b0eb96638021efee7",
+      "recovery": {
+        "kind": "current_main_crlf_normalized_git_blob",
+        "commit": "57a6b1ad43b04e42deb89c84165489794d4e5ab9",
+        "path": "LightGenV2/tasks/t03_saliency/reports/reproduction/EARLY_LIGHTWEIGHT_RESIDUAL.md",
+        "git_blob": "a04222e637c238f3a317bb77ea7c20056935bde6"
+      }
+    },
+    {
+      "path": "LightGenV2/reports/20260927_demo_energy_efficiency_a100/ours/06_salicon/source_snapshot/tasks/t03_saliency/reports/reproduction/EVIDENCE_20260908.json",
+      "bytes": 11992,
+      "sha256": "6823193a8f366f15bbda2ae36119138103228ee6843ddbe254921222697ac959",
+      "recovery": {
+        "kind": "current_main_crlf_normalized_git_blob",
+        "commit": "57a6b1ad43b04e42deb89c84165489794d4e5ab9",
+        "path": "LightGenV2/tasks/t03_saliency/reports/reproduction/EVIDENCE_20260908.json",
+        "git_blob": "24f3347969c69ecfcd4614feb7ba899240516558"
+      }
+    },
+    {
+      "path": "LightGenV2/reports/20260927_demo_energy_efficiency_a100/ours/06_salicon/source_snapshot/tasks/t03_saliency/reports/reproduction/FEATURE_HINTS.md",
+      "bytes": 50890,
+      "sha256": "f663edf08802be9a623c1b7f379b3742e4afa2db29b5be8c783b1da403b95a68",
+      "recovery": {
+        "kind": "current_main_crlf_normalized_git_blob",
+        "commit": "57a6b1ad43b04e42deb89c84165489794d4e5ab9",
+        "path": "LightGenV2/tasks/t03_saliency/reports/reproduction/FEATURE_HINTS.md",
+        "git_blob": "0ea8c84dfe5654347abc4c8f4c63449a15153f5c"
+      }
+    },
+    {
+      "path": "LightGenV2/reports/20260927_demo_energy_efficiency_a100/ours/06_salicon/source_snapshot/tasks/t03_saliency/reports/reproduction/GSAM_TRAINING_20260913.md",
+      "bytes": 4909,
+      "sha256": "895446de427f1ba88e8edd4bc17f5164ee590c94f771d4135159a259f4132b53",
+      "recovery": {
+        "kind": "current_main_crlf_normalized_git_blob",
+        "commit": "57a6b1ad43b04e42deb89c84165489794d4e5ab9",
+        "path": "LightGenV2/tasks/t03_saliency/reports/reproduction/GSAM_TRAINING_20260913.md",
+        "git_blob": "f7f7b958b0a2d94531f7e985b7cff73a1612e522"
+      }
+    },
+    {
+      "path": "LightGenV2/reports/20260927_demo_energy_efficiency_a100/ours/06_salicon/source_snapshot/tasks/t03_saliency/reports/reproduction/HARD_CC_20260912.md",
+      "bytes": 6133,
+      "sha256": "6d15508f4515a6689e4f95c68f729e8eeaf25c4ad959cb8a5e485eae1f5d074b",
+      "recovery": {
+        "kind": "current_main_crlf_normalized_git_blob",
+        "commit": "57a6b1ad43b04e42deb89c84165489794d4e5ab9",
+        "path": "LightGenV2/tasks/t03_saliency/reports/reproduction/HARD_CC_20260912.md",
+        "git_blob": "992ab0916b5138e51dc3e434961c4a31a3d1b03f"
+      }
+    },
+    {
+      "path": "LightGenV2/reports/20260927_demo_energy_efficiency_a100/ours/06_salicon/source_snapshot/tasks/t03_saliency/reports/reproduction/MIXUP_20260913.md",
+      "bytes": 5146,
+      "sha256": "df3d5790a8463c808703f9ec0fdb2e23b655847ef0d62b0cf74d32d6dbe36e47",
+      "recovery": {
+        "kind": "current_main_crlf_normalized_git_blob",
+        "commit": "57a6b1ad43b04e42deb89c84165489794d4e5ab9",
+        "path": "LightGenV2/tasks/t03_saliency/reports/reproduction/MIXUP_20260913.md",
+        "git_blob": "ffc61b1e47ec228b2dcf1f4c2820cd6d387d6bb0"
+      }
+    },
+    {
+      "path": "LightGenV2/reports/20260927_demo_energy_efficiency_a100/ours/06_salicon/source_snapshot/tasks/t03_saliency/reports/reproduction/NOISE_CONSISTENCY_20260913.md",
+      "bytes": 6259,
+      "sha256": "c063aa223ad413c583081fef8f64af1d91e186daf4237306587c51f17a6a32ce",
+      "recovery": {
+        "kind": "current_main_crlf_normalized_git_blob",
+        "commit": "57a6b1ad43b04e42deb89c84165489794d4e5ab9",
+        "path": "LightGenV2/tasks/t03_saliency/reports/reproduction/NOISE_CONSISTENCY_20260913.md",
+        "git_blob": "b99e269c4d268e6652ad56b37f6d9b861e717707"
+      }
+    },
+    {
+      "path": "LightGenV2/reports/20260927_demo_energy_efficiency_a100/ours/06_salicon/source_snapshot/tasks/t03_saliency/reports/reproduction/OPTICAL_ABLATION.md",
+      "bytes": 7552,
+      "sha256": "77b9d2f98a29545851b24bf4694d6b6e8272c100bd37ec0304c0f4f7ccb0d3b4",
+      "recovery": {
+        "kind": "current_main_crlf_normalized_git_blob",
+        "commit": "57a6b1ad43b04e42deb89c84165489794d4e5ab9",
+        "path": "LightGenV2/tasks/t03_saliency/reports/reproduction/OPTICAL_ABLATION.md",
+        "git_blob": "5c29515c3d218cde56c29256f31069a06060ee88"
+      }
+    },
+    {
+      "path": "LightGenV2/reports/20260927_demo_energy_efficiency_a100/ours/06_salicon/source_snapshot/tasks/t03_saliency/reports/reproduction/OPTICAL_LR_PRIORITY_20260913.md",
+      "bytes": 4703,
+      "sha256": "1585d53e4a5d1d242143d7a9ccfe68d24bd43fd955b16d01d8b0a231bdeacabc",
+      "recovery": {
+        "kind": "current_main_crlf_normalized_git_blob",
+        "commit": "57a6b1ad43b04e42deb89c84165489794d4e5ab9",
+        "path": "LightGenV2/tasks/t03_saliency/reports/reproduction/OPTICAL_LR_PRIORITY_20260913.md",
+        "git_blob": "93e95b7977124ee06d6a0fc01c45b801d22fa055"
+      }
+    },
+    {
+      "path": "LightGenV2/reports/20260927_demo_energy_efficiency_a100/ours/06_salicon/source_snapshot/tasks/t03_saliency/reports/reproduction/PYRAMID_CC_20260913.md",
+      "bytes": 6745,
+      "sha256": "372d693faccfb817977f4c410ab072d237010b1409141d7545772a05970a4169",
+      "recovery": {
+        "kind": "current_main_crlf_normalized_git_blob",
+        "commit": "57a6b1ad43b04e42deb89c84165489794d4e5ab9",
+        "path": "LightGenV2/tasks/t03_saliency/reports/reproduction/PYRAMID_CC_20260913.md",
+        "git_blob": "286e4bb5c873550d1528ca92653b04c3d657ab42"
+      }
+    },
+    {
+      "path": "LightGenV2/reports/20260927_demo_energy_efficiency_a100/ours/06_salicon/source_snapshot/tasks/t03_saliency/reports/reproduction/README.md",
+      "bytes": 17711,
+      "sha256": "051792b65fdb1a1a5598e17f833b06b93e280ee3fe2a963209c685cf2d2c0259",
+      "recovery": {
+        "kind": "current_main_crlf_normalized_git_blob",
+        "commit": "57a6b1ad43b04e42deb89c84165489794d4e5ab9",
+        "path": "LightGenV2/tasks/t03_saliency/reports/reproduction/README.md",
+        "git_blob": "a7c4191e7e452068e41a7f65075a5d111a5c5322"
+      }
+    },
+    {
+      "path": "LightGenV2/reports/20260927_demo_energy_efficiency_a100/ours/06_salicon/source_snapshot/tasks/t03_saliency/reports/reproduction/READOUT_CALIBRATION.md",
+      "bytes": 8764,
+      "sha256": "c5aa73762dd3f20185344a2ca3385b24194f7b05be673ce5d5e3a5cd4bfa42e6",
+      "recovery": {
+        "kind": "current_main_crlf_normalized_git_blob",
+        "commit": "57a6b1ad43b04e42deb89c84165489794d4e5ab9",
+        "path": "LightGenV2/tasks/t03_saliency/reports/reproduction/READOUT_CALIBRATION.md",
+        "git_blob": "3af5fc445fdd0bd9552f3e329f8d053ca9470754"
+      }
+    },
+    {
+      "path": "LightGenV2/reports/20260927_demo_energy_efficiency_a100/ours/06_salicon/source_snapshot/tasks/t03_saliency/reports/reproduction/RELIABLE_TEACHER_20260912.md",
+      "bytes": 5191,
+      "sha256": "ae14cef9dcfde66cb8b4c61cd90dee745fc8dd83f73dab7aff68dfa2ff7a57ce",
+      "recovery": {
+        "kind": "current_main_crlf_normalized_git_blob",
+        "commit": "57a6b1ad43b04e42deb89c84165489794d4e5ab9",
+        "path": "LightGenV2/tasks/t03_saliency/reports/reproduction/RELIABLE_TEACHER_20260912.md",
+        "git_blob": "dc1d2a93e2e4d585367203702bf293ee18363b1c"
+      }
+    },
+    {
+      "path": "LightGenV2/reports/20260927_demo_energy_efficiency_a100/ours/06_salicon/source_snapshot/tasks/t03_saliency/reports/reproduction/RESULTS.md",
+      "bytes": 3576,
+      "sha256": "7df1eb81d21ef419a89ae3cfcc5c16a30fdbbc6e61e575ff8c92f2d9e820b847",
+      "recovery": {
+        "kind": "current_main_crlf_normalized_git_blob",
+        "commit": "57a6b1ad43b04e42deb89c84165489794d4e5ab9",
+        "path": "LightGenV2/tasks/t03_saliency/reports/reproduction/RESULTS.md",
+        "git_blob": "a4924ab507b4c62ef60fe8af36b539da354f337e"
+      }
+    },
+    {
+      "path": "LightGenV2/reports/20260927_demo_energy_efficiency_a100/ours/06_salicon/source_snapshot/tasks/t03_saliency/reports/reproduction/SAM_TRAINING.md",
+      "bytes": 91316,
+      "sha256": "8bf1ab3871c793513bd8cdc7082d9e23745f0ffeb83e8b78aad6f5c78e852b54",
+      "recovery": {
+        "kind": "current_main_crlf_normalized_git_blob",
+        "commit": "57a6b1ad43b04e42deb89c84165489794d4e5ab9",
+        "path": "LightGenV2/tasks/t03_saliency/reports/reproduction/SAM_TRAINING.md",
+        "git_blob": "b99a63c433d8cdc9723b3f0dfbd5e911ec161a5f"
+      }
+    },
+    {
+      "path": "LightGenV2/reports/20260927_demo_energy_efficiency_a100/ours/06_salicon/source_snapshot/tasks/t03_saliency/reports/reproduction/SPATIAL_FFN_RESIDUAL.md",
+      "bytes": 3991,
+      "sha256": "fb3bdd8119bcdf1f127b4247546042f7f6d83e926bb804d00d64156b7565b014",
+      "recovery": {
+        "kind": "current_main_crlf_normalized_git_blob",
+        "commit": "57a6b1ad43b04e42deb89c84165489794d4e5ab9",
+        "path": "LightGenV2/tasks/t03_saliency/reports/reproduction/SPATIAL_FFN_RESIDUAL.md",
+        "git_blob": "7b425f6f846919b16cdc9aa68531fbab4ed2497f"
+      }
+    },
+    {
+      "path": "LightGenV2/reports/20260927_demo_energy_efficiency_a100/ours/06_salicon/source_snapshot/tasks/t03_saliency/reports/reproduction/TEACHER_CURRICULUM.md",
+      "bytes": 7052,
+      "sha256": "e4ba60d2509cff55e363bcc358ef9ee70e91ed3c7f25c1b5a3fa355b82991e52",
+      "recovery": {
+        "kind": "current_main_crlf_normalized_git_blob",
+        "commit": "57a6b1ad43b04e42deb89c84165489794d4e5ab9",
+        "path": "LightGenV2/tasks/t03_saliency/reports/reproduction/TEACHER_CURRICULUM.md",
+        "git_blob": "e1380e433aeab0f0aa0d20ff4b21dd4279b51915"
+      }
+    },
+    {
+      "path": "LightGenV2/reports/20260927_demo_energy_efficiency_a100/ours/06_salicon/source_snapshot/tasks/t03_saliency/reports/reproduction/TRAINING_REFINEMENT.md",
+      "bytes": 17155,
+      "sha256": "931a14ea786a339024fb84a240ca7503a22b50b9593363a7664a7b82120a7c64",
+      "recovery": {
+        "kind": "current_main_crlf_normalized_git_blob",
+        "commit": "57a6b1ad43b04e42deb89c84165489794d4e5ab9",
+        "path": "LightGenV2/tasks/t03_saliency/reports/reproduction/TRAINING_REFINEMENT.md",
+        "git_blob": "f745a6ee838fa455cd78a060e03898555c350de9"
+      }
+    },
+    {
+      "path": "LightGenV2/reports/20260927_demo_energy_efficiency_a100/ours/06_salicon/source_snapshot/tasks/t03_saliency/reports/reproduction/UNLABELED_PRETRAINING.md",
+      "bytes": 44402,
+      "sha256": "9fc448392af7abd317da92c4d9d52123977bed6442424c445dd20cbd65fef793",
+      "recovery": {
+        "kind": "current_main_crlf_normalized_git_blob",
+        "commit": "57a6b1ad43b04e42deb89c84165489794d4e5ab9",
+        "path": "LightGenV2/tasks/t03_saliency/reports/reproduction/UNLABELED_PRETRAINING.md",
+        "git_blob": "6f6d7d900dea1ad4a37e84854d08ef585a5ae636"
+      }
+    },
+    {
+      "path": "LightGenV2/reports/20260927_demo_energy_efficiency_a100/ours/06_salicon/source_snapshot/tasks/t03_saliency/reports/reproduction/VIEW_REGULARIZATION.md",
+      "bytes": 27217,
+      "sha256": "a9bd3b4dd506e3cbe687be21cefb5786067c7a0465b0d1853d053325a0b26ff1",
+      "recovery": {
+        "kind": "current_main_crlf_normalized_git_blob",
+        "commit": "57a6b1ad43b04e42deb89c84165489794d4e5ab9",
+        "path": "LightGenV2/tasks/t03_saliency/reports/reproduction/VIEW_REGULARIZATION.md",
+        "git_blob": "83881ce28e94500882977d12dba3f66c3dfa49fd"
+      }
+    },
+    {
+      "path": "LightGenV2/reports/20260927_demo_energy_efficiency_a100/ours/06_salicon/source_snapshot/tasks/t03_saliency/reports/reproduction/evidence/baseline_environment.txt",
+      "bytes": 2365,
+      "sha256": "2e5267c185103eb854a72e1ae5042fa19b0a3b607a2633427237022ba99c2bdd",
+      "recovery": {
+        "kind": "current_main_crlf_normalized_git_blob",
+        "commit": "57a6b1ad43b04e42deb89c84165489794d4e5ab9",
+        "path": "LightGenV2/tasks/t03_saliency/reports/reproduction/evidence/baseline_environment.txt",
+        "git_blob": "1c4c37cafaee3e3c4341f81894b90f73132bece9"
+      }
+    },
+    {
+      "path": "LightGenV2/reports/20260927_demo_energy_efficiency_a100/ours/06_salicon/source_snapshot/tasks/t03_saliency/reports/reproduction/evidence/baseline_recheck_20260908.json",
+      "bytes": 2538,
+      "sha256": "b830e3fd16d50eaa9260a2a22f66c36b37b2c88297652fdd89539c9ac932b5d5",
+      "recovery": {
+        "kind": "current_main_crlf_normalized_git_blob",
+        "commit": "57a6b1ad43b04e42deb89c84165489794d4e5ab9",
+        "path": "LightGenV2/tasks/t03_saliency/reports/reproduction/evidence/baseline_recheck_20260908.json",
+        "git_blob": "ce6bb3f6ee217d3dfcfccfe9c9de82de3705ab03"
+      }
+    },
+    {
+      "path": "LightGenV2/reports/20260927_demo_energy_efficiency_a100/ours/06_salicon/source_snapshot/tasks/t03_saliency/reports/reproduction/evidence/baseline_retrain_20260908.json",
+      "bytes": 2807,
+      "sha256": "9a42a81a628c42709eedb6947809459b2eb914891d285ab1b38a7e30648549c2",
+      "recovery": {
+        "kind": "current_main_crlf_normalized_git_blob",
+        "commit": "57a6b1ad43b04e42deb89c84165489794d4e5ab9",
+        "path": "LightGenV2/tasks/t03_saliency/reports/reproduction/evidence/baseline_retrain_20260908.json",
+        "git_blob": "aceeb0ea406de203b0eed08e4b423bacfc57f5df"
+      }
+    },
+    {
+      "path": "LightGenV2/reports/20260927_demo_energy_efficiency_a100/ours/06_salicon/source_snapshot/tasks/t03_saliency/tests/test_lab_runtime.py",
+      "bytes": 2299,
+      "sha256": "4507ef187c9703d42ebec0be378bed22422491ad9d56c0d0e7efe5498a5260d2",
+      "recovery": {
+        "kind": "crlf_normalized_git_blob",
+        "commit": "ac7e3ecce0bef96ae7d91f8de6e478542913bd4e",
+        "path": "LightGenV2/tasks/t03_saliency/tests/test_lab_runtime.py",
+        "archive_ref": "refs/archive/checkout-preservation-20261004/original18"
+      }
+    },
+    {
+      "path": "LightGenV2/reports/20260927_demo_energy_efficiency_a100/ours/07_openmoji_new_layout/source_snapshot/tasks/t04_semantic_interaction/configs/layered_scene_exp05_dc30_ccdsmall.yaml",
+      "bytes": 710,
+      "sha256": "8e3113f3528094973e5bf6fab437713c55243a09c369ff89c912940155ab5bd3",
+      "recovery": {
+        "kind": "crlf_normalized_git_blob",
+        "commit": "74c82d3782e1b1e3287f0e50798057bd1aa6e6f1",
+        "path": "LightGenV2/tasks/t04_semantic_interaction/configs/layered_scene_exp05_dc30_ccdsmall.yaml",
+        "archive_ref": "refs/archive/frozen-local-20261005/t04-e45-dvp-deploy"
+      }
+    },
+    {
+      "path": "LightGenV2/reports/20260927_demo_energy_efficiency_a100/ours/07_openmoji_new_layout/source_snapshot/tasks/t04_semantic_interaction/modeling.py",
+      "bytes": 13288,
+      "sha256": "b0e24d5ce01475f5053080d3f24abafb862da00f864ea48ae06da93e45391cf8",
+      "recovery": {
+        "kind": "exact_git_blob",
+        "commit": "74c82d3782e1b1e3287f0e50798057bd1aa6e6f1",
+        "path": "LightGenV2/tasks/t04_semantic_interaction/modeling.py",
+        "archive_ref": "refs/archive/frozen-local-20261005/t04-e45-dvp-deploy"
+      }
+    }
+  ],
+  "excluded": [
+    {
+      "path": "LightGenV2/reports/20260927_demo_energy_efficiency_a100/ours/01_lgvq/source_snapshot/tasks/t06_video_quality_assessment/reports/paper_results/spatial_continuous_no_k_20260908/masks/phase_slm_1920x1200/reconstruction_manifest.csv",
+      "reason": "not_original_manifest_bytes"
+    },
+    {
+      "path": "LightGenV2/reports/20260927_demo_energy_efficiency_a100/ours/01_lgvq/source_snapshot/tasks/t06_video_quality_assessment/reports/paper_results/spatial_continuous_no_k_20260908/masks/phase_slm_1920x1200/reconstruction_report.json",
+      "reason": "not_original_manifest_bytes"
+    },
+    {
+      "path": "LightGenV2/reports/20260927_demo_energy_efficiency_a100/ours/01_lgvq/source_snapshot/tasks/t06_video_quality_assessment/reports/paper_results/spatial_continuous_no_k_20260908/optical_visualization/raw_ccd_intensity_statistics.csv",
+      "reason": "not_original_manifest_bytes"
+    },
+    {
+      "path": "LightGenV2/reports/20260927_demo_energy_efficiency_a100/ours/01_lgvq/source_snapshot/tasks/t06_video_quality_assessment/reports/paper_results/spatial_continuous_no_k_20260908/optical_visualization/visualization_report.json",
+      "reason": "not_original_manifest_bytes"
+    }
+  ],
+  "originals_deleted_or_moved": false,
+  "main_runtime_source_changed": false,
+  "limitations": [
+    "Visibility only: all original timing snapshot files stay at their original paths.",
+    "Git identity is not main adoption; ZIP recovery is local only.",
+    "The full historical report still has nine documented artifact exceptions.",
+    "Primary backend source, new snapshot names and future files are not covered."
+  ],
+  "local_zip_members_used": 0,
+  "positive_main_identities_rechecked": true
+}

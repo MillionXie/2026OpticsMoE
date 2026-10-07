@@ -10,6 +10,18 @@ ROOT = Path(__file__).resolve().parents[3]
 
 
 class ArtifactIgnoreTests(unittest.TestCase):
+    def test_embedded_timing_snapshots_not_primary_backend_or_unmatched_files(self):
+        import json
+        d=json.loads((ROOT/'maintenance/storage/DEMO_EMBEDDED_SOURCE_VISIBILITY_20261007.json').read_text(encoding='utf8'))
+        selected=[r['path'] for r in d['files']]
+        self.assertEqual(len(selected),212)
+        visible=[r['path'] for r in d['excluded']]+[
+            'experiments/qwen3_vl_2b_lgvq_single_metric_o2_16frame_54/modeling.py',
+            'LightGenV2/tasks/t06_video_quality_assessment/lab_runtime.py',
+            'LightGenV2/reports/20260927_demo_energy_efficiency_a100/ours/01_lgvq/source_snapshot/new_measurement.py',
+            'LightGenV2/reports/20260927_demo_energy_efficiency_a100/ours/01_lgvq/new_timing.csv']
+        self.assertEqual(self.ignored(selected+visible),set(selected))
+
     def test_generated_section_headers_are_comments_not_literal_patterns(self):
         content=(ROOT/'.gitignore').read_text(encoding='utf8')
         self.assertNotIn('\\n+# ',content)
@@ -127,7 +139,8 @@ class ArtifactIgnoreTests(unittest.TestCase):
         prefix = 'LightGenV2/reports/20260927_demo_energy_efficiency_a100/'
         private = [prefix + 'raw_remote/ours/narrow_200_no_warmup/all_per_call_timings.csv']
         visible = [prefix + 'build_summary.py', prefix + 'calculated_summary.json',
-                   prefix + 'ours/01_lgvq/source_snapshot/tasks/t06_video_quality_assessment/configs/spatial_hardware_readout_tuning.json',
+                   'LightGenV2/tasks/t06_video_quality_assessment/configs/spatial_hardware_readout_tuning.json',
+                   prefix + 'ours/01_lgvq/source_snapshot/tasks/t06_video_quality_assessment/configs/future_tuning.json',
                    prefix + 'raw_remote/future_run/report.json']
         self.assertEqual(self.ignored(private + visible), set(private))
     def test_named_historical_timing_payload_not_code_or_future_evidence(self):
