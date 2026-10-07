@@ -3130,3 +3130,9 @@ node_modules/
 /LightGenV2/tasks/t04_semantic_interaction/dataset/openmoji_grid_v2/token_embeddings_v1.json
 # SHA256 2ff7127b2df37086109cc137e99cdf65605e7e2a0ef01a60dc9bac6039820666
 /LightGenV2/tasks/t04_semantic_interaction/dataset/openmoji_grid_v2/train.jsonl
+# Two original dataset manifests, exact bytes retained in the existing private recovery ZIP.
+# No timing, ablation, optical statistics or current experiment prediction files excluded here.
+# SHA256 da8a6d3bac693de4903e622cbdfe0431f75650c1bcfc2dc185a4ca41cc2aaa7b
+/LightGenV2/demo_check/adrenal_softsign_code_export_20260915_145336/data/adrenalmnist3d/projected2d/axis2_mean/manifest.csv
+# SHA256 607c50d20662a47795c23cd2038081b30368ed108ba9be8a1bb8a9d250f8e7fc
+/LightGenV2/projects/lgvq_temporal/assets/manifest/lgvq_train2250_test558.csv
