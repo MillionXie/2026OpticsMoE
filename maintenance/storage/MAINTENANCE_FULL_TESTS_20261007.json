@@ -17,12 +17,21 @@
     "remaining_local_device_helpers_not_in_this_import": 3
   },
   "schema_version": 1,
-  "tested_commit": "97a242f0046f6983066e6ee62bfe09faf66e2d5d",
+  "tested_commit": "499ab4c364b3f532876ac439f4548d183458b210",
   "command": "python -m pytest maintenance/git_safety/tests -q",
   "environment": "Local qwen3vl-cifar10 Python; no environment changes",
   "passed": 371,
   "failed": 0,
-  "elapsed_seconds": 100.27,
+  "elapsed_seconds": 116.96,
+  "previous_371_run_20261007": {"tested_commit": "97a242f0046f6983066e6ee62bfe09faf66e2d5d", "passed": 371, "failed": 0, "elapsed_seconds": 100.27},
+  "historical_handoff_exact_duplicate_review_20261008": {
+    "scope": "Nonignored untracked handoff files <=2MiB; current openmoji_robust_ablation and abo_latestfresh excluded from duplicate removal candidates",
+    "required_identity": "Exact original bytes equal a current tracked main file and an existing recovery ZIP member",
+    "eligible_exact_duplicates": 0,
+    "originals_changed_or_deleted": false,
+    "new_ignore_rules_from_this_duplicate_review": 0,
+    "conclusion": "Do not classify distinct historical source or reports as duplicate merely from their directory names"
+  },
   "previous_371_run": {"tested_commit": "075379163c977d93bdbb2be622e079552114c5c5", "passed": 371, "failed": 0, "elapsed_seconds": 105.21},
   "additional_storage_unittest": {"tested_commit": "97a242f0046f6983066e6ee62bfe09faf66e2d5d", "passed": 20, "elapsed_seconds": 0.104, "scope": "Existing storage audit tests; no deletion or scientific execution"},
   "default_python_failed_attempt": {"errors": 10, "cause": "System Python Torch c10.dll initialization failure", "resolution": "Reran existing CPU environment; 371 pytest checks passed. No environment installed or changed."},
