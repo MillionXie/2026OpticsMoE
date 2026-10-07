@@ -1,4 +1,763 @@
 {
+  "latest_after_ssh_recovery": {
+  "root_main": "983b24f2bba8876fdbbf59acd9156ef5e70c0cdb",
+  "registered_worktree_count": 83,
+  "with_tracked_changes": 9,
+  "with_untracked_files": 52,
+  "read_only": true,
+  "laboratory_contacted": false,
+  "worktrees": [
+    {
+      "worktree": "/DATA/DATA1/guest3/2026OpticsMoE",
+      "HEAD": "983b24f2bba8876fdbbf59acd9156ef5e70c0cdb",
+      "branch": "refs/heads/main",
+      "exists": true,
+      "owned_process_cwd_count": 3,
+      "tracked_changes": 0,
+      "untracked_files": 445
+    },
+    {
+      "worktree": "/DATA/DATA1/guest3/.codex_worktrees/t06_compress_all_20260912",
+      "HEAD": "630d09367219a4bddd70ed098d2cbdbe8040b617",
+      "detached": "",
+      "exists": true,
+      "owned_process_cwd_count": 0,
+      "tracked_changes": 0,
+      "untracked_files": 4
+    },
+    {
+      "worktree": "/DATA/DATA1/guest3/.codex_worktrees/t06_readout_compress_20260912",
+      "HEAD": "de866ff8b890b77b18a4f873f5be2d216ae4c7fa",
+      "detached": "",
+      "exists": true,
+      "owned_process_cwd_count": 0,
+      "tracked_changes": 0,
+      "untracked_files": 1
+    },
+    {
+      "worktree": "/DATA/DATA1/guest3/2026OpticsMoE/.worktrees/abo8-deploy",
+      "HEAD": "e10925f1254376e59c1fae4e1149091a1472ee55",
+      "detached": "",
+      "exists": true,
+      "owned_process_cwd_count": 0,
+      "tracked_changes": 0,
+      "untracked_files": 4
+    },
+    {
+      "worktree": "/DATA/DATA1/guest3/2026OpticsMoE/.worktrees/fa_vtab_20260914",
+      "HEAD": "a2e6096fbe6ce43e6bbbc55b88f8ceb95aa4fd8b",
+      "detached": "",
+      "exists": true,
+      "owned_process_cwd_count": 0,
+      "tracked_changes": 0,
+      "untracked_files": 0
+    },
+    {
+      "worktree": "/DATA/DATA1/guest3/2026OpticsMoE/.worktrees/lgvq_shs_20260914",
+      "HEAD": "acb72fbe75dacf250341e565030e9172cec67978",
+      "detached": "",
+      "exists": true,
+      "owned_process_cwd_count": 0,
+      "tracked_changes": 0,
+      "untracked_files": 0
+    },
+    {
+      "worktree": "/DATA/DATA1/guest3/2026OpticsMoE/.worktrees/sister_bounded_20260927",
+      "HEAD": "3f85510285e5ffdfca28def93eef2eb082b1655c",
+      "detached": "",
+      "exists": true,
+      "owned_process_cwd_count": 0,
+      "tracked_changes": 0,
+      "untracked_files": 1
+    },
+    {
+      "worktree": "/DATA/DATA1/guest3/2026OpticsMoE/.worktrees/sister_t08_bounded_20260927",
+      "HEAD": "73e2febdc94e4cb280c6ada1e0e7881826f3c7f2",
+      "detached": "",
+      "exists": true,
+      "owned_process_cwd_count": 0,
+      "tracked_changes": 1,
+      "untracked_files": 4
+    },
+    {
+      "worktree": "/DATA/DATA1/guest3/2026OpticsMoE/.worktrees/spatial_custom_conv",
+      "HEAD": "557c10d38ffd685793f25d697fb887497720af24",
+      "detached": "",
+      "exists": true,
+      "owned_process_cwd_count": 0,
+      "tracked_changes": 3,
+      "untracked_files": 23
+    },
+    {
+      "worktree": "/DATA/DATA1/guest3/2026OpticsMoE/.worktrees/t03_adaptive",
+      "HEAD": "3cd5f08ddbad7b7d9dd4fbab65f7f36c9f416ad2",
+      "detached": "",
+      "exists": true,
+      "owned_process_cwd_count": 0,
+      "tracked_changes": 0,
+      "untracked_files": 2
+    },
+    {
+      "worktree": "/DATA/DATA1/guest3/2026OpticsMoE/.worktrees/t03_balance",
+      "HEAD": "27d6d49cbb338309825ea6d1975be05e6f6115fb",
+      "detached": "",
+      "exists": true,
+      "owned_process_cwd_count": 0,
+      "tracked_changes": 0,
+      "untracked_files": 2
+    },
+    {
+      "worktree": "/DATA/DATA1/guest3/2026OpticsMoE/.worktrees/t03_baseline50_20260912",
+      "HEAD": "d55eaf17c8d20770e0ece9df976110b1e5896cce",
+      "detached": "",
+      "exists": true,
+      "owned_process_cwd_count": 0,
+      "tracked_changes": 0,
+      "untracked_files": 2
+    },
+    {
+      "worktree": "/DATA/DATA1/guest3/2026OpticsMoE/.worktrees/t03_calibration",
+      "HEAD": "4723a0d519e23deb58402b7b57f94865be838301",
+      "detached": "",
+      "exists": true,
+      "owned_process_cwd_count": 0,
+      "tracked_changes": 0,
+      "untracked_files": 2
+    },
+    {
+      "worktree": "/DATA/DATA1/guest3/2026OpticsMoE/.worktrees/t03_centered",
+      "HEAD": "b3f88069bdc6864c0d4a3338152fbed6402a3045",
+      "detached": "",
+      "exists": true,
+      "owned_process_cwd_count": 0,
+      "tracked_changes": 0,
+      "untracked_files": 2
+    },
+    {
+      "worktree": "/DATA/DATA1/guest3/2026OpticsMoE/.worktrees/t03_cffn",
+      "HEAD": "f09ac85a965c470b1a3fd1ef7d83bdabc316d41c",
+      "detached": "",
+      "exists": true,
+      "owned_process_cwd_count": 0,
+      "tracked_changes": 0,
+      "untracked_files": 2
+    },
+    {
+      "worktree": "/DATA/DATA1/guest3/2026OpticsMoE/.worktrees/t03_early_grn",
+      "HEAD": "04204b9c367c0f2af2e3a25000c3a87e1f9de3a4",
+      "detached": "",
+      "exists": true,
+      "owned_process_cwd_count": 0,
+      "tracked_changes": 0,
+      "untracked_files": 2
+    },
+    {
+      "worktree": "/DATA/DATA1/guest3/2026OpticsMoE/.worktrees/t03_global16",
+      "HEAD": "961907d182a23fc3882a19139cd89b4563fe41f7",
+      "detached": "",
+      "exists": true,
+      "owned_process_cwd_count": 0,
+      "tracked_changes": 0,
+      "untracked_files": 2
+    },
+    {
+      "worktree": "/DATA/DATA1/guest3/2026OpticsMoE/.worktrees/t03_handoff_20260915",
+      "HEAD": "3b931ccdcbd398f1c73f57d46621eccbddeff4f0",
+      "detached": "",
+      "exists": true,
+      "owned_process_cwd_count": 0,
+      "tracked_changes": 0,
+      "untracked_files": 0
+    },
+    {
+      "worktree": "/DATA/DATA1/guest3/2026OpticsMoE/.worktrees/t03_hints",
+      "HEAD": "9bc65286e03d327c962abaa0e35a52770b2a8dab",
+      "detached": "",
+      "exists": true,
+      "owned_process_cwd_count": 0,
+      "tracked_changes": 0,
+      "untracked_files": 2
+    },
+    {
+      "worktree": "/DATA/DATA1/guest3/2026OpticsMoE/.worktrees/t03_kernel13",
+      "HEAD": "f5b29fc9db304daffbfa3df1d34f8975098d1c5f",
+      "detached": "",
+      "exists": true,
+      "owned_process_cwd_count": 0,
+      "tracked_changes": 0,
+      "untracked_files": 2
+    },
+    {
+      "worktree": "/DATA/DATA1/guest3/2026OpticsMoE/.worktrees/t03_licensed_figures_20260929",
+      "HEAD": "b75a56203b47818810e0a45dceecf9cea4c6aa9f",
+      "detached": "",
+      "exists": true,
+      "owned_process_cwd_count": 0,
+      "tracked_changes": 0,
+      "untracked_files": 0
+    },
+    {
+      "worktree": "/DATA/DATA1/guest3/2026OpticsMoE/.worktrees/t03_mix50",
+      "HEAD": "49fb6fd8734f625dc05d258b167d633956875040",
+      "detached": "",
+      "exists": true,
+      "owned_process_cwd_count": 0,
+      "tracked_changes": 0,
+      "untracked_files": 2
+    },
+    {
+      "worktree": "/DATA/DATA1/guest3/2026OpticsMoE/.worktrees/t03_recheck",
+      "HEAD": "8e093743bf4756a2fedd598fec3ba52f010e8a3b",
+      "detached": "",
+      "exists": true,
+      "owned_process_cwd_count": 0,
+      "tracked_changes": 0,
+      "untracked_files": 2
+    },
+    {
+      "worktree": "/DATA/DATA1/guest3/2026OpticsMoE/.worktrees/t03_recheck_sam",
+      "HEAD": "30145efdfa2371b3882cc39aa52e1eba882bfda3",
+      "detached": "",
+      "exists": true,
+      "owned_process_cwd_count": 0,
+      "tracked_changes": 0,
+      "untracked_files": 2
+    },
+    {
+      "worktree": "/DATA/DATA1/guest3/2026OpticsMoE/.worktrees/t03_rfstage",
+      "HEAD": "21fc0c1444c8f7c837fba127af5433aa1f0bd10a",
+      "detached": "",
+      "exists": true,
+      "owned_process_cwd_count": 0,
+      "tracked_changes": 0,
+      "untracked_files": 1
+    },
+    {
+      "worktree": "/DATA/DATA1/guest3/2026OpticsMoE/.worktrees/t03_rfstage_ek5",
+      "HEAD": "dea0f494b0e7c3dd638e9f7011bb535e2e0874ea",
+      "detached": "",
+      "exists": true,
+      "owned_process_cwd_count": 0,
+      "tracked_changes": 0,
+      "untracked_files": 2
+    },
+    {
+      "worktree": "/DATA/DATA1/guest3/2026OpticsMoE/.worktrees/t03_sam",
+      "HEAD": "a05ce1bcac9ecf4614b45f4df65a0f7e3dd342e5",
+      "detached": "",
+      "exists": true,
+      "owned_process_cwd_count": 0,
+      "tracked_changes": 0,
+      "untracked_files": 2
+    },
+    {
+      "worktree": "/DATA/DATA1/guest3/2026OpticsMoE/.worktrees/t03_sam_crop90",
+      "HEAD": "3d5b520ad9f27bf05eacf222c7cc7becd7113a2f",
+      "detached": "",
+      "exists": true,
+      "owned_process_cwd_count": 0,
+      "tracked_changes": 0,
+      "untracked_files": 2
+    },
+    {
+      "worktree": "/DATA/DATA1/guest3/2026OpticsMoE/.worktrees/t03_sam_early",
+      "HEAD": "23b2cd4639f639790de1db3ed4d9531d599764e4",
+      "detached": "",
+      "exists": true,
+      "owned_process_cwd_count": 0,
+      "tracked_changes": 0,
+      "untracked_files": 2
+    },
+    {
+      "worktree": "/DATA/DATA1/guest3/2026OpticsMoE/.worktrees/t03_sam_radius",
+      "HEAD": "066ed0c46874e3611bb062f76503e6e925b7bbc8",
+      "detached": "",
+      "exists": true,
+      "owned_process_cwd_count": 0,
+      "tracked_changes": 0,
+      "untracked_files": 2
+    },
+    {
+      "worktree": "/DATA/DATA1/guest3/2026OpticsMoE/.worktrees/t03_viewreg",
+      "HEAD": "966fb80087776a9a22982a82e684fff32d52e71f",
+      "detached": "",
+      "exists": true,
+      "owned_process_cwd_count": 0,
+      "tracked_changes": 0,
+      "untracked_files": 2
+    },
+    {
+      "worktree": "/DATA/DATA1/guest3/2026OpticsMoE/.worktrees/t03_wide576",
+      "HEAD": "b3dc44a8437b3f432161fa4cfd247e917ea57abd",
+      "detached": "",
+      "exists": true,
+      "owned_process_cwd_count": 0,
+      "tracked_changes": 0,
+      "untracked_files": 2
+    },
+    {
+      "worktree": "/DATA/DATA1/guest3/2026OpticsMoE/.worktrees/t04_openmoji_robust_20260928",
+      "HEAD": "3b956503a4ecae9b6c20c789ead28621e42e6eeb",
+      "branch": "refs/heads/codex/t04-openmoji-robust-20260928",
+      "exists": true,
+      "owned_process_cwd_count": 0,
+      "tracked_changes": 2,
+      "untracked_files": 21
+    },
+    {
+      "worktree": "/DATA/DATA1/guest3/2026OpticsMoE/.worktrees/t07_abo_20260909",
+      "HEAD": "40544b2b32ff37da543ec60cb1966e3abe24a904",
+      "detached": "",
+      "exists": true,
+      "owned_process_cwd_count": 0,
+      "tracked_changes": 0,
+      "untracked_files": 0
+    },
+    {
+      "worktree": "/DATA/DATA1/guest3/2026OpticsMoE/.worktrees/t07_abo_anchor_20260909",
+      "HEAD": "e59fc45fbec17938e76f4bfd527e5540003bb255",
+      "detached": "",
+      "exists": true,
+      "owned_process_cwd_count": 0,
+      "tracked_changes": 0,
+      "untracked_files": 0
+    },
+    {
+      "worktree": "/DATA/DATA1/guest3/2026OpticsMoE/.worktrees/t07_fresh35_20260929",
+      "HEAD": "bd1fcf136ac23ff2f1a4f3f9fc5c1f8bfc614239",
+      "detached": "",
+      "exists": true,
+      "owned_process_cwd_count": 0,
+      "tracked_changes": 0,
+      "untracked_files": 8
+    },
+    {
+      "worktree": "/DATA/DATA1/guest3/2026OpticsMoE/.worktrees/t07_gallery_fp32_20260912",
+      "HEAD": "c8ec81ced7f1c4d54b848ec99f747ac38c77bae5",
+      "detached": "",
+      "exists": true,
+      "owned_process_cwd_count": 0,
+      "tracked_changes": 0,
+      "untracked_files": 0
+    },
+    {
+      "worktree": "/DATA/DATA1/guest3/2026OpticsMoE/.worktrees/t07_goal81_verify_20260912",
+      "HEAD": "5f3c704ad93ee8baade05ea2fc13823119c21d84",
+      "detached": "",
+      "exists": true,
+      "owned_process_cwd_count": 0,
+      "tracked_changes": 0,
+      "untracked_files": 0
+    },
+    {
+      "worktree": "/DATA/DATA1/guest3/2026OpticsMoE/.worktrees/t07_joint_best_restart_20260912",
+      "HEAD": "35055dc78d9ddd585e3d39357312f2f508cd287d",
+      "detached": "",
+      "exists": true,
+      "owned_process_cwd_count": 0,
+      "tracked_changes": 0,
+      "untracked_files": 0
+    },
+    {
+      "worktree": "/DATA/DATA1/guest3/2026OpticsMoE/.worktrees/t07_latestfresh35_20260929",
+      "HEAD": "d979b53ed509907a3630bd2a36c317dfb3aac965",
+      "detached": "",
+      "exists": true,
+      "owned_process_cwd_count": 0,
+      "tracked_changes": 0,
+      "untracked_files": 9
+    },
+    {
+      "worktree": "/DATA/DATA1/guest3/2026OpticsMoE/.worktrees/t07_retail_audit_20260913",
+      "HEAD": "5a7bf527a1b4a479180097f493c5ac648057ab31",
+      "detached": "",
+      "exists": true,
+      "owned_process_cwd_count": 0,
+      "tracked_changes": 0,
+      "untracked_files": 0
+    },
+    {
+      "worktree": "/DATA/DATA1/guest3/2026OpticsMoE/.worktrees/t07_review_20260910",
+      "HEAD": "e0732f74338af0cee3cb4463df9a320b09f2b24d",
+      "detached": "",
+      "exists": true,
+      "owned_process_cwd_count": 0,
+      "tracked_changes": 0,
+      "untracked_files": 0
+    },
+    {
+      "worktree": "/DATA/DATA1/guest3/2026OpticsMoE/.worktrees/t07_robust_20260926",
+      "HEAD": "62ac6c52b0bef264edabdd25d41200820ac8fc01",
+      "detached": "",
+      "exists": true,
+      "owned_process_cwd_count": 0,
+      "tracked_changes": 0,
+      "untracked_files": 23
+    },
+    {
+      "worktree": "/DATA/DATA1/guest3/2026OpticsMoE/.worktrees/t07_vision13_20260913",
+      "HEAD": "6c1320c2ff798321404a5e6060852033130b52b2",
+      "detached": "",
+      "exists": true,
+      "owned_process_cwd_count": 0,
+      "tracked_changes": 0,
+      "untracked_files": 0
+    },
+    {
+      "worktree": "/DATA/DATA1/guest3/2026OpticsMoE/.worktrees/t08_text_to_image_10cm_compact_20260923",
+      "HEAD": "73e2febdc94e4cb280c6ada1e0e7881826f3c7f2",
+      "detached": "",
+      "exists": true,
+      "owned_process_cwd_count": 0,
+      "tracked_changes": 1,
+      "untracked_files": 4
+    },
+    {
+      "worktree": "/DATA/DATA1/guest3/2026OpticsMoE/.worktrees/t08_text_to_image_20260920",
+      "HEAD": "d0662a7d240340817948a3496c2cd43f4240e76d",
+      "detached": "",
+      "exists": true,
+      "owned_process_cwd_count": 0,
+      "tracked_changes": 0,
+      "untracked_files": 1
+    },
+    {
+      "worktree": "/DATA/DATA1/guest3/2026OpticsMoE/.worktrees/t12_physical_robust_20260926",
+      "HEAD": "197beba57440dff0ca2082fd3449635ce7d91c5a",
+      "detached": "",
+      "exists": true,
+      "owned_process_cwd_count": 0,
+      "tracked_changes": 0,
+      "untracked_files": 0
+    },
+    {
+      "worktree": "/DATA/DATA1/guest3/2026OpticsMoE/.worktrees/t12_physical_robust_v2_20260927",
+      "HEAD": "7093ec46082eed2fae127ec5028d3e2e8548b592",
+      "detached": "",
+      "exists": true,
+      "owned_process_cwd_count": 0,
+      "tracked_changes": 0,
+      "untracked_files": 0
+    },
+    {
+      "worktree": "/DATA/DATA1/guest3/2026OpticsMoE/.worktrees/t13_temporal_robust_20260927",
+      "HEAD": "493eb38375f3bd9e4e8e7edfe278468b351365f1",
+      "detached": "",
+      "exists": true,
+      "owned_process_cwd_count": 0,
+      "tracked_changes": 0,
+      "untracked_files": 1
+    },
+    {
+      "worktree": "/DATA/DATA1/guest3/2026OpticsMoE_a100_formal",
+      "HEAD": "0db3b583925ec688d2fba09957905d8e1cd9bec8",
+      "detached": "",
+      "exists": true,
+      "owned_process_cwd_count": 0,
+      "tracked_changes": 7,
+      "untracked_files": 37
+    },
+    {
+      "worktree": "/DATA/DATA1/guest3/2026OpticsMoE_t06_a100_batch",
+      "HEAD": "3fab90b363e3d49f02fa68acdc6c363b991097e7",
+      "detached": "",
+      "exists": true,
+      "owned_process_cwd_count": 0,
+      "tracked_changes": 2,
+      "untracked_files": 0
+    },
+    {
+      "worktree": "/DATA/DATA1/guest3/LightGenV2_worktrees/t04_layered_1bc120428",
+      "HEAD": "a61a3746d39765991048d95e40812d1028d70c93",
+      "detached": "",
+      "exists": true,
+      "owned_process_cwd_count": 0,
+      "tracked_changes": 0,
+      "untracked_files": 30006
+    },
+    {
+      "worktree": "/DATA/DATA1/guest3/abo_figures_checkout_20260928",
+      "HEAD": "c93fad700a1da4b30ceeac9af2afc7985934eb00",
+      "detached": "",
+      "exists": true,
+      "owned_process_cwd_count": 0,
+      "tracked_changes": 0,
+      "untracked_files": 0
+    },
+    {
+      "worktree": "/DATA/DATA1/guest3/demo_reproduction_20260915",
+      "HEAD": "1c7222a1119385475e1b464ca7efdb67cdc21a4c",
+      "detached": "",
+      "exists": true,
+      "owned_process_cwd_count": 1,
+      "tracked_changes": 7,
+      "untracked_files": 105
+    },
+    {
+      "worktree": "/DATA/DATA1/guest3/lightgen_spatial_065",
+      "HEAD": "23612d55106cb8c817cf4b4e7b38ea5bc138361a",
+      "detached": "",
+      "exists": true,
+      "owned_process_cwd_count": 0,
+      "tracked_changes": 11,
+      "untracked_files": 125
+    },
+    {
+      "worktree": "/DATA/DATA1/guest3/t02_personal_source_20260928",
+      "HEAD": "2fa901dc7800d8798658b29e242e38bebac97989",
+      "detached": "",
+      "exists": true,
+      "owned_process_cwd_count": 0,
+      "tracked_changes": 0,
+      "untracked_files": 0
+    },
+    {
+      "worktree": "/DATA/DATA1/guest3/t10_corrected_20260918",
+      "HEAD": "5a1178ef09be40f45b58a20a8633a6e1add2d75d",
+      "detached": "",
+      "exists": true,
+      "owned_process_cwd_count": 0,
+      "tracked_changes": 1,
+      "untracked_files": 8
+    },
+    {
+      "worktree": "/DATA/DATA1/guest3/t11_joint_d2nn_20260920",
+      "HEAD": "1430e8331739b0fd640c23d3adba244991408abc",
+      "detached": "",
+      "exists": true,
+      "owned_process_cwd_count": 0,
+      "tracked_changes": 0,
+      "untracked_files": 0
+    },
+    {
+      "worktree": "/DATA/DATA1/guest3/t11_optical_20260919",
+      "HEAD": "604cd89e3e4a88ed0b580eaa41f88af7de2da86c",
+      "detached": "",
+      "exists": true,
+      "owned_process_cwd_count": 0,
+      "tracked_changes": 0,
+      "untracked_files": 0
+    },
+    {
+      "worktree": "/DATA/DATA1/guest3/t12_compare_20260920",
+      "HEAD": "3d87c006a22206d90b3f5cf6217cecccfb35ba9d",
+      "detached": "",
+      "exists": true,
+      "owned_process_cwd_count": 0,
+      "tracked_changes": 0,
+      "untracked_files": 1
+    },
+    {
+      "worktree": "/DATA/DATA1/guest3/t12_cross_modal_20260920",
+      "HEAD": "2f2f6946f38c7d06320eb29314654a6260f3d618",
+      "detached": "",
+      "exists": true,
+      "owned_process_cwd_count": 0,
+      "tracked_changes": 0,
+      "untracked_files": 0
+    },
+    {
+      "worktree": "/DATA/DATA1/guest3/t12_cross_modal_capacity_20260920",
+      "HEAD": "fea3b079d04745a2aa5d181c7dfb4da37a81a922",
+      "detached": "",
+      "exists": true,
+      "owned_process_cwd_count": 0,
+      "tracked_changes": 0,
+      "untracked_files": 0
+    },
+    {
+      "worktree": "/DATA/DATA1/guest3/t12_cross_modal_video_20260920",
+      "HEAD": "e99846b8590550f2b02d11e8630e7cf12ebb9fab",
+      "detached": "",
+      "exists": true,
+      "owned_process_cwd_count": 0,
+      "tracked_changes": 0,
+      "untracked_files": 0
+    },
+    {
+      "worktree": "/DATA/DATA1/guest3/t12_d2nn_baselines_20260920",
+      "HEAD": "5d1ee1174ba445fb807380f7dd0c28c03a592f9d",
+      "detached": "",
+      "exists": true,
+      "owned_process_cwd_count": 0,
+      "tracked_changes": 0,
+      "untracked_files": 0
+    },
+    {
+      "worktree": "/DATA/DATA1/guest3/t12_git_audited_20260926",
+      "HEAD": "a3f5e6fe7027e92fe29be2934750f427cdfd91e7",
+      "detached": "",
+      "exists": true,
+      "owned_process_cwd_count": 0,
+      "tracked_changes": 0,
+      "untracked_files": 0
+    },
+    {
+      "worktree": "/DATA/DATA1/guest3/t12_sequential_d2nn_20260920",
+      "HEAD": "0e791798f8ec69bc9dc1c9b2f82dc4452e6cf3f6",
+      "detached": "",
+      "exists": true,
+      "owned_process_cwd_count": 0,
+      "tracked_changes": 0,
+      "untracked_files": 0
+    },
+    {
+      "worktree": "/DATA/DATA1/guest3/t12_text_to_image_20260920",
+      "HEAD": "9502371917e33e1e45388010208d510c0688f9bf",
+      "detached": "",
+      "exists": true,
+      "owned_process_cwd_count": 0,
+      "tracked_changes": 0,
+      "untracked_files": 17
+    },
+    {
+      "worktree": "/DATA/DATA1/guest3/worktrees/2026OpticsMoE_cifar100_6ce31e05",
+      "HEAD": "6ce31e0514f90efbb11f548b5f024dcd28a07896",
+      "detached": "",
+      "exists": true,
+      "owned_process_cwd_count": 0,
+      "tracked_changes": 0,
+      "untracked_files": 1
+    },
+    {
+      "worktree": "/DATA/DATA1/guest3/worktrees/2026OpticsMoE_static_cifar",
+      "HEAD": "8063ed16bac540758f7ba226dbeadac005def8d6",
+      "detached": "",
+      "exists": true,
+      "owned_process_cwd_count": 0,
+      "tracked_changes": 0,
+      "untracked_files": 1
+    },
+    {
+      "worktree": "/DATA/DATA1/guest3/worktrees/2026OpticsMoE_static_experts_8c354986",
+      "HEAD": "8c35498660b874b257a33ae7d376de0c328a6139",
+      "detached": "",
+      "exists": true,
+      "owned_process_cwd_count": 0,
+      "tracked_changes": 0,
+      "untracked_files": 1
+    },
+    {
+      "worktree": "/DATA/DATA1/guest3/worktrees/static_control_v3",
+      "HEAD": "dee34f07aa2f8aadbcfbc2600d49bd76783abb41",
+      "detached": "",
+      "exists": true,
+      "owned_process_cwd_count": 0,
+      "tracked_changes": 0,
+      "untracked_files": 1
+    },
+    {
+      "worktree": "/DATA/DATA1/guest3/worktrees/static_control_v3_deterministic",
+      "HEAD": "14eb8e8d07083bff740009b2c9a8145bc06a56bb",
+      "detached": "",
+      "exists": true,
+      "owned_process_cwd_count": 0,
+      "tracked_changes": 0,
+      "untracked_files": 1
+    },
+    {
+      "worktree": "/DATA/DATA1/guest3/worktrees/static_control_v3_timing",
+      "HEAD": "cc00af1b01f16c8c4417b26e7e228db51f3a7508",
+      "detached": "",
+      "exists": true,
+      "owned_process_cwd_count": 0,
+      "tracked_changes": 0,
+      "untracked_files": 1
+    },
+    {
+      "worktree": "/DATA/DATA1/guest3/worktrees/static_spatial_v4",
+      "HEAD": "2d291bbfe484e4c8395db6c6ccfc78d21a829cae",
+      "detached": "",
+      "exists": true,
+      "owned_process_cwd_count": 0,
+      "tracked_changes": 0,
+      "untracked_files": 1
+    },
+    {
+      "worktree": "/DATA/DATA1/guest3/worktrees/static_spatial_v4_formal",
+      "HEAD": "c024b9280433f6e7fe31fc0122a1b8aadf342b38",
+      "detached": "",
+      "exists": true,
+      "owned_process_cwd_count": 0,
+      "tracked_changes": 0,
+      "untracked_files": 1
+    },
+    {
+      "worktree": "/DATA/DATA1/guest3/worktrees/static_spatial_v4_timing",
+      "HEAD": "c558fd03054c9abc6e5db245a1017106a2549a1b",
+      "detached": "",
+      "exists": true,
+      "owned_process_cwd_count": 0,
+      "tracked_changes": 0,
+      "untracked_files": 1
+    },
+    {
+      "worktree": "/DATA/DATA1/guest3/worktrees/static_unseen_v1",
+      "HEAD": "0d854376cca29e16143ad1eb7762860770e59459",
+      "detached": "",
+      "exists": true,
+      "owned_process_cwd_count": 0,
+      "tracked_changes": 0,
+      "untracked_files": 1
+    },
+    {
+      "worktree": "/tmp/t16_audit_4bf",
+      "HEAD": "d4ea23cf1b13940e2513a06cb74ccdd0b2dcd22a",
+      "detached": "",
+      "exists": true,
+      "owned_process_cwd_count": 0,
+      "tracked_changes": 0,
+      "untracked_files": 0
+    },
+    {
+      "worktree": "/tmp/t16_aug_6b3e",
+      "HEAD": "6b3ebfea36d0882e9213a19685b129144a78600c",
+      "detached": "",
+      "exists": true,
+      "owned_process_cwd_count": 0,
+      "tracked_changes": 0,
+      "untracked_files": 0
+    },
+    {
+      "worktree": "/tmp/t16_aug_ce8",
+      "HEAD": "ce8fe0f48637c94ce77b389582b2d1c4aae67b2a",
+      "detached": "",
+      "exists": true,
+      "owned_process_cwd_count": 0,
+      "tracked_changes": 0,
+      "untracked_files": 0
+    },
+    {
+      "worktree": "/tmp/t16_ft_6d7",
+      "HEAD": "46984d9dfc8f12d9a1def3a1b4ea95f225082c6d",
+      "detached": "",
+      "exists": true,
+      "owned_process_cwd_count": 0,
+      "tracked_changes": 0,
+      "untracked_files": 0
+    },
+    {
+      "worktree": "/tmp/t16_physical_binary_977",
+      "HEAD": "8841d3c9181a4ed68bb666eed2f44ee06d708eae",
+      "detached": "",
+      "exists": true,
+      "owned_process_cwd_count": 0,
+      "tracked_changes": 0,
+      "untracked_files": 0
+    },
+    {
+      "worktree": "/tmp/t16_train_8f28",
+      "HEAD": "8f280a5d661d37b43d40eace585c43bd00d819d0",
+      "detached": "",
+      "exists": true,
+      "owned_process_cwd_count": 0,
+      "tracked_changes": 0,
+      "untracked_files": 0
+    }
+  ],
+  "limitations": "cwd observation only; zero cwd does not prove absence of command-line, open-file, import or future dependencies"
+},
+  "original_snapshot_preserved_below": true,
   "audit_date": "2026-10-07",
   "published_root_main": "19531b8008673ccd33e0f2715ff41d51c8ad6347",
   "read_only": true,

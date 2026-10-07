@@ -34,8 +34,12 @@ Linux对应分组：ABO_Lab_8um 156、TransferFromElectricity 85、LightGenV2 83
 LightGenPublic 80、experiments 41。差异不等于丢失源码，也不表示可以整目录ignore。
 Linux数据盘当时可用251337773056字节；这是磁盘快照，不是本轮释放量。
 后续T06八份原低秩历史配置已发布本地/GitHub `e8817babd`，17项相关CPU检查通过。
-Linux同步仍待完成：两次发布及后续只读核验均在SSH握手超时，未执行远端切换；
-最后成功发布核验为`c91304f0`，不能据此断言服务器此刻HEAD或进程状态。
+此前Linux同步曾因SSH握手超时停在c91304f0；后续重新登录成功，
+已通过Git安全快进至983b24f2b，与当时本地/GitHub一致，主目录已跟踪修改为0。
+ABO保护目录仍为d979b53e、OpenMoji保护目录仍为3b956503，未切换实验目录。
+最新83目录只读复查仍为9个有已跟踪修改、52个有未跟踪文件；
+实际同用户cwd观察到主目录和demo_reproduction，零cwd不构成删除许可。
+完整复查快照保存在下方工作目录收据的latest_after_ssh_recovery，旧快照仍保留。
 
 后续在发布19531b80时再次实查Linux注册工作目录：**仍有83个，9个有已跟踪修改、
 52个有未跟踪文件**。这是与开发分支数独立的整理余额，不能宣称仅剩两个工程。
@@ -179,4 +183,4 @@ python maintenance/git_safety/check_source_archives.py --server-formal-timing-pa
 
 本地后续只读复查（源码23809bdf7）：已跟踪未提交0、未跟踪2540；
 其中LightGenV2 1176、handoffs 811，其余分组数量与上方旧快照相同。
-这不是释放磁盘或全部副本退役；Linux当前状态仍待SSH恢复后核验，实验室不连接。
+这不是释放磁盘或全部副本退役；Linux已恢复连接并补齐主线，实验室不连接。
