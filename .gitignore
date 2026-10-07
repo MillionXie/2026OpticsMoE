@@ -3116,3 +3116,17 @@ node_modules/
 /ABO_Lab_8um/original_optics/validation/backend_validation.json
 /ABO_Lab_8um/original_optics/validation/camera_pipeline_validation.json
 /ABO_Lab_8um/original_optics/validation/mock_runtime_validation.json
+# Historical OpenMoji grid_v2 dataset payloads; originals remain on Linux, not source code.
+# Exact paths only: current layered application and robust experiment sources remain visible.
+# SHA256 b5a4aa1bb1ebc80eb1343293e4f65318d6d114a4a9d81dd74257663dbeba9080
+/LightGenV2/tasks/t04_semantic_interaction/dataset/openmoji_grid_v2/dataset_summary.json
+# SHA256 d639ce9f2f8e83039f51324c3136fd77bb0d85fa567e3705e05f4e96c8124486
+/LightGenV2/tasks/t04_semantic_interaction/dataset/openmoji_grid_v2/qwen_shared_head_v1/test_native.json
+# SHA256 04755da49d1e68aa6129c49d7b5bd6d9062f96cab0054391003681e538a80fac
+/LightGenV2/tasks/t04_semantic_interaction/dataset/openmoji_grid_v2/qwen_shared_head_v1/train_native.json
+# SHA256 c86765b9a6643be05aa0a91e1060457e214f01930bf483540a4c4e845dc15789
+/LightGenV2/tasks/t04_semantic_interaction/dataset/openmoji_grid_v2/test.jsonl
+# SHA256 c30a9b2dddc34e659146d233b6b5ae98c01626c3ea9a704c6fb168f5a8f24b11
+/LightGenV2/tasks/t04_semantic_interaction/dataset/openmoji_grid_v2/token_embeddings_v1.json
+# SHA256 2ff7127b2df37086109cc137e99cdf65605e7e2a0ef01a60dc9bac6039820666
+/LightGenV2/tasks/t04_semantic_interaction/dataset/openmoji_grid_v2/train.jsonl
