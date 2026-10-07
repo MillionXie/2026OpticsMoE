@@ -1,0 +1,34 @@
+{
+  "date": "2026-10-07",
+  "scope": "Read-only comparison of current Linux OpenMoji overlay against existing local and Linux Git recovery objects; laboratory computer excluded",
+  "runtime_directory": "/DATA/DATA1/guest3/2026OpticsMoE/.worktrees/t04_openmoji_robust_20260928",
+  "runtime_head": "3b956503a4ecae9b6c20c789ead28621e42e6eeb",
+  "tracked_modified_count": 2,
+  "untracked_count": 21,
+  "verified_file_count": 23,
+  "task_subtree_recovery": {
+    "count": 20,
+    "archive_commit": "0512414a69eb4f2433b48c14bfd1e12ddafc86c6",
+    "sha_manifest": "maintenance/storage/T04_CURRENT_SOURCE_OVERLAY_20261005.json",
+    "mapping": "Runtime path equals archive path; current raw SHA256 must equal runtime_sha256 in the manifest"
+  },
+  "root_tools_recovery": {
+    "count": 3,
+    "archive_commit": "2e64b6c2ccdcf4a1bd1f6215f0e2adcd4a224062",
+    "sha_manifest": "maintenance/storage/OPENMOJI_HISTORICAL_TOOLS_20261006.json",
+    "archive_directory": "handoffs/openmoji_robust_ablation_20260928/midrank48_candidate",
+    "runtime_paths": [
+      "launch_rank64_clean_20261002.sh",
+      "launch_rank64_common_20261002.sh",
+      "train_rank64_common_20261002.py"
+    ],
+    "mapping": "Archive directory plus runtime basename; restore bytes to original worktree root, not the archive directory"
+  },
+  "all_current_raw_sha256_equal_existing_manifest": true,
+  "all_local_archive_blob_sha256_equal_current_runtime": true,
+  "all_linux_archive_blob_sha256_equal_current_runtime": true,
+  "new_archive_created": false,
+  "runtime_modified": false,
+  "training_or_launchers_executed": false,
+  "limits": "Snapshot only; does not establish scientific reproducibility, choose the current final model, verify live process occupation, or authorize retirement of the runtime. Later changes require another comparison. Historical receipts remain unchanged."
+}
