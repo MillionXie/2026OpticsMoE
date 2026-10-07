@@ -1,5 +1,12 @@
 # 自采照片小样本域迁移（2026-09-28）
 
+2026-10-07整理：本机旧 `.worktrees/t02_personal_pose` 已整体移入现有历史区
+`archive/frozen_worktrees_20261006/t02_personal_pose`，移动前后3620份文件逐SHA相同，
+原源码、编译缓存及全部历史材料完整保留。该目录没有独有未提交源码或实验产物，
+主线T02仅三份说明不同；没有移动数据、PT或原run，也没有重新评估。
+原Git工作目录登记同步了归档位置，仍可恢复，不能把这次移动说成释放磁盘或减少注册数。
+下面旧分支及服务器路径只记录历史出处；日常操作使用main主工程，不从归档区开发。
+
 ## 画图交付（LightGen2-only）
 
 本地`data/lsp_pose/LightGen2_figure_delivery_20260928`，PREVIEW.html只显示Input、GT、LightGen2、叠加。
@@ -222,8 +229,9 @@ COCO的12个四肢关节直接映射；颈部/头顶仅几何占位，**不是LS
 
 ```powershell
 # 本机已生成，不要重复运行下列准备命令；直接打开review.html即可。
-# 换机器复现时，先checkout上述分支，再设置绝对数据路径。
-Set-Location C:\Users\Xml12\OneDrive\2026OpticsMoE\.worktrees\t02_personal_pose
+# 当前日常源码从main主工程进入；上述分支／目录仅记录历史运行出处。
+# 换机器复现应绑定原PT、标注和配置，不再建立同名工作目录或开发分支。
+Set-Location C:\Users\Xml12\OneDrive\2026OpticsMoE
 $poseData = 'C:\Users\Xml12\OneDrive\2026OpticsMoE\data\lsp_pose'
 python -m LightGenV2.tasks.t02_keypoint_detection.personal_prepare --source "$poseData/Lsp" --output "$poseData/personal_20260928"
 python -m LightGenV2.tasks.t02_keypoint_detection.personal_prelabel --dataset "$poseData/personal_20260928"
