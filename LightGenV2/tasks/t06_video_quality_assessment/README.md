@@ -149,6 +149,13 @@ LightGenV2 后不会错误地相对到新 config 目录。
 
 ## 硬件与交付
 
+2026-10-07补齐既有SHS打包器引用的`lab_phase.py`和`hardware/run_lab.py`，
+不再依赖本地未跟踪源码。两份服务器原Spatial/Temporal交付ZIP中的对应成员已只读核验；
+portable入口原样保留，相位保持器保留后续已有的可选`--release-file`退出控制，
+未指定时与原包行为相同。不会自动切层或采CCD，本次未打开设备或重建旧包。
+来源和差异见[打包依赖身份](package_dependency_source_import_20261007.json)。
+这仅关闭两份源码缺项，不代表旧Temporal默认资产或机器SDK已完整。
+
 - 六阶段顺序：[`hardware/README.md`](hardware/README.md)
 - 构建实验室完整包：
 

@@ -1,0 +1,20 @@
+{
+  "source_head": "7093ec46082eed2fae127ec5028d3e2e8548b592",
+  "prior_main": "c7c309f15f7d4a60169fa76b6bb596408648192f",
+  "purpose": "Close two missing source dependencies of the existing SHS package builder; do not rebuild or replace existing releases",
+  "files": [
+    {"path": "LightGenV2/tasks/t06_video_quality_assessment/lab_phase.py", "source_blob_sha256": "6d07e46caf29957ecb8fa0ad71ce765ad558c6b99ad67e0bb234f11f71f7dad9", "bytes": 1745, "hash_normalization": "crlf_to_lf"},
+    {"path": "LightGenV2/tasks/t06_video_quality_assessment/hardware/run_lab.py", "source_blob_sha256": "65f1aedd163f6adf796ff22a436b885d612f1191666fcbd0a9ee300f63e644ae", "bytes": 292, "hash_normalization": "crlf_to_lf"}
+  ],
+  "actual_server_release_read_only_recheck": {
+    "date": "2026-10-07",
+    "source_commit": "8e869473787f4ffceb2a6a77f4430b94c206f459",
+    "packages": ["20260914_shs_spatial06710.zip", "20260914_shs_temporal08044.zip"],
+    "checked_members": ["runtime/LightGenV2/tasks/t06_video_quality_assessment/lab_phase.py", "run.py"],
+    "original_phase_sha256": "f265fdd62a30ff9b3f358a808b2bf56ea3b912d07f654010e61252a6e4cc0ef3",
+    "portable_entry_sha256": "65f1aedd163f6adf796ff22a436b885d612f1191666fcbd0a9ee300f63e644ae",
+    "full_package_sha_rechecked_this_round": false
+  },
+  "local_unique_change_preserved": "The later phase holder adds optional --release-file and rejects an already present release file; without that option, parser/phase show/repeat/SDK lock behavior is the original package behavior. It neither captures CCD nor automatically switches layers.",
+  "limits": ["No SDK, model, cache, GPU or acquisition invoked", "No existing package, checkpoint or scientific metric changed", "Optional release-file behavior not certified on actual devices", "No claim of full package build or machine SDK dependency closure", "Historical automatic coordinator remains separate and is not invoked by this adoption"]
+}
