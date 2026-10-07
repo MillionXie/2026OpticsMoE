@@ -4,6 +4,7 @@ import hashlib
 import json
 from pathlib import Path
 import subprocess
+import sys
 
 
 def git(root, *args):
@@ -21,6 +22,10 @@ def inspect(root):
     configured = proc.stdout.strip() or None
     if configured not in (None, '.githooks'):
         raise ValueError('Existing hooksPath must be preserved; no automatic replacement')
+    python_proc = subprocess.run(['git', '-C', str(root), 'config', '--local', '--get',
+                                  'lightgen.guardPython'], capture_output=True, text=True)
+    if python_proc.returncode not in (0, 1):
+        raise RuntimeError('Cannot inspect existing guard interpreter')
     default_hook = Path(git(root, 'rev-parse', '--git-path', 'hooks/pre-commit'))
     if not default_hook.is_absolute():
         default_hook = root / default_hook
@@ -34,6 +39,7 @@ def inspect(root):
         raise ValueError('Install from the canonical main checkout only')
     return {'root': str(root), 'head': head, 'branch': branch,
             'previous_local_hooks_path': configured,
+            'configured_python': python_proc.stdout.strip() or None,
             'hook_sha256': hashlib.sha256(hook.read_bytes()).hexdigest(),
             'guard_sha256': hashlib.sha256(guard.read_bytes()).hexdigest(),
             'installed': configured == '.githooks',
@@ -49,12 +55,22 @@ def install(root, expected_head):
         raise ValueError('HEAD changed; do not alter shared Git configuration')
     if git(root, 'diff', '--cached', '--name-only'):
         raise ValueError('Index is occupied; finish the current Git transaction first')
+    interpreter = str(Path(sys.executable).resolve())
+    if state['configured_python'] not in (None, interpreter):
+        raise ValueError('Existing guard interpreter must be preserved; inspect manually')
+    # Bind the interpreter that actually passed the guard, not SSH/VSCode PATH.
+    subprocess.check_call([interpreter, str(Path(state['root']) / 'maintenance/git_safety/review_git.py'),
+                           '--repo', state['root'], '--check-staged'], stdout=subprocess.DEVNULL)
+    subprocess.check_call(['git', '-C', state['root'], 'config', '--local',
+                           'lightgen.guardPython', interpreter])
     subprocess.check_call(['git', '-C', state['root'], 'config', '--local',
                            'core.hooksPath', '.githooks'])
     result = inspect(root)
     if result['head'] != expected_head or not result['installed']:
         raise RuntimeError('Guard installation verification failed')
     result['configuration_changed'] = state['previous_local_hooks_path'] != '.githooks'
+    result['interpreter_configuration_changed'] = state['configured_python'] != interpreter
+    result['previous_configured_python'] = state['configured_python']
     result['working_files_refs_and_index_changed'] = False
     return result
 

@@ -6,6 +6,10 @@ if [ ! -f "$guard" ]; then
     echo "LightGen Git guard missing from this checkout; refusing commit." >&2
     exit 1
 fi
+configured=$(git config --get lightgen.guardPython || :)
+if [ -n "$configured" ]; then
+    exec "$configured" "$guard" --repo "$root" --check-staged
+fi
 for interpreter in python python3; do
     if command -v "$interpreter" >/dev/null 2>&1 && "$interpreter" -c 'import sys; sys.exit(0 if sys.version_info >= (3, 8) else 1)' >/dev/null 2>&1; then
         exec "$interpreter" "$guard" --repo "$root" --check-staged

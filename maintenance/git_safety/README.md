@@ -10,14 +10,17 @@ python maintenance/git_safety/install_commit_guard.py
 python maintenance/git_safety/install_commit_guard.py --apply --expected-head <核实的main提交>
 ```
 
-安装器只改本仓库`core.hooksPath`，原有自定义hook/路径、非main入口、过期HEAD及
+安装器只改本仓库`core.hooksPath`和`lightgen.guardPython`，先验证当前Python能运行
+检查，再固定其绝对路径，不依赖SSH或VSCode的PATH。原有自定义hook/路径/解释器、非main入口、过期HEAD及
 已有暂存事务会拒绝自动修改。源文件和Git引用不变，不安装Python包。
 安装后普通提交会拦截权重/缓存/传输包、具名私有目录、大文件以及有限的明显凭据；
 失败时保留暂存区供人工处理，不自动删除文件。它不是完整secret扫描或操作系统强锁，
 `--no-verify`或修改配置仍能绕过，也不防止创建分支或多个窗口同时写文件。
 现用旧工作树没有`.githooks`时不会获得该检查，不能声称已约束全部窗口。
 实际安装情况以本机安装器检查为准；恢复原未设置状态可在串行Git事务中执行
-`git config --local --unset core.hooksPath`（仅当安装前确实未设置）。
+`git config --local --unset core.hooksPath`和`git config --local --unset lightgen.guardPython`
+（仅当安装前两项确实未设置）。Git2.25无`git hook run`时，可直接运行
+`sh .githooks/pre-commit`验证脚本；这不是该机器真实提交回归。
 
 身份核查默认只选源码后缀。检查报告、Markdown、CSV等未跟踪资产时，可显式使用：
 

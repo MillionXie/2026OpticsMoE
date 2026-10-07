@@ -66,6 +66,19 @@ class CommitGuardTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, 'canonical main'):
             install(self.root, self.head)
 
+    def test_explicit_interpreter_avoids_path_lookup(self):
+        import os
+        state = install(self.root, self.head)
+        self.assertTrue(Path(state['configured_python']).is_file())
+        # Missing generic python is irrelevant: the hook uses the tested path.
+        self.assertIn('lightgen.guardPython', (self.root / '.githooks/pre-commit').read_text())
+
+    def test_foreign_interpreter_is_not_replaced(self):
+        self.run_git('config', '--local', 'lightgen.guardPython', '/user/custom/python')
+        with self.assertRaisesRegex(ValueError, 'Existing guard interpreter'):
+            install(self.root, self.head)
+        self.assertEqual(self.run_git('config', '--get', 'lightgen.guardPython').stdout.strip(), '/user/custom/python')
+
     def test_foreign_hook_configuration_is_preserved(self):
         self.run_git('config', 'core.hooksPath', 'user-hooks')
         with self.assertRaisesRegex(ValueError, 'Existing hooksPath'):
