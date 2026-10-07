@@ -1,0 +1,183 @@
+{
+  "audited_on": "2026-10-07",
+  "source_pin": "d62d8d177d6751132f0ff9cd433ec82c96010a1e",
+  "scope": "Named existing laboratory dataset/capture payloads and installed environment; visibility only, no bytes moved/deleted, no source tree hidden",
+  "before_untracked": 406133,
+  "selected_count": 369265,
+  "selected_paths_sha256": "0185944a57771f6debb9d5a705305e58f79c9ba07c26bc816da45cf8fefbd9e9",
+  "classification_counts": {
+    "raw_dataset_or_physical_payload": 279630,
+    "installed_environment_or_git_recovery_objects": 21080,
+    "per_frame_physical_receipt": 68555
+  },
+  "asset_scopes": {
+    "ABO_I2I_Lab_DVP_8um/data": {
+      ".jpg": 2400
+    },
+    "ABO_T2I_10cm_alpha040_20260925/finetune_train800": {
+      ".bmp": 6,
+      ".png": 10200
+    },
+    "ABO_T2I_10cm_alpha040_20260925/full_test": {
+      ".bmp": 6,
+      ".png": 29400
+    },
+    "ABO_T2I_10cm_alpha040_20260925/phase_response_probe_20260925/ccd": {
+      ".png": 4
+    },
+    "ABO_T2I_10cm_alpha040_20260925/router_pilot_capture_10ms_20260925/ccd": {
+      ".png": 4
+    },
+    "ABO_T2I_10cm_alpha040_20260925/router_pilot_capture_20260925/ccd": {
+      ".png": 4
+    },
+    "LGVQ_Spatial_Lab_SHS_8um/sessions": {
+      ".bmp": 11752,
+      ".png": 22582,
+      ".record.json": 10859
+    },
+    "LGVQ_Spatial_Train_Lab_SHS_8um/sessions": {
+      ".png": 65194,
+      ".record.json": 36450,
+      ".bmp": 27018
+    },
+    "LGVQ_Temporal_Lab_SHS_8um/sessions": {
+      ".bmp": 226,
+      ".png": 424,
+      ".record.json": 210
+    },
+    "OpenMoji_Exp05_SHS_20260927/data": {
+      ".png": 4000
+    },
+    "OpenMoji_Exp05_SHS_20260927/data_train_adapt1000": {
+      ".png": 4000
+    },
+    "OpenMoji_FullHead_Robust_SHS_20260929/data_train_adapt1000": {
+      ".png": 3000
+    },
+    "OpenMoji_Lab_DVP_8um_e45/data": {
+      ".png": 4000
+    },
+    "OpenMoji_Lab_SHS_8um/assets": {
+      ".png": 16
+    },
+    "OpenMoji_Lab_SHS_8um/data": {
+      ".png": 18000
+    },
+    "OpenMoji_Lab_SHS_8um/sessions": {
+      ".png": 6290,
+      ".bmp": 6068,
+      ".record.json": 6024
+    },
+    "OpenMoji_RobustAblation_SHS_20260929/data_train_adapt1000": {
+      ".png": 3000
+    },
+    "OpenMoji_Robust_Midrank48_G2_SHS_20260930/data_train_adapt1000": {
+      ".png": 3000
+    },
+    "OpenMoji_Robust_Midrank48_SHS_20260930/data_train_adapt1000": {
+      ".png": 3000
+    },
+    "OpenMoji_Robust_Rank64_SHS_20261002/data_train_adapt1000": {
+      ".png": 3000
+    },
+    "OpenMoji_Robust_Rank64_SHS_20261002/data_train_extra1000": {
+      ".png": 3000
+    },
+    "OpenMoji_Robust_Rank64_SHS_20261002/data_train_extra2_1000": {
+      ".png": 3000
+    },
+    "OpenMoji_delivery_20260915/sessions": {
+      ".bmp": 3,
+      ".png": 3
+    },
+    "SALICON_Lab_SHS_8um/sessions": {
+      ".png": 15112,
+      ".record.json": 15012,
+      ".bmp": 15018
+    },
+    "T12_Small_Lab_SHS_8um/assets": {
+      ".jpg": 2113,
+      ".png": 2112
+    },
+    "T12_Small_Lab_SHS_8um/candidate_bounded/assets": {
+      ".jpg": 2113,
+      ".png": 2112
+    },
+    "T12_Small_Lab_SHS_8um/candidate_robust17m_20260927/assets": {
+      ".jpg": 2113,
+      ".png": 2112
+    },
+    "T12_Small_Lab_SHS_8um/ch27_ref/assets": {
+      ".jpg": 2113,
+      ".png": 2112
+    }
+  },
+  "installed_non_source_directories": [
+    "ABO_Lab_SHS_8um/.venv_gpu/",
+    "OpenMoji_Robust_Rank64_SHS_20261002/.git-source-objects/",
+    "OpenMoji_Robust_Rank64_SHS_20261002/.git-tools/MinGit_2_56_0/"
+  ],
+  "rules": [
+    "/ABO_I2I_Lab_DVP_8um/data/**/*.jpg",
+    "/ABO_Lab_SHS_8um/.venv_gpu/",
+    "/ABO_T2I_10cm_alpha040_20260925/finetune_train800/**/*.bmp",
+    "/ABO_T2I_10cm_alpha040_20260925/finetune_train800/**/*.png",
+    "/ABO_T2I_10cm_alpha040_20260925/full_test/**/*.bmp",
+    "/ABO_T2I_10cm_alpha040_20260925/full_test/**/*.png",
+    "/ABO_T2I_10cm_alpha040_20260925/phase_response_probe_20260925/ccd/**/*.png",
+    "/ABO_T2I_10cm_alpha040_20260925/router_pilot_capture_10ms_20260925/ccd/**/*.png",
+    "/ABO_T2I_10cm_alpha040_20260925/router_pilot_capture_20260925/ccd/**/*.png",
+    "/LGVQ_Spatial_Lab_SHS_8um/sessions/**/*.bmp",
+    "/LGVQ_Spatial_Lab_SHS_8um/sessions/**/*.png",
+    "/LGVQ_Spatial_Lab_SHS_8um/sessions/**/ccd/**/*.record.json",
+    "/LGVQ_Spatial_Train_Lab_SHS_8um/sessions/**/*.bmp",
+    "/LGVQ_Spatial_Train_Lab_SHS_8um/sessions/**/*.png",
+    "/LGVQ_Spatial_Train_Lab_SHS_8um/sessions/**/ccd/**/*.record.json",
+    "/LGVQ_Temporal_Lab_SHS_8um/sessions/**/*.bmp",
+    "/LGVQ_Temporal_Lab_SHS_8um/sessions/**/*.png",
+    "/LGVQ_Temporal_Lab_SHS_8um/sessions/**/ccd/**/*.record.json",
+    "/OpenMoji_Exp05_SHS_20260927/data/**/*.png",
+    "/OpenMoji_Exp05_SHS_20260927/data_train_adapt1000/**/*.png",
+    "/OpenMoji_FullHead_Robust_SHS_20260929/data_train_adapt1000/**/*.png",
+    "/OpenMoji_Lab_DVP_8um_e45/data/**/*.png",
+    "/OpenMoji_Lab_SHS_8um/assets/**/*.png",
+    "/OpenMoji_Lab_SHS_8um/data/**/*.png",
+    "/OpenMoji_Lab_SHS_8um/sessions/**/*.bmp",
+    "/OpenMoji_Lab_SHS_8um/sessions/**/*.png",
+    "/OpenMoji_Lab_SHS_8um/sessions/**/ccd/**/*.record.json",
+    "/OpenMoji_RobustAblation_SHS_20260929/data_train_adapt1000/**/*.png",
+    "/OpenMoji_Robust_Midrank48_G2_SHS_20260930/data_train_adapt1000/**/*.png",
+    "/OpenMoji_Robust_Midrank48_SHS_20260930/data_train_adapt1000/**/*.png",
+    "/OpenMoji_Robust_Rank64_SHS_20261002/.git-source-objects/",
+    "/OpenMoji_Robust_Rank64_SHS_20261002/.git-tools/MinGit_2_56_0/",
+    "/OpenMoji_Robust_Rank64_SHS_20261002/data_train_adapt1000/**/*.png",
+    "/OpenMoji_Robust_Rank64_SHS_20261002/data_train_extra1000/**/*.png",
+    "/OpenMoji_Robust_Rank64_SHS_20261002/data_train_extra2_1000/**/*.png",
+    "/OpenMoji_delivery_20260915/sessions/**/*.bmp",
+    "/OpenMoji_delivery_20260915/sessions/**/*.png",
+    "/SALICON_Lab_SHS_8um/sessions/**/*.bmp",
+    "/SALICON_Lab_SHS_8um/sessions/**/*.png",
+    "/SALICON_Lab_SHS_8um/sessions/**/ccd/**/*.record.json",
+    "/T12_Small_Lab_SHS_8um/assets/**/*.jpg",
+    "/T12_Small_Lab_SHS_8um/assets/**/*.png",
+    "/T12_Small_Lab_SHS_8um/candidate_bounded/assets/**/*.jpg",
+    "/T12_Small_Lab_SHS_8um/candidate_bounded/assets/**/*.png",
+    "/T12_Small_Lab_SHS_8um/candidate_robust17m_20260927/assets/**/*.jpg",
+    "/T12_Small_Lab_SHS_8um/candidate_robust17m_20260927/assets/**/*.png",
+    "/T12_Small_Lab_SHS_8um/ch27_ref/assets/**/*.jpg",
+    "/T12_Small_Lab_SHS_8um/ch27_ref/assets/**/*.png"
+  ],
+  "protected_visible_examples": [
+    "OpenMoji_Robust_Rank64_SHS_20261002/source/LightGenV2/tasks/t04_openmoji_robust_ablation/train.py",
+    "OpenMoji_Robust_Rank64_SHS_20261002/lab_tune_rank64_test.py",
+    "OpenMoji_Robust_Rank64_SHS_20261002/data_train_adapt1000/split_audit.json",
+    "LGVQ_Spatial_Train_Lab_SHS_8um/sessions/train2250_language_verified_20260915/analyze.py",
+    "LGVQ_Spatial_Train_Lab_SHS_8um/sessions/train2250_language_verified_20260915/timing.csv",
+    "T12_Small_Lab_SHS_8um/assets/manifest.json",
+    "ABO_I2I_Lab_DVP_8um/candidate_latergb_rank72_20260930/README.md"
+  ],
+  "deletion_authorized": false,
+  "complete_asset_backup_proven": false,
+  "raw_content_hashes_not_computed_by_this_visibility_plan": true
+}

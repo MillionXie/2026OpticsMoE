@@ -1,0 +1,64 @@
+{
+  "audited_on": "2026-10-07",
+  "verified_source_pin": "d62d8d177d6751132f0ff9cd433ec82c96010a1e",
+  "actual_roots": {
+    "local": "C:/Users/Xml12/OneDrive/2026OpticsMoE",
+    "linux": "/DATA/DATA1/guest3/2026OpticsMoE",
+    "lab": "E:/code/guest/2026OpticsMoE"
+  },
+  "all_actual_root_heads_equal": true,
+  "all_actual_root_branches": "main",
+  "all_actual_root_tracked_status_clean": true,
+  "registry_working_file_checks": {
+    "entries": 14,
+    "errors_per_root": 0,
+    "source_sha_mismatches_per_root": 0,
+    "not_git_tree_only": true
+  },
+  "maintenance_unit_tests": {
+    "tests_per_root": 29,
+    "passed_all_roots": true,
+    "modules": [
+      "test_adrenal_historical_source",
+      "test_adopt_published_main",
+      "test_private_artifact_ignore",
+      "test_format_adopted_checkout"
+    ]
+  },
+  "remote_tests": {
+    "linux": {
+      "head": "d62d8d177d6751132f0ff9cd433ec82c96010a1e",
+      "tests_returncode": 0,
+      "registry_returncode": 0,
+      "readiness_scope": "No formal dataset/PT inference, hardware, training or acquisition"
+    },
+    "lab": {
+      "head": "d62d8d177d6751132f0ff9cd433ec82c96010a1e",
+      "tests_returncode": 0,
+      "registry_returncode": 0,
+      "readiness_scope": "No formal dataset/PT inference, hardware, training or acquisition"
+    }
+  },
+  "lab_new_checkout_formatting": {
+    "previous_mismatch_declarations": 229,
+    "unique_sources": 216,
+    "canonical_git_bytes_restored": true,
+    "index_tree_unchanged": true,
+    "original_vscode_settings_sha": "b48be4a0808834c155006634c1f3e4c32f577ce9e52b30ee608372c4d89850cb",
+    "original_settings_unchanged": true,
+    "expected_hashes_waived": false,
+    "original_runtime_children_modified": false
+  },
+  "limitations": [
+    "Does not prove full datasets/PT/SDK runtime readiness",
+    "Does not change sealed ABO or active OpenMoji runtimes",
+    "No hardware, training, query evaluation, deleting or asset upload",
+    "Lab direct GitHub read probe failed; verified Git bundle source transport was used",
+    "Whole-project cleanup acceptance remains incomplete"
+  ],
+  "private_receipts": [
+    ".codex_tmp/current_main_three_root_tests_finalized_20261007.json",
+    ".codex_tmp/lab_canonical_index_finalized_20261007.json",
+    ".codex_tmp/canonical_index_lab_sync_20261007.json"
+  ]
+}

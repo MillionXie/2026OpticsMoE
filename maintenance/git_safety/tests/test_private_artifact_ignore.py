@@ -10,6 +10,26 @@ ROOT = Path(__file__).resolve().parents[3]
 
 
 class ArtifactIgnoreTests(unittest.TestCase):
+    def test_lab_payload_rules_preserve_source_manifests_and_timing(self):
+        import json
+        d=json.loads((ROOT/'maintenance/storage/LAB_PAYLOAD_VISIBILITY_20261007.json').read_text(encoding='utf8'))
+        self.assertEqual(d['selected_count'],369265)
+        private=[
+            'LGVQ_Spatial_Train_Lab_SHS_8um/sessions/train2250_language_verified_20260915/ccd/vision_router/field_0000.png',
+            'LGVQ_Spatial_Train_Lab_SHS_8um/sessions/train2250_language_verified_20260915/ccd/vision_router/field_0000.record.json',
+            'ABO_I2I_Lab_DVP_8um/data/gallery/item.jpg',
+            'OpenMoji_Robust_Rank64_SHS_20261002/data_train_extra2_1000/train/train_0000/input.png',
+            'ABO_Lab_SHS_8um/.venv_gpu/Lib/site-packages/torch/__init__.py',
+            'OpenMoji_Robust_Rank64_SHS_20261002/.git-source-objects/objects/pack/object.pack']
+        visible=d['protected_visible_examples']+[
+            'OpenMoji_Robust_Rank64_SHS_20261002/data_train_extra2_1000/prepare.py',
+            'OpenMoji_Robust_Rank64_SHS_20261002/data_train_extra2_1000/protocol.json',
+            'LGVQ_Spatial_Train_Lab_SHS_8um/sessions/train2250_language_verified_20260915/ccd/vision_router/config.yaml',
+            'LightGenV2/tasks/t04_openmoji_robust_ablation/dataset/prepare.py',
+            'LightGenV2/reports/new_timing/measure.py',
+            'unreviewed_lab/sessions/new_frame.png']
+        self.assertEqual(self.ignored(private+visible),set(private))
+
     def test_editor_result_rules_keep_contracts_and_current_tasks_visible(self):
         import json
         d=json.loads((ROOT/'maintenance/storage/EDITOR_RESULT_VISIBILITY_20261007.json').read_text(encoding='utf8'))
