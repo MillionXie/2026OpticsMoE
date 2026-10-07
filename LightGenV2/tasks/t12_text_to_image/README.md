@@ -14,6 +14,13 @@
 原报告中的“current primary/final”只指当时版本；原报告、计时及图片不改不删，
 不能将其旧模型测速套用到当前17.03M实拍版本。
 
+历史测速源码 `benchmark_product_editors`、`benchmark_three_task_bundle`、
+`benchmark_unified_256` 及[9月23日紧凑编辑器原对照](reports/20260923_compact_product_editors/README.md)
+已原样纳入main，十份文件与保留服务器v2源码及原提交`7093ec4608`一致。
+三个入口仅核验`--help`，未重新测速。原报告的35.0606ms是电子计时28.7924ms加
+固定光学估算6.2682ms，不能当成实验台端到端实测；63.4864ms是当时完整电子baseline，
+不套给当前17M权重。原报告、训练/测试摘要及计时分布全部保留。
+
 更早的[2026-09-21纯电子单步对照](reports/20260921_electronic_baseline/README.md)
 也保留原训练入口 `electronic_turbo_run`、训练实现、原配置及训练／提示推理报告。
 三份源码／配置与服务器保留的v2工作目录原字节一致；此次只核验帮助与三项合成CPU合同。

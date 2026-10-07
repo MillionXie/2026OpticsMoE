@@ -1,0 +1,171 @@
+{
+  "schema_version": 1,
+  "task": "text-guided object replacement",
+  "best_epoch": 4,
+  "initial_validation": {
+    "latent_mse": 0.27987267065327615,
+    "edit_l1": 0.6431472236290574,
+    "preserve_change_l1": 0.05189563176827505,
+    "reference_mse": 0.48931450909003615,
+    "catalogue_accuracy": 0.25,
+    "mse_improvement_over_copy": 0.428031122204516
+  },
+  "test": {
+    "latent_mse": 0.02765962333069183,
+    "edit_l1": 0.11284083122154698,
+    "preserve_change_l1": 0.06252751077408902,
+    "reference_mse": 0.48541193548589945,
+    "catalogue_accuracy": 1.0,
+    "mse_improvement_over_copy": 0.9430182463416265
+  },
+  "architecture": {
+    "variant": "qwen_bksdm_v2_tiny_reference_decoder_optical",
+    "flow": "image->frozen VAE encoder; text->frozen Qwen->adapter; one UNet call->VAE decoder",
+    "unet_parameters": 255888681,
+    "vae_decoder_parameters": 49490179,
+    "qwen_condition_adapter_parameters": 4273280,
+    "text_region_router_parameters": 12292,
+    "generation_tail_parameters": 309664432,
+    "qwen_parameters_excluded_from_tail": true,
+    "inference_iterations": 1,
+    "unet_calls": 1,
+    "vae_decoder_calls": 1,
+    "reference_conditioning": "8ch input latent + small seeded Gaussian texture channel",
+    "output_parameterization": "single-pass residual around the input latent",
+    "optical_decoder": {
+      "location": "deleted BK-SDM mid residual transform at decoder entrance",
+      "parallel_contract": "identity residual(shared_input) || optical(shared_input), then RMS fusion",
+      "electronic_and_optical_are_parallel": true,
+      "electronic_branch": "parameter-free identity residual; excluded from latency",
+      "optical_backend": "differentiable phase-only FFT simulation",
+      "optical_grid": [
+        8,
+        8
+      ],
+      "optical_parameters": 1146597,
+      "alpha": 0.49956679344177246,
+      "alpha_minimum": 0.4,
+      "alpha_maximum": 0.75,
+      "physical_latency_ms": 6.2682
+    },
+    "config": {
+      "optical_width": 224,
+      "optical_grid": 8,
+      "optical_experts": 4,
+      "optical_top_k": 2,
+      "alpha_initial": 0.5,
+      "alpha_minimum": 0.4,
+      "alpha_maximum": 0.75,
+      "rms_epsilon": 1e-06
+    },
+    "vae_encoder_parameters": 34163664,
+    "counted_qwen_parameters": 151010048,
+    "counted_end_to_end_parameters": 494838144
+  },
+  "attention_pruning": {
+    "spec": [
+      {
+        "side": "down",
+        "block": 0,
+        "attention": 0,
+        "removed_parameters": 2710080
+      },
+      {
+        "side": "down",
+        "block": 1,
+        "attention": 0,
+        "removed_parameters": 9516160
+      },
+      {
+        "side": "up",
+        "block": 0,
+        "attention": 1,
+        "removed_parameters": 35416320
+      },
+      {
+        "side": "up",
+        "block": 1,
+        "attention": 0,
+        "removed_parameters": 9516160
+      },
+      {
+        "side": "up",
+        "block": 1,
+        "attention": 1,
+        "removed_parameters": 9516160
+      },
+      {
+        "side": "up",
+        "block": 2,
+        "attention": 0,
+        "removed_parameters": 2710080
+      },
+      {
+        "side": "up",
+        "block": 2,
+        "attention": 1,
+        "removed_parameters": 2710080
+      }
+    ],
+    "removed_parameters": 72095040,
+    "remaining_parameters": 254742084,
+    "parameters_after_optical": 255888681
+  },
+  "history": [
+    {
+      "epoch": 1,
+      "train_loss": 1.3502889604618151,
+      "validation": {
+        "latent_mse": 0.041604105790611356,
+        "edit_l1": 0.16928490391001105,
+        "preserve_change_l1": 0.05904351192293689,
+        "reference_mse": 0.48931450909003615,
+        "catalogue_accuracy": 1.0,
+        "mse_improvement_over_copy": 0.914974714590047
+      },
+      "optical_alpha": 0.4990922212600708
+    },
+    {
+      "epoch": 2,
+      "train_loss": 0.7039708429430094,
+      "validation": {
+        "latent_mse": 0.034507016054703854,
+        "edit_l1": 0.14313820685492828,
+        "preserve_change_l1": 0.05874906192184426,
+        "reference_mse": 0.48931450909003615,
+        "catalogue_accuracy": 1.0,
+        "mse_improvement_over_copy": 0.929478861930999
+      },
+      "optical_alpha": 0.4991777837276459
+    },
+    {
+      "epoch": 3,
+      "train_loss": 0.6232911614545932,
+      "validation": {
+        "latent_mse": 0.032082609497592784,
+        "edit_l1": 0.13383240217808634,
+        "preserve_change_l1": 0.05996252706972882,
+        "reference_mse": 0.48931450909003615,
+        "catalogue_accuracy": 1.0,
+        "mse_improvement_over_copy": 0.9344335618470503
+      },
+      "optical_alpha": 0.4993399381637573
+    },
+    {
+      "epoch": 4,
+      "train_loss": 0.5772282120047344,
+      "validation": {
+        "latent_mse": 0.029024786228546873,
+        "edit_l1": 0.11854527523973957,
+        "preserve_change_l1": 0.061023118352750316,
+        "reference_mse": 0.48931450909003615,
+        "catalogue_accuracy": 1.0,
+        "mse_improvement_over_copy": 0.9406827598827523
+      },
+      "optical_alpha": 0.49957412481307983
+    }
+  ],
+  "training_seconds": 623.9867034032941,
+  "gan_used": false,
+  "inference_iterations": 1
+}
