@@ -5,6 +5,19 @@
 [当前版本与待收敛边界](CURRENT_VERSION_20261004.md)。主线核心通过57项CPU合同测试、
 两份正式PT严格加载；旧Temporal-36默认profile和后续实拍微调入口仍须单独核验。
 
+## 先选版本：当前实拍模型与历史默认不是同一套
+
+| 当前登记版本 | 原固定权重仿真 SRCC | 未适配实拍 SRCC | 权重身份 |
+| --- | ---: | ---: | --- |
+| Spatial，单视频4帧，六层原1M读出 | .6710968960 | .5786364901 | 95e12397…592828b |
+| Temporal，16视频×4帧，同场六层 | .8043868643 | .7977138739 | 5303b574…a243a77c |
+
+精确完整SHA、源数据、原报告、离线适配与只读权重验收命令均从上方
+`CURRENT_VERSION_20261004.md`进入。两行不是同一模型；旧测速不套到这两份PT。
+以下Temporal-36、旧Spatial-4、9×4等段落保留历史成绩和对照。
+**未指定profile的旧默认仍是Temporal-36，不是当前Temporal实拍模型，且预检未通过。**
+本轮只澄清入口，不静默改默认profile、原SHA、资产路径或光学合同。
+
 2026-10-06补齐主线测试依赖：`lab_stage_coordinator.desktop_code` 仅返回历史阶段脚本
 字符串，不连接机器、不打开SDK、不启动采集；T03测试不再依赖未跟踪的
 `lab_manual_stage.py`。同时恢复历史 `stage_config` / `effective_stage_identity` 纯配置
@@ -29,13 +42,13 @@
 [历史源码副本](../../../maintenance/storage/T06_REVIEW_SOURCE_VISIBILITY_20261007.json)。
 忽略副本不删除文件，不改变封存包的SHA清单；后续开发仍从本任务入口进行。
 
-Spatial 的当前正式归档是 `spatial_single_video4_balanced`：一条视频均匀取 4 帧并排成
+历史 Spatial-4 对照归档是 `spatial_single_video4_balanced`：一条视频均匀取 4 帧并排成
 2×2，**没有多视频复用**。它使用两套物理光 Router Top-2、六次光传播和 20% 名义
 未调制分量，在 558 条 test 视频上达到 SRCC 0.6393、KRCC 0.4642、PLCC 0.6743、
 RMSE 8.452、MAE 6.646。入口、checkpoint SHA 和光关闭对照见
 [`reports/paper_results/spatial_single_video4_balanced`](reports/paper_results/spatial_single_video4_balanced/README.md)。
 
-当前主版本是 `temporal36_balanced`：一个视频均匀取 36 帧，以 6×6 lane 放进同一个
+历史 Temporal-36 对照版本为 `temporal36_balanced`：一个视频均匀取 36 帧，以 6×6 lane 放进同一个
 478×478 有效光场。四专家光学 Top-2 router、六次光传播、20% 名义未调制直流分量、
 鲁棒位移/相位/CCD 扰动和目标专属电子读出头保持不变。
 
@@ -43,7 +56,7 @@ RMSE 8.452、MAE 6.646。入口、checkpoint SHA 和光关闭对照见
 MAE 5.451。平衡候选四专家占比正常，结果详见
 [`reports/paper_results/temporal36_balanced`](reports/paper_results/temporal36_balanced/README.md)。
 
-新的正式仿真候选 `temporal_multivideo9x4` 把 9 条互不相关的视频各取 4 帧，以 3×3 视频
+历史正式仿真候选 `temporal_multivideo9x4` 把 9 条互不相关的视频各取 4 帧，以 3×3 视频
 tile、每 tile 内 2×2 帧的方式放入同一 478×478 光场。它不是把 Temporal-36 checkpoint
 改名，而是新的六次全场相干传播模型，输出形状为 `[B,9]`；其中每个数仍只评价一条视频。
 正式单 seed 结果为 SRCC 0.8082、KRCC 0.5999、PLCC 0.8131、RMSE 8.226、MAE 6.109；
@@ -52,7 +65,7 @@ tile、每 tile 内 2×2 帧的方式放入同一 478×478 光场。它不是把
 [`reports/paper_results/temporal_multivideo9x4_contentroute`](reports/paper_results/temporal_multivideo9x4_contentroute/README.md)。
 Temporal-36 保留为“单视频 36 帧”的独立基线，二者不能混报。
 
-最新吞吐优先候选 `temporal_multivideo16x4` 在同一光场同时处理 16 条视频、每条 4 帧，
+16×4 吞吐优先模型 `temporal_multivideo16x4` 在同一光场同时处理 16 条视频、每条 4 帧，
 输出 `[B,16]`。正式单 seed 结果为 SRCC 0.8044、KRCC 0.5968、PLCC 0.8180、
 RMSE 7.991、MAE 5.992；没有达到预设 SRCC≥0.81，但一次光场输出数相对 9×4 增加
 77.8%，且没有发生全局专家坍缩。正式配置和诚实的限制说明见
