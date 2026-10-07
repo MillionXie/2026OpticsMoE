@@ -1,4 +1,14 @@
 {
+  "imported_readonly_support_payloads_20261008": {
+    "scope": "21 exact existing original_a100/original_inference/original_optics support payload paths listed in root .gitignore; two upstream Qwen helper copies, original machine configuration, calibration contracts and validation/reference data",
+    "original_manifests": ["ABO_Lab_8um/original_a100/FULL_PACKAGE_MANIFEST.json", "ABO_Lab_8um/original_inference/PACKAGE_MANIFEST.json", "ABO_Lab_8um/original_optics/FULL_PACKAGE_MANIFEST.json"],
+    "each_current_Linux_file_matches_original_manifest_SHA": true,
+    "originals_moved_deleted_or_changed": false,
+    "top_level_provenance_manifests_and_development_wrappers_hidden": false,
+    "new_paths_or_current_experiment_sources_hidden": false,
+    "private_optics_token": "Existing original_optics/config/shared_token.txt excluded without reading, hashing or publishing its contents",
+    "laboratory_contacted": false
+  },
   "linux_private_artifact_reconciliation_20261008": {
     "source_commit": "f6a1c5075de204c3e9143c76d6b96c726861e1aa",
     "previous_global_registry_asset_errors": 13,

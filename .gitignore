@@ -3091,3 +3091,28 @@ node_modules/
 /handoffs/openmoji_robust_ablation_20260928/midrank48_candidate/rank64_g2_train2000_bias_report_20261002.json
 # SHA256 c75be6637074840b3efb783fe97da661ad6bc3f6582ef710e9342523111db33b
 /handoffs/t12_lab_robust17m_20260927/README.md
+# Private token retained locally; never read or published during cleanup.
+/ABO_Lab_8um/original_optics/config/shared_token.txt
+# Original imported read-only deployment support payloads, pinned by original package manifests.
+# All 21 files matched their original manifest SHA on Linux; originals and top-level provenance retained.
+/ABO_Lab_8um/original_a100/config/a100.json
+/ABO_Lab_8um/original_a100/models/Qwen3-VL-Embedding-2B/scripts/qwen3_vl_embedding.py
+/ABO_Lab_8um/original_a100/reference_phases/contract.json
+/ABO_Lab_8um/original_a100/validation/backend_validation.json
+/ABO_Lab_8um/original_a100/validation/mock_runtime_validation.json
+/ABO_Lab_8um/original_a100/validation/package_validation.json
+/ABO_Lab_8um/original_inference/models/Qwen3-VL-Embedding-2B/scripts/qwen3_vl_embedding.py
+/ABO_Lab_8um/original_inference/reference/FINAL_VERIFICATION.json
+/ABO_Lab_8um/original_inference/reference/final_report.json
+/ABO_Lab_8um/original_inference/validation/gpu_smoke_metrics.json
+/ABO_Lab_8um/original_optics/config/generated/detector_homography_478.contract.json
+/ABO_Lab_8um/original_optics/config/optics.json
+/ABO_Lab_8um/original_optics/config/reference/README.txt
+/ABO_Lab_8um/original_optics/config/reference/generated/detector_homography_478.contract.json
+/ABO_Lab_8um/original_optics/config/reference/generated/detector_homography_478.contract.json.sha256
+/ABO_Lab_8um/original_optics/config/reference/generated/prepare_report.json
+/ABO_Lab_8um/original_optics/config/reference/pass_01_export_report.json
+/ABO_Lab_8um/original_optics/reference_phases/contract.json
+/ABO_Lab_8um/original_optics/validation/backend_validation.json
+/ABO_Lab_8um/original_optics/validation/camera_pipeline_validation.json
+/ABO_Lab_8um/original_optics/validation/mock_runtime_validation.json
