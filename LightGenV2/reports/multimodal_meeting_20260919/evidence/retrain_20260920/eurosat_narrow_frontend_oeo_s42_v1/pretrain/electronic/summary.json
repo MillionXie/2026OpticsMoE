@@ -1,0 +1,298 @@
+{
+  "stage": "electronic",
+  "selected_epoch": 19,
+  "validation": {
+    "electronic": {
+      "accuracy": 0.727,
+      "domain_accuracy": {
+        "0": 0.724,
+        "1": 0.73
+      },
+      "loss": 0.7497162222862244,
+      "confusion_matrix": [
+        [
+          154,
+          2,
+          7,
+          1,
+          1,
+          10,
+          12,
+          0,
+          6,
+          7
+        ],
+        [
+          0,
+          168,
+          9,
+          3,
+          0,
+          4,
+          11,
+          0,
+          1,
+          4
+        ],
+        [
+          18,
+          17,
+          97,
+          9,
+          1,
+          20,
+          35,
+          0,
+          3,
+          0
+        ],
+        [
+          17,
+          5,
+          9,
+          99,
+          12,
+          24,
+          16,
+          11,
+          7,
+          0
+        ],
+        [
+          0,
+          0,
+          1,
+          2,
+          189,
+          0,
+          2,
+          4,
+          1,
+          1
+        ],
+        [
+          4,
+          4,
+          8,
+          8,
+          0,
+          152,
+          23,
+          0,
+          1,
+          0
+        ],
+        [
+          17,
+          5,
+          43,
+          17,
+          0,
+          12,
+          103,
+          0,
+          3,
+          0
+        ],
+        [
+          0,
+          1,
+          1,
+          6,
+          10,
+          0,
+          0,
+          182,
+          0,
+          0
+        ],
+        [
+          7,
+          5,
+          5,
+          30,
+          1,
+          10,
+          3,
+          1,
+          136,
+          2
+        ],
+        [
+          4,
+          16,
+          0,
+          0,
+          0,
+          5,
+          0,
+          0,
+          1,
+          174
+        ]
+      ]
+    }
+  },
+  "train_unaugmented": {
+    "electronic": {
+      "accuracy": 0.7766666666666666,
+      "domain_accuracy": {
+        "0": 0.8083333333333333,
+        "1": 0.745
+      },
+      "loss": 0.6399449110031128,
+      "confusion_matrix": [
+        [
+          465,
+          18,
+          17,
+          3,
+          0,
+          46,
+          30,
+          2,
+          9,
+          10
+        ],
+        [
+          1,
+          526,
+          21,
+          4,
+          0,
+          14,
+          31,
+          1,
+          1,
+          1
+        ],
+        [
+          38,
+          36,
+          323,
+          24,
+          7,
+          52,
+          107,
+          9,
+          2,
+          2
+        ],
+        [
+          33,
+          6,
+          18,
+          375,
+          44,
+          37,
+          36,
+          13,
+          36,
+          2
+        ],
+        [
+          0,
+          0,
+          3,
+          21,
+          567,
+          0,
+          0,
+          5,
+          4,
+          0
+        ],
+        [
+          25,
+          6,
+          29,
+          20,
+          0,
+          450,
+          61,
+          0,
+          8,
+          1
+        ],
+        [
+          35,
+          28,
+          66,
+          23,
+          7,
+          36,
+          401,
+          2,
+          2,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          11,
+          34,
+          0,
+          3,
+          551,
+          1,
+          0
+        ],
+        [
+          13,
+          14,
+          9,
+          61,
+          11,
+          27,
+          1,
+          2,
+          457,
+          5
+        ],
+        [
+          3,
+          38,
+          1,
+          0,
+          0,
+          5,
+          0,
+          0,
+          8,
+          545
+        ]
+      ]
+    }
+  },
+  "trainable_parameters": 43546,
+  "initial_parameters_sha256": {
+    "features.0.weight": "b32e007ac546dfef765cef3eea6b1cf800bd7273a61d64eb391b9dbc15641a77",
+    "features.1.weight": "9628e545ed3ac074e5a6cbf542a642b62482fbfca9b4cb3ea4743a1874256e37",
+    "features.1.bias": "f5a5fd42d16a20302798ef6ed309979b43003d2320d9f0e8ea9831a92759fb4b",
+    "features.4.weight": "6a6ddf96a816117be68b02bccb98783f2d3d0a38a85c88eedb62ff9061eee468",
+    "features.5.weight": "b638277a8690e175a9137feff1e43c067f9faf4e2f600caf468fb05b0403b717",
+    "features.5.bias": "38723a2e5e8a17aa7950dc008209944e898f69a7bd10a23c839d341e935fd5ca",
+    "features.8.weight": "c13e107c0ae8f6798333385c69fb800c170964bcc96bd091e3a60d9491b316a5",
+    "features.9.weight": "02722f124d0f1736a9dd7c4ddcd05630dcf16ee1ce3454e9a876005ce005d4ac",
+    "features.9.bias": "076a27c79e5ace2a3d47f9dd2e83e4ff6ea8872b3c2218f66c92b89b55f36560",
+    "head.1.weight": "f27b24807d9c72b2e81aeea7ece24cfa3d044dbb8f7d0bb03d5775edf546eb05",
+    "head.1.bias": "8eea87b664ee95700575479967b15c119536d0a3ef1445ee25781e5db4c31d95"
+  },
+  "final_parameters_sha256": {
+    "features.0.weight": "de1aa601e951656ad853c2241299296d8741ea59c8b282e47c862886330d9602",
+    "features.1.weight": "3a15cc5326b2ca7057f8cbaf87a5261c5332ef05d59ac9a0f197450ea346e5ba",
+    "features.1.bias": "7355c8aebed3e5053322181127860537485d12bd999750ca60c087831b0157d1",
+    "features.4.weight": "62775fc8d62c43fb2e6153314ff287656c5e373e9744683e1e4bcdb818649e7f",
+    "features.5.weight": "a39ce983d87c6f3751f99d06201dda12ffa4d4deeb40a6e7fdbf4e4972169d35",
+    "features.5.bias": "cb53a7cbedb3cb4c3f80ead198bb68e5e6017d9ba9b919057601c69892ed741e",
+    "features.8.weight": "7cc5b748d8f55b77f267e9143ea0b50971664e20f2b0770e3ad5b44dbc64a083",
+    "features.9.weight": "c6b10a06080b543062c64ec9552f7e032683ecfc1b0b132d32e3e2c05159fd70",
+    "features.9.bias": "7679b89c3d7214a7536e0dce5a9c0cd42347df0f6f171754da72afa09ee933a8",
+    "head.1.weight": "bdba754449a2eff9d35da1121a061673f8707c44e6dea6dc93801cad680d0928",
+    "head.1.bias": "dcb246eba6b7945f3c034e4884d3df5f88314a45b44d6ac4bbd97ab40e8de322"
+  },
+  "checkpoint_sha256": "ce474c361a09747db2ac35cb99046cfab2b26e9876cc97ac8f3c12834dc6b22d",
+  "frozen_electronic_sha256": null,
+  "seconds": 71.23009815067053
+}

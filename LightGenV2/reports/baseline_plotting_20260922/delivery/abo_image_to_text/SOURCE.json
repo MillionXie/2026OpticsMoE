@@ -1,0 +1,15 @@
+{
+  "task": "abo_image_to_text",
+  "code_commit": "b9a4be689f198f55ee0caaf4e5bcddd4dfc80200",
+  "code_entry": "LightGenV2/tasks/t08_abo_image_text_retrieval/baseline_5090d.py",
+  "checkpoint": null,
+  "frozen_model_sha256": "c73fa9caeddeb3ff831d46c085a7a5708343248ca777e90f2d486964464509c1",
+  "dataset_sha256": {
+    "test_csv": "4ca5834abf4bb4d614b41f05b5b2481b3d41720dd78c1c37b05923c97657dfb8",
+    "titles_csv": "c97e8da3c6c608a706f2cc0d284aeafb873fc6cc17d04a7c9f9f66b2135846c1",
+    "manifest_csv": "880b4f34a411df1bfbd98adc91b1c19651480323ee43e62ae4b84c36ca06c543"
+  },
+  "sample_rows": 2400,
+  "timing_rows": 200,
+  "timing_note": "Only the deterministic 200-query timing subset has latency values."
+}

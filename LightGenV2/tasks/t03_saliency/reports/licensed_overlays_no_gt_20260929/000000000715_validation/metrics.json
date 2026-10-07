@@ -1,0 +1,25 @@
+{
+  "image_id": 715,
+  "file_name": "COCO_val2014_000000000715.jpg",
+  "subject": "饮品与水果摊",
+  "local_path": "images\\COCO_val2014_000000000715.jpg",
+  "flickr_title": "smoothies",
+  "flickr_photographer": "zoetnet",
+  "flickr_photo_page": "https://www.flickr.com/photos/zoetnet/3732947167",
+  "flickr_license": "https://creativecommons.org/licenses/by/2.0/",
+  "image_sha256": "45e8925104949b569b5280347cb829149dd3e9e9ed51098f3a55847ed7afa294",
+  "split": "validation",
+  "sample_id": "validation/000000000715",
+  "metrics": {
+    "samples": 1,
+    "kld": 0.04935957491397858,
+    "cc": 0.9111731052398682,
+    "sim": 0.8793022036552429,
+    "nss": 0.802422285079956,
+    "auc_judd": 0.7586662419880146,
+    "mae": 0.1289278119802475,
+    "cc_float64": 0.9111731480964527,
+    "original_test_reference_cc": 0.9111730620990923
+  },
+  "directory": "000000000715_validation"
+}

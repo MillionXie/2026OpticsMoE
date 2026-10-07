@@ -1,0 +1,26 @@
+{
+  "image_id": 292271,
+  "file_name": "COCO_train2014_000000292271.jpg",
+  "subject": "草地斑马",
+  "local_path": "images\\COCO_train2014_000000292271.jpg",
+  "flickr_title": "Zebra at Leipzig Zoo",
+  "flickr_photographer": "Alistair Young",
+  "flickr_photo_page": "https://www.flickr.com/photos/ajy/3889833692",
+  "flickr_license": "https://creativecommons.org/licenses/by/2.0/",
+  "image_sha256": "404234598c037d6b93b28a88cf0eace39073dd96bd23bae2b4710fee72655b4f",
+  "split": "train",
+  "sample_id": "train/000000292271",
+  "metrics": {
+    "samples": 1,
+    "kld": 0.10450185835361481,
+    "cc": 0.9030175805091858,
+    "sim": 0.8292418718338013,
+    "nss": 1.1733800172805786,
+    "auc_judd": 0.8205396357992332,
+    "mae": 0.07945294678211212,
+    "cc_float64": 0.9030175722782398
+  },
+  "gt_sha256": "45aa73f6b94ecf3eb8cb1b14fe21609e67b9b0acebffa1f6c99529b21d3cd3fa",
+  "fixation_sha256": "5d2bb7f74eec4cfee7575b1d3cad3f185af3af2154b6448c36cde546925fadcb",
+  "directory": "000000292271_train"
+}

@@ -1,0 +1,11 @@
+{
+  "task": "lgvq_spatial",
+  "code_commit": "3fab90b363e3d49f02fa68acdc6c363b991097e7",
+  "code_entry": "LightGenV2/tasks/t06_video_quality_assessment/quality_token_dataset_once.py",
+  "checkpoint_server_path": "/DATA/DATA1/guest3/2026OpticsMoE_a100_formal/LightGenV2/tasks/t06_video_quality_assessment/runs/simulation/qwen3vl_spatial_quality_tokens_4f_r448_dataset_once_a100_20260907/checkpoints/frames4/best_checkpoint.pt",
+  "checkpoint_sha256": "9155ec7a45a19e14ac87661021b44599317d5efb16475df77707d70e866ad913",
+  "manifest_sha256": "607c50d20662a47795c23cd2038081b30368ed108ba9be8a1bb8a9d250f8e7fc",
+  "model": "/DATA/DATA1/guest3/.cache/huggingface/hub/models--Qwen--Qwen3-VL-2B-Instruct/snapshots/89644892e4d85e24eaac8bacfd4f463576704203",
+  "sample_rows": 558,
+  "timing_boundary": "pre-hook at first Vision Transformer block through all Vision/Language blocks and the scheme-specific readout until the score is ready on GPU"
+}

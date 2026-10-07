@@ -1,0 +1,24 @@
+{
+  "image_id": 508,
+  "file_name": "COCO_train2014_000000000508.jpg",
+  "subject": "雪地山谷",
+  "local_path": "images\\COCO_train2014_000000000508.jpg",
+  "flickr_title": "Maine Valley",
+  "flickr_photographer": "dgrosso23",
+  "flickr_photo_page": "https://www.flickr.com/photos/damongrosso/6854522413",
+  "flickr_license": "https://creativecommons.org/licenses/by/2.0/",
+  "image_sha256": "31988bc646bfa6f95b40d6367c2d83efb75a7d3c1883019157efd3982105dab1",
+  "split": "train",
+  "sample_id": "train/000000000508",
+  "metrics": {
+    "samples": 1,
+    "kld": 0.10933245718479156,
+    "cc": 0.868664562702179,
+    "sim": 0.8236947059631348,
+    "nss": 1.0461653470993042,
+    "auc_judd": 0.7945106735763812,
+    "mae": 0.06683393567800522,
+    "cc_float64": 0.8686644824653275
+  },
+  "directory": "000000000508_train"
+}

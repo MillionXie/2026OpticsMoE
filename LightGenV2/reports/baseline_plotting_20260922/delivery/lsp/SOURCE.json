@@ -1,0 +1,11 @@
+{
+  "task": "lsp",
+  "code_commit": "bcec3a5977ccf00c71c6b5e8c00bf436cc3e305e",
+  "code_entry": "LightGenV2/tasks/t02_keypoint_detection/baseline_5090d.py",
+  "checkpoint_server_path": "/DATA/DATA1/guest3/2026OpticsMoE/experiments/qwen3_vl_embedding_2b_lsp_pose_optical_moe16/runs/lsp_pose_optical_moe16_opt2/checkpoints/teacher_best_train_loss.pt",
+  "checkpoint_sha256": "0a4569f288f6de424b1b412452fa804a96e58d8f7e8655efaa23f461ab8cc735",
+  "exact_a100_primary_value": 0.7225714285714285,
+  "per_joint_source_value": 0.7215714285714285,
+  "important_note": "The retained per-joint CSV is an earlier evaluation of the same epoch-37 teacher and recomputes to 0.7216; the requested 0.7226 is the later A100 aggregate. They are kept distinct, not silently mixed.",
+  "sample_rows": 1000
+}

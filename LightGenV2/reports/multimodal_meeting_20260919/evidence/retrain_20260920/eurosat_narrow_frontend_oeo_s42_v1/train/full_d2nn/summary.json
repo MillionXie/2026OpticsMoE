@@ -1,0 +1,299 @@
+{
+  "architecture": "full_d2nn",
+  "selected_epoch": 37,
+  "validation": {
+    "accuracy": 0.773,
+    "domain_accuracy": {
+      "0": 0.796,
+      "1": 0.75
+    },
+    "loss": 0.6736539978981018,
+    "confusion_matrix": [
+      [
+        156,
+        1,
+        5,
+        1,
+        1,
+        8,
+        14,
+        0,
+        9,
+        5
+      ],
+      [
+        1,
+        170,
+        11,
+        4,
+        0,
+        2,
+        5,
+        0,
+        2,
+        5
+      ],
+      [
+        11,
+        18,
+        111,
+        6,
+        1,
+        17,
+        30,
+        0,
+        5,
+        1
+      ],
+      [
+        9,
+        4,
+        8,
+        107,
+        11,
+        24,
+        13,
+        11,
+        13,
+        0
+      ],
+      [
+        0,
+        1,
+        0,
+        4,
+        188,
+        0,
+        1,
+        4,
+        1,
+        1
+      ],
+      [
+        3,
+        2,
+        9,
+        10,
+        0,
+        166,
+        8,
+        0,
+        2,
+        0
+      ],
+      [
+        16,
+        6,
+        28,
+        15,
+        0,
+        20,
+        108,
+        0,
+        7,
+        0
+      ],
+      [
+        0,
+        1,
+        1,
+        7,
+        6,
+        0,
+        0,
+        185,
+        0,
+        0
+      ],
+      [
+        6,
+        0,
+        1,
+        23,
+        0,
+        7,
+        3,
+        0,
+        158,
+        2
+      ],
+      [
+        3,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        197
+      ]
+    ],
+    "detector_capture_mean": 0.0013569425791501999
+  },
+  "train_unaugmented": {
+    "accuracy": 0.8338333333333333,
+    "domain_accuracy": {
+      "0": 0.8773333333333333,
+      "1": 0.7903333333333333
+    },
+    "loss": 0.4851044682661692,
+    "confusion_matrix": [
+      [
+        489,
+        11,
+        16,
+        6,
+        0,
+        32,
+        27,
+        0,
+        10,
+        9
+      ],
+      [
+        0,
+        529,
+        23,
+        4,
+        0,
+        13,
+        22,
+        1,
+        2,
+        6
+      ],
+      [
+        20,
+        34,
+        415,
+        13,
+        5,
+        44,
+        57,
+        6,
+        5,
+        1
+      ],
+      [
+        22,
+        1,
+        13,
+        433,
+        32,
+        23,
+        24,
+        13,
+        35,
+        4
+      ],
+      [
+        0,
+        0,
+        2,
+        17,
+        568,
+        0,
+        1,
+        11,
+        1,
+        0
+      ],
+      [
+        20,
+        7,
+        30,
+        24,
+        0,
+        467,
+        38,
+        0,
+        11,
+        3
+      ],
+      [
+        27,
+        26,
+        53,
+        19,
+        5,
+        45,
+        421,
+        0,
+        4,
+        0
+      ],
+      [
+        0,
+        0,
+        0,
+        10,
+        15,
+        0,
+        1,
+        573,
+        1,
+        0
+      ],
+      [
+        10,
+        2,
+        7,
+        31,
+        11,
+        14,
+        0,
+        0,
+        521,
+        4
+      ],
+      [
+        1,
+        4,
+        0,
+        0,
+        0,
+        3,
+        0,
+        0,
+        5,
+        587
+      ]
+    ],
+    "detector_capture_mean": 0.0013728615595027804
+  },
+  "initial_parameters_sha256": {
+    "first_phase": "653e4965dbca0e739dd04c99cd66a8e369d4150e2fc69641f3b113c537c9b984",
+    "global_phase": "32d53fdbf588996e732feb9834b0e0a1577e4a2c0d4a4845ef538aea345250fc"
+  },
+  "final_parameters_sha256": {
+    "first_phase": "b9be04f678ac73111e97013ebd14ed7b5edbc75c256e3b5eb6e6a95fea81b026",
+    "global_phase": "5478f9a1630fadb348dacc0a61b0aaec052b7a6ebcb64a92d51e460d174b2e04"
+  },
+  "checkpoint_sha256": "849d6aed2a5b0bf62d8b921255587d7457d1d75ae2e95957e58cfa361808e827",
+  "frontend_tensors_sha256": {
+    "mean": "46fe0b7cd38b70c8e0817788eb5fe870b01cd6209d12917ad0d57b62784c3827",
+    "std": "7a4a994edaf7a7234c6cd3571aca7ac71301ac0663b7a40dff47fa5978912425",
+    "features.0.weight": "de1aa601e951656ad853c2241299296d8741ea59c8b282e47c862886330d9602",
+    "features.1.weight": "3a15cc5326b2ca7057f8cbaf87a5261c5332ef05d59ac9a0f197450ea346e5ba",
+    "features.1.bias": "7355c8aebed3e5053322181127860537485d12bd999750ca60c087831b0157d1",
+    "features.1.running_mean": "63d0ab66acf9d2963a26d89e87d8159a8f7e67e839eef8bf057f1495919f610d",
+    "features.1.running_var": "379c9f98710c6458a78292cf06bf32f167442667f4407aecce61a101da34b121",
+    "features.1.num_batches_tracked": "aa6f48793cee09f29f120a5c854bcb91eb0757c3b0fd665cc3773970218c199c",
+    "features.4.weight": "62775fc8d62c43fb2e6153314ff287656c5e373e9744683e1e4bcdb818649e7f",
+    "features.5.weight": "a39ce983d87c6f3751f99d06201dda12ffa4d4deeb40a6e7fdbf4e4972169d35",
+    "features.5.bias": "cb53a7cbedb3cb4c3f80ead198bb68e5e6017d9ba9b919057601c69892ed741e",
+    "features.5.running_mean": "49f2c59e02e964e567005539361238c431604cb2d05d4976df7716ec6f37c8f2",
+    "features.5.running_var": "45ba9866762a90405b199b9456940e8c0d810ac7ef1a88e03f70441f0a4d9d73",
+    "features.5.num_batches_tracked": "aa6f48793cee09f29f120a5c854bcb91eb0757c3b0fd665cc3773970218c199c",
+    "features.8.weight": "7cc5b748d8f55b77f267e9143ea0b50971664e20f2b0770e3ad5b44dbc64a083",
+    "features.9.weight": "c6b10a06080b543062c64ec9552f7e032683ecfc1b0b132d32e3e2c05159fd70",
+    "features.9.bias": "7679b89c3d7214a7536e0dce5a9c0cd42347df0f6f171754da72afa09ee933a8",
+    "features.9.running_mean": "ad8dc6cb386016ca524f4f6839991abb7eeb9247dfad965934360b077660215b",
+    "features.9.running_var": "8c981a6c203ecf462aa7875dff748c7ae8671c258379a3414e0b381c3b402582",
+    "features.9.num_batches_tracked": "aa6f48793cee09f29f120a5c854bcb91eb0757c3b0fd665cc3773970218c199c"
+  },
+  "trainable_parameters": 456968,
+  "seconds": 796.925983786583
+}

@@ -1,0 +1,299 @@
+{
+  "architecture": "full_d2nn",
+  "selected_epoch": 37,
+  "validation": {
+    "accuracy": 0.788,
+    "domain_accuracy": {
+      "0": 0.819,
+      "1": 0.757
+    },
+    "loss": 0.6207439095973969,
+    "confusion_matrix": [
+      [
+        150,
+        0,
+        6,
+        2,
+        2,
+        8,
+        15,
+        0,
+        11,
+        6
+      ],
+      [
+        0,
+        170,
+        10,
+        4,
+        0,
+        2,
+        8,
+        0,
+        1,
+        5
+      ],
+      [
+        10,
+        19,
+        115,
+        3,
+        1,
+        17,
+        29,
+        1,
+        5,
+        0
+      ],
+      [
+        7,
+        3,
+        6,
+        124,
+        11,
+        24,
+        6,
+        11,
+        8,
+        0
+      ],
+      [
+        0,
+        1,
+        2,
+        3,
+        187,
+        0,
+        0,
+        6,
+        1,
+        0
+      ],
+      [
+        2,
+        2,
+        5,
+        14,
+        0,
+        162,
+        14,
+        0,
+        1,
+        0
+      ],
+      [
+        17,
+        6,
+        18,
+        14,
+        0,
+        22,
+        117,
+        0,
+        6,
+        0
+      ],
+      [
+        0,
+        0,
+        1,
+        8,
+        4,
+        0,
+        0,
+        187,
+        0,
+        0
+      ],
+      [
+        5,
+        0,
+        1,
+        18,
+        0,
+        5,
+        3,
+        0,
+        164,
+        4
+      ],
+      [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        200
+      ]
+    ],
+    "detector_capture_mean": 0.001397264190018177
+  },
+  "train_unaugmented": {
+    "accuracy": 0.8486666666666667,
+    "domain_accuracy": {
+      "0": 0.894,
+      "1": 0.8033333333333333
+    },
+    "loss": 0.44382363563776017,
+    "confusion_matrix": [
+      [
+        491,
+        10,
+        13,
+        6,
+        0,
+        30,
+        27,
+        0,
+        13,
+        10
+      ],
+      [
+        0,
+        537,
+        24,
+        6,
+        0,
+        6,
+        23,
+        0,
+        0,
+        4
+      ],
+      [
+        19,
+        30,
+        431,
+        9,
+        5,
+        48,
+        48,
+        5,
+        4,
+        1
+      ],
+      [
+        13,
+        1,
+        13,
+        455,
+        33,
+        25,
+        16,
+        10,
+        32,
+        2
+      ],
+      [
+        0,
+        0,
+        2,
+        12,
+        572,
+        0,
+        1,
+        10,
+        3,
+        0
+      ],
+      [
+        18,
+        5,
+        25,
+        27,
+        0,
+        475,
+        36,
+        0,
+        13,
+        1
+      ],
+      [
+        26,
+        25,
+        46,
+        16,
+        3,
+        46,
+        433,
+        0,
+        5,
+        0
+      ],
+      [
+        0,
+        0,
+        0,
+        9,
+        13,
+        0,
+        0,
+        577,
+        1,
+        0
+      ],
+      [
+        9,
+        0,
+        5,
+        29,
+        7,
+        13,
+        1,
+        0,
+        532,
+        4
+      ],
+      [
+        1,
+        2,
+        0,
+        0,
+        0,
+        2,
+        0,
+        0,
+        6,
+        589
+      ]
+    ],
+    "detector_capture_mean": 0.0014650264056399465
+  },
+  "initial_parameters_sha256": {
+    "first_phase": "653e4965dbca0e739dd04c99cd66a8e369d4150e2fc69641f3b113c537c9b984",
+    "global_phase": "32d53fdbf588996e732feb9834b0e0a1577e4a2c0d4a4845ef538aea345250fc"
+  },
+  "final_parameters_sha256": {
+    "first_phase": "1fc2827e46ce310305331c694bed8abd55b2ec44ed437fe90842ba8f936c761f",
+    "global_phase": "e54b4e96627163cb0b326487a6d39805c3b5b8f6421d4c616564697b86835c47"
+  },
+  "checkpoint_sha256": "734fc4d4bdf02abdffc14bca236ce0f4d71593395f20351c586e6d4fbdabdf01",
+  "frontend_tensors_sha256": {
+    "mean": "46fe0b7cd38b70c8e0817788eb5fe870b01cd6209d12917ad0d57b62784c3827",
+    "std": "7a4a994edaf7a7234c6cd3571aca7ac71301ac0663b7a40dff47fa5978912425",
+    "features.0.weight": "9d06932a03822e62a72fedfb883ff17bfa3c9dfb2bda987268dc2f80116de127",
+    "features.1.weight": "25fae3b18967fb6502b8725a2fc5390d882b20daeddebe553723e9b2abf53d6f",
+    "features.1.bias": "93f19d69afff2ee47cf7c8f1763cf582e84ac33108473dc5ac5f191b0f2ae632",
+    "features.1.running_mean": "6c18d920547e2a79ddc44e58c95af445f0c4a45543e98223d22ba9cfcdf44408",
+    "features.1.running_var": "b4909c8fe191666ba2a9d3356a2b3bbc81392eeecaf7181258ce401a30a97fd1",
+    "features.1.num_batches_tracked": "aa6f48793cee09f29f120a5c854bcb91eb0757c3b0fd665cc3773970218c199c",
+    "features.4.weight": "252c9ce0a1e228d92dfa9b9bc572354b7507d6c92fea9f866c8f12659ad63c7c",
+    "features.5.weight": "0e931665d7a6a81b0847443f20e93466a86cf9e7cb713a46aba626eaff6a7321",
+    "features.5.bias": "88671881e99b568a140f84c2db66e5aaa22de8e541a3cc2b23247aca564b0875",
+    "features.5.running_mean": "e531c5d89d400f42492af29ecea726db46d5ce34e56a228e6ee41060428f2e1d",
+    "features.5.running_var": "379d44d3da7288ef66f59177e767f3c04eff8f6d33bf676d5ff914b10387d9d9",
+    "features.5.num_batches_tracked": "aa6f48793cee09f29f120a5c854bcb91eb0757c3b0fd665cc3773970218c199c",
+    "features.8.weight": "2554226e6cfd6ae7f2132659fa4d1affc8299086d22948201a1e2dc118b39e98",
+    "features.9.weight": "70cfd22f17dcd6d87e20acb357ccdd20db07fb440981d6fa6f565a0b9324c3b4",
+    "features.9.bias": "7e842ffc01c05cf46f4a33b08d1a71057e9e40e64a76d4fd13cc98482034bdc9",
+    "features.9.running_mean": "7568f9599fb5a6ebb6dcf3959f5aa05f935eb86fd7f1cf17a5fd6a57d99868b3",
+    "features.9.running_var": "685b951193ff6af4a150b6000dbf52bb5c7727504f22a8a0ecf4cfad6ebd631a",
+    "features.9.num_batches_tracked": "aa6f48793cee09f29f120a5c854bcb91eb0757c3b0fd665cc3773970218c199c"
+  },
+  "trainable_parameters": 456968,
+  "seconds": 686.5975038930774
+}

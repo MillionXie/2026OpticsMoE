@@ -1,0 +1,15 @@
+{
+  "simulation_same_batches": {
+    "recall_at_1": 0.825,
+    "recall_at_5": 0.91875,
+    "recall_at_10": 0.9525,
+    "mrr": 0.8671712970484474
+  },
+  "physical": {
+    "recall_at_1": 0.1975,
+    "recall_at_5": 0.31875,
+    "recall_at_10": 0.4025,
+    "mrr": 0.2671623850546896
+  },
+  "descriptor_cosine_mean": 0.44705474376678467
+}

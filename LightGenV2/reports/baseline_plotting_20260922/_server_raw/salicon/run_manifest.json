@@ -1,0 +1,34 @@
+{
+  "git_commit": "d8653fa6057f96b52d53259999343ff2117c1526",
+  "command": [
+    "/home/guest3/miniconda3/envs/xml/bin/python",
+    "-m",
+    "LightGenV2.tasks.t03_saliency.aligned_baseline",
+    "--config",
+    "LightGenV2/tasks/t03_saliency/configs/qwen_aligned_head_50.yaml",
+    "--run-dir",
+    "LightGenV2/tasks/t03_saliency/runs/simulation/qwen_aligned_head_50_20260912_seed42",
+    "--seed",
+    "42"
+  ],
+  "architecture": "frozen_qwen24_adapter192_identical_progressive_decoder_v1",
+  "parameter_audit": {
+    "adapter": 197184,
+    "decoder": 85412,
+    "total": 282596
+  },
+  "seed": 42,
+  "torch": "2.6.0+cu124",
+  "gpu": "NVIDIA GeForce RTX 4090",
+  "qwen_frozen": true,
+  "training_scope": "only adapter and decoder",
+  "head_initialization": "random; no previous trained head loaded",
+  "epochs_budget": 50,
+  "dataset_counts": {
+    "train": 10000,
+    "test": 5000
+  },
+  "selection_biased": true,
+  "selection": "public test CC at epoch1/every5/final",
+  "note": "Both systems have the same 197184-parameter adapter and 85412-parameter decoder; adapter appears before the optical body but after the frozen Qwen body. This is not an identical full-network/train-history ablation."
+}

@@ -1,0 +1,9 @@
+{
+  "task": "salicon",
+  "code_commit": "d8653fa6057f96b52d53259999343ff2117c1526",
+  "code_entry": "LightGenV2/tasks/t03_saliency/aligned_baseline.py",
+  "checkpoint_server_path": "LightGenV2/tasks/t03_saliency/runs/simulation/qwen_aligned_head_50_20260912_seed42/best_checkpoint.pt",
+  "checkpoint_sha256": "689d086b5a390c399df109d07b73185575cd2245998b7bd427f6ccea5b0fe019",
+  "sample_rows": 5000,
+  "per_sample_metric_limit": "The audited run retained per-image CC only; KLD/SIM/NSS/AUC-Judd/MAE are aggregate values in metrics.csv."
+}

@@ -1,0 +1,24 @@
+{
+  "image_id": 450,
+  "file_name": "COCO_train2014_000000000450.jpg",
+  "subject": "披萨",
+  "local_path": "images\\COCO_train2014_000000000450.jpg",
+  "flickr_title": "Best Italian-style pizza in Vancouver is the Margherita at Nicli Antica Pizzeria - 032820114606",
+  "flickr_photographer": "Roland Tanglao",
+  "flickr_photo_page": "https://www.flickr.com/photos/roland/5569738713",
+  "flickr_license": "https://creativecommons.org/licenses/by/2.0/",
+  "image_sha256": "0d8eb23c53e83ea805d280c8064ac4568ff56c24adfa1c3e0af3dca3f9f943aa",
+  "split": "train",
+  "sample_id": "train/000000000450",
+  "metrics": {
+    "samples": 1,
+    "kld": 0.09183624386787415,
+    "cc": 0.8834260106086731,
+    "sim": 0.834445595741272,
+    "nss": 0.9277235269546509,
+    "auc_judd": 0.7931623786227571,
+    "mae": 0.15641872584819794,
+    "cc_float64": 0.8834260827933266
+  },
+  "directory": "000000000450_train"
+}

@@ -1,0 +1,26 @@
+{
+  "image_id": 562382,
+  "file_name": "COCO_train2014_000000562382.jpg",
+  "subject": "湖边象群",
+  "local_path": "images\\COCO_train2014_000000562382.jpg",
+  "flickr_title": "Elephants grazing",
+  "flickr_photographer": "shankar s.",
+  "flickr_photo_page": "https://www.flickr.com/photos/shankaronline/7568363916",
+  "flickr_license": "https://creativecommons.org/licenses/by/2.0/",
+  "image_sha256": "38645946c6a7541bf6da30136751d41e324026075b6f9bb6d6322f2cc4dfe963",
+  "split": "train",
+  "sample_id": "train/000000562382",
+  "metrics": {
+    "samples": 1,
+    "kld": 0.12362343072891235,
+    "cc": 0.9232746362686157,
+    "sim": 0.8194258213043213,
+    "nss": 1.5659207105636597,
+    "auc_judd": 0.8408026185576669,
+    "mae": 0.04454036429524422,
+    "cc_float64": 0.923274580536745
+  },
+  "gt_sha256": "8f75aefdcabecee03a47682d99e6286d29fa750b898dbbb2b7ca1f2a91461dee",
+  "fixation_sha256": "cd045e9f31d958237e70357ea1811d111de57702781c035fcc70a843a563ae51",
+  "directory": "000000562382_train"
+}

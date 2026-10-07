@@ -1,0 +1,24 @@
+{
+  "image_id": 6730,
+  "file_name": "COCO_train2014_000000006730.jpg",
+  "subject": "猫与旅行箱",
+  "local_path": "images\\COCO_train2014_000000006730.jpg",
+  "flickr_title": "timmy goes on holiday",
+  "flickr_photographer": "zenilorac",
+  "flickr_photo_page": "https://www.flickr.com/photos/zenilorac/195448192",
+  "flickr_license": "https://creativecommons.org/licenses/by/2.0/",
+  "image_sha256": "84541c8a41d46cbe35f730b687f68c814d31e43158d72d321fd669ea07b37ba3",
+  "split": "train",
+  "sample_id": "train/000000006730",
+  "metrics": {
+    "samples": 1,
+    "kld": 0.15605947375297546,
+    "cc": 0.8779526948928833,
+    "sim": 0.789759635925293,
+    "nss": 1.2447502613067627,
+    "auc_judd": 0.791238912835498,
+    "mae": 0.09298332780599594,
+    "cc_float64": 0.877952676012659
+  },
+  "directory": "000000006730_train"
+}

@@ -1,0 +1,10 @@
+{
+  "task": "abo_image_to_image",
+  "code_commit": "5f731fae979ef81a09770c1dd721b5cecd8b3392",
+  "code_entry": "LightGenV2/tasks/t07_abo_image_retrieval/standalone/retrieval_screen.py",
+  "checkpoint": null,
+  "frozen_model_config_sha256": "9172f55b0b9cce70b7f67b10c58a408ccf3ec15c587e6efd4d5f41631237fded",
+  "manifest_sha256": "f1749d5fc22d2dfee6a1333ce2b35e9fa600a070f949eba8420b4def41906dde",
+  "sample_rows": 800,
+  "timing_rows": 200
+}

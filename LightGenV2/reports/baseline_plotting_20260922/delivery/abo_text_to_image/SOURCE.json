@@ -1,0 +1,18 @@
+{
+  "task": "abo_text_to_image",
+  "code_commit": "1e218991a894923906f1e70eebd41377083252dd",
+  "code_entry": "LightGenV2/tasks/t08_abo_image_text_retrieval/text_to_image_baseline.py",
+  "code_location_note": "The exact source is at Git commit 1e218991a; it is not present on the current mixed branch.",
+  "checkpoint": null,
+  "frozen_model_weight_sha256": {
+    "model.safetensors": "c73fa9caeddeb3ff831d46c085a7a5708343248ca777e90f2d486964464509c1"
+  },
+  "dataset_sha256": {
+    "titles.csv": "c97e8da3c6c608a706f2cc0d284aeafb873fc6cc17d04a7c9f9f66b2135846c1",
+    "train.csv": "f742fc9e2314b7fb2858ad486505c943f7b7e37493e5d601d8dcbf7740b5707b",
+    "test.csv": "4ca5834abf4bb4d614b41f05b5b2481b3d41720dd78c1c37b05923c97657dfb8"
+  },
+  "query_rows": 100,
+  "gallery_images": 2400,
+  "timing_status": "not measured in this run"
+}
