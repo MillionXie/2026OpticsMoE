@@ -1,0 +1,132 @@
+{
+  "git_sha": "0d854376cca29e16143ad1eb7762860770e59459",
+  "gpu_uuid": "GPU-d53ce4c8-272d-c2fb-dc09-f182d586c4eb",
+  "device": "NVIDIA GeForce RTX 3090",
+  "records": [
+    {
+      "run_id": "20260909_unseen_smoke_a_direct_5shot_s101",
+      "pid": 1180977,
+      "command": [
+        "/home/guest3/miniconda3/envs/xml/bin/python",
+        "-u",
+        "-m",
+        "TransferFromElectricity.tasks.t01_object_retrieval.run_unseen",
+        "--method",
+        "direct",
+        "--class-set",
+        "a",
+        "--shots",
+        "5",
+        "--support-seed",
+        "101",
+        "--gpu-uuid",
+        "GPU-d53ce4c8-272d-c2fb-dc09-f182d586c4eb",
+        "--run-dir",
+        "/DATA/DATA1/guest3/worktrees/static_unseen_v1/TransferFromElectricity/tasks/t01_object_retrieval/runs/smoke/20260909_unseen_smoke_a_direct_5shot_s101",
+        "--smoke"
+      ],
+      "gpu_uuid": "GPU-d53ce4c8-272d-c2fb-dc09-f182d586c4eb",
+      "started": 1788915675.1979043,
+      "status": "complete",
+      "own_gpu_seen": true,
+      "foreign_pids": [],
+      "samples": [
+        {
+          "time": 1788915675.3252711,
+          "pids": []
+        },
+        {
+          "time": 1788915680.414596,
+          "pids": []
+        },
+        {
+          "time": 1788915685.5314665,
+          "pids": []
+        },
+        {
+          "time": 1788915690.6452365,
+          "pids": [
+            1180977
+          ]
+        },
+        {
+          "time": 1788915695.7338586,
+          "pids": [
+            1180977
+          ]
+        },
+        {
+          "time": 1788915700.848084,
+          "pids": [
+            1180977
+          ]
+        }
+      ],
+      "finished": 1788915705.8531313,
+      "returncode": 0
+    },
+    {
+      "run_id": "20260909_unseen_smoke_a_qwen_vision_lora_5shot_s101",
+      "pid": 1181788,
+      "command": [
+        "/home/guest3/miniconda3/envs/xml/bin/python",
+        "-u",
+        "-m",
+        "TransferFromElectricity.tasks.t01_object_retrieval.run_unseen",
+        "--method",
+        "qwen_vision_lora",
+        "--class-set",
+        "a",
+        "--shots",
+        "5",
+        "--support-seed",
+        "101",
+        "--gpu-uuid",
+        "GPU-d53ce4c8-272d-c2fb-dc09-f182d586c4eb",
+        "--run-dir",
+        "/DATA/DATA1/guest3/worktrees/static_unseen_v1/TransferFromElectricity/tasks/t01_object_retrieval/runs/smoke/20260909_unseen_smoke_a_qwen_vision_lora_5shot_s101",
+        "--smoke"
+      ],
+      "gpu_uuid": "GPU-d53ce4c8-272d-c2fb-dc09-f182d586c4eb",
+      "started": 1788915705.968849,
+      "status": "complete",
+      "own_gpu_seen": true,
+      "foreign_pids": [],
+      "samples": [
+        {
+          "time": 1788915706.0584993,
+          "pids": []
+        },
+        {
+          "time": 1788915711.1680884,
+          "pids": []
+        },
+        {
+          "time": 1788915716.8728213,
+          "pids": []
+        },
+        {
+          "time": 1788915721.9840248,
+          "pids": [
+            1181788
+          ]
+        },
+        {
+          "time": 1788915727.0764964,
+          "pids": [
+            1181788
+          ]
+        },
+        {
+          "time": 1788915732.1910598,
+          "pids": [
+            1181788
+          ]
+        }
+      ],
+      "finished": 1788915737.192327,
+      "returncode": 0
+    }
+  ],
+  "complete": true
+}

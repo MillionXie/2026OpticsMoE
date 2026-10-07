@@ -1,0 +1,372 @@
+[
+  {
+    "run_id": "20260908_v4_timing_cifar_direct_s42",
+    "evidence_type": "remote_checkpoint_sha256",
+    "source": "/DATA/DATA1/guest3/2026OpticsMoE/TransferFromElectricity/tasks/t01_object_retrieval/runs/smoke/20260908_v4_timing_cifar_direct_s42/best_checkpoint.pt",
+    "file": "best_checkpoint.pt",
+    "sha256": "60f2537ae0fa98a2a3c9fa7b39b52e412f91dcd790b5163b4b5af23ee122b780",
+    "bytes": 49860102,
+    "downloaded": false
+  },
+  {
+    "run_id": "20260908_v4_timing_cifar_direct_s42",
+    "evidence_type": "remote_checkpoint_sha256",
+    "source": "/DATA/DATA1/guest3/2026OpticsMoE/TransferFromElectricity/tasks/t01_object_retrieval/runs/smoke/20260908_v4_timing_cifar_direct_s42/last_checkpoint.pt",
+    "file": "last_checkpoint.pt",
+    "sha256": "ce10517bb658eca7403d423315696068cf655fc6332b97b612ff6605f94a624a",
+    "bytes": 49860102,
+    "downloaded": false
+  },
+  {
+    "run_id": "20260908_v4_timing_cifar_direct_s42",
+    "source": "/DATA/DATA1/guest3/2026OpticsMoE/TransferFromElectricity/tasks/t01_object_retrieval/runs/smoke/20260908_v4_timing_cifar_direct_s42/protocol.json",
+    "file": "protocol.json",
+    "sha256": "15cc0ca230d1f12070e4805d38d2bf5385ca2b9303ba24668f8905fab9a04ab2",
+    "bytes": 2343
+  },
+  {
+    "run_id": "20260908_v4_timing_cifar_direct_s42",
+    "source": "/DATA/DATA1/guest3/2026OpticsMoE/TransferFromElectricity/tasks/t01_object_retrieval/runs/smoke/20260908_v4_timing_cifar_direct_s42/history.json",
+    "file": "history.json",
+    "sha256": "32ca2b2573ebf0f73d2cef7a80d66f88b9c652146d69bdaea74953daa9e7857b",
+    "bytes": 41434
+  },
+  {
+    "run_id": "20260908_v4_timing_cifar_direct_s42",
+    "source": "/DATA/DATA1/guest3/2026OpticsMoE/TransferFromElectricity/tasks/t01_object_retrieval/runs/smoke/20260908_v4_timing_cifar_direct_s42/epoch_timing.json",
+    "file": "epoch_timing.json",
+    "sha256": "dfcfffab73e1780de13d7634764f77524eaca5851e3f9e2f8bc954763574a200",
+    "bytes": 2394
+  },
+  {
+    "run_id": "20260908_v4_timing_cifar_direct_s42",
+    "source": "/DATA/DATA1/guest3/2026OpticsMoE/TransferFromElectricity/tasks/t01_object_retrieval/runs/smoke/20260908_v4_timing_cifar_direct_s42/final_report.json",
+    "file": "final_report.json",
+    "sha256": "afd2875f6e6519bc4221e694079d503b6b213a775f50d0c0e6bb833dcdb1aac3",
+    "bytes": 25650
+  },
+  {
+    "run_id": "20260908_v4_timing_cifar_direct_s42",
+    "source": "/DATA/DATA1/guest3/2026OpticsMoE/TransferFromElectricity/tasks/t01_object_retrieval/runs/smoke/20260908_v4_timing_cifar_direct_s42/environment.json",
+    "file": "environment.json",
+    "sha256": "cc4058be1634339bee6a927c4f6b0688be8efd6bbb1ba8746b1fe2503f9128ca",
+    "bytes": 1103
+  },
+  {
+    "run_id": "20260908_v4_timing_cifar_direct_s42",
+    "source": "/DATA/DATA1/guest3/2026OpticsMoE/TransferFromElectricity/tasks/t01_object_retrieval/runs/smoke/20260908_v4_timing_cifar_direct_s42/gpu_execution.json",
+    "file": "gpu_execution.json",
+    "sha256": "538316ea33b2a8f16e36d44b527228228f9ddc8d34a82a0bc1e477d4f3d05ede",
+    "bytes": 1000
+  },
+  {
+    "run_id": "20260908_v4_timing_cifar_direct_s42",
+    "source": "/DATA/DATA1/guest3/2026OpticsMoE/TransferFromElectricity/tasks/t01_object_retrieval/runs/smoke/20260908_v4_timing_cifar_direct_s42/zero_initialization.json",
+    "file": "zero_initialization.json",
+    "sha256": "6444fec4f618bf4eec20ffd851df95dbcb5f809ee654edeffd1a1d2bc54e78ac",
+    "bytes": 2784
+  },
+  {
+    "run_id": "20260908_v4_timing_cifar_direct_s42",
+    "source": "/DATA/DATA1/guest3/2026OpticsMoE/TransferFromElectricity/tasks/t01_object_retrieval/runs/smoke/20260908_v4_timing_cifar_direct_s42/initial_validation.json",
+    "file": "initial_validation.json",
+    "sha256": "cb0936941920464e5286d1ebf117d2be0d0607e5117cffbbfa6b08b380de7b7e",
+    "bytes": 2611
+  },
+  {
+    "run_id": "20260908_v4_timing_cifar_clip_vision_lora_s42",
+    "evidence_type": "remote_checkpoint_sha256",
+    "source": "/DATA/DATA1/guest3/2026OpticsMoE/TransferFromElectricity/tasks/t01_object_retrieval/runs/smoke/20260908_v4_timing_cifar_clip_vision_lora_s42/best_checkpoint.pt",
+    "file": "best_checkpoint.pt",
+    "sha256": "bb980a6d064718f2e48f217d3e303bbb25d9222fa2504bbcc7d5b54414e8d2e7",
+    "bytes": 66681834,
+    "downloaded": false
+  },
+  {
+    "run_id": "20260908_v4_timing_cifar_clip_vision_lora_s42",
+    "evidence_type": "remote_checkpoint_sha256",
+    "source": "/DATA/DATA1/guest3/2026OpticsMoE/TransferFromElectricity/tasks/t01_object_retrieval/runs/smoke/20260908_v4_timing_cifar_clip_vision_lora_s42/last_checkpoint.pt",
+    "file": "last_checkpoint.pt",
+    "sha256": "3e447f56016bf9c912fc259746c20bd6993b7de545a8840b866de739ea020aec",
+    "bytes": 66681834,
+    "downloaded": false
+  },
+  {
+    "run_id": "20260908_v4_timing_cifar_clip_vision_lora_s42",
+    "source": "/DATA/DATA1/guest3/2026OpticsMoE/TransferFromElectricity/tasks/t01_object_retrieval/runs/smoke/20260908_v4_timing_cifar_clip_vision_lora_s42/protocol.json",
+    "file": "protocol.json",
+    "sha256": "2b8b4f64ca7094c1e4c0be495bc6647f712fc095c9dad183164de9bdf030b449",
+    "bytes": 2353
+  },
+  {
+    "run_id": "20260908_v4_timing_cifar_clip_vision_lora_s42",
+    "source": "/DATA/DATA1/guest3/2026OpticsMoE/TransferFromElectricity/tasks/t01_object_retrieval/runs/smoke/20260908_v4_timing_cifar_clip_vision_lora_s42/history.json",
+    "file": "history.json",
+    "sha256": "5f2ada9ae6ff1d23ad231a92b1bb93595c460aa54468c98dfc27354c8cb0240c",
+    "bytes": 42166
+  },
+  {
+    "run_id": "20260908_v4_timing_cifar_clip_vision_lora_s42",
+    "source": "/DATA/DATA1/guest3/2026OpticsMoE/TransferFromElectricity/tasks/t01_object_retrieval/runs/smoke/20260908_v4_timing_cifar_clip_vision_lora_s42/epoch_timing.json",
+    "file": "epoch_timing.json",
+    "sha256": "f78d03ab3270eae4b5d040348ddce7c0d3e41614457ddb1cd5e4785b5a83ec2e",
+    "bytes": 2389
+  },
+  {
+    "run_id": "20260908_v4_timing_cifar_clip_vision_lora_s42",
+    "source": "/DATA/DATA1/guest3/2026OpticsMoE/TransferFromElectricity/tasks/t01_object_retrieval/runs/smoke/20260908_v4_timing_cifar_clip_vision_lora_s42/final_report.json",
+    "file": "final_report.json",
+    "sha256": "41ef54af33ec8b3c55a7644ba79edf5fb2dc1681c6284f15deed3100101fcd4c",
+    "bytes": 29974
+  },
+  {
+    "run_id": "20260908_v4_timing_cifar_clip_vision_lora_s42",
+    "source": "/DATA/DATA1/guest3/2026OpticsMoE/TransferFromElectricity/tasks/t01_object_retrieval/runs/smoke/20260908_v4_timing_cifar_clip_vision_lora_s42/environment.json",
+    "file": "environment.json",
+    "sha256": "e31720e6b6f1737753ac801f892b07cd639feecf1d3b8f3ffd7ba60abde339f3",
+    "bytes": 1123
+  },
+  {
+    "run_id": "20260908_v4_timing_cifar_clip_vision_lora_s42",
+    "source": "/DATA/DATA1/guest3/2026OpticsMoE/TransferFromElectricity/tasks/t01_object_retrieval/runs/smoke/20260908_v4_timing_cifar_clip_vision_lora_s42/gpu_execution.json",
+    "file": "gpu_execution.json",
+    "sha256": "70d327aedf15bcf4de40232ab8db0e9dbf70efe6dac20509be0db50facfcf818",
+    "bytes": 1036
+  },
+  {
+    "run_id": "20260908_v4_timing_cifar_clip_vision_lora_s42",
+    "source": "/DATA/DATA1/guest3/2026OpticsMoE/TransferFromElectricity/tasks/t01_object_retrieval/runs/smoke/20260908_v4_timing_cifar_clip_vision_lora_s42/zero_initialization.json",
+    "file": "zero_initialization.json",
+    "sha256": "6444fec4f618bf4eec20ffd851df95dbcb5f809ee654edeffd1a1d2bc54e78ac",
+    "bytes": 2784
+  },
+  {
+    "run_id": "20260908_v4_timing_cifar_clip_vision_lora_s42",
+    "source": "/DATA/DATA1/guest3/2026OpticsMoE/TransferFromElectricity/tasks/t01_object_retrieval/runs/smoke/20260908_v4_timing_cifar_clip_vision_lora_s42/initial_validation.json",
+    "file": "initial_validation.json",
+    "sha256": "cb0936941920464e5286d1ebf117d2be0d0607e5117cffbbfa6b08b380de7b7e",
+    "bytes": 2611
+  },
+  {
+    "run_id": "20260908_v4_timing_cifar_qwen_vision_pooled_lora_s42",
+    "evidence_type": "remote_checkpoint_sha256",
+    "source": "/DATA/DATA1/guest3/2026OpticsMoE/TransferFromElectricity/tasks/t01_object_retrieval/runs/smoke/20260908_v4_timing_cifar_qwen_vision_pooled_lora_s42/best_checkpoint.pt",
+    "file": "best_checkpoint.pt",
+    "sha256": "52933d14a6d495141b64538763f4ba1074d9222607edbd05fd3f02a85bfa407f",
+    "bytes": 80537712,
+    "downloaded": false
+  },
+  {
+    "run_id": "20260908_v4_timing_cifar_qwen_vision_pooled_lora_s42",
+    "evidence_type": "remote_checkpoint_sha256",
+    "source": "/DATA/DATA1/guest3/2026OpticsMoE/TransferFromElectricity/tasks/t01_object_retrieval/runs/smoke/20260908_v4_timing_cifar_qwen_vision_pooled_lora_s42/last_checkpoint.pt",
+    "file": "last_checkpoint.pt",
+    "sha256": "0793bc5c83189851775cd13292e29e89b1c67d42207abe59cee00c98c7710f33",
+    "bytes": 80566000,
+    "downloaded": false
+  },
+  {
+    "run_id": "20260908_v4_timing_cifar_qwen_vision_pooled_lora_s42",
+    "source": "/DATA/DATA1/guest3/2026OpticsMoE/TransferFromElectricity/tasks/t01_object_retrieval/runs/smoke/20260908_v4_timing_cifar_qwen_vision_pooled_lora_s42/protocol.json",
+    "file": "protocol.json",
+    "sha256": "c7a0738ff9027b5f56ccb1773782ec05f6e8f5b5a3dd1deacbe472dca21b9fee",
+    "bytes": 2360
+  },
+  {
+    "run_id": "20260908_v4_timing_cifar_qwen_vision_pooled_lora_s42",
+    "source": "/DATA/DATA1/guest3/2026OpticsMoE/TransferFromElectricity/tasks/t01_object_retrieval/runs/smoke/20260908_v4_timing_cifar_qwen_vision_pooled_lora_s42/history.json",
+    "file": "history.json",
+    "sha256": "f83410ddabb009ce4622fe39d8030411817a8cc442d3d44bb23fc2b49cdc78fa",
+    "bytes": 42107
+  },
+  {
+    "run_id": "20260908_v4_timing_cifar_qwen_vision_pooled_lora_s42",
+    "source": "/DATA/DATA1/guest3/2026OpticsMoE/TransferFromElectricity/tasks/t01_object_retrieval/runs/smoke/20260908_v4_timing_cifar_qwen_vision_pooled_lora_s42/epoch_timing.json",
+    "file": "epoch_timing.json",
+    "sha256": "42453f252e59815da538dd69ab70e954a94c426398dc897bb864b25113ccaa71",
+    "bytes": 2392
+  },
+  {
+    "run_id": "20260908_v4_timing_cifar_qwen_vision_pooled_lora_s42",
+    "source": "/DATA/DATA1/guest3/2026OpticsMoE/TransferFromElectricity/tasks/t01_object_retrieval/runs/smoke/20260908_v4_timing_cifar_qwen_vision_pooled_lora_s42/final_report.json",
+    "file": "final_report.json",
+    "sha256": "6c92fff595c3aa71017eeb0f7c524e00ec2d3ebb5970d766b8dcdb0090615fef",
+    "bytes": 29896
+  },
+  {
+    "run_id": "20260908_v4_timing_cifar_qwen_vision_pooled_lora_s42",
+    "source": "/DATA/DATA1/guest3/2026OpticsMoE/TransferFromElectricity/tasks/t01_object_retrieval/runs/smoke/20260908_v4_timing_cifar_qwen_vision_pooled_lora_s42/environment.json",
+    "file": "environment.json",
+    "sha256": "6c7036049e7f1a2bdf76c91abe00e7b2af7c9e0a0b108ad77272f64a33a1abc5",
+    "bytes": 1137
+  },
+  {
+    "run_id": "20260908_v4_timing_cifar_qwen_vision_pooled_lora_s42",
+    "source": "/DATA/DATA1/guest3/2026OpticsMoE/TransferFromElectricity/tasks/t01_object_retrieval/runs/smoke/20260908_v4_timing_cifar_qwen_vision_pooled_lora_s42/gpu_execution.json",
+    "file": "gpu_execution.json",
+    "sha256": "58a73dfc01b81b4bc9d382fb1bb81aa8551988f1f9c7910875069115c056b46c",
+    "bytes": 1066
+  },
+  {
+    "run_id": "20260908_v4_timing_cifar_qwen_vision_pooled_lora_s42",
+    "source": "/DATA/DATA1/guest3/2026OpticsMoE/TransferFromElectricity/tasks/t01_object_retrieval/runs/smoke/20260908_v4_timing_cifar_qwen_vision_pooled_lora_s42/zero_initialization.json",
+    "file": "zero_initialization.json",
+    "sha256": "6444fec4f618bf4eec20ffd851df95dbcb5f809ee654edeffd1a1d2bc54e78ac",
+    "bytes": 2784
+  },
+  {
+    "run_id": "20260908_v4_timing_cifar_qwen_vision_pooled_lora_s42",
+    "source": "/DATA/DATA1/guest3/2026OpticsMoE/TransferFromElectricity/tasks/t01_object_retrieval/runs/smoke/20260908_v4_timing_cifar_qwen_vision_pooled_lora_s42/initial_validation.json",
+    "file": "initial_validation.json",
+    "sha256": "cb0936941920464e5286d1ebf117d2be0d0607e5117cffbbfa6b08b380de7b7e",
+    "bytes": 2611
+  },
+  {
+    "run_id": "20260908_v4_timing_cifar_qwen_vision_lora_s42",
+    "evidence_type": "remote_checkpoint_sha256",
+    "source": "/DATA/DATA1/guest3/2026OpticsMoE/TransferFromElectricity/tasks/t01_object_retrieval/runs/smoke/20260908_v4_timing_cifar_qwen_vision_lora_s42/best_checkpoint.pt",
+    "file": "best_checkpoint.pt",
+    "sha256": "9419c0397ff0ec9ebc510be6460256157fcfcc8e84b643508094c575e34513fa",
+    "bytes": 80566000,
+    "downloaded": false
+  },
+  {
+    "run_id": "20260908_v4_timing_cifar_qwen_vision_lora_s42",
+    "evidence_type": "remote_checkpoint_sha256",
+    "source": "/DATA/DATA1/guest3/2026OpticsMoE/TransferFromElectricity/tasks/t01_object_retrieval/runs/smoke/20260908_v4_timing_cifar_qwen_vision_lora_s42/last_checkpoint.pt",
+    "file": "last_checkpoint.pt",
+    "sha256": "331b00472fa4a3c2c3a22c82384da82b248c6c860d2c90c447274a9124ab9b8e",
+    "bytes": 80566000,
+    "downloaded": false
+  },
+  {
+    "run_id": "20260908_v4_timing_cifar_qwen_vision_lora_s42",
+    "source": "/DATA/DATA1/guest3/2026OpticsMoE/TransferFromElectricity/tasks/t01_object_retrieval/runs/smoke/20260908_v4_timing_cifar_qwen_vision_lora_s42/protocol.json",
+    "file": "protocol.json",
+    "sha256": "06a679db074d38f42333f51889e9adf5bb2bdd2237d55b6685656169343ccbab",
+    "bytes": 2353
+  },
+  {
+    "run_id": "20260908_v4_timing_cifar_qwen_vision_lora_s42",
+    "source": "/DATA/DATA1/guest3/2026OpticsMoE/TransferFromElectricity/tasks/t01_object_retrieval/runs/smoke/20260908_v4_timing_cifar_qwen_vision_lora_s42/history.json",
+    "file": "history.json",
+    "sha256": "b05faca8da2f40870a20b4c0eb07991753e46097abd656f45ea96c4f158bff7a",
+    "bytes": 42079
+  },
+  {
+    "run_id": "20260908_v4_timing_cifar_qwen_vision_lora_s42",
+    "source": "/DATA/DATA1/guest3/2026OpticsMoE/TransferFromElectricity/tasks/t01_object_retrieval/runs/smoke/20260908_v4_timing_cifar_qwen_vision_lora_s42/epoch_timing.json",
+    "file": "epoch_timing.json",
+    "sha256": "25f63e006680c1d1444e19f0a4618a14c9f33501d020fa099a2b0b9715c40d10",
+    "bytes": 2394
+  },
+  {
+    "run_id": "20260908_v4_timing_cifar_qwen_vision_lora_s42",
+    "source": "/DATA/DATA1/guest3/2026OpticsMoE/TransferFromElectricity/tasks/t01_object_retrieval/runs/smoke/20260908_v4_timing_cifar_qwen_vision_lora_s42/final_report.json",
+    "file": "final_report.json",
+    "sha256": "56bfc02673b88a31dfffc669fb9322617672d6fcc5c341929b2a1c586b7f3350",
+    "bytes": 30092
+  },
+  {
+    "run_id": "20260908_v4_timing_cifar_qwen_vision_lora_s42",
+    "source": "/DATA/DATA1/guest3/2026OpticsMoE/TransferFromElectricity/tasks/t01_object_retrieval/runs/smoke/20260908_v4_timing_cifar_qwen_vision_lora_s42/environment.json",
+    "file": "environment.json",
+    "sha256": "8f4e4138401d76e830f5f1b0423c61d1df0f6e85a4d9e80f4aab30442cc8f049",
+    "bytes": 1123
+  },
+  {
+    "run_id": "20260908_v4_timing_cifar_qwen_vision_lora_s42",
+    "source": "/DATA/DATA1/guest3/2026OpticsMoE/TransferFromElectricity/tasks/t01_object_retrieval/runs/smoke/20260908_v4_timing_cifar_qwen_vision_lora_s42/gpu_execution.json",
+    "file": "gpu_execution.json",
+    "sha256": "12d964bb4f6d7e5a98677519865a455a82957e14f9e3fee674fe6f8608e68a01",
+    "bytes": 1039
+  },
+  {
+    "run_id": "20260908_v4_timing_cifar_qwen_vision_lora_s42",
+    "source": "/DATA/DATA1/guest3/2026OpticsMoE/TransferFromElectricity/tasks/t01_object_retrieval/runs/smoke/20260908_v4_timing_cifar_qwen_vision_lora_s42/zero_initialization.json",
+    "file": "zero_initialization.json",
+    "sha256": "6444fec4f618bf4eec20ffd851df95dbcb5f809ee654edeffd1a1d2bc54e78ac",
+    "bytes": 2784
+  },
+  {
+    "run_id": "20260908_v4_timing_cifar_qwen_vision_lora_s42",
+    "source": "/DATA/DATA1/guest3/2026OpticsMoE/TransferFromElectricity/tasks/t01_object_retrieval/runs/smoke/20260908_v4_timing_cifar_qwen_vision_lora_s42/initial_validation.json",
+    "file": "initial_validation.json",
+    "sha256": "cb0936941920464e5286d1ebf117d2be0d0607e5117cffbbfa6b08b380de7b7e",
+    "bytes": 2611
+  },
+  {
+    "run_id": "20260908_v4_timing_cifar_qwen_vision_global_lora_s42",
+    "evidence_type": "remote_checkpoint_sha256",
+    "source": "/DATA/DATA1/guest3/2026OpticsMoE/TransferFromElectricity/tasks/t01_object_retrieval/runs/smoke/20260908_v4_timing_cifar_qwen_vision_global_lora_s42/best_checkpoint.pt",
+    "file": "best_checkpoint.pt",
+    "sha256": "d0619ef3ffedb1fcf827730441b68040b031b2319e201e811ee946370f5080f7",
+    "bytes": 84543264,
+    "downloaded": false
+  },
+  {
+    "run_id": "20260908_v4_timing_cifar_qwen_vision_global_lora_s42",
+    "evidence_type": "remote_checkpoint_sha256",
+    "source": "/DATA/DATA1/guest3/2026OpticsMoE/TransferFromElectricity/tasks/t01_object_retrieval/runs/smoke/20260908_v4_timing_cifar_qwen_vision_global_lora_s42/last_checkpoint.pt",
+    "file": "last_checkpoint.pt",
+    "sha256": "bd7c88281e05848f5636e7077d190bc1372ed603d14859160e5a9f4be9941695",
+    "bytes": 84571616,
+    "downloaded": false
+  },
+  {
+    "run_id": "20260908_v4_timing_cifar_qwen_vision_global_lora_s42",
+    "source": "/DATA/DATA1/guest3/2026OpticsMoE/TransferFromElectricity/tasks/t01_object_retrieval/runs/smoke/20260908_v4_timing_cifar_qwen_vision_global_lora_s42/protocol.json",
+    "file": "protocol.json",
+    "sha256": "2a2d75bca0b4634b6b487dbf16788a64cf8e86fa3a052a1b5af3076b967c7939",
+    "bytes": 2360
+  },
+  {
+    "run_id": "20260908_v4_timing_cifar_qwen_vision_global_lora_s42",
+    "source": "/DATA/DATA1/guest3/2026OpticsMoE/TransferFromElectricity/tasks/t01_object_retrieval/runs/smoke/20260908_v4_timing_cifar_qwen_vision_global_lora_s42/history.json",
+    "file": "history.json",
+    "sha256": "8f8caa954ecd1179585d20bc1ee56990dfa7cd0c88c0c77fbb6b3c84522ed875",
+    "bytes": 42309
+  },
+  {
+    "run_id": "20260908_v4_timing_cifar_qwen_vision_global_lora_s42",
+    "source": "/DATA/DATA1/guest3/2026OpticsMoE/TransferFromElectricity/tasks/t01_object_retrieval/runs/smoke/20260908_v4_timing_cifar_qwen_vision_global_lora_s42/epoch_timing.json",
+    "file": "epoch_timing.json",
+    "sha256": "0559a49cd23279b4286c6d4367a9a31b73868cd51c837a284f7c308189a7a41a",
+    "bytes": 2396
+  },
+  {
+    "run_id": "20260908_v4_timing_cifar_qwen_vision_global_lora_s42",
+    "source": "/DATA/DATA1/guest3/2026OpticsMoE/TransferFromElectricity/tasks/t01_object_retrieval/runs/smoke/20260908_v4_timing_cifar_qwen_vision_global_lora_s42/final_report.json",
+    "file": "final_report.json",
+    "sha256": "ae5a5333dc8f1f0dd7a94f7ebd89235994a0d1b3c4d14f469575fd16e0904da9",
+    "bytes": 29986
+  },
+  {
+    "run_id": "20260908_v4_timing_cifar_qwen_vision_global_lora_s42",
+    "source": "/DATA/DATA1/guest3/2026OpticsMoE/TransferFromElectricity/tasks/t01_object_retrieval/runs/smoke/20260908_v4_timing_cifar_qwen_vision_global_lora_s42/environment.json",
+    "file": "environment.json",
+    "sha256": "09e95374f468fcf5c5dd3bcf51573b5f1e7ad28d694b893a87efa2e80204d6f1",
+    "bytes": 1137
+  },
+  {
+    "run_id": "20260908_v4_timing_cifar_qwen_vision_global_lora_s42",
+    "source": "/DATA/DATA1/guest3/2026OpticsMoE/TransferFromElectricity/tasks/t01_object_retrieval/runs/smoke/20260908_v4_timing_cifar_qwen_vision_global_lora_s42/gpu_execution.json",
+    "file": "gpu_execution.json",
+    "sha256": "089b22fb96b1bdf5cfab828f8eaaa522e5cf9e09e09a1e4df84523bd3cb9f7ff",
+    "bytes": 1067
+  },
+  {
+    "run_id": "20260908_v4_timing_cifar_qwen_vision_global_lora_s42",
+    "source": "/DATA/DATA1/guest3/2026OpticsMoE/TransferFromElectricity/tasks/t01_object_retrieval/runs/smoke/20260908_v4_timing_cifar_qwen_vision_global_lora_s42/zero_initialization.json",
+    "file": "zero_initialization.json",
+    "sha256": "6444fec4f618bf4eec20ffd851df95dbcb5f809ee654edeffd1a1d2bc54e78ac",
+    "bytes": 2784
+  },
+  {
+    "run_id": "20260908_v4_timing_cifar_qwen_vision_global_lora_s42",
+    "source": "/DATA/DATA1/guest3/2026OpticsMoE/TransferFromElectricity/tasks/t01_object_retrieval/runs/smoke/20260908_v4_timing_cifar_qwen_vision_global_lora_s42/initial_validation.json",
+    "file": "initial_validation.json",
+    "sha256": "cb0936941920464e5286d1ebf117d2be0d0607e5117cffbbfa6b08b380de7b7e",
+    "bytes": 2611
+  }
+]

@@ -1,0 +1,20 @@
+[
+  {
+    "source": "/DATA/DATA1/guest3/2026OpticsMoE/TransferFromElectricity/tasks/t01_object_retrieval/runs/smoke/20260907_checkpoint_diagnosis/diagnosis.json",
+    "file": "diagnosis.json",
+    "sha256": "bdae91eddd7a8b4f01ce0801621c22069bcd57e5ee0ac100afcfb4d0dbcd30ad",
+    "bytes": 59345
+  },
+  {
+    "source": "/DATA/DATA1/guest3/2026OpticsMoE/TransferFromElectricity/tasks/t01_object_retrieval/runs/smoke/20260907_checkpoint_diagnosis/phase_changes.png",
+    "file": "phase_changes.png",
+    "sha256": "a1a978acb0c51c5e0694186d4723eb53c69fc1f3f619173b3eef42a156f5c6d1",
+    "bytes": 2973915
+  },
+  {
+    "source": "/DATA/DATA1/guest3/2026OpticsMoE/TransferFromElectricity/tasks/t01_object_retrieval/runs/smoke/20260907_checkpoint_diagnosis/qwen_all_expert_changes.png",
+    "file": "qwen_all_expert_changes.png",
+    "sha256": "dad7474eab133f9129bf31089832742b7f874cd82f36fb54aebbd6d3d051478f",
+    "bytes": 2558529
+  }
+]

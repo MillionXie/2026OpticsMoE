@@ -1,0 +1,151 @@
+{
+  "geometry": {
+    "canvas_size": 518,
+    "active_size": 478,
+    "expert_size": 224,
+    "expert_pitch": 254,
+    "num_experts": 4,
+    "grid_rows": 2,
+    "grid_cols": 2
+  },
+  "expert_apertures": [
+    {
+      "y0": 20,
+      "y1": 244,
+      "x0": 20,
+      "x1": 244
+    },
+    {
+      "y0": 20,
+      "y1": 244,
+      "x0": 274,
+      "x1": 498
+    },
+    {
+      "y0": 274,
+      "y1": 498,
+      "x0": 20,
+      "x1": 244
+    },
+    {
+      "y0": 274,
+      "y1": 498,
+      "x0": 274,
+      "x1": 498
+    }
+  ],
+  "initial_phase": {
+    "minimum_rad": 1.2461034059524536,
+    "maximum_rad": 5.037076473236084,
+    "mean_rad": 3.1408274173736572,
+    "std_rad": 1.0946362018585205,
+    "raw_min": -1.3968056440353394,
+    "raw_max": 1.3968003988265991
+  },
+  "initial_reconstruction_checks": [
+    {
+      "run_id": "20260908_v3_formal_caltech_fixed_s42",
+      "expert_bank_sha256": "169f15a23596b194485b8196aaf4fbf74e2bafbe1cc34e19d6af18457092c21a",
+      "raw_reconstruction_max_error": 1.1920928955078125e-07,
+      "physical_reconstruction_max_error_rad": 9.5367431640625e-07
+    },
+    {
+      "run_id": "20260908_v3_formal_cifar_fixed_s42",
+      "expert_bank_sha256": "2add8f2889fd152173347f96868b59e8723e031647d40d059f48d74bf01a1d71",
+      "raw_reconstruction_max_error": 1.1920928955078125e-07,
+      "physical_reconstruction_max_error_rad": 9.5367431640625e-07
+    },
+    {
+      "run_id": "20260908_v3_formal_imagenette_fixed_s42",
+      "expert_bank_sha256": "5ac4279563dc65b9a5af7b34b2c2a4d5a26ef7452c4edab6517893c3721bb9ba",
+      "raw_reconstruction_max_error": 1.1920928955078125e-07,
+      "physical_reconstruction_max_error_rad": 9.5367431640625e-07
+    }
+  ],
+  "artifacts": [
+    {
+      "dataset": "caltech",
+      "method": "initial",
+      "artifact": "runs\\smoke\\20260908_v3_assembled_masks\\caltech_initial_assembled.pt",
+      "sha256": "be417b8b14e858a9b13ff336dccad3ebee9f547560537f8d649e2a2a21599c4a",
+      "reconstruction_max_error": 0.0
+    },
+    {
+      "dataset": "caltech",
+      "method": "direct",
+      "artifact": "runs\\smoke\\20260908_v3_assembled_masks\\caltech_direct_assembled.pt",
+      "sha256": "ac7d0feb9b0439212425a2231a66211a2a2f01b9d0edeec0b7f6f29c2fc53609",
+      "reconstruction_max_error": 0.0
+    },
+    {
+      "dataset": "caltech",
+      "method": "qwen_lora",
+      "artifact": "runs\\smoke\\20260908_v3_assembled_masks\\caltech_qwen_lora_assembled.pt",
+      "sha256": "7966d43b21c3fd15a809404781cfb8814137c8235401af1f77e070691dfacb11",
+      "reconstruction_max_error": 0.0
+    },
+    {
+      "dataset": "caltech",
+      "method": "clip_lora",
+      "artifact": "runs\\smoke\\20260908_v3_assembled_masks\\caltech_clip_lora_assembled.pt",
+      "sha256": "9a7cffae4c71bb0a99c78e1119304994734f3b91d1070f7d0fb433229aa7576c",
+      "reconstruction_max_error": 0.0
+    },
+    {
+      "dataset": "cifar",
+      "method": "initial",
+      "artifact": "runs\\smoke\\20260908_v3_assembled_masks\\cifar_initial_assembled.pt",
+      "sha256": "76fb28eaccdaefa7c32157b23c120e4127e4531f0aa4c11af35c9128ff16cc2f",
+      "reconstruction_max_error": 0.0
+    },
+    {
+      "dataset": "cifar",
+      "method": "direct",
+      "artifact": "runs\\smoke\\20260908_v3_assembled_masks\\cifar_direct_assembled.pt",
+      "sha256": "067a23d29230f8777d040fbe7de9fd52baa9ee92caefb3ec6646eb99fe4b7bad",
+      "reconstruction_max_error": 0.0
+    },
+    {
+      "dataset": "cifar",
+      "method": "qwen_lora",
+      "artifact": "runs\\smoke\\20260908_v3_assembled_masks\\cifar_qwen_lora_assembled.pt",
+      "sha256": "1641d02407230f2781604b9276126de8d57bcd377e53c1dc2079895d6bdffaa4",
+      "reconstruction_max_error": 0.0
+    },
+    {
+      "dataset": "cifar",
+      "method": "clip_lora",
+      "artifact": "runs\\smoke\\20260908_v3_assembled_masks\\cifar_clip_lora_assembled.pt",
+      "sha256": "8d9fbb5ed3c7386dade1159b0de07a4c761be5b1f435bf5ed83b512bba0db42d",
+      "reconstruction_max_error": 0.0
+    },
+    {
+      "dataset": "imagenette",
+      "method": "initial",
+      "artifact": "runs\\smoke\\20260908_v3_assembled_masks\\imagenette_initial_assembled.pt",
+      "sha256": "1d5fb9417fa1e590cc26ad85adcbd5ac5c1d7b47eb8905b2e2f20b2136ea758a",
+      "reconstruction_max_error": 0.0
+    },
+    {
+      "dataset": "imagenette",
+      "method": "direct",
+      "artifact": "runs\\smoke\\20260908_v3_assembled_masks\\imagenette_direct_assembled.pt",
+      "sha256": "29a3cb23d271baa1b80907fba1f9e0c248a506302d4b93a79e20af61670b4e94",
+      "reconstruction_max_error": 0.0
+    },
+    {
+      "dataset": "imagenette",
+      "method": "qwen_lora",
+      "artifact": "runs\\smoke\\20260908_v3_assembled_masks\\imagenette_qwen_lora_assembled.pt",
+      "sha256": "b0b65162e04c6a8f7875f970574f72bdd81c7773f8165710e90f20a203fcf63c",
+      "reconstruction_max_error": 0.0
+    },
+    {
+      "dataset": "imagenette",
+      "method": "clip_lora",
+      "artifact": "runs\\smoke\\20260908_v3_assembled_masks\\imagenette_clip_lora_assembled.pt",
+      "sha256": "7305a154c88f98d88c20661a4cc5551f2899fabebec8876272fd72e0c863a837",
+      "reconstruction_max_error": 0.0
+    }
+  ]
+}

@@ -1,0 +1,322 @@
+{
+  "git_sha": "cc00af1b01f16c8c4417b26e7e228db51f3a7508",
+  "epochs": [
+    {
+      "method": "direct",
+      "run_id": "20260908_v3_timing_cifar_direct_s42",
+      "gpu_uuid": "GPU-e8837b85-d55b-8e81-aaa5-ec1ac326932d",
+      "epoch": 1,
+      "stage": "experts",
+      "steps": 120,
+      "setup_seconds": 0.0057146549224853516,
+      "train_loop_seconds": 42.358854845166206,
+      "evaluation_and_audit_seconds": 3.38543713837862,
+      "checkpoint_and_logs_seconds": 0.11184835433959961,
+      "epoch_wall_seconds": 45.86185499280691
+    },
+    {
+      "method": "direct",
+      "run_id": "20260908_v3_timing_cifar_direct_s42",
+      "gpu_uuid": "GPU-e8837b85-d55b-8e81-aaa5-ec1ac326932d",
+      "epoch": 2,
+      "stage": "experts",
+      "steps": 120,
+      "setup_seconds": 0.0037705525755882263,
+      "train_loop_seconds": 41.67426436394453,
+      "evaluation_and_audit_seconds": 6.795005567371845,
+      "checkpoint_and_logs_seconds": 0.4326811134815216,
+      "epoch_wall_seconds": 48.905721597373486
+    },
+    {
+      "method": "direct",
+      "run_id": "20260908_v3_timing_cifar_direct_s42",
+      "gpu_uuid": "GPU-e8837b85-d55b-8e81-aaa5-ec1ac326932d",
+      "epoch": 3,
+      "stage": "optics",
+      "steps": 120,
+      "setup_seconds": 0.0033815577626228333,
+      "train_loop_seconds": 58.63465882092714,
+      "evaluation_and_audit_seconds": 3.5107345953583717,
+      "checkpoint_and_logs_seconds": 0.2050614356994629,
+      "epoch_wall_seconds": 62.3538364097476
+    },
+    {
+      "method": "direct",
+      "run_id": "20260908_v3_timing_cifar_direct_s42",
+      "gpu_uuid": "GPU-e8837b85-d55b-8e81-aaa5-ec1ac326932d",
+      "epoch": 4,
+      "stage": "optics",
+      "steps": 120,
+      "setup_seconds": 0.003026925027370453,
+      "train_loop_seconds": 57.10255540907383,
+      "evaluation_and_audit_seconds": 6.703881591558456,
+      "checkpoint_and_logs_seconds": 0.25645992904901505,
+      "epoch_wall_seconds": 64.06592385470867
+    },
+    {
+      "method": "direct",
+      "run_id": "20260908_v3_timing_cifar_direct_s42",
+      "gpu_uuid": "GPU-e8837b85-d55b-8e81-aaa5-ec1ac326932d",
+      "epoch": 5,
+      "stage": "joint",
+      "steps": 120,
+      "setup_seconds": 0.001653425395488739,
+      "train_loop_seconds": 61.06935141980648,
+      "evaluation_and_audit_seconds": 3.364441938698292,
+      "checkpoint_and_logs_seconds": 0.3951674550771713,
+      "epoch_wall_seconds": 64.83061423897743
+    },
+    {
+      "method": "direct",
+      "run_id": "20260908_v3_timing_cifar_direct_s42",
+      "gpu_uuid": "GPU-e8837b85-d55b-8e81-aaa5-ec1ac326932d",
+      "epoch": 6,
+      "stage": "joint",
+      "steps": 120,
+      "setup_seconds": 0.0014751777052879333,
+      "train_loop_seconds": 60.12732274830341,
+      "evaluation_and_audit_seconds": 6.730481594800949,
+      "checkpoint_and_logs_seconds": 0.38426630944013596,
+      "epoch_wall_seconds": 67.24354583024979
+    },
+    {
+      "method": "qwen_lora",
+      "run_id": "20260908_v3_timing_cifar_qwen_lora_s42",
+      "gpu_uuid": "GPU-e8837b85-d55b-8e81-aaa5-ec1ac326932d",
+      "epoch": 1,
+      "stage": "experts",
+      "steps": 120,
+      "setup_seconds": 0.004090078175067902,
+      "train_loop_seconds": 71.94890329241753,
+      "evaluation_and_audit_seconds": 3.7263146564364433,
+      "checkpoint_and_logs_seconds": 0.4611394926905632,
+      "epoch_wall_seconds": 76.1404475197196
+    },
+    {
+      "method": "qwen_lora",
+      "run_id": "20260908_v3_timing_cifar_qwen_lora_s42",
+      "gpu_uuid": "GPU-e8837b85-d55b-8e81-aaa5-ec1ac326932d",
+      "epoch": 2,
+      "stage": "experts",
+      "steps": 120,
+      "setup_seconds": 0.004585377871990204,
+      "train_loop_seconds": 72.61729492992163,
+      "evaluation_and_audit_seconds": 7.143061272799969,
+      "checkpoint_and_logs_seconds": 1.166931539773941,
+      "epoch_wall_seconds": 80.93187312036753
+    },
+    {
+      "method": "qwen_lora",
+      "run_id": "20260908_v3_timing_cifar_qwen_lora_s42",
+      "gpu_uuid": "GPU-e8837b85-d55b-8e81-aaa5-ec1ac326932d",
+      "epoch": 3,
+      "stage": "optics",
+      "steps": 120,
+      "setup_seconds": 0.007359430193901062,
+      "train_loop_seconds": 88.39146316051483,
+      "evaluation_and_audit_seconds": 3.5847209692001343,
+      "checkpoint_and_logs_seconds": 1.3361479490995407,
+      "epoch_wall_seconds": 93.31969150900841
+    },
+    {
+      "method": "qwen_lora",
+      "run_id": "20260908_v3_timing_cifar_qwen_lora_s42",
+      "gpu_uuid": "GPU-e8837b85-d55b-8e81-aaa5-ec1ac326932d",
+      "epoch": 4,
+      "stage": "optics",
+      "steps": 120,
+      "setup_seconds": 0.005578972399234772,
+      "train_loop_seconds": 87.4761887267232,
+      "evaluation_and_audit_seconds": 7.163605205714703,
+      "checkpoint_and_logs_seconds": 1.2369600161910057,
+      "epoch_wall_seconds": 95.88233292102814
+    },
+    {
+      "method": "qwen_lora",
+      "run_id": "20260908_v3_timing_cifar_qwen_lora_s42",
+      "gpu_uuid": "GPU-e8837b85-d55b-8e81-aaa5-ec1ac326932d",
+      "epoch": 5,
+      "stage": "joint",
+      "steps": 120,
+      "setup_seconds": 0.003372177481651306,
+      "train_loop_seconds": 92.27854235470295,
+      "evaluation_and_audit_seconds": 3.7424657940864563,
+      "checkpoint_and_logs_seconds": 0.6300744339823723,
+      "epoch_wall_seconds": 96.65445476025343
+    },
+    {
+      "method": "qwen_lora",
+      "run_id": "20260908_v3_timing_cifar_qwen_lora_s42",
+      "gpu_uuid": "GPU-e8837b85-d55b-8e81-aaa5-ec1ac326932d",
+      "epoch": 6,
+      "stage": "joint",
+      "steps": 120,
+      "setup_seconds": 0.003402821719646454,
+      "train_loop_seconds": 92.86066322028637,
+      "evaluation_and_audit_seconds": 8.150088392198086,
+      "checkpoint_and_logs_seconds": 1.598384790122509,
+      "epoch_wall_seconds": 102.61253922432661
+    },
+    {
+      "method": "clip_lora",
+      "run_id": "20260908_v3_timing_cifar_clip_lora_s42",
+      "gpu_uuid": "GPU-e8837b85-d55b-8e81-aaa5-ec1ac326932d",
+      "epoch": 1,
+      "stage": "experts",
+      "steps": 120,
+      "setup_seconds": 0.0030975714325904846,
+      "train_loop_seconds": 49.995413318276405,
+      "evaluation_and_audit_seconds": 3.5953861251473427,
+      "checkpoint_and_logs_seconds": 0.2266426905989647,
+      "epoch_wall_seconds": 53.8205397054553
+    },
+    {
+      "method": "clip_lora",
+      "run_id": "20260908_v3_timing_cifar_clip_lora_s42",
+      "gpu_uuid": "GPU-e8837b85-d55b-8e81-aaa5-ec1ac326932d",
+      "epoch": 2,
+      "stage": "experts",
+      "steps": 120,
+      "setup_seconds": 0.0037193968892097473,
+      "train_loop_seconds": 49.22833149880171,
+      "evaluation_and_audit_seconds": 6.99298245459795,
+      "checkpoint_and_logs_seconds": 0.5997303202748299,
+      "epoch_wall_seconds": 56.8247636705637
+    },
+    {
+      "method": "clip_lora",
+      "run_id": "20260908_v3_timing_cifar_clip_lora_s42",
+      "gpu_uuid": "GPU-e8837b85-d55b-8e81-aaa5-ec1ac326932d",
+      "epoch": 3,
+      "stage": "optics",
+      "steps": 120,
+      "setup_seconds": 0.003915898501873016,
+      "train_loop_seconds": 66.16837777942419,
+      "evaluation_and_audit_seconds": 3.5349565222859383,
+      "checkpoint_and_logs_seconds": 0.6942919492721558,
+      "epoch_wall_seconds": 70.40154214948416
+    },
+    {
+      "method": "clip_lora",
+      "run_id": "20260908_v3_timing_cifar_clip_lora_s42",
+      "gpu_uuid": "GPU-e8837b85-d55b-8e81-aaa5-ec1ac326932d",
+      "epoch": 4,
+      "stage": "optics",
+      "steps": 120,
+      "setup_seconds": 0.004110313951969147,
+      "train_loop_seconds": 66.06299029290676,
+      "evaluation_and_audit_seconds": 6.941426403820515,
+      "checkpoint_and_logs_seconds": 0.35344938188791275,
+      "epoch_wall_seconds": 73.36197639256716
+    },
+    {
+      "method": "clip_lora",
+      "run_id": "20260908_v3_timing_cifar_clip_lora_s42",
+      "gpu_uuid": "GPU-e8837b85-d55b-8e81-aaa5-ec1ac326932d",
+      "epoch": 5,
+      "stage": "joint",
+      "steps": 120,
+      "setup_seconds": 0.0024162158370018005,
+      "train_loop_seconds": 72.390381321311,
+      "evaluation_and_audit_seconds": 3.5899428948760033,
+      "checkpoint_and_logs_seconds": 0.5087835639715195,
+      "epoch_wall_seconds": 76.49152399599552
+    },
+    {
+      "method": "clip_lora",
+      "run_id": "20260908_v3_timing_cifar_clip_lora_s42",
+      "gpu_uuid": "GPU-e8837b85-d55b-8e81-aaa5-ec1ac326932d",
+      "epoch": 6,
+      "stage": "joint",
+      "steps": 120,
+      "setup_seconds": 0.002933107316493988,
+      "train_loop_seconds": 67.96761041879654,
+      "evaluation_and_audit_seconds": 6.753530465066433,
+      "checkpoint_and_logs_seconds": 0.4498964324593544,
+      "epoch_wall_seconds": 75.17397042363882
+    }
+  ],
+  "second_epoch_per_stage": [
+    {
+      "method": "direct",
+      "stage": "experts",
+      "epoch": 2,
+      "train_loop_seconds": 41.67426436394453,
+      "epoch_wall_seconds": 48.905721597373486,
+      "train_time_ratio_to_direct": 1.0
+    },
+    {
+      "method": "direct",
+      "stage": "optics",
+      "epoch": 4,
+      "train_loop_seconds": 57.10255540907383,
+      "epoch_wall_seconds": 64.06592385470867,
+      "train_time_ratio_to_direct": 1.0
+    },
+    {
+      "method": "direct",
+      "stage": "joint",
+      "epoch": 6,
+      "train_loop_seconds": 60.12732274830341,
+      "epoch_wall_seconds": 67.24354583024979,
+      "train_time_ratio_to_direct": 1.0
+    },
+    {
+      "method": "qwen_lora",
+      "stage": "experts",
+      "epoch": 2,
+      "train_loop_seconds": 72.61729492992163,
+      "epoch_wall_seconds": 80.93187312036753,
+      "train_time_ratio_to_direct": 1.74249734310243
+    },
+    {
+      "method": "qwen_lora",
+      "stage": "optics",
+      "epoch": 4,
+      "train_loop_seconds": 87.4761887267232,
+      "epoch_wall_seconds": 95.88233292102814,
+      "train_time_ratio_to_direct": 1.5319137313568085
+    },
+    {
+      "method": "qwen_lora",
+      "stage": "joint",
+      "epoch": 6,
+      "train_loop_seconds": 92.86066322028637,
+      "epoch_wall_seconds": 102.61253922432661,
+      "train_time_ratio_to_direct": 1.5444004318803064
+    },
+    {
+      "method": "clip_lora",
+      "stage": "experts",
+      "epoch": 2,
+      "train_loop_seconds": 49.22833149880171,
+      "epoch_wall_seconds": 56.8247636705637,
+      "train_time_ratio_to_direct": 1.1812645585987298
+    },
+    {
+      "method": "clip_lora",
+      "stage": "optics",
+      "epoch": 4,
+      "train_loop_seconds": 66.06299029290676,
+      "epoch_wall_seconds": 73.36197639256716,
+      "train_time_ratio_to_direct": 1.1569182818464387
+    },
+    {
+      "method": "clip_lora",
+      "stage": "joint",
+      "epoch": 6,
+      "train_loop_seconds": 67.96761041879654,
+      "epoch_wall_seconds": 75.17397042363882,
+      "train_time_ratio_to_direct": 1.1303947575266746
+    }
+  ],
+  "execution_sha256": "68fa056042bf87bb170579df046d75f589e1eacb1d38971f72ffb72665a5039f",
+  "limitations": [
+    "One sequential run per method on one GPU; not a distribution of repeat trials",
+    "GPU process isolation sampled every five seconds; shared host CPU/storage are not isolated",
+    "Six timing epochs use 2/2/2 stages, not the formal 4/8/18 optimization schedule",
+    "Second epochs are also stage ends, whose validation includes an additional initial-expert intervention",
+    "Same precision as prior implementations: Qwen frozen BF16, CLIP frozen FP32",
+    "Training loop includes preprocessing, EMA and gradient/update audits; not GPU kernel time alone"
+  ]
+}

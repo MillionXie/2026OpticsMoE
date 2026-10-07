@@ -1,0 +1,12 @@
+[
+  {
+    "source": "/DATA/DATA1/guest3/2026OpticsMoE/data/static_bank_models/clip-vit-b16-text/asset_manifest.json",
+    "destination": "clip_asset_manifest.json",
+    "sha256": "1ea13eaf2ddb4f407841aaeb0c3da4f46a046daea05fc9565432078ebc9fc200"
+  },
+  {
+    "source": "/DATA/DATA1/guest3/2026OpticsMoE/data/imagenette_static_experts/asset_manifest.json",
+    "destination": "imagenette_asset_manifest.json",
+    "sha256": "7b9f28a665ca9652779e720703c0bd372dd6a66d284597fc1235c5fbe64d8c45"
+  }
+]

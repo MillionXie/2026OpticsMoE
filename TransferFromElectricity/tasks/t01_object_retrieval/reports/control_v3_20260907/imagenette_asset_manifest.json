@@ -1,0 +1,5 @@
+{
+  "source": "https://s3.amazonaws.com/fast-ai-imageclas/imagenette2-160.tgz",
+  "archive_sha256": "64d0c4859f35a461889e0147755a999a48b49bf38a7e0f9bd27003f10db02fe5",
+  "image_count": 13394
+}

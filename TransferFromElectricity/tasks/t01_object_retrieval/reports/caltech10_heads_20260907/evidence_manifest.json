@@ -1,0 +1,350 @@
+[
+  {
+    "run_id": "20260907_caltech10_heads_fixed_s42",
+    "file": "architecture.json",
+    "bytes": 9662,
+    "sha256": "05141447b8ac1ea6544ab108c1ed074dfe1b4668e730920db9a8b531ce31f6b7"
+  },
+  {
+    "run_id": "20260907_caltech10_heads_fixed_s42",
+    "file": "config.yaml",
+    "bytes": 10820,
+    "sha256": "b2355733001d4465bc44b7d8057a497f932848e413d50d850d444c8684ddcaff"
+  },
+  {
+    "run_id": "20260907_caltech10_heads_fixed_s42",
+    "file": "data_hashes.json",
+    "bytes": 511858,
+    "sha256": "b7654cc0f96a3b8c627f1221299fa716b09b2c3d16ededd82ca633c8464888e8"
+  },
+  {
+    "run_id": "20260907_caltech10_heads_fixed_s42",
+    "file": "dataset.json",
+    "bytes": 1492,
+    "sha256": "526dc6246a9c152237a1c8bdee07aac4e035ec8cf3da1c0411861f6d78429422"
+  },
+  {
+    "run_id": "20260907_caltech10_heads_fixed_s42",
+    "file": "environment.json",
+    "bytes": 972,
+    "sha256": "d5386d257fb0e3ea1752259feb0285e01e943d37bc47b29d5d928e5f5bfe8a7f"
+  },
+  {
+    "run_id": "20260907_caltech10_heads_fixed_s42",
+    "file": "final_report.json",
+    "bytes": 14217,
+    "sha256": "8f65caf39357236e8e475e8b17ddb6fa7c858a4d295d518fe4deb752d0fda548"
+  },
+  {
+    "run_id": "20260907_caltech10_heads_fixed_s42",
+    "file": "history.json",
+    "bytes": 170738,
+    "sha256": "f4be6b31cee54a30c32711f46c961ed80bb892d66b0c890c700cd7c5421c3936"
+  },
+  {
+    "run_id": "20260907_caltech10_heads_fixed_s42",
+    "file": "initial_validation.json",
+    "bytes": 2713,
+    "sha256": "80764f3e6c6c4c2426be10cf5c669de60f748cc892ee32fbc3ed7d821d6e08c0"
+  },
+  {
+    "run_id": "20260907_caltech10_heads_fixed_s42",
+    "file": "initialization.json",
+    "bytes": 1864,
+    "sha256": "e30059e3f9ab4f4133243efad32ee010dfd9d1014301719013cacc2c1ad489fb"
+  },
+  {
+    "run_id": "20260907_caltech10_heads_fixed_s42",
+    "file": "protocol.json",
+    "bytes": 1280,
+    "sha256": "edbfc9e1c3631e9c5a19ed9c038316cb9d72f99d40126444a7788b96c79bdb54"
+  },
+  {
+    "run_id": "20260907_caltech10_heads_fixed_s42",
+    "file": "split.json",
+    "bytes": 1013107,
+    "sha256": "d8d21a4c2085c725dd6f25dae7b70030a13f2be6229581cc6a49c0c2c3868d11"
+  },
+  {
+    "run_id": "20260907_caltech10_heads_fixed_s42",
+    "file": "status.json",
+    "bytes": 26,
+    "sha256": "34c8f74408bc4183b49f04a8136d278cf1d85c3415647a3e734dc82d5dd7e5c0"
+  },
+  {
+    "run_id": "20260907_caltech10_heads_fixed_s42",
+    "file": "steps.json",
+    "bytes": 528839,
+    "sha256": "4a916fa58223cba55f0d6b26f0220fc17200d42e151b5a2582f06b4e0e504dfb"
+  },
+  {
+    "run_id": "20260907_caltech10_heads_fixed_s42",
+    "file": "transfer_manifest.json",
+    "bytes": 4392,
+    "sha256": "1606993a727e98ac7e6bdc59483dcb6548c15ea9f813ce874792c3f8ed55b1fa"
+  },
+  {
+    "run_id": "20260907_caltech10_heads_direct_s42",
+    "file": "architecture.json",
+    "bytes": 10682,
+    "sha256": "e28aabeef9aed59e4bc1f20ca85406d482bd1bbaeab7b7df8fe882d28de02d05"
+  },
+  {
+    "run_id": "20260907_caltech10_heads_direct_s42",
+    "file": "config.yaml",
+    "bytes": 10822,
+    "sha256": "a6a8df88a68093574f49e3dabae908957993daf155c4d9ba88a390ad2de313ac"
+  },
+  {
+    "run_id": "20260907_caltech10_heads_direct_s42",
+    "file": "data_hashes.json",
+    "bytes": 511858,
+    "sha256": "b7654cc0f96a3b8c627f1221299fa716b09b2c3d16ededd82ca633c8464888e8"
+  },
+  {
+    "run_id": "20260907_caltech10_heads_direct_s42",
+    "file": "dataset.json",
+    "bytes": 1492,
+    "sha256": "526dc6246a9c152237a1c8bdee07aac4e035ec8cf3da1c0411861f6d78429422"
+  },
+  {
+    "run_id": "20260907_caltech10_heads_direct_s42",
+    "file": "environment.json",
+    "bytes": 974,
+    "sha256": "f6a31857c6c22fc5bfcdfdce2830b2091a63e726424039a0184dd6bf17787d56"
+  },
+  {
+    "run_id": "20260907_caltech10_heads_direct_s42",
+    "file": "final_report.json",
+    "bytes": 14458,
+    "sha256": "ad9c1c5393920af73e8144b84fc3fa7e56658e946d0db20ee237d05dc81b5d80"
+  },
+  {
+    "run_id": "20260907_caltech10_heads_direct_s42",
+    "file": "history.json",
+    "bytes": 173779,
+    "sha256": "bf874c420e745a01a65000bd022cd93e6c8c24be22d8b1b3755fb51b0a612c41"
+  },
+  {
+    "run_id": "20260907_caltech10_heads_direct_s42",
+    "file": "initial_validation.json",
+    "bytes": 2713,
+    "sha256": "80764f3e6c6c4c2426be10cf5c669de60f748cc892ee32fbc3ed7d821d6e08c0"
+  },
+  {
+    "run_id": "20260907_caltech10_heads_direct_s42",
+    "file": "initialization.json",
+    "bytes": 1864,
+    "sha256": "e30059e3f9ab4f4133243efad32ee010dfd9d1014301719013cacc2c1ad489fb"
+  },
+  {
+    "run_id": "20260907_caltech10_heads_direct_s42",
+    "file": "protocol.json",
+    "bytes": 1281,
+    "sha256": "f5153ad42776ec56b31c15e131aef472f57fbccd16b005e080304f7acf4bff6a"
+  },
+  {
+    "run_id": "20260907_caltech10_heads_direct_s42",
+    "file": "split.json",
+    "bytes": 1013107,
+    "sha256": "d8d21a4c2085c725dd6f25dae7b70030a13f2be6229581cc6a49c0c2c3868d11"
+  },
+  {
+    "run_id": "20260907_caltech10_heads_direct_s42",
+    "file": "status.json",
+    "bytes": 26,
+    "sha256": "34c8f74408bc4183b49f04a8136d278cf1d85c3415647a3e734dc82d5dd7e5c0"
+  },
+  {
+    "run_id": "20260907_caltech10_heads_direct_s42",
+    "file": "steps.json",
+    "bytes": 601832,
+    "sha256": "a8e1ff410dbab5f65747b304cf57e2785a587a6cd8aa928961b3fe556075115f"
+  },
+  {
+    "run_id": "20260907_caltech10_heads_direct_s42",
+    "file": "transfer_manifest.json",
+    "bytes": 4407,
+    "sha256": "3cf302d2d6f4e54eb27bd0c591eb26cc21ff5119b7ccd1b9510fa7ebdde57bb0"
+  },
+  {
+    "run_id": "20260907_caltech10_heads_qwen_frozen_s42",
+    "file": "architecture.json",
+    "bytes": 10556,
+    "sha256": "29339f50fb46e999752f69eebb9413c1b4a7024ce2ba1d24275308d1bb4a3e64"
+  },
+  {
+    "run_id": "20260907_caltech10_heads_qwen_frozen_s42",
+    "file": "config.yaml",
+    "bytes": 10832,
+    "sha256": "5edbc8ddd001cc536407d3a593465e20e5a74dd07e4569ca8899f602c2eb52cd"
+  },
+  {
+    "run_id": "20260907_caltech10_heads_qwen_frozen_s42",
+    "file": "data_hashes.json",
+    "bytes": 511858,
+    "sha256": "b7654cc0f96a3b8c627f1221299fa716b09b2c3d16ededd82ca633c8464888e8"
+  },
+  {
+    "run_id": "20260907_caltech10_heads_qwen_frozen_s42",
+    "file": "dataset.json",
+    "bytes": 1492,
+    "sha256": "526dc6246a9c152237a1c8bdee07aac4e035ec8cf3da1c0411861f6d78429422"
+  },
+  {
+    "run_id": "20260907_caltech10_heads_qwen_frozen_s42",
+    "file": "environment.json",
+    "bytes": 984,
+    "sha256": "3c2589fcfcdcbd923466ecaaee6638f6d79a182e196adc5e4726fe6a964a59f9"
+  },
+  {
+    "run_id": "20260907_caltech10_heads_qwen_frozen_s42",
+    "file": "final_report.json",
+    "bytes": 14359,
+    "sha256": "28644406674a949b14d164920da9c62bae10560baccb4cdc28865d3e813b0881"
+  },
+  {
+    "run_id": "20260907_caltech10_heads_qwen_frozen_s42",
+    "file": "generator_source_manifest.json",
+    "bytes": 1069,
+    "sha256": "2bd7af7339d264f1c7800c4b9c30763eaf2e6bfc3108739c0398b5590e29f744"
+  },
+  {
+    "run_id": "20260907_caltech10_heads_qwen_frozen_s42",
+    "file": "history.json",
+    "bytes": 173840,
+    "sha256": "78193c14c67cacce570b3eee356ed8de6a3b148f4d06130d537dc6ae8d85916d"
+  },
+  {
+    "run_id": "20260907_caltech10_heads_qwen_frozen_s42",
+    "file": "initial_validation.json",
+    "bytes": 2713,
+    "sha256": "80764f3e6c6c4c2426be10cf5c669de60f748cc892ee32fbc3ed7d821d6e08c0"
+  },
+  {
+    "run_id": "20260907_caltech10_heads_qwen_frozen_s42",
+    "file": "initialization.json",
+    "bytes": 1864,
+    "sha256": "e30059e3f9ab4f4133243efad32ee010dfd9d1014301719013cacc2c1ad489fb"
+  },
+  {
+    "run_id": "20260907_caltech10_heads_qwen_frozen_s42",
+    "file": "protocol.json",
+    "bytes": 1286,
+    "sha256": "3da31b12e60273c61e52a558825366aedc5e82f5a1bd02659db49467b58e8a77"
+  },
+  {
+    "run_id": "20260907_caltech10_heads_qwen_frozen_s42",
+    "file": "split.json",
+    "bytes": 1013107,
+    "sha256": "d8d21a4c2085c725dd6f25dae7b70030a13f2be6229581cc6a49c0c2c3868d11"
+  },
+  {
+    "run_id": "20260907_caltech10_heads_qwen_frozen_s42",
+    "file": "status.json",
+    "bytes": 26,
+    "sha256": "34c8f74408bc4183b49f04a8136d278cf1d85c3415647a3e734dc82d5dd7e5c0"
+  },
+  {
+    "run_id": "20260907_caltech10_heads_qwen_frozen_s42",
+    "file": "steps.json",
+    "bytes": 614143,
+    "sha256": "84130d371484d01ecfac0794bf320ba70dbb10ed15137bfc0176a6a4ecff3cdc"
+  },
+  {
+    "run_id": "20260907_caltech10_heads_qwen_frozen_s42",
+    "file": "transfer_manifest.json",
+    "bytes": 4827,
+    "sha256": "177c9ea8c9c78f4727e89527e6b842d15a9edd68ae86ea6c27c8a93bbae701a2"
+  },
+  {
+    "run_id": "20260907_caltech10_heads_qwen_lora_s42",
+    "file": "architecture.json",
+    "bytes": 19850,
+    "sha256": "bd2e641e5b87dc070ca7e9b4ebdc4d70d6a4536f173b871df07df7f058ac2f01"
+  },
+  {
+    "run_id": "20260907_caltech10_heads_qwen_lora_s42",
+    "file": "config.yaml",
+    "bytes": 10828,
+    "sha256": "16bdc51564130ea11235e1ef948b0335315b60d6e56630c4f2ee5c3a629728e4"
+  },
+  {
+    "run_id": "20260907_caltech10_heads_qwen_lora_s42",
+    "file": "data_hashes.json",
+    "bytes": 511858,
+    "sha256": "b7654cc0f96a3b8c627f1221299fa716b09b2c3d16ededd82ca633c8464888e8"
+  },
+  {
+    "run_id": "20260907_caltech10_heads_qwen_lora_s42",
+    "file": "dataset.json",
+    "bytes": 1492,
+    "sha256": "526dc6246a9c152237a1c8bdee07aac4e035ec8cf3da1c0411861f6d78429422"
+  },
+  {
+    "run_id": "20260907_caltech10_heads_qwen_lora_s42",
+    "file": "environment.json",
+    "bytes": 980,
+    "sha256": "1a73f4bd645d798a2c27227965c42380b9c61a87fd75e10e4554205c835c277b"
+  },
+  {
+    "run_id": "20260907_caltech10_heads_qwen_lora_s42",
+    "file": "final_report.json",
+    "bytes": 18688,
+    "sha256": "c01e11d7bf49013291d5fef7aa24937ff58acf96f78304b3a920e07418b4c6a2"
+  },
+  {
+    "run_id": "20260907_caltech10_heads_qwen_lora_s42",
+    "file": "generator_source_manifest.json",
+    "bytes": 1069,
+    "sha256": "2bd7af7339d264f1c7800c4b9c30763eaf2e6bfc3108739c0398b5590e29f744"
+  },
+  {
+    "run_id": "20260907_caltech10_heads_qwen_lora_s42",
+    "file": "history.json",
+    "bytes": 174583,
+    "sha256": "127bdbca64b4fc1ea14b149d9743b649095f4867bc16f1ed189af6421ceac0fe"
+  },
+  {
+    "run_id": "20260907_caltech10_heads_qwen_lora_s42",
+    "file": "initial_validation.json",
+    "bytes": 2713,
+    "sha256": "80764f3e6c6c4c2426be10cf5c669de60f748cc892ee32fbc3ed7d821d6e08c0"
+  },
+  {
+    "run_id": "20260907_caltech10_heads_qwen_lora_s42",
+    "file": "initialization.json",
+    "bytes": 1864,
+    "sha256": "e30059e3f9ab4f4133243efad32ee010dfd9d1014301719013cacc2c1ad489fb"
+  },
+  {
+    "run_id": "20260907_caltech10_heads_qwen_lora_s42",
+    "file": "protocol.json",
+    "bytes": 1284,
+    "sha256": "e00bac289ec60072888f5f970ece7cac6bc801d38b2e7697e0b688494bf09871"
+  },
+  {
+    "run_id": "20260907_caltech10_heads_qwen_lora_s42",
+    "file": "split.json",
+    "bytes": 1013107,
+    "sha256": "d8d21a4c2085c725dd6f25dae7b70030a13f2be6229581cc6a49c0c2c3868d11"
+  },
+  {
+    "run_id": "20260907_caltech10_heads_qwen_lora_s42",
+    "file": "status.json",
+    "bytes": 26,
+    "sha256": "34c8f74408bc4183b49f04a8136d278cf1d85c3415647a3e734dc82d5dd7e5c0"
+  },
+  {
+    "run_id": "20260907_caltech10_heads_qwen_lora_s42",
+    "file": "steps.json",
+    "bytes": 672477,
+    "sha256": "870661115995e3fa8a1a8e4a5e1798d3069b653d8b7fe370bc0e569a3a3dbf7d"
+  },
+  {
+    "run_id": "20260907_caltech10_heads_qwen_lora_s42",
+    "file": "transfer_manifest.json",
+    "bytes": 4797,
+    "sha256": "9ec3794fa13dcee41ab299bda756f51b5404f2353943f4b098a1d26265d5e12f"
+  }
+]

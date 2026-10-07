@@ -1,0 +1,1910 @@
+[
+  {
+    "run_id": "20260908_v4_formal_caltech_direct_s42",
+    "evidence_type": "remote_checkpoint_sha256",
+    "source": "/DATA/DATA1/guest3/2026OpticsMoE/TransferFromElectricity/tasks/t01_object_retrieval/runs/simulation/20260908_v4_formal_caltech_direct_s42/best_checkpoint.pt",
+    "file": "best_checkpoint.pt",
+    "sha256": "c54dbac0e0450d7f2c14248ac24b5c30a9d352b538916280d14e44c73405935d",
+    "bytes": 50422086,
+    "downloaded": false
+  },
+  {
+    "run_id": "20260908_v4_formal_caltech_direct_s42",
+    "evidence_type": "remote_checkpoint_sha256",
+    "source": "/DATA/DATA1/guest3/2026OpticsMoE/TransferFromElectricity/tasks/t01_object_retrieval/runs/simulation/20260908_v4_formal_caltech_direct_s42/last_checkpoint.pt",
+    "file": "last_checkpoint.pt",
+    "sha256": "b2405a4858a34509bf2ad472c60658fda35182cc11007bd0d03583310b7bcf46",
+    "bytes": 50474054,
+    "downloaded": false
+  },
+  {
+    "run_id": "20260908_v4_formal_caltech_direct_s42",
+    "source": "/DATA/DATA1/guest3/2026OpticsMoE/TransferFromElectricity/tasks/t01_object_retrieval/runs/simulation/20260908_v4_formal_caltech_direct_s42/final_report.json",
+    "file": "final_report.json",
+    "sha256": "067afea1289a63e9fd10d5258968a63c1d36d9dc22705486670feb72c4f892e4",
+    "bytes": 28563
+  },
+  {
+    "run_id": "20260908_v4_formal_caltech_direct_s42",
+    "source": "/DATA/DATA1/guest3/2026OpticsMoE/TransferFromElectricity/tasks/t01_object_retrieval/runs/simulation/20260908_v4_formal_caltech_direct_s42/history.json",
+    "file": "history.json",
+    "sha256": "bed690b064fc72dfe7313238b27e87dd82f607a57035ceb38a99053bba2c6761",
+    "bytes": 165737
+  },
+  {
+    "run_id": "20260908_v4_formal_caltech_direct_s42",
+    "source": "/DATA/DATA1/guest3/2026OpticsMoE/TransferFromElectricity/tasks/t01_object_retrieval/runs/simulation/20260908_v4_formal_caltech_direct_s42/epoch_timing.json",
+    "file": "epoch_timing.json",
+    "sha256": "20ac207b7c13f7a5213381a2b3e9bcbeaa800df6d138c34b8ddb31ff52ad9e68",
+    "bytes": 10302
+  },
+  {
+    "run_id": "20260908_v4_formal_caltech_direct_s42",
+    "source": "/DATA/DATA1/guest3/2026OpticsMoE/TransferFromElectricity/tasks/t01_object_retrieval/runs/simulation/20260908_v4_formal_caltech_direct_s42/protocol.json",
+    "file": "protocol.json",
+    "sha256": "47b3c39a2fe4ac6ce6b397597ab4d54c9e6f73b8cccaa0f680801a3bb47f8720",
+    "bytes": 2027
+  },
+  {
+    "run_id": "20260908_v4_formal_caltech_direct_s42",
+    "source": "/DATA/DATA1/guest3/2026OpticsMoE/TransferFromElectricity/tasks/t01_object_retrieval/runs/simulation/20260908_v4_formal_caltech_direct_s42/environment.json",
+    "file": "environment.json",
+    "sha256": "d56aa511bff9827576663bb8020a632b8a5bcddd97c396774f154c7c57bee3b1",
+    "bytes": 1105
+  },
+  {
+    "run_id": "20260908_v4_formal_caltech_direct_s42",
+    "source": "/DATA/DATA1/guest3/2026OpticsMoE/TransferFromElectricity/tasks/t01_object_retrieval/runs/simulation/20260908_v4_formal_caltech_direct_s42/zero_initialization.json",
+    "file": "zero_initialization.json",
+    "sha256": "6444fec4f618bf4eec20ffd851df95dbcb5f809ee654edeffd1a1d2bc54e78ac",
+    "bytes": 2784
+  },
+  {
+    "run_id": "20260908_v4_formal_caltech_direct_s42",
+    "source": "/DATA/DATA1/guest3/2026OpticsMoE/TransferFromElectricity/tasks/t01_object_retrieval/runs/simulation/20260908_v4_formal_caltech_direct_s42/expert_bank.pt",
+    "file": "expert_bank.pt",
+    "sha256": "6df122e491a861215b2663e66803ce34c6aa83f6f2a2edf85e55358924687e66",
+    "bytes": 6869104
+  },
+  {
+    "run_id": "20260908_v4_formal_caltech_direct_s42",
+    "source": "/DATA/DATA1/guest3/2026OpticsMoE/TransferFromElectricity/tasks/t01_object_retrieval/runs/simulation/20260908_v4_formal_caltech_direct_s42/gpu_execution.json",
+    "file": "gpu_execution.json",
+    "sha256": "6b02f0b45329bf8503e0d0c2cf30bcaeaf5ddb6784a590dd3263a1728c03e65e",
+    "bytes": 1008
+  },
+  {
+    "run_id": "20260908_v4_formal_caltech_direct_s42",
+    "source": "/DATA/DATA1/guest3/2026OpticsMoE/TransferFromElectricity/tasks/t01_object_retrieval/runs/simulation/20260908_v4_formal_caltech_direct_s42/architecture.json",
+    "file": "architecture.json",
+    "sha256": "af132399969f0853e9602f5c3adf2b916902645eca524f1d2bb975f693f221d5",
+    "bytes": 10588
+  },
+  {
+    "run_id": "20260908_v4_formal_caltech_direct_s42",
+    "source": "/DATA/DATA1/guest3/2026OpticsMoE/TransferFromElectricity/tasks/t01_object_retrieval/runs/simulation/20260908_v4_formal_caltech_direct_s42/initial_validation.json",
+    "file": "initial_validation.json",
+    "sha256": "3fd4a3407c24a7ef47dbdebc06ff4bd32dabd15c8fefb7d6f9ec12857e654386",
+    "bytes": 2724
+  },
+  {
+    "run_id": "20260908_v4_formal_caltech_direct_s42",
+    "source": "/DATA/DATA1/guest3/2026OpticsMoE/TransferFromElectricity/tasks/t01_object_retrieval/runs/simulation/20260908_v4_formal_caltech_direct_s42/initialization.json",
+    "file": "initialization.json",
+    "sha256": "120e5d04b152e6289350cea6ba6fb6e72759a8086cc92d135793fe07fff65e17",
+    "bytes": 1864
+  },
+  {
+    "run_id": "20260908_v4_formal_caltech_direct_s42",
+    "source": "/DATA/DATA1/guest3/2026OpticsMoE/TransferFromElectricity/tasks/t01_object_retrieval/runs/simulation/20260908_v4_formal_caltech_direct_s42/split.json",
+    "file": "split.json",
+    "sha256": "d8d21a4c2085c725dd6f25dae7b70030a13f2be6229581cc6a49c0c2c3868d11",
+    "bytes": 1013107
+  },
+  {
+    "run_id": "20260908_v4_formal_caltech_direct_s42",
+    "source": "/DATA/DATA1/guest3/2026OpticsMoE/TransferFromElectricity/tasks/t01_object_retrieval/runs/simulation/20260908_v4_formal_caltech_direct_s42/data_hashes.json",
+    "file": "data_hashes.json",
+    "sha256": "b7654cc0f96a3b8c627f1221299fa716b09b2c3d16ededd82ca633c8464888e8",
+    "bytes": 511858
+  },
+  {
+    "run_id": "20260908_v4_formal_caltech_direct_s42",
+    "source": "/DATA/DATA1/guest3/2026OpticsMoE/TransferFromElectricity/tasks/t01_object_retrieval/runs/simulation/20260908_v4_formal_caltech_direct_s42/config.yaml",
+    "file": "config.yaml",
+    "sha256": "7c1aa1b990f7741204b1ec243ea828ca6b8d2a212099d8cb28c8a5ce206abf82",
+    "bytes": 11483
+  },
+  {
+    "run_id": "20260908_v4_formal_caltech_clip_vision_lora_s42",
+    "evidence_type": "remote_checkpoint_sha256",
+    "source": "/DATA/DATA1/guest3/2026OpticsMoE/TransferFromElectricity/tasks/t01_object_retrieval/runs/simulation/20260908_v4_formal_caltech_clip_vision_lora_s42/best_checkpoint.pt",
+    "file": "best_checkpoint.pt",
+    "sha256": "d534188d3a45beb1fbcf998a910723c2a8402eb769a193c31e64c45e1fd12bd9",
+    "bytes": 67254890,
+    "downloaded": false
+  },
+  {
+    "run_id": "20260908_v4_formal_caltech_clip_vision_lora_s42",
+    "evidence_type": "remote_checkpoint_sha256",
+    "source": "/DATA/DATA1/guest3/2026OpticsMoE/TransferFromElectricity/tasks/t01_object_retrieval/runs/simulation/20260908_v4_formal_caltech_clip_vision_lora_s42/last_checkpoint.pt",
+    "file": "last_checkpoint.pt",
+    "sha256": "f4e13d52d704bf1b767a9228aa31cdcf68baeff4ab8b2598ba80eaf3ec553e2c",
+    "bytes": 67337770,
+    "downloaded": false
+  },
+  {
+    "run_id": "20260908_v4_formal_caltech_clip_vision_lora_s42",
+    "source": "/DATA/DATA1/guest3/2026OpticsMoE/TransferFromElectricity/tasks/t01_object_retrieval/runs/simulation/20260908_v4_formal_caltech_clip_vision_lora_s42/final_report.json",
+    "file": "final_report.json",
+    "sha256": "8496c7b3d5fd212b15c889789d292edf00b07a1ceccfa4a18a49ceb27d342d59",
+    "bytes": 32942
+  },
+  {
+    "run_id": "20260908_v4_formal_caltech_clip_vision_lora_s42",
+    "source": "/DATA/DATA1/guest3/2026OpticsMoE/TransferFromElectricity/tasks/t01_object_retrieval/runs/simulation/20260908_v4_formal_caltech_clip_vision_lora_s42/history.json",
+    "file": "history.json",
+    "sha256": "7adeeac53825296e6cda2982b8d7f915e8009314fa4ceffc49b00dd0cf7b3821",
+    "bytes": 169434
+  },
+  {
+    "run_id": "20260908_v4_formal_caltech_clip_vision_lora_s42",
+    "source": "/DATA/DATA1/guest3/2026OpticsMoE/TransferFromElectricity/tasks/t01_object_retrieval/runs/simulation/20260908_v4_formal_caltech_clip_vision_lora_s42/epoch_timing.json",
+    "file": "epoch_timing.json",
+    "sha256": "54ebff4969ee8b9ac1a5ea9f44860057a1d2350713468af7fd0d9720f1520cad",
+    "bytes": 10273
+  },
+  {
+    "run_id": "20260908_v4_formal_caltech_clip_vision_lora_s42",
+    "source": "/DATA/DATA1/guest3/2026OpticsMoE/TransferFromElectricity/tasks/t01_object_retrieval/runs/simulation/20260908_v4_formal_caltech_clip_vision_lora_s42/protocol.json",
+    "file": "protocol.json",
+    "sha256": "3a2d1b37fb6e6ecc6ca5927b1a73f64eb99679739e29037016ba893d36f02f4f",
+    "bytes": 2037
+  },
+  {
+    "run_id": "20260908_v4_formal_caltech_clip_vision_lora_s42",
+    "source": "/DATA/DATA1/guest3/2026OpticsMoE/TransferFromElectricity/tasks/t01_object_retrieval/runs/simulation/20260908_v4_formal_caltech_clip_vision_lora_s42/environment.json",
+    "file": "environment.json",
+    "sha256": "7dc252a548c655f3ad19c4eee4d5c12deffbd31c8e2ebce9f58791339dac638a",
+    "bytes": 1125
+  },
+  {
+    "run_id": "20260908_v4_formal_caltech_clip_vision_lora_s42",
+    "source": "/DATA/DATA1/guest3/2026OpticsMoE/TransferFromElectricity/tasks/t01_object_retrieval/runs/simulation/20260908_v4_formal_caltech_clip_vision_lora_s42/zero_initialization.json",
+    "file": "zero_initialization.json",
+    "sha256": "6444fec4f618bf4eec20ffd851df95dbcb5f809ee654edeffd1a1d2bc54e78ac",
+    "bytes": 2784
+  },
+  {
+    "run_id": "20260908_v4_formal_caltech_clip_vision_lora_s42",
+    "source": "/DATA/DATA1/guest3/2026OpticsMoE/TransferFromElectricity/tasks/t01_object_retrieval/runs/simulation/20260908_v4_formal_caltech_clip_vision_lora_s42/expert_bank.pt",
+    "file": "expert_bank.pt",
+    "sha256": "bb66ee7e5356ece4b6e676c621e1a74b386e71f8daaae51e8479ed1deb501fde",
+    "bytes": 6869104
+  },
+  {
+    "run_id": "20260908_v4_formal_caltech_clip_vision_lora_s42",
+    "source": "/DATA/DATA1/guest3/2026OpticsMoE/TransferFromElectricity/tasks/t01_object_retrieval/runs/simulation/20260908_v4_formal_caltech_clip_vision_lora_s42/gpu_execution.json",
+    "file": "gpu_execution.json",
+    "sha256": "751e6ed91c76ffee28e693e932f285fdb53b76aa564afa0c0e63e38d1396e003",
+    "bytes": 1048
+  },
+  {
+    "run_id": "20260908_v4_formal_caltech_clip_vision_lora_s42",
+    "source": "/DATA/DATA1/guest3/2026OpticsMoE/TransferFromElectricity/tasks/t01_object_retrieval/runs/simulation/20260908_v4_formal_caltech_clip_vision_lora_s42/architecture.json",
+    "file": "architecture.json",
+    "sha256": "02e9999a23c9adcd1b001deba887ec30497ec832493c8feb094e67d8d0cc349a",
+    "bytes": 17907
+  },
+  {
+    "run_id": "20260908_v4_formal_caltech_clip_vision_lora_s42",
+    "source": "/DATA/DATA1/guest3/2026OpticsMoE/TransferFromElectricity/tasks/t01_object_retrieval/runs/simulation/20260908_v4_formal_caltech_clip_vision_lora_s42/initial_validation.json",
+    "file": "initial_validation.json",
+    "sha256": "3fd4a3407c24a7ef47dbdebc06ff4bd32dabd15c8fefb7d6f9ec12857e654386",
+    "bytes": 2724
+  },
+  {
+    "run_id": "20260908_v4_formal_caltech_clip_vision_lora_s42",
+    "source": "/DATA/DATA1/guest3/2026OpticsMoE/TransferFromElectricity/tasks/t01_object_retrieval/runs/simulation/20260908_v4_formal_caltech_clip_vision_lora_s42/initialization.json",
+    "file": "initialization.json",
+    "sha256": "120e5d04b152e6289350cea6ba6fb6e72759a8086cc92d135793fe07fff65e17",
+    "bytes": 1864
+  },
+  {
+    "run_id": "20260908_v4_formal_caltech_clip_vision_lora_s42",
+    "source": "/DATA/DATA1/guest3/2026OpticsMoE/TransferFromElectricity/tasks/t01_object_retrieval/runs/simulation/20260908_v4_formal_caltech_clip_vision_lora_s42/split.json",
+    "file": "split.json",
+    "sha256": "d8d21a4c2085c725dd6f25dae7b70030a13f2be6229581cc6a49c0c2c3868d11",
+    "bytes": 1013107
+  },
+  {
+    "run_id": "20260908_v4_formal_caltech_clip_vision_lora_s42",
+    "source": "/DATA/DATA1/guest3/2026OpticsMoE/TransferFromElectricity/tasks/t01_object_retrieval/runs/simulation/20260908_v4_formal_caltech_clip_vision_lora_s42/data_hashes.json",
+    "file": "data_hashes.json",
+    "sha256": "b7654cc0f96a3b8c627f1221299fa716b09b2c3d16ededd82ca633c8464888e8",
+    "bytes": 511858
+  },
+  {
+    "run_id": "20260908_v4_formal_caltech_clip_vision_lora_s42",
+    "source": "/DATA/DATA1/guest3/2026OpticsMoE/TransferFromElectricity/tasks/t01_object_retrieval/runs/simulation/20260908_v4_formal_caltech_clip_vision_lora_s42/config.yaml",
+    "file": "config.yaml",
+    "sha256": "45f1f41878f462f5bc827a9c291c7eb9f7a4514568dcb2a2b2ea0532f217cc6c",
+    "bytes": 11503
+  },
+  {
+    "run_id": "20260908_v4_formal_caltech_clip_vision_lora_s42",
+    "source": "/DATA/DATA1/guest3/2026OpticsMoE/TransferFromElectricity/tasks/t01_object_retrieval/runs/simulation/20260908_v4_formal_caltech_clip_vision_lora_s42/fixed_references.json",
+    "file": "fixed_references.json",
+    "sha256": "360836be1164d92bdf9122292ea9d641146ff9c017e558618c16e1d256d8481a",
+    "bytes": 4480
+  },
+  {
+    "run_id": "20260908_v4_formal_caltech_clip_vision_lora_s42",
+    "source": "/DATA/DATA1/guest3/2026OpticsMoE/TransferFromElectricity/tasks/t01_object_retrieval/runs/simulation/20260908_v4_formal_caltech_clip_vision_lora_s42/generator_source_manifest.json",
+    "file": "generator_source_manifest.json",
+    "sha256": "a06788d1204e73a2710e16d08b250c2154ef54e966eb67a44309364009d8c550",
+    "bytes": 442
+  },
+  {
+    "run_id": "20260908_v4_formal_caltech_qwen_vision_pooled_lora_s42",
+    "evidence_type": "remote_checkpoint_sha256",
+    "source": "/DATA/DATA1/guest3/2026OpticsMoE/TransferFromElectricity/tasks/t01_object_retrieval/runs/simulation/20260908_v4_formal_caltech_qwen_vision_pooled_lora_s42/best_checkpoint.pt",
+    "file": "best_checkpoint.pt",
+    "sha256": "f829dcbc47de93353fc5270f9636782cc5d7f7d282ea4080a4da03b8f8521248",
+    "bytes": 81166448,
+    "downloaded": false
+  },
+  {
+    "run_id": "20260908_v4_formal_caltech_qwen_vision_pooled_lora_s42",
+    "evidence_type": "remote_checkpoint_sha256",
+    "source": "/DATA/DATA1/guest3/2026OpticsMoE/TransferFromElectricity/tasks/t01_object_retrieval/runs/simulation/20260908_v4_formal_caltech_qwen_vision_pooled_lora_s42/last_checkpoint.pt",
+    "file": "last_checkpoint.pt",
+    "sha256": "21f4eec547708cb94001cfff31ca7ef575d0a13dac0f58fd6202791bc4368081",
+    "bytes": 81222000,
+    "downloaded": false
+  },
+  {
+    "run_id": "20260908_v4_formal_caltech_qwen_vision_pooled_lora_s42",
+    "source": "/DATA/DATA1/guest3/2026OpticsMoE/TransferFromElectricity/tasks/t01_object_retrieval/runs/simulation/20260908_v4_formal_caltech_qwen_vision_pooled_lora_s42/final_report.json",
+    "file": "final_report.json",
+    "sha256": "5201649089c08eafe04eb9a485beb05a3906957197d148498ab7228d49fe8313",
+    "bytes": 33063
+  },
+  {
+    "run_id": "20260908_v4_formal_caltech_qwen_vision_pooled_lora_s42",
+    "source": "/DATA/DATA1/guest3/2026OpticsMoE/TransferFromElectricity/tasks/t01_object_retrieval/runs/simulation/20260908_v4_formal_caltech_qwen_vision_pooled_lora_s42/history.json",
+    "file": "history.json",
+    "sha256": "f330b1a058fa3d3ac9a76495f95bd723be478e7d0770f81bd5d1f6c24bbe5677",
+    "bytes": 169723
+  },
+  {
+    "run_id": "20260908_v4_formal_caltech_qwen_vision_pooled_lora_s42",
+    "source": "/DATA/DATA1/guest3/2026OpticsMoE/TransferFromElectricity/tasks/t01_object_retrieval/runs/simulation/20260908_v4_formal_caltech_qwen_vision_pooled_lora_s42/epoch_timing.json",
+    "file": "epoch_timing.json",
+    "sha256": "a04fddc004458b168a9721f67c46384c83021b355664b6461a6d5c7c606d4370",
+    "bytes": 10329
+  },
+  {
+    "run_id": "20260908_v4_formal_caltech_qwen_vision_pooled_lora_s42",
+    "source": "/DATA/DATA1/guest3/2026OpticsMoE/TransferFromElectricity/tasks/t01_object_retrieval/runs/simulation/20260908_v4_formal_caltech_qwen_vision_pooled_lora_s42/protocol.json",
+    "file": "protocol.json",
+    "sha256": "b51f7c5b4d0a138cd5523c37aefed4ffdc681985db9f2feecceab203e77c8a33",
+    "bytes": 2044
+  },
+  {
+    "run_id": "20260908_v4_formal_caltech_qwen_vision_pooled_lora_s42",
+    "source": "/DATA/DATA1/guest3/2026OpticsMoE/TransferFromElectricity/tasks/t01_object_retrieval/runs/simulation/20260908_v4_formal_caltech_qwen_vision_pooled_lora_s42/environment.json",
+    "file": "environment.json",
+    "sha256": "f958253f4cd6833a74f8ad6e3d9ee5c05a024cfc5f479175d4232b12c7350aea",
+    "bytes": 1139
+  },
+  {
+    "run_id": "20260908_v4_formal_caltech_qwen_vision_pooled_lora_s42",
+    "source": "/DATA/DATA1/guest3/2026OpticsMoE/TransferFromElectricity/tasks/t01_object_retrieval/runs/simulation/20260908_v4_formal_caltech_qwen_vision_pooled_lora_s42/zero_initialization.json",
+    "file": "zero_initialization.json",
+    "sha256": "6444fec4f618bf4eec20ffd851df95dbcb5f809ee654edeffd1a1d2bc54e78ac",
+    "bytes": 2784
+  },
+  {
+    "run_id": "20260908_v4_formal_caltech_qwen_vision_pooled_lora_s42",
+    "source": "/DATA/DATA1/guest3/2026OpticsMoE/TransferFromElectricity/tasks/t01_object_retrieval/runs/simulation/20260908_v4_formal_caltech_qwen_vision_pooled_lora_s42/expert_bank.pt",
+    "file": "expert_bank.pt",
+    "sha256": "1b862b8fe41990d3362e8a73c63c5a4896c74f844d465b6139c142a210727a09",
+    "bytes": 6869104
+  },
+  {
+    "run_id": "20260908_v4_formal_caltech_qwen_vision_pooled_lora_s42",
+    "source": "/DATA/DATA1/guest3/2026OpticsMoE/TransferFromElectricity/tasks/t01_object_retrieval/runs/simulation/20260908_v4_formal_caltech_qwen_vision_pooled_lora_s42/gpu_execution.json",
+    "file": "gpu_execution.json",
+    "sha256": "5395cb45ded3b5a23e056f914fd6c254864320b3763e5fc2c494eb86da236036",
+    "bytes": 1076
+  },
+  {
+    "run_id": "20260908_v4_formal_caltech_qwen_vision_pooled_lora_s42",
+    "source": "/DATA/DATA1/guest3/2026OpticsMoE/TransferFromElectricity/tasks/t01_object_retrieval/runs/simulation/20260908_v4_formal_caltech_qwen_vision_pooled_lora_s42/architecture.json",
+    "file": "architecture.json",
+    "sha256": "ff5727327ac015968c4a3e92ce3130cebd6bfdcc923c2b7b7c6990b82b3c4cb6",
+    "bytes": 15857
+  },
+  {
+    "run_id": "20260908_v4_formal_caltech_qwen_vision_pooled_lora_s42",
+    "source": "/DATA/DATA1/guest3/2026OpticsMoE/TransferFromElectricity/tasks/t01_object_retrieval/runs/simulation/20260908_v4_formal_caltech_qwen_vision_pooled_lora_s42/initial_validation.json",
+    "file": "initial_validation.json",
+    "sha256": "3fd4a3407c24a7ef47dbdebc06ff4bd32dabd15c8fefb7d6f9ec12857e654386",
+    "bytes": 2724
+  },
+  {
+    "run_id": "20260908_v4_formal_caltech_qwen_vision_pooled_lora_s42",
+    "source": "/DATA/DATA1/guest3/2026OpticsMoE/TransferFromElectricity/tasks/t01_object_retrieval/runs/simulation/20260908_v4_formal_caltech_qwen_vision_pooled_lora_s42/initialization.json",
+    "file": "initialization.json",
+    "sha256": "120e5d04b152e6289350cea6ba6fb6e72759a8086cc92d135793fe07fff65e17",
+    "bytes": 1864
+  },
+  {
+    "run_id": "20260908_v4_formal_caltech_qwen_vision_pooled_lora_s42",
+    "source": "/DATA/DATA1/guest3/2026OpticsMoE/TransferFromElectricity/tasks/t01_object_retrieval/runs/simulation/20260908_v4_formal_caltech_qwen_vision_pooled_lora_s42/split.json",
+    "file": "split.json",
+    "sha256": "d8d21a4c2085c725dd6f25dae7b70030a13f2be6229581cc6a49c0c2c3868d11",
+    "bytes": 1013107
+  },
+  {
+    "run_id": "20260908_v4_formal_caltech_qwen_vision_pooled_lora_s42",
+    "source": "/DATA/DATA1/guest3/2026OpticsMoE/TransferFromElectricity/tasks/t01_object_retrieval/runs/simulation/20260908_v4_formal_caltech_qwen_vision_pooled_lora_s42/data_hashes.json",
+    "file": "data_hashes.json",
+    "sha256": "b7654cc0f96a3b8c627f1221299fa716b09b2c3d16ededd82ca633c8464888e8",
+    "bytes": 511858
+  },
+  {
+    "run_id": "20260908_v4_formal_caltech_qwen_vision_pooled_lora_s42",
+    "source": "/DATA/DATA1/guest3/2026OpticsMoE/TransferFromElectricity/tasks/t01_object_retrieval/runs/simulation/20260908_v4_formal_caltech_qwen_vision_pooled_lora_s42/config.yaml",
+    "file": "config.yaml",
+    "sha256": "5af07a2e9fb21771d964f90b525c609d2dac1790d15e70170cf3c43e34a080a7",
+    "bytes": 11517
+  },
+  {
+    "run_id": "20260908_v4_formal_caltech_qwen_vision_pooled_lora_s42",
+    "source": "/DATA/DATA1/guest3/2026OpticsMoE/TransferFromElectricity/tasks/t01_object_retrieval/runs/simulation/20260908_v4_formal_caltech_qwen_vision_pooled_lora_s42/fixed_references.json",
+    "file": "fixed_references.json",
+    "sha256": "360836be1164d92bdf9122292ea9d641146ff9c017e558618c16e1d256d8481a",
+    "bytes": 4480
+  },
+  {
+    "run_id": "20260908_v4_formal_caltech_qwen_vision_pooled_lora_s42",
+    "source": "/DATA/DATA1/guest3/2026OpticsMoE/TransferFromElectricity/tasks/t01_object_retrieval/runs/simulation/20260908_v4_formal_caltech_qwen_vision_pooled_lora_s42/generator_source_manifest.json",
+    "file": "generator_source_manifest.json",
+    "sha256": "2bd7af7339d264f1c7800c4b9c30763eaf2e6bfc3108739c0398b5590e29f744",
+    "bytes": 1069
+  },
+  {
+    "run_id": "20260908_v4_formal_caltech_qwen_vision_lora_s42",
+    "evidence_type": "remote_checkpoint_sha256",
+    "source": "/DATA/DATA1/guest3/2026OpticsMoE/TransferFromElectricity/tasks/t01_object_retrieval/runs/simulation/20260908_v4_formal_caltech_qwen_vision_lora_s42/best_checkpoint.pt",
+    "file": "best_checkpoint.pt",
+    "sha256": "44f222dde9251486ce59b51e249068343c2bd6f735c81fb1f64062a180029ac7",
+    "bytes": 81166448,
+    "downloaded": false
+  },
+  {
+    "run_id": "20260908_v4_formal_caltech_qwen_vision_lora_s42",
+    "evidence_type": "remote_checkpoint_sha256",
+    "source": "/DATA/DATA1/guest3/2026OpticsMoE/TransferFromElectricity/tasks/t01_object_retrieval/runs/simulation/20260908_v4_formal_caltech_qwen_vision_lora_s42/last_checkpoint.pt",
+    "file": "last_checkpoint.pt",
+    "sha256": "0b0efb9dcfb681ceb7d5c01180f2ef55356301ef1bf344e900b8bf160372350f",
+    "bytes": 81222000,
+    "downloaded": false
+  },
+  {
+    "run_id": "20260908_v4_formal_caltech_qwen_vision_lora_s42",
+    "source": "/DATA/DATA1/guest3/2026OpticsMoE/TransferFromElectricity/tasks/t01_object_retrieval/runs/simulation/20260908_v4_formal_caltech_qwen_vision_lora_s42/final_report.json",
+    "file": "final_report.json",
+    "sha256": "323d9da70af162ec9073bcb7b9918645fcaa12a0e9f37765c01c0eb557003af7",
+    "bytes": 32916
+  },
+  {
+    "run_id": "20260908_v4_formal_caltech_qwen_vision_lora_s42",
+    "source": "/DATA/DATA1/guest3/2026OpticsMoE/TransferFromElectricity/tasks/t01_object_retrieval/runs/simulation/20260908_v4_formal_caltech_qwen_vision_lora_s42/history.json",
+    "file": "history.json",
+    "sha256": "ad3a634b82da6613b4adaaa9ecf0c74ffc602e0bd92b660ccf8d0d37a7a08908",
+    "bytes": 169524
+  },
+  {
+    "run_id": "20260908_v4_formal_caltech_qwen_vision_lora_s42",
+    "source": "/DATA/DATA1/guest3/2026OpticsMoE/TransferFromElectricity/tasks/t01_object_retrieval/runs/simulation/20260908_v4_formal_caltech_qwen_vision_lora_s42/epoch_timing.json",
+    "file": "epoch_timing.json",
+    "sha256": "8220fea39ab13a70cb224da772aeaef6aa34ad0a257c3f20feb0fe2c1f4af263",
+    "bytes": 10322
+  },
+  {
+    "run_id": "20260908_v4_formal_caltech_qwen_vision_lora_s42",
+    "source": "/DATA/DATA1/guest3/2026OpticsMoE/TransferFromElectricity/tasks/t01_object_retrieval/runs/simulation/20260908_v4_formal_caltech_qwen_vision_lora_s42/protocol.json",
+    "file": "protocol.json",
+    "sha256": "85aa031f05301a7a4100de131dc71ffe0cd932b3fa62832f04f4bc0d9beb745d",
+    "bytes": 2037
+  },
+  {
+    "run_id": "20260908_v4_formal_caltech_qwen_vision_lora_s42",
+    "source": "/DATA/DATA1/guest3/2026OpticsMoE/TransferFromElectricity/tasks/t01_object_retrieval/runs/simulation/20260908_v4_formal_caltech_qwen_vision_lora_s42/environment.json",
+    "file": "environment.json",
+    "sha256": "ca6f435656a2200b77d03924c10455e0a31e8dcf7056a9e7502526b46fb829d1",
+    "bytes": 1125
+  },
+  {
+    "run_id": "20260908_v4_formal_caltech_qwen_vision_lora_s42",
+    "source": "/DATA/DATA1/guest3/2026OpticsMoE/TransferFromElectricity/tasks/t01_object_retrieval/runs/simulation/20260908_v4_formal_caltech_qwen_vision_lora_s42/zero_initialization.json",
+    "file": "zero_initialization.json",
+    "sha256": "6444fec4f618bf4eec20ffd851df95dbcb5f809ee654edeffd1a1d2bc54e78ac",
+    "bytes": 2784
+  },
+  {
+    "run_id": "20260908_v4_formal_caltech_qwen_vision_lora_s42",
+    "source": "/DATA/DATA1/guest3/2026OpticsMoE/TransferFromElectricity/tasks/t01_object_retrieval/runs/simulation/20260908_v4_formal_caltech_qwen_vision_lora_s42/expert_bank.pt",
+    "file": "expert_bank.pt",
+    "sha256": "9003e49a94f0dbccbc40896df3fead4531481e8dcd57de06351058bd89b4cab0",
+    "bytes": 6869104
+  },
+  {
+    "run_id": "20260908_v4_formal_caltech_qwen_vision_lora_s42",
+    "source": "/DATA/DATA1/guest3/2026OpticsMoE/TransferFromElectricity/tasks/t01_object_retrieval/runs/simulation/20260908_v4_formal_caltech_qwen_vision_lora_s42/gpu_execution.json",
+    "file": "gpu_execution.json",
+    "sha256": "126071793633866ab306c132cab0addd86f5e7d35a6c952761b286e0881e3cbe",
+    "bytes": 1089
+  },
+  {
+    "run_id": "20260908_v4_formal_caltech_qwen_vision_lora_s42",
+    "source": "/DATA/DATA1/guest3/2026OpticsMoE/TransferFromElectricity/tasks/t01_object_retrieval/runs/simulation/20260908_v4_formal_caltech_qwen_vision_lora_s42/architecture.json",
+    "file": "architecture.json",
+    "sha256": "a231c645101a7b4f4db364ba0497381f9aca05660223c7e2a05a6a7cc4a1e099",
+    "bytes": 15851
+  },
+  {
+    "run_id": "20260908_v4_formal_caltech_qwen_vision_lora_s42",
+    "source": "/DATA/DATA1/guest3/2026OpticsMoE/TransferFromElectricity/tasks/t01_object_retrieval/runs/simulation/20260908_v4_formal_caltech_qwen_vision_lora_s42/initial_validation.json",
+    "file": "initial_validation.json",
+    "sha256": "3fd4a3407c24a7ef47dbdebc06ff4bd32dabd15c8fefb7d6f9ec12857e654386",
+    "bytes": 2724
+  },
+  {
+    "run_id": "20260908_v4_formal_caltech_qwen_vision_lora_s42",
+    "source": "/DATA/DATA1/guest3/2026OpticsMoE/TransferFromElectricity/tasks/t01_object_retrieval/runs/simulation/20260908_v4_formal_caltech_qwen_vision_lora_s42/initialization.json",
+    "file": "initialization.json",
+    "sha256": "120e5d04b152e6289350cea6ba6fb6e72759a8086cc92d135793fe07fff65e17",
+    "bytes": 1864
+  },
+  {
+    "run_id": "20260908_v4_formal_caltech_qwen_vision_lora_s42",
+    "source": "/DATA/DATA1/guest3/2026OpticsMoE/TransferFromElectricity/tasks/t01_object_retrieval/runs/simulation/20260908_v4_formal_caltech_qwen_vision_lora_s42/split.json",
+    "file": "split.json",
+    "sha256": "d8d21a4c2085c725dd6f25dae7b70030a13f2be6229581cc6a49c0c2c3868d11",
+    "bytes": 1013107
+  },
+  {
+    "run_id": "20260908_v4_formal_caltech_qwen_vision_lora_s42",
+    "source": "/DATA/DATA1/guest3/2026OpticsMoE/TransferFromElectricity/tasks/t01_object_retrieval/runs/simulation/20260908_v4_formal_caltech_qwen_vision_lora_s42/data_hashes.json",
+    "file": "data_hashes.json",
+    "sha256": "b7654cc0f96a3b8c627f1221299fa716b09b2c3d16ededd82ca633c8464888e8",
+    "bytes": 511858
+  },
+  {
+    "run_id": "20260908_v4_formal_caltech_qwen_vision_lora_s42",
+    "source": "/DATA/DATA1/guest3/2026OpticsMoE/TransferFromElectricity/tasks/t01_object_retrieval/runs/simulation/20260908_v4_formal_caltech_qwen_vision_lora_s42/config.yaml",
+    "file": "config.yaml",
+    "sha256": "e7a2c86719c777f50aede4975afa1a5564457ecb375610a6b99b6bd5bac525f5",
+    "bytes": 11503
+  },
+  {
+    "run_id": "20260908_v4_formal_caltech_qwen_vision_lora_s42",
+    "source": "/DATA/DATA1/guest3/2026OpticsMoE/TransferFromElectricity/tasks/t01_object_retrieval/runs/simulation/20260908_v4_formal_caltech_qwen_vision_lora_s42/fixed_references.json",
+    "file": "fixed_references.json",
+    "sha256": "360836be1164d92bdf9122292ea9d641146ff9c017e558618c16e1d256d8481a",
+    "bytes": 4480
+  },
+  {
+    "run_id": "20260908_v4_formal_caltech_qwen_vision_lora_s42",
+    "source": "/DATA/DATA1/guest3/2026OpticsMoE/TransferFromElectricity/tasks/t01_object_retrieval/runs/simulation/20260908_v4_formal_caltech_qwen_vision_lora_s42/generator_source_manifest.json",
+    "file": "generator_source_manifest.json",
+    "sha256": "2bd7af7339d264f1c7800c4b9c30763eaf2e6bfc3108739c0398b5590e29f744",
+    "bytes": 1069
+  },
+  {
+    "run_id": "20260908_v4_formal_caltech_qwen_vision_global_lora_s42",
+    "evidence_type": "remote_checkpoint_sha256",
+    "source": "/DATA/DATA1/guest3/2026OpticsMoE/TransferFromElectricity/tasks/t01_object_retrieval/runs/simulation/20260908_v4_formal_caltech_qwen_vision_global_lora_s42/best_checkpoint.pt",
+    "file": "best_checkpoint.pt",
+    "sha256": "73e8ccf36c423f3d09957d54b62184bbca3308f998cb8a5339b9ec00493f414b",
+    "bytes": 85227872,
+    "downloaded": false
+  },
+  {
+    "run_id": "20260908_v4_formal_caltech_qwen_vision_global_lora_s42",
+    "evidence_type": "remote_checkpoint_sha256",
+    "source": "/DATA/DATA1/guest3/2026OpticsMoE/TransferFromElectricity/tasks/t01_object_retrieval/runs/simulation/20260908_v4_formal_caltech_qwen_vision_global_lora_s42/last_checkpoint.pt",
+    "file": "last_checkpoint.pt",
+    "sha256": "9da66de88feac15e0508888a1b3bd1675ec0945e30e05cb7986846401dbd8fbc",
+    "bytes": 85227872,
+    "downloaded": false
+  },
+  {
+    "run_id": "20260908_v4_formal_caltech_qwen_vision_global_lora_s42",
+    "source": "/DATA/DATA1/guest3/2026OpticsMoE/TransferFromElectricity/tasks/t01_object_retrieval/runs/simulation/20260908_v4_formal_caltech_qwen_vision_global_lora_s42/final_report.json",
+    "file": "final_report.json",
+    "sha256": "acbd5cc12f08517ca3209d39cbb37d2dc7acf4da75c4e8d95939dd9e6bf48ca3",
+    "bytes": 32994
+  },
+  {
+    "run_id": "20260908_v4_formal_caltech_qwen_vision_global_lora_s42",
+    "source": "/DATA/DATA1/guest3/2026OpticsMoE/TransferFromElectricity/tasks/t01_object_retrieval/runs/simulation/20260908_v4_formal_caltech_qwen_vision_global_lora_s42/history.json",
+    "file": "history.json",
+    "sha256": "43640e933dc29015485fb8318fc4df40f52abb3920e8bb0b4754f4371ab12322",
+    "bytes": 170734
+  },
+  {
+    "run_id": "20260908_v4_formal_caltech_qwen_vision_global_lora_s42",
+    "source": "/DATA/DATA1/guest3/2026OpticsMoE/TransferFromElectricity/tasks/t01_object_retrieval/runs/simulation/20260908_v4_formal_caltech_qwen_vision_global_lora_s42/epoch_timing.json",
+    "file": "epoch_timing.json",
+    "sha256": "13f86a12329d7196d0d87fae0dfaddba2bdf0182c4ab58e2b76d126c902e953a",
+    "bytes": 10336
+  },
+  {
+    "run_id": "20260908_v4_formal_caltech_qwen_vision_global_lora_s42",
+    "source": "/DATA/DATA1/guest3/2026OpticsMoE/TransferFromElectricity/tasks/t01_object_retrieval/runs/simulation/20260908_v4_formal_caltech_qwen_vision_global_lora_s42/protocol.json",
+    "file": "protocol.json",
+    "sha256": "7ce8a38b5ff12c1ba3f3a51d64de8ecc25b3764cd28b980ecbcc12d70b74a54f",
+    "bytes": 2044
+  },
+  {
+    "run_id": "20260908_v4_formal_caltech_qwen_vision_global_lora_s42",
+    "source": "/DATA/DATA1/guest3/2026OpticsMoE/TransferFromElectricity/tasks/t01_object_retrieval/runs/simulation/20260908_v4_formal_caltech_qwen_vision_global_lora_s42/environment.json",
+    "file": "environment.json",
+    "sha256": "ff409424245dcf7d6f10c3924c975dba56af5724fbf494e2205b4755c7b8e335",
+    "bytes": 1139
+  },
+  {
+    "run_id": "20260908_v4_formal_caltech_qwen_vision_global_lora_s42",
+    "source": "/DATA/DATA1/guest3/2026OpticsMoE/TransferFromElectricity/tasks/t01_object_retrieval/runs/simulation/20260908_v4_formal_caltech_qwen_vision_global_lora_s42/zero_initialization.json",
+    "file": "zero_initialization.json",
+    "sha256": "6444fec4f618bf4eec20ffd851df95dbcb5f809ee654edeffd1a1d2bc54e78ac",
+    "bytes": 2784
+  },
+  {
+    "run_id": "20260908_v4_formal_caltech_qwen_vision_global_lora_s42",
+    "source": "/DATA/DATA1/guest3/2026OpticsMoE/TransferFromElectricity/tasks/t01_object_retrieval/runs/simulation/20260908_v4_formal_caltech_qwen_vision_global_lora_s42/expert_bank.pt",
+    "file": "expert_bank.pt",
+    "sha256": "3b84738bd69d44c5ffbb5e7eff0b71664a6fb42f521fad65e9d4226afb5e8407",
+    "bytes": 6869104
+  },
+  {
+    "run_id": "20260908_v4_formal_caltech_qwen_vision_global_lora_s42",
+    "source": "/DATA/DATA1/guest3/2026OpticsMoE/TransferFromElectricity/tasks/t01_object_retrieval/runs/simulation/20260908_v4_formal_caltech_qwen_vision_global_lora_s42/gpu_execution.json",
+    "file": "gpu_execution.json",
+    "sha256": "88a7f761af635b8f1f6a1099ef27938ba9bd515b419b0389b676bd6bfd4626e7",
+    "bytes": 1089
+  },
+  {
+    "run_id": "20260908_v4_formal_caltech_qwen_vision_global_lora_s42",
+    "source": "/DATA/DATA1/guest3/2026OpticsMoE/TransferFromElectricity/tasks/t01_object_retrieval/runs/simulation/20260908_v4_formal_caltech_qwen_vision_global_lora_s42/architecture.json",
+    "file": "architecture.json",
+    "sha256": "aeded4e2dbbbd8b1a93cc8b90e39c1d621287c4b35e59ef69a973d5ff021afb0",
+    "bytes": 18405
+  },
+  {
+    "run_id": "20260908_v4_formal_caltech_qwen_vision_global_lora_s42",
+    "source": "/DATA/DATA1/guest3/2026OpticsMoE/TransferFromElectricity/tasks/t01_object_retrieval/runs/simulation/20260908_v4_formal_caltech_qwen_vision_global_lora_s42/initial_validation.json",
+    "file": "initial_validation.json",
+    "sha256": "3fd4a3407c24a7ef47dbdebc06ff4bd32dabd15c8fefb7d6f9ec12857e654386",
+    "bytes": 2724
+  },
+  {
+    "run_id": "20260908_v4_formal_caltech_qwen_vision_global_lora_s42",
+    "source": "/DATA/DATA1/guest3/2026OpticsMoE/TransferFromElectricity/tasks/t01_object_retrieval/runs/simulation/20260908_v4_formal_caltech_qwen_vision_global_lora_s42/initialization.json",
+    "file": "initialization.json",
+    "sha256": "120e5d04b152e6289350cea6ba6fb6e72759a8086cc92d135793fe07fff65e17",
+    "bytes": 1864
+  },
+  {
+    "run_id": "20260908_v4_formal_caltech_qwen_vision_global_lora_s42",
+    "source": "/DATA/DATA1/guest3/2026OpticsMoE/TransferFromElectricity/tasks/t01_object_retrieval/runs/simulation/20260908_v4_formal_caltech_qwen_vision_global_lora_s42/split.json",
+    "file": "split.json",
+    "sha256": "d8d21a4c2085c725dd6f25dae7b70030a13f2be6229581cc6a49c0c2c3868d11",
+    "bytes": 1013107
+  },
+  {
+    "run_id": "20260908_v4_formal_caltech_qwen_vision_global_lora_s42",
+    "source": "/DATA/DATA1/guest3/2026OpticsMoE/TransferFromElectricity/tasks/t01_object_retrieval/runs/simulation/20260908_v4_formal_caltech_qwen_vision_global_lora_s42/data_hashes.json",
+    "file": "data_hashes.json",
+    "sha256": "b7654cc0f96a3b8c627f1221299fa716b09b2c3d16ededd82ca633c8464888e8",
+    "bytes": 511858
+  },
+  {
+    "run_id": "20260908_v4_formal_caltech_qwen_vision_global_lora_s42",
+    "source": "/DATA/DATA1/guest3/2026OpticsMoE/TransferFromElectricity/tasks/t01_object_retrieval/runs/simulation/20260908_v4_formal_caltech_qwen_vision_global_lora_s42/config.yaml",
+    "file": "config.yaml",
+    "sha256": "513b68573a31c8a3ecd4f05200e22f834739f6d52bc9f8cd3f747f7ad4071863",
+    "bytes": 11517
+  },
+  {
+    "run_id": "20260908_v4_formal_caltech_qwen_vision_global_lora_s42",
+    "source": "/DATA/DATA1/guest3/2026OpticsMoE/TransferFromElectricity/tasks/t01_object_retrieval/runs/simulation/20260908_v4_formal_caltech_qwen_vision_global_lora_s42/fixed_references.json",
+    "file": "fixed_references.json",
+    "sha256": "360836be1164d92bdf9122292ea9d641146ff9c017e558618c16e1d256d8481a",
+    "bytes": 4480
+  },
+  {
+    "run_id": "20260908_v4_formal_caltech_qwen_vision_global_lora_s42",
+    "source": "/DATA/DATA1/guest3/2026OpticsMoE/TransferFromElectricity/tasks/t01_object_retrieval/runs/simulation/20260908_v4_formal_caltech_qwen_vision_global_lora_s42/generator_source_manifest.json",
+    "file": "generator_source_manifest.json",
+    "sha256": "2bd7af7339d264f1c7800c4b9c30763eaf2e6bfc3108739c0398b5590e29f744",
+    "bytes": 1069
+  },
+  {
+    "run_id": "20260908_v4_formal_cifar_direct_s42",
+    "evidence_type": "remote_checkpoint_sha256",
+    "source": "/DATA/DATA1/guest3/2026OpticsMoE/TransferFromElectricity/tasks/t01_object_retrieval/runs/simulation/20260908_v4_formal_cifar_direct_s42/best_checkpoint.pt",
+    "file": "best_checkpoint.pt",
+    "sha256": "9adedd347335f9eb462875c3b40a40b6460d25b18555b796f3be58d98a90cb8d",
+    "bytes": 50474374,
+    "downloaded": false
+  },
+  {
+    "run_id": "20260908_v4_formal_cifar_direct_s42",
+    "evidence_type": "remote_checkpoint_sha256",
+    "source": "/DATA/DATA1/guest3/2026OpticsMoE/TransferFromElectricity/tasks/t01_object_retrieval/runs/simulation/20260908_v4_formal_cifar_direct_s42/last_checkpoint.pt",
+    "file": "last_checkpoint.pt",
+    "sha256": "b58469d4e05206ff4a8e2af37c1913ce87a63b7fc875524df7b213bac7bf9079",
+    "bytes": 50474374,
+    "downloaded": false
+  },
+  {
+    "run_id": "20260908_v4_formal_cifar_direct_s42",
+    "source": "/DATA/DATA1/guest3/2026OpticsMoE/TransferFromElectricity/tasks/t01_object_retrieval/runs/simulation/20260908_v4_formal_cifar_direct_s42/final_report.json",
+    "file": "final_report.json",
+    "sha256": "f9ee5d279ad887ac11643786e1203f4feb9c626cdc93ebe45199d11aa99f6cca",
+    "bytes": 29382
+  },
+  {
+    "run_id": "20260908_v4_formal_cifar_direct_s42",
+    "source": "/DATA/DATA1/guest3/2026OpticsMoE/TransferFromElectricity/tasks/t01_object_retrieval/runs/simulation/20260908_v4_formal_cifar_direct_s42/history.json",
+    "file": "history.json",
+    "sha256": "d049e7951b2c076caf52ba1000f6748dbccd5623438892a5e7e41f402a9bd793",
+    "bytes": 166913
+  },
+  {
+    "run_id": "20260908_v4_formal_cifar_direct_s42",
+    "source": "/DATA/DATA1/guest3/2026OpticsMoE/TransferFromElectricity/tasks/t01_object_retrieval/runs/simulation/20260908_v4_formal_cifar_direct_s42/epoch_timing.json",
+    "file": "epoch_timing.json",
+    "sha256": "720d0eb027e09a2f22df31dc24a64b877434a6248ecf64915d18d0ed9fea0246",
+    "bytes": 10286
+  },
+  {
+    "run_id": "20260908_v4_formal_cifar_direct_s42",
+    "source": "/DATA/DATA1/guest3/2026OpticsMoE/TransferFromElectricity/tasks/t01_object_retrieval/runs/simulation/20260908_v4_formal_cifar_direct_s42/protocol.json",
+    "file": "protocol.json",
+    "sha256": "98d2405331fd4731dc105fd5a2fafc5fdbe8b0dacf33c3d898be3e9ec07a2ca4",
+    "bytes": 2345
+  },
+  {
+    "run_id": "20260908_v4_formal_cifar_direct_s42",
+    "source": "/DATA/DATA1/guest3/2026OpticsMoE/TransferFromElectricity/tasks/t01_object_retrieval/runs/simulation/20260908_v4_formal_cifar_direct_s42/environment.json",
+    "file": "environment.json",
+    "sha256": "47d2f6edfad4bd411c7e83f0e501e8a6a58a5ed0dfefd55bf05f3132459d1627",
+    "bytes": 1101
+  },
+  {
+    "run_id": "20260908_v4_formal_cifar_direct_s42",
+    "source": "/DATA/DATA1/guest3/2026OpticsMoE/TransferFromElectricity/tasks/t01_object_retrieval/runs/simulation/20260908_v4_formal_cifar_direct_s42/zero_initialization.json",
+    "file": "zero_initialization.json",
+    "sha256": "6444fec4f618bf4eec20ffd851df95dbcb5f809ee654edeffd1a1d2bc54e78ac",
+    "bytes": 2784
+  },
+  {
+    "run_id": "20260908_v4_formal_cifar_direct_s42",
+    "source": "/DATA/DATA1/guest3/2026OpticsMoE/TransferFromElectricity/tasks/t01_object_retrieval/runs/simulation/20260908_v4_formal_cifar_direct_s42/expert_bank.pt",
+    "file": "expert_bank.pt",
+    "sha256": "82dc225b47a50568ecd0e51255e1b608944ba32a2743a1b4d2737445350dc897",
+    "bytes": 6869104
+  },
+  {
+    "run_id": "20260908_v4_formal_cifar_direct_s42",
+    "source": "/DATA/DATA1/guest3/2026OpticsMoE/TransferFromElectricity/tasks/t01_object_retrieval/runs/simulation/20260908_v4_formal_cifar_direct_s42/gpu_execution.json",
+    "file": "gpu_execution.json",
+    "sha256": "81953ed1fac768b05cef33b771259f2b7bd8a1f238155cb4c2d1f4034d44275c",
+    "bytes": 999
+  },
+  {
+    "run_id": "20260908_v4_formal_cifar_direct_s42",
+    "source": "/DATA/DATA1/guest3/2026OpticsMoE/TransferFromElectricity/tasks/t01_object_retrieval/runs/simulation/20260908_v4_formal_cifar_direct_s42/architecture.json",
+    "file": "architecture.json",
+    "sha256": "af132399969f0853e9602f5c3adf2b916902645eca524f1d2bb975f693f221d5",
+    "bytes": 10588
+  },
+  {
+    "run_id": "20260908_v4_formal_cifar_direct_s42",
+    "source": "/DATA/DATA1/guest3/2026OpticsMoE/TransferFromElectricity/tasks/t01_object_retrieval/runs/simulation/20260908_v4_formal_cifar_direct_s42/initial_validation.json",
+    "file": "initial_validation.json",
+    "sha256": "2d50a2e9e177078f9f5f7691d44f5cac8a314c86256d4d86a73a79ebdaf0ce75",
+    "bytes": 2640
+  },
+  {
+    "run_id": "20260908_v4_formal_cifar_direct_s42",
+    "source": "/DATA/DATA1/guest3/2026OpticsMoE/TransferFromElectricity/tasks/t01_object_retrieval/runs/simulation/20260908_v4_formal_cifar_direct_s42/initialization.json",
+    "file": "initialization.json",
+    "sha256": "120e5d04b152e6289350cea6ba6fb6e72759a8086cc92d135793fe07fff65e17",
+    "bytes": 1864
+  },
+  {
+    "run_id": "20260908_v4_formal_cifar_direct_s42",
+    "source": "/DATA/DATA1/guest3/2026OpticsMoE/TransferFromElectricity/tasks/t01_object_retrieval/runs/simulation/20260908_v4_formal_cifar_direct_s42/split.json",
+    "file": "split.json",
+    "sha256": "039d16ca675201a6ef9d8a8559df2621e96516b659fcc0b16fa23dade44d34aa",
+    "bytes": 2072824
+  },
+  {
+    "run_id": "20260908_v4_formal_cifar_direct_s42",
+    "source": "/DATA/DATA1/guest3/2026OpticsMoE/TransferFromElectricity/tasks/t01_object_retrieval/runs/simulation/20260908_v4_formal_cifar_direct_s42/data_hashes.json",
+    "file": "data_hashes.json",
+    "sha256": "1ea7608e4fca337e3d39c56425756d6cac4f3cc912636729f3a9ad3b1422bc18",
+    "bytes": 1024402
+  },
+  {
+    "run_id": "20260908_v4_formal_cifar_direct_s42",
+    "source": "/DATA/DATA1/guest3/2026OpticsMoE/TransferFromElectricity/tasks/t01_object_retrieval/runs/simulation/20260908_v4_formal_cifar_direct_s42/config.yaml",
+    "file": "config.yaml",
+    "sha256": "f2d4800a17e0bc462bfc84521e742c329726a7830a0c1421e4143a4293b78264",
+    "bytes": 11796
+  },
+  {
+    "run_id": "20260908_v4_formal_cifar_clip_vision_lora_s42",
+    "evidence_type": "remote_checkpoint_sha256",
+    "source": "/DATA/DATA1/guest3/2026OpticsMoE/TransferFromElectricity/tasks/t01_object_retrieval/runs/simulation/20260908_v4_formal_cifar_clip_vision_lora_s42/best_checkpoint.pt",
+    "file": "best_checkpoint.pt",
+    "sha256": "9464fa29859259fe7d0be6d8ec44a34ca9cc555e6e2638efd20ca704720e5053",
+    "bytes": 67338090,
+    "downloaded": false
+  },
+  {
+    "run_id": "20260908_v4_formal_cifar_clip_vision_lora_s42",
+    "evidence_type": "remote_checkpoint_sha256",
+    "source": "/DATA/DATA1/guest3/2026OpticsMoE/TransferFromElectricity/tasks/t01_object_retrieval/runs/simulation/20260908_v4_formal_cifar_clip_vision_lora_s42/last_checkpoint.pt",
+    "file": "last_checkpoint.pt",
+    "sha256": "534de71dbd24c1ef6fd58fc5eba9ac6f7222dec7993eaa578e3706d00edf95b5",
+    "bytes": 67338090,
+    "downloaded": false
+  },
+  {
+    "run_id": "20260908_v4_formal_cifar_clip_vision_lora_s42",
+    "source": "/DATA/DATA1/guest3/2026OpticsMoE/TransferFromElectricity/tasks/t01_object_retrieval/runs/simulation/20260908_v4_formal_cifar_clip_vision_lora_s42/final_report.json",
+    "file": "final_report.json",
+    "sha256": "923d4ed9ea9c63f0f5e380b9454b72b0de68fd3a191328663149fb1e34141547",
+    "bytes": 33789
+  },
+  {
+    "run_id": "20260908_v4_formal_cifar_clip_vision_lora_s42",
+    "source": "/DATA/DATA1/guest3/2026OpticsMoE/TransferFromElectricity/tasks/t01_object_retrieval/runs/simulation/20260908_v4_formal_cifar_clip_vision_lora_s42/history.json",
+    "file": "history.json",
+    "sha256": "3b16aa0b505d6325beb55c2f58bd43179eea474d74417db207d7147ca52cc85b",
+    "bytes": 170709
+  },
+  {
+    "run_id": "20260908_v4_formal_cifar_clip_vision_lora_s42",
+    "source": "/DATA/DATA1/guest3/2026OpticsMoE/TransferFromElectricity/tasks/t01_object_retrieval/runs/simulation/20260908_v4_formal_cifar_clip_vision_lora_s42/epoch_timing.json",
+    "file": "epoch_timing.json",
+    "sha256": "f8a67f6446daa28b3197d20d6ad3217ec3dbd5db2e7560d7e1d2c7da4831e818",
+    "bytes": 10264
+  },
+  {
+    "run_id": "20260908_v4_formal_cifar_clip_vision_lora_s42",
+    "source": "/DATA/DATA1/guest3/2026OpticsMoE/TransferFromElectricity/tasks/t01_object_retrieval/runs/simulation/20260908_v4_formal_cifar_clip_vision_lora_s42/protocol.json",
+    "file": "protocol.json",
+    "sha256": "89dfe20eec20d0e9227f0f2af4b577346edf6be9ba49a23c91afc752eee6198b",
+    "bytes": 2355
+  },
+  {
+    "run_id": "20260908_v4_formal_cifar_clip_vision_lora_s42",
+    "source": "/DATA/DATA1/guest3/2026OpticsMoE/TransferFromElectricity/tasks/t01_object_retrieval/runs/simulation/20260908_v4_formal_cifar_clip_vision_lora_s42/environment.json",
+    "file": "environment.json",
+    "sha256": "cf2ea1b941112d95051e694253db39229f5111d7fee7251269e539f4c5e086c8",
+    "bytes": 1121
+  },
+  {
+    "run_id": "20260908_v4_formal_cifar_clip_vision_lora_s42",
+    "source": "/DATA/DATA1/guest3/2026OpticsMoE/TransferFromElectricity/tasks/t01_object_retrieval/runs/simulation/20260908_v4_formal_cifar_clip_vision_lora_s42/zero_initialization.json",
+    "file": "zero_initialization.json",
+    "sha256": "6444fec4f618bf4eec20ffd851df95dbcb5f809ee654edeffd1a1d2bc54e78ac",
+    "bytes": 2784
+  },
+  {
+    "run_id": "20260908_v4_formal_cifar_clip_vision_lora_s42",
+    "source": "/DATA/DATA1/guest3/2026OpticsMoE/TransferFromElectricity/tasks/t01_object_retrieval/runs/simulation/20260908_v4_formal_cifar_clip_vision_lora_s42/expert_bank.pt",
+    "file": "expert_bank.pt",
+    "sha256": "646839832cb046c433d5a633b5fa42894a1233c6fc5079343ecd55806004e9cc",
+    "bytes": 6869104
+  },
+  {
+    "run_id": "20260908_v4_formal_cifar_clip_vision_lora_s42",
+    "source": "/DATA/DATA1/guest3/2026OpticsMoE/TransferFromElectricity/tasks/t01_object_retrieval/runs/simulation/20260908_v4_formal_cifar_clip_vision_lora_s42/gpu_execution.json",
+    "file": "gpu_execution.json",
+    "sha256": "8bd8ccaa866867f995b7c235158af67d225d6247c6e1cc15efcef714cf131b17",
+    "bytes": 1040
+  },
+  {
+    "run_id": "20260908_v4_formal_cifar_clip_vision_lora_s42",
+    "source": "/DATA/DATA1/guest3/2026OpticsMoE/TransferFromElectricity/tasks/t01_object_retrieval/runs/simulation/20260908_v4_formal_cifar_clip_vision_lora_s42/architecture.json",
+    "file": "architecture.json",
+    "sha256": "02e9999a23c9adcd1b001deba887ec30497ec832493c8feb094e67d8d0cc349a",
+    "bytes": 17907
+  },
+  {
+    "run_id": "20260908_v4_formal_cifar_clip_vision_lora_s42",
+    "source": "/DATA/DATA1/guest3/2026OpticsMoE/TransferFromElectricity/tasks/t01_object_retrieval/runs/simulation/20260908_v4_formal_cifar_clip_vision_lora_s42/initial_validation.json",
+    "file": "initial_validation.json",
+    "sha256": "2d50a2e9e177078f9f5f7691d44f5cac8a314c86256d4d86a73a79ebdaf0ce75",
+    "bytes": 2640
+  },
+  {
+    "run_id": "20260908_v4_formal_cifar_clip_vision_lora_s42",
+    "source": "/DATA/DATA1/guest3/2026OpticsMoE/TransferFromElectricity/tasks/t01_object_retrieval/runs/simulation/20260908_v4_formal_cifar_clip_vision_lora_s42/initialization.json",
+    "file": "initialization.json",
+    "sha256": "120e5d04b152e6289350cea6ba6fb6e72759a8086cc92d135793fe07fff65e17",
+    "bytes": 1864
+  },
+  {
+    "run_id": "20260908_v4_formal_cifar_clip_vision_lora_s42",
+    "source": "/DATA/DATA1/guest3/2026OpticsMoE/TransferFromElectricity/tasks/t01_object_retrieval/runs/simulation/20260908_v4_formal_cifar_clip_vision_lora_s42/split.json",
+    "file": "split.json",
+    "sha256": "039d16ca675201a6ef9d8a8559df2621e96516b659fcc0b16fa23dade44d34aa",
+    "bytes": 2072824
+  },
+  {
+    "run_id": "20260908_v4_formal_cifar_clip_vision_lora_s42",
+    "source": "/DATA/DATA1/guest3/2026OpticsMoE/TransferFromElectricity/tasks/t01_object_retrieval/runs/simulation/20260908_v4_formal_cifar_clip_vision_lora_s42/data_hashes.json",
+    "file": "data_hashes.json",
+    "sha256": "1ea7608e4fca337e3d39c56425756d6cac4f3cc912636729f3a9ad3b1422bc18",
+    "bytes": 1024402
+  },
+  {
+    "run_id": "20260908_v4_formal_cifar_clip_vision_lora_s42",
+    "source": "/DATA/DATA1/guest3/2026OpticsMoE/TransferFromElectricity/tasks/t01_object_retrieval/runs/simulation/20260908_v4_formal_cifar_clip_vision_lora_s42/config.yaml",
+    "file": "config.yaml",
+    "sha256": "e0c15d4f1ae5b8392cda921189dbfe9145fd90c12d273f6fbd00bee103dc289e",
+    "bytes": 11816
+  },
+  {
+    "run_id": "20260908_v4_formal_cifar_clip_vision_lora_s42",
+    "source": "/DATA/DATA1/guest3/2026OpticsMoE/TransferFromElectricity/tasks/t01_object_retrieval/runs/simulation/20260908_v4_formal_cifar_clip_vision_lora_s42/fixed_references.json",
+    "file": "fixed_references.json",
+    "sha256": "fc587b6c59ee64653ed86a966f892cf6f7f76529d3daee0df1f7589e405ccd71",
+    "bytes": 4395
+  },
+  {
+    "run_id": "20260908_v4_formal_cifar_clip_vision_lora_s42",
+    "source": "/DATA/DATA1/guest3/2026OpticsMoE/TransferFromElectricity/tasks/t01_object_retrieval/runs/simulation/20260908_v4_formal_cifar_clip_vision_lora_s42/generator_source_manifest.json",
+    "file": "generator_source_manifest.json",
+    "sha256": "a06788d1204e73a2710e16d08b250c2154ef54e966eb67a44309364009d8c550",
+    "bytes": 442
+  },
+  {
+    "run_id": "20260908_v4_formal_cifar_qwen_vision_pooled_lora_s42",
+    "evidence_type": "remote_checkpoint_sha256",
+    "source": "/DATA/DATA1/guest3/2026OpticsMoE/TransferFromElectricity/tasks/t01_object_retrieval/runs/simulation/20260908_v4_formal_cifar_qwen_vision_pooled_lora_s42/best_checkpoint.pt",
+    "file": "best_checkpoint.pt",
+    "sha256": "02ababad1afe8ec1bbb42b2489a18c82b2804adb1fa4d1d87b66fef883fc1075",
+    "bytes": 81194032,
+    "downloaded": false
+  },
+  {
+    "run_id": "20260908_v4_formal_cifar_qwen_vision_pooled_lora_s42",
+    "evidence_type": "remote_checkpoint_sha256",
+    "source": "/DATA/DATA1/guest3/2026OpticsMoE/TransferFromElectricity/tasks/t01_object_retrieval/runs/simulation/20260908_v4_formal_cifar_qwen_vision_pooled_lora_s42/last_checkpoint.pt",
+    "file": "last_checkpoint.pt",
+    "sha256": "4c438aa7616b9e03c32a4025d34fef135a25ad497a1a7c7c5ad365bed055a74d",
+    "bytes": 81222256,
+    "downloaded": false
+  },
+  {
+    "run_id": "20260908_v4_formal_cifar_qwen_vision_pooled_lora_s42",
+    "source": "/DATA/DATA1/guest3/2026OpticsMoE/TransferFromElectricity/tasks/t01_object_retrieval/runs/simulation/20260908_v4_formal_cifar_qwen_vision_pooled_lora_s42/final_report.json",
+    "file": "final_report.json",
+    "sha256": "a4aa68577c502be2e279edb3a971e20194a96d4e985a8572855dd9e7a3015b72",
+    "bytes": 33725
+  },
+  {
+    "run_id": "20260908_v4_formal_cifar_qwen_vision_pooled_lora_s42",
+    "source": "/DATA/DATA1/guest3/2026OpticsMoE/TransferFromElectricity/tasks/t01_object_retrieval/runs/simulation/20260908_v4_formal_cifar_qwen_vision_pooled_lora_s42/history.json",
+    "file": "history.json",
+    "sha256": "a0e1c4db025ab455e187b5d44855408cfbd4ff4d3eab769f4fc9580044582bcc",
+    "bytes": 170660
+  },
+  {
+    "run_id": "20260908_v4_formal_cifar_qwen_vision_pooled_lora_s42",
+    "source": "/DATA/DATA1/guest3/2026OpticsMoE/TransferFromElectricity/tasks/t01_object_retrieval/runs/simulation/20260908_v4_formal_cifar_qwen_vision_pooled_lora_s42/epoch_timing.json",
+    "file": "epoch_timing.json",
+    "sha256": "7f597dca73f38635c12c8e14577ba0eb20902be9dd3cd8510236e35b1c42c703",
+    "bytes": 10306
+  },
+  {
+    "run_id": "20260908_v4_formal_cifar_qwen_vision_pooled_lora_s42",
+    "source": "/DATA/DATA1/guest3/2026OpticsMoE/TransferFromElectricity/tasks/t01_object_retrieval/runs/simulation/20260908_v4_formal_cifar_qwen_vision_pooled_lora_s42/protocol.json",
+    "file": "protocol.json",
+    "sha256": "a6a5d81ae365aef9ecd504882a90ed17f169a07ac8835e48151b45d7a5d947bd",
+    "bytes": 2362
+  },
+  {
+    "run_id": "20260908_v4_formal_cifar_qwen_vision_pooled_lora_s42",
+    "source": "/DATA/DATA1/guest3/2026OpticsMoE/TransferFromElectricity/tasks/t01_object_retrieval/runs/simulation/20260908_v4_formal_cifar_qwen_vision_pooled_lora_s42/environment.json",
+    "file": "environment.json",
+    "sha256": "a07374f5a3ad7647008bd19a3588fb27488e1a33c89e1b16996d5dd90a62f588",
+    "bytes": 1135
+  },
+  {
+    "run_id": "20260908_v4_formal_cifar_qwen_vision_pooled_lora_s42",
+    "source": "/DATA/DATA1/guest3/2026OpticsMoE/TransferFromElectricity/tasks/t01_object_retrieval/runs/simulation/20260908_v4_formal_cifar_qwen_vision_pooled_lora_s42/zero_initialization.json",
+    "file": "zero_initialization.json",
+    "sha256": "6444fec4f618bf4eec20ffd851df95dbcb5f809ee654edeffd1a1d2bc54e78ac",
+    "bytes": 2784
+  },
+  {
+    "run_id": "20260908_v4_formal_cifar_qwen_vision_pooled_lora_s42",
+    "source": "/DATA/DATA1/guest3/2026OpticsMoE/TransferFromElectricity/tasks/t01_object_retrieval/runs/simulation/20260908_v4_formal_cifar_qwen_vision_pooled_lora_s42/expert_bank.pt",
+    "file": "expert_bank.pt",
+    "sha256": "504027842bd28519a7a3270e7a7e18d5ec69a39b396f8a458866835cb4f5de31",
+    "bytes": 6869104
+  },
+  {
+    "run_id": "20260908_v4_formal_cifar_qwen_vision_pooled_lora_s42",
+    "source": "/DATA/DATA1/guest3/2026OpticsMoE/TransferFromElectricity/tasks/t01_object_retrieval/runs/simulation/20260908_v4_formal_cifar_qwen_vision_pooled_lora_s42/gpu_execution.json",
+    "file": "gpu_execution.json",
+    "sha256": "0cebbe350ef7df6305a24864b58ab0097eedefe4a97c78e1a2dc548f40645790",
+    "bytes": 1161
+  },
+  {
+    "run_id": "20260908_v4_formal_cifar_qwen_vision_pooled_lora_s42",
+    "source": "/DATA/DATA1/guest3/2026OpticsMoE/TransferFromElectricity/tasks/t01_object_retrieval/runs/simulation/20260908_v4_formal_cifar_qwen_vision_pooled_lora_s42/architecture.json",
+    "file": "architecture.json",
+    "sha256": "ff5727327ac015968c4a3e92ce3130cebd6bfdcc923c2b7b7c6990b82b3c4cb6",
+    "bytes": 15857
+  },
+  {
+    "run_id": "20260908_v4_formal_cifar_qwen_vision_pooled_lora_s42",
+    "source": "/DATA/DATA1/guest3/2026OpticsMoE/TransferFromElectricity/tasks/t01_object_retrieval/runs/simulation/20260908_v4_formal_cifar_qwen_vision_pooled_lora_s42/initial_validation.json",
+    "file": "initial_validation.json",
+    "sha256": "2d50a2e9e177078f9f5f7691d44f5cac8a314c86256d4d86a73a79ebdaf0ce75",
+    "bytes": 2640
+  },
+  {
+    "run_id": "20260908_v4_formal_cifar_qwen_vision_pooled_lora_s42",
+    "source": "/DATA/DATA1/guest3/2026OpticsMoE/TransferFromElectricity/tasks/t01_object_retrieval/runs/simulation/20260908_v4_formal_cifar_qwen_vision_pooled_lora_s42/initialization.json",
+    "file": "initialization.json",
+    "sha256": "120e5d04b152e6289350cea6ba6fb6e72759a8086cc92d135793fe07fff65e17",
+    "bytes": 1864
+  },
+  {
+    "run_id": "20260908_v4_formal_cifar_qwen_vision_pooled_lora_s42",
+    "source": "/DATA/DATA1/guest3/2026OpticsMoE/TransferFromElectricity/tasks/t01_object_retrieval/runs/simulation/20260908_v4_formal_cifar_qwen_vision_pooled_lora_s42/split.json",
+    "file": "split.json",
+    "sha256": "039d16ca675201a6ef9d8a8559df2621e96516b659fcc0b16fa23dade44d34aa",
+    "bytes": 2072824
+  },
+  {
+    "run_id": "20260908_v4_formal_cifar_qwen_vision_pooled_lora_s42",
+    "source": "/DATA/DATA1/guest3/2026OpticsMoE/TransferFromElectricity/tasks/t01_object_retrieval/runs/simulation/20260908_v4_formal_cifar_qwen_vision_pooled_lora_s42/data_hashes.json",
+    "file": "data_hashes.json",
+    "sha256": "1ea7608e4fca337e3d39c56425756d6cac4f3cc912636729f3a9ad3b1422bc18",
+    "bytes": 1024402
+  },
+  {
+    "run_id": "20260908_v4_formal_cifar_qwen_vision_pooled_lora_s42",
+    "source": "/DATA/DATA1/guest3/2026OpticsMoE/TransferFromElectricity/tasks/t01_object_retrieval/runs/simulation/20260908_v4_formal_cifar_qwen_vision_pooled_lora_s42/config.yaml",
+    "file": "config.yaml",
+    "sha256": "9e6a964a9c89790716b11ad4f77626b7f0d24e6d29ee03503f79f0c164d65bb9",
+    "bytes": 11830
+  },
+  {
+    "run_id": "20260908_v4_formal_cifar_qwen_vision_pooled_lora_s42",
+    "source": "/DATA/DATA1/guest3/2026OpticsMoE/TransferFromElectricity/tasks/t01_object_retrieval/runs/simulation/20260908_v4_formal_cifar_qwen_vision_pooled_lora_s42/fixed_references.json",
+    "file": "fixed_references.json",
+    "sha256": "fc587b6c59ee64653ed86a966f892cf6f7f76529d3daee0df1f7589e405ccd71",
+    "bytes": 4395
+  },
+  {
+    "run_id": "20260908_v4_formal_cifar_qwen_vision_pooled_lora_s42",
+    "source": "/DATA/DATA1/guest3/2026OpticsMoE/TransferFromElectricity/tasks/t01_object_retrieval/runs/simulation/20260908_v4_formal_cifar_qwen_vision_pooled_lora_s42/generator_source_manifest.json",
+    "file": "generator_source_manifest.json",
+    "sha256": "2bd7af7339d264f1c7800c4b9c30763eaf2e6bfc3108739c0398b5590e29f744",
+    "bytes": 1069
+  },
+  {
+    "run_id": "20260908_v4_formal_cifar_qwen_vision_lora_s42",
+    "evidence_type": "remote_checkpoint_sha256",
+    "source": "/DATA/DATA1/guest3/2026OpticsMoE/TransferFromElectricity/tasks/t01_object_retrieval/runs/simulation/20260908_v4_formal_cifar_qwen_vision_lora_s42/best_checkpoint.pt",
+    "file": "best_checkpoint.pt",
+    "sha256": "b5598341f71e3a7c6d338eb72daf7d1c4aa506232c4a60290fb90be5c31cb54f",
+    "bytes": 81222256,
+    "downloaded": false
+  },
+  {
+    "run_id": "20260908_v4_formal_cifar_qwen_vision_lora_s42",
+    "evidence_type": "remote_checkpoint_sha256",
+    "source": "/DATA/DATA1/guest3/2026OpticsMoE/TransferFromElectricity/tasks/t01_object_retrieval/runs/simulation/20260908_v4_formal_cifar_qwen_vision_lora_s42/last_checkpoint.pt",
+    "file": "last_checkpoint.pt",
+    "sha256": "dd0277c8540f9f83d796abebc0150255507066ebcd8279068b74344ac9db894a",
+    "bytes": 81222256,
+    "downloaded": false
+  },
+  {
+    "run_id": "20260908_v4_formal_cifar_qwen_vision_lora_s42",
+    "source": "/DATA/DATA1/guest3/2026OpticsMoE/TransferFromElectricity/tasks/t01_object_retrieval/runs/simulation/20260908_v4_formal_cifar_qwen_vision_lora_s42/final_report.json",
+    "file": "final_report.json",
+    "sha256": "4cbd321ef6305e9d27886a9ce1537f67ff3774167c34ecfc9eb0adf65ac5700c",
+    "bytes": 33825
+  },
+  {
+    "run_id": "20260908_v4_formal_cifar_qwen_vision_lora_s42",
+    "source": "/DATA/DATA1/guest3/2026OpticsMoE/TransferFromElectricity/tasks/t01_object_retrieval/runs/simulation/20260908_v4_formal_cifar_qwen_vision_lora_s42/history.json",
+    "file": "history.json",
+    "sha256": "e4270de7ba6447830ff184b83e6a16f687af0ac4347d3ca4305271ac75555c7a",
+    "bytes": 170815
+  },
+  {
+    "run_id": "20260908_v4_formal_cifar_qwen_vision_lora_s42",
+    "source": "/DATA/DATA1/guest3/2026OpticsMoE/TransferFromElectricity/tasks/t01_object_retrieval/runs/simulation/20260908_v4_formal_cifar_qwen_vision_lora_s42/epoch_timing.json",
+    "file": "epoch_timing.json",
+    "sha256": "0f5f03878d22bd52ea1023e3c39d4145c65fea9bd5582737ef509875700351b6",
+    "bytes": 10311
+  },
+  {
+    "run_id": "20260908_v4_formal_cifar_qwen_vision_lora_s42",
+    "source": "/DATA/DATA1/guest3/2026OpticsMoE/TransferFromElectricity/tasks/t01_object_retrieval/runs/simulation/20260908_v4_formal_cifar_qwen_vision_lora_s42/protocol.json",
+    "file": "protocol.json",
+    "sha256": "1a65b0ad41e58085d1f86f17d9dc6129fa0df2b432d7dec9b500774403ec61ce",
+    "bytes": 2355
+  },
+  {
+    "run_id": "20260908_v4_formal_cifar_qwen_vision_lora_s42",
+    "source": "/DATA/DATA1/guest3/2026OpticsMoE/TransferFromElectricity/tasks/t01_object_retrieval/runs/simulation/20260908_v4_formal_cifar_qwen_vision_lora_s42/environment.json",
+    "file": "environment.json",
+    "sha256": "76f0b87fa7edbb97ccf0b2bafa77b86e1699a86d33182b97a6ccf182c8faba83",
+    "bytes": 1121
+  },
+  {
+    "run_id": "20260908_v4_formal_cifar_qwen_vision_lora_s42",
+    "source": "/DATA/DATA1/guest3/2026OpticsMoE/TransferFromElectricity/tasks/t01_object_retrieval/runs/simulation/20260908_v4_formal_cifar_qwen_vision_lora_s42/zero_initialization.json",
+    "file": "zero_initialization.json",
+    "sha256": "6444fec4f618bf4eec20ffd851df95dbcb5f809ee654edeffd1a1d2bc54e78ac",
+    "bytes": 2784
+  },
+  {
+    "run_id": "20260908_v4_formal_cifar_qwen_vision_lora_s42",
+    "source": "/DATA/DATA1/guest3/2026OpticsMoE/TransferFromElectricity/tasks/t01_object_retrieval/runs/simulation/20260908_v4_formal_cifar_qwen_vision_lora_s42/expert_bank.pt",
+    "file": "expert_bank.pt",
+    "sha256": "8465c3eefaf914e7ad499af6fef67d37824f1fe542142589e2185f00338b517f",
+    "bytes": 6869104
+  },
+  {
+    "run_id": "20260908_v4_formal_cifar_qwen_vision_lora_s42",
+    "source": "/DATA/DATA1/guest3/2026OpticsMoE/TransferFromElectricity/tasks/t01_object_retrieval/runs/simulation/20260908_v4_formal_cifar_qwen_vision_lora_s42/gpu_execution.json",
+    "file": "gpu_execution.json",
+    "sha256": "810cfb290bccfe27739b5d64fc7080c8c9a2a605858793a31caa33c4d7c89016",
+    "bytes": 1039
+  },
+  {
+    "run_id": "20260908_v4_formal_cifar_qwen_vision_lora_s42",
+    "source": "/DATA/DATA1/guest3/2026OpticsMoE/TransferFromElectricity/tasks/t01_object_retrieval/runs/simulation/20260908_v4_formal_cifar_qwen_vision_lora_s42/architecture.json",
+    "file": "architecture.json",
+    "sha256": "a231c645101a7b4f4db364ba0497381f9aca05660223c7e2a05a6a7cc4a1e099",
+    "bytes": 15851
+  },
+  {
+    "run_id": "20260908_v4_formal_cifar_qwen_vision_lora_s42",
+    "source": "/DATA/DATA1/guest3/2026OpticsMoE/TransferFromElectricity/tasks/t01_object_retrieval/runs/simulation/20260908_v4_formal_cifar_qwen_vision_lora_s42/initial_validation.json",
+    "file": "initial_validation.json",
+    "sha256": "2d50a2e9e177078f9f5f7691d44f5cac8a314c86256d4d86a73a79ebdaf0ce75",
+    "bytes": 2640
+  },
+  {
+    "run_id": "20260908_v4_formal_cifar_qwen_vision_lora_s42",
+    "source": "/DATA/DATA1/guest3/2026OpticsMoE/TransferFromElectricity/tasks/t01_object_retrieval/runs/simulation/20260908_v4_formal_cifar_qwen_vision_lora_s42/initialization.json",
+    "file": "initialization.json",
+    "sha256": "120e5d04b152e6289350cea6ba6fb6e72759a8086cc92d135793fe07fff65e17",
+    "bytes": 1864
+  },
+  {
+    "run_id": "20260908_v4_formal_cifar_qwen_vision_lora_s42",
+    "source": "/DATA/DATA1/guest3/2026OpticsMoE/TransferFromElectricity/tasks/t01_object_retrieval/runs/simulation/20260908_v4_formal_cifar_qwen_vision_lora_s42/split.json",
+    "file": "split.json",
+    "sha256": "039d16ca675201a6ef9d8a8559df2621e96516b659fcc0b16fa23dade44d34aa",
+    "bytes": 2072824
+  },
+  {
+    "run_id": "20260908_v4_formal_cifar_qwen_vision_lora_s42",
+    "source": "/DATA/DATA1/guest3/2026OpticsMoE/TransferFromElectricity/tasks/t01_object_retrieval/runs/simulation/20260908_v4_formal_cifar_qwen_vision_lora_s42/data_hashes.json",
+    "file": "data_hashes.json",
+    "sha256": "1ea7608e4fca337e3d39c56425756d6cac4f3cc912636729f3a9ad3b1422bc18",
+    "bytes": 1024402
+  },
+  {
+    "run_id": "20260908_v4_formal_cifar_qwen_vision_lora_s42",
+    "source": "/DATA/DATA1/guest3/2026OpticsMoE/TransferFromElectricity/tasks/t01_object_retrieval/runs/simulation/20260908_v4_formal_cifar_qwen_vision_lora_s42/config.yaml",
+    "file": "config.yaml",
+    "sha256": "3c5d77ddf6d4c7a747137706b8e311ae90bcf60b8a296865812a1809ea0dcd43",
+    "bytes": 11816
+  },
+  {
+    "run_id": "20260908_v4_formal_cifar_qwen_vision_lora_s42",
+    "source": "/DATA/DATA1/guest3/2026OpticsMoE/TransferFromElectricity/tasks/t01_object_retrieval/runs/simulation/20260908_v4_formal_cifar_qwen_vision_lora_s42/fixed_references.json",
+    "file": "fixed_references.json",
+    "sha256": "fc587b6c59ee64653ed86a966f892cf6f7f76529d3daee0df1f7589e405ccd71",
+    "bytes": 4395
+  },
+  {
+    "run_id": "20260908_v4_formal_cifar_qwen_vision_lora_s42",
+    "source": "/DATA/DATA1/guest3/2026OpticsMoE/TransferFromElectricity/tasks/t01_object_retrieval/runs/simulation/20260908_v4_formal_cifar_qwen_vision_lora_s42/generator_source_manifest.json",
+    "file": "generator_source_manifest.json",
+    "sha256": "2bd7af7339d264f1c7800c4b9c30763eaf2e6bfc3108739c0398b5590e29f744",
+    "bytes": 1069
+  },
+  {
+    "run_id": "20260908_v4_formal_cifar_qwen_vision_global_lora_s42",
+    "evidence_type": "remote_checkpoint_sha256",
+    "source": "/DATA/DATA1/guest3/2026OpticsMoE/TransferFromElectricity/tasks/t01_object_retrieval/runs/simulation/20260908_v4_formal_cifar_qwen_vision_global_lora_s42/best_checkpoint.pt",
+    "file": "best_checkpoint.pt",
+    "sha256": "79ae81ca42d54e31cd3041b8a28287a8fda46a0f138e5f30dd6b091e557864ec",
+    "bytes": 85228192,
+    "downloaded": false
+  },
+  {
+    "run_id": "20260908_v4_formal_cifar_qwen_vision_global_lora_s42",
+    "evidence_type": "remote_checkpoint_sha256",
+    "source": "/DATA/DATA1/guest3/2026OpticsMoE/TransferFromElectricity/tasks/t01_object_retrieval/runs/simulation/20260908_v4_formal_cifar_qwen_vision_global_lora_s42/last_checkpoint.pt",
+    "file": "last_checkpoint.pt",
+    "sha256": "6107dbaa8d7100d33a53137a36fd847a49ea50f1a4135295a110dea57ee3e7c6",
+    "bytes": 85228192,
+    "downloaded": false
+  },
+  {
+    "run_id": "20260908_v4_formal_cifar_qwen_vision_global_lora_s42",
+    "source": "/DATA/DATA1/guest3/2026OpticsMoE/TransferFromElectricity/tasks/t01_object_retrieval/runs/simulation/20260908_v4_formal_cifar_qwen_vision_global_lora_s42/final_report.json",
+    "file": "final_report.json",
+    "sha256": "d3522a15820bb27ed45c8ed18571ed94317119620f73a3123f16354e7ba70b9d",
+    "bytes": 33812
+  },
+  {
+    "run_id": "20260908_v4_formal_cifar_qwen_vision_global_lora_s42",
+    "source": "/DATA/DATA1/guest3/2026OpticsMoE/TransferFromElectricity/tasks/t01_object_retrieval/runs/simulation/20260908_v4_formal_cifar_qwen_vision_global_lora_s42/history.json",
+    "file": "history.json",
+    "sha256": "f6bf2a0ef83e01006afe88fc3dbc05dcfa0400dce4bb9fe7563f14a2e53648e2",
+    "bytes": 171875
+  },
+  {
+    "run_id": "20260908_v4_formal_cifar_qwen_vision_global_lora_s42",
+    "source": "/DATA/DATA1/guest3/2026OpticsMoE/TransferFromElectricity/tasks/t01_object_retrieval/runs/simulation/20260908_v4_formal_cifar_qwen_vision_global_lora_s42/epoch_timing.json",
+    "file": "epoch_timing.json",
+    "sha256": "eace80f2d1db81c02eacb1ebcf6816a34ef25db2a5956140cd87751b498dd239",
+    "bytes": 10305
+  },
+  {
+    "run_id": "20260908_v4_formal_cifar_qwen_vision_global_lora_s42",
+    "source": "/DATA/DATA1/guest3/2026OpticsMoE/TransferFromElectricity/tasks/t01_object_retrieval/runs/simulation/20260908_v4_formal_cifar_qwen_vision_global_lora_s42/protocol.json",
+    "file": "protocol.json",
+    "sha256": "5f245ee3a3f5f62f47f9078121aee4c4a4b2b7a50ec312e5384aca1843a1d0a4",
+    "bytes": 2362
+  },
+  {
+    "run_id": "20260908_v4_formal_cifar_qwen_vision_global_lora_s42",
+    "source": "/DATA/DATA1/guest3/2026OpticsMoE/TransferFromElectricity/tasks/t01_object_retrieval/runs/simulation/20260908_v4_formal_cifar_qwen_vision_global_lora_s42/environment.json",
+    "file": "environment.json",
+    "sha256": "a42a707bf0fded89f65dbe6d250b7d685c00131f6895d2c6a3cac33eeea1c50b",
+    "bytes": 1135
+  },
+  {
+    "run_id": "20260908_v4_formal_cifar_qwen_vision_global_lora_s42",
+    "source": "/DATA/DATA1/guest3/2026OpticsMoE/TransferFromElectricity/tasks/t01_object_retrieval/runs/simulation/20260908_v4_formal_cifar_qwen_vision_global_lora_s42/zero_initialization.json",
+    "file": "zero_initialization.json",
+    "sha256": "6444fec4f618bf4eec20ffd851df95dbcb5f809ee654edeffd1a1d2bc54e78ac",
+    "bytes": 2784
+  },
+  {
+    "run_id": "20260908_v4_formal_cifar_qwen_vision_global_lora_s42",
+    "source": "/DATA/DATA1/guest3/2026OpticsMoE/TransferFromElectricity/tasks/t01_object_retrieval/runs/simulation/20260908_v4_formal_cifar_qwen_vision_global_lora_s42/expert_bank.pt",
+    "file": "expert_bank.pt",
+    "sha256": "ddc5a41a9d13bb5640e4331785aa3ae77ece24e9addb8700ecb9187e38febb57",
+    "bytes": 6869104
+  },
+  {
+    "run_id": "20260908_v4_formal_cifar_qwen_vision_global_lora_s42",
+    "source": "/DATA/DATA1/guest3/2026OpticsMoE/TransferFromElectricity/tasks/t01_object_retrieval/runs/simulation/20260908_v4_formal_cifar_qwen_vision_global_lora_s42/gpu_execution.json",
+    "file": "gpu_execution.json",
+    "sha256": "3482808fe98c3daea47762a147b1c4dfcce60f0d003c31a5de05c66a6abf6511",
+    "bytes": 1083
+  },
+  {
+    "run_id": "20260908_v4_formal_cifar_qwen_vision_global_lora_s42",
+    "source": "/DATA/DATA1/guest3/2026OpticsMoE/TransferFromElectricity/tasks/t01_object_retrieval/runs/simulation/20260908_v4_formal_cifar_qwen_vision_global_lora_s42/architecture.json",
+    "file": "architecture.json",
+    "sha256": "aeded4e2dbbbd8b1a93cc8b90e39c1d621287c4b35e59ef69a973d5ff021afb0",
+    "bytes": 18405
+  },
+  {
+    "run_id": "20260908_v4_formal_cifar_qwen_vision_global_lora_s42",
+    "source": "/DATA/DATA1/guest3/2026OpticsMoE/TransferFromElectricity/tasks/t01_object_retrieval/runs/simulation/20260908_v4_formal_cifar_qwen_vision_global_lora_s42/initial_validation.json",
+    "file": "initial_validation.json",
+    "sha256": "2d50a2e9e177078f9f5f7691d44f5cac8a314c86256d4d86a73a79ebdaf0ce75",
+    "bytes": 2640
+  },
+  {
+    "run_id": "20260908_v4_formal_cifar_qwen_vision_global_lora_s42",
+    "source": "/DATA/DATA1/guest3/2026OpticsMoE/TransferFromElectricity/tasks/t01_object_retrieval/runs/simulation/20260908_v4_formal_cifar_qwen_vision_global_lora_s42/initialization.json",
+    "file": "initialization.json",
+    "sha256": "120e5d04b152e6289350cea6ba6fb6e72759a8086cc92d135793fe07fff65e17",
+    "bytes": 1864
+  },
+  {
+    "run_id": "20260908_v4_formal_cifar_qwen_vision_global_lora_s42",
+    "source": "/DATA/DATA1/guest3/2026OpticsMoE/TransferFromElectricity/tasks/t01_object_retrieval/runs/simulation/20260908_v4_formal_cifar_qwen_vision_global_lora_s42/split.json",
+    "file": "split.json",
+    "sha256": "039d16ca675201a6ef9d8a8559df2621e96516b659fcc0b16fa23dade44d34aa",
+    "bytes": 2072824
+  },
+  {
+    "run_id": "20260908_v4_formal_cifar_qwen_vision_global_lora_s42",
+    "source": "/DATA/DATA1/guest3/2026OpticsMoE/TransferFromElectricity/tasks/t01_object_retrieval/runs/simulation/20260908_v4_formal_cifar_qwen_vision_global_lora_s42/data_hashes.json",
+    "file": "data_hashes.json",
+    "sha256": "1ea7608e4fca337e3d39c56425756d6cac4f3cc912636729f3a9ad3b1422bc18",
+    "bytes": 1024402
+  },
+  {
+    "run_id": "20260908_v4_formal_cifar_qwen_vision_global_lora_s42",
+    "source": "/DATA/DATA1/guest3/2026OpticsMoE/TransferFromElectricity/tasks/t01_object_retrieval/runs/simulation/20260908_v4_formal_cifar_qwen_vision_global_lora_s42/config.yaml",
+    "file": "config.yaml",
+    "sha256": "268831a9c2fa28a1b9129fe519dc06bab47e725e60b0c051d183d3e83f824015",
+    "bytes": 11830
+  },
+  {
+    "run_id": "20260908_v4_formal_cifar_qwen_vision_global_lora_s42",
+    "source": "/DATA/DATA1/guest3/2026OpticsMoE/TransferFromElectricity/tasks/t01_object_retrieval/runs/simulation/20260908_v4_formal_cifar_qwen_vision_global_lora_s42/fixed_references.json",
+    "file": "fixed_references.json",
+    "sha256": "fc587b6c59ee64653ed86a966f892cf6f7f76529d3daee0df1f7589e405ccd71",
+    "bytes": 4395
+  },
+  {
+    "run_id": "20260908_v4_formal_cifar_qwen_vision_global_lora_s42",
+    "source": "/DATA/DATA1/guest3/2026OpticsMoE/TransferFromElectricity/tasks/t01_object_retrieval/runs/simulation/20260908_v4_formal_cifar_qwen_vision_global_lora_s42/generator_source_manifest.json",
+    "file": "generator_source_manifest.json",
+    "sha256": "2bd7af7339d264f1c7800c4b9c30763eaf2e6bfc3108739c0398b5590e29f744",
+    "bytes": 1069
+  },
+  {
+    "run_id": "20260908_v4_formal_imagenette_direct_s42",
+    "evidence_type": "remote_checkpoint_sha256",
+    "source": "/DATA/DATA1/guest3/2026OpticsMoE/TransferFromElectricity/tasks/t01_object_retrieval/runs/simulation/20260908_v4_formal_imagenette_direct_s42/best_checkpoint.pt",
+    "file": "best_checkpoint.pt",
+    "sha256": "e1b4b0bc46d901c7494b63e7083ccf74b30f189a3587c762561ee0e099100560",
+    "bytes": 50345478,
+    "downloaded": false
+  },
+  {
+    "run_id": "20260908_v4_formal_imagenette_direct_s42",
+    "evidence_type": "remote_checkpoint_sha256",
+    "source": "/DATA/DATA1/guest3/2026OpticsMoE/TransferFromElectricity/tasks/t01_object_retrieval/runs/simulation/20260908_v4_formal_imagenette_direct_s42/last_checkpoint.pt",
+    "file": "last_checkpoint.pt",
+    "sha256": "7b7b2da5b04f234e634ac9450a8c75fed16235abb437f5cf5030fab9a5e8ea6a",
+    "bytes": 50474374,
+    "downloaded": false
+  },
+  {
+    "run_id": "20260908_v4_formal_imagenette_direct_s42",
+    "source": "/DATA/DATA1/guest3/2026OpticsMoE/TransferFromElectricity/tasks/t01_object_retrieval/runs/simulation/20260908_v4_formal_imagenette_direct_s42/final_report.json",
+    "file": "final_report.json",
+    "sha256": "d7bb635b87ee2ff8e1a51aa5ae76f0cea8be8273d78c3458f19f31e12b819f04",
+    "bytes": 30189
+  },
+  {
+    "run_id": "20260908_v4_formal_imagenette_direct_s42",
+    "source": "/DATA/DATA1/guest3/2026OpticsMoE/TransferFromElectricity/tasks/t01_object_retrieval/runs/simulation/20260908_v4_formal_imagenette_direct_s42/history.json",
+    "file": "history.json",
+    "sha256": "a7dcb26d0fd245075e3d50b45071924315222deebc5405c405b046bb009d8bce",
+    "bytes": 169692
+  },
+  {
+    "run_id": "20260908_v4_formal_imagenette_direct_s42",
+    "source": "/DATA/DATA1/guest3/2026OpticsMoE/TransferFromElectricity/tasks/t01_object_retrieval/runs/simulation/20260908_v4_formal_imagenette_direct_s42/epoch_timing.json",
+    "file": "epoch_timing.json",
+    "sha256": "8668ba911a61ab7329a2ee80c2acfc5ba2580de75f2d8a65fde95c8198b2c4c9",
+    "bytes": 10296
+  },
+  {
+    "run_id": "20260908_v4_formal_imagenette_direct_s42",
+    "source": "/DATA/DATA1/guest3/2026OpticsMoE/TransferFromElectricity/tasks/t01_object_retrieval/runs/simulation/20260908_v4_formal_imagenette_direct_s42/protocol.json",
+    "file": "protocol.json",
+    "sha256": "6d7db6fe11f4cd95e46446f0988a2d289ff43c6f8310a4b1235e3071044dfb84",
+    "bytes": 2229
+  },
+  {
+    "run_id": "20260908_v4_formal_imagenette_direct_s42",
+    "source": "/DATA/DATA1/guest3/2026OpticsMoE/TransferFromElectricity/tasks/t01_object_retrieval/runs/simulation/20260908_v4_formal_imagenette_direct_s42/environment.json",
+    "file": "environment.json",
+    "sha256": "bcaada33268fc4ab52fb235d30ea4418f9a61489f289ac42728523c23737b9ec",
+    "bytes": 1111
+  },
+  {
+    "run_id": "20260908_v4_formal_imagenette_direct_s42",
+    "source": "/DATA/DATA1/guest3/2026OpticsMoE/TransferFromElectricity/tasks/t01_object_retrieval/runs/simulation/20260908_v4_formal_imagenette_direct_s42/zero_initialization.json",
+    "file": "zero_initialization.json",
+    "sha256": "6444fec4f618bf4eec20ffd851df95dbcb5f809ee654edeffd1a1d2bc54e78ac",
+    "bytes": 2784
+  },
+  {
+    "run_id": "20260908_v4_formal_imagenette_direct_s42",
+    "source": "/DATA/DATA1/guest3/2026OpticsMoE/TransferFromElectricity/tasks/t01_object_retrieval/runs/simulation/20260908_v4_formal_imagenette_direct_s42/expert_bank.pt",
+    "file": "expert_bank.pt",
+    "sha256": "c6e255864fe2a5b76870deb3b2e188a4e094722651ece697309fbb012252b1dc",
+    "bytes": 6869104
+  },
+  {
+    "run_id": "20260908_v4_formal_imagenette_direct_s42",
+    "source": "/DATA/DATA1/guest3/2026OpticsMoE/TransferFromElectricity/tasks/t01_object_retrieval/runs/simulation/20260908_v4_formal_imagenette_direct_s42/gpu_execution.json",
+    "file": "gpu_execution.json",
+    "sha256": "709740c8c7cd848e378ee4dd298d6cf4e35792cfdb7855603b24c2346a2fe7bc",
+    "bytes": 1016
+  },
+  {
+    "run_id": "20260908_v4_formal_imagenette_direct_s42",
+    "source": "/DATA/DATA1/guest3/2026OpticsMoE/TransferFromElectricity/tasks/t01_object_retrieval/runs/simulation/20260908_v4_formal_imagenette_direct_s42/architecture.json",
+    "file": "architecture.json",
+    "sha256": "af132399969f0853e9602f5c3adf2b916902645eca524f1d2bb975f693f221d5",
+    "bytes": 10588
+  },
+  {
+    "run_id": "20260908_v4_formal_imagenette_direct_s42",
+    "source": "/DATA/DATA1/guest3/2026OpticsMoE/TransferFromElectricity/tasks/t01_object_retrieval/runs/simulation/20260908_v4_formal_imagenette_direct_s42/initial_validation.json",
+    "file": "initial_validation.json",
+    "sha256": "fc31ed0741fd71608d2c4dbee795cf3de7b1d2d9df3e9545b7e69b1e48f45d58",
+    "bytes": 2741
+  },
+  {
+    "run_id": "20260908_v4_formal_imagenette_direct_s42",
+    "source": "/DATA/DATA1/guest3/2026OpticsMoE/TransferFromElectricity/tasks/t01_object_retrieval/runs/simulation/20260908_v4_formal_imagenette_direct_s42/initialization.json",
+    "file": "initialization.json",
+    "sha256": "120e5d04b152e6289350cea6ba6fb6e72759a8086cc92d135793fe07fff65e17",
+    "bytes": 1864
+  },
+  {
+    "run_id": "20260908_v4_formal_imagenette_direct_s42",
+    "source": "/DATA/DATA1/guest3/2026OpticsMoE/TransferFromElectricity/tasks/t01_object_retrieval/runs/simulation/20260908_v4_formal_imagenette_direct_s42/split.json",
+    "file": "split.json",
+    "sha256": "7a9359944761664d2a86abbcb298af405c527ef8140d46a67f282d240b9df339",
+    "bytes": 5017425
+  },
+  {
+    "run_id": "20260908_v4_formal_imagenette_direct_s42",
+    "source": "/DATA/DATA1/guest3/2026OpticsMoE/TransferFromElectricity/tasks/t01_object_retrieval/runs/simulation/20260908_v4_formal_imagenette_direct_s42/data_hashes.json",
+    "file": "data_hashes.json",
+    "sha256": "9bb8993b8820d0a05b32d0ca71c6e657683928d1e0b22286eafe05b377d3e245",
+    "bytes": 2533853
+  },
+  {
+    "run_id": "20260908_v4_formal_imagenette_direct_s42",
+    "source": "/DATA/DATA1/guest3/2026OpticsMoE/TransferFromElectricity/tasks/t01_object_retrieval/runs/simulation/20260908_v4_formal_imagenette_direct_s42/config.yaml",
+    "file": "config.yaml",
+    "sha256": "ff655420c494bad5e015f2354335f845ff01ac20c85be991661938d4532671f0",
+    "bytes": 11770
+  },
+  {
+    "run_id": "20260908_v4_formal_imagenette_clip_vision_lora_s42",
+    "evidence_type": "remote_checkpoint_sha256",
+    "source": "/DATA/DATA1/guest3/2026OpticsMoE/TransferFromElectricity/tasks/t01_object_retrieval/runs/simulation/20260908_v4_formal_imagenette_clip_vision_lora_s42/best_checkpoint.pt",
+    "file": "best_checkpoint.pt",
+    "sha256": "5636b214442695a91463d7e4165ae8ff78a69ee1f631e4772c601ecd17db64ab",
+    "bytes": 67227818,
+    "downloaded": false
+  },
+  {
+    "run_id": "20260908_v4_formal_imagenette_clip_vision_lora_s42",
+    "evidence_type": "remote_checkpoint_sha256",
+    "source": "/DATA/DATA1/guest3/2026OpticsMoE/TransferFromElectricity/tasks/t01_object_retrieval/runs/simulation/20260908_v4_formal_imagenette_clip_vision_lora_s42/last_checkpoint.pt",
+    "file": "last_checkpoint.pt",
+    "sha256": "eba3f614b30d3b5bf80b165bfcf43ea9b416c4c828d5f55add151119bb282aee",
+    "bytes": 67338090,
+    "downloaded": false
+  },
+  {
+    "run_id": "20260908_v4_formal_imagenette_clip_vision_lora_s42",
+    "source": "/DATA/DATA1/guest3/2026OpticsMoE/TransferFromElectricity/tasks/t01_object_retrieval/runs/simulation/20260908_v4_formal_imagenette_clip_vision_lora_s42/final_report.json",
+    "file": "final_report.json",
+    "sha256": "4699637858bed5800d9e0b767227efc15dbd626c73ab88ff8def2ebdfd703258",
+    "bytes": 34692
+  },
+  {
+    "run_id": "20260908_v4_formal_imagenette_clip_vision_lora_s42",
+    "source": "/DATA/DATA1/guest3/2026OpticsMoE/TransferFromElectricity/tasks/t01_object_retrieval/runs/simulation/20260908_v4_formal_imagenette_clip_vision_lora_s42/history.json",
+    "file": "history.json",
+    "sha256": "8f37dfb67e9f9285be8f618c66ec4346a0cef57bbab58e57de7a64f1f9314deb",
+    "bytes": 173371
+  },
+  {
+    "run_id": "20260908_v4_formal_imagenette_clip_vision_lora_s42",
+    "source": "/DATA/DATA1/guest3/2026OpticsMoE/TransferFromElectricity/tasks/t01_object_retrieval/runs/simulation/20260908_v4_formal_imagenette_clip_vision_lora_s42/epoch_timing.json",
+    "file": "epoch_timing.json",
+    "sha256": "a361bb0c5aa43526e9562b25d95322802237a2d539f47f8615cc9da56a8be94b",
+    "bytes": 10273
+  },
+  {
+    "run_id": "20260908_v4_formal_imagenette_clip_vision_lora_s42",
+    "source": "/DATA/DATA1/guest3/2026OpticsMoE/TransferFromElectricity/tasks/t01_object_retrieval/runs/simulation/20260908_v4_formal_imagenette_clip_vision_lora_s42/protocol.json",
+    "file": "protocol.json",
+    "sha256": "9633e8c4e2fd38a6ff85dfd49f3343196ecbdba6251630107846373f04f7f434",
+    "bytes": 2239
+  },
+  {
+    "run_id": "20260908_v4_formal_imagenette_clip_vision_lora_s42",
+    "source": "/DATA/DATA1/guest3/2026OpticsMoE/TransferFromElectricity/tasks/t01_object_retrieval/runs/simulation/20260908_v4_formal_imagenette_clip_vision_lora_s42/environment.json",
+    "file": "environment.json",
+    "sha256": "1705533e22a64a9f3f7dbf5766f5584902cb64467cc51bbda97dd48042d7e859",
+    "bytes": 1131
+  },
+  {
+    "run_id": "20260908_v4_formal_imagenette_clip_vision_lora_s42",
+    "source": "/DATA/DATA1/guest3/2026OpticsMoE/TransferFromElectricity/tasks/t01_object_retrieval/runs/simulation/20260908_v4_formal_imagenette_clip_vision_lora_s42/zero_initialization.json",
+    "file": "zero_initialization.json",
+    "sha256": "6444fec4f618bf4eec20ffd851df95dbcb5f809ee654edeffd1a1d2bc54e78ac",
+    "bytes": 2784
+  },
+  {
+    "run_id": "20260908_v4_formal_imagenette_clip_vision_lora_s42",
+    "source": "/DATA/DATA1/guest3/2026OpticsMoE/TransferFromElectricity/tasks/t01_object_retrieval/runs/simulation/20260908_v4_formal_imagenette_clip_vision_lora_s42/expert_bank.pt",
+    "file": "expert_bank.pt",
+    "sha256": "79565f1698725c4399a3a4df8a73f8103b6466a4f5f980f447675e41d0f1af5e",
+    "bytes": 6869104
+  },
+  {
+    "run_id": "20260908_v4_formal_imagenette_clip_vision_lora_s42",
+    "source": "/DATA/DATA1/guest3/2026OpticsMoE/TransferFromElectricity/tasks/t01_object_retrieval/runs/simulation/20260908_v4_formal_imagenette_clip_vision_lora_s42/gpu_execution.json",
+    "file": "gpu_execution.json",
+    "sha256": "2c03adac5f10543efa9c3f05e599cbe47a6b87a6c698193f7dca7236fede0140",
+    "bytes": 1055
+  },
+  {
+    "run_id": "20260908_v4_formal_imagenette_clip_vision_lora_s42",
+    "source": "/DATA/DATA1/guest3/2026OpticsMoE/TransferFromElectricity/tasks/t01_object_retrieval/runs/simulation/20260908_v4_formal_imagenette_clip_vision_lora_s42/architecture.json",
+    "file": "architecture.json",
+    "sha256": "02e9999a23c9adcd1b001deba887ec30497ec832493c8feb094e67d8d0cc349a",
+    "bytes": 17907
+  },
+  {
+    "run_id": "20260908_v4_formal_imagenette_clip_vision_lora_s42",
+    "source": "/DATA/DATA1/guest3/2026OpticsMoE/TransferFromElectricity/tasks/t01_object_retrieval/runs/simulation/20260908_v4_formal_imagenette_clip_vision_lora_s42/initial_validation.json",
+    "file": "initial_validation.json",
+    "sha256": "fc31ed0741fd71608d2c4dbee795cf3de7b1d2d9df3e9545b7e69b1e48f45d58",
+    "bytes": 2741
+  },
+  {
+    "run_id": "20260908_v4_formal_imagenette_clip_vision_lora_s42",
+    "source": "/DATA/DATA1/guest3/2026OpticsMoE/TransferFromElectricity/tasks/t01_object_retrieval/runs/simulation/20260908_v4_formal_imagenette_clip_vision_lora_s42/initialization.json",
+    "file": "initialization.json",
+    "sha256": "120e5d04b152e6289350cea6ba6fb6e72759a8086cc92d135793fe07fff65e17",
+    "bytes": 1864
+  },
+  {
+    "run_id": "20260908_v4_formal_imagenette_clip_vision_lora_s42",
+    "source": "/DATA/DATA1/guest3/2026OpticsMoE/TransferFromElectricity/tasks/t01_object_retrieval/runs/simulation/20260908_v4_formal_imagenette_clip_vision_lora_s42/split.json",
+    "file": "split.json",
+    "sha256": "7a9359944761664d2a86abbcb298af405c527ef8140d46a67f282d240b9df339",
+    "bytes": 5017425
+  },
+  {
+    "run_id": "20260908_v4_formal_imagenette_clip_vision_lora_s42",
+    "source": "/DATA/DATA1/guest3/2026OpticsMoE/TransferFromElectricity/tasks/t01_object_retrieval/runs/simulation/20260908_v4_formal_imagenette_clip_vision_lora_s42/data_hashes.json",
+    "file": "data_hashes.json",
+    "sha256": "9bb8993b8820d0a05b32d0ca71c6e657683928d1e0b22286eafe05b377d3e245",
+    "bytes": 2533853
+  },
+  {
+    "run_id": "20260908_v4_formal_imagenette_clip_vision_lora_s42",
+    "source": "/DATA/DATA1/guest3/2026OpticsMoE/TransferFromElectricity/tasks/t01_object_retrieval/runs/simulation/20260908_v4_formal_imagenette_clip_vision_lora_s42/config.yaml",
+    "file": "config.yaml",
+    "sha256": "29aaceae15cffe263d174f1db81f406dbd902ff84e788da4dd8f641541943d86",
+    "bytes": 11790
+  },
+  {
+    "run_id": "20260908_v4_formal_imagenette_clip_vision_lora_s42",
+    "source": "/DATA/DATA1/guest3/2026OpticsMoE/TransferFromElectricity/tasks/t01_object_retrieval/runs/simulation/20260908_v4_formal_imagenette_clip_vision_lora_s42/fixed_references.json",
+    "file": "fixed_references.json",
+    "sha256": "1fef5a2633f4bd258b4d75d2df5b95ae9a6bf303f5c1cbfb660565c3cdba56b8",
+    "bytes": 4687
+  },
+  {
+    "run_id": "20260908_v4_formal_imagenette_clip_vision_lora_s42",
+    "source": "/DATA/DATA1/guest3/2026OpticsMoE/TransferFromElectricity/tasks/t01_object_retrieval/runs/simulation/20260908_v4_formal_imagenette_clip_vision_lora_s42/generator_source_manifest.json",
+    "file": "generator_source_manifest.json",
+    "sha256": "a06788d1204e73a2710e16d08b250c2154ef54e966eb67a44309364009d8c550",
+    "bytes": 442
+  },
+  {
+    "run_id": "20260908_v4_formal_imagenette_qwen_vision_pooled_lora_s42",
+    "evidence_type": "remote_checkpoint_sha256",
+    "source": "/DATA/DATA1/guest3/2026OpticsMoE/TransferFromElectricity/tasks/t01_object_retrieval/runs/simulation/20260908_v4_formal_imagenette_qwen_vision_pooled_lora_s42/best_checkpoint.pt",
+    "file": "best_checkpoint.pt",
+    "sha256": "90c9c0c76298336ae1adea8e18909931d28c20daffbd34497a148c84d5a502f8",
+    "bytes": 81222256,
+    "downloaded": false
+  },
+  {
+    "run_id": "20260908_v4_formal_imagenette_qwen_vision_pooled_lora_s42",
+    "evidence_type": "remote_checkpoint_sha256",
+    "source": "/DATA/DATA1/guest3/2026OpticsMoE/TransferFromElectricity/tasks/t01_object_retrieval/runs/simulation/20260908_v4_formal_imagenette_qwen_vision_pooled_lora_s42/last_checkpoint.pt",
+    "file": "last_checkpoint.pt",
+    "sha256": "07bff7cdb853949a4031bfb0b17e3eb88dcc68e55ea2abc8882e375f81452f7a",
+    "bytes": 81222256,
+    "downloaded": false
+  },
+  {
+    "run_id": "20260908_v4_formal_imagenette_qwen_vision_pooled_lora_s42",
+    "source": "/DATA/DATA1/guest3/2026OpticsMoE/TransferFromElectricity/tasks/t01_object_retrieval/runs/simulation/20260908_v4_formal_imagenette_qwen_vision_pooled_lora_s42/final_report.json",
+    "file": "final_report.json",
+    "sha256": "09fbba610704f209f84799e875886c918972bb75d31aec4823c8f13e27ade53b",
+    "bytes": 34709
+  },
+  {
+    "run_id": "20260908_v4_formal_imagenette_qwen_vision_pooled_lora_s42",
+    "source": "/DATA/DATA1/guest3/2026OpticsMoE/TransferFromElectricity/tasks/t01_object_retrieval/runs/simulation/20260908_v4_formal_imagenette_qwen_vision_pooled_lora_s42/history.json",
+    "file": "history.json",
+    "sha256": "11f2bb92a931f6ded2a223c9784fc2d9343ecb1a5528a7d1aa6ebdc15c454759",
+    "bytes": 173602
+  },
+  {
+    "run_id": "20260908_v4_formal_imagenette_qwen_vision_pooled_lora_s42",
+    "source": "/DATA/DATA1/guest3/2026OpticsMoE/TransferFromElectricity/tasks/t01_object_retrieval/runs/simulation/20260908_v4_formal_imagenette_qwen_vision_pooled_lora_s42/epoch_timing.json",
+    "file": "epoch_timing.json",
+    "sha256": "8c03dd8089cbf86ea49bbb59387727b77d92e497911bbb66445f6d388d998888",
+    "bytes": 10309
+  },
+  {
+    "run_id": "20260908_v4_formal_imagenette_qwen_vision_pooled_lora_s42",
+    "source": "/DATA/DATA1/guest3/2026OpticsMoE/TransferFromElectricity/tasks/t01_object_retrieval/runs/simulation/20260908_v4_formal_imagenette_qwen_vision_pooled_lora_s42/protocol.json",
+    "file": "protocol.json",
+    "sha256": "76e5f431c300979d4c17f1c0f1b813c5aeb733a989fb106769001af03cdbf616",
+    "bytes": 2246
+  },
+  {
+    "run_id": "20260908_v4_formal_imagenette_qwen_vision_pooled_lora_s42",
+    "source": "/DATA/DATA1/guest3/2026OpticsMoE/TransferFromElectricity/tasks/t01_object_retrieval/runs/simulation/20260908_v4_formal_imagenette_qwen_vision_pooled_lora_s42/environment.json",
+    "file": "environment.json",
+    "sha256": "7e3c60ad907d08aa74390036ddac0992d0df339e0eb52e13f7c4e18da216f7ae",
+    "bytes": 1145
+  },
+  {
+    "run_id": "20260908_v4_formal_imagenette_qwen_vision_pooled_lora_s42",
+    "source": "/DATA/DATA1/guest3/2026OpticsMoE/TransferFromElectricity/tasks/t01_object_retrieval/runs/simulation/20260908_v4_formal_imagenette_qwen_vision_pooled_lora_s42/zero_initialization.json",
+    "file": "zero_initialization.json",
+    "sha256": "6444fec4f618bf4eec20ffd851df95dbcb5f809ee654edeffd1a1d2bc54e78ac",
+    "bytes": 2784
+  },
+  {
+    "run_id": "20260908_v4_formal_imagenette_qwen_vision_pooled_lora_s42",
+    "source": "/DATA/DATA1/guest3/2026OpticsMoE/TransferFromElectricity/tasks/t01_object_retrieval/runs/simulation/20260908_v4_formal_imagenette_qwen_vision_pooled_lora_s42/expert_bank.pt",
+    "file": "expert_bank.pt",
+    "sha256": "030ad775049311f384ae3e7c796dbe88136b7454dd79ffa21026aee6da9bb2d4",
+    "bytes": 6869104
+  },
+  {
+    "run_id": "20260908_v4_formal_imagenette_qwen_vision_pooled_lora_s42",
+    "source": "/DATA/DATA1/guest3/2026OpticsMoE/TransferFromElectricity/tasks/t01_object_retrieval/runs/simulation/20260908_v4_formal_imagenette_qwen_vision_pooled_lora_s42/gpu_execution.json",
+    "file": "gpu_execution.json",
+    "sha256": "624f37c9d15434dbcaedd92034be16ad1f21b39d6d85e47f08246de92165d321",
+    "bytes": 1087
+  },
+  {
+    "run_id": "20260908_v4_formal_imagenette_qwen_vision_pooled_lora_s42",
+    "source": "/DATA/DATA1/guest3/2026OpticsMoE/TransferFromElectricity/tasks/t01_object_retrieval/runs/simulation/20260908_v4_formal_imagenette_qwen_vision_pooled_lora_s42/architecture.json",
+    "file": "architecture.json",
+    "sha256": "ff5727327ac015968c4a3e92ce3130cebd6bfdcc923c2b7b7c6990b82b3c4cb6",
+    "bytes": 15857
+  },
+  {
+    "run_id": "20260908_v4_formal_imagenette_qwen_vision_pooled_lora_s42",
+    "source": "/DATA/DATA1/guest3/2026OpticsMoE/TransferFromElectricity/tasks/t01_object_retrieval/runs/simulation/20260908_v4_formal_imagenette_qwen_vision_pooled_lora_s42/initial_validation.json",
+    "file": "initial_validation.json",
+    "sha256": "fc31ed0741fd71608d2c4dbee795cf3de7b1d2d9df3e9545b7e69b1e48f45d58",
+    "bytes": 2741
+  },
+  {
+    "run_id": "20260908_v4_formal_imagenette_qwen_vision_pooled_lora_s42",
+    "source": "/DATA/DATA1/guest3/2026OpticsMoE/TransferFromElectricity/tasks/t01_object_retrieval/runs/simulation/20260908_v4_formal_imagenette_qwen_vision_pooled_lora_s42/initialization.json",
+    "file": "initialization.json",
+    "sha256": "120e5d04b152e6289350cea6ba6fb6e72759a8086cc92d135793fe07fff65e17",
+    "bytes": 1864
+  },
+  {
+    "run_id": "20260908_v4_formal_imagenette_qwen_vision_pooled_lora_s42",
+    "source": "/DATA/DATA1/guest3/2026OpticsMoE/TransferFromElectricity/tasks/t01_object_retrieval/runs/simulation/20260908_v4_formal_imagenette_qwen_vision_pooled_lora_s42/split.json",
+    "file": "split.json",
+    "sha256": "7a9359944761664d2a86abbcb298af405c527ef8140d46a67f282d240b9df339",
+    "bytes": 5017425
+  },
+  {
+    "run_id": "20260908_v4_formal_imagenette_qwen_vision_pooled_lora_s42",
+    "source": "/DATA/DATA1/guest3/2026OpticsMoE/TransferFromElectricity/tasks/t01_object_retrieval/runs/simulation/20260908_v4_formal_imagenette_qwen_vision_pooled_lora_s42/data_hashes.json",
+    "file": "data_hashes.json",
+    "sha256": "9bb8993b8820d0a05b32d0ca71c6e657683928d1e0b22286eafe05b377d3e245",
+    "bytes": 2533853
+  },
+  {
+    "run_id": "20260908_v4_formal_imagenette_qwen_vision_pooled_lora_s42",
+    "source": "/DATA/DATA1/guest3/2026OpticsMoE/TransferFromElectricity/tasks/t01_object_retrieval/runs/simulation/20260908_v4_formal_imagenette_qwen_vision_pooled_lora_s42/config.yaml",
+    "file": "config.yaml",
+    "sha256": "dfd8247c36b38622f9846e204e749e7abc2dd52784b27fa7841f3bb29dced429",
+    "bytes": 11804
+  },
+  {
+    "run_id": "20260908_v4_formal_imagenette_qwen_vision_pooled_lora_s42",
+    "source": "/DATA/DATA1/guest3/2026OpticsMoE/TransferFromElectricity/tasks/t01_object_retrieval/runs/simulation/20260908_v4_formal_imagenette_qwen_vision_pooled_lora_s42/fixed_references.json",
+    "file": "fixed_references.json",
+    "sha256": "1fef5a2633f4bd258b4d75d2df5b95ae9a6bf303f5c1cbfb660565c3cdba56b8",
+    "bytes": 4687
+  },
+  {
+    "run_id": "20260908_v4_formal_imagenette_qwen_vision_pooled_lora_s42",
+    "source": "/DATA/DATA1/guest3/2026OpticsMoE/TransferFromElectricity/tasks/t01_object_retrieval/runs/simulation/20260908_v4_formal_imagenette_qwen_vision_pooled_lora_s42/generator_source_manifest.json",
+    "file": "generator_source_manifest.json",
+    "sha256": "2bd7af7339d264f1c7800c4b9c30763eaf2e6bfc3108739c0398b5590e29f744",
+    "bytes": 1069
+  },
+  {
+    "run_id": "20260908_v4_formal_imagenette_qwen_vision_lora_s42",
+    "evidence_type": "remote_checkpoint_sha256",
+    "source": "/DATA/DATA1/guest3/2026OpticsMoE/TransferFromElectricity/tasks/t01_object_retrieval/runs/simulation/20260908_v4_formal_imagenette_qwen_vision_lora_s42/best_checkpoint.pt",
+    "file": "best_checkpoint.pt",
+    "sha256": "7da41e947b4fbe1e91d060866768ee0e35107f7a0ecda3a0d18c89f150b2956f",
+    "bytes": 81084656,
+    "downloaded": false
+  },
+  {
+    "run_id": "20260908_v4_formal_imagenette_qwen_vision_lora_s42",
+    "evidence_type": "remote_checkpoint_sha256",
+    "source": "/DATA/DATA1/guest3/2026OpticsMoE/TransferFromElectricity/tasks/t01_object_retrieval/runs/simulation/20260908_v4_formal_imagenette_qwen_vision_lora_s42/last_checkpoint.pt",
+    "file": "last_checkpoint.pt",
+    "sha256": "fc0e871633929fd76258ae9c0cd4a50eb6b7a79e57f2c309efd5a1c7f899eae3",
+    "bytes": 81222256,
+    "downloaded": false
+  },
+  {
+    "run_id": "20260908_v4_formal_imagenette_qwen_vision_lora_s42",
+    "source": "/DATA/DATA1/guest3/2026OpticsMoE/TransferFromElectricity/tasks/t01_object_retrieval/runs/simulation/20260908_v4_formal_imagenette_qwen_vision_lora_s42/final_report.json",
+    "file": "final_report.json",
+    "sha256": "a4abf988bfef85e386a32f241b98ddff482d16c3e6853e56fba0ed04813ff6eb",
+    "bytes": 34663
+  },
+  {
+    "run_id": "20260908_v4_formal_imagenette_qwen_vision_lora_s42",
+    "source": "/DATA/DATA1/guest3/2026OpticsMoE/TransferFromElectricity/tasks/t01_object_retrieval/runs/simulation/20260908_v4_formal_imagenette_qwen_vision_lora_s42/history.json",
+    "file": "history.json",
+    "sha256": "925971b30e1ff5cc73e87e4c5e71e2071e061cbd37579814d0df11e393cfa3a3",
+    "bytes": 173525
+  },
+  {
+    "run_id": "20260908_v4_formal_imagenette_qwen_vision_lora_s42",
+    "source": "/DATA/DATA1/guest3/2026OpticsMoE/TransferFromElectricity/tasks/t01_object_retrieval/runs/simulation/20260908_v4_formal_imagenette_qwen_vision_lora_s42/epoch_timing.json",
+    "file": "epoch_timing.json",
+    "sha256": "8d0f6c1d207a2efba80579984c3034ed6537cb898c2ce4dd7fc108a5a8b8561a",
+    "bytes": 10307
+  },
+  {
+    "run_id": "20260908_v4_formal_imagenette_qwen_vision_lora_s42",
+    "source": "/DATA/DATA1/guest3/2026OpticsMoE/TransferFromElectricity/tasks/t01_object_retrieval/runs/simulation/20260908_v4_formal_imagenette_qwen_vision_lora_s42/protocol.json",
+    "file": "protocol.json",
+    "sha256": "45e82743d0d93b0d002e8770452641d6252ef5500ea34255151ff83a2a77eb2f",
+    "bytes": 2239
+  },
+  {
+    "run_id": "20260908_v4_formal_imagenette_qwen_vision_lora_s42",
+    "source": "/DATA/DATA1/guest3/2026OpticsMoE/TransferFromElectricity/tasks/t01_object_retrieval/runs/simulation/20260908_v4_formal_imagenette_qwen_vision_lora_s42/environment.json",
+    "file": "environment.json",
+    "sha256": "cf2649e36de1e34ce0891f5bb7d6d9186f7a69ddd1c461e78d34c19217988ced",
+    "bytes": 1131
+  },
+  {
+    "run_id": "20260908_v4_formal_imagenette_qwen_vision_lora_s42",
+    "source": "/DATA/DATA1/guest3/2026OpticsMoE/TransferFromElectricity/tasks/t01_object_retrieval/runs/simulation/20260908_v4_formal_imagenette_qwen_vision_lora_s42/zero_initialization.json",
+    "file": "zero_initialization.json",
+    "sha256": "6444fec4f618bf4eec20ffd851df95dbcb5f809ee654edeffd1a1d2bc54e78ac",
+    "bytes": 2784
+  },
+  {
+    "run_id": "20260908_v4_formal_imagenette_qwen_vision_lora_s42",
+    "source": "/DATA/DATA1/guest3/2026OpticsMoE/TransferFromElectricity/tasks/t01_object_retrieval/runs/simulation/20260908_v4_formal_imagenette_qwen_vision_lora_s42/expert_bank.pt",
+    "file": "expert_bank.pt",
+    "sha256": "adc1d6ce348b2d8dbea3e5aad4f0c447b167b38f34a10837cb644b1b5a7cfe19",
+    "bytes": 6869104
+  },
+  {
+    "run_id": "20260908_v4_formal_imagenette_qwen_vision_lora_s42",
+    "source": "/DATA/DATA1/guest3/2026OpticsMoE/TransferFromElectricity/tasks/t01_object_retrieval/runs/simulation/20260908_v4_formal_imagenette_qwen_vision_lora_s42/gpu_execution.json",
+    "file": "gpu_execution.json",
+    "sha256": "af3d4b41e3748602b03ffbf73352130d9d8e91d3365ddfd70dafd9ef169c44ad",
+    "bytes": 1102
+  },
+  {
+    "run_id": "20260908_v4_formal_imagenette_qwen_vision_lora_s42",
+    "source": "/DATA/DATA1/guest3/2026OpticsMoE/TransferFromElectricity/tasks/t01_object_retrieval/runs/simulation/20260908_v4_formal_imagenette_qwen_vision_lora_s42/architecture.json",
+    "file": "architecture.json",
+    "sha256": "a231c645101a7b4f4db364ba0497381f9aca05660223c7e2a05a6a7cc4a1e099",
+    "bytes": 15851
+  },
+  {
+    "run_id": "20260908_v4_formal_imagenette_qwen_vision_lora_s42",
+    "source": "/DATA/DATA1/guest3/2026OpticsMoE/TransferFromElectricity/tasks/t01_object_retrieval/runs/simulation/20260908_v4_formal_imagenette_qwen_vision_lora_s42/initial_validation.json",
+    "file": "initial_validation.json",
+    "sha256": "fc31ed0741fd71608d2c4dbee795cf3de7b1d2d9df3e9545b7e69b1e48f45d58",
+    "bytes": 2741
+  },
+  {
+    "run_id": "20260908_v4_formal_imagenette_qwen_vision_lora_s42",
+    "source": "/DATA/DATA1/guest3/2026OpticsMoE/TransferFromElectricity/tasks/t01_object_retrieval/runs/simulation/20260908_v4_formal_imagenette_qwen_vision_lora_s42/initialization.json",
+    "file": "initialization.json",
+    "sha256": "120e5d04b152e6289350cea6ba6fb6e72759a8086cc92d135793fe07fff65e17",
+    "bytes": 1864
+  },
+  {
+    "run_id": "20260908_v4_formal_imagenette_qwen_vision_lora_s42",
+    "source": "/DATA/DATA1/guest3/2026OpticsMoE/TransferFromElectricity/tasks/t01_object_retrieval/runs/simulation/20260908_v4_formal_imagenette_qwen_vision_lora_s42/split.json",
+    "file": "split.json",
+    "sha256": "7a9359944761664d2a86abbcb298af405c527ef8140d46a67f282d240b9df339",
+    "bytes": 5017425
+  },
+  {
+    "run_id": "20260908_v4_formal_imagenette_qwen_vision_lora_s42",
+    "source": "/DATA/DATA1/guest3/2026OpticsMoE/TransferFromElectricity/tasks/t01_object_retrieval/runs/simulation/20260908_v4_formal_imagenette_qwen_vision_lora_s42/data_hashes.json",
+    "file": "data_hashes.json",
+    "sha256": "9bb8993b8820d0a05b32d0ca71c6e657683928d1e0b22286eafe05b377d3e245",
+    "bytes": 2533853
+  },
+  {
+    "run_id": "20260908_v4_formal_imagenette_qwen_vision_lora_s42",
+    "source": "/DATA/DATA1/guest3/2026OpticsMoE/TransferFromElectricity/tasks/t01_object_retrieval/runs/simulation/20260908_v4_formal_imagenette_qwen_vision_lora_s42/config.yaml",
+    "file": "config.yaml",
+    "sha256": "8060d997d0008af36a7f33f2fb022f3c8191e1274e848e549a41c29e5d89147b",
+    "bytes": 11790
+  },
+  {
+    "run_id": "20260908_v4_formal_imagenette_qwen_vision_lora_s42",
+    "source": "/DATA/DATA1/guest3/2026OpticsMoE/TransferFromElectricity/tasks/t01_object_retrieval/runs/simulation/20260908_v4_formal_imagenette_qwen_vision_lora_s42/fixed_references.json",
+    "file": "fixed_references.json",
+    "sha256": "1fef5a2633f4bd258b4d75d2df5b95ae9a6bf303f5c1cbfb660565c3cdba56b8",
+    "bytes": 4687
+  },
+  {
+    "run_id": "20260908_v4_formal_imagenette_qwen_vision_lora_s42",
+    "source": "/DATA/DATA1/guest3/2026OpticsMoE/TransferFromElectricity/tasks/t01_object_retrieval/runs/simulation/20260908_v4_formal_imagenette_qwen_vision_lora_s42/generator_source_manifest.json",
+    "file": "generator_source_manifest.json",
+    "sha256": "2bd7af7339d264f1c7800c4b9c30763eaf2e6bfc3108739c0398b5590e29f744",
+    "bytes": 1069
+  },
+  {
+    "run_id": "20260908_v4_formal_imagenette_qwen_vision_global_lora_s42",
+    "evidence_type": "remote_checkpoint_sha256",
+    "source": "/DATA/DATA1/guest3/2026OpticsMoE/TransferFromElectricity/tasks/t01_object_retrieval/runs/simulation/20260908_v4_formal_imagenette_qwen_vision_global_lora_s42/best_checkpoint.pt",
+    "file": "best_checkpoint.pt",
+    "sha256": "0af46a11b37155cd10e8b707b888c145cf5de9fcc2c061be92af9e1788b0bc16",
+    "bytes": 85090464,
+    "downloaded": false
+  },
+  {
+    "run_id": "20260908_v4_formal_imagenette_qwen_vision_global_lora_s42",
+    "evidence_type": "remote_checkpoint_sha256",
+    "source": "/DATA/DATA1/guest3/2026OpticsMoE/TransferFromElectricity/tasks/t01_object_retrieval/runs/simulation/20260908_v4_formal_imagenette_qwen_vision_global_lora_s42/last_checkpoint.pt",
+    "file": "last_checkpoint.pt",
+    "sha256": "778bdd995de5353cc708be9fa294b048022d1108f9dad094bba7709085732a2a",
+    "bytes": 85228192,
+    "downloaded": false
+  },
+  {
+    "run_id": "20260908_v4_formal_imagenette_qwen_vision_global_lora_s42",
+    "source": "/DATA/DATA1/guest3/2026OpticsMoE/TransferFromElectricity/tasks/t01_object_retrieval/runs/simulation/20260908_v4_formal_imagenette_qwen_vision_global_lora_s42/final_report.json",
+    "file": "final_report.json",
+    "sha256": "16ffd11532e95187e0e54b706648e41c982e1b50fc37f2d4a8d2007f73c52252",
+    "bytes": 34730
+  },
+  {
+    "run_id": "20260908_v4_formal_imagenette_qwen_vision_global_lora_s42",
+    "source": "/DATA/DATA1/guest3/2026OpticsMoE/TransferFromElectricity/tasks/t01_object_retrieval/runs/simulation/20260908_v4_formal_imagenette_qwen_vision_global_lora_s42/history.json",
+    "file": "history.json",
+    "sha256": "5c68aa3e6202fdc52d98b28d1f55d17a1a9d469415416655ebff256e4d23c674",
+    "bytes": 174668
+  },
+  {
+    "run_id": "20260908_v4_formal_imagenette_qwen_vision_global_lora_s42",
+    "source": "/DATA/DATA1/guest3/2026OpticsMoE/TransferFromElectricity/tasks/t01_object_retrieval/runs/simulation/20260908_v4_formal_imagenette_qwen_vision_global_lora_s42/epoch_timing.json",
+    "file": "epoch_timing.json",
+    "sha256": "d9aa63ce9240dbe417031e7389405b2588687a0acde1d9a9ef6992fc3d3704f9",
+    "bytes": 10310
+  },
+  {
+    "run_id": "20260908_v4_formal_imagenette_qwen_vision_global_lora_s42",
+    "source": "/DATA/DATA1/guest3/2026OpticsMoE/TransferFromElectricity/tasks/t01_object_retrieval/runs/simulation/20260908_v4_formal_imagenette_qwen_vision_global_lora_s42/protocol.json",
+    "file": "protocol.json",
+    "sha256": "f893d78fcd69c66f8943574a2a9ee178b3ce315dd5af8aa1a5393e9e81bcf6c0",
+    "bytes": 2246
+  },
+  {
+    "run_id": "20260908_v4_formal_imagenette_qwen_vision_global_lora_s42",
+    "source": "/DATA/DATA1/guest3/2026OpticsMoE/TransferFromElectricity/tasks/t01_object_retrieval/runs/simulation/20260908_v4_formal_imagenette_qwen_vision_global_lora_s42/environment.json",
+    "file": "environment.json",
+    "sha256": "c33b5659747c41e228ec892f820ab45966779895b74c2709d5e2dca7e14c7870",
+    "bytes": 1145
+  },
+  {
+    "run_id": "20260908_v4_formal_imagenette_qwen_vision_global_lora_s42",
+    "source": "/DATA/DATA1/guest3/2026OpticsMoE/TransferFromElectricity/tasks/t01_object_retrieval/runs/simulation/20260908_v4_formal_imagenette_qwen_vision_global_lora_s42/zero_initialization.json",
+    "file": "zero_initialization.json",
+    "sha256": "6444fec4f618bf4eec20ffd851df95dbcb5f809ee654edeffd1a1d2bc54e78ac",
+    "bytes": 2784
+  },
+  {
+    "run_id": "20260908_v4_formal_imagenette_qwen_vision_global_lora_s42",
+    "source": "/DATA/DATA1/guest3/2026OpticsMoE/TransferFromElectricity/tasks/t01_object_retrieval/runs/simulation/20260908_v4_formal_imagenette_qwen_vision_global_lora_s42/expert_bank.pt",
+    "file": "expert_bank.pt",
+    "sha256": "2e25bb180d7f4d3780289fcaf77f3ac8e7a425fe2bbd5b78e034cde06422a5dc",
+    "bytes": 6869104
+  },
+  {
+    "run_id": "20260908_v4_formal_imagenette_qwen_vision_global_lora_s42",
+    "source": "/DATA/DATA1/guest3/2026OpticsMoE/TransferFromElectricity/tasks/t01_object_retrieval/runs/simulation/20260908_v4_formal_imagenette_qwen_vision_global_lora_s42/gpu_execution.json",
+    "file": "gpu_execution.json",
+    "sha256": "b186b57962ab9209ada82dd36f413ee5900ecda478f17cb152ac22901cec06ec",
+    "bytes": 1088
+  },
+  {
+    "run_id": "20260908_v4_formal_imagenette_qwen_vision_global_lora_s42",
+    "source": "/DATA/DATA1/guest3/2026OpticsMoE/TransferFromElectricity/tasks/t01_object_retrieval/runs/simulation/20260908_v4_formal_imagenette_qwen_vision_global_lora_s42/architecture.json",
+    "file": "architecture.json",
+    "sha256": "aeded4e2dbbbd8b1a93cc8b90e39c1d621287c4b35e59ef69a973d5ff021afb0",
+    "bytes": 18405
+  },
+  {
+    "run_id": "20260908_v4_formal_imagenette_qwen_vision_global_lora_s42",
+    "source": "/DATA/DATA1/guest3/2026OpticsMoE/TransferFromElectricity/tasks/t01_object_retrieval/runs/simulation/20260908_v4_formal_imagenette_qwen_vision_global_lora_s42/initial_validation.json",
+    "file": "initial_validation.json",
+    "sha256": "fc31ed0741fd71608d2c4dbee795cf3de7b1d2d9df3e9545b7e69b1e48f45d58",
+    "bytes": 2741
+  },
+  {
+    "run_id": "20260908_v4_formal_imagenette_qwen_vision_global_lora_s42",
+    "source": "/DATA/DATA1/guest3/2026OpticsMoE/TransferFromElectricity/tasks/t01_object_retrieval/runs/simulation/20260908_v4_formal_imagenette_qwen_vision_global_lora_s42/initialization.json",
+    "file": "initialization.json",
+    "sha256": "120e5d04b152e6289350cea6ba6fb6e72759a8086cc92d135793fe07fff65e17",
+    "bytes": 1864
+  },
+  {
+    "run_id": "20260908_v4_formal_imagenette_qwen_vision_global_lora_s42",
+    "source": "/DATA/DATA1/guest3/2026OpticsMoE/TransferFromElectricity/tasks/t01_object_retrieval/runs/simulation/20260908_v4_formal_imagenette_qwen_vision_global_lora_s42/split.json",
+    "file": "split.json",
+    "sha256": "7a9359944761664d2a86abbcb298af405c527ef8140d46a67f282d240b9df339",
+    "bytes": 5017425
+  },
+  {
+    "run_id": "20260908_v4_formal_imagenette_qwen_vision_global_lora_s42",
+    "source": "/DATA/DATA1/guest3/2026OpticsMoE/TransferFromElectricity/tasks/t01_object_retrieval/runs/simulation/20260908_v4_formal_imagenette_qwen_vision_global_lora_s42/data_hashes.json",
+    "file": "data_hashes.json",
+    "sha256": "9bb8993b8820d0a05b32d0ca71c6e657683928d1e0b22286eafe05b377d3e245",
+    "bytes": 2533853
+  },
+  {
+    "run_id": "20260908_v4_formal_imagenette_qwen_vision_global_lora_s42",
+    "source": "/DATA/DATA1/guest3/2026OpticsMoE/TransferFromElectricity/tasks/t01_object_retrieval/runs/simulation/20260908_v4_formal_imagenette_qwen_vision_global_lora_s42/config.yaml",
+    "file": "config.yaml",
+    "sha256": "1e9e58f062d58479129f3b4b795891f8a79a638a8626aad5db6f440e67961e9f",
+    "bytes": 11804
+  },
+  {
+    "run_id": "20260908_v4_formal_imagenette_qwen_vision_global_lora_s42",
+    "source": "/DATA/DATA1/guest3/2026OpticsMoE/TransferFromElectricity/tasks/t01_object_retrieval/runs/simulation/20260908_v4_formal_imagenette_qwen_vision_global_lora_s42/fixed_references.json",
+    "file": "fixed_references.json",
+    "sha256": "1fef5a2633f4bd258b4d75d2df5b95ae9a6bf303f5c1cbfb660565c3cdba56b8",
+    "bytes": 4687
+  },
+  {
+    "run_id": "20260908_v4_formal_imagenette_qwen_vision_global_lora_s42",
+    "source": "/DATA/DATA1/guest3/2026OpticsMoE/TransferFromElectricity/tasks/t01_object_retrieval/runs/simulation/20260908_v4_formal_imagenette_qwen_vision_global_lora_s42/generator_source_manifest.json",
+    "file": "generator_source_manifest.json",
+    "sha256": "2bd7af7339d264f1c7800c4b9c30763eaf2e6bfc3108739c0398b5590e29f744",
+    "bytes": 1069
+  }
+]

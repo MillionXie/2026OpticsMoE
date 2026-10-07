@@ -1,0 +1,39 @@
+{
+  "controller_sha": "0fabb3c33b9c13e64292f57cd4d7a572092409ed",
+  "training_sha": "c024b9280433f6e7fe31fc0122a1b8aadf342b38",
+  "training_root": "/DATA/DATA1/guest3/worktrees/static_spatial_v4_formal",
+  "candidate_uuids": [
+    "GPU-afc19890-6209-ee4d-622d-e619da5bd5b2",
+    "GPU-e8837b85-d55b-8e81-aaa5-ec1ac326932d",
+    "GPU-1b963983-7909-af6e-0528-f0f0661ab549",
+    "GPU-4d8bfdb9-8777-05a6-3811-ab18ff4eadfd",
+    "GPU-6dcca91a-8e08-1a50-9aa6-81defeaed50b",
+    "GPU-d53ce4c8-272d-c2fb-dc09-f182d586c4eb"
+  ],
+  "chosen_uuid": "GPU-e8837b85-d55b-8e81-aaa5-ec1ac326932d",
+  "command": [
+    "/home/guest3/miniconda3/envs/xml/bin/python",
+    "-u",
+    "-m",
+    "TransferFromElectricity.tasks.t01_object_retrieval.run_spatial_suite",
+    "--gpu-uuids",
+    "GPU-e8837b85-d55b-8e81-aaa5-ec1ac326932d",
+    "--datasets",
+    "imagenette",
+    "--methods",
+    "qwen_vision_lora",
+    "qwen_vision_global_lora",
+    "direct",
+    "clip_vision_lora",
+    "qwen_vision_pooled_lora",
+    "--prefix",
+    "20260908_v4_formal",
+    "--wait-for-gpus"
+  ],
+  "selected_at": 1788865320.088122,
+  "policy": "Choose an empty RTX, excluding all GPUs reserved by incomplete paired suites",
+  "status": "complete",
+  "queue_pid": 3574974,
+  "returncode": 0,
+  "finished_at": 1788884982.7515368
+}

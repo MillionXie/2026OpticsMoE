@@ -1,0 +1,74 @@
+[
+  {
+    "run_id": "20260907_v3_dev_base_s42",
+    "status": "complete",
+    "role": "excluded_numerical_diagnostic",
+    "reason": "Native CUDA pooling backward nondeterminism; mixed GPU models. Replaced by deterministic RTX 4090 validation grid before formal testing.",
+    "evaluation_split": "validation",
+    "device": "NVIDIA GeForce RTX 4090",
+    "git_sha": "9f0ba41d9b60780b36567fa1df21dc2d4d421f6f",
+    "validation_top1": 0.38499999046325684,
+    "validation_top3": 0.7099999785423279,
+    "result_sha256": "5747cc41329d4eb731ad0cf3dea418e6e77512c47e59eef24ab639a3abdfe6d3"
+  },
+  {
+    "run_id": "20260907_v3_dev_encoder_focus_s42",
+    "status": "complete",
+    "role": "excluded_numerical_diagnostic",
+    "reason": "Native CUDA pooling backward nondeterminism; mixed GPU models. Replaced by deterministic RTX 4090 validation grid before formal testing.",
+    "evaluation_split": "validation",
+    "device": "NVIDIA GeForce RTX 4090",
+    "git_sha": "9f0ba41d9b60780b36567fa1df21dc2d4d421f6f",
+    "validation_top1": 0.375,
+    "validation_top3": 0.6700000166893005,
+    "result_sha256": "91415ef8a8cc5b521172a88bce645fa4b2c407cac8833045f4a919a458a93338"
+  },
+  {
+    "run_id": "20260907_v3_dev_frozen_e_s42",
+    "status": "complete",
+    "role": "excluded_numerical_diagnostic",
+    "reason": "Native CUDA pooling backward nondeterminism; mixed GPU models. Replaced by deterministic RTX 4090 validation grid before formal testing.",
+    "evaluation_split": "validation",
+    "device": "NVIDIA GeForce RTX 4090",
+    "git_sha": "9f0ba41d9b60780b36567fa1df21dc2d4d421f6f",
+    "validation_top1": 0.375,
+    "validation_top3": 0.6600000262260437,
+    "result_sha256": "8720400d72daeb67f4580fe138c0a9b5457250b6cd0df62e88f2b633b5c57c86"
+  },
+  {
+    "run_id": "20260907_v3_dev_high_g_s42",
+    "status": "complete",
+    "role": "excluded_numerical_diagnostic",
+    "reason": "Native CUDA pooling backward nondeterminism; mixed GPU models. Replaced by deterministic RTX 4090 validation grid before formal testing.",
+    "evaluation_split": "validation",
+    "device": "NVIDIA GeForce RTX 3090",
+    "git_sha": "9f0ba41d9b60780b36567fa1df21dc2d4d421f6f",
+    "validation_top1": 0.36500000953674316,
+    "validation_top3": 0.6700000166893005,
+    "result_sha256": "c1cda2d1e4e530ebb657681e09dafb0df3114aac5da93140f5ae128ebef7660c"
+  },
+  {
+    "run_id": "20260907_v3_dev_slow_e_high_g_s42",
+    "status": "complete",
+    "role": "excluded_numerical_diagnostic",
+    "reason": "Native CUDA pooling backward nondeterminism; mixed GPU models. Replaced by deterministic RTX 4090 validation grid before formal testing.",
+    "evaluation_split": "validation",
+    "device": "NVIDIA GeForce RTX 3090",
+    "git_sha": "9f0ba41d9b60780b36567fa1df21dc2d4d421f6f",
+    "validation_top1": 0.375,
+    "validation_top3": 0.6850000023841858,
+    "result_sha256": "e8c8dbf0ee33019c69ba6519fc874ebe60d1ca618389ed94544ed51a9bb572ba"
+  },
+  {
+    "run_id": "20260907_v3_dev_slow_e_s42",
+    "status": "complete",
+    "role": "excluded_numerical_diagnostic",
+    "reason": "Native CUDA pooling backward nondeterminism; mixed GPU models. Replaced by deterministic RTX 4090 validation grid before formal testing.",
+    "evaluation_split": "validation",
+    "device": "NVIDIA GeForce RTX 4090",
+    "git_sha": "9f0ba41d9b60780b36567fa1df21dc2d4d421f6f",
+    "validation_top1": 0.39500001072883606,
+    "validation_top3": 0.6949999928474426,
+    "result_sha256": "9d8534784355f8b98a6f8147df945e76c1d8f1afdcc9247300d3165bd5bed69d"
+  }
+]

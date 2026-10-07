@@ -1,0 +1,39 @@
+{
+  "controller_sha": "c558fd03054c9abc6e5db245a1017106a2549a1b",
+  "training_sha": "c558fd03054c9abc6e5db245a1017106a2549a1b",
+  "training_root": "/DATA/DATA1/guest3/worktrees/static_spatial_v4_timing",
+  "candidate_uuids": [
+    "GPU-4d8bfdb9-8777-05a6-3811-ab18ff4eadfd",
+    "GPU-d53ce4c8-272d-c2fb-dc09-f182d586c4eb"
+  ],
+  "chosen_uuid": "GPU-4d8bfdb9-8777-05a6-3811-ab18ff4eadfd",
+  "command": [
+    "/home/guest3/miniconda3/envs/xml/bin/python",
+    "-u",
+    "-m",
+    "TransferFromElectricity.tasks.t01_object_retrieval.run_spatial_suite",
+    "--gpu-uuids",
+    "GPU-4d8bfdb9-8777-05a6-3811-ab18ff4eadfd",
+    "--datasets",
+    "cifar",
+    "--methods",
+    "direct",
+    "clip_vision_lora",
+    "qwen_vision_pooled_lora",
+    "qwen_vision_lora",
+    "qwen_vision_global_lora",
+    "--prefix",
+    "20260908_v4_timing",
+    "--wait-for-gpus",
+    "--run-kind",
+    "smoke",
+    "--config",
+    "TransferFromElectricity/tasks/t01_object_retrieval/configs/spatial_v4/timing_cifar.yaml"
+  ],
+  "selected_at": 1788874824.3722568,
+  "policy": "Choose an empty RTX, excluding all GPUs reserved by incomplete paired suites",
+  "status": "complete",
+  "queue_pid": 4170181,
+  "returncode": 0,
+  "finished_at": 1788877915.3864496
+}

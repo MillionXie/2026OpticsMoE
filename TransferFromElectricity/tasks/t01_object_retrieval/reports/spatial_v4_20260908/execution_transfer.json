@@ -1,0 +1,50 @@
+[
+  {
+    "file": "20260908_v4_formal_caltech_execution.json",
+    "remote_path": "/DATA/DATA1/guest3/2026OpticsMoE/TransferFromElectricity/tasks/t01_object_retrieval/runs/simulation/20260908_v4_formal_caltech_execution.json",
+    "sha256": "235841662ac45f5129cc8da6b41dbb482a71744f3f406310e150d8a2e1adc45e",
+    "bytes": 5923,
+    "host": "202.120.62.181",
+    "port": 24096
+  },
+  {
+    "file": "20260908_v4_formal_cifar_execution.json",
+    "remote_path": "/DATA/DATA1/guest3/2026OpticsMoE/TransferFromElectricity/tasks/t01_object_retrieval/runs/simulation/20260908_v4_formal_cifar_execution.json",
+    "sha256": "b38c45b3fe44c5fa3d418ddaa8f58241b805285f8a6d807b42f0bc54b84c6a41",
+    "bytes": 5951,
+    "host": "202.120.62.181",
+    "port": 24096
+  },
+  {
+    "file": "20260908_v4_formal_imagenette_execution.json",
+    "remote_path": "/DATA/DATA1/guest3/2026OpticsMoE/TransferFromElectricity/tasks/t01_object_retrieval/runs/simulation/20260908_v4_formal_imagenette_execution.json",
+    "sha256": "9925ea232a577fb381657118b45eb202df9aeabd455558d357a1edcb2b7e9a62",
+    "bytes": 5953,
+    "host": "202.120.62.181",
+    "port": 24096
+  },
+  {
+    "file": "20260908_v4_formal_imagenette_allocation.json",
+    "remote_path": "/DATA/DATA1/guest3/2026OpticsMoE/TransferFromElectricity/tasks/t01_object_retrieval/runs/simulation/20260908_v4_formal_imagenette_allocation.json",
+    "sha256": "d974b5b5a8899edce6e21d2d26a488ce438f07306050474d7a78c31597afa037",
+    "bytes": 1287,
+    "host": "202.120.62.181",
+    "port": 24096
+  },
+  {
+    "file": "20260908_v4_timing_cifar_execution.json",
+    "remote_path": "/DATA/DATA1/guest3/2026OpticsMoE/TransferFromElectricity/tasks/t01_object_retrieval/runs/smoke/20260908_v4_timing_cifar_execution.json",
+    "sha256": "199040d9a226e0e51255b251b488d61261858e6004d14310bada9d2287d36605",
+    "bytes": 5909,
+    "host": "202.120.62.181",
+    "port": 24096
+  },
+  {
+    "file": "20260908_v4_timing_cifar_allocation.json",
+    "remote_path": "/DATA/DATA1/guest3/2026OpticsMoE/TransferFromElectricity/tasks/t01_object_retrieval/runs/smoke/20260908_v4_timing_cifar_allocation.json",
+    "sha256": "3770fba0159fac6415ddafcfc25e700b601f0dd7f4c960a79642e8066f53c2ae",
+    "bytes": 1233,
+    "host": "202.120.62.181",
+    "port": 24096
+  }
+]

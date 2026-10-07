@@ -1,0 +1,3 @@
+# Keep Linux JSON evidence hashes stable across Windows and server checkouts.
+*.json text eol=lf
+*.csv text eol=crlf

@@ -1,0 +1,159 @@
+{
+  "protocol": "300 training images, 50 steps, final EMA, one seed; not full-data benchmark",
+  "git_sha": "56d7e6b66b9d820b64ad476ceccb5bff56f55947",
+  "split_sha256": "edd18b958c25799f6bdf46ca1523f0f13b88a7ec285021b884e8a91b2a493508",
+  "seed": 42,
+  "test_used_for_checkpoint_selection": false,
+  "rows": [
+    {
+      "method": "direct",
+      "run_id": "20260907_static_direct_pilot_s42",
+      "top1": 0.8199999928474426,
+      "top3": 0.9300000071525574,
+      "mrr": 0.8860138654708862,
+      "train_samples": 300,
+      "optimizer_steps": 50,
+      "peak_memory_gib": 7.425044059753418,
+      "train_and_eval_seconds": 30.144160144031048,
+      "total_trainable": 2782485,
+      "generator_trainable": 0,
+      "initial_max_error": 0.0,
+      "first_task_loss": 2.598761796951294,
+      "last_epoch_mean_task_loss": 1.9656703114509582,
+      "expert_phase_rms_change_rad": 0.00839255377650261,
+      "export_max_error": 0.0,
+      "batch_max_error": 0.0022250041365623474,
+      "order_max_error": 0.0,
+      "task_gradient_chain": {
+        "task_to_expert_grad_norm": 0.054834794253110886
+      },
+      "train_expert_selection_counts": {
+        "vision": [
+          1133,
+          902,
+          641,
+          324
+        ],
+        "language": [
+          1500,
+          1500,
+          0,
+          0
+        ]
+      }
+    },
+    {
+      "method": "small_hyper",
+      "run_id": "20260907_static_small_hyper_pilot_s42",
+      "top1": 0.8199999928474426,
+      "top3": 0.9300000071525574,
+      "mrr": 0.8868471384048462,
+      "train_samples": 300,
+      "optimizer_steps": 50,
+      "peak_memory_gib": 7.436174392700195,
+      "train_and_eval_seconds": 30.01732687652111,
+      "total_trainable": 2741781,
+      "generator_trainable": 360704,
+      "initial_max_error": 0.0,
+      "first_task_loss": 2.60030460357666,
+      "last_epoch_mean_task_loss": 1.9696247220039367,
+      "expert_phase_rms_change_rad": 0.0077743735164403915,
+      "export_max_error": 0.0,
+      "batch_max_error": 0.002976551651954651,
+      "order_max_error": 0.0,
+      "task_gradient_chain": {
+        "task_to_expert_grad_norm": 0.054909706115722656
+      },
+      "train_expert_selection_counts": {
+        "vision": [
+          1132,
+          899,
+          644,
+          325
+        ],
+        "language": [
+          1500,
+          1500,
+          0,
+          0
+        ]
+      }
+    },
+    {
+      "method": "qwen_frozen",
+      "run_id": "20260907_static_qwen_frozen_pilot_s42",
+      "top1": 0.8149999976158142,
+      "top3": 0.9300000071525574,
+      "mrr": 0.884347140789032,
+      "train_samples": 300,
+      "optimizer_steps": 50,
+      "peak_memory_gib": 10.639877319335938,
+      "train_and_eval_seconds": 30.706880062818527,
+      "total_trainable": 2722325,
+      "generator_trainable": 341248,
+      "initial_max_error": 0.0,
+      "first_task_loss": 2.598761796951294,
+      "last_epoch_mean_task_loss": 1.9685457229614258,
+      "expert_phase_rms_change_rad": 0.01412753202021122,
+      "export_max_error": 0.0,
+      "batch_max_error": 0.0022880733013153076,
+      "order_max_error": 0.0,
+      "task_gradient_chain": {
+        "task_to_expert_grad_norm": 0.054834749549627304
+      },
+      "train_expert_selection_counts": {
+        "vision": [
+          1126,
+          898,
+          645,
+          331
+        ],
+        "language": [
+          1500,
+          1500,
+          0,
+          0
+        ]
+      }
+    },
+    {
+      "method": "qwen_lora",
+      "run_id": "20260907_static_qwen_lora_pilot_s42",
+      "top1": 0.8149999976158142,
+      "top3": 0.9300000071525574,
+      "mrr": 0.883513867855072,
+      "train_samples": 300,
+      "optimizer_steps": 50,
+      "peak_memory_gib": 11.248716354370117,
+      "train_and_eval_seconds": 36.43807987123728,
+      "total_trainable": 4327957,
+      "generator_trainable": 1946880,
+      "initial_max_error": 0.0,
+      "first_task_loss": 2.598761796951294,
+      "last_epoch_mean_task_loss": 1.9712909579277038,
+      "expert_phase_rms_change_rad": 0.013308852910995483,
+      "export_max_error": 0.0,
+      "batch_max_error": 0.0024403370916843414,
+      "order_max_error": 0.0,
+      "task_gradient_chain": {
+        "task_to_expert_grad_norm": 0.05483477562665939,
+        "task_to_lora_b_grad_norm": 0.0008386843255721033
+      },
+      "train_expert_selection_counts": {
+        "vision": [
+          1130,
+          902,
+          642,
+          326
+        ],
+        "language": [
+          1500,
+          1500,
+          0,
+          0
+        ]
+      }
+    }
+  ],
+  "time_boundary": "training loop + checkpoint I/O + final evaluations; excludes model loading/source hashing; CUDA simulation, not optical latency"
+}

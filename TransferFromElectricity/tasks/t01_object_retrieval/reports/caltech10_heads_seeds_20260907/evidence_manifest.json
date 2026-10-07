@@ -1,0 +1,122 @@
+[
+  {
+    "run_id": "20260907_caltech10_heads_direct_s42",
+    "file": "final_report.json",
+    "sha256": "ad9c1c5393920af73e8144b84fc3fa7e56658e946d0db20ee237d05dc81b5d80"
+  },
+  {
+    "run_id": "20260907_caltech10_heads_direct_s42",
+    "file": "protocol.json",
+    "sha256": "f5153ad42776ec56b31c15e131aef472f57fbccd16b005e080304f7acf4bff6a"
+  },
+  {
+    "run_id": "20260907_caltech10_heads_direct_s42",
+    "file": "environment.json",
+    "sha256": "f6a31857c6c22fc5bfcdfdce2830b2091a63e726424039a0184dd6bf17787d56"
+  },
+  {
+    "run_id": "20260907_caltech10_heads_direct_s42",
+    "file": "transfer_manifest.json",
+    "sha256": "3cf302d2d6f4e54eb27bd0c591eb26cc21ff5119b7ccd1b9510fa7ebdde57bb0"
+  },
+  {
+    "run_id": "20260907_caltech10_heads_qwen_lora_s42",
+    "file": "final_report.json",
+    "sha256": "c01e11d7bf49013291d5fef7aa24937ff58acf96f78304b3a920e07418b4c6a2"
+  },
+  {
+    "run_id": "20260907_caltech10_heads_qwen_lora_s42",
+    "file": "protocol.json",
+    "sha256": "e00bac289ec60072888f5f970ece7cac6bc801d38b2e7697e0b688494bf09871"
+  },
+  {
+    "run_id": "20260907_caltech10_heads_qwen_lora_s42",
+    "file": "environment.json",
+    "sha256": "1a73f4bd645d798a2c27227965c42380b9c61a87fd75e10e4554205c835c277b"
+  },
+  {
+    "run_id": "20260907_caltech10_heads_qwen_lora_s42",
+    "file": "transfer_manifest.json",
+    "sha256": "9ec3794fa13dcee41ab299bda756f51b5404f2353943f4b098a1d26265d5e12f"
+  },
+  {
+    "run_id": "20260907_caltech10_heads_direct_s43",
+    "file": "final_report.json",
+    "sha256": "aa82970c45a43b2db0fdf1224740d0507e77e425cb060ba26dc5d7f003a95206"
+  },
+  {
+    "run_id": "20260907_caltech10_heads_direct_s43",
+    "file": "protocol.json",
+    "sha256": "3637550da76d1f7b56c48084a818d61aa48b1c0c2596ccb816b08b05acbb5a14"
+  },
+  {
+    "run_id": "20260907_caltech10_heads_direct_s43",
+    "file": "environment.json",
+    "sha256": "ab324e58b8f75c7524f2effac6755009e084c0529439388ac744eb33e386ec3d"
+  },
+  {
+    "run_id": "20260907_caltech10_heads_direct_s43",
+    "file": "transfer_manifest.json",
+    "sha256": "59f035aabf61f743d5a3892e36c87948a5569dfa60d452c1999ab4ad13f731d3"
+  },
+  {
+    "run_id": "20260907_caltech10_heads_qwen_lora_s43",
+    "file": "final_report.json",
+    "sha256": "cb3008f29717136431a636a9080cb20ecc596ff3aa5aa80ea79949426a7b6b50"
+  },
+  {
+    "run_id": "20260907_caltech10_heads_qwen_lora_s43",
+    "file": "protocol.json",
+    "sha256": "2551d1cb245c294978fd84ed7ef10d3c30c1e456abd2c8d77f13e9b743ab9451"
+  },
+  {
+    "run_id": "20260907_caltech10_heads_qwen_lora_s43",
+    "file": "environment.json",
+    "sha256": "5ecc2b4239d5c33cf5e292169615422372c356e9ba0c4737155b37e6e594c5d4"
+  },
+  {
+    "run_id": "20260907_caltech10_heads_qwen_lora_s43",
+    "file": "transfer_manifest.json",
+    "sha256": "3e19eb86229b2fb75d81c4d96574e3886511a894ed29bbd0af941eb2a4dab69d"
+  },
+  {
+    "run_id": "20260907_caltech10_heads_direct_s44",
+    "file": "final_report.json",
+    "sha256": "b7994976225555612f9cfbe3ea3521933e41f3c31d18c3a2e5de179ee33f8baf"
+  },
+  {
+    "run_id": "20260907_caltech10_heads_direct_s44",
+    "file": "protocol.json",
+    "sha256": "463b1b5335ff7d3f74098e73e2e59f9cbae209b8c5fc131e96270fc31f181cee"
+  },
+  {
+    "run_id": "20260907_caltech10_heads_direct_s44",
+    "file": "environment.json",
+    "sha256": "3943d9ed8e2fb1a90ad39e433cd4b6511b4e2f9724357e2549d24902880961f9"
+  },
+  {
+    "run_id": "20260907_caltech10_heads_direct_s44",
+    "file": "transfer_manifest.json",
+    "sha256": "6a81681d378101709d4eaf8f776b95feffd85a10cf22af17ce2436063ecc4ee5"
+  },
+  {
+    "run_id": "20260907_caltech10_heads_qwen_lora_s44",
+    "file": "final_report.json",
+    "sha256": "bda175bac27989b846a7f9356271a6ee86b803a967e204b7f1fb40567eb3e0c0"
+  },
+  {
+    "run_id": "20260907_caltech10_heads_qwen_lora_s44",
+    "file": "protocol.json",
+    "sha256": "e37efe6fc92c1b60569af0536822c78f7639cc330811e04dd676b972b33c6164"
+  },
+  {
+    "run_id": "20260907_caltech10_heads_qwen_lora_s44",
+    "file": "environment.json",
+    "sha256": "6393bfef612bc73da76748baf1432ae2f94d5f994ddbdc5658ababf3ae239f11"
+  },
+  {
+    "run_id": "20260907_caltech10_heads_qwen_lora_s44",
+    "file": "transfer_manifest.json",
+    "sha256": "97067f776d61c1181a5bd6818fa863d1b94a6036c83bc0ddd46690af1c1b0f9f"
+  }
+]

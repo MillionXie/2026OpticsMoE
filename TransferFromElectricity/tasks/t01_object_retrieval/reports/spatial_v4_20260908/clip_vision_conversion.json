@@ -1,0 +1,7 @@
+{
+  "source": "/home/guest3/.cache/clip/ViT-B-16.pt",
+  "source_url": "https://openaipublic.azureedge.net/clip/models/5806e77cd80f8b59890b7e101eabd078d9fb84e6937f9e85e4ecb61988df416f/ViT-B-16.pt",
+  "source_sha256": "5806e77cd80f8b59890b7e101eabd078d9fb84e6937f9e85e4ecb61988df416f",
+  "patch_token_conversion_max_error": 0.0,
+  "weights_sha256": "594859c825365196742ff796e5098c831d0c25594f76b68181cf75c014a5d1a6"
+}

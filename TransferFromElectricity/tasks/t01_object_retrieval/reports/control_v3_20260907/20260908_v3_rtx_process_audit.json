@@ -1,0 +1,119 @@
+{
+  "observations": [
+    {
+      "run_id": "20260908_v3_formal_caltech_direct_s42",
+      "pid": 9129,
+      "gpu_uuid": "GPU-4d8bfdb9-8777-05a6-3811-ab18ff4eadfd",
+      "torch_device": "NVIDIA GeForce RTX 4090",
+      "source": "nvidia-smi process query observed earlier in this session",
+      "git_sha": "dee34f07aa2f8aadbcfbc2600d49bd76783abb41"
+    },
+    {
+      "run_id": "20260908_v3_formal_cifar_direct_s42",
+      "pid": 9138,
+      "gpu_uuid": "GPU-1b963983-7909-af6e-0528-f0f0661ab549",
+      "torch_device": "NVIDIA GeForce RTX 4090",
+      "source": "nvidia-smi process query observed earlier in this session",
+      "git_sha": "dee34f07aa2f8aadbcfbc2600d49bd76783abb41"
+    },
+    {
+      "run_id": "20260908_v3_formal_imagenette_direct_s42",
+      "pid": 21297,
+      "gpu_uuid": "GPU-afc19890-6209-ee4d-622d-e619da5bd5b2",
+      "torch_device": "NVIDIA GeForce RTX 4090",
+      "source": "nvidia-smi process query observed earlier in this session",
+      "git_sha": "dee34f07aa2f8aadbcfbc2600d49bd76783abb41"
+    },
+    {
+      "run_id": "20260908_v3_formal_caltech_qwen_lora_s42",
+      "pid": 22098,
+      "gpu_uuid": "GPU-e8837b85-d55b-8e81-aaa5-ec1ac326932d",
+      "torch_device": "NVIDIA GeForce RTX 4090",
+      "source": "nvidia-smi process query observed earlier in this session",
+      "git_sha": "dee34f07aa2f8aadbcfbc2600d49bd76783abb41"
+    },
+    {
+      "run_id": "20260908_v3_formal_cifar_qwen_lora_s42",
+      "pid": 70118,
+      "gpu_uuid": "GPU-4d8bfdb9-8777-05a6-3811-ab18ff4eadfd",
+      "torch_device": "NVIDIA GeForce RTX 4090",
+      "source": "live nvidia-smi process query",
+      "git_sha": "dee34f07aa2f8aadbcfbc2600d49bd76783abb41"
+    },
+    {
+      "run_id": "20260908_v3_formal_imagenette_qwen_lora_s42",
+      "pid": 70927,
+      "gpu_uuid": "GPU-1b963983-7909-af6e-0528-f0f0661ab549",
+      "torch_device": "NVIDIA GeForce RTX 4090",
+      "source": "live nvidia-smi process query",
+      "git_sha": "dee34f07aa2f8aadbcfbc2600d49bd76783abb41"
+    },
+    {
+      "run_id": "20260908_v3_formal_caltech_clip_lora_s42",
+      "pid": 94034,
+      "gpu_uuid": "GPU-afc19890-6209-ee4d-622d-e619da5bd5b2",
+      "torch_device": "NVIDIA GeForce RTX 4090",
+      "source": "live nvidia-smi process query",
+      "git_sha": "dee34f07aa2f8aadbcfbc2600d49bd76783abb41"
+    },
+    {
+      "run_id": "20260908_v3_formal_cifar_clip_lora_s42",
+      "pid": 113105,
+      "gpu_uuid": "GPU-e8837b85-d55b-8e81-aaa5-ec1ac326932d",
+      "torch_device": "NVIDIA GeForce RTX 4090",
+      "source": "live nvidia-smi process query",
+      "git_sha": "dee34f07aa2f8aadbcfbc2600d49bd76783abb41"
+    },
+    {
+      "run_id": "20260908_v3_formal_imagenette_clip_lora_s42",
+      "pid": 172110,
+      "gpu_uuid": "GPU-afc19890-6209-ee4d-622d-e619da5bd5b2",
+      "torch_device": "NVIDIA GeForce RTX 4090",
+      "source": "live nvidia-smi process query",
+      "git_sha": "dee34f07aa2f8aadbcfbc2600d49bd76783abb41"
+    },
+    {
+      "run_id": "20260908_v3_formal_caltech_fixed_s42",
+      "pid": 181319,
+      "gpu_uuid": "GPU-4d8bfdb9-8777-05a6-3811-ab18ff4eadfd",
+      "torch_device": "NVIDIA GeForce RTX 4090",
+      "source": "live nvidia-smi process query",
+      "git_sha": "dee34f07aa2f8aadbcfbc2600d49bd76783abb41"
+    },
+    {
+      "run_id": "20260908_v3_formal_cifar_fixed_s42",
+      "pid": 186854,
+      "gpu_uuid": "GPU-1b963983-7909-af6e-0528-f0f0661ab549",
+      "torch_device": "NVIDIA GeForce RTX 4090",
+      "source": "live nvidia-smi process query",
+      "git_sha": "dee34f07aa2f8aadbcfbc2600d49bd76783abb41"
+    },
+    {
+      "run_id": "20260908_v3_formal_imagenette_fixed_s42",
+      "pid": 192460,
+      "gpu_uuid": "GPU-e8837b85-d55b-8e81-aaa5-ec1ac326932d",
+      "torch_device": "NVIDIA GeForce RTX 4090",
+      "source": "live nvidia-smi process query",
+      "git_sha": "dee34f07aa2f8aadbcfbc2600d49bd76783abb41"
+    },
+    {
+      "run_id": "20260908_v3_formal_cifar_qwen_frozen_s42",
+      "pid": 247707,
+      "gpu_uuid": "GPU-4d8bfdb9-8777-05a6-3811-ab18ff4eadfd",
+      "torch_device": "NVIDIA GeForce RTX 4090",
+      "source": "live nvidia-smi process query",
+      "git_sha": "dee34f07aa2f8aadbcfbc2600d49bd76783abb41"
+    },
+    {
+      "run_id": "20260908_v3_formal_cifar_clip_frozen_s42",
+      "pid": 254795,
+      "gpu_uuid": "GPU-1b963983-7909-af6e-0528-f0f0661ab549",
+      "torch_device": "NVIDIA GeForce RTX 4090",
+      "source": "live nvidia-smi process query",
+      "git_sha": "dee34f07aa2f8aadbcfbc2600d49bd76783abb41"
+    }
+  ],
+  "expected_runs": 14,
+  "queue_complete": true,
+  "all_observed": true
+}

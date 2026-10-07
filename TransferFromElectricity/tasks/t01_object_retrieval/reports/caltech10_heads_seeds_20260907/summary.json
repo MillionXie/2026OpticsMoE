@@ -1,0 +1,90 @@
+{
+  "training_git_sha": "8063ed16bac540758f7ba226dbeadac005def8d6",
+  "split_sha256": "d8d21a4c2085c725dd6f25dae7b70030a13f2be6229581cc6a49c0c2c3868d11",
+  "device": "NVIDIA GeForce RTX 4090",
+  "updates_per_run": 1200,
+  "rows": [
+    {
+      "seed": 42,
+      "direct": {
+        "run_id": "20260907_caltech10_heads_direct_s42",
+        "selected_epoch": 20,
+        "top1": 0.8349999785423279,
+        "phase_rms_rad": 0.8468729257583618,
+        "initial_experts_top1": 0.6449999809265137,
+        "lora_disabled_top1": null,
+        "export_max_error": 0.0
+      },
+      "qwen_lora": {
+        "run_id": "20260907_caltech10_heads_qwen_lora_s42",
+        "selected_epoch": 20,
+        "top1": 0.8450000286102295,
+        "phase_rms_rad": 1.270769476890564,
+        "initial_experts_top1": 0.699999988079071,
+        "lora_disabled_top1": 0.8450000286102295,
+        "export_max_error": 0.0
+      },
+      "qwen_minus_direct_pp": 1.0000050067901611
+    },
+    {
+      "seed": 43,
+      "direct": {
+        "run_id": "20260907_caltech10_heads_direct_s43",
+        "selected_epoch": 20,
+        "top1": 0.8399999737739563,
+        "phase_rms_rad": 0.8117038607597351,
+        "initial_experts_top1": 0.675000011920929,
+        "lora_disabled_top1": null,
+        "export_max_error": 0.0
+      },
+      "qwen_lora": {
+        "run_id": "20260907_caltech10_heads_qwen_lora_s43",
+        "selected_epoch": 19,
+        "top1": 0.8149999976158142,
+        "phase_rms_rad": 1.138149619102478,
+        "initial_experts_top1": 0.6700000166893005,
+        "lora_disabled_top1": 0.8149999976158142,
+        "export_max_error": 0.0
+      },
+      "qwen_minus_direct_pp": -2.499997615814209
+    },
+    {
+      "seed": 44,
+      "direct": {
+        "run_id": "20260907_caltech10_heads_direct_s44",
+        "selected_epoch": 4,
+        "top1": 0.7599999904632568,
+        "phase_rms_rad": 0.6087314486503601,
+        "initial_experts_top1": 0.45500001311302185,
+        "lora_disabled_top1": null,
+        "export_max_error": 0.0
+      },
+      "qwen_lora": {
+        "run_id": "20260907_caltech10_heads_qwen_lora_s44",
+        "selected_epoch": 11,
+        "top1": 0.800000011920929,
+        "phase_rms_rad": 1.2051727771759033,
+        "initial_experts_top1": 0.5899999737739563,
+        "lora_disabled_top1": 0.800000011920929,
+        "export_max_error": 0.0
+      },
+      "qwen_minus_direct_pp": 4.000002145767212
+    }
+  ],
+  "summary": {
+    "direct": {
+      "mean_top1": 0.8116666475931803,
+      "sample_std_top1": 0.04481442381995872
+    },
+    "qwen_lora": {
+      "mean_top1": 0.8200000127156576,
+      "sample_std_top1": 0.022912889140357832
+    }
+  },
+  "limitations": [
+    "Same test queries reused across seeds, not independent new test samples",
+    "Optimization stability only; no claim of statistical significance",
+    "Historical Caltech warmstart and prior test inspection remain limitations",
+    "Ideal optical simulation; no hardware robustness conclusion"
+  ]
+}

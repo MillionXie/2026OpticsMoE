@@ -1,0 +1,21 @@
+{
+  "time": 1788917788.3196118,
+  "reason": "Original GPU2 remains occupied; task B completed and released GPU5. No A training run had started.",
+  "stopped_idle_queue_pid": 1184839,
+  "stopped_queue_command": "/home/guest3/miniconda3/envs/xml/bin/python -u -m TransferFromElectricity.tasks.t01_object_retrieval.run_unseen_suite --gpu-uuid GPU-6dcca91a-8e08-1a50-9aa6-81defeaed50b --class-set a --prefix 20260909_unseen_formal ",
+  "new_queue_pid": 1220432,
+  "new_command": [
+    "/home/guest3/miniconda3/envs/xml/bin/python",
+    "-u",
+    "-m",
+    "TransferFromElectricity.tasks.t01_object_retrieval.run_unseen_suite",
+    "--gpu-uuid",
+    "GPU-d53ce4c8-272d-c2fb-dc09-f182d586c4eb",
+    "--class-set",
+    "a",
+    "--prefix",
+    "20260909_unseen_formal"
+  ],
+  "gpu_uuid": "GPU-d53ce4c8-272d-c2fb-dc09-f182d586c4eb",
+  "git_sha": "0d854376cca29e16143ad1eb7762860770e59459"
+}

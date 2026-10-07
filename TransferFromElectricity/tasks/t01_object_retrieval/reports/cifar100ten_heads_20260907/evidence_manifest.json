@@ -1,0 +1,350 @@
+[
+  {
+    "run_id": "20260907_cifar100ten_heads_fixed_s42",
+    "file": "architecture.json",
+    "bytes": 9664,
+    "sha256": "643f8405b57e72b7e20184387cdd7a5331e17b15891ef708a86a63b56568f901"
+  },
+  {
+    "run_id": "20260907_cifar100ten_heads_fixed_s42",
+    "file": "config.yaml",
+    "bytes": 11133,
+    "sha256": "1d0067ea639bc25cfe097d270a3504720eef2ae4afa029c72283f13b5cf276b6"
+  },
+  {
+    "run_id": "20260907_cifar100ten_heads_fixed_s42",
+    "file": "data_hashes.json",
+    "bytes": 1024402,
+    "sha256": "1ea7608e4fca337e3d39c56425756d6cac4f3cc912636729f3a9ad3b1422bc18"
+  },
+  {
+    "run_id": "20260907_cifar100ten_heads_fixed_s42",
+    "file": "dataset.json",
+    "bytes": 837,
+    "sha256": "33d40adb9a1c1ee7912f49170d6a5488fede34c4b66821419acc3aa705093767"
+  },
+  {
+    "run_id": "20260907_cifar100ten_heads_fixed_s42",
+    "file": "environment.json",
+    "bytes": 987,
+    "sha256": "9dfe4de4b5622f327317e045502d4e62c456b4a9f57fa5c4008e75ccde09d52e"
+  },
+  {
+    "run_id": "20260907_cifar100ten_heads_fixed_s42",
+    "file": "final_report.json",
+    "bytes": 14748,
+    "sha256": "e25b05cf37e243a538cd421690003cec5caf5f76b1a6fde6927f27c7fd9bc79a"
+  },
+  {
+    "run_id": "20260907_cifar100ten_heads_fixed_s42",
+    "file": "history.json",
+    "bytes": 172652,
+    "sha256": "5b18ef3822b2bba21eb6263514b0dc96cb81f71a194848db8dda13fce8fa886d"
+  },
+  {
+    "run_id": "20260907_cifar100ten_heads_fixed_s42",
+    "file": "initial_validation.json",
+    "bytes": 2676,
+    "sha256": "d182d5b3137a8532d5092dc8fdb860e9de0ab0d6a2280a0344e2ffb21d0f2190"
+  },
+  {
+    "run_id": "20260907_cifar100ten_heads_fixed_s42",
+    "file": "initialization.json",
+    "bytes": 1864,
+    "sha256": "e30059e3f9ab4f4133243efad32ee010dfd9d1014301719013cacc2c1ad489fb"
+  },
+  {
+    "run_id": "20260907_cifar100ten_heads_fixed_s42",
+    "file": "protocol.json",
+    "bytes": 1601,
+    "sha256": "87e7b29c97843767ea78b9f1c3b46e7fe59edcf96614962508f40b25b5584915"
+  },
+  {
+    "run_id": "20260907_cifar100ten_heads_fixed_s42",
+    "file": "split.json",
+    "bytes": 2072824,
+    "sha256": "039d16ca675201a6ef9d8a8559df2621e96516b659fcc0b16fa23dade44d34aa"
+  },
+  {
+    "run_id": "20260907_cifar100ten_heads_fixed_s42",
+    "file": "status.json",
+    "bytes": 26,
+    "sha256": "34c8f74408bc4183b49f04a8136d278cf1d85c3415647a3e734dc82d5dd7e5c0"
+  },
+  {
+    "run_id": "20260907_cifar100ten_heads_fixed_s42",
+    "file": "steps.json",
+    "bytes": 568350,
+    "sha256": "b6a0ca6d15361952b13bbc76fec1f40396e54aef05add8818a3e8dbfd0485284"
+  },
+  {
+    "run_id": "20260907_cifar100ten_heads_fixed_s42",
+    "file": "transfer_manifest.json",
+    "bytes": 4420,
+    "sha256": "a1db0c6779d7676b556e7c9125ee63d75a0ab60f5ddbc6a2f6d5d8fa43ecf050"
+  },
+  {
+    "run_id": "20260907_cifar100ten_heads_direct_s42",
+    "file": "architecture.json",
+    "bytes": 10684,
+    "sha256": "2cf4925e18a223f0bc8565d28ea180e8e96f2e82e0c0435b6796ce4c32c647ba"
+  },
+  {
+    "run_id": "20260907_cifar100ten_heads_direct_s42",
+    "file": "config.yaml",
+    "bytes": 11135,
+    "sha256": "1623125e0f39b0a69d5461de1180e518857aa1ba24ff1066fa9723d2431a2a78"
+  },
+  {
+    "run_id": "20260907_cifar100ten_heads_direct_s42",
+    "file": "data_hashes.json",
+    "bytes": 1024402,
+    "sha256": "1ea7608e4fca337e3d39c56425756d6cac4f3cc912636729f3a9ad3b1422bc18"
+  },
+  {
+    "run_id": "20260907_cifar100ten_heads_direct_s42",
+    "file": "dataset.json",
+    "bytes": 837,
+    "sha256": "33d40adb9a1c1ee7912f49170d6a5488fede34c4b66821419acc3aa705093767"
+  },
+  {
+    "run_id": "20260907_cifar100ten_heads_direct_s42",
+    "file": "environment.json",
+    "bytes": 989,
+    "sha256": "da5141d9878156b236a64fda89e838d45928a18f7f7c62a096744f9004a92443"
+  },
+  {
+    "run_id": "20260907_cifar100ten_heads_direct_s42",
+    "file": "final_report.json",
+    "bytes": 14899,
+    "sha256": "af8abd03390c93a07189cc06a516aed03972a31dfb6d91f71476490f5c0722f5"
+  },
+  {
+    "run_id": "20260907_cifar100ten_heads_direct_s42",
+    "file": "history.json",
+    "bytes": 177306,
+    "sha256": "d3b564990b382bdb7ac5d3737e5f625031c8aef26fafb122d3329465ceef9c12"
+  },
+  {
+    "run_id": "20260907_cifar100ten_heads_direct_s42",
+    "file": "initial_validation.json",
+    "bytes": 2676,
+    "sha256": "d182d5b3137a8532d5092dc8fdb860e9de0ab0d6a2280a0344e2ffb21d0f2190"
+  },
+  {
+    "run_id": "20260907_cifar100ten_heads_direct_s42",
+    "file": "initialization.json",
+    "bytes": 1864,
+    "sha256": "e30059e3f9ab4f4133243efad32ee010dfd9d1014301719013cacc2c1ad489fb"
+  },
+  {
+    "run_id": "20260907_cifar100ten_heads_direct_s42",
+    "file": "protocol.json",
+    "bytes": 1602,
+    "sha256": "32d3939bc766bc70348a81bc1d1e9e20d850a88a5cc1364f9aa5de3771681c01"
+  },
+  {
+    "run_id": "20260907_cifar100ten_heads_direct_s42",
+    "file": "split.json",
+    "bytes": 2072824,
+    "sha256": "039d16ca675201a6ef9d8a8559df2621e96516b659fcc0b16fa23dade44d34aa"
+  },
+  {
+    "run_id": "20260907_cifar100ten_heads_direct_s42",
+    "file": "status.json",
+    "bytes": 26,
+    "sha256": "34c8f74408bc4183b49f04a8136d278cf1d85c3415647a3e734dc82d5dd7e5c0"
+  },
+  {
+    "run_id": "20260907_cifar100ten_heads_direct_s42",
+    "file": "steps.json",
+    "bytes": 627658,
+    "sha256": "7f09ea023a3f54543db528c24b2122c45f778380a141e56e3d18c97aa0b90545"
+  },
+  {
+    "run_id": "20260907_cifar100ten_heads_direct_s42",
+    "file": "transfer_manifest.json",
+    "bytes": 4435,
+    "sha256": "0601f271fc62e582ccac0234889cb3881c9ae5b9fcd98b76397cef8fbc69db12"
+  },
+  {
+    "run_id": "20260907_cifar100ten_heads_qwen_frozen_s42",
+    "file": "architecture.json",
+    "bytes": 10558,
+    "sha256": "b2b2ae6013deabfd0a9e24270d35e350883878408e934831ec1bc711fa07dd63"
+  },
+  {
+    "run_id": "20260907_cifar100ten_heads_qwen_frozen_s42",
+    "file": "config.yaml",
+    "bytes": 11145,
+    "sha256": "6ce8611692fb6e474b0aaa8ed446e835f69771acfea6bafba5faaf2a7d79a489"
+  },
+  {
+    "run_id": "20260907_cifar100ten_heads_qwen_frozen_s42",
+    "file": "data_hashes.json",
+    "bytes": 1024402,
+    "sha256": "1ea7608e4fca337e3d39c56425756d6cac4f3cc912636729f3a9ad3b1422bc18"
+  },
+  {
+    "run_id": "20260907_cifar100ten_heads_qwen_frozen_s42",
+    "file": "dataset.json",
+    "bytes": 837,
+    "sha256": "33d40adb9a1c1ee7912f49170d6a5488fede34c4b66821419acc3aa705093767"
+  },
+  {
+    "run_id": "20260907_cifar100ten_heads_qwen_frozen_s42",
+    "file": "environment.json",
+    "bytes": 999,
+    "sha256": "88cfbbc6a957bfc032858fa5f8a190a66be0b17440fff1aaba86c4192bad71c9"
+  },
+  {
+    "run_id": "20260907_cifar100ten_heads_qwen_frozen_s42",
+    "file": "final_report.json",
+    "bytes": 14930,
+    "sha256": "ad3a48bc073169974851029ccd22855e630b62c2eaa8a248f7848cd24b6ced0c"
+  },
+  {
+    "run_id": "20260907_cifar100ten_heads_qwen_frozen_s42",
+    "file": "generator_source_manifest.json",
+    "bytes": 1069,
+    "sha256": "2bd7af7339d264f1c7800c4b9c30763eaf2e6bfc3108739c0398b5590e29f744"
+  },
+  {
+    "run_id": "20260907_cifar100ten_heads_qwen_frozen_s42",
+    "file": "history.json",
+    "bytes": 176263,
+    "sha256": "3229944cd302a4d9c2e9d412ce5de70bad1b5bb020810d468771939bd713f6ea"
+  },
+  {
+    "run_id": "20260907_cifar100ten_heads_qwen_frozen_s42",
+    "file": "initial_validation.json",
+    "bytes": 2676,
+    "sha256": "d182d5b3137a8532d5092dc8fdb860e9de0ab0d6a2280a0344e2ffb21d0f2190"
+  },
+  {
+    "run_id": "20260907_cifar100ten_heads_qwen_frozen_s42",
+    "file": "initialization.json",
+    "bytes": 1864,
+    "sha256": "e30059e3f9ab4f4133243efad32ee010dfd9d1014301719013cacc2c1ad489fb"
+  },
+  {
+    "run_id": "20260907_cifar100ten_heads_qwen_frozen_s42",
+    "file": "protocol.json",
+    "bytes": 1607,
+    "sha256": "78b5bb7ee95b0613d258dc6312be34f0faecaa58c66013c8460669b16430b982"
+  },
+  {
+    "run_id": "20260907_cifar100ten_heads_qwen_frozen_s42",
+    "file": "split.json",
+    "bytes": 2072824,
+    "sha256": "039d16ca675201a6ef9d8a8559df2621e96516b659fcc0b16fa23dade44d34aa"
+  },
+  {
+    "run_id": "20260907_cifar100ten_heads_qwen_frozen_s42",
+    "file": "status.json",
+    "bytes": 26,
+    "sha256": "34c8f74408bc4183b49f04a8136d278cf1d85c3415647a3e734dc82d5dd7e5c0"
+  },
+  {
+    "run_id": "20260907_cifar100ten_heads_qwen_frozen_s42",
+    "file": "steps.json",
+    "bytes": 639183,
+    "sha256": "52aa96fb090073d6ccd4cc7af2d05c9f3ad2dc5483ef07bde07bb941b9012997"
+  },
+  {
+    "run_id": "20260907_cifar100ten_heads_qwen_frozen_s42",
+    "file": "transfer_manifest.json",
+    "bytes": 4857,
+    "sha256": "b283194c2e1854d0df9a8a3d1f294091969ae5c2db627cb3c7bbb1c4068763be"
+  },
+  {
+    "run_id": "20260907_cifar100ten_heads_qwen_lora_s42",
+    "file": "architecture.json",
+    "bytes": 19852,
+    "sha256": "1269ec3114f88923298f9ddeb7ad541f46a2ac20abce3772b20dbf742365b346"
+  },
+  {
+    "run_id": "20260907_cifar100ten_heads_qwen_lora_s42",
+    "file": "config.yaml",
+    "bytes": 11141,
+    "sha256": "fffddf5008e926afc9eab4f7aadbcbeccfa9423b00f97e849783c322ef9fba23"
+  },
+  {
+    "run_id": "20260907_cifar100ten_heads_qwen_lora_s42",
+    "file": "data_hashes.json",
+    "bytes": 1024402,
+    "sha256": "1ea7608e4fca337e3d39c56425756d6cac4f3cc912636729f3a9ad3b1422bc18"
+  },
+  {
+    "run_id": "20260907_cifar100ten_heads_qwen_lora_s42",
+    "file": "dataset.json",
+    "bytes": 837,
+    "sha256": "33d40adb9a1c1ee7912f49170d6a5488fede34c4b66821419acc3aa705093767"
+  },
+  {
+    "run_id": "20260907_cifar100ten_heads_qwen_lora_s42",
+    "file": "environment.json",
+    "bytes": 995,
+    "sha256": "b2269ac0b9c97e800ea12af3a65d134718015da4d0005296f40853cc643c9695"
+  },
+  {
+    "run_id": "20260907_cifar100ten_heads_qwen_lora_s42",
+    "file": "final_report.json",
+    "bytes": 19214,
+    "sha256": "f6ca164ba01208b7a1f7760fb34c7809e486fc4f99d9556c513cf60930a60bec"
+  },
+  {
+    "run_id": "20260907_cifar100ten_heads_qwen_lora_s42",
+    "file": "generator_source_manifest.json",
+    "bytes": 1069,
+    "sha256": "2bd7af7339d264f1c7800c4b9c30763eaf2e6bfc3108739c0398b5590e29f744"
+  },
+  {
+    "run_id": "20260907_cifar100ten_heads_qwen_lora_s42",
+    "file": "history.json",
+    "bytes": 177669,
+    "sha256": "c08aefc33004e7c62341fd18aa5d40a2552cd307f2d2501f073e4f349d3403f9"
+  },
+  {
+    "run_id": "20260907_cifar100ten_heads_qwen_lora_s42",
+    "file": "initial_validation.json",
+    "bytes": 2676,
+    "sha256": "d182d5b3137a8532d5092dc8fdb860e9de0ab0d6a2280a0344e2ffb21d0f2190"
+  },
+  {
+    "run_id": "20260907_cifar100ten_heads_qwen_lora_s42",
+    "file": "initialization.json",
+    "bytes": 1864,
+    "sha256": "e30059e3f9ab4f4133243efad32ee010dfd9d1014301719013cacc2c1ad489fb"
+  },
+  {
+    "run_id": "20260907_cifar100ten_heads_qwen_lora_s42",
+    "file": "protocol.json",
+    "bytes": 1605,
+    "sha256": "0c89cedbceb48280ffa35595b4566758901771e72ada7932c0a1ac50580563c2"
+  },
+  {
+    "run_id": "20260907_cifar100ten_heads_qwen_lora_s42",
+    "file": "split.json",
+    "bytes": 2072824,
+    "sha256": "039d16ca675201a6ef9d8a8559df2621e96516b659fcc0b16fa23dade44d34aa"
+  },
+  {
+    "run_id": "20260907_cifar100ten_heads_qwen_lora_s42",
+    "file": "status.json",
+    "bytes": 26,
+    "sha256": "34c8f74408bc4183b49f04a8136d278cf1d85c3415647a3e734dc82d5dd7e5c0"
+  },
+  {
+    "run_id": "20260907_cifar100ten_heads_qwen_lora_s42",
+    "file": "steps.json",
+    "bytes": 699314,
+    "sha256": "ad3f5822f10d678196f253b285476b3639a4c84be7473522dd715b9fb4a67654"
+  },
+  {
+    "run_id": "20260907_cifar100ten_heads_qwen_lora_s42",
+    "file": "transfer_manifest.json",
+    "bytes": 4827,
+    "sha256": "d1da5d6e005088875a9a39b7d14837bc20f1f4f7911a899ce255ddf8d84172a8"
+  }
+]

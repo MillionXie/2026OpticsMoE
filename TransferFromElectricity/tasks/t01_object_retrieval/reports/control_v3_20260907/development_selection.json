@@ -1,0 +1,120 @@
+{
+  "rows": [
+    {
+      "run_id": "20260908_v3_devdet_base_s42",
+      "candidate": true,
+      "electronic_lr": 0.0001,
+      "generator_lr": 0.0001,
+      "freeze_electronic": false,
+      "decoder_freeze_after": null,
+      "last3_validation_top1": 0.37333332498868305,
+      "last3_validation_mrr": 0.5671144127845764,
+      "selected_validation_top1": 0.38499999046325684,
+      "selected_validation_top3": 0.6800000071525574,
+      "phase_rms_rad": 0.8254509568214417,
+      "lora_phase_effect_rad": 0.00815524347126484,
+      "ablations": {
+        "initial_experts": 0.3700000047683716,
+        "flat_pi_experts": 0.28999999165534973,
+        "lora_disabled_same_decoder": 0.38999998569488525,
+        "remove_optical": 0.2750000059604645,
+        "remove_electronic": 0.28999999165534973,
+        "remove_vision_optical": 0.33000001311302185,
+        "remove_language_optical": 0.33000001311302185
+      }
+    },
+    {
+      "run_id": "20260908_v3_devdet_slow_e_s42",
+      "candidate": true,
+      "electronic_lr": 1e-05,
+      "generator_lr": 0.0001,
+      "freeze_electronic": false,
+      "decoder_freeze_after": null,
+      "last3_validation_top1": 0.36833332975705463,
+      "last3_validation_mrr": 0.5697982708613077,
+      "selected_validation_top1": 0.39500001072883606,
+      "selected_validation_top3": 0.6850000023841858,
+      "phase_rms_rad": 0.8524935841560364,
+      "lora_phase_effect_rad": 0.00789306778460741,
+      "ablations": {
+        "initial_experts": 0.35499998927116394,
+        "flat_pi_experts": 0.2849999964237213,
+        "lora_disabled_same_decoder": 0.3799999952316284,
+        "remove_optical": 0.20000000298023224,
+        "remove_electronic": 0.26499998569488525,
+        "remove_vision_optical": 0.38499999046325684,
+        "remove_language_optical": 0.3050000071525574
+      }
+    },
+    {
+      "run_id": "20260908_v3_devdet_high_g_s42",
+      "candidate": true,
+      "electronic_lr": 0.0001,
+      "generator_lr": 0.001,
+      "freeze_electronic": false,
+      "decoder_freeze_after": null,
+      "last3_validation_top1": 0.3583333392937978,
+      "last3_validation_mrr": 0.5579364895820618,
+      "selected_validation_top1": 0.36500000953674316,
+      "selected_validation_top3": 0.7099999785423279,
+      "phase_rms_rad": 0.8443684577941895,
+      "lora_phase_effect_rad": 0.05585714057087898,
+      "ablations": {
+        "initial_experts": 0.36500000953674316,
+        "flat_pi_experts": 0.2750000059604645,
+        "lora_disabled_same_decoder": 0.36500000953674316,
+        "remove_optical": 0.2750000059604645,
+        "remove_electronic": 0.24500000476837158,
+        "remove_vision_optical": 0.33000001311302185,
+        "remove_language_optical": 0.29499998688697815
+      }
+    },
+    {
+      "run_id": "20260908_v3_devdet_slow_e_high_g_s42",
+      "candidate": true,
+      "electronic_lr": 1e-05,
+      "generator_lr": 0.001,
+      "freeze_electronic": false,
+      "decoder_freeze_after": null,
+      "last3_validation_top1": 0.3449999988079071,
+      "last3_validation_mrr": 0.551922599474589,
+      "selected_validation_top1": 0.3799999952316284,
+      "selected_validation_top3": 0.6650000214576721,
+      "phase_rms_rad": 0.8485390543937683,
+      "lora_phase_effect_rad": 0.057216010987758636,
+      "ablations": {
+        "initial_experts": 0.35499998927116394,
+        "flat_pi_experts": 0.2849999964237213,
+        "lora_disabled_same_decoder": 0.3700000047683716,
+        "remove_optical": 0.2199999988079071,
+        "remove_electronic": 0.3050000071525574,
+        "remove_vision_optical": 0.33500000834465027,
+        "remove_language_optical": 0.28999999165534973
+      }
+    }
+  ],
+  "chosen": {
+    "run_id": "20260908_v3_devdet_base_s42",
+    "candidate": true,
+    "electronic_lr": 0.0001,
+    "generator_lr": 0.0001,
+    "freeze_electronic": false,
+    "decoder_freeze_after": null,
+    "last3_validation_top1": 0.37333332498868305,
+    "last3_validation_mrr": 0.5671144127845764,
+    "selected_validation_top1": 0.38499999046325684,
+    "selected_validation_top3": 0.6800000071525574,
+    "phase_rms_rad": 0.8254509568214417,
+    "lora_phase_effect_rad": 0.00815524347126484,
+    "ablations": {
+      "initial_experts": 0.3700000047683716,
+      "flat_pi_experts": 0.28999999165534973,
+      "lora_disabled_same_decoder": 0.38999998569488525,
+      "remove_optical": 0.2750000059604645,
+      "remove_electronic": 0.28999999165534973,
+      "remove_vision_optical": 0.33000001311302185,
+      "remove_language_optical": 0.33000001311302185
+    }
+  },
+  "selection": "last-three validation Top-1 mean then MRR mean; no test evaluation"
+}
