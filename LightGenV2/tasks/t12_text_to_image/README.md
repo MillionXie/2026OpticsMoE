@@ -10,6 +10,10 @@
 
 唯一入口：[复现与最终产物](reports/reproduction/README.md)。旧报告保留作历史记录，不代表当前部署入口。
 
+2026-09-23 七模型 baseline 与测速从[历史身份说明](../../reports/20260923_t12_three_task_large_small/HISTORICAL_IDENTITY_20261004.md)进入。
+原报告中的“current primary/final”只指当时版本；原报告、计时及图片不改不删，
+不能将其旧模型测速套用到当前17.03M实拍版本。
+
 正式 17M 实验室捕获与电子适配的 17 份源码已逐 SHA 收录；来源、旧入口恢复点、CPU 检查和尚未迁移的环境边界见 [硬件源码登记](lab_shs8um/SOURCE_STATUS_20261006.md)。这是源码身份收敛，不是新实验或硬件运行环境验收。
 
 已保存PNG的逐图感知/区域指标工具现在由[任务内指标入口](perceptual/README.md)管理。
@@ -58,6 +62,9 @@ CSV不支持all，避免旧目录布局混用。原物化脚本和已导出数�
 新增pix2pix-Turbo原生TEST全量图片、报告、同样本拼图及五组逐图汇总位于 `handoffs/t12_pix2pix_turbo_20260927` 和 `handoffs/t12_five_group_summary_20260928`；五组表格 `outputs/t12_five_group_summary_20260928/T12_five_group_performance.xlsx`。保留旧四组文件原样，避免覆盖已引用的结果。未新增跨架构统一延迟实测，不把既有小版旧计时挪用于17M或pix2pix。
 
 ## 历史记录：2026-09-27 小版物理鲁棒性候选
+
+下文“最新候选”仅指2026-09-27历史续训轮次，不是当前正式权重；
+5496204d及更早13cf候选均不替换本页顶部的5b4f原权重和eeec适配权重。
 
 本分支追加语言均衡/极强扰动试验，**均衡尚未解决**：所有试验实际语言top2仍为专家1/2。仅作为图像鲁棒性改善候选交付 `5b4f9a37…`（17,026,642参数，与前版预算相同），完整VAL2304：clean34.4315/.928509、stress29.3008/.892036、severe28.4256/.885481、extreme27.7628/.879783。候选保留原standardized_region_energy读出，不启用实验性log读出。来源为 `20260927_language_balance_input/last_checkpoint.pt`，不是该run未通过均衡守卫的best_checkpoint.pt；在完整VAL上仅按图像质量/干净保护人工选为备选，不能称为均衡选模成功。新增极强扰动已进入TRAIN，不再称为留出未见扰动；TEST仅固定权重后评估。交付目录 `handoffs/t12_language_balance_20260927`。
 
