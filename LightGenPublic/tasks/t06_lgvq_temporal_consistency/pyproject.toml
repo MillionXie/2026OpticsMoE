@@ -1,0 +1,26 @@
+[build-system]
+requires = ["setuptools>=75", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "lgvq-temporal-consistency"
+version = "1.0.0"
+description = "Standalone reproduction code for the LGVQ Temporal 16x4 SRCC 0.8044 model"
+readme = "README.md"
+requires-python = ">=3.11,<3.13"
+dependencies = [
+  "numpy==2.1.3",
+  "PyYAML==6.0.2",
+  "torch==2.6.0",
+]
+
+[project.optional-dependencies]
+test = ["pytest>=8.3,<9"]
+
+[tool.setuptools.packages.find]
+where = ["runtime"]
+include = ["lgvq_temporal*", "LightGenV2*", "experiments*"]
+
+[tool.pytest.ini_options]
+addopts = "-q"
+testpaths = ["tests"]

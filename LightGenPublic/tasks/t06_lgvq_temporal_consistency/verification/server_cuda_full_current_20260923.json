@@ -1,0 +1,3949 @@
+{
+  "status": "passed",
+  "reference_match": true,
+  "checkpoint_sha256": "5303b574b200e14bf943af21c60a246720be453b9cf8847cd93c0eaaa243a77c",
+  "device": "cuda",
+  "full_test": true,
+  "field_count": 35,
+  "video_count": 558,
+  "metric_deltas_vs_packaged_reference": {
+    "srcc": 0.0,
+    "krcc": 0.0,
+    "plcc": 0.0,
+    "rmse": 0.0,
+    "mae": 0.0
+  },
+  "reproduction_tolerances": {
+    "srcc": 0.00015,
+    "krcc": 0.00015,
+    "plcc": 0.0001,
+    "rmse": 0.001,
+    "mae": 0.001
+  },
+  "metrics": {
+    "target": "temporal",
+    "srcc": 0.8022806420367042,
+    "krcc": 0.5931156844050931,
+    "plcc": 0.8154774079271463,
+    "rmse": 8.049678802490234,
+    "mae": 6.05666971206665,
+    "count": 558
+  },
+  "packaged_reference_metrics": {
+    "target": "temporal",
+    "srcc": 0.8022806420367042,
+    "krcc": 0.5931156844050931,
+    "plcc": 0.8154774079271463,
+    "rmse": 8.049678802490234,
+    "mae": 6.05666971206665,
+    "count": 558
+  },
+  "rows": [
+    {
+      "field": "field_0000",
+      "slot": 0,
+      "video": "Gen-2/A baseball player swung the bat, preparing for a home run.mp4",
+      "prediction": 68.93762969970703,
+      "target": 55.630001068115234
+    },
+    {
+      "field": "field_0000",
+      "slot": 1,
+      "video": "Gen-2/A bowl of hot soup is especially delicious on a cold winter day.mp4",
+      "prediction": 63.92113494873047,
+      "target": 73.1500015258789
+    },
+    {
+      "field": "field_0000",
+      "slot": 2,
+      "video": "Gen-2/A bowl of ramen has delicious pork and seaweed.mp4",
+      "prediction": 68.18090057373047,
+      "target": 67.56999969482422
+    },
+    {
+      "field": "field_0000",
+      "slot": 3,
+      "video": "Gen-2/A bowl of rich French onion soup emanates an enticing aroma.mp4",
+      "prediction": 69.27542114257812,
+      "target": 60.63999938964844
+    },
+    {
+      "field": "field_0000",
+      "slot": 4,
+      "video": "Gen-2/A bowl of spicy Mexican chili is very delicious.mp4",
+      "prediction": 56.109195709228516,
+      "target": 60.939998626708984
+    },
+    {
+      "field": "field_0000",
+      "slot": 5,
+      "video": "Gen-2/A butterfly gracefully dances among the flowers.mp4",
+      "prediction": 61.25448226928711,
+      "target": 73.1500015258789
+    },
+    {
+      "field": "field_0000",
+      "slot": 6,
+      "video": "Gen-2/A cactus thrives in the harsh desert.mp4",
+      "prediction": 61.72007369995117,
+      "target": 75.97000122070312
+    },
+    {
+      "field": "field_0000",
+      "slot": 7,
+      "video": "Gen-2/A couple walks hand in hand on the beach, listening to the sound of the waves.mp4",
+      "prediction": 71.270751953125,
+      "target": 68.9800033569336
+    },
+    {
+      "field": "field_0000",
+      "slot": 8,
+      "video": "Gen-2/A cup of hot chocolate is fragrant.mp4",
+      "prediction": 67.83049011230469,
+      "target": 54.529998779296875
+    },
+    {
+      "field": "field_0000",
+      "slot": 9,
+      "video": "Gen-2/A daffodil sways in the spring breeze.mp4",
+      "prediction": 52.5346565246582,
+      "target": 70.31999969482422
+    },
+    {
+      "field": "field_0000",
+      "slot": 10,
+      "video": "Gen-2/A designer creates fashionable clothing designs.mp4",
+      "prediction": 71.69575500488281,
+      "target": 70.37000274658203
+    },
+    {
+      "field": "field_0000",
+      "slot": 11,
+      "video": "Gen-2/A diver is exploring the underwater world under the coral reef.mp4",
+      "prediction": 60.38600540161133,
+      "target": 67.55000305175781
+    },
+    {
+      "field": "field_0000",
+      "slot": 12,
+      "video": "Gen-2/A doctor cares for patients in the hospital.mp4",
+      "prediction": 67.50662231445312,
+      "target": 63.630001068115234
+    },
+    {
+      "field": "field_0000",
+      "slot": 13,
+      "video": "Gen-2/A doctor is carefully examining a patient's body.mp4",
+      "prediction": 70.73365020751953,
+      "target": 70.52999877929688
+    },
+    {
+      "field": "field_0000",
+      "slot": 14,
+      "video": "Gen-2/A family goes to the movies on the weekend.mp4",
+      "prediction": 50.93218994140625,
+      "target": 57.90999984741211
+    },
+    {
+      "field": "field_0000",
+      "slot": 15,
+      "video": "Gen-2/A field of dandelions lines the side of a rural road.mp4",
+      "prediction": 72.509521484375,
+      "target": 74.58000183105469
+    },
+    {
+      "field": "field_0001",
+      "slot": 0,
+      "video": "Gen-2/A golden field of wheat sways gently in the breeze.mp4",
+      "prediction": 69.15361785888672,
+      "target": 70.81999969482422
+    },
+    {
+      "field": "field_0001",
+      "slot": 1,
+      "video": "Gen-2/A group of villagers wash clothes by the stream.mp4",
+      "prediction": 71.89979553222656,
+      "target": 66.70999908447266
+    },
+    {
+      "field": "field_0001",
+      "slot": 2,
+      "video": "Gen-2/A hippo leisurely floats in the water.mp4",
+      "prediction": 61.16255569458008,
+      "target": 74.48999786376953
+    },
+    {
+      "field": "field_0001",
+      "slot": 3,
+      "video": "Gen-2/A kangaroo jumps across the Australian desert.mp4",
+      "prediction": 73.55287170410156,
+      "target": 70.48999786376953
+    },
+    {
+      "field": "field_0001",
+      "slot": 4,
+      "video": "Gen-2/A lotus leaf floats on a serene pond.mp4",
+      "prediction": 67.15743255615234,
+      "target": 66.7300033569336
+    },
+    {
+      "field": "field_0001",
+      "slot": 5,
+      "video": "Gen-2/A milkshake is garnished with fresh strawberries and cream.mp4",
+      "prediction": 58.091835021972656,
+      "target": 51.31999969482422
+    },
+    {
+      "field": "field_0001",
+      "slot": 6,
+      "video": "Gen-2/A painter showcases their art on an outdoor gallery.mp4",
+      "prediction": 70.20405578613281,
+      "target": 71.72000122070312
+    },
+    {
+      "field": "field_0001",
+      "slot": 7,
+      "video": "Gen-2/A peony blooms with snow-white petals.mp4",
+      "prediction": 72.78578186035156,
+      "target": 76.08000183105469
+    },
+    {
+      "field": "field_0001",
+      "slot": 8,
+      "video": "Gen-2/A pet owner walks their dog in the park.mp4",
+      "prediction": 70.79378509521484,
+      "target": 74.30000305175781
+    },
+    {
+      "field": "field_0001",
+      "slot": 9,
+      "video": "Gen-2/A photographer captures the neon lights of the city.mp4",
+      "prediction": 52.61220169067383,
+      "target": 71.76000213623047
+    },
+    {
+      "field": "field_0001",
+      "slot": 10,
+      "video": "Gen-2/A piece of French bread is spread with butter.mp4",
+      "prediction": 50.103187561035156,
+      "target": 62.41999816894531
+    },
+    {
+      "field": "field_0001",
+      "slot": 11,
+      "video": "Gen-2/A piece of cheesecake is covered with blueberry sauce.mp4",
+      "prediction": 51.42230987548828,
+      "target": 69.2300033569336
+    },
+    {
+      "field": "field_0001",
+      "slot": 12,
+      "video": "Gen-2/A pizza is topped with Italian sausage and mushrooms.mp4",
+      "prediction": 72.46273040771484,
+      "target": 77.30000305175781
+    },
+    {
+      "field": "field_0001",
+      "slot": 13,
+      "video": "Gen-2/A purple bellflower opens in the sunlight.mp4",
+      "prediction": 48.490840911865234,
+      "target": 77.30000305175781
+    },
+    {
+      "field": "field_0001",
+      "slot": 14,
+      "video": "Gen-2/A roasted cod fish is garnished with fresh herbs.mp4",
+      "prediction": 67.73396301269531,
+      "target": 54.470001220703125
+    },
+    {
+      "field": "field_0001",
+      "slot": 15,
+      "video": "Gen-2/A roasted salmon is presented on a plate.mp4",
+      "prediction": 71.86162567138672,
+      "target": 77.30000305175781
+    },
+    {
+      "field": "field_0002",
+      "slot": 0,
+      "video": "Gen-2/A salad is sprinkled with nuts and fruits.mp4",
+      "prediction": 74.88825988769531,
+      "target": 67.73999786376953
+    },
+    {
+      "field": "field_0002",
+      "slot": 1,
+      "video": "Gen-2/A sausage is grilled slightly crispy on the barbecue.mp4",
+      "prediction": 63.680908203125,
+      "target": 69.08000183105469
+    },
+    {
+      "field": "field_0002",
+      "slot": 2,
+      "video": "Gen-2/A skier enjoys the thrill of skiing on a snowy mountain.mp4",
+      "prediction": 68.96296691894531,
+      "target": 72.0
+    },
+    {
+      "field": "field_0002",
+      "slot": 3,
+      "video": "Gen-2/A slice of French chocolate mousse cake brings sweet delight.mp4",
+      "prediction": 72.99018859863281,
+      "target": 73.94000244140625
+    },
+    {
+      "field": "field_0002",
+      "slot": 4,
+      "video": "Gen-2/A tennis player elegantly slid on the grass court.mp4",
+      "prediction": 73.57356262207031,
+      "target": 57.869998931884766
+    },
+    {
+      "field": "field_0002",
+      "slot": 5,
+      "video": "Gen-2/A tennis player made spectacular plays at the net.mp4",
+      "prediction": 68.54014587402344,
+      "target": 52.90999984741211
+    },
+    {
+      "field": "field_0002",
+      "slot": 6,
+      "video": "Gen-2/A thin pancake is spread with butter and maple syrup.mp4",
+      "prediction": 66.16734313964844,
+      "target": 57.040000915527344
+    },
+    {
+      "field": "field_0002",
+      "slot": 7,
+      "video": "Gen-2/A water skier created splashes on the lake.mp4",
+      "prediction": 60.37995147705078,
+      "target": 70.31999969482422
+    },
+    {
+      "field": "field_0002",
+      "slot": 8,
+      "video": "Gen-2/A waterfall cascades gracefully, resembling a silver thread.mp4",
+      "prediction": 64.07549285888672,
+      "target": 74.48999786376953
+    },
+    {
+      "field": "field_0002",
+      "slot": 9,
+      "video": "Gen-2/A wheat field sways gracefully in the gentle breeze.mp4",
+      "prediction": 67.69792175292969,
+      "target": 74.63999938964844
+    },
+    {
+      "field": "field_0002",
+      "slot": 10,
+      "video": "Gen-2/A white orchid grows in a potted plant.mp4",
+      "prediction": 61.70737838745117,
+      "target": 63.630001068115234
+    },
+    {
+      "field": "field_0002",
+      "slot": 11,
+      "video": "Gen-2/A writer sits at a desk, crafting a new novel.mp4",
+      "prediction": 59.019386291503906,
+      "target": 73.1500015258789
+    },
+    {
+      "field": "field_0002",
+      "slot": 12,
+      "video": "Gen-2/An adorable little cat is napping on the windowsill.mp4",
+      "prediction": 55.8909797668457,
+      "target": 70.33999633789062
+    },
+    {
+      "field": "field_0002",
+      "slot": 13,
+      "video": "Gen-2/An ancient church is a landmark in the village.mp4",
+      "prediction": 74.66844177246094,
+      "target": 77.30000305175781
+    },
+    {
+      "field": "field_0002",
+      "slot": 14,
+      "video": "Gen-2/An explorer searches for adventure in the forest.mp4",
+      "prediction": 77.73822021484375,
+      "target": 65.31999969482422
+    },
+    {
+      "field": "field_0002",
+      "slot": 15,
+      "video": "Gen-2/An orchid blooms with deep purple flowers.mp4",
+      "prediction": 63.76558303833008,
+      "target": 73.11000061035156
+    },
+    {
+      "field": "field_0003",
+      "slot": 0,
+      "video": "Gen-2/Blue skies and fluffy clouds, ever-changing shapes like poetry.mp4",
+      "prediction": 51.339759826660156,
+      "target": 74.48999786376953
+    },
+    {
+      "field": "field_0003",
+      "slot": 1,
+      "video": "Gen-2/Cherry trees in the orchard are filled with red fruit.mp4",
+      "prediction": 76.51012420654297,
+      "target": 66.44999694824219
+    },
+    {
+      "field": "field_0003",
+      "slot": 2,
+      "video": "Gen-2/Children dig sandcastles on the beach.mp4",
+      "prediction": 67.95854949951172,
+      "target": 70.33000183105469
+    },
+    {
+      "field": "field_0003",
+      "slot": 3,
+      "video": "Gen-2/Crocodiles swim leisurely in the lake.mp4",
+      "prediction": 52.48365020751953,
+      "target": 66.23999786376953
+    },
+    {
+      "field": "field_0003",
+      "slot": 4,
+      "video": "Gen-2/Great white sharks swim majestically in the depths of the ocean.mp4",
+      "prediction": 68.06231689453125,
+      "target": 74.68000030517578
+    },
+    {
+      "field": "field_0003",
+      "slot": 5,
+      "video": "Gen-2/In a rugby match, players vied for possession of the rugby ball.mp4",
+      "prediction": 58.02724838256836,
+      "target": 65.11000061035156
+    },
+    {
+      "field": "field_0003",
+      "slot": 6,
+      "video": "Gen-2/In front of a farmhouse, there is a swing.mp4",
+      "prediction": 71.81533813476562,
+      "target": 70.41000366210938
+    },
+    {
+      "field": "field_0003",
+      "slot": 7,
+      "video": "Gen-2/Military aircraft are neatly lined up on the military base.mp4",
+      "prediction": 49.14485168457031,
+      "target": 59.54999923706055
+    },
+    {
+      "field": "field_0003",
+      "slot": 8,
+      "video": "Gen-2/Parents pick up students at the bus stop.mp4",
+      "prediction": 70.2567138671875,
+      "target": 65.20999908447266
+    },
+    {
+      "field": "field_0003",
+      "slot": 9,
+      "video": "Gen-2/People sunbathe on the lawn.mp4",
+      "prediction": 71.41084289550781,
+      "target": 60.7599983215332
+    },
+    {
+      "field": "field_0003",
+      "slot": 10,
+      "video": "Gen-2/People taking a leisurely walk admire the lake view.mp4",
+      "prediction": 65.87367248535156,
+      "target": 63.779998779296875
+    },
+    {
+      "field": "field_0003",
+      "slot": 11,
+      "video": "Gen-2/Plateaus surrounding lakes, embraced by peaceful and harmonious mountains.mp4",
+      "prediction": 61.06221008300781,
+      "target": 77.30000305175781
+    },
+    {
+      "field": "field_0003",
+      "slot": 12,
+      "video": "Gen-2/Purple lavender grows in the field.mp4",
+      "prediction": 65.70677185058594,
+      "target": 74.52999877929688
+    },
+    {
+      "field": "field_0003",
+      "slot": 13,
+      "video": "Gen-2/Sharks dart through the water.mp4",
+      "prediction": 61.69955062866211,
+      "target": 65.02999877929688
+    },
+    {
+      "field": "field_0003",
+      "slot": 14,
+      "video": "Gen-2/Soldiers are setting up tents in the camp.mp4",
+      "prediction": 74.94647216796875,
+      "target": 73.23999786376953
+    },
+    {
+      "field": "field_0003",
+      "slot": 15,
+      "video": "Gen-2/Students and teachers discuss topics in the classroom.mp4",
+      "prediction": 71.85138702392578,
+      "target": 77.30000305175781
+    },
+    {
+      "field": "field_0004",
+      "slot": 0,
+      "video": "Gen-2/Students create exquisite artwork in art class.mp4",
+      "prediction": 69.96958923339844,
+      "target": 67.63999938964844
+    },
+    {
+      "field": "field_0004",
+      "slot": 1,
+      "video": "Gen-2/Students enjoy tasty sandwiches in the cafeteria.mp4",
+      "prediction": 72.83258819580078,
+      "target": 64.8499984741211
+    },
+    {
+      "field": "field_0004",
+      "slot": 2,
+      "video": "Gen-2/Students enjoy their time on campus, full of youthful energy.mp4",
+      "prediction": 67.02870178222656,
+      "target": 58.45000076293945
+    },
+    {
+      "field": "field_0004",
+      "slot": 3,
+      "video": "Gen-2/Students line up in the cafeteria, waiting for lunch.mp4",
+      "prediction": 47.84710693359375,
+      "target": 74.23999786376953
+    },
+    {
+      "field": "field_0004",
+      "slot": 4,
+      "video": "Gen-2/Students participate in celebration ceremonies in the school courtyard.mp4",
+      "prediction": 61.88811492919922,
+      "target": 62.470001220703125
+    },
+    {
+      "field": "field_0004",
+      "slot": 5,
+      "video": "Gen-2/Students program in the computer lab.mp4",
+      "prediction": 54.55345153808594,
+      "target": 70.43000030517578
+    },
+    {
+      "field": "field_0004",
+      "slot": 6,
+      "video": "Gen-2/Students savor delicious soups in the cafeteria.mp4",
+      "prediction": 71.8454360961914,
+      "target": 70.52999877929688
+    },
+    {
+      "field": "field_0004",
+      "slot": 7,
+      "video": "Gen-2/Sunflowers stand tall in a field.mp4",
+      "prediction": 72.36766815185547,
+      "target": 64.04000091552734
+    },
+    {
+      "field": "field_0004",
+      "slot": 8,
+      "video": "Gen-2/Sunlight is streaming through the leaves onto the grass.mp4",
+      "prediction": 71.36577606201172,
+      "target": 74.2699966430664
+    },
+    {
+      "field": "field_0004",
+      "slot": 9,
+      "video": "Gen-2/Swallows soar in the air.mp4",
+      "prediction": 58.01759338378906,
+      "target": 65.13999938964844
+    },
+    {
+      "field": "field_0004",
+      "slot": 10,
+      "video": "Gen-2/Teenage skateboarders perform tricks by the pond.mp4",
+      "prediction": 71.3125991821289,
+      "target": 63.31999969482422
+    },
+    {
+      "field": "field_0004",
+      "slot": 11,
+      "video": "Gen-2/The campus has colorful gardens, full of vitality.mp4",
+      "prediction": 56.27889633178711,
+      "target": 66.45999908447266
+    },
+    {
+      "field": "field_0004",
+      "slot": 12,
+      "video": "Gen-2/The commander is strategizing in front of a map.mp4",
+      "prediction": 43.195648193359375,
+      "target": 58.02000045776367
+    },
+    {
+      "field": "field_0004",
+      "slot": 13,
+      "video": "Gen-2/The crickets chirped merrily in the summer night.mp4",
+      "prediction": 68.97552490234375,
+      "target": 64.87999725341797
+    },
+    {
+      "field": "field_0004",
+      "slot": 14,
+      "video": "Gen-2/The leaves of a purple-leaf plum tree turn deep purple.mp4",
+      "prediction": 66.27133178710938,
+      "target": 67.7699966430664
+    },
+    {
+      "field": "field_0004",
+      "slot": 15,
+      "video": "Gen-2/The lion roars majestically on the grassland.mp4",
+      "prediction": 76.46028137207031,
+      "target": 74.66999816894531
+    },
+    {
+      "field": "field_0005",
+      "slot": 0,
+      "video": "Gen-2/The parrot chirped in the treetops.mp4",
+      "prediction": 65.86463928222656,
+      "target": 70.31999969482422
+    },
+    {
+      "field": "field_0005",
+      "slot": 1,
+      "video": "Gen-2/The roof of a farmhouse is covered in moss.mp4",
+      "prediction": 71.09517669677734,
+      "target": 74.5199966430664
+    },
+    {
+      "field": "field_0005",
+      "slot": 2,
+      "video": "Gen-2/The rural stream serves as the water source for villagers.mp4",
+      "prediction": 71.10157775878906,
+      "target": 77.30000305175781
+    },
+    {
+      "field": "field_0005",
+      "slot": 3,
+      "video": "Gen-2/The school auditorium is decorated with festive decorations.mp4",
+      "prediction": 59.56523895263672,
+      "target": 71.76000213623047
+    },
+    {
+      "field": "field_0005",
+      "slot": 4,
+      "video": "Gen-2/The seahorse swayed slowly on the sea floor.mp4",
+      "prediction": 69.8692855834961,
+      "target": 70.43000030517578
+    },
+    {
+      "field": "field_0005",
+      "slot": 5,
+      "video": "Gen-2/There are boats on the park lake.mp4",
+      "prediction": 63.729957580566406,
+      "target": 75.95999908447266
+    },
+    {
+      "field": "field_0005",
+      "slot": 6,
+      "video": "Gen-2/There's a drum and guitar in the music classroom.mp4",
+      "prediction": 75.2230224609375,
+      "target": 74.68000030517578
+    },
+    {
+      "field": "field_0005",
+      "slot": 7,
+      "video": "Gen-2/Unique desert landscapes, with dunes sculpted by the wind.mp4",
+      "prediction": 70.74899291992188,
+      "target": 77.30000305175781
+    },
+    {
+      "field": "field_0005",
+      "slot": 8,
+      "video": "Gen-2/Various fruit trees grow in the countryside.mp4",
+      "prediction": 68.98934936523438,
+      "target": 73.30000305175781
+    },
+    {
+      "field": "field_0005",
+      "slot": 9,
+      "video": "Gen-2/Vendors at the market display fresh fruits and vegetables.mp4",
+      "prediction": 68.13165283203125,
+      "target": 61.18000030517578
+    },
+    {
+      "field": "field_0005",
+      "slot": 10,
+      "video": "Gen-2/Visitors get information at the park's visitor center.mp4",
+      "prediction": 71.85348510742188,
+      "target": 73.38999938964844
+    },
+    {
+      "field": "field_0005",
+      "slot": 11,
+      "video": "Gen-2/Wandering through a forest path, surrounded by emerald greenery.mp4",
+      "prediction": 67.57466888427734,
+      "target": 67.58999633789062
+    },
+    {
+      "field": "field_0005",
+      "slot": 12,
+      "video": "Gen-2/Willow trees by the river, swaying gently in the calming breeze.mp4",
+      "prediction": 65.29303741455078,
+      "target": 73.2699966430664
+    },
+    {
+      "field": "field_0005",
+      "slot": 13,
+      "video": "Hotshot-XL/A baseball player swung the bat, preparing for a home run.mp4",
+      "prediction": 57.489192962646484,
+      "target": 39.52000045776367
+    },
+    {
+      "field": "field_0005",
+      "slot": 14,
+      "video": "Hotshot-XL/A bowl of hot soup is especially delicious on a cold winter day.mp4",
+      "prediction": 63.56636047363281,
+      "target": 54.209999084472656
+    },
+    {
+      "field": "field_0005",
+      "slot": 15,
+      "video": "Hotshot-XL/A bowl of ramen has delicious pork and seaweed.mp4",
+      "prediction": 55.68357849121094,
+      "target": 66.41000366210938
+    },
+    {
+      "field": "field_0006",
+      "slot": 0,
+      "video": "Hotshot-XL/A bowl of rich French onion soup emanates an enticing aroma.mp4",
+      "prediction": 56.555091857910156,
+      "target": 62.40999984741211
+    },
+    {
+      "field": "field_0006",
+      "slot": 1,
+      "video": "Hotshot-XL/A bowl of spicy Mexican chili is very delicious.mp4",
+      "prediction": 68.67630767822266,
+      "target": 66.37999725341797
+    },
+    {
+      "field": "field_0006",
+      "slot": 2,
+      "video": "Hotshot-XL/A butterfly gracefully dances among the flowers.mp4",
+      "prediction": 58.8280029296875,
+      "target": 54.099998474121094
+    },
+    {
+      "field": "field_0006",
+      "slot": 3,
+      "video": "Hotshot-XL/A cactus thrives in the harsh desert.mp4",
+      "prediction": 58.29936981201172,
+      "target": 51.43000030517578
+    },
+    {
+      "field": "field_0006",
+      "slot": 4,
+      "video": "Hotshot-XL/A couple walks hand in hand on the beach, listening to the sound of the waves.mp4",
+      "prediction": 56.48504638671875,
+      "target": 56.97999954223633
+    },
+    {
+      "field": "field_0006",
+      "slot": 5,
+      "video": "Hotshot-XL/A cup of hot chocolate is fragrant.mp4",
+      "prediction": 61.58386993408203,
+      "target": 62.2599983215332
+    },
+    {
+      "field": "field_0006",
+      "slot": 6,
+      "video": "Hotshot-XL/A daffodil sways in the spring breeze.mp4",
+      "prediction": 66.66802215576172,
+      "target": 51.54999923706055
+    },
+    {
+      "field": "field_0006",
+      "slot": 7,
+      "video": "Hotshot-XL/A designer creates fashionable clothing designs.mp4",
+      "prediction": 66.69789123535156,
+      "target": 60.22999954223633
+    },
+    {
+      "field": "field_0006",
+      "slot": 8,
+      "video": "Hotshot-XL/A diver is exploring the underwater world under the coral reef.mp4",
+      "prediction": 59.18095397949219,
+      "target": 56.93000030517578
+    },
+    {
+      "field": "field_0006",
+      "slot": 9,
+      "video": "Hotshot-XL/A doctor cares for patients in the hospital.mp4",
+      "prediction": 65.11738586425781,
+      "target": 47.380001068115234
+    },
+    {
+      "field": "field_0006",
+      "slot": 10,
+      "video": "Hotshot-XL/A doctor is carefully examining a patient's body.mp4",
+      "prediction": 69.35255432128906,
+      "target": 47.54999923706055
+    },
+    {
+      "field": "field_0006",
+      "slot": 11,
+      "video": "Hotshot-XL/A family goes to the movies on the weekend.mp4",
+      "prediction": 64.15605163574219,
+      "target": 48.810001373291016
+    },
+    {
+      "field": "field_0006",
+      "slot": 12,
+      "video": "Hotshot-XL/A field of dandelions lines the side of a rural road.mp4",
+      "prediction": 62.349815368652344,
+      "target": 60.470001220703125
+    },
+    {
+      "field": "field_0006",
+      "slot": 13,
+      "video": "Hotshot-XL/A golden field of wheat sways gently in the breeze.mp4",
+      "prediction": 63.308067321777344,
+      "target": 52.400001525878906
+    },
+    {
+      "field": "field_0006",
+      "slot": 14,
+      "video": "Hotshot-XL/A group of villagers wash clothes by the stream.mp4",
+      "prediction": 57.342124938964844,
+      "target": 60.790000915527344
+    },
+    {
+      "field": "field_0006",
+      "slot": 15,
+      "video": "Hotshot-XL/A hippo leisurely floats in the water.mp4",
+      "prediction": 55.285003662109375,
+      "target": 53.86000061035156
+    },
+    {
+      "field": "field_0007",
+      "slot": 0,
+      "video": "Hotshot-XL/A kangaroo jumps across the Australian desert.mp4",
+      "prediction": 58.5423583984375,
+      "target": 48.540000915527344
+    },
+    {
+      "field": "field_0007",
+      "slot": 1,
+      "video": "Hotshot-XL/A lotus leaf floats on a serene pond.mp4",
+      "prediction": 58.99005126953125,
+      "target": 62.09000015258789
+    },
+    {
+      "field": "field_0007",
+      "slot": 2,
+      "video": "Hotshot-XL/A milkshake is garnished with fresh strawberries and cream.mp4",
+      "prediction": 59.162906646728516,
+      "target": 56.66999816894531
+    },
+    {
+      "field": "field_0007",
+      "slot": 3,
+      "video": "Hotshot-XL/A painter showcases their art on an outdoor gallery.mp4",
+      "prediction": 66.71659851074219,
+      "target": 53.959999084472656
+    },
+    {
+      "field": "field_0007",
+      "slot": 4,
+      "video": "Hotshot-XL/A peony blooms with snow-white petals.mp4",
+      "prediction": 58.891319274902344,
+      "target": 68.0199966430664
+    },
+    {
+      "field": "field_0007",
+      "slot": 5,
+      "video": "Hotshot-XL/A pet owner walks their dog in the park.mp4",
+      "prediction": 64.5553970336914,
+      "target": 62.290000915527344
+    },
+    {
+      "field": "field_0007",
+      "slot": 6,
+      "video": "Hotshot-XL/A photographer captures the neon lights of the city.mp4",
+      "prediction": 52.165367126464844,
+      "target": 49.939998626708984
+    },
+    {
+      "field": "field_0007",
+      "slot": 7,
+      "video": "Hotshot-XL/A piece of French bread is spread with butter.mp4",
+      "prediction": 60.065582275390625,
+      "target": 66.36000061035156
+    },
+    {
+      "field": "field_0007",
+      "slot": 8,
+      "video": "Hotshot-XL/A piece of cheesecake is covered with blueberry sauce.mp4",
+      "prediction": 48.781761169433594,
+      "target": 63.439998626708984
+    },
+    {
+      "field": "field_0007",
+      "slot": 9,
+      "video": "Hotshot-XL/A pizza is topped with Italian sausage and mushrooms.mp4",
+      "prediction": 61.47496795654297,
+      "target": 62.66999816894531
+    },
+    {
+      "field": "field_0007",
+      "slot": 10,
+      "video": "Hotshot-XL/A purple bellflower opens in the sunlight.mp4",
+      "prediction": 66.82089233398438,
+      "target": 63.97999954223633
+    },
+    {
+      "field": "field_0007",
+      "slot": 11,
+      "video": "Hotshot-XL/A roasted cod fish is garnished with fresh herbs.mp4",
+      "prediction": 59.585330963134766,
+      "target": 66.69999694824219
+    },
+    {
+      "field": "field_0007",
+      "slot": 12,
+      "video": "Hotshot-XL/A roasted salmon is presented on a plate.mp4",
+      "prediction": 63.891029357910156,
+      "target": 71.77999877929688
+    },
+    {
+      "field": "field_0007",
+      "slot": 13,
+      "video": "Hotshot-XL/A salad is sprinkled with nuts and fruits.mp4",
+      "prediction": 63.09946060180664,
+      "target": 63.7400016784668
+    },
+    {
+      "field": "field_0007",
+      "slot": 14,
+      "video": "Hotshot-XL/A sausage is grilled slightly crispy on the barbecue.mp4",
+      "prediction": 62.07893753051758,
+      "target": 66.36000061035156
+    },
+    {
+      "field": "field_0007",
+      "slot": 15,
+      "video": "Hotshot-XL/A skier enjoys the thrill of skiing on a snowy mountain.mp4",
+      "prediction": 59.786048889160156,
+      "target": 53.369998931884766
+    },
+    {
+      "field": "field_0008",
+      "slot": 0,
+      "video": "Hotshot-XL/A slice of French chocolate mousse cake brings sweet delight.mp4",
+      "prediction": 56.7427864074707,
+      "target": 51.470001220703125
+    },
+    {
+      "field": "field_0008",
+      "slot": 1,
+      "video": "Hotshot-XL/A tennis player elegantly slid on the grass court.mp4",
+      "prediction": 58.651344299316406,
+      "target": 40.630001068115234
+    },
+    {
+      "field": "field_0008",
+      "slot": 2,
+      "video": "Hotshot-XL/A tennis player made spectacular plays at the net.mp4",
+      "prediction": 58.748600006103516,
+      "target": 39.40999984741211
+    },
+    {
+      "field": "field_0008",
+      "slot": 3,
+      "video": "Hotshot-XL/A thin pancake is spread with butter and maple syrup.mp4",
+      "prediction": 59.592559814453125,
+      "target": 60.95000076293945
+    },
+    {
+      "field": "field_0008",
+      "slot": 4,
+      "video": "Hotshot-XL/A water skier created splashes on the lake.mp4",
+      "prediction": 57.49007797241211,
+      "target": 62.15999984741211
+    },
+    {
+      "field": "field_0008",
+      "slot": 5,
+      "video": "Hotshot-XL/A waterfall cascades gracefully, resembling a silver thread.mp4",
+      "prediction": 56.62620162963867,
+      "target": 62.45000076293945
+    },
+    {
+      "field": "field_0008",
+      "slot": 6,
+      "video": "Hotshot-XL/A wheat field sways gracefully in the gentle breeze.mp4",
+      "prediction": 61.36644744873047,
+      "target": 64.97000122070312
+    },
+    {
+      "field": "field_0008",
+      "slot": 7,
+      "video": "Hotshot-XL/A white orchid grows in a potted plant.mp4",
+      "prediction": 66.16149139404297,
+      "target": 58.59000015258789
+    },
+    {
+      "field": "field_0008",
+      "slot": 8,
+      "video": "Hotshot-XL/A writer sits at a desk, crafting a new novel.mp4",
+      "prediction": 56.80457305908203,
+      "target": 44.88999938964844
+    },
+    {
+      "field": "field_0008",
+      "slot": 9,
+      "video": "Hotshot-XL/An adorable little cat is napping on the windowsill.mp4",
+      "prediction": 63.158145904541016,
+      "target": 66.37999725341797
+    },
+    {
+      "field": "field_0008",
+      "slot": 10,
+      "video": "Hotshot-XL/An ancient church is a landmark in the village.mp4",
+      "prediction": 51.85365676879883,
+      "target": 54.08000183105469
+    },
+    {
+      "field": "field_0008",
+      "slot": 11,
+      "video": "Hotshot-XL/An explorer searches for adventure in the forest.mp4",
+      "prediction": 63.93840789794922,
+      "target": 56.58000183105469
+    },
+    {
+      "field": "field_0008",
+      "slot": 12,
+      "video": "Hotshot-XL/An orchid blooms with deep purple flowers.mp4",
+      "prediction": 55.857704162597656,
+      "target": 57.22999954223633
+    },
+    {
+      "field": "field_0008",
+      "slot": 13,
+      "video": "Hotshot-XL/Blue skies and fluffy clouds, ever-changing shapes like poetry.mp4",
+      "prediction": 53.78729248046875,
+      "target": 69.22000122070312
+    },
+    {
+      "field": "field_0008",
+      "slot": 14,
+      "video": "Hotshot-XL/Cherry trees in the orchard are filled with red fruit.mp4",
+      "prediction": 74.99029541015625,
+      "target": 62.290000915527344
+    },
+    {
+      "field": "field_0008",
+      "slot": 15,
+      "video": "Hotshot-XL/Children dig sandcastles on the beach.mp4",
+      "prediction": 58.14201354980469,
+      "target": 56.70000076293945
+    },
+    {
+      "field": "field_0009",
+      "slot": 0,
+      "video": "Hotshot-XL/Crocodiles swim leisurely in the lake.mp4",
+      "prediction": 53.99977493286133,
+      "target": 63.61000061035156
+    },
+    {
+      "field": "field_0009",
+      "slot": 1,
+      "video": "Hotshot-XL/Great white sharks swim majestically in the depths of the ocean.mp4",
+      "prediction": 60.14584732055664,
+      "target": 63.72999954223633
+    },
+    {
+      "field": "field_0009",
+      "slot": 2,
+      "video": "Hotshot-XL/In a rugby match, players vied for possession of the rugby ball.mp4",
+      "prediction": 56.98761749267578,
+      "target": 46.040000915527344
+    },
+    {
+      "field": "field_0009",
+      "slot": 3,
+      "video": "Hotshot-XL/In front of a farmhouse, there is a swing.mp4",
+      "prediction": 52.0283203125,
+      "target": 66.47000122070312
+    },
+    {
+      "field": "field_0009",
+      "slot": 4,
+      "video": "Hotshot-XL/Military aircraft are neatly lined up on the military base.mp4",
+      "prediction": 53.49334716796875,
+      "target": 65.08000183105469
+    },
+    {
+      "field": "field_0009",
+      "slot": 5,
+      "video": "Hotshot-XL/Parents pick up students at the bus stop.mp4",
+      "prediction": 55.38929748535156,
+      "target": 49.9900016784668
+    },
+    {
+      "field": "field_0009",
+      "slot": 6,
+      "video": "Hotshot-XL/People sunbathe on the lawn.mp4",
+      "prediction": 55.096282958984375,
+      "target": 64.7699966430664
+    },
+    {
+      "field": "field_0009",
+      "slot": 7,
+      "video": "Hotshot-XL/People taking a leisurely walk admire the lake view.mp4",
+      "prediction": 59.137733459472656,
+      "target": 43.349998474121094
+    },
+    {
+      "field": "field_0009",
+      "slot": 8,
+      "video": "Hotshot-XL/Plateaus surrounding lakes, embraced by peaceful and harmonious mountains.mp4",
+      "prediction": 55.27796936035156,
+      "target": 61.2400016784668
+    },
+    {
+      "field": "field_0009",
+      "slot": 9,
+      "video": "Hotshot-XL/Purple lavender grows in the field.mp4",
+      "prediction": 59.08810806274414,
+      "target": 63.86000061035156
+    },
+    {
+      "field": "field_0009",
+      "slot": 10,
+      "video": "Hotshot-XL/Sharks dart through the water.mp4",
+      "prediction": 61.153724670410156,
+      "target": 55.5099983215332
+    },
+    {
+      "field": "field_0009",
+      "slot": 11,
+      "video": "Hotshot-XL/Soldiers are setting up tents in the camp.mp4",
+      "prediction": 58.72057342529297,
+      "target": 47.93000030517578
+    },
+    {
+      "field": "field_0009",
+      "slot": 12,
+      "video": "Hotshot-XL/Students and teachers discuss topics in the classroom.mp4",
+      "prediction": 65.95854949951172,
+      "target": 46.72999954223633
+    },
+    {
+      "field": "field_0009",
+      "slot": 13,
+      "video": "Hotshot-XL/Students create exquisite artwork in art class.mp4",
+      "prediction": 56.7744140625,
+      "target": 58.22999954223633
+    },
+    {
+      "field": "field_0009",
+      "slot": 14,
+      "video": "Hotshot-XL/Students enjoy tasty sandwiches in the cafeteria.mp4",
+      "prediction": 47.99553680419922,
+      "target": 50.29999923706055
+    },
+    {
+      "field": "field_0009",
+      "slot": 15,
+      "video": "Hotshot-XL/Students enjoy their time on campus, full of youthful energy.mp4",
+      "prediction": 67.20830535888672,
+      "target": 46.06999969482422
+    },
+    {
+      "field": "field_0010",
+      "slot": 0,
+      "video": "Hotshot-XL/Students line up in the cafeteria, waiting for lunch.mp4",
+      "prediction": 48.87465286254883,
+      "target": 43.45000076293945
+    },
+    {
+      "field": "field_0010",
+      "slot": 1,
+      "video": "Hotshot-XL/Students participate in celebration ceremonies in the school courtyard.mp4",
+      "prediction": 51.804840087890625,
+      "target": 51.36000061035156
+    },
+    {
+      "field": "field_0010",
+      "slot": 2,
+      "video": "Hotshot-XL/Students program in the computer lab.mp4",
+      "prediction": 54.2301025390625,
+      "target": 46.0099983215332
+    },
+    {
+      "field": "field_0010",
+      "slot": 3,
+      "video": "Hotshot-XL/Students savor delicious soups in the cafeteria.mp4",
+      "prediction": 57.00967788696289,
+      "target": 54.459999084472656
+    },
+    {
+      "field": "field_0010",
+      "slot": 4,
+      "video": "Hotshot-XL/Sunflowers stand tall in a field.mp4",
+      "prediction": 66.48382568359375,
+      "target": 64.95999908447266
+    },
+    {
+      "field": "field_0010",
+      "slot": 5,
+      "video": "Hotshot-XL/Sunlight is streaming through the leaves onto the grass.mp4",
+      "prediction": 57.5238037109375,
+      "target": 63.880001068115234
+    },
+    {
+      "field": "field_0010",
+      "slot": 6,
+      "video": "Hotshot-XL/Swallows soar in the air.mp4",
+      "prediction": 52.35525894165039,
+      "target": 48.900001525878906
+    },
+    {
+      "field": "field_0010",
+      "slot": 7,
+      "video": "Hotshot-XL/Teenage skateboarders perform tricks by the pond.mp4",
+      "prediction": 54.483482360839844,
+      "target": 40.720001220703125
+    },
+    {
+      "field": "field_0010",
+      "slot": 8,
+      "video": "Hotshot-XL/The campus has colorful gardens, full of vitality.mp4",
+      "prediction": 54.32067108154297,
+      "target": 57.220001220703125
+    },
+    {
+      "field": "field_0010",
+      "slot": 9,
+      "video": "Hotshot-XL/The commander is strategizing in front of a map.mp4",
+      "prediction": 59.497230529785156,
+      "target": 56.880001068115234
+    },
+    {
+      "field": "field_0010",
+      "slot": 10,
+      "video": "Hotshot-XL/The crickets chirped merrily in the summer night.mp4",
+      "prediction": 66.50485229492188,
+      "target": 61.310001373291016
+    },
+    {
+      "field": "field_0010",
+      "slot": 11,
+      "video": "Hotshot-XL/The leaves of a purple-leaf plum tree turn deep purple.mp4",
+      "prediction": 46.99703598022461,
+      "target": 56.779998779296875
+    },
+    {
+      "field": "field_0010",
+      "slot": 12,
+      "video": "Hotshot-XL/The lion roars majestically on the grassland.mp4",
+      "prediction": 62.90448760986328,
+      "target": 59.54999923706055
+    },
+    {
+      "field": "field_0010",
+      "slot": 13,
+      "video": "Hotshot-XL/The parrot chirped in the treetops.mp4",
+      "prediction": 53.32994079589844,
+      "target": 55.7400016784668
+    },
+    {
+      "field": "field_0010",
+      "slot": 14,
+      "video": "Hotshot-XL/The roof of a farmhouse is covered in moss.mp4",
+      "prediction": 57.51949691772461,
+      "target": 73.66000366210938
+    },
+    {
+      "field": "field_0010",
+      "slot": 15,
+      "video": "Hotshot-XL/The rural stream serves as the water source for villagers.mp4",
+      "prediction": 56.930240631103516,
+      "target": 56.86000061035156
+    },
+    {
+      "field": "field_0011",
+      "slot": 0,
+      "video": "Hotshot-XL/The school auditorium is decorated with festive decorations.mp4",
+      "prediction": 54.398887634277344,
+      "target": 52.529998779296875
+    },
+    {
+      "field": "field_0011",
+      "slot": 1,
+      "video": "Hotshot-XL/The seahorse swayed slowly on the sea floor.mp4",
+      "prediction": 57.328712463378906,
+      "target": 59.88999938964844
+    },
+    {
+      "field": "field_0011",
+      "slot": 2,
+      "video": "Hotshot-XL/There are boats on the park lake.mp4",
+      "prediction": 61.718753814697266,
+      "target": 66.30999755859375
+    },
+    {
+      "field": "field_0011",
+      "slot": 3,
+      "video": "Hotshot-XL/There's a drum and guitar in the music classroom.mp4",
+      "prediction": 55.83926773071289,
+      "target": 51.65999984741211
+    },
+    {
+      "field": "field_0011",
+      "slot": 4,
+      "video": "Hotshot-XL/Unique desert landscapes, with dunes sculpted by the wind.mp4",
+      "prediction": 59.02263641357422,
+      "target": 66.0
+    },
+    {
+      "field": "field_0011",
+      "slot": 5,
+      "video": "Hotshot-XL/Various fruit trees grow in the countryside.mp4",
+      "prediction": 51.898921966552734,
+      "target": 57.029998779296875
+    },
+    {
+      "field": "field_0011",
+      "slot": 6,
+      "video": "Hotshot-XL/Vendors at the market display fresh fruits and vegetables.mp4",
+      "prediction": 72.47615051269531,
+      "target": 65.11000061035156
+    },
+    {
+      "field": "field_0011",
+      "slot": 7,
+      "video": "Hotshot-XL/Visitors get information at the park's visitor center.mp4",
+      "prediction": 60.89845275878906,
+      "target": 58.25
+    },
+    {
+      "field": "field_0011",
+      "slot": 8,
+      "video": "Hotshot-XL/Wandering through a forest path, surrounded by emerald greenery.mp4",
+      "prediction": 55.982505798339844,
+      "target": 55.540000915527344
+    },
+    {
+      "field": "field_0011",
+      "slot": 9,
+      "video": "Hotshot-XL/Willow trees by the river, swaying gently in the calming breeze.mp4",
+      "prediction": 58.4623908996582,
+      "target": 55.77000045776367
+    },
+    {
+      "field": "field_0011",
+      "slot": 10,
+      "video": "Text2Video-Zero/A baseball player swung the bat, preparing for a home run.mp4",
+      "prediction": 34.505802154541016,
+      "target": 31.34000015258789
+    },
+    {
+      "field": "field_0011",
+      "slot": 11,
+      "video": "Text2Video-Zero/A bowl of hot soup is especially delicious on a cold winter day.mp4",
+      "prediction": 34.198211669921875,
+      "target": 33.959999084472656
+    },
+    {
+      "field": "field_0011",
+      "slot": 12,
+      "video": "Text2Video-Zero/A bowl of ramen has delicious pork and seaweed.mp4",
+      "prediction": 37.16497039794922,
+      "target": 46.15999984741211
+    },
+    {
+      "field": "field_0011",
+      "slot": 13,
+      "video": "Text2Video-Zero/A bowl of rich French onion soup emanates an enticing aroma.mp4",
+      "prediction": 36.975589752197266,
+      "target": 35.40999984741211
+    },
+    {
+      "field": "field_0011",
+      "slot": 14,
+      "video": "Text2Video-Zero/A bowl of spicy Mexican chili is very delicious.mp4",
+      "prediction": 35.454017639160156,
+      "target": 29.950000762939453
+    },
+    {
+      "field": "field_0011",
+      "slot": 15,
+      "video": "Text2Video-Zero/A butterfly gracefully dances among the flowers.mp4",
+      "prediction": 35.2740592956543,
+      "target": 38.18000030517578
+    },
+    {
+      "field": "field_0012",
+      "slot": 0,
+      "video": "Text2Video-Zero/A cactus thrives in the harsh desert.mp4",
+      "prediction": 34.61676025390625,
+      "target": 38.150001525878906
+    },
+    {
+      "field": "field_0012",
+      "slot": 1,
+      "video": "Text2Video-Zero/A couple walks hand in hand on the beach, listening to the sound of the waves.mp4",
+      "prediction": 34.561187744140625,
+      "target": 34.790000915527344
+    },
+    {
+      "field": "field_0012",
+      "slot": 2,
+      "video": "Text2Video-Zero/A cup of hot chocolate is fragrant.mp4",
+      "prediction": 36.02931594848633,
+      "target": 36.79999923706055
+    },
+    {
+      "field": "field_0012",
+      "slot": 3,
+      "video": "Text2Video-Zero/A daffodil sways in the spring breeze.mp4",
+      "prediction": 35.42394256591797,
+      "target": 35.40999984741211
+    },
+    {
+      "field": "field_0012",
+      "slot": 4,
+      "video": "Text2Video-Zero/A designer creates fashionable clothing designs.mp4",
+      "prediction": 37.10307312011719,
+      "target": 32.65999984741211
+    },
+    {
+      "field": "field_0012",
+      "slot": 5,
+      "video": "Text2Video-Zero/A diver is exploring the underwater world under the coral reef.mp4",
+      "prediction": 36.75230407714844,
+      "target": 32.689998626708984
+    },
+    {
+      "field": "field_0012",
+      "slot": 6,
+      "video": "Text2Video-Zero/A doctor cares for patients in the hospital.mp4",
+      "prediction": 34.45649719238281,
+      "target": 31.350000381469727
+    },
+    {
+      "field": "field_0012",
+      "slot": 7,
+      "video": "Text2Video-Zero/A doctor is carefully examining a patient's body.mp4",
+      "prediction": 37.06170654296875,
+      "target": 42.22999954223633
+    },
+    {
+      "field": "field_0012",
+      "slot": 8,
+      "video": "Text2Video-Zero/A family goes to the movies on the weekend.mp4",
+      "prediction": 34.948211669921875,
+      "target": 34.18000030517578
+    },
+    {
+      "field": "field_0012",
+      "slot": 9,
+      "video": "Text2Video-Zero/A field of dandelions lines the side of a rural road.mp4",
+      "prediction": 41.624351501464844,
+      "target": 39.38999938964844
+    },
+    {
+      "field": "field_0012",
+      "slot": 10,
+      "video": "Text2Video-Zero/A golden field of wheat sways gently in the breeze.mp4",
+      "prediction": 36.370723724365234,
+      "target": 39.5
+    },
+    {
+      "field": "field_0012",
+      "slot": 11,
+      "video": "Text2Video-Zero/A group of villagers wash clothes by the stream.mp4",
+      "prediction": 34.828330993652344,
+      "target": 31.239999771118164
+    },
+    {
+      "field": "field_0012",
+      "slot": 12,
+      "video": "Text2Video-Zero/A hippo leisurely floats in the water.mp4",
+      "prediction": 39.778968811035156,
+      "target": 37.970001220703125
+    },
+    {
+      "field": "field_0012",
+      "slot": 13,
+      "video": "Text2Video-Zero/A kangaroo jumps across the Australian desert.mp4",
+      "prediction": 36.293663024902344,
+      "target": 39.08000183105469
+    },
+    {
+      "field": "field_0012",
+      "slot": 14,
+      "video": "Text2Video-Zero/A lotus leaf floats on a serene pond.mp4",
+      "prediction": 41.71416473388672,
+      "target": 39.459999084472656
+    },
+    {
+      "field": "field_0012",
+      "slot": 15,
+      "video": "Text2Video-Zero/A milkshake is garnished with fresh strawberries and cream.mp4",
+      "prediction": 42.886329650878906,
+      "target": 36.81999969482422
+    },
+    {
+      "field": "field_0013",
+      "slot": 0,
+      "video": "Text2Video-Zero/A painter showcases their art on an outdoor gallery.mp4",
+      "prediction": 35.83688735961914,
+      "target": 39.5
+    },
+    {
+      "field": "field_0013",
+      "slot": 1,
+      "video": "Text2Video-Zero/A peony blooms with snow-white petals.mp4",
+      "prediction": 35.87907028198242,
+      "target": 40.939998626708984
+    },
+    {
+      "field": "field_0013",
+      "slot": 2,
+      "video": "Text2Video-Zero/A pet owner walks their dog in the park.mp4",
+      "prediction": 34.482547760009766,
+      "target": 39.470001220703125
+    },
+    {
+      "field": "field_0013",
+      "slot": 3,
+      "video": "Text2Video-Zero/A photographer captures the neon lights of the city.mp4",
+      "prediction": 35.060646057128906,
+      "target": 36.86000061035156
+    },
+    {
+      "field": "field_0013",
+      "slot": 4,
+      "video": "Text2Video-Zero/A piece of French bread is spread with butter.mp4",
+      "prediction": 36.191680908203125,
+      "target": 36.7400016784668
+    },
+    {
+      "field": "field_0013",
+      "slot": 5,
+      "video": "Text2Video-Zero/A piece of cheesecake is covered with blueberry sauce.mp4",
+      "prediction": 34.50910949707031,
+      "target": 40.75
+    },
+    {
+      "field": "field_0013",
+      "slot": 6,
+      "video": "Text2Video-Zero/A pizza is topped with Italian sausage and mushrooms.mp4",
+      "prediction": 36.97984313964844,
+      "target": 35.33000183105469
+    },
+    {
+      "field": "field_0013",
+      "slot": 7,
+      "video": "Text2Video-Zero/A purple bellflower opens in the sunlight.mp4",
+      "prediction": 35.10832214355469,
+      "target": 36.7400016784668
+    },
+    {
+      "field": "field_0013",
+      "slot": 8,
+      "video": "Text2Video-Zero/A roasted cod fish is garnished with fresh herbs.mp4",
+      "prediction": 38.36123275756836,
+      "target": 36.810001373291016
+    },
+    {
+      "field": "field_0013",
+      "slot": 9,
+      "video": "Text2Video-Zero/A roasted salmon is presented on a plate.mp4",
+      "prediction": 38.68440628051758,
+      "target": 37.97999954223633
+    },
+    {
+      "field": "field_0013",
+      "slot": 10,
+      "video": "Text2Video-Zero/A salad is sprinkled with nuts and fruits.mp4",
+      "prediction": 41.011009216308594,
+      "target": 43.040000915527344
+    },
+    {
+      "field": "field_0013",
+      "slot": 11,
+      "video": "Text2Video-Zero/A sausage is grilled slightly crispy on the barbecue.mp4",
+      "prediction": 35.11921691894531,
+      "target": 40.83000183105469
+    },
+    {
+      "field": "field_0013",
+      "slot": 12,
+      "video": "Text2Video-Zero/A skier enjoys the thrill of skiing on a snowy mountain.mp4",
+      "prediction": 34.698204040527344,
+      "target": 32.560001373291016
+    },
+    {
+      "field": "field_0013",
+      "slot": 13,
+      "video": "Text2Video-Zero/A slice of French chocolate mousse cake brings sweet delight.mp4",
+      "prediction": 34.43595886230469,
+      "target": 39.27000045776367
+    },
+    {
+      "field": "field_0013",
+      "slot": 14,
+      "video": "Text2Video-Zero/A tennis player elegantly slid on the grass court.mp4",
+      "prediction": 38.5675048828125,
+      "target": 32.689998626708984
+    },
+    {
+      "field": "field_0013",
+      "slot": 15,
+      "video": "Text2Video-Zero/A tennis player made spectacular plays at the net.mp4",
+      "prediction": 46.011810302734375,
+      "target": 32.63999938964844
+    },
+    {
+      "field": "field_0014",
+      "slot": 0,
+      "video": "Text2Video-Zero/A thin pancake is spread with butter and maple syrup.mp4",
+      "prediction": 34.93562316894531,
+      "target": 40.75
+    },
+    {
+      "field": "field_0014",
+      "slot": 1,
+      "video": "Text2Video-Zero/A water skier created splashes on the lake.mp4",
+      "prediction": 35.61484146118164,
+      "target": 32.79999923706055
+    },
+    {
+      "field": "field_0014",
+      "slot": 2,
+      "video": "Text2Video-Zero/A waterfall cascades gracefully, resembling a silver thread.mp4",
+      "prediction": 36.30809020996094,
+      "target": 35.439998626708984
+    },
+    {
+      "field": "field_0014",
+      "slot": 3,
+      "video": "Text2Video-Zero/A wheat field sways gracefully in the gentle breeze.mp4",
+      "prediction": 35.700130462646484,
+      "target": 35.29999923706055
+    },
+    {
+      "field": "field_0014",
+      "slot": 4,
+      "video": "Text2Video-Zero/A white orchid grows in a potted plant.mp4",
+      "prediction": 40.304771423339844,
+      "target": 32.060001373291016
+    },
+    {
+      "field": "field_0014",
+      "slot": 5,
+      "video": "Text2Video-Zero/A writer sits at a desk, crafting a new novel.mp4",
+      "prediction": 34.523040771484375,
+      "target": 29.969999313354492
+    },
+    {
+      "field": "field_0014",
+      "slot": 6,
+      "video": "Text2Video-Zero/An adorable little cat is napping on the windowsill.mp4",
+      "prediction": 35.38091278076172,
+      "target": 36.86000061035156
+    },
+    {
+      "field": "field_0014",
+      "slot": 7,
+      "video": "Text2Video-Zero/An ancient church is a landmark in the village.mp4",
+      "prediction": 36.426963806152344,
+      "target": 29.950000762939453
+    },
+    {
+      "field": "field_0014",
+      "slot": 8,
+      "video": "Text2Video-Zero/An explorer searches for adventure in the forest.mp4",
+      "prediction": 40.815460205078125,
+      "target": 31.399999618530273
+    },
+    {
+      "field": "field_0014",
+      "slot": 9,
+      "video": "Text2Video-Zero/An orchid blooms with deep purple flowers.mp4",
+      "prediction": 34.40175247192383,
+      "target": 31.399999618530273
+    },
+    {
+      "field": "field_0014",
+      "slot": 10,
+      "video": "Text2Video-Zero/Blue skies and fluffy clouds, ever-changing shapes like poetry.mp4",
+      "prediction": 37.04999542236328,
+      "target": 38.150001525878906
+    },
+    {
+      "field": "field_0014",
+      "slot": 11,
+      "video": "Text2Video-Zero/Cherry trees in the orchard are filled with red fruit.mp4",
+      "prediction": 37.19779586791992,
+      "target": 31.8700008392334
+    },
+    {
+      "field": "field_0014",
+      "slot": 12,
+      "video": "Text2Video-Zero/Children dig sandcastles on the beach.mp4",
+      "prediction": 35.433536529541016,
+      "target": 41.79999923706055
+    },
+    {
+      "field": "field_0014",
+      "slot": 13,
+      "video": "Text2Video-Zero/Crocodiles swim leisurely in the lake.mp4",
+      "prediction": 35.245819091796875,
+      "target": 31.34000015258789
+    },
+    {
+      "field": "field_0014",
+      "slot": 14,
+      "video": "Text2Video-Zero/Great white sharks swim majestically in the depths of the ocean.mp4",
+      "prediction": 38.287208557128906,
+      "target": 34.18000030517578
+    },
+    {
+      "field": "field_0014",
+      "slot": 15,
+      "video": "Text2Video-Zero/In a rugby match, players vied for possession of the rugby ball.mp4",
+      "prediction": 35.53423309326172,
+      "target": 32.63999938964844
+    },
+    {
+      "field": "field_0015",
+      "slot": 0,
+      "video": "Text2Video-Zero/In front of a farmhouse, there is a swing.mp4",
+      "prediction": 34.203060150146484,
+      "target": 34.09000015258789
+    },
+    {
+      "field": "field_0015",
+      "slot": 1,
+      "video": "Text2Video-Zero/Military aircraft are neatly lined up on the military base.mp4",
+      "prediction": 38.175697326660156,
+      "target": 32.810001373291016
+    },
+    {
+      "field": "field_0015",
+      "slot": 2,
+      "video": "Text2Video-Zero/Parents pick up students at the bus stop.mp4",
+      "prediction": 36.27911376953125,
+      "target": 32.689998626708984
+    },
+    {
+      "field": "field_0015",
+      "slot": 3,
+      "video": "Text2Video-Zero/People sunbathe on the lawn.mp4",
+      "prediction": 34.83601379394531,
+      "target": 38.20000076293945
+    },
+    {
+      "field": "field_0015",
+      "slot": 4,
+      "video": "Text2Video-Zero/People taking a leisurely walk admire the lake view.mp4",
+      "prediction": 35.892948150634766,
+      "target": 32.75
+    },
+    {
+      "field": "field_0015",
+      "slot": 5,
+      "video": "Text2Video-Zero/Plateaus surrounding lakes, embraced by peaceful and harmonious mountains.mp4",
+      "prediction": 39.52739334106445,
+      "target": 38.2599983215332
+    },
+    {
+      "field": "field_0015",
+      "slot": 6,
+      "video": "Text2Video-Zero/Purple lavender grows in the field.mp4",
+      "prediction": 36.22517395019531,
+      "target": 40.599998474121094
+    },
+    {
+      "field": "field_0015",
+      "slot": 7,
+      "video": "Text2Video-Zero/Sharks dart through the water.mp4",
+      "prediction": 35.722164154052734,
+      "target": 29.950000762939453
+    },
+    {
+      "field": "field_0015",
+      "slot": 8,
+      "video": "Text2Video-Zero/Soldiers are setting up tents in the camp.mp4",
+      "prediction": 37.13554000854492,
+      "target": 38.150001525878906
+    },
+    {
+      "field": "field_0015",
+      "slot": 9,
+      "video": "Text2Video-Zero/Students and teachers discuss topics in the classroom.mp4",
+      "prediction": 35.72135925292969,
+      "target": 34.029998779296875
+    },
+    {
+      "field": "field_0015",
+      "slot": 10,
+      "video": "Text2Video-Zero/Students create exquisite artwork in art class.mp4",
+      "prediction": 35.880428314208984,
+      "target": 35.470001220703125
+    },
+    {
+      "field": "field_0015",
+      "slot": 11,
+      "video": "Text2Video-Zero/Students enjoy tasty sandwiches in the cafeteria.mp4",
+      "prediction": 34.26759719848633,
+      "target": 34.27000045776367
+    },
+    {
+      "field": "field_0015",
+      "slot": 12,
+      "video": "Text2Video-Zero/Students enjoy their time on campus, full of youthful energy.mp4",
+      "prediction": 35.63184356689453,
+      "target": 35.40999984741211
+    },
+    {
+      "field": "field_0015",
+      "slot": 13,
+      "video": "Text2Video-Zero/Students line up in the cafeteria, waiting for lunch.mp4",
+      "prediction": 33.858402252197266,
+      "target": 32.68000030517578
+    },
+    {
+      "field": "field_0015",
+      "slot": 14,
+      "video": "Text2Video-Zero/Students participate in celebration ceremonies in the school courtyard.mp4",
+      "prediction": 37.67615509033203,
+      "target": 42.2400016784668
+    },
+    {
+      "field": "field_0015",
+      "slot": 15,
+      "video": "Text2Video-Zero/Students program in the computer lab.mp4",
+      "prediction": 33.92671203613281,
+      "target": 35.209999084472656
+    },
+    {
+      "field": "field_0016",
+      "slot": 0,
+      "video": "Text2Video-Zero/Students savor delicious soups in the cafeteria.mp4",
+      "prediction": 34.97388458251953,
+      "target": 32.16999816894531
+    },
+    {
+      "field": "field_0016",
+      "slot": 1,
+      "video": "Text2Video-Zero/Sunflowers stand tall in a field.mp4",
+      "prediction": 36.42559051513672,
+      "target": 35.41999816894531
+    },
+    {
+      "field": "field_0016",
+      "slot": 2,
+      "video": "Text2Video-Zero/Sunlight is streaming through the leaves onto the grass.mp4",
+      "prediction": 34.52079391479492,
+      "target": 36.70000076293945
+    },
+    {
+      "field": "field_0016",
+      "slot": 3,
+      "video": "Text2Video-Zero/Swallows soar in the air.mp4",
+      "prediction": 34.96598434448242,
+      "target": 37.93000030517578
+    },
+    {
+      "field": "field_0016",
+      "slot": 4,
+      "video": "Text2Video-Zero/Teenage skateboarders perform tricks by the pond.mp4",
+      "prediction": 37.9647331237793,
+      "target": 38.02000045776367
+    },
+    {
+      "field": "field_0016",
+      "slot": 5,
+      "video": "Text2Video-Zero/The campus has colorful gardens, full of vitality.mp4",
+      "prediction": 34.971622467041016,
+      "target": 34.33000183105469
+    },
+    {
+      "field": "field_0016",
+      "slot": 6,
+      "video": "Text2Video-Zero/The commander is strategizing in front of a map.mp4",
+      "prediction": 35.52443313598633,
+      "target": 31.43000030517578
+    },
+    {
+      "field": "field_0016",
+      "slot": 7,
+      "video": "Text2Video-Zero/The crickets chirped merrily in the summer night.mp4",
+      "prediction": 34.40119552612305,
+      "target": 36.790000915527344
+    },
+    {
+      "field": "field_0016",
+      "slot": 8,
+      "video": "Text2Video-Zero/The leaves of a purple-leaf plum tree turn deep purple.mp4",
+      "prediction": 34.748477935791016,
+      "target": 42.0099983215332
+    },
+    {
+      "field": "field_0016",
+      "slot": 9,
+      "video": "Text2Video-Zero/The lion roars majestically on the grassland.mp4",
+      "prediction": 48.61716079711914,
+      "target": 44.91999816894531
+    },
+    {
+      "field": "field_0016",
+      "slot": 10,
+      "video": "Text2Video-Zero/The parrot chirped in the treetops.mp4",
+      "prediction": 36.78542709350586,
+      "target": 29.950000762939453
+    },
+    {
+      "field": "field_0016",
+      "slot": 11,
+      "video": "Text2Video-Zero/The roof of a farmhouse is covered in moss.mp4",
+      "prediction": 36.391754150390625,
+      "target": 35.40999984741211
+    },
+    {
+      "field": "field_0016",
+      "slot": 12,
+      "video": "Text2Video-Zero/The rural stream serves as the water source for villagers.mp4",
+      "prediction": 34.22718811035156,
+      "target": 36.68000030517578
+    },
+    {
+      "field": "field_0016",
+      "slot": 13,
+      "video": "Text2Video-Zero/The school auditorium is decorated with festive decorations.mp4",
+      "prediction": 42.11249542236328,
+      "target": 31.8700008392334
+    },
+    {
+      "field": "field_0016",
+      "slot": 14,
+      "video": "Text2Video-Zero/The seahorse swayed slowly on the sea floor.mp4",
+      "prediction": 37.25215530395508,
+      "target": 36.77000045776367
+    },
+    {
+      "field": "field_0016",
+      "slot": 15,
+      "video": "Text2Video-Zero/There are boats on the park lake.mp4",
+      "prediction": 35.429176330566406,
+      "target": 31.34000015258789
+    },
+    {
+      "field": "field_0017",
+      "slot": 0,
+      "video": "Text2Video-Zero/There's a drum and guitar in the music classroom.mp4",
+      "prediction": 34.72023010253906,
+      "target": 31.829999923706055
+    },
+    {
+      "field": "field_0017",
+      "slot": 1,
+      "video": "Text2Video-Zero/Unique desert landscapes, with dunes sculpted by the wind.mp4",
+      "prediction": 43.365291595458984,
+      "target": 35.310001373291016
+    },
+    {
+      "field": "field_0017",
+      "slot": 2,
+      "video": "Text2Video-Zero/Various fruit trees grow in the countryside.mp4",
+      "prediction": 36.942222595214844,
+      "target": 40.77000045776367
+    },
+    {
+      "field": "field_0017",
+      "slot": 3,
+      "video": "Text2Video-Zero/Vendors at the market display fresh fruits and vegetables.mp4",
+      "prediction": 35.97343444824219,
+      "target": 33.66999816894531
+    },
+    {
+      "field": "field_0017",
+      "slot": 4,
+      "video": "Text2Video-Zero/Visitors get information at the park's visitor center.mp4",
+      "prediction": 36.5029296875,
+      "target": 37.86000061035156
+    },
+    {
+      "field": "field_0017",
+      "slot": 5,
+      "video": "Text2Video-Zero/Wandering through a forest path, surrounded by emerald greenery.mp4",
+      "prediction": 38.04902648925781,
+      "target": 38.189998626708984
+    },
+    {
+      "field": "field_0017",
+      "slot": 6,
+      "video": "Text2Video-Zero/Willow trees by the river, swaying gently in the calming breeze.mp4",
+      "prediction": 35.27037811279297,
+      "target": 39.529998779296875
+    },
+    {
+      "field": "field_0017",
+      "slot": 7,
+      "video": "Tune-A-Video/A baseball player swung the bat, preparing for a home run.mp4",
+      "prediction": 33.69929504394531,
+      "target": 35.529998779296875
+    },
+    {
+      "field": "field_0017",
+      "slot": 8,
+      "video": "Tune-A-Video/A bowl of hot soup is especially delicious on a cold winter day.mp4",
+      "prediction": 38.24283981323242,
+      "target": 36.7400016784668
+    },
+    {
+      "field": "field_0017",
+      "slot": 9,
+      "video": "Tune-A-Video/A bowl of ramen has delicious pork and seaweed.mp4",
+      "prediction": 36.661582946777344,
+      "target": 33.939998626708984
+    },
+    {
+      "field": "field_0017",
+      "slot": 10,
+      "video": "Tune-A-Video/A bowl of rich French onion soup emanates an enticing aroma.mp4",
+      "prediction": 37.26139450073242,
+      "target": 43.349998474121094
+    },
+    {
+      "field": "field_0017",
+      "slot": 11,
+      "video": "Tune-A-Video/A bowl of spicy Mexican chili is very delicious.mp4",
+      "prediction": 41.3836669921875,
+      "target": 35.40999984741211
+    },
+    {
+      "field": "field_0017",
+      "slot": 12,
+      "video": "Tune-A-Video/A butterfly gracefully dances among the flowers.mp4",
+      "prediction": 33.77569580078125,
+      "target": 39.47999954223633
+    },
+    {
+      "field": "field_0017",
+      "slot": 13,
+      "video": "Tune-A-Video/A cactus thrives in the harsh desert.mp4",
+      "prediction": 38.34257507324219,
+      "target": 38.20000076293945
+    },
+    {
+      "field": "field_0017",
+      "slot": 14,
+      "video": "Tune-A-Video/A couple walks hand in hand on the beach, listening to the sound of the waves.mp4",
+      "prediction": 34.50770950317383,
+      "target": 31.239999771118164
+    },
+    {
+      "field": "field_0017",
+      "slot": 15,
+      "video": "Tune-A-Video/A cup of hot chocolate is fragrant.mp4",
+      "prediction": 38.78208541870117,
+      "target": 35.369998931884766
+    },
+    {
+      "field": "field_0018",
+      "slot": 0,
+      "video": "Tune-A-Video/A daffodil sways in the spring breeze.mp4",
+      "prediction": 38.519588470458984,
+      "target": 38.11000061035156
+    },
+    {
+      "field": "field_0018",
+      "slot": 1,
+      "video": "Tune-A-Video/A designer creates fashionable clothing designs.mp4",
+      "prediction": 35.2711181640625,
+      "target": 31.34000015258789
+    },
+    {
+      "field": "field_0018",
+      "slot": 2,
+      "video": "Tune-A-Video/A diver is exploring the underwater world under the coral reef.mp4",
+      "prediction": 34.0941162109375,
+      "target": 36.59000015258789
+    },
+    {
+      "field": "field_0018",
+      "slot": 3,
+      "video": "Tune-A-Video/A doctor cares for patients in the hospital.mp4",
+      "prediction": 36.33386993408203,
+      "target": 32.779998779296875
+    },
+    {
+      "field": "field_0018",
+      "slot": 4,
+      "video": "Tune-A-Video/A doctor is carefully examining a patient's body.mp4",
+      "prediction": 36.28468704223633,
+      "target": 32.27000045776367
+    },
+    {
+      "field": "field_0018",
+      "slot": 5,
+      "video": "Tune-A-Video/A family goes to the movies on the weekend.mp4",
+      "prediction": 34.14809799194336,
+      "target": 32.66999816894531
+    },
+    {
+      "field": "field_0018",
+      "slot": 6,
+      "video": "Tune-A-Video/A field of dandelions lines the side of a rural road.mp4",
+      "prediction": 37.554443359375,
+      "target": 34.20000076293945
+    },
+    {
+      "field": "field_0018",
+      "slot": 7,
+      "video": "Tune-A-Video/A golden field of wheat sways gently in the breeze.mp4",
+      "prediction": 38.87801742553711,
+      "target": 31.299999237060547
+    },
+    {
+      "field": "field_0018",
+      "slot": 8,
+      "video": "Tune-A-Video/A group of villagers wash clothes by the stream.mp4",
+      "prediction": 34.12627410888672,
+      "target": 36.7599983215332
+    },
+    {
+      "field": "field_0018",
+      "slot": 9,
+      "video": "Tune-A-Video/A hippo leisurely floats in the water.mp4",
+      "prediction": 33.982948303222656,
+      "target": 36.560001373291016
+    },
+    {
+      "field": "field_0018",
+      "slot": 10,
+      "video": "Tune-A-Video/A kangaroo jumps across the Australian desert.mp4",
+      "prediction": 36.51755142211914,
+      "target": 38.2400016784668
+    },
+    {
+      "field": "field_0018",
+      "slot": 11,
+      "video": "Tune-A-Video/A lotus leaf floats on a serene pond.mp4",
+      "prediction": 35.25215530395508,
+      "target": 32.63999938964844
+    },
+    {
+      "field": "field_0018",
+      "slot": 12,
+      "video": "Tune-A-Video/A milkshake is garnished with fresh strawberries and cream.mp4",
+      "prediction": 36.13755798339844,
+      "target": 37.9900016784668
+    },
+    {
+      "field": "field_0018",
+      "slot": 13,
+      "video": "Tune-A-Video/A painter showcases their art on an outdoor gallery.mp4",
+      "prediction": 36.41648864746094,
+      "target": 35.45000076293945
+    },
+    {
+      "field": "field_0018",
+      "slot": 14,
+      "video": "Tune-A-Video/A peony blooms with snow-white petals.mp4",
+      "prediction": 36.96761703491211,
+      "target": 36.709999084472656
+    },
+    {
+      "field": "field_0018",
+      "slot": 15,
+      "video": "Tune-A-Video/A pet owner walks their dog in the park.mp4",
+      "prediction": 34.798248291015625,
+      "target": 32.220001220703125
+    },
+    {
+      "field": "field_0019",
+      "slot": 0,
+      "video": "Tune-A-Video/A photographer captures the neon lights of the city.mp4",
+      "prediction": 34.819339752197266,
+      "target": 34.150001525878906
+    },
+    {
+      "field": "field_0019",
+      "slot": 1,
+      "video": "Tune-A-Video/A piece of French bread is spread with butter.mp4",
+      "prediction": 35.842018127441406,
+      "target": 38.06999969482422
+    },
+    {
+      "field": "field_0019",
+      "slot": 2,
+      "video": "Tune-A-Video/A piece of cheesecake is covered with blueberry sauce.mp4",
+      "prediction": 34.160526275634766,
+      "target": 34.0099983215332
+    },
+    {
+      "field": "field_0019",
+      "slot": 3,
+      "video": "Tune-A-Video/A pizza is topped with Italian sausage and mushrooms.mp4",
+      "prediction": 36.43004608154297,
+      "target": 38.15999984741211
+    },
+    {
+      "field": "field_0019",
+      "slot": 4,
+      "video": "Tune-A-Video/A purple bellflower opens in the sunlight.mp4",
+      "prediction": 35.43077087402344,
+      "target": 35.83000183105469
+    },
+    {
+      "field": "field_0019",
+      "slot": 5,
+      "video": "Tune-A-Video/A roasted cod fish is garnished with fresh herbs.mp4",
+      "prediction": 39.038108825683594,
+      "target": 35.41999816894531
+    },
+    {
+      "field": "field_0019",
+      "slot": 6,
+      "video": "Tune-A-Video/A roasted salmon is presented on a plate.mp4",
+      "prediction": 34.6322021484375,
+      "target": 31.8799991607666
+    },
+    {
+      "field": "field_0019",
+      "slot": 7,
+      "video": "Tune-A-Video/A salad is sprinkled with nuts and fruits.mp4",
+      "prediction": 34.91498565673828,
+      "target": 31.43000030517578
+    },
+    {
+      "field": "field_0019",
+      "slot": 8,
+      "video": "Tune-A-Video/A sausage is grilled slightly crispy on the barbecue.mp4",
+      "prediction": 36.768226623535156,
+      "target": 31.639999389648438
+    },
+    {
+      "field": "field_0019",
+      "slot": 9,
+      "video": "Tune-A-Video/A skier enjoys the thrill of skiing on a snowy mountain.mp4",
+      "prediction": 35.2568359375,
+      "target": 57.099998474121094
+    },
+    {
+      "field": "field_0019",
+      "slot": 10,
+      "video": "Tune-A-Video/A slice of French chocolate mousse cake brings sweet delight.mp4",
+      "prediction": 35.5838508605957,
+      "target": 31.579999923706055
+    },
+    {
+      "field": "field_0019",
+      "slot": 11,
+      "video": "Tune-A-Video/A tennis player elegantly slid on the grass court.mp4",
+      "prediction": 35.98693084716797,
+      "target": 29.950000762939453
+    },
+    {
+      "field": "field_0019",
+      "slot": 12,
+      "video": "Tune-A-Video/A tennis player made spectacular plays at the net.mp4",
+      "prediction": 35.32149887084961,
+      "target": 28.6200008392334
+    },
+    {
+      "field": "field_0019",
+      "slot": 13,
+      "video": "Tune-A-Video/A thin pancake is spread with butter and maple syrup.mp4",
+      "prediction": 39.756736755371094,
+      "target": 42.18000030517578
+    },
+    {
+      "field": "field_0019",
+      "slot": 14,
+      "video": "Tune-A-Video/A water skier created splashes on the lake.mp4",
+      "prediction": 35.29973602294922,
+      "target": 46.099998474121094
+    },
+    {
+      "field": "field_0019",
+      "slot": 15,
+      "video": "Tune-A-Video/A waterfall cascades gracefully, resembling a silver thread.mp4",
+      "prediction": 35.99211502075195,
+      "target": 36.779998779296875
+    },
+    {
+      "field": "field_0020",
+      "slot": 0,
+      "video": "Tune-A-Video/A wheat field sways gracefully in the gentle breeze.mp4",
+      "prediction": 41.50705337524414,
+      "target": 44.790000915527344
+    },
+    {
+      "field": "field_0020",
+      "slot": 1,
+      "video": "Tune-A-Video/A white orchid grows in a potted plant.mp4",
+      "prediction": 37.90122985839844,
+      "target": 40.83000183105469
+    },
+    {
+      "field": "field_0020",
+      "slot": 2,
+      "video": "Tune-A-Video/A writer sits at a desk, crafting a new novel.mp4",
+      "prediction": 35.6522216796875,
+      "target": 36.810001373291016
+    },
+    {
+      "field": "field_0020",
+      "slot": 3,
+      "video": "Tune-A-Video/An adorable little cat is napping on the windowsill.mp4",
+      "prediction": 36.88217544555664,
+      "target": 35.43000030517578
+    },
+    {
+      "field": "field_0020",
+      "slot": 4,
+      "video": "Tune-A-Video/An ancient church is a landmark in the village.mp4",
+      "prediction": 34.57988357543945,
+      "target": 32.65999984741211
+    },
+    {
+      "field": "field_0020",
+      "slot": 5,
+      "video": "Tune-A-Video/An explorer searches for adventure in the forest.mp4",
+      "prediction": 35.68433380126953,
+      "target": 34.060001373291016
+    },
+    {
+      "field": "field_0020",
+      "slot": 6,
+      "video": "Tune-A-Video/An orchid blooms with deep purple flowers.mp4",
+      "prediction": 38.2466926574707,
+      "target": 36.720001220703125
+    },
+    {
+      "field": "field_0020",
+      "slot": 7,
+      "video": "Tune-A-Video/Blue skies and fluffy clouds, ever-changing shapes like poetry.mp4",
+      "prediction": 33.535789489746094,
+      "target": 34.119998931884766
+    },
+    {
+      "field": "field_0020",
+      "slot": 8,
+      "video": "Tune-A-Video/Cherry trees in the orchard are filled with red fruit.mp4",
+      "prediction": 33.64287567138672,
+      "target": 31.299999237060547
+    },
+    {
+      "field": "field_0020",
+      "slot": 9,
+      "video": "Tune-A-Video/Children dig sandcastles on the beach.mp4",
+      "prediction": 33.87837219238281,
+      "target": 28.6200008392334
+    },
+    {
+      "field": "field_0020",
+      "slot": 10,
+      "video": "Tune-A-Video/Crocodiles swim leisurely in the lake.mp4",
+      "prediction": 33.36466979980469,
+      "target": 35.290000915527344
+    },
+    {
+      "field": "field_0020",
+      "slot": 11,
+      "video": "Tune-A-Video/Great white sharks swim majestically in the depths of the ocean.mp4",
+      "prediction": 34.87495803833008,
+      "target": 36.779998779296875
+    },
+    {
+      "field": "field_0020",
+      "slot": 12,
+      "video": "Tune-A-Video/In a rugby match, players vied for possession of the rugby ball.mp4",
+      "prediction": 36.21073913574219,
+      "target": 36.650001525878906
+    },
+    {
+      "field": "field_0020",
+      "slot": 13,
+      "video": "Tune-A-Video/In front of a farmhouse, there is a swing.mp4",
+      "prediction": 36.44144058227539,
+      "target": 32.790000915527344
+    },
+    {
+      "field": "field_0020",
+      "slot": 14,
+      "video": "Tune-A-Video/Military aircraft are neatly lined up on the military base.mp4",
+      "prediction": 36.69289016723633,
+      "target": 35.470001220703125
+    },
+    {
+      "field": "field_0020",
+      "slot": 15,
+      "video": "Tune-A-Video/Parents pick up students at the bus stop.mp4",
+      "prediction": 34.950523376464844,
+      "target": 32.650001525878906
+    },
+    {
+      "field": "field_0021",
+      "slot": 0,
+      "video": "Tune-A-Video/People sunbathe on the lawn.mp4",
+      "prediction": 35.362022399902344,
+      "target": 32.790000915527344
+    },
+    {
+      "field": "field_0021",
+      "slot": 1,
+      "video": "Tune-A-Video/People taking a leisurely walk admire the lake view.mp4",
+      "prediction": 36.159332275390625,
+      "target": 36.77000045776367
+    },
+    {
+      "field": "field_0021",
+      "slot": 2,
+      "video": "Tune-A-Video/Plateaus surrounding lakes, embraced by peaceful and harmonious mountains.mp4",
+      "prediction": 37.461402893066406,
+      "target": 31.239999771118164
+    },
+    {
+      "field": "field_0021",
+      "slot": 3,
+      "video": "Tune-A-Video/Purple lavender grows in the field.mp4",
+      "prediction": 43.16902542114258,
+      "target": 31.34000015258789
+    },
+    {
+      "field": "field_0021",
+      "slot": 4,
+      "video": "Tune-A-Video/Sharks dart through the water.mp4",
+      "prediction": 35.244590759277344,
+      "target": 36.349998474121094
+    },
+    {
+      "field": "field_0021",
+      "slot": 5,
+      "video": "Tune-A-Video/Soldiers are setting up tents in the camp.mp4",
+      "prediction": 35.70433044433594,
+      "target": 38.06999969482422
+    },
+    {
+      "field": "field_0021",
+      "slot": 6,
+      "video": "Tune-A-Video/Students and teachers discuss topics in the classroom.mp4",
+      "prediction": 35.128543853759766,
+      "target": 40.790000915527344
+    },
+    {
+      "field": "field_0021",
+      "slot": 7,
+      "video": "Tune-A-Video/Students create exquisite artwork in art class.mp4",
+      "prediction": 34.132080078125,
+      "target": 32.16999816894531
+    },
+    {
+      "field": "field_0021",
+      "slot": 8,
+      "video": "Tune-A-Video/Students enjoy tasty sandwiches in the cafeteria.mp4",
+      "prediction": 38.931968688964844,
+      "target": 38.15999984741211
+    },
+    {
+      "field": "field_0021",
+      "slot": 9,
+      "video": "Tune-A-Video/Students enjoy their time on campus, full of youthful energy.mp4",
+      "prediction": 36.04264831542969,
+      "target": 32.65999984741211
+    },
+    {
+      "field": "field_0021",
+      "slot": 10,
+      "video": "Tune-A-Video/Students line up in the cafeteria, waiting for lunch.mp4",
+      "prediction": 35.7229118347168,
+      "target": 32.36000061035156
+    },
+    {
+      "field": "field_0021",
+      "slot": 11,
+      "video": "Tune-A-Video/Students participate in celebration ceremonies in the school courtyard.mp4",
+      "prediction": 37.17936325073242,
+      "target": 32.65999984741211
+    },
+    {
+      "field": "field_0021",
+      "slot": 12,
+      "video": "Tune-A-Video/Students program in the computer lab.mp4",
+      "prediction": 33.986385345458984,
+      "target": 29.90999984741211
+    },
+    {
+      "field": "field_0021",
+      "slot": 13,
+      "video": "Tune-A-Video/Students savor delicious soups in the cafeteria.mp4",
+      "prediction": 37.390785217285156,
+      "target": 37.9900016784668
+    },
+    {
+      "field": "field_0021",
+      "slot": 14,
+      "video": "Tune-A-Video/Sunflowers stand tall in a field.mp4",
+      "prediction": 38.722171783447266,
+      "target": 34.849998474121094
+    },
+    {
+      "field": "field_0021",
+      "slot": 15,
+      "video": "Tune-A-Video/Sunlight is streaming through the leaves onto the grass.mp4",
+      "prediction": 36.6966552734375,
+      "target": 35.43000030517578
+    },
+    {
+      "field": "field_0022",
+      "slot": 0,
+      "video": "Tune-A-Video/Swallows soar in the air.mp4",
+      "prediction": 45.732112884521484,
+      "target": 35.41999816894531
+    },
+    {
+      "field": "field_0022",
+      "slot": 1,
+      "video": "Tune-A-Video/Teenage skateboarders perform tricks by the pond.mp4",
+      "prediction": 37.68891143798828,
+      "target": 32.72999954223633
+    },
+    {
+      "field": "field_0022",
+      "slot": 2,
+      "video": "Tune-A-Video/The campus has colorful gardens, full of vitality.mp4",
+      "prediction": 37.46343994140625,
+      "target": 35.2599983215332
+    },
+    {
+      "field": "field_0022",
+      "slot": 3,
+      "video": "Tune-A-Video/The commander is strategizing in front of a map.mp4",
+      "prediction": 37.30032730102539,
+      "target": 36.86000061035156
+    },
+    {
+      "field": "field_0022",
+      "slot": 4,
+      "video": "Tune-A-Video/The crickets chirped merrily in the summer night.mp4",
+      "prediction": 36.5217170715332,
+      "target": 31.34000015258789
+    },
+    {
+      "field": "field_0022",
+      "slot": 5,
+      "video": "Tune-A-Video/The leaves of a purple-leaf plum tree turn deep purple.mp4",
+      "prediction": 35.89328384399414,
+      "target": 38.2599983215332
+    },
+    {
+      "field": "field_0022",
+      "slot": 6,
+      "video": "Tune-A-Video/The lion roars majestically on the grassland.mp4",
+      "prediction": 36.92742919921875,
+      "target": 39.36000061035156
+    },
+    {
+      "field": "field_0022",
+      "slot": 7,
+      "video": "Tune-A-Video/The parrot chirped in the treetops.mp4",
+      "prediction": 34.071502685546875,
+      "target": 31.420000076293945
+    },
+    {
+      "field": "field_0022",
+      "slot": 8,
+      "video": "Tune-A-Video/The roof of a farmhouse is covered in moss.mp4",
+      "prediction": 38.36285400390625,
+      "target": 35.40999984741211
+    },
+    {
+      "field": "field_0022",
+      "slot": 9,
+      "video": "Tune-A-Video/The rural stream serves as the water source for villagers.mp4",
+      "prediction": 35.66769790649414,
+      "target": 32.68000030517578
+    },
+    {
+      "field": "field_0022",
+      "slot": 10,
+      "video": "Tune-A-Video/The school auditorium is decorated with festive decorations.mp4",
+      "prediction": 36.249786376953125,
+      "target": 32.279998779296875
+    },
+    {
+      "field": "field_0022",
+      "slot": 11,
+      "video": "Tune-A-Video/The seahorse swayed slowly on the sea floor.mp4",
+      "prediction": 35.154197692871094,
+      "target": 40.619998931884766
+    },
+    {
+      "field": "field_0022",
+      "slot": 12,
+      "video": "Tune-A-Video/There are boats on the park lake.mp4",
+      "prediction": 35.628623962402344,
+      "target": 32.65999984741211
+    },
+    {
+      "field": "field_0022",
+      "slot": 13,
+      "video": "Tune-A-Video/There's a drum and guitar in the music classroom.mp4",
+      "prediction": 33.644874572753906,
+      "target": 29.950000762939453
+    },
+    {
+      "field": "field_0022",
+      "slot": 14,
+      "video": "Tune-A-Video/Unique desert landscapes, with dunes sculpted by the wind.mp4",
+      "prediction": 35.18739700317383,
+      "target": 36.88999938964844
+    },
+    {
+      "field": "field_0022",
+      "slot": 15,
+      "video": "Tune-A-Video/Various fruit trees grow in the countryside.mp4",
+      "prediction": 35.855796813964844,
+      "target": 31.739999771118164
+    },
+    {
+      "field": "field_0023",
+      "slot": 0,
+      "video": "Tune-A-Video/Vendors at the market display fresh fruits and vegetables.mp4",
+      "prediction": 38.5247802734375,
+      "target": 35.150001525878906
+    },
+    {
+      "field": "field_0023",
+      "slot": 1,
+      "video": "Tune-A-Video/Visitors get information at the park's visitor center.mp4",
+      "prediction": 35.096046447753906,
+      "target": 35.459999084472656
+    },
+    {
+      "field": "field_0023",
+      "slot": 2,
+      "video": "Tune-A-Video/Wandering through a forest path, surrounded by emerald greenery.mp4",
+      "prediction": 34.90531539916992,
+      "target": 37.9900016784668
+    },
+    {
+      "field": "field_0023",
+      "slot": 3,
+      "video": "Tune-A-Video/Willow trees by the river, swaying gently in the calming breeze.mp4",
+      "prediction": 36.93712615966797,
+      "target": 31.299999237060547
+    },
+    {
+      "field": "field_0023",
+      "slot": 4,
+      "video": "VideoCrafter/A baseball player swung the bat, preparing for a home run.mp4",
+      "prediction": 42.73879623413086,
+      "target": 40.779998779296875
+    },
+    {
+      "field": "field_0023",
+      "slot": 5,
+      "video": "VideoCrafter/A bowl of hot soup is especially delicious on a cold winter day.mp4",
+      "prediction": 55.086856842041016,
+      "target": 46.220001220703125
+    },
+    {
+      "field": "field_0023",
+      "slot": 6,
+      "video": "VideoCrafter/A bowl of ramen has delicious pork and seaweed.mp4",
+      "prediction": 58.80490493774414,
+      "target": 47.5099983215332
+    },
+    {
+      "field": "field_0023",
+      "slot": 7,
+      "video": "VideoCrafter/A bowl of rich French onion soup emanates an enticing aroma.mp4",
+      "prediction": 49.66213607788086,
+      "target": 51.70000076293945
+    },
+    {
+      "field": "field_0023",
+      "slot": 8,
+      "video": "VideoCrafter/A bowl of spicy Mexican chili is very delicious.mp4",
+      "prediction": 53.00473403930664,
+      "target": 59.63999938964844
+    },
+    {
+      "field": "field_0023",
+      "slot": 9,
+      "video": "VideoCrafter/A butterfly gracefully dances among the flowers.mp4",
+      "prediction": 40.687339782714844,
+      "target": 46.119998931884766
+    },
+    {
+      "field": "field_0023",
+      "slot": 10,
+      "video": "VideoCrafter/A cactus thrives in the harsh desert.mp4",
+      "prediction": 58.230045318603516,
+      "target": 49.18000030517578
+    },
+    {
+      "field": "field_0023",
+      "slot": 11,
+      "video": "VideoCrafter/A couple walks hand in hand on the beach, listening to the sound of the waves.mp4",
+      "prediction": 53.14091110229492,
+      "target": 43.36000061035156
+    },
+    {
+      "field": "field_0023",
+      "slot": 12,
+      "video": "VideoCrafter/A cup of hot chocolate is fragrant.mp4",
+      "prediction": 63.92869567871094,
+      "target": 54.040000915527344
+    },
+    {
+      "field": "field_0023",
+      "slot": 13,
+      "video": "VideoCrafter/A daffodil sways in the spring breeze.mp4",
+      "prediction": 41.778404235839844,
+      "target": 42.810001373291016
+    },
+    {
+      "field": "field_0023",
+      "slot": 14,
+      "video": "VideoCrafter/A designer creates fashionable clothing designs.mp4",
+      "prediction": 50.22018814086914,
+      "target": 44.72999954223633
+    },
+    {
+      "field": "field_0023",
+      "slot": 15,
+      "video": "VideoCrafter/A diver is exploring the underwater world under the coral reef.mp4",
+      "prediction": 39.00697326660156,
+      "target": 32.66999816894531
+    },
+    {
+      "field": "field_0024",
+      "slot": 0,
+      "video": "VideoCrafter/A doctor cares for patients in the hospital.mp4",
+      "prediction": 52.314144134521484,
+      "target": 45.810001373291016
+    },
+    {
+      "field": "field_0024",
+      "slot": 1,
+      "video": "VideoCrafter/A doctor is carefully examining a patient's body.mp4",
+      "prediction": 43.904151916503906,
+      "target": 43.349998474121094
+    },
+    {
+      "field": "field_0024",
+      "slot": 2,
+      "video": "VideoCrafter/A family goes to the movies on the weekend.mp4",
+      "prediction": 55.94649124145508,
+      "target": 47.70000076293945
+    },
+    {
+      "field": "field_0024",
+      "slot": 3,
+      "video": "VideoCrafter/A field of dandelions lines the side of a rural road.mp4",
+      "prediction": 54.4066162109375,
+      "target": 66.25
+    },
+    {
+      "field": "field_0024",
+      "slot": 4,
+      "video": "VideoCrafter/A golden field of wheat sways gently in the breeze.mp4",
+      "prediction": 73.37981414794922,
+      "target": 48.290000915527344
+    },
+    {
+      "field": "field_0024",
+      "slot": 5,
+      "video": "VideoCrafter/A group of villagers wash clothes by the stream.mp4",
+      "prediction": 47.20998001098633,
+      "target": 50.43000030517578
+    },
+    {
+      "field": "field_0024",
+      "slot": 6,
+      "video": "VideoCrafter/A hippo leisurely floats in the water.mp4",
+      "prediction": 43.772361755371094,
+      "target": 40.5099983215332
+    },
+    {
+      "field": "field_0024",
+      "slot": 7,
+      "video": "VideoCrafter/A kangaroo jumps across the Australian desert.mp4",
+      "prediction": 53.31248092651367,
+      "target": 40.84000015258789
+    },
+    {
+      "field": "field_0024",
+      "slot": 8,
+      "video": "VideoCrafter/A lotus leaf floats on a serene pond.mp4",
+      "prediction": 47.962890625,
+      "target": 54.09000015258789
+    },
+    {
+      "field": "field_0024",
+      "slot": 9,
+      "video": "VideoCrafter/A milkshake is garnished with fresh strawberries and cream.mp4",
+      "prediction": 34.530677795410156,
+      "target": 54.470001220703125
+    },
+    {
+      "field": "field_0024",
+      "slot": 10,
+      "video": "VideoCrafter/A painter showcases their art on an outdoor gallery.mp4",
+      "prediction": 48.55391311645508,
+      "target": 48.79999923706055
+    },
+    {
+      "field": "field_0024",
+      "slot": 11,
+      "video": "VideoCrafter/A peony blooms with snow-white petals.mp4",
+      "prediction": 52.2063102722168,
+      "target": 52.880001068115234
+    },
+    {
+      "field": "field_0024",
+      "slot": 12,
+      "video": "VideoCrafter/A pet owner walks their dog in the park.mp4",
+      "prediction": 47.97679901123047,
+      "target": 40.779998779296875
+    },
+    {
+      "field": "field_0024",
+      "slot": 13,
+      "video": "VideoCrafter/A photographer captures the neon lights of the city.mp4",
+      "prediction": 43.88436508178711,
+      "target": 47.630001068115234
+    },
+    {
+      "field": "field_0024",
+      "slot": 14,
+      "video": "VideoCrafter/A piece of French bread is spread with butter.mp4",
+      "prediction": 48.47947311401367,
+      "target": 39.439998626708984
+    },
+    {
+      "field": "field_0024",
+      "slot": 15,
+      "video": "VideoCrafter/A piece of cheesecake is covered with blueberry sauce.mp4",
+      "prediction": 55.659061431884766,
+      "target": 61.11000061035156
+    },
+    {
+      "field": "field_0025",
+      "slot": 0,
+      "video": "VideoCrafter/A pizza is topped with Italian sausage and mushrooms.mp4",
+      "prediction": 53.18603515625,
+      "target": 54.5099983215332
+    },
+    {
+      "field": "field_0025",
+      "slot": 1,
+      "video": "VideoCrafter/A purple bellflower opens in the sunlight.mp4",
+      "prediction": 54.284568786621094,
+      "target": 58.290000915527344
+    },
+    {
+      "field": "field_0025",
+      "slot": 2,
+      "video": "VideoCrafter/A roasted cod fish is garnished with fresh herbs.mp4",
+      "prediction": 54.984901428222656,
+      "target": 66.37999725341797
+    },
+    {
+      "field": "field_0025",
+      "slot": 3,
+      "video": "VideoCrafter/A roasted salmon is presented on a plate.mp4",
+      "prediction": 43.25374221801758,
+      "target": 51.59000015258789
+    },
+    {
+      "field": "field_0025",
+      "slot": 4,
+      "video": "VideoCrafter/A salad is sprinkled with nuts and fruits.mp4",
+      "prediction": 49.21194839477539,
+      "target": 39.45000076293945
+    },
+    {
+      "field": "field_0025",
+      "slot": 5,
+      "video": "VideoCrafter/A sausage is grilled slightly crispy on the barbecue.mp4",
+      "prediction": 40.176395416259766,
+      "target": 54.15999984741211
+    },
+    {
+      "field": "field_0025",
+      "slot": 6,
+      "video": "VideoCrafter/A skier enjoys the thrill of skiing on a snowy mountain.mp4",
+      "prediction": 42.597286224365234,
+      "target": 62.040000915527344
+    },
+    {
+      "field": "field_0025",
+      "slot": 7,
+      "video": "VideoCrafter/A slice of French chocolate mousse cake brings sweet delight.mp4",
+      "prediction": 45.290950775146484,
+      "target": 58.54999923706055
+    },
+    {
+      "field": "field_0025",
+      "slot": 8,
+      "video": "VideoCrafter/A tennis player elegantly slid on the grass court.mp4",
+      "prediction": 47.599853515625,
+      "target": 42.2400016784668
+    },
+    {
+      "field": "field_0025",
+      "slot": 9,
+      "video": "VideoCrafter/A tennis player made spectacular plays at the net.mp4",
+      "prediction": 44.73112869262695,
+      "target": 32.68000030517578
+    },
+    {
+      "field": "field_0025",
+      "slot": 10,
+      "video": "VideoCrafter/A thin pancake is spread with butter and maple syrup.mp4",
+      "prediction": 49.688594818115234,
+      "target": 54.27000045776367
+    },
+    {
+      "field": "field_0025",
+      "slot": 11,
+      "video": "VideoCrafter/A water skier created splashes on the lake.mp4",
+      "prediction": 46.276885986328125,
+      "target": 48.779998779296875
+    },
+    {
+      "field": "field_0025",
+      "slot": 12,
+      "video": "VideoCrafter/A waterfall cascades gracefully, resembling a silver thread.mp4",
+      "prediction": 43.754859924316406,
+      "target": 58.04999923706055
+    },
+    {
+      "field": "field_0025",
+      "slot": 13,
+      "video": "VideoCrafter/A wheat field sways gracefully in the gentle breeze.mp4",
+      "prediction": 64.41421508789062,
+      "target": 54.33000183105469
+    },
+    {
+      "field": "field_0025",
+      "slot": 14,
+      "video": "VideoCrafter/A white orchid grows in a potted plant.mp4",
+      "prediction": 57.95016860961914,
+      "target": 52.810001373291016
+    },
+    {
+      "field": "field_0025",
+      "slot": 15,
+      "video": "VideoCrafter/A writer sits at a desk, crafting a new novel.mp4",
+      "prediction": 42.97484588623047,
+      "target": 47.349998474121094
+    },
+    {
+      "field": "field_0026",
+      "slot": 0,
+      "video": "VideoCrafter/An adorable little cat is napping on the windowsill.mp4",
+      "prediction": 41.13458251953125,
+      "target": 36.650001525878906
+    },
+    {
+      "field": "field_0026",
+      "slot": 1,
+      "video": "VideoCrafter/An ancient church is a landmark in the village.mp4",
+      "prediction": 55.62526321411133,
+      "target": 42.63999938964844
+    },
+    {
+      "field": "field_0026",
+      "slot": 2,
+      "video": "VideoCrafter/An explorer searches for adventure in the forest.mp4",
+      "prediction": 47.94890594482422,
+      "target": 40.900001525878906
+    },
+    {
+      "field": "field_0026",
+      "slot": 3,
+      "video": "VideoCrafter/An orchid blooms with deep purple flowers.mp4",
+      "prediction": 53.665771484375,
+      "target": 53.02000045776367
+    },
+    {
+      "field": "field_0026",
+      "slot": 4,
+      "video": "VideoCrafter/Blue skies and fluffy clouds, ever-changing shapes like poetry.mp4",
+      "prediction": 41.733558654785156,
+      "target": 64.83999633789062
+    },
+    {
+      "field": "field_0026",
+      "slot": 5,
+      "video": "VideoCrafter/Cherry trees in the orchard are filled with red fruit.mp4",
+      "prediction": 41.43430709838867,
+      "target": 63.63999938964844
+    },
+    {
+      "field": "field_0026",
+      "slot": 6,
+      "video": "VideoCrafter/Children dig sandcastles on the beach.mp4",
+      "prediction": 40.249908447265625,
+      "target": 45.40999984741211
+    },
+    {
+      "field": "field_0026",
+      "slot": 7,
+      "video": "VideoCrafter/Crocodiles swim leisurely in the lake.mp4",
+      "prediction": 39.91265869140625,
+      "target": 36.88999938964844
+    },
+    {
+      "field": "field_0026",
+      "slot": 8,
+      "video": "VideoCrafter/Great white sharks swim majestically in the depths of the ocean.mp4",
+      "prediction": 39.0860595703125,
+      "target": 42.310001373291016
+    },
+    {
+      "field": "field_0026",
+      "slot": 9,
+      "video": "VideoCrafter/In a rugby match, players vied for possession of the rugby ball.mp4",
+      "prediction": 40.088951110839844,
+      "target": 35.40999984741211
+    },
+    {
+      "field": "field_0026",
+      "slot": 10,
+      "video": "VideoCrafter/In front of a farmhouse, there is a swing.mp4",
+      "prediction": 38.9654541015625,
+      "target": 51.7599983215332
+    },
+    {
+      "field": "field_0026",
+      "slot": 11,
+      "video": "VideoCrafter/Military aircraft are neatly lined up on the military base.mp4",
+      "prediction": 50.8157958984375,
+      "target": 43.58000183105469
+    },
+    {
+      "field": "field_0026",
+      "slot": 12,
+      "video": "VideoCrafter/Parents pick up students at the bus stop.mp4",
+      "prediction": 45.29945755004883,
+      "target": 36.91999816894531
+    },
+    {
+      "field": "field_0026",
+      "slot": 13,
+      "video": "VideoCrafter/People sunbathe on the lawn.mp4",
+      "prediction": 66.25614166259766,
+      "target": 50.04999923706055
+    },
+    {
+      "field": "field_0026",
+      "slot": 14,
+      "video": "VideoCrafter/People taking a leisurely walk admire the lake view.mp4",
+      "prediction": 47.269187927246094,
+      "target": 51.529998779296875
+    },
+    {
+      "field": "field_0026",
+      "slot": 15,
+      "video": "VideoCrafter/Plateaus surrounding lakes, embraced by peaceful and harmonious mountains.mp4",
+      "prediction": 69.65032958984375,
+      "target": 63.68000030517578
+    },
+    {
+      "field": "field_0027",
+      "slot": 0,
+      "video": "VideoCrafter/Purple lavender grows in the field.mp4",
+      "prediction": 44.55898666381836,
+      "target": 59.70000076293945
+    },
+    {
+      "field": "field_0027",
+      "slot": 1,
+      "video": "VideoCrafter/Sharks dart through the water.mp4",
+      "prediction": 34.930110931396484,
+      "target": 39.56999969482422
+    },
+    {
+      "field": "field_0027",
+      "slot": 2,
+      "video": "VideoCrafter/Soldiers are setting up tents in the camp.mp4",
+      "prediction": 62.04775619506836,
+      "target": 44.790000915527344
+    },
+    {
+      "field": "field_0027",
+      "slot": 3,
+      "video": "VideoCrafter/Students and teachers discuss topics in the classroom.mp4",
+      "prediction": 45.275604248046875,
+      "target": 39.470001220703125
+    },
+    {
+      "field": "field_0027",
+      "slot": 4,
+      "video": "VideoCrafter/Students create exquisite artwork in art class.mp4",
+      "prediction": 44.54636764526367,
+      "target": 51.4900016784668
+    },
+    {
+      "field": "field_0027",
+      "slot": 5,
+      "video": "VideoCrafter/Students enjoy tasty sandwiches in the cafeteria.mp4",
+      "prediction": 48.5249137878418,
+      "target": 51.54999923706055
+    },
+    {
+      "field": "field_0027",
+      "slot": 6,
+      "video": "VideoCrafter/Students enjoy their time on campus, full of youthful energy.mp4",
+      "prediction": 47.30856704711914,
+      "target": 36.38999938964844
+    },
+    {
+      "field": "field_0027",
+      "slot": 7,
+      "video": "VideoCrafter/Students line up in the cafeteria, waiting for lunch.mp4",
+      "prediction": 60.49368667602539,
+      "target": 36.810001373291016
+    },
+    {
+      "field": "field_0027",
+      "slot": 8,
+      "video": "VideoCrafter/Students participate in celebration ceremonies in the school courtyard.mp4",
+      "prediction": 47.5433235168457,
+      "target": 39.41999816894531
+    },
+    {
+      "field": "field_0027",
+      "slot": 9,
+      "video": "VideoCrafter/Students program in the computer lab.mp4",
+      "prediction": 47.166934967041016,
+      "target": 42.33000183105469
+    },
+    {
+      "field": "field_0027",
+      "slot": 10,
+      "video": "VideoCrafter/Students savor delicious soups in the cafeteria.mp4",
+      "prediction": 64.04914855957031,
+      "target": 48.2400016784668
+    },
+    {
+      "field": "field_0027",
+      "slot": 11,
+      "video": "VideoCrafter/Sunflowers stand tall in a field.mp4",
+      "prediction": 63.64923095703125,
+      "target": 61.29999923706055
+    },
+    {
+      "field": "field_0027",
+      "slot": 12,
+      "video": "VideoCrafter/Sunlight is streaming through the leaves onto the grass.mp4",
+      "prediction": 52.31755447387695,
+      "target": 62.04999923706055
+    },
+    {
+      "field": "field_0027",
+      "slot": 13,
+      "video": "VideoCrafter/Swallows soar in the air.mp4",
+      "prediction": 45.129364013671875,
+      "target": 40.95000076293945
+    },
+    {
+      "field": "field_0027",
+      "slot": 14,
+      "video": "VideoCrafter/Teenage skateboarders perform tricks by the pond.mp4",
+      "prediction": 49.728271484375,
+      "target": 40.689998626708984
+    },
+    {
+      "field": "field_0027",
+      "slot": 15,
+      "video": "VideoCrafter/The campus has colorful gardens, full of vitality.mp4",
+      "prediction": 45.80372619628906,
+      "target": 48.27000045776367
+    },
+    {
+      "field": "field_0028",
+      "slot": 0,
+      "video": "VideoCrafter/The commander is strategizing in front of a map.mp4",
+      "prediction": 43.946449279785156,
+      "target": 48.720001220703125
+    },
+    {
+      "field": "field_0028",
+      "slot": 1,
+      "video": "VideoCrafter/The crickets chirped merrily in the summer night.mp4",
+      "prediction": 58.206092834472656,
+      "target": 57.33000183105469
+    },
+    {
+      "field": "field_0028",
+      "slot": 2,
+      "video": "VideoCrafter/The leaves of a purple-leaf plum tree turn deep purple.mp4",
+      "prediction": 65.68305969238281,
+      "target": 58.43000030517578
+    },
+    {
+      "field": "field_0028",
+      "slot": 3,
+      "video": "VideoCrafter/The lion roars majestically on the grassland.mp4",
+      "prediction": 52.17829895019531,
+      "target": 49.0099983215332
+    },
+    {
+      "field": "field_0028",
+      "slot": 4,
+      "video": "VideoCrafter/The parrot chirped in the treetops.mp4",
+      "prediction": 50.450531005859375,
+      "target": 48.70000076293945
+    },
+    {
+      "field": "field_0028",
+      "slot": 5,
+      "video": "VideoCrafter/The roof of a farmhouse is covered in moss.mp4",
+      "prediction": 58.44438552856445,
+      "target": 58.75
+    },
+    {
+      "field": "field_0028",
+      "slot": 6,
+      "video": "VideoCrafter/The rural stream serves as the water source for villagers.mp4",
+      "prediction": 59.24883270263672,
+      "target": 54.41999816894531
+    },
+    {
+      "field": "field_0028",
+      "slot": 7,
+      "video": "VideoCrafter/The school auditorium is decorated with festive decorations.mp4",
+      "prediction": 59.15940475463867,
+      "target": 51.65999984741211
+    },
+    {
+      "field": "field_0028",
+      "slot": 8,
+      "video": "VideoCrafter/The seahorse swayed slowly on the sea floor.mp4",
+      "prediction": 49.98121643066406,
+      "target": 47.63999938964844
+    },
+    {
+      "field": "field_0028",
+      "slot": 9,
+      "video": "VideoCrafter/There are boats on the park lake.mp4",
+      "prediction": 60.607425689697266,
+      "target": 51.29999923706055
+    },
+    {
+      "field": "field_0028",
+      "slot": 10,
+      "video": "VideoCrafter/There's a drum and guitar in the music classroom.mp4",
+      "prediction": 57.61082458496094,
+      "target": 55.470001220703125
+    },
+    {
+      "field": "field_0028",
+      "slot": 11,
+      "video": "VideoCrafter/Unique desert landscapes, with dunes sculpted by the wind.mp4",
+      "prediction": 56.567623138427734,
+      "target": 52.70000076293945
+    },
+    {
+      "field": "field_0028",
+      "slot": 12,
+      "video": "VideoCrafter/Various fruit trees grow in the countryside.mp4",
+      "prediction": 64.63957214355469,
+      "target": 52.720001220703125
+    },
+    {
+      "field": "field_0028",
+      "slot": 13,
+      "video": "VideoCrafter/Vendors at the market display fresh fruits and vegetables.mp4",
+      "prediction": 40.62371063232422,
+      "target": 55.33000183105469
+    },
+    {
+      "field": "field_0028",
+      "slot": 14,
+      "video": "VideoCrafter/Visitors get information at the park's visitor center.mp4",
+      "prediction": 54.798255920410156,
+      "target": 54.27000045776367
+    },
+    {
+      "field": "field_0028",
+      "slot": 15,
+      "video": "VideoCrafter/Wandering through a forest path, surrounded by emerald greenery.mp4",
+      "prediction": 48.244415283203125,
+      "target": 55.81999969482422
+    },
+    {
+      "field": "field_0029",
+      "slot": 0,
+      "video": "VideoCrafter/Willow trees by the river, swaying gently in the calming breeze.mp4",
+      "prediction": 63.10455322265625,
+      "target": 67.87999725341797
+    },
+    {
+      "field": "field_0029",
+      "slot": 1,
+      "video": "video_fusion/A baseball player swung the bat, preparing for a home run.mp4",
+      "prediction": 59.76181411743164,
+      "target": 50.189998626708984
+    },
+    {
+      "field": "field_0029",
+      "slot": 2,
+      "video": "video_fusion/A bowl of hot soup is especially delicious on a cold winter day.mp4",
+      "prediction": 47.98441696166992,
+      "target": 44.81999969482422
+    },
+    {
+      "field": "field_0029",
+      "slot": 3,
+      "video": "video_fusion/A bowl of ramen has delicious pork and seaweed.mp4",
+      "prediction": 58.254119873046875,
+      "target": 62.41999816894531
+    },
+    {
+      "field": "field_0029",
+      "slot": 4,
+      "video": "video_fusion/A bowl of rich French onion soup emanates an enticing aroma.mp4",
+      "prediction": 58.227622985839844,
+      "target": 61.560001373291016
+    },
+    {
+      "field": "field_0029",
+      "slot": 5,
+      "video": "video_fusion/A bowl of spicy Mexican chili is very delicious.mp4",
+      "prediction": 66.54060363769531,
+      "target": 63.59000015258789
+    },
+    {
+      "field": "field_0029",
+      "slot": 6,
+      "video": "video_fusion/A butterfly gracefully dances among the flowers.mp4",
+      "prediction": 69.23422241210938,
+      "target": 55.31999969482422
+    },
+    {
+      "field": "field_0029",
+      "slot": 7,
+      "video": "video_fusion/A cactus thrives in the harsh desert.mp4",
+      "prediction": 60.979095458984375,
+      "target": 58.15999984741211
+    },
+    {
+      "field": "field_0029",
+      "slot": 8,
+      "video": "video_fusion/A couple walks hand in hand on the beach, listening to the sound of the waves.mp4",
+      "prediction": 54.2638053894043,
+      "target": 62.61000061035156
+    },
+    {
+      "field": "field_0029",
+      "slot": 9,
+      "video": "video_fusion/A cup of hot chocolate is fragrant.mp4",
+      "prediction": 50.643211364746094,
+      "target": 60.900001525878906
+    },
+    {
+      "field": "field_0029",
+      "slot": 10,
+      "video": "video_fusion/A daffodil sways in the spring breeze.mp4",
+      "prediction": 59.7877311706543,
+      "target": 67.6500015258789
+    },
+    {
+      "field": "field_0029",
+      "slot": 11,
+      "video": "video_fusion/A designer creates fashionable clothing designs.mp4",
+      "prediction": 46.07373046875,
+      "target": 48.779998779296875
+    },
+    {
+      "field": "field_0029",
+      "slot": 12,
+      "video": "video_fusion/A diver is exploring the underwater world under the coral reef.mp4",
+      "prediction": 63.518898010253906,
+      "target": 66.25
+    },
+    {
+      "field": "field_0029",
+      "slot": 13,
+      "video": "video_fusion/A doctor cares for patients in the hospital.mp4",
+      "prediction": 63.265567779541016,
+      "target": 69.19000244140625
+    },
+    {
+      "field": "field_0029",
+      "slot": 14,
+      "video": "video_fusion/A doctor is carefully examining a patient's body.mp4",
+      "prediction": 50.63087844848633,
+      "target": 51.599998474121094
+    },
+    {
+      "field": "field_0029",
+      "slot": 15,
+      "video": "video_fusion/A family goes to the movies on the weekend.mp4",
+      "prediction": 62.863807678222656,
+      "target": 44.72999954223633
+    },
+    {
+      "field": "field_0030",
+      "slot": 0,
+      "video": "video_fusion/A field of dandelions lines the side of a rural road.mp4",
+      "prediction": 56.67439270019531,
+      "target": 60.81999969482422
+    },
+    {
+      "field": "field_0030",
+      "slot": 1,
+      "video": "video_fusion/A golden field of wheat sways gently in the breeze.mp4",
+      "prediction": 62.76350021362305,
+      "target": 65.27999877929688
+    },
+    {
+      "field": "field_0030",
+      "slot": 2,
+      "video": "video_fusion/A group of villagers wash clothes by the stream.mp4",
+      "prediction": 54.90382766723633,
+      "target": 63.58000183105469
+    },
+    {
+      "field": "field_0030",
+      "slot": 3,
+      "video": "video_fusion/A hippo leisurely floats in the water.mp4",
+      "prediction": 46.03215408325195,
+      "target": 63.619998931884766
+    },
+    {
+      "field": "field_0030",
+      "slot": 4,
+      "video": "video_fusion/A kangaroo jumps across the Australian desert.mp4",
+      "prediction": 56.45038986206055,
+      "target": 42.0
+    },
+    {
+      "field": "field_0030",
+      "slot": 5,
+      "video": "video_fusion/A lotus leaf floats on a serene pond.mp4",
+      "prediction": 58.967445373535156,
+      "target": 67.94999694824219
+    },
+    {
+      "field": "field_0030",
+      "slot": 6,
+      "video": "video_fusion/A milkshake is garnished with fresh strawberries and cream.mp4",
+      "prediction": 56.13605499267578,
+      "target": 59.58000183105469
+    },
+    {
+      "field": "field_0030",
+      "slot": 7,
+      "video": "video_fusion/A painter showcases their art on an outdoor gallery.mp4",
+      "prediction": 62.529258728027344,
+      "target": 48.77000045776367
+    },
+    {
+      "field": "field_0030",
+      "slot": 8,
+      "video": "video_fusion/A peony blooms with snow-white petals.mp4",
+      "prediction": 53.80103302001953,
+      "target": 55.31999969482422
+    },
+    {
+      "field": "field_0030",
+      "slot": 9,
+      "video": "video_fusion/A pet owner walks their dog in the park.mp4",
+      "prediction": 54.79281234741211,
+      "target": 58.20000076293945
+    },
+    {
+      "field": "field_0030",
+      "slot": 10,
+      "video": "video_fusion/A photographer captures the neon lights of the city.mp4",
+      "prediction": 54.40135955810547,
+      "target": 44.66999816894531
+    },
+    {
+      "field": "field_0030",
+      "slot": 11,
+      "video": "video_fusion/A piece of French bread is spread with butter.mp4",
+      "prediction": 62.56340026855469,
+      "target": 66.37000274658203
+    },
+    {
+      "field": "field_0030",
+      "slot": 12,
+      "video": "video_fusion/A piece of cheesecake is covered with blueberry sauce.mp4",
+      "prediction": 49.5263671875,
+      "target": 61.060001373291016
+    },
+    {
+      "field": "field_0030",
+      "slot": 13,
+      "video": "video_fusion/A pizza is topped with Italian sausage and mushrooms.mp4",
+      "prediction": 56.62023162841797,
+      "target": 68.16000366210938
+    },
+    {
+      "field": "field_0030",
+      "slot": 14,
+      "video": "video_fusion/A purple bellflower opens in the sunlight.mp4",
+      "prediction": 46.49888229370117,
+      "target": 59.7599983215332
+    },
+    {
+      "field": "field_0030",
+      "slot": 15,
+      "video": "video_fusion/A roasted cod fish is garnished with fresh herbs.mp4",
+      "prediction": 73.42668151855469,
+      "target": 61.09000015258789
+    },
+    {
+      "field": "field_0031",
+      "slot": 0,
+      "video": "video_fusion/A roasted salmon is presented on a plate.mp4",
+      "prediction": 42.14332962036133,
+      "target": 74.61000061035156
+    },
+    {
+      "field": "field_0031",
+      "slot": 1,
+      "video": "video_fusion/A salad is sprinkled with nuts and fruits.mp4",
+      "prediction": 62.49537658691406,
+      "target": 70.33999633789062
+    },
+    {
+      "field": "field_0031",
+      "slot": 2,
+      "video": "video_fusion/A sausage is grilled slightly crispy on the barbecue.mp4",
+      "prediction": 44.45929718017578,
+      "target": 62.189998626708984
+    },
+    {
+      "field": "field_0031",
+      "slot": 3,
+      "video": "video_fusion/A skier enjoys the thrill of skiing on a snowy mountain.mp4",
+      "prediction": 47.61153030395508,
+      "target": 52.56999969482422
+    },
+    {
+      "field": "field_0031",
+      "slot": 4,
+      "video": "video_fusion/A slice of French chocolate mousse cake brings sweet delight.mp4",
+      "prediction": 54.05510330200195,
+      "target": 66.37999725341797
+    },
+    {
+      "field": "field_0031",
+      "slot": 5,
+      "video": "video_fusion/A tennis player elegantly slid on the grass court.mp4",
+      "prediction": 56.047950744628906,
+      "target": 47.29999923706055
+    },
+    {
+      "field": "field_0031",
+      "slot": 6,
+      "video": "video_fusion/A tennis player made spectacular plays at the net.mp4",
+      "prediction": 56.06578826904297,
+      "target": 50.290000915527344
+    },
+    {
+      "field": "field_0031",
+      "slot": 7,
+      "video": "video_fusion/A thin pancake is spread with butter and maple syrup.mp4",
+      "prediction": 71.08968353271484,
+      "target": 52.880001068115234
+    },
+    {
+      "field": "field_0031",
+      "slot": 8,
+      "video": "video_fusion/A water skier created splashes on the lake.mp4",
+      "prediction": 47.06874465942383,
+      "target": 45.90999984741211
+    },
+    {
+      "field": "field_0031",
+      "slot": 9,
+      "video": "video_fusion/A waterfall cascades gracefully, resembling a silver thread.mp4",
+      "prediction": 60.65623474121094,
+      "target": 51.08000183105469
+    },
+    {
+      "field": "field_0031",
+      "slot": 10,
+      "video": "video_fusion/A wheat field sways gracefully in the gentle breeze.mp4",
+      "prediction": 58.63030242919922,
+      "target": 54.25
+    },
+    {
+      "field": "field_0031",
+      "slot": 11,
+      "video": "video_fusion/A white orchid grows in a potted plant.mp4",
+      "prediction": 65.62232208251953,
+      "target": 66.11000061035156
+    },
+    {
+      "field": "field_0031",
+      "slot": 12,
+      "video": "video_fusion/A writer sits at a desk, crafting a new novel.mp4",
+      "prediction": 56.76718521118164,
+      "target": 56.86000061035156
+    },
+    {
+      "field": "field_0031",
+      "slot": 13,
+      "video": "video_fusion/An adorable little cat is napping on the windowsill.mp4",
+      "prediction": 57.43406677246094,
+      "target": 66.19000244140625
+    },
+    {
+      "field": "field_0031",
+      "slot": 14,
+      "video": "video_fusion/An ancient church is a landmark in the village.mp4",
+      "prediction": 51.69538116455078,
+      "target": 70.4800033569336
+    },
+    {
+      "field": "field_0031",
+      "slot": 15,
+      "video": "video_fusion/An explorer searches for adventure in the forest.mp4",
+      "prediction": 71.35624694824219,
+      "target": 54.2599983215332
+    },
+    {
+      "field": "field_0032",
+      "slot": 0,
+      "video": "video_fusion/An orchid blooms with deep purple flowers.mp4",
+      "prediction": 57.36628723144531,
+      "target": 55.81999969482422
+    },
+    {
+      "field": "field_0032",
+      "slot": 1,
+      "video": "video_fusion/Blue skies and fluffy clouds, ever-changing shapes like poetry.mp4",
+      "prediction": 57.13500213623047,
+      "target": 62.43000030517578
+    },
+    {
+      "field": "field_0032",
+      "slot": 2,
+      "video": "video_fusion/Cherry trees in the orchard are filled with red fruit.mp4",
+      "prediction": 63.71073532104492,
+      "target": 58.310001373291016
+    },
+    {
+      "field": "field_0032",
+      "slot": 3,
+      "video": "video_fusion/Children dig sandcastles on the beach.mp4",
+      "prediction": 55.21775436401367,
+      "target": 62.59000015258789
+    },
+    {
+      "field": "field_0032",
+      "slot": 4,
+      "video": "video_fusion/Crocodiles swim leisurely in the lake.mp4",
+      "prediction": 62.433380126953125,
+      "target": 67.76000213623047
+    },
+    {
+      "field": "field_0032",
+      "slot": 5,
+      "video": "video_fusion/Great white sharks swim majestically in the depths of the ocean.mp4",
+      "prediction": 46.4253044128418,
+      "target": 54.2599983215332
+    },
+    {
+      "field": "field_0032",
+      "slot": 6,
+      "video": "video_fusion/In a rugby match, players vied for possession of the rugby ball.mp4",
+      "prediction": 54.81867599487305,
+      "target": 58.36000061035156
+    },
+    {
+      "field": "field_0032",
+      "slot": 7,
+      "video": "video_fusion/In front of a farmhouse, there is a swing.mp4",
+      "prediction": 59.87949752807617,
+      "target": 66.1500015258789
+    },
+    {
+      "field": "field_0032",
+      "slot": 8,
+      "video": "video_fusion/Military aircraft are neatly lined up on the military base.mp4",
+      "prediction": 54.8104248046875,
+      "target": 59.27000045776367
+    },
+    {
+      "field": "field_0032",
+      "slot": 9,
+      "video": "video_fusion/Parents pick up students at the bus stop.mp4",
+      "prediction": 44.71033477783203,
+      "target": 58.34000015258789
+    },
+    {
+      "field": "field_0032",
+      "slot": 10,
+      "video": "video_fusion/People sunbathe on the lawn.mp4",
+      "prediction": 58.84531784057617,
+      "target": 48.81999969482422
+    },
+    {
+      "field": "field_0032",
+      "slot": 11,
+      "video": "video_fusion/People taking a leisurely walk admire the lake view.mp4",
+      "prediction": 60.226524353027344,
+      "target": 59.45000076293945
+    },
+    {
+      "field": "field_0032",
+      "slot": 12,
+      "video": "video_fusion/Plateaus surrounding lakes, embraced by peaceful and harmonious mountains.mp4",
+      "prediction": 61.22407531738281,
+      "target": 52.54999923706055
+    },
+    {
+      "field": "field_0032",
+      "slot": 13,
+      "video": "video_fusion/Purple lavender grows in the field.mp4",
+      "prediction": 54.702117919921875,
+      "target": 56.97999954223633
+    },
+    {
+      "field": "field_0032",
+      "slot": 14,
+      "video": "video_fusion/Sharks dart through the water.mp4",
+      "prediction": 55.65301513671875,
+      "target": 47.619998931884766
+    },
+    {
+      "field": "field_0032",
+      "slot": 15,
+      "video": "video_fusion/Soldiers are setting up tents in the camp.mp4",
+      "prediction": 66.01932525634766,
+      "target": 55.47999954223633
+    },
+    {
+      "field": "field_0033",
+      "slot": 0,
+      "video": "video_fusion/Students and teachers discuss topics in the classroom.mp4",
+      "prediction": 67.14157104492188,
+      "target": 56.81999969482422
+    },
+    {
+      "field": "field_0033",
+      "slot": 1,
+      "video": "video_fusion/Students create exquisite artwork in art class.mp4",
+      "prediction": 55.426513671875,
+      "target": 60.970001220703125
+    },
+    {
+      "field": "field_0033",
+      "slot": 2,
+      "video": "video_fusion/Students enjoy tasty sandwiches in the cafeteria.mp4",
+      "prediction": 49.087642669677734,
+      "target": 42.20000076293945
+    },
+    {
+      "field": "field_0033",
+      "slot": 3,
+      "video": "video_fusion/Students enjoy their time on campus, full of youthful energy.mp4",
+      "prediction": 56.37074279785156,
+      "target": 44.7400016784668
+    },
+    {
+      "field": "field_0033",
+      "slot": 4,
+      "video": "video_fusion/Students line up in the cafeteria, waiting for lunch.mp4",
+      "prediction": 56.2911376953125,
+      "target": 62.16999816894531
+    },
+    {
+      "field": "field_0033",
+      "slot": 5,
+      "video": "video_fusion/Students participate in celebration ceremonies in the school courtyard.mp4",
+      "prediction": 67.06214904785156,
+      "target": 69.25
+    },
+    {
+      "field": "field_0033",
+      "slot": 6,
+      "video": "video_fusion/Students program in the computer lab.mp4",
+      "prediction": 50.176761627197266,
+      "target": 56.779998779296875
+    },
+    {
+      "field": "field_0033",
+      "slot": 7,
+      "video": "video_fusion/Students savor delicious soups in the cafeteria.mp4",
+      "prediction": 46.62924575805664,
+      "target": 47.599998474121094
+    },
+    {
+      "field": "field_0033",
+      "slot": 8,
+      "video": "video_fusion/Sunflowers stand tall in a field.mp4",
+      "prediction": 55.3453483581543,
+      "target": 56.689998626708984
+    },
+    {
+      "field": "field_0033",
+      "slot": 9,
+      "video": "video_fusion/Sunlight is streaming through the leaves onto the grass.mp4",
+      "prediction": 55.76676940917969,
+      "target": 55.630001068115234
+    },
+    {
+      "field": "field_0033",
+      "slot": 10,
+      "video": "video_fusion/Swallows soar in the air.mp4",
+      "prediction": 61.55796432495117,
+      "target": 60.7599983215332
+    },
+    {
+      "field": "field_0033",
+      "slot": 11,
+      "video": "video_fusion/Teenage skateboarders perform tricks by the pond.mp4",
+      "prediction": 52.75575637817383,
+      "target": 42.209999084472656
+    },
+    {
+      "field": "field_0033",
+      "slot": 12,
+      "video": "video_fusion/The campus has colorful gardens, full of vitality.mp4",
+      "prediction": 57.77999496459961,
+      "target": 61.209999084472656
+    },
+    {
+      "field": "field_0033",
+      "slot": 13,
+      "video": "video_fusion/The commander is strategizing in front of a map.mp4",
+      "prediction": 59.23224639892578,
+      "target": 45.95000076293945
+    },
+    {
+      "field": "field_0033",
+      "slot": 14,
+      "video": "video_fusion/The crickets chirped merrily in the summer night.mp4",
+      "prediction": 59.71198654174805,
+      "target": 52.779998779296875
+    },
+    {
+      "field": "field_0033",
+      "slot": 15,
+      "video": "video_fusion/The leaves of a purple-leaf plum tree turn deep purple.mp4",
+      "prediction": 41.673038482666016,
+      "target": 57.540000915527344
+    },
+    {
+      "field": "field_0034",
+      "slot": 0,
+      "video": "video_fusion/The lion roars majestically on the grassland.mp4",
+      "prediction": 57.11677169799805,
+      "target": 57.25
+    },
+    {
+      "field": "field_0034",
+      "slot": 1,
+      "video": "video_fusion/The parrot chirped in the treetops.mp4",
+      "prediction": 58.723968505859375,
+      "target": 61.130001068115234
+    },
+    {
+      "field": "field_0034",
+      "slot": 2,
+      "video": "video_fusion/The roof of a farmhouse is covered in moss.mp4",
+      "prediction": 54.36467361450195,
+      "target": 65.0
+    },
+    {
+      "field": "field_0034",
+      "slot": 3,
+      "video": "video_fusion/The rural stream serves as the water source for villagers.mp4",
+      "prediction": 63.96529769897461,
+      "target": 60.040000915527344
+    },
+    {
+      "field": "field_0034",
+      "slot": 4,
+      "video": "video_fusion/The school auditorium is decorated with festive decorations.mp4",
+      "prediction": 73.28178405761719,
+      "target": 53.0
+    },
+    {
+      "field": "field_0034",
+      "slot": 5,
+      "video": "video_fusion/The seahorse swayed slowly on the sea floor.mp4",
+      "prediction": 57.75458526611328,
+      "target": 51.41999816894531
+    },
+    {
+      "field": "field_0034",
+      "slot": 6,
+      "video": "video_fusion/There are boats on the park lake.mp4",
+      "prediction": 52.713844299316406,
+      "target": 54.20000076293945
+    },
+    {
+      "field": "field_0034",
+      "slot": 7,
+      "video": "video_fusion/There's a drum and guitar in the music classroom.mp4",
+      "prediction": 60.802581787109375,
+      "target": 56.400001525878906
+    },
+    {
+      "field": "field_0034",
+      "slot": 8,
+      "video": "video_fusion/Unique desert landscapes, with dunes sculpted by the wind.mp4",
+      "prediction": 58.395973205566406,
+      "target": 70.58000183105469
+    },
+    {
+      "field": "field_0034",
+      "slot": 9,
+      "video": "video_fusion/Various fruit trees grow in the countryside.mp4",
+      "prediction": 57.151405334472656,
+      "target": 59.380001068115234
+    },
+    {
+      "field": "field_0034",
+      "slot": 10,
+      "video": "video_fusion/Vendors at the market display fresh fruits and vegetables.mp4",
+      "prediction": 56.843318939208984,
+      "target": 60.709999084472656
+    },
+    {
+      "field": "field_0034",
+      "slot": 11,
+      "video": "video_fusion/Visitors get information at the park's visitor center.mp4",
+      "prediction": 55.886863708496094,
+      "target": 48.619998931884766
+    },
+    {
+      "field": "field_0034",
+      "slot": 12,
+      "video": "video_fusion/Wandering through a forest path, surrounded by emerald greenery.mp4",
+      "prediction": 69.80776977539062,
+      "target": 60.779998779296875
+    },
+    {
+      "field": "field_0034",
+      "slot": 13,
+      "video": "video_fusion/Willow trees by the river, swaying gently in the calming breeze.mp4",
+      "prediction": 58.2115364074707,
+      "target": 56.849998474121094
+    }
+  ]
+}
