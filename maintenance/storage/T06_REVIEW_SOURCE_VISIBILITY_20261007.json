@@ -1,4 +1,95 @@
 {
+  "preserved_package_document_visibility": {
+  "scope": "20 original frozen review-package documents/manifests, not the current base task source or three requirements.txt files",
+  "recovery_zip": ".codex_tmp/storage_git_backup_20261002/untracked_asset_records_20261006.zip",
+  "existing_recovery_identity": "UNTRACKED_ASSET_RECOVERY_20261006.json",
+  "local_zip_raw_sha_equal": 20,
+  "server_same_paths_missing": 20,
+  "originals_moved_or_deleted": false,
+  "fields": [
+    {
+      "path": "LightGenPublic/tasks/t06_lgvq_temporal_consistency/teacher_release/lgvq_temporal_08044/COMMAND.md",
+      "sha256": "22e03723eef9d736f61b0d3fc8a5acdd044bb0c5b9a9c359940edb19860a867c"
+    },
+    {
+      "path": "LightGenPublic/tasks/t06_lgvq_temporal_consistency/teacher_release/lgvq_temporal_08044/MODEL_CARD.md",
+      "sha256": "ff99ca99af0a7b64d77ef8a1a0396a4dd548dd41bcfa5f27774d99b101e3040a"
+    },
+    {
+      "path": "LightGenPublic/tasks/t06_lgvq_temporal_consistency/teacher_release/lgvq_temporal_08044/OPEN_SOURCE_CHECKLIST.md",
+      "sha256": "82f8dafcfb521f6f1c837802a31192f92123dd2d2cbfb10c6a2b7e1f5d5eb240"
+    },
+    {
+      "path": "LightGenPublic/tasks/t06_lgvq_temporal_consistency/teacher_release/lgvq_temporal_08044/README.md",
+      "sha256": "9f9daec4ee78198b4292618852479b1f6c7545bdef98265694a765edf35e2615"
+    },
+    {
+      "path": "LightGenPublic/tasks/t06_lgvq_temporal_consistency/teacher_release/lgvq_temporal_08044/SHA256.json",
+      "sha256": "c60275d5180bdaaa33958894523c9c973b84674ac740bd1d4ab9401f4a4f2506"
+    },
+    {
+      "path": "LightGenPublic/tasks/t06_lgvq_temporal_consistency/teacher_release/lgvq_temporal_08044/START_HERE_CN.md",
+      "sha256": "7e53154f13faea3ce93be57742d3076c8f469e22a8eb78eb009f60ed31fc92db"
+    },
+    {
+      "path": "LightGenPublic/tasks/t06_lgvq_temporal_consistency/teacher_release/lgvq_temporal_08044/TRAINING_ASSETS.md",
+      "sha256": "31e19e13942cec6a8d5d008f484465248191375e1d2310d4ae14aad9219eeec4"
+    },
+    {
+      "path": "LightGenPublic/tasks/t06_lgvq_temporal_consistency/teacher_release/lgvq_temporal_08044/TRAINING_ASSETS_SHA256.json",
+      "sha256": "1430c5e5d9fcfe520cf5ec292cc75ff78cf2b8543b64778f9ceed2bc677449cb"
+    },
+    {
+      "path": "LightGenPublic/tasks/t06_lgvq_temporal_consistency/teacher_release/lgvq_temporal_08044/pyproject.toml",
+      "sha256": "2f3663dcb5eefc45be50cb1f8eba0d14af0ebde178f6d1ae4ae22c35b7643bdc"
+    },
+    {
+      "path": "LightGenPublic/tasks/t06_lgvq_temporal_consistency/teacher_release/lgvq_temporal_08044/release.json",
+      "sha256": "fe13e99481557af1a827b6794c9fb10af1f054dbcac4abf945bc80b54fda57a7"
+    },
+    {
+      "path": "LightGenPublic/tasks/t06_lgvq_temporal_consistency/teacher_release/lgvq_temporal_08044/verification/README.md",
+      "sha256": "02613c05247b46908f3a10f6ff3d6a74e81cc0c381cc2d4dfc2fef962cef43cf"
+    },
+    {
+      "path": "LightGenPublic/tasks/t06_lgvq_temporal_consistency/teacher_release/lgvq_temporal_08044/verification/server_cuda_full_20260922.json",
+      "sha256": "719f1fa2771156adb68ec795412878e6970a20507d47cbd85344c56b70afcc4d"
+    },
+    {
+      "path": "LightGenPublic/tasks/t06_lgvq_temporal_consistency/teacher_release_final/lgvq_temporal_08044/README.md",
+      "sha256": "efcef5096222489ce57ea5909b0f0bd48832f5b8cd5244d67e0190b43ef75b03"
+    },
+    {
+      "path": "LightGenPublic/tasks/t06_lgvq_temporal_consistency/teacher_release_final/lgvq_temporal_08044/SHA256.json",
+      "sha256": "146dc969dc6f5efba252f9b3a794722d49985e7cf0a026ab7bbd31cb1ff052ed"
+    },
+    {
+      "path": "LightGenPublic/tasks/t06_lgvq_temporal_consistency/teacher_release_final/lgvq_temporal_08044/pyproject.toml",
+      "sha256": "e704242e219316e95055a0d4900e4445128753af01b1fbf60f158545c5c0dd0f"
+    },
+    {
+      "path": "LightGenPublic/tasks/t06_lgvq_temporal_consistency/teacher_release_final/lgvq_temporal_08044/release.json",
+      "sha256": "fe13e99481557af1a827b6794c9fb10af1f054dbcac4abf945bc80b54fda57a7"
+    },
+    {
+      "path": "LightGenPublic/tasks/t06_lgvq_temporal_consistency/teacher_release_final_v2/lgvq_temporal_08044/README.md",
+      "sha256": "f34eaaabf1d7fb3e45af93f21a1f7a10964763b19f651ecb3f0a94f90e8962a3"
+    },
+    {
+      "path": "LightGenPublic/tasks/t06_lgvq_temporal_consistency/teacher_release_final_v2/lgvq_temporal_08044/SHA256.json",
+      "sha256": "f2ec9e7bdb9d8837aaa61b8849a03f52d34c6c1cb7baabc193d65bae1522d44b"
+    },
+    {
+      "path": "LightGenPublic/tasks/t06_lgvq_temporal_consistency/teacher_release_final_v2/lgvq_temporal_08044/pyproject.toml",
+      "sha256": "e704242e219316e95055a0d4900e4445128753af01b1fbf60f158545c5c0dd0f"
+    },
+    {
+      "path": "LightGenPublic/tasks/t06_lgvq_temporal_consistency/teacher_release_final_v2/lgvq_temporal_08044/release.json",
+      "sha256": "dac8debd0d2b0e7b7fa161988d20ecda877f10fddb9285426cc2d5b2d4f34e1e"
+    }
+  ],
+  "limits": "Local static package visibility only; not Git source adoption or remote disaster recovery; requirement files remain visible"
+},
   "audited_on": "2026-10-07",
   "scope": "Named T06 historical teacher package source/description copies; originals stay runnable in place",
   "archive_ref": "refs/archive/source-closure-20261006/t06-review-packages",

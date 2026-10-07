@@ -2448,3 +2448,26 @@ node_modules/
 /ABO_Lab_8um/original_inference/models/Qwen3-VL-Embedding-2B/scripts/qwen3_vl_embedding.py
 /ABO_Lab_8um/original_optics/tests/test_protocol.py
 /ABO_Lab_8um/original_optics/tests/verify_mock_runtime.py
+
+# Named frozen T06 review-package documents; original copies remain in place.
+# Exact bytes also retained in the existing local asset-record ZIP; see T06 review visibility receipt.
+/LightGenPublic/tasks/t06_lgvq_temporal_consistency/teacher_release/lgvq_temporal_08044/COMMAND.md
+/LightGenPublic/tasks/t06_lgvq_temporal_consistency/teacher_release/lgvq_temporal_08044/MODEL_CARD.md
+/LightGenPublic/tasks/t06_lgvq_temporal_consistency/teacher_release/lgvq_temporal_08044/OPEN_SOURCE_CHECKLIST.md
+/LightGenPublic/tasks/t06_lgvq_temporal_consistency/teacher_release/lgvq_temporal_08044/README.md
+/LightGenPublic/tasks/t06_lgvq_temporal_consistency/teacher_release/lgvq_temporal_08044/SHA256.json
+/LightGenPublic/tasks/t06_lgvq_temporal_consistency/teacher_release/lgvq_temporal_08044/START_HERE_CN.md
+/LightGenPublic/tasks/t06_lgvq_temporal_consistency/teacher_release/lgvq_temporal_08044/TRAINING_ASSETS.md
+/LightGenPublic/tasks/t06_lgvq_temporal_consistency/teacher_release/lgvq_temporal_08044/TRAINING_ASSETS_SHA256.json
+/LightGenPublic/tasks/t06_lgvq_temporal_consistency/teacher_release/lgvq_temporal_08044/pyproject.toml
+/LightGenPublic/tasks/t06_lgvq_temporal_consistency/teacher_release/lgvq_temporal_08044/release.json
+/LightGenPublic/tasks/t06_lgvq_temporal_consistency/teacher_release/lgvq_temporal_08044/verification/README.md
+/LightGenPublic/tasks/t06_lgvq_temporal_consistency/teacher_release/lgvq_temporal_08044/verification/server_cuda_full_20260922.json
+/LightGenPublic/tasks/t06_lgvq_temporal_consistency/teacher_release_final/lgvq_temporal_08044/README.md
+/LightGenPublic/tasks/t06_lgvq_temporal_consistency/teacher_release_final/lgvq_temporal_08044/SHA256.json
+/LightGenPublic/tasks/t06_lgvq_temporal_consistency/teacher_release_final/lgvq_temporal_08044/pyproject.toml
+/LightGenPublic/tasks/t06_lgvq_temporal_consistency/teacher_release_final/lgvq_temporal_08044/release.json
+/LightGenPublic/tasks/t06_lgvq_temporal_consistency/teacher_release_final_v2/lgvq_temporal_08044/README.md
+/LightGenPublic/tasks/t06_lgvq_temporal_consistency/teacher_release_final_v2/lgvq_temporal_08044/SHA256.json
+/LightGenPublic/tasks/t06_lgvq_temporal_consistency/teacher_release_final_v2/lgvq_temporal_08044/pyproject.toml
+/LightGenPublic/tasks/t06_lgvq_temporal_consistency/teacher_release_final_v2/lgvq_temporal_08044/release.json
