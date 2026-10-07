@@ -2540,3 +2540,35 @@ node_modules/
 /LightGenV2/tasks/t06_video_quality_assessment/reports/paper_results/spatial_mobilenetv2_b11_20260910/test_metrics_optical_on.json
 /LightGenV2/tasks/t06_video_quality_assessment/reports/paper_results/spatial_mobilenetv2_b11_20260910/trainable_scope_report.json
 /LightGenV2/tasks/t06_video_quality_assessment/reports/paper_results/spatial_mobilenetv2_b11_20260910/training_summary.json
+# Frozen historical 8um T06 standalone source; exact Git archive 632ff03226c1.
+# Keep original files and assets; new files in this directory remain visible.
+/LightGenV2/projects/lgvq_temporal/configs/temporal_16x4_s163.yaml
+/LightGenV2/projects/lgvq_temporal/inspect_fields.py
+/LightGenV2/projects/lgvq_temporal/runtime/LightGenV2/__init__.py
+/LightGenV2/projects/lgvq_temporal/runtime/LightGenV2/tasks/__init__.py
+/LightGenV2/projects/lgvq_temporal/runtime/LightGenV2/tasks/t06_video_quality_assessment/__init__.py
+/LightGenV2/projects/lgvq_temporal/runtime/LightGenV2/tasks/t06_video_quality_assessment/lab_runtime.py
+/LightGenV2/projects/lgvq_temporal/runtime/LightGenV2/tasks/t06_video_quality_assessment/models/__init__.py
+/LightGenV2/projects/lgvq_temporal/runtime/LightGenV2/tasks/t06_video_quality_assessment/models/multivideo9x4.py
+/LightGenV2/projects/lgvq_temporal/runtime/LightGenV2/tasks/t06_video_quality_assessment/multivideo.py
+/LightGenV2/projects/lgvq_temporal/runtime/LightGenV2/tasks/t06_video_quality_assessment/multivideo_data.py
+/LightGenV2/projects/lgvq_temporal/runtime/LightGenV2/tasks/t06_video_quality_assessment/multivideo_settings.py
+/LightGenV2/projects/lgvq_temporal/runtime/LightGenV2/tasks/t06_video_quality_assessment/multivideo_training.py
+/LightGenV2/projects/lgvq_temporal/runtime/experiments/__init__.py
+/LightGenV2/projects/lgvq_temporal/runtime/experiments/qwen3_vl_2b_lgvq_single_metric_o2_16frame_54/__init__.py
+/LightGenV2/projects/lgvq_temporal/runtime/experiments/qwen3_vl_2b_lgvq_single_metric_o2_16frame_54/data.py
+/LightGenV2/projects/lgvq_temporal/runtime/experiments/qwen3_vl_2b_lgvq_single_metric_o2_16frame_54/metrics.py
+/LightGenV2/projects/lgvq_temporal/runtime/experiments/qwen3_vl_2b_lgvq_single_metric_o2_16frame_54/modeling.py
+/LightGenV2/projects/lgvq_temporal/runtime/experiments/qwen3_vl_2b_lgvq_single_metric_o2_16frame_54/phase_snapshots.py
+/LightGenV2/projects/lgvq_temporal/runtime/experiments/qwen3_vl_2b_lgvq_single_metric_o2_16frame_54/settings.py
+/LightGenV2/projects/lgvq_temporal/runtime/experiments/qwen3_vl_2b_lgvq_single_metric_o2_16frame_54/training.py
+/LightGenV2/projects/lgvq_temporal/runtime/lgvq_temporal/__init__.py
+/LightGenV2/projects/lgvq_temporal/runtime/lgvq_temporal/contracts.py
+/LightGenV2/projects/lgvq_temporal/runtime/lgvq_temporal/fixed_weight.py
+/LightGenV2/projects/lgvq_temporal/simulate.py
+/LightGenV2/projects/lgvq_temporal/sync_reference.py
+/LightGenV2/projects/lgvq_temporal/tests/test_ccd_noise.py
+/LightGenV2/projects/lgvq_temporal/tests/test_physical_contract.py
+/LightGenV2/projects/lgvq_temporal/tests/test_source_contract.py
+/LightGenV2/projects/lgvq_temporal/train.py
+/LightGenV2/projects/lgvq_temporal/verify_release.py

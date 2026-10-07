@@ -189,3 +189,10 @@ python maintenance/git_safety/check_source_archives.py --server-formal-timing-pa
 本地后续只读复查（源码23809bdf7）：已跟踪未提交0、未跟踪2540；
 其中LightGenV2 1176、handoffs 811，其余分组数量与上方旧快照相同。
 这不是释放磁盘或全部副本退役；Linux已恢复连接并补齐主线，实验室不连接。
+
+2026-10-07后续实际复查（源码37353a80d）：本地、Linux主目录、GitHub主线一致，
+两端已跟踪未提交0；未跟踪为本地2454、Linux407。旧T06 working-project的30份
+源码/配置再次逐字节匹配本地及Linux既有Git恢复提交632ff03226c1，已按具体路径
+退出日常待提交列表；原目录、数据/PT、文档、manifest、依赖和测速未移动或删除。
+仅减少历史源码副本的待提交项，不宣称旧目录已经退役或释放磁盘；未来新源码仍可见。
+这次规则应用后本地数量预计少30，须以最终实查为准，Linux没有这些原路径，不变。

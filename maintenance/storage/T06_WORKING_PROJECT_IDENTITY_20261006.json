@@ -177,6 +177,17 @@
   "incremental_bundle_requires_base": true,
   "data_backup": false,
   "original_files_moved_or_deleted": false,
+  "visibility_update_20261007": {
+    "scope": "Only the 30 named historical source/config paths in source_files are excluded from daily Git changes; no directory wildcard",
+    "local_original_and_archive_sha_rechecked": 30,
+    "server_archive_sha_rechecked": 30,
+    "server_original_named_paths_absent": 30,
+    "recovery_commit": "632ff03226c1e69b7a335730aca05d49af7e9bce",
+    "original_assets_documents_manifests_and_requirements_unchanged": true,
+    "future_source_files_remain_visible": true,
+    "directory_retired": false,
+    "official_runtime_changed": false
+  },
   "model_evaluated": false,
   "official_model_changed": false
 }
