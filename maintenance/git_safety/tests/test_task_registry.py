@@ -49,6 +49,26 @@ def test_additional_task_evidence_field_is_not_silently_ignored(tmp_path):
     assert any('missing entry/evidence' in e for e in checker.inspect(tmp_path)['errors'])
 
 
+def test_application_entry_and_identity_are_checked_not_just_robust_entry(tmp_path):
+    fixture_registry(tmp_path, {'application_entry': 'missing_app.md',
+                               'application_identity_evidence': 'missing_app.json'})
+    errors = checker.inspect(tmp_path)['errors']
+    assert any('missing_app.md' in e for e in errors)
+    assert any('missing_app.json' in e for e in errors)
+
+
+def test_real_openmoji_application_is_distinct_from_robust_and_has_exact_weight():
+    root = Path(__file__).resolve().parents[3]
+    registry = json.loads((root / 'LightGenV2/TASK_REGISTRY.json').read_text(encoding='utf8'))
+    task = next(t for t in registry['tasks'] if t['id'] == 't04_openmoji_robust_ablation')
+    assert task['application_entry'] != task['entry']
+    assert task['application_selected_epoch'] == 45
+    app_weights = [w for w in task['weights'] if w['path'].startswith('tasks/t04_semantic_interaction/')]
+    assert len(app_weights) == 1
+    assert app_weights[0]['sha256'] == '03cb861c3ac344556601eb3eb6d7d1a22b77a54d2e7e68e85d77ee30fb09eb21'
+    assert task['application_metrics']['physical_verified'] is False
+
+
 def test_per_task_source_import_checks_bytes_without_top_level_duplicate(tmp_path):
     base, registry = fixture_registry(tmp_path, {'historical_source_import': 'source.json'})
     (base / 'source.json').write_text(json.dumps({'files': [

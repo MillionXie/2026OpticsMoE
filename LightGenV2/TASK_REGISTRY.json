@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "audited_on": "2026-10-06",
+  "audited_on": "2026-10-07",
   "purpose": "Source and artifact identity index; metrics remain in task README/report and PROJECT_SCORECARD.md",
   "migration_complete": false,
   "reconciliation_plan": "../maintenance/storage/REMAINING_CLEANUP_PLAN_20261003.md",
@@ -49,6 +49,14 @@
     },
     {
       "id": "t04_openmoji_robust_ablation",
+      "application_entry": "tasks/t04_semantic_interaction/README.md",
+      "application_identity_evidence": "tasks/t04_semantic_interaction/layered_application_import_20261007.json",
+      "application_profile": "layered_scene_exp05_dc30_ccdsmall",
+      "application_selected_epoch": 45,
+      "application_training_source_commit": "7121e2e0758ef3aae8c2aa29e8002a6e81e7d204",
+      "application_source_status": "layered_renderer_configs_and_original_expansion_DC_CCD_contract_on_main_strict_CPU_load_verified",
+      "application_metrics": {"simulation_changed_cell": 0.8765, "same_weight_remove_optical": 0.4845, "physical_verified": false, "current_version_latency_verified": false, "selection": "manually_selected_TEST_development_not_independent_generalization"},
+      "application_remaining": ["original_SVG_preview_dependency_resvg_py_missing_locally", "native_data_and_Qwen_cache_asset_closure", "new_layered_epoch45_independent_package_not_accepted_old_epoch40_builder_incompatible"],
       "windows_known_source_recheck_evidence": "../maintenance/storage/T04_WINDOWS_SOURCE_RECHECK_20261006.json",
       "entry": "tasks/t04_openmoji_robust_ablation/README.md",
       "reproduction": "tasks/t04_openmoji_robust_ablation/reports/reproduction/README.md",
@@ -64,6 +72,7 @@
       "protected_dependencies": ["tasks/t04_semantic_interaction", "experiments/qwen3_vl_2b_openmoji_instruction_four_stage_optical_editing", "ABO_I2I_Lab_DVP_8um/lab_dvp8um"],
       "local_artifact_directory": "../handoffs/openmoji_robust_ablation_20260928/midrank48_candidate",
       "weights": [
+        {"path": "tasks/t04_semantic_interaction/runs/simulation/layered_dc30_ccdsmall_selected_e45_s73_20260925/selected_checkpoint.pt", "sha256": "03cb861c3ac344556601eb3eb6d7d1a22b77a54d2e7e68e85d77ee30fb09eb21", "identity": "Application layered expansion .5 DC30 small CCD noise manual epoch45; not robust G2/G5; local and Linux SHA verified 2026-10-07"},
         {"path": "../handoffs/openmoji_robust_ablation_20260928/midrank48_candidate/rank64_g2_train2000_bias_best_20261002.pt", "sha256": "1cbc3d2574827272dafee7102a4a402ace7eab3f373ea177cbc02e66d90fe6db"},
         {"path": "../handoffs/openmoji_robust_ablation_20260928/midrank48_candidate/rank64_train2000_bias_calibrated_best_20261002.pt", "sha256": "1fa31ec7b30a554280d9115b54f580d40b9c754f805db4ec9714ec28d22af41f", "identity": "G5 rank64 TRAIN2000 original decoder existing-bias calibrated best; local SHA reverified 2026-10-06"},
         {"path": "../handoffs/openmoji_robust_ablation_20260928/midrank48_candidate/rank64_train2000_decoder_best_20261002.pt", "sha256": "018470e4e2a21cf572ac8faf5f9884af810ce5e53321aa3fa8c70e6deb26a825", "identity": "G5 rank64 uncalibrated original-decoder alternative; scene-exact tradeoff retained"}

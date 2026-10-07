@@ -14,7 +14,7 @@
 | T01 | 物品检索 | Caltech101（可替换） | DC20 正式复跑完成 | `tasks/t01_object_retrieval` |
 | T02 | 关键点检测 | LSP（可替换） | DC20 正式复跑完成 | `tasks/t02_keypoint_detection` |
 | T03 | 显著性分析 | SALICON（可替换） | 核心源码已归主线；历史资产及部署边界见任务说明 | `tasks/t03_saliency` |
-| T04 | OpenMoji robust 消融 | OpenMoji（可替换） | 仿真及硬件源码分版本登记；现用实验目录保护 | `tasks/t04_openmoji_robust_ablation` |
+| T04 | OpenMoji 应用与 robust 两条线 | 各自 OpenMoji 划分 | 应用指定epoch45与robust封存rank64分别登记；现用实验保护 | [应用/布局/电子缩减](tasks/t04_semantic_interaction/README.md)；[robust消融](tasks/t04_openmoji_robust_ablation/README.md) |
 | T05 | 视频分类 | 未确定 | 规划中 | `tasks/t05_video_classification` |
 | T06 | 视频质量评价 | LGVQ（可替换） | Spatial／Temporal 核心及适配入口已归主线 | `tasks/t06_video_quality_assessment` |
 | T07 | 商品图搜图 | ABO（可替换） | rank72 最终模型封存；训练及回放源码已归主线 | `tasks/t07_abo_image_retrieval` |
@@ -33,8 +33,9 @@
 其历代版本和最终身份边界见该任务README。新的 robust 消融从 T04 robust 入口进入，
 两线不能互套指标。精确源码、PT、数据身份及剩余例外
 见 [`TASK_REGISTRY.json`](TASK_REGISTRY.json)；各版本指标以任务 README／原报告为准。
-本机、训练服务器和实验室主目录均已实际建立 `main` 源码入口；实验室主目录的
-落地收据见[入口核验](../maintenance/storage/LAB_ROOT_MAIN_ADOPTION_20261007.json)。
+本机和训练服务器主目录已实际建立 `main` 源码入口。实验室此前的入口处理仅作为
+历史记录，见[入口核验](../maintenance/storage/LAB_ROOT_MAIN_ADOPTION_20261007.json)；
+按用户最新要求，实验室电脑已排除本轮治理，不再连接、同步、清理或切换。
 受保护的ABO/OpenMoji历史运行目录尚未全部改用主线配置，不能覆盖现用实验目录；
 主目录源码到位也不等于SDK、数据、PT及现场回归已全部通过。
 
@@ -101,6 +102,6 @@ notepad LightGenV2\paths.local.yaml
 
 ## Git 同步规则
 
-代码修改完成后必须测试、commit 并 push GitHub；服务器和实验室电脑只通过 Git 拉取
-源码。大权重、缓存、CCD 和 ZIP 不进入 Git，继续通过 SHA256 清单传输。禁止以 SCP
+代码修改完成后必须测试、commit 并 push GitHub；本轮训练服务器只通过 Git 同步
+源码，实验室电脑不在本轮同步范围。大权重、缓存、CCD 和 ZIP 不进入 Git，继续通过 SHA256 清单传输。禁止以 SCP
 直接覆盖源码，也禁止强推 main。完整要求见 `AI_RULES.md` 第 15–20 条。

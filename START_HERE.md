@@ -18,6 +18,7 @@
 | 物品检索 | [T01](LightGenV2/tasks/t01_object_retrieval/README.md) |
 | 关键点/LSP | [T02](LightGenV2/tasks/t02_keypoint_detection/README.md) |
 | 显著性/SALICON | [T03](LightGenV2/tasks/t03_saliency/README.md) |
+| OpenMoji 应用：分层布局、不同大小、电子缩减及对外复现 | [T04 应用线](LightGenV2/tasks/t04_semantic_interaction/README.md) |
 | OpenMoji robust 消融 | [T04](LightGenV2/tasks/t04_openmoji_robust_ablation/README.md) |
 | 视频分类规划 | [T05](LightGenV2/tasks/t05_video_classification/README.md) |
 | 视频质量/LGVQ | [T06](LightGenV2/tasks/t06_video_quality_assessment/README.md) |
@@ -56,8 +57,10 @@
 2026-10-07实验室的同一主目录`E:/code/guest/2026OpticsMoE`也已实际建立main入口，
 不是另建工程副本。4497份原先缺失的主线文件通过Git落地，原有设置文件保持SHA，
 14项任务导航检查通过；已有ABO/OpenMoji子工程、PT、CCD和设备配置原位保留。
-从该主目录的本页进入任务；旧子工程是保护的运行依赖，不再作为新的日常源码主线。
-这不表示所有任务已经从主线完成设备回归，具体边界见
+以上是此前的历史处理记录，不表示已登录实验室电脑上的 GitHub 账号。
+按用户最新要求，实验室电脑现已排除本轮治理范围：不再连接、同步、清理或切换其代码，
+也不撤销此前入口；现有实验和文件保持原状。本轮仅整理本地、Linux 训练服务器与 GitHub。
+这不表示所有任务已经从主线完成设备回归，历史边界见
 [实验室入口收据](maintenance/storage/LAB_ROOT_MAIN_ADOPTION_20261007.json)。
 2026-10-06训练服务器主目录也已实际切到`main`，不是只更新发布引用；1011项源码／说明
 落地，295项旧独有文件原位保留。现用OpenMoji和封存ABO工作目录未切换，服务器主目录
