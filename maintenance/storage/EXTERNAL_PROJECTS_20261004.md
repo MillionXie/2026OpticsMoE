@@ -13,6 +13,16 @@
 
 ## 本机已做的实际整理
 
+2026-10-08两份旧OpenMoji分层应用源码工作目录又收进既有历史区：
+`archive/frozen_worktrees_20261006/t04-dc30`（4520文件，HEAD74c82d3782e1b1e3287f0e50798057bd1aa6e6f1）和
+`archive/frozen_worktrees_20261006/t04-qwen`（4681文件，HEADccf6630ba5c4540dbb966617f179a99a30743c39）。
+移前／移后全部9201文件SHA、Git HEAD和原dirty／untracked状态一致，未删除文件。
+前者是指定epoch45的应用线历史源码；后者含完整Qwen baseline原修改、论文选图、图表，
+三份主体／设置／测试overlay不同于main，整份保留，不覆盖现用版本。
+二者不是当前robust消融目录。源码／配置未发现两旧目录名引用，检查时只有本次盘点进程
+命令涉及旧名；没有接管现用OpenMoji或接触实验室。Git登记仍保留（本机13），
+这是退出日常`.worktrees`入口，不是减少注册数、删除baseline或释放磁盘空间。
+
 2026-10-07夜间又将两个本机旧源码工作目录整体收进既有
 `archive/frozen_worktrees_20261006/`：T02个人照片源码3620文件、
 `mnist_publish`旧DVP/MNIST发布暂存源码4752文件，分别移动前后逐文件SHA完全一致。
