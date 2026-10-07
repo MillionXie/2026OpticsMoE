@@ -11,6 +11,24 @@
   "snapshot_is_not_current_git_count": true,
   "retention_decisions": [
     {
+      "path": "T12_Small_Lab_SHS_8um/candidate_bounded/source",
+      "purpose": "Historical bounded-amplitude T12 capture backend; retained comparison/diagnostic entry, not a new main development tree",
+      "known_callers": ["run_bounded_diagnostic.cmd", "run_bounded_full.cmd", "run_bounded_sixstage.cmd", "run_layerwise.cmd"],
+      "actual_lab_launcher_text_rechecked": true,
+      "decision": "Retain original package until these historical capture/replay dependencies have an audited replacement; do not remove its matching-main subset alone",
+      "current_process_occupancy_proven": false,
+      "source_or_assets_moved": false
+    },
+    {
+      "path": "T12_Small_Lab_SHS_8um/candidate_robust17m_20260927/source",
+      "purpose": "Original formal 17M capture and decoder comparison/training backend, including sealed model assets",
+      "known_callers": ["run_decoder20_comparison.cmd", "run_decoder20_trainonly.cmd", "run_robust17m_full.cmd", "run_robust17m_pilot.cmd", "run_train_robust17m.cmd"],
+      "actual_lab_launcher_text_rechecked": true,
+      "decision": "Protect formal historical package; main CPU/source verification is not permission to replace or retire its device entry",
+      "current_process_occupancy_proven": false,
+      "source_or_assets_moved": false
+    },
+    {
       "path": "T12_Small_Lab_SHS_8um/ch27_ref/source",
       "purpose": "Historical original-weight channel comparison backend, not current final 17M development entry",
       "audited_files_under_scope": 2254,
@@ -23,6 +41,7 @@
       "complete_dependency_closure_verified": false
     }
   ],
+  "launcher_dependency_scan": {"projects": 11, "top_and_one_level_launchers_checked": 130, "source_or_runtime_marker_files": 95, "scope": "Read-only launcher text and SHA only; markers can be comments, not full import/OS occupancy proof", "devices_opened": false},
   "limits": [
     "Matching main bytes do not prove a runtime path is unused or deletable",
     "No main match may instead be an older valid implementation, overlay, report or private asset",
