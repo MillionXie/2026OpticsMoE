@@ -61,7 +61,12 @@ def adopt(root: Path, store: Path, git: str, pin: str) -> dict:
     before = audit(root, store, git, pin)
     if before['conflicts']:
         raise ValueError('Unresolved collisions; target left unchanged')
-    call(git, root, 'init', '--initial-branch=main')
+    # Older lab/server Git lacks --initial-branch. No commit or extra branch
+    # exists yet; select the sole intended branch with an unborn symbolic HEAD.
+    call(git, root, 'init')
+    call(git, root, 'symbolic-ref', 'HEAD', 'refs/heads/main')
+    # Source manifests bind Git bytes, not the platform's preferred newlines.
+    call(git, root, 'config', 'core.autocrlf', 'false')
     call(git, root, 'fetch', '--no-tags', str(store), pin)
     call(git, root, 'update-ref', 'refs/heads/main', pin)
     call(git, root, 'read-tree', pin)
@@ -73,7 +78,10 @@ def adopt(root: Path, store: Path, git: str, pin: str) -> dict:
             raise RuntimeError('Existing file changed during adoption')
     missing = [p for p in before['missing'] if not (root / p).is_file()]
     diff = call(git, root, 'diff', '--name-only').decode('utf8').splitlines()
-    if missing or diff or call(git, root, 'rev-parse', 'HEAD').decode().strip() != pin:
+    # Audited pre-existing CRLF files are retained byte-for-byte even when
+    # canonical Git text is LF. Report that difference, never rewrite it.
+    preserved_paths = {row['path'] for row in before['existing']}
+    if missing or set(diff) - preserved_paths or call(git, root, 'rev-parse', 'HEAD').decode().strip() != pin:
         raise RuntimeError('Adoption incomplete; preserve files and inspect Git state')
     return {'pin': pin, 'new_tracked_files': len(before['missing']),
             'existing_files_preserved': before['existing'], 'tracked_diff': diff,
