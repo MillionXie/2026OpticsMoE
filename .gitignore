@@ -2986,3 +2986,13 @@ node_modules/
 /LightGenV2/tasks/t04_semantic_interaction/reports/layered_scene_focus_changed_iou_20260920/training_history.csv
 # SHA256 764fab59bd3e504fb0cf7890ba27bdaa45f53099097590002326c03410fb2435, reachable LF blob 8fe6ef29ee251873f046badcda630cc56c309a5f
 /LightGenV2/tasks/t04_semantic_interaction/reports/layered_scene_pilot_20260920/training_history.csv
+# Vendor camera manuals are local deployment assets, not project source.
+# Originals remain in place; do not publish vendor documents with source sync.
+# SHA256 0da826eb0b294c8949f2ba259bf2e1b6fc2a2fbb1af9e54ee5f96f08f8bca4d4
+/ABO_Lab_8um/control_kit/CCD_SHS/FlexIO采集卡快速入门.pdf
+# SHA256 dd40a9bf09218165bf87cb4a607da117b8cd76d068850870d4687dca1e6fd2a9
+/ABO_Lab_8um/control_kit/CCD_SHS/SDK_Manual_zh_CN.pdf
+# SHA256 f72ffcaa2cfff21fdd1cb459ed80d9892eef496ac1edea2cb28fde7eedba6641
+/ABO_Lab_8um/control_kit/CCD_SHS/SHS 硬件使用手册 20260309.pdf
+# SHA256 4729eefb34f371e2d628c87a0a55d3b4d287d6ed533fae7a938eeebcd9ed128d
+/ABO_Lab_8um/control_kit/CCD_SHS/SHS系列FastStream使用手册-20260109.pdf
