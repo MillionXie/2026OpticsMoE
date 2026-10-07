@@ -50,12 +50,16 @@
 
 误命名的`tasks/06_video_quality_assessment`仅含14份MobileNet历史报告，已原字节归入
 [MobileNet旧对照](reports/paper_results/spatial_mobilenetv2_b11_20260910/RESULT.md)。
+其33级配置继承链缺失的五份旧配置已按原字段纳入兼容后端；
+[配置来源和本地／服务器注释差异](reports/paper_results/spatial_mobilenetv2_b11_20260910/CONFIG_SOURCE.md)
+单独说明。原报告、PT和测速不变，没有重训或复测，也不将此历史候选改为默认。
 原报告与配置快照纳入main，其余原结果仍保留在该规范任务目录；14份原字节
 均可从Git恢复提交`a96c1fc4d7bd6062002cb73955cbc0433229326c`的旧路径恢复。
 旧目录已无报告文件，空目录未删除。
 这是2026-09-10的SRCC .665159、去光 .561838、PT SHA 5e5020e3…55c4459历史对照，
 不是当前Spatial .6710968960/PT 95e12397，也没有补测实拍或套用旧测速。
-原s745训练配置/资产闭包未在本轮复核；原配置快照只保留出处，不当作新可运行profile。
+原s745配置继承及原字段加载已复核；数据/缓存/PT等资产闭包未完整复核，
+原配置快照保留出处，不当作已通过新机训练或实拍验收的profile。
 
 历史 Spatial-4 对照归档是 `spatial_single_video4_balanced`：一条视频均匀取 4 帧并排成
 2×2，**没有多视频复用**。它使用两套物理光 Router Top-2、六次光传播和 20% 名义

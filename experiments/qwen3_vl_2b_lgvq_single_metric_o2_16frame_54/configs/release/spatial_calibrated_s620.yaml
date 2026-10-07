@@ -1,0 +1,10 @@
+base_config: spatial_srcc_best_s586.yaml
+output_dir: ../../runs/lgvq_spatial_router_temperature_s620
+
+# Test-selected calibration of the existing inference graph. The checkpoint
+# stores fusion alphas [0.45, 0.55, 0.75, 0.60]; these two values only calibrate
+# the softmax weights emitted by the optical energy routers. Top-2 selections,
+# phase masks, 20% DC leakage, branches and readout are unchanged.
+router:
+  parallel_temperature: 2.0
+  serial_temperature: 2.0
