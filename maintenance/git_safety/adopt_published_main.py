@@ -66,7 +66,7 @@ def adopt(root: Path, store: Path, git: str, pin: str) -> dict:
     call(git, root, 'init')
     call(git, root, 'symbolic-ref', 'HEAD', 'refs/heads/main')
     # Source manifests bind Git bytes, not the platform's preferred newlines.
-    call(git, root, 'config', 'core.autocrlf', 'false')
+    call(git, root, 'config', 'core.autocrlf', 'input')
     call(git, root, 'fetch', '--no-tags', str(store), pin)
     call(git, root, 'update-ref', 'refs/heads/main', pin)
     call(git, root, 'read-tree', pin)

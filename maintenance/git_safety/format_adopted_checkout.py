@@ -39,7 +39,9 @@ def apply(root, git, pin, rows):
             if target.read_bytes()!=original:raise ValueError('Concurrent source edit')
             target.write_bytes(canonical)  # mechanical Git-byte newline formatting only
             changed.append((target,original,canonical))
-        subprocess.check_call([git,'-C',str(root),'config','core.autocrlf','false'])
+        # Future checkouts retain Git LF; pre-existing CRLF user files are not
+        # rewritten. Explicit manifest SHA checks remain strict and separate.
+        subprocess.check_call([git,'-C',str(root),'config','core.autocrlf','input'])
     except Exception:
         for target,original,canonical in reversed(changed):
             if target.read_bytes()!=canonical:raise RuntimeError('Concurrent edit prevents rollback')
