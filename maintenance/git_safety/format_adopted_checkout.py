@@ -38,6 +38,9 @@ def apply(root, git, pin, rows):
     root=Path(root).resolve()
     head=subprocess.check_output([git,'-C',str(root),'rev-parse','HEAD']).decode().strip()
     if head!=pin:raise ValueError('HEAD changed')
+    index_tree=subprocess.check_output([git,'-C',str(root),'write-tree']).strip()
+    head_tree=subprocess.check_output([git,'-C',str(root),'rev-parse',pin+'^{tree}']).strip()
+    if index_tree!=head_tree:raise ValueError('Existing staged changes; do not modify index')
     changed=[]
     try:
         for relative,original,canonical in rows:
@@ -48,6 +51,7 @@ def apply(root, git, pin, rows):
         # Future checkouts retain Git LF; pre-existing CRLF user files are not
         # rewritten. Explicit manifest SHA checks remain strict and separate.
         subprocess.check_call([git,'-C',str(root),'config','core.autocrlf','input'])
+        refresh_canonical_index(root,git,pin,[relative for relative,_,_ in rows])
     except Exception:
         for target,original,canonical in reversed(changed):
             if target.read_bytes()!=canonical:raise RuntimeError('Concurrent edit prevents rollback')
@@ -55,3 +59,25 @@ def apply(root, git, pin, rows):
         raise
     return {'repaired_files':len(changed),'expected_hashes_waived':False,
             'formatting_only':True,'scope':'Only explicitly eligible new main files; original runtime assets untouched'}
+
+
+def refresh_canonical_index(root,git,pin,paths):
+    """Refresh Git conversion/stat metadata without staging any source change."""
+    root=Path(root).resolve()
+    before=subprocess.check_output([git,'-C',str(root),'write-tree']).strip()
+    expected=subprocess.check_output([git,'-C',str(root),'rev-parse',pin+'^{tree}']).strip()
+    if before!=expected:raise ValueError('Existing staged changes')
+    for relative in paths:
+        target=root/relative
+        if not target.resolve().is_relative_to(root) or target.is_symlink():
+            raise ValueError('Unsafe source path')
+        canonical=subprocess.check_output([git,'-C',str(root),'show',pin+':'+relative])
+        if target.read_bytes()!=canonical:raise ValueError('Source is not exact canonical Git bytes')
+    # Git for Windows can retain the previous checkout conversion metadata
+    # after a mechanical CRLF->LF repair. Refresh only byte-identical paths.
+    # No new source is staged: the complete index tree must remain unchanged.
+    for start in range(0,len(paths),16):
+        subprocess.check_call([git,'-C',str(root),'-c','core.autocrlf=false','add','--',*paths[start:start+16]])
+    after=subprocess.check_output([git,'-C',str(root),'write-tree']).strip()
+    if after!=before:raise RuntimeError('Index tree changed unexpectedly; stop for review')
+    return {'refreshed_paths':len(paths),'index_tree_unchanged':True}

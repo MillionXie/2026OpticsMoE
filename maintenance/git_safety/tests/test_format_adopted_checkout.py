@@ -3,7 +3,7 @@ from pathlib import Path
 import subprocess
 import tempfile
 import unittest
-from maintenance.git_safety.format_adopted_checkout import plan,apply
+from maintenance.git_safety.format_adopted_checkout import plan,apply,refresh_canonical_index
 
 
 class CheckoutFormattingTests(unittest.TestCase):
@@ -26,6 +26,9 @@ class CheckoutFormattingTests(unittest.TestCase):
             self.assertEqual(apply(root,'git',pin,rows)['repaired_files'],1)
             self.assertEqual((root/'source.py').read_bytes(),canonical)
             self.assertFalse(subprocess.check_output(['git','-C',folder,'diff','--name-only']).strip())
+            self.assertFalse(subprocess.check_output(['git','-C',folder,'status','--short','--untracked-files=no']).strip())
+            (root/'source.py').write_bytes(b'value = 2\n')
+            with self.assertRaises(ValueError):refresh_canonical_index(root,'git',pin,['source.py'])
 
 
 if __name__=='__main__':unittest.main()
