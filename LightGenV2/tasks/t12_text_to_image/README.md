@@ -63,6 +63,21 @@ CSV不支持all，避免旧目录布局混用。原物化脚本和已导出数�
 
 ## 历史记录：2026-09-27 小版物理鲁棒性候选
 
+### 更早的单物品条件VAE比较入口（历史baseline，不是17M实拍版）
+
+原 `__main__/run/evaluation/training/losses` 五个模块及七份依赖YAML已原样归入main，
+不再仅存在于本地未跟踪文件中。12份原字节与实际服务器旧审计目录及原Git提交
+`a3f5e6fe7027e92fe29be2934750f427cdfd91e7`完全一致；
+[来源与核验范围](historical_cvae_source_import_20261007.json)保留精确SHA。
+
+只看旧接口可用 `python -m LightGenV2.tasks.t12_text_to_image --help`。
+它必须显式选profile，比较早期LightGen latent生成与Qwen缓存特征+VAE方案，
+**不是本页正式17M图文编辑入口，也不是当前完整Qwen28补训baseline**。
+正式版本仍从本页顶部复现说明进入，不把旧CLI的lightgen名称解释为当前最终权重。
+旧CLI的训练／缓存／评价会写输出，且保留原`--force`行为；复查旧实验必须绑定原资产，
+只使用新的输出目录，不能直接覆盖已有run。此次只运行帮助、六配置加载及不写run的
+合成CPU前向／反向合同检查，没有读取正式数据/PT、重训、评价或生成新指标。
+
 下文“最新候选”仅指2026-09-27历史续训轮次，不是当前正式权重；
 5496204d及更早13cf候选均不替换本页顶部的5b4f原权重和eeec适配权重。
 

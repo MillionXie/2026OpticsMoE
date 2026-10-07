@@ -1,0 +1,82 @@
+{
+  "source_runtime": "/DATA/DATA1/guest3/t12_git_audited_20260926",
+  "source_head": "a3f5e6fe7027e92fe29be2934750f427cdfd91e7",
+  "scope": "Original early single-object text-conditioned conditional-VAE comparison CLI and its seven YAMLs; historical baseline only, not the current 17M image-and-text editor or current full-Qwen28 baseline.",
+  "files": [
+    {
+      "path": "LightGenV2/tasks/t12_text_to_image/__main__.py",
+      "sha256": "554f8b7213c6212748e01b23467b7539aa7b14827dc2bfa4ba0982369a4b69fb",
+      "server_main_before": "absent_before_publication"
+    },
+    {
+      "path": "LightGenV2/tasks/t12_text_to_image/run.py",
+      "sha256": "18893f2b7565131dca6e3de449acba04b79a01921b131ad636280adc36378d6d",
+      "server_main_before": "absent_before_publication"
+    },
+    {
+      "path": "LightGenV2/tasks/t12_text_to_image/evaluation.py",
+      "sha256": "65baf801b61a7d3de120c7e13b5c9ecb7fc2f6153d9c0b241fc2429bd7fad8b7",
+      "server_main_before": "absent_before_publication"
+    },
+    {
+      "path": "LightGenV2/tasks/t12_text_to_image/training.py",
+      "sha256": "d3d3b9f5b7514271b147f07756cf7de10ecc624ee0f0b736c53d89d4924705a8",
+      "server_main_before": "absent_before_publication"
+    },
+    {
+      "path": "LightGenV2/tasks/t12_text_to_image/losses.py",
+      "sha256": "f3ecff1d51a3e5f1ffcff6beb6bb61ecec4a8e50c71abcea7f5444b40092dbd5",
+      "server_main_before": "absent_before_publication"
+    },
+    {
+      "path": "LightGenV2/tasks/t12_text_to_image/configs/common.yaml",
+      "sha256": "1d6e8c198f49921ea75876125e8f441d583c81637fbb8d7a128edcbc213a4501",
+      "server_main_before": "absent_before_publication"
+    },
+    {
+      "path": "LightGenV2/tasks/t12_text_to_image/configs/lightgen_parallel.yaml",
+      "sha256": "96e7c7d4ddfc8daca674d10e5cc35a21649d5d5444730ccc6d5616e686b7a423",
+      "server_main_before": "absent_before_publication"
+    },
+    {
+      "path": "LightGenV2/tasks/t12_text_to_image/configs/lightgen_parallel_gan.yaml",
+      "sha256": "7120600da58e92b2fc94d5fd4c8f09aa90fcc7bec204717ec29941fe2843d59b",
+      "server_main_before": "absent_before_publication"
+    },
+    {
+      "path": "LightGenV2/tasks/t12_text_to_image/configs/lightgen_parallel_decoder_gan.yaml",
+      "sha256": "7e679ab60cb55418e8a1bbde8d5b614a33b88d7a28618f10d88eac76634812df",
+      "server_main_before": "absent_before_publication"
+    },
+    {
+      "path": "LightGenV2/tasks/t12_text_to_image/configs/qwen_vae_baseline.yaml",
+      "sha256": "6fafaeb8184d43c87553e2660623c88cf74226565207141bc5216b745cae604e",
+      "server_main_before": "absent_before_publication"
+    },
+    {
+      "path": "LightGenV2/tasks/t12_text_to_image/configs/qwen_vae_baseline_gan.yaml",
+      "sha256": "6b83c5777157adb3ad2ff27264ff14cffeb74d0298259a2dba34aafb0a67d830",
+      "server_main_before": "absent_before_publication"
+    },
+    {
+      "path": "LightGenV2/tasks/t12_text_to_image/configs/smoke.yaml",
+      "sha256": "fb905cf752806e21ca04d446b2ff07970bcd48d37d74ba1d37e35bb1597952c2",
+      "server_main_before": "absent_before_publication"
+    }
+  ],
+  "original_files_edited": false,
+  "local_server_and_existing_git_raw_sha_equal": true,
+  "checks": {
+    "cli_help_passed": true,
+    "profiles_loaded": 6,
+    "direct_synthetic_forward_backward": "Both original variants pass on CPU with output [2,4,8,8]; direct smoke function, no run directory creation",
+    "formal_dataset_or_checkpoint_read": false,
+    "training_or_evaluation_started": false,
+    "hardware_or_gpu_used": false
+  },
+  "limitations": [
+    "Existing dependent model/cache/data modules are already on main; their current compatibility is checked synthetically, not claimed identical to all historical training runs.",
+    "Legacy run CLI can write outputs and has --force; do not use existing original output directories or confuse it with the current formal reproduction entry.",
+    "Original datasets, pretrained assets, PTs, metrics and timing remain at their original paths; no new performance claim."
+  ]
+}

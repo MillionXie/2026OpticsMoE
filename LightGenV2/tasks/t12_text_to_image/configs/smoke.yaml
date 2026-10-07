@@ -1,0 +1,37 @@
+seed: 7
+dataset:
+  data_dir: ../dataset/smoke
+  image_size: 64
+qwen:
+  model: smoke
+  checkpoint: null
+  hidden_size: 64
+vae:
+  model: smoke
+  checkpoint: null
+  latent_channels: 4
+  latent_size: 8
+model:
+  variant: lightgen_parallel
+  optical_backend: compact_fft
+  width: 32
+  token_grid: 4
+  style_dim: 16
+  electronic_depth: 2
+fusion:
+  alpha_initial: 0.4
+  alpha_minimum: 0.05
+  alpha_maximum: 0.95
+  rms_epsilon: 1.0e-6
+training:
+  batch_size: 2
+  epochs: 1
+  learning_rate: 0.001
+  weight_decay: 0.0
+  num_workers: 0
+  amp: false
+loss:
+  kl_weight: 0.001
+  kl_warmup_epochs: 1
+  free_bits: 0.0
+output_dir: ../runs/smoke/t12_contract
