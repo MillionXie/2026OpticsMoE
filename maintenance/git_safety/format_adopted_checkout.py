@@ -12,8 +12,14 @@ import subprocess
 def plan(root, git, pin, mismatches, eligible):
     root=Path(root).resolve()
     rows=[]
+    seen={}
     for row in mismatches:
         relative=row['path']
+        identity=(row['raw_sha256'],row['expected_sha256'])
+        if relative in seen:
+            if seen[relative]!=identity:raise ValueError('Conflicting manifest contracts: '+relative)
+            continue
+        seen[relative]=identity
         target=root/relative
         if (relative not in eligible or row['classification']!='line_endings_only'
                 or not target.resolve().is_relative_to(root) or target.is_symlink()):

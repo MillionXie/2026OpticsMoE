@@ -21,7 +21,8 @@ class CheckoutFormattingTests(unittest.TestCase):
             row={'path':'source.py','classification':'line_endings_only',
                  'raw_sha256':hashlib.sha256(raw).hexdigest(),'expected_sha256':hashlib.sha256(canonical).hexdigest()}
             with self.assertRaises(ValueError):plan(root,'git',pin,[row],set())
-            rows=plan(root,'git',pin,[row],{'source.py'})
+            rows=plan(root,'git',pin,[row,row],{'source.py'})
+            self.assertEqual(len(rows),1)
             self.assertEqual(apply(root,'git',pin,rows)['repaired_files'],1)
             self.assertEqual((root/'source.py').read_bytes(),canonical)
             self.assertFalse(subprocess.check_output(['git','-C',folder,'diff','--name-only']).strip())
