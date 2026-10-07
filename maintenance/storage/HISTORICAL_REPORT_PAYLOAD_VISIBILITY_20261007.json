@@ -6,61 +6,73 @@
   "files": [
   {
     "path": "LightGenV2/reports/20260928_nine_task_a100_table/raw_remote/formal_03_narrow/report.json",
+    "payload_kind": "historical_a100_result_record",
     "bytes": 3432,
     "sha256": "04137b2c48503ea2de480d33d2d5da32d653cbc74b535b78899708f6410f3020"
   },
   {
     "path": "LightGenV2/reports/20260928_nine_task_a100_table/raw_remote/formal_04_baseline/baseline_performance_report.json",
+    "payload_kind": "historical_a100_result_record",
     "bytes": 224190,
     "sha256": "e26ea454d46e9911e8355928be35bf589adae854445e0ac66ec047924a187e54"
   },
   {
     "path": "LightGenV2/reports/20260928_nine_task_a100_table/raw_remote/formal_04_baseline/baseline_report.json",
+    "payload_kind": "historical_a100_result_record",
     "bytes": 1653,
     "sha256": "ed74d262007533c75de6f59f2305d216cff5f018240a75ad5e7ca297dabb290d"
   },
   {
     "path": "LightGenV2/reports/20260928_nine_task_a100_table/raw_remote/formal_04_ours/evidence/ours_final_report.json",
+    "payload_kind": "historical_a100_result_record",
     "bytes": 5730,
     "sha256": "962ff0e9b4b30441f9746e9cd2976d014f70b5c2d6b938cef65580e6b05eefbe"
   },
   {
     "path": "LightGenV2/reports/20260928_nine_task_a100_table/raw_remote/formal_04_ours/report.json",
+    "payload_kind": "historical_a100_result_record",
     "bytes": 4946,
     "sha256": "85e86cb89a1ea1684b7bad71ad006e5abf8c15396187ac3b0b52dcc1c7c8152b"
   },
   {
     "path": "LightGenV2/reports/20260928_nine_task_a100_table/raw_remote/formal_08_fullaudit/baseline_report.json",
+    "payload_kind": "historical_a100_result_record",
     "bytes": 8601,
     "sha256": "29ffe91db0030acb7cd347cce7b82bd446b1ac222b6081e5677aeb04c1e0233b"
   },
   {
     "path": "LightGenV2/reports/20260928_nine_task_a100_table/raw_remote/formal_08_fullaudit/ours_report.json",
+    "payload_kind": "historical_a100_result_record",
     "bytes": 1160,
     "sha256": "2e2d5283dd1696bccc98bc19997b7bf0f060990fc225d098078426e3dca0ca1b"
   },
   {
     "path": "LightGenV2/reports/20260928_nine_task_a100_table/raw_remote/formal_08_narrow/report.json",
+    "payload_kind": "historical_a100_result_record",
     "bytes": 4074,
     "sha256": "29bfb019e81d8b778c5cf5f5b58f8962d5f58d1883bcc7cffaa204f46b60d68c"
   },
   {
     "path": "LightGenV2/reports/20260928_nine_task_a100_table/raw_remote/ours_narrow_200/report.json",
+    "payload_kind": "historical_a100_result_record",
     "bytes": 7072,
     "sha256": "9bda619d54eb83becd23a6b22a210463d7277ca5c61c535052e108f770f58225"
   },
   {
     "path": "LightGenV2/reports/20260928_t03_t08_a100_completion/raw_candidate/03_abo_image_to_image/report.json",
+    "payload_kind": "historical_a100_result_record",
     "bytes": 5944,
     "sha256": "f3536d711723ad17c05b0fee84f7e385f1bfc393e843af6c0aebd127e9801f28"
   },
   {
     "path": "LightGenV2/reports/20260928_t03_t08_a100_completion/raw_candidate/08_abo_text_to_image/baseline_report.json",
+    "payload_kind": "historical_a100_result_record",
     "bytes": 8869,
     "sha256": "6cb46e9bd547085fb9885064f9b8e26302efd712b0547d2ac0f22f6e80dda9da"
   },
   {
     "path": "LightGenV2/reports/20260928_t03_t08_a100_completion/raw_candidate/08_abo_text_to_image/ours_report.json",
+    "payload_kind": "historical_a100_result_record",
     "bytes": 1152,
     "sha256": "695f447cec80d2f8b5ff70ddc60e2a6f014c3ad2efa2d301e74948a7f5f7f6d8"
   },

@@ -22,9 +22,15 @@ class ArtifactIgnoreTests(unittest.TestCase):
             self.assertIn('/reports/',row['path'])
             self.assertIn(Path(row['path']).suffix.lower(),{'.csv','.png','.pdf','.svg','.json'})
             if row['path'].endswith('.json'):
-                self.assertEqual(row['payload_kind'],'historical_t12_result_record')
                 self.assertTrue(row['path'].startswith('LightGenV2/reports/202609'))
-                self.assertIn('_t12_',row['path'].split('/')[2])
+                if row['payload_kind'] == 'historical_t12_result_record':
+                    self.assertIn('_t12_',row['path'].split('/')[2])
+                else:
+                    self.assertEqual(row['payload_kind'],'historical_a100_result_record')
+                    self.assertTrue(row['path'].startswith((
+                        'LightGenV2/reports/20260928_nine_task_a100_table/raw_remote/',
+                        'LightGenV2/reports/20260928_t03_t08_a100_completion/raw_candidate/')))
+                    self.assertTrue(row['path'].endswith(('/report.json','_report.json')))
                 self.assertFalse(any(s in Path(row['path']).name.lower()
                                      for s in ['config','manifest','protocol','split','reference']))
             self.assertNotIn('/t04_',row['path'])
@@ -235,9 +241,24 @@ class ArtifactIgnoreTests(unittest.TestCase):
         self.assertEqual(self.ignored(private + visible), set(private))
     def test_named_historical_timing_payload_not_code_or_future_evidence(self):
         private = ['LightGenV2/reports/20260917_redbox_timing_energy_audit/evidence/ours_narrow_clean_final/report.json']
-        visible = ['LightGenV2/reports/20260917_redbox_timing_energy_audit/evidence/ours_narrow_clean_final/consolidate_narrow_optical_power.py',
+        visible = ['LightGenV2/reports/20260917_redbox_timing_energy_audit/evidence/ours_narrow_clean_final/new_consolidation.py',
                    'LightGenV2/reports/20260917_redbox_timing_energy_audit/evidence/future_run/report.json']
         self.assertEqual(self.ignored(private + visible), set(private))
+    def test_named_timing_source_attachments_have_exact_original_recovery(self):
+        import json, hashlib
+        record=json.loads((ROOT/'maintenance/storage/HISTORICAL_TIMING_SOURCE_VISIBILITY_20261007.json').read_text())
+        private=[]
+        for group in record['groups']:
+            blob=subprocess.check_output(['git','cat-file','blob',group['blob']],cwd=ROOT)
+            self.assertEqual(hashlib.sha256(blob).hexdigest(),group['sha256'])
+            for name in group['paths']:
+                self.assertEqual((ROOT/name).read_bytes(),blob)
+                private.append(name)
+        self.assertEqual(len(private),18)
+        self.assertEqual(len(set(private)),18)
+        self.assertFalse(record['originals_deleted_moved_or_modified'])
+        visible=[str(Path(p).parent/'new_tool.py').replace('\\','/') for p in private]
+        self.assertEqual(self.ignored(private+visible),set(private))
     def test_known_machine_config_names_only(self):
         private = ['future_task/LAB.local.json', 'future_task/dual.local.json', 'future_task/paths.local.yaml']
         public = ['future_task/LAB.example.json', 'future_task/dual.example.json', 'future_task/config.yaml']
