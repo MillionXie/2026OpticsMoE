@@ -28,8 +28,13 @@
 
 Physical最后新四槽功率4.55%→12.02%。功率分配变散不等于所有任务均形成样本级分工，EuroSAT最大权重仍几乎总落在槽13，部分槽仍很弱。功率不是专家因果贡献。
 
-![完整验证功率与argmax分布](expert_distribution_validation.png)
+原完整验证功率与argmax图文件名为`expert_distribution_validation.png`。
 
-![每任务固定索引0、1的验证样本](expert_examples_validation.png)
+原每任务固定索引0、1验证样本图文件名为`expert_examples_validation.png`。
+
+2026-10-07这两份私有历史PNG未纳入main，本机本目录也没有原文件，因此不显示
+不存在的嵌入图。未删除远端原图，未重新绘图或改变上述验证结果；原结果来源仍是
+下方列出的run、source/result/selected_test及expert_examples记录。图片本身的
+完整恢复仍是具名资产缺项，不能把正文表格当成原PNG字节恢复证据。
 
 source.json保存源checkpoint、训练源码commit、验证样本数与选中轮次；result.json保存完整验证与旧专家逐元素未变核验；selected_test.json保存唯一测试、checkpoint SHA256和评估commit；expert_examples_validation.json保存固定索引预测和路由功率。获选权重唯一读出为shared_head.weight (10,784)，无额外头；服务器29项测试通过，本轮训练与推理进程均已结束并释放GPU。
