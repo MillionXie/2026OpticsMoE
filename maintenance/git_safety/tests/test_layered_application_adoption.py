@@ -25,6 +25,29 @@ def test_imported_application_sources_match_pinned_original_bytes():
             ast.parse(payload)
 
 
+def test_selected_application_pt_cannot_be_mispackaged_as_old_standard_head(tmp_path):
+    identity=json.loads((TASK/'layered_application_import_20261007.json').read_text(encoding='utf8'))['selected_application']
+    assert identity['epoch']==45
+    assert identity['checkpoint_sha256']=='03cb861c3ac344556601eb3eb6d7d1a22b77a54d2e7e68e85d77ee30fb09eb21'
+    assert identity['changed_cell_accuracy_simulation']==.8765
+    assert identity['same_checkpoint_remove_optical']==.4845
+    assert identity['physical_accuracy_for_this_checkpoint'] is None
+    assert 'electronicexp0p50' in identity['architecture']
+    run=tmp_path/'run';run.mkdir()
+    (run/'resolved_config.json').write_text('{}',encoding='utf8')
+    tree=ast.parse((TASK/'build_lab_package.py').read_text(encoding='utf8'))
+    build=next(n for n in tree.body if isinstance(n,ast.FunctionDef) and n.name=='build')
+    namespace={'json':json}
+    exec(compile(ast.Module(body=[build],type_ignores=[]),'build_lab_package.build','exec'),namespace)
+    torch=ModuleType('torch')
+    torch.load=lambda *args,**kwargs: {'architecture':identity['architecture'],'epoch':45}
+    safe=ModuleType('safetensors.torch');safe.save_file=lambda *args,**kwargs: None
+    with patch.dict(sys.modules,{'torch':torch,'safetensors':ModuleType('safetensors'),'safetensors.torch':safe}):
+        with pytest.raises(ValueError,match='exclusively OURS standard-head epoch40'):
+            namespace['build'](run,tmp_path/'data',tmp_path/'output')
+    assert not (tmp_path/'output').exists()
+
+
 def merged_config(name, seen=()):
     assert name not in seen
     value=yaml.safe_load((TASK/'configs'/name).read_text(encoding='utf8'))

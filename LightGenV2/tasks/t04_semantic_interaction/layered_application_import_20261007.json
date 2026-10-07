@@ -2,6 +2,31 @@
   "source_commit": "a61a3746d39765991048d95e40812d1028d70c93",
   "actual_server_runtime_source": "/DATA/DATA1/guest3/LightGenV2_worktrees/t04_layered_1bc120428",
   "scope": "Application layered layout renderer, compressed residual profiles and Qwen matched baseline; not G2-G5 robust final weights",
+  "selected_application": {
+    "run": "layered_dc30_ccdsmall_selected_e45_s73_20260925",
+    "profile": "layered_scene_exp05_dc30_ccdsmall",
+    "epoch": 45,
+    "selection": "User-selected epoch45, not automatic epoch70 best; historical TEST-selected development result",
+    "checkpoint": "LightGenV2/tasks/t04_semantic_interaction/runs/simulation/layered_dc30_ccdsmall_selected_e45_s73_20260925/selected_checkpoint.pt",
+    "checkpoint_sha256": "03cb861c3ac344556601eb3eb6d7d1a22b77a54d2e7e68e85d77ee30fb09eb21",
+    "architecture": "t04_embedding_only_optical_alpha0.4001_0.9500_e2_scaleccd_positionlinear_v1_electronicexp0p50_routerfill_sharedhead_v2",
+    "changed_cell_accuracy_simulation": 0.8765,
+    "same_checkpoint_remove_optical": 0.4845,
+    "physical_accuracy_for_this_checkpoint": null,
+    "train_samples": 5000,
+    "test_samples": 1000,
+    "source_training_commit": "7121e2e0758ef3aae8c2aa29e8002a6e81e7d204",
+    "local_and_actual_training_server_checkpoint_sha_rechecked": true,
+    "local_cpu_checkpoint_metadata_read": true,
+    "full_model_inference_repeated": false,
+    "record_sha256": {
+      "selection.json": "ad0ef105b24932c8235572ac25b49403f1bc28139c37251c7288822eb4c950f3",
+      "audit.json": "3bda0aba07909a65efa76a369aec6c263f03e052f2eb514c46d37a577652338e",
+      "split_contract.json": "f186d66f67429b73fa375622d0138fdc574b77027960d723b55087a0c1591de5"
+    },
+    "standalone_builder_boundary": "Existing build_lab_package.build and standalone.py are pinned to old standard-head epoch40; do not use them unchanged to deliver this layered epoch45 model",
+    "hardware_record_boundary": "The exp05 0.9365 baseline / 0.671 direct / 0.8375 adapted report is a different historical weight; do not assign its physical metrics to this PT"
+  },
   "actual_server_files_rechecked": true,
   "hash_normalization": "CRLF to LF",
   "files": [
