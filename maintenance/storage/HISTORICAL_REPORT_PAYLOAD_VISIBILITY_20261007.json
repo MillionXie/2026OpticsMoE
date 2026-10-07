@@ -1,4 +1,259 @@
 {
+  "additional_named_output_artifacts": {
+  "scope": "49 named historical output tables, pictures, per-sample predictions and raw results; originals preserved; no source or configuration adoption",
+  "local_original_and_zip_raw_sha_equal": 49,
+  "server_same_paths_missing": 49,
+  "originals_deleted_or_moved": false,
+  "assets_or_metrics_regenerated": false,
+  "fields": [
+    {
+      "path": "LightGenV2/reports/20260915_lgvq_topsw/operation_count_and_topsw.json",
+      "bytes": 116100,
+      "sha256": "a2773ce8b9330f7e8df59f3f7d6e8773143d35e877d4bfc9750b0144efbf755c"
+    },
+    {
+      "path": "LightGenV2/reports/20260917_redbox_timing_energy_audit/energy_recalculation_20260920/energy_recalculation_report.json",
+      "bytes": 1134,
+      "sha256": "af25dd24fa9f04d6cccdef0ff7ee586d2096d424c495b3558d0cf86f519a08d6"
+    },
+    {
+      "path": "LightGenV2/reports/baseline_plotting_20260922/_server_raw/abo_image_to_image/final_report.json",
+      "bytes": 2500,
+      "sha256": "0f8a23f8f029d8578ed2da60fe1be98de68b589dcf9036ca53b562e93f481a27"
+    },
+    {
+      "path": "LightGenV2/reports/baseline_plotting_20260922/_server_raw/abo_image_to_text/per_product_metrics.json",
+      "bytes": 23530,
+      "sha256": "b739726d49b5d5787bc8aa5397497f6ca3fc4fbcb9986e50ee7abd2c815fee05"
+    },
+    {
+      "path": "LightGenV2/reports/baseline_plotting_20260922/_server_raw/abo_text_to_image/contain_white_2048_predictions.json",
+      "bytes": 46656,
+      "sha256": "d33ce2d3efc98467750e0917d4d098fa33e7e89fe6e06cfc37811fe359319cbf"
+    },
+    {
+      "path": "LightGenV2/reports/baseline_plotting_20260922/_server_raw/abo_text_to_image/contain_white_64_predictions.json",
+      "bytes": 46673,
+      "sha256": "089cae9e9938123da4b821cba4a20bac1dc3120ee4cb8cbbb416d464b231dc48"
+    },
+    {
+      "path": "LightGenV2/reports/baseline_plotting_20260922/_server_raw/abo_text_to_image/dynamic_2048_predictions.json",
+      "bytes": 46653,
+      "sha256": "0e48c271344db33f5eb80160133fb51cb7cf0df2a99ebf5a0120f75739c09e49"
+    },
+    {
+      "path": "LightGenV2/reports/baseline_plotting_20260922/_server_raw/abo_text_to_image/dynamic_64_predictions.json",
+      "bytes": 46670,
+      "sha256": "4b8e69229e78ce029a90b68da7f0739196d4d3e40f7b0f5bcb77a0b9ef30be5c"
+    },
+    {
+      "path": "LightGenV2/reports/baseline_plotting_20260922/_server_raw/abo_text_to_image/report.json",
+      "bytes": 224190,
+      "sha256": "e26ea454d46e9911e8355928be35bf589adae854445e0ac66ec047924a187e54"
+    },
+    {
+      "path": "LightGenV2/reports/baseline_plotting_20260922/_server_raw/salicon/selected_checkpoint_test_evaluation.json",
+      "bytes": 1546,
+      "sha256": "121899505294ce5efa819e20104eeb930c07741fcdd313f41f6d937f251ad32f"
+    },
+    {
+      "path": "LightGenV2/reports/baseline_plotting_20260922/delivery/abo_image_to_image/source_report.json",
+      "bytes": 2500,
+      "sha256": "0f8a23f8f029d8578ed2da60fe1be98de68b589dcf9036ca53b562e93f481a27"
+    },
+    {
+      "path": "LightGenV2/reports/baseline_plotting_20260922/delivery/abo_image_to_text/per_product_metrics.json",
+      "bytes": 23530,
+      "sha256": "b739726d49b5d5787bc8aa5397497f6ca3fc4fbcb9986e50ee7abd2c815fee05"
+    },
+    {
+      "path": "LightGenV2/reports/baseline_plotting_20260922/delivery/abo_text_to_image/source_report.json",
+      "bytes": 224190,
+      "sha256": "e26ea454d46e9911e8355928be35bf589adae854445e0ac66ec047924a187e54"
+    },
+    {
+      "path": "LightGenV2/reports/baseline_plotting_20260922/delivery/salicon/source_report.json",
+      "bytes": 1546,
+      "sha256": "121899505294ce5efa819e20104eeb930c07741fcdd313f41f6d937f251ad32f"
+    },
+    {
+      "path": "LightGenV2/reports/multimodal_meeting_20260919/evidence/02_results.json",
+      "bytes": 1708,
+      "sha256": "2e3e04bf234a0a4e81c4237e0b2dbeeee6f7571c7f941421541582344585fd1b"
+    },
+    {
+      "path": "LightGenV2/reports/multimodal_meeting_20260919/evidence/03_results.json",
+      "bytes": 3440,
+      "sha256": "ce37d35a1b06eca421dbf66a6b418c6890e7e0179d9596586f5409e316210ac8"
+    },
+    {
+      "path": "LightGenV2/reports/multimodal_meeting_20260919/evidence/retrain_20260920/clevr_nodrop_results.json",
+      "bytes": 1805,
+      "sha256": "76f2ee939743fd5d498562e2b9bd7983fcf9582df2898f0f0c96f42d24a0857e"
+    },
+    {
+      "path": "LightGenV2/reports/multimodal_meeting_20260919/evidence/retrain_20260920/clevr_visual_lite_featuredrop05_60ep_s17_v1/test/results.json",
+      "bytes": 1839,
+      "sha256": "8600182f6f5bc48ad6390592959f088f6558bd0b469a449e861679250c28b1c9"
+    },
+    {
+      "path": "LightGenV2/reports/multimodal_meeting_20260919/evidence/retrain_20260920/clevr_visual_lite_featuredrop05_60ep_s17_v1/train/fixed/d2nn/result.json",
+      "bytes": 1506,
+      "sha256": "35bd6e7364350b2b2c7cb624d35f9c57f7f951524aceb32e24abee5bdca3670c"
+    },
+    {
+      "path": "LightGenV2/reports/multimodal_meeting_20260919/evidence/retrain_20260920/clevr_visual_lite_featuredrop05_60ep_s17_v1/train/fixed/moe/result.json",
+      "bytes": 2054,
+      "sha256": "3bca83ff111fffdf3676963234bd02ec9b5d2f3c2fa8945edfe993e2861dc527"
+    },
+    {
+      "path": "LightGenV2/reports/multimodal_meeting_20260919/evidence/retrain_20260920/clevr_visual_lite_softsign_50ep_s17_v1/test/results.json",
+      "bytes": 1814,
+      "sha256": "5c3de6929a350b2214341a222cc2e755c05170d6d741e5572594ae3299c2acd7"
+    },
+    {
+      "path": "LightGenV2/reports/multimodal_meeting_20260919/evidence/retrain_20260920/clevr_visual_lite_softsign_50ep_s17_v1/train/fixed/d2nn/result.json",
+      "bytes": 1507,
+      "sha256": "1217974f76855bcc0d947a8c5e034ea0f1469cdb85dcc3a8796271ef900e4871"
+    },
+    {
+      "path": "LightGenV2/reports/multimodal_meeting_20260919/evidence/retrain_20260920/clevr_visual_lite_softsign_50ep_s17_v1/train/fixed/moe/result.json",
+      "bytes": 2049,
+      "sha256": "50d6eafb304c9042ce3d29c12f096b7bbb581d88f3cb6696832eac984e4f28f4"
+    },
+    {
+      "path": "LightGenV2/reports/multimodal_meeting_20260919/evidence/retrain_20260920/eurosat_narrow_frontend_oeo_s42_v1/pretrain/results.json",
+      "bytes": 6495,
+      "sha256": "704f72c335f9f5979effe2841b7f3ac79e9df2270aaa49e7ba7b2155015ea87a"
+    },
+    {
+      "path": "LightGenV2/reports/multimodal_meeting_20260919/evidence/retrain_20260920/eurosat_narrow_frontend_oeo_s42_v1/test/results.json",
+      "bytes": 14433,
+      "sha256": "9bc17eedd560d1a4fa8c800bfe0ac03f096db3add7983613525146b9a44460e2"
+    },
+    {
+      "path": "LightGenV2/reports/multimodal_meeting_20260919/evidence/retrain_20260920/eurosat_narrow_frontend_oeo_s42_v1/train/dynamic_four/history.json",
+      "bytes": 168383,
+      "sha256": "e5703280c19e56eb20d13a3c1c0cacabe2f2a99018a4377ccdb4b3924b8d7871"
+    },
+    {
+      "path": "LightGenV2/reports/multimodal_meeting_20260919/evidence/retrain_20260920/eurosat_narrow_frontend_oeo_s42_v1/train/full_d2nn/history.json",
+      "bytes": 117134,
+      "sha256": "9b2925189ba93128bdceefde3b7fc5ab912016887a1c57a2ed97ee109a3e54df"
+    },
+    {
+      "path": "LightGenV2/reports/multimodal_meeting_20260919/evidence/retrain_20260920/eurosat_narrow_frontend_oeo_s42_v1/train/results.json",
+      "bytes": 14714,
+      "sha256": "e7bed7971fe67287d647d5e5a32cd355771b2c47cf0c8fbfe1c6f90106a9324a"
+    },
+    {
+      "path": "LightGenV2/reports/multimodal_meeting_20260919/evidence/retrain_20260920/eurosat_oeo_results.json",
+      "bytes": 5443,
+      "sha256": "7f53289e0898e1de13c845404bcae5f1ebb286358a695c9f08af5a828bd6458f"
+    },
+    {
+      "path": "LightGenV2/reports/multimodal_meeting_20260919/evidence/retrain_20260920/eurosat_oeo_train_results.json",
+      "bytes": 10175,
+      "sha256": "9f062522d09f3cdc32b7904b326c7b541e478aaa7e94383f4e4cad3b97130046"
+    },
+    {
+      "path": "LightGenV2/reports/multimodal_meeting_20260919/evidence/retrain_20260920/eurosat_shared_frontend_oeo_s42_v2/test/results.json",
+      "bytes": 14373,
+      "sha256": "f9e9c3733d5b605f94f2e789dcc6df25feb59b987e08516ae6132326420431a7"
+    },
+    {
+      "path": "LightGenV2/reports/multimodal_meeting_20260919/evidence/retrain_20260920/eurosat_shared_frontend_oeo_s42_v2/train/dynamic_four/history.json",
+      "bytes": 168294,
+      "sha256": "9698d7cc779366e91a94d3e51cd4bac6ebd11c79eb0041c5d264c818093408d7"
+    },
+    {
+      "path": "LightGenV2/reports/multimodal_meeting_20260919/evidence/retrain_20260920/eurosat_shared_frontend_oeo_s42_v2/train/full_d2nn/history.json",
+      "bytes": 117127,
+      "sha256": "11d1d2c7da05071e57ba4b25fa4a9acf9d478c961abc4f1ab5f7f93b12492b5d"
+    },
+    {
+      "path": "LightGenV2/reports/multimodal_meeting_20260919/evidence/retrain_20260920/eurosat_shared_frontend_oeo_s42_v2/train/results.json",
+      "bytes": 14655,
+      "sha256": "2786f021c347c355b5af90eb5b89965dd5e6ffef34e1a87c1f338ac0ab1bb2de"
+    },
+    {
+      "path": "LightGenV2/reports/20260915_lgvq_topsw/.codex-finalizer-power-slide/candidate.pptx.inspect.ndjson",
+      "bytes": 5840,
+      "sha256": "f7a26980cd910a0562f326ffd529aa29fdd74a2e45901a3c8ab581a937574e32"
+    },
+    {
+      "path": "LightGenV2/reports/20260928_nine_task_a100_table/A100_nine_task_energy_efficiency_20260928.xlsx",
+      "bytes": 8776,
+      "sha256": "a3bf7fbd9b312b35c8c5117e8746c0b034405ade55e712b70fc8ef53b288bdb2"
+    },
+    {
+      "path": "LightGenV2/reports/20260928_nine_task_a100_table/A100_nine_task_energy_efficiency_20260928.xlsx.inspect.ndjson",
+      "bytes": 156887,
+      "sha256": "9bb97fe09bd23fccc47f8e43ec1eeef5c820a75d8b1eaa1634f5b439578cf4e8"
+    },
+    {
+      "path": "LightGenV2/reports/20260928_nine_task_a100_table/A100_nine_task_energy_efficiency_COMPLETE_20260928.xlsx",
+      "bytes": 8792,
+      "sha256": "332f3e1aff0a426c0d7c5a1bc38f7becc98fd46b110454cde6ea34aedec396ad"
+    },
+    {
+      "path": "LightGenV2/reports/20260928_nine_task_a100_table/A100_nine_task_energy_efficiency_COMPLETE_20260928.xlsx.inspect.ndjson",
+      "bytes": 162847,
+      "sha256": "4aede6804513739f7541753312236c1dc7412d7e2531feb39a087f63d504022e"
+    },
+    {
+      "path": "handoffs/abo_text_to_image_figure_pack_20260928/asset_index.csv",
+      "bytes": 31592,
+      "sha256": "9d8b487a21e20a217bb0e93d2e7a00ac869e554febffe64698ce15abc7689c31"
+    },
+    {
+      "path": "handoffs/abo_text_to_image_figure_pack_20260928/cases_overview.csv",
+      "bytes": 1614,
+      "sha256": "7b1c11b55fa81cdded40a8006e4351b698cb658c2c1811d83c43f1bbb0e27e4e"
+    },
+    {
+      "path": "handoffs/abo_text_to_image_figure_pack_20260928/rankings.csv",
+      "bytes": 31766,
+      "sha256": "921de6bb04853ead0d21eb34d41d088222d6c0d359a0e7bfac3957f4c557c63f"
+    },
+    {
+      "path": "handoffs/abo_text_to_image_figure_pack_20260928/source/test.csv",
+      "bytes": 839270,
+      "sha256": "4ca5834abf4bb4d614b41f05b5b2481b3d41720dd78c1c37b05923c97657dfb8"
+    },
+    {
+      "path": "handoffs/abo_text_to_image_figure_pack_20260928/source/titles.csv",
+      "bytes": 10533,
+      "sha256": "c97e8da3c6c608a706f2cc0d284aeafb873fc6cc17d04a7c9f9f66b2135846c1"
+    },
+    {
+      "path": "handoffs/t12_four_group_summary_20260927/small_matched_export/figure_shortlist.csv",
+      "bytes": 144691,
+      "sha256": "0909dda7ecd7164edc3f53b7038bde545363cf90156df2e3653d84c6fc493d3b"
+    },
+    {
+      "path": "handoffs/t12_lab_robust17m_20260927/decoder20_comparison/figure_shortlist.csv",
+      "bytes": 144691,
+      "sha256": "0909dda7ecd7164edc3f53b7038bde545363cf90156df2e3653d84c6fc493d3b"
+    },
+    {
+      "path": "handoffs/t12_lab_robust17m_20260927/decoder20_comparison/full_verified/figure_shortlist.csv",
+      "bytes": 144691,
+      "sha256": "0909dda7ecd7164edc3f53b7038bde545363cf90156df2e3653d84c6fc493d3b"
+    },
+    {
+      "path": "handoffs/t13_temporal_ablation_20260927/presentation_build/candidate.pptx.inspect.ndjson",
+      "bytes": 8622,
+      "sha256": "51d50109dfa79e6d2088c8d6db2b779af5094ef8fc269c80a54ddb256ae9159f"
+    },
+    {
+      "path": "outputs/t12_perceptual_comparison_20260928/three_task_scores.csv",
+      "bytes": 4140,
+      "sha256": "bd56015185eb2aec7cbd713282615ddabe889688634c0ed9e0deebf82ca5863c"
+    }
+  ],
+  "limits": "No remote full backup; no blanket ignore; masks, split/manifest/config and future reports not selected"
+},
   "schema": 1,
   "purpose": "Retained named historical graphics/CSV, dated T12 results and 12 September 28 A100 report JSON; not source, input configs, identities or contracts",
   "backup_archive": ".codex_tmp\\storage_git_backup_20261002\\untracked_asset_records_20261006.zip",
