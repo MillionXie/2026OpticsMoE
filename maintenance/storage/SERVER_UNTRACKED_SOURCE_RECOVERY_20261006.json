@@ -1,4 +1,17 @@
 {
+  "visibility_update_20261007": {
+    "scope": "40 named ABO_Lab_8um historical dual-machine delivery source/config files from the existing archives below; not the five unique timing/spatial source files",
+    "server_current_raw_sha_equal": 40,
+    "server_archive_raw_sha_equal": 40,
+    "local_archive_raw_sha_equal": 40,
+    "server_untracked_before": 40,
+    "local_original_files_present": 0,
+    "root_ignore_rules": "Exact file paths only; no new directory wildcard",
+    "original_files_deleted_or_moved": false,
+    "laboratory_computer_contacted": false,
+    "original_local_child_ignore": "ABO_Lab_8um/.gitignore already ignores original_*/ locally; left unchanged, not installed on server",
+    "limits": "Exit from pending Git source list only; not main runtime adoption, disk release or permission to remove historical files"
+  },
   "schema": 1,
   "scope": "45 server main untracked source files absent from prior Git byte identities",
   "prerequisite_commit": "d1530d34218e56f38057b796125059d0018cac91",

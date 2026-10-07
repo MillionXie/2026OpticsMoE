@@ -2404,3 +2404,47 @@ node_modules/
 /handoffs/robust_retrain_20260927/physical_bounded30_recover7_20260927_report.json
 /handoffs/robust_retrain_20260927/physical_bounded30_recover_spatial_20260927_report.json
 /handoffs/robust_retrain_20260927/physical_bounded30_spatial_extend_20260927_report.json
+
+# Frozen historical dual-machine ABO delivery sources; original files retained.
+# Exact recovery identities: SERVER_UNTRACKED_SOURCE_RECOVERY_20261006.json.
+# No directory wildcard: unique timing scripts and future source remain out of this rule.
+/ABO_Lab_8um/original_a100/abo_dual/__init__.py
+/ABO_Lab_8um/original_a100/abo_dual/backend.py
+/ABO_Lab_8um/original_a100/abo_dual/client.py
+/ABO_Lab_8um/original_a100/abo_dual/common.py
+/ABO_Lab_8um/original_a100/abo_dual/optics.py
+/ABO_Lab_8um/original_a100/abo_dual/server.py
+/ABO_Lab_8um/original_a100/check_local.py
+/ABO_Lab_8um/original_a100/install_a100.cmd
+/ABO_Lab_8um/original_a100/run_a100.py
+/ABO_Lab_8um/original_a100/run_optics.py
+/ABO_Lab_8um/original_a100/start_a100_10.cmd
+/ABO_Lab_8um/original_a100/start_a100_full.cmd
+/ABO_Lab_8um/original_a100/tests/verify_backend.py
+/ABO_Lab_8um/original_a100/tests/verify_camera_pipeline.py
+/ABO_Lab_8um/original_inference/backend/LightGenV2/tasks/t08_abo_image_text_retrieval/configs/optical_router_moe_dc20_kd1_balance1_optimized.yaml
+/ABO_Lab_8um/original_inference/infer.py
+/ABO_Lab_8um/original_optics/abo_dual/__init__.py
+/ABO_Lab_8um/original_optics/abo_dual/backend.py
+/ABO_Lab_8um/original_optics/abo_dual/client.py
+/ABO_Lab_8um/original_optics/abo_dual/common.py
+/ABO_Lab_8um/original_optics/abo_dual/optics.py
+/ABO_Lab_8um/original_optics/abo_dual/server.py
+/ABO_Lab_8um/original_optics/check_local.py
+/ABO_Lab_8um/original_optics/config/generated/formal_hardware.yaml
+/ABO_Lab_8um/original_optics/config/reference/LAB_CONFIG.yaml
+/ABO_Lab_8um/original_optics/config/reference/generated/bootstrap_hardware.yaml
+/ABO_Lab_8um/original_optics/config/reference/generated/formal_hardware.yaml
+/ABO_Lab_8um/original_optics/config/reference/generated/geometry_source.generated.yaml
+/ABO_Lab_8um/original_optics/install_optics.cmd
+/ABO_Lab_8um/original_optics/run_a100.py
+/ABO_Lab_8um/original_optics/run_optics.py
+/ABO_Lab_8um/original_optics/start_optics.cmd
+/ABO_Lab_8um/original_optics/tests/verify_backend.py
+/ABO_Lab_8um/original_optics/tests/verify_camera_pipeline.py
+/ABO_Lab_8um/original_a100/models/Qwen3-VL-Embedding-2B/scripts/qwen3_vl_embedding.py
+/ABO_Lab_8um/original_a100/tests/test_protocol.py
+/ABO_Lab_8um/original_a100/tests/verify_mock_runtime.py
+/ABO_Lab_8um/original_inference/models/Qwen3-VL-Embedding-2B/scripts/qwen3_vl_embedding.py
+/ABO_Lab_8um/original_optics/tests/test_protocol.py
+/ABO_Lab_8um/original_optics/tests/verify_mock_runtime.py
