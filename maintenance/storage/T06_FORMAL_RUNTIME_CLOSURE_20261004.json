@@ -9,6 +9,14 @@
     "difference": "Server index retained pre-capture no-reproduction wording; local index links already-published capture, adaptation and baseline reports. Added explicit current-version navigation without rewriting historical metrics.",
     "all_index_links_published": true,
     "navigation_and_registry_tests_passed": 19,
+    "linux_post_publication_check": {
+      "commit": "320a5eccebfe7f97fa3cc688f2a233192bf12cd8",
+      "navigation_and_synthetic_tests_passed": 18,
+      "full_private_asset_registry_test_passed": false,
+      "global_registry_asset_errors": 13,
+      "scope": "Four locally registered PT paths absent on Linux, eight private report/evidence checks absent and one T11 recovery-ref mismatch. These are global asset/ref requirements, not T06 navigation failures; do not waive or claim full server artifact closure.",
+      "published_tree_check": "14 entries, zero source/navigation errors; three private delivery materials still required"
+    },
     "models_datasets_timing_or_hardware_changed": false
   },
   "schema_version": 1,
