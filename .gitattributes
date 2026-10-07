@@ -1,0 +1,2 @@
+# Git invokes this shell hook on Windows and Linux; preserve LF in both checkouts.
+.githooks/pre-commit text eol=lf

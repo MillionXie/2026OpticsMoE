@@ -1,6 +1,23 @@
 # 单主线治理：第一阶段安全结果
 
-## 当前入口（2026-10-06）
+## 当前入口（2026-10-07）
+
+主线提交守卫位于`.githooks/pre-commit`，调用原只读暂存检查。仅发布文件不会启用：
+每台主仓库须先检查原hook，随后以核实的HEAD显式安装：
+
+```text
+python maintenance/git_safety/install_commit_guard.py
+python maintenance/git_safety/install_commit_guard.py --apply --expected-head <核实的main提交>
+```
+
+安装器只改本仓库`core.hooksPath`，原有自定义hook/路径、非main入口、过期HEAD及
+已有暂存事务会拒绝自动修改。源文件和Git引用不变，不安装Python包。
+安装后普通提交会拦截权重/缓存/传输包、具名私有目录、大文件以及有限的明显凭据；
+失败时保留暂存区供人工处理，不自动删除文件。它不是完整secret扫描或操作系统强锁，
+`--no-verify`或修改配置仍能绕过，也不防止创建分支或多个窗口同时写文件。
+现用旧工作树没有`.githooks`时不会获得该检查，不能声称已约束全部窗口。
+实际安装情况以本机安装器检查为准；恢复原未设置状态可在串行Git事务中执行
+`git config --local --unset core.hooksPath`（仅当安装前确实未设置）。
 
 身份核查默认只选源码后缀。检查报告、Markdown、CSV等未跟踪资产时，可显式使用：
 
@@ -13,9 +30,9 @@ python maintenance/git_safety/source_snapshot_scope.py --history --all-files --s
 运行依赖和独立数据备份不在覆盖内。没有Git身份的报告不是垃圾；必须另行保全。
 有身份也不意味着可以删除、整目录ignore或已经成为正式运行入口。
 
-本机及训练服务器主目录已实际使用main；实验室仅更新受保护发布引用，
-现用运行工程未覆盖。本机2条分支、14个登记工作目录；服务器最近快照3条分支、
-83个登记工作目录。历史目录包含独有源码、数据和测速，不按数量批删。
+本机、训练服务器及实验室主目录已实际使用main；现用运行子工程未覆盖。
+本机和训练服务器各2条开发分支；实验室主仓库1条main。
+历史工作目录包含独有源码、数据和测速，不按数量批删。
 本机28个已退役名称的失效Git配置也已备份后退出，现用两条分支设置不变。
 
 日常从根 [START_HERE](../../START_HERE.md) 进入；
