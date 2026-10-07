@@ -14,6 +14,8 @@ from .lab_runtime import PINS,STAGES,load_model,phase_planes,forward,replay,read
 
 def build(a):
  root=Path(__file__).resolve().parents[3];out=Path(a.output).resolve();source=Path(a.source_root).resolve()
+ if out.exists():raise FileExistsError('Use a new release output, not overwrite')
+ if out.with_suffix('.zip').exists():raise FileExistsError(out.with_suffix('.zip'))
  checkpoint=source/'LightGenV2/tasks/t06_video_quality_assessment/runs/simulation'/PINS[a.target]['run']/'best_checkpoint.pt'
  model,settings=load_model(a.target,checkpoint,a.device)
  # Evaluation uses only the canonical view, never training augmentations/teachers.
@@ -21,7 +23,6 @@ def build(a):
  settings=dataclasses.replace(settings,**updates)
  from experiments.qwen3_vl_2b_lgvq_single_metric_o2_16frame_54.data import load_single_metric_cache
  payload=load_single_metric_cache(settings)
- if out.exists():raise FileExistsError('Use a new release output, not overwrite')
  out.mkdir(parents=True);(out/'weights').mkdir();shutil.copy2(checkpoint,out/'weights/best_checkpoint.pt')
  count=PINS[a.target]['videos_per_field'];indices=[i for i,split in enumerate(payload['splits']) if split=='test'];all_indices=list(indices)
  valid=[True]*len(indices)

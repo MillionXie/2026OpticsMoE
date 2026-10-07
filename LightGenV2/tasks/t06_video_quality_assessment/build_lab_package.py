@@ -1,4 +1,4 @@
-"""Build the current Temporal-36 hardware-control and fine-tuning ZIP."""
+"""Build a T06 lab package; legacy profile and explicit pinned SHS are distinct."""
 
 from __future__ import annotations
 
@@ -16,7 +16,20 @@ def main() -> int:
     parser.add_argument("--profile", default=CURRENT_PROFILE)
     parser.add_argument("--checkpoint", default=None)
     parser.add_argument("--output", default=None)
+    parser.add_argument("--bench", choices=("legacy", "shs"), default="legacy")
+    parser.add_argument("--target", choices=("spatial", "temporal"))
+    parser.add_argument("--source-root", default=str(REPO_ROOT))
+    parser.add_argument("--device", default="cuda")
+    parser.add_argument("--max-fields", type=int, default=0)
     args = parser.parse_args()
+    if args.bench == "shs":
+        if args.target is None or args.output is None:
+            parser.error("SHS requires --target and --output (new directory; ZIP is adjacent)")
+        if args.checkpoint is not None:
+            parser.error("SHS uses the target's pinned checkpoint under --source-root; --checkpoint is legacy-only")
+        from .lab_bundle import build
+        build(args)
+        return 0
     profile = load_profile(args.profile)
     backend = profile["backend"]
     checkpoint = (
@@ -36,6 +49,8 @@ def main() -> int:
         if args.output is None
         else Path(args.output).expanduser().resolve()
     )
+    if output.exists():
+        raise FileExistsError("Use a new release output; existing package must not be overwritten")
     command = [
         sys.executable,
         "-m",

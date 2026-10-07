@@ -72,8 +72,11 @@
     },
     {
       "path": "LightGenV2/tasks/t06_video_quality_assessment/lab_bundle.py",
-      "bytes": 7014,
-      "source_blob_sha256": "fe40a1c205ed39e08af7c0cdfc120e293eb327e5bcc5373fc141e1d39b317125"
+        "bytes": 7098,
+        "source_blob_sha256": "833bb16a95403e5ee5114fda4da82659d9f652a63d4d42f3ffb1f6da6390d65c",
+        "original_bytes": 7014,
+        "original_source_blob_sha256": "fe40a1c205ed39e08af7c0cdfc120e293eb327e5bcc5373fc141e1d39b317125",
+        "evolution": "2026-10-07: reject existing output directory or adjacent ZIP before loading the model; preserve original model and capture contract"
     },
     {
       "path": "LightGenV2/tasks/t06_video_quality_assessment/models/__init__.py",

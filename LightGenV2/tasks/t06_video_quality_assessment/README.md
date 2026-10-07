@@ -156,6 +156,12 @@ portable入口原样保留，相位保持器保留后续已有的可选`--releas
 来源和差异见[打包依赖身份](package_dependency_source_import_20261007.json)。
 这仅关闭两份源码缺项，不代表旧Temporal默认资产或机器SDK已完整。
 
+同日恢复正式SHS打包分派：显式使用 `--bench shs --target spatial|temporal
+--source-root <原资产根目录> --output <新的输出目录>`，调用既有 `lab_bundle`；
+不传 `--bench` 仍是旧legacy流程。SHS不接受 `--checkpoint` 静默替换封存权重，
+已有输出目录或相邻ZIP在加载模型前拒绝。参数分派及输出保护测试不加载PT/SDK，
+本次没有构建新包或覆盖旧包，不代表完整现场复现通过。
+
 - 六阶段顺序：[`hardware/README.md`](hardware/README.md)
 - 构建实验室完整包：
 

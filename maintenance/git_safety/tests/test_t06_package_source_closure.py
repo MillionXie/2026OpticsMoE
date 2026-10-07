@@ -4,6 +4,8 @@ import subprocess
 import sys
 from pathlib import Path
 
+import pytest
+
 ROOT = Path(__file__).resolve().parents[3]
 TASK = ROOT/'LightGenV2/tasks/t06_video_quality_assessment'
 ORIGINAL = '7093ec46082eed2fae127ec5028d3e2e8548b592'
@@ -54,3 +56,54 @@ def test_optional_release_is_only_change_from_formal_server_package():
     current = current.replace(" if a.release_file and a.release_file.exists():raise ValueError('Release file already exists')\n", '')
     current = current.replace("while not (a.release_file and a.release_file.exists()):", "while True:")
     assert current == original
+
+
+def test_shs_dispatch_requires_explicit_target_output_and_pinned_checkpoint(monkeypatch, tmp_path):
+    import types
+    from LightGenV2.tasks.t06_video_quality_assessment import build_lab_package as wrapper
+    calls=[]
+    module=types.ModuleType('LightGenV2.tasks.t06_video_quality_assessment.lab_bundle')
+    module.build=lambda args:calls.append(args)
+    monkeypatch.setitem(sys.modules,module.__name__,module)
+    monkeypatch.setattr(wrapper,'load_profile',lambda *_: (_ for _ in ()).throw(AssertionError('legacy dispatch')))
+    for flags in (['--bench','shs'],['--bench','shs','--target','spatial'],
+                  ['--bench','shs','--target','spatial','--output',str(tmp_path/'new'),'--checkpoint','other.pt']):
+        monkeypatch.setattr(sys,'argv',['builder',*flags])
+        with pytest.raises(SystemExit) as exc:
+            wrapper.main()
+        assert exc.value.code==2
+    monkeypatch.setattr(sys,'argv',['builder','--bench','shs','--target','temporal','--output',str(tmp_path/'new'),'--device','cpu'])
+    assert wrapper.main()==0
+    assert len(calls)==1 and calls[0].target=='temporal' and calls[0].device=='cpu'
+    assert not (tmp_path/'new').exists()
+
+
+@pytest.mark.parametrize('existing', ['directory','adjacent_zip'])
+def test_shs_output_collision_rejected_before_model_load(tmp_path,existing):
+    import argparse
+    # Execute the pure function definition, not the module's Torch imports.
+    function=next(n for n in ast.parse((TASK/'lab_bundle.py').read_text()).body
+                  if isinstance(n,ast.FunctionDef) and n.name=='build')
+    module=ast.Module(body=[function],type_ignores=[])
+    scope={'Path':Path,'__file__':str(TASK/'lab_bundle.py'),
+           'load_model':lambda *_: (_ for _ in ()).throw(AssertionError('model loaded before collision check'))}
+    exec(compile(ast.fix_missing_locations(module),'fixture_build','exec'),scope)
+    out=tmp_path/'release'
+    if existing=='directory':out.mkdir()
+    else:out.with_suffix('.zip').write_bytes(b'existing package')
+    before={p.name:p.read_bytes() if p.is_file() else None for p in tmp_path.iterdir()}
+    with pytest.raises(FileExistsError):
+        scope['build'](argparse.Namespace(output=str(out),source_root=str(tmp_path),target='temporal',device='cpu'))
+    assert before=={p.name:p.read_bytes() if p.is_file() else None for p in tmp_path.iterdir()}
+
+
+def test_legacy_output_collision_does_not_start_backend(monkeypatch,tmp_path):
+    from types import SimpleNamespace
+    from LightGenV2.tasks.t06_video_quality_assessment import build_lab_package as wrapper
+    checkpoint=tmp_path/'fixture.pt';checkpoint.write_bytes(b'not a model')
+    output=tmp_path/'existing.zip';output.write_bytes(b'original package')
+    monkeypatch.setattr(wrapper,'load_profile',lambda *_:{'backend':{},'artifacts':{}})
+    monkeypatch.setattr(wrapper.subprocess,'run',lambda *_args,**_kw: (_ for _ in ()).throw(AssertionError('backend launched')))
+    monkeypatch.setattr(sys,'argv',['builder','--checkpoint',str(checkpoint),'--output',str(output)])
+    with pytest.raises(FileExistsError):wrapper.main()
+    assert output.read_bytes()==b'original package'
