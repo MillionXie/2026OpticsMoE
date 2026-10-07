@@ -68,6 +68,20 @@ baseline各用对应分层数据；评估展示也使用原分层合成器，不
 不加载PT、Qwen缓存、正式TRAIN/TEST或设备；没有重测epoch45性能。
 下方仍未完成的数据/Qwen缓存闭包及独立交付包不能据此关闭；服务器环境未作安装。
 
+### 指定epoch45应用资产的只读检查
+
+`python -m LightGenV2.tasks.t04_semantic_interaction.verify_layered_assets --dataset-dir <原数据目录> --svg-dir <原SVG目录>`
+核对原TRAIN5000/TEST1000清单、token_embeddings_v1.pt和16个SVG的固定SHA，
+缺失或变化返回失败，不创建目录、复制资产或重建缓存，也不运行模型/TEST。
+身份见[layered资产清单](layered_asset_identity_20261007.json)。本地16个SVG与原服务器一致。
+服务器main默认数据/SVG/缓存路径目前缺失；原资产仍位于
+`/DATA/DATA1/guest3/LightGenV2_worktrees/t04_layered_1bc120428/LightGenV2/tasks/t04_semantic_interaction/`
+下的`dataset/openmoji_layered_anchor6_svg_v3`与`assets/openmoji-17.0.0-svg`。
+仅运行上述只读检查不能使原run入口自动改用这些路径；在明确路径绑定之前，
+不要运行prepare/all来自动生成另一份数据。现有缓存94,018,791字节，原位保留。
+清单一致尚不证明缓存tensor与每条样本的数值绑定或24,000张PNG的完整像素身份，
+不据此删除原运行目录或宣称epoch45完整复现。
+
 ## 2026-10-05 源码收敛边界
 
 本批将实际服务器的语义核心、共享电子头和六份已有配置纳入主线，未修改运行目录、

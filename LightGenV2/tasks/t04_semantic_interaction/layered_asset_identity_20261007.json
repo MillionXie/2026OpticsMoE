@@ -1,0 +1,88 @@
+{
+  "schema_version": 1,
+  "application_checkpoint_sha256": "03cb861c3ac344556601eb3eb6d7d1a22b77a54d2e7e68e85d77ee30fb09eb21",
+  "source_root": "/DATA/DATA1/guest3/LightGenV2_worktrees/t04_layered_1bc120428",
+  "dataset_files": {
+    "train.jsonl": {
+      "sha256": "452c0d4cede80ee8f838a853566b2bc52204d1c3c588fd2c6b4f7c99fac31fff",
+      "records": 5000
+    },
+    "test.jsonl": {
+      "sha256": "93aa528c61fb7da116dc0bb7e749f7f3e525d1140050982e33604e3e72d22fca",
+      "records": 1000
+    },
+    "token_embeddings_v1.pt": {
+      "sha256": "653491acbd0eade927e3a1f18d2f6858e9926bef3a6fadf0ba74db649a316ff0",
+      "bytes": 94018791
+    }
+  },
+  "svg_files": [
+    {
+      "path": "1F333.svg",
+      "sha256": "5e9aa542a9e8bce244c326fd2d1427f432ad72e5d8ba92905f3d801d393f6b63"
+    },
+    {
+      "path": "1F33B.svg",
+      "sha256": "8ec898c7225016a95cc1c71c1634ac2e1966f5c97b7d9ee209ebe35a003fa08b"
+    },
+    {
+      "path": "1F34E.svg",
+      "sha256": "b4db458333fa917a803c8d36865ae57ae5ea54d2aa0e1f906518d3f0c9bf2bcb"
+    },
+    {
+      "path": "1F3E0.svg",
+      "sha256": "edfb5e77a7d324526f76295c0b3eb913006fd0424a0ee3dd0f12b0824225568f"
+    },
+    {
+      "path": "1F408.svg",
+      "sha256": "d028cef4726d15bc5c84ff1751db9d90c35d990151972a5f044afd53691beff6"
+    },
+    {
+      "path": "1F415.svg",
+      "sha256": "a01131556b1f472f2be150b5e61bb77e4ffed96bbdbc9b60ac4a36b62ffac2a3"
+    },
+    {
+      "path": "1F426.svg",
+      "sha256": "950c880495d9668746d3af0cfc533de52a228bce41a9553e68b20016d86ece76"
+    },
+    {
+      "path": "1F4A1.svg",
+      "sha256": "fb98f3985e05ab294e1ca1beee18d5c557d1572b316756a9abd00d8901807b43"
+    },
+    {
+      "path": "1F4D8.svg",
+      "sha256": "79a3683e2aa173e34bf0b6432a4f91d5818124250325d6e443c023722bb244d2"
+    },
+    {
+      "path": "1F4F1.svg",
+      "sha256": "a69cdc48cf92ad4d52a58847393a2403c469673d2738fd88de01273817a6f9ab"
+    },
+    {
+      "path": "1F68C.svg",
+      "sha256": "7cb121f1c5b89588f9506e455778e54b527ed244fc321dd6bcee416f8df39be3"
+    },
+    {
+      "path": "1F697.svg",
+      "sha256": "f2bc314639afba633ef21e802c022fa64b6a3fe0e3d3739e5826a816f1895286"
+    },
+    {
+      "path": "1F6B2.svg",
+      "sha256": "1c550e12d994489de8d082ca49c8f24e73de2cc8e1271fd83fa7c78693a9595e"
+    },
+    {
+      "path": "2602.svg",
+      "sha256": "bf5b227c1702f9b87d329c470dd86f3c7e244f6e90134289eb358d679453ca8b"
+    },
+    {
+      "path": "2615.svg",
+      "sha256": "7de24e2f229c7b43848225ecdbb8b16c829e6a525e8b84fc6c3e584821027e1d"
+    },
+    {
+      "path": "26BD.svg",
+      "sha256": "f3d7e883a1d7a0776e5aa16ea857530884a3c12b192475fb116d351241f0bc8a"
+    }
+  ],
+  "local_svg_all_16_raw_equal": true,
+  "scope": "Selected layered epoch45 application only; not robust G2/G5",
+  "limits": "Cache bytes and manifest identities, not tensor-to-sample binding, image pixels or performance reproduction"
+}
