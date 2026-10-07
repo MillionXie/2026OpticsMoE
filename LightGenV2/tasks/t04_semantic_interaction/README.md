@@ -60,6 +60,14 @@ baseline各用对应分层数据；评估展示也使用原分层合成器，不
 所需历史依赖为 `resvg-py==0.5.0`，本轮未安装软件或换用PNG/其他渲染器掩盖差异。
 全套324项维护测试通过只覆盖工程合同，不覆盖这些需真实SVG环境的预览测试。
 
+后续本地复核已补齐此环境缺项：在现有qwen3vl-cifar10环境仅安装
+`resvg-py==0.5.0`（不升级其他依赖），原分层预览与数据测试14项全部通过。
+可用`python -m pip install --no-deps -r LightGenV2/tasks/t04_semantic_interaction/requirements-layered.txt`
+安装相同可选渲染器，再运行本任务`tests/test_layered_scene_preview.py`与
+`tests/test_layered_scene_data.py`。测试使用已有原SVG及合成样本/临时输出，
+不加载PT、Qwen缓存、正式TRAIN/TEST或设备；没有重测epoch45性能。
+下方仍未完成的数据/Qwen缓存闭包及独立交付包不能据此关闭；服务器环境未作安装。
+
 ## 2026-10-05 源码收敛边界
 
 本批将实际服务器的语义核心、共享电子头和六份已有配置纳入主线，未修改运行目录、

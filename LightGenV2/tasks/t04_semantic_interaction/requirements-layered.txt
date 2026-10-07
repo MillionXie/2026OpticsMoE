@@ -1,0 +1,2 @@
+# Optional original layered SVG renderer; not required by robust G2/G5.
+resvg-py==0.5.0
