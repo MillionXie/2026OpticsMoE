@@ -46,6 +46,21 @@ class VisibleSourceRecoveryTests(unittest.TestCase):
         row, _ = self.audit(b"x=1\n", b"x=2\n")
         self.assertEqual(row["status"], "unverified_retained")
 
+    def test_reachable_fallback_reads_and_compares_blob(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            payload = b"x=1\n"
+            (root / "source.py").write_bytes(payload)
+            oid = "b" * 40
+            index = {"files": [{"path": "source.py", "sha256": digest(payload)}]}
+            with patch("maintenance.storage.check_visible_source_recovery.subprocess.check_output",
+                       side_effect=[b"source.py\0", (oid + " source.py\n").encode(),
+                                    (oid + "\n").encode(), payload, b"head\n"]):
+                result = inspect(root, index, all_reachable=True)
+            self.assertEqual(result["files"][0]["status"], "reachable_exact_blob")
+            self.assertEqual(result["files"][0]["recovery_blob"], oid)
+            self.assertEqual(result["mutations"], [])
+
 
 if __name__ == "__main__":
     unittest.main()

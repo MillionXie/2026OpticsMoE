@@ -17,12 +17,16 @@ def digest(payload: bytes) -> str:
     return hashlib.sha256(payload).hexdigest()
 
 
-def inspect(root: Path, index: dict) -> dict:
+def inspect(root: Path, index: dict, all_reachable: bool = False) -> dict:
     def git(*args: str) -> bytes:
         return subprocess.check_output(["git", "-C", str(root), *args])
 
     visible = [p for p in git("ls-files", "--others", "--exclude-standard", "-z").decode().split("\0") if p]
     by_path = {r["path"]: r for r in index["files"]}
+    reachable = set()
+    if all_reachable:
+        reachable = {line.split(b" ", 1)[0].decode("ascii")
+                     for line in git("rev-list", "--objects", "--all").splitlines()}
     rows = []
     for name in visible:
         old = by_path.get(name)
@@ -54,10 +58,19 @@ def inspect(root: Path, index: dict) -> dict:
                     continue
                 row.update(status=kind, recovery_commit=commit, recovery_path=target)
                 break
+            if row["status"] == "unverified_retained" and all_reachable:
+                oid = subprocess.check_output(
+                    ["git", "-C", str(root), "hash-object", "--stdin"], input=payload
+                ).decode().strip()
+                if oid in reachable:
+                    blob = git("cat-file", "blob", oid)
+                    if blob == payload:
+                        row.update(status="reachable_exact_blob", recovery_blob=oid)
         rows.append(row)
     return {
         "head": git("rev-parse", "HEAD").decode().strip(),
         "index_head": index.get("head"),
+        "all_reachable_objects_checked": all_reachable,
         "indexed_visible_sources": len(rows),
         "unindexed_visible_files": sum(name not in by_path for name in visible),
         "counts": dict(Counter(r["status"] for r in rows)),
@@ -72,8 +85,10 @@ def main() -> int:
     parser.add_argument("--index", type=Path, required=True)
     parser.add_argument("--root", type=Path, default=Path.cwd())
     parser.add_argument("--summary", action="store_true")
+    parser.add_argument("--all-reachable", action="store_true",
+                        help="Also check current all-ref reachable blobs when the old index has no match")
     args = parser.parse_args()
-    result = inspect(args.root.resolve(), json.loads(args.index.read_text(encoding="utf-8")))
+    result = inspect(args.root.resolve(), json.loads(args.index.read_text(encoding="utf-8")), args.all_reachable)
     if args.summary:
         result.pop("files")
     print(json.dumps(result, ensure_ascii=False, indent=2))
