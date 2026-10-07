@@ -17,6 +17,11 @@
 
 本地1764项分组：LightGenV2 878、handoffs 707、旧ABO台架140、MNIST7、
 experiments23、TransferFromElectricity5、outputs3、tmp1。这是文件数，不是模型或算法数。
+夜间源码补齐后的新盘点：本地未跟踪1748项，其中465 Python、834 JSON、233 Markdown；
+并非1748项都应ignore。T12原baseline入口与审计工具已逐原源码恢复主线，
+服务器主目录未跟踪仍195项。上述1764为此前快照，不能当成当前余额。
+本轮还核对了旧T07 standalone试验和测速报告附带源码：这些文件并不与主线Python
+逐LF字节相同，不按“看起来重复”隐藏或删除；测速附带baseline源码尤其继续保留。
 十张旧MNIST／对齐预览及三张测速PDF页渲染按13个具体路径退出Git待提交，原图原地保留，
 当前逐文件SHA记录于.gitignore对应规则注释。31项忽略测试通过，原件SHA未变，
 新源码、新预览和新测速渲染文件仍可见；不删除任何测速，也不声称释放磁盘空间。
