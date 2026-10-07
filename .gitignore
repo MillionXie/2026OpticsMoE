@@ -2572,3 +2572,7 @@ node_modules/
 /LightGenV2/projects/lgvq_temporal/tests/test_source_contract.py
 /LightGenV2/projects/lgvq_temporal/train.py
 /LightGenV2/projects/lgvq_temporal/verify_release.py
+# Generated training history and per-sample evaluation data in handoff assets.
+# Keep originals on disk; this does not exclude source, config, manifest or summary reports.
+/handoffs/**/history.json
+/handoffs/**/test_samples.json
