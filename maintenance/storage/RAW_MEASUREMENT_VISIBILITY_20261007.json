@@ -1,0 +1,97 @@
+{
+  "scope": "Named existing raw historical 20260928 measurement CSV only; all originals remain in place",
+  "backup_archive": ".codex_tmp\\storage_git_backup_20261002\\untracked_asset_records_20261006.zip",
+  "backup_archive_sha256": "ec7fc89b4294ca2c89cd7589bc727317e4c2e105395cbcd7f65ff8ee22784777",
+  "files": [
+    {
+      "path": "LightGenV2/reports/20260928_nine_task_a100_table/raw_remote/formal_03_narrow/per_call_timings.csv",
+      "bytes": 48983,
+      "sha256": "5a9c7bac403b6767af649d807f65ce991ece8b68de57f29dc9268ee452b56bbf"
+    },
+    {
+      "path": "LightGenV2/reports/20260928_nine_task_a100_table/raw_remote/formal_04_baseline/baseline_power_samples.csv",
+      "bytes": 83203,
+      "sha256": "553aff3a3b883dc13d629cc71a800f831a9a4c2eb1b74fd7b5ef47f72358c22d"
+    },
+    {
+      "path": "LightGenV2/reports/20260928_nine_task_a100_table/raw_remote/formal_04_baseline/baseline_timing_per_sample.csv",
+      "bytes": 13455,
+      "sha256": "10203af9eabbab178a9467be218eb421276261a16769c84dc912d5b2e5ad208f"
+    },
+    {
+      "path": "LightGenV2/reports/20260928_nine_task_a100_table/raw_remote/formal_04_ours/all_per_call_timings.csv",
+      "bytes": 806499,
+      "sha256": "3c53f616cddc46de406eae3b35d4c87997e882419329ac6a33753b5f171f608c"
+    },
+    {
+      "path": "LightGenV2/reports/20260928_nine_task_a100_table/raw_remote/formal_04_ours/component_summary.csv",
+      "bytes": 9669,
+      "sha256": "e48961461165a5d811c3e1f1ee0f7c14c0444bb20b08b0abfb2cf792c9cfe3e1"
+    },
+    {
+      "path": "LightGenV2/reports/20260928_nine_task_a100_table/raw_remote/formal_04_ours/paper_narrow_summary.csv",
+      "bytes": 832,
+      "sha256": "1f6b494454add0bad54ac3156f92d63a98165b0c3b2a83479fb9a696bfaf8c33"
+    },
+    {
+      "path": "LightGenV2/reports/20260928_nine_task_a100_table/raw_remote/formal_08_fullaudit/baseline_power_samples.csv",
+      "bytes": 6272,
+      "sha256": "a6ac633e2af6f0641221f27ddf3092e93e78edb4c22bbf428f413b83713329b6"
+    },
+    {
+      "path": "LightGenV2/reports/20260928_nine_task_a100_table/raw_remote/formal_08_fullaudit/baseline_timing_per_sample.csv",
+      "bytes": 16124,
+      "sha256": "2168b12ebec1d9da6829eeac7db123e0bfa80f7f0418bc66578c47f8f6b54c8e"
+    },
+    {
+      "path": "LightGenV2/reports/20260928_nine_task_a100_table/raw_remote/formal_08_fullaudit/ours_timing_per_call.csv",
+      "bytes": 10487,
+      "sha256": "2032f9ca55274fbc0f605fb9232a52b43326ebb84bea00803d1d088233614ca6"
+    },
+    {
+      "path": "LightGenV2/reports/20260928_nine_task_a100_table/raw_remote/formal_08_narrow/per_call_timings.csv",
+      "bytes": 57548,
+      "sha256": "a5428f24f741dd661c8b76d706d681241d8ebfb259850f06d690aad91a1ea0ec"
+    },
+    {
+      "path": "LightGenV2/reports/20260928_nine_task_a100_table/raw_remote/ours_narrow_200/all_per_call_timings.csv",
+      "bytes": 1240590,
+      "sha256": "d90195a11804c23b8bd5396c535452c28548c8d256478abbed9d3a9dd02e492a"
+    },
+    {
+      "path": "LightGenV2/reports/20260928_nine_task_a100_table/raw_remote/ours_narrow_200/component_summary.csv",
+      "bytes": 14804,
+      "sha256": "f6a4600bcc95ad001275a646c962660c5fd7f67d9a64046eca33d5a7ceb5151d"
+    },
+    {
+      "path": "LightGenV2/reports/20260928_nine_task_a100_table/raw_remote/ours_narrow_200/paper_narrow_summary.csv",
+      "bytes": 1239,
+      "sha256": "c5fb8052e9980092065b160752d297e5c85e404f20cf4f5c98d1685c07cc80d2"
+    },
+    {
+      "path": "LightGenV2/reports/20260928_t03_t08_a100_completion/raw_candidate/03_abo_image_to_image/per_call_timings.csv",
+      "bytes": 7419,
+      "sha256": "a26cd58853d1fcde469e65544705e6ac409f61e7f431d20af6646b32f0a42a01"
+    },
+    {
+      "path": "LightGenV2/reports/20260928_t03_t08_a100_completion/raw_candidate/08_abo_text_to_image/baseline_power_samples.csv",
+      "bytes": 6200,
+      "sha256": "70ac62c7225f5b7e812e2258d81e158422861829fade7c9c0e223c5602ff284a"
+    },
+    {
+      "path": "LightGenV2/reports/20260928_t03_t08_a100_completion/raw_candidate/08_abo_text_to_image/baseline_timing_per_sample.csv",
+      "bytes": 16146,
+      "sha256": "9357ea3ac49edd1b57516699b64b7b9dd1b4d9afce70ac56a7f6816c4cbd4827"
+    },
+    {
+      "path": "LightGenV2/reports/20260928_t03_t08_a100_completion/raw_candidate/08_abo_text_to_image/ours_timing_per_call.csv",
+      "bytes": 10461,
+      "sha256": "5dbf44f7c8f2cd7cd7dc6c986883f6bcba354a82b49afed5f39724c460542bdd"
+    }
+  ],
+  "excluded_changed_or_not_backed_up": [],
+  "no_new_patterns_or_source_files_hidden": true,
+  "originals_moved_or_deleted": false,
+  "runtime_or_model_changed": false,
+  "independent_remote_asset_backup_proven": false
+}

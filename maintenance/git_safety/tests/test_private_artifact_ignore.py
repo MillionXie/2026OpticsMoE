@@ -10,6 +10,17 @@ ROOT = Path(__file__).resolve().parents[3]
 
 
 class ArtifactIgnoreTests(unittest.TestCase):
+    def test_named_raw_measurements_do_not_hide_source_or_new_runs(self):
+        import json
+        data=json.loads((ROOT/'maintenance/storage/RAW_MEASUREMENT_VISIBILITY_20261007.json').read_text(encoding='utf8'))
+        selected=[r['path'] for r in data['files']]
+        self.assertTrue(selected)
+        visible=data['excluded_changed_or_not_backed_up']+[
+            'LightGenV2/reports/20260928_nine_task_a100_table/raw_remote/formal_04_ours/profile.py',
+            'LightGenV2/reports/20260928_nine_task_a100_table/raw_remote/new_run/per_call_timings.csv',
+            'LightGenV2/reports/20260928_t03_t08_a100_completion/raw_candidate/README.md']
+        self.assertEqual(self.ignored(selected+visible),set(selected))
+
     def test_lab_payload_rules_preserve_source_manifests_and_timing(self):
         import json
         d=json.loads((ROOT/'maintenance/storage/LAB_PAYLOAD_VISIBILITY_20261007.json').read_text(encoding='utf8'))
