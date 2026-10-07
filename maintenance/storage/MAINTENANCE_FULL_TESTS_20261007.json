@@ -1,11 +1,12 @@
 {
   "schema_version": 1,
-  "tested_commit": "84de609fc5265632c8b852040a3d76a7629652db",
+  "tested_commit": "d245d32eec25b6cc43ffe84bc5e0415b775426a4",
   "command": "python -m pytest maintenance/git_safety/tests -q",
   "environment": "Local qwen3vl-cifar10 Python; no environment changes",
-  "passed": 283,
+  "passed": 311,
   "failed": 0,
-  "elapsed_seconds": 120.02,
+  "elapsed_seconds": 117.41,
+  "previous_run": {"tested_commit": "84de609fc5265632c8b852040a3d76a7629652db", "passed": 283, "elapsed_seconds": 120.02},
   "scope": "All maintenance/git_safety tests, including source identity, navigation, guarded Git operations and synthetic CPU contracts. Not all task-model tests, real data reconstruction, hardware or scientific performance reproduction.",
   "scientific_training_or_capture_executed": false,
   "full_migration_proven": false

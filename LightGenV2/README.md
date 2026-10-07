@@ -29,7 +29,9 @@
 目录名按任务而非数据集命名，因此以后更换可公开发表的数据集时，不需要重命名工程。
 
 本表是工程导航，不是完整迁移验收表。旧 `t04_semantic_interaction` 保留为兼容后端及
-历史对照，新的 robust 实验从 T04 robust 入口进入。精确源码、PT、数据身份及剩余例外
+应用开发线（布局/物体大小/电子容量及对外复现）的入口，不能只当作robust旧试错清理；
+其历代版本和最终身份边界见该任务README。新的 robust 消融从 T04 robust 入口进入，
+两线不能互套指标。精确源码、PT、数据身份及剩余例外
 见 [`TASK_REGISTRY.json`](TASK_REGISTRY.json)；各版本指标以任务 README／原报告为准。
 本机、训练服务器和实验室主目录均已实际建立 `main` 源码入口；实验室主目录的
 落地收据见[入口核验](../maintenance/storage/LAB_ROOT_MAIN_ADOPTION_20261007.json)。
