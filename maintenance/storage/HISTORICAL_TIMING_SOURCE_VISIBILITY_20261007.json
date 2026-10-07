@@ -1,0 +1,78 @@
+{
+  "scope": "18 named historical A100 report source attachments, retained at original paths; not current task implementations",
+  "audit_date": "2026-10-07",
+  "local_reachable_git_blobs_verified": true,
+  "linux_git_blob_bytes_equal_local": true,
+  "originals_deleted_moved_or_modified": false,
+  "timing_results_deleted_or_recomputed": false,
+  "groups": [
+    {
+      "blob": "91bc63153c1c3d79815490851dd887714dcd9cdb",
+      "sha256": "47676b1046e59d184cf894fd20318df160c94c7ef8bc6df288c8003d1f7fa8ca",
+      "paths": [
+        "LightGenV2/reports/20260914_latest_optical_electronics_a100_FINAL/profile_latest_optical_electronics_a100.py",
+        "LightGenV2/reports/20260914_latest_optical_electronics_a100_NARROW_POWER_v1/source_snapshot/LightGenV2/scripts/profile_latest_optical_electronics_a100.py",
+        "LightGenV2/reports/20260914_latest_optical_electronics_a100_NARROW_POWER_v2_TELEMETRY/source_snapshot/LightGenV2/scripts/profile_latest_optical_electronics_a100.py",
+        "LightGenV2/reports/20260914_latest_optical_electronics_a100_NARROW_v1/source_snapshot/LightGenV2/scripts/profile_latest_optical_electronics_a100.py",
+        "LightGenV2/reports/20260914_latest_optical_electronics_a100_NARROW_v2_CLEAN/source_snapshot/LightGenV2/scripts/profile_latest_optical_electronics_a100.py"
+      ]
+    },
+    {
+      "blob": "591dc9fa4381e82189335e6454b8df86a3479a31",
+      "sha256": "cbb74d736677f64f4df6407e44ecf64be3678e81e862362550ba40872e46313a",
+      "paths": [
+        "LightGenV2/reports/20260914_latest_optical_electronics_a100_NARROW_CLEAN_FINAL/consolidate_narrow_optical_power.py",
+        "LightGenV2/reports/20260917_redbox_timing_energy_audit/evidence/ours_narrow_clean_final/consolidate_narrow_optical_power.py"
+      ]
+    },
+    {
+      "blob": "956a6641b8c330b687cbbe4d32107547732bef91",
+      "sha256": "e8df8382d40f6b769d2823ea1e27c1d6ec585d165c3c93c68ce2af4d0ef33a7e",
+      "paths": ["LightGenV2/reports/20260914_latest_optical_electronics_a100_NARROW_FINAL/consolidate_narrow_optical_power.py"]
+    },
+    {
+      "blob": "2da1658e8386aa70bcd9785c9d781fa9ef548658",
+      "sha256": "ed956dadc0a6ab70b84ebd2ae53ac0d588f95ddf25ea379e63e5ca80f33a2c04",
+      "paths": [
+        "LightGenV2/reports/20260914_latest_optical_electronics_a100_NARROW_FINAL/profile_narrow_optical_electronics_a100.py",
+        "LightGenV2/reports/20260914_latest_optical_electronics_a100_NARROW_POWER_v1/source_snapshot/LightGenV2/scripts/profile_narrow_optical_electronics_a100.py"
+      ]
+    },
+    {
+      "blob": "ead50fbc3a0f37bcd80d107068c7d028a3d80794",
+      "sha256": "75bbd2df870831d16f6a6c0af6bdf8beee6d91f7fe4957be5d5da0ac0c17b074",
+      "paths": ["LightGenV2/reports/20260914_latest_optical_electronics_a100_NARROW_v1/source_snapshot/LightGenV2/scripts/profile_narrow_optical_electronics_a100.py"]
+    },
+    {
+      "blob": "a0a8b8a706b7387b355500677ea3078d3695999e",
+      "sha256": "53b38ec05f3427994b8cf07258560e63d2dfa2eaae38ced64530f9c4ff893274",
+      "paths": [
+        "LightGenV2/reports/20260914_latest_qwen_baselines_a100_FIRSTBLOCK_FINAL/source_snapshot/consolidate_latest_qwen_baselines_a100.py",
+        "LightGenV2/reports/20260917_redbox_timing_energy_audit/evidence/current_qwen_firstblock_final/source_snapshot/consolidate_latest_qwen_baselines_a100.py"
+      ]
+    },
+    {
+      "blob": "d9e3000d701c174d4f7f7de02adec8558cf269b4",
+      "sha256": "298956ccd4a792fedf8fbaad6448676bff067270d8b92e1a68dd66804e7fb244",
+      "paths": [
+        "LightGenV2/reports/20260914_latest_qwen_baselines_a100_FIRSTBLOCK_FINAL/source_snapshot/profile_latest_qwen_changed_a100.py",
+        "LightGenV2/reports/20260917_redbox_timing_energy_audit/evidence/current_qwen_firstblock_final/source_snapshot/profile_latest_qwen_changed_a100.py"
+      ]
+    },
+    {
+      "blob": "36046341be2d35781f5ae3106d50f2c418e1bd9e",
+      "sha256": "07cbc28c97d4cd841583881b70b3859595005351173c48f2d99b873c960f37fd",
+      "paths": [
+        "LightGenV2/reports/20260914_latest_qwen_baselines_a100_FIRSTBLOCK_FINAL/source_snapshot/profile_latest_qwen_changed_a100_three_tasks_sha07cbc28c.py",
+        "LightGenV2/reports/20260917_redbox_timing_energy_audit/evidence/current_qwen_firstblock_final/source_snapshot/profile_latest_qwen_changed_a100_three_tasks_sha07cbc28c.py"
+      ]
+    },
+    {
+      "blob": "d4151366b5f2597cf4c0632500da0a5625bed61a",
+      "sha256": "3ccd0c4f34cf78c3e002f9d89f49178f9902f059c91212d36e7728c9c74afa62",
+      "paths": ["LightGenV2/reports/20260915_lgvq_topsw/source_snapshot/calculate_lgvq_topsw_ops.py"]
+    }
+  ],
+  "restore": "git cat-file blob <blob> yields exact original bytes; compare SHA256 before restoring to the named original path. Preserve archive refs, do not overwrite current files.",
+  "limits": "Named source attachments only. Ignore does not release storage, retire a runtime, prove dependencies or bind historical timing to current models. No laboratory contact."
+}
