@@ -5,8 +5,12 @@
 The existing implementation is now retained on the repository's `main` line at
 this path, with the original `experiments.*` module name unchanged. The historical
 server run used commit `a2e6096fbe6ce43e6bbbc55b88f8ceb95aa4fd8b` in
-`.worktrees/fa_vtab_20260914`; that checkout and its central run/data paths remain
-untouched. Fourteen original files match that server checkout byte-for-byte.
+`.worktrees/fa_vtab_20260914`. That code-only checkout was fully archived and
+retired after checking process and runtime dependencies; its central run/data
+paths remain untouched. All 4,303 original files, including historical timing,
+were SHA-verified in the archive. Recovery location and SHA are recorded in
+[`SERVER_WORKTREE_BALANCE`](../../../maintenance/storage/SERVER_WORKTREE_BALANCE_20261007.json).
+Fourteen original files match that server checkout byte-for-byte.
 The retained local launch log adds the original launch observations, and its shell
 status command counts only the formal result depth rather than quarantine results;
 neither difference changes the model or training. The four existing synthetic CPU

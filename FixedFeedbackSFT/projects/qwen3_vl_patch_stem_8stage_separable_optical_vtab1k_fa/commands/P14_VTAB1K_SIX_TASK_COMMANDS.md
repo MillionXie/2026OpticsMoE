@@ -9,7 +9,7 @@ and 2028 are launched only after the first matrix passes its result audit.
 ## Required server paths
 
 ```bash
-export P14_REPO_ROOT=/DATA/DATA1/guest3/2026OpticsMoE/.worktrees/fa_vtab_20260914
+export P14_REPO_ROOT=/DATA/DATA1/guest3/2026OpticsMoE
 export P14_DATA_ROOT=/DATA/DATA1/guest3/2026OpticsMoE/data/vtab-1k
 export P14_SOURCE_BACKBONE=/DATA/DATA1/guest3/2026OpticsMoE/FixedFeedbackSFT/runs/qwen3_vl_patch_stem_8stage_separable_optical_imagenet_backbone/p11_imagenet1k_pretrain_bs96_90e/checkpoints/backbone.pt
 export P14_STEM_CHECKPOINT=/DATA/DATA1/guest3/2026OpticsMoE/FixedFeedbackSFT/projects/qwen3_vl_patch_stem_8stage_optical_imagenet_backbone/assets/qwen3_vl_static_stem_224.pt
@@ -19,6 +19,12 @@ export P14_SEED=2026
 ```
 
 ## Data extraction
+
+The historical run used `.worktrees/fa_vtab_20260914` at commit
+`a2e6096fbe6ce43e6bbbc55b88f8ceb95aa4fd8b`. That source-only checkout is now
+fully archived; the maintained source entry above is `main`. Original data,
+output and checkpoint paths are unchanged. These commands are reference
+instructions, not an instruction to restart the historical run during cleanup.
 
 The selected public archive is pinned to Hugging Face dataset revision
 `102b19d8a1e23c47fb3941e736ca8b1d49d2552c`. Extract only the six registered

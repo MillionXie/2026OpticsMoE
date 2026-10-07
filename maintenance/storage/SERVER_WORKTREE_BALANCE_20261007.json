@@ -1,4 +1,25 @@
 {
+  "latest_fa_vtab_retirement_20261007": {
+    "registered_before": 72,
+    "registered_after": 71,
+    "retired": "fa_vtab_20260914",
+    "head": "a2e6096fbe6ce43e6bbbc55b88f8ceb95aa4fd8b",
+    "purpose": "Historical P14 fixed-feedback VTAB-1k transfer source; sixteen existing source/config/test/doc files now retained on main",
+    "archive": "/DATA/DATA1/guest3/storage_cleanup_manifests/retired_fa_vtab_20261007/complete_old_worktree.tar.gz",
+    "archive_sha256": "3288e966b73be6883558a33a58e4eced3345b77861a11acf065fcb5271ee380e",
+    "archive_bytes": 228684103,
+    "verified_regular_files": 4303,
+    "symlinks": 0,
+    "untracked_or_ignored_files": 0,
+    "runtime_reference_scan_files": 195195,
+    "runtime_reference_name_hits": 0,
+    "owned_process_references": 0,
+    "local_existing_recovery_ref": "refs/archive/checkout-preservation-20261004/original18",
+    "removal_method": "Full native tar archive, every original regular-file SHA verified, ordinary git worktree remove without force",
+    "protected_heads_and_overlays_unchanged": true,
+    "data_runs_weights_and_all_timing_preserved": true,
+    "laboratory_contacted": false
+  },
   "latest_salicon_retirement_20261007": {
     "registered_before": 74,
     "registered_after": 72,
