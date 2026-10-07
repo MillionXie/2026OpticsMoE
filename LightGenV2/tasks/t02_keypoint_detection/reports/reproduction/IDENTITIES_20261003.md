@@ -55,6 +55,14 @@ PCK12=.83333333，best_epoch=0，PT SHA
 
 ## 实际代码在哪里，为什么不能立即删旧工程
 
+2026-10-07收尾：上述旧源码目录已完整归档并退出注册，日常源码改从主工程本任务进入。
+实际64项任务文件仅两份已整合的说明页与main不同，源码/配置/测试一致；本地和Linux各27项CPU测试通过。
+完整原目录3690个文件逐SHA核验后归档，包含全部历史测速；数据、PT和原run不在该缓存型副本中，未移动。
+归档为 `/DATA/DATA1/guest3/storage_cleanup_manifests/retired_t02_personal_source_20261007/complete_old_worktree.tar.gz`，
+SHA256 `2f85361f241b24e341d2694d8d6369b08e5c111e0f9ef149ca15742aad283b4e`。
+下文旧目录与“继续保留”的表述属于迁移前历史；资产闭包和科学复现边界仍有效，不因代码目录归档而声称复现完成。
+退出依据与现用目录保护核验见[当前目录收据](../../../../../maintenance/storage/SERVER_WORKTREE_BALANCE_20261007.json)。
+
 后续alpha/蒸馏/个人图片的完整工程为服务器
 `/DATA/DATA1/guest3/t02_personal_source_20260928`，HEAD
 `2fa901dc7800d8798658b29e242e38bebac97989`，本任务已跟踪源码无未提交修改。

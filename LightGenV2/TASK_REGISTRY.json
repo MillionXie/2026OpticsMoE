@@ -39,7 +39,7 @@
       "historical_deconv128_timing_evidence": "../maintenance/storage/T02_BASELINE_TIMING_BINDING_20261006.json",
       "entry": "tasks/t02_keypoint_detection/README.md",
       "source_status": "runtime_source_on_main_official_and_personal_image_content_audited_asset_closure_pending",
-      "additional_source": "/DATA/DATA1/guest3/t02_personal_source_20260928",
+      "additional_source": "/DATA/DATA1/guest3/storage_cleanup_manifests/retired_t02_personal_source_20261007/complete_old_worktree.tar.gz",
       "source_head": "2fa901dc7800d8798658b29e242e38bebac97989",
       "data_status": "preserve_LSP_and_per_sample_evidence",
       "evidence": ["PROJECT_SCORECARD.md"],

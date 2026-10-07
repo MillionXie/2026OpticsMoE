@@ -1,4 +1,28 @@
 {
+  "latest_t02_retirement_20261007": {
+    "registered_before": 71,
+    "registered_after": 70,
+    "retired": "/DATA/DATA1/guest3/t02_personal_source_20260928",
+    "head": "2fa901dc7800d8798658b29e242e38bebac97989",
+    "purpose": "Historical T02 LSP refinement, distillation and personal-photo pilot source; current task code/config/tests retained on main",
+    "archive": "/DATA/DATA1/guest3/storage_cleanup_manifests/retired_t02_personal_source_20261007/complete_old_worktree.tar.gz",
+    "archive_sha256": "2f85361f241b24e341d2694d8d6369b08e5c111e0f9ef149ca15742aad283b4e",
+    "archive_bytes": 227153297,
+    "verified_regular_files": 3690,
+    "archived_cache_files": 87,
+    "task_tracked_files": 64,
+    "task_source_config_test_differences": 0,
+    "documentation_differences": ["README.md", "reports/reproduction/README.md"],
+    "runtime_files_scanned": 199923,
+    "runtime_name_hits": ["LightGenV2/TASK_REGISTRY.json (historical provenance, updated to archive)"],
+    "owned_cwd_exe_cmdline_fd_references": 0,
+    "local_existing_recovery_ref": "refs/archive/frozen-local-20261005/t02-personal-pose-20260928",
+    "cpu_tests": {"local_passed": 27, "server_passed": 27},
+    "removal_method": "Native full tar, every regular file SHA checked against archive and live source, remove only verified cache, git worktree remove without force",
+    "protected_heads_and_tracked_overlays_unchanged": true,
+    "all_original_timing_preserved": true,
+    "laboratory_contacted": false
+  },
   "latest_fa_vtab_retirement_20261007": {
     "registered_before": 72,
     "registered_after": 71,
