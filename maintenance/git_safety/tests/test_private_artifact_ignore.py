@@ -20,7 +20,13 @@ class ArtifactIgnoreTests(unittest.TestCase):
         self.assertFalse(record['openmoji_selected'])
         for row in record['files']:
             self.assertIn('/reports/',row['path'])
-            self.assertIn(Path(row['path']).suffix.lower(),{'.csv','.png','.pdf','.svg'})
+            self.assertIn(Path(row['path']).suffix.lower(),{'.csv','.png','.pdf','.svg','.json'})
+            if row['path'].endswith('.json'):
+                self.assertEqual(row['payload_kind'],'historical_t12_result_record')
+                self.assertTrue(row['path'].startswith('LightGenV2/reports/202609'))
+                self.assertIn('_t12_',row['path'].split('/')[2])
+                self.assertFalse(any(s in Path(row['path']).name.lower()
+                                     for s in ['config','manifest','protocol','split','reference']))
             self.assertNotIn('/t04_',row['path'])
             self.assertEqual(len(row['sha256']),64)
         visible=record['excluded_changed_or_unbacked']+record['retained_visible_tables_or_nonascii_paths']+[
@@ -29,6 +35,8 @@ class ArtifactIgnoreTests(unittest.TestCase):
             str(Path(selected[0]).parent/'config.yaml').replace('\\','/'),
             str(Path(selected[0]).parent/'future_result.csv').replace('\\','/'),
             'handoffs/openmoji_robust_ablation_20260928/current_report.json']
+        visible += ['LightGenV2/reports/20260926_t12_joint_recovery/'+name for name in
+                    ('resolved_config.json','MANIFEST.json','contract.json','future_result.json','analyze.py')]
         self.assertEqual(self.ignored(selected+visible),set(selected))
 
     def test_seed37_named_transfer_records_keep_source_tables_and_future_runs_visible(self):

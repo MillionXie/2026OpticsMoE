@@ -1,6 +1,6 @@
 {
   "schema": 1,
-  "purpose": "Retained named historical report graphics and CSV payloads, not source or configs",
+  "purpose": "Retained named historical graphics/CSV and dated T12 result records; not source, input configs or contracts",
   "backup_archive": ".codex_tmp\\storage_git_backup_20261002\\untracked_asset_records_20261006.zip",
   "backup_archive_sha256": "ec7fc89b4294ca2c89cd7589bc727317e4c2e105395cbcd7f65ff8ee22784777",
   "files": [
@@ -543,6 +543,300 @@
       "path": "LightGenV2/reports/baseline_plotting_20260922/delivery/summary.csv",
       "bytes": 1024,
       "sha256": "93f44611f3f0b7f00d50c7686ac8de56050c86247d064d881aec99f82bd90303"
+    },
+    {
+      "path": "LightGenV2/reports/20260923_t12_morphology_generation/training_summary.json",
+      "bytes": 3756,
+      "sha256": "8072ad0d7b303d2d2e4279291b5facecc8daaba39b30f563c90eca9cefc30090",
+      "payload_kind": "historical_t12_result_record"
+    },
+    {
+      "path": "LightGenV2/reports/20260923_t12_morphology_generation/training_summary_v2.json",
+      "bytes": 9611,
+      "sha256": "840286a13afd7c5efed7090db0345471d44d033b69da8ad005842a9b323633cb",
+      "payload_kind": "historical_t12_result_record"
+    },
+    {
+      "path": "LightGenV2/reports/20260923_t12_morphology_generation/training_summary_v3.json",
+      "bytes": 9598,
+      "sha256": "18b03c1a0b922e97dc9cae8b7b36f8016890782f52e3949b8a32f3e09d7b5080",
+      "payload_kind": "historical_t12_result_record"
+    },
+    {
+      "path": "LightGenV2/reports/20260923_t12_morphology_generation/training_summary_v4_seeded.json",
+      "bytes": 9599,
+      "sha256": "a2cb7bf94781f33a668816dcf4e2e2055c0a9da9a392fdb9e3d835a078df4186",
+      "payload_kind": "historical_t12_result_record"
+    },
+    {
+      "path": "LightGenV2/reports/20260925_t12_unified_edit/expanded_final/audit_256.json",
+      "bytes": 4094,
+      "sha256": "9c6610ede213f0e555070678f34f9d48a648132c5274f5dfed62151a89feaa98",
+      "payload_kind": "historical_t12_result_record"
+    },
+    {
+      "path": "LightGenV2/reports/20260925_t12_unified_edit/expanded_final/expanded_small9m_256_training_summary.json",
+      "bytes": 2092,
+      "sha256": "dbe04e227e52a64db6c43f03e5a93025bbbd423879288c5dc2e0b0a6f423ac6d",
+      "payload_kind": "historical_t12_result_record"
+    },
+    {
+      "path": "LightGenV2/reports/20260925_t12_unified_edit/expanded_final/sourcegate_audit_epoch2.json",
+      "bytes": 4200,
+      "sha256": "2ba2d4a3d07342fbe30d1230d73c567851c769aaff380498e3a2b24e4876b80d",
+      "payload_kind": "historical_t12_result_record"
+    },
+    {
+      "path": "LightGenV2/reports/20260925_t12_unified_edit/expanded_final/sourcegate_audit_final.json",
+      "bytes": 4207,
+      "sha256": "95b2c5acfbede663e355b2d013e5e1321f8db0733372e42ed4e2ba5dc59f5722",
+      "payload_kind": "historical_t12_result_record"
+    },
+    {
+      "path": "LightGenV2/reports/20260925_t12_unified_edit/expanded_final/sourcegate_timing.json",
+      "bytes": 1691,
+      "sha256": "14f9fc89d5ed89beb053d99edf422b39576be66637bcf803ba8ccbc5960177d7",
+      "payload_kind": "historical_t12_result_record"
+    },
+    {
+      "path": "LightGenV2/reports/20260925_t12_unified_edit/expanded_final/sourcegate_training_summary.json",
+      "bytes": 2751,
+      "sha256": "8a8e3b0008505c3ea349f86672413fe0bd6477b59d0a73253d6c60bd9de2faf4",
+      "payload_kind": "historical_t12_result_record"
+    },
+    {
+      "path": "LightGenV2/reports/20260925_t12_unified_edit/expanded_final/timing_256.json",
+      "bytes": 1689,
+      "sha256": "3c85f911ae9c543e95596c450c1d6e200d93d7ddb2c8a7862e95fe4456d14eab",
+      "payload_kind": "historical_t12_result_record"
+    },
+    {
+      "path": "LightGenV2/reports/20260925_t12_unified_edit/expanded_large_training_summary.json",
+      "bytes": 3706,
+      "sha256": "29fedaffef2bb5bc853b42e2f446095f35b0b092e117cb347631ccd22a4d6939",
+      "payload_kind": "historical_t12_result_record"
+    },
+    {
+      "path": "LightGenV2/reports/20260925_t12_unified_edit/expanded_small9m_metrics.json",
+      "bytes": 1087,
+      "sha256": "130a2b0c0fb6f32f5ae823b43fc86c4424603c14cd1a68e51d08c8b0884383c3",
+      "payload_kind": "historical_t12_result_record"
+    },
+    {
+      "path": "LightGenV2/reports/20260925_t12_unified_edit/expanded_small9m_training_summary.json",
+      "bytes": 3255,
+      "sha256": "4faae809562e488480692a13b0ac6b1ea251a54415027facd38cba7c85f464a0",
+      "payload_kind": "historical_t12_result_record"
+    },
+    {
+      "path": "LightGenV2/reports/20260925_t12_unified_edit/expanded_small9m_v2_training_summary.json",
+      "bytes": 1860,
+      "sha256": "de907fa9978810a46955a92e87dd4194eba3266a74ad2839676059af93511929",
+      "payload_kind": "historical_t12_result_record"
+    },
+    {
+      "path": "LightGenV2/reports/20260925_t12_unified_edit/highres_vae_reconstruction_metrics.json",
+      "bytes": 642,
+      "sha256": "a095b26a3087ac68f83d72a6434bf8eff2bf0801e76e2960dda818e4b4cb8800",
+      "payload_kind": "historical_t12_result_record"
+    },
+    {
+      "path": "LightGenV2/reports/20260925_t12_unified_edit/large_143m_true256_training_summary.json",
+      "bytes": 3667,
+      "sha256": "b71f38bf9e30880eb7f9efe41cb3895beb6fd602dfde59a6d6560915fad12794",
+      "payload_kind": "historical_t12_result_record"
+    },
+    {
+      "path": "LightGenV2/reports/20260925_t12_unified_edit/vae_reconstruction_metrics.json",
+      "bytes": 636,
+      "sha256": "58ea654ab149329f4c20ac8a6c5e3d469ff97b827a9549583c910c70ee0ea97e",
+      "payload_kind": "historical_t12_result_record"
+    },
+    {
+      "path": "LightGenV2/reports/20260926_t12_audited_v2/audited_v2_large.json",
+      "bytes": 3743,
+      "sha256": "4a6cf3201169beaef31487af0631a78d4a2d8bc95dfe5c076ac9bcda9df46b96",
+      "payload_kind": "historical_t12_result_record"
+    },
+    {
+      "path": "LightGenV2/reports/20260926_t12_audited_v2/audited_v2_large_adapted.json",
+      "bytes": 5005,
+      "sha256": "73742f7dda48894bbc60df04f82649ac0993cd4858074930ff1fe7d05140d78e",
+      "payload_kind": "historical_t12_result_record"
+    },
+    {
+      "path": "LightGenV2/reports/20260926_t12_audited_v2/audited_v2_small.json",
+      "bytes": 3684,
+      "sha256": "915ec436959622d59423b1b11fa69d04c78911f63f00bed99e035d82854b5540",
+      "payload_kind": "historical_t12_result_record"
+    },
+    {
+      "path": "LightGenV2/reports/20260926_t12_audited_v2/audited_v2_small_adapted.json",
+      "bytes": 4881,
+      "sha256": "42fef12726241ff9e8ce1b8e62546befd224a39d811d8d1e8b7730444a134b8f",
+      "payload_kind": "historical_t12_result_record"
+    },
+    {
+      "path": "LightGenV2/reports/20260926_t12_audited_v2/large_adaptation.json",
+      "bytes": 28575,
+      "sha256": "2fbc8686e719c4d65a95b9d584f88768e75f4fae3e4144b915c58d697483e335",
+      "payload_kind": "historical_t12_result_record"
+    },
+    {
+      "path": "LightGenV2/reports/20260926_t12_audited_v2/small_adaptation.json",
+      "bytes": 28487,
+      "sha256": "a72499381b2b5e04ecbacf494569f74fe109f911998b92ab8c514103e943f844",
+      "payload_kind": "historical_t12_result_record"
+    },
+    {
+      "path": "LightGenV2/reports/20260926_t12_joint_recovery/large_final_audit.json",
+      "bytes": 5241,
+      "sha256": "332b81833f9dfe22418c562e1d34956c4f1c0fffb5003a7c4ebd818891a12f2c",
+      "payload_kind": "historical_t12_result_record"
+    },
+    {
+      "path": "LightGenV2/reports/20260926_t12_joint_recovery/large_final_test.json",
+      "bytes": 7339,
+      "sha256": "aef7372c4f031ab938e0ae953a8964180ae33b99b060d42ecc8ec5925118915a",
+      "payload_kind": "historical_t12_result_record"
+    },
+    {
+      "path": "LightGenV2/reports/20260926_t12_joint_recovery/large_training.json",
+      "bytes": 42849,
+      "sha256": "e28cd2727a654e0b6ac55e3f1e8fce4425e377830b466fe9303445a37fe5a79a",
+      "payload_kind": "historical_t12_result_record"
+    },
+    {
+      "path": "LightGenV2/reports/20260926_t12_joint_recovery/small_final_audit.json",
+      "bytes": 5108,
+      "sha256": "592d38ef13c6beaa9e63279a7a8d9554dfe1cfc52eac4df26a284c4cbba942a5",
+      "payload_kind": "historical_t12_result_record"
+    },
+    {
+      "path": "LightGenV2/reports/20260926_t12_joint_recovery/small_final_test.json",
+      "bytes": 6554,
+      "sha256": "2400b81a2d60994ac37bd77062e41387008cfdb7155eb625d496d7955ca32d73",
+      "payload_kind": "historical_t12_result_record"
+    },
+    {
+      "path": "LightGenV2/reports/20260926_t12_joint_recovery/small_full_routing.json",
+      "bytes": 6964,
+      "sha256": "27d921393f77f05656ac572fc3a9ad29b4d3c5677d28b0d2e623290bb59f57b3",
+      "payload_kind": "historical_t12_result_record"
+    },
+    {
+      "path": "LightGenV2/reports/20260926_t12_joint_recovery/small_step500_evaluation.json",
+      "bytes": 6018,
+      "sha256": "596362b3c64add4eae8e3e4cfae4f0e2527538e3d8eed17268228e35e6c68426",
+      "payload_kind": "historical_t12_result_record"
+    },
+    {
+      "path": "LightGenV2/reports/20260926_t12_joint_recovery/small_training.json",
+      "bytes": 55970,
+      "sha256": "a8e2bde550a1a9b1a7c5350e6b65e96812aa278a960de7ff0403d533806bb887",
+      "payload_kind": "historical_t12_result_record"
+    },
+    {
+      "path": "LightGenV2/reports/20260926_t12_small_detail15m/audit.json",
+      "bytes": 5564,
+      "sha256": "ba62c03a13369ba184c6e1571966ff38a0ae78cdecf34124a427396ddb792699",
+      "payload_kind": "historical_t12_result_record"
+    },
+    {
+      "path": "LightGenV2/reports/20260926_t12_small_detail15m/test.json",
+      "bytes": 7616,
+      "sha256": "ba62401e4c4679a699260ad190f770ba786e8d8893e2e99fc7fd6798fb29adde",
+      "payload_kind": "historical_t12_result_record"
+    },
+    {
+      "path": "LightGenV2/reports/20260926_t12_small_detail15m/training.json",
+      "bytes": 51197,
+      "sha256": "3c6fa061e01a29f8033de80cf9c2f3bef9bbf074c5b780e16ca39505656419ee",
+      "payload_kind": "historical_t12_result_record"
+    },
+    {
+      "path": "LightGenV2/reports/20260926_t12_small_detail_distillation/audit.json",
+      "bytes": 5102,
+      "sha256": "9dac1b9c7c491dfaae87d779fd1ef5b9b612121cebf140c74ff42fc98636e66f",
+      "payload_kind": "historical_t12_result_record"
+    },
+    {
+      "path": "LightGenV2/reports/20260926_t12_small_detail_distillation/gan_test.json",
+      "bytes": 7275,
+      "sha256": "58ce9d773a77b8cd4878c58e524ce335418e57a48996c6a47fb55790cc857126",
+      "payload_kind": "historical_t12_result_record"
+    },
+    {
+      "path": "LightGenV2/reports/20260926_t12_small_detail_distillation/gan_training.json",
+      "bytes": 46003,
+      "sha256": "cfd84f633208e2a1949cda0d7cf5ac909b0cf0819f7e8f0c5951d5cdae7a896a",
+      "payload_kind": "historical_t12_result_record"
+    },
+    {
+      "path": "LightGenV2/reports/20260926_t12_small_detail_distillation/test.json",
+      "bytes": 7307,
+      "sha256": "0921d5ca94928c84971ccfd8eae9fa14d0c6be1f09672f2397706763c90fea41",
+      "payload_kind": "historical_t12_result_record"
+    },
+    {
+      "path": "LightGenV2/reports/20260926_t12_small_detail_distillation/training.json",
+      "bytes": 25496,
+      "sha256": "d2fc66997e35d07061dcc71a38df9ed150f16d3e53954bef206c6992fe2269ef",
+      "payload_kind": "historical_t12_result_record"
+    },
+    {
+      "path": "LightGenV2/reports/20260926_t12_small_local_detail/audit.json",
+      "bytes": 5111,
+      "sha256": "4c7313a30fba5bd5806f55dec3ad7541f07c2e613e3ddd0470c5abf88b26f737",
+      "payload_kind": "historical_t12_result_record"
+    },
+    {
+      "path": "LightGenV2/reports/20260926_t12_small_local_detail/old_comparison.json",
+      "bytes": 7231,
+      "sha256": "70f44b95cc51332a446362b47c12f498fad4d440792b61a7cadf3b4a249ec0d7",
+      "payload_kind": "historical_t12_result_record"
+    },
+    {
+      "path": "LightGenV2/reports/20260926_t12_small_local_detail/test.json",
+      "bytes": 7588,
+      "sha256": "c65e48e37bcd428de3862458324818253aa927f0015a06bf1676c0379789bafc",
+      "payload_kind": "historical_t12_result_record"
+    },
+    {
+      "path": "LightGenV2/reports/20260926_t12_small_local_detail/training.json",
+      "bytes": 35806,
+      "sha256": "bf7e0b772ab9ec377a938c8cefe1a1af41908cebf8cdf7d05c51a33ed6d5e836",
+      "payload_kind": "historical_t12_result_record"
+    },
+    {
+      "path": "LightGenV2/reports/20260926_t12_small_under10m_refine/audit.json",
+      "bytes": 5103,
+      "sha256": "7af229d6173a8dcfe0f2f25ef93bc82f9a66333ec184c587ee2e64201ed4e5d1",
+      "payload_kind": "historical_t12_result_record"
+    },
+    {
+      "path": "LightGenV2/reports/20260926_t12_small_under10m_refine/gentle_test.json",
+      "bytes": 7298,
+      "sha256": "47e11ade376df622c408421bc32182f17154d322819af3e5ad8fd876725be36a",
+      "payload_kind": "historical_t12_result_record"
+    },
+    {
+      "path": "LightGenV2/reports/20260926_t12_small_under10m_refine/gentle_training.json",
+      "bytes": 30777,
+      "sha256": "fec63eb8213eb3a46dc55eab171a4d4228e1f739cfc7b53e10d9f21fb69ea4fb",
+      "payload_kind": "historical_t12_result_record"
+    },
+    {
+      "path": "LightGenV2/reports/20260926_t12_small_under10m_refine/test.json",
+      "bytes": 7305,
+      "sha256": "ffddb6ac2c699689903faf06e453876c4203808c6a839065fa7f596c3d3ab886",
+      "payload_kind": "historical_t12_result_record"
+    },
+    {
+      "path": "LightGenV2/reports/20260926_t12_small_under10m_refine/training.json",
+      "bytes": 56157,
+      "sha256": "e8609c652dcd6892a763214bcdd9a459e60b2e8325fec25f5cedbf787b198d14",
+      "payload_kind": "historical_t12_result_record"
     }
   ],
   "excluded_changed_or_unbacked": [],
@@ -579,5 +873,6 @@
     "LightGenV2/tasks/t10_expert_scaling/reports/plotting/kather_expert_count_20260921/three_seed_test_per_seed.csv",
     "LightGenV2/tasks/t10_expert_scaling/reports/plotting/kather_expert_count_20260921/three_seed_test_summary.csv",
     "LightGenV2/tasks/t10_expert_scaling/reports/plotting/kather_expert_count_20260921/topk_test_trends.csv"
-  ]
+  ],
+  "t12_result_records_added": 49
 }
