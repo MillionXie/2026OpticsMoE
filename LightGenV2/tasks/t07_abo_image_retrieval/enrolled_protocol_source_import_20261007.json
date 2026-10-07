@@ -1,0 +1,24 @@
+{
+  "scope": "Original enrolled-SKU protocol preparation helper and historical baseline dependency; not new data or model selection",
+  "source_commit": "d979b53ed509907a3630bd2a36c317dfb3aac965",
+  "actual_protected_server_source": "/DATA/DATA1/guest3/2026OpticsMoE/.worktrees/t07_latestfresh35_20260929",
+  "local_and_actual_server_source_equal_after_explicit_EOL_normalization": true,
+  "protocol": "abo200_enrolled_sku_hash8train4query_v1",
+  "per_product_gallery_query": [8, 4],
+  "products": 200,
+  "gallery_query_samples": [1600, 800],
+  "scientific_model_changed": false,
+  "original_protocol_or_data_regenerated": false,
+  "query_or_retrieval_evaluated": false,
+  "independent_generalization": false,
+  "files": [
+    {"path": "LightGenV2/tasks/t07_abo_image_retrieval/standalone/enrolled_abo.py", "source_blob_sha256": "0344436032f2e492f6af602ad95fe6afff1d85ce74d740896bacfc4185137f4e", "hash_normalization": "crlf_to_lf"}
+  ],
+  "additional_existing_dependencies": [
+    "LightGenV2/tasks/t07_abo_image_retrieval/standalone/data.py",
+    "LightGenV2/tasks/t07_abo_image_retrieval/standalone/io.py",
+    "LightGenV2/tasks/t07_abo_image_retrieval/standalone/retail_sources.py"
+  ],
+  "tests": {"passed": 7, "scope": "Synthetic bytes only: exact source SHA, deterministic hash order, 8/4 counts and product coverage, duplicate rejection, existing output refusal; no real images or model forward"},
+  "caveats": ["Closed catalog: query SKUs also occur in gallery/fitting, not unseen-product generalization", "Near duplicates/shared spin sessions not ruled out", "Source-commit provenance changes on regeneration; original protocol is retained, never silently replaced"]
+}

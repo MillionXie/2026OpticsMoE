@@ -112,6 +112,7 @@
     },
     {
       "id": "t07_abo_image_retrieval",
+      "enrolled_protocol_source_import": "tasks/t07_abo_image_retrieval/enrolled_protocol_source_import_20261007.json",
       "actual_main_readonly_binding_evidence": "../maintenance/storage/T07_ACTUAL_MAIN_BINDING_20261007.json",
       "actual_main_strict_cpu_and_processor_load_verified": true,
       "readonly_binding_profile": "tasks/t07_abo_image_retrieval/configs/lab/rank72_windows_20261007.json",
