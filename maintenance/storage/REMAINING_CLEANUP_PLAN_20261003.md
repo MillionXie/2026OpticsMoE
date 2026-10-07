@@ -217,3 +217,9 @@ python maintenance/git_safety/check_source_archives.py --server-formal-timing-pa
 `latest_verified_retirement_20261007`；最终rank72、旧robust必要运行目录和现用OpenMoji不动。
 主线4c7ec63d的14任务Git树检查无错；本机私有入口／原报告检查亦无错、源SHA无错，
 但七项版本状态仍明确有资产／历史依赖或现用实验边界，不改migration_complete=false。
+
+另四个名称含`t12`的旧capacity／video／D2NN目录实际属于T16早期沿革，不是文生图。
+它们包含146份非缓存被忽略资产及34份best/last，PT原字节SHA已核验并登记在T16任务
+`source_import_20261002.json`，没有删除、搬走、重训或改指标。原阶段名仍为
+sen12ms／clevr／sonyc／video，不互套当前最终T16矩阵。注册余额仍75，
+这四处暂列“含原结果资产的历史目录”，不能当作只有重复代码而直接移除。

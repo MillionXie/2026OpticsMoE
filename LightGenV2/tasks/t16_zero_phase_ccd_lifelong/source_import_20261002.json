@@ -1,4 +1,220 @@
 {
+  "legacy_protocol_asset_protection_20261007": {
+    "scope": "Four historical t12-named cross-modal lifelong directories belong to the T16 lineage, not T12 text-to-image. Stage directory names remain sen12ms/clevr/sonyc/video; do not substitute these records for the final T16 protocol or metrics.",
+    "read_only": true,
+    "original_directories_retained": true,
+    "original_checkpoints_results_and_timing_unchanged": true,
+    "registered_worktree_count_unchanged": 75,
+    "owned_process_references_observed": 0,
+    "checkpoint_files_sha_checked": 34,
+    "noncache_ignored_files_observed": 146,
+    "checkpoint_loaded_or_training_started": false,
+    "data_protocol_content_binding_proven": false,
+    "directories": [
+      {
+        "directory": "/DATA/DATA1/guest3/t12_cross_modal_capacity_20260920",
+        "head": "fea3b079d04745a2aa5d181c7dfb4da37a81a922",
+        "noncache_ignored_files": 32,
+        "noncache_regular_bytes": 61843076,
+        "checkpoints": [
+          {
+            "relative_path": "LightGenV2/tasks/t12_cross_modal_lifelong/runs/simulation/capacity_guard_s17_v1/lifelong_moe/stage_1_sen12ms/best_checkpoint.pt",
+            "bytes": 7591757,
+            "sha256": "53ec085f8806d841a2107430ff1069b1605d90e92eadd0f5affb0af29888d720"
+          },
+          {
+            "relative_path": "LightGenV2/tasks/t12_cross_modal_lifelong/runs/simulation/capacity_guard_s17_v1/lifelong_moe/stage_1_sen12ms/last_checkpoint.pt",
+            "bytes": 7591757,
+            "sha256": "e2e1210ea7befcf1fdceebb962164901f3e52a2d0b842f5eabf9f5e0d844648a"
+          },
+          {
+            "relative_path": "LightGenV2/tasks/t12_cross_modal_lifelong/runs/simulation/capacity_guard_s17_v1/lifelong_moe/stage_2_clevr/best_checkpoint.pt",
+            "bytes": 7592205,
+            "sha256": "1a2917b28c7a4f5398191e9711ef2cc6066371cd687fdb515c92ea3c22e6b8e7"
+          },
+          {
+            "relative_path": "LightGenV2/tasks/t12_cross_modal_lifelong/runs/simulation/capacity_guard_s17_v1/lifelong_moe/stage_2_clevr/last_checkpoint.pt",
+            "bytes": 7592205,
+            "sha256": "54aea4f71085bf65c9cd311b9ccbea3d65221d73817815a82ebe1cfb130db2e5"
+          },
+          {
+            "relative_path": "LightGenV2/tasks/t12_cross_modal_lifelong/runs/simulation/capacity_guard_s17_v1/lifelong_moe/stage_3_sonyc/best_checkpoint.pt",
+            "bytes": 7593485,
+            "sha256": "e8514bfcc5ceafb2f6cfdc5b3a7b6dbce99f37c6a262a5628dd575c272c984d0"
+          },
+          {
+            "relative_path": "LightGenV2/tasks/t12_cross_modal_lifelong/runs/simulation/capacity_guard_s17_v1/lifelong_moe/stage_3_sonyc/last_checkpoint.pt",
+            "bytes": 7593485,
+            "sha256": "6f59c323bf3778b308cdb9cb2ac3e999cbad7ee46d5e83085fd8d748a3721262"
+          },
+          {
+            "relative_path": "LightGenV2/tasks/t12_cross_modal_lifelong/runs/simulation/capacity_guard_s17_v1/lifelong_moe/stage_4_video/best_checkpoint.pt",
+            "bytes": 7593933,
+            "sha256": "d5b31305dffe32b84674ad7d4c3d991cadde6113b1890b59d35a12f7279f4ee7"
+          },
+          {
+            "relative_path": "LightGenV2/tasks/t12_cross_modal_lifelong/runs/simulation/capacity_guard_s17_v1/lifelong_moe/stage_4_video/last_checkpoint.pt",
+            "bytes": 7593933,
+            "sha256": "6e9aa2cc8f819415b4fd63fc63b442feb85ea008b0812a14cebd8341ec3938b2"
+          }
+        ]
+      },
+      {
+        "directory": "/DATA/DATA1/guest3/t12_cross_modal_video_20260920",
+        "head": "e99846b8590550f2b02d11e8630e7cf12ebb9fab",
+        "noncache_ignored_files": 57,
+        "noncache_regular_bytes": 94569365,
+        "checkpoints": [
+          {
+            "relative_path": "LightGenV2/tasks/t12_cross_modal_lifelong/runs/formal/initial_s17_v1/joint_d2nn/best_checkpoint.pt",
+            "bytes": 8064445,
+            "sha256": "0c19eddef610a573e2e9432126b66300541e61c6a79c7a256e05160054a5806f"
+          },
+          {
+            "relative_path": "LightGenV2/tasks/t12_cross_modal_lifelong/runs/formal/initial_s17_v1/joint_d2nn/last_checkpoint.pt",
+            "bytes": 8064445,
+            "sha256": "6c3c171664cd501df27c3b7609a6c10346bfedebecf431cc4b1d9ae89a1cb07d"
+          },
+          {
+            "relative_path": "LightGenV2/tasks/t12_cross_modal_lifelong/runs/simulation/initial_s17_v1/joint_d2nn/best_checkpoint.pt",
+            "bytes": 8064445,
+            "sha256": "aa1842c476214927266a0a648daba97b9465db61d7848944da9ac45e7d2e0d9c"
+          },
+          {
+            "relative_path": "LightGenV2/tasks/t12_cross_modal_lifelong/runs/simulation/initial_s17_v1/joint_d2nn/last_checkpoint.pt",
+            "bytes": 8064445,
+            "sha256": "9c63bcacac5545f9113e5e90342f7060be47540cca37e7aab9c9e967269d4717"
+          },
+          {
+            "relative_path": "LightGenV2/tasks/t12_cross_modal_lifelong/runs/simulation/initial_s17_v1/lifelong_moe/stage_1_sen12ms/best_checkpoint.pt",
+            "bytes": 7591757,
+            "sha256": "53ec085f8806d841a2107430ff1069b1605d90e92eadd0f5affb0af29888d720"
+          },
+          {
+            "relative_path": "LightGenV2/tasks/t12_cross_modal_lifelong/runs/simulation/initial_s17_v1/lifelong_moe/stage_1_sen12ms/last_checkpoint.pt",
+            "bytes": 7591757,
+            "sha256": "e2e1210ea7befcf1fdceebb962164901f3e52a2d0b842f5eabf9f5e0d844648a"
+          },
+          {
+            "relative_path": "LightGenV2/tasks/t12_cross_modal_lifelong/runs/simulation/initial_s17_v1/lifelong_moe/stage_2_clevr/best_checkpoint.pt",
+            "bytes": 7592205,
+            "sha256": "1a0102575c02ce7aa1f520d99419398130954fdfa555ad92d30a6f41ffe1ac0e"
+          },
+          {
+            "relative_path": "LightGenV2/tasks/t12_cross_modal_lifelong/runs/simulation/initial_s17_v1/lifelong_moe/stage_2_clevr/last_checkpoint.pt",
+            "bytes": 7592205,
+            "sha256": "88b5e703638cdbb9c68835c2768dd3aa4165bd5359ad5fb0a9c45011482b341c"
+          },
+          {
+            "relative_path": "LightGenV2/tasks/t12_cross_modal_lifelong/runs/simulation/initial_s17_v1/lifelong_moe/stage_3_sonyc/best_checkpoint.pt",
+            "bytes": 7593485,
+            "sha256": "aa00a224c1c3748f4385b9aba6dddb8c82e1a4b52771d63cfe1c037bb2ced94a"
+          },
+          {
+            "relative_path": "LightGenV2/tasks/t12_cross_modal_lifelong/runs/simulation/initial_s17_v1/lifelong_moe/stage_3_sonyc/last_checkpoint.pt",
+            "bytes": 7593485,
+            "sha256": "6017e2ff6fae8fb3e128f3e2ffdad6c4844e517e7f3d7bc37ebf080cc4864c2c"
+          },
+          {
+            "relative_path": "LightGenV2/tasks/t12_cross_modal_lifelong/runs/simulation/initial_s17_v1/lifelong_moe/stage_4_video/best_checkpoint.pt",
+            "bytes": 7593933,
+            "sha256": "6909b58e3322060105fe0acb25ac3257524404912d6a7381bbe0ca8ca217523e"
+          },
+          {
+            "relative_path": "LightGenV2/tasks/t12_cross_modal_lifelong/runs/simulation/initial_s17_v1/lifelong_moe/stage_4_video/last_checkpoint.pt",
+            "bytes": 7593933,
+            "sha256": "74dc91f5514dc04e6fb14094922ae156c2ba785a175917159be4f47a2ba8c616"
+          }
+        ]
+      },
+      {
+        "directory": "/DATA/DATA1/guest3/t12_d2nn_baselines_20260920",
+        "head": "5d1ee1174ba445fb807380f7dd0c28c03a592f9d",
+        "noncache_ignored_files": 25,
+        "noncache_regular_bytes": 36179247,
+        "checkpoints": [
+          {
+            "relative_path": "LightGenV2/tasks/t12_cross_modal_lifelong/runs/simulation/sequential_d2nn_s17_5d1ee117/sequential_d2nn/stage_1_sen12ms/best_checkpoint.pt",
+            "bytes": 5989215,
+            "sha256": "1a00e8bae27107729797a44d650324c56f3a8d46de2b1f9837a24c4b15c1e37d"
+          },
+          {
+            "relative_path": "LightGenV2/tasks/t12_cross_modal_lifelong/runs/simulation/sequential_d2nn_s17_5d1ee117/sequential_d2nn/stage_1_sen12ms/last_checkpoint.pt",
+            "bytes": 5989215,
+            "sha256": "1573aed2eea1b837e0a5f8534fbd3fe66f1204702503735daec9a5f2087f6d35"
+          },
+          {
+            "relative_path": "LightGenV2/tasks/t12_cross_modal_lifelong/runs/simulation/sequential_d2nn_s17_5d1ee117/sequential_d2nn/stage_2_clevr/best_checkpoint.pt",
+            "bytes": 5989343,
+            "sha256": "53b85de96724e4073ba5f45194d88a0b7a5e106143ac6a84f911e36a5f009323"
+          },
+          {
+            "relative_path": "LightGenV2/tasks/t12_cross_modal_lifelong/runs/simulation/sequential_d2nn_s17_5d1ee117/sequential_d2nn/stage_2_clevr/last_checkpoint.pt",
+            "bytes": 5989343,
+            "sha256": "35f96b3302ee0909325e3cc91c9de88cc9df1a89efa0dc9456aefd5a44f61c3b"
+          },
+          {
+            "relative_path": "LightGenV2/tasks/t12_cross_modal_lifelong/runs/simulation/sequential_d2nn_s17_5d1ee117/sequential_d2nn/stage_3_sonyc/best_checkpoint.pt",
+            "bytes": 5990303,
+            "sha256": "c7b4d142f7512174b80a1af28be683f0d4028b7a55469fcf53a32cb1846d26a6"
+          },
+          {
+            "relative_path": "LightGenV2/tasks/t12_cross_modal_lifelong/runs/simulation/sequential_d2nn_s17_5d1ee117/sequential_d2nn/stage_3_sonyc/last_checkpoint.pt",
+            "bytes": 5990303,
+            "sha256": "13cee7c247d2b5396f634984e71ec601971fc90a073b19cdb171c9f07dc5958f"
+          }
+        ]
+      },
+      {
+        "directory": "/DATA/DATA1/guest3/t12_sequential_d2nn_20260920",
+        "head": "0e791798f8ec69bc9dc1c9b2f82dc4452e6cf3f6",
+        "noncache_ignored_files": 32,
+        "noncache_regular_bytes": 65135315,
+        "checkpoints": [
+          {
+            "relative_path": "LightGenV2/tasks/t12_cross_modal_lifelong/runs/simulation/sequential_d2nn_replay_s17_v1/sequential_d2nn/stage_1_sen12ms/best_checkpoint.pt",
+            "bytes": 8063165,
+            "sha256": "edb358530a20c0836c0747d0104c19e15b852cd1246b602120d790010bc465d6"
+          },
+          {
+            "relative_path": "LightGenV2/tasks/t12_cross_modal_lifelong/runs/simulation/sequential_d2nn_replay_s17_v1/sequential_d2nn/stage_1_sen12ms/last_checkpoint.pt",
+            "bytes": 8063165,
+            "sha256": "bd0dcb9d39523d67b01bec4c3186d67ac6b8b64e56b0a0d28fc8ea1754f8c2c4"
+          },
+          {
+            "relative_path": "LightGenV2/tasks/t12_cross_modal_lifelong/runs/simulation/sequential_d2nn_replay_s17_v1/sequential_d2nn/stage_2_clevr/best_checkpoint.pt",
+            "bytes": 8063357,
+            "sha256": "eab4c1d2fb2a3efd4e15bf1b03e2c6f3f24fd51da4cadea45cd04e1ec6297c70"
+          },
+          {
+            "relative_path": "LightGenV2/tasks/t12_cross_modal_lifelong/runs/simulation/sequential_d2nn_replay_s17_v1/sequential_d2nn/stage_2_clevr/last_checkpoint.pt",
+            "bytes": 8063357,
+            "sha256": "3afa9fc3f2cc501cca884c46e12f0ca9250eaaafde8600888d4550c5adb11a45"
+          },
+          {
+            "relative_path": "LightGenV2/tasks/t12_cross_modal_lifelong/runs/simulation/sequential_d2nn_replay_s17_v1/sequential_d2nn/stage_3_sonyc/best_checkpoint.pt",
+            "bytes": 8064317,
+            "sha256": "eef37f97a71c11bfc5f1c5070692029923295ef62f22b9f7a365d95ca8f39c2c"
+          },
+          {
+            "relative_path": "LightGenV2/tasks/t12_cross_modal_lifelong/runs/simulation/sequential_d2nn_replay_s17_v1/sequential_d2nn/stage_3_sonyc/last_checkpoint.pt",
+            "bytes": 8064317,
+            "sha256": "6cfe230764ff35eb1d4e7d81552ce35065084fb179a64a18a2ab85bd76ae6932"
+          },
+          {
+            "relative_path": "LightGenV2/tasks/t12_cross_modal_lifelong/runs/simulation/sequential_d2nn_replay_s17_v1/sequential_d2nn/stage_4_video/best_checkpoint.pt",
+            "bytes": 8064445,
+            "sha256": "950253ff27e0d35318972016cd942bfefefdc9a4a512f60547efecb59265d2e5"
+          },
+          {
+            "relative_path": "LightGenV2/tasks/t12_cross_modal_lifelong/runs/simulation/sequential_d2nn_replay_s17_v1/sequential_d2nn/stage_4_video/last_checkpoint.pt",
+            "bytes": 8064445,
+            "sha256": "90aff84153dc4d015fc19d18472b25795aff878738c8d2ed8225265057e813cf"
+          }
+        ]
+      }
+    ]
+  },
   "schema_version": 1,
   "source_head": "2f2f6946f38c7d06320eb29314654a6260f3d618",
   "source_runtime": "/DATA/DATA1/guest3/t12_cross_modal_20260920",

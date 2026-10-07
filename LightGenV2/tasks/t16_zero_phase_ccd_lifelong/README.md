@@ -30,6 +30,25 @@
 
 ## 代码和数据
 
+### 名称含t12的四份旧目录，不是文生图
+
+2026-10-07实际核对下列服务器目录：它们属于本任务的早期多模态终身学习沿革，
+不是T12文生图，也不是可以仅凭Git状态干净就删除的代码副本。
+
+| 服务器guest3下的旧目录 | 当初用途 | 当前保留资产 |
+| --- | --- | --- |
+| `t12_cross_modal_capacity_20260920` | 早期容量／损失权重试验 | 8份best/last及原配置／结果 |
+| `t12_cross_modal_video_20260920` | 早期视频任务及划分协议 | 12份best/last及原配置／结果 |
+| `t12_d2nn_baselines_20260920` | 早期顺序D2NN对照 | 6份best/last及原配置／结果 |
+| `t12_sequential_d2nn_20260920` | 早期顺序D2NN回放对照 | 8份best/last及原配置／结果 |
+
+这些run仍在各目录的旧 `LightGenV2/tasks/t12_cross_modal_lifelong/runs/`，
+阶段目录名为sen12ms／clevr／sonyc／video，不能把它们的指标套给本页最终四任务矩阵。
+34份PT本次只读取原字节核验SHA，没有载入模型、训练或评估；146份非缓存被忽略资产
+以及旧测速均原位保留。精确目录、HEAD及PT SHA见
+[源码与历史资产身份](source_import_20261002.json)的`legacy_protocol_asset_protection_20261007`。
+这不证明其数据协议与当前最终版相同，也不批准删除这些旧run；本轮没有切换旧目录。
+
 - 正式 MoE/D2NN 顺序链：`train_lifelong_moe.py` / `train_lifelong_d2nn.py`。
 - 独立固定模型迁移：`eval_d2nn_fixed_4x4.py`。
 - 单任务/前端：`train_eurosat.py`、`train_other_tasks.py`、`pretrain_clevr_vision.py`。
