@@ -2576,3 +2576,8 @@ node_modules/
 # Keep originals on disk; this does not exclude source, config, manifest or summary reports.
 /handoffs/**/history.json
 /handoffs/**/test_samples.json
+# Generated epoch logs in CSV form; original files stay on disk.
+/handoffs/**/history.csv
+# Named historical per-query output data, not source or split manifests.
+/handoffs/abo_text_to_image_10cm_alpha040_20260925/physical_test_predictions.csv
+/handoffs/abo_text_to_image_10cm_alpha040_20260925/finetune_train800/finetuned_test_predictions.csv
