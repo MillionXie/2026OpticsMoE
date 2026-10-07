@@ -1,4 +1,10 @@
 /CLIP
+# Existing diagnostic outputs remain on disk, outside source synchronization.
+# Do not hide capture contracts, final reports, source or new task directories.
+/handoffs/t12_lab_small_20260926/physical_pilot_01/ccd/*/pilot_[0-9][0-9][0-9].json
+/LightGenV2/reports/20260927_lgvq_temporal_multi_baseline_a100/LGVQ_temporal_multi_baseline_A100.xlsx.inspect.ndjson
+/LightGenV2/reports/20260927_lgvq_temporal_multi_baseline_a100/workbook_error_scan.ndjson
+/LightGenV2/reports/20260927_lgvq_temporal_multi_baseline_a100/workbook_inspect.ndjson
 # Immutable, individually reviewed T12 share-package source export. Canonical
 # main source and original historical Git objects are retained on all 3 hosts.
 # Unknown helper scripts/docs and future source additions stay visible.
