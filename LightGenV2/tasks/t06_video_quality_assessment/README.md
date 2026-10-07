@@ -322,6 +322,8 @@ python -m LightGenV2.tasks.t06_video_quality_assessment.quality_token_resolution
 只保存压缩best；它不是新的已验收正式训练协议，不补造历史last或独立泛化结论。
 入口帮助：`python -m LightGenV2.tasks.t06_video_quality_assessment.compress_temporal_readout --help`。
 9项合成CPU/AST/配置/防覆盖检查通过，不等于真实缓存或完整模型复现。
+实际训练服务器main `3a130341` 同样通过这9项检查，CUDA设备隐藏，未读取正式PT/数据
+或调用设备；来源收据保留原本地历史身份，不因发布后存在而改称此前服务器运行版。
 
 2026-10-07补回旧A100综合测速导出缺失的15份baseline源码／配置快照，逐文件匹配
 其原SHA（含混合CRLF行尾），没有替换现用模型、重测或更新旧SHA清单。

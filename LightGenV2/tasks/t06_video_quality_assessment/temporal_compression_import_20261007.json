@@ -10,6 +10,14 @@
   "models_data_GPU_or_devices_run": false,
   "final_temporal_checkpoint_changed": false,
   "new_compression_accuracy_verified": false,
+  "training_server_main_CPU_verification": {
+    "tested_commit": "3a13034106df1ad16e43eb439f7f39b4741c2192",
+    "command": "CUDA_VISIBLE_DEVICES='' python -m pytest maintenance/git_safety/tests/test_t06_temporal_compression_adoption.py -q",
+    "passed": 9,
+    "failed": 0,
+    "elapsed_seconds": 1.58,
+    "scope": "AST preservation, original config inheritance, output refusal and tiny synthetic CPU matrices; not formal PT/data or performance validation"
+  },
   "original_function_AST_SHA256": {
     "_sha256": "d5657dd6c15076069c80ca45db0f35e0047ac6ebcc3dce751a06b87a8f2616f8",
     "_json": "d805d3bbf177b431acdd456ccc6b0a2e6c37f8c2023f7345d09c6725b05f7c61",
