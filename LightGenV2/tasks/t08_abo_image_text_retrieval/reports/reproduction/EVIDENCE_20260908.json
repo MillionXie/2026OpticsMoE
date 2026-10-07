@@ -1,0 +1,204 @@
+{
+  "schema_version": 1,
+  "audit_date": "2026-09-08",
+  "task": "T08",
+  "scope": "Read-only source/data/artifact audit; no new model training or full model evaluation. Existing predictions may be recomputed as explicitly recorded.",
+  "local_head": "79bf0f2695949fc5d0353698cfad417c14282f7b",
+  "local_tree_clean": false,
+  "server_main_head": "c313ff807617a75f410246e08d22d5f03b96443b",
+  "server_main_tree_clean": false,
+  "source_files_sha256": {
+    "LightGenV2/tasks/t08_abo_image_text_retrieval/__init__.py": "6e4778f4f7242eac832ef5a4a31aaaeda8eef45a430661d60d7e9ea9f57cc58b",
+    "LightGenV2/tasks/t08_abo_image_text_retrieval/baseline_5090d.py": "812a9da0571727ebcf9a59b87ad638d800fd2191db984575e560a60a5a7c4568",
+    "LightGenV2/tasks/t08_abo_image_text_retrieval/optical_moe.py": "f7e069ada63dee8ff34fab5858976abe40742c4056cbc26c7b426f9539031cfc",
+    "LightGenV2/tasks/t08_abo_image_text_retrieval/summarize_optical_moe.py": "d2b2cc926f114c83bb08be20c0d6c2eb4d08947295a3dc8a7b53121f58c8347a",
+    "LightGenV2/tasks/t08_abo_image_text_retrieval/configs/optical_router_moe_dc20.yaml": "636dcf8c42602b1d3cb2d03818d02fed53ba435ed1a82fbe68e814c3793885d1",
+    "LightGenV2/tasks/t08_abo_image_text_retrieval/configs/optical_router_moe_dc20_kd1_balance1.yaml": "933293b6aa20e83e9cdfc322048fb1f231b1491a9f848030697efab72c7347c4"
+  },
+  "remote_record_inventory": [
+    {
+      "path": "/DATA/DATA1/guest3/2026OpticsMoE/LightGenV2/tasks/t08_abo_image_text_retrieval/runs/simulation/optical_router_moe_dc20_seed42/parameter_fairness_contract.json",
+      "sha256_of_record": "3cd4d4113a27484b6d2e2cbbc5dc258959a8b4fc20fc44cca817fb8d172af5d1",
+      "bytes": 655
+    },
+    {
+      "path": "/DATA/DATA1/guest3/2026OpticsMoE/LightGenV2/tasks/t08_abo_image_text_retrieval/runs/simulation/optical_router_moe_dc20_seed42/final_report.json",
+      "sha256_of_record": "9116f02476fe9503ed334c6b5ec7cefb8712dcdc15c88c0196b6fb9f26d612f3",
+      "bytes": 3535,
+      "best_epoch": 40,
+      "selection_biased": true,
+      "test_samples": 2400,
+      "checkpoint_sha256": "7b49b8b7a942939d0819130460b0fbeaa1887921e151c5fa2154dff4e576bf30",
+      "status": "complete",
+      "student": {
+        "recall_at_1": 0.79875,
+        "recall_at_5": 0.9479166666666666,
+        "recall_at_10": 0.9825,
+        "mrr": 0.8617108573126544,
+        "mean_rank": 1.8270833333333334,
+        "median_rank": 1.0
+      }
+    },
+    {
+      "path": "/DATA/DATA1/guest3/2026OpticsMoE/LightGenV2/tasks/t08_abo_image_text_retrieval/runs/simulation/optical_router_moe_dc20_seed42/run_manifest.json",
+      "sha256_of_record": "6931d9d07f52011f9ea2745c79b961773558465bc03b9bff1e5acc59b4aa531e",
+      "bytes": 706,
+      "git_commit": "b44bfe3d63877191f3593a8c8f9132be0640ce03",
+      "git_dirty": false,
+      "seed": 42,
+      "selection_biased": true
+    },
+    {
+      "path": "/DATA/DATA1/guest3/2026OpticsMoE/LightGenV2/tasks/t08_abo_image_text_retrieval/runs/simulation/optical_router_moe_dc20_kd1_balance1_seed42/parameter_fairness_contract.json",
+      "sha256_of_record": "3cd4d4113a27484b6d2e2cbbc5dc258959a8b4fc20fc44cca817fb8d172af5d1",
+      "bytes": 655
+    },
+    {
+      "path": "/DATA/DATA1/guest3/2026OpticsMoE/LightGenV2/tasks/t08_abo_image_text_retrieval/runs/simulation/optical_router_moe_dc20_kd1_balance1_seed42/final_report.json",
+      "sha256_of_record": "b28d2684ee43e86bdfae39c252836161bde2f4c0f84a638fa07c9b673ad68c79",
+      "bytes": 3540,
+      "best_epoch": 40,
+      "selection_biased": true,
+      "test_samples": 2400,
+      "checkpoint_sha256": "b64689eb792da483486f721d4adf879f0a083107d7cbee63ad8ed7718c8b7144",
+      "status": "complete",
+      "student": {
+        "recall_at_1": 0.7983333333333333,
+        "recall_at_5": 0.95375,
+        "recall_at_10": 0.9858333333333333,
+        "mrr": 0.867616268422718,
+        "mean_rank": 1.7195833333333332,
+        "median_rank": 1.0
+      }
+    },
+    {
+      "path": "/DATA/DATA1/guest3/2026OpticsMoE/LightGenV2/tasks/t08_abo_image_text_retrieval/runs/simulation/optical_router_moe_dc20_kd1_balance1_seed42/run_manifest.json",
+      "sha256_of_record": "ac739f3f69bf1e3937b693a5d0ad83414fef1bc0b3dc2068651140c6049f548f",
+      "bytes": 706,
+      "git_commit": "46d35fc268fc08dd7fa9120bfc72d008f67545af",
+      "git_dirty": false,
+      "seed": 42,
+      "selection_biased": true
+    }
+  ],
+  "actual_checkpoint_sha256": {
+    "LightGenV2/tasks/t08_abo_image_text_retrieval/runs/simulation/optical_router_moe_dc20_kd1_balance1_seed42/best_checkpoint.pt": {
+      "bytes": 35104565,
+      "sha256": "b64689eb792da483486f721d4adf879f0a083107d7cbee63ad8ed7718c8b7144"
+    }
+  },
+  "data_audit": {
+    "counts": [
+      4800,
+      2400
+    ],
+    "manifest_sha256": {
+      "train.csv": "f742fc9e2314b7fb2858ad486505c943f7b7e37493e5d601d8dcbf7740b5707b",
+      "test.csv": "4ca5834abf4bb4d614b41f05b5b2481b3d41720dd78c1c37b05923c97657dfb8",
+      "titles.csv": "c97e8da3c6c608a706f2cc0d284aeafb873fc6cc17d04a7c9f9f66b2135846c1",
+      "manifest.csv": "880b4f34a411df1bfbd98adc91b1c19651480323ee43e62ae4b84c36ca06c543"
+    },
+    "sample_id_intersection": 0,
+    "image_path_intersection": 0,
+    "image_id_intersection": 1,
+    "product_id_intersection": 100,
+    "spin_id_intersection": 100,
+    "unique_image_file_hashes": [
+      4800,
+      2400
+    ],
+    "image_file_hash_intersection": 1,
+    "views_per_product": {
+      "train": {
+        "48": 100
+      },
+      "test": {
+        "24": 100
+      }
+    }
+  },
+  "duplicate_pairs": [
+    {
+      "train": {
+        "sample_id": "00b79f67f640ec55",
+        "dataset": "abo",
+        "product_id": "B072C8Q4WV",
+        "image_id": "61I1JyT8E+L",
+        "image_path": "images/B072C8Q4WV/2399ab95_07.jpg",
+        "label": "43",
+        "class_name": "B072C8Q4WV",
+        "coarse_type": "furniture cover",
+        "text": "Stone & Beam | furniture cover | Amazon Brand – Stone & Beam Carrigan Modern Living Room Accent Chair with Slipcover, 45\"W, Khaki",
+        "split": "train",
+        "spin_id": "2399ab95",
+        "azimuth": "7",
+        "identity_image_path": "/DATA/DATA1/lixinyue/code/adapt2026/0817/f4/downloads/images/abo_spin_product200/B072C8Q4WV/2399ab95_07.jpg"
+      },
+      "test": {
+        "sample_id": "eec0a5c73493ed9d",
+        "dataset": "abo",
+        "product_id": "B072C8Q4WV",
+        "image_id": "61I1JyT8E+L",
+        "image_path": "images/B072C8Q4WV/2399ab95_06.jpg",
+        "label": "43",
+        "class_name": "B072C8Q4WV",
+        "coarse_type": "furniture cover",
+        "text": "Stone & Beam | furniture cover | Amazon Brand – Stone & Beam Carrigan Modern Living Room Accent Chair with Slipcover, 45\"W, Khaki",
+        "split": "test",
+        "spin_id": "2399ab95",
+        "azimuth": "6",
+        "identity_image_path": "/DATA/DATA1/lixinyue/code/adapt2026/0817/f4/downloads/images/abo_spin_product200/B072C8Q4WV/2399ab95_06.jpg"
+      },
+      "train_sha256": "0661069a9ed3079441aadb0e8a2831635b441eae4908557f5eff13006c4ebfb9",
+      "test_sha256": "0661069a9ed3079441aadb0e8a2831635b441eae4908557f5eff13006c4ebfb9"
+    }
+  ],
+  "recomputed_from_existing_predictions": {
+    "count": 2400,
+    "metrics": {
+      "recall_at_1": 0.7370833333333333,
+      "recall_at_5": 0.93375,
+      "recall_at_10": 0.9604166666666667,
+      "mrr": 0.8230330539977374,
+      "mean_rank": 2.6654166666666668,
+      "median_rank": 1.0
+    },
+    "matches_report_at_1e_12": true
+  },
+  "recomputed_timing": {
+    "count": 200,
+    "mean_ms": 25.690505142211915,
+    "median_ms": 25.074864387512207,
+    "first_block_shapes": {
+      "[160, 1024]": 78,
+      "[156, 1024]": 6,
+      "[168, 1024]": 62,
+      "[180, 1024]": 28,
+      "[144, 1024]": 6,
+      "[192, 1024]": 12,
+      "[176, 1024]": 6,
+      "[196, 1024]": 2
+    }
+  },
+  "specific_5090d_report": {
+    "path": "LightGenV2/tasks/t08_abo_image_text_retrieval/reports/5090d_optical_and_qwen_20260907/qwen_baseline/baseline_report.json",
+    "sha256": "1ddb51dfb47531158b5917e396ca29d051cff3daa607f043885bdfbe01b6fd94",
+    "git_commit": "50294388b4c59a881083a1b3460d475a4bc4834d",
+    "git_worktree_clean": false,
+    "power": {
+      "sampler": "nvidia-smi board power.draw",
+      "sampling_interval_ms": 10,
+      "idle_samples": 294,
+      "active_samples": 511,
+      "idle_mean_w": 67.65108843537415,
+      "active_mean_w": 154.20146771037184,
+      "active_peak_w": 158.05,
+      "rated_power_limit_w": 575.0,
+      "measured_active_energy_j_per_sample": 3.9615135991499324,
+      "idle_subtracted_energy_j_per_sample": 2.2235229638247196,
+      "rated_upper_bound_energy_j_per_sample": 14.772040456771851,
+      "energy_basis": "board power sampled only while model inference was active; energy uses the measured first-block-to-task-output mean latency",
+      "pre_idle_cooldown_seconds": 5.0
+    }
+  }
+}
