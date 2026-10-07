@@ -1,0 +1,39 @@
+{
+  "schema_version": 1,
+  "dataset": "curated CC BY 4.0 single-object T2I subset",
+  "license": "CC BY 4.0",
+  "splits": {
+    "train": 576,
+    "val": 64,
+    "test": 64
+  },
+  "object_sequences": {
+    "train": 48,
+    "val": 8,
+    "test": 8
+  },
+  "categories": [
+    "lamp"
+  ],
+  "manifest_sha256": {
+    "train": "52128ac5f8219c7cfc56af44d958b667566a48340449a8d3306bbbbfba6c32ff",
+    "val": "768e06c80702ef1030cce1a9f0f35d1f660d2ae67adb5bbab6759b56639e33e1",
+    "test": "72a6c2c6f6a09c05b32c77511a9e71ebde0549b42f01c2b75741f2dd5e44b397"
+  },
+  "identity_split": true,
+  "source_dataset": "ABO CVPR 2022 No-BG Blender render benchmark",
+  "source_url": "https://amazon-berkeley-objects.s3.amazonaws.com/index.html",
+  "source_archive": "https://amazon-berkeley-objects.s3.us-east-1.amazonaws.com/archives/abo-release-renders.zip",
+  "source_license_sha256": "419896aea50c15d6e40c5b4baf4bd346f78223b9a354c7357ad00262afdc08ec",
+  "attribution": "Amazon.com and the Amazon Berkeley Objects dataset creators",
+  "seed": 42,
+  "eligible_rendered_products": {
+    "LAMP": 84
+  },
+  "views_per_train_product": 12,
+  "views_per_eval_product": 8,
+  "image_size": 256,
+  "download_workers": 16,
+  "one_object_per_image": true,
+  "alpha_masks_saved": true
+}

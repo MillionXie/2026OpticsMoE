@@ -1,0 +1,58 @@
+{
+  "schema_version": 1,
+  "split": "identity-disjoint test",
+  "samples": 144,
+  "underlying_images": 72,
+  "metrics": {
+    "latent_mse": 0.03524436160094208,
+    "selected_l1": 0.5135899922913976,
+    "distractor_change_l1": 0.2589294704505139,
+    "reference_mse": 0.059256425644788474,
+    "counterfactual_delta_l1": 0.5904422303040823,
+    "region_accuracy": 0.9791666666666666,
+    "mse_improvement_over_copy": 0.40522295738501435
+  },
+  "architecture": {
+    "variant": "qwen_bksdm_v2_tiny_reference_decoder_optical",
+    "flow": "image->frozen VAE encoder; text->frozen Qwen->adapter; one UNet call->VAE decoder",
+    "unet_parameters": 329623401,
+    "vae_decoder_parameters": 49490179,
+    "qwen_condition_adapter_parameters": 4273280,
+    "text_region_router_parameters": 10243,
+    "generation_tail_parameters": 383397103,
+    "qwen_parameters_excluded_from_tail": true,
+    "inference_iterations": 1,
+    "unet_calls": 1,
+    "vae_decoder_calls": 1,
+    "reference_conditioning": "8ch input latent + small seeded Gaussian texture channel",
+    "output_parameterization": "single-pass residual around the input latent",
+    "optical_decoder": {
+      "location": "first/deepest UNet decoder up block",
+      "parallel_contract": "electronic(shared_input) || optical(shared_input), then RMS fusion",
+      "electronic_and_optical_are_parallel": true,
+      "optical_backend": "differentiable phase-only FFT simulation",
+      "optical_grid": [
+        8,
+        8
+      ],
+      "optical_parameters": 2786277,
+      "alpha": 0.5039359927177429,
+      "alpha_minimum": 0.4,
+      "alpha_maximum": 0.75
+    },
+    "config": {
+      "optical_width": 224,
+      "optical_grid": 8,
+      "optical_experts": 4,
+      "optical_top_k": 2,
+      "alpha_initial": 0.5,
+      "alpha_minimum": 0.4,
+      "alpha_maximum": 0.75,
+      "rms_epsilon": 1e-06
+    }
+  },
+  "checkpoint": "/DATA/DATA1/guest3/t12_assets/runs/abo_product_repair_big_optical_rgb_v6/best_model.pt",
+  "random_seed_is_real": true,
+  "same_seed_within_counterfactual_pair": true,
+  "gan_used": false
+}

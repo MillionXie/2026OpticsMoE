@@ -1,0 +1,56 @@
+{
+  "schema_version": 1,
+  "date": "2026-09-22",
+  "image_size": 128,
+  "single_pass": true,
+  "decoder_calls": 1,
+  "qwen_frozen_feature_cache": true,
+  "gan_training_only": true,
+  "runs": {
+    "backpack_style_electronic": {
+      "checkpoint_sha256": "1ab37bb7d44bae2501f2b19fec680970dcb7176b2ff4c8cc4bcfd23d954ab1c0",
+      "checkpoint_epoch": 25,
+      "test_samples": 54,
+      "generator_parameters": 929860,
+      "metrics": {"l1": 0.10621213609421695, "edge": 0.13563670383559334, "background": 0.008548659548439362}
+    },
+    "backpack_style_decoder_optical": {
+      "checkpoint_sha256": "d8ffb3409b065e48bf25b1858498a774c249254cf3093d182bb21605aab5c2b2",
+      "checkpoint_epoch": 20,
+      "test_samples": 54,
+      "generator_parameters": 966728,
+      "decoder_optical_parameters": 36865,
+      "optics_location": "first_decoder_generator_block",
+      "alpha": 0.49973928928375244,
+      "alpha_minimum": 0.4,
+      "metrics": {"l1": 0.056276403919414235, "edge": 0.06450474041479605, "background": 0.005296527114869268}
+    },
+    "chair_view_electronic": {
+      "checkpoint_sha256": "25c2cd88dfec80f36174e232f37c7963edc42a6c2c502dbf1c290a2394d75b2e",
+      "checkpoint_epoch": 45,
+      "test_samples": 24,
+      "generator_parameters": 1926710,
+      "view_flow_limit": 0.1,
+      "view_warp_mix": 0.45,
+      "metrics": {"l1": 0.08727476745843887, "edge": 0.2560585141181946, "background": 0.047619134187698364}
+    },
+    "chair_view_decoder_optical": {
+      "checkpoint_sha256": "9874a921dd2d4c90ea306d8ff35b2f83f5bebd2e2162c5dee76a60b499f45170",
+      "checkpoint_epoch": 24,
+      "test_samples": 24,
+      "generator_parameters": 2017338,
+      "decoder_optical_parameters": 90625,
+      "optics_location": "first_decoder_generator_block",
+      "alpha": 0.4999154508113861,
+      "alpha_minimum": 0.4,
+      "view_flow_limit": 0.1,
+      "view_warp_mix": 0.45,
+      "metrics": {"l1": 0.08754201233386993, "edge": 0.25485891103744507, "background": 0.04802772402763367}
+    }
+  },
+  "limitations": [
+    "The clean-render archive contains no backpack turntable identities, so the adjacent-view task is demonstrated on chairs.",
+    "The adjacent-view output is structure preserving but can contain double edges on thin chair legs.",
+    "The optical layer is a differentiable Fourier-optics simulation, not a measured physical optical bench."
+  ]
+}

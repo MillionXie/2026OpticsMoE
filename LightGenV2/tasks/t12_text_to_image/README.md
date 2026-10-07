@@ -10,6 +10,11 @@
 
 唯一入口：[复现与最终产物](reports/reproduction/README.md)。旧报告保留作历史记录，不代表当前部署入口。
 
+9月21—22日旧cleanrender GAN、parallel optical、lamp场景／半Qwen替换、商品修复、
+chair style及decoder optical共11份原JSON汇总已补入main，逐LF字节与原7093ec4608
+和实际服务器v2源码一致。它们是旧容量／划分的历史仿真、训练耗时及PT身份，
+不是当前17.03M实拍新结果；原数值和全部测速未重算，数据和权重不进Git。
+
 原数据合同与caption缓存测试 `tests/test_dataset_contract.py`、`tests/test_feature_cache.py`
 已补入main，原字节与保留服务器v2及7093ec4608逐LF一致。四项合成CPU测试验证
 旧UCO3D许可／对象划分拒绝和caption首次出现顺序；不读取正式数据或缓存，

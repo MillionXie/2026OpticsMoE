@@ -1,0 +1,49 @@
+{
+  "schema_version": 1,
+  "variant": "qwen_cleanrender_direct_gan",
+  "selected_epoch": 120,
+  "selection_basis": "held-out identity visual quality; epoch 160 had stronger edge artifacts",
+  "dataset": {
+    "name": "abo_cleanrender_v1",
+    "source": "ABO CVPR 2022 No-BG Blender renders",
+    "resolution": 128,
+    "categories": ["chair", "lamp", "table"],
+    "images": {"train": 1728, "val": 192, "test": 192},
+    "products": {"train": 144, "val": 24, "test": 24},
+    "identity_split": true,
+    "summary_sha256": "34f59bcb2842b15982565160c6b8dba9ec4f0322fcdcdd974d611d49dfc97a8c",
+    "license_file_sha256": "419896aea50c15d6e40c5b4baf4bd346f78223b9a354c7357ad00262afdc08ec"
+  },
+  "parameters": {
+    "generator": 4193542,
+    "training_discriminator": 1875364,
+    "total_trainable_during_training": 6068906,
+    "under_10m": true,
+    "frozen_qwen_excluded": true
+  },
+  "inference": {
+    "iterations": 1,
+    "decoder_calls": 1,
+    "unet": false,
+    "vae": false,
+    "input_image": false,
+    "random_seed_is_real": true
+  },
+  "selected_validation": {
+    "discriminator_category_accuracy": 1.0,
+    "mean_seed_pixel_difference": 0.13398964703083038,
+    "low_resolution_polynomial_mmd": 0.07871818542480469
+  },
+  "selected_training": {
+    "foreground_weighted_low_frequency_reconstruction": 0.08502333556060437,
+    "visible_seed_difference": 0.1458823257298381,
+    "real_category_accuracy": 0.9913194444444444,
+    "fake_category_accuracy": 1.0
+  },
+  "checkpoint": {
+    "server_path": "/DATA/DATA1/guest3/t12_assets/runs/cleanrender_direct_gan_v1/checkpoint_epoch_0120.pt",
+    "sha256": "2638ea12e7bf88059aed7b60f4bc445859e6136cab27809e4dee18357423860a"
+  },
+  "server_tests_passed": 36,
+  "gpu_released_memory_mib": 12
+}
