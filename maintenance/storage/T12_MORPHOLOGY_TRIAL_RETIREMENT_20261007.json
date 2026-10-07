@@ -1,0 +1,24 @@
+{
+  "purpose": "Historical teacher-generated full-frame product morphology trial; explicitly excluded from final T12 versions in task README",
+  "operation": "Moved three local untracked source files out of the canonical task directory into existing archive hierarchy; no remote runtime file moved",
+  "destination": "archive/t12_morphology_trial_20261007",
+  "git_recovery_commit": "ac7e3ecce0bef96ae7d91f8de6e478542913bd4e",
+  "git_recovery_ref": "refs/archive/checkout-preservation-20261004/original18",
+  "files": [
+    {"name": "morphology_data.py", "sha256": "c95feef5a033297d7a386a359790bdf44f671027fe8501b0b57e45a213e2f78d"},
+    {"name": "morphology_run.py", "sha256": "de5a754bf1f394368eee88e59cce4958636c206cb7e4e105cab26035f6d0bab0"},
+    {"name": "morphology_teacher.py", "sha256": "3136f0a6427cc5ef29753f5eff9dca347d4de67337ac0e48936e255f9c8150c5"}
+  ],
+  "checks": {
+    "source_bytes_exactly_match_recovery_commit": true,
+    "destination_sha_matches_original": true,
+    "tracked_source_imports_of_retired_modules": 0,
+    "local_non_handoff_source_references": "morphology_run imported morphology_data; no other module import found; shared redraw trainer only retains generic morphology task-name handling",
+    "local_training_and_lab_process_command_line_matches": 0
+  },
+  "restore": "Move the three exact-SHA files from destination back to LightGenV2/tasks/t12_text_to_image, or extract their original paths from the recorded Git commit; inspect current source conflicts first",
+  "preserved": ["original datasets and teacher targets", "all PT and reports", "all timing", "historical delivery package snapshots", "shared product_global_redesign_training.py", "all remote runtime files"],
+  "limits": ["Command-line inspection is not an OS-wide open-file guarantee", "This retires only three local trial source files, not all T12 historical implementations", "Archived files retain original package-relative imports; restore before running, do not execute them as a new package"],
+  "bytes_deleted": 0,
+  "runtime_models_or_devices_changed": false
+}
