@@ -118,6 +118,13 @@ def run(args: argparse.Namespace) -> dict[str, Any]:
     if fusion_ablation != 'none' and args.phase != 'evaluate':
         raise ValueError('Fusion ablation is evaluation-only; it must not trigger training')
     settings = load_settings(TASK_DIR / "configs" / PROFILES[args.profile])
+    existing_root = getattr(args, 'existing_layered_root', None)
+    existing_summary = None
+    if existing_root is not None:
+        if args.profile != 'layered_scene_exp05_dc30_ccdsmall':
+            raise ValueError('Existing layered assets are pinned to the selected application profile')
+        from .verify_layered_assets import bind_existing
+        existing_summary = bind_existing(settings, existing_root)
     if args.run_dir:
         settings.output_dir = Path(args.run_dir).expanduser().resolve()
     suffix = '' if fusion_ablation == 'none' else f'_{fusion_ablation}'
@@ -148,7 +155,7 @@ def run(args: argparse.Namespace) -> dict[str, Any]:
             "selection": "maximum test changed-cell accuracy at epoch 1/every 5/final",
         },
     )
-    summary = _ensure_data(settings, device)
+    summary = existing_summary if existing_summary is not None else _ensure_data(settings, device)
     _json(
         settings.output_dir / f"split_contract{suffix}.json",
         {
@@ -186,6 +193,8 @@ def main() -> int:
     parser.add_argument("--device", default=None)
     parser.add_argument("--run-dir", default=None)
     parser.add_argument("--checkpoint", default=None)
+    parser.add_argument('--existing-layered-root', type=Path, default=None,
+                        help='Original selected application task asset directory; verify and reuse without preparation')
     parser.add_argument('--fusion-ablation', choices=('none', 'remove_optical', 'remove_electronic'), default='none')
     args = parser.parse_args()
     print(json.dumps(run(args), ensure_ascii=False, indent=2), flush=True)

@@ -77,8 +77,12 @@ baseline各用对应分层数据；评估展示也使用原分层合成器，不
 服务器main默认数据/SVG/缓存路径目前缺失；原资产仍位于
 `/DATA/DATA1/guest3/LightGenV2_worktrees/t04_layered_1bc120428/LightGenV2/tasks/t04_semantic_interaction/`
 下的`dataset/openmoji_layered_anchor6_svg_v3`与`assets/openmoji-17.0.0-svg`。
-仅运行上述只读检查不能使原run入口自动改用这些路径；在明确路径绑定之前，
-不要运行prepare/all来自动生成另一份数据。现有缓存94,018,791字节，原位保留。
+仅运行上述只读检查不会更改run路径。主线run现支持显式
+`--existing-layered-root <原任务资产目录>`，仅限`layered_scene_exp05_dc30_ccdsmall`。
+绑定前核验19份资产和dataset_summary的seed/划分SHA/数量，再设置数据/SVG/缓存路径；
+此模式跳过prepare与缓存生成，仅复用已有资产。缺失或错配在创建run输出前失败。
+不提供该参数时原默认行为不变，不要在缺资产的main路径盲运行prepare/all。
+本轮没有执行训练或TEST评估；现有缓存94,018,791字节，原位保留。
 清单一致尚不证明缓存tensor与每条样本的数值绑定或24,000张PNG的完整像素身份，
 不据此删除原运行目录或宣称epoch45完整复现。
 

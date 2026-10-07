@@ -58,5 +58,31 @@ def main():
     return 1 if result['errors'] else 0
 
 
+def bind_existing(settings, task_asset_root):
+    """Bind only the selected application; never invoke a preparation routine."""
+    if settings.layout_version != 'layered_anchor6_svg_v3' or not settings.embedding_only or settings.qwen_shared_baseline:
+        raise ValueError('Existing asset binding requires the layered embedding application')
+    if settings.prompt_cache_path.name != 'token_embeddings_v1.pt':
+        raise ValueError('Unexpected application cache name')
+    base = Path(task_asset_root).expanduser().resolve()
+    data = base / 'dataset/openmoji_layered_anchor6_svg_v3'
+    svg = base / 'assets/openmoji-17.0.0-svg'
+    result = inspect(data, svg)
+    if result['errors']:
+        raise ValueError('Existing layered assets failed identity check: ' + json.dumps(result['errors']))
+    expected = json.loads(IDENTITY.read_text(encoding='utf8'))
+    summary = json.loads((data / 'dataset_summary.json').read_text(encoding='utf8'))
+    if summary.get('type') != 'openmoji_layered_anchor6_proportional_svg_v3' or summary.get('seed') != settings.seed:
+        raise ValueError('Existing layered dataset summary has a different protocol')
+    for split in ('train', 'test'):
+        identity = expected['dataset_files'][split + '.jsonl']
+        if summary[split]['sha256'] != identity['sha256'] or summary[split]['samples'] != identity['records']:
+            raise ValueError('Existing layered summary differs from pinned split')
+    settings.data_dir = data
+    settings.svg_asset_dir = svg
+    settings.prompt_cache_path = data / 'token_embeddings_v1.pt'
+    return summary
+
+
 if __name__ == '__main__':
     raise SystemExit(main())

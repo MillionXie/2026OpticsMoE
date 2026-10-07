@@ -19,3 +19,43 @@ def test_identity_gate_is_read_only_and_rejects_changed_or_missing_assets(tmp_pa
     missing = tmp_path/'missing'
     assert inspect(missing, svg, expected)['errors'][0]['error'] == 'missing'
     assert not missing.exists()
+
+
+def test_binding_changes_only_explicit_paths_after_all_guards(tmp_path, monkeypatch):
+    import json
+    from types import SimpleNamespace
+    from LightGenV2.tasks.t04_semantic_interaction import verify_layered_assets as gate
+    data = tmp_path / 'dataset/openmoji_layered_anchor6_svg_v3'
+    data.mkdir(parents=True)
+    expected = {'dataset_files': {'train.jsonl': {'sha256': 'trainsha', 'records': 5000},
+                                 'test.jsonl': {'sha256': 'testsha', 'records': 1000}}}
+    identity = tmp_path/'identity.json'; identity.write_text(json.dumps(expected))
+    monkeypatch.setattr(gate, 'IDENTITY', identity)
+    monkeypatch.setattr(gate, 'inspect', lambda *a: {'errors': []})
+    summary = {'type': 'openmoji_layered_anchor6_proportional_svg_v3', 'seed': 73,
+               'train': {'sha256': 'trainsha', 'samples': 5000},
+               'test': {'sha256': 'testsha', 'samples': 1000}}
+    (data/'dataset_summary.json').write_text(json.dumps(summary))
+    settings = SimpleNamespace(layout_version='layered_anchor6_svg_v3', embedding_only=True,
+                               qwen_shared_baseline=False, seed=73,
+                               prompt_cache_path=tmp_path/'original/token_embeddings_v1.pt',
+                               data_dir=tmp_path/'original', svg_asset_dir=tmp_path/'original-svg',
+                               electronic_expansion=.5, fusion_alpha_minimum=.4001)
+    assert gate.bind_existing(settings, tmp_path) == summary
+    assert settings.data_dir == data
+    assert settings.prompt_cache_path == data/'token_embeddings_v1.pt'
+    assert settings.electronic_expansion == .5 and settings.fusion_alpha_minimum == .4001
+    assert not settings.prompt_cache_path.exists()  # mock identity validation did not generate it
+
+
+def test_failed_binding_keeps_settings_and_assets_untouched(tmp_path, monkeypatch):
+    import pytest
+    from types import SimpleNamespace
+    from LightGenV2.tasks.t04_semantic_interaction import verify_layered_assets as gate
+    settings = SimpleNamespace(layout_version='layered_anchor6_svg_v3', embedding_only=True,
+                               qwen_shared_baseline=False, prompt_cache_path=tmp_path/'token_embeddings_v1.pt')
+    before = vars(settings).copy()
+    monkeypatch.setattr(gate, 'inspect', lambda *a: {'errors': [{'error': 'missing'}]})
+    with pytest.raises(ValueError, match='identity check'):
+        gate.bind_existing(settings, tmp_path/'absent')
+    assert vars(settings) == before and not (tmp_path/'absent').exists()
