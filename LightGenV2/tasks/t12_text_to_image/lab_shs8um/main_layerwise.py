@@ -44,10 +44,14 @@ def inspect(args):
         raise ValueError('Only the original formal 17M model contract is supported')
     if digest(args.project / 'assets/small.pt') != FORMAL_SHA:
         raise ValueError('Formal checkpoint SHA mismatch')
-    for name in ('machine_config', 'phase_sdk', 'phase_lut'):
+    for name in ('machine_config', 'phase_lut'):
         path = getattr(args, name)
         if not path.is_file():
             raise FileNotFoundError(path)
+    if not args.phase_sdk.is_dir():
+        raise NotADirectoryError(args.phase_sdk)
+    if not (args.phase_sdk / 'Blink_C_wrapper.dll').is_file():
+        raise FileNotFoundError(args.phase_sdk / 'Blink_C_wrapper.dll')
     if args.amplitude_sdk is not None and not args.amplitude_sdk.is_dir():
         raise FileNotFoundError(args.amplitude_sdk)
     if not args.reuse.is_dir():

@@ -20,7 +20,7 @@ CPU 检查覆盖源码 SHA/语法、TRAIN 适配器与固定捕获入口的替�
 三个实际使用的geometry函数及Bench采集/释放逻辑与旧实现逐AST一致。
 
 ```text
-python -m LightGenV2.tasks.t12_text_to_image.lab_shs8um.main_layerwise --mode inspect --project <原17M候选资产目录> --output <不存在的新输出目录> --reuse <原同权重CCD目录> --machine-config <私有SHS配置JSON> --phase-sdk <原SDK文件> --phase-lut <原LUT文件> --amplitude-sdk <振幅SDK目录>
+python -m LightGenV2.tasks.t12_text_to_image.lab_shs8um.main_layerwise --mode inspect --project <原17M候选资产目录> --output <不存在的新输出目录> --reuse <原同权重CCD目录> --machine-config <私有SHS配置JSON> --phase-sdk <含Blink_C_wrapper.dll的原SDK目录> --phase-lut <原LUT文件> --amplitude-sdk <振幅SDK目录>
 ```
 
 默认inspect仅查源合同、原5b4f权重SHA、路径存在并编译适配代码，不加载模型/SDK、不写输出。

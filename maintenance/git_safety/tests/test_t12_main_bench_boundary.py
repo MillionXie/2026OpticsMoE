@@ -72,13 +72,15 @@ def test_inspection_creates_no_output_or_device_import(tmp_path, monkeypatch):
     (project / 'assets/contract.json').write_text(json.dumps(
         {'checkpoint_sha256': adapter.FORMAL_SHA, 'counted_parameters': 17026642}))
     (project / 'assets/small.pt').write_bytes(b'fixture only; hash is mocked')
-    for name in ('machine.json', 'phase.dll', 'phase.lut'):
+    for name in ('machine.json', 'phase.lut'):
         (tmp_path / name).write_bytes(b'fixture')
+    sdk = tmp_path / 'phase_sdk'; sdk.mkdir()
+    (sdk/'Blink_C_wrapper.dll').write_bytes(b'fixture')
     reuse = tmp_path / 'reuse'; reuse.mkdir()
     out = tmp_path / 'output'
     args = argparse.Namespace(project=project, output=out, reuse=reuse,
                              machine_config=tmp_path/'machine.json',
-                             phase_sdk=tmp_path/'phase.dll', phase_lut=tmp_path/'phase.lut',
+                             phase_sdk=sdk, phase_lut=tmp_path/'phase.lut',
                              amplitude_sdk=None)
     monkeypatch.setattr(adapter, 'digest', lambda p: adapter.FORMAL_SHA)
     before = set(sys.modules)
