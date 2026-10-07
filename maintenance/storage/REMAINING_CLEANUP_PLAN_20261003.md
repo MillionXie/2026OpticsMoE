@@ -104,6 +104,9 @@ OpenMoji旧32份源码/overlay恢复记录见
 异地备份或无占用，不按“已备份”整目录隐藏。
 另有12份9月28日A100历史原报告JSON逐SHA与本机原恢复ZIP一致，已精确退出待提交
 列表；原文件不移动、不重算。identity、manifest、summary、配置及新报告仍可见。
+28份9月27日已完成ABO鲁棒旧结果也按具体文件归类，原ZIP和当前字节一致；
+原报告、模型和指标未改，[原结果保留身份](ABO_HANDOFF_RESULT_VISIBILITY_20261007.json)
+包含逐文件SHA。合同、源码、未来报告和现用OpenMoji均保持可见；不是重新评估。
 其中18份历史A100报告附带源码已按具体文件退出待提交列表，九种原始blob在本地和
 Linux对象库逐字节一致；原18份文件、全部报告和测速数据仍原地保留。
 见[历史测速源码身份](HISTORICAL_TIMING_SOURCE_VISIBILITY_20261007.json)。规则不覆盖

@@ -11,6 +11,174 @@
     "original_files_sha_rechecked": true
   },
   "files": [
+  {
+    "path": "handoffs/robust_retrain_20260927/abo_bounded_matched_stress_report.json",
+    "payload_kind": "historical_abo_ablation_result",
+    "bytes": 10610,
+    "sha256": "8e84715c77b0becc2c3c593692be33585436082b12609df85e58bcb7b7550c20"
+  },
+  {
+    "path": "handoffs/robust_retrain_20260927/abo_cleanmix_report.json",
+    "payload_kind": "historical_abo_ablation_result",
+    "bytes": 12487,
+    "sha256": "47e9ce4529904e75b601df05fc54db2a7e2ad07835b24a434dd88d2fb08a1c13"
+  },
+  {
+    "path": "handoffs/robust_retrain_20260927/abo_distill_matched_stress_report.json",
+    "payload_kind": "historical_abo_ablation_result",
+    "bytes": 10533,
+    "sha256": "2fb7a4c8ceb30a9171f64682cd180a56aab4450ae48dd2b57f7e3580360021a7"
+  },
+  {
+    "path": "handoffs/robust_retrain_20260927/abo_spatial_holdout_multiseed.json",
+    "payload_kind": "historical_abo_ablation_result",
+    "bytes": 10760,
+    "sha256": "156b031479aa8ed461ccf5eee34609e0f390acc14820fed43f6125712e4a03e1"
+  },
+  {
+    "path": "handoffs/robust_retrain_20260927/abo_stress.json",
+    "payload_kind": "historical_abo_ablation_result",
+    "bytes": 17307,
+    "sha256": "83e41ba04c5223c125a0a02284b1decd01e6faf926278ea3f1bbc253f6af85cd"
+  },
+  {
+    "path": "handoffs/robust_retrain_20260927/descriptor_anchor_report.json",
+    "payload_kind": "historical_abo_ablation_result",
+    "bytes": 1335146,
+    "sha256": "e509488e831e20e19661454c0ba1729d64355bbde61d4cb502844a7dce3d926d"
+  },
+  {
+    "path": "handoffs/robust_retrain_20260927/language_router_causal_holdout_20260927.json",
+    "payload_kind": "historical_abo_ablation_result",
+    "bytes": 3939,
+    "sha256": "43967da92b8d3f1667a18e18411726fa558dfe0d2809fe2af5aa9c21f96bf091"
+  },
+  {
+    "path": "handoffs/robust_retrain_20260927/mlp448_extend_report.json",
+    "payload_kind": "historical_abo_ablation_result",
+    "bytes": 1335947,
+    "sha256": "761fd091f35dd98b30ad5bc5d3a700f00963f87094a580cd972f646329898f17"
+  },
+  {
+    "path": "handoffs/robust_retrain_20260927/mlp448_matched_report.json",
+    "payload_kind": "historical_abo_ablation_result",
+    "bytes": 10709,
+    "sha256": "677d4da04ef48cd65e9e104e2639ba1746dc30b70c309b15d9c46cbc67a9bd50"
+  },
+  {
+    "path": "handoffs/robust_retrain_20260927/noise_attribution_no_dc_20260927.json",
+    "payload_kind": "historical_abo_ablation_result",
+    "bytes": 2266,
+    "sha256": "8802b8d78df1ddb23e47de740dce4152c01c7f6779d9fcd6748e53642136202e"
+  },
+  {
+    "path": "handoffs/robust_retrain_20260927/noise_attribution_no_phase_bypass_20260927.json",
+    "payload_kind": "historical_abo_ablation_result",
+    "bytes": 2220,
+    "sha256": "abccd720c19fec70d87151b26346ab5f39dd304b1d3726c7a2ff6439de113036"
+  },
+  {
+    "path": "handoffs/robust_retrain_20260927/noise_attribution_no_shift_20260927.json",
+    "payload_kind": "historical_abo_ablation_result",
+    "bytes": 2253,
+    "sha256": "326f6530a1aeef6dcdfebfd170eb9a76d1215341caf94c5da43f296c5b776056"
+  },
+  {
+    "path": "handoffs/robust_retrain_20260927/phase_clean_recovery_report.json",
+    "payload_kind": "historical_abo_ablation_result",
+    "bytes": 1335145,
+    "sha256": "36af2feeb3c537ccfa34e060a07c5808c350ce8540be20fb9d408b9954b77043"
+  },
+  {
+    "path": "handoffs/robust_retrain_20260927/phase_pair_holdout_matched_dropout_20260927.json",
+    "payload_kind": "historical_abo_ablation_result",
+    "bytes": 10735,
+    "sha256": "3714e85c7858907188d53f3e202fdb457bb77f83dd47a55b4df671fe7c614570"
+  },
+  {
+    "path": "handoffs/robust_retrain_20260927/phase_pair_holdout_multiseed_20260927.json",
+    "payload_kind": "historical_abo_ablation_result",
+    "bytes": 10765,
+    "sha256": "f8b1ed13b9b64c7700028d08ab079467da5ba2dda2c5bbec5a2804546738a066"
+  },
+  {
+    "path": "handoffs/robust_retrain_20260927/physical_bounded30_20260927_report.json",
+    "payload_kind": "historical_abo_ablation_result",
+    "bytes": 12482,
+    "sha256": "bb6e211f3649d31e8bd0148844176d8769753c26c8a512a11958b05675244f5f"
+  },
+  {
+    "path": "handoffs/robust_retrain_20260927/physical_bounded30_conv5_20260927_report.json",
+    "payload_kind": "historical_abo_ablation_result",
+    "bytes": 13337,
+    "sha256": "3c70ad05a86875fbce60e66fda0e17dd5c4c1f4652d0d329b1c44c853cadbf34"
+  },
+  {
+    "path": "handoffs/robust_retrain_20260927/physical_bounded30_distill_20260927_report.json",
+    "payload_kind": "historical_abo_ablation_result",
+    "bytes": 51655,
+    "sha256": "116f8ca864a36b0583b194ffb4cdeab0a100176bcc885bbcba5aec19992ce01f"
+  },
+  {
+    "path": "handoffs/robust_retrain_20260927/physical_bounded30_distill_strong_20260927_report.json",
+    "payload_kind": "historical_abo_ablation_result",
+    "bytes": 51689,
+    "sha256": "3c63d9bd0395e41a2154d11ebf1b6096861ea50d8c2791ad846785c692afc35a"
+  },
+  {
+    "path": "handoffs/robust_retrain_20260927/physical_bounded30_mlp448_cleanmix_20260927_report.json",
+    "payload_kind": "historical_abo_ablation_result",
+    "bytes": 1336399,
+    "sha256": "1e227cfec5ac4691a0d507f4915c85a387e823504e2c3d81379922251b0660d7"
+  },
+  {
+    "path": "handoffs/robust_retrain_20260927/physical_bounded30_mlp448_paired_20260927_report.json",
+    "payload_kind": "historical_abo_ablation_result",
+    "bytes": 1336297,
+    "sha256": "89249808303095b20d332583d09a4ffe6d478cbc797ae661c48315fa45eb76d0"
+  },
+  {
+    "path": "handoffs/robust_retrain_20260927/physical_bounded30_phase_pair_20260927_report.json",
+    "payload_kind": "historical_abo_ablation_result",
+    "bytes": 1335077,
+    "sha256": "d9aa6086abc03ce14a0a0f3e60dd282277bcf1df2a80a8d665f4a54deb69ba75"
+  },
+  {
+    "path": "handoffs/robust_retrain_20260927/physical_bounded30_phase_pair_strong_20260927_report.json",
+    "payload_kind": "historical_abo_ablation_result",
+    "bytes": 1335147,
+    "sha256": "6cc716082b550cc8769fa1ce51f2ac64a31762cd64467e9903615ec82d1b2a85"
+  },
+  {
+    "path": "handoffs/robust_retrain_20260927/physical_bounded30_phase_recovery_joint_20260927_report.json",
+    "payload_kind": "historical_abo_ablation_result",
+    "bytes": 1335217,
+    "sha256": "5c47946b771803257c1d82cd538c6a5e3e02f6fa295b08b6f143614a18984640"
+  },
+  {
+    "path": "handoffs/robust_retrain_20260927/physical_bounded30_phase_recovery_only_20260927_report.json",
+    "payload_kind": "historical_abo_ablation_result",
+    "bytes": 1335491,
+    "sha256": "f58c7053709caa29fec50b61db7523330ea654ca4abec611de0ba960b9f54a3d"
+  },
+  {
+    "path": "handoffs/robust_retrain_20260927/physical_bounded30_recover7_20260927_report.json",
+    "payload_kind": "historical_abo_ablation_result",
+    "bytes": 13578,
+    "sha256": "93c2a81c03d7bd0a54842332e42bfa765e524f34de7618ed3b8bfee2c6576eb0"
+  },
+  {
+    "path": "handoffs/robust_retrain_20260927/physical_bounded30_recover_spatial_20260927_report.json",
+    "payload_kind": "historical_abo_ablation_result",
+    "bytes": 13459,
+    "sha256": "57386a487516f3e264e89234e32eb4374b95bb7f8e563ef09c8444d347d4a732"
+  },
+  {
+    "path": "handoffs/robust_retrain_20260927/physical_bounded30_spatial_extend_20260927_report.json",
+    "payload_kind": "historical_abo_ablation_result",
+    "bytes": 1335211,
+    "sha256": "cb6ddde9030077aaa0521c7378c19513e29f6bef745a7224a25c11890822db05"
+  },
     {
       "path": "handoffs/abo_i2i_bounded8225_20260927/probe4/report.json",
       "bytes": 84879,
@@ -384,6 +552,8 @@
   ],
   "excluded_changed_since_backup": [],
   "originals_deleted_or_moved": false,
+  "historical_ablation_results_added": 28,
+  "ablation_scope": "Named September 27 completed result records only; raw metrics and original naming unchanged, no new physical result or independent generalization asserted",
   "limitations": [
     "Only local ZIP recovery, not remote data backup.",
     "Readme, source, contracts, splits, selection and future report names remain visible.",

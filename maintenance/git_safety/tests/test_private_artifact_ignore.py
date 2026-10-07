@@ -138,13 +138,24 @@ class ArtifactIgnoreTests(unittest.TestCase):
         import json
         d=json.loads((ROOT/'maintenance/storage/ABO_HANDOFF_RESULT_VISIBILITY_20261007.json').read_text(encoding='utf8'))
         selected=[r['path'] for r in d['files']]
-        self.assertEqual(len(selected),74)
+        self.assertEqual(len(selected),102)
+        ablations=[r for r in d['files'] if r.get('payload_kind')=='historical_abo_ablation_result']
+        self.assertEqual(len(ablations),28)
+        self.assertEqual(d['historical_ablation_results_added'],28)
+        self.assertFalse(d['originals_deleted_or_moved'])
+        for row in ablations:
+            self.assertTrue(row['path'].startswith('handoffs/robust_retrain_20260927/'))
+            self.assertEqual(Path(row['path']).suffix,'.json')
+            self.assertFalse(any(s in Path(row['path']).name for s in ('config','protocol','manifest','selection')))
         visible=['handoffs/abo_latestfresh35_lab_20260930/RANK72_DEPLOYMENT_20260930.md',
                  'handoffs/abo_latestfresh35_lab_20260930/new_physical_report.json',
                  'handoffs/abo_i2i_sixhour_strong_20260928/capture_contract.json',
                  'handoffs/abo_i2i_sixhour_strong_20260928/selection.json',
                  'handoffs/abo_i2i_sixhour_strong_20260928/new_eval.py',
-                 'handoffs/openmoji_robust_ablation_20260928/new_report.json']
+                 'handoffs/openmoji_robust_ablation_20260928/new_report.json',
+                 'handoffs/robust_retrain_20260927/new_report.json',
+                 'handoffs/robust_retrain_20260927/protocol.json',
+                 'handoffs/robust_retrain_20260927/train.py']
         self.assertEqual(self.ignored(selected+visible),set(selected))
 
     def test_kather_transfer_evidence_not_tables_manifests_or_future_files(self):
