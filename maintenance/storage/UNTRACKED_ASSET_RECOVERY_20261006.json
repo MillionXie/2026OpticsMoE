@@ -1,4 +1,14 @@
 {
+  "historical_runtime_payload_ignore_20261008": {
+    "scope": "26 explicitly named 20260920 multimodal meeting retrain metadata, status, fairness, selection and dataset split payload JSON files; not final source or current experiments",
+    "archive_sha256_rechecked": "ec7fc89b4294ca2c89cd7589bc727317e4c2e105395cbcd7f65ff8ee22784777",
+    "each_original_matches_existing_zip_member": true,
+    "retained_original_bytes": 528724,
+    "exact_path_and_sha256_listing": "../../.gitignore (Exact historical 20260920 runtime metadata block)",
+    "originals_deleted_or_moved": false,
+    "future_files_and_source_not_hidden": true,
+    "remote_asset_backup_claimed": false
+  },
   "reference_commit": "0c348155c8bf0b9196852b22aa854c7c463b93c7",
   "scope": "Nonignored untracked regular files up to 2 MiB in the local Windows main workspace; includes reports and documents, not just source extensions",
   "files_checked": 3806,
