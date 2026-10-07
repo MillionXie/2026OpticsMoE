@@ -10,6 +10,24 @@
   "models_data_GPU_or_devices_run": false,
   "final_temporal_checkpoint_changed": false,
   "new_compression_accuracy_verified": false,
+  "additional_low_rank_configs": {
+    "origin": "Same local protected ac7e3ecc history, not an earlier verified server runtime",
+    "actual_server_root_files_present_before_adoption": false,
+    "server_original_history_object_available_before_adoption": false,
+    "normalization": "crlf_to_lf",
+    "files": [
+      {"name": "temporal_multivideo16x4_readout_rank512_s173.yaml", "sha256_lf": "66b5d15959f6e8dbed09a6d2dc00ec945538dccf328ec6f22c7b23edabfe1d36"},
+      {"name": "temporal_multivideo16x4_readout_rank384_s174.yaml", "sha256_lf": "7e2df18f5e0765ddbfffff89d3fa89cf0bf8ae7450aab768891055c55cd4b776"},
+      {"name": "temporal_multivideo16x4_readout_rank320_s175.yaml", "sha256_lf": "5dff6afde53eb4af314d715002dab3212155635bdbae36eb51bfc4ecb4e84c86"},
+      {"name": "temporal_multivideo16x4_readout_rank256_s176.yaml", "sha256_lf": "519cbed45e3a005af7917fe30d88b7eb68ca10f5481735c4c8013124d231d057"},
+      {"name": "temporal_multivideo16x4_readout_rank192_s177.yaml", "sha256_lf": "f2795e219796cfd32f68718e619a51870656f13ac41ed6625b96b8b19a92de76"},
+      {"name": "temporal_multivideo16x4_readout_rank128_s178.yaml", "sha256_lf": "58aede1b44864e97e12d08af39edd37bf45e2e705444bd38bfba216c8295318a"},
+      {"name": "temporal_multivideo16x4_readout_rank64_s179.yaml", "sha256_lf": "63106371f3b292c500c6921c015691a4a1f4e73834dfb45fab79e3a8a40dd0fb"},
+      {"name": "temporal_multivideo16x4_readout_rank48_s180.yaml", "sha256_lf": "bb29105385f72a55c49cc855dbac1be842721e80a6c2fd3b641cb12f272ec095"}
+    ],
+    "final_checkpoint_or_default_changed": false,
+    "real_candidate_training_accuracy_or_timing_proven": false
+  },
   "training_server_main_CPU_verification": {
     "tested_commit": "3a13034106df1ad16e43eb439f7f39b4741c2192",
     "command": "CUDA_VISIBLE_DEVICES='' python -m pytest maintenance/git_safety/tests/test_t06_temporal_compression_adoption.py -q",

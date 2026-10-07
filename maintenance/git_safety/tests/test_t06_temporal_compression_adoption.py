@@ -70,6 +70,22 @@ def test_batches_only_return_explicit_fit_indices():
     assert torch.cat([row[-1] for row in batches]).tolist() == [0, 2]
 
 
+@pytest.mark.parametrize('rank,seed', [(512,173),(384,174),(320,175),(256,176),
+                                      (192,177),(128,178),(64,179),(48,180)])
+def test_optional_low_rank_configs_preserve_original_bytes_and_geometry(rank, seed):
+    evidence = json.loads((BASE / 'temporal_compression_import_20261007.json').read_text())
+    rows = {r['name']: r for r in evidence['additional_low_rank_configs']['files']}
+    name = f'temporal_multivideo16x4_readout_rank{rank}_s{seed}.yaml'
+    path = BASE / 'configs/lightgen' / name
+    assert hashlib.sha256(path.read_bytes().replace(b'\r\n', b'\n')).hexdigest() == rows[name]['sha256_lf']
+    settings = load_settings(path)
+    assert (settings.videos_per_field, settings.frame_count) == (16, 4)
+    assert settings.temporal_readout_mode == 'low_rank'
+    assert settings.temporal_readout_rank == rank
+    suffix = f'multivideo16x4_readout_rank{rank}_s{seed}' if rank != 48 else 'multivideo16x4_readout_rank48_kd_s180'
+    assert str(settings.output_dir).replace('\\','/').endswith(suffix)
+
+
 def test_pruning_selects_original_neurons_not_an_extra_branch():
     readout = nn.Module()
     readout.output = nn.Sequential(nn.Identity(), nn.Linear(3, 2), nn.Identity(),

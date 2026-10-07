@@ -1,0 +1,9 @@
+# Aggressive candidate for the formal 16-video x 4-frame Temporal readout.
+# Only the largest post-optical 4096->1024 matrix is factorized.
+base_config: temporal_multivideo16x4_formal.yaml
+output_dir: LightGenV2/tasks/t06_video_quality_assessment/runs/simulation/multivideo16x4_readout_rank128_s178
+random_seed: 178
+
+model:
+  temporal_readout_mode: low_rank
+  temporal_readout_rank: 128
