@@ -10,6 +10,21 @@ ROOT = Path(__file__).resolve().parents[3]
 
 
 class ArtifactIgnoreTests(unittest.TestCase):
+    def test_seed37_named_transfer_records_keep_source_tables_and_future_runs_visible(self):
+        import json
+        d=json.loads((ROOT/'maintenance/storage/KATHER_SEED37_RECORD_VISIBILITY_20261007.json').read_text(encoding='utf8'))
+        private=[r['path'] for r in d['files']]
+        self.assertTrue(private)
+        self.assertEqual(set(Path(p).name for p in private),
+                         {'metadata.json','result.json','status.json','test_result.json'})
+        self.assertFalse(d['originals_moved_or_deleted'])
+        visible=d['excluded_changed_or_unbacked']+[
+            d['transfer_manifest'],d['root']+'/README.md',d['root']+'/full_test_per_seed.csv',
+            d['root']+'/evidence/seed37_completion/analyze.py',
+            d['root']+'/evidence/seed37_completion/future_run/test_result.json',
+            'handoffs/openmoji_robust_ablation_20260928/current_report.json']
+        self.assertEqual(self.ignored(private+visible),set(private))
+
     def test_named_raw_measurements_do_not_hide_source_or_new_runs(self):
         import json
         data=json.loads((ROOT/'maintenance/storage/RAW_MEASUREMENT_VISIBILITY_20261007.json').read_text(encoding='utf8'))
