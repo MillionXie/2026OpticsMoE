@@ -1,0 +1,26 @@
+{
+  "model_snapshots": {
+    "Qwen3-VL-Embedding-2B": "9f2f7e710d6d81056aa5c0a4f04764fec6bb7bda",
+    "Qwen3-VL-2B-Instruct": "89644892e4d85e24eaac8bacfd4f463576704203"
+  },
+  "rows": [
+    {
+      "table_order": "04",
+      "target": "lsp",
+      "metric": "PCK@0.2",
+      "value": 0.7225714285714285,
+      "samples": 1000,
+      "source_commit": "bcec3a5977ccf00c71c6b5e8c00bf436cc3e305e",
+      "commit_scope": "fixed checkpoint evaluation; original training commit not established here",
+      "code": "LightGenV2/tasks/t02_keypoint_detection/baseline_5090d.py",
+      "run_id": "lsp_pose_optical_moe16_opt2",
+      "selected_epoch": 37,
+      "evidence_file": "LightGenV2/reports/20260914_latest_qwen_baselines_a100_FIRSTBLOCK_FINAL/evidence/performance_sources/T02_lsp_baseline_report.json",
+      "evidence_sha256": "4a3b57679f2786839dceadf33775b240498c1c5d838b426e1aa032443988746b",
+      "checkpoint_sha256": "0a4569f288f6de424b1b412452fa804a96e58d8f7e8655efaa23f461ab8cc735",
+      "remote_resolved_config_sha256": "8087afac5586287afec815be8bcf99a4260df7e4b2254915aa83ccc9e630c5a1",
+      "training_code": "experiments/qwen3_vl_embedding_2b_lsp_pose_optical_moe16/training.py",
+      "training_config": "experiments/qwen3_vl_embedding_2b_lsp_pose_optical_moe16/configs/lsp_pose_opt2.yaml"
+    }
+  ]
+}

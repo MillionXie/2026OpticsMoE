@@ -1,0 +1,27 @@
+{
+  "model_snapshots": {
+    "Qwen3-VL-Embedding-2B": "9f2f7e710d6d81056aa5c0a4f04764fec6bb7bda",
+    "Qwen3-VL-2B-Instruct": "89644892e4d85e24eaac8bacfd4f463576704203"
+  },
+  "rows": [
+    {
+      "table_order": "05",
+      "target": "salicon",
+      "metric": "CC",
+      "value": 0.8748382970809937,
+      "samples": 5000,
+      "source_commit": "d8653fa6057f96b52d53259999343ff2117c1526",
+      "commit_scope": "training",
+      "code": "LightGenV2/tasks/t03_saliency/aligned_baseline.py",
+      "run_id": "qwen_aligned_head_50_20260912_seed42",
+      "selected_epoch": 45,
+      "evidence_file": "LightGenV2/reports/20260914_latest_qwen_baselines_a100_FIRSTBLOCK_FINAL/evidence/performance_sources/T03_salicon_selected_checkpoint_test.json",
+      "evidence_sha256": "121899505294ce5efa819e20104eeb930c07741fcdd313f41f6d937f251ad32f",
+      "checkpoint_sha256": "689d086b5a390c399df109d07b73185575cd2245998b7bd427f6ccea5b0fe019",
+      "remote_resolved_config_sha256": "836c529ad9213160f36537e570ffd63f4bf93d52cb67a7576f94f4648ef609db",
+      "training_config": "LightGenV2/tasks/t03_saliency/configs/qwen_aligned_head_50.yaml",
+      "augmentation_enabled": false,
+      "performance_batch_size": 96
+    }
+  ]
+}

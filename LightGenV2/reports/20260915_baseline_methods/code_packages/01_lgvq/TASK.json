@@ -1,0 +1,38 @@
+{
+  "directory": "01_lgvq",
+  "title": "01 视频质量评价 · LGVQ",
+  "metric": "Temporal SRCC 0.7663；Spatial SRCC 0.6908",
+  "commit": "4b24e9ad4df027db3bac92a7721ae8cf052a6f50",
+  "task": "t06_video_quality_assessment",
+  "actions": {
+    "prepare": [
+      "experiments.qwen3_vl_2b_lgvq_spatiotemporal_optical_router_vqa.prepare_manifest"
+    ],
+    "temporal": [
+      "LightGenV2.tasks.t06_video_quality_assessment.quality_token_resolution",
+      "--config",
+      "LightGenV2/tasks/t06_video_quality_assessment/configs/baselines/qwen3vl_quality_tokens_r448_a100.yaml",
+      "--frames",
+      "4"
+    ],
+    "spatial": [
+      "LightGenV2.tasks.t06_video_quality_assessment.quality_token_resolution",
+      "--config",
+      "LightGenV2/tasks/t06_video_quality_assessment/configs/baselines/qwen3vl_spatial_quality_tokens_4f_r448_a100.yaml",
+      "--frames",
+      "4"
+    ]
+  },
+  "files": [
+    "LightGenV2/tasks/t06_video_quality_assessment/quality_token_extract.py",
+    "LightGenV2/tasks/t06_video_quality_assessment/quality_token_train.py",
+    "LightGenV2/tasks/t06_video_quality_assessment/quality_token_common.py",
+    "LightGenV2/tasks/t06_video_quality_assessment/quality_token_dataset_once.py",
+    "LightGenV2/tasks/t06_video_quality_assessment/configs/baselines/qwen3vl_quality_tokens_r448_a100.yaml",
+    "LightGenV2/tasks/t06_video_quality_assessment/configs/baselines/qwen3vl_spatial_quality_tokens_4f_r448_a100.yaml"
+  ],
+  "assets": "准备 LGVQ 原视频、MOS.txt、prompt_cls.json，以及 Qwen3-VL-2B-Instruct snapshot `89644892e4d85e24eaac8bacfd4f463576704203`。清单中的视频路径需要指向当前机器。",
+  "instructions": "```bash\npython run_baseline.py prepare -- --dataset-root /path/to/LGVQ --output /path/to/lgvq_split.csv --seed 42\npython run_baseline.py temporal -- --phase all --model /path/to/Qwen3-VL-2B-Instruct --manifest /path/to/lgvq_split.csv --run-dir LightGenV2/tasks/t06_video_quality_assessment/runs/simulation/handoff_temporal\npython run_baseline.py spatial -- --phase all --model /path/to/Qwen3-VL-2B-Instruct --manifest /path/to/lgvq_split.csv --run-dir LightGenV2/tasks/t06_video_quality_assessment/runs/simulation/handoff_spatial\n```\n`all` 依次提取特征、训练评分头、完整测试；也可分别指定 `--phase extract/train/benchmark`。两个入口固定四帧。仅固定权重复评时，将对应 best_checkpoint.pt 放入新 run 的 `checkpoints/frames4/` 后执行 `--phase benchmark`，不执行训练。A100 配置的 GPU 名称检查位于 `timing.gpu`，更换硬件须明确修改该项并重新报告。",
+  "identities": "时间头 SHA256：`e102adc6a7b33335c8f49ae1cbeea3302a1a10017d282da8d6091a640276d0d2`；空间头 SHA256：`9155ec7a45a19e14ac87661021b44599317d5efb16475df77707d70e866ad913`。\n原 LGVQ manifest SHA256：`607c50d20662a47795c23cd2038081b30368ed108ba9be8a1bb8a9d250f8e7fc`（改写绝对路径后文件哈希会改变，需另存新哈希并保留样本和划分）。",
+  "methods": "LightGenV2/tasks/t06_video_quality_assessment/reports/reproduction/BASELINE_METHODS.md"
+}

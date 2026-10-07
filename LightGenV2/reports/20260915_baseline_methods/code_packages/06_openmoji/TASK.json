@@ -1,0 +1,40 @@
+{
+  "directory": "06_openmoji",
+  "title": "06 语义交互 · OpenMoji",
+  "metric": "修改格准确率 0.8420",
+  "commit": "966f407000c5ecef4c7c6415d8995065aeed7484",
+  "task": "t04_semantic_interaction",
+  "actions": {
+    "prepare": [
+      "LightGenV2.tasks.t04_semantic_interaction.run",
+      "--profile",
+      "qwen_shared",
+      "--phase",
+      "prepare"
+    ],
+    "train": [
+      "LightGenV2.tasks.t04_semantic_interaction.run",
+      "--profile",
+      "qwen_shared",
+      "--phase",
+      "train"
+    ],
+    "evaluate": [
+      "LightGenV2.tasks.t04_semantic_interaction.run",
+      "--profile",
+      "qwen_shared",
+      "--phase",
+      "evaluate"
+    ]
+  },
+  "files": [
+    "LightGenV2/tasks/t04_semantic_interaction/configs/qwen_shared.yaml",
+    "LightGenV2/tasks/t04_semantic_interaction/qwen_shared.py",
+    "LightGenV2/tasks/t04_semantic_interaction/shared_readout.py",
+    "LightGenV2/tasks/t04_semantic_interaction/embedding_data.py"
+  ],
+  "assets": "准备 OpenMoji 17.0.0 彩色 72px 图标素材和 Qwen3-VL-2B-Instruct snapshot `89644892e4d85e24eaac8bacfd4f463576704203`。可由 prepare 生成 seed 73 的 v2 数据（5,000/1,000），也可提供原完整 v2 数据和清单。固定权重复评需要 qwen_shared_s73 的 best_checkpoint.pt。",
+  "instructions": "在 `source/LightGenV2/tasks/t04_semantic_interaction/configs/qwen_shared.yaml` 中补充 `dataset.data_dir`（v2 数据目录）、`dataset.asset_dir`（图标目录）、`qwen.checkpoint`（本地模型目录），使用绝对路径并保留原 base_config。\n\n```bash\npython run_baseline.py prepare -- --device cuda\npython run_baseline.py train -- --device cuda --run-dir LightGenV2/tasks/t04_semantic_interaction/runs/simulation/handoff_qwen_shared\npython run_baseline.py evaluate -- --device cuda --checkpoint /path/to/best_checkpoint.pt --run-dir LightGenV2/tasks/t04_semantic_interaction/runs/simulation/handoff_recheck\n```\n完整冻结图文主干，训练同结构网格头和适配器 100 轮。固定权重入口不重新训练；必须配套 v2 场景及真实 source_grid。",
+  "identities": "原 run：`qwen_shared_s73`，选中 epoch 25 EMA，训练 manifest 记录的恢复版本为上述 commit。权重 SHA256 见 `REFERENCE.json`（若原记录未提供则保留 null，不推测）。",
+  "methods": "LightGenV2/tasks/t04_semantic_interaction/reports/reproduction/BASELINE_METHODS.md"
+}

@@ -1,0 +1,44 @@
+{
+  "model_snapshots": {
+    "Qwen3-VL-Embedding-2B": "9f2f7e710d6d81056aa5c0a4f04764fec6bb7bda",
+    "Qwen3-VL-2B-Instruct": "89644892e4d85e24eaac8bacfd4f463576704203"
+  },
+  "rows": [
+    {
+      "table_order": "01",
+      "target": "temporal",
+      "metric": "SRCC",
+      "value": 0.7663428036522781,
+      "samples": 558,
+      "source_commit": "4b24e9ad4df027db3bac92a7721ae8cf052a6f50",
+      "commit_scope": "training",
+      "code": "LightGenV2/tasks/t06_video_quality_assessment/quality_token_train.py",
+      "run_id": "qwen3vl_quality_tokens_r448_dataset_once_a100_20260907",
+      "selected_epoch": 45,
+      "evidence_file": "LightGenV2/reports/20260914_latest_qwen_baselines_a100_FIRSTBLOCK_FINAL/evidence/T06_temporal_batch1_batch2/batch_01/report.json",
+      "evidence_sha256": "9809a3defed1ba4c541486bc436f7da26c6e8435ffd89714b423570b52d3fa23",
+      "checkpoint_sha256": "e102adc6a7b33335c8f49ae1cbeea3302a1a10017d282da8d6091a640276d0d2",
+      "manifest_sha256": "607c50d20662a47795c23cd2038081b30368ed108ba9be8a1bb8a9d250f8e7fc",
+      "remote_resolved_config_sha256": "27d1cd72981a51cce2a405aa614cc3e47b9c267e2379006c2c536629c9575f72",
+      "training_config_at_source_commit": "LightGenV2/tasks/t06_video_quality_assessment/configs/baselines/qwen3vl_quality_tokens_r448_a100.yaml"
+    },
+    {
+      "table_order": "01",
+      "target": "spatial",
+      "metric": "SRCC",
+      "value": 0.6907725734336255,
+      "samples": 558,
+      "source_commit": "4b24e9ad4df027db3bac92a7721ae8cf052a6f50",
+      "commit_scope": "training",
+      "code": "LightGenV2/tasks/t06_video_quality_assessment/quality_token_train.py",
+      "run_id": "qwen3vl_spatial_quality_tokens_4f_r448_dataset_once_a100_20260907",
+      "selected_epoch": 39,
+      "evidence_file": "LightGenV2/reports/20260914_latest_qwen_baselines_a100_FIRSTBLOCK_FINAL/evidence/T06_spatial/report.json",
+      "evidence_sha256": "9858954de368171e4736607cd8f2340b871191799e10d3068b3576b73cdd20e6",
+      "checkpoint_sha256": "9155ec7a45a19e14ac87661021b44599317d5efb16475df77707d70e866ad913",
+      "manifest_sha256": "607c50d20662a47795c23cd2038081b30368ed108ba9be8a1bb8a9d250f8e7fc",
+      "remote_resolved_config_sha256": "8e3c05c5fdb1461849f9840a48a93d3da4a9bd53d3fed3e626e1649c9f929dce",
+      "training_config_at_source_commit": "LightGenV2/tasks/t06_video_quality_assessment/configs/baselines/qwen3vl_spatial_quality_tokens_4f_r448_a100.yaml"
+    }
+  ]
+}

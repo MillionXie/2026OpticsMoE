@@ -1,0 +1,19 @@
+{
+  "directory": "02_abo_image_text",
+  "title": "02 商品检索 · ABO 图搜文",
+  "metric": "R@1 0.7358",
+  "commit": "b9a4be689f198f55ee0caaf4e5bcddd4dfc80200",
+  "task": "t08_abo_image_text_retrieval",
+  "actions": {
+    "evaluate": [
+      "LightGenV2.tasks.t08_abo_image_text_retrieval.baseline_5090d",
+      "--expected-gpu",
+      "NVIDIA A100-PCIE-40GB"
+    ]
+  },
+  "files": [],
+  "assets": "准备 ABO easy100 数据目录：`manifest.csv`、`train.csv`、`test.csv`、`titles.csv` 和清单对应图像；100 商品、4,800/2,400 图像。准备 Qwen3-VL-Embedding-2B snapshot `9f2f7e710d6d81056aa5c0a4f04764fec6bb7bda`。该基线无需任务头权重。",
+  "instructions": "```bash\npython run_baseline.py evaluate -- --model /path/to/Qwen3-VL-Embedding-2B --data-root /path/to/abo_easy100 --run-dir LightGenV2/tasks/t08_abo_image_text_retrieval/runs/simulation/handoff_qwen\n```\n该入口直接编码完整 2,400 张测试图和 100 条标题，无训练阶段。保留动态长宽、2,048 维和原始 prompt。不同 GPU 可显式传入 `--expected-gpu`；计时附加结果属于该次运行。",
+  "identities": "模型 safetensors SHA256：`c73fa9caeddeb3ff831d46c085a7a5708343248ca777e90f2d486964464509c1`。\n测试清单 SHA256：`4ca5834abf4bb4d614b41f05b5b2481b3d41720dd78c1c37b05923c97657dfb8`；标题表 SHA256：`c97e8da3c6c608a706f2cc0d284aeafb873fc6cc17d04a7c9f9f66b2135846c1`。",
+  "methods": "LightGenV2/tasks/t08_abo_image_text_retrieval/reports/reproduction/BASELINE_METHODS.md"
+}

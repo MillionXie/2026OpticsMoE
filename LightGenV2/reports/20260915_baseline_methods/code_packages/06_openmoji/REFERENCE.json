@@ -1,0 +1,28 @@
+{
+  "model_snapshots": {
+    "Qwen3-VL-Embedding-2B": "9f2f7e710d6d81056aa5c0a4f04764fec6bb7bda",
+    "Qwen3-VL-2B-Instruct": "89644892e4d85e24eaac8bacfd4f463576704203"
+  },
+  "rows": [
+    {
+      "table_order": "06",
+      "target": "openmoji",
+      "metric": "changed-cell accuracy",
+      "value": 0.842,
+      "samples": 1000,
+      "source_commit": "966f407000c5ecef4c7c6415d8995065aeed7484",
+      "commit_scope": "training run manifest (resumed run)",
+      "code": "LightGenV2/tasks/t04_semantic_interaction/run.py",
+      "run_id": "qwen_shared_s73",
+      "selected_epoch": 25,
+      "evidence_file": "LightGenV2/reports/20260914_latest_qwen_baselines_a100_FIRSTBLOCK_FINAL/evidence/performance_sources/T04_openmoji_selected_checkpoint_test.json",
+      "evidence_sha256": "fb11f8ee8430185f3ef1c5cec2d7ad3476751ba1376ee6d7248dc7aa92191e4f",
+      "remote_resolved_config_sha256": "ce8b42bfcca42e228230b46fc2f5151bc7a78223a290b77124a4acb6cc407bb2",
+      "training_config": "LightGenV2/tasks/t04_semantic_interaction/configs/qwen_shared.yaml",
+      "model_code": [
+        "LightGenV2/tasks/t04_semantic_interaction/qwen_shared.py",
+        "LightGenV2/tasks/t04_semantic_interaction/shared_readout.py"
+      ]
+    }
+  ]
+}

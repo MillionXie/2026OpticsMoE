@@ -1,0 +1,32 @@
+{
+  "directory": "05_salicon",
+  "title": "05 显著性分析 · SALICON",
+  "metric": "CC 0.8748",
+  "commit": "d8653fa6057f96b52d53259999343ff2117c1526",
+  "task": "t03_saliency",
+  "actions": {
+    "train": [
+      "LightGenV2.tasks.t03_saliency.aligned_baseline",
+      "--config",
+      "LightGenV2/tasks/t03_saliency/configs/qwen_aligned_head_50.yaml",
+      "--seed",
+      "42"
+    ],
+    "evaluate": [
+      "LightGenV2.tasks.t03_saliency.recheck_aligned",
+      "--system",
+      "qwen",
+      "--config",
+      "LightGenV2/tasks/t03_saliency/configs/qwen_aligned_head_50.yaml",
+      "--batch-size",
+      "96"
+    ]
+  },
+  "files": [
+    "LightGenV2/tasks/t03_saliency/configs/qwen_aligned_head_50.yaml"
+  ],
+  "assets": "准备 SALICON 2015r1 train/val 图像与 fixations_train2014.json、fixations_val2014.json。模型为 Qwen3-VL-Embedding-2B。固定权重复评另需 50 轮基线选中的 best_checkpoint.pt。",
+  "instructions": "在 `source/LightGenV2/tasks/t03_saliency/configs/qwen_aligned_head_50.yaml` 中补充 `dataset.data_root`、`qwen.model_id`（本地模型目录）、`qwen.local_files_only: true`，保留原配置其余内容。\n\n```bash\npython run_baseline.py train -- --run-dir LightGenV2/tasks/t03_saliency/runs/simulation/handoff_head50\npython run_baseline.py evaluate -- --checkpoint /path/to/best_checkpoint.pt --run-dir LightGenV2/tasks/t03_saliency/runs/simulation/handoff_recheck\n```\n冻结主干，仅训练 282,596 参数的适配器及密度头，预算 50 轮、无增强；固定权重评价保持 batch 96。训练和复评使用不同的新输出目录。",
+  "identities": "原 best SHA256：`689d086b5a390c399df109d07b73185575cd2245998b7bd427f6ccea5b0fe019`；选中 epoch 45。",
+  "methods": "LightGenV2/tasks/t03_saliency/reports/reproduction/BASELINE_METHODS.md"
+}

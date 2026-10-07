@@ -1,0 +1,13 @@
+torch==2.6.0
+transformers==4.57.3
+numpy
+scipy
+Pillow
+PyYAML
+opencv-python
+matplotlib
+tqdm
+safetensors
+huggingface-hub
+requests
+einops

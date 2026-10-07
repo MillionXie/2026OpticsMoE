@@ -1,0 +1,28 @@
+{
+  "directory": "04_lsp",
+  "title": "04 关键点检测 · LSP",
+  "metric": "PCK@0.2 0.7226",
+  "commit": "bcec3a5977ccf00c71c6b5e8c00bf436cc3e305e",
+  "task": "t02_keypoint_detection",
+  "actions": {
+    "train": [
+      "experiments.qwen3_vl_embedding_2b_lsp_pose_optical_moe16.run",
+      "--phase",
+      "teacher_train"
+    ],
+    "evaluate": [
+      "LightGenV2.tasks.t02_keypoint_detection.baseline_5090d",
+      "--expected-gpu",
+      "NVIDIA A100-PCIE-40GB",
+      "--performance-batch-size",
+      "1"
+    ]
+  },
+  "files": [
+    "experiments/qwen3_vl_embedding_2b_lsp_pose_optical_moe16/configs/lsp_pose_opt2.yaml"
+  ],
+  "assets": "准备 LSP 2,000 张图与 joints.mat；从头训练还需 HR-LSPET 9,428 张及标注。模型为 Qwen3-VL-Embedding-2B，snapshot 与 ABO 相同。固定权重复评需要原姿态头 `teacher_best_train_loss.pt`。",
+  "instructions": "在 `source/experiments/qwen3_vl_embedding_2b_lsp_pose_optical_moe16/configs/lsp_pose_opt2.yaml` 中补充当前机器的 `dataset.data_root`、`qwen.model_id`（本地模型目录）、`qwen.local_files_only: true` 和新的 `output_dir`，保留原 base_config。\n\n```bash\npython run_baseline.py train -- --config experiments/qwen3_vl_embedding_2b_lsp_pose_optical_moe16/configs/lsp_pose_opt2.yaml\npython run_baseline.py evaluate -- --model /path/to/Qwen3-VL-Embedding-2B --data-root /path/to/lsp_pose --config experiments/qwen3_vl_embedding_2b_lsp_pose_optical_moe16/configs/lsp_pose_opt2.yaml --checkpoint /path/to/teacher_best_train_loss.pt --run-dir LightGenV2/tasks/t02_keypoint_detection/runs/simulation/handoff_qwen\n```\n仅 `teacher_train` 属于此基线，训练 40 轮并按训练损失选头。所固定 commit 是指标复评版本；原历史训练启动 commit 尚未从记录中确定，因此不声称从头训练必定精确返回该小数。",
+  "identities": "原头 SHA256：`0a4569f288f6de424b1b412452fa804a96e58d8f7e8655efaa23f461ab8cc735`。",
+  "methods": "LightGenV2/tasks/t02_keypoint_detection/reports/reproduction/BASELINE_METHODS.md"
+}

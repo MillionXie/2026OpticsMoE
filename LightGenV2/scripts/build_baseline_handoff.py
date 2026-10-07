@@ -143,7 +143,7 @@ class Snapshot:
 
 
 RUNNER = r'''"""Baseline handoff launcher; stdlib-only checks, original task code at execution."""
-import argparse, hashlib, json, subprocess, sys
+import argparse, hashlib, json, os, subprocess, sys
 from pathlib import Path
 ROOT = Path(__file__).resolve().parent
 SPEC = json.loads((ROOT/'TASK.json').read_text(encoding='utf-8'))
@@ -152,6 +152,8 @@ def verify():
     m=json.loads((ROOT/'SOURCE_MANIFEST.json').read_text(encoding='utf-8'))
     for row in m['files']:
         p=ROOT/'source'/row['path']
+        if os.name=='nt' and not str(p).startswith('\\\\?\\'):
+            p=Path('\\\\?\\'+str(p.resolve()))
         if not p.is_file() or hashlib.sha256(p.read_bytes()).hexdigest()!=row['sha256']:
             raise RuntimeError('Source differs from snapshot: '+row['path'])
     print('Verified',len(m['files']),'original files at',m['source_commit'])
