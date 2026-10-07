@@ -2803,3 +2803,8 @@ node_modules/
 /experiments/qwen3_vl_2b_lgvq_single_metric_o2_16frame_54/configs/release/spatial_two_branch_stage_ema_q8_s421.yaml
 /experiments/qwen3_vl_2b_lgvq_single_metric_o2_16frame_54/configs/release/spatial_two_branch_stage_ema_routerdiv_s424.yaml
 /experiments/qwen3_vl_2b_lgvq_single_metric_o2_16frame_54/configs/release/spatial_two_branch_weighted_multiview_s413.yaml
+
+# Historical c9926cba ABO physical-query/simulated-gallery raw 800-query payload.
+# Original retained in place and byte-matched existing recovery ZIP; not rank72.
+# SHA256 b8b41e157d82221cb0f42c83d18cb7fed679961d5a1a29086fde2f5093e8ea1b
+/LightGenV2/tasks/t07_abo_image_retrieval/reports/20260923_dvp8um_full800/report.json
