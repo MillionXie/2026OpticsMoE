@@ -1,4 +1,21 @@
 {
+  "t12_original_baseline_closure_20261008": {
+    "server_tested_commit": "bba0e18e4",
+    "command": "python -m pytest LightGenV2/tasks/t12_text_to_image/tests -q --disable-warnings --maxfail=3",
+    "local_cpu": {"passed": 99, "failed": 0, "elapsed_seconds": 13.80},
+    "server_cpu": {"passed": 99, "failed": 0, "elapsed_seconds": 8.82},
+    "original_source_commit": "7093ec46082eed2fae127ec5028d3e2e8548b592",
+    "actual_runtime_source": "/DATA/DATA1/guest3/2026OpticsMoE/.worktrees/t12_physical_robust_v2_20260927",
+    "original_python_sources_restored": 80,
+    "original_companion_configs_restored": 25,
+    "restored_missing_channel_profile_sha256": "7babe6bb8f707b8634f3b32d36147302b3c210f0e1fcfad3d881111b98686941",
+    "each_restored_source_matches_original_git_and_runtime_after_explicit_LF_normalization": true,
+    "earlier_local_failure": "Missing original optical_channel_robust_v2.json prevented three modules from importing",
+    "earlier_server_failure": "Original chair and cleanrender companion YAML absent from main; 3 failed and 13 passed before restoration",
+    "scope": "Offline CPU synthetic task tests; original code and parameters only, no formal PT/data evaluation, training, device acquisition or new scientific result",
+    "original_whitespace_retained": "product_repair_infer.py has its original trailing blank line; not rewritten merely to change historical source bytes",
+    "remaining_local_device_helpers_not_in_this_import": 3
+  },
   "schema_version": 1,
   "tested_commit": "97a242f0046f6983066e6ee62bfe09faf66e2d5d",
   "command": "python -m pytest maintenance/git_safety/tests -q",
