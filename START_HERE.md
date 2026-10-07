@@ -51,25 +51,18 @@
 
 ## Git 的当前边界
 
-长期只维护 `main`，不再自动创建分支、工作树或独立工程。本机这个主文件夹已经切到
-`main`；历史工作目录仍保留必要版本及独有内容，现用 OpenMoji 目录继续保护。
-**主线已经发布的内容不等于所有旧运行目录都切换了 main**。
-2026-10-07实验室的同一主目录`E:/code/guest/2026OpticsMoE`也已实际建立main入口，
-不是另建工程副本。4497份原先缺失的主线文件通过Git落地，原有设置文件保持SHA，
-14项任务导航检查通过；已有ABO/OpenMoji子工程、PT、CCD和设备配置原位保留。
-以上是此前的历史处理记录，不表示已登录实验室电脑上的 GitHub 账号。
-按用户最新要求，实验室电脑现已排除本轮治理范围：不再连接、同步、清理或切换其代码，
-也不撤销此前入口；现有实验和文件保持原状。本轮仅整理本地、Linux 训练服务器与 GitHub。
-这不表示所有任务已经从主线完成设备回归，历史边界见
-[实验室入口收据](maintenance/storage/LAB_ROOT_MAIN_ADOPTION_20261007.json)。
-2026-10-06训练服务器主目录也已实际切到`main`，不是只更新发布引用；1011项源码／说明
-落地，295项旧独有文件原位保留。现用OpenMoji和封存ABO工作目录未切换，服务器主目录
-原9项历史结果／审计差异已收敛：两份说明采用服务器已保存版本，7份生成审计产物
-取消Git跟踪但本地文件和恢复身份保留。两端主目录已跟踪文件均无未提交差异。
-具体保留与恢复见 [审计产物身份](maintenance/storage/T06_GENERATED_AUDIT_RETENTION_20261006.json)。原切换详情见
-[服务器主目录切换收据](maintenance/storage/SERVER_ROOT_MAIN_CUTOVER_20261006.json)。
-不要直接切分支、pull 或整仓覆盖。整理时按 [AGENTS.md](AGENTS.md) 做逐任务迁移，
-保留最终代码、有效实验数据、必要 baseline，以及全部测速/功耗证据。
+本地这个主文件夹与 Linux 的 `/DATA/DATA1/guest3/2026OpticsMoE` 都使用 `main`，
+源码经 GitHub 同步。以后只从这两个主目录开发，不再新增分支、工作树或工程副本。
+现用 OpenMoji 的未提交改动和封存 ABO 运行目录继续保护；主线同步不等于这些目录已切换。
+本轮**不连接、不整理实验室电脑**，也不恢复对外上传。
+
+原数据、权重、CCD、交付包和全部测速不靠 Git 同步，原位置及 SHA 从任务登记查找。
+旧目录的归档恢复位置、必须保留的依赖和未解决项，统一看
+[当前待办与例外](maintenance/storage/REMAINING_CLEANUP_PLAN_20261003.md)，不把历史盘点数字当实时状态。
+服务器切换经过保存在[原切换收据](maintenance/storage/SERVER_ROOT_MAIN_CUTOVER_20261006.json)；
+日常使用不需要逐份阅读历史审计报告。
+
+存在未提交修改时不要直接切分支、pull 或整仓覆盖，按 [AGENTS.md](AGENTS.md) 保留并逐项处理。
 
 如果 Git 界面还有“6k+/10k+”，先看
 [分支、未跟踪产物与版本差异的区别](maintenance/git_safety/GIT_NOISE_RECONCILIATION_20261004.md)。

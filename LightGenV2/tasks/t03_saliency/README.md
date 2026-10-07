@@ -37,6 +37,13 @@
 9321个原文件逐SHA核验，全部历史测速及源码可恢复；正式数据、PT、release和插图不动。
 恢复位置和两份原commit见[目录收据](../../../maintenance/storage/SERVER_WORKTREE_BALANCE_20261007.json)。
 
+同日另20份旧精修／baseline源码副本已完整归档退出：76,049个原文件和60处符号链接
+逐SHA／目标核验通过。包括50轮baseline的旧源码目录，但其主线入口、原权重、报告和全部测速没有删除；
+数据及结果链接指向的主工程原资产保持原位，共享缓存入口`t03_rfstage`保留。
+恢复归档为 `/DATA/DATA1/guest3/storage_cleanup_manifests/retired_t03_trial_sources_20261007/complete_old_worktrees.tar.gz`，
+SHA256 `b46dcd5342eab37cebdb9ee9195421740c53ea85a3279db3fa09d0c1f70ceb1a`。
+详细目录／commit身份见同一目录收据；以下旧目录名仍为历史出处，不再作为日常开发入口。
+
 2026-09-29：[六张许可核验候选的固定权重推理和论文素材包](reports/reproduction/LICENSED_EXAMPLES_20260929.md)。
 原best不变；715为public-test，另外五张为训练样例，必须在论文中区分。
 
