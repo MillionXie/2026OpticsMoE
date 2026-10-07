@@ -28,3 +28,8 @@ python -m LightGenV2.tasks.t12_text_to_image.lab_shs8um.main_layerwise --mode in
 只支持原17M TEST/VAL逐层入口；TRAIN选集适配和eeec电子读出仍是各自原入口。
 目录存在不证明SDK二进制身份/可用设备/环境完整；原CUDA与显示边界尚未现场回归。
 五项AST/合成文件测试验证绑定与拒绝条件，不代表正式数据、精度或光路验收。
+
+实验室实际main随后通过该入口的只读inspect：原5b4f PT、合同与机器配置前后SHA
+一致，原正式CCD目录及SDK/LUT路径存在，无模型加载/设备打开/输出创建。
+见[实际资产绑定收据](../../../../maintenance/storage/T12_ACTUAL_MAIN_BINDING_20261007.json)。
+只检查目录存在，不据此证明全部CCD完整或设备可用；原现场运行项目仍保留。

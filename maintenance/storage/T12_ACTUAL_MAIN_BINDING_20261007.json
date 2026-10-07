@@ -1,0 +1,19 @@
+{
+  "executed_main_commit": "a1a98c325b4c52280e4266e5067dd4ff66eb6d4d",
+  "entry": "LightGenV2.tasks.t12_text_to_image.lab_shs8um.main_layerwise.inspect",
+  "machine": "Actual laboratory Windows canonical main checkout",
+  "project": "E:/code/guest/2026OpticsMoE/T12_Small_Lab_SHS_8um/candidate_robust17m_20260927",
+  "reuse": "E:/code/guest/2026OpticsMoE/T12_Small_Lab_SHS_8um/runs/robust17m_full_test_20260927",
+  "checkpoint_sha256": "5b4f9a37f19ce95cf23e4b874badc8e88955559553d47929fb80cd3cbf527cac",
+  "contract_sha256": "bde4b70ef92fd44dee6a4978351e8f5a6882cbaafb0aa85162d14f773530575c",
+  "machine_config_sha256": "29bb02363adfd689b7d17e0b8e8b44997ab0cd187c2599eac9259c2f12fa78e4",
+  "contract_counted_parameters": 17026642,
+  "legacy_abo_source_required_by_adapted_runner": false,
+  "checkpoint_contract_machine_config_before_after_sha_equal": true,
+  "devices_opened": false,
+  "model_loaded": false,
+  "output_created": false,
+  "scope": "Formal source pin/compilation, original PT SHA and contract, explicit SDK/LUT/config path presence; existing reuse directory existence only",
+  "capture_or_full_environment_regression_verified": false,
+  "outstanding": ["Original CUDA/SDK display and frame lifecycle must be verified in an authorized device session", "TRAIN selection adapter still uses preserved original entry", "All reuse CCD contents and source/decode dependencies are not certified by this inspect call", "Do not retire formal runtime package merely because inspection passed"]
+}
