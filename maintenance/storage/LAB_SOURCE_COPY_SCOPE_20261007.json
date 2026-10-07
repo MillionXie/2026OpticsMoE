@@ -1,0 +1,34 @@
+{
+  "schema_version": 1,
+  "audited_main": "42ff7cde8e44363ae25afe94279e233a39c5eee4",
+  "scope": "Actual lab untracked regular files up to 2 MiB after dataset/CCD visibility rules; includes source, config, reports and labels, not a source-only count",
+  "files_checked": 36734,
+  "main_exact_byte_matches": 23664,
+  "main_crlf_normalized_matches": 975,
+  "no_main_byte_identity": 12095,
+  "over_2_mib_excluded": 134,
+  "subsequent_label_receipt_rule_files": 4743,
+  "snapshot_is_not_current_git_count": true,
+  "retention_decisions": [
+    {
+      "path": "T12_Small_Lab_SHS_8um/ch27_ref/source",
+      "purpose": "Historical original-weight channel comparison backend, not current final 17M development entry",
+      "audited_files_under_scope": 2254,
+      "main_exact_byte_matches": 1750,
+      "no_main_byte_identity": 504,
+      "known_caller": "handoffs/t12_channel_robust_20260927/run_original_val96.cmd",
+      "caller_evidence": "REVIEWED_HISTORICAL_TOOLS_20261006.json",
+      "decision": "Retain original path and all contents as a required historical baseline dependency. Do not move, delete or blanket-ignore this source snapshot.",
+      "runtime_occupancy_verified": false,
+      "complete_dependency_closure_verified": false
+    }
+  ],
+  "limits": [
+    "Matching main bytes do not prove a runtime path is unused or deletable",
+    "No main match may instead be an older valid implementation, overlay, report or private asset",
+    "Ignored files and large weights/data are outside this content audit",
+    "Current final model, sealed ABO, active OpenMoji and all timing remain unchanged"
+  ],
+  "files_moved_or_deleted": false,
+  "source_trees_ignored": false
+}
