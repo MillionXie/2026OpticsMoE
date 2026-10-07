@@ -1,4 +1,25 @@
 {
+  "latest_t01_static_retirement_20261008": {
+    "purpose": "Historical fixed-expert CIFAR, unseen-class adaptation and timing source checkouts; scientific assets remain in shared main targets",
+    "registered_before": 48,
+    "registered_after": 38,
+    "retired_names": ["2026OpticsMoE_cifar100_6ce31e05", "2026OpticsMoE_static_cifar", "2026OpticsMoE_static_experts_8c354986", "static_control_v3", "static_control_v3_deterministic", "static_control_v3_timing", "static_spatial_v4", "static_spatial_v4_formal", "static_spatial_v4_timing", "static_unseen_v1"],
+    "original_parent": "/DATA/DATA1/guest3/worktrees",
+    "archive": "/DATA/DATA1/guest3/storage_cleanup_manifests/retired_t01_static_sources_20261008/complete_old_worktrees.tar.gz",
+    "archive_sha256": "b93c9b3441e42f87eef114387676f308d42290a21b123005e331d4ef6b954517",
+    "archive_bytes": 1737512598,
+    "verified_regular_files": 33889,
+    "preserved_symlink_identities": 30,
+    "archived_nontracked_entries": 611,
+    "other_worktree_source_files_scanned": 113797,
+    "runtime_name_hits": 0,
+    "owned_cwd_exe_cmdline_fd_references": 0,
+    "existing_server_recovery_ref": "refs/archive/frozen-server-20261005/t12-audited-editors-20260926",
+    "protected_main_ABO_OpenMoji_heads_and_status_unchanged": true,
+    "shared_data_runs_weights_and_all_timing_not_deleted": true,
+    "removal_method": "Native tar without dereferencing links; every original file SHA and link identity rechecked before removing only archived named nontracked entries, followed by ordinary git worktree remove without force",
+    "laboratory_contacted": false
+  },
   "latest_t06_readout_trial_retirement_20261007": {
     "retired": "/DATA/DATA1/guest3/.codex_worktrees/t06_readout_compress_20260912",
     "purpose": "Historical h512 temporal readout-compression trial with four synthetic smoke metadata files; not the sealed Temporal or Spatial model",
