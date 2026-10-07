@@ -1,4 +1,25 @@
 {
+  "latest_t16_temporary_retirement_20261008": {
+    "user_approved": true,
+    "purpose": "Six old CLEVR protocol, paired augmentation, expert utilization and slow electronic adaptation temporary source trials; final T16 and necessary contrasts untouched",
+    "registered_before": 35,
+    "registered_after": 29,
+    "archive": "/DATA/DATA1/guest3/storage_cleanup_manifests/retired_t16_temporary_sources_20261008/complete_old_worktrees.tar.gz",
+    "archive_sha256": "764376977d5b4029a0622acdbb44f790eb13313165c072ede27d9eecd7929140",
+    "archive_bytes": 1457732036,
+    "every_original_regular_file_SHA_verified_twice": 31410,
+    "symlinks": 0,
+    "other_registered_source_checkouts_checked": 29,
+    "tracked_source_reference_hits": 0,
+    "readable_same_uid_process_reference_hits": 0,
+    "six_original_heads_and_full_status_rechecked": true,
+    "protected_ABO_OpenMoji_heads_and_full_status_unchanged": true,
+    "all_historical_timing_preserved": true,
+    "method": "Native full tar and every-file/set verification followed by six exact non-force Git worktree removals",
+    "detailed_heads_and_limits": "T16_TEMPORARY_WORKTREE_AUDIT_20261007.json",
+    "laboratory_contacted": false,
+    "external_upload": false
+  },
   "latest_sister_t08_frozen_move_20261008": {
     "purpose": "Old bounded-amplitude recovery and sister-package preparation; main retains the adopted text-to-image body separately",
     "original": "/DATA/DATA1/guest3/2026OpticsMoE/.worktrees/sister_t08_bounded_20260927",
