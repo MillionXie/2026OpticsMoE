@@ -1,0 +1,29 @@
+{
+  "best_epoch": 200,
+  "best_validation_normalized_mse": 0.0537901408970356,
+  "architecture": {
+    "variant": "qwen_sd_turbo_one_step",
+    "qwen_is_inference_conditioner": true,
+    "decoder": "frozen SD-Turbo UNet + frozen VAE",
+    "inference_iterations": 1,
+    "unet_calls": 1,
+    "vae_decoder_calls": 1,
+    "trainable_parameters": 4273280,
+    "condition_tokens": 77,
+    "condition_dim": 1024,
+    "pca_rank": 128
+  },
+  "training_flow": "cached Qwen text -> trainable condition adapter -> frozen CLIP condition manifold",
+  "synthetic_text_prompts": 768,
+  "inference_flow": "Qwen text + seeded Gaussian latent -> one frozen SD-Turbo UNet call -> one frozen VAE decode",
+  "final_sample": {
+    "seconds_per_four_images": [
+      0.2903985232114792,
+      0.18028777837753296,
+      0.18488210439682007,
+      0.18250906467437744
+    ],
+    "inference_iterations": 1,
+    "vae_decodes": 1
+  }
+}

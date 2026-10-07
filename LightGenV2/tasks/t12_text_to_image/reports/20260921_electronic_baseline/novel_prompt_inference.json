@@ -1,0 +1,60 @@
+{
+  "schema_version": 1,
+  "variant": "qwen_sd_turbo_one_step",
+  "prompts": [
+    "a retro orange velvet chair on a plain neutral background",
+    "a minimalist matte black metal lamp on a plain neutral background",
+    "a watercolor illustration style red leather shoe on a plain neutral background",
+    "a Scandinavian dark walnut table on a plain neutral background"
+  ],
+  "seeds": [
+    7,
+    101
+  ],
+  "random_seed_is_real": true,
+  "randomness": "Each integer initializes an independent N(0,I) diffusion latent; no input image is used.",
+  "inference_flow": "text -> frozen Qwen -> trained adapter -> seeded Gaussian latent + one frozen SD-Turbo UNet call -> one frozen VAE decode",
+  "inference_iterations": 1,
+  "images": [
+    {
+      "prompt": "a retro orange velvet chair on a plain neutral background",
+      "seed": 7,
+      "file": "prompt_00_seed_7.png"
+    },
+    {
+      "prompt": "a minimalist matte black metal lamp on a plain neutral background",
+      "seed": 7,
+      "file": "prompt_01_seed_7.png"
+    },
+    {
+      "prompt": "a watercolor illustration style red leather shoe on a plain neutral background",
+      "seed": 7,
+      "file": "prompt_02_seed_7.png"
+    },
+    {
+      "prompt": "a Scandinavian dark walnut table on a plain neutral background",
+      "seed": 7,
+      "file": "prompt_03_seed_7.png"
+    },
+    {
+      "prompt": "a retro orange velvet chair on a plain neutral background",
+      "seed": 101,
+      "file": "prompt_00_seed_101.png"
+    },
+    {
+      "prompt": "a minimalist matte black metal lamp on a plain neutral background",
+      "seed": 101,
+      "file": "prompt_01_seed_101.png"
+    },
+    {
+      "prompt": "a watercolor illustration style red leather shoe on a plain neutral background",
+      "seed": 101,
+      "file": "prompt_02_seed_101.png"
+    },
+    {
+      "prompt": "a Scandinavian dark walnut table on a plain neutral background",
+      "seed": 101,
+      "file": "prompt_03_seed_101.png"
+    }
+  ]
+}
