@@ -19,6 +19,7 @@
     "local_and_actual_training_server_checkpoint_sha_rechecked": true,
     "local_cpu_checkpoint_metadata_read": true,
     "local_cpu_strict_model_load": {"passed": true, "model_state_entries": 139, "same_architecture": true, "device": "cpu", "test_dataset_evaluated": false},
+    "training_server_main_cpu_strict_model_load": {"passed": true, "tested_main_commit": "4ea21bb62280e8226c86c97b512ed57ded2a3bf4", "model_state_entries": 139, "checkpoint_sha_reverified": true, "device": "cpu", "model_evaluated": false},
     "full_model_inference_repeated": false,
     "record_sha256": {
       "selection.json": "ad0ef105b24932c8235572ac25b49403f1bc28139c37251c7288822eb4c950f3",

@@ -27,6 +27,8 @@ SHA `03cb861c3ac344556601eb3eb6d7d1a22b77a54d2e7e68e85d77ee30fb09eb21`。
 epoch45和电子expansion=.5架构；不是自动最佳epoch70，不称独立TEST泛化。
 原模型参数解析、DC/CCD向router/expert/global的传递和expansion架构后缀已恢复；
 本机主线模型严格CPU加载该PT全部139项state通过，53项相关CPU检查通过。
+训练服务器实际main `4ea21bb6` 也严格CPU加载同SHA的epoch45 PT全部139项state通过，
+未执行模型推理、TEST、GPU或设备；这证明两处源码/权重构造兼容，不冒称全流程复现。
 仅训练时启用原Router扰动；默认关闭、保持旧调用，主线低秩头和消融保护不回退。
 没有重新评估1000条TEST，原87.65%仍引用封存审计，不把严格加载当作精度重测。
 该PT的实拍精度本轮未核实；旧应用exp05另一权重的.9365仿真/.671直接实拍/.8375适配
