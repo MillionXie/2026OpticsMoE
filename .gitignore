@@ -709,6 +709,15 @@ node_modules/
 # This is a read-only release payload, not the canonical task source or current experiment.
 /ABO_Lab_8um/original_inference/backend/
 
+# Imported legacy TEST data tables; original CSVs match both package manifests.
+# Keep manifest and SHA identities visible; raw dataset rows are not source Git payloads.
+# test.csv SHA256 4ca5834abf4bb4d614b41f05b5b2481b3d41720dd78c1c37b05923c97657dfb8
+# titles.csv SHA256 c97e8da3c6c608a706f2cc0d284aeafb873fc6cc17d04a7c9f9f66b2135846c1
+/ABO_Lab_8um/original_a100/assets/test_dataset/test.csv
+/ABO_Lab_8um/original_a100/assets/test_dataset/titles.csv
+/ABO_Lab_8um/original_inference/assets/test_dataset/test.csv
+/ABO_Lab_8um/original_inference/assets/test_dataset/titles.csv
+
 # Historical EuroSAT package dependency snapshot: all 390 members match its
 # FILES_SHA256 manifest. Original package/runtime files remain in place.
 # Do not hide top-level training/analysis tools or modified package metadata.
