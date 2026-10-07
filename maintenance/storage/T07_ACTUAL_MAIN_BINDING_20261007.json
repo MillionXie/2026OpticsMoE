@@ -1,0 +1,21 @@
+{
+  "schema_version": 1,
+  "verified_main_commit": "42ff7cde8e44363ae25afe94279e233a39c5eee4",
+  "machine": "lab_windows_actual_repository_root",
+  "passed": true,
+  "checkpoint_sha256": "25f23260864a00a0f32b5de209c27f5876166018c8d8ab0e880de81e0d2c2c22",
+  "protocol_sha256": "f1749d5fc22d2dfee6a1333ce2b35e9fa600a070f949eba8420b4def41906dde",
+  "geometry_sha256": "bde57c1be8eae6f8362cae5d52b370eeedf410e3fae6e5a05a19ce820745ad2e",
+  "machine_config_sha256_unchanged": "29bb02363adfd689b7d17e0b8e8b44997ab0cd187c2599eac9259c2f12fa78e4",
+  "sample_paths_present": {"gallery": 1600, "query": 800},
+  "sdk_path_checks_passed": 8,
+  "model_loaded": true,
+  "strict_cpu_state_dict_load": true,
+  "local_processor_class": "Qwen3VLProcessor",
+  "devices_opened": false,
+  "dataset_evaluated": false,
+  "outputs_created": false,
+  "hardware_regression_verified": false,
+  "sealed_runtime_replaced": false,
+  "scope": "Actual main CLI loaded original assets and model on CPU; no image inference, retrieval evaluation or SDK operation. Existing sealed runtime remains protected."
+}
