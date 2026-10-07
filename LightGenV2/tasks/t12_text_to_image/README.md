@@ -74,6 +74,16 @@ CSV不支持all，避免旧目录布局混用。原物化脚本和已导出数�
 
 ## 2026-09-27/28 同任务 baseline 补训与五组汇总
 
+原`audit_checkpoint_components`、`audit_unified_optics`、`audit_unified_ablation`、
+`audit_unified_seed`四份审计入口也已原样归主线，逐LF字节与保留服务器v2及`7093ec4608`
+一致。四个`python -m LightGenV2.tasks.t12_text_to_image.<模块> --help`通过；原路由统计、
+置零光学输出、MSE汇总和seed差异函数仅做了无数据／无输出的合成CPU检查。
+参数审计依赖旧small/model、large/unet等payload结构并有原固定VAE计数，不是所有新PT的
+通用预算工具；正式17M仍用本页的verify_formal_checkpoint。其余审计重放FFT仿真固定
+子集，不是实际CCD采集或完整2304条TEST；alpha不是光功率占比，去光只置零expert/global
+输出并保留电子／identity路径，不能另改消融定义。原脚本会写指定JSON且没有新增防覆盖，
+如要复查必须使用新输出路径并绑定原资产。本轮未读取正式PT、图片、缓存或重评原指标。
+
 ### 历史紧凑／剪枝电子对照入口已补齐（2026-10-07）
 
 9月21日紧凑BK-SDM-v2-Tiny和结构剪枝UNet的六份训练／推理源码、两份原配置、
