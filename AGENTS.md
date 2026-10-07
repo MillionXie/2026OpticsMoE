@@ -40,4 +40,7 @@
   TEST 选模若获授权，必须标为开发指标，不冒称独立泛化。
 - 检查工具：`python maintenance/git_safety/review_git.py` 为只读盘点；
   `python maintenance/git_safety/review_git.py --check-staged` 检查暂存的大文件/运行产物。
-  工具未安装为 hook，规则也不是操作系统强锁；不能声称已阻止所有其他窗口的写入。
+  主仓库现接入 `.githooks/pre-commit`，安装与本机状态检查见
+  `maintenance/git_safety/install_commit_guard.py`。只发布源码不自动安装到新 clone；
+  旧工作树没有该 hook 时不受检查。它可被 `--no-verify` 或配置修改绕过，规则不是
+  操作系统强锁，也不能声称已阻止所有其他窗口的写入或创建分支。

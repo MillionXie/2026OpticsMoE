@@ -1,0 +1,17 @@
+{
+  "scope": "Actual local, training-server and laboratory canonical main repositories; no protected runtime checkout was switched",
+  "source_commit": "50a7f2980ba2ac7568051221800e34feaba5b82f",
+  "hook_sha256": "53ead7df4f53c15e412ecbaacaa33644917577a068d2a2f946f1ebfe27ad2f95",
+  "repository_local_configuration": ["core.hooksPath=.githooks", "lightgen.guardPython=<tested machine-local absolute Python path>"],
+  "machines": {
+    "local_windows": {"installed": true, "verification": "git hook run pre-commit", "return_code": 0},
+    "training_linux": {"installed": true, "git_version": "2.25.1", "verification": "sh .githooks/pre-commit", "return_code": 0, "actual_commit_regression_on_this_machine": false},
+    "laboratory_windows": {"installed": true, "git_version": "2.56.0.windows.1", "verification": "git hook run pre-commit", "return_code": 0}
+  },
+  "fixture_tests": {"passed": 8, "covers": ["actual fixture commit rejects PT and literal connection credential without printing the credential", "normal source commit succeeds", "existing user hook/path/interpreter preserved", "stale HEAD and occupied index rejected", "non-main installation rejected", "tested absolute interpreter configured"]},
+  "full_maintenance_suite": {"passed": 291, "seconds": 124.28, "exit_code": 0, "scope": "maintenance/git_safety/tests only; not model accuracy or hardware regression"},
+  "initial_installation_failure": "Git 2.25 lacked git hook run; lab shell lacked generic Python. Own temporary remote config was reverted, then explicit interpreter binding was published and verified successfully.",
+  "source_and_index_unchanged_by_installation": true,
+  "runtime_models_datasets_devices_and_external_upload_changed": false,
+  "limitations": ["Bypassable; not a filesystem or concurrent-writer lock", "Narrow credential heuristic, not a complete secret scanner", "Old protected worktrees without .githooks are not covered", "No claim of blocking branch creation", "No model/hardware regression implied"]
+}
