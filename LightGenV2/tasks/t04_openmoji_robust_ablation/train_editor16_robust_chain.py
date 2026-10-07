@@ -19,6 +19,7 @@ from torch.utils.data import DataLoader
 from . import train_preserved_upstream as architecture
 from .profiles import PROFILES, bounded, grid_roundtrip
 from .train import sha, metric
+from .spatial_alignment import perturb_field
 from .train_modality_fusion import settings
 from LightGenV2.tasks.t04_semantic_interaction import training as t
 
@@ -72,7 +73,8 @@ def observed_response_ccd(intensity, scale, stats):
 
 
 def install_training_profile(model,group,*,noise_scale=NOISE_SCALE,
-                             noise_model='legacy',grid_probability=1.,sensor_stats=None):
+                             noise_model='legacy',grid_probability=1.,sensor_stats=None,
+                             spatial_shift=0.,spatial_rotation=0.,spatial_dropout=0.):
     """Clean eval uses exactly r0 bounded propagation, including G5.
 
     Historical grid wrapper was always active; here grid is TRAIN-only, as the
@@ -105,6 +107,8 @@ def install_training_profile(model,group,*,noise_scale=NOISE_SCALE,
         def detector(field,modulation,shifts,*,phase_support=None,original=original,path=path):
             path._sensor_stage=phase_support
             field=bounded(field)
+            if model.training and (spatial_shift or spatial_rotation or spatial_dropout):
+                field=perturb_field(field,spatial_shift,spatial_rotation,spatial_dropout)
             if model.training and profile['grid'] and torch.rand(())<grid_probability:
                 field=grid_roundtrip(field,1101 if field.shape[-1]==518 else 1016)
             return original(field,modulation,shifts,phase_support=phase_support)
@@ -114,6 +118,8 @@ def install_training_profile(model,group,*,noise_scale=NOISE_SCALE,
         original_router=router._simulate
         def route(fields,original=original_router,modality=modality):
             fields=bounded(fields)
+            if model.training and (spatial_shift or spatial_rotation or spatial_dropout):
+                fields=perturb_field(fields,spatial_shift,spatial_rotation,spatial_dropout)
             if model.training and profile['grid'] and torch.rand(())<grid_probability:
                 fields=grid_roundtrip(fields,1016)
             intensity=original(fields)
@@ -163,8 +169,12 @@ def main():
     parser.add_argument('--paired-clean-weight',type=float,default=0.)
     parser.add_argument('--consistency-weight',type=float,default=0.)
     parser.add_argument('--smoke',action='store_true')
+    parser.add_argument('--spatial-shift',type=float,default=0.)
+    parser.add_argument('--spatial-rotation',type=float,default=0.)
+    parser.add_argument('--spatial-dropout',type=float,default=0.)
     args=parser.parse_args()
     assert args.noise_scale>=0 and 0<=args.grid_probability<=1
+    assert args.spatial_shift>=0 and args.spatial_rotation>=0 and 0<=args.spatial_dropout<1
     assert 0<=args.paired_clean_weight<=1 and args.consistency_weight>=0
     assert not args.consistency_weight or args.paired_clean_weight>0
     sensor_stats=None
@@ -179,6 +189,9 @@ def main():
     relative=Path(__file__).relative_to(root).as_posix()
     blob=subprocess.check_output(['git','-C',str(root),'show',args.source_commit+':'+relative])
     assert hashlib.sha256(blob).hexdigest()==sha(Path(__file__))
+    helper=Path(__file__).with_name('spatial_alignment.py')
+    helper_blob=subprocess.check_output(['git','-C',str(root),'show',args.source_commit+':'+helper.relative_to(root).as_posix()])
+    assert hashlib.sha256(helper_blob).hexdigest()==sha(helper)
     output=args.output
     output.mkdir(parents=True,exist_ok=False)
     def write(name,value):
@@ -204,7 +217,9 @@ def main():
         for n,p in model.named_parameters():
             if n in gates: p.requires_grad_(False)
         install_training_profile(model,args.group,noise_scale=args.noise_scale,
-                                 noise_model=args.noise_model,grid_probability=args.grid_probability,sensor_stats=sensor_stats)
+                                 noise_model=args.noise_model,grid_probability=args.grid_probability,sensor_stats=sensor_stats,
+                                 spatial_shift=args.spatial_shift,spatial_rotation=args.spatial_rotation,
+                                 spatial_dropout=args.spatial_dropout)
         train,test=t.build_loaders(cfg)
         assert len(train.dataset)==5000 and len(test.dataset)==1000
         epochs=1 if args.smoke else args.epochs
@@ -226,6 +241,11 @@ def main():
             noise_offset_fraction=.03*args.noise_scale,noise_read_fraction=.01*args.noise_scale,
             noise_shot_fraction=.01*args.noise_scale if args.noise_model=='randomized' else 0.,
             grid_probability=args.grid_probability,
+            spatial_shift_simulation_pixels=args.spatial_shift,
+            spatial_rotation_degrees=args.spatial_rotation,
+            spatial_dropout_coarse16=args.spatial_dropout,
+            spatial_helper_sha256=sha(helper),spatial_geometry_sampling='shared per optical call/batch',
+            spatial_proxy_not_calibrated=True,
             paired_clean_weight=args.paired_clean_weight,consistency_weight=args.consistency_weight,
             consistency_teacher='detached current clean TRAIN output; no extra model',
             noise_proxy_not_calibrated=True,dc_phase_leakage_intensity=.30 if PROFILES[args.group]['dc30'] else 0.,
