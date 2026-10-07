@@ -1,0 +1,15 @@
+{
+  "schema_version": 1,
+  "task": "t07_rank72_sealed",
+  "checkpoint": "E:/code/guest/2026OpticsMoE/ABO_I2I_Lab_DVP_8um/candidate_latergb_rank72_20260930/assets/best.pt",
+  "checkpoint_sha256": "25f23260864a00a0f32b5de209c27f5876166018c8d8ab0e880de81e0d2c2c22",
+  "processor": "E:/code/guest/2026OpticsMoE/ABO_I2I_Lab_DVP_8um/assets/processor",
+  "protocol": "E:/code/guest/2026OpticsMoE/ABO_I2I_Lab_DVP_8um/protocol.json",
+  "data_root": "E:/code/guest/2026OpticsMoE/ABO_I2I_Lab_DVP_8um/data",
+  "geometry": "E:/code/guest/2026OpticsMoE/ABO_I2I_Lab_DVP_8um/runs/abo_i2i_20260926/shs_geometry.json",
+  "run_dir": "E:/code/guest/2026OpticsMoE/ABO_I2I_Lab_DVP_8um/candidate_latergb_rank72_20260930/runs/layerwise_selected2400_20260929",
+  "machine_config": "E:/code/guest/2026OpticsMoE/LGVQ_Spatial_Lab_SHS_8um/LAB.local.json",
+  "amplitude_sdk": "E:/code/guest/2026OpticsMoE/ABO_Lab_SHS_8um/vendor/holoeye_python",
+  "phase_sdk": "C:/Program Files/Meadowlark Optics/Blink 1920 HDMI/SDK",
+  "phase_lut": "C:/Program Files/Meadowlark Optics/Blink 1920 HDMI/LUT Files/19x12_8bit_linearVoltage.lut"
+}

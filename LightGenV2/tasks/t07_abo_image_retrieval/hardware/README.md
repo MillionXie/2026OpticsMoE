@@ -121,3 +121,16 @@ SDK授权、ABI、交互桌面、有效光信号或现场回归。
 显式绑定原ABO安装的SDK后八项路径全部存在，六项文件SHA已记录，原JSON未改变。
 见 [`机器路径收据`](../../../../maintenance/storage/T07_MACHINE_PATH_GATE_20261006.json)。
 实际旧工程仍保留；这不授权重采、不证明设备回归，也不等于实验室运行代码已切main。
+
+## 主仓库的封存资产绑定检查
+
+实验室原路径集中在 `../configs/lab/rank72_windows_20261007.json`。
+该配置不替换权重、机器JSON或旧会话，且只允许inspect；从仓库根目录运行：
+
+```powershell
+python -m LightGenV2.tasks.t07_abo_image_retrieval.hardware.inspect_binding --binding LightGenV2/tasks/t07_abo_image_retrieval/configs/lab/rank72_windows_20261007.json --load-cpu
+```
+
+检查原PT、protocol及geometry SHA、2400图片身份和SDK文件路径，随后可选严格CPU加载
+封存模型与本地processor。不运行图片推理、检索评价或SDK，不创建输出、不修改机器配置。
+缺少原资产或依赖即失败，不能把存在性检查当成硬件现场验收。
