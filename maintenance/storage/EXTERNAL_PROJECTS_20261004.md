@@ -13,6 +13,17 @@
 
 ## 本机已做的实际整理
 
+2026-10-07夜间又将两个本机旧源码工作目录整体收进既有
+`archive/frozen_worktrees_20261006/`：T02个人照片源码3620文件、
+`mnist_publish`旧DVP/MNIST发布暂存源码4752文件，分别移动前后逐文件SHA完全一致。
+后者HEAD为52db52d19dfd35382e62d1cc9bda3373be5cff81，既有恢复引用
+`refs/archive/frozen-local-20261005/mnist-dvp-20260924`覆盖；没有未提交内容或
+非缓存运行资产，主线保留原MNIST实现及后续说明。原源码和缓存一起保留，
+不是清理实验室设备或删除测速；未连接实验室。Git登记随位置迁移仍保留，
+本机注册总数仍14，不能把入口收拢说成14减少或释放空间。
+T11本机目录则含必要best/PT、NPZ预测和原报告，不按空源码副本处理；
+T16本机cross_modal有69项原修改／未跟踪内容，也保持不动。
+
 日常只打开 `C:/Users/Xml12/OneDrive/2026OpticsMoE`，从
 [START_HERE.md](../../START_HERE.md) 进入各任务。
 
