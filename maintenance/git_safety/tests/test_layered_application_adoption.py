@@ -79,6 +79,45 @@ def test_layered_config_graph_preserves_layout_and_compresses_only_residual_widt
     assert reference['dataset']['test_samples']==1000
 
 
+def test_real_settings_and_compact_dispatch_apply_original_application_parameters():
+    from LightGenV2.tasks.t04_semantic_interaction.settings import load_settings
+    selected=load_settings(TASK/'configs/layered_scene_exp05_dc30_ccdsmall.yaml')
+    assert selected.electronic_expansion==.5
+    assert selected.zero_order_intensity_fraction==.30
+    assert (selected.ccd_noise_mean_fraction,selected.ccd_noise_std_fraction,
+            selected.ccd_noise_min_fraction,selected.ccd_noise_max_fraction)==(.01,.01,-.01,.03)
+    original=load_settings(TASK/'configs/routerfill_shared.yaml')
+    assert original.electronic_expansion==2.0
+    assert original.zero_order_intensity_fraction is None
+    assert original.ccd_noise_mean_fraction is None
+    tree=ast.parse((TASK/'modeling.py').read_text(encoding='utf8'))
+    compact=next(n for n in tree.body if isinstance(n,ast.FunctionDef) and n.name=='_compact')
+    namespace={'Settings':object,'Any':object,'T01_CONFIG':None,
+               'load_t01_settings':lambda _:SimpleNamespace()}
+    exec(compile(ast.Module(body=[compact],type_ignores=[]),'modeling._compact','exec'),namespace)
+    result=namespace['_compact'](selected)
+    assert result.electronic_expansion==.5
+    assert result.language_optical_amplitude_zero_order_intensity_min==.30
+    assert result.language_optical_phase_zero_order_intensity_max==.30
+    assert result.optical_router_robust_zero_order_intensity_fraction==.30
+    assert result.optical_router_robust_ccd_noise_std_fraction==.01
+
+
+@pytest.mark.parametrize('model,match',[
+    ({'electronic_expansion':.1},'electronic_expansion'),
+    ({'zero_order_intensity_fraction':1.0},'zero_order_intensity_fraction'),
+    ({'ccd_noise_mean_fraction':.01},'All four'),
+    ({'ccd_noise_mean_fraction':.01,'ccd_noise_std_fraction':-.1,
+      'ccd_noise_min_fraction':-.01,'ccd_noise_max_fraction':.03},'Invalid model CCD')])
+def test_application_settings_reject_invalid_or_partial_parameters(tmp_path,model,match):
+    from LightGenV2.tasks.t04_semantic_interaction.settings import load_settings
+    path=tmp_path/'invalid.yaml'
+    path.write_text(yaml.safe_dump({'base_config':str(TASK/'configs/routerfill_shared.yaml'),
+                                  'model':model}),encoding='utf8')
+    with pytest.raises(ValueError,match=match):
+        load_settings(path)
+
+
 @pytest.mark.parametrize('baseline',[False,True])
 @pytest.mark.parametrize('layered',[False,True])
 def test_actual_data_dispatch_uses_correct_renderer_and_cache(baseline,layered):

@@ -68,6 +68,9 @@ class Settings:
         )
         self.optical_enabled = True
         self.electronic_width = int(d("model.electronic_width", 192))
+        self.electronic_expansion = float(d("model.electronic_expansion", 2.0))
+        if not 0.5 <= self.electronic_expansion <= 4.0:
+            raise ValueError("model.electronic_expansion must be in [0.5, 4.0]")
         self.max_language_tokens = int(d("model.max_language_tokens", 64))
         self.optical_fusion_initial = float(d("model.optical_fusion_initial", 0.055))
         self.embedding_only = bool(d("model.embedding_only", False))
@@ -93,6 +96,27 @@ class Settings:
         self.phase_dropout_p = float(d("model.phase_dropout_p", 0.08))
         if not 0.0 <= self.phase_dropout_p < 1.0:
             raise ValueError('model.phase_dropout_p must be in [0, 1)')
+        self.zero_order_intensity_fraction = d("model.zero_order_intensity_fraction", None)
+        if self.zero_order_intensity_fraction is not None:
+            self.zero_order_intensity_fraction = float(self.zero_order_intensity_fraction)
+            if not 0.0 <= self.zero_order_intensity_fraction < 1.0:
+                raise ValueError('model.zero_order_intensity_fraction must be in [0, 1)')
+        self.ccd_noise_mean_fraction = d("model.ccd_noise_mean_fraction", None)
+        self.ccd_noise_std_fraction = d("model.ccd_noise_std_fraction", None)
+        self.ccd_noise_min_fraction = d("model.ccd_noise_min_fraction", None)
+        self.ccd_noise_max_fraction = d("model.ccd_noise_max_fraction", None)
+        noise_values = (
+            self.ccd_noise_mean_fraction, self.ccd_noise_std_fraction,
+            self.ccd_noise_min_fraction, self.ccd_noise_max_fraction,
+        )
+        if any(value is not None for value in noise_values):
+            if not all(value is not None for value in noise_values):
+                raise ValueError('All four model.ccd_noise_*_fraction fields must be set together')
+            (self.ccd_noise_mean_fraction, self.ccd_noise_std_fraction,
+             self.ccd_noise_min_fraction, self.ccd_noise_max_fraction) = map(float, noise_values)
+            if not (self.ccd_noise_std_fraction >= 0.0 and
+                    self.ccd_noise_min_fraction <= self.ccd_noise_mean_fraction <= self.ccd_noise_max_fraction):
+                raise ValueError('Invalid model CCD noise fractions')
         self.epochs = int(d("training.epochs", 40))
         self.batch_size = int(d("training.batch_size", 16))
         self.num_workers = int(d("training.num_workers", 4))

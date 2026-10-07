@@ -18,6 +18,7 @@
     "source_training_commit": "7121e2e0758ef3aae8c2aa29e8002a6e81e7d204",
     "local_and_actual_training_server_checkpoint_sha_rechecked": true,
     "local_cpu_checkpoint_metadata_read": true,
+    "local_cpu_strict_model_load": {"passed": true, "model_state_entries": 139, "same_architecture": true, "device": "cpu", "test_dataset_evaluated": false},
     "full_model_inference_repeated": false,
     "record_sha256": {
       "selection.json": "ad0ef105b24932c8235572ac25b49403f1bc28139c37251c7288822eb4c950f3",
@@ -92,6 +93,20 @@
     }
   ],
   "main_projection": "Add original eight profile entries and original _ensure_data layered dispatch; restore layered gallery routing while preserving newer fusion ablation suffix and output guards",
+  "restored_model_contract": {
+    "actual_server_source_files_match_original_commit": true,
+    "original_source_sha256_lf": {
+      "settings.py": "1e2df2b528afb29ed7f998737b0386df12b27b001ec21cd2e771299753ff810b",
+      "modeling.py": "79650ddabadaa753bbc3e60fba613103e3e50cae4f89be298e958310d9ce478c",
+      "embedding_model.py": "3011eaf6b34adbace76bce626f593617028bee13b11a027add532b6e7aa5f8d7",
+      "experiments/qwen3_vl_embedding_2b_caltech101_four_layer_optical_router_retrieval/router.py": "288f54ab9a3178b86112be851e220a9344af723ef3a3a548dcba69ddc462d19e"
+    },
+    "restored": ["Validated model.electronic_expansion, DC and CCD noise fields", "Original _compact propagation to expert/global and router", "Original expansion-dependent checkpoint architecture tag", "Original training-only router phase/amplitude leakage and truncated CCD noise", "Architecture report uses actual selected DC/noise/MLP configuration"],
+    "preserved_main": ["Newer lowrank/lite/slim shared-head variants", "Fusion ablation guards and loss handling", "Best/last-only retention; no periodic checkpoint saving restored"],
+    "compatibility_guard": "Missing input RMS is accepted only when router zero-order perturbation is disabled; explicit nonzero zero-order requires the original RMS setting. With actual application settings the original training computation is retained.",
+    "validation": {"related_cpu_contract_tests_passed": 53, "full_maintenance_tests_passed": 324, "strict_selected_pt_load": true, "new_metrics_or_capture": false},
+    "formatting": "settings.py mixed CRLF/LF normalized to LF; original archived bytes remain recoverable, no additional setting values changed"
+  },
   "local_test_difference_preserved": "tests/test_layered_scene_data.py omits the original compression-profile test; not overwritten or adopted as the server test. A separate maintenance test covers configuration and dispatch contracts.",
   "preserved": [
     "Original model architecture, training function, train/test counts and selection protocol",

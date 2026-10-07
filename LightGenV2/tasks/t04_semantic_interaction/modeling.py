@@ -43,6 +43,25 @@ def _compact(settings: Settings) -> Any:
     compact.output_dir = settings.output_dir
     compact.optical_fusion_initial = settings.optical_fusion_initial
     compact.fusion_alpha_initial = settings.optical_fusion_initial
+    compact.electronic_expansion = settings.electronic_expansion
+    if settings.zero_order_intensity_fraction is not None:
+        eta = settings.zero_order_intensity_fraction
+        compact.language_optical_zero_order_enabled = eta > 0.0
+        compact.language_optical_amplitude_zero_order_intensity_min = eta
+        compact.language_optical_amplitude_zero_order_intensity_max = eta
+        compact.language_optical_phase_zero_order_intensity_min = eta
+        compact.language_optical_phase_zero_order_intensity_max = eta
+        compact.optical_router_robust_zero_order_intensity_fraction = eta
+    if settings.ccd_noise_mean_fraction is not None:
+        compact.language_optical_ccd_noise_distribution = "truncated_biased_gaussian"
+        compact.language_optical_ccd_noise_mean_fraction = settings.ccd_noise_mean_fraction
+        compact.language_optical_ccd_noise_std_fraction = settings.ccd_noise_std_fraction
+        compact.language_optical_ccd_noise_min_fraction = settings.ccd_noise_min_fraction
+        compact.language_optical_ccd_noise_max_fraction = settings.ccd_noise_max_fraction
+        compact.optical_router_robust_ccd_noise_mean_fraction = settings.ccd_noise_mean_fraction
+        compact.optical_router_robust_ccd_noise_std_fraction = settings.ccd_noise_std_fraction
+        compact.optical_router_robust_ccd_noise_min_fraction = settings.ccd_noise_min_fraction
+        compact.optical_router_robust_ccd_noise_max_fraction = settings.ccd_noise_max_fraction
     if settings.embedding_only:
         compact.fusion_alpha_min = settings.fusion_alpha_minimum
         compact.fusion_alpha_max = settings.fusion_alpha_maximum
@@ -141,6 +160,12 @@ class LightGenOpenMojiEditor(OpenMojiOpticalEditor):
             "text": "cached frozen Qwen3-VL-2B-Instruct contextual hidden states",
             "vision": "frozen Qwen patch embedding and position embedding; zero native Transformer blocks",
             "hybrid_blocks": {"language": 2, "vision": 2},
+            "electronic_residual": {
+                "width": compact.electronic_width,
+                "depth_per_modality": compact.electronic_layers,
+                "mlp_expansion": compact.electronic_expansion,
+                "token_mixer": "causal depthwise Conv1d for language; spatial depthwise Conv2d for vision",
+            },
             "router": {
                 "backend": self.router_backend,
                 "top_k": self.router_top_k,
@@ -179,7 +204,25 @@ class LightGenOpenMojiEditor(OpenMojiOpticalEditor):
                 "router_captures": 0 if self.router_backend == "none" else 2,
                 "pixel_pitch_um": 17.0,
                 "distance_m": 0.10,
-                "zero_order_intensity_range": [0.20, 0.30],
+                "zero_order_intensity_range": (
+                    [self.settings.zero_order_intensity_fraction] * 2
+                    if self.settings.zero_order_intensity_fraction is not None
+                    else [0.20, 0.30]
+                ),
+                "zero_order_applies_to": (
+                    "amplitude and phase SLMs in router, expert and global exposures"
+                    if self.settings.zero_order_intensity_fraction is not None
+                    else "expert and global exposures"
+                ),
+                "training_ccd_noise": (
+                    None if self.settings.ccd_noise_mean_fraction is None else {
+                        "distribution": "truncated_biased_gaussian",
+                        "mean_fraction": self.settings.ccd_noise_mean_fraction,
+                        "std_fraction": self.settings.ccd_noise_std_fraction,
+                        "minimum_fraction": self.settings.ccd_noise_min_fraction,
+                        "maximum_fraction": self.settings.ccd_noise_max_fraction,
+                    }
+                ),
             },
             "decoder": "electronic 6x6 category and edit heads; no attention/Transformer",
             "trainable_parameters": sum(

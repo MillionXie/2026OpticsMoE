@@ -27,6 +27,9 @@ OpenMoji应用线进一步恢复原分层数据/展示分派、4份渲染源码�
 应用线指定的layered epoch45 PT（SHA03cb861c…09eb21）、selection/audit/split已在本地
 与实际训练服务器逐SHA一致，CPU确认epoch45/expansion=.5；原仿真.8765/去光.4845。
 旧独立打包器仍限standard epoch40，不冒充可交付新版；新版独立包与该PT实拍绑定仍是例外。
+进一步关闭应用配置静默失效：恢复原MLP expansion、DC/CCD参数解析/传递、Router训练扰动
+及架构标签。指定PT在本机main模型严格CPU加载139项state通过，53项相关CPU检查通过，
+未重评查询或TEST、未开设备；主线其他头/消融功能保留，旧科学运行目录不切换。
 
 ### 13:07收尾覆盖（优先于下方旧快照）
 

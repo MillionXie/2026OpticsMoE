@@ -131,6 +131,9 @@ class EmbeddingOnlyEditor(LightGenOpenMojiEditor):
         self.checkpoint_architecture = (
             f't04_embedding_only_{self.router_backend}_alpha{settings.fusion_alpha_minimum:.4f}_'
             f'{settings.fusion_alpha_maximum:.4f}_e{settings.editor_depth}_scaleccd_positionlinear_v1')
+        if settings.electronic_expansion != 2.0:
+            expansion = f'{settings.electronic_expansion:.2f}'.replace('.', 'p')
+            self.checkpoint_architecture += f'_electronicexp{expansion}'
         self.assert_contract()
 
     def _language_condition(self, groups):
