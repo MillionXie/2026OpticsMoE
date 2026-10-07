@@ -10,6 +10,21 @@ ROOT = Path(__file__).resolve().parents[3]
 
 
 class ArtifactIgnoreTests(unittest.TestCase):
+    def test_editor_result_rules_keep_contracts_and_current_tasks_visible(self):
+        import json
+        d=json.loads((ROOT/'maintenance/storage/EDITOR_RESULT_VISIBILITY_20261007.json').read_text(encoding='utf8'))
+        selected=[r['path'] for r in d['files']]
+        self.assertEqual(len(selected),197)
+        visible=d['excluded_without_backup']+d['excluded_changed_since_backup']+[
+            'handoffs/t12_lab_robust17m_20260927/README.md',
+            'handoffs/t12_lab_robust17m_20260927/contract.json',
+            'handoffs/t12_lab_robust17m_20260927/new_report.json',
+            'handoffs/t12_channel_severe_20260927/protocol.json',
+            'handoffs/t13_temporal_ablation_20260927/train.py',
+            'handoffs/openmoji_robust_ablation_20260928/current_report.json',
+            'LightGenV2/tasks/t12_text_to_image/sealed_editor.py']
+        self.assertEqual(self.ignored(selected+visible),set(selected))
+
     def test_embedded_timing_snapshots_not_primary_backend_or_unmatched_files(self):
         import json
         d=json.loads((ROOT/'maintenance/storage/DEMO_EMBEDDED_SOURCE_VISIBILITY_20261007.json').read_text(encoding='utf8'))
