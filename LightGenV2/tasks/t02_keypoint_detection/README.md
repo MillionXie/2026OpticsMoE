@@ -44,11 +44,16 @@ Git路径兼容失败日志保留，未覆盖有效CCD。
 单样本相对batch24的float32差异逐项记录。原光电core/head全量strict加载，
 相位回消必须还原非负实幅度，三层理想CCD回放通过才允许设备初始化。
 现有实验室主仓库通过已发布main的Git bundle接入该任务；未改旧OpenMoji/ABO目录。
-一次性任务`LSP_Staged7348_Full1000_1008`真实PID13024/launcher16224已启动，
-当前`full1000.queue.json`为`waiting_for_verified_cache`，尚不是全量采集中。
-等待剩余996缓存传输完成，校验包SHA
+一次性任务`LSP_Staged7348_Full1000_1008`已实际进入全量采集，最新主PID11192/
+launcher11776、router60/1000，总68PNG（含其他两层各4 pilot），最新p99=22/sat0。
+当前进度以`full1000/progress.json`和实际CCD/收据数量mtime为准，不仅看任务State。
+原大包上传被Windows独占锁挡住；已保留残件、失败日志并停止原大包上传。
+改为私有逐样本artifact-only发布器，输入每个成员在本机和远端SHA通过后原子发布；
+采集再次校验后播放，允许边传边采。每个缺帧等待有10分钟无增量上限。
+发布完成由`stem_release_retry2/external_transfer.json`登记，全部1000成员SHA终审。
+不再等待大包整体传完才开始；原打包SHA仍保留为来源：
 916f929ccdc01f1811e9f3225b7c05db08e9cd4ada1644426a23068759706e19和所有成员SHA，
-再自动开始router→expert→global各完整1000样本。等待有2小时上限，异常即停止。
+按router→expert→global各完整1000样本继续。交接最多2小时，异常即停止。
 同权重/幅度/曝光/几何的12 pilot CCD保留复用；每帧须重新匹配BMP/phase/upstream SHA，
 因此目标3000有效CCD、2988新增采集。2000us/GainX4/wait240、hv反相phase、flip_v CCD，
 固定1/255 CCD回灌，不做逐图亮度拉伸；暗p99<15和原严格1%饱和守卫均停。

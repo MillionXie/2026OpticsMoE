@@ -31,7 +31,18 @@ cb1864fe7217bb4d0891d3712c37173877c84746baa4ed756fbdc989e7a77140。
 `lab_tune_g2_test.py` SHAd4c0c4fd...2c9a0f；来源逐项见
 `maintenance/storage/T04_WINDOWS_SOURCE_PRESERVATION_20261005.json`。
 参数仅在任务命令中配置，不新增工程/分支/worktree，不打开SDK、不重采、不覆盖旧run。
-原始CCD/PT和ABO等封存保持，外部上传暂停。当前没有本run的新精度。
+原始CCD/PT和ABO等封存保持，外部上传暂停。该160轮run现已完成，选择e160，
+strict CPU .8680，best SHA080db54660b95503ebc89388cd525d4e4ff1694feb50972b0f6daf27bc216c60；
+原光学上游SHA不变。TRAIN changed-cell .979，未达用户>=.890目标。
+
+有限一次`editor16_align_decoder_average050_20261008`已完成：预声明50/50平均
+同上游两份训练后原decoder权重（父.8685/.8680），不增加推理层、不做梯度或阈值扫描。
+TRAIN .984、完整TEST1000 strict CPU .8695，较同上游此前最高.8685提高.1pp，
+仍距.890目标2.05pp；不是独立泛化，不能与不同上游历史.8705拼成一条链。
+平均PT SHA75bc667d3724ec55f5c6a7607e361ef236979f1a63ed95907e7c42ae9502b972，
+严格保存后默认CPU复载通过、全部非decoder张量逐项相同、保护SHA保持f385956d...bf66f。
+报告/逐样本已本地备份，PT原件保留，CPU进程退出，不占SDK/GPU。入口
+`lab_decoder_average.py` Git9283481ad，仅一次对照，不继续无限TEST扫分。
 
 ## 2026-10-07 新授权：单对齐空间扰动训练（结果待实拍）
 
