@@ -1,5 +1,11 @@
 # 8 µm、532 nm、10 cm 光路手动测试包（2026-09-23）
 
+2026-10-08整理：七份原标定JSON／老师MATLAB参考源码已原样纳入main，
+来源SHA见`maintenance/storage/MNIST_CALIBRATION_SOURCE_RETENTION_20261008.json`。
+BMP、PNG、PT及原测速仍作为私有资产保留，不因源码发布而重新生成或测量。
+老师MATLAB参考仍是30cm/9.2µm，不能当成10cm/8µm最终相位生成器；
+本文下方实验步骤是历史说明，本轮没有操作实验室设备。
+
 这三个文件夹分别用于：距离/焦点检查、MNIST-4（数字 0–3）识别、双 SLM 共面和方向对齐。BMP 才是播放文件；PNG 是预览，不能代替 BMP。振幅 SLM 为 1920×1080，反射相位 SLM 为 1920×1200，播放时均选择原始尺寸、不缩放。
 
 ## 01_fresnel_10cm

@@ -1,0 +1,497 @@
+{
+  "schema": 1,
+  "phase_size_wh": [
+    1920,
+    1200
+  ],
+  "active_bounds_panel_xyxy_half_open": [
+    452,
+    92,
+    1468,
+    1108
+  ],
+  "phase_center_panel_pixel_xy": [
+    959.5,
+    599.5
+  ],
+  "ideal_active_width_phase_pixels": 1015.75,
+  "current_ccd_roi_full_sensor_TL_TR_BR_BL": [
+    [
+      900,
+      142
+    ],
+    [
+      4310,
+      142
+    ],
+    [
+      4297,
+      3551
+    ],
+    [
+      874,
+      3544
+    ]
+  ],
+  "teacher_source": "C:/Users/Xml12/OneDrive/2026OpticsModel/generate_fresnel_lens.m",
+  "formula": "turns=-pitch_m^2*((x-xc)^2+(y-yc)^2)/(2*lambda_m*f_m); uint8=round(255*mod(turns,1))",
+  "inverse_formula": "uint8_inverse=255-uint8_normal, including the flat background",
+  "warning": "10 cm, 8 um, and 1016-pixel support exceed quadratic Nyquist sampling near the outer edges; teacher formula retained without clipping.",
+  "amplitude_white_bmp": "A_WHITE_1920x1080.bmp",
+  "files": [
+    {
+      "name": "00_teacher_original_30cm_9p2um_1920x1152",
+      "description": "original MATLAB geometry and physical parameters",
+      "normal_bmp": "00_teacher_original_30cm_9p2um_1920x1152_normal.bmp",
+      "normal_sha256": "0ebe1c6a98d05ec6c3f5cac74fc6ca525bc91e6240571479323fdb2ad3760c0a",
+      "inverse255_bmp": "00_teacher_original_30cm_9p2um_1920x1152_inverse255.bmp",
+      "inverse255_sha256": "1c164b73f402a2619edd59aa0ee3fdfc12f03f4ac69c177f6083ed638253fad6",
+      "preview_png": "00_teacher_original_30cm_9p2um_1920x1152_preview.png",
+      "size_wh": [
+        1920,
+        1152
+      ],
+      "wavelength_nm": 532.0,
+      "pixel_pitch_um": 9.2,
+      "focal_distance_cm": 30.0,
+      "lens_centers_panel_pixel_xy_row_major": [
+        [
+          784.0,
+          400.0
+        ],
+        [
+          1134.0,
+          400.0
+        ],
+        [
+          784.0,
+          750.0
+        ],
+        [
+          1134.0,
+          750.0
+        ]
+      ],
+      "clipped_tile_bounds_xyxy_row_major": [
+        [
+          610,
+          226,
+          960,
+          576
+        ],
+        [
+          960,
+          226,
+          1310,
+          576
+        ],
+        [
+          610,
+          576,
+          960,
+          926
+        ],
+        [
+          960,
+          576,
+          1310,
+          926
+        ]
+      ],
+      "gray_min_max": [
+        0,
+        255
+      ]
+    },
+    {
+      "name": "01_single_10cm_8um",
+      "description": "one lens centered in the 1016x1016 active square",
+      "normal_bmp": "01_single_10cm_8um_normal.bmp",
+      "normal_sha256": "f96af121dbdb3a4781e1039fa729cd8afe1b0ffe13a2309c2da0ec7f516daba6",
+      "inverse255_bmp": "01_single_10cm_8um_inverse255.bmp",
+      "inverse255_sha256": "1a59356bc2811eed1188941e71503f4db3972ee732cb72145fd8b21ed3816e78",
+      "preview_png": "01_single_10cm_8um_preview.png",
+      "size_wh": [
+        1920,
+        1200
+      ],
+      "wavelength_nm": 532.0,
+      "pixel_pitch_um": 8.0,
+      "focal_distance_cm": 10.0,
+      "lens_centers_panel_pixel_xy_row_major": [
+        [
+          959.5,
+          599.5
+        ]
+      ],
+      "clipped_tile_bounds_xyxy_row_major": [
+        [
+          452,
+          92,
+          1468,
+          1108
+        ]
+      ],
+      "gray_min_max": [
+        0,
+        255
+      ]
+    },
+    {
+      "name": "02_four_normal_10cm_8um",
+      "description": "four adjacent cells, lens center at each cell center",
+      "normal_bmp": "02_four_normal_10cm_8um_normal.bmp",
+      "normal_sha256": "2ec34060bbad40c7eda3d529cfbb82496abc857181143226c65bee3b544397e8",
+      "inverse255_bmp": "02_four_normal_10cm_8um_inverse255.bmp",
+      "inverse255_sha256": "28d52810ce305a2e6d0edb519db38e3afc195988addb83d973b7c1f591d6198c",
+      "preview_png": "02_four_normal_10cm_8um_preview.png",
+      "size_wh": [
+        1920,
+        1200
+      ],
+      "wavelength_nm": 532.0,
+      "pixel_pitch_um": 8.0,
+      "focal_distance_cm": 10.0,
+      "lens_centers_panel_pixel_xy_row_major": [
+        [
+          705.5,
+          345.5
+        ],
+        [
+          1213.5,
+          345.5
+        ],
+        [
+          705.5,
+          853.5
+        ],
+        [
+          1213.5,
+          853.5
+        ]
+      ],
+      "clipped_tile_bounds_xyxy_row_major": [
+        [
+          452,
+          92,
+          960,
+          600
+        ],
+        [
+          960,
+          92,
+          1468,
+          600
+        ],
+        [
+          452,
+          600,
+          960,
+          1108
+        ],
+        [
+          960,
+          600,
+          1468,
+          1108
+        ]
+      ],
+      "gray_min_max": [
+        0,
+        255
+      ]
+    },
+    {
+      "name": "03_four_roi_vertices_10cm_8um",
+      "description": "four adjacent lenses centered on the physical active ROI vertices",
+      "normal_bmp": "03_four_roi_vertices_10cm_8um_normal.bmp",
+      "normal_sha256": "8fed5e8c45e8f6c903f610e4bca2bf7de6c74565a521bd2ef276a0cb7c6aadc9",
+      "inverse255_bmp": "03_four_roi_vertices_10cm_8um_inverse255.bmp",
+      "inverse255_sha256": "6c682ad85f93b3b61b0a397b7af5a4aff723e19da27ad1d3a579d49018dfd51b",
+      "preview_png": "03_four_roi_vertices_10cm_8um_preview.png",
+      "size_wh": [
+        1920,
+        1200
+      ],
+      "wavelength_nm": 532.0,
+      "pixel_pitch_um": 8.0,
+      "focal_distance_cm": 10.0,
+      "lens_centers_panel_pixel_xy_row_major": [
+        [
+          451.625,
+          91.625
+        ],
+        [
+          1467.375,
+          91.625
+        ],
+        [
+          451.625,
+          1107.375
+        ],
+        [
+          1467.375,
+          1107.375
+        ]
+      ],
+      "clipped_tile_bounds_xyxy_row_major": [
+        [
+          0,
+          0,
+          960,
+          600
+        ],
+        [
+          960,
+          0,
+          1920,
+          600
+        ],
+        [
+          0,
+          600,
+          960,
+          1200
+        ],
+        [
+          960,
+          600,
+          1920,
+          1200
+        ]
+      ],
+      "gray_min_max": [
+        0,
+        255
+      ]
+    },
+    {
+      "name": "04_nine_normal_10cm_8um",
+      "description": "nine adjacent cells, lens center at each cell center",
+      "normal_bmp": "04_nine_normal_10cm_8um_normal.bmp",
+      "normal_sha256": "ce585550439ce3e4a212624e645b132bfebdbdabed2ca1a342018604d5003702",
+      "inverse255_bmp": "04_nine_normal_10cm_8um_inverse255.bmp",
+      "inverse255_sha256": "217c4dc5f53592541395b7cc9f35d140694c3ff0f9580fb077a283a88debcbb7",
+      "preview_png": "04_nine_normal_10cm_8um_preview.png",
+      "size_wh": [
+        1920,
+        1200
+      ],
+      "wavelength_nm": 532.0,
+      "pixel_pitch_um": 8.0,
+      "focal_distance_cm": 10.0,
+      "lens_centers_panel_pixel_xy_row_major": [
+        [
+          621.0,
+          261.0
+        ],
+        [
+          959.5,
+          261.0
+        ],
+        [
+          1298.0,
+          261.0
+        ],
+        [
+          621.0,
+          599.5
+        ],
+        [
+          959.5,
+          599.5
+        ],
+        [
+          1298.0,
+          599.5
+        ],
+        [
+          621.0,
+          938.0
+        ],
+        [
+          959.5,
+          938.0
+        ],
+        [
+          1298.0,
+          938.0
+        ]
+      ],
+      "clipped_tile_bounds_xyxy_row_major": [
+        [
+          452,
+          92,
+          791,
+          431
+        ],
+        [
+          791,
+          92,
+          1129,
+          431
+        ],
+        [
+          1129,
+          92,
+          1468,
+          431
+        ],
+        [
+          452,
+          431,
+          791,
+          769
+        ],
+        [
+          791,
+          431,
+          1129,
+          769
+        ],
+        [
+          1129,
+          431,
+          1468,
+          769
+        ],
+        [
+          452,
+          769,
+          791,
+          1108
+        ],
+        [
+          791,
+          769,
+          1129,
+          1108
+        ],
+        [
+          1129,
+          769,
+          1468,
+          1108
+        ]
+      ],
+      "gray_min_max": [
+        0,
+        255
+      ]
+    },
+    {
+      "name": "05_nine_roi_nodes_10cm_8um",
+      "description": "nine adjacent lenses centered on ROI vertices, edge midpoints and center",
+      "normal_bmp": "05_nine_roi_nodes_10cm_8um_normal.bmp",
+      "normal_sha256": "beda9c5c7e8c186c16162f650edae014788c978b244753c85bca5e09721c2f80",
+      "inverse255_bmp": "05_nine_roi_nodes_10cm_8um_inverse255.bmp",
+      "inverse255_sha256": "e184178fce985e6ca6a27799151153cc1896d63241db61da358d9ad1fc148603",
+      "preview_png": "05_nine_roi_nodes_10cm_8um_preview.png",
+      "size_wh": [
+        1920,
+        1200
+      ],
+      "wavelength_nm": 532.0,
+      "pixel_pitch_um": 8.0,
+      "focal_distance_cm": 10.0,
+      "lens_centers_panel_pixel_xy_row_major": [
+        [
+          451.625,
+          91.625
+        ],
+        [
+          959.5,
+          91.625
+        ],
+        [
+          1467.375,
+          91.625
+        ],
+        [
+          451.625,
+          599.5
+        ],
+        [
+          959.5,
+          599.5
+        ],
+        [
+          1467.375,
+          599.5
+        ],
+        [
+          451.625,
+          1107.375
+        ],
+        [
+          959.5,
+          1107.375
+        ],
+        [
+          1467.375,
+          1107.375
+        ]
+      ],
+      "clipped_tile_bounds_xyxy_row_major": [
+        [
+          0,
+          0,
+          707,
+          347
+        ],
+        [
+          707,
+          0,
+          1214,
+          347
+        ],
+        [
+          1214,
+          0,
+          1920,
+          347
+        ],
+        [
+          0,
+          347,
+          707,
+          854
+        ],
+        [
+          707,
+          347,
+          1214,
+          854
+        ],
+        [
+          1214,
+          347,
+          1920,
+          854
+        ],
+        [
+          0,
+          854,
+          707,
+          1200
+        ],
+        [
+          707,
+          854,
+          1214,
+          1200
+        ],
+        [
+          1214,
+          854,
+          1920,
+          1200
+        ]
+      ],
+      "gray_min_max": [
+        0,
+        255
+      ]
+    }
+  ]
+}

@@ -4166,3 +4166,4 @@ node_modules/
 /handoffs/abo_text_to_image_10cm_alpha040_20260925/launch_server_stage.py
 /handoffs/abo_text_to_image_10cm_alpha040_20260925/sync_full_stage.py
 /handoffs/abo_text_to_image_10cm_alpha040_20260925/transfer_router_inputs.py
+/TransferFromElectricity/tasks/t01_object_retrieval/collect_unseen_audits.py

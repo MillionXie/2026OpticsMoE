@@ -1,0 +1,115 @@
+{
+  "schema": 1,
+  "hardware_identity": "7659bad0384f79213f4dffdaf50bbdd14c70cfeda0e8e53471fa6d26e11a23a3",
+  "relay_scale_k": 1.0,
+  "effective_width_um": 8126,
+  "effective_device_width_px": 1015.75,
+  "amplitude_size_wh": [
+    1920,
+    1080
+  ],
+  "phase_size_wh": [
+    1920,
+    1200
+  ],
+  "amplitude_center_xy": [
+    959.5,
+    539.5
+  ],
+  "phase_center_xy": [
+    959.5,
+    599.5
+  ],
+  "sampling": "identical physical-coordinate nearest sampling on both panels, binary values only",
+  "amplitude_gray_lut_applied": false,
+  "pairs": [
+    {
+      "folder": "01_check64",
+      "amplitude": "A.bmp",
+      "phase": "P.bmp",
+      "opposite_vertical_phase": "P_V.bmp",
+      "phase_gray_encoding": "inverted_255_minus_g",
+      "phase_flip_vertical": false,
+      "opposite_phase_flip_vertical": true,
+      "phase_flip_horizontal": false,
+      "amplitude_flip_vertical": false,
+      "amplitude_flip_horizontal": false,
+      "cell_model_px": 64,
+      "cell_device_px": 136.0,
+      "grating_period_device_px": 17.0,
+      "grating_axis": "alternating x/y in visible white cells",
+      "sha256": {
+        "A.bmp": "e88213f98f3b76b923c7ba0af08cdc79b99fceaeaef0909a074e309abc72dcd1",
+        "P.bmp": "e3cb680610efbae924cc78f7a572950077f8d477f9a829d8ba99c6de1c3633c1",
+        "P_V.bmp": "29d03e88b115a0c7d7cf629debcd7e3eef95d1afbdad70ec9c43219bc5dcfe54"
+      },
+      "preview": "canonical logical layout, NOT a simulated CCD or native playback bitmap"
+    },
+    {
+      "folder": "02_blocks_x",
+      "amplitude": "A.bmp",
+      "phase": "P.bmp",
+      "opposite_vertical_phase": "P_V.bmp",
+      "phase_gray_encoding": "inverted_255_minus_g",
+      "phase_flip_vertical": false,
+      "opposite_phase_flip_vertical": true,
+      "phase_flip_horizontal": false,
+      "amplitude_flip_vertical": false,
+      "amplitude_flip_horizontal": false,
+      "cell_model_px": 48,
+      "cell_device_px": 102.0,
+      "grating_period_device_px": 17.0,
+      "grating_axis": "x",
+      "sha256": {
+        "A.bmp": "1950139425f4b8a1871565662ddda65ae3ad17c15735ce5951a669d3a7a91b50",
+        "P.bmp": "1efe358b0ebe457c19fda1f038d8a79f792843046affcb6564bc4a6ddffecf21",
+        "P_V.bmp": "ffd98ba41592efd08f68bc0743d16f3400fd8c8b1d02a4992ac0b05fc103c311"
+      },
+      "preview": "canonical logical layout, NOT a simulated CCD or native playback bitmap"
+    },
+    {
+      "folder": "03_blocks_y",
+      "amplitude": "A.bmp",
+      "phase": "P.bmp",
+      "opposite_vertical_phase": "P_V.bmp",
+      "phase_gray_encoding": "inverted_255_minus_g",
+      "phase_flip_vertical": false,
+      "opposite_phase_flip_vertical": true,
+      "phase_flip_horizontal": false,
+      "amplitude_flip_vertical": false,
+      "amplitude_flip_horizontal": false,
+      "cell_model_px": 48,
+      "cell_device_px": 102.0,
+      "grating_period_device_px": 17.0,
+      "grating_axis": "y",
+      "sha256": {
+        "A.bmp": "1950139425f4b8a1871565662ddda65ae3ad17c15735ce5951a669d3a7a91b50",
+        "P.bmp": "f52a7e82622f4b7aa2ba7f98520c0f24592c0b19143fcdcb7ebf9d55a5d3b0e6",
+        "P_V.bmp": "3d345ac7e2864ed797d42cabfe8ee661144c6a7cc2d7c137a61eb0c47939f08b"
+      },
+      "preview": "canonical logical layout, NOT a simulated CCD or native playback bitmap"
+    },
+    {
+      "folder": "04_check16",
+      "amplitude": "A.bmp",
+      "phase": "P.bmp",
+      "opposite_vertical_phase": "P_V.bmp",
+      "phase_gray_encoding": "inverted_255_minus_g",
+      "phase_flip_vertical": false,
+      "opposite_phase_flip_vertical": true,
+      "phase_flip_horizontal": false,
+      "amplitude_flip_vertical": false,
+      "amplitude_flip_horizontal": false,
+      "cell_model_px": 16,
+      "cell_device_px": 34.0,
+      "grating_period_device_px": 17.0,
+      "grating_axis": "alternating x/y in visible white cells",
+      "sha256": {
+        "A.bmp": "c5846191975845c6a05ed077d975ececa2fda981e49a5a403966da70d863ae42",
+        "P.bmp": "717e9db3414cd4553a8f0dc3992095748733c6ef0854c7d2b599a80a21598a64",
+        "P_V.bmp": "96d4ed02b7a75054e699383a25a611dd90d971910580e35be9517620aa62f700"
+      },
+      "preview": "canonical logical layout, NOT a simulated CCD or native playback bitmap"
+    }
+  ]
+}

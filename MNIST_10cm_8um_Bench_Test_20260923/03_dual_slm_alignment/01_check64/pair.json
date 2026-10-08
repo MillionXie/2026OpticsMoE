@@ -1,0 +1,22 @@
+{
+  "folder": "01_check64",
+  "amplitude": "A.bmp",
+  "phase": "P.bmp",
+  "opposite_vertical_phase": "P_V.bmp",
+  "phase_gray_encoding": "inverted_255_minus_g",
+  "phase_flip_vertical": false,
+  "opposite_phase_flip_vertical": true,
+  "phase_flip_horizontal": false,
+  "amplitude_flip_vertical": false,
+  "amplitude_flip_horizontal": false,
+  "cell_model_px": 64,
+  "cell_device_px": 136.0,
+  "grating_period_device_px": 17.0,
+  "grating_axis": "alternating x/y in visible white cells",
+  "sha256": {
+    "A.bmp": "e88213f98f3b76b923c7ba0af08cdc79b99fceaeaef0909a074e309abc72dcd1",
+    "P.bmp": "e3cb680610efbae924cc78f7a572950077f8d477f9a829d8ba99c6de1c3633c1",
+    "P_V.bmp": "29d03e88b115a0c7d7cf629debcd7e3eef95d1afbdad70ec9c43219bc5dcfe54"
+  },
+  "preview": "canonical logical layout, NOT a simulated CCD or native playback bitmap"
+}

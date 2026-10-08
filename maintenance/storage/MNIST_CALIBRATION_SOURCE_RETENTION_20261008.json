@@ -1,0 +1,63 @@
+{
+  "scope": "Seven original historical MNIST calibration metadata/source files adopted unchanged; one original private connection helper retained outside source sync",
+  "files": [
+    {
+      "path": "MNIST_10cm_8um_Bench_Test_20260923/01_fresnel_10cm/manifest.json",
+      "sha256": "8a1f397e8d2a6bd13257b2131c574318c4c0cfce755f7aa252f6312f6f00d744",
+      "bytes": 10640,
+      "recovery_blob": "7a4d6f0d5c1756b43bf587e7601a358dfdcdcf72",
+      "action": "publish_original_historical_calibration_metadata_source"
+    },
+    {
+      "path": "MNIST_10cm_8um_Bench_Test_20260923/01_fresnel_10cm/teacher_generate_fresnel_lens.m",
+      "sha256": "aa1509b7764077e9755e60d59323560374a8a2a1323f6d16a4e155921cc66f80",
+      "bytes": 739,
+      "recovery_blob": "f3049fd3cf42ab5e3d45c00d06a2d4c99fee1dd4",
+      "action": "publish_original_historical_calibration_metadata_source"
+    },
+    {
+      "path": "MNIST_10cm_8um_Bench_Test_20260923/03_dual_slm_alignment/01_check64/pair.json",
+      "sha256": "1f2c66b54662b12c62228e0cda17e249267a6dc9ef35c14ca4fd8b165ac164af",
+      "bytes": 859,
+      "recovery_blob": "9f29d4b2803f1183f222410b8d1fd5aca22dcaef",
+      "action": "publish_original_historical_calibration_metadata_source"
+    },
+    {
+      "path": "MNIST_10cm_8um_Bench_Test_20260923/03_dual_slm_alignment/02_blocks_x/pair.json",
+      "sha256": "3ecd2abb45e07f7353cea13eff38d378b74ae3471a7d90c41f0357b899458380",
+      "bytes": 823,
+      "recovery_blob": "061a49d62c26f9542ea6ca6af14f27cfb7a01f67",
+      "action": "publish_original_historical_calibration_metadata_source"
+    },
+    {
+      "path": "MNIST_10cm_8um_Bench_Test_20260923/03_dual_slm_alignment/03_blocks_y/pair.json",
+      "sha256": "4fdfea76a153e4641f73c827f0492ae22fc67ffb365364eac400b9a84a5ca649",
+      "bytes": 823,
+      "recovery_blob": "7910dd2e833708db05017b2c4617057adc68bb2e",
+      "action": "publish_original_historical_calibration_metadata_source"
+    },
+    {
+      "path": "MNIST_10cm_8um_Bench_Test_20260923/03_dual_slm_alignment/04_check16/pair.json",
+      "sha256": "7466a8e9927773e55f0f7bfb54048085f72de8bab045c4618c6f118f6ba7b4d3",
+      "bytes": 858,
+      "recovery_blob": "f63352abd9db003c6dc04f3f080256351e605718",
+      "action": "publish_original_historical_calibration_metadata_source"
+    },
+    {
+      "path": "MNIST_10cm_8um_Bench_Test_20260923/03_dual_slm_alignment/pairs.json",
+      "sha256": "29ba264a822453a9e5438e1ad45ebd2abf74d64c0bf524e674899ec16d7a65fb",
+      "bytes": 4306,
+      "recovery_blob": "654a3d718fe808e701a592b5771170446f2a334d",
+      "action": "publish_original_historical_calibration_metadata_source"
+    },
+    {
+      "path": "TransferFromElectricity/tasks/t01_object_retrieval/collect_unseen_audits.py",
+      "sha256": "c1faf207ef2bf9ca85faa8096578c7c6d9b36801aa1e1a40d97d39b1306774bf",
+      "bytes": 1988,
+      "recovery_blob": "ca096ae634f9d6b0eadb4d2ace5e7bb120f38a63",
+      "action": "retain_private_connection_helper_exact_ignore"
+    }
+  ],
+  "validation": "Original raw SHA and existing recovery Git blob raw/LF match; six calibration JSON parsed. No MATLAB execution, image export, device operation, benchmark, training or metric reevaluation. Teacher MATLAB is 30cm/9.2um reference, not current 10cm/8um model.",
+  "limitations": "Local historical source retention, not a new hardware validation or final ABO model identity. All original assets and timing remain."
+}

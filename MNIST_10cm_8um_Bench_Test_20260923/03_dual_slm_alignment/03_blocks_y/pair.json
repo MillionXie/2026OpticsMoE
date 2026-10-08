@@ -1,0 +1,22 @@
+{
+  "folder": "03_blocks_y",
+  "amplitude": "A.bmp",
+  "phase": "P.bmp",
+  "opposite_vertical_phase": "P_V.bmp",
+  "phase_gray_encoding": "inverted_255_minus_g",
+  "phase_flip_vertical": false,
+  "opposite_phase_flip_vertical": true,
+  "phase_flip_horizontal": false,
+  "amplitude_flip_vertical": false,
+  "amplitude_flip_horizontal": false,
+  "cell_model_px": 48,
+  "cell_device_px": 102.0,
+  "grating_period_device_px": 17.0,
+  "grating_axis": "y",
+  "sha256": {
+    "A.bmp": "1950139425f4b8a1871565662ddda65ae3ad17c15735ce5951a669d3a7a91b50",
+    "P.bmp": "f52a7e82622f4b7aa2ba7f98520c0f24592c0b19143fcdcb7ebf9d55a5d3b0e6",
+    "P_V.bmp": "3d345ac7e2864ed797d42cabfe8ee661144c6a7cc2d7c137a61eb0c47939f08b"
+  },
+  "preview": "canonical logical layout, NOT a simulated CCD or native playback bitmap"
+}
