@@ -1,4 +1,13 @@
 {
+  "matched_runner_adoption_20261008": {
+    "main_path": "LightGenV2/tasks/t04_openmoji_robust_ablation/train_rank64_matched.py",
+    "original_sha256": "f8e0786a90a1b45a911020251dfddffa34436aa1890a3ba622c2a7b44d23eef1",
+    "main_LF_sha256": "202c40e66d2e0d36e95acec5eaf5a4858d109d176451114c911956c7179ae44a",
+    "changes": "Remove only import sys and the old worktree SOURCE_ROOT/sys.path injection; original training body is preserved and reconstructed against original SHA by a no-Torch source test.",
+    "runtime_or_original_modified": false,
+    "training_evaluated_or_restarted": false,
+    "asset_closure_proven": false
+  },
   "visibility_update_20261008": {
     "source_commit": "ee251db7ed530574ad60bb25050e0139db036f55",
     "original_16_files_rechecked_against_raw_SHA_and_archive_commit": true,

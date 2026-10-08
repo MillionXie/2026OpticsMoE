@@ -19,6 +19,24 @@
 
 ## 主线入口的操作顺序（2026-10-05治理核对）
 
+### 原封存rank64仿真训练程序
+
+原服务器根目录的 `train_rank64_common_20261002.py` 已纳入任务模块
+`LightGenV2.tasks.t04_openmoji_robust_ablation.train_rank64_matched`。
+仅移除指向旧工作树的 `sys.path` 注入，训练体与原SHA
+`f8e0786a90a1b45a911020251dfddffa34436aa1890a3ba622c2a7b44d23eef1` 对应；
+源码保全测试会重建原文件并验证SHA。原文件、启动脚本、权重和结果仍保留。
+
+从已发布主仓库使用 `python -m LightGenV2.tasks.t04_openmoji_robust_ablation.train_rank64_matched`，
+参数为 `--group r0_base|r3_ccd_dc30_grid --epochs 15 --steps 100`，可显式提供
+`--resume`、`--output-root`。此处只是原接口记录，不授权重跑或覆盖正式run。
+该原程序使用TRAIN5000梯度、原TEST1000每五轮开发选模，正常仿真评估临时关闭噪声/DC/grid；
+不是 `train.py` 的4000FIT/1000VAL协议，也不是实拍后仅decoder微调。
+资产仍由 `train.py` 的BASE/SOURCE及resolved_config定位；必须先取得并核验原资产，
+不能把源码保全测试说成已从零训练复现或新实测。
+
+### 已有实拍与微调入口
+
 以下是参数合同，不是允许立即重跑已完成实验的指令。本轮未启动训练、采集或正式评估。
 在已发布源码仓库根目录使用模块入口；原实验工程作为资产位置，不把其 `source/`
 悄悄覆盖为主线。先核验原PT及所有资产，再排期现场回归。
