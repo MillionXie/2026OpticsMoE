@@ -102,6 +102,10 @@
 只读核验：review_git.py、check_task_registry.py、
 check_source_archives.py，均位于maintenance/git_safety。
 带PT/private选项需要原私有资产；检查通过不是删除许可。
+2026-10-08在4bef55ed4实际复核两端主目录：14项登记、源SHA、已登记PT及私有报告均无错误；
+两端提交守卫均已配置且相同SHA，不代表强制锁住其他窗口。
+Linux须使用既有xml环境Python3.11（/home/guest3/miniconda3/envs/xml/bin/python），
+系统python3为旧3.8，登记检查会因Path.is_relative_to缺失失败；未改系统环境或为此改科学代码。
 
 ## 7. 验收标准
 
