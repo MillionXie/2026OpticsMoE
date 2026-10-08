@@ -1,6 +1,6 @@
 {
   "audited_on": "2026-10-08",
-  "scope": "Local Windows copies only; no laboratory-computer connection or relocation",
+  "scope": "Local Windows archival plus separately audited Linux historical import archive; no laboratory-computer connection or relocation",
   "dvp_project": {
     "original": "C:/Users/Xml12/OneDrive/2026OpticsMoE/ABO_Lab_8um",
     "archive": "C:/Users/Xml12/OneDrive/2026OpticsMoE/archive/legacy_lab_projects/ABO_Lab_8um",
@@ -74,6 +74,25 @@
     "file_contents_modified": false,
     "historical_future_use_possible": true,
     "restore_rule": "Only restore the complete archived directory when the original path is absent and no process uses either location; verify every file against the private manifest before and after. Never overwrite a newer directory. This local archive is not an off-machine backup or retirement of the laboratory copy."
+  },
+  "linux_legacy_dvp_archive": {
+    "original": "/DATA/DATA1/guest3/2026OpticsMoE/ABO_Lab_8um",
+    "archive": "/DATA/DATA1/guest3/2026OpticsMoE/archive/legacy_lab_projects/ABO_Lab_8um",
+    "purpose": "Historical original_inference/original_a100/original_optics imports, their checkpoints/data, old releases and results; distinct from the smaller local Windows copy and sealed rank72",
+    "files": 6557,
+    "bytes": 17759514840,
+    "private_complete_manifest": "/DATA/DATA1/guest3/storage_cleanup_manifests/abo_lab_dvp_server_inventory_20261008.json",
+    "private_complete_manifest_sha256": "710569a9ea6e3ff66bad3c2f01719cdb3da1b179e031d64cc33999a77248e1e6",
+    "git_tracked_files": 0,
+    "symlinks_observed": 0,
+    "active_cwd_open_file_and_pre_move_command_reference_hits": 0,
+    "file_set_and_every_sha_unchanged": true,
+    "deleted_files": 0,
+    "disk_space_freed": 0,
+    "move_method": "Same-filesystem atomic directory rename after exact target and no-existing-destination checks; complete post-move SHA verification",
+    "restore": "Only restore the complete directory when the old path is absent and neither path is in use; verify the private complete manifest before and after, do not overwrite newer contents. Original historical path labels and timing references are not rewritten; restore when reproducing those old commands.",
+    "protected_current_models_changed": false,
+    "limits": "This preserves historical originals on the same server; not an independent off-machine backup or a claim that all old imports can run without restoration. Laboratory Windows deployment untouched."
   },
   "additional_maintenance_scratch_archive": {
     "archive_root": "C:/Users/Xml12/OneDrive/2026OpticsMoE/archive/maintenance_scratch_20261008",

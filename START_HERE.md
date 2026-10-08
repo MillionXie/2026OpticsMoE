@@ -58,6 +58,8 @@
   `archive/legacy_lab_projects/`，原文件、SDK、标定、CCD及全部测速未删除。
   旧硬件入口若需要这些资产，须显式指定归档路径或按收据恢复原目录；旧命令不自动改写。
   两者都不是当前rank72最终图搜图入口，详见[用途与归档收据](maintenance/storage/LOCAL_LEGACY_LAB_PROJECTS_20261008.json)。
+  Linux主目录中的旧DVP导入工程也已独立完整归档至同名历史区：6,557文件，约17.76 GB；
+  包含旧权重、数据和测速，未删除，不与本机较小的归档混为一份。
 - 服务器 `t12_assets`、`demo_reproduction_data`、`*_runs` 等：环境、数据或结果资产，
   不应因为位于主仓库外就删除。
 
