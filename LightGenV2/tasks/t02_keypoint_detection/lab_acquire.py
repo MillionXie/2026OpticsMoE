@@ -151,6 +151,13 @@ def acquire(a):
             amp=output/'amplitude'/s;amp.mkdir(parents=True)
             for k,item in enumerate(items):
                 p=root/item['file']
+                until=time.monotonic()+600
+                while not p.exists():
+                    errors=getattr(a,'_transfer_errors',[])
+                    if errors:raise RuntimeError('Verified cache transfer failed: '+str(errors[0]))
+                    if time.monotonic()>until:raise TimeoutError('No verified cache increment for ten minutes; stop safely')
+                    write(output/'progress.json',{'status':'waiting_for_sample_cache','stage':s,'next_sample':item['key'],'ccd_completed':n*a.limit+k,'elapsed_seconds':time.time()-start})
+                    time.sleep(1)
                 if sha(p)!=item['sha256']:raise ValueError('Cache changed')
                 batch=torch.load(p,map_location='cpu',weights_only=False)
                 measured={}
@@ -181,34 +188,70 @@ def acquire(a):
     print('CAPTURE COMPLETE',a.limit*3,flush=True)
 
 
+class GrowingArchive:
+    """Read an in-flight immutable upload without treating temporary EOF as EOF."""
+    def __init__(self,path,size,timeout=7200):
+        self.file=Path(path).open('rb');self.size=size;self.deadline=time.monotonic()+timeout
+
+    def read(self,n):
+        remaining=min(n,self.size-self.file.tell())
+        pieces=[]
+        while remaining>0:
+            value=self.file.read(remaining)
+            if value:pieces.append(value);remaining-=len(value)
+            else:
+                if time.monotonic()>self.deadline:raise TimeoutError('Upload stream timed out')
+                time.sleep(1)
+        return b''.join(pieces)
+
+    def close(self):self.file.close()
+
+
 def queued(a):
-    """One bounded handoff, not a recurring task or a blind retry."""
+    """Atomic, individually SHA-verified samples enable overlap with acquisition."""
     import tarfile
-    deadline=time.monotonic()+7200
+    import threading
+    import shutil
     state=a.output.with_suffix('.queue.json')
-    write(state,{'status':'waiting_for_verified_cache','pilot':str(a.reuse_session)})
-    while not a.cache_archive.exists() or a.cache_archive.stat().st_size!=a.archive_bytes:
-        if time.monotonic()>deadline:raise TimeoutError('Cache transfer incomplete after two hours; SDK never opened')
-        time.sleep(5)
-    if sha(a.cache_archive)!=a.archive_sha256:raise ValueError('Cache archive SHA mismatch')
     root=a.project.resolve();release=read(root/'release.json')
     allowed={e['file']:e['sha256'] for e in release['fields']}
-    with tarfile.open(a.cache_archive) as tar:
-        for member in tar.getmembers():
-            dest=(root/member.name).resolve()
-            if not member.isfile() or not dest.is_relative_to(root) or member.name not in allowed:raise ValueError('Unexpected artifact member')
-            if dest.exists():raise FileExistsError('Preserve existing cache member')
-            with tar.extractfile(member) as source,dest.open('xb') as target:
-                import shutil
-                shutil.copyfileobj(source,target)
-            if sha(dest)!=allowed[member.name]:raise ValueError('Extracted cache SHA mismatch')
-    for item in release['fields']:
-        if sha(root/item['file'])!=item['sha256']:raise ValueError('Incomplete full cache')
     if a.reuse_session is None:raise ValueError('Require verified three-layer pilot')
     report=read(a.reuse_session/'capture_report.json')
     if report['status']!='complete' or not report['sdk_released'] or report['ccd_count']!=12:raise ValueError('Pilot not complete')
-    write(state,{'status':'capturing_full','samples':1000,'captures':3000})
+    if not a.cache_archive.exists():raise FileNotFoundError('Upload must already be active')
+    a._transfer_errors=[]
+    finished=threading.Event()
+    def extract_verified():
+        stream=GrowingArchive(a.cache_archive,a.archive_bytes)
+        count=0
+        try:
+            with tarfile.open(fileobj=stream,mode='r|gz') as tar:
+                for member in tar:
+                    dest=(root/member.name).resolve()
+                    if not member.isfile() or not dest.is_relative_to(root) or member.name not in allowed:raise ValueError('Unexpected artifact member')
+                    if dest.exists():raise FileExistsError('Preserve existing cache member')
+                    temporary=dest.with_suffix(dest.suffix+'.incoming')
+                    with tar.extractfile(member) as source,temporary.open('xb') as target:shutil.copyfileobj(source,target)
+                    if sha(temporary)!=allowed[member.name]:raise ValueError('Cache member SHA mismatch')
+                    temporary.replace(dest)
+                    count+=1
+                    write(state,{'status':'streaming_verified_cache','verified_new_samples':count,'archive_bytes_received':a.cache_archive.stat().st_size})
+            until=time.monotonic()+600
+            while a.cache_archive.stat().st_size!=a.archive_bytes:
+                if time.monotonic()>until:raise TimeoutError('Archive completion not confirmed')
+                time.sleep(1)
+            if sha(a.cache_archive)!=a.archive_sha256:raise ValueError('Full archive SHA mismatch')
+            for item in release['fields']:
+                if sha(root/item['file'])!=item['sha256']:raise ValueError('Incomplete full cache')
+            write(state,{'status':'all_cache_verified','samples':1000})
+        except BaseException as ex:
+            a._transfer_errors.append(ex)
+            write(state,{'status':'transfer_failed','error':str(ex),'verified_new_samples':count})
+        finally:stream.close();finished.set()
+    worker=threading.Thread(target=extract_verified,daemon=True);worker.start()
     acquire(a)
+    if not finished.wait(timeout=600):raise TimeoutError('Final archive audit did not finish')
+    if a._transfer_errors:raise RuntimeError('Transfer audit failed: '+str(a._transfer_errors[0]))
     write(state,{'status':'capture_complete','samples':1000,'captures':3000,'sdk_released':True})
 
 
