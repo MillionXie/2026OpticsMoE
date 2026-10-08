@@ -36,7 +36,23 @@ CCD回放的热图一致性检查；独立`ideal_ccd_replay`完整42批/1000图�
 
 后续必须先验证三层相位和CCD回放，再pilot后
 全量官方TEST1000×三层=3000实际CCD。实测上游CCD须驱动后续输入，不混理想场。
-此时LSP实际采集尚未启动，没有新实拍PCK。OpenMoji的离线decoder适配另行运行，
+2026-10-08已实际完成`pilot4_retry2`：4样本×3层=12 CCD，全部PNG/收据/相位SHA
+核验通过，最低p99=22、最大饱和比例0，采集24.793秒，任务返回0且SDK释放。
+这是信号和逐层衔接pilot，不是完整TEST的实拍PCK。原未打开SDK的PosixPath及
+Git路径兼容失败日志保留，未覆盖有效CCD。
+`lab_acquire.py`导出1000个冻结Qwen stem token缓存；同批量缓存模型热图合同通过，
+单样本相对batch24的float32差异逐项记录。原光电core/head全量strict加载，
+相位回消必须还原非负实幅度，三层理想CCD回放通过才允许设备初始化。
+现有实验室主仓库通过已发布main的Git bundle接入该任务；未改旧OpenMoji/ABO目录。
+一次性任务`LSP_Staged7348_Full1000_1008`真实PID13024/launcher16224已启动，
+当前`full1000.queue.json`为`waiting_for_verified_cache`，尚不是全量采集中。
+等待剩余996缓存传输完成，校验包SHA
+916f929ccdc01f1811e9f3225b7c05db08e9cd4ada1644426a23068759706e19和所有成员SHA，
+再自动开始router→expert→global各完整1000样本。等待有2小时上限，异常即停止。
+同权重/幅度/曝光/几何的12 pilot CCD保留复用；每帧须重新匹配BMP/phase/upstream SHA，
+因此目标3000有效CCD、2988新增采集。2000us/GainX4/wait240、hv反相phase、flip_v CCD，
+固定1/255 CCD回灌，不做逐图亮度拉伸；暗p99<15和原严格1%饱和守卫均停。
+全量完成还需原PCK定义的物理回放评估，当前没有全量实拍PCK。OpenMoji离线适配
 不会占用SDK；二者不能共用数据或篡改对方run。其他窗口任务和原光学合同保持。
 本轮不新建分支/worktree/工程副本，源码仅Git同步；权重/缓存走SHA清单。
 
