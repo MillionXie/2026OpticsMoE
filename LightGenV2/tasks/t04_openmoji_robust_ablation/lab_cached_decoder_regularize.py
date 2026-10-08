@@ -9,6 +9,7 @@ import hashlib
 import json
 from pathlib import Path
 import sys
+import time
 from types import SimpleNamespace
 
 
@@ -28,9 +29,15 @@ def main():
                    help='Additional TRAIN draws per epoch, based only on initial TRAIN errors')
     p.add_argument('--feature-drop', type=float, default=.02,
                    help='TRAIN-only feature masking probability; clean paired branch retained')
+    p.add_argument('--label-smoothing', type=float, default=0.,
+                   help='TRAIN category CE smoothing; composed target and edit labels unchanged')
+    p.add_argument('--benchmark-only', action='store_true',
+                   help='Audit TRAIN and time isolated decoder copies on CPU/CUDA; no saved trained PT')
     a = p.parse_args()
     if not 0 <= a.feature_drop <= .25:
         raise ValueError('Finite feature masking range must be 0..0.25')
+    if not 0 <= a.label_smoothing <= .2:
+        raise ValueError('Finite smoothing range must be 0..0.2')
     if not 0 <= a.train_hard_extra <= 1000:
         raise ValueError('Finite TRAIN oversampling budget must be 0..1000')
     if a.output.exists():
@@ -104,7 +111,7 @@ def main():
     optimizer = torch.optim.AdamW(decoder.parameters(), lr=1e-5, weight_decay=.05)
     def supervised(cat, edit, y):
         target, mask = y['target_grid'].long(), y['edit_grid'].float()
-        ce = F.cross_entropy(cat, target, reduction='none')
+        ce = F.cross_entropy(cat, target, reduction='none', label_smoothing=a.label_smoothing)
         changed = (ce * mask).sum((1, 2)) / mask.sum((1, 2)).clamp_min(1)
         preserved = (ce * (1-mask)).sum((1, 2)) / (1-mask).sum((1, 2)).clamp_min(1)
         prob = cat.softmax(1).gather(1, target[:, None]).squeeze(1)
@@ -114,13 +121,39 @@ def main():
         negative_edit = (F.softplus(edit)*(1-mask)).sum((1, 2))/(1-mask).sum((1, 2)).clamp_min(1)
         return .5*changed.mean()+.5*composed.mean()+.2*preserved.mean()+F.binary_cross_entropy_with_logits(edit, mask, pos_weight=edit.new_tensor(8.))+a.changed_edit_weight*positive_edit.mean()+a.preserved_edit_weight*negative_edit.mean()
     a.output.mkdir(parents=True)
-    torch.save(payload, a.output/'best.pt')
     def write(name, value):
         (a.output / name).write_text(json.dumps(value, indent=2), encoding='utf-8')
+    if a.benchmark_only:
+        train_metrics, _ = evaluate('train')
+        timings = {}
+        for device in (['cpu', 'cuda'] if torch.cuda.is_available() else ['cpu']):
+            bench = copy.deepcopy(decoder).to(device).train()
+            opt = torch.optim.AdamW(bench.parameters(), lr=1e-5, weight_decay=.05)
+            for step in range(35):
+                if step == 5:
+                    if device == 'cuda': torch.cuda.synchronize()
+                    started = time.perf_counter()
+                x, y = batch('train', list(range(32)), device)
+                cat, edit = bench(x)
+                loss = supervised(cat, edit, y)
+                opt.zero_grad(set_to_none=True)
+                loss.backward()
+                opt.step()
+            if device == 'cuda': torch.cuda.synchronize()
+            timings[device] = {'milliseconds_per_step': 1000*(time.perf_counter()-started)/30,
+                               'batch': 32, 'warmup': 5, 'timed_steps': 30}
+            del bench, opt
+        write('report.json', {'status': 'complete', 'scope': 'TRAIN diagnostic; timed disposable decoder copies',
+              'initial_sha256': sha(a.initial), 'train': train_metrics, 'initial_test': initial_test,
+              'timings': timings, 'protected_unchanged': backend.protected_sha(model) == protected,
+              'test_gradient': False, 'saved_trained_checkpoint': False})
+        return
+    torch.save(payload, a.output/'best.pt')
     write('protocol.json', {'initial_sha256': sha(a.initial), 'cache_sha256': {s: sha(a.cache/(s+'_features.pt')) for s in data},
           'protected_sha256': protected, 'epochs': a.epochs, 'seed': 1008, 'lr': 1e-5, 'weight_decay': .05,
           'gain_range': [.98, 1.02], 'feature_drop': a.feature_drop, 'relative_feature_noise': .01,
           'changed_edit_weight': a.changed_edit_weight,
+          'label_smoothing': a.label_smoothing,
           'preserved_edit_weight': a.preserved_edit_weight,
           'train_hard_extra': a.train_hard_extra,
           'hard_sampling': 'fixed initial TRAIN changed-cell error weights 1+2*error; all original TRAIN once plus extra draws; no TEST mining',
@@ -170,15 +203,17 @@ def main():
     torch.save(last, a.output/'last.pt')
     payload['model'] = best_state
     torch.save(payload, a.output/'best.pt')
-    audits = {}
+    audits, train_audits = {}, {}
     for label in ('best', 'last'):
         model.load_state_dict(torch.load(a.output/(label+'.pt'), map_location='cpu', weights_only=False)['model'], strict=True)
         if backend.protected_sha(model) != protected:
             raise ValueError('Protected upstream changed')
         metrics, records = evaluate('test')
         audits[label] = metrics
+        train_audits[label], _ = evaluate('train')
         write(label+'_test_samples.json', records)
     write('report.json', {'status': 'complete', 'initial_test': initial_test, 'baseline': baseline, 'strict_cpu': audits,
+          'strict_cpu_train': train_audits,
           'selected_epoch': selected, 'protected_unchanged': True, 'best_sha256': sha(a.output/'best.pt'),
           'last_sha256': sha(a.output/'last.pt'), 'test_gradient': False, 'architecture_unchanged': True})
 
