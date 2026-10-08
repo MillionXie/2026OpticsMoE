@@ -3964,3 +3964,8 @@ node_modules/
 /LightGenV2/tasks/t06_video_quality_assessment/reports/paper_results/spatial_continuous_no_k_20260908/optical_visualization/raw_ccd_intensity_statistics.csv
 # SHA256 aa4e957bc475b86e7ed215191b400632c89b0739b73df4e0741c611e7f977e53; blob 42422bfccba41307eb7f13a2144977be3a7fece5; raw
 /LightGenV2/tasks/t06_video_quality_assessment/reports/paper_results/spatial_continuous_no_k_20260908/optical_visualization/visualization_report.json
+
+# Historical LGVQ timing summaries: preserve originals; identities in timing visibility manifest.
+/LightGenV2/reports/20260927_lgvq_temporal_multi_baseline_a100/LGVQ_temporal_multi_baseline_A100.xlsx
+/LightGenV2/reports/20260927_lgvq_temporal_multi_baseline_a100/calculated_summary.csv
+/LightGenV2/reports/20260927_lgvq_temporal_multi_baseline_a100/calculated_summary.json

@@ -1,0 +1,24 @@
+{
+  "schema_version": 1,
+  "task": "LGVQ temporal quality",
+  "gpu": "NVIDIA A100-PCIE-40GB",
+  "physical_gpu_index": 6,
+  "timing_samples": 200,
+  "test_selection": "first 200 test videos in fixed manifest order",
+  "batch_sizes_videos": [1, 2, 4, 8],
+  "calls_for_16_videos": [16, 8, 4, 2],
+  "explicit_warmup_calls": 0,
+  "first_call_included": true,
+  "paper_timing_basis": "synchronized wall",
+  "timing_boundary": "first native backbone block input to scalar temporal-quality score ready on GPU",
+  "baseline_energy_formula": "(338.2 W host + measured active A100 board mean) * 16-video synchronized-wall time",
+  "performance_basis": "fixed formal full-test SRCC",
+  "frames_per_video": 4,
+  "frame_fractions": [0.10, 0.37, 0.63, 0.90],
+  "input_sizes": {
+    "Qwen3-VL-2B": [448, 448],
+    "DeepSeek-VL2-Tiny": [384, 384],
+    "CLIP ViT-B/32": [224, 224],
+    "YOLO11s": [640, 640]
+  }
+}

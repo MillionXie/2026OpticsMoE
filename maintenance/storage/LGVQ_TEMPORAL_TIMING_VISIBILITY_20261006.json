@@ -302,12 +302,18 @@
       "sha256": "dbca3de35ece567dd0a68af59c08416be92f17dce7cda9d89dcc4e25f4edbeb4"
     }
   ],
+  "generated_summary_products_verified_20261008": [
+    {"path": "LightGenV2/reports/20260927_lgvq_temporal_multi_baseline_a100/LGVQ_temporal_multi_baseline_A100.xlsx", "sha256": "453326054328cd154f678c359f5261082b59a65a1f7359c0783e2cf2455457a9", "recovery_blob": "bb9d2d44f283d1d0475a61c9d51b82783307c5db", "normalization": "raw"},
+    {"path": "LightGenV2/reports/20260927_lgvq_temporal_multi_baseline_a100/calculated_summary.csv", "sha256": "add8b9e49f5b8dc3fe0665d8bbae321d0cc47b1477e340f9503ff576c3465dde", "recovery_blob": "bc2b0ef3b4cc601738ecddd478c045bfc03720bd", "normalization": "CRLF_to_LF"},
+    {"path": "LightGenV2/reports/20260927_lgvq_temporal_multi_baseline_a100/calculated_summary.json", "sha256": "76374434a6237f3e3e5e2d744992c79727909eab5e599655dcd9f7cf161b1d1e", "recovery_blob": "31eff59b746f6e9b6ca7b8c2760a655f9108b30a", "normalization": "CRLF_to_LF"}
+  ],
+  "generated_summary_verification": "Three additional products, not part of the original 81-entry manifest: local and Linux original bytes verified equal; kept in place and precisely ignored, not regenerated or deleted. Git recovery may normalize CRLF as explicitly recorded.",
   "originals_deleted_or_moved": false,
   "source_or_future_files_hidden": false,
   "timing_scope": "Synchronized wall, first native backbone block input to scalar quality ready on GPU, no warm-up, first 200 fixed test videos. Performance from original full-test reports, not random timing-only head.",
   "limitations": [
     "Local original bytes only; not new measurements or asset dependency closure",
     "All timing originals retained",
-    "README, protocol, derivation source, calculated summary and original SHA manifest remain visible"
+    "README, protocol, derivation source and original SHA manifest remain visible; three generated summary products retained in place with separate recovery identities"
   ]
 }
