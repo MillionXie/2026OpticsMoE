@@ -4064,3 +4064,5 @@ node_modules/
 /LightGenV2/reports/baseline_plotting_20260922/delivery/lgvq_temporal/source_report.json
 /LightGenV2/reports/baseline_plotting_20260922/delivery/lsp/source_report.json
 /LightGenV2/reports/baseline_plotting_20260922/delivery/openmoji/source_report.json
+# Office's live workbook owner/lock files are transient, never source; keep them on disk.
+~$*.xlsx
