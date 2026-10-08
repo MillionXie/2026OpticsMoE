@@ -58,8 +58,11 @@
     },
     {
       "path": "LightGenV2/tasks/t06_video_quality_assessment/lab_bench.py",
-      "bytes": 16345,
-      "source_blob_sha256": "3c70a5fb8a1cb2be388084281999d57045f5c008f976cbccb3a3e6106f51217a",
+      "bytes": 16383,
+      "source_blob_sha256": "b8e0dbd50e7d1b1970c701b814cb119667a052c5a5139d768d9ffb2d462517f8",
+      "pre_controller_migration_commit": "c906700e36cba2853f8cdcb072c0a4e49b1d1d8a",
+      "pre_controller_migration_sha256": "3c70a5fb8a1cb2be388084281999d57045f5c008f976cbccb3a3e6106f51217a",
+      "controller_migration_review": "2026-10-08: only replace two bare imports and supply config_base=bench to canonical Controller. Exact reverse-change SHA regression verifies original; ownership lock, geometry, guards, stage configuration, model and saved CCD identity unchanged. No device acceptance claimed.",
       "previous_published_main_sha256": "a888ab0480c062e9a3bef66fbf7b20df7d3962ad5fc4b2ba6293f5765b9d57a9",
       "original_import_blob_sha256": "43f861f38e9dc032048a246719d4f4e903d7f62e1410ae109a2e14d333260cfa",
       "original_import_bytes": 12068,
@@ -72,8 +75,11 @@
     },
     {
       "path": "LightGenV2/tasks/t06_video_quality_assessment/lab_bundle.py",
-        "bytes": 7098,
-        "source_blob_sha256": "833bb16a95403e5ee5114fda4da82659d9f652a63d4d42f3ffb1f6da6390d65c",
+        "bytes": 7368,
+        "source_blob_sha256": "e75e35b71f7b8019041592680e15529061720a428d88696ad6124aabcdcda42e",
+        "pre_controller_migration_commit": "c906700e36cba2853f8cdcb072c0a4e49b1d1d8a",
+        "pre_controller_migration_sha256": "833bb16a95403e5ee5114fda4da82659d9f652a63d4d42f3ffb1f6da6390d65c",
+        "controller_migration_review": "Only append canonical control and driver source to runtime copy list; original model/data/replay/export logic unchanged. Exact reverse-change SHA regression checks original. No ZIP built.",
         "original_bytes": 7014,
         "original_source_blob_sha256": "fe40a1c205ed39e08af7c0cdfc120e293eb327e5bcc5373fc141e1d39b317125",
         "evolution": "2026-10-07: reject existing output directory or adjacent ZIP before loading the model; preserve original model and capture contract"

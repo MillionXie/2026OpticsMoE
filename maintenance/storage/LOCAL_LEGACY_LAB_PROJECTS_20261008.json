@@ -55,12 +55,12 @@
     ],
     "remaining_reference_audit_20261008": {
       "canonical_helpers_commit": "ec01263a69c469313152a2d79f0c7e5c3d62c323",
-      "source_import_dependency": "T06 lab_bench capture paths still inject --bench-root into sys.path and import bare slm_camera; T04 uses the shared T06 capture path. Canonical source availability alone does not migrate these callers.",
+      "source_import_dependency": "T06 lab_bench capture paths now explicitly import canonical SHS Controller, with config_base=bench; shared T03/T04 capture uses this function. Two import/config-base substitutions have exact reverse-change SHA coverage; not device acceptance.",
       "ownership_dependency": "T06 lab_bench uses bench-root/results/dual_jobs/ACTIVE.lock for exclusive capture ownership. Relocating the root while a separate old caller retains it could create independent locks; no lock path was changed.",
       "vendor_dependency": "T07 legacy mnist_dvp_bench/four_image_flow/bench_scan use OLD/vendor/holoeye_python. Current rank72 config names the laboratory E: vendor path, which is outside this local relocation scope.",
       "reference_asset_dependency": "T07 analyze_mnist_dvp/render_mnist_dvp_figure read assets/mnist_native8_completed_20260913/paired; saved reports retain original absolute provenance paths and must not be rewritten as new observations.",
       "historical_git_dependency": "T03 build_lab_package requirements are read from release source_commit. A local directory move does not alter that historical Git object binding.",
-      "next_safe_boundary": "Migrate legacy import resolution and ownership as one reviewed change, with explicit external bench-root compatibility; relocate local reference assets only with exact SHA mappings. Do not change laboratory E: configuration, run hardware, or rewrite old report paths to force closure.",
+      "next_safe_boundary": "Canonical source import is resolved for the shared capture path, but external ownership root and SDK/reference assets remain protected. Relocate local reference assets only with exact SHA mappings and preserve old ownership compatibility. Do not change laboratory E: configuration, run hardware, or rewrite old report paths to force closure.",
       "hardware_or_scientific_execution_performed": false
     },
     "files_modified_moved_or_deleted": false,

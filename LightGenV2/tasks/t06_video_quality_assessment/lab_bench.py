@@ -128,14 +128,14 @@ def capture(a):
  if sha(phase)!=mf['phase_sha256']:raise ValueError('Phase BMP changed')
  if not a.phase_ready:raise ValueError('Load this stage phase first; then explicitly pass --phase-ready. This is NOT optical verification.')
  if not c.get('geometry_confirmed'):raise ValueError('ROI is not confirmed')
- bench=Path(a.bench_root).resolve();sys.path.insert(0,str(bench))
- from slm_camera import Controller
+ bench=Path(a.bench_root).resolve()
+ from LightGenV2.hardware_common.shs.slm_camera import Controller
  # Share the existing desktop-job ownership lock; never steal another capture.
  lock=bench/'results/dual_jobs/ACTIVE.lock';lock.parent.mkdir(parents=True,exist_ok=True)
  fd=os.open(lock,os.O_CREAT|os.O_EXCL|os.O_WRONLY);os.write(fd,str(os.getpid()).encode());os.close(fd)
  try:
   pts=np.float32([c['logical_corners_full_sensor_xy'][k] for k in ('top_left','top_right','bottom_right','bottom_left')]);H=cv2.getPerspectiveTransform(pts,np.float32([[-.5,-.5],[477.5,-.5],[477.5,477.5],[-.5,477.5]]))
-  with Controller(c) as hw:
+  with Controller(c,config_base=bench) as hw:
    for i,e in enumerate(mf['entries'],1):
     p=s/'ccd'/a.stage/(e['key']+'.png');record=p.with_suffix('.record.json')
     if record.exists():
@@ -170,14 +170,14 @@ def capture_staged(a,opener,stages):
  if sha(phase)!=mf['phase_sha256']:raise ValueError('Phase BMP changed')
  if not a.phase_ready:raise ValueError('Load this stage phase first; then explicitly pass --phase-ready. This is NOT optical verification.')
  if not c.get('geometry_confirmed'):raise ValueError('ROI is not confirmed')
- bench=Path(a.bench_root).resolve();sys.path.insert(0,str(bench))
- from slm_camera import Controller
+ bench=Path(a.bench_root).resolve()
+ from LightGenV2.hardware_common.shs.slm_camera import Controller
  # Share the existing desktop-job ownership lock; never steal another capture.
  lock=bench/'results/dual_jobs/ACTIVE.lock';lock.parent.mkdir(parents=True,exist_ok=True)
  fd=os.open(lock,os.O_CREAT|os.O_EXCL|os.O_WRONLY);os.write(fd,str(os.getpid()).encode());os.close(fd)
  try:
   pts=np.float32([c['logical_corners_full_sensor_xy'][k] for k in ('top_left','top_right','bottom_right','bottom_left')]);H=cv2.getPerspectiveTransform(pts,np.float32([[-.5,-.5],[477.5,-.5],[477.5,477.5],[-.5,477.5]]))
-  with Controller(stage_config(c,a.stage,stages)) as hw:
+  with Controller(stage_config(c,a.stage,stages),config_base=bench) as hw:
    for i,e in enumerate(mf['entries'],1):
     p=s/'ccd'/a.stage/(e['key']+'.png');record=p.with_suffix('.record.json')
     if record.exists():

@@ -64,8 +64,11 @@
     },
     {
       "path": "LightGenV2/tasks/t06_video_quality_assessment/lab_bench.py",
-      "bytes": 16345,
-      "source_blob_sha256": "3c70a5fb8a1cb2be388084281999d57045f5c008f976cbccb3a3e6106f51217a",
+      "bytes": 16383,
+      "source_blob_sha256": "b8e0dbd50e7d1b1970c701b814cb119667a052c5a5139d768d9ffb2d462517f8",
+      "pre_controller_migration_commit": "c906700e36cba2853f8cdcb072c0a4e49b1d1d8a",
+      "pre_controller_migration_sha256": "3c70a5fb8a1cb2be388084281999d57045f5c008f976cbccb3a3e6106f51217a",
+      "controller_migration_review": "Only canonical controller import and explicit old bench config_base; exact reverse-change SHA checks original. Lock/config/model/CCD guards unchanged. See source_import_20261004.json.",
       "previous_published_main_sha256": "a888ab0480c062e9a3bef66fbf7b20df7d3962ad5fc4b2ba6293f5765b9d57a9",
       "original_import_blob_sha256": "43f861f38e9dc032048a246719d4f4e903d7f62e1410ae109a2e14d333260cfa",
       "original_import_bytes": 12068,

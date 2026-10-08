@@ -60,6 +60,8 @@ def build(a):
  # Copy committed runtime only, never a dirty server optimization worktree.
  paths=['LightGenV2/__init__.py','LightGenV2/tasks/__init__.py','LightGenV2/tasks/t06_video_quality_assessment/__init__.py','LightGenV2/tasks/t06_video_quality_assessment/project.py','LightGenV2/tasks/t06_video_quality_assessment/models/__init__.py','LightGenV2/tasks/t06_video_quality_assessment/models/multivideo9x4.py','LightGenV2/tasks/t06_video_quality_assessment/multivideo_settings.py','LightGenV2/tasks/t06_video_quality_assessment/lab_runtime.py','LightGenV2/tasks/t06_video_quality_assessment/lab_bench.py','LightGenV2/tasks/t06_video_quality_assessment/lab_phase.py','experiments/__init__.py']
  backend='experiments/qwen3_vl_2b_lgvq_single_metric_o2_16frame_54'
+ paths += ['LightGenV2/hardware_common/shs/'+name for name in ('sdk.py','capture.py','slm_camera.py')]
+ paths += ['experiments/hardware_sdk/'+name for name in ('__init__.py','devices.py','drivers/__init__.py','drivers/meadowlark_pcie_slm.py','drivers/tucam_camera.py')]
  paths += [backend+'/'+name for name in ('__init__.py','modeling.py','settings.py','metrics.py')]
  for rel in paths:
   src=root/rel
