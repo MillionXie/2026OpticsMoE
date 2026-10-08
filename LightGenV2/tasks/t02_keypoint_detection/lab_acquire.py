@@ -131,6 +131,20 @@ def acquire(a):
         'corners':legacy.CORNERS.tolist(),'phase_sha256':{s:sha(p) for s,p in phases.items()},
         'bench_source_sha256':sha(Path(legacy.__file__)),'full_run':a.limit==1000}
     write(output/'contract.json',contract)
+    reused=0
+    if a.reuse_session is not None:
+        import shutil
+        previous=read(a.reuse_session/'capture_report.json')
+        prior=previous['contract']
+        if previous['status']!='complete' or not previous['sdk_released']:raise ValueError('Pilot incomplete')
+        for key in ('checkpoint_sha256','release_sha256','amplitude_scale','detector_scale','exposure_us','gain','wait_ms','camera_orientation','phase_orientation','phase_inverse','corners','phase_sha256','bench_source_sha256'):
+            if prior[key]!=contract[key]:raise ValueError('Pilot identity differs: '+key)
+        for stage in STAGES:
+            dest=output/'ccd'/stage;dest.mkdir(parents=True)
+            for item in items[:previous['samples']]:
+                p=a.reuse_session/'ccd'/stage/(item['key']+'.png');rec=p.with_suffix('.json')
+                if sha(p)!=read(rec)['ccd_sha256']:raise ValueError('Pilot CCD changed')
+                shutil.copy2(p,dest/p.name);shutil.copy2(rec,dest/rec.name);reused+=1
     start=time.time()
     with legacy.SHSBench(output,2000,240,{}) as bench:
         for n,s in enumerate(STAGES):
@@ -149,6 +163,12 @@ def acquire(a):
                 # Verify phase planes exactly represent this model's input field.
                 bmp=amp/(item['key']+'.bmp')
                 Image.fromarray(flow.active_to_native(np.rint(value*255).astype(np.uint8))).save(bmp)
+                c=output/'ccd'/s/(item['key']+'.png')
+                if c.exists():
+                    rec=read(c.with_suffix('.json'))
+                    if sha(c)!=rec['ccd_sha256'] or sha(bmp)!=rec['amplitude_sha256'] or rec['upstream_ccd_sha256']!=upstream or rec['phase_sha256']!=sha(phases[s]):
+                        raise ValueError('Reused CCD not identical to current input/phase')
+                    continue
                 values,_=bench.capture(s,phases[s],[bmp],[item['key']],'flip_v',save=False)
                 row=bench.rows[-1]
                 if row['p99']<15: raise RuntimeError('Dark CCD: stop and diagnose; no blind retry')
@@ -157,17 +177,52 @@ def acquire(a):
                 write(c.with_suffix('.json'),dict(row,ccd_sha256=sha(c),upstream_ccd_sha256=upstream,checkpoint_sha256=EXPECTED_SHA,contract_sha256=sha(output/'contract.json')))
                 write(output/'progress.json',{'status':'capturing','stage':s,'stage_completed':k+1,'per_stage':a.limit,'ccd_completed':n*a.limit+k+1,'elapsed_seconds':time.time()-start})
                 if (k+1)%20==0:print('CAPTURED',s,k+1,'/',a.limit,flush=True)
-    write(output/'capture_report.json',{'status':'complete','samples':a.limit,'ccd_count':a.limit*3,'sdk_released':True,'elapsed_seconds':time.time()-start,'contract':contract})
+    write(output/'capture_report.json',{'status':'complete','samples':a.limit,'ccd_count':a.limit*3,'reused_captures':reused,'sdk_released':True,'elapsed_seconds':time.time()-start,'contract':contract})
     print('CAPTURE COMPLETE',a.limit*3,flush=True)
 
 
+def queued(a):
+    """One bounded handoff, not a recurring task or a blind retry."""
+    import tarfile
+    deadline=time.monotonic()+7200
+    state=a.output.with_suffix('.queue.json')
+    write(state,{'status':'waiting_for_verified_cache','pilot':str(a.reuse_session)})
+    while not a.cache_archive.exists() or a.cache_archive.stat().st_size!=a.archive_bytes:
+        if time.monotonic()>deadline:raise TimeoutError('Cache transfer incomplete after two hours; SDK never opened')
+        time.sleep(5)
+    if sha(a.cache_archive)!=a.archive_sha256:raise ValueError('Cache archive SHA mismatch')
+    root=a.project.resolve();release=read(root/'release.json')
+    allowed={e['file']:e['sha256'] for e in release['fields']}
+    with tarfile.open(a.cache_archive) as tar:
+        for member in tar.getmembers():
+            dest=(root/member.name).resolve()
+            if not member.isfile() or not dest.is_relative_to(root) or member.name not in allowed:raise ValueError('Unexpected artifact member')
+            if dest.exists():raise FileExistsError('Preserve existing cache member')
+            with tar.extractfile(member) as source,dest.open('xb') as target:
+                import shutil
+                shutil.copyfileobj(source,target)
+            if sha(dest)!=allowed[member.name]:raise ValueError('Extracted cache SHA mismatch')
+    for item in release['fields']:
+        if sha(root/item['file'])!=item['sha256']:raise ValueError('Incomplete full cache')
+    if a.reuse_session is None:raise ValueError('Require verified three-layer pilot')
+    report=read(a.reuse_session/'capture_report.json')
+    if report['status']!='complete' or not report['sdk_released'] or report['ccd_count']!=12:raise ValueError('Pilot not complete')
+    write(state,{'status':'capturing_full','samples':1000,'captures':3000})
+    acquire(a)
+    write(state,{'status':'capture_complete','samples':1000,'captures':3000,'sdk_released':True})
+
+
 def main():
-    p=argparse.ArgumentParser(description=__doc__);p.add_argument('action',choices=['export','acquire'])
+    p=argparse.ArgumentParser(description=__doc__);p.add_argument('action',choices=['export','acquire','queued'])
     p.add_argument('--project',type=Path,required=True);p.add_argument('--checkpoint',type=Path)
     p.add_argument('--output',type=Path);p.add_argument('--bench-root',type=Path)
+    p.add_argument('--reuse-session',type=Path)
+    p.add_argument('--cache-archive',type=Path);p.add_argument('--archive-bytes',type=int)
+    p.add_argument('--archive-sha256')
     p.add_argument('--limit',type=int,default=4);a=p.parse_args()
     if a.action=='export' and a.checkpoint is None:p.error('checkpoint required')
-    if a.action=='acquire' and (a.output is None or a.bench_root is None or not 1<=a.limit<=1000):p.error('output/bench-root/limit required')
+    if a.action in ('acquire','queued') and (a.output is None or a.bench_root is None or not 1<=a.limit<=1000):p.error('output/bench-root/limit required')
+    if a.action=='queued' and (a.limit!=1000 or a.cache_archive is None or a.archive_bytes is None or not a.archive_sha256):p.error('full archive identity required')
     globals()[a.action](a)
 
 
