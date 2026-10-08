@@ -1,0 +1,403 @@
+{
+  "scope": "79 precise previously-backed generated result/audit JSON paths only",
+  "decision": "Keep originals, experiment ownership, runtime, best/last and all measurements unchanged; source and protocol/config/deployment identities remain visible. No directory-wide rule or model selection.",
+  "verification": "Raw SHA matches existing recovery manifest and Git blob (raw or LF); JSON parsing only; changed files are skipped",
+  "changed_skipped": [],
+  "files": [
+    {
+      "path": "handoffs/openmoji_robust_ablation_20260928/midrank48_candidate/align_decoder_lr2e5_20261006/report.json",
+      "sha256": "adaa5ca24efe7cd6220dd2e847ed8b5486e5d3d3c0275e8ec708f0feb2ab553d",
+      "recovery_blob": "ab74f1e1b4440406e76c81bf79af1ab567a301a6"
+    },
+    {
+      "path": "handoffs/openmoji_robust_ablation_20260928/midrank48_candidate/align_decoder_lr2e5_20261006/strict_reload.json",
+      "sha256": "2050b2f6e8f6a25b57e3ad88b056b858415f962c4460d7d5a66e7b339579a5c5",
+      "recovery_blob": "6d9a35c2098047883872039716da26eeeb1b09bd"
+    },
+    {
+      "path": "handoffs/openmoji_robust_ablation_20260928/midrank48_candidate/align_decoder_lr3e5_wd001_320_20261006/report.json",
+      "sha256": "573444cfdcabf5a96984b1c72c0472f1f9c21ba3dce599befee5f6b7bfa166c6",
+      "recovery_blob": "8ca31b60c2e80e4b356ddcd1f5d507e5554c8e44"
+    },
+    {
+      "path": "handoffs/openmoji_robust_ablation_20260928/midrank48_candidate/align_decoder_lr3e5_wd001_320_20261006/strict_reload.json",
+      "sha256": "b97afb20fefa15648163eafdcb03c241f1b12058c2d517a5c6ba9fd40d7e1b68",
+      "recovery_blob": "7c2e38097cdf55dc020f670ed5728f5a2ee3532b"
+    },
+    {
+      "path": "handoffs/openmoji_robust_ablation_20260928/midrank48_candidate/align_grid010_20261006/physical_report.json",
+      "sha256": "cd5d3a459aa89a930b9a56173cc45a68112227daa578f4e032676d5afaa18d11",
+      "recovery_blob": "a65280d933681385651f91605aa59737e9abe2be"
+    },
+    {
+      "path": "handoffs/openmoji_robust_ablation_20260928/midrank48_candidate/align_grid010_20261006/report.json",
+      "sha256": "e04fc5794e90980549fc456f4eb7db6c28cd6268cfbd074e16281d225df0152a",
+      "recovery_blob": "c90146d7c44474d5b94f49fdb644635623fee1ba"
+    },
+    {
+      "path": "handoffs/openmoji_robust_ablation_20260928/midrank48_candidate/align_grid010_clean075_20261006/physical_report.json",
+      "sha256": "7a7a6d81bb967f7f1dd9b9ddb7115cfb6e704756a6d3af88598755b6176a570a",
+      "recovery_blob": "36e58be0701751cbbc4f948b19fbc684d8ea3e9d"
+    },
+    {
+      "path": "handoffs/openmoji_robust_ablation_20260928/midrank48_candidate/align_grid010_clean075_20261006/report.json",
+      "sha256": "c25cdd5881164c4e53e65a200e7fc07a1697074570141e55ad0889447a1395cd",
+      "recovery_blob": "5084a04070ea8591fef4b7c8bce09676cbbcaf22"
+    },
+    {
+      "path": "handoffs/openmoji_robust_ablation_20260928/midrank48_candidate/align_grid010_cons020_20261007/last_cpu_audit.json",
+      "sha256": "75f24d60ae2f396a46f885dd32357da7f612244169b8b7692b6699a8e62e21bb",
+      "recovery_blob": "f57e701e29a770fb9a5e27d70358a033dbb1020e"
+    },
+    {
+      "path": "handoffs/openmoji_robust_ablation_20260928/midrank48_candidate/align_grid010_cons020_20261007/physical_report.json",
+      "sha256": "6b7fa8022cb82d9e0eb8f8ecf920f6f02886e6a2d26b8018b3d2b2810d342d1d",
+      "recovery_blob": "40126ae175e2bb342f6ecbb9440905b4cbee7078"
+    },
+    {
+      "path": "handoffs/openmoji_robust_ablation_20260928/midrank48_candidate/align_grid010_cons020_20261007/report.json",
+      "sha256": "190b8253edac05e0d81c1d6a6694485ea6d9f9505a24cfa31dbd44b70b008ee8",
+      "recovery_blob": "2be6568918ebb14f4fbd09ab8a20b042016211c0"
+    },
+    {
+      "path": "handoffs/openmoji_robust_ablation_20260928/midrank48_candidate/align_grid075_20261006/physical_report.json",
+      "sha256": "14fd3a25142f14069de4d1a40677dafabc1d1d27936ad476e93f6cab541684da",
+      "recovery_blob": "2194328cedaf8af5d6dba5dd56b37dadd11fd5ba"
+    },
+    {
+      "path": "handoffs/openmoji_robust_ablation_20260928/midrank48_candidate/align_grid075_20261006/report.json",
+      "sha256": "2e5f93cd10c6f745a19fb974144ad8028666f9a8f076f6cb41c260e18ae7ad92",
+      "recovery_blob": "66219448f5001e4023e4c6a6225487e8ee4fe0b7"
+    },
+    {
+      "path": "handoffs/openmoji_robust_ablation_20260928/midrank48_candidate/align_grid100_singlepass_20261007/last_cpu_audit.json",
+      "sha256": "716ac233a4b8ab4bf9ea6f0e860549fcc60acc3d74240fd828d5073deba7ef3d",
+      "recovery_blob": "b9f6090d1c3f140e013b1d6cf68097860d305fba"
+    },
+    {
+      "path": "handoffs/openmoji_robust_ablation_20260928/midrank48_candidate/align_grid100_singlepass_20261007/physical_report.json",
+      "sha256": "d90f430c18bea62d7dabdf63d57faf549d625b5b7f76224ea65ff8ca9f8c617d",
+      "recovery_blob": "fd29594b076dde81e92344fc17548643ef826f48"
+    },
+    {
+      "path": "handoffs/openmoji_robust_ablation_20260928/midrank48_candidate/align_grid100_singlepass_20261007/report.json",
+      "sha256": "a81e365d7c807a032f3aa9964b718764e22f09cb674222fb71a09e85f63adfda",
+      "recovery_blob": "b0bdf956169faef23f0f6885d2c7e0f3f26704c6"
+    },
+    {
+      "path": "handoffs/openmoji_robust_ablation_20260928/midrank48_candidate/align_spatial_singlepass_20261007/last_cpu_audit.json",
+      "sha256": "edd0c9b7fee45ea1d6be5eeea94826b6295865d2d740aafe63eb25fa20ab5446",
+      "recovery_blob": "a0a50916fec08994cb5c0477ff0ac5d675dd84fb"
+    },
+    {
+      "path": "handoffs/openmoji_robust_ablation_20260928/midrank48_candidate/align_spatial_singlepass_20261007/physical_report.json",
+      "sha256": "c557f7ead877c6ea8f97b6dc0839c37a21fa63d6491bd9c6b47a3f93a887a7dd",
+      "recovery_blob": "36ac9ce7924981fcd5631de3038fefdccb4d8e0a"
+    },
+    {
+      "path": "handoffs/openmoji_robust_ablation_20260928/midrank48_candidate/align_spatial_singlepass_20261007/report.json",
+      "sha256": "4ae6599ba556ae24e0f85d7c8536ea96f316e056a50ac6eaefaf8058d5a3f704",
+      "recovery_blob": "a78d2b8d0a590e1fdaa090a65517a59f71ba78f8"
+    },
+    {
+      "path": "handoffs/openmoji_robust_ablation_20260928/midrank48_candidate/baseline_short20_20261006/report.json",
+      "sha256": "87b03b15f4d5a13aee2a71e24420bd33a0ca264fba3b7c87478742b4b4fc6b4e",
+      "recovery_blob": "648219aad961edc17d920502e0ccb77df093a57a"
+    },
+    {
+      "path": "handoffs/openmoji_robust_ablation_20260928/midrank48_candidate/baseline_short20_20261006/strict_reload.json",
+      "sha256": "50401b09bf5e803769dc8ecb12a8a05b79fce51869fca8acdfc2b0217fe270a5",
+      "recovery_blob": "fda49dc7cae80a1bd9f6fcb9990d28c02f85b46f"
+    },
+    {
+      "path": "handoffs/openmoji_robust_ablation_20260928/midrank48_candidate/editor16_robust_chain_20261003/comparison.json",
+      "sha256": "7f6d5889086133280622af34e7856b0956dc51b362c856e40e4b52c182ec3a41",
+      "recovery_blob": "7243e985be582cd170610a8f3974515fd46535ce"
+    },
+    {
+      "path": "handoffs/openmoji_robust_ablation_20260928/midrank48_candidate/editor16_robust_chain_20261003/g5_adapter/report.json",
+      "sha256": "5b3379b7313bc4e78db35e0aa73a28c7f975d96ace261b8088bfae4cb10e79dc",
+      "recovery_blob": "f6fd652d15c99d35dd66392085c1c170d6b3f685"
+    },
+    {
+      "path": "handoffs/openmoji_robust_ablation_20260928/midrank48_candidate/editor16_robust_chain_20261003/g5_adapter/strict_reload.json",
+      "sha256": "83580c75c6413b6219539a447f69c68641424ff02e3a29954d981ed887f5ac0f",
+      "recovery_blob": "ba06afd3c2da0aff30ef393f04c457e4bb3e955b"
+    },
+    {
+      "path": "handoffs/openmoji_robust_ablation_20260928/midrank48_candidate/editor16_robust_chain_20261003/r1_ccd/report.json",
+      "sha256": "55c449eff9899734495a5241eb268840ff85e051a70965f1abf4e35ede8f9a5b",
+      "recovery_blob": "058d104322d24a75b61865cf6db2baa5b9ac751f"
+    },
+    {
+      "path": "handoffs/openmoji_robust_ablation_20260928/midrank48_candidate/editor16_robust_chain_20261003/r2_ccd_dc30/report.json",
+      "sha256": "ad224a2ac7d72e31e08ed2aaa744ec7d14fd0c913252ddf48bc50c7fad031a8f",
+      "recovery_blob": "fc5a98c3c1ace730f73ccd76c170c87908b1fddc"
+    },
+    {
+      "path": "handoffs/openmoji_robust_ablation_20260928/midrank48_candidate/editor16_robust_chain_20261003/r3_ccd_dc30_grid/report.json",
+      "sha256": "b7fa8ac8972a187f699f6416534f44d97fb4e9e983c2055a50613ed2622b2933",
+      "recovery_blob": "922e0b0d6cda9aee7ad63aa4307d5d47d29f9d48"
+    },
+    {
+      "path": "handoffs/openmoji_robust_ablation_20260928/midrank48_candidate/editor16_sensor_retrain_20261004/align_mixed/report.json",
+      "sha256": "cc28c1f2e7cbfe5d96af618f47643e427a2067a7d264c1e4223d2081a5ccc811",
+      "recovery_blob": "64d8e13878d1f597f8c02ceaad347726f704779b"
+    },
+    {
+      "path": "handoffs/openmoji_robust_ablation_20260928/midrank48_candidate/editor16_sensor_retrain_20261004/ccd_randomized/report.json",
+      "sha256": "4f51c96625f0244e570d03c04e0c36cf8814e8c4790c8e0b248aa9b6ae13a8b7",
+      "recovery_blob": "2f69f2a5108d68f296b3b4cd2259e663e6581c38"
+    },
+    {
+      "path": "handoffs/openmoji_robust_ablation_20260928/midrank48_candidate/editor16_sensor_retrain_20261004/observed_alignment/physical/report.json",
+      "sha256": "5df5441f3f46fb7871488c70f446548fe64afdc6564201b11d8b1d0a489d10a5",
+      "recovery_blob": "2995be28e9675655fd8bbbae12a2b521697287ab"
+    },
+    {
+      "path": "handoffs/openmoji_robust_ablation_20260928/midrank48_candidate/editor16_sensor_retrain_20261004/observed_alignment/report.json",
+      "sha256": "8e7e591bc54271425a53f6a4ece76c3c450c1c3214a5f051555a9dd73c67751f",
+      "recovery_blob": "51e1e428f9ba2158189059b91e73298373800881"
+    },
+    {
+      "path": "handoffs/openmoji_robust_ablation_20260928/midrank48_candidate/editor16_sensor_retrain_20261004/observed_response/physical/report.json",
+      "sha256": "de293f7b04dbfb50645b9d2945a9a7fa69625886f93f477717493628a5b1b233",
+      "recovery_blob": "9989930e35f381175910d0af2fd23716dc385002"
+    },
+    {
+      "path": "handoffs/openmoji_robust_ablation_20260928/midrank48_candidate/editor16_sensor_retrain_20261004/observed_response/report.json",
+      "sha256": "0486c2e5503ff77b55cd5cc3e04e7fbc08605851efb6b6441651f2aaa7ea428e",
+      "recovery_blob": "de0fa6797c73e56baded02bf69c6472032a46968"
+    },
+    {
+      "path": "handoffs/openmoji_robust_ablation_20260928/midrank48_candidate/editor16_sensor_retrain_20261004/paired_smoke/report.json",
+      "sha256": "eb2fada07118cc399ed1a6f8592ee53e0ed77b30f4eb73a8409f0e82a7d1558a",
+      "recovery_blob": "80e570383a7eedea3349549e6364e39a516491f7"
+    },
+    {
+      "path": "handoffs/openmoji_robust_ablation_20260928/midrank48_candidate/editor16_sensor_retrain_20261004/physical/comparison.json",
+      "sha256": "b809a48b1c0865fbf8018d43ddcacf7bba8bd4f42f42d5bf0ef505417704f549",
+      "recovery_blob": "49774c8cde5e62de5b222ec82a85d9a6ba8053cf"
+    },
+    {
+      "path": "handoffs/openmoji_robust_ablation_20260928/midrank48_candidate/fixedfusion_rank64_continuation30_20261003/alpha80_continuation30/report.json",
+      "sha256": "054b510e9a6a685b663a6ab71de1d8826c426aa6ea00c64fb5ac6d20c69620d9",
+      "recovery_blob": "f3795e914298f35df24789779d55eff1866c8a6d"
+    },
+    {
+      "path": "handoffs/openmoji_robust_ablation_20260928/midrank48_candidate/gapcompare_20261003/modality55/full_cached_gate.json",
+      "sha256": "5472cfad25e59e7587a0c85cfc0f200da3c7ea700851b11327c872d9a96c7a07",
+      "recovery_blob": "6a91f714a396769031d7acc57d99c4c04dde70f1"
+    },
+    {
+      "path": "handoffs/openmoji_robust_ablation_20260928/midrank48_candidate/gapcompare_20261003/modality55/report.json",
+      "sha256": "407027ae3b99eaaf9947cda20fc9be15cfc00e87305e81b0c5ee746b6d89c64f",
+      "recovery_blob": "18fe043ce645600cbf054a82212a785f36f67e6a"
+    },
+    {
+      "path": "handoffs/openmoji_robust_ablation_20260928/midrank48_candidate/gapcompare_20261003/original_g2/full_cached_gate.json",
+      "sha256": "0a6224885170346d2e02a720546d4a3060fe736e7b52339e32ae9116bf390368",
+      "recovery_blob": "55d0fdc4dd9004d512357d995096d7589038d925"
+    },
+    {
+      "path": "handoffs/openmoji_robust_ablation_20260928/midrank48_candidate/gapcompare_20261003/original_g2/report.json",
+      "sha256": "c2afdbcd6b71262c1757e90b4e1a9f0ac188b1d6b006e548c02f140794457c81",
+      "recovery_blob": "1cd054faef49667c1fd88a35f1998192fba69bb9"
+    },
+    {
+      "path": "handoffs/openmoji_robust_ablation_20260928/midrank48_candidate/modality_fusion_simulation_20261003/language55_vision80/report.json",
+      "sha256": "6702a250ec2b85bec3581a5932f47801d09df7c3ff6a32940d7f12afda825e01",
+      "recovery_blob": "0d067ad9f5678422b14b3bbeac60b5b608abd70a"
+    },
+    {
+      "path": "handoffs/openmoji_robust_ablation_20260928/midrank48_candidate/modality_fusion_simulation_20261003/language55_vision80_cpu_audit/report.json",
+      "sha256": "5bcb7374271bc6b675226cd62aa611cb44b209e0e03e02776772ff6cc6c0e8c5",
+      "recovery_blob": "1299a823d08e14563b57423b938fb240b08ad9f7"
+    },
+    {
+      "path": "handoffs/openmoji_robust_ablation_20260928/midrank48_candidate/modality_fusion_simulation_20261003/language65_vision75/report.json",
+      "sha256": "ca4f69c03dfcf611055c2782b6d28f59504f331236ffbd713fecbfb821f7bb04",
+      "recovery_blob": "ff85942b1d45a3ed9a2427a29dab1a5d6e8c2413"
+    },
+    {
+      "path": "handoffs/openmoji_robust_ablation_20260928/midrank48_candidate/modality_fusion_simulation_20261003/language65_vision75_cpu_audit/report.json",
+      "sha256": "923ca890a4351fd7e98e0a6a8d6d2008de0634387865ab47408d636ce87d3ae6",
+      "recovery_blob": "6f8d8c3dbae2252c9c373d40fb8e6aac43fc155d"
+    },
+    {
+      "path": "handoffs/openmoji_robust_ablation_20260928/midrank48_candidate/modality_l55_v80_sat15_decoder_20261003/report.json",
+      "sha256": "1a172430d4f84fab382b1ef3cde7889d15c771f92e71e9fce106348c82c5c17e",
+      "recovery_blob": "7ae041baaa00bfa8055bdf286bf25d4dfb8e65bc"
+    },
+    {
+      "path": "handoffs/openmoji_robust_ablation_20260928/midrank48_candidate/modality_l55_v80_sat15_decoder_20261003/strict_reload.json",
+      "sha256": "22d1fab039b209e0caac32da1889bf0c5ec2c9493f573f0d3b0aa37da1b2519d",
+      "recovery_blob": "8bc74c883bd5a5e1dc838a0716210a8e4c0afeb4"
+    },
+    {
+      "path": "handoffs/openmoji_robust_ablation_20260928/midrank48_candidate/observed_ablation_20261005/ccd_dc_noise075/physical/report.json",
+      "sha256": "49ab981fb14096fbebd8c72f204803f169f99963e2705a8aef14b8f3e58aee69",
+      "recovery_blob": "548e20db2f64632743b8a4d6809aa9ddff5e7cc8"
+    },
+    {
+      "path": "handoffs/openmoji_robust_ablation_20260928/midrank48_candidate/observed_ablation_20261005/ccd_dc_noise075/report.json",
+      "sha256": "42ba5fe879425243cfe44ed5d971b01258a621d050fdc43265974b87e928344d",
+      "recovery_blob": "9cd8cfccb9e45a6311d923316490321a67801728"
+    },
+    {
+      "path": "handoffs/openmoji_robust_ablation_20260928/midrank48_candidate/observed_ablation_20261005/ccd_dc_paired/physical/report.json",
+      "sha256": "7d5d4ba3b29bbef51e20120791755b11778a858db2d0adb4ebe9e2619080da12",
+      "recovery_blob": "a4eee6dd15c9685a900ab87321388cd5341ed8fa"
+    },
+    {
+      "path": "handoffs/openmoji_robust_ablation_20260928/midrank48_candidate/observed_ablation_20261005/ccd_dc_paired/report.json",
+      "sha256": "6ef5dc738ae7dc7ba1295cc9234771efd40a37d8da81de4cb42a243149f327bd",
+      "recovery_blob": "15fc11a664327cbea03d3a15180efce6a0fd5220"
+    },
+    {
+      "path": "handoffs/openmoji_robust_ablation_20260928/midrank48_candidate/observed_ablation_20261005/ccd_paired/physical/report.json",
+      "sha256": "281976e774a9546eaa280ccf4bda0167c8cb67e9da6f623aafb09db086b1b502",
+      "recovery_blob": "702c3b9b94ce4bc3eb6694e919a879411c4d5f39"
+    },
+    {
+      "path": "handoffs/openmoji_robust_ablation_20260928/midrank48_candidate/observed_ablation_20261005/ccd_paired/report.json",
+      "sha256": "f02b4a297eec7774753666974bee6f218c71dd8ec6fb7481b9c45f7ea8fcad2d",
+      "recovery_blob": "bbcf86f107ba26cb6223311edba57e179162cf71"
+    },
+    {
+      "path": "handoffs/openmoji_robust_ablation_20260928/midrank48_candidate/observed_align_adaptation_20261005/report.json",
+      "sha256": "022e164a5726e51c027105eb09de0253aaff310739d4b8efa5cec639d40cbe58",
+      "recovery_blob": "1954db216addd1155ae060632f9e14cdc2825056"
+    },
+    {
+      "path": "handoffs/openmoji_robust_ablation_20260928/midrank48_candidate/observed_align_adaptation_20261005/strict_reload.json",
+      "sha256": "5101c40193321a357489b37b26b03e115871b783b64ad71a000c9c5dc8df5d22",
+      "recovery_blob": "e4f04cef3f1e3164c4136738b16655e0e758c407"
+    },
+    {
+      "path": "handoffs/openmoji_robust_ablation_20260928/midrank48_candidate/preserved_g2_20261003/direct_report.json",
+      "sha256": "3bba56bbfc3d45ff17ea2cc636fb54af7c437b6ae053f57e6c8a17e83bfb26ad",
+      "recovery_blob": "1d6ed1d3679f08c863628a8da5fb8845ed717bc2"
+    },
+    {
+      "path": "handoffs/openmoji_robust_ablation_20260928/midrank48_candidate/preserved_g2_20261003/editor16/report.json",
+      "sha256": "23eee652a119648203474ca9dfb4834ef6a47531e64eefe4278733faba78075d",
+      "recovery_blob": "ed289520237a6d27e1cff0b1dfe310f6c8387a49"
+    },
+    {
+      "path": "handoffs/openmoji_robust_ablation_20260928/midrank48_candidate/preserved_g2_20261003/editor32/report.json",
+      "sha256": "91a1defb3cd4dcc6f04ef74af89785ea3c9a261c8a4e4533357a336191cbc7cc",
+      "recovery_blob": "cedda48c945442944184782c46ac9c5c5713dcc1"
+    },
+    {
+      "path": "handoffs/openmoji_robust_ablation_20260928/midrank48_candidate/preserved_g2_20261003/physical_adapter/direct_report.json",
+      "sha256": "3bba56bbfc3d45ff17ea2cc636fb54af7c437b6ae053f57e6c8a17e83bfb26ad",
+      "recovery_blob": "1d6ed1d3679f08c863628a8da5fb8845ed717bc2"
+    },
+    {
+      "path": "handoffs/openmoji_robust_ablation_20260928/midrank48_candidate/preserved_g2_20261003/physical_adapter/report.json",
+      "sha256": "fac81cb8242e8177ff788b7843327ad3fb770556906c867bbc424956ae611080",
+      "recovery_blob": "257525262029f47131405910b82ea33e5c4a291e"
+    },
+    {
+      "path": "handoffs/openmoji_robust_ablation_20260928/midrank48_candidate/preserved_g2_20261003/physical_adapter/reuse_audit.json",
+      "sha256": "5c865d92962add43bcb422816c4d4e0d8627380209bf3d6df3f3d01c58fe5ec1",
+      "recovery_blob": "aab05d59d9a791a83fed36c5193f86f179f8d0d1"
+    },
+    {
+      "path": "handoffs/openmoji_robust_ablation_20260928/midrank48_candidate/preserved_g2_20261003/physical_adapter/strict_reload.json",
+      "sha256": "5917375f0904d0f0a3b3b9c96b870a02c5c4e580b51d1dc4ce0c73563fe17724",
+      "recovery_blob": "9a11d7c265087d8b1e3a0281020b34ebf7b53d32"
+    },
+    {
+      "path": "handoffs/openmoji_robust_ablation_20260928/midrank48_candidate/preserved_g2_20261003/reuse_audit.json",
+      "sha256": "5c865d92962add43bcb422816c4d4e0d8627380209bf3d6df3f3d01c58fe5ec1",
+      "recovery_blob": "aab05d59d9a791a83fed36c5193f86f179f8d0d1"
+    },
+    {
+      "path": "handoffs/openmoji_robust_ablation_20260928/midrank48_candidate/report.json",
+      "sha256": "43e2ed41afd80cbd4987a490d254b5600715bdae0ea62e89ebfebe62ba65b07d",
+      "recovery_blob": "4326de33cef4b7e21afa7858d338d8f49f3311f0"
+    },
+    {
+      "path": "handoffs/openmoji_robust_ablation_20260928/midrank48_candidate/singlemeasure_20261005/align_only/physical_report.json",
+      "sha256": "add0b46b8b7c8b8dd6ce27c31409c6a8d0ce6d30c5c620417a4ac9654cbf52a5",
+      "recovery_blob": "321b22aab83ec3f5e27674cf3ec5adcb45b3ed3b"
+    },
+    {
+      "path": "handoffs/openmoji_robust_ablation_20260928/midrank48_candidate/singlemeasure_20261005/align_only/report.json",
+      "sha256": "5f330196ce05b3526d50bd7f991993280c73d037356a7dd422ef4ab8d3e83532",
+      "recovery_blob": "f6dbb82fcfb47985c2f14cc7fd89a87236b9e32f"
+    },
+    {
+      "path": "handoffs/openmoji_robust_ablation_20260928/midrank48_candidate/singlemeasure_20261005/dc_only/physical_report.json",
+      "sha256": "bca0ecb295ac5af82c07a77241c71911ee52ad99aaf12b48176976ec9cf8ea23",
+      "recovery_blob": "a311ae38c0fcde23ac7ee8a1f40ae195aeb8d726"
+    },
+    {
+      "path": "handoffs/openmoji_robust_ablation_20260928/midrank48_candidate/singlemeasure_20261005/dc_only/report.json",
+      "sha256": "9db6e1370ecbe0d095b8025fc995f18b3e12e3635fbea9ad59a2a3949bfddf01",
+      "recovery_blob": "294286a73fdabd7ca76b6c3a1b0d9db7893e2d8f"
+    },
+    {
+      "path": "handoffs/openmoji_robust_ablation_20260928/midrank48_candidate/singlemeasure_retry_20261006/align_grid025/physical_report.json",
+      "sha256": "3deab71c2aa8481e56a043842d6990a44bcae5ef75eb0dc98d9569ca2999609c",
+      "recovery_blob": "25357671cb70d4f86355bd96870c1d6cdf82182a"
+    },
+    {
+      "path": "handoffs/openmoji_robust_ablation_20260928/midrank48_candidate/singlemeasure_retry_20261006/align_grid025/report.json",
+      "sha256": "71229a3a23480379eced68970711c5d3acfe7fbb260823ba72060c2d84d63551",
+      "recovery_blob": "d7cec2342935d7d0c02368013600fd5b75218660"
+    },
+    {
+      "path": "handoffs/openmoji_robust_ablation_20260928/midrank48_candidate/singlemeasure_retry_20261006/dc_clean075/physical_report.json",
+      "sha256": "6440d41486c731fb28d9be621f69a49bc47b6ae84aee1ea1436e361a96bdee9c",
+      "recovery_blob": "76e35b40e93334dae51b6fd9206c9a8af8e98065"
+    },
+    {
+      "path": "handoffs/openmoji_robust_ablation_20260928/midrank48_candidate/singlemeasure_retry_20261006/dc_clean075/report.json",
+      "sha256": "1c2c056d613a20036b3ecd99d53cbd17eb0d22ece320c81353298641eff17248",
+      "recovery_blob": "7687b8b409b96ec9ee2d5c5b2c6db2a07b9bf46d"
+    },
+    {
+      "path": "handoffs/openmoji_robust_ablation_20260928/midrank48_candidate/splitrank48_decoder_train1000_testselected_20261003/report.json",
+      "sha256": "cf376e729d3d9e758d6d20448def9c36daadf8a3c03cf544c7385ef109154cd5",
+      "recovery_blob": "4114130d5fcf4a804c24d5900ba62ca184a36a8d"
+    },
+    {
+      "path": "handoffs/openmoji_robust_ablation_20260928/midrank48_candidate/splitrank48_decoder_train1000_testselected_20261003/strict_reload.json",
+      "sha256": "bd16756ea7fb5002d18e68cae0fc4923b1b0f6419b618fefe6bab5dbf23a9af1",
+      "recovery_blob": "46bb45df547b16f48953d7c444645c3db762a2d8"
+    },
+    {
+      "path": "handoffs/openmoji_robust_ablation_20260928/midrank48_candidate/splitrank48_gap_diagnostic_20261003/full_cached_gate.json",
+      "sha256": "a7969dad27a21771726c3c56d96187ef80a987db1119d3068b90ce7bdeef35d6",
+      "recovery_blob": "be5b7eb404c4579d3fa4fa5cedb9ffd3e9324743"
+    },
+    {
+      "path": "handoffs/openmoji_robust_ablation_20260928/midrank48_candidate/splitrank48_gap_diagnostic_20261003/report.json",
+      "sha256": "8f711c0741ef4c601eaccc354261ef471f83e25a9e86dcb81b7870a6396fd6ff",
+      "recovery_blob": "f5c73d32068594c8fd5b694f3c791d37d9baee57"
+    },
+    {
+      "path": "handoffs/openmoji_robust_ablation_20260928/midrank48_candidate/splitrank_decoder64_20261003/editor32_retry1_uuid/report.json",
+      "sha256": "f3c3a7e959d6875a81733e667a89c8f1d0ff00094297cf3868da78f6ea434cbb",
+      "recovery_blob": "c82f40dcfec9704d90662bad4c51c807e5092d68"
+    },
+    {
+      "path": "handoffs/openmoji_robust_ablation_20260928/midrank48_candidate/splitrank_decoder64_20261003/editor32_retry1_uuid_fulltest_cpu1/report.json",
+      "sha256": "275c92ac3d5a3d58cf046e5ba51a51a8d354753d40084bcbf6bf0b16f2515c48",
+      "recovery_blob": "66b25b5b52991ff7fd8ebf0e1387093a891dd344"
+    },
+    {
+      "path": "handoffs/openmoji_robust_ablation_20260928/midrank48_candidate/splitrank_decoder64_20261003/editor48/report.json",
+      "sha256": "1cd206e8feaed7ce6d0eee7f6b9d2d197d50ca94d74372178cab6ac21d4a25b8",
+      "recovery_blob": "d432127355be2ea71742ee85e36969c916bac1ce"
+    },
+    {
+      "path": "handoffs/openmoji_robust_ablation_20260928/midrank48_candidate/splitrank_decoder64_20261003/editor48_fulltest_cpu1/report.json",
+      "sha256": "2bd409595387562bb5239f6695062706b397dd4aa775a95f886375ae243b5b26",
+      "recovery_blob": "8784e47a90d39b51129504ee8af99329bb32956e"
+    }
+  ]
+}
