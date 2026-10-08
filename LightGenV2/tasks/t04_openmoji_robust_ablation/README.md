@@ -2,6 +2,14 @@
 
 ## 2026-10-08 授权：累计组电子适配，目标89.0%–89.5%（进行中）
 
+编辑定位监督对照`editor16_align_decoder_editfocus120_20261008`已完成120轮，
+strict CPU best .8740/e5、last .8665，上游保护不变，任务返回0。
+最新用户授权继续，有限单因素`editor16_align_decoder_editfocus1_120_20261008`：
+同.8695初始平均PT、同缓存/seed/120轮/正则化，仅`--changed-edit-weight .5→1.0`。
+唯一CPU任务`OpenMoji_CachedEditFocus1_120_1008`，不SDK/GPU、不复采、不增层；
+完整TEST每5轮最高开发选模，无TEST梯度/VAL选模。不是从.874继续训，保持起点
+相同便于配置比较。最高.874仍保存，不把后续较差PT覆盖它；终了严格CPU审计。
+
 用户要求继续增强电子泛化。新增`lab_cached_decoder_regularize.py`有限对照：
 只读同上游已核验TRAIN/TEST特征，严格复测原CPU基线.7315后，从.8695平均PT
 初始化原decoder；不重建特征、不采光路、不增层。TRAIN-only特征gain .98–1.02、
