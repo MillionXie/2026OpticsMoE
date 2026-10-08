@@ -14,9 +14,19 @@ def main():
     p=argparse.ArgumentParser(description=__doc__)
     p.add_argument('--indices',type=Path,required=True)
     p.add_argument('--output',type=Path,required=True)
+    p.add_argument('--data-root',type=Path,help='Existing original dataset location; no download')
+    p.add_argument('--expected-checkpoint-sha256',default='495b9c2c4e3df15d3715f1ce8f2faea7cb9156275b31103ec684f4e96a328518')
+    p.add_argument('--expected-reference-pck',type=float,default=.7347857142857143)
     a=p.parse_args()
     if a.output.exists():raise FileExistsError('Preserve metrics output')
     settings=load_settings(Path(__file__).parent/'configs/moe_optical_router_scale_matched_dc20_no_shift_warmstart.yaml')
+    replay=json.loads(a.indices.with_name('report.json').read_text())
+    if replay['status']!='complete' or replay['samples']!=1000 or replay['checkpoint_sha256']!=a.expected_checkpoint_sha256:
+        raise ValueError('Replay checkpoint identity mismatch')
+    if not 0 <= a.expected_reference_pck <= 1:
+        raise ValueError('Invalid reference PCK')
+    if a.data_root is not None:settings.data_root=a.data_root.resolve()
+    settings.download=False
     bundle=build_periodic_test_protocol(prepare_lsp(settings,persist=False))
     dataset=LSPPoseDataset(bundle.test,settings,training=False)
     records=json.loads(a.indices.read_text())
@@ -37,11 +47,12 @@ def main():
             entry[name+'_coordinates']=predicted.tolist()
         samples.append(entry)
     metrics={k:v.compute() for k,v in meters.items()}
-    if metrics['reference']['pck_evaluated_joints']!=14000 or abs(metrics['reference']['pck_at_0.2_torso']-.7347857142857143)>1e-12:
+    if metrics['reference']['pck_evaluated_joints']!=14000 or abs(metrics['reference']['pck_at_0.2_torso']-a.expected_reference_pck)>1e-12:
         raise ValueError('Original simulation/TEST order/target metric not reproduced')
     if metrics['physical']['pck_evaluated_joints']!=14000:raise ValueError('Physical joint count mismatch')
     a.output.mkdir(parents=True)
     report={'status':'complete','samples':1000,'indices_sha256':sha(a.indices),'metrics':metrics,
+            'checkpoint_sha256':a.expected_checkpoint_sha256,'expected_reference_pck':a.expected_reference_pck,
             'metric_implementation':'original PoseMetricAccumulator and hardargmax_coordinates',
             'target_contract':'original LSPPoseDataset(training=False), original periodic TEST order',
             'no_test_gradient':True,'no_tta':True}
