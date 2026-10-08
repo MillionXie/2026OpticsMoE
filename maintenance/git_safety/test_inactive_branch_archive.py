@@ -9,7 +9,8 @@ from maintenance.git_safety.archive_inactive_local_branches import apply, digest
 def repository(tmp_path: Path) -> Path:
     root = tmp_path / "repo"
     root.mkdir()
-    git(root, "init", "-b", "main")
+    git(root, "init")
+    git(root, "symbolic-ref", "HEAD", "refs/heads/main")
     git(root, "config", "user.name", "Archive Test")
     git(root, "config", "user.email", "archive-test@example.invalid")
     (root / "source.py").write_text("baseline\n")
