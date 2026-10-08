@@ -159,7 +159,7 @@ def acquire(a):
     start=time.time()
     with legacy.SHSBench(output,2000,240,{}) as bench:
         for n,s in enumerate(STAGES):
-            amp=output/'amplitude'/s;amp.mkdir(parents=True)
+            amp=output/'amplitude'/s;amp.mkdir(parents=True,exist_ok=a.resume)
             for k,item in enumerate(items):
                 p=root/item['file']
                 until=time.monotonic()+600
@@ -180,7 +180,10 @@ def acquire(a):
                 value=tap.amplitudes[s][0].cpu().numpy()
                 # Verify phase planes exactly represent this model's input field.
                 bmp=amp/(item['key']+'.bmp')
-                Image.fromarray(flow.active_to_native(np.rint(value*255).astype(np.uint8))).save(bmp)
+                image=Image.fromarray(flow.active_to_native(np.rint(value*255).astype(np.uint8)))
+                if bmp.exists():
+                    if not np.array_equal(np.asarray(image),np.asarray(Image.open(bmp))):raise ValueError('Existing amplitude BMP differs')
+                else:image.save(bmp)
                 c=output/'ccd'/s/(item['key']+'.png')
                 if c.exists():
                     rec=read(c.with_suffix('.json'))
