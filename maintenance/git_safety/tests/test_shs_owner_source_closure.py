@@ -87,4 +87,9 @@ def test_t06_bundle_contains_canonical_controller_dependency_closure():
     assert set(required) <= set(paths)
     assert all((ROOT/p).is_file() for p in required)
     additions = " paths += ['LightGenV2/hardware_common/shs/'+name for name in ('sdk.py','capture.py','slm_camera.py')]\n paths += ['experiments/hardware_sdk/'+name for name in ('__init__.py','devices.py','drivers/__init__.py','drivers/meadowlark_pcie_slm.py','drivers/tucam_camera.py')]\n"
-    assert hashlib.sha256(source.replace(additions, '').encode()).hexdigest() == '833bb16a95403e5ee5114fda4da82659d9f652a63d4d42f3ffb1f6da6390d65c'
+    additions += " paths += ['LightGenV2/hardware_common/shs/'+name for name in ('__init__.py','phase_hdmi.py','phase_owner.py','phase_display.py')]\n"
+    original = source
+    for line in additions.splitlines(keepends=True):
+        assert source.count(line) == 1
+        original = original.replace(line, '')
+    assert hashlib.sha256(original.encode()).hexdigest() == '833bb16a95403e5ee5114fda4da82659d9f652a63d4d42f3ffb1f6da6390d65c'

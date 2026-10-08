@@ -11,11 +11,25 @@ TASK = ROOT/'LightGenV2/tasks/t06_video_quality_assessment'
 ORIGINAL = '7093ec46082eed2fae127ec5028d3e2e8548b592'
 
 
+def reverse_phase_import_migration(source):
+    source = source.replace('import argparse,json,os,sys,time,subprocess', 'import argparse,os,sys,time,subprocess')
+    current = (' from LightGenV2.hardware_common.shs.phase_hdmi import PhaseHDMI,load_native\n'
+               ' from LightGenV2.hardware_common.shs.phase_owner import message_pump\n'
+               ' from LightGenV2.hardware_common.shs.phase_display import DisplayOrigin\n')
+    old = (' sys.path.insert(0,str(a.bench_root.resolve()))\n from guarded_workflow import read\n'
+           ' from phase_hdmi import PhaseHDMI,load_native\n from phase_owner import message_pump\n'
+           ' from phase_display import DisplayOrigin\n')
+    return source.replace(current, old).replace("c=json.loads(Path(a.link_config).read_text(encoding='utf-8-sig'))", 'c=read(a.link_config)')
+
+
 def test_required_phase_and_portable_entry_match_preserved_source():
     for relative in ('lab_phase.py', 'hardware/run_lab.py'):
         path = TASK/relative
         original = subprocess.check_output(['git', 'show', ORIGINAL+':'+path.relative_to(ROOT).as_posix()], cwd=ROOT)
-        assert path.read_bytes().replace(b'\r\n', b'\n') == original
+        current = path.read_bytes().replace(b'\r\n', b'\n')
+        if relative == 'lab_phase.py':
+            current = reverse_phase_import_migration(current.decode()).encode()
+        assert current == original
         compile(original, relative, 'exec')
 
 
@@ -51,7 +65,7 @@ def test_phase_sdk_imports_are_inside_explicit_main_only():
 def test_optional_release_is_only_change_from_formal_server_package():
     path = TASK/'lab_phase.py'
     original = subprocess.check_output(['git', 'show', '8e869473787f4ffceb2a6a77f4430b94c206f459:'+path.relative_to(ROOT).as_posix()], cwd=ROOT).decode()
-    current = path.read_text()
+    current = reverse_phase_import_migration(path.read_text())
     current = current.replace(";p.add_argument('--release-file',type=Path)", '')
     current = current.replace(" if a.release_file and a.release_file.exists():raise ValueError('Release file already exists')\n", '')
     current = current.replace("while not (a.release_file and a.release_file.exists()):", "while True:")

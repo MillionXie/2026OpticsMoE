@@ -211,6 +211,9 @@ SDK相对路径基准及 `results/dual_jobs/ACTIVE.lock` 的互斥根，未移�
 Controller显式传入该基准，逐层配置和原采集守卫不变。SHS打包源码清单同步包含
 共享控制器及其驱动依赖。仅CPU结构与前置拒绝检查，不构建包、不接设备或重评模型。
 现有旧交付ZIP保持原样，不能据此宣称旧SHS整目录已不再需要。
+相位保持器同样改为主线显式导入，不再加载旧目录的guarded_workflow或phase脚本；
+原UTF-8-sig配置读取、相位锁位置、SDK参数、重复显示和退出流程不变。
+相位源码加入新打包清单，原包及历史源码身份仍保留；没有启动相位设备。
 
 原服务器compress_all交付材料`hardware/reproduce_simulation.py`和
 `hardware/AI_TEMPORAL08044_HANDOFF.md`已原样纳入main，逐LF SHA分别为

@@ -1,17 +1,15 @@
 """Local phase hold ONLY. Never captures or switches automatically to next plane."""
-import argparse,os,sys,time,subprocess
+import argparse,json,os,sys,time,subprocess
 from pathlib import Path
 
 def main():
  p=argparse.ArgumentParser(description=__doc__);p.add_argument('--bmp',type=Path,required=True);p.add_argument('--bench-root',type=Path,required=True);p.add_argument('--link-config',type=Path,required=True);p.add_argument('--release-file',type=Path);a=p.parse_args()
  if a.release_file and a.release_file.exists():raise ValueError('Release file already exists')
- sys.path.insert(0,str(a.bench_root.resolve()))
- from guarded_workflow import read
- from phase_hdmi import PhaseHDMI,load_native
- from phase_owner import message_pump
- from phase_display import DisplayOrigin
+ from LightGenV2.hardware_common.shs.phase_hdmi import PhaseHDMI,load_native
+ from LightGenV2.hardware_common.shs.phase_owner import message_pump
+ from LightGenV2.hardware_common.shs.phase_display import DisplayOrigin
  if 'blinkhdmi.exe' in subprocess.check_output(['tasklist','/FI','IMAGENAME eq BlinkHdmi.exe','/FO','CSV'],text=True).lower():raise RuntimeError('Close Blink GUI before SDK ownership')
- c=read(a.link_config);load_native(a.bmp)
+ c=json.loads(Path(a.link_config).read_text(encoding='utf-8-sig'));load_native(a.bmp)
  lock=a.bench_root/'results/phase_sdk_owner.lock';fd=os.open(lock,os.O_CREAT|os.O_EXCL|os.O_WRONLY);os.write(fd,str(os.getpid()).encode());os.close(fd)
  try:
   with DisplayOrigin(bool(c.get('phase_display_align_top',False))):
