@@ -1,0 +1,12 @@
+{
+  "original": "handoffs/t12_language_balance_20260927",
+  "archive": "archive/legacy_lab_projects/t12_empty_checks_20261008",
+  "subdirectories": ["coverage_test", "semantic_test"],
+  "filenames_each": ["clean_per_image.json", "evaluation.json", "extreme_per_image.json", "protocol.json", "severe_per_image.json", "stress_per_image.json"],
+  "files": 12,
+  "bytes_each": 0,
+  "sha256_each": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "verification": "All twelve original files and existing recovery Git blobs are empty and unchanged; no observed local matching Python process; tracked references only maintenance provenance, no scientific runtime reference",
+  "meaning": "Empty historical coverage/semantic-check placeholders; not valid metric reports or populated protocols. No results reconstructed or inferred",
+  "preservation": "Only these exact empty files relocated, originals recoverable; candidate PT, ZIP, README, actual selection/visual audit and other files remain in place; no server or laboratory file operation"
+}
