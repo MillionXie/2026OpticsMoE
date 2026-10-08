@@ -1,0 +1,21 @@
+{
+  "audited_main": "368bc1114c55f09bc92dfa99d8f134f451a52c9f",
+  "scope": "Every current local git ls-files --others --exclude-standard -z path; source, documentation, configuration and report payloads, not ignored datasets",
+  "files_read": 1228,
+  "windows_extended_length_paths_used": true,
+  "unreadable_files": [],
+  "missing_reachable_blob_identity": [],
+  "git_cat_file_batch_full_content_verified": true,
+  "raw_byte_matches": 959,
+  "explicit_CRLF_to_LF_matches": 269,
+  "private_zip_exact_member_matches": 394,
+  "coverage_counts_overlap": true,
+  "original_files_moved_deleted_modified_or_ignored_by_this_audit": false,
+  "current_runtime_or_scientific_models_changed": false,
+  "limitations": [
+    "Local reachable Git objects, not proof of independent disaster recovery or identical Linux asset files.",
+    "CRLF-to-LF recovery requires the stated conversion; raw originals remain in place.",
+    "Recovery identity does not prove main adoption, absence of use, dependency closure or deletion safety.",
+    "Snapshot excludes ignored data, checkpoints and files subsequently created by other windows."
+  ]
+}
