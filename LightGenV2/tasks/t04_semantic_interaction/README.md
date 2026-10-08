@@ -39,6 +39,13 @@ epoch45和电子expansion=.5架构；不是自动最佳epoch70，不称独立TES
 当前外部上传暂停；旧包保留，新版完整独立包尚未验收。本轮不自行打包或上传。
 本轮只整理入口和身份，不训练、重评、修改现用实验或连接实验室设备。
 
+旧epoch40的`shs_package`模板原为本机保留的未跟踪历史工具，现单独收录；
+只有相位源码读取位置改为`LightGenV2/hardware_common/shs`，原模型/PT/BASE_SHA和
+输出结构不改。必要相位owner/display保留原实现及独立包的bare-import模式，
+包内导入只增加相对导入适配；不触发SDK或改变相位/ROI/曝光合同。
+来源及原SHA见仓库`maintenance/storage/SHS_SHARED_CONTROLLER_SOURCE_20261004.json`。
+仅源码/导入检查，不构建ZIP、安装Windows依赖或验证设备；不能用于指定epoch45新包。
+
 ### 大小层次应用源码与电子缩减配置已归主线
 
 服务器原运行目录 `LightGenV2_worktrees/t04_layered_1bc120428` 的4份渲染/展示源码与

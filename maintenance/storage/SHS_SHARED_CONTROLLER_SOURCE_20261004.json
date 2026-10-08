@@ -1,4 +1,44 @@
 {
+  "historical_helpers_adopted_20261008": {
+    "scope": "Preserved local historical helpers, not a new model or laboratory acceptance",
+    "files": [
+      {
+        "original_path": "ABO_Lab_SHS_8um/phase_owner.py",
+        "original_recovery_blob": "e223e08b7cdc9bdb34a9fc6e407c18d1ecb245bd",
+        "original_sha256": "5c18f05c5fdeb5020cdfdd8583e4ef05dc4f1abc7b1bf9bae276bcfe001d902c",
+        "published_path": "LightGenV2/hardware_common/shs/phase_owner.py",
+        "published_sha256_lf": "1c0e95fe7785d6b3d292a485ffe8b4e28d586e8bf57fb002ec1a3a63f8fe1e84",
+        "reviewed_changes": "Package-relative imports with original bare-module import mode retained; all other original source bytes unchanged after reversing this exact import adapter"
+      },
+      {
+        "original_path": "ABO_Lab_SHS_8um/phase_display.py",
+        "original_recovery_blob": "27e9fce0fb8d88154db2169a31abfe484a207c06",
+        "original_sha256": "91163af118af02c1a8fb0f02c48dd541cd83dbff7285501e8c4d4c81de0eb502",
+        "published_path": "LightGenV2/hardware_common/shs/phase_display.py",
+        "published_sha256_lf": "91163af118af02c1a8fb0f02c48dd541cd83dbff7285501e8c4d4c81de0eb502",
+        "reviewed_changes": "none"
+      },
+      {
+        "original_path": "ABO_Lab_SHS_8um/requirements-gpu-tested.txt",
+        "original_recovery_blob": "64dc7b5aa22cd9ae7aba505eb4eda0578c78d8da",
+        "original_sha256": "130967c1cac05915007f16aae2b31671700b8583ab530140a10db7e3aff1a83d",
+        "published_path": "LightGenV2/hardware_common/shs/requirements-gpu-tested-reference.txt",
+        "published_sha256_lf": "4b892cc1b076fb48a5f9d4dfc7700a8fa62e829ce23969d7a1b77b912d2fc1e3",
+        "reviewed_changes": "Explicit CRLF to LF only; historical Windows reference, not installation or a complete current environment"
+      }
+    ],
+    "original_working_files_unchanged": true,
+    "imports_tested_without_WinDLL_or_device_owner_entry": true,
+    "hardware_opened_or_current_runtime_switched": false
+  },
+  "legacy_t04_template_adopted_20261008": {
+    "path": "LightGenV2/tasks/t04_semantic_interaction/shs_package.py",
+    "original_recovery_blob": "5870ca37b86a8396fc2d29801cebe751870cf62a",
+    "original_sha256": "8b937f52f1ed5e31d581584396680fe937d2001cf5261c736ff85667d222aba9",
+    "reviewed_changes": "One Git source-path literal changed from ABO_Lab_SHS_8um to LightGenV2/hardware_common/shs; exact reverse-change SHA regression passes",
+    "scope": "Preserved local epoch40 template, not epoch45 packaging or server runtime authority",
+    "package_executed": false
+  },
   "paths": [
     {
       "original_path": "E:/code/guest/2026OpticsMoE/ABO_Lab_SHS_8um/sdk.py",
