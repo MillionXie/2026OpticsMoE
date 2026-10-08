@@ -3,6 +3,38 @@
   "scope": "Reviewed task source evolution; historical hashes remain enforced",
   "paths": [
     {
+      "path": "LightGenV2/tasks/t04_semantic_interaction/modeling.py",
+      "historical_source_commit": "3b956503a4ecae9b6c20c789ead28621e42e6eeb",
+      "historical_sha256": "7c110fcbdbaab306b324def19051de7e5ff9c8f2e83139fee1d28e4164c1d5a3",
+      "source_commit": "4ea21bb62280e8226c86c97b512ed57ded2a3bf4",
+      "sha256": "78deb9c5f6d4a6285179236fa295716b459c8885c814c4324da9e04e1d5f202c",
+      "review_reason": "Complete diff reviewed: forward declared residual expansion and optional DC/CCD settings to the compact model, expose them in architecture reports, and avoid optical router regularizers during explicit remove-optical evaluation. Selected layered application's 139-state strict-load identity is separately documented in layered_application_import_20261007.json. Do not assign its PT or metrics to robust G2/G5; no model or experiment altered by this provenance registration."
+    },
+    {
+      "path": "LightGenV2/tasks/t04_semantic_interaction/settings.py",
+      "historical_source_commit": "3b956503a4ecae9b6c20c789ead28621e42e6eeb",
+      "historical_sha256": "0c1c7a70b9bfd0f01a5e68bed050416f71dd82bfbb8e77a5f962cceb14cc4b3d",
+      "source_commit": "4ea21bb62280e8226c86c97b512ed57ded2a3bf4",
+      "sha256": "39cf623df0bf1ab0eaef8fda89b131946dc73ae6d292444be95adfe1068e9a17",
+      "review_reason": "Reviewed complete semantic diff after separately identifying CRLF-to-LF conversion: explicit residual expansion default 2/range .5-4, optional DC fraction and four all-or-none CCD fractions with validation. Other settings retain previous values. Original raw Git blob identity and adopted LF identity are both enforced; this is selected application contract support, not a replacement of sealed robust weights."
+    },
+    {
+      "path": "LightGenV2/tasks/t04_semantic_interaction/run.py",
+      "historical_source_commit": "3b956503a4ecae9b6c20c789ead28621e42e6eeb",
+      "historical_sha256": "2b729e49bd9be037e8491f7d72b2a343f9dd4cdac54bf415771d446e8c31f4b1",
+      "source_commit": "8414eb333133316c006143d3c479f9004031fe87",
+      "sha256": "58f63f7bad0052783a4e4e817cbd453ba8eb1eee9e14952bfe77c16148f1a3d5",
+      "review_reason": "Complete diff reviewed: explicit layered profiles/data dispatch, selected-profile existing-asset binding, evaluation-only fusion ablation and distinct protected output names. Existing weights/reports are refused before writing. No automatic new dataset, training, formal evaluation or change of current runtime was executed during review."
+    },
+    {
+      "path": "LightGenV2/tasks/t04_semantic_interaction/training.py",
+      "historical_source_commit": "3b956503a4ecae9b6c20c789ead28621e42e6eeb",
+      "historical_sha256": "ef5d45a7b8f5d5c861d6ccd21419b2245890c0eb6e47feac44e8473aed3f744c",
+      "source_commit": "ccdaeb2989b8924b958abd2e248c3d984a489ecf",
+      "sha256": "b82ddb724d67eaa1ad70c68a0a3078ebf697619dad645ec8ce0c5674458fa0e3",
+      "review_reason": "Complete diff reviewed: same-checkpoint explicit fusion ablation with strict loading, router-audit bypass only for removed optics, non-overwriting suffixed evaluation reports, and layered gallery dispatch. Existing training loop unchanged; no source data, result or PT re-evaluated in provenance review. No-Torch migration tests exercise mode and output protection, not accuracy."
+    },
+    {
       "path": "LightGenV2/tasks/t04_openmoji_robust_ablation/configs/lab/rank64_20261002.json",
       "historical_source_commit": "0e0b2079e84559b0ab495828273da9fffb2fe3bb",
       "historical_sha256": "1285a6720f810c848aee32c4397e84fbfa983116ba220bc9f203de1f7e8babbc",

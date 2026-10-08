@@ -111,7 +111,7 @@ class FusionAblationMigrationTests(unittest.TestCase):
                                _set_phase_dropout=lambda *a: None, _json=lambda p, value: paths.append(p),
                                evaluate_with_routes=lambda *a: ({'overall': {'changed_cell_accuracy': .5}}, [], []),
                                legacy=SimpleNamespace(_save_gallery=lambda p, *a: paths.append(p)))
-                result = self.ns['evaluate_selected'](SimpleNamespace(output_dir=root, test_samples=1000, embedding_only=False), None, root/'fixed.pt', mode)
+                result = self.ns['evaluate_selected'](SimpleNamespace(output_dir=root, test_samples=1000, embedding_only=False, layout_version='grid_v2'), None, root/'fixed.pt', mode)
                 self.assertEqual(loaded, [(state, True)])
                 self.assertEqual((result['fusion_ablation'], result['selected_epoch']), (mode, 7))
                 suffix = '' if mode == 'none' else '_' + mode
