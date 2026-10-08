@@ -1,0 +1,25 @@
+# OpenMoji rank-48 G5: lab deployment (2026-09-30)
+
+- Isolated bench: `E:/code/guest/2026OpticsMoE/OpenMoji_Robust_Midrank48_SHS_20260930`.
+- Weight `weights/g5_lowrank48_best.pt`, SHA-256 `735ed73a900ac2b7b0984f65b719c98667198000de6defaa74b33554b8d370a3`; strict architecture/state preflight passed. This is the existing G5 rank-48 checkpoint, not a tuned optical result.
+- Interactive six-stage 4-TEST-sample pilot `OpenMoji_Rank48_Pilot_0930` completed 24/24 CCD, exit 0. Minimum stage p99: language router/expert/global `27/66/59`, vision router/expert/global `201/115/90`. No dark stage. Output `runs/g5_rank48_pilot4_e2000` on the bench.
+- Interactive full TEST acquisition `OpenMoji_Rank48_Full_0930` started after pilot and exclusive hardware check. Output `runs/g5_rank48_full1000_e2000`, log `runs/g5_rank48_full1000_e2000.log`, target 1000 TEST images × six whole-dataset layers = 6000 CCD. Full accuracy is pending.
+- If the fixed TEST result is below the required physical target, an independent original TRAIN1000 whole-layer capture and last-electronic-decoder tune are prepared in the same isolated bench. Use 800 FIT/200 VAL for selection and fixed TEST replay once; do not tune on TEST.
+- No CCD from earlier rank-16/full-head experiments is reused. Do not run another SLM/camera task concurrently.
+
+## Full TEST and independent TRAIN capture
+
+- `OpenMoji_Rank48_Full_0930` completed normally (exit 0), with all six stages at 1000 CCD each: 6000 PNG and 6000 receipts. The unchanged checkpoint's physical Changed-cell accuracy is **0.6350**; same-run simulation is **0.8970** (the original server simulation report was 0.9000). The physical operation breakdown is add 0.344, replace 0.564, move 0.644, remove 0.988. Full report and per-sample outputs are in `runs/g5_rank48_full1000_e2000/` on the bench. This is below the desired threshold, so last-decoder adaptation is required.
+- After a device-free/task-ready check, separate interactive task `OpenMoji_Rank48_Train_0930` was started for independent original TRAIN1000 × six complete optical layers. Output `runs/g5_rank48_train1000_e2000/`, log `runs/g5_rank48_train1000_e2000.log`. The source split audit records no source-image overlap with TEST. No old CCD is reused. Tune only after all 6000 new TRAIN CCD and receipts are complete and hardware is released.
+- `OpenMoji_Rank48_Train_0930` completed normally (exit 0): each of six layers has exactly 1000 PNG and 1000 JSON receipts. Split audit shows 800 FIT / 200 VAL and zero TEST ID or source-image overlap. After confirming no running optical task and no existing tune output, `OpenMoji_Rank48_Tune_0930` started the offline `run_tune.cmd` process. It must freeze everything except the original final electronic decoder, use VAL for checkpoint selection, then replay the already captured TEST once. Physical result after tuning is pending.
+
+## Decoder adaptation result
+
+- Offline `OpenMoji_Rank48_Tune_0930` completed with only the final shared electronic decoder trainable; report says protected upstream weights unchanged. On independent TRAIN 800 FIT / 200 VAL, VAL selected epoch 31 at Changed-cell accuracy **0.8750**. Fixed replay on the already captured original TEST1000 CCD improved **0.6350 → 0.7815**. Per operation after tune: add **0.544**, replace **0.848**, move **0.746**, remove **0.988**. This remains below 0.95×0.9000 = **0.8550**, so the target is *not* met.
+- Best checkpoint SHA-256 `65211a04d649a4d8df2e7d8bbb2adf1173d3c3dd13b8bddd7d3bcee3cf9be295`. The bench retains `runs/g5_rank48_decoder_train1000/{best.pt,last.pt,report.json,history.json}` plus raw TEST/TRAIN CCD; local copies `g5_rank48_decoder_best_20260930.pt` and `g5_rank48_decoder_report_20260930.json` were downloaded and the best checkpoint SHA matched. Do not use the TEST result to choose another epoch/hyperparameter.
+
+## User-authorized TEST-guided exploratory run
+
+At the user's later explicit request, a separate offline run reused the already captured decoder-input caches, with the same original G5 weight, 800 TRAIN FIT samples, decoder-only optimizer and 200 TRAIN VAL samples. It evaluated the original 1000 TEST CCD every 5 epochs through epoch 80 and deliberately selected the maximum TEST Changed-cell accuracy. This *changes the statistical status of TEST*: the resulting score is a development-set optimum, not an independent held-out estimate. The original VAL-selected checkpoint and all raw CCD remain untouched.
+
+The TEST-selected best was epoch 70 at **0.7975**, versus the original VAL-selected checkpoint's **0.7815**; the unchanged pre-adaptation baseline was **0.6350**. The protected upstream SHA remained unchanged. New bench output is `runs/g5_rank48_decoder_testselected_20260930/{best.pt,last.pt,history.json,report.json}`. Local copies are `testselected_best_20260930.pt` (SHA-256 `fba1bd2f6bb9327f49c0979f94ff6ed170de1d48e7b44459893c292e1a3d04c5`), `testselected_last_20260930.pt`, `testselected_history_20260930.json`, and `testselected_report_20260930.json`. The full-architecture physical target around 0.855 remains unmet.

@@ -1,0 +1,245 @@
+{
+  "status": "complete",
+  "method": "one predeclared 50/50 original decoder average",
+  "train": {
+    "overall": {
+      "samples": 1000,
+      "cell_accuracy": 0.9879166625142097,
+      "changed_cell_accuracy": 0.984,
+      "foreground_category_accuracy": 0.9880166669487953,
+      "preserved_cell_accuracy": 0.9880924349427224,
+      "edit_grid_iou": 0.8212500000000001,
+      "object_f1": 0.9441187035187044,
+      "scene_exact_match": 0.702,
+      "task_accuracy": 1.0
+    },
+    "add": {
+      "samples": 250,
+      "cell_accuracy": 0.9715555469989776,
+      "changed_cell_accuracy": 0.972,
+      "foreground_category_accuracy": 0.9887333338260651,
+      "preserved_cell_accuracy": 0.971542858839035,
+      "edit_grid_iou": 0.5834666666666666,
+      "object_f1": 0.8835596625596631,
+      "scene_exact_match": 0.328,
+      "task_accuracy": 1.0
+    },
+    "replace": {
+      "samples": 250,
+      "cell_accuracy": 0.999666666507721,
+      "changed_cell_accuracy": 0.992,
+      "foreground_category_accuracy": 0.9976666667461396,
+      "preserved_cell_accuracy": 0.9998857142925263,
+      "edit_grid_iou": 0.986,
+      "object_f1": 0.9972222222222222,
+      "scene_exact_match": 0.988,
+      "task_accuracy": 1.0
+    },
+    "move": {
+      "samples": 250,
+      "cell_accuracy": 0.9804444365501404,
+      "changed_cell_accuracy": 0.972,
+      "foreground_category_accuracy": 0.9656666672229767,
+      "preserved_cell_accuracy": 0.980941166639328,
+      "edit_grid_iou": 0.7375333333333327,
+      "object_f1": 0.8956929292929294,
+      "scene_exact_match": 0.492,
+      "task_accuracy": 1.0
+    },
+    "remove": {
+      "samples": 250,
+      "cell_accuracy": 1.0,
+      "changed_cell_accuracy": 1.0,
+      "foreground_category_accuracy": 1.0,
+      "preserved_cell_accuracy": 1.0,
+      "edit_grid_iou": 0.978,
+      "object_f1": 1.0,
+      "scene_exact_match": 1.0,
+      "task_accuracy": 1.0
+    }
+  },
+  "test": {
+    "overall": {
+      "samples": 1000,
+      "cell_accuracy": 0.9831666617393494,
+      "changed_cell_accuracy": 0.8695,
+      "foreground_category_accuracy": 0.9439333345890045,
+      "preserved_cell_accuracy": 0.9870680647492409,
+      "edit_grid_iou": 0.7954261904761899,
+      "object_f1": 0.9050967088467086,
+      "scene_exact_match": 0.622,
+      "task_accuracy": 1.0
+    },
+    "add": {
+      "samples": 250,
+      "cell_accuracy": 0.9645555467605591,
+      "changed_cell_accuracy": 0.724,
+      "foreground_category_accuracy": 0.9247333362102509,
+      "preserved_cell_accuracy": 0.9714285731315613,
+      "edit_grid_iou": 0.5196666666666664,
+      "object_f1": 0.8422511932511937,
+      "scene_exact_match": 0.288,
+      "task_accuracy": 1.0
+    },
+    "replace": {
+      "samples": 250,
+      "cell_accuracy": 0.9962222204208374,
+      "changed_cell_accuracy": 0.872,
+      "foreground_category_accuracy": 0.9386666672229766,
+      "preserved_cell_accuracy": 0.9997714285850525,
+      "edit_grid_iou": 0.988,
+      "object_f1": 0.9387396825396824,
+      "scene_exact_match": 0.864,
+      "task_accuracy": 1.0
+    },
+    "move": {
+      "samples": 250,
+      "cell_accuracy": 0.9724444355964661,
+      "changed_cell_accuracy": 0.886,
+      "foreground_category_accuracy": 0.919666668176651,
+      "preserved_cell_accuracy": 0.9775294001102448,
+      "edit_grid_iou": 0.6960380952380949,
+      "object_f1": 0.847662626262626,
+      "scene_exact_match": 0.356,
+      "task_accuracy": 1.0
+    },
+    "remove": {
+      "samples": 250,
+      "cell_accuracy": 0.9994444441795349,
+      "changed_cell_accuracy": 0.996,
+      "foreground_category_accuracy": 0.9926666667461396,
+      "preserved_cell_accuracy": 0.9995428571701049,
+      "edit_grid_iou": 0.978,
+      "object_f1": 0.9917333333333332,
+      "scene_exact_match": 0.98,
+      "task_accuracy": 1.0
+    }
+  },
+  "parent_tests": [
+    {
+      "overall": {
+        "samples": 1000,
+        "cell_accuracy": 0.9833888839483261,
+        "changed_cell_accuracy": 0.8685,
+        "foreground_category_accuracy": 0.9442666679620743,
+        "preserved_cell_accuracy": 0.9873579808473587,
+        "edit_grid_iou": 0.7970285714285709,
+        "object_f1": 0.9067083971583967,
+        "scene_exact_match": 0.625,
+        "task_accuracy": 1.0
+      },
+      "add": {
+        "samples": 250,
+        "cell_accuracy": 0.965111102104187,
+        "changed_cell_accuracy": 0.724,
+        "foreground_category_accuracy": 0.9247333362102509,
+        "preserved_cell_accuracy": 0.9720000016689301,
+        "edit_grid_iou": 0.525333333333333,
+        "object_f1": 0.8443519147519154,
+        "scene_exact_match": 0.292,
+        "task_accuracy": 1.0
+      },
+      "replace": {
+        "samples": 250,
+        "cell_accuracy": 0.9962222204208374,
+        "changed_cell_accuracy": 0.872,
+        "foreground_category_accuracy": 0.9416666672229766,
+        "preserved_cell_accuracy": 0.9997714285850525,
+        "edit_grid_iou": 0.984,
+        "object_f1": 0.9417396825396824,
+        "scene_exact_match": 0.864,
+        "task_accuracy": 1.0
+      },
+      "move": {
+        "samples": 250,
+        "cell_accuracy": 0.9727777690887451,
+        "changed_cell_accuracy": 0.882,
+        "foreground_category_accuracy": 0.91800000166893,
+        "preserved_cell_accuracy": 0.9781176359653473,
+        "edit_grid_iou": 0.702780952380952,
+        "object_f1": 0.8490086580086578,
+        "scene_exact_match": 0.364,
+        "task_accuracy": 1.0
+      },
+      "remove": {
+        "samples": 250,
+        "cell_accuracy": 0.9994444441795349,
+        "changed_cell_accuracy": 0.996,
+        "foreground_category_accuracy": 0.9926666667461396,
+        "preserved_cell_accuracy": 0.9995428571701049,
+        "edit_grid_iou": 0.976,
+        "object_f1": 0.9917333333333332,
+        "scene_exact_match": 0.98,
+        "task_accuracy": 1.0
+      }
+    },
+    {
+      "overall": {
+        "samples": 1000,
+        "cell_accuracy": 0.9827777728438377,
+        "changed_cell_accuracy": 0.868,
+        "foreground_category_accuracy": 0.9423000012636185,
+        "preserved_cell_accuracy": 0.9867478966712951,
+        "edit_grid_iou": 0.7930261904761898,
+        "object_f1": 0.9022635198135196,
+        "scene_exact_match": 0.616,
+        "task_accuracy": 1.0
+      },
+      "add": {
+        "samples": 250,
+        "cell_accuracy": 0.9641111023426056,
+        "changed_cell_accuracy": 0.728,
+        "foreground_category_accuracy": 0.9255333361625672,
+        "preserved_cell_accuracy": 0.9708571445941925,
+        "edit_grid_iou": 0.5189999999999997,
+        "object_f1": 0.8398347430347434,
+        "scene_exact_match": 0.284,
+        "task_accuracy": 1.0
+      },
+      "replace": {
+        "samples": 250,
+        "cell_accuracy": 0.9962222204208374,
+        "changed_cell_accuracy": 0.868,
+        "foreground_category_accuracy": 0.9376666672229766,
+        "preserved_cell_accuracy": 0.9998857142925263,
+        "edit_grid_iou": 0.99,
+        "object_f1": 0.9381841269841269,
+        "scene_exact_match": 0.864,
+        "task_accuracy": 1.0
+      },
+      "move": {
+        "samples": 250,
+        "cell_accuracy": 0.9713333244323731,
+        "changed_cell_accuracy": 0.88,
+        "foreground_category_accuracy": 0.9133333349227906,
+        "preserved_cell_accuracy": 0.9767058706283569,
+        "edit_grid_iou": 0.6851047619047617,
+        "object_f1": 0.8393018759018759,
+        "scene_exact_match": 0.336,
+        "task_accuracy": 1.0
+      },
+      "remove": {
+        "samples": 250,
+        "cell_accuracy": 0.9994444441795349,
+        "changed_cell_accuracy": 0.996,
+        "foreground_category_accuracy": 0.9926666667461396,
+        "preserved_cell_accuracy": 0.9995428571701049,
+        "edit_grid_iou": 0.978,
+        "object_f1": 0.9917333333333332,
+        "scene_exact_match": 0.98,
+        "task_accuracy": 1.0
+      }
+    }
+  ],
+  "strict_default_cpu_reload": true,
+  "protected_sha256": "f385956d653201b10c1bcc1bb3e8bd1f6a25a987fc328f660e6666d26e3bf66f",
+  "protected_unchanged": true,
+  "test_gradient": false,
+  "architecture_unchanged": true,
+  "parents_sha256": [
+    "cb1864fe7217bb4d0891d3712c37173877c84746baa4ed756fbdc989e7a77140",
+    "080db54660b95503ebc89388cd525d4e4ff1694feb50972b0f6daf27bc216c60"
+  ],
+  "best_sha256": "75bc667d3724ec55f5c6a7607e361ef236979f1a63ed95907e7c42ae9502b972",
+  "selection": "TEST development; no independent generalization claim"
+}

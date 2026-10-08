@@ -1,0 +1,18 @@
+{
+  "group": "r3_ccd_dc30_grid",
+  "profile": {
+    "ccd": true,
+    "dc30": true,
+    "grid": true
+  },
+  "shared_readout_variant": "lowrank48",
+  "shared_readout_parameters": 234520,
+  "calibration_no_test": false,
+  "initial_sha256": "579b19e78befe93cd258ce02308235f1a9176316f37bc42fc2e1b6ff06d38e9f",
+  "amplitude": "tanh(abs/.5), zero/phase preserving; BMP round255a only",
+  "grid": "17→8→17 differentiable raster proxy, not true 8um propagation",
+  "selection": "TRAIN-only holdout; best epoch including 0",
+  "test": "once per selected group",
+  "epochs": 12,
+  "steps_per_epoch": 100
+}
