@@ -1,0 +1,6 @@
+base_config: polish_low_lr.yaml
+# Only feature-phase LR differs from the paired control (10x).
+# Optical router and electronic learning rates stay identical.
+training:
+  phase_learning_rate: 0.004
+output_dir: ../runs/simulation/polish_phase_reheat_20260910

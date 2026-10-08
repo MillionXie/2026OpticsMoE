@@ -1,0 +1,6 @@
+base_config: polish_low_lr.yaml
+# Training-only regularization after the 99.375% train-other-product diagnostic.
+# This third candidate differs from low_lr ONLY in anchor label smoothing.
+abo_image_image:
+  anchor_label_smoothing: 0.1
+output_dir: ../runs/simulation/polish_smoothing_20260910
