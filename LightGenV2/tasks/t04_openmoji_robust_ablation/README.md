@@ -2,6 +2,17 @@
 
 ## 2026-10-08 授权：累计组电子适配，目标89.0%–89.5%（进行中）
 
+2026-10-09 01:15类别mixup保真对照120轮已完成，任务返回0、Python退出、4060空闲。
+strictCPU best .8890/e100、last .8865，上游保护通过；best TRAIN changed .9995。
+best preserved .9857109/editIoU .7884024/objectF1 .9010684/sceneExact .606，
+相较.8870父PT .9846655/.7733107/.8975204/.591改善，主指标提高.20pp；
+距.890下限仍差.10pp，不四舍五入称达标，不为落区间挑差PT或改阈值。
+这是固定实拍特征上的电子适配开发TEST结果，不是新光路采集或独立泛化指标。
+best SHA414b21fa69fa01ad5e1ea660e14f33e92cecad4478591c51ecbcd07108d4731b，
+last SHA66cd078ff14941984bba3eb15d93787e111ee959da8f19ac0be3a90b7bf1a827。
+完整报告/逐样本/协议/历史及bestlast保留，本地七文件SHA备份进行中。
+当前没有下一轮OpenMoji训练，不机械扫描配置；本地LSP继续训练，确认前不部署。
+
 00:55按用户最新“合理调整”授权，先查TRAIN：preserve05 best changed1.0、
 preserved .9774193/IoU .6967710，说明误编辑也出现在TRAIN，不只是TEST泛化。
 旧完整mixup对两个不相同场景同时施加edit/source-dependent composed目标，
