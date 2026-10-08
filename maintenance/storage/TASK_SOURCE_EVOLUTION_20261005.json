@@ -3,6 +3,38 @@
   "scope": "Reviewed task source evolution; historical hashes remain enforced",
   "paths": [
     {
+      "path": "LightGenV2/tasks/t04_openmoji_robust_ablation/configs/lab/rank64_20261002.json",
+      "historical_source_commit": "0e0b2079e84559b0ab495828273da9fffb2fe3bb",
+      "historical_sha256": "1285a6720f810c848aee32c4397e84fbfa983116ba220bc9f203de1f7e8babbc",
+      "source_commit": "f34b6bf0381457f115940ce681d190c168ddb11b",
+      "sha256": "79488ddaf5b47794950d8e01df1177e14cd1d8cc6916a55c2fd827ff71491b9c",
+      "review_reason": "Complete diff reviewed: clarify historical deployed source SHA role and publication status only. Exact original G2/G5 PT SHA, rank64 architecture and camera/BMP/phase contract unchanged. Historical source is not falsely treated as a hash of the evolving main entry."
+    },
+    {
+      "path": "LightGenV2/tasks/t04_openmoji_robust_ablation/lab_tune2000.py",
+      "historical_source_commit": "20b8e46951a334a6414aca23578cef26356111b4",
+      "historical_sha256": "aaade18bc836c36c4a58678149a3307cea19c034b9212377d8495c0bd7e51ce0",
+      "source_commit": "a0546047e8006e5c22f86e9d6c4dfc6cf3e6019b",
+      "sha256": "c2cbd743106c7b16875dc70ff0358cfbaf0a24976b21938ad82f601e4385a234",
+      "review_reason": "Complete diff reviewed: locate the two model configs in the published repository instead of project/source copies. Original asset/data/frontend paths, lowrank64, group PT identity, TRAIN2000 gradient and TEST-development selection logic unchanged. No training or replay executed."
+    },
+    {
+      "path": "LightGenV2/tasks/t04_openmoji_robust_ablation/lab_tune_decoder.py",
+      "historical_source_commit": "0512414a69eb4f2433b48c14bfd1e12ddafc86c6",
+      "historical_sha256": "97a349f01afe4d7b557e3997b8a058c5c66af968e830ed7fab39552712ae7b75",
+      "source_commit": "f34b6bf0381457f115940ce681d190c168ddb11b",
+      "sha256": "47a6acef6be396f3ba2cf5eb6f427748c9a5a806188bc101f5da09b1ac0f54c0",
+      "review_reason": "Complete diff reviewed: the same two canonical model-config path bindings as the rank64 tuner. This remains the historical lowrank16 G5/validation protocol, not the sealed rank64 TEST-selected pipeline; original calculation, assets and groups unchanged."
+    },
+    {
+      "path": "LightGenV2/tasks/t04_openmoji_robust_ablation/tests/test_lab_train2000_contract.py",
+      "historical_source_commit": "20b8e46951a334a6414aca23578cef26356111b4",
+      "historical_sha256": "672f6958be2bdb3f277eb551bf8ac2acab2dc3ec99ce05c350dce3f27fba57f1",
+      "source_commit": "f34b6bf0381457f115940ce681d190c168ddb11b",
+      "sha256": "4adbe7f230022175ebc697693a29f8851a30cb7ae7fd8c92ad585c0b8bca704f",
+      "review_reason": "Complete diff reviewed: add two AST assertions enforcing canonical config lookup and retaining the separate historical rank16 validation protocol. Existing rank64 group and TRAIN2000/calibration checks unchanged; tests do not operate devices or train models."
+    },
+    {
       "path": "LightGenV2/tasks/t03_saliency/aligned_baseline.py",
       "historical_source_commit": "b75a56203b47818810e0a45dceecf9cea4c6aa9f",
       "historical_sha256": "70bfbcd56e2b8305cd6b462160306cbf7af2e3763cd450ac4372cdcf3f9b67ee",
