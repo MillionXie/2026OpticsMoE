@@ -66,6 +66,16 @@ SDK路径前检不等于设备回归或运行工程切换，不能只换PT就宣
 
 ## 报告、baseline与历史保护
 
+2026-10-08本机20份未跟踪的早期 `standalone` 试错工具／配置已完整归档至
+`archive/legacy_lab_projects/t07_standalone_trials_20261008`。包括旧域扩展、相位优化、
+教师关系、读出蒸馏及权重平均工具；主线已跟踪运行入口未引用这些模块，未观察到
+本机相关试验进程。原文件逐SHA与已有恢复对象一致，归档后20份文件集合、长度与
+SHA全部一致。私有原路径清单为
+`.codex_tmp/storage_git_backup_20261002/t07_standalone_trials_archive_20261008.json`，
+SHA `244ee360a5e6fe0f4304fcec22560f477b04deac7c4cc46c2a118e9829fd1a87`。
+历史命令需完整恢复原工具及当时源码后运行；当前rank72核心源码、硬件入口和
+所有数据／PT／测速未动，受保护服务器旧运行目录也未移动。
+
 `configs/optical_top2_dc20*.yaml`、`refine_*.yaml` 与 `polish_*.yaml`
 是9月9日旧图搜图训练及必要对照配置，不是rank72最终配置。2026-10-08核验
 这9份文件与原提交 `d979b53ed509907a3630bd2a36c317dfb3aac965` 及服务器受保护
