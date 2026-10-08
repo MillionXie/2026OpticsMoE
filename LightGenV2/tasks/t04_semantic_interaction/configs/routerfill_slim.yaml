@@ -1,0 +1,4 @@
+base_config: routerfill_shared.yaml
+model:
+  shared_readout_variant: slim
+output_dir: ../runs/simulation/routerfill_slim_s73

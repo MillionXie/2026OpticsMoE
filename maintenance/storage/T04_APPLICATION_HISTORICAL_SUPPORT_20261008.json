@@ -1,0 +1,122 @@
+{
+  "scope": "23 original OpenMoji application historical slim profiles, epoch40 delivery helpers/templates/notices and original tests; distinct from active robust task",
+  "verification": "Raw SHA and recovery Git blob equal (raw or LF); Python AST and YAML parsing only; no device/GPU/model run or new package build",
+  "decision": "Preserve original application compatibility and reproduction materials in main. Old package builder remains epoch40 only, not epoch45 independent deployment. No active robust source or phase/ROI/exposure/weights changed.",
+  "files": [
+    {
+      "path": "LightGenV2/tasks/t04_semantic_interaction/COMMAND_SHS.md",
+      "original_raw_sha256": "83ffe14c26352d553c1f9a9f3f9f7936f2f31c6029a160748b813341fe123d7a",
+      "recovery_blob": "85133c02e9520119e29a256bc7af6882b71ea725"
+    },
+    {
+      "path": "LightGenV2/tasks/t04_semantic_interaction/assets/openmoji-17.0.0-svg/README.md",
+      "original_raw_sha256": "e6c1b0e1d656fd5e35cb788ccd17249efad88920981b57cbc5c3198913fc6ddb",
+      "recovery_blob": "ef7d278bef183e31936a8970d0b7f577fd933d38"
+    },
+    {
+      "path": "LightGenV2/tasks/t04_semantic_interaction/build_lab_package.py",
+      "original_raw_sha256": "5b6e18d7eaf549551f00573f990a303ebf6f26af2a41faf4d5420dad2ebeb295",
+      "recovery_blob": "8ce3c0d7ab8eacc02d8f206080c186340ac68a6c"
+    },
+    {
+      "path": "LightGenV2/tasks/t04_semantic_interaction/configs/qwen_slim.yaml",
+      "original_raw_sha256": "030b6d500f269cedc61f67660fd3f1a561690972b07443fe625812a769cfc1f8",
+      "recovery_blob": "c3b8da780424c9a19a4b7f5d9491389394befeaa"
+    },
+    {
+      "path": "LightGenV2/tasks/t04_semantic_interaction/configs/qwen_slim_norm.yaml",
+      "original_raw_sha256": "8677162078d81bf7fca6053349bb59e33cd6ed36f59046c8d4ddfff24ccf8e3e",
+      "recovery_blob": "460101c1d90f1f982e5ac601df322c812c5ef6fe"
+    },
+    {
+      "path": "LightGenV2/tasks/t04_semantic_interaction/configs/routerfill_slim.yaml",
+      "original_raw_sha256": "f4812905275728cff0cda1e0be0d55bc0d353cd852ae52cf20fae9dc44834ade",
+      "recovery_blob": "5ac08e99974f84709d840f2aeaef65079dd4d309"
+    },
+    {
+      "path": "LightGenV2/tasks/t04_semantic_interaction/configs/routerfill_slim_norm.yaml",
+      "original_raw_sha256": "cabcc2f49b522b173e725a7ac97ff2b2941effcad71d62ea77fd4de78792def3",
+      "recovery_blob": "bdbc250d5cf261b22cf65d41e8ed77270df12631"
+    },
+    {
+      "path": "LightGenV2/tasks/t04_semantic_interaction/install_shs.py",
+      "original_raw_sha256": "630362f6aa4ae28a3b8c272e83af3afa79814e6468fdbbd2c9d896ec31fa0d33",
+      "recovery_blob": "e6e02c2d59cb1e1c5aeb87c64a69118d61808bd2"
+    },
+    {
+      "path": "LightGenV2/tasks/t04_semantic_interaction/lab_adaptation.py",
+      "original_raw_sha256": "d151c47484eb90792b30bf13ee4ba4e2e2017f401f2fd743acedea6ca119a92f",
+      "recovery_blob": "38580383532b7a0012eeaf6953ac13c4df4ede80"
+    },
+    {
+      "path": "LightGenV2/tasks/t04_semantic_interaction/lab_bench.py",
+      "original_raw_sha256": "fc96e17bcbb4482c389c7b6728d426f0c5933fca1aa438daaf36e66dcdcb54eb",
+      "recovery_blob": "cc029b823212274e3a058c67c515291385e7445e"
+    },
+    {
+      "path": "LightGenV2/tasks/t04_semantic_interaction/lab_control.py",
+      "original_raw_sha256": "84f21506fedda1a1c1711c4e3c7a117466d09f509578866f054b0579dd56bd78",
+      "recovery_blob": "47d389ca46622141e06b491d92f43c7100dfb578"
+    },
+    {
+      "path": "LightGenV2/tasks/t04_semantic_interaction/release_template/AI_README.md",
+      "original_raw_sha256": "46ffa93ad00393cb758648db23efc32924f13bb309c1b9a177dbf68163464780",
+      "recovery_blob": "7625e8d307251fdcb61f4175202022185fa93f0e"
+    },
+    {
+      "path": "LightGenV2/tasks/t04_semantic_interaction/release_template/APACHE-2.0.txt",
+      "original_raw_sha256": "77fd4710def9ec3c0f6225800e0235f15a425abd4a8b03559127fcd782612049",
+      "recovery_blob": "68b7d66c97d66c58de883ed0c451af2b3183e6f3"
+    },
+    {
+      "path": "LightGenV2/tasks/t04_semantic_interaction/release_template/COMMAND.md",
+      "original_raw_sha256": "6e81e9259a134802e031d339895784bdb0c2fd292c6a3bbbb62fd52a630a51b3",
+      "recovery_blob": "3bd6d825c62c8fcc00e70a4032d58145a8ca8991"
+    },
+    {
+      "path": "LightGenV2/tasks/t04_semantic_interaction/release_template/README.md",
+      "original_raw_sha256": "05ba3ec39c8f4d859ec28f31032c96cf85b58d3775d17a25e3c35b7a267af7b6",
+      "recovery_blob": "787b73fbdcbcc9b1ca934e04569ec83a3602c719"
+    },
+    {
+      "path": "LightGenV2/tasks/t04_semantic_interaction/release_template/THIRD_PARTY_NOTICES.md",
+      "original_raw_sha256": "46f0d4099eea5ab2aa95aa332cc8ad13f3b04bde2e4654737b26a814adb37c4f",
+      "recovery_blob": "b4e31257b3b290b242e126a33bcc46cf3e457213"
+    },
+    {
+      "path": "LightGenV2/tasks/t04_semantic_interaction/release_template/requirements.txt",
+      "original_raw_sha256": "3fb3e6191dec8b674a3513d3775a128dee67e7bdde40859ed81545ae0f742ee2",
+      "recovery_blob": "31add329aa2ae32b050b56f7b5bd3c38a8b0db22"
+    },
+    {
+      "path": "LightGenV2/tasks/t04_semantic_interaction/tests/test_lab_adaptation.py",
+      "original_raw_sha256": "7775376b34abf43fd6adda5b7c131be940199a9a5f89ba34a6800d9a6d61dad0",
+      "recovery_blob": "28cfed2ab65ad3a48326582f62b7e787f2a7a74e"
+    },
+    {
+      "path": "LightGenV2/tasks/t04_semantic_interaction/tests/test_layered_scene_data.py",
+      "original_raw_sha256": "e0967c60bf2b2e2fe733c1ee6a75eec20e464c411ef47e3e6155afa88f99fc96",
+      "recovery_blob": "88e8f95ee6a6c13d013fa3e24324222bfdc942ac"
+    },
+    {
+      "path": "LightGenV2/tasks/t04_semantic_interaction/tests/test_layered_scene_preview.py",
+      "original_raw_sha256": "7b5e441c64b1aba2f61f0207aba45cf22c05fa475923d14fd2de4e38e550e4e2",
+      "recovery_blob": "2bd9639de16f19d7e6804b5d415a675798021853"
+    },
+    {
+      "path": "LightGenV2/tasks/t04_semantic_interaction/tests/test_phase_ipc.py",
+      "original_raw_sha256": "7f5b8641b8007fc74f5bb73588f5751eb1bd172ce0ccf8b38eb6c302141887a3",
+      "recovery_blob": "4bba077b0fb4f4d873ad5419de32228bff628bd1"
+    },
+    {
+      "path": "LightGenV2/tasks/t04_semantic_interaction/tests/test_shs_deployment.py",
+      "original_raw_sha256": "f876ab550ccaa95ad6b181d63139f7f92a9c8efdee6783a90a0acf31a56b07e8",
+      "recovery_blob": "c5f872505a1dbb447216c4dbcaa9c94c84a70645"
+    },
+    {
+      "path": "LightGenV2/tasks/t04_semantic_interaction/tests/test_standalone.py",
+      "original_raw_sha256": "8b687c176894e42650ebeec3511a113d797c60ab7431dd84e4a79e1e4fa13c7c",
+      "recovery_blob": "95759817cd339c2c6d3d2e139b0b293ae52e20e6"
+    }
+  ]
+}
