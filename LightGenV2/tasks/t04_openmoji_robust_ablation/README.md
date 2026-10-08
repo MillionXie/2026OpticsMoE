@@ -15,6 +15,13 @@
 已真实epoch2/loss .2111679，epoch1 .1987193；源仍b9d1bacc8，同级完整log。
 不是双训练：重派前核无原Python，终了仍须strict best/last审计备份，.8810不覆盖。
 
+上述计划任务现已完成120轮并返回0、Python退出：strictCPU best .8840/e70，
+last .8795，上游保护通过；best SHA4c81abd78457aab91526d8a112959a612606d02028dedb961254ea43ae018d57，
+last SHA4d1907d8c128fe70f78f8f0002942e046f85268c414b29c4307d0d33fe4e5841。
+较.881提高.30pp，仍距.890目标.60pp，不能称任务达标；best/last及完整报告/逐样本/
+history/protocol均保留实验台，正在取回本任务`runs/hardware`作本地SHA备份。
+本轮结束没有下一训练进程，不机械反复提高遮挡率；下一步以TRAIN错误组成检验泛化正则。
+
 最新继续授权：数据已在实验室既有rank64项目，同上游`lr1e5_wd005_160_20261008`
 的TRAIN/TEST特征各1000、各约153MB，不需光路采集或传回服务器。
 定位1.5对照strict CPU best .8780/e25、last .8725；best SHA
