@@ -98,7 +98,7 @@ def test_ignore_rules_hide_payload_not_source_or_tracked_evidence(tmp_path):
     git(root, "add", "handoffs/test/curated.png")
     git(root, "commit", "-m", "retain curated evidence")
     source_rules = Path(__file__).resolve().parents[2] / ".gitignore"
-    (root / ".gitignore").write_text(source_rules.read_text())
+    (root / ".gitignore").write_text(source_rules.read_text(encoding="utf-8"), encoding="utf-8")
     for name in ("run.py", "config.yaml", "README.md", "manifest.json", "metrics.csv", "raw.png"):
         (report / name).write_text("local file")
     untracked = git(root, "ls-files", "--others", "--exclude-standard").decode().splitlines()

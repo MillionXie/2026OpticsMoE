@@ -50,6 +50,8 @@ def test_source_path_does_not_change_relative_identity(tmp_path):
 def history_fixture(tmp_path, monkeypatch, payload=b"old implementation\n"):
     (tmp_path / 'old.py').write_bytes(payload)
     current = {'head': 'abc', 'reference_commit': 'abc',
+        'scope': 'selected_source_extensions_up_to_2_mib',
+        'source_file_count': 1, 'skipped_counts': {},
         'counts': {'no_byte_identity_in_reference': 1},
         'files': [{'path': 'old.py', 'identity': 'no_byte_identity_in_reference',
                    'sha256': hashlib.sha256(payload).hexdigest()}]}
