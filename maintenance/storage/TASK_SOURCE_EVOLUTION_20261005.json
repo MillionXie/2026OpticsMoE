@@ -3,6 +3,39 @@
   "scope": "Reviewed task source evolution; historical hashes remain enforced",
   "paths": [
     {
+      "path": "LightGenV2/tasks/t07_abo_image_retrieval/README.md",
+      "historical_source_commit": "ccfe2c64590a1b6fc2c8e30c334ace5fef1c83a1",
+      "historical_sha256": "08f51025407fe75f46c1ab2fee57d1f008291662a53a9335061e431c263ee122",
+      "source_commit": "08a64e251319257ffad32e924c6ff464c6af29c8",
+      "sha256": "23e7b1283d22f9fdea87193d96f8b94c27bc0058342b3d0ceb2a76e0b6cd8a6e",
+      "review_reason": "Complete diff from approved concise rank72 main entry reviewed: add original baseline/DVP/MNIST/480-query historical boundaries, enrolled split tooling and canonical hardware-entry navigation; record root main adoption without claiming all assets or field regressions complete. Sealed rank72 PT, physical metrics, optical contract and development-query caveats unchanged. Initial adopted README equals the draft source SHA in T07_REVIEWED_MAIN_ENTRY."
+    },
+    {
+      "path": "LightGenV2/reports/20260915_baseline_methods/CODE_HANDOFF.md",
+      "scope": "historical_baseline_navigation",
+      "historical_source_commit": "7093ec46082eed2fae127ec5028d3e2e8548b592",
+      "historical_sha256": "fd1176d8fc361626faafa7325dd0ce91e6d5b0571c6efe4131047a55301abdb1",
+      "source_commit": "94cd8ed6e5dee2080e2075c91c797c843c23eeb9",
+      "sha256": "6fd9456d0b6d7e364406cd21f012c7830829b736f61e42213a9a89b3c3a22b7d",
+      "review_reason": "Complete diff reviewed: add verified original six-package/738-source/ZIP preservation evidence, read-only inspect-history command, and non-ancestor history/incremental-bundle recovery limits. Original exporter command and historical source/results remain; no package rebuilt, metric rerun or timing removed. Only this named baseline document is permitted outside task evolution scope."
+    },
+    {
+      "path": "LightGenV2/tasks/t04_semantic_interaction/embedding_model.py",
+      "historical_source_commit": "43bf2f1d214c252b48e8104ef5816643ce6a7f4f",
+      "historical_sha256": "0b7922acaf7135f73438459bce60b95339bbc253f790fab02c362e84a3718dea",
+      "source_commit": "4ea21bb62280e8226c86c97b512ed57ded2a3bf4",
+      "sha256": "3011eaf6b34adbace76bce626f593617028bee13b11a027add532b6e7aa5f8d7",
+      "review_reason": "Complete diff is three lines: append an electronic-expansion suffix to checkpoint architecture identity only when expansion differs from legacy 2.0. This prevents the selected half-capacity application PT from being mistaken for the old architecture; prior constructor and default identity unchanged. No weights, inference or measurements executed by this provenance update."
+    },
+    {
+      "path": "LightGenV2/tasks/t04_openmoji_robust_ablation/train_editor16_robust_chain.py",
+      "historical_source_commit": "0512414a69eb4f2433b48c14bfd1e12ddafc86c6",
+      "historical_sha256": "5ae413bba6bebe34496e38e923877104f2243664e9373fe708bedf1445abf140",
+      "source_commit": "4760d78f29fa47ebdc95db45945d0876ee958daf",
+      "sha256": "57ea664c5341fe66a8fa471702710e71abb4c5a7b8af7e8c0f6c14cf1239c834",
+      "review_reason": "Complete diff reviewed against the task's 2026-10-07 authorized spatial-training contract: opt-in TRAIN-only field shift/rotation/coarse dropout for detectors and router, zero defaults and clean evaluation preserved, argument bounds and helper Git/SHA binding recorded. This is a new training candidate requiring new CCD, not a silent replacement of sealed rank64 results. No job restarted or current experiment changed."
+    },
+    {
       "path": "LightGenV2/tasks/t04_semantic_interaction/modeling.py",
       "historical_source_commit": "3b956503a4ecae9b6c20c789ead28621e42e6eeb",
       "historical_sha256": "7c110fcbdbaab306b324def19051de7e5ff9c8f2e83139fee1d28e4164c1d5a3",
@@ -119,9 +152,9 @@
       "path": "LightGenV2/tasks/t04_openmoji_robust_ablation/lab_shs_capture.py",
       "historical_source_commit": "410d8ded23883ba1ef26803baf08c5be55e0756c",
       "historical_sha256": "6ef3d137c07afde384970abf9d644aa0d0092fa954cc549dd524cbec70419522",
-      "source_commit": "0f413c739e0259ce55b10f664843d0bcd72a9407",
-      "sha256": "625ed250be5771136356c57ff8a6be1a775b1e2a742dd09ee21ce248f0784ca9",
-      "review_reason": "Rank16 default and legacy physical contract retained; explicit audited rank64 selection and deployed pre-persistence signal guard added. Current runtime source is not overwritten."
+      "source_commit": "a0546047e8006e5c22f86e9d6c4dfc6cf3e6019b",
+      "sha256": "be5507503007d7decebec16c0c25f9fca4d79b49ebfeda0d54e63e6fcb89f65f",
+      "review_reason": "Original rank16 import identity remains enforced. Complete later diff from 0f413c7 reviewed: require explicit machine-local configuration and SDK/LUT arguments, import canonical audited SHS bench/geometry instead of old ABO sys.path control scripts, and locate model configs on main. Explicit rank64 identity/signal guard and existing capture order, wait/exposure/saturation logic retained. Pure contract tests are not a field regression; current runtime and devices not touched."
     }
   ]
 }

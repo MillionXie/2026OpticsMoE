@@ -44,14 +44,17 @@ def test_empty_schema_rejected(monkeypatch):
         module.verify_reviewed_publications(None, "main", ["manifest"])
 
 
-@pytest.mark.parametrize("path,accepted", [
-    ("LightGenV2/scripts/profile_narrow_optical_electronics_a100.py", True),
-    ("LightGenV2/scripts/unrelated.py", False),
+@pytest.mark.parametrize("path,scope,accepted", [
+    ("LightGenV2/scripts/profile_narrow_optical_electronics_a100.py", "historical_timing_contract", True),
+    ("LightGenV2/scripts/unrelated.py", "historical_timing_contract", False),
+    ("LightGenV2/reports/20260915_baseline_methods/CODE_HANDOFF.md", "historical_baseline_navigation", True),
+    ("LightGenV2/reports/unrelated.md", "historical_baseline_navigation", False),
+    ("LightGenV2/reports/20260915_baseline_methods/CODE_HANDOFF.md", "historical_timing_contract", False),
 ])
-def test_only_named_historical_timing_evolution_is_permitted(monkeypatch, path, accepted):
+def test_only_named_reviewed_non_task_evolutions_are_permitted(monkeypatch, path, scope, accepted):
     old = hashlib.sha256(b"old").hexdigest()
     new = hashlib.sha256(b"new").hexdigest()
-    row = {"path": path, "scope": "historical_timing_contract",
+    row = {"path": path, "scope": scope,
            "historical_source_commit": "old", "historical_sha256": old,
            "source_commit": "new", "sha256": new, "review_reason": "audited contract"}
     def read(root, ref, name):
