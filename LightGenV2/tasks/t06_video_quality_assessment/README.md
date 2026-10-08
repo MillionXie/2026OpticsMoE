@@ -31,6 +31,21 @@
 
 ## 历史仿真结论（不替代上方当前实拍版本）
 
+### 旧 Spatial 候选说明入口
+
+以下原说明按历史版本保存，其中“当前／正式”仅指当时，不替代本页顶部的
+Spatial `.6710968960` 和对应封存权重：
+
+- [严格双支路旧候选](reports/paper_results/spatial_single_video4_two_branch/README.md)：SRCC `.6251`。
+- [EMA／8-bit 相位旧候选](reports/paper_results/spatial_single_video4_two_branch_ema_q8/README.md)：SRCC `.62561`。
+- [s586／s581 历史优化对照](reports/paper_results/spatial_srcc_optimization_20260909/README.md)：SRCC `.633614`／`.633359`。
+
+三份说明与实际服务器原字节一致；保留原配置、PT、结果和测速，不重评或套用旧测速。
+其中旧说明的“失败 run 可以删除”不是本轮清理授权，仍须遵守根目录保护规则。
+另一个 `.666503` 候选的本地说明已标注含冻结 ResNet18、仅作被否决的上限对照；
+服务器旧说明仍称“正式”，两份差异保留，不能按旧标题采用该候选。
+这些历史 TEST 选模成绩是开发指标，说明归主线不代表资产闭包或新机复现通过。
+
 旧独立审阅包在 `LightGenPublic/tasks/t06_lgvq_temporal_consistency`，不是另一个
 日常开发工程。原 `teacher_release_final/lgvq_temporal_08044` 使用35个固定field、
 558条视频及PT SHA `5303b574b200e14bf943af21c60a246720be453b9cf8847cd93c0eaaa243a77c`，
