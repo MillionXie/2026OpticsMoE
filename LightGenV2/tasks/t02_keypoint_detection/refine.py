@@ -5,6 +5,7 @@ import argparse
 import copy
 import json
 import math
+import shutil
 import subprocess
 import time
 from functools import lru_cache
@@ -30,6 +31,34 @@ SOURCE_REL = TASK / 'runs/simulation/moe_router_scale_dc20_no_shift_warmstart071
 SOURCE_SHA = 'fc1c6be4196593d7f27d83097c5bfd53b6e0511e84726fd55d712af0a4cd7741'
 RATES = {'electronic': 2e-5, 'router': 3e-4, 'feature_phase': 3e-3,
          'ccd_readout': 5e-5, 'pose_head': 1e-4}
+
+
+def continuation_metadata(parent, args):
+    """Explicit weights-only recovery; never claim an exact optimizer/EMA resume."""
+    if args.profile != 'bounded_staged' or args.smoke:
+        raise ValueError('Weights continuation only supports full bounded_staged runs')
+    if (parent/'final_report.json').exists():
+        raise ValueError('Do not revive a completed run')
+    manifest = json.loads((parent/'run_manifest.json').read_text())
+    previous = manifest['args']
+    for key in ('profile', 'seed', 'batch_size', 'workers'):
+        if previous[key] != getattr(args, key):
+            raise ValueError(f'Continuation configuration differs: {key}')
+    for key in ('data_root', 'cache_dir'):
+        if Path(previous[key]).resolve() != getattr(args, key).resolve():
+            raise ValueError(f'Continuation asset path differs: {key}')
+    if manifest['source_sha256'] != HIGH_SOURCE_SHA or manifest['physical_amplitude_mode'] != 'tanh05_uint8':
+        raise ValueError('Continuation source or amplitude contract differs')
+    history = json.loads((parent/'training_history.json').read_text())
+    epochs = [row['epoch'] for row in history]
+    if not epochs or epochs != list(range(1, epochs[-1]+1)) or epochs[-1] >= 60:
+        raise ValueError('Continuation history is incomplete or already finished')
+    names = ('last_checkpoint.pt', 'best_checkpoint.pt', 'training_history.json',
+             'pose_protocol_split.csv', 'source_anchor_test.json', 'run_manifest.json')
+    return {'parent': str(parent.resolve()), 'completed_epoch': epochs[-1],
+            'files_sha256': {name: sha256_file(parent/name) for name in names},
+            'exact_resume': False, 'optimizer_reset': True, 'ema_reset_to_live_last': True,
+            'rng_reset_to_seed': args.seed, 'history': history}
 
 
 @lru_cache(maxsize=2)
@@ -121,6 +150,7 @@ def checked_fusion(model, settings):
 
 def run(args):
     _bind()
+    continuation = continuation_metadata(args.continue_from_run, args) if args.continue_from_run else None
     config = TASK/'configs/moe_optical_router_scale_matched_dc20_no_shift_warmstart.yaml'
     source_settings = load_settings(config)
     distillation = args.profile == 'alpha40_distill'
@@ -156,6 +186,8 @@ def run(args):
     _seed(args.seed)
     bundle=build_periodic_test_protocol(prepare_lsp(settings,persist=False))
     persist_protocol(bundle,settings.output_dir)
+    if continuation and sha256_file(settings.output_dir/'pose_protocol_split.csv') != continuation['files_sha256']['pose_protocol_split.csv']:
+        raise RuntimeError('Continuation original dataset split differs')
     if args.smoke:
         bundle=copy.copy(bundle)
         # Protocol dataclass may be frozen; replace its lists without changing the original split.
@@ -206,6 +238,7 @@ def run(args):
               'target_pck_at_0.2':0.73 if args.profile.startswith('alpha40') else None,
               'schedule':[{'epoch':e,'stage':stage_spec(args.profile,e)[0],'lr':stage_spec(args.profile,e)[1]} for e in range(1,settings.student_epochs+1)],
               'torch':torch.__version__,'gpu':torch.cuda.get_device_name(device) if device.type=='cuda' else 'cpu'}
+    manifest['continuation'] = {k:v for k,v in continuation.items() if k != 'history'} if continuation else None
     write('run_manifest.json',manifest)
     write('student_architecture.json',architecture_report(model,settings))
     train_loader=base._loader(bundle.train,settings,training=True)
@@ -222,13 +255,38 @@ def run(args):
     history=[]; best_epoch=0; last_test={}
     model.core.set_phase_dropout_active(True)
     try:
-        anchor=evaluate(0,'source_anchor_test')
+        anchor=json.loads((args.continue_from_run/'source_anchor_test.json').read_text()) if continuation else evaluate(0,'source_anchor_test')
         write('source_anchor_test.json',anchor)
         print('SOURCE_ANCHOR',json.dumps(anchor),'FUSION',initial_fusion,flush=True)
         best_key=base._selection_key(anchor,0)
-        save(out/'best_checkpoint.pt',0,{},anchor)
+        start_epoch = 1
+        if continuation:
+            parent = args.continue_from_run
+            last = torch.load(parent/'last_checkpoint.pt',map_location='cpu',weights_only=False,pickle_module=PORTABLE_PICKLE)
+            previous_best = torch.load(parent/'best_checkpoint.pt',map_location='cpu',weights_only=False,pickle_module=PORTABLE_PICKLE)
+            for item in (last, previous_best):
+                if item['checkpoint_architecture'] != architecture_label(settings) or item['router_contract_sha256'] != settings.router_contract_sha256:
+                    raise RuntimeError('Continuation checkpoint architecture/contract differs')
+            if last['epoch'] != continuation['completed_epoch'] or last['weight_variant'] != 'live_last':
+                raise RuntimeError('Continuation last epoch/variant differs')
+            best_epoch = previous_best['epoch']
+            if best_epoch > last['epoch'] or previous_best['weight_variant'] != 'ema':
+                raise RuntimeError('Continuation best epoch/variant differs')
+            best_key = base._selection_key(previous_best['periodic_test_metrics'], best_epoch)
+            model.core.load_state_dict(last['core'],strict=True)
+            model.head.load_state_dict(last['head'],strict=True)
+            checked_fusion(model,settings)
+            ema = base.ModelEMA(model.core,model.head,settings.ema_decay)
+            history = continuation['history']
+            last_test = last['periodic_test_metrics']
+            start_epoch = last['epoch']+1
+            shutil.copyfile(parent/'best_checkpoint.pt',out/'best_checkpoint.pt')
+            write('training_history.json',history)
+            print('WEIGHTS_ONLY_CONTINUATION',json.dumps(manifest['continuation']),flush=True)
+        else:
+            save(out/'best_checkpoint.pt',0,{},anchor)
         total=1 if args.smoke else settings.student_epochs
-        for epoch in range(1,total+1):
+        for epoch in range(start_epoch,total+1):
             started=time.perf_counter()
             name,rates=stage_spec(args.profile,epoch)
             if args.smoke and not high_alpha: name,rates=stage_spec('joint',1)
@@ -287,6 +345,8 @@ def main():
     p.add_argument('--batch-size',type=int,default=24)
     p.add_argument('--workers',type=int,default=4)
     p.add_argument('--smoke',action='store_true')
+    p.add_argument('--continue-from-run',type=Path,default=None,
+                   help='Interrupted bounded_staged weights-only continuation; optimizer/EMA/RNG reset explicitly recorded')
     run(p.parse_args())
 
 

@@ -2,6 +2,14 @@
 
 ## 2026-10-08 最新授权：修正物理幅度后在实验室GPU重训，实拍须再次确认
 
+00:35补充显式`--continue-from-run`：只允许未完成的bounded_staged，同profile/seed/
+batch/workers/资产路径/初始SHA/物理幅度合同及完整原划分，检查history与live-last epoch，
+严格加载原架构。新run保留旧best与history并从last下一轮继续原60轮日程，
+原run不写不覆盖；manifest记录父run及全部SHA、optimizer/EMA/RNG重置，明确非精确恢复。
+不多跑额外60轮、不拿旧e15PCK冒称续训结果；13项日程/幅度/恢复拒绝条件测试通过。
+计划在本地4070继续e21–60，独立持久计划任务避免依赖原临时执行session；
+仍待原PT实载、实际新epoch/loss确认，用户确认完整新仿真精度前不部署。
+
 2026-10-09 00:15核查发现本地正式进程已消失、4070降至53MiB，日志停在完整epoch20，
 没有final_report或Traceback；不能称60轮完成或仍健康运行。e15开发PCK .7359285714、
 e20 .7324285714，best/last及history保存至e20，原始资产/划分保留。

@@ -1,4 +1,5 @@
 import math
+import json
 from types import SimpleNamespace
 
 import pytest
@@ -23,6 +24,28 @@ def test_schedule_complete_and_stage_boundaries():
         assert stage_spec('staged', epoch) == stage_spec('staged_heatmap', epoch)
     with pytest.raises(ValueError):
         stage_spec('staged', 61)
+
+
+def test_weights_only_continuation_identity_and_guards(tmp_path):
+    from LightGenV2.tasks.t02_keypoint_detection.refine import continuation_metadata, HIGH_SOURCE_SHA
+    args = SimpleNamespace(profile='bounded_staged', smoke=False, seed=42,
+                           batch_size=12, workers=0, data_root=tmp_path, cache_dir=tmp_path)
+    manifest = {'args': {k:str(v) if k in ('data_root','cache_dir') else v for k,v in vars(args).items()},
+                'source_sha256':HIGH_SOURCE_SHA, 'physical_amplitude_mode':'tanh05_uint8'}
+    (tmp_path/'run_manifest.json').write_text(json.dumps(manifest))
+    (tmp_path/'training_history.json').write_text(json.dumps([{'epoch':i} for i in range(1,21)]))
+    for name in ('best_checkpoint.pt','last_checkpoint.pt','pose_protocol_split.csv','source_anchor_test.json'):
+        (tmp_path/name).write_text('fixture')
+    metadata=continuation_metadata(tmp_path,args)
+    assert metadata['completed_epoch']==20 and not metadata['exact_resume']
+    assert metadata['optimizer_reset'] and metadata['ema_reset_to_live_last']
+    args.seed=43
+    with pytest.raises(ValueError,match='seed'): continuation_metadata(tmp_path,args)
+    args.seed=42
+    (tmp_path/'training_history.json').write_text('[{"epoch":2}]')
+    with pytest.raises(ValueError,match='history'): continuation_metadata(tmp_path,args)
+    (tmp_path/'final_report.json').write_text('{}')
+    with pytest.raises(ValueError,match='completed'): continuation_metadata(tmp_path,args)
 
 
 def test_frozen_groups_do_not_move_and_can_thaw():
