@@ -75,6 +75,22 @@
     "historical_future_use_possible": true,
     "restore_rule": "Only restore the complete archived directory when the original path is absent and no process uses either location; verify every file against the private manifest before and after. Never overwrite a newer directory. This local archive is not an off-machine backup or retirement of the laboratory copy."
   },
+  "additional_maintenance_scratch_archive": {
+    "archive_root": "C:/Users/Xml12/OneDrive/2026OpticsMoE/archive/maintenance_scratch_20261008",
+    "original_directories": [".tmp_t04_package_check", ".tmp_xlsx", "remote_patch", "remote_staging", ".codex-patches"],
+    "purpose": "Old packaging preview PNGs, spreadsheet verification scripts/data/previews, transfer bytecode caches and an empty patch directory; not final task source or optical runs",
+    "files": 23,
+    "bytes": 1332508,
+    "private_manifest": ".codex_tmp/storage_git_backup_20261002/local_maintenance_scratch_inventory_20261008.json",
+    "private_manifest_sha256": "ba4d6528a86781367b3a87ab620bb4a0d3c32a61ba9f8d459585d91804d9eb66",
+    "tracked_files": 0,
+    "matching_noninspection_processes_observed": 0,
+    "file_set_and_every_sha_unchanged": true,
+    "deleted_files": 0,
+    "disk_space_freed": 0,
+    "restore": "Restore only the required complete directory from this archive when its original path is absent; verify against the private manifest and never overwrite newer contents.",
+    "limits": "Historical documents may retain these old transfer labels; they were not rewritten. No spreadsheet or model was executed; no off-machine backup claimed."
+  },
   "protected_final_ABO_or_current_OpenMoji_changed": false,
   "training_evaluation_capture_or_upload_started": false,
   "limitations": [

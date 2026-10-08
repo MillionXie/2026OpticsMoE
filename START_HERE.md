@@ -52,6 +52,8 @@
 - `.worktrees/`：历史/现用 Git 工作目录。运行中的版本先保留，不能为目录整齐中断实验。
 - `data/`、`handoffs/`、各任务 `runs/`：原数据、交付材料、权重与实拍记录，不是重复源码。
 - `archive/`：停止维护的历史副本和恢复材料，不是第二个主工程。
+  旧打包预览、Excel核验临时目录及传输字节码已整体归入
+  `archive/maintenance_scratch_20261008/`，原文件未删，不再散在根目录。
 - 旧 `ABO_Lab_8um` 和 `ABO_Lab_SHS_8um` 本机工程已完整归入
   `archive/legacy_lab_projects/`，原文件、SDK、标定、CCD及全部测速未删除。
   旧硬件入口若需要这些资产，须显式指定归档路径或按收据恢复原目录；旧命令不自动改写。
