@@ -20,6 +20,7 @@ from .modeling import architecture_label, architecture_report, build_student, lo
 from .run import _seed
 from .settings import load_settings, save_resolved_config
 from .training import _bind
+from .lab_runtime import PORTABLE_PICKLE
 
 TASK = Path(__file__).resolve().parent
 PROFILES = ('joint', 'staged', 'staged_heatmap', 'bounded_staged', 'alpha50', 'alpha40', 'alpha40_polish', 'alpha40_distill')
@@ -136,7 +137,7 @@ def run(args):
         args.source = TASK/spec['source_relative'] if polish else (HIGH_SOURCE_REL if high_alpha or bounded else SOURCE_REL)
     if sha256_file(args.source) != source_sha:
         raise RuntimeError('Source checkpoint differs from the profile-pinned candidate')
-    payload = torch.load(args.source,map_location='cpu',weights_only=False)
+    payload = torch.load(args.source,map_location='cpu',weights_only=False,pickle_module=PORTABLE_PICKLE)
     if payload.get('checkpoint_architecture') != architecture_label(source_settings) or payload.get('router_contract_sha256') != settings.router_contract_sha256:
         raise RuntimeError('Source architecture or optical router contract mismatch')
     if payload.get('weight_variant') != 'ema': raise RuntimeError('Source must be EMA')
@@ -257,7 +258,7 @@ def run(args):
             row['best_epoch']=best_epoch
             history.append(row); write('training_history.json',history)
             print('EPOCH',epoch,name,'train_loss',train['loss'],'test_PCK',row.get('test',{}).get('pck_at_0.2_torso'),'best_epoch',best_epoch,flush=True)
-        selected=torch.load(out/'best_checkpoint.pt',map_location=device,weights_only=False)
+        selected=torch.load(out/'best_checkpoint.pt',map_location=device,weights_only=False,pickle_module=PORTABLE_PICKLE)
         model.core.load_state_dict(selected['core'],strict=True); model.head.load_state_dict(selected['head'],strict=True)
         normal=evaluate(best_epoch,'selected_best_test')
         model.core.hybrid.set_fusion_ablation('remove_optical')
