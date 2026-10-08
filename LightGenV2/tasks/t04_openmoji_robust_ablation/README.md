@@ -11,6 +11,12 @@
 先单轮GPU/strictCPU及保护检查，再唯一正式
 `editor16_align_decoder_catmix020_cosine_gpu120_20261009`，不占SDK、不影响LSP。
 这不是严格同起点的scheduler因果对照，不保证提高，不机械扫描调度或为区间压分。
+Git9aa6aad28三端同步，5项调度测试及GPU单轮短测通过；短测loss .5436034、
+strictCPU best仍初始.8895、last .8875，上游保护true，不称短测改善。
+唯一正式任务`OpenMoji_CachedCatMix020_Cosine_GPU120_1009`已实际epoch4/
+loss .5408624/lr9.985894e-6，launcher3068/真实Python6420，4060约830MiB。
+使用上述cosine新run，不重复旧训练或抢SDK；终了核strictCPU bestlast和所有保真指标、
+保护SHA、完整备份。LSP另一个既有采集保持独立进行。
 
 2026-10-09用户继续授权小幅提升。基于当前TRAIN .9995，有限一次取消额外500次
 困难样本重放（每轮完整TRAIN1000仍在），从已核验.8890 best继续120轮，
