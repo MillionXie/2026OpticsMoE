@@ -3799,3 +3799,38 @@ node_modules/
 /handoffs/openmoji_robust_ablation_20260928/midrank48_candidate/prepare_extra_train1000.py
 # Canonical lab_prepare_extra2_train1000.py; raw SHA256 c61714a5084ae693a5161292d216a5ffeb963d08829b73715cda7fed0cb652e9
 /handoffs/openmoji_robust_ablation_20260928/midrank48_candidate/prepare_extra2_train1000.py
+
+# Original OpenMoji input assets; retained in place, SHA-bound by layered_asset_identity_20261007.json.
+# Attribution README and future/new assets remain visible.
+# SHA256 5e9aa542a9e8bce244c326fd2d1427f432ad72e5d8ba92905f3d801d393f6b63
+/LightGenV2/tasks/t04_semantic_interaction/assets/openmoji-17.0.0-svg/1F333.svg
+# SHA256 8ec898c7225016a95cc1c71c1634ac2e1966f5c97b7d9ee209ebe35a003fa08b
+/LightGenV2/tasks/t04_semantic_interaction/assets/openmoji-17.0.0-svg/1F33B.svg
+# SHA256 b4db458333fa917a803c8d36865ae57ae5ea54d2aa0e1f906518d3f0c9bf2bcb
+/LightGenV2/tasks/t04_semantic_interaction/assets/openmoji-17.0.0-svg/1F34E.svg
+# SHA256 edfb5e77a7d324526f76295c0b3eb913006fd0424a0ee3dd0f12b0824225568f
+/LightGenV2/tasks/t04_semantic_interaction/assets/openmoji-17.0.0-svg/1F3E0.svg
+# SHA256 d028cef4726d15bc5c84ff1751db9d90c35d990151972a5f044afd53691beff6
+/LightGenV2/tasks/t04_semantic_interaction/assets/openmoji-17.0.0-svg/1F408.svg
+# SHA256 a01131556b1f472f2be150b5e61bb77e4ffed96bbdbc9b60ac4a36b62ffac2a3
+/LightGenV2/tasks/t04_semantic_interaction/assets/openmoji-17.0.0-svg/1F415.svg
+# SHA256 950c880495d9668746d3af0cfc533de52a228bce41a9553e68b20016d86ece76
+/LightGenV2/tasks/t04_semantic_interaction/assets/openmoji-17.0.0-svg/1F426.svg
+# SHA256 fb98f3985e05ab294e1ca1beee18d5c557d1572b316756a9abd00d8901807b43
+/LightGenV2/tasks/t04_semantic_interaction/assets/openmoji-17.0.0-svg/1F4A1.svg
+# SHA256 79a3683e2aa173e34bf0b6432a4f91d5818124250325d6e443c023722bb244d2
+/LightGenV2/tasks/t04_semantic_interaction/assets/openmoji-17.0.0-svg/1F4D8.svg
+# SHA256 a69cdc48cf92ad4d52a58847393a2403c469673d2738fd88de01273817a6f9ab
+/LightGenV2/tasks/t04_semantic_interaction/assets/openmoji-17.0.0-svg/1F4F1.svg
+# SHA256 7cb121f1c5b89588f9506e455778e54b527ed244fc321dd6bcee416f8df39be3
+/LightGenV2/tasks/t04_semantic_interaction/assets/openmoji-17.0.0-svg/1F68C.svg
+# SHA256 f2bc314639afba633ef21e802c022fa64b6a3fe0e3d3739e5826a816f1895286
+/LightGenV2/tasks/t04_semantic_interaction/assets/openmoji-17.0.0-svg/1F697.svg
+# SHA256 1c550e12d994489de8d082ca49c8f24e73de2cc8e1271fd83fa7c78693a9595e
+/LightGenV2/tasks/t04_semantic_interaction/assets/openmoji-17.0.0-svg/1F6B2.svg
+# SHA256 bf5b227c1702f9b87d329c470dd86f3c7e244f6e90134289eb358d679453ca8b
+/LightGenV2/tasks/t04_semantic_interaction/assets/openmoji-17.0.0-svg/2602.svg
+# SHA256 7de24e2f229c7b43848225ecdbb8b16c829e6a525e8b84fc6c3e584821027e1d
+/LightGenV2/tasks/t04_semantic_interaction/assets/openmoji-17.0.0-svg/2615.svg
+# SHA256 f3d7e883a1d7a0776e5aa16ea857530884a3c12b192475fb116d351241f0bc8a
+/LightGenV2/tasks/t04_semantic_interaction/assets/openmoji-17.0.0-svg/26BD.svg
