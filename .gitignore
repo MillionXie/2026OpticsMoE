@@ -3793,3 +3793,9 @@ node_modules/
 /LightGenV2/tasks/t07_abo_image_retrieval/reports/20260924_mnist_dvp/mnist40_flat_analysis.json
 # SHA256 d6397a5a7117510f80f080459a1398be50708c4956e13f2b46c3a5bf37f2bcee
 /LightGenV2/tasks/t07_abo_image_retrieval/reports/20260924_mnist_dvp/mnist40_flat_canonical/report.json
+
+# Exact historical helper copies; canonical source is published in t04_openmoji_robust_ablation.
+# Canonical lab_prepare_extra_train1000.py; raw SHA256 f9fa019ade0b8b3df7a0ca0e6d390386506920616ab6f4f853c84e49d1e16b96
+/handoffs/openmoji_robust_ablation_20260928/midrank48_candidate/prepare_extra_train1000.py
+# Canonical lab_prepare_extra2_train1000.py; raw SHA256 c61714a5084ae693a5161292d216a5ffeb963d08829b73715cda7fed0cb652e9
+/handoffs/openmoji_robust_ablation_20260928/midrank48_candidate/prepare_extra2_train1000.py
