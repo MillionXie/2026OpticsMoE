@@ -39,7 +39,7 @@
 这些不是新增工程，也不替代上表的最终模型：
 
 - [EuroSAT RGB/SAR 及光学分类历史对照](LightGenV2/demo_check/README.md)：纯光学、输出融合、共享冻结前端三种协议分别保留；不要混用成绩。
-- [Adrenal 病理结构/OEO 历史源码](LightGenV2/demo_check/adrenal_softsign_code_export_20260915_145336/MAIN_ENTRY.md)：原导出和必要结构对照，不是 T11/T16 的另一套最终版；旧路径与训练命令不能直接用于现在的机器。
+- [Adrenal 病理结构/OEO 历史源码](LightGenV2/demo_check/adrenal_softsign_code_export_20260915_145336/MAIN_ENTRY.md)：另见[深度/OEO核查](LightGenV2/demo_check/reports/reproduction/ADRENAL_DEPTH_REPRODUCTION_20260916.md)及[固定权重阈值诊断](LightGenV2/demo_check/reports/reproduction/ADRENAL_THRESHOLD_AUDIT_20260916.md)。原导出和必要结构对照不是 T11/T16 的另一套最终版；旧路径与训练命令不能直接用于现在的机器。
 - [六任务 baseline 代码交接](LightGenV2/reports/20260915_baseline_methods/CODE_HANDOFF.md)：原版本、原包与恢复方式；不是用最新模型替换旧对照。
 
 原数据、权重、结果及全部测速仍保留，以上链接不表示已重跑或已在空机器复现。

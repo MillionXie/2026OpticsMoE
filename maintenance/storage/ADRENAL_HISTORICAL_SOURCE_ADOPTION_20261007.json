@@ -1,4 +1,22 @@
 {
+  "historical_report_adoption_20261008": {
+    "source_runtime": "/DATA/DATA1/guest3/demo_reproduction_20260915",
+    "local_and_server_original_bytes_equal": true,
+    "metrics_recomputed_or_rewritten": false,
+    "files": [
+      {
+        "path": "LightGenV2/demo_check/reports/reproduction/ADRENAL_DEPTH_REPRODUCTION_20260916.md",
+        "sha256": "51d19c26a81c963af4a6afb594b4c613f2d1ef98f8accb30d5a8ad6cdc540c26",
+        "original_recovery_blob": "203856786386b5c4650de5af56b101b519a4661f"
+      },
+      {
+        "path": "LightGenV2/demo_check/reports/reproduction/ADRENAL_THRESHOLD_AUDIT_20260916.md",
+        "sha256": "c5e4c365e3a309082d6aac2020e6ae9f847cebf6b1787f08bcf3d031fd30c426",
+        "original_recovery_blob": "bd644ce6f0bbc05040246ef0303feedf5e7509e7"
+      }
+    ],
+    "scope": "Original historical depth/OEO and threshold diagnostics; not T11/T16 final results, new measurements, training authorization or complete asset closure"
+  },
   "files": [
     {
       "path": "LightGenV2/demo_check/adrenal_softsign_code_export_20260915_145336/code/calibration.py",
