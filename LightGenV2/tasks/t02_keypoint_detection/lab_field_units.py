@@ -30,9 +30,10 @@ def physical_field(field, scale=16., quantize=False):
 
 class FieldUnits:
     """Scoped interception with contiguous-prefix measured physical CCD support."""
-    def __init__(self, model, *, scale=16., quantize=False, measured=None):
+    def __init__(self, model, *, scale=16., quantize=False, measured=None, planes=None):
         self.model, self.scale, self.quantize = model, scale, quantize
         self.measured = measured or {}
+        self.planes = planes
         if tuple(self.measured) != STAGES[:len(self.measured)]:
             raise ValueError('CCDs must be a contiguous physical-stage prefix')
         self.originals, self.amplitudes, self.detectors = [], {}, {}
@@ -53,6 +54,11 @@ class FieldUnits:
                 physical = physical_field(field, self.scale, self.quantize)
                 a = core.geometry.active_aperture
                 active = physical[:, a.y0:a.y1, a.x0:a.x1]
+                if self.planes is not None:
+                    phase = torch.as_tensor(self.planes[stage], device=field.device)
+                    recovered = active * torch.exp(-1j * phase)
+                    if recovered.imag.abs().max() > 2e-5 or recovered.real.min() < -2e-5:
+                        raise RuntimeError('Exported phase does not represent the propagated input')
                 self.amplitudes[stage] = active.abs().detach()
                 if stage in self.measured:
                     detector = self.measured[stage].to(field.device).float()
@@ -72,4 +78,3 @@ class FieldUnits:
     def __exit__(self, *_args):
         for prop, original in self.originals:
             prop.forward = original
-
