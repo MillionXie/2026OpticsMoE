@@ -1,0 +1,36 @@
+{
+  "files": [
+    {
+      "path": "outputs/t12_perceptual_comparison_20260928/README.md",
+      "bytes": 9210,
+      "sha256": "e5867dfe6ac5865c20034209df0587915db2b5093d42313c6f644603d82629e4",
+      "recovery_blob": "32df65d6bb92247a8048ca1d970b7ccfee78f719",
+      "decision": "publish_original_historical_source_or_documentation"
+    },
+    {
+      "path": "outputs/t12_perceptual_comparison_20260928/SOURCE_LOCATION_20261006.md",
+      "bytes": 670,
+      "sha256": "3751fb09fcd6e010c8e3db1042dcf70af81d01226b1122f7625d3c83e08c1023",
+      "recovery_blob": "aa1282dd9bbaadc84fd40de77f0e10097a9429ab",
+      "decision": "publish_original_historical_source_or_documentation"
+    },
+    {
+      "path": "tmp/pdfs/timing_manual_audit.py",
+      "bytes": 764,
+      "sha256": "ea8631e6a40f19367c5b76fbe75103fc141e09ceb3edaa623025b005ec279673",
+      "recovery_blob": "9bd192a2bbefcb7ef9f1d3891ef5b52119a97087",
+      "decision": "publish_original_historical_source_or_documentation"
+    },
+    {
+      "path": "handoffs/t13_temporal_ablation_20260927/presentation_build/build.mjs",
+      "bytes": 6358,
+      "sha256": "a5842b0195a6c773458662a4bc8758104c21d58e5b321895ad1687dbb719da7e",
+      "recovery_blob": "2e92608eb952d8b0b316fa887f2b9e41bd3cb3c8",
+      "decision": "archive_original_one_time_presentation_builder"
+    }
+  ],
+  "scope": "Three original timing/perceptual evidence source/documents published unchanged; one one-time historical presentation generator fully archived",
+  "archive": "archive/legacy_lab_projects/t13_presentation_builder_20261008/build.mjs",
+  "boundary": "Timing manual tool reads external original PDFs and writes previews at import/execution; not imported, executed, or treated as a measured latency. Historical T12 PNG metrics not rerun. Presentation code tied to old private runtime paths, not training or inference; original PPTX/images/results stay unchanged.",
+  "verification": "Original raw SHA and raw/LF recovery blobs match; Python AST parse only, no metrics/figures/PT/data/environment mutation."
+}

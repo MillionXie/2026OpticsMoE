@@ -1,5 +1,11 @@
 # T13 时间一致性鲁棒训练与光路消融
 
+2026-10-08整理：旧 `handoffs/t13_temporal_ablation_20260927/presentation_build/build.mjs`
+是依赖原报告和旧工具环境的一次性演示生成脚本，不是训练／推理入口。
+本机原脚本已逐SHA完整归档至 `archive/legacy_lab_projects/t13_presentation_builder_20261008/build.mjs`；
+原PPTX、图表、报告、模型和全部测速不动，也没有重新生成演示或修改指标。
+恢复身份见 `maintenance/storage/HISTORICAL_EVIDENCE_SUPPORT_20261008.json`。
+
 这是基于导师审阅版的时间一致性鲁棒消融任务，四组仿真训练已完成，尚未完成新光路实采。旧导师包不修改；本目录使用内部固定runtime快照，不运行时依赖父仓库、原T06或其他任务。当前profile为schema=4，配置为configs/study_full2250_testbest.json：原2250 train/558 test、不划validation，每5epoch按共同8μm/DC30/无CCD噪声的test SRCC选best。主报告是固定选定权重在共同noise-scale=1下的最终评价，不是选模时的无噪声数字。所有组phase dropout=0.05、router noise=0.06，像素平移全部关闭；tanh/0.5振幅与固定255量化一致。schema=3及其报告是作废历史，旧产物已隔离；原导师包、公共缓存、schema=4正式结果和父阶段均保留。
 
 **2026-10-03整理入口：**[唯一复现入口](reports/reproduction/README.md)集中列出源码、四份权重SHA、数据与原始报告位置。整理不重新训练、评估或采集。已保护服务器源码HEAD为`493eb38375f3bd9e4e8e7edfe278468b351365f1`，实际本轮训练记录commit为`1aa3842c01ddb54c8b0d61f8428de391e11cdaaa`；前者还包含结果文档与独立仿真导出，不能把导出包未经复核称为本轮训练运行时。
