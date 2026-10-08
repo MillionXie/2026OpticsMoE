@@ -15,7 +15,6 @@
 9月时间点，不是现在的方向、进程状态或执行授权。baseline、旧命令、原实验和
 全部测速保留；历史草稿也不再作为另一份最终版说明。
 
-<!-- preserved-historical-body-begins -->
 <!-- 2026-10-08 archive notice: The old tests/ directory (42 historical trial
 test sources plus original caches, 95 files total) is preserved in
 archive/legacy_lab_projects/t07_historical_trial_tests_20261008. Its old unittest
@@ -26,6 +25,8 @@ All archived file sets, lengths and SHA match the pre-move inventory at
 .codex_tmp/storage_git_backup_20261002/t07_historical_tests_inventory_20261008.json
 (SHA256 030b4cca155fae30a569796d581ddbf78abfea9c6ff72eba69770b7a248212b7).
 No test source or timing result was deleted. -->
+
+<!-- preserved-historical-body-begins -->
 
 ## 当前方向：替代图检索数据集（2026-09-13）
 
