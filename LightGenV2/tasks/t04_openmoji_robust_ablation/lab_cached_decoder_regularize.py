@@ -7,6 +7,7 @@ import argparse
 import copy
 import hashlib
 import json
+import math
 from pathlib import Path
 import sys
 import time
@@ -15,6 +16,15 @@ from types import SimpleNamespace
 
 def sha(path):
     return hashlib.sha256(path.read_bytes()).hexdigest()
+
+
+def epoch_learning_rate(epoch, epochs, cosine_decay=False):
+    """Fixed, predeclared schedule; independent of TRAIN/TEST measurements."""
+    if epochs < 1 or not 1 <= epoch <= epochs:
+        raise ValueError('Invalid epoch budget')
+    if not cosine_decay or epochs == 1:
+        return 1e-5
+    return 1e-6 + .5 * (1e-5 - 1e-6) * (1 + math.cos(math.pi * (epoch - 1) / (epochs - 1)))
 
 
 def category_mixup_loss(cat, y, smoothing=0.):
@@ -45,6 +55,8 @@ def main():
                    help='TRAIN-only convex feature/paired-target loss weight; no inference change')
     p.add_argument('--mixup-category-only', action='store_true',
                    help='Mixed features supervise categories only, not conflicting edit/source composition targets')
+    p.add_argument('--cosine-decay', action='store_true',
+                   help='Predeclared epoch cosine LR 1e-5 to 1e-6; no metric-dependent scheduling')
     p.add_argument('--benchmark-only', action='store_true',
                    help='Audit TRAIN and time isolated decoder copies on CPU/CUDA; no saved trained PT')
     a = p.parse_args()
@@ -167,6 +179,7 @@ def main():
     torch.save(payload, a.output/'best.pt')
     write('protocol.json', {'initial_sha256': sha(a.initial), 'cache_sha256': {s: sha(a.cache/(s+'_features.pt')) for s in data},
           'protected_sha256': protected, 'epochs': a.epochs, 'seed': 1008, 'lr': 1e-5, 'weight_decay': .05,
+          'lr_schedule': 'epoch cosine 1e-5 to 1e-6' if a.cosine_decay else 'constant 1e-5',
           'gain_range': [.98, 1.02], 'feature_drop': a.feature_drop, 'relative_feature_noise': .01,
           'changed_edit_weight': a.changed_edit_weight,
           'label_smoothing': a.label_smoothing,
@@ -182,6 +195,9 @@ def main():
           'selection': 'TEST every5 highest development; no independent generalization claim', 'architecture_unchanged': True})
     history = []
     for epoch in range(1, a.epochs + 1):
+        learning_rate = epoch_learning_rate(epoch, a.epochs, a.cosine_decay)
+        for group in optimizer.param_groups:
+            group['lr'] = learning_rate
         decoder.train()
         losses = []
         order = torch.randperm(1000).tolist()
@@ -226,7 +242,7 @@ def main():
                 checkpoint = copy.deepcopy(payload)
                 checkpoint['model'] = best_state
                 torch.save(checkpoint, a.output/'best.pt')
-        history.append({'epoch': epoch, 'loss': sum(losses)/len(losses), 'test': score, 'best': best})
+        history.append({'epoch': epoch, 'loss': sum(losses)/len(losses), 'test': score, 'best': best, 'lr': learning_rate})
         write('history.json', history)
         write('progress.json', {'status': 'training', **history[-1], 'selected_epoch': selected})
         print(json.dumps(history[-1]), flush=True)
