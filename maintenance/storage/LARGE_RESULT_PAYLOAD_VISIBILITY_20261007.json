@@ -127,12 +127,14 @@
   "manual_review_files": [
     {
       "path": "ABO_Lab_8um/control_kit/CCD_SHS/SHS 硬件使用手册 20260309.pdf",
+      "local_path": "archive/legacy_lab_projects/ABO_Lab_8um/control_kit/CCD_SHS/SHS 硬件使用手册 20260309.pdf",
       "bytes": 2997143,
       "sha256": "f72ffcaa2cfff21fdd1cb459ed80d9892eef496ac1edea2cb28fde7eedba6641",
       "suffix": ".pdf"
     },
     {
       "path": "ABO_Lab_8um/control_kit/CCD_SHS/SHS系列FastStream使用手册-20260109.pdf",
+      "local_path": "archive/legacy_lab_projects/ABO_Lab_8um/control_kit/CCD_SHS/SHS系列FastStream使用手册-20260109.pdf",
       "bytes": 11975788,
       "sha256": "4729eefb34f371e2d628c87a0a55d3b4d287d6ed533fae7a938eeebcd9ed128d",
       "suffix": ".pdf"

@@ -1,0 +1,53 @@
+{
+  "audited_on": "2026-10-08",
+  "scope": "Local Windows copies only; no laboratory-computer connection or relocation",
+  "dvp_project": {
+    "original": "C:/Users/Xml12/OneDrive/2026OpticsMoE/ABO_Lab_8um",
+    "archive": "C:/Users/Xml12/OneDrive/2026OpticsMoE/archive/legacy_lab_projects/ABO_Lab_8um",
+    "purpose": "September 9-10 historical Holoeye amplitude plus legacy DVP camera; fixed epoch25 image-to-text reproduction and device diagnostics, not final rank72 image retrieval",
+    "files": 791,
+    "bytes": 1754763788,
+    "private_complete_manifest": ".codex_tmp/storage_git_backup_20261002/abo_lab_dvp_complete_inventory_20261008.json",
+    "private_complete_manifest_sha256": "7f0b2627cf14926513e130c32a8ee1e7dcf60af7d534a79f89916a15aee02256",
+    "every_original_file_verified_before_and_after_move": true,
+    "file_set_unchanged": true,
+    "deleted_files": 0,
+    "disk_space_freed": 0,
+    "git_tracked_files": 0,
+    "untracked_source_records_before_move": 48,
+    "separate_git_repository": false,
+    "active_noninspection_process_command_references_observed": 0,
+    "symlink_files_observed": 0,
+    "windows_directory_reparse_tag": "0x9000e01a OneDrive cloud directory; not a symbolic link or junction",
+    "remaining_historical_reference": "LightGenV2/scripts/profile_latest_optical_electronics_a100.py records the old README as a historical metric artifact. Original timing source and old measurement records unchanged; archived README remains available.",
+    "restore_rule": "Restore the complete archived directory to the original path only after confirming the original path is absent and no process uses either location; verify the private manifest before and after. Do not overwrite a newer directory."
+  },
+  "shs_project": {
+    "original": "C:/Users/Xml12/OneDrive/2026OpticsMoE/ABO_Lab_SHS_8um",
+    "purpose": "September 12-13 SHS high-speed-camera control base, historical six-layer ABO image-to-text, MNIST references, exposure and timing diagnostics; also shared by historical LGVQ, SALICON and OpenMoji lab entries",
+    "files_observed": 4064,
+    "bytes_observed": 2326884661,
+    "git_tracked_files": 0,
+    "untracked_records_observed": 86,
+    "separate_git_repository": false,
+    "decision": "Retain in place in this operation: not an unused trial copy. Shared hardware/asset references must be migrated explicitly before whole-directory relocation.",
+    "shared_source_on_main": "LightGenV2/hardware_common/shs/; exact origin identities in SHS_SHARED_CONTROLLER_SOURCE_20261004.json",
+    "runtime_reference_examples": [
+      "LightGenV2/tasks/t03_saliency/lab_bench.py: legacy bench-root default",
+      "LightGenV2/tasks/t04_semantic_interaction/lab_bench.py: legacy bench-root default",
+      "LightGenV2/tasks/t06_video_quality_assessment/lab_bench.py: legacy bench-root default",
+      "LightGenV2/tasks/t07_abo_image_retrieval/configs/lab/rank72_windows_20261007.json: laboratory E: amplitude SDK location",
+      "LightGenV2/tasks/t07_abo_image_retrieval/lab_dvp8um/render_mnist_dvp_figure.py: historical MNIST reference assets"
+    ],
+    "files_modified_moved_or_deleted": false,
+    "not_proven_unused": true
+  },
+  "protected_final_ABO_or_current_OpenMoji_changed": false,
+  "training_evaluation_capture_or_upload_started": false,
+  "limitations": [
+    "No matching process command and no static execution reference do not rule out every future or external caller.",
+    "This is complete file-preserving local relocation, not a separate off-machine disaster-recovery backup.",
+    "Local and laboratory copies are different paths; this record does not assert the laboratory SDK or sessions were retired.",
+    "Original model metrics and historical timing measurements were not rerun or relabelled."
+  ]
+}

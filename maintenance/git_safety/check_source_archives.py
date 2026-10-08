@@ -119,7 +119,12 @@ def inspect_export_payload(root, descriptor):
                 or not re.fullmatch('[0-9a-fA-F]{64}', row['sha256'])):
             raise ValueError('Invalid or duplicate export payload identity')
         seen.add(name)
-        path = confined(root, name)
+        location = row.get('local_path', name)
+        local = PurePosixPath(location)
+        if (local.is_absolute() or '..' in local.parts or '\\' in location or ':' in location
+                or location in ('', '.')):
+            raise ValueError('Invalid relocated export payload path')
+        path = confined(root, location)
         if os.name == 'nt':
             absolute = str(path)
             path = Path('\\\\?\\UNC\\' + absolute[2:] if absolute.startswith('\\\\')

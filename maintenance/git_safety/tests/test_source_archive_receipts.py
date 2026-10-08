@@ -6,6 +6,26 @@ from maintenance.git_safety.check_source_archives import confined, inspect_manif
 
 
 class ArchiveTests(unittest.TestCase):
+    def test_relocated_export_keeps_original_identity_and_rejects_changed_bytes(self):
+        with tempfile.TemporaryDirectory() as folder:
+            root = Path(folder); (root/'archive').mkdir()
+            path = root/'archive/manual.pdf'; path.write_bytes(b'original')
+            row = dict(path='old/manual.pdf', local_path='archive/manual.pdf',
+                       sha256=hashlib.sha256(b'original').hexdigest())
+            self.assertEqual(inspect_export_payload(root, dict(files=[row]))['errors'], [])
+            self.assertFalse((root/'old/manual.pdf').exists())
+            path.write_bytes(b'changed')
+            self.assertTrue(inspect_export_payload(root, dict(files=[row]))['errors'])
+            self.assertEqual(path.read_bytes(), b'changed')
+
+    def test_relocated_export_rejects_escape_or_absolute_path(self):
+        with tempfile.TemporaryDirectory() as folder:
+            root = Path(folder)
+            for location in ('../outside.pdf', '/outside.pdf', 'C:/outside.pdf', ''):
+                row = dict(path='original.pdf', local_path=location, sha256='0'*64)
+                with self.assertRaises(ValueError):
+                    inspect_export_payload(root, dict(files=[row]))
+
     def test_private_export_is_byte_exact_and_read_only(self):
         with tempfile.TemporaryDirectory() as folder:
             root = Path(folder); path = root/'source.py'; path.write_bytes(b'original\r\n')

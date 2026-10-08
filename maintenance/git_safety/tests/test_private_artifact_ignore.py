@@ -213,7 +213,11 @@ class ArtifactIgnoreTests(unittest.TestCase):
                  if row['path'].startswith('ABO_Lab_8um/control_kit/CCD_SHS/')]
         import hashlib
         for row in manuals:
-            self.assertEqual(hashlib.sha256((ROOT/row['path']).read_bytes()).hexdigest(),row['sha256'])
+            locations = [ROOT/row['path'], ROOT/row.get('local_path', row['path'])]
+            available = [path for path in locations if path.is_file()]
+            self.assertTrue(available, 'Original or completely archived vendor manual must exist')
+            for path in available:
+                self.assertEqual(hashlib.sha256(path.read_bytes()).hexdigest(),row['sha256'])
         private += [row['path'] for row in manuals]
         visible=[row['path'] for row in descriptor['manual_review_files'] if row not in manuals]
         visible += ['handoffs/t12_lab_robust17m_20260927/future_metrics.json',

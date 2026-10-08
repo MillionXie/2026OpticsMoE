@@ -52,6 +52,9 @@
 - `.worktrees/`：历史/现用 Git 工作目录。运行中的版本先保留，不能为目录整齐中断实验。
 - `data/`、`handoffs/`、各任务 `runs/`：原数据、交付材料、权重与实拍记录，不是重复源码。
 - `archive/`：停止维护的历史副本和恢复材料，不是第二个主工程。
+- 旧 `ABO_Lab_8um` 本机DVP工程已整体归入 `archive/legacy_lab_projects/ABO_Lab_8um`；
+  `ABO_Lab_SHS_8um` 仍含旧硬件入口的共享SDK/标定/MNIST依赖，暂不能整份删除。
+  两者都不是当前rank72最终图搜图入口，详见[用途与归档收据](maintenance/storage/LOCAL_LEGACY_LAB_PROJECTS_20261008.json)。
 - 服务器 `t12_assets`、`demo_reproduction_data`、`*_runs` 等：环境、数据或结果资产，
   不应因为位于主仓库外就删除。
 
