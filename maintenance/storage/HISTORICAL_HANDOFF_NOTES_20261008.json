@@ -1,5 +1,5 @@
 {
-  "scope": "31 original dated ABO/T12/T13 experiment and delivery notes; historical records only",
+  "scope": "30 original dated ABO/T12/T13 experiment and delivery notes; historical records only; one credential-keyword note conservatively excluded",
   "verification": "Raw SHA and recovery Git blob identical (raw or LF). No original result or instruction rewritten; current supervision and all OpenMoji notes excluded from this adoption.",
   "decision": "Keep old phase/ROI/training/ablation explanations with their original reports. Formal task README/registry remain sole current entry; old deadlines, upload or capture instructions are not renewed authorization.",
   "files": [
