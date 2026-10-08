@@ -1,4 +1,12 @@
 {
+  "local_relocation_20261008": {
+    "archive_path": "archive/legacy_lab_projects/abo_historical_diagnostics_20261008",
+    "files": 8,
+    "selection": "Eight Python diagnostic sources listed below; config.yaml remains original asset-bound metadata",
+    "verification": "Original and archived raw SHA identical; complete eight-file set; no observed local Python use; no scientific tracked runtime path reference (maintenance classifiers mention old names)",
+    "policy": "Full original source recoverable from archive and existing Git recovery reference; no device operation, output/timing/data deletion or server/laboratory move. Historical command reuse requires intentional restoration.",
+    "history": "The original_files_moved/ignored values below describe the 2026-10-06 snapshot, not current placement."
+  },
   "archive_ref": "refs/archive/reviewed-abo-diagnostics-20261006",
   "archive_commit": "d7bcc5e57f542658d8b379b6c3fe3beb9854c9d2",
   "prerequisite_commit": "0189518ff4490bfded81beebae6a80b52c3498f2",
