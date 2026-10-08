@@ -2,6 +2,17 @@
 
 ## 2026-10-08 授权：累计组电子适配，目标89.0%–89.5%（进行中）
 
+最新继续授权：数据已在实验室既有rank64项目，同上游`lr1e5_wd005_160_20261008`
+的TRAIN/TEST特征各1000、各约153MB，不需光路采集或传回服务器。
+定位1.5对照strict CPU best .8780/e25、last .8725；best SHA
+3b07b50d7aba413cc0d202b47c73460098d8264b39cc55923db5adacedf9de40已本地备份核验。
+增加未编辑区域保护.5的对照best .8745/e15、last .8680，不替换.8780。
+下一有限对照从.8780初始化，仅在完整TRAIN1000之外每epoch增加500次TRAIN困难样本
+重放；固定权重为初始TRAIN changed-cell错误率的`1+2*error`，不从TEST挖困难样本。
+原decoder/光学上游/损失定位1.5/正则化保持，120轮CPU，TEST每5最高开发选模。
+Git c26cc967d已接入实验台；先`editor16_align_decoder_hardtrain_smoke_20261008`单轮
+实测及上游审计，通过后才派发正式run，不将派发或短测称为新性能改善。
+
 编辑定位监督对照`editor16_align_decoder_editfocus120_20261008`已完成120轮，
 strict CPU best .8740/e5、last .8665，上游保护不变，任务返回0。
 最新用户授权继续，有限单因素`editor16_align_decoder_editfocus1_120_20261008`：
