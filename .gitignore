@@ -3216,6 +3216,20 @@ node_modules/
 # Historical full-head simulation records: originals retained; exact bytes verified
 # against private untracked_asset_records_20261006.zip, not current rank64 experiments.
 # Historical T12 channel candidates: exact private records retained in place and backup.
+# Four historical source copies equal to published main after CRLF/LF normalization.
+# Originals retained; no wildcard, deletion or hardware contact.
+# Canonical: LightGenV2/hardware_common/shs/phase_hdmi.py
+# Original SHA256 cb9fb63042002fb68919ea97f351c30ee728641592db23884cd770e9765e177f
+/ABO_Lab_SHS_8um/phase_hdmi.py
+# Canonical: LightGenV2/hardware_common/shs/sdk.py
+# Original SHA256 5e035ce43dcb9aa8424f4160b01971229d4b50f3e0574c94651b933a62c8ab19
+/ABO_Lab_SHS_8um/sdk.py
+# Canonical: LightGenV2/hardware_common/dvp_legacy.py
+# Original SHA256 cab6e0ef3cdbf0840666e5f0d17baa26821011772d394a1c0b1a3f386028ca06
+/LightGenV2/tasks/t07_abo_image_retrieval/lab_dvp.py
+# Canonical: LightGenV2/tasks/t08_abo_image_text_retrieval/reverse_runtime.py
+# Original SHA256 ebf026e5aa2eaf6dc32ef7b5c5f18c5ac2eaea8515fe2d5a3431427d67e97869
+/handoffs/abo_text_to_image_10cm_alpha040_20260925/optical_moe.py
 # SHA256 70cbd0dbedb6bb3005b8008a624469fa4a547901a9c9019167c5f01d317c42ba
 /handoffs/t12_channel_robust_20260927/base_contract.json
 # SHA256 9ac66f75f92007cb4355e4b30f3050b79d30f01677bcbbd6e7f57ae53db929b3
