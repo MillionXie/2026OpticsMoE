@@ -1,0 +1,54 @@
+schema_version: 1
+name: spatial_single_video4_custom_conv_compressed
+status: formal_compressed_candidate_20260912
+
+backend:
+  package: experiments.qwen3_vl_2b_lgvq_single_metric_o2_16frame_54
+  config: experiments/qwen3_vl_2b_lgvq_single_metric_o2_16frame_54/configs/release/spatial_custom_conv_readout_lowrank1550k_s1291.yaml
+  config_sha256: 37f772bd29ff998d22e4d6ee6b44abd2924511383f5643491257b84ade82b48b
+
+artifacts:
+  checkpoint: LightGenV2/tasks/t06_video_quality_assessment/runs/simulation/spatial_readout_compressed_s1291/best_observed_test_checkpoint.pt
+  checkpoint_sha256: 5abc57a69a1025ec30660fb6d710fb7133316a1c2bad00792a901a49868d6e56
+  evidence_directory: LightGenV2/tasks/t06_video_quality_assessment/runs/simulation/spatial_readout_compressed_s1291
+
+architecture_contract:
+  qwen_vision_blocks_executed: 0
+  qwen_language_blocks_executed: 0
+  transformer_or_attention_in_student: false
+  named_pretrained_backbone_in_inference: false
+  two_main_branches_only: [electronic_residual, optical_moe]
+  frame_count: 4
+  optical_router: top2
+  fusion_alpha_lower_bound: 0.42
+  phase_masks_and_optical_graph_changed_by_compression: false
+  compression_location: post_optical_readout_only
+  compression_method: truncated_svd_initialization_then_distillation
+
+parameters:
+  full_student: 4384519
+  optical_feature_paths_and_routers: 970404
+  electronic_total: 3414115
+  electronic_routes: 766468
+  custom_conv_e1_residual: 316568
+  post_optical_readout: 1565570
+  training_scope_for_compression: 1882138
+  frozen_during_compression: 2502381
+  source_post_optical_readout: 2123010
+  readout_reduction: 557440
+  readout_reduction_percent: 26.2571
+
+formal_simulation:
+  test_count: 558
+  selection: highest_periodically_observed_test_srcc
+  best_epoch: 18
+  selection_source: raw
+  srcc: 0.6660718352787389
+  krcc: 0.48415465732525026
+  plcc: 0.6786870645170371
+  rmse: 8.451359748840332
+  mae: 6.72096586227417
+  same_checkpoint_optical_off_srcc: 0.6143329696321634
+  optical_on_minus_off_srcc: 0.05173886564657548
+  source_model_srcc: 0.667213852151199
+  srcc_change_from_source: -0.0011420168724601

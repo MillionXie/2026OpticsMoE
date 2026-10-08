@@ -1,0 +1,30 @@
+# Self-contained laboratory paths for the formal 0.671008 Spatial-4 model.
+# This file must be used with deployment/checkpoints/best_observed_test_checkpoint.pt.
+base_config: ../release/spatial_readout_1m_srcc067.yaml
+
+output_dir: ../../lab_runs/spatial4_readout_1m
+
+data:
+  dataset_root: null
+  manifest: ../../deployment/data/lgvq_train2250_test558.csv
+  vision_cache: ../../deployment/data/qwen3vl_front_4f_196x1024_quality14.pt
+  vision_cache_views: []
+  language_cache: ../../deployment/data/qwen3vl_front_spatial_prompt_2048.pt
+  quality_feature_cache: ../../deployment/data/lgvq_quality_conv5_4f_196x192.pt
+  quality_feature_cache_views: []
+  raw_frame_cache: ../../deployment/data/lgvq_four_frames_center100_224_uint8.pt
+  raw_frame_cache_views: []
+  training_view_probabilities: [1.0]
+
+training:
+  initialization_checkpoint: null
+
+# The delivery ZIP intentionally contains one canonical sampling view only.
+# Disable the paired-view-only losses inherited from the training recipe.
+loss:
+  paired_view_supervision_weight: 0.0
+  paired_view_consistency_weight: 0.0
+
+initialization:
+  qwen_model_path: null
+  reset_serial_router_phase: false

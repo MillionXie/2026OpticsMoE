@@ -1,0 +1,29 @@
+# Lower-rate mask-only continuation.  It removes the temporal-reversal
+# augmentation used by s1327 and searches a smoother neighbourhood around the
+# 0.668012 warm start.  No electronic parameter or inference module is added.
+base_config: spatial_readout_1m_phase_refine_s1327.yaml
+output_dir: ../../../../LightGenV2/tasks/t06_video_quality_assessment/runs/simulation/spatial_readout_1m_phase_gentle_s1328
+random_seed: 1328
+
+training:
+  epochs: 60
+  phase_learning_rate: 0.000005
+  router_phase_learning_rate: 0.000010
+  late_refine_start_epoch: 41
+  temporal_reverse_probability: 0.0
+  ema_decay: 0.997
+
+loss:
+  regression_weight: 0.20
+  ranking_weight: 2.00
+  correlation_weight: 4.00
+  soft_spearman_weight: 0.40
+  paired_view_supervision_weight: 0.08
+  paired_view_consistency_weight: 0.01
+
+curriculum:
+  start_epoch: 1
+  end_epoch: 42
+  ranking_weight_final: 2.50
+  correlation_weight_final: 3.50
+  soft_spearman_weight_final: 0.65

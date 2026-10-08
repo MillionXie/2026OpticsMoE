@@ -1,0 +1,163 @@
+{
+  "scope": "31 original T06 historical compact/custom-convolution profile, baseline cache/distillation and laboratory helper sources",
+  "decision": "Preserve original dependencies and comparison sources in main, without changing defaults, contracts or original paths. Pretrained vision upper-bound helpers remain rejected as formal model architecture; retaining history is not approval.",
+  "verification": "Original raw SHA and recovery Git blob identical (raw or LF); Python AST and YAML syntax parsing only. No driver loading, model performance run, data regeneration or environment repair.",
+  "excluded_private_tool": "fetch_measured_archive.py remains unchanged private connection helper outside source publication",
+  "files": [
+    {
+      "path": "LightGenV2/tasks/t06_video_quality_assessment/SPATIAL_COMPACT_READOUT.md",
+      "original_raw_sha256": "3baa3501c46d357a5ab5ef95dacf8e4b0e2e4190a5c4a7349b3d701501bb9094",
+      "recovery_blob": "8536197edff9c9effd052e40b2f12e393afed020"
+    },
+    {
+      "path": "LightGenV2/tasks/t06_video_quality_assessment/SPATIAL_CUSTOM_OEO_ARCHITECTURE.md",
+      "original_raw_sha256": "355650ab8ce33a9853741ef6ede09d52de843f8a059d01a1a5fd93983fa5be88",
+      "recovery_blob": "6e87fb00e8ec5e80503f6e39ab94938b1163a7d0"
+    },
+    {
+      "path": "LightGenV2/tasks/t06_video_quality_assessment/configs/lightgen/spatial_single_video4_compact_readout.yaml",
+      "original_raw_sha256": "363fe256e75c0b971eb1a02334024a915d350da72635803b4e9fd2e57d52cbae",
+      "recovery_blob": "86a7444ee8663ca3604471e24e6cca5c5b6d37f4"
+    },
+    {
+      "path": "LightGenV2/tasks/t06_video_quality_assessment/configs/lightgen/spatial_single_video4_custom_conv.yaml",
+      "original_raw_sha256": "1585bfa860e8cb4e4ff5d58b092e2f0f996d14e665a290d6edf9b63c95fe0a86",
+      "recovery_blob": "7f36603a36b101e1b9786f14daf93a56d6b3d6a4"
+    },
+    {
+      "path": "LightGenV2/tasks/t06_video_quality_assessment/configs/lightgen/spatial_single_video4_custom_conv_compressed.yaml",
+      "original_raw_sha256": "6409351a4a424a5fb9e779feb5c642b1d82d2443d03a8b4c743c6c9246c74dcf",
+      "recovery_blob": "61b3ee2f1980c919d25c6448f68defb106a1e2a3"
+    },
+    {
+      "path": "LightGenV2/tasks/t06_video_quality_assessment/hardware/adapt_lab.py",
+      "original_raw_sha256": "bc31926c6308c20dc1efdd2b37a9eaa512991fb1347beaff5d53ea84a74a2ecf",
+      "recovery_blob": "38358153afcc79a99a63e4e4a1915eac93cb0ab0"
+    },
+    {
+      "path": "LightGenV2/tasks/t06_video_quality_assessment/lab_exposure_session.py",
+      "original_raw_sha256": "ac8922d0846bb691517d08d11682bef464b14d1faef5bcb8bf71ba92b6e9d215",
+      "recovery_blob": "dff3e9641e5d97f3ac419097e87ab16a9885e0bc"
+    },
+    {
+      "path": "LightGenV2/tasks/t06_video_quality_assessment/lab_manual_stage.py",
+      "original_raw_sha256": "cd612caa81faa76f4e3ad38c985855b77d0737ead1424addbb52fbe5f59ced7d",
+      "recovery_blob": "09418d888177e63b066d0a75abc8010065595008"
+    },
+    {
+      "path": "LightGenV2/tasks/t06_video_quality_assessment/lab_phase_verification.py",
+      "original_raw_sha256": "ee17be99740b7d120a7d2a45f67742cce538d6181e79a78ecdb6f2a415094d4b",
+      "recovery_blob": "4736818790bbeb28d5f8e3f7b9d505c89d83c0f5"
+    },
+    {
+      "path": "LightGenV2/tasks/t06_video_quality_assessment/lab_supervise.py",
+      "original_raw_sha256": "63abf08b5faf88c7b180cc0669c0271fdd96346c46d46ae326b3dac5d635d50a",
+      "recovery_blob": "bd895e16080c5ec9090f39931c4acaa427d458eb"
+    },
+    {
+      "path": "LightGenV2/tasks/t06_video_quality_assessment/tests/test_lab_atomic_write.py",
+      "original_raw_sha256": "555a7262bb485a2450f5d9bf8563ffaa950d599cb846a1a24d0e2953cbc3e66c",
+      "recovery_blob": "6f57f5a613cb8eeb924a55d63f6b845608c525f9"
+    },
+    {
+      "path": "LightGenV2/tasks/t06_video_quality_assessment/tests/test_phase_verification.py",
+      "original_raw_sha256": "f3fe1540275b8bb845e42f61708ad37f7789d9222c238e3addf01833a9a14b8b",
+      "recovery_blob": "69e827e89becdaad4ba61403bd27b5f68d797edc"
+    },
+    {
+      "path": "LightGenV2/tasks/t06_video_quality_assessment/tests/test_supervision_resume.py",
+      "original_raw_sha256": "22d8e2f881bfe18943a6d1a5eba0c0b31981bf4b4f7c08e385f20b0855e75ff4",
+      "recovery_blob": "7fa079429afbbf96ae9c093f49fdd7f49989aa44"
+    },
+    {
+      "path": "experiments/qwen3_vl_2b_lgvq_single_metric_o2_16frame_54/DATA_ADAPTER_CONTRACT.md",
+      "original_raw_sha256": "4a8207342eaf6a769f50ab91de4c05d7be89d6f6ae0ee693c1e0c4d92b60532d",
+      "recovery_blob": "e5cfbfd877bcf72ed8f9c3acb5e94d347f314348"
+    },
+    {
+      "path": "experiments/qwen3_vl_2b_lgvq_single_metric_o2_16frame_54/LAB_SPATIAL4_CUSTOM_CONV_GUIDE.md",
+      "original_raw_sha256": "2beb34e38f2746d01edc4f778f8be1cbb68f0eb180dde436dece21f9a9c2ac88",
+      "recovery_blob": "1ff0de00555a39320b5f33e201b3a0ad9c1cdb24"
+    },
+    {
+      "path": "experiments/qwen3_vl_2b_lgvq_single_metric_o2_16frame_54/LAB_SPATIAL4_READOUT_1M_GUIDE.md",
+      "original_raw_sha256": "77945544e1ff983f151630e6582b8d379f6f10e66eaef7840221874376594825",
+      "recovery_blob": "99deb3b49c5f887f020301c1e021f9601000760d"
+    },
+    {
+      "path": "experiments/qwen3_vl_2b_lgvq_single_metric_o2_16frame_54/SPATIAL_CURRENT_ARCHITECTURE_ZH.md",
+      "original_raw_sha256": "1f90902d1df9b36a807cdf0b20da937eeeed38913273a51fd66816e958dc2c43",
+      "recovery_blob": "01f09e5a79b267bb4d84a54acfaf0599e74b75bb"
+    },
+    {
+      "path": "experiments/qwen3_vl_2b_lgvq_single_metric_o2_16frame_54/cache_mobilenetv2_front.py",
+      "original_raw_sha256": "0bf9628e22aca1a57a2152ffa234b019ec39c442b7a1e7aa7a2e51e9df51b63b",
+      "recovery_blob": "a08124c794baa0977b806a06f4358fa64af2c629"
+    },
+    {
+      "path": "experiments/qwen3_vl_2b_lgvq_single_metric_o2_16frame_54/cache_raw_frame_view.py",
+      "original_raw_sha256": "197cd051621c16f5f1f3fe1e241be5156cbd286748bf41a6af618dab8f2d423b",
+      "recovery_blob": "480a08773051caaab3c80e168cf9c4c83526056e"
+    },
+    {
+      "path": "experiments/qwen3_vl_2b_lgvq_single_metric_o2_16frame_54/cache_resnet18_front.py",
+      "original_raw_sha256": "2fbdcfc0b7f740fbe1fee30278f92bb8cf4a21ff660b4e369d123b3833ef504a",
+      "recovery_blob": "7c296625a57348a0c503612acd48d73ba26cfdf7"
+    },
+    {
+      "path": "experiments/qwen3_vl_2b_lgvq_single_metric_o2_16frame_54/configs/deployment/spatial4_custom_conv_lab.yaml",
+      "original_raw_sha256": "7f0e6569f975af797040ab37735e997fc4bd5386f9bc7b3244c02e0d1c2caef1",
+      "recovery_blob": "9be56d7514452e3dac823c56cf653e29d28cee51"
+    },
+    {
+      "path": "experiments/qwen3_vl_2b_lgvq_single_metric_o2_16frame_54/configs/deployment/spatial4_readout_1m_lab.yaml",
+      "original_raw_sha256": "e9e72dc62694580e7e403104fff78eceecbe25f7fad4e633026ba1448f1b6f20",
+      "recovery_blob": "bc821a847b8749c528f66268315b172329835538"
+    },
+    {
+      "path": "experiments/qwen3_vl_2b_lgvq_single_metric_o2_16frame_54/configs/release/spatial_custom_conv_aligned_multiview_alpha42_s983.yaml",
+      "original_raw_sha256": "a1549b7f9ae2cc6ca86e966e547248f764b4f460ccca2bcb32d4baca76dd870a",
+      "recovery_blob": "75c4919de2a0cc8b61d8be1a4bbd5e9083ca1f93"
+    },
+    {
+      "path": "experiments/qwen3_vl_2b_lgvq_single_metric_o2_16frame_54/configs/release/spatial_readout_1m_joint_reverse_refine_s1326.yaml",
+      "original_raw_sha256": "34764daf502f1adcec647ad5ac1f4a72f77d0ab5925f9998be206efa53e64e9a",
+      "recovery_blob": "b5ab264ff957bd6c209e36c5e1ccbcce11df2f76"
+    },
+    {
+      "path": "experiments/qwen3_vl_2b_lgvq_single_metric_o2_16frame_54/configs/release/spatial_readout_1m_phase_gentle_s1328.yaml",
+      "original_raw_sha256": "9c4e166785dcdb0ed83b02c0bbc106f03bd4e938966272830b45cc90236688dd",
+      "recovery_blob": "3ccb310aff0b5643748bfd8446991f016ed9a0d3"
+    },
+    {
+      "path": "experiments/qwen3_vl_2b_lgvq_single_metric_o2_16frame_54/distill_conv5_into_custom_e1.py",
+      "original_raw_sha256": "b93526624c6e668fab7b55db71ec53e7c0ada62715c69a1fcb27d3cdbeec2bb5",
+      "recovery_blob": "4f4ad109d2701e85fa473c4ee1cbf097b85e3509"
+    },
+    {
+      "path": "experiments/qwen3_vl_2b_lgvq_single_metric_o2_16frame_54/distill_resnet_e1_into_conv5.py",
+      "original_raw_sha256": "4d2a2790b05df54c1ee2c9e85ed0d214a1dbdf9bb917015d10c4db2767e2f35f",
+      "recovery_blob": "c7e99e69fc6d6cd34f03246d3ea2b73bb40c670b"
+    },
+    {
+      "path": "experiments/qwen3_vl_2b_lgvq_single_metric_o2_16frame_54/distill_resnet_e1_to_mobilenet.py",
+      "original_raw_sha256": "2409884149d4fd1d083a222c3fe0420be1b0955486e76702a2e5cf14ea6c0d24",
+      "recovery_blob": "d796caf7ed4872216908bbfa9a349e0ca3496138"
+    },
+    {
+      "path": "experiments/qwen3_vl_2b_lgvq_single_metric_o2_16frame_54/distill_resnet_e1_to_tiny_rgb.py",
+      "original_raw_sha256": "d5b191fe017f9a2a36a32450e7e5f369f248fc5d66c0c25a25668c96071f5b8e",
+      "recovery_blob": "6ebc2608a902c85d15698f3d349cb35749e9867b"
+    },
+    {
+      "path": "experiments/qwen3_vl_2b_lgvq_single_metric_o2_16frame_54/pretrain_custom_conv_e1.py",
+      "original_raw_sha256": "d9df6f9fabdca7e7ac851474b859fc74310b46fb91a7b198595984672587ae10",
+      "recovery_blob": "944e046894f6c671395e104a0994a221272aa9c2"
+    },
+    {
+      "path": "experiments/qwen3_vl_2b_lgvq_single_metric_o2_16frame_54/sweep_spatial_fusion.py",
+      "original_raw_sha256": "4fa4b0a6193f4acc62f1822aff7af7e6c6d24983110cd012c28055e0f50baac7",
+      "recovery_blob": "09119485b0f2bbe660c25faf7aca2f31f1af434c"
+    }
+  ]
+}
