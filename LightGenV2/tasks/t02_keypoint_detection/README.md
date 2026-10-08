@@ -2,6 +2,18 @@
 
 ## 2026-10-08 最新授权：修正物理幅度后在实验室GPU重训，实拍须再次确认
 
+2026-10-09 04:02 bounded续训已完整到60轮，持久任务返回0/final_report生成，
+本地4070回落53MiB/利用率0。best仍e15 PCK .7359285714285714，
+best SHA b525e613a876b6a4c2543e6433a8bef52d07a8101281c29448c50ea02151bb3e；
+last e60 PCK .7339285714285714，SHA184c0f212328cad8c71e8fefa0d7806fcce17fa52f5ee45653ba405d1a64857e。
+续训和原run划分CSV SHA均ca14c3f9592badc324397e709b506f06a9915acee4620684ab1ba98c3094ba4a，
+best六组原相位均有更新；weights-only continuation的optimizer/EMA/RNG重置记录保持。
+final_report只读optical-off反事实PCK .7361428571428571（非重训），高于best正常仿真
+.02143pp；融合权重.1335573/.0728691，不能据接近的仿真/实拍PCK宣称光学有稳定增益。
+当前固定e15光路身份不替换。TRAIN/TEST latent完整SHA取回后，本地CPU原head30轮
+已开始真实梯度：e1 loss .002232825/PCK .7375714286，e4 loss .002170823，
+初始严格复现直接实拍.7376428571428572/14000关节通过，尚无新最佳。
+
 2026-10-09 03:52独立TRAIN100实拍完成：full100三层各100PNG/100收据，
 300CCD完整（复用本轮同身份pilot12），采集148.054秒，最低p99=22/最大饱和0。
 capture_report为complete/sdk_released=true，固定e15 PT、相位/BMP/上游身份保持；
