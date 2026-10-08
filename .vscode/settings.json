@@ -1,4 +1,12 @@
 {
     "python-envs.defaultEnvManager": "ms-python.python:conda",
-    "python-envs.defaultPackageManager": "ms-python.python:conda"
+    "python-envs.defaultPackageManager": "ms-python.python:conda",
+    "git.detectWorktrees": false,
+    "git.repositoryScanIgnoredFolders": [
+        "node_modules",
+        ".worktrees",
+        ".codex_worktrees",
+        ".codex_tmp",
+        "archive"
+    ]
 }
