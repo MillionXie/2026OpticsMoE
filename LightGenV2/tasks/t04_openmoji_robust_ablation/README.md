@@ -12,6 +12,11 @@ mixup.2/遮挡.08/平滑.05/困难重放500/原decoder及光学不变，无新�
 两项类别混合梯度、空/全mask边界测试通过，先GPU短测/strictCPU/上游保护后正式。
 这是针对TRAIN误编辑的目标修正，不为89–89.5区间压分、不扫描比例/TEST门限。
 旧mixup与preserve05所有best/last/report/history/逐样本现已本地完整备份并SHA一致。
+Git a002a43c9三端同步，类别mixup单轮loss .5996673；strictCPU last .8835，
+preserved .9849546/IoU .7813274（父.9846655/.7733107），短测保真改善但主指标下降；
+best仍初始.8870，不能称该短测提高准确率。上游保护通过，短测保留。
+据此按预定预算正式检验，唯一`OpenMoji_CachedCatMix020_Preserve05_GPU120_1009`，
+run `editor16_align_decoder_catmix020_preserve05_gpu120_20261009`，不重新采光路。
 
 2026-10-09 00:15保真平衡120轮已完成：返回0、Python退出、4060回落400MiB。
 strictCPU best .9060/e5、last .9015，上游保护通过，best TRAIN changed1.0。
