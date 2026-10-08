@@ -2,6 +2,16 @@
 
 ## 2026-10-08 授权：累计组电子适配，目标89.0%–89.5%（进行中）
 
+GPU标签平滑正式120轮已完成，任务返回0/实际Python退出/GPU回落400MiB空闲。
+strictCPU best .8870/e105、last .8870；best TRAIN .9995，上游保护通过，
+比此前.884提升.30pp、距.890仍.30pp，仍未达标。best SHA
+10ed4da3f7b6202a71fe32aecad63bf57ac7398640db4cef6cb30091d68e1d3f；last SHA
+94808c6479a2610b2303c7a4f98cde2aed27d33407ec8785233e65f68f25114c。
+原best/last/全部报告保留，取回本地备份进行中；当前没有下一轮梯度训练。
+一次预声明best/last固定50/50平均`editor16_align_decoder_smooth005_bestlast_average_20261008`
+strictCPU .8860、TRAIN .9995，没有提高，不替换.8870，不扫描比例或阈值。
+这不能解释为泛化差距消失；后续须有TRAIN-only新依据，不机械重复平滑权重扫描。
+
 用户最新继续授权改进泛化并使用实验室空闲GPU。原.8840 best本地best/last/完整
 report/history/protocol/逐样本备份已完成，两PT SHA与实验台报告相符。
 `editor16_align_decoder_cpu_gpu_audit_20261008`只审计原TRAIN并计时临时decoder副本，
