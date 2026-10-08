@@ -3218,6 +3218,12 @@ node_modules/
 # Historical T12 channel candidates: exact private records retained in place and backup.
 # Four historical source copies equal to published main after CRLF/LF normalization.
 # Historical T01 private connection helper and its dependent test; retained in place.
+# Two historical SHS assets-build temporary copies; canonical private builder retained.
+# Canonical: ABO_Lab_SHS_8um/build_inference_assets.py (LF-normalized equal)
+# Reachable recovery blob c8d0bfe679ace198c27ed09d0740de1d431821f6
+# Original server SHA256 6d62f00e1c43171ef722ba9b69fd709ec08e3bb6b7d9413b68899484023b18e1
+/ABO_Lab_8um/releases/shs_assets_build.6Piu3P/ABO_Lab_SHS_8um/build_inference_assets.py
+/ABO_Lab_8um/releases/shs_assets_build.BKwT4E/ABO_Lab_SHS_8um/build_inference_assets.py
 # Purpose/boundary: T01 reports/reproduction/EXPERT_GENERATION_HISTORY.md
 # Recovery: refs/archive/checkout-preservation-20261004/original18 (CRLF/LF normalized equality)
 # Original SHA256 76b8f739302fefd2078f848f456df3d883045a80750802e984c66170d81eaece
