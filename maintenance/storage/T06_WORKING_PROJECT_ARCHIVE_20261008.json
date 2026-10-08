@@ -1,0 +1,13 @@
+{
+  "original_path": "LightGenV2/projects/lgvq_temporal",
+  "archive_path": "archive/legacy_lab_projects/lgvq_temporal_8um_snapshot",
+  "purpose": "Historical standalone 8um-resampled simulation/inspection snapshot, not official Temporal runtime",
+  "files": 309,
+  "bytes": 732387612,
+  "inventory": ".codex_tmp/storage_git_backup_20261002/lgvq_temporal_project_inventory_20261008.json",
+  "inventory_sha256": "33a3fa0b45aa80399f7fe6c899c89aa215384fd93f2228170d1bab837a5336a1",
+  "verification": "Complete post-move file set, sizes and SHA equal; no symlinks; no tracked runtime path references across registered local worktrees; no observed active process reference except inspection itself",
+  "source_recovery": "refs/archive/source-closure-20261006/t06-working-project",
+  "asset_policy": "All PT, inputs, phases, results and timing preserved inside complete archive; no disk-space release claimed; no Linux or laboratory runtime moved",
+  "restore": "After confirming original path absent and no user task using it, move the entire archive back to original path and verify complete inventory. Do not silently repair historical commands or release.json."
+}
