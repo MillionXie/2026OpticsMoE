@@ -2,6 +2,23 @@
 
 ## 2026-10-08 授权：累计组电子适配，目标89.0%–89.5%（进行中）
 
+用户最新继续授权改进泛化并使用实验室空闲GPU。原.8840 best本地best/last/完整
+report/history/protocol/逐样本备份已完成，两PT SHA与实验台报告相符。
+`editor16_align_decoder_cpu_gpu_audit_20261008`只审计原TRAIN并计时临时decoder副本，
+没有保存训练PT或用TEST梯度：TRAIN changed .999，对应TEST .884，差11.5pp，
+支持存在明显拟合/泛化差距，但不能排除TRAIN/TEST分布差异。
+CPU/CUDA各预热5步计时30步、batch32含缓存组批/监督loss/backward/AdamW，
+CPU15.538ms/步、4060为5.763ms/步（约2.70倍）；此计时不含配对扰动和全TEST评估，
+不是整轮或全流程加速承诺。实验台GPU原空闲，正式改用cuda，不抢本地LSP显卡。
+有限一次类别CE label_smoothing=.05，保留.08遮挡/其他损失及120轮；composed目标、
+edit标签和推理门限不变，从.8840 PT继续，不新增层/更改光学上游。
+入口Git24aff1ad5已三端同步；GPU单轮短测loss .727552、last .8780，strictCPU
+best仍为初始.8840、上游保护通过，不能称该短测提高精度。
+正式唯一任务`OpenMoji_CachedSmooth005_GPU120_1008`，run
+`editor16_align_decoder_smooth005_gpu120_20261008`，launcher28060/实际Python7528，
+已真实epoch4/loss .7037337，GPU约580MiB。TEST每5最高开发选模/noTEST梯度/noVAL；
+终了新增strictCPU TRAIN与TEST best/last报告，保留全部历史最佳，不保证.890目标。
+
 最新TRAIN-only诊断：.8810 best在原TRAIN1000 changed-cell .996，说明继续增加
 训练拟合不是主要目标。有限一次从该best继续，唯一配置变动为TRAIN特征遮挡.02→.08，
 保持clean/noisy配对、噪声.01、原decoder、定位1.5、困难重放500及120轮预算；
