@@ -1,4 +1,20 @@
 {
+  "server_remaining_recovery": {
+    "audited_main": "f5535048c9b79dd442a6aee56f6522f7ffa14c31",
+    "files_read": 74,
+    "git_full_blob_raw_matches": 48,
+    "git_full_blob_CRLF_to_LF_matches": 2,
+    "private_metadata_without_git_recovery": 24,
+    "archive": "/DATA/DATA1/guest3/storage_cleanup_manifests/server_remaining_private_metadata_20261008/original_24_records.tar.gz",
+    "receipt": "/DATA/DATA1/guest3/storage_cleanup_manifests/server_remaining_private_metadata_20261008/receipt.json",
+    "archive_sha256": "04ab473ac5df19da1cc5a480719867e9ae932be603f7017d45c096952d0737dc",
+    "archive_bytes": 623571,
+    "archive_member_set_and_each_SHA_verified": true,
+    "original_SHA_rechecked_after_archive": true,
+    "originals_changed_deleted_or_ignored": false,
+    "archive_mode": "0600",
+    "independent_off_server_disaster_recovery": false
+  },
   "audited_main": "368bc1114c55f09bc92dfa99d8f134f451a52c9f",
   "scope": "Every current local git ls-files --others --exclude-standard -z path; source, documentation, configuration and report payloads, not ignored datasets",
   "files_read": 1228,
