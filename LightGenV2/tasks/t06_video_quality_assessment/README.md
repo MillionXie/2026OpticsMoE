@@ -46,6 +46,15 @@ Spatial `.6710968960` 和对应封存权重：
 服务器旧说明仍称“正式”，两份差异保留，不能按旧标题采用该候选。
 这些历史 TEST 选模成绩是开发指标，说明归主线不代表资产闭包或新机复现通过。
 
+原1M读出候选的[仿真说明](reports/paper_results/spatial_readout_1m_srcc067/README.md)
+及[同权重去光／最后相位随机对照](reports/paper_results/spatial_readout_1m_srcc067/LAST_PHASE_ABLATION.md)
+现已原样收录。它们记录历史SRCC `.671008`，不是本页顶部固定实拍包复评的
+`.6710968960`，不能相互替换。来源是本地保留报告及既有Git恢复blob，
+本次限定检查未在服务器主目录或compress_all目录找到原件，不改称服务器运行新结果。
+两份原始SHA依次为`10b0be9a96fbab912a6c66b2d5aaaa0398e557cc9f99c12b22d80f3fae673c77`
+及`40de254f400efd0900b6be7282a0fceb42f0188a27a62b5bdec785cf0ab144be`；
+原文件不改，未复算消融、训练或运行其中的旧输出命令。
+
 旧独立审阅包在 `LightGenPublic/tasks/t06_lgvq_temporal_consistency`，不是另一个
 日常开发工程。原 `teacher_release_final/lgvq_temporal_08044` 使用35个固定field、
 558条视频及PT SHA `5303b574b200e14bf943af21c60a246720be453b9cf8847cd93c0eaaa243a77c`，
