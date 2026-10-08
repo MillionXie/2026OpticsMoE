@@ -292,6 +292,26 @@
   ],
   "additional_dependency_hashes": [
     {
+      "path": "LightGenV2/tasks/t06_video_quality_assessment/reports/paper_results/spatial_weighted_readout_20260909/README.md",
+      "source_blob_sha256": "c88afed3953279f3fdafd00358f4c04f90dc1b5500335604c40820349928c12d",
+      "origin": "2026-10-08 read-only comparison with actual server t06_compress_all_20260912; same normalized original bytes. Historical s495, not final Spatial or a new evaluation."
+    },
+    {
+      "path": "LightGenV2/tasks/t06_video_quality_assessment/reports/paper_results/spatial_rf_fusion_20260909/README.md",
+      "source_blob_sha256": "b786c67e733203c01d7956cb3046c21d3e24d6f4dec8abc6a9c29d37eb59ad76",
+      "origin": "Same actual server historical s523/s495 comparison, normalized bytes unchanged; TEST selected development result, no new evaluation or preferred final version."
+    },
+    {
+      "path": "LightGenV2/tasks/t06_video_quality_assessment/reports/paper_results/spatial_continuous_no_k_20260908/README.md",
+      "source_blob_sha256": "d95e1880f7deaed4b2aa05011ca66f813572515d3a8e2eaeddaee5396f31e77b",
+      "origin": "Original server main and t06_compress_all copies both match; historical continuous-phase/DC and original extra low-level quality input explicitly retained. Not current Spatial PT."
+    },
+    {
+      "path": "LightGenV2/tasks/t06_video_quality_assessment/reports/architecture/ELECTRONIC_PARAMETER_AUDIT_20260912.md",
+      "source_blob_sha256": "9c3405fe99b802ddac6c9fabba34ebf87a73d095cfcf216f8b7889e7eff29be6",
+      "origin": "Original server t06_compress_all parameter/low-rank report, same normalized bytes. September 12 candidate numbers and original labels unchanged; not current final metrics or a new parameter audit."
+    },
+    {
       "path": "LightGenV2/tasks/t06_video_quality_assessment/lab_phase.py",
       "bytes": 1804,
       "source_blob_sha256": "a862012eef384b26141e162410df8bc9448fd3e95676e602dc314a1dfdef4aea",

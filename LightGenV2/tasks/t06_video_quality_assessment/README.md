@@ -31,6 +31,17 @@
 
 ## 历史仿真结论（不替代上方当前实拍版本）
 
+以下四份服务器原报告现已原样收录，便于查询必要历史对照，不将报告中当时的
+“正式／当前”称谓作为今日最终版本：
+
+- [连续相位、DC20旧对照](reports/paper_results/spatial_continuous_no_k_20260908/README.md)：s463，SRCC .624532，含原低层质量输入边界。
+- [五档加权读出](reports/paper_results/spatial_weighted_readout_20260909/README.md)：s495，SRCC .631329。
+- [感受野／校正尺度对照](reports/paper_results/spatial_rf_fusion_20260909/README.md)：s523，SRCC .632483；不是新网络旁路。
+- [9月12日电子参数／压缩核对](reports/architecture/ELECTRONIC_PARAMETER_AUDIT_20260912.md)：历史Temporal rank256与Spatial压缩链，不替换本页顶部封存PT和复评指标。
+
+四份与实际服务器保留原件逐LF SHA一致，来源记于`source_import_20261004.json`；
+原数据、PT、旧测速和报告里的开发期TEST选模口径保留，未重训、重评或套用新测速。
+
 ### 旧 Spatial 候选说明入口
 
 以下原说明按历史版本保存，其中“当前／正式”仅指当时，不替代本页顶部的
