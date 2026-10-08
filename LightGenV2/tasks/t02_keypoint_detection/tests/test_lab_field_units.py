@@ -53,3 +53,24 @@ def test_three_pass_replay_and_exception_restoration():
         with FieldUnits(model):
             raise RuntimeError('test exit')
     assert router.forward == originals[0] and body.forward == originals[1]
+
+
+def test_bounded_pre_hook_bridge_does_not_restore_legacy_units():
+    from LightGenV2.tasks.t02_keypoint_detection.physical_amplitude import install_bounded_inputs
+    class Propagator(torch.nn.Module):
+        def forward(self, field):
+            return torch.fft.fft2(field, norm='ortho')
+    router, body = Propagator(), Propagator()
+    core = SimpleNamespace(router=SimpleNamespace(propagator=router),propagator=body,
+        geometry=SimpleNamespace(active_aperture=SimpleNamespace(y0=0,y1=8,x0=0,x1=8)))
+    outer=SimpleNamespace(optical_branch=SimpleNamespace(core=core))
+    model=SimpleNamespace(core=outer)
+    install_bounded_inputs(outer,quantize=True)
+    field=torch.complex(torch.rand(1,8,8)*10,torch.zeros(1,8,8))
+    def run():return tuple(p(field).abs().square() for p in (router,body,body))
+    expected=run()
+    with FieldUnits(model,scale=1.,quantize=True) as tap:actual=run()
+    with FieldUnits(model,scale=1.,quantize=True,measured=tap.detectors):replayed=run()
+    assert all(torch.allclose(x,y,atol=2e-5,rtol=2e-5) for x,y in zip(expected,actual))
+    assert all(torch.allclose(x,y,atol=2e-5,rtol=2e-5) for x,y in zip(expected,replayed))
+    assert all(v.max()<=1.000001 for v in tap.amplitudes.values())

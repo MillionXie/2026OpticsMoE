@@ -17,7 +17,10 @@ def physical_field(field, scale=16., quantize=False):
     if not math.isfinite(scale) or scale <= 0:
         raise ValueError('Invalid fixed amplitude scale')
     amplitude = field.abs()
-    if not torch.isfinite(field).all() or amplitude.max() > scale:
+    # Complex polar multiplication can exceed its real amplitude by a few ulps.
+    # Permit numerical roundoff only; do not clip or normalize a physical excess.
+    tolerance=8*torch.finfo(amplitude.dtype).eps*scale
+    if not torch.isfinite(field).all() or amplitude.max() > scale+tolerance:
         raise ValueError('Amplitude exceeds the fixed physical encoding range; never clip')
     physical = field / scale
     if quantize:

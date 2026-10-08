@@ -2,6 +2,13 @@
 
 ## 2026-10-08 授权：累计组电子适配，目标89.0%–89.5%（进行中）
 
+2026-10-09用户继续授权小幅提升。基于当前TRAIN .9995，有限一次取消额外500次
+困难样本重放（每轮完整TRAIN1000仍在），从已核验.8890 best继续120轮，
+category-only mixup/保真.5/其他正则和原decoder不变；不扫描权重或门限压分。
+唯一OpenMoji_CachedCatMix020_NoReplay_GPU120_1009，run
+editor16_align_decoder_catmix020_noreplay_gpu120_20261009；已实际epoch39/loss .542582，
+best仍初始.8890，尚无改善结论。不抢光路SDK，与本地LSP训练并行。
+
 2026-10-09 01:15类别mixup保真对照120轮已完成，任务返回0、Python退出、4060空闲。
 strictCPU best .8890/e100、last .8865，上游保护通过；best TRAIN changed .9995。
 best preserved .9857109/editIoU .7884024/objectF1 .9010684/sceneExact .606，

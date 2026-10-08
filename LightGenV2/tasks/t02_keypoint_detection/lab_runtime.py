@@ -47,10 +47,18 @@ class CachedStudent(nn.Module):
 
 def load_model(root):
     root=Path(root);pt=root/'weights/best_checkpoint.pt'
-    if sha(pt)!=EXPECTED_SHA:raise ValueError('Wrong LSP PT')
+    release=json.loads((root/'release.json').read_text())
+    expected=release['checkpoint_sha256']
+    mode=release.get('physical_amplitude_mode','legacy')
+    if mode not in ('legacy','tanh05_uint8') or (mode=='legacy' and expected!=EXPECTED_SHA):
+        raise ValueError('Unapproved LSP release contract')
+    if sha(pt)!=expected:raise ValueError('Wrong LSP PT')
     cfg=SimpleNamespace(**json.loads((root/'settings.json').read_text()))
+    if getattr(cfg,'physical_amplitude_mode','legacy')!=mode:
+        raise ValueError('Release/settings physical contract mismatch')
     payload=torch.load(pt,map_location='cpu',weights_only=False,pickle_module=PORTABLE_PICKLE)
     if payload['checkpoint_architecture']!=architecture_label(cfg):raise ValueError('Architecture mismatch')
+    if payload['router_contract_sha256']!=cfg.router_contract_sha256:raise ValueError('Router contract mismatch')
     model=CachedStudent(cfg)
     model.core.load_state_dict(payload['core'],strict=True);model.head.load_state_dict(payload['head'],strict=True)
     model.core.set_phase_dropout_active(False)

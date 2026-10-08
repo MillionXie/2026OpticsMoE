@@ -2,6 +2,15 @@
 
 ## 2026-10-08 最新授权：修正物理幅度后在实验室GPU重训，实拍须再次确认
 
+2026-10-09用户已明确授权将当前73.5929%最佳部署光路，不再等待再次确认。
+固定新物理合同e15 EMA，SHA b525e613a876b6a4c2543e6433a8bef52d07a8101281c29448c50ea02151bb3e；
+本地续训继续至60，不把未完成训练称完训，不在采集中切换后续best。
+新增lab_bounded_release只读复用旧TEST1000冻结stem缓存（不复用CCD或旧仿真热图），
+精确新PT/settings/phase身份和全1000理想CCD回灌通过后，实验室pilot4再完整三层1000。
+新release/session lsp_bounded_e15_20261009，tanh05_uint8在传播前执行，幅度scale1、
+CCD除255回灌，不再乘16/256；2000us/GainX4/wait240/原ROI方向不变，暗帧即停。
+旧legacy默认合同不变；新合同传播/回灌及原幅度测试11项通过。新光路结果尚未产生。
+
 00:35补充显式`--continue-from-run`：只允许未完成的bounded_staged，同profile/seed/
 batch/workers/资产路径/初始SHA/物理幅度合同及完整原划分，检查history与live-last epoch，
 严格加载原架构。新run保留旧best与history并从last下一轮继续原60轮日程，

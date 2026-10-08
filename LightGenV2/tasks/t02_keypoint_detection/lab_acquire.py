@@ -100,7 +100,12 @@ def acquire(a):
     resuming=output.exists()
     if resuming and not a.resume: raise FileExistsError('Existing session: explicit validated resume required')
     release=read(root/'release.json')
-    if release['checkpoint_sha256']!=EXPECTED_SHA or sha(root/'settings.json')!=release['settings_sha256']:
+    checkpoint_sha=release['checkpoint_sha256']
+    mode=release.get('physical_amplitude_mode','legacy')
+    scale=release['amplitude_scale']
+    if mode not in ('legacy','tanh05_uint8') or scale!=(1. if mode=='tanh05_uint8' else 16.):
+        raise ValueError('Wrong physical amplitude contract')
+    if (mode=='legacy' and checkpoint_sha!=EXPECTED_SHA) or sha(root/'settings.json')!=release['settings_sha256']:
         raise ValueError('Wrong release')
     items=release['fields'][:a.limit]
     if len(release['fields'])!=1000 or len(items)!=a.limit: raise ValueError('Wrong sample count')
@@ -118,8 +123,8 @@ def acquire(a):
         p=root/item['file']
         if sha(p)!=item['sha256']:raise ValueError('Input cache SHA')
         batch=torch.load(p,map_location='cpu',weights_only=False)
-        with torch.inference_mode(),FieldUnits(model,quantize=True,planes=planes) as tap: before=model(batch)
-        with torch.inference_mode(),FieldUnits(model,quantize=True,measured=tap.detectors,planes=planes): after=model(batch)
+        with torch.inference_mode(),FieldUnits(model,scale=scale,quantize=True,planes=planes) as tap: before=model(batch)
+        with torch.inference_mode(),FieldUnits(model,scale=scale,quantize=True,measured=tap.detectors,planes=planes): after=model(batch)
         if not torch.allclose(before[0],after[0],atol=2e-5,rtol=2e-5):raise ValueError('Ideal CCD bridge failed')
     flow.BASE_CORNERS=legacy.CORNERS.copy()
     output.mkdir(parents=True,exist_ok=a.resume);(output/'phase').mkdir(exist_ok=a.resume)
@@ -130,8 +135,8 @@ def acquire(a):
             if not np.array_equal(np.asarray(image),np.asarray(Image.open(p))):raise ValueError('Resume phase BMP differs')
         else:image.save(p)
         phases[s]=p
-    contract={'checkpoint_sha256':EXPECTED_SHA,'release_sha256':sha(root/'release.json'),'samples':a.limit,
-        'source_commit':subprocess.check_output(['git','rev-parse','HEAD'],text=True).strip(),'amplitude_scale':16.,'detector_scale':1/255,
+    contract={'checkpoint_sha256':checkpoint_sha,'release_sha256':sha(root/'release.json'),'samples':a.limit,
+        'source_commit':subprocess.check_output(['git','rev-parse','HEAD'],text=True).strip(),'amplitude_scale':scale,'detector_scale':1/255,
         'exposure_us':2000,'gain':'Gain_X4','wait_ms':240,'camera_orientation':'flip_v','phase_orientation':'hv','phase_inverse':True,
         'corners':legacy.CORNERS.tolist(),'phase_sha256':{s:sha(p) for s,p in phases.items()},
         'bench_source_sha256':sha(Path(legacy.__file__)),'full_run':a.limit==1000}
@@ -176,7 +181,7 @@ def acquire(a):
                 for old in STAGES[:n]:
                     c=output/'ccd'/old/(item['key']+'.png');upstream[old]=sha(c)
                     measured[old]=torch.from_numpy(np.array(Image.open(c),dtype=np.float32))[None]/255
-                with torch.inference_mode(),FieldUnits(model,quantize=True,measured=measured,planes=planes) as tap:model(batch)
+                with torch.inference_mode(),FieldUnits(model,scale=scale,quantize=True,measured=measured,planes=planes) as tap:model(batch)
                 value=tap.amplitudes[s][0].cpu().numpy()
                 # Verify phase planes exactly represent this model's input field.
                 bmp=amp/(item['key']+'.bmp')
@@ -195,7 +200,7 @@ def acquire(a):
                 if row['p99']<15: raise RuntimeError('Dark CCD: stop and diagnose; no blind retry')
                 c=output/'ccd'/s/(item['key']+'.png');c.parent.mkdir(parents=True,exist_ok=True)
                 Image.fromarray(values[0]).save(c)
-                write(c.with_suffix('.json'),dict(row,ccd_sha256=sha(c),upstream_ccd_sha256=upstream,checkpoint_sha256=EXPECTED_SHA,contract_sha256=sha(output/'contract.json')))
+                write(c.with_suffix('.json'),dict(row,ccd_sha256=sha(c),upstream_ccd_sha256=upstream,checkpoint_sha256=checkpoint_sha,contract_sha256=sha(output/'contract.json')))
                 write(output/'progress.json',{'status':'capturing','stage':s,'stage_completed':k+1,'per_stage':a.limit,'ccd_completed':n*a.limit+k+1,'elapsed_seconds':time.time()-start})
                 if (k+1)%20==0:print('CAPTURED',s,k+1,'/',a.limit,flush=True)
     write(output/'capture_report.json',{'status':'complete','samples':a.limit,'ccd_count':a.limit*3,'reused_captures':reused,'sdk_released':True,'elapsed_seconds':time.time()-start,'contract':contract})

@@ -43,9 +43,10 @@ def main():
             for up,digest in receipt['upstream_ccd_sha256'].items():
                 if sha(a.session/'ccd'/up/(key+'.png'))!=digest:raise ValueError('Upstream differs')
             measured[stage]=torch.from_numpy(np.asarray(Image.open(png),dtype=np.float32).copy())[None]/255
-        with torch.inference_mode(),FieldUnits(model,quantize=True,measured=measured,planes=planes):
+        with torch.inference_mode(),FieldUnits(model,scale=contract['amplitude_scale'],quantize=True,planes=planes):
+            sim=model(batch)[0]
+        with torch.inference_mode(),FieldUnits(model,scale=contract['amplitude_scale'],quantize=True,measured=measured,planes=planes):
             physical=model(batch)[0]
-        sim=batch['simulation_heatmap']
         records.append({'key':key,'shape':list(physical.shape),'physical_indices':physical.flatten(2).argmax(-1).tolist(),
                         'reference_indices':sim.flatten(2).argmax(-1).tolist()})
         if len(records)%50==0:
