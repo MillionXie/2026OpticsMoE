@@ -15,7 +15,7 @@ objectF1 .9011949/sceneExact .606；相较.8890父PT主指标+.05pp，保真基�
 IoU略降，不能称所有指标改善；距.890仍差.05pp，不向上取整报达标。
 best SHA5aff935453b2dc0d979a0df40ac4a1329c4662972099491a715736b017344a8f，
 last SHA7929c1d70a3b6526e5faecaa1bae9509a0b39931c5c0d47ef75af63f6c2d3085。
-完整报告/协议/历史/逐样本已取回，本地bestlast SHA备份进行中，历史候选全部保留。
+完整报告/协议/历史/逐样本已取回，本地bestlast SHA备份完成且双PT与原报告一致，历史候选全部保留。
 
 2026-10-09 01:15类别mixup保真对照120轮已完成，任务返回0、Python退出、4060空闲。
 strictCPU best .8890/e100、last .8865，上游保护通过；best TRAIN changed .9995。

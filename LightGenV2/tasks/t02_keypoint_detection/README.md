@@ -14,6 +14,9 @@ CCD除255回灌，不再乘16/256；2000us/GainX4/wait240/原ROI方向不变，�
 全1000缓存SHA通过并实际理想回灌850/1000有增量；不是仅TaskRunning。
 任务按回灌成功→pilot4成功→full1000严格退出码串联，失败即停、不重启旧采集。
 补充恢复与幅度回灌回归18项通过；源码be73faca1已三端同步。
+全1000回灌现已通过（热图maxabs 1.1921e-6），pilot12 CCD/24.034秒完成并释放SDK。
+同任务已进入full1000，router13/1000、共21有效CCD（含pilot），p99=22/sat0。
+新真实PCK尚未产生；全部完成后必须逐层1000收据审计和原指标回放，不以桥接替代实拍。
 
 00:35补充显式`--continue-from-run`：只允许未完成的bounded_staged，同profile/seed/
 batch/workers/资产路径/初始SHA/物理幅度合同及完整原划分，检查history与live-last epoch，
