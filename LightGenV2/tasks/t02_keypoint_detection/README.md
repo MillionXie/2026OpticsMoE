@@ -9,6 +9,10 @@ batch/workers/资产路径/初始SHA/物理幅度合同及完整原划分，检�
 不多跑额外60轮、不拿旧e15PCK冒称续训结果；13项日程/幅度/恢复拒绝条件测试通过。
 计划在本地4070继续e21–60，独立持久计划任务避免依赖原临时执行session；
 仍待原PT实载、实际新epoch/loss确认，用户确认完整新仿真精度前不部署。
+上述续训现已实际启动：持久任务`LSP_Bounded_Continue21_Local4070_1009`，Python39864，
+新run `lsp_bounded_staged_continue21_local4070_20261009`，已记录权重续训身份并真实
+epoch21 batch100/869、loss .11370，4070约2346MiB；不是仅PID/任务Running。
+三端已同步训练源码cbfba4c40，原run与e15 best不变，续训尚无新周期TEST指标。
 
 2026-10-09 00:15核查发现本地正式进程已消失、4070降至53MiB，日志停在完整epoch20，
 没有final_report或Traceback；不能称60轮完成或仍健康运行。e15开发PCK .7359285714、
