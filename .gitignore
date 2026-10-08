@@ -3217,6 +3217,13 @@ node_modules/
 # against private untracked_asset_records_20261006.zip, not current rank64 experiments.
 # Historical T12 channel candidates: exact private records retained in place and backup.
 # Four historical source copies equal to published main after CRLF/LF normalization.
+# Historical T01 private connection helper and its dependent test; retained in place.
+# Purpose/boundary: T01 reports/reproduction/EXPERT_GENERATION_HISTORY.md
+# Recovery: refs/archive/checkout-preservation-20261004/original18 (CRLF/LF normalized equality)
+# Original SHA256 76b8f739302fefd2078f848f456df3d883045a80750802e984c66170d81eaece
+/TransferFromElectricity/tasks/t01_object_retrieval/collect_results.py
+# Original SHA256 71ce74fccfcf70abbe9a3b25152ba278320c2d60dc7e173d5a0539ebe11d45d9
+/TransferFromElectricity/tasks/t01_object_retrieval/tests/test_collection.py
 # Originals retained; no wildcard, deletion or hardware contact.
 # Canonical: LightGenV2/hardware_common/shs/phase_hdmi.py
 # Original SHA256 cb9fb63042002fb68919ea97f351c30ee728641592db23884cd770e9765e177f
