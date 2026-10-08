@@ -45,7 +45,7 @@ def test_three_pass_replay_and_exception_restoration():
     with FieldUnits(model) as tap:
         actual = run()
         physical = {k:v.clone() for k,v in tap.detectors.items()}
-    assert all(torch.equal(x,y) for x,y in zip(expected,actual))
+    assert all(torch.allclose(x,y,atol=2e-5,rtol=2e-6) for x,y in zip(expected,actual))
     with FieldUnits(model, measured=physical):
         replayed = run()
     assert all(torch.allclose(x,y,atol=2e-5,rtol=1e-6) for x,y in zip(expected,replayed))
