@@ -1,5 +1,30 @@
 # T02 关键点检测（LSP）
 
+## 2026-10-08 授权实拍：已确认版本，部署合同检查中
+
+用户所指旧表0.7353对应`refinement_20260909/staged_heatmap`第50轮EMA；
+原报告精确PCK@0.2为.7347857142857143，不能将展示值0.7353冒称精确证据。
+权重SHA495b9c2c4e3df15d3715f1ce8f2faea7cb9156275b31103ec684f4e96a328518。
+服务器原PT与本地取回PT均核验相同SHA；原数据、报告和权重没有修改。
+
+新run `runs/hardware/lsp_staged7348_20261008/simulation_reference`在main严格加载
+同PT，完整官方TEST1000/14000关节复测PCK .7347857142857143、PCKh .8524285714；
+此项是仿真复载，不是实拍。与旧报告PCK完全一致，NME等浮点值另保留新报告。
+无重新训练或新增推理层，数据仍为原人体标注框裁剪，不是整图多人检测。
+
+部署前入口`lab_preflight.py`只挂无参数观测hook，沿用原模型/评估器/TEST及PCK定义，
+不打开SDK、不改光场或权重。新`contract_audit`完整1000图复测同PCK通过，
+`amplitude_audit.json`确认router/expert/global原输入幅度最大
+14.0494499/13.5001602/9.7189484，均超出单位区间；router记录含518×518 FFT画布，
+expert/global为478×478有效场。不能直接套用0–1的OpenMoji BMP编码，也不能
+只在导出端截断或做仿真中没有的逐图peak归一化。
+
+后续必须先验证仿真/播放一致的物理幅度单位映射、三层相位和CCD回放，再pilot后
+全量官方TEST1000×三层=3000实际CCD。实测上游CCD须驱动后续输入，不混理想场。
+此时LSP实际采集尚未启动，没有新实拍PCK。OpenMoji的离线decoder适配另行运行，
+不会占用SDK；二者不能共用数据或篡改对方run。其他窗口任务和原光学合同保持。
+本轮不新建分支/worktree/工程副本，源码仅Git同步；权重/缓存走SHA清单。
+
 2026-10-03整理核验：[完整版本地图](reports/reproduction/IDENTITIES_20261003.md)。
 下文DC20为早期公平对照，不代表所有后续候选：另保留73.48%低alpha交付、72.83%高alpha蒸馏，
 以及独立个人照片pilot。对应PT/划分已查证；后续入口按服务器固定源码收敛到main。
