@@ -97,7 +97,8 @@ def acquire(a):
     from PIL import Image
     from .lab_runtime import load_model, phase_planes
     root=a.project.resolve(); output=a.output.resolve()
-    if output.exists(): raise FileExistsError('Existing session: do not overwrite or blindly resume')
+    resuming=output.exists()
+    if resuming and not a.resume: raise FileExistsError('Existing session: explicit validated resume required')
     release=read(root/'release.json')
     if release['checkpoint_sha256']!=EXPECTED_SHA or sha(root/'settings.json')!=release['settings_sha256']:
         raise ValueError('Wrong release')
@@ -121,18 +122,28 @@ def acquire(a):
         with torch.inference_mode(),FieldUnits(model,quantize=True,measured=tap.detectors,planes=planes): after=model(batch)
         if not torch.allclose(before[0],after[0],atol=2e-5,rtol=2e-5):raise ValueError('Ideal CCD bridge failed')
     flow.BASE_CORNERS=legacy.CORNERS.copy()
-    output.mkdir(parents=True);(output/'phase').mkdir()
+    output.mkdir(parents=True,exist_ok=a.resume);(output/'phase').mkdir(exist_ok=a.resume)
     phases={}
     for s in STAGES:
-        p=output/'phase'/(s+'.bmp');Image.fromarray(flow.phase_gray(planes[s],'hv',True)).save(p);phases[s]=p
+        p=output/'phase'/(s+'.bmp');image=Image.fromarray(flow.phase_gray(planes[s],'hv',True))
+        if p.exists():
+            if not np.array_equal(np.asarray(image),np.asarray(Image.open(p))):raise ValueError('Resume phase BMP differs')
+        else:image.save(p)
+        phases[s]=p
     contract={'checkpoint_sha256':EXPECTED_SHA,'release_sha256':sha(root/'release.json'),'samples':a.limit,
         'source_commit':subprocess.check_output(['git','rev-parse','HEAD'],text=True).strip(),'amplitude_scale':16.,'detector_scale':1/255,
         'exposure_us':2000,'gain':'Gain_X4','wait_ms':240,'camera_orientation':'flip_v','phase_orientation':'hv','phase_inverse':True,
         'corners':legacy.CORNERS.tolist(),'phase_sha256':{s:sha(p) for s,p in phases.items()},
         'bench_source_sha256':sha(Path(legacy.__file__)),'full_run':a.limit==1000}
-    write(output/'contract.json',contract)
-    reused=0
-    if a.reuse_session is not None:
+    if resuming:
+        previous=read(output/'contract.json')
+        if {k:v for k,v in previous.items() if k!='source_commit'}!={k:v for k,v in contract.items() if k!='source_commit'}:
+            raise ValueError('Resume physical/model contract differs')
+        write(output/('resume_execution_'+str(int(time.time()))+'.json'),{'previous_source_commit':previous['source_commit'],'current_source_commit':contract['source_commit'],'reason':'verified sample transfer handoff'})
+        contract=previous
+    else:write(output/'contract.json',contract)
+    reused=len(list((output/'ccd').rglob('*.png'))) if resuming else 0
+    if a.reuse_session is not None and not resuming:
         import shutil
         previous=read(a.reuse_session/'capture_report.json')
         prior=previous['contract']
@@ -277,6 +288,7 @@ def main():
     p.add_argument('--cache-archive',type=Path);p.add_argument('--archive-bytes',type=int)
     p.add_argument('--archive-sha256')
     p.add_argument('--cache-marker',type=Path)
+    p.add_argument('--resume',action='store_true')
     p.add_argument('--limit',type=int,default=4);a=p.parse_args()
     if a.action=='export' and a.checkpoint is None:p.error('checkpoint required')
     if a.action in ('acquire','queued') and (a.output is None or a.bench_root is None or not 1<=a.limit<=1000):p.error('output/bench-root/limit required')
