@@ -26,7 +26,11 @@ def main():
     p.add_argument('--preserved-edit-weight', type=float, default=0.)
     p.add_argument('--train-hard-extra', type=int, default=0,
                    help='Additional TRAIN draws per epoch, based only on initial TRAIN errors')
+    p.add_argument('--feature-drop', type=float, default=.02,
+                   help='TRAIN-only feature masking probability; clean paired branch retained')
     a = p.parse_args()
+    if not 0 <= a.feature_drop <= .25:
+        raise ValueError('Finite feature masking range must be 0..0.25')
     if not 0 <= a.train_hard_extra <= 1000:
         raise ValueError('Finite TRAIN oversampling budget must be 0..1000')
     if a.output.exists():
@@ -115,7 +119,7 @@ def main():
         (a.output / name).write_text(json.dumps(value, indent=2), encoding='utf-8')
     write('protocol.json', {'initial_sha256': sha(a.initial), 'cache_sha256': {s: sha(a.cache/(s+'_features.pt')) for s in data},
           'protected_sha256': protected, 'epochs': a.epochs, 'seed': 1008, 'lr': 1e-5, 'weight_decay': .05,
-          'gain_range': [.98, 1.02], 'feature_drop': .02, 'relative_feature_noise': .01,
+          'gain_range': [.98, 1.02], 'feature_drop': a.feature_drop, 'relative_feature_noise': .01,
           'changed_edit_weight': a.changed_edit_weight,
           'preserved_edit_weight': a.preserved_edit_weight,
           'train_hard_extra': a.train_hard_extra,
@@ -134,7 +138,7 @@ def main():
             x, y = batch('train', order[start:start+32], a.device)
             scale = x.detach().square().mean().sqrt().clamp_min(1e-8)
             noisy = x*(.98+.04*torch.rand_like(x)) + .01*scale*torch.randn_like(x)
-            noisy = noisy*(torch.rand_like(x) >= .02)
+            noisy = noisy*(torch.rand_like(x) >= a.feature_drop)
             cat, edit = decoder(x)
             nc, ne = decoder(noisy)
             consistency = F.kl_div(nc.log_softmax(1), cat.detach().softmax(1), reduction='batchmean')/cat[0, 0].numel()
