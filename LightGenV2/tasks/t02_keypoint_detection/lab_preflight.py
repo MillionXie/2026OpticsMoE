@@ -18,6 +18,8 @@ def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--checkpoint', type=Path, required=True)
     parser.add_argument('--output', type=Path, required=True)
+    parser.add_argument('--physical-mode', choices=('original', 'continuous', 'uint8'), default='original')
+    parser.add_argument('--amplitude-scale', type=float, default=16.)
     args = parser.parse_args()
     if args.output.exists():
         raise FileExistsError('Preserve existing preflight output')
@@ -53,6 +55,14 @@ def main():
     def factory(loaded, settings):
         model = build(loaded, settings)
         model.register_forward_hook(observe)
+        if args.physical_mode != 'original':
+            from .lab_field_units import FieldUnits
+            original_forward = model.forward
+            def physical_forward(*values, **keywords):
+                with FieldUnits(model, scale=args.amplitude_scale,
+                                quantize=args.physical_mode == 'uint8'):
+                    return original_forward(*values, **keywords)
+            model.forward = physical_forward
         return model
 
     # Parameter-free instrumentation only; the original evaluator builds and
@@ -67,6 +77,8 @@ def main():
     report = {'status': 'complete', 'checkpoint_sha256': EXPECTED_SHA,
               'test_samples': 1000, 'metrics': result['metrics'], 'stages': stages,
               'hardware_started': False, 'weights_unchanged': sha(args.checkpoint) == EXPECTED_SHA,
+              'physical_mode': args.physical_mode, 'amplitude_scale': args.amplitude_scale,
+              'physical_intensity_to_model_units': args.amplitude_scale ** 2,
               'unit_interval_export_safe': all(s['maximum'] <= 1 for s in stages.values()),
               'source_commit': subprocess.check_output(['git', 'rev-parse', 'HEAD'], text=True).strip()}
     (args.output / 'amplitude_audit.json').write_text(json.dumps(report, indent=2), encoding='utf-8')
