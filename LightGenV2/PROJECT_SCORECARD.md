@@ -1,6 +1,6 @@
 # LightGenV2 任务版本、性能与测速索引
 
-更新日期：2026-10-07。这里只汇总**主线已登记的版本**，不替另一窗口尚未交付的
+更新日期：2026-10-08（仅更新T02实拍登记）。这里只汇总**主线已登记的版本**，不替另一窗口尚未交付的
 OpenMoji新实验选模型。每项任务一行，精确PT/SHA、划分、原run和复现命令从任务页查。
 
 仿真、未微调实拍、电子适配后的实拍分开；同权重去光不是重训电子baseline。
@@ -12,7 +12,7 @@ OpenMoji新实验选模型。每项任务一行，精确PT/SHA、划分、原run
 | 任务/入口 | 登记版本 | 仿真主指标 | 未微调实拍 | 适配/校准实拍 | 必要baseline与对照 | 该版本测速与限制 |
 | --- | --- | --- | --- | --- | --- | --- |
 | [T01 物品检索](tasks/t01_object_retrieval/README.md) | Caltech101 target-10，DC20正式对照 | Top-1 .9000，Top-3 .9650，MRR .9344 | 尚未核验 | 尚未核验 | matched D2NN Top-1 .8950；冻结Qwen .9950；固定专家相位迁移是另一个历史研究 | 旧DC20计算图估算10.061ms/query，旧Qwen模型核心26.407ms；不是实验台端到端 |
-| [T02 关键点](tasks/t02_keypoint_detection/README.md) | 官方LSP三类光学候选分别保留；个人照片另列 | DC20 PCK .5772857；低alpha交付 .7347857；alpha40蒸馏 .7282857 | 官方全量实拍尚未核验 | 个人pilot仅伪标签一致性，不作官方成绩 | DC20 D2NN .6751429；旧Deconv128 Qwen .7217143，Deconv40 .6381429，头容量不可混用 | 旧Deconv128 9.504ms：性能1000/batch8，计时200/batch1，显式预热50次；不套后续光电候选 |
+| [T02 关键点](tasks/t02_keypoint_detection/README.md) | 官方LSP三类光学候选分别保留；个人照片另列 | DC20 PCK .5772857；低alpha交付 .7347857；alpha40蒸馏 .7282857 | 低alpha同PT：2026-10-08首次TEST1000三层实拍完成，PCK@0.2 .7353571428571428；独立repeat1000已授权，完成未核验 | 个人pilot仅伪标签一致性，不作官方成绩 | DC20 D2NN .6751429；旧Deconv128 Qwen .7217143，Deconv40 .6381429，头容量不可混用 | 旧Deconv128 9.504ms：性能1000/batch8，计时200/batch1，显式预热50次；不套后续光电候选 |
 | [T03 显著性](tasks/t03_saliency/README.md) | 指定cross-sample best，SHA起始036bc8ca | CC .8624925082；同权重去光 .84229470 | 5000图三层CC .8597739692 | 指定结果未微调 | 同头Qwen历史100轮 .88968469、50轮 .87483828；早期DC20/D2NN .8291/.8346另保留 | 新指定候选未绑定专属测速；旧DC20计算图5.654ms和旧头Qwen10.176ms不移用于新模型 |
 | [T04 OpenMoji robust](tasks/t04_openmoji_robust_ablation/README.md) | 2026-10-02封存rank64 G2/G5；现用新实验保护 | 实验台CPU G2 .9390/G5 .9270；服务器 .9385/.9290另列 | G2 .6185/G5 .6910 | 原decoder .9015/.9180；已有bias校准 .9045/.9305 | G1与G2同原PT；旧DC20 D2NN .9895、旧Qwen .5475不是rank64同容量对照 | rank64专属延迟未测；旧DC20 10.862ms、旧Qwen27.166ms仍为历史证据；TEST选PT/校准属开发指标 |
 | [T05 视频分类](tasks/t05_video_classification/README.md) | 尚未开展，协议未定 | — | — | — | — | 不为整理自动建模型或启动训练 |
@@ -27,6 +27,31 @@ OpenMoji新实验选模型。每项任务一行，精确PT/SHA、划分、原run
 | [T16 多模态终身学习](tasks/t16_zero_phase_ccd_lifelong/README.md) | 最终A/B/C/D序列及必要对照；不同于T11 | 最终D四任务宏平均召回率均值：MoE全replay .7838 | 非实拍 | — | D2NN无replay .4877、全replay .7579、每旧任务300记忆 .6202；排序探索 .7862不替换主矩阵 | 本版本计时尚未核定；不借其他模型A100/相机时间 |
 
 ## 如何查证及保留历史
+
+### T02 首次全量实拍与历史表分开登记
+
+[2026-10-08完成记录](https://github.com/MillionXie/2026OpticsMoE/commit/8a9f5e149587d824c4cf91d16a6aad70da5f09bc)
+绑定低alpha `refinement_20260909/staged_heatmap` 第50轮EMA，checkpoint SHA256
+`495b9c2c4e3df15d3715f1ce8f2faea7cb9156275b31103ec684f4e96a328518`。
+首次任务 `LSP_Staged7348_Full1000_1008` 沿用原官方TEST1000、14000关节及原PCK@0.2评估器；
+router→expert→global各1000有效CCD/收据，共3000份（含12份核验复用pilot，新增2988份），
+CCD/BMP/phase/upstream SHA审计bad0，任务返回0且SDK释放。
+同PT原仿真及10月8日仿真复载均为 **.7347857142857143**，首次物理回放为
+**.7353571428571428**：10287→10295个阈值命中，净多8个（约.057143个百分点），
+像素定位误差略增；这是单次实拍，不称稳定提升。原TEST参与选模，仍属开发指标，
+不据此声称独立泛化、专属端到端测速/能耗或整项交付完成。
+
+[历史A100九任务CSV](reports/20260928_nine_task_a100_table/latest_nine_task_summary_TOPS_20261008.csv)
+的LSP仿真 **.7353** / 实验 **.7356** 保持原值；尚未建立其checkpoint、评估协议及
+性能测量日期与上述10月8日采集的同一身份绑定，不能当作该次同权重结果或独立重复。
+该表说明绑定9月28日A100窄口径计时/能耗，CSV的10月8日文件名不证明性能测量日期；
+其“formal measured”状态也不替代checkpoint核验，旧时间/能耗不移用于首次实拍。
+
+独立重复 `LSP_Staged7348_Repeat1000_1008` / `repeat1000` 已授权：
+同精确PT、完整TEST和光学合同，仅复用冻结stem缓存，不复用首次CCD/pilot。
+截至本次文档核验未见重复完成证据，保持“已授权、完成未核验”，不登记第二个成绩。
+任务README下方采集进行中及“当前没有全量实拍PCK”是完成记录之前的历史进度，
+当前首次完成状态以上述10月8日记录为准。首次与重复、全部原报告/PT/测量身份分别保留。
 
 ### T04 的应用版不是 robust 消融版
 
