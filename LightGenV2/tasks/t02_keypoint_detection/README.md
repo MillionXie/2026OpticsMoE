@@ -2,6 +2,18 @@
 
 ## 2026-10-08 最新授权：修正物理幅度后在实验室GPU重训，实拍须再次确认
 
+2026-10-09 04:04独立TRAIN100电子头30轮已完成，编排返回0；只用TRAIN梯度，
+完整TEST1000/14000关节每5轮最高开发选模，初始直接.7376428571428572精确复现。
+strictCPU best e10 PCK .7382142857142857/PCKh .8507142857142858，
+last e30 PCK .7315714285714285/PCKh .8462142857142857，全部core张量保护true。
+best SHA85af0853f7d3b1959c7864ab8db493fd2f41647d44ceef7ecb0953ba3a50827d，
+last SHA5823664414cac2790ac86f60b6f830bbd3f2ec6635fdd7e997a9c4b5e481b267。
+原head133425参数/光学相位/融合均未扩展或改变；TRAIN loss .002232825→.001846279，
+末期TEST下降，说明本轮后期泛化退化，不能为低于.7348把last冒称最佳。
+本地run lsp_bounded_e15_train100_20261009/head_adapt30保存best/last、逐样本、协议、
+history与报告；两份latent SHA校验取回，全部300TRAIN/3000TEST收据和播放SHA回灌通过。
+不重采TEST，不按目标区间筛差PT；直接实拍.737642857与全部历史保持。
+
 2026-10-09 04:02 bounded续训已完整到60轮，持久任务返回0/final_report生成，
 本地4070回落53MiB/利用率0。best仍e15 PCK .7359285714285714，
 best SHA b525e613a876b6a4c2543e6433a8bef52d07a8101281c29448c50ea02151bb3e；
