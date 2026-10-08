@@ -1,0 +1,187 @@
+{
+  "scope": "36 original legacy retrieval, analysis, DVP/MNIST/SHS diagnostic and timing helper sources/notes",
+  "decision": "Preserve old dependencies and measurement helpers in main unchanged, including four_image_flow/shs_physical2400 referenced by historical T12 hardware flows. They are not rank72 CLI or a new hardware contract.",
+  "verification": "Raw SHA and recovery Git blob identity verified (raw or LF); Python AST only. No SDK import, camera/SLM operation, model evaluation or old environment repair.",
+  "files": [
+    {
+      "path": "LightGenV2/tasks/t07_abo_image_retrieval/PHYSICAL2400.md",
+      "original_raw_sha256": "b212444ec5b25e24af0178b1df38f1f2d4910417a6b2bb10fb61f40a22d03c41",
+      "recovery_blob": "d5797aa620c0c7581f8ecc9f3eedc7d973b57011"
+    },
+    {
+      "path": "LightGenV2/tasks/t07_abo_image_retrieval/PHYSICAL_FINETUNE_PLAN.md",
+      "original_raw_sha256": "d10f50698990663e6a1f6511f109549372d50c2dad7f338c1f79891df92ccd53",
+      "recovery_blob": "a704bf2a8b9405c707e8c211610cbec24db47037"
+    },
+    {
+      "path": "LightGenV2/tasks/t07_abo_image_retrieval/ROBUST_RETRAIN_20260926.md",
+      "original_raw_sha256": "d04befed149942ff903a98dc084a0615a9c66448d6d9e75d880beb46e4a35c39",
+      "recovery_blob": "f11018299cee49837681faeaccfa5a88117b817c"
+    },
+    {
+      "path": "LightGenV2/tasks/t07_abo_image_retrieval/analysis/__init__.py",
+      "original_raw_sha256": "bf299cdfc80901e9cd162d77f78bb0af8141c551e2372f58f44249a9ccb31462",
+      "recovery_blob": "d1968dc8c8a8b66cbbbd4348abb895915dbe5cda"
+    },
+    {
+      "path": "LightGenV2/tasks/t07_abo_image_retrieval/analysis/analyze_bringup4.py",
+      "original_raw_sha256": "3079fedb119a8f0f006727d3074bcc4bf1e71f6d50214bec7cc0ea2b4b45798a",
+      "recovery_blob": "4aad56cde49fd3bba2be1625220ac726077edc0b"
+    },
+    {
+      "path": "LightGenV2/tasks/t07_abo_image_retrieval/analysis/audit_for_meeting.py",
+      "original_raw_sha256": "779d4e8d1ef948272ebed7fce5ca4529e64cd87b70d89d1cefc25f0973b3dfa9",
+      "recovery_blob": "f2e5facca84f8b38ef920433b9682ba979a6e03c"
+    },
+    {
+      "path": "LightGenV2/tasks/t07_abo_image_retrieval/analysis/audit_stage_orientations.py",
+      "original_raw_sha256": "b0a2a624189fe1a831bad58810d9a3c0c1518e7c40f60add1fd7b54f823cb387",
+      "recovery_blob": "9f91e83a3d3f949965b409ad4383f2166fd9b2ef"
+    },
+    {
+      "path": "LightGenV2/tasks/t07_abo_image_retrieval/analysis/enrolled_views.py",
+      "original_raw_sha256": "ecd85846bffc0a6bfcfe9b369f7d1b4b1344eaf4b729d88d0bbac9bb996fee95",
+      "recovery_blob": "f474dfc7d799bf139e4b7102222b6b3dcaa22d3f"
+    },
+    {
+      "path": "LightGenV2/tasks/t07_abo_image_retrieval/lab_dvp8um/abo_full_sensor_health.py",
+      "original_raw_sha256": "280106861792d5f631289c2e835750ca82b1538c2ebc1d08c75685ed7971e0f0",
+      "recovery_blob": "916e1f9f891b04e976960a17542ddef8e745c18c"
+    },
+    {
+      "path": "LightGenV2/tasks/t07_abo_image_retrieval/lab_dvp8um/abo_illumination_map.py",
+      "original_raw_sha256": "22ae3bc12cfa56f8a6bd3c927e80a4abb046f30267a03c46514380eaf54e5543",
+      "recovery_blob": "38031e26233152b3c1ebf803547d22eba605cdd8"
+    },
+    {
+      "path": "LightGenV2/tasks/t07_abo_image_retrieval/lab_dvp8um/abo_input_replay_probe.py",
+      "original_raw_sha256": "4de0ebb158d4ca8b76a58dd90fdfe95d0e294e53fdd551acfcf7437f52d2108b",
+      "recovery_blob": "7c68e2a9761f1bc9fb83214f8cd5c8fae749fb35"
+    },
+    {
+      "path": "LightGenV2/tasks/t07_abo_image_retrieval/lab_dvp8um/abo_phase_contrast_probe.py",
+      "original_raw_sha256": "538572c84a23f51ff298f3ec8470dea6d51d74ece6ea4ee81ae2f4fa88de405d",
+      "recovery_blob": "7120c08cf17b3e874d86d9fa3c63ee69b39c2dd2"
+    },
+    {
+      "path": "LightGenV2/tasks/t07_abo_image_retrieval/lab_dvp8um/abo_sdk_preload_probe.py",
+      "original_raw_sha256": "267d5655f701113aa1955418f79fb79749dc6f95ea3bfdd11e1f7b2c19821387",
+      "recovery_blob": "f106000349d250c6fbaafe9ba0447700cc931eb2"
+    },
+    {
+      "path": "LightGenV2/tasks/t07_abo_image_retrieval/lab_dvp8um/abo_stage_exposure_probe.py",
+      "original_raw_sha256": "e703131250e3d326f56c1e4c52dd491be456e4dbfa7f06f9524aff176480be3b",
+      "recovery_blob": "61c9d6b2815fe9e7ad84c6bf73db0adc9750ed5f"
+    },
+    {
+      "path": "LightGenV2/tasks/t07_abo_image_retrieval/lab_dvp8um/analyze_mnist_dvp.py",
+      "original_raw_sha256": "38ed4850bb737a224b6bc873fcaaef650a2d950d154e7ddc07454d6ee186120a",
+      "recovery_blob": "782655d3fedfa91956d340bc7ed726b21ac7313d"
+    },
+    {
+      "path": "LightGenV2/tasks/t07_abo_image_retrieval/lab_dvp8um/bench_scan.py",
+      "original_raw_sha256": "7129c2ec354b4e671c3b74d1bfb85448466b3302fe3d35e7e01231cc57cd48d6",
+      "recovery_blob": "098d33c0cef3cefee85df08160074e0c86e4a4d6"
+    },
+    {
+      "path": "LightGenV2/tasks/t07_abo_image_retrieval/lab_dvp8um/camera_only_physical2400.py",
+      "original_raw_sha256": "ffc8cf4bc3882f0fcd93258e36ca3cac6bee1567988c7ea8fefa836863efa87c",
+      "recovery_blob": "d7bfe0f89bff8b6f796d9f427259a09781fb3e03"
+    },
+    {
+      "path": "LightGenV2/tasks/t07_abo_image_retrieval/lab_dvp8um/check_dvp_enumeration.py",
+      "original_raw_sha256": "1cd1e7e011f5acec58fdf82793cfe34aa03037733de258cdb0fcc8c184cda52d",
+      "recovery_blob": "24826b99463d7ac82b2454dd661a8504f1ec5d31"
+    },
+    {
+      "path": "LightGenV2/tasks/t07_abo_image_retrieval/lab_dvp8um/four_image_flow.py",
+      "original_raw_sha256": "26265e6b238c4e8f4062f250720b2e2144f4ff37bf864a5700af93ae3f3120fb",
+      "recovery_blob": "be3de5afc4720d98c1f463a1016fb4159d2a1bea"
+    },
+    {
+      "path": "LightGenV2/tasks/t07_abo_image_retrieval/lab_dvp8um/full_query_flow.py",
+      "original_raw_sha256": "c75320bead6e7cc9af65dd5de2f6869718df65ee19ebda9d204d2f5eef7d13a2",
+      "recovery_blob": "d66c1ed81e8bc3c77bde94972949877e23bbb0b4"
+    },
+    {
+      "path": "LightGenV2/tasks/t07_abo_image_retrieval/lab_dvp8um/generate_fresnel_sets.py",
+      "original_raw_sha256": "7eda25f3e6e4f2fd56a3eac377ad67fdb0ee72537c964fec5e4b2af05e801d7d",
+      "recovery_blob": "65f17919c6e16c677793d0246b1b9ee004e69ddc"
+    },
+    {
+      "path": "LightGenV2/tasks/t07_abo_image_retrieval/lab_dvp8um/health_physical2400_20260926.py",
+      "original_raw_sha256": "94bd493825fbc265d7ff6d26909da704313fd384aad8d01d24bf0ceb4cf01b0e",
+      "recovery_blob": "f034d3c1d7efa64e021f75da3096f3ce086200a7"
+    },
+    {
+      "path": "LightGenV2/tasks/t07_abo_image_retrieval/lab_dvp8um/mnist_dvp_bench.py",
+      "original_raw_sha256": "e8fb14dbc691e14c4fe4eec2f65228b52df63dcfe1d109b3b871f71cc5d1d1e5",
+      "recovery_blob": "8cef16d862fcb29d1835591a09b48c281241b07a"
+    },
+    {
+      "path": "LightGenV2/tasks/t07_abo_image_retrieval/lab_dvp8um/render_mnist_dvp_figure.py",
+      "original_raw_sha256": "3ca46db78aebed8a43e12f57830d0beb9c51ddd460f453d853fcdd51985b199f",
+      "recovery_blob": "84fbd65963ce34c5f9b40dfeed549e6cc74a5f25"
+    },
+    {
+      "path": "LightGenV2/tasks/t07_abo_image_retrieval/lab_dvp8um/shs_phase_verify2400.py",
+      "original_raw_sha256": "49954b01fea1bccb52b54d421fefa22ff3541967758d419ab34286fd074336cf",
+      "recovery_blob": "9a6a925e9c8161c66c1975549ec2e3f599cbca63"
+    },
+    {
+      "path": "LightGenV2/tasks/t07_abo_image_retrieval/lab_dvp8um/shs_physical2400.py",
+      "original_raw_sha256": "5976d3e152dada1f6cf9f93d73d72bff32c4557dd03056b8e63e07f65d6dc859",
+      "recovery_blob": "e84d1f4b9e1ff272665a5619876deb7a2f7ae310"
+    },
+    {
+      "path": "LightGenV2/tasks/t07_abo_image_retrieval/lab_dvp8um/shs_previous_timing2400.py",
+      "original_raw_sha256": "0a42192d84516a9e2e19be68146e4cda3b1e614157d08522888425251457f8f0",
+      "recovery_blob": "6b45be80b91b5d21628c1b8719526c1aea1c1c9d"
+    },
+    {
+      "path": "LightGenV2/tasks/t07_abo_image_retrieval/lab_dvp8um/shs_verify2400.py",
+      "original_raw_sha256": "63fbf7b8d3a2b7997938fff072b66ca7fc921a2287344c6f947f3b2dd316099b",
+      "recovery_blob": "c90b19e936e2f40f5cc49663572aaf63eb32fe46"
+    },
+    {
+      "path": "LightGenV2/tasks/t07_abo_image_retrieval/lab_dvp8um/shs_wait_sweep2400.py",
+      "original_raw_sha256": "7093658af132b315180f7bc2e222fa96c43cd05d56f15a673b9e54f8fd2b8d48",
+      "recovery_blob": "11fdbceb63d86146deceb1b9787ab7acd4abf1a4"
+    },
+    {
+      "path": "LightGenV2/tasks/t07_abo_image_retrieval/lab_dvp8um/tune_full_projection.py",
+      "original_raw_sha256": "c416f1fadd3b3a7cfa17d5aac8ea1d1a2bef5a1817cf588c8936ffcd18169c43",
+      "recovery_blob": "f99f4b6aa501b2dfe66716d2c9e8b2567e926198"
+    },
+    {
+      "path": "LightGenV2/tasks/t07_abo_image_retrieval/lab_dvp8um/tune_physical_readout.py",
+      "original_raw_sha256": "6c1b6d425070807b067b3d154ad2ebe83a09d57c54b68c5176ed15311b67cd6a",
+      "recovery_blob": "79394ff7cecda568560e09fa94f122bfd706e7e5"
+    },
+    {
+      "path": "LightGenV2/tasks/t07_abo_image_retrieval/legacy_run.py",
+      "original_raw_sha256": "d8c28baa27f011e61dde23c3da6761989bfa2a0779b760dc19da3e11980a7ba3",
+      "recovery_blob": "40e8672e662b0214894705ddbbc679579381d23f"
+    },
+    {
+      "path": "LightGenV2/tasks/t07_abo_image_retrieval/refinement.py",
+      "original_raw_sha256": "401f1d73a5a964c84101b859eeed48a352f3b9e847e412440557bdce551fc155",
+      "recovery_blob": "7d5ba8ae4295cfb8766fa51bc1c4f6164fe52b61"
+    },
+    {
+      "path": "LightGenV2/tasks/t07_abo_image_retrieval/requirements.txt",
+      "original_raw_sha256": "d0d67b87de03d8c1d3df84d50b12dc43b945bc1fd03aa6e608fe49403d61413f",
+      "recovery_blob": "54db203f38571755cdce8fa97fc547ac870c8b9f"
+    },
+    {
+      "path": "LightGenV2/tasks/t07_abo_image_retrieval/retrieval_contract.py",
+      "original_raw_sha256": "1195732dc5548ef7f5bf5962548d232733bc76cb64d3e9c3fe0603b5b37d49e7",
+      "recovery_blob": "d623c22864e93d608ff15e38de8280e9f0ae0553"
+    },
+    {
+      "path": "LightGenV2/tasks/t07_abo_image_retrieval/run.py",
+      "original_raw_sha256": "1b8c657c56c712cbec0861ebfedd184d3a011406ce0f612a395b1c12e11c7f14",
+      "recovery_blob": "303bd0f2655ad978090ac5408439ccda03fc14db"
+    }
+  ]
+}

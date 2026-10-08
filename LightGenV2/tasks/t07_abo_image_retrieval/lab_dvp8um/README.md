@@ -10,6 +10,12 @@
 SHA `1b2c11500b566c54a246de22c53dacf617f1cf0f2caf8744ff664c2dd854d151`。
 Python依赖、实际数据和原报告未移动；未操作服务器旧运行目录或实验室电脑。
 
+原Python辅助源码、旧检索依赖与历史说明共36份已逐SHA核对恢复对象后原样归main，
+包括历史T12流程引用的 `four_image_flow` / `shs_physical2400` 及旧MNIST测速工具。
+来源见 `maintenance/storage/T07_HISTORICAL_SUPPORT_20261008.json`；仅做语法检查，
+未加载SDK、采集、复评查询或改变参数。这不修复下方旧路径／环境假设，
+不把旧光学几何或相位提升为rank72合同，也不授权执行其会覆盖旧输出的命令。
+
 本目录原文件保留于本机，用于解释2026-09-23至26日的设备调试和历史命令。
 静态MNIST/菲涅尔/双SLM对齐包的原始说明和原训练摘要，见
 [历史测试包](../../../../MNIST_10cm_8um_Bench_Test_20260923/README.md)。
