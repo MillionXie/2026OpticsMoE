@@ -30,7 +30,9 @@ class ArtifactIgnoreTests(unittest.TestCase):
     def test_named_t06_generated_phase_records_preserve_source_and_future_outputs(self):
         content = (ROOT / '.gitignore').read_text(encoding='utf8')
         section = content.split('# Named historical generated phase/visualization payloads;', 1)[1]
-        selected = [line[1:] for line in section.splitlines() if line.startswith('/LightGenV2/')]
+        section = section.split('# Historical LGVQ timing summaries:', 1)[0]
+        base = 'LightGenV2/tasks/t06_video_quality_assessment/reports/paper_results/spatial_continuous_no_k_20260908/'
+        selected = [line[1:] for line in section.splitlines() if line.startswith('/' + base)]
         self.assertEqual(len(selected), 7)
         self.assertFalse(any('*' in p or '?' in p for p in selected))
         base = 'LightGenV2/tasks/t06_video_quality_assessment/reports/paper_results/spatial_continuous_no_k_20260908/'
@@ -145,6 +147,12 @@ class ArtifactIgnoreTests(unittest.TestCase):
             'LightGenV2/tasks/t06_video_quality_assessment/lab_runtime.py',
             'LightGenV2/reports/20260927_demo_energy_efficiency_a100/ours/01_lgvq/source_snapshot/new_measurement.py',
             'LightGenV2/reports/20260927_demo_energy_efficiency_a100/ours/01_lgvq/new_timing.csv']
+        later = json.loads((ROOT/'maintenance/storage/HISTORICAL_REPORT_PRODUCTS_20261008.json').read_text())
+        reviewed = [p for p in visible if p in later['paths']]
+        self.assertEqual(len(reviewed), 3)
+        self.assertTrue(all(Path(p).suffix in {'.json', '.csv'} for p in reviewed))
+        selected += reviewed
+        visible = [p for p in visible if p not in reviewed]
         self.assertEqual(self.ignored(selected+visible),set(selected))
 
     def test_generated_section_headers_are_comments_not_literal_patterns(self):
@@ -220,10 +228,15 @@ class ArtifactIgnoreTests(unittest.TestCase):
                 self.assertEqual(hashlib.sha256(path.read_bytes()).hexdigest(),row['sha256'])
         private += [row['path'] for row in manuals]
         visible=[row['path'] for row in descriptor['manual_review_files'] if row not in manuals]
+        # Original binary font is retained as a private asset, not executable source.
+        font = 'LightGenV2/demo_check/adrenal_softsign_code_export_20260915_145336/code/assets/simhei.ttf'
+        self.assertIn(font, visible)
+        private.append(font)
+        visible.remove(font)
         visible += ['handoffs/t12_lab_robust17m_20260927/future_metrics.json',
                     'LightGenV2/demo_check/EuroSAT_MoE_D2NN/code/train_eurosat.py',
                     'LightGenV2/reports/20260927_demo_energy_efficiency_a100/future_timing.csv']
-        self.assertEqual(len(private),22)
+        self.assertEqual(len(private),23)
         self.assertEqual(self.ignored(private+visible),set(private))
 
     def test_rank72_delivery_copy_not_unmatched_or_canonical_source(self):
@@ -250,11 +263,29 @@ class ArtifactIgnoreTests(unittest.TestCase):
         descriptor = json.loads((ROOT/'maintenance/storage/LGVQ_TEMPORAL_TIMING_VISIBILITY_20261006.json').read_text())
         private = [row['path'] for row in descriptor['files']]
         self.assertEqual(len(private), 74)
+        products = [row['path'] for row in descriptor['generated_summary_products_verified_20261008']]
+        self.assertEqual(len(products), 3)
+        private += products
         prefix = 'LightGenV2/reports/20260927_lgvq_temporal_multi_baseline_a100/'
         visible = [prefix + name for name in ('README.md', 'build_analysis.py', 'protocol.json',
-                   'SHA256SUMS.csv', 'calculated_summary.json', 'raw_remote/future/report.json',
+                   'SHA256SUMS.csv', 'future_calculated_summary.json', 'raw_remote/future/report.json',
                    'raw_remote/future/timing_per_call.csv', 'raw_remote/new_benchmark.py')]
         self.assertEqual(self.ignored(private + visible), set(private))
+
+    def test_openmoji_named_results_keep_source_and_contracts_visible(self):
+        import json
+        record = json.loads((ROOT/'maintenance/storage/OPENMOJI_RESULT_VISIBILITY_20261008.json').read_text())
+        selected = [row['path'] for row in record['files']]
+        self.assertEqual(len(selected), 79)
+        allowed = {'report.json', 'physical_report.json', 'strict_reload.json',
+                   'last_cpu_audit.json', 'full_cached_gate.json', 'comparison.json',
+                   'direct_report.json', 'reuse_audit.json'}
+        self.assertTrue(all(Path(p).name in allowed and '*' not in p and '?' not in p for p in selected))
+        parent = str(Path(selected[0]).parent).replace('\\', '/')
+        visible = [parent+'/'+name for name in ('train.py', 'README.md', 'protocol.json',
+                   'resolved_config.json', 'physical_contract.json', 'future_report.json')]
+        visible.append('handoffs/openmoji_robust_ablation_20260928/future_run/report.json')
+        self.assertEqual(self.ignored(selected+visible), set(selected))
 
     def test_server_formal_timing_copy_is_exactly_named_not_folder_hidden(self):
         prefix = 'LightGenV2/reports/20260917_redbox_timing_energy_audit/server_2026OpticsMoE_a100_formal/'
