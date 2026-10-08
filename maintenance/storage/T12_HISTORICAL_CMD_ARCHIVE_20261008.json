@@ -1,0 +1,13 @@
+{
+  "scope": "Three local historical T12 Small Lab launchers only; no laboratory or server directory operation",
+  "archive": "archive/legacy_lab_projects/t12_historical_cmd_20261008",
+  "original_directory": "LightGenV2/tasks/t12_text_to_image/lab_shs8um",
+  "purpose": "Earlier 9.96M pilot/full run and candidate DC30 exposure diagnostic; fixed Windows environment paths, not the current 17M entry",
+  "files": [
+    {"name":"diagnose_exposure.cmd","bytes":565,"sha256":"dcd83933f356392e154f1c6bf7a40ac0d9fcaf541692dc2d48681f23a8d81de5"},
+    {"name":"run_full.cmd","bytes":547,"sha256":"76c42b8855fb4ae71beb70b2a0e2122f6384c74dafc0adffb7abad2f3bed85a6"},
+    {"name":"run_physical_pilot.cmd","bytes":408,"sha256":"d2abe1ffeb99e9b8928a017b609ebbe66f4c019ebeb60bbe077185e0b4b0d513"}
+  ],
+  "verification": "Raw original SHA and existing recovery Git blobs verified before relocation; no observed matching local Python/CMD process, tracked references only historical README and maintenance provenance",
+  "preservation": "Complete original launchers preserved; no weight, data, result, timing or Python source removal; original historical use requires deliberate restoration"
+}
