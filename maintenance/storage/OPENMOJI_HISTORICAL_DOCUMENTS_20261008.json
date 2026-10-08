@@ -1,0 +1,80 @@
+{
+  "scope": "Twelve immutable September 27-29 historical OpenMoji documentation originals only, preserved in main; no current experiment source, checkpoint, CCD or protocol mutation",
+  "files": [
+    {
+      "path": "handoffs/openmoji_exp05_20260927/decoder50_trainonly/README.md",
+      "bytes": 1266,
+      "sha256": "f99d7843a431734ef50cfa8182775aef04588aabcd9deb9dd37ffc8c3dbddb16",
+      "recovery_blob": "16206a5a646c4b007f8f6ebd8249c49ad74b562f"
+    },
+    {
+      "path": "handoffs/openmoji_fullhead_original889_20260929/PHYSICAL_G2_G5_COMPARISON_20260929.md",
+      "bytes": 2596,
+      "sha256": "d4a0f071d64b7293d39a1790c9168618a97e9fb17e663502d32d0213cd92f4d8",
+      "recovery_blob": "6d1fb14e66692fd52e50c5eecca91387e0fbf11f"
+    },
+    {
+      "path": "handoffs/openmoji_fullhead_original889_20260929/PHYSICAL_PROBE_20260929.md",
+      "bytes": 3231,
+      "sha256": "06c239ce1d5cf3cee776e0be4c2af92611757a8e0a2cd40e048188027f9f56b6",
+      "recovery_blob": "f6ff5ec4b2b809d1a8823b32c3f7a2e26a573465"
+    },
+    {
+      "path": "handoffs/openmoji_fullhead_original889_20260929/SELECTION.md",
+      "bytes": 2554,
+      "sha256": "4fb66f076d7d66050d83666842d6963c6a8298c650d76d8f7cd9bb40c4411669",
+      "recovery_blob": "2c9a4b3bcb006c069868c635b5026e0381d7e598"
+    },
+    {
+      "path": "handoffs/openmoji_fullhead_original889_20260929/final_four/README.md",
+      "bytes": 1316,
+      "sha256": "6dd9811d404499cffd15d1cef1cfb27c6871f0e3ca60a5ca73330bda7349f79e",
+      "recovery_blob": "24d6270dd47c4b6a1a24ac884184e8844a0212a5"
+    },
+    {
+      "path": "handoffs/openmoji_fullhead_original889_20260929/robust_recovery/RESULTS.md",
+      "bytes": 4094,
+      "sha256": "e635f0c63902558049c46510a6d31b56c362f2a2fc85d1b2c3a099511ab3daf9",
+      "recovery_blob": "32d692b570064f3ab194dd6e007d12cb99365d80"
+    },
+    {
+      "path": "handoffs/openmoji_robust_ablation_20260928/RESULTS.md",
+      "bytes": 2716,
+      "sha256": "de76829005de04e568a2bf6234ce9e85bb5211525206028b7cfa3ffae53d1b55",
+      "recovery_blob": "edc2b185eb4c208a6d6d281716093c1a3ccec7f1"
+    },
+    {
+      "path": "handoffs/openmoji_robust_ablation_20260928/compact/COMPACT_RESULTS.md",
+      "bytes": 3400,
+      "sha256": "1de21be17da3dcad63be7758f6bd7ab914afd1f28473cc8d48c6092df158c713",
+      "recovery_blob": "03b4af345f471632ff9333a3fd2e08aa399fde0b"
+    },
+    {
+      "path": "handoffs/openmoji_robust_ablation_20260928/lowrank16/CAPACITY_SELECTION.md",
+      "bytes": 1250,
+      "sha256": "964733d71477f074fee5a88151c2ee33d9213dbae5622e41573f77242954f3c3",
+      "recovery_blob": "fdeb79e8bb8dacc45441e7b3228076309c5c6aff"
+    },
+    {
+      "path": "handoffs/openmoji_robust_ablation_20260928/lowrank16/COMPARISON_20260929.md",
+      "bytes": 2965,
+      "sha256": "0111669493b7c0ca048c45f63a9c096da445bba842aa744ab18eb8b81a3b72da",
+      "recovery_blob": "36afb13e6173e9fda1f018748fcce96edb0a5330"
+    },
+    {
+      "path": "handoffs/openmoji_robust_ablation_20260928/lowrank16/PERFORMANCE_MATCH_RULE.md",
+      "bytes": 1233,
+      "sha256": "9e2894032beed86bf988479d71fad4cf30aa68c6cdc715fc2992a1535fede278",
+      "recovery_blob": "1c1b5c3939453f1e900a799777a86d18b910abcd"
+    },
+    {
+      "path": "handoffs/openmoji_robust_ablation_20260928/lowrank16/RESULTS.md",
+      "bytes": 4500,
+      "sha256": "368885e2a5b6d489f87e5e18f1973e780e9f2aac1fa6b1cf157b4997bbbf434c",
+      "recovery_blob": "18cf71c1b968506787ef0fecacab52b89761bebd"
+    }
+  ],
+  "verification": "Each original raw SHA and recovery Git blob raw/LF matched immediately before adoption; original document bytes unchanged",
+  "interpretation": "Historical chronology, not current performance or execution status. Old statements about no capture, next steps and VAL selection are dated snapshots and do not override later raw reports, current task README, rank64 sealed identity or current October editor16 experiment. Do not mix full-head, rank16, rank48, exp05 or rank64 weights/metrics.",
+  "assets": "Original PT, report JSON, histories, per-sample results, source images, CCD and timing retained in original private locations. This publication does not constitute independent reproduction or authorization to run old commands."
+}
