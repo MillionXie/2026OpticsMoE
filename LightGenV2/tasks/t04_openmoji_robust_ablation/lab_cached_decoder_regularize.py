@@ -23,6 +23,7 @@ def main():
     p.add_argument('--epochs', type=int, default=120)
     p.add_argument('--device', choices=('cpu', 'cuda'), default='cpu')
     p.add_argument('--changed-edit-weight', type=float, default=0.)
+    p.add_argument('--preserved-edit-weight', type=float, default=0.)
     a = p.parse_args()
     if a.output.exists():
         raise FileExistsError('Preserve existing outputs')
@@ -90,7 +91,8 @@ def main():
         correct = edit.sigmoid()*prob + (1-edit.sigmoid())*y['source_grid'].eq(target)
         composed = (-correct.clamp_min(1e-7).log()*mask).sum((1, 2))/mask.sum((1, 2)).clamp_min(1)
         positive_edit = (F.softplus(-edit)*mask).sum((1, 2))/mask.sum((1, 2)).clamp_min(1)
-        return .5*changed.mean()+.5*composed.mean()+.2*preserved.mean()+F.binary_cross_entropy_with_logits(edit, mask, pos_weight=edit.new_tensor(8.))+a.changed_edit_weight*positive_edit.mean()
+        negative_edit = (F.softplus(edit)*(1-mask)).sum((1, 2))/(1-mask).sum((1, 2)).clamp_min(1)
+        return .5*changed.mean()+.5*composed.mean()+.2*preserved.mean()+F.binary_cross_entropy_with_logits(edit, mask, pos_weight=edit.new_tensor(8.))+a.changed_edit_weight*positive_edit.mean()+a.preserved_edit_weight*negative_edit.mean()
     a.output.mkdir(parents=True)
     torch.save(payload, a.output/'best.pt')
     def write(name, value):
@@ -99,6 +101,7 @@ def main():
           'protected_sha256': protected, 'epochs': a.epochs, 'seed': 1008, 'lr': 1e-5, 'weight_decay': .05,
           'gain_range': [.98, 1.02], 'feature_drop': .02, 'relative_feature_noise': .01,
           'changed_edit_weight': a.changed_edit_weight,
+          'preserved_edit_weight': a.preserved_edit_weight,
           'paired_supervision': [.5, .5], 'consistency': .05, 'test_gradient': False,
           'selection': 'TEST every5 highest development; no independent generalization claim', 'architecture_unchanged': True})
     history = []
