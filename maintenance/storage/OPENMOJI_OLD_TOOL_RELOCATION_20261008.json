@@ -1,0 +1,12 @@
+{
+  "source_identity_receipt": "maintenance/storage/OPENMOJI_HISTORICAL_TOOLS_20261006.json",
+  "original_directory": "handoffs/openmoji_robust_ablation_20260928/midrank48_candidate",
+  "archive_directory": "archive/legacy_lab_projects/openmoji_old_tools_20261008",
+  "selection": "Exactly the 16 names and raw hashes in original_file_sha256 of the source identity receipt; no directory-wide move",
+  "verification": "Each original raw SHA and original archive-commit blob identical before relocation. No observed matching local Python/Node command; tracked task Python sources do not reference this private directory",
+  "purpose": "Finished rank48 diagnostics, original G2 wrappers, rank64 matched training source/one-time preparation, expired October 2 queue and rejected extra residual trial; detailed per-group purposes remain in source receipt",
+  "canonical_training_entry": "LightGenV2/tasks/t04_openmoji_robust_ablation/train_rank64_matched.py",
+  "preservation": "All sixteen complete originals archived without edits. Original PT, CCD, reports, feature caches, split audits and timing remain in place. Laboratory/server runtime paths and current October editor16 experiment unchanged",
+  "historical_restore_boundary": "Old helper-to-helper imports and original command paths require deliberate full restoration of these sixteen files and their original assets; do not run the expired queue or reuse historical resource assignments",
+  "scope_limit": "Local archival only, not laboratory inspection, hardware revalidation, runtime cutover or permission to delete assets"
+}
