@@ -1,4 +1,13 @@
 {
+  "historical_two_branch_profile_preservation_20261008": {
+    "profile": "LightGenV2/tasks/t06_video_quality_assessment/configs/lightgen/spatial_single_video4_two_branch.yaml",
+    "main_choice": "Original server historical profile; source SHA guard unchanged, not rebound to current final model",
+    "local_original": "archive/historical_config_bindings_20261008/spatial_single_video4_two_branch_local.yaml",
+    "local_original_sha256": "7dbc7bab523a799ebff0b68f59727e12df6e08bc03e3e3d8cd761d4e1b24a036",
+    "local_original_recovery_blob": "59fc2dff7567ffdfb1b666c96971bd733c52bf29",
+    "difference": "Five backend source SHA bindings differ; physical contract, checkpoint and config identity unchanged. Both original versions retained; no model execution or guard relaxation.",
+    "historical_only": true
+  },
   "historical_result_annotation_reconciliation_20261008": {
     "path": "LightGenV2/tasks/t06_video_quality_assessment/reports/paper_results/spatial_single_video4_srcc06665/result.json",
     "local_sha256": "3aab5417bc1f671258cc14acffd8605b92665d91359f2bf45c4b28894f79b07f",
