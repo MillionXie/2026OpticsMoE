@@ -60,13 +60,19 @@ def export(a):
                 (root/'phases').mkdir()
                 import numpy as np
                 for stage, value in phase_planes(cached).items(): np.save(root/'phases'/(stage+'.npy'), value)
+            joined = {'tokens':torch.cat(m._lab_groups).detach(), 'grid':torch.tensor(m._lab_shapes, device=loaded.device)}
+            with torch.no_grad(): batch_output = cached(joined)
+            if not torch.allclose(batch_output[0], result[0], atol=2e-5, rtol=2e-5):
+                raise RuntimeError('Cached model changes the original same-batch graph')
             for i, tokens in enumerate(m._lab_groups):
                 key = f'test_{len(entries):05d}'
                 batch = {'tokens':tokens.detach().cpu(), 'grid':torch.tensor([m._lab_shapes[i]])}
-                with torch.inference_mode():
+                with torch.no_grad():
                     output = cached(batch)
                 error = float((output[0]-result[0][i:i+1]).abs().max())
-                if not torch.allclose(output[0], result[0][i:i+1], atol=2e-5, rtol=2e-5):
+                # Batch-one GEMM/FFT kernels can differ from batch24 in float32.
+                # Same-batch identity is checked above; retain measured delta.
+                if not torch.allclose(output[0], result[0][i:i+1], atol=2e-3, rtol=2e-5):
                     raise RuntimeError(f'Cached stem changes heatmap: {error}')
                 batch['simulation_heatmap'] = result[0][i:i+1].detach().cpu()
                 p = root/'cache'/(key+'.pt'); torch.save(batch,p)
