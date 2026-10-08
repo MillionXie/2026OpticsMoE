@@ -5,7 +5,17 @@
   "training_commit": "1aa3842c01ddb54c8b0d61f8428de391e11cdaaa",
   "source_ref": "refs/archive/server-authoritative-20261002/t13_temporal_robust_20260927",
   "scope": "Pinned runtime, adapters, configs, structural tests and curated reports; no experimental artifacts copied or removed",
-  "publication_pending": true,
+  "publication_pending": false,
+  "publication_commit": "139d147bd212394a0eb90c85f35b01636340162c",
+  "publication_recheck_20261008": {
+    "original_runtime_files_checked": 62,
+    "published_commit_files_checked": 62,
+    "source_hash_mismatches": [],
+    "normalization": "Only explicitly declared crlf_to_lf rows normalized",
+    "original_runtime_directory": "/DATA/DATA1/guest3/2026OpticsMoE/.worktrees/t13_temporal_robust_20260927",
+    "runtime_modified": false,
+    "hardware_ready_proven": false
+  },
   "files": [
     {
       "path": "LightGenV2/tasks/t13_temporal_robust_training/.gitattributes",
