@@ -2,6 +2,15 @@
 
 ## 2026-10-08 授权：累计组电子适配，目标89.0%–89.5%（进行中）
 
+2026-10-09 00:15保真平衡120轮已完成：返回0、Python退出、4060回落400MiB。
+strictCPU best .9060/e5、last .9015，上游保护通过，best TRAIN changed1.0。
+best preserved .9766176/IoU .6980810/objectF1 .8683938/sceneExact .521，
+相较不加保护的mixup best .9729513/.6544591/.8555544/.496，保真有所改善，
+但仍低于.8870父PT，未得到89–89.5区间PT，不能称全面解决过拟合或最终选择完成。
+best SHA1fcb95dc5d40c530dd3ad4125245c34194d7cf22ab2913ef089eef83e76597b7，
+last SHAbeb6974f210b35fddd6b22a8e737a3bc9c3f0b302ed8b7d878e081b9e6e7528c。
+原始PT/完整报告/逐样本保留，正在本地备份；当前不再启动机械权重扫描。
+
 用户最新授权继续保真平衡对照并同步Git。mixup020正式120轮已完成，返回0、
 Python退出/4060空闲：strictCPU best .9090/e5、last .9065，上游保护通过。
 best SHA b17675d1ab2ea7479fb1017dbef7043f8a6c6522d2e545104f6608220ead9545；
