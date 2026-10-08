@@ -3,6 +3,15 @@
   "scope": "Reviewed task source evolution; historical hashes remain enforced",
   "paths": [
     {
+      "path": "LightGenV2/scripts/profile_narrow_optical_electronics_a100.py",
+      "scope": "historical_timing_contract",
+      "historical_source_commit": "43bf2f1d214c252b48e8104ef5816643ce6a7f4f",
+      "historical_sha256": "71ebc1e164023094ae880bafc0ed6f96a9f93c3ccc0c227a2ab28143b5dce100",
+      "source_commit": "479877944cf6d364e0571eaf34578f05ccfb2171",
+      "sha256": "a27f99cf058abe1c04a58c6f2a057a1c175bbef8b0825c2ec5d083b8ec197805",
+      "review_reason": "Reviewed existing commit diff: preserve legacy77/linear64 default; explicit 71-token spatial64 historical option, reverse retrieval selection, bounded 200-call/no-warmup opt-in and statistic label. Both original and published blob identities verified. Existing no-Torch AST contract test distinguishes token/head/kernel boundaries and rejects rank72. No benchmark executed and no original measurement rewritten; neither historical contract measures the sealed rank72 model."
+    },
+    {
       "path": "LightGenV2/tasks/t10_expert_scaling/plan.py",
       "historical_source_commit": "38afd43c1e28aeaff28e33bad58177ae09a0f156",
       "historical_sha256": "ee1fd82de0dd86c70ed52837b68c223de2d75cbaccbdceab510f77a4ea9cfb98",

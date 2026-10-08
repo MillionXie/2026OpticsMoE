@@ -44,6 +44,31 @@ def test_empty_schema_rejected(monkeypatch):
         module.verify_reviewed_publications(None, "main", ["manifest"])
 
 
+@pytest.mark.parametrize("path,accepted", [
+    ("LightGenV2/scripts/profile_narrow_optical_electronics_a100.py", True),
+    ("LightGenV2/scripts/unrelated.py", False),
+])
+def test_only_named_historical_timing_evolution_is_permitted(monkeypatch, path, accepted):
+    old = hashlib.sha256(b"old").hexdigest()
+    new = hashlib.sha256(b"new").hexdigest()
+    row = {"path": path, "scope": "historical_timing_contract",
+           "historical_source_commit": "old", "historical_sha256": old,
+           "source_commit": "new", "sha256": new, "review_reason": "audited contract"}
+    def read(root, ref, name):
+        if name.endswith("TASK_SOURCE_EVOLUTION_20261005.json"):
+            return json.dumps({"paths": [row]}).encode()
+        if name == "manifest":
+            return json.dumps({"paths": [{"path": path, "sha256": old}]}).encode()
+        return b"old" if ref == "old" else b"new"
+    monkeypatch.setattr(module, "read", read)
+    monkeypatch.setattr(module.subprocess, "check_output", lambda args: b"present" if args[-1].endswith("TASK_SOURCE_EVOLUTION_20261005.json") else b"")
+    if accepted:
+        assert module.verify_reviewed_publications(None, "main", ["manifest"])["errors"] == []
+    else:
+        with pytest.raises(ValueError, match="Unsafe/unreviewed task evolution"):
+            module.verify_reviewed_publications(None, "main", ["manifest"])
+
+
 @pytest.mark.parametrize("corrupt", ["history", "new", "reason"])
 def test_task_evolution_rejects_unverified_history(monkeypatch, corrupt):
     path = "LightGenV2/tasks/t04_openmoji_robust_ablation/lab_shs_capture.py"

@@ -53,7 +53,12 @@ def verify_reviewed_publications(root, ref, manifests):
     task_evolutions = json.loads(read(root,ref,task_evolution_path))['paths'] if present else []
     for row in task_evolutions:
         path = row['path']
-        if (not path.startswith('LightGenV2/tasks/') or '..' in PurePosixPath(path).parts
+        allowed_task_path = path.startswith('LightGenV2/tasks/')
+        allowed_timing_path = (
+            path == 'LightGenV2/scripts/profile_narrow_optical_electronics_a100.py'
+            and row.get('scope') == 'historical_timing_contract'
+        )
+        if (not (allowed_task_path or allowed_timing_path) or '..' in PurePosixPath(path).parts
                 or path in evolved or not row.get('review_reason')):
             raise ValueError('Unsafe/unreviewed task evolution: '+path)
         if hashlib.sha256(read(root,row['historical_source_commit'],path)).hexdigest() != row['historical_sha256']:
