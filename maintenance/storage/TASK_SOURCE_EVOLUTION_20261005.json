@@ -69,7 +69,9 @@
     },
     {
       "path": "LightGenV2/tasks/t04_openmoji_robust_ablation/configs/lab/rank64_20261002.json",
-      "historical_source_commit": "0e0b2079e84559b0ab495828273da9fffb2fe3bb",
+      "historical_source_commit": "30647628a986328766372f3b636842c185647f09",
+      "historical_origin_commit": "0e0b2079e84559b0ab495828273da9fffb2fe3bb",
+      "historical_reference_note": "Published main ancestor contains the exact original path bytes and SHA. Original origin commit is retained here for provenance but is not present in the server object database; this alias proves source-byte identity, not distribution of the original disconnected commit history.",
       "historical_sha256": "1285a6720f810c848aee32c4397e84fbfa983116ba220bc9f203de1f7e8babbc",
       "source_commit": "f34b6bf0381457f115940ce681d190c168ddb11b",
       "sha256": "79488ddaf5b47794950d8e01df1177e14cd1d8cc6916a55c2fd827ff71491b9c",
