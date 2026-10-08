@@ -9,7 +9,8 @@ last SHA88faaf7a9c46de04bdd6f039df9e6777fb56c1433c270baf487b3d67473231a3。
 best preserved .9852756/IoU .7846190/objectF1 .9002853/sceneExact .600，
 比cosine .8900主指标增加.05pp，但保真/IoU/F1/scene略低，两版保留、不称全面改善。
 这是固定实拍CCD缓存上原decoder电子适配的完整TEST开发指标，不是新光路重采，
-也不称独立泛化；不为区间继续机械扫配置。七文件本地SHA备份正在进行，未完不称完整。
+也不称独立泛化；不为区间继续机械扫配置。03:52 EMA及drop012各七文件本地备份
+均已完成，report/protocol/history/两份逐样本/best/last逐文件SHA与实验台原件一致。
 
 2026-10-09 03:27 EMA120已完整完成/返回0、strictCPU best .8900/e0、last .8890，
 上游保护true；没有改善主指标，不将新PT序列化SHA变化冒称decoder有改善。
