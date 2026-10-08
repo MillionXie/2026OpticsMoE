@@ -10,6 +10,12 @@ strict CPU best .8740/e5、last .8665，上游保护不变，任务返回0。
 完整TEST每5轮最高开发选模，无TEST梯度/VAL选模。不是从.874继续训，保持起点
 相同便于配置比较。最高.874仍保存，不把后续较差PT覆盖它；终了严格CPU审计。
 
+权重1.0对照已完成：strict CPU best .8770/e5、last .8710，上游保护通过，
+任务返回0且进程退出；best SHA14ef916c0d9392306b6034b6f57292be8007e7d99893b439b5fe2f6297e7273b。
+0/.5/1.0定位项对应.870/.874/.877，有限再验证1.5（同初始.8695、同seed与120轮），
+唯一`OpenMoji_CachedEditFocus15_120_1008`，run `editor16_align_decoder_editfocus15_120_20261008`。
+不保证继续上升，保留全部对照，核验新增定位收益与未编辑格误改；本系列不无限扫描权重。
+
 用户要求继续增强电子泛化。新增`lab_cached_decoder_regularize.py`有限对照：
 只读同上游已核验TRAIN/TEST特征，严格复测原CPU基线.7315后，从.8695平均PT
 初始化原decoder；不重建特征、不采光路、不增层。TRAIN-only特征gain .98–1.02、
