@@ -2,6 +2,15 @@
 
 ## 2026-10-08 授权：累计组电子适配，目标89.0%–89.5%（进行中）
 
+2026-10-09 03:27 EMA120已完整完成/返回0、strictCPU best .8900/e0、last .8890，
+上游保护true；没有改善主指标，不将新PT序列化SHA变化冒称decoder有改善。
+用户授权继续至08:00。TRAIN .9995而TEST .890仍有差距，有限一次增强特征缺失鲁棒性：
+从同.8900 cosine best继续，唯一改feature-drop .08→.12，关闭EMA保持原cosine对照，
+其余cosine120/原decoder30162/完整TRAIN1000/noReplay/category-only mixup.2/
+保真.5/平滑.05/定位1.5不变。先单轮GPU/strictCPU/保护，再唯一正式120轮。
+不重采、不SDK、不改架构或上游、不扫描遮挡率/门限，不保证提升或强凑目标区间。
+正式run editor16_align_decoder_catmix020_drop012_gpu120_20261009，TEST最高开发口径。
+
 2026-10-09用户要求89.00%再小幅提高。有限一次TRAIN-step decoder EMA=.99对照：
 从已核验.8900 best继续，同cosine120/完整TRAIN1000/noReplay及全部损失不变。
 依据TRAIN .9995且上一轮末期.888低于最佳，检验随机批更新平滑假设，不保证改善。

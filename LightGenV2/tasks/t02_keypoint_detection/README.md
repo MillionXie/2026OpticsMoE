@@ -2,6 +2,18 @@
 
 ## 2026-10-08 最新授权：修正物理幅度后在实验室GPU重训，实拍须再次确认
 
+2026-10-09 03:27用户授权独立部分TRAIN实拍与末端电子头微调，08:00前交付。
+预声明原TRAIN10428中seed1009固定抽100，不按TEST成绩选样，原裁剪/标注且不增强，
+同已部署bounded e15 PT b525e613...51bb3e，三层各100共300CCD；先4样本pilot再全100。
+新lab_head_adapt入口导出冻结stem与目标SHA/原TRAIN索引/样本ID、逐项理想回灌检查，
+acquire仅对显式TRAIN release放开数量，旧TEST仍严格1000不变。
+CCD三层/播放BMP/相位/上游收据完整核验后缓存最终head前spatial，原core全部冻结，
+仅原133425参数PoseHeatmapDecoder，AdamW lr1e-5/wd.01，30轮热图MSE。
+既有同PT新TEST3000CCD只读复用，梯度仅TRAIN100；每5轮最高PCK开发选模（含初始），
+不按低于.7348的区间筛选PT，不扫描阈值，保留直接.737642857及所有best/last/曲线。
+训练前必须精确重现直接PCK及14000关节，终了strictCPU bestlast和全部core张量保护。
+本段是已授权协议，尚未完成TRAIN采集或产生微调精度，不能以代码通过冒称结果。
+
 2026-10-09 03:04新bounded e15实拍完成：任务返回0，三层各1000PNG及1000收据，
 3000帧齐（仅复用本轮新pilot12），SDK释放、无Python占用。完整逐样本回放核验
 CCD/BMP/phase/upstream SHA，全部收据checkpoint一致，最低p99=22、最大饱和率0。

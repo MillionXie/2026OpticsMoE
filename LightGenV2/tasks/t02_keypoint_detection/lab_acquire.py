@@ -29,6 +29,21 @@ def read(p):
     return json.loads(Path(p).read_text(encoding='utf-8'))
 
 
+def validate_fields(release, limit):
+    """Keep full TEST immutable; explicitly bounded independent TRAIN releases."""
+    fields=release['fields']; split=release.get('split','test')
+    count=1000 if split=='test' else release.get('samples')
+    if split not in ('train','test') or not isinstance(count,int) or not 1<=count<=1000:
+        raise ValueError('Invalid explicit dataset split/count')
+    if len(fields)!=count or len({r['key'] for r in fields})!=count or not 1<=limit<=count:
+        raise ValueError('Wrong sample count or duplicate keys')
+    if any(r['key']!=f'{split}_{i:05d}' for i,r in enumerate(fields)):
+        raise ValueError('Dataset key/order mismatch')
+    if split=='train' and (not release.get('train_test_disjoint') or not release.get('targets_sha256')):
+        raise ValueError('TRAIN identity/disjointness proof required')
+    return fields[:limit]
+
+
 def export(a):
     import torch
     from . import run, training, modeling
@@ -107,8 +122,7 @@ def acquire(a):
         raise ValueError('Wrong physical amplitude contract')
     if (mode=='legacy' and checkpoint_sha!=EXPECTED_SHA) or sha(root/'settings.json')!=release['settings_sha256']:
         raise ValueError('Wrong release')
-    items=release['fields'][:a.limit]
-    if len(release['fields'])!=1000 or len(items)!=a.limit: raise ValueError('Wrong sample count')
+    items=validate_fields(release,a.limit)
     torch.set_num_threads(4)
     model=load_model(root)
     planes=phase_planes(model)
@@ -139,7 +153,7 @@ def acquire(a):
         'source_commit':subprocess.check_output(['git','rev-parse','HEAD'],text=True).strip(),'amplitude_scale':scale,'detector_scale':1/255,
         'exposure_us':2000,'gain':'Gain_X4','wait_ms':240,'camera_orientation':'flip_v','phase_orientation':'hv','phase_inverse':True,
         'corners':legacy.CORNERS.tolist(),'phase_sha256':{s:sha(p) for s,p in phases.items()},
-        'bench_source_sha256':sha(Path(legacy.__file__)),'full_run':a.limit==1000}
+        'bench_source_sha256':sha(Path(legacy.__file__)),'full_run':a.limit==len(release['fields'])}
     if resuming:
         previous=read(output/'contract.json')
         if {k:v for k,v in previous.items() if k!='source_commit'}!={k:v for k,v in contract.items() if k!='source_commit'}:
