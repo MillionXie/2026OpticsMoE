@@ -97,7 +97,7 @@ class ArtifactIgnoreTests(unittest.TestCase):
         selected=[r['path'] for r in d['files']]
         self.assertEqual(len(selected),197)
         visible=d['excluded_without_backup']+d['excluded_changed_since_backup']+[
-            'handoffs/t12_lab_robust17m_20260927/README.md',
+            'handoffs/t12_lab_robust17m_20260927/future_README.md',
             'handoffs/t12_lab_robust17m_20260927/contract.json',
             'handoffs/t12_lab_robust17m_20260927/new_report.json',
             'handoffs/t12_channel_severe_20260927/protocol.json',
@@ -178,11 +178,19 @@ class ArtifactIgnoreTests(unittest.TestCase):
         import json
         descriptor=json.loads((ROOT/'maintenance/storage/LARGE_RESULT_PAYLOAD_VISIBILITY_20261007.json').read_text(encoding='utf8'))
         private=[row['path'] for row in descriptor['files']]
-        visible=[row['path'] for row in descriptor['manual_review_files']]
+        # The two named SDK PDFs were subsequently reviewed as private vendor
+        # assets (a6c98765); retain their exact bytes, not redistribution in Git.
+        manuals=[row for row in descriptor['manual_review_files']
+                 if row['path'].startswith('ABO_Lab_8um/control_kit/CCD_SHS/')]
+        import hashlib
+        for row in manuals:
+            self.assertEqual(hashlib.sha256((ROOT/row['path']).read_bytes()).hexdigest(),row['sha256'])
+        private += [row['path'] for row in manuals]
+        visible=[row['path'] for row in descriptor['manual_review_files'] if row not in manuals]
         visible += ['handoffs/t12_lab_robust17m_20260927/future_metrics.json',
                     'LightGenV2/demo_check/EuroSAT_MoE_D2NN/code/train_eurosat.py',
                     'LightGenV2/reports/20260927_demo_energy_efficiency_a100/future_timing.csv']
-        self.assertEqual(len(private),20)
+        self.assertEqual(len(private),22)
         self.assertEqual(self.ignored(private+visible),set(private))
 
     def test_rank72_delivery_copy_not_unmatched_or_canonical_source(self):
@@ -280,10 +288,27 @@ class ArtifactIgnoreTests(unittest.TestCase):
         private = ['future_task/LAB.local.json', 'future_task/dual.local.json', 'future_task/paths.local.yaml']
         public = ['future_task/LAB.example.json', 'future_task/dual.example.json', 'future_task/config.yaml']
         self.assertEqual(self.ignored(private + public), set(private))
+
+    def test_later_exact_historical_records_are_retained_in_verified_backup(self):
+        import hashlib
+        import zipfile
+        records = {
+            'handoffs/t12_lab_robust17m_20260927/README.md':
+                'c75be6637074840b3efb783fe97da661ad6bc3f6582ef710e9342523111db33b',
+            'LightGenV2/reports/baseline_plotting_20260922/_server_raw/openmoji/test_predictions.jsonl':
+                'd9125c859f15936c3e60a7cb0787060a519ffbf6e722ca455988509b614b45c7',
+        }
+        with zipfile.ZipFile(ROOT/'.codex_tmp/storage_git_backup_20261002/untracked_asset_records_20261006.zip') as archive:
+            for name, expected in records.items():
+                original = (ROOT/name).read_bytes()
+                self.assertEqual(hashlib.sha256(original).hexdigest(), expected)
+                self.assertEqual(original, archive.read(name))
+        self.assertEqual(self.ignored(list(records)), set(records))
+
     def test_dataset_split_payload_not_timing_or_predictions(self):
         private = ['handoffs/t12_small_baseline_handoff_20260928/stage/datasets/abo_cleanrender_lamp_table_pillow_256_v1/' + split + '.jsonl' for split in ('train', 'val', 'test')]
         public = ['LightGenV2/reports/timing/sample_preprocessing.jsonl',
-                  'LightGenV2/reports/baseline_plotting_20260922/_server_raw/openmoji/test_predictions.jsonl',
+                  'LightGenV2/reports/baseline_plotting_20260922/_server_raw/openmoji/future_predictions.jsonl',
                   'handoffs/future_dataset/train.jsonl']
         self.assertEqual(self.ignored(private + public), set(private))
 
@@ -372,9 +397,12 @@ class ArtifactIgnoreTests(unittest.TestCase):
 
     def check_vendor_assets(self):
         base = 'ABO_Lab_8um/original_a100/models/Qwen3-VL-Embedding-2B/'
-        selected = [base+'config.json', base+'tokenizer.json', base+'ASSET_MANIFEST.json']
+        # Exact original Qwen helper is a manifest-verified read-only payload;
+        # new scripts remain visible. See imported_readonly_support_payloads_20261008.
+        selected = [base+'config.json', base+'tokenizer.json', base+'ASSET_MANIFEST.json',
+                    base+'scripts/qwen3_vl_embedding.py']
         self.assertEqual(self.ignored(selected), set(selected))
-        visible = [base+'scripts/qwen3_vl_embedding.py', base+'scripts/new_fix.py',
+        visible = [base+'scripts/new_fix.py',
                    base+'new_config.json', 'ABO_Lab_8um/original_a100/BACKEND_MANIFEST.json']
         self.assertEqual(self.ignored(visible), set())
 
@@ -383,7 +411,8 @@ class ArtifactIgnoreTests(unittest.TestCase):
                   'ABO_Lab_8um/original_a100/assets/test_dataset/images/product/image.jpg',
                   'ABO_Lab_8um/original_inference/assets/test_dataset/images/product/image.jpeg',
                   'ABO_Lab_8um/original_optics/reference_phases/vision_router.bmp']
-        images += ['LightGenV2/tasks/t04_semantic_interaction/dataset/openmoji_grid_v2/train/train_000001/scene.json',
+        images += ['LightGenV2/tasks/t04_semantic_interaction/dataset/openmoji_grid_v2/dataset_summary.json',
+                   'LightGenV2/tasks/t04_semantic_interaction/dataset/openmoji_grid_v2/train/train_000001/scene.json',
                    'LightGenV2/tasks/t04_semantic_interaction/dataset/openmoji_grid_v2/test/test_000001/scene.json',
                    'LightGenV2/tasks/t07_abo_image_retrieval/reports/bringup/ccd.png',
                    'LightGenV2/reports/timing/latency_plot.png']
@@ -401,7 +430,7 @@ class ArtifactIgnoreTests(unittest.TestCase):
                    'ABO_Lab_8um/original_a100/assets/test_dataset/manifest.json',
                    'ABO_Lab_8um/original_a100/reference_phases/manifest.json',
                    'ABO_Lab_8um/original_a100/reports/timing.csv']
-        sources += ['LightGenV2/tasks/t04_semantic_interaction/dataset/openmoji_grid_v2/dataset_summary.json',
+        sources += ['LightGenV2/tasks/t04_semantic_interaction/dataset/openmoji_grid_v2/future_summary.json',
                     'LightGenV2/tasks/t04_semantic_interaction/dataset/openmoji_grid_v2/train/train_000001/config.yaml',
                     'LightGenV2/reports/timing/timing_per_sample.csv',
                     'LightGenV2/reports/timing/source_snapshot/measure.py',
