@@ -2,6 +2,15 @@
 
 ## 2026-10-08 授权：累计组电子适配，目标89.0%–89.5%（进行中）
 
+最新TRAIN-only诊断：.8810 best在原TRAIN1000 changed-cell .996，说明继续增加
+训练拟合不是主要目标。有限一次从该best继续，唯一配置变动为TRAIN特征遮挡.02→.08，
+保持clean/noisy配对、噪声.01、原decoder、定位1.5、困难重放500及120轮预算；
+不新增层或改变光学上游，不从TEST挖困难样本。Git b9d1bacc8已三端同步。
+`editor16_align_decoder_mask008_smoke_20261008`单轮loss .1987193，strictCPU .8830，
+上游保护通过；这是单轮短测，保留独立PT，不将其当正式120轮结果。
+正式`editor16_align_decoder_mask008_120_20261008`已在实验台CPU派发，唯一PID25508，
+同级stdout/err日志；终了仍须strict best/last审计与备份，.8810原结果不覆盖。
+
 最新继续授权：数据已在实验室既有rank64项目，同上游`lr1e5_wd005_160_20261008`
 的TRAIN/TEST特征各1000、各约153MB，不需光路采集或传回服务器。
 定位1.5对照strict CPU best .8780/e25、last .8725；best SHA
