@@ -1,4 +1,19 @@
 {
+  "retired_trial_configs_20261008": {
+    "purpose": "Old Spatial electronic-balance s586 and phase-polish seed570 trial launch configs; not current final profile",
+    "archive_root": "/DATA/DATA1/guest3/2026OpticsMoE/archive/historical_trial_configs_20261008",
+    "original_relative_paths_preserved_under_archive": true,
+    "files": [
+      {"path": "experiments/qwen3_vl_2b_lgvq_single_metric_o2_16frame_54/configs/release/spatial_electronic_balanced_strong_s586.yaml", "sha256": "739302fc2674558500a4fa4dd02e160115e65f4959e0872fdd24d65324b1189b"},
+      {"path": "experiments/qwen3_vl_2b_lgvq_single_metric_o2_16frame_54/configs/release/spatial_phase_polish_seed570.yaml", "sha256": "e7143fb839ff97888d29edf06666726ef77e8a88a6eaaa4eff09e0d7cf54f56c"}
+    ],
+    "registered_worktree_tracked_runtime_reference_hits": 0,
+    "readable_process_command_or_open_fd_hits": 0,
+    "SHA_before_and_after_equal": true,
+    "recovery": "Restore original relative path from complete archive only when intentionally reproducing that historical trial; missing parent configs still require original historical source checkout.",
+    "data_weights_results_and_timing_moved_or_deleted": false,
+    "same_filesystem_move_not_disk_release": true
+  },
   "visibility_update_20261007": {
     "scope": "38 named ABO_Lab_8um historical dual-machine delivery source/config files; the two vendor qwen3_vl_embedding.py files remain visible, as do five unique timing/spatial source files",
     "vendor_source_visibility_preserved": true,
