@@ -1,0 +1,32 @@
+{
+  "scope": "Five original local-only historical T12 device input/delivery helpers, generation requirements and LGVQ visual-baseline timing tool",
+  "verification": "Raw SHA and recovery Git blob match (raw or LF); Python AST only. Not asserted identical to deployed laboratory copy; no dependencies installed, driver imported, model run or timing recalculated.",
+  "decision": "Preserve local unique source in main, not replace formal model or its contracts. Historical commands still require their original explicit environment/assets.",
+  "files": [
+    {
+      "path": "LightGenV2/requirements/generation.txt",
+      "original_raw_sha256": "eddb99996387cadf7abcdead02cf6a5fd0b7ecfcc5babebacb9f07491f6b3f18",
+      "recovery_blob": "5f8439e817b8bdaf6f116b414f4d689a18883122"
+    },
+    {
+      "path": "LightGenV2/scripts/profile_lgvq_temporal_visual_baselines_a100.py",
+      "original_raw_sha256": "1f73f8172fff97e7f7014977bbd1771c3158b96a1e1c899da779a519027e9291",
+      "recovery_blob": "f05ffdd58d659c3d8823c2130d65728fc760db31"
+    },
+    {
+      "path": "LightGenV2/tasks/t12_text_to_image/lab_shs8um/check_inputs.py",
+      "original_raw_sha256": "e59b25c07b236645e463a3b1c339fc516b2bab498056b1bf8593bdc911f54642",
+      "recovery_blob": "72fbd675962c03e018da0c54af2f00bbee2fc095"
+    },
+    {
+      "path": "LightGenV2/tasks/t12_text_to_image/lab_shs8um/prepare_delivery.py",
+      "original_raw_sha256": "a2792a79f7cb043573cb078beeab9edf0b273d1dd42feb2851beb9fab28f0876",
+      "recovery_blob": "d810275a2d3a11d63163c5cef8ee9cc3f7c9a193"
+    },
+    {
+      "path": "LightGenV2/tasks/t12_text_to_image/lab_shs8um/probe_signal.py",
+      "original_raw_sha256": "fc6959b29309546f0276403959d18a38092e990e943385700b47b29282bfb60a",
+      "recovery_blob": "b874839b525543a5d8a61b753b30a47468208831"
+    }
+  ]
+}
