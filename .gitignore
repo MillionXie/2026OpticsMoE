@@ -4066,3 +4066,10 @@ node_modules/
 /LightGenV2/reports/baseline_plotting_20260922/delivery/openmoji/source_report.json
 # Office's live workbook owner/lock files are transient, never source; keep them on disk.
 ~$*.xlsx
+# Exact historical private data records, authorization and font asset; originals preserved.
+/LightGenV2/demo_check/EuroSAT_MoE_D2NN/code/USER_AUTHORIZATION.json
+/LightGenV2/demo_check/adrenal_softsign_code_export_20260915_145336/code/assets/simhei.ttf
+/LightGenV2/demo_check/adrenal_softsign_code_export_20260915_145336/data/adrenalmnist3d/projected2d/axis2_mean/preprocessing.json
+/LightGenV2/demo_check/adrenal_softsign_code_export_20260915_145336/data/adrenalmnist3d/raw/download_manifest.json
+/LightGenV2/demo_check/adrenal_softsign_code_export_20260915_145336/data/adrenalmnist3d/reports/data_audit.json
+/LightGenV2/demo_check/adrenal_softsign_code_export_20260915_145336/data/adrenalmnist3d/reports/data_audit.md

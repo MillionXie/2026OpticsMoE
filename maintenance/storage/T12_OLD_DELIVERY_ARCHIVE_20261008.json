@@ -1,0 +1,14 @@
+{
+  "scope": "Two local historical 17M baseline delivery snapshots, not active development/runtime directories",
+  "projects": [
+    {"original_path": "handoffs/t12_small_baseline_handoff_20260928", "archive_path": "archive/legacy_lab_projects/t12_small_baseline_handoff_20260928", "files": 6546, "bytes": 509947730},
+    {"original_path": "handoffs/t12_small_baseline_share_20260928", "archive_path": "archive/legacy_lab_projects/t12_small_baseline_share_20260928", "files": 4494, "bytes": 326757675}
+  ],
+  "complete_inventory": ".codex_tmp/storage_git_backup_20261002/t12_old_delivery_longpath_inventory_20261008.json",
+  "inventory_sha256": "935971151a2bf587456c71eb187db43c05acaf9dff6aca5f5d49cdbe60880fb4",
+  "verification": "All 11040 file sets, lengths and SHA equal complete pre-move longpath inventory; original paths absent; no symlinks; no tracked scientific runtime references or observed local process use",
+  "scan_correction": "Initial ordinary-path scan omitted seven deep configuration files. Restored directories, rescanned using extended Windows paths before final move, then verified full archive. No missing file or payload deletion.",
+  "cleanup": "PowerShell move left read-only empty directories for the first package; removed only verified empty directories, never recursively deleted payload files. Second package original directory was already absent.",
+  "preserved": "Original PT, data, source, output, timing and power records; no asset disk-space release claimed; source Git identity/recovery references unchanged; no Linux/laboratory directory operation",
+  "restore": "Confirm old path absent and no active user task; move complete same-named archive to original handoffs path and verify inventory. Old checker commands require this explicit restoration."
+}
