@@ -3,6 +3,14 @@
   "scope": "Reviewed task source evolution; historical hashes remain enforced",
   "paths": [
     {
+      "path": "LightGenV2/tasks/t16_zero_phase_ccd_lifelong/reports/refinement_20260926/README.md",
+      "historical_source_commit": "2f2f6946f38c7d06320eb29314654a6260f3d618",
+      "historical_sha256": "b808fb43d4d6e5ceebea6af0286880d8ed5f87d14306a2908ab59f7671f49f40",
+      "source_commit": "0f9f386cd3850e68a346b6eced03d38af29ad3c0",
+      "sha256": "a183ee3d953dfd5ac6c9abbf806f575fcd01989658b39523c8c30e4858957e06",
+      "review_reason": "Complete old-to-current diff reviewed: replace two broken private PNG embeds with original filenames and an explicit missing-asset caveat. No numerical result, source/result/selected-test identity or model changed. Historical document bytes remain verified at the original commit; missing PNG bytes are not claimed recovered."
+    },
+    {
       "path": "LightGenV2/scripts/profile_narrow_optical_electronics_a100.py",
       "scope": "historical_timing_contract",
       "historical_source_commit": "43bf2f1d214c252b48e8104ef5816643ce6a7f4f",
@@ -23,9 +31,9 @@
       "path": "LightGenV2/tasks/t03_saliency/README.md",
       "historical_source_commit": "6650d2bb3ca6566ce781b4b9de488227f67717f8",
       "historical_sha256": "ae5f430c71379aae02087bd408d1eb32f2394f7b890007e696477633319f6af4",
-      "source_commit": "14e5eff6dea41aeba6ebe8572d6bef66ec07b331",
-      "sha256": "5a46aef82790e4fddf87adf9cc466ea1fcbd63df0eda03729cdbb05bd527e587",
-      "review_reason": "Append existing handoff/main source equality and four synthetic CPU contract tests with explicit machine and field limitations; no model, data or metric changes. Historical imported README hash remains checked."
+      "source_commit": "62ee1ae9f5d36b48bbbadddd289468c415f4a557",
+      "sha256": "2b00480f13c609dc132078e42a6784e5f80fc573ba86c29e1441ee587e2b0608",
+      "review_reason": "Original imported README identity remains checked. Reviewed the later complete diff from 14e5eff6: document explicit historical fixed-learning-rate/test-interval options without assigning new scores, and replace obsolete keep-directory wording with verified retirement receipts for two handoff/figure copies and twenty SALICON trial copies. Original source, data, PT, measurements and archive SHA remain distinguished; no scientific result changed. Earlier handoff/main equality and four synthetic-test caveats retained."
     },
     {
       "path": "LightGenV2/tasks/t04_openmoji_robust_ablation/lab_shs_capture.py",
