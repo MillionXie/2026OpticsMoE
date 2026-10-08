@@ -35,6 +35,8 @@ def architecture_label(settings: Any) -> str:
     lower, upper = settings.fusion_alpha_min, settings.fusion_alpha_max
     if (lower, upper) != (0.01, 0.95):
         label += f"_alpha{lower:.3f}_{upper:.3f}"
+    if getattr(settings, 'physical_amplitude_mode', 'legacy') != 'legacy':
+        label += '_tanh05_uint8'
     return label
 
 
@@ -104,6 +106,9 @@ def build_student(loaded: Any, settings: Any) -> LightGenVision2PoseStudent:
         "optical" if settings.lightgen_model_variant.startswith("optical_router") else "none"
     )
     model.checkpoint_architecture = architecture_label(settings)
+    if getattr(settings, 'physical_amplitude_mode', 'legacy') == 'tanh05_uint8':
+        from .physical_amplitude import install_bounded_inputs
+        install_bounded_inputs(model.core, quantize=True)
     return model
 
 

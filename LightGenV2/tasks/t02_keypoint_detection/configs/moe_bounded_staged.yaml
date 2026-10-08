@@ -1,0 +1,12 @@
+base_config: moe_optical_router_scale_matched_dc20_no_shift_warmstart.yaml
+
+# New physical graph contract; initialize from the pinned 73.4786% legacy PT.
+# All three propagations receive tanh(abs(E)/.5) with fixed uint8 quantization.
+# Never restore the old x16 field / x256 intensity units.
+physical_amplitude:
+  mode: tanh05_uint8
+
+loss:
+  coordinate_weight: 0.0
+
+output_dir: ../runs/simulation/bounded_staged_20261008

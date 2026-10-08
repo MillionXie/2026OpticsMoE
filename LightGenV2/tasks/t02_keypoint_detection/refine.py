@@ -22,7 +22,7 @@ from .settings import load_settings, save_resolved_config
 from .training import _bind
 
 TASK = Path(__file__).resolve().parent
-PROFILES = ('joint', 'staged', 'staged_heatmap', 'alpha50', 'alpha40', 'alpha40_polish', 'alpha40_distill')
+PROFILES = ('joint', 'staged', 'staged_heatmap', 'bounded_staged', 'alpha50', 'alpha40', 'alpha40_polish', 'alpha40_distill')
 HIGH_SOURCE_REL = TASK/'runs/simulation/refinement_20260909/staged_heatmap/best_checkpoint.pt'
 HIGH_SOURCE_SHA = '495b9c2c4e3df15d3715f1ce8f2faea7cb9156275b31103ec684f4e96a328518'
 SOURCE_REL = TASK / 'runs/simulation/moe_router_scale_dc20_no_shift_warmstart0713_seed42/best_checkpoint.pt'
@@ -126,13 +126,14 @@ def run(args):
     polish = args.profile in ('alpha40_polish','alpha40_distill')
     high_alpha = args.profile.startswith('alpha')
     reset_alpha = high_alpha and not polish
-    settings = load_settings(TASK/f'configs/moe_{args.profile}.yaml') if high_alpha else source_settings
+    bounded = args.profile == 'bounded_staged'
+    settings = load_settings(TASK/f'configs/moe_{args.profile}.yaml') if high_alpha or bounded else source_settings
     if polish:
         source_settings = load_settings(TASK/'configs/moe_alpha40.yaml')
     spec = polish_config(args.profile) if polish else {}
-    source_sha = spec['source_sha256'] if polish else (HIGH_SOURCE_SHA if high_alpha else SOURCE_SHA)
+    source_sha = spec['source_sha256'] if polish else (HIGH_SOURCE_SHA if high_alpha or bounded else SOURCE_SHA)
     if args.source is None:
-        args.source = TASK/spec['source_relative'] if polish else (HIGH_SOURCE_REL if high_alpha else SOURCE_REL)
+        args.source = TASK/spec['source_relative'] if polish else (HIGH_SOURCE_REL if high_alpha or bounded else SOURCE_REL)
     if sha256_file(args.source) != source_sha:
         raise RuntimeError('Source checkpoint differs from the profile-pinned candidate')
     payload = torch.load(args.source,map_location='cpu',weights_only=False)
@@ -193,13 +194,14 @@ def run(args):
         write('distillation_gradient_audit.json',audit_distillation_gradient(model,bundle,loaded,settings,teacher_cache,opt))
     manifest={'source':str(args.source.resolve()),'source_sha256':source_sha,'source_epoch':payload['epoch'],
               'git_commit':subprocess.check_output(['git','rev-parse','HEAD'],cwd=TASK,text=True).strip(),
-              'args':vars(args),'architecture_unchanged':not reset_alpha,'topology_unchanged':True,'new_layers':0,
+              'args':vars(args),'architecture_unchanged':not reset_alpha and not bounded,'topology_unchanged':True,'new_layers':0,
+              'physical_amplitude_mode':getattr(settings,'physical_amplitude_mode','legacy'),
               'parameter_budget':parameter_budget,
               'teacher':teacher_report,
               'fusion_contract':{'min':settings.fusion_alpha_min,'max':settings.fusion_alpha_max,
                                  'initial_actual':initial_fusion,'reset_from_source':reset_alpha},
               'train_samples':len(bundle.train),'test_samples':len(bundle.test),
-              'test_selected':True,'coordinate_loss_train_weight':0. if args.profile in ('staged_heatmap','alpha50','alpha40') else settings.coordinate_loss_weight,
+              'test_selected':True,'coordinate_loss_train_weight':0. if args.profile in ('staged_heatmap','bounded_staged','alpha50','alpha40') else settings.coordinate_loss_weight,
               'target_pck_at_0.2':0.73 if args.profile.startswith('alpha40') else None,
               'schedule':[{'epoch':e,'stage':stage_spec(args.profile,e)[0],'lr':stage_spec(args.profile,e)[1]} for e in range(1,settings.student_epochs+1)],
               'torch':torch.__version__,'gpu':torch.cuda.get_device_name(device) if device.type=='cuda' else 'cpu'}
@@ -208,7 +210,7 @@ def run(args):
     train_loader=base._loader(bundle.train,settings,training=True)
     test_loader=base._loader(bundle.test,settings,training=False)
     eval_settings=copy.copy(settings)
-    if args.profile in ('staged_heatmap','alpha50','alpha40'): settings.coordinate_loss_weight=0.
+    if args.profile in ('staged_heatmap','bounded_staged','alpha50','alpha40'): settings.coordinate_loss_weight=0.
     save_resolved_config(settings)
     def evaluate(epoch,phase):
         return base.evaluate_model(model,'student',test_loader,loaded.processor,device,eval_settings,phase=phase,epoch=epoch,save_outputs=False,tta=False)[0]

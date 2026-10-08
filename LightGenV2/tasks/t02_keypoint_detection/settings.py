@@ -53,6 +53,9 @@ def load_settings(path: str | Path) -> Any:
     settings.phase_dc_weight = float(d("loss.phase_dc_weight", 0.0))
     settings.d2nn_phase_size = int(d("d2nn.phase_size", settings.expert_size))
     settings.d2nn_phase_layers = int(d("d2nn.phase_layers", settings.top_k))
+    settings.physical_amplitude_mode = str(d("physical_amplitude.mode", "legacy"))
+    if settings.physical_amplitude_mode not in ("legacy", "tanh05_uint8"):
+        raise ValueError('Unknown T02 physical amplitude contract')
 
     if settings.lightgen_model_variant not in MODEL_VARIANTS:
         raise ValueError(f"Unknown LightGen T02 model variant: {settings.lightgen_model_variant}")
@@ -113,6 +116,8 @@ def save_resolved_config(settings: Any) -> None:
         "phase_parameters": settings.d2nn_phase_layers * settings.d2nn_phase_size**2,
         "matching_target": "top_k * expert_size^2",
     }
+    values["physical_amplitude"] = {"mode": getattr(settings, 'physical_amplitude_mode', 'legacy'),
+                                    "legacy_scale_restoration": False}
     path.write_text(
         yaml.safe_dump(values, sort_keys=False, allow_unicode=True), encoding="utf-8"
     )

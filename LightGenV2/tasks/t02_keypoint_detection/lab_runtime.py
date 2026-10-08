@@ -30,6 +30,9 @@ class CachedStudent(nn.Module):
         self.core=LightGenDenseVision2Core(settings.vision_hidden_size,settings)
         branch=self.core.optical_branch
         branch.core.router=OpticalDetectorTopKRouter(branch.core.geometry,settings)
+        if getattr(settings, 'physical_amplitude_mode', 'legacy') == 'tanh05_uint8':
+            from .physical_amplitude import install_bounded_inputs
+            install_bounded_inputs(self.core, quantize=True)
         self.head=PoseHeatmapDecoder(input_dim=settings.electronic_width,heatmap_size=settings.heatmap_size,num_joints=14)
 
     def forward(self,batch):
