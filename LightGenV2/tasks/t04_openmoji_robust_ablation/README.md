@@ -8,8 +8,12 @@
 不新增层或改变光学上游，不从TEST挖困难样本。Git b9d1bacc8已三端同步。
 `editor16_align_decoder_mask008_smoke_20261008`单轮loss .1987193，strictCPU .8830，
 上游保护通过；这是单轮短测，保留独立PT，不将其当正式120轮结果。
-正式`editor16_align_decoder_mask008_120_20261008`已在实验台CPU派发，唯一PID25508，
-同级stdout/err日志；终了仍须strict best/last审计与备份，.8810原结果不覆盖。
+首次直接后台派发`editor16_align_decoder_mask008_120_20261008`的PID25508已退出，
+仅落盘初始best/protocol，无梯度history；保留该失败启动，不称训练完成。
+改为既有任务模板的独立计划任务`OpenMoji_CachedMask008_120_1008`，正式run
+`editor16_align_decoder_mask008_scheduled_20261008`，launcher16344/实际Python7696；
+已真实epoch2/loss .2111679，epoch1 .1987193；源仍b9d1bacc8，同级完整log。
+不是双训练：重派前核无原Python，终了仍须strict best/last审计备份，.8810不覆盖。
 
 最新继续授权：数据已在实验室既有rank64项目，同上游`lr1e5_wd005_160_20261008`
 的TRAIN/TEST特征各1000、各约153MB，不需光路采集或传回服务器。
