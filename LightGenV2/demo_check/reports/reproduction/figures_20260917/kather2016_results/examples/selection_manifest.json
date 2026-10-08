@@ -1,0 +1,9 @@
+{
+  "rule": "Lexicographically first test ID within each true class and each of two outcomes: all four arms correct, or at least one wrong. No substitution when empty.",
+  "depth": 6,
+  "seed": 17,
+  "data_sha256": "b6d887d8dfc890f5829639b47dd63e7fe22d1fee100119617a36756e32631ce7",
+  "results_sha256": "143ae667b79f53a7d1dd265853a8bc73cf6d0373fdcb291de1f98d7817d7f5fa",
+  "script_sha256": "0be332e9481ebd7df5ca5ca165aa94660dc2a2f67e8a55204b6297f1ebc8ee71",
+  "n_examples": 16
+}

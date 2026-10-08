@@ -1,0 +1,284 @@
+{
+  "files": {
+    "ARCHITECTURE_AND_PROTOCOL.md": {
+      "bytes": 5385,
+      "sha256": "ee20a1f82756addeae4420a40189d1b8ea1bef67d290e1f20651a3f53d93432e"
+    },
+    "PROVENANCE.json": {
+      "bytes": 8305,
+      "sha256": "6cb4f7fce6db7eef1dae85d2b73e9f097cfcfe55f98381ad56430a0b7ab4208c"
+    },
+    "README.md": {
+      "bytes": 5211,
+      "sha256": "52bd4678de5992760d0ed1b86d97326608637700dc6ac30a6452c43649f7820d"
+    },
+    "adrenal_softsign_code_export_20260915_145336/code/calibration.py": {
+      "bytes": 1703,
+      "sha256": "064663a7b5f4196c4d9e63de4096e55b29457a69343c57afeb029ef72c92fd5f"
+    },
+    "adrenal_softsign_code_export_20260915_145336/code/config.yaml": {
+      "bytes": 4127,
+      "sha256": "8ee2c5cf07ce15c020f41ad8724bd88499fd4d0b9c76a6823fb54065fd095f46"
+    },
+    "adrenal_softsign_code_export_20260915_145336/code/configs/d2nn_L2_oeo_off.yaml": {
+      "bytes": 4888,
+      "sha256": "5cfaa741cc221546e6da2dbc756b3d7e3600155774029f0ae48c783740eac9e6"
+    },
+    "adrenal_softsign_code_export_20260915_145336/code/configs/d2nn_L2_oeo_relu_softsign.yaml": {
+      "bytes": 4915,
+      "sha256": "0ee02cc1106a3954f0c1f9f255e7bd1100e7d58b14f46d84237243cef78af464"
+    },
+    "adrenal_softsign_code_export_20260915_145336/code/configs/d2nn_L2_oeo_relu_tanh.yaml": {
+      "bytes": 4899,
+      "sha256": "1d34d74b72fe320f882757540c5b6eeeb803622d67fe8a4ed7929193f74801f6"
+    },
+    "adrenal_softsign_code_export_20260915_145336/code/configs/d2nn_L2_oeo_softplus2.yaml": {
+      "bytes": 4899,
+      "sha256": "619968726a22cbb64eee7629fd2eb044f0c0c75d86620b80d5bac90ba314e64e"
+    },
+    "adrenal_softsign_code_export_20260915_145336/code/configs/d2nn_L4_oeo_off.yaml": {
+      "bytes": 4901,
+      "sha256": "2d9a13126480afb2a02b27a027f7ed967eea1724ce794ec1a6f11d26458e3acc"
+    },
+    "adrenal_softsign_code_export_20260915_145336/code/configs/d2nn_L4_oeo_relu_softsign.yaml": {
+      "bytes": 4927,
+      "sha256": "ca61e9c894587f65da425b99981f427d452260c31c7993533693e6fac14ae20d"
+    },
+    "adrenal_softsign_code_export_20260915_145336/code/configs/d2nn_L4_oeo_relu_tanh.yaml": {
+      "bytes": 4911,
+      "sha256": "442c8776c858d7a863054b82a2d1c243593ca166a1a56bb4a6734ec7b0c3dd1b"
+    },
+    "adrenal_softsign_code_export_20260915_145336/code/configs/d2nn_L4_oeo_softplus2.yaml": {
+      "bytes": 4911,
+      "sha256": "3bcbed6ca702814aa5826218049d5c77bb4e2efca7248bff5f1d36c366fd83d5"
+    },
+    "adrenal_softsign_code_export_20260915_145336/code/configs/d2nn_L6_oeo_off.yaml": {
+      "bytes": 4916,
+      "sha256": "23b2018137df3f1126a9dbd8136f4c97be5f2a4874b20a3cb8d2ca22fddeeea6"
+    },
+    "adrenal_softsign_code_export_20260915_145336/code/configs/d2nn_L6_oeo_relu_softsign.yaml": {
+      "bytes": 4941,
+      "sha256": "510e0e692ca17aa5fb6e8b73dd7b2eefb801c76a9e28d14cb9d4d61e4b0d43c7"
+    },
+    "adrenal_softsign_code_export_20260915_145336/code/configs/d2nn_L6_oeo_relu_tanh.yaml": {
+      "bytes": 4925,
+      "sha256": "60ece3d6f51443791c3bde87b00bbf11324347d672c393f89bf6df2d15a443d7"
+    },
+    "adrenal_softsign_code_export_20260915_145336/code/configs/d2nn_L6_oeo_softplus2.yaml": {
+      "bytes": 4925,
+      "sha256": "1d7ec8f4b60fb64f26906bf5c1b4e1b50b2f496700a57cf4d85000c0c197bfe8"
+    },
+    "adrenal_softsign_code_export_20260915_145336/code/configs/moe_L2_oeo_off.yaml": {
+      "bytes": 4885,
+      "sha256": "5638d40f0bbeccf23cb185d5d9a4325a46402d0d8ae8b6a0dfc1f51f1184f2e0"
+    },
+    "adrenal_softsign_code_export_20260915_145336/code/configs/moe_L2_oeo_relu_softsign.yaml": {
+      "bytes": 4912,
+      "sha256": "92090f546e6bc79ae640cf0f81f9990991b61b1dc1f774bef80ddd1e5e3ad932"
+    },
+    "adrenal_softsign_code_export_20260915_145336/code/configs/moe_L2_oeo_relu_tanh.yaml": {
+      "bytes": 4896,
+      "sha256": "56e01d31297023feab78c137be2ea5d88fc75d55760574c62661d8e7ea45ca6e"
+    },
+    "adrenal_softsign_code_export_20260915_145336/code/configs/moe_L2_oeo_softplus2.yaml": {
+      "bytes": 4896,
+      "sha256": "2ca293ea9703d88853a2775a26debf729d88f363f905ab9d95d8cb568414b450"
+    },
+    "adrenal_softsign_code_export_20260915_145336/code/configs/moe_L4_oeo_off.yaml": {
+      "bytes": 4898,
+      "sha256": "6d9b9f65226c22e1cc79d5cc7531cb2431eb63c1696c9e1502de5f812fef34d2"
+    },
+    "adrenal_softsign_code_export_20260915_145336/code/configs/moe_L4_oeo_relu_softsign.yaml": {
+      "bytes": 4924,
+      "sha256": "6821d2bf8be68f9cf4e94a7c37f0626620ac616272f1a915454d69d8da447b4d"
+    },
+    "adrenal_softsign_code_export_20260915_145336/code/configs/moe_L4_oeo_relu_tanh.yaml": {
+      "bytes": 4908,
+      "sha256": "1239a105006b822f29db13463d054ed8e3f24312bec2788c0815acf1abd7a49d"
+    },
+    "adrenal_softsign_code_export_20260915_145336/code/configs/moe_L4_oeo_softplus2.yaml": {
+      "bytes": 4908,
+      "sha256": "76cd67c7855d8a0adc2403a4f19918bccbac2be8f39baa8fed923a95bc5fd51d"
+    },
+    "adrenal_softsign_code_export_20260915_145336/code/configs/moe_L6_oeo_off.yaml": {
+      "bytes": 4913,
+      "sha256": "046f7647158ff896837e52cb53d526e738ee4f668d68dcd22ce1b264b214396b"
+    },
+    "adrenal_softsign_code_export_20260915_145336/code/configs/moe_L6_oeo_relu_softsign.yaml": {
+      "bytes": 4938,
+      "sha256": "f8c99fe608c6e9db3c071ea6a64bc8d3740d29562d1ea5d6a0698c1659d6fb76"
+    },
+    "adrenal_softsign_code_export_20260915_145336/code/configs/moe_L6_oeo_relu_tanh.yaml": {
+      "bytes": 4922,
+      "sha256": "01af85858d4308e648d49c57f2db630236981e7004999bf677ccc9dd397c4a56"
+    },
+    "adrenal_softsign_code_export_20260915_145336/code/configs/moe_L6_oeo_softplus2.yaml": {
+      "bytes": 4922,
+      "sha256": "7a078c7f4c4fd7fd42808dca6ff6f1782c74f656982e62fca1e2607ccef79979"
+    },
+    "adrenal_softsign_code_export_20260915_145336/code/experiments.py": {
+      "bytes": 1379,
+      "sha256": "56debf769cf6966105dbc0fd34bdea4037f83fcb0de48bb9986c0c138f460e7b"
+    },
+    "adrenal_softsign_code_export_20260915_145336/code/metrics.py": {
+      "bytes": 2025,
+      "sha256": "9f17a3a15a89630bbcd294f2e97de3755941fe38bf6f80d8e6e8758b313e496b"
+    },
+    "adrenal_softsign_code_export_20260915_145336/code/models.py": {
+      "bytes": 6646,
+      "sha256": "fae0fb551d9111c255041a8f04ba99c0bcf438f877561a1eed2e8f67946b5646"
+    },
+    "adrenal_softsign_code_export_20260915_145336/code/optical_reference/__init__.py": {
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "adrenal_softsign_code_export_20260915_145336/code/optical_reference/activations.py": {
+      "bytes": 823,
+      "sha256": "a6be25569d228f4154c7598535d98853e154a21b4ddca755c8cd19ed69f4b4bc"
+    },
+    "adrenal_softsign_code_export_20260915_145336/code/optical_reference/experts.py": {
+      "bytes": 54432,
+      "sha256": "5ff26c6223631534823b479c3eba98ca2311285e379c933c67ae24a073a37161"
+    },
+    "adrenal_softsign_code_export_20260915_145336/code/optical_reference/layout.py": {
+      "bytes": 4451,
+      "sha256": "512ed7cf1f62d07cfd2ffc50997285f41d1cf0f9a5c3398e702a45ec37d7db7f"
+    },
+    "adrenal_softsign_code_export_20260915_145336/code/optical_reference/losses.py": {
+      "bytes": 1213,
+      "sha256": "0a1e97baf44c9045f607d84aa55dee8660c451e13fbb2cd4696f0ed0690b74c6"
+    },
+    "adrenal_softsign_code_export_20260915_145336/code/optical_reference/model.py": {
+      "bytes": 22433,
+      "sha256": "afe60ad6cfe42dc8c01d3639112b6d7df47acd2854fff46d6a2da2893d3d1b9f"
+    },
+    "adrenal_softsign_code_export_20260915_145336/code/optical_reference/optics.py": {
+      "bytes": 15679,
+      "sha256": "b250627b14357a254eb12c785caf20f3aff2bf3fe30121a05321094803c73a7d"
+    },
+    "adrenal_softsign_code_export_20260915_145336/code/optical_reference/prompt.py": {
+      "bytes": 16947,
+      "sha256": "3a66d0612473ae488a3e3e16a85bdff7f8f2370f6bc8c03687f77b947c953bc6"
+    },
+    "adrenal_softsign_code_export_20260915_145336/code/optical_reference/readout.py": {
+      "bytes": 1643,
+      "sha256": "181cabdc4b7b85c30bdb16b778870afbd6b35d1d365d98924606c5dbe3e487a4"
+    },
+    "adrenal_softsign_code_export_20260915_145336/code/preflight.py": {
+      "bytes": 8240,
+      "sha256": "4b5de46ddc1ddc4d96a6fc403cd4a7013a0b0d8fb15d8ac0daa12ed7d36ee9a5"
+    },
+    "adrenal_softsign_code_export_20260915_145336/code/reference_initialization.yaml": {
+      "bytes": 43230,
+      "sha256": "e6833086dd4d15ef352c4b375d559d37c2e2b10194a800941fb0f136197a814d"
+    },
+    "adrenal_softsign_code_export_20260915_145336/code/report.py": {
+      "bytes": 11074,
+      "sha256": "9bbc6db6bbd7a2fea9d2a9e7eb8a60271ed353387c0724b19f784baf58da67ea"
+    },
+    "adrenal_softsign_code_export_20260915_145336/code/run_experiment.py": {
+      "bytes": 9440,
+      "sha256": "e277aaa67e841594085451c23ca5a082094ca7c6c7f572445ebe43e1f95efe69"
+    },
+    "adrenal_softsign_code_export_20260915_145336/code/search_pipeline.py": {
+      "bytes": 6202,
+      "sha256": "170fec8994e7873e3fc1de8b133d8eeb4729c016e5596123050a721acfcb6f20"
+    },
+    "build_lab_package.py": {
+      "bytes": 7212,
+      "sha256": "ae1138db2ef50354ba8147feb6140a26ca97871032f06789a7b4519c110ffbab"
+    },
+    "configs/long.json": {
+      "bytes": 1591,
+      "sha256": "d7b248bc92914cc7184646e444ecf85267832cc6a528a106c9abf483bb92cd07"
+    },
+    "configs/lower_capture.json": {
+      "bytes": 1592,
+      "sha256": "2af3e00bb19f98202f309864d4893ae509ec4c8161ecad606528e01cbe4a127d"
+    },
+    "data_manifest.json": {
+      "bytes": 97248,
+      "sha256": "f859b19f58b95eea781d6b9305ce064209fcb6b8c5f8637df5545913db22dcfd"
+    },
+    "provenance/training_metadata.json": {
+      "bytes": 10124,
+      "sha256": "696495a719d650ea424d3174207a594f64677089f39f1cfc2bdb5e439acdecf7"
+    },
+    "provenance/training_status_at_export.json": {
+      "bytes": 359,
+      "sha256": "846f7a4592616c9ea25d1c7ddd1086db5106bb8f499087ca625ba3d8faee8dc5"
+    },
+    "reproduction/bloodmnist_experiment.py": {
+      "bytes": 15753,
+      "sha256": "cf2bef3dd86865c1cd3b7d2874017895b297ff5a614f0a82e28b96f8bbce2551"
+    },
+    "reproduction/bloodmnist_multiseed.py": {
+      "bytes": 14350,
+      "sha256": "d5fd93451eadb54c4b964fb5e49a4758f9170e28579642d8e07992bef35181c9"
+    },
+    "reproduction/bloodmnist_profile.json": {
+      "bytes": 1429,
+      "sha256": "d01fdc507f8698767e9fc09016f58cc601880d9733b1064d6f6e35be4aa60f96"
+    },
+    "reproduction/handoff_kather.py": {
+      "bytes": 2246,
+      "sha256": "f3efbd49f493ed1d6addb575786a642f30fe11c37ae6746d443a7802d7376a2a"
+    },
+    "reproduction/kather2016_experiment.py": {
+      "bytes": 10980,
+      "sha256": "976e0d9b6d4a2b549acfa4d5459f8c4a8c699e1c7bd5f8d676e96e32c4f1356f"
+    },
+    "reproduction/kather2016_profiles.json": {
+      "bytes": 1406,
+      "sha256": "643535aa250d6e654077b36bb45c9baab9b9f6daf48aa70097f3b3b8e63da3aa"
+    },
+    "reproduction/kather_coverage.py": {
+      "bytes": 3955,
+      "sha256": "43d0fcb017a6b2b3f74676d78802f61eea0e763ad06b19f832935da52b2fcd45"
+    },
+    "reproduction/kather_followup.py": {
+      "bytes": 6139,
+      "sha256": "ceedf23f56e87a6529d807c27fa1a13bfbcd61cc0d38a8c1cc153e321360a58a"
+    },
+    "reproduction/kather_followup_profiles.json": {
+      "bytes": 1118,
+      "sha256": "2be0a7948e9877ab5d6d57cb041d5d8c85277dd21bc4e654902d32fe5b1f5643"
+    },
+    "reproduction/package_kather.py": {
+      "bytes": 6553,
+      "sha256": "77511f5c90169d4de46b634eea04562597dad946d75d9254b553c5a9ce34065d"
+    },
+    "reproduction/plot_kather_architecture.py": {
+      "bytes": 3208,
+      "sha256": "d343f55f4a8ce84af82d2ec23cbd96cd0d8f0cd873bd21e84041473a602078e7"
+    },
+    "reproduction/prepare_kather2016.py": {
+      "bytes": 5378,
+      "sha256": "7eb5880e86d9ad6a5b1e6a9cf3572046c4012052b7941da8c58774144b4169cd"
+    },
+    "reproduction/prepare_kather_handoff.py": {
+      "bytes": 646,
+      "sha256": "5f68e3ef1c29ecc108d5e24fdba4840a7a017b5522e7796c2552afc674f364ec"
+    },
+    "reproduction/train_adrenal_regularized.py": {
+      "bytes": 15339,
+      "sha256": "502ffec98fd3a455eacf0449edf5979f1c5800b9a4c62087f5fa5e70db1bae25"
+    },
+    "requirements.txt": {
+      "bytes": 110,
+      "sha256": "786fac035e7bdeaa3b407314cc8c7192668a9075b655406fc0f826d225cb76b7"
+    },
+    "verification/coverage_smoke.json": {
+      "bytes": 79198,
+      "sha256": "6745d0c19c5f56cbeb3d52090e3a3b7aaea1bac87443c2096664b10635e407d8"
+    },
+    "verification/smoke.json": {
+      "bytes": 14049,
+      "sha256": "34e814ff900b09017aae3a629a7c3ac3d3dfdf94dd358211682380b8eaf1f9b5"
+    },
+    "verify_manifest.py": {
+      "bytes": 285,
+      "sha256": "73de8831ea4b70a17b59ec535ed9278e3af5eaadcc2b5c1640ce77f84a64e626"
+    }
+  }
+}

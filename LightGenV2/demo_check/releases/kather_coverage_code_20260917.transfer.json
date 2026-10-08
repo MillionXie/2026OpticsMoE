@@ -1,0 +1,20 @@
+{
+  "files": [
+    {
+      "file": "kather_coverage_code_20260917.zip",
+      "bytes": 187342,
+      "sha256": "d09a9d8bd2d5dd2dfd8a73df671be86df9080504efd690c9e3975807cdba6115"
+    },
+    {
+      "file": "kather_coverage_code_20260917.manifest.json",
+      "bytes": 12627,
+      "sha256": "bee7793e89acc410ca11b999202bdb8c924d027ade5e1cbc39b77d8eab8f6a37"
+    },
+    {
+      "file": "kather_coverage_code_20260917.sha256",
+      "bytes": 100,
+      "sha256": "fde1fe379f88180224c56d813287eb07032fb5d1f6d920b3aec38c1a55bca08e"
+    }
+  ],
+  "zip_hash_verified": true
+}

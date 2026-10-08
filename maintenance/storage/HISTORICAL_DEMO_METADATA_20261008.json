@@ -1,0 +1,317 @@
+{
+  "scope": "Original historical package configurations, attribution, source/asset hashes and fixed comparison metadata",
+  "verification": "62 raw SHA identities equal recovery manifest and Git blob; JSON parsing passed; no data/model execution; private data subtree, user authorization and font binary excluded",
+  "decision": "Keep unchanged old contracts alongside their historical sources. Original artifact paths and historical scores are not current formal identity or new reproducibility proof.",
+  "files": [
+    {
+      "path": "LightGenV2/demo_check/EuroSAT_MoE_D2NN/EXTERNAL_ARTIFACTS.json",
+      "original_raw_sha256": "431ee94f4742fdfd3289195948e7e9e8c1c540817eda422ebc748260784c4b41",
+      "recovery_blob": "4a20b173de9a324b72189d7e4c5ab43744bd2e7c"
+    },
+    {
+      "path": "LightGenV2/demo_check/EuroSAT_MoE_D2NN/FILES_SHA256.json",
+      "original_raw_sha256": "6a3d595645168ff3ad5045c2dc468220779a1e1c5f90d95c15c7385b254c7fe9",
+      "recovery_blob": "1b652a17d3bdd9c035845bc87041e1f95b2d7ba9"
+    },
+    {
+      "path": "LightGenV2/demo_check/EuroSAT_MoE_D2NN/PACKAGE_VERIFICATION.json",
+      "original_raw_sha256": "229abb8cf85eee3a50b5dd0806817d49776a5f0ab63deffb6939e84a9b2fa8e6",
+      "recovery_blob": "c03fe00595cc63cfc639a0fa05f5767682794808"
+    },
+    {
+      "path": "LightGenV2/demo_check/EuroSAT_MoE_D2NN/analysis_tools/AB_EXAMPLE_SELECTION.json",
+      "original_raw_sha256": "c8cb360787ad42f3d1598d08c2d8794e214df29c3fad9494a60629812bd221bd",
+      "recovery_blob": "5a462ca14cd339594267905c5b354b997412b3fb"
+    },
+    {
+      "path": "LightGenV2/demo_check/EuroSAT_MoE_D2NN/code/ARCHITECTURE_REUSE.json",
+      "original_raw_sha256": "e0500c3925a958a73c23c76849ec91f4ece8f2b1e74618ca156bdb50511c4e1e",
+      "recovery_blob": "7d70e8f48acfc28c8a0261f0afe17e8437832c75"
+    },
+    {
+      "path": "LightGenV2/demo_check/EuroSAT_MoE_D2NN/code/ATTRIBUTION.txt",
+      "original_raw_sha256": "d8fc6d44f39435b3ce975055a33d1081532b4a43dad55ccb5484babf801bde5a",
+      "recovery_blob": "26272de4d9daf83070890a44ef1a4c41dab6a2c2"
+    },
+    {
+      "path": "LightGenV2/demo_check/EuroSAT_MoE_D2NN/code/DATA_CHECKS.json",
+      "original_raw_sha256": "2b077058b85130404836b0388535b3e130018a9b8fff1b86df77c0738a6ff9de",
+      "recovery_blob": "7dcefc43e9a70996690fd75a9321c13aad5795de"
+    },
+    {
+      "path": "LightGenV2/demo_check/EuroSAT_MoE_D2NN/code/EXCLUSION_REVIEW.json",
+      "original_raw_sha256": "0d6670e6103c943b21dc16283c7cde8f99d6f8915523328cc6250e046c556134",
+      "recovery_blob": "393403005636a43cde28a4ce40578d494d66718c"
+    },
+    {
+      "path": "LightGenV2/demo_check/EuroSAT_MoE_D2NN/code/PLAN.json",
+      "original_raw_sha256": "a239c1bd3e45f4ad17604e5ee6dba8837a0b1166d068a89954f4212679b673f7",
+      "recovery_blob": "17a436708270fb18d1c6286cff89e5622ebf11ac"
+    },
+    {
+      "path": "LightGenV2/demo_check/EuroSAT_MoE_D2NN/code/PLAN_TEMPLATE.json",
+      "original_raw_sha256": "6d8ee38a8620bf4c6afc84af7cf93f028e695733b7bfb7010d8cc6acb5408f00",
+      "recovery_blob": "60888fddb7a915a103484aa23e174bdfcb0c88a9"
+    },
+    {
+      "path": "LightGenV2/demo_check/EuroSAT_MoE_D2NN/code/PRELAUNCH_VERIFICATION.json",
+      "original_raw_sha256": "199f9fffed024782d65ff04e61aa5fe2142ec3a4610083da4d033e3a91dda291",
+      "recovery_blob": "8fa4cc111fdc0d632dc471e22ca4acfabb30a429"
+    },
+    {
+      "path": "LightGenV2/demo_check/EuroSAT_MoE_D2NN/code/SOURCE_MANIFEST.json",
+      "original_raw_sha256": "978ffbdcab0a7399b40e1b327879a1d10fe71002adb15106829af504c77364d3",
+      "recovery_blob": "4868ee71f0fa3b5293927a47d811de967a9f6689"
+    },
+    {
+      "path": "LightGenV2/demo_check/EuroSAT_MoE_D2NN/code/VENDOR_MANIFEST.json",
+      "original_raw_sha256": "9babc71bf05d45f6130dc612d5de3784a4f080f52f79971dca91573c84939620",
+      "recovery_blob": "499564291800f3c4d9686e5b25e4f6e7ce8c2a8d"
+    },
+    {
+      "path": "LightGenV2/demo_check/EuroSAT_MoE_D2NN/code/data_progress.json",
+      "original_raw_sha256": "6d074289907769280adbcb02d15539b501a23544316400b4ca4e7ed99542b5d6",
+      "recovery_blob": "049c7d0e7dfa6c7c79e5f5ee2e72f55fa85caf6c"
+    },
+    {
+      "path": "LightGenV2/demo_check/EuroSAT_MoE_D2NN/code/licenses/SENTINEL_LEGAL_NOTICE.html",
+      "original_raw_sha256": "bfad1b992eb79fb9a0a665cc9737ef9d3cee521eb16484b6bc3a2115531dfd37",
+      "recovery_blob": "5ed6079943f27f2f138e998d8fc5e7a5480e044c"
+    },
+    {
+      "path": "LightGenV2/demo_check/EuroSAT_MoE_D2NN/provenance/LOCAL_RESULT_VERIFICATION.json",
+      "original_raw_sha256": "8548dfbca0ef69d5b81097025a85eeb085a2ce759395d643b8966fe863aa9e7a",
+      "recovery_blob": "bff0f7754138d038e05f242ec1ffad404224a71a"
+    },
+    {
+      "path": "LightGenV2/demo_check/EuroSAT_MoE_D2NN/provenance/SEALED_SOURCE.json",
+      "original_raw_sha256": "10dee21302c0a3bf2670487d61d3233cac8c7c3c46cef592ba62cc7654e44cf5",
+      "recovery_blob": "e1625b5babb5bd881768facea88e8df2cf73ba53"
+    },
+    {
+      "path": "LightGenV2/demo_check/EuroSAT_MoE_D2NN/reference_results/PERFORMANCE.json",
+      "original_raw_sha256": "f0607a986485ac71ea3502f146a0b8cf76d872495ae2fb586982bf8546f03645",
+      "recovery_blob": "d5f234275e5159e9c9348bc199a9413ab4d5d86b"
+    },
+    {
+      "path": "LightGenV2/demo_check/EuroSAT_MoE_D2NN/reference_results/ROUTING_TEST_VERIFICATION.json",
+      "original_raw_sha256": "492dc1a8011960f8dd2b03ff1f0f885fc082be5f97ac2a9784257ebf895278e8",
+      "recovery_blob": "94206db0e7d32f3353620b7e7dab35afe54d42d6"
+    },
+    {
+      "path": "LightGenV2/demo_check/EuroSAT_MoE_D2NN/reference_results/SELECTION_SEAL.json",
+      "original_raw_sha256": "157e48c9205385b3be9e28439a94e88a967cf6637bbea772e15416c8c3decc84",
+      "recovery_blob": "2743806cd4fb64234f17550fb1c247bbaa5729bb"
+    },
+    {
+      "path": "LightGenV2/demo_check/EuroSAT_MoE_D2NN/reference_results/architecture.json",
+      "original_raw_sha256": "b85b4050d8ba168cf0c32b7578f9486df51cb3de401510ef0adb2db780617e8b",
+      "recovery_blob": "1c0cc11342e1d92c5b5f9d962c47d15dcde7d732"
+    },
+    {
+      "path": "LightGenV2/demo_check/PACKAGE_SHA256.json",
+      "original_raw_sha256": "10042b15203cb4c7bf515c7ebbfdaf3c7fe86b2c994dc345440928e5dac62fa1",
+      "recovery_blob": "cfab4b80f45ad1f0b1d2d14bb8ab49ecbbd2e9aa"
+    },
+    {
+      "path": "LightGenV2/demo_check/PACKAGE_VERIFICATION.json",
+      "original_raw_sha256": "229abb8cf85eee3a50b5dd0806817d49776a5f0ab63deffb6939e84a9b2fa8e6",
+      "recovery_blob": "c03fe00595cc63cfc639a0fa05f5767682794808"
+    },
+    {
+      "path": "LightGenV2/demo_check/adrenal_softsign_code_export_20260915_145336/MANIFEST.json",
+      "original_raw_sha256": "065925b97d54427ef2de77fe47cd5e28d167917f3555242984d7c2447e6cdb35",
+      "recovery_blob": "2558f05cdd667bc70ece7696e1b480f7f1e90f8a"
+    },
+    {
+      "path": "LightGenV2/demo_check/adrenal_softsign_code_export_20260915_145336/environment/ENVIRONMENT.json",
+      "original_raw_sha256": "f81f5487c0fdc191c231a02467d1b1dc35aec9ecb27838b7b4afcc41eae959fa",
+      "recovery_blob": "920cc847d8c9929a096e8b35b52a153a8d6b9367"
+    },
+    {
+      "path": "LightGenV2/demo_check/adrenal_softsign_code_export_20260915_145336/environment/MIGRATION_17953_ENVIRONMENT.json",
+      "original_raw_sha256": "f81f5487c0fdc191c231a02467d1b1dc35aec9ecb27838b7b4afcc41eae959fa",
+      "recovery_blob": "920cc847d8c9929a096e8b35b52a153a8d6b9367"
+    },
+    {
+      "path": "LightGenV2/demo_check/adrenal_softsign_code_export_20260915_145336/environment/requirements-17953.txt",
+      "original_raw_sha256": "dba322f2e50113d04ea78af01e61371a1e790a5c4a7d05bf26a9c66a1b0d939a",
+      "recovery_blob": "4f455facd348d4949982143d301c1c8215031ce4"
+    },
+    {
+      "path": "LightGenV2/demo_check/adrenal_softsign_code_export_20260915_145336/environment/requirements-resolved.txt",
+      "original_raw_sha256": "dba322f2e50113d04ea78af01e61371a1e790a5c4a7d05bf26a9c66a1b0d939a",
+      "recovery_blob": "4f455facd348d4949982143d301c1c8215031ce4"
+    },
+    {
+      "path": "LightGenV2/demo_check/frozen_electronic/config_narrow_16_32_128.json",
+      "original_raw_sha256": "ba0ef0c5ca5327d46f5f5636cd6dc375309fcfd3e35cacdd856448dd639ecf23",
+      "recovery_blob": "4819cd5ba3175a4a183b88e05e9b4e9425f32d70"
+    },
+    {
+      "path": "LightGenV2/demo_check/pure_optical/config_oeo_intensity_softsign.json",
+      "original_raw_sha256": "f3b2795b8836143e53d72561f2609491b6a7c94c4cd4c8c22fec57bee40ddc60",
+      "recovery_blob": "b3b9b686258b536951ee88aa948bd655922aaace"
+    },
+    {
+      "path": "LightGenV2/demo_check/pure_optical/config_oeo_intensity_softsign_50ep.json",
+      "original_raw_sha256": "132948622110e3f761a40814d926970b1d38cf45a78737d2b8679d421f6ea96c",
+      "recovery_blob": "fcb8a1c1342e86655a23a627c9536b976576ced0"
+    },
+    {
+      "path": "LightGenV2/demo_check/releases/eurosat_phase_only_moe_d2nn_20260916.manifest.json",
+      "original_raw_sha256": "dbb467776d062586e0a9f0193c767428250466981b8f1675eebb18129bab6fda",
+      "recovery_blob": "c6bda1fd79a1b9f7b65fb82ca8fb644f4de08bdb"
+    },
+    {
+      "path": "LightGenV2/demo_check/releases/eurosat_phase_only_moe_d2nn_20260916.sha256",
+      "original_raw_sha256": "e42b6f9071ab5a8217d849a763e318211d802d0127dddd9ccc12430bec436114",
+      "recovery_blob": "53b7c0d82af856c67d773d6283d36e9d224b99dd"
+    },
+    {
+      "path": "LightGenV2/demo_check/releases/eurosat_shared_frontend_moe_d2nn_7720_7365_20260916.manifest.json",
+      "original_raw_sha256": "122f8cdb17c99d20291f54e6eca09f938393a6667a66a882d13911e8b9692407",
+      "recovery_blob": "0fe5e483512b1b5c43491d26149d55530195c3c2"
+    },
+    {
+      "path": "LightGenV2/demo_check/releases/eurosat_shared_frontend_moe_d2nn_7720_7365_20260916.sha256",
+      "original_raw_sha256": "5574a10b8c01e0dfb4b979d2eaa9711939840230b5b91786465070c84c31cd0f",
+      "recovery_blob": "899b9a147dd60e8f4d0392993c66362f83aeb35e"
+    },
+    {
+      "path": "LightGenV2/demo_check/releases/kather_coverage_code_20260917.manifest.json",
+      "original_raw_sha256": "bee7793e89acc410ca11b999202bdb8c924d027ade5e1cbc39b77d8eab8f6a37",
+      "recovery_blob": "79347892334401b0bac129f7c87aef8c45bf5883"
+    },
+    {
+      "path": "LightGenV2/demo_check/releases/kather_coverage_code_20260917.sha256",
+      "original_raw_sha256": "fde1fe379f88180224c56d813287eb07032fb5d1f6d920b3aec38c1a55bca08e",
+      "recovery_blob": "fc21a0309e402534fcedfb854b9e9650243ca4ab"
+    },
+    {
+      "path": "LightGenV2/demo_check/releases/kather_coverage_code_20260917.transfer.json",
+      "original_raw_sha256": "43a7682c12d5cc912fd8bb1127dd636411abdda33469004f2d5a913072844c7a",
+      "recovery_blob": "a9f451caf2030cb364b534a8d5108637ebf36fdf"
+    },
+    {
+      "path": "LightGenV2/demo_check/releases/kather_coverage_code_20260917.verification.json",
+      "original_raw_sha256": "adb994292733f63622328ea5c88244aed5d65af433240460caca9e9d2d41709d",
+      "recovery_blob": "5f539114cdb8f7f4ce76b8305f3caacc61eb00bb"
+    },
+    {
+      "path": "LightGenV2/demo_check/reports/explanations/threshold-demo.html",
+      "original_raw_sha256": "6cc05d251c36f35974172943e99754eaf128b3a30bcc165ae2fe7f75f872b132",
+      "recovery_blob": "c008943bf8353a57092e4c0c5e921d24aad730c2"
+    },
+    {
+      "path": "LightGenV2/demo_check/reports/reproduction/figures_20260917/bloodmnist_inputs/coverage_evidence.json",
+      "original_raw_sha256": "5d0d61ff30af5753cb3552a41936339590370a1ac092cbbb87c1f7ff9d8e9bfa",
+      "recovery_blob": "ff3f585a47eda9313acdc63853aa7593b27aa0a5"
+    },
+    {
+      "path": "LightGenV2/demo_check/reports/reproduction/figures_20260917/bloodmnist_inputs/figure_manifest.json",
+      "original_raw_sha256": "7bbfc80263bdc43ff8dc617b5f53eaa03c41de96d7a272328836d3010442e637",
+      "recovery_blob": "6a087ed5a3fa8c613e40707a3d6da90a21cfc3ca"
+    },
+    {
+      "path": "LightGenV2/demo_check/reports/reproduction/figures_20260917/bloodmnist_results/download_manifest.json",
+      "original_raw_sha256": "ea10708211cdd0062f302ddf1879db68032b8947b9e1e89146431e23a65bb941",
+      "recovery_blob": "3f91616ecb33ff0dc120fae6dc7af9b022413cc5"
+    },
+    {
+      "path": "LightGenV2/demo_check/reports/reproduction/figures_20260917/bloodmnist_results/examples/selection_manifest.json",
+      "original_raw_sha256": "4255c9a02f50e3274e5b8ff826117f6af583c5a6998186672c6a2e5c66da7460",
+      "recovery_blob": "382bf0769ebda89a58694d80d91051786254240a"
+    },
+    {
+      "path": "LightGenV2/demo_check/reports/reproduction/figures_20260917/bloodmnist_results/render_history.json",
+      "original_raw_sha256": "36dbd0f87ef44063ed656da657e7b0a1c8b8551f7a67c891ba5f547899e70397",
+      "recovery_blob": "0b1f1882f7e5af786fb883362e848ebd847e4833"
+    },
+    {
+      "path": "LightGenV2/demo_check/reports/reproduction/figures_20260917/kather2016_inputs/coverage_evidence.json",
+      "original_raw_sha256": "9745707a5554bd1cff571c64ce839a61e2f9cf23db240f9912f3b379854b3af4",
+      "recovery_blob": "0c3aa172d2b9068c2c0e78ca3dcb8cd87a566681"
+    },
+    {
+      "path": "LightGenV2/demo_check/reports/reproduction/figures_20260917/kather2016_inputs/figure_manifest.json",
+      "original_raw_sha256": "13d1fbb2d353652e8337d704cf836c1674d859169686805ea5154061f881e027",
+      "recovery_blob": "bcc2434df6028270ef212b7fce014039db0c4e4a"
+    },
+    {
+      "path": "LightGenV2/demo_check/reports/reproduction/figures_20260917/kather2016_results/download_manifest.json",
+      "original_raw_sha256": "b1f9059944acdbd142deee5a366074735637810fa3e048bde1406a866de0decd",
+      "recovery_blob": "2d652a1aba34d2ed2e7ab898516b0606527626b1"
+    },
+    {
+      "path": "LightGenV2/demo_check/reports/reproduction/figures_20260917/kather2016_results/examples/selection_manifest.json",
+      "original_raw_sha256": "b705130f7aabf69bbef15db43e54fe7890ee57d9bcc0a6db29399cf6755f77a6",
+      "recovery_blob": "16ca7578bc8b470c270183624d781666fdd1ff67"
+    },
+    {
+      "path": "LightGenV2/demo_check/reports/reproduction/figures_20260917/kather2016_results/pilot_verification.json",
+      "original_raw_sha256": "8931b607ddc84a6cd4e3d4e0f26145fb59dc934f8271a743bf19aa00a7faee3a",
+      "recovery_blob": "f6739abb1e0832f0618885509a187571e504af94"
+    },
+    {
+      "path": "LightGenV2/demo_check/reports/reproduction/figures_20260917/kather2016_results/render_history.json",
+      "original_raw_sha256": "6d7475ef96dba8cbe9cfdf0cba6ec193013a13bef88615744a53851478abfa93",
+      "recovery_blob": "b8df64501ec4a5454c716473ddbf291d20a215b2"
+    },
+    {
+      "path": "LightGenV2/demo_check/reports/reproduction/figures_20260917/meeting_coverage/snapshot.json",
+      "original_raw_sha256": "5418ff88c4925f636ff8e7a88fb350f897340f41b605a9ea1bb2810b933b4a4a",
+      "recovery_blob": "f489aa6a0634e99f0cf655ad3863eef9589a6e3e"
+    },
+    {
+      "path": "LightGenV2/demo_check/reproduction/adrenal_classification_regularization.json",
+      "original_raw_sha256": "988b8afe49ad44d5402510db5a6aa02cb26cfaabdc5b79d0d998efd0a6ec41ab",
+      "recovery_blob": "c2e0d617b3d0387d25ba3b9f5bb8c1aaf3713be5"
+    },
+    {
+      "path": "LightGenV2/demo_check/reproduction/adrenal_nll_coarse.json",
+      "original_raw_sha256": "75284126b4646321d3c8c1739e8f0165c1ab3ffb9a7c9663f4404e9243fc875a",
+      "recovery_blob": "fadd042a737b41d1c4f3baa8c56c0741da4df30f"
+    },
+    {
+      "path": "LightGenV2/demo_check/reproduction/adrenal_nll_native.json",
+      "original_raw_sha256": "fb71ed4543796eba2908200e8c36d1b7ed1a62ce6e76cf4dfb00ca1497316a99",
+      "recovery_blob": "54bc4d8afbc16d0eea07bbf98e45a4c641f460b1"
+    },
+    {
+      "path": "LightGenV2/demo_check/reproduction/adrenal_nll_router10.json",
+      "original_raw_sha256": "953e03b7bc8164edae208eb039dd3496e83a7f778242429f670c409cf84a6c37",
+      "recovery_blob": "2ee86d9feb1330d9f732d52db0ca5419b9e69327"
+    },
+    {
+      "path": "LightGenV2/demo_check/reproduction/adrenal_regularization.json",
+      "original_raw_sha256": "042a40cd211e630bc59dc59c14359a8777c8418afe9d8e1d01f0b6b999b6123f",
+      "recovery_blob": "fddea392e770c59b589a53f2a3d247e91305041c"
+    },
+    {
+      "path": "LightGenV2/demo_check/reproduction/bloodmnist_profile.json",
+      "original_raw_sha256": "d01fdc507f8698767e9fc09016f58cc601880d9733b1064d6f6e35be4aa60f96",
+      "recovery_blob": "dd9642eeb15bf0950d93e1aea3c7bc1c4152c8f0"
+    },
+    {
+      "path": "LightGenV2/demo_check/reproduction/kather2016_profiles.json",
+      "original_raw_sha256": "643535aa250d6e654077b36bb45c9baab9b9f6daf48aa70097f3b3b8e63da3aa",
+      "recovery_blob": "fbeebef18d42520bdcf0dd4038cbe1d5cb815709"
+    },
+    {
+      "path": "LightGenV2/demo_check/reproduction/kather_followup_profiles.json",
+      "original_raw_sha256": "2be0a7948e9877ab5d6d57cb041d5d8c85277dd21bc4e654902d32fe5b1f5643",
+      "recovery_blob": "18786e6e5c66167213c76edf447a407be1629183"
+    },
+    {
+      "path": "LightGenV2/demo_check/shared_frontend/config_narrow_16_32_128_oeo_50ep.json",
+      "original_raw_sha256": "7ae3ddb613c12a1137dbb5899dd0e8c7fe59ed87342803ffc71e2b06a593b8e8",
+      "recovery_blob": "da5d4da3bfc4939a4efc7a9064c0c5c6c3c002c2"
+    },
+    {
+      "path": "LightGenV2/demo_check/shared_frontend/config_oeo_50ep.json",
+      "original_raw_sha256": "e7b9221d5faa1d911933779767af64acbc51544b561131544f134394bf469cc5",
+      "recovery_blob": "a99858091f1fda6e1ec2a8236f2339097ea31465"
+    }
+  ]
+}

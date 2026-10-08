@@ -1,0 +1,171 @@
+{
+  "remote_root": "/DATA/DATA1/guest3/demo_reproduction_20260915/LightGenV2/demo_check/reports/reproduction/figures_20260917/kather2016_results",
+  "files": [
+    {
+      "path": "oeo_paired_gain.pdf",
+      "sha256": "7ece8d45a9df6afd567345af612afdac9a21333eba7a3a1685c61218192eaf4c",
+      "bytes": 15506
+    },
+    {
+      "path": "examples/prediction_examples.csv",
+      "sha256": "51f7bd5f9aac339ce38488203e66175064d957460cd97656dc517a20a76dbee3",
+      "bytes": 2110
+    },
+    {
+      "path": "examples/prediction_examples.svg",
+      "sha256": "e1a1ee29ca8855cfb40e4a4b6d0dd47f9ca6afa3f4040c16e4351d7dd39548da",
+      "bytes": 1319921
+    },
+    {
+      "path": "examples/prediction_examples.pdf",
+      "sha256": "eabf98a3c248a9a7d8398571524ce6283d7303b0e1d40bbc6c5fae0239f051f6",
+      "bytes": 932434
+    },
+    {
+      "path": "examples/selection_manifest.json",
+      "sha256": "b705130f7aabf69bbef15db43e54fe7890ee57d9bcc0a6db29399cf6755f77a6",
+      "bytes": 478
+    },
+    {
+      "path": "examples/prediction_examples.png",
+      "sha256": "3eea5b1b7d7eaa805013c951358160b28285630add12069a41d5418021cd8a71",
+      "bytes": 1209180
+    },
+    {
+      "path": "seed_distribution.pdf",
+      "sha256": "7e0558d8b5fe81c4dbd8149a2335310979830efe810b7342625ba0b08c41805e",
+      "bytes": 19116
+    },
+    {
+      "path": "paired_train_validation_curves.pdf",
+      "sha256": "3a0a24a44f16a57af906b911b30095e945e540d2b23308b81e37571f8a12af82",
+      "bytes": 31104
+    },
+    {
+      "path": "paired_train_validation_curves.png",
+      "sha256": "ca3782006197f190eec63d5e8cff29e49ebc695812177075f2ce8a8386f9563f",
+      "bytes": 705824
+    },
+    {
+      "path": "independent_verification.json",
+      "sha256": "df2e3b40da00f2d307d249dc009996302bb87b2b30a32908e8840456dac5fcaa",
+      "bytes": 12665
+    },
+    {
+      "path": "confusion_L6.png",
+      "sha256": "d04b7607cabfc5cc8d3b905fb9cef0764a7a9592e1b5f47d758457a96ea1af25",
+      "bytes": 195073
+    },
+    {
+      "path": "seed_distribution.svg",
+      "sha256": "bdaddd1c05273e7685df7d5dc97777d299ea6e33a7baa5a9d3f13c65d0686bf9",
+      "bytes": 30805
+    },
+    {
+      "path": "learning_curve_data.csv",
+      "sha256": "4041aedd45f70336cfd89df6c2f047ef814ce070241fdef0b5fd2d204f794123",
+      "bytes": 135526
+    },
+    {
+      "path": "depth_accuracy.pdf",
+      "sha256": "bfd46c6475768822672d5939512320209b6d889b5d119f887d784b8c4904c348",
+      "bytes": 19667
+    },
+    {
+      "path": "phase_audit.csv",
+      "sha256": "b7a685d2cb01244ea63a0166f07d873a1ebd525a81c8bed4fbe0507300bc3a46",
+      "bytes": 82619
+    },
+    {
+      "path": "aggregate_metrics.csv",
+      "sha256": "c5348112024139f1b04ed369458e0097d808cdb54c6d1367fc92cf2ce9268aaf",
+      "bytes": 9936
+    },
+    {
+      "path": "pilot_verification.json",
+      "sha256": "8931b607ddc84a6cd4e3d4e0f26145fb59dc934f8271a743bf19aa00a7faee3a",
+      "bytes": 352
+    },
+    {
+      "path": "render_history.json",
+      "sha256": "6d7475ef96dba8cbe9cfdf0cba6ec193013a13bef88615744a53851478abfa93",
+      "bytes": 342
+    },
+    {
+      "path": "depth_accuracy.png",
+      "sha256": "079efe6f5a386872d4f787249b1dfafbc0e698d6878d815590341b909ff3c90d",
+      "bytes": 120567
+    },
+    {
+      "path": "paired_differences.csv",
+      "sha256": "c174a93f5b7703c3eb132e38791238b5017af84ba2981fe887c5ff5e870e1079",
+      "bytes": 1853
+    },
+    {
+      "path": "all_pilot_validation_results.csv",
+      "sha256": "9642427780791eb1ea68d1e40bbaa449f1f28f2e2e2bf8a4cd2a0995e10aa127",
+      "bytes": 1032
+    },
+    {
+      "path": "confusion_L6.pdf",
+      "sha256": "b31bd21ac50523841f0ed78e7aba7fa39a3fc2da9855c115d093473e3c4591bb",
+      "bytes": 34726
+    },
+    {
+      "path": "oeo_paired_gain.png",
+      "sha256": "16e8cbafa38e7a51e883888b0bd98a675cbfcca604b4b15082001c6774f60a1c",
+      "bytes": 166648
+    },
+    {
+      "path": "confusion_L6.csv",
+      "sha256": "7b8e16c6e6a268636c3cd3612500e2913b7051207813102e305e0f6ed004571a",
+      "bytes": 7724
+    },
+    {
+      "path": "generalization_curves.pdf",
+      "sha256": "30f59af100960585015731878889df2a1c00e823ba342a2671f6d9ed333103ad",
+      "bytes": 26294
+    },
+    {
+      "path": "confusion_L6.svg",
+      "sha256": "79bc6fbe22832a641ec16209b0f352329def702442d59a723440eeeb12820e37",
+      "bytes": 107899
+    },
+    {
+      "path": "depth_accuracy.svg",
+      "sha256": "381c2590f149b5d9194b3370acb7027926410df3f796c3fb03aad8d1eba8e721",
+      "bytes": 29771
+    },
+    {
+      "path": "per_seed_metrics.csv",
+      "sha256": "21f1edb9838b68ad7091571f3308c26d0292f5403be6e66b8f7d0b21ffe8b793",
+      "bytes": 16486
+    },
+    {
+      "path": "paired_train_validation_curves.svg",
+      "sha256": "706ca22a04ea75b154c34e3e3cf46fbf10aef6f56379deebda8783f921bedfe7",
+      "bytes": 125592
+    },
+    {
+      "path": "generalization_curves.svg",
+      "sha256": "a18751e9858466d2094b1e2df75ba6885c8fdb8177e6a27891158d320845877f",
+      "bytes": 86521
+    },
+    {
+      "path": "generalization_curves.png",
+      "sha256": "3bacb3dea230f33022e51892793f35bb4d47a4ba352327292d58448a396eb0cf",
+      "bytes": 401308
+    },
+    {
+      "path": "oeo_paired_gain.svg",
+      "sha256": "6fd360079e74d0d81e62514d850b1739ff2da6e1252354c5bc43149a7ca907ef",
+      "bytes": 22962
+    },
+    {
+      "path": "seed_distribution.png",
+      "sha256": "eaead118f66a303bf6bd3db0b1fe9f60969df3e203ba04880ce87fbee4d6c990",
+      "bytes": 105820
+    }
+  ],
+  "includes_best_weights": false
+}

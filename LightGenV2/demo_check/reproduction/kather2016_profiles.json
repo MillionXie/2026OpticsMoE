@@ -1,0 +1,17 @@
+{
+  "dataset": "Kather_texture_2016_image_tiles_5000",
+  "classes": ["tumour epithelium", "simple stroma", "complex stroma", "immune cells", "debris and mucus", "mucosal glands", "adipose tissue", "background"],
+  "candidate_order": ["base", "lower_lr", "regularized"],
+  "candidates": {
+    "base": {"lr": 0.002, "phase_smooth_weight": 0.02},
+    "lower_lr": {"lr": 0.001, "phase_smooth_weight": 0.02},
+    "regularized": {"lr": 0.002, "phase_smooth_weight": 0.05, "augmentation": {"degrees": 20.0, "translation_pixels": 3.0, "scale_delta": 0.05}}
+  },
+  "selection": "One common candidate: minimum mean selected validation balanced NLL across four architecture/OEO arms at depth4 seed17; no test access and no gap-based selection.",
+  "architectures": ["moe", "moe_nooeo", "d2nn_wide", "d2nn_wide_nooeo"],
+  "seeds": [17, 27, 37],
+  "depths": [2, 4, 6],
+  "data_split": "Per class 70% train, remaining equally split validation/test with fixed RNG20260917 after exact deduplication. All eight classes, no patient independence claim.",
+  "encoding": "Original 150x150 RGB -> bicubic antialias100 clamp -> shared train-only affine -> bilinear50 -> fixed [R,G;B,meanRGB] amplitude100. D2NN each tile is independently enlarged to fill its phase aperture and incident power restored.",
+  "scope": "Architecture/optimization benchmark; no clinical performance claim, no guarantee of a desired model ranking."
+}

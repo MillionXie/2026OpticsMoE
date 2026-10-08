@@ -1,0 +1,278 @@
+{
+  "moe": {
+    "architecture": "moe",
+    "modalities": [
+      "vision"
+    ],
+    "expert_layout": "upper A=(0,1), lower B=(2,3)",
+    "parameter_counts": {
+      "electronic": 702822,
+      "router": 50176,
+      "expert_a": 100352,
+      "expert_b": 100352,
+      "shared_phase": 228484,
+      "head": 4618
+    },
+    "backbone": {
+      "source": "/root/autodl-tmp/huggingface-cache/models--Qwen--Qwen3-VL-Embedding-2B/snapshots/9f2f7e710d6d81056aa5c0a4f04764fec6bb7bda",
+      "config_sha256": "9172f55b0b9cce70b7f67b10c58a408ccf3ec15c587e6efd4d5f41631237fded",
+      "frozen_stem_sha256": "3f494085f1c65fcb5c691d8fc5c048e4cb5d925cb220a1d54f2a04565fe3f477",
+      "loaded_tensors": {
+        "patch_embed.proj.bias": {
+          "file": "model.safetensors",
+          "key": "model.visual.patch_embed.proj.bias"
+        },
+        "patch_embed.proj.weight": {
+          "file": "model.safetensors",
+          "key": "model.visual.patch_embed.proj.weight"
+        },
+        "pos_embed.weight": {
+          "file": "model.safetensors",
+          "key": "model.visual.pos_embed.weight"
+        }
+      },
+      "frozen_parameters": 3933184,
+      "language_parameters": 0,
+      "vision_transformer_parameters": 0,
+      "merger_parameters": 0
+    },
+    "head_parameters": 4618,
+    "spatial_mapping": [
+      {
+        "expert": 0,
+        "position": "top_left",
+        "task": "A",
+        "ccd_xyxy": [
+          82,
+          82,
+          142,
+          142
+        ],
+        "phase_xyxy": [
+          20,
+          20,
+          244,
+          244
+        ],
+        "weight_index": 0
+      },
+      {
+        "expert": 1,
+        "position": "top_right",
+        "task": "A",
+        "ccd_xyxy": [
+          336,
+          82,
+          396,
+          142
+        ],
+        "phase_xyxy": [
+          274,
+          20,
+          498,
+          244
+        ],
+        "weight_index": 1
+      },
+      {
+        "expert": 2,
+        "position": "bottom_left",
+        "task": "B",
+        "ccd_xyxy": [
+          82,
+          336,
+          142,
+          396
+        ],
+        "phase_xyxy": [
+          20,
+          274,
+          244,
+          498
+        ],
+        "weight_index": 2
+      },
+      {
+        "expert": 3,
+        "position": "bottom_right",
+        "task": "B",
+        "ccd_xyxy": [
+          336,
+          336,
+          396,
+          396
+        ],
+        "phase_xyxy": [
+          274,
+          274,
+          498,
+          498
+        ],
+        "weight_index": 3
+      }
+    ],
+    "optical_phase_parameters": 479364,
+    "feature_ccd_exposures": 2,
+    "router_exposures": 1,
+    "final_inference": "one checkpoint, fixed optical sequence, no task ID or task mask; all four experts",
+    "active_expert_channels": 4,
+    "head": "LayerNorm(384) -> Linear(384,10)",
+    "electronics_initial_sha256": "ba74fee6b32bc998e78f11e28ab5121f830b0a1d5fd0d015105e6273a197722e",
+    "checks": [
+      {
+        "stage": "shared",
+        "epoch": 1,
+        "phase_gradients": {},
+        "changed_parameters": 46,
+        "frozen_unchanged": true
+      },
+      {
+        "stage": "shared",
+        "epoch": 5,
+        "phase_gradients": {
+          "vision_optical.core.optical_branch.core.global_phase.phase.raw_phase": {
+            "l2": 0.010090027004480362,
+            "finite": true
+          }
+        },
+        "changed_parameters": 47,
+        "frozen_unchanged": true
+      },
+      {
+        "stage": "expert_A",
+        "epoch": 1,
+        "phase_gradients": {
+          "vision_optical.core.optical_branch.core.expert_layers.0.experts.0.raw_phase": {
+            "l2": 0.009390652179718018,
+            "finite": true
+          },
+          "vision_optical.core.optical_branch.core.expert_layers.0.experts.1.raw_phase": {
+            "l2": 0.009114070795476437,
+            "finite": true
+          }
+        },
+        "changed_parameters": 2,
+        "frozen_unchanged": true
+      },
+      {
+        "stage": "expert_B",
+        "epoch": 1,
+        "phase_gradients": {
+          "vision_optical.core.optical_branch.core.expert_layers.0.experts.2.raw_phase": {
+            "l2": 0.008920780383050442,
+            "finite": true
+          },
+          "vision_optical.core.optical_branch.core.expert_layers.0.experts.3.raw_phase": {
+            "l2": 0.008882992900907993,
+            "finite": true
+          }
+        },
+        "changed_parameters": 2,
+        "frozen_unchanged": true
+      },
+      {
+        "stage": "router",
+        "epoch": 1,
+        "phase_gradients": {
+          "vision_optical.core.optical_branch.core.router.raw_router_phase": {
+            "l2": 0.003643902251496911,
+            "finite": true
+          }
+        },
+        "changed_parameters": 1,
+        "frozen_unchanged": true
+      }
+    ],
+    "initial_state_sha256": "96a111dbe9fd62999274e092296e1fc911d2547904fab087be53aa023535f07b",
+    "batch60_probe": {
+      "step_seconds": [
+        0.1710220742970705,
+        0.18189609982073307,
+        0.18531291000545025
+      ],
+      "peak_gpu_allocated_bytes": 3519819264,
+      "includes_preprocessing": false,
+      "discarded_updates": true
+    }
+  },
+  "d2nn": {
+    "architecture": "d2nn",
+    "modalities": [
+      "vision"
+    ],
+    "expert_layout": "upper A=(0,1), lower B=(2,3)",
+    "parameter_counts": {
+      "electronic": 702822,
+      "shared_phase": 456968,
+      "head": 4618
+    },
+    "backbone": {
+      "source": "/root/autodl-tmp/huggingface-cache/models--Qwen--Qwen3-VL-Embedding-2B/snapshots/9f2f7e710d6d81056aa5c0a4f04764fec6bb7bda",
+      "config_sha256": "9172f55b0b9cce70b7f67b10c58a408ccf3ec15c587e6efd4d5f41631237fded",
+      "frozen_stem_sha256": "3f494085f1c65fcb5c691d8fc5c048e4cb5d925cb220a1d54f2a04565fe3f477",
+      "loaded_tensors": {
+        "patch_embed.proj.bias": {
+          "file": "model.safetensors",
+          "key": "model.visual.patch_embed.proj.bias"
+        },
+        "patch_embed.proj.weight": {
+          "file": "model.safetensors",
+          "key": "model.visual.patch_embed.proj.weight"
+        },
+        "pos_embed.weight": {
+          "file": "model.safetensors",
+          "key": "model.visual.pos_embed.weight"
+        }
+      },
+      "frozen_parameters": 3933184,
+      "language_parameters": 0,
+      "vision_transformer_parameters": 0,
+      "merger_parameters": 0
+    },
+    "head_parameters": 4618,
+    "spatial_mapping": null,
+    "optical_phase_parameters": 456968,
+    "feature_ccd_exposures": 2,
+    "router_exposures": 0,
+    "final_inference": "one checkpoint, fixed optical sequence, no task ID or task mask; one contiguous aperture, no router",
+    "active_expert_channels": 1,
+    "head": "LayerNorm(384) -> Linear(384,10)",
+    "electronics_initial_sha256": "ba74fee6b32bc998e78f11e28ab5121f830b0a1d5fd0d015105e6273a197722e",
+    "checks": [
+      {
+        "stage": "A_only",
+        "epoch": 1,
+        "phase_gradients": {},
+        "changed_parameters": 46,
+        "frozen_unchanged": true
+      },
+      {
+        "stage": "A_only",
+        "epoch": 5,
+        "phase_gradients": {
+          "vision_optical.core.optical_branch.core.expert_layers.0.phase.raw_phase": {
+            "l2": 0.004794531036168337,
+            "finite": true
+          },
+          "vision_optical.core.optical_branch.core.global_phase.phase.raw_phase": {
+            "l2": 0.004804129246622324,
+            "finite": true
+          }
+        },
+        "changed_parameters": 48,
+        "frozen_unchanged": true
+      }
+    ],
+    "initial_state_sha256": "66c5ec999a2bd482e5157539c4a0e32eafc6ca4703c610a4a77b2eb1fca59e52",
+    "batch60_probe": {
+      "step_seconds": [
+        0.17278253845870495,
+        0.1804589219391346,
+        0.18694062158465385
+      ],
+      "peak_gpu_allocated_bytes": 3079239680,
+      "includes_preprocessing": false,
+      "discarded_updates": true
+    }
+  }
+}

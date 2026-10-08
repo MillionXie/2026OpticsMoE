@@ -1,0 +1,18 @@
+{
+  "profile": "affine_phase_smooth_balanced_nll_v1",
+  "epochs": 50,
+  "batch_size": 8,
+  "lr": 0.001,
+  "step_size": 10,
+  "gamma": 0.7,
+  "weight_decay": 0.0,
+  "augmentation": {"degrees": 8.0, "translation_pixels": 3.0, "scale_delta": 0.03},
+  "phase_smooth_weight": 0.05,
+  "balanced_detector_nll_weight": 0.1,
+  "objective": "original_detector_plane_mse_plus_mean_circular_phase_smoothness_plus_class_balanced_detector_nll",
+  "class_weights": "N_train/(2*N_train_class); weighted per-sample NLL mean, not batch-weight-normalized",
+  "selection": "max_validation_auroc_then_min_validation_detector_plane_mse_tol_1e-6",
+  "threshold": "validation_balanced_accuracy_then_accuracy_then_nearest_0.5",
+  "scope": "initial validation-only probe: paired 6-layer MoE/D2NN with Softsign, seed17; no test-based tuning",
+  "test_status": "retrospective development: this official test was inspected in earlier reproductions"
+}

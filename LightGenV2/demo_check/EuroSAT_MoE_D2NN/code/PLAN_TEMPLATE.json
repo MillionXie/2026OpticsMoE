@@ -1,0 +1,101 @@
+{
+  "status": "authorized_preparing_data",
+  "training_authorized": true,
+  "seed": 42,
+  "experiment_type": "supervised domain expert pretraining and merging; shared sees A+B",
+  "dataset": "EuroSAT_RGB_and_author_EuroSAT_SAR_10class_geographic_split",
+  "split_records_sha256": null,
+  "counts": {},
+  "batch_size": 60,
+  "moe_stages": [
+    {
+      "name": "shared",
+      "epochs": 40,
+      "steps_per_epoch": 250,
+      "domains": [
+        "A",
+        "B"
+      ]
+    },
+    {
+      "name": "expert_A",
+      "epochs": 15,
+      "steps_per_epoch": 125,
+      "domains": [
+        "A"
+      ]
+    },
+    {
+      "name": "expert_B",
+      "epochs": 15,
+      "steps_per_epoch": 125,
+      "domains": [
+        "B"
+      ]
+    },
+    {
+      "name": "router",
+      "epochs": 15,
+      "steps_per_epoch": 250,
+      "domains": [
+        "A",
+        "B"
+      ]
+    }
+  ],
+  "d2nn_A_only": {
+    "epochs": 70,
+    "steps_per_epoch": 125
+  },
+  "d2nn_B_only": {
+    "epochs": 70,
+    "steps_per_epoch": 125
+  },
+  "d2nn_AB": {
+    "schedule": "same sampled data curriculum as MoE",
+    "optimizer_updates": 17500,
+    "domain_presentations": {
+      "A": 525000,
+      "B": 525000
+    }
+  },
+  "training_parameters": {
+    "moe": 1186804,
+    "d2nn": 1164408,
+    "frozen_stem_each": 3933184
+  },
+  "optimizer": {
+    "name": "AdamW",
+    "weight_decay": 0,
+    "clip_norm": 1,
+    "minimum_lr_fraction": 0.2
+  },
+  "loss": {
+    "classification": "cross_entropy",
+    "label_smoothing": 0.05,
+    "router_teacher_weight": 0.2,
+    "router_teacher_temperature": 2,
+    "router_group_kl_weight": 0.02,
+    "router_group_target": 0.7,
+    "capture_weight": 0.005
+  },
+  "formal_inference": "fixed checkpoint, automatic routing, no task ID",
+  "test_policy": "evaluate only after selection sealed; no test selection",
+  "entry_point": "run_eurosat.py",
+  "note": "User explicitly requested an additional EuroSAT optical/SAR experiment following the previous procedure. Models, losses, optimizer and stage epochs unchanged. Equal paired domains use 125 single-domain steps for BOTH A and B; paired stages retain250 steps. MoE/AB17500 updates each; A-only/B-only8750 each. No CORe50 learned weights reused.",
+  "data_root": "/root/autodl-tmp/data/eurosat_optical_sar",
+  "remote_root": "/root/autodl-tmp/review/eurosat_expert_merge_20260912",
+  "d2nn_root": "/root/autodl-tmp/review/eurosat_d2nn_baselines_20260912",
+  "split_policy": {
+    "method": "five stratified geographic group folds, seed42; fold0 test, fold1 validation, folds2-4 train",
+    "grid_m": 50000,
+    "minimum_cross_split_center_distance_m": 3000,
+    "paired_locations_together": true
+  },
+  "input_encoding": {
+    "A": "official EuroSAT RGB JPEG64x64, fixed common center56x56 crop",
+    "B": "VV/VH dB reprojected to the paired optical center56x56 grid, original-author 1/99 percentile clip and fixed mean+-2std scaling; RGB=(VV,VH,mean(VV,VH))",
+    "resize": "same224 bicubic padding",
+    "augmentation": "same horizontal flip and ColorJitter(.1,.1,.1,.02) for all models and domains"
+  }
+}

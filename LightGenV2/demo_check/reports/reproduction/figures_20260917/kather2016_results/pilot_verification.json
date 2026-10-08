@@ -1,0 +1,13 @@
+{
+  "passed": true,
+  "candidates": 3,
+  "models": 12,
+  "selected": "base",
+  "mean_validation_balanced_nll": {
+    "base": 1.2035111337900162,
+    "lower_lr": 1.2903787046670914,
+    "regularized": 1.2172890156507492
+  },
+  "selection_sha256": "99ac2daeea9c9a0d25e27d1af339ef993b2a9845c65df74dfd2c0b111ef046fe",
+  "test_not_used_by_selection": true
+}

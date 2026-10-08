@@ -1,0 +1,57 @@
+{
+  "files": {
+    "PROVENANCE.json": {
+      "bytes": 1440,
+      "sha256": "bfa5d8532ab2023aec02de24cb4a029e53f038dede67466c2b315c249d3d4cf3"
+    },
+    "README.md": {
+      "bytes": 6564,
+      "sha256": "aae114216df847948b50e5d6893e514a0a1bb4a5931fb637b0de67ef90b8388d"
+    },
+    "config.json": {
+      "bytes": 1225,
+      "sha256": "f47be970d78b5fbc85f77ded5708ab6514a1279cff898a43b11c6795afbab511"
+    },
+    "data/SPLIT.json": {
+      "bytes": 13895324,
+      "sha256": "cfe8373dd33cc0fe64f083b9ca32377e767c21b078c3f1d91f2dacecc25cb776"
+    },
+    "download_archives.py": {
+      "bytes": 3716,
+      "sha256": "314aec875575e7c3141cd17a8c708e5862a93199cede7a243a4f6293505b07ef"
+    },
+    "models.py": {
+      "bytes": 5353,
+      "sha256": "d0881c17497e1540b3afc91d4e874c19c3e29f20dd5bd2346d9911fe2cbe7542"
+    },
+    "optics.py": {
+      "bytes": 4032,
+      "sha256": "a222515d58c5829bdae9bc9d0d9b564864b6fae8f9bed7db398999623ce32cf9"
+    },
+    "prepare.py": {
+      "bytes": 5262,
+      "sha256": "66ba4dd16abf0646bc9b9785debea7b8ad715abdc0d45c51b329d284cbcf22c8"
+    },
+    "reference_data_manifest.json": {
+      "bytes": 1846970,
+      "sha256": "f15e2a8e40257eb6fde0be060992a54a09f94fcf884b5226e64d580358996d70"
+    },
+    "reported_results.json": {
+      "bytes": 10159,
+      "sha256": "3cab088012893056e2b49aa331637dbbfd40fdde996f82eaf0429ea1ee0276ac"
+    },
+    "requirements.txt": {
+      "bytes": 90,
+      "sha256": "d8b27a983c60d0210aa309ec70195869ee8208cfd1ab47335b2d71d2cb52f093"
+    },
+    "run.py": {
+      "bytes": 10763,
+      "sha256": "717f75257321e3148203d2fafac216e142d644e61d1192748f531a468c6a0a13"
+    },
+    "training_environment.json": {
+      "bytes": 2747,
+      "sha256": "540aa96e3b5152d57355818fc3b99260493ef9b0550bd2ccf8dfe6bc258a3113"
+    }
+  },
+  "manifest_scope": "all other ZIP files; manifest itself excluded"
+}

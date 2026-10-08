@@ -1,0 +1,173 @@
+{
+  "files": {
+    "PROVENANCE.json": {
+      "bytes": 1889,
+      "sha256": "b4917f94174801726aecc1b10446fbea6f7c7e3ad9762b0afb5f14406973da4e"
+    },
+    "README.md": {
+      "bytes": 5492,
+      "sha256": "2de8b837c5d583575c3e7a7c95d2311945ef9cd99965ffd13d143f40f0a6ec18"
+    },
+    "checkpoints/dynamic_four/best_checkpoint.pt": {
+      "bytes": 1924620,
+      "sha256": "635ff1258ef3c7dc153f6ca28df78b6d65a2edc055c09a9108ebd5700c252e1c"
+    },
+    "checkpoints/dynamic_four/last_checkpoint.pt": {
+      "bytes": 5762546,
+      "sha256": "77e28ccaaf13f56f953bbcdb3ee5bb0beb6f15599541f584db493469f6841be1"
+    },
+    "checkpoints/frontend/best_checkpoint.pt": {
+      "bytes": 385178,
+      "sha256": "61d3c189a18d814a22e5ffea2986cd0902c8e9b2cb4de6dbd90aae94e9ace15f"
+    },
+    "checkpoints/full_d2nn/best_checkpoint.pt": {
+      "bytes": 1834440,
+      "sha256": "8863471b1a75199d8b4876a7653d82d331230ddb70d7c090cd54bbba4bfa98f9"
+    },
+    "checkpoints/full_d2nn/last_checkpoint.pt": {
+      "bytes": 5492256,
+      "sha256": "755dc3c55f04b2f6c26fbe5c2f51200d4e7e929cb3039ca4a3c0613e72d688fa"
+    },
+    "cnn.py": {
+      "bytes": 956,
+      "sha256": "a7d2e9383d347c350929609fb5908cd44036f277ef7c46279a46b00bbd4a7986"
+    },
+    "config.json": {
+      "bytes": 1197,
+      "sha256": "a6b6431edbf74e13132cc8984f4a538351a38000ab8fa65d5813c9b2c516fec6"
+    },
+    "data/DATA_LICENSES.json": {
+      "bytes": 1758,
+      "sha256": "ca894838e604dfc7c95eda621a361b9880d2eb5214f98065d1fbc1af55f8fba1"
+    },
+    "data/DATA_PREPROCESSING.json": {
+      "bytes": 1939,
+      "sha256": "45baf925d92ad6a9d56ec65d59d2736809339ea48cb299ec2d00b33c22e3c225"
+    },
+    "data/classes.json": {
+      "bytes": 159,
+      "sha256": "47dc7587a54b07fc2b515689a3d4f5f15664eca6725cf1d6608e42f593731075"
+    },
+    "data/data.npz": {
+      "bytes": 57449246,
+      "sha256": "f543d0c9ce330272063a1669ebacef082b26dc77994ec76b251f477634e350bd"
+    },
+    "data/manifest.json": {
+      "bytes": 1846970,
+      "sha256": "f15e2a8e40257eb6fde0be060992a54a09f94fcf884b5226e64d580358996d70"
+    },
+    "licenses/EuroSAT_MIT_LICENSE.txt": {
+      "bytes": 1071,
+      "sha256": "73b8c5d100ff46a84845702b9e78d76ddb1effaacdb386b91dc07061c6123362"
+    },
+    "licenses/EuroSAT_README.md": {
+      "bytes": 3843,
+      "sha256": "e9c4e82e7edc2d9fe47b023bbdc450f341694f94aac6bcef5c5e47b71c49859f"
+    },
+    "licenses/EuroSAT_SAR_README.md": {
+      "bytes": 1238,
+      "sha256": "60fbf85cf189ca843f8bcf193cd5b0d4e8599edd6a8e461555570f6f35edec46"
+    },
+    "licenses/FGMAE_APACHE_LICENSE.txt": {
+      "bytes": 11324,
+      "sha256": "50e6751797c50dedd75ef1b8a0d9e42f5f8472e9fbce91f34718e9f97b0c780a"
+    },
+    "models.py": {
+      "bytes": 2294,
+      "sha256": "fa54019442f1397b74faa85a0738f6b06e9a76e932439fce59ee9df3e6f417d7"
+    },
+    "optical_config.json": {
+      "bytes": 1225,
+      "sha256": "f47be970d78b5fbc85f77ded5708ab6514a1279cff898a43b11c6795afbab511"
+    },
+    "optical_model.py": {
+      "bytes": 5354,
+      "sha256": "19fd4538fcd3c916e803ecf273177ae5f72ea51bd51ec11b93bc62241692f797"
+    },
+    "optics.py": {
+      "bytes": 4106,
+      "sha256": "84f48ef14c1cb12b6de19afacf733daf49e4793c92dff0739e48c1a85b6b9c10"
+    },
+    "reference/dynamic_four/history.json": {
+      "bytes": 67328,
+      "sha256": "bef4f4cbe7584b620838551f2eee46a8cb41f115f460cabf85ccb4ffa5e535ce"
+    },
+    "reference/dynamic_four/initial_validation.json": {
+      "bytes": 2070,
+      "sha256": "fe667d32057711785b89c7330fbf5614a675feafb22bae98f13bde2a7d5ecd89"
+    },
+    "reference/dynamic_four/summary.json": {
+      "bytes": 7650,
+      "sha256": "326e8990abce769bafc995d8812374a3d87592d370a8ae70c649db4bbbea913d"
+    },
+    "reference/dynamic_four/validation_predictions.csv": {
+      "bytes": 462826,
+      "sha256": "39a29255c5265ef1d202764a773d9c3faa2db2a4f301f19032b0f14af20c45d0"
+    },
+    "reference/fairness.json": {
+      "bytes": 199,
+      "sha256": "83b361bdb7be93e96d93bc0a3c1e2b4bb3704473e4b4f80e02004d9717682c77"
+    },
+    "reference/full_d2nn/history.json": {
+      "bytes": 46902,
+      "sha256": "efc6b2baeb4974ec2e898817faec36f99fb4f8b016aa44c55ef4b41fec33932f"
+    },
+    "reference/full_d2nn/initial_validation.json": {
+      "bytes": 1254,
+      "sha256": "1618a44d2471fb9cf0dcabc9c522a88c719278a1fd803eecc1a6364f1a75936a"
+    },
+    "reference/full_d2nn/summary.json": {
+      "bytes": 5692,
+      "sha256": "a8b9ca5cfa24385204bd85d5c761abfc774f66796ae5b07dc655770cd463063b"
+    },
+    "reference/full_d2nn/validation_predictions.csv": {
+      "bytes": 456375,
+      "sha256": "7e63171b5b6e5b75dd925c75b60409f7d3b2390cead8d8e138709139700d5741"
+    },
+    "reference/independent_verification.json": {
+      "bytes": 1475,
+      "sha256": "33db2f72b615fe592bb3be22efb04977fe583eaf6476508098151e6e803dd85f"
+    },
+    "reference/known_test_results.json": {
+      "bytes": 5062,
+      "sha256": "2768d47579e37019109854d5288f482a92e72d921966d0547de0b42135aa347f"
+    },
+    "reference/metadata.json": {
+      "bytes": 9090,
+      "sha256": "7f3fb0fd65a1e4f78eef61b08912e22995303688bfaaa38953bcb652a471938a"
+    },
+    "reference/results.json": {
+      "bytes": 14716,
+      "sha256": "16fd531fe72d99252270461d92d0026475a6c1e4399caefe6dd7a45a24f876fc"
+    },
+    "reference/training_diagnostics.png": {
+      "bytes": 275775,
+      "sha256": "6dc00ec349b550805146137728d85752ce9c2034d0191de82e4522d52f11716c"
+    },
+    "reference/validation_curves.png": {
+      "bytes": 119978,
+      "sha256": "24385ee8e7951c81f6dbfe61cbd52ad67238a6768d7acc1832de0e703b3f0d81"
+    },
+    "requirements.txt": {
+      "bytes": 71,
+      "sha256": "12653d1b0ac7c39ae53b3866fc0ad48d13db9636dfaf19106413cad8b9bbafda"
+    },
+    "run.py": {
+      "bytes": 5839,
+      "sha256": "2b1a37272d0e12c62877217506c7bad2304daf1d5901e2f277d8536e0d6e8cbf"
+    },
+    "training.py": {
+      "bytes": 6364,
+      "sha256": "4183216143667cb0b82a11a219f555ec09d790f82c91cf88caa5d22bdfbb76d9"
+    },
+    "utils.py": {
+      "bytes": 2466,
+      "sha256": "eee2d53ed29fda53e9e96ba9a2b2d2d40ac0d0f2a8162b11f844e93a923f5067"
+    },
+    "verify_package.py": {
+      "bytes": 295,
+      "sha256": "b70ceac3fdf6c83999fa2c1ea9db63fbe860797468f76bd1a68ccaa3461a2bb5"
+    }
+  },
+  "scope": "all other package files"
+}

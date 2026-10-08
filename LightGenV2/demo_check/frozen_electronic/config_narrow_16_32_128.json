@@ -1,0 +1,21 @@
+{
+  "protocol": "eurosat_shared_frozen_cnn_narrow_16_32_128_v1",
+  "dataset_protocol": "eurosat_phase_only_v1",
+  "seed": 42,
+  "electronic_epochs": 20,
+  "electronic_learning_rate": 0.001,
+  "electronic_weight_decay": 0.0001,
+  "electronic_dropout": 0.2,
+  "electronic_widths": [16, 32, 128],
+  "optical_epochs": 20,
+  "batch_size": 32,
+  "electronic_weight": 0.5,
+  "optical_weight": 0.5,
+  "architectures": ["dynamic_four", "full_d2nn"],
+  "electronic_model": "Conv3x3-BatchNorm-ReLU-MaxPool widths 16/32/128; GAP128; dropout 0.2; Linear(128,10), trained from scratch",
+  "electronic_normalization": "per-channel train-only mean/std pooled across both domains",
+  "fusion": "unused by the shared_frontend optical run; this pretraining classifier only supplies a frozen GAP128 representation",
+  "selection": "maximum validation accuracy, then minimum validation NLL; electronic selection once",
+  "augmentation": "horizontal flip; no ColorJitter",
+  "test_set_used": false
+}

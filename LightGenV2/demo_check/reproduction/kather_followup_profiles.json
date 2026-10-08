@@ -1,0 +1,14 @@
+{
+  "candidate_order": ["long", "input_dropout", "lower_capture"],
+  "candidates": {
+    "long": {"epochs": 60, "minimum_epochs": 30, "patience": 12, "input_dropout": 0.0},
+    "input_dropout": {"epochs": 60, "minimum_epochs": 30, "patience": 12, "input_dropout": 0.05},
+    "lower_capture": {"epochs": 60, "minimum_epochs": 30, "patience": 12, "input_dropout": 0.0, "capture_weight": 0.02}
+  },
+  "pilot_depth": 6,
+  "selection": "Minimum average selected validation balanced NLL across all four arms at depth6 seed17. One common configuration; no ranking/gap criterion. Existing test results were previously observed; this is iterative development, not a fresh test.",
+  "architectures": ["moe", "moe_nooeo", "d2nn_wide", "d2nn_wide_nooeo"],
+  "depths": [2,4,6],
+  "seeds": [17,27,37],
+  "dropout_contract": "Training only: Bernoulli masking of the shared 100x100 encoded input amplitude, before router/fanout or D2NN upsampling. Restore each image total power. Separate seeded RNG provides identical masks in paired runs. Evaluation is identity. No hidden interlayer OEO or trainable electronic module is added."
+}

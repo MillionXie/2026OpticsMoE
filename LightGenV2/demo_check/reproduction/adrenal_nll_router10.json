@@ -1,0 +1,16 @@
+{
+  "profile": "classification_primary_ema_native_phase_router_temperature10",
+  "epochs": 50,
+  "minimum_epochs": 25,
+  "patience": 12,
+  "min_delta": 0.0005,
+  "batch_size": 16,
+  "lr": 0.002,
+  "phase_factor": 1,
+  "router_temperature": 10.0,
+  "ema_decay": 0.95,
+  "mse_weight": 0.05,
+  "phase_smooth_weight": 0.05,
+  "label_smoothing": 0.05,
+  "augmentation": {"degrees": 10.0, "translation_pixels": 3.0, "scale_delta": 0.05}
+}

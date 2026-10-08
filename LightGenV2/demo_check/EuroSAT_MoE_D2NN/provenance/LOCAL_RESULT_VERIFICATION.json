@@ -1,0 +1,56 @@
+{
+  "passed": true,
+  "archive_sha256": "1c0bff2537b77901a4571df3946ff93037e781725d677da9e357218946c28f8b",
+  "source_sha256": "1743b41517518e2a1b3869e0e884351eb3f9c40da9dde109cce4ddf5321b5641",
+  "split_sha256": "46e42dad5f19bff7ad638d13a359f118348ccd3e6eab4d76dc4b97be0340dc59",
+  "verified_rows": [
+    {
+      "model": "moe",
+      "A_accuracy": 0.8449069810278136,
+      "A_macro_f1": 0.8367772647483557,
+      "B_accuracy": 0.7264689629766071,
+      "B_macro_f1": 0.7063922807131474,
+      "mean_accuracy": 0.7856879720022103,
+      "worst_accuracy": 0.7264689629766071
+    },
+    {
+      "model": "A_only",
+      "A_accuracy": 0.8896666052680051,
+      "A_macro_f1": 0.8836417695336072,
+      "B_accuracy": 0.1797752808988764,
+      "B_macro_f1": 0.12142965510939611,
+      "mean_accuracy": 0.5347209430834408,
+      "worst_accuracy": 0.1797752808988764
+    },
+    {
+      "model": "B_only",
+      "A_accuracy": 0.28550377601768284,
+      "A_macro_f1": 0.24103932841329154,
+      "B_accuracy": 0.7388100939399521,
+      "B_macro_f1": 0.722640208779097,
+      "mean_accuracy": 0.5121569349788175,
+      "worst_accuracy": 0.28550377601768284
+    },
+    {
+      "model": "AB",
+      "A_accuracy": 0.8598268557745441,
+      "A_macro_f1": 0.8526154468195208,
+      "B_accuracy": 0.7353103702339289,
+      "B_macro_f1": 0.7214163652087622,
+      "mean_accuracy": 0.7975686130042365,
+      "worst_accuracy": 0.7353103702339289
+    }
+  ],
+  "counts": {
+    "A": {
+      "train": 15998,
+      "validation": 5465,
+      "test": 5429
+    },
+    "B": {
+      "train": 15998,
+      "validation": 5465,
+      "test": 5429
+    }
+  }
+}

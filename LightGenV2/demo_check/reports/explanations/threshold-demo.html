@@ -1,0 +1,53 @@
+<div id="adrenal-threshold-explainer">
+  <h3>同一组分数，改变判决阈值</h3>
+  <div class="text-small">示意数据 · 正常2例，增生2例 · 分数固定</div>
+  <label class="form-label" for="adrenal-demo-threshold">判决阈值：<span id="adrenal-demo-value" class="tabular-nums">0.50</span></label>
+  <input class="form-range" id="adrenal-demo-threshold" type="range" min="0" max="1" step="0.01" value="0.5">
+  <div id="adrenal-demo-rows"></div>
+  <div class="viz-grid" aria-live="polite">
+    <div class="card viz-stat"><div>准确率</div><div id="adrenal-demo-accuracy" class="viz-stat-value tabular-nums">50%</div></div>
+    <div class="card viz-stat"><div>增生检出</div><div id="adrenal-demo-recall" class="viz-stat-value tabular-nums">0 / 2</div></div>
+    <div class="card viz-stat"><div>AUROC（排序）</div><div class="viz-stat-value tabular-nums">1.00</div></div>
+  </div>
+  <div class="text-small">竖线：阈值　｜　分数超过阈值 → 判增生</div>
+  <style>
+    #adrenal-threshold-explainer .sample { margin: 16px 0; }
+    #adrenal-threshold-explainer .sample-label { display: flex; justify-content: space-between; flex-wrap: wrap; gap: 4px 16px; margin-bottom: 6px; }
+    #adrenal-threshold-explainer .score-track { position: relative; height: 14px; background: color-mix(in srgb,var(--foreground) 8%,transparent); }
+    #adrenal-threshold-explainer .score-fill { height: 100%; }
+    #adrenal-threshold-explainer .cutoff { position: absolute; top: -4px; bottom: -4px; width: 2px; background: var(--foreground); }
+  </style>
+  <script>
+    (() => {
+      const root = document.getElementById('adrenal-threshold-explainer');
+      const samples = [{name:'正常 A',truth:0,score:.10},{name:'正常 B',truth:0,score:.20},{name:'增生 C',truth:1,score:.30},{name:'增生 D',truth:1,score:.40}];
+      const rows = root.querySelector('#adrenal-demo-rows');
+      for (const sample of samples) {
+        const row = document.createElement('div');
+        row.className = 'sample';
+        const label = document.createElement('div'); label.className = 'sample-label';
+        const identity = document.createElement('span'); identity.textContent = sample.name + ' · 分数 ' + sample.score.toFixed(2);
+        const decision = document.createElement('span'); decision.className = 'tabular-nums';
+        label.append(identity,decision);
+        const track = document.createElement('div'); track.className = 'score-track'; track.setAttribute('aria-hidden','true');
+        const fill = document.createElement('div'); fill.className = 'score-fill'; fill.style.width = sample.score * 100 + '%'; fill.style.background = sample.truth ? 'var(--viz-series-2)' : 'var(--viz-series-1)';
+        const line = document.createElement('div'); line.className = 'cutoff'; track.append(fill,line); row.append(label,track); rows.append(row);
+        sample.decision = decision; sample.line = line;
+      }
+      const slider = root.querySelector('#adrenal-demo-threshold');
+      function update() {
+        const threshold = Number(slider.value); let correct = 0; let detected = 0;
+        for (const sample of samples) {
+          const predicted = Number(sample.score > threshold); const match = predicted === sample.truth;
+          correct += Number(match); detected += Number(sample.truth === 1 && predicted === 1);
+          sample.decision.textContent = '判' + (predicted ? '增生' : '正常') + ' · ' + (match ? '正确' : '错误');
+          sample.line.style.left = 'calc(' + (threshold * 100) + '% - 1px)';
+        }
+        root.querySelector('#adrenal-demo-value').textContent = threshold.toFixed(2);
+        root.querySelector('#adrenal-demo-accuracy').textContent = (correct / samples.length * 100).toFixed(0) + '%';
+        root.querySelector('#adrenal-demo-recall').textContent = detected + ' / 2';
+      }
+      slider.addEventListener('input',update); update();
+    })();
+  </script>
+</div>

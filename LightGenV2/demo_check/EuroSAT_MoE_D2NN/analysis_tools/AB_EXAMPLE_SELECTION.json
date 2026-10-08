@@ -1,0 +1,143 @@
+{
+  "selection_policy": "First test pair per chosen class, numeric ID ascending. No model outputs or performance used.",
+  "pairs": [
+    {
+      "class": "AnnualCrop",
+      "A": {
+        "path": "images/A/AnnualCrop/AnnualCrop_3.png",
+        "pair_id": "AnnualCrop_3",
+        "label": 0,
+        "label_name": "AnnualCrop",
+        "domain": "A",
+        "split": "test",
+        "spatial_group": "g2",
+        "grid_id": "77_57"
+      },
+      "B": {
+        "path": "images/B/AnnualCrop/AnnualCrop_3.png",
+        "pair_id": "AnnualCrop_3",
+        "label": 0,
+        "label_name": "AnnualCrop",
+        "domain": "B",
+        "split": "test",
+        "spatial_group": "g2",
+        "grid_id": "77_57"
+      }
+    },
+    {
+      "class": "Forest",
+      "A": {
+        "path": "images/A/Forest/Forest_8.png",
+        "pair_id": "Forest_8",
+        "label": 1,
+        "label_name": "Forest",
+        "domain": "A",
+        "split": "test",
+        "spatial_group": "g332",
+        "grid_id": "87_64"
+      },
+      "B": {
+        "path": "images/B/Forest/Forest_8.png",
+        "pair_id": "Forest_8",
+        "label": 1,
+        "label_name": "Forest",
+        "domain": "B",
+        "split": "test",
+        "spatial_group": "g332",
+        "grid_id": "87_64"
+      }
+    },
+    {
+      "class": "Industrial",
+      "A": {
+        "path": "images/A/Industrial/Industrial_9.png",
+        "pair_id": "Industrial_9",
+        "label": 4,
+        "label_name": "Industrial",
+        "domain": "A",
+        "split": "test",
+        "spatial_group": "g29",
+        "grid_id": "85_57"
+      },
+      "B": {
+        "path": "images/B/Industrial/Industrial_9.png",
+        "pair_id": "Industrial_9",
+        "label": 4,
+        "label_name": "Industrial",
+        "domain": "B",
+        "split": "test",
+        "spatial_group": "g29",
+        "grid_id": "85_57"
+      }
+    },
+    {
+      "class": "Residential",
+      "A": {
+        "path": "images/A/Residential/Residential_4.png",
+        "pair_id": "Residential_4",
+        "label": 7,
+        "label_name": "Residential",
+        "domain": "A",
+        "split": "test",
+        "spatial_group": "g12030",
+        "grid_id": "70_64"
+      },
+      "B": {
+        "path": "images/B/Residential/Residential_4.png",
+        "pair_id": "Residential_4",
+        "label": 7,
+        "label_name": "Residential",
+        "domain": "B",
+        "split": "test",
+        "spatial_group": "g12030",
+        "grid_id": "70_64"
+      }
+    },
+    {
+      "class": "River",
+      "A": {
+        "path": "images/A/River/River_3.png",
+        "pair_id": "River_3",
+        "label": 8,
+        "label_name": "River",
+        "domain": "A",
+        "split": "test",
+        "spatial_group": "g3722",
+        "grid_id": "107_75"
+      },
+      "B": {
+        "path": "images/B/River/River_3.png",
+        "pair_id": "River_3",
+        "label": 8,
+        "label_name": "River",
+        "domain": "B",
+        "split": "test",
+        "spatial_group": "g3722",
+        "grid_id": "107_75"
+      }
+    },
+    {
+      "class": "SeaLake",
+      "A": {
+        "path": "images/A/SeaLake/SeaLake_5.png",
+        "pair_id": "SeaLake_5",
+        "label": 9,
+        "label_name": "SeaLake",
+        "domain": "A",
+        "split": "test",
+        "spatial_group": "g9167",
+        "grid_id": "108_40"
+      },
+      "B": {
+        "path": "images/B/SeaLake/SeaLake_5.png",
+        "pair_id": "SeaLake_5",
+        "label": 9,
+        "label_name": "SeaLake",
+        "domain": "B",
+        "split": "test",
+        "spatial_group": "g9167",
+        "grid_id": "108_40"
+      }
+    }
+  ]
+}

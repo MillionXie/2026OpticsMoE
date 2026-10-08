@@ -1,0 +1,441 @@
+{
+  "exported_at": "2026-09-15T06:53:36.830696+00:00",
+  "server": "connect.westc.seetacloud.com:17953",
+  "hostname": "autodl-container-e67043990d-c2f06751",
+  "source_project": "/root/autodl-tmp/Figure2b_adrenal_activation_search",
+  "source_bytes_unchanged": true,
+  "training_locked_sources_verified": 43,
+  "trained_weights_included": false,
+  "dataset_included": true,
+  "source_status": {
+    "updated_at": "2026-09-14T10:41:52.874047+00:00",
+    "state": "completed",
+    "formal_runs": 60,
+    "screening_runs": 12,
+    "unique_training_runs": 68,
+    "selected_activation": "relu_softsign",
+    "report": "reports/report.md"
+  },
+  "files": {
+    "code/PROTOCOL.md": {
+      "source_path": "/root/autodl-tmp/Figure2b_adrenal_activation_search/PROTOCOL.md",
+      "bytes": 4027,
+      "sha256": "2165a2bc26a928a3a4b88a3307f2168b245750bb78b9042f12a546e2647af7d6"
+    },
+    "code/calibration.py": {
+      "source_path": "/root/autodl-tmp/Figure2b_adrenal_activation_search/calibration.py",
+      "bytes": 1703,
+      "sha256": "064663a7b5f4196c4d9e63de4096e55b29457a69343c57afeb029ef72c92fd5f"
+    },
+    "code/config.yaml": {
+      "source_path": "/root/autodl-tmp/Figure2b_adrenal_activation_search/config.yaml",
+      "bytes": 4127,
+      "sha256": "8ee2c5cf07ce15c020f41ad8724bd88499fd4d0b9c76a6823fb54065fd095f46"
+    },
+    "code/experiments.py": {
+      "source_path": "/root/autodl-tmp/Figure2b_adrenal_activation_search/experiments.py",
+      "bytes": 1379,
+      "sha256": "56debf769cf6966105dbc0fd34bdea4037f83fcb0de48bb9986c0c138f460e7b"
+    },
+    "code/metrics.py": {
+      "source_path": "/root/autodl-tmp/Figure2b_adrenal_activation_search/metrics.py",
+      "bytes": 2025,
+      "sha256": "9f17a3a15a89630bbcd294f2e97de3755941fe38bf6f80d8e6e8758b313e496b"
+    },
+    "code/models.py": {
+      "source_path": "/root/autodl-tmp/Figure2b_adrenal_activation_search/models.py",
+      "bytes": 6646,
+      "sha256": "fae0fb551d9111c255041a8f04ba99c0bcf438f877561a1eed2e8f67946b5646"
+    },
+    "code/preflight.py": {
+      "source_path": "/root/autodl-tmp/Figure2b_adrenal_activation_search/preflight.py",
+      "bytes": 8240,
+      "sha256": "4b5de46ddc1ddc4d96a6fc403cd4a7013a0b0d8fb15d8ac0daa12ed7d36ee9a5"
+    },
+    "code/reference_initialization.yaml": {
+      "source_path": "/root/autodl-tmp/Figure2b_adrenal_activation_search/reference_initialization.yaml",
+      "bytes": 43230,
+      "sha256": "e6833086dd4d15ef352c4b375d559d37c2e2b10194a800941fb0f136197a814d"
+    },
+    "code/report.py": {
+      "source_path": "/root/autodl-tmp/Figure2b_adrenal_activation_search/report.py",
+      "bytes": 11074,
+      "sha256": "9bbc6db6bbd7a2fea9d2a9e7eb8a60271ed353387c0724b19f784baf58da67ea"
+    },
+    "code/run.sh": {
+      "source_path": "/root/autodl-tmp/Figure2b_adrenal_activation_search/run.sh",
+      "bytes": 188,
+      "sha256": "e7ea306b696c8f88a5dcbd52d75ed25adaa6bd4589e57c0640f9d873d31e1d61"
+    },
+    "code/run_experiment.py": {
+      "source_path": "/root/autodl-tmp/Figure2b_adrenal_activation_search/run_experiment.py",
+      "bytes": 9440,
+      "sha256": "e277aaa67e841594085451c23ca5a082094ca7c6c7f572445ebe43e1f95efe69"
+    },
+    "code/search_pipeline.py": {
+      "source_path": "/root/autodl-tmp/Figure2b_adrenal_activation_search/search_pipeline.py",
+      "bytes": 6202,
+      "sha256": "170fec8994e7873e3fc1de8b133d8eeb4729c016e5596123050a721acfcb6f20"
+    },
+    "code/optical_reference/__init__.py": {
+      "source_path": "/root/autodl-tmp/Figure2b_adrenal_activation_search/optical_reference/__init__.py",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "code/optical_reference/activations.py": {
+      "source_path": "/root/autodl-tmp/Figure2b_adrenal_activation_search/optical_reference/activations.py",
+      "bytes": 823,
+      "sha256": "a6be25569d228f4154c7598535d98853e154a21b4ddca755c8cd19ed69f4b4bc"
+    },
+    "code/optical_reference/experts.py": {
+      "source_path": "/root/autodl-tmp/Figure2b_adrenal_activation_search/optical_reference/experts.py",
+      "bytes": 54432,
+      "sha256": "5ff26c6223631534823b479c3eba98ca2311285e379c933c67ae24a073a37161"
+    },
+    "code/optical_reference/layout.py": {
+      "source_path": "/root/autodl-tmp/Figure2b_adrenal_activation_search/optical_reference/layout.py",
+      "bytes": 4451,
+      "sha256": "512ed7cf1f62d07cfd2ffc50997285f41d1cf0f9a5c3398e702a45ec37d7db7f"
+    },
+    "code/optical_reference/losses.py": {
+      "source_path": "/root/autodl-tmp/Figure2b_adrenal_activation_search/optical_reference/losses.py",
+      "bytes": 1213,
+      "sha256": "0a1e97baf44c9045f607d84aa55dee8660c451e13fbb2cd4696f0ed0690b74c6"
+    },
+    "code/optical_reference/model.py": {
+      "source_path": "/root/autodl-tmp/Figure2b_adrenal_activation_search/optical_reference/model.py",
+      "bytes": 22433,
+      "sha256": "afe60ad6cfe42dc8c01d3639112b6d7df47acd2854fff46d6a2da2893d3d1b9f"
+    },
+    "code/optical_reference/optics.py": {
+      "source_path": "/root/autodl-tmp/Figure2b_adrenal_activation_search/optical_reference/optics.py",
+      "bytes": 15679,
+      "sha256": "b250627b14357a254eb12c785caf20f3aff2bf3fe30121a05321094803c73a7d"
+    },
+    "code/optical_reference/prompt.py": {
+      "source_path": "/root/autodl-tmp/Figure2b_adrenal_activation_search/optical_reference/prompt.py",
+      "bytes": 16947,
+      "sha256": "3a66d0612473ae488a3e3e16a85bdff7f8f2370f6bc8c03687f77b947c953bc6"
+    },
+    "code/optical_reference/readout.py": {
+      "source_path": "/root/autodl-tmp/Figure2b_adrenal_activation_search/optical_reference/readout.py",
+      "bytes": 1643,
+      "sha256": "181cabdc4b7b85c30bdb16b778870afbd6b35d1d365d98924606c5dbe3e487a4"
+    },
+    "code/configs/d2nn_L2_oeo_off.yaml": {
+      "source_path": "/root/autodl-tmp/Figure2b_adrenal_activation_search/configs/d2nn_L2_oeo_off.yaml",
+      "bytes": 4888,
+      "sha256": "5cfaa741cc221546e6da2dbc756b3d7e3600155774029f0ae48c783740eac9e6"
+    },
+    "code/configs/d2nn_L2_oeo_relu_softsign.yaml": {
+      "source_path": "/root/autodl-tmp/Figure2b_adrenal_activation_search/configs/d2nn_L2_oeo_relu_softsign.yaml",
+      "bytes": 4915,
+      "sha256": "0ee02cc1106a3954f0c1f9f255e7bd1100e7d58b14f46d84237243cef78af464"
+    },
+    "code/configs/d2nn_L2_oeo_relu_tanh.yaml": {
+      "source_path": "/root/autodl-tmp/Figure2b_adrenal_activation_search/configs/d2nn_L2_oeo_relu_tanh.yaml",
+      "bytes": 4899,
+      "sha256": "1d34d74b72fe320f882757540c5b6eeeb803622d67fe8a4ed7929193f74801f6"
+    },
+    "code/configs/d2nn_L2_oeo_softplus2.yaml": {
+      "source_path": "/root/autodl-tmp/Figure2b_adrenal_activation_search/configs/d2nn_L2_oeo_softplus2.yaml",
+      "bytes": 4899,
+      "sha256": "619968726a22cbb64eee7629fd2eb044f0c0c75d86620b80d5bac90ba314e64e"
+    },
+    "code/configs/d2nn_L4_oeo_off.yaml": {
+      "source_path": "/root/autodl-tmp/Figure2b_adrenal_activation_search/configs/d2nn_L4_oeo_off.yaml",
+      "bytes": 4901,
+      "sha256": "2d9a13126480afb2a02b27a027f7ed967eea1724ce794ec1a6f11d26458e3acc"
+    },
+    "code/configs/d2nn_L4_oeo_relu_softsign.yaml": {
+      "source_path": "/root/autodl-tmp/Figure2b_adrenal_activation_search/configs/d2nn_L4_oeo_relu_softsign.yaml",
+      "bytes": 4927,
+      "sha256": "ca61e9c894587f65da425b99981f427d452260c31c7993533693e6fac14ae20d"
+    },
+    "code/configs/d2nn_L4_oeo_relu_tanh.yaml": {
+      "source_path": "/root/autodl-tmp/Figure2b_adrenal_activation_search/configs/d2nn_L4_oeo_relu_tanh.yaml",
+      "bytes": 4911,
+      "sha256": "442c8776c858d7a863054b82a2d1c243593ca166a1a56bb4a6734ec7b0c3dd1b"
+    },
+    "code/configs/d2nn_L4_oeo_softplus2.yaml": {
+      "source_path": "/root/autodl-tmp/Figure2b_adrenal_activation_search/configs/d2nn_L4_oeo_softplus2.yaml",
+      "bytes": 4911,
+      "sha256": "3bcbed6ca702814aa5826218049d5c77bb4e2efca7248bff5f1d36c366fd83d5"
+    },
+    "code/configs/d2nn_L6_oeo_off.yaml": {
+      "source_path": "/root/autodl-tmp/Figure2b_adrenal_activation_search/configs/d2nn_L6_oeo_off.yaml",
+      "bytes": 4916,
+      "sha256": "23b2018137df3f1126a9dbd8136f4c97be5f2a4874b20a3cb8d2ca22fddeeea6"
+    },
+    "code/configs/d2nn_L6_oeo_relu_softsign.yaml": {
+      "source_path": "/root/autodl-tmp/Figure2b_adrenal_activation_search/configs/d2nn_L6_oeo_relu_softsign.yaml",
+      "bytes": 4941,
+      "sha256": "510e0e692ca17aa5fb6e8b73dd7b2eefb801c76a9e28d14cb9d4d61e4b0d43c7"
+    },
+    "code/configs/d2nn_L6_oeo_relu_tanh.yaml": {
+      "source_path": "/root/autodl-tmp/Figure2b_adrenal_activation_search/configs/d2nn_L6_oeo_relu_tanh.yaml",
+      "bytes": 4925,
+      "sha256": "60ece3d6f51443791c3bde87b00bbf11324347d672c393f89bf6df2d15a443d7"
+    },
+    "code/configs/d2nn_L6_oeo_softplus2.yaml": {
+      "source_path": "/root/autodl-tmp/Figure2b_adrenal_activation_search/configs/d2nn_L6_oeo_softplus2.yaml",
+      "bytes": 4925,
+      "sha256": "1d7ec8f4b60fb64f26906bf5c1b4e1b50b2f496700a57cf4d85000c0c197bfe8"
+    },
+    "code/configs/moe_L2_oeo_off.yaml": {
+      "source_path": "/root/autodl-tmp/Figure2b_adrenal_activation_search/configs/moe_L2_oeo_off.yaml",
+      "bytes": 4885,
+      "sha256": "5638d40f0bbeccf23cb185d5d9a4325a46402d0d8ae8b6a0dfc1f51f1184f2e0"
+    },
+    "code/configs/moe_L2_oeo_relu_softsign.yaml": {
+      "source_path": "/root/autodl-tmp/Figure2b_adrenal_activation_search/configs/moe_L2_oeo_relu_softsign.yaml",
+      "bytes": 4912,
+      "sha256": "92090f546e6bc79ae640cf0f81f9990991b61b1dc1f774bef80ddd1e5e3ad932"
+    },
+    "code/configs/moe_L2_oeo_relu_tanh.yaml": {
+      "source_path": "/root/autodl-tmp/Figure2b_adrenal_activation_search/configs/moe_L2_oeo_relu_tanh.yaml",
+      "bytes": 4896,
+      "sha256": "56e01d31297023feab78c137be2ea5d88fc75d55760574c62661d8e7ea45ca6e"
+    },
+    "code/configs/moe_L2_oeo_softplus2.yaml": {
+      "source_path": "/root/autodl-tmp/Figure2b_adrenal_activation_search/configs/moe_L2_oeo_softplus2.yaml",
+      "bytes": 4896,
+      "sha256": "2ca293ea9703d88853a2775a26debf729d88f363f905ab9d95d8cb568414b450"
+    },
+    "code/configs/moe_L4_oeo_off.yaml": {
+      "source_path": "/root/autodl-tmp/Figure2b_adrenal_activation_search/configs/moe_L4_oeo_off.yaml",
+      "bytes": 4898,
+      "sha256": "6d9b9f65226c22e1cc79d5cc7531cb2431eb63c1696c9e1502de5f812fef34d2"
+    },
+    "code/configs/moe_L4_oeo_relu_softsign.yaml": {
+      "source_path": "/root/autodl-tmp/Figure2b_adrenal_activation_search/configs/moe_L4_oeo_relu_softsign.yaml",
+      "bytes": 4924,
+      "sha256": "6821d2bf8be68f9cf4e94a7c37f0626620ac616272f1a915454d69d8da447b4d"
+    },
+    "code/configs/moe_L4_oeo_relu_tanh.yaml": {
+      "source_path": "/root/autodl-tmp/Figure2b_adrenal_activation_search/configs/moe_L4_oeo_relu_tanh.yaml",
+      "bytes": 4908,
+      "sha256": "1239a105006b822f29db13463d054ed8e3f24312bec2788c0815acf1abd7a49d"
+    },
+    "code/configs/moe_L4_oeo_softplus2.yaml": {
+      "source_path": "/root/autodl-tmp/Figure2b_adrenal_activation_search/configs/moe_L4_oeo_softplus2.yaml",
+      "bytes": 4908,
+      "sha256": "76cd67c7855d8a0adc2403a4f19918bccbac2be8f39baa8fed923a95bc5fd51d"
+    },
+    "code/configs/moe_L6_oeo_off.yaml": {
+      "source_path": "/root/autodl-tmp/Figure2b_adrenal_activation_search/configs/moe_L6_oeo_off.yaml",
+      "bytes": 4913,
+      "sha256": "046f7647158ff896837e52cb53d526e738ee4f668d68dcd22ce1b264b214396b"
+    },
+    "code/configs/moe_L6_oeo_relu_softsign.yaml": {
+      "source_path": "/root/autodl-tmp/Figure2b_adrenal_activation_search/configs/moe_L6_oeo_relu_softsign.yaml",
+      "bytes": 4938,
+      "sha256": "f8c99fe608c6e9db3c071ea6a64bc8d3740d29562d1ea5d6a0698c1659d6fb76"
+    },
+    "code/configs/moe_L6_oeo_relu_tanh.yaml": {
+      "source_path": "/root/autodl-tmp/Figure2b_adrenal_activation_search/configs/moe_L6_oeo_relu_tanh.yaml",
+      "bytes": 4922,
+      "sha256": "01af85858d4308e648d49c57f2db630236981e7004999bf677ccc9dd397c4a56"
+    },
+    "code/configs/moe_L6_oeo_softplus2.yaml": {
+      "source_path": "/root/autodl-tmp/Figure2b_adrenal_activation_search/configs/moe_L6_oeo_softplus2.yaml",
+      "bytes": 4922,
+      "sha256": "7a078c7f4c4fd7fd42808dca6ff6f1782c74f656982e62fca1e2607ccef79979"
+    },
+    "code/assets/simhei.ttf": {
+      "source_path": "/root/autodl-tmp/Figure2b_adrenal_activation_search/assets/simhei.ttf",
+      "bytes": 9753388,
+      "sha256": "aa4560dd8fe5645745fed3ffa301c3ca4d6c03cbd738145b613303961ba733b8"
+    },
+    "results/reports/COMPLETION.md": {
+      "source_path": "/root/autodl-tmp/Figure2b_adrenal_activation_search/reports/COMPLETION.md",
+      "bytes": 14296,
+      "sha256": "e83cf55ec1a99110d253c62c66ecc3e6ab3338de2ccac98bbdfa76c33158f1d2"
+    },
+    "results/reports/depth246_fixed_0.5.pdf": {
+      "source_path": "/root/autodl-tmp/Figure2b_adrenal_activation_search/reports/depth246_fixed_0.5.pdf",
+      "bytes": 40399,
+      "sha256": "1db872f5cbb882f63c72ce325bc1c498ed0ff62c9f5f38c1b07f23445c02f706"
+    },
+    "results/reports/depth246_fixed_0.5.png": {
+      "source_path": "/root/autodl-tmp/Figure2b_adrenal_activation_search/reports/depth246_fixed_0.5.png",
+      "bytes": 714810,
+      "sha256": "2d57be1a01f8dc03c0e4742796b40c740cfc05742c57def933454c66924f05d6"
+    },
+    "results/reports/depth246_fixed_0.5.svg": {
+      "source_path": "/root/autodl-tmp/Figure2b_adrenal_activation_search/reports/depth246_fixed_0.5.svg",
+      "bytes": 138702,
+      "sha256": "665d1e9d43eb3a2ad104dab0fdd466b0e55f15dbe0375ff76b900f39a3d65ab3"
+    },
+    "results/reports/depth246_val_accuracy.pdf": {
+      "source_path": "/root/autodl-tmp/Figure2b_adrenal_activation_search/reports/depth246_val_accuracy.pdf",
+      "bytes": 42431,
+      "sha256": "c103d33aa7eb48a0a91e67748f573793477ee91b72423f87546f667c5dc496fc"
+    },
+    "results/reports/depth246_val_accuracy.png": {
+      "source_path": "/root/autodl-tmp/Figure2b_adrenal_activation_search/reports/depth246_val_accuracy.png",
+      "bytes": 776307,
+      "sha256": "096b9473f669da803ed04f0d9b51c0db193409c4e7f1d8d5c2099ad78f84a8e0"
+    },
+    "results/reports/depth246_val_accuracy.svg": {
+      "source_path": "/root/autodl-tmp/Figure2b_adrenal_activation_search/reports/depth246_val_accuracy.svg",
+      "bytes": 136112,
+      "sha256": "28bc5c6309ba29347465bcd8c07a7689e1d2d9584f6f3b30580bf08c1d61a287"
+    },
+    "results/reports/depth246_val_balanced.pdf": {
+      "source_path": "/root/autodl-tmp/Figure2b_adrenal_activation_search/reports/depth246_val_balanced.pdf",
+      "bytes": 42717,
+      "sha256": "11d13470b148edbdc5262cb85df8abc07d93a9d2d254e91cadae48780439d24a"
+    },
+    "results/reports/depth246_val_balanced.png": {
+      "source_path": "/root/autodl-tmp/Figure2b_adrenal_activation_search/reports/depth246_val_balanced.png",
+      "bytes": 802326,
+      "sha256": "c88ecbffd8a03cb78d570cf4c7dab0655cb642a50af1e152a4393fea449dfbc8"
+    },
+    "results/reports/depth246_val_balanced.svg": {
+      "source_path": "/root/autodl-tmp/Figure2b_adrenal_activation_search/reports/depth246_val_balanced.svg",
+      "bytes": 137409,
+      "sha256": "d7ebb7f7cff06925370c3af12b7bdd6db7b3136e77fa017f8ddb00ac630cab57"
+    },
+    "results/reports/mean_sd.csv": {
+      "source_path": "/root/autodl-tmp/Figure2b_adrenal_activation_search/reports/mean_sd.csv",
+      "bytes": 13599,
+      "sha256": "04995a98310e95870767350572a63042edbf2d92cc3f7c8ed64ccce98e55659c"
+    },
+    "results/reports/ordering.csv": {
+      "source_path": "/root/autodl-tmp/Figure2b_adrenal_activation_search/reports/ordering.csv",
+      "bytes": 2810,
+      "sha256": "baa5691d6bb148bb681135c3a931b415fa42aeaafffc1be77adda73b448f3106"
+    },
+    "results/reports/paired_summary.csv": {
+      "source_path": "/root/autodl-tmp/Figure2b_adrenal_activation_search/reports/paired_summary.csv",
+      "bytes": 10363,
+      "sha256": "b1d2f90e1630f2e3f3859393f2e620e4ff2dd370a4728f9e6e4161c345f0fd25"
+    },
+    "results/reports/per_seed.csv": {
+      "source_path": "/root/autodl-tmp/Figure2b_adrenal_activation_search/reports/per_seed.csv",
+      "bytes": 43934,
+      "sha256": "af4af49e118affee51e92bcc6e544d5b6f59002c29a1cb102967be2e03926311"
+    },
+    "results/reports/report.md": {
+      "source_path": "/root/autodl-tmp/Figure2b_adrenal_activation_search/reports/report.md",
+      "bytes": 1411,
+      "sha256": "a15eb410f1304a1c2c7eb55915afdfbf7e907bfb26daf97c173474ffbb7d3f5b"
+    },
+    "results/reports/results.json": {
+      "source_path": "/root/autodl-tmp/Figure2b_adrenal_activation_search/reports/results.json",
+      "bytes": 223224,
+      "sha256": "cb88a4fa5cf90be9f723cf716559d0cc14aa068637518a6c748dd67841befcd6"
+    },
+    "results/reports/screening_validation.csv": {
+      "source_path": "/root/autodl-tmp/Figure2b_adrenal_activation_search/reports/screening_validation.csv",
+      "bytes": 313,
+      "sha256": "0c99833a8924e6c8e8222d94970cb4cf78e7443402015a49427f06926c19f8a6"
+    },
+    "results/protocol/training_lock.json": {
+      "source_path": "/root/autodl-tmp/Figure2b_adrenal_activation_search/protocol/training_lock.json",
+      "bytes": 6431,
+      "sha256": "43f1cd1bbfa521307cd60e49dbccca379de0ce65fadbf635acc510deb7e8c95c"
+    },
+    "results/protocol/final_lock.json": {
+      "source_path": "/root/autodl-tmp/Figure2b_adrenal_activation_search/protocol/final_lock.json",
+      "bytes": 20804,
+      "sha256": "45382ba2285530a80d971db74b69aa65983bc3f2323dec3e79787f63e5bcff14"
+    },
+    "results/protocol/activation_selection.json": {
+      "source_path": "/root/autodl-tmp/Figure2b_adrenal_activation_search/protocol/activation_selection.json",
+      "bytes": 5521,
+      "sha256": "4c4ff0a8b66aed7cfb5616e6581c3374ba520397fd9d8b9852fc707651b7fd69"
+    },
+    "results/protocol/preflight.json": {
+      "source_path": "/root/autodl-tmp/Figure2b_adrenal_activation_search/protocol/preflight.json",
+      "bytes": 82316,
+      "sha256": "76e4097bf62e834a6aec3010a57ff0b0a5416efdb8c079409aefb058a8649bbd"
+    },
+    "results/status.json": {
+      "source_path": "/root/autodl-tmp/Figure2b_adrenal_activation_search/status.json",
+      "bytes": 228,
+      "sha256": "70db7be8d10cf6e93875d0ac1040c58f424f3eb15c16876b4f8a454c625f2f8c"
+    },
+    "data/adrenalmnist3d/projected2d/axis2_mean/data.npz": {
+      "source_path": "/root/autodl-tmp/Figure2b_adrenal_L4_5090/data/adrenalmnist3d/projected2d/axis2_mean/data.npz",
+      "bytes": 161184,
+      "sha256": "22bc193a85c43be85f093bf12f3ffdc5ed79b5efda63925bd9e063a70594bf93"
+    },
+    "data/adrenalmnist3d/projected2d/axis2_mean/manifest.csv": {
+      "source_path": "/root/autodl-tmp/Figure2b_adrenal_L4_5090/data/adrenalmnist3d/projected2d/axis2_mean/manifest.csv",
+      "bytes": 252263,
+      "sha256": "da8a6d3bac693de4903e622cbdfe0431f75650c1bcfc2dc185a4ca41cc2aaa7b"
+    },
+    "data/adrenalmnist3d/projected2d/axis2_mean/preprocessing.json": {
+      "source_path": "/root/autodl-tmp/Figure2b_adrenal_L4_5090/data/adrenalmnist3d/projected2d/axis2_mean/preprocessing.json",
+      "bytes": 599,
+      "sha256": "533c4894409eded0af716c83f938f8bf49862a77a0f1c5171bb11c9cd0f28529"
+    },
+    "data/adrenalmnist3d/projected2d/axis2_mean/preview_train.png": {
+      "source_path": "/root/autodl-tmp/Figure2b_adrenal_L4_5090/data/adrenalmnist3d/projected2d/axis2_mean/preview_train.png",
+      "bytes": 79996,
+      "sha256": "a4ce99f85b7391548f2ebe39a2a9a08499f781121793f20fa45426ac2cad3496"
+    },
+    "data/adrenalmnist3d/raw/adrenalmnist3d.npz": {
+      "source_path": "/root/autodl-tmp/Figure2b_adrenal_L4_5090/data/adrenalmnist3d/raw/adrenalmnist3d.npz",
+      "bytes": 276833,
+      "sha256": "8ffd78c0f000265deb7cf4ee0b454136fb3170f9839ecaa7bb01adf9f88aa7d1"
+    },
+    "data/adrenalmnist3d/raw/download_manifest.json": {
+      "source_path": "/root/autodl-tmp/Figure2b_adrenal_L4_5090/data/adrenalmnist3d/raw/download_manifest.json",
+      "bytes": 516,
+      "sha256": "fe85634db654f0be16b5224f2016cd6e78941c17a4ba34314f07f2747a3c74b3"
+    },
+    "data/adrenalmnist3d/reports/data_audit.json": {
+      "source_path": "/root/autodl-tmp/Figure2b_adrenal_L4_5090/data/adrenalmnist3d/reports/data_audit.json",
+      "bytes": 1913,
+      "sha256": "4c0b6e9628efdc222e762278dd56c70ba7bcc4fefe3de95d8660cb9453d572fc"
+    },
+    "data/adrenalmnist3d/reports/data_audit.md": {
+      "source_path": "/root/autodl-tmp/Figure2b_adrenal_L4_5090/data/adrenalmnist3d/reports/data_audit.md",
+      "bytes": 1943,
+      "sha256": "9b0f039b3b3bae9aa55efbcaabb9b65bf18b64727c2df57afc761019537847b1"
+    },
+    "data_tools/__init__.py": {
+      "source_path": "/root/autodl-tmp/Figure2b_adrenal_L4_5090/data_tools/__init__.py",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "data_tools/common.py": {
+      "source_path": "/root/autodl-tmp/Figure2b_adrenal_L4_5090/data_tools/common.py",
+      "bytes": 968,
+      "sha256": "1eac0c313369ae0c52ade293f876d1618120c3fdd2937aaf74ef8e69b106aacc"
+    },
+    "data_tools/preparation.py": {
+      "source_path": "/root/autodl-tmp/Figure2b_adrenal_L4_5090/data_tools/preparation.py",
+      "bytes": 9003,
+      "sha256": "13eeeff30748c8fbd6a4a6d04faf13138aa532c55dc95278314f8f429f971e13"
+    },
+    "environment/requirements-17953.txt": {
+      "source_path": "/root/autodl-tmp/Figure2b_adrenal_L4_5090/requirements-17953.txt",
+      "bytes": 4993,
+      "sha256": "dba322f2e50113d04ea78af01e61371a1e790a5c4a7d05bf26a9c66a1b0d939a"
+    },
+    "environment/requirements-resolved.txt": {
+      "source_path": "/root/autodl-tmp/Figure2b_adrenal_L4_5090/requirements-resolved.txt",
+      "bytes": 4993,
+      "sha256": "dba322f2e50113d04ea78af01e61371a1e790a5c4a7d05bf26a9c66a1b0d939a"
+    },
+    "environment/ENVIRONMENT.json": {
+      "source_path": "/root/autodl-tmp/Figure2b_adrenal_L4_5090/ENVIRONMENT.json",
+      "bytes": 293,
+      "sha256": "f81f5487c0fdc191c231a02467d1b1dc35aec9ecb27838b7b4afcc41eae959fa"
+    },
+    "environment/MIGRATION_17953_ENVIRONMENT.json": {
+      "source_path": "/root/autodl-tmp/Figure2b_adrenal_L4_5090/MIGRATION_17953_ENVIRONMENT.json",
+      "bytes": 293,
+      "sha256": "f81f5487c0fdc191c231a02467d1b1dc35aec9ecb27838b7b4afcc41eae959fa"
+    },
+    "README_EXPORT_zh.md": {
+      "source_path": null,
+      "bytes": 2934,
+      "sha256": "b1dceaa2e35222c1ad32ffbf0ba677d8fd4bd939ba3f5a70ae082fbafdf2c9ee"
+    }
+  }
+}

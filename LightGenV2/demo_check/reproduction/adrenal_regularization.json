@@ -1,0 +1,16 @@
+{
+  "profile": "affine_phase_smooth_v1",
+  "epochs": 50,
+  "batch_size": 8,
+  "lr": 0.001,
+  "step_size": 10,
+  "gamma": 0.7,
+  "weight_decay": 0.0,
+  "augmentation": {"degrees": 8.0, "translation_pixels": 3.0, "scale_delta": 0.03},
+  "phase_smooth_weight": 0.05,
+  "objective": "original_detector_plane_mse_plus_mean_circular_phase_smoothness",
+  "selection": "max_validation_auroc_then_min_validation_detector_plane_mse_tol_1e-6",
+  "threshold": "validation_balanced_accuracy_then_accuracy_then_nearest_0.5",
+  "scope": "paired 2/4/6 layers, MoE/D2NN, Softsign/off; same protocol and random transforms; no test-based tuning",
+  "test_status": "retrospective development: this official test was inspected in earlier reproductions"
+}

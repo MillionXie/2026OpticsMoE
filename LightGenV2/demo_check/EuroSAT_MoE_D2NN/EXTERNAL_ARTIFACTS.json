@@ -1,0 +1,13 @@
+{
+  "dataset_zip": "D:/陈课题组/LGII_f2_code/图2d代码/EuroSAT_images_53784_20260914/EuroSAT_experiment_53784_images.zip",
+  "phase_mask_zip": "D:/陈课题组/LGII_f2_code/图2d代码/EuroSAT_相位板非线性色标_20260914/EuroSAT_MoE与D2NN_相位mask_非线性色标.zip",
+  "server_code": "/root/autodl-tmp/review/eurosat_expert_merge_20260912",
+  "server_data": "/root/autodl-tmp/data/eurosat_optical_sar",
+  "server_qwen_cache": "/root/autodl-tmp/huggingface-cache",
+  "checkpoint_paths": {
+    "moe": "/root/autodl-tmp/review/eurosat_expert_merge_20260912/runs/moe/router/selected.pt",
+    "A_only": "/root/autodl-tmp/review/eurosat_d2nn_baselines_20260912/runs/A_only/selected.pt",
+    "B_only": "/root/autodl-tmp/review/eurosat_d2nn_baselines_20260912/runs/B_only/selected.pt",
+    "AB": "/root/autodl-tmp/review/eurosat_d2nn_baselines_20260912/runs/AB/selected.pt"
+  }
+}

@@ -1,0 +1,6 @@
+EuroSAT optical/SAR research experiment.
+EuroSAT: Patrick Helber, Benjamin Bischke, Andreas Dengel, Damian Borth. EuroSAT: A Novel Dataset and Deep Learning Benchmark for Land Use and Land Cover Classification, 2019. https://github.com/phelber/EuroSAT ; https://doi.org/10.5281/zenodo.7711810 . Dataset MIT license retained in licenses/EuroSAT_MIT_LICENSE.txt.
+EuroSAT-SAR: Yi Wang, Hugo Hernandez Hernandez, Conrad M. Albrecht, Xiao Xiang Zhu. Feature Guided Masked Autoencoder for Self-supervised Learning in Remote Sensing, 2023. https://huggingface.co/datasets/wangyi111/EuroSAT-SAR ; https://arxiv.org/abs/2310.18653 . Dataset card declares MIT.
+Contains modified Copernicus Sentinel data 2016/2017 (EuroSAT-SAR authors report this approximate acquisition period; exact paired optical sensing dates are not provided). Sentinel-2 RGB source credited to Copernicus and the EuroSAT authors as released. Original source notices and legal terms retained in licenses/.
+Modifications: SAR resampled to paired optical geographic grid, VV/VH fixed radiometric scaling and deterministic three-channel encoding; RGB decoded to lossless PNG; geographic partitioning; common224-pixel model input and train augmentation. No endorsement by the original creators is implied.
+The SAR normalization procedure follows the authors' FGMAE reference; its Apache-2.0 source notice is retained.

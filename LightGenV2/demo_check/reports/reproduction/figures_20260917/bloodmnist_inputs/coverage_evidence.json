@@ -1,0 +1,53 @@
+[
+  {
+    "arch": "d2nn",
+    "phase": "phases.0.phase",
+    "shape": [
+      472,
+      472
+    ],
+    "pixels": 222784,
+    "input_samples": 32,
+    "illuminated_exact_fraction": 0.04488652944564819,
+    "illuminated_relative_1e6_fraction": 0.04488652944564819,
+    "classification_gradient_exact_fraction": 0.04488652944564819,
+    "classification_gradient_relative_1e6_fraction": 0.04488652944564819,
+    "classification_gradient_norm": 0.10153073817491531,
+    "saturation_fraction": 0.0,
+    "map_key": "phase0"
+  },
+  {
+    "arch": "d2nn_wide",
+    "phase": "phases.0.phase",
+    "shape": [
+      472,
+      472
+    ],
+    "pixels": 222784,
+    "input_samples": 32,
+    "illuminated_exact_fraction": 1.0,
+    "illuminated_relative_1e6_fraction": 1.0,
+    "classification_gradient_exact_fraction": 1.0,
+    "classification_gradient_relative_1e6_fraction": 1.0,
+    "classification_gradient_norm": 0.24655909836292267,
+    "saturation_fraction": 0.0,
+    "map_key": "phase0"
+  },
+  {
+    "arch": "moe",
+    "phase": "net.expert_bank.experts.0.phase_layers.0",
+    "shape": [
+      146,
+      146
+    ],
+    "pixels": 21316,
+    "input_samples": 32,
+    "illuminated_exact_fraction": 0.46913114190101624,
+    "illuminated_relative_1e6_fraction": 0.46913114190101624,
+    "classification_gradient_exact_fraction": 0.46913114190101624,
+    "classification_gradient_relative_1e6_fraction": 0.46913114190101624,
+    "classification_gradient_norm": 0.04226846620440483,
+    "saturation_fraction": 0.0,
+    "map_key": "phase1"
+  }
+]

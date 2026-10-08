@@ -1,0 +1,32 @@
+{
+  "passed": true,
+  "scope": "Standalone extracted ZIP, no Git dependency; four full-train-split one-epoch training runs at depth2 and exact validation checkpoint replay. Not final performance.",
+  "training_smokes": [
+    {
+      "arch": "moe",
+      "validation_exact_replay": true,
+      "all_phase_tensors_updated": true,
+      "epoch": 1
+    },
+    {
+      "arch": "moe_nooeo",
+      "validation_exact_replay": true,
+      "all_phase_tensors_updated": true,
+      "epoch": 1
+    },
+    {
+      "arch": "d2nn_wide",
+      "validation_exact_replay": true,
+      "all_phase_tensors_updated": true,
+      "epoch": 1
+    },
+    {
+      "arch": "d2nn_wide_nooeo",
+      "validation_exact_replay": true,
+      "all_phase_tensors_updated": true,
+      "epoch": 1
+    }
+  ],
+  "coverage_smoke": true,
+  "zip_sha256": "d09a9d8bd2d5dd2dfd8a73df671be86df9080504efd690c9e3975807cdba6115"
+}

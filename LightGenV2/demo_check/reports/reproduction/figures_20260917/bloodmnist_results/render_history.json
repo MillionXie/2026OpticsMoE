@@ -1,0 +1,14 @@
+[
+  {
+    "previous_verifier_sha256": "f8aeb1a34b65787589fd2860d7207f0f799e587ea3fedaa1ebb838c7cc47dfb4",
+    "current_verifier_sha256": "d945b588343133eed9694cc096da57c7367693be8d7b6e9d37c7edca13062d97",
+    "unchanged_results_sha256": "693bc205d29e1d15bd9d6476f1f143175a0fb9012d4960dffdc5d959cbec3748",
+    "all_checks_repeated": true
+  },
+  {
+    "previous_verifier_sha256": "d945b588343133eed9694cc096da57c7367693be8d7b6e9d37c7edca13062d97",
+    "current_verifier_sha256": "7081f8da5629d30f3fdf7af651c0706a83e6d57bf55cdc52a0af4674d9eb1bb6",
+    "unchanged_results_sha256": "693bc205d29e1d15bd9d6476f1f143175a0fb9012d4960dffdc5d959cbec3748",
+    "all_checks_repeated": true
+  }
+]

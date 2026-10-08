@@ -1,0 +1,24 @@
+{
+  "passed": true,
+  "sealed_files": 420,
+  "sealed_python_files_parsed": 236,
+  "source_sha256": "1743b41517518e2a1b3869e0e884351eb3f9c40da9dde109cce4ddf5321b5641",
+  "source_tar_sha256": "f6f30f26c72340c972257ab2086e2e606556267aae0fd23edfb7e1cea5e6fbc5",
+  "sealed_source_files_byte_identical": true,
+  "syntax_checks": "ast.parse only; original training was not rerun",
+  "server_source_verified_on": "2026-09-15",
+  "training_source_modified": false,
+  "additional_queue_marker": "code/data_progress.json",
+  "analysis_scripts": [
+    "analyze_completed_results.py",
+    "verify_completed_results.py",
+    "plot_three_models_20260914.py",
+    "render_nonlinear_phase_package_20260914.py",
+    "export_experiment_images_20260914.py",
+    "render_ab_image_examples_20260914.py",
+    "verify_downloaded_image_package_20260914.py"
+  ],
+  "includes_dataset_images": false,
+  "includes_trained_checkpoint_weights": false,
+  "includes_qwen_weights": false
+}
