@@ -1,0 +1,277 @@
+{
+  "scope": "Original dated historical report notes, timing evidence explanations and missing-data notices; not current task status",
+  "decision": "Preserve original notes in main unchanged alongside the dated historical reports they explain; do not recalculate metrics or claim current reproducibility",
+  "verification": "54 files match original raw SHA and existing recovery Git blobs (raw or LF); original relative path preserved; no model run or data modification",
+  "files": [
+    {
+      "path": "LightGenV2/reports/20260914_latest_qwen_baselines_a100_FIRSTBLOCK_FINAL/README_CN.md",
+      "original_raw_sha256": "b247b199e0da46fc1e4f715e65706984e1603ea479b7bb6af8e2a688b216010a",
+      "recovery_blob": "8aa5feb0ae553cd793c1eb4afd7d1adc241b3587"
+    },
+    {
+      "path": "LightGenV2/reports/20260914_latest_qwen_baselines_a100_FIRSTBLOCK_FINAL/work/abo_qwen_reproduction/README.md",
+      "original_raw_sha256": "5b49bf6605d90c7e4ba48f11c1956304205cc7c563afbb37d776517cfd138184",
+      "recovery_blob": "99fba316848901a578f2a4ac31689b8b2a8054f7"
+    },
+    {
+      "path": "LightGenV2/reports/20260915_lgvq_topsw/README_1MAC_2OP_CN.md",
+      "original_raw_sha256": "0de133f41a24e47c1df693a58e138e8173e98a49a8ed3fd1bb15f8b435c5fdc9",
+      "recovery_blob": "f121cdb431da10f816f694cdf0c7552b3fe24a46"
+    },
+    {
+      "path": "LightGenV2/reports/20260915_lgvq_topsw/README_CN.md",
+      "original_raw_sha256": "84a244875e755d30b08371211b5ab430c72b906dd02e27047788d57455097ea9",
+      "recovery_blob": "770b215fa18b36336b8ccde16036234da1ef9d42"
+    },
+    {
+      "path": "LightGenV2/reports/20260917_redbox_timing_energy_audit/energy_recalculation_20260920/README_CN.md",
+      "original_raw_sha256": "7208d5c8f4a95c28f96126a7dd3a6f37f457dfffd12679e33209a36f01601a0b",
+      "recovery_blob": "4ea4ecf911340747092a4713e46c52004ef1283f"
+    },
+    {
+      "path": "LightGenV2/reports/20260917_redbox_timing_energy_audit/evidence/current_qwen_firstblock_final/README_CN.md",
+      "original_raw_sha256": "b247b199e0da46fc1e4f715e65706984e1603ea479b7bb6af8e2a688b216010a",
+      "recovery_blob": "8aa5feb0ae553cd793c1eb4afd7d1adc241b3587"
+    },
+    {
+      "path": "LightGenV2/reports/20260917_redbox_timing_energy_audit/evidence/current_qwen_firstblock_final/work/abo_qwen_reproduction/README.md",
+      "original_raw_sha256": "5b49bf6605d90c7e4ba48f11c1956304205cc7c563afbb37d776517cfd138184",
+      "recovery_blob": "99fba316848901a578f2a4ac31689b8b2a8054f7"
+    },
+    {
+      "path": "LightGenV2/reports/20260917_redbox_timing_energy_audit/evidence/historical_git_3f3ea6da/LightGenV2/tasks/t04_semantic_interaction/reports/a100_formal/AUDIT_20260908_CN.md",
+      "original_raw_sha256": "8cddcd2a5ad5ee8c75bf99a592988d0663bac5377d7d2d619ac4af78082ac0a2",
+      "recovery_blob": "6d7e8b16c43557db5e397f8c3e4dae535bf3e083"
+    },
+    {
+      "path": "LightGenV2/reports/20260917_redbox_timing_energy_audit/evidence/historical_git_7d5b05e9/LightGenV2/tasks/t06_video_quality_assessment/reports/a100_audited_table_20260907/COMMANDS.md",
+      "original_raw_sha256": "fe7cc7a44f2dab500f6971e563684b5dd07dc7c4ed998fbe876d393f16b357fd",
+      "recovery_blob": "e56f29d6c308692cab653670873bfbdf196f1627"
+    },
+    {
+      "path": "LightGenV2/reports/20260917_redbox_timing_energy_audit/evidence/historical_git_7d5b05e9/LightGenV2/tasks/t06_video_quality_assessment/reports/a100_audited_table_20260907/README.md",
+      "original_raw_sha256": "4a63f8ff841833d35674efc2d949642c74441bbe7a242d81fee1e6e8920d770a",
+      "recovery_blob": "ed2c32d761652dea04965ff5cb45665a339a5d4b"
+    },
+    {
+      "path": "LightGenV2/reports/20260917_redbox_timing_energy_audit/evidence/historical_git_7d5b05e9/LightGenV2/tasks/t06_video_quality_assessment/reports/a100_cross_task_baselines_20260907/README.md",
+      "original_raw_sha256": "2b610f66da376fd5e01ad983e3b71a5ca06073c4889c5d12473e0d5dd22687c6",
+      "recovery_blob": "d3baa26a2782f05d29337fb48f8e257dca5fc373"
+    },
+    {
+      "path": "LightGenV2/reports/20260917_redbox_timing_energy_audit/evidence/historical_git_7d5b05e9/LightGenV2/tasks/t07_abo_image_retrieval/reports/a100_frozen_qwen_20260907/README.md",
+      "original_raw_sha256": "6238624126b456f1610ab663c1396b5873fd987402ef339c2811a29e72777a0d",
+      "recovery_blob": "9276c4b5c8e7a1aac017baa84390ede46f15c24c"
+    },
+    {
+      "path": "LightGenV2/reports/20260917_redbox_timing_energy_audit/server_2026OpticsMoE_a100_formal/03_ABO_image_to_text/Baseline/MISSING_RAW_DATA.md",
+      "original_raw_sha256": "6677f5fc74127fa8adc92f728c0141d0747ba1df8686b3025fb8a544e3489c7e",
+      "recovery_blob": "7ee4eb68d1dff8f6accae20b31c6142cb3ebb359"
+    },
+    {
+      "path": "LightGenV2/reports/20260917_redbox_timing_energy_audit/server_2026OpticsMoE_a100_formal/04_ABO_image_to_image/Baseline/MISSING_RAW_DATA.md",
+      "original_raw_sha256": "6677f5fc74127fa8adc92f728c0141d0747ba1df8686b3025fb8a544e3489c7e",
+      "recovery_blob": "7ee4eb68d1dff8f6accae20b31c6142cb3ebb359"
+    },
+    {
+      "path": "LightGenV2/reports/20260917_redbox_timing_energy_audit/server_2026OpticsMoE_a100_formal/05_LSP/Baseline/MISSING_RAW_DATA.md",
+      "original_raw_sha256": "6677f5fc74127fa8adc92f728c0141d0747ba1df8686b3025fb8a544e3489c7e",
+      "recovery_blob": "7ee4eb68d1dff8f6accae20b31c6142cb3ebb359"
+    },
+    {
+      "path": "LightGenV2/reports/20260917_redbox_timing_energy_audit/server_2026OpticsMoE_a100_formal/06_SALICON/Baseline/MISSING_RAW_DATA.md",
+      "original_raw_sha256": "6677f5fc74127fa8adc92f728c0141d0747ba1df8686b3025fb8a544e3489c7e",
+      "recovery_blob": "7ee4eb68d1dff8f6accae20b31c6142cb3ebb359"
+    },
+    {
+      "path": "LightGenV2/reports/20260917_redbox_timing_energy_audit/server_2026OpticsMoE_a100_formal/07_OpenMoji/Baseline/MISSING_RAW_DATA.md",
+      "original_raw_sha256": "6677f5fc74127fa8adc92f728c0141d0747ba1df8686b3025fb8a544e3489c7e",
+      "recovery_blob": "7ee4eb68d1dff8f6accae20b31c6142cb3ebb359"
+    },
+    {
+      "path": "LightGenV2/reports/20260923_t12_282m_fullframe/README.md",
+      "original_raw_sha256": "f3a1e186a74b7aa081bfd1556f92518d4621eb33f9013a277dee68eab6ca50cc",
+      "recovery_blob": "4b04b69b705498ecda184af1e6fc1a5480b34641"
+    },
+    {
+      "path": "LightGenV2/reports/20260923_t12_morphology_generation/README.md",
+      "original_raw_sha256": "e4f6b922f6944ed9a659c73fcf38bccf2e8c722311d884fd905c8ccf6604b8da",
+      "recovery_blob": "6db1acf3d44f012f6b5094c21d803640a2db9e9e"
+    },
+    {
+      "path": "LightGenV2/reports/20260925_t12_unified_edit/README.md",
+      "original_raw_sha256": "1824412b25325048b3109616004069c9882bf497b730ddad60db8c48bb16b5c5",
+      "recovery_blob": "48415f65ac34f14e26a2741cbd5eda17c41d08ef"
+    },
+    {
+      "path": "LightGenV2/reports/20260925_t12_unified_edit/deliverables/START_HERE.md",
+      "original_raw_sha256": "187868b89f6a4f7bb2e7677f29f71fb3a5477a06e69b2e13d966a83cc0c1587a",
+      "recovery_blob": "33c6ef1ac5f8b28fd54c1418cc84eecb836d84ad"
+    },
+    {
+      "path": "LightGenV2/reports/20260925_t12_unified_edit/expanded_final/256_comparison.md",
+      "original_raw_sha256": "08ac80606cb953075009090d3dff4da3bc7f7ea3d15f3fa9f85730f8d12f898b",
+      "recovery_blob": "b55807a776d173acfe3b6506331882f6e2546b1d"
+    },
+    {
+      "path": "LightGenV2/reports/20260925_t12_unified_edit/expanded_final/README.md",
+      "original_raw_sha256": "06df01cc72bb66e39d49f2417a8de6c80b5e1d68cbb5253065ffd87cbe38fa7c",
+      "recovery_blob": "4dc5483cd7f7cdb22029162b7d80ba3e61d4c3f2"
+    },
+    {
+      "path": "LightGenV2/reports/20260925_t12_unified_edit/expanded_final/architecture_audit_20260926.md",
+      "original_raw_sha256": "6c16a1e6c99ac5738d068062d965edee8edbd44e291787175774b5632374566e",
+      "recovery_blob": "e659bf02ed459387ab156c42aabcc610a32a489b"
+    },
+    {
+      "path": "LightGenV2/reports/20260925_t12_unified_edit/expanded_final/sourcegate_improvement.md",
+      "original_raw_sha256": "f85041f50b26023ff23ca674ce9b2185e3d34924ab077680df8e97c260d3b446",
+      "recovery_blob": "980a67b9af0622f306c60822470916c2c21694cc"
+    },
+    {
+      "path": "LightGenV2/reports/20260926_t12_joint_recovery/TEXT_HEAD.md",
+      "original_raw_sha256": "aae6c3e62eb991c32e5da33673c35ff5233be78cd41da3aba928538135005400",
+      "recovery_blob": "85afb6af87a50d260380321ac08f958b049a9297"
+    },
+    {
+      "path": "LightGenV2/reports/20260927_demo_energy_efficiency_a100/ours/01_lgvq_spatial/raw_200/README.md",
+      "original_raw_sha256": "bb63cf3e980b6641b669f45157f7c58c222fdef36fe467b81c218d03f01daf1c",
+      "recovery_blob": "65431b8475788b257e080aa6b62f6e1b5e9d33b3"
+    },
+    {
+      "path": "LightGenV2/reports/20260927_demo_energy_efficiency_a100/ours/01_lgvq_temporal/raw_200/README.md",
+      "original_raw_sha256": "bb63cf3e980b6641b669f45157f7c58c222fdef36fe467b81c218d03f01daf1c",
+      "recovery_blob": "65431b8475788b257e080aa6b62f6e1b5e9d33b3"
+    },
+    {
+      "path": "LightGenV2/reports/20260927_demo_energy_efficiency_a100/ours/02_abo_image_to_text/raw_200/README.md",
+      "original_raw_sha256": "bb63cf3e980b6641b669f45157f7c58c222fdef36fe467b81c218d03f01daf1c",
+      "recovery_blob": "65431b8475788b257e080aa6b62f6e1b5e9d33b3"
+    },
+    {
+      "path": "LightGenV2/reports/20260927_demo_energy_efficiency_a100/ours/03_abo_image_to_image/raw_200/README.md",
+      "original_raw_sha256": "bb63cf3e980b6641b669f45157f7c58c222fdef36fe467b81c218d03f01daf1c",
+      "recovery_blob": "65431b8475788b257e080aa6b62f6e1b5e9d33b3"
+    },
+    {
+      "path": "LightGenV2/reports/20260927_demo_energy_efficiency_a100/ours/05_lsp/raw_200/README.md",
+      "original_raw_sha256": "bb63cf3e980b6641b669f45157f7c58c222fdef36fe467b81c218d03f01daf1c",
+      "recovery_blob": "65431b8475788b257e080aa6b62f6e1b5e9d33b3"
+    },
+    {
+      "path": "LightGenV2/reports/20260927_demo_energy_efficiency_a100/ours/06_salicon/raw_200/README.md",
+      "original_raw_sha256": "bb63cf3e980b6641b669f45157f7c58c222fdef36fe467b81c218d03f01daf1c",
+      "recovery_blob": "65431b8475788b257e080aa6b62f6e1b5e9d33b3"
+    },
+    {
+      "path": "LightGenV2/reports/20260927_demo_energy_efficiency_a100/ours/07_openmoji_new_layout/raw_200/README.md",
+      "original_raw_sha256": "bb63cf3e980b6641b669f45157f7c58c222fdef36fe467b81c218d03f01daf1c",
+      "recovery_blob": "65431b8475788b257e080aa6b62f6e1b5e9d33b3"
+    },
+    {
+      "path": "LightGenV2/reports/20260927_demo_energy_efficiency_a100/raw_remote/ours/narrow_200_no_warmup/README.md",
+      "original_raw_sha256": "bb63cf3e980b6641b669f45157f7c58c222fdef36fe467b81c218d03f01daf1c",
+      "recovery_blob": "65431b8475788b257e080aa6b62f6e1b5e9d33b3"
+    },
+    {
+      "path": "LightGenV2/reports/20260927_demo_energy_efficiency_a100/reserved/04_abo_text_to_image/STATUS.md",
+      "original_raw_sha256": "b41d4e6633b4edfe64b9da5adf50f446e91278209dc1a29d6452e168e8380af2",
+      "recovery_blob": "5dec4cec3af64a5ba49c74bf5b7019c90028ff9e"
+    },
+    {
+      "path": "LightGenV2/reports/20260927_demo_energy_efficiency_a100/reserved/08_abo_clean_text_to_image/STATUS.md",
+      "original_raw_sha256": "0e5b7496b0b71d99ba049d348bd04c8158a94ecd385f7690ab8b54e51f9cdf07",
+      "recovery_blob": "9cfe114cae1b2c17de8bd2ad97d9b85baa516c6b"
+    },
+    {
+      "path": "LightGenV2/reports/20260928_nine_task_a100_table/raw_remote/formal_04_ours/README.md",
+      "original_raw_sha256": "bb63cf3e980b6641b669f45157f7c58c222fdef36fe467b81c218d03f01daf1c",
+      "recovery_blob": "65431b8475788b257e080aa6b62f6e1b5e9d33b3"
+    },
+    {
+      "path": "LightGenV2/reports/20260928_nine_task_a100_table/raw_remote/formal_04_ours/evidence/scope_note.md",
+      "original_raw_sha256": "b67fa44f68850d611b66fd2b319e3ad0336b2e6acb147b893d897deff25a1444",
+      "recovery_blob": "6feba086602cdd63a74163ded2fc84f37a105ce3"
+    },
+    {
+      "path": "LightGenV2/reports/20260928_nine_task_a100_table/raw_remote/ours_narrow_200/README.md",
+      "original_raw_sha256": "bb63cf3e980b6641b669f45157f7c58c222fdef36fe467b81c218d03f01daf1c",
+      "recovery_blob": "65431b8475788b257e080aa6b62f6e1b5e9d33b3"
+    },
+    {
+      "path": "LightGenV2/reports/ACCEL_GUIDED_ROBUSTNESS_ABLATION_PLAN_20260926.md",
+      "original_raw_sha256": "bbe0be1d7f86c3db041aa035385f97187df45fec81110bf1479cc37b62e47c21",
+      "recovery_blob": "1d752ad6f80a80fe7412b721d4757ff201d05da7"
+    },
+    {
+      "path": "LightGenV2/reports/OPTICAL_DISTANCE_AUDIT_20260922.md",
+      "original_raw_sha256": "818390027b2df6d5dc898685419c35e1c64c014ea0e0c38200f51c4cef9b32c4",
+      "recovery_blob": "c7b62f2f2da4a258c7f3dc42d9650fa831d0ac5f"
+    },
+    {
+      "path": "LightGenV2/reports/baseline_plotting_20260922/delivery/README_CN.md",
+      "original_raw_sha256": "96f81ddc3ee5f3543004e37cec4ded0ccce22387267e2ffd8302d774f65edae9",
+      "recovery_blob": "1a591c7f4b07785b63c970cc568c99164b2fa2fb"
+    },
+    {
+      "path": "LightGenV2/reports/multimodal_meeting_20260919/00_汇报总览.md",
+      "original_raw_sha256": "b59bdf14d683534549a21a08e4bb9d024fdbd51f60768ea25bfb5c5b6873ded8",
+      "recovery_blob": "84c602dc926a9b1e570906fe9b79fb1d56f93808"
+    },
+    {
+      "path": "LightGenV2/reports/multimodal_meeting_20260919/01_RGB_SAR.md",
+      "original_raw_sha256": "93944194552d749dec1871da8a9d2ee7a9a3039c9b976b41d8d91e6ad549d8a1",
+      "recovery_blob": "f124283d77878b276095480bcdf29e1f056cb1c0"
+    },
+    {
+      "path": "LightGenV2/reports/multimodal_meeting_20260919/02_CLEVR_图文.md",
+      "original_raw_sha256": "0aadf1bf60e11283f905a517da00597a520464e10d21041d8416518be81bb52f",
+      "recovery_blob": "01360b6a002d90472c9e96504dae9eb208bd9d5c"
+    },
+    {
+      "path": "LightGenV2/reports/multimodal_meeting_20260919/03_SpeechCommands_音文.md",
+      "original_raw_sha256": "0caae189be8fc962e9745992b25bb172668d4ca4abd751f6b880692168312302",
+      "recovery_blob": "3753244dd2f8694a8edc9c39a8439a9d72bf3c47"
+    },
+    {
+      "path": "LightGenV2/reports/multimodal_meeting_20260919/04_统一OEO审查.md",
+      "original_raw_sha256": "3ea754c05e5ce4c752dca6e2445194f25484bc07dce84b27e67c035a46650f20",
+      "recovery_blob": "a38de7a62d4e1607f89be2f383ef63fbd659f1b7"
+    },
+    {
+      "path": "LightGenV2/reports/multimodal_meeting_20260919/05_明早汇报版本筛选.md",
+      "original_raw_sha256": "59eccdcf097765876bcb25e5f91aa770229c822facd083d821310901fc09dbd1",
+      "recovery_blob": "9ef3efa45ed2aa9c594282c923f4aee92fdb462b"
+    },
+    {
+      "path": "LightGenV2/reports/multimodal_meeting_20260919/06_两项重跑配置.md",
+      "original_raw_sha256": "27ed9f400b0db6c40c182da29e67fb489584e1b3f6658dedc8674536544bf24f",
+      "recovery_blob": "5de4d60cece925376040835870582dd629cbfce7"
+    },
+    {
+      "path": "LightGenV2/reports/multimodal_meeting_20260919/07_20260920_两项重跑结果.md",
+      "original_raw_sha256": "f933174faace90d7133ff2a1b96c952bb80ae4e4968a16dc479b9a0dbe313fd5",
+      "recovery_blob": "f376d6d3154801addc45a14f8322bacd41e9451f"
+    },
+    {
+      "path": "LightGenV2/reports/multimodal_meeting_20260919/08_20260920_轻量电子前端完整结果.md",
+      "original_raw_sha256": "8cf0c911d0b0a3e1e46354c452c71c379a3d16b431a42c993c7899e30231f051",
+      "recovery_blob": "2f08979e89032c94b14b9ea833a9fbf649d0f037"
+    },
+    {
+      "path": "LightGenV2/reports/multimodal_meeting_20260919/09_20260920_正则化与窄前端消融.md",
+      "original_raw_sha256": "75ae79a7f041c9158545c850eb440165428cfce75099a9e8aa3b735c0dd07798",
+      "recovery_blob": "1f33694392523b58617d35af498fe8a27bd84ddf"
+    },
+    {
+      "path": "LightGenV2/reports/multimodal_meeting_20260919/evidence/00_README.md",
+      "original_raw_sha256": "8c1c34866a5b4b93c2c61e3e29f4ce422276a1715c2ae2dc9946bbe49b98bdbb",
+      "recovery_blob": "18c945db092533075f5706248c2245f322c161d9"
+    },
+    {
+      "path": "LightGenV2/reports/multimodal_meeting_20260919/evidence/05_EUROSAT_CONTINUATION_HOLDOUT_20260916.md",
+      "original_raw_sha256": "7dfee580a02e71660df4e3b3395d3d9564e16f7882d2dc5d60d40905fb5e265b",
+      "recovery_blob": "062bade355a6546a9934c4e3a9d54cff8bef644e"
+    }
+  ]
+}
