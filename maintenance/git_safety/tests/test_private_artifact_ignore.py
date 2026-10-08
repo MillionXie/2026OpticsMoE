@@ -13,6 +13,7 @@ class ArtifactIgnoreTests(unittest.TestCase):
     def test_named_t06_old_results_do_not_hide_source_contracts_or_future_reports(self):
         content = (ROOT / '.gitignore').read_text(encoding='utf8')
         section = content.split('# Named historical T06 result payloads; original reports and all timing retained.\n', 1)[1]
+        section = section.split('# Named historical generated phase/visualization payloads;', 1)[0]
         selected = [line[1:] for line in section.splitlines() if line.startswith('/LightGenV2/tasks/t06_video_quality_assessment/reports/paper_results/')]
         self.assertEqual(len(selected), 22)
         self.assertTrue(all(Path(p).name in {'result.json', 'test_metrics_optical_off.json',
@@ -24,6 +25,18 @@ class ArtifactIgnoreTests(unittest.TestCase):
                                                      'protocol.json', 'future_result.json', 'timing.csv')]
         visible.append('LightGenV2/tasks/t06_video_quality_assessment/reports/paper_results/future_run/result.json')
         visible.append('LightGenV2/tasks/t06_video_quality_assessment/reports/paper_results/spatial_single_video4_srcc06665/result.json')
+        self.assertEqual(self.ignored(selected + visible), set(selected))
+
+    def test_named_t06_generated_phase_records_preserve_source_and_future_outputs(self):
+        content = (ROOT / '.gitignore').read_text(encoding='utf8')
+        section = content.split('# Named historical generated phase/visualization payloads;', 1)[1]
+        selected = [line[1:] for line in section.splitlines() if line.startswith('/LightGenV2/')]
+        self.assertEqual(len(selected), 7)
+        self.assertFalse(any('*' in p or '?' in p for p in selected))
+        base = 'LightGenV2/tasks/t06_video_quality_assessment/reports/paper_results/spatial_continuous_no_k_20260908/'
+        visible = [base + name for name in ('README.md', 'analyze.py', 'resolved_config.json',
+                    'masks/future_manifest.csv', 'masks/phase_contract.json',
+                    'optical_visualization/timing.csv', 'optical_visualization/future_report.json')]
         self.assertEqual(self.ignored(selected + visible), set(selected))
 
     def test_named_historical_report_payloads_preserve_source_and_future_results(self):
