@@ -8,7 +8,12 @@
 2%遮挡及1% RMS相对高斯扰动，clean/扰动监督各.5、一致性.05，AdamW lr1e-5/
 wd.05，120轮预算。此为电子特征正则化假设，不是CCD标定模型；TEST不扰动、
 不进梯度，每5轮最高开发选模，无VAL选择。先CPU单轮短测及best/last严格审计，
-通过后才正式训练；目前尚无该对照的正式新精度。光学上游保护SHA必须不变。
+通过后才正式训练。单轮CPU短测现已返回0：原基线.7315、初始.8695，实际loss
+.18736354，best/last严格CPU复载与上游保护通过；短测不是性能改善证据。
+已派发唯一`OpenMoji_CachedRegularize120_1008`，实验台既有项目run
+`editor16_align_decoder_regularize120_20261008`及同级log，CPU预算120轮；
+source Git c9035d398通过bundle只接入该新入口，旧加载/采集backend不改。
+目前尚无该对照的正式终了精度，光学上游保护SHA必须不变。
 
 暂不推进单措施消融。历史87.05%是早期editor16累计G5的真实CCD适配：
 原clean CPU .9165、直接 .5730，独立TRAIN1000梯度，原decoder30162参数、
