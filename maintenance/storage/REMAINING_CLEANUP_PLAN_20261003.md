@@ -114,7 +114,7 @@ SHA e35a0df228cc98bc74709be53388ccbd21c4e293a9f78f812ed52f411de836b6。
 | --- | --- |
 | T01 | 历史前端revision/资产闭包 |
 | T02 | 历史启动版本及环境/资产；旧Deconv测速不可套新头 |
-| T03 | 厂商环境/本机资产；旧Meadowlark非正式SHS |
+| T03 | 厂商环境/本机资产；旧Meadowlark非正式SHS；历史lab_supervise仍动态启动私有lab_manual_stage，完整控制器未公开采用，不能将main监督脚本称为独立设备入口 |
 | T04应用 | epoch45原数据/Qwen缓存数值绑定、新独立包及其专属实拍/测速；旧epoch40包不兼容 |
 | T04 robust | 现用实验归属及资产绑定；实验室迁移范围外 |
 | T05 | 规划任务未开展，不为了整理自动训练 |
@@ -166,6 +166,10 @@ T13过期的publication_pending已纠正；硬件仍未就绪，没有修改科�
 固定Git版本全部可读；两端14项登记的PT及私有报告检查无错误，但仍返回migration_complete=false。
 VS Code仅排除archive/.worktrees/.codex_worktrees/.codex_tmp的自动仓库扫描并关闭自动worktree检测；
 原Python配置保留，主仓库真实源码修改不隐藏。配置发布不代表已观察到用户界面刷新。
+后续静态检查651份主线任务/公共/硬件/脚本Python源码：933个相对模块候选及项目内绝对导入
+未见缺失跟踪模块。19个动态模块字符串另查出一处上表T03私有协调器例外，原文件未动；
+恢复身份见T06的stage_coordinator_source_identity_20261006.json。静态解析不是运行时/SDK证明，
+尤其不覆盖sys.path注入、外部机器配置、数据或厂商依赖，不据此删除未跟踪历史源码。
 
 ## 7. 验收标准
 
