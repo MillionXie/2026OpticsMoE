@@ -1,0 +1,1264 @@
+{
+  "status": "preview_only_awaiting_visual_approval",
+  "gpu_used": false,
+  "renderer": "alpha compositing; fixed bottom anchors; explicit z order",
+  "input_size": [
+    224,
+    224
+  ],
+  "assets": "official OpenMoji 17.0.0 SVG rasterized at 1024px before sizing",
+  "git_commit_before_run": "cd80f4dbefd24e3b305f101ae61f02a2b8048a97",
+  "examples": [
+    {
+      "id": "home_move",
+      "title": "a  Coming home",
+      "instruction": "Move the dog to the left of the house.",
+      "operation": "move",
+      "edited_id": "dog",
+      "source": [
+        {
+          "id": "tree",
+          "category": "tree",
+          "x": 59,
+          "bottom": 173,
+          "height": 106,
+          "z": 0,
+          "xyxy": [
+            8.0,
+            67.0,
+            110.0,
+            173.0
+          ],
+          "visible_alpha_fraction": 0.8107316493988037
+        },
+        {
+          "id": "house",
+          "category": "house",
+          "x": 146,
+          "bottom": 175,
+          "height": 154,
+          "z": 1,
+          "xyxy": [
+            82.0,
+            21.0,
+            211.0,
+            175.0
+          ],
+          "visible_alpha_fraction": 0.9792770147323608
+        },
+        {
+          "id": "dog",
+          "category": "dog",
+          "x": 129,
+          "bottom": 186,
+          "height": 29,
+          "z": 2,
+          "xyxy": [
+            113.0,
+            157.0,
+            146.0,
+            186.0
+          ],
+          "visible_alpha_fraction": 1.0
+        },
+        {
+          "id": "flower",
+          "category": "flower",
+          "x": 188,
+          "bottom": 190,
+          "height": 18,
+          "z": 3,
+          "xyxy": [
+            181.0,
+            172.0,
+            196.0,
+            190.0
+          ],
+          "visible_alpha_fraction": 1.0
+        }
+      ],
+      "target": [
+        {
+          "id": "tree",
+          "category": "tree",
+          "x": 59,
+          "bottom": 173,
+          "height": 106,
+          "z": 0,
+          "xyxy": [
+            8.0,
+            67.0,
+            110.0,
+            173.0
+          ],
+          "visible_alpha_fraction": 0.8073197603225708
+        },
+        {
+          "id": "house",
+          "category": "house",
+          "x": 146,
+          "bottom": 175,
+          "height": 154,
+          "z": 1,
+          "xyxy": [
+            82.0,
+            21.0,
+            211.0,
+            175.0
+          ],
+          "visible_alpha_fraction": 0.9992185831069946
+        },
+        {
+          "id": "dog",
+          "category": "dog",
+          "x": 57,
+          "bottom": 188,
+          "height": 29,
+          "z": 2,
+          "xyxy": [
+            41.0,
+            159.0,
+            74.0,
+            188.0
+          ],
+          "visible_alpha_fraction": 1.0
+        },
+        {
+          "id": "flower",
+          "category": "flower",
+          "x": 188,
+          "bottom": 190,
+          "height": 18,
+          "z": 3,
+          "xyxy": [
+            181.0,
+            172.0,
+            196.0,
+            190.0
+          ],
+          "visible_alpha_fraction": 1.0
+        }
+      ]
+    },
+    {
+      "id": "grove_remove",
+      "title": "b  Under the tree",
+      "instruction": "Remove the cat.",
+      "operation": "remove",
+      "edited_id": "cat",
+      "source": [
+        {
+          "id": "tree",
+          "category": "tree",
+          "x": 105,
+          "bottom": 186,
+          "height": 156,
+          "z": 0,
+          "xyxy": [
+            30.0,
+            30.0,
+            180.0,
+            186.0
+          ],
+          "visible_alpha_fraction": 0.9801392555236816
+        },
+        {
+          "id": "bird",
+          "category": "bird",
+          "x": 154,
+          "bottom": 98,
+          "height": 18,
+          "z": 1,
+          "xyxy": [
+            143.0,
+            80.0,
+            166.0,
+            98.0
+          ],
+          "visible_alpha_fraction": 1.0
+        },
+        {
+          "id": "cat",
+          "category": "cat",
+          "x": 106,
+          "bottom": 190,
+          "height": 25,
+          "z": 2,
+          "xyxy": [
+            87.0,
+            165.0,
+            125.0,
+            190.0
+          ],
+          "visible_alpha_fraction": 1.0
+        },
+        {
+          "id": "flower",
+          "category": "flower",
+          "x": 177,
+          "bottom": 192,
+          "height": 21,
+          "z": 3,
+          "xyxy": [
+            169.0,
+            171.0,
+            186.0,
+            192.0
+          ],
+          "visible_alpha_fraction": 1.0
+        }
+      ],
+      "target": [
+        {
+          "id": "tree",
+          "category": "tree",
+          "x": 105,
+          "bottom": 186,
+          "height": 156,
+          "z": 0,
+          "xyxy": [
+            30.0,
+            30.0,
+            180.0,
+            186.0
+          ],
+          "visible_alpha_fraction": 0.985943078994751
+        },
+        {
+          "id": "bird",
+          "category": "bird",
+          "x": 154,
+          "bottom": 98,
+          "height": 18,
+          "z": 1,
+          "xyxy": [
+            143.0,
+            80.0,
+            166.0,
+            98.0
+          ],
+          "visible_alpha_fraction": 1.0
+        },
+        {
+          "id": "flower",
+          "category": "flower",
+          "x": 177,
+          "bottom": 192,
+          "height": 21,
+          "z": 3,
+          "xyxy": [
+            169.0,
+            171.0,
+            186.0,
+            192.0
+          ],
+          "visible_alpha_fraction": 1.0
+        }
+      ]
+    },
+    {
+      "id": "street_replace",
+      "title": "c  A quiet street",
+      "instruction": "Replace the car with a bus.",
+      "operation": "replace",
+      "edited_id": "car",
+      "source": [
+        {
+          "id": "tree",
+          "category": "tree",
+          "x": 60,
+          "bottom": 167,
+          "height": 110,
+          "z": 0,
+          "xyxy": [
+            7.0,
+            57.0,
+            113.0,
+            167.0
+          ],
+          "visible_alpha_fraction": 0.861057698726654
+        },
+        {
+          "id": "house",
+          "category": "house",
+          "x": 146,
+          "bottom": 163,
+          "height": 136,
+          "z": 1,
+          "xyxy": [
+            89.0,
+            27.0,
+            203.0,
+            163.0
+          ],
+          "visible_alpha_fraction": 0.9889412522315979
+        },
+        {
+          "id": "car",
+          "category": "car",
+          "x": 131,
+          "bottom": 184,
+          "height": 26,
+          "z": 2,
+          "xyxy": [
+            102.0,
+            158.0,
+            161.0,
+            184.0
+          ],
+          "visible_alpha_fraction": 1.0
+        },
+        {
+          "id": "bicycle",
+          "category": "bicycle",
+          "x": 49,
+          "bottom": 196,
+          "height": 27,
+          "z": 3,
+          "xyxy": [
+            29.0,
+            169.0,
+            70.0,
+            196.0
+          ],
+          "visible_alpha_fraction": 1.0
+        }
+      ],
+      "target": [
+        {
+          "id": "tree",
+          "category": "tree",
+          "x": 60,
+          "bottom": 167,
+          "height": 110,
+          "z": 0,
+          "xyxy": [
+            7.0,
+            57.0,
+            113.0,
+            167.0
+          ],
+          "visible_alpha_fraction": 0.861057698726654
+        },
+        {
+          "id": "house",
+          "category": "house",
+          "x": 146,
+          "bottom": 163,
+          "height": 136,
+          "z": 1,
+          "xyxy": [
+            89.0,
+            27.0,
+            203.0,
+            163.0
+          ],
+          "visible_alpha_fraction": 0.9674718976020813
+        },
+        {
+          "id": "car",
+          "category": "bus",
+          "x": 131,
+          "bottom": 184,
+          "height": 27,
+          "z": 2,
+          "xyxy": [
+            91.0,
+            157.0,
+            172.0,
+            184.0
+          ],
+          "visible_alpha_fraction": 1.0
+        },
+        {
+          "id": "bicycle",
+          "category": "bicycle",
+          "x": 49,
+          "bottom": 196,
+          "height": 27,
+          "z": 3,
+          "xyxy": [
+            29.0,
+            169.0,
+            70.0,
+            196.0
+          ],
+          "visible_alpha_fraction": 1.0
+        }
+      ]
+    },
+    {
+      "id": "home_add",
+      "title": "d  A flower by the door",
+      "instruction": "Add a flower to the right of the dog.",
+      "operation": "add",
+      "edited_id": "flower",
+      "source": [
+        {
+          "id": "tree",
+          "category": "tree",
+          "x": 59,
+          "bottom": 173,
+          "height": 106,
+          "z": 0,
+          "xyxy": [
+            8.0,
+            67.0,
+            110.0,
+            173.0
+          ],
+          "visible_alpha_fraction": 0.8107316493988037
+        },
+        {
+          "id": "house",
+          "category": "house",
+          "x": 146,
+          "bottom": 175,
+          "height": 154,
+          "z": 1,
+          "xyxy": [
+            82.0,
+            21.0,
+            211.0,
+            175.0
+          ],
+          "visible_alpha_fraction": 0.9800583720207214
+        },
+        {
+          "id": "dog",
+          "category": "dog",
+          "x": 129,
+          "bottom": 186,
+          "height": 29,
+          "z": 2,
+          "xyxy": [
+            113.0,
+            157.0,
+            146.0,
+            186.0
+          ],
+          "visible_alpha_fraction": 1.0
+        }
+      ],
+      "target": [
+        {
+          "id": "tree",
+          "category": "tree",
+          "x": 59,
+          "bottom": 173,
+          "height": 106,
+          "z": 0,
+          "xyxy": [
+            8.0,
+            67.0,
+            110.0,
+            173.0
+          ],
+          "visible_alpha_fraction": 0.8107316493988037
+        },
+        {
+          "id": "house",
+          "category": "house",
+          "x": 146,
+          "bottom": 175,
+          "height": 154,
+          "z": 1,
+          "xyxy": [
+            82.0,
+            21.0,
+            211.0,
+            175.0
+          ],
+          "visible_alpha_fraction": 0.9792770147323608
+        },
+        {
+          "id": "dog",
+          "category": "dog",
+          "x": 129,
+          "bottom": 186,
+          "height": 29,
+          "z": 2,
+          "xyxy": [
+            113.0,
+            157.0,
+            146.0,
+            186.0
+          ],
+          "visible_alpha_fraction": 1.0
+        },
+        {
+          "id": "flower",
+          "category": "flower",
+          "x": 188,
+          "bottom": 190,
+          "height": 18,
+          "z": 3,
+          "xyxy": [
+            181.0,
+            172.0,
+            196.0,
+            190.0
+          ],
+          "visible_alpha_fraction": 1.0
+        }
+      ]
+    }
+  ],
+  "regular_preview": [
+    [
+      {
+        "id": "tree",
+        "category": "tree",
+        "x": 60,
+        "bottom": 175,
+        "height": 106,
+        "z": 0,
+        "xyxy": [
+          9.0,
+          69.0,
+          111.0,
+          175.0
+        ],
+        "visible_alpha_fraction": 0.8107316493988037
+      },
+      {
+        "id": "house",
+        "category": "house",
+        "x": 147,
+        "bottom": 177,
+        "height": 154,
+        "z": 1,
+        "xyxy": [
+          83.0,
+          23.0,
+          212.0,
+          177.0
+        ],
+        "visible_alpha_fraction": 0.9792771339416504
+      },
+      {
+        "id": "dog",
+        "category": "dog",
+        "x": 130,
+        "bottom": 188,
+        "height": 29,
+        "z": 2,
+        "xyxy": [
+          114.0,
+          159.0,
+          147.0,
+          188.0
+        ],
+        "visible_alpha_fraction": 1.0
+      },
+      {
+        "id": "flower",
+        "category": "flower",
+        "x": 189,
+        "bottom": 192,
+        "height": 18,
+        "z": 3,
+        "xyxy": [
+          182.0,
+          174.0,
+          197.0,
+          192.0
+        ],
+        "visible_alpha_fraction": 1.0
+      }
+    ],
+    [
+      {
+        "id": "tree",
+        "category": "tree",
+        "x": 107,
+        "bottom": 185,
+        "height": 156,
+        "z": 0,
+        "xyxy": [
+          32.0,
+          29.0,
+          182.0,
+          185.0
+        ],
+        "visible_alpha_fraction": 0.9801391363143921
+      },
+      {
+        "id": "bird",
+        "category": "bird",
+        "x": 156,
+        "bottom": 97,
+        "height": 18,
+        "z": 1,
+        "xyxy": [
+          145.0,
+          79.0,
+          168.0,
+          97.0
+        ],
+        "visible_alpha_fraction": 1.0
+      },
+      {
+        "id": "cat",
+        "category": "cat",
+        "x": 108,
+        "bottom": 189,
+        "height": 25,
+        "z": 2,
+        "xyxy": [
+          89.0,
+          164.0,
+          127.0,
+          189.0
+        ],
+        "visible_alpha_fraction": 1.0
+      },
+      {
+        "id": "flower",
+        "category": "flower",
+        "x": 179,
+        "bottom": 191,
+        "height": 21,
+        "z": 3,
+        "xyxy": [
+          171.0,
+          170.0,
+          188.0,
+          191.0
+        ],
+        "visible_alpha_fraction": 1.0
+      }
+    ],
+    [
+      {
+        "id": "tree",
+        "category": "tree",
+        "x": 58,
+        "bottom": 167,
+        "height": 110,
+        "z": 0,
+        "xyxy": [
+          5.0,
+          57.0,
+          111.0,
+          167.0
+        ],
+        "visible_alpha_fraction": 0.861057698726654
+      },
+      {
+        "id": "house",
+        "category": "house",
+        "x": 144,
+        "bottom": 163,
+        "height": 136,
+        "z": 1,
+        "xyxy": [
+          87.0,
+          27.0,
+          201.0,
+          163.0
+        ],
+        "visible_alpha_fraction": 0.9889412522315979
+      },
+      {
+        "id": "car",
+        "category": "car",
+        "x": 129,
+        "bottom": 184,
+        "height": 26,
+        "z": 2,
+        "xyxy": [
+          100.0,
+          158.0,
+          159.0,
+          184.0
+        ],
+        "visible_alpha_fraction": 1.0
+      },
+      {
+        "id": "bicycle",
+        "category": "bicycle",
+        "x": 47,
+        "bottom": 196,
+        "height": 27,
+        "z": 3,
+        "xyxy": [
+          27.0,
+          169.0,
+          68.0,
+          196.0
+        ],
+        "visible_alpha_fraction": 1.0
+      }
+    ],
+    [
+      {
+        "id": "tree",
+        "category": "tree",
+        "x": 62,
+        "bottom": 173,
+        "height": 106,
+        "z": 0,
+        "xyxy": [
+          11.0,
+          67.0,
+          113.0,
+          173.0
+        ],
+        "visible_alpha_fraction": 0.8107315897941589
+      },
+      {
+        "id": "house",
+        "category": "house",
+        "x": 149,
+        "bottom": 175,
+        "height": 154,
+        "z": 1,
+        "xyxy": [
+          85.0,
+          21.0,
+          214.0,
+          175.0
+        ],
+        "visible_alpha_fraction": 0.9792771339416504
+      },
+      {
+        "id": "dog",
+        "category": "dog",
+        "x": 132,
+        "bottom": 186,
+        "height": 29,
+        "z": 2,
+        "xyxy": [
+          116.0,
+          157.0,
+          149.0,
+          186.0
+        ],
+        "visible_alpha_fraction": 1.0
+      },
+      {
+        "id": "flower",
+        "category": "flower",
+        "x": 191,
+        "bottom": 190,
+        "height": 18,
+        "z": 3,
+        "xyxy": [
+          184.0,
+          172.0,
+          199.0,
+          190.0
+        ],
+        "visible_alpha_fraction": 1.0
+      }
+    ],
+    [
+      {
+        "id": "tree",
+        "category": "tree",
+        "x": 104,
+        "bottom": 184,
+        "height": 156,
+        "z": 0,
+        "xyxy": [
+          29.0,
+          28.0,
+          179.0,
+          184.0
+        ],
+        "visible_alpha_fraction": 0.9801391363143921
+      },
+      {
+        "id": "bird",
+        "category": "bird",
+        "x": 153,
+        "bottom": 96,
+        "height": 18,
+        "z": 1,
+        "xyxy": [
+          142.0,
+          78.0,
+          165.0,
+          96.0
+        ],
+        "visible_alpha_fraction": 1.0
+      },
+      {
+        "id": "cat",
+        "category": "cat",
+        "x": 105,
+        "bottom": 188,
+        "height": 25,
+        "z": 2,
+        "xyxy": [
+          86.0,
+          163.0,
+          124.0,
+          188.0
+        ],
+        "visible_alpha_fraction": 1.0
+      },
+      {
+        "id": "flower",
+        "category": "flower",
+        "x": 176,
+        "bottom": 190,
+        "height": 21,
+        "z": 3,
+        "xyxy": [
+          168.0,
+          169.0,
+          185.0,
+          190.0
+        ],
+        "visible_alpha_fraction": 1.0
+      }
+    ],
+    [
+      {
+        "id": "tree",
+        "category": "tree",
+        "x": 60,
+        "bottom": 166,
+        "height": 110,
+        "z": 0,
+        "xyxy": [
+          7.0,
+          56.0,
+          113.0,
+          166.0
+        ],
+        "visible_alpha_fraction": 0.8610577583312988
+      },
+      {
+        "id": "house",
+        "category": "house",
+        "x": 146,
+        "bottom": 162,
+        "height": 136,
+        "z": 1,
+        "xyxy": [
+          89.0,
+          26.0,
+          203.0,
+          162.0
+        ],
+        "visible_alpha_fraction": 0.9889412522315979
+      },
+      {
+        "id": "car",
+        "category": "car",
+        "x": 131,
+        "bottom": 183,
+        "height": 26,
+        "z": 2,
+        "xyxy": [
+          102.0,
+          157.0,
+          161.0,
+          183.0
+        ],
+        "visible_alpha_fraction": 1.0
+      },
+      {
+        "id": "bicycle",
+        "category": "bicycle",
+        "x": 49,
+        "bottom": 195,
+        "height": 27,
+        "z": 3,
+        "xyxy": [
+          29.0,
+          168.0,
+          70.0,
+          195.0
+        ],
+        "visible_alpha_fraction": 1.0
+      }
+    ],
+    [
+      {
+        "id": "tree",
+        "category": "tree",
+        "x": 56,
+        "bottom": 171,
+        "height": 106,
+        "z": 0,
+        "xyxy": [
+          5.0,
+          65.0,
+          107.0,
+          171.0
+        ],
+        "visible_alpha_fraction": 0.8107317090034485
+      },
+      {
+        "id": "house",
+        "category": "house",
+        "x": 143,
+        "bottom": 173,
+        "height": 154,
+        "z": 1,
+        "xyxy": [
+          79.0,
+          19.0,
+          208.0,
+          173.0
+        ],
+        "visible_alpha_fraction": 0.9792770147323608
+      },
+      {
+        "id": "dog",
+        "category": "dog",
+        "x": 126,
+        "bottom": 184,
+        "height": 29,
+        "z": 2,
+        "xyxy": [
+          110.0,
+          155.0,
+          143.0,
+          184.0
+        ],
+        "visible_alpha_fraction": 1.0
+      },
+      {
+        "id": "flower",
+        "category": "flower",
+        "x": 185,
+        "bottom": 188,
+        "height": 18,
+        "z": 3,
+        "xyxy": [
+          178.0,
+          170.0,
+          193.0,
+          188.0
+        ],
+        "visible_alpha_fraction": 1.0
+      }
+    ],
+    [
+      {
+        "id": "tree",
+        "category": "tree",
+        "x": 107,
+        "bottom": 185,
+        "height": 156,
+        "z": 0,
+        "xyxy": [
+          32.0,
+          29.0,
+          182.0,
+          185.0
+        ],
+        "visible_alpha_fraction": 0.9801391363143921
+      },
+      {
+        "id": "bird",
+        "category": "bird",
+        "x": 156,
+        "bottom": 97,
+        "height": 18,
+        "z": 1,
+        "xyxy": [
+          145.0,
+          79.0,
+          168.0,
+          97.0
+        ],
+        "visible_alpha_fraction": 1.0
+      },
+      {
+        "id": "cat",
+        "category": "cat",
+        "x": 108,
+        "bottom": 189,
+        "height": 25,
+        "z": 2,
+        "xyxy": [
+          89.0,
+          164.0,
+          127.0,
+          189.0
+        ],
+        "visible_alpha_fraction": 1.0
+      },
+      {
+        "id": "flower",
+        "category": "flower",
+        "x": 179,
+        "bottom": 191,
+        "height": 21,
+        "z": 3,
+        "xyxy": [
+          171.0,
+          170.0,
+          188.0,
+          191.0
+        ],
+        "visible_alpha_fraction": 1.0
+      }
+    ],
+    [
+      {
+        "id": "tree",
+        "category": "tree",
+        "x": 61,
+        "bottom": 167,
+        "height": 110,
+        "z": 0,
+        "xyxy": [
+          8.0,
+          57.0,
+          114.0,
+          167.0
+        ],
+        "visible_alpha_fraction": 0.861057698726654
+      },
+      {
+        "id": "house",
+        "category": "house",
+        "x": 147,
+        "bottom": 163,
+        "height": 136,
+        "z": 1,
+        "xyxy": [
+          90.0,
+          27.0,
+          204.0,
+          163.0
+        ],
+        "visible_alpha_fraction": 0.9889412522315979
+      },
+      {
+        "id": "car",
+        "category": "car",
+        "x": 132,
+        "bottom": 184,
+        "height": 26,
+        "z": 2,
+        "xyxy": [
+          103.0,
+          158.0,
+          162.0,
+          184.0
+        ],
+        "visible_alpha_fraction": 1.0
+      },
+      {
+        "id": "bicycle",
+        "category": "bicycle",
+        "x": 50,
+        "bottom": 196,
+        "height": 27,
+        "z": 3,
+        "xyxy": [
+          30.0,
+          169.0,
+          71.0,
+          196.0
+        ],
+        "visible_alpha_fraction": 1.0
+      }
+    ],
+    [
+      {
+        "id": "tree",
+        "category": "tree",
+        "x": 62,
+        "bottom": 176,
+        "height": 106,
+        "z": 0,
+        "xyxy": [
+          11.0,
+          70.0,
+          113.0,
+          176.0
+        ],
+        "visible_alpha_fraction": 0.8107315301895142
+      },
+      {
+        "id": "house",
+        "category": "house",
+        "x": 149,
+        "bottom": 178,
+        "height": 154,
+        "z": 1,
+        "xyxy": [
+          85.0,
+          24.0,
+          214.0,
+          178.0
+        ],
+        "visible_alpha_fraction": 0.9792771339416504
+      },
+      {
+        "id": "dog",
+        "category": "dog",
+        "x": 132,
+        "bottom": 189,
+        "height": 29,
+        "z": 2,
+        "xyxy": [
+          116.0,
+          160.0,
+          149.0,
+          189.0
+        ],
+        "visible_alpha_fraction": 1.0
+      },
+      {
+        "id": "flower",
+        "category": "flower",
+        "x": 191,
+        "bottom": 193,
+        "height": 18,
+        "z": 3,
+        "xyxy": [
+          184.0,
+          175.0,
+          199.0,
+          193.0
+        ],
+        "visible_alpha_fraction": 1.0
+      }
+    ],
+    [
+      {
+        "id": "tree",
+        "category": "tree",
+        "x": 105,
+        "bottom": 183,
+        "height": 156,
+        "z": 0,
+        "xyxy": [
+          30.0,
+          27.0,
+          180.0,
+          183.0
+        ],
+        "visible_alpha_fraction": 0.9801392555236816
+      },
+      {
+        "id": "bird",
+        "category": "bird",
+        "x": 154,
+        "bottom": 95,
+        "height": 18,
+        "z": 1,
+        "xyxy": [
+          143.0,
+          77.0,
+          166.0,
+          95.0
+        ],
+        "visible_alpha_fraction": 1.0
+      },
+      {
+        "id": "cat",
+        "category": "cat",
+        "x": 106,
+        "bottom": 187,
+        "height": 25,
+        "z": 2,
+        "xyxy": [
+          87.0,
+          162.0,
+          125.0,
+          187.0
+        ],
+        "visible_alpha_fraction": 1.0
+      },
+      {
+        "id": "flower",
+        "category": "flower",
+        "x": 177,
+        "bottom": 189,
+        "height": 21,
+        "z": 3,
+        "xyxy": [
+          169.0,
+          168.0,
+          186.0,
+          189.0
+        ],
+        "visible_alpha_fraction": 1.0
+      }
+    ],
+    [
+      {
+        "id": "tree",
+        "category": "tree",
+        "x": 57,
+        "bottom": 165,
+        "height": 110,
+        "z": 0,
+        "xyxy": [
+          4.0,
+          55.0,
+          110.0,
+          165.0
+        ],
+        "visible_alpha_fraction": 0.861057698726654
+      },
+      {
+        "id": "house",
+        "category": "house",
+        "x": 143,
+        "bottom": 161,
+        "height": 136,
+        "z": 1,
+        "xyxy": [
+          86.0,
+          25.0,
+          200.0,
+          161.0
+        ],
+        "visible_alpha_fraction": 0.9889412522315979
+      },
+      {
+        "id": "car",
+        "category": "car",
+        "x": 128,
+        "bottom": 182,
+        "height": 26,
+        "z": 2,
+        "xyxy": [
+          99.0,
+          156.0,
+          158.0,
+          182.0
+        ],
+        "visible_alpha_fraction": 1.0
+      },
+      {
+        "id": "bicycle",
+        "category": "bicycle",
+        "x": 46,
+        "bottom": 194,
+        "height": 27,
+        "z": 3,
+        "xyxy": [
+          26.0,
+          167.0,
+          67.0,
+          194.0
+        ],
+        "visible_alpha_fraction": 1.0
+      }
+    ]
+  ],
+  "asset_sha256": {
+    "1F333": "5e9aa542a9e8bce244c326fd2d1427f432ad72e5d8ba92905f3d801d393f6b63",
+    "1F3E0": "edfb5e77a7d324526f76295c0b3eb913006fd0424a0ee3dd0f12b0824225568f",
+    "1F415": "a01131556b1f472f2be150b5e61bb77e4ffed96bbdbc9b60ac4a36b62ffac2a3",
+    "1F33B": "8ec898c7225016a95cc1c71c1634ac2e1966f5c97b7d9ee209ebe35a003fa08b",
+    "1F426": "950c880495d9668746d3af0cfc533de52a228bce41a9553e68b20016d86ece76",
+    "1F408": "d028cef4726d15bc5c84ff1751db9d90c35d990151972a5f044afd53691beff6",
+    "1F697": "f2bc314639afba633ef21e802c022fa64b6a3fe0e3d3739e5826a816f1895286",
+    "1F6B2": "1c550e12d994489de8d082ca49c8f24e73de2cc8e1271fd83fa7c78693a9595e",
+    "1F68C": "7cb121f1c5b89588f9506e455778e54b527ed244fc321dd6bcee416f8df39be3"
+  }
+}

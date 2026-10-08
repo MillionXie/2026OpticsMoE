@@ -1,0 +1,35 @@
+{
+  "schema": 1,
+  "query_count": 800,
+  "batch_size": 4,
+  "exposure_us": 20000.0,
+  "wait_ms": 240.0,
+  "stage_calibration": {
+    "vision_router": [
+      "none_normal",
+      "flip_v"
+    ],
+    "vision_expert": [
+      "h_inverse",
+      "rot270"
+    ],
+    "vision_global": [
+      "none_normal",
+      "rot270"
+    ],
+    "language_router": [
+      "h_inverse",
+      "flip_v"
+    ],
+    "language_expert": [
+      "hv_inverse",
+      "rot270"
+    ],
+    "language_global": [
+      "hv_inverse",
+      "rot270"
+    ]
+  },
+  "checkpoint_sha256": "c9926cbaaa1ef066d9657a8028dffc130a33915aa9f392551573dc79894192d0",
+  "scope": "800 physical queries against fixed 1600 simulated gallery"
+}

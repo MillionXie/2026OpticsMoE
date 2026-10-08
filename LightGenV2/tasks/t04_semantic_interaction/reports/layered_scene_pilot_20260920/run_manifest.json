@@ -1,0 +1,23 @@
+{
+  "schema_version": 1,
+  "task": "t04_semantic_interaction",
+  "profile": "layered_scene_pilot",
+  "variant": "optical_router_scale_matched_moe",
+  "seed": 73,
+  "git_commit": "642363f1f78db50e216bdcb9fffa7744106c95dd",
+  "started_at": "2026-09-20T08:16:46.714958+00:00",
+  "command": [
+    "/home/guest3/miniconda3/envs/xml/bin/python",
+    "/DATA/DATA1/guest3/LightGenV2_worktrees/t04_layered_1bc120428/LightGenV2/tasks/t04_semantic_interaction/run.py",
+    "--profile",
+    "layered_scene_pilot",
+    "--phase",
+    "evaluate",
+    "--device",
+    "cuda",
+    "--run-dir",
+    "/DATA/DATA1/guest3/2026OpticsMoE/LightGenV2/tasks/t04_semantic_interaction/runs/smoke/layered_scene_pilot_s73_e10_20260920"
+  ],
+  "working_directory": "/DATA/DATA1/guest3/LightGenV2_worktrees/t04_layered_1bc120428",
+  "selection": "maximum test changed-cell accuracy at epoch 1/every 5/final"
+}

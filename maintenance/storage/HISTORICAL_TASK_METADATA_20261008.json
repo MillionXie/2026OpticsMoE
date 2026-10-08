@@ -1,0 +1,117 @@
+{
+  "scope": "Original historical T04 application layout, T06 refinement and T07 DVP/MNIST records; not current formal model identities",
+  "verification": "22 originals match raw SHA and existing recovery Git blob (raw or LF); JSON parsing passed; no experiment execution or metadata regeneration",
+  "decision": "Preserve historical contracts/architecture/README in main rather than ignoring or deleting. Original old path references remain historical; this does not claim runnable assets or validated present hardware.",
+  "files": [
+    {
+      "path": "LightGenV2/tasks/t04_semantic_interaction/reports/layered_scene_design_20260920/scene_manifest.json",
+      "original_raw_sha256": "1b02e6a14f52be92429ada3c7897da86f3c68240601ad12490005963e22419a9",
+      "recovery_blob": "515ee95fc04b9bc992a8f395c23d948394c649de"
+    },
+    {
+      "path": "LightGenV2/tasks/t04_semantic_interaction/reports/layered_scene_focus_changed_iou_20260920/resolved_config.json",
+      "original_raw_sha256": "2f167cbd56ddcca92ec51d82e5f84b023723345cef36d159966f0db5148d9437",
+      "recovery_blob": "92612179f107278e864c2732e369a56cb9401859"
+    },
+    {
+      "path": "LightGenV2/tasks/t04_semantic_interaction/reports/layered_scene_focus_changed_iou_20260920/run_manifest.json",
+      "original_raw_sha256": "bd705cd2565f884acc618387cfd350362d7ffd59bbe2e7b79913cf8104e84f55",
+      "recovery_blob": "ebcf470ff8c95f457156e730c198d732c18a29ce"
+    },
+    {
+      "path": "LightGenV2/tasks/t04_semantic_interaction/reports/layered_scene_focus_changed_iou_20260920/split_contract.json",
+      "original_raw_sha256": "f186d66f67429b73fa375622d0138fdc574b77027960d723b55087a0c1591de5",
+      "recovery_blob": "62e99dfb30209651c856cbe6a679d815c432490a"
+    },
+    {
+      "path": "LightGenV2/tasks/t04_semantic_interaction/reports/layered_scene_focus_changed_iou_20260920/student_architecture.json",
+      "original_raw_sha256": "716fe6fdb3183599ce263a63f51305a52e5ab0f3eac3db14d78524b6424fc140",
+      "recovery_blob": "e543ca2a263992bf42e65877524585645aec137c"
+    },
+    {
+      "path": "LightGenV2/tasks/t04_semantic_interaction/reports/layered_scene_pilot_20260920/resolved_config.json",
+      "original_raw_sha256": "0241478294f0c241b1ad5a93bf56070b45c64a16a7b7de2f2622068f72b46da2",
+      "recovery_blob": "7a0cb19aa1975579526ceba1655026aaf10de083"
+    },
+    {
+      "path": "LightGenV2/tasks/t04_semantic_interaction/reports/layered_scene_pilot_20260920/run_manifest.json",
+      "original_raw_sha256": "2dce7e9c0eee1af52dc5559b8f779e38d910bd608cdf6bcb3f017910824e490f",
+      "recovery_blob": "9bf7e6575f57aa0c8b8eb354eb845df0bebbda8f"
+    },
+    {
+      "path": "LightGenV2/tasks/t04_semantic_interaction/reports/layered_scene_pilot_20260920/split_contract.json",
+      "original_raw_sha256": "f186d66f67429b73fa375622d0138fdc574b77027960d723b55087a0c1591de5",
+      "recovery_blob": "62e99dfb30209651c856cbe6a679d815c432490a"
+    },
+    {
+      "path": "LightGenV2/tasks/t04_semantic_interaction/reports/layered_scene_pilot_20260920/student_architecture.json",
+      "original_raw_sha256": "716fe6fdb3183599ce263a63f51305a52e5ab0f3eac3db14d78524b6424fc140",
+      "recovery_blob": "e543ca2a263992bf42e65877524585645aec137c"
+    },
+    {
+      "path": "LightGenV2/tasks/t04_semantic_interaction/reports/reproduction/HARDWARE_EPOCH65.md",
+      "original_raw_sha256": "dd700a3e5f7b32f81b80a97dc11531ffebb66d61af15ac14d643385301786c74",
+      "recovery_blob": "c75a50860c730782500876fe48cd8d02ef0b6c52"
+    },
+    {
+      "path": "LightGenV2/tasks/t04_semantic_interaction/reports/reproduction/standalone_23612d55/README.md",
+      "original_raw_sha256": "0c440ea9b009cfa0099cb655f66fc51f9e6f4b48e36221fb8e4d338de5cf4255",
+      "recovery_blob": "2c642c28093f1ace71de7574e897e4f0e4c66538"
+    },
+    {
+      "path": "LightGenV2/tasks/t06_video_quality_assessment/reports/paper_results/COMPRESSION_AND_REFINEMENT_20260913.md",
+      "original_raw_sha256": "22c06df94aec483e0cd3921459ccdbed4092eb26b6d07d183ca2e91bcc8e5bd6",
+      "recovery_blob": "c8f4d52c57d8a296299b429c2a2074da97dac4d8"
+    },
+    {
+      "path": "LightGenV2/tasks/t06_video_quality_assessment/reports/paper_results/spatial_compact_readout_20260910/ALIGNED_MULTIVIEW_20260911.md",
+      "original_raw_sha256": "290e180f3d62f6a6f63f4ec4c67806cf44530ee3faf0451bff41741e5262449d",
+      "recovery_blob": "1f25b744c7f6cf443e27e46d55a676efcb542e27"
+    },
+    {
+      "path": "LightGenV2/tasks/t06_video_quality_assessment/reports/paper_results/spatial_compact_readout_20260910/AUGMENTATION_20260911.md",
+      "original_raw_sha256": "a3baf7ee720ff2b8130753697ecea3c550edfe13e0ab4a358fa6ceeb9bb7b6b3",
+      "recovery_blob": "4420bb1acac0f1cf6a93a4c5a18ee7f467a4f4eb"
+    },
+    {
+      "path": "LightGenV2/tasks/t06_video_quality_assessment/reports/paper_results/spatial_compact_readout_20260910/PAIRED_VIEW_20260911.md",
+      "original_raw_sha256": "5a09a2b673daa64a9dc4a0a0d870693479630fee0d7b24b68f8b9efc02db8930",
+      "recovery_blob": "f521d2940fbdd3822c59a9b133932af495e351af"
+    },
+    {
+      "path": "LightGenV2/tasks/t06_video_quality_assessment/reports/paper_results/spatial_compact_readout_20260910/README.md",
+      "original_raw_sha256": "c32f143e5568430d71a8c0c0c45611f009836aa9cd2a854e229aa42606fe2219",
+      "recovery_blob": "e98c5b256df22cf1773c60806886ed2bf6aa2993"
+    },
+    {
+      "path": "LightGenV2/tasks/t06_video_quality_assessment/reports/paper_results/spatial_custom_conv_06672_20260912/README.md",
+      "original_raw_sha256": "9a0715db8c484902f9c2789515837b9440f6817d7cde886633d4508d08d485ad",
+      "recovery_blob": "baeba3e58f2a64f15dae9f860231d2aeb3e0d9a1"
+    },
+    {
+      "path": "LightGenV2/tasks/t06_video_quality_assessment/reports/paper_results/spatial_custom_conv_s749_20260910/RESULT.md",
+      "original_raw_sha256": "bfea8717f9e7e32f6bf08c0936d6e47c89e091f2119c6b5bfe91ac3b1bda1497",
+      "recovery_blob": "9f0d2a57b2e93a6a849425fdfd64a61d664aa92f"
+    },
+    {
+      "path": "LightGenV2/tasks/t07_abo_image_retrieval/reports/20260923_dvp8um_bringup4/README.md",
+      "original_raw_sha256": "9f13d4d9ba6d015058f69abf6bf22d893706f3be2655299a75047bdc466f58c7",
+      "recovery_blob": "e47e11e99bfe598a6b5c1dda82daa703ff5f3934"
+    },
+    {
+      "path": "LightGenV2/tasks/t07_abo_image_retrieval/reports/20260923_dvp8um_full800/run_contract.json",
+      "original_raw_sha256": "51ff1e2c66c02e24c5f21f3d09f32eaf2c15d71f21dbe66b86084209f927ab0c",
+      "recovery_blob": "f578b1d6789e96bde570814d74b10fe2768a76b8"
+    },
+    {
+      "path": "LightGenV2/tasks/t07_abo_image_retrieval/reports/20260924_dvp8um_bringup4/README.md",
+      "original_raw_sha256": "a260d305425f46dd673447cff48f3aebe4ba4a2a9c3e0473c550e4cf711af226",
+      "recovery_blob": "e706011b8576ba12f13b815a59925307603bd3c8"
+    },
+    {
+      "path": "LightGenV2/tasks/t07_abo_image_retrieval/reports/20260924_mnist_dvp/README.md",
+      "original_raw_sha256": "70bb527f23e25a610b862c77751232f07c7522e89cb81d19a92a9ea6004416f1",
+      "recovery_blob": "b70c95bda12a8e6ab022a26c2f53cb8daea05282"
+    }
+  ]
+}

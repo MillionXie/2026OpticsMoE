@@ -1,0 +1,20 @@
+{
+  "dataset": "openmoji_layered_anchor6_proportional_svg_v3",
+  "train": 5000,
+  "test": 1000,
+  "validation": null,
+  "split_rule": "same distribution; deterministic seeds; deduplicated source-grid/instruction pairs",
+  "task_counts_train": {
+    "add": 1250,
+    "replace": 1250,
+    "move": 1250,
+    "remove": 1250
+  },
+  "task_counts_test": {
+    "add": 250,
+    "replace": 250,
+    "move": 250,
+    "remove": 250
+  },
+  "selection_biased": true
+}

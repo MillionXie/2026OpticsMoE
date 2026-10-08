@@ -1,0 +1,23 @@
+{
+  "schema_version": 1,
+  "task": "t04_semantic_interaction",
+  "profile": "layered_scene_focus_changed_iou",
+  "variant": "optical_router_scale_matched_moe",
+  "seed": 73,
+  "git_commit": "0552ad2e0a56336b848df0affc068c7f24dc2e7a",
+  "started_at": "2026-09-20T12:28:37.328242+00:00",
+  "command": [
+    "/home/guest3/miniconda3/envs/xml/bin/python",
+    "/DATA/DATA1/guest3/LightGenV2_worktrees/t04_layered_1bc120428/LightGenV2/tasks/t04_semantic_interaction/run.py",
+    "--profile",
+    "layered_scene_focus_changed_iou",
+    "--phase",
+    "all",
+    "--device",
+    "cuda",
+    "--run-dir",
+    "/DATA/DATA1/guest3/2026OpticsMoE/LightGenV2/tasks/t04_semantic_interaction/runs/simulation/layered_scene_focus_changed_iou_s73_e100_20260920"
+  ],
+  "working_directory": "/DATA/DATA1/guest3/LightGenV2_worktrees/t04_layered_1bc120428",
+  "selection": "maximum test changed-cell accuracy at epoch 1/every 5/final"
+}
