@@ -51,6 +51,9 @@ def main():
             shape = list(value.shape[-2:])
             if shape not in stat['shapes']:
                 stat['shapes'].append(shape)
+            if args.physical_mode != 'original':
+                physical = model._lab_unit_amplitudes[name]
+                stat['physical_maximum'] = max(stat.get('physical_maximum', 0.), float(physical.max()))
 
     def factory(loaded, settings):
         model = build(loaded, settings)
@@ -60,8 +63,12 @@ def main():
             original_forward = model.forward
             def physical_forward(*values, **keywords):
                 with FieldUnits(model, scale=args.amplitude_scale,
-                                quantize=args.physical_mode == 'uint8'):
-                    return original_forward(*values, **keywords)
+                                quantize=args.physical_mode == 'uint8') as tap:
+                    result = original_forward(*values, **keywords)
+                    if tap.index != 3:
+                        raise RuntimeError('Require exactly three optical propagations')
+                    model._lab_unit_amplitudes = tap.amplitudes
+                    return result
             model.forward = physical_forward
         return model
 
@@ -79,7 +86,7 @@ def main():
               'hardware_started': False, 'weights_unchanged': sha(args.checkpoint) == EXPECTED_SHA,
               'physical_mode': args.physical_mode, 'amplitude_scale': args.amplitude_scale,
               'physical_intensity_to_model_units': args.amplitude_scale ** 2,
-              'unit_interval_export_safe': all(s['maximum'] <= 1 for s in stages.values()),
+              'unit_interval_export_safe': all(s.get('physical_maximum', s['maximum']) <= 1 for s in stages.values()),
               'source_commit': subprocess.check_output(['git', 'rev-parse', 'HEAD'], text=True).strip()}
     (args.output / 'amplitude_audit.json').write_text(json.dumps(report, indent=2), encoding='utf-8')
     print(json.dumps(report), flush=True)

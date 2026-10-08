@@ -1,6 +1,8 @@
 import pytest
 import torch
 from LightGenV2.tasks.t02_keypoint_detection.lab_field_units import physical_field
+from LightGenV2.tasks.t02_keypoint_detection.lab_field_units import FieldUnits
+from types import SimpleNamespace
 
 
 def test_exact_fixed_units_and_no_extra_peak_normalization():
@@ -24,3 +26,30 @@ def test_reject_out_of_range_and_nonfinite_without_clipping():
             physical_field(field)
     with pytest.raises(ValueError):
         physical_field(torch.ones(1), scale=0)
+
+
+def test_three_pass_replay_and_exception_restoration():
+    class Propagator(torch.nn.Module):
+        def forward(self, field):
+            return torch.fft.fft2(field, norm='ortho')
+    router, body = Propagator(), Propagator()
+    a = SimpleNamespace(y0=0, y1=8, x0=0, x1=8)
+    core = SimpleNamespace(router=SimpleNamespace(propagator=router), propagator=body,
+                           geometry=SimpleNamespace(active_aperture=a))
+    model = SimpleNamespace(core=SimpleNamespace(optical_branch=SimpleNamespace(core=core)))
+    originals = router.forward, body.forward
+    field = torch.complex(torch.rand(1, 8, 8)*8, torch.zeros(1, 8, 8))
+    def run():
+        return tuple(prop(field).abs().square() for prop in (router, body, body))
+    expected = run()
+    with FieldUnits(model) as tap:
+        actual = run()
+        physical = {k:v.clone() for k,v in tap.detectors.items()}
+    assert all(torch.equal(x,y) for x,y in zip(expected,actual))
+    with FieldUnits(model, measured=physical):
+        replayed = run()
+    assert all(torch.allclose(x,y,atol=2e-5,rtol=1e-6) for x,y in zip(expected,replayed))
+    with pytest.raises(RuntimeError):
+        with FieldUnits(model):
+            raise RuntimeError('test exit')
+    assert router.forward == originals[0] and body.forward == originals[1]
