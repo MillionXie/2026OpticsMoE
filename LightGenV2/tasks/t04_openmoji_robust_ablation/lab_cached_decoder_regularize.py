@@ -5,6 +5,7 @@ No SDK, new inference layers, TEST gradients or VAL selection.
 """
 import argparse
 import copy
+from contextlib import contextmanager
 import hashlib
 import json
 import math
@@ -25,6 +26,29 @@ def epoch_learning_rate(epoch, epochs, cosine_decay=False):
     if not cosine_decay or epochs == 1:
         return 1e-5
     return 1e-6 + .5 * (1e-5 - 1e-6) * (1 + math.cos(math.pi * (epoch - 1) / (epochs - 1)))
+
+
+def update_ema(shadow, module, decay):
+    import torch
+    with torch.no_grad():
+        for key, value in module.state_dict().items():
+            if value.is_floating_point():
+                shadow[key].mul_(decay).add_(value, alpha=1-decay)
+            else:
+                shadow[key].copy_(value)
+
+
+@contextmanager
+def evaluation_weights(module, shadow):
+    if shadow is None:
+        yield
+        return
+    original = {k: v.detach().clone() for k, v in module.state_dict().items()}
+    try:
+        module.load_state_dict(shadow, strict=True)
+        yield
+    finally:
+        module.load_state_dict(original, strict=True)
 
 
 def category_mixup_loss(cat, y, smoothing=0.):
@@ -57,9 +81,13 @@ def main():
                    help='Mixed features supervise categories only, not conflicting edit/source composition targets')
     p.add_argument('--cosine-decay', action='store_true',
                    help='Predeclared epoch cosine LR 1e-5 to 1e-6; no metric-dependent scheduling')
+    p.add_argument('--ema-decay', type=float, default=0.,
+                   help='TRAIN-step decoder EMA; periodic TEST and last use EMA only, no candidate ratio scan')
     p.add_argument('--benchmark-only', action='store_true',
                    help='Audit TRAIN and time isolated decoder copies on CPU/CUDA; no saved trained PT')
     a = p.parse_args()
+    if not 0 <= a.ema_decay < 1:
+        raise ValueError('EMA decay must be 0..1 exclusive')
     if not 0 <= a.feature_drop <= .25:
         raise ValueError('Finite feature masking range must be 0..0.25')
     if not 0 <= a.label_smoothing <= .2:
@@ -137,6 +165,7 @@ def main():
     decoder.requires_grad_(True).to(a.device)
     anchor = {k: v.detach().clone() for k, v in decoder.named_parameters()}
     optimizer = torch.optim.AdamW(decoder.parameters(), lr=1e-5, weight_decay=.05)
+    ema = {k: v.detach().clone() for k, v in decoder.state_dict().items()} if a.ema_decay else None
     def supervised(cat, edit, y):
         target, mask = y['target_grid'].long(), y['edit_grid'].float()
         ce = F.cross_entropy(cat, target, reduction='none', label_smoothing=a.label_smoothing)
@@ -180,6 +209,7 @@ def main():
     write('protocol.json', {'initial_sha256': sha(a.initial), 'cache_sha256': {s: sha(a.cache/(s+'_features.pt')) for s in data},
           'protected_sha256': protected, 'epochs': a.epochs, 'seed': 1008, 'lr': 1e-5, 'weight_decay': .05,
           'lr_schedule': 'epoch cosine 1e-5 to 1e-6' if a.cosine_decay else 'constant 1e-5',
+          'ema_decay': a.ema_decay, 'evaluation_weights': 'TRAIN-step decoder EMA only; last is final EMA' if ema is not None else 'live decoder',
           'gain_range': [.98, 1.02], 'feature_drop': a.feature_drop, 'relative_feature_noise': .01,
           'changed_edit_weight': a.changed_edit_weight,
           'label_smoothing': a.label_smoothing,
@@ -231,21 +261,26 @@ def main():
             loss.backward()
             torch.nn.utils.clip_grad_norm_(decoder.parameters(), 1.)
             optimizer.step()
+            if ema is not None:
+                update_ema(ema, decoder, a.ema_decay)
             losses.append(float(loss.detach()))
         score = None
         if epoch % 5 == 0 or epoch == a.epochs:
-            metrics, _ = evaluate('test')
-            score = metrics['overall']['changed_cell_accuracy']
-            if score > best:
-                best, selected = score, epoch
-                best_state = {k: v.detach().cpu().clone() for k, v in model.state_dict().items()}
-                checkpoint = copy.deepcopy(payload)
-                checkpoint['model'] = best_state
-                torch.save(checkpoint, a.output/'best.pt')
+            with evaluation_weights(decoder, ema):
+                metrics, _ = evaluate('test')
+                score = metrics['overall']['changed_cell_accuracy']
+                if score > best:
+                    best, selected = score, epoch
+                    best_state = {k: v.detach().cpu().clone() for k, v in model.state_dict().items()}
+                    checkpoint = copy.deepcopy(payload)
+                    checkpoint['model'] = best_state
+                    torch.save(checkpoint, a.output/'best.pt')
         history.append({'epoch': epoch, 'loss': sum(losses)/len(losses), 'test': score, 'best': best, 'lr': learning_rate})
         write('history.json', history)
         write('progress.json', {'status': 'training', **history[-1], 'selected_epoch': selected})
         print(json.dumps(history[-1]), flush=True)
+    if ema is not None:
+        decoder.load_state_dict(ema, strict=True)
     decoder.cpu()
     last = copy.deepcopy(payload)
     last['model'] = copy.deepcopy(model.state_dict())

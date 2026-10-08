@@ -2,6 +2,16 @@
 
 ## 2026-10-08 授权：累计组电子适配，目标89.0%–89.5%（进行中）
 
+2026-10-09用户要求89.00%再小幅提高。有限一次TRAIN-step decoder EMA=.99对照：
+从已核验.8900 best继续，同cosine120/完整TRAIN1000/noReplay及全部损失不变。
+依据TRAIN .9995且上一轮末期.888低于最佳，检验随机批更新平滑假设，不保证改善。
+shadow初始化为父decoder，每步thetaEMA=.99*thetaEMA+.01*theta；周期TEST只评EMA，
+训练前恢复live参数，最终last明确为末步EMA；不额外评raw候选、不扫比例/阈值。
+只训练原30162参数decoder，EMA是训练缓存不是推理新增层，光学上游保护不变。
+先GPU单轮/strictCPU保护后唯一正式run
+editor16_align_decoder_catmix020_ema099_gpu120_20261009；原89.00及所有历史保留。
+TEST每5最高仍为授权开发指标，不称独立泛化，不改曝光/重采CCD。
+
 2026-10-09 03:04终审：cosine120完整完成、任务返回0、全部Python退出、4060空闲。
 strictCPU best .8900/e20、last .8880，上游保护true；best TRAIN .9995，仍有泛化差距。
 best preserved .9858824/editIoU .7923024/objectF1 .9031216/sceneExact .612，
