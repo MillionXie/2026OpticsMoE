@@ -1,4 +1,15 @@
 {
+  "files": [
+    {
+      "path": "LightGenV2/tasks/t04_openmoji_robust_ablation/train_rank64_matched.py",
+      "sha256": "202c40e66d2e0d36e95acec5eaf5a4858d109d176451114c911956c7179ae44a",
+      "source_blob_sha256": "202c40e66d2e0d36e95acec5eaf5a4858d109d176451114c911956c7179ae44a",
+      "hash_normalization": "crlf_to_lf",
+      "adopted_commit": "e2bb1037adc2e3d1fa88f2d378b67a31d3aa9da6",
+      "original_archive_commit": "2e64b6c2ccdcf4a1bd1f6215f0e2adcd4a224062",
+      "original_archive_path": "handoffs/openmoji_robust_ablation_20260928/midrank48_candidate/train_rank64_common_20261002.py"
+    }
+  ],
   "matched_runner_adoption_20261008": {
     "main_path": "LightGenV2/tasks/t04_openmoji_robust_ablation/train_rank64_matched.py",
     "original_sha256": "f8e0786a90a1b45a911020251dfddffa34436aa1890a3ba622c2a7b44d23eef1",

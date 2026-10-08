@@ -72,6 +72,8 @@
       "current_overlay_recheck_evidence": "../maintenance/storage/T04_CURRENT_OVERLAY_RECHECK_20261007.json",
       "overlay_publication_commit": "18ae9903f89b82590554ed0510aa90704afbd992",
       "overlay_source_manifest": "../maintenance/storage/T04_ROBUST_SOURCE_ADDITIONS_20261005.json",
+      "matched_rank64_simulation_entry": "tasks/t04_openmoji_robust_ablation/train_rank64_matched.py",
+      "matched_rank64_source_import": "../maintenance/storage/OPENMOJI_HISTORICAL_TOOLS_20261006.json",
       "bench_runtime_integrated": false,
       "training_source": "/DATA/DATA1/guest3/2026OpticsMoE/.worktrees/t04_openmoji_robust_20260928",
       "protected_git_ref": "refs/archive/server-authoritative-20261002/t04_openmoji_robust_20260928",
