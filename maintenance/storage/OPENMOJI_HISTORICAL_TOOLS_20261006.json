@@ -1,4 +1,14 @@
 {
+  "visibility_update_20261008": {
+    "source_commit": "ee251db7ed530574ad60bb25050e0139db036f55",
+    "original_16_files_rechecked_against_raw_SHA_and_archive_commit": true,
+    "historical_auxiliary_files_exactly_ignored": 15,
+    "retained_visible_training_runner": "train_rank64_common_20261002.py",
+    "reason": "Explicit existing training-source visibility protection retained; other named reviewed historical helpers are archive payloads, not canonical main entries.",
+    "originals_deleted_moved_or_changed": false,
+    "future_helpers_and_main_task_sources_hidden": false,
+    "previous_original_files_ignored_field_is_20261006_snapshot": true
+  },
   "archive_ref":"refs/archive/reviewed-openmoji-tools-20261006",
   "archive_commit":"2e64b6c2ccdcf4a1bd1f6215f0e2adcd4a224062",
   "prerequisite_commit":"f7cbe86fa0f2bfacd2658d1f515fc9b148233fd3",
