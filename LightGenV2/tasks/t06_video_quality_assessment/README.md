@@ -437,3 +437,16 @@ Qwen 对照和论文图统一见
 属于开发指标，不称独立泛化。本轮未重训、未读取视频、未重评性能或测速。
 原报告和本地中转源码仍原位保留，来源及CPU合同核验见
 [恢复记录](../../../maintenance/storage/T06_VISUAL_BASELINE_IMPORT_20261005.md)。
+
+## 9月27日历史 A100 多基线汇总源码
+
+原 [LGVQ temporal multi-baseline A100说明](../../reports/20260927_lgvq_temporal_multi_baseline_a100/README.md)
+及同目录 `build_analysis.py` 已按实际服务器原字节纳入main。
+脚本SHA256为 `418cb591c3a7703ac0eb12d40d22271c330e3fdef77488e81954b443c4ddfa99`，
+恢复来源为 `refs/archive/server-untracked-safe-source-20261006`；原测量、CSV、表格及功率记录仍保留原位。
+
+这是历史200视频、无预热、同步墙钟、A100板卡加338.2W主机代理的对照；
+Ours点沿用当时已审计的16视频记录，不是新PT或当前硬件的重新测速。
+脚本是原始产物重建器，导入即读取 `raw_remote` 并写汇总/图/校验表，不是可安全导入的库；
+本次只做源码身份/语法检查，未执行重建、未改旧报告或测量、未启动GPU。
+如需重建，应先保存原目录并在独立输出副本操作，不能覆盖原测量证据。
