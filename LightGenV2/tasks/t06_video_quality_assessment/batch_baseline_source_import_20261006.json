@@ -5,7 +5,8 @@
   "hardware_touched": false,
   "runtime_checkout_changed": false,
   "original_measurement_assets_20261008": {
-    "asset_root": "/DATA/DATA1/guest3/2026OpticsMoE_t06_a100_batch",
+    "asset_root": "/DATA/DATA1/guest3/storage_cleanup_manifests/retired_t06_a100_batch_source_20261008/frozen_worktree",
+    "original_asset_root": "/DATA/DATA1/guest3/2026OpticsMoE_t06_a100_batch",
     "relative_run_root": "LightGenV2/tasks/t06_video_quality_assessment/runs/simulation/a100_temporal_batch_scaling_20260907",
     "source_HEAD": "3fab90b363e3d49f02fa68acdc6c363b991097e7",
     "two_current_source_overlays_match_registered_recovery_ref": true,
@@ -29,7 +30,9 @@
     "file_count": 15,
     "total_bytes": 134628,
     "all_original_measurement_files_read_and_SHA_bound": true,
-    "originals_moved_deleted_or_changed": false,
+    "originals_moved_intact_after_archive_verification": true,
+    "originals_deleted": false,
+    "measurement_bytes_changed": false,
     "new_measurements_or_metrics_computed": false,
     "scope": "Noncache ignored measurement files in this historical batch checkout only; not all T06 or A100 assets"
   },

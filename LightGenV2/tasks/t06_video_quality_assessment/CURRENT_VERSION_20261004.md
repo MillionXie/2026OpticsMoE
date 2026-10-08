@@ -90,7 +90,8 @@ Spatial 3,786,407参数、Temporal 6,804,011参数均通过原SHA/架构/strict 
 历史 A100 batch scaling 的源码和15份原始测速/遥测/预测文件统一从
 [批量baseline身份清单](batch_baseline_source_import_20261006.json)进入。
 清单记录原目录、运行子目录及每份文件的字节数/SHA；原文件仍保留在
-`/DATA/DATA1/guest3/2026OpticsMoE_t06_a100_batch`，两处源码overlay与登记的Git恢复引用一致。
+清单的 `asset_root` 历史区，原目录为 `/DATA/DATA1/guest3/2026OpticsMoE_t06_a100_batch`。
+该副本已完整归档后原生Git移动，所有原始测量字节保留；两处源码overlay与登记的Git恢复引用一致。
 formal batch16 与 sweep batch1/2/4/8/16 各自保留，不能把sweep或历史schema混作当前正式结果。
 本轮只读绑定文件身份，未重测速度、重算指标或将旧A100数字套给本页Spatial/Temporal模型。
 
