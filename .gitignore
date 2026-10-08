@@ -3979,3 +3979,8 @@ node_modules/
 /LightGenV2/tasks/t04_semantic_interaction/reports/reproduction/evidence_20260908/moe.json
 /LightGenV2/tasks/t04_semantic_interaction/reports/reproduction/evidence_20260908/moe_adapter_probe.json
 /LightGenV2/tasks/t04_semantic_interaction/reports/reproduction/evidence_20260908/qwen.json
+
+# Named historical T06 generated audits/results; originals and recovery blobs retained.
+/LightGenV2/tasks/t06_video_quality_assessment/reports/paper_results/spatial_continuous_no_k_20260908/training_only_checkpoint_interpolation.json
+/LightGenV2/tasks/t06_video_quality_assessment/reports/reproduction/EVIDENCE_20260908.json
+/experiments/qwen3_vl_2b_lgvq_single_metric_o2_16frame_54/spatial_strict_selected_result.json
