@@ -3969,3 +3969,13 @@ node_modules/
 /LightGenV2/reports/20260927_lgvq_temporal_multi_baseline_a100/LGVQ_temporal_multi_baseline_A100.xlsx
 /LightGenV2/reports/20260927_lgvq_temporal_multi_baseline_a100/calculated_summary.csv
 /LightGenV2/reports/20260927_lgvq_temporal_multi_baseline_a100/calculated_summary.json
+
+# Dated 2026-09-08 OpenMoji application audit outputs, not current robust source.
+# Originals remain in place. Per-file SHA and Git recovery blobs:
+# .codex_tmp/storage_git_backup_20261002/remaining_local_retention_20261008.json
+/LightGenV2/tasks/t04_semantic_interaction/reports/reproduction/EVIDENCE_20260908.json
+/LightGenV2/tasks/t04_semantic_interaction/reports/reproduction/evidence_20260908/d2nn.json
+/LightGenV2/tasks/t04_semantic_interaction/reports/reproduction/evidence_20260908/d2nn_adapter_probe.json
+/LightGenV2/tasks/t04_semantic_interaction/reports/reproduction/evidence_20260908/moe.json
+/LightGenV2/tasks/t04_semantic_interaction/reports/reproduction/evidence_20260908/moe_adapter_probe.json
+/LightGenV2/tasks/t04_semantic_interaction/reports/reproduction/evidence_20260908/qwen.json
