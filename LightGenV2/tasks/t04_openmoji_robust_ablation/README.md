@@ -13,7 +13,11 @@ wd.05，120轮预算。此为电子特征正则化假设，不是CCD标定模型
 已派发唯一`OpenMoji_CachedRegularize120_1008`，实验台既有项目run
 `editor16_align_decoder_regularize120_20261008`及同级log，CPU预算120轮；
 source Git c9035d398通过bundle只接入该新入口，旧加载/采集backend不改。
-目前尚无该对照的正式终了精度，光学上游保护SHA必须不变。
+该120轮已返回0、CPU进程退出：严格CPU best .8700/e15、last .8620，
+上游保护通过，best SHA402f5637e9aae8370dbc53630c129a067c0fafa29c0b1963a2d9dff5c9ac3889，
+last SHA490a20dd5eee210b162b71c35cab3110cd41ad99c4040f43227acc69980f5c5a。
+较同上游平均PT仅提高.05pp，仍距用户.890目标2pp；不把历史另一上游.8705合并。
+报告本地备份，原best/last/逐样本/history/protocol均保留；无SDK/GPU占用。
 
 暂不推进单措施消融。历史87.05%是早期editor16累计G5的真实CCD适配：
 原clean CPU .9165、直接 .5730，独立TRAIN1000梯度，原decoder30162参数、
