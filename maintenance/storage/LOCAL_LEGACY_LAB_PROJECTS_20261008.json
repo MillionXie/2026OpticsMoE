@@ -24,13 +24,20 @@
   },
   "shs_project": {
     "original": "C:/Users/Xml12/OneDrive/2026OpticsMoE/ABO_Lab_SHS_8um",
+    "archive": "C:/Users/Xml12/OneDrive/2026OpticsMoE/archive/legacy_lab_projects/ABO_Lab_SHS_8um",
+    "private_complete_manifest": ".codex_tmp/storage_git_backup_20261002/abo_lab_shs_complete_inventory_20261008.json",
+    "private_complete_manifest_sha256": "45bfeb0581eeb2ea039092fda22c250f54e5cdef19ae81f8ec00addbaaa75fb8",
+    "every_original_file_verified_before_and_after_move": true,
+    "file_set_unchanged": true,
+    "deleted_files": 0,
+    "disk_space_freed": 0,
     "purpose": "September 12-13 SHS high-speed-camera control base, historical six-layer ABO image-to-text, MNIST references, exposure and timing diagnostics; also shared by historical LGVQ, SALICON and OpenMoji lab entries",
     "files_observed": 4064,
     "bytes_observed": 2326884661,
     "git_tracked_files": 0,
     "untracked_records_observed": 86,
     "separate_git_repository": false,
-    "decision": "Retain in place in this operation: not an unused trial copy. Shared hardware/asset references must be migrated explicitly before whole-directory relocation.",
+    "decision": "Complete local historical directory archived without deletion. Historical tools are not required to become immediately executable before archival; use explicit archived bench-root where supported or restore the exact original directory when reproducing old commands. Laboratory E: copy and final/current experiments unchanged.",
     "shared_source_on_main": "LightGenV2/hardware_common/shs/; exact origin identities in SHS_SHARED_CONTROLLER_SOURCE_20261004.json",
     "additional_packaging_gap_verified": {
       "scope": "Historical packaging reference review; not final rank72 inference or current optical acceptance. T04 template was an untracked local historical tool, not an existing main builder.",
@@ -43,7 +50,7 @@
         "LightGenV2/tasks/t04_semantic_interaction/shs_package.py: legacy epoch40 template adopted with canonical phase-script Git read paths only; not the current epoch45 packager",
         "LightGenV2/tasks/t03_saliency/build_lab_package.py: reads old GPU requirements from release source_commit, not from the current working directory; historical binding unchanged"
       ],
-      "decision": "Retain original SHS assets/SDK/runtime paths. Adopt preserved phase helpers and dependency reference into canonical source; no whole-directory relocation until remaining runtime and asset dependencies are resolved. No package execution or new physical acceptance is implied.",
+      "decision": "Original files retained in full local archive; shared phase helpers are on main. Historical package builders are not executed as an archive prerequisite. Laboratory runtime paths and original Git bindings unchanged.",
       "package_built_or_hardware_opened": false
     },
     "runtime_reference_examples": [
@@ -60,11 +67,13 @@
       "vendor_dependency": "T07 legacy mnist_dvp_bench/four_image_flow/bench_scan use OLD/vendor/holoeye_python. Current rank72 config names the laboratory E: vendor path, which is outside this local relocation scope.",
       "reference_asset_dependency": "T07 analyze_mnist_dvp/render_mnist_dvp_figure read assets/mnist_native8_completed_20260913/paired; saved reports retain original absolute provenance paths and must not be rewritten as new observations.",
       "historical_git_dependency": "T03 build_lab_package requirements are read from release source_commit. A local directory move does not alter that historical Git object binding.",
-      "next_safe_boundary": "Canonical source import is resolved for the shared capture path, but external ownership root and SDK/reference assets remain protected. Relocate local reference assets only with exact SHA mappings and preserve old ownership compatibility. Do not change laboratory E: configuration, run hardware, or rewrite old report paths to force closure.",
+      "next_safe_boundary": "Local historical project is archived as a complete unit, not deleted. Old relative/absolute asset commands may require full original-path restoration. No compatibility link or new lock root is created automatically. Laboratory E: paths and saved report provenance remain unchanged.",
       "hardware_or_scientific_execution_performed": false
     },
-    "files_modified_moved_or_deleted": false,
-    "not_proven_unused": true
+    "files_moved": 4064,
+    "file_contents_modified": false,
+    "historical_future_use_possible": true,
+    "restore_rule": "Only restore the complete archived directory when the original path is absent and no process uses either location; verify every file against the private manifest before and after. Never overwrite a newer directory. This local archive is not an off-machine backup or retirement of the laboratory copy."
   },
   "protected_final_ABO_or_current_OpenMoji_changed": false,
   "training_evaluation_capture_or_upload_started": false,
