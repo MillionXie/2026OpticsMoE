@@ -1,0 +1,1 @@
+/DATA/DATA1/guest3/t07_a100_formal_audit.py --checkpoint /DATA/DATA1/guest3/2026OpticsMoE/LightGenV2/tasks/t07_abo_image_retrieval/runs/simulation/physical_bounded30_spatial_consistent_20260927/best.pt --output /DATA/DATA1/guest3/2026OpticsMoE_a100_measurements/20260928_t03_t08/candidate_03 --samples 200 --physical-gpu-index 6 --allow-foreign

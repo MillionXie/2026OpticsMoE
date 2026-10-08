@@ -1,0 +1,1 @@
+/DATA/DATA1/guest3/t12_a100_narrow.py --checkpoint LightGenV2/tasks/t12_text_to_image/runs/simulation/20260927_language_balance_input/last_checkpoint.pt --output /DATA/DATA1/guest3/2026OpticsMoE_a100_measurements/20260928_t03_t08/formal_08_narrow --samples 200 --physical-gpu-index 6

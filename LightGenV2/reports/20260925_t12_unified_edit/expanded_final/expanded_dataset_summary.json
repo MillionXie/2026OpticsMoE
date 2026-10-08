@@ -1,0 +1,43 @@
+{
+  "schema_version": 1,
+  "dataset": "curated CC BY 4.0 single-object T2I subset",
+  "license": "CC BY 4.0",
+  "splits": {
+    "train": 1728,
+    "val": 192,
+    "test": 192
+  },
+  "object_sequences": {
+    "train": 144,
+    "val": 24,
+    "test": 24
+  },
+  "categories": [
+    "lamp",
+    "pillow",
+    "table"
+  ],
+  "manifest_sha256": {
+    "train": "5e008814c3f8a83409c41744df056235a19d3433f0bd0755e33a454680477264",
+    "val": "307b0e5039f5523b29d1121c9840cfe454477d83806dd3fbbfadb0e006abb5b7",
+    "test": "331874abbb8d8c7a4ac5ee3d6e030f20611cb5a9e96d3092917b7a5c4d7d5d2f"
+  },
+  "identity_split": true,
+  "source_dataset": "ABO CVPR 2022 No-BG Blender render benchmark",
+  "source_url": "https://amazon-berkeley-objects.s3.amazonaws.com/index.html",
+  "source_archive": "https://amazon-berkeley-objects.s3.us-east-1.amazonaws.com/archives/abo-release-renders.zip",
+  "source_license_sha256": "419896aea50c15d6e40c5b4baf4bd346f78223b9a354c7357ad00262afdc08ec",
+  "attribution": "Amazon.com and the Amazon Berkeley Objects dataset creators",
+  "seed": 42,
+  "eligible_rendered_products": {
+    "LAMP": 84,
+    "TABLE": 69,
+    "PILLOW": 232
+  },
+  "views_per_train_product": 12,
+  "views_per_eval_product": 8,
+  "image_size": 256,
+  "download_workers": 8,
+  "one_object_per_image": true,
+  "alpha_masks_saved": true
+}

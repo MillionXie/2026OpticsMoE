@@ -1,0 +1,1 @@
+/tmp/profile_latest_optical_electronics_a100.py --output-dir /DATA/DATA1/guest3/2026OpticsMoE_a100_measurements/20260927_demo_energy_efficiency_a100/ours/components_v3 --warmup 0 --repeats 200 --nvidia-smi-index 6

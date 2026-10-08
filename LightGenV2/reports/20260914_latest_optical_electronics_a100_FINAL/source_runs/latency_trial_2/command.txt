@@ -1,0 +1,1 @@
+/DATA/DATA1/guest3/2026OpticsMoE/LightGenV2/scripts/profile_latest_optical_electronics_a100.py --output-dir /DATA/DATA1/guest3/2026OpticsMoE_a100_measurements/20260914_latest_optical_electronics_a100_steady_v5 --warmup 50 --repeats 1000 --device-warmup-seconds 5 --nvidia-smi-index 6

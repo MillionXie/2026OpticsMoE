@@ -1,0 +1,34 @@
+{
+  "dataset": "HR-LSPET + LSP",
+  "protocol": "LSPET_9428_all_plus_LSP_first1000_train__LSP_last1000_test",
+  "train_samples": 10428,
+  "test_samples": 1000,
+  "train_lspet": 9428,
+  "train_lsp": 1000,
+  "test_lsp": 1000,
+  "lspet_expected_count": 9428,
+  "joint_names": [
+    "right_ankle",
+    "right_knee",
+    "right_hip",
+    "left_hip",
+    "left_knee",
+    "left_ankle",
+    "right_wrist",
+    "right_elbow",
+    "right_shoulder",
+    "left_shoulder",
+    "left_elbow",
+    "left_wrist",
+    "neck",
+    "head_top"
+  ],
+  "visibility_policy": "coordinates_in_image",
+  "random_seed": 42,
+  "lsp_root": "/DATA/DATA1/guest3/2026OpticsMoE/data/lsp_pose/lsp_dataset",
+  "lspet_root": "/DATA/DATA1/guest3/2026OpticsMoE/data/lsp_pose/lspet_dataset/hr-lspet",
+  "annotation_sha256": {
+    "lsp": "ddcfcbe904106bfbf26561c8d11720ca62a11c7a861548064b3bae84cb396b2a",
+    "lspet": "e0cb5663a0c618b7ca5c2863deea4085c57e854c0202b9d7875c6d7dd53d36ca"
+  }
+}
