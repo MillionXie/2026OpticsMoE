@@ -1,0 +1,157 @@
+{
+  "scope": "31 original dated ABO/T12/T13 experiment and delivery notes; historical records only",
+  "verification": "Raw SHA and recovery Git blob identical (raw or LF). No original result or instruction rewritten; current supervision and all OpenMoji notes excluded from this adoption.",
+  "decision": "Keep old phase/ROI/training/ablation explanations with their original reports. Formal task README/registry remain sole current entry; old deadlines, upload or capture instructions are not renewed authorization.",
+  "files": [
+    {
+      "path": "handoffs/abo_i2i_physical2400_20260926/README.md",
+      "original_raw_sha256": "8e861cb689416793d90a8805b7e22f3ac6893b2cd633e028328127ff71ed8513",
+      "recovery_blob": "aa8e1614c6484c848ce40f7346470e595c4ab31a"
+    },
+    {
+      "path": "handoffs/abo_i2i_sixhour_strong_20260928/RESULTS.md",
+      "original_raw_sha256": "a8d3757e364489ccf5beb38b8a191d72f51f69f0301dc5514142eb31d7ce71b8",
+      "recovery_blob": "ebec4080ac8c1d72ce003cac7691c392ef3ba200"
+    },
+    {
+      "path": "handoffs/abo_i2i_sixhour_strong_20260928/RGB_LATE_BRANCH_20260929.md",
+      "original_raw_sha256": "84ec643a07d13ae708b692ae1746a925ad080887cf33fe92fbcb7300983f8a48",
+      "recovery_blob": "fc9ba80ce6d3835e9e71a953938dad635ac447d4"
+    },
+    {
+      "path": "handoffs/abo_i2i_sixhour_strong_20260928/electronic_bypass/README.md",
+      "original_raw_sha256": "3de4447e61a7d1cfec7d13a25cfa7f491bf54ec7dedfb8adf02e10bf895d43c8",
+      "recovery_blob": "8784616adc16df0127d5f669b4a5a1210d1eca7a"
+    },
+    {
+      "path": "handoffs/abo_i2i_sixhour_strong_20260928/electronic_bypass/REPEAT_STABILITY_20260928.md",
+      "original_raw_sha256": "005b5d4d5a7e5d77fb98ab5fcd74326430e17e02604432d37113d0e2759b63a0",
+      "recovery_blob": "f7c95e4656308d970cd1915af518da046a6b13b1"
+    },
+    {
+      "path": "handoffs/abo_latestfresh35_lab_20260930/DEPLOYMENT.md",
+      "original_raw_sha256": "8842c8fdc51e78ba81f0ed521a50f0a1d44ea17ba85dd395745f78fa107e00e5",
+      "recovery_blob": "b85537d358e07308e2ede632f6c6eabebc6e7ad5"
+    },
+    {
+      "path": "handoffs/abo_latestfresh35_lab_20260930/RANK72_DELIVERY_CHECKLIST.md",
+      "original_raw_sha256": "b1530c267d9342407c9cc58309eab3b3cf30422dcdbf3db85da69cddf02f16f2",
+      "recovery_blob": "ed4eed253ed52b5828380c65db8ffa996002c464"
+    },
+    {
+      "path": "handoffs/abo_text_to_image_10cm_alpha040_20260925/FINETUNE_TRAIN800.md",
+      "original_raw_sha256": "b1b702c956fde6eae07340542a29aa54382ca9b82be16ff92e25b6a852fc80de",
+      "recovery_blob": "20549a8bd92d9b21337414dbd115dbd0656cfd88"
+    },
+    {
+      "path": "handoffs/abo_text_to_image_10cm_alpha040_20260925/PILOT_STATUS.md",
+      "original_raw_sha256": "99fc0b0afac4ca87ad812748bb97e9dd1710e23e92592faba3edde3fc168a3d4",
+      "recovery_blob": "08fa7a349638484c08ea1590b412da795c43b105"
+    },
+    {
+      "path": "handoffs/abo_text_to_image_10cm_alpha040_20260925/README.md",
+      "original_raw_sha256": "aeb206f1c6f05cb974c7e00defc65b0070ee9cfbc7cf43bdea8588094d4b8dc8",
+      "recovery_blob": "f185e066708853d875b2f9daedb54fc4aa4e7244"
+    },
+    {
+      "path": "handoffs/abo_text_to_image_10cm_alpha040_20260925/SELECTED_PHYSICAL_RESULT.md",
+      "original_raw_sha256": "65eb554497b6d7f776967a2181fe0af1381e5521b25aac6011f54dc6b046a016",
+      "recovery_blob": "6fede3866753df11c21ffe8214d5207884b4cb22"
+    },
+    {
+      "path": "handoffs/abo_text_to_image_10cm_alpha040_20260925/finetune10/README.md",
+      "original_raw_sha256": "b69da38e37195c0185d171cf4d91fa89c216a0289b8580771056b11a751ac060",
+      "recovery_blob": "593f2933e4067e9c40e6f17d4c2504119ca8baf4"
+    },
+    {
+      "path": "handoffs/abo_text_to_image_10cm_alpha040_20260925/finetune20/README.md",
+      "original_raw_sha256": "5975ed714d945a753e532ca2fa3e46e0adec8f14978a7ea9a67a540f6fa07669",
+      "recovery_blob": "534aa59847240bd28bcb0ecea1570d9aab444658"
+    },
+    {
+      "path": "handoffs/abo_text_to_image_10cm_alpha040_20260925/finetune50/README.md",
+      "original_raw_sha256": "037880bdd72e991810fafaaa6bc302cf282c8ebd45332a1356cda50f505eda01",
+      "recovery_blob": "856c71267bdced8ac3ec3e5a605ba7168a667a6d"
+    },
+    {
+      "path": "handoffs/abo_text_to_image_figure_pack_20260928/README.md",
+      "original_raw_sha256": "5a590ed52a05a3c9fa8bb34a42cc356badc5280d66549465c97de096da8a1e8b",
+      "recovery_blob": "386641ce893de7188e128871fe03461c9f4d2041"
+    },
+    {
+      "path": "handoffs/robust_retrain_20260927/ABO_BOUNDED_COMPARISON.md",
+      "original_raw_sha256": "d680b3407abaa3832e71b5638a0983bb9b35c9cf8a148b621a8db3ed799e5218",
+      "recovery_blob": "189937024e6b71d7c7b2f42dc4bc523a94e42f47"
+    },
+    {
+      "path": "handoffs/robust_retrain_20260927/README.md",
+      "original_raw_sha256": "a2aa067dd0581df8d79cf0c9823d188241a9ed3a20502e670fd180e0a7b6b950",
+      "recovery_blob": "7283b0d2789c560a47725f1ea4df6d1fbeeeb57f"
+    },
+    {
+      "path": "handoffs/sister_simulation_final_20260927/RESULTS.md",
+      "original_raw_sha256": "ec5d73d322b917710ae105733a7ce2a3bd227f4e22963874ffbaf3ee838f72b0",
+      "recovery_blob": "3a05080aa865e5b5a8ea04a241c674a08eb3a49d"
+    },
+    {
+      "path": "handoffs/t12_channel_robust_20260927/README.md",
+      "original_raw_sha256": "d0184953efd439e17b0b97f368603c67134dfacc44e82647b09ed5d2cf06405e",
+      "recovery_blob": "a80e2fbf243823c827e6dbb44560708b2f782524"
+    },
+    {
+      "path": "handoffs/t12_channel_severe_20260927/README.md",
+      "original_raw_sha256": "43e64bbf4c5d5082d6079256a6bc23f06e0a4b24c7c1f8accf8d70b1bfc7ec92",
+      "recovery_blob": "2cab21bd205f5e20d09873683e91ed797ee0e3d9"
+    },
+    {
+      "path": "handoffs/t12_four_group_summary_20260927/README.md",
+      "original_raw_sha256": "240a988a03b80a16398d76c44eb1236e7d489db795a556ae01b9bcc58960e046",
+      "recovery_blob": "f63f378bb31267d9aa6197bfaa8b8ad4dff4ccf3"
+    },
+    {
+      "path": "handoffs/t12_four_group_summary_20260927/baselines/README.md",
+      "original_raw_sha256": "71c9c6b967ce73b99f2ed64b69a5c33544debde2f6425e3f65c3cdeaed4bb40e",
+      "recovery_blob": "d870ce7fd9458885e5caefbddfddb8462cd49309"
+    },
+    {
+      "path": "handoffs/t12_four_group_summary_20260927/small_matched_export/README.md",
+      "original_raw_sha256": "8ef3066570f5b73765a85efa8bad8e349d605fdaa6c73c7e429228121a787bff",
+      "recovery_blob": "238ea936b1e87558537196c2498db0d0b0e81052"
+    },
+    {
+      "path": "handoffs/t12_lab_robust17m_20260927/decoder20_comparison/README.md",
+      "original_raw_sha256": "8ef3066570f5b73765a85efa8bad8e349d605fdaa6c73c7e429228121a787bff",
+      "recovery_blob": "238ea936b1e87558537196c2498db0d0b0e81052"
+    },
+    {
+      "path": "handoffs/t12_lab_robust17m_20260927/decoder20_comparison/full_verified/README.md",
+      "original_raw_sha256": "8ef3066570f5b73765a85efa8bad8e349d605fdaa6c73c7e429228121a787bff",
+      "recovery_blob": "238ea936b1e87558537196c2498db0d0b0e81052"
+    },
+    {
+      "path": "handoffs/t12_lab_small_20260926/full_test_bounded/README.md",
+      "original_raw_sha256": "3f3617270cd99e8f64aedc644afe203381e9fcc4d49c06e13cdbdcad90101360",
+      "recovery_blob": "b876ba70acd85e6e00fd42e7ce3e1cd1a62040f5"
+    },
+    {
+      "path": "handoffs/t12_lab_small_20260926/physical_pilot_01/FIGURE_README.md",
+      "original_raw_sha256": "bccba55521199bab100a6a9d0371c1dc066e2a4f676f022385cde8ce3812cd33",
+      "recovery_blob": "9790c2ed9272c78144789201659a3025dd73d927"
+    },
+    {
+      "path": "handoffs/t12_language_balance_20260927/README.md",
+      "original_raw_sha256": "1030ade14ff671544896f719afb391f6b5e10c30f2c9360f34034b26acb2ff61",
+      "recovery_blob": "413e54e72cab92e412ed0f2a5e4cdc315038b9db"
+    },
+    {
+      "path": "handoffs/t12_pix2pix_turbo_20260927/README.md",
+      "original_raw_sha256": "f3c04f107153eaf46a28aca808eb490b1ddf0f1005b57b34170b8f146caf32d6",
+      "recovery_blob": "b33d843ea71c8e9dbc529083228b1e294699db4c"
+    },
+    {
+      "path": "handoffs/t13_temporal_ablation_20260927/RESULTS.md",
+      "original_raw_sha256": "8b6d90407dcafdfc357e3d2d8f512ba41620295a18353e85efcac1a49ba8d318",
+      "recovery_blob": "574b799221705b74811ea43c0cb7ee69f4ca3026"
+    }
+  ]
+}
