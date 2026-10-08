@@ -13,6 +13,17 @@
 先GPU单轮短测和strictCPU/上游保护，通过后唯一正式GPU任务；保留.8870，
 不保证提高，不扫描混合比例/TEST阈值，原LSP本地GPU训练不受影响。
 
+Git372ac604e三端源码同步后，mixup020_gpu_smoke单轮loss1.01028349；
+完整TEST1000 strictCPU .9075，另起CPU进程零梯度复载再次.9075，上游保护通过。
+候选SHA0be89d39e50022eede6bd189ff181ffa9a662a76ab44d929b4820dec2026f53b。
+不能只按主指标宣布全面提高：preserved-cell .9846655→.9784983，
+editIoU .7733107→.7217198、objectF1 .8975204→.8754846、sceneExact .591→.541，
+TRAIN changed1.0；主指标越过.890但仍有编辑保真取舍，不称过拟合已解决。
+单轮候选独立保留，不与正式每5轮选模混淆。唯一正式任务
+`OpenMoji_CachedMixup020_GPU120_1008`从原.8870重新开始同seed/120轮，
+run `editor16_align_decoder_mixup020_gpu120_20261008`，实际launcher27524/Python1636，
+已真实epoch4/loss .8784238，尚未首次周期TEST。只GPU电子训练，不重采。
+
 GPU标签平滑正式120轮已完成，任务返回0/实际Python退出/GPU回落400MiB空闲。
 strictCPU best .8870/e105、last .8870；best TRAIN .9995，上游保护通过，
 比此前.884提升.30pp、距.890仍.30pp，仍未达标。best SHA
