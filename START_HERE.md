@@ -34,6 +34,16 @@
 同一任务的具体复现步骤以其 `reports/reproduction/README.md` 为准。未闭合的依赖不代表
 可以直接换权重运行，更不代表已经在另一光路复现。
 
+## 另外保留的历史研究与 baseline
+
+这些不是新增工程，也不替代上表的最终模型：
+
+- [EuroSAT RGB/SAR 及光学分类历史对照](LightGenV2/demo_check/README.md)：纯光学、输出融合、共享冻结前端三种协议分别保留；不要混用成绩。
+- [Adrenal 病理结构/OEO 历史源码](LightGenV2/demo_check/adrenal_softsign_code_export_20260915_145336/MAIN_ENTRY.md)：原导出和必要结构对照，不是 T11/T16 的另一套最终版；旧路径与训练命令不能直接用于现在的机器。
+- [六任务 baseline 代码交接](LightGenV2/reports/20260915_baseline_methods/CODE_HANDOFF.md)：原版本、原包与恢复方式；不是用最新模型替换旧对照。
+
+原数据、权重、结果及全部测速仍保留，以上链接不表示已重跑或已在空机器复现。
+
 ## 为什么还有其他目录
 
 - `LightGenV2/tasks/`：长期正式任务入口。
