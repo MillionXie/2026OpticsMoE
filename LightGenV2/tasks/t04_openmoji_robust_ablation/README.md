@@ -2,6 +2,17 @@
 
 ## 2026-10-08 授权：累计组电子适配，目标89.0%–89.5%（进行中）
 
+00:55按用户最新“合理调整”授权，先查TRAIN：preserve05 best changed1.0、
+preserved .9774193/IoU .6967710，说明误编辑也出现在TRAIN，不只是TEST泛化。
+旧完整mixup对两个不相同场景同时施加edit/source-dependent composed目标，
+存在标签冲突假设。有限一次`--mixup-category-only`：混合分支仅计算类别CE
+（原changed .5/preserved .2及双目标凸组合），不对混合场景施加edit BCE/定位/composed。
+原样本clean/noisy全部监督和保真.5保持；从同.8870父PT、同seed/120轮，
+mixup.2/遮挡.08/平滑.05/困难重放500/原decoder及光学不变，无新推理层。
+两项类别混合梯度、空/全mask边界测试通过，先GPU短测/strictCPU/上游保护后正式。
+这是针对TRAIN误编辑的目标修正，不为89–89.5区间压分、不扫描比例/TEST门限。
+旧mixup与preserve05所有best/last/report/history/逐样本现已本地完整备份并SHA一致。
+
 2026-10-09 00:15保真平衡120轮已完成：返回0、Python退出、4060回落400MiB。
 strictCPU best .9060/e5、last .9015，上游保护通过，best TRAIN changed1.0。
 best preserved .9766176/IoU .6980810/objectF1 .8683938/sceneExact .521，
