@@ -9,6 +9,14 @@ category-only mixup/保真.5/其他正则和原decoder不变；不扫描权重�
 editor16_align_decoder_catmix020_noreplay_gpu120_20261009；已实际epoch39/loss .542582，
 best仍初始.8890，尚无改善结论。不抢光路SDK，与本地LSP训练并行。
 
+上述noReplay120轮已完成、返回0，strictCPU best .8895/e45、last .8890，
+上游保护true、best TRAIN .9995。best preserved .9856824/IoU .7878024/
+objectF1 .9011949/sceneExact .606；相较.8890父PT主指标+.05pp，保真基本持平、
+IoU略降，不能称所有指标改善；距.890仍差.05pp，不向上取整报达标。
+best SHA5aff935453b2dc0d979a0df40ac4a1329c4662972099491a715736b017344a8f，
+last SHA7929c1d70a3b6526e5faecaa1bae9509a0b39931c5c0d47ef75af63f6c2d3085。
+完整报告/协议/历史/逐样本已取回，本地bestlast SHA备份进行中，历史候选全部保留。
+
 2026-10-09 01:15类别mixup保真对照120轮已完成，任务返回0、Python退出、4060空闲。
 strictCPU best .8890/e100、last .8865，上游保护通过；best TRAIN changed .9995。
 best preserved .9857109/editIoU .7884024/objectF1 .9010684/sceneExact .606，
