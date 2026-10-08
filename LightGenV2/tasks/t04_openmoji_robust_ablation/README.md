@@ -15,6 +15,12 @@ last SHA 8c40e5061148619c87d88ade79ed87a28d194f0f34148e43bb9ea10fbfb0a46a。
 先`editor16_align_decoder_mixup020_preserve05_gpu_smoke_20261008`单轮GPU短测，
 strictCPU及保护通过后唯一正式120轮；不扫描权重/门限，全部既有结果保留。
 89–89.5只是用户希望的候选区间，不保证结果落入，不隐瞒保真与主指标取舍。
+三端Git6af8a7022同步后，preserve05单轮短测loss1.05505523，strictCPU .9060，
+preserved .9790227/IoU .7263063，相比同起点mixup单轮.9075/.9784983/.7217198
+保真略升，仍未落入用户区间，不称全面或最终达标。上游保护通过，短测独立保存。
+随后派发唯一`OpenMoji_CachedMixup020_Preserve05_GPU120_1008`，run
+`editor16_align_decoder_mixup020_preserve05_gpu120_20261008`，从同.8870父PT重训，
+120轮/每5TEST最高开发选模；无需额外光路采集，不影响本地LSP。
 
 88.70%的best/last及完整报告现已本地备份，双PT SHA核验一致。
 用户继续授权后，有限一次TRAIN特征mixup对照：从.8870 best继续、120轮，
