@@ -4172,3 +4172,5 @@ node_modules/
 /handoffs/abo_text_to_image_10cm_alpha040_20260925/vision_router_routing_summary.json
 /handoffs/abo_text_to_image_10cm_alpha040_20260925/physical_capture_qa.json
 /handoffs/abo_text_to_image_10cm_alpha040_20260925/physical_test_report.json
+# Original generated OpenMoji display SVG retained; plotting source/future figures stay visible.
+/outputs/openmoji_cumulative_nature_style.svg

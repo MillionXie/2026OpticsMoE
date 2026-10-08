@@ -1,0 +1,29 @@
+{
+  "files": [
+    {
+      "path": "outputs/openmoji_cumulative_figure.py",
+      "bytes": 2068,
+      "sha256": "77abed97ef8c119aa99412919e8276823929929859e63ff5f1056a7ae4d218a2",
+      "recovery_blob": "6285c1f05b8b598d7ddfa0412e7487fefd5c6a0d",
+      "action": "publish_original_plotting_source"
+    },
+    {
+      "path": "outputs/openmoji_cumulative_nature_style.svg",
+      "bytes": 9872,
+      "sha256": "eba9b37be4bc1e6acdf881c22882b4e828bb30105f3c56f5661a6e2bb7989bac",
+      "recovery_blob": "8fcbe508055f43bb805668d22b86c5ca4d7b76f5",
+      "action": "retain_original_generated_svg_exact_ignore"
+    },
+    {
+      "path": "outputs/pelican-bicycle.html",
+      "bytes": 6503,
+      "sha256": "1a1bccd297e153897fa2604b1904ba783739d8f08da7867b2d853bf9c2459379",
+      "recovery_blob": "239a22a178f63e70e0bf3b1a512af400a2688f97",
+      "action": "delete_only_user_confirmed_unrelated_html"
+    }
+  ],
+  "authorization": "User explicitly answered 删除 for outputs/pelican-bicycle.html, unrelated self-contained animated pelican illustration only",
+  "recovery": "Existing raw/LF recovery Git blobs verified before the scoped operation; no recovery blob or original private backup removed",
+  "plot_boundary": "Original cumulative figure source retained unchanged; values are static historical display numbers, including historical adapted upstream distinct from 73.15% upstream, as original footnote states. Not rerun, not new experiment or current independent benchmark. SVG remains original and excluded only by exact output path.",
+  "runtime_policy": "No training, device operation, result/PT/data changes or external upload"
+}
