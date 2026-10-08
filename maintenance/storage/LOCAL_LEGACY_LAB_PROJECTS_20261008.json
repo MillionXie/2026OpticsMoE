@@ -91,6 +91,22 @@
     "restore": "Restore only the required complete directory from this archive when its original path is absent; verify against the private manifest and never overwrite newer contents.",
     "limits": "Historical documents may retain these old transfer labels; they were not rewritten. No spreadsheet or model was executed; no off-machine backup claimed."
   },
+  "additional_prepare_transfer_archive": {
+    "archive_root": "C:/Users/Xml12/OneDrive/2026OpticsMoE/archive/maintenance_scratch_20261008",
+    "original_directories": [".tmp", ".codex_transfer", "Cgastb"],
+    "purpose": "Old T01/T02 preparation and LGVQ transfer material, retained timing scripts/commands and an empty accidental directory tree; not final model or dataset source",
+    "files": 55,
+    "bytes": 1636670,
+    "private_manifest": ".codex_tmp/storage_git_backup_20261002/local_transfer_scratch_inventory_20261008.json",
+    "private_manifest_sha256": "298330034ec4b797066976e81360019484e144f2a0e008edd1b8899e265cb069",
+    "tracked_files": 0,
+    "file_set_and_every_sha_unchanged": true,
+    "deleted_files": 0,
+    "disk_space_freed": 0,
+    "timing_code_commands_and_records_preserved": true,
+    "excluded": "tmp/pdfs retains historical timing evidence and its original source-overlay binding; TransferFromElectricity is a tracked historical backend, not an unused scratch directory",
+    "restore": "Restore only the required complete directory after confirming its original path is absent; verify the private manifest and never overwrite newer contents. Old packaging tools may create a new empty .codex_transfer scratch independently; do not merge it over this archive."
+  },
   "protected_final_ABO_or_current_OpenMoji_changed": false,
   "training_evaluation_capture_or_upload_started": false,
   "limitations": [
