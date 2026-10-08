@@ -1,0 +1,139 @@
+# 2026-09-15 实际运行复现记录
+
+2026-09-17完成：[新输入覆盖、seed17三深度Train/Test结果](KATHER_SEED17_TEST_20260917.md)。按最新要求停止其他种子，12份权重完成原GPU训练/验证预测精确重放、测试和独立复核。MoE＋OEO测试2/4/6层为70.21%/79.12%/80.85%，D2NN＋OEO为66.89%/71.14%/71.14%；提供三张Train/Test柱状图。MoE＋OEO六层泛化差11.97个百分点、捕获率1.69%，不能宣称过拟合或光能效率问题已解决。GPU已释放。
+
+2026-09-17交付：[新输入尺寸MoE/D2NN独立源码包](KATHER_CODE_HANDOFF_20260917.md)。ZIP位于`releases/kather_coverage_code_20260917.zip`；含MoE146×146专家输入、D2NN全孔径输入、逐层OEO开/关、配置与数据准备。脱离Git解压后四组一轮训练及权重精确重载验证通过。当前交付源码，不含尚未完成的最终权重和性能。
+
+2026-09-17进行中：[Kather输入覆盖修正与重训](KATHER_FOLLOWUP_20260917.md)。MoE专家输入从100×100中心补零改为四块分别插值后填满146×146，相同源图信息与总入射功率；D2NN仍覆盖自身相位面。六组MoE前后向、九专家首层覆盖、功率与EMA复制检查通过，正在五张授权GPU执行8次验证配置对照及2/4/6层三种子正式重训。旧几何后续实验已中断保留，不参与本次选模；新性能尚未完成，不替换下列历史结果。
+
+2026-09-17完成：[BloodMNIST逐层OEO、三种子与输入覆盖对照](BLOODMNIST_OEO_20260917.md)。54份锁定权重已完成原训练GPU精确验证重放、测试及独立指标核验；六层MoE＋OEO为84.48±0.60%，全孔径D2NN＋OEO为83.79±0.42%，配对均值差0.69个百分点，一个种子上D2NN略高。提供真实图像、深度曲线、全部种子点、训练／验证曲线和路由诊断。原小输入D2NN首层仅约4.5%被照明，此前单种子差距不能直接视为严格公平的架构优势。
+
+2026-09-17完成：[Kather2016非MNIST组织八分类对照](KATHER2016_OEO_20260917.md)。12次等预算预实验选择统一配置，36份正式权重完成测试与独立复核；六层MoE＋OEO为70.88±1.44%，全孔径D2NN＋OEO为63.25±1.36%，配对优势7.62±0.60个百分点，三个种子均为正。原始数据为CC BY 4.0，但本轮是图像级随机划分，不是患者独立验证。两套实验的训练／评估／调度进程已退出，[GPU释放证据](../../runs/smoke/oeo_campaign_resource_release_20260917/resource_release.json)已保存。
+
+[完整技术说明](OEO_METHODS_20260917.md)、[Blood协议](../../reproduction/BLOODMNIST_MULTISEED_PROTOCOL.md)、[Kather协议](../../reproduction/KATHER2016_PROTOCOL.md)。本轮共评估90份锁定权重，包含逐层OEO开／关、2/4/6层、三种子、真实图像、全孔径输入对照和路由诊断；旧Adrenal与RGB/SAR实验保留其各自范围。
+
+2026-09-17完成：[BloodMNIST八类血细胞可行性验证](BLOODMNIST_FEASIBILITY_20260916.md)。
+CC BY 4.0数据；7组训练、锁定测试和独立指标核验完成。2/4/6层测试准确率，MoE为72.26%/80.33%/83.81%，D2NN为61.77%/74.80%/79.54%，多数类基线19.47%。六层训练/验证为87.38%/85.81%；保留单种子、患者独立性、理想九端口和OEO的适用范围，不替代旧Adrenal结果。
+
+2026-09-16新增：[Adrenal两小时泛化优化与配对复评](ADRENAL_GENERALIZATION_20260916.md)。
+30组新训练、32份权重复评与独立指标核验完成；统一验证选定配置的两种子测试AUROC均值，MoE为0.7113/0.7293/0.7297，D2NN为0.6748/0.7152/0.7318（2/4/6层）。
+MoE各层均训动，六层过拟合及优势不稳定仍未解决；保留共享CNN、粗网格、温度对照与旧六层候选，并记录新分类损失下探测窗口捕获率偏低的问题。
+
+2026-09-16交付：[共享前端77.20% / 73.65%独立代码包验证](EUROSAT_HANDOFF_20260916.md)。包含原权重、优化器、训练/验证子集；解压后完整复评及续训检查通过。
+
+2026-09-16新增：[低学习率续训、早停与独立空间测试](EUROSAT_CONTINUATION_HOLDOUT_20260916.md)。
+MoE验证77.20%→77.55%，独立测试75.65%→75.70%；D2NN测试72.85%→73.30%。提升区间均包含0，未宣称稳定泛化提升；两组冻结、恢复、早停及测试隔离均已核验。
+
+2026-09-16新增：[共享前端训练状态与路由诊断](EUROSAT_TRAINING_DIAGNOSIS_20260916.md)。
+两组均训动，MoE四专家梯度有效、相位未大面积饱和；固定权重将动态路由改等功率后77.20%→57.40%。诊断未追加训练，优化建议与实测结果分开记录。
+
+2026-09-16新增：[RGB/SAR同一冻结电子前端对照](EUROSAT_SHARED_FRONTEND_20260916.md)。
+电子前置、去掉分类旁路，两组20轮输入特征逐位相同；MoE验证77.20%、D2NN73.65%。差距主要来自RGB，SAR基本持平；完整冻结与保存权重复评通过。
+
+2026-09-16新增：[RGB/SAR共享冻结电子、0.5融合实测](EUROSAT_FROZEN_ELECTRONIC_20260916.md)。
+电子预训练20轮后冻结，两种光学模型各训练20轮；验证准确率电子76.05%、MoE融合75.85%、D2NN融合75.90%，未超过电子单独。冻结状态、相位更新与保存权重复评均已核验。
+
+2026-09-16新增：[Adrenal正则化与选模诊断](ADRENAL_REGULARIZATION_20260916.md)。
+完成12组配对正则化重训、2组六层分类损失对照，以及新旧24份第50轮权重复评。
+六层过拟合减轻；四层低谷与早期权重选择相关。保留完整升降结果，不将事后固定轮次诊断替换原验证选模记录。
+
+2026-09-16补齐：[Adrenal输入、损失与2/4/6层重训核查](ADRENAL_DEPTH_REPRODUCTION_20260916.md)。
+seed17的三种深度、两种架构、OEO开/关共12组均完成50轮；原四/六层趋势接近复现，
+六层两组OEO的最佳轮次有变化，不能宣称全数精确一致。150个相位张量均更新，分层梯度和sigmoid状态已核查。
+下文“两层复现”保留其历史范围；最新完整深度范围、数值差异与证据以该报告为准。
+
+2026-09-16新增：[动态四专家路由分布与分工诊断](ROUTING_SPECIALIZATION_20260916.md)。
+固定第15轮权重，验证集两域各1000张；含域/类别分布图、单专家/关闭专家及路由交换诊断，不改变已报告模型。
+
+RGB/SAR两模型独立交接包已生成并核验：[代码、交接说明与校验信息](../../pure_optical/README.md)。
+仅包含动态四支路MoE和整孔径D2NN，原固定四支路消融及其他历史证据保留在工程中。
+
+2026-09-16新增：[Adrenal分类退化与阈值复评](ADRENAL_THRESHOLD_AUDIT_20260916.md)。
+确认四组模型无电子残差或α；固定权重、验证集选阈值后复评，未重新训练，详见报告。
+
+2026-09-16新增：[EuroSAT移除电子分类支路的相位训练试验](PURE_OPTICAL_PILOT_20260916.md)。
+三份原始数据包已下载并校验，沿原空间划分重建6000/2000张训练/验证子集；动态四路、固定四路、
+整孔径D2NN已完成20轮训练。该新协议没有Qwen、电子残差、电子分类头或α，不能与旧混合模型数值直接比较。
+下文“EuroSAT未复现准确率”的描述保留为原混合模型复现工作的状态，不适用于此新试验。
+
+2026-09-16新增：[模型、张量、训练、公平对照与指标审查](STRUCTURE_REVIEW_20260916.md)。
+该审查按“推理阶段相位固定”的最新定义解释双域预训练，并记录暂缓的九端口物理模型问题。
+
+Adrenal 两层、seed17 的四组模型已从原初始化完整重训，各 50 轮；四组测试 AUROC
+和最佳轮次均与原记录一致。EuroSAT 已通过模型运行检查，尚未复现数据集准确率。
+
+## Adrenal 重训结果
+
+| 模型 | 原记录 AUROC | 本轮 AUROC | 原／本轮最佳 epoch |
+|---|---:|---:|---:|
+| MoE＋Softsign OEO | 0.721599898740586 | 0.721599898740586 | 11／11 |
+| MoE，无中间 OEO | 0.6719827858996266 | 0.6719827858996266 | 48／48 |
+| D2NN＋Softsign OEO | 0.6563508638693754 | 0.6563508638693754 | 50／50 |
+| D2NN，无中间 OEO | 0.5568634896525536 | 0.5568634896525536 | 50／50 |
+
+对照对象为原导出包 `results/reports/per_seed.csv` 的 depth=2、seed=17、fixed_0.5 行，
+不是五种子均值。探测面 MSE 最大绝对差为 5.321e-7；不声称权重或浮点输出逐位一致。
+四组固定阈值准确率都为 229/298=76.8456%，阳性召回率都为零，与原记录一致。
+数值可复现不等于分类阈值合理，也不增加关于非线性或专家分工的因果证据。
+
+数据沿原数组轴平均投影、28→100 双三次抗混叠插值及截断，原划分
+train/val/test=1188/98/298。batch=8、Adam lr=0.001、weight_decay=0、
+StepLR 每10轮乘0.7，原探测面归一化 MSE；原验证 AUROC→MSE→较早轮次选模。
+每组 7,450 次更新，所有相位参数均发生更新；共 29,800 次更新。
+四组训练函数报告用时合计约 638 秒，不作为架构速度对比。
+
+固定已报告的 Softsign，不重新筛选激活。本轮未重训4/6层或其他种子，
+不能称为原始68次搜索及五种子统计的完整复现。12种架构配置都单独通过了前向/反向检查。
+
+## 执行与独立核验
+
+运行位置：服务器 `/DATA/DATA1/guest3/demo_reproduction_20260915`，只使用GPU0
+RTX4090。PyTorch2.6.0+cu124、torchvision0.21.0+cu124；原报告为RTX5090、
+PyTorch2.8.0+cu128。完整Python及依赖清单在run的 `metadata.json`。
+
+Adrenal运行源码commit：`4934e200f4ec8cd6acdc37d6957334c4003f087d`。
+独立入口 `../../reproduction/run_adrenal.py` 调用归档中的训练、选模和评估函数，
+只重定向数据与输出位置；43个原始Python/YAML文件的SHA256均与本机归档相同。
+不复制旧训练完成标记或旧权重。四组最佳检查点封存之后才读取本轮测试集。
+
+数据SHA256：`22bc193a85c43be85f093bf12f3ffdc5ed79b5efda63925bd9e063a70594bf93`。
+
+run ID：
+- `runs/smoke/adrenal_20260915`：12个配置的有限损失、有效梯度、参数量、初始相位哈希与路由归一化。
+- `runs/simulation/adrenal_L2_s17_20260915`：四组完整训练与测试。
+- `runs/smoke/eurosat_20260915`：EuroSAT模型运行检查。
+
+run相对本文件位置为 `../../runs/`。本机已保存Adrenal逐轮记录、逐样本预测、
+四个best.pt和下载清单；服务器另保留last.pt。`subset_test_lock.json`包含最佳权重SHA256，
+`independent_verification.json`记录独立核验：按逐样本分数秩和重算AUROC、重算准确率、
+检查298个唯一样本ID、最佳权重哈希、50轮记录、7,450更新以及相位参数更新。
+原始运行进程已退出，GPU0显存已释放。
+
+实际运行命令（仓库根目录）：
+
+```bash
+CUDA_VISIBLE_DEVICES=0 /home/guest3/miniconda3/envs/xml/bin/python LightGenV2/demo_check/reproduction/run_adrenal.py --phase smoke --data /DATA/DATA1/guest3/demo_reproduction_data/adrenal/data.npz --out /DATA/DATA1/guest3/demo_reproduction_20260915/LightGenV2/demo_check/runs/smoke/adrenal_20260915
+CUDA_VISIBLE_DEVICES=0 /home/guest3/miniconda3/envs/xml/bin/python LightGenV2/demo_check/reproduction/run_adrenal.py --phase train --depth 2 --seed 17 --data /DATA/DATA1/guest3/demo_reproduction_data/adrenal/data.npz --out /DATA/DATA1/guest3/demo_reproduction_20260915/LightGenV2/demo_check/runs/simulation/adrenal_L2_s17_20260915
+```
+
+再次执行须使用不同输出目录；入口拒绝覆盖现有run。
+
+## EuroSAT 运行检查的范围
+
+使用原模型实现和配置、服务器已有Qwen3-VL-Embedding-2B缓存、两张固定随机种子的
+224×224合成RGB图像。MoE自动/均匀/已知域隔离路由和D2NN均完成前向、CE反向，
+相关参数组有有限梯度，输出形状2×10；两种模型参数数目与原报告一致。
+MoE路由功率和误差最大1.1921e-7。固定路由时没有路由器梯度属于预期行为。
+
+冻结前端SHA256与原报告一致：
+`3f494085f1c65fcb5c691d8fc5c048e4cb5d925cb220a1d54f2a04565fe3f477`。
+347个被记录的Python/YAML/JSON文件SHA256与本机归档一致。
+执行commit：`12c797e5`（完整SHA在run的 `result.json`）。
+
+```bash
+CUDA_VISIBLE_DEVICES=0 /home/guest3/miniconda3/envs/xml/bin/python LightGenV2/demo_check/reproduction/smoke_eurosat.py --cache /DATA/DATA1/guest3/.cache/huggingface/hub --out /DATA/DATA1/guest3/demo_reproduction_20260915/LightGenV2/demo_check/runs/smoke/eurosat_20260915
+```
+
+本地和当前训练服务器尚未找到原实验的53,784张预处理图像、IMAGE_MANIFEST.json和
+选定训练权重。服务器的VTAB-EuroSAT属于另一划分，不能替代该光学/SAR实验。
+本轮没有计算EuroSAT准确率、没有重训其专家合并流程。

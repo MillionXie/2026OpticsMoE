@@ -1,0 +1,482 @@
+{
+  "scope": "95 existing historical demo/baseline Python tools and original descriptions, unchanged; private data_audit.md remains original asset outside source Git",
+  "decision": "Preserve original tools and necessary comparison explanations in main under existing historical package boundaries. Current tasks remain sole daily entry. Do not treat all historical commands as newly tested deployment.",
+  "verification": "Raw SHA equals complete recovery manifest; Git recovery blob equals raw or LF; all 70 Python files AST parse; no code execution, model run, metrics rewrite or package rebuild",
+  "files": [
+    {
+      "path": "LightGenV2/demo_check/EuroSAT_MoE_D2NN/README_使用说明.md",
+      "original_raw_sha256": "96550d7d52f3ac8e56dd05db14af2e4e19b7fc9297336e425608333b859902e3",
+      "recovery_blob": "cb9497af8683be23e1e77a976c0c84a41b790c6c"
+    },
+    {
+      "path": "LightGenV2/demo_check/EuroSAT_MoE_D2NN/analysis_tools/analyze_completed_results.py",
+      "original_raw_sha256": "a7a6f75c2655c9a58d0f20dcdbd901d6ce3811448e5d6f5513232e53a0327e39",
+      "recovery_blob": "7b4a3aa7ddc5be7e8b4e48233885817677aa2f7c"
+    },
+    {
+      "path": "LightGenV2/demo_check/EuroSAT_MoE_D2NN/analysis_tools/export_experiment_images_20260914.py",
+      "original_raw_sha256": "3dc4bab95b907a289afa0f5123e328bf1fdb1fcfb596196a7a691382d14e71e8",
+      "recovery_blob": "36906e4b32ba9cc6ecb1508ad86bac746a6611e2"
+    },
+    {
+      "path": "LightGenV2/demo_check/EuroSAT_MoE_D2NN/analysis_tools/plot_three_models_20260914.py",
+      "original_raw_sha256": "5f48eb17e21aa57f974aec3f3d892bdbf60f4039b6924995fdb69700cad0a0ed",
+      "recovery_blob": "33a2f1bf3b2ca5e817be6a062a864fa25d6c5418"
+    },
+    {
+      "path": "LightGenV2/demo_check/EuroSAT_MoE_D2NN/analysis_tools/render_ab_image_examples_20260914.py",
+      "original_raw_sha256": "d42e4951a258504edb167b5a1759e6fd23eabe7f934c10ad5df0f4ce896d5669",
+      "recovery_blob": "001a2ff073daefa24b9ab7972be98be220335e93"
+    },
+    {
+      "path": "LightGenV2/demo_check/EuroSAT_MoE_D2NN/analysis_tools/render_nonlinear_phase_package_20260914.py",
+      "original_raw_sha256": "25f4542fbbbe98b6bb80076c6b623e600de2ed50f0e4560156f1a74b24e2ee32",
+      "recovery_blob": "6dff660a03f6785fc307b07e26b0e36caf5c980d"
+    },
+    {
+      "path": "LightGenV2/demo_check/EuroSAT_MoE_D2NN/analysis_tools/verify_completed_results.py",
+      "original_raw_sha256": "d6fcf51162c1a8bf1f36023fd930a21a2db13b4e379fb0a0c96f90697e027334",
+      "recovery_blob": "fb45aae45e022c36a946b123f542783c53e6f1d3"
+    },
+    {
+      "path": "LightGenV2/demo_check/EuroSAT_MoE_D2NN/analysis_tools/verify_downloaded_image_package_20260914.py",
+      "original_raw_sha256": "8864f90c2a1cd73df93d64d6dba8cffb84f5a2d167640a78d2e12b71d6fd96b0",
+      "recovery_blob": "fef7de3dad72d63ad383831845e339b109ebd345"
+    },
+    {
+      "path": "LightGenV2/demo_check/EuroSAT_MoE_D2NN/code/IMPLEMENTATION.md",
+      "original_raw_sha256": "08e3369f749267ddeaf441f72d97cc70d15fc6498b69d7e90311ae78b8304579",
+      "recovery_blob": "eacd99d007904d150d3bd808f8395fbd6afd915c"
+    },
+    {
+      "path": "LightGenV2/demo_check/EuroSAT_MoE_D2NN/code/eurosat_data.py",
+      "original_raw_sha256": "0264c448fb7529b9608d8aa3883adca132d040d495f18e57dbeda54958c88cf3",
+      "recovery_blob": "93e4c967136eb485f351f7d56d36e38f84d9016d"
+    },
+    {
+      "path": "LightGenV2/demo_check/EuroSAT_MoE_D2NN/code/eurosat_runtime.py",
+      "original_raw_sha256": "64b2578637857a2ae80607f91af4f0c7b83939de3810af747eaf3aedf892788d",
+      "recovery_blob": "09ddc4ba8fa189f822752570589aea8145c687fd"
+    },
+    {
+      "path": "LightGenV2/demo_check/EuroSAT_MoE_D2NN/code/evaluate_eurosat.py",
+      "original_raw_sha256": "acd26bab1352191cdb30231609ae29b967f9afed52aa1a254b80d865243fb121",
+      "recovery_blob": "d297d3b70576f43eb265b1e98b4e72f2e72579c7"
+    },
+    {
+      "path": "LightGenV2/demo_check/EuroSAT_MoE_D2NN/code/licenses/SAR_preprocessing_reference.py",
+      "original_raw_sha256": "b6828d8bc517e308d6e79a34c30b3e5b4eaaeceacc6a96cce9b7e6467645a318",
+      "recovery_blob": "bd81ad440c937b49ef2a00f4116d9e35ad8602e9"
+    },
+    {
+      "path": "LightGenV2/demo_check/EuroSAT_MoE_D2NN/code/preflight_eurosat.py",
+      "original_raw_sha256": "61eb0a7b7258a3ee744940b08d030d15b9430d6ab5543edd18fe723b47d53602",
+      "recovery_blob": "531ae1ee5b1ea325002f9c91da6a8ae1828e6220"
+    },
+    {
+      "path": "LightGenV2/demo_check/EuroSAT_MoE_D2NN/code/prepare_data.py",
+      "original_raw_sha256": "659c3f91ce79327b5ab5bb5e39c507d272eecf7c7ad9a267798f9f48f09e2ae2",
+      "recovery_blob": "7e45289e95b0446d2f21cf17cc11bfc49d235322"
+    },
+    {
+      "path": "LightGenV2/demo_check/EuroSAT_MoE_D2NN/code/run_eurosat.py",
+      "original_raw_sha256": "ef8488f5e713be47662606fc8f8d1d81c0f80be000642101d6a16ade91e842a7",
+      "recovery_blob": "d7f3dc6d1a7fd2b7edcb8fc1b350e9aa60e70853"
+    },
+    {
+      "path": "LightGenV2/demo_check/EuroSAT_MoE_D2NN/code/run_merge.py",
+      "original_raw_sha256": "65096cea2f1ca5802b807d03d22ff83918015fb6e5e256c0a12bd4bbed970a6d",
+      "recovery_blob": "128639e7be0f5c965deaecb8c8b2051bb1f84d4e"
+    },
+    {
+      "path": "LightGenV2/demo_check/EuroSAT_MoE_D2NN/code/train_eurosat.py",
+      "original_raw_sha256": "5e68486f360d5ce85efe22f3fd56778563ef9f70ddaa9461011e6efda90c2edc",
+      "recovery_blob": "2e6f48ea168516a3754958a3c5d93a577a3b85ca"
+    },
+    {
+      "path": "LightGenV2/demo_check/EuroSAT_MoE_D2NN/code/verify_prelaunch_data.py",
+      "original_raw_sha256": "fb41139a467ad61acf1f158f199c88602a417a71336ad1623670b7ec5cbec238",
+      "recovery_blob": "c43b08bd3481ddf2ced22f265e207d27aa50cde8"
+    },
+    {
+      "path": "LightGenV2/demo_check/EuroSAT_MoE_D2NN/provenance/package_code_for_delivery.py",
+      "original_raw_sha256": "8977a033bb678fb9ba1f84897fad073775e7ab5f57c75109966bfc860b60570d",
+      "recovery_blob": "42441e2aa69bfcafd9fc4a052415ab4f7a61c5ba"
+    },
+    {
+      "path": "LightGenV2/demo_check/EuroSAT_MoE_D2NN/reference_results/EuroSAT性能报告.md",
+      "original_raw_sha256": "390467cdef604f05513aaf673a5a512fe42cb964977f274c6456b9dc10482d02",
+      "recovery_blob": "d2d036302d21e1bb0d161bf2ab7871722af21d8d"
+    },
+    {
+      "path": "LightGenV2/demo_check/README_使用说明.md",
+      "original_raw_sha256": "866654c4302f1fe0f52b06570774317ac448c1538816dfc002a653dbe7261934",
+      "recovery_blob": "cb9497af8683be23e1e77a976c0c84a41b790c6c"
+    },
+    {
+      "path": "LightGenV2/demo_check/adrenal_softsign_code_export_20260915_145336/README_EXPORT_zh.md",
+      "original_raw_sha256": "b1dceaa2e35222c1ad32ffbf0ba677d8fd4bd939ba3f5a70ae082fbafdf2c9ee",
+      "recovery_blob": "7d05bbc1a1d6efaf452ab963b6ddc25ae7cbda4e"
+    },
+    {
+      "path": "LightGenV2/demo_check/adrenal_softsign_code_export_20260915_145336/data_tools/__init__.py",
+      "original_raw_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "recovery_blob": "e69de29bb2d1d6434b8b29ae775ad8c2e48c5391"
+    },
+    {
+      "path": "LightGenV2/demo_check/adrenal_softsign_code_export_20260915_145336/data_tools/common.py",
+      "original_raw_sha256": "1eac0c313369ae0c52ade293f876d1618120c3fdd2937aaf74ef8e69b106aacc",
+      "recovery_blob": "62d6d2b2df471a5774a7312d3b2a0d763402318d"
+    },
+    {
+      "path": "LightGenV2/demo_check/adrenal_softsign_code_export_20260915_145336/data_tools/preparation.py",
+      "original_raw_sha256": "13eeeff30748c8fbd6a4a6d04faf13138aa532c55dc95278314f8f429f971e13",
+      "recovery_blob": "4552f53418f2b398cac4bc644efdb45987c43edb"
+    },
+    {
+      "path": "LightGenV2/demo_check/frozen_electronic/reevaluate.py",
+      "original_raw_sha256": "ba6b100fa3ac8ca86b4045152b9dae36d9acc0d5fecfb380cd30cbfb06ef6c47",
+      "recovery_blob": "093862b8e78750883c3cd398ffc3d8abd04f80f9"
+    },
+    {
+      "path": "LightGenV2/demo_check/frozen_electronic/verify.py",
+      "original_raw_sha256": "06f5e7e854dedc45f930d7aa265744000111f6d61a65fca53c1c47e204cb11b7",
+      "recovery_blob": "789fd98476a76f63ac7335b6b373a4cd414550c4"
+    },
+    {
+      "path": "LightGenV2/demo_check/pure_optical/HANDOFF_README.md",
+      "original_raw_sha256": "aae114216df847948b50e5d6893e514a0a1bb4a5931fb637b0de67ef90b8388d",
+      "recovery_blob": "d1c45d83d4b24475019e132358d97d6639509903"
+    },
+    {
+      "path": "LightGenV2/demo_check/pure_optical/README.md",
+      "original_raw_sha256": "10c1850c3844f9fae962655e6ac766738209f80e776f2c69696c88f4228377a9",
+      "recovery_blob": "09df5f530d4ca952307a8c864e40334ccf59b941"
+    },
+    {
+      "path": "LightGenV2/demo_check/pure_optical/audit_routing.py",
+      "original_raw_sha256": "5e8cf7b7991e3d26f8c61f7534f85218c5431173f50285266da2b49de5fa0af7",
+      "recovery_blob": "fe1a00a462f74856cd4f7ded463d60b2dacfe9a5"
+    },
+    {
+      "path": "LightGenV2/demo_check/pure_optical/plot_routing_audit.py",
+      "original_raw_sha256": "87359aae1e4563936510966f5a048239012079cd53049b72bc1715898106ff6e",
+      "recovery_blob": "591ea8973fc62c430f1748a985914c5726388e89"
+    },
+    {
+      "path": "LightGenV2/demo_check/pure_optical/verify_download.py",
+      "original_raw_sha256": "201ea9f0bd1b806f93e9621e667ca303cc728b8489401a92f4c2d55eea7c8ed5",
+      "recovery_blob": "27f23b542e87d830e5da6a16554bb146c95c2cc0"
+    },
+    {
+      "path": "LightGenV2/demo_check/pure_optical/verify_handoff.py",
+      "original_raw_sha256": "484c5c40746bf95b1c8e7928b9fff9c2e0858dd512290e503ab46ec462180c9d",
+      "recovery_blob": "d5e7c0a2cced88687503011a154eb24ffe3c6b3a"
+    },
+    {
+      "path": "LightGenV2/demo_check/reports/reproduction/ADRENAL_GENERALIZATION_20260916.md",
+      "original_raw_sha256": "3c46115b660fdcb6d0734bc178c1f2e5247f04b2aa791cd335dfe5680b678f2d",
+      "recovery_blob": "e1a9a735f17df873e57da4e1c9b099667afe7248"
+    },
+    {
+      "path": "LightGenV2/demo_check/reports/reproduction/ADRENAL_REGULARIZATION_20260916.md",
+      "original_raw_sha256": "bfd555a3c15de23bc2c12557eb018721bc5dbeb4518e34ebfc366e06a73d3731",
+      "recovery_blob": "9a9fe7e8182e4862142aa0c7b462f6ec10b03feb"
+    },
+    {
+      "path": "LightGenV2/demo_check/reports/reproduction/BLOODMNIST_FEASIBILITY_20260916.md",
+      "original_raw_sha256": "1ca1cbf2632082c81cd436742d1977da0f080582a7e193e9d52e2e53771ec3a8",
+      "recovery_blob": "350f08c703dfc7bcf015690f4bf997143ceae9aa"
+    },
+    {
+      "path": "LightGenV2/demo_check/reports/reproduction/BLOODMNIST_OEO_20260917.md",
+      "original_raw_sha256": "77f29153205c9384394e12240b3898343a85bbbbc99e54512d1433c6426dbb4d",
+      "recovery_blob": "cd76b98c18e246a1c275fe7fedc6ceeb99a5ab0d"
+    },
+    {
+      "path": "LightGenV2/demo_check/reports/reproduction/KATHER2016_OEO_20260917.md",
+      "original_raw_sha256": "1375e12be63323bdcefc6c537b81312d0fb875b36e641256762eb00de921c288",
+      "recovery_blob": "9bc53ef313790a27d6ea5a25d06d3be7aad74254"
+    },
+    {
+      "path": "LightGenV2/demo_check/reports/reproduction/KATHER_CODE_HANDOFF_20260917.md",
+      "original_raw_sha256": "c16f221264e36fbf7f09873d052dc806a84e1660ed7d9beda6697b44693c945c",
+      "recovery_blob": "30d58cbbbb3e48bcda7f6024a356d107ed6e6ec1"
+    },
+    {
+      "path": "LightGenV2/demo_check/reports/reproduction/KATHER_FOLLOWUP_20260917.md",
+      "original_raw_sha256": "ee20a1f82756addeae4420a40189d1b8ea1bef67d290e1f20651a3f53d93432e",
+      "recovery_blob": "68f2a336b414c22fc7b0d6a3172e805c1d5619a9"
+    },
+    {
+      "path": "LightGenV2/demo_check/reports/reproduction/KATHER_SEED17_TEST_20260917.md",
+      "original_raw_sha256": "7e456dd057ef6980448a5b80cee64424aa2e5278ecc30ead9c25f99297734c5e",
+      "recovery_blob": "f115e8a5332612526db1cf362bd4272aa226ec79"
+    },
+    {
+      "path": "LightGenV2/demo_check/reports/reproduction/OEO_METHODS_20260917.md",
+      "original_raw_sha256": "f521eaa9232bc41a6fa6d53b5145e6734aaeb2142551b2a2acc5c029c848403a",
+      "recovery_blob": "3945de71bcc4bd311ba7c023e741533a8160de86"
+    },
+    {
+      "path": "LightGenV2/demo_check/reports/reproduction/README.md",
+      "original_raw_sha256": "7c26819033131307229e8210825fef575b3fdd93d4096406a35377dc60ba51dd",
+      "recovery_blob": "1afb7d506b408f308b70fd54a7f93e97603653a8"
+    },
+    {
+      "path": "LightGenV2/demo_check/reports/reproduction/ROUTING_SPECIALIZATION_20260916.md",
+      "original_raw_sha256": "141754d6b87a75d0e70066ddcdaba30c0912f7c5ae3130d15d54c23806d70d5c",
+      "recovery_blob": "0d9a748199db5baa4e1586c20a8ebbb6a0f15b62"
+    },
+    {
+      "path": "LightGenV2/demo_check/reports/reproduction/STRUCTURE_REVIEW_20260916.md",
+      "original_raw_sha256": "e1088696e1ba75bf14c5df958d53b3937befca3238de3b0622a8ab039060ef7c",
+      "recovery_blob": "e19e67caaa94cf0407365cc0d9ec8789ec5046bb"
+    },
+    {
+      "path": "LightGenV2/demo_check/reproduction/ADRENAL_OPTIMIZATION_PROTOCOL.md",
+      "original_raw_sha256": "5354326b2bbf926fefba98fe63691dd265e1e02b03df74056f82fa69e392bc83",
+      "recovery_blob": "2ec91554e3fbdccffb7fb32405ebb7e47c57a299"
+    },
+    {
+      "path": "LightGenV2/demo_check/reproduction/BLOODMNIST_MULTISEED_PROTOCOL.md",
+      "original_raw_sha256": "1dd5f613cdc20140bdc9ce969a3f5c83453a76fc9a689556cfaed42c46eae492",
+      "recovery_blob": "247b830b2ebb6c1dcca2676050eda24b9a94a0e6"
+    },
+    {
+      "path": "LightGenV2/demo_check/reproduction/BLOODMNIST_PROTOCOL.md",
+      "original_raw_sha256": "e0d9fca67ffc7dd3870032faa0b0d7b742d202f66e86803ec515b212ca8ac5c8",
+      "recovery_blob": "7e3813277e12cc14df34b70e7b1d514d6f153462"
+    },
+    {
+      "path": "LightGenV2/demo_check/reproduction/KATHER2016_PROTOCOL.md",
+      "original_raw_sha256": "ec5ecff67e93273fa9ba50a848e3ae7db44e803947f6bb2aef26cc1ad11f5df0",
+      "recovery_blob": "cd627421b04ca5f3638c2159c560169261c49a89"
+    },
+    {
+      "path": "LightGenV2/demo_check/reproduction/KATHER_CODE_HANDOFF.md",
+      "original_raw_sha256": "52bd4678de5992760d0ed1b86d97326608637700dc6ac30a6452c43649f7820d",
+      "recovery_blob": "9c175ff06cbc0683cfe038be4ca70ffe72162a9e"
+    },
+    {
+      "path": "LightGenV2/demo_check/reproduction/KATHER_HANDOFF.md",
+      "original_raw_sha256": "50652e34f45d0d8357c9e3105ef4fe95f688473206cac0b83c278f2a5f786304",
+      "recovery_blob": "9a0d48ac795b8c8af911a9e0df6cff3b7889ea26"
+    },
+    {
+      "path": "LightGenV2/demo_check/reproduction/adrenal_generalization.py",
+      "original_raw_sha256": "df739cc731d9131000f06f204aece588337576b95e2026e20fbfe8052be11bb4",
+      "recovery_blob": "7fdc0f3b018d34b0dad55028a333906b950f0b5c"
+    },
+    {
+      "path": "LightGenV2/demo_check/reproduction/adrenal_shared_frontend.py",
+      "original_raw_sha256": "2f94609db43e9975d91363a3c9b0cb57a844e70b6210e9b3ca47d6fe64c9778b",
+      "recovery_blob": "c36930cfe17343af3926f434779f178526d83617"
+    },
+    {
+      "path": "LightGenV2/demo_check/reproduction/analyze_oeo_suite.py",
+      "original_raw_sha256": "909117f6c481be6fff52ee16c01f13457a5f480c61a9e831fdbdbc8f353b683e",
+      "recovery_blob": "fcb1cf5c358773232c765a170411431c2ce98723"
+    },
+    {
+      "path": "LightGenV2/demo_check/reproduction/audit_adrenal_depth.py",
+      "original_raw_sha256": "a861ce43f407033593502cd3288a03c4ac6b240c11ce0f70c934dcb6d57da86d",
+      "recovery_blob": "18a0b8d52d0b6fdc43ac682dfd990f0ee47ecb03"
+    },
+    {
+      "path": "LightGenV2/demo_check/reproduction/audit_adrenal_fixed_epoch.py",
+      "original_raw_sha256": "6821b0cc5996707669cc0d0aa49aa763e30a3254eb05a2d18fa10d305495ebaa",
+      "recovery_blob": "6c3fc78b0acdc8380dadce9fd0626d64fd5670de"
+    },
+    {
+      "path": "LightGenV2/demo_check/reproduction/audit_adrenal_thresholds.py",
+      "original_raw_sha256": "0be4c3050b30ac0915e3b1b135c4260b244510cc715bec476de1b26d98f952b8",
+      "recovery_blob": "95dfda968630401a0502b8c4e446f65aa451d497"
+    },
+    {
+      "path": "LightGenV2/demo_check/reproduction/audit_bloodmnist_optics.py",
+      "original_raw_sha256": "123f452ed45b268f23453e5f5b008a67a51da343ca963339f379cf18d2c1e3d8",
+      "recovery_blob": "ac10f4bd1fe748fb8128d80d932ac71ff0cb0202"
+    },
+    {
+      "path": "LightGenV2/demo_check/reproduction/audit_oeo_contract.py",
+      "original_raw_sha256": "37aa834c7c3d05dbd54ef614876d24a44fb40129ddaf10a69abfb4b195fc036c",
+      "recovery_blob": "27c48fb2dfea3da8ea797dc3a3d59efcf40591de"
+    },
+    {
+      "path": "LightGenV2/demo_check/reproduction/audit_selected_routing.py",
+      "original_raw_sha256": "d021723a4930e856153237643d379c75913a83285d7006002a36489985e5625e",
+      "recovery_blob": "c8ca6798cf51893e5172c2254baa5e19d775b2e7"
+    },
+    {
+      "path": "LightGenV2/demo_check/reproduction/bloodmnist_experiment.py",
+      "original_raw_sha256": "cf2bef3dd86865c1cd3b7d2874017895b297ff5a614f0a82e28b96f8bbce2551",
+      "recovery_blob": "726c428d901a424ad0324fa2ea891e73d3c80d60"
+    },
+    {
+      "path": "LightGenV2/demo_check/reproduction/bloodmnist_multiseed.py",
+      "original_raw_sha256": "d5fd93451eadb54c4b964fb5e49a4758f9170e28579642d8e07992bef35181c9",
+      "recovery_blob": "5e3ab66729d8cf64a08842bc0920753f26f6d212"
+    },
+    {
+      "path": "LightGenV2/demo_check/reproduction/confirm_adrenal_generalization.py",
+      "original_raw_sha256": "a3d93a5de60708be8fe3f53881eea25c1aa7b5db56e309196b2d59675497c8f1",
+      "recovery_blob": "e4af683ab149b6ff4298d9f890acfeb9cba5f0fc"
+    },
+    {
+      "path": "LightGenV2/demo_check/reproduction/continue_oeo_campaign.py",
+      "original_raw_sha256": "7bdca573a24b2e3799e809bca83caf5bbec1e163423d863b081716fd722adeab",
+      "recovery_blob": "dc98bee57107e656861ad741ab028c9642c61b0d"
+    },
+    {
+      "path": "LightGenV2/demo_check/reproduction/evaluate_adrenal_generalization.py",
+      "original_raw_sha256": "f01ffed26b776ed50c312f34ca6f5225fc9b1d60f717f174a429a76dc9e804e2",
+      "recovery_blob": "3af8cf94710c8b715771c95ffbfaa1178e3a56fa"
+    },
+    {
+      "path": "LightGenV2/demo_check/reproduction/evaluate_kather_seed17.py",
+      "original_raw_sha256": "dbd1f3c6a1f633e8dde67c561e8c7ceeaca52c64a4b4921186659edbf0e1a0d6",
+      "recovery_blob": "9c5da18a40110f111e96e634e6d963b6970b40ac"
+    },
+    {
+      "path": "LightGenV2/demo_check/reproduction/evaluate_native_device.py",
+      "original_raw_sha256": "bf580d15a83bed7b6b956f6cbf485e2e7a134aff47c1b7e2d681a08af87a2e4f",
+      "recovery_blob": "6bb01a9df18377f97aea8d3576cc60a3d027988f"
+    },
+    {
+      "path": "LightGenV2/demo_check/reproduction/expedite_kather.py",
+      "original_raw_sha256": "b8f021ef38c57b2475909622b199917f5a2b6df1aa8e6e35e44888764cafe790",
+      "recovery_blob": "29cfcba1549411705e24f5f75ee38a65cdbbe461"
+    },
+    {
+      "path": "LightGenV2/demo_check/reproduction/export_input_examples.py",
+      "original_raw_sha256": "9e29c7f77132475ae616ea6b6aad91817f313137215930531ede9ba8059f70c8",
+      "recovery_blob": "103625303eb8b67be020ade11217e1488fcd7e2c"
+    },
+    {
+      "path": "LightGenV2/demo_check/reproduction/finalize_adrenal_generalization.py",
+      "original_raw_sha256": "f957b94aded16d92b357b3099823d3fd58b1b71633fc5379c5dd4eecb9fd2093",
+      "recovery_blob": "c818094a298359a26cc03920f8c5308092980a27"
+    },
+    {
+      "path": "LightGenV2/demo_check/reproduction/finalize_bloodmnist.py",
+      "original_raw_sha256": "e4176adbf70713aa30d3bfebfb9e0d3a8784d472b03dff867b375f0d30ade6f3",
+      "recovery_blob": "a5853acdbd2bdb032788d7785103aa285e2363b9"
+    },
+    {
+      "path": "LightGenV2/demo_check/reproduction/handoff_kather.py",
+      "original_raw_sha256": "f3efbd49f493ed1d6addb575786a642f30fe11c37ae6746d443a7802d7376a2a",
+      "recovery_blob": "2bc42409932330bb5f7ea2db087d0489b623be36"
+    },
+    {
+      "path": "LightGenV2/demo_check/reproduction/inspect_bloodmnist.py",
+      "original_raw_sha256": "fb9469450baca76dca14627982b9f9dcf86de87a9f72f7b3bbedf718b226566b",
+      "recovery_blob": "dd6efc691b2d066d1ebd4524c15727a6bcfc444f"
+    },
+    {
+      "path": "LightGenV2/demo_check/reproduction/kather2016_experiment.py",
+      "original_raw_sha256": "976e0d9b6d4a2b549acfa4d5459f8c4a8c699e1c7bd5f8d676e96e32c4f1356f",
+      "recovery_blob": "82626fd8052b90270ac23fec0e0cce868b355302"
+    },
+    {
+      "path": "LightGenV2/demo_check/reproduction/kather_coverage.py",
+      "original_raw_sha256": "43d0fcb017a6b2b3f74676d78802f61eea0e763ad06b19f832935da52b2fcd45",
+      "recovery_blob": "028831897e5ebb1675523022d05b84f990a813a0"
+    },
+    {
+      "path": "LightGenV2/demo_check/reproduction/kather_followup.py",
+      "original_raw_sha256": "ceedf23f56e87a6529d807c27fa1a13bfbcd61cc0d38a8c1cc153e321360a58a",
+      "recovery_blob": "ec3c4bd31ccfd424aa71c74fd6f761a227a9cd20"
+    },
+    {
+      "path": "LightGenV2/demo_check/reproduction/package_kather.py",
+      "original_raw_sha256": "77511f5c90169d4de46b634eea04562597dad946d75d9254b553c5a9ce34065d",
+      "recovery_blob": "9364ba44fcea4a8b7137c1c5a0f5c64e8fd67443"
+    },
+    {
+      "path": "LightGenV2/demo_check/reproduction/plot_input_examples.py",
+      "original_raw_sha256": "ecf32aa097744b830cfb4a02b4aae1a88ce61afb6a34b5959118e252bf7e743d",
+      "recovery_blob": "753fd609141d8fbdfe4ada12c0054ade6a0b424b"
+    },
+    {
+      "path": "LightGenV2/demo_check/reproduction/plot_kather_architecture.py",
+      "original_raw_sha256": "d343f55f4a8ce84af82d2ec23cbd96cd0d8f0cd873bd21e84041473a602078e7",
+      "recovery_blob": "fdc5caf2df995e4753451c12a9fea44fafadc9c9"
+    },
+    {
+      "path": "LightGenV2/demo_check/reproduction/plot_kather_seed17.py",
+      "original_raw_sha256": "92f3724dba0d4da37f0c315913822e206ae7c89d6dc6988776a8aed90ca998ec",
+      "recovery_blob": "b2f2b09bdb2e8cacf8a1330283c0550d82eb5bfd"
+    },
+    {
+      "path": "LightGenV2/demo_check/reproduction/plot_prediction_examples.py",
+      "original_raw_sha256": "0be332e9481ebd7df5ca5ca165aa94660dc2a2f67e8a55204b6297f1ebc8ee71",
+      "recovery_blob": "502ab05bb63e55f98e0cd755d854aa73236dc073"
+    },
+    {
+      "path": "LightGenV2/demo_check/reproduction/prepare_kather2016.py",
+      "original_raw_sha256": "7eb5880e86d9ad6a5b1e6a9cf3572046c4012052b7941da8c58774144b4169cd",
+      "recovery_blob": "e07adf1acc1d69adda76942dacca278c5bd921b9"
+    },
+    {
+      "path": "LightGenV2/demo_check/reproduction/prepare_kather_handoff.py",
+      "original_raw_sha256": "5f68e3ef1c29ecc108d5e24fdba4840a7a017b5522e7796c2552afc674f364ec",
+      "recovery_blob": "257d4385c7896265b821f8387cdc9022baf06659"
+    },
+    {
+      "path": "LightGenV2/demo_check/reproduction/report_adrenal_generalization.py",
+      "original_raw_sha256": "dbfaa7f84712671a5c2c7d5eeabeb250ecdd2455dbf43836f9baa07fac87bdc5",
+      "recovery_blob": "761d51cc7c8bcccd49fc097e7af70994b3e44bca"
+    },
+    {
+      "path": "LightGenV2/demo_check/reproduction/run_adrenal.py",
+      "original_raw_sha256": "383d1b05ba03389544e0c444d23ef539b34edb27104c076e83b8af3f9b163259",
+      "recovery_blob": "dc585ec0597ee4a12540643f93dbcea6c9c1190c"
+    },
+    {
+      "path": "LightGenV2/demo_check/reproduction/select_adrenal_generalization.py",
+      "original_raw_sha256": "6f52041278c55b1f21cf16f6a34dda9012bf2682dfe334b8a574106547404091",
+      "recovery_blob": "697bd4df30ff3811a2c876a131e296784bc3ba6e"
+    },
+    {
+      "path": "LightGenV2/demo_check/reproduction/smoke_eurosat.py",
+      "original_raw_sha256": "0d6d3b4f5eec96d34c11559b5e38fd2ae6e211ddac305d65eec1f47f4c735aa3",
+      "recovery_blob": "4c935fbe9ba0c228573f67b0fa53f17e4423b8e8"
+    },
+    {
+      "path": "LightGenV2/demo_check/reproduction/train_adrenal_regularized.py",
+      "original_raw_sha256": "502ffec98fd3a455eacf0449edf5979f1c5800b9a4c62087f5fa5e70db1bae25",
+      "recovery_blob": "800ae81468d14a2c3dd59623cb994c532c8cbd3c"
+    },
+    {
+      "path": "LightGenV2/demo_check/reproduction/verify_adrenal_depth_runs.py",
+      "original_raw_sha256": "bc933a998c279fc38abaf69377a45b88eaf27bd1168073593126a654e62b9769",
+      "recovery_blob": "de9972d0fedc689e390e8b7e194db89c52869b76"
+    },
+    {
+      "path": "LightGenV2/demo_check/reproduction/verify_adrenal_fixed_epoch.py",
+      "original_raw_sha256": "b114d5feb0e20fad43e58ae50e39bd2e7b1c51f50f23026456b16f8c7ebaa1b7",
+      "recovery_blob": "2acfb0c06575d505fa50d6c37b962e86f1a831e8"
+    },
+    {
+      "path": "LightGenV2/demo_check/reproduction/verify_adrenal_generalization.py",
+      "original_raw_sha256": "4caab698286460f0ac7e8297a3b459cfb61a4e105453fba3095346ed2d53815a",
+      "recovery_blob": "20767279a27e8789aecf98de83895c031c580a9f"
+    },
+    {
+      "path": "LightGenV2/demo_check/reproduction/verify_adrenal_regularized.py",
+      "original_raw_sha256": "41239b0303ba38ec4e17308317f7706b9d1c0ecd6a70f0f61ff405c476c97d12",
+      "recovery_blob": "68086375122bb3e64296f81e1dcc91af016d4e62"
+    },
+    {
+      "path": "LightGenV2/demo_check/reproduction/verify_bloodmnist.py",
+      "original_raw_sha256": "1ab76be5f997f4017139abac350b966435e57148d2b9d3e5bdea2f26e77e3cd5",
+      "recovery_blob": "a17772399953b54127dabb80291a722e07eb073a"
+    },
+    {
+      "path": "LightGenV2/demo_check/shared_frontend/audit_training.py",
+      "original_raw_sha256": "2b1f8d23935dacb468200bf37e7457fabd9927ba8188697a4bf460c95332936e",
+      "recovery_blob": "833bdb5421b74c12009009460b9579db5dedcb05"
+    }
+  ]
+}
