@@ -7,6 +7,12 @@
 仍在原位，实验室及服务器旧运行目录未移动。私有历史接力脚本需要恢复这些旧工具后
 才能按历史命令使用；日常入口仍是本包。见仓库对应归档收据。
 
+原2026-09-25交付包的`architecture.json`、`run_manifest.json`和`config.yaml`
+已原样保全于main，包含原dirty/source和继承字段，不改成新版默认配置。
+四份生成的路由统计／采集QA／实拍汇总仍在原位，逐SHA绑定后仅退出源码同步列表。
+来源见`maintenance/storage/ABO_HISTORICAL_CONTRACT_RETENTION_20261008.json`；
+这不是重建CCD或新的性能复评，也不解除历史教师snapshot绑定例外。
+
 本包归入当时服务器实际运行的七份工具，来源和逐项 SHA 见仓库
 `maintenance/storage/T08_PHYSICAL_TOOLS_IMPORT_20261004.json`。仅将局部导入改为
 包内导入、将反向检索实现明确绑定 `reverse_runtime`，计算函数和历史科学合同不改。

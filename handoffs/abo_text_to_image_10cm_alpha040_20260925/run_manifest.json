@@ -1,0 +1,49 @@
+{
+  "schema_version": 1,
+  "task": "t08_abo_image_text_retrieval",
+  "retrieval_direction": "text_to_image",
+  "prompt_contract": {
+    "image_instruction": "Represent the user's input.",
+    "title_instruction": "Retrieve product images that match the following product description."
+  },
+  "architecture": "optical_router_top2_scale_matched_moe_dc20",
+  "propagation_distance_m": 0.1,
+  "seed": 42,
+  "git_commit": "94856741263742c14fa1851ca0bdac7fc5efc7a1",
+  "git_dirty": true,
+  "teacher_qwen_frozen": true,
+  "teacher_trainable_parameters": 0,
+  "checkpoint_selection": "maximum periodic EMA test R@1",
+  "selection_biased": true,
+  "embedding_dim": 64,
+  "full_qwen_2048d_reference": {
+    "hit_at_1": 0.8,
+    "preprocessing": "fixed_224_white_pad"
+  },
+  "hardware_matched_fixed_field_qwen_64d_reference": {
+    "image_to_text": {
+      "recall_at_1": 0.5345833333333333,
+      "recall_at_5": 0.7745833333333333,
+      "recall_at_10": 0.8541666666666666,
+      "mrr": 0.6478866966038989,
+      "mean_rank": 5.897916666666666,
+      "median_rank": 1.0
+    },
+    "text_to_image": {
+      "hit_at_1": 0.57,
+      "hit_at_5": 0.7,
+      "hit_at_10": 0.75,
+      "recall_at_1": 0.023750000707805155,
+      "recall_at_5": 0.12041666492819786,
+      "recall_at_10": 0.23166666369885205,
+      "mrr": 0.6347584106025295,
+      "map": 0.4973082046841826,
+      "query_count": 100,
+      "gallery_count": 2400,
+      "relevant_images_per_query": 24
+    }
+  },
+  "dynamic_shape_qwen_64d_reference": {
+    "hit_at_1": 0.65
+  }
+}

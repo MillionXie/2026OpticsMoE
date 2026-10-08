@@ -4167,3 +4167,8 @@ node_modules/
 /handoffs/abo_text_to_image_10cm_alpha040_20260925/sync_full_stage.py
 /handoffs/abo_text_to_image_10cm_alpha040_20260925/transfer_router_inputs.py
 /TransferFromElectricity/tasks/t01_object_retrieval/collect_unseen_audits.py
+# Exact old T08 generated QA/routing results; contracts and source remain visible.
+/handoffs/abo_text_to_image_10cm_alpha040_20260925/language_router_routing_summary.json
+/handoffs/abo_text_to_image_10cm_alpha040_20260925/vision_router_routing_summary.json
+/handoffs/abo_text_to_image_10cm_alpha040_20260925/physical_capture_qa.json
+/handoffs/abo_text_to_image_10cm_alpha040_20260925/physical_test_report.json

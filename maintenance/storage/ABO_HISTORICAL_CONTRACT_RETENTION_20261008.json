@@ -1,0 +1,70 @@
+{
+  "scope": "Five original historical ABO geometry/configuration/provenance records retained in main; four precise generated QA/routing/result records excluded from source sync but retained in place",
+  "files": [
+    {
+      "path": "handoffs/abo_i2i_physical2400_20260926/shs_geometry.json",
+      "bytes": 1297,
+      "sha256": "bde57c1be8eae6f8362cae5d52b370eeedf410e3fae6e5a05a19ce820745ad2e",
+      "recovery_blob": "729c7d892321730b800e9e1689c356a6d82f2972",
+      "decision": "publish_original_historical_contract"
+    },
+    {
+      "path": "handoffs/abo_i2i_sixhour_strong_20260928/capture_contract.json",
+      "bytes": 60895,
+      "sha256": "cf7a424a0534917ebcb3f480501b3608f5ae60660d4fbb2ab4d9b349f4685134",
+      "recovery_blob": "7a6c58dbcfe897fee78d11695e02052e264372ed",
+      "decision": "publish_original_historical_contract"
+    },
+    {
+      "path": "handoffs/abo_text_to_image_10cm_alpha040_20260925/architecture.json",
+      "bytes": 2122,
+      "sha256": "090e5e0c560d971e612cb09d24bcd4b27fd76257b5fe6666d9ee4f3c9edbf5c1",
+      "recovery_blob": "ec9b72e10ae07ab00704c69e55661dc1f2a8b184",
+      "decision": "publish_original_historical_contract"
+    },
+    {
+      "path": "handoffs/abo_text_to_image_10cm_alpha040_20260925/run_manifest.json",
+      "bytes": 1527,
+      "sha256": "2afaed9b9a5d21a716abbf92693b013663ca4880ba19a51a6d558d194f80f102",
+      "recovery_blob": "4b36086bb34759e26cca0eacd33db58192c8aa15",
+      "decision": "publish_original_historical_contract"
+    },
+    {
+      "path": "handoffs/abo_text_to_image_10cm_alpha040_20260925/config.yaml",
+      "bytes": 10921,
+      "sha256": "be07e969b7aad79e2df4f0b246cbeb8141e102c83c062882dd2e73d23771a3cc",
+      "recovery_blob": "23f76a44ea9261ed1dc317917d25f41832603d04",
+      "decision": "publish_original_historical_contract"
+    },
+    {
+      "path": "handoffs/abo_text_to_image_10cm_alpha040_20260925/language_router_routing_summary.json",
+      "bytes": 368,
+      "sha256": "3b8b36b522bc3e0694cdd7742d1dde58e459441e54c18bae57a2b2d997a76114",
+      "recovery_blob": "4a8a06cddcfaf692177fde1b2431f63781b6079c",
+      "decision": "retain_original_generated_result_exact_ignore"
+    },
+    {
+      "path": "handoffs/abo_text_to_image_10cm_alpha040_20260925/vision_router_routing_summary.json",
+      "bytes": 369,
+      "sha256": "d22cd9caa839cba84206965ab4b94b5364041bb90c96bbce18d5114e9234c0da",
+      "recovery_blob": "cd0ba771902c577699b2edc6a2d7884116d21275",
+      "decision": "retain_original_generated_result_exact_ignore"
+    },
+    {
+      "path": "handoffs/abo_text_to_image_10cm_alpha040_20260925/physical_capture_qa.json",
+      "bytes": 2963,
+      "sha256": "0573510c86265230a6ead2970b66938ef759bfd4ce1c5fa77449eb6ae82c80a5",
+      "recovery_blob": "d389249a70874ae6d72cd03ce711d04bf57d99eb",
+      "decision": "retain_original_generated_result_exact_ignore"
+    },
+    {
+      "path": "handoffs/abo_text_to_image_10cm_alpha040_20260925/physical_test_report.json",
+      "bytes": 626,
+      "sha256": "f163202cf582dec8a10f7a95d863f3e4de56b32d9362f5efbae012f966dfbe2f",
+      "recovery_blob": "19bb8dbc958d0b7a37b467f8bb0031dd42690ba4",
+      "decision": "retain_original_generated_result_exact_ignore"
+    }
+  ],
+  "validation": "Original raw SHA and recovery Git blob raw or LF matched; YAML/JSON parsed; no output recomputation, changes to fields, weights, protocols or runtime. Local historical evidence not independent hardware revalidation.",
+  "boundary": "Sep25 T08 uses old p99.5 encoding and its own acquisition contract; Sep26-28 T07 contracts are not sealed rank72 or current OpenMoji. Original inherited YAML fields remain historical, not a default execution profile."
+}
