@@ -24,7 +24,11 @@ def main():
     p.add_argument('--device', choices=('cpu', 'cuda'), default='cpu')
     p.add_argument('--changed-edit-weight', type=float, default=0.)
     p.add_argument('--preserved-edit-weight', type=float, default=0.)
+    p.add_argument('--train-hard-extra', type=int, default=0,
+                   help='Additional TRAIN draws per epoch, based only on initial TRAIN errors')
     a = p.parse_args()
+    if not 0 <= a.train_hard_extra <= 1000:
+        raise ValueError('Finite TRAIN oversampling budget must be 0..1000')
     if a.output.exists():
         raise FileExistsError('Preserve existing outputs')
     sys.path.insert(0, str(a.project.resolve() / 'source'))
@@ -79,6 +83,18 @@ def main():
     initial_test, _ = evaluate('test')
     best = initial_test['overall']['changed_cell_accuracy']
     selected, best_state = 0, copy.deepcopy(model.state_dict())
+    hard_weights = torch.ones(1000)
+    if a.train_hard_extra:
+        model.eval()
+        with torch.no_grad():
+            for start in range(0, 1000, 32):
+                stop = min(start+32, 1000)
+                x, y = batch('train', list(range(start, stop)), 'cpu')
+                cat, edit = decoder(x)
+                prediction = torch.where(edit.sigmoid() >= .5, cat.argmax(1), y['source_grid'])
+                mask = y['edit_grid'].float()
+                error = ((prediction != y['target_grid']).float()*mask).sum((1, 2))/mask.sum((1, 2)).clamp_min(1)
+                hard_weights[start:stop] = 1+2*error
     decoder.requires_grad_(True).to(a.device)
     anchor = {k: v.detach().clone() for k, v in decoder.named_parameters()}
     optimizer = torch.optim.AdamW(decoder.parameters(), lr=1e-5, weight_decay=.05)
@@ -102,6 +118,8 @@ def main():
           'gain_range': [.98, 1.02], 'feature_drop': .02, 'relative_feature_noise': .01,
           'changed_edit_weight': a.changed_edit_weight,
           'preserved_edit_weight': a.preserved_edit_weight,
+          'train_hard_extra': a.train_hard_extra,
+          'hard_sampling': 'fixed initial TRAIN changed-cell error weights 1+2*error; all original TRAIN once plus extra draws; no TEST mining',
           'paired_supervision': [.5, .5], 'consistency': .05, 'test_gradient': False,
           'selection': 'TEST every5 highest development; no independent generalization claim', 'architecture_unchanged': True})
     history = []
@@ -109,7 +127,10 @@ def main():
         decoder.train()
         losses = []
         order = torch.randperm(1000).tolist()
-        for start in range(0, 1000, 32):
+        if a.train_hard_extra:
+            order += torch.multinomial(hard_weights, a.train_hard_extra, replacement=True).tolist()
+            order = [order[i] for i in torch.randperm(len(order)).tolist()]
+        for start in range(0, len(order), 32):
             x, y = batch('train', order[start:start+32], a.device)
             scale = x.detach().square().mean().sqrt().clamp_min(1e-8)
             noisy = x*(.98+.04*torch.rand_like(x)) + .01*scale*torch.randn_like(x)
