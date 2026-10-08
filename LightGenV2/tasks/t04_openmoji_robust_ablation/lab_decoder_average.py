@@ -9,6 +9,7 @@ import hashlib
 import json
 from pathlib import Path
 import sys
+from types import SimpleNamespace
 
 
 def main():
@@ -24,7 +25,7 @@ def main():
     from experiments.qwen3_vl_2b_openmoji_instruction_four_stage_optical_editing.metrics import MetricAccumulator
     row=json.loads(a.manifest.read_text())['groups'][0]
     backend.GROUPS={'g2':(row['weight'],row['sha256'])}
-    backend.t.build_model=factory(a.project.resolve(),row)
+    backend.t=SimpleNamespace(build_model=factory(a.project.resolve(),row))
     _,model=backend.config(a.project.resolve(),torch.device('cpu'))
     torch.set_num_threads(4)
     base_protected=backend.protected_sha(model)
