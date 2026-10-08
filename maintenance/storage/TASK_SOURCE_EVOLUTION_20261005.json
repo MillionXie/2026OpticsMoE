@@ -3,6 +3,22 @@
   "scope": "Reviewed task source evolution; historical hashes remain enforced",
   "paths": [
     {
+      "path": "LightGenV2/tasks/t03_saliency/aligned_baseline.py",
+      "historical_source_commit": "b75a56203b47818810e0a45dceecf9cea4c6aa9f",
+      "historical_sha256": "70bfbcd56e2b8305cd6b462160306cbf7af2e3763cd450ac4372cdcf3f9b67ee",
+      "source_commit": "5254a4e58136fb336b37d86e0fdb78eb21229ad9",
+      "sha256": "d5debeefe1f69aadaa9679f78257185acdace75f85ad019612be0cd6039eb0a3",
+      "review_reason": "Complete original-to-current diff reviewed against LOCAL_BASELINE_PATCH_REVIEW_20261006.md: add explicit fixed-LR and test-interval opt-ins with early validation and actual manifest protocol. Default staged scheduling, head architecture, objective and epoch1/config-interval/final behavior remain. Original and adopted blob hashes checked; protocol CPU tests do not create a scientific run or change old baseline results."
+    },
+    {
+      "path": "LightGenV2/tasks/t03_saliency/tests/test_lab_runtime.py",
+      "historical_source_commit": "b75a56203b47818810e0a45dceecf9cea4c6aa9f",
+      "historical_sha256": "b352b22e6c9d04ebd47e4da822bee1f87f319106c1748ca6c9be104a8c69fbd2",
+      "source_commit": "2733c6a2a45dfefda8979d1269a1a765dc97ebee",
+      "sha256": "b1aa630828a6f466f00afecc4a9a16da4fdb242b405ab1b0b9556e293865a162",
+      "review_reason": "Complete diff has one import change: desktop_code now comes from the published pure lab_stage_coordinator rather than the untracked historical lab_manual_stage. Original test assertions and scientific model untouched; no device invoked by this provenance check. Original and adopted Git blobs both verified."
+    },
+    {
       "path": "LightGenV2/tasks/t16_zero_phase_ccd_lifelong/reports/refinement_20260926/README.md",
       "historical_source_commit": "2f2f6946f38c7d06320eb29314654a6260f3d618",
       "historical_sha256": "b808fb43d4d6e5ceebea6af0286880d8ed5f87d14306a2908ab59f7671f49f40",
