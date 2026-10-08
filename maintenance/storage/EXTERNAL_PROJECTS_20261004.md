@@ -24,6 +24,16 @@ ABO最终和OpenMoji现用版本不为整理切换；资产目录不因在主工
 
 ## 本机已做的实际整理
 
+2026-10-08本机三份历史T12/T13源码副本完整退出日常`.worktrees`目录，
+归入`archive/frozen_worktrees_20261006/`：`t12_audited_editors`、
+`t12_physical_robust_v2_20260927`和`t13_temporal_robust_20260927`。
+全部12,988原文件（约1.25GB）的集合、长度及SHA移前移后一致；
+只有原生Git移动必需的`.git`管理指针改变，HEAD及干净状态保持。
+旧图片、数据、baseline和所有测速一起保留，未删除、未腾盘；本机注册数仍13。
+完整清单及恢复方式见[目录收据](SERVER_WORKTREE_BALANCE_20261007.json)
+中的`latest_local_t12_t13_frozen_move_20261008`。
+服务器同名运行目录没有移动，现用OpenMoji和封存ABO不动。
+
 2026-10-08两份旧OpenMoji分层应用源码工作目录又收进既有历史区：
 `archive/frozen_worktrees_20261006/t04-dc30`（4520文件，HEAD74c82d3782e1b1e3287f0e50798057bd1aa6e6f1）和
 `archive/frozen_worktrees_20261006/t04-qwen`（4681文件，HEADccf6630ba5c4540dbb966617f179a99a30743c39）。

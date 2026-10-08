@@ -1,4 +1,24 @@
 {
+  "latest_local_t12_t13_frozen_move_20261008": {
+    "scope": "Local Windows historical source copies only; Linux runtime directories, final models and current OpenMoji untouched",
+    "names": ["t12_audited_editors", "t12_physical_robust_v2_20260927", "t13_temporal_robust_20260927"],
+    "original_parent": "C:/Users/Xml12/OneDrive/2026OpticsMoE/.worktrees",
+    "archive_parent": "C:/Users/Xml12/OneDrive/2026OpticsMoE/archive/frozen_worktrees_20261006",
+    "files": 12988,
+    "original_bytes": 1245216687,
+    "complete_inventory": ".codex_tmp/storage_git_backup_20261002/local_frozen_t12_t13_inventory_20261008.json",
+    "inventory_sha256": "3427c2dfd18ede2e1ab3f28a49121780b772eb1adefc0fd5491bf54dc9eca491",
+    "verified_receipt": ".codex_tmp/storage_git_backup_20261002/local_frozen_t12_t13_verified_20261008.json",
+    "verified_receipt_sha256": "b9e29764835e663235e740a3be8cd91de5b9cad0007c5ab91188cffc9cf33bd4",
+    "all_file_sets_lengths_and_SHA_preserved": true,
+    "exception": "Only each .git administrative pointer changed through native git worktree move; same HEAD and clean tracked/untracked state verified",
+    "verification_used_Windows_long_path_API": true,
+    "observed_process_command_references": 0,
+    "main_tracked_runtime_path_references": 0,
+    "registered_worktree_count_before_and_after": 13,
+    "no_deletion_or_disk_release": true,
+    "restore": "Use native git worktree move back to the corresponding original path only if it is absent and historical reproduction is intentionally needed"
+  },
   "latest_t08_compact_frozen_move_20261008": {
     "original": "/DATA/DATA1/guest3/2026OpticsMoE/.worktrees/t08_text_to_image_10cm_compact_20260923",
     "frozen_worktree": "/DATA/DATA1/guest3/storage_cleanup_manifests/retired_t08_compact_source_20261008/frozen_worktree",
