@@ -10,7 +10,8 @@ best preserved .9857109/editIoU .7884024/objectF1 .9010684/sceneExact .606，
 这是固定实拍特征上的电子适配开发TEST结果，不是新光路采集或独立泛化指标。
 best SHA414b21fa69fa01ad5e1ea660e14f33e92cecad4478591c51ecbcd07108d4731b，
 last SHA66cd078ff14941984bba3eb15d93787e111ee959da8f19ac0be3a90b7bf1a827。
-完整报告/逐样本/协议/历史及bestlast保留，本地七文件SHA备份进行中。
+完整报告/逐样本/协议/历史及bestlast保留；01:35本地七文件备份全部完成，
+逐文件SHA与实验台原件一致，best/last均已核验，不依赖仍在运行的传输session。
 当前没有下一轮OpenMoji训练，不机械扫描配置；本地LSP继续训练，确认前不部署。
 
 00:55按用户最新“合理调整”授权，先查TRAIN：preserve05 best changed1.0、
