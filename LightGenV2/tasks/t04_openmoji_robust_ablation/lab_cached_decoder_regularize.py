@@ -31,6 +31,8 @@ def main():
                    help='TRAIN-only feature masking probability; clean paired branch retained')
     p.add_argument('--label-smoothing', type=float, default=0.,
                    help='TRAIN category CE smoothing; composed target and edit labels unchanged')
+    p.add_argument('--mixup-weight', type=float, default=0.,
+                   help='TRAIN-only convex feature/paired-target loss weight; no inference change')
     p.add_argument('--benchmark-only', action='store_true',
                    help='Audit TRAIN and time isolated decoder copies on CPU/CUDA; no saved trained PT')
     a = p.parse_args()
@@ -38,6 +40,8 @@ def main():
         raise ValueError('Finite feature masking range must be 0..0.25')
     if not 0 <= a.label_smoothing <= .2:
         raise ValueError('Finite smoothing range must be 0..0.2')
+    if not 0 <= a.mixup_weight <= .5:
+        raise ValueError('Finite mixup loss weight must be 0..0.5')
     if not 0 <= a.train_hard_extra <= 1000:
         raise ValueError('Finite TRAIN oversampling budget must be 0..1000')
     if a.output.exists():
@@ -154,6 +158,10 @@ def main():
           'gain_range': [.98, 1.02], 'feature_drop': a.feature_drop, 'relative_feature_noise': .01,
           'changed_edit_weight': a.changed_edit_weight,
           'label_smoothing': a.label_smoothing,
+          'mixup_weight': a.mixup_weight,
+          'mixup_contract': 'TRAIN within-batch random pair; lambda uniform .25..75; convex features and weighted full supervised losses with each original source/edit/target; no TEST gradients',
+          'entry_sha256': sha(Path(__file__)),
+          'command': sys.argv,
           'preserved_edit_weight': a.preserved_edit_weight,
           'train_hard_extra': a.train_hard_extra,
           'hard_sampling': 'fixed initial TRAIN changed-cell error weights 1+2*error; all original TRAIN once plus extra draws; no TEST mining',
@@ -178,6 +186,15 @@ def main():
             consistency = consistency + (ne.sigmoid()-edit.detach().sigmoid()).square().mean()
             anch = sum((v-anchor[k]).square().mean() for k, v in decoder.named_parameters())
             loss = .5*supervised(cat, edit, y)+.5*supervised(nc, ne, y)+.05*consistency+.05*anch
+            if a.mixup_weight:
+                # Targets include source-grid dependent composition: evaluate both
+                # original target dictionaries, never interpolate discrete grid IDs.
+                permutation = torch.randperm(x.shape[0], device=x.device)
+                coefficient = .25 + .5*torch.rand((), device=x.device)
+                paired_y = {k: v[permutation] if torch.is_tensor(v) else v for k, v in y.items()}
+                mc, me = decoder(coefficient*x + (1-coefficient)*x[permutation])
+                mixed_loss = coefficient*supervised(mc, me, y)+(1-coefficient)*supervised(mc, me, paired_y)
+                loss = (1-a.mixup_weight)*loss+a.mixup_weight*mixed_loss
             optimizer.zero_grad(set_to_none=True)
             loss.backward()
             torch.nn.utils.clip_grad_norm_(decoder.parameters(), 1.)
