@@ -1,0 +1,57 @@
+{
+  "original_directory": "handoffs/abo_text_to_image_10cm_alpha040_20260925",
+  "archive_directory": "archive/legacy_lab_projects/t08_original_tool_sources_20261008",
+  "files": [
+    {
+      "name": "audit_physical_router.py",
+      "bytes": 2174,
+      "sha256": "7f72c9f4344c5d0a4e2d1fbeb9cf9802583f94078d66b0e627d2e52ba6fa30f4",
+      "canonical": "LightGenV2/tasks/t08_abo_image_text_retrieval/physical10cm/audit_physical_router.py"
+    },
+    {
+      "name": "cache_physical_readout.py",
+      "bytes": 5365,
+      "sha256": "12fb46fb2bbb3512aebc57e34b044680eab9e1ff15464a8f2e4f8533536421d0",
+      "canonical": "LightGenV2/tasks/t08_abo_image_text_retrieval/physical10cm/cache_physical_readout.py"
+    },
+    {
+      "name": "evaluate_full_physical.py",
+      "bytes": 4173,
+      "sha256": "e564718e20413cdd13597e133118e42f0f8850972d1b3103621fbf264b47197c",
+      "canonical": "LightGenV2/tasks/t08_abo_image_text_retrieval/physical10cm/evaluate_full_physical.py"
+    },
+    {
+      "name": "export_full_next_stage.py",
+      "bytes": 12075,
+      "sha256": "d1b5b15042959d828cafb0c6a6eb3051791c8bd5f1ffdbeb2b64e9b9e0e73f0d",
+      "canonical": "LightGenV2/tasks/t08_abo_image_text_retrieval/physical10cm/export_full_next_stage.py"
+    },
+    {
+      "name": "export_full_vision_router.py",
+      "bytes": 5102,
+      "sha256": "3897756c027d537614bfbbde024a333e370b9d77ccee3adfbe15fea79b46447a",
+      "canonical": "LightGenV2/tasks/t08_abo_image_text_retrieval/physical10cm/export_full_vision_router.py"
+    },
+    {
+      "name": "export_router_pilot.py",
+      "bytes": 5228,
+      "sha256": "3d59acbb71e11f449f8fd3e174fb73c75f09b2682d67c00797ce589ce7dd8675",
+      "canonical": "LightGenV2/tasks/t08_abo_image_text_retrieval/physical10cm/export_router_pilot.py"
+    },
+    {
+      "name": "capture_full_stage.py",
+      "bytes": 6946,
+      "sha256": "0efcc8cfd9d0fc9267501df102dff70cf5e215315e2c6b013d51db8889e05883",
+      "canonical": "LightGenV2/tasks/t08_abo_image_text_retrieval/physical10cm/capture_full_stage.py"
+    },
+    {
+      "name": "capture_full_vision_router.py",
+      "bytes": 5148,
+      "sha256": "089a7d8d7ad380945161010f53882f64395e5d195a6239efb7792e7156d84896",
+      "canonical": "LightGenV2/tasks/t08_abo_image_text_retrieval/physical10cm/capture_full_stage.py"
+    }
+  ],
+  "scope": "Eight local original T08 tool sources whose authoritative import provenance is already recorded; complete recoverable archive, no laboratory or server path change",
+  "preservation": "PT, config, architecture, manifests, CCD, receipts, outputs and timing stay original. Private historical relay helpers require deliberate restoration of original tool sources before historical use. Main physical10cm entry unchanged.",
+  "verification": "Raw source and recovery Git blob identical; original source hashes match T08_PHYSICAL_TOOLS_IMPORT / T08_CAPTURE_SOURCE_IMPORT. Package-relative projection is not byte-identical to old wrapper and prior projection audit is not new hardware regression."
+}
