@@ -11,6 +11,11 @@ shadow初始化为父decoder，每步thetaEMA=.99*thetaEMA+.01*theta；周期TES
 先GPU单轮/strictCPU保护后唯一正式run
 editor16_align_decoder_catmix020_ema099_gpu120_20261009；原89.00及所有历史保留。
 TEST每5最高仍为授权开发指标，不称独立泛化，不改曝光/重采CCD。
+Git4a9f42929三端同步，EMA/调度8项测试通过；GPU单轮loss .5400153、strictCPU
+best/last均.8900，上游保护true，短测未提高主指标但IoU .7923024→.7928024。
+唯一正式任务OpenMoji_CachedCatMix020_EMA099_GPU120_1009，launcher24932/
+Python18868，已实际epoch4/loss .5372415，best仍父.8900，不能以PID称改善。
+本轮从.8900父PT继续，不与同起点因果消融混称；全量结束按EMA best/last终审备份。
 
 2026-10-09 03:04终审：cosine120完整完成、任务返回0、全部Python退出、4060空闲。
 strictCPU best .8900/e20、last .8880，上游保护true；best TRAIN .9995，仍有泛化差距。
