@@ -292,6 +292,13 @@
   ],
   "additional_dependency_hashes": [
     {
+      "path": "LightGenV2/tasks/t06_video_quality_assessment/tests/test_lab_bench.py",
+      "bytes": 1163,
+      "source_blob_sha256": "f4dd468ad2ff5e3a5320917c826018d1d43f04ab2fbad9f27996269083693692",
+      "original_source_commit": "8e869473787f4ffceb2a6a77f4430b94c206f459",
+      "origin": "2026-10-08: exact historical CPU raster/pin tests recovered from preserved local file; original Git bytes match. No test assertion, model, device or metric changed."
+    },
+    {
       "path": "LightGenV2/tasks/t06_video_quality_assessment/lab_runtime.py",
       "bytes": 9099,
       "source_blob_sha256": "015dac71d45c7b0f4332ce221400400f58a98c098c749b0d517b5f9dcc9663b4",
