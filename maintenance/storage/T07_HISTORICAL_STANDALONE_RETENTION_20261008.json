@@ -1,0 +1,133 @@
+{
+  "scope": "20 current untracked historical standalone source/config files, not rank72 final-model source additions",
+  "purpose": "External-domain transfer, teacher relation/vision distillation, alpha/phase controls, calibration and candidate queues; historical research tools remain recoverable",
+  "decision": "Retain originals at current paths. Do not promote all to final main or blanket-ignore; historical tools import each other and have data/cache dependencies.",
+  "final_entry": "LightGenV2/tasks/t07_abo_image_retrieval/README.md",
+  "final_runtime_changed": false,
+  "files_moved_deleted_or_ignored": false,
+  "current_main": "f38456e6fb4ccad796ae7d7d43756ec0d34a8438",
+  "local_recovery_blob_content_compared": true,
+  "linux_asset_equivalence_or_dependency_closure_proven": false,
+  "files": [
+    {
+      "path": "LightGenV2/tasks/t07_abo_image_retrieval/standalone/broad_transfer.json",
+      "raw_sha256": "86c5f122ded1eb291b6872966045a2697602a6a3725b3f6e737c209e6f0ff3ae",
+      "recovery_blob": "af17db8288850a763b2db960f25f6a8e3e33e02d",
+      "normalization": "CRLF_to_LF"
+    },
+    {
+      "path": "LightGenV2/tasks/t07_abo_image_retrieval/standalone/broad_transfer.py",
+      "raw_sha256": "e4d0c3aabc35711affbd4140290026b982c580c64e539860b10b5342d24935f0",
+      "recovery_blob": "43ebbc585f63874bfebd455daaae1275556dec02",
+      "normalization": "CRLF_to_LF"
+    },
+    {
+      "path": "LightGenV2/tasks/t07_abo_image_retrieval/standalone/catalog_view_audit.py",
+      "raw_sha256": "627cef5c20abe742967b97fd51ac90f2526e37e651bd451bd15079b49d55e11d",
+      "recovery_blob": "44ff89b28dab694bc94dc4f3f73f50a912f3aeb8",
+      "normalization": "CRLF_to_LF"
+    },
+    {
+      "path": "LightGenV2/tasks/t07_abo_image_retrieval/standalone/curriculum.json",
+      "raw_sha256": "058e004f735b3a22961a4fe4a3f4cd51ecdd13484113cabff02112c4e2ade99d",
+      "recovery_blob": "b72cacbb425bf77c49f0882f6ce8fc8cb2d33915",
+      "normalization": "CRLF_to_LF"
+    },
+    {
+      "path": "LightGenV2/tasks/t07_abo_image_retrieval/standalone/domain_data.py",
+      "raw_sha256": "85d6543b2ae3a29696316c9894ae5736897fcb9597b053f0d14ce8ea250e6237",
+      "recovery_blob": "81fefd6f6b094a2d8fe9df40bf673dcbb5917c59",
+      "normalization": "CRLF_to_LF"
+    },
+    {
+      "path": "LightGenV2/tasks/t07_abo_image_retrieval/standalone/export.py",
+      "raw_sha256": "58e6f0b3f0913847dc1c8f04686655a314ec49dd5c2e97de74ffe4b75a6fb68b",
+      "recovery_blob": "39a0ea28f6b1c6b53e1da579dfb7dd4a0e365f55",
+      "normalization": "CRLF_to_LF"
+    },
+    {
+      "path": "LightGenV2/tasks/t07_abo_image_retrieval/standalone/generalization_queue.py",
+      "raw_sha256": "379c0b5d9ad48fd8a865543c0d1eb48a5c4351d60cd851e8a9b18970bab41e88",
+      "recovery_blob": "e99ef435f9f568e67604f0ed896c37cb2d93f911",
+      "normalization": "CRLF_to_LF"
+    },
+    {
+      "path": "LightGenV2/tasks/t07_abo_image_retrieval/standalone/high_alpha.json",
+      "raw_sha256": "8c33e696bdadd7d4072dafb6ecbdf582f229dae778f0aeef4ce2ed534bb2bada",
+      "recovery_blob": "8e68f9be8c7e7079cee02f3199def325152ff4e1",
+      "normalization": "CRLF_to_LF"
+    },
+    {
+      "path": "LightGenV2/tasks/t07_abo_image_retrieval/standalone/high_alpha.py",
+      "raw_sha256": "1030641bfceceafffac74dd9e0a48ba9753e1e0a0c6b7e203cfc55a75b48817f",
+      "recovery_blob": "e7a8c00ffff2702566451f5e530199bb8144f655",
+      "normalization": "CRLF_to_LF"
+    },
+    {
+      "path": "LightGenV2/tasks/t07_abo_image_retrieval/standalone/phase_optimization.py",
+      "raw_sha256": "91e309ba3443814e62b5b39a52a2f1ee6f628fcb72853d4127abe539ee20409c",
+      "recovery_blob": "b3a5fae63e85f688b77119c355462fefa29a4984",
+      "normalization": "CRLF_to_LF"
+    },
+    {
+      "path": "LightGenV2/tasks/t07_abo_image_retrieval/standalone/prepare_spin_abo.py",
+      "raw_sha256": "25e11987616bd7e38a0f1be123c2c42d5b243ad080e17dea344d0c2b182e1a13",
+      "recovery_blob": "db5c0f5ed232cff735539cb7a16e0dab922da168",
+      "normalization": "CRLF_to_LF"
+    },
+    {
+      "path": "LightGenV2/tasks/t07_abo_image_retrieval/standalone/randomness.py",
+      "raw_sha256": "a231e09a57997d328018ce1b7c24a9835e8a8e48b4b38c55d2f0c5e08fb3ad26",
+      "recovery_blob": "faad567b37f05db57245fe34cbf1207da743db99",
+      "normalization": "CRLF_to_LF"
+    },
+    {
+      "path": "LightGenV2/tasks/t07_abo_image_retrieval/standalone/readout_calibration.py",
+      "raw_sha256": "77b52ab35b25de7de579e232c707218a9f458d0b9a375e65611c2bf2a5664ae3",
+      "recovery_blob": "7dcffe2df07c8c4fd44de726a5710943e736f805",
+      "normalization": "CRLF_to_LF"
+    },
+    {
+      "path": "LightGenV2/tasks/t07_abo_image_retrieval/standalone/readout_distill.py",
+      "raw_sha256": "83e7a92b352432a1f3951b8ecc05065b5d37de8713a2362f24642c836a541aa4",
+      "recovery_blob": "9ae1f5e745ae113ce5ece62b33ab921e181bf7b7",
+      "normalization": "CRLF_to_LF"
+    },
+    {
+      "path": "LightGenV2/tasks/t07_abo_image_retrieval/standalone/retrieval_training.json",
+      "raw_sha256": "09a04c05b6846e0af25fa3ceb47510a2dc41ffbf30d91a78a0790ec87d5cbd05",
+      "recovery_blob": "1dd51fb4aee18678e2f37df5e054773380838418",
+      "normalization": "CRLF_to_LF"
+    },
+    {
+      "path": "LightGenV2/tasks/t07_abo_image_retrieval/standalone/retrieval_training.py",
+      "raw_sha256": "a0f37e01d849bd1160c48ed8876b965bdfe2621de9a6f2c225474255244497bd",
+      "recovery_blob": "853e03bf89f012e18a5a132d73b0166cb7a04ed7",
+      "normalization": "CRLF_to_LF"
+    },
+    {
+      "path": "LightGenV2/tasks/t07_abo_image_retrieval/standalone/teacher_projection.py",
+      "raw_sha256": "fc5bd654d2474caa95f02f00dd43f114b36c127a92002323a09d34c77e407fa9",
+      "recovery_blob": "18b2205310d2bd1519a71b6a0cfee17928fd5eb8",
+      "normalization": "CRLF_to_LF"
+    },
+    {
+      "path": "LightGenV2/tasks/t07_abo_image_retrieval/standalone/teacher_relations.py",
+      "raw_sha256": "87a46bd7e91fd7adfa827d50b6f54862c7348e7ea41a7bb9e71ee65bbbcb1978",
+      "recovery_blob": "671667f2d9abd2dc750453eb2f42c8394c639619",
+      "normalization": "CRLF_to_LF"
+    },
+    {
+      "path": "LightGenV2/tasks/t07_abo_image_retrieval/standalone/vision_teacher.py",
+      "raw_sha256": "87be0aa0e5ed090323214a4276417883d7266a3adda8c94116b0535ee6353c14",
+      "recovery_blob": "1bef80c82a38773abe1ef98d1d1bb7b966929f2d",
+      "normalization": "CRLF_to_LF"
+    },
+    {
+      "path": "LightGenV2/tasks/t07_abo_image_retrieval/standalone/weight_average.py",
+      "raw_sha256": "15410f01b830f08f5388da322e5db6dace9f348cf024497cfdb8cdd18964139c",
+      "recovery_blob": "27a6d44627abf41c4810ed82f4f1115b235309d4",
+      "normalization": "CRLF_to_LF"
+    }
+  ]
+}
