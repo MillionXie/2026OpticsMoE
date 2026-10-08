@@ -1,4 +1,18 @@
 {
+  "historical_result_annotation_reconciliation_20261008": {
+    "path": "LightGenV2/tasks/t06_video_quality_assessment/reports/paper_results/spatial_single_video4_srcc06665/result.json",
+    "local_sha256": "3aab5417bc1f671258cc14acffd8605b92665d91359f2bf45c4b28894f79b07f",
+    "server_sha256": "48bc5f87f328a902389453601b15c826d96bbf52cbdb336b785c0ce03b6e7057",
+    "common_json_fields_identical": true,
+    "checkpoint_identity_in_both_reports": "6b05961f87f92173586504d3a984f7f9a9b473adf6a2d692777b4b9869e720fe",
+    "extra_local_fields": {
+      "status": "rejected_noncompliant_pretrained_resnet_front",
+      "formal_result": false
+    },
+    "interpretation": "Only these two local review annotations differ; original metrics, checkpoint identity, epoch and sample count agree. Preserve the local noncompliance annotation and both original files; do not overwrite either by treating server bytes as a universal winner. This historical ResNet-front upper-bound candidate is not the adopted Spatial 95e12397 checkpoint.",
+    "original_reports_changed_ignored_or_deleted": false,
+    "checkpoint_loaded_or_metrics_recomputed": false
+  },
   "audited_on": "2026-10-04",
   "read_only": true,
   "runtime_migration_complete": false,
