@@ -222,9 +222,21 @@ def queued(a):
     a._transfer_errors=[]
     finished=threading.Event()
     def extract_verified():
-        stream=GrowingArchive(a.cache_archive,a.archive_bytes)
+        stream=None
         count=0
         try:
+            if a.cache_marker is not None:
+                until=time.monotonic()+7200
+                while not a.cache_marker.exists():
+                    if time.monotonic()>until:raise TimeoutError('Sample transfer timed out')
+                    time.sleep(2)
+                marker=read(a.cache_marker)
+                if marker['status']!='complete':raise RuntimeError('Sample publisher failed: '+str(marker))
+                for item in release['fields']:
+                    if sha(root/item['file'])!=item['sha256']:raise ValueError('Published cache SHA mismatch')
+                write(state,{'status':'all_cache_verified','samples':1000,'method':'atomic per-sample upload'})
+                return
+            stream=GrowingArchive(a.cache_archive,a.archive_bytes)
             with tarfile.open(fileobj=stream,mode='r|gz') as tar:
                 for member in tar:
                     dest=(root/member.name).resolve()
@@ -247,7 +259,9 @@ def queued(a):
         except BaseException as ex:
             a._transfer_errors.append(ex)
             write(state,{'status':'transfer_failed','error':str(ex),'verified_new_samples':count})
-        finally:stream.close();finished.set()
+        finally:
+            if stream is not None:stream.close()
+            finished.set()
     worker=threading.Thread(target=extract_verified,daemon=True);worker.start()
     acquire(a)
     if not finished.wait(timeout=600):raise TimeoutError('Final archive audit did not finish')
@@ -262,6 +276,7 @@ def main():
     p.add_argument('--reuse-session',type=Path)
     p.add_argument('--cache-archive',type=Path);p.add_argument('--archive-bytes',type=int)
     p.add_argument('--archive-sha256')
+    p.add_argument('--cache-marker',type=Path)
     p.add_argument('--limit',type=int,default=4);a=p.parse_args()
     if a.action=='export' and a.checkpoint is None:p.error('checkpoint required')
     if a.action in ('acquire','queued') and (a.output is None or a.bench_root is None or not 1<=a.limit<=1000):p.error('output/bench-root/limit required')
