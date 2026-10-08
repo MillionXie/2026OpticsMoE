@@ -32,6 +32,20 @@
     "separate_git_repository": false,
     "decision": "Retain in place in this operation: not an unused trial copy. Shared hardware/asset references must be migrated explicitly before whole-directory relocation.",
     "shared_source_on_main": "LightGenV2/hardware_common/shs/; exact origin identities in SHS_SHARED_CONTROLLER_SOURCE_20261004.json",
+    "additional_packaging_gap_verified": {
+      "scope": "Existing historical hardware package builders; not final rank72 inference or current optical acceptance",
+      "main_git_paths_absent": [
+        "ABO_Lab_SHS_8um/phase_owner.py",
+        "ABO_Lab_SHS_8um/phase_display.py",
+        "ABO_Lab_SHS_8um/requirements-gpu-tested.txt"
+      ],
+      "callers": [
+        "LightGenV2/tasks/t04_semantic_interaction/shs_package.py: build_shs still reads phase scripts from current Git commit at old root paths",
+        "LightGenV2/tasks/t03_saliency/build_lab_package.py: reads old GPU requirements from a specified Git base"
+      ],
+      "decision": "Keep the original SHS copy. Review and adopt these needed dependencies before relocating it; do not claim the historical package builder is complete merely because four shared driver modules were adopted.",
+      "package_built_or_hardware_opened": false
+    },
     "runtime_reference_examples": [
       "LightGenV2/tasks/t03_saliency/lab_bench.py: legacy bench-root default",
       "LightGenV2/tasks/t04_semantic_interaction/lab_bench.py: legacy bench-root default",
