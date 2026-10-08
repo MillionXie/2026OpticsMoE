@@ -20,7 +20,10 @@ def main():
     parser.add_argument('--output', type=Path, required=True)
     parser.add_argument('--physical-mode', choices=('original', 'continuous', 'uint8'), default='original')
     parser.add_argument('--amplitude-scale', type=float, default=16.)
+    parser.add_argument('--ideal-replay-check', action='store_true')
     args = parser.parse_args()
+    if args.ideal_replay_check and args.physical_mode == 'original':
+        raise ValueError('Ideal CCD replay requires explicit physical units')
     if args.output.exists():
         raise FileExistsError('Preserve existing preflight output')
     from . import run, training, modeling
@@ -31,6 +34,7 @@ def main():
     stages = {s: {'minimum': None, 'maximum': 0., 'above_one': 0,
                   'pixels': 0, 'forward_samples': 0, 'shapes': []}
               for s in ('router', 'expert', 'global')}
+    replay = {'batches': 0, 'samples': 0, 'heatmap_max_abs_error': 0.}
     build = modeling.build_student
 
     def observe(model, _inputs, _output):
@@ -68,7 +72,20 @@ def main():
                     if tap.index != 3:
                         raise RuntimeError('Require exactly three optical propagations')
                     model._lab_unit_amplitudes = tap.amplitudes
-                    return result
+                if args.ideal_replay_check:
+                    with FieldUnits(model, scale=args.amplitude_scale,
+                                    quantize=args.physical_mode == 'uint8',
+                                    measured=tap.detectors) as replay_tap:
+                        replay_result = original_forward(*values, **keywords)
+                    if replay_tap.index != 3:
+                        raise RuntimeError('Incomplete ideal CCD replay')
+                    error = float((result[0] - replay_result[0]).abs().max())
+                    replay['heatmap_max_abs_error'] = max(replay['heatmap_max_abs_error'], error)
+                    replay['batches'] += 1
+                    replay['samples'] += len(result[0])
+                    if not torch.allclose(result[0], replay_result[0], atol=2e-5, rtol=2e-5):
+                        raise RuntimeError(f'Ideal CCD replay changes heatmaps: {error}')
+                return result
             model.forward = physical_forward
         return model
 
@@ -86,6 +103,7 @@ def main():
               'hardware_started': False, 'weights_unchanged': sha(args.checkpoint) == EXPECTED_SHA,
               'physical_mode': args.physical_mode, 'amplitude_scale': args.amplitude_scale,
               'physical_intensity_to_model_units': args.amplitude_scale ** 2,
+              'ideal_ccd_replay': replay if args.ideal_replay_check else None,
               'unit_interval_export_safe': all(s.get('physical_maximum', s['maximum']) <= 1 for s in stages.values()),
               'source_commit': subprocess.check_output(['git', 'rev-parse', 'HEAD'], text=True).strip()}
     (args.output / 'amplitude_audit.json').write_text(json.dumps(report, indent=2), encoding='utf-8')
