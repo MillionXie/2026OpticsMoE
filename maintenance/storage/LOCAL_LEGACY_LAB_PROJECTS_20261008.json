@@ -126,6 +126,18 @@
     "excluded": "tmp/pdfs retains historical timing evidence and its original source-overlay binding; TransferFromElectricity is a tracked historical backend, not an unused scratch directory",
     "restore": "Restore only the required complete directory after confirming its original path is absent; verify the private manifest and never overwrite newer contents. Old packaging tools may create a new empty .codex_transfer scratch independently; do not merge it over this archive."
   },
+  "rejected_t06_resnet_upper_bound_archive": {
+    "archive_relative_root": "archive/rejected_candidates_20261008/t06_resnet_upper_bound",
+    "purpose": "Explicitly rejected frozen pretrained ResNet18 upper-bound trial, not final Spatial .6710968960; removes obsolete candidate profile/report/config from daily task paths without deleting evidence",
+    "selected_paths": ["LightGenV2/tasks/t06_video_quality_assessment/configs/lightgen/spatial_single_video4_srcc06665.yaml", "experiments/qwen3_vl_2b_lgvq_single_metric_o2_16frame_54/configs/release/spatial_resnet_range140_final.yaml", "LightGenV2/tasks/t06_video_quality_assessment/reports/paper_results/spatial_single_video4_srcc06665"],
+    "local": {"files": 4, "bytes": 4694, "manifest": ".codex_tmp/storage_git_backup_20261002/t06_rejected_resnet_local_inventory_20261008.json", "manifest_sha256": "7b1adabb51320afd86525c51b427788e2a20ade14dd98a29032cd22d439de5c3"},
+    "server": {"files": 4, "bytes": 4309, "manifest": "/DATA/DATA1/guest3/storage_cleanup_manifests/t06_rejected_resnet_server_inventory_20261008.json", "manifest_sha256": "17cc2e0270ca018f35df9a5eaeb28e1163b2108300cd8d1b022ca3d18512167a"},
+    "host_differences_preserved": "Local profile/README mark rejection; server retains older formal wording. Originals archived independently, not silently reconciled or merged.",
+    "all_original_file_sha_verified": true,
+    "deleted_files": 0,
+    "checkpoints_data_timings_or_final_source_moved": false,
+    "restore": "Restore the three selected paths from the correct host archive only when old destinations are absent; verify that host manifest. Do not overwrite newer files or deploy this rejected candidate as the final model."
+  },
   "protected_final_ABO_or_current_OpenMoji_changed": false,
   "training_evaluation_capture_or_upload_started": false,
   "limitations": [
