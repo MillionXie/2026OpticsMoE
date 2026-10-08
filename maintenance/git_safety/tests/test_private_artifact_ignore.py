@@ -10,6 +10,22 @@ ROOT = Path(__file__).resolve().parents[3]
 
 
 class ArtifactIgnoreTests(unittest.TestCase):
+    def test_named_t06_old_results_do_not_hide_source_contracts_or_future_reports(self):
+        content = (ROOT / '.gitignore').read_text(encoding='utf8')
+        section = content.split('# Named historical T06 result payloads; original reports and all timing retained.\n', 1)[1]
+        selected = [line[1:] for line in section.splitlines() if line.startswith('/LightGenV2/tasks/t06_video_quality_assessment/reports/paper_results/')]
+        self.assertEqual(len(selected), 22)
+        self.assertTrue(all(Path(p).name in {'result.json', 'test_metrics_optical_off.json',
+                                            'test_metrics_optical_on.json', 'optical_contribution_same_checkpoint.json'}
+                            for p in selected))
+        self.assertFalse(any('*' in p or '?' in p for p in selected))
+        parent = str(Path(selected[0]).parent).replace('\\', '/')
+        visible = [parent + '/' + name for name in ('README.md', 'analyze.py', 'resolved_config.json',
+                                                     'protocol.json', 'future_result.json', 'timing.csv')]
+        visible.append('LightGenV2/tasks/t06_video_quality_assessment/reports/paper_results/future_run/result.json')
+        visible.append('LightGenV2/tasks/t06_video_quality_assessment/reports/paper_results/spatial_single_video4_srcc06665/result.json')
+        self.assertEqual(self.ignored(selected + visible), set(selected))
+
     def test_named_historical_report_payloads_preserve_source_and_future_results(self):
         import json
         record=json.loads((ROOT/'maintenance/storage/HISTORICAL_REPORT_PAYLOAD_VISIBILITY_20261007.json').read_text(encoding='utf8'))
