@@ -3,12 +3,25 @@ import math
 from pathlib import Path
 from types import SimpleNamespace
 import json
+import pickle
+import pathlib
 import torch
 from torch import nn
 from .modeling import LightGenDenseVision2Core, OpticalDetectorTopKRouter, PoseHeatmapDecoder, architecture_label
 from experiments.vision2_hybrid_dense.modeling import restore_qwen_block_major_spatial
 from .build_lab_package import sha
 from .lab_preflight import EXPECTED_SHA
+
+
+class PortableUnpickler(pickle.Unpickler):
+    def find_class(self, module, name):
+        if module == 'pathlib' and name == 'PosixPath':
+            return pathlib.PurePosixPath
+        return super().find_class(module, name)
+
+
+PORTABLE_PICKLE = SimpleNamespace(__name__='pickle', Unpickler=PortableUnpickler,
+                                 load=pickle.load, loads=pickle.loads)
 
 
 class CachedStudent(nn.Module):
@@ -33,7 +46,7 @@ def load_model(root):
     root=Path(root);pt=root/'weights/best_checkpoint.pt'
     if sha(pt)!=EXPECTED_SHA:raise ValueError('Wrong LSP PT')
     cfg=SimpleNamespace(**json.loads((root/'settings.json').read_text()))
-    payload=torch.load(pt,map_location='cpu',weights_only=False)
+    payload=torch.load(pt,map_location='cpu',weights_only=False,pickle_module=PORTABLE_PICKLE)
     if payload['checkpoint_architecture']!=architecture_label(cfg):raise ValueError('Architecture mismatch')
     model=CachedStudent(cfg)
     model.core.load_state_dict(payload['core'],strict=True);model.head.load_state_dict(payload['head'],strict=True)
