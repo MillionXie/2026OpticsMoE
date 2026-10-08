@@ -1,5 +1,38 @@
 # T04 OpenMoji 鲁棒性消融：当前统一入口
 
+## 2026-10-08 授权：累计组电子适配，目标89.0%–89.5%（进行中）
+
+暂不推进单措施消融。历史87.05%是早期editor16累计G5的真实CCD适配：
+原clean CPU .9165、直接 .5730，独立TRAIN1000梯度，原decoder30162参数、
+160epoch、TEST1000每5epoch开发选模，第105轮最佳，strict CPU .8705。
+原PT SHA094d01157e63d56d195f154bc0671e9e2ce43ac32df34f47d893ea233c0489a4；
+适配best SHA7f3268c8d94dd2ec1389a9ebc247b0a1a5301a9ae9e43315177364803cd5e40a。
+这不是后来直接.7315的PT，不能将两个版本拼成同一恢复链。
+历史report/strict_reload/history在私有`editor16_robust_chain_20261003/g5_adapter`保留。
+
+后来的累计对齐PT d4481ef804dbd8f27f2f24f98c08dc7bf161b3137cefcc2613310291fe56f653
+自身CPU仿真.9120、直接.7315；已有末端适配.8670，低学习率160轮及另一320轮配置
+最高strict CPU均.8685。320轮结果best SHA
+cb1864fe7217bb4d0891d3712c37173877c84746baa4ed756fbdc989e7a77140。
+均按无trick仿真.8950作为用户目标参照；89.0%即相差0.5个百分点，不换成较低参照。
+
+新有限run `editor16_align_decoder_lr1e5_wd005_160_20261008`已派发既有实验台任务
+`OpenMoji_AlignDecoder_LR1e5_WD005_1008`：从精确d4481ef8原部署PT重新训练，
+同独立TRAIN1000/固定TEST1000，各原6000CCD只读复用；AdamW lr1e-5/wd.05，
+160epoch/seed927，TEST每5轮最高选PT开发口径，无TEST梯度/无VAL选模。
+仍只训练原decoder，不改光学相位、alpha或架构。理由是历史TRAIN接近饱和、
+延长320轮未提高TEST，有限检验低学习率与更强正则化，不保证目标或宣称单因素因果。
+派发成功不等于开始梯度；须核CPU缓存基线.7315、实际epoch/loss及终了strict CPU。
+原上游保护SHA f385956d653201b10c1bcc1bb3e8bd1f6a25a987fc328f660e6666d26e3bf66f
+必须不变。最终保存best/last/逐样本/报告和SHA，确认进程及GPU释放。
+
+沿用Git封存源码`bc1951cfbd0bcbd60a6111884286b506790e20fb`，未修改实验台源码；
+入口`lab_editor16_robust_chain.py` SHA0adc3fc6...bccb62、原实际适配backend
+`lab_tune_g2_test.py` SHAd4c0c4fd...2c9a0f；来源逐项见
+`maintenance/storage/T04_WINDOWS_SOURCE_PRESERVATION_20261005.json`。
+参数仅在任务命令中配置，不新增工程/分支/worktree，不打开SDK、不重采、不覆盖旧run。
+原始CCD/PT和ABO等封存保持，外部上传暂停。当前没有本run的新精度。
+
 ## 2026-10-07 新授权：单对齐空间扰动训练（结果待实拍）
 
 不改变下方封存rank64结果。editor16的新对照仍使用同一初始权重、完整TRAIN5000、
