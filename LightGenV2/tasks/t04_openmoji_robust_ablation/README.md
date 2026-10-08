@@ -13,6 +13,13 @@
 Git c26cc967d已接入实验台；先`editor16_align_decoder_hardtrain_smoke_20261008`单轮
 实测及上游审计，通过后才派发正式run，不将派发或短测称为新性能改善。
 
+`editor16_align_decoder_hardtrain120_20261008`正式120轮已完成，任务返回0；
+strict CPU best .8810/e45、last .8685，全部非decoder上游保护通过。
+best SHA a98c93a27e89ee6d38a8222b7c970a7772e574c4d53f7faf102a8c18ff345c36，
+报告及best已取回本地且SHA一致。较.8780提高.30pp，距.890仍.90pp，未完成目标。
+单轮短测.8805仍保留，不替代正式最佳；当前没有下一轮训练，先检查TRAIN错误组成，
+不机械重复120轮或继续无限定位权重扫描。TEST选择均为开发口径，不是独立泛化。
+
 编辑定位监督对照`editor16_align_decoder_editfocus120_20261008`已完成120轮，
 strict CPU best .8740/e5、last .8665，上游保护不变，任务返回0。
 最新用户授权继续，有限单因素`editor16_align_decoder_editfocus1_120_20261008`：
