@@ -1,3 +1,4 @@
+"""Independent T17 tests with a unique module name for joint collection."""
 import torch
 from LightGenV2.tasks.t17_router_classification.model import RouterClassification
 from LightGenV2.tasks.t17_router_classification.train import encode

@@ -60,6 +60,9 @@ def main():
     p.add_argument('--min-epochs', type=int, default=8)
     p.add_argument('--patience', type=int, default=6)
     p.add_argument('--seed', type=int, default=17)
+    p.add_argument('--router-features', choices=['mean','centered'], default='mean')
+    p.add_argument('--router-lr', type=float, default=.001)
+    p.add_argument('--skip-test', action='store_true')
     args=p.parse_args()
     args.out.mkdir(parents=True, exist_ok=False)
     config={k:str(v) if isinstance(v,Path) else v for k,v in vars(args).items()}
@@ -79,10 +82,11 @@ def main():
         # Test images are encoded only after checkpoint selection.
         x={s:encode(data[s+'_images']).to(device) for s in ('train','val')}
         y={s:torch.as_tensor(data[s+'_labels'],device=device,dtype=torch.long) for s in ('train','val')}
-        model=RouterClassification(args.architecture).to(device)
+        model=RouterClassification(args.architecture,args.router_features).to(device)
         groups=[]
         for name,param in model.named_parameters():
             lr=.001 if 'shared_head' in name or 'electronic_router' in name else .005
+            if 'electronic_router' in name: lr=args.router_lr
             groups.append({'params':[param], 'lr':lr})
         opt=torch.optim.Adam(groups)
         config['parameters']={name:sum(v.numel() for n,v in model.named_parameters() if name in n)
@@ -116,6 +120,12 @@ def main():
             if epoch>=args.min_epochs and stale>=args.patience: break
         chosen=torch.load(args.out/'best_checkpoint.pt',map_location=device,weights_only=False)
         model.load_state_dict(chosen['model'])
+        if args.skip_test:
+            selected,_,_=evaluate(model,x['val'],y['val'],args.batch)
+            write(args.out/'selected_validation.json',dict(epoch=chosen['epoch'],metrics=selected))
+            write(args.out/'status.json',{'state':'completed_validation_only','epoch':chosen['epoch'],
+                                          'validation':selected})
+            return
         xt=encode(data['test_images']).to(device)
         yt=torch.as_tensor(data['test_labels'],device=device,dtype=torch.long)
         result,pred,q=evaluate(model,xt,yt,args.batch)

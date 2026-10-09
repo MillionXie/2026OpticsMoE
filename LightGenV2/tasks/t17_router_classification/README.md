@@ -46,4 +46,27 @@ Adam相位学习率0.005，电子路由和读出0.001，交叉熵，无预训练
 
 从仓库根用 `python -m LightGenV2.tasks.t17_router_classification.train --architecture optical|electronic|d2nn --data <A_original.npz> --manifest <A_original_manifest.json> --out LightGenV2/tasks/t17_router_classification/runs/simulation/<unique_id>`。
 代码同步仅经main Git；GPU按UUID绑定，每组一张，不使用被他人占用的卡，结束自动退出释放。
-新问题记录于各run/status.json，结果汇总更新本README。当前正式结果待训练。
+新问题记录于各run/status.json，结果汇总更新本README。
+
+## 2026-10-09 首轮完成
+
+训练源码main `c273d3351`，run前缀 `crc9_s17_20261009`，每组测试1,436张一次。
+本地与服务器合同测试通过；三组均确认光学梯度有限且非零。
+
+| 组 | 普通测试准确率 | 测试宏平均召回 | 验证选中轮 | 实际训练轮 |
+|---|---:|---:|---:|---:|
+| Ours光路由 | 74.30% | 71.93% | 6 | 12 |
+| 电路由MoE | 73.40% | 69.83% | 12 | 18 |
+| D2NN | 69.92% | 67.46% | 20 | 25 |
+
+两种MoE普通准确率相差0.90百分点；光路由宏平均比D2NN高4.47百分点。
+这是一个seed的仿真结果，不足以宣称显著性或远高于D2NN。
+数字、配置、SHA、逐轮验证与图见 [首轮报告](reports/crc9_s17_20261009/results.md)。
+原数据曾在T11历史任务使用，不将其测试集称为项目从未接触过的独立外部测试。
+
+**需处理的问题：**光路由较集中于4/10号端口，16号几乎不用；电路由各样本权重
+标准差约1e-6，几乎为固定软分配，不能称成功学到内容相关路由。电路由没有选择一个
+专家：所有16专家仍参与，只是首选位置总为16。这与稀疏top1不同。
+追加`centered` profile在路由内部使用固定无参数LayerNorm，并把电子路由学习率降为
+0.0001；推理MLP/专家/global/CCD/readout尺寸不变，先仅验证，不按测试选方案。
+首轮报告保留；追加获选模型的测试将明确标探索性。
