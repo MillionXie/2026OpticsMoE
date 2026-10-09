@@ -1,0 +1,7 @@
+{
+  "selection": "same validation mean of accuracy and macro recall; parent included; no test selection",
+  "candidates": [
+    {"name": "optical", "architecture": "optical", "init_run": "crc9_moe_regularized_r1_s17_20261009_optical_early", "epochs": 15, "phase_lr": 0.0003, "electronic_lr": 0.0001, "head_decay": 0.02, "label_smoothing": 0.02, "ema_decay": 0.995},
+    {"name": "electronic", "architecture": "electronic", "init_run": "crc9_moe_regularized_r1_s17_20261009_electronic", "epochs": 15, "phase_lr": 0.0003, "electronic_lr": 0.0001, "head_decay": 0.03, "label_smoothing": 0.02, "ema_decay": 0.995}
+  ]
+}

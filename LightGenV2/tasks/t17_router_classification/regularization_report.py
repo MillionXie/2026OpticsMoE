@@ -15,7 +15,9 @@ def main():
         'Only the winning candidate per architecture receives one exploratory test.','',
         '| Candidate | Weights | Fine-tune epoch | Val accuracy | Val macro | Train macro | Gap | Test accuracy | Test macro |',
         '|---|---|---:|---:|---:|---:|---:|---:|---:|']
-    for name in ('optical_early','optical_late','electronic'):
+    names=('optical_early','optical_late','electronic')
+    if (task/'runs'/'simulation'/f'{args.run_prefix}_optical').exists():names=('optical','electronic')
+    for name in names:
         run=task/'runs'/'simulation'/f'{args.run_prefix}_{name}'
         d=json.loads((run/'selected_diagnostics.json').read_text())
         cfg=json.loads((run/'config.json').read_text());hist=json.loads((run/'metrics.json').read_text())
