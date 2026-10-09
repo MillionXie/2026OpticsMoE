@@ -65,7 +65,9 @@ def main():
     p.add_argument('--class-weight-power',type=float,default=0.)
     p.add_argument('--augmentation-probability',type=float,default=1.)
     p.add_argument('--router-balance-weight',type=float,default=0.)
+    p.add_argument('--batch',type=int)
     args=p.parse_args()
+    if args.batch is not None and args.batch<1:raise ValueError('invalid batch')
     if args.router_balance_weight<0:raise ValueError('negative router balance weight')
     if args.epochs<1 or not 0<=args.label_smoothing<1 or not 0<args.ema_decay<1 or not 0<=args.augmentation_probability<=1:
         raise ValueError('invalid regularization budget')
@@ -78,7 +80,7 @@ def main():
         if previous['optical_contract']!=CONTRACT:raise ValueError('optical contract mismatch')
         cfg={k:str(v) if isinstance(v,Path) else v for k,v in vars(args).items()}
         cfg.update(profile='four_top2',readout='linear',architecture=previous['architecture'],
-            data=previous['data'],manifest=previous['manifest'],batch=previous['batch'],
+            data=previous['data'],manifest=previous['manifest'],batch=args.batch or previous['batch'],
             data_sha256=sha256(Path(previous['data'])),
             manifest_sha256=sha256(Path(previous['manifest'])),optical_contract=CONTRACT,top_k=2,
             skip_test=True,router_features='mean',router_lr=args.electronic_lr,

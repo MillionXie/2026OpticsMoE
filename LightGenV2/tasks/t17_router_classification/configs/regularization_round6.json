@@ -1,0 +1,8 @@
+{
+  "selection": "unchanged validation accuracy/macro mean; larger batch stability candidates; no test selection",
+  "candidates": [
+    {"name": "optical_b32aug25", "architecture": "optical", "init_run": "crc9_moe_regularized_r4_s17_20261009_optical_weighted", "epochs": 30, "batch": 32, "phase_lr": 0.0003, "electronic_lr": 0.00015, "head_decay": 0.02, "label_smoothing": 0.0, "ema_decay": 0.99, "class_weight_power": 0.5, "augmentation_probability": 0.25},
+    {"name": "optical_b32aug50", "architecture": "optical", "init_run": "crc9_moe_regularized_r4_s17_20261009_optical_weighted", "epochs": 30, "batch": 32, "phase_lr": 0.0005, "electronic_lr": 0.0002, "head_decay": 0.02, "label_smoothing": 0.0, "ema_decay": 0.99, "class_weight_power": 0.5, "augmentation_probability": 0.5},
+    {"name": "optical_b64aug50", "architecture": "optical", "init_run": "crc9_moe_regularized_r4_s17_20261009_optical_weighted", "epochs": 30, "batch": 64, "phase_lr": 0.0005, "electronic_lr": 0.0002, "head_decay": 0.02, "label_smoothing": 0.0, "ema_decay": 0.99, "class_weight_power": 0.5, "augmentation_probability": 0.5}
+  ]
+}
