@@ -1,5 +1,11 @@
 # T04 OpenMoji 鲁棒性消融：当前统一入口
 
+2026-10-09图与机制说明：`plot_cumulative_summary.py`生成六组累计图，末项更新89.10%，
+旧outputs图不覆盖。新PNG/SVG/PDF及metadata位于`reports/cumulative_20261009/`；
+图例不再称historical model，横轴精确为changed-cell accuracy。图注明89.50是无trick
+参考、当前光学上游适配前仿真91.20，不冒称严格同权重gap仅.40pp。机制解释与
+论文结论边界见`reports/deployment_mechanism_20261009.md`，不改模型、训练或硬件合同。
+
 ## 2026-10-08 授权：累计组电子适配，目标89.0%–89.5%（进行中）
 
 2026-10-09 08:59一致性对照训练终审：唯一任务
