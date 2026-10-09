@@ -1,5 +1,6 @@
 """Summarize validation-selected MoE candidates without additional inference."""
 import argparse,json
+import numpy as np
 from pathlib import Path
 
 def main():
@@ -58,5 +59,20 @@ def main():
         'D4 augmentation and regularization are training-only. '
         'Baseline tests were previously seen; new tests are exploratory.'])
     (args.out/'results.md').write_text('\n'.join(lines)+'\n');print('\n'.join(lines))
+    if any('effective_experts' in d['selected']['validation'].get('router',{}) for d in summary.values()):
+        fig,axes=plt.subplots(1,2,figsize=(13,4))
+        pairs=('1,2','1,3','1,4','2,3','2,4','3,4')
+        width=.8/(len(summary)+1)
+        first=next(iter(summary.values()))['initial']['validation']['router']
+        rows=[('parent',first)]+[(name,d['selected']['validation']['router']) for name,d in summary.items()]
+        for i,(name,route) in enumerate(rows):
+            offset=(i-(len(rows)-1)/2)*width
+            axes[0].bar(np.arange(4)+offset,np.array(route['mean_power'])*100,width,label=name)
+            axes[1].bar(np.arange(6)+offset,
+                [100*route.get('top2_pair_fraction',{}).get(pair,0) for pair in pairs],width,label=name)
+        axes[0].set(xticks=np.arange(4),xticklabels=['1','2','3','4'],ylabel='Mean optical power (%)',title='Full validation: expert power')
+        axes[1].set(xticks=np.arange(6),xticklabels=pairs,ylabel='Samples (%)',title='Full validation: Top-2 pairs')
+        for ax in axes:ax.legend(fontsize=8);ax.grid(axis='y',alpha=.2)
+        fig.tight_layout();fig.savefig(args.out/'training_and_routing.png',dpi=170);plt.close(fig)
 
 if __name__=='__main__':main()
