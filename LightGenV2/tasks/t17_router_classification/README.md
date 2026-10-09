@@ -231,6 +231,19 @@ head decay分别0.02/0.03、label smoothing0.02、EMA0.995，保留D4训练增�
 反向选择另一checkpoint，不再追加本轮调参。原模型及完整收据保留。
 结果与完整验证走势见[第二轮报告](reports/crc9_moe_regularized_r2_s17_20261009/results.md)。
 
+### 第三轮光MoE训练损失候选
+
+用户要求两种MoE普通测试准确率比固定D2NN74.93%至少高5百分点，门槛79.93%。
+电MoE第二轮80.08%已满足，原权重和测试收据保留，不追加训练或测试。
+光MoE尚差约0.61百分点。本轮仅做两个完整训练集20轮候选，从第二轮光best开始。
+新增训练类别权重`(mean_train_count / class_train_count)^power`后均值归一化，
+power=0.25/0.5，全部只来自训练标签，不用验证/测试频率或逐类测试召回定权重。
+相位LR0.0005、读出LR0.00015、head decay0.02、平滑0.03、EMA0.995，
+其余D4/余弦LR和原架构不变。发布`configs/regularization_round3.json`，run前缀
+`crc9_moe_regularized_r3_s17_20261009`。仍按相同验证accuracy/macro均值选模；
+原模型参与比较，仅优胜新权重一次探索性测试，不从测试成绩选候选或保证达门槛。
+5百分点只是本次观察差值，单seed和非等优化预算不足以支持普遍或统计显著的“远高于”。
+
 ## 去除可训练读出对照：four_top2_ccd（2026-10-09）
 
 用户要求检验末端Linear的影响。新增profile `four_top2_ccd`，保留上述四专家、

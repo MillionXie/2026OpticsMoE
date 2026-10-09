@@ -1,0 +1,7 @@
+{
+  "selection": "unchanged validation accuracy/macro mean; training-count class weights only; test excluded",
+  "candidates": [
+    {"name": "optical_mild", "architecture": "optical", "init_run": "crc9_moe_regularized_r2_s17_20261009_optical", "epochs": 20, "phase_lr": 0.0005, "electronic_lr": 0.00015, "head_decay": 0.02, "label_smoothing": 0.03, "ema_decay": 0.995, "class_weight_power": 0.25},
+    {"name": "optical_balanced", "architecture": "optical", "init_run": "crc9_moe_regularized_r2_s17_20261009_optical", "epochs": 20, "phase_lr": 0.0005, "electronic_lr": 0.00015, "head_decay": 0.02, "label_smoothing": 0.03, "ema_decay": 0.995, "class_weight_power": 0.5}
+  ]
+}

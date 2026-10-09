@@ -40,6 +40,12 @@ def update_ema(average,online,decay):
 def selection_score(metrics):
     return .5*(metrics['accuracy']+metrics['balanced_accuracy'])
 
+def class_weights(labels,power):
+    counts=torch.bincount(labels,minlength=9).float()
+    if (counts==0).any() or not 0<=power<=1:raise ValueError('class weighting requires all training classes')
+    weights=(counts.mean()/counts).pow(power)
+    return weights/weights.mean()
+
 def main():
     p=argparse.ArgumentParser()
     p.add_argument('--init-run',type=Path,required=True)
@@ -51,6 +57,7 @@ def main():
     p.add_argument('--label-smoothing',type=float,default=.05)
     p.add_argument('--ema-decay',type=float,default=.999)
     p.add_argument('--seed',type=int,default=17)
+    p.add_argument('--class-weight-power',type=float,default=0.)
     args=p.parse_args()
     if args.epochs<1 or not 0<=args.label_smoothing<1 or not 0<args.ema_decay<1:
         raise ValueError('invalid regularization budget')
@@ -85,6 +92,9 @@ def main():
         # No test image is encoded or inferred during candidate training.
         x={s:encode(data[s+'_images'],'four_top2').to(device) for s in ('train','val')}
         y={s:torch.as_tensor(data[s+'_labels'],device=device,dtype=torch.long) for s in ('train','val')}
+        weights=class_weights(y['train'],args.class_weight_power)
+        cfg['loss_class_weights']=weights.cpu().tolist()
+        cfg['training_class_counts']=torch.bincount(y['train'],minlength=9).cpu().tolist()
         model=FourRouterClassification(cfg['architecture']).to(device)
         ck=torch.load(args.init_run/'best_checkpoint.pt',map_location=device,weights_only=False)
         model.load_state_dict(ck['model']);initial_epoch=int(ck['epoch']);del ck
@@ -123,7 +133,9 @@ def main():
                 codes=torch.randint(0,8,(len(ix),),device=device)
                 opt.zero_grad(set_to_none=True)
                 out=model(augment_d4(x['train'][ix],codes))
-                loss=F.cross_entropy(out['logits'],y['train'][ix],label_smoothing=args.label_smoothing)
+                loss=F.cross_entropy(out['logits'],y['train'][ix],
+                    weight=weights if args.class_weight_power>0 else None,
+                    label_smoothing=args.label_smoothing)
                 if not torch.isfinite(loss):raise RuntimeError('nonfinite loss')
                 loss.backward();torch.nn.utils.clip_grad_norm_(model.parameters(),5.)
                 opt.step();update_ema(ema,model,args.ema_decay)

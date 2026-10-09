@@ -39,6 +39,8 @@ def main():
                  '--init-run',str(task/'runs'/'simulation'/item['init_run']),'--out',str(out)]
         for key in ('epochs','phase_lr','electronic_lr','head_decay','label_smoothing','ema_decay'):
             command.extend(['--'+key.replace('_','-'),str(item[key])])
+        if 'class_weight_power' in item:
+            command.extend(['--class-weight-power',str(item['class_weight_power'])])
         env=os.environ.copy();env['CUDA_VISIBLE_DEVICES']=uuid;env['OMP_NUM_THREADS']='4'
         with (out.parent/f'{run}.log').open('x') as log:
             process=subprocess.Popen(command,cwd=root,env=env,stdout=log,stderr=subprocess.STDOUT,start_new_session=True)

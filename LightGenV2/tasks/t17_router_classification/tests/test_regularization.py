@@ -3,6 +3,7 @@ import torch
 import json
 import pytest
 from LightGenV2.tasks.t17_router_classification.train_regularized import augment_d4,update_ema
+from LightGenV2.tasks.t17_router_classification.train_regularized import class_weights
 from LightGenV2.tasks.t17_router_classification.evaluate_selected import reuse_parent_receipt
 from LightGenV2.tasks.t11_lifelong_optics.crc9_data import sha256
 
@@ -25,6 +26,14 @@ def test_ema_blends_parameters_and_copies_buffers_without_changing_graph():
     assert torch.equal(ema.weight,torch.full((3,),2.))
     assert torch.equal(ema.running_mean,model.running_mean)
     assert list(ema.state_dict())==list(model.state_dict())
+
+def test_class_weights_depend_only_on_training_counts():
+    y=torch.cat([torch.full((i+1,),i) for i in range(9)])
+    assert torch.equal(class_weights(y,0),torch.ones(9))
+    weights=class_weights(y,.5)
+    assert torch.all(weights[:-1]>weights[1:])
+    assert torch.allclose(weights.mean(),torch.tensor(1.))
+    with pytest.raises(ValueError):class_weights(torch.zeros(5,dtype=torch.long),.5)
 
 @pytest.mark.parametrize('mismatch',[False,True])
 def test_parent_receipt_reuse_requires_elementwise_equal_weights(tmp_path,mismatch):

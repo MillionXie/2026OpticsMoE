@@ -4,7 +4,8 @@ from pathlib import Path
 
 def main():
     p=argparse.ArgumentParser();p.add_argument('--run-prefix',required=True)
-    p.add_argument('--out',type=Path,required=True);args=p.parse_args()
+    p.add_argument('--out',type=Path,required=True)
+    p.add_argument('--candidates',nargs='+');args=p.parse_args()
     task=Path(__file__).resolve().parent
     import matplotlib
     matplotlib.use('Agg')
@@ -17,6 +18,7 @@ def main():
         '|---|---|---:|---:|---:|---:|---:|---:|---:|']
     names=('optical_early','optical_late','electronic')
     if (task/'runs'/'simulation'/f'{args.run_prefix}_optical').exists():names=('optical','electronic')
+    if args.candidates:names=args.candidates
     for name in names:
         run=task/'runs'/'simulation'/f'{args.run_prefix}_{name}'
         d=json.loads((run/'selected_diagnostics.json').read_text())
