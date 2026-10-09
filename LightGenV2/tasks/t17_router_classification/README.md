@@ -336,6 +336,17 @@ run前缀`crc9_moe_regularized_r5_s17_20261009`，仅按相同完整验证指标
 报告见[第六轮与goal结果](reports/crc9_moe_regularized_r6_s17_20261009/results.md)。
 本项目GPU已全部释放，旧run和有效权重保留，28项合同测试通过。
 
+### 电MoE同等本轮优化预算
+
+用户要求电MoE也同等程度优化。发布`configs/electronic_matched_round6.json`，
+与光MoE第六轮三个候选逐项匹配epoch30、batch32/64、LR、衰减、增强概率、
+类别权重power0.5、label smoothing0、EMA0.99及验证选择规则。
+从电MoE第二轮当前best（权重链epoch60）接续，不加新层或分类旁路。
+run前缀`crc9_electronic_matched_r6_s17_20261009`，实际新增3×30=90候选epoch。
+原电best参与验证比较，只对优胜新权重一次探索性测试；无改善则复用原收据。
+这对齐的是本轮优化配置与预算，不宣称此前所有轮次总调参预算完全相等。
+光MoE80.64%、D2NN74.93%原结果均保留，不重复测试。
+
 ## 去除可训练读出对照：four_top2_ccd（2026-10-09）
 
 用户要求检验末端Linear的影响。新增profile `four_top2_ccd`，保留上述四专家、

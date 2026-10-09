@@ -1,0 +1,8 @@
+{
+  "selection": "same full validation accuracy/macro mean as optical round6; matched three candidates and 30 epochs each",
+  "candidates": [
+    {"name": "electronic_b32aug25", "architecture": "electronic", "init_run": "crc9_moe_regularized_r2_s17_20261009_electronic", "epochs": 30, "batch": 32, "phase_lr": 0.0003, "electronic_lr": 0.00015, "head_decay": 0.02, "label_smoothing": 0.0, "ema_decay": 0.99, "class_weight_power": 0.5, "augmentation_probability": 0.25},
+    {"name": "electronic_b32aug50", "architecture": "electronic", "init_run": "crc9_moe_regularized_r2_s17_20261009_electronic", "epochs": 30, "batch": 32, "phase_lr": 0.0005, "electronic_lr": 0.0002, "head_decay": 0.02, "label_smoothing": 0.0, "ema_decay": 0.99, "class_weight_power": 0.5, "augmentation_probability": 0.5},
+    {"name": "electronic_b64aug50", "architecture": "electronic", "init_run": "crc9_moe_regularized_r2_s17_20261009_electronic", "epochs": 30, "batch": 64, "phase_lr": 0.0005, "electronic_lr": 0.0002, "head_decay": 0.02, "label_smoothing": 0.0, "ema_decay": 0.99, "class_weight_power": 0.5, "augmentation_probability": 0.5}
+  ]
+}
