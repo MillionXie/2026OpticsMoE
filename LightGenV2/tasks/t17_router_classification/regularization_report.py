@@ -6,6 +6,7 @@ from pathlib import Path
 def main():
     p=argparse.ArgumentParser();p.add_argument('--run-prefix',required=True)
     p.add_argument('--out',type=Path,required=True)
+    p.add_argument('--baseline-diagnostics',type=Path)
     p.add_argument('--candidates',nargs='+');args=p.parse_args()
     task=Path(__file__).resolve().parent
     import matplotlib
@@ -63,8 +64,9 @@ def main():
         fig,axes=plt.subplots(1,2,figsize=(13,4))
         pairs=('1,2','1,3','1,4','2,3','2,4','3,4')
         width=.8/(len(summary)+1)
-        first=next(iter(summary.values()))['initial']['validation']['router']
-        rows=[('parent',first)]+[(name,d['selected']['validation']['router']) for name,d in summary.items()]
+        first=(json.loads(args.baseline_diagnostics.read_text())['validation']['router']
+               if args.baseline_diagnostics else next(iter(summary.values()))['initial']['validation']['router'])
+        rows=[('before dispersion' if args.baseline_diagnostics else 'parent',first)]+[(name,d['selected']['validation']['router']) for name,d in summary.items()]
         for i,(name,route) in enumerate(rows):
             offset=(i-(len(rows)-1)/2)*width
             axes[0].bar(np.arange(4)+offset,np.array(route['mean_power'])*100,width,label=name)
