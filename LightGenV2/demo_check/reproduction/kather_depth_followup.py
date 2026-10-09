@@ -56,7 +56,11 @@ def main():
         assert cfg['detector'] == base['detector']
         assert cfg['encoding'] == base['encoding']
         assert cfg['phase_init_raw_uniform'] == base['phase_init_raw_uniform']
-        assert cfg['capture_weight'] == base['capture_weight']
+        assert set(SPEC['candidates'][candidate]) <= {
+            'lr', 'epochs', 'minimum_epochs', 'patience', 'ema_decay',
+            'label_smoothing', 'capture_weight', 'phase_smooth_weight', 'augmentation'
+        }
+        assert cfg['capture_weight'] >= 0 and cfg['phase_smooth_weight'] >= 0
     if args.check_contract:
         print(json.dumps(dict(passed=True,configurations={c:config(c) for c in SPEC['candidates']})))
         return

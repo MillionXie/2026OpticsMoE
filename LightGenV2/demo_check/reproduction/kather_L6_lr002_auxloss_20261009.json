@@ -1,0 +1,9 @@
+{
+  "candidates": {
+    "capture01": {"capture_weight": 0.1},
+    "smooth0005": {"phase_smooth_weight": 0.005}
+  },
+  "depths": [6],
+  "seeds": [17],
+  "selection": "Fresh six-layer D2NN+OEO at original lr0.002, maximum30 epochs, no checkpoint loading. Single-factor controls reducing capture or phase-smoothness auxiliary loss weights; all other original settings preserved. Compare minimum complete validation balanced NLL to previous original-LR winner1.0374559164047241 before deciding to test. Only validation improvement may be tested once; no test-score/ranking-based selection. Previously observed test: exploratory follow-up, preserve all outcomes."
+}
