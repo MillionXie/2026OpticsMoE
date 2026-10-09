@@ -1,0 +1,49 @@
+# T17 单数据集路由分类对照
+
+2026-10-09 用户批准三组训练、最多三张GPU。本任务为9分类，不是终身学习。
+
+## 数据
+
+CRC-VAL-HE-7K（Kather等2018，非Kather2016），7,180张224×224 RGB图。
+原始发布 https://zenodo.org/records/1214456 ，CC BY 4.0。
+复用服务器 `demo_reproduction_data/kather2018_crc9_domains_v1/A_original.npz`，
+SHA256 `287441e12c9f05c8257bf44b12b0157e77e934b88e5596e2dd9f85068484b51b`。
+全量固定划分训练5026、验证718、测试1436；类别依次为肿瘤、平滑肌、癌相关基质、
+淋巴细胞、碎屑、正常黏膜、脂肪、背景、黏液。仅用原始域，不使用人工染色变换域。
+这是已有镜像的图像级划分；没有患者ID，不能称患者独立。原始ZIP逐像素一致性尚未核定。
+此数据在历史T11使用过，本次新增的是三组独立分类对照，不宣称从未被项目使用。
+
+## 三组共同合同
+
+固定RGB平铺 `[R,G;B,0]`，各通道缩为112平方；右下为明确的空白保留区，
+没有第四模态、没有电子CNN、没有预训练特征。归一化为单位功率。
+沿用已发布T16角谱传播：532nm，17μm像素，每段10cm，1026平方画布、986平方相位孔径。
+所有光学raw相位初始0，经2πsigmoid成为π。无新增透镜。
+MoE从一开始开放并训练全部16个224平方专家，象限编号1–4/5–8/9–12/13–16，
+专家间隔30像素。稠密soft routing，振幅乘sqrt(q)，全场相干传播。
+专家之后使用原T16固定intensity-softsign OEO，再global phase与传播，CCD裁去边框，
+平均池化28平方、按样本均值归一化、唯一无偏置Linear(784,9)分类。
+OEO是电子非线性处理，三组一致；本任务不宣称纯被动光学。
+
+| 组 | 路由 | 后续光路 | 参数 |
+|---|---|---|---|
+| optical/Ours | 224平方相位+传播，16个80平方CCD窗，间隙16，温度1.25 | 16专家+global | 光学1,825,188 + 读出7,056 |
+| electronic | 固定28平方平均池化，Linear(784,64)/GELU/Linear(64,16)/softmax | 与Ours逐元素相同的初始专家和global | 路由51,280 + 专家/global1,775,012 + 读出7,056 |
+| d2nn | 无路由 | 两个986平方相位、相同OEO | 光学1,944,392 + 读出7,056 |
+
+电路由只决定16个功率，不直连分类头，没有特征绕过光路。它替换光router而非叠加。
+三组读出初始化逐元素一致，训练后分别拥有自己的权重。
+D2NN光学参数比Ours多6.53%；完整参数和实际命令保存于run/config.json。
+
+## 训练与选择
+
+首轮公平基线：seed17、batch8、最多25轮、最少8轮，完整验证宏平均召回率选模，
+6轮无提高早停；全部训练样本每轮遍历一次，不抽小子集。
+Adam相位学习率0.005，电子路由和读出0.001，交叉熵，无预训练/蒸馏。
+只保存best/last。选定checkpoint仅评一次完整测试集；记录普通准确率、宏平均召回、
+9×9混淆矩阵、逐样本结果、专家均值/标准差/首选比例。
+首轮结果用于决定是否需要EMA等MoE训练增强；不保证或人为制造MoE高于D2NN。
+
+从仓库根用 `python -m LightGenV2.tasks.t17_router_classification.train --architecture optical|electronic|d2nn --data <A_original.npz> --manifest <A_original_manifest.json> --out LightGenV2/tasks/t17_router_classification/runs/simulation/<unique_id>`。
+代码同步仅经main Git；GPU按UUID绑定，每组一张，不使用被他人占用的卡，结束自动退出释放。
+新问题记录于各run/status.json，结果汇总更新本README。当前正式结果待训练。
