@@ -244,6 +244,8 @@ class MultiVideoSettings:
     unmodulated_power_fraction_min: float = 0.20
     unmodulated_power_fraction_max: float = 0.35
     unmodulated_power_fraction_eval: float = 0.20
+    # Explicit user-authorized DC removal study; never changes formal defaults.
+    unmodulated_ablation: bool = False
     alpha_min: float = 0.50
     alpha_initial: float = 0.57
     alpha_max: float = 0.90
@@ -333,7 +335,9 @@ class MultiVideoSettings:
             <= self.unmodulated_power_fraction_max < 1
         ):
             raise ValueError("Invalid unmodulated-power interval")
-        if not self.synthetic and self.unmodulated_power_fraction_min < 0.20:
+        if self.unmodulated_ablation and 'dc_ablation' not in self.output_dir.name:
+            raise ValueError("DC ablation requires an explicitly named dc_ablation output")
+        if not self.synthetic and not self.unmodulated_ablation and self.unmodulated_power_fraction_min < 0.20:
             raise ValueError("Formal runs retain at least 20% nominal DC power")
         if min(self.epochs, self.batch_size, self.test_interval_epochs, self.slot_consistency_interval) <= 0:
             raise ValueError("Training counts must be positive")
