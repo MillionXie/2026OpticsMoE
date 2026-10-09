@@ -1,0 +1,8 @@
+{
+  "selection": "full validation mean of accuracy and macro recall; no candidate test",
+  "candidates": [
+    {"name": "optical_early", "architecture": "optical", "init_run": "crc9_four_top2_s17_20261009_optical", "epochs": 48, "phase_lr": 0.001, "electronic_lr": 0.0002, "head_decay": 0.01, "label_smoothing": 0.05, "ema_decay": 0.999},
+    {"name": "optical_late", "architecture": "optical", "init_run": "crc9_four_top2_e60_s17_20261009_optical", "epochs": 30, "phase_lr": 0.0005, "electronic_lr": 0.0001, "head_decay": 0.05, "label_smoothing": 0.05, "ema_decay": 0.999},
+    {"name": "electronic", "architecture": "electronic", "init_run": "crc9_four_top2_e60_s17_20261009_electronic", "epochs": 30, "phase_lr": 0.001, "electronic_lr": 0.0002, "head_decay": 0.01, "label_smoothing": 0.05, "ema_decay": 0.999}
+  ]
+}
