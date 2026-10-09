@@ -1,0 +1,9 @@
+{
+  "candidates": {
+    "lr003": {"lr": 0.003},
+    "lr004": {"lr": 0.004}
+  },
+  "depths": [6],
+  "seeds": [17],
+  "selection": "Minimum selected full validation balanced NLL at depth6 seed17 across two LR candidates. Preserve original 30 epochs, minimum15, patience8, cosine eta_min=0.1*lr and all other original settings. Previously observed test: exploratory optimized six-layer result, no test-based selection or monotonicity requirement."
+}
