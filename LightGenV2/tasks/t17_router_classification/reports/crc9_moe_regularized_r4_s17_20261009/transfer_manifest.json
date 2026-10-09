@@ -1,0 +1,14 @@
+{
+  "summary.json": {
+    "sha256": "24f9d93516551abdbf5eee01ced588b43b4b24959d745b8d51f0d9504e98f469",
+    "size": 419059
+  },
+  "results.md": {
+    "sha256": "75c9ede934467c2603cd59796fd047cbdb1b0d3a7e845b77812349c0349210b5",
+    "size": 772
+  },
+  "generalization_curves.png": {
+    "sha256": "16c36bae48f372ab83069052ee58a9ced56309d8ddd8ad175e67d59f0e69b374",
+    "size": 139837
+  }
+}
