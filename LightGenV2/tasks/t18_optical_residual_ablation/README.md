@@ -1,5 +1,11 @@
 # T18 Kather六层MoE：相干未调制分量消融
 
+新增两层主干消融：router→九专家并行相位→OEO→global相位→OEO→CCD
+（相位之后均有原5cm传播，末端另有5cm传播）。专家各1张相位，共9专家＋1global，
+router额外1张，总参数449,848；2次主干OEO。`--depth 2`，rho0／0.3配对，
+30轮seed17，其余设置不变。run：`runs/simulation/paired_L2_s17_20261009`。
+两层需独立smoke；与4／6层结果一同报告，保持每个深度内部配对同预算。
+
 2026-10-09新增用户批准的四层主干配对：router→专家层1→global1→专家层2→global2。
 仍是九专家，专家各2张相位，共18专家＋2global相位，router额外1张；
 总参数889,696，4次OEO。rho0/0.3、30轮、seed17，其余数据和训练配置不变。

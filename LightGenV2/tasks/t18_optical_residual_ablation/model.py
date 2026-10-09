@@ -24,7 +24,7 @@ def install_residual(model, phase_type, rho):
             module.residual_rho=float(rho)
             targets.append(name)
     cycles=model.net.num_cycles
-    assert cycles in (2,3)
+    assert cycles in (1,2,3)
     assert len(targets)==10*cycles,targets
     model.net.expert_bank.vectorize_homogeneous_d2nn=False
     assert sum(p.numel() for p in model.parameters())==10000+439848*cycles

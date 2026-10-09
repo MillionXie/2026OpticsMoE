@@ -17,7 +17,7 @@ def main():
     p.add_argument('--data',type=Path,required=True)
     p.add_argument('--out',type=Path,required=True)
     p.add_argument('--gpus',nargs=2,required=True)
-    p.add_argument('--depth',type=int,choices=[4,6],default=6)
+    p.add_argument('--depth',type=int,choices=[2,4,6],default=6)
     a=p.parse_args()
     assert len(set(a.gpus))==2 and all(g.startswith('GPU-') for g in a.gpus)
     occupied=subprocess.check_output(['nvidia-smi','--query-compute-apps=gpu_uuid',

@@ -18,7 +18,7 @@ original_build=b.build
 
 
 def build(arch,depth,cfg):
-    assert arch=='moe' and depth in (4,6)
+    assert arch=='moe' and depth in (2,4,6)
     model=original_build(arch,depth,cfg)
     install_residual(model,PhaseLayer,cfg['residual_rho'])
     return model
@@ -46,7 +46,7 @@ def main():
     parser.add_argument('--data',type=Path,required=True)
     parser.add_argument('--out',type=Path,required=True)
     parser.add_argument('--checkpoint',type=Path)
-    parser.add_argument('--depth',type=int,choices=[4,6],default=6)
+    parser.add_argument('--depth',type=int,choices=[2,4,6],default=6)
     a=parser.parse_args()
     visible=os.environ.get('CUDA_VISIBLE_DEVICES','')
     assert visible.startswith('GPU-') and ',' not in visible
