@@ -1,0 +1,8 @@
+{
+  "candidates": {
+    "smoothing003": {"phase_smooth_weight": 0.005, "augmentation": {"degrees": 5.0, "translation_pixels": 1.0, "scale_delta": 0.02}, "label_smoothing": 0.03}
+  },
+  "depths": [6],
+  "seeds": [27, 37],
+  "selection": "Replicate the validation-selected original-LR smoothing003 configuration without any new search. Fresh six-layer D2NN+OEO from random initialization; lr0.002, maximum30 epochs, minimum15, patience8, EMA0.95, phase smoothness0.005, weak affine augmentation, label smoothing0.03. Each seed selects minimum full validation balanced NLL, locks and replays checkpoint, tests once. Reuse existing seed17 test65.29255319148937 without retesting. Include all three seeds regardless of score or model ranking; exploratory follow-up, not replacement of the original uniformly tuned ablation."
+}
