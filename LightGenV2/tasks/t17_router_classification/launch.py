@@ -12,7 +12,7 @@ def main():
     p.add_argument('--data', required=True)
     p.add_argument('--manifest', required=True)
     p.add_argument('--run-prefix', required=True)
-    p.add_argument('--profile',choices=['four_top2','sixteen_dense'],default='four_top2')
+    p.add_argument('--profile',choices=['four_top2','four_top2_ccd','sixteen_dense'],default='four_top2')
     args=p.parse_args()
     if len(set(args.gpus))!=3: raise ValueError('three distinct GPU UUIDs required')
     root=Path(__file__).resolve().parents[3]

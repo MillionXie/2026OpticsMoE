@@ -16,16 +16,19 @@ def sparse_top2(weights):
     return q/q.sum(1,keepdim=True).clamp_min(1e-20)
 
 class FourRouterClassification(PhaseOnly):
-    def __init__(self,variant):
+    def __init__(self,variant,readout='linear'):
         if variant not in ('optical','electronic','d2nn'):raise ValueError(variant)
+        if readout not in ('linear','ccd_grid'):raise ValueError(readout)
         super().__init__('full_d2nn' if variant=='d2nn' else 'dynamic_four',dict(CONTRACT))
         self.variant=variant
+        self.readout=readout
         self.height=self.width=518
         self.active_height=self.active_width=478
         self.max_experts=4
         with torch.random.fork_rng(devices=[]):
             torch.manual_seed(122)
-            self.shared_head=nn.Linear(784,9,bias=False)
+            head=nn.Linear(784,9,bias=False)
+            if readout=='linear':self.shared_head=head
             if variant=='electronic':
                 self.electronic_router=nn.Sequential(nn.Linear(784,64),nn.GELU(),nn.Linear(64,4))
                 nn.init.zeros_(self.electronic_router[-1].weight)
@@ -64,10 +67,30 @@ class FourRouterClassification(PhaseOnly):
         final_ccd=self.propagator(intermediate*mask)
         reencoded=self.oeo(final_ccd)
         intensity=reencoded.abs().square()
-        features=F.adaptive_avg_pool2d(intensity[:,None,20:498,20:498],28).flatten(1)
-        features=features/features.mean(1,keepdim=True).clamp_min(1e-20)
-        output=dict(logits=self.shared_head(features),route_power=q,router_capture=capture)
+        active=intensity[:,20:498,20:498]
+        if self.readout=='linear':
+            features=F.adaptive_avg_pool2d(active[:,None],28).flatten(1)
+            features=features/features.mean(1,keepdim=True).clamp_min(1e-20)
+            logits=self.shared_head(features)
+            energies=None
+        else:
+            energies=ccd_grid_energies(active)
+            # Relative additive epsilon preserves gradients in dark regions.
+            total=energies.sum(1,keepdim=True)
+            probabilities=(energies+1e-12*total)/(total*(1+9e-12))
+            logits=probabilities.log()
+        output=dict(logits=logits,route_power=q,router_capture=capture)
+        if energies is not None:output['class_energies']=energies
         if return_debug:
             output.update(first_ccd=first_ccd.abs().square(),final_ccd=final_ccd.abs().square(),
                           post_oeo_intensity=intensity)
         return output
+
+CCD_EDGES=(0,159,318,478)
+
+def ccd_grid_energies(active):
+    """Nine disjoint, full-coverage CCD regions, numbered row-major 0..8."""
+    if active.shape[-2:]!=(478,478):raise ValueError(active.shape)
+    return torch.stack([active[:,CCD_EDGES[r]:CCD_EDGES[r+1],
+                                     CCD_EDGES[c]:CCD_EDGES[c+1]].sum((-2,-1))
+                        for r in range(3) for c in range(3)],dim=1)

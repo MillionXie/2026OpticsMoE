@@ -20,7 +20,7 @@ def write(path, value):
 
 
 def encode(images,profile='sixteen_dense'):
-    if profile=='four_top2':
+    if profile in ('four_top2','four_top2_ccd'):
         from .model_four import encode_rgb
         return encode_rgb(torch.as_tensor(images.copy()))
     rgb = torch.as_tensor(images.copy()).float().permute(0, 3, 1, 2) / 255
@@ -56,7 +56,7 @@ def evaluate(model, x, y, batch):
 def main():
     p=argparse.ArgumentParser()
     p.add_argument('--architecture', choices=['optical','electronic','d2nn'], required=True)
-    p.add_argument('--profile',choices=['four_top2','sixteen_dense'],default='four_top2')
+    p.add_argument('--profile',choices=['four_top2','four_top2_ccd','sixteen_dense'],default='four_top2')
     p.add_argument('--data', type=Path, required=True)
     p.add_argument('--manifest', type=Path, required=True)
     p.add_argument('--out', type=Path, required=True)
@@ -69,7 +69,7 @@ def main():
     p.add_argument('--router-lr', type=float, default=.001)
     p.add_argument('--skip-test', action='store_true')
     args=p.parse_args()
-    if args.profile=='four_top2' and (args.router_features!='mean' or args.router_lr!=.001):
+    if args.profile.startswith('four_top2') and (args.router_features!='mean' or args.router_lr!=.001):
         raise ValueError('four_top2 fixes standard electronic router features and learning rate')
     args.out.mkdir(parents=True, exist_ok=False)
     config={k:str(v) if isinstance(v,Path) else v for k,v in vars(args).items()}
@@ -89,11 +89,18 @@ def main():
         # Test images are encoded only after checkpoint selection.
         x={s:encode(data[s+'_images'],args.profile).to(device) for s in ('train','val')}
         y={s:torch.as_tensor(data[s+'_labels'],device=device,dtype=torch.long) for s in ('train','val')}
-        if args.profile=='four_top2':
+        if args.profile.startswith('four_top2'):
             from .model_four import FourRouterClassification,CONTRACT
-            model=FourRouterClassification(args.architecture).to(device)
+            model=FourRouterClassification(args.architecture,
+                readout='ccd_grid' if args.profile=='four_top2_ccd' else 'linear').to(device)
             config['optical_contract']=CONTRACT
             config['top_k']=2 if args.architecture!='d2nn' else None
+            config['readout']=model.readout
+            if model.readout=='ccd_grid':
+                config['ccd_readout']=dict(edges_active_pixels=[0,159,318,478],
+                    class_order='row-major 0..8',gap_pixels=0,coverage=1.,
+                    loss='cross_entropy(log(normalized_region_energy + relative epsilon))',
+                    relative_epsilon=1e-12,trainable_readout_parameters=0)
         else:
             from .model import RouterClassification
             model=RouterClassification(args.architecture,args.router_features).to(device)
