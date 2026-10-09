@@ -1,0 +1,10 @@
+{
+  "checked_on": "2026-10-09",
+  "metadata_url": "https://zenodo.org/api/records/1214456",
+  "doi": "10.5281/zenodo.1214456",
+  "title": "100,000 histological images of human colorectal cancer and healthy tissue",
+  "license": {"id": "cc-by-4.0"},
+  "used_file": "CRC-VAL-HE-7K.zip",
+  "used_images": 7180,
+  "note": "Official metadata queried successfully. Cached mirror raw-pixel equivalence is not verified."
+}
