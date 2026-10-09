@@ -29,7 +29,7 @@ b.build=build
 
 def source_identity():
     return dict(historical=k.sources(),task={p.name:r.sha(p) for p in
-        (Path(__file__),HERE/'model.py',HERE/'README.md')})
+        (Path(__file__),HERE/'model.py',HERE/'campaign.py')})
 
 
 def config(rho):

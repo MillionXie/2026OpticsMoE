@@ -45,4 +45,8 @@ rho0重新训练作配对对照，不直接拿旧MoE表混作同次实验。
 不修改历史源码或旧run，不新建分支/工作树，源码按main发布后服务器Git同步。
 
 入口：`run.py --phase smoke|train|evaluate --rho 0|0.3 --data ... --out ...`。
-当前尚未产生训练结果。
+配对执行入口：`campaign.py --data ... --out runs/simulation/paired_s17_20261009
+--gpus GPU-<uuid1> GPU-<uuid2>`，预检两张物理卡无占用，再并行训练。
+自动核验样本顺序/增强哈希相同并锁定结果，之后串行各测试一次。
+smoke `runs/smoke/contract_s17_20261009` 已通过rho0精确前向、初始化不变、
+30主干相位及router分类梯度与干涉功率范围检查。当前尚未产生训练结果。
