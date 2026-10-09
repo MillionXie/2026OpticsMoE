@@ -1,5 +1,9 @@
 # T18 Kather 2／4／6层MoE：相干未调制分量消融
 
+2026-10-10用户要求在未使用过的CC BY4.0数据集重做：另设
+[MangoLeafVarietyBD v2原始八品种协议](MANGO_VARIETY_PROTOCOL.md)，新run及图表
+与下方Kather历史分开。光路/残差及训练预算不变；输入类别含义变更。
+
 新增两层主干消融：router→九专家并行相位→OEO→global相位→OEO→CCD
 （相位之后均有原5cm传播，末端另有5cm传播）。专家各1张相位，共9专家＋1global，
 router额外1张，总参数449,848；2次主干OEO。`--depth 2`，rho0／0.3配对，

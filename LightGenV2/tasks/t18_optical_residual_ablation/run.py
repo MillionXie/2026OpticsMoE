@@ -29,7 +29,7 @@ b.build=build
 
 def source_identity():
     return dict(historical=k.sources(),task={p.name:r.sha(p) for p in
-        (Path(__file__),HERE/'model.py',HERE/'campaign.py')})
+        (Path(__file__),HERE/'model.py',HERE/'campaign.py',HERE/'prepare_mango.py')})
 
 
 def config(rho):
@@ -47,16 +47,22 @@ def main():
     parser.add_argument('--out',type=Path,required=True)
     parser.add_argument('--checkpoint',type=Path)
     parser.add_argument('--depth',type=int,choices=[2,4,6],default=6)
+    parser.add_argument('--dataset',choices=['kather','mango_variety'],default='kather')
     a=parser.parse_args()
     visible=os.environ.get('CUDA_VISIBLE_DEVICES','')
     assert visible.startswith('GPU-') and ',' not in visible
     a.out.mkdir(parents=True,exist_ok=False)
     torch.set_num_threads(4)
     cfg=config(a.rho);src=source_identity()
+    if a.dataset=='mango_variety':
+        manifest=r.read(a.data.parent/'data_manifest.json')
+        assert manifest['dataset']=='MangoLeafVarietyBD_raw_v2' and manifest['license']=='CC BY 4.0'
+        cfg.update(dataset=manifest['dataset'],classes=manifest['classes'],
+            deduplication=manifest['split_policy'],scope='Mango variety image-level single-seed optical ablation')
     r.save(a.out/'metadata.json',dict(command=sys.argv,pid=os.getpid(),
         git_commit=subprocess.check_output(['git','rev-parse','HEAD'],text=True).strip(),
         config=cfg,depth=a.depth,sources=src,environment=m.environment(),data_sha256=r.sha(a.data),
-        time=r.now(),test_read=a.phase=='evaluate',test_previously_observed=True))
+        time=r.now(),test_read=a.phase=='evaluate',test_previously_observed=a.dataset=='kather'))
     if a.phase=='smoke':
         r.setseed(17)
         base=original_build('moe',a.depth,cfg)
