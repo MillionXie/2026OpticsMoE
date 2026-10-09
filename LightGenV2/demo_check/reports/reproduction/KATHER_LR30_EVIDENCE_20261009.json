@@ -1,0 +1,464 @@
+{
+  "run": "LightGenV2/demo_check/runs/simulation/kather_d2nn_L6_lr30_selected_s17_20261009",
+  "metadata": {
+    "command": [
+      "LightGenV2/demo_check/reproduction/kather_depth_followup.py",
+      "--profile",
+      "LightGenV2/demo_check/reproduction/kather_depth_lr30_20261009.json",
+      "--data",
+      "/DATA/DATA1/guest3/demo_reproduction_data/kather2016/kather2016_fixed_split.npz",
+      "--out",
+      "LightGenV2/demo_check/runs/simulation/kather_d2nn_L6_lr30_selected_s17_20261009",
+      "--select-from",
+      "LightGenV2/demo_check/runs/simulation/kather_d2nn_L6_lr003_30_s17_20261009",
+      "LightGenV2/demo_check/runs/simulation/kather_d2nn_L6_lr004_30_s17_20261009"
+    ],
+    "pid": 2993101,
+    "git_commit": "8a2c84839ec46b7a43ddc72250479b8d0fa9f1e0",
+    "environment": {
+      "python": "3.11.15 (main, Jun 11 2026, 15:20:16) [GCC 14.3.0]",
+      "torch": "2.6.0+cu124",
+      "cuda": "12.4",
+      "cudnn": 90100,
+      "numpy": "1.26.4",
+      "sklearn": "1.9.0",
+      "gpu": "NVIDIA GeForce RTX 3090",
+      "visible_devices": "GPU-6dcca91a-8e08-1a50-9aa6-81defeaed50b"
+    },
+    "sources": {
+      "reproduction/bloodmnist_experiment.py": "cf2bef3dd86865c1cd3b7d2874017895b297ff5a614f0a82e28b96f8bbce2551",
+      "reproduction/train_adrenal_regularized.py": "502ffec98fd3a455eacf0449edf5979f1c5800b9a4c62087f5fa5e70db1bae25",
+      "reproduction/bloodmnist_profile.json": "d01fdc507f8698767e9fc09016f58cc601880d9733b1064d6f6e35be4aa60f96",
+      "adrenal_softsign_code_export_20260915_145336/code/reference_initialization.yaml": "212741d7f31b3dce3f8f7aea023f7848441e36d115411ecdb0688d6335252089",
+      "adrenal_softsign_code_export_20260915_145336/code/search_pipeline.py": "170fec8994e7873e3fc1de8b133d8eeb4729c016e5596123050a721acfcb6f20",
+      "adrenal_softsign_code_export_20260915_145336/code/metrics.py": "9f17a3a15a89630bbcd294f2e97de3755941fe38bf6f80d8e6e8758b313e496b",
+      "adrenal_softsign_code_export_20260915_145336/code/experiments.py": "56debf769cf6966105dbc0fd34bdea4037f83fcb0de48bb9986c0c138f460e7b",
+      "adrenal_softsign_code_export_20260915_145336/code/models.py": "f46e9aa1214532aa0a7121ffe0ef191ed656af2de80f7611df121cd9f110bd9c",
+      "adrenal_softsign_code_export_20260915_145336/code/report.py": "9bbc6db6bbd7a2fea9d2a9e7eb8a60271ed353387c0724b19f784baf58da67ea",
+      "adrenal_softsign_code_export_20260915_145336/code/calibration.py": "064663a7b5f4196c4d9e63de4096e55b29457a69343c57afeb029ef72c92fd5f",
+      "adrenal_softsign_code_export_20260915_145336/code/preflight.py": "98b3df39edc9e352e691b8e92902e739492386a0a3d6e03cfc9b563585140001",
+      "adrenal_softsign_code_export_20260915_145336/code/config.yaml": "409834f4668f0cf88c252d94fcbbd43a74c496d6d3b24a516acb181c9a7ea46a",
+      "adrenal_softsign_code_export_20260915_145336/code/run_experiment.py": "fcd0a5f7d486a6f6f6767e71e29a6161a9476e5b60e3039aff104408db59e752",
+      "adrenal_softsign_code_export_20260915_145336/code/optical_reference/__init__.py": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "adrenal_softsign_code_export_20260915_145336/code/optical_reference/readout.py": "181cabdc4b7b85c30bdb16b778870afbd6b35d1d365d98924606c5dbe3e487a4",
+      "adrenal_softsign_code_export_20260915_145336/code/optical_reference/experts.py": "5ff26c6223631534823b479c3eba98ca2311285e379c933c67ae24a073a37161",
+      "adrenal_softsign_code_export_20260915_145336/code/optical_reference/layout.py": "512ed7cf1f62d07cfd2ffc50997285f41d1cf0f9a5c3398e702a45ec37d7db7f",
+      "adrenal_softsign_code_export_20260915_145336/code/optical_reference/activations.py": "a6be25569d228f4154c7598535d98853e154a21b4ddca755c8cd19ed69f4b4bc",
+      "adrenal_softsign_code_export_20260915_145336/code/optical_reference/losses.py": "0a1e97baf44c9045f607d84aa55dee8660c451e13fbb2cd4696f0ed0690b74c6",
+      "adrenal_softsign_code_export_20260915_145336/code/optical_reference/optics.py": "b250627b14357a254eb12c785caf20f3aff2bf3fe30121a05321094803c73a7d",
+      "adrenal_softsign_code_export_20260915_145336/code/optical_reference/model.py": "afe60ad6cfe42dc8c01d3639112b6d7df47acd2854fff46d6a2da2893d3d1b9f",
+      "adrenal_softsign_code_export_20260915_145336/code/optical_reference/prompt.py": "3a66d0612473ae488a3e3e16a85bdff7f8f2370f6bc8c03687f77b947c953bc6",
+      "adrenal_softsign_code_export_20260915_145336/code/configs/d2nn_L2_oeo_relu_softsign.yaml": "58f9f7e6ff473bbcff5cb7d1681b2d4b152a6cec49c7383e01d083689ee0bb50",
+      "adrenal_softsign_code_export_20260915_145336/code/configs/d2nn_L6_oeo_softplus2.yaml": "a4bd1fd1a3d66058ca137b249915133fc7bdee30daa425f7edeb3760dd2d0818",
+      "adrenal_softsign_code_export_20260915_145336/code/configs/moe_L6_oeo_relu_softsign.yaml": "7e95024e316798c904ee69a76d1ce9e52841ae81c3b36d9595be47c2889b33fc",
+      "adrenal_softsign_code_export_20260915_145336/code/configs/d2nn_L6_oeo_relu_tanh.yaml": "9675ae3af42056cde146972b1a6e51a5e1a920c679795cfe4867b71122350de4",
+      "adrenal_softsign_code_export_20260915_145336/code/configs/d2nn_L2_oeo_softplus2.yaml": "1d96902b33f8534fa772e0bf780135cedcc39dc5a35b830df0b51e218464f8bf",
+      "adrenal_softsign_code_export_20260915_145336/code/configs/moe_L4_oeo_off.yaml": "9ea7abd35cf4de45406893454ad97dbffd9dad3ae789e33b6e16601c2a17b1db",
+      "adrenal_softsign_code_export_20260915_145336/code/configs/d2nn_L6_oeo_relu_softsign.yaml": "bf80b8d704d80fc41d7cb61aa655e7e2a65ee965971cc0e2dfa475aa9c430d46",
+      "adrenal_softsign_code_export_20260915_145336/code/configs/moe_L6_oeo_relu_tanh.yaml": "d55bde5b2a6d79e246a527becee05b9f0dceb58b300c8fa528205a0f8c0330e8",
+      "adrenal_softsign_code_export_20260915_145336/code/configs/d2nn_L2_oeo_relu_tanh.yaml": "b433629759c54435c7cede8029ee326f8ea6c987ae8fafc58598405eeceee2f8",
+      "adrenal_softsign_code_export_20260915_145336/code/configs/moe_L2_oeo_off.yaml": "9925b57312997c92bff5bc3bab97605684d2fb0244ab69a53b639ae3ac2bddd4",
+      "adrenal_softsign_code_export_20260915_145336/code/configs/moe_L4_oeo_relu_softsign.yaml": "031789271b04ede00a3061ee963effa3e1b60b2fefdbc3694ba05172e7e4de65",
+      "adrenal_softsign_code_export_20260915_145336/code/configs/d2nn_L4_oeo_off.yaml": "daaca90718f740cf2a3aa67cd2512ebe426b2a21c9a26aebb1e90ef9eaf13943",
+      "adrenal_softsign_code_export_20260915_145336/code/configs/moe_L4_oeo_softplus2.yaml": "1c4013b7184b687a7e296433e866478cbb30a66de5defa1ab0de5b61668eac2d",
+      "adrenal_softsign_code_export_20260915_145336/code/configs/moe_L2_oeo_relu_tanh.yaml": "8c1ef0470f0e2fc63cc17ef69c7ce6154be5266f5777483ff163525a20c302ff",
+      "adrenal_softsign_code_export_20260915_145336/code/configs/moe_L2_oeo_softplus2.yaml": "9dad12420c031b6544388b76513618dc72eb93bc941d8dc428ec7d40e41888d2",
+      "adrenal_softsign_code_export_20260915_145336/code/configs/moe_L6_oeo_off.yaml": "81b007c988919e518268ab384d604516892e57da2b55ec3c3f755c8be0db814e",
+      "adrenal_softsign_code_export_20260915_145336/code/configs/moe_L2_oeo_relu_softsign.yaml": "e5d3aa79b405a0f8cd25bb5d82b03707ef057ffe824123287ad411377956ccc0",
+      "adrenal_softsign_code_export_20260915_145336/code/configs/d2nn_L4_oeo_relu_tanh.yaml": "a1e64aa765cbbd14bfd98061d85fda3898a48bfe85d3cde66f2cdce5b80a91bd",
+      "adrenal_softsign_code_export_20260915_145336/code/configs/d2nn_L2_oeo_off.yaml": "0c2113f31bfdf2ffd5456ec4f9b94af4f7bea2f433e71700c3d4c736703d2a44",
+      "adrenal_softsign_code_export_20260915_145336/code/configs/d2nn_L4_oeo_softplus2.yaml": "d23e07e75910b50eda00d8faf3a663e88840b73cd3add84f5fba84e751862880",
+      "adrenal_softsign_code_export_20260915_145336/code/configs/d2nn_L6_oeo_off.yaml": "17e9295e90a144378c45fc525944c5770cfdfdab732c8559e20fc7339150b1e7",
+      "adrenal_softsign_code_export_20260915_145336/code/configs/moe_L6_oeo_softplus2.yaml": "405f630bc53753ee13dc91575e232733428d1350378d36d9d2e28c3e2032750b",
+      "adrenal_softsign_code_export_20260915_145336/code/configs/moe_L4_oeo_relu_tanh.yaml": "0fbad9b101bc120930c95ccf9225ff8780a3d455b3eef942979f6bf9ee96d935",
+      "adrenal_softsign_code_export_20260915_145336/code/configs/d2nn_L4_oeo_relu_softsign.yaml": "ab602e08f6b92baf59911ba466acdc7234b2f99ece5d3eb6c8f05ad327023788",
+      "reproduction/bloodmnist_multiseed.py": "d5fd93451eadb54c4b964fb5e49a4758f9170e28579642d8e07992bef35181c9",
+      "reproduction/kather2016_experiment.py": "976e0d9b6d4a2b549acfa4d5459f8c4a8c699e1c7bd5f8d676e96e32c4f1356f",
+      "reproduction/kather2016_profiles.json": "643535aa250d6e654077b36bb45c9baab9b9f6daf48aa70097f3b3b8e63da3aa",
+      "reproduction/prepare_kather2016.py": "7eb5880e86d9ad6a5b1e6a9cf3572046c4012052b7941da8c58774144b4169cd",
+      "reproduction/kather_depth_followup.py": "f91ef8e21338ac74b27490337b078f5de8f289826feda944f8eacedb939d3fd5",
+      "reproduction/kather_depth_lr30_20261009.json": "87165a88558362f0689992ed1915126b33a734c1b9abee7d545fc5ceaa487b3a"
+    },
+    "specification": {
+      "candidates": {
+        "lr003": {
+          "lr": 0.003
+        },
+        "lr004": {
+          "lr": 0.004
+        }
+      },
+      "depths": [
+        6
+      ],
+      "seeds": [
+        17
+      ],
+      "selection": "Minimum selected full validation balanced NLL at depth6 seed17 across two LR candidates. Preserve original 30 epochs, minimum15, patience8, cosine eta_min=0.1*lr and all other original settings. Previously observed test: exploratory optimized six-layer result, no test-based selection or monotonicity requirement."
+    },
+    "gpu_uuid": "GPU-6dcca91a-8e08-1a50-9aa6-81defeaed50b",
+    "data_sha256": "b6d887d8dfc890f5829639b47dd63e7fe22d1fee100119617a36756e32631ce7",
+    "test_previously_observed": true,
+    "test_read": false,
+    "time": "2026-10-09T11:06:30.746793+00:00"
+  },
+  "status": {
+    "state": "complete",
+    "time": "2026-10-09T11:06:42.340318+00:00",
+    "candidate": "lr004",
+    "test_scope": "exploratory_single_seed_followup",
+    "gpu_released_on_exit": true
+  },
+  "candidate": "lr004",
+  "candidate_means": {
+    "lr003": 0.8606650829315186,
+    "lr004": 0.7518625259399414
+  },
+  "selected_epoch": 29,
+  "metrics": {
+    "train": {
+      "n": 3496,
+      "support": [
+        437,
+        437,
+        437,
+        437,
+        437,
+        437,
+        437,
+        437
+      ],
+      "accuracy": 0.8329519450800915,
+      "balanced_accuracy": 0.8329519450800915,
+      "macro_f1": 0.832418428604278,
+      "macro_ovr_auroc": 0.9832161427845805,
+      "recall": [
+        0.8604118993135011,
+        0.7505720823798627,
+        0.7528604118993135,
+        0.7643020594965675,
+        0.7162471395881007,
+        0.9336384439359268,
+        0.9038901601830663,
+        0.9816933638443935
+      ],
+      "confusion_matrix": [
+        [
+          376,
+          2,
+          14,
+          22,
+          0,
+          23,
+          0,
+          0
+        ],
+        [
+          0,
+          328,
+          29,
+          0,
+          76,
+          3,
+          1,
+          0
+        ],
+        [
+          5,
+          64,
+          329,
+          18,
+          4,
+          17,
+          0,
+          0
+        ],
+        [
+          45,
+          0,
+          31,
+          334,
+          0,
+          27,
+          0,
+          0
+        ],
+        [
+          0,
+          92,
+          7,
+          0,
+          313,
+          9,
+          16,
+          0
+        ],
+        [
+          3,
+          2,
+          2,
+          15,
+          7,
+          408,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          0,
+          1,
+          0,
+          395,
+          41
+        ],
+        [
+          0,
+          0,
+          0,
+          0,
+          0,
+          1,
+          7,
+          429
+        ]
+      ],
+      "nll": 0.5988945364952087,
+      "balanced_nll": 0.5988945960998535,
+      "detector_capture": 0.5197078585624695
+    },
+    "val": {
+      "n": 752,
+      "support": [
+        94,
+        94,
+        94,
+        94,
+        94,
+        94,
+        94,
+        94
+      ],
+      "accuracy": 0.7167553191489362,
+      "balanced_accuracy": 0.7167553191489362,
+      "macro_f1": 0.7137043485824472,
+      "macro_ovr_auroc": 0.9597102761430512,
+      "recall": [
+        0.7446808510638298,
+        0.6382978723404256,
+        0.6063829787234043,
+        0.5425531914893617,
+        0.5638297872340425,
+        0.8297872340425532,
+        0.8191489361702128,
+        0.9893617021276596
+      ],
+      "confusion_matrix": [
+        [
+          70,
+          0,
+          4,
+          12,
+          1,
+          7,
+          0,
+          0
+        ],
+        [
+          0,
+          60,
+          7,
+          0,
+          27,
+          0,
+          0,
+          0
+        ],
+        [
+          2,
+          23,
+          57,
+          3,
+          5,
+          4,
+          0,
+          0
+        ],
+        [
+          24,
+          0,
+          11,
+          51,
+          0,
+          8,
+          0,
+          0
+        ],
+        [
+          0,
+          21,
+          5,
+          0,
+          53,
+          7,
+          7,
+          1
+        ],
+        [
+          5,
+          1,
+          0,
+          7,
+          3,
+          78,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          0,
+          2,
+          0,
+          77,
+          15
+        ],
+        [
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          1,
+          93
+        ]
+      ],
+      "nll": 0.7518625259399414,
+      "balanced_nll": 0.7518625259399414,
+      "detector_capture": 0.5164729356765747
+    }
+  },
+  "test": {
+    "n": 752,
+    "support": [
+      94,
+      94,
+      94,
+      94,
+      94,
+      94,
+      94,
+      94
+    ],
+    "accuracy": 0.7300531914893617,
+    "balanced_accuracy": 0.7300531914893618,
+    "macro_f1": 0.7284992813531063,
+    "macro_ovr_auroc": 0.9586937366617085,
+    "recall": [
+      0.5319148936170213,
+      0.6595744680851063,
+      0.6914893617021277,
+      0.5957446808510638,
+      0.6702127659574468,
+      0.7872340425531915,
+      0.9042553191489362,
+      1.0
+    ],
+    "confusion_matrix": [
+      [
+        50,
+        0,
+        3,
+        27,
+        0,
+        14,
+        0,
+        0
+      ],
+      [
+        0,
+        62,
+        9,
+        0,
+        21,
+        2,
+        0,
+        0
+      ],
+      [
+        4,
+        13,
+        65,
+        7,
+        3,
+        2,
+        0,
+        0
+      ],
+      [
+        18,
+        0,
+        5,
+        56,
+        1,
+        14,
+        0,
+        0
+      ],
+      [
+        0,
+        17,
+        3,
+        0,
+        63,
+        6,
+        5,
+        0
+      ],
+      [
+        1,
+        1,
+        1,
+        13,
+        4,
+        74,
+        0,
+        0
+      ],
+      [
+        0,
+        0,
+        0,
+        0,
+        1,
+        0,
+        85,
+        8
+      ],
+      [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        94
+      ]
+    ],
+    "nll": 0.7450698614120483,
+    "balanced_nll": 0.7450698614120483,
+    "detector_capture": 0.5090994834899902
+  },
+  "checkpoint_sha256": "9a17818ddf8917792e8899c59690dc764468e25f36fafa0585fa33e40a132664",
+  "validation_replay": [
+    {
+      "model": "d2nn_wide_L6_seed17",
+      "maximum_validation_score_error": 0.0
+    }
+  ],
+  "results_sha256": "14578a8853a7c2e0f1f4c6db062a0caa858d46032b45a7f9e70f972cafa8c07c"
+}
