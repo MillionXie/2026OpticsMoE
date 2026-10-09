@@ -380,6 +380,15 @@ encoder、路由层或推理分支。三条训练进程及一次评估已结束�
 分散与仅softmax变均匀。原80.57%模型和测试收据始终保留。
 run前缀`crc9_electronic_dispersion_r1_s17_20261009`；只使用空闲物理UUID，最多三卡。
 
+首轮中档辅助后期分散改善但验证精度下降，新增恢复候选
+`configs/electronic_dispersion_recovery.json`，从中档last在线权重接续，明确记录SHA，
+暂时冻结电子router，继续训练专家/global与既有读出，不增加推理模块。
+两档相位LR0.0003/0.001，各30轮；EMA对冻结router逐元素复制，防止平均舍入改变Top-2。
+仍使用原分散前验证综合分数80.942724%减1百分点为硬门槛，不改成较差last的分数。
+初始last未测试，不能复用父best测试收据。最终各候选是否达到门槛另记
+`validation_admissible`，未过门槛不测试。run前缀
+`crc9_electronic_dispersion_recovery_s17_20261009`。
+
 ## 去除可训练读出对照：four_top2_ccd（2026-10-09）
 
 用户要求检验末端Linear的影响。新增profile `four_top2_ccd`，保留上述四专家、

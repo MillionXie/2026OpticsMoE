@@ -30,7 +30,7 @@ def main():
         parent=task/'runs'/'simulation'/item['init_run']
         cfg=json.loads((parent/'config.json').read_text())
         if cfg['architecture']!=item['architecture'] or cfg['profile']!='four_top2':raise ValueError('parent contract')
-        if not (parent/'best_checkpoint.pt').is_file():raise FileNotFoundError(parent)
+        if not (parent/f'{item.get("init_checkpoint","best")}_checkpoint.pt').is_file():raise FileNotFoundError(parent)
     launches=[]
     for item,uuid in zip(candidates,args.gpus):
         run=f'{args.run_prefix}_{item["name"]}'
@@ -46,8 +46,9 @@ def main():
         if 'router_balance_weight' in item:
             command.extend(['--router-balance-weight',str(item['router_balance_weight'])])
         if 'batch' in item:command.extend(['--batch',str(item['batch'])])
-        for key in ('router_balance_mode','routing_score_tolerance'):
+        for key in ('router_balance_mode','routing_score_tolerance','validation_score_floor','init_checkpoint'):
             if key in item:command.extend(['--'+key.replace('_','-'),str(item[key])])
+        if item.get('freeze_router'):command.append('--freeze-router')
         env=os.environ.copy();env['CUDA_VISIBLE_DEVICES']=uuid;env['OMP_NUM_THREADS']='4'
         with (out.parent/f'{run}.log').open('x') as log:
             process=subprocess.Popen(command,cwd=root,env=env,stdout=log,stderr=subprocess.STDOUT,start_new_session=True)

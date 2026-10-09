@@ -34,7 +34,8 @@ def augment_d4(amplitude,codes):
 @torch.no_grad()
 def update_ema(average,online,decay):
     for a,p in zip(average.parameters(),online.parameters()):
-        a.mul_(decay).add_(p,alpha=1-decay)
+        if p.requires_grad:a.mul_(decay).add_(p,alpha=1-decay)
+        else:a.copy_(p)
     for a,b in zip(average.buffers(),online.buffers()):a.copy_(b)
 
 def selection_score(metrics):
@@ -93,12 +94,17 @@ def main():
     p.add_argument('--router-balance-weight',type=float,default=0.)
     p.add_argument('--router-balance-mode',choices=['dense_kl','top2_load'],default='dense_kl')
     p.add_argument('--routing-score-tolerance',type=float)
+    p.add_argument('--validation-score-floor',type=float)
+    p.add_argument('--init-checkpoint',choices=['best','last'],default='best')
+    p.add_argument('--freeze-router',action='store_true')
     p.add_argument('--batch',type=int)
     args=p.parse_args()
     if args.batch is not None and args.batch<1:raise ValueError('invalid batch')
     if args.router_balance_weight<0:raise ValueError('negative router balance weight')
     if args.routing_score_tolerance is not None and not 0<=args.routing_score_tolerance<=.02:
         raise ValueError('routing selection tolerance must be between zero and .02')
+    if args.validation_score_floor is not None and (args.routing_score_tolerance is None or not 0<=args.validation_score_floor<=1):
+        raise ValueError('absolute floor requires routing selection')
     if args.epochs<1 or not 0<=args.label_smoothing<1 or not 0<args.ema_decay<1 or not 0<=args.augmentation_probability<=1:
         raise ValueError('invalid regularization budget')
     args.out.mkdir(parents=True,exist_ok=False)
@@ -107,6 +113,7 @@ def main():
         previous=json.loads((args.init_run/'config.json').read_text())
         if previous['profile']!='four_top2' or previous['architecture'] not in ('optical','electronic'):
             raise ValueError('only the existing four-top2 Linear MoE graph is authorized')
+        if args.freeze_router and previous['architecture']!='electronic':raise ValueError('freeze-router is electronic training only')
         if previous['optical_contract']!=CONTRACT:raise ValueError('optical contract mismatch')
         cfg={k:str(v) if isinstance(v,Path) else v for k,v in vars(args).items()}
         cfg.update(profile='four_top2',readout='linear',architecture=previous['architecture'],
@@ -138,10 +145,13 @@ def main():
         cfg['loss_class_weights']=weights.cpu().tolist()
         cfg['training_class_counts']=torch.bincount(y['train'],minlength=9).cpu().tolist()
         model=FourRouterClassification(cfg['architecture']).to(device)
-        ck=torch.load(args.init_run/'best_checkpoint.pt',map_location=device,weights_only=False)
+        source=args.init_run/f'{args.init_checkpoint}_checkpoint.pt'
+        ck=torch.load(source,map_location=device,weights_only=False)
         model.load_state_dict(ck['model']);initial_epoch=int(ck['epoch']);del ck
+        if args.freeze_router:
+            for parameter in model.electronic_router.parameters():parameter.requires_grad_(False)
         cfg['initial_checkpoint']=dict(epoch=initial_epoch,
-            sha256=sha256(args.init_run/'best_checkpoint.pt'),source_git_commit=previous['git_commit'])
+            sha256=sha256(source),path=str(source),source_git_commit=previous['git_commit'])
         cfg['effective_final_epoch']=initial_epoch+args.epochs
         cfg['total_parameters']=sum(p.numel() for p in model.parameters())
         write(args.out/'config.json',cfg)
@@ -149,6 +159,7 @@ def main():
         for parameter in ema.parameters():parameter.requires_grad_(False)
         groups=[]
         for name,parameter in model.named_parameters():
+            if not parameter.requires_grad:continue
             lr=args.electronic_lr if 'shared_head' in name or 'electronic_router' in name else args.phase_lr
             decay=args.head_decay if 'shared_head' in name else (.0001 if 'electronic_router' in name else 0.)
             groups.append(dict(params=[parameter],lr=lr,weight_decay=decay))
@@ -158,6 +169,8 @@ def main():
         initial_train,_,_=evaluate_candidate(model,x['train'],y['train'],cfg['batch'])
         write(args.out/'initial_diagnostics.json',dict(epoch=initial_epoch,training=initial_train,validation=initial_val))
         baseline_score=selection_score(initial_val)
+        if args.validation_score_floor is not None:
+            baseline_score=args.validation_score_floor+args.routing_score_tolerance
         best=baseline_score;history=[]
         best_key=candidate_key(initial_val,baseline_score,args.routing_score_tolerance)
         def save_best(chosen,epoch,kind):
@@ -165,7 +178,7 @@ def main():
                 fine_tune_epoch=epoch,weights_kind=kind,config=cfg,optimizer=None,
                 checkpoint_role='selected inference weights; optimizer must be reinitialized'),
                 args.out/'best_checkpoint.pt')
-        save_best(model,0,'parent')
+        save_best(model,0,'parent' if args.init_checkpoint=='best' else 'initial_untested_last')
         rng=np.random.default_rng(args.seed)
         for epoch in range(1,args.epochs+1):
             begin=time.time();model.train();loss_sum=0.;balance_sum=0.;indices=rng.permutation(len(y['train']))
@@ -222,6 +235,8 @@ def main():
         selected=dict(epoch=ck['epoch'],fine_tune_epoch=ck['fine_tune_epoch'],weights_kind=ck['weights_kind'],
             training=selected_train,validation=selected_val,selection_score=selection_score(selected_val),
             checkpoint_sha256=sha256(args.out/'best_checkpoint.pt'),test_evaluations=0)
+        if args.routing_score_tolerance is not None:
+            selected['validation_admissible']=selection_score(selected_val)>=baseline_score-args.routing_score_tolerance
         write(args.out/'selected_diagnostics.json',selected)
         write(args.out/'selected_validation.json',dict(epoch=ck['epoch'],metrics=selected_val,selection_score=selection_score(selected_val)))
         write(args.out/'status.json',dict(state='completed_validation_only',selected=selected))

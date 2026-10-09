@@ -1,0 +1,7 @@
+{
+  "selection":"freeze last middle-load router; full validation score floor .7994272406739227 referenced to pre-dispersion model; no test selection",
+  "candidates":[
+    {"name":"recovery_lr03","architecture":"electronic","init_run":"crc9_electronic_dispersion_r1_s17_20261009_electronic_load05","init_checkpoint":"last","freeze_router":true,"epochs":30,"batch":32,"phase_lr":0.0003,"electronic_lr":0.0002,"head_decay":0.02,"label_smoothing":0.0,"ema_decay":0.99,"class_weight_power":0.5,"augmentation_probability":0.5,"routing_score_tolerance":0.01,"validation_score_floor":0.7994272406739227},
+    {"name":"recovery_lr10","architecture":"electronic","init_run":"crc9_electronic_dispersion_r1_s17_20261009_electronic_load05","init_checkpoint":"last","freeze_router":true,"epochs":30,"batch":32,"phase_lr":0.001,"electronic_lr":0.0002,"head_decay":0.02,"label_smoothing":0.0,"ema_decay":0.99,"class_weight_power":0.5,"augmentation_probability":0.5,"routing_score_tolerance":0.01,"validation_score_floor":0.7994272406739227}
+  ]
+}

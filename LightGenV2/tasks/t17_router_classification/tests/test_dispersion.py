@@ -1,5 +1,5 @@
 import torch
-from LightGenV2.tasks.t17_router_classification.train_regularized import router_balance_loss,candidate_key
+from LightGenV2.tasks.t17_router_classification.train_regularized import router_balance_loss,candidate_key,update_ema
 
 def test_top2_balance_moves_logits_toward_unused_experts():
     logits=torch.tensor([[0.,0.,2.,1.5]]*8,requires_grad=True)
@@ -23,3 +23,11 @@ def test_accuracy_floor_prevents_diverse_but_bad_selection():
     assert candidate_key(acceptable,.81,.01)>candidate_key(parent,.81,.01)
     assert candidate_key(failed,.81,.01)<candidate_key(parent,.81,.01)
     assert candidate_key(acceptable,.81)<candidate_key(parent,.81)
+
+def test_ema_preserves_frozen_router_exactly():
+    from copy import deepcopy
+    layer=torch.nn.Linear(4,4)
+    layer.requires_grad_(False)
+    average=deepcopy(layer)
+    for _ in range(100):update_ema(average,layer,.99)
+    assert all(torch.equal(a,b) for a,b in zip(layer.parameters(),average.parameters()))
