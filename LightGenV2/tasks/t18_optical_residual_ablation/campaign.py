@@ -16,11 +16,11 @@ def main():
     p=argparse.ArgumentParser()
     p.add_argument('--data',type=Path,required=True)
     p.add_argument('--out',type=Path,required=True)
-    p.add_argument('--gpus',nargs=2,required=True)
+    p.add_argument('--gpus',nargs='+',required=True)
     p.add_argument('--depth',type=int,choices=[2,4,6],default=6)
     p.add_argument('--dataset',choices=['kather','mango_variety'],default='kather')
     a=p.parse_args()
-    assert len(set(a.gpus))==2 and all(g.startswith('GPU-') for g in a.gpus)
+    assert len(a.gpus) in (1,2) and len(set(a.gpus))==len(a.gpus) and all(g.startswith('GPU-') for g in a.gpus)
     occupied=subprocess.check_output(['nvidia-smi','--query-compute-apps=gpu_uuid',
         '--format=csv,noheader'],text=True).splitlines()
     assert not set(a.gpus).intersection(x.strip() for x in occupied)
@@ -30,7 +30,8 @@ def main():
     run=Path(__file__).with_name('run.py')
     processes=[]
     try:
-        for rho,gpu in zip([0.,.3],a.gpus):
+        for i,rho in enumerate([0.,.3]):
+            gpu=a.gpus[i%len(a.gpus)]
             folder=a.out/f'rho{rho}'
             cmd=[sys.executable,'-u',str(run),'--phase','train','--rho',str(rho),
                 '--data',str(a.data),'--out',str(folder),'--depth',str(a.depth),'--dataset',a.dataset]
@@ -39,6 +40,9 @@ def main():
             proc=subprocess.Popen(cmd,env=env,stdout=log,stderr=subprocess.STDOUT)
             processes.append((proc,log))
             save(a.out/f'process_rho{rho}.json',dict(pid=proc.pid,command=cmd,gpu_uuid=gpu))
+            if len(a.gpus)==1:
+                assert proc.wait()==0,proc.pid
+                log.close()
         save(a.out/'status.json',dict(state='training',test_read=False))
         for proc,log in processes:
             assert proc.wait()==0,proc.pid
