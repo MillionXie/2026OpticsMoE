@@ -8,16 +8,20 @@
 本轮只改训练预算、平滑正则及训练增强；原RGB编码、全孔径输入、OEO、
 相位初始化、探测器、EMA0.95、损失捕获权重和数据划分均不变。
 四层／六层同预算比较60轮基础设置和60轮较强正则（平滑0.05、旋转±20°）。
-seed17两种深度最佳验证平衡NLL均值选一个公共配置；再补seed27/37两深度。
-最终6份checkpoint锁定后重放验证，再各测试一次。未胜出配置不测试。
+按用户最新指示，仅seed17，最多两张GPU；两候选各占一张，内部串行跑4／6层。
+两种深度最佳验证平衡NLL均值选一个公共配置；最终2份checkpoint锁定后重放
+验证，再各测试一次。未胜出配置不测试；单种子不能给出均值±标准差。
 测试集历史结果已被查看，本轮必须称后续探索，不能声称新的独立确认实验，
 也不能保证六层一定超过四层或挑种子制造单调性。原MoE不改，若将新结果与
 原表并列，须明确D2NN训练预算变化，不称原同预算消融。
 
-入口 `reproduction/kather_depth_followup.py`，配置同名日期JSON；单进程依次训练，
-仅接受一张GPU UUID。run保留命令、Git、源码SHA、数据SHA、配置、best/last、
+入口 `reproduction/kather_depth_followup.py`，配置同名日期JSON；每个进程依次训练，
+各只接受一张GPU UUID。run保留命令、Git、源码SHA、数据SHA、配置、best/last、
 历史曲线、逐样本预测和状态；训练／评估结束进程退出释放GPU。
 数据：`/DATA/DATA1/guest3/demo_reproduction_data/kather2016/kather2016_fixed_split.npz`。
-计划run：`runs/simulation/kather_d2nn_depth_followup_20261009`。
-旧服务器训练入口的四份核心训练文件已与main逐SHA一致核验；旧目录保留。
+候选run：`runs/simulation/kather_d2nn_depth_long_s17_20261009` 和
+`runs/simulation/kather_d2nn_depth_regularized_s17_20261009`。
+原单GPU试跑 `kather_d2nn_depth_followup_20261009` 已在首个模型第5轮后停止，
+不进入结果。旧入口50份源依赖已核验文本完全一致；部分归档文件仅换行格式
+不同，因此原始字节SHA不同，不能冒称全部逐字节一致；旧目录保留。
 当前尚无新结果，训练与测试成绩不得预填。
