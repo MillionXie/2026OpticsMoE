@@ -61,3 +61,33 @@ CUDA_VISIBLE_DEVICES=1 $PY -m LightGenV2.tasks.t06_video_quality_assessment.dc_a
 各run保存 `initialization_identity.json`、配置、数据SHA、命令、commit、环境、状态、
 逐样本预测、best/last；最终同时报告两组best与last指标，不将旧.8044成绩填作新结果。
 原正式PT、原消融与续训数据不改、不删。
+
+## 完成结果
+
+两组均从头训练100epoch，训练源码commit
+`c1d616f6ecfd22cb04b71785bd1eab9ab60e5834`。相关CPU测试7项通过。
+实际配置仅输出目录和三项rho参数不同；二者共同初始state SHA256：
+`86c80d5fbf538730f58b3d0893dde1e7d006fc880fe56ba85fb7dc251ce179c5`。
+各自 `initialization_identity.json` 均记录 `pretrained_student_weights_loaded=false`。
+
+| 从头训练条件 | 最佳epoch | 最佳SRCC | 最佳PLCC | 最佳RMSE | 第100epoch SRCC |
+| --- | ---: | ---: | ---: | ---: | ---: |
+| 有光学FFN残差，训练/测试rho=.20 | 100 | .7970022913 | .8036683088 | 8.353568 | .7970022913 |
+| 无显式光学FFN残差，训练/测试rho=0 | 75 | .8003919178 | .8102487203 | 8.327778 | .7974375292 |
+
+最佳SRCC的有减无差值为 `-.0033896265`，第100epoch差 `-.0004352378`。
+最佳PT逐视频配对bootstrap（2000次，seed163）差值95%区间
+`[-.0226477797, .0146697694]`，包含0。单seed、TEST选模的开发实验：
+当前只能说性能接近，本轮无残差组略高，不能声称某一条件显著更好。
+这不是旧PT续训，不将原 `.8044` 纳入此表，也不替换原部署权重。
+
+服务器权重均在本任务 `runs/simulation/` 下：
+
+- `temporal_dc_ablation_scratch_dc20_s163_20261009/best_checkpoint.pt`：
+  SHA256 `2746a94ddd06b8d1ab355ebb9ed1913b1eb83f2f48faddfb0a94a05da0dccc9d`。
+- `temporal_dc_ablation_scratch_dc0_s163_20261009/best_checkpoint.pt`：
+  SHA256 `d027a52e2abd249e52d9dc2d9501967c1f563fec0a2f38f128a43522527b8e48`。
+
+两份status均complete，只保留best/last两份PT及必要指标、逐视频预测。
+训练PID2825126/2825127的 `/proc` 条目均消失，`nvidia-smi` 中无对应CUDA进程；
+GPU资源随训练退出释放，未停止其他用户/任务的进程。
