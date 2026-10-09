@@ -1,3 +1,4 @@
 # Derived scientific plots only; raw CCD/input imagery and runs stay ignored.
 !reports/**/confusion_matrices.png
 !reports/**/training_and_routing.png
+!reports/**/detector_fields.png
