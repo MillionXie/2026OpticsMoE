@@ -13,6 +13,10 @@ def main():
     p.add_argument('--manifest', required=True)
     p.add_argument('--run-prefix', required=True)
     p.add_argument('--profile',choices=['four_top2','four_top2_ccd','sixteen_dense'],default='four_top2')
+    p.add_argument('--epochs',type=int,default=25)
+    p.add_argument('--min-epochs',type=int,default=8)
+    p.add_argument('--train-eval-every',type=int,default=0)
+    p.add_argument('--resume-prefix')
     args=p.parse_args()
     if len(set(args.gpus))!=3: raise ValueError('three distinct GPU UUIDs required')
     root=Path(__file__).resolve().parents[3]
@@ -35,7 +39,10 @@ def main():
         out.parent.mkdir(parents=True,exist_ok=True)
         command=[sys.executable,'-u','-m','LightGenV2.tasks.t17_router_classification.train',
                  '--architecture',variant,'--profile',args.profile,'--data',args.data,'--manifest',args.manifest,
-                 '--out',str(out)]
+                 '--out',str(out),'--epochs',str(args.epochs),'--min-epochs',str(args.min_epochs),
+                 '--train-eval-every',str(args.train_eval_every)]
+        if args.resume_prefix:
+            command.extend(['--resume-run',str(task/'runs'/'simulation'/f'{args.resume_prefix}_{variant}')])
         env=os.environ.copy();env['CUDA_VISIBLE_DEVICES']=uuid
         env['OMP_NUM_THREADS']='4'
         with (out.parent/f'{run}.log').open('x') as log:
