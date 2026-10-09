@@ -71,5 +71,36 @@ CUDA_VISIBLE_DEVICES=1 $PY -m LightGenV2.tasks.t06_video_quality_assessment.dc_a
 ```
 
 audit生成 `comparison.json`、逐样本 `test_predictions.csv`、数据SHA和缓存恢复核验。
-训练各生成 `history.json`、best/last、指标和run_manifest。输出目录已存在时拒绝覆盖。
+训练各生成 `train_history.json`、best/last、指标和run_manifest。输出目录已存在时拒绝覆盖。
 初始权重和数据不上传Git。结论必须区分固定权重干预与匹配续训，不只挑一组最高分。
+
+## 2026-10-09 已完成的固定权重干预
+
+代码提交 `76643e200`，服务器 xml 环境；新物理公式与设置合同测试5项通过。
+扩大运行T06整组测试为51通过、2失败；失败均为历史Temporal36/旧Spatial profile
+的backend来源hash检查，涉及未改动的旧modeling/settings/training/run/data文件。
+README已标注旧profile未通过预检；本次固定PT入口不经这些profile，不绕过旧来源检查。
+原完整TEST558发布包原预测复现为 `.8043868643075132`，不是另换一个Temporal版本。
+
+| 同一原始PT，全部光分支开启 | SRCC | PLCC | RMSE | MAE |
+| --- | ---: | ---: | ---: | ---: |
+| 显式未调制场 rho=.20 | .8043868643 | .8180329374 | 7.99108 | 5.99206 |
+| 显式未调制场 rho=0 | .8003881881 | .8134329592 | 8.10588 | 6.13661 |
+
+SRCC差 `.0039986762`。同视频配对bootstrap（2000次，seed163）差值95%区间
+`[-.00259043, .01083649]`，含0；当前不能声称增益统计显著，更不能推广成所有任务。
+bootstrap只描述本组测试样本的不确定性，不是跨训练seed的误差，也不是独立泛化评估。
+
+原四个同尺度融合alpha为 `.56113535/.55998361/.56789732/.56950724`；
+固定PT干预两组完全相同。未调制比例rho与这些alpha必须分开报告。
+训练仍保留原共同的5% phase-dropout、原k-space和位移扰动设置；dc0只关掉显式
+相干混合项，不能说训练中不存在任何零相位像素或背景未调制区域。
+
+重建缓存全部558个测试视频的两类视觉输入、文本输入逐元素核对一致，
+TRAIN2250/TEST558与冻结前端来源校验通过。恢复资产为只读引用：
+
+- Vision SHA256 `17b29fc12b17268b7d94fb2c6bbead6650d82899b33bcc1c3ee2a8608a64419c`。
+- Language SHA256 `57b9f8463a88b5c71a917422bcbbb48d8ac156a16dc460ffccca8a56d10feb4c`。
+
+两组100epoch续训已启动，各自独立进程占GPU0/1，数据加载workers=0，不产生常驻
+GPU子进程；退出后CUDA上下文随进程释放。仅保存best/last。训练完成前不填最终成绩。
