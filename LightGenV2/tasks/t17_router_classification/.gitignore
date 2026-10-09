@@ -2,3 +2,4 @@
 !reports/**/confusion_matrices.png
 !reports/**/training_and_routing.png
 !reports/**/detector_fields.png
+!reports/**/generalization_curves.png
