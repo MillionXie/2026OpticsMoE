@@ -1,0 +1,9 @@
+{
+  "candidates": {
+    "smooth0": {"phase_smooth_weight": 0.0},
+    "weakaug": {"phase_smooth_weight": 0.005, "augmentation": {"degrees": 5.0, "translation_pixels": 1.0, "scale_delta": 0.02}}
+  },
+  "depths": [6],
+  "seeds": [17],
+  "selection": "Fresh six-layer D2NN+OEO from random initialization; original lr0.002, maximum30 epochs, minimum15 and patience8. Relative to prior original-LR validation winner with phase_smooth_weight0.005, compare removing phase penalty versus weaker train-only affine augmentation. Keep all other settings. Select minimum full validation balanced NLL, and test only if it improves upon1.024367094039917. No desired accuracy cap or model ranking. Preserve all outcomes; exploratory follow-up because test previously observed."
+}
