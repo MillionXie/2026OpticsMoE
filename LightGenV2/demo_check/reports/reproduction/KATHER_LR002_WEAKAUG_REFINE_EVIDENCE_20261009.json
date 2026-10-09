@@ -1,0 +1,969 @@
+{
+  "run": "LightGenV2/demo_check/runs/simulation/kather_d2nn_L6_lr002_weakaug_refine_selected_s17_20261009",
+  "metadata": {
+    "command": [
+      "LightGenV2/demo_check/reproduction/kather_depth_followup.py",
+      "--profile",
+      "LightGenV2/demo_check/reproduction/kather_L6_lr002_weakaug_refine_20261009.json",
+      "--seed",
+      "17",
+      "--data",
+      "/DATA/DATA1/guest3/demo_reproduction_data/kather2016/kather2016_fixed_split.npz",
+      "--out",
+      "LightGenV2/demo_check/runs/simulation/kather_d2nn_L6_lr002_weakaug_refine_selected_s17_20261009",
+      "--select-from",
+      "LightGenV2/demo_check/runs/simulation/kather_d2nn_L6_lr002_weakaug_ema097_s17_20261009",
+      "LightGenV2/demo_check/runs/simulation/kather_d2nn_L6_lr002_weakaug_smoothing003_s17_20261009"
+    ],
+    "pid": 3150717,
+    "git_commit": "d187fede5da2050a421f751b1c9f88ce81763375",
+    "environment": {
+      "python": "3.11.15 (main, Jun 11 2026, 15:20:16) [GCC 14.3.0]",
+      "torch": "2.6.0+cu124",
+      "cuda": "12.4",
+      "cudnn": 90100,
+      "numpy": "1.26.4",
+      "sklearn": "1.9.0",
+      "gpu": "NVIDIA GeForce RTX 3090",
+      "visible_devices": "GPU-6dcca91a-8e08-1a50-9aa6-81defeaed50b"
+    },
+    "sources": {
+      "reproduction/bloodmnist_experiment.py": "cf2bef3dd86865c1cd3b7d2874017895b297ff5a614f0a82e28b96f8bbce2551",
+      "reproduction/train_adrenal_regularized.py": "502ffec98fd3a455eacf0449edf5979f1c5800b9a4c62087f5fa5e70db1bae25",
+      "reproduction/bloodmnist_profile.json": "d01fdc507f8698767e9fc09016f58cc601880d9733b1064d6f6e35be4aa60f96",
+      "adrenal_softsign_code_export_20260915_145336/code/reference_initialization.yaml": "212741d7f31b3dce3f8f7aea023f7848441e36d115411ecdb0688d6335252089",
+      "adrenal_softsign_code_export_20260915_145336/code/search_pipeline.py": "170fec8994e7873e3fc1de8b133d8eeb4729c016e5596123050a721acfcb6f20",
+      "adrenal_softsign_code_export_20260915_145336/code/metrics.py": "9f17a3a15a89630bbcd294f2e97de3755941fe38bf6f80d8e6e8758b313e496b",
+      "adrenal_softsign_code_export_20260915_145336/code/experiments.py": "56debf769cf6966105dbc0fd34bdea4037f83fcb0de48bb9986c0c138f460e7b",
+      "adrenal_softsign_code_export_20260915_145336/code/models.py": "f46e9aa1214532aa0a7121ffe0ef191ed656af2de80f7611df121cd9f110bd9c",
+      "adrenal_softsign_code_export_20260915_145336/code/report.py": "9bbc6db6bbd7a2fea9d2a9e7eb8a60271ed353387c0724b19f784baf58da67ea",
+      "adrenal_softsign_code_export_20260915_145336/code/calibration.py": "064663a7b5f4196c4d9e63de4096e55b29457a69343c57afeb029ef72c92fd5f",
+      "adrenal_softsign_code_export_20260915_145336/code/preflight.py": "98b3df39edc9e352e691b8e92902e739492386a0a3d6e03cfc9b563585140001",
+      "adrenal_softsign_code_export_20260915_145336/code/config.yaml": "409834f4668f0cf88c252d94fcbbd43a74c496d6d3b24a516acb181c9a7ea46a",
+      "adrenal_softsign_code_export_20260915_145336/code/run_experiment.py": "fcd0a5f7d486a6f6f6767e71e29a6161a9476e5b60e3039aff104408db59e752",
+      "adrenal_softsign_code_export_20260915_145336/code/optical_reference/__init__.py": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "adrenal_softsign_code_export_20260915_145336/code/optical_reference/readout.py": "181cabdc4b7b85c30bdb16b778870afbd6b35d1d365d98924606c5dbe3e487a4",
+      "adrenal_softsign_code_export_20260915_145336/code/optical_reference/experts.py": "5ff26c6223631534823b479c3eba98ca2311285e379c933c67ae24a073a37161",
+      "adrenal_softsign_code_export_20260915_145336/code/optical_reference/layout.py": "512ed7cf1f62d07cfd2ffc50997285f41d1cf0f9a5c3398e702a45ec37d7db7f",
+      "adrenal_softsign_code_export_20260915_145336/code/optical_reference/activations.py": "a6be25569d228f4154c7598535d98853e154a21b4ddca755c8cd19ed69f4b4bc",
+      "adrenal_softsign_code_export_20260915_145336/code/optical_reference/losses.py": "0a1e97baf44c9045f607d84aa55dee8660c451e13fbb2cd4696f0ed0690b74c6",
+      "adrenal_softsign_code_export_20260915_145336/code/optical_reference/optics.py": "b250627b14357a254eb12c785caf20f3aff2bf3fe30121a05321094803c73a7d",
+      "adrenal_softsign_code_export_20260915_145336/code/optical_reference/model.py": "afe60ad6cfe42dc8c01d3639112b6d7df47acd2854fff46d6a2da2893d3d1b9f",
+      "adrenal_softsign_code_export_20260915_145336/code/optical_reference/prompt.py": "3a66d0612473ae488a3e3e16a85bdff7f8f2370f6bc8c03687f77b947c953bc6",
+      "adrenal_softsign_code_export_20260915_145336/code/configs/d2nn_L2_oeo_relu_softsign.yaml": "58f9f7e6ff473bbcff5cb7d1681b2d4b152a6cec49c7383e01d083689ee0bb50",
+      "adrenal_softsign_code_export_20260915_145336/code/configs/d2nn_L6_oeo_softplus2.yaml": "a4bd1fd1a3d66058ca137b249915133fc7bdee30daa425f7edeb3760dd2d0818",
+      "adrenal_softsign_code_export_20260915_145336/code/configs/moe_L6_oeo_relu_softsign.yaml": "7e95024e316798c904ee69a76d1ce9e52841ae81c3b36d9595be47c2889b33fc",
+      "adrenal_softsign_code_export_20260915_145336/code/configs/d2nn_L6_oeo_relu_tanh.yaml": "9675ae3af42056cde146972b1a6e51a5e1a920c679795cfe4867b71122350de4",
+      "adrenal_softsign_code_export_20260915_145336/code/configs/d2nn_L2_oeo_softplus2.yaml": "1d96902b33f8534fa772e0bf780135cedcc39dc5a35b830df0b51e218464f8bf",
+      "adrenal_softsign_code_export_20260915_145336/code/configs/moe_L4_oeo_off.yaml": "9ea7abd35cf4de45406893454ad97dbffd9dad3ae789e33b6e16601c2a17b1db",
+      "adrenal_softsign_code_export_20260915_145336/code/configs/d2nn_L6_oeo_relu_softsign.yaml": "bf80b8d704d80fc41d7cb61aa655e7e2a65ee965971cc0e2dfa475aa9c430d46",
+      "adrenal_softsign_code_export_20260915_145336/code/configs/moe_L6_oeo_relu_tanh.yaml": "d55bde5b2a6d79e246a527becee05b9f0dceb58b300c8fa528205a0f8c0330e8",
+      "adrenal_softsign_code_export_20260915_145336/code/configs/d2nn_L2_oeo_relu_tanh.yaml": "b433629759c54435c7cede8029ee326f8ea6c987ae8fafc58598405eeceee2f8",
+      "adrenal_softsign_code_export_20260915_145336/code/configs/moe_L2_oeo_off.yaml": "9925b57312997c92bff5bc3bab97605684d2fb0244ab69a53b639ae3ac2bddd4",
+      "adrenal_softsign_code_export_20260915_145336/code/configs/moe_L4_oeo_relu_softsign.yaml": "031789271b04ede00a3061ee963effa3e1b60b2fefdbc3694ba05172e7e4de65",
+      "adrenal_softsign_code_export_20260915_145336/code/configs/d2nn_L4_oeo_off.yaml": "daaca90718f740cf2a3aa67cd2512ebe426b2a21c9a26aebb1e90ef9eaf13943",
+      "adrenal_softsign_code_export_20260915_145336/code/configs/moe_L4_oeo_softplus2.yaml": "1c4013b7184b687a7e296433e866478cbb30a66de5defa1ab0de5b61668eac2d",
+      "adrenal_softsign_code_export_20260915_145336/code/configs/moe_L2_oeo_relu_tanh.yaml": "8c1ef0470f0e2fc63cc17ef69c7ce6154be5266f5777483ff163525a20c302ff",
+      "adrenal_softsign_code_export_20260915_145336/code/configs/moe_L2_oeo_softplus2.yaml": "9dad12420c031b6544388b76513618dc72eb93bc941d8dc428ec7d40e41888d2",
+      "adrenal_softsign_code_export_20260915_145336/code/configs/moe_L6_oeo_off.yaml": "81b007c988919e518268ab384d604516892e57da2b55ec3c3f755c8be0db814e",
+      "adrenal_softsign_code_export_20260915_145336/code/configs/moe_L2_oeo_relu_softsign.yaml": "e5d3aa79b405a0f8cd25bb5d82b03707ef057ffe824123287ad411377956ccc0",
+      "adrenal_softsign_code_export_20260915_145336/code/configs/d2nn_L4_oeo_relu_tanh.yaml": "a1e64aa765cbbd14bfd98061d85fda3898a48bfe85d3cde66f2cdce5b80a91bd",
+      "adrenal_softsign_code_export_20260915_145336/code/configs/d2nn_L2_oeo_off.yaml": "0c2113f31bfdf2ffd5456ec4f9b94af4f7bea2f433e71700c3d4c736703d2a44",
+      "adrenal_softsign_code_export_20260915_145336/code/configs/d2nn_L4_oeo_softplus2.yaml": "d23e07e75910b50eda00d8faf3a663e88840b73cd3add84f5fba84e751862880",
+      "adrenal_softsign_code_export_20260915_145336/code/configs/d2nn_L6_oeo_off.yaml": "17e9295e90a144378c45fc525944c5770cfdfdab732c8559e20fc7339150b1e7",
+      "adrenal_softsign_code_export_20260915_145336/code/configs/moe_L6_oeo_softplus2.yaml": "405f630bc53753ee13dc91575e232733428d1350378d36d9d2e28c3e2032750b",
+      "adrenal_softsign_code_export_20260915_145336/code/configs/moe_L4_oeo_relu_tanh.yaml": "0fbad9b101bc120930c95ccf9225ff8780a3d455b3eef942979f6bf9ee96d935",
+      "adrenal_softsign_code_export_20260915_145336/code/configs/d2nn_L4_oeo_relu_softsign.yaml": "ab602e08f6b92baf59911ba466acdc7234b2f99ece5d3eb6c8f05ad327023788",
+      "reproduction/bloodmnist_multiseed.py": "d5fd93451eadb54c4b964fb5e49a4758f9170e28579642d8e07992bef35181c9",
+      "reproduction/kather2016_experiment.py": "976e0d9b6d4a2b549acfa4d5459f8c4a8c699e1c7bd5f8d676e96e32c4f1356f",
+      "reproduction/kather2016_profiles.json": "643535aa250d6e654077b36bb45c9baab9b9f6daf48aa70097f3b3b8e63da3aa",
+      "reproduction/prepare_kather2016.py": "7eb5880e86d9ad6a5b1e6a9cf3572046c4012052b7941da8c58774144b4169cd",
+      "reproduction/kather_depth_followup.py": "0f6ec3f0e0eec5601ccba0e4d0b587d09e5889181652c5383162732b1a51a479",
+      "reproduction/kather_L6_lr002_weakaug_refine_20261009.json": "c9ff3025d4e5674726a97626646ce4295019fcba6251a9c354b79a5a062e6d2a"
+    },
+    "specification": {
+      "candidates": {
+        "ema097": {
+          "phase_smooth_weight": 0.005,
+          "augmentation": {
+            "degrees": 5.0,
+            "translation_pixels": 1.0,
+            "scale_delta": 0.02
+          },
+          "ema_decay": 0.97
+        },
+        "smoothing003": {
+          "phase_smooth_weight": 0.005,
+          "augmentation": {
+            "degrees": 5.0,
+            "translation_pixels": 1.0,
+            "scale_delta": 0.02
+          },
+          "label_smoothing": 0.03
+        }
+      },
+      "depths": [
+        6
+      ],
+      "seeds": [
+        17
+      ],
+      "selection": "One bounded refinement round; fresh six-layer D2NN+OEO from random initialization, original lr0.002 and maximum30 epochs. Preserve accepted weakaug run, checkpoint and all predictions. Each candidate differs from weakaug by one small training parameter: EMA0.95->0.97 or label smoothing0.02->0.03. Select minimum full validation balanced NLL. Test selected candidate once only if NLL <0.9679116606712341-0.0005. Otherwise retain accepted run and do not test either candidate. No test-score-driven choice, accuracy cap or required architecture ranking; exploratory validation-adaptive development."
+    },
+    "gpu_uuid": "GPU-6dcca91a-8e08-1a50-9aa6-81defeaed50b",
+    "data_sha256": "b6d887d8dfc890f5829639b47dd63e7fe22d1fee100119617a36756e32631ce7",
+    "test_previously_observed": true,
+    "test_read": false,
+    "time": "2026-10-09T13:17:48.671023+00:00"
+  },
+  "status": {
+    "state": "complete",
+    "time": "2026-10-09T13:18:00.130988+00:00",
+    "candidate": "smoothing003",
+    "test_scope": "exploratory_followup",
+    "gpu_released_on_exit": true
+  },
+  "candidate": "smoothing003",
+  "candidate_means": {
+    "ema097": 0.967882513999939,
+    "smoothing003": 0.956247091293335
+  },
+  "selected_epoch": 30,
+  "metrics": {
+    "train": {
+      "n": 3496,
+      "support": [
+        437,
+        437,
+        437,
+        437,
+        437,
+        437,
+        437,
+        437
+      ],
+      "accuracy": 0.8100686498855835,
+      "balanced_accuracy": 0.8100686498855835,
+      "macro_f1": 0.8078120868739289,
+      "macro_ovr_auroc": 0.9733563244745034,
+      "recall": [
+        0.8306636155606407,
+        0.8260869565217391,
+        0.7345537757437071,
+        0.6430205949656751,
+        0.6338672768878718,
+        0.9267734553775744,
+        0.9038901601830663,
+        0.9816933638443935
+      ],
+      "confusion_matrix": [
+        [
+          363,
+          3,
+          24,
+          4,
+          2,
+          41,
+          0,
+          0
+        ],
+        [
+          2,
+          361,
+          19,
+          0,
+          51,
+          4,
+          0,
+          0
+        ],
+        [
+          7,
+          70,
+          321,
+          14,
+          11,
+          14,
+          0,
+          0
+        ],
+        [
+          57,
+          0,
+          46,
+          281,
+          0,
+          53,
+          0,
+          0
+        ],
+        [
+          0,
+          101,
+          15,
+          0,
+          277,
+          18,
+          26,
+          0
+        ],
+        [
+          12,
+          2,
+          3,
+          8,
+          7,
+          405,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          0,
+          1,
+          1,
+          395,
+          40
+        ],
+        [
+          0,
+          0,
+          0,
+          0,
+          0,
+          1,
+          7,
+          429
+        ]
+      ],
+      "nll": 0.8489724397659302,
+      "balanced_nll": 0.8489724397659302,
+      "detector_capture": 0.2868290841579437
+    },
+    "val": {
+      "n": 752,
+      "support": [
+        94,
+        94,
+        94,
+        94,
+        94,
+        94,
+        94,
+        94
+      ],
+      "accuracy": 0.6688829787234043,
+      "balanced_accuracy": 0.6688829787234043,
+      "macro_f1": 0.6585173677241363,
+      "macro_ovr_auroc": 0.9462466856366811,
+      "recall": [
+        0.6170212765957447,
+        0.6914893617021277,
+        0.5957446808510638,
+        0.30851063829787234,
+        0.4787234042553192,
+        0.8191489361702128,
+        0.851063829787234,
+        0.9893617021276596
+      ],
+      "confusion_matrix": [
+        [
+          58,
+          1,
+          6,
+          17,
+          0,
+          12,
+          0,
+          0
+        ],
+        [
+          0,
+          65,
+          11,
+          1,
+          17,
+          0,
+          0,
+          0
+        ],
+        [
+          3,
+          27,
+          56,
+          2,
+          5,
+          1,
+          0,
+          0
+        ],
+        [
+          34,
+          0,
+          12,
+          29,
+          1,
+          18,
+          0,
+          0
+        ],
+        [
+          0,
+          20,
+          10,
+          1,
+          45,
+          6,
+          11,
+          1
+        ],
+        [
+          6,
+          0,
+          1,
+          8,
+          2,
+          77,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          0,
+          3,
+          0,
+          80,
+          11
+        ],
+        [
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          1,
+          93
+        ]
+      ],
+      "nll": 0.9562470316886902,
+      "balanced_nll": 0.956247091293335,
+      "detector_capture": 0.2875617444515228
+    }
+  },
+  "test": {
+    "n": 752,
+    "support": [
+      94,
+      94,
+      94,
+      94,
+      94,
+      94,
+      94,
+      94
+    ],
+    "accuracy": 0.6529255319148937,
+    "balanced_accuracy": 0.6529255319148936,
+    "macro_f1": 0.6449522520761162,
+    "macro_ovr_auroc": 0.940418256483218,
+    "recall": [
+      0.44680851063829785,
+      0.6808510638297872,
+      0.648936170212766,
+      0.2978723404255319,
+      0.5106382978723404,
+      0.7446808510638298,
+      0.8936170212765957,
+      1.0
+    ],
+    "confusion_matrix": [
+      [
+        42,
+        0,
+        6,
+        22,
+        0,
+        24,
+        0,
+        0
+      ],
+      [
+        0,
+        64,
+        11,
+        0,
+        18,
+        1,
+        0,
+        0
+      ],
+      [
+        5,
+        14,
+        61,
+        6,
+        5,
+        3,
+        0,
+        0
+      ],
+      [
+        32,
+        0,
+        6,
+        28,
+        1,
+        27,
+        0,
+        0
+      ],
+      [
+        0,
+        25,
+        5,
+        0,
+        48,
+        7,
+        9,
+        0
+      ],
+      [
+        2,
+        1,
+        0,
+        15,
+        6,
+        70,
+        0,
+        0
+      ],
+      [
+        0,
+        0,
+        0,
+        0,
+        1,
+        0,
+        84,
+        9
+      ],
+      [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        94
+      ]
+    ],
+    "nll": 0.9547379612922668,
+    "balanced_nll": 0.9547379016876221,
+    "detector_capture": 0.28158873319625854
+  },
+  "checkpoint_sha256": "db9e96e1b0ae71a6138e150d4138a8b50ea1d6852f3b44d2b420a2b19bd8a97d",
+  "replay": [
+    {
+      "model": "d2nn_wide_L6_seed17",
+      "maximum_validation_score_error": 0.0
+    }
+  ],
+  "results_sha256": "a43120f858e4be761bd199795a6e3c709c6e50f0f964b16b854c9fae1492c612",
+  "accepted_checkpoint_preserved": true,
+  "accepted_checkpoint_sha256": "627a821d41bf2c387e577a5c8d3f220ab836c8ee47e2236d138aded330a91485",
+  "candidates": [
+    {
+      "candidate": "ema097",
+      "metrics": {
+        "train": {
+          "n": 3496,
+          "support": [
+            437,
+            437,
+            437,
+            437,
+            437,
+            437,
+            437,
+            437
+          ],
+          "accuracy": 0.7934782608695652,
+          "balanced_accuracy": 0.7934782608695652,
+          "macro_f1": 0.790459640274563,
+          "macro_ovr_auroc": 0.9713950394342238,
+          "recall": [
+            0.7848970251716247,
+            0.8215102974828375,
+            0.7345537757437071,
+            0.5995423340961098,
+            0.6086956521739131,
+            0.9176201372997712,
+            0.8993135011441648,
+            0.9816933638443935
+          ],
+          "confusion_matrix": [
+            [
+              343,
+              3,
+              26,
+              9,
+              2,
+              54,
+              0,
+              0
+            ],
+            [
+              2,
+              359,
+              20,
+              0,
+              52,
+              4,
+              0,
+              0
+            ],
+            [
+              8,
+              66,
+              321,
+              14,
+              13,
+              15,
+              0,
+              0
+            ],
+            [
+              64,
+              1,
+              47,
+              262,
+              0,
+              63,
+              0,
+              0
+            ],
+            [
+              0,
+              108,
+              18,
+              0,
+              266,
+              19,
+              26,
+              0
+            ],
+            [
+              13,
+              2,
+              4,
+              10,
+              7,
+              401,
+              0,
+              0
+            ],
+            [
+              0,
+              0,
+              0,
+              0,
+              1,
+              1,
+              393,
+              42
+            ],
+            [
+              0,
+              0,
+              0,
+              0,
+              0,
+              1,
+              7,
+              429
+            ]
+          ],
+          "nll": 0.864678144454956,
+          "balanced_nll": 0.864678144454956,
+          "detector_capture": 0.2715590298175812
+        },
+        "val": {
+          "n": 752,
+          "support": [
+            94,
+            94,
+            94,
+            94,
+            94,
+            94,
+            94,
+            94
+          ],
+          "accuracy": 0.6622340425531915,
+          "balanced_accuracy": 0.6622340425531914,
+          "macro_f1": 0.6495337345608034,
+          "macro_ovr_auroc": 0.9443126333829139,
+          "recall": [
+            0.6595744680851063,
+            0.6914893617021277,
+            0.5957446808510638,
+            0.2872340425531915,
+            0.44680851063829785,
+            0.8085106382978723,
+            0.8191489361702128,
+            0.9893617021276596
+          ],
+          "confusion_matrix": [
+            [
+              62,
+              0,
+              6,
+              12,
+              1,
+              13,
+              0,
+              0
+            ],
+            [
+              0,
+              65,
+              12,
+              0,
+              17,
+              0,
+              0,
+              0
+            ],
+            [
+              4,
+              26,
+              56,
+              1,
+              6,
+              1,
+              0,
+              0
+            ],
+            [
+              35,
+              0,
+              12,
+              27,
+              1,
+              19,
+              0,
+              0
+            ],
+            [
+              0,
+              21,
+              9,
+              1,
+              42,
+              7,
+              13,
+              1
+            ],
+            [
+              8,
+              0,
+              1,
+              7,
+              2,
+              76,
+              0,
+              0
+            ],
+            [
+              0,
+              0,
+              0,
+              0,
+              4,
+              0,
+              77,
+              13
+            ],
+            [
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              1,
+              93
+            ]
+          ],
+          "nll": 0.967882513999939,
+          "balanced_nll": 0.967882513999939,
+          "detector_capture": 0.27219563722610474
+        }
+      },
+      "epoch": 30,
+      "updates": {
+        "phases.0.phase.raw_phase": 0.11247287690639496,
+        "phases.1.phase.raw_phase": 0.12831762433052063,
+        "phases.2.phase.raw_phase": 0.16037562489509583,
+        "phases.3.phase.raw_phase": 0.21091847121715546,
+        "phases.4.phase.raw_phase": 0.2897980809211731,
+        "phases.5.phase.raw_phase": 0.43315285444259644
+      }
+    },
+    {
+      "candidate": "smoothing003",
+      "metrics": {
+        "train": {
+          "n": 3496,
+          "support": [
+            437,
+            437,
+            437,
+            437,
+            437,
+            437,
+            437,
+            437
+          ],
+          "accuracy": 0.8100686498855835,
+          "balanced_accuracy": 0.8100686498855835,
+          "macro_f1": 0.8078120868739289,
+          "macro_ovr_auroc": 0.9733563244745034,
+          "recall": [
+            0.8306636155606407,
+            0.8260869565217391,
+            0.7345537757437071,
+            0.6430205949656751,
+            0.6338672768878718,
+            0.9267734553775744,
+            0.9038901601830663,
+            0.9816933638443935
+          ],
+          "confusion_matrix": [
+            [
+              363,
+              3,
+              24,
+              4,
+              2,
+              41,
+              0,
+              0
+            ],
+            [
+              2,
+              361,
+              19,
+              0,
+              51,
+              4,
+              0,
+              0
+            ],
+            [
+              7,
+              70,
+              321,
+              14,
+              11,
+              14,
+              0,
+              0
+            ],
+            [
+              57,
+              0,
+              46,
+              281,
+              0,
+              53,
+              0,
+              0
+            ],
+            [
+              0,
+              101,
+              15,
+              0,
+              277,
+              18,
+              26,
+              0
+            ],
+            [
+              12,
+              2,
+              3,
+              8,
+              7,
+              405,
+              0,
+              0
+            ],
+            [
+              0,
+              0,
+              0,
+              0,
+              1,
+              1,
+              395,
+              40
+            ],
+            [
+              0,
+              0,
+              0,
+              0,
+              0,
+              1,
+              7,
+              429
+            ]
+          ],
+          "nll": 0.8489724397659302,
+          "balanced_nll": 0.8489724397659302,
+          "detector_capture": 0.2868290841579437
+        },
+        "val": {
+          "n": 752,
+          "support": [
+            94,
+            94,
+            94,
+            94,
+            94,
+            94,
+            94,
+            94
+          ],
+          "accuracy": 0.6688829787234043,
+          "balanced_accuracy": 0.6688829787234043,
+          "macro_f1": 0.6585173677241363,
+          "macro_ovr_auroc": 0.9462466856366811,
+          "recall": [
+            0.6170212765957447,
+            0.6914893617021277,
+            0.5957446808510638,
+            0.30851063829787234,
+            0.4787234042553192,
+            0.8191489361702128,
+            0.851063829787234,
+            0.9893617021276596
+          ],
+          "confusion_matrix": [
+            [
+              58,
+              1,
+              6,
+              17,
+              0,
+              12,
+              0,
+              0
+            ],
+            [
+              0,
+              65,
+              11,
+              1,
+              17,
+              0,
+              0,
+              0
+            ],
+            [
+              3,
+              27,
+              56,
+              2,
+              5,
+              1,
+              0,
+              0
+            ],
+            [
+              34,
+              0,
+              12,
+              29,
+              1,
+              18,
+              0,
+              0
+            ],
+            [
+              0,
+              20,
+              10,
+              1,
+              45,
+              6,
+              11,
+              1
+            ],
+            [
+              6,
+              0,
+              1,
+              8,
+              2,
+              77,
+              0,
+              0
+            ],
+            [
+              0,
+              0,
+              0,
+              0,
+              3,
+              0,
+              80,
+              11
+            ],
+            [
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              1,
+              93
+            ]
+          ],
+          "nll": 0.9562470316886902,
+          "balanced_nll": 0.956247091293335,
+          "detector_capture": 0.2875617444515228
+        }
+      },
+      "epoch": 30,
+      "updates": {
+        "phases.0.phase.raw_phase": 0.11260610818862915,
+        "phases.1.phase.raw_phase": 0.12926453351974487,
+        "phases.2.phase.raw_phase": 0.16041149199008942,
+        "phases.3.phase.raw_phase": 0.21149547398090363,
+        "phases.4.phase.raw_phase": 0.289533406496048,
+        "phases.5.phase.raw_phase": 0.4410856366157532
+      }
+    }
+  ],
+  "independent_prediction_audit": {
+    "n": 752,
+    "identical_test_ids_and_labels": true,
+    "argmax_matches_saved_predictions": true,
+    "new_correct": 491,
+    "accepted_correct": 485,
+    "new_only_correct": 20,
+    "accepted_only_correct": 14,
+    "new_predictions_sha256": "3fef8db4d67c640ee80c710f74e4986a13150c1f4c04e13bd837b2b2b4c9f7de",
+    "accepted_predictions_sha256": "5fc874ad1220ce34c5b023d690172700cca36d67bab302bac1b48ccdecc42b75"
+  }
+}
