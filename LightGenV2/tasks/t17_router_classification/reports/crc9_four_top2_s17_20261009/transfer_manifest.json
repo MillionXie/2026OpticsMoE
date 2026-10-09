@@ -1,0 +1,18 @@
+{
+  "confusion_matrices.png": {
+    "sha256": "2088b38834be985af904a4e917d062a5e13a1a6b2060a23fd1ab5ffe89be17aa",
+    "size": 93180
+  },
+  "training_and_routing.png": {
+    "sha256": "981711bf7dddd3a1a488d548a177815047e32f529aa4956691d68f40998f7380",
+    "size": 167311
+  },
+  "summary.json": {
+    "sha256": "21d172ed96459a7df3b30320675ed8b8cf14a033337fb2bfc13a3dc55b7100d6",
+    "size": 197886
+  },
+  "results.md": {
+    "sha256": "1d552106a042d63627a907ab09e9e8f19b47a8f3deddf06c88021db0c2cac19a",
+    "size": 341
+  }
+}
