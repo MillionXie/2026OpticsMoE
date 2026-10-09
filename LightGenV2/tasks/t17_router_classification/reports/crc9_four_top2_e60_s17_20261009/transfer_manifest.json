@@ -1,0 +1,30 @@
+{
+  "confusion_matrices.png": {
+    "sha256": "fedbb25b0885801852d347aa971b39f831de3064ace2a8c8e915d14249ee6e0b",
+    "size": 93261
+  },
+  "training_and_routing.png": {
+    "sha256": "6e822bb8cab848c9652141edd0d7c7f535c213a167a9f617737125ae13387bd0",
+    "size": 192309
+  },
+  "summary.json": {
+    "sha256": "6581c52457b58a51944fc294707823e124cce9da04bc7d630112adcef5e4974d",
+    "size": 575727
+  },
+  "generalization.json": {
+    "sha256": "73583e532472a298c22f20c3c2ae4e0fd75f34acd10b3ce94dc9bd0a260fff34",
+    "size": 60029
+  },
+  "generalization.md": {
+    "sha256": "63d586ac6873d3eecca43c71d3cb92ff0826b86f65ac73cf564b94535c446614",
+    "size": 963
+  },
+  "results.md": {
+    "sha256": "a2764a4dc0180e5e7a1575f0fef789575526fcac29ae4cfd78b3b7c24eee6258",
+    "size": 345
+  },
+  "generalization_curves.png": {
+    "sha256": "c3541b53fe0b7a05fd47490ccd91cafe6a549223b3bcbf5619a71c5657ff0572",
+    "size": 395947
+  }
+}
