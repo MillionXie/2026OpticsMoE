@@ -35,13 +35,14 @@ def main():
     parser.add_argument('--data', type=Path, required=True)
     parser.add_argument('--out', type=Path, required=True)
     parser.add_argument('--check-contract', action='store_true')
-    parser.add_argument('--candidate', choices=list(SPEC['candidates']))
+    parser.add_argument('--candidate')
     parser.add_argument('--validation-only', action='store_true')
     parser.add_argument('--select-from', type=Path, nargs='+')
     parser.add_argument('--profile', type=Path, default=PROFILE)
     args = parser.parse_args()
     PROFILE = args.profile.resolve()
     SPEC = r.read(PROFILE)
+    assert args.candidate is None or args.candidate in SPEC['candidates']
     assert not args.candidate or args.validation_only
     # There is no worker pool: a single process trains every job in dependency order.
     assert os.environ.get('CUDA_VISIBLE_DEVICES', '').startswith('GPU-')
