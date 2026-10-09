@@ -1,0 +1,14 @@
+{
+  "source": "LightGenV2/tasks/t17_router_classification/runs/simulation/crc9_electronic_dispersion_recovery_s17_20261009_recovery_lr10/test_predictions.npz",
+  "n": 1436,
+  "mean_selected_count": 2.0,
+  "effective_experts": 3.2651199262419794,
+  "top2_pair_fraction": {
+    "1,2": 0.018802228412256268,
+    "1,3": 0.25557103064066855,
+    "2,3": 0.33147632311977715,
+    "3,4": 0.39415041782729804
+  },
+  "dominant_pair_fraction": 0.39415041782729804,
+  "additional_inference": false
+}

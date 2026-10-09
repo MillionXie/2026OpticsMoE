@@ -1,0 +1,18 @@
+{
+  "training_and_routing.png": {
+    "sha256": "277716c66763959ec71a4658dcd6d996e603ac067b1bf5b7a31084b0402fb99e",
+    "size": 61806
+  },
+  "summary.json": {
+    "sha256": "981ffc6d28dc2f22b902c62bdbdbe9b07b6df49473777426c1f52ec4548066cb",
+    "size": 1014846
+  },
+  "results.md": {
+    "sha256": "55e66e98e4bec0521773e0a046507e3219d9c80c7ec06361b77450f959fc5fad",
+    "size": 2030
+  },
+  "generalization_curves.png": {
+    "sha256": "661695b987f7ec5fad99a89d92ce33aff69f7a02289168ce1a10fe3467779560",
+    "size": 157674
+  }
+}

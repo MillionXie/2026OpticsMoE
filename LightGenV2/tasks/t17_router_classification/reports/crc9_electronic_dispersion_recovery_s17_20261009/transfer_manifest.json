@@ -1,0 +1,26 @@
+{
+  "frozen_router_audit.json": {
+    "sha256": "51679fa56c396ba1ed3e105c34bf1fbd4f80f852bd41174f918cdd916126798a",
+    "size": 4683
+  },
+  "training_and_routing.png": {
+    "sha256": "da8cc10c0aa72cab95c0bb8175c3e27aeb967a78cdce78f216af44174c24f339",
+    "size": 58159
+  },
+  "summary.json": {
+    "sha256": "41dcc4850dc773336cd297660c19de6d7a806eb107a39c7e82953361f175e3fc",
+    "size": 701552
+  },
+  "results.md": {
+    "sha256": "6bf0f38619b804b7c5abaaf1d3db45c328624712d01127d55d80bcf5b5a773aa",
+    "size": 1829
+  },
+  "generalization_curves.png": {
+    "sha256": "3c983c8379ae08391733b11223688e42a3cdc4d5f49c37a1377053f525579134",
+    "size": 140497
+  },
+  "test_route_distribution.json": {
+    "sha256": "1327d6329c45b8df0cec59d76d65f9879af5afd207bd4bbc3541992feeabb3e4",
+    "size": 488
+  }
+}
