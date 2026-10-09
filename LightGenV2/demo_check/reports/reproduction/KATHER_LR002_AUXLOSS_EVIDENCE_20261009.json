@@ -1,0 +1,944 @@
+{
+  "run": "LightGenV2/demo_check/runs/simulation/kather_d2nn_L6_lr002_auxloss_selected_s17_20261009",
+  "metadata": {
+    "command": [
+      "LightGenV2/demo_check/reproduction/kather_depth_followup.py",
+      "--profile",
+      "LightGenV2/demo_check/reproduction/kather_L6_lr002_auxloss_20261009.json",
+      "--seed",
+      "17",
+      "--data",
+      "/DATA/DATA1/guest3/demo_reproduction_data/kather2016/kather2016_fixed_split.npz",
+      "--out",
+      "LightGenV2/demo_check/runs/simulation/kather_d2nn_L6_lr002_auxloss_selected_s17_20261009",
+      "--select-from",
+      "LightGenV2/demo_check/runs/simulation/kather_d2nn_L6_lr002_capture01_s17_20261009",
+      "LightGenV2/demo_check/runs/simulation/kather_d2nn_L6_lr002_smooth0005_s17_20261009"
+    ],
+    "pid": 3094356,
+    "git_commit": "2288c3a2e99ac556c4a2a61227223c515708ee49",
+    "environment": {
+      "python": "3.11.15 (main, Jun 11 2026, 15:20:16) [GCC 14.3.0]",
+      "torch": "2.6.0+cu124",
+      "cuda": "12.4",
+      "cudnn": 90100,
+      "numpy": "1.26.4",
+      "sklearn": "1.9.0",
+      "gpu": "NVIDIA GeForce RTX 3090",
+      "visible_devices": "GPU-6dcca91a-8e08-1a50-9aa6-81defeaed50b"
+    },
+    "sources": {
+      "reproduction/bloodmnist_experiment.py": "cf2bef3dd86865c1cd3b7d2874017895b297ff5a614f0a82e28b96f8bbce2551",
+      "reproduction/train_adrenal_regularized.py": "502ffec98fd3a455eacf0449edf5979f1c5800b9a4c62087f5fa5e70db1bae25",
+      "reproduction/bloodmnist_profile.json": "d01fdc507f8698767e9fc09016f58cc601880d9733b1064d6f6e35be4aa60f96",
+      "adrenal_softsign_code_export_20260915_145336/code/reference_initialization.yaml": "212741d7f31b3dce3f8f7aea023f7848441e36d115411ecdb0688d6335252089",
+      "adrenal_softsign_code_export_20260915_145336/code/search_pipeline.py": "170fec8994e7873e3fc1de8b133d8eeb4729c016e5596123050a721acfcb6f20",
+      "adrenal_softsign_code_export_20260915_145336/code/metrics.py": "9f17a3a15a89630bbcd294f2e97de3755941fe38bf6f80d8e6e8758b313e496b",
+      "adrenal_softsign_code_export_20260915_145336/code/experiments.py": "56debf769cf6966105dbc0fd34bdea4037f83fcb0de48bb9986c0c138f460e7b",
+      "adrenal_softsign_code_export_20260915_145336/code/models.py": "f46e9aa1214532aa0a7121ffe0ef191ed656af2de80f7611df121cd9f110bd9c",
+      "adrenal_softsign_code_export_20260915_145336/code/report.py": "9bbc6db6bbd7a2fea9d2a9e7eb8a60271ed353387c0724b19f784baf58da67ea",
+      "adrenal_softsign_code_export_20260915_145336/code/calibration.py": "064663a7b5f4196c4d9e63de4096e55b29457a69343c57afeb029ef72c92fd5f",
+      "adrenal_softsign_code_export_20260915_145336/code/preflight.py": "98b3df39edc9e352e691b8e92902e739492386a0a3d6e03cfc9b563585140001",
+      "adrenal_softsign_code_export_20260915_145336/code/config.yaml": "409834f4668f0cf88c252d94fcbbd43a74c496d6d3b24a516acb181c9a7ea46a",
+      "adrenal_softsign_code_export_20260915_145336/code/run_experiment.py": "fcd0a5f7d486a6f6f6767e71e29a6161a9476e5b60e3039aff104408db59e752",
+      "adrenal_softsign_code_export_20260915_145336/code/optical_reference/__init__.py": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "adrenal_softsign_code_export_20260915_145336/code/optical_reference/readout.py": "181cabdc4b7b85c30bdb16b778870afbd6b35d1d365d98924606c5dbe3e487a4",
+      "adrenal_softsign_code_export_20260915_145336/code/optical_reference/experts.py": "5ff26c6223631534823b479c3eba98ca2311285e379c933c67ae24a073a37161",
+      "adrenal_softsign_code_export_20260915_145336/code/optical_reference/layout.py": "512ed7cf1f62d07cfd2ffc50997285f41d1cf0f9a5c3398e702a45ec37d7db7f",
+      "adrenal_softsign_code_export_20260915_145336/code/optical_reference/activations.py": "a6be25569d228f4154c7598535d98853e154a21b4ddca755c8cd19ed69f4b4bc",
+      "adrenal_softsign_code_export_20260915_145336/code/optical_reference/losses.py": "0a1e97baf44c9045f607d84aa55dee8660c451e13fbb2cd4696f0ed0690b74c6",
+      "adrenal_softsign_code_export_20260915_145336/code/optical_reference/optics.py": "b250627b14357a254eb12c785caf20f3aff2bf3fe30121a05321094803c73a7d",
+      "adrenal_softsign_code_export_20260915_145336/code/optical_reference/model.py": "afe60ad6cfe42dc8c01d3639112b6d7df47acd2854fff46d6a2da2893d3d1b9f",
+      "adrenal_softsign_code_export_20260915_145336/code/optical_reference/prompt.py": "3a66d0612473ae488a3e3e16a85bdff7f8f2370f6bc8c03687f77b947c953bc6",
+      "adrenal_softsign_code_export_20260915_145336/code/configs/d2nn_L2_oeo_relu_softsign.yaml": "58f9f7e6ff473bbcff5cb7d1681b2d4b152a6cec49c7383e01d083689ee0bb50",
+      "adrenal_softsign_code_export_20260915_145336/code/configs/d2nn_L6_oeo_softplus2.yaml": "a4bd1fd1a3d66058ca137b249915133fc7bdee30daa425f7edeb3760dd2d0818",
+      "adrenal_softsign_code_export_20260915_145336/code/configs/moe_L6_oeo_relu_softsign.yaml": "7e95024e316798c904ee69a76d1ce9e52841ae81c3b36d9595be47c2889b33fc",
+      "adrenal_softsign_code_export_20260915_145336/code/configs/d2nn_L6_oeo_relu_tanh.yaml": "9675ae3af42056cde146972b1a6e51a5e1a920c679795cfe4867b71122350de4",
+      "adrenal_softsign_code_export_20260915_145336/code/configs/d2nn_L2_oeo_softplus2.yaml": "1d96902b33f8534fa772e0bf780135cedcc39dc5a35b830df0b51e218464f8bf",
+      "adrenal_softsign_code_export_20260915_145336/code/configs/moe_L4_oeo_off.yaml": "9ea7abd35cf4de45406893454ad97dbffd9dad3ae789e33b6e16601c2a17b1db",
+      "adrenal_softsign_code_export_20260915_145336/code/configs/d2nn_L6_oeo_relu_softsign.yaml": "bf80b8d704d80fc41d7cb61aa655e7e2a65ee965971cc0e2dfa475aa9c430d46",
+      "adrenal_softsign_code_export_20260915_145336/code/configs/moe_L6_oeo_relu_tanh.yaml": "d55bde5b2a6d79e246a527becee05b9f0dceb58b300c8fa528205a0f8c0330e8",
+      "adrenal_softsign_code_export_20260915_145336/code/configs/d2nn_L2_oeo_relu_tanh.yaml": "b433629759c54435c7cede8029ee326f8ea6c987ae8fafc58598405eeceee2f8",
+      "adrenal_softsign_code_export_20260915_145336/code/configs/moe_L2_oeo_off.yaml": "9925b57312997c92bff5bc3bab97605684d2fb0244ab69a53b639ae3ac2bddd4",
+      "adrenal_softsign_code_export_20260915_145336/code/configs/moe_L4_oeo_relu_softsign.yaml": "031789271b04ede00a3061ee963effa3e1b60b2fefdbc3694ba05172e7e4de65",
+      "adrenal_softsign_code_export_20260915_145336/code/configs/d2nn_L4_oeo_off.yaml": "daaca90718f740cf2a3aa67cd2512ebe426b2a21c9a26aebb1e90ef9eaf13943",
+      "adrenal_softsign_code_export_20260915_145336/code/configs/moe_L4_oeo_softplus2.yaml": "1c4013b7184b687a7e296433e866478cbb30a66de5defa1ab0de5b61668eac2d",
+      "adrenal_softsign_code_export_20260915_145336/code/configs/moe_L2_oeo_relu_tanh.yaml": "8c1ef0470f0e2fc63cc17ef69c7ce6154be5266f5777483ff163525a20c302ff",
+      "adrenal_softsign_code_export_20260915_145336/code/configs/moe_L2_oeo_softplus2.yaml": "9dad12420c031b6544388b76513618dc72eb93bc941d8dc428ec7d40e41888d2",
+      "adrenal_softsign_code_export_20260915_145336/code/configs/moe_L6_oeo_off.yaml": "81b007c988919e518268ab384d604516892e57da2b55ec3c3f755c8be0db814e",
+      "adrenal_softsign_code_export_20260915_145336/code/configs/moe_L2_oeo_relu_softsign.yaml": "e5d3aa79b405a0f8cd25bb5d82b03707ef057ffe824123287ad411377956ccc0",
+      "adrenal_softsign_code_export_20260915_145336/code/configs/d2nn_L4_oeo_relu_tanh.yaml": "a1e64aa765cbbd14bfd98061d85fda3898a48bfe85d3cde66f2cdce5b80a91bd",
+      "adrenal_softsign_code_export_20260915_145336/code/configs/d2nn_L2_oeo_off.yaml": "0c2113f31bfdf2ffd5456ec4f9b94af4f7bea2f433e71700c3d4c736703d2a44",
+      "adrenal_softsign_code_export_20260915_145336/code/configs/d2nn_L4_oeo_softplus2.yaml": "d23e07e75910b50eda00d8faf3a663e88840b73cd3add84f5fba84e751862880",
+      "adrenal_softsign_code_export_20260915_145336/code/configs/d2nn_L6_oeo_off.yaml": "17e9295e90a144378c45fc525944c5770cfdfdab732c8559e20fc7339150b1e7",
+      "adrenal_softsign_code_export_20260915_145336/code/configs/moe_L6_oeo_softplus2.yaml": "405f630bc53753ee13dc91575e232733428d1350378d36d9d2e28c3e2032750b",
+      "adrenal_softsign_code_export_20260915_145336/code/configs/moe_L4_oeo_relu_tanh.yaml": "0fbad9b101bc120930c95ccf9225ff8780a3d455b3eef942979f6bf9ee96d935",
+      "adrenal_softsign_code_export_20260915_145336/code/configs/d2nn_L4_oeo_relu_softsign.yaml": "ab602e08f6b92baf59911ba466acdc7234b2f99ece5d3eb6c8f05ad327023788",
+      "reproduction/bloodmnist_multiseed.py": "d5fd93451eadb54c4b964fb5e49a4758f9170e28579642d8e07992bef35181c9",
+      "reproduction/kather2016_experiment.py": "976e0d9b6d4a2b549acfa4d5459f8c4a8c699e1c7bd5f8d676e96e32c4f1356f",
+      "reproduction/kather2016_profiles.json": "643535aa250d6e654077b36bb45c9baab9b9f6daf48aa70097f3b3b8e63da3aa",
+      "reproduction/prepare_kather2016.py": "7eb5880e86d9ad6a5b1e6a9cf3572046c4012052b7941da8c58774144b4169cd",
+      "reproduction/kather_depth_followup.py": "0f6ec3f0e0eec5601ccba0e4d0b587d09e5889181652c5383162732b1a51a479",
+      "reproduction/kather_L6_lr002_auxloss_20261009.json": "ecf797f5a0d7ebcb360bd638c1b6e19cc2f3dda76d5f9f9ad7995a9820ec441b"
+    },
+    "specification": {
+      "candidates": {
+        "capture01": {
+          "capture_weight": 0.1
+        },
+        "smooth0005": {
+          "phase_smooth_weight": 0.005
+        }
+      },
+      "depths": [
+        6
+      ],
+      "seeds": [
+        17
+      ],
+      "selection": "Fresh six-layer D2NN+OEO at original lr0.002, maximum30 epochs, no checkpoint loading. Single-factor controls reducing capture or phase-smoothness auxiliary loss weights; all other original settings preserved. Compare minimum complete validation balanced NLL to previous original-LR winner1.0374559164047241 before deciding to test. Only validation improvement may be tested once; no test-score/ranking-based selection. Previously observed test: exploratory follow-up, preserve all outcomes."
+    },
+    "gpu_uuid": "GPU-6dcca91a-8e08-1a50-9aa6-81defeaed50b",
+    "data_sha256": "b6d887d8dfc890f5829639b47dd63e7fe22d1fee100119617a36756e32631ce7",
+    "test_previously_observed": true,
+    "test_read": false,
+    "time": "2026-10-09T12:21:55.509670+00:00"
+  },
+  "status": {
+    "state": "complete",
+    "time": "2026-10-09T12:22:07.131291+00:00",
+    "candidate": "smooth0005",
+    "test_scope": "exploratory_followup",
+    "gpu_released_on_exit": true
+  },
+  "candidate": "smooth0005",
+  "candidate_means": {
+    "capture01": 1.113142967224121,
+    "smooth0005": 1.024367094039917
+  },
+  "selected_epoch": 30,
+  "metrics": {
+    "train": {
+      "n": 3496,
+      "support": [
+        437,
+        437,
+        437,
+        437,
+        437,
+        437,
+        437,
+        437
+      ],
+      "accuracy": 0.6844965675057209,
+      "balanced_accuracy": 0.6844965675057209,
+      "macro_f1": 0.6712323386389398,
+      "macro_ovr_auroc": 0.951861016335486,
+      "recall": [
+        0.6498855835240275,
+        0.7368421052631579,
+        0.6453089244851259,
+        0.2791762013729977,
+        0.5308924485125858,
+        0.8741418764302059,
+        0.7688787185354691,
+        0.9908466819221968
+      ],
+      "confusion_matrix": [
+        [
+          284,
+          5,
+          31,
+          17,
+          1,
+          99,
+          0,
+          0
+        ],
+        [
+          1,
+          322,
+          32,
+          0,
+          78,
+          4,
+          0,
+          0
+        ],
+        [
+          12,
+          86,
+          282,
+          13,
+          19,
+          25,
+          0,
+          0
+        ],
+        [
+          143,
+          1,
+          53,
+          122,
+          0,
+          118,
+          0,
+          0
+        ],
+        [
+          0,
+          132,
+          19,
+          0,
+          232,
+          24,
+          30,
+          0
+        ],
+        [
+          22,
+          4,
+          3,
+          14,
+          12,
+          382,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          0,
+          4,
+          0,
+          336,
+          97
+        ],
+        [
+          0,
+          0,
+          0,
+          0,
+          0,
+          1,
+          3,
+          433
+        ]
+      ],
+      "nll": 0.9889261722564697,
+      "balanced_nll": 0.988926112651825,
+      "detector_capture": 0.3404051959514618
+    },
+    "val": {
+      "n": 752,
+      "support": [
+        94,
+        94,
+        94,
+        94,
+        94,
+        94,
+        94,
+        94
+      ],
+      "accuracy": 0.6263297872340425,
+      "balanced_accuracy": 0.6263297872340425,
+      "macro_f1": 0.6045684400939503,
+      "macro_ovr_auroc": 0.9406890642178103,
+      "recall": [
+        0.5957446808510638,
+        0.7127659574468085,
+        0.5638297872340425,
+        0.14893617021276595,
+        0.46808510638297873,
+        0.8191489361702128,
+        0.7127659574468085,
+        0.9893617021276596
+      ],
+      "confusion_matrix": [
+        [
+          56,
+          1,
+          5,
+          9,
+          0,
+          23,
+          0,
+          0
+        ],
+        [
+          0,
+          67,
+          10,
+          0,
+          16,
+          1,
+          0,
+          0
+        ],
+        [
+          2,
+          30,
+          53,
+          1,
+          6,
+          2,
+          0,
+          0
+        ],
+        [
+          42,
+          0,
+          13,
+          14,
+          1,
+          24,
+          0,
+          0
+        ],
+        [
+          0,
+          21,
+          10,
+          1,
+          44,
+          6,
+          11,
+          1
+        ],
+        [
+          8,
+          0,
+          1,
+          5,
+          3,
+          77,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          0,
+          3,
+          0,
+          67,
+          24
+        ],
+        [
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          1,
+          93
+        ]
+      ],
+      "nll": 1.024367094039917,
+      "balanced_nll": 1.024367094039917,
+      "detector_capture": 0.34273695945739746
+    }
+  },
+  "test": {
+    "n": 752,
+    "support": [
+      94,
+      94,
+      94,
+      94,
+      94,
+      94,
+      94,
+      94
+    ],
+    "accuracy": 0.6303191489361702,
+    "balanced_accuracy": 0.6303191489361701,
+    "macro_f1": 0.6109192779570494,
+    "macro_ovr_auroc": 0.936962426437302,
+    "recall": [
+      0.43617021276595747,
+      0.6914893617021277,
+      0.6276595744680851,
+      0.13829787234042554,
+      0.4787234042553192,
+      0.8085106382978723,
+      0.8617021276595744,
+      1.0
+    ],
+    "confusion_matrix": [
+      [
+        41,
+        0,
+        8,
+        16,
+        0,
+        29,
+        0,
+        0
+      ],
+      [
+        0,
+        65,
+        8,
+        0,
+        19,
+        2,
+        0,
+        0
+      ],
+      [
+        6,
+        16,
+        59,
+        2,
+        6,
+        5,
+        0,
+        0
+      ],
+      [
+        34,
+        0,
+        8,
+        13,
+        1,
+        38,
+        0,
+        0
+      ],
+      [
+        0,
+        27,
+        5,
+        0,
+        45,
+        7,
+        10,
+        0
+      ],
+      [
+        3,
+        1,
+        1,
+        8,
+        5,
+        76,
+        0,
+        0
+      ],
+      [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        81,
+        13
+      ],
+      [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        94
+      ]
+    ],
+    "nll": 1.020392894744873,
+    "balanced_nll": 1.020392894744873,
+    "detector_capture": 0.33601659536361694
+  },
+  "checkpoint_sha256": "39fbbdfec96b32ecd689b275bdaa4b4c48e2fac23a868a5732538cfdd161dd15",
+  "replay": [
+    {
+      "model": "d2nn_wide_L6_seed17",
+      "maximum_validation_score_error": 0.0
+    }
+  ],
+  "results_sha256": "474fe1d932220bfee4be23be3787ed1aa985cf8c00dce7c47da042a7565d8861",
+  "candidates": [
+    {
+      "candidate": "capture01",
+      "metrics": {
+        "train": {
+          "n": 3496,
+          "support": [
+            437,
+            437,
+            437,
+            437,
+            437,
+            437,
+            437,
+            437
+          ],
+          "accuracy": 0.6776315789473685,
+          "balanced_accuracy": 0.6776315789473684,
+          "macro_f1": 0.658046625238187,
+          "macro_ovr_auroc": 0.9487700602865237,
+          "recall": [
+            0.6773455377574371,
+            0.7437070938215103,
+            0.6338672768878718,
+            0.19221967963386727,
+            0.4965675057208238,
+            0.8627002288329519,
+            0.8283752860411899,
+            0.9862700228832952
+          ],
+          "confusion_matrix": [
+            [
+              296,
+              5,
+              31,
+              8,
+              1,
+              96,
+              0,
+              0
+            ],
+            [
+              1,
+              325,
+              39,
+              0,
+              66,
+              5,
+              1,
+              0
+            ],
+            [
+              16,
+              91,
+              277,
+              11,
+              18,
+              24,
+              0,
+              0
+            ],
+            [
+              166,
+              2,
+              55,
+              84,
+              0,
+              130,
+              0,
+              0
+            ],
+            [
+              0,
+              135,
+              26,
+              0,
+              217,
+              25,
+              34,
+              0
+            ],
+            [
+              30,
+              5,
+              2,
+              12,
+              11,
+              377,
+              0,
+              0
+            ],
+            [
+              0,
+              0,
+              0,
+              0,
+              3,
+              1,
+              362,
+              71
+            ],
+            [
+              0,
+              0,
+              0,
+              0,
+              0,
+              1,
+              5,
+              431
+            ]
+          ],
+          "nll": 1.0853968858718872,
+          "balanced_nll": 1.0853968858718872,
+          "detector_capture": 0.08835818618535995
+        },
+        "val": {
+          "n": 752,
+          "support": [
+            94,
+            94,
+            94,
+            94,
+            94,
+            94,
+            94,
+            94
+          ],
+          "accuracy": 0.6303191489361702,
+          "balanced_accuracy": 0.6303191489361701,
+          "macro_f1": 0.6046156594821097,
+          "macro_ovr_auroc": 0.9389712539610684,
+          "recall": [
+            0.6382978723404256,
+            0.7127659574468085,
+            0.574468085106383,
+            0.11702127659574468,
+            0.44680851063829785,
+            0.8191489361702128,
+            0.7446808510638298,
+            0.9893617021276596
+          ],
+          "confusion_matrix": [
+            [
+              60,
+              0,
+              6,
+              6,
+              0,
+              22,
+              0,
+              0
+            ],
+            [
+              0,
+              67,
+              13,
+              0,
+              13,
+              1,
+              0,
+              0
+            ],
+            [
+              3,
+              27,
+              54,
+              1,
+              7,
+              2,
+              0,
+              0
+            ],
+            [
+              44,
+              0,
+              14,
+              11,
+              1,
+              24,
+              0,
+              0
+            ],
+            [
+              0,
+              21,
+              11,
+              1,
+              42,
+              6,
+              12,
+              1
+            ],
+            [
+              9,
+              0,
+              3,
+              3,
+              2,
+              77,
+              0,
+              0
+            ],
+            [
+              0,
+              0,
+              0,
+              0,
+              3,
+              0,
+              70,
+              21
+            ],
+            [
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              1,
+              93
+            ]
+          ],
+          "nll": 1.113142967224121,
+          "balanced_nll": 1.113142967224121,
+          "detector_capture": 0.08877449482679367
+        }
+      },
+      "epoch": 30,
+      "updates": {
+        "phases.0.phase.raw_phase": 0.11199693381786346,
+        "phases.1.phase.raw_phase": 0.11905725300312042,
+        "phases.2.phase.raw_phase": 0.14387758076190948,
+        "phases.3.phase.raw_phase": 0.18392512202262878,
+        "phases.4.phase.raw_phase": 0.23952016234397888,
+        "phases.5.phase.raw_phase": 0.30364981293678284
+      }
+    },
+    {
+      "candidate": "smooth0005",
+      "metrics": {
+        "train": {
+          "n": 3496,
+          "support": [
+            437,
+            437,
+            437,
+            437,
+            437,
+            437,
+            437,
+            437
+          ],
+          "accuracy": 0.6844965675057209,
+          "balanced_accuracy": 0.6844965675057209,
+          "macro_f1": 0.6712323386389398,
+          "macro_ovr_auroc": 0.951861016335486,
+          "recall": [
+            0.6498855835240275,
+            0.7368421052631579,
+            0.6453089244851259,
+            0.2791762013729977,
+            0.5308924485125858,
+            0.8741418764302059,
+            0.7688787185354691,
+            0.9908466819221968
+          ],
+          "confusion_matrix": [
+            [
+              284,
+              5,
+              31,
+              17,
+              1,
+              99,
+              0,
+              0
+            ],
+            [
+              1,
+              322,
+              32,
+              0,
+              78,
+              4,
+              0,
+              0
+            ],
+            [
+              12,
+              86,
+              282,
+              13,
+              19,
+              25,
+              0,
+              0
+            ],
+            [
+              143,
+              1,
+              53,
+              122,
+              0,
+              118,
+              0,
+              0
+            ],
+            [
+              0,
+              132,
+              19,
+              0,
+              232,
+              24,
+              30,
+              0
+            ],
+            [
+              22,
+              4,
+              3,
+              14,
+              12,
+              382,
+              0,
+              0
+            ],
+            [
+              0,
+              0,
+              0,
+              0,
+              4,
+              0,
+              336,
+              97
+            ],
+            [
+              0,
+              0,
+              0,
+              0,
+              0,
+              1,
+              3,
+              433
+            ]
+          ],
+          "nll": 0.9889261722564697,
+          "balanced_nll": 0.988926112651825,
+          "detector_capture": 0.3404051959514618
+        },
+        "val": {
+          "n": 752,
+          "support": [
+            94,
+            94,
+            94,
+            94,
+            94,
+            94,
+            94,
+            94
+          ],
+          "accuracy": 0.6263297872340425,
+          "balanced_accuracy": 0.6263297872340425,
+          "macro_f1": 0.6045684400939503,
+          "macro_ovr_auroc": 0.9406890642178103,
+          "recall": [
+            0.5957446808510638,
+            0.7127659574468085,
+            0.5638297872340425,
+            0.14893617021276595,
+            0.46808510638297873,
+            0.8191489361702128,
+            0.7127659574468085,
+            0.9893617021276596
+          ],
+          "confusion_matrix": [
+            [
+              56,
+              1,
+              5,
+              9,
+              0,
+              23,
+              0,
+              0
+            ],
+            [
+              0,
+              67,
+              10,
+              0,
+              16,
+              1,
+              0,
+              0
+            ],
+            [
+              2,
+              30,
+              53,
+              1,
+              6,
+              2,
+              0,
+              0
+            ],
+            [
+              42,
+              0,
+              13,
+              14,
+              1,
+              24,
+              0,
+              0
+            ],
+            [
+              0,
+              21,
+              10,
+              1,
+              44,
+              6,
+              11,
+              1
+            ],
+            [
+              8,
+              0,
+              1,
+              5,
+              3,
+              77,
+              0,
+              0
+            ],
+            [
+              0,
+              0,
+              0,
+              0,
+              3,
+              0,
+              67,
+              24
+            ],
+            [
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              1,
+              93
+            ]
+          ],
+          "nll": 1.024367094039917,
+          "balanced_nll": 1.024367094039917,
+          "detector_capture": 0.34273695945739746
+        }
+      },
+      "epoch": 30,
+      "updates": {
+        "phases.0.phase.raw_phase": 0.12041541934013367,
+        "phases.1.phase.raw_phase": 0.1269286870956421,
+        "phases.2.phase.raw_phase": 0.15888909995555878,
+        "phases.3.phase.raw_phase": 0.20930537581443787,
+        "phases.4.phase.raw_phase": 0.2853117287158966,
+        "phases.5.phase.raw_phase": 0.4319118559360504
+      }
+    }
+  ]
+}
