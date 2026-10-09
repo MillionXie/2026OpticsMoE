@@ -1,0 +1,9 @@
+{
+  "candidates": {
+    "ema099": {"ema_decay": 0.99},
+    "smoothing005": {"label_smoothing": 0.05}
+  },
+  "depths": [6],
+  "seeds": [17],
+  "selection": "Fresh six-layer D2NN+OEO training at original lr0.002 and maximum30 epochs, no checkpoint loading. Compare EMA0.99 against original0.95, or label smoothing0.05 against original0.02, changing only one training parameter per candidate. Select minimum full validation balanced NLL, preserving all candidates and no desired test-score/ranking condition. Test previously observed; exploratory follow-up, not replacement of original uniformly tuned ablation."
+}
