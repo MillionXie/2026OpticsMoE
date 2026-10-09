@@ -46,10 +46,36 @@ def class_weights(labels,power):
     weights=(counts.mean()/counts).pow(power)
     return weights/weights.mean()
 
-def router_balance_loss(dense):
+def router_balance_loss(dense,mode='dense_kl'):
     """KL of batch-average dense CCD fractions to uniform; no labels or hard routes."""
     mean=dense.mean(0)
+    if mode=='top2_load':
+        selected=torch.zeros_like(dense).scatter(1,dense.topk(2,dim=1).indices,1.)
+        load=selected.mean(0).detach()/2
+        return dense.shape[1]*(load*mean).sum()
+    if mode!='dense_kl':raise ValueError(mode)
     return (mean*(mean.clamp_min(1e-20)*dense.shape[1]).log()).sum()
+
+def evaluate_candidate(model,x,y,batch):
+    metrics,pred,q=evaluate(model,x,y,batch)
+    if q is not None:
+        mean=q.mean(0).astype(float)
+        mean=mean/mean.sum()
+        entropy=-float((mean[mean>0]*np.log(mean[mean>0])).sum())
+        pairs=np.sort(np.argsort(q,axis=1)[:,-2:],axis=1)
+        unique,counts=np.unique(pairs,axis=0,return_counts=True)
+        metrics['router'].update(effective_experts=float(np.exp(entropy)),
+            top2_pair_fraction={','.join(str(int(i)+1) for i in pair):float(n/len(q))
+                               for pair,n in zip(unique,counts)},
+            dominant_pair_fraction=float(counts.max()/len(q)))
+    return metrics,pred,q
+
+def candidate_key(metrics,baseline_score,tolerance=None):
+    score=selection_score(metrics)
+    if tolerance is None:return (True,score,-metrics['cross_entropy'])
+    router=metrics['router']
+    return (score>=baseline_score-tolerance,router['effective_experts'],
+            -router['dominant_pair_fraction'],score,-metrics['cross_entropy'])
 
 def main():
     p=argparse.ArgumentParser()
@@ -65,10 +91,14 @@ def main():
     p.add_argument('--class-weight-power',type=float,default=0.)
     p.add_argument('--augmentation-probability',type=float,default=1.)
     p.add_argument('--router-balance-weight',type=float,default=0.)
+    p.add_argument('--router-balance-mode',choices=['dense_kl','top2_load'],default='dense_kl')
+    p.add_argument('--routing-score-tolerance',type=float)
     p.add_argument('--batch',type=int)
     args=p.parse_args()
     if args.batch is not None and args.batch<1:raise ValueError('invalid batch')
     if args.router_balance_weight<0:raise ValueError('negative router balance weight')
+    if args.routing_score_tolerance is not None and not 0<=args.routing_score_tolerance<=.02:
+        raise ValueError('routing selection tolerance must be between zero and .02')
     if args.epochs<1 or not 0<=args.label_smoothing<1 or not 0<args.ema_decay<1 or not 0<=args.augmentation_probability<=1:
         raise ValueError('invalid regularization budget')
     args.out.mkdir(parents=True,exist_ok=False)
@@ -92,6 +122,8 @@ def main():
             augmentation='train-only common R/G/B D4; no color jitter; empty tile unchanged',
             optimizer_reinitialized=True,phase_weight_decay=0.,router_weight_decay=.0001,
             minimum_lr_ratio=.1)
+        if args.routing_score_tolerance is not None:
+            cfg['selection']='validation score >= parent score - tolerance; maximize effective experts, then pair diversity, then accuracy/macro mean'
         for key in ('data_sha256','manifest_sha256'):
             if cfg[key]!=previous[key]:raise ValueError(f'{key} mismatch')
         torch.manual_seed(args.seed);np.random.seed(args.seed)
@@ -122,10 +154,12 @@ def main():
             groups.append(dict(params=[parameter],lr=lr,weight_decay=decay))
         opt=torch.optim.AdamW(groups)
         base_lrs=[g['lr'] for g in opt.param_groups]
-        initial_val,_,_=evaluate(model,x['val'],y['val'],cfg['batch'])
-        initial_train,_,_=evaluate(model,x['train'],y['train'],cfg['batch'])
+        initial_val,_,_=evaluate_candidate(model,x['val'],y['val'],cfg['batch'])
+        initial_train,_,_=evaluate_candidate(model,x['train'],y['train'],cfg['batch'])
         write(args.out/'initial_diagnostics.json',dict(epoch=initial_epoch,training=initial_train,validation=initial_val))
-        best=selection_score(initial_val);history=[]
+        baseline_score=selection_score(initial_val)
+        best=baseline_score;history=[]
+        best_key=candidate_key(initial_val,baseline_score,args.routing_score_tolerance)
         def save_best(chosen,epoch,kind):
             torch.save(dict(model=chosen.state_dict(),epoch=initial_epoch+epoch,
                 fine_tune_epoch=epoch,weights_kind=kind,config=cfg,optimizer=None,
@@ -151,26 +185,27 @@ def main():
                     weight=weights if args.class_weight_power>0 else None,
                     label_smoothing=args.label_smoothing)
                 if args.router_balance_weight>0:
-                    balance=router_balance_loss(out['dense_route_power'])
+                    balance=router_balance_loss(out['dense_route_power'],args.router_balance_mode)
                     loss=loss+args.router_balance_weight*balance
                     balance_sum+=float(balance.detach())*len(ix)
                 if not torch.isfinite(loss):raise RuntimeError('nonfinite loss')
                 loss.backward();torch.nn.utils.clip_grad_norm_(model.parameters(),5.)
                 opt.step();update_ema(ema,model,args.ema_decay)
                 loss_sum+=float(loss.detach())*len(ix)
-            raw_val,_,_=evaluate(model,x['val'],y['val'],cfg['batch'])
-            ema_val,_,_=evaluate(ema,x['val'],y['val'],cfg['batch'])
+            raw_val,_,_=evaluate_candidate(model,x['val'],y['val'],cfg['batch'])
+            ema_val,_,_=evaluate_candidate(ema,x['val'],y['val'],cfg['batch'])
             kind,chosen,metrics=max((('online',model,raw_val),('ema',ema,ema_val)),
-                key=lambda t:(selection_score(t[2]),-t[2]['cross_entropy']))
-            score=selection_score(metrics);improved=score>best
-            if improved:best=score;save_best(chosen,epoch,kind)
+                key=lambda t:candidate_key(t[2],baseline_score,args.routing_score_tolerance))
+            key=candidate_key(metrics,baseline_score,args.routing_score_tolerance)
+            score=selection_score(metrics);improved=key>best_key
+            if improved:best=score;best_key=key;save_best(chosen,epoch,kind)
             row=dict(epoch=initial_epoch+epoch,fine_tune_epoch=epoch,train_loss=loss_sum/len(indices),
                 validation=metrics,online_validation=raw_val,ema_validation=ema_val,
                 evaluated_kind=kind,selection_score=score,selected=improved,
                 router_balance_loss=balance_sum/len(indices),
                 learning_rates=[g['lr'] for g in opt.param_groups])
             if epoch%5==0 or epoch==args.epochs:
-                row['training'],_,_=evaluate(chosen,x['train'],y['train'],cfg['batch'])
+                row['training'],_,_=evaluate_candidate(chosen,x['train'],y['train'],cfg['batch'])
             row['seconds']=time.time()-begin
             history.append(row);write(args.out/'metrics.json',history)
             torch.save(dict(model=model.state_dict(),ema_model=ema.state_dict(),optimizer=opt.state_dict(),
@@ -182,8 +217,8 @@ def main():
             print(json.dumps(row),flush=True)
         ck=torch.load(args.out/'best_checkpoint.pt',map_location=device,weights_only=False)
         model.load_state_dict(ck['model'])
-        selected_train,_,_=evaluate(model,x['train'],y['train'],cfg['batch'])
-        selected_val,_,_=evaluate(model,x['val'],y['val'],cfg['batch'])
+        selected_train,_,_=evaluate_candidate(model,x['train'],y['train'],cfg['batch'])
+        selected_val,_,_=evaluate_candidate(model,x['val'],y['val'],cfg['batch'])
         selected=dict(epoch=ck['epoch'],fine_tune_epoch=ck['fine_tune_epoch'],weights_kind=ck['weights_kind'],
             training=selected_train,validation=selected_val,selection_score=selection_score(selected_val),
             checkpoint_sha256=sha256(args.out/'best_checkpoint.pt'),test_evaluations=0)

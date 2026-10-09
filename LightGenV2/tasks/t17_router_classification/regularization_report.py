@@ -12,7 +12,7 @@ def main():
     import matplotlib.pyplot as plt
     fig,axes=plt.subplots(1,2,figsize=(13,4))
     summary={};lines=['# MoE regularization candidates','',
-        'Selection uses validation only: mean of accuracy and macro recall. '
+        'Selection uses validation only; the precise rule is recorded below for each candidate. '
         'Only the winning candidate per architecture receives one exploratory test.','',
         '| Candidate | Weights | Fine-tune epoch | Val accuracy | Val macro | Train macro | Gap | Test accuracy | Test macro |',
         '|---|---|---:|---:|---:|---:|---:|---:|---:|']
@@ -45,6 +45,14 @@ def main():
     fig.tight_layout();args.out.mkdir(parents=True,exist_ok=True)
     fig.savefig(args.out/'generalization_curves.png',dpi=170);plt.close(fig)
     (args.out/'summary.json').write_text(json.dumps(summary,indent=2)+'\n')
+    lines.extend(['', '## Selection and validation routing', ''])
+    for name,data in summary.items():
+        lines.append(f'- {name}: {data["config"]["selection"]}')
+        route=data['selected']['validation'].get('router',{})
+        if 'effective_experts' in route:
+            lines.append(f'  Validation effective experts: {route["effective_experts"]:.3f}; '
+                f'dominant pair: {route["dominant_pair_fraction"]:.2%}; '
+                f'mean power: {route["mean_power"]}; pairs: {route["top2_pair_fraction"]}')
     lines.extend(['',f'Run prefix: {args.run_prefix}',
         'Inference geometry, Top-2, two OEO stages and single Linear are unchanged. '
         'D4 augmentation and regularization are training-only. '
