@@ -1,0 +1,8 @@
+{
+  "selection": "same full validation accuracy/macro mean; dense router KL only as weak training auxiliary",
+  "candidates": [
+    {"name": "optical_control", "architecture": "optical", "init_run": "crc9_moe_regularized_r4_s17_20261009_optical_weighted", "epochs": 20, "phase_lr": 0.0003, "electronic_lr": 0.00015, "head_decay": 0.02, "label_smoothing": 0.0, "ema_decay": 0.995, "class_weight_power": 0.5, "augmentation_probability": 0.5, "router_balance_weight": 0.0},
+    {"name": "optical_balance005", "architecture": "optical", "init_run": "crc9_moe_regularized_r4_s17_20261009_optical_weighted", "epochs": 20, "phase_lr": 0.0003, "electronic_lr": 0.00015, "head_decay": 0.02, "label_smoothing": 0.0, "ema_decay": 0.995, "class_weight_power": 0.5, "augmentation_probability": 0.5, "router_balance_weight": 0.005},
+    {"name": "optical_balance02", "architecture": "optical", "init_run": "crc9_moe_regularized_r4_s17_20261009_optical_weighted", "epochs": 20, "phase_lr": 0.0003, "electronic_lr": 0.00015, "head_decay": 0.02, "label_smoothing": 0.0, "ema_decay": 0.995, "class_weight_power": 0.5, "augmentation_probability": 0.5, "router_balance_weight": 0.02}
+  ]
+}

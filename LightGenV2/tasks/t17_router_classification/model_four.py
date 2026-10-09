@@ -35,7 +35,7 @@ class FourRouterClassification(PhaseOnly):
                 nn.init.zeros_(self.electronic_router[-1].bias)
                 self.register_parameter('router_phase',None)
 
-    def route(self,amplitude):
+    def dense_route(self,amplitude):
         if self.variant=='d2nn':return None,None
         if self.variant=='optical':
             dense,capture=super().route(amplitude)
@@ -44,12 +44,19 @@ class FourRouterClassification(PhaseOnly):
             x=x/x.mean(1,keepdim=True).clamp_min(1e-20)
             dense=self.electronic_router(x).softmax(1)
             capture=None
-        return sparse_top2(dense),capture
+        return dense,capture
 
-    def forward(self,amplitude,return_debug=False):
+    def route(self,amplitude):
+        dense,capture=self.dense_route(amplitude)
+        return (sparse_top2(dense) if dense is not None else None),capture
+
+    def forward(self,amplitude,return_debug=False,return_dense_route=False):
         if amplitude.ndim!=3 or amplitude.shape[-2:]!=(224,224):raise ValueError(amplitude.shape)
         amplitude=amplitude/amplitude.square().sum((-2,-1),keepdim=True).clamp_min(1e-20).sqrt()
-        q,capture=self.route(amplitude)
+        if return_dense_route:
+            dense,capture=self.dense_route(amplitude)
+            q=sparse_top2(dense) if dense is not None else None
+        else:q,capture=self.route(amplitude)
         if self.variant=='d2nn':
             expanded=F.interpolate(amplitude[:,None],(478,478),mode='bilinear',align_corners=False)[:,0]
             expanded=expanded/expanded.square().sum((-2,-1),keepdim=True).clamp_min(1e-20).sqrt()
@@ -80,6 +87,7 @@ class FourRouterClassification(PhaseOnly):
             probabilities=(energies+1e-12*total)/(total*(1+9e-12))
             logits=probabilities.log()
         output=dict(logits=logits,route_power=q,router_capture=capture)
+        if return_dense_route:output['dense_route_power']=dense
         if energies is not None:output['class_energies']=energies
         if return_debug:
             output.update(first_ccd=first_ccd.abs().square(),final_ccd=final_ccd.abs().square(),

@@ -43,6 +43,8 @@ def main():
             command.extend(['--class-weight-power',str(item['class_weight_power'])])
         if 'augmentation_probability' in item:
             command.extend(['--augmentation-probability',str(item['augmentation_probability'])])
+        if 'router_balance_weight' in item:
+            command.extend(['--router-balance-weight',str(item['router_balance_weight'])])
         env=os.environ.copy();env['CUDA_VISIBLE_DEVICES']=uuid;env['OMP_NUM_THREADS']='4'
         with (out.parent/f'{run}.log').open('x') as log:
             process=subprocess.Popen(command,cwd=root,env=env,stdout=log,stderr=subprocess.STDOUT,start_new_session=True)

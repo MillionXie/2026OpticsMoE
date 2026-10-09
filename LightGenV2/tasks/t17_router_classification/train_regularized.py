@@ -46,6 +46,11 @@ def class_weights(labels,power):
     weights=(counts.mean()/counts).pow(power)
     return weights/weights.mean()
 
+def router_balance_loss(dense):
+    """KL of batch-average dense CCD fractions to uniform; no labels or hard routes."""
+    mean=dense.mean(0)
+    return (mean*(mean.clamp_min(1e-20)*dense.shape[1]).log()).sum()
+
 def main():
     p=argparse.ArgumentParser()
     p.add_argument('--init-run',type=Path,required=True)
@@ -59,7 +64,9 @@ def main():
     p.add_argument('--seed',type=int,default=17)
     p.add_argument('--class-weight-power',type=float,default=0.)
     p.add_argument('--augmentation-probability',type=float,default=1.)
+    p.add_argument('--router-balance-weight',type=float,default=0.)
     args=p.parse_args()
+    if args.router_balance_weight<0:raise ValueError('negative router balance weight')
     if args.epochs<1 or not 0<=args.label_smoothing<1 or not 0<args.ema_decay<1 or not 0<=args.augmentation_probability<=1:
         raise ValueError('invalid regularization budget')
     args.out.mkdir(parents=True,exist_ok=False)
@@ -125,7 +132,7 @@ def main():
         save_best(model,0,'parent')
         rng=np.random.default_rng(args.seed)
         for epoch in range(1,args.epochs+1):
-            begin=time.time();model.train();loss_sum=0.;indices=rng.permutation(len(y['train']))
+            begin=time.time();model.train();loss_sum=0.;balance_sum=0.;indices=rng.permutation(len(y['train']))
             # Cosine from the requested LR to 10% of it; preserve per-group ratios.
             factor=.1+.9*.5*(1+np.cos(np.pi*(epoch-1)/max(1,args.epochs-1)))
             for group,base in zip(opt.param_groups,base_lrs):group['lr']=base*factor
@@ -136,10 +143,15 @@ def main():
                     codes=torch.where(torch.rand(len(ix),device=device)<args.augmentation_probability,
                                       codes,torch.zeros_like(codes))
                 opt.zero_grad(set_to_none=True)
-                out=model(augment_d4(x['train'][ix],codes))
+                out=model(augment_d4(x['train'][ix],codes),
+                          return_dense_route=args.router_balance_weight>0)
                 loss=F.cross_entropy(out['logits'],y['train'][ix],
                     weight=weights if args.class_weight_power>0 else None,
                     label_smoothing=args.label_smoothing)
+                if args.router_balance_weight>0:
+                    balance=router_balance_loss(out['dense_route_power'])
+                    loss=loss+args.router_balance_weight*balance
+                    balance_sum+=float(balance.detach())*len(ix)
                 if not torch.isfinite(loss):raise RuntimeError('nonfinite loss')
                 loss.backward();torch.nn.utils.clip_grad_norm_(model.parameters(),5.)
                 opt.step();update_ema(ema,model,args.ema_decay)
@@ -153,6 +165,7 @@ def main():
             row=dict(epoch=initial_epoch+epoch,fine_tune_epoch=epoch,train_loss=loss_sum/len(indices),
                 validation=metrics,online_validation=raw_val,ema_validation=ema_val,
                 evaluated_kind=kind,selection_score=score,selected=improved,
+                router_balance_loss=balance_sum/len(indices),
                 learning_rates=[g['lr'] for g in opt.param_groups])
             if epoch%5==0 or epoch==args.epochs:
                 row['training'],_,_=evaluate(chosen,x['train'],y['train'],cfg['batch'])

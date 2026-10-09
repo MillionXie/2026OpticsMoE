@@ -4,6 +4,8 @@ import json
 import pytest
 from LightGenV2.tasks.t17_router_classification.train_regularized import augment_d4,update_ema
 from LightGenV2.tasks.t17_router_classification.train_regularized import class_weights
+from LightGenV2.tasks.t17_router_classification.train_regularized import router_balance_loss
+from LightGenV2.tasks.t17_router_classification.model_four import FourRouterClassification
 from LightGenV2.tasks.t17_router_classification.evaluate_selected import reuse_parent_receipt
 from LightGenV2.tasks.t11_lifelong_optics.crc9_data import sha256
 
@@ -34,6 +36,21 @@ def test_class_weights_depend_only_on_training_counts():
     assert torch.all(weights[:-1]>weights[1:])
     assert torch.allclose(weights.mean(),torch.tensor(1.))
     with pytest.raises(ValueError):class_weights(torch.zeros(5,dtype=torch.long),.5)
+
+def test_dense_router_auxiliary_preserves_forward_and_reaches_unselected_ports():
+    torch.set_num_threads(4)
+    model=FourRouterClassification('optical')
+    x=torch.rand(2,224,224)
+    usual=model(x);extra=model(x,return_dense_route=True)
+    assert torch.equal(usual['logits'],extra['logits'])
+    assert torch.equal(usual['route_power'],extra['route_power'])
+    assert (extra['route_power']>0).sum(1).tolist()==[2,2]
+    dense=extra['dense_route_power'];dense.retain_grad()
+    router_balance_loss(dense).backward()
+    assert torch.isfinite(model.router_phase.grad).all()
+    assert model.router_phase.grad.abs().sum()>0
+    assert dense.grad[extra['route_power']==0].abs().sum()>0
+    assert router_balance_loss(torch.full((8,4),.25))==0
 
 @pytest.mark.parametrize('mismatch',[False,True])
 def test_parent_receipt_reuse_requires_elementwise_equal_weights(tmp_path,mismatch):
