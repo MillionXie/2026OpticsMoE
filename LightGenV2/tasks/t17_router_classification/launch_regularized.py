@@ -41,6 +41,8 @@ def main():
             command.extend(['--'+key.replace('_','-'),str(item[key])])
         if 'class_weight_power' in item:
             command.extend(['--class-weight-power',str(item['class_weight_power'])])
+        if 'augmentation_probability' in item:
+            command.extend(['--augmentation-probability',str(item['augmentation_probability'])])
         env=os.environ.copy();env['CUDA_VISIBLE_DEVICES']=uuid;env['OMP_NUM_THREADS']='4'
         with (out.parent/f'{run}.log').open('x') as log:
             process=subprocess.Popen(command,cwd=root,env=env,stdout=log,stderr=subprocess.STDOUT,start_new_session=True)

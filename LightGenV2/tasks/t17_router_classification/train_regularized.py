@@ -58,8 +58,9 @@ def main():
     p.add_argument('--ema-decay',type=float,default=.999)
     p.add_argument('--seed',type=int,default=17)
     p.add_argument('--class-weight-power',type=float,default=0.)
+    p.add_argument('--augmentation-probability',type=float,default=1.)
     args=p.parse_args()
-    if args.epochs<1 or not 0<=args.label_smoothing<1 or not 0<args.ema_decay<1:
+    if args.epochs<1 or not 0<=args.label_smoothing<1 or not 0<args.ema_decay<1 or not 0<=args.augmentation_probability<=1:
         raise ValueError('invalid regularization budget')
     args.out.mkdir(parents=True,exist_ok=False)
     write(args.out/'status.json',dict(state='loading'))
@@ -131,6 +132,9 @@ def main():
             for start in range(0,len(indices),cfg['batch']):
                 ix=torch.as_tensor(indices[start:start+cfg['batch']],device=device)
                 codes=torch.randint(0,8,(len(ix),),device=device)
+                if args.augmentation_probability<1:
+                    codes=torch.where(torch.rand(len(ix),device=device)<args.augmentation_probability,
+                                      codes,torch.zeros_like(codes))
                 opt.zero_grad(set_to_none=True)
                 out=model(augment_d4(x['train'][ix],codes))
                 loss=F.cross_entropy(out['logits'],y['train'][ix],
