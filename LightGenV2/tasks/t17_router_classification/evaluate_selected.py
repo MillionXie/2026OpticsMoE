@@ -4,7 +4,6 @@ import json
 import numpy as np
 import torch
 from pathlib import Path
-from .model import RouterClassification
 from .train import encode,evaluate,write
 from LightGenV2.tasks.t11_lifelong_optics.crc9_data import load_domain,sha256
 
@@ -16,9 +15,15 @@ def main():
     cfg=ck['config']
     if not cfg['skip_test']:raise ValueError('only validation-only candidates')
     data,_=load_domain(cfg['data'],cfg['manifest'])
-    model=RouterClassification(cfg['architecture'],cfg['router_features']).cuda()
+    profile=cfg.get('profile','sixteen_dense')
+    if profile=='four_top2':
+        from .model_four import FourRouterClassification
+        model=FourRouterClassification(cfg['architecture']).cuda()
+    else:
+        from .model import RouterClassification
+        model=RouterClassification(cfg['architecture'],cfg['router_features']).cuda()
     model.load_state_dict(ck['model'])
-    result,pred,q=evaluate(model,encode(data['test_images']).cuda(),
+    result,pred,q=evaluate(model,encode(data['test_images'],profile).cuda(),
         torch.as_tensor(data['test_labels'],device='cuda',dtype=torch.long),cfg['batch'])
     result.update(selected_epoch=ck['epoch'],checkpoint_sha256=sha256(a.run/'best_checkpoint.pt'),
                   test_evaluations=1,interpretation='post-hoc exploratory; baseline test previously seen')

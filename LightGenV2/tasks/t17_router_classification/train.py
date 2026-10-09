@@ -10,7 +10,6 @@ from pathlib import Path
 import numpy as np
 import torch
 from torch.nn import functional as F
-from .model import RouterClassification
 from LightGenV2.tasks.t11_lifelong_optics.crc9_data import load_domain, sha256
 
 
@@ -20,7 +19,10 @@ def write(path, value):
     os.replace(temp, path)
 
 
-def encode(images):
+def encode(images,profile='sixteen_dense'):
+    if profile=='four_top2':
+        from .model_four import encode_rgb
+        return encode_rgb(torch.as_tensor(images.copy()))
     rgb = torch.as_tensor(images.copy()).float().permute(0, 3, 1, 2) / 255
     rgb = F.interpolate(rgb, (112, 112), mode='bilinear', align_corners=False)
     return torch.cat((torch.cat((rgb[:, 0], rgb[:, 1]), -1),
@@ -45,13 +47,16 @@ def evaluate(model, x, y, batch):
     if routes:
         q = np.concatenate(routes)
         result['router'] = dict(mean_power=q.mean(0).tolist(), std_power=q.std(0).tolist(),
-            argmax_fraction=(np.bincount(q.argmax(1), minlength=16)/len(q)).tolist())
+            argmax_fraction=(np.bincount(q.argmax(1), minlength=q.shape[1])/len(q)).tolist(),
+            selected_fraction=(q>0).mean(0).tolist(),
+            mean_selected_count=float((q>0).sum(1).mean()))
     return result, pred, np.concatenate(routes) if routes else None
 
 
 def main():
     p=argparse.ArgumentParser()
     p.add_argument('--architecture', choices=['optical','electronic','d2nn'], required=True)
+    p.add_argument('--profile',choices=['four_top2','sixteen_dense'],default='four_top2')
     p.add_argument('--data', type=Path, required=True)
     p.add_argument('--manifest', type=Path, required=True)
     p.add_argument('--out', type=Path, required=True)
@@ -64,6 +69,8 @@ def main():
     p.add_argument('--router-lr', type=float, default=.001)
     p.add_argument('--skip-test', action='store_true')
     args=p.parse_args()
+    if args.profile=='four_top2' and (args.router_features!='mean' or args.router_lr!=.001):
+        raise ValueError('four_top2 fixes standard electronic router features and learning rate')
     args.out.mkdir(parents=True, exist_ok=False)
     config={k:str(v) if isinstance(v,Path) else v for k,v in vars(args).items()}
     config.update(git_commit=subprocess.check_output(['git','rev-parse','HEAD'],text=True).strip(),
@@ -80,9 +87,16 @@ def main():
             raise ValueError('unexpected full split counts')
         device=torch.device('cuda')
         # Test images are encoded only after checkpoint selection.
-        x={s:encode(data[s+'_images']).to(device) for s in ('train','val')}
+        x={s:encode(data[s+'_images'],args.profile).to(device) for s in ('train','val')}
         y={s:torch.as_tensor(data[s+'_labels'],device=device,dtype=torch.long) for s in ('train','val')}
-        model=RouterClassification(args.architecture,args.router_features).to(device)
+        if args.profile=='four_top2':
+            from .model_four import FourRouterClassification,CONTRACT
+            model=FourRouterClassification(args.architecture).to(device)
+            config['optical_contract']=CONTRACT
+            config['top_k']=2 if args.architecture!='d2nn' else None
+        else:
+            from .model import RouterClassification
+            model=RouterClassification(args.architecture,args.router_features).to(device)
         groups=[]
         for name,param in model.named_parameters():
             lr=.001 if 'shared_head' in name or 'electronic_router' in name else .005
@@ -126,7 +140,7 @@ def main():
             write(args.out/'status.json',{'state':'completed_validation_only','epoch':chosen['epoch'],
                                           'validation':selected})
             return
-        xt=encode(data['test_images']).to(device)
+        xt=encode(data['test_images'],args.profile).to(device)
         yt=torch.as_tensor(data['test_labels'],device=device,dtype=torch.long)
         result,pred,q=evaluate(model,xt,yt,args.batch)
         result.update(selected_epoch=chosen['epoch'],checkpoint_sha256=sha256(args.out/'best_checkpoint.pt'),

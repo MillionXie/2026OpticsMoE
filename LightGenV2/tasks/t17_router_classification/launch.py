@@ -12,6 +12,7 @@ def main():
     p.add_argument('--data', required=True)
     p.add_argument('--manifest', required=True)
     p.add_argument('--run-prefix', required=True)
+    p.add_argument('--profile',choices=['four_top2','sixteen_dense'],default='four_top2')
     args=p.parse_args()
     if len(set(args.gpus))!=3: raise ValueError('three distinct GPU UUIDs required')
     root=Path(__file__).resolve().parents[3]
@@ -33,14 +34,14 @@ def main():
         out=task/'runs'/'simulation'/run
         out.parent.mkdir(parents=True,exist_ok=True)
         command=[sys.executable,'-u','-m','LightGenV2.tasks.t17_router_classification.train',
-                 '--architecture',variant,'--data',args.data,'--manifest',args.manifest,
+                 '--architecture',variant,'--profile',args.profile,'--data',args.data,'--manifest',args.manifest,
                  '--out',str(out)]
         env=os.environ.copy();env['CUDA_VISIBLE_DEVICES']=uuid
         env['OMP_NUM_THREADS']='4'
         with (out.parent/f'{run}.log').open('x') as log:
             process=subprocess.Popen(command,cwd=root,env=env,stdout=log,stderr=subprocess.STDOUT,
                                      start_new_session=True)
-        launches.append(dict(variant=variant,pid=process.pid,gpu_uuid=uuid,out=str(out)))
+        launches.append(dict(variant=variant,profile=args.profile,pid=process.pid,gpu_uuid=uuid,out=str(out)))
     receipt=task/'runs'/'simulation'/f'{args.run_prefix}_launch.json'
     receipt.write_text(json.dumps(launches,indent=2)+'\n')
     print(json.dumps(launches,indent=2))

@@ -40,9 +40,10 @@ def main():
         hist=item['history'];axes[0].plot([r['epoch'] for r in hist],
             [r['validation']['balanced_accuracy']*100 for r in hist],label=variant)
         route=item['result'].get('router')
-        if route:axes[1].plot(range(1,17),route['mean_power'],'o-',label=variant)
+        if route:axes[1].plot(range(1,len(route['mean_power'])+1),route['mean_power'],'o-',label=variant)
     axes[0].set(xlabel='Epoch',ylabel='Validation macro recall (%)')
-    axes[1].set(xlabel='Expert slot (quadrant order)',ylabel='Test mean routed power',xticks=range(1,17))
+    slots=max(len(item['result'].get('router',{}).get('mean_power',[])) for item in results.values())
+    axes[1].set(xlabel='Expert slot (row-major for four slots)',ylabel='Test mean routed power',xticks=range(1,slots+1))
     for ax in axes: ax.legend();ax.grid(alpha=.2)
     fig.tight_layout();fig.savefig(args.out/'training_and_routing.png',dpi=180);plt.close(fig)
     (args.out/'summary.json').write_text(json.dumps(results,indent=2)+'\n')
