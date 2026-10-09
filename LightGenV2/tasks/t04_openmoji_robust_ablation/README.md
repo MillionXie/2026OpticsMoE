@@ -2,6 +2,16 @@
 
 ## 2026-10-08 授权：累计组电子适配，目标89.0%–89.5%（进行中）
 
+2026-10-09用户最新授权89.05%继续小幅改善。先对该best的完整TRAIN1000做
+固定seed1008/原扰动分布的预测稳定性审计，不评TEST、不梯度、不保存训练PT。
+若存在明显扰动翻转，有限一次从该best继续，唯一目标因素为clean-teacher一致性
+权重.05→.10，保持drop.12/category-only mixup.2/保真.5/平滑.05/定位1.5/
+cosine120/完整TRAIN1000/noReplay/原30162 decoder及光学不变。先单轮GPU及
+strictCPU/保护审计，通过后唯一正式120轮；不扫描一致性权重、TEST门限或选低分。
+旧89.05/89.00及所有PT保留，同时报告保真/IoU/F1，不能保证提高。
+新增--train-stability-only与--consistency-weight，默认历史损失不变；12项测试通过。
+源码只Git同步，实验台4060原空闲，无SDK/新采集。本轮路径仅本T04入口、测试及README。
+
 2026-10-09 03:43终审：drop012正式120轮完成、任务返回0、训练Python退出，
 4060约400MiB无本任务训练占用。strictCPU best .8905/e30、last .8895，
 上游保护true；best SHA4dd327ddc44bbe13b70a04db4916098ddb50d0f44b8bd49967d7ce7a475a6220，

@@ -61,6 +61,14 @@ def category_mixup_loss(cat, y, smoothing=0.):
     return .5*changed.mean()+.2*preserved.mean()
 
 
+def paired_consistency(cat, edit, noisy_cat, noisy_edit):
+    """Clean predictions are a detached TRAIN teacher, never TEST targets."""
+    import torch.nn.functional as F
+    return (F.kl_div(noisy_cat.log_softmax(1), cat.detach().softmax(1), reduction='batchmean')
+            / cat[0, 0].numel()
+            + (noisy_edit.sigmoid()-edit.detach().sigmoid()).square().mean())
+
+
 def main():
     p = argparse.ArgumentParser(description=__doc__)
     for name in ('project', 'manifest', 'initial', 'cache', 'output'):
@@ -85,7 +93,13 @@ def main():
                    help='TRAIN-step decoder EMA; periodic TEST and last use EMA only, no candidate ratio scan')
     p.add_argument('--benchmark-only', action='store_true',
                    help='Audit TRAIN and time isolated decoder copies on CPU/CUDA; no saved trained PT')
+    p.add_argument('--consistency-weight', type=float, default=.05,
+                   help='TRAIN paired clean-teacher consistency; historical default .05')
+    p.add_argument('--train-stability-only', action='store_true',
+                   help='TRAIN-only perturbation audit; no TEST evaluation, gradient or trained PT')
     a = p.parse_args()
+    if not math.isfinite(a.consistency_weight) or not 0 <= a.consistency_weight <= .2:
+        raise ValueError('Finite consistency weight must be 0..0.2')
     if not 0 <= a.ema_decay < 1:
         raise ValueError('EMA decay must be 0..1 exclusive')
     if not 0 <= a.feature_drop <= .25:
@@ -138,6 +152,45 @@ def main():
                                              'task_logits': y['task_logits']}, y)
                 records.extend(samples)
         return meter.compute(), records
+    if a.train_stability_only:
+        payload = torch.load(a.initial, map_location='cpu', weights_only=False)
+        model.load_state_dict(payload['model'], strict=True)
+        if backend.protected_sha(model) != protected:
+            raise ValueError('Initial PT upstream mismatch')
+        model.requires_grad_(False).eval()
+        decoder = model.shared_readout.decoder.to(a.device)
+        clean_metrics, _ = evaluate('train')
+        noisy_meter = MetricAccumulator()
+        counts = {'changed': [0, 0], 'preserved': [0, 0]}
+        consistency_sum = 0.
+        with torch.no_grad():
+            for start in range(0, 1000, 32):
+                ids = list(range(start, min(start+32, 1000)))
+                x, y = batch('train', ids, a.device)
+                scale = x.square().mean().sqrt().clamp_min(1e-8)
+                noisy = x*(.98+.04*torch.rand_like(x))+.01*scale*torch.randn_like(x)
+                noisy *= (torch.rand_like(x) >= a.feature_drop).to(x.dtype)
+                cat, edit = decoder(x)
+                nc, ne = decoder(noisy)
+                consistency_sum += float(paired_consistency(cat, edit, nc, ne))*len(ids)
+                noisy_meter.update({'category_logits': nc, 'edit_logits': ne,
+                                    'task_logits': y['task_logits']}, y)
+                clean_pred = torch.where(edit.sigmoid() >= .5, cat.argmax(1), y['source_grid'])
+                noisy_pred = torch.where(ne.sigmoid() >= .5, nc.argmax(1), y['source_grid'])
+                for label, mask in [('changed', y['edit_grid'].bool()),
+                                    ('preserved', ~y['edit_grid'].bool())]:
+                    counts[label][0] += int(((clean_pred != noisy_pred) & mask).sum())
+                    counts[label][1] += int(mask.sum())
+        a.output.mkdir(parents=True)
+        audit = {'status': 'complete', 'scope': 'TRAIN1000', 'seed': 1008,
+                 'feature_drop': a.feature_drop, 'clean': clean_metrics, 'perturbed': noisy_meter.compute(),
+                 'prediction_disagreement': counts, 'mean_consistency': consistency_sum/1000,
+                 'initial_sha256': sha(a.initial), 'entry_sha256': sha(Path(__file__)),
+                 'protected_unchanged': backend.protected_sha(model) == protected,
+                 'test_evaluated': False, 'gradient': False, 'trained_pt_saved': False}
+        (a.output/'train_stability.json').write_text(json.dumps(audit, indent=2), encoding='utf-8')
+        print(json.dumps(audit), flush=True)
+        return
     baseline, _ = evaluate('test')
     if abs(baseline['overall']['changed_cell_accuracy'] - .7315) > 1e-8:
         raise ValueError('Original CPU CCD baseline differs')
@@ -221,7 +274,7 @@ def main():
           'preserved_edit_weight': a.preserved_edit_weight,
           'train_hard_extra': a.train_hard_extra,
           'hard_sampling': 'fixed initial TRAIN changed-cell error weights 1+2*error; all original TRAIN once plus extra draws; no TEST mining',
-          'paired_supervision': [.5, .5], 'consistency': .05, 'test_gradient': False,
+          'paired_supervision': [.5, .5], 'consistency': a.consistency_weight, 'test_gradient': False,
           'selection': 'TEST every5 highest development; no independent generalization claim', 'architecture_unchanged': True})
     history = []
     for epoch in range(1, a.epochs + 1):
@@ -241,10 +294,9 @@ def main():
             noisy = noisy*(torch.rand_like(x) >= a.feature_drop)
             cat, edit = decoder(x)
             nc, ne = decoder(noisy)
-            consistency = F.kl_div(nc.log_softmax(1), cat.detach().softmax(1), reduction='batchmean')/cat[0, 0].numel()
-            consistency = consistency + (ne.sigmoid()-edit.detach().sigmoid()).square().mean()
+            consistency = paired_consistency(cat, edit, nc, ne)
             anch = sum((v-anchor[k]).square().mean() for k, v in decoder.named_parameters())
-            loss = .5*supervised(cat, edit, y)+.5*supervised(nc, ne, y)+.05*consistency+.05*anch
+            loss = .5*supervised(cat, edit, y)+.5*supervised(nc, ne, y)+a.consistency_weight*consistency+.05*anch
             if a.mixup_weight:
                 # Targets include source-grid dependent composition: evaluate both
                 # original target dictionaries, never interpolate discrete grid IDs.
