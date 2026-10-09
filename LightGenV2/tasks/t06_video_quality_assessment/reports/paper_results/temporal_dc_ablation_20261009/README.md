@@ -102,5 +102,45 @@ TRAIN2250/TEST558与冻结前端来源校验通过。恢复资产为只读引用
 - Vision SHA256 `17b29fc12b17268b7d94fb2c6bbead6650d82899b33bcc1c3ee2a8608a64419c`。
 - Language SHA256 `57b9f8463a88b5c71a917422bcbbb48d8ac156a16dc460ffccca8a56d10feb4c`。
 
-两组100epoch续训已启动，各自独立进程占GPU0/1，数据加载workers=0，不产生常驻
-GPU子进程；退出后CUDA上下文随进程释放。仅保存best/last。训练完成前不填最终成绩。
+## 匹配续训最终结果（两组均完成100epoch）
+
+| 显式未调制分量设置 | 最佳epoch | 最佳SRCC | 最佳PLCC | 最佳RMSE | 第100epoch SRCC |
+| --- | ---: | ---: | ---: | ---: | ---: |
+| 训练20%~35%，推理20% | 90 | .8044144919 | .8134424868 | 8.16568 | .8039904432 |
+| 训练/推理0 | 80 | .8021410503 | .8104244160 | 8.22474 | .8016364707 |
+
+最佳点差 `.0022734415`，两组100epoch差 `.0023539725`。最佳PT逐视频预测配对
+bootstrap（2000次，seed163）差值95%区间 `[-.00381954, .00813824]`，仍含0。
+这些是同一含DC权重起点的匹配续训，单seed、TEST选模的开发指标；不足以证明
+未调制场有显著泛化增益，更不足以证明它等价于FFN恒等残差。
+
+含DC组的SRCC只比原正式PT高约 `.000028`，且PLCC/RMSE反而逊于原正式PT；
+**不替换原正式0.8044权重**。本次是消融，不是新的部署冠军。
+
+### 权重与相位确实训练了
+
+输出均位于 `runs/simulation/`，仅有best/last两份PT，没有周期mask文件：
+
+- `temporal_dc_ablation_dc20_20261009/best_checkpoint.pt`：
+  SHA256 `7b632bf244b3874f02f5695302b3b16e0126db1da8d659971f9a1a25f8c6937f`。
+- `temporal_dc_ablation_dc0_20261009/best_checkpoint.pt`：
+  SHA256 `4cdd0ce70226b8a45eb4f64a4895320b5acc0422444febc7248552758f50e6ac`。
+
+第100epoch相对于共同起点的周期相位差RMS（弧度）：
+
+| 相位组 | dc20 | dc0 |
+| --- | ---: | ---: |
+| Vision Router | .06706 | .07003 |
+| Vision Expert | .05708 | .05872 |
+| Vision Global | .03697 | .03771 |
+| Language Router | .14746 | .17104 |
+| Language Expert | .04910 | .04069 |
+| Language Global | .03068 | .03160 |
+
+计算使用 `atan2(sin(phi_last-phi_start), cos(phi_last-phi_start))`，不是原始logit差。
+最佳PT四个alpha：dc20 `.56093141/.55966221/.56775194/.56933110`，
+dc0 `.56091903/.55969780/.56778377/.56930079`，与名义光场rho无关。
+
+两份 `status.json` 均complete。训练进程2787523/2787524的 `/proc` 条目均消失，
+`nvidia-smi`中也无对应CUDA进程；GPU0/1恢复为12/25MiB、利用率0%。
+未终止其他用户进程。数据加载workers=0，不产生常驻GPU子进程。
