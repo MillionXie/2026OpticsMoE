@@ -1,0 +1,9 @@
+{
+  "candidates": {
+    "ema097": {"phase_smooth_weight": 0.005, "augmentation": {"degrees": 5.0, "translation_pixels": 1.0, "scale_delta": 0.02}, "ema_decay": 0.97},
+    "smoothing003": {"phase_smooth_weight": 0.005, "augmentation": {"degrees": 5.0, "translation_pixels": 1.0, "scale_delta": 0.02}, "label_smoothing": 0.03}
+  },
+  "depths": [6],
+  "seeds": [17],
+  "selection": "One bounded refinement round; fresh six-layer D2NN+OEO from random initialization, original lr0.002 and maximum30 epochs. Preserve accepted weakaug run, checkpoint and all predictions. Each candidate differs from weakaug by one small training parameter: EMA0.95->0.97 or label smoothing0.02->0.03. Select minimum full validation balanced NLL. Test selected candidate once only if NLL <0.9679116606712341-0.0005. Otherwise retain accepted run and do not test either candidate. No test-score-driven choice, accuracy cap or required architecture ranking; exploratory validation-adaptive development."
+}
