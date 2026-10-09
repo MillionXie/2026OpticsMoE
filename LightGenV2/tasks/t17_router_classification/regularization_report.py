@@ -50,6 +50,10 @@ def main():
     lines.extend(['', '## Selection and validation routing', ''])
     for name,data in summary.items():
         lines.append(f'- {name}: {data["config"]["selection"]}')
+        if data['config'].get('validation_score_floor') is not None:
+            lines.append(f'  Absolute pre-dispersion validation score floor: '
+                f'{data["config"]["validation_score_floor"]:.6%}; '
+                f'admissible: {data["selected"].get("validation_admissible")}')
         route=data['selected']['validation'].get('router',{})
         if 'effective_experts' in route:
             lines.append(f'  Validation effective experts: {route["effective_experts"]:.3f}; '
