@@ -17,6 +17,7 @@ def main():
     p.add_argument('--data',type=Path,required=True)
     p.add_argument('--out',type=Path,required=True)
     p.add_argument('--gpus',nargs=2,required=True)
+    p.add_argument('--depth',type=int,choices=[4,6],default=6)
     a=p.parse_args()
     assert len(set(a.gpus))==2 and all(g.startswith('GPU-') for g in a.gpus)
     occupied=subprocess.check_output(['nvidia-smi','--query-compute-apps=gpu_uuid',
@@ -24,14 +25,14 @@ def main():
     assert not set(a.gpus).intersection(x.strip() for x in occupied)
     a.out.mkdir(parents=True,exist_ok=False)
     save(a.out/'metadata.json',dict(command=sys.argv,pid=os.getpid(),gpus=a.gpus,
-        git_commit=subprocess.check_output(['git','rev-parse','HEAD'],text=True).strip()))
+        depth=a.depth,git_commit=subprocess.check_output(['git','rev-parse','HEAD'],text=True).strip()))
     run=Path(__file__).with_name('run.py')
     processes=[]
     try:
         for rho,gpu in zip([0.,.3],a.gpus):
             folder=a.out/f'rho{rho}'
             cmd=[sys.executable,'-u',str(run),'--phase','train','--rho',str(rho),
-                '--data',str(a.data),'--out',str(folder)]
+                '--data',str(a.data),'--out',str(folder),'--depth',str(a.depth)]
             env=dict(os.environ,CUDA_VISIBLE_DEVICES=gpu)
             log=(a.out/f'rho{rho}.log').open('w')
             proc=subprocess.Popen(cmd,env=env,stdout=log,stderr=subprocess.STDOUT)
@@ -44,7 +45,7 @@ def main():
         results=[json.loads((a.out/f'rho{rho}'/'result.json').read_text()) for rho in [0.,.3]]
         assert results[0]['orders']==results[1]['orders']
         assert results[0]['transforms']==results[1]['transforms']
-        assert results[0]['parameters']==results[1]['parameters']==1329544
+        assert results[0]['parameters']==results[1]['parameters']==10000+439848*(a.depth//2)
         save(a.out/'selection_lock.json',dict(results=results,paired_orders=True,
             paired_transforms=True,criterion='each arm minimum validation balanced NLL'))
         save(a.out/'status.json',dict(state='locked_evaluation'))
@@ -52,7 +53,7 @@ def main():
             folder=a.out/f'rho{rho}'
             cmd=[sys.executable,'-u',str(run),'--phase','evaluate','--rho',str(rho),
                 '--data',str(a.data),'--out',str(a.out/f'evaluation_rho{rho}'),
-                '--checkpoint',str(folder/result['name']/'best_checkpoint.pt')]
+                '--checkpoint',str(folder/result['name']/'best_checkpoint.pt'),'--depth',str(a.depth)]
             env=dict(os.environ,CUDA_VISIBLE_DEVICES=a.gpus[0])
             subprocess.run(cmd,env=env,check=True)
         metrics={str(rho):json.loads((a.out/f'evaluation_rho{rho}'/'metrics.json').read_text())

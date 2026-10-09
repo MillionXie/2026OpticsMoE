@@ -18,7 +18,7 @@ original_build=b.build
 
 
 def build(arch,depth,cfg):
-    assert arch=='moe' and depth==6
+    assert arch=='moe' and depth in (4,6)
     model=original_build(arch,depth,cfg)
     install_residual(model,PhaseLayer,cfg['residual_rho'])
     return model
@@ -46,6 +46,7 @@ def main():
     parser.add_argument('--data',type=Path,required=True)
     parser.add_argument('--out',type=Path,required=True)
     parser.add_argument('--checkpoint',type=Path)
+    parser.add_argument('--depth',type=int,choices=[4,6],default=6)
     a=parser.parse_args()
     visible=os.environ.get('CUDA_VISIBLE_DEVICES','')
     assert visible.startswith('GPU-') and ',' not in visible
@@ -54,11 +55,11 @@ def main():
     cfg=config(a.rho);src=source_identity()
     r.save(a.out/'metadata.json',dict(command=sys.argv,pid=os.getpid(),
         git_commit=subprocess.check_output(['git','rev-parse','HEAD'],text=True).strip(),
-        config=cfg,sources=src,environment=m.environment(),data_sha256=r.sha(a.data),
+        config=cfg,depth=a.depth,sources=src,environment=m.environment(),data_sha256=r.sha(a.data),
         time=r.now(),test_read=a.phase=='evaluate',test_previously_observed=True))
     if a.phase=='smoke':
         r.setseed(17)
-        base=original_build('moe',6,cfg)
+        base=original_build('moe',a.depth,cfg)
         x=b.encode(k.load_data(a.data,'train')[0][:2])
         base.net.expert_bank.vectorize_homogeneous_d2nn=False
         with torch.no_grad(): reference=b.forward(base,x,'moe')[0]
@@ -78,14 +79,14 @@ def main():
         assert torch.allclose(coherent_modulation(ones,phase,.3).abs().square(),
             torch.tensor([1.,.16],device=x.device),atol=1e-6)
         r.save(a.out/'smoke.json',dict(passed=True,rho0_exact_identity=True,
-            initialization_unchanged=True,gradients=gradients,targets=30))
+            initialization_unchanged=True,gradients=gradients,targets=5*a.depth))
     elif a.phase=='train':
         r.setseed(17)
-        result=b.train('moe',6,17,k.load_data(a.data,'train'),k.load_data(a.data,'val'),
+        result=b.train('moe',a.depth,17,k.load_data(a.data,'train'),k.load_data(a.data,'val'),
             cfg,a.out,src)
         r.save(a.out/'result.json',result)
         r.setseed(17)
-        model=build('moe',6,cfg)
+        model=build('moe',a.depth,cfg)
         ck=torch.load(a.out/result['name']/'best_checkpoint.pt',map_location='cpu',weights_only=False)
         model.load_state_dict(ck['model'])
         diagnostics=[]
@@ -102,14 +103,14 @@ def main():
     else:
         assert a.checkpoint
         ck=torch.load(a.checkpoint,map_location='cpu',weights_only=False)
-        assert ck['config']==cfg and ck['sources']==src
-        model=build('moe',6,cfg);model.load_state_dict(ck['model'])
+        assert ck['config']==cfg and ck['sources']==src and ck['depth']==a.depth
+        model=build('moe',a.depth,cfg);model.load_state_dict(ck['model'])
         vm,rows=b.evaluate(model,k.load_data(a.data,'val'),'moe',cfg['batch_size'])
         r.csvwrite(a.out/'val_predictions.csv',rows)
         tm,rows=b.evaluate(model,k.load_data(a.data,'test'),'moe',cfg['batch_size'])
         r.csvwrite(a.out/'test_predictions.csv',rows)
         r.save(a.out/'metrics.json',dict(val=vm,test=tm,checkpoint_sha256=r.sha(a.checkpoint),
-            epoch=ck['epoch'],rho=a.rho,scope='single_seed_exploratory'))
+            epoch=ck['epoch'],rho=a.rho,depth=a.depth,scope='single_seed_exploratory'))
     r.save(a.out/'status.json',dict(state='complete',phase=a.phase,time=r.now()))
 
 
