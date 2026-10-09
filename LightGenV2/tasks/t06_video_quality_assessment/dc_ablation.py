@@ -19,7 +19,7 @@ from pathlib import Path
 
 import torch
 
-from .lab_runtime import forward, load_model, sha, write
+from .lab_runtime import forward, load_model, restore_settings, sha, write
 from .models.multivideo9x4 import build_model
 from .multivideo_settings import resolved_dict
 
@@ -58,7 +58,8 @@ def _manifest(root, checkpoint, settings, phase):
     root.mkdir(parents=True, exist_ok=False)
     write(root / 'run_manifest.json', dict(
         git_commit=head, command=[sys.executable, *sys.argv], phase=phase,
-        checkpoint=str(checkpoint), checkpoint_sha256=sha(checkpoint),
+        checkpoint=str(checkpoint) if checkpoint is not None else None,
+        checkpoint_sha256=sha(checkpoint) if checkpoint is not None else None,
         torch=torch.__version__, cuda=torch.version.cuda,
         cuda_visible_devices=os.environ.get('CUDA_VISIBLE_DEVICES'),
         test_used_for_selection=phase == 'train', validation_used=False,
@@ -67,6 +68,29 @@ def _manifest(root, checkpoint, settings, phase):
         frames_per_video=4, intervention='only nominal unmodulated power coefficient',
     ))
     write(root / 'resolved_config.json', resolved_dict(settings))
+
+
+def scratch_settings(template, output, arm):
+    """Restore only the architecture/config JSON; never read a checkpoint PT."""
+    values = json.loads(Path(template).read_text(encoding='utf-8'))
+    settings = restore_settings('temporal', values)
+    settings = ablation_settings(settings, output, arm)
+    rho = .20 if arm == 'dc20' else 0.
+    return dataclasses.replace(settings, initialization_checkpoint=None,
+        unmodulated_power_fraction_min=rho,
+        unmodulated_power_fraction_max=rho,
+        unmodulated_power_fraction_eval=rho)
+
+
+def state_fingerprint(model):
+    """Identity of all initial parameters/buffers without retaining an init PT."""
+    import hashlib
+    digest = hashlib.sha256()
+    for name, value in sorted(model.state_dict().items()):
+        value = value.detach().cpu().contiguous()
+        digest.update(f'{name}:{value.dtype}:{tuple(value.shape)}'.encode())
+        digest.update(value.reshape(-1).view(torch.uint8).numpy().tobytes())
+    return digest.hexdigest()
 
 
 def audit(args):
@@ -175,13 +199,21 @@ def audit(args):
 
 def train_arm(args):
     root = _run_root(args.output)
-    checkpoint = Path(args.checkpoint).resolve()
-    model, settings = load_model('temporal', checkpoint, 'cpu')
-    settings = ablation_settings(settings, root, args.arm)
+    scratch = args.initialization == 'scratch'
+    if scratch:
+        checkpoint = None
+        settings = scratch_settings(args.architecture_config, root, args.arm)
+        model = None
+    else:
+        checkpoint = Path(args.checkpoint).resolve()
+        model, settings = load_model('temporal', checkpoint, 'cpu')
+        settings = ablation_settings(settings, root, args.arm)
+    rates = (.0003, .02, .032) if scratch else (3e-5, .002, .0032)
     overrides = dict(epochs=args.epochs, batch_size=args.batch_size, random_seed=args.seed,
-        learning_rate=args.learning_rate, phase_learning_rate=args.phase_learning_rate,
-        router_phase_learning_rate=args.router_phase_learning_rate, num_workers=0,
-        initialization_checkpoint=checkpoint)
+        learning_rate=args.learning_rate if args.learning_rate is not None else rates[0],
+        phase_learning_rate=args.phase_learning_rate if args.phase_learning_rate is not None else rates[1],
+        router_phase_learning_rate=args.router_phase_learning_rate if args.router_phase_learning_rate is not None else rates[2],
+        num_workers=0, initialization_checkpoint=checkpoint)
     for key in ('manifest_path','vision_cache_path','language_cache_path'):
         value=getattr(args,key)
         if value: overrides[key]=Path(value).resolve()
@@ -193,6 +225,8 @@ def train_arm(args):
     recovery = json.loads((audited/'cache_recovery.json').read_text())
     if comparison.get('status') != 'complete':
         raise ValueError('Canonical baseline audit is incomplete')
+    if scratch and sha(args.architecture_config) != sha(audited/'resolved_config.json'):
+        raise ValueError('Scratch architecture template differs from the pinned audited version')
     for key in ('vision', 'language'):
         if sha(getattr(settings, key+'_cache_path')) != recovery[key+'_sha256']:
             raise ValueError('Training cache differs from audited recovery')
@@ -208,8 +242,17 @@ def train_arm(args):
     write(root/'cache_recovery.json',recovery)
     write(root/'audit_identity.json',dict(path=str(audited.resolve()),
         comparison_sha256=sha(audited/'comparison.json')))
-    # Rebuild and STRICT reload all parameters; no name/shape warm-start filtering.
-    candidate=build_model(settings);candidate.load_state_dict(model.state_dict(),strict=True)
+    # Seed BEFORE construction: both scratch arms have byte-identical parameters.
+    random.seed(args.seed);torch.manual_seed(args.seed)
+    candidate=build_model(settings)
+    if model is not None:
+        candidate.load_state_dict(model.state_dict(),strict=True)
+    write(root/'initialization_identity.json',dict(
+        initialization=args.initialization, pretrained_student_weights_loaded=not scratch,
+        initial_state_sha256=state_fingerprint(candidate),
+        architecture_config_sha256=sha(args.architecture_config) if scratch else None,
+        seed=args.seed, fixed_training_and_eval_rho=scratch,
+    ))
     random.seed(args.seed);torch.manual_seed(args.seed);torch.cuda.manual_seed_all(args.seed)
     # Match the RNG draw budget of the original random-rho arm. A zero-rho
     # condition otherwise omits one draw per optical pass, shifting every later
@@ -218,7 +261,7 @@ def train_arm(args):
     original=multivideo9x4._phase_modulation
     def matched_modulation(raw, *, settings, training):
         result=original(raw,settings=settings,training=training)
-        if training and args.arm=='dc0':
+        if training and args.arm=='dc0' and not scratch:
             torch.rand((),device=raw.device)
         return result
     multivideo9x4._phase_modulation=matched_modulation
@@ -226,6 +269,9 @@ def train_arm(args):
     try:
         result=train(candidate,payload,settings,torch.device(args.device))
         write(root/'status.json',dict(status='complete',summary=result))
+    except BaseException as error:
+        write(root/'status.json',dict(status='failed',error=repr(error)))
+        raise
     finally:
         multivideo9x4._phase_modulation=original
 
@@ -233,7 +279,9 @@ def train_arm(args):
 def main():
     parser=argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--phase',choices=('audit','train'),required=True)
-    parser.add_argument('--checkpoint',required=True)
+    parser.add_argument('--checkpoint')
+    parser.add_argument('--initialization',choices=('checkpoint','scratch'),default='checkpoint')
+    parser.add_argument('--architecture-config',help='Audited resolved_config.json; scratch never reads student PT')
     parser.add_argument('--output',required=True)
     parser.add_argument('--package',help='Pinned original full-test ZIP, required for audit')
     parser.add_argument('--arm',choices=('dc20','dc0'))
@@ -241,9 +289,9 @@ def main():
     parser.add_argument('--epochs',type=int,default=100)
     parser.add_argument('--batch-size',type=int,default=16)
     parser.add_argument('--seed',type=int,default=163)
-    parser.add_argument('--learning-rate',type=float,default=3e-5)
-    parser.add_argument('--phase-learning-rate',type=float,default=2e-3)
-    parser.add_argument('--router-phase-learning-rate',type=float,default=3.2e-3)
+    parser.add_argument('--learning-rate',type=float)
+    parser.add_argument('--phase-learning-rate',type=float)
+    parser.add_argument('--router-phase-learning-rate',type=float)
     parser.add_argument('--manifest-path')
     parser.add_argument('--vision-cache-path')
     parser.add_argument('--language-cache-path')
@@ -251,6 +299,12 @@ def main():
     args=parser.parse_args()
     if args.phase=='audit' and not args.package:parser.error('audit requires --package')
     if args.phase=='train' and not args.arm:parser.error('train requires --arm')
+    if args.phase=='audit' or args.initialization=='checkpoint':
+        if not args.checkpoint:parser.error('audit/checkpoint initialization requires --checkpoint')
+    elif not args.architecture_config:
+        parser.error('scratch requires --architecture-config')
+    if args.initialization=='scratch' and args.checkpoint:
+        parser.error('scratch forbids --checkpoint; use JSON architecture metadata only')
     (audit if args.phase=='audit' else train_arm)(args)
 
 
