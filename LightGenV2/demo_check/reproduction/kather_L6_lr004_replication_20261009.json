@@ -1,0 +1,6 @@
+{
+  "candidates": {"lr004": {"lr": 0.004}},
+  "depths": [6],
+  "seeds": [27, 37],
+  "selection": "Replicate the previously validation-selected lr0.004, six-layer D2NN+OEO at seeds27/37. No new hyperparameter search. Preserve original30-epoch maximum, minimum15 and patience8. Each seed selects minimum validation balanced NLL, locks checkpoint, replays validation and tests once. Combine all seeds with existing seed17, retaining every result regardless of relative MoE ranking; exploratory follow-up because test previously observed."
+}

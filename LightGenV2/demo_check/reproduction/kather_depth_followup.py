@@ -39,9 +39,12 @@ def main():
     parser.add_argument('--validation-only', action='store_true')
     parser.add_argument('--select-from', type=Path, nargs='+')
     parser.add_argument('--profile', type=Path, default=PROFILE)
+    parser.add_argument('--seed', type=int, help='Run one predeclared replication seed')
     args = parser.parse_args()
     PROFILE = args.profile.resolve()
     SPEC = r.read(PROFILE)
+    assert args.seed is None or args.seed in SPEC['seeds']
+    seeds = [args.seed] if args.seed is not None else SPEC['seeds']
     assert args.candidate is None or args.candidate in SPEC['candidates']
     assert not args.candidate or args.validation_only
     # There is no worker pool: a single process trains every job in dependency order.
@@ -74,7 +77,8 @@ def main():
                 assert r.read(folder/'status.json')['state']=='validation_complete'
                 entries.extend(r.read(folder/'validation_results.json'))
             assert sorted((e['candidate'],e['result']['depth'],e['result']['seed'])
-                for e in entries)==sorted((c,d,17) for c in SPEC['candidates'] for d in SPEC['depths'])
+                for e in entries)==sorted((c,d,s) for c in SPEC['candidates']
+                    for d in SPEC['depths'] for s in seeds)
             means={c:float(np.mean([e['result']['metrics']['val']['balanced_nll']
                 for e in entries if e['candidate']==c])) for c in SPEC['candidates']}
             chosen=min(means,key=means.get)
@@ -87,7 +91,7 @@ def main():
             k.sources=sources
             k.evaluate(args)
             r.save(args.out/'status.json',dict(state='complete',time=r.now(),candidate=chosen,
-                test_scope='exploratory_single_seed_followup',gpu_released_on_exit=True))
+                test_scope='exploratory_followup',gpu_released_on_exit=True))
             return
         data = k.load_data(args.data,'train')
         val = k.load_data(args.data,'val')
@@ -109,7 +113,7 @@ def main():
 
         for candidate in ([args.candidate] if args.candidate else SPEC['candidates']):
             for depth in SPEC['depths']:
-                train(candidate,depth,17)
+                train(candidate,depth,seeds[0])
         r.save(args.out/'validation_results.json',entries)
         if args.validation_only:
             r.save(args.out/'status.json',dict(state='validation_complete',time=r.now(),
@@ -121,10 +125,10 @@ def main():
         r.save(args.out/'candidate_selection.json',dict(chosen=chosen,
             mean_validation_balanced_nll=means,criterion=SPEC['selection'],entries=entries))
         selected = [e for e in entries if e['candidate']==chosen]
-        for seed in SPEC['seeds'][1:]:
+        for seed in seeds[1:]:
             for depth in SPEC['depths']:
                 selected.append(train(chosen,depth,seed))
-        assert len(selected)==len(SPEC['depths'])*len(SPEC['seeds'])
+        assert len(selected)==len(SPEC['depths'])*len(seeds)
         r.save(args.out/'selection_lock.json',dict(entries=selected,config=config(chosen),
             candidate=chosen,sources=src,data_sha256=r.sha(args.data),time=r.now(),
             test_previously_observed=True,selection=SPEC['selection']))
