@@ -1,5 +1,18 @@
 # 新数据集：MangoLeafVarietyBD v2原始图像
 
+## 100轮预算追加（2026-10-10用户批准）
+
+六组均从同seed17初始化重训100轮，100轮余弦学习率0.002→0.0002，
+minimum_epochs/patience均100以保证完整预算；保留best/last，验证balanced NLL
+（min_delta0.0005）选各组自己的最佳EMA权重，各只评估一次test。并非用末轮替代best。
+此前30轮也是按验证NLL选，只是全部选择末轮；此轮测试已经看过，属于预算追加
+探索，不再声称测试未观察。无／有残差都得到相同100轮预算，不根据测试调rho。
+沿用已经准备并核验的cache/manifest，无需重下4.78GB原数据。
+启动`mango_suite.py --prepared --epochs 100`，仍三GPU每深度一卡、内部两组顺序。
+新run：`runs/simulation/mango_variety_s17_e100_20261010_3gpu`；旧30轮结果完整保留。
+将报告所选轮次、训练/验证/测试准确率与NLL、末轮表现及曲线，检查后期过拟合。
+当前100轮暂无结果。
+
 用户2026-10-10要求换用工程未出现、CC BY4.0的新数据集重做残差消融。
 作者来源：https://data.mendeley.com/datasets/hb3kvgfcvm/2，DOI10.17632/hb3kvgfcvm.2。
 作者明确CC BY4.0、2744张原始照片、8个芒果品种。并非病害MangoLeafBD

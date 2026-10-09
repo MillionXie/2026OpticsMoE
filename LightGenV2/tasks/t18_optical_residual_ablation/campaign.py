@@ -19,6 +19,7 @@ def main():
     p.add_argument('--gpus',nargs='+',required=True)
     p.add_argument('--depth',type=int,choices=[2,4,6],default=6)
     p.add_argument('--dataset',choices=['kather','mango_variety'],default='kather')
+    p.add_argument('--epochs',type=int,choices=[30,100],default=30)
     a=p.parse_args()
     assert len(a.gpus) in (1,2) and len(set(a.gpus))==len(a.gpus) and all(g.startswith('GPU-') for g in a.gpus)
     occupied=subprocess.check_output(['nvidia-smi','--query-compute-apps=gpu_uuid',
@@ -26,7 +27,7 @@ def main():
     assert not set(a.gpus).intersection(x.strip() for x in occupied)
     a.out.mkdir(parents=True,exist_ok=False)
     save(a.out/'metadata.json',dict(command=sys.argv,pid=os.getpid(),gpus=a.gpus,
-        depth=a.depth,dataset=a.dataset,git_commit=subprocess.check_output(['git','rev-parse','HEAD'],text=True).strip()))
+        depth=a.depth,dataset=a.dataset,epochs=a.epochs,git_commit=subprocess.check_output(['git','rev-parse','HEAD'],text=True).strip()))
     run=Path(__file__).with_name('run.py')
     processes=[]
     try:
@@ -34,7 +35,7 @@ def main():
             gpu=a.gpus[i%len(a.gpus)]
             folder=a.out/f'rho{rho}'
             cmd=[sys.executable,'-u',str(run),'--phase','train','--rho',str(rho),
-                '--data',str(a.data),'--out',str(folder),'--depth',str(a.depth),'--dataset',a.dataset]
+                '--data',str(a.data),'--out',str(folder),'--depth',str(a.depth),'--dataset',a.dataset,'--epochs',str(a.epochs)]
             env=dict(os.environ,CUDA_VISIBLE_DEVICES=gpu)
             log=(a.out/f'rho{rho}.log').open('w')
             proc=subprocess.Popen(cmd,env=env,stdout=log,stderr=subprocess.STDOUT)
@@ -58,7 +59,7 @@ def main():
             folder=a.out/f'rho{rho}'
             cmd=[sys.executable,'-u',str(run),'--phase','evaluate','--rho',str(rho),
                 '--data',str(a.data),'--out',str(a.out/f'evaluation_rho{rho}'),
-                '--checkpoint',str(folder/result['name']/'best_checkpoint.pt'),'--depth',str(a.depth),'--dataset',a.dataset]
+                '--checkpoint',str(folder/result['name']/'best_checkpoint.pt'),'--depth',str(a.depth),'--dataset',a.dataset,'--epochs',str(a.epochs)]
             env=dict(os.environ,CUDA_VISIBLE_DEVICES=a.gpus[0])
             subprocess.run(cmd,env=env,check=True)
         metrics={str(rho):json.loads((a.out/f'evaluation_rho{rho}'/'metrics.json').read_text())

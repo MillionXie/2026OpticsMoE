@@ -12,6 +12,8 @@ def main():
     p=argparse.ArgumentParser();p.add_argument('--data-root',type=Path,required=True)
     p.add_argument('--out',type=Path,required=True);p.add_argument('--gpus',nargs='+',required=True)
     p.add_argument('--wait-preparation-pid',type=int)
+    p.add_argument('--prepared',action='store_true')
+    p.add_argument('--epochs',type=int,choices=[30,100],default=30)
     a=p.parse_args();a.out.mkdir(parents=True,exist_ok=False)
     assert len(a.gpus) in (2,3) and len(set(a.gpus))==len(a.gpus)
     here=Path(__file__).resolve().parent
@@ -20,7 +22,10 @@ def main():
         git_commit=subprocess.check_output(['git','rev-parse','HEAD'],text=True).strip()),indent=2))
     try:
         state(dict(state='preparing_data',gpu_processes=0))
-        if a.wait_preparation_pid:
+        if a.prepared:
+            assert (a.data_root/'data_manifest.json').exists()
+            assert (a.data_root/'mango_variety_fixed_split.npz').exists()
+        elif a.wait_preparation_pid:
             deadline=time.monotonic()+7200
             while not (a.data_root/'data_manifest.json').exists():
                 assert time.monotonic()<deadline,'Preparation timed out'
@@ -31,7 +36,7 @@ def main():
         data=a.data_root/'mango_variety_fixed_split.npz'
         env=dict(os.environ,CUDA_VISIBLE_DEVICES=a.gpus[0])
         subprocess.run([sys.executable,str(here/'run.py'),'--phase','smoke','--rho','.3',
-            '--depth','2','--dataset','mango_variety','--data',str(data),'--out',str(a.out/'smoke')],env=env,check=True)
+            '--depth','2','--dataset','mango_variety','--data',str(data),'--out',str(a.out/'smoke'),'--epochs',str(a.epochs)],env=env,check=True)
         if len(a.gpus)==3:
             workers=[]
             try:
@@ -39,7 +44,7 @@ def main():
                     log=(a.out/f'L{depth}.log').open('w')
                     cmd=[sys.executable,'-u',str(here/'campaign.py'),'--dataset','mango_variety',
                         '--depth',str(depth),'--data',str(data),'--out',str(a.out/f'L{depth}'),
-                        '--gpus',gpu]
+                        '--gpus',gpu,'--epochs',str(a.epochs)]
                     proc=subprocess.Popen(cmd,stdout=log,stderr=subprocess.STDOUT)
                     workers.append((proc,log))
                 state(dict(state='parallel_depth_training',depths=[2,4,6],gpu_limit=3))
@@ -58,7 +63,7 @@ def main():
             state(dict(state='paired_training_and_evaluation',depth=depth))
             subprocess.run([sys.executable,'-u',str(here/'campaign.py'),'--dataset','mango_variety',
                 '--depth',str(depth),'--data',str(data),'--out',str(a.out/f'L{depth}'),
-                '--gpus',*a.gpus],check=True)
+                '--epochs',str(a.epochs),'--gpus',*a.gpus],check=True)
         results={str(d):json.loads((a.out/f'L{d}'/'results.json').read_text()) for d in [2,4,6]}
         (a.out/'results.json').write_text(json.dumps(results,indent=2))
         state(dict(state='complete',gpu_released_on_exit=True))

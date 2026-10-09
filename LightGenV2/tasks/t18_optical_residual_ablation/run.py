@@ -48,12 +48,15 @@ def main():
     parser.add_argument('--checkpoint',type=Path)
     parser.add_argument('--depth',type=int,choices=[2,4,6],default=6)
     parser.add_argument('--dataset',choices=['kather','mango_variety'],default='kather')
+    parser.add_argument('--epochs',type=int,choices=[30,100],default=30)
     a=parser.parse_args()
     visible=os.environ.get('CUDA_VISIBLE_DEVICES','')
     assert visible.startswith('GPU-') and ',' not in visible
     a.out.mkdir(parents=True,exist_ok=False)
     torch.set_num_threads(4)
     cfg=config(a.rho);src=source_identity()
+    if a.epochs==100:
+        cfg.update(epochs=100,minimum_epochs=100,patience=100)
     if a.dataset=='mango_variety':
         manifest=r.read(a.data.parent/'data_manifest.json')
         assert manifest['dataset']=='MangoLeafVarietyBD_raw_v2' and manifest['license']=='CC BY 4.0'
@@ -62,7 +65,7 @@ def main():
     r.save(a.out/'metadata.json',dict(command=sys.argv,pid=os.getpid(),
         git_commit=subprocess.check_output(['git','rev-parse','HEAD'],text=True).strip(),
         config=cfg,depth=a.depth,sources=src,environment=m.environment(),data_sha256=r.sha(a.data),
-        time=r.now(),test_read=a.phase=='evaluate',test_previously_observed=a.dataset=='kather'))
+        time=r.now(),test_read=a.phase=='evaluate',test_previously_observed=a.dataset=='kather' or a.epochs==100))
     if a.phase=='smoke':
         r.setseed(17)
         base=original_build('moe',a.depth,cfg)
