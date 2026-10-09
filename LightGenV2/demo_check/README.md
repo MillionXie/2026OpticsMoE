@@ -1,5 +1,10 @@
 # 历史 demo / 必要对照入口
 
+2026-10-09：用户授权复查原 Kather 2／4／6 层消融中六层 D2NN＋OEO 的下降。
+原曲线不支持直接认定更严重过拟合；正在准备单GPU、4／6层等预算的延长训练
+和正则对照，原光路及历史数据不改。协议及进度见
+[Kather深度后续优化](reports/reproduction/KATHER_DEPTH_FOLLOWUP_20261009.md)。
+
 这里是历史实验与必要 baseline，不是另一个日常主工程。正式任务仍从仓库根 `START_HERE.md` 和 `LightGenV2/tasks/` 进入。原数据、权重、逐样本预测及全部测速保留。
 
 ## EuroSAT 历史协议请分开看

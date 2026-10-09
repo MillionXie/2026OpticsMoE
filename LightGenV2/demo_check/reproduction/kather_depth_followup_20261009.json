@@ -1,0 +1,9 @@
+{
+  "candidates": {
+    "long": {"epochs": 60, "minimum_epochs": 30, "patience": 12},
+    "regularized": {"epochs": 60, "minimum_epochs": 30, "patience": 12, "phase_smooth_weight": 0.05, "augmentation": {"degrees": 20.0, "translation_pixels": 3.0, "scale_delta": 0.05}}
+  },
+  "depths": [4, 6],
+  "seeds": [17, 27, 37],
+  "selection": "Lowest mean selected validation balanced NLL across depths 4 and 6 at seed17; one shared configuration. Test previously observed: exploratory follow-up, no monotonicity or test-score selection."
+}
