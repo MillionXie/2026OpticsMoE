@@ -63,7 +63,8 @@ def _manifest(root, checkpoint, settings, phase):
         torch=torch.__version__, cuda=torch.version.cuda,
         cuda_visible_devices=os.environ.get('CUDA_VISIBLE_DEVICES'),
         test_used_for_selection=phase == 'train', validation_used=False,
-        interpretation='development metrics; historical checkpoint selected on TEST',
+        interpretation='development metrics; TEST selection; ' +
+            ('random student initialization' if checkpoint is None else 'historical TEST-selected checkpoint'),
         optical_propagations=6, optical_router='top2', videos_per_field=16,
         frames_per_video=4, intervention='only nominal unmodulated power coefficient',
     ))

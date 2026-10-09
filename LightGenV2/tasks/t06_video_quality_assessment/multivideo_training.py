@@ -384,7 +384,8 @@ def train(
     best_path = settings.output_dir / "best_checkpoint.pt"
     _checkpoint(best_path, model, optimizer, settings, epoch=0, metrics=initial)
     _json(settings.output_dir / "metrics_best_observed_test_optical_on.json", initial)
-    print(f"epoch 000 warm-start temporal_SRCC={best_srcc:.4f}", flush=True)
+    initialization_label = "random-init" if settings.initialization_checkpoint is None else "warm-start"
+    print(f"epoch 000 {initialization_label} temporal_SRCC={best_srcc:.4f}", flush=True)
     slot_generator = torch.Generator().manual_seed(settings.random_seed + 100000)
     for epoch in range(1, settings.epochs + 1):
         loader = _loader(
