@@ -10,7 +10,13 @@
 见协议；[30/100轮对照图](reports/mango_figures_20261010/depth_accuracy.png)、
 [完整学习曲线](reports/mango_figures_20261010/learning_curves.png)、
 [可编辑SVG](reports/mango_figures_20261010/depth_accuracy.svg)、
-[数值CSV](reports/mango_figures_20261010/source_data.csv)。追加公共lr0.003候选仅验证。
+[数值CSV](reports/mango_figures_20261010/source_data.csv)。公共lr0.003候选已完成，
+六组平均验证NLL由0.524229降至0.477688，整套配置锁定后各测试一次。
+最终2/4/6层无残差74.64/82.78/89.23%，rho0.3为75.36/83.25/86.60%；
+仍不支持深度越大残差优势越大。原结果保留，未开启第三个方案，项目GPU已释放。
+详细训练/验证/测试、最佳/末轮、泛化差、梯度及功率见
+[候选最终报告](reports/mango_lr3_final_20261010.md)。新图并列保留三套配置，
+学习曲线展示最终公共lr0.003候选；单种子探索不加误差条。
 
 新增两层主干消融：router→九专家并行相位→OEO→global相位→OEO→CCD
 （相位之后均有原5cm传播，末端另有5cm传播）。专家各1张相位，共9专家＋1global，
