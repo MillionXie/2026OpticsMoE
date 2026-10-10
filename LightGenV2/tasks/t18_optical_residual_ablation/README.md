@@ -1,5 +1,23 @@
 # T18 Kather 2／4／6层MoE：相干未调制分量消融
 
+## 训练期电子教师蒸馏（2026-10-10继续优化授权）
+
+MixUp/focal继续训练未突破开发87.80%，[负结果保留](reports/residual_L6_mixup_focal_20261010.md)。
+GPU1被其它项目占用，两项实际顺序使用GPU4，均已结束。
+接续`distill_suite.py`在GPU4依次训练教师、光学学生和比较保存状态，始终只占一张卡。
+教师接收**与光网络相同的1×100×100固定振幅编码**，不是高分辨率原图或额外特征。
+电子CNN为Conv(1,16,5,s2)→Conv(16,32,3,s2)→Conv(32,64,3,s2)，每层ReLU，
+AdaptiveAvgPool4×4→Linear(1024,8)；只用于训练，不加入光学推理，不加载外部预训练。
+教师AdamW lr0.001、weight_decay0.01、batch64，最多40轮/至少10/耐心8，
+验证balanced NLL选best。只读train/val，验证宏平均召回≥90%才继续蒸馏，否则停止。
+学生从原开发87.80%的同一光学父权重出发；保留完整六层九专家/global/OEO及CCD，
+lr0.00015、EMA0.99、最多30轮/至少10/耐心10，原分类/收光/相位平滑项不变，
+增加0.3×T² KL(teacher_T || student_T)、T=2，教师固定，输入/软目标都只来自train。
+学生T软概率由log(CCD归一化能量)/T的softmax获得；教师只在训练loss内运行。
+完成后比较学生best/last raw/last EMA和旧父，原父仍参与用户授权的test开发选模，
+同权重预测复用。不改rho、数据、标签、光路、无残差及2/4层，不虚称公平同预算。
+run `mango_rho03_L6_teacher_distill_20261010`，教师/学生各存best和last，结束释放GPU。
+
 ## 六层训练期正则继续优化（2026-10-10用户批准）
 
 从测试开发扫描选定`smooth`第8轮best EMA（原PT SHA058b758c...、开发87.80%）

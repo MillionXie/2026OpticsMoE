@@ -37,6 +37,9 @@ def smoke():
     loss=classification_loss(p,mix,w,1.);loss.backward()
     assert t.torch.isfinite(p.grad).all() and p.grad.abs().sum()>0
     assert float(loss)<float(classification_loss(p,mix,w))
+    soft=t.torch.tensor([[.7,.3]])
+    same=t.b.F.kl_div(soft.log(),soft,reduction='batchmean')
+    assert abs(float(same))<1e-7
     print('CPU loss/soft-target/gradient checks passed')
 
 
@@ -57,6 +60,17 @@ def train(a):
         continuation_augmentation_epoch_offset=200,parent_checkpoint_sha256=PARENT_SHA,
         mixup_alpha=.1 if a.profile=='mixup' else 0.,focal_gamma=1. if a.profile=='focal' else 0.,
         selection='best EMA by validation balanced NLL during training; saved states compared on test as development')
+    teacher=None
+    if a.profile=='distill':
+        from train_teacher import Teacher,source as teacher_source
+        teacher_ck=t.torch.load(a.teacher,map_location='cpu',weights_only=False)
+        assert teacher_ck['sources']==teacher_source() and teacher_ck['data_sha256']==DATA_SHA
+        assert t.r.read(a.teacher.parent/'result.json')['eligible_for_distillation']
+        teacher=Teacher().cuda();teacher.load_state_dict(teacher_ck['model']);teacher.eval()
+        for q in teacher.parameters():q.requires_grad_(False)
+        cfg.update(distillation_weight=.3,distillation_temperature=2.,
+            teacher_checkpoint_sha256=t.r.sha(a.teacher),teacher_sources=teacher_ck['sources'],
+            teacher_used_only_during_training=True)
     a.out.mkdir(parents=True,exist_ok=False);folder=a.out/'moe_L6_seed17';folder.mkdir()
     src=dict(parent=t.source_identity(),regularized=t.r.sha(Path(__file__)))
     t.r.save(a.out/'metadata.json',dict(config=cfg,sources=src,depth=6,seed=17,pid=os.getpid(),
@@ -94,6 +108,11 @@ def train(a):
                 mixhash.update(t.np.asarray([lam],dtype='float64').tobytes());mixhash.update(permutation.tobytes())
             opt.zero_grad(set_to_none=True);prob,capture,_=t.b.forward(model,x,'moe')
             loss=classification_loss(prob,target,weights,cfg['focal_gamma'])
+            if teacher is not None:
+                temperature=cfg['distillation_temperature']
+                with t.torch.no_grad():soft_target=(teacher(x)/temperature).softmax(1)
+                log_student=(prob.clamp_min(1e-12).log()/temperature).log_softmax(1)
+                loss=loss+cfg['distillation_weight']*temperature**2*t.b.F.kl_div(log_student,soft_target,reduction='batchmean')
             loss=loss-cfg['capture_weight']*capture.clamp_min(1e-12).log().mean()+cfg['phase_smooth_weight']*t.b.phase_smoothness(model)
             assert t.torch.isfinite(loss);loss.backward()
             if batch==0:
@@ -139,11 +158,14 @@ def evaluate(a):
     assert parent_record['checkpoint_sha256']==PARENT_SHA
     check_predictions(Path(parent_record['predictions']),parent_record['test'],manifest)
     items=[]
-    for profile in ['mixup','focal']:
+    for profile in a.profiles:
         for name in ['best_checkpoint.pt','last_checkpoint.pt']:
             path=a.candidates/profile/'moe_L6_seed17'/name
             ck=t.torch.load(path,map_location='cpu',weights_only=False)
-            assert ck['sources']==dict(parent=t.source_identity(),regularized=t.r.sha(Path(__file__)))
+            assert ck['sources']['parent']==t.source_identity()
+            archived=hashlib.sha256(subprocess.check_output(['git','show',
+                'af8aedaef:LightGenV2/tasks/t18_optical_residual_ablation/regularized_continuation.py'])).hexdigest()
+            assert ck['sources']['regularized'] in {t.r.sha(Path(__file__)),archived}
             assert ck['config']['parent_checkpoint_sha256']==PARENT_SHA
             assert ck['config']['training_profile']=='rho03_'+profile+'_development30'
             assert ck['depth']==6 and ck['config']['residual_rho']==.3
@@ -173,9 +195,11 @@ def evaluate(a):
 
 def main():
     p=argparse.ArgumentParser();p.add_argument('--phase',choices=['smoke','train','evaluate'],required=True)
-    p.add_argument('--profile',choices=['mixup','focal']);p.add_argument('--checkpoint',type=Path)
+    p.add_argument('--profile',choices=['mixup','focal','distill']);p.add_argument('--checkpoint',type=Path)
+    p.add_argument('--teacher',type=Path)
     p.add_argument('--data',type=Path);p.add_argument('--out',type=Path)
     p.add_argument('--candidates',type=Path);p.add_argument('--parent-sweep',type=Path)
+    p.add_argument('--profiles',nargs='+',choices=['mixup','focal','distill'],default=['mixup','focal'])
     a=p.parse_args()
     if a.phase=='smoke':smoke()
     elif a.phase=='train':train(a)
