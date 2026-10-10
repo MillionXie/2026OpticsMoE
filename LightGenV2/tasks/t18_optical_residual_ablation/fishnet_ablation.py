@@ -143,7 +143,7 @@ def train(a, profile, manifest, cfg, src):
     r.save(a.out / 'status.json', dict(state='complete', time=r.now(), test_development=True, gpu_released_on_exit=True))
 
 
-def smoke(a, profile, cfg):
+def smoke(a, profile, cfg, diagnostic_only=False):
     r.setseed(profile['seed'])
     model = t.original_build('moe', a.depth, cfg)
     model.net.expert_bank.vectorize_homogeneous_d2nn = False
@@ -163,13 +163,28 @@ def smoke(a, profile, cfg):
     assert all('router' not in name for name in targets) and prob.shape == (2, 8)
     full_grad = {name: p.grad.detach().clone() for name, p in model.named_parameters()}
     model.zero_grad(set_to_none=True)
+    single_prob = []
     for sample in x.split(1):
         small_prob = b.forward(model, sample, 'moe')[0]
+        single_prob.append(small_prob.detach())
         (-small_prob[:, 0].clamp_min(1e-12).log().mean() / 2).backward()
-    errors = {}
+    errors, audit = {}, {}
+    for name, p in model.named_parameters():
+        errors[name] = float((p.grad - full_grad[name]).abs().max())
+        audit[name] = dict(full_norm=float(full_grad[name].norm()), single_norm=float(p.grad.norm()),
+                          relative_l2_error=float((p.grad - full_grad[name]).norm() / full_grad[name].norm().clamp_min(1e-20)),
+                          cosine=float(torch.nn.functional.cosine_similarity(p.grad.flatten(), full_grad[name].flatten(), dim=0)))
+    with torch.no_grad():
+        repeat = b.forward(model, x, 'moe')[0]
+    diagnostic = dict(batch2_vs_single_probability_error=float((prob.detach() - torch.cat(single_prob)).abs().max()),
+                      repeated_batch2_probability_error=float((prob.detach() - repeat).abs().max()), gradients=audit,
+                      scope='No optimizer update or test access; same phase tensors; numerical batch-shape diagnostic')
+    r.save(a.out / 'batch_shape_diagnostic.json', diagnostic)
+    if diagnostic_only:
+        r.save(a.out / 'status.json', dict(state='diagnostic_complete', time=r.now()))
+        return
     for name, p in model.named_parameters():
         torch.testing.assert_close(p.grad, full_grad[name], rtol=5e-4, atol=1e-7)
-        errors[name] = float((p.grad - full_grad[name]).abs().max())
     r.save(a.out / 'smoke.json', dict(passed=True, rho0_exact_identity=True, initialization_unchanged=True,
         router_no_residual=True, input_shape=list(x.shape), output_shape=list(prob.shape), gradients=norms,
         per_sample_accumulation_checked=True, maximum_gradient_error=errors))
@@ -223,7 +238,7 @@ def suite(a, profile):
 
 def main():
     p = argparse.ArgumentParser()
-    p.add_argument('--phase', choices=['suite', 'smoke', 'train'], required=True)
+    p.add_argument('--phase', choices=['suite', 'smoke', 'diagnose', 'train'], required=True)
     p.add_argument('--profile', type=Path, default=HERE / 'fishnet_profile.json')
     p.add_argument('--data-root', type=Path)
     p.add_argument('--data', type=Path)
@@ -256,8 +271,8 @@ def main():
         gpu_policy=policy, environment=t.m.environment(), time=r.now(),
         test_development=True, training_reads_test_for_gradients=False))
     try:
-        if a.phase == 'smoke':
-            smoke(a, profile, cfg)
+        if a.phase in ['smoke', 'diagnose']:
+            smoke(a, profile, cfg, diagnostic_only=a.phase == 'diagnose')
         else:
             train(a, profile, manifest, cfg, src)
     except BaseException:
