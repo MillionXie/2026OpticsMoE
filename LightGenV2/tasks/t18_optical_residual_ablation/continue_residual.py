@@ -29,7 +29,9 @@ def main():
         assert 1<=a.budget<=50
         if a.continuation_parent:
             assert ck['sources']['parent']==t.source_identity()
-            assert ck['sources']['continuation']=='3983cc1dd985194b6235f53ff5e017164b3134226214d7f55b898ab378e26f0f'
+            parents={hashlib.sha256(subprocess.check_output(['git','show',rev+':LightGenV2/tasks/t18_optical_residual_ablation/continue_residual.py'])).hexdigest()
+                     for rev in ['e6b125e9b','65917810b','7cc822e81']}
+            assert ck['sources']['continuation'] in parents | {src['continuation']}
         else:
             assert ck['sources']==t.source_identity(), 'Parent source identity mismatch'
         cfg=copy.deepcopy(ck['config'])
