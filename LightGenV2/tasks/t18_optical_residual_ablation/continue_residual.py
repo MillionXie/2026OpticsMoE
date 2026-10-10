@@ -18,7 +18,7 @@ def main():
     p.add_argument('--out',type=Path,required=True)
     p.add_argument('--continuation-parent',action='store_true')
     p.add_argument('--budget',type=int,default=50)
-    p.add_argument('--profile',choices=['base','aug','ema'],default='base')
+    p.add_argument('--profile',choices=['base','aug','ema','capture','smooth'],default='base')
     a=p.parse_args()
     assert os.environ.get('CUDA_VISIBLE_DEVICES','').startswith('GPU-')
     a.out.mkdir(parents=True,exist_ok=False)
@@ -31,7 +31,7 @@ def main():
         if a.continuation_parent:
             assert ck['sources']['parent']==t.source_identity()
             parents={hashlib.sha256(subprocess.check_output(['git','show',rev+':LightGenV2/tasks/t18_optical_residual_ablation/continue_residual.py'])).hexdigest()
-                     for rev in ['e6b125e9b','65917810b','7cc822e81','b149b3e88']}
+                     for rev in ['e6b125e9b','65917810b','7cc822e81','b149b3e88','a438155fd']}
             assert ck['sources']['continuation'] in parents | {src['continuation']}
         else:
             assert ck['sources']==t.source_identity(), 'Parent source identity mismatch'
@@ -41,22 +41,27 @@ def main():
                    training_profile='rho03_best_warmstart_lr0006_50',
                    parent_checkpoint_sha256=t.r.sha(a.checkpoint),
                    continuation_augmentation_epoch_offset=offset)
-        if a.profile in ['aug','ema']:
+        if a.profile in ['aug','ema','capture','smooth']:
             cfg.update(lr=.0003,training_profile='rho03_'+a.profile+'_validation50')
             if a.profile=='aug':
                 cfg['augmentation']=dict(degrees=15.,translation_pixels=4.,scale_delta=.1)
-            else:
+            elif a.profile=='ema':
                 cfg['ema_decay']=.99
+            elif a.profile=='capture':
+                cfg['capture_weight']=.05
+            else:
+                cfg['phase_smooth_weight']=.05
     else:
         # These published revisions share the unchanged forward/loss implementation;
         # the later revision adds only budget and warm-start lineage handling.
         archived={hashlib.sha256(subprocess.check_output(['git','show',rev+':LightGenV2/tasks/t18_optical_residual_ablation/continue_residual.py'])).hexdigest()
-                  for rev in ['e6b125e9b','65917810b','7cc822e81','b149b3e88']}
+                  for rev in ['e6b125e9b','65917810b','7cc822e81','b149b3e88','a438155fd']}
         assert ck['sources']['parent']==t.source_identity()
         assert ck['sources']['continuation'] in archived | {src['continuation']}
         cfg=ck['config']
         assert cfg['training_profile'] in ['rho03_best_warmstart_lr0006_50',
-            'rho03_aug_validation50','rho03_ema_validation50']
+            'rho03_aug_validation50','rho03_ema_validation50',
+            'rho03_capture_validation50','rho03_smooth_validation50']
     t.r.save(a.out/'metadata.json',dict(command=sys.argv,config=cfg,sources=src,
         checkpoint_training_sources=ck['sources'],
         parent_checkpoint_sha256=cfg['parent_checkpoint_sha256'],
