@@ -20,6 +20,9 @@
 训练源码main e57e3b518，Linux4项CPU检查通过；Windows3过、Torch原生检查因本地DLL问题跳过，
 不改共享环境。数据[manifest](reports/fishnet_data_manifest_20261011.json)与
 [数值诊断](reports/fishnet_batchshape_diagnostic_20261011.json)已保存。
+六层rho0首轮已完成：val39.06%、test开发EMA39.87%，训练记录179秒（含初始化评估、
+首轮train/val/test评估，非纯训练时间）。六组单卡串行暂估15–20小时，受其它GPU进程
+竞争和周期评估影响，须按后续实测修正；先产生六层配对结果，不能把首轮当最终表现。
 当前100轮六组仍在进行，性能与耗时只按实际history汇报；旧芒果88.04%开发结果、
 best/last、失败候选和历史同预算表全部保留。本轮只修改T18，main不新增分支/工作树。
 
