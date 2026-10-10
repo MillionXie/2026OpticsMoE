@@ -17,6 +17,10 @@ lr0.00015、EMA0.99、最多30轮/至少10/耐心10，原分类/收光/相位平
 完成后比较学生best/last raw/last EMA和旧父，原父仍参与用户授权的test开发选模，
 同权重预测复用。不改rho、数据、标签、光路、无残差及2/4层，不虚称公平同预算。
 run `mango_rho03_L6_teacher_distill_20261010`，教师/学生各存best和last，结束释放GPU。
+首次教师在首个batch因CUDA adaptive-average-pool反向不支持严格确定性而失败，
+未产生有效训练权重，日志/metadata保留，不算完成结果。改用相同分区的显式均值，
+数学上保持4×4 adaptive平均池化，继续保留严格确定性；前向等价与GPU反向须通过。
+修复run为`mango_rho03_L6_teacher_distill_detpool_20261010`，旧失败run不覆盖。
 
 ## 六层训练期正则继续优化（2026-10-10用户批准）
 

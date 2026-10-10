@@ -10,6 +10,18 @@ import run as t
 from test_sweep import ALLOWED_GPUS, DATA_SHA
 
 
+class FixedMean4(t.torch.nn.Module):
+    """Exact adaptive-pool bins using deterministic mean/slice backward kernels."""
+    def forward(self,x):
+        height,width=x.shape[-2:];cells=[]
+        for row in range(4):
+            for col in range(4):
+                y0=row*height//4;y1=((row+1)*height+3)//4
+                x0=col*width//4;x1=((col+1)*width+3)//4
+                cells.append(x[...,y0:y1,x0:x1].mean((-2,-1)))
+        return t.torch.stack(cells,dim=-1).reshape(x.shape[0],x.shape[1],4,4)
+
+
 class Teacher(t.torch.nn.Module):
     def __init__(self):
         super().__init__()
@@ -17,7 +29,7 @@ class Teacher(t.torch.nn.Module):
             t.torch.nn.Conv2d(1,16,5,stride=2,padding=2),t.torch.nn.ReLU(),
             t.torch.nn.Conv2d(16,32,3,stride=2,padding=1),t.torch.nn.ReLU(),
             t.torch.nn.Conv2d(32,64,3,stride=2,padding=1),t.torch.nn.ReLU(),
-            t.torch.nn.AdaptiveAvgPool2d((4,4)))
+            FixedMean4())
         self.head=t.torch.nn.Linear(1024,8)
     def forward(self,x):return self.head(self.features(x).flatten(1))
 
