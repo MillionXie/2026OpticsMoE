@@ -1,5 +1,22 @@
 # T18 Kather 2／4／6层MoE：相干未调制分量消融
 
+## 六层训练期正则继续优化（2026-10-10用户批准）
+
+从测试开发扫描选定`smooth`第8轮best EMA（原PT SHA058b758c...、开发87.80%）
+分别训练`mixup`／`focal`。`regularized_continuation.py`仅在本任务定义训练损失，
+复用同一光学模型、编码、评估，不修改历史训练器或共享模块。
+MixUp在训练仿射后的振幅输入上混合两个训练样本，Beta(0.1,0.1)，
+取较大系数保留主样本；相同系数混合平滑soft label，按目标类别加权。
+Focal只把训练分类项加上(1-p)^gamma、gamma=1，关注低置信训练类别。
+二者都从同一父权重、同seed17出发，lr0.00015余弦至0.000015、EMA0.99，
+保留相位平滑0.05和收光loss0.2；最多30轮、至少10、patience10、
+验证balanced NLL min_delta0.0002选best EMA，父epoch0仍参与best选择。
+优化器/EMA重新初始化，增强epoch偏移200；只存best/last与完整曲线。
+训练梯度仅来自train，验证用于早停；完成后按用户已授权test开发口径比较
+两个候选的best／last raw／last EMA，加原父状态，共7个候选，重复权重复用。
+这不是独立泛化；不改光路、rho0.3、数据划分、类别、2/4层或无残差基线。
+仅物理GPU1/4、上限两卡，run `mango_rho03_L6_mixup_focal_20261010`，结束释放。
+
 ## 测试集选模开发扫描（2026-10-10用户明确批准）
 
 用户要求直接在test上选PT、查看当前最高值。`test_sweep.py`只比较保留的
