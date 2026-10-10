@@ -11,7 +11,9 @@
 `continue_suite.py`三个深度各一卡，仅验证，不自动测试；run
 `runs/simulation/mango_rho03_continue50_20261010_3gpu`。
 这是仅残差额外预算的性能探索，不能冒称与固定基线同预算公平消融。
-最多三张物理GPU，以UUID核对，结束释放，完成/失败/需处理时自动通知。
+用户随后将上限减为两张GPU：两层进程已停止，已有best/last和日志保留，
+四/六层继续。父调度先停止以防一个子任务退出触发整组清理，后续分别监控与汇总；
+不恢复三卡调度。以UUID核对，结束释放，完成/失败/需处理时自动通知。
 
 2026-10-10用户要求在未使用过的CC BY4.0数据集重做：另设
 [MangoLeafVarietyBD v2原始八品种协议](MANGO_VARIETY_PROTOCOL.md)，新run及图表
