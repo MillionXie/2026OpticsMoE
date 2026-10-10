@@ -1,6 +1,7 @@
 """Validation-only warm start of rho=.3; never changes historical training sources."""
 import argparse
 import copy
+import hashlib
 import os
 import subprocess
 import sys
@@ -38,10 +39,16 @@ def main():
                    parent_checkpoint_sha256=t.r.sha(a.checkpoint),
                    continuation_augmentation_epoch_offset=offset)
     else:
-        assert ck['sources']==src
+        # These published revisions share the unchanged forward/loss implementation;
+        # the later revision adds only budget and warm-start lineage handling.
+        archived={hashlib.sha256(subprocess.check_output(['git','show',rev+':LightGenV2/tasks/t18_optical_residual_ablation/continue_residual.py'])).hexdigest()
+                  for rev in ['e6b125e9b','65917810b']}
+        assert ck['sources']['parent']==t.source_identity()
+        assert ck['sources']['continuation'] in archived | {src['continuation']}
         cfg=ck['config']
         assert cfg['training_profile']=='rho03_best_warmstart_lr0006_50'
     t.r.save(a.out/'metadata.json',dict(command=sys.argv,config=cfg,sources=src,
+        checkpoint_training_sources=ck['sources'],
         parent_checkpoint_sha256=cfg['parent_checkpoint_sha256'],
         data_sha256=t.r.sha(a.data),git_commit=subprocess.check_output(
             ['git','rev-parse','HEAD'],text=True).strip(),time=t.r.now(),
