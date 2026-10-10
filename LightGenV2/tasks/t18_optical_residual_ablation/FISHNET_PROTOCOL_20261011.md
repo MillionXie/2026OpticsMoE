@@ -70,6 +70,13 @@ Torch分配上限3GiB、启动时另留800MiB；复用既有`gpu_budget.py`，�
 不杀别项目。microbatch2按样本比例（含尾batch、收光与平滑项）积累到有效batch16，
 每宏batch裁剪/AdamW/EMA一次，评估也batch2，OEO逐样本归一化。两个残差组都用
 相同微批量执行，不改变有效batch或优化步数，浮点求和次序可能有微小差异。
+附加smoke的batch2/逐样本比较：前向概率最大差1.49e-7，重复batch2为0；
+最差梯度相对L2差0.009196、方向余弦0.999958，逐像素严格assert_close失败，
+原失败run `fishnet_s17_e100_gpu1_spare_20261011`保留且未训练。
+只读train的诊断run `runs/smoke/fishnet_batchshape_20261011`完整记录，未改变相位。
+检查门槛改为前向≤1e-6、重复前向精确一致、整体梯度相对L2≤2%且余弦≥0.999，
+同时保留`pixelwise_gradient_equal=false`，不假称批量形状变化的逐像素梯度精确相等。
+这项数值诊断支持继续固定同微批量的配对比较，不能保证任意样本/权重的数值误差上界。
 CPU准备→六层smoke（rho0精确一致/初始化/梯度/router无残差）→
 六层两组→四层两组→两层两组，全部串行；每阶段退出释放GPU，再启动下一项。
 配对完成核验同初始化SHA、顺序/增强哈希、参数量、数据SHA和100轮数。
@@ -78,7 +85,7 @@ CPU准备→六层smoke（rho0精确一致/初始化/梯度/router无残差）�
 入口：`fishnet_ablation.py --phase suite --data-root ... --out ... --gpu GPU-...`。
 配置`fishnet_profile.json`；数据准备`prepare_fishnet.py`。
 服务器数据根 `/DATA/DATA1/guest3/t18_fishnet_v1_20261011`。
-新run `runs/simulation/fishnet_s17_e100_gpu1_spare_20261011`，原失败启动不覆盖。
+新run `runs/simulation/fishnet_s17_e100_gpu1_checked_20261011`，原失败启动不覆盖。
 每组配置、Git/源码/数据SHA、
 command/PID/UUID、best/last/history/逐样本预测/梯度与配对收据完整保留。
 GPU仅按UUID选择，源码先测试/commit/push main再服务器干净fetch/ff-only同步。

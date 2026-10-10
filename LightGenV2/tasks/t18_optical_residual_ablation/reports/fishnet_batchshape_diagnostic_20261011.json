@@ -1,0 +1,193 @@
+{
+  "batch2_vs_single_probability_error": 1.4901161193847656e-07,
+  "repeated_batch2_probability_error": 0.0,
+  "gradients": {
+    "net.prompt.router_network.slm.raw_phase": {
+      "full_norm": 0.2564035952091217,
+      "single_norm": 0.25612032413482666,
+      "relative_l2_error": 0.0091956602409482,
+      "cosine": 0.9999582767486572
+    },
+    "net.expert_bank.experts.0.phase_layers.0.raw_phase": {
+      "full_norm": 0.2914237678050995,
+      "single_norm": 0.2914186120033264,
+      "relative_l2_error": 0.007069751620292664,
+      "cosine": 0.9999749660491943
+    },
+    "net.expert_bank.experts.0.phase_layers.1.raw_phase": {
+      "full_norm": 0.1367771178483963,
+      "single_norm": 0.13676391541957855,
+      "relative_l2_error": 0.007423110771924257,
+      "cosine": 0.9999724626541138
+    },
+    "net.expert_bank.experts.0.phase_layers.2.raw_phase": {
+      "full_norm": 0.06188013404607773,
+      "single_norm": 0.061873890459537506,
+      "relative_l2_error": 0.005169990938156843,
+      "cosine": 0.9999866485595703
+    },
+    "net.expert_bank.experts.1.phase_layers.0.raw_phase": {
+      "full_norm": 0.27495330572128296,
+      "single_norm": 0.27500611543655396,
+      "relative_l2_error": 0.006821514572948217,
+      "cosine": 0.9999766945838928
+    },
+    "net.expert_bank.experts.1.phase_layers.1.raw_phase": {
+      "full_norm": 0.12531064450740814,
+      "single_norm": 0.12531939148902893,
+      "relative_l2_error": 0.007452544756233692,
+      "cosine": 0.9999722242355347
+    },
+    "net.expert_bank.experts.1.phase_layers.2.raw_phase": {
+      "full_norm": 0.05544188246130943,
+      "single_norm": 0.0554363839328289,
+      "relative_l2_error": 0.004422928672283888,
+      "cosine": 0.9999902248382568
+    },
+    "net.expert_bank.experts.2.phase_layers.0.raw_phase": {
+      "full_norm": 0.40604788064956665,
+      "single_norm": 0.4060090482234955,
+      "relative_l2_error": 0.007236490026116371,
+      "cosine": 0.9999738335609436
+    },
+    "net.expert_bank.experts.2.phase_layers.1.raw_phase": {
+      "full_norm": 0.15079744160175323,
+      "single_norm": 0.15079377591609955,
+      "relative_l2_error": 0.006573400925844908,
+      "cosine": 0.9999784231185913
+    },
+    "net.expert_bank.experts.2.phase_layers.2.raw_phase": {
+      "full_norm": 0.0557098463177681,
+      "single_norm": 0.0557098425924778,
+      "relative_l2_error": 0.0059509905986487865,
+      "cosine": 0.9999821782112122
+    },
+    "net.expert_bank.experts.3.phase_layers.0.raw_phase": {
+      "full_norm": 0.30590200424194336,
+      "single_norm": 0.30594420433044434,
+      "relative_l2_error": 0.006994127295911312,
+      "cosine": 0.9999755024909973
+    },
+    "net.expert_bank.experts.3.phase_layers.1.raw_phase": {
+      "full_norm": 0.1319328397512436,
+      "single_norm": 0.13194957375526428,
+      "relative_l2_error": 0.006526661105453968,
+      "cosine": 0.9999787211418152
+    },
+    "net.expert_bank.experts.3.phase_layers.2.raw_phase": {
+      "full_norm": 0.06385059654712677,
+      "single_norm": 0.06385079771280289,
+      "relative_l2_error": 0.004583959002047777,
+      "cosine": 0.9999895691871643
+    },
+    "net.expert_bank.experts.4.phase_layers.0.raw_phase": {
+      "full_norm": 0.33886122703552246,
+      "single_norm": 0.3388555943965912,
+      "relative_l2_error": 0.0069165416061878204,
+      "cosine": 0.9999760389328003
+    },
+    "net.expert_bank.experts.4.phase_layers.1.raw_phase": {
+      "full_norm": 0.13019496202468872,
+      "single_norm": 0.13022194802761078,
+      "relative_l2_error": 0.006304414477199316,
+      "cosine": 0.9999799728393555
+    },
+    "net.expert_bank.experts.4.phase_layers.2.raw_phase": {
+      "full_norm": 0.05634547770023346,
+      "single_norm": 0.0563504733145237,
+      "relative_l2_error": 0.003920894116163254,
+      "cosine": 0.9999921917915344
+    },
+    "net.expert_bank.experts.5.phase_layers.0.raw_phase": {
+      "full_norm": 0.36037376523017883,
+      "single_norm": 0.360463410615921,
+      "relative_l2_error": 0.006588925141841173,
+      "cosine": 0.9999783039093018
+    },
+    "net.expert_bank.experts.5.phase_layers.1.raw_phase": {
+      "full_norm": 0.14292503893375397,
+      "single_norm": 0.1429249346256256,
+      "relative_l2_error": 0.005788798443973064,
+      "cosine": 0.9999833106994629
+    },
+    "net.expert_bank.experts.5.phase_layers.2.raw_phase": {
+      "full_norm": 0.05633149668574333,
+      "single_norm": 0.05632992833852768,
+      "relative_l2_error": 0.005201431922614574,
+      "cosine": 0.999986469745636
+    },
+    "net.expert_bank.experts.6.phase_layers.0.raw_phase": {
+      "full_norm": 0.13606803119182587,
+      "single_norm": 0.13612942397594452,
+      "relative_l2_error": 0.006944266147911549,
+      "cosine": 0.9999760389328003
+    },
+    "net.expert_bank.experts.6.phase_layers.1.raw_phase": {
+      "full_norm": 0.12133489549160004,
+      "single_norm": 0.12130818516016006,
+      "relative_l2_error": 0.007377634756267071,
+      "cosine": 0.9999727606773376
+    },
+    "net.expert_bank.experts.6.phase_layers.2.raw_phase": {
+      "full_norm": 0.05062412470579147,
+      "single_norm": 0.05062603950500488,
+      "relative_l2_error": 0.0052287401631474495,
+      "cosine": 0.9999862909317017
+    },
+    "net.expert_bank.experts.7.phase_layers.0.raw_phase": {
+      "full_norm": 0.2573874890804291,
+      "single_norm": 0.25741156935691833,
+      "relative_l2_error": 0.0071766795590519905,
+      "cosine": 0.9999743700027466
+    },
+    "net.expert_bank.experts.7.phase_layers.1.raw_phase": {
+      "full_norm": 0.11385682970285416,
+      "single_norm": 0.11389244347810745,
+      "relative_l2_error": 0.007359005510807037,
+      "cosine": 0.9999728798866272
+    },
+    "net.expert_bank.experts.7.phase_layers.2.raw_phase": {
+      "full_norm": 0.04803214222192764,
+      "single_norm": 0.04803065210580826,
+      "relative_l2_error": 0.004249345511198044,
+      "cosine": 0.9999908804893494
+    },
+    "net.expert_bank.experts.8.phase_layers.0.raw_phase": {
+      "full_norm": 0.21482020616531372,
+      "single_norm": 0.2147860825061798,
+      "relative_l2_error": 0.007073030807077885,
+      "cosine": 0.9999749660491943
+    },
+    "net.expert_bank.experts.8.phase_layers.1.raw_phase": {
+      "full_norm": 0.12587915360927582,
+      "single_norm": 0.12586937844753265,
+      "relative_l2_error": 0.006624446250498295,
+      "cosine": 0.9999779462814331
+    },
+    "net.expert_bank.experts.8.phase_layers.2.raw_phase": {
+      "full_norm": 0.049014706164598465,
+      "single_norm": 0.04901215061545372,
+      "relative_l2_error": 0.005338277202099562,
+      "cosine": 0.9999857544898987
+    },
+    "net.global_fcs.0.phase.raw_phase": {
+      "full_norm": 0.6474802494049072,
+      "single_norm": 0.6475712656974792,
+      "relative_l2_error": 0.006841975264251232,
+      "cosine": 0.999976634979248
+    },
+    "net.global_fcs.1.phase.raw_phase": {
+      "full_norm": 0.2678944170475006,
+      "single_norm": 0.2678779363632202,
+      "relative_l2_error": 0.006629335694015026,
+      "cosine": 0.9999780654907227
+    },
+    "net.global_fcs.2.phase.raw_phase": {
+      "full_norm": 0.11627913266420364,
+      "single_norm": 0.11628200858831406,
+      "relative_l2_error": 0.004739350639283657,
+      "cosine": 0.9999887943267822
+    }
+  },
+  "scope": "No optimizer update or test access; same phase tensors; numerical batch-shape diagnostic"
+}

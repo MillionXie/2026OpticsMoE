@@ -10,7 +10,9 @@
 这不是独立测试泛化，不能保证残差为正。只GPU1 UUIDe8837b85...，六/四/二层串行。
 数据已准备：640×640、train2106/val448/test459、1组精确重复不跨划分。
 首run `fishnet_s17_e100_gpu1_20261011`因GPU1临时被其它项目占用而预检失败，未进入训练。
-沿用此前剩余显存授权，新run `fishnet_s17_e100_gpu1_spare_20261011`，
+沿用此前剩余显存授权；`fishnet_s17_e100_gpu1_spare_20261011`附加逐像素梯度检查未通过，
+只读train诊断确认前向差1.49e-7、梯度方向余弦≥0.999958，但不逐像素精确相同。
+保留两次失败启动及诊断记录，采用整体梯度/前向稳定性检查，新run `fishnet_s17_e100_gpu1_checked_20261011`，
 `fishnet_ablation.py --use-spare-memory`限制Torch3GiB，双方microbatch2累积有效batch16，
 每子进程前核对剩余显存/UUID，不终止其它项目。详见[数据与实验协议](FISHNET_PROTOCOL_20261011.md)。
 实际启动/进度须核对run；旧芒果88.04%开发结果、
