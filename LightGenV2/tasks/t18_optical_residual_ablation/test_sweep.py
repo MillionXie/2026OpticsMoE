@@ -79,6 +79,16 @@ def main():
     archived = {hashlib.sha256(subprocess.check_output([
         'git', 'show', rev + ':LightGenV2/tasks/t18_optical_residual_ablation/continue_residual.py'
     ])).hexdigest(): rev for rev in REVISIONS}
+    # Published changes here only add scheduling/epoch/LR options, not inference.
+    # Keep complete original identities; never relabel old checkpoints as current.
+    originals = []
+    for rev in ['bfd4718f0', '32a9d32fb', '261ac4fd0', '58147df49']:
+        task = {name: hashlib.sha256(subprocess.check_output([
+            'git', 'show', rev + ':LightGenV2/tasks/t18_optical_residual_ablation/' + name
+        ])).hexdigest() for name in src['task']}
+        assert task['model.py'] == src['task']['model.py']
+        assert task['prepare_mango.py'] == src['task']['prepare_mango.py']
+        originals.append((dict(historical=src['historical'], task=task), rev))
     states = []
     for run in RUNS:
         for path in sorted((HERE / 'runs/simulation' / run).rglob('*_checkpoint.pt')):
@@ -95,8 +105,9 @@ def main():
             base = t.config(.3)
             for key in ['detector', 'encoding', 'phase_init_raw_uniform', 'residual_formula']:
                 assert cfg[key] == base[key], (path, key)
-            if ck['sources'] == src:
-                revision = 'original_source_identity'
+            matches = [rev for identity, rev in originals if ck['sources'] == identity]
+            if matches:
+                revision = matches[0]
             else:
                 assert ck['sources']['parent'] == src, path
                 revision = archived[ck['sources']['continuation']]
@@ -111,7 +122,7 @@ def main():
                 states.append(dict(checkpoint=str(path), checkpoint_sha256=t.r.sha(path),
                     state_key=key, state_sha256=state_sha(ck[key]), epoch=ck['epoch'],
                     kind='best_ema' if path.name.startswith('best') else 'last_' + key,
-                    profile=cfg['training_profile'], training_source_revision=revision,
+                    profile=cfg.get('training_profile', 'base'), training_source_revision=revision,
                     config=cfg, training_sources=ck['sources']))
             del ck
     assert len(states) == 36, f'Expected 12 retained arms x 3 states, found {len(states)}'
