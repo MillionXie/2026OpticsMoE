@@ -12,6 +12,8 @@ def main():
     p=argparse.ArgumentParser();p.add_argument('--out',type=Path,required=True)
     p.add_argument('--data',type=Path,required=True);p.add_argument('--gpu',required=True)
     p.add_argument('--test-development',action='store_true')
+    p.add_argument('--use-spare-memory',action='store_true')
+    p.add_argument('--memory-gib',type=float,default=3.)
     a=p.parse_args();root=Path(__file__).resolve().parent
     assert a.gpu=='GPU-1b963983-7909-af6e-0528-f0f0661ab549'
     a.out.mkdir(parents=True,exist_ok=False)
@@ -19,10 +21,14 @@ def main():
     now=lambda:datetime.now(timezone.utc).isoformat()
     save('metadata.json',dict(command=sys.argv,pid=os.getpid(),gpu_uuid=a.gpu,time=now(),
         git_commit=subprocess.check_output(['git','rev-parse','HEAD'],text=True).strip(),
-        gpu_limit=1,scope='test-selected development, optical inference unchanged'))
+        gpu_limit=1,use_spare_memory=a.use_spare_memory,memory_limit_gib=a.memory_gib,
+        scope='test-selected development, optical inference unchanged'))
     def execute(stage,cmd):
-        occupied=subprocess.check_output(['nvidia-smi','--query-compute-apps=gpu_uuid','--format=csv,noheader'],text=True)
-        assert a.gpu not in occupied,'GPU occupied; no sharing'
+        from gpu_budget import preflight
+        policy=preflight(a.gpu,a.use_spare_memory,a.memory_gib)
+        save(stage+'.gpu_policy.json',policy)
+        cmd+=['--memory-gib',str(a.memory_gib)]
+        if a.use_spare_memory:cmd+=['--use-spare-memory']
         save('status.json',dict(state=stage,time=now()))
         with (a.out/(stage+'.log')).open('w') as log:
             proc=subprocess.Popen(cmd,env=dict(os.environ,CUDA_VISIBLE_DEVICES=a.gpu),
@@ -43,6 +49,7 @@ def main():
             '--data',str(a.data),'--checkpoint',str(root/'runs/simulation/mango_rho03_L6_capture_smooth_20261010/smooth/moe_L6_seed17/best_checkpoint.pt'),
             '--out',str(a.out/'distill')]
         if a.test_development:student_cmd+=['--test-development','--parent-sweep',str(root/'runs/simulation/mango_rho03_L6_test_selected_development_20261010')]
+        if a.use_spare_memory:student_cmd+=['--microbatch','2']
         execute('student',student_cmd)
         if a.test_development:
             # Selected and last states were already evaluated during training. No re-inference.

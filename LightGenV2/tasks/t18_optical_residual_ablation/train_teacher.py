@@ -1,4 +1,4 @@
-"""Training-only electronic teacher on the SAME fixed optical input; no test access."""
+"""Training-only teacher on the same optical input; optional authorized test development."""
 import argparse
 import hashlib
 import os
@@ -63,11 +63,14 @@ def main():
     p.add_argument('--out',type=Path,required=True)
     p.add_argument('--profile',choices=['small','bn32'],default='small')
     p.add_argument('--epochs',type=int,default=40)
+    p.add_argument('--use-spare-memory',action='store_true')
+    p.add_argument('--memory-gib',type=float,default=3.)
     p.add_argument('--test-development',action='store_true');a=p.parse_args()
     assert 10<=a.epochs<=80
     gpu=os.environ.get('CUDA_VISIBLE_DEVICES');assert gpu in ALLOWED_GPUS
-    occupied=subprocess.check_output(['nvidia-smi','--query-compute-apps=gpu_uuid','--format=csv,noheader'],text=True)
-    assert gpu not in occupied and t.r.sha(a.data)==DATA_SHA
+    from gpu_budget import configure
+    gpu_policy=configure(t.torch,gpu,a.use_spare_memory,a.memory_gib)
+    assert t.r.sha(a.data)==DATA_SHA
     a.out.mkdir(parents=True,exist_ok=False);t.torch.set_num_threads(4);t.r.setseed(17)
     cfg=dict(seed=17,epochs=a.epochs,minimum_epochs=10,patience=8,lr=.001,teacher_profile=a.profile,
         weight_decay=.01,label_smoothing=.02,batch_size=64,encoding='same b.encode amplitude100',
@@ -83,7 +86,8 @@ def main():
     t.r.save(a.out/'metadata.json',dict(config=cfg,sources=src,command=sys.argv,pid=os.getpid(),gpu_uuid=gpu,
         data_sha256=DATA_SHA,parameters=sum(q.numel() for q in model.parameters()),
         git_commit=subprocess.check_output(['git','rev-parse','HEAD'],text=True).strip(),
-        time=t.r.now(),test_read=a.test_development,scope='Teacher train-only inference role; test scores are development'))
+        time=t.r.now(),test_read=a.test_development,gpu_policy=gpu_policy,
+        scope='Teacher train-only inference role; test scores are development'))
     best=float('inf');best_score=(-1.,float('-inf'));wait=0;history=[];started=time.time()
     for epoch in range(1,a.epochs+1):
         model.train();order=t.r.epoch_order(17,epoch+300,len(data[1]))

@@ -40,13 +40,22 @@ def smoke():
     soft=t.torch.tensor([[.7,.3]])
     same=t.b.F.kl_div(soft.log(),soft,reduction='batchmean')
     assert abs(float(same))<1e-7
+    # Uneven microbatches reproduce a full-batch mean gradient before clipping/step.
+    layer=t.torch.nn.Linear(3,2);x=t.torch.randn(5,3);target=t.torch.randn(5,2)
+    layer.zero_grad();(layer(x)-target).square().mean().backward()
+    reference=[q.grad.clone() for q in layer.parameters()];layer.zero_grad()
+    for start in range(0,5,2):
+        part=x[start:start+2];y=target[start:start+2]
+        ((layer(part)-y).square().mean()*len(part)/5).backward()
+    assert all(t.torch.allclose(q.grad,g,atol=1e-6) for q,g in zip(layer.parameters(),reference))
     print('CPU loss/soft-target/gradient checks passed')
 
 
 def train(a):
     gpu=os.environ.get('CUDA_VISIBLE_DEVICES');assert gpu in ALLOWED_GPUS
-    procs=subprocess.check_output(['nvidia-smi','--query-compute-apps=gpu_uuid','--format=csv,noheader'],text=True)
-    assert gpu not in procs
+    from gpu_budget import configure
+    gpu_policy=configure(t.torch,gpu,a.use_spare_memory,a.memory_gib)
+    assert a.microbatch in [1,2,4,8,16]
     assert t.r.sha(a.data)==DATA_SHA and t.r.sha(a.checkpoint)==PARENT_SHA
     ck=t.torch.load(a.checkpoint,map_location='cpu',weights_only=False)
     assert ck['depth']==6 and ck['seed']==17 and ck['arch']=='moe'
@@ -59,7 +68,8 @@ def train(a):
         min_delta=.0002,lr=.00015,ema_decay=.99,training_profile='rho03_'+a.profile+'_development30',
         continuation_augmentation_epoch_offset=200,parent_checkpoint_sha256=PARENT_SHA,
         mixup_alpha=.1 if a.profile=='mixup' else 0.,focal_gamma=1. if a.profile=='focal' else 0.,
-        selection='best EMA by validation balanced NLL during training; saved states compared on test as development')
+        selection='best EMA by validation balanced NLL during training; saved states compared on test as development',
+        microbatch=a.microbatch,effective_batch_size=16,evaluation_batch_size=a.microbatch)
     teacher=None
     if a.profile=='distill':
         from train_teacher import Teacher,source as teacher_source
@@ -77,7 +87,7 @@ def train(a):
         command=sys.argv,gpu_uuid=gpu,git_commit=subprocess.check_output(['git','rev-parse','HEAD'],text=True).strip(),
         parent_checkpoint=str(a.checkpoint),parent_training_sources=ck['sources'],
         parent_state_sha256=state_sha(ck['model']),data_sha256=DATA_SHA,time=t.r.now(),
-        scope=SCOPE,training_reads_test=False,optimizer_restart=True,ema_restart=True))
+        scope=SCOPE,training_reads_test=False,optimizer_restart=True,ema_restart=True,gpu_policy=gpu_policy))
     t.torch.set_num_threads(4);t.r.setseed(17)
     model=t.build('moe',6,cfg);model.load_state_dict(ck['model'],strict=True)
     ema=copy.deepcopy(model).eval()
@@ -87,7 +97,7 @@ def train(a):
     opt=t.torch.optim.AdamW(model.parameters(),lr=cfg['lr'],weight_decay=0)
     scheduler=t.torch.optim.lr_scheduler.CosineAnnealingLR(opt,cfg['epochs'],eta_min=cfg['lr']*.1)
     weights=len(data[1])/(8*t.torch.bincount(data[1],minlength=8).float())
-    initial=t.b.evaluate(ema,val,'moe',16)[0];best=initial['balanced_nll'];wait=0
+    initial=t.b.evaluate(ema,val,'moe',a.microbatch)[0];best=initial['balanced_nll'];wait=0
     t.r.save(folder/'initial_validation.json',initial)
     def checkpoint(state,epoch):
         return dict(model=state,epoch=epoch,arch='moe',depth=6,seed=17,config=cfg,sources=src)
@@ -121,15 +131,19 @@ def train(a):
                 permutation=rng.permutation(len(idx));j=t.torch.tensor(permutation,device=x.device)
                 x=lam*x+(1-lam)*x[j];target=lam*target+(1-lam)*target[j]
                 mixhash.update(t.np.asarray([lam],dtype='float64').tobytes());mixhash.update(permutation.tobytes())
-            opt.zero_grad(set_to_none=True);prob,capture,_=t.b.forward(model,x,'moe')
-            loss=classification_loss(prob,target,weights,cfg['focal_gamma'])
-            if teacher is not None:
-                temperature=cfg['distillation_temperature']
-                with t.torch.no_grad():soft_target=(teacher(x)/temperature).softmax(1)
-                log_student=(prob.clamp_min(1e-12).log()/temperature).log_softmax(1)
-                loss=loss+cfg['distillation_weight']*temperature**2*t.b.F.kl_div(log_student,soft_target,reduction='batchmean')
-            loss=loss-cfg['capture_weight']*capture.clamp_min(1e-12).log().mean()+cfg['phase_smooth_weight']*t.b.phase_smoothness(model)
-            assert t.torch.isfinite(loss);loss.backward()
+            opt.zero_grad(set_to_none=True);accumulated_loss=0.
+            for start in range(0,len(idx),a.microbatch):
+                part=x[start:start+a.microbatch];labels=target[start:start+a.microbatch]
+                prob,capture,_=t.b.forward(model,part,'moe')
+                loss=classification_loss(prob,labels,weights,cfg['focal_gamma'])
+                if teacher is not None:
+                    temperature=cfg['distillation_temperature']
+                    with t.torch.no_grad():soft_target=(teacher(part)/temperature).softmax(1)
+                    log_student=(prob.clamp_min(1e-12).log()/temperature).log_softmax(1)
+                    loss=loss+cfg['distillation_weight']*temperature**2*t.b.F.kl_div(log_student,soft_target,reduction='batchmean')
+                loss=loss-cfg['capture_weight']*capture.clamp_min(1e-12).log().mean()+cfg['phase_smooth_weight']*t.b.phase_smoothness(model)
+                loss=loss*len(part)/len(idx)
+                assert t.torch.isfinite(loss);loss.backward();accumulated_loss+=float(loss.detach())
             if batch==0:
                 norms={name:float(q.grad.norm()) for name,q in model.named_parameters()}
                 assert all(t.np.isfinite(v) for v in norms.values()) and all(v>0 for v in norms.values())
@@ -137,10 +151,10 @@ def train(a):
             t.torch.nn.utils.clip_grad_norm_(model.parameters(),1);opt.step()
             with t.torch.no_grad():
                 for q,new in zip(ema.parameters(),model.parameters()):q.lerp_(new,1-cfg['ema_decay'])
-            total+=float(loss.detach())*len(idx)
-        vm,_=t.b.evaluate(ema,val,'moe',16)
+            total+=accumulated_loss*len(idx)
+        vm,_=t.b.evaluate(ema,val,'moe',a.microbatch)
         h=dict(epoch=epoch,val=vm,train_loss=total/len(data[1]),lr=opt.param_groups[0]['lr'])
-        if epoch==1 or epoch%5==0:h['train']=t.b.evaluate(ema,data,'moe',16)[0]
+        if epoch==1 or epoch%5==0:h['train']=t.b.evaluate(ema,data,'moe',a.microbatch)[0]
         history.append(h);mixup_hashes.append(mixhash.hexdigest())
         improved=False
         if test is None:
@@ -148,7 +162,7 @@ def train(a):
                 best=vm['balanced_nll'];improved=True;t.r.save_torch(folder/'best_checkpoint.pt',checkpoint(ema.state_dict(),epoch))
         else:
             for state_kind,instance in [('raw',model),('ema',ema)]:
-                test_metrics,test_rows=t.b.evaluate(instance,test,'moe',16)
+                test_metrics,test_rows=t.b.evaluate(instance,test,'moe',a.microbatch)
                 h['test_development_'+state_kind]=test_metrics
                 score=(test_metrics['accuracy'],-test_metrics['balanced_nll'])
                 if score>best_test_score:
@@ -171,7 +185,7 @@ def train(a):
     selected=t.torch.load(folder/'best_checkpoint.pt',map_location='cpu',weights_only=False)
     ema.load_state_dict(selected['model']);metrics={}
     for split,d in [('train',data),('val',val)]:
-        metrics[split],rows=t.b.evaluate(ema,d,'moe',16);t.r.csvwrite(folder/(split+'_predictions.csv'),rows)
+        metrics[split],rows=t.b.evaluate(ema,d,'moe',a.microbatch);t.r.csvwrite(folder/(split+'_predictions.csv'),rows)
     t.r.save(a.out/'result.json',dict(profile=a.profile,selected_epoch=selected['epoch'],epochs_completed=epoch,
         metrics=metrics,parent_validation=initial,checkpoint_sha256=t.r.sha(folder/'best_checkpoint.pt'),
         orders=orders,transforms=transforms,mixup_hashes=mixup_hashes,scope=SCOPE,seconds=time.time()-started,
@@ -231,6 +245,9 @@ def main():
     p.add_argument('--profile',choices=['mixup','focal','distill']);p.add_argument('--checkpoint',type=Path)
     p.add_argument('--teacher',type=Path)
     p.add_argument('--test-development',action='store_true')
+    p.add_argument('--use-spare-memory',action='store_true')
+    p.add_argument('--memory-gib',type=float,default=3.)
+    p.add_argument('--microbatch',type=int,default=16)
     p.add_argument('--data',type=Path);p.add_argument('--out',type=Path)
     p.add_argument('--candidates',type=Path);p.add_argument('--parent-sweep',type=Path)
     p.add_argument('--profiles',nargs='+',choices=['mixup','focal','distill'],default=['mixup','focal'])
