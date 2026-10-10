@@ -18,7 +18,7 @@ def main():
     p.add_argument('--out',type=Path,required=True)
     p.add_argument('--continuation-parent',action='store_true')
     p.add_argument('--budget',type=int,default=50)
-    p.add_argument('--profile',choices=['base','aug','ema','capture','smooth'],default='base')
+    p.add_argument('--profile',choices=['base','aug','ema','capture','smooth','lowlr','lowlr_ls'],default='base')
     a=p.parse_args()
     assert os.environ.get('CUDA_VISIBLE_DEVICES','').startswith('GPU-')
     a.out.mkdir(parents=True,exist_ok=False)
@@ -51,6 +51,10 @@ def main():
                 cfg['capture_weight']=.05
             else:
                 cfg['phase_smooth_weight']=.05
+        if a.profile in ['lowlr','lowlr_ls']:
+            cfg.update(lr=.0001,training_profile='rho03_'+a.profile+'_validation50')
+            if a.profile=='lowlr_ls':
+                cfg['label_smoothing']=.05
     else:
         # These published revisions share the unchanged forward/loss implementation;
         # the later revision adds only budget and warm-start lineage handling.
@@ -61,7 +65,8 @@ def main():
         cfg=ck['config']
         assert cfg['training_profile'] in ['rho03_best_warmstart_lr0006_50',
             'rho03_aug_validation50','rho03_ema_validation50',
-            'rho03_capture_validation50','rho03_smooth_validation50']
+            'rho03_capture_validation50','rho03_smooth_validation50',
+            'rho03_lowlr_validation50','rho03_lowlr_ls_validation50']
     t.r.save(a.out/'metadata.json',dict(command=sys.argv,config=cfg,sources=src,
         checkpoint_training_sources=ck['sources'],
         parent_checkpoint_sha256=cfg['parent_checkpoint_sha256'],
