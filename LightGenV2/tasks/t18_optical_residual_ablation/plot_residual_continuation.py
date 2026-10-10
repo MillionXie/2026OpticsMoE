@@ -1,5 +1,6 @@
 """Draw saved residual-only exploratory results; no training or inference."""
 import csv
+import argparse
 import json
 from pathlib import Path
 import matplotlib
@@ -7,8 +8,12 @@ matplotlib.use('Agg')
 import matplotlib.pyplot as plt
 
 root=Path(__file__).resolve().parent
-d=json.loads((root/'reports/residual_continuation_20261010.json').read_text())
-out=root/'reports/residual_continuation_figures_20261010'
+p=argparse.ArgumentParser()
+p.add_argument('--record',default='residual_continuation_20261010.json')
+p.add_argument('--output',default='residual_continuation_figures_20261010')
+a=p.parse_args()
+d=json.loads((root/'reports'/a.record).read_text())
+out=root/'reports'/a.output
 out.mkdir(exist_ok=True)
 plt.rcParams.update({'font.family':'Arial','font.size':8,'svg.fonttype':'none','pdf.fonttype':42})
 depths=[2,4,6]
@@ -18,8 +23,8 @@ fig,ax=plt.subplots(figsize=(4.2,3.1))
 ax.plot(depths,baseline,'o-',color='#0072B2',label='Fixed baseline · 100 epochs')
 ax.plot(depths,residual,'s-',color='#D55E00',label='Residual 0.3 · extra optimization')
 for x,a,b in zip(depths,baseline,residual):
-    ax.annotate(f'{a:.2f}',(x,a),xytext=(0,-13),textcoords='offset points',ha='center',color='#0072B2')
-    ax.annotate(f'{b:.2f}',(x,b),xytext=(0,7),textcoords='offset points',ha='center',color='#D55E00')
+    ax.annotate(f'{a:.2f}',(x,a),xytext=(0,7 if a>b else -13),textcoords='offset points',ha='center',color='#0072B2')
+    ax.annotate(f'{b:.2f}',(x,b),xytext=(0,-13 if a>b else 7),textcoords='offset points',ha='center',color='#D55E00')
 ax.set(xlabel='Optical backbone layers',ylabel='Test accuracy (%)',xticks=depths,
        xlim=(1.6,6.4),ylim=(70,92),title='MangoLeafVarietyBD v2 · seed 17')
 ax.spines[['top','right']].set_visible(False)
@@ -50,7 +55,7 @@ for col,dep in enumerate(depths):
     axes[1,col].set(xlabel='Local continuation epoch',ylabel='Accuracy (%)')
     for ax in axes[:,col]:ax.spines[['top','right']].set_visible(False)
 axes[0,0].legend(frameon=False,fontsize=7);axes[1,0].legend(frameon=False,fontsize=7)
-fig.suptitle('Residual-only continuation · six-layer curve starts after GPU migration',fontsize=10)
+fig.suptitle('Residual-only continuation · local epochs of each selected run',fontsize=10)
 fig.tight_layout()
 for ext in ['png','svg','pdf']:fig.savefig(out/f'learning_curves.{ext}',dpi=300)
 plt.close(fig)
