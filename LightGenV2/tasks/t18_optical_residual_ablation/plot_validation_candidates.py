@@ -1,5 +1,6 @@
 """Plot rejected validation-only candidates without accessing any model/data."""
 import csv
+import argparse
 import json
 from pathlib import Path
 import matplotlib
@@ -7,8 +8,12 @@ matplotlib.use('Agg')
 import matplotlib.pyplot as plt
 
 root=Path(__file__).resolve().parent
-d=json.loads((root/'reports/residual_L6_capture_smooth_20261010.json').read_text())
-out=root/'reports/residual_L6_capture_smooth_figures_20261010'
+p=argparse.ArgumentParser()
+p.add_argument('--record',default='residual_L6_capture_smooth_20261010.json')
+p.add_argument('--output',default='residual_L6_capture_smooth_figures_20261010')
+a=p.parse_args()
+d=json.loads((root/'reports'/a.record).read_text())
+out=root/'reports'/a.output
 out.mkdir(exist_ok=True)
 plt.rcParams.update({'font.family':'Arial','font.size':8,'svg.fonttype':'none','pdf.fonttype':42})
 fig,axes=plt.subplots(2,2,figsize=(7,5))
