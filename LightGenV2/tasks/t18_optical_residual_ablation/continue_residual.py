@@ -15,6 +15,8 @@ def main():
     p.add_argument('--checkpoint',type=Path,required=True)
     p.add_argument('--data',type=Path,required=True)
     p.add_argument('--out',type=Path,required=True)
+    p.add_argument('--continuation-parent',action='store_true')
+    p.add_argument('--budget',type=int,default=50)
     a=p.parse_args()
     assert os.environ.get('CUDA_VISIBLE_DEVICES','').startswith('GPU-')
     a.out.mkdir(parents=True,exist_ok=False)
@@ -23,12 +25,18 @@ def main():
     assert ck['depth']==a.depth and ck['config']['residual_rho']==.3
     src=dict(parent=t.source_identity(),continuation=t.r.sha(Path(__file__)))
     if a.phase=='train':
-        assert ck['sources']==t.source_identity(), 'Parent source identity mismatch'
+        assert 1<=a.budget<=50
+        if a.continuation_parent:
+            assert ck['sources']['parent']==t.source_identity()
+            assert ck['sources']['continuation']=='3983cc1dd985194b6235f53ff5e017164b3134226214d7f55b898ab378e26f0f'
+        else:
+            assert ck['sources']==t.source_identity(), 'Parent source identity mismatch'
         cfg=copy.deepcopy(ck['config'])
-        cfg.update(epochs=50,minimum_epochs=15,patience=12,lr=.0006,
+        offset=ck['config'].get('continuation_augmentation_epoch_offset',0)+ck['epoch'] if a.continuation_parent else 100
+        cfg.update(epochs=a.budget,minimum_epochs=min(15,a.budget),patience=12,lr=.0006,
                    training_profile='rho03_best_warmstart_lr0006_50',
                    parent_checkpoint_sha256=t.r.sha(a.checkpoint),
-                   continuation_augmentation_epoch_offset=100)
+                   continuation_augmentation_epoch_offset=offset)
     else:
         assert ck['sources']==src
         cfg=ck['config']
@@ -55,8 +63,8 @@ def main():
             return model
         t.b.build=warm_build
         order=t.r.epoch_order; affine=t.b.affine_parameters
-        t.r.epoch_order=lambda seed,epoch,n:order(seed,epoch+100,n)
-        t.b.affine_parameters=lambda n,seed,epoch,aug:affine(n,seed,epoch+100,aug)
+        t.r.epoch_order=lambda seed,epoch,n:order(seed,epoch+offset,n)
+        t.b.affine_parameters=lambda n,seed,epoch,aug:affine(n,seed,epoch+offset,aug)
         data=t.k.load_data(a.data,'train');val=t.k.load_data(a.data,'val')
         result=t.b.train('moe',a.depth,17,data,val,cfg,a.out,src)
         initial=t.r.read(a.out/result['name']/'initial_validation.json')
