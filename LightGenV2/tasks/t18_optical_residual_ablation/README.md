@@ -15,7 +15,12 @@
 保留两次失败启动及诊断记录，采用整体梯度/前向稳定性检查，新run `fishnet_s17_e100_gpu1_checked_20261011`，
 `fishnet_ablation.py --use-spare-memory`限制Torch3GiB，双方microbatch2累积有效batch16，
 每子进程前核对剩余显存/UUID，不终止其它项目。详见[数据与实验协议](FISHNET_PROTOCOL_20261011.md)。
-实际启动/进度须核对run；旧芒果88.04%开发结果、
+新run已于北京时间2026-10-11 01:24通过六层GPU smoke，启动父PID11618、
+首个六层rho0训练子PID11951（后续PID以current_process.json为准），实际GPU占用约1748MiB。
+训练源码main e57e3b518，Linux4项CPU检查通过；Windows3过、Torch原生检查因本地DLL问题跳过，
+不改共享环境。数据[manifest](reports/fishnet_data_manifest_20261011.json)与
+[数值诊断](reports/fishnet_batchshape_diagnostic_20261011.json)已保存。
+当前100轮六组仍在进行，性能与耗时只按实际history汇报；旧芒果88.04%开发结果、
 best/last、失败候选和历史同预算表全部保留。本轮只修改T18，main不新增分支/工作树。
 
 ## 不再等待空卡：受限显存执行（2026-10-10用户最新指令）
