@@ -7,10 +7,13 @@
 原文件SHA与八类数量已核对；671张HEIC也完整解码，不漏类别、不挑子集。
 同T18光路与固定电子输入，2/4/6层各从头配对rho0/rho0.3、100轮seed17，
 共同base优化设置；按此前授权逐轮raw/EMA test开发accuracy最高选PT，双方同规则。
-这不是独立测试泛化，不能保证残差为正。只GPU1 UUIDe8837b85...，六/四/二层串行，
-每个新子进程前核对卡为空闲。新入口`fishnet_ablation.py`，
-run `fishnet_s17_e100_gpu1_20261011`，详见[数据与实验协议](FISHNET_PROTOCOL_20261011.md)。
-当前仅完成数据来源/ZIP结构核验，实际启动状态须核对run；旧芒果88.04%开发结果、
+这不是独立测试泛化，不能保证残差为正。只GPU1 UUIDe8837b85...，六/四/二层串行。
+数据已准备：640×640、train2106/val448/test459、1组精确重复不跨划分。
+首run `fishnet_s17_e100_gpu1_20261011`因GPU1临时被其它项目占用而预检失败，未进入训练。
+沿用此前剩余显存授权，新run `fishnet_s17_e100_gpu1_spare_20261011`，
+`fishnet_ablation.py --use-spare-memory`限制Torch3GiB，双方microbatch2累积有效batch16，
+每子进程前核对剩余显存/UUID，不终止其它项目。详见[数据与实验协议](FISHNET_PROTOCOL_20261011.md)。
+实际启动/进度须核对run；旧芒果88.04%开发结果、
 best/last、失败候选和历史同预算表全部保留。本轮只修改T18，main不新增分支/工作树。
 
 ## 不再等待空卡：受限显存执行（2026-10-10用户最新指令）

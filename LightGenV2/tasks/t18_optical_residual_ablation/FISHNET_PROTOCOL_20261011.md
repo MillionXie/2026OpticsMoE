@@ -30,12 +30,13 @@ DOI `10.17632/p3xh4fs7cp.1`，**CC BY 4.0**。作者原文件
 其中2,342张JPEG、671张HEIC。HEIC不能漏读：在数据目录独立安装
 `pillow-heif==0.18.0`（不更新共享训练环境/Pillow），关闭缩略图解码，读取主图，
 EXIF校正转RGB8，保存原图尺寸分布，再与JPEG一致双三次缩放到150×150。
-原ZIP保留，不生成离线增强副本；模型仍用固定100×100的[R,G;B,meanRGB]振幅输入。
+原ZIP保留，不生成离线增强副本；全部主图实际为640×640，模型仍用固定100×100的[R,G;B,meanRGB]振幅输入。
 
 固定split seed20261011，以原图精确像素和150×150缓存像素匹配的连通组，
 逐类别按组70%/15%/15%划分，整数向下取整后余项进test。全部样本保留；
 重复组不跨划分，跨标签的相同像素报错。实际train/val/test数量、类别支持、ID与SHA
-以准备后的`data_manifest.json`为准，不在数据解码前编造数量。
+以准备后的`data_manifest.json`为准。实际**train2,106／val448／test459**，
+3,012个分组，1条精确重复与其原图处于同划分，全部3,013条保留。
 图像级划分，作者未给个体/拍摄会话身份，不能声称个体独立泛化。
 类别不平衡尤其Ruhi Fish少，必须同时报告accuracy、宏平均召回和每类支持数。
 
@@ -62,16 +63,23 @@ AdamW lr0.002余弦到0.0002，weight_decay0、EMA0.95、梯度裁剪1、
 ## 执行与同步
 
 只用物理GPU1 UUID `GPU-e8837b85-d55b-8e81-aaa5-ec1ac326932d`，
-本轮一张GPU、一个训练/推理子进程。每个子进程启动前核验无其它CUDA进程且空闲显存≥22,000MiB。
+本轮一张GPU、一个训练/推理子进程。首个独占启动预检发现GPU1被其它项目临时占用，
+`fishnet_s17_e100_gpu1_20261011`已记录失败，未进入smoke/训练，数据已准备并保留。
+沿用用户此前不要等待、允许指定GPU剩余显存的授权，新入口`--use-spare-memory`使用
+Torch分配上限3GiB、启动时另留800MiB；复用既有`gpu_budget.py`，不升级其它环境、
+不杀别项目。microbatch2按样本比例（含尾batch、收光与平滑项）积累到有效batch16，
+每宏batch裁剪/AdamW/EMA一次，评估也batch2，OEO逐样本归一化。两个残差组都用
+相同微批量执行，不改变有效batch或优化步数，浮点求和次序可能有微小差异。
 CPU准备→六层smoke（rho0精确一致/初始化/梯度/router无残差）→
 六层两组→四层两组→两层两组，全部串行；每阶段退出释放GPU，再启动下一项。
 配对完成核验同初始化SHA、顺序/增强哈希、参数量、数据SHA和100轮数。
-若有新项目占用GPU，停止调度并记录，不杀其他项目。
+若剩余显存不足预设上限/余量，停止调度并记录，不杀其他项目。
 
 入口：`fishnet_ablation.py --phase suite --data-root ... --out ... --gpu GPU-...`。
 配置`fishnet_profile.json`；数据准备`prepare_fishnet.py`。
 服务器数据根 `/DATA/DATA1/guest3/t18_fishnet_v1_20261011`。
-run `runs/simulation/fishnet_s17_e100_gpu1_20261011`，每组配置、Git/源码/数据SHA、
+新run `runs/simulation/fishnet_s17_e100_gpu1_spare_20261011`，原失败启动不覆盖。
+每组配置、Git/源码/数据SHA、
 command/PID/UUID、best/last/history/逐样本预测/梯度与配对收据完整保留。
 GPU仅按UUID选择，源码先测试/commit/push main再服务器干净fetch/ff-only同步。
 不上传原ZIP/缓存/PT/CCD、不覆盖其它窗口未跟踪文件。单种子无误差条，负结果也保留。

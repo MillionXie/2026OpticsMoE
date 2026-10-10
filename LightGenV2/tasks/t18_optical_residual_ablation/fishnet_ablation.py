@@ -12,18 +12,21 @@ import time
 import traceback
 
 import run as t
+import gpu_budget
 
 HERE = Path(__file__).resolve().parent
 b, r, torch, np = t.b, t.r, t.torch, t.np
 
 
 def source_identity(profile):
-    return dict(optical_parent=t.source_identity(), adapter=r.sha(__file__),
+    return dict(optical_parent=t.source_identity(), adapter=r.sha(__file__), gpu_budget=r.sha(HERE / 'gpu_budget.py'),
                 preparation=r.sha(HERE / 'prepare_fishnet.py'), profile=r.sha(profile))
 
 
-def preflight(gpu):
+def preflight(gpu, shared=False):
     assert gpu == 'GPU-e8837b85-d55b-8e81-aaa5-ec1ac326932d'
+    if shared:
+        return gpu_budget.preflight(gpu, shared=True, memory_gib=3.)
     occupied = subprocess.check_output(['nvidia-smi', '--query-compute-apps=gpu_uuid', '--format=csv,noheader'], text=True)
     assert gpu not in [x.strip() for x in occupied.splitlines()], 'Requested physical GPU is occupied'
     info = subprocess.check_output(['nvidia-smi', '--query-gpu=uuid,memory.free', '--format=csv,noheader,nounits'], text=True)
@@ -53,6 +56,7 @@ def tensor_identity(model):
 
 def train(a, profile, manifest, cfg, src):
     data, val, test = [t.k.load_data(a.data, split) for split in ['train', 'val', 'test']]
+    evaluation_batch = cfg['evaluation_batch_size']
     r.setseed(profile['seed'])
     model = t.build('moe', a.depth, cfg)
     initial_sha = tensor_identity(model)
@@ -69,7 +73,7 @@ def train(a, profile, manifest, cfg, src):
     history, gradients, orders, transforms = [], [], [], []
     best, chosen_test = (-1., -float('inf')), None
     started = time.time()
-    r.save(dest / 'initial_validation.json', b.evaluate(model, val, 'moe', cfg['batch_size'])[0])
+    r.save(dest / 'initial_validation.json', b.evaluate(model, val, 'moe', evaluation_batch)[0])
     for epoch in range(1, cfg['epochs'] + 1):
         model.train()
         order = r.epoch_order(profile['seed'], epoch, len(data[1]))
@@ -77,15 +81,17 @@ def train(a, profile, manifest, cfg, src):
         orders.append(r.sha_tensor(order)); transforms.append(r.sha_tensor(theta))
         total = 0.
         for batch_index, idx in enumerate(order.split(cfg['batch_size'])):
-            y = data[1][idx]
-            x = b.encode(data[0][idx], theta[idx])
             opt.zero_grad(set_to_none=True)
-            prob, capture, _ = b.forward(model, x, 'moe')
-            target = torch.nn.functional.one_hot(y, 8) * (1 - cfg['label_smoothing']) + cfg['label_smoothing'] / 8
-            loss = (-(target * prob.clamp_min(1e-12).log()).sum(1) * weights[y]).mean()
-            loss = loss - cfg['capture_weight'] * capture.clamp_min(1e-12).log().mean() + cfg['phase_smooth_weight'] * b.phase_smoothness(model)
-            assert torch.isfinite(loss)
-            loss.backward()
+            for micro in idx.split(cfg['microbatch']):
+                y = data[1][micro]
+                x = b.encode(data[0][micro], theta[micro])
+                prob, capture, _ = b.forward(model, x, 'moe')
+                target = torch.nn.functional.one_hot(y, 8) * (1 - cfg['label_smoothing']) + cfg['label_smoothing'] / 8
+                loss = (-(target * prob.clamp_min(1e-12).log()).sum(1) * weights[y]).mean()
+                loss = loss - cfg['capture_weight'] * capture.clamp_min(1e-12).log().mean() + cfg['phase_smooth_weight'] * b.phase_smoothness(model)
+                assert torch.isfinite(loss)
+                (loss * (len(micro) / len(idx))).backward()
+                total += float(loss.detach()) * len(micro)
             if batch_index == 0:
                 norms = {name: float(p.grad.norm()) for name, p in model.named_parameters()}
                 assert all(np.isfinite(v) and v > 0 for v in norms.values())
@@ -95,13 +101,12 @@ def train(a, profile, manifest, cfg, src):
             with torch.no_grad():
                 for ep, mp in zip(ema.parameters(), model.parameters()):
                     ep.lerp_(mp, 1 - cfg['ema_decay'])
-            total += float(loss.detach()) * len(idx)
-        vm = b.evaluate(ema, val, 'moe', cfg['batch_size'])[0]
+        vm = b.evaluate(ema, val, 'moe', evaluation_batch)[0]
         entry = dict(epoch=epoch, train_loss=total / len(data[1]), lr=opt.param_groups[0]['lr'], val=vm)
         if epoch == 1 or epoch % 5 == 0:
-            entry['train'] = b.evaluate(ema, data, 'moe', cfg['batch_size'])[0]
+            entry['train'] = b.evaluate(ema, data, 'moe', evaluation_batch)[0]
         for kind, candidate in [('raw', model), ('ema', ema)]:
-            metric, rows = b.evaluate(candidate, test, 'moe', cfg['batch_size'])
+            metric, rows = b.evaluate(candidate, test, 'moe', evaluation_batch)
             entry['test_development_' + kind] = metric
             score = (metric['accuracy'], -metric['balanced_nll'])
             if score > best:
@@ -125,7 +130,7 @@ def train(a, profile, manifest, cfg, src):
     ema.load_state_dict(ck['model'])
     measures = {}
     for split, examples in [('train', data), ('val', val)]:
-        measures[split], rows = b.evaluate(ema, examples, 'moe', cfg['batch_size'])
+        measures[split], rows = b.evaluate(ema, examples, 'moe', evaluation_batch)
         r.csvwrite(dest / (split + '_predictions.csv'), rows)
     result = dict(depth=a.depth, rho=a.rho, parameters=parameters, initial_parameter_sha256=initial_sha,
                   selected_epoch=ck['epoch'], selected_state_kind=ck['selected_state_kind'], epochs_completed=epoch,
@@ -156,8 +161,18 @@ def smoke(a, profile, cfg):
     norms = {name: float(p.grad.norm()) for name, p in model.named_parameters()}
     assert len(targets) == 5 * a.depth and all(np.isfinite(v) and v > 0 for v in norms.values())
     assert all('router' not in name for name in targets) and prob.shape == (2, 8)
+    full_grad = {name: p.grad.detach().clone() for name, p in model.named_parameters()}
+    model.zero_grad(set_to_none=True)
+    for sample in x.split(1):
+        small_prob = b.forward(model, sample, 'moe')[0]
+        (-small_prob[:, 0].clamp_min(1e-12).log().mean() / 2).backward()
+    errors = {}
+    for name, p in model.named_parameters():
+        torch.testing.assert_close(p.grad, full_grad[name], rtol=5e-4, atol=1e-7)
+        errors[name] = float((p.grad - full_grad[name]).abs().max())
     r.save(a.out / 'smoke.json', dict(passed=True, rho0_exact_identity=True, initialization_unchanged=True,
-        router_no_residual=True, input_shape=list(x.shape), output_shape=list(prob.shape), gradients=norms))
+        router_no_residual=True, input_shape=list(x.shape), output_shape=list(prob.shape), gradients=norms,
+        per_sample_accumulation_checked=True, maximum_gradient_error=errors))
     r.save(a.out / 'status.json', dict(state='complete', phase='smoke', time=r.now()))
 
 
@@ -177,10 +192,12 @@ def suite(a, profile):
         jobs = [('smoke', 6, .3)] + [('train', depth, rho) for depth in profile['depth_order'] for rho in profile['rhos']]
         results = []
         for phase, depth, rho in jobs:
-            preflight(a.gpu)
+            preflight(a.gpu, a.use_spare_memory)
             folder = a.out / ('smoke' if phase == 'smoke' else f'L{depth}_rho{rho}')
             cmd = [sys.executable, '-u', str(Path(__file__).resolve()), '--phase', phase, '--depth', str(depth),
                    '--rho', str(rho), '--data', str(data), '--profile', str(a.profile), '--out', str(folder), '--gpu', a.gpu]
+            if a.use_spare_memory:
+                cmd.append('--use-spare-memory')
             with (a.out / (folder.name + '.log')).open('w') as log:
                 child = subprocess.Popen(cmd, env=dict(os.environ, CUDA_VISIBLE_DEVICES=a.gpu), stdout=log, stderr=subprocess.STDOUT)
                 r.save(a.out / 'current_process.json', dict(pid=child.pid, command=cmd, gpu_uuid=a.gpu, phase=phase, depth=depth, rho=rho))
@@ -214,6 +231,7 @@ def main():
     p.add_argument('--depth', type=int, choices=[2, 4, 6], default=6)
     p.add_argument('--rho', type=float, choices=[0., .3], default=.3)
     p.add_argument('--gpu', required=True)
+    p.add_argument('--use-spare-memory', action='store_true', help='Previously authorized bounded 3GiB execution, microbatch2/effective16')
     a = p.parse_args(); profile = r.read(a.profile)
     assert a.gpu == profile['gpu_uuid'] and profile['test_development'] and profile['epochs'] == 100
     if a.phase == 'suite':
@@ -221,13 +239,17 @@ def main():
         suite(a, profile)
         return
     assert os.environ.get('CUDA_VISIBLE_DEVICES') == a.gpu and a.data
-    policy = preflight(a.gpu)
+    policy = preflight(a.gpu, a.use_spare_memory)
+    if a.use_spare_memory:
+        policy = gpu_budget.configure(torch, a.gpu, shared=True, memory_gib=3.)
     a.out.mkdir(parents=True, exist_ok=False)
     torch.set_num_threads(4)
     manifest = r.read(a.data.parent / 'data_manifest.json')
     assert manifest['dataset'] == profile['dataset'] and manifest['license'] == 'CC BY 4.0'
     assert manifest['classes'] == profile['classes'] and manifest['profile_sha256'] == r.sha(a.profile)
     cfg, src = config(profile, manifest, a.rho), source_identity(a.profile)
+    cfg.update(microbatch=2 if a.use_spare_memory else 16, effective_batch_size=16,
+               evaluation_batch_size=2 if a.use_spare_memory else 16, spare_memory_authorized=a.use_spare_memory)
     r.save(a.out / 'metadata.json', dict(config=cfg, sources=src, command=sys.argv, pid=os.getpid(),
         git_commit=subprocess.check_output(['git', 'rev-parse', 'HEAD'], text=True).strip(),
         data_sha256=r.sha(a.data), manifest_sha256=r.sha(a.data.parent / 'data_manifest.json'),
