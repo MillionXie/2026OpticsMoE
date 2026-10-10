@@ -2,6 +2,15 @@
 
 ## 当前追加：只优化30%残差（2026-10-10用户批准）
 
+公式改以alpha及模块算子描述，router无残差；当前非线性是OEO而非Kerr，
+[完整表述](OPTICAL_RESIDUAL_FORMULATION.md)注明传播与残差位置。
+用户要求进一步优化六层后，另比较aug/ema两个验证候选：从同一round2最佳
+epoch11出发，lr0.0003余弦、最多50轮/minimum15/patience12；aug只增强到
+旋转15度/平移4/尺度10%，ema只把EMA改0.99，模型与光路不变。
+分别使用GPU1/4，run `mango_rho03_L6_aug_ema_20261010`，不自动测试。
+候选仅在验证NLL优于父且验证宏平均召回不低于父时考虑采用，二者按验证NLL
+选胜者，只对胜者做一次探索性测试；失败者不测试，不按测试挑方案。
+
 用户随后要求继续六层：从GPU4第二段续训最佳epoch25（测试87.56%）
 再warm-start最多50轮，lr0.0006、minimum15、patience12，其余不变；
 仅验证，旧父仍参与选择。run `mango_rho03_L6_continue50_round2_20261010`，
