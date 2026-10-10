@@ -14,6 +14,8 @@ def main():
     p.add_argument('--wait-preparation-pid',type=int)
     p.add_argument('--prepared',action='store_true')
     p.add_argument('--epochs',type=int,choices=[30,100],default=30)
+    p.add_argument('--profile',choices=['base','lr3'],default='base')
+    p.add_argument('--validation-only',action='store_true')
     a=p.parse_args();a.out.mkdir(parents=True,exist_ok=False)
     assert len(a.gpus) in (2,3) and len(set(a.gpus))==len(a.gpus)
     here=Path(__file__).resolve().parent
@@ -36,7 +38,7 @@ def main():
         data=a.data_root/'mango_variety_fixed_split.npz'
         env=dict(os.environ,CUDA_VISIBLE_DEVICES=a.gpus[0])
         subprocess.run([sys.executable,str(here/'run.py'),'--phase','smoke','--rho','.3',
-            '--depth','2','--dataset','mango_variety','--data',str(data),'--out',str(a.out/'smoke'),'--epochs',str(a.epochs)],env=env,check=True)
+            '--depth','2','--dataset','mango_variety','--data',str(data),'--out',str(a.out/'smoke'),'--epochs',str(a.epochs),'--profile',a.profile],env=env,check=True)
         if len(a.gpus)==3:
             workers=[]
             try:
@@ -44,7 +46,8 @@ def main():
                     log=(a.out/f'L{depth}.log').open('w')
                     cmd=[sys.executable,'-u',str(here/'campaign.py'),'--dataset','mango_variety',
                         '--depth',str(depth),'--data',str(data),'--out',str(a.out/f'L{depth}'),
-                        '--gpus',gpu,'--epochs',str(a.epochs)]
+                        '--gpus',gpu,'--epochs',str(a.epochs),'--profile',a.profile]
+                    if a.validation_only:cmd.append('--validation-only')
                     proc=subprocess.Popen(cmd,stdout=log,stderr=subprocess.STDOUT)
                     workers.append((proc,log))
                 state(dict(state='parallel_depth_training',depths=[2,4,6],gpu_limit=3))
@@ -61,12 +64,15 @@ def main():
                 raise
         for depth in ([] if len(a.gpus)==3 else [2,4,6]):
             state(dict(state='paired_training_and_evaluation',depth=depth))
-            subprocess.run([sys.executable,'-u',str(here/'campaign.py'),'--dataset','mango_variety',
+            cmd=[sys.executable,'-u',str(here/'campaign.py'),'--dataset','mango_variety',
                 '--depth',str(depth),'--data',str(data),'--out',str(a.out/f'L{depth}'),
-                '--epochs',str(a.epochs),'--gpus',*a.gpus],check=True)
-        results={str(d):json.loads((a.out/f'L{d}'/'results.json').read_text()) for d in [2,4,6]}
-        (a.out/'results.json').write_text(json.dumps(results,indent=2))
-        state(dict(state='complete',gpu_released_on_exit=True))
+                '--epochs',str(a.epochs),'--profile',a.profile,'--gpus',*a.gpus]
+            if a.validation_only:cmd.append('--validation-only')
+            subprocess.run(cmd,check=True)
+        filename='validation_results.json' if a.validation_only else 'results.json'
+        results={str(d):json.loads((a.out/f'L{d}'/filename).read_text()) for d in [2,4,6]}
+        (a.out/filename).write_text(json.dumps(results,indent=2))
+        state(dict(state='validation_complete' if a.validation_only else 'complete',gpu_released_on_exit=True))
     except BaseException as error:
         state(dict(state='failed',error=repr(error)));raise
 

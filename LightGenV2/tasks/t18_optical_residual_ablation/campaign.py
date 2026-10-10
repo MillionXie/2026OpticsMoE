@@ -20,6 +20,8 @@ def main():
     p.add_argument('--depth',type=int,choices=[2,4,6],default=6)
     p.add_argument('--dataset',choices=['kather','mango_variety'],default='kather')
     p.add_argument('--epochs',type=int,choices=[30,100],default=30)
+    p.add_argument('--profile',choices=['base','lr3'],default='base')
+    p.add_argument('--validation-only',action='store_true')
     a=p.parse_args()
     assert len(a.gpus) in (1,2) and len(set(a.gpus))==len(a.gpus) and all(g.startswith('GPU-') for g in a.gpus)
     occupied=subprocess.check_output(['nvidia-smi','--query-compute-apps=gpu_uuid',
@@ -35,7 +37,7 @@ def main():
             gpu=a.gpus[i%len(a.gpus)]
             folder=a.out/f'rho{rho}'
             cmd=[sys.executable,'-u',str(run),'--phase','train','--rho',str(rho),
-                '--data',str(a.data),'--out',str(folder),'--depth',str(a.depth),'--dataset',a.dataset,'--epochs',str(a.epochs)]
+                '--data',str(a.data),'--out',str(folder),'--depth',str(a.depth),'--dataset',a.dataset,'--epochs',str(a.epochs),'--profile',a.profile]
             env=dict(os.environ,CUDA_VISIBLE_DEVICES=gpu)
             log=(a.out/f'rho{rho}.log').open('w')
             proc=subprocess.Popen(cmd,env=env,stdout=log,stderr=subprocess.STDOUT)
@@ -54,12 +56,16 @@ def main():
         assert results[0]['parameters']==results[1]['parameters']==10000+439848*(a.depth//2)
         save(a.out/'selection_lock.json',dict(results=results,paired_orders=True,
             paired_transforms=True,criterion='each arm minimum validation balanced NLL'))
+        if a.validation_only:
+            save(a.out/'validation_results.json',{str(rho):e for rho,e in zip([0.,.3],results)})
+            save(a.out/'status.json',dict(state='validation_complete',test_read=False))
+            return
         save(a.out/'status.json',dict(state='locked_evaluation'))
         for rho,result in zip([0.,.3],results):
             folder=a.out/f'rho{rho}'
             cmd=[sys.executable,'-u',str(run),'--phase','evaluate','--rho',str(rho),
                 '--data',str(a.data),'--out',str(a.out/f'evaluation_rho{rho}'),
-                '--checkpoint',str(folder/result['name']/'best_checkpoint.pt'),'--depth',str(a.depth),'--dataset',a.dataset,'--epochs',str(a.epochs)]
+                '--checkpoint',str(folder/result['name']/'best_checkpoint.pt'),'--depth',str(a.depth),'--dataset',a.dataset,'--epochs',str(a.epochs),'--profile',a.profile]
             env=dict(os.environ,CUDA_VISIBLE_DEVICES=a.gpus[0])
             subprocess.run(cmd,env=env,check=True)
         metrics={str(rho):json.loads((a.out/f'evaluation_rho{rho}'/'metrics.json').read_text())

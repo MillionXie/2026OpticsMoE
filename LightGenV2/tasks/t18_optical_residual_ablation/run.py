@@ -49,6 +49,7 @@ def main():
     parser.add_argument('--depth',type=int,choices=[2,4,6],default=6)
     parser.add_argument('--dataset',choices=['kather','mango_variety'],default='kather')
     parser.add_argument('--epochs',type=int,choices=[30,100],default=30)
+    parser.add_argument('--profile',choices=['base','lr3'],default='base')
     a=parser.parse_args()
     visible=os.environ.get('CUDA_VISIBLE_DEVICES','')
     assert visible.startswith('GPU-') and ',' not in visible
@@ -57,6 +58,8 @@ def main():
     cfg=config(a.rho);src=source_identity()
     if a.epochs==100:
         cfg.update(epochs=100,minimum_epochs=100,patience=100)
+    if a.profile=='lr3':cfg.update(lr=0.003)
+    cfg['training_profile']=a.profile
     if a.dataset=='mango_variety':
         manifest=r.read(a.data.parent/'data_manifest.json')
         assert manifest['dataset']=='MangoLeafVarietyBD_raw_v2' and manifest['license']=='CC BY 4.0'

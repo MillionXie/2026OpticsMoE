@@ -5,6 +5,12 @@
 与下方Kather历史分开。光路/残差及训练预算不变；输入类别含义变更。
 新数据六组已完成：2/4层残差测试提升1.67/1.20pp，6层下降7.18pp；
 不能声称残差跨数据集始终有益。精确结果、划分及证据见上述协议。
+同预算100轮也已完成：2/4/6层无残差测试74.40/82.30/87.56%，残差
+73.92/82.54/83.97%，不支持随深度扩大优势。当前训练/验证诊断及获选epoch
+见协议；[30/100轮对照图](reports/mango_figures_20261010/depth_accuracy.png)、
+[完整学习曲线](reports/mango_figures_20261010/learning_curves.png)、
+[可编辑SVG](reports/mango_figures_20261010/depth_accuracy.svg)、
+[数值CSV](reports/mango_figures_20261010/source_data.csv)。追加公共lr0.003候选仅验证。
 
 新增两层主干消融：router→九专家并行相位→OEO→global相位→OEO→CCD
 （相位之后均有原5cm传播，末端另有5cm传播）。专家各1张相位，共9专家＋1global，
