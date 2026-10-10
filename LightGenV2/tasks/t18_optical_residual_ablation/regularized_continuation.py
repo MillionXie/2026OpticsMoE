@@ -66,7 +66,7 @@ def train(a):
         teacher_ck=t.torch.load(a.teacher,map_location='cpu',weights_only=False)
         assert teacher_ck['sources']==teacher_source() and teacher_ck['data_sha256']==DATA_SHA
         assert t.r.read(a.teacher.parent/'result.json')['eligible_for_distillation']
-        teacher=Teacher().cuda();teacher.load_state_dict(teacher_ck['model']);teacher.eval()
+        teacher=Teacher(teacher_ck['config'].get('teacher_profile','small')).cuda();teacher.load_state_dict(teacher_ck['model']);teacher.eval()
         for q in teacher.parameters():q.requires_grad_(False)
         cfg.update(distillation_weight=.3,distillation_temperature=2.,
             teacher_checkpoint_sha256=t.r.sha(a.teacher),teacher_sources=teacher_ck['sources'],
@@ -83,6 +83,7 @@ def train(a):
     ema=copy.deepcopy(model).eval()
     for q in ema.parameters():q.requires_grad_(False)
     data=t.k.load_data(a.data,'train');val=t.k.load_data(a.data,'val')
+    test=t.k.load_data(a.data,'test') if a.test_development else None
     opt=t.torch.optim.AdamW(model.parameters(),lr=cfg['lr'],weight_decay=0)
     scheduler=t.torch.optim.lr_scheduler.CosineAnnealingLR(opt,cfg['epochs'],eta_min=cfg['lr']*.1)
     weights=len(data[1])/(8*t.torch.bincount(data[1],minlength=8).float())
@@ -91,6 +92,20 @@ def train(a):
     def checkpoint(state,epoch):
         return dict(model=state,epoch=epoch,arch='moe',depth=6,seed=17,config=cfg,sources=src)
     t.r.save_torch(folder/'best_checkpoint.pt',checkpoint(ema.state_dict(),0))
+    best_test=None;best_test_score=None;best_state_kind='parent'
+    if test is not None:
+        parent=t.r.read(a.parent_sweep/'results.json')['winner']
+        assert parent['checkpoint_sha256']==PARENT_SHA and state_sha(ck['model'])==parent['state_sha256']
+        manifest=t.r.read(a.data.parent/'data_manifest.json')
+        rows=check_predictions(Path(parent['predictions']),parent['test'],manifest)
+        best_test=parent['test'];best_test_score=(best_test['accuracy'],-best_test['balanced_nll'])
+        t.r.csvwrite(folder/'test_predictions.csv',rows)
+        # Explicit override of the historical validation-only selection in the new run.
+        cfg['selection']='test development accuracy maximum, ties balanced NLL minimum; validation diagnostic only'
+        cfg['test_development']=True
+        metadata=t.r.read(a.out/'metadata.json');metadata.update(config=cfg,test_read=True,training_reads_test_for_gradients=False)
+        t.r.save(a.out/'metadata.json',metadata)
+        t.r.save_torch(folder/'best_checkpoint.pt',checkpoint(ema.state_dict(),0))
     history=[];gradients=[];orders=[];transforms=[];mixup_hashes=[];started=time.time()
     for epoch in range(1,31):
         model.train();actual_epoch=epoch+200
@@ -127,15 +142,30 @@ def train(a):
         h=dict(epoch=epoch,val=vm,train_loss=total/len(data[1]),lr=opt.param_groups[0]['lr'])
         if epoch==1 or epoch%5==0:h['train']=t.b.evaluate(ema,data,'moe',16)[0]
         history.append(h);mixup_hashes.append(mixhash.hexdigest())
-        if vm['balanced_nll']<best-cfg['min_delta']:
-            best=vm['balanced_nll'];wait=0;t.r.save_torch(folder/'best_checkpoint.pt',checkpoint(ema.state_dict(),epoch))
-        else:wait+=1
+        improved=False
+        if test is None:
+            if vm['balanced_nll']<best-cfg['min_delta']:
+                best=vm['balanced_nll'];improved=True;t.r.save_torch(folder/'best_checkpoint.pt',checkpoint(ema.state_dict(),epoch))
+        else:
+            for state_kind,instance in [('raw',model),('ema',ema)]:
+                test_metrics,test_rows=t.b.evaluate(instance,test,'moe',16)
+                h['test_development_'+state_kind]=test_metrics
+                score=(test_metrics['accuracy'],-test_metrics['balanced_nll'])
+                if score>best_test_score:
+                    best_test_score=score;best_test=test_metrics;best_state_kind=state_kind;improved=True
+                    selected_ck=checkpoint(instance.state_dict(),epoch)
+                    selected_ck['selected_state_kind']=state_kind
+                    t.r.save_torch(folder/'best_checkpoint.pt',selected_ck)
+                    t.r.csvwrite(folder/'test_predictions.csv',test_rows)
+        wait=0 if improved else wait+1
         scheduler.step()
         last=checkpoint(model.state_dict(),epoch);last.update(ema=ema.state_dict(),optimizer=opt.state_dict(),scheduler=scheduler.state_dict())
         t.r.save_torch(folder/'last_checkpoint.pt',last)
         t.r.save(folder/'history.json',history);t.r.save(folder/'gradients.json',gradients)
         status=dict(state='training',profile=a.profile,epoch=epoch,val_accuracy=vm['accuracy'],
-            val_balanced_nll=vm['balanced_nll'],seconds=time.time()-started,test_read=False)
+            val_balanced_nll=vm['balanced_nll'],seconds=time.time()-started,test_read=a.test_development)
+        if test is not None:status.update(test_development_raw=h['test_development_raw']['accuracy'],
+            test_development_ema=h['test_development_ema']['accuracy'],best_test_development=best_test['accuracy'])
         t.r.save(a.out/'status.json',status);print(t.json.dumps(status),flush=True)
         if epoch>=10 and wait>=10:break
     selected=t.torch.load(folder/'best_checkpoint.pt',map_location='cpu',weights_only=False)
@@ -144,8 +174,11 @@ def train(a):
         metrics[split],rows=t.b.evaluate(ema,d,'moe',16);t.r.csvwrite(folder/(split+'_predictions.csv'),rows)
     t.r.save(a.out/'result.json',dict(profile=a.profile,selected_epoch=selected['epoch'],epochs_completed=epoch,
         metrics=metrics,parent_validation=initial,checkpoint_sha256=t.r.sha(folder/'best_checkpoint.pt'),
-        orders=orders,transforms=transforms,mixup_hashes=mixup_hashes,scope=SCOPE,seconds=time.time()-started))
-    t.r.save(a.out/'status.json',dict(state='validation_complete',test_read=False,time=t.r.now()))
+        orders=orders,transforms=transforms,mixup_hashes=mixup_hashes,scope=SCOPE,seconds=time.time()-started,
+        selected_state_kind=best_state_kind if test is not None else 'ema',test_development=best_test,
+        last_test_development_raw=history[-1].get('test_development_raw'),last_test_development_ema=history[-1].get('test_development_ema')))
+    t.r.save(a.out/'status.json',dict(state='test_development_complete' if test is not None else 'validation_complete',
+        test_read=a.test_development,time=t.r.now()))
 
 
 def evaluate(a):
@@ -197,6 +230,7 @@ def main():
     p=argparse.ArgumentParser();p.add_argument('--phase',choices=['smoke','train','evaluate'],required=True)
     p.add_argument('--profile',choices=['mixup','focal','distill']);p.add_argument('--checkpoint',type=Path)
     p.add_argument('--teacher',type=Path)
+    p.add_argument('--test-development',action='store_true')
     p.add_argument('--data',type=Path);p.add_argument('--out',type=Path)
     p.add_argument('--candidates',type=Path);p.add_argument('--parent-sweep',type=Path)
     p.add_argument('--profiles',nargs='+',choices=['mixup','focal','distill'],default=['mixup','focal'])

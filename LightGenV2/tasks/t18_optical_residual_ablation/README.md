@@ -1,5 +1,23 @@
 # T18 Kather 2／4／6层MoE：相干未调制分量消融
 
+## 每轮test开发选模（用户2026-10-10最新覆盖）
+
+用户明确要求训练过程中每轮测test，不再按验证准确率选PT。新run均启用
+`--test-development`：教师每轮test，学生每轮分别测raw和EMA，按test accuracy
+最高、同分test balanced NLL最低保存best；验证只诊断，早停也由test开发分数决定。
+训练梯度和蒸馏输入/标签仍只来自train；此集合现在是开发集，不声称独立泛化。
+每轮指标保存history，逐样本预测只保存更新best，best/last保留，不另存逐轮PT。
+父87.80%仍参与选择，同权重历史预测直接复用；完成后不重测已选权重。
+
+首个31,752参数教师train/val79.30/78.92%，未满足90%验证门槛，未启动学生，
+`mango_rho03_L6_teacher_distill_detpool_20261010`完整保留，teacher未读test。
+这支持该小教师欠拟合（训练也低），不能把其成绩当光模型或架构上限。
+新训练期教师`bn32`扩大至110,024参数：三Conv通道32/64/128，每层BN/ReLU，
+同样固定4×4均值池化，head Dropout0.1+Linear2048→8；仍接收同一固定振幅输入，
+仍不进入任何光学推理。最多80轮、其余训练设置相同，不加载外部预训练。
+教师test开发accuracy≥90%才接续学生，未满足则停止；学生最多30轮，光路及rho不改。
+新run `mango_rho03_L6_teacher_testdev_20261010`，GPU4独占，上限始终两卡（GPU1被其它项目使用）。
+
 ## 训练期电子教师蒸馏（2026-10-10继续优化授权）
 
 MixUp/focal继续训练未突破开发87.80%，[负结果保留](reports/residual_L6_mixup_focal_20261010.md)。
