@@ -1,0 +1,4766 @@
+{
+  "scope": "TEST-SELECTED DEVELOPMENT METRIC, NOT INDEPENDENT GENERALIZATION",
+  "manifest_sha256": "ec3acd0f9dce9487d0fa851cea06360b15c4386a45376c801e7496cc4836aaea",
+  "winner": {
+    "checkpoint": "/DATA/DATA1/guest3/2026OpticsMoE/LightGenV2/tasks/t18_optical_residual_ablation/runs/simulation/mango_rho03_L6_capture_smooth_20261010/smooth/moe_L6_seed17/best_checkpoint.pt",
+    "checkpoint_sha256": "058b758ce585dde9e9ba092d28feca89465c9444f48be5c087bab5a86ccf565f",
+    "state_key": "model",
+    "state_sha256": "4503adc1a843e648b5fd6238c547472d00fedeff888b9b93c2c0d97bcca2984f",
+    "epoch": 8,
+    "kind": "best_ema",
+    "profile": "rho03_smooth_validation50",
+    "training_source_revision": "fad46834a",
+    "config": {
+      "dataset": "MangoLeafVarietyBD_raw_v2",
+      "license": "CC BY 4.0",
+      "deduplication": "70/15/15 per-class exact-pixel groups; all records retained",
+      "classes": [
+        "Amrupali",
+        "Banana",
+        "Bandigori",
+        "Brunei King",
+        "Harivanga",
+        "Himsagor",
+        "Kacha Mitha",
+        "Surjapuri"
+      ],
+      "epochs": 50,
+      "minimum_epochs": 15,
+      "patience": 12,
+      "min_delta": 0.0005,
+      "batch_size": 16,
+      "lr": 0.0003,
+      "phase_init_raw_uniform": 1.0,
+      "ema_decay": 0.99,
+      "label_smoothing": 0.02,
+      "capture_weight": 0.2,
+      "phase_smooth_weight": 0.05,
+      "augmentation": {
+        "degrees": 10.0,
+        "translation_pixels": 3.0,
+        "scale_delta": 0.05
+      },
+      "encoding": "Original 150x150 RGB -> bicubic antialias100 clamp -> shared train-only affine -> bilinear50 -> fixed [R,G;B,meanRGB] amplitude100. D2NN each tile is independently enlarged to fill its phase aperture and incident power restored.",
+      "detector": {
+        "size": 32,
+        "x": 126,
+        "y": 198,
+        "rows": [
+          4,
+          4
+        ],
+        "gap_x": [
+          40,
+          40
+        ],
+        "gap_y": 40
+      },
+      "cnn": {
+        "epochs": 30,
+        "batch_size": 128,
+        "lr": 0.001,
+        "weight_decay": 0.01,
+        "dropout": 0.2
+      },
+      "selection": "minimum validation balanced NLL; no test-based choice",
+      "scope": "Mango variety image-level single-seed optical ablation",
+      "residual_rho": 0.3,
+      "residual_scope": "expert_and_global_only",
+      "residual_formula": "((1-rho)*exp(i*phi)+rho)*U",
+      "expert_vectorize": false,
+      "training_profile": "rho03_smooth_validation50",
+      "parent_checkpoint_sha256": "1dca0c450379191e1e4abd9133143759e1fb60bb981490b8e4c3a449e261f7d3",
+      "continuation_augmentation_epoch_offset": 175
+    },
+    "training_sources": {
+      "parent": {
+        "historical": {
+          "reproduction/bloodmnist_experiment.py": "cf2bef3dd86865c1cd3b7d2874017895b297ff5a614f0a82e28b96f8bbce2551",
+          "reproduction/train_adrenal_regularized.py": "502ffec98fd3a455eacf0449edf5979f1c5800b9a4c62087f5fa5e70db1bae25",
+          "reproduction/bloodmnist_profile.json": "d01fdc507f8698767e9fc09016f58cc601880d9733b1064d6f6e35be4aa60f96",
+          "adrenal_softsign_code_export_20260915_145336/code/reference_initialization.yaml": "212741d7f31b3dce3f8f7aea023f7848441e36d115411ecdb0688d6335252089",
+          "adrenal_softsign_code_export_20260915_145336/code/search_pipeline.py": "170fec8994e7873e3fc1de8b133d8eeb4729c016e5596123050a721acfcb6f20",
+          "adrenal_softsign_code_export_20260915_145336/code/metrics.py": "9f17a3a15a89630bbcd294f2e97de3755941fe38bf6f80d8e6e8758b313e496b",
+          "adrenal_softsign_code_export_20260915_145336/code/experiments.py": "56debf769cf6966105dbc0fd34bdea4037f83fcb0de48bb9986c0c138f460e7b",
+          "adrenal_softsign_code_export_20260915_145336/code/models.py": "f46e9aa1214532aa0a7121ffe0ef191ed656af2de80f7611df121cd9f110bd9c",
+          "adrenal_softsign_code_export_20260915_145336/code/report.py": "9bbc6db6bbd7a2fea9d2a9e7eb8a60271ed353387c0724b19f784baf58da67ea",
+          "adrenal_softsign_code_export_20260915_145336/code/calibration.py": "064663a7b5f4196c4d9e63de4096e55b29457a69343c57afeb029ef72c92fd5f",
+          "adrenal_softsign_code_export_20260915_145336/code/preflight.py": "98b3df39edc9e352e691b8e92902e739492386a0a3d6e03cfc9b563585140001",
+          "adrenal_softsign_code_export_20260915_145336/code/config.yaml": "409834f4668f0cf88c252d94fcbbd43a74c496d6d3b24a516acb181c9a7ea46a",
+          "adrenal_softsign_code_export_20260915_145336/code/run_experiment.py": "fcd0a5f7d486a6f6f6767e71e29a6161a9476e5b60e3039aff104408db59e752",
+          "adrenal_softsign_code_export_20260915_145336/code/optical_reference/__init__.py": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "adrenal_softsign_code_export_20260915_145336/code/optical_reference/readout.py": "181cabdc4b7b85c30bdb16b778870afbd6b35d1d365d98924606c5dbe3e487a4",
+          "adrenal_softsign_code_export_20260915_145336/code/optical_reference/experts.py": "5ff26c6223631534823b479c3eba98ca2311285e379c933c67ae24a073a37161",
+          "adrenal_softsign_code_export_20260915_145336/code/optical_reference/layout.py": "512ed7cf1f62d07cfd2ffc50997285f41d1cf0f9a5c3398e702a45ec37d7db7f",
+          "adrenal_softsign_code_export_20260915_145336/code/optical_reference/activations.py": "a6be25569d228f4154c7598535d98853e154a21b4ddca755c8cd19ed69f4b4bc",
+          "adrenal_softsign_code_export_20260915_145336/code/optical_reference/losses.py": "0a1e97baf44c9045f607d84aa55dee8660c451e13fbb2cd4696f0ed0690b74c6",
+          "adrenal_softsign_code_export_20260915_145336/code/optical_reference/optics.py": "b250627b14357a254eb12c785caf20f3aff2bf3fe30121a05321094803c73a7d",
+          "adrenal_softsign_code_export_20260915_145336/code/optical_reference/model.py": "afe60ad6cfe42dc8c01d3639112b6d7df47acd2854fff46d6a2da2893d3d1b9f",
+          "adrenal_softsign_code_export_20260915_145336/code/optical_reference/prompt.py": "3a66d0612473ae488a3e3e16a85bdff7f8f2370f6bc8c03687f77b947c953bc6",
+          "adrenal_softsign_code_export_20260915_145336/code/configs/d2nn_L2_oeo_relu_softsign.yaml": "58f9f7e6ff473bbcff5cb7d1681b2d4b152a6cec49c7383e01d083689ee0bb50",
+          "adrenal_softsign_code_export_20260915_145336/code/configs/d2nn_L6_oeo_softplus2.yaml": "a4bd1fd1a3d66058ca137b249915133fc7bdee30daa425f7edeb3760dd2d0818",
+          "adrenal_softsign_code_export_20260915_145336/code/configs/moe_L6_oeo_relu_softsign.yaml": "7e95024e316798c904ee69a76d1ce9e52841ae81c3b36d9595be47c2889b33fc",
+          "adrenal_softsign_code_export_20260915_145336/code/configs/d2nn_L6_oeo_relu_tanh.yaml": "9675ae3af42056cde146972b1a6e51a5e1a920c679795cfe4867b71122350de4",
+          "adrenal_softsign_code_export_20260915_145336/code/configs/d2nn_L2_oeo_softplus2.yaml": "1d96902b33f8534fa772e0bf780135cedcc39dc5a35b830df0b51e218464f8bf",
+          "adrenal_softsign_code_export_20260915_145336/code/configs/moe_L4_oeo_off.yaml": "9ea7abd35cf4de45406893454ad97dbffd9dad3ae789e33b6e16601c2a17b1db",
+          "adrenal_softsign_code_export_20260915_145336/code/configs/d2nn_L6_oeo_relu_softsign.yaml": "bf80b8d704d80fc41d7cb61aa655e7e2a65ee965971cc0e2dfa475aa9c430d46",
+          "adrenal_softsign_code_export_20260915_145336/code/configs/moe_L6_oeo_relu_tanh.yaml": "d55bde5b2a6d79e246a527becee05b9f0dceb58b300c8fa528205a0f8c0330e8",
+          "adrenal_softsign_code_export_20260915_145336/code/configs/d2nn_L2_oeo_relu_tanh.yaml": "b433629759c54435c7cede8029ee326f8ea6c987ae8fafc58598405eeceee2f8",
+          "adrenal_softsign_code_export_20260915_145336/code/configs/moe_L2_oeo_off.yaml": "9925b57312997c92bff5bc3bab97605684d2fb0244ab69a53b639ae3ac2bddd4",
+          "adrenal_softsign_code_export_20260915_145336/code/configs/moe_L4_oeo_relu_softsign.yaml": "031789271b04ede00a3061ee963effa3e1b60b2fefdbc3694ba05172e7e4de65",
+          "adrenal_softsign_code_export_20260915_145336/code/configs/d2nn_L4_oeo_off.yaml": "daaca90718f740cf2a3aa67cd2512ebe426b2a21c9a26aebb1e90ef9eaf13943",
+          "adrenal_softsign_code_export_20260915_145336/code/configs/moe_L4_oeo_softplus2.yaml": "1c4013b7184b687a7e296433e866478cbb30a66de5defa1ab0de5b61668eac2d",
+          "adrenal_softsign_code_export_20260915_145336/code/configs/moe_L2_oeo_relu_tanh.yaml": "8c1ef0470f0e2fc63cc17ef69c7ce6154be5266f5777483ff163525a20c302ff",
+          "adrenal_softsign_code_export_20260915_145336/code/configs/moe_L2_oeo_softplus2.yaml": "9dad12420c031b6544388b76513618dc72eb93bc941d8dc428ec7d40e41888d2",
+          "adrenal_softsign_code_export_20260915_145336/code/configs/moe_L6_oeo_off.yaml": "81b007c988919e518268ab384d604516892e57da2b55ec3c3f755c8be0db814e",
+          "adrenal_softsign_code_export_20260915_145336/code/configs/moe_L2_oeo_relu_softsign.yaml": "e5d3aa79b405a0f8cd25bb5d82b03707ef057ffe824123287ad411377956ccc0",
+          "adrenal_softsign_code_export_20260915_145336/code/configs/d2nn_L4_oeo_relu_tanh.yaml": "a1e64aa765cbbd14bfd98061d85fda3898a48bfe85d3cde66f2cdce5b80a91bd",
+          "adrenal_softsign_code_export_20260915_145336/code/configs/d2nn_L2_oeo_off.yaml": "0c2113f31bfdf2ffd5456ec4f9b94af4f7bea2f433e71700c3d4c736703d2a44",
+          "adrenal_softsign_code_export_20260915_145336/code/configs/d2nn_L4_oeo_softplus2.yaml": "d23e07e75910b50eda00d8faf3a663e88840b73cd3add84f5fba84e751862880",
+          "adrenal_softsign_code_export_20260915_145336/code/configs/d2nn_L6_oeo_off.yaml": "17e9295e90a144378c45fc525944c5770cfdfdab732c8559e20fc7339150b1e7",
+          "adrenal_softsign_code_export_20260915_145336/code/configs/moe_L6_oeo_softplus2.yaml": "405f630bc53753ee13dc91575e232733428d1350378d36d9d2e28c3e2032750b",
+          "adrenal_softsign_code_export_20260915_145336/code/configs/moe_L4_oeo_relu_tanh.yaml": "0fbad9b101bc120930c95ccf9225ff8780a3d455b3eef942979f6bf9ee96d935",
+          "adrenal_softsign_code_export_20260915_145336/code/configs/d2nn_L4_oeo_relu_softsign.yaml": "ab602e08f6b92baf59911ba466acdc7234b2f99ece5d3eb6c8f05ad327023788",
+          "reproduction/bloodmnist_multiseed.py": "d5fd93451eadb54c4b964fb5e49a4758f9170e28579642d8e07992bef35181c9",
+          "reproduction/kather2016_experiment.py": "976e0d9b6d4a2b549acfa4d5459f8c4a8c699e1c7bd5f8d676e96e32c4f1356f",
+          "reproduction/kather2016_profiles.json": "643535aa250d6e654077b36bb45c9baab9b9f6daf48aa70097f3b3b8e63da3aa",
+          "reproduction/prepare_kather2016.py": "7eb5880e86d9ad6a5b1e6a9cf3572046c4012052b7941da8c58774144b4169cd"
+        },
+        "task": {
+          "run.py": "f5d49bae15b824e7ac3585fa36fcb319390026d55ddba13547f3647e88d9da01",
+          "model.py": "e97daaa915643c65fcde020dad356966067539fb9119a24fb535d550df5d1f48",
+          "campaign.py": "7a515c3e92ecb47814897adaefcab25af2613ee9b4a1a82d41e648385e44ff4d",
+          "prepare_mango.py": "de10af1f3141fcaa31d79f872f81477902d9b0db13f42d7c67aa7c4d02b03120"
+        }
+      },
+      "continuation": "9473039081fe0c1130914aff06f13c4c31937c12e2e26875b69e3419468f1e57"
+    },
+    "test": {
+      "n": 418,
+      "support": [
+        47,
+        54,
+        51,
+        45,
+        56,
+        52,
+        57,
+        56
+      ],
+      "accuracy": 0.8779904306220095,
+      "balanced_accuracy": 0.8806386524494274,
+      "macro_f1": 0.8790140414490257,
+      "macro_ovr_auroc": 0.9853426675183822,
+      "recall": [
+        0.8936170212765957,
+        0.9814814814814815,
+        0.9019607843137255,
+        1.0,
+        0.8571428571428571,
+        0.7307692307692307,
+        0.9122807017543859,
+        0.7678571428571429
+      ],
+      "confusion_matrix": [
+        [
+          42,
+          0,
+          2,
+          0,
+          0,
+          0,
+          1,
+          2
+        ],
+        [
+          0,
+          53,
+          0,
+          1,
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          3,
+          0,
+          46,
+          0,
+          0,
+          0,
+          2,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          45,
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          1,
+          48,
+          3,
+          1,
+          3
+        ],
+        [
+          0,
+          0,
+          0,
+          0,
+          12,
+          38,
+          0,
+          2
+        ],
+        [
+          0,
+          1,
+          1,
+          2,
+          0,
+          0,
+          52,
+          1
+        ],
+        [
+          3,
+          0,
+          2,
+          0,
+          3,
+          2,
+          3,
+          43
+        ]
+      ],
+      "nll": 0.3966064453125,
+      "balanced_nll": 0.3862273097038269,
+      "detector_capture": 0.5961511135101318
+    },
+    "predictions": "LightGenV2/tasks/t18_optical_residual_ablation/runs/simulation/mango_rho03_L6_test_selected_development_20261010/state_27_test_predictions.csv",
+    "reused_from": null,
+    "inference": "new_test_once"
+  },
+  "states": 36,
+  "unique_states": 33,
+  "new_inferences": 27,
+  "gpu_uuid": "GPU-1b963983-7909-af6e-0528-f0f0661ab549",
+  "time": "2026-10-10T07:04:38.420202+00:00",
+  "results": [
+    {
+      "checkpoint": "/DATA/DATA1/guest3/2026OpticsMoE/LightGenV2/tasks/t18_optical_residual_ablation/runs/simulation/mango_variety_s17_20261010_3gpu/L6/rho0.3/moe_L6_seed17/best_checkpoint.pt",
+      "checkpoint_sha256": "332d88ed6f23f68580a8e94b4d44af4d15081a4f1b74d68fd9625c9663fb5459",
+      "state_key": "model",
+      "state_sha256": "b11dded01e573ed1c8bba2f23652c6f9e3f60aa107b7ccb59f0ad9a2765b6cdf",
+      "epoch": 30,
+      "kind": "best_ema",
+      "profile": "base",
+      "training_source_revision": "32a9d32fb",
+      "test": {
+        "n": 418,
+        "support": [
+          47,
+          54,
+          51,
+          45,
+          56,
+          52,
+          57,
+          56
+        ],
+        "accuracy": 0.715311004784689,
+        "balanced_accuracy": 0.7255314761335856,
+        "macro_f1": 0.7124853537137479,
+        "macro_ovr_auroc": 0.9507014826763294,
+        "recall": [
+          0.8723404255319149,
+          0.8703703703703703,
+          0.6274509803921569,
+          1.0,
+          0.42857142857142855,
+          0.7307692307692307,
+          0.6140350877192983,
+          0.6607142857142857
+        ],
+        "confusion_matrix": [
+          [
+            41,
+            0,
+            4,
+            0,
+            0,
+            0,
+            0,
+            2
+          ],
+          [
+            0,
+            47,
+            0,
+            6,
+            0,
+            0,
+            1,
+            0
+          ],
+          [
+            10,
+            0,
+            32,
+            0,
+            0,
+            0,
+            8,
+            1
+          ],
+          [
+            0,
+            0,
+            0,
+            45,
+            0,
+            0,
+            0,
+            0
+          ],
+          [
+            2,
+            2,
+            0,
+            3,
+            24,
+            14,
+            3,
+            8
+          ],
+          [
+            0,
+            0,
+            0,
+            1,
+            7,
+            38,
+            1,
+            5
+          ],
+          [
+            4,
+            2,
+            7,
+            3,
+            3,
+            2,
+            35,
+            1
+          ],
+          [
+            3,
+            0,
+            3,
+            2,
+            2,
+            5,
+            4,
+            37
+          ]
+        ],
+        "nll": 0.8508312702178955,
+        "balanced_nll": 0.8281875848770142,
+        "detector_capture": 0.19872532784938812
+      },
+      "predictions": "/DATA/DATA1/guest3/2026OpticsMoE/LightGenV2/tasks/t18_optical_residual_ablation/runs/simulation/mango_variety_s17_20261010_3gpu/L6/evaluation_rho0.3/test_predictions.csv",
+      "reused_from": "/DATA/DATA1/guest3/2026OpticsMoE/LightGenV2/tasks/t18_optical_residual_ablation/runs/simulation/mango_variety_s17_20261010_3gpu/L6/evaluation_rho0.3/metrics.json",
+      "inference": "reused_same_state"
+    },
+    {
+      "checkpoint": "/DATA/DATA1/guest3/2026OpticsMoE/LightGenV2/tasks/t18_optical_residual_ablation/runs/simulation/mango_variety_s17_20261010_3gpu/L6/rho0.3/moe_L6_seed17/last_checkpoint.pt",
+      "checkpoint_sha256": "2ebce58bad69c8f9a76aeaf3157693e3693e89a669f519615a46d86c72b9802e",
+      "state_key": "model",
+      "state_sha256": "7252f2de1e0e289c30ad293b9cdc0d88f257824a665c503e27263b4eb43804af",
+      "epoch": 30,
+      "kind": "last_model",
+      "profile": "base",
+      "training_source_revision": "32a9d32fb",
+      "test": {
+        "n": 418,
+        "support": [
+          47,
+          54,
+          51,
+          45,
+          56,
+          52,
+          57,
+          56
+        ],
+        "accuracy": 0.7105263157894737,
+        "balanced_accuracy": 0.720848352884286,
+        "macro_f1": 0.7070100169194663,
+        "macro_ovr_auroc": 0.9508944899171036,
+        "recall": [
+          0.8723404255319149,
+          0.8703703703703703,
+          0.6078431372549019,
+          1.0,
+          0.4107142857142857,
+          0.7307692307692307,
+          0.6140350877192983,
+          0.6607142857142857
+        ],
+        "confusion_matrix": [
+          [
+            41,
+            0,
+            4,
+            0,
+            0,
+            0,
+            0,
+            2
+          ],
+          [
+            0,
+            47,
+            0,
+            6,
+            0,
+            0,
+            1,
+            0
+          ],
+          [
+            11,
+            0,
+            31,
+            0,
+            0,
+            0,
+            8,
+            1
+          ],
+          [
+            0,
+            0,
+            0,
+            45,
+            0,
+            0,
+            0,
+            0
+          ],
+          [
+            2,
+            2,
+            0,
+            3,
+            23,
+            15,
+            3,
+            8
+          ],
+          [
+            0,
+            0,
+            0,
+            1,
+            7,
+            38,
+            1,
+            5
+          ],
+          [
+            4,
+            2,
+            7,
+            3,
+            3,
+            2,
+            35,
+            1
+          ],
+          [
+            3,
+            0,
+            3,
+            2,
+            1,
+            6,
+            4,
+            37
+          ]
+        ],
+        "nll": 0.8498470783233643,
+        "balanced_nll": 0.8268808126449585,
+        "detector_capture": 0.19918181002140045
+      },
+      "predictions": "LightGenV2/tasks/t18_optical_residual_ablation/runs/simulation/mango_rho03_L6_test_selected_development_20261010/state_01_test_predictions.csv",
+      "reused_from": null,
+      "inference": "new_test_once"
+    },
+    {
+      "checkpoint": "/DATA/DATA1/guest3/2026OpticsMoE/LightGenV2/tasks/t18_optical_residual_ablation/runs/simulation/mango_variety_s17_20261010_3gpu/L6/rho0.3/moe_L6_seed17/last_checkpoint.pt",
+      "checkpoint_sha256": "2ebce58bad69c8f9a76aeaf3157693e3693e89a669f519615a46d86c72b9802e",
+      "state_key": "ema",
+      "state_sha256": "b11dded01e573ed1c8bba2f23652c6f9e3f60aa107b7ccb59f0ad9a2765b6cdf",
+      "epoch": 30,
+      "kind": "last_ema",
+      "profile": "base",
+      "training_source_revision": "32a9d32fb",
+      "test": {
+        "n": 418,
+        "support": [
+          47,
+          54,
+          51,
+          45,
+          56,
+          52,
+          57,
+          56
+        ],
+        "accuracy": 0.715311004784689,
+        "balanced_accuracy": 0.7255314761335856,
+        "macro_f1": 0.7124853537137479,
+        "macro_ovr_auroc": 0.9507014826763294,
+        "recall": [
+          0.8723404255319149,
+          0.8703703703703703,
+          0.6274509803921569,
+          1.0,
+          0.42857142857142855,
+          0.7307692307692307,
+          0.6140350877192983,
+          0.6607142857142857
+        ],
+        "confusion_matrix": [
+          [
+            41,
+            0,
+            4,
+            0,
+            0,
+            0,
+            0,
+            2
+          ],
+          [
+            0,
+            47,
+            0,
+            6,
+            0,
+            0,
+            1,
+            0
+          ],
+          [
+            10,
+            0,
+            32,
+            0,
+            0,
+            0,
+            8,
+            1
+          ],
+          [
+            0,
+            0,
+            0,
+            45,
+            0,
+            0,
+            0,
+            0
+          ],
+          [
+            2,
+            2,
+            0,
+            3,
+            24,
+            14,
+            3,
+            8
+          ],
+          [
+            0,
+            0,
+            0,
+            1,
+            7,
+            38,
+            1,
+            5
+          ],
+          [
+            4,
+            2,
+            7,
+            3,
+            3,
+            2,
+            35,
+            1
+          ],
+          [
+            3,
+            0,
+            3,
+            2,
+            2,
+            5,
+            4,
+            37
+          ]
+        ],
+        "nll": 0.8508312702178955,
+        "balanced_nll": 0.8281875848770142,
+        "detector_capture": 0.19872532784938812
+      },
+      "predictions": "/DATA/DATA1/guest3/2026OpticsMoE/LightGenV2/tasks/t18_optical_residual_ablation/runs/simulation/mango_variety_s17_20261010_3gpu/L6/evaluation_rho0.3/test_predictions.csv",
+      "reused_from": "/DATA/DATA1/guest3/2026OpticsMoE/LightGenV2/tasks/t18_optical_residual_ablation/runs/simulation/mango_variety_s17_20261010_3gpu/L6/evaluation_rho0.3/metrics.json",
+      "inference": "reused_same_state"
+    },
+    {
+      "checkpoint": "/DATA/DATA1/guest3/2026OpticsMoE/LightGenV2/tasks/t18_optical_residual_ablation/runs/simulation/mango_variety_s17_e100_20261010_3gpu/L6/rho0.3/moe_L6_seed17/best_checkpoint.pt",
+      "checkpoint_sha256": "a1f8f2e24b22498c0e106b159fd23f8ab9e64d271000ca21b32a1b442d333803",
+      "state_key": "model",
+      "state_sha256": "77a4f4c6311101f25887e23674bb5cef576c57f8a3493847894c4034a8139ede",
+      "epoch": 95,
+      "kind": "best_ema",
+      "profile": "base",
+      "training_source_revision": "261ac4fd0",
+      "test": {
+        "n": 418,
+        "support": [
+          47,
+          54,
+          51,
+          45,
+          56,
+          52,
+          57,
+          56
+        ],
+        "accuracy": 0.8397129186602871,
+        "balanced_accuracy": 0.843063880099278,
+        "macro_f1": 0.8416439062815844,
+        "macro_ovr_auroc": 0.9810562982109242,
+        "recall": [
+          0.8297872340425532,
+          0.9814814814814815,
+          0.8431372549019608,
+          1.0,
+          0.7678571428571429,
+          0.7307692307692307,
+          0.8771929824561403,
+          0.7142857142857143
+        ],
+        "confusion_matrix": [
+          [
+            39,
+            1,
+            4,
+            0,
+            0,
+            0,
+            1,
+            2
+          ],
+          [
+            0,
+            53,
+            0,
+            1,
+            0,
+            0,
+            0,
+            0
+          ],
+          [
+            2,
+            0,
+            43,
+            0,
+            0,
+            0,
+            5,
+            1
+          ],
+          [
+            0,
+            0,
+            0,
+            45,
+            0,
+            0,
+            0,
+            0
+          ],
+          [
+            0,
+            0,
+            0,
+            1,
+            43,
+            6,
+            1,
+            5
+          ],
+          [
+            0,
+            0,
+            0,
+            0,
+            12,
+            38,
+            0,
+            2
+          ],
+          [
+            0,
+            1,
+            1,
+            2,
+            2,
+            0,
+            50,
+            1
+          ],
+          [
+            3,
+            0,
+            3,
+            0,
+            2,
+            4,
+            4,
+            40
+          ]
+        ],
+        "nll": 0.4783635437488556,
+        "balanced_nll": 0.46519219875335693,
+        "detector_capture": 0.46058183908462524
+      },
+      "predictions": "/DATA/DATA1/guest3/2026OpticsMoE/LightGenV2/tasks/t18_optical_residual_ablation/runs/simulation/mango_variety_s17_e100_20261010_3gpu/L6/evaluation_rho0.3/test_predictions.csv",
+      "reused_from": "/DATA/DATA1/guest3/2026OpticsMoE/LightGenV2/tasks/t18_optical_residual_ablation/runs/simulation/mango_variety_s17_e100_20261010_3gpu/L6/evaluation_rho0.3/metrics.json",
+      "inference": "reused_same_state"
+    },
+    {
+      "checkpoint": "/DATA/DATA1/guest3/2026OpticsMoE/LightGenV2/tasks/t18_optical_residual_ablation/runs/simulation/mango_variety_s17_e100_20261010_3gpu/L6/rho0.3/moe_L6_seed17/last_checkpoint.pt",
+      "checkpoint_sha256": "9a9aad0828f0a79953965af65c7191a5eb6f9cc1e8d8ddb4cd9d9d9746038189",
+      "state_key": "model",
+      "state_sha256": "d94288b61cd57a1a313a7bcf6bdd14502547220d5b3f33c7502d6faf2534397c",
+      "epoch": 100,
+      "kind": "last_model",
+      "profile": "base",
+      "training_source_revision": "261ac4fd0",
+      "test": {
+        "n": 418,
+        "support": [
+          47,
+          54,
+          51,
+          45,
+          56,
+          52,
+          57,
+          56
+        ],
+        "accuracy": 0.8444976076555024,
+        "balanced_accuracy": 0.8477470033485777,
+        "macro_f1": 0.8462621906683971,
+        "macro_ovr_auroc": 0.9812121800378804,
+        "recall": [
+          0.8297872340425532,
+          0.9814814814814815,
+          0.8627450980392157,
+          1.0,
+          0.7857142857142857,
+          0.7307692307692307,
+          0.8771929824561403,
+          0.7142857142857143
+        ],
+        "confusion_matrix": [
+          [
+            39,
+            1,
+            4,
+            0,
+            0,
+            0,
+            1,
+            2
+          ],
+          [
+            0,
+            53,
+            0,
+            1,
+            0,
+            0,
+            0,
+            0
+          ],
+          [
+            2,
+            0,
+            44,
+            0,
+            0,
+            0,
+            4,
+            1
+          ],
+          [
+            0,
+            0,
+            0,
+            45,
+            0,
+            0,
+            0,
+            0
+          ],
+          [
+            0,
+            0,
+            0,
+            1,
+            44,
+            5,
+            1,
+            5
+          ],
+          [
+            0,
+            0,
+            0,
+            0,
+            12,
+            38,
+            0,
+            2
+          ],
+          [
+            0,
+            1,
+            1,
+            2,
+            2,
+            0,
+            50,
+            1
+          ],
+          [
+            3,
+            0,
+            3,
+            0,
+            2,
+            4,
+            4,
+            40
+          ]
+        ],
+        "nll": 0.47502514719963074,
+        "balanced_nll": 0.4623474180698395,
+        "detector_capture": 0.4623466432094574
+      },
+      "predictions": "LightGenV2/tasks/t18_optical_residual_ablation/runs/simulation/mango_rho03_L6_test_selected_development_20261010/state_04_test_predictions.csv",
+      "reused_from": null,
+      "inference": "new_test_once"
+    },
+    {
+      "checkpoint": "/DATA/DATA1/guest3/2026OpticsMoE/LightGenV2/tasks/t18_optical_residual_ablation/runs/simulation/mango_variety_s17_e100_20261010_3gpu/L6/rho0.3/moe_L6_seed17/last_checkpoint.pt",
+      "checkpoint_sha256": "9a9aad0828f0a79953965af65c7191a5eb6f9cc1e8d8ddb4cd9d9d9746038189",
+      "state_key": "ema",
+      "state_sha256": "db2d717741bbfe1cc24de0991adad4e6764120c4c21fc9eec79968bc57eef78a",
+      "epoch": 100,
+      "kind": "last_ema",
+      "profile": "base",
+      "training_source_revision": "261ac4fd0",
+      "test": {
+        "n": 418,
+        "support": [
+          47,
+          54,
+          51,
+          45,
+          56,
+          52,
+          57,
+          56
+        ],
+        "accuracy": 0.8444976076555024,
+        "balanced_accuracy": 0.8475281658135636,
+        "macro_f1": 0.8465101292712853,
+        "macro_ovr_auroc": 0.9810268996990275,
+        "recall": [
+          0.8297872340425532,
+          0.9814814814814815,
+          0.8431372549019608,
+          1.0,
+          0.7857142857142857,
+          0.7307692307692307,
+          0.8771929824561403,
+          0.7321428571428571
+        ],
+        "confusion_matrix": [
+          [
+            39,
+            1,
+            4,
+            0,
+            0,
+            0,
+            1,
+            2
+          ],
+          [
+            0,
+            53,
+            0,
+            1,
+            0,
+            0,
+            0,
+            0
+          ],
+          [
+            2,
+            0,
+            43,
+            0,
+            0,
+            0,
+            5,
+            1
+          ],
+          [
+            0,
+            0,
+            0,
+            45,
+            0,
+            0,
+            0,
+            0
+          ],
+          [
+            0,
+            0,
+            0,
+            1,
+            44,
+            4,
+            1,
+            6
+          ],
+          [
+            0,
+            0,
+            0,
+            0,
+            12,
+            38,
+            0,
+            2
+          ],
+          [
+            0,
+            1,
+            1,
+            2,
+            2,
+            0,
+            50,
+            1
+          ],
+          [
+            3,
+            0,
+            3,
+            0,
+            2,
+            3,
+            4,
+            41
+          ]
+        ],
+        "nll": 0.47694769501686096,
+        "balanced_nll": 0.4641661047935486,
+        "detector_capture": 0.4610811471939087
+      },
+      "predictions": "LightGenV2/tasks/t18_optical_residual_ablation/runs/simulation/mango_rho03_L6_test_selected_development_20261010/state_05_test_predictions.csv",
+      "reused_from": null,
+      "inference": "new_test_once"
+    },
+    {
+      "checkpoint": "/DATA/DATA1/guest3/2026OpticsMoE/LightGenV2/tasks/t18_optical_residual_ablation/runs/simulation/mango_variety_s17_e100_lr3_20261010_3gpu/L6/rho0.3/moe_L6_seed17/best_checkpoint.pt",
+      "checkpoint_sha256": "fffcd12dd3d71d9a9a7ea5ad1d07601df7c60ce5233c66615b7f334e58abcb83",
+      "state_key": "model",
+      "state_sha256": "b22f92ef79db6de362eebf03116cea39cd90869ddd381ff522b5b3e61fd575d8",
+      "epoch": 96,
+      "kind": "best_ema",
+      "profile": "lr3",
+      "training_source_revision": "58147df49",
+      "test": {
+        "n": 418,
+        "support": [
+          47,
+          54,
+          51,
+          45,
+          56,
+          52,
+          57,
+          56
+        ],
+        "accuracy": 0.8660287081339713,
+        "balanced_accuracy": 0.8690816931164652,
+        "macro_f1": 0.8676454708168784,
+        "macro_ovr_auroc": 0.9844089542055614,
+        "recall": [
+          0.8723404255319149,
+          0.9814814814814815,
+          0.8823529411764706,
+          1.0,
+          0.8392857142857143,
+          0.75,
+          0.8771929824561403,
+          0.75
+        ],
+        "confusion_matrix": [
+          [
+            41,
+            0,
+            3,
+            0,
+            0,
+            0,
+            1,
+            2
+          ],
+          [
+            0,
+            53,
+            0,
+            1,
+            0,
+            0,
+            0,
+            0
+          ],
+          [
+            3,
+            0,
+            45,
+            0,
+            0,
+            0,
+            3,
+            0
+          ],
+          [
+            0,
+            0,
+            0,
+            45,
+            0,
+            0,
+            0,
+            0
+          ],
+          [
+            0,
+            0,
+            0,
+            1,
+            47,
+            4,
+            1,
+            3
+          ],
+          [
+            0,
+            0,
+            0,
+            0,
+            12,
+            39,
+            0,
+            1
+          ],
+          [
+            0,
+            1,
+            1,
+            2,
+            2,
+            0,
+            50,
+            1
+          ],
+          [
+            3,
+            0,
+            3,
+            0,
+            2,
+            2,
+            4,
+            42
+          ]
+        ],
+        "nll": 0.4280740022659302,
+        "balanced_nll": 0.41655755043029785,
+        "detector_capture": 0.5592797994613647
+      },
+      "predictions": "/DATA/DATA1/guest3/2026OpticsMoE/LightGenV2/tasks/t18_optical_residual_ablation/runs/simulation/mango_variety_s17_e100_lr3_20261010_3gpu/L6/selected_evaluation_rho0.3/test_predictions.csv",
+      "reused_from": "/DATA/DATA1/guest3/2026OpticsMoE/LightGenV2/tasks/t18_optical_residual_ablation/runs/simulation/mango_variety_s17_e100_lr3_20261010_3gpu/L6/selected_evaluation_rho0.3/metrics.json",
+      "inference": "reused_same_state"
+    },
+    {
+      "checkpoint": "/DATA/DATA1/guest3/2026OpticsMoE/LightGenV2/tasks/t18_optical_residual_ablation/runs/simulation/mango_variety_s17_e100_lr3_20261010_3gpu/L6/rho0.3/moe_L6_seed17/last_checkpoint.pt",
+      "checkpoint_sha256": "e874c7751652a51aac143d7df2a32b3e5af63ab4d948bba50e20d24d274acf35",
+      "state_key": "model",
+      "state_sha256": "c2760d841aea303a9233fb7e2eb9fd763d6f14ee3cad0ef97ca80ee29815f81c",
+      "epoch": 100,
+      "kind": "last_model",
+      "profile": "lr3",
+      "training_source_revision": "58147df49",
+      "test": {
+        "n": 418,
+        "support": [
+          47,
+          54,
+          51,
+          45,
+          56,
+          52,
+          57,
+          56
+        ],
+        "accuracy": 0.8636363636363636,
+        "balanced_accuracy": 0.8665938219450834,
+        "macro_f1": 0.8654298853475213,
+        "macro_ovr_auroc": 0.9845445240208226,
+        "recall": [
+          0.851063829787234,
+          0.9814814814814815,
+          0.8823529411764706,
+          1.0,
+          0.8392857142857143,
+          0.7692307692307693,
+          0.8771929824561403,
+          0.7321428571428571
+        ],
+        "confusion_matrix": [
+          [
+            40,
+            0,
+            4,
+            0,
+            0,
+            0,
+            1,
+            2
+          ],
+          [
+            0,
+            53,
+            0,
+            1,
+            0,
+            0,
+            0,
+            0
+          ],
+          [
+            2,
+            0,
+            45,
+            0,
+            0,
+            0,
+            4,
+            0
+          ],
+          [
+            0,
+            0,
+            0,
+            45,
+            0,
+            0,
+            0,
+            0
+          ],
+          [
+            0,
+            0,
+            0,
+            1,
+            47,
+            4,
+            1,
+            3
+          ],
+          [
+            0,
+            0,
+            0,
+            0,
+            11,
+            40,
+            0,
+            1
+          ],
+          [
+            0,
+            1,
+            1,
+            2,
+            2,
+            0,
+            50,
+            1
+          ],
+          [
+            3,
+            0,
+            2,
+            0,
+            3,
+            3,
+            4,
+            41
+          ]
+        ],
+        "nll": 0.4248819947242737,
+        "balanced_nll": 0.41401487588882446,
+        "detector_capture": 0.5629318356513977
+      },
+      "predictions": "LightGenV2/tasks/t18_optical_residual_ablation/runs/simulation/mango_rho03_L6_test_selected_development_20261010/state_07_test_predictions.csv",
+      "reused_from": null,
+      "inference": "new_test_once"
+    },
+    {
+      "checkpoint": "/DATA/DATA1/guest3/2026OpticsMoE/LightGenV2/tasks/t18_optical_residual_ablation/runs/simulation/mango_variety_s17_e100_lr3_20261010_3gpu/L6/rho0.3/moe_L6_seed17/last_checkpoint.pt",
+      "checkpoint_sha256": "e874c7751652a51aac143d7df2a32b3e5af63ab4d948bba50e20d24d274acf35",
+      "state_key": "ema",
+      "state_sha256": "d50d2f7a31e1aa13f8d6e3f70ad2ce06e5ca82efb400ed2d39d521575357550c",
+      "epoch": 100,
+      "kind": "last_ema",
+      "profile": "lr3",
+      "training_source_revision": "58147df49",
+      "test": {
+        "n": 418,
+        "support": [
+          47,
+          54,
+          51,
+          45,
+          56,
+          52,
+          57,
+          56
+        ],
+        "accuracy": 0.861244019138756,
+        "balanced_accuracy": 0.8642740008087729,
+        "macro_f1": 0.8632452773398669,
+        "macro_ovr_auroc": 0.9845721591341554,
+        "recall": [
+          0.8723404255319149,
+          0.9814814814814815,
+          0.8823529411764706,
+          1.0,
+          0.8392857142857143,
+          0.7115384615384616,
+          0.8771929824561403,
+          0.75
+        ],
+        "confusion_matrix": [
+          [
+            41,
+            0,
+            3,
+            0,
+            0,
+            0,
+            1,
+            2
+          ],
+          [
+            0,
+            53,
+            0,
+            1,
+            0,
+            0,
+            0,
+            0
+          ],
+          [
+            2,
+            0,
+            45,
+            0,
+            0,
+            0,
+            4,
+            0
+          ],
+          [
+            0,
+            0,
+            0,
+            45,
+            0,
+            0,
+            0,
+            0
+          ],
+          [
+            0,
+            0,
+            0,
+            1,
+            47,
+            4,
+            1,
+            3
+          ],
+          [
+            0,
+            0,
+            0,
+            0,
+            13,
+            37,
+            0,
+            2
+          ],
+          [
+            0,
+            1,
+            1,
+            2,
+            2,
+            0,
+            50,
+            1
+          ],
+          [
+            3,
+            0,
+            2,
+            0,
+            3,
+            2,
+            4,
+            42
+          ]
+        ],
+        "nll": 0.42665714025497437,
+        "balanced_nll": 0.415831983089447,
+        "detector_capture": 0.5609933733940125
+      },
+      "predictions": "LightGenV2/tasks/t18_optical_residual_ablation/runs/simulation/mango_rho03_L6_test_selected_development_20261010/state_08_test_predictions.csv",
+      "reused_from": null,
+      "inference": "new_test_once"
+    },
+    {
+      "checkpoint": "/DATA/DATA1/guest3/2026OpticsMoE/LightGenV2/tasks/t18_optical_residual_ablation/runs/simulation/mango_rho03_continue50_20261010_3gpu/L6/moe_L6_seed17/best_checkpoint.pt",
+      "checkpoint_sha256": "555b1bbfd97258b5851feae163244917e1b3f924999e9e6482ed733c6fba706b",
+      "state_key": "model",
+      "state_sha256": "179ff43586a90c597c17c777ea41586ff697e16c185606dd8fb339f25b2c65f8",
+      "epoch": 25,
+      "kind": "best_ema",
+      "profile": "rho03_best_warmstart_lr0006_50",
+      "training_source_revision": "e6b125e9b",
+      "test": {
+        "n": 418,
+        "support": [
+          47,
+          54,
+          51,
+          45,
+          56,
+          52,
+          57,
+          56
+        ],
+        "accuracy": 0.8660287081339713,
+        "balanced_accuracy": 0.8687013957438336,
+        "macro_f1": 0.8675998295428706,
+        "macro_ovr_auroc": 0.9854076929465874,
+        "recall": [
+          0.851063829787234,
+          0.9814814814814815,
+          0.9019607843137255,
+          1.0,
+          0.8392857142857143,
+          0.7307692307692307,
+          0.8771929824561403,
+          0.7678571428571429
+        ],
+        "confusion_matrix": [
+          [
+            40,
+            0,
+            4,
+            0,
+            0,
+            0,
+            1,
+            2
+          ],
+          [
+            0,
+            53,
+            0,
+            1,
+            0,
+            0,
+            0,
+            0
+          ],
+          [
+            3,
+            0,
+            46,
+            0,
+            0,
+            0,
+            2,
+            0
+          ],
+          [
+            0,
+            0,
+            0,
+            45,
+            0,
+            0,
+            0,
+            0
+          ],
+          [
+            0,
+            0,
+            0,
+            1,
+            47,
+            4,
+            1,
+            3
+          ],
+          [
+            0,
+            0,
+            0,
+            0,
+            13,
+            38,
+            0,
+            1
+          ],
+          [
+            0,
+            1,
+            1,
+            2,
+            2,
+            0,
+            50,
+            1
+          ],
+          [
+            3,
+            0,
+            2,
+            0,
+            3,
+            2,
+            3,
+            43
+          ]
+        ],
+        "nll": 0.41027095913887024,
+        "balanced_nll": 0.399852991104126,
+        "detector_capture": 0.574131429195404
+      },
+      "predictions": "LightGenV2/tasks/t18_optical_residual_ablation/runs/simulation/mango_rho03_L6_test_selected_development_20261010/state_09_test_predictions.csv",
+      "reused_from": null,
+      "inference": "new_test_once"
+    },
+    {
+      "checkpoint": "/DATA/DATA1/guest3/2026OpticsMoE/LightGenV2/tasks/t18_optical_residual_ablation/runs/simulation/mango_rho03_continue50_20261010_3gpu/L6/moe_L6_seed17/last_checkpoint.pt",
+      "checkpoint_sha256": "036ca1d49be3f63ef9301648d962c444a63bda71914f17bcc807c2f7f8684486",
+      "state_key": "model",
+      "state_sha256": "8c29a752ec5ffe7a13a8d5826d88485ed2a4a27193bbb5e464a928355b30d8c9",
+      "epoch": 25,
+      "kind": "last_model",
+      "profile": "rho03_best_warmstart_lr0006_50",
+      "training_source_revision": "e6b125e9b",
+      "test": {
+        "n": 418,
+        "support": [
+          47,
+          54,
+          51,
+          45,
+          56,
+          52,
+          57,
+          56
+        ],
+        "accuracy": 0.868421052631579,
+        "balanced_accuracy": 0.8713507267528331,
+        "macro_f1": 0.8705495426739402,
+        "macro_ovr_auroc": 0.9853291312919357,
+        "recall": [
+          0.8936170212765957,
+          0.9814814814814815,
+          0.8627450980392157,
+          1.0,
+          0.875,
+          0.7307692307692307,
+          0.8771929824561403,
+          0.75
+        ],
+        "confusion_matrix": [
+          [
+            42,
+            0,
+            2,
+            0,
+            0,
+            0,
+            1,
+            2
+          ],
+          [
+            0,
+            53,
+            0,
+            1,
+            0,
+            0,
+            0,
+            0
+          ],
+          [
+            3,
+            0,
+            44,
+            0,
+            1,
+            0,
+            2,
+            1
+          ],
+          [
+            0,
+            0,
+            0,
+            45,
+            0,
+            0,
+            0,
+            0
+          ],
+          [
+            0,
+            0,
+            0,
+            1,
+            49,
+            3,
+            1,
+            2
+          ],
+          [
+            0,
+            0,
+            0,
+            0,
+            14,
+            38,
+            0,
+            0
+          ],
+          [
+            0,
+            1,
+            1,
+            2,
+            2,
+            0,
+            50,
+            1
+          ],
+          [
+            3,
+            0,
+            2,
+            0,
+            3,
+            2,
+            4,
+            42
+          ]
+        ],
+        "nll": 0.414968878030777,
+        "balanced_nll": 0.4046822786331177,
+        "detector_capture": 0.5740509033203125
+      },
+      "predictions": "LightGenV2/tasks/t18_optical_residual_ablation/runs/simulation/mango_rho03_L6_test_selected_development_20261010/state_10_test_predictions.csv",
+      "reused_from": null,
+      "inference": "new_test_once"
+    },
+    {
+      "checkpoint": "/DATA/DATA1/guest3/2026OpticsMoE/LightGenV2/tasks/t18_optical_residual_ablation/runs/simulation/mango_rho03_continue50_20261010_3gpu/L6/moe_L6_seed17/last_checkpoint.pt",
+      "checkpoint_sha256": "036ca1d49be3f63ef9301648d962c444a63bda71914f17bcc807c2f7f8684486",
+      "state_key": "ema",
+      "state_sha256": "179ff43586a90c597c17c777ea41586ff697e16c185606dd8fb339f25b2c65f8",
+      "epoch": 25,
+      "kind": "last_ema",
+      "profile": "rho03_best_warmstart_lr0006_50",
+      "training_source_revision": "e6b125e9b",
+      "test": {
+        "n": 418,
+        "support": [
+          47,
+          54,
+          51,
+          45,
+          56,
+          52,
+          57,
+          56
+        ],
+        "accuracy": 0.8660287081339713,
+        "balanced_accuracy": 0.8687013957438336,
+        "macro_f1": 0.8675998295428706,
+        "macro_ovr_auroc": 0.9854076929465874,
+        "recall": [
+          0.851063829787234,
+          0.9814814814814815,
+          0.9019607843137255,
+          1.0,
+          0.8392857142857143,
+          0.7307692307692307,
+          0.8771929824561403,
+          0.7678571428571429
+        ],
+        "confusion_matrix": [
+          [
+            40,
+            0,
+            4,
+            0,
+            0,
+            0,
+            1,
+            2
+          ],
+          [
+            0,
+            53,
+            0,
+            1,
+            0,
+            0,
+            0,
+            0
+          ],
+          [
+            3,
+            0,
+            46,
+            0,
+            0,
+            0,
+            2,
+            0
+          ],
+          [
+            0,
+            0,
+            0,
+            45,
+            0,
+            0,
+            0,
+            0
+          ],
+          [
+            0,
+            0,
+            0,
+            1,
+            47,
+            4,
+            1,
+            3
+          ],
+          [
+            0,
+            0,
+            0,
+            0,
+            13,
+            38,
+            0,
+            1
+          ],
+          [
+            0,
+            1,
+            1,
+            2,
+            2,
+            0,
+            50,
+            1
+          ],
+          [
+            3,
+            0,
+            2,
+            0,
+            3,
+            2,
+            3,
+            43
+          ]
+        ],
+        "nll": 0.41027095913887024,
+        "balanced_nll": 0.399852991104126,
+        "detector_capture": 0.574131429195404
+      },
+      "predictions": "LightGenV2/tasks/t18_optical_residual_ablation/runs/simulation/mango_rho03_L6_test_selected_development_20261010/state_09_test_predictions.csv",
+      "reused_from": null,
+      "inference": "reused_same_state"
+    },
+    {
+      "checkpoint": "/DATA/DATA1/guest3/2026OpticsMoE/LightGenV2/tasks/t18_optical_residual_ablation/runs/simulation/mango_rho03_requested_gpu1_gpu4_20261010/L6/moe_L6_seed17/best_checkpoint.pt",
+      "checkpoint_sha256": "615049ce3e26930b177a2d9ee077194549ccf25626dfaf77ca86c26734e935dc",
+      "state_key": "model",
+      "state_sha256": "4fd650e895fdc15f8e599c1c7465bc08c37e52871a122e34418687591f0af0d0",
+      "epoch": 25,
+      "kind": "best_ema",
+      "profile": "rho03_best_warmstart_lr0006_50",
+      "training_source_revision": "65917810b",
+      "test": {
+        "n": 418,
+        "support": [
+          47,
+          54,
+          51,
+          45,
+          56,
+          52,
+          57,
+          56
+        ],
+        "accuracy": 0.8755980861244019,
+        "balanced_accuracy": 0.878445669993287,
+        "macro_f1": 0.8767965574770561,
+        "macro_ovr_auroc": 0.9853336690706083,
+        "recall": [
+          0.8936170212765957,
+          0.9814814814814815,
+          0.9019607843137255,
+          1.0,
+          0.8571428571428571,
+          0.7307692307692307,
+          0.8947368421052632,
+          0.7678571428571429
+        ],
+        "confusion_matrix": [
+          [
+            42,
+            0,
+            2,
+            0,
+            0,
+            0,
+            1,
+            2
+          ],
+          [
+            0,
+            53,
+            0,
+            1,
+            0,
+            0,
+            0,
+            0
+          ],
+          [
+            3,
+            0,
+            46,
+            0,
+            0,
+            0,
+            2,
+            0
+          ],
+          [
+            0,
+            0,
+            0,
+            45,
+            0,
+            0,
+            0,
+            0
+          ],
+          [
+            0,
+            0,
+            0,
+            1,
+            48,
+            3,
+            1,
+            3
+          ],
+          [
+            0,
+            1,
+            0,
+            0,
+            12,
+            38,
+            0,
+            1
+          ],
+          [
+            0,
+            1,
+            1,
+            2,
+            1,
+            0,
+            51,
+            1
+          ],
+          [
+            3,
+            0,
+            2,
+            0,
+            3,
+            2,
+            3,
+            43
+          ]
+        ],
+        "nll": 0.40350985527038574,
+        "balanced_nll": 0.39334234595298767,
+        "detector_capture": 0.5823639035224915
+      },
+      "predictions": "/DATA/DATA1/guest3/2026OpticsMoE/LightGenV2/tasks/t18_optical_residual_ablation/runs/simulation/mango_rho03_requested_gpu1_gpu4_20261010/selected_evaluation_L6/test_predictions.csv",
+      "reused_from": "/DATA/DATA1/guest3/2026OpticsMoE/LightGenV2/tasks/t18_optical_residual_ablation/runs/simulation/mango_rho03_requested_gpu1_gpu4_20261010/selected_evaluation_L6/metrics.json",
+      "inference": "reused_same_state"
+    },
+    {
+      "checkpoint": "/DATA/DATA1/guest3/2026OpticsMoE/LightGenV2/tasks/t18_optical_residual_ablation/runs/simulation/mango_rho03_requested_gpu1_gpu4_20261010/L6/moe_L6_seed17/last_checkpoint.pt",
+      "checkpoint_sha256": "20287b1da7078b013a0cd3bd82aa0990f55e1cdbba717d1059124b275bd12bad",
+      "state_key": "model",
+      "state_sha256": "8e230b9a23827417efe8d465dd93660ead9047bb92865cf89fd48f5c66dbe714",
+      "epoch": 25,
+      "kind": "last_model",
+      "profile": "rho03_best_warmstart_lr0006_50",
+      "training_source_revision": "65917810b",
+      "test": {
+        "n": 418,
+        "support": [
+          47,
+          54,
+          51,
+          45,
+          56,
+          52,
+          57,
+          56
+        ],
+        "accuracy": 0.8779904306220095,
+        "balanced_accuracy": 0.8808495161471332,
+        "macro_f1": 0.8794846096347183,
+        "macro_ovr_auroc": 0.98549123407917,
+        "recall": [
+          0.8936170212765957,
+          0.9814814814814815,
+          0.9019607843137255,
+          1.0,
+          0.8571428571428571,
+          0.75,
+          0.8947368421052632,
+          0.7678571428571429
+        ],
+        "confusion_matrix": [
+          [
+            42,
+            0,
+            2,
+            0,
+            0,
+            0,
+            1,
+            2
+          ],
+          [
+            0,
+            53,
+            0,
+            1,
+            0,
+            0,
+            0,
+            0
+          ],
+          [
+            3,
+            0,
+            46,
+            0,
+            0,
+            0,
+            2,
+            0
+          ],
+          [
+            0,
+            0,
+            0,
+            45,
+            0,
+            0,
+            0,
+            0
+          ],
+          [
+            0,
+            0,
+            0,
+            1,
+            48,
+            3,
+            1,
+            3
+          ],
+          [
+            0,
+            0,
+            0,
+            0,
+            12,
+            39,
+            0,
+            1
+          ],
+          [
+            0,
+            1,
+            1,
+            2,
+            1,
+            0,
+            51,
+            1
+          ],
+          [
+            3,
+            0,
+            2,
+            0,
+            3,
+            2,
+            3,
+            43
+          ]
+        ],
+        "nll": 0.4019266664981842,
+        "balanced_nll": 0.3917023539543152,
+        "detector_capture": 0.5822838544845581
+      },
+      "predictions": "LightGenV2/tasks/t18_optical_residual_ablation/runs/simulation/mango_rho03_L6_test_selected_development_20261010/state_13_test_predictions.csv",
+      "reused_from": null,
+      "inference": "new_test_once"
+    },
+    {
+      "checkpoint": "/DATA/DATA1/guest3/2026OpticsMoE/LightGenV2/tasks/t18_optical_residual_ablation/runs/simulation/mango_rho03_requested_gpu1_gpu4_20261010/L6/moe_L6_seed17/last_checkpoint.pt",
+      "checkpoint_sha256": "20287b1da7078b013a0cd3bd82aa0990f55e1cdbba717d1059124b275bd12bad",
+      "state_key": "ema",
+      "state_sha256": "4fd650e895fdc15f8e599c1c7465bc08c37e52871a122e34418687591f0af0d0",
+      "epoch": 25,
+      "kind": "last_ema",
+      "profile": "rho03_best_warmstart_lr0006_50",
+      "training_source_revision": "65917810b",
+      "test": {
+        "n": 418,
+        "support": [
+          47,
+          54,
+          51,
+          45,
+          56,
+          52,
+          57,
+          56
+        ],
+        "accuracy": 0.8755980861244019,
+        "balanced_accuracy": 0.878445669993287,
+        "macro_f1": 0.8767965574770561,
+        "macro_ovr_auroc": 0.9853336690706083,
+        "recall": [
+          0.8936170212765957,
+          0.9814814814814815,
+          0.9019607843137255,
+          1.0,
+          0.8571428571428571,
+          0.7307692307692307,
+          0.8947368421052632,
+          0.7678571428571429
+        ],
+        "confusion_matrix": [
+          [
+            42,
+            0,
+            2,
+            0,
+            0,
+            0,
+            1,
+            2
+          ],
+          [
+            0,
+            53,
+            0,
+            1,
+            0,
+            0,
+            0,
+            0
+          ],
+          [
+            3,
+            0,
+            46,
+            0,
+            0,
+            0,
+            2,
+            0
+          ],
+          [
+            0,
+            0,
+            0,
+            45,
+            0,
+            0,
+            0,
+            0
+          ],
+          [
+            0,
+            0,
+            0,
+            1,
+            48,
+            3,
+            1,
+            3
+          ],
+          [
+            0,
+            1,
+            0,
+            0,
+            12,
+            38,
+            0,
+            1
+          ],
+          [
+            0,
+            1,
+            1,
+            2,
+            1,
+            0,
+            51,
+            1
+          ],
+          [
+            3,
+            0,
+            2,
+            0,
+            3,
+            2,
+            3,
+            43
+          ]
+        ],
+        "nll": 0.40350985527038574,
+        "balanced_nll": 0.39334234595298767,
+        "detector_capture": 0.5823639035224915
+      },
+      "predictions": "/DATA/DATA1/guest3/2026OpticsMoE/LightGenV2/tasks/t18_optical_residual_ablation/runs/simulation/mango_rho03_requested_gpu1_gpu4_20261010/selected_evaluation_L6/test_predictions.csv",
+      "reused_from": "/DATA/DATA1/guest3/2026OpticsMoE/LightGenV2/tasks/t18_optical_residual_ablation/runs/simulation/mango_rho03_requested_gpu1_gpu4_20261010/selected_evaluation_L6/metrics.json",
+      "inference": "reused_same_state"
+    },
+    {
+      "checkpoint": "/DATA/DATA1/guest3/2026OpticsMoE/LightGenV2/tasks/t18_optical_residual_ablation/runs/simulation/mango_rho03_L6_continue50_round2_20261010/moe_L6_seed17/best_checkpoint.pt",
+      "checkpoint_sha256": "08dd1ca1c21ccc36c752423984615ef8049836cff3d220305bbbad78088ad178",
+      "state_key": "model",
+      "state_sha256": "ec802bdeeac79ebd5b068745f3646045aa95fc55d95b09beaefe7fe6ccb92925",
+      "epoch": 11,
+      "kind": "best_ema",
+      "profile": "rho03_best_warmstart_lr0006_50",
+      "training_source_revision": "b149b3e88",
+      "test": {
+        "n": 418,
+        "support": [
+          47,
+          54,
+          51,
+          45,
+          56,
+          52,
+          57,
+          56
+        ],
+        "accuracy": 0.868421052631579,
+        "balanced_accuracy": 0.871788401822861,
+        "macro_f1": 0.8701529148587641,
+        "macro_ovr_auroc": 0.985596258114853,
+        "recall": [
+          0.8936170212765957,
+          0.9814814814814815,
+          0.9019607843137255,
+          1.0,
+          0.8214285714285714,
+          0.7307692307692307,
+          0.8771929824561403,
+          0.7678571428571429
+        ],
+        "confusion_matrix": [
+          [
+            42,
+            0,
+            2,
+            0,
+            0,
+            0,
+            1,
+            2
+          ],
+          [
+            0,
+            53,
+            0,
+            1,
+            0,
+            0,
+            0,
+            0
+          ],
+          [
+            3,
+            0,
+            46,
+            0,
+            0,
+            0,
+            2,
+            0
+          ],
+          [
+            0,
+            0,
+            0,
+            45,
+            0,
+            0,
+            0,
+            0
+          ],
+          [
+            0,
+            0,
+            0,
+            1,
+            46,
+            5,
+            1,
+            3
+          ],
+          [
+            0,
+            1,
+            0,
+            0,
+            12,
+            38,
+            0,
+            1
+          ],
+          [
+            0,
+            1,
+            1,
+            2,
+            2,
+            0,
+            50,
+            1
+          ],
+          [
+            3,
+            0,
+            2,
+            0,
+            3,
+            2,
+            3,
+            43
+          ]
+        ],
+        "nll": 0.39737600088119507,
+        "balanced_nll": 0.3868071734905243,
+        "detector_capture": 0.5921878218650818
+      },
+      "predictions": "/DATA/DATA1/guest3/2026OpticsMoE/LightGenV2/tasks/t18_optical_residual_ablation/runs/simulation/mango_rho03_L6_continue50_round2_20261010/selected_evaluation/test_predictions.csv",
+      "reused_from": "/DATA/DATA1/guest3/2026OpticsMoE/LightGenV2/tasks/t18_optical_residual_ablation/runs/simulation/mango_rho03_L6_continue50_round2_20261010/selected_evaluation/metrics.json",
+      "inference": "reused_same_state"
+    },
+    {
+      "checkpoint": "/DATA/DATA1/guest3/2026OpticsMoE/LightGenV2/tasks/t18_optical_residual_ablation/runs/simulation/mango_rho03_L6_continue50_round2_20261010/moe_L6_seed17/last_checkpoint.pt",
+      "checkpoint_sha256": "82c2dab0c09c9c02b6973b6028bee1e94a02c98a9cf26221843cbbc6f4388633",
+      "state_key": "model",
+      "state_sha256": "0142f1da8f2edc9ff4b25e4b0ac6450cf1ff126af267e15798b8bcad908ba9b3",
+      "epoch": 23,
+      "kind": "last_model",
+      "profile": "rho03_best_warmstart_lr0006_50",
+      "training_source_revision": "b149b3e88",
+      "test": {
+        "n": 418,
+        "support": [
+          47,
+          54,
+          51,
+          45,
+          56,
+          52,
+          57,
+          56
+        ],
+        "accuracy": 0.8779904306220095,
+        "balanced_accuracy": 0.8810660840603697,
+        "macro_f1": 0.8791500024138746,
+        "macro_ovr_auroc": 0.9848562557495144,
+        "recall": [
+          0.9148936170212766,
+          0.9814814814814815,
+          0.9019607843137255,
+          1.0,
+          0.8571428571428571,
+          0.7307692307692307,
+          0.9122807017543859,
+          0.75
+        ],
+        "confusion_matrix": [
+          [
+            43,
+            0,
+            1,
+            0,
+            0,
+            0,
+            1,
+            2
+          ],
+          [
+            0,
+            53,
+            0,
+            1,
+            0,
+            0,
+            0,
+            0
+          ],
+          [
+            3,
+            0,
+            46,
+            0,
+            0,
+            0,
+            2,
+            0
+          ],
+          [
+            0,
+            0,
+            0,
+            45,
+            0,
+            0,
+            0,
+            0
+          ],
+          [
+            0,
+            0,
+            0,
+            1,
+            48,
+            3,
+            1,
+            3
+          ],
+          [
+            0,
+            1,
+            0,
+            0,
+            12,
+            38,
+            0,
+            1
+          ],
+          [
+            0,
+            1,
+            1,
+            2,
+            0,
+            0,
+            52,
+            1
+          ],
+          [
+            3,
+            0,
+            2,
+            0,
+            4,
+            2,
+            3,
+            42
+          ]
+        ],
+        "nll": 0.4006473124027252,
+        "balanced_nll": 0.3897191286087036,
+        "detector_capture": 0.5958105325698853
+      },
+      "predictions": "LightGenV2/tasks/t18_optical_residual_ablation/runs/simulation/mango_rho03_L6_test_selected_development_20261010/state_16_test_predictions.csv",
+      "reused_from": null,
+      "inference": "new_test_once"
+    },
+    {
+      "checkpoint": "/DATA/DATA1/guest3/2026OpticsMoE/LightGenV2/tasks/t18_optical_residual_ablation/runs/simulation/mango_rho03_L6_continue50_round2_20261010/moe_L6_seed17/last_checkpoint.pt",
+      "checkpoint_sha256": "82c2dab0c09c9c02b6973b6028bee1e94a02c98a9cf26221843cbbc6f4388633",
+      "state_key": "ema",
+      "state_sha256": "cfce08dd22a8722690d193f50ff381489e0fc7a580c226c3282eddce44cb3562",
+      "epoch": 23,
+      "kind": "last_ema",
+      "profile": "rho03_best_warmstart_lr0006_50",
+      "training_source_revision": "b149b3e88",
+      "test": {
+        "n": 418,
+        "support": [
+          47,
+          54,
+          51,
+          45,
+          56,
+          52,
+          57,
+          56
+        ],
+        "accuracy": 0.8732057416267942,
+        "balanced_accuracy": 0.8761743667351416,
+        "macro_f1": 0.874479807215516,
+        "macro_ovr_auroc": 0.9854007974757479,
+        "recall": [
+          0.8936170212765957,
+          0.9814814814814815,
+          0.9019607843137255,
+          1.0,
+          0.8571428571428571,
+          0.7307692307692307,
+          0.9122807017543859,
+          0.7321428571428571
+        ],
+        "confusion_matrix": [
+          [
+            42,
+            0,
+            2,
+            0,
+            0,
+            0,
+            1,
+            2
+          ],
+          [
+            0,
+            53,
+            0,
+            1,
+            0,
+            0,
+            0,
+            0
+          ],
+          [
+            3,
+            0,
+            46,
+            0,
+            0,
+            0,
+            2,
+            0
+          ],
+          [
+            0,
+            0,
+            0,
+            45,
+            0,
+            0,
+            0,
+            0
+          ],
+          [
+            0,
+            0,
+            0,
+            1,
+            48,
+            3,
+            1,
+            3
+          ],
+          [
+            0,
+            0,
+            0,
+            0,
+            13,
+            38,
+            0,
+            1
+          ],
+          [
+            0,
+            1,
+            1,
+            2,
+            0,
+            0,
+            52,
+            1
+          ],
+          [
+            3,
+            0,
+            2,
+            0,
+            4,
+            2,
+            4,
+            41
+          ]
+        ],
+        "nll": 0.4003240466117859,
+        "balanced_nll": 0.3899490237236023,
+        "detector_capture": 0.5965971946716309
+      },
+      "predictions": "LightGenV2/tasks/t18_optical_residual_ablation/runs/simulation/mango_rho03_L6_test_selected_development_20261010/state_17_test_predictions.csv",
+      "reused_from": null,
+      "inference": "new_test_once"
+    },
+    {
+      "checkpoint": "/DATA/DATA1/guest3/2026OpticsMoE/LightGenV2/tasks/t18_optical_residual_ablation/runs/simulation/mango_rho03_L6_aug_ema_20261010/aug/moe_L6_seed17/best_checkpoint.pt",
+      "checkpoint_sha256": "cfeb8773921326313de3473655209441ba4089c9c7a4bd7fd04d93236deb9fb0",
+      "state_key": "model",
+      "state_sha256": "b23d78bd44593a01643f59a67d3b60fb5ad2c58791d6a0489e063e089808e255",
+      "epoch": 1,
+      "kind": "best_ema",
+      "profile": "rho03_aug_validation50",
+      "training_source_revision": "a438155fd",
+      "test": {
+        "n": 418,
+        "support": [
+          47,
+          54,
+          51,
+          45,
+          56,
+          52,
+          57,
+          56
+        ],
+        "accuracy": 0.8755980861244019,
+        "balanced_accuracy": 0.8784065095922846,
+        "macro_f1": 0.8766455010968541,
+        "macro_ovr_auroc": 0.9847751042015503,
+        "recall": [
+          0.8936170212765957,
+          0.9814814814814815,
+          0.9019607843137255,
+          1.0,
+          0.8571428571428571,
+          0.7307692307692307,
+          0.9122807017543859,
+          0.75
+        ],
+        "confusion_matrix": [
+          [
+            42,
+            0,
+            2,
+            0,
+            0,
+            0,
+            1,
+            2
+          ],
+          [
+            0,
+            53,
+            0,
+            1,
+            0,
+            0,
+            0,
+            0
+          ],
+          [
+            3,
+            0,
+            46,
+            0,
+            0,
+            0,
+            2,
+            0
+          ],
+          [
+            0,
+            0,
+            0,
+            45,
+            0,
+            0,
+            0,
+            0
+          ],
+          [
+            0,
+            0,
+            0,
+            1,
+            48,
+            3,
+            1,
+            3
+          ],
+          [
+            0,
+            0,
+            0,
+            0,
+            12,
+            38,
+            0,
+            2
+          ],
+          [
+            0,
+            1,
+            1,
+            2,
+            0,
+            0,
+            52,
+            1
+          ],
+          [
+            3,
+            0,
+            2,
+            0,
+            3,
+            2,
+            4,
+            42
+          ]
+        ],
+        "nll": 0.4048638641834259,
+        "balanced_nll": 0.3940451443195343,
+        "detector_capture": 0.5994997620582581
+      },
+      "predictions": "LightGenV2/tasks/t18_optical_residual_ablation/runs/simulation/mango_rho03_L6_test_selected_development_20261010/state_18_test_predictions.csv",
+      "reused_from": null,
+      "inference": "new_test_once"
+    },
+    {
+      "checkpoint": "/DATA/DATA1/guest3/2026OpticsMoE/LightGenV2/tasks/t18_optical_residual_ablation/runs/simulation/mango_rho03_L6_aug_ema_20261010/aug/moe_L6_seed17/last_checkpoint.pt",
+      "checkpoint_sha256": "1183e34a11cb4dfcdb63a9b346d919b79f18d3d41efca25e8903c98a62a7e3d3",
+      "state_key": "model",
+      "state_sha256": "cd7c323daee7698875ffc907b8822278aa36b3800292293ed57c7312988d76bf",
+      "epoch": 15,
+      "kind": "last_model",
+      "profile": "rho03_aug_validation50",
+      "training_source_revision": "a438155fd",
+      "test": {
+        "n": 418,
+        "support": [
+          47,
+          54,
+          51,
+          45,
+          56,
+          52,
+          57,
+          56
+        ],
+        "accuracy": 0.8636363636363636,
+        "balanced_accuracy": 0.8658567189162588,
+        "macro_f1": 0.8645815973404453,
+        "macro_ovr_auroc": 0.983938007001993,
+        "recall": [
+          0.8723404255319149,
+          0.9814814814814815,
+          0.803921568627451,
+          1.0,
+          0.8571428571428571,
+          0.75,
+          0.9298245614035088,
+          0.7321428571428571
+        ],
+        "confusion_matrix": [
+          [
+            41,
+            0,
+            2,
+            0,
+            0,
+            0,
+            2,
+            2
+          ],
+          [
+            0,
+            53,
+            0,
+            1,
+            0,
+            0,
+            0,
+            0
+          ],
+          [
+            4,
+            0,
+            41,
+            0,
+            0,
+            0,
+            6,
+            0
+          ],
+          [
+            0,
+            0,
+            0,
+            45,
+            0,
+            0,
+            0,
+            0
+          ],
+          [
+            0,
+            0,
+            1,
+            1,
+            48,
+            3,
+            1,
+            2
+          ],
+          [
+            0,
+            1,
+            0,
+            0,
+            12,
+            39,
+            0,
+            0
+          ],
+          [
+            0,
+            1,
+            0,
+            2,
+            0,
+            0,
+            53,
+            1
+          ],
+          [
+            3,
+            0,
+            2,
+            0,
+            4,
+            2,
+            4,
+            41
+          ]
+        ],
+        "nll": 0.43645116686820984,
+        "balanced_nll": 0.425278902053833,
+        "detector_capture": 0.603488564491272
+      },
+      "predictions": "LightGenV2/tasks/t18_optical_residual_ablation/runs/simulation/mango_rho03_L6_test_selected_development_20261010/state_19_test_predictions.csv",
+      "reused_from": null,
+      "inference": "new_test_once"
+    },
+    {
+      "checkpoint": "/DATA/DATA1/guest3/2026OpticsMoE/LightGenV2/tasks/t18_optical_residual_ablation/runs/simulation/mango_rho03_L6_aug_ema_20261010/aug/moe_L6_seed17/last_checkpoint.pt",
+      "checkpoint_sha256": "1183e34a11cb4dfcdb63a9b346d919b79f18d3d41efca25e8903c98a62a7e3d3",
+      "state_key": "ema",
+      "state_sha256": "6edcca5490cc60a7506ec507ddb2e8df97929213f3834afd438107d0c0fead45",
+      "epoch": 15,
+      "kind": "last_ema",
+      "profile": "rho03_aug_validation50",
+      "training_source_revision": "a438155fd",
+      "test": {
+        "n": 418,
+        "support": [
+          47,
+          54,
+          51,
+          45,
+          56,
+          52,
+          57,
+          56
+        ],
+        "accuracy": 0.8708133971291866,
+        "balanced_accuracy": 0.8732096600927294,
+        "macro_f1": 0.8717110621673875,
+        "macro_ovr_auroc": 0.9842506513786194,
+        "recall": [
+          0.8723404255319149,
+          0.9814814814814815,
+          0.8627450980392157,
+          1.0,
+          0.8571428571428571,
+          0.75,
+          0.9298245614035088,
+          0.7321428571428571
+        ],
+        "confusion_matrix": [
+          [
+            41,
+            0,
+            2,
+            0,
+            0,
+            0,
+            2,
+            2
+          ],
+          [
+            0,
+            53,
+            0,
+            1,
+            0,
+            0,
+            0,
+            0
+          ],
+          [
+            4,
+            0,
+            44,
+            0,
+            0,
+            0,
+            2,
+            1
+          ],
+          [
+            0,
+            0,
+            0,
+            45,
+            0,
+            0,
+            0,
+            0
+          ],
+          [
+            0,
+            0,
+            0,
+            1,
+            48,
+            3,
+            1,
+            3
+          ],
+          [
+            0,
+            1,
+            0,
+            0,
+            12,
+            39,
+            0,
+            0
+          ],
+          [
+            0,
+            1,
+            0,
+            2,
+            0,
+            0,
+            53,
+            1
+          ],
+          [
+            3,
+            0,
+            2,
+            0,
+            4,
+            2,
+            4,
+            41
+          ]
+        ],
+        "nll": 0.4284396469593048,
+        "balanced_nll": 0.4179120659828186,
+        "detector_capture": 0.6037320494651794
+      },
+      "predictions": "LightGenV2/tasks/t18_optical_residual_ablation/runs/simulation/mango_rho03_L6_test_selected_development_20261010/state_20_test_predictions.csv",
+      "reused_from": null,
+      "inference": "new_test_once"
+    },
+    {
+      "checkpoint": "/DATA/DATA1/guest3/2026OpticsMoE/LightGenV2/tasks/t18_optical_residual_ablation/runs/simulation/mango_rho03_L6_aug_ema_20261010/ema/moe_L6_seed17/best_checkpoint.pt",
+      "checkpoint_sha256": "1dca0c450379191e1e4abd9133143759e1fb60bb981490b8e4c3a449e261f7d3",
+      "state_key": "model",
+      "state_sha256": "4a82397a11bca415842235d2c521cd01226112cd1e537bd4762e12ac80164e0c",
+      "epoch": 14,
+      "kind": "best_ema",
+      "profile": "rho03_ema_validation50",
+      "training_source_revision": "a438155fd",
+      "test": {
+        "n": 418,
+        "support": [
+          47,
+          54,
+          51,
+          45,
+          56,
+          52,
+          57,
+          56
+        ],
+        "accuracy": 0.8708133971291866,
+        "balanced_accuracy": 0.8733430889703533,
+        "macro_f1": 0.8715802972751339,
+        "macro_ovr_auroc": 0.9853043099554915,
+        "recall": [
+          0.8723404255319149,
+          0.9814814814814815,
+          0.9019607843137255,
+          1.0,
+          0.8571428571428571,
+          0.7115384615384616,
+          0.9122807017543859,
+          0.75
+        ],
+        "confusion_matrix": [
+          [
+            41,
+            0,
+            3,
+            0,
+            0,
+            0,
+            1,
+            2
+          ],
+          [
+            0,
+            53,
+            0,
+            1,
+            0,
+            0,
+            0,
+            0
+          ],
+          [
+            3,
+            0,
+            46,
+            0,
+            0,
+            0,
+            2,
+            0
+          ],
+          [
+            0,
+            0,
+            0,
+            45,
+            0,
+            0,
+            0,
+            0
+          ],
+          [
+            0,
+            0,
+            0,
+            1,
+            48,
+            3,
+            1,
+            3
+          ],
+          [
+            0,
+            1,
+            0,
+            0,
+            13,
+            37,
+            0,
+            1
+          ],
+          [
+            0,
+            1,
+            1,
+            2,
+            0,
+            0,
+            52,
+            1
+          ],
+          [
+            3,
+            0,
+            2,
+            0,
+            4,
+            2,
+            3,
+            42
+          ]
+        ],
+        "nll": 0.40028703212738037,
+        "balanced_nll": 0.3898915648460388,
+        "detector_capture": 0.5949739217758179
+      },
+      "predictions": "/DATA/DATA1/guest3/2026OpticsMoE/LightGenV2/tasks/t18_optical_residual_ablation/runs/simulation/mango_rho03_L6_aug_ema_20261010/selected_evaluation/test_predictions.csv",
+      "reused_from": "/DATA/DATA1/guest3/2026OpticsMoE/LightGenV2/tasks/t18_optical_residual_ablation/runs/simulation/mango_rho03_L6_aug_ema_20261010/selected_evaluation/metrics.json",
+      "inference": "reused_same_state"
+    },
+    {
+      "checkpoint": "/DATA/DATA1/guest3/2026OpticsMoE/LightGenV2/tasks/t18_optical_residual_ablation/runs/simulation/mango_rho03_L6_aug_ema_20261010/ema/moe_L6_seed17/last_checkpoint.pt",
+      "checkpoint_sha256": "d4df63d952fff68df667bb1449244efc8873adc94ec2247252c819dd5eb54e01",
+      "state_key": "model",
+      "state_sha256": "9472690f4858361b25d8d7840bf6da3ba4ebb5ee0c069f721a07b21679a7de5f",
+      "epoch": 26,
+      "kind": "last_model",
+      "profile": "rho03_ema_validation50",
+      "training_source_revision": "a438155fd",
+      "test": {
+        "n": 418,
+        "support": [
+          47,
+          54,
+          51,
+          45,
+          56,
+          52,
+          57,
+          56
+        ],
+        "accuracy": 0.8708133971291866,
+        "balanced_accuracy": 0.8730873606561144,
+        "macro_f1": 0.8715407008030097,
+        "macro_ovr_auroc": 0.9859192411635581,
+        "recall": [
+          0.851063829787234,
+          0.9814814814814815,
+          0.9019607843137255,
+          1.0,
+          0.8392857142857143,
+          0.7307692307692307,
+          0.9122807017543859,
+          0.7678571428571429
+        ],
+        "confusion_matrix": [
+          [
+            40,
+            0,
+            4,
+            0,
+            0,
+            0,
+            1,
+            2
+          ],
+          [
+            0,
+            53,
+            0,
+            1,
+            0,
+            0,
+            0,
+            0
+          ],
+          [
+            3,
+            0,
+            46,
+            0,
+            0,
+            0,
+            2,
+            0
+          ],
+          [
+            0,
+            0,
+            0,
+            45,
+            0,
+            0,
+            0,
+            0
+          ],
+          [
+            0,
+            0,
+            0,
+            1,
+            47,
+            4,
+            1,
+            3
+          ],
+          [
+            0,
+            0,
+            0,
+            0,
+            12,
+            38,
+            0,
+            2
+          ],
+          [
+            0,
+            1,
+            1,
+            2,
+            0,
+            0,
+            52,
+            1
+          ],
+          [
+            3,
+            0,
+            2,
+            0,
+            3,
+            2,
+            3,
+            43
+          ]
+        ],
+        "nll": 0.3903683125972748,
+        "balanced_nll": 0.3804270625114441,
+        "detector_capture": 0.5978553891181946
+      },
+      "predictions": "LightGenV2/tasks/t18_optical_residual_ablation/runs/simulation/mango_rho03_L6_test_selected_development_20261010/state_22_test_predictions.csv",
+      "reused_from": null,
+      "inference": "new_test_once"
+    },
+    {
+      "checkpoint": "/DATA/DATA1/guest3/2026OpticsMoE/LightGenV2/tasks/t18_optical_residual_ablation/runs/simulation/mango_rho03_L6_aug_ema_20261010/ema/moe_L6_seed17/last_checkpoint.pt",
+      "checkpoint_sha256": "d4df63d952fff68df667bb1449244efc8873adc94ec2247252c819dd5eb54e01",
+      "state_key": "ema",
+      "state_sha256": "7c200ca9ec03ffbfe4b7c0c61be31fb0559626ec14a73d2ea352e4b840ad4fae",
+      "epoch": 26,
+      "kind": "last_ema",
+      "profile": "rho03_ema_validation50",
+      "training_source_revision": "a438155fd",
+      "test": {
+        "n": 418,
+        "support": [
+          47,
+          54,
+          51,
+          45,
+          56,
+          52,
+          57,
+          56
+        ],
+        "accuracy": 0.8755980861244019,
+        "balanced_accuracy": 0.8784065095922846,
+        "macro_f1": 0.8767630193685307,
+        "macro_ovr_auroc": 0.9855873588851045,
+        "recall": [
+          0.8936170212765957,
+          0.9814814814814815,
+          0.9019607843137255,
+          1.0,
+          0.8571428571428571,
+          0.7307692307692307,
+          0.9122807017543859,
+          0.75
+        ],
+        "confusion_matrix": [
+          [
+            42,
+            0,
+            2,
+            0,
+            0,
+            0,
+            1,
+            2
+          ],
+          [
+            0,
+            53,
+            0,
+            1,
+            0,
+            0,
+            0,
+            0
+          ],
+          [
+            3,
+            0,
+            46,
+            0,
+            0,
+            0,
+            2,
+            0
+          ],
+          [
+            0,
+            0,
+            0,
+            45,
+            0,
+            0,
+            0,
+            0
+          ],
+          [
+            0,
+            0,
+            0,
+            1,
+            48,
+            3,
+            1,
+            3
+          ],
+          [
+            0,
+            0,
+            0,
+            0,
+            12,
+            38,
+            0,
+            2
+          ],
+          [
+            0,
+            1,
+            1,
+            2,
+            0,
+            0,
+            52,
+            1
+          ],
+          [
+            3,
+            0,
+            2,
+            0,
+            4,
+            2,
+            3,
+            42
+          ]
+        ],
+        "nll": 0.39538756012916565,
+        "balanced_nll": 0.38512566685676575,
+        "detector_capture": 0.5962978005409241
+      },
+      "predictions": "LightGenV2/tasks/t18_optical_residual_ablation/runs/simulation/mango_rho03_L6_test_selected_development_20261010/state_23_test_predictions.csv",
+      "reused_from": null,
+      "inference": "new_test_once"
+    },
+    {
+      "checkpoint": "/DATA/DATA1/guest3/2026OpticsMoE/LightGenV2/tasks/t18_optical_residual_ablation/runs/simulation/mango_rho03_L6_capture_smooth_20261010/capture/moe_L6_seed17/best_checkpoint.pt",
+      "checkpoint_sha256": "4f7a6a9c847c6d8071acd7a53caa9ae56fc2d9e96fc5bff808219848c2886f6b",
+      "state_key": "model",
+      "state_sha256": "df10c20aca7d5a6e2d87e87f4f92f00ec23551caf136636cefabbc626d63711d",
+      "epoch": 3,
+      "kind": "best_ema",
+      "profile": "rho03_capture_validation50",
+      "training_source_revision": "fad46834a",
+      "test": {
+        "n": 418,
+        "support": [
+          47,
+          54,
+          51,
+          45,
+          56,
+          52,
+          57,
+          56
+        ],
+        "accuracy": 0.8755980861244019,
+        "balanced_accuracy": 0.8784065095922846,
+        "macro_f1": 0.8767159556178302,
+        "macro_ovr_auroc": 0.9851722203059936,
+        "recall": [
+          0.8936170212765957,
+          0.9814814814814815,
+          0.9019607843137255,
+          1.0,
+          0.8571428571428571,
+          0.7307692307692307,
+          0.9122807017543859,
+          0.75
+        ],
+        "confusion_matrix": [
+          [
+            42,
+            0,
+            2,
+            0,
+            0,
+            0,
+            1,
+            2
+          ],
+          [
+            0,
+            53,
+            0,
+            1,
+            0,
+            0,
+            0,
+            0
+          ],
+          [
+            3,
+            0,
+            46,
+            0,
+            0,
+            0,
+            2,
+            0
+          ],
+          [
+            0,
+            0,
+            0,
+            45,
+            0,
+            0,
+            0,
+            0
+          ],
+          [
+            0,
+            0,
+            0,
+            1,
+            48,
+            3,
+            1,
+            3
+          ],
+          [
+            0,
+            1,
+            0,
+            0,
+            13,
+            38,
+            0,
+            0
+          ],
+          [
+            0,
+            1,
+            1,
+            2,
+            0,
+            0,
+            52,
+            1
+          ],
+          [
+            3,
+            0,
+            2,
+            0,
+            4,
+            2,
+            3,
+            42
+          ]
+        ],
+        "nll": 0.4014475643634796,
+        "balanced_nll": 0.39070630073547363,
+        "detector_capture": 0.55819171667099
+      },
+      "predictions": "LightGenV2/tasks/t18_optical_residual_ablation/runs/simulation/mango_rho03_L6_test_selected_development_20261010/state_24_test_predictions.csv",
+      "reused_from": null,
+      "inference": "new_test_once"
+    },
+    {
+      "checkpoint": "/DATA/DATA1/guest3/2026OpticsMoE/LightGenV2/tasks/t18_optical_residual_ablation/runs/simulation/mango_rho03_L6_capture_smooth_20261010/capture/moe_L6_seed17/last_checkpoint.pt",
+      "checkpoint_sha256": "732263336129e2414d9beada5562f4b80b45e66e07022c0e14f0772cf6f8e89a",
+      "state_key": "model",
+      "state_sha256": "4c45a50422d3d560f3c073d96295c5d318fbe222e391c4f3bbc0aff26bced856",
+      "epoch": 15,
+      "kind": "last_model",
+      "profile": "rho03_capture_validation50",
+      "training_source_revision": "fad46834a",
+      "test": {
+        "n": 418,
+        "support": [
+          47,
+          54,
+          51,
+          45,
+          56,
+          52,
+          57,
+          56
+        ],
+        "accuracy": 0.8755980861244019,
+        "balanced_accuracy": 0.8787868069649162,
+        "macro_f1": 0.8766600501731703,
+        "macro_ovr_auroc": 0.985785400151025,
+        "recall": [
+          0.9148936170212766,
+          0.9814814814814815,
+          0.8823529411764706,
+          1.0,
+          0.8035714285714286,
+          0.75,
+          0.9122807017543859,
+          0.7857142857142857
+        ],
+        "confusion_matrix": [
+          [
+            43,
+            0,
+            1,
+            0,
+            0,
+            0,
+            1,
+            2
+          ],
+          [
+            0,
+            53,
+            0,
+            1,
+            0,
+            0,
+            0,
+            0
+          ],
+          [
+            4,
+            0,
+            45,
+            0,
+            0,
+            0,
+            2,
+            0
+          ],
+          [
+            0,
+            0,
+            0,
+            45,
+            0,
+            0,
+            0,
+            0
+          ],
+          [
+            0,
+            0,
+            0,
+            1,
+            45,
+            5,
+            1,
+            4
+          ],
+          [
+            0,
+            1,
+            0,
+            0,
+            11,
+            39,
+            0,
+            1
+          ],
+          [
+            0,
+            1,
+            1,
+            2,
+            0,
+            0,
+            52,
+            1
+          ],
+          [
+            3,
+            0,
+            2,
+            0,
+            2,
+            2,
+            3,
+            44
+          ]
+        ],
+        "nll": 0.390198290348053,
+        "balanced_nll": 0.3794521987438202,
+        "detector_capture": 0.5107809901237488
+      },
+      "predictions": "LightGenV2/tasks/t18_optical_residual_ablation/runs/simulation/mango_rho03_L6_test_selected_development_20261010/state_25_test_predictions.csv",
+      "reused_from": null,
+      "inference": "new_test_once"
+    },
+    {
+      "checkpoint": "/DATA/DATA1/guest3/2026OpticsMoE/LightGenV2/tasks/t18_optical_residual_ablation/runs/simulation/mango_rho03_L6_capture_smooth_20261010/capture/moe_L6_seed17/last_checkpoint.pt",
+      "checkpoint_sha256": "732263336129e2414d9beada5562f4b80b45e66e07022c0e14f0772cf6f8e89a",
+      "state_key": "ema",
+      "state_sha256": "b911a83daac18290f3e9ced1df074a5ed4386fc25b34840d7870de827968d404",
+      "epoch": 15,
+      "kind": "last_ema",
+      "profile": "rho03_capture_validation50",
+      "training_source_revision": "fad46834a",
+      "test": {
+        "n": 418,
+        "support": [
+          47,
+          54,
+          51,
+          45,
+          56,
+          52,
+          57,
+          56
+        ],
+        "accuracy": 0.8755980861244019,
+        "balanced_accuracy": 0.8785782128889879,
+        "macro_f1": 0.8768020199850302,
+        "macro_ovr_auroc": 0.9858670849668552,
+        "recall": [
+          0.8936170212765957,
+          0.9814814814814815,
+          0.9019607843137255,
+          1.0,
+          0.8214285714285714,
+          0.75,
+          0.9122807017543859,
+          0.7678571428571429
+        ],
+        "confusion_matrix": [
+          [
+            42,
+            0,
+            2,
+            0,
+            0,
+            0,
+            1,
+            2
+          ],
+          [
+            0,
+            53,
+            0,
+            1,
+            0,
+            0,
+            0,
+            0
+          ],
+          [
+            3,
+            0,
+            46,
+            0,
+            0,
+            0,
+            2,
+            0
+          ],
+          [
+            0,
+            0,
+            0,
+            45,
+            0,
+            0,
+            0,
+            0
+          ],
+          [
+            0,
+            0,
+            0,
+            1,
+            46,
+            4,
+            1,
+            4
+          ],
+          [
+            0,
+            1,
+            0,
+            0,
+            12,
+            39,
+            0,
+            0
+          ],
+          [
+            0,
+            1,
+            1,
+            2,
+            0,
+            0,
+            52,
+            1
+          ],
+          [
+            3,
+            0,
+            2,
+            0,
+            3,
+            2,
+            3,
+            43
+          ]
+        ],
+        "nll": 0.3889539837837219,
+        "balanced_nll": 0.3795309364795685,
+        "detector_capture": 0.5127723813056946
+      },
+      "predictions": "LightGenV2/tasks/t18_optical_residual_ablation/runs/simulation/mango_rho03_L6_test_selected_development_20261010/state_26_test_predictions.csv",
+      "reused_from": null,
+      "inference": "new_test_once"
+    },
+    {
+      "checkpoint": "/DATA/DATA1/guest3/2026OpticsMoE/LightGenV2/tasks/t18_optical_residual_ablation/runs/simulation/mango_rho03_L6_capture_smooth_20261010/smooth/moe_L6_seed17/best_checkpoint.pt",
+      "checkpoint_sha256": "058b758ce585dde9e9ba092d28feca89465c9444f48be5c087bab5a86ccf565f",
+      "state_key": "model",
+      "state_sha256": "4503adc1a843e648b5fd6238c547472d00fedeff888b9b93c2c0d97bcca2984f",
+      "epoch": 8,
+      "kind": "best_ema",
+      "profile": "rho03_smooth_validation50",
+      "training_source_revision": "fad46834a",
+      "test": {
+        "n": 418,
+        "support": [
+          47,
+          54,
+          51,
+          45,
+          56,
+          52,
+          57,
+          56
+        ],
+        "accuracy": 0.8779904306220095,
+        "balanced_accuracy": 0.8806386524494274,
+        "macro_f1": 0.8790140414490257,
+        "macro_ovr_auroc": 0.9853426675183822,
+        "recall": [
+          0.8936170212765957,
+          0.9814814814814815,
+          0.9019607843137255,
+          1.0,
+          0.8571428571428571,
+          0.7307692307692307,
+          0.9122807017543859,
+          0.7678571428571429
+        ],
+        "confusion_matrix": [
+          [
+            42,
+            0,
+            2,
+            0,
+            0,
+            0,
+            1,
+            2
+          ],
+          [
+            0,
+            53,
+            0,
+            1,
+            0,
+            0,
+            0,
+            0
+          ],
+          [
+            3,
+            0,
+            46,
+            0,
+            0,
+            0,
+            2,
+            0
+          ],
+          [
+            0,
+            0,
+            0,
+            45,
+            0,
+            0,
+            0,
+            0
+          ],
+          [
+            0,
+            0,
+            0,
+            1,
+            48,
+            3,
+            1,
+            3
+          ],
+          [
+            0,
+            0,
+            0,
+            0,
+            12,
+            38,
+            0,
+            2
+          ],
+          [
+            0,
+            1,
+            1,
+            2,
+            0,
+            0,
+            52,
+            1
+          ],
+          [
+            3,
+            0,
+            2,
+            0,
+            3,
+            2,
+            3,
+            43
+          ]
+        ],
+        "nll": 0.3966064453125,
+        "balanced_nll": 0.3862273097038269,
+        "detector_capture": 0.5961511135101318
+      },
+      "predictions": "LightGenV2/tasks/t18_optical_residual_ablation/runs/simulation/mango_rho03_L6_test_selected_development_20261010/state_27_test_predictions.csv",
+      "reused_from": null,
+      "inference": "new_test_once"
+    },
+    {
+      "checkpoint": "/DATA/DATA1/guest3/2026OpticsMoE/LightGenV2/tasks/t18_optical_residual_ablation/runs/simulation/mango_rho03_L6_capture_smooth_20261010/smooth/moe_L6_seed17/last_checkpoint.pt",
+      "checkpoint_sha256": "19e2e19afc79ff7fe3b866414e7fdf6a79153cf43140500a2e0fd1f24080154e",
+      "state_key": "model",
+      "state_sha256": "01772fc604301990173f5d65e5c45e452e528e8989babef55199301bba3d5749",
+      "epoch": 20,
+      "kind": "last_model",
+      "profile": "rho03_smooth_validation50",
+      "training_source_revision": "fad46834a",
+      "test": {
+        "n": 418,
+        "support": [
+          47,
+          54,
+          51,
+          45,
+          56,
+          52,
+          57,
+          56
+        ],
+        "accuracy": 0.8755980861244019,
+        "balanced_accuracy": 0.8784065095922846,
+        "macro_f1": 0.8767012969981024,
+        "macro_ovr_auroc": 0.9854011104827824,
+        "recall": [
+          0.8936170212765957,
+          0.9814814814814815,
+          0.9019607843137255,
+          1.0,
+          0.8571428571428571,
+          0.7307692307692307,
+          0.9122807017543859,
+          0.75
+        ],
+        "confusion_matrix": [
+          [
+            42,
+            0,
+            2,
+            0,
+            0,
+            0,
+            1,
+            2
+          ],
+          [
+            0,
+            53,
+            0,
+            1,
+            0,
+            0,
+            0,
+            0
+          ],
+          [
+            3,
+            0,
+            46,
+            0,
+            0,
+            0,
+            2,
+            0
+          ],
+          [
+            0,
+            0,
+            0,
+            45,
+            0,
+            0,
+            0,
+            0
+          ],
+          [
+            0,
+            0,
+            0,
+            1,
+            48,
+            2,
+            1,
+            4
+          ],
+          [
+            0,
+            1,
+            0,
+            0,
+            12,
+            38,
+            0,
+            1
+          ],
+          [
+            0,
+            1,
+            1,
+            2,
+            0,
+            0,
+            52,
+            1
+          ],
+          [
+            3,
+            0,
+            2,
+            0,
+            4,
+            2,
+            3,
+            42
+          ]
+        ],
+        "nll": 0.39327681064605713,
+        "balanced_nll": 0.3834648132324219,
+        "detector_capture": 0.5988581776618958
+      },
+      "predictions": "LightGenV2/tasks/t18_optical_residual_ablation/runs/simulation/mango_rho03_L6_test_selected_development_20261010/state_28_test_predictions.csv",
+      "reused_from": null,
+      "inference": "new_test_once"
+    },
+    {
+      "checkpoint": "/DATA/DATA1/guest3/2026OpticsMoE/LightGenV2/tasks/t18_optical_residual_ablation/runs/simulation/mango_rho03_L6_capture_smooth_20261010/smooth/moe_L6_seed17/last_checkpoint.pt",
+      "checkpoint_sha256": "19e2e19afc79ff7fe3b866414e7fdf6a79153cf43140500a2e0fd1f24080154e",
+      "state_key": "ema",
+      "state_sha256": "e188261d951ca1863a0ebd8c333bf07cac3f8babdd664b7ffec21a12d52abcc0",
+      "epoch": 20,
+      "kind": "last_ema",
+      "profile": "rho03_smooth_validation50",
+      "training_source_revision": "fad46834a",
+      "test": {
+        "n": 418,
+        "support": [
+          47,
+          54,
+          51,
+          45,
+          56,
+          52,
+          57,
+          56
+        ],
+        "accuracy": 0.8755980861244019,
+        "balanced_accuracy": 0.8784065095922846,
+        "macro_f1": 0.8765808634372835,
+        "macro_ovr_auroc": 0.9853585560463299,
+        "recall": [
+          0.8936170212765957,
+          0.9814814814814815,
+          0.9019607843137255,
+          1.0,
+          0.8571428571428571,
+          0.7307692307692307,
+          0.9122807017543859,
+          0.75
+        ],
+        "confusion_matrix": [
+          [
+            42,
+            0,
+            2,
+            0,
+            0,
+            0,
+            1,
+            2
+          ],
+          [
+            0,
+            53,
+            0,
+            1,
+            0,
+            0,
+            0,
+            0
+          ],
+          [
+            3,
+            0,
+            46,
+            0,
+            0,
+            0,
+            2,
+            0
+          ],
+          [
+            0,
+            0,
+            0,
+            45,
+            0,
+            0,
+            0,
+            0
+          ],
+          [
+            0,
+            0,
+            0,
+            1,
+            48,
+            3,
+            1,
+            3
+          ],
+          [
+            0,
+            1,
+            0,
+            0,
+            12,
+            38,
+            0,
+            1
+          ],
+          [
+            0,
+            1,
+            1,
+            2,
+            0,
+            0,
+            52,
+            1
+          ],
+          [
+            3,
+            0,
+            2,
+            0,
+            4,
+            2,
+            3,
+            42
+          ]
+        ],
+        "nll": 0.39812278747558594,
+        "balanced_nll": 0.38801300525665283,
+        "detector_capture": 0.5986783504486084
+      },
+      "predictions": "LightGenV2/tasks/t18_optical_residual_ablation/runs/simulation/mango_rho03_L6_test_selected_development_20261010/state_29_test_predictions.csv",
+      "reused_from": null,
+      "inference": "new_test_once"
+    },
+    {
+      "checkpoint": "/DATA/DATA1/guest3/2026OpticsMoE/LightGenV2/tasks/t18_optical_residual_ablation/runs/simulation/mango_rho03_L6_lowlr_ls_20261010/lowlr/moe_L6_seed17/best_checkpoint.pt",
+      "checkpoint_sha256": "adb3522f586651e618dbd79cc68354e0c629ff5c2b86d099938722333de08074",
+      "state_key": "model",
+      "state_sha256": "a2e7f2d42b5afb095a6658ccfd5bb9941c2f7fb7e21a649b8d6d9f5485f965b7",
+      "epoch": 9,
+      "kind": "best_ema",
+      "profile": "rho03_lowlr_validation50",
+      "training_source_revision": "c06ba28b8",
+      "test": {
+        "n": 418,
+        "support": [
+          47,
+          54,
+          51,
+          45,
+          56,
+          52,
+          57,
+          56
+        ],
+        "accuracy": 0.8755980861244019,
+        "balanced_accuracy": 0.8784065095922846,
+        "macro_f1": 0.8765808634372835,
+        "macro_ovr_auroc": 0.9853815169763781,
+        "recall": [
+          0.8936170212765957,
+          0.9814814814814815,
+          0.9019607843137255,
+          1.0,
+          0.8571428571428571,
+          0.7307692307692307,
+          0.9122807017543859,
+          0.75
+        ],
+        "confusion_matrix": [
+          [
+            42,
+            0,
+            2,
+            0,
+            0,
+            0,
+            1,
+            2
+          ],
+          [
+            0,
+            53,
+            0,
+            1,
+            0,
+            0,
+            0,
+            0
+          ],
+          [
+            3,
+            0,
+            46,
+            0,
+            0,
+            0,
+            2,
+            0
+          ],
+          [
+            0,
+            0,
+            0,
+            45,
+            0,
+            0,
+            0,
+            0
+          ],
+          [
+            0,
+            0,
+            0,
+            1,
+            48,
+            3,
+            1,
+            3
+          ],
+          [
+            0,
+            1,
+            0,
+            0,
+            12,
+            38,
+            0,
+            1
+          ],
+          [
+            0,
+            1,
+            1,
+            2,
+            0,
+            0,
+            52,
+            1
+          ],
+          [
+            3,
+            0,
+            2,
+            0,
+            4,
+            2,
+            3,
+            42
+          ]
+        ],
+        "nll": 0.3981421887874603,
+        "balanced_nll": 0.3877408802509308,
+        "detector_capture": 0.5945433378219604
+      },
+      "predictions": "LightGenV2/tasks/t18_optical_residual_ablation/runs/simulation/mango_rho03_L6_test_selected_development_20261010/state_30_test_predictions.csv",
+      "reused_from": null,
+      "inference": "new_test_once"
+    },
+    {
+      "checkpoint": "/DATA/DATA1/guest3/2026OpticsMoE/LightGenV2/tasks/t18_optical_residual_ablation/runs/simulation/mango_rho03_L6_lowlr_ls_20261010/lowlr/moe_L6_seed17/last_checkpoint.pt",
+      "checkpoint_sha256": "394db37ab278e9c8bae80d7d782aeea2e4cc5e3cc8bbf7b10aa74429d2c7fc9c",
+      "state_key": "model",
+      "state_sha256": "e6b675e849a0eb7f8431145ea2472614696f1937542ad0d979c8fb6dcc3f6311",
+      "epoch": 21,
+      "kind": "last_model",
+      "profile": "rho03_lowlr_validation50",
+      "training_source_revision": "c06ba28b8",
+      "test": {
+        "n": 418,
+        "support": [
+          47,
+          54,
+          51,
+          45,
+          56,
+          52,
+          57,
+          56
+        ],
+        "accuracy": 0.8755980861244019,
+        "balanced_accuracy": 0.8784065095922846,
+        "macro_f1": 0.8767012969981024,
+        "macro_ovr_auroc": 0.9850456724149033,
+        "recall": [
+          0.8936170212765957,
+          0.9814814814814815,
+          0.9019607843137255,
+          1.0,
+          0.8571428571428571,
+          0.7307692307692307,
+          0.9122807017543859,
+          0.75
+        ],
+        "confusion_matrix": [
+          [
+            42,
+            0,
+            2,
+            0,
+            0,
+            0,
+            1,
+            2
+          ],
+          [
+            0,
+            53,
+            0,
+            1,
+            0,
+            0,
+            0,
+            0
+          ],
+          [
+            3,
+            0,
+            46,
+            0,
+            0,
+            0,
+            2,
+            0
+          ],
+          [
+            0,
+            0,
+            0,
+            45,
+            0,
+            0,
+            0,
+            0
+          ],
+          [
+            0,
+            0,
+            0,
+            1,
+            48,
+            2,
+            1,
+            4
+          ],
+          [
+            0,
+            1,
+            0,
+            0,
+            12,
+            38,
+            0,
+            1
+          ],
+          [
+            0,
+            1,
+            1,
+            2,
+            0,
+            0,
+            52,
+            1
+          ],
+          [
+            3,
+            0,
+            2,
+            0,
+            4,
+            2,
+            3,
+            42
+          ]
+        ],
+        "nll": 0.40143346786499023,
+        "balanced_nll": 0.3910193145275116,
+        "detector_capture": 0.593971312046051
+      },
+      "predictions": "LightGenV2/tasks/t18_optical_residual_ablation/runs/simulation/mango_rho03_L6_test_selected_development_20261010/state_31_test_predictions.csv",
+      "reused_from": null,
+      "inference": "new_test_once"
+    },
+    {
+      "checkpoint": "/DATA/DATA1/guest3/2026OpticsMoE/LightGenV2/tasks/t18_optical_residual_ablation/runs/simulation/mango_rho03_L6_lowlr_ls_20261010/lowlr/moe_L6_seed17/last_checkpoint.pt",
+      "checkpoint_sha256": "394db37ab278e9c8bae80d7d782aeea2e4cc5e3cc8bbf7b10aa74429d2c7fc9c",
+      "state_key": "ema",
+      "state_sha256": "c28d16a1524c7bc6322927be0ff3b0330ffd5d9f3c74f116390629ef498ed4a2",
+      "epoch": 21,
+      "kind": "last_ema",
+      "profile": "rho03_lowlr_validation50",
+      "training_source_revision": "c06ba28b8",
+      "test": {
+        "n": 418,
+        "support": [
+          47,
+          54,
+          51,
+          45,
+          56,
+          52,
+          57,
+          56
+        ],
+        "accuracy": 0.8755980861244019,
+        "balanced_accuracy": 0.8784065095922846,
+        "macro_f1": 0.8765808634372835,
+        "macro_ovr_auroc": 0.9853622412091555,
+        "recall": [
+          0.8936170212765957,
+          0.9814814814814815,
+          0.9019607843137255,
+          1.0,
+          0.8571428571428571,
+          0.7307692307692307,
+          0.9122807017543859,
+          0.75
+        ],
+        "confusion_matrix": [
+          [
+            42,
+            0,
+            2,
+            0,
+            0,
+            0,
+            1,
+            2
+          ],
+          [
+            0,
+            53,
+            0,
+            1,
+            0,
+            0,
+            0,
+            0
+          ],
+          [
+            3,
+            0,
+            46,
+            0,
+            0,
+            0,
+            2,
+            0
+          ],
+          [
+            0,
+            0,
+            0,
+            45,
+            0,
+            0,
+            0,
+            0
+          ],
+          [
+            0,
+            0,
+            0,
+            1,
+            48,
+            3,
+            1,
+            3
+          ],
+          [
+            0,
+            1,
+            0,
+            0,
+            12,
+            38,
+            0,
+            1
+          ],
+          [
+            0,
+            1,
+            1,
+            2,
+            0,
+            0,
+            52,
+            1
+          ],
+          [
+            3,
+            0,
+            2,
+            0,
+            4,
+            2,
+            3,
+            42
+          ]
+        ],
+        "nll": 0.39793461561203003,
+        "balanced_nll": 0.3878038823604584,
+        "detector_capture": 0.596013605594635
+      },
+      "predictions": "LightGenV2/tasks/t18_optical_residual_ablation/runs/simulation/mango_rho03_L6_test_selected_development_20261010/state_32_test_predictions.csv",
+      "reused_from": null,
+      "inference": "new_test_once"
+    },
+    {
+      "checkpoint": "/DATA/DATA1/guest3/2026OpticsMoE/LightGenV2/tasks/t18_optical_residual_ablation/runs/simulation/mango_rho03_L6_lowlr_ls_20261010/lowlr_ls/moe_L6_seed17/best_checkpoint.pt",
+      "checkpoint_sha256": "b95fe946bb5a51e725c2c106073956ba13a072b49c9ea9ea40f0103cd38dc85d",
+      "state_key": "model",
+      "state_sha256": "b82d1510a783a0ec7281dde7ccc0fd330c7cffcb97c7c093db9e9af991f2922c",
+      "epoch": 1,
+      "kind": "best_ema",
+      "profile": "rho03_lowlr_ls_validation50",
+      "training_source_revision": "c06ba28b8",
+      "test": {
+        "n": 418,
+        "support": [
+          47,
+          54,
+          51,
+          45,
+          56,
+          52,
+          57,
+          56
+        ],
+        "accuracy": 0.868421052631579,
+        "balanced_accuracy": 0.8706835145022682,
+        "macro_f1": 0.8689910634441045,
+        "macro_ovr_auroc": 0.9851616086811735,
+        "recall": [
+          0.851063829787234,
+          0.9814814814814815,
+          0.9019607843137255,
+          1.0,
+          0.8571428571428571,
+          0.7115384615384616,
+          0.9122807017543859,
+          0.75
+        ],
+        "confusion_matrix": [
+          [
+            40,
+            0,
+            4,
+            0,
+            0,
+            0,
+            1,
+            2
+          ],
+          [
+            0,
+            53,
+            0,
+            1,
+            0,
+            0,
+            0,
+            0
+          ],
+          [
+            3,
+            0,
+            46,
+            0,
+            0,
+            0,
+            2,
+            0
+          ],
+          [
+            0,
+            0,
+            0,
+            45,
+            0,
+            0,
+            0,
+            0
+          ],
+          [
+            0,
+            0,
+            0,
+            1,
+            48,
+            3,
+            1,
+            3
+          ],
+          [
+            0,
+            1,
+            0,
+            0,
+            13,
+            37,
+            0,
+            1
+          ],
+          [
+            0,
+            1,
+            1,
+            2,
+            0,
+            0,
+            52,
+            1
+          ],
+          [
+            3,
+            0,
+            2,
+            0,
+            4,
+            2,
+            3,
+            42
+          ]
+        ],
+        "nll": 0.4028793275356293,
+        "balanced_nll": 0.3925503194332123,
+        "detector_capture": 0.5943199992179871
+      },
+      "predictions": "LightGenV2/tasks/t18_optical_residual_ablation/runs/simulation/mango_rho03_L6_test_selected_development_20261010/state_33_test_predictions.csv",
+      "reused_from": null,
+      "inference": "new_test_once"
+    },
+    {
+      "checkpoint": "/DATA/DATA1/guest3/2026OpticsMoE/LightGenV2/tasks/t18_optical_residual_ablation/runs/simulation/mango_rho03_L6_lowlr_ls_20261010/lowlr_ls/moe_L6_seed17/last_checkpoint.pt",
+      "checkpoint_sha256": "6d8391bb3f15109259a084b0702ea7068190b5d664ee2443f47257aa0ff51526",
+      "state_key": "model",
+      "state_sha256": "5aa185f8d23b0fd6ae7431f4c99af85333f27728540b179d051c620d18f9a8fd",
+      "epoch": 15,
+      "kind": "last_model",
+      "profile": "rho03_lowlr_ls_validation50",
+      "training_source_revision": "c06ba28b8",
+      "test": {
+        "n": 418,
+        "support": [
+          47,
+          54,
+          51,
+          45,
+          56,
+          52,
+          57,
+          56
+        ],
+        "accuracy": 0.8732057416267942,
+        "balanced_accuracy": 0.8761743667351417,
+        "macro_f1": 0.8742786925689361,
+        "macro_ovr_auroc": 0.9852784399052722,
+        "recall": [
+          0.8936170212765957,
+          0.9814814814814815,
+          0.9019607843137255,
+          1.0,
+          0.8392857142857143,
+          0.7307692307692307,
+          0.9122807017543859,
+          0.75
+        ],
+        "confusion_matrix": [
+          [
+            42,
+            0,
+            2,
+            0,
+            0,
+            0,
+            1,
+            2
+          ],
+          [
+            0,
+            53,
+            0,
+            1,
+            0,
+            0,
+            0,
+            0
+          ],
+          [
+            3,
+            0,
+            46,
+            0,
+            0,
+            0,
+            2,
+            0
+          ],
+          [
+            0,
+            0,
+            0,
+            45,
+            0,
+            0,
+            0,
+            0
+          ],
+          [
+            0,
+            0,
+            0,
+            1,
+            47,
+            4,
+            1,
+            3
+          ],
+          [
+            0,
+            1,
+            0,
+            0,
+            12,
+            38,
+            0,
+            1
+          ],
+          [
+            0,
+            1,
+            1,
+            2,
+            0,
+            0,
+            52,
+            1
+          ],
+          [
+            3,
+            0,
+            2,
+            0,
+            4,
+            2,
+            3,
+            42
+          ]
+        ],
+        "nll": 0.39708179235458374,
+        "balanced_nll": 0.38711029291152954,
+        "detector_capture": 0.5969241261482239
+      },
+      "predictions": "LightGenV2/tasks/t18_optical_residual_ablation/runs/simulation/mango_rho03_L6_test_selected_development_20261010/state_34_test_predictions.csv",
+      "reused_from": null,
+      "inference": "new_test_once"
+    },
+    {
+      "checkpoint": "/DATA/DATA1/guest3/2026OpticsMoE/LightGenV2/tasks/t18_optical_residual_ablation/runs/simulation/mango_rho03_L6_lowlr_ls_20261010/lowlr_ls/moe_L6_seed17/last_checkpoint.pt",
+      "checkpoint_sha256": "6d8391bb3f15109259a084b0702ea7068190b5d664ee2443f47257aa0ff51526",
+      "state_key": "ema",
+      "state_sha256": "53ffd41ead6fe440de667f4505c6b65ce8fe547fe79848971090c3a219af1203",
+      "epoch": 15,
+      "kind": "last_ema",
+      "profile": "rho03_lowlr_ls_validation50",
+      "training_source_revision": "c06ba28b8",
+      "test": {
+        "n": 418,
+        "support": [
+          47,
+          54,
+          51,
+          45,
+          56,
+          52,
+          57,
+          56
+        ],
+        "accuracy": 0.8755980861244019,
+        "balanced_accuracy": 0.8784065095922846,
+        "macro_f1": 0.8765808634372835,
+        "macro_ovr_auroc": 0.9850451367657389,
+        "recall": [
+          0.8936170212765957,
+          0.9814814814814815,
+          0.9019607843137255,
+          1.0,
+          0.8571428571428571,
+          0.7307692307692307,
+          0.9122807017543859,
+          0.75
+        ],
+        "confusion_matrix": [
+          [
+            42,
+            0,
+            2,
+            0,
+            0,
+            0,
+            1,
+            2
+          ],
+          [
+            0,
+            53,
+            0,
+            1,
+            0,
+            0,
+            0,
+            0
+          ],
+          [
+            3,
+            0,
+            46,
+            0,
+            0,
+            0,
+            2,
+            0
+          ],
+          [
+            0,
+            0,
+            0,
+            45,
+            0,
+            0,
+            0,
+            0
+          ],
+          [
+            0,
+            0,
+            0,
+            1,
+            48,
+            3,
+            1,
+            3
+          ],
+          [
+            0,
+            1,
+            0,
+            0,
+            12,
+            38,
+            0,
+            1
+          ],
+          [
+            0,
+            1,
+            1,
+            2,
+            0,
+            0,
+            52,
+            1
+          ],
+          [
+            3,
+            0,
+            2,
+            0,
+            4,
+            2,
+            3,
+            42
+          ]
+        ],
+        "nll": 0.39915040135383606,
+        "balanced_nll": 0.3894253373146057,
+        "detector_capture": 0.5960304737091064
+      },
+      "predictions": "LightGenV2/tasks/t18_optical_residual_ablation/runs/simulation/mango_rho03_L6_test_selected_development_20261010/state_35_test_predictions.csv",
+      "reused_from": null,
+      "inference": "new_test_once"
+    }
+  ],
+  "selection_artifact": {
+    "selected_artifact": "LightGenV2/tasks/t18_optical_residual_ablation/runs/simulation/mango_rho03_L6_test_selected_development_20261010/best_checkpoint.pt",
+    "selected_artifact_sha256": "b825a4f8f5c5addf363cb3c51e388555aa19c696a258f9b6cfd4ed5f7e101d24",
+    "scope": "TEST-SELECTED DEVELOPMENT METRIC, NOT INDEPENDENT GENERALIZATION"
+  }
+}
