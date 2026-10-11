@@ -113,3 +113,18 @@ def test_tail_sample_and_auxiliary_weighting_gives_one_macro_update():
         loss = ((p - micro).square() + .2 * (p + micro).square() + .04 * p.square()).mean()
         (loss * len(micro) / len(values)).backward()
     assert torch.allclose(p.grad, expected)
+
+
+def test_failed_preparation_stops_before_any_gpu_or_test(tmp_path, monkeypatch):
+    a = module()
+    data = tmp_path / 'data'; data.mkdir()
+    a.r.save(data / 'preparation_process.json', dict(pid=999999999))
+    out = tmp_path / 'run'
+    monkeypatch.setattr(sys, 'argv', ['butterfly_ablation.py', '--phase', 'suite', '--data-root', str(data),
+        '--out', str(out), '--wait-preparation', '--profile', str(TASK / 'butterfly_profile.json')])
+    monkeypatch.setattr(a.f.gpu_budget, 'preflight', lambda *args, **kwargs: pytest.fail('Preparation must not allocate GPU'))
+    with pytest.raises(AssertionError, match='Preparation stopped'):
+        a.main()
+    assert a.r.read(out / 'status.json')['state'] == 'failed'
+    assert a.r.read(out / 'current_processes.json') == []
+    assert not (out / 'test_started.json').exists()
