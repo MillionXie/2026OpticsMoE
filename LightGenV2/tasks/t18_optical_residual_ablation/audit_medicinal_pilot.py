@@ -41,7 +41,8 @@ def main():
         assert result['config'] == best['config'] == last['config'] == read(arm/'config.json')
         assert result['sources'] == best['sources'] == last['sources'] == read(arm/'metadata.json')['sources']
         assert result['data_sha256'] == best['data_sha256'] == last['data_sha256'] == manifest['cache_sha256']
-        assert all(digest(Path(path)) == sha and hashlib.sha256(subprocess.check_output(['git', 'show', 'HEAD:'+path])).hexdigest() == sha
+        commit = read(arm/'metadata.json')['git_commit']
+        assert all(hashlib.sha256(subprocess.check_output(['git', 'show', commit+':'+path])).hexdigest() == sha
             for path, sha in result['sources'].items())
         assert sum(v.numel() for k, v in best['model'].items() if k.endswith('raw_phase')) == result['parameters'] == 449848
         assert result['initial_parameter_sha256'] == last['initial_parameter_sha256'] == read(arm/'smoke.json')['initial_parameter_sha256']
@@ -110,6 +111,8 @@ def main():
     for ax in axes: ax.set(xlabel='Epoch'); ax.grid(alpha=.15); ax.legend(fontsize=8)
     fig.suptitle('Full 30-class leaves | L2 feasibility pilot | seed17 | no test')
     for ext in ['png', 'svg', 'pdf']: fig.savefig(a.out/('learning_curves_L2.'+ext), dpi=180)
+    svg = a.out/'learning_curves_L2.svg'
+    svg.write_text('\n'.join(line.rstrip() for line in svg.read_text().splitlines())+'\n')
     plt.close(fig)
     print(json.dumps(dict(cpu_checks_passed=True, summaries=summaries), indent=2))
 
