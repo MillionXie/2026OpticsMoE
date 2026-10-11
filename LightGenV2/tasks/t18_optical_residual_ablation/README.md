@@ -17,8 +17,13 @@ Linux11项检查通过；Windows9过／2项原生Torch检查跳过，不改其�
 train98.91%／val92.19%／test89.98%（413/459），test宏平均召回86.05%、
 balanced NLL0.35783。100轮history无逐轮test，锁定PT后仅测试一次；保存预测、
 best／last、缓存及60个发布源码身份CPU核验通过，没有重复test推理。
-真实PNG／SVG／PDF／CSV见上述验证报告；六层rho0.3已自动接续PID446585，
-后续以current_process.json为准，仍仅物理GPU1。配对尚未完成，不先作残差结论。
+六层rho0.3已于北京时间16:28:43完成100轮，验证NLL最低选第97轮EMA：
+train96.06%／val89.96%／test85.40%（392/459），test宏平均召回81.30%、balanced NLL0.47787。
+六层配对初始化、100轮顺序／增强、数据、参数和60个源码身份一致，配置唯一区别rho；
+各PT锁定后仅测一次test，CPU核验保存预测与pair_lock通过。本次残差低4.58个百分点，
+保留负结果，不追加训练或反换权重。真实PNG／SVG／PDF／CSV见上述验证报告。
+四层rho0已自动接续PID518458，后续以current_process.json为准，仍仅物理GPU1；
+四／两层未完成，不提前作整体深度结论。
 因旧test已多次观测，新结果仍是探索性评估，不能重命名为独立泛化。
 以下test开发选模段落仅属于保留的旧run。
 
