@@ -85,10 +85,11 @@ def main():
     p.add_argument('--micro', type=int, choices=[1, 2, 4], required=True)
     p.add_argument('--batched', type=int, choices=[0, 1], required=True)
     p.add_argument('--probe', type=Path, required=True)
+    p.add_argument('--profile', type=Path, default=o.HERE/'medicinal_pilot_profile.json')
     a = p.parse_args()
     assert os.environ['CUDA_VISIBLE_DEVICES'] == a.gpu
     a.out.mkdir(parents=True, exist_ok=False)
-    profile_path = o.HERE/'medicinal_pilot_profile.json'
+    profile_path = a.profile
     profile = r.read(profile_path)
     gate = r.read(a.probe)
     for rho in [0., .3]:
@@ -98,22 +99,28 @@ def main():
     gpu_policy = o.f.gpu_budget.configure(torch, a.gpu, shared=True, memory_gib=3)
     torch.set_num_threads(4)
     manifest = r.read(a.data.parent/'data_manifest.json')
-    assert manifest['total_records'] == 1835 and len(manifest['classes']) == 30
+    contract = profile.get('data_contract', dict(dataset='MedicinalLeaf_author_segmented_v1', records=1835,
+        classes=30, preparation_source='prepare_medicinal.py', identity_key='author_index_sha256',
+        identity_sha256='922f45590782b91149e24ce2a003b57d1117de8b563d8ace8534a7bee8351fa7'))
+    classes = contract['classes']
+    assert manifest['dataset'] == contract['dataset'] and manifest['total_records'] == contract['records']
+    assert len(manifest['classes']) == classes
     assert manifest['cache_sha256'] == r.sha(a.data)
-    assert manifest['preparation_source_sha256'] == r.sha(o.HERE/'prepare_medicinal.py')
+    assert contract['preparation_source'] in ('prepare_medicinal.py', 'prepare_coil20.py')
+    assert manifest['preparation_source_sha256'] == r.sha(o.HERE/contract['preparation_source'])
     assert manifest['grouping_source_sha256'] == r.sha(o.HERE/'prepare_butterfly.py')
-    assert manifest['author_index_sha256'] == '922f45590782b91149e24ce2a003b57d1117de8b563d8ace8534a7bee8351fa7'
-    assert profile['detector'] == execution.detector(30)
+    assert manifest[contract['identity_key']] == contract['identity_sha256']
+    assert profile['detector'] == execution.detector(classes)
     profile.update(dataset=manifest['dataset'], microbatch=a.micro, evaluation_batch_size=a.micro,
         expert_batched=bool(a.batched), maximum_epochs=30, minimum_epochs=10, patience=6,
-        maximum_seconds=1800, scope='Small full30 natural leaf image train/val feasibility pilot, image-level only')
+        maximum_seconds=1800)
     cfg = o.config(profile, manifest, a.rho, 'base')
     for key in ['initial_epochs', 'maximum_base_epochs', 'maximum_paired_restarts', 'restart_epochs', 'restart_candidates', 'data_revision']:
         cfg.pop(key, None)
     cfg['selection'] = 'EMA minimum validation balanced NLL, first exact tie; pilot never tests'
     sources = o.source_identity(profile_path)
     sources.update({str((o.HERE/name).relative_to(o.ROOT)).replace('\\', '/'): r.sha(o.HERE/name)
-        for name in ['fast_optical.py', 'medicinal_pilot.py', 'prepare_medicinal.py', 'probe_fast_optical.py']})
+        for name in ['fast_optical.py', 'medicinal_pilot.py', contract['preparation_source'], 'probe_fast_optical.py']})
     assert all(hashlib.sha256(subprocess.check_output(['git', 'show', 'HEAD:'+path])).hexdigest() == digest
         for path, digest in sources.items()), 'Every runtime source must match its published Git blob'
     r.save(a.out/'config.json', cfg)
@@ -121,7 +128,7 @@ def main():
         git_commit=subprocess.check_output(['git', 'rev-parse', 'HEAD'], text=True).strip(),
         execution_probe_sha256=r.sha(a.probe), manifest_sha256=r.sha(a.data.parent/'data_manifest.json'), time=r.now()))
     data, val = [load_fit_data(a.data, split, manifest) for split in ('train', 'val')]
-    weights = (len(data[1])/(30*torch.bincount(data[1], minlength=30).float())).cuda()
+    weights = (len(data[1])/(classes*torch.bincount(data[1], minlength=classes).float())).cuda()
     smoke = numerical_gate(data, weights, profile, cfg, bool(a.batched), a.micro)
     r.save(a.out/'smoke.json', smoke)
     r.setseed(cfg['seed'])
@@ -204,7 +211,7 @@ def main():
         test_evaluations=0, test_used_for_selection=False, selection_split='val',
         accuracy_gate_passed=checkpoint['validation']['accuracy'] >= .7 and checkpoint['validation']['balanced_accuracy'] >= .7,
         speed_gate_passed=float(np.mean([h['epoch_seconds'] for h in history])) <= 60,
-        scope='Feasibility pilot, adaptive validation reuse, not a final independent test or residual comparison')
+        scope=cfg['scope']+'; feasibility pilot, adaptive validation reuse, not final independent test or residual comparison')
     r.save(a.out/'fit_result.json', result)
     r.save(a.out/'status.json', dict(state='fit_complete', stop_reason=reason, epochs=len(history), test_evaluations=0, time=r.now()))
 

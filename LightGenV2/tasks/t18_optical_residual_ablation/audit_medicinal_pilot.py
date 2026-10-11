@@ -22,6 +22,7 @@ def main():
     p.add_argument('--out', type=Path, required=True)
     a = p.parse_args(); a.out.mkdir(parents=True, exist_ok=True)
     manifest = read(a.data.parent/'data_manifest.json')
+    classes = len(manifest['classes'])
     assert digest(a.data) == manifest['cache_sha256']
     summaries, histories, identities, configurations, sources = [], [], [], [], []
     for name in ['rho0', 'rho03']:
@@ -55,7 +56,7 @@ def main():
             rows = list(csv.DictReader((arm/(split+'_predictions.csv')).open()))
             assert [row['sample_id'] for row in rows] == ids.tolist() == manifest['split_ids'][split]
             assert [int(row['label_true']) for row in rows] == labels.tolist()
-            probability = np.array([[float(row[f'score{k}']) for k in range(30)] for row in rows])
+            probability = np.array([[float(row[f'score{k}']) for k in range(classes)] for row in rows])
             assert probability.argmax(1).tolist() == [int(row['label_pred']) for row in rows]
             computed = metrics(labels, probability)
             saved = result['metrics'][split]
@@ -109,7 +110,7 @@ def main():
     axes[0].axhline(70, color='#888888', linewidth=.8, linestyle=':')
     axes[0].set(ylabel='Accuracy (%)', ylim=(0, 100)); axes[1].set(ylabel='Balanced NLL')
     for ax in axes: ax.set(xlabel='Epoch'); ax.grid(alpha=.15); ax.legend(fontsize=8)
-    fig.suptitle('Full 30-class leaves | L2 feasibility pilot | seed17 | no test')
+    fig.suptitle(f'{manifest["dataset"]} | {classes} classes | L2 pilot | seed17 | no test')
     for ext in ['png', 'svg', 'pdf']: fig.savefig(a.out/('learning_curves_L2.'+ext), dpi=180)
     svg = a.out/'learning_curves_L2.svg'
     svg.write_text('\n'.join(line.rstrip() for line in svg.read_text().splitlines())+'\n')

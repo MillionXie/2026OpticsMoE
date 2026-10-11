@@ -1,0 +1,79 @@
+{
+  "dataset": "COIL20_author_processed_full",
+  "seed": 17,
+  "depths": [
+    2,
+    4,
+    8,
+    16
+  ],
+  "rhos": [
+    0.0,
+    0.3
+  ],
+  "batch_size": 16,
+  "microbatch": 4,
+  "evaluation_batch_size": 4,
+  "expert_batched": true,
+  "maximum_epochs": 30,
+  "minimum_epochs": 10,
+  "patience": 6,
+  "maximum_seconds": 1800,
+  "lr": 0.002,
+  "ema_decay": 0.95,
+  "label_smoothing": 0.02,
+  "capture_weight": 0.2,
+  "phase_smooth_weight": 0.02,
+  "phase_init_raw_uniform": 1.0,
+  "augmentation": {
+    "degrees": 10.0,
+    "translation_pixels": 3.0,
+    "scale_delta": 0.05
+  },
+  "scheduler": {
+    "factor": 0.5,
+    "patience": 8,
+    "min_lr": 2e-05
+  },
+  "detector": {
+    "detector_size": 32,
+    "layout": "fixed_2x2",
+    "normalize_detector_energy": true,
+    "start_pos_x": 24,
+    "start_pos_y": 174,
+    "N_det_sets": [
+      8,
+      8,
+      4
+    ],
+    "det_steps_x": [
+      28,
+      28,
+      28
+    ],
+    "det_steps_y": 28,
+    "start_pos_x_per_row": [
+      24,
+      24,
+      144
+    ]
+  },
+  "selection": "EMA minimum validation balanced NLL, first exact tie; pilot never tests",
+  "test_development": false,
+  "test_previously_observed": false,
+  "gpu_uuids": [
+    "GPU-e8837b85-d55b-8e81-aaa5-ec1ac326932d",
+    "GPU-6dcca91a-8e08-1a50-9aa6-81defeaed50b",
+    "GPU-1b963983-7909-af6e-0528-f0f0661ab549"
+  ],
+  "memory_gib": 3.0,
+  "scope": "Full20 known physical object identification from withheld view blocks; not unseen instances",
+  "data_contract": {
+    "dataset": "COIL20_author_processed_full",
+    "records": 1440,
+    "classes": 20,
+    "preparation_source": "prepare_coil20.py",
+    "identity_key": "archive_sha256",
+    "identity_sha256": "517c5594820eb40066ba0ff6842e7f09392bf7fde849bf9cb9c28445b0f29e88"
+  }
+}
