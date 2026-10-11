@@ -9,7 +9,7 @@
 - GPU 1 的 FishNet 已有计算进程，不使用；GPU 6 A100 初检无计算进程，按 UUID 指定。
 - 根 AGENTS.md、FixedFeedbackSFT README/MIGRATION、P11/P12 实现和任务协议均已核对。
 - 三位子代理负责架构/训练审计、数学及文献审查、强度接口实现；路径互不重叠，Git 事务由主代理串行执行。
-- 旧 LSP phase-only common start 未保留，LSP 已适配 best 不作为共同起点。P11 source 与 frozen stem 仍可使用。
+- 旧 LSP phase-only common start 未保留，LSP 已适配 FA-source best 不作为共同起点。P11 source 与 frozen stem 仍可使用。
 - 本轮采用新共同头起点和独立 run 身份。配置为 `pilot.json`，只做验证集初筛。
 - 本机 PyTorch c10.dll 加载失败；源码静态语法检查通过，数值测试在服务器已有 xml 环境执行。
 - 实现保留物理相位映射的当前控制链式因子；冻结的是完整光学强度响应，不是全部电子计算。
@@ -39,3 +39,26 @@ PAT 原文：[Deep physical neural networks trained with backpropagation](https:
 CUDA float32、双精度 gradcheck、有限差分、token/feature 两层电子链、源响应冻结与恢复。
 测试结束后 GPU 上未保留测试进程。训练程序的 buffer 哈希增加标量张量处理后再发布运行。
 实际训练结果将追加在此；测试通过不代表 FFA 适配有效。
+
+## 第一轮终态：完成，GPU 已释放
+
+- run：服务器 `/DATA/DATA1/guest3/2026OpticsMoE/FFA/runs/lsp_intensity_pilot_20261011`。
+- 执行代码 main `3ac18278502be4e634de32a75f6676e140e132e9`，PID 339952，终态 `result.json=status:complete`。
+- 30 epoch 新头暖启 + 每组 8 epoch；每组恰好 8 行适配历史、五组同一个共同起点 SHA。
+- 共 273.5672 秒；测试集未评估，未进行真实光路实验或动态反馈形成。
+- 骨干电子参数与全部持久 buffer 完整哈希在训练前后相同；冻结反馈 tensor SHA 在每组前后相同。
+- 八层相位在全部更新组都有有限非零梯度；无 AMP 跳过的优化步。
+- 32 份 JSON/CSV、477,326 字节记录已下载到本地同名 `FFA/runs`，逐文件 SHA 核验；权重保留在服务器，best/last SHA 进入各组结果。传输清单保存在被忽略的 `FFA/runs/transfer_manifest_20261011.json`。
+- 进程退出后查询 GPU compute-app，A100 UUID 已无进程；GPU 1 FishNet 未干预。
+
+| 方法 | val best PCK | val last PCK | 末轮梯度余弦（同状态对 BP） |
+|---|---:|---:|---:|
+| head_only | 26.171875% | 25.920759% | 无光学更新 |
+| bp_current | 26.953125% | 26.953125% | 1.0000 |
+| fa_source_connector | 26.925223% | 26.869420% | 0.9996 |
+| source_full_response | 26.897321% | 26.869420% | 0.9471 |
+| random_full_response | 26.199777% | 26.060268% | 0.0676 |
+
+BP 相对同预算 head-only 的增益 0.78125 pp，源完整响应恢复 92.8571%；这是开发描述性比值，未检验统计显著性。头暖启仍在明显学习，小数据结果不代表旧完整任务成绩。原 FA 保留原二维 FFT，起点 val 相较一维实现差 0.0558 pp（两关节），全网 legacy/current 梯度 cosine 0.99999991、relative L2 0.000427、输出 max abs 0.000193；不解读小数点级排名。主比较 BP/source-full/random-full 共用一维前向。
+
+源完整响应末轮平均绝对相位位移 0.00408061 rad、RMS 0.0128294 rad，仍是很局部的范围。因此补做旧 50-epoch FA-source 已保留终点的只读梯度诊断；旧 best 本身选在 epoch45，是否完成50轮由原 result 收据确认，不能由 `run_epochs=50` 推断。
