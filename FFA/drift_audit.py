@@ -319,7 +319,7 @@ def main() -> None:
     out.mkdir(parents=True)
     started = time.time()
     try:
-        torch.set_num_threads(4)
+        source_reconstruction_threads = torch.get_num_threads()
         pilot.p12.seed_everything(profile["seed"])
         device = torch.device("cuda:0")
         base = ROOT / "FixedFeedbackSFT/projects/qwen3_vl_patch_stem_8stage_separable_optical_downstream_fa/configs/base_50e.yaml"
@@ -352,6 +352,11 @@ def main() -> None:
         # endpoint; retaining source_phases is essential to this counterfactual.
         model = pilot.p12.build_model(settings)
         endpoint_proof = load_verified_endpoint(model, payload)
+        # Preserve the original CPU phase-snapshot arithmetic during identity
+        # reconstruction. Float32 sigmoid can differ by an ULP when thread
+        # partitioning changes; the archived reference must match byte-for-byte.
+        # Only after strict source verification do we bound CPU worker threads.
+        torch.set_num_threads(4)
         del payload
         model = model.to(device)
         pilot.policy(model, True)
@@ -378,6 +383,8 @@ def main() -> None:
             "old_endpoint_dataset_manifest_sha256": parent_identity["dataset_manifest_sha256"],
             "different_full_vs_pilot_subset_manifest_expected": True,
             "source": model.source_manifest, "gpu": gpu,
+            "source_reconstruction_cpu_threads": source_reconstruction_threads,
+            "audit_cpu_threads": torch.get_num_threads(),
             "git_commit": pilot.p12.git_commit(ROOT),
             "implementation_files": pilot.source_manifest(),
             "test_evaluated": False, "optimizer_steps": 0,

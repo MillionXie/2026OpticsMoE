@@ -62,3 +62,15 @@ CUDA float32、双精度 gradcheck、有限差分、token/feature 两层电子�
 BP 相对同预算 head-only 的增益 0.78125 pp，源完整响应恢复 92.8571%；这是开发描述性比值，未检验统计显著性。头暖启仍在明显学习，小数据结果不代表旧完整任务成绩。原 FA 保留原二维 FFT，起点 val 相较一维实现差 0.0558 pp（两关节），全网 legacy/current 梯度 cosine 0.99999991、relative L2 0.000427、输出 max abs 0.000193；不解读小数点级排名。主比较 BP/source-full/random-full 共用一维前向。
 
 源完整响应末轮平均绝对相位位移 0.00408061 rad、RMS 0.0128294 rad，仍是很局部的范围。因此补做旧 50-epoch FA-source 已保留终点的只读梯度诊断；旧 best 本身选在 epoch45，是否完成50轮由原 result 收据确认，不能由 `run_epochs=50` 推断。
+
+## 旧终点审计：严格来源检查先行
+
+首个审计目录 `FFA/runs/lsp_retained_endpoint_audit_20261011` 在源相位哈希检查处退出，failure.json 保留。
+随后只读重建实验确认是 CPU 线程设置下的 float32 舍入差异：默认 40 线程时源相位 SHA
+与旧 checkpoint/声明完全一致 `dec25a27...`；4 线程时为 pilot 使用的 `e1237e98...`。
+总 1,204,224 个元素仅44个不同，max abs `9.536743e-7 rad`、mean abs `8.666205e-12 rad`。
+同一 P11 文件 SHA 保持 `c3ad0b78...`；电子 parameter+buffer 哈希在 source/旧 endpoint 严格一致。
+
+修复仅将线程设置移到默认设置下完成原样 source 重建与严格加载之后，不放宽来源校验，
+保留旧 source tensor 字节。新试验本身的源相位、代码和数据身份在运行时已独立记录，
+不将两种舍入后的物理相位 tensor SHA 混为一个值。审计重试使用新目录，未覆盖失败记录。

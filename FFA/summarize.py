@@ -292,7 +292,7 @@ def render(summary: dict[str, Any], curves: list[dict[str, Any]], path: Path) ->
     with plt.rc_context({"font.family": "DejaVu Sans", "font.size": 10,
                          "axes.spines.top": False, "axes.spines.right": False,
                          "axes.linewidth": 0.8, "savefig.dpi": 200}):
-        fig, axes = plt.subplots(1, 2, figsize=(12.8, 4.6), sharey=True)
+        fig, axes = plt.subplots(1, 2, figsize=(12.8, 4.6))
         warm = [row for row in curves if row["phase"] == "head_warmup"]
         axes[0].plot([row["epoch"] for row in warm], [row["validation_pck_percent"] for row in warm],
                      color="#0072B2", linewidth=1.8, label="Shared head warmup")
@@ -310,13 +310,14 @@ def render(summary: dict[str, Any], curves: list[dict[str, Any]], path: Path) ->
                          label=LABELS[method], linestyle="--" if method == "head_only" else "-")
         axes[1].set_title("B  Paired adaptation from the shared start", loc="left", fontsize=11)
         axes[1].set_xlabel("Adaptation epoch (same sample/update budget)")
+        axes[1].set_ylabel("Validation PCK@0.2 torso (%)")
         axes[1].set_xticks(range(summary["profile"]["adaptation_epochs"] + 1))
         axes[1].legend(frameon=False, fontsize=8.5, loc="best")
         for ax in axes:
             ax.grid(axis="y", color="#DDDDDD", linewidth=0.7, alpha=0.7)
             ax.set_axisbelow(True)
         fig.suptitle("LSP validation development pilot", fontsize=13, y=1.0)
-        fig.text(0.5, 0.015, "Single source and seed; reduced data. No test, hardware, or dynamic feedback formation assessment.",
+        fig.text(0.5, 0.015, "Panels use separate y scales. Single source/seed, reduced data; validation only. No hardware or feedback formation assessment.",
                  ha="center", fontsize=8.5, color="#555555")
         fig.tight_layout(rect=(0, 0.06, 1, 0.97))
         temporary = path.with_name(f".{path.name}.{os.getpid()}.tmp")
