@@ -22,5 +22,15 @@ class SplitTests(unittest.TestCase):
             split_groups([dict(label=0, original_hash='x', cache_hash='a'),
                           dict(label=1, original_hash='x', cache_hash='b')])
 
+    def test_expansion_keeps_previous_train_val_out_of_new_test(self):
+        rows = [dict(name=f'img{i}', label=0, original_hash=f'o{i}', cache_hash=f'c{i}') for i in range(90)]
+        previous = {f'img{i}':'train' for i in range(20)}
+        previous.update({f'img{i}':'val' for i in range(20,25)})
+        split, _ = split_groups(rows, 20261012, 60, 10, previous)
+        self.assertEqual([len(split[k]) for k in ['train','val','test']], [60,10,20])
+        roles = {rows[i]['name']:k for k, indices in split.items() for i in indices}
+        self.assertTrue(all(roles[name] == role for name, role in previous.items()))
+        self.assertFalse({rows[i]['name'] for i in split['test']} & set(previous))
+
 
 if __name__ == '__main__': unittest.main()

@@ -116,6 +116,10 @@ def main():
     grouping_source = 'prepare_caltech50.py' if contract['preparation_source'] == 'prepare_caltech50.py' else 'prepare_butterfly.py'
     assert manifest['grouping_source_sha256'] == r.sha(o.HERE/grouping_source)
     assert manifest[contract['identity_key']] == contract['identity_sha256']
+    if 'preparation_plan_sha256' in contract:
+        assert manifest['preparation_plan_sha256'] == contract['preparation_plan_sha256']
+        assert manifest['parent_manifest_sha256'] == contract['parent_manifest_sha256']
+        assert manifest['previous_fit_or_validation_images_in_test'] == 0
     assert profile['detector'] == execution.detector(classes)
     profile.update(dataset=manifest['dataset'], microbatch=a.micro, evaluation_batch_size=a.micro,
         expert_batched=bool(a.batched), maximum_epochs=a.epochs, minimum_epochs=min(10, a.epochs), patience=6,

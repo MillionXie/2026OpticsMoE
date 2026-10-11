@@ -18,6 +18,8 @@ def save(path, value):
 def main():
     p = argparse.ArgumentParser()
     for key in ('out', 'profile', 'data', 'probe'): p.add_argument('--'+key, type=Path, required=True)
+    p.add_argument('--micro2', type=int, choices=(1,2,4), default=4)
+    p.add_argument('--micro16', type=int, choices=(1,2,4), default=4)
     a = p.parse_args()
     assert os.environ.get('CUDA_VISIBLE_DEVICES') == '', 'Parent must not use CUDA'
     profile = json.loads(a.profile.read_text())
@@ -25,8 +27,9 @@ def main():
     gate = json.loads(a.probe.read_text())
     for depth in (2,16):
         for rho in (0.,.3):
-            assert any(x['depth']==depth and x['rho']==rho and x['microbatch']==4 and x['passed'] for x in gate['results'])
-    assert profile['dataset'] == 'Caltech101_prespecified50_fewshot' and profile['maximum_epochs']==100
+            micro = a.micro2 if depth == 2 else a.micro16
+            assert any(x['depth']==depth and x['rho']==rho and x['microbatch']==micro and x['passed'] for x in gate['results'])
+    assert profile['dataset'] in ('Caltech101_prespecified50_fewshot', 'Caltech101_prespecified20_train60') and profile['maximum_epochs']==100
     a.out.mkdir(parents=True, exist_ok=False)
     task = Path(__file__).resolve().parent
     jobs = [('L2_rho0',2,0.,100,gpu[0]), ('L2_rho03',2,.3,100,gpu[3]),
@@ -44,7 +47,8 @@ def main():
             cmd = [sys.executable,str(task/'medicinal_pilot.py'),'--out',str(a.out/name),
                 '--data',str(a.data),'--profile',str(a.profile),'--probe',str(a.probe),
                 '--gpu',uuid,'--rho',str(rho),'--depth',str(depth),'--epochs',str(epochs),
-                '--seconds','36000' if epochs==100 else '900','--full-budget','--micro','4','--batched','1']
+                '--seconds','36000' if epochs==100 else '900','--full-budget',
+                '--micro',str(a.micro2 if depth==2 else a.micro16),'--batched','1']
             env = os.environ.copy(); env['CUDA_VISIBLE_DEVICES'] = uuid
             with (a.out/(name+'.log')).open('xb') as log:
                 child = subprocess.Popen(cmd,stdout=log,stderr=subprocess.STDOUT,env=env)

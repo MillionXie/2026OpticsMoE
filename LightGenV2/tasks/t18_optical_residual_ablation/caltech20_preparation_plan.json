@@ -1,0 +1,13 @@
+{
+  "dataset": "Caltech101_prespecified20_train60",
+  "classes": 20,
+  "minimum_source_images": 80,
+  "selection_seed": 20261012,
+  "split_seed": 20261012,
+  "train_groups_per_class": 60,
+  "val_groups_per_class": 10,
+  "archive_path": "/DATA/DATA1/guest3/t18_caltech101_20261011/caltech-101.zip",
+  "parent_manifest_path": "/DATA/DATA1/guest3/t18_caltech101_20261011/data_manifest.json",
+  "parent_manifest_sha256": "ef819d50004993ddd3869ce0ed97fab8927939713a2f76b9995debc2d49862f7",
+  "policy": "Choose category names by source counts and fixed seed, never by accuracy; retain all selected photos; keep previous train and validation pictures out of new test"
+}
