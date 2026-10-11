@@ -13,6 +13,7 @@ import traceback
 
 import run as t
 import gpu_budget
+import fishnet_selection as selection
 
 HERE = Path(__file__).resolve().parent
 b, r, torch, np = t.b, t.r, t.torch, t.np
@@ -20,7 +21,9 @@ b, r, torch, np = t.b, t.r, t.torch, t.np
 
 def source_identity(profile):
     return dict(optical_parent=t.source_identity(), adapter=r.sha(__file__), gpu_budget=r.sha(HERE / 'gpu_budget.py'),
-                preparation=r.sha(HERE / 'prepare_fishnet.py'), profile=r.sha(profile))
+                preparation=r.sha(HERE / 'prepare_fishnet.py'), profile=r.sha(profile),
+                selection_policy=r.sha(HERE / 'fishnet_selection.py'),
+                preparation_profile=r.sha(HERE / 'fishnet_profile.json'))
 
 
 def preflight(gpu, shared=False):
@@ -41,8 +44,12 @@ def config(profile, manifest, rho):
                 'capture_weight', 'phase_smooth_weight', 'phase_init_raw_uniform', 'augmentation',
                 'selection', 'scope', 'test_development', 'training_reads_test_for_gradients']:
         cfg[key] = profile[key]
+    mode = selection.selection_mode(profile)
     cfg.update(classes=manifest['classes'], deduplication=manifest['split_policy'],
-               training_profile='fishnet_common100_testdev', minimum_epochs=100, patience=100,
+               training_profile='fishnet_common100_' + mode, minimum_epochs=100, patience=100,
+               selection_split='val' if mode == 'validation' else 'test',
+               prepared_data_profile_sha256=manifest['profile_sha256'],
+               test_previously_observed=True,
                source=profile['source'], doi=profile['doi'])
     return cfg
 
@@ -55,7 +62,9 @@ def tensor_identity(model):
 
 
 def train(a, profile, manifest, cfg, src):
-    data, val, test = [t.k.load_data(a.data, split) for split in ['train', 'val', 'test']]
+    mode = selection.selection_mode(profile)
+    data, val = [t.k.load_data(a.data, split) for split in ['train', 'val']]
+    test = t.k.load_data(a.data, 'test') if mode == 'test_development' else None
     evaluation_batch = cfg['evaluation_batch_size']
     r.setseed(profile['seed'])
     model = t.build('moe', a.depth, cfg)
@@ -72,6 +81,7 @@ def train(a, profile, manifest, cfg, src):
     weights = len(data[1]) / (8 * torch.bincount(data[1], minlength=8).float())
     history, gradients, orders, transforms = [], [], [], []
     best, chosen_test = (-1., -float('inf')), None
+    best_validation = float('inf')
     started = time.time()
     r.save(dest / 'initial_validation.json', b.evaluate(model, val, 'moe', evaluation_batch)[0])
     for epoch in range(1, cfg['epochs'] + 1):
@@ -101,20 +111,29 @@ def train(a, profile, manifest, cfg, src):
             with torch.no_grad():
                 for ep, mp in zip(ema.parameters(), model.parameters()):
                     ep.lerp_(mp, 1 - cfg['ema_decay'])
-        vm = b.evaluate(ema, val, 'moe', evaluation_batch)[0]
+        vm, val_rows = b.evaluate(ema, val, 'moe', evaluation_batch)
         entry = dict(epoch=epoch, train_loss=total / len(data[1]), lr=opt.param_groups[0]['lr'], val=vm)
         if epoch == 1 or epoch % 5 == 0:
             entry['train'] = b.evaluate(ema, data, 'moe', evaluation_batch)[0]
-        for kind, candidate in [('raw', model), ('ema', ema)]:
-            metric, rows = b.evaluate(candidate, test, 'moe', evaluation_batch)
-            entry['test_development_' + kind] = metric
-            score = (metric['accuracy'], -metric['balanced_nll'])
-            if score > best:
-                best, chosen_test = score, metric
-                r.save_torch(dest / 'best_checkpoint.pt', dict(model=candidate.state_dict(), epoch=epoch,
+        if mode == 'validation':
+            if selection.validation_improves(vm, best_validation):
+                best_validation = vm['balanced_nll']
+                r.save_torch(dest / 'best_checkpoint.pt', dict(model=ema.state_dict(), epoch=epoch,
                     arch='moe', depth=a.depth, seed=profile['seed'], config=cfg, sources=src,
-                    selected_state_kind=kind, data_sha256=manifest['cache_sha256']))
-                r.csvwrite(dest / 'test_predictions.csv', rows)
+                    selected_state_kind='ema', selection_split='val', validation=vm,
+                    data_sha256=manifest['cache_sha256']))
+                r.csvwrite(dest / 'val_predictions.csv', val_rows)
+        else:
+            for kind, candidate in [('raw', model), ('ema', ema)]:
+                metric, rows = b.evaluate(candidate, test, 'moe', evaluation_batch)
+                entry['test_development_' + kind] = metric
+                score = (metric['accuracy'], -metric['balanced_nll'])
+                if score > best:
+                    best, chosen_test = score, metric
+                    r.save_torch(dest / 'best_checkpoint.pt', dict(model=candidate.state_dict(), epoch=epoch,
+                        arch='moe', depth=a.depth, seed=profile['seed'], config=cfg, sources=src,
+                        selected_state_kind=kind, data_sha256=manifest['cache_sha256']))
+                    r.csvwrite(dest / 'test_predictions.csv', rows)
         history.append(entry)
         scheduler.step()
         r.save(dest / 'history.json', history); r.save(dest / 'gradients.json', gradients)
@@ -122,25 +141,49 @@ def train(a, profile, manifest, cfg, src):
             optimizer=opt.state_dict(), scheduler=scheduler.state_dict(), epoch=epoch, arch='moe',
             depth=a.depth, seed=profile['seed'], config=cfg, sources=src, data_sha256=manifest['cache_sha256']))
         status = dict(state='training', depth=a.depth, rho=a.rho, epoch=epoch, epochs=cfg['epochs'],
-                      val_accuracy=vm['accuracy'], test_raw=entry['test_development_raw']['accuracy'],
-                      test_ema=entry['test_development_ema']['accuracy'], best_test_development=best[0], seconds=time.time() - started)
+                      selection_split=cfg['selection_split'], val_accuracy=vm['accuracy'],
+                      val_balanced_nll=vm['balanced_nll'], seconds=time.time() - started)
+        if mode == 'validation':
+            status.update(best_validation_balanced_nll=best_validation, test_evaluations=0)
+        else:
+            status.update(test_raw=entry['test_development_raw']['accuracy'],
+                          test_ema=entry['test_development_ema']['accuracy'], best_test_development=best[0])
         r.save(a.out / 'status.json', status); print(json.dumps(status), flush=True)
     ck = torch.load(dest / 'best_checkpoint.pt', map_location='cpu', weights_only=False)
     assert ck['config'] == cfg and ck['sources'] == src and ck['data_sha256'] == r.sha(a.data)
+    if mode == 'validation':
+        selected = min(history, key=lambda row: row['val']['balanced_nll'])
+        assert selected['epoch'] == ck['epoch'] and selected['val'] == ck['validation']
+        r.save(a.out / 'selection_lock.json', dict(selection_split='val', rule=profile['selection'],
+            epoch=ck['epoch'], selected_state_kind='ema', validation=ck['validation'],
+            checkpoint_sha256=r.sha(dest / 'best_checkpoint.pt'), config=cfg, sources=src,
+            data_sha256=manifest['cache_sha256'], test_evaluations_before_lock=0, time=r.now()))
     ema.load_state_dict(ck['model'])
     measures = {}
     for split, examples in [('train', data), ('val', val)]:
         measures[split], rows = b.evaluate(ema, examples, 'moe', evaluation_batch)
         r.csvwrite(dest / (split + '_predictions.csv'), rows)
+    if mode == 'validation':
+        # Test data are first loaded only after the validation-selected PT is locked.
+        test = t.k.load_data(a.data, 'test')
+        measures['test'], rows = b.evaluate(ema, test, 'moe', evaluation_batch)
+        r.csvwrite(dest / 'test_predictions.csv', rows)
     result = dict(depth=a.depth, rho=a.rho, parameters=parameters, initial_parameter_sha256=initial_sha,
                   selected_epoch=ck['epoch'], selected_state_kind=ck['selected_state_kind'], epochs_completed=epoch,
-                  metrics=measures, test_development=chosen_test, orders=orders, transforms=transforms,
+                  metrics=measures, orders=orders, transforms=transforms,
                   checkpoint_sha256=r.sha(dest / 'best_checkpoint.pt'), checkpoint=str(dest / 'best_checkpoint.pt'),
                   data_sha256=manifest['cache_sha256'], seconds=time.time() - started, scope=cfg['scope'])
+    if mode == 'validation':
+        result.update(selection_split='val', selected_validation=ck['validation'], test_evaluations=1,
+                      test_previously_observed=True, test_used_for_selection=False)
+    else:
+        result['test_development'] = chosen_test
     r.save(a.out / 'result.json', result)
     del model, ema, opt, ck, data, val, test
     gc.collect(); torch.cuda.empty_cache()
-    r.save(a.out / 'status.json', dict(state='complete', time=r.now(), test_development=True, gpu_released_on_exit=True))
+    r.save(a.out / 'status.json', dict(state='complete', time=r.now(), selection_split=cfg['selection_split'],
+        test_development=profile['test_development'], test_evaluations=1 if mode == 'validation' else 200,
+        gpu_released_on_exit=True))
 
 
 def smoke(a, profile, cfg, diagnostic_only=False):
@@ -207,6 +250,7 @@ def suite(a, profile):
     try:
         data = a.data_root / 'fishnet_fixed_split.npz'
         if not data.exists():
+            assert selection.selection_mode(profile) != 'validation', 'Validation switch requires the preserved prepared cache'
             r.save(a.out / 'status.json', dict(state='preparing_data', gpu_processes=0))
             with (a.out / 'preparation.log').open('w') as log:
                 subprocess.run([sys.executable, '-u', str(HERE / 'prepare_fishnet.py'), '--out', str(a.data_root),
@@ -234,7 +278,8 @@ def suite(a, profile):
                         assert left[key] == right[key], ('Pair mismatch', depth, key)
                     r.save(a.out / f'pair_lock_L{depth}.json', dict(depth=depth, paired_initialization=True, paired_orders=True,
                         paired_transforms=True, same100_epochs=True, checkpoints=[x['checkpoint_sha256'] for x in [left, right]],
-                        selection=profile['selection'], test_development=True))
+                        selection=profile['selection'], test_development=profile['test_development'],
+                        selection_split='val' if selection.selection_mode(profile) == 'validation' else 'test'))
         r.save(a.out / 'status.json', dict(state='complete', completed=6, gpu_released_on_exit=True, time=r.now()))
     except BaseException:
         if child is not None and child.poll() is None:
@@ -246,7 +291,7 @@ def suite(a, profile):
 def main():
     p = argparse.ArgumentParser()
     p.add_argument('--phase', choices=['suite', 'smoke', 'diagnose', 'train'], required=True)
-    p.add_argument('--profile', type=Path, default=HERE / 'fishnet_profile.json')
+    p.add_argument('--profile', type=Path, default=HERE / 'fishnet_validation_profile.json')
     p.add_argument('--data-root', type=Path)
     p.add_argument('--data', type=Path)
     p.add_argument('--out', type=Path, required=True)
@@ -255,7 +300,8 @@ def main():
     p.add_argument('--gpu', required=True)
     p.add_argument('--use-spare-memory', action='store_true', help='Previously authorized bounded 3GiB execution, microbatch2/effective16')
     a = p.parse_args(); profile = r.read(a.profile)
-    assert a.gpu == profile['gpu_uuid'] and profile['test_development'] and profile['epochs'] == 100
+    selection.selection_mode(profile)
+    assert a.gpu == profile['gpu_uuid'] and profile['epochs'] == 100
     if a.phase == 'suite':
         assert a.data_root
         suite(a, profile)
@@ -268,7 +314,10 @@ def main():
     torch.set_num_threads(4)
     manifest = r.read(a.data.parent / 'data_manifest.json')
     assert manifest['dataset'] == profile['dataset'] and manifest['license'] == 'CC BY 4.0'
-    assert manifest['classes'] == profile['classes'] and manifest['profile_sha256'] == r.sha(a.profile)
+    preparation_profile = HERE / 'fishnet_profile.json'
+    selection.validate_prepared_profile(profile, manifest, r.read(preparation_profile), r.sha(preparation_profile))
+    assert manifest['preparation_source_sha256'] == r.sha(HERE / 'prepare_fishnet.py')
+    assert manifest['cache_sha256'] == r.sha(a.data)
     cfg, src = config(profile, manifest, a.rho), source_identity(a.profile)
     cfg.update(microbatch=2 if a.use_spare_memory else 16, effective_batch_size=16,
                evaluation_batch_size=2 if a.use_spare_memory else 16, spare_memory_authorized=a.use_spare_memory)
@@ -276,7 +325,8 @@ def main():
         git_commit=subprocess.check_output(['git', 'rev-parse', 'HEAD'], text=True).strip(),
         data_sha256=r.sha(a.data), manifest_sha256=r.sha(a.data.parent / 'data_manifest.json'),
         gpu_policy=policy, environment=t.m.environment(), time=r.now(),
-        test_development=True, training_reads_test_for_gradients=False))
+        test_development=profile['test_development'], selection_split=cfg['selection_split'],
+        training_reads_test_for_gradients=False, test_previously_observed=True))
     try:
         if a.phase in ['smoke', 'diagnose']:
             smoke(a, profile, cfg, diagnostic_only=a.phase == 'diagnose')

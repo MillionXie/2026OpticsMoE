@@ -1,5 +1,28 @@
 # FishNet v1：新的八分类残差消融
 
+## 当前人工变更：验证集选模（2026-10-11 11:00）
+
+用户最新要求“先暂时不要用test选，试着用验证集选”，覆盖下文旧的逐轮test选模授权。
+旧run `fishnet_s17_e100_gpu1_checked_20261011` 的六／四层两组均已100轮完成；
+父PID11618和刚启动、未训练的两层子PID300595已停止，旧记录及权重全部保留。
+四个已完成组的验证EMA balanced NLL最低轮为72／97／97／97；这些权重均不是旧test-best
+或last，原来没有保存。不得把旧test-best／last假称全程验证最优。
+
+因此新run `fishnet_val_s17_e100_gpu1_20261011` 六组从头重跑，同seed17、相位初始化、
+原数据／划分、microbatch2／有效batch16及原100轮优化预算。
+**每轮只用验证EMA balanced NLL最低选best；精确同分保留首次，不以accuracy或test反换权重。**
+验证不早停，各组完整100轮。训练梯度仍只读train；test在100轮后核验PT/config/source/data
+并保存`selection_lock.json`以后才加载，对锁定的EMA只评估一次。
+不逐轮test，不追加raw／last测试候选；best／last及验证曲线全部保留。
+
+新入口仍是`fishnet_ablation.py`，默认`fishnet_validation_profile.json`；原
+`fishnet_profile.json`保持其SHA `17cbc0264fd2c633f4ba8aef5aeaed6cc8c69ee2c25273370e7da841c1112229`。
+新profile显式引用此准备身份，校验原manifest、准备源码、缓存SHA，并校验与原profile仅
+selection／scope／test_development及准备SHA引用有区别；不重新划分、不绕过身份检查。
+两臂都使用新的同一选模规则和来源，并核验pair_lock。
+同一test已在旧实验逐轮观测过，今后结果称**验证选模的探索性评估**，仍不能称独立泛化。
+下文test-selected协议及成绩只描述保留的旧run。
+
 2026-10-11用户要求使用空闲物理GPU1、更换未在工程用过且符合原许可/类别要求的数据集，
 保留芒果最终结果，沿main同步、不新分支。2026-10-11仓库源码、配置与协议检索未发现
 `FishNet`或DOI `10.17632/p3xh4fs7cp.1`已有实验。当前源码/实验只在T18增加适配入口，

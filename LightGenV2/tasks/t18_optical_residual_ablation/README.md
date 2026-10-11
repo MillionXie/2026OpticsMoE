@@ -2,6 +2,18 @@
 
 ## FishNet新数据集配对实验（2026-10-11）
 
+**当前规则已改为验证集选模。**用户11:00要求暂时不用test选PT；旧test-selected
+队列在六／四层两组100轮完成后停止，两层尚未训练，旧结果与best／last完整保留。
+四个已完成组验证最优轮72／97／97／97的权重未保存，不能从旧test-best／last冒称补选。
+新run `fishnet_val_s17_e100_gpu1_20261011` 六组从头seed17、同数据／划分／光路／优化预算
+完整100轮；每轮验证EMA balanced NLL最低选best、精确同分保留首次。
+test只在验证PT锁定后评估一次，不逐轮测、不按test挑raw／EMA／last。
+默认profile为`fishnet_validation_profile.json`，严格关联原准备profile与缓存SHA。
+仍只物理GPU1、microbatch2累积有效batch16；新源码检查并Git发布后启动。
+新[验证选模记录](reports/fishnet_validation_20261011/README.md)与旧开发报告分开。
+因旧test已多次观测，新结果仍是探索性评估，不能重命名为独立泛化。
+以下test开发选模段落仅属于保留的旧run。
+
 用户要求使用空闲物理GPU1、另试符合许可/类别要求的数据集，保留当前最终结果。
 选作者FishNet v1，原生3,013张／八个鱼虾类别、CC BY4.0、DOI10.17632/p3xh4fs7cp.1。
 原文件SHA与八类数量已核对；671张HEIC也完整解码，不漏类别、不挑子集。
