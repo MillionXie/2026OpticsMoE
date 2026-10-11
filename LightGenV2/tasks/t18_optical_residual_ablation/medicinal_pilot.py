@@ -88,7 +88,8 @@ def main():
     a = p.parse_args()
     assert os.environ['CUDA_VISIBLE_DEVICES'] == a.gpu
     a.out.mkdir(parents=True, exist_ok=False)
-    profile = r.read(o.HERE/'butterfly_profile.json')
+    profile_path = o.HERE/'medicinal_pilot_profile.json'
+    profile = r.read(profile_path)
     gate = r.read(a.probe)
     for rho in [0., .3]:
         assert any(x['depth'] == 2 and x['rho'] == rho and x['expert_batched'] == bool(a.batched)
@@ -102,7 +103,7 @@ def main():
     assert manifest['preparation_source_sha256'] == r.sha(o.HERE/'prepare_medicinal.py')
     assert manifest['grouping_source_sha256'] == r.sha(o.HERE/'prepare_butterfly.py')
     assert manifest['author_index_sha256'] == '922f45590782b91149e24ce2a003b57d1117de8b563d8ace8534a7bee8351fa7'
-    profile['detector'] = execution.detector(30)
+    assert profile['detector'] == execution.detector(30)
     profile.update(dataset=manifest['dataset'], microbatch=a.micro, evaluation_batch_size=a.micro,
         expert_batched=bool(a.batched), maximum_epochs=30, minimum_epochs=10, patience=6,
         maximum_seconds=1800, scope='Small full30 natural leaf image train/val feasibility pilot, image-level only')
@@ -110,7 +111,7 @@ def main():
     for key in ['initial_epochs', 'maximum_base_epochs', 'maximum_paired_restarts', 'restart_epochs', 'restart_candidates', 'data_revision']:
         cfg.pop(key, None)
     cfg['selection'] = 'EMA minimum validation balanced NLL, first exact tie; pilot never tests'
-    sources = o.source_identity(o.HERE/'butterfly_profile.json')
+    sources = o.source_identity(profile_path)
     sources.update({str((o.HERE/name).relative_to(o.ROOT)).replace('\\', '/'): r.sha(o.HERE/name)
         for name in ['fast_optical.py', 'medicinal_pilot.py', 'prepare_medicinal.py', 'probe_fast_optical.py']})
     assert all(hashlib.sha256(subprocess.check_output(['git', 'show', 'HEAD:'+path])).hexdigest() == digest
