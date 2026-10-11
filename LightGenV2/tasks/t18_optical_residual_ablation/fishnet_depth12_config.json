@@ -1,0 +1,19 @@
+{
+  "main_optical_layers": 12,
+  "cycles": 6,
+  "experts": 9,
+  "trainable_phase_planes": 61,
+  "parameters": 2649088,
+  "seed": 17,
+  "epochs": 100,
+  "rhos": [0.0, 0.3],
+  "gpu_uuids": [
+    "GPU-6dcca91a-8e08-1a50-9aa6-81defeaed50b",
+    "GPU-1b963983-7909-af6e-0528-f0f0661ab549"
+  ],
+  "maximum_project_gpus_including_existing_suite": 3,
+  "training_policy": "Reuse frozen FishNet validation profile and train function; full 100 epochs; validation EMA balanced NLL minimum; test once after lock",
+  "graph_change": "Repeat original expert and global propagation/OEO cycle six times; router unchanged; no CNN or trainable electronic readout",
+  "source_policy": "Existing 2/4/6 layer runtime source files are unchanged; extension bindings and graph registry are process-local",
+  "scope": "User-authorized depth extension; single-seed validation-selected exploratory evaluation; previously observed test"
+}

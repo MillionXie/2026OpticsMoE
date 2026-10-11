@@ -2,6 +2,14 @@
 
 ## FishNet新数据集配对实验（2026-10-11）
 
+用户下午新增授权最多三张GPU并试12层，同时查看train精度／过拟合。
+现有六组队列源码冻结、GPU1继续；新增`fishnet_depth12.py`复用原训练函数，
+12层六周期、九专家、61张可训练相位、2,649,088参数，GPU2／GPU4分别rho0／rho0.3。
+同100轮、seed17、验证NLL选EMA、锁后一次test，结束释放，不预设加深或残差一定改善。
+新图配置`fishnet_depth12_config.json`，详细授权和身份见[协议](FISHNET_PROTOCOL_20261011.md)。
+新增run `fishnet_val_L12_s17_e100_3gpu_20261011`须先通过12层GPU smoke；
+最新启动／检查状态写入[验证选模报告](reports/fishnet_validation_20261011/README.md)。
+
 **当前规则已改为验证集选模。**用户11:00要求暂时不用test选PT；旧test-selected
 队列在六／四层两组100轮完成后停止，两层尚未训练，旧结果与best／last完整保留。
 四个已完成组验证最优轮72／97／97／97的权重未保存，不能从旧test-best／last冒称补选。

@@ -1,5 +1,31 @@
 # FishNet v1：新的八分类残差消融
 
+## 新增人工授权：三张GPU与12层（2026-10-11下午）
+
+用户要求查看train精度与过拟合，允许最多三张GPU，并新增12层实验，使用完释放。
+原`fishnet_val_s17_e100_gpu1_20261011`队列继续GPU1的2／4／6层协议，运行源码不改。
+新增`fishnet_depth12.py`复用冻结的`fishnet_ablation.train`和原光学模块，仅在新进程的
+内存配置中增加12层图：六次原专家／global周期，各周期仍各5cm传播及原OEO，
+九专家各六张相位、六张global相位，额外一张router，共61张相位、2,649,088参数。
+专家／global采用rho0或0.3的同一相干振幅混合，router不加残差，无CNN／Linear。
+12层rho0与rho0.3在GPU2／GPU4各一张卡并行，与原GPU1合计最多三卡；
+UUID见`fishnet_depth12_config.json`。每卡一个本项目GPU子进程，结束退出释放，
+不增加第四卡，不修改或终止其它项目。上限是允许并行的卡数，不保证任意时刻占满。
+
+新增run `fishnet_val_L12_s17_e100_3gpu_20261011`，沿用同一数据／分组／缓存／八类、
+seed17、原增强／lr0.002余弦／EMA0.95／损失和完整100轮，不从六层PT迁移。
+双方microbatch2按样本权重累积有效batch16，评估batch2，Torch上限3GiB另留800MiB，
+开始前预检GPU，并先做12层train-only GPU smoke。不能绕过前向／梯度数值门槛。
+每轮验证EMA balanced NLL最小选best、精确同分保留首次，100轮后锁定获选PT再各测一次test，
+不追加raw／last测试候选。原test已观测，全部仍称验证选模探索性评估。
+新增来源记录冻结adapter／原profile、12层入口与图配置SHA；源码仅Git发布同步后启动，
+不复制训练器、不覆盖在跑队列的来源身份。12层完成后也核对同初始化／100轮顺序／增强／
+数据／参数与配置仅rho不同，保存pair_lock和逐样本预测。总交付需原六组加新增两组全部完成。
+
+过拟合诊断从保存的同轮train／val accuracy和NLL曲线判断，不为此额外推理test。
+train精度较高而val NLL后期上升支持过拟合迹象；train本身较低也可能是拟合／优化限制，
+不能单靠train-val差距断言原因，更不能保证增加深度一定改善。
+
 ## 当前人工变更：验证集选模（2026-10-11 11:00）
 
 用户最新要求“先暂时不要用test选，试着用验证集选”，覆盖下文旧的逐轮test选模授权。
