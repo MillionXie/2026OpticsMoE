@@ -116,7 +116,9 @@ def main():
     a = parser.parse_args()
     a.out.mkdir(parents=True, exist_ok=True)
     assert not (a.out / 'butterfly_fixed_split.npz').exists(), 'Never overwrite a prepared split'
-    base = f'{a.endpoint}/datasets/{REPO}/resolve/{REVISION}/'
+    # All pinned Butterfly files are ordinary Git blobs. Raw avoids the mirror's
+    # resolve redirect quota, with the same content and Git-blob/SHA checks.
+    base = f'{a.endpoint}/datasets/{REPO}/raw/{REVISION}/'
     for name, expected in METADATA.items():
         path = a.out / name
         path.parent.mkdir(parents=True, exist_ok=True)
@@ -159,13 +161,16 @@ def main():
             path.write_bytes(content)
         return entry['path'], hashlib.sha256(content).hexdigest()
     hashes = {}
-    with ThreadPoolExecutor(max_workers=a.workers) as executor:
+    executor = ThreadPoolExecutor(max_workers=a.workers)
+    try:
         pending = [executor.submit(download, entry) for entry in files]
         for future in as_completed(pending):
             name, digest = future.result()
             hashes[name] = digest
             if len(hashes) % 250 == 0:
                 print(json.dumps({'downloaded': len(hashes), 'total': len(names)}), flush=True)
+    finally:
+        executor.shutdown(wait=True, cancel_futures=True)
     save(a.out / 'original_file_sha256.json', hashes)
     rows, sizes = [], Counter()
     for i, item in enumerate(sorted(metadata, key=lambda x: x['fileNameAsDelivered'])):
