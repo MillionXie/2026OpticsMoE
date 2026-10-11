@@ -18,6 +18,7 @@ import requests
 HERE = Path(__file__).resolve().parent
 REPO = 'imageomics/VLM4Bio'
 REVISION = '354805681278db357ffdff8749a29e2ca145d32e'
+INDEX_SHA256 = 'e97e731d2568f4a4f1deb38e12b3eb75ae396102ed4c9f1dd0d0684f0a4baa1d'
 PREFIX = 'datasets/Butterfly/'
 METADATA = {
     PREFIX + 'metadata/metadata_10k.csv': 'a2f0ebaf0db492ffab05c0a91b6bd6e1ae39abdbbeb4712d84f9d32efb02cbc2',
@@ -48,10 +49,13 @@ def fetch(url):
             response = LOCAL.session.get(url, timeout=(20, 90))
             response.raise_for_status()
             return response
-        except requests.RequestException:
+        except requests.RequestException as exc:
             if attempt == 4:
                 raise
-            time.sleep(2 ** attempt)
+            if isinstance(exc, requests.HTTPError) and exc.response.status_code == 429:
+                time.sleep(min(int(exc.response.headers.get('Retry-After', '60')), 120))
+            else:
+                time.sleep(2 ** attempt)
 
 
 def specimen(name):
@@ -140,14 +144,18 @@ def main():
     assert {x['license'] for x in licenses} == {'CC BY 4.0'}
     license_names = {x['image_filename'] for x in licenses}
     assert 'All butterfly images' in (a.out / 'README.md').read_text()
-    files = []
-    url = f'{a.endpoint}/api/datasets/{REPO}/tree/{REVISION}/datasets/Butterfly?recursive=true&limit=1000'
-    while url:
-        response = fetch(url)
-        files.extend(x for x in response.json() if x['type'] == 'file' and Path(x['path']).name in names)
-        url = response.links.get('next', {}).get('url')
-        if url:
-            url = url.replace('https://huggingface.co/', a.endpoint + '/')
+    index = a.out / 'pinned_download_index.json'
+    files = json.loads(index.read_text()) if index.exists() else []
+    if not files:
+        url = f'{a.endpoint}/api/datasets/{REPO}/tree/{REVISION}/datasets/Butterfly?recursive=true&limit=1000'
+        while url:
+            response = fetch(url)
+            files.extend(x for x in response.json() if x['type'] == 'file' and Path(x['path']).name in names)
+            url = response.links.get('next', {}).get('url')
+            if url:
+                url = url.replace('https://huggingface.co/', a.endpoint + '/')
+    canonical_index = json.dumps(sorted([[x['path'], x['oid'], x['size']] for x in files]), separators=(',', ':')).encode()
+    assert hashlib.sha256(canonical_index).hexdigest() == INDEX_SHA256, 'Index differs from independently checked primary author API'
     by_name = {Path(x['path']).name: x for x in files}
     assert len(files) == len(by_name) == len(names)
     save(a.out / 'pinned_download_index.json', files)
@@ -196,6 +204,7 @@ def main():
     save(a.out / 'group_identity.json', [{k: v for k, v in row.items() if k != 'image'} for row in rows])
     manifest = dict(dataset='VLM4Bio_Butterfly10K_full60', source=f'https://huggingface.co/datasets/{REPO}',
         source_revision=REVISION, download_endpoint=a.endpoint, doi='10.57967/hf/3393', license='CC BY 4.0', classes=classes,
+        author_download_index_sha256=INDEX_SHA256,
         class_counts=[sum(x['label'] == k for x in rows) for k in range(60)], total_records=len(rows),
         supports=supports, split_ids=ids, split_seed=20261011, unique_groups=ng,
         unique_specimens=len({x['specimen'] for x in rows}), metadata_sha256=METADATA,

@@ -510,7 +510,12 @@ def main():
     assert len(profile['gpu_uuids']) == 3 and profile['test_development'] is False
     if a.phase == 'suite':
         assert a.data_root
-        suite(a, profile)
+        try:
+            suite(a, profile)
+        except BaseException:
+            if a.out.exists():
+                r.save(a.out / 'status.json', dict(state='failed', traceback=traceback.format_exc(), time=r.now()))
+            raise
     else:
         assert a.data
         worker(a, profile)
