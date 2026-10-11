@@ -1,0 +1,20 @@
+{
+  "pid": 714888,
+  "command": [
+    "/home/guest3/miniconda3/envs/xml/bin/python",
+    "LightGenV2/tasks/t18_optical_residual_ablation/coil20_finalize.py",
+    "--phase",
+    "suite",
+    "--out",
+    "LightGenV2/tasks/t18_optical_residual_ablation/runs/simulation/coil20_s17_L2L4L8L16_val_selected_once_20261011",
+    "--data",
+    "/DATA/DATA1/guest3/t18_coil20_20261011/coil20_fixed_split.npz"
+  ],
+  "CUDA_VISIBLE_DEVICES": "",
+  "python": "3.11.15 (main, Jun 11 2026, 15:20:16) [GCC 14.3.0]",
+  "platform": "Linux-5.15.0-136-generic-x86_64-with-glibc2.31",
+  "git_commit": "d0828e236dfd8ddb1c3ac1cf74e676bcc799f497",
+  "source_sha256": "5cb5ed25b2dbfe9b579b98160eb043931cfbd626b09b19ee2c195650f142cb9e",
+  "global_selection_lock_sha256": "4b0a2c00278673052f18ab988b29b97272a4e389b7d86a62fe138067cc7edc3c",
+  "time": "2026-10-11T14:35:51.785332+00:00"
+}

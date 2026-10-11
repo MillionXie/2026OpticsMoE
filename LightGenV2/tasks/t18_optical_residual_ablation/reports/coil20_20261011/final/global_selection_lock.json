@@ -1,0 +1,283 @@
+{
+  "entries": {
+    "L2_rho0": {
+      "arm": "/DATA/DATA1/guest3/2026OpticsMoE/LightGenV2/tasks/t18_optical_residual_ablation/runs/simulation/coil20_L2_s17_b4_batched_pilot_20261011/rho0",
+      "depth": 2,
+      "rho": 0.0,
+      "candidate": "base",
+      "selected_epoch": 30,
+      "selected_state_kind": "ema",
+      "selection_split": "val",
+      "test_evaluations_before_lock": 0,
+      "test_used_for_selection": false,
+      "pair_lock_sha256": "e39736859f5216a3a61ace6d9d52c2db171e3089fe79c117496d2db884b5a6f4",
+      "fit_result_sha256": "7441967db7e6c61aad955e3d6b9999f142de63e4ad9577452e1b131fc74dd24d",
+      "checkpoint_sha256": "2c0ca9b225654b1d5d37f605254611302cfbf1325373c574733d4395fb2712d8",
+      "history_sha256": "7e3637e225d5d53a09f527f2506c9b1d4b5692862f1fc093a3db4facbc203cac",
+      "config_sha256": "95994cb89b3f0b188f6db4e970b29e7a38db2a948be8f80926ced79a0082d5d5",
+      "metadata_sha256": "1c6d855dca7e8977a21dce1b514ea178182e7acbba3e3c4d24137682329839c0",
+      "train_predictions_sha256": "86ebe603f5c55158d5ce2accc7310fff1a3f4ee77904ddfa51fac19fe259f9b4",
+      "val_predictions_sha256": "0337b89498dc5deb71577deee6efdb4c512ea7d41347c8b1f3a78ac9deb2fa7a",
+      "selection_lock_sha256": "efe02fdef3d8b3a532d573344ce4d28e70487c31d6e16067eb0ed2205df9be60"
+    },
+    "L2_rho03": {
+      "arm": "/DATA/DATA1/guest3/2026OpticsMoE/LightGenV2/tasks/t18_optical_residual_ablation/runs/simulation/coil20_L2_s17_b4_batched_pilot_20261011/rho03",
+      "depth": 2,
+      "rho": 0.3,
+      "candidate": "base",
+      "selected_epoch": 30,
+      "selected_state_kind": "ema",
+      "selection_split": "val",
+      "test_evaluations_before_lock": 0,
+      "test_used_for_selection": false,
+      "pair_lock_sha256": "e39736859f5216a3a61ace6d9d52c2db171e3089fe79c117496d2db884b5a6f4",
+      "fit_result_sha256": "38ff03af2ebd2f4cd9a5575dcc5650a05f55b2371bbd884d828f6187952261b5",
+      "checkpoint_sha256": "ed6967a21b45705ca81a89d527a7d13adc1a72d60518ef208083fa022c8bf12d",
+      "history_sha256": "411026d3ea242fa9dfa0c7c4f8b0af6a164bb370380880e574ef7396e2eba7c0",
+      "config_sha256": "c3012310149d2e8aa29f3dc6a6fc09eadd38c8c495a1b17e1169ff46e3e0c0e0",
+      "metadata_sha256": "8311ecfc18acd16fb8888bb9e9df46f478015ae63bef6665261205cd25b80c63",
+      "train_predictions_sha256": "e9bb4044d812df54c7c014b5ee3fceb58420e3b8eb9d1e82b701f51b1355c7d2",
+      "val_predictions_sha256": "b516d9727abf18567f2faa52528eb34572497b997ac4c6de0cfcd4acc2c79d0a",
+      "selection_lock_sha256": "187cfb6f82a179c7efcad2dbf3b9b000104dda3fe0b2099c37af71d53daf3e8f"
+    },
+    "L4_rho0": {
+      "arm": "/DATA/DATA1/guest3/2026OpticsMoE/LightGenV2/tasks/t18_optical_residual_ablation/runs/simulation/coil20_s17_L2L4L8L16_val_fast_20261011/L4_rho0",
+      "depth": 4,
+      "rho": 0.0,
+      "candidate": "base",
+      "selected_epoch": 30,
+      "selected_state_kind": "ema",
+      "selection_split": "val",
+      "test_evaluations_before_lock": 0,
+      "test_used_for_selection": false,
+      "pair_lock_sha256": "c989c94c95459a3a53ffb8810ed7fb6399e329601020e99fb6d54a0511100bb5",
+      "fit_result_sha256": "bbca011ea522019bc69e0372a793dd981cf57aef25eaed030c9a65df846d5d8a",
+      "checkpoint_sha256": "7dcc513cabac0ac330b1f849f48521c9ee002ee3390399970371e0c1b802af70",
+      "history_sha256": "e0cb009f11780528a6825035eb68daf35b30637fc6425976652c059cafcb59c0",
+      "config_sha256": "ec373cac4dac91188391542968109f1972678249221cc82fbd925c4793cabcbe",
+      "metadata_sha256": "c1e8c7fb9edaf12f4aa032b68b204ee03202049a65d04106914580c0359b105f",
+      "train_predictions_sha256": "e65a39cfdc99d27b0b61d5e82df4bb5d90b7979d850df005f96088c66b7bfd02",
+      "val_predictions_sha256": "94ee6b00a130aa8b06124b78d2be83d06348b1513cdc2270444cf07a13aad039",
+      "selection_lock_sha256": "a65f757c59189c6bdad8b10a79609dd4f1d22bb7ecbf1a2996b5ce1a19de7bad"
+    },
+    "L4_rho03": {
+      "arm": "/DATA/DATA1/guest3/2026OpticsMoE/LightGenV2/tasks/t18_optical_residual_ablation/runs/simulation/coil20_s17_L2L4L8L16_val_fast_20261011/L4_rho03",
+      "depth": 4,
+      "rho": 0.3,
+      "candidate": "base",
+      "selected_epoch": 30,
+      "selected_state_kind": "ema",
+      "selection_split": "val",
+      "test_evaluations_before_lock": 0,
+      "test_used_for_selection": false,
+      "pair_lock_sha256": "c989c94c95459a3a53ffb8810ed7fb6399e329601020e99fb6d54a0511100bb5",
+      "fit_result_sha256": "58d3e35855917b1bbb70ecf07111934db1929303f9fa0bc76a2509ce823d82f1",
+      "checkpoint_sha256": "e5647d16d356e2e807ca122dd18e5714c5b9ead285a6e74dd1276640f80b1e11",
+      "history_sha256": "24e97f7f518b082cf4771e52ede2d65320f0f2234313be6e5dfc8b4cac564da5",
+      "config_sha256": "d92feed6d882a9054bcc571428fd96c2a6e1467f817093ef0b3ee92c1d46a1bb",
+      "metadata_sha256": "d69ded415cb382be1fbfd20f11804fdafbb691d920b5ee7aa7321e448944ddef",
+      "train_predictions_sha256": "81e9e488783fc84c78cc257f2aecaddfa98399024a8a4fbc8c47f7557ca45c5b",
+      "val_predictions_sha256": "674b3b5c37fe8ef51515c5ccbefd8cd77757edfa310b744ce3f310fb2ab39f17",
+      "selection_lock_sha256": "ed9c2a242b327a2a2abb52d97575092aa7690066627ccb458f5ada087331c021"
+    },
+    "L8_rho0": {
+      "arm": "/DATA/DATA1/guest3/2026OpticsMoE/LightGenV2/tasks/t18_optical_residual_ablation/runs/simulation/coil20_s17_L2L4L8L16_val_fast_20261011/L8_rho0",
+      "depth": 8,
+      "rho": 0.0,
+      "candidate": "base",
+      "selected_epoch": 30,
+      "selected_state_kind": "ema",
+      "selection_split": "val",
+      "test_evaluations_before_lock": 0,
+      "test_used_for_selection": false,
+      "pair_lock_sha256": "fd582528114990ae2f4ebdffd98be2922faa4c036a8f02b1157090e361cfb2a4",
+      "fit_result_sha256": "ca29c4a99eb994787b448cb6a4564e5f8974c87a66397743c39e28639b2224e9",
+      "checkpoint_sha256": "e0639bbb6cbbbc72abeb40c6da5da9e13052c95367b9b382d5d4dca7a47a6b3b",
+      "history_sha256": "5b9240f2f886c521d602b3e3de0bdafb9da18a688c76f1701eb74e84bb7a25e5",
+      "config_sha256": "a03a1397c1e6239a3e4f95b3edda37c5e3423390eeff844709ed4a8304060ba7",
+      "metadata_sha256": "ec941e7243b5f97bfe9e17b4c4a40f28761e65099723d86429afae6d229f41ba",
+      "train_predictions_sha256": "905bd710380271d1102474f2f3775788851c190a97d3a9bc3f1bbfa96f568ab2",
+      "val_predictions_sha256": "0a98c623495ceffa209c079272a70a9713fd49be223990f43bf87c30e1c79086",
+      "selection_lock_sha256": "c723545de34339ad458c891befd6bd7c990de506e9a8d680f2d6aef948ed78a3"
+    },
+    "L8_rho03": {
+      "arm": "/DATA/DATA1/guest3/2026OpticsMoE/LightGenV2/tasks/t18_optical_residual_ablation/runs/simulation/coil20_s17_L2L4L8L16_val_fast_20261011/L8_rho03",
+      "depth": 8,
+      "rho": 0.3,
+      "candidate": "base",
+      "selected_epoch": 30,
+      "selected_state_kind": "ema",
+      "selection_split": "val",
+      "test_evaluations_before_lock": 0,
+      "test_used_for_selection": false,
+      "pair_lock_sha256": "fd582528114990ae2f4ebdffd98be2922faa4c036a8f02b1157090e361cfb2a4",
+      "fit_result_sha256": "629ee9bbc5dffd9a4036a2495cdd324f275a70f3ba465baa80508d1e5f60daf7",
+      "checkpoint_sha256": "048b25438d4a13ff99a0f5022e44e85692e6f58234271f1554f96e6263627db1",
+      "history_sha256": "b5162f7e4c5980e4d41fb04b9802c003b578a554112a1f427452f59a5f7d42bd",
+      "config_sha256": "4f244a10713c504e0ac2a7f2f00685f736f31628828a362d4c9be4c311aa1881",
+      "metadata_sha256": "0b1ef56f2e552e24c558f3b79244e280a72138435aceb9498ec5897c736a207d",
+      "train_predictions_sha256": "f222bbc8c1444d24c3a306e77b48e8b3ae71f3b63008c3c03fe790cb2e74b259",
+      "val_predictions_sha256": "e526b2cde61dfdb5b71fb1e943f38b6d45bba70b104b94a4b854ffdd58fabd96",
+      "selection_lock_sha256": "3cbfd033e526719e13410f0b5c3548a7913f542bffb5ec9897de6dede70bd823"
+    },
+    "L16_rho0": {
+      "arm": "/DATA/DATA1/guest3/2026OpticsMoE/LightGenV2/tasks/t18_optical_residual_ablation/runs/simulation/coil20_L16_s17_init01_paired10_20261011/rho0",
+      "depth": 16,
+      "rho": 0.0,
+      "candidate": "low_variance",
+      "selected_epoch": 10,
+      "selected_state_kind": "ema",
+      "selection_split": "val",
+      "test_evaluations_before_lock": 0,
+      "test_used_for_selection": false,
+      "pair_lock_sha256": "3a63fc5a030ac8bf753c5ab63c7a7fc49873755f543a7f3b89225016e200a03b",
+      "fit_result_sha256": "5fd778fec48bf1af1267970f4f0c5340210ec393937ae749027238a2ac3180db",
+      "checkpoint_sha256": "3a6d307d16d0ead6520d6501a8f10c071f73f59080f2baad7ecd87f31ca83bf6",
+      "history_sha256": "e11fbcfe785648078ff246cedfbea3411319647d2a38971398edfa46d44cfc35",
+      "config_sha256": "1d0d4c7367fd86ca414c553624401e538c69dff1de4e7dba29ecd078df28fb3f",
+      "metadata_sha256": "280e91d7c8aa76d9cb21eb82475d019c3550707bb0cffe953d4c994e345647a0",
+      "train_predictions_sha256": "2a0c1a9471252162a49f558f86426333344138b6fd710cf1f96c9ea234b4e45f",
+      "val_predictions_sha256": "99dfb7d7bf566686735297a2f385d3e9845f063de1f1eb5b2c60a404e486a739",
+      "selection_lock_sha256": "6edad5b8f41d2b63350fc564044a535c252df54118aaebfdaa1f113f816787c5"
+    },
+    "L16_rho03": {
+      "arm": "/DATA/DATA1/guest3/2026OpticsMoE/LightGenV2/tasks/t18_optical_residual_ablation/runs/simulation/coil20_L16_s17_init01_paired10_20261011/rho03",
+      "depth": 16,
+      "rho": 0.3,
+      "candidate": "low_variance",
+      "selected_epoch": 10,
+      "selected_state_kind": "ema",
+      "selection_split": "val",
+      "test_evaluations_before_lock": 0,
+      "test_used_for_selection": false,
+      "pair_lock_sha256": "3a63fc5a030ac8bf753c5ab63c7a7fc49873755f543a7f3b89225016e200a03b",
+      "fit_result_sha256": "7a846b42dd9b8baef64a386a82851d4bbfdaaa150930fa4051d6c260f09c7dcf",
+      "checkpoint_sha256": "5b7b616891bc7e0d2dfe7e76f4213ba559782eebb707a2a5014e7b9c4d8dd179",
+      "history_sha256": "81ffaafb7a5185654e0724f15abe8f450dd7450773ed315ec4b5e4a53dab71bc",
+      "config_sha256": "44ca43cc3e9752142c834becd70ab7421ef7c0a69106ec612ed8dd8f64379453",
+      "metadata_sha256": "8cbe579d6126a80bb49d03671bb933bcdff3cf1ab429b1a14ff54c2bca575757",
+      "train_predictions_sha256": "40aa85fbc95645d1925d7dc2a72432f6b26f90021948f83c34ee7e5f85309742",
+      "val_predictions_sha256": "8e46b5e94aa85feb5dd1c2307aa0a8f6c60511b591c37ea05c75433a7379345a",
+      "selection_lock_sha256": "366abaa4c449e5b8ab94fc3e453a27c0c974064d4a490923a2d8f1eb1ac622e3"
+    }
+  },
+  "choices": {
+    "2": {
+      "selected_candidate": "base",
+      "candidates": {
+        "base": {
+          "arms": [
+            "/DATA/DATA1/guest3/2026OpticsMoE/LightGenV2/tasks/t18_optical_residual_ablation/runs/simulation/coil20_L2_s17_b4_batched_pilot_20261011/rho0",
+            "/DATA/DATA1/guest3/2026OpticsMoE/LightGenV2/tasks/t18_optical_residual_ablation/runs/simulation/coil20_L2_s17_b4_batched_pilot_20261011/rho03"
+          ],
+          "epochs": 30,
+          "mean_best_val_balanced_nll": 0.8482726960144762,
+          "fit_result_sha256": [
+            "7441967db7e6c61aad955e3d6b9999f142de63e4ad9577452e1b131fc74dd24d",
+            "38ff03af2ebd2f4cd9a5575dcc5650a05f55b2371bbd884d828f6187952261b5"
+          ],
+          "best_checkpoint_sha256": [
+            "2c0ca9b225654b1d5d37f605254611302cfbf1325373c574733d4395fb2712d8",
+            "ed6967a21b45705ca81a89d527a7d13adc1a72d60518ef208083fa022c8bf12d"
+          ]
+        }
+      },
+      "rule": "Mean of paired best EMA val balanced NLL; exact tie retains base; no test"
+    },
+    "4": {
+      "selected_candidate": "base",
+      "candidates": {
+        "base": {
+          "arms": [
+            "/DATA/DATA1/guest3/2026OpticsMoE/LightGenV2/tasks/t18_optical_residual_ablation/runs/simulation/coil20_s17_L2L4L8L16_val_fast_20261011/L4_rho0",
+            "/DATA/DATA1/guest3/2026OpticsMoE/LightGenV2/tasks/t18_optical_residual_ablation/runs/simulation/coil20_s17_L2L4L8L16_val_fast_20261011/L4_rho03"
+          ],
+          "epochs": 30,
+          "mean_best_val_balanced_nll": 0.5921435012180145,
+          "fit_result_sha256": [
+            "bbca011ea522019bc69e0372a793dd981cf57aef25eaed030c9a65df846d5d8a",
+            "58d3e35855917b1bbb70ecf07111934db1929303f9fa0bc76a2509ce823d82f1"
+          ],
+          "best_checkpoint_sha256": [
+            "7dcc513cabac0ac330b1f849f48521c9ee002ee3390399970371e0c1b802af70",
+            "e5647d16d356e2e807ca122dd18e5714c5b9ead285a6e74dd1276640f80b1e11"
+          ]
+        }
+      },
+      "rule": "Mean of paired best EMA val balanced NLL; exact tie retains base; no test"
+    },
+    "8": {
+      "selected_candidate": "base",
+      "candidates": {
+        "base": {
+          "arms": [
+            "/DATA/DATA1/guest3/2026OpticsMoE/LightGenV2/tasks/t18_optical_residual_ablation/runs/simulation/coil20_s17_L2L4L8L16_val_fast_20261011/L8_rho0",
+            "/DATA/DATA1/guest3/2026OpticsMoE/LightGenV2/tasks/t18_optical_residual_ablation/runs/simulation/coil20_s17_L2L4L8L16_val_fast_20261011/L8_rho03"
+          ],
+          "epochs": 30,
+          "mean_best_val_balanced_nll": 1.020428578301713,
+          "fit_result_sha256": [
+            "ca29c4a99eb994787b448cb6a4564e5f8974c87a66397743c39e28639b2224e9",
+            "629ee9bbc5dffd9a4036a2495cdd324f275a70f3ba465baa80508d1e5f60daf7"
+          ],
+          "best_checkpoint_sha256": [
+            "e0639bbb6cbbbc72abeb40c6da5da9e13052c95367b9b382d5d4dca7a47a6b3b",
+            "048b25438d4a13ff99a0f5022e44e85692e6f58234271f1554f96e6263627db1"
+          ]
+        }
+      },
+      "rule": "Mean of paired best EMA val balanced NLL; exact tie retains base; no test"
+    },
+    "16": {
+      "selected_candidate": "low_variance",
+      "candidates": {
+        "base": {
+          "arms": [
+            "/DATA/DATA1/guest3/2026OpticsMoE/LightGenV2/tasks/t18_optical_residual_ablation/runs/simulation/coil20_s17_L2L4L8L16_val_fast_20261011/L16_rho0",
+            "/DATA/DATA1/guest3/2026OpticsMoE/LightGenV2/tasks/t18_optical_residual_ablation/runs/simulation/coil20_s17_L2L4L8L16_val_fast_20261011/L16_rho03"
+          ],
+          "epochs": 30,
+          "mean_best_val_balanced_nll": 1.8094680619732726,
+          "fit_result_sha256": [
+            "3cbb1ee659cddbe4050cf029888ef396febe0e4860e2cff1edf7d935b249da6f",
+            "2a33c9deebce7418af55b4d90d8f9575fb909028a23377a1b14a7d7a72b056c8"
+          ],
+          "best_checkpoint_sha256": [
+            "d2b72ecf10ee3767d002c3825351d738236a09da8274059e4d679a9b98ea2536",
+            "612dd9d711c077a57927fd2905d60a16012e69af3b5f5121d879d64e55cf870d"
+          ]
+        },
+        "low_variance": {
+          "arms": [
+            "/DATA/DATA1/guest3/2026OpticsMoE/LightGenV2/tasks/t18_optical_residual_ablation/runs/simulation/coil20_L16_s17_init01_paired10_20261011/rho0",
+            "/DATA/DATA1/guest3/2026OpticsMoE/LightGenV2/tasks/t18_optical_residual_ablation/runs/simulation/coil20_L16_s17_init01_paired10_20261011/rho03"
+          ],
+          "epochs": 10,
+          "mean_best_val_balanced_nll": 0.8959092881359554,
+          "fit_result_sha256": [
+            "5fd778fec48bf1af1267970f4f0c5340210ec393937ae749027238a2ac3180db",
+            "7a846b42dd9b8baef64a386a82851d4bbfdaaa150930fa4051d6c260f09c7dcf"
+          ],
+          "best_checkpoint_sha256": [
+            "3a6d307d16d0ead6520d6501a8f10c071f73f59080f2baad7ecd87f31ca83bf6",
+            "5b7b616891bc7e0d2dfe7e76f4213ba559782eebb707a2a5014e7b9c4d8dd179"
+          ]
+        }
+      },
+      "rule": "Mean of paired best EMA val balanced NLL; exact tie retains base; no test"
+    }
+  },
+  "candidate_audits": {
+    "L2_base": "46a194dcdcd25c7582fcd2e886043e41a811f02613d2e4ca16a7f609e59554f7",
+    "L4_base": "08653d4af394935f010f9ab2c929b9dfdc06399efd94e31f7fdbef62adb54883",
+    "L8_base": "e41d98422e99d8c61cf09696f79241ff146bab148167c948897ebddce08907a3",
+    "L16_base": "42761ad9cf5053228aba2a56319f0eecb3963ae2a83f79519609e29ff0eebd34",
+    "L16_low_variance": "fa476b5e42fa3b6cdda55801962d6af517b9178f943775cfd543af14dce1c7c3"
+  },
+  "data_sha256": "1fa725a132346d02893f016ccea70b45dc52666bdeeecd429b3aab6676b78418",
+  "manifest_sha256": "ba4bf4e10496984d4fc6be789a35e64a413250c749c82ec3049435c218ba26e3",
+  "lock_time_unix": 1791729315.508214,
+  "source_sha256": "5cb5ed25b2dbfe9b579b98160eb043931cfbd626b09b19ee2c195650f142cb9e",
+  "git_commit": "d0828e236dfd8ddb1c3ac1cf74e676bcc799f497",
+  "scope": "Validation-selected exploratory known-object withheld-view evaluation; not unseen-instance generalization"
+}

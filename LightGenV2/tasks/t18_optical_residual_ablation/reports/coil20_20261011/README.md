@@ -1,4 +1,14 @@
-# COIL20：快速物体任务与两层门槛
+# COIL20：快速物体任务与四深度验证选模结果
+
+最终八组评估完成：两层test79.44%／81.94%，四层91.11%／88.89%，八层90.28%／78.61%，
+16层60.83%／71.11%；均由全8验证选择锁定后的获选EMA首次单次test，不再追加训练或反换权重。
+16层获选方案是一次rawinit.1成对重启10轮；原base30及全部负结果保护，未选权重不test。
+全8三划分预测／锁／PT／原Git来源／参数／支持／CM／NLL／macro独立CPU核验通过，GPU实际释放。
+[最终说明](final/README.md)、[完整指标CSV](final/final_summary.csv)、[逐类支持](final/per_class_support.csv)、
+[总曲线PNG](final/learning_curves_all.png)、[获选汇总PNG](final/selected_summary.png)、
+[CPU审计](final/final_audit.json)、[全8锁](final/global_selection_lock.json)、[释放收据](final/gpu_release_receipt.json)。
+所有PNG均已视觉检查，SVG／PDF／曲线CSV可导出。单seed预算末端验证NLL仍改善，未证充分收敛；
+留出的是已知物体视角，不是未见个体。以下时间顺序段落均是保留的历史快照，test0等措辞不是最终状态。
 
 用户要求自然图像、类别>8、两层70%且更快。完整30类叶片有界预检30轮未过70%，
 保存其负结果和历史，不扩展它的深层套件；只额外考察一次完整作者COIL20物体任务。
