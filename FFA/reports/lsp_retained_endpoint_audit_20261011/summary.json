@@ -1,0 +1,181 @@
+{
+  "format": "ffa-retained-endpoint-counterfactual-audit-v1",
+  "status": "complete",
+  "scope": "read-only gradient rules at an old phase-only endpoint; FFA has not trained to this endpoint",
+  "parent_method": "fa_pretrained",
+  "parent_checkpoint_best_epoch": 45,
+  "parent_completed_adaptation_epochs": 50,
+  "phase_drift": {
+    "mean_absolute_rad": 0.07674334198236465,
+    "median_absolute_rad": 0.006846815347671509,
+    "fraction_over_0p1_rad": 0.20339654386043549,
+    "per_stage_mean_absolute_rad": [
+      0.05325537174940109,
+      0.1152750626206398,
+      0.0660342276096344,
+      0.12855179607868195,
+      0.06160946935415268,
+      0.09985577315092087,
+      0.039881400763988495,
+      0.04948361963033676
+    ],
+    "per_stage_rms_rad": [
+      0.13390152156352997,
+      0.223433256149292,
+      0.16092807054519653,
+      0.26912960410118103,
+      0.16104550659656525,
+      0.22026386857032776,
+      0.1270545870065689,
+      0.13699591159820557
+    ],
+    "current_physical_phase_sha256": "311d9d715322599df1c76f15f318e97ef22d969be2deddf45ba18a895674868e",
+    "source_physical_phase_sha256": "dec25a27a85036255e65ae5ceefbfd480a4cbcbb5324e6310369785ec641e89b",
+    "per_line_gauge_aligned": {
+      "definition": "wrap(current-source minus each independent line's circular-mean offset)",
+      "mean_absolute_rad": 0.07841229223572505,
+      "rms_rad": 0.1853234236163578,
+      "per_stage_mean_absolute_rad": [
+        0.05441375738084797,
+        0.1174244750799362,
+        0.06770627689128685,
+        0.1312866193530128,
+        0.06357930723997073,
+        0.10195340729429246,
+        0.041259694478078875,
+        0.049674800168374514
+      ],
+      "per_stage_rms_rad": [
+        0.1337834960899439,
+        0.2231286427268004,
+        0.16072304285205113,
+        0.26877548502572596,
+        0.16069342874189405,
+        0.2199075878327816,
+        0.12680531117346724,
+        0.13689516307180766
+      ],
+      "line_records_file": "phase_drift.json"
+    }
+  },
+  "gradient_comparison": {
+    "bp_current": {
+      "phase_cosine_mean": 0.9999999999887215,
+      "phase_cosine_min": 0.9999999999833364,
+      "phase_relative_l2_mean": 4.676836592928484e-06,
+      "per_stage_cosine_mean": [
+        0.9999999999891337,
+        0.9999999999890306,
+        0.9999999999877208,
+        0.9999999999903203,
+        0.9999999999835483,
+        0.999999999993617,
+        0.9999999999860267,
+        0.9999999999651088
+      ],
+      "per_stage_cosine_min": [
+        0.9999999999763508,
+        0.9999999999770868,
+        0.9999999999793867,
+        0.9999999999876428,
+        0.9999999999753928,
+        0.9999999999921585,
+        0.9999999999785015,
+        0.9999999999314046
+      ],
+      "forward_max_abs": 0.0
+    },
+    "fa_source_connector": {
+      "phase_cosine_mean": 0.9479769897923207,
+      "phase_cosine_min": 0.9410256039595236,
+      "phase_relative_l2_mean": 0.31950050366529226,
+      "per_stage_cosine_mean": [
+        0.9529066902789407,
+        0.9606662378734686,
+        0.8744641252663093,
+        0.9621168885536653,
+        0.9226331017765953,
+        0.977062710841516,
+        0.9988176337214675,
+        0.9999999784642739
+      ],
+      "per_stage_cosine_min": [
+        0.9403829840716728,
+        0.9008321733641284,
+        0.8633884933250571,
+        0.9523640375209645,
+        0.886701599081815,
+        0.9706943748278335,
+        0.9983714794999088,
+        0.9999999744079592
+      ],
+      "forward_max_abs": 0.0005008280277252197
+    },
+    "source_full_response": {
+      "phase_cosine_mean": 0.5593939305104657,
+      "phase_cosine_min": 0.492613566561148,
+      "phase_relative_l2_mean": 0.9091644128469571,
+      "per_stage_cosine_mean": [
+        0.4283385767139895,
+        0.7279218573269474,
+        0.5037562146017973,
+        0.5791511844695979,
+        0.42697061905960004,
+        0.6599031049191834,
+        0.669344134222281,
+        0.7815802548676355
+      ],
+      "per_stage_cosine_min": [
+        0.2887184089756001,
+        0.6210816070364665,
+        0.49596736609689807,
+        0.509231358118607,
+        0.228613753365993,
+        0.5775275380407255,
+        0.5834104248590791,
+        0.7451065611948352
+      ],
+      "forward_max_abs": 0.0
+    },
+    "random_full_response": {
+      "phase_cosine_mean": 0.038520814305428246,
+      "phase_cosine_min": -0.03608487869027913,
+      "phase_relative_l2_mean": 1.3691228505078248,
+      "per_stage_cosine_mean": [
+        0.01795074233431168,
+        0.09850432018865052,
+        0.005555363254546978,
+        0.12547057058583036,
+        0.027561161293088356,
+        0.015404040849808176,
+        0.01703769569153743,
+        0.030546089942993477
+      ],
+      "per_stage_cosine_min": [
+        -0.012089007751669061,
+        -0.11558630341778454,
+        -0.023404343144879967,
+        0.08808654598244915,
+        -0.1079618464156822,
+        -0.10409781794015241,
+        -0.07255750480265166,
+        -0.02783416152908202
+      ],
+      "forward_max_abs": 0.0
+    }
+  },
+  "validation_batches": 3,
+  "diagnostic_samples": 12,
+  "test_evaluated": false,
+  "optimizer_steps": 0,
+  "endpoint_tensors_unchanged": true,
+  "parent_checkpoint_unchanged": true,
+  "source_phases_preserved": true,
+  "seconds": 7.080000877380371,
+  "parent_checkpoint_sha256": "ef9533021397fd0eb9def50955b2fa895631bff81ea17004f60b1e339b49cbd5",
+  "source_checkpoint_sha256": "c3ad0b780dfbb3e5f8e1f7b7850c06fcb5c6d977e106f351b4602fcaadf210d2",
+  "audit_dataset_manifest_sha256": "31f22b94e5a87bd01f9198016d8847ffc3351314e32d91c7854f0533c945daf8",
+  "git_commit": "27de6ee67a8d68f535ec9c555e01bd3b30bc50bd",
+  "gpu_uuid": "GPU-3f60d773-4dd8-d706-ef48-a4dfc5af6c55",
+  "input_result_sha256": "6a02fba6f26c199f9df33ba16279a8f880f6f69155cbff1dafcce93dea7bf049"
+}

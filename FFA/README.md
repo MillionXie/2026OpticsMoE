@@ -57,3 +57,8 @@ python -m FFA.run_pilot --profile FFA/pilot.json \
 更大漂移、跨任务或实际硬件有效。原 FA 的旧二维 FFT 还带有轻微数值舍入差异，
 不解读这些方法的小数点级排名。完整曲线/数值见
 [初筛摘要](reports/lsp_intensity_pilot_20261011/summary.csv)。
+
+随后只读检查旧FA-source的epoch45最佳终点（父run完成50轮）：完整源响应与当前BP的
+相位梯度余弦降至0.559，原FA-source仍为0.948。这是同状态梯度诊断，不是新FFA的50轮成绩。
+下一轮优先比较同曝光预算的源点形成与结构化邻域形成反馈；动态形成尚未执行。
+完整结论、限制与下一步见[结果报告](REPORT_20261011.md)。
