@@ -16,15 +16,21 @@ o, torch = execution.optical, execution.torch
 def main():
     p = argparse.ArgumentParser(); p.add_argument('--out', type=Path, required=True)
     p.add_argument('--data', type=Path, required=True); p.add_argument('--profile', type=Path, required=True)
-    p.add_argument('--gpu', required=True); a = p.parse_args()
+    p.add_argument('--gpu', required=True)
+    p.add_argument('--depths', type=int, nargs='+', choices=[2, 4, 8, 16], default=[4, 8, 16])
+    p.add_argument('--microbatches', type=int, nargs='+', choices=[1, 2, 4], default=[1, 4])
+    a = p.parse_args()
     assert os.environ['CUDA_VISIBLE_DEVICES'] == a.gpu
     a.out.mkdir(parents=True, exist_ok=False)
     profile = o.r.read(a.profile); manifest = o.r.read(a.data.parent/'data_manifest.json')
     o.f.gpu_budget.ALLOWED.update(profile['gpu_uuids'])
     policy = o.f.gpu_budget.configure(torch, a.gpu, shared=True, memory_gib=3)
     sources = o.source_identity(a.profile)
+    preparation = profile['data_contract']['preparation_source']
+    assert manifest['preparation_source_sha256'] == o.r.sha(o.HERE/preparation)
+    assert manifest['cache_sha256'] == o.r.sha(a.data)
     sources.update({str((o.HERE/name).relative_to(o.ROOT)).replace('\\', '/'): o.r.sha(o.HERE/name)
-        for name in ['fast_optical.py', 'medicinal_pilot.py', 'prepare_coil20.py', 'probe_small_depths.py']})
+        for name in ['fast_optical.py', 'medicinal_pilot.py', preparation, 'probe_small_depths.py']})
     o.r.save(a.out/'metadata.json', dict(command=sys.argv, pid=os.getpid(), sources=sources,
         git_commit=subprocess.check_output(['git', 'rev-parse', 'HEAD'], text=True).strip(),
         data_sha256=o.r.sha(a.data), python=sys.version, torch=torch.__version__, cuda_build=torch.version.cuda, time=o.r.now()))
@@ -34,7 +40,7 @@ def main():
     count = len(manifest['classes'])
     weights = (len(data[1])/(count*torch.bincount(data[1], minlength=count).float())).cuda()
     results = []
-    for depth in [4, 8, 16]:
+    for depth in a.depths:
         for rho in [0., .3]:
             cfg = o.config(profile, manifest, rho, 'base'); o.r.setseed(17)
             model = execution.build(depth, profile, cfg, batched=False)
@@ -50,7 +56,7 @@ def main():
             initial_sha = o.f.tensor_identity(model)
             execution.enable_expert_batching(model)
             assert o.f.tensor_identity(model) == initial_sha
-            for micro in [1, 4]:
+            for micro in a.microbatches:
                 torch.cuda.synchronize(); started = time.perf_counter()
                 prob, grad = compute(micro)
                 torch.cuda.synchronize(); seconds = (time.perf_counter()-started)/8

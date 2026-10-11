@@ -87,7 +87,7 @@ def main():
     p.add_argument('--probe', type=Path, required=True)
     p.add_argument('--profile', type=Path, default=o.HERE/'medicinal_pilot_profile.json')
     p.add_argument('--depth', type=int, choices=[2, 4, 8, 16], default=2)
-    p.add_argument('--epochs', type=int, choices=[2, 10, 30], default=30)
+    p.add_argument('--epochs', type=int, choices=[2, 10, 30, 100], default=30)
     p.add_argument('--seconds', type=int, default=None)
     p.add_argument('--full-budget', action='store_true')
     p.add_argument('--candidate', choices=['base', 'regularized', 'optimization'], default='base')
@@ -111,15 +111,17 @@ def main():
     assert manifest['dataset'] == contract['dataset'] and manifest['total_records'] == contract['records']
     assert len(manifest['classes']) == classes
     assert manifest['cache_sha256'] == r.sha(a.data)
-    assert contract['preparation_source'] in ('prepare_medicinal.py', 'prepare_coil20.py')
+    assert contract['preparation_source'] in ('prepare_medicinal.py', 'prepare_coil20.py', 'prepare_caltech50.py')
     assert manifest['preparation_source_sha256'] == r.sha(o.HERE/contract['preparation_source'])
-    assert manifest['grouping_source_sha256'] == r.sha(o.HERE/'prepare_butterfly.py')
+    grouping_source = 'prepare_caltech50.py' if contract['preparation_source'] == 'prepare_caltech50.py' else 'prepare_butterfly.py'
+    assert manifest['grouping_source_sha256'] == r.sha(o.HERE/grouping_source)
     assert manifest[contract['identity_key']] == contract['identity_sha256']
     assert profile['detector'] == execution.detector(classes)
     profile.update(dataset=manifest['dataset'], microbatch=a.micro, evaluation_batch_size=a.micro,
         expert_batched=bool(a.batched), maximum_epochs=a.epochs, minimum_epochs=min(10, a.epochs), patience=6,
         maximum_seconds=a.seconds or profile['maximum_seconds'])
-    assert 1 <= profile['maximum_seconds'] <= 5400
+    maximum_seconds = 36000 if contract['preparation_source'] == 'prepare_caltech50.py' else 5400
+    assert 1 <= profile['maximum_seconds'] <= maximum_seconds
     cfg = o.config(profile, manifest, a.rho, a.candidate)
     cfg.update(depth=a.depth, requested_epochs=a.epochs, early_stopping=not a.full_budget)
     for key in ['initial_epochs', 'maximum_base_epochs', 'maximum_paired_restarts', 'restart_epochs', 'restart_candidates', 'data_revision']:

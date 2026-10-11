@@ -35,7 +35,7 @@ def main():
         selected = min(history, key=lambda h: h['val']['balanced_nll'])
         assert result['test_evaluations'] == 0 and not result['test_used_for_selection']
         assert 'test' not in result['metrics'] and all('test' not in h for h in history)
-        assert result['epochs_completed'] == len(history) == last['epoch'] <= 30
+        assert result['epochs_completed'] == len(history) == last['epoch'] <= result['config']['requested_epochs'] <= 100
         assert [h['epoch'] for h in history] == list(range(1, len(history)+1))
         assert selected['epoch'] == best['epoch'] == result['selected_epoch']
         assert selected['val'] == best['validation'] == result['metrics']['val']
@@ -113,7 +113,7 @@ def main():
     axes[0].axhline(70, color='#888888', linewidth=.8, linestyle=':')
     axes[0].set(ylabel='Accuracy (%)', ylim=(0, 100)); axes[1].set(ylabel='Balanced NLL')
     for ax in axes: ax.set(xlabel='Epoch'); ax.grid(alpha=.15); ax.legend(fontsize=8)
-    fig.suptitle(f'COIL-20 | {classes} known objects | L{a.depth} | seed17 | train / val only')
+    fig.suptitle(f'{configurations[0]["dataset"]} | {classes} classes | L{a.depth} | seed17 | train / val only')
     for ext in ['png', 'svg', 'pdf']: fig.savefig(a.out/(f'learning_curves_L{a.depth}.'+ext), dpi=180)
     svg = a.out/f'learning_curves_L{a.depth}.svg'
     svg.write_text('\n'.join(line.rstrip() for line in svg.read_text().splitlines())+'\n')
