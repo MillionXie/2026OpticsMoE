@@ -55,3 +55,35 @@ commit `29a542ace`，PID645299，20:27:35启动，只一个GPU子；此计时不
 待真实速度门槛和预算核验后再展开2／4／8／16两rho；全八臂来源／数据／配置／方案／PT
 锁定后获选每臂首次单次test，不能提前只给L2测test。原数据／原ZIP／PT／预测不进Git。
 完整契约见[协议](../../COIL20_PILOT_PROTOCOL_20261011.md)。
+
+## 已接续四深度有界比较（20:46:11启动）
+
+16层两轮端到端计时已完成并释放GPU：首轮172.224秒（含全train），普通轮136.895秒；
+按每5轮完整train评估均摊的投影143.961秒，最终额外选中train评估另计。
+完整[计时收据](L16_throughput_receipt.json)保存两轮／来源／参数和实际退出证据，
+不把计时两轮当正式16层臂，也不把380.18秒总时长直接除二当每轮时长。
+
+CPU队列`coil20_s17_L2L4L8L16_val_fast_20261011`父654702，实际源码commit
+`b8bbe7ccf`；CPU无CUDA，最多GPU1／2／4各一个子进程。复用已完成的两层两臂
+30轮以省时，其它六臂从头seed17各完整30轮（--full-budget、每臂5400秒安全上限）。
+4／8层生产micro4，16层micro1，专家batch均保留相干残差；同深度两rho相同模式／
+有效batch16／样本加权尾及辅助项／一次clip Adam EMA。同层配置仅rho不同。
+全部每轮val、EMA最低balanced NLL首次选best，未增强全train每5轮和端点。
+ReduceLROnPlateau只看val调整lr，不用test选权重或调训练。
+两层完成来源是旧2b版本，其它六臂使用只新增depth／预算参数化的29a控制器；
+各metadata实际67文件及发布blob分别核验，不能冒称全八臂控制器来源完全相同。
+光模型、编码、detector、原优化算法未改；每深度仅作单seed探索，不称纯深度因果。
+
+20:52实际核验：GPU1 L16rho0 PID654708、GPU2 L16rho.3 PID654709、
+GPU4 L8rho0 PID654710，全67实际／发布来源匹配，重新GPU smoke通过；
+随后以current_processes.json核对PID，不重复启动。显存1170／1020／1338MiB，
+各3GiB+800MiB。16层普通E2为143.55／140.20秒、8层普通约20秒，
+首轮30轮训练暂估22:00前后结束，非最终test／拟合调整完成时间保证。
+源／负载变化需实测修正。8层rho0 E15 val82.50%；16层各E2只是早期，
+不根据chance附近的早期精度判容量或宣称残差最终收益。
+
+此队列严格只fit，结束生成8臂fit_manifest，实际释放GPU并停在
+fit_complete_awaiting_validation_review。然后只读保存结果做CPU来源／PT／指标及
+过拟合／欠拟合／未收敛审查，必要调整必须有限、成对、使用新profile并保留原结果；
+不能为70%反换权重／无限追加。所有方案选择及pair／selection／global lock
+完成后，获选每臂EMA才可首次单次test。当前所有test均0，正式最终结果尚未完成。
