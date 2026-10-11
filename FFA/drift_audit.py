@@ -215,6 +215,29 @@ def _small_batch(raw: dict, sample_count: int) -> dict:
     }
 
 
+def sample_identity(batch: dict, sample_count: int) -> dict:
+    """Record only collated per-sample string identities, never tensor metadata.
+
+    Default collation represents crop-box coordinates as a list of tensors;
+    those component lists are not per-sample identities and must not be written
+    as though slicing their outer list selected the diagnostic samples.
+    """
+
+    result = {}
+    for key in ("sample_id", "source", "image_path"):
+        values = batch.get(key)
+        if values is None and key != "sample_id":
+            continue
+        if (
+            not isinstance(values, (list, tuple))
+            or len(values) != sample_count
+            or not all(isinstance(value, str) for value in values)
+        ):
+            raise RuntimeError(f"Expected exactly {sample_count} string sample identities for {key}")
+        result[key] = list(values)
+    return result
+
+
 def gauge_aligned_phase_drift(model) -> tuple[dict, list[dict]]:
     """Remove each independent optical line's unobservable circular offset.
 
@@ -409,7 +432,7 @@ def main() -> None:
                 raise RuntimeError("Validation loader does not contain three full diagnostic batches")
             batch = pilot.p12._move_batch(selected, device)
             row = {"batch_index": batch_index, "samples": args.samples_per_batch,
-                   "sample_identity": {k: v for k, v in selected.items() if isinstance(v, (list, tuple))},
+                   "sample_identity": sample_identity(selected, args.samples_per_batch),
                    "methods": {}}
             for method in METHODS:
                 row["methods"][method] = pilot.diagnose(
