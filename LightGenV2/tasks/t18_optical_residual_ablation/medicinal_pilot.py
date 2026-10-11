@@ -44,10 +44,10 @@ def evaluate(model, data, batch):
     return result, rows
 
 
-def numerical_gate(data, weights, profile, cfg, batched, micro):
+def numerical_gate(data, weights, profile, cfg, batched, micro, depth=2):
     """Fresh same initialized parameters: serial micro1 vs proposed production execution."""
     r.setseed(cfg['seed'])
-    model = execution.build(2, profile, cfg, batched=False)
+    model = execution.build(depth, profile, cfg, batched=False)
     identity = o.f.tensor_identity(model)
     def compute(batch):
         model.zero_grad(set_to_none=True)
@@ -72,7 +72,7 @@ def numerical_gate(data, weights, profile, cfg, batched, micro):
     receipt = dict(passed=True, probability_max_error=error, gradient_max_relative_l2=relative,
         gradient_min_cosine=cosine, gradients_finite_nonzero=finite, initialization_unchanged=True,
         router_has_residual=False, initial_parameter_sha256=identity, residual_rho=cfg['residual_rho'],
-        expert_batched=batched, microbatch=micro, scope='Fresh seed17 first8 train only; serial micro1 reference')
+        expert_batched=batched, microbatch=micro, depth=depth, scope='Fresh seed17 first8 train only; serial micro1 reference')
     del model, reference, gradients, result, proposed
     gc.collect(); torch.cuda.empty_cache()
     return receipt
@@ -86,6 +86,11 @@ def main():
     p.add_argument('--batched', type=int, choices=[0, 1], required=True)
     p.add_argument('--probe', type=Path, required=True)
     p.add_argument('--profile', type=Path, default=o.HERE/'medicinal_pilot_profile.json')
+    p.add_argument('--depth', type=int, choices=[2, 4, 8, 16], default=2)
+    p.add_argument('--epochs', type=int, choices=[2, 30], default=30)
+    p.add_argument('--seconds', type=int, default=None)
+    p.add_argument('--full-budget', action='store_true')
+    p.add_argument('--candidate', choices=['base', 'regularized', 'optimization'], default='base')
     a = p.parse_args()
     assert os.environ['CUDA_VISIBLE_DEVICES'] == a.gpu
     a.out.mkdir(parents=True, exist_ok=False)
@@ -93,7 +98,7 @@ def main():
     profile = r.read(profile_path)
     gate = r.read(a.probe)
     for rho in [0., .3]:
-        assert any(x['depth'] == 2 and x['rho'] == rho and x['expert_batched'] == bool(a.batched)
+        assert any(x['depth'] == a.depth and x['rho'] == rho and x['expert_batched'] == bool(a.batched)
             and x['microbatch'] == a.micro and x['passed'] for x in gate['results'])
     o.f.gpu_budget.ALLOWED.update(profile['gpu_uuids'])
     gpu_policy = o.f.gpu_budget.configure(torch, a.gpu, shared=True, memory_gib=3)
@@ -113,8 +118,10 @@ def main():
     assert profile['detector'] == execution.detector(classes)
     profile.update(dataset=manifest['dataset'], microbatch=a.micro, evaluation_batch_size=a.micro,
         expert_batched=bool(a.batched), maximum_epochs=30, minimum_epochs=10, patience=6,
-        maximum_seconds=1800)
-    cfg = o.config(profile, manifest, a.rho, 'base')
+        maximum_seconds=a.seconds or profile['maximum_seconds'])
+    assert 1 <= profile['maximum_seconds'] <= 5400
+    cfg = o.config(profile, manifest, a.rho, a.candidate)
+    cfg.update(depth=a.depth, requested_epochs=a.epochs, early_stopping=not a.full_budget)
     for key in ['initial_epochs', 'maximum_base_epochs', 'maximum_paired_restarts', 'restart_epochs', 'restart_candidates', 'data_revision']:
         cfg.pop(key, None)
     cfg['selection'] = 'EMA minimum validation balanced NLL, first exact tie; pilot never tests'
@@ -129,10 +136,10 @@ def main():
         execution_probe_sha256=r.sha(a.probe), manifest_sha256=r.sha(a.data.parent/'data_manifest.json'), time=r.now()))
     data, val = [load_fit_data(a.data, split, manifest) for split in ('train', 'val')]
     weights = (len(data[1])/(classes*torch.bincount(data[1], minlength=classes).float())).cuda()
-    smoke = numerical_gate(data, weights, profile, cfg, bool(a.batched), a.micro)
+    smoke = numerical_gate(data, weights, profile, cfg, bool(a.batched), a.micro, a.depth)
     r.save(a.out/'smoke.json', smoke)
     r.setseed(cfg['seed'])
-    model = execution.build(2, profile, cfg, batched=bool(a.batched))
+    model = execution.build(a.depth, profile, cfg, batched=bool(a.batched))
     initial_sha = o.f.tensor_identity(model)
     assert initial_sha == smoke['initial_parameter_sha256']
     ema = copy.deepcopy(model).eval()
@@ -142,8 +149,8 @@ def main():
     history, gradients, orders, transforms = [], [], [], []
     best, stale, reason = float('inf'), 0, 'maximum_epochs'
     started = time.monotonic()
-    for epoch in range(1, 31):
-        if time.monotonic()-started >= 1800:
+    for epoch in range(1, a.epochs+1):
+        if time.monotonic()-started >= cfg['maximum_seconds']:
             reason = 'time_budget'; break
         epoch_started = time.monotonic()
         model.train()
@@ -173,7 +180,7 @@ def main():
             entry['train'] = evaluate(ema, data, a.micro)[0]
         if vm['balanced_nll'] < best:
             best, stale = vm['balanced_nll'], 0
-            r.save_torch(a.out/'best_checkpoint.pt', dict(model=ema.state_dict(), epoch=epoch, depth=2,
+            r.save_torch(a.out/'best_checkpoint.pt', dict(model=ema.state_dict(), epoch=epoch, depth=a.depth,
                 config=cfg, sources=sources, data_sha256=manifest['cache_sha256'], validation=vm,
                 selected_state_kind='ema', selection_split='val'))
             r.csvwrite(a.out/'val_predictions.csv', rows)
@@ -184,13 +191,13 @@ def main():
         r.save(a.out/'history.json', history); r.save(a.out/'gradients.json', gradients)
         r.save_torch(a.out/'last_checkpoint.pt', dict(model=model.state_dict(), ema=ema.state_dict(),
             optimizer=optimizer.state_dict(), scheduler=scheduler.state_dict(), epoch=epoch, config=cfg,
-            sources=sources, orders=orders, transforms=transforms, initial_parameter_sha256=initial_sha,
+            sources=sources, depth=a.depth, orders=orders, transforms=transforms, initial_parameter_sha256=initial_sha,
             data_sha256=manifest['cache_sha256']))
-        status = dict(state='training', depth=2, rho=a.rho, epoch=epoch, seconds=entry['seconds'],
+        status = dict(state='training', depth=a.depth, rho=a.rho, epoch=epoch, seconds=entry['seconds'],
             epoch_seconds=entry['epoch_seconds'], val_accuracy=vm['accuracy'], val_macro_recall=vm['balanced_accuracy'],
             val_balanced_nll=vm['balanced_nll'], test_evaluations=0)
         r.save(a.out/'status.json', status); print(json.dumps(status), flush=True)
-        if epoch >= 10 and stale >= 6:
+        if not a.full_budget and epoch >= 10 and stale >= 6:
             reason = 'validation_plateau'; break
     if 'train' not in history[-1]:
         history[-1]['train'] = evaluate(ema, data, a.micro)[0]
@@ -202,7 +209,7 @@ def main():
     ema.load_state_dict(checkpoint['model'])
     tm, rows = evaluate(ema, data, a.micro)
     r.csvwrite(a.out/'train_predictions.csv', rows)
-    result = dict(depth=2, rho=a.rho, metrics=dict(train=tm, val=checkpoint['validation']),
+    result = dict(depth=a.depth, rho=a.rho, candidate=a.candidate, metrics=dict(train=tm, val=checkpoint['validation']),
         selected_epoch=checkpoint['epoch'], epochs_completed=len(history), stop_reason=reason,
         seconds=time.monotonic()-started, history_sha256=r.sha(a.out/'history.json'),
         checkpoint_sha256=r.sha(a.out/'best_checkpoint.pt'), sources=sources, config=cfg,
