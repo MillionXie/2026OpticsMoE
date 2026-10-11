@@ -33,6 +33,16 @@ raw初始化范围1→.1时两rho的样本预测差异都增大，但初始NLL�
 按两rho各自最低valNLL的均值选择整个pair，精确同分base，不根据test调整，不无限追加。
 此变化是初始化优化，模型／rho／数据／类别不改；不把不同预算的结果冒称纯深度因果或已收敛。
 
+22:04阶段更新：全部base八臂完成，父654702及GPU子654708／654709实际退出，GPU全释放。
+16层rho0选E30 train95.9375%／val86.6667%／bNLL.63674522；rho.3选E26
+train8.6458%／val9.1667%／bNLL2.98219091，负结果全部通过独立CPU审计并保留。
+rawinit .1一次配对10轮在`coil20_L16_s17_init01_paired10_20261011`启动，
+CPU父695521、GPU1／2子695523／695524，随后以current_processes.json核对，勿重复启动。
+来源b7ccea8d6，67实际／发布blob通过，新初始化fresh smoke概率／梯度差0，双方initialSHA一致。
+实际配置maximum/requested_epochs均10；原base身份按原commit保护，不修改旧结果。
+Linux6项CPU检查通过；全8锁定及独占首次test标记的finalizer两项CPU检查通过，尚未读真实test。
+入口`coil20_finalize.py`独立发布；只有候选完成、保存结果审核、成对方案与全8global lock之后才执行test。
+
 ## 历史：停止慢速Butterfly，完整30类叶片有界两层预检（已完成）
 
 用户19:29要求更快、两层精度目标≥70%，选择叶片／物体自然图像且类别>8。

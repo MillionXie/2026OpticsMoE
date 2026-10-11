@@ -115,6 +115,46 @@ epsilon贡献约2.66e-10，不支持epsilon淹没预测解释。不能外推到�
 整个pair按两rho最佳验证NLL均值选择，同分base，任何结果仍如实报告预算及未收敛风险。
 不改模型／rho／数据／类别，不无限追加。完整规则在[协议](../../COIL20_PILOT_PROTOCOL_20261011.md)。
 
+## 16层base完成，唯一10轮调整已启动
+
+全部八个base臂已完成并实际释放GPU。16层原rho0最低验证NLL选E30：
+train95.9375%／val86.6667%、balanced NLL.63674522，总4452.369秒／平均146.923秒每轮。
+rho.3最低NLL选E26：train8.6458%／val9.1667%、balanced NLL2.98219091，总4362.266秒。
+后者最后E30 train9.375%／val10%没有更低NLL，不能按更高accuracy反换权重。
+初始／30轮order与augmentation／配置仅rho／67原Git来源／PT／缓存标签与预测全部CPU审核通过。
+原[审计](L16/pilot_audit.json)、[CSV](L16/pilot_summary.csv)、[曲线CSV](L16/curve_data.csv)、
+[PNG](L16/learning_curves_L16.png)、[SVG](L16/learning_curves_L16.svg)、[PDF](L16/learning_curves_L16.pdf)
+已取回SHA核验、PNG视觉检查，全部test0，不重测原模型。
+原pilot通用speed_gate<=60秒仅用于两层可行门槛，16层平均147秒不达它；
+16层扩展门槛是<=180秒，因此报告保留原false字段，不改成true或混淆两个门槛。
+
+`coil20_L16_s17_init01_paired10_20261011`启动CPU父695521、GPU1／2子695523／695524，
+实际训练来源b7ccea8d6／67文件与发布blob匹配；只多了允许10轮与真实预算元数据，模型算法不变。
+两rho新初始化fresh生产micro1 smoke通过，概率／梯度差0，initialSHA均
+e15501a9458c236526f7663bfdabbbd7b18ff98d23ad0b6f7e731f262e70a60b。
+配置只rho不同，完整10轮不早停，约25分钟训练估计，最终评估另计。不额外候选／第二次调整。
+
+独立最终入口`coil20_finalize.py`：全8选择锁前不会读取test，独占test_started标记阻止失败自动重测。
+两项CPU检查通过（全8缺失拒绝、失败后重复claim拒绝），还没有真实test评估。
+候选完成后可执行以下流程，所有源码应先Git发布并核对实际依赖；不能跳过lock或自动重试test：
+
+```bash
+TASK=LightGenV2/tasks/t18_optical_residual_ablation
+PY=/home/guest3/miniconda3/envs/xml/bin/python
+DATA=/DATA/DATA1/guest3/t18_coil20_20261011/coil20_fixed_split.npz
+BASE=$TASK/runs/simulation/coil20_s17_L2L4L8L16_val_fast_20261011
+ADJUST=$TASK/runs/simulation/coil20_L16_s17_init01_paired10_20261011
+FINAL=$TASK/runs/simulation/coil20_s17_L2L4L8L16_val_selected_once_20261011
+CUDA_VISIBLE_DEVICES='' $PY $TASK/coil20_finalize.py --phase lock --base "$BASE" --adjust "$ADJUST" --out "$FINAL" --data "$DATA"
+# Inspect actual all-eight global lock and pair candidate selection before suite.
+CUDA_VISIBLE_DEVICES='' $PY $TASK/coil20_finalize.py --phase suite --out "$FINAL" --data "$DATA"
+```
+
+lock阶段对全部base／alternative保存结果CPU审计，选择完整16层pair，保存每pair／每臂／全8锁。
+suite只对获选EMA各单次test，不再train／val推理；实际光模型依赖必须匹配原训练SHA。
+训练控制器版本有变化时，原发布Git身份仍逐一核验，evaluate函数AST还须一致，不拿新HEAD冒充。
+当前真实test尚未执行，不能把上述检查或入口实现当作已完成最终成绩。
+
 此队列严格只fit，结束生成8臂fit_manifest，实际释放GPU并停在
 fit_complete_awaiting_validation_review。然后只读保存结果做CPU来源／PT／指标及
 过拟合／欠拟合／未收敛审查，必要调整必须有限、成对、使用新profile并保留原结果；
