@@ -34,4 +34,8 @@ PAT 原文：[Deep physical neural networks trained with backpropagation](https:
 
 ## 运行状态
 
-源码准备完成；服务器数值测试和实际训练结果将追加在此。该文字不是成功运行的证明。
+初始源码提交 `0de3b0da0` 已经同步本地、GitHub 与服务器 main。
+服务器 xml / PyTorch 2.6.0+cu124 环境下 12 项数值测试全部通过（1.963 s），包括
+CUDA float32、双精度 gradcheck、有限差分、token/feature 两层电子链、源响应冻结与恢复。
+测试结束后 GPU 上未保留测试进程。训练程序的 buffer 哈希增加标量张量处理后再发布运行。
+实际训练结果将追加在此；测试通过不代表 FFA 适配有效。

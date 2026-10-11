@@ -67,7 +67,7 @@ def electronic_hash(model):
     for name, value in model.backbone.state_dict().items():
         if not name.endswith(".raw_phase"):
             digest.update(name.encode())
-            digest.update(value.detach().cpu().contiguous().view(torch.uint8).numpy().tobytes())
+            digest.update(value.detach().cpu().contiguous().reshape(-1).view(torch.uint8).numpy().tobytes())
     return digest.hexdigest()
 
 
