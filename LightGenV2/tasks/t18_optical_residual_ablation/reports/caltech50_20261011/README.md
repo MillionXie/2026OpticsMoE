@@ -29,3 +29,11 @@ Linux6项CPU检查通过（执行批处理/训练只加载trainval/连接分组�
 数值通过后先两层100轮trainval可学习性预检及16层2轮端到端计时；
 每深度两rho使用同执行模式，旧失败模式保留，不自动无限追加或换类追残差正结果。
 正式八臂方案与PT全部锁定前不测试任何模型。
+
+## 已完成后被人工20类要求替代
+
+两层两rho完整100轮CPU审计通过，均选最低val NLL首次E99。
+rho0 train24.5%/val14.8%，rho0.3 train32.2%/val18.8%；末段val NLL仍改善，
+不能把低train单归因过拟合或宣称收敛。所有test0，全部原GPU子实际退出。
+真实CPU审计/曲线CSV和PNG SVG PDF保存在[L2](L2/pilot_summary.csv)。
+50类数据与best/last全部保护，不再扩展50类深层。

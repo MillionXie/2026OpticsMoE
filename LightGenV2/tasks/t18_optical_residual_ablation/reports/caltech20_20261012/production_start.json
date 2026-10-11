@@ -1,0 +1,106 @@
+{
+  "run": "LightGenV2/tasks/t18_optical_residual_ablation/runs/simulation/caltech20_s17_L2_e100_L16_timing_4gpu_20261012",
+  "parent_pid": 776112,
+  "parent_git_commit": "aaccbeb7911eade85723964f5ef052161ca5d487",
+  "parent_source_sha256": "2bf7de0689a55397626e83c99e24148e5c2ce8ed16e651b1236c4b833674c746",
+  "test_evaluations": 0,
+  "children": [
+    {
+      "name": "L2_rho0",
+      "status": null,
+      "pid": 776114,
+      "git_commit": "aaccbeb7911eade85723964f5ef052161ca5d487",
+      "sources_checked": 67,
+      "source_mapping_sha256": "73bbed669978b011f06715d923185e97cd14201275c338fb5f702f5b41d6a18c",
+      "smoke": {
+        "passed": true,
+        "probability_max_error": 2.980232238769531e-7,
+        "gradient_max_relative_l2": 0.000006082362688175635,
+        "gradient_min_cosine": 0.9999998807907104,
+        "gradients_finite_nonzero": true,
+        "initialization_unchanged": true,
+        "router_has_residual": false,
+        "initial_parameter_sha256": "ab990649a70865af24d57c0e0d04128517cdc6b662385b4ca68738dd546d534d",
+        "residual_rho": 0,
+        "expert_batched": true,
+        "microbatch": 4,
+        "depth": 2,
+        "scope": "Fresh seed17 first8 train only; serial micro1 reference"
+      },
+      "log_tail": ""
+    },
+    {
+      "name": "L2_rho03",
+      "status": null,
+      "pid": 776115,
+      "git_commit": "aaccbeb7911eade85723964f5ef052161ca5d487",
+      "sources_checked": 67,
+      "source_mapping_sha256": "73bbed669978b011f06715d923185e97cd14201275c338fb5f702f5b41d6a18c",
+      "smoke": {
+        "passed": true,
+        "probability_max_error": 3.5762786865234375e-7,
+        "gradient_max_relative_l2": 0.002126289065927267,
+        "gradient_min_cosine": 0.9999977350234985,
+        "gradients_finite_nonzero": true,
+        "initialization_unchanged": true,
+        "router_has_residual": false,
+        "initial_parameter_sha256": "ab990649a70865af24d57c0e0d04128517cdc6b662385b4ca68738dd546d534d",
+        "residual_rho": 0.3,
+        "expert_batched": true,
+        "microbatch": 4,
+        "depth": 2,
+        "scope": "Fresh seed17 first8 train only; serial micro1 reference"
+      },
+      "log_tail": ""
+    },
+    {
+      "name": "L16_timing_rho0",
+      "status": null,
+      "pid": 776116,
+      "git_commit": "aaccbeb7911eade85723964f5ef052161ca5d487",
+      "sources_checked": 67,
+      "source_mapping_sha256": "73bbed669978b011f06715d923185e97cd14201275c338fb5f702f5b41d6a18c",
+      "smoke": {
+        "passed": true,
+        "probability_max_error": 0,
+        "gradient_max_relative_l2": 0,
+        "gradient_min_cosine": 0.9999998211860657,
+        "gradients_finite_nonzero": true,
+        "initialization_unchanged": true,
+        "router_has_residual": false,
+        "initial_parameter_sha256": "e15501a9458c236526f7663bfdabbbd7b18ff98d23ad0b6f7e731f262e70a60b",
+        "residual_rho": 0,
+        "expert_batched": true,
+        "microbatch": 1,
+        "depth": 16,
+        "scope": "Fresh seed17 first8 train only; serial micro1 reference"
+      },
+      "log_tail": ""
+    },
+    {
+      "name": "L16_timing_rho03",
+      "status": null,
+      "pid": 776117,
+      "git_commit": "aaccbeb7911eade85723964f5ef052161ca5d487",
+      "sources_checked": 67,
+      "source_mapping_sha256": "73bbed669978b011f06715d923185e97cd14201275c338fb5f702f5b41d6a18c",
+      "smoke": {
+        "passed": true,
+        "probability_max_error": 0,
+        "gradient_max_relative_l2": 0,
+        "gradient_min_cosine": 0.9999998211860657,
+        "gradients_finite_nonzero": true,
+        "initialization_unchanged": true,
+        "router_has_residual": false,
+        "initial_parameter_sha256": "e15501a9458c236526f7663bfdabbbd7b18ff98d23ad0b6f7e731f262e70a60b",
+        "residual_rho": 0.3,
+        "expert_batched": true,
+        "microbatch": 1,
+        "depth": 16,
+        "scope": "Fresh seed17 first8 train only; serial micro1 reference"
+      },
+      "log_tail": ""
+    }
+  ],
+  "scope": "Initial production smoke/source verification; no epoch metrics yet. L2 formal100, L16 timing2 only."
+}
