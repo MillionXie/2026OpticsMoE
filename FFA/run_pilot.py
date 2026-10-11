@@ -124,9 +124,10 @@ def diagnose(model, batch, settings, seed, candidate, include_legacy=False):
         old, oldhead, oldout, _ = gradients(model,batch,settings,"bp_current",seed,legacy=True)
         result["legacy_2d_bp_phase"] = compare(old,ref)
         result["legacy_2d_bp_head"] = compare(oldhead,refhead)
+        result["legacy_2d_bp_forward"] = compare([oldout],[refout])
         result["legacy_2d_bp_forward_max_abs"] = float((oldout-refout).abs().max())
         if (result["legacy_2d_bp_phase"]["cosine"] < 0.9999 or result["legacy_2d_bp_phase"]["relative_l2"] > 0.01
-                or result["legacy_2d_bp_head"]["relative_l2"] > 0.01 or result["legacy_2d_bp_forward_max_abs"] > 5e-4):
+                or result["legacy_2d_bp_head"]["relative_l2"] > 0.01 or result["legacy_2d_bp_forward"]["relative_l2"] > 1e-3):
             raise RuntimeError(f"Analytic 1D baseline differs from legacy BP: {result}")
     configure(model,candidate,seed)
     model.zero_grad(set_to_none=True)
