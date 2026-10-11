@@ -1,0 +1,55 @@
+{
+  "run": "LightGenV2/tasks/t18_optical_residual_ablation/runs/simulation/caltech20_s17_L2_e100_L16_timing_4gpu_20261012",
+  "observed_utc": "2026-10-11T16:39:49.781802+00:00",
+  "test_evaluations": 0,
+  "timing_arms": [
+    {
+      "name": "L16_timing_rho0",
+      "pid": 776116,
+      "actual_exit": true,
+      "git_commit": "aaccbeb7911eade85723964f5ef052161ca5d487",
+      "history_sha256": "e471df455b207f8fe77e13d461c0745c0e6d336520cedfcbc5d3c1442cd21ef0",
+      "fit_result_sha256": "a8c0c3aa6c6a1a0004cf7f5ba32d92dd07b8b80804383164dce206e1f39cf69d",
+      "epoch_seconds": [
+        227.70457811653614,
+        183.13271668553352
+      ],
+      "periodic_mean_estimate_seconds": 192.04708897173404,
+      "scope": "Two timing epochs only, not formal fit. Epoch1 includes full train evaluation, epoch2 ordinary; periodic estimate assumes train evaluation each5. Additional endpoint and selected train evaluation excluded."
+    },
+    {
+      "name": "L16_timing_rho03",
+      "pid": 776117,
+      "actual_exit": true,
+      "git_commit": "aaccbeb7911eade85723964f5ef052161ca5d487",
+      "history_sha256": "08008582dc3873758915e8414e705681651b29c4fad87cffbeb090aa746f634c",
+      "fit_result_sha256": "438b77ef0337978beaee24997efdf17d11c81ff86a0d8954410e212dc106b1dd",
+      "epoch_seconds": [
+        222.22178481519222,
+        176.86466793715954
+      ],
+      "periodic_mean_estimate_seconds": 185.93609131276608,
+      "scope": "Two timing epochs only, not formal fit. Epoch1 includes full train evaluation, epoch2 ordinary; periodic estimate assumes train evaluation each5. Additional endpoint and selected train evaluation excluded."
+    }
+  ],
+  "learning_snapshot": [
+    {
+      "name": "L2_rho0",
+      "epoch": 63,
+      "val_accuracy": 0.385,
+      "val_balanced_nll": 2.2003589899237688,
+      "train_epoch": 60,
+      "train_accuracy": 0.49416666666666664,
+      "scope": "In-progress EMA train/validation snapshot, not selected final checkpoint"
+    },
+    {
+      "name": "L2_rho03",
+      "epoch": 62,
+      "val_accuracy": 0.375,
+      "val_balanced_nll": 2.1211270758799663,
+      "train_epoch": 60,
+      "train_accuracy": 0.5216666666666666,
+      "scope": "In-progress EMA train/validation snapshot, not selected final checkpoint"
+    }
+  ]
+}
