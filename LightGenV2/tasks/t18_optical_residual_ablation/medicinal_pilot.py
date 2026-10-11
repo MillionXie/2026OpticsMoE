@@ -2,6 +2,7 @@
 import argparse
 import copy
 import gc
+import hashlib
 import json
 import os
 import subprocess
@@ -112,6 +113,8 @@ def main():
     sources = o.source_identity(o.HERE/'butterfly_profile.json')
     sources.update({str((o.HERE/name).relative_to(o.ROOT)).replace('\\', '/'): r.sha(o.HERE/name)
         for name in ['fast_optical.py', 'medicinal_pilot.py', 'prepare_medicinal.py', 'probe_fast_optical.py']})
+    assert all(hashlib.sha256(subprocess.check_output(['git', 'show', 'HEAD:'+path])).hexdigest() == digest
+        for path, digest in sources.items()), 'Every runtime source must match its published Git blob'
     r.save(a.out/'config.json', cfg)
     r.save(a.out/'metadata.json', dict(pid=os.getpid(), command=sys.argv, sources=sources, gpu_policy=gpu_policy,
         git_commit=subprocess.check_output(['git', 'rev-parse', 'HEAD'], text=True).strip(),
@@ -181,6 +184,9 @@ def main():
         r.save(a.out/'status.json', status); print(json.dumps(status), flush=True)
         if epoch >= 10 and stale >= 6:
             reason = 'validation_plateau'; break
+    if 'train' not in history[-1]:
+        history[-1]['train'] = evaluate(ema, data, a.micro)[0]
+        r.save(a.out/'history.json', history)
     checkpoint = torch.load(a.out/'best_checkpoint.pt', map_location='cpu', weights_only=False)
     selected = min(history, key=lambda h: h['val']['balanced_nll'])
     assert selected['epoch'] == checkpoint['epoch'] and selected['val'] == checkpoint['validation']
