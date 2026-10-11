@@ -1,0 +1,89 @@
+{
+  "dataset": "Caltech101_prespecified20_train60",
+  "seed": 17,
+  "depths": [
+    2,
+    4,
+    8,
+    16
+  ],
+  "rhos": [
+    0,
+    0.3
+  ],
+  "batch_size": 16,
+  "microbatch": 1,
+  "evaluation_batch_size": 1,
+  "expert_batched": true,
+  "maximum_epochs": 100,
+  "minimum_epochs": 100,
+  "patience": 6,
+  "maximum_seconds": 36000,
+  "lr": 0.002,
+  "ema_decay": 0.95,
+  "label_smoothing": 0.02,
+  "capture_weight": 0.2,
+  "phase_smooth_weight": 0.02,
+  "phase_init_raw_uniform": 0.1,
+  "augmentation": {
+    "degrees": 10,
+    "translation_pixels": 3,
+    "scale_delta": 0.05
+  },
+  "scheduler": {
+    "factor": 0.5,
+    "patience": 8,
+    "min_lr": 0.00002
+  },
+  "detector": {
+    "detector_size": 32,
+    "layout": "fixed_2x2",
+    "normalize_detector_energy": true,
+    "start_pos_x": 24,
+    "start_pos_y": 174,
+    "N_det_sets": [
+      8,
+      8,
+      4
+    ],
+    "det_steps_x": [
+      28,
+      28,
+      28
+    ],
+    "det_steps_y": 28,
+    "start_pos_x_per_row": [
+      24,
+      24,
+      144
+    ]
+  },
+  "selection": "EMA minimum validation balanced NLL, first exact tie; all eight locked before once per selected test",
+  "test_development": false,
+  "test_previously_observed": false,
+  "gpu_uuids": [
+    "GPU-afc19890-6209-ee4d-622d-e619da5bd5b2",
+    "GPU-e8837b85-d55b-8e81-aaa5-ec1ac326932d",
+    "GPU-6dcca91a-8e08-1a50-9aa6-81defeaed50b",
+    "GPU-1b963983-7909-af6e-0528-f0f0661ab549"
+  ],
+  "memory_gib": 3,
+  "scope": "Count-conditioned prespecified20 Caltech101 categories;60 train/10 validation groups per class, all remaining test. Previous train/val never new test. Validation-guided exploratory task adaptation.",
+  "data_contract": {
+    "dataset": "Caltech101_prespecified20_train60",
+    "records": 3888,
+    "classes": 20,
+    "preparation_source": "prepare_caltech50.py",
+    "identity_key": "archive_sha256",
+    "identity_sha256": "331234750fc7f77520e50d9565e8b6907b03565e30320da1401130db08c61f91",
+    "preparation_plan_sha256": "90501472d055ba7aefb9b4fa22929da5f9ccff94d0cb40051714becb89139d5b",
+    "parent_manifest_sha256": "ef819d50004993ddd3869ce0ed97fab8927939713a2f76b9995debc2d49862f7"
+  },
+  "budget_policy": {
+    "base_epochs_per_arm": 100,
+    "max_base_seconds_per_arm": 36000,
+    "early_stopping": false,
+    "test_before_all_locks": false,
+    "preflight": "Fresh train-only numerical checks, two-layer100 learning pilot and two-epoch16 timing; no test. Execution and elapsed time reviewed before all eight."
+  }
+}
