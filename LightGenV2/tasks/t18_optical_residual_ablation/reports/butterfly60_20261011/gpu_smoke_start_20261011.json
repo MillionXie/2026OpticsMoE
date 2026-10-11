@@ -1,0 +1,173 @@
+{
+  "time": "2026-10-11T18:06:31.197951",
+  "run_id": "butterfly60_s17_L2L4L8L16_val_3gpu_ready_20261011",
+  "parent_pid": 560528,
+  "parent_alive": true,
+  "source_commit": "2ddf96fb8812b4bf72c6d342a682e9ef0646cfe9",
+  "source_count": 63,
+  "source_mismatches": [],
+  "state": "running",
+  "completed_smokes": 4,
+  "completed_training_arms": 0,
+  "test_evaluations": 0,
+  "arms": [
+    {
+      "pid": 569626,
+      "depth": 16,
+      "rho": 0,
+      "gpu_uuid": "GPU-e8837b85-d55b-8e81-aaa5-ec1ac326932d",
+      "alive": true,
+      "source_matches": true,
+      "data_matches": true,
+      "selection_split": "val",
+      "training_reads_test": false,
+      "gpu_policy": {
+        "gpu_uuid": "GPU-e8837b85-d55b-8e81-aaa5-ec1ac326932d",
+        "spare_memory_authorized": true,
+        "memory_limit_gib": 3,
+        "free_mib_at_start": 24186,
+        "total_mib": 24564,
+        "other_process_on_gpu": false,
+        "safety_margin_mib": 800,
+        "source_sha256": "6d9ae0cb8d49d06997905f84cbe30929e4d4552a5276afe356e6f5ee14e496a2"
+      },
+      "epochs_saved": 0,
+      "history_has_test": false
+    },
+    {
+      "pid": 569692,
+      "depth": 16,
+      "rho": 0.3,
+      "gpu_uuid": "GPU-6dcca91a-8e08-1a50-9aa6-81defeaed50b",
+      "alive": true,
+      "source_matches": true,
+      "data_matches": true,
+      "selection_split": "val",
+      "training_reads_test": false,
+      "gpu_policy": {
+        "gpu_uuid": "GPU-6dcca91a-8e08-1a50-9aa6-81defeaed50b",
+        "spare_memory_authorized": true,
+        "memory_limit_gib": 3,
+        "free_mib_at_start": 24243,
+        "total_mib": 24576,
+        "other_process_on_gpu": false,
+        "safety_margin_mib": 800,
+        "source_sha256": "6d9ae0cb8d49d06997905f84cbe30929e4d4552a5276afe356e6f5ee14e496a2"
+      },
+      "epochs_saved": 0,
+      "history_has_test": false
+    },
+    {
+      "pid": 569761,
+      "depth": 8,
+      "rho": 0,
+      "gpu_uuid": "GPU-1b963983-7909-af6e-0528-f0f0661ab549",
+      "alive": true,
+      "source_matches": true,
+      "data_matches": true,
+      "selection_split": "val",
+      "training_reads_test": false,
+      "gpu_policy": {
+        "gpu_uuid": "GPU-1b963983-7909-af6e-0528-f0f0661ab549",
+        "spare_memory_authorized": true,
+        "memory_limit_gib": 3,
+        "free_mib_at_start": 24200,
+        "total_mib": 24564,
+        "other_process_on_gpu": false,
+        "safety_margin_mib": 800,
+        "source_sha256": "6d9ae0cb8d49d06997905f84cbe30929e4d4552a5276afe356e6f5ee14e496a2"
+      },
+      "epochs_saved": 0,
+      "history_has_test": false
+    }
+  ],
+  "smokes": {
+    "2": {
+      "passed": true,
+      "depth": 2,
+      "rho0_exact_identity": true,
+      "initialization_unchanged": true,
+      "router_has_residual": false,
+      "targets": 10,
+      "repeated_micro1_probability_error": 0,
+      "peak_allocated_mib": 227.3583984375,
+      "scope": "Production micro1 graphs: joint mean loss vs separately accumulated sample-weighted loss; no batch2-equivalence claim; train only",
+      "gradient_parameters": 11,
+      "all_gradients_finite_nonzero": true,
+      "max_gradient_relative_l2": 3.36042198512132e-8,
+      "min_gradient_cosine": 0.9999998211860657,
+      "status": {
+        "state": "smoke_complete",
+        "test_evaluations": 0,
+        "time": "2026-10-11T10:01:07.855428+00:00",
+        "gpu_released_on_exit": true
+      }
+    },
+    "4": {
+      "passed": true,
+      "depth": 4,
+      "rho0_exact_identity": true,
+      "initialization_unchanged": true,
+      "router_has_residual": false,
+      "targets": 20,
+      "repeated_micro1_probability_error": 0,
+      "peak_allocated_mib": 294.09033203125,
+      "scope": "Production micro1 graphs: joint mean loss vs separately accumulated sample-weighted loss; no batch2-equivalence claim; train only",
+      "gradient_parameters": 21,
+      "all_gradients_finite_nonzero": true,
+      "max_gradient_relative_l2": 3.777730483989217e-8,
+      "min_gradient_cosine": 0.9999998807907104,
+      "status": {
+        "state": "smoke_complete",
+        "test_evaluations": 0,
+        "time": "2026-10-11T10:00:44.140998+00:00",
+        "gpu_released_on_exit": true
+      }
+    },
+    "8": {
+      "passed": true,
+      "depth": 8,
+      "rho0_exact_identity": true,
+      "initialization_unchanged": true,
+      "router_has_residual": false,
+      "targets": 40,
+      "repeated_micro1_probability_error": 0,
+      "peak_allocated_mib": 436.91259765625,
+      "scope": "Production micro1 graphs: joint mean loss vs separately accumulated sample-weighted loss; no batch2-equivalence claim; train only",
+      "gradient_parameters": 41,
+      "all_gradients_finite_nonzero": true,
+      "max_gradient_relative_l2": 4.0428243863743774e-8,
+      "min_gradient_cosine": 0.9999998807907104,
+      "status": {
+        "state": "smoke_complete",
+        "test_evaluations": 0,
+        "time": "2026-10-11T10:00:47.708501+00:00",
+        "gpu_released_on_exit": true
+      }
+    },
+    "16": {
+      "passed": true,
+      "depth": 16,
+      "rho0_exact_identity": true,
+      "initialization_unchanged": true,
+      "router_has_residual": false,
+      "targets": 80,
+      "repeated_micro1_probability_error": 0,
+      "peak_allocated_mib": 727.748046875,
+      "scope": "Production micro1 graphs: joint mean loss vs separately accumulated sample-weighted loss; no batch2-equivalence claim; train only",
+      "gradient_parameters": 81,
+      "all_gradients_finite_nonzero": true,
+      "max_gradient_relative_l2": 4.248661511496721e-8,
+      "min_gradient_cosine": 0.9999997615814209,
+      "status": {
+        "state": "smoke_complete",
+        "test_evaluations": 0,
+        "time": "2026-10-11T10:00:45.109809+00:00",
+        "gpu_released_on_exit": true
+      }
+    }
+  },
+  "data_sha256": "6bc2bbbfac2b3fcfc223b60ef337ef10c46811c57a8d77a000298f85f2b6ff14",
+  "manifest_sha256": "5ead2fc6d95a8b27f0a12151ebdd8b2b846ab20901d3bbdee27c9f8eb86e27f2",
+  "gpu_processes": "569626, GPU-e8837b85-d55b-8e81-aaa5-ec1ac326932d, 1236 MiB\n569692, GPU-6dcca91a-8e08-1a50-9aa6-81defeaed50b, 1086 MiB\n569761, GPU-1b963983-7909-af6e-0528-f0f0661ab549, 998 MiB\n"
+}
