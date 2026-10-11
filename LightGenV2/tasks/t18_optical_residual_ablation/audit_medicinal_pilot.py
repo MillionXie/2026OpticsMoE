@@ -20,13 +20,15 @@ def main():
     p = argparse.ArgumentParser()
     p.add_argument('--run', type=Path, required=True); p.add_argument('--data', type=Path, required=True)
     p.add_argument('--out', type=Path, required=True)
+    p.add_argument('--depth', type=int, choices=[2,4,8,16], default=2)
+    p.add_argument('--arm0', type=Path); p.add_argument('--arm03', type=Path)
     a = p.parse_args(); a.out.mkdir(parents=True, exist_ok=True)
     manifest = read(a.data.parent/'data_manifest.json')
     classes = len(manifest['classes'])
     assert digest(a.data) == manifest['cache_sha256']
     summaries, histories, identities, configurations, sources = [], [], [], [], []
     for name in ['rho0', 'rho03']:
-        arm = a.run/name
+        arm = (a.arm0 if name == 'rho0' else a.arm03) or a.run/name
         result = read(arm/'fit_result.json'); history = read(arm/'history.json')
         best = torch.load(arm/'best_checkpoint.pt', map_location='cpu', weights_only=False)
         last = torch.load(arm/'last_checkpoint.pt', map_location='cpu', weights_only=False)
@@ -45,11 +47,12 @@ def main():
         commit = read(arm/'metadata.json')['git_commit']
         assert all(hashlib.sha256(subprocess.check_output(['git', 'show', commit+':'+path])).hexdigest() == sha
             for path, sha in result['sources'].items())
-        assert sum(v.numel() for k, v in best['model'].items() if k.endswith('raw_phase')) == result['parameters'] == 449848
+        assert result['depth'] == a.depth
+        assert sum(v.numel() for k, v in best['model'].items() if k.endswith('raw_phase')) == result['parameters'] == 10000+439848*(a.depth//2)
         assert result['initial_parameter_sha256'] == last['initial_parameter_sha256'] == read(arm/'smoke.json')['initial_parameter_sha256']
         assert result['orders'] == last['orders'] and result['transforms'] == last['transforms']
         gradients = read(arm/'gradients.json')
-        assert len(gradients) == len(history) and all(len(g['norms']) == 11 and all(np.isfinite(v) and v > 0 for v in g['norms'].values()) for g in gradients)
+        assert len(gradients) == len(history) and all(len(g['norms']) == 1+5*a.depth and all(np.isfinite(v) and v > 0 for v in g['norms'].values()) for g in gradients)
         for split in ['train', 'val']:
             with np.load(a.data, allow_pickle=False) as z:
                 labels, ids = z[split+'_labels'].copy(), z[split+'_ids'].copy()
@@ -78,7 +81,7 @@ def main():
     assert identities[0] == identities[1] and sources[0] == sources[1]
     assert {k for k in configurations[0] if configurations[0][k] != configurations[1][k]} == {'residual_rho'}
     length = min(map(len, histories))
-    results = [read(a.run/name/'fit_result.json') for name in ['rho0', 'rho03']]
+    results = [read(arm/'fit_result.json') for arm in [a.arm0 or a.run/'rho0', a.arm03 or a.run/'rho03']]
     assert results[0]['orders'][:length] == results[1]['orders'][:length]
     assert results[0]['transforms'][:length] == results[1]['transforms'][:length]
     report = dict(scope='Validation-reused feasibility pilot only, not independent test or formal residual benefit',
@@ -110,9 +113,9 @@ def main():
     axes[0].axhline(70, color='#888888', linewidth=.8, linestyle=':')
     axes[0].set(ylabel='Accuracy (%)', ylim=(0, 100)); axes[1].set(ylabel='Balanced NLL')
     for ax in axes: ax.set(xlabel='Epoch'); ax.grid(alpha=.15); ax.legend(fontsize=8)
-    fig.suptitle(f'{manifest["dataset"]} | {classes} classes | L2 pilot | seed17 | no test')
-    for ext in ['png', 'svg', 'pdf']: fig.savefig(a.out/('learning_curves_L2.'+ext), dpi=180)
-    svg = a.out/'learning_curves_L2.svg'
+    fig.suptitle(f'COIL-20 | {classes} known objects | L{a.depth} | seed17 | train / val only')
+    for ext in ['png', 'svg', 'pdf']: fig.savefig(a.out/(f'learning_curves_L{a.depth}.'+ext), dpi=180)
+    svg = a.out/f'learning_curves_L{a.depth}.svg'
     svg.write_text('\n'.join(line.rstrip() for line in svg.read_text().splitlines())+'\n')
     plt.close(fig)
     print(json.dumps(dict(cpu_checks_passed=True, summaries=summaries), indent=2))
