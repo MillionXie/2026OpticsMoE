@@ -61,7 +61,9 @@ def main():
     z = zipfile.ZipFile(io.BytesIO(content)); assert z.testzip() is None
     names = [n for n in z.namelist() if Path(n).name == '101_ObjectCategories.tar.gz']
     assert len(names) == 1, z.namelist()
-    t = tarfile.open(fileobj=io.BytesIO(z.read(names[0])), mode='r:gz')
+    # Decompress once before random member reads; seeking backwards in gzip is quadratic.
+    import gzip
+    t = tarfile.open(fileobj=io.BytesIO(gzip.decompress(z.read(names[0]))), mode='r:')
     members = sorted((m for m in t.getmembers() if m.isfile() and m.name.lower().endswith('.jpg')), key=lambda m:m.name)
     categories = sorted({Path(m.name).parent.name for m in members})
     assert len(categories) == 102 and 'BACKGROUND_Google' in categories and 'Faces_easy' in categories
