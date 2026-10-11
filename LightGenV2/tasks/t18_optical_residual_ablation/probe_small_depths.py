@@ -3,6 +3,8 @@ import argparse
 import gc
 import json
 import os
+import subprocess
+import sys
 from pathlib import Path
 import time
 import fast_optical as execution
@@ -20,6 +22,12 @@ def main():
     profile = o.r.read(a.profile); manifest = o.r.read(a.data.parent/'data_manifest.json')
     o.f.gpu_budget.ALLOWED.update(profile['gpu_uuids'])
     policy = o.f.gpu_budget.configure(torch, a.gpu, shared=True, memory_gib=3)
+    sources = o.source_identity(a.profile)
+    sources.update({str((o.HERE/name).relative_to(o.ROOT)).replace('\\', '/'): o.r.sha(o.HERE/name)
+        for name in ['fast_optical.py', 'medicinal_pilot.py', 'prepare_coil20.py', 'probe_small_depths.py']})
+    o.r.save(a.out/'metadata.json', dict(command=sys.argv, pid=os.getpid(), sources=sources,
+        git_commit=subprocess.check_output(['git', 'rev-parse', 'HEAD'], text=True).strip(),
+        data_sha256=o.r.sha(a.data), python=sys.version, torch=torch.__version__, cuda_build=torch.version.cuda, time=o.r.now()))
     torch.set_num_threads(4)
     data = load_fit_data(a.data, 'train', manifest)
     amplitude = o.encode(data[0][:8]); labels = data[1][:8].cuda()
@@ -39,7 +47,9 @@ def main():
                     probabilities.append(probability.detach())
                 return torch.cat(probabilities), {n: p.grad.detach().clone() for n, p in model.named_parameters()}
             reference, gradients = compute(1)
+            initial_sha = o.f.tensor_identity(model)
             execution.enable_expert_batching(model)
+            assert o.f.tensor_identity(model) == initial_sha
             for micro in [1, 4]:
                 torch.cuda.synchronize(); started = time.perf_counter()
                 prob, grad = compute(micro)
@@ -49,6 +59,7 @@ def main():
                 cosine = min(float(torch.nn.functional.cosine_similarity(grad[n].flatten(), g.flatten(), dim=0)) for n, g in gradients.items())
                 finite = all(bool(torch.isfinite(g).all()) and float(g.norm()) > 0 for g in grad.values())
                 result = dict(depth=depth, rho=rho, expert_batched=True, microbatch=micro,
+                    initial_parameter_sha256=initial_sha, parameters=sum(p.numel() for p in model.parameters()),
                     probability_max_error=error, gradient_max_relative_l2=relative, gradient_min_cosine=cosine,
                     gradients_finite_nonzero=finite, passed=error<=1e-6 and relative<=.02 and cosine>=.999 and finite,
                     train_core_seconds_per_sample=seconds,
