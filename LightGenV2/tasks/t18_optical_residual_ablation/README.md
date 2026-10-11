@@ -13,6 +13,12 @@ test只在验证PT锁定后评估一次，不逐轮测、不按test挑raw／EMA�
 后续子PID以新run的current_process.json为准。训练源码main `ce7edf074`已同步，
 Linux11项检查通过；Windows9过／2项原生Torch检查跳过，不改其它环境。
 新[验证选模记录](reports/fishnet_validation_20261011/README.md)与旧开发报告分开。
+六层rho0已于北京时间14:05:48完成100轮，验证balanced NLL最低选第72轮EMA：
+train98.91%／val92.19%／test89.98%（413/459），test宏平均召回86.05%、
+balanced NLL0.35783。100轮history无逐轮test，锁定PT后仅测试一次；保存预测、
+best／last、缓存及60个发布源码身份CPU核验通过，没有重复test推理。
+真实PNG／SVG／PDF／CSV见上述验证报告；六层rho0.3已自动接续PID446585，
+后续以current_process.json为准，仍仅物理GPU1。配对尚未完成，不先作残差结论。
 因旧test已多次观测，新结果仍是探索性评估，不能重命名为独立泛化。
 以下test开发选模段落仅属于保留的旧run。
 

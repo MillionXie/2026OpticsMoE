@@ -27,6 +27,11 @@ def main():
     audits = [json.loads(p.read_text(encoding='utf-8')) for p in sorted(a.reports.glob('L*_audit.json'))]
     assert audits, 'No completed, audited training arms'
     audits.sort(key=lambda q: (q['result']['depth'], q['result']['rho']))
+    validation = all(q['result'].get('selection_split') == 'val' for q in audits)
+    assert validation or all('test_development' in q['result'] for q in audits), 'Mixed selection protocols'
+    scope = 'validation-selected exploratory evaluation' if validation else 'test-selected DEVELOPMENT'
+    def test_metric(result):
+        return result['metrics']['test'] if validation else result['test_development']
     plt.rcParams.update({'font.family': ['Arial', 'DejaVu Sans'], 'font.size': 9,
                          'axes.spines.top': False, 'axes.spines.right': False,
                          'svg.fonttype': 'none', 'pdf.fonttype': 42})
@@ -38,9 +43,13 @@ def main():
             curves.append({'depth': r['depth'], 'rho': r['rho'], **row})
         row = {k: r[k] for k in ['depth', 'rho', 'parameters', 'selected_epoch', 'selected_state_kind',
                                  'epochs_completed', 'checkpoint_sha256']}
-        row['scope'] = 'test-selected DEVELOPMENT'
+        row['scope'] = scope
+        if validation:
+            assert r['test_evaluations'] == 1 and r['test_used_for_selection'] is False
+            assert all(not any(k.startswith('test') for k in q) for q in audit['curve'])
+            row.update(selection_split='val', test_evaluations=1, test_previously_observed=True)
         for split, metric in [('train', r['metrics']['train']), ('val', r['metrics']['val']),
-                              ('test', r['test_development'])]:
+                              ('test', test_metric(r))]:
             for key in ['accuracy', 'balanced_accuracy', 'nll', 'balanced_nll']:
                 row[split + '_' + key] = metric[key]
         summary.append(row)
@@ -59,7 +68,7 @@ def main():
         fig, axes = plt.subplots(len(arms), 2, figsize=(8.2, 2.8 * len(arms)), squeeze=False)
         for index, audit in enumerate(arms):
             r = audit['result']; rows = audit['curve']
-            for split in palette:
+            for split in (['train', 'val'] if validation else palette):
                 valid = [q for q in rows if split + '_accuracy' in q]
                 x = [q['epoch'] for q in valid]
                 style = ':' if split == 'test_raw' else '-'
@@ -70,9 +79,10 @@ def main():
                 axes[index, 1].plot(x, [q[split + '_balanced_nll'] for q in valid],
                                     color=palette[split], linestyle=style, alpha=alpha,
                                     linewidth=1.3, label=labels[split])
-            best = r['test_development']
+            best = test_metric(r)
             axes[index, 0].scatter([r['selected_epoch']], [100 * best['accuracy']],
-                                    color='black', s=24, zorder=5, label='Selected checkpoint')
+                                    color='black', s=24, zorder=5,
+                                    label='One test after validation lock' if validation else 'Selected checkpoint')
             axes[index, 1].scatter([r['selected_epoch']], [best['balanced_nll']], color='black', s=24, zorder=5)
             title = f"L{depth}, amplitude mixing coefficient {r['rho']:g}; selected epoch {r['selected_epoch']} ({r['selected_state_kind'].upper()})"
             axes[index, 0].set_title(title, loc='left', fontsize=9)
@@ -82,7 +92,7 @@ def main():
             for ax in axes[index]:
                 ax.set_xlabel('Epoch'); ax.set_xlim(1, 100); ax.grid(axis='y', alpha=.16)
             axes[index, 0].legend(frameon=False, fontsize=7, loc='lower right')
-        fig.suptitle('FishNet v1 | seed 17 | 100 epochs | test-selected DEVELOPMENT', fontsize=10)
+        fig.suptitle(f'FishNet v1 | seed 17 | 100 epochs | {scope}', fontsize=10)
         fig.tight_layout()
         export(fig, a.reports / f'learning_curves_L{depth}')
     if all(any(q['result']['depth'] == d and q['result']['rho'] == rho for q in audits)
@@ -92,9 +102,10 @@ def main():
                                    (.3, '#3d7f9d', 'Amplitude mixture = 0.3')]:
             selected = sorted([q for q in audits if q['result']['rho'] == rho], key=lambda q: q['result']['depth'])
             x = [q['result']['depth'] for q in selected]
-            y = [100 * q['result']['test_development']['accuracy'] for q in selected]
+            y = [100 * test_metric(q['result'])['accuracy'] for q in selected]
             ax.plot(x, y, marker='o', color=color, linewidth=1.7, markersize=4, label=label)
-        ax.set_xticks([2, 4, 6]); ax.set_xlabel('Main optical layers'); ax.set_ylabel('Development accuracy (%)')
+        ax.set_xticks([2, 4, 6]); ax.set_xlabel('Main optical layers')
+        ax.set_ylabel('Test accuracy (%)' if validation else 'Development accuracy (%)')
         ax.set_title('FishNet v1, seed 17', loc='left'); ax.legend(frameon=False, fontsize=7)
         ax.grid(axis='y', alpha=.16); fig.tight_layout()
         export(fig, a.reports / 'depth_accuracy')
