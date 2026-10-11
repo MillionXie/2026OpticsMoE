@@ -1,0 +1,67 @@
+{
+  "state": "stopped_user_speed_reconsideration",
+  "time": "2026-10-11T19:31:51.651550",
+  "reason": "Human cannot wait for Butterfly60 suite; requests faster natural-image task and L2 >=70% target; preserve all existing artifacts, no test",
+  "parent_pid": 560528,
+  "arms": [
+    {
+      "pid": 569626,
+      "depth": 16,
+      "rho": 0,
+      "epochs_saved": 3,
+      "weights": {
+        "best_checkpoint.pt": {
+          "epoch": 3,
+          "sha256": "6cdb4b2c34feda0521144c5328dabc808450f2cfa66b9a76c8797c96d961ff42",
+          "readable": true
+        },
+        "last_checkpoint.pt": {
+          "epoch": 3,
+          "sha256": "a0477f65531ace492ad7fc3ff8804cfc4458c272d922feed98b2a6c68876b03f",
+          "readable": true
+        }
+      },
+      "test_evaluations": 0
+    },
+    {
+      "pid": 569692,
+      "depth": 16,
+      "rho": 0.3,
+      "epochs_saved": 3,
+      "weights": {
+        "best_checkpoint.pt": {
+          "epoch": 2,
+          "sha256": "18f1770b1356a21c4b4a7a01d5e6fb1ad3e6345e365b29bac8ff4f2199cd1d2e",
+          "readable": true
+        },
+        "last_checkpoint.pt": {
+          "epoch": 3,
+          "sha256": "36308531ead4a29427770cbbd59d2756c665d9a0f4438102a8799a2b95d1282e",
+          "readable": true
+        }
+      },
+      "test_evaluations": 0
+    },
+    {
+      "pid": 569761,
+      "depth": 8,
+      "rho": 0,
+      "epochs_saved": 7,
+      "weights": {
+        "best_checkpoint.pt": {
+          "epoch": 7,
+          "sha256": "a60ac703d56e697a809c0e5188c73cf53d9eb64036627abbcf33792c88f6b2af",
+          "readable": true
+        },
+        "last_checkpoint.pt": {
+          "epoch": 7,
+          "sha256": "9543826b123fb1e80ba40703fdec56f6bcb1f024021a5ea1191fc8ddf1854d2f",
+          "readable": true
+        }
+      },
+      "test_evaluations": 0
+    }
+  ],
+  "project_gpu_released": true,
+  "source_commit": "2ddf96fb8812b4bf72c6d342a682e9ef0646cfe9"
+}
