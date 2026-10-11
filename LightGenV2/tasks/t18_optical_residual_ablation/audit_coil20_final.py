@@ -49,6 +49,9 @@ def main():
     for key in KEYS:
         entry=lock['entries'][key];arm=Path(entry['arm']);fit=verify_arm(arm)
         result=read(args.run/key/'result.json');checkpoint=torch.load(arm/'best_checkpoint.pt',map_location='cpu',weights_only=False)
+        assert result['depth']==entry['depth'] and result['rho']==entry['rho'] and result['candidate']==entry['candidate']
+        assert result['selected_state_kind']=='ema' and result['scope']==lock['scope']
+        assert sum(value.numel() for name,value in checkpoint['model'].items() if name.endswith('raw_phase'))==result['parameters']==fit['parameters']
         assert checkpoint['epoch']==result['selected_epoch']==entry['selected_epoch']
         assert checkpoint['validation']==fit['metrics']['val']
         assert result['metrics']['train']==fit['metrics']['train'] and result['metrics']['val']==fit['metrics']['val']
@@ -73,6 +76,7 @@ def main():
             computed=metrics(labels,probability);saved=result['metrics'][split]
             assert computed['n']==saved['n'] and computed['support']==manifest['supports'][split]
             for field in ['support','confusion_matrix']: assert computed[field]==saved[field]
+            assert np.allclose(computed['recall'],saved['recall'],atol=1e-10,rtol=1e-10)
             for field in ['accuracy','balanced_accuracy','macro_f1','nll','balanced_nll']:
                 assert np.isclose(computed[field],saved[field],atol=1e-10,rtol=1e-10)
             for index,label in enumerate(manifest['classes']):

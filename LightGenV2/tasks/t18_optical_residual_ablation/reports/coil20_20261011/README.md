@@ -155,6 +155,19 @@ suite只对获选EMA各单次test，不再train／val推理；实际光模型依
 训练控制器版本有变化时，原发布Git身份仍逐一核验，evaluate函数AST还须一致，不拿新HEAD冒充。
 当前真实test尚未执行，不能把上述检查或入口实现当作已完成最终成绩。
 
+最终八次评估全部结束后，独立`audit_coil20_final.py`仅CPU读保存PT／history／CSV和缓存标签，
+核对全8锁／初次标记／test计数／原来源／参数及三划分ID、标签、argmax、支持、CM、NLL、macro。
+它不调用模型推理；会生成final_summary.csv、per_class_support.csv、全部candidate曲线CSV，
+learning_curves_all／selected_summary的PNG SVG PDF及final_audit.json。4项锁定／审计前置CPU检查通过，
+真实最终审计尚待评估结束；不是已取得最终test成绩的声明。
+
+```bash
+CUDA_VISIBLE_DEVICES='' $PY $TASK/audit_coil20_final.py --run "$FINAL" --data "$DATA" --out "$FINAL/cpu_report"
+```
+
+总曲线保留base30与16层重启10各自epoch，获选test仅一个星点，不造逐轮test或误差条；
+报告预算末端仍在改善的验证NLL与未证收敛，不能用单seed不同适应预算冒称纯深度因果。
+
 此队列严格只fit，结束生成8臂fit_manifest，实际释放GPU并停在
 fit_complete_awaiting_validation_review。然后只读保存结果做CPU来源／PT／指标及
 过拟合／欠拟合／未收敛审查，必要调整必须有限、成对、使用新profile并保留原结果；
