@@ -1,4 +1,5 @@
 import importlib.util
+import hashlib
 from pathlib import Path
 import pytest
 
@@ -34,3 +35,17 @@ def test_transitive_groups_keep_every_record_and_every_class():
 def test_conflicting_specimen_labels_fail():
     with pytest.raises(AssertionError, match='Conflicting grouped labels'):
         p.grouped_split([dict(label=i, specimen='same', original_hash=str(i), cache_hash=str(i)) for i in range(2)], 17)
+
+
+def test_ordinary_and_lfs_identity_checks_reject_raw_pointer_and_corruption():
+    content = b'original-image-fixture'
+    digest = hashlib.sha256(content).hexdigest()
+    entry = dict(path='image.jpg', size=len(content), oid=hashlib.sha1(f'blob {len(content)}\0'.encode() + content).hexdigest())
+    assert p.verified_digest(content, entry) == digest
+    pointer = f'version https://git-lfs.github.com/spec/v1\noid sha256:{digest}\nsize {len(content)}\n'.encode()
+    entry.update(oid=hashlib.sha1(f'blob {len(pointer)}\0'.encode() + pointer).hexdigest(), lfs=dict(oid=digest))
+    assert p.verified_digest(content, entry) == digest
+    with pytest.raises(AssertionError, match='size mismatch'):
+        p.verified_digest(pointer, entry)
+    with pytest.raises(AssertionError, match='LFS content mismatch'):
+        p.verified_digest(b'X' + content[1:], entry)

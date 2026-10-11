@@ -18,7 +18,7 @@ import requests
 HERE = Path(__file__).resolve().parent
 REPO = 'imageomics/VLM4Bio'
 REVISION = '354805681278db357ffdff8749a29e2ca145d32e'
-INDEX_SHA256 = 'e97e731d2568f4a4f1deb38e12b3eb75ae396102ed4c9f1dd0d0684f0a4baa1d'
+INDEX_SHA256 = '814eea924ddfff7dfd71916c4c2092b9682e1a8b0b2b7147bdf4df97af922c36'
 PREFIX = 'datasets/Butterfly/'
 METADATA = {
     PREFIX + 'metadata/metadata_10k.csv': 'a2f0ebaf0db492ffab05c0a91b6bd6e1ae39abdbbeb4712d84f9d32efb02cbc2',
@@ -39,6 +39,18 @@ def sha(path):
 
 def save(path, value):
     path.write_text(json.dumps(value, indent=2, ensure_ascii=False) + '\n', encoding='utf-8')
+
+
+def verified_digest(content, entry):
+    assert len(content) == entry['size'], ('Image size mismatch', entry['path'])
+    digest = hashlib.sha256(content).hexdigest()
+    if 'lfs' in entry:
+        assert digest == entry['lfs']['oid'], ('LFS content mismatch', entry['path'])
+        pointer = f"version https://git-lfs.github.com/spec/v1\noid sha256:{digest}\nsize {len(content)}\n".encode()
+        assert hashlib.sha1(f'blob {len(pointer)}\0'.encode() + pointer).hexdigest() == entry['oid']
+    else:
+        assert hashlib.sha1(f'blob {len(content)}\0'.encode() + content).hexdigest() == entry['oid']
+    return digest
 
 
 def fetch(url):
@@ -120,8 +132,8 @@ def main():
     a = parser.parse_args()
     a.out.mkdir(parents=True, exist_ok=True)
     assert not (a.out / 'butterfly_fixed_split.npz').exists(), 'Never overwrite a prepared split'
-    # All pinned Butterfly files are ordinary Git blobs. Raw avoids the mirror's
-    # resolve redirect quota, with the same content and Git-blob/SHA checks.
+    # Ordinary blobs use raw. The 438 LFS images need resolved content instead
+    # of their raw pointer; both pointer identity and content SHA are checked.
     base = f'{a.endpoint}/datasets/{REPO}/raw/{REVISION}/'
     for name, expected in METADATA.items():
         path = a.out / name
@@ -154,7 +166,7 @@ def main():
             url = response.links.get('next', {}).get('url')
             if url:
                 url = url.replace('https://huggingface.co/', a.endpoint + '/')
-    canonical_index = json.dumps(sorted([[x['path'], x['oid'], x['size']] for x in files]), separators=(',', ':')).encode()
+    canonical_index = json.dumps(sorted([[x['path'], x['oid'], x['size'], x.get('lfs', {}).get('oid')] for x in files]), separators=(',', ':')).encode()
     assert hashlib.sha256(canonical_index).hexdigest() == INDEX_SHA256, 'Index differs from independently checked primary author API'
     by_name = {Path(x['path']).name: x for x in files}
     assert len(files) == len(by_name) == len(names)
@@ -162,12 +174,12 @@ def main():
     def download(entry):
         path = a.out / entry['path']
         path.parent.mkdir(parents=True, exist_ok=True)
-        content = path.read_bytes() if path.exists() else fetch(base + entry['path']).content
-        assert len(content) == entry['size']
-        assert hashlib.sha1(f'blob {len(content)}\0'.encode() + content).hexdigest() == entry['oid']
+        url = base.replace('/raw/', '/resolve/') if 'lfs' in entry else base
+        content = path.read_bytes() if path.exists() else fetch(url + entry['path']).content
+        digest = verified_digest(content, entry)
         if not path.exists():
             path.write_bytes(content)
-        return entry['path'], hashlib.sha256(content).hexdigest()
+        return entry['path'], digest
     hashes = {}
     executor = ThreadPoolExecutor(max_workers=a.workers)
     try:
