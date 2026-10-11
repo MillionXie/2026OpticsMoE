@@ -87,7 +87,7 @@ def main():
     p.add_argument('--probe', type=Path, required=True)
     p.add_argument('--profile', type=Path, default=o.HERE/'medicinal_pilot_profile.json')
     p.add_argument('--depth', type=int, choices=[2, 4, 8, 16], default=2)
-    p.add_argument('--epochs', type=int, choices=[2, 30], default=30)
+    p.add_argument('--epochs', type=int, choices=[2, 10, 30], default=30)
     p.add_argument('--seconds', type=int, default=None)
     p.add_argument('--full-budget', action='store_true')
     p.add_argument('--candidate', choices=['base', 'regularized', 'optimization'], default='base')
@@ -117,7 +117,7 @@ def main():
     assert manifest[contract['identity_key']] == contract['identity_sha256']
     assert profile['detector'] == execution.detector(classes)
     profile.update(dataset=manifest['dataset'], microbatch=a.micro, evaluation_batch_size=a.micro,
-        expert_batched=bool(a.batched), maximum_epochs=30, minimum_epochs=10, patience=6,
+        expert_batched=bool(a.batched), maximum_epochs=a.epochs, minimum_epochs=min(10, a.epochs), patience=6,
         maximum_seconds=a.seconds or profile['maximum_seconds'])
     assert 1 <= profile['maximum_seconds'] <= 5400
     cfg = o.config(profile, manifest, a.rho, a.candidate)
