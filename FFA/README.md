@@ -1,0 +1,40 @@
+# FFA：预训练后冻结完整强度学习响应
+
+本工程由用户于 2026-10-11 授权启动。唯一新增顶级目录为 `FFA`；沿用 `main`，不新增分支、工作树或工程副本。旧 `FixedFeedbackSFT` 为只读参照，源码同步走 Git，运行产物与权重不进入 Git。
+
+首先检验一个明确问题：**在预训练点同时冻结光学输入反馈和本层相位更新响应，之后前向 mask 持续学习，是否仍有有效适配？** 这是后续研究“短暂活动形成反馈、然后冻结”的机制前提。当前复制解析源响应是可行性上界，尚未实现动态反馈形成。
+
+对已知实时振幅 `a`、实时强度误差 `e`，固定源算子 `A₀=P diag(exp(iφ₀))`：
+
+```text
+q = A₀† diag(e) A₀ a
+输入反馈 = 2 Re(q)
+物理相位更新方向 = 2 a Im(q)
+```
+
+前向使用当前相位。相位控制的 `2π sigmoid(raw_phase)` 链式因子、强度后的归一化及电子任务头仍正常求导。不会使用当前复光场构造这两个光学更新量。当前实现仍执行源响应 FFT，不主张计算加速、优于 PAT、已有硬件验证或论文新颖性已被证实。
+
+## 首轮运行
+
+使用 P11 ImageNet 源骨干，LSP 训练 1024 张、验证 256 张，通过原 P12 的稳定 hash 子集选择。新头在无增强缓存的源特征上训练 30 epochs；选择验证最佳共同起点，再对五组各适配 8 epochs。电子骨干固定为 eval，适配组更新相位和头，所有组使用相同数据顺序和预算。只使用验证集，不评估测试集。
+
+| 组 | 光学更新 |
+|---|---|
+| `head_only` | 固定相位，继续训练头 |
+| `bp_current` | 当前完整响应，解析一维 FFT；先与旧二维 FFT BP 校验 |
+| `fa_source_connector` | 原 FA-source，只固定跨层连接 |
+| `source_full_response` | 固定源完整强度响应 |
+| `random_full_response` | 固定随机完整强度响应 |
+
+每组保存验证曲线、八层相位移动、同一模型同一批次下与 BP 的梯度比较、来源/共同起点/数据 SHA、冻结反馈身份、best/last 与终态收据。结果属于单 seed 的短程机制初筛，不能与旧正式 50+50 面板混用。
+
+```bash
+python -m unittest discover -s FFA/tests -p test_optics.py -v
+python -m FFA.run_pilot --profile FFA/pilot.json \
+  --out FFA/runs/lsp_intensity_pilot_20261011 \
+  --gpu GPU-3f60d773-4dd8-d706-ef48-a4dfc5af6c55
+```
+
+运行器再次核对 GPU UUID 的计算进程，设备忙时退出。默认不覆盖或续跑已有目录。当前授权 A100 为物理 GPU 6；物理 GPU 1 正运行其他 FishNet 作业，未占用或中断它。运行结束进程退出即释放 GPU；无需保留常驻 worker。
+
+完整推导、证伪条件、发育形成与硬件研究阶段见 [研究方案](RESEARCH_PLAN.md)。本次实际状态和结果见 [实验记录](EXPERIMENT_LOG.md)。

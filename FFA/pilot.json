@@ -1,0 +1,16 @@
+{
+  "format": "ffa-intensity-response-pilot-v1",
+  "seed": 2026,
+  "task": "lsp",
+  "train_samples": 1024,
+  "validation_samples": 256,
+  "warmup_epochs": 30,
+  "adaptation_epochs": 8,
+  "train_batch_size": 32,
+  "evaluation_batch_size": 32,
+  "num_workers": 4,
+  "use_amp": true,
+  "phase_learning_rate": 0.003,
+  "head_learning_rate": 0.001,
+  "methods": ["head_only", "bp_current", "fa_source_connector", "source_full_response", "random_full_response"]
+}

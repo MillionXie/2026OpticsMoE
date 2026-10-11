@@ -1,0 +1,11 @@
+__pycache__/
+.pytest_cache/
+runs/
+cache/
+private/
+assets/
+*.pt
+*.pth
+*.npz
+*.npy
+*.log
