@@ -9,7 +9,9 @@
 完整100轮；每轮验证EMA balanced NLL最低选best、精确同分保留首次。
 test只在验证PT锁定后评估一次，不逐轮测、不按test挑raw／EMA／last。
 默认profile为`fishnet_validation_profile.json`，严格关联原准备profile与缓存SHA。
-仍只物理GPU1、microbatch2累积有效batch16；新源码检查并Git发布后启动。
+仍只物理GPU1、microbatch2累积有效batch16；已于北京时间11:07:35启动，父PID305617，
+后续子PID以新run的current_process.json为准。训练源码main `ce7edf074`已同步，
+Linux11项检查通过；Windows9过／2项原生Torch检查跳过，不改其它环境。
 新[验证选模记录](reports/fishnet_validation_20261011/README.md)与旧开发报告分开。
 因旧test已多次观测，新结果仍是探索性评估，不能重命名为独立泛化。
 以下test开发选模段落仅属于保留的旧run。

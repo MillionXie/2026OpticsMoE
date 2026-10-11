@@ -2,7 +2,10 @@
 
 用户11:00要求暂时不按test选权重。新run `fishnet_val_s17_e100_gpu1_20261011`，
 入口`fishnet_ablation.py`，profile `fishnet_validation_profile.json`。
-源码通过检查、发布main并同步服务器后启动；未开始前不填写性能数字。
+已于北京时间11:07:35启动，父PID305617，后续子PID以current_process.json为准。
+训练源码main `ce7edf074`已发布并同步服务器，Linux11项CPU检查通过；
+Windows9过／2项原生Torch检查因环境限制跳过。不改共享环境。
+完成100轮及CPU证据核验前不填写最终性能数字。
 
 六组顺序为六层rho0／rho0.3、四层rho0／rho0.3、两层rho0／rho0.3，仅GPU1串行。
 各组从头seed17、完整100轮，同原初始化、原光学模型、lr／EMA／损失／增强与有效batch16。
