@@ -112,10 +112,11 @@ def main():
     parser = argparse.ArgumentParser()
     parser.add_argument('--out', type=Path, required=True)
     parser.add_argument('--workers', type=int, default=12)
+    parser.add_argument('--endpoint', choices=['https://huggingface.co', 'https://hf-mirror.com'], default='https://huggingface.co')
     a = parser.parse_args()
     a.out.mkdir(parents=True, exist_ok=True)
     assert not (a.out / 'butterfly_fixed_split.npz').exists(), 'Never overwrite a prepared split'
-    base = f'https://huggingface.co/datasets/{REPO}/resolve/{REVISION}/'
+    base = f'{a.endpoint}/datasets/{REPO}/resolve/{REVISION}/'
     for name, expected in METADATA.items():
         path = a.out / name
         path.parent.mkdir(parents=True, exist_ok=True)
@@ -138,7 +139,7 @@ def main():
     license_names = {x['image_filename'] for x in licenses}
     assert 'All butterfly images' in (a.out / 'README.md').read_text()
     files = []
-    url = f'https://huggingface.co/api/datasets/{REPO}/tree/{REVISION}/datasets/Butterfly?recursive=true&limit=1000'
+    url = f'{a.endpoint}/api/datasets/{REPO}/tree/{REVISION}/datasets/Butterfly?recursive=true&limit=1000'
     while url:
         response = fetch(url)
         files.extend(x for x in response.json() if x['type'] == 'file' and Path(x['path']).name in names)
@@ -187,7 +188,7 @@ def main():
     np.savez_compressed(cache, **arrays)
     save(a.out / 'group_identity.json', [{k: v for k, v in row.items() if k != 'image'} for row in rows])
     manifest = dict(dataset='VLM4Bio_Butterfly10K_full60', source=f'https://huggingface.co/datasets/{REPO}',
-        source_revision=REVISION, doi='10.57967/hf/3393', license='CC BY 4.0', classes=classes,
+        source_revision=REVISION, download_endpoint=a.endpoint, doi='10.57967/hf/3393', license='CC BY 4.0', classes=classes,
         class_counts=[sum(x['label'] == k for x in rows) for k in range(60)], total_records=len(rows),
         supports=supports, split_ids=ids, split_seed=20261011, unique_groups=ng,
         unique_specimens=len({x['specimen'] for x in rows}), metadata_sha256=METADATA,
