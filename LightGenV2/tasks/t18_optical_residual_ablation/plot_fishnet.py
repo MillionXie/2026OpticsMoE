@@ -21,6 +21,8 @@ def export(fig, path):
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument('--reports', type=Path, default=Path(__file__).parent / 'reports/fishnet_20261011')
+    parser.add_argument('--depth', type=int, choices=[2, 4, 6], action='append',
+                        help='Render only these learning-curve depths; CSV summaries still include all audited arms')
     a = parser.parse_args()
     audits = [json.loads(p.read_text(encoding='utf-8')) for p in sorted(a.reports.glob('L*_audit.json'))]
     assert audits, 'No completed, audited training arms'
@@ -51,6 +53,8 @@ def main():
     labels = {'train': 'Train EMA', 'val': 'Validation EMA',
               'test_ema': 'Test-development EMA', 'test_raw': 'Test-development raw'}
     for depth in sorted({q['result']['depth'] for q in audits}):
+        if a.depth and depth not in a.depth:
+            continue
         arms = [q for q in audits if q['result']['depth'] == depth]
         fig, axes = plt.subplots(len(arms), 2, figsize=(8.2, 2.8 * len(arms)), squeeze=False)
         for index, audit in enumerate(arms):
