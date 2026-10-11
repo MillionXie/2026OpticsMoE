@@ -144,6 +144,8 @@ def main():
         response = fetch(url)
         files.extend(x for x in response.json() if x['type'] == 'file' and Path(x['path']).name in names)
         url = response.links.get('next', {}).get('url')
+        if url:
+            url = url.replace('https://huggingface.co/', a.endpoint + '/')
     by_name = {Path(x['path']).name: x for x in files}
     assert len(files) == len(by_name) == len(names)
     save(a.out / 'pinned_download_index.json', files)
