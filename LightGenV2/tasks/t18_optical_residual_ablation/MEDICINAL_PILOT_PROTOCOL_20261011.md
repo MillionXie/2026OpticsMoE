@@ -20,13 +20,19 @@ seed20261011按原始／缓存精确重复连通组70/15/15，全部保留。
 不能直接启用绕过PhaseLayer残差的旧vectorized代码；新任务局部batched实现需核验。
 micro1串行作为数值参考，候选micro2/4及九专家batch需前向误差≤1e-6、
 梯度相对L2≤2%、余弦≥0.999、全部有限非零；不放宽旧门槛，不以速度换光学图。
-只用通过的共同执行模式，两rho同micro/effective16/样本加权辅助项／尾batch，
+只用本深度两rho均通过的执行模式，两rho同micro/effective16/样本加权辅助项／尾batch，
 每macro一次clip／AdamW／EMA，3GiB上限另留800MiB，最多三指定GPU。
+实际旧train数值预检：两层micro4通过两rho，16层rho0.3的micro2/4未通过，
+保留失败且不放宽门槛；16层只能沿用已通过micro1，后续仍需新数据核验。
+不同深度可用不同已核验micro，但有效batch16和更新次数合同相同；不声称逐像素精确。
+两层正式短试验前还要对新30类CCD与实际train重新通过数值检查。
 
 先做两层rho0／rho0.3、seed17，从头最多30轮、每臂最多30分钟，梯度只train，
 每轮完整val balanced NLL选best（精确同分首次），train同EMA未增强每5轮及端点。
 lr0.002、AdamW、EMA0.95、LS0.02、capture0.2、smooth0.02、原增强；
 至少10轮、验证NLL不改善patience6则停止，best/last、预测、顺序／增强、梯度保留。
+两臂pilot可能在不同轮停止，只用于可行性筛查，不据此宣称正式残差收益；
+扩展时另锁同深度共同训练预算，保留此前探索历史。
 不为达到70%过滤图像／改标签／混划分／挑test，不保证某一数据集或任何rho达到70%。
 扩展门槛：无残差L2的best验证accuracy与macro recall均≥70%，
 L2实测≤60秒／轮，16层投影／实测需≤180秒／轮且总预算可接受。
