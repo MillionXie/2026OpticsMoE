@@ -1,5 +1,26 @@
 # 完整30类叶片：两层快速可行性预检
 
+## 30轮已完成：速度通过，70%精度门槛未通过
+
+两臂均完成30轮、验证NLL最低首次均为第30轮EMA，test始终0。
+
+| rho | train准确率 | val准确率 | train宏召回 | val宏召回 | 验证balanced NLL | 平均秒／轮 | 总秒 |
+|---|---:|---:|---:|---:|---:|---:|---:|
+| 0 | 45.33% | 42.59% | 48.01% | 44.94% | 2.16475 | 14.32 | 434.15 |
+| 0.3 | 47.84% | 42.21% | 51.09% | 45.69% | 2.14509 | 14.72 | 445.92 |
+
+train／val差2.74／5.63pp，二者都低，验证NLL继续改善，不能称严重过拟合；
+更符合未充分拟合／尚未收敛的迹象，也不能单凭低train判容量不足。
+无残差末轮accuracy不是历史最高accuracy，仍严格按最低balanced NLL第30轮选择，
+未按70%目标反换checkpoint。两个70%门槛都未过，不启动四深度长套件。
+两GPU子626462／626463已退出，实际计算进程清空。所有历史和best／last保留。
+独立CPU核验全部通过：67来源运行及发布Git blob、best／last／数据／config／
+首次最低NLL、三十轮每参数梯度、两划分保存预测／标签／support／CM／NLL／macro、
+双方初始化及30轮order／augmentation哈希一致，config唯rho不同。
+收据见[pilot_audit.json](pilot_audit.json)，[汇总CSV](pilot_summary.csv)和
+[真实曲线CSV](curve_data.csv)。[PNG](learning_curves_L2.png)、[SVG](learning_curves_L2.svg)、
+[PDF](learning_curves_L2.pdf)均来自保存history，无test曲线、无误差条。
+
 用户要求自然图像、类别多于8、两层精度目标70%、避免长时间等待。
 Butterfly长队列已停止，原历史和数据保留。新数据是作者完整Medicinal Leaf v1，
 实际30类／1835图（各类34–122），作者已背景处理的自然RGB叶片，CC BY4。
