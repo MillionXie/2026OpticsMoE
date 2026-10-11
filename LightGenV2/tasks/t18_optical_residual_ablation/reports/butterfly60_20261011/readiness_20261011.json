@@ -1,0 +1,27 @@
+{
+  "time": "2026-10-11T17:49:40.093478",
+  "run_id": "butterfly60_s17_L2L4L8L16_val_3gpu_ready_20261011",
+  "parent_pid": 560528,
+  "preparation_pid": 560244,
+  "parent_alive": true,
+  "preparation_alive": true,
+  "status": {
+    "state": "waiting_data_preparation",
+    "preparation_pid": 560244,
+    "gpu_processes": 0,
+    "test_evaluations": 0,
+    "seconds": 290.58735370635986,
+    "time": "2026-10-11T09:49:32.519257+00:00"
+  },
+  "source_count": 63,
+  "source_mismatches": [],
+  "source_commit": "2ddf96fb8812b4bf72c6d342a682e9ef0646cfe9",
+  "data_prepared": false,
+  "download_log_tail": "{\"downloaded\": 250, \"total\": 10013}\n{\"downloaded\": 500, \"total\": 10013}\n{\"downloaded\": 750, \"total\": 10013}\n{\"downloaded\": 1000, \"total\": 10013}\n{\"downloaded\": 1250, \"total\": 10013}\n{\"downloaded\": 1500, \"total\": 10013}\n{\"downloaded\": 1750, \"total\": 10013}\n{\"downloaded\": 2000, \"total\": 10013}\n{\"downloaded\": 2250, \"total\": 10013}\n{\"downloaded\": 2500, \"total\": 10013}\n{\"downloaded\": 2750, \"total\": 10013}\n{\"downloaded\": 3000, \"total\": 10013}\n{\"downloaded\": 3250, \"total\": 10013}\n{\"downloaded\": 3500, \"total\": 10013}\n{\"downloaded\": 3750, \"total\": 10013}\n{\"downloaded\": 4000, \"total\": 10013}\n{\"downloaded\": 4250, \"total\": 10013}\n{\"downloaded\": 4500, \"total\": 10013}\n{\"downloaded\": 4750, \"total\": 10013}\n",
+  "gpu_processes": "",
+  "author_index_sha256": "814eea924ddfff7dfd71916c4c2092b9682e1a8b0b2b7147bdf4df97af922c36",
+  "native_cpu_tests": {
+    "passed": 13,
+    "seconds": 5.58
+  }
+}

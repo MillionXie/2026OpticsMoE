@@ -128,3 +128,23 @@ def test_failed_preparation_stops_before_any_gpu_or_test(tmp_path, monkeypatch):
     assert a.r.read(out / 'status.json')['state'] == 'failed'
     assert a.r.read(out / 'current_processes.json') == []
     assert not (out / 'test_started.json').exists()
+
+
+def test_cpu_prediction_audit_checks_all60_ids_labels_argmax_and_metrics(tmp_path):
+    a = module()
+    import audit_butterfly as audit
+    labels = a.np.arange(60)
+    ids = a.np.array([f'specimen_{i}' for i in range(60)])
+    scores = a.np.eye(60) * .9 + .1 / 60
+    data = tmp_path / 'data.npz'
+    a.np.savez(data, val_labels=labels, val_ids=ids)
+    rows = [dict(sample_id=str(sid), label_true=int(label), label_pred=int(label),
+                 **{f'score{k}': float(row[k]) for k in range(60)}) for sid, label, row in zip(ids, labels, scores)]
+    a.r.csvwrite(tmp_path / 'val_predictions.csv', rows)
+    expected = a.metrics(labels, scores)
+    manifest = dict(split_ids={'val': ids.tolist()})
+    assert audit.prediction_audit(tmp_path, data, manifest, 'val', expected)['records'] == 60
+    rows[0]['label_pred'] = 1
+    a.r.csvwrite(tmp_path / 'val_predictions.csv', rows)
+    with pytest.raises(AssertionError):
+        audit.prediction_audit(tmp_path, data, manifest, 'val', expected)
