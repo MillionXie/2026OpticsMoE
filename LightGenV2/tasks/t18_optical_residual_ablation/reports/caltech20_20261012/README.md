@@ -32,3 +32,18 @@ aaccbeb7911eade85723964f5ef052161ca5d487，同depth初始化SHA一致。
 2层约60轮仍学习，train约49–50%/val约38%，NLL下降；非最终获选精度，
 不能宣称收敛、70%达标或只归因过拟合。等完整100轮审核后决定其它正式深层。
 仍test0、67来源未改；未启动深层正式100或额外调整。
+
+## 两层100轮完成、未达70%验证门槛
+
+两组全部100轮，无残差按val NLL选E99，train56.33%/val41.50%，
+残差按val NLL选E100，train63.33%/val43.50%；val NLL2.07703543/1.95519117。
+选中train-val gap14.83/19.83pp，训练精度本身也有限；不能只归因过拟合。
+末十val NLL均值比前十改善1.636%/1.989%，最低轮在末端，100轮不证明充分收敛。
+总1339.63/1369.61秒，均摊13.32/13.62秒；全部test0。
+保存PT/history/prediction/cache标签CPU独立审核通过：67实际和archivedGitblob、
+最低NLL首次、参数11相位梯度、初始化/order/augmentation100配对、config唯rho、
+ID标签argmaxsupportCM/NLL/macro均过；无完成臂重复模型推理。
+真实结果、拟合审查及PNG/SVG/PDF/CSV见[L2](L2/pilot_summary.csv)及
+[fit_review.json](L2/fit_review.json)。所有四个GPU子/CPU父实际退出、GPU无本项目占用。
+尚无正式4/8/16结果，也没有最终test；已询问优先学习诊断还是接受长时间深层比较。
+不因低分换类/追加或重测旧test，当前深层启动取决于该预算优先级回复，监控仍ACTIVE。

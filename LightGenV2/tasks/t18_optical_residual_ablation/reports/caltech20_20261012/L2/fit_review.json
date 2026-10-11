@@ -1,0 +1,36 @@
+{
+  "run": "LightGenV2/tasks/t18_optical_residual_ablation/runs/simulation/caltech20_s17_L2_e100_L16_timing_4gpu_20261012",
+  "observed_utc": "2026-10-11T16:50:38.103480+00:00",
+  "test_evaluations": 0,
+  "arms": [
+    {
+      "name": "L2_rho0",
+      "selected_epoch": 99,
+      "last10_val_NLL_mean": 2.0893829369869197,
+      "preceding10_val_NLL_mean": 2.1241397589482247,
+      "relative_improvement_percent": 1.6362775478820184,
+      "best_val_NLL": 2.0770354323460545,
+      "last10_above_best_percent": 0.5944773232355649,
+      "selected_gap_pp": 14.833333333333337,
+      "train_capture": 0.052078843116760254,
+      "val_capture": 0.05165093392133713,
+      "history_sha256": "4082470a275eb29c621a2157683dc269a494ac45ce53fcc88e8322743a4ebc8a",
+      "fit_result_sha256": "25a19b045769fc0691dfb20db373f3f6015a655a82cd9047b0c84b7fa0ca851c"
+    },
+    {
+      "name": "L2_rho03",
+      "selected_epoch": 100,
+      "last10_val_NLL_mean": 1.9738079321220372,
+      "preceding10_val_NLL_mean": 2.0138696819206188,
+      "relative_improvement_percent": 1.9892920658289495,
+      "best_val_NLL": 1.9551911657547134,
+      "last10_above_best_percent": 0.952171158165882,
+      "selected_gap_pp": 19.833333333333332,
+      "train_capture": 0.10175994783639908,
+      "val_capture": 0.0991581603884697,
+      "history_sha256": "422273b88358c679702878824f5368b29917ea5c30cfc258459e22478ead6cba",
+      "fit_result_sha256": "f9a8d3a6f0c75f342a9aa730cf993e1821e67e81aa5bf88daa075d2283b77fcf"
+    }
+  ],
+  "interpretation": "Neither L2 validation accuracy reaches70%; train accuracy also limited, gaps14.83/19.83pp. Endpoint validation NLL still improves; budget insufficient to claim convergence. Gap is generalization concern, not proof that overfitting alone explains failure. Window capture is output-field fraction, not total optical efficiency or proven causal explanation."
+}
