@@ -1,0 +1,190 @@
+{
+  "results": [
+    {
+      "rho": 0.0,
+      "depth": 16,
+      "phase_init_raw_uniform": 1.0,
+      "initial_parameter_sha256": "463165a482b601751bf8b24378ac4a4650015ac828e6aa08ba21903c21635a44",
+      "sample_ids": [
+        "coil-20-proc/obj1__0.png",
+        "coil-20-proc/obj7__10.png",
+        "coil-20-proc/obj13__0.png",
+        "coil-20-proc/obj20__0.png"
+      ],
+      "labels": [
+        0,
+        6,
+        12,
+        19
+      ],
+      "objective_values": {
+        "nll": 3.149111330509186,
+        "capture": 0.6283276379108429,
+        "smooth": 0.011167529970407486
+      },
+      "gradient_norms": {
+        "nll": 6.670968055725098,
+        "capture": 0.30536699295043945,
+        "smooth": 1.609032005944755e-05
+      },
+      "nll_capture_cosine": -0.0038672664668411016,
+      "probability_min": 0.02905373089015484,
+      "probability_max": 0.0706094428896904,
+      "max_pairwise_probability_difference": 0.03225310519337654,
+      "mean_entropy": 2.9752912521362305,
+      "detector_energy_sums": [
+        0.03915802389383316,
+        0.050810571759939194,
+        0.03799639642238617,
+        0.04612095654010773
+      ],
+      "output_intensity_sums": [
+        16807.74609375,
+        17791.54296875,
+        16016.6845703125,
+        17214.69140625
+      ],
+      "epsilon_fraction_max": 5.263657049774692e-10
+    },
+    {
+      "rho": 0.3,
+      "depth": 16,
+      "phase_init_raw_uniform": 1.0,
+      "initial_parameter_sha256": "463165a482b601751bf8b24378ac4a4650015ac828e6aa08ba21903c21635a44",
+      "sample_ids": [
+        "coil-20-proc/obj1__0.png",
+        "coil-20-proc/obj7__10.png",
+        "coil-20-proc/obj13__0.png",
+        "coil-20-proc/obj20__0.png"
+      ],
+      "labels": [
+        0,
+        6,
+        12,
+        19
+      ],
+      "objective_values": {
+        "nll": 2.9402024149894714,
+        "capture": 0.5149935036897659,
+        "smooth": 0.011167529970407486
+      },
+      "gradient_norms": {
+        "nll": 76.94548797607422,
+        "capture": 3.505821943283081,
+        "smooth": 1.609032005944755e-05
+      },
+      "nll_capture_cosine": 0.025135720148682594,
+      "probability_min": 0.04175324738025665,
+      "probability_max": 0.059234619140625,
+      "max_pairwise_probability_difference": 0.007068026810884476,
+      "mean_entropy": 2.992248058319092,
+      "detector_energy_sums": [
+        0.07637012004852295,
+        0.07700562477111816,
+        0.07513062655925751,
+        0.07613080739974976
+      ],
+      "output_intensity_sums": [
+        19289.890625,
+        19206.650390625,
+        19195.37109375,
+        19178.58203125
+      ],
+      "epsilon_fraction_max": 2.6620302412760275e-10
+    },
+    {
+      "rho": 0.0,
+      "depth": 16,
+      "phase_init_raw_uniform": 0.1,
+      "initial_parameter_sha256": "e15501a9458c236526f7663bfdabbbd7b18ff98d23ad0b6f7e731f262e70a60b",
+      "sample_ids": [
+        "coil-20-proc/obj1__0.png",
+        "coil-20-proc/obj7__10.png",
+        "coil-20-proc/obj13__0.png",
+        "coil-20-proc/obj20__0.png"
+      ],
+      "labels": [
+        0,
+        6,
+        12,
+        19
+      ],
+      "objective_values": {
+        "nll": 4.452731251716614,
+        "capture": 1.526071473956108,
+        "smooth": 0.00016383198089897633
+      },
+      "gradient_norms": {
+        "nll": 1.6591013669967651,
+        "capture": 0.08553892374038696,
+        "smooth": 3.3657049698376795e-06
+      },
+      "nll_capture_cosine": -0.008240808732807636,
+      "probability_min": 2.1047433619969524e-05,
+      "probability_max": 0.5365889668464661,
+      "max_pairwise_probability_difference": 0.4983239769935608,
+      "mean_entropy": 2.3497672080993652,
+      "detector_energy_sums": [
+        7.995592022780329e-05,
+        0.07180509716272354,
+        9.5467570645269e-05,
+        0.00010135625780094415
+      ],
+      "output_intensity_sums": [
+        11065.345703125,
+        11224.1875,
+        11246.626953125,
+        12393.837890625
+      ],
+      "epsilon_fraction_max": 2.501377626605077e-07
+    },
+    {
+      "rho": 0.3,
+      "depth": 16,
+      "phase_init_raw_uniform": 0.1,
+      "initial_parameter_sha256": "e15501a9458c236526f7663bfdabbbd7b18ff98d23ad0b6f7e731f262e70a60b",
+      "sample_ids": [
+        "coil-20-proc/obj1__0.png",
+        "coil-20-proc/obj7__10.png",
+        "coil-20-proc/obj13__0.png",
+        "coil-20-proc/obj20__0.png"
+      ],
+      "labels": [
+        0,
+        6,
+        12,
+        19
+      ],
+      "objective_values": {
+        "nll": 4.312020242214203,
+        "capture": 1.4044382125139236,
+        "smooth": 0.00016383198089897633
+      },
+      "gradient_norms": {
+        "nll": 2.2043542861938477,
+        "capture": 0.11362629383802414,
+        "smooth": 3.3657049698376795e-06
+      },
+      "nll_capture_cosine": 0.023276792839169502,
+      "probability_min": 5.191513992031105e-05,
+      "probability_max": 0.5340492129325867,
+      "max_pairwise_probability_difference": 0.49262475967407227,
+      "mean_entropy": 2.370668888092041,
+      "detector_energy_sums": [
+        0.00017545351875014603,
+        0.07047198712825775,
+        0.00021443236619234085,
+        0.00023863601381890476
+      ],
+      "output_intensity_sums": [
+        10989.34375,
+        11138.486328125,
+        11066.498046875,
+        12389.6953125
+      ],
+      "epsilon_fraction_max": 1.1399029134704958e-07
+    }
+  ],
+  "test_evaluations": 0,
+  "scope": "Fresh seed17 L16 four prespecified train samples; no fitting, val, checkpoint or test. Not causal proof."
+}

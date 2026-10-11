@@ -42,7 +42,7 @@ support／CM／NLL／macro及配对身份。[审计](pilot_audit.json)、[指标
 [曲线CSV](curve_data.csv)、[PNG](learning_curves_L2.png)、[SVG](learning_curves_L2.svg)、
 [PDF](learning_curves_L2.pdf)均为真实保存结果，单seed无误差条，没有test曲线。
 
-## 深层只做了数值／速度预检，尚无正式精度
+## 历史：20:27深层数值／速度预检
 
 [新数据预检](deeper_execution_probe.json)只用train8及新鲜seed17参数，无正式拟合／test。
 4／8层micro4两rho过原门槛；16层micro4两rho未过（maxgrad L2 3.216%／5.889%，
@@ -81,6 +81,39 @@ GPU4 L8rho0 PID654710，全67实际／发布来源匹配，重新GPU smoke通过
 首轮30轮训练暂估22:00前后结束，非最终test／拟合调整完成时间保证。
 源／负载变化需实测修正。8层rho0 E15 val82.50%；16层各E2只是早期，
 不根据chance附近的早期精度判容量或宣称残差最终收益。
+
+## 已完成4／8层与16层拟合诊断（21:44）
+
+4／8层各两rho完整30轮、验证最低NLL首次均为E30，test尚未读取。保存结果CPU核验通过：
+最低轮／PT／config／各原commit发布blob／data／梯度及逐样本ID、标签、argmax、支持、CM、NLL、macro；
+每对初始化／全部30轮order及augmentation一致，配置仅rho不同。GPU4四个fit子实际退出。
+
+|层数|rho|train / val accuracy|val balanced NLL|总fit秒|
+|---|---|---|---|---|
+|4|0|98.4375% / 100.0000%|.39155049|397.091|
+|4|.3|98.1250% / 94.1667%|.79273651|399.631|
+|8|0|99.0625% / 97.5000%|.38328143|660.078|
+|8|.3|97.7083% / 88.3333%|1.65757573|668.493|
+
+真实保存数据：L4[审计](L4/pilot_audit.json)、[CSV](L4/pilot_summary.csv)、[曲线CSV](L4/curve_data.csv)、
+[PNG](L4/learning_curves_L4.png)、[SVG](L4/learning_curves_L4.svg)、[PDF](L4/learning_curves_L4.pdf)；
+L8[审计](L8/pilot_audit.json)、[CSV](L8/pilot_summary.csv)、[曲线CSV](L8/curve_data.csv)、
+[PNG](L8/learning_curves_L8.png)、[SVG](L8/learning_curves_L8.svg)、[PDF](L8/learning_curves_L8.pdf)。
+PNG视觉检查通过，单seed无误差条、没有test曲线。100%仅120个已知物体留出视角，不是未见实体泛化。
+4／8各最后十轮验证NLL仍改善，存在未充分收敛可能，不能因高accuracy假称已收敛。
+
+16层尚未完成：rho0 E22 val83.33%；rho.3 E23 val11.67%、E20 train8.96%，
+长期低train／val是学习停滞风险，不能归因为过拟合或直接推断容量不足。
+新鲜seed17、四个预指定train标签的[独立诊断](L16_train_diagnostic/diagnostic.json)
+没有加载在训／完成PT、没有训练更新／val／test。[来源](L16_train_diagnostic/metadata.json)
+与[完成收据](L16_train_diagnostic/status.json)保留，GPU4诊断子退出释放。
+原初始化rho.3分类梯度范数76.95、加权capture3.51、smooth1.61e-5，分类梯度并非消失；
+epsilon贡献约2.66e-10，不支持epsilon淹没预测解释。不能外推到全部样本／训练权重。
+两rho统一raw初始化范围1→.1，rho.3四样本最大预测差异.00707→.49262，
+但初始NLL2.940→4.312更高；支持有限候选检查，不证明因果、准确率收益或优化已经修复。
+只预登记16层一次配对10轮新profile，待base全部结束再发布10轮入口并启动；保留base30，
+整个pair按两rho最佳验证NLL均值选择，同分base，任何结果仍如实报告预算及未收敛风险。
+不改模型／rho／数据／类别，不无限追加。完整规则在[协议](../../COIL20_PILOT_PROTOCOL_20261011.md)。
 
 此队列严格只fit，结束生成8臂fit_manifest，实际释放GPU并停在
 fit_complete_awaiting_validation_review。然后只读保存结果做CPU来源／PT／指标及
