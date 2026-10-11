@@ -369,6 +369,20 @@ def suite(a, profile):
     a.out.mkdir(parents=True, exist_ok=False)
     src = source_identity(a.profile)
     data = a.data_root / 'butterfly_fixed_split.npz'
+    if not (a.data_root / 'data_manifest.json').exists():
+        assert a.wait_preparation, 'Prepared data missing; explicit wait required'
+        wait_start = time.time()
+        r.save(a.out / 'preparation_wait.json', dict(pid=os.getpid(), sources=src, data_root=str(a.data_root),
+            command=sys.argv, time=r.now(), git_commit=subprocess.check_output(['git', 'rev-parse', 'HEAD'], text=True).strip()))
+        r.save(a.out / 'current_processes.json', [])
+        while not (a.data_root / 'data_manifest.json').exists():
+            receipt = r.read(a.data_root / 'preparation_process.json')
+            assert Path('/proc', str(receipt['pid'])).exists(), 'Preparation stopped before manifest; preserve failure and do not train'
+            assert source_identity(a.profile) == src, 'Dependency changed during preparation wait'
+            assert time.time() - wait_start < 7200, 'Preparation timeout; do not occupy GPUs'
+            r.save(a.out / 'status.json', dict(state='waiting_data_preparation', preparation_pid=receipt['pid'],
+                gpu_processes=0, test_evaluations=0, seconds=time.time() - wait_start, time=r.now()))
+            time.sleep(10)
     manifest = r.read(a.data_root / 'data_manifest.json')
     f.gpu_budget.ALLOWED.update(profile['gpu_uuids'])
     r.save(a.out / 'metadata.json', dict(command=sys.argv, pid=os.getpid(), sources=src, profile=profile,
@@ -487,6 +501,7 @@ def main():
     p.add_argument('--candidate', choices=['base', 'regularized', 'optimization'], default='base')
     p.add_argument('--epochs', type=int, choices=[100, 150, 200], default=100)
     p.add_argument('--resume', action='store_true')
+    p.add_argument('--wait-preparation', action='store_true')
     p.add_argument('--gpu')
     p.add_argument('--suite-root', type=Path)
     a = p.parse_args(); profile = r.read(a.profile)
