@@ -1,0 +1,167 @@
+{
+  "run": "LightGenV2/tasks/t18_optical_residual_ablation/runs/simulation/caltech20_s17_L2L4L8L16_e100_4gpu_20261012",
+  "checked_at": "2026-10-12 09:49:19 +0800",
+  "parent_pid": 1055706,
+  "parent_cuda_visible_devices": "",
+  "parent_git_commit": "52ab4d58cd07e9c1c3abd67131171db64d6b1bb7",
+  "parent_source_sha256": "2d8d621f261f01c6399574ffe65554902cd357ca02a8144086c5e9e658287bad",
+  "plan_sha256": "1c5529cda139c5474304a0aa1c76d156ec95548cac7862b61a50b4e616136897",
+  "test_evaluations": 0,
+  "children": [
+    {
+      "name": "L16_rho0",
+      "pid": 1055853,
+      "gpu_uuid": "GPU-e8837b85-d55b-8e81-aaa5-ec1ac326932d",
+      "depth": 16,
+      "rho": 0,
+      "microbatch": 1,
+      "git_commit": "52ab4d58cd07e9c1c3abd67131171db64d6b1bb7",
+      "sources_checked": 67,
+      "same_sources_as_completed_L2": true,
+      "smoke": {
+        "passed": true,
+        "probability_max_error": 0,
+        "gradient_max_relative_l2": 0,
+        "gradient_min_cosine": 0.9999998211860657,
+        "gradients_finite_nonzero": true,
+        "initialization_unchanged": true,
+        "router_has_residual": false,
+        "initial_parameter_sha256": "e15501a9458c236526f7663bfdabbbd7b18ff98d23ad0b6f7e731f262e70a60b",
+        "residual_rho": 0,
+        "expert_batched": true,
+        "microbatch": 1,
+        "depth": 16,
+        "scope": "Fresh seed17 first8 train only; serial micro1 reference"
+      },
+      "status": null,
+      "log_tail": ""
+    },
+    {
+      "name": "L16_rho03",
+      "pid": 1055985,
+      "gpu_uuid": "GPU-6dcca91a-8e08-1a50-9aa6-81defeaed50b",
+      "depth": 16,
+      "rho": 0.3,
+      "microbatch": 1,
+      "git_commit": "52ab4d58cd07e9c1c3abd67131171db64d6b1bb7",
+      "sources_checked": 67,
+      "same_sources_as_completed_L2": true,
+      "smoke": {
+        "passed": true,
+        "probability_max_error": 0,
+        "gradient_max_relative_l2": 0,
+        "gradient_min_cosine": 0.9999998211860657,
+        "gradients_finite_nonzero": true,
+        "initialization_unchanged": true,
+        "router_has_residual": false,
+        "initial_parameter_sha256": "e15501a9458c236526f7663bfdabbbd7b18ff98d23ad0b6f7e731f262e70a60b",
+        "residual_rho": 0.3,
+        "expert_batched": true,
+        "microbatch": 1,
+        "depth": 16,
+        "scope": "Fresh seed17 first8 train only; serial micro1 reference"
+      },
+      "status": null,
+      "log_tail": ""
+    },
+    {
+      "name": "L8_rho0",
+      "pid": 1056117,
+      "gpu_uuid": "GPU-afc19890-6209-ee4d-622d-e619da5bd5b2",
+      "depth": 8,
+      "rho": 0,
+      "microbatch": 1,
+      "git_commit": "52ab4d58cd07e9c1c3abd67131171db64d6b1bb7",
+      "sources_checked": 67,
+      "same_sources_as_completed_L2": true,
+      "smoke": {
+        "passed": true,
+        "probability_max_error": 0,
+        "gradient_max_relative_l2": 0,
+        "gradient_min_cosine": 0.9999998807907104,
+        "gradients_finite_nonzero": true,
+        "initialization_unchanged": true,
+        "router_has_residual": false,
+        "initial_parameter_sha256": "3333a49c6be589ecaa1dc09039a9ba7398404b4d2eb6373a4196b097bf8e7d02",
+        "residual_rho": 0,
+        "expert_batched": true,
+        "microbatch": 1,
+        "depth": 8,
+        "scope": "Fresh seed17 first8 train only; serial micro1 reference"
+      },
+      "status": null,
+      "log_tail": ""
+    },
+    {
+      "name": "L8_rho03",
+      "pid": 1056249,
+      "gpu_uuid": "GPU-1b963983-7909-af6e-0528-f0f0661ab549",
+      "depth": 8,
+      "rho": 0.3,
+      "microbatch": 1,
+      "git_commit": "52ab4d58cd07e9c1c3abd67131171db64d6b1bb7",
+      "sources_checked": 67,
+      "same_sources_as_completed_L2": true,
+      "smoke": {
+        "passed": true,
+        "probability_max_error": 0,
+        "gradient_max_relative_l2": 0,
+        "gradient_min_cosine": 0.9999998807907104,
+        "gradients_finite_nonzero": true,
+        "initialization_unchanged": true,
+        "router_has_residual": false,
+        "initial_parameter_sha256": "3333a49c6be589ecaa1dc09039a9ba7398404b4d2eb6373a4196b097bf8e7d02",
+        "residual_rho": 0.3,
+        "expert_batched": true,
+        "microbatch": 1,
+        "depth": 8,
+        "scope": "Fresh seed17 first8 train only; serial micro1 reference"
+      },
+      "status": null,
+      "log_tail": ""
+    }
+  ],
+  "pending": [
+    {
+      "name": "L4_rho0",
+      "depth": 4,
+      "rho": 0,
+      "micro": 4
+    },
+    {
+      "name": "L4_rho03",
+      "depth": 4,
+      "rho": 0.3,
+      "micro": 4
+    }
+  ],
+  "gpu_compute_processes": [
+    "1056117, GPU-afc19890-6209-ee4d-622d-e619da5bd5b2, 938 MiB",
+    "1055853, GPU-e8837b85-d55b-8e81-aaa5-ec1ac326932d, 1170 MiB",
+    "1055985, GPU-6dcca91a-8e08-1a50-9aa6-81defeaed50b, 1020 MiB",
+    "1056249, GPU-1b963983-7909-af6e-0528-f0f0661ab549, 938 MiB"
+  ],
+  "status": {
+    "state": "fit_running",
+    "completed": [],
+    "failures": [],
+    "pending": 2,
+    "active": 4,
+    "seconds": 61.04585409164429,
+    "test_evaluations": 0
+  },
+  "adopted_L2": {
+    "rho0": {
+      "arm": "/DATA/DATA1/guest3/2026OpticsMoE/LightGenV2/tasks/t18_optical_residual_ablation/runs/simulation/caltech20_s17_L2_e100_L16_timing_4gpu_20261012/L2_rho0",
+      "fit_result_sha256": "25a19b045769fc0691dfb20db373f3f6015a655a82cd9047b0c84b7fa0ca851c",
+      "best_checkpoint_sha256": "ec05857cf15486b4a14bd1b23a052a5463da9d81fd63fbc606d95cc6f18f3755",
+      "training_git_commit": "aaccbeb7911eade85723964f5ef052161ca5d487"
+    },
+    "rho03": {
+      "arm": "/DATA/DATA1/guest3/2026OpticsMoE/LightGenV2/tasks/t18_optical_residual_ablation/runs/simulation/caltech20_s17_L2_e100_L16_timing_4gpu_20261012/L2_rho03",
+      "fit_result_sha256": "f9a8d3a6f0c75f342a9aa730cf993e1821e67e81aa5bf88daa075d2283b77fcf",
+      "best_checkpoint_sha256": "2cd4c29be1e7f833864c7e90ec227dbe4d4663191319592a75867f9d947d7a52",
+      "training_git_commit": "aaccbeb7911eade85723964f5ef052161ca5d487"
+    }
+  }
+}

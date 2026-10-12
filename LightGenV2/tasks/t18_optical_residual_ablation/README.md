@@ -6,7 +6,8 @@
 两层val41.5/43.5%负结果保留，尚未test。来源/数据/rho/配置不改，执行微批4层4、
 8/16层1，原数值及fresh生产门槛不放宽。计划见
 [有界八臂计划](caltech20_full_suite_plan.json)，队列仅训练/验证，全8审核锁定后首次test。
-实际启动收据和进展随后写入[Caltech20报告](reports/caltech20_20261012/README.md)。
+新队列已实际启动，父1055706；16层两组在GPU1/2、8层两组在GPU0/4，四新生产门槛通过，
+4层两组排队。test0。实际启动收据和后续进展见[Caltech20报告](reports/caltech20_20261012/README.md)。
 
 20类覆盖先前30/50类提议。按原图数量至少80的25类池和固定seed20261012选20类，
 每类60个train组、10个val组、其余test；旧50类train/val图片不进入新test。
