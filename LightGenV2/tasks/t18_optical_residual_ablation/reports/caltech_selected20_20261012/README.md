@@ -68,3 +68,11 @@ exclusive durable once-test claims, claim-before-test-array read and final CPU
 audit waiting for all results and exited GPU children. No real test has run.
 The registered commands and order are in the current protocol. Historical sealed
 Caltech20/COIL files and all70 running sources are unchanged.
+
+Nine finalizer checks actually passed on both Windows and Linux. A CPU-only
+check of real partial saved histories independently regenerated every recorded
+MixUp hash (including the12-sample macro tail) and checked61/81 phase gradients
+finite/nonzero for both12/16 pairs. All70 active training sources still match
+current files and original a477d916c Git blobs; real test claim count0. Evidence:
+[completion_tooling_checks.json](completion_tooling_checks.json). These incomplete
+histories were inspected only and were not accepted as completed fits or locked.
