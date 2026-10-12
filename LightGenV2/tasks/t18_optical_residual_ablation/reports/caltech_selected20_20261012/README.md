@@ -38,3 +38,22 @@ extra candidates, or category changes. All eight CPU saved-artifact audits and
 selection/global locks precede each selectedEMA once-only test. Final plotting
 must show macro/NLL/support and gap, no promised accuracy or residual advantage.
 Protocol: ../../CALTECH_SELECTED_PROTOCOL_20261012.md.
+
+## Actual production start
+
+Training source main a477d916c, CPU supervisor1150143, CUDA invisible. New run
+`caltech_selected20_s17_L2L4L12L16_reg100_4gpu_20261012` actually started after
+all four depth preflights.24 execution checks:16 passed and8 failed retained;
+common pair modes L2/L4micro4 and L12/L16micro1, unchanged numerical thresholds.
+Fresh production checks pass for all four active children: probability error0,
+gradient relative error0, minimum gradient cosine>=.9999998, every phase finite
+and nonzero, no router rho and same initialization within each pair.
+
+L12rho0/.3 GPU1/2 PID1151379/1151536; L16rho0/.3 GPU0/4 PID1151671/1151809.
+L4/L2 both pairs pending automatic dispatch when allowed cards free. All70 sources
+of every active child match both actual current files and archived training Git
+blobs. Actual occupancy894–1170MiB at the receipt, no queue failure/test claim.
+PIDs and progress are snapshots: always read live current_processes/status/proc.
+Detailed evidence: [production_start.json](production_start.json).
+Follow-up monitor `t18-20` remains active until all results/plots are delivered,
+Git synchronized and actual GPU release verified; ordinary healthy progress quiet.
