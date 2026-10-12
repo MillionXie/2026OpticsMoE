@@ -1,0 +1,14 @@
+{
+  "state": "tests_complete_awaiting_cpu_audit",
+  "completed": [
+    "L12_rho03",
+    "L12_rho0",
+    "L16_rho03",
+    "L16_rho0",
+    "L4_rho03",
+    "L4_rho0",
+    "L2_rho03",
+    "L2_rho0"
+  ],
+  "failures": []
+}

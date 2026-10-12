@@ -1,3 +1,19 @@
+# Final delivery: screened Caltech20 regularized development
+
+Eight arms completed100 epochs and all eight selected EMA checkpoints received
+their first and only test after all CPU audits/locks. Final CPU audit passes;
+all project train/test processes exited and GPU0/1/2/4 were actually released.
+Residual test accuracy/macro recall improve at every depth. L12rho.3 records
+73.26% test accuracy and57.84% macro recall; L16 does not further improve these.
+The best validation accuracy remains61.84% (L4rho.3), below70%. Deep residual
+train-val gaps20-23pp remain, and late NLL improvement prevents a full-convergence
+claim. These are validation-screened, single-seed exploratory development results.
+[Full results, inspected PNG/SVG/PDF, curves and CPU evidence](final/README.md).
+Final source/report delivery is synchronized on main; the monitor stops after
+publication and final live release verification.
+
+## Historical stage snapshots (preserved; superseded by final delivery)
+
 # Caltech20 screened regularized development task
 
 ## Completed L2 train/validation review

@@ -1,0 +1,73 @@
+{
+  "time_unix": 1791813504.03738,
+  "source_count": 70,
+  "sources_match": true,
+  "process_alive": {
+    "1151379": false,
+    "1151536": false,
+    "1386782": false,
+    "1388777": false,
+    "1416439": false,
+    "1418565": false,
+    "1151671": false,
+    "1151809": false
+  },
+  "supervisor_alive": false,
+  "test_process_alive": {
+    "L2_rho03": false,
+    "L12_rho03": false,
+    "L4_rho0": false,
+    "L2_rho0": false,
+    "L4_rho03": false,
+    "L16_rho03": false,
+    "L12_rho0": false,
+    "L16_rho0": false
+  },
+  "test_supervisor_alive": false,
+  "claims": [
+    "L2_rho03",
+    "L12_rho03",
+    "L4_rho0",
+    "L2_rho0",
+    "L4_rho03",
+    "L16_rho03",
+    "L12_rho0",
+    "L16_rho0"
+  ],
+  "results": [
+    "L2_rho03",
+    "L12_rho03",
+    "L4_rho0",
+    "L2_rho0",
+    "L4_rho03",
+    "L16_rho03",
+    "L12_rho0",
+    "L16_rho0"
+  ],
+  "final_status": {
+    "state": "tests_complete_awaiting_cpu_audit",
+    "completed": [
+      "L12_rho03",
+      "L12_rho0",
+      "L16_rho03",
+      "L16_rho0",
+      "L4_rho03",
+      "L4_rho0",
+      "L2_rho03",
+      "L2_rho0"
+    ],
+    "failures": []
+  },
+  "final_current": {
+    "active": [],
+    "pending": []
+  },
+  "nvidia": "",
+  "gpus": "0, GPU-afc19890-6209-ee4d-622d-e619da5bd5b2, 12 MiB, 24199 MiB\n1, GPU-e8837b85-d55b-8e81-aaa5-ec1ac326932d, 25 MiB, 24186 MiB\n2, GPU-6dcca91a-8e08-1a50-9aa6-81defeaed50b, 10 MiB, 24243 MiB\n3, GPU-4d8bfdb9-8777-05a6-3811-ab18ff4eadfd, 12 MiB, 24200 MiB\n4, GPU-1b963983-7909-af6e-0528-f0f0661ab549, 12 MiB, 24200 MiB\n5, GPU-d53ce4c8-272d-c2fb-dc09-f182d586c4eb, 19 MiB, 24234 MiB\n6, GPU-3f60d773-4dd8-d706-ef48-a4dfc5af6c55, 14 MiB, 40313 MiB\n",
+  "head": "13f405eb6037e10c2127673bee93827d37779df2",
+  "tracked_status": "",
+  "actual_gpu_release_verified": true,
+  "cpu_checks_passed": true,
+  "source_identity_rule": "70 actual files and original training Git blobs match",
+  "training_git_commit": "a477d916ce76d5ac6ab109b3c892b0b4361410ce"
+}
