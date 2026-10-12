@@ -1,0 +1,28 @@
+{
+  "dataset": "Caltech101_prespecified20_train60",
+  "authorization": "2026-10-12 human challenged idle waiting and requested progress; continue original full-depth100 comparison without another budget question",
+  "data_sha256": "78129d81a860b433a55988a8f41ce40e856867d33d98d91f3f5546dcbc941d4d",
+  "manifest_sha256": "42a60db7e793abd4c36c5ba457fcd46b04b3c17ecff25bbcb9a2592b0b57c5e4",
+  "profile_sha256": "3f009f6c75647dad43e035d37877cae1b35d4c9a1481a1a955731702e85fadc8",
+  "adopted_L2": {
+    "rho0": {"epochs": 100, "selected_epoch": 99, "best_sha256": "ec05857cf15486b4a14bd1b23a052a5463da9d81fd63fbc606d95cc6f18f3755"},
+    "rho03": {"epochs": 100, "selected_epoch": 100, "best_sha256": "2cd4c29be1e7f833864c7e90ec227dbe4d4663191319592a75867f9d947d7a52"}
+  },
+  "new_jobs": ["L16_rho0", "L16_rho03", "L8_rho0", "L8_rho03", "L4_rho0", "L4_rho03"],
+  "maximum_epochs_per_new_arm": 100,
+  "maximum_seconds_per_new_arm": 36000,
+  "microbatch_by_depth": {"2": 4, "4": 4, "8": 1, "16": 1},
+  "effective_batch_size": 16,
+  "maximum_concurrent_gpu_children": 4,
+  "physical_gpu_indices": [0, 1, 2, 4],
+  "first_dispatch": {"1": "L16_rho0", "2": "L16_rho03", "0": "L8_rho0", "4": "L8_rho03"},
+  "remaining_dispatch": "L4 pair uses released allowed slots; one child per GPU; no fifth GPU",
+  "strict_fresh_production_gate": {"probability_max_error": 0.000001, "gradient_max_relative_l2": 0.02, "gradient_min_cosine": 0.999, "all_phase_gradients": "finite and nonzero"},
+  "selection": "Each arm: first exact minimum validation EMA balanced NLL across100epochs. No additional candidate or extension.",
+  "all_eight_lock_plan": "Read saved PT/CSV/history/cache labels with CUDA unavailable. Require100each, paired initialization/order/augmentation/config-rho-only, archived source Git blobs and data identities. Reuse completedL2 without optical reinference. Exclusively create pair locks, per-arm selected EMA locks and global all-eight lock.",
+  "test_plan": "Only after successful all-eight CPU audit and immutable global lock, evaluate each selected best EMA once. Caltech20-specific finalizer with manifest-derived classes/support/IDs; never mutate or reuse sealed COIL20 fixed360test finalizer. Exclusive test_started precedes first test array materialization. A failure keeps marker and forbids automatic retry/removal; no raw/last/unselected test, no test-driven reselection.",
+  "delivery": "Independent CPU verification of saved train/val/test probabilities, supports, confusion matrices, NLL, macro recall, selected epoch and budgets. Curves plus one test point; PNG/SVG/PDF/CSV, one seed without error bars. Publish main via serialized Git, verify actual GPU release.",
+  "timing": "L16 actual micro1 ordinary177-183s, periodic mean186-192s;100arm about5-6h plus final assessments. L8/L4 estimates pending actual epochs; not a guarantee or whole-suite measured ETA.",
+  "failure_policy": "Stop dispatch on child failure; preserve healthy running children and all artifacts. No automatic training/test retry, no category changes or extra candidate search.",
+  "test_evaluations_at_registration": 0
+}

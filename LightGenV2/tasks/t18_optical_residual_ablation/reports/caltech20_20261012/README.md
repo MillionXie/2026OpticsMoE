@@ -46,4 +46,8 @@ ID标签argmaxsupportCM/NLL/macro均过；无完成臂重复模型推理。
 真实结果、拟合审查及PNG/SVG/PDF/CSV见[L2](L2/pilot_summary.csv)及
 [fit_review.json](L2/fit_review.json)。所有四个GPU子/CPU父实际退出、GPU无本项目占用。
 尚无正式4/8/16结果，也没有最终test；已询问优先学习诊断还是接受长时间深层比较。
-不因低分换类/追加或重测旧test，当前深层启动取决于该预算优先级回复，监控仍ACTIVE。
+不因低分换类/追加或重测旧test。以上预算等待为历史状态：2026-10-12人工指出
+十余小时未推进，现直接继续原先全深度100轮比较，复用L2，fresh六个深层臂。
+预登记[有界计划](../../caltech20_full_suite_plan.json)：16pair在GPU1/2、8pair在0/4，
+4pair接空出的允许卡；最多四子，每臂100轮，未增加候选。原70%门槛失败继续如实报告。
+队列只train/val；全8独立CPU审核、pair/selection/global锁定后首次单test，运行收据待实际启动补充。

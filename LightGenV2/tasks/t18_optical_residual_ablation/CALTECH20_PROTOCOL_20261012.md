@@ -1,5 +1,23 @@
 # Caltech20: more training images per category
 
+## 2026-10-12 continuation after completed pilot
+
+The human challenged the prolonged idle wait and requested progress. Continue
+the originally requested all-depth100 comparison without another budget question.
+Reuse completed L2rho0/rho0.3 fits unchanged; fresh L4/L8/L16 pairs each100epochs.
+The bounded registration is caltech20_full_suite_plan.json. The CPU supervisor
+caltech20_fit_queue.py starts L16pair on physicalGPU1/2 and L8pair on0/4, then
+dispatches L4pair into released allowed slots. Four children maximum, micro4
+forL4 and micro1 forL8/L16; all original numerical and fresh production gates
+remain enforced. Runtime sources of the completed pair remain unchanged.
+The pilot70% target failed; proceeding reports that negative result openly.
+No new classes, hyperparameters, candidates or extra epochs. L16two-epoch
+timing is excluded from formal fits. Training completes at a CPU audit barrier;
+the plan requires all-eight locks and a Caltech20-specific once-test finalizer.
+No test is launched by the training queue. Monitor ordinary progress quietly,
+notify meaningful stages/failures and act at completion instead of waiting
+again for a redundant budget choice.
+
 The latest human request is 20 categories with more images per category. This
 replaces the proposed 30-category task and cancels expansion of Caltech50. The
 completed Caltech50 two-layer fits and two-epoch timing runs remain archived;
