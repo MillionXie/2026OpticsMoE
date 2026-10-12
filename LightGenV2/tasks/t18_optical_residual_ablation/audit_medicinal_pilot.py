@@ -20,7 +20,7 @@ def main():
     p = argparse.ArgumentParser()
     p.add_argument('--run', type=Path, required=True); p.add_argument('--data', type=Path, required=True)
     p.add_argument('--out', type=Path, required=True)
-    p.add_argument('--depth', type=int, choices=[2,4,8,16], default=2)
+    p.add_argument('--depth', type=int, choices=[2,4,8,12,16], default=2)
     p.add_argument('--arm0', type=Path); p.add_argument('--arm03', type=Path)
     a = p.parse_args(); a.out.mkdir(parents=True, exist_ok=True)
     manifest = read(a.data.parent/'data_manifest.json')

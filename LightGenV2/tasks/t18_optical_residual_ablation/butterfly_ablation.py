@@ -33,7 +33,7 @@ def source_identity(profile):
 
 
 def graph_config(depth, profile):
-    assert depth in profile['depths'] == [2, 4, 8, 16]
+    assert depth in profile['depths'] and depth in (2, 4, 8, 12, 16)
     cycles = depth // 2
     graph = copy.deepcopy(r.CONFIGS['moe_L6_oeo_relu_softsign'])
     graph['model']['num_cycles'] = cycles

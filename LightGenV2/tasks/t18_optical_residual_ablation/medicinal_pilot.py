@@ -16,6 +16,29 @@ o, torch = execution.optical, execution.torch
 np, r = o.np, o.r
 
 
+def mixup_schedule(seed, epoch, batch_index, count, alpha):
+    rng = np.random.default_rng(np.random.SeedSequence([seed, epoch, batch_index, 20261012]))
+    lam = float(rng.beta(alpha, alpha))
+    lam = max(lam, 1-lam)
+    permutation = rng.permutation(count)
+    identity = hashlib.sha256(np.asarray([lam], dtype='<f8').tobytes()+permutation.astype('<i8').tobytes()).hexdigest()
+    return lam, permutation, identity
+
+
+def mixup_batch(data, idx, theta, cfg, epoch, batch_index):
+    amplitude = o.encode(data[0][idx], theta[idx])
+    target = torch.nn.functional.one_hot(data[1][idx], len(cfg['classes'])).to(amplitude.device).float()
+    target = target*(1-cfg['label_smoothing'])+cfg['label_smoothing']/len(cfg['classes'])
+    lam, permutation, identity = mixup_schedule(cfg['seed'], epoch, batch_index, len(idx), cfg['mixup_alpha'])
+    permutation = torch.tensor(permutation, device=amplitude.device)
+    return lam*amplitude+(1-lam)*amplitude[permutation], lam*target+(1-lam)*target[permutation], identity
+
+
+def soft_objective(model, prob, capture, target, weights, cfg):
+    nll = -(target*weights[None]*prob.clamp_min(1e-12).log()).sum(1).mean()
+    return nll-cfg['capture_weight']*capture.clamp_min(1e-12).log().mean()+cfg['phase_smooth_weight']*o.b.phase_smoothness(model)
+
+
 def load_fit_data(path, split, manifest):
     assert split in ('train', 'val'), 'Pilot must never materialize test'
     with np.load(path, allow_pickle=False) as z:
@@ -49,13 +72,18 @@ def numerical_gate(data, weights, profile, cfg, batched, micro, depth=2):
     r.setseed(cfg['seed'])
     model = execution.build(depth, profile, cfg, batched=False)
     identity = o.f.tensor_identity(model)
+    mixed = None
+    if cfg.get('mixup_alpha', 0.):
+        theta = o.b.affine_parameters(len(data[1]), cfg['seed'], 0, cfg['augmentation'])
+        mixed, target, _ = mixup_batch(data, torch.arange(8), theta, cfg, 0, 0)
     def compute(batch):
         model.zero_grad(set_to_none=True)
         probabilities = []
         for start in range(0, 8, batch):
             end = min(start + batch, 8)
-            p, c = o.forward(model, o.encode(data[0][start:end]))
-            (o.objective(model, p, c, data[1][start:end].cuda(), weights, cfg) * (end-start)/8).backward()
+            p, c = o.forward(model, o.encode(data[0][start:end]) if mixed is None else mixed[start:end])
+            loss = o.objective(model, p, c, data[1][start:end].cuda(), weights, cfg) if mixed is None else soft_objective(model, p, c, target[start:end], weights, cfg)
+            (loss * (end-start)/8).backward()
             probabilities.append(p.detach())
         return torch.cat(probabilities), {n: p.grad.detach().clone() for n, p in model.named_parameters()}
     reference, gradients = compute(1)
@@ -86,7 +114,7 @@ def main():
     p.add_argument('--batched', type=int, choices=[0, 1], required=True)
     p.add_argument('--probe', type=Path, required=True)
     p.add_argument('--profile', type=Path, default=o.HERE/'medicinal_pilot_profile.json')
-    p.add_argument('--depth', type=int, choices=[2, 4, 8, 16], default=2)
+    p.add_argument('--depth', type=int, choices=[2, 4, 8, 12, 16], default=2)
     p.add_argument('--epochs', type=int, choices=[2, 10, 30, 100], default=30)
     p.add_argument('--seconds', type=int, default=None)
     p.add_argument('--full-budget', action='store_true')
@@ -111,9 +139,9 @@ def main():
     assert manifest['dataset'] == contract['dataset'] and manifest['total_records'] == contract['records']
     assert len(manifest['classes']) == classes
     assert manifest['cache_sha256'] == r.sha(a.data)
-    assert contract['preparation_source'] in ('prepare_medicinal.py', 'prepare_coil20.py', 'prepare_caltech50.py')
+    assert contract['preparation_source'] in ('prepare_medicinal.py', 'prepare_coil20.py', 'prepare_caltech50.py', 'prepare_caltech_selected.py')
     assert manifest['preparation_source_sha256'] == r.sha(o.HERE/contract['preparation_source'])
-    grouping_source = 'prepare_caltech50.py' if contract['preparation_source'] == 'prepare_caltech50.py' else 'prepare_butterfly.py'
+    grouping_source = 'prepare_caltech50.py' if contract['preparation_source'].startswith('prepare_caltech') else 'prepare_butterfly.py'
     assert manifest['grouping_source_sha256'] == r.sha(o.HERE/grouping_source)
     assert manifest[contract['identity_key']] == contract['identity_sha256']
     if 'preparation_plan_sha256' in contract:
@@ -124,16 +152,20 @@ def main():
     profile.update(dataset=manifest['dataset'], microbatch=a.micro, evaluation_batch_size=a.micro,
         expert_batched=bool(a.batched), maximum_epochs=a.epochs, minimum_epochs=min(10, a.epochs), patience=6,
         maximum_seconds=a.seconds or profile['maximum_seconds'])
-    maximum_seconds = 36000 if contract['preparation_source'] == 'prepare_caltech50.py' else 5400
+    maximum_seconds = 36000 if contract['preparation_source'].startswith('prepare_caltech') else 5400
     assert 1 <= profile['maximum_seconds'] <= maximum_seconds
     cfg = o.config(profile, manifest, a.rho, a.candidate)
     cfg.update(depth=a.depth, requested_epochs=a.epochs, early_stopping=not a.full_budget)
+    assert 0 <= cfg.get('mixup_alpha', 0.) <= 1
     for key in ['initial_epochs', 'maximum_base_epochs', 'maximum_paired_restarts', 'restart_epochs', 'restart_candidates', 'data_revision']:
         cfg.pop(key, None)
     cfg['selection'] = 'EMA minimum validation balanced NLL, first exact tie; pilot never tests'
     sources = o.source_identity(profile_path)
     sources.update({str((o.HERE/name).relative_to(o.ROOT)).replace('\\', '/'): r.sha(o.HERE/name)
         for name in ['fast_optical.py', 'medicinal_pilot.py', contract['preparation_source'], 'probe_fast_optical.py']})
+    if contract['preparation_source'] == 'prepare_caltech_selected.py':
+        sources.update({str((o.HERE/name).relative_to(o.ROOT)).replace('\\', '/'): r.sha(o.HERE/name)
+            for name in ['prepare_caltech50.py', 'caltech_selected_queue.py', 'caltech_selected_plan.json']})
     assert all(hashlib.sha256(subprocess.check_output(['git', 'show', 'HEAD:'+path])).hexdigest() == digest
         for path, digest in sources.items()), 'Every runtime source must match its published Git blob'
     r.save(a.out/'config.json', cfg)
@@ -163,12 +195,22 @@ def main():
         order = r.epoch_order(cfg['seed'], epoch, len(data[1]))
         theta = o.b.affine_parameters(len(data[1]), cfg['seed'], epoch, cfg['augmentation'])
         orders.append(r.sha_tensor(order)); transforms.append(r.sha_tensor(theta))
+        mix_hash = hashlib.sha256()
         total = 0.
         for batch_index, idx in enumerate(order.split(16)):
             optimizer.zero_grad(set_to_none=True)
+            mixed = None
+            if cfg.get('mixup_alpha', 0.):
+                mixed, soft_target, mix_identity = mixup_batch(data, idx, theta, cfg, epoch, batch_index)
+                mix_hash.update(mix_identity.encode())
             for micro in idx.split(a.micro):
-                probability, capture = o.forward(model, o.encode(data[0][micro], theta[micro]))
-                loss = o.objective(model, probability, capture, data[1][micro].cuda(), weights, cfg)
+                if mixed is None:
+                    probability, capture = o.forward(model, o.encode(data[0][micro], theta[micro]))
+                    loss = o.objective(model, probability, capture, data[1][micro].cuda(), weights, cfg)
+                else:
+                    start = int((idx == micro[0]).nonzero()[0])
+                    probability, capture = o.forward(model, mixed[start:start+len(micro)])
+                    loss = soft_objective(model, probability, capture, soft_target[start:start+len(micro)], weights, cfg)
                 assert bool(torch.isfinite(loss))
                 (loss*len(micro)/len(idx)).backward()
                 total += float(loss.detach())*len(micro)
@@ -182,6 +224,10 @@ def main():
                 for ep, mp in zip(ema.parameters(), model.parameters()): ep.lerp_(mp, 1-cfg['ema_decay'])
         vm, rows = evaluate(ema, val, a.micro)
         entry = dict(epoch=epoch, train_loss=total/len(data[1]), lr=optimizer.param_groups[0]['lr'], val=vm)
+        if cfg.get('mixup_alpha', 0.):
+            entry['mixup_contract'] = 'Deterministic seed/epoch/macro; amplitude and smoothed targets mixed before microbatch split'
+            transforms[-1] = hashlib.sha256((transforms[-1]+mix_hash.hexdigest()).encode()).hexdigest()
+            entry['mixup_sha256'] = mix_hash.hexdigest()
         if epoch == 1 or epoch % 5 == 0:
             entry['train'] = evaluate(ema, data, a.micro)[0]
         if vm['balanced_nll'] < best:
