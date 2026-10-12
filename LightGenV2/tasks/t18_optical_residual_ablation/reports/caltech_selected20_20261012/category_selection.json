@@ -1,0 +1,6841 @@
+{
+  "policy": "One deterministic screening pass over classes with >=60 photos: train-only nearest centroids of fixed nonlearned thumbnails; iteratively remove worst validation recall, ties mean nearest-other margin then category name, until20. All selected photos retained. No optical rho preference; no test pixels/scores used for screening. Split approx70/15/rest, capped100train/20val, previous train/val roles pinned. Freeze before optical training.",
+  "training_features": "Untrained centered RGB16x16 thumbnail and horizontal/vertical finite differences, unit L2 norm",
+  "pool": [
+    "Faces",
+    "Leopards",
+    "Motorbikes",
+    "airplanes",
+    "bonsai",
+    "brain",
+    "buddha",
+    "butterfly",
+    "car_side",
+    "chair",
+    "chandelier",
+    "cougar_face",
+    "crab",
+    "crayfish",
+    "dalmatian",
+    "dolphin",
+    "dragonfly",
+    "electric_guitar",
+    "elephant",
+    "euphonium",
+    "ewer",
+    "ferry",
+    "flamingo",
+    "grand_piano",
+    "hawksbill",
+    "helicopter",
+    "ibis",
+    "joshua_tree",
+    "kangaroo",
+    "ketch",
+    "lamp",
+    "laptop",
+    "llama",
+    "lotus",
+    "menorah",
+    "minaret",
+    "revolver",
+    "schooner",
+    "scorpion",
+    "soccer_ball",
+    "starfish",
+    "stop_sign",
+    "sunflower",
+    "trilobite",
+    "umbrella",
+    "watch",
+    "yin_yang"
+  ],
+  "selected_classes": [
+    "Faces",
+    "Leopards",
+    "Motorbikes",
+    "airplanes",
+    "bonsai",
+    "crab",
+    "crayfish",
+    "grand_piano",
+    "helicopter",
+    "kangaroo",
+    "ketch",
+    "laptop",
+    "lotus",
+    "minaret",
+    "revolver",
+    "schooner",
+    "trilobite",
+    "umbrella",
+    "watch",
+    "yin_yang"
+  ],
+  "steps": [
+    {
+      "classes": [
+        "Faces",
+        "Leopards",
+        "Motorbikes",
+        "airplanes",
+        "bonsai",
+        "brain",
+        "buddha",
+        "butterfly",
+        "car_side",
+        "chair",
+        "chandelier",
+        "cougar_face",
+        "crab",
+        "crayfish",
+        "dalmatian",
+        "dolphin",
+        "dragonfly",
+        "electric_guitar",
+        "elephant",
+        "euphonium",
+        "ewer",
+        "ferry",
+        "flamingo",
+        "grand_piano",
+        "hawksbill",
+        "helicopter",
+        "ibis",
+        "joshua_tree",
+        "kangaroo",
+        "ketch",
+        "lamp",
+        "laptop",
+        "llama",
+        "lotus",
+        "menorah",
+        "minaret",
+        "revolver",
+        "schooner",
+        "scorpion",
+        "soccer_ball",
+        "starfish",
+        "stop_sign",
+        "sunflower",
+        "trilobite",
+        "umbrella",
+        "watch",
+        "yin_yang"
+      ],
+      "macro_recall": 0.2978806904766987,
+      "scores": [
+        {
+          "class_name": "Faces",
+          "recall": 0.65,
+          "margin": 0.03890980813740605,
+          "validation_count": 20
+        },
+        {
+          "class_name": "Leopards",
+          "recall": 0.85,
+          "margin": 0.10758214984374767,
+          "validation_count": 20
+        },
+        {
+          "class_name": "Motorbikes",
+          "recall": 0.95,
+          "margin": 0.19651948119133492,
+          "validation_count": 20
+        },
+        {
+          "class_name": "airplanes",
+          "recall": 0.65,
+          "margin": 0.11603815517363658,
+          "validation_count": 20
+        },
+        {
+          "class_name": "bonsai",
+          "recall": 0.3157894736842105,
+          "margin": -0.06354537236108547,
+          "validation_count": 19
+        },
+        {
+          "class_name": "brain",
+          "recall": 0.0,
+          "margin": -0.25769206245245607,
+          "validation_count": 14
+        },
+        {
+          "class_name": "buddha",
+          "recall": 0.0,
+          "margin": -0.1925215698756698,
+          "validation_count": 12
+        },
+        {
+          "class_name": "butterfly",
+          "recall": 0.15384615384615385,
+          "margin": -0.11901959896120515,
+          "validation_count": 13
+        },
+        {
+          "class_name": "car_side",
+          "recall": 0.2222222222222222,
+          "margin": -0.07886635659730595,
+          "validation_count": 18
+        },
+        {
+          "class_name": "chair",
+          "recall": 0.3,
+          "margin": -0.10754638227477495,
+          "validation_count": 10
+        },
+        {
+          "class_name": "chandelier",
+          "recall": 0.0,
+          "margin": -0.14230649597341752,
+          "validation_count": 16
+        },
+        {
+          "class_name": "cougar_face",
+          "recall": 0.1,
+          "margin": -0.09537690738109042,
+          "validation_count": 10
+        },
+        {
+          "class_name": "crab",
+          "recall": 0.2,
+          "margin": -0.1063631478131872,
+          "validation_count": 10
+        },
+        {
+          "class_name": "crayfish",
+          "recall": 0.4,
+          "margin": -0.053743264449766716,
+          "validation_count": 10
+        },
+        {
+          "class_name": "dalmatian",
+          "recall": 0.0,
+          "margin": -0.12365719624810274,
+          "validation_count": 10
+        },
+        {
+          "class_name": "dolphin",
+          "recall": 0.0,
+          "margin": -0.1687263082032149,
+          "validation_count": 10
+        },
+        {
+          "class_name": "dragonfly",
+          "recall": 0.1,
+          "margin": -0.10703154429231768,
+          "validation_count": 10
+        },
+        {
+          "class_name": "electric_guitar",
+          "recall": 0.18181818181818182,
+          "margin": -0.08979408933632237,
+          "validation_count": 11
+        },
+        {
+          "class_name": "elephant",
+          "recall": 0.2,
+          "margin": -0.055440767612852784,
+          "validation_count": 10
+        },
+        {
+          "class_name": "euphonium",
+          "recall": 0.1,
+          "margin": -0.1304871689296369,
+          "validation_count": 10
+        },
+        {
+          "class_name": "ewer",
+          "recall": 0.0,
+          "margin": -0.18256620496277987,
+          "validation_count": 12
+        },
+        {
+          "class_name": "ferry",
+          "recall": 0.0,
+          "margin": -0.1071821058404554,
+          "validation_count": 10
+        },
+        {
+          "class_name": "flamingo",
+          "recall": 0.1,
+          "margin": -0.12916526973028944,
+          "validation_count": 10
+        },
+        {
+          "class_name": "grand_piano",
+          "recall": 0.8571428571428571,
+          "margin": 0.11726222058121981,
+          "validation_count": 14
+        },
+        {
+          "class_name": "hawksbill",
+          "recall": 0.06666666666666667,
+          "margin": -0.07551628394743733,
+          "validation_count": 15
+        },
+        {
+          "class_name": "helicopter",
+          "recall": 0.38461538461538464,
+          "margin": -0.1197376327467608,
+          "validation_count": 13
+        },
+        {
+          "class_name": "ibis",
+          "recall": 0.08333333333333333,
+          "margin": -0.12610764011869122,
+          "validation_count": 12
+        },
+        {
+          "class_name": "joshua_tree",
+          "recall": 0.3,
+          "margin": -0.07871384933858781,
+          "validation_count": 10
+        },
+        {
+          "class_name": "kangaroo",
+          "recall": 0.25,
+          "margin": -0.06286905410028752,
+          "validation_count": 12
+        },
+        {
+          "class_name": "ketch",
+          "recall": 0.4117647058823529,
+          "margin": -0.06772558197073794,
+          "validation_count": 17
+        },
+        {
+          "class_name": "lamp",
+          "recall": 0.0,
+          "margin": -0.12646004353733745,
+          "validation_count": 10
+        },
+        {
+          "class_name": "laptop",
+          "recall": 0.4166666666666667,
+          "margin": -0.08117885424272275,
+          "validation_count": 12
+        },
+        {
+          "class_name": "llama",
+          "recall": 0.0,
+          "margin": -0.13302291874040698,
+          "validation_count": 11
+        },
+        {
+          "class_name": "lotus",
+          "recall": 0.7,
+          "margin": -0.0916114495251454,
+          "validation_count": 10
+        },
+        {
+          "class_name": "menorah",
+          "recall": 0.23076923076923078,
+          "margin": -0.09073176275841817,
+          "validation_count": 13
+        },
+        {
+          "class_name": "minaret",
+          "recall": 0.6363636363636364,
+          "margin": 0.1154313841758297,
+          "validation_count": 11
+        },
+        {
+          "class_name": "revolver",
+          "recall": 0.4166666666666667,
+          "margin": 0.04258834304359774,
+          "validation_count": 12
+        },
+        {
+          "class_name": "schooner",
+          "recall": 0.5,
+          "margin": -0.09747343255814779,
+          "validation_count": 10
+        },
+        {
+          "class_name": "scorpion",
+          "recall": 0.16666666666666666,
+          "margin": -0.07499098271016764,
+          "validation_count": 12
+        },
+        {
+          "class_name": "soccer_ball",
+          "recall": 0.3,
+          "margin": -0.09605006626617574,
+          "validation_count": 10
+        },
+        {
+          "class_name": "starfish",
+          "recall": 0.0,
+          "margin": -0.14598869120361582,
+          "validation_count": 12
+        },
+        {
+          "class_name": "stop_sign",
+          "recall": 0.3,
+          "margin": -0.011186530188869948,
+          "validation_count": 10
+        },
+        {
+          "class_name": "sunflower",
+          "recall": 0.25,
+          "margin": -0.07554892334633237,
+          "validation_count": 12
+        },
+        {
+          "class_name": "trilobite",
+          "recall": 0.5833333333333334,
+          "margin": 0.06181168061073681,
+          "validation_count": 12
+        },
+        {
+          "class_name": "umbrella",
+          "recall": 0.2727272727272727,
+          "margin": -0.07583934147962473,
+          "validation_count": 11
+        },
+        {
+          "class_name": "watch",
+          "recall": 0.4,
+          "margin": -0.12916674069302334,
+          "validation_count": 20
+        },
+        {
+          "class_name": "yin_yang",
+          "recall": 1.0,
+          "margin": 0.20072629118720337,
+          "validation_count": 10
+        }
+      ]
+    },
+    {
+      "classes": [
+        "Faces",
+        "Leopards",
+        "Motorbikes",
+        "airplanes",
+        "bonsai",
+        "buddha",
+        "butterfly",
+        "car_side",
+        "chair",
+        "chandelier",
+        "cougar_face",
+        "crab",
+        "crayfish",
+        "dalmatian",
+        "dolphin",
+        "dragonfly",
+        "electric_guitar",
+        "elephant",
+        "euphonium",
+        "ewer",
+        "ferry",
+        "flamingo",
+        "grand_piano",
+        "hawksbill",
+        "helicopter",
+        "ibis",
+        "joshua_tree",
+        "kangaroo",
+        "ketch",
+        "lamp",
+        "laptop",
+        "llama",
+        "lotus",
+        "menorah",
+        "minaret",
+        "revolver",
+        "schooner",
+        "scorpion",
+        "soccer_ball",
+        "starfish",
+        "stop_sign",
+        "sunflower",
+        "trilobite",
+        "umbrella",
+        "watch",
+        "yin_yang"
+      ],
+      "macro_recall": 0.30435635766097474,
+      "scores": [
+        {
+          "class_name": "Faces",
+          "recall": 0.65,
+          "margin": 0.03890980813740605,
+          "validation_count": 20
+        },
+        {
+          "class_name": "Leopards",
+          "recall": 0.85,
+          "margin": 0.1144235059624267,
+          "validation_count": 20
+        },
+        {
+          "class_name": "Motorbikes",
+          "recall": 0.95,
+          "margin": 0.19651948119133492,
+          "validation_count": 20
+        },
+        {
+          "class_name": "airplanes",
+          "recall": 0.65,
+          "margin": 0.11603815517363658,
+          "validation_count": 20
+        },
+        {
+          "class_name": "bonsai",
+          "recall": 0.3157894736842105,
+          "margin": -0.06354537236108547,
+          "validation_count": 19
+        },
+        {
+          "class_name": "buddha",
+          "recall": 0.0,
+          "margin": -0.1925215698756698,
+          "validation_count": 12
+        },
+        {
+          "class_name": "butterfly",
+          "recall": 0.15384615384615385,
+          "margin": -0.11901959896120515,
+          "validation_count": 13
+        },
+        {
+          "class_name": "car_side",
+          "recall": 0.2222222222222222,
+          "margin": -0.07886635659730595,
+          "validation_count": 18
+        },
+        {
+          "class_name": "chair",
+          "recall": 0.3,
+          "margin": -0.10754638227477495,
+          "validation_count": 10
+        },
+        {
+          "class_name": "chandelier",
+          "recall": 0.0,
+          "margin": -0.14230649597341752,
+          "validation_count": 16
+        },
+        {
+          "class_name": "cougar_face",
+          "recall": 0.1,
+          "margin": -0.09420459065433552,
+          "validation_count": 10
+        },
+        {
+          "class_name": "crab",
+          "recall": 0.2,
+          "margin": -0.1063631478131872,
+          "validation_count": 10
+        },
+        {
+          "class_name": "crayfish",
+          "recall": 0.4,
+          "margin": -0.053743264449766716,
+          "validation_count": 10
+        },
+        {
+          "class_name": "dalmatian",
+          "recall": 0.0,
+          "margin": -0.12365719624810274,
+          "validation_count": 10
+        },
+        {
+          "class_name": "dolphin",
+          "recall": 0.0,
+          "margin": -0.1687263082032149,
+          "validation_count": 10
+        },
+        {
+          "class_name": "dragonfly",
+          "recall": 0.1,
+          "margin": -0.10635859337779507,
+          "validation_count": 10
+        },
+        {
+          "class_name": "electric_guitar",
+          "recall": 0.18181818181818182,
+          "margin": -0.08979408933632237,
+          "validation_count": 11
+        },
+        {
+          "class_name": "elephant",
+          "recall": 0.2,
+          "margin": -0.055440767612852784,
+          "validation_count": 10
+        },
+        {
+          "class_name": "euphonium",
+          "recall": 0.1,
+          "margin": -0.1299807424174359,
+          "validation_count": 10
+        },
+        {
+          "class_name": "ewer",
+          "recall": 0.0,
+          "margin": -0.18256620496277987,
+          "validation_count": 12
+        },
+        {
+          "class_name": "ferry",
+          "recall": 0.0,
+          "margin": -0.1071821058404554,
+          "validation_count": 10
+        },
+        {
+          "class_name": "flamingo",
+          "recall": 0.1,
+          "margin": -0.12916526973028944,
+          "validation_count": 10
+        },
+        {
+          "class_name": "grand_piano",
+          "recall": 0.8571428571428571,
+          "margin": 0.11726222058121981,
+          "validation_count": 14
+        },
+        {
+          "class_name": "hawksbill",
+          "recall": 0.06666666666666667,
+          "margin": -0.07551628394743733,
+          "validation_count": 15
+        },
+        {
+          "class_name": "helicopter",
+          "recall": 0.38461538461538464,
+          "margin": -0.1197376327467608,
+          "validation_count": 13
+        },
+        {
+          "class_name": "ibis",
+          "recall": 0.08333333333333333,
+          "margin": -0.12610764011869122,
+          "validation_count": 12
+        },
+        {
+          "class_name": "joshua_tree",
+          "recall": 0.3,
+          "margin": -0.07871384933858781,
+          "validation_count": 10
+        },
+        {
+          "class_name": "kangaroo",
+          "recall": 0.25,
+          "margin": -0.06251209195225638,
+          "validation_count": 12
+        },
+        {
+          "class_name": "ketch",
+          "recall": 0.4117647058823529,
+          "margin": -0.06772558197073794,
+          "validation_count": 17
+        },
+        {
+          "class_name": "lamp",
+          "recall": 0.0,
+          "margin": -0.12623037622012712,
+          "validation_count": 10
+        },
+        {
+          "class_name": "laptop",
+          "recall": 0.4166666666666667,
+          "margin": -0.08117885424272275,
+          "validation_count": 12
+        },
+        {
+          "class_name": "llama",
+          "recall": 0.0,
+          "margin": -0.13302291874040698,
+          "validation_count": 11
+        },
+        {
+          "class_name": "lotus",
+          "recall": 0.7,
+          "margin": -0.08985701691957008,
+          "validation_count": 10
+        },
+        {
+          "class_name": "menorah",
+          "recall": 0.23076923076923078,
+          "margin": -0.09073176275841817,
+          "validation_count": 13
+        },
+        {
+          "class_name": "minaret",
+          "recall": 0.6363636363636364,
+          "margin": 0.1154313841758297,
+          "validation_count": 11
+        },
+        {
+          "class_name": "revolver",
+          "recall": 0.4166666666666667,
+          "margin": 0.04259869891878073,
+          "validation_count": 12
+        },
+        {
+          "class_name": "schooner",
+          "recall": 0.5,
+          "margin": -0.09747343255814779,
+          "validation_count": 10
+        },
+        {
+          "class_name": "scorpion",
+          "recall": 0.16666666666666666,
+          "margin": -0.07109207746416916,
+          "validation_count": 12
+        },
+        {
+          "class_name": "soccer_ball",
+          "recall": 0.3,
+          "margin": -0.0960393679455578,
+          "validation_count": 10
+        },
+        {
+          "class_name": "starfish",
+          "recall": 0.0,
+          "margin": -0.14598869120361582,
+          "validation_count": 12
+        },
+        {
+          "class_name": "stop_sign",
+          "recall": 0.3,
+          "margin": -0.010938766544543477,
+          "validation_count": 10
+        },
+        {
+          "class_name": "sunflower",
+          "recall": 0.25,
+          "margin": -0.07219664073292596,
+          "validation_count": 12
+        },
+        {
+          "class_name": "trilobite",
+          "recall": 0.5833333333333334,
+          "margin": 0.06181168061073681,
+          "validation_count": 12
+        },
+        {
+          "class_name": "umbrella",
+          "recall": 0.2727272727272727,
+          "margin": -0.07583934147962473,
+          "validation_count": 11
+        },
+        {
+          "class_name": "watch",
+          "recall": 0.4,
+          "margin": -0.12916674069302334,
+          "validation_count": 20
+        },
+        {
+          "class_name": "yin_yang",
+          "recall": 1.0,
+          "margin": 0.20246593682535236,
+          "validation_count": 10
+        }
+      ]
+    },
+    {
+      "classes": [
+        "Faces",
+        "Leopards",
+        "Motorbikes",
+        "airplanes",
+        "bonsai",
+        "butterfly",
+        "car_side",
+        "chair",
+        "chandelier",
+        "cougar_face",
+        "crab",
+        "crayfish",
+        "dalmatian",
+        "dolphin",
+        "dragonfly",
+        "electric_guitar",
+        "elephant",
+        "euphonium",
+        "ewer",
+        "ferry",
+        "flamingo",
+        "grand_piano",
+        "hawksbill",
+        "helicopter",
+        "ibis",
+        "joshua_tree",
+        "kangaroo",
+        "ketch",
+        "lamp",
+        "laptop",
+        "llama",
+        "lotus",
+        "menorah",
+        "minaret",
+        "revolver",
+        "schooner",
+        "scorpion",
+        "soccer_ball",
+        "starfish",
+        "stop_sign",
+        "sunflower",
+        "trilobite",
+        "umbrella",
+        "watch",
+        "yin_yang"
+      ],
+      "macro_recall": 0.3134590135622128,
+      "scores": [
+        {
+          "class_name": "Faces",
+          "recall": 0.65,
+          "margin": 0.039299386787354895,
+          "validation_count": 20
+        },
+        {
+          "class_name": "Leopards",
+          "recall": 0.85,
+          "margin": 0.1144235059624267,
+          "validation_count": 20
+        },
+        {
+          "class_name": "Motorbikes",
+          "recall": 0.95,
+          "margin": 0.19651948119133492,
+          "validation_count": 20
+        },
+        {
+          "class_name": "airplanes",
+          "recall": 0.65,
+          "margin": 0.11603815517363658,
+          "validation_count": 20
+        },
+        {
+          "class_name": "bonsai",
+          "recall": 0.42105263157894735,
+          "margin": -0.059821544090437447,
+          "validation_count": 19
+        },
+        {
+          "class_name": "butterfly",
+          "recall": 0.15384615384615385,
+          "margin": -0.11901959896120515,
+          "validation_count": 13
+        },
+        {
+          "class_name": "car_side",
+          "recall": 0.2222222222222222,
+          "margin": -0.07847347613505354,
+          "validation_count": 18
+        },
+        {
+          "class_name": "chair",
+          "recall": 0.3,
+          "margin": -0.10220751723885231,
+          "validation_count": 10
+        },
+        {
+          "class_name": "chandelier",
+          "recall": 0.0,
+          "margin": -0.14230649597341752,
+          "validation_count": 16
+        },
+        {
+          "class_name": "cougar_face",
+          "recall": 0.1,
+          "margin": -0.09420459065433552,
+          "validation_count": 10
+        },
+        {
+          "class_name": "crab",
+          "recall": 0.2,
+          "margin": -0.1063631478131872,
+          "validation_count": 10
+        },
+        {
+          "class_name": "crayfish",
+          "recall": 0.4,
+          "margin": -0.053743264449766716,
+          "validation_count": 10
+        },
+        {
+          "class_name": "dalmatian",
+          "recall": 0.0,
+          "margin": -0.12357752655936247,
+          "validation_count": 10
+        },
+        {
+          "class_name": "dolphin",
+          "recall": 0.0,
+          "margin": -0.1687263082032149,
+          "validation_count": 10
+        },
+        {
+          "class_name": "dragonfly",
+          "recall": 0.1,
+          "margin": -0.10635859337779507,
+          "validation_count": 10
+        },
+        {
+          "class_name": "electric_guitar",
+          "recall": 0.18181818181818182,
+          "margin": -0.08979408933632237,
+          "validation_count": 11
+        },
+        {
+          "class_name": "elephant",
+          "recall": 0.2,
+          "margin": -0.05120317843097562,
+          "validation_count": 10
+        },
+        {
+          "class_name": "euphonium",
+          "recall": 0.1,
+          "margin": -0.1275934761942369,
+          "validation_count": 10
+        },
+        {
+          "class_name": "ewer",
+          "recall": 0.0,
+          "margin": -0.18256620496277987,
+          "validation_count": 12
+        },
+        {
+          "class_name": "ferry",
+          "recall": 0.0,
+          "margin": -0.1071821058404554,
+          "validation_count": 10
+        },
+        {
+          "class_name": "flamingo",
+          "recall": 0.1,
+          "margin": -0.12916526973028944,
+          "validation_count": 10
+        },
+        {
+          "class_name": "grand_piano",
+          "recall": 0.8571428571428571,
+          "margin": 0.11726222058121981,
+          "validation_count": 14
+        },
+        {
+          "class_name": "hawksbill",
+          "recall": 0.06666666666666667,
+          "margin": -0.07551628394743733,
+          "validation_count": 15
+        },
+        {
+          "class_name": "helicopter",
+          "recall": 0.38461538461538464,
+          "margin": -0.11882404539831094,
+          "validation_count": 13
+        },
+        {
+          "class_name": "ibis",
+          "recall": 0.08333333333333333,
+          "margin": -0.12610764011869122,
+          "validation_count": 12
+        },
+        {
+          "class_name": "joshua_tree",
+          "recall": 0.3,
+          "margin": -0.07047747061899538,
+          "validation_count": 10
+        },
+        {
+          "class_name": "kangaroo",
+          "recall": 0.25,
+          "margin": -0.06251209195225638,
+          "validation_count": 12
+        },
+        {
+          "class_name": "ketch",
+          "recall": 0.4117647058823529,
+          "margin": -0.06700993135993373,
+          "validation_count": 17
+        },
+        {
+          "class_name": "lamp",
+          "recall": 0.0,
+          "margin": -0.12446348979658631,
+          "validation_count": 10
+        },
+        {
+          "class_name": "laptop",
+          "recall": 0.4166666666666667,
+          "margin": -0.07869405588084151,
+          "validation_count": 12
+        },
+        {
+          "class_name": "llama",
+          "recall": 0.0,
+          "margin": -0.13302291874040698,
+          "validation_count": 11
+        },
+        {
+          "class_name": "lotus",
+          "recall": 0.7,
+          "margin": -0.08985701691957008,
+          "validation_count": 10
+        },
+        {
+          "class_name": "menorah",
+          "recall": 0.23076923076923078,
+          "margin": -0.09073176275841817,
+          "validation_count": 13
+        },
+        {
+          "class_name": "minaret",
+          "recall": 0.6363636363636364,
+          "margin": 0.1154313841758297,
+          "validation_count": 11
+        },
+        {
+          "class_name": "revolver",
+          "recall": 0.4166666666666667,
+          "margin": 0.04259869891878073,
+          "validation_count": 12
+        },
+        {
+          "class_name": "schooner",
+          "recall": 0.5,
+          "margin": -0.09747343255814779,
+          "validation_count": 10
+        },
+        {
+          "class_name": "scorpion",
+          "recall": 0.16666666666666666,
+          "margin": -0.07109207746416916,
+          "validation_count": 12
+        },
+        {
+          "class_name": "soccer_ball",
+          "recall": 0.3,
+          "margin": -0.0960393679455578,
+          "validation_count": 10
+        },
+        {
+          "class_name": "starfish",
+          "recall": 0.0,
+          "margin": -0.14598869120361582,
+          "validation_count": 12
+        },
+        {
+          "class_name": "stop_sign",
+          "recall": 0.3,
+          "margin": -0.008157612029966954,
+          "validation_count": 10
+        },
+        {
+          "class_name": "sunflower",
+          "recall": 0.25,
+          "margin": -0.07219664073292596,
+          "validation_count": 12
+        },
+        {
+          "class_name": "trilobite",
+          "recall": 0.5833333333333334,
+          "margin": 0.06181168061073681,
+          "validation_count": 12
+        },
+        {
+          "class_name": "umbrella",
+          "recall": 0.2727272727272727,
+          "margin": -0.07583934147962473,
+          "validation_count": 11
+        },
+        {
+          "class_name": "watch",
+          "recall": 0.4,
+          "margin": -0.1283366434673589,
+          "validation_count": 20
+        },
+        {
+          "class_name": "yin_yang",
+          "recall": 1.0,
+          "margin": 0.20246593682535236,
+          "validation_count": 10
+        }
+      ]
+    },
+    {
+      "classes": [
+        "Faces",
+        "Leopards",
+        "Motorbikes",
+        "airplanes",
+        "bonsai",
+        "butterfly",
+        "car_side",
+        "chair",
+        "chandelier",
+        "cougar_face",
+        "crab",
+        "crayfish",
+        "dalmatian",
+        "dolphin",
+        "dragonfly",
+        "electric_guitar",
+        "elephant",
+        "euphonium",
+        "ferry",
+        "flamingo",
+        "grand_piano",
+        "hawksbill",
+        "helicopter",
+        "ibis",
+        "joshua_tree",
+        "kangaroo",
+        "ketch",
+        "lamp",
+        "laptop",
+        "llama",
+        "lotus",
+        "menorah",
+        "minaret",
+        "revolver",
+        "schooner",
+        "scorpion",
+        "soccer_ball",
+        "starfish",
+        "stop_sign",
+        "sunflower",
+        "trilobite",
+        "umbrella",
+        "watch",
+        "yin_yang"
+      ],
+      "macro_recall": 0.32058308205226305,
+      "scores": [
+        {
+          "class_name": "Faces",
+          "recall": 0.65,
+          "margin": 0.039299386787354895,
+          "validation_count": 20
+        },
+        {
+          "class_name": "Leopards",
+          "recall": 0.85,
+          "margin": 0.1144235059624267,
+          "validation_count": 20
+        },
+        {
+          "class_name": "Motorbikes",
+          "recall": 0.95,
+          "margin": 0.19651948119133492,
+          "validation_count": 20
+        },
+        {
+          "class_name": "airplanes",
+          "recall": 0.65,
+          "margin": 0.11603815517363658,
+          "validation_count": 20
+        },
+        {
+          "class_name": "bonsai",
+          "recall": 0.42105263157894735,
+          "margin": -0.059821544090437447,
+          "validation_count": 19
+        },
+        {
+          "class_name": "butterfly",
+          "recall": 0.15384615384615385,
+          "margin": -0.11901959896120515,
+          "validation_count": 13
+        },
+        {
+          "class_name": "car_side",
+          "recall": 0.2222222222222222,
+          "margin": -0.07847347613505354,
+          "validation_count": 18
+        },
+        {
+          "class_name": "chair",
+          "recall": 0.3,
+          "margin": -0.10220751723885231,
+          "validation_count": 10
+        },
+        {
+          "class_name": "chandelier",
+          "recall": 0.0,
+          "margin": -0.14230649597341752,
+          "validation_count": 16
+        },
+        {
+          "class_name": "cougar_face",
+          "recall": 0.1,
+          "margin": -0.09420459065433552,
+          "validation_count": 10
+        },
+        {
+          "class_name": "crab",
+          "recall": 0.2,
+          "margin": -0.1063631478131872,
+          "validation_count": 10
+        },
+        {
+          "class_name": "crayfish",
+          "recall": 0.4,
+          "margin": -0.053743264449766716,
+          "validation_count": 10
+        },
+        {
+          "class_name": "dalmatian",
+          "recall": 0.0,
+          "margin": -0.12357752655936247,
+          "validation_count": 10
+        },
+        {
+          "class_name": "dolphin",
+          "recall": 0.0,
+          "margin": -0.1687263082032149,
+          "validation_count": 10
+        },
+        {
+          "class_name": "dragonfly",
+          "recall": 0.1,
+          "margin": -0.10635859337779507,
+          "validation_count": 10
+        },
+        {
+          "class_name": "electric_guitar",
+          "recall": 0.18181818181818182,
+          "margin": -0.08979408933632237,
+          "validation_count": 11
+        },
+        {
+          "class_name": "elephant",
+          "recall": 0.2,
+          "margin": -0.05120317843097562,
+          "validation_count": 10
+        },
+        {
+          "class_name": "euphonium",
+          "recall": 0.1,
+          "margin": -0.1275934761942369,
+          "validation_count": 10
+        },
+        {
+          "class_name": "ferry",
+          "recall": 0.0,
+          "margin": -0.09996261222281864,
+          "validation_count": 10
+        },
+        {
+          "class_name": "flamingo",
+          "recall": 0.1,
+          "margin": -0.1277652126516881,
+          "validation_count": 10
+        },
+        {
+          "class_name": "grand_piano",
+          "recall": 0.8571428571428571,
+          "margin": 0.11726222058121981,
+          "validation_count": 14
+        },
+        {
+          "class_name": "hawksbill",
+          "recall": 0.06666666666666667,
+          "margin": -0.07551628394743733,
+          "validation_count": 15
+        },
+        {
+          "class_name": "helicopter",
+          "recall": 0.38461538461538464,
+          "margin": -0.11822748767005124,
+          "validation_count": 13
+        },
+        {
+          "class_name": "ibis",
+          "recall": 0.08333333333333333,
+          "margin": -0.12174524492957367,
+          "validation_count": 12
+        },
+        {
+          "class_name": "joshua_tree",
+          "recall": 0.3,
+          "margin": -0.07047747061899538,
+          "validation_count": 10
+        },
+        {
+          "class_name": "kangaroo",
+          "recall": 0.25,
+          "margin": -0.061124740805118254,
+          "validation_count": 12
+        },
+        {
+          "class_name": "ketch",
+          "recall": 0.4117647058823529,
+          "margin": -0.06700993135993373,
+          "validation_count": 17
+        },
+        {
+          "class_name": "lamp",
+          "recall": 0.0,
+          "margin": -0.12446348979658631,
+          "validation_count": 10
+        },
+        {
+          "class_name": "laptop",
+          "recall": 0.4166666666666667,
+          "margin": -0.07869405588084151,
+          "validation_count": 12
+        },
+        {
+          "class_name": "llama",
+          "recall": 0.0,
+          "margin": -0.13302291874040698,
+          "validation_count": 11
+        },
+        {
+          "class_name": "lotus",
+          "recall": 0.7,
+          "margin": -0.08985701691957008,
+          "validation_count": 10
+        },
+        {
+          "class_name": "menorah",
+          "recall": 0.23076923076923078,
+          "margin": -0.0903288007248921,
+          "validation_count": 13
+        },
+        {
+          "class_name": "minaret",
+          "recall": 0.6363636363636364,
+          "margin": 0.1154313841758297,
+          "validation_count": 11
+        },
+        {
+          "class_name": "revolver",
+          "recall": 0.4166666666666667,
+          "margin": 0.04259869891878073,
+          "validation_count": 12
+        },
+        {
+          "class_name": "schooner",
+          "recall": 0.5,
+          "margin": -0.09747343255814779,
+          "validation_count": 10
+        },
+        {
+          "class_name": "scorpion",
+          "recall": 0.16666666666666666,
+          "margin": -0.07109207746416916,
+          "validation_count": 12
+        },
+        {
+          "class_name": "soccer_ball",
+          "recall": 0.3,
+          "margin": -0.0931752627165223,
+          "validation_count": 10
+        },
+        {
+          "class_name": "starfish",
+          "recall": 0.0,
+          "margin": -0.14598869120361582,
+          "validation_count": 12
+        },
+        {
+          "class_name": "stop_sign",
+          "recall": 0.3,
+          "margin": -0.008157612029966954,
+          "validation_count": 10
+        },
+        {
+          "class_name": "sunflower",
+          "recall": 0.25,
+          "margin": -0.07219664073292596,
+          "validation_count": 12
+        },
+        {
+          "class_name": "trilobite",
+          "recall": 0.5833333333333334,
+          "margin": 0.06181168061073681,
+          "validation_count": 12
+        },
+        {
+          "class_name": "umbrella",
+          "recall": 0.2727272727272727,
+          "margin": -0.07583934147962473,
+          "validation_count": 11
+        },
+        {
+          "class_name": "watch",
+          "recall": 0.4,
+          "margin": -0.1283366434673589,
+          "validation_count": 20
+        },
+        {
+          "class_name": "yin_yang",
+          "recall": 1.0,
+          "margin": 0.20246593682535236,
+          "validation_count": 10
+        }
+      ]
+    },
+    {
+      "classes": [
+        "Faces",
+        "Leopards",
+        "Motorbikes",
+        "airplanes",
+        "bonsai",
+        "butterfly",
+        "car_side",
+        "chair",
+        "chandelier",
+        "cougar_face",
+        "crab",
+        "crayfish",
+        "dalmatian",
+        "dragonfly",
+        "electric_guitar",
+        "elephant",
+        "euphonium",
+        "ferry",
+        "flamingo",
+        "grand_piano",
+        "hawksbill",
+        "helicopter",
+        "ibis",
+        "joshua_tree",
+        "kangaroo",
+        "ketch",
+        "lamp",
+        "laptop",
+        "llama",
+        "lotus",
+        "menorah",
+        "minaret",
+        "revolver",
+        "schooner",
+        "scorpion",
+        "soccer_ball",
+        "starfish",
+        "stop_sign",
+        "sunflower",
+        "trilobite",
+        "umbrella",
+        "watch",
+        "yin_yang"
+      ],
+      "macro_recall": 0.3299764870612304,
+      "scores": [
+        {
+          "class_name": "Faces",
+          "recall": 0.65,
+          "margin": 0.03954264462940488,
+          "validation_count": 20
+        },
+        {
+          "class_name": "Leopards",
+          "recall": 0.85,
+          "margin": 0.1144235059624267,
+          "validation_count": 20
+        },
+        {
+          "class_name": "Motorbikes",
+          "recall": 0.95,
+          "margin": 0.19651948119133492,
+          "validation_count": 20
+        },
+        {
+          "class_name": "airplanes",
+          "recall": 0.65,
+          "margin": 0.11603815517363658,
+          "validation_count": 20
+        },
+        {
+          "class_name": "bonsai",
+          "recall": 0.42105263157894735,
+          "margin": -0.057521235799738966,
+          "validation_count": 19
+        },
+        {
+          "class_name": "butterfly",
+          "recall": 0.15384615384615385,
+          "margin": -0.11901959896120515,
+          "validation_count": 13
+        },
+        {
+          "class_name": "car_side",
+          "recall": 0.2222222222222222,
+          "margin": -0.07847347613505354,
+          "validation_count": 18
+        },
+        {
+          "class_name": "chair",
+          "recall": 0.3,
+          "margin": -0.10220751723885231,
+          "validation_count": 10
+        },
+        {
+          "class_name": "chandelier",
+          "recall": 0.0,
+          "margin": -0.14230649597341752,
+          "validation_count": 16
+        },
+        {
+          "class_name": "cougar_face",
+          "recall": 0.1,
+          "margin": -0.09420459065433552,
+          "validation_count": 10
+        },
+        {
+          "class_name": "crab",
+          "recall": 0.2,
+          "margin": -0.1063631478131872,
+          "validation_count": 10
+        },
+        {
+          "class_name": "crayfish",
+          "recall": 0.4,
+          "margin": -0.04970884003386181,
+          "validation_count": 10
+        },
+        {
+          "class_name": "dalmatian",
+          "recall": 0.0,
+          "margin": -0.12357752655936247,
+          "validation_count": 10
+        },
+        {
+          "class_name": "dragonfly",
+          "recall": 0.1,
+          "margin": -0.10635859337779507,
+          "validation_count": 10
+        },
+        {
+          "class_name": "electric_guitar",
+          "recall": 0.18181818181818182,
+          "margin": -0.08672252904427297,
+          "validation_count": 11
+        },
+        {
+          "class_name": "elephant",
+          "recall": 0.2,
+          "margin": -0.05120317843097562,
+          "validation_count": 10
+        },
+        {
+          "class_name": "euphonium",
+          "recall": 0.1,
+          "margin": -0.1275934761942369,
+          "validation_count": 10
+        },
+        {
+          "class_name": "ferry",
+          "recall": 0.0,
+          "margin": -0.09996261222281864,
+          "validation_count": 10
+        },
+        {
+          "class_name": "flamingo",
+          "recall": 0.1,
+          "margin": -0.1277652126516881,
+          "validation_count": 10
+        },
+        {
+          "class_name": "grand_piano",
+          "recall": 0.8571428571428571,
+          "margin": 0.11726222058121981,
+          "validation_count": 14
+        },
+        {
+          "class_name": "hawksbill",
+          "recall": 0.06666666666666667,
+          "margin": -0.07551628394743733,
+          "validation_count": 15
+        },
+        {
+          "class_name": "helicopter",
+          "recall": 0.38461538461538464,
+          "margin": -0.11822748767005124,
+          "validation_count": 13
+        },
+        {
+          "class_name": "ibis",
+          "recall": 0.08333333333333333,
+          "margin": -0.12174524492957367,
+          "validation_count": 12
+        },
+        {
+          "class_name": "joshua_tree",
+          "recall": 0.3,
+          "margin": -0.07047747061899538,
+          "validation_count": 10
+        },
+        {
+          "class_name": "kangaroo",
+          "recall": 0.25,
+          "margin": -0.061124740805118254,
+          "validation_count": 12
+        },
+        {
+          "class_name": "ketch",
+          "recall": 0.4117647058823529,
+          "margin": -0.06700993135993373,
+          "validation_count": 17
+        },
+        {
+          "class_name": "lamp",
+          "recall": 0.0,
+          "margin": -0.12446348979658631,
+          "validation_count": 10
+        },
+        {
+          "class_name": "laptop",
+          "recall": 0.4166666666666667,
+          "margin": -0.07854675783717831,
+          "validation_count": 12
+        },
+        {
+          "class_name": "llama",
+          "recall": 0.0,
+          "margin": -0.13302291874040698,
+          "validation_count": 11
+        },
+        {
+          "class_name": "lotus",
+          "recall": 0.7,
+          "margin": -0.08985701691957008,
+          "validation_count": 10
+        },
+        {
+          "class_name": "menorah",
+          "recall": 0.23076923076923078,
+          "margin": -0.0903288007248921,
+          "validation_count": 13
+        },
+        {
+          "class_name": "minaret",
+          "recall": 0.6363636363636364,
+          "margin": 0.1154313841758297,
+          "validation_count": 11
+        },
+        {
+          "class_name": "revolver",
+          "recall": 0.4166666666666667,
+          "margin": 0.04259869891878073,
+          "validation_count": 12
+        },
+        {
+          "class_name": "schooner",
+          "recall": 0.5,
+          "margin": -0.09747343255814779,
+          "validation_count": 10
+        },
+        {
+          "class_name": "scorpion",
+          "recall": 0.16666666666666666,
+          "margin": -0.07109207746416916,
+          "validation_count": 12
+        },
+        {
+          "class_name": "soccer_ball",
+          "recall": 0.3,
+          "margin": -0.0931752627165223,
+          "validation_count": 10
+        },
+        {
+          "class_name": "starfish",
+          "recall": 0.08333333333333333,
+          "margin": -0.14401182047795522,
+          "validation_count": 12
+        },
+        {
+          "class_name": "stop_sign",
+          "recall": 0.3,
+          "margin": -0.008157612029966954,
+          "validation_count": 10
+        },
+        {
+          "class_name": "sunflower",
+          "recall": 0.25,
+          "margin": -0.06981273432272278,
+          "validation_count": 12
+        },
+        {
+          "class_name": "trilobite",
+          "recall": 0.5833333333333334,
+          "margin": 0.07848873857784512,
+          "validation_count": 12
+        },
+        {
+          "class_name": "umbrella",
+          "recall": 0.2727272727272727,
+          "margin": -0.07583934147962473,
+          "validation_count": 11
+        },
+        {
+          "class_name": "watch",
+          "recall": 0.4,
+          "margin": -0.1283366434673589,
+          "validation_count": 20
+        },
+        {
+          "class_name": "yin_yang",
+          "recall": 1.0,
+          "margin": 0.20246593682535236,
+          "validation_count": 10
+        }
+      ]
+    },
+    {
+      "classes": [
+        "Faces",
+        "Leopards",
+        "Motorbikes",
+        "airplanes",
+        "bonsai",
+        "butterfly",
+        "car_side",
+        "chair",
+        "cougar_face",
+        "crab",
+        "crayfish",
+        "dalmatian",
+        "dragonfly",
+        "electric_guitar",
+        "elephant",
+        "euphonium",
+        "ferry",
+        "flamingo",
+        "grand_piano",
+        "hawksbill",
+        "helicopter",
+        "ibis",
+        "joshua_tree",
+        "kangaroo",
+        "ketch",
+        "lamp",
+        "laptop",
+        "llama",
+        "lotus",
+        "menorah",
+        "minaret",
+        "revolver",
+        "schooner",
+        "scorpion",
+        "soccer_ball",
+        "starfish",
+        "stop_sign",
+        "sunflower",
+        "trilobite",
+        "umbrella",
+        "watch",
+        "yin_yang"
+      ],
+      "macro_recall": 0.33783307008649777,
+      "scores": [
+        {
+          "class_name": "Faces",
+          "recall": 0.65,
+          "margin": 0.03954264462940488,
+          "validation_count": 20
+        },
+        {
+          "class_name": "Leopards",
+          "recall": 0.85,
+          "margin": 0.1144235059624267,
+          "validation_count": 20
+        },
+        {
+          "class_name": "Motorbikes",
+          "recall": 0.95,
+          "margin": 0.19651948119133492,
+          "validation_count": 20
+        },
+        {
+          "class_name": "airplanes",
+          "recall": 0.65,
+          "margin": 0.11603815517363658,
+          "validation_count": 20
+        },
+        {
+          "class_name": "bonsai",
+          "recall": 0.42105263157894735,
+          "margin": -0.057521235799738966,
+          "validation_count": 19
+        },
+        {
+          "class_name": "butterfly",
+          "recall": 0.15384615384615385,
+          "margin": -0.11901959896120515,
+          "validation_count": 13
+        },
+        {
+          "class_name": "car_side",
+          "recall": 0.2222222222222222,
+          "margin": -0.07847347613505354,
+          "validation_count": 18
+        },
+        {
+          "class_name": "chair",
+          "recall": 0.3,
+          "margin": -0.10220751723885231,
+          "validation_count": 10
+        },
+        {
+          "class_name": "cougar_face",
+          "recall": 0.1,
+          "margin": -0.09420459065433552,
+          "validation_count": 10
+        },
+        {
+          "class_name": "crab",
+          "recall": 0.2,
+          "margin": -0.1063631478131872,
+          "validation_count": 10
+        },
+        {
+          "class_name": "crayfish",
+          "recall": 0.4,
+          "margin": -0.04970884003386181,
+          "validation_count": 10
+        },
+        {
+          "class_name": "dalmatian",
+          "recall": 0.0,
+          "margin": -0.12357752655936247,
+          "validation_count": 10
+        },
+        {
+          "class_name": "dragonfly",
+          "recall": 0.1,
+          "margin": -0.10635859337779507,
+          "validation_count": 10
+        },
+        {
+          "class_name": "electric_guitar",
+          "recall": 0.18181818181818182,
+          "margin": -0.08483715707780458,
+          "validation_count": 11
+        },
+        {
+          "class_name": "elephant",
+          "recall": 0.2,
+          "margin": -0.05120317843097562,
+          "validation_count": 10
+        },
+        {
+          "class_name": "euphonium",
+          "recall": 0.1,
+          "margin": -0.1275934761942369,
+          "validation_count": 10
+        },
+        {
+          "class_name": "ferry",
+          "recall": 0.0,
+          "margin": -0.09890749901293563,
+          "validation_count": 10
+        },
+        {
+          "class_name": "flamingo",
+          "recall": 0.1,
+          "margin": -0.1277652126516881,
+          "validation_count": 10
+        },
+        {
+          "class_name": "grand_piano",
+          "recall": 0.8571428571428571,
+          "margin": 0.11726222058121981,
+          "validation_count": 14
+        },
+        {
+          "class_name": "hawksbill",
+          "recall": 0.06666666666666667,
+          "margin": -0.07551628394743733,
+          "validation_count": 15
+        },
+        {
+          "class_name": "helicopter",
+          "recall": 0.38461538461538464,
+          "margin": -0.11822748767005124,
+          "validation_count": 13
+        },
+        {
+          "class_name": "ibis",
+          "recall": 0.08333333333333333,
+          "margin": -0.12174524492957367,
+          "validation_count": 12
+        },
+        {
+          "class_name": "joshua_tree",
+          "recall": 0.3,
+          "margin": -0.06947715187160981,
+          "validation_count": 10
+        },
+        {
+          "class_name": "kangaroo",
+          "recall": 0.25,
+          "margin": -0.061124740805118254,
+          "validation_count": 12
+        },
+        {
+          "class_name": "ketch",
+          "recall": 0.4117647058823529,
+          "margin": -0.06700993135993373,
+          "validation_count": 17
+        },
+        {
+          "class_name": "lamp",
+          "recall": 0.0,
+          "margin": -0.12446348979658631,
+          "validation_count": 10
+        },
+        {
+          "class_name": "laptop",
+          "recall": 0.4166666666666667,
+          "margin": -0.07854675783717831,
+          "validation_count": 12
+        },
+        {
+          "class_name": "llama",
+          "recall": 0.0,
+          "margin": -0.13302291874040698,
+          "validation_count": 11
+        },
+        {
+          "class_name": "lotus",
+          "recall": 0.7,
+          "margin": -0.08985701691957008,
+          "validation_count": 10
+        },
+        {
+          "class_name": "menorah",
+          "recall": 0.23076923076923078,
+          "margin": -0.0903288007248921,
+          "validation_count": 13
+        },
+        {
+          "class_name": "minaret",
+          "recall": 0.6363636363636364,
+          "margin": 0.1154313841758297,
+          "validation_count": 11
+        },
+        {
+          "class_name": "revolver",
+          "recall": 0.4166666666666667,
+          "margin": 0.04259869891878073,
+          "validation_count": 12
+        },
+        {
+          "class_name": "schooner",
+          "recall": 0.5,
+          "margin": -0.09747343255814779,
+          "validation_count": 10
+        },
+        {
+          "class_name": "scorpion",
+          "recall": 0.16666666666666666,
+          "margin": -0.07109207746416916,
+          "validation_count": 12
+        },
+        {
+          "class_name": "soccer_ball",
+          "recall": 0.3,
+          "margin": -0.08887305442577376,
+          "validation_count": 10
+        },
+        {
+          "class_name": "starfish",
+          "recall": 0.08333333333333333,
+          "margin": -0.14401182047795522,
+          "validation_count": 12
+        },
+        {
+          "class_name": "stop_sign",
+          "recall": 0.3,
+          "margin": -0.008157612029966954,
+          "validation_count": 10
+        },
+        {
+          "class_name": "sunflower",
+          "recall": 0.25,
+          "margin": -0.06981273432272278,
+          "validation_count": 12
+        },
+        {
+          "class_name": "trilobite",
+          "recall": 0.5833333333333334,
+          "margin": 0.07848873857784512,
+          "validation_count": 12
+        },
+        {
+          "class_name": "umbrella",
+          "recall": 0.2727272727272727,
+          "margin": -0.07583934147962473,
+          "validation_count": 11
+        },
+        {
+          "class_name": "watch",
+          "recall": 0.4,
+          "margin": -0.1283366434673589,
+          "validation_count": 20
+        },
+        {
+          "class_name": "yin_yang",
+          "recall": 1.0,
+          "margin": 0.20246593682535236,
+          "validation_count": 10
+        }
+      ]
+    },
+    {
+      "classes": [
+        "Faces",
+        "Leopards",
+        "Motorbikes",
+        "airplanes",
+        "bonsai",
+        "butterfly",
+        "car_side",
+        "chair",
+        "cougar_face",
+        "crab",
+        "crayfish",
+        "dalmatian",
+        "dragonfly",
+        "electric_guitar",
+        "elephant",
+        "euphonium",
+        "ferry",
+        "flamingo",
+        "grand_piano",
+        "hawksbill",
+        "helicopter",
+        "ibis",
+        "joshua_tree",
+        "kangaroo",
+        "ketch",
+        "lamp",
+        "laptop",
+        "lotus",
+        "menorah",
+        "minaret",
+        "revolver",
+        "schooner",
+        "scorpion",
+        "soccer_ball",
+        "starfish",
+        "stop_sign",
+        "sunflower",
+        "trilobite",
+        "umbrella",
+        "watch",
+        "yin_yang"
+      ],
+      "macro_recall": 0.34607290106421723,
+      "scores": [
+        {
+          "class_name": "Faces",
+          "recall": 0.65,
+          "margin": 0.03954264462940488,
+          "validation_count": 20
+        },
+        {
+          "class_name": "Leopards",
+          "recall": 0.85,
+          "margin": 0.1144235059624267,
+          "validation_count": 20
+        },
+        {
+          "class_name": "Motorbikes",
+          "recall": 0.95,
+          "margin": 0.19651948119133492,
+          "validation_count": 20
+        },
+        {
+          "class_name": "airplanes",
+          "recall": 0.65,
+          "margin": 0.11603815517363658,
+          "validation_count": 20
+        },
+        {
+          "class_name": "bonsai",
+          "recall": 0.42105263157894735,
+          "margin": -0.057521235799738966,
+          "validation_count": 19
+        },
+        {
+          "class_name": "butterfly",
+          "recall": 0.15384615384615385,
+          "margin": -0.11901959896120515,
+          "validation_count": 13
+        },
+        {
+          "class_name": "car_side",
+          "recall": 0.2222222222222222,
+          "margin": -0.07785583782369028,
+          "validation_count": 18
+        },
+        {
+          "class_name": "chair",
+          "recall": 0.3,
+          "margin": -0.10220751723885231,
+          "validation_count": 10
+        },
+        {
+          "class_name": "cougar_face",
+          "recall": 0.1,
+          "margin": -0.09420459065433552,
+          "validation_count": 10
+        },
+        {
+          "class_name": "crab",
+          "recall": 0.2,
+          "margin": -0.1063631478131872,
+          "validation_count": 10
+        },
+        {
+          "class_name": "crayfish",
+          "recall": 0.4,
+          "margin": -0.04970884003386181,
+          "validation_count": 10
+        },
+        {
+          "class_name": "dalmatian",
+          "recall": 0.0,
+          "margin": -0.12357752655936247,
+          "validation_count": 10
+        },
+        {
+          "class_name": "dragonfly",
+          "recall": 0.1,
+          "margin": -0.10635859337779507,
+          "validation_count": 10
+        },
+        {
+          "class_name": "electric_guitar",
+          "recall": 0.18181818181818182,
+          "margin": -0.08483715707780458,
+          "validation_count": 11
+        },
+        {
+          "class_name": "elephant",
+          "recall": 0.2,
+          "margin": -0.05120317843097562,
+          "validation_count": 10
+        },
+        {
+          "class_name": "euphonium",
+          "recall": 0.1,
+          "margin": -0.1275934761942369,
+          "validation_count": 10
+        },
+        {
+          "class_name": "ferry",
+          "recall": 0.0,
+          "margin": -0.09890749901293563,
+          "validation_count": 10
+        },
+        {
+          "class_name": "flamingo",
+          "recall": 0.1,
+          "margin": -0.1277652126516881,
+          "validation_count": 10
+        },
+        {
+          "class_name": "grand_piano",
+          "recall": 0.8571428571428571,
+          "margin": 0.11726222058121981,
+          "validation_count": 14
+        },
+        {
+          "class_name": "hawksbill",
+          "recall": 0.06666666666666667,
+          "margin": -0.07551628394743733,
+          "validation_count": 15
+        },
+        {
+          "class_name": "helicopter",
+          "recall": 0.38461538461538464,
+          "margin": -0.11822748767005124,
+          "validation_count": 13
+        },
+        {
+          "class_name": "ibis",
+          "recall": 0.08333333333333333,
+          "margin": -0.12174524492957367,
+          "validation_count": 12
+        },
+        {
+          "class_name": "joshua_tree",
+          "recall": 0.3,
+          "margin": -0.06947715187160981,
+          "validation_count": 10
+        },
+        {
+          "class_name": "kangaroo",
+          "recall": 0.25,
+          "margin": -0.061124740805118254,
+          "validation_count": 12
+        },
+        {
+          "class_name": "ketch",
+          "recall": 0.4117647058823529,
+          "margin": -0.06700993135993373,
+          "validation_count": 17
+        },
+        {
+          "class_name": "lamp",
+          "recall": 0.0,
+          "margin": -0.12446348979658631,
+          "validation_count": 10
+        },
+        {
+          "class_name": "laptop",
+          "recall": 0.4166666666666667,
+          "margin": -0.07854675783717831,
+          "validation_count": 12
+        },
+        {
+          "class_name": "lotus",
+          "recall": 0.7,
+          "margin": -0.08985701691957008,
+          "validation_count": 10
+        },
+        {
+          "class_name": "menorah",
+          "recall": 0.23076923076923078,
+          "margin": -0.0903288007248921,
+          "validation_count": 13
+        },
+        {
+          "class_name": "minaret",
+          "recall": 0.6363636363636364,
+          "margin": 0.1154313841758297,
+          "validation_count": 11
+        },
+        {
+          "class_name": "revolver",
+          "recall": 0.4166666666666667,
+          "margin": 0.04323967331394004,
+          "validation_count": 12
+        },
+        {
+          "class_name": "schooner",
+          "recall": 0.5,
+          "margin": -0.09747343255814779,
+          "validation_count": 10
+        },
+        {
+          "class_name": "scorpion",
+          "recall": 0.16666666666666666,
+          "margin": -0.07109207746416916,
+          "validation_count": 12
+        },
+        {
+          "class_name": "soccer_ball",
+          "recall": 0.3,
+          "margin": -0.08887305442577376,
+          "validation_count": 10
+        },
+        {
+          "class_name": "starfish",
+          "recall": 0.08333333333333333,
+          "margin": -0.14401182047795522,
+          "validation_count": 12
+        },
+        {
+          "class_name": "stop_sign",
+          "recall": 0.3,
+          "margin": -0.008157612029966954,
+          "validation_count": 10
+        },
+        {
+          "class_name": "sunflower",
+          "recall": 0.25,
+          "margin": -0.06981273432272278,
+          "validation_count": 12
+        },
+        {
+          "class_name": "trilobite",
+          "recall": 0.5833333333333334,
+          "margin": 0.07848873857784512,
+          "validation_count": 12
+        },
+        {
+          "class_name": "umbrella",
+          "recall": 0.2727272727272727,
+          "margin": -0.07583934147962473,
+          "validation_count": 11
+        },
+        {
+          "class_name": "watch",
+          "recall": 0.4,
+          "margin": -0.1283366434673589,
+          "validation_count": 20
+        },
+        {
+          "class_name": "yin_yang",
+          "recall": 1.0,
+          "margin": 0.20246593682535236,
+          "validation_count": 10
+        }
+      ]
+    },
+    {
+      "classes": [
+        "Faces",
+        "Leopards",
+        "Motorbikes",
+        "airplanes",
+        "bonsai",
+        "butterfly",
+        "car_side",
+        "chair",
+        "cougar_face",
+        "crab",
+        "crayfish",
+        "dalmatian",
+        "dragonfly",
+        "electric_guitar",
+        "elephant",
+        "euphonium",
+        "ferry",
+        "flamingo",
+        "grand_piano",
+        "hawksbill",
+        "helicopter",
+        "ibis",
+        "joshua_tree",
+        "kangaroo",
+        "ketch",
+        "laptop",
+        "lotus",
+        "menorah",
+        "minaret",
+        "revolver",
+        "schooner",
+        "scorpion",
+        "soccer_ball",
+        "starfish",
+        "stop_sign",
+        "sunflower",
+        "trilobite",
+        "umbrella",
+        "watch",
+        "yin_yang"
+      ],
+      "macro_recall": 0.3547247235908227,
+      "scores": [
+        {
+          "class_name": "Faces",
+          "recall": 0.65,
+          "margin": 0.0395481517294219,
+          "validation_count": 20
+        },
+        {
+          "class_name": "Leopards",
+          "recall": 0.85,
+          "margin": 0.11502737599250068,
+          "validation_count": 20
+        },
+        {
+          "class_name": "Motorbikes",
+          "recall": 0.95,
+          "margin": 0.19651948119133492,
+          "validation_count": 20
+        },
+        {
+          "class_name": "airplanes",
+          "recall": 0.65,
+          "margin": 0.11603815517363658,
+          "validation_count": 20
+        },
+        {
+          "class_name": "bonsai",
+          "recall": 0.42105263157894735,
+          "margin": -0.057521235799738966,
+          "validation_count": 19
+        },
+        {
+          "class_name": "butterfly",
+          "recall": 0.15384615384615385,
+          "margin": -0.11901959896120515,
+          "validation_count": 13
+        },
+        {
+          "class_name": "car_side",
+          "recall": 0.2222222222222222,
+          "margin": -0.07785583782369028,
+          "validation_count": 18
+        },
+        {
+          "class_name": "chair",
+          "recall": 0.3,
+          "margin": -0.10220751723885231,
+          "validation_count": 10
+        },
+        {
+          "class_name": "cougar_face",
+          "recall": 0.1,
+          "margin": -0.09420459065433552,
+          "validation_count": 10
+        },
+        {
+          "class_name": "crab",
+          "recall": 0.2,
+          "margin": -0.1063631478131872,
+          "validation_count": 10
+        },
+        {
+          "class_name": "crayfish",
+          "recall": 0.4,
+          "margin": -0.04970884003386181,
+          "validation_count": 10
+        },
+        {
+          "class_name": "dalmatian",
+          "recall": 0.0,
+          "margin": -0.12357752655936247,
+          "validation_count": 10
+        },
+        {
+          "class_name": "dragonfly",
+          "recall": 0.1,
+          "margin": -0.10635859337779507,
+          "validation_count": 10
+        },
+        {
+          "class_name": "electric_guitar",
+          "recall": 0.18181818181818182,
+          "margin": -0.08483715707780458,
+          "validation_count": 11
+        },
+        {
+          "class_name": "elephant",
+          "recall": 0.2,
+          "margin": -0.05120317843097562,
+          "validation_count": 10
+        },
+        {
+          "class_name": "euphonium",
+          "recall": 0.1,
+          "margin": -0.12728200877018686,
+          "validation_count": 10
+        },
+        {
+          "class_name": "ferry",
+          "recall": 0.0,
+          "margin": -0.09890749901293563,
+          "validation_count": 10
+        },
+        {
+          "class_name": "flamingo",
+          "recall": 0.1,
+          "margin": -0.12766300915674292,
+          "validation_count": 10
+        },
+        {
+          "class_name": "grand_piano",
+          "recall": 0.8571428571428571,
+          "margin": 0.11726222058121981,
+          "validation_count": 14
+        },
+        {
+          "class_name": "hawksbill",
+          "recall": 0.06666666666666667,
+          "margin": -0.07551628394743733,
+          "validation_count": 15
+        },
+        {
+          "class_name": "helicopter",
+          "recall": 0.38461538461538464,
+          "margin": -0.11822748767005124,
+          "validation_count": 13
+        },
+        {
+          "class_name": "ibis",
+          "recall": 0.08333333333333333,
+          "margin": -0.12174524492957367,
+          "validation_count": 12
+        },
+        {
+          "class_name": "joshua_tree",
+          "recall": 0.3,
+          "margin": -0.06947715187160981,
+          "validation_count": 10
+        },
+        {
+          "class_name": "kangaroo",
+          "recall": 0.25,
+          "margin": -0.061124740805118254,
+          "validation_count": 12
+        },
+        {
+          "class_name": "ketch",
+          "recall": 0.4117647058823529,
+          "margin": -0.06700993135993373,
+          "validation_count": 17
+        },
+        {
+          "class_name": "laptop",
+          "recall": 0.4166666666666667,
+          "margin": -0.07854675783717831,
+          "validation_count": 12
+        },
+        {
+          "class_name": "lotus",
+          "recall": 0.7,
+          "margin": -0.08637085982439481,
+          "validation_count": 10
+        },
+        {
+          "class_name": "menorah",
+          "recall": 0.23076923076923078,
+          "margin": -0.0903288007248921,
+          "validation_count": 13
+        },
+        {
+          "class_name": "minaret",
+          "recall": 0.6363636363636364,
+          "margin": 0.1154313841758297,
+          "validation_count": 11
+        },
+        {
+          "class_name": "revolver",
+          "recall": 0.4166666666666667,
+          "margin": 0.04476312864374126,
+          "validation_count": 12
+        },
+        {
+          "class_name": "schooner",
+          "recall": 0.5,
+          "margin": -0.09747343255814779,
+          "validation_count": 10
+        },
+        {
+          "class_name": "scorpion",
+          "recall": 0.16666666666666666,
+          "margin": -0.07109207746416916,
+          "validation_count": 12
+        },
+        {
+          "class_name": "soccer_ball",
+          "recall": 0.3,
+          "margin": -0.08887305442577376,
+          "validation_count": 10
+        },
+        {
+          "class_name": "starfish",
+          "recall": 0.08333333333333333,
+          "margin": -0.14401182047795522,
+          "validation_count": 12
+        },
+        {
+          "class_name": "stop_sign",
+          "recall": 0.3,
+          "margin": -0.008157612029966954,
+          "validation_count": 10
+        },
+        {
+          "class_name": "sunflower",
+          "recall": 0.25,
+          "margin": -0.06981273432272278,
+          "validation_count": 12
+        },
+        {
+          "class_name": "trilobite",
+          "recall": 0.5833333333333334,
+          "margin": 0.07848873857784512,
+          "validation_count": 12
+        },
+        {
+          "class_name": "umbrella",
+          "recall": 0.2727272727272727,
+          "margin": -0.07583934147962473,
+          "validation_count": 11
+        },
+        {
+          "class_name": "watch",
+          "recall": 0.4,
+          "margin": -0.1283366434673589,
+          "validation_count": 20
+        },
+        {
+          "class_name": "yin_yang",
+          "recall": 1.0,
+          "margin": 0.20342184822837042,
+          "validation_count": 10
+        }
+      ]
+    },
+    {
+      "classes": [
+        "Faces",
+        "Leopards",
+        "Motorbikes",
+        "airplanes",
+        "bonsai",
+        "butterfly",
+        "car_side",
+        "chair",
+        "cougar_face",
+        "crab",
+        "crayfish",
+        "dragonfly",
+        "electric_guitar",
+        "elephant",
+        "euphonium",
+        "ferry",
+        "flamingo",
+        "grand_piano",
+        "hawksbill",
+        "helicopter",
+        "ibis",
+        "joshua_tree",
+        "kangaroo",
+        "ketch",
+        "laptop",
+        "lotus",
+        "menorah",
+        "minaret",
+        "revolver",
+        "schooner",
+        "scorpion",
+        "soccer_ball",
+        "starfish",
+        "stop_sign",
+        "sunflower",
+        "trilobite",
+        "umbrella",
+        "watch",
+        "yin_yang"
+      ],
+      "macro_recall": 0.3638202293239207,
+      "scores": [
+        {
+          "class_name": "Faces",
+          "recall": 0.65,
+          "margin": 0.03964806495554024,
+          "validation_count": 20
+        },
+        {
+          "class_name": "Leopards",
+          "recall": 0.85,
+          "margin": 0.11502737599250068,
+          "validation_count": 20
+        },
+        {
+          "class_name": "Motorbikes",
+          "recall": 0.95,
+          "margin": 0.19651948119133492,
+          "validation_count": 20
+        },
+        {
+          "class_name": "airplanes",
+          "recall": 0.65,
+          "margin": 0.11603815517363658,
+          "validation_count": 20
+        },
+        {
+          "class_name": "bonsai",
+          "recall": 0.42105263157894735,
+          "margin": -0.057521235799738966,
+          "validation_count": 19
+        },
+        {
+          "class_name": "butterfly",
+          "recall": 0.15384615384615385,
+          "margin": -0.11901959896120515,
+          "validation_count": 13
+        },
+        {
+          "class_name": "car_side",
+          "recall": 0.2222222222222222,
+          "margin": -0.07785583782369028,
+          "validation_count": 18
+        },
+        {
+          "class_name": "chair",
+          "recall": 0.3,
+          "margin": -0.10220751723885231,
+          "validation_count": 10
+        },
+        {
+          "class_name": "cougar_face",
+          "recall": 0.1,
+          "margin": -0.09420459065433552,
+          "validation_count": 10
+        },
+        {
+          "class_name": "crab",
+          "recall": 0.2,
+          "margin": -0.1063631478131872,
+          "validation_count": 10
+        },
+        {
+          "class_name": "crayfish",
+          "recall": 0.4,
+          "margin": -0.04970884003386181,
+          "validation_count": 10
+        },
+        {
+          "class_name": "dragonfly",
+          "recall": 0.1,
+          "margin": -0.10635859337779507,
+          "validation_count": 10
+        },
+        {
+          "class_name": "electric_guitar",
+          "recall": 0.18181818181818182,
+          "margin": -0.08483715707780458,
+          "validation_count": 11
+        },
+        {
+          "class_name": "elephant",
+          "recall": 0.2,
+          "margin": -0.05120317843097562,
+          "validation_count": 10
+        },
+        {
+          "class_name": "euphonium",
+          "recall": 0.1,
+          "margin": -0.12728200877018686,
+          "validation_count": 10
+        },
+        {
+          "class_name": "ferry",
+          "recall": 0.0,
+          "margin": -0.09890749901293563,
+          "validation_count": 10
+        },
+        {
+          "class_name": "flamingo",
+          "recall": 0.1,
+          "margin": -0.1258791473330398,
+          "validation_count": 10
+        },
+        {
+          "class_name": "grand_piano",
+          "recall": 0.8571428571428571,
+          "margin": 0.11726222058121981,
+          "validation_count": 14
+        },
+        {
+          "class_name": "hawksbill",
+          "recall": 0.06666666666666667,
+          "margin": -0.07551628394743733,
+          "validation_count": 15
+        },
+        {
+          "class_name": "helicopter",
+          "recall": 0.38461538461538464,
+          "margin": -0.11822748767005124,
+          "validation_count": 13
+        },
+        {
+          "class_name": "ibis",
+          "recall": 0.08333333333333333,
+          "margin": -0.12174524492957367,
+          "validation_count": 12
+        },
+        {
+          "class_name": "joshua_tree",
+          "recall": 0.3,
+          "margin": -0.06947715187160981,
+          "validation_count": 10
+        },
+        {
+          "class_name": "kangaroo",
+          "recall": 0.25,
+          "margin": -0.061124740805118254,
+          "validation_count": 12
+        },
+        {
+          "class_name": "ketch",
+          "recall": 0.4117647058823529,
+          "margin": -0.06700993135993373,
+          "validation_count": 17
+        },
+        {
+          "class_name": "laptop",
+          "recall": 0.4166666666666667,
+          "margin": -0.07562453811339151,
+          "validation_count": 12
+        },
+        {
+          "class_name": "lotus",
+          "recall": 0.7,
+          "margin": -0.08637085982439481,
+          "validation_count": 10
+        },
+        {
+          "class_name": "menorah",
+          "recall": 0.23076923076923078,
+          "margin": -0.0903288007248921,
+          "validation_count": 13
+        },
+        {
+          "class_name": "minaret",
+          "recall": 0.6363636363636364,
+          "margin": 0.1154313841758297,
+          "validation_count": 11
+        },
+        {
+          "class_name": "revolver",
+          "recall": 0.4166666666666667,
+          "margin": 0.04476312864374126,
+          "validation_count": 12
+        },
+        {
+          "class_name": "schooner",
+          "recall": 0.5,
+          "margin": -0.09747343255814779,
+          "validation_count": 10
+        },
+        {
+          "class_name": "scorpion",
+          "recall": 0.16666666666666666,
+          "margin": -0.07109207746416916,
+          "validation_count": 12
+        },
+        {
+          "class_name": "soccer_ball",
+          "recall": 0.3,
+          "margin": -0.08887305442577376,
+          "validation_count": 10
+        },
+        {
+          "class_name": "starfish",
+          "recall": 0.08333333333333333,
+          "margin": -0.14401182047795522,
+          "validation_count": 12
+        },
+        {
+          "class_name": "stop_sign",
+          "recall": 0.3,
+          "margin": -0.008157612029966954,
+          "validation_count": 10
+        },
+        {
+          "class_name": "sunflower",
+          "recall": 0.25,
+          "margin": -0.06981273432272278,
+          "validation_count": 12
+        },
+        {
+          "class_name": "trilobite",
+          "recall": 0.5833333333333334,
+          "margin": 0.07848873857784512,
+          "validation_count": 12
+        },
+        {
+          "class_name": "umbrella",
+          "recall": 0.2727272727272727,
+          "margin": -0.07583934147962473,
+          "validation_count": 11
+        },
+        {
+          "class_name": "watch",
+          "recall": 0.4,
+          "margin": -0.1283366434673589,
+          "validation_count": 20
+        },
+        {
+          "class_name": "yin_yang",
+          "recall": 1.0,
+          "margin": 0.20411775931731727,
+          "validation_count": 10
+        }
+      ]
+    },
+    {
+      "classes": [
+        "Faces",
+        "Leopards",
+        "Motorbikes",
+        "airplanes",
+        "bonsai",
+        "butterfly",
+        "car_side",
+        "chair",
+        "cougar_face",
+        "crab",
+        "crayfish",
+        "dragonfly",
+        "electric_guitar",
+        "elephant",
+        "euphonium",
+        "flamingo",
+        "grand_piano",
+        "hawksbill",
+        "helicopter",
+        "ibis",
+        "joshua_tree",
+        "kangaroo",
+        "ketch",
+        "laptop",
+        "lotus",
+        "menorah",
+        "minaret",
+        "revolver",
+        "schooner",
+        "scorpion",
+        "soccer_ball",
+        "starfish",
+        "stop_sign",
+        "sunflower",
+        "trilobite",
+        "umbrella",
+        "watch",
+        "yin_yang"
+      ],
+      "macro_recall": 0.3803517902263218,
+      "scores": [
+        {
+          "class_name": "Faces",
+          "recall": 0.65,
+          "margin": 0.03984482133035139,
+          "validation_count": 20
+        },
+        {
+          "class_name": "Leopards",
+          "recall": 0.85,
+          "margin": 0.11502737599250068,
+          "validation_count": 20
+        },
+        {
+          "class_name": "Motorbikes",
+          "recall": 0.95,
+          "margin": 0.19651948119133492,
+          "validation_count": 20
+        },
+        {
+          "class_name": "airplanes",
+          "recall": 0.65,
+          "margin": 0.11603815517363658,
+          "validation_count": 20
+        },
+        {
+          "class_name": "bonsai",
+          "recall": 0.42105263157894735,
+          "margin": -0.056305884084408515,
+          "validation_count": 19
+        },
+        {
+          "class_name": "butterfly",
+          "recall": 0.15384615384615385,
+          "margin": -0.11901959896120515,
+          "validation_count": 13
+        },
+        {
+          "class_name": "car_side",
+          "recall": 0.2777777777777778,
+          "margin": -0.056875740839773016,
+          "validation_count": 18
+        },
+        {
+          "class_name": "chair",
+          "recall": 0.3,
+          "margin": -0.10220751723885231,
+          "validation_count": 10
+        },
+        {
+          "class_name": "cougar_face",
+          "recall": 0.1,
+          "margin": -0.09420459065433552,
+          "validation_count": 10
+        },
+        {
+          "class_name": "crab",
+          "recall": 0.2,
+          "margin": -0.1063631478131872,
+          "validation_count": 10
+        },
+        {
+          "class_name": "crayfish",
+          "recall": 0.4,
+          "margin": -0.04970884003386181,
+          "validation_count": 10
+        },
+        {
+          "class_name": "dragonfly",
+          "recall": 0.1,
+          "margin": -0.10635859337779507,
+          "validation_count": 10
+        },
+        {
+          "class_name": "electric_guitar",
+          "recall": 0.18181818181818182,
+          "margin": -0.08483715707780458,
+          "validation_count": 11
+        },
+        {
+          "class_name": "elephant",
+          "recall": 0.2,
+          "margin": -0.05120317843097562,
+          "validation_count": 10
+        },
+        {
+          "class_name": "euphonium",
+          "recall": 0.1,
+          "margin": -0.12728200877018686,
+          "validation_count": 10
+        },
+        {
+          "class_name": "flamingo",
+          "recall": 0.1,
+          "margin": -0.12455995205065626,
+          "validation_count": 10
+        },
+        {
+          "class_name": "grand_piano",
+          "recall": 0.8571428571428571,
+          "margin": 0.11726222058121981,
+          "validation_count": 14
+        },
+        {
+          "class_name": "hawksbill",
+          "recall": 0.13333333333333333,
+          "margin": -0.07220929196552689,
+          "validation_count": 15
+        },
+        {
+          "class_name": "helicopter",
+          "recall": 0.38461538461538464,
+          "margin": -0.11822748767005124,
+          "validation_count": 13
+        },
+        {
+          "class_name": "ibis",
+          "recall": 0.16666666666666666,
+          "margin": -0.11537388850925849,
+          "validation_count": 12
+        },
+        {
+          "class_name": "joshua_tree",
+          "recall": 0.3,
+          "margin": -0.06947715187160981,
+          "validation_count": 10
+        },
+        {
+          "class_name": "kangaroo",
+          "recall": 0.25,
+          "margin": -0.061124740805118254,
+          "validation_count": 12
+        },
+        {
+          "class_name": "ketch",
+          "recall": 0.47058823529411764,
+          "margin": -0.06140002683911156,
+          "validation_count": 17
+        },
+        {
+          "class_name": "laptop",
+          "recall": 0.4166666666666667,
+          "margin": -0.07030706054557169,
+          "validation_count": 12
+        },
+        {
+          "class_name": "lotus",
+          "recall": 0.7,
+          "margin": -0.08510404964080101,
+          "validation_count": 10
+        },
+        {
+          "class_name": "menorah",
+          "recall": 0.23076923076923078,
+          "margin": -0.08703396323583304,
+          "validation_count": 13
+        },
+        {
+          "class_name": "minaret",
+          "recall": 0.6363636363636364,
+          "margin": 0.1154313841758297,
+          "validation_count": 11
+        },
+        {
+          "class_name": "revolver",
+          "recall": 0.4166666666666667,
+          "margin": 0.04476312864374126,
+          "validation_count": 12
+        },
+        {
+          "class_name": "schooner",
+          "recall": 0.5,
+          "margin": -0.09747343255814779,
+          "validation_count": 10
+        },
+        {
+          "class_name": "scorpion",
+          "recall": 0.16666666666666666,
+          "margin": -0.07109207746416916,
+          "validation_count": 12
+        },
+        {
+          "class_name": "soccer_ball",
+          "recall": 0.3,
+          "margin": -0.08887305442577376,
+          "validation_count": 10
+        },
+        {
+          "class_name": "starfish",
+          "recall": 0.08333333333333333,
+          "margin": -0.14401182047795522,
+          "validation_count": 12
+        },
+        {
+          "class_name": "stop_sign",
+          "recall": 0.3,
+          "margin": -0.008157612029966954,
+          "validation_count": 10
+        },
+        {
+          "class_name": "sunflower",
+          "recall": 0.25,
+          "margin": -0.06981273432272278,
+          "validation_count": 12
+        },
+        {
+          "class_name": "trilobite",
+          "recall": 0.5833333333333334,
+          "margin": 0.07848873857784512,
+          "validation_count": 12
+        },
+        {
+          "class_name": "umbrella",
+          "recall": 0.2727272727272727,
+          "margin": -0.07583934147962473,
+          "validation_count": 11
+        },
+        {
+          "class_name": "watch",
+          "recall": 0.4,
+          "margin": -0.1281714501970574,
+          "validation_count": 20
+        },
+        {
+          "class_name": "yin_yang",
+          "recall": 1.0,
+          "margin": 0.20411775931731727,
+          "validation_count": 10
+        }
+      ]
+    },
+    {
+      "classes": [
+        "Faces",
+        "Leopards",
+        "Motorbikes",
+        "airplanes",
+        "bonsai",
+        "butterfly",
+        "car_side",
+        "chair",
+        "cougar_face",
+        "crab",
+        "crayfish",
+        "dragonfly",
+        "electric_guitar",
+        "elephant",
+        "euphonium",
+        "flamingo",
+        "grand_piano",
+        "hawksbill",
+        "helicopter",
+        "ibis",
+        "joshua_tree",
+        "kangaroo",
+        "ketch",
+        "laptop",
+        "lotus",
+        "menorah",
+        "minaret",
+        "revolver",
+        "schooner",
+        "scorpion",
+        "soccer_ball",
+        "stop_sign",
+        "sunflower",
+        "trilobite",
+        "umbrella",
+        "watch",
+        "yin_yang"
+      ],
+      "macro_recall": 0.38837931608829446,
+      "scores": [
+        {
+          "class_name": "Faces",
+          "recall": 0.65,
+          "margin": 0.03984482133035139,
+          "validation_count": 20
+        },
+        {
+          "class_name": "Leopards",
+          "recall": 0.85,
+          "margin": 0.11502737599250068,
+          "validation_count": 20
+        },
+        {
+          "class_name": "Motorbikes",
+          "recall": 0.95,
+          "margin": 0.19651948119133492,
+          "validation_count": 20
+        },
+        {
+          "class_name": "airplanes",
+          "recall": 0.65,
+          "margin": 0.11603815517363658,
+          "validation_count": 20
+        },
+        {
+          "class_name": "bonsai",
+          "recall": 0.42105263157894735,
+          "margin": -0.056305884084408515,
+          "validation_count": 19
+        },
+        {
+          "class_name": "butterfly",
+          "recall": 0.15384615384615385,
+          "margin": -0.11901959896120515,
+          "validation_count": 13
+        },
+        {
+          "class_name": "car_side",
+          "recall": 0.2777777777777778,
+          "margin": -0.056875740839773016,
+          "validation_count": 18
+        },
+        {
+          "class_name": "chair",
+          "recall": 0.3,
+          "margin": -0.10220751723885231,
+          "validation_count": 10
+        },
+        {
+          "class_name": "cougar_face",
+          "recall": 0.1,
+          "margin": -0.09420459065433552,
+          "validation_count": 10
+        },
+        {
+          "class_name": "crab",
+          "recall": 0.2,
+          "margin": -0.1063631478131872,
+          "validation_count": 10
+        },
+        {
+          "class_name": "crayfish",
+          "recall": 0.4,
+          "margin": -0.04970884003386181,
+          "validation_count": 10
+        },
+        {
+          "class_name": "dragonfly",
+          "recall": 0.1,
+          "margin": -0.10635859337779507,
+          "validation_count": 10
+        },
+        {
+          "class_name": "electric_guitar",
+          "recall": 0.18181818181818182,
+          "margin": -0.08483715707780458,
+          "validation_count": 11
+        },
+        {
+          "class_name": "elephant",
+          "recall": 0.2,
+          "margin": -0.05120317843097562,
+          "validation_count": 10
+        },
+        {
+          "class_name": "euphonium",
+          "recall": 0.1,
+          "margin": -0.12728200877018686,
+          "validation_count": 10
+        },
+        {
+          "class_name": "flamingo",
+          "recall": 0.1,
+          "margin": -0.12455995205065626,
+          "validation_count": 10
+        },
+        {
+          "class_name": "grand_piano",
+          "recall": 0.8571428571428571,
+          "margin": 0.11726222058121981,
+          "validation_count": 14
+        },
+        {
+          "class_name": "hawksbill",
+          "recall": 0.13333333333333333,
+          "margin": -0.07220929196552689,
+          "validation_count": 15
+        },
+        {
+          "class_name": "helicopter",
+          "recall": 0.38461538461538464,
+          "margin": -0.11822748767005124,
+          "validation_count": 13
+        },
+        {
+          "class_name": "ibis",
+          "recall": 0.16666666666666666,
+          "margin": -0.11321855407751864,
+          "validation_count": 12
+        },
+        {
+          "class_name": "joshua_tree",
+          "recall": 0.3,
+          "margin": -0.06947715187160981,
+          "validation_count": 10
+        },
+        {
+          "class_name": "kangaroo",
+          "recall": 0.25,
+          "margin": -0.061124740805118254,
+          "validation_count": 12
+        },
+        {
+          "class_name": "ketch",
+          "recall": 0.47058823529411764,
+          "margin": -0.06140002683911156,
+          "validation_count": 17
+        },
+        {
+          "class_name": "laptop",
+          "recall": 0.4166666666666667,
+          "margin": -0.07030706054557169,
+          "validation_count": 12
+        },
+        {
+          "class_name": "lotus",
+          "recall": 0.7,
+          "margin": -0.08510404964080101,
+          "validation_count": 10
+        },
+        {
+          "class_name": "menorah",
+          "recall": 0.23076923076923078,
+          "margin": -0.08703396323583304,
+          "validation_count": 13
+        },
+        {
+          "class_name": "minaret",
+          "recall": 0.6363636363636364,
+          "margin": 0.1154313841758297,
+          "validation_count": 11
+        },
+        {
+          "class_name": "revolver",
+          "recall": 0.4166666666666667,
+          "margin": 0.04476312864374126,
+          "validation_count": 12
+        },
+        {
+          "class_name": "schooner",
+          "recall": 0.5,
+          "margin": -0.09747343255814779,
+          "validation_count": 10
+        },
+        {
+          "class_name": "scorpion",
+          "recall": 0.16666666666666666,
+          "margin": -0.06635308479483816,
+          "validation_count": 12
+        },
+        {
+          "class_name": "soccer_ball",
+          "recall": 0.3,
+          "margin": -0.08887305442577376,
+          "validation_count": 10
+        },
+        {
+          "class_name": "stop_sign",
+          "recall": 0.3,
+          "margin": -0.008157612029966954,
+          "validation_count": 10
+        },
+        {
+          "class_name": "sunflower",
+          "recall": 0.25,
+          "margin": -0.06981273432272278,
+          "validation_count": 12
+        },
+        {
+          "class_name": "trilobite",
+          "recall": 0.5833333333333334,
+          "margin": 0.07848873857784512,
+          "validation_count": 12
+        },
+        {
+          "class_name": "umbrella",
+          "recall": 0.2727272727272727,
+          "margin": -0.07583934147962473,
+          "validation_count": 11
+        },
+        {
+          "class_name": "watch",
+          "recall": 0.4,
+          "margin": -0.1281714501970574,
+          "validation_count": 20
+        },
+        {
+          "class_name": "yin_yang",
+          "recall": 1.0,
+          "margin": 0.20438431624343445,
+          "validation_count": 10
+        }
+      ]
+    },
+    {
+      "classes": [
+        "Faces",
+        "Leopards",
+        "Motorbikes",
+        "airplanes",
+        "bonsai",
+        "butterfly",
+        "car_side",
+        "chair",
+        "cougar_face",
+        "crab",
+        "crayfish",
+        "dragonfly",
+        "electric_guitar",
+        "elephant",
+        "flamingo",
+        "grand_piano",
+        "hawksbill",
+        "helicopter",
+        "ibis",
+        "joshua_tree",
+        "kangaroo",
+        "ketch",
+        "laptop",
+        "lotus",
+        "menorah",
+        "minaret",
+        "revolver",
+        "schooner",
+        "scorpion",
+        "soccer_ball",
+        "stop_sign",
+        "sunflower",
+        "trilobite",
+        "umbrella",
+        "watch",
+        "yin_yang"
+      ],
+      "macro_recall": 0.39916763042408043,
+      "scores": [
+        {
+          "class_name": "Faces",
+          "recall": 0.65,
+          "margin": 0.03984482133035139,
+          "validation_count": 20
+        },
+        {
+          "class_name": "Leopards",
+          "recall": 0.85,
+          "margin": 0.11502737599250068,
+          "validation_count": 20
+        },
+        {
+          "class_name": "Motorbikes",
+          "recall": 0.95,
+          "margin": 0.19651948119133492,
+          "validation_count": 20
+        },
+        {
+          "class_name": "airplanes",
+          "recall": 0.65,
+          "margin": 0.11603815517363658,
+          "validation_count": 20
+        },
+        {
+          "class_name": "bonsai",
+          "recall": 0.42105263157894735,
+          "margin": -0.056305884084408515,
+          "validation_count": 19
+        },
+        {
+          "class_name": "butterfly",
+          "recall": 0.15384615384615385,
+          "margin": -0.11826359695159508,
+          "validation_count": 13
+        },
+        {
+          "class_name": "car_side",
+          "recall": 0.2777777777777778,
+          "margin": -0.056875740839773016,
+          "validation_count": 18
+        },
+        {
+          "class_name": "chair",
+          "recall": 0.3,
+          "margin": -0.10220751723885231,
+          "validation_count": 10
+        },
+        {
+          "class_name": "cougar_face",
+          "recall": 0.1,
+          "margin": -0.09218952774473277,
+          "validation_count": 10
+        },
+        {
+          "class_name": "crab",
+          "recall": 0.3,
+          "margin": -0.10362215613719528,
+          "validation_count": 10
+        },
+        {
+          "class_name": "crayfish",
+          "recall": 0.4,
+          "margin": -0.04970884003386181,
+          "validation_count": 10
+        },
+        {
+          "class_name": "dragonfly",
+          "recall": 0.1,
+          "margin": -0.10635859337779507,
+          "validation_count": 10
+        },
+        {
+          "class_name": "electric_guitar",
+          "recall": 0.18181818181818182,
+          "margin": -0.08483715707780458,
+          "validation_count": 11
+        },
+        {
+          "class_name": "elephant",
+          "recall": 0.2,
+          "margin": -0.05120317843097562,
+          "validation_count": 10
+        },
+        {
+          "class_name": "flamingo",
+          "recall": 0.1,
+          "margin": -0.12455995205065626,
+          "validation_count": 10
+        },
+        {
+          "class_name": "grand_piano",
+          "recall": 0.8571428571428571,
+          "margin": 0.11726222058121981,
+          "validation_count": 14
+        },
+        {
+          "class_name": "hawksbill",
+          "recall": 0.13333333333333333,
+          "margin": -0.07220929196552689,
+          "validation_count": 15
+        },
+        {
+          "class_name": "helicopter",
+          "recall": 0.38461538461538464,
+          "margin": -0.11707055703340992,
+          "validation_count": 13
+        },
+        {
+          "class_name": "ibis",
+          "recall": 0.16666666666666666,
+          "margin": -0.11321855407751864,
+          "validation_count": 12
+        },
+        {
+          "class_name": "joshua_tree",
+          "recall": 0.3,
+          "margin": -0.06947715187160981,
+          "validation_count": 10
+        },
+        {
+          "class_name": "kangaroo",
+          "recall": 0.25,
+          "margin": -0.061124740805118254,
+          "validation_count": 12
+        },
+        {
+          "class_name": "ketch",
+          "recall": 0.47058823529411764,
+          "margin": -0.06140002683911156,
+          "validation_count": 17
+        },
+        {
+          "class_name": "laptop",
+          "recall": 0.4166666666666667,
+          "margin": -0.07030706054557169,
+          "validation_count": 12
+        },
+        {
+          "class_name": "lotus",
+          "recall": 0.7,
+          "margin": -0.08510404964080101,
+          "validation_count": 10
+        },
+        {
+          "class_name": "menorah",
+          "recall": 0.23076923076923078,
+          "margin": -0.08703396323583304,
+          "validation_count": 13
+        },
+        {
+          "class_name": "minaret",
+          "recall": 0.6363636363636364,
+          "margin": 0.1154313841758297,
+          "validation_count": 11
+        },
+        {
+          "class_name": "revolver",
+          "recall": 0.4166666666666667,
+          "margin": 0.04596031360100869,
+          "validation_count": 12
+        },
+        {
+          "class_name": "schooner",
+          "recall": 0.5,
+          "margin": -0.09747343255814779,
+          "validation_count": 10
+        },
+        {
+          "class_name": "scorpion",
+          "recall": 0.16666666666666666,
+          "margin": -0.06635308479483816,
+          "validation_count": 12
+        },
+        {
+          "class_name": "soccer_ball",
+          "recall": 0.3,
+          "margin": -0.08837413522789542,
+          "validation_count": 10
+        },
+        {
+          "class_name": "stop_sign",
+          "recall": 0.3,
+          "margin": -0.008157612029966954,
+          "validation_count": 10
+        },
+        {
+          "class_name": "sunflower",
+          "recall": 0.25,
+          "margin": -0.06981273432272278,
+          "validation_count": 12
+        },
+        {
+          "class_name": "trilobite",
+          "recall": 0.5833333333333334,
+          "margin": 0.07848873857784512,
+          "validation_count": 12
+        },
+        {
+          "class_name": "umbrella",
+          "recall": 0.2727272727272727,
+          "margin": -0.07583934147962473,
+          "validation_count": 11
+        },
+        {
+          "class_name": "watch",
+          "recall": 0.4,
+          "margin": -0.1281714501970574,
+          "validation_count": 20
+        },
+        {
+          "class_name": "yin_yang",
+          "recall": 1.0,
+          "margin": 0.20438431624343445,
+          "validation_count": 10
+        }
+      ]
+    },
+    {
+      "classes": [
+        "Faces",
+        "Leopards",
+        "Motorbikes",
+        "airplanes",
+        "bonsai",
+        "butterfly",
+        "car_side",
+        "chair",
+        "cougar_face",
+        "crab",
+        "crayfish",
+        "dragonfly",
+        "electric_guitar",
+        "elephant",
+        "grand_piano",
+        "hawksbill",
+        "helicopter",
+        "ibis",
+        "joshua_tree",
+        "kangaroo",
+        "ketch",
+        "laptop",
+        "lotus",
+        "menorah",
+        "minaret",
+        "revolver",
+        "schooner",
+        "scorpion",
+        "soccer_ball",
+        "stop_sign",
+        "sunflower",
+        "trilobite",
+        "umbrella",
+        "watch",
+        "yin_yang"
+      ],
+      "macro_recall": 0.40962003891238746,
+      "scores": [
+        {
+          "class_name": "Faces",
+          "recall": 0.65,
+          "margin": 0.03984482133035139,
+          "validation_count": 20
+        },
+        {
+          "class_name": "Leopards",
+          "recall": 0.85,
+          "margin": 0.11504844874186029,
+          "validation_count": 20
+        },
+        {
+          "class_name": "Motorbikes",
+          "recall": 0.95,
+          "margin": 0.19651948119133492,
+          "validation_count": 20
+        },
+        {
+          "class_name": "airplanes",
+          "recall": 0.65,
+          "margin": 0.11634935815960039,
+          "validation_count": 20
+        },
+        {
+          "class_name": "bonsai",
+          "recall": 0.42105263157894735,
+          "margin": -0.056305884084408515,
+          "validation_count": 19
+        },
+        {
+          "class_name": "butterfly",
+          "recall": 0.15384615384615385,
+          "margin": -0.11756282825965067,
+          "validation_count": 13
+        },
+        {
+          "class_name": "car_side",
+          "recall": 0.2777777777777778,
+          "margin": -0.05644184407873539,
+          "validation_count": 18
+        },
+        {
+          "class_name": "chair",
+          "recall": 0.3,
+          "margin": -0.10220751723885231,
+          "validation_count": 10
+        },
+        {
+          "class_name": "cougar_face",
+          "recall": 0.1,
+          "margin": -0.09218952774473277,
+          "validation_count": 10
+        },
+        {
+          "class_name": "crab",
+          "recall": 0.3,
+          "margin": -0.10362215613719528,
+          "validation_count": 10
+        },
+        {
+          "class_name": "crayfish",
+          "recall": 0.4,
+          "margin": -0.04970884003386181,
+          "validation_count": 10
+        },
+        {
+          "class_name": "dragonfly",
+          "recall": 0.1,
+          "margin": -0.10635859337779507,
+          "validation_count": 10
+        },
+        {
+          "class_name": "electric_guitar",
+          "recall": 0.18181818181818182,
+          "margin": -0.0825221557705359,
+          "validation_count": 11
+        },
+        {
+          "class_name": "elephant",
+          "recall": 0.2,
+          "margin": -0.05120317843097562,
+          "validation_count": 10
+        },
+        {
+          "class_name": "grand_piano",
+          "recall": 0.8571428571428571,
+          "margin": 0.11726222058121981,
+          "validation_count": 14
+        },
+        {
+          "class_name": "hawksbill",
+          "recall": 0.2,
+          "margin": -0.07125784860904814,
+          "validation_count": 15
+        },
+        {
+          "class_name": "helicopter",
+          "recall": 0.38461538461538464,
+          "margin": -0.11707055703340992,
+          "validation_count": 13
+        },
+        {
+          "class_name": "ibis",
+          "recall": 0.16666666666666666,
+          "margin": -0.11024334958036282,
+          "validation_count": 12
+        },
+        {
+          "class_name": "joshua_tree",
+          "recall": 0.3,
+          "margin": -0.06947715187160981,
+          "validation_count": 10
+        },
+        {
+          "class_name": "kangaroo",
+          "recall": 0.25,
+          "margin": -0.060594394969220304,
+          "validation_count": 12
+        },
+        {
+          "class_name": "ketch",
+          "recall": 0.47058823529411764,
+          "margin": -0.06140002683911156,
+          "validation_count": 17
+        },
+        {
+          "class_name": "laptop",
+          "recall": 0.4166666666666667,
+          "margin": -0.07030706054557169,
+          "validation_count": 12
+        },
+        {
+          "class_name": "lotus",
+          "recall": 0.7,
+          "margin": -0.08510404964080101,
+          "validation_count": 10
+        },
+        {
+          "class_name": "menorah",
+          "recall": 0.23076923076923078,
+          "margin": -0.08703396323583304,
+          "validation_count": 13
+        },
+        {
+          "class_name": "minaret",
+          "recall": 0.6363636363636364,
+          "margin": 0.1154313841758297,
+          "validation_count": 11
+        },
+        {
+          "class_name": "revolver",
+          "recall": 0.4166666666666667,
+          "margin": 0.04635831234910242,
+          "validation_count": 12
+        },
+        {
+          "class_name": "schooner",
+          "recall": 0.5,
+          "margin": -0.09747343255814779,
+          "validation_count": 10
+        },
+        {
+          "class_name": "scorpion",
+          "recall": 0.16666666666666666,
+          "margin": -0.06635308479483816,
+          "validation_count": 12
+        },
+        {
+          "class_name": "soccer_ball",
+          "recall": 0.3,
+          "margin": -0.08837413522789542,
+          "validation_count": 10
+        },
+        {
+          "class_name": "stop_sign",
+          "recall": 0.3,
+          "margin": -0.008157612029966954,
+          "validation_count": 10
+        },
+        {
+          "class_name": "sunflower",
+          "recall": 0.25,
+          "margin": -0.06621306395041648,
+          "validation_count": 12
+        },
+        {
+          "class_name": "trilobite",
+          "recall": 0.5833333333333334,
+          "margin": 0.07848873857784512,
+          "validation_count": 12
+        },
+        {
+          "class_name": "umbrella",
+          "recall": 0.2727272727272727,
+          "margin": -0.07583934147962473,
+          "validation_count": 11
+        },
+        {
+          "class_name": "watch",
+          "recall": 0.4,
+          "margin": -0.1281714501970574,
+          "validation_count": 20
+        },
+        {
+          "class_name": "yin_yang",
+          "recall": 1.0,
+          "margin": 0.20438431624343445,
+          "validation_count": 10
+        }
+      ]
+    },
+    {
+      "classes": [
+        "Faces",
+        "Leopards",
+        "Motorbikes",
+        "airplanes",
+        "bonsai",
+        "butterfly",
+        "car_side",
+        "chair",
+        "cougar_face",
+        "crab",
+        "crayfish",
+        "electric_guitar",
+        "elephant",
+        "grand_piano",
+        "hawksbill",
+        "helicopter",
+        "ibis",
+        "joshua_tree",
+        "kangaroo",
+        "ketch",
+        "laptop",
+        "lotus",
+        "menorah",
+        "minaret",
+        "revolver",
+        "schooner",
+        "scorpion",
+        "soccer_ball",
+        "stop_sign",
+        "sunflower",
+        "trilobite",
+        "umbrella",
+        "watch",
+        "yin_yang"
+      ],
+      "macro_recall": 0.42019709888039886,
+      "scores": [
+        {
+          "class_name": "Faces",
+          "recall": 0.65,
+          "margin": 0.03984482133035139,
+          "validation_count": 20
+        },
+        {
+          "class_name": "Leopards",
+          "recall": 0.9,
+          "margin": 0.1201636584765811,
+          "validation_count": 20
+        },
+        {
+          "class_name": "Motorbikes",
+          "recall": 0.95,
+          "margin": 0.19651948119133492,
+          "validation_count": 20
+        },
+        {
+          "class_name": "airplanes",
+          "recall": 0.65,
+          "margin": 0.11634935815960039,
+          "validation_count": 20
+        },
+        {
+          "class_name": "bonsai",
+          "recall": 0.42105263157894735,
+          "margin": -0.05493403681402819,
+          "validation_count": 19
+        },
+        {
+          "class_name": "butterfly",
+          "recall": 0.15384615384615385,
+          "margin": -0.11756282825965067,
+          "validation_count": 13
+        },
+        {
+          "class_name": "car_side",
+          "recall": 0.2777777777777778,
+          "margin": -0.05644184407873539,
+          "validation_count": 18
+        },
+        {
+          "class_name": "chair",
+          "recall": 0.3,
+          "margin": -0.10220751723885231,
+          "validation_count": 10
+        },
+        {
+          "class_name": "cougar_face",
+          "recall": 0.1,
+          "margin": -0.09218952774473277,
+          "validation_count": 10
+        },
+        {
+          "class_name": "crab",
+          "recall": 0.3,
+          "margin": -0.10362215613719528,
+          "validation_count": 10
+        },
+        {
+          "class_name": "crayfish",
+          "recall": 0.4,
+          "margin": -0.04908156806825413,
+          "validation_count": 10
+        },
+        {
+          "class_name": "electric_guitar",
+          "recall": 0.18181818181818182,
+          "margin": -0.08124068225040698,
+          "validation_count": 11
+        },
+        {
+          "class_name": "elephant",
+          "recall": 0.2,
+          "margin": -0.05120317843097562,
+          "validation_count": 10
+        },
+        {
+          "class_name": "grand_piano",
+          "recall": 0.8571428571428571,
+          "margin": 0.11726222058121981,
+          "validation_count": 14
+        },
+        {
+          "class_name": "hawksbill",
+          "recall": 0.2,
+          "margin": -0.07125784860904814,
+          "validation_count": 15
+        },
+        {
+          "class_name": "helicopter",
+          "recall": 0.38461538461538464,
+          "margin": -0.1156016632381937,
+          "validation_count": 13
+        },
+        {
+          "class_name": "ibis",
+          "recall": 0.16666666666666666,
+          "margin": -0.11024334958036282,
+          "validation_count": 12
+        },
+        {
+          "class_name": "joshua_tree",
+          "recall": 0.3,
+          "margin": -0.06947715187160981,
+          "validation_count": 10
+        },
+        {
+          "class_name": "kangaroo",
+          "recall": 0.25,
+          "margin": -0.058169811989339494,
+          "validation_count": 12
+        },
+        {
+          "class_name": "ketch",
+          "recall": 0.47058823529411764,
+          "margin": -0.06140002683911156,
+          "validation_count": 17
+        },
+        {
+          "class_name": "laptop",
+          "recall": 0.4166666666666667,
+          "margin": -0.07030706054557169,
+          "validation_count": 12
+        },
+        {
+          "class_name": "lotus",
+          "recall": 0.7,
+          "margin": -0.08510404964080101,
+          "validation_count": 10
+        },
+        {
+          "class_name": "menorah",
+          "recall": 0.23076923076923078,
+          "margin": -0.08703396323583304,
+          "validation_count": 13
+        },
+        {
+          "class_name": "minaret",
+          "recall": 0.6363636363636364,
+          "margin": 0.1154313841758297,
+          "validation_count": 11
+        },
+        {
+          "class_name": "revolver",
+          "recall": 0.4166666666666667,
+          "margin": 0.04635831234910242,
+          "validation_count": 12
+        },
+        {
+          "class_name": "schooner",
+          "recall": 0.5,
+          "margin": -0.09747343255814779,
+          "validation_count": 10
+        },
+        {
+          "class_name": "scorpion",
+          "recall": 0.16666666666666666,
+          "margin": -0.06635308479483816,
+          "validation_count": 12
+        },
+        {
+          "class_name": "soccer_ball",
+          "recall": 0.3,
+          "margin": -0.08837413522789542,
+          "validation_count": 10
+        },
+        {
+          "class_name": "stop_sign",
+          "recall": 0.3,
+          "margin": -0.008157612029966954,
+          "validation_count": 10
+        },
+        {
+          "class_name": "sunflower",
+          "recall": 0.25,
+          "margin": -0.0659471830162262,
+          "validation_count": 12
+        },
+        {
+          "class_name": "trilobite",
+          "recall": 0.5833333333333334,
+          "margin": 0.08398191874156459,
+          "validation_count": 12
+        },
+        {
+          "class_name": "umbrella",
+          "recall": 0.2727272727272727,
+          "margin": -0.07583934147962473,
+          "validation_count": 11
+        },
+        {
+          "class_name": "watch",
+          "recall": 0.4,
+          "margin": -0.1281714501970574,
+          "validation_count": 20
+        },
+        {
+          "class_name": "yin_yang",
+          "recall": 1.0,
+          "margin": 0.20438431624343445,
+          "validation_count": 10
+        }
+      ]
+    },
+    {
+      "classes": [
+        "Faces",
+        "Leopards",
+        "Motorbikes",
+        "airplanes",
+        "bonsai",
+        "butterfly",
+        "car_side",
+        "chair",
+        "crab",
+        "crayfish",
+        "electric_guitar",
+        "elephant",
+        "grand_piano",
+        "hawksbill",
+        "helicopter",
+        "ibis",
+        "joshua_tree",
+        "kangaroo",
+        "ketch",
+        "laptop",
+        "lotus",
+        "menorah",
+        "minaret",
+        "revolver",
+        "schooner",
+        "scorpion",
+        "soccer_ball",
+        "stop_sign",
+        "sunflower",
+        "trilobite",
+        "umbrella",
+        "watch",
+        "yin_yang"
+      ],
+      "macro_recall": 0.4347562961269688,
+      "scores": [
+        {
+          "class_name": "Faces",
+          "recall": 0.65,
+          "margin": 0.04069979074433758,
+          "validation_count": 20
+        },
+        {
+          "class_name": "Leopards",
+          "recall": 0.9,
+          "margin": 0.1201636584765811,
+          "validation_count": 20
+        },
+        {
+          "class_name": "Motorbikes",
+          "recall": 0.95,
+          "margin": 0.19651948119133492,
+          "validation_count": 20
+        },
+        {
+          "class_name": "airplanes",
+          "recall": 0.65,
+          "margin": 0.11634935815960039,
+          "validation_count": 20
+        },
+        {
+          "class_name": "bonsai",
+          "recall": 0.42105263157894735,
+          "margin": -0.05493403681402819,
+          "validation_count": 19
+        },
+        {
+          "class_name": "butterfly",
+          "recall": 0.23076923076923078,
+          "margin": -0.11671933661929909,
+          "validation_count": 13
+        },
+        {
+          "class_name": "car_side",
+          "recall": 0.2777777777777778,
+          "margin": -0.05644184407873539,
+          "validation_count": 18
+        },
+        {
+          "class_name": "chair",
+          "recall": 0.3,
+          "margin": -0.10220751723885231,
+          "validation_count": 10
+        },
+        {
+          "class_name": "crab",
+          "recall": 0.3,
+          "margin": -0.10362215613719528,
+          "validation_count": 10
+        },
+        {
+          "class_name": "crayfish",
+          "recall": 0.4,
+          "margin": -0.04908156806825413,
+          "validation_count": 10
+        },
+        {
+          "class_name": "electric_guitar",
+          "recall": 0.18181818181818182,
+          "margin": -0.07994668714301417,
+          "validation_count": 11
+        },
+        {
+          "class_name": "elephant",
+          "recall": 0.2,
+          "margin": -0.05120317843097562,
+          "validation_count": 10
+        },
+        {
+          "class_name": "grand_piano",
+          "recall": 0.8571428571428571,
+          "margin": 0.11726222058121981,
+          "validation_count": 14
+        },
+        {
+          "class_name": "hawksbill",
+          "recall": 0.2,
+          "margin": -0.07125784860904814,
+          "validation_count": 15
+        },
+        {
+          "class_name": "helicopter",
+          "recall": 0.38461538461538464,
+          "margin": -0.114843854987908,
+          "validation_count": 13
+        },
+        {
+          "class_name": "ibis",
+          "recall": 0.16666666666666666,
+          "margin": -0.11024334958036282,
+          "validation_count": 12
+        },
+        {
+          "class_name": "joshua_tree",
+          "recall": 0.3,
+          "margin": -0.06947715187160981,
+          "validation_count": 10
+        },
+        {
+          "class_name": "kangaroo",
+          "recall": 0.3333333333333333,
+          "margin": -0.05189807765848767,
+          "validation_count": 12
+        },
+        {
+          "class_name": "ketch",
+          "recall": 0.47058823529411764,
+          "margin": -0.06140002683911156,
+          "validation_count": 17
+        },
+        {
+          "class_name": "laptop",
+          "recall": 0.4166666666666667,
+          "margin": -0.07030706054557169,
+          "validation_count": 12
+        },
+        {
+          "class_name": "lotus",
+          "recall": 0.7,
+          "margin": -0.08510404964080101,
+          "validation_count": 10
+        },
+        {
+          "class_name": "menorah",
+          "recall": 0.23076923076923078,
+          "margin": -0.08703396323583304,
+          "validation_count": 13
+        },
+        {
+          "class_name": "minaret",
+          "recall": 0.6363636363636364,
+          "margin": 0.1154313841758297,
+          "validation_count": 11
+        },
+        {
+          "class_name": "revolver",
+          "recall": 0.4166666666666667,
+          "margin": 0.059897119013994436,
+          "validation_count": 12
+        },
+        {
+          "class_name": "schooner",
+          "recall": 0.5,
+          "margin": -0.09747343255814779,
+          "validation_count": 10
+        },
+        {
+          "class_name": "scorpion",
+          "recall": 0.16666666666666666,
+          "margin": -0.06635308479483816,
+          "validation_count": 12
+        },
+        {
+          "class_name": "soccer_ball",
+          "recall": 0.3,
+          "margin": -0.08837413522789542,
+          "validation_count": 10
+        },
+        {
+          "class_name": "stop_sign",
+          "recall": 0.3,
+          "margin": -0.008157612029966954,
+          "validation_count": 10
+        },
+        {
+          "class_name": "sunflower",
+          "recall": 0.25,
+          "margin": -0.0659471830162262,
+          "validation_count": 12
+        },
+        {
+          "class_name": "trilobite",
+          "recall": 0.5833333333333334,
+          "margin": 0.0872414841226319,
+          "validation_count": 12
+        },
+        {
+          "class_name": "umbrella",
+          "recall": 0.2727272727272727,
+          "margin": -0.07583934147962473,
+          "validation_count": 11
+        },
+        {
+          "class_name": "watch",
+          "recall": 0.4,
+          "margin": -0.1281714501970574,
+          "validation_count": 20
+        },
+        {
+          "class_name": "yin_yang",
+          "recall": 1.0,
+          "margin": 0.20438431624343445,
+          "validation_count": 10
+        }
+      ]
+    },
+    {
+      "classes": [
+        "Faces",
+        "Leopards",
+        "Motorbikes",
+        "airplanes",
+        "bonsai",
+        "butterfly",
+        "car_side",
+        "chair",
+        "crab",
+        "crayfish",
+        "electric_guitar",
+        "elephant",
+        "grand_piano",
+        "hawksbill",
+        "helicopter",
+        "joshua_tree",
+        "kangaroo",
+        "ketch",
+        "laptop",
+        "lotus",
+        "menorah",
+        "minaret",
+        "revolver",
+        "schooner",
+        "scorpion",
+        "soccer_ball",
+        "stop_sign",
+        "sunflower",
+        "trilobite",
+        "umbrella",
+        "watch",
+        "yin_yang"
+      ],
+      "macro_recall": 0.44487020815871436,
+      "scores": [
+        {
+          "class_name": "Faces",
+          "recall": 0.65,
+          "margin": 0.05016412057551435,
+          "validation_count": 20
+        },
+        {
+          "class_name": "Leopards",
+          "recall": 0.9,
+          "margin": 0.12397685419960709,
+          "validation_count": 20
+        },
+        {
+          "class_name": "Motorbikes",
+          "recall": 0.95,
+          "margin": 0.19651948119133492,
+          "validation_count": 20
+        },
+        {
+          "class_name": "airplanes",
+          "recall": 0.65,
+          "margin": 0.11634935815960039,
+          "validation_count": 20
+        },
+        {
+          "class_name": "bonsai",
+          "recall": 0.42105263157894735,
+          "margin": -0.05493403681402819,
+          "validation_count": 19
+        },
+        {
+          "class_name": "butterfly",
+          "recall": 0.23076923076923078,
+          "margin": -0.11671933661929909,
+          "validation_count": 13
+        },
+        {
+          "class_name": "car_side",
+          "recall": 0.3333333333333333,
+          "margin": -0.04948037736784062,
+          "validation_count": 18
+        },
+        {
+          "class_name": "chair",
+          "recall": 0.3,
+          "margin": -0.10220751723885231,
+          "validation_count": 10
+        },
+        {
+          "class_name": "crab",
+          "recall": 0.3,
+          "margin": -0.10362215613719528,
+          "validation_count": 10
+        },
+        {
+          "class_name": "crayfish",
+          "recall": 0.4,
+          "margin": -0.04908156806825413,
+          "validation_count": 10
+        },
+        {
+          "class_name": "electric_guitar",
+          "recall": 0.18181818181818182,
+          "margin": -0.07741104079784601,
+          "validation_count": 11
+        },
+        {
+          "class_name": "elephant",
+          "recall": 0.2,
+          "margin": -0.05120317843097562,
+          "validation_count": 10
+        },
+        {
+          "class_name": "grand_piano",
+          "recall": 0.8571428571428571,
+          "margin": 0.11726222058121981,
+          "validation_count": 14
+        },
+        {
+          "class_name": "hawksbill",
+          "recall": 0.2,
+          "margin": -0.06806804537019447,
+          "validation_count": 15
+        },
+        {
+          "class_name": "helicopter",
+          "recall": 0.38461538461538464,
+          "margin": -0.114843854987908,
+          "validation_count": 13
+        },
+        {
+          "class_name": "joshua_tree",
+          "recall": 0.3,
+          "margin": -0.06947715187160981,
+          "validation_count": 10
+        },
+        {
+          "class_name": "kangaroo",
+          "recall": 0.3333333333333333,
+          "margin": -0.0448026847966445,
+          "validation_count": 12
+        },
+        {
+          "class_name": "ketch",
+          "recall": 0.47058823529411764,
+          "margin": -0.06140002683911156,
+          "validation_count": 17
+        },
+        {
+          "class_name": "laptop",
+          "recall": 0.4166666666666667,
+          "margin": -0.0666184447609054,
+          "validation_count": 12
+        },
+        {
+          "class_name": "lotus",
+          "recall": 0.7,
+          "margin": -0.08100551737132819,
+          "validation_count": 10
+        },
+        {
+          "class_name": "menorah",
+          "recall": 0.23076923076923078,
+          "margin": -0.08703396323583304,
+          "validation_count": 13
+        },
+        {
+          "class_name": "minaret",
+          "recall": 0.6363636363636364,
+          "margin": 0.1154313841758297,
+          "validation_count": 11
+        },
+        {
+          "class_name": "revolver",
+          "recall": 0.4166666666666667,
+          "margin": 0.059897119013994436,
+          "validation_count": 12
+        },
+        {
+          "class_name": "schooner",
+          "recall": 0.5,
+          "margin": -0.09747343255814779,
+          "validation_count": 10
+        },
+        {
+          "class_name": "scorpion",
+          "recall": 0.16666666666666666,
+          "margin": -0.06635308479483816,
+          "validation_count": 12
+        },
+        {
+          "class_name": "soccer_ball",
+          "recall": 0.3,
+          "margin": -0.08837413522789542,
+          "validation_count": 10
+        },
+        {
+          "class_name": "stop_sign",
+          "recall": 0.3,
+          "margin": -0.004669500599580889,
+          "validation_count": 10
+        },
+        {
+          "class_name": "sunflower",
+          "recall": 0.25,
+          "margin": -0.0659471830162262,
+          "validation_count": 12
+        },
+        {
+          "class_name": "trilobite",
+          "recall": 0.5833333333333334,
+          "margin": 0.08805005817798896,
+          "validation_count": 12
+        },
+        {
+          "class_name": "umbrella",
+          "recall": 0.2727272727272727,
+          "margin": -0.07583934147962473,
+          "validation_count": 11
+        },
+        {
+          "class_name": "watch",
+          "recall": 0.4,
+          "margin": -0.1281714501970574,
+          "validation_count": 20
+        },
+        {
+          "class_name": "yin_yang",
+          "recall": 1.0,
+          "margin": 0.20438431624343445,
+          "validation_count": 10
+        }
+      ]
+    },
+    {
+      "classes": [
+        "Faces",
+        "Leopards",
+        "Motorbikes",
+        "airplanes",
+        "bonsai",
+        "butterfly",
+        "car_side",
+        "chair",
+        "crab",
+        "crayfish",
+        "electric_guitar",
+        "elephant",
+        "grand_piano",
+        "hawksbill",
+        "helicopter",
+        "joshua_tree",
+        "kangaroo",
+        "ketch",
+        "laptop",
+        "lotus",
+        "menorah",
+        "minaret",
+        "revolver",
+        "schooner",
+        "soccer_ball",
+        "stop_sign",
+        "sunflower",
+        "trilobite",
+        "umbrella",
+        "watch",
+        "yin_yang"
+      ],
+      "macro_recall": 0.45632590552694424,
+      "scores": [
+        {
+          "class_name": "Faces",
+          "recall": 0.65,
+          "margin": 0.05016412057551435,
+          "validation_count": 20
+        },
+        {
+          "class_name": "Leopards",
+          "recall": 0.9,
+          "margin": 0.12397685419960709,
+          "validation_count": 20
+        },
+        {
+          "class_name": "Motorbikes",
+          "recall": 0.95,
+          "margin": 0.19784126488859594,
+          "validation_count": 20
+        },
+        {
+          "class_name": "airplanes",
+          "recall": 0.65,
+          "margin": 0.11634935815960039,
+          "validation_count": 20
+        },
+        {
+          "class_name": "bonsai",
+          "recall": 0.42105263157894735,
+          "margin": -0.05493403681402819,
+          "validation_count": 19
+        },
+        {
+          "class_name": "butterfly",
+          "recall": 0.23076923076923078,
+          "margin": -0.11671933661929909,
+          "validation_count": 13
+        },
+        {
+          "class_name": "car_side",
+          "recall": 0.3333333333333333,
+          "margin": -0.04948037736784062,
+          "validation_count": 18
+        },
+        {
+          "class_name": "chair",
+          "recall": 0.3,
+          "margin": -0.10105134010719603,
+          "validation_count": 10
+        },
+        {
+          "class_name": "crab",
+          "recall": 0.3,
+          "margin": -0.10362215613719528,
+          "validation_count": 10
+        },
+        {
+          "class_name": "crayfish",
+          "recall": 0.4,
+          "margin": -0.04908156806825413,
+          "validation_count": 10
+        },
+        {
+          "class_name": "electric_guitar",
+          "recall": 0.18181818181818182,
+          "margin": -0.07741104079784601,
+          "validation_count": 11
+        },
+        {
+          "class_name": "elephant",
+          "recall": 0.2,
+          "margin": -0.04826737017124318,
+          "validation_count": 10
+        },
+        {
+          "class_name": "grand_piano",
+          "recall": 0.8571428571428571,
+          "margin": 0.11780655614889958,
+          "validation_count": 14
+        },
+        {
+          "class_name": "hawksbill",
+          "recall": 0.2,
+          "margin": -0.06806804537019447,
+          "validation_count": 15
+        },
+        {
+          "class_name": "helicopter",
+          "recall": 0.46153846153846156,
+          "margin": -0.1128660326816117,
+          "validation_count": 13
+        },
+        {
+          "class_name": "joshua_tree",
+          "recall": 0.3,
+          "margin": -0.06947715187160981,
+          "validation_count": 10
+        },
+        {
+          "class_name": "kangaroo",
+          "recall": 0.3333333333333333,
+          "margin": -0.04402660396455794,
+          "validation_count": 12
+        },
+        {
+          "class_name": "ketch",
+          "recall": 0.47058823529411764,
+          "margin": -0.06140002683911156,
+          "validation_count": 17
+        },
+        {
+          "class_name": "laptop",
+          "recall": 0.4166666666666667,
+          "margin": -0.0666184447609054,
+          "validation_count": 12
+        },
+        {
+          "class_name": "lotus",
+          "recall": 0.7,
+          "margin": -0.08100551737132819,
+          "validation_count": 10
+        },
+        {
+          "class_name": "menorah",
+          "recall": 0.23076923076923078,
+          "margin": -0.08703396323583304,
+          "validation_count": 13
+        },
+        {
+          "class_name": "minaret",
+          "recall": 0.6363636363636364,
+          "margin": 0.1154313841758297,
+          "validation_count": 11
+        },
+        {
+          "class_name": "revolver",
+          "recall": 0.4166666666666667,
+          "margin": 0.059897119013994436,
+          "validation_count": 12
+        },
+        {
+          "class_name": "schooner",
+          "recall": 0.5,
+          "margin": -0.09747343255814779,
+          "validation_count": 10
+        },
+        {
+          "class_name": "soccer_ball",
+          "recall": 0.3,
+          "margin": -0.08837413522789542,
+          "validation_count": 10
+        },
+        {
+          "class_name": "stop_sign",
+          "recall": 0.3,
+          "margin": -0.004669500599580889,
+          "validation_count": 10
+        },
+        {
+          "class_name": "sunflower",
+          "recall": 0.25,
+          "margin": -0.06197231591424873,
+          "validation_count": 12
+        },
+        {
+          "class_name": "trilobite",
+          "recall": 0.5833333333333334,
+          "margin": 0.08805005817798896,
+          "validation_count": 12
+        },
+        {
+          "class_name": "umbrella",
+          "recall": 0.2727272727272727,
+          "margin": -0.07162872240862146,
+          "validation_count": 11
+        },
+        {
+          "class_name": "watch",
+          "recall": 0.4,
+          "margin": -0.1281714501970574,
+          "validation_count": 20
+        },
+        {
+          "class_name": "yin_yang",
+          "recall": 1.0,
+          "margin": 0.20438431624343445,
+          "validation_count": 10
+        }
+      ]
+    },
+    {
+      "classes": [
+        "Faces",
+        "Leopards",
+        "Motorbikes",
+        "airplanes",
+        "bonsai",
+        "butterfly",
+        "car_side",
+        "chair",
+        "crab",
+        "crayfish",
+        "elephant",
+        "grand_piano",
+        "hawksbill",
+        "helicopter",
+        "joshua_tree",
+        "kangaroo",
+        "ketch",
+        "laptop",
+        "lotus",
+        "menorah",
+        "minaret",
+        "revolver",
+        "schooner",
+        "soccer_ball",
+        "stop_sign",
+        "sunflower",
+        "trilobite",
+        "umbrella",
+        "watch",
+        "yin_yang"
+      ],
+      "macro_recall": 0.46880949631723634,
+      "scores": [
+        {
+          "class_name": "Faces",
+          "recall": 0.75,
+          "margin": 0.05795252283785753,
+          "validation_count": 20
+        },
+        {
+          "class_name": "Leopards",
+          "recall": 0.9,
+          "margin": 0.12435913226966418,
+          "validation_count": 20
+        },
+        {
+          "class_name": "Motorbikes",
+          "recall": 0.95,
+          "margin": 0.19784126488859594,
+          "validation_count": 20
+        },
+        {
+          "class_name": "airplanes",
+          "recall": 0.65,
+          "margin": 0.11634935815960039,
+          "validation_count": 20
+        },
+        {
+          "class_name": "bonsai",
+          "recall": 0.42105263157894735,
+          "margin": -0.05493403681402819,
+          "validation_count": 19
+        },
+        {
+          "class_name": "butterfly",
+          "recall": 0.23076923076923078,
+          "margin": -0.11671933661929909,
+          "validation_count": 13
+        },
+        {
+          "class_name": "car_side",
+          "recall": 0.3333333333333333,
+          "margin": -0.04893874081850377,
+          "validation_count": 18
+        },
+        {
+          "class_name": "chair",
+          "recall": 0.3,
+          "margin": -0.10105134010719603,
+          "validation_count": 10
+        },
+        {
+          "class_name": "crab",
+          "recall": 0.3,
+          "margin": -0.10362215613719528,
+          "validation_count": 10
+        },
+        {
+          "class_name": "crayfish",
+          "recall": 0.4,
+          "margin": -0.04908156806825413,
+          "validation_count": 10
+        },
+        {
+          "class_name": "elephant",
+          "recall": 0.2,
+          "margin": -0.04826737017124318,
+          "validation_count": 10
+        },
+        {
+          "class_name": "grand_piano",
+          "recall": 0.8571428571428571,
+          "margin": 0.11780655614889958,
+          "validation_count": 14
+        },
+        {
+          "class_name": "hawksbill",
+          "recall": 0.2,
+          "margin": -0.06806804537019447,
+          "validation_count": 15
+        },
+        {
+          "class_name": "helicopter",
+          "recall": 0.46153846153846156,
+          "margin": -0.1128660326816117,
+          "validation_count": 13
+        },
+        {
+          "class_name": "joshua_tree",
+          "recall": 0.3,
+          "margin": -0.06947715187160981,
+          "validation_count": 10
+        },
+        {
+          "class_name": "kangaroo",
+          "recall": 0.3333333333333333,
+          "margin": -0.04402660396455794,
+          "validation_count": 12
+        },
+        {
+          "class_name": "ketch",
+          "recall": 0.47058823529411764,
+          "margin": -0.06140002683911156,
+          "validation_count": 17
+        },
+        {
+          "class_name": "laptop",
+          "recall": 0.4166666666666667,
+          "margin": -0.0666184447609054,
+          "validation_count": 12
+        },
+        {
+          "class_name": "lotus",
+          "recall": 0.7,
+          "margin": -0.08100551737132819,
+          "validation_count": 10
+        },
+        {
+          "class_name": "menorah",
+          "recall": 0.23076923076923078,
+          "margin": -0.08703396323583304,
+          "validation_count": 13
+        },
+        {
+          "class_name": "minaret",
+          "recall": 0.6363636363636364,
+          "margin": 0.1154313841758297,
+          "validation_count": 11
+        },
+        {
+          "class_name": "revolver",
+          "recall": 0.4166666666666667,
+          "margin": 0.059897119013994436,
+          "validation_count": 12
+        },
+        {
+          "class_name": "schooner",
+          "recall": 0.5,
+          "margin": -0.09747343255814779,
+          "validation_count": 10
+        },
+        {
+          "class_name": "soccer_ball",
+          "recall": 0.3,
+          "margin": -0.08837413522789542,
+          "validation_count": 10
+        },
+        {
+          "class_name": "stop_sign",
+          "recall": 0.3,
+          "margin": -0.004669500599580889,
+          "validation_count": 10
+        },
+        {
+          "class_name": "sunflower",
+          "recall": 0.25,
+          "margin": -0.06197231591424873,
+          "validation_count": 12
+        },
+        {
+          "class_name": "trilobite",
+          "recall": 0.5833333333333334,
+          "margin": 0.088273078651605,
+          "validation_count": 12
+        },
+        {
+          "class_name": "umbrella",
+          "recall": 0.2727272727272727,
+          "margin": -0.07162872240862146,
+          "validation_count": 11
+        },
+        {
+          "class_name": "watch",
+          "recall": 0.4,
+          "margin": -0.12600393080689437,
+          "validation_count": 20
+        },
+        {
+          "class_name": "yin_yang",
+          "recall": 1.0,
+          "margin": 0.20793151548591826,
+          "validation_count": 10
+        }
+      ]
+    },
+    {
+      "classes": [
+        "Faces",
+        "Leopards",
+        "Motorbikes",
+        "airplanes",
+        "bonsai",
+        "butterfly",
+        "car_side",
+        "chair",
+        "crab",
+        "crayfish",
+        "elephant",
+        "grand_piano",
+        "helicopter",
+        "joshua_tree",
+        "kangaroo",
+        "ketch",
+        "laptop",
+        "lotus",
+        "menorah",
+        "minaret",
+        "revolver",
+        "schooner",
+        "soccer_ball",
+        "stop_sign",
+        "sunflower",
+        "trilobite",
+        "umbrella",
+        "watch",
+        "yin_yang"
+      ],
+      "macro_recall": 0.47807878929369274,
+      "scores": [
+        {
+          "class_name": "Faces",
+          "recall": 0.75,
+          "margin": 0.05838281751362963,
+          "validation_count": 20
+        },
+        {
+          "class_name": "Leopards",
+          "recall": 0.9,
+          "margin": 0.12583489655720528,
+          "validation_count": 20
+        },
+        {
+          "class_name": "Motorbikes",
+          "recall": 0.95,
+          "margin": 0.19784126488859594,
+          "validation_count": 20
+        },
+        {
+          "class_name": "airplanes",
+          "recall": 0.65,
+          "margin": 0.11634935815960039,
+          "validation_count": 20
+        },
+        {
+          "class_name": "bonsai",
+          "recall": 0.42105263157894735,
+          "margin": -0.05493403681402819,
+          "validation_count": 19
+        },
+        {
+          "class_name": "butterfly",
+          "recall": 0.23076923076923078,
+          "margin": -0.11409072625020689,
+          "validation_count": 13
+        },
+        {
+          "class_name": "car_side",
+          "recall": 0.3333333333333333,
+          "margin": -0.046640686555960875,
+          "validation_count": 18
+        },
+        {
+          "class_name": "chair",
+          "recall": 0.3,
+          "margin": -0.10105134010719603,
+          "validation_count": 10
+        },
+        {
+          "class_name": "crab",
+          "recall": 0.3,
+          "margin": -0.10362215613719528,
+          "validation_count": 10
+        },
+        {
+          "class_name": "crayfish",
+          "recall": 0.4,
+          "margin": -0.04908156806825413,
+          "validation_count": 10
+        },
+        {
+          "class_name": "elephant",
+          "recall": 0.2,
+          "margin": -0.04826737017124318,
+          "validation_count": 10
+        },
+        {
+          "class_name": "grand_piano",
+          "recall": 0.8571428571428571,
+          "margin": 0.11780655614889958,
+          "validation_count": 14
+        },
+        {
+          "class_name": "helicopter",
+          "recall": 0.46153846153846156,
+          "margin": -0.1128660326816117,
+          "validation_count": 13
+        },
+        {
+          "class_name": "joshua_tree",
+          "recall": 0.3,
+          "margin": -0.06837904251514973,
+          "validation_count": 10
+        },
+        {
+          "class_name": "kangaroo",
+          "recall": 0.3333333333333333,
+          "margin": -0.04402660396455794,
+          "validation_count": 12
+        },
+        {
+          "class_name": "ketch",
+          "recall": 0.47058823529411764,
+          "margin": -0.06140002683911156,
+          "validation_count": 17
+        },
+        {
+          "class_name": "laptop",
+          "recall": 0.4166666666666667,
+          "margin": -0.0666184447609054,
+          "validation_count": 12
+        },
+        {
+          "class_name": "lotus",
+          "recall": 0.7,
+          "margin": -0.08100551737132819,
+          "validation_count": 10
+        },
+        {
+          "class_name": "menorah",
+          "recall": 0.23076923076923078,
+          "margin": -0.08703396323583304,
+          "validation_count": 13
+        },
+        {
+          "class_name": "minaret",
+          "recall": 0.6363636363636364,
+          "margin": 0.1154313841758297,
+          "validation_count": 11
+        },
+        {
+          "class_name": "revolver",
+          "recall": 0.4166666666666667,
+          "margin": 0.059897119013994436,
+          "validation_count": 12
+        },
+        {
+          "class_name": "schooner",
+          "recall": 0.5,
+          "margin": -0.09747343255814779,
+          "validation_count": 10
+        },
+        {
+          "class_name": "soccer_ball",
+          "recall": 0.3,
+          "margin": -0.0872553044088777,
+          "validation_count": 10
+        },
+        {
+          "class_name": "stop_sign",
+          "recall": 0.3,
+          "margin": -0.004669500599580889,
+          "validation_count": 10
+        },
+        {
+          "class_name": "sunflower",
+          "recall": 0.25,
+          "margin": -0.06197231591424873,
+          "validation_count": 12
+        },
+        {
+          "class_name": "trilobite",
+          "recall": 0.5833333333333334,
+          "margin": 0.088273078651605,
+          "validation_count": 12
+        },
+        {
+          "class_name": "umbrella",
+          "recall": 0.2727272727272727,
+          "margin": -0.07162872240862146,
+          "validation_count": 11
+        },
+        {
+          "class_name": "watch",
+          "recall": 0.4,
+          "margin": -0.12516878849773347,
+          "validation_count": 20
+        },
+        {
+          "class_name": "yin_yang",
+          "recall": 1.0,
+          "margin": 0.2085382437051016,
+          "validation_count": 10
+        }
+      ]
+    },
+    {
+      "classes": [
+        "Faces",
+        "Leopards",
+        "Motorbikes",
+        "airplanes",
+        "bonsai",
+        "butterfly",
+        "car_side",
+        "chair",
+        "crab",
+        "crayfish",
+        "grand_piano",
+        "helicopter",
+        "joshua_tree",
+        "kangaroo",
+        "ketch",
+        "laptop",
+        "lotus",
+        "menorah",
+        "minaret",
+        "revolver",
+        "schooner",
+        "soccer_ball",
+        "stop_sign",
+        "sunflower",
+        "trilobite",
+        "umbrella",
+        "watch",
+        "yin_yang"
+      ],
+      "macro_recall": 0.4935657301811659,
+      "scores": [
+        {
+          "class_name": "Faces",
+          "recall": 0.75,
+          "margin": 0.05838281751362963,
+          "validation_count": 20
+        },
+        {
+          "class_name": "Leopards",
+          "recall": 0.9,
+          "margin": 0.12583489655720528,
+          "validation_count": 20
+        },
+        {
+          "class_name": "Motorbikes",
+          "recall": 0.95,
+          "margin": 0.19784126488859594,
+          "validation_count": 20
+        },
+        {
+          "class_name": "airplanes",
+          "recall": 0.65,
+          "margin": 0.11634935815960039,
+          "validation_count": 20
+        },
+        {
+          "class_name": "bonsai",
+          "recall": 0.42105263157894735,
+          "margin": -0.05493403681402819,
+          "validation_count": 19
+        },
+        {
+          "class_name": "butterfly",
+          "recall": 0.23076923076923078,
+          "margin": -0.11013614709323928,
+          "validation_count": 13
+        },
+        {
+          "class_name": "car_side",
+          "recall": 0.3888888888888889,
+          "margin": -0.04314019755300744,
+          "validation_count": 18
+        },
+        {
+          "class_name": "chair",
+          "recall": 0.3,
+          "margin": -0.10105134010719603,
+          "validation_count": 10
+        },
+        {
+          "class_name": "crab",
+          "recall": 0.4,
+          "margin": -0.08853583590191752,
+          "validation_count": 10
+        },
+        {
+          "class_name": "crayfish",
+          "recall": 0.4,
+          "margin": -0.04908156806825413,
+          "validation_count": 10
+        },
+        {
+          "class_name": "grand_piano",
+          "recall": 0.8571428571428571,
+          "margin": 0.11780655614889958,
+          "validation_count": 14
+        },
+        {
+          "class_name": "helicopter",
+          "recall": 0.46153846153846156,
+          "margin": -0.10651440862372656,
+          "validation_count": 13
+        },
+        {
+          "class_name": "joshua_tree",
+          "recall": 0.3,
+          "margin": -0.06837904251514973,
+          "validation_count": 10
+        },
+        {
+          "class_name": "kangaroo",
+          "recall": 0.3333333333333333,
+          "margin": -0.04402660396455794,
+          "validation_count": 12
+        },
+        {
+          "class_name": "ketch",
+          "recall": 0.47058823529411764,
+          "margin": -0.06140002683911156,
+          "validation_count": 17
+        },
+        {
+          "class_name": "laptop",
+          "recall": 0.4166666666666667,
+          "margin": -0.0639493391548018,
+          "validation_count": 12
+        },
+        {
+          "class_name": "lotus",
+          "recall": 0.7,
+          "margin": -0.08100551737132819,
+          "validation_count": 10
+        },
+        {
+          "class_name": "menorah",
+          "recall": 0.23076923076923078,
+          "margin": -0.08703396323583304,
+          "validation_count": 13
+        },
+        {
+          "class_name": "minaret",
+          "recall": 0.6363636363636364,
+          "margin": 0.1154313841758297,
+          "validation_count": 11
+        },
+        {
+          "class_name": "revolver",
+          "recall": 0.4166666666666667,
+          "margin": 0.059897119013994436,
+          "validation_count": 12
+        },
+        {
+          "class_name": "schooner",
+          "recall": 0.5,
+          "margin": -0.09747343255814779,
+          "validation_count": 10
+        },
+        {
+          "class_name": "soccer_ball",
+          "recall": 0.3,
+          "margin": -0.0872553044088777,
+          "validation_count": 10
+        },
+        {
+          "class_name": "stop_sign",
+          "recall": 0.3,
+          "margin": -0.004669500599580889,
+          "validation_count": 10
+        },
+        {
+          "class_name": "sunflower",
+          "recall": 0.25,
+          "margin": -0.06197231591424873,
+          "validation_count": 12
+        },
+        {
+          "class_name": "trilobite",
+          "recall": 0.5833333333333334,
+          "margin": 0.088273078651605,
+          "validation_count": 12
+        },
+        {
+          "class_name": "umbrella",
+          "recall": 0.2727272727272727,
+          "margin": -0.07162872240862146,
+          "validation_count": 11
+        },
+        {
+          "class_name": "watch",
+          "recall": 0.4,
+          "margin": -0.12420079565740003,
+          "validation_count": 20
+        },
+        {
+          "class_name": "yin_yang",
+          "recall": 1.0,
+          "margin": 0.2085382437051016,
+          "validation_count": 10
+        }
+      ]
+    },
+    {
+      "classes": [
+        "Faces",
+        "Leopards",
+        "Motorbikes",
+        "airplanes",
+        "bonsai",
+        "car_side",
+        "chair",
+        "crab",
+        "crayfish",
+        "grand_piano",
+        "helicopter",
+        "joshua_tree",
+        "kangaroo",
+        "ketch",
+        "laptop",
+        "lotus",
+        "menorah",
+        "minaret",
+        "revolver",
+        "schooner",
+        "soccer_ball",
+        "stop_sign",
+        "sunflower",
+        "trilobite",
+        "umbrella",
+        "watch",
+        "yin_yang"
+      ],
+      "macro_recall": 0.5063853536161758,
+      "scores": [
+        {
+          "class_name": "Faces",
+          "recall": 0.75,
+          "margin": 0.05838281751362963,
+          "validation_count": 20
+        },
+        {
+          "class_name": "Leopards",
+          "recall": 0.9,
+          "margin": 0.12881167221830922,
+          "validation_count": 20
+        },
+        {
+          "class_name": "Motorbikes",
+          "recall": 0.95,
+          "margin": 0.19784126488859594,
+          "validation_count": 20
+        },
+        {
+          "class_name": "airplanes",
+          "recall": 0.65,
+          "margin": 0.11634935815960039,
+          "validation_count": 20
+        },
+        {
+          "class_name": "bonsai",
+          "recall": 0.42105263157894735,
+          "margin": -0.05493403681402819,
+          "validation_count": 19
+        },
+        {
+          "class_name": "car_side",
+          "recall": 0.3888888888888889,
+          "margin": -0.04314019755300744,
+          "validation_count": 18
+        },
+        {
+          "class_name": "chair",
+          "recall": 0.3,
+          "margin": -0.10105134010719603,
+          "validation_count": 10
+        },
+        {
+          "class_name": "crab",
+          "recall": 0.4,
+          "margin": -0.08567270789584423,
+          "validation_count": 10
+        },
+        {
+          "class_name": "crayfish",
+          "recall": 0.4,
+          "margin": -0.04908156806825413,
+          "validation_count": 10
+        },
+        {
+          "class_name": "grand_piano",
+          "recall": 0.8571428571428571,
+          "margin": 0.11780655614889958,
+          "validation_count": 14
+        },
+        {
+          "class_name": "helicopter",
+          "recall": 0.46153846153846156,
+          "margin": -0.10651440862372656,
+          "validation_count": 13
+        },
+        {
+          "class_name": "joshua_tree",
+          "recall": 0.3,
+          "margin": -0.06837904251514973,
+          "validation_count": 10
+        },
+        {
+          "class_name": "kangaroo",
+          "recall": 0.4166666666666667,
+          "margin": -0.03988257258371308,
+          "validation_count": 12
+        },
+        {
+          "class_name": "ketch",
+          "recall": 0.47058823529411764,
+          "margin": -0.06140002683911156,
+          "validation_count": 17
+        },
+        {
+          "class_name": "laptop",
+          "recall": 0.4166666666666667,
+          "margin": -0.0639493391548018,
+          "validation_count": 12
+        },
+        {
+          "class_name": "lotus",
+          "recall": 0.7,
+          "margin": -0.08100551737132819,
+          "validation_count": 10
+        },
+        {
+          "class_name": "menorah",
+          "recall": 0.23076923076923078,
+          "margin": -0.08703396323583304,
+          "validation_count": 13
+        },
+        {
+          "class_name": "minaret",
+          "recall": 0.6363636363636364,
+          "margin": 0.1154313841758297,
+          "validation_count": 11
+        },
+        {
+          "class_name": "revolver",
+          "recall": 0.4166666666666667,
+          "margin": 0.06059517616403637,
+          "validation_count": 12
+        },
+        {
+          "class_name": "schooner",
+          "recall": 0.5,
+          "margin": -0.09747343255814779,
+          "validation_count": 10
+        },
+        {
+          "class_name": "soccer_ball",
+          "recall": 0.3,
+          "margin": -0.0872553044088777,
+          "validation_count": 10
+        },
+        {
+          "class_name": "stop_sign",
+          "recall": 0.3,
+          "margin": -0.004669500599580889,
+          "validation_count": 10
+        },
+        {
+          "class_name": "sunflower",
+          "recall": 0.25,
+          "margin": -0.0619588108463606,
+          "validation_count": 12
+        },
+        {
+          "class_name": "trilobite",
+          "recall": 0.5833333333333334,
+          "margin": 0.11257054225785089,
+          "validation_count": 12
+        },
+        {
+          "class_name": "umbrella",
+          "recall": 0.2727272727272727,
+          "margin": -0.07162872240862146,
+          "validation_count": 11
+        },
+        {
+          "class_name": "watch",
+          "recall": 0.4,
+          "margin": -0.12420079565740003,
+          "validation_count": 20
+        },
+        {
+          "class_name": "yin_yang",
+          "recall": 1.0,
+          "margin": 0.2085382437051016,
+          "validation_count": 10
+        }
+      ]
+    },
+    {
+      "classes": [
+        "Faces",
+        "Leopards",
+        "Motorbikes",
+        "airplanes",
+        "bonsai",
+        "car_side",
+        "chair",
+        "crab",
+        "crayfish",
+        "grand_piano",
+        "helicopter",
+        "joshua_tree",
+        "kangaroo",
+        "ketch",
+        "laptop",
+        "lotus",
+        "minaret",
+        "revolver",
+        "schooner",
+        "soccer_ball",
+        "stop_sign",
+        "sunflower",
+        "trilobite",
+        "umbrella",
+        "watch",
+        "yin_yang"
+      ],
+      "macro_recall": 0.5204824772221772,
+      "scores": [
+        {
+          "class_name": "Faces",
+          "recall": 0.75,
+          "margin": 0.058750316923977794,
+          "validation_count": 20
+        },
+        {
+          "class_name": "Leopards",
+          "recall": 0.9,
+          "margin": 0.12977880424902846,
+          "validation_count": 20
+        },
+        {
+          "class_name": "Motorbikes",
+          "recall": 0.95,
+          "margin": 0.19784126488859594,
+          "validation_count": 20
+        },
+        {
+          "class_name": "airplanes",
+          "recall": 0.65,
+          "margin": 0.11634935815960039,
+          "validation_count": 20
+        },
+        {
+          "class_name": "bonsai",
+          "recall": 0.42105263157894735,
+          "margin": -0.05451871697871968,
+          "validation_count": 19
+        },
+        {
+          "class_name": "car_side",
+          "recall": 0.3888888888888889,
+          "margin": -0.04314019755300744,
+          "validation_count": 18
+        },
+        {
+          "class_name": "chair",
+          "recall": 0.3,
+          "margin": -0.10105134010719603,
+          "validation_count": 10
+        },
+        {
+          "class_name": "crab",
+          "recall": 0.4,
+          "margin": -0.08567270789584423,
+          "validation_count": 10
+        },
+        {
+          "class_name": "crayfish",
+          "recall": 0.4,
+          "margin": -0.04908156806825413,
+          "validation_count": 10
+        },
+        {
+          "class_name": "grand_piano",
+          "recall": 0.8571428571428571,
+          "margin": 0.11780655614889958,
+          "validation_count": 14
+        },
+        {
+          "class_name": "helicopter",
+          "recall": 0.46153846153846156,
+          "margin": -0.10651440862372656,
+          "validation_count": 13
+        },
+        {
+          "class_name": "joshua_tree",
+          "recall": 0.3,
+          "margin": -0.06837904251514973,
+          "validation_count": 10
+        },
+        {
+          "class_name": "kangaroo",
+          "recall": 0.4166666666666667,
+          "margin": -0.03988257258371308,
+          "validation_count": 12
+        },
+        {
+          "class_name": "ketch",
+          "recall": 0.47058823529411764,
+          "margin": -0.06140002683911156,
+          "validation_count": 17
+        },
+        {
+          "class_name": "laptop",
+          "recall": 0.4166666666666667,
+          "margin": -0.0639493391548018,
+          "validation_count": 12
+        },
+        {
+          "class_name": "lotus",
+          "recall": 0.7,
+          "margin": -0.08100551737132819,
+          "validation_count": 10
+        },
+        {
+          "class_name": "minaret",
+          "recall": 0.6363636363636364,
+          "margin": 0.1154313841758297,
+          "validation_count": 11
+        },
+        {
+          "class_name": "revolver",
+          "recall": 0.4166666666666667,
+          "margin": 0.06059517616403637,
+          "validation_count": 12
+        },
+        {
+          "class_name": "schooner",
+          "recall": 0.5,
+          "margin": -0.09747343255814779,
+          "validation_count": 10
+        },
+        {
+          "class_name": "soccer_ball",
+          "recall": 0.3,
+          "margin": -0.0872553044088777,
+          "validation_count": 10
+        },
+        {
+          "class_name": "stop_sign",
+          "recall": 0.3,
+          "margin": -0.0028729685870089506,
+          "validation_count": 10
+        },
+        {
+          "class_name": "sunflower",
+          "recall": 0.25,
+          "margin": -0.0619588108463606,
+          "validation_count": 12
+        },
+        {
+          "class_name": "trilobite",
+          "recall": 0.5833333333333334,
+          "margin": 0.11281461368321309,
+          "validation_count": 12
+        },
+        {
+          "class_name": "umbrella",
+          "recall": 0.36363636363636365,
+          "margin": -0.0675390384208294,
+          "validation_count": 11
+        },
+        {
+          "class_name": "watch",
+          "recall": 0.4,
+          "margin": -0.12420079565740003,
+          "validation_count": 20
+        },
+        {
+          "class_name": "yin_yang",
+          "recall": 1.0,
+          "margin": 0.2085382437051016,
+          "validation_count": 10
+        }
+      ]
+    },
+    {
+      "classes": [
+        "Faces",
+        "Leopards",
+        "Motorbikes",
+        "airplanes",
+        "bonsai",
+        "car_side",
+        "chair",
+        "crab",
+        "crayfish",
+        "grand_piano",
+        "helicopter",
+        "joshua_tree",
+        "kangaroo",
+        "ketch",
+        "laptop",
+        "lotus",
+        "minaret",
+        "revolver",
+        "schooner",
+        "soccer_ball",
+        "stop_sign",
+        "trilobite",
+        "umbrella",
+        "watch",
+        "yin_yang"
+      ],
+      "macro_recall": 0.5313017763110642,
+      "scores": [
+        {
+          "class_name": "Faces",
+          "recall": 0.75,
+          "margin": 0.058750316923977794,
+          "validation_count": 20
+        },
+        {
+          "class_name": "Leopards",
+          "recall": 0.9,
+          "margin": 0.12977880424902846,
+          "validation_count": 20
+        },
+        {
+          "class_name": "Motorbikes",
+          "recall": 0.95,
+          "margin": 0.19784126488859594,
+          "validation_count": 20
+        },
+        {
+          "class_name": "airplanes",
+          "recall": 0.65,
+          "margin": 0.11634935815960039,
+          "validation_count": 20
+        },
+        {
+          "class_name": "bonsai",
+          "recall": 0.42105263157894735,
+          "margin": -0.05451871697871968,
+          "validation_count": 19
+        },
+        {
+          "class_name": "car_side",
+          "recall": 0.3888888888888889,
+          "margin": -0.04314019755300744,
+          "validation_count": 18
+        },
+        {
+          "class_name": "chair",
+          "recall": 0.3,
+          "margin": -0.10105134010719603,
+          "validation_count": 10
+        },
+        {
+          "class_name": "crab",
+          "recall": 0.4,
+          "margin": -0.08536568788195817,
+          "validation_count": 10
+        },
+        {
+          "class_name": "crayfish",
+          "recall": 0.4,
+          "margin": -0.04908156806825413,
+          "validation_count": 10
+        },
+        {
+          "class_name": "grand_piano",
+          "recall": 0.8571428571428571,
+          "margin": 0.11780655614889958,
+          "validation_count": 14
+        },
+        {
+          "class_name": "helicopter",
+          "recall": 0.46153846153846156,
+          "margin": -0.10651440862372656,
+          "validation_count": 13
+        },
+        {
+          "class_name": "joshua_tree",
+          "recall": 0.3,
+          "margin": -0.06837904251514973,
+          "validation_count": 10
+        },
+        {
+          "class_name": "kangaroo",
+          "recall": 0.4166666666666667,
+          "margin": -0.03988257258371308,
+          "validation_count": 12
+        },
+        {
+          "class_name": "ketch",
+          "recall": 0.47058823529411764,
+          "margin": -0.06140002683911156,
+          "validation_count": 17
+        },
+        {
+          "class_name": "laptop",
+          "recall": 0.4166666666666667,
+          "margin": -0.0639493391548018,
+          "validation_count": 12
+        },
+        {
+          "class_name": "lotus",
+          "recall": 0.7,
+          "margin": -0.08100551737132819,
+          "validation_count": 10
+        },
+        {
+          "class_name": "minaret",
+          "recall": 0.6363636363636364,
+          "margin": 0.1154313841758297,
+          "validation_count": 11
+        },
+        {
+          "class_name": "revolver",
+          "recall": 0.4166666666666667,
+          "margin": 0.061102374954512706,
+          "validation_count": 12
+        },
+        {
+          "class_name": "schooner",
+          "recall": 0.5,
+          "margin": -0.09747343255814779,
+          "validation_count": 10
+        },
+        {
+          "class_name": "soccer_ball",
+          "recall": 0.3,
+          "margin": -0.0872553044088777,
+          "validation_count": 10
+        },
+        {
+          "class_name": "stop_sign",
+          "recall": 0.3,
+          "margin": -0.0028729685870089506,
+          "validation_count": 10
+        },
+        {
+          "class_name": "trilobite",
+          "recall": 0.5833333333333334,
+          "margin": 0.11281461368321309,
+          "validation_count": 12
+        },
+        {
+          "class_name": "umbrella",
+          "recall": 0.36363636363636365,
+          "margin": -0.0675390384208294,
+          "validation_count": 11
+        },
+        {
+          "class_name": "watch",
+          "recall": 0.4,
+          "margin": -0.12420079565740003,
+          "validation_count": 20
+        },
+        {
+          "class_name": "yin_yang",
+          "recall": 1.0,
+          "margin": 0.2085382437051016,
+          "validation_count": 10
+        }
+      ]
+    },
+    {
+      "classes": [
+        "Faces",
+        "Leopards",
+        "Motorbikes",
+        "airplanes",
+        "bonsai",
+        "car_side",
+        "crab",
+        "crayfish",
+        "grand_piano",
+        "helicopter",
+        "joshua_tree",
+        "kangaroo",
+        "ketch",
+        "laptop",
+        "lotus",
+        "minaret",
+        "revolver",
+        "schooner",
+        "soccer_ball",
+        "stop_sign",
+        "trilobite",
+        "umbrella",
+        "watch",
+        "yin_yang"
+      ],
+      "macro_recall": 0.5409393503240252,
+      "scores": [
+        {
+          "class_name": "Faces",
+          "recall": 0.75,
+          "margin": 0.058750316923977794,
+          "validation_count": 20
+        },
+        {
+          "class_name": "Leopards",
+          "recall": 0.9,
+          "margin": 0.12977880424902846,
+          "validation_count": 20
+        },
+        {
+          "class_name": "Motorbikes",
+          "recall": 0.95,
+          "margin": 0.19784126488859594,
+          "validation_count": 20
+        },
+        {
+          "class_name": "airplanes",
+          "recall": 0.65,
+          "margin": 0.11750974536417906,
+          "validation_count": 20
+        },
+        {
+          "class_name": "bonsai",
+          "recall": 0.42105263157894735,
+          "margin": -0.05451871697871968,
+          "validation_count": 19
+        },
+        {
+          "class_name": "car_side",
+          "recall": 0.3888888888888889,
+          "margin": -0.04087672995473117,
+          "validation_count": 18
+        },
+        {
+          "class_name": "crab",
+          "recall": 0.4,
+          "margin": -0.08466329562062075,
+          "validation_count": 10
+        },
+        {
+          "class_name": "crayfish",
+          "recall": 0.4,
+          "margin": -0.04908156806825413,
+          "validation_count": 10
+        },
+        {
+          "class_name": "grand_piano",
+          "recall": 0.8571428571428571,
+          "margin": 0.11780655614889958,
+          "validation_count": 14
+        },
+        {
+          "class_name": "helicopter",
+          "recall": 0.46153846153846156,
+          "margin": -0.10592909575747136,
+          "validation_count": 13
+        },
+        {
+          "class_name": "joshua_tree",
+          "recall": 0.3,
+          "margin": -0.06837904251514973,
+          "validation_count": 10
+        },
+        {
+          "class_name": "kangaroo",
+          "recall": 0.4166666666666667,
+          "margin": -0.03741558020282162,
+          "validation_count": 12
+        },
+        {
+          "class_name": "ketch",
+          "recall": 0.47058823529411764,
+          "margin": -0.06140002683911156,
+          "validation_count": 17
+        },
+        {
+          "class_name": "laptop",
+          "recall": 0.4166666666666667,
+          "margin": -0.0639493391548018,
+          "validation_count": 12
+        },
+        {
+          "class_name": "lotus",
+          "recall": 0.7,
+          "margin": -0.08100551737132819,
+          "validation_count": 10
+        },
+        {
+          "class_name": "minaret",
+          "recall": 0.6363636363636364,
+          "margin": 0.1154313841758297,
+          "validation_count": 11
+        },
+        {
+          "class_name": "revolver",
+          "recall": 0.4166666666666667,
+          "margin": 0.061102374954512706,
+          "validation_count": 12
+        },
+        {
+          "class_name": "schooner",
+          "recall": 0.5,
+          "margin": -0.09747343255814779,
+          "validation_count": 10
+        },
+        {
+          "class_name": "soccer_ball",
+          "recall": 0.3,
+          "margin": -0.08617292197329592,
+          "validation_count": 10
+        },
+        {
+          "class_name": "stop_sign",
+          "recall": 0.3,
+          "margin": -0.002867841689462358,
+          "validation_count": 10
+        },
+        {
+          "class_name": "trilobite",
+          "recall": 0.5833333333333334,
+          "margin": 0.11281461368321309,
+          "validation_count": 12
+        },
+        {
+          "class_name": "umbrella",
+          "recall": 0.36363636363636365,
+          "margin": -0.0675390384208294,
+          "validation_count": 11
+        },
+        {
+          "class_name": "watch",
+          "recall": 0.4,
+          "margin": -0.12420079565740003,
+          "validation_count": 20
+        },
+        {
+          "class_name": "yin_yang",
+          "recall": 1.0,
+          "margin": 0.2085382437051016,
+          "validation_count": 10
+        }
+      ]
+    },
+    {
+      "classes": [
+        "Faces",
+        "Leopards",
+        "Motorbikes",
+        "airplanes",
+        "bonsai",
+        "car_side",
+        "crab",
+        "crayfish",
+        "grand_piano",
+        "helicopter",
+        "joshua_tree",
+        "kangaroo",
+        "ketch",
+        "laptop",
+        "lotus",
+        "minaret",
+        "revolver",
+        "schooner",
+        "stop_sign",
+        "trilobite",
+        "umbrella",
+        "watch",
+        "yin_yang"
+      ],
+      "macro_recall": 0.5535888872946351,
+      "scores": [
+        {
+          "class_name": "Faces",
+          "recall": 0.75,
+          "margin": 0.058750316923977794,
+          "validation_count": 20
+        },
+        {
+          "class_name": "Leopards",
+          "recall": 0.9,
+          "margin": 0.12977880424902846,
+          "validation_count": 20
+        },
+        {
+          "class_name": "Motorbikes",
+          "recall": 0.95,
+          "margin": 0.19784126488859594,
+          "validation_count": 20
+        },
+        {
+          "class_name": "airplanes",
+          "recall": 0.65,
+          "margin": 0.11811762092163365,
+          "validation_count": 20
+        },
+        {
+          "class_name": "bonsai",
+          "recall": 0.42105263157894735,
+          "margin": -0.05451871697871968,
+          "validation_count": 19
+        },
+        {
+          "class_name": "car_side",
+          "recall": 0.3888888888888889,
+          "margin": -0.038732678122212885,
+          "validation_count": 18
+        },
+        {
+          "class_name": "crab",
+          "recall": 0.4,
+          "margin": -0.08466329562062075,
+          "validation_count": 10
+        },
+        {
+          "class_name": "crayfish",
+          "recall": 0.4,
+          "margin": -0.04908156806825413,
+          "validation_count": 10
+        },
+        {
+          "class_name": "grand_piano",
+          "recall": 0.8571428571428571,
+          "margin": 0.11780655614889958,
+          "validation_count": 14
+        },
+        {
+          "class_name": "helicopter",
+          "recall": 0.46153846153846156,
+          "margin": -0.10592909575747136,
+          "validation_count": 13
+        },
+        {
+          "class_name": "joshua_tree",
+          "recall": 0.3,
+          "margin": -0.06837904251514973,
+          "validation_count": 10
+        },
+        {
+          "class_name": "kangaroo",
+          "recall": 0.4166666666666667,
+          "margin": -0.03696541172905508,
+          "validation_count": 12
+        },
+        {
+          "class_name": "ketch",
+          "recall": 0.47058823529411764,
+          "margin": -0.06140002683911156,
+          "validation_count": 17
+        },
+        {
+          "class_name": "laptop",
+          "recall": 0.4166666666666667,
+          "margin": -0.0639493391548018,
+          "validation_count": 12
+        },
+        {
+          "class_name": "lotus",
+          "recall": 0.7,
+          "margin": -0.08100551737132819,
+          "validation_count": 10
+        },
+        {
+          "class_name": "minaret",
+          "recall": 0.6363636363636364,
+          "margin": 0.1154313841758297,
+          "validation_count": 11
+        },
+        {
+          "class_name": "revolver",
+          "recall": 0.4166666666666667,
+          "margin": 0.061102374954512706,
+          "validation_count": 12
+        },
+        {
+          "class_name": "schooner",
+          "recall": 0.5,
+          "margin": -0.09747343255814779,
+          "validation_count": 10
+        },
+        {
+          "class_name": "stop_sign",
+          "recall": 0.3,
+          "margin": -0.002867841689462358,
+          "validation_count": 10
+        },
+        {
+          "class_name": "trilobite",
+          "recall": 0.5833333333333334,
+          "margin": 0.11281461368321309,
+          "validation_count": 12
+        },
+        {
+          "class_name": "umbrella",
+          "recall": 0.36363636363636365,
+          "margin": -0.0675390384208294,
+          "validation_count": 11
+        },
+        {
+          "class_name": "watch",
+          "recall": 0.45,
+          "margin": -0.12151462420801207,
+          "validation_count": 20
+        },
+        {
+          "class_name": "yin_yang",
+          "recall": 1.0,
+          "margin": 0.26014212568524575,
+          "validation_count": 10
+        }
+      ]
+    },
+    {
+      "classes": [
+        "Faces",
+        "Leopards",
+        "Motorbikes",
+        "airplanes",
+        "bonsai",
+        "car_side",
+        "crab",
+        "crayfish",
+        "grand_piano",
+        "helicopter",
+        "kangaroo",
+        "ketch",
+        "laptop",
+        "lotus",
+        "minaret",
+        "revolver",
+        "schooner",
+        "stop_sign",
+        "trilobite",
+        "umbrella",
+        "watch",
+        "yin_yang"
+      ],
+      "macro_recall": 0.5651156548989366,
+      "scores": [
+        {
+          "class_name": "Faces",
+          "recall": 0.75,
+          "margin": 0.058750316923977794,
+          "validation_count": 20
+        },
+        {
+          "class_name": "Leopards",
+          "recall": 0.9,
+          "margin": 0.12977880424902846,
+          "validation_count": 20
+        },
+        {
+          "class_name": "Motorbikes",
+          "recall": 0.95,
+          "margin": 0.19784126488859594,
+          "validation_count": 20
+        },
+        {
+          "class_name": "airplanes",
+          "recall": 0.65,
+          "margin": 0.12007359323862035,
+          "validation_count": 20
+        },
+        {
+          "class_name": "bonsai",
+          "recall": 0.42105263157894735,
+          "margin": -0.05451871697871968,
+          "validation_count": 19
+        },
+        {
+          "class_name": "car_side",
+          "recall": 0.3888888888888889,
+          "margin": -0.038732678122212885,
+          "validation_count": 18
+        },
+        {
+          "class_name": "crab",
+          "recall": 0.4,
+          "margin": -0.08466329562062075,
+          "validation_count": 10
+        },
+        {
+          "class_name": "crayfish",
+          "recall": 0.4,
+          "margin": -0.04908156806825413,
+          "validation_count": 10
+        },
+        {
+          "class_name": "grand_piano",
+          "recall": 0.8571428571428571,
+          "margin": 0.11780655614889958,
+          "validation_count": 14
+        },
+        {
+          "class_name": "helicopter",
+          "recall": 0.46153846153846156,
+          "margin": -0.10592909575747136,
+          "validation_count": 13
+        },
+        {
+          "class_name": "kangaroo",
+          "recall": 0.4166666666666667,
+          "margin": -0.03696541172905508,
+          "validation_count": 12
+        },
+        {
+          "class_name": "ketch",
+          "recall": 0.47058823529411764,
+          "margin": -0.06084305199140555,
+          "validation_count": 17
+        },
+        {
+          "class_name": "laptop",
+          "recall": 0.4166666666666667,
+          "margin": -0.0639493391548018,
+          "validation_count": 12
+        },
+        {
+          "class_name": "lotus",
+          "recall": 0.7,
+          "margin": -0.08100551737132819,
+          "validation_count": 10
+        },
+        {
+          "class_name": "minaret",
+          "recall": 0.6363636363636364,
+          "margin": 0.1154313841758297,
+          "validation_count": 11
+        },
+        {
+          "class_name": "revolver",
+          "recall": 0.4166666666666667,
+          "margin": 0.061102374954512706,
+          "validation_count": 12
+        },
+        {
+          "class_name": "schooner",
+          "recall": 0.5,
+          "margin": -0.09747343255814779,
+          "validation_count": 10
+        },
+        {
+          "class_name": "stop_sign",
+          "recall": 0.3,
+          "margin": -0.002867841689462358,
+          "validation_count": 10
+        },
+        {
+          "class_name": "trilobite",
+          "recall": 0.5833333333333334,
+          "margin": 0.11281461368321309,
+          "validation_count": 12
+        },
+        {
+          "class_name": "umbrella",
+          "recall": 0.36363636363636365,
+          "margin": -0.05857561769167505,
+          "validation_count": 11
+        },
+        {
+          "class_name": "watch",
+          "recall": 0.45,
+          "margin": -0.12151462420801207,
+          "validation_count": 20
+        },
+        {
+          "class_name": "yin_yang",
+          "recall": 1.0,
+          "margin": 0.26014212568524575,
+          "validation_count": 10
+        }
+      ]
+    },
+    {
+      "classes": [
+        "Faces",
+        "Leopards",
+        "Motorbikes",
+        "airplanes",
+        "bonsai",
+        "car_side",
+        "crab",
+        "crayfish",
+        "grand_piano",
+        "helicopter",
+        "kangaroo",
+        "ketch",
+        "laptop",
+        "lotus",
+        "minaret",
+        "revolver",
+        "schooner",
+        "trilobite",
+        "umbrella",
+        "watch",
+        "yin_yang"
+      ],
+      "macro_recall": 0.5820692142231284,
+      "scores": [
+        {
+          "class_name": "Faces",
+          "recall": 0.75,
+          "margin": 0.058750316923977794,
+          "validation_count": 20
+        },
+        {
+          "class_name": "Leopards",
+          "recall": 0.9,
+          "margin": 0.12977880424902846,
+          "validation_count": 20
+        },
+        {
+          "class_name": "Motorbikes",
+          "recall": 0.95,
+          "margin": 0.19784126488859594,
+          "validation_count": 20
+        },
+        {
+          "class_name": "airplanes",
+          "recall": 0.65,
+          "margin": 0.12007359323862035,
+          "validation_count": 20
+        },
+        {
+          "class_name": "bonsai",
+          "recall": 0.42105263157894735,
+          "margin": -0.05451871697871968,
+          "validation_count": 19
+        },
+        {
+          "class_name": "car_side",
+          "recall": 0.3888888888888889,
+          "margin": -0.038732678122212885,
+          "validation_count": 18
+        },
+        {
+          "class_name": "crab",
+          "recall": 0.4,
+          "margin": -0.08466329562062075,
+          "validation_count": 10
+        },
+        {
+          "class_name": "crayfish",
+          "recall": 0.4,
+          "margin": -0.04908156806825413,
+          "validation_count": 10
+        },
+        {
+          "class_name": "grand_piano",
+          "recall": 0.8571428571428571,
+          "margin": 0.11780655614889958,
+          "validation_count": 14
+        },
+        {
+          "class_name": "helicopter",
+          "recall": 0.46153846153846156,
+          "margin": -0.10592909575747136,
+          "validation_count": 13
+        },
+        {
+          "class_name": "kangaroo",
+          "recall": 0.4166666666666667,
+          "margin": -0.03696541172905508,
+          "validation_count": 12
+        },
+        {
+          "class_name": "ketch",
+          "recall": 0.47058823529411764,
+          "margin": -0.06084305199140555,
+          "validation_count": 17
+        },
+        {
+          "class_name": "laptop",
+          "recall": 0.4166666666666667,
+          "margin": -0.0639493391548018,
+          "validation_count": 12
+        },
+        {
+          "class_name": "lotus",
+          "recall": 0.7,
+          "margin": -0.08100551737132819,
+          "validation_count": 10
+        },
+        {
+          "class_name": "minaret",
+          "recall": 0.6363636363636364,
+          "margin": 0.1154313841758297,
+          "validation_count": 11
+        },
+        {
+          "class_name": "revolver",
+          "recall": 0.4166666666666667,
+          "margin": 0.061102374954512706,
+          "validation_count": 12
+        },
+        {
+          "class_name": "schooner",
+          "recall": 0.5,
+          "margin": -0.09747343255814779,
+          "validation_count": 10
+        },
+        {
+          "class_name": "trilobite",
+          "recall": 0.5833333333333334,
+          "margin": 0.11281461368321309,
+          "validation_count": 12
+        },
+        {
+          "class_name": "umbrella",
+          "recall": 0.45454545454545453,
+          "margin": -0.05758096060593967,
+          "validation_count": 11
+        },
+        {
+          "class_name": "watch",
+          "recall": 0.45,
+          "margin": -0.12151462420801207,
+          "validation_count": 20
+        },
+        {
+          "class_name": "yin_yang",
+          "recall": 1.0,
+          "margin": 0.26014212568524575,
+          "validation_count": 10
+        }
+      ]
+    },
+    {
+      "classes": [
+        "Faces",
+        "Leopards",
+        "Motorbikes",
+        "airplanes",
+        "bonsai",
+        "crab",
+        "crayfish",
+        "grand_piano",
+        "helicopter",
+        "kangaroo",
+        "ketch",
+        "laptop",
+        "lotus",
+        "minaret",
+        "revolver",
+        "schooner",
+        "trilobite",
+        "umbrella",
+        "watch",
+        "yin_yang"
+      ],
+      "macro_recall": 0.595894897156507,
+      "scores": [
+        {
+          "class_name": "Faces",
+          "recall": 0.75,
+          "margin": 0.06650631233266026,
+          "validation_count": 20
+        },
+        {
+          "class_name": "Leopards",
+          "recall": 0.9,
+          "margin": 0.1327550060966157,
+          "validation_count": 20
+        },
+        {
+          "class_name": "Motorbikes",
+          "recall": 0.95,
+          "margin": 0.19784126488859594,
+          "validation_count": 20
+        },
+        {
+          "class_name": "airplanes",
+          "recall": 0.65,
+          "margin": 0.12229636718034591,
+          "validation_count": 20
+        },
+        {
+          "class_name": "bonsai",
+          "recall": 0.42105263157894735,
+          "margin": -0.05451871697871968,
+          "validation_count": 19
+        },
+        {
+          "class_name": "crab",
+          "recall": 0.4,
+          "margin": -0.08466329562062075,
+          "validation_count": 10
+        },
+        {
+          "class_name": "crayfish",
+          "recall": 0.4,
+          "margin": -0.04908156806825413,
+          "validation_count": 10
+        },
+        {
+          "class_name": "grand_piano",
+          "recall": 0.8571428571428571,
+          "margin": 0.11780655614889958,
+          "validation_count": 14
+        },
+        {
+          "class_name": "helicopter",
+          "recall": 0.46153846153846156,
+          "margin": -0.1009042001010288,
+          "validation_count": 13
+        },
+        {
+          "class_name": "kangaroo",
+          "recall": 0.5,
+          "margin": -0.029878095840547347,
+          "validation_count": 12
+        },
+        {
+          "class_name": "ketch",
+          "recall": 0.47058823529411764,
+          "margin": -0.06084305199140555,
+          "validation_count": 17
+        },
+        {
+          "class_name": "laptop",
+          "recall": 0.4166666666666667,
+          "margin": -0.060066304471718714,
+          "validation_count": 12
+        },
+        {
+          "class_name": "lotus",
+          "recall": 0.7,
+          "margin": -0.08100551737132819,
+          "validation_count": 10
+        },
+        {
+          "class_name": "minaret",
+          "recall": 0.6363636363636364,
+          "margin": 0.1154313841758297,
+          "validation_count": 11
+        },
+        {
+          "class_name": "revolver",
+          "recall": 0.4166666666666667,
+          "margin": 0.06377839891189735,
+          "validation_count": 12
+        },
+        {
+          "class_name": "schooner",
+          "recall": 0.5,
+          "margin": -0.09747343255814779,
+          "validation_count": 10
+        },
+        {
+          "class_name": "trilobite",
+          "recall": 0.5833333333333334,
+          "margin": 0.11281461368321309,
+          "validation_count": 12
+        },
+        {
+          "class_name": "umbrella",
+          "recall": 0.45454545454545453,
+          "margin": -0.052460937664731144,
+          "validation_count": 11
+        },
+        {
+          "class_name": "watch",
+          "recall": 0.45,
+          "margin": -0.12151462420801207,
+          "validation_count": 20
+        },
+        {
+          "class_name": "yin_yang",
+          "recall": 1.0,
+          "margin": 0.26014212568524575,
+          "validation_count": 10
+        }
+      ]
+    }
+  ],
+  "uses_optical_or_test_scores": false,
+  "limitations": "Selection adapts to validation. Proxy score is NOT optical-model accuracy or an independent generalization estimate."
+}

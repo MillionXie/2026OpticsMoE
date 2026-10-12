@@ -61,6 +61,8 @@ def suite(a):
     assert os.environ.get('CUDA_VISIBLE_DEVICES') == ''
     profile, manifest = read(a.profile), read(a.data.parent/'data_manifest.json')
     assert profile['depths'] == DEPTHS and len(manifest['classes']) == 20
+    assert profile['selected_classes'] == manifest['classes']
+    assert sha(a.data.parent/'data_manifest.json') == profile['data_contract']['manifest_sha256']
     assert sha(a.data) == manifest['cache_sha256']
     assert manifest['preparation_source_sha256'] == sha(HERE/'prepare_caltech_selected.py')
     assert all(idle(g) for g in GPUS), 'No other project is killed or displaced'
@@ -91,6 +93,7 @@ def suite(a):
     for name in ('fast_optical.py','medicinal_pilot.py','prepare_caltech_selected.py','prepare_caltech50.py','probe_fast_optical.py','caltech_selected_queue.py','caltech_selected_plan.json'):
         sources[str((HERE/name).relative_to(ROOT)).replace('\\','/')] = sha(HERE/name)
     def verify():
+        assert sha(a.data.parent/'data_manifest.json') == metadata['manifest_sha256']
         for path, digest in sources.items():
             assert sha(ROOT/path)==digest
             assert hashlib.sha256(subprocess.check_output(['git','show','HEAD:'+path],cwd=ROOT)).hexdigest()==digest

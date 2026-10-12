@@ -74,6 +74,8 @@ def numerical_gate(data, weights, profile, cfg, batched, micro, depth=2):
     identity = o.f.tensor_identity(model)
     mixed = None
     if cfg.get('mixup_alpha', 0.):
+        indices = torch.tensor([int((data[1] == k).nonzero()[0]) for k in range(8)])
+        data = (data[0][indices], data[1][indices], data[2][indices.numpy()])
         theta = o.b.affine_parameters(len(data[1]), cfg['seed'], 0, cfg['augmentation'])
         mixed, target, _ = mixup_batch(data, torch.arange(8), theta, cfg, 0, 0)
     def compute(batch):
@@ -96,11 +98,13 @@ def numerical_gate(data, weights, profile, cfg, batched, micro, depth=2):
     relative = max(float((proposed[n]-g).norm()/g.norm().clamp_min(1e-12)) for n, g in gradients.items())
     cosine = min(float(torch.nn.functional.cosine_similarity(proposed[n].flatten(), g.flatten(), dim=0)) for n, g in gradients.items())
     finite = all(bool(torch.isfinite(g).all()) and float(g.norm()) > 0 for g in proposed.values())
-    assert error <= 1e-6 and relative <= .02 and cosine >= .999 and finite
+    assert error <= 1e-6 and relative <= .02 and cosine >= .999 and finite, dict(
+        probability_max_error=error, gradient_max_relative_l2=relative, gradient_min_cosine=cosine, gradients_finite_nonzero=finite)
     receipt = dict(passed=True, probability_max_error=error, gradient_max_relative_l2=relative,
         gradient_min_cosine=cosine, gradients_finite_nonzero=finite, initialization_unchanged=True,
         router_has_residual=False, initial_parameter_sha256=identity, residual_rho=cfg['residual_rho'],
-        expert_batched=batched, microbatch=micro, depth=depth, scope='Fresh seed17 first8 train only; serial micro1 reference')
+        expert_batched=batched, microbatch=micro, depth=depth,
+        scope='Fresh seed17 stratified8 train images, actual MixUp objective; serial micro1 reference' if cfg.get('mixup_alpha', 0.) else 'Fresh seed17 first8 train only; serial micro1 reference')
     del model, reference, gradients, result, proposed
     gc.collect(); torch.cuda.empty_cache()
     return receipt
@@ -144,6 +148,10 @@ def main():
     grouping_source = 'prepare_caltech50.py' if contract['preparation_source'].startswith('prepare_caltech') else 'prepare_butterfly.py'
     assert manifest['grouping_source_sha256'] == r.sha(o.HERE/grouping_source)
     assert manifest[contract['identity_key']] == contract['identity_sha256']
+    if 'cache_sha256' in contract:
+        assert manifest['cache_sha256'] == contract['cache_sha256']
+        assert r.sha(a.data.parent/'data_manifest.json') == contract['manifest_sha256']
+        assert manifest['classes'] == profile['selected_classes']
     if 'preparation_plan_sha256' in contract:
         assert manifest['preparation_plan_sha256'] == contract['preparation_plan_sha256']
         assert manifest['parent_manifest_sha256'] == contract['parent_manifest_sha256']
