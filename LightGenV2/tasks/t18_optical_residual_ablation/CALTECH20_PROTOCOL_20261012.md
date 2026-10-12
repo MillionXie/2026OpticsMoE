@@ -135,3 +135,15 @@ CUDA_VISIBLE_DEVICES='' $PY $T/audit_caltech20_final.py --run $RUN/final --out $
 These are ordered completion commands, not authorization to bypass a failed
 barrier. Existing final directories/claims must be inspected; no automatic
 test retry or removal of a failure claim. No repeated train/val optical inference.
+
+
+After the completed final CPU report has been fetched with SHA verification,
+additional macro-recall and row-normalized test-confusion plots can be reproduced
+without model inference:
+
+```sh
+python LightGenV2/tasks/t18_optical_residual_ablation/plot_caltech20_saved_metrics.py --report LightGenV2/tasks/t18_optical_residual_ablation/reports/caltech20_20261012/final
+```
+
+These plots read the completed audit and immutable global lock only. Original
+fits, selected checkpoints and once-only test claims remain preserved.

@@ -1,0 +1,34 @@
+{
+  "time_unix": 1791788823.205651,
+  "fit_run": "/DATA/DATA1/guest3/2026OpticsMoE/LightGenV2/tasks/t18_optical_residual_ablation/runs/simulation/caltech20_s17_L2L4L8L16_e100_4gpu_20261012",
+  "all_training_and_test_pids_absent": true,
+  "pid_exists": {
+    "1055706": false,
+    "1055853": false,
+    "1055985": false,
+    "1056117": false,
+    "1056249": false,
+    "1088805": false,
+    "1089281": false,
+    "1121129": false,
+    "1123545": false,
+    "1123262": false,
+    "1122912": false,
+    "1122571": false,
+    "1121150": false,
+    "1121148": false,
+    "1121146": false,
+    "1121144": false
+  },
+  "gpu_compute_processes": [],
+  "current_processes": {
+    "active": [],
+    "pending": []
+  },
+  "source_count": 67,
+  "current_source_mismatches": [],
+  "global_selection_lock_sha256": "746ca2f6cb9ab90281b67572e634b6d57969ffecd787d7cd9b24e0c00f27a904",
+  "final_audit_sha256": "75c17ba0cecc925ce866c03a23701555838c9d2745a52c9dd20b1676ffb8afb6",
+  "total_test_evaluations": 8,
+  "test_used_for_selection": false
+}

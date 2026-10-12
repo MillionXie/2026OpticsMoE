@@ -1,0 +1,17 @@
+{
+  "parent_pid": 1121129,
+  "command": [
+    "/home/guest3/miniconda3/envs/xml/bin/python",
+    "LightGenV2/tasks/t18_optical_residual_ablation/caltech20_finalize.py",
+    "--phase",
+    "suite",
+    "--out",
+    "LightGenV2/tasks/t18_optical_residual_ablation/runs/simulation/caltech20_s17_L2L4L8L16_e100_4gpu_20261012/final",
+    "--data",
+    "/DATA/DATA1/guest3/t18_caltech20_20261012/caltech20_fixed_split.npz"
+  ],
+  "CUDA_VISIBLE_DEVICES": "",
+  "start_time_unix": 1791788623.1805334,
+  "source_sha256": "edb849f2212baf2a6253271cb29f4c80e0bf2ffee0954231d6e485c3f4cbb196",
+  "git_commit": "892931d70c2e5b2f885f920f2a7ad6d38ab87097"
+}
