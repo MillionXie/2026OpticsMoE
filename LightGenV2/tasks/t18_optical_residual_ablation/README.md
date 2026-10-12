@@ -13,6 +13,12 @@
 70训练源码原Gitblob/当前文件匹配，test0。数值模式2/4micro4、12/16micro1，
 详情和真实启动收据见[新报告](reports/caltech_selected20_20261012/README.md)。
 
+12层两rho已完成共同100轮，CPU保存结果审核与独立100轮MixUp hash核验通过，test0。
+验证NLL选rho0E100/rho.3E91：train69.02/80.90%、val54.77/60.78%，gap14.25/20.13pp；
+残差验证高6.01pp，但训练提升更大、末段验证趋平台，过拟合迹象仍在，不能称充分收敛。
+原12层GPU子退出，队列在GPU1/2自动接4层；16层仍在GPU0/4训练。
+[12层曲线、macro/NLL和审核证据](reports/caltech_selected20_20261012/L12/README.md)。
+
 ## Caltech20最终结果：八组100轮已交付
 
 2/4/8/16层两rho各100轮，全部验证EMA NLL选模锁定后各首次单test；CPU审核通过。

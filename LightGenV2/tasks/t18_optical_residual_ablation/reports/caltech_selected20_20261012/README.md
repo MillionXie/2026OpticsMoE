@@ -1,5 +1,19 @@
 # Caltech20 screened regularized development task
 
+## Completed L12 train/validation review
+
+Both L12 arms completed the full100 epochs and their GPU processes exited.
+CPU saved-artifact audits and independently regenerated100 MixUp hashes passed;
+all70 current sources match training Git blobs. Test remains0, no partial locks.
+First minimum validation EMA balanced NLL selects rho0 E100 and rho.3 E91:
+train69.02/80.90%, val54.77/60.78%, val macro51.95/57.94%, gaps14.25/20.13pp.
+Residual validation accuracy gain6.01pp is smaller than training gain11.88pp.
+Late validation NLL window improvement4.782/2.292%; residual validation flattens
+while training keeps improving, so overfitting signs remain. Neither sufficient
+convergence nor70% accuracy is established. L4 pair automatically follows on
+GPU1/2; L16 continues onGPU0/4. [Full evidence and inspected plots](L12/README.md).
+The production-start section below is the preserved initial snapshot.
+
 User requested20 classes, better accuracy/generalization, replace8 with12, four
 GPUs. New depths2/4/12/16, rho0/.3, fresh common100; original eight fits preserved.
 
