@@ -1,5 +1,17 @@
 # Caltech20 screened regularized development task
 
+## Completed L4 train/validation review
+
+Both L4 arms completed common100 and their GPU processes exited; L2 automatically
+follows onGPU1/2. Saved-artifact CPU audits, all100 independently regenerated
+MixUp hashes,21 phase gradients and70 current/training Git sources pass; test0.
+First minimum validation EMA balanced NLL selects rho0 E99 and rho.3 E100:
+train61.81/76.90%, val49.82/61.84%, val macro47.65/59.26%, gaps11.98/15.06pp.
+Residual validation accuracy gain12.01pp; late validation NLL improves3.377/5.450%.
+The gap remains, but both train/val curves still improve; neither full convergence
+nor persistently deteriorating validation is established.70% gate fails for both.
+[Full evidence and inspected plots](L4/README.md). L16 continues, no early test/locks.
+
 ## Completed L12 train/validation review
 
 Both L12 arms completed the full100 epochs and their GPU processes exited.

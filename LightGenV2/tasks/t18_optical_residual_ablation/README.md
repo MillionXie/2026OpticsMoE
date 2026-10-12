@@ -19,6 +19,12 @@
 原12层GPU子退出，队列在GPU1/2自动接4层；16层仍在GPU0/4训练。
 [12层曲线、macro/NLL和审核证据](reports/caltech_selected20_20261012/L12/README.md)。
 
+4层两rho共同100轮已完成并通过CPU保存结果及100轮MixUp核验：rho0E99/rho.3E100，
+train61.81/76.90%、val49.82/61.84%、gap11.98/15.06pp，残差val高12.01pp。
+末十验证NLL仍改善3.377/5.450%，未充分收敛，不能仅凭差距归因为严重过拟合；test0。
+原4层子已退出，GPU1/2自动接续2层；16层继续原预算。
+[4层完整曲线及审核证据](reports/caltech_selected20_20261012/L4/README.md)。
+
 ## Caltech20最终结果：八组100轮已交付
 
 2/4/8/16层两rho各100轮，全部验证EMA NLL选模锁定后各首次单test；CPU审核通过。
