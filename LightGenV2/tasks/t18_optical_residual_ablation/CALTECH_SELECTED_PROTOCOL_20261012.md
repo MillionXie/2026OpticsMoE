@@ -61,3 +61,36 @@ The actual data identity is inserted in caltech_selected_profile.json after the
 selection manifest is frozen, then committed/pushed before the server fit starts.
 Queue: caltech_selected_queue.py --phase suite --data <cache> --profile <profile>
 --out <task>/runs/simulation/caltech_selected20_s17_L2L4L12L16_reg100_4gpu_20261012.
+
+## Independent executable completion
+
+`caltech_selected_finalize.py` is separate from the sealed historical20/COIL
+entries. It validates the actual frozen profile, dynamic class names/support/IDs,
+common100, original source Git blobs, all pair identities and independently
+regenerates each epoch's deterministic MixUp hash including the macro tail.
+It executes all four saved-PT/CSV CPU pair audits before any pair/local/global
+lock. The exclusive suite marker prevents duplicate test supervisors; the worker
+claim is file+directory fsynced on Linux before first test-array materialization.
+No claims are deleted/retried after failures.
+
+Only AFTER the live fit queue is complete, all eight fits exist, and GPU children
+are exited, use these ordered commands from the server repository root:
+
+```sh
+T=LightGenV2/tasks/t18_optical_residual_ablation
+RUN=$T/runs/simulation/caltech_selected20_s17_L2L4L12L16_reg100_4gpu_20261012
+DATA=/DATA/DATA1/guest3/t18_caltech_selected20_20261012/caltech20_selected_split.npz
+PY=/home/guest3/miniconda3/envs/xml/bin/python
+CUDA_VISIBLE_DEVICES='' $PY $T/caltech_selected_finalize.py --phase lock --base $RUN --out $RUN/final --data $DATA
+CUDA_VISIBLE_DEVICES='' $PY $T/caltech_selected_finalize.py --phase suite --out $RUN/final --data $DATA
+CUDA_VISIBLE_DEVICES='' $PY $T/audit_caltech_selected_final.py --run $RUN/final --out $RUN/cpu_report_final --data $DATA
+```
+
+Inspect existing output/claims before acting. These steps do not authorize
+bypassing a failed audit or restarting a claimed test. The final CPU audit waits
+for all eight once-only results and supervisor completion before reading labels,
+then checks saved hard-label probabilities/CM/support/macro/NLL and checkpoint
+identities without optical inference. Exports include full CM CSV, support CSV,
+summary and curve CSV plus accuracy/macro/NLL curves, selected summaries and
+per-depth row-normalized test CM figures in PNG/SVG/PDF. Actual completed figures
+must be visually inspected; no single-seed error bars or invented test history.

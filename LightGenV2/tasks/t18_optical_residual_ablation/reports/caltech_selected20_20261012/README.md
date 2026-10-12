@@ -57,3 +57,14 @@ PIDs and progress are snapshots: always read live current_processes/status/proc.
 Detailed evidence: [production_start.json](production_start.json).
 Follow-up monitor `t18-20` remains active until all results/plots are delivered,
 Git synchronized and actual GPU release verified; ordinary healthy progress quiet.
+
+## Completion tooling prepared while training
+
+Independent `caltech_selected_finalize.py` and `audit_caltech_selected_final.py`
+support actual screened classes/unequal support and depths2/4/12/16/common100.
+CPU checks cover first exact NLL tie, MixUp schedule corruption/tail/epoch,
+pair equality, all-eight barrier before data access, unsupported8 key rejection,
+exclusive durable once-test claims, claim-before-test-array read and final CPU
+audit waiting for all results and exited GPU children. No real test has run.
+The registered commands and order are in the current protocol. Historical sealed
+Caltech20/COIL files and all70 running sources are unchanged.
