@@ -106,3 +106,32 @@ training, categories or checkpoint choice. Final independent CPU audits generate
 actual train/validation curves plus one selected test point, summary/support CSV
 and PNG/SVG/PDF, single seed without error bars. Complete reports, synchronize
 Git and verify actual GPU release before ending the monitor.
+
+## Executable completion steps (CPU lock, then first test, then CPU report)
+
+The independent Caltech20 entry points are caltech20_finalize.py and
+audit_caltech20_final.py. They do not alter the sealed historical COIL20 files.
+The finalizer checks the registered Caltech20 manifest and actual class names,
+split IDs and supports; all eight must be common100 base EMA validation choices.
+The CPU lock runs the saved-PT/CSV audit for every pair and hashes best/last,
+history, config, metadata, gradient, smoke and prediction artifacts into locks.
+The exclusive test claim is flushed/fsynced before test arrays are materialized.
+The report audits saved probabilities only and exports class support, full
+confusion matrices, NLL, macro recall/F1, fit budgets and PNG/SVG/PDF curves.
+
+On the training server from the repository root, after the full fit queue has
+completed and released its GPU children:
+
+```sh
+T=LightGenV2/tasks/t18_optical_residual_ablation
+RUN=$T/runs/simulation/caltech20_s17_L2L4L8L16_e100_4gpu_20261012
+DATA=/DATA/DATA1/guest3/t18_caltech20_20261012/caltech20_fixed_split.npz
+PY=/home/guest3/miniconda3/envs/xml/bin/python
+CUDA_VISIBLE_DEVICES='' $PY $T/caltech20_finalize.py --phase lock --base $RUN --out $RUN/final --data $DATA
+CUDA_VISIBLE_DEVICES='' $PY $T/caltech20_finalize.py --phase suite --out $RUN/final --data $DATA
+CUDA_VISIBLE_DEVICES='' $PY $T/audit_caltech20_final.py --run $RUN/final --out $RUN/cpu_report_final --data $DATA
+```
+
+These are ordered completion commands, not authorization to bypass a failed
+barrier. Existing final directories/claims must be inspected; no automatic
+test retry or removal of a failure claim. No repeated train/val optical inference.
