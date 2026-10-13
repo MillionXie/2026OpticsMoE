@@ -103,15 +103,9 @@ def test_worker(a):
     ck=torch.load(a.base/a.key/'best_checkpoint.pt',map_location='cpu',weights_only=False);cfg=ck['config'];model=DeployMoE(cfg['depth'],cfg['residual_rho']).cuda().eval();model.load_state_dict(ck['model'],strict=True)
     metric,rows=t.evaluate(model,data,1);t.csvwrite(a.out/a.key/'test_predictions.csv',rows)
     t.save(a.out/a.key/'result.json',dict(test=metric,selected_epoch=ck['epoch'],checkpoint_sha256=selection['checkpoint_sha256'],test_evaluations=1,test_used_for_selection=False,test_accuracy_target_passed=(metric['accuracy']>=.75 if a.key=='L4_rho03' else None)))
-    # Static phase maps and amplitude multipliers; no train/val forward re-run.
-    from check_caltech_deploy234 import native
-    package=a.out/a.key/'deployment';package.mkdir()
-    maps={}
-    for stage in ['router']+[str(k) for k in range(cfg['depth'])]:
-        plane=model.plane(stage).detach().cpu()[20:498,20:498];phase=(torch.floor(torch.remainder(torch.angle(plane),2*math.pi)/(2*math.pi)*256).clamp(0,255)).to(torch.uint8).numpy()
-        native(phase,'phase').save(package/f'phase_{stage}_canonical.bmp');maps[stage]=plane.abs().numpy()
-    np.savez_compressed(package/'amplitude_multipliers.npz',**maps)
-    t.save(package/'manifest.json',dict(contract=deployment_contract(cfg['depth'],cfg['residual_rho']),checkpoint=str((a.base/a.key/'best_checkpoint.pt').resolve()),checkpoint_sha256=selection['checkpoint_sha256'],files={p.name:t.sha(p) for p in package.iterdir() if p.is_file()},calibration_status='Offline only; fresh LUT/ROI/orientation/exposure/session required before bench use'))
+    # Static deployment export on CPU; no extra sample/model inference.
+    from export_caltech_deploy234 import export_selected
+    export_selected(model.cpu(),cfg,a.out/a.key/'deployment',a.base/a.key/'best_checkpoint.pt',selection['checkpoint_sha256'],m['classes'],fit['sources'])
 
 def suite(a):
     assert os.environ.get('CUDA_VISIBLE_DEVICES')=='';validate_lock(a)

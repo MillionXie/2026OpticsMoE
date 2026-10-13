@@ -44,3 +44,41 @@ def test_exclusive_claim_preserves_original(tmp_path):
     path=tmp_path/'claim.json';t.save(path,dict(checkpoint='original'),exclusive=True)
     with pytest.raises(FileExistsError):t.save(path,dict(checkpoint='changed'),exclusive=True)
     assert t.read(path)==dict(checkpoint='original')
+
+@pytest.mark.parametrize('depth,rho',[(d,r) for d in (2,3,4) for r in (0.,.3)])
+def test_static_joint_export_dimensions_and_encoded_field(tmp_path,monkeypatch,depth,rho):
+    import math,numpy as np,torch
+    from PIL import Image
+    import export_caltech_deploy234 as e
+    from caltech_deploy234_model import DeployMoE
+    torch.set_num_threads(2);torch.manual_seed(17);model=DeployMoE(depth,rho).eval()
+    monkeypatch.setattr(model,'forward',lambda *args,**kwargs:pytest.fail('No extra model inference allowed'))
+    checkpoint=tmp_path/'selected.pt';checkpoint.write_bytes(b'synthetic reference only')
+    package=tmp_path/'deployment';manifest=e.export_selected(model,dict(depth=depth,residual_rho=rho),package,checkpoint,e.sha(checkpoint),[str(k) for k in range(20)],dict(synthetic='only'))
+    assert manifest['phase_only_is_sufficient'] is False and manifest['model_forward_calls']==0
+    assert all(e.sha(package/name)==identity for name,identity in manifest['files'].items())
+    masks=np.load(package/'fixed_masks.npz');assert masks['detectors'].shape==(20,478,478) and masks['detectors'].sum(0).max()==1
+    assert json.loads((package/'classes.json').read_text())['class_label']==list(range(20))
+    amp=torch.stack([torch.zeros(224,224),torch.linspace(0,.5,224*224).reshape(224,224)])
+    weights=torch.tensor([[.6,0.,.8,0.],[.6,0.,.8,0.]])
+    with np.load(package/'amplitude_multipliers.npz') as maps:
+        for stage in ['router']+[str(k) for k in range(depth)]:
+            with torch.no_grad():plane=model.plane(stage).cpu()[20:498,20:498]
+            assert np.array_equal(maps[stage],plane.abs().numpy())
+            canonical=np.asarray(Image.open(package/f'phase_{stage}_canonical.bmp'))
+            device=np.asarray(Image.open(package/f'phase_{stage}_native.bmp'))
+            assert canonical.shape==(478,478) and device.shape==(1200,1920)
+            expected=torch.floor(torch.remainder(torch.angle(plane),2*math.pi)/(2*math.pi)*256).clamp(0,255).to(torch.uint8).numpy()
+            assert np.array_equal(canonical,expected)
+            w=None if stage=='router' else weights
+            a,p=e.encode_stage(model,amp,stage,w)
+            with torch.no_grad():field,_,_=model.physical_fields(amp,stage,w)
+            decoded=torch.from_numpy(a.astype(np.float32)/255)*torch.exp(2j*math.pi*torch.from_numpy(p.astype(np.float32)/256))[None]
+            assert (decoded-field[:,20:498,20:498]).abs().max()<1e-6
+            sample=tmp_path/('sample_'+stage);receipt=e.save_sample_bmps(model,amp,stage,sample,w)
+            assert np.asarray(Image.open(sample/'amplitude_000000_canonical.bmp')).shape==(478,478)
+            assert np.asarray(Image.open(sample/'amplitude_000001_native.bmp')).shape==(1080,1920)
+            assert receipt['brightness'][0]['zero_fraction']==1. and receipt['brightness'][0]['active']['maximum']==0.
+            assert receipt['brightness'][1]['extra_peak_normalization'] is False
+            assert np.array_equal(np.asarray(Image.open(sample/'amplitude_000001_canonical.bmp')),a[1])
+            assert not np.asarray(Image.open(sample/'amplitude_000000_native.bmp')).any()
