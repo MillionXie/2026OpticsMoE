@@ -1,0 +1,87 @@
+{
+  "passed": true,
+  "time_unix": 1791904375.7883902,
+  "own_fit_suite_test_pids": [
+    2437439,
+    2968571,
+    2882890,
+    2437706,
+    2790895,
+    2437634,
+    2775881,
+    2437562,
+    2968648,
+    2968839,
+    2969097,
+    2969275,
+    2969552,
+    2969945
+  ],
+  "all_actual_processes_exited": true,
+  "own_gpu_processes": 0,
+  "A100_used": false,
+  "test_evaluations": 6,
+  "each_test_once": true,
+  "model_forward_calls": 0,
+  "all_deployment_packages_verified": [
+    {
+      "key": "L2_rho0",
+      "manifest_sha256": "68014717489b31626d8c00c6decda90a67d48a1bb1ffe7116b51c07ad9eeb056",
+      "all_files_sha_verified": true,
+      "canonical_native_shapes_verified": true,
+      "classes_masks_verified": true,
+      "checkpoint_source_verified": true,
+      "gpu_uuid": "GPU-6dcca91a-8e08-1a50-9aa6-81defeaed50b"
+    },
+    {
+      "key": "L2_rho03",
+      "manifest_sha256": "b98bbc060cab20a6c96a7bc7c444a29f17c1844d65ff244895b804633bb0eba7",
+      "all_files_sha_verified": true,
+      "canonical_native_shapes_verified": true,
+      "classes_masks_verified": true,
+      "checkpoint_source_verified": true,
+      "gpu_uuid": "GPU-6dcca91a-8e08-1a50-9aa6-81defeaed50b"
+    },
+    {
+      "key": "L3_rho0",
+      "manifest_sha256": "ad80181b8b702da157c0a96349eb33c210da15cade57e8e12b2cc632370cf6df",
+      "all_files_sha_verified": true,
+      "canonical_native_shapes_verified": true,
+      "classes_masks_verified": true,
+      "checkpoint_source_verified": true,
+      "gpu_uuid": "GPU-6dcca91a-8e08-1a50-9aa6-81defeaed50b"
+    },
+    {
+      "key": "L3_rho03",
+      "manifest_sha256": "33c8b29e3057eefa1c25850d276f553af23c2df6a1099cab9eecf83c1719f420",
+      "all_files_sha_verified": true,
+      "canonical_native_shapes_verified": true,
+      "classes_masks_verified": true,
+      "checkpoint_source_verified": true,
+      "gpu_uuid": "GPU-6dcca91a-8e08-1a50-9aa6-81defeaed50b"
+    },
+    {
+      "key": "L4_rho0",
+      "manifest_sha256": "c5c2c3a0ac33520e56e471328aa4dccfd02b1d42d27d6a67db4412647aa36b35",
+      "all_files_sha_verified": true,
+      "canonical_native_shapes_verified": true,
+      "classes_masks_verified": true,
+      "checkpoint_source_verified": true,
+      "gpu_uuid": "GPU-6dcca91a-8e08-1a50-9aa6-81defeaed50b"
+    },
+    {
+      "key": "L4_rho03",
+      "manifest_sha256": "8578e085e2455078070eb522c95a03b29ecd267271736a741a23e01592bf0479",
+      "all_files_sha_verified": true,
+      "canonical_native_shapes_verified": true,
+      "classes_masks_verified": true,
+      "checkpoint_source_verified": true,
+      "gpu_uuid": "GPU-6dcca91a-8e08-1a50-9aa6-81defeaed50b"
+    }
+  ],
+  "frozen_runtime_sources_match": true,
+  "training_git_commit": "4406c010f95f60a959d732ad2200eaa34657519a",
+  "current_server_head": "e4fd4bc9eb441ba56019831c5c94bad82bac4c65",
+  "nvidia_compute_processes": "2172652, GPU-afc19890-6209-ee4d-622d-e619da5bd5b2, 20484 MiB\n2172653, GPU-e8837b85-d55b-8e81-aaa5-ec1ac326932d, 20484 MiB\n2172654, GPU-4d8bfdb9-8777-05a6-3811-ab18ff4eadfd, 20484 MiB\n2172655, GPU-1b963983-7909-af6e-0528-f0f0661ab549, 20484 MiB\n",
+  "calibration_status": "Offline only; laboratory not connected and physical calibration/accuracy not accepted"
+}

@@ -1,0 +1,68 @@
+{
+  "inspected_at": "2026-10-13T15:23:32.186828+00:00",
+  "method": "Poppler pdftoppm single-page PNG render, scale_to 2000; actual view_image inspection",
+  "actual_visual_inspection": true,
+  "issues_found": [],
+  "figures": [
+    {
+      "name": "learning_curves",
+      "pages_inspected": [
+        1
+      ],
+      "pdf_sha256": "44c217a4a50a21cfb05d4d39eb00027bdee36a0c11025167e324ef761b36dca3",
+      "png_sha256": "fd2423022ba4a54df845d2c352dfb7109558973dc58134ffcab9ef6079670419",
+      "svg_sha256": "9d41b10a8cf2cfdd392d15d61e8dc9b7f5b388f66a46b66a204663c78b674bfb",
+      "render_sha256": "178f7869153328327c42839ba76ae631e00344f8fec0a91f3e04d5b753d94fdc",
+      "axes_labels_legible": true,
+      "no_clipping_or_overlap": true
+    },
+    {
+      "name": "selected_summary",
+      "pages_inspected": [
+        1
+      ],
+      "pdf_sha256": "8346cbc242c75b796ad9ff7c294fc23817c9f07bd92579849cad63a3e39cbd73",
+      "png_sha256": "f4e89c932163fe3fa18353770c302eea6a649076d59a839e7bff54169c21d9a3",
+      "svg_sha256": "accbe8c46589635c4ad5092d477e4bb76fe018332bb12ca471a451cda3a9e4dc",
+      "render_sha256": "2320569c0fcc561893b1581ecd5b263ef19a0c648410d1e40d4b78027b6eb49b",
+      "axes_labels_legible": true,
+      "no_clipping_or_overlap": true
+    },
+    {
+      "name": "L2_test_confusion",
+      "pages_inspected": [
+        1
+      ],
+      "pdf_sha256": "744940f79368a7cb9fb8ca41a63b46f7b55f0b6dda5446cdb9416a2d01a0cfb1",
+      "png_sha256": "a6d32e301bbb9dc3fd965111b8f8b8d35489eca87781a8b3fe7c9e94a74b8430",
+      "svg_sha256": "61368ed874b177fe4c4c587cd71c18a91ccb4e8ad82e2855ba0af4710199c5a1",
+      "render_sha256": "3f9e4aa0dc54954575942dbf39d7b0a4ae39ee62b439c15391e0d8b43e110d2a",
+      "axes_labels_legible": true,
+      "no_clipping_or_overlap": true
+    },
+    {
+      "name": "L3_test_confusion",
+      "pages_inspected": [
+        1
+      ],
+      "pdf_sha256": "9d55e67f95212536c149ec599699903705d35ac964f014453459ad9c2a1a7e45",
+      "png_sha256": "0c571d46d20863fed5beb4ef9acb799387caf48bbad1a45ba619fd1a6754442b",
+      "svg_sha256": "5a6a464e8098752ddd2634137e60add36c9846109927da85f76b24c9570096e8",
+      "render_sha256": "62f0d898eb67e258ff374713b2a63dfdaac0675e3c57056b9bccf8415660acad",
+      "axes_labels_legible": true,
+      "no_clipping_or_overlap": true
+    },
+    {
+      "name": "L4_test_confusion",
+      "pages_inspected": [
+        1
+      ],
+      "pdf_sha256": "0576ccf12e2a9d1d2d5aa432cec25413836ba3ebecd677aef125ce5c91c22924",
+      "png_sha256": "177ce2fb10d70d2c4ad19c9fa1965abaa55b0a6c1e545cb07584a64ef54cf63e",
+      "svg_sha256": "d8821ec91827ad55f94cbd7c3bc3ff0deebf785b95fc9b3a2e01be65cb89e124",
+      "render_sha256": "106667f9beba1a71048d3e6cf0e5e3fc116624a39f93aa4bf737f0fd424ac10b",
+      "axes_labels_legible": true,
+      "no_clipping_or_overlap": true
+    }
+  ]
+}

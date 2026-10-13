@@ -1,0 +1,13 @@
+{
+  "locks": {
+    "L2_rho0": "996cf5f7a27413d396665de0c22ba6afafe773d93feaed0308a568fa25f12fec",
+    "L2_rho03": "7ebb562464fdb354aaba650f3b4d19d43c14befb31504bec346a34191e9fc026",
+    "L3_rho0": "e86adb28ae50834870bacb04a5ee0a438b8d0004281d31adb5a3fd169ae922c7",
+    "L3_rho03": "0bc1d0d8367a797378ce3a78789a088f5192afc57f6a7619fbcce7db603e08f3",
+    "L4_rho0": "136dfe542ef9ec463ab6fbf5a91288b66101125607f745ff4714495445dd21fa",
+    "L4_rho03": "92044e1afcfe2bcba72a35f88fb341b24d5ce8e0ffcd606efafe10a071471862"
+  },
+  "all_six_fit_audited": true,
+  "data_sha256": "a81e78bbff06ea65e7ceba3771b688178276464e33fdcdedf3796fa2930fa6e1",
+  "test_evaluations_before_lock": 0
+}

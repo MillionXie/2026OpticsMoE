@@ -1,0 +1,26 @@
+{
+  "2": {
+    "depth": 2,
+    "config_only_rho": true,
+    "keys": [
+      "L2_rho0",
+      "L2_rho03"
+    ]
+  },
+  "3": {
+    "depth": 3,
+    "config_only_rho": true,
+    "keys": [
+      "L3_rho0",
+      "L3_rho03"
+    ]
+  },
+  "4": {
+    "depth": 4,
+    "config_only_rho": true,
+    "keys": [
+      "L4_rho0",
+      "L4_rho03"
+    ]
+  }
+}

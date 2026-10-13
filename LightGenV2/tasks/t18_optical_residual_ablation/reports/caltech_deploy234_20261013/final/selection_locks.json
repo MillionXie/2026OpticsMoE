@@ -1,0 +1,860 @@
+{
+  "L2_rho0": {
+    "epoch": 147,
+    "checkpoint_sha256": "886786c8a446e4e587c67e1e7a6184fb023924af76d3aae26c8ce21d717894db",
+    "data_sha256": "a81e78bbff06ea65e7ceba3771b688178276464e33fdcdedf3796fa2930fa6e1",
+    "config": {
+      "seed": 17,
+      "depths": [
+        2,
+        3,
+        4
+      ],
+      "rhos": [
+        0,
+        0.3
+      ],
+      "maximum_epochs": 150,
+      "minimum_epochs": 50,
+      "maximum_seconds": 14400,
+      "early_patience": 25,
+      "early_min_delta": 0.002,
+      "batch_size": 16,
+      "microbatch": 1,
+      "lr": 0.002,
+      "ema_decay": 0.95,
+      "mixup_alpha": 0.4,
+      "label_smoothing": 0.08,
+      "capture_weight": 0.05,
+      "phase_smooth_weight": 0.005,
+      "augmentation": {
+        "degrees": 20,
+        "translation_pixels": 5,
+        "scale_delta": 0.1
+      },
+      "cache_sha256": "a81e78bbff06ea65e7ceba3771b688178276464e33fdcdedf3796fa2930fa6e1",
+      "manifest_sha256": "91f7aa36a97713e300699367904c8866551996de199b9630c0545bb24dc5f60e",
+      "maximum_gpu_children": 3,
+      "allowed_physical_gpu_indices": [
+        0,
+        1,
+        2,
+        4
+      ],
+      "forbidden_A100": true,
+      "test_accuracy_target_L4_rho03": 0.75,
+      "test_previously_observed": true,
+      "selection": "first minimum EMA validation balanced NLL; all six CPU audited and locked before single test",
+      "automatic_retry": false,
+      "automatic_regularization_search": false,
+      "shared_spare_memory_gib": 2,
+      "spare_margin_mib": 800,
+      "depth": 2,
+      "residual_rho": 0.0,
+      "classes": [
+        "Faces",
+        "Leopards",
+        "Motorbikes",
+        "airplanes",
+        "bonsai",
+        "crab",
+        "crayfish",
+        "grand_piano",
+        "helicopter",
+        "kangaroo",
+        "ketch",
+        "laptop",
+        "lotus",
+        "minaret",
+        "revolver",
+        "schooner",
+        "trilobite",
+        "umbrella",
+        "watch",
+        "yin_yang"
+      ],
+      "contract": {
+        "main_depth": 2,
+        "router_count": 1,
+        "total_captures": 3,
+        "stages": [
+          "expert",
+          "global"
+        ],
+        "geometry": {
+          "wavelength_m": 5.32e-07,
+          "distance_m": 0.1,
+          "logical_pitch_m": 1.7e-05,
+          "numerical_canvas": 518,
+          "active": 478,
+          "expert": 224,
+          "expert_array": "2x2",
+          "gap": 30,
+          "active_expert_origins": [
+            [
+              0,
+              0
+            ],
+            [
+              0,
+              254
+            ],
+            [
+              254,
+              0
+            ],
+            [
+              254,
+              254
+            ]
+          ],
+          "native_active": 1016,
+          "amplitude_native": [
+            1080,
+            1920
+          ],
+          "phase_native": [
+            1200,
+            1920
+          ]
+        },
+        "amplitude": "RMS .25 -> tanh(abs/.5), zeros remain zero, round255; NO extra peak normalization",
+        "phase": "floor256 modulo2pi; calibrated phase LUT required",
+        "rho": 0.0,
+        "residual": "((1-rho)*exp(i*phi)+rho); expert/global only, router rho0",
+        "residual_export": "joint amplitude*abs(modulation) and angle(modulation), not phase-only",
+        "nonlinearity": "raw CCD -> relative mean clamp12 -> log1p -> pool224 -> row LayerNorm eps1e-5 -> ReLU -> RMS.25",
+        "readout": "fixed20 equal64x64 intensity windows, normalized detector energy; no learned electronic classifier",
+        "quantization": "8-bit amplitude AND phase in training/validation/export, straight-through gradients",
+        "physical_status": "offline mathematical/export parity; fresh camera ROI/orientation/exposure/gain/LUT and physical rho calibration still require bench acceptance; no device connection"
+      }
+    },
+    "sources": {
+      "LightGenV2/tasks/t18_optical_residual_ablation/caltech_deploy234_model.py": "bec7cb121a3810de779adb24bbe0b774909ea1f7babc10af05c398237622d9a0",
+      "LightGenV2/tasks/t18_optical_residual_ablation/caltech_deploy234.py": "ff35dc4aeb59af220d62df0e65517cd811427ecbc537625fa4a389632923e064",
+      "LightGenV2/tasks/t18_optical_residual_ablation/caltech_deploy234_queue.py": "8323e589b292eae46b239aba50793c4f2c60b97eb99e00585943557133e6c831",
+      "LightGenV2/tasks/t18_optical_residual_ablation/caltech_deploy234_profile.json": "fbc2c0298dd789604a14c5c6166f95e3de404852622323a776e6f15f0ab299c6",
+      "LightGenV2/tasks/t18_optical_residual_ablation/gpu_budget.py": "6d9ae0cb8d49d06997905f84cbe30929e4d4552a5276afe356e6f5ee14e496a2",
+      "LightGenV2/tasks/t07_abo_image_retrieval/standalone/optics.py": "ff07716e09337520a5f338be6097522226bb8f9d42b1e39feb3e2c15eab3d67f",
+      "LightGenV2/tasks/t07_abo_image_retrieval/standalone/__init__.py": "53db7bdf4277ec72c9af012c50dcded4a7d116f62425f073d3b6a9538a92da63"
+    },
+    "selection_split": "val",
+    "test_evaluations_before_lock": 0
+  },
+  "L2_rho03": {
+    "epoch": 150,
+    "checkpoint_sha256": "e383803735efc3ad70c6ff5860e99e568b9227299dc3ae5b6efe0afd19d79666",
+    "data_sha256": "a81e78bbff06ea65e7ceba3771b688178276464e33fdcdedf3796fa2930fa6e1",
+    "config": {
+      "seed": 17,
+      "depths": [
+        2,
+        3,
+        4
+      ],
+      "rhos": [
+        0,
+        0.3
+      ],
+      "maximum_epochs": 150,
+      "minimum_epochs": 50,
+      "maximum_seconds": 14400,
+      "early_patience": 25,
+      "early_min_delta": 0.002,
+      "batch_size": 16,
+      "microbatch": 1,
+      "lr": 0.002,
+      "ema_decay": 0.95,
+      "mixup_alpha": 0.4,
+      "label_smoothing": 0.08,
+      "capture_weight": 0.05,
+      "phase_smooth_weight": 0.005,
+      "augmentation": {
+        "degrees": 20,
+        "translation_pixels": 5,
+        "scale_delta": 0.1
+      },
+      "cache_sha256": "a81e78bbff06ea65e7ceba3771b688178276464e33fdcdedf3796fa2930fa6e1",
+      "manifest_sha256": "91f7aa36a97713e300699367904c8866551996de199b9630c0545bb24dc5f60e",
+      "maximum_gpu_children": 3,
+      "allowed_physical_gpu_indices": [
+        0,
+        1,
+        2,
+        4
+      ],
+      "forbidden_A100": true,
+      "test_accuracy_target_L4_rho03": 0.75,
+      "test_previously_observed": true,
+      "selection": "first minimum EMA validation balanced NLL; all six CPU audited and locked before single test",
+      "automatic_retry": false,
+      "automatic_regularization_search": false,
+      "shared_spare_memory_gib": 2,
+      "spare_margin_mib": 800,
+      "depth": 2,
+      "residual_rho": 0.3,
+      "classes": [
+        "Faces",
+        "Leopards",
+        "Motorbikes",
+        "airplanes",
+        "bonsai",
+        "crab",
+        "crayfish",
+        "grand_piano",
+        "helicopter",
+        "kangaroo",
+        "ketch",
+        "laptop",
+        "lotus",
+        "minaret",
+        "revolver",
+        "schooner",
+        "trilobite",
+        "umbrella",
+        "watch",
+        "yin_yang"
+      ],
+      "contract": {
+        "main_depth": 2,
+        "router_count": 1,
+        "total_captures": 3,
+        "stages": [
+          "expert",
+          "global"
+        ],
+        "geometry": {
+          "wavelength_m": 5.32e-07,
+          "distance_m": 0.1,
+          "logical_pitch_m": 1.7e-05,
+          "numerical_canvas": 518,
+          "active": 478,
+          "expert": 224,
+          "expert_array": "2x2",
+          "gap": 30,
+          "active_expert_origins": [
+            [
+              0,
+              0
+            ],
+            [
+              0,
+              254
+            ],
+            [
+              254,
+              0
+            ],
+            [
+              254,
+              254
+            ]
+          ],
+          "native_active": 1016,
+          "amplitude_native": [
+            1080,
+            1920
+          ],
+          "phase_native": [
+            1200,
+            1920
+          ]
+        },
+        "amplitude": "RMS .25 -> tanh(abs/.5), zeros remain zero, round255; NO extra peak normalization",
+        "phase": "floor256 modulo2pi; calibrated phase LUT required",
+        "rho": 0.3,
+        "residual": "((1-rho)*exp(i*phi)+rho); expert/global only, router rho0",
+        "residual_export": "joint amplitude*abs(modulation) and angle(modulation), not phase-only",
+        "nonlinearity": "raw CCD -> relative mean clamp12 -> log1p -> pool224 -> row LayerNorm eps1e-5 -> ReLU -> RMS.25",
+        "readout": "fixed20 equal64x64 intensity windows, normalized detector energy; no learned electronic classifier",
+        "quantization": "8-bit amplitude AND phase in training/validation/export, straight-through gradients",
+        "physical_status": "offline mathematical/export parity; fresh camera ROI/orientation/exposure/gain/LUT and physical rho calibration still require bench acceptance; no device connection"
+      }
+    },
+    "sources": {
+      "LightGenV2/tasks/t18_optical_residual_ablation/caltech_deploy234_model.py": "bec7cb121a3810de779adb24bbe0b774909ea1f7babc10af05c398237622d9a0",
+      "LightGenV2/tasks/t18_optical_residual_ablation/caltech_deploy234.py": "ff35dc4aeb59af220d62df0e65517cd811427ecbc537625fa4a389632923e064",
+      "LightGenV2/tasks/t18_optical_residual_ablation/caltech_deploy234_queue.py": "8323e589b292eae46b239aba50793c4f2c60b97eb99e00585943557133e6c831",
+      "LightGenV2/tasks/t18_optical_residual_ablation/caltech_deploy234_profile.json": "fbc2c0298dd789604a14c5c6166f95e3de404852622323a776e6f15f0ab299c6",
+      "LightGenV2/tasks/t18_optical_residual_ablation/gpu_budget.py": "6d9ae0cb8d49d06997905f84cbe30929e4d4552a5276afe356e6f5ee14e496a2",
+      "LightGenV2/tasks/t07_abo_image_retrieval/standalone/optics.py": "ff07716e09337520a5f338be6097522226bb8f9d42b1e39feb3e2c15eab3d67f",
+      "LightGenV2/tasks/t07_abo_image_retrieval/standalone/__init__.py": "53db7bdf4277ec72c9af012c50dcded4a7d116f62425f073d3b6a9538a92da63"
+    },
+    "selection_split": "val",
+    "test_evaluations_before_lock": 0
+  },
+  "L3_rho0": {
+    "epoch": 148,
+    "checkpoint_sha256": "f6457c073ae877743cda16853056412736ebd5e818791790b2e8b5e21dc4458f",
+    "data_sha256": "a81e78bbff06ea65e7ceba3771b688178276464e33fdcdedf3796fa2930fa6e1",
+    "config": {
+      "seed": 17,
+      "depths": [
+        2,
+        3,
+        4
+      ],
+      "rhos": [
+        0,
+        0.3
+      ],
+      "maximum_epochs": 150,
+      "minimum_epochs": 50,
+      "maximum_seconds": 14400,
+      "early_patience": 25,
+      "early_min_delta": 0.002,
+      "batch_size": 16,
+      "microbatch": 1,
+      "lr": 0.002,
+      "ema_decay": 0.95,
+      "mixup_alpha": 0.4,
+      "label_smoothing": 0.08,
+      "capture_weight": 0.05,
+      "phase_smooth_weight": 0.005,
+      "augmentation": {
+        "degrees": 20,
+        "translation_pixels": 5,
+        "scale_delta": 0.1
+      },
+      "cache_sha256": "a81e78bbff06ea65e7ceba3771b688178276464e33fdcdedf3796fa2930fa6e1",
+      "manifest_sha256": "91f7aa36a97713e300699367904c8866551996de199b9630c0545bb24dc5f60e",
+      "maximum_gpu_children": 3,
+      "allowed_physical_gpu_indices": [
+        0,
+        1,
+        2,
+        4
+      ],
+      "forbidden_A100": true,
+      "test_accuracy_target_L4_rho03": 0.75,
+      "test_previously_observed": true,
+      "selection": "first minimum EMA validation balanced NLL; all six CPU audited and locked before single test",
+      "automatic_retry": false,
+      "automatic_regularization_search": false,
+      "shared_spare_memory_gib": 2,
+      "spare_margin_mib": 800,
+      "depth": 3,
+      "residual_rho": 0.0,
+      "classes": [
+        "Faces",
+        "Leopards",
+        "Motorbikes",
+        "airplanes",
+        "bonsai",
+        "crab",
+        "crayfish",
+        "grand_piano",
+        "helicopter",
+        "kangaroo",
+        "ketch",
+        "laptop",
+        "lotus",
+        "minaret",
+        "revolver",
+        "schooner",
+        "trilobite",
+        "umbrella",
+        "watch",
+        "yin_yang"
+      ],
+      "contract": {
+        "main_depth": 3,
+        "router_count": 1,
+        "total_captures": 4,
+        "stages": [
+          "expert",
+          "global",
+          "expert"
+        ],
+        "geometry": {
+          "wavelength_m": 5.32e-07,
+          "distance_m": 0.1,
+          "logical_pitch_m": 1.7e-05,
+          "numerical_canvas": 518,
+          "active": 478,
+          "expert": 224,
+          "expert_array": "2x2",
+          "gap": 30,
+          "active_expert_origins": [
+            [
+              0,
+              0
+            ],
+            [
+              0,
+              254
+            ],
+            [
+              254,
+              0
+            ],
+            [
+              254,
+              254
+            ]
+          ],
+          "native_active": 1016,
+          "amplitude_native": [
+            1080,
+            1920
+          ],
+          "phase_native": [
+            1200,
+            1920
+          ]
+        },
+        "amplitude": "RMS .25 -> tanh(abs/.5), zeros remain zero, round255; NO extra peak normalization",
+        "phase": "floor256 modulo2pi; calibrated phase LUT required",
+        "rho": 0.0,
+        "residual": "((1-rho)*exp(i*phi)+rho); expert/global only, router rho0",
+        "residual_export": "joint amplitude*abs(modulation) and angle(modulation), not phase-only",
+        "nonlinearity": "raw CCD -> relative mean clamp12 -> log1p -> pool224 -> row LayerNorm eps1e-5 -> ReLU -> RMS.25",
+        "readout": "fixed20 equal64x64 intensity windows, normalized detector energy; no learned electronic classifier",
+        "quantization": "8-bit amplitude AND phase in training/validation/export, straight-through gradients",
+        "physical_status": "offline mathematical/export parity; fresh camera ROI/orientation/exposure/gain/LUT and physical rho calibration still require bench acceptance; no device connection"
+      }
+    },
+    "sources": {
+      "LightGenV2/tasks/t18_optical_residual_ablation/caltech_deploy234_model.py": "bec7cb121a3810de779adb24bbe0b774909ea1f7babc10af05c398237622d9a0",
+      "LightGenV2/tasks/t18_optical_residual_ablation/caltech_deploy234.py": "ff35dc4aeb59af220d62df0e65517cd811427ecbc537625fa4a389632923e064",
+      "LightGenV2/tasks/t18_optical_residual_ablation/caltech_deploy234_queue.py": "8323e589b292eae46b239aba50793c4f2c60b97eb99e00585943557133e6c831",
+      "LightGenV2/tasks/t18_optical_residual_ablation/caltech_deploy234_profile.json": "fbc2c0298dd789604a14c5c6166f95e3de404852622323a776e6f15f0ab299c6",
+      "LightGenV2/tasks/t18_optical_residual_ablation/gpu_budget.py": "6d9ae0cb8d49d06997905f84cbe30929e4d4552a5276afe356e6f5ee14e496a2",
+      "LightGenV2/tasks/t07_abo_image_retrieval/standalone/optics.py": "ff07716e09337520a5f338be6097522226bb8f9d42b1e39feb3e2c15eab3d67f",
+      "LightGenV2/tasks/t07_abo_image_retrieval/standalone/__init__.py": "53db7bdf4277ec72c9af012c50dcded4a7d116f62425f073d3b6a9538a92da63"
+    },
+    "selection_split": "val",
+    "test_evaluations_before_lock": 0
+  },
+  "L3_rho03": {
+    "epoch": 150,
+    "checkpoint_sha256": "531987ca6d63a2daaef1e370d6b6b31c4fc868b8b04a7e840efc6ba93cb7318d",
+    "data_sha256": "a81e78bbff06ea65e7ceba3771b688178276464e33fdcdedf3796fa2930fa6e1",
+    "config": {
+      "seed": 17,
+      "depths": [
+        2,
+        3,
+        4
+      ],
+      "rhos": [
+        0,
+        0.3
+      ],
+      "maximum_epochs": 150,
+      "minimum_epochs": 50,
+      "maximum_seconds": 14400,
+      "early_patience": 25,
+      "early_min_delta": 0.002,
+      "batch_size": 16,
+      "microbatch": 1,
+      "lr": 0.002,
+      "ema_decay": 0.95,
+      "mixup_alpha": 0.4,
+      "label_smoothing": 0.08,
+      "capture_weight": 0.05,
+      "phase_smooth_weight": 0.005,
+      "augmentation": {
+        "degrees": 20,
+        "translation_pixels": 5,
+        "scale_delta": 0.1
+      },
+      "cache_sha256": "a81e78bbff06ea65e7ceba3771b688178276464e33fdcdedf3796fa2930fa6e1",
+      "manifest_sha256": "91f7aa36a97713e300699367904c8866551996de199b9630c0545bb24dc5f60e",
+      "maximum_gpu_children": 3,
+      "allowed_physical_gpu_indices": [
+        0,
+        1,
+        2,
+        4
+      ],
+      "forbidden_A100": true,
+      "test_accuracy_target_L4_rho03": 0.75,
+      "test_previously_observed": true,
+      "selection": "first minimum EMA validation balanced NLL; all six CPU audited and locked before single test",
+      "automatic_retry": false,
+      "automatic_regularization_search": false,
+      "shared_spare_memory_gib": 2,
+      "spare_margin_mib": 800,
+      "depth": 3,
+      "residual_rho": 0.3,
+      "classes": [
+        "Faces",
+        "Leopards",
+        "Motorbikes",
+        "airplanes",
+        "bonsai",
+        "crab",
+        "crayfish",
+        "grand_piano",
+        "helicopter",
+        "kangaroo",
+        "ketch",
+        "laptop",
+        "lotus",
+        "minaret",
+        "revolver",
+        "schooner",
+        "trilobite",
+        "umbrella",
+        "watch",
+        "yin_yang"
+      ],
+      "contract": {
+        "main_depth": 3,
+        "router_count": 1,
+        "total_captures": 4,
+        "stages": [
+          "expert",
+          "global",
+          "expert"
+        ],
+        "geometry": {
+          "wavelength_m": 5.32e-07,
+          "distance_m": 0.1,
+          "logical_pitch_m": 1.7e-05,
+          "numerical_canvas": 518,
+          "active": 478,
+          "expert": 224,
+          "expert_array": "2x2",
+          "gap": 30,
+          "active_expert_origins": [
+            [
+              0,
+              0
+            ],
+            [
+              0,
+              254
+            ],
+            [
+              254,
+              0
+            ],
+            [
+              254,
+              254
+            ]
+          ],
+          "native_active": 1016,
+          "amplitude_native": [
+            1080,
+            1920
+          ],
+          "phase_native": [
+            1200,
+            1920
+          ]
+        },
+        "amplitude": "RMS .25 -> tanh(abs/.5), zeros remain zero, round255; NO extra peak normalization",
+        "phase": "floor256 modulo2pi; calibrated phase LUT required",
+        "rho": 0.3,
+        "residual": "((1-rho)*exp(i*phi)+rho); expert/global only, router rho0",
+        "residual_export": "joint amplitude*abs(modulation) and angle(modulation), not phase-only",
+        "nonlinearity": "raw CCD -> relative mean clamp12 -> log1p -> pool224 -> row LayerNorm eps1e-5 -> ReLU -> RMS.25",
+        "readout": "fixed20 equal64x64 intensity windows, normalized detector energy; no learned electronic classifier",
+        "quantization": "8-bit amplitude AND phase in training/validation/export, straight-through gradients",
+        "physical_status": "offline mathematical/export parity; fresh camera ROI/orientation/exposure/gain/LUT and physical rho calibration still require bench acceptance; no device connection"
+      }
+    },
+    "sources": {
+      "LightGenV2/tasks/t18_optical_residual_ablation/caltech_deploy234_model.py": "bec7cb121a3810de779adb24bbe0b774909ea1f7babc10af05c398237622d9a0",
+      "LightGenV2/tasks/t18_optical_residual_ablation/caltech_deploy234.py": "ff35dc4aeb59af220d62df0e65517cd811427ecbc537625fa4a389632923e064",
+      "LightGenV2/tasks/t18_optical_residual_ablation/caltech_deploy234_queue.py": "8323e589b292eae46b239aba50793c4f2c60b97eb99e00585943557133e6c831",
+      "LightGenV2/tasks/t18_optical_residual_ablation/caltech_deploy234_profile.json": "fbc2c0298dd789604a14c5c6166f95e3de404852622323a776e6f15f0ab299c6",
+      "LightGenV2/tasks/t18_optical_residual_ablation/gpu_budget.py": "6d9ae0cb8d49d06997905f84cbe30929e4d4552a5276afe356e6f5ee14e496a2",
+      "LightGenV2/tasks/t07_abo_image_retrieval/standalone/optics.py": "ff07716e09337520a5f338be6097522226bb8f9d42b1e39feb3e2c15eab3d67f",
+      "LightGenV2/tasks/t07_abo_image_retrieval/standalone/__init__.py": "53db7bdf4277ec72c9af012c50dcded4a7d116f62425f073d3b6a9538a92da63"
+    },
+    "selection_split": "val",
+    "test_evaluations_before_lock": 0
+  },
+  "L4_rho0": {
+    "epoch": 147,
+    "checkpoint_sha256": "435187639d10e09d5320b385b1542516b47f04a223395a1e1f95faf471740f87",
+    "data_sha256": "a81e78bbff06ea65e7ceba3771b688178276464e33fdcdedf3796fa2930fa6e1",
+    "config": {
+      "seed": 17,
+      "depths": [
+        2,
+        3,
+        4
+      ],
+      "rhos": [
+        0,
+        0.3
+      ],
+      "maximum_epochs": 150,
+      "minimum_epochs": 50,
+      "maximum_seconds": 14400,
+      "early_patience": 25,
+      "early_min_delta": 0.002,
+      "batch_size": 16,
+      "microbatch": 1,
+      "lr": 0.002,
+      "ema_decay": 0.95,
+      "mixup_alpha": 0.4,
+      "label_smoothing": 0.08,
+      "capture_weight": 0.05,
+      "phase_smooth_weight": 0.005,
+      "augmentation": {
+        "degrees": 20,
+        "translation_pixels": 5,
+        "scale_delta": 0.1
+      },
+      "cache_sha256": "a81e78bbff06ea65e7ceba3771b688178276464e33fdcdedf3796fa2930fa6e1",
+      "manifest_sha256": "91f7aa36a97713e300699367904c8866551996de199b9630c0545bb24dc5f60e",
+      "maximum_gpu_children": 3,
+      "allowed_physical_gpu_indices": [
+        0,
+        1,
+        2,
+        4
+      ],
+      "forbidden_A100": true,
+      "test_accuracy_target_L4_rho03": 0.75,
+      "test_previously_observed": true,
+      "selection": "first minimum EMA validation balanced NLL; all six CPU audited and locked before single test",
+      "automatic_retry": false,
+      "automatic_regularization_search": false,
+      "shared_spare_memory_gib": 2,
+      "spare_margin_mib": 800,
+      "depth": 4,
+      "residual_rho": 0.0,
+      "classes": [
+        "Faces",
+        "Leopards",
+        "Motorbikes",
+        "airplanes",
+        "bonsai",
+        "crab",
+        "crayfish",
+        "grand_piano",
+        "helicopter",
+        "kangaroo",
+        "ketch",
+        "laptop",
+        "lotus",
+        "minaret",
+        "revolver",
+        "schooner",
+        "trilobite",
+        "umbrella",
+        "watch",
+        "yin_yang"
+      ],
+      "contract": {
+        "main_depth": 4,
+        "router_count": 1,
+        "total_captures": 5,
+        "stages": [
+          "expert",
+          "global",
+          "expert",
+          "global"
+        ],
+        "geometry": {
+          "wavelength_m": 5.32e-07,
+          "distance_m": 0.1,
+          "logical_pitch_m": 1.7e-05,
+          "numerical_canvas": 518,
+          "active": 478,
+          "expert": 224,
+          "expert_array": "2x2",
+          "gap": 30,
+          "active_expert_origins": [
+            [
+              0,
+              0
+            ],
+            [
+              0,
+              254
+            ],
+            [
+              254,
+              0
+            ],
+            [
+              254,
+              254
+            ]
+          ],
+          "native_active": 1016,
+          "amplitude_native": [
+            1080,
+            1920
+          ],
+          "phase_native": [
+            1200,
+            1920
+          ]
+        },
+        "amplitude": "RMS .25 -> tanh(abs/.5), zeros remain zero, round255; NO extra peak normalization",
+        "phase": "floor256 modulo2pi; calibrated phase LUT required",
+        "rho": 0.0,
+        "residual": "((1-rho)*exp(i*phi)+rho); expert/global only, router rho0",
+        "residual_export": "joint amplitude*abs(modulation) and angle(modulation), not phase-only",
+        "nonlinearity": "raw CCD -> relative mean clamp12 -> log1p -> pool224 -> row LayerNorm eps1e-5 -> ReLU -> RMS.25",
+        "readout": "fixed20 equal64x64 intensity windows, normalized detector energy; no learned electronic classifier",
+        "quantization": "8-bit amplitude AND phase in training/validation/export, straight-through gradients",
+        "physical_status": "offline mathematical/export parity; fresh camera ROI/orientation/exposure/gain/LUT and physical rho calibration still require bench acceptance; no device connection"
+      }
+    },
+    "sources": {
+      "LightGenV2/tasks/t18_optical_residual_ablation/caltech_deploy234_model.py": "bec7cb121a3810de779adb24bbe0b774909ea1f7babc10af05c398237622d9a0",
+      "LightGenV2/tasks/t18_optical_residual_ablation/caltech_deploy234.py": "ff35dc4aeb59af220d62df0e65517cd811427ecbc537625fa4a389632923e064",
+      "LightGenV2/tasks/t18_optical_residual_ablation/caltech_deploy234_queue.py": "8323e589b292eae46b239aba50793c4f2c60b97eb99e00585943557133e6c831",
+      "LightGenV2/tasks/t18_optical_residual_ablation/caltech_deploy234_profile.json": "fbc2c0298dd789604a14c5c6166f95e3de404852622323a776e6f15f0ab299c6",
+      "LightGenV2/tasks/t18_optical_residual_ablation/gpu_budget.py": "6d9ae0cb8d49d06997905f84cbe30929e4d4552a5276afe356e6f5ee14e496a2",
+      "LightGenV2/tasks/t07_abo_image_retrieval/standalone/optics.py": "ff07716e09337520a5f338be6097522226bb8f9d42b1e39feb3e2c15eab3d67f",
+      "LightGenV2/tasks/t07_abo_image_retrieval/standalone/__init__.py": "53db7bdf4277ec72c9af012c50dcded4a7d116f62425f073d3b6a9538a92da63"
+    },
+    "selection_split": "val",
+    "test_evaluations_before_lock": 0
+  },
+  "L4_rho03": {
+    "epoch": 150,
+    "checkpoint_sha256": "662617fa567965686a0cbfa9ab2960ea30238fa2b925e753e689e2ac77ded437",
+    "data_sha256": "a81e78bbff06ea65e7ceba3771b688178276464e33fdcdedf3796fa2930fa6e1",
+    "config": {
+      "seed": 17,
+      "depths": [
+        2,
+        3,
+        4
+      ],
+      "rhos": [
+        0,
+        0.3
+      ],
+      "maximum_epochs": 150,
+      "minimum_epochs": 50,
+      "maximum_seconds": 14400,
+      "early_patience": 25,
+      "early_min_delta": 0.002,
+      "batch_size": 16,
+      "microbatch": 1,
+      "lr": 0.002,
+      "ema_decay": 0.95,
+      "mixup_alpha": 0.4,
+      "label_smoothing": 0.08,
+      "capture_weight": 0.05,
+      "phase_smooth_weight": 0.005,
+      "augmentation": {
+        "degrees": 20,
+        "translation_pixels": 5,
+        "scale_delta": 0.1
+      },
+      "cache_sha256": "a81e78bbff06ea65e7ceba3771b688178276464e33fdcdedf3796fa2930fa6e1",
+      "manifest_sha256": "91f7aa36a97713e300699367904c8866551996de199b9630c0545bb24dc5f60e",
+      "maximum_gpu_children": 3,
+      "allowed_physical_gpu_indices": [
+        0,
+        1,
+        2,
+        4
+      ],
+      "forbidden_A100": true,
+      "test_accuracy_target_L4_rho03": 0.75,
+      "test_previously_observed": true,
+      "selection": "first minimum EMA validation balanced NLL; all six CPU audited and locked before single test",
+      "automatic_retry": false,
+      "automatic_regularization_search": false,
+      "shared_spare_memory_gib": 2,
+      "spare_margin_mib": 800,
+      "depth": 4,
+      "residual_rho": 0.3,
+      "classes": [
+        "Faces",
+        "Leopards",
+        "Motorbikes",
+        "airplanes",
+        "bonsai",
+        "crab",
+        "crayfish",
+        "grand_piano",
+        "helicopter",
+        "kangaroo",
+        "ketch",
+        "laptop",
+        "lotus",
+        "minaret",
+        "revolver",
+        "schooner",
+        "trilobite",
+        "umbrella",
+        "watch",
+        "yin_yang"
+      ],
+      "contract": {
+        "main_depth": 4,
+        "router_count": 1,
+        "total_captures": 5,
+        "stages": [
+          "expert",
+          "global",
+          "expert",
+          "global"
+        ],
+        "geometry": {
+          "wavelength_m": 5.32e-07,
+          "distance_m": 0.1,
+          "logical_pitch_m": 1.7e-05,
+          "numerical_canvas": 518,
+          "active": 478,
+          "expert": 224,
+          "expert_array": "2x2",
+          "gap": 30,
+          "active_expert_origins": [
+            [
+              0,
+              0
+            ],
+            [
+              0,
+              254
+            ],
+            [
+              254,
+              0
+            ],
+            [
+              254,
+              254
+            ]
+          ],
+          "native_active": 1016,
+          "amplitude_native": [
+            1080,
+            1920
+          ],
+          "phase_native": [
+            1200,
+            1920
+          ]
+        },
+        "amplitude": "RMS .25 -> tanh(abs/.5), zeros remain zero, round255; NO extra peak normalization",
+        "phase": "floor256 modulo2pi; calibrated phase LUT required",
+        "rho": 0.3,
+        "residual": "((1-rho)*exp(i*phi)+rho); expert/global only, router rho0",
+        "residual_export": "joint amplitude*abs(modulation) and angle(modulation), not phase-only",
+        "nonlinearity": "raw CCD -> relative mean clamp12 -> log1p -> pool224 -> row LayerNorm eps1e-5 -> ReLU -> RMS.25",
+        "readout": "fixed20 equal64x64 intensity windows, normalized detector energy; no learned electronic classifier",
+        "quantization": "8-bit amplitude AND phase in training/validation/export, straight-through gradients",
+        "physical_status": "offline mathematical/export parity; fresh camera ROI/orientation/exposure/gain/LUT and physical rho calibration still require bench acceptance; no device connection"
+      }
+    },
+    "sources": {
+      "LightGenV2/tasks/t18_optical_residual_ablation/caltech_deploy234_model.py": "bec7cb121a3810de779adb24bbe0b774909ea1f7babc10af05c398237622d9a0",
+      "LightGenV2/tasks/t18_optical_residual_ablation/caltech_deploy234.py": "ff35dc4aeb59af220d62df0e65517cd811427ecbc537625fa4a389632923e064",
+      "LightGenV2/tasks/t18_optical_residual_ablation/caltech_deploy234_queue.py": "8323e589b292eae46b239aba50793c4f2c60b97eb99e00585943557133e6c831",
+      "LightGenV2/tasks/t18_optical_residual_ablation/caltech_deploy234_profile.json": "fbc2c0298dd789604a14c5c6166f95e3de404852622323a776e6f15f0ab299c6",
+      "LightGenV2/tasks/t18_optical_residual_ablation/gpu_budget.py": "6d9ae0cb8d49d06997905f84cbe30929e4d4552a5276afe356e6f5ee14e496a2",
+      "LightGenV2/tasks/t07_abo_image_retrieval/standalone/optics.py": "ff07716e09337520a5f338be6097522226bb8f9d42b1e39feb3e2c15eab3d67f",
+      "LightGenV2/tasks/t07_abo_image_retrieval/standalone/__init__.py": "53db7bdf4277ec72c9af012c50dcded4a7d116f62425f073d3b6a9538a92da63"
+    },
+    "selection_split": "val",
+    "test_evaluations_before_lock": 0
+  }
+}
