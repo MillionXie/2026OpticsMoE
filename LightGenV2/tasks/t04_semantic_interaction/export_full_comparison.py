@@ -106,11 +106,16 @@ def run(args):
             destination = args.output / f'{name}_{split}.jsonl'
             with destination.open('w', encoding='utf-8') as stream, torch.inference_mode():
                 for batch in loader:
-                    outputs = model(batch['source_image'].to(device),
-                                    [p.to(device) for p in batch['prompt_hidden']])
-                    outputs_cpu = {k: v.detach().cpu() for k, v in outputs.items()
-                                   if isinstance(v, torch.Tensor)}
-                    values, predictions, edits = acc.update(outputs_cpu, batch)
+                    # Match the original evaluation's BF16 autocast and GPU
+                    # sigmoid thresholding, rather than silently changing precision.
+                    with torch.autocast(device_type=device.type, dtype=torch.bfloat16,
+                                        enabled=settings.amp_enabled and device.type == 'cuda'):
+                        outputs = model(batch['source_image'].to(device),
+                                        [p.to(device) for p in batch['prompt_hidden']])
+                    metric_batch = {k: v.to(device) if isinstance(v, torch.Tensor) else v
+                                    for k, v in batch.items()}
+                    values, predictions, edits = acc.update(outputs, metric_batch)
+                    predictions, edits = predictions.cpu(), edits.cpu()
                     for i, values_row in enumerate(values):
                         sample_id = values_row['sample_id']
                         row = rows[sample_id]
@@ -139,7 +144,8 @@ def run(args):
                     print(f'{name} {split}: {len(seen)}/{len(dataset)}', flush=True)
             assert seen == [r['sample_id'] for r in dataset.records]
             summary = {'manifest_sha256': MANIFESTS[split], 'records_sha256': digest(destination),
-                       'metrics': acc.compute(), 'archived_metric_max_error': max_error}
+                       'metrics': acc.compute(), 'archived_metric_max_error': max_error,
+                       'bf16_autocast': settings.amp_enabled and device.type == 'cuda'}
             if split == 'test':
                 assert abs(summary['metrics']['overall']['changed_cell_accuracy'] - expected_cca) < 1e-8
             if name == 'qwen':
