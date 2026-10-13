@@ -1,5 +1,40 @@
 # LGVQ batch comparison: offline recalculation, 2026-10-13
 
+## Current frozen reevaluation update
+
+The authorized A100 Qwen B1/B2/B4/B8 reevaluation is complete, with 558 real
+predictions per setting and the first 200 videos used for costs. Source is
+`../raw_remote/frozen_batch_20261013/`. All four full-test scores exactly match
+the historical batch-specific values below. The run used main `4cd6fe86d`,
+A100 UUID `GPU-3f60d773-4dd8-d706-ef48-a4dfc5af6c55`, actual limit 250 W,
+no warmup and interleaved CPU preparation/H2D/inference. Model and trained
+quality rows were frozen. Own processes have exited; another user's later
+GPU use is not altered.
+
+Decode, preprocessing and H2D are audit records only and are excluded from
+both final latency and energy. The final synchronized-wall inference boundary
+and 338.2 W host proxy plus measured inference-active A100 power are unchanged.
+
+| Qwen videos/call | Final time for 16 videos (ms) | Final energy for 16 videos (J) | Full558 SRCC | Cost source |
+|---:|---:|---:|---:|---|
+| 1 | 1188.3861464262009 | 462.1134010767563 | .7663428036522781 | Preserved nine-task table measurement |
+| 2 | 751.1531734466553 | 289.25610600062987 | .7664148425389119 | New same-protocol inference |
+| 4 | 554.0055650472641 | 229.76200380177073 | .7694958345192725 | New same-protocol inference |
+| 8 | 504.5564776659012 | 227.74037765183186 | .7694089803486667 | New same-protocol inference |
+
+Fresh B1 measured 1150.4916036128998 ms / 442.9714733293941 J; it is retained
+only in raw evidence and the separately labelled audit, not substituted into
+the final B1 table. No numerical scaling is used to force agreement. This is
+a historical B1 anchor with same-protocol later B2/4/8 measurements, not four
+simultaneous measurements. At B1 the ratios versus updated Ours are 115.9902
+in time and 392.3898 in energy. CLIP/YOLO/DeepSeek remain historical cost plus
+fixed performance references: exact original trained temporal heads have not
+been located, so no new batch-specific performance is claimed for them.
+
+The following continuous-GPU sweep description and 81x/348x figures document
+the previous audit and are not the current Qwen output. Original raw records
+are kept, rather than rewritten to match the final table.
+
 ## Results and files
 
 - `batch_cost_comparison.png/svg`: revised 16-video energy and processing time versus videos per call. No unmeasured accuracy trend is implied.
@@ -30,7 +65,7 @@ For a baseline batch of B videos, T16 = (16/B) times the mean synchronized-wall
 batch time. E16 = (338.2 W + that batch's mean A100 board power) times T16 in
 seconds. B = 1/2/4/8 requires 16/8/4/2 calls. The 200-video timing sample and
 no-explicit-warm-up protocol are preserved; the first call remains included.
-The visual-model power pass is a separate sustained inference measurement,
+The historical visual-model power pass is a separate sustained inference measurement,
 not a time integral of each timed call. These are mean-power duration estimates.
 
 Updated LightGen-II: six optical cycles total 6.2682 ms; serial electronic
@@ -136,4 +171,6 @@ and process-audit evidence. DeepSeek B8 raw power has peaks above 300 W. This
 does not by itself prove invalid data; independent physical-device/power-limit
 identity should be recovered before a stronger calibrated-power claim.
 
-No GPU/SDK work or external upload was performed for this recalculation.
+The offline calculation itself does not use GPU/SDK. Its updated Qwen source
+was actually reevaluated on A100 as stated above. Source code was Git-synced;
+raw predictions/weights were not externally uploaded.
