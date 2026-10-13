@@ -1,0 +1,38 @@
+{
+  "passed": true,
+  "time_unix": 1791913966.0518177,
+  "checks": [
+    {
+      "variant": "base",
+      "prefix_epochs": 17,
+      "epoch": 20,
+      "prefix_exact": true,
+      "all_order_affine_mixup_tail12_verified": true,
+      "optimizer_steps": 1720,
+      "all_phase_gradients_finite_nonzero": true
+    },
+    {
+      "variant": "unquantized",
+      "prefix_epochs": 17,
+      "epoch": 20,
+      "prefix_exact": true,
+      "all_order_affine_mixup_tail12_verified": true,
+      "optimizer_steps": 1720,
+      "all_phase_gradients_finite_nonzero": true
+    },
+    {
+      "variant": "fullfield_ln",
+      "prefix_epochs": 12,
+      "epoch": 15,
+      "prefix_exact": true,
+      "all_order_affine_mixup_tail12_verified": true,
+      "optimizer_steps": 1290,
+      "all_phase_gradients_finite_nonzero": true
+    }
+  ],
+  "source_commit": "e4cb1400fdaed5d4a1867770474e91b0ddc19617",
+  "source_count": 121,
+  "model_forward_calls": 0,
+  "test_evaluations": 0,
+  "test_arrays_materialized": 0
+}

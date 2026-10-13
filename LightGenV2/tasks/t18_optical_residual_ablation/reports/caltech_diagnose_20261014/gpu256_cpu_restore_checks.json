@@ -1,0 +1,40 @@
+{
+  "passed": true,
+  "checks": [
+    {
+      "variant": "base",
+      "epoch": 17,
+      "raw_exact": true,
+      "ema_exact": true,
+      "optimizer_exact": true,
+      "scientific_change_rejected": true
+    },
+    {
+      "variant": "unquantized",
+      "epoch": 17,
+      "raw_exact": true,
+      "ema_exact": true,
+      "optimizer_exact": true,
+      "scientific_change_rejected": true
+    },
+    {
+      "variant": "fullfield_ln",
+      "epoch": 12,
+      "raw_exact": true,
+      "ema_exact": true,
+      "optimizer_exact": true,
+      "scientific_change_rejected": true
+    }
+  ],
+  "source_commit": "e4cb1400fdaed5d4a1867770474e91b0ddc19617",
+  "source_count": 121,
+  "allowed_gpu_indices": [
+    2,
+    5,
+    6
+  ],
+  "parent": "/DATA/DATA1/guest3/2026OpticsMoE/LightGenV2/tasks/t18_optical_residual_ablation/runs/simulation/caltech_selected20_s17_L4rho03_regression_diagnose40_3gpu_20261014",
+  "model_forward_calls": 0,
+  "test_arrays_materialized": 0,
+  "test_evaluations": 0
+}

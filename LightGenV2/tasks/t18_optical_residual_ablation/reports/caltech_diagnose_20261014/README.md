@@ -1,3 +1,20 @@
+## 最新执行：仅GPU2/5/6、完整状态接续
+
+人工明确指定物理2/5/6，覆盖下方初始6/2/1名单；本项目GPU1子已退出，其他项目不动。
+旧CPU父3054100和三子已实际退出，base/unquantized完整E17、fullfieldLN完整E12状态保留。
+新CPU父3077108已实际在新run `caltech_selected20_s17_L4rho03_regression_diagnose40_gpu256_20261014`
+接续：GPU6 base3077640、GPU2 unquantized3077832、GPU5 fullfieldLN3078020；PID是启动历史，后续实时核对。
+
+[原进程退出及保存检查点身份](execution_handoff_gpu256.json)、[CPU完整恢复检查](gpu256_cpu_restore_checks.json)、
+[九项新实际GPU预检](gpu256_numerical_preflight.json)、[新启动及三GPU真实恢复门槛](gpu256_continuation_start.json)。
+三组raw/EMA/Adam逐项完全相同，原best保留参与选模，完成轮次不重播；fixed LR无scheduler。
+三张实际GPU恢复门槛repeatprob0、所有相位梯度有限非零；121运行来源冻结e4cb1400fdaed5d4a1867770474e91b0ddc19617。
+旧prefix来源582c90a1c保留，模型/光学/科学配置完全不改，仅执行入口/audit/GPUplan变动。
+诊断总40轮/7200s含prefix，失败保留，无test或正式训练启动。
+
+持续监控已更新只允许2/5/6；另设每日北京时间09:00实际结果报告，报告进度/失败也不编造满意结果或保证75%。
+下面的旧GPU1与source582初始运行描述仅作原阶段证据。
+
 # 2026-10-14 回归消融与新类别准备
 
 人工要求先诊断精度退步，再开始正式训练；四层残差单独检查过拟合，逐类监控。
@@ -23,3 +40,24 @@ A100本轮人工允许；最多三项目子、每子2GiB+800MiB，GPU6/2优先�
 新类已冻结：car_side/joshua_tree/stop_sign替补，保留其他17；1937图/train1246/val261/test430。旧保留类1295个train/val像素及角色逐项相同；以前fit/val进入新test为0。
 [新数据身份、支持、固定筛选和独立CPU审核](revised_data_cpu_receipt.json)。固定缩略图proxy宏召回52.66%仅筛选指标，不是光学精度。缓存SHA21436ad0b269d5319176e3e4d40fd382b21e1d34d41345ec979176231fb0e3c0，manifestSHA017dff61d36bb5161ac9442cd22d8436b15cf68a963273f797229d624868f30b。
 正式训练仍未启动；先根据消融检查信息损失/优化，并独立评估4层残差正则与逐类失效，再冻结正式方案。旧test不复测，不拿test选候选。
+
+## 接续后的独立CPU核验与结构线索
+
+接续真实base/unquantized E20、fullfieldLN E15保存记录已独立CPU核验；
+原17/17/12轮history/gradients/order/transforms前缀逐项完全相同，Adam1720/1720/1290步，
+全部相位梯度有限非零；独立重生全部截至当前order/affine/MixUp hash，包含宏尾12。
+[实际保存审核](gpu256_partial_cpu_audit.json)，没有模型前向或test数组。
+
+旧3层rho.3获选E150模型仅router组件，用每类首5个TRAIN样本（共100）检查：
+100个均选底部专家2/3，未随输入改变。不是全train统计，更没有test重推。
+[真实训练样本router组件探针及原PT身份](trained_L3_router_probe.json)。
+另用零raw相位、均匀振幅的末端expert合成组件检查六种Top2组合：
+选择底部2/3时，上半分类窗能量极低，最大/最小分类窗能量比约5.23e5。
+[无数据、CPU合成几何探针](synthetic_router_detector_geometry.json)。
+
+这两项说明路由固定化及末端expert/分类窗能量偏置值得优先排查，
+不能直接证明完整已训练模型的因果失败、不能把合成能量当准确率。
+现有dense_router共同40轮消融会验证去除硬Top2后的训练/验证变化；
+3层正式方案还必须单独确认末端布局，不允许仅换类别掩盖此结构问题。
+后续正式验收增加路由按样本变化/各槽位占用及逐类持续失效检查，
+既要诊断欠拟合，也要4层残差独立控制泛化差距，不能只看train提高。

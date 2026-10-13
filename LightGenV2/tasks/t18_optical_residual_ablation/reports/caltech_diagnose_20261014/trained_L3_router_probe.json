@@ -1,0 +1,1495 @@
+{
+  "time_unix": 1791914124.1948824,
+  "kind": "Trained old L3rho.3 router-component probe on first5 TRAIN samples per class, no full classification forward or test data",
+  "selected_epoch": 150,
+  "checkpoint_sha256": "531987ca6d63a2daaef1e370d6b6b31c4fc868b8b04a7e840efc6ba93cb7318d",
+  "rows": [
+    {
+      "class_name": "Faces",
+      "samples": 5,
+      "pair_counts": {
+        "(2, 3)": 5
+      },
+      "detail": [
+        {
+          "sample_id": "101_ObjectCategories/Faces/image_0001.jpg",
+          "selected_experts": [
+            2,
+            3
+          ],
+          "router_soft_weights": [
+            0.13942000269889832,
+            0.13012170791625977,
+            0.38352882862091064,
+            0.3469294309616089
+          ]
+        },
+        {
+          "sample_id": "101_ObjectCategories/Faces/image_0011.jpg",
+          "selected_experts": [
+            2,
+            3
+          ],
+          "router_soft_weights": [
+            0.13875313103199005,
+            0.13104960322380066,
+            0.39389973878860474,
+            0.33629754185676575
+          ]
+        },
+        {
+          "sample_id": "101_ObjectCategories/Faces/image_0021.jpg",
+          "selected_experts": [
+            2,
+            3
+          ],
+          "router_soft_weights": [
+            0.13983485102653503,
+            0.1297256201505661,
+            0.3817710280418396,
+            0.34866854548454285
+          ]
+        },
+        {
+          "sample_id": "101_ObjectCategories/Faces/image_0029.jpg",
+          "selected_experts": [
+            2,
+            3
+          ],
+          "router_soft_weights": [
+            0.13810549676418304,
+            0.13116946816444397,
+            0.35171812772750854,
+            0.37900689244270325
+          ]
+        },
+        {
+          "sample_id": "101_ObjectCategories/Faces/image_0032.jpg",
+          "selected_experts": [
+            2,
+            3
+          ],
+          "router_soft_weights": [
+            0.1393173187971115,
+            0.13051757216453552,
+            0.3929109275341034,
+            0.33725422620773315
+          ]
+        }
+      ]
+    },
+    {
+      "class_name": "Leopards",
+      "samples": 5,
+      "pair_counts": {
+        "(2, 3)": 5
+      },
+      "detail": [
+        {
+          "sample_id": "101_ObjectCategories/Leopards/image_0001.jpg",
+          "selected_experts": [
+            2,
+            3
+          ],
+          "router_soft_weights": [
+            0.13902349770069122,
+            0.13027332723140717,
+            0.37303438782691956,
+            0.35766878724098206
+          ]
+        },
+        {
+          "sample_id": "101_ObjectCategories/Leopards/image_0005.jpg",
+          "selected_experts": [
+            2,
+            3
+          ],
+          "router_soft_weights": [
+            0.139340341091156,
+            0.13020677864551544,
+            0.3841668665409088,
+            0.34628593921661377
+          ]
+        },
+        {
+          "sample_id": "101_ObjectCategories/Leopards/image_0007.jpg",
+          "selected_experts": [
+            2,
+            3
+          ],
+          "router_soft_weights": [
+            0.13789816200733185,
+            0.13123315572738647,
+            0.3689015507698059,
+            0.36196714639663696
+          ]
+        },
+        {
+          "sample_id": "101_ObjectCategories/Leopards/image_0009.jpg",
+          "selected_experts": [
+            2,
+            3
+          ],
+          "router_soft_weights": [
+            0.13880525529384613,
+            0.13044944405555725,
+            0.37162917852401733,
+            0.3591160774230957
+          ]
+        },
+        {
+          "sample_id": "101_ObjectCategories/Leopards/image_0010.jpg",
+          "selected_experts": [
+            2,
+            3
+          ],
+          "router_soft_weights": [
+            0.1394510269165039,
+            0.13002173602581024,
+            0.3803865313529968,
+            0.3501407504081726
+          ]
+        }
+      ]
+    },
+    {
+      "class_name": "Motorbikes",
+      "samples": 5,
+      "pair_counts": {
+        "(2, 3)": 5
+      },
+      "detail": [
+        {
+          "sample_id": "101_ObjectCategories/Motorbikes/image_0018.jpg",
+          "selected_experts": [
+            2,
+            3
+          ],
+          "router_soft_weights": [
+            0.14210912585258484,
+            0.1286872923374176,
+            0.3260972797870636,
+            0.40310633182525635
+          ]
+        },
+        {
+          "sample_id": "101_ObjectCategories/Motorbikes/image_0035.jpg",
+          "selected_experts": [
+            2,
+            3
+          ],
+          "router_soft_weights": [
+            0.14155742526054382,
+            0.12818412482738495,
+            0.3552258610725403,
+            0.37503257393836975
+          ]
+        },
+        {
+          "sample_id": "101_ObjectCategories/Motorbikes/image_0041.jpg",
+          "selected_experts": [
+            2,
+            3
+          ],
+          "router_soft_weights": [
+            0.13916407525539398,
+            0.1302417814731598,
+            0.3515261113643646,
+            0.3790680468082428
+          ]
+        },
+        {
+          "sample_id": "101_ObjectCategories/Motorbikes/image_0044.jpg",
+          "selected_experts": [
+            2,
+            3
+          ],
+          "router_soft_weights": [
+            0.14087435603141785,
+            0.12882333993911743,
+            0.3502148687839508,
+            0.3800874352455139
+          ]
+        },
+        {
+          "sample_id": "101_ObjectCategories/Motorbikes/image_0045.jpg",
+          "selected_experts": [
+            2,
+            3
+          ],
+          "router_soft_weights": [
+            0.14065012335777283,
+            0.12895528972148895,
+            0.35315072536468506,
+            0.3772438168525696
+          ]
+        }
+      ]
+    },
+    {
+      "class_name": "airplanes",
+      "samples": 5,
+      "pair_counts": {
+        "(2, 3)": 5
+      },
+      "detail": [
+        {
+          "sample_id": "101_ObjectCategories/airplanes/image_0006.jpg",
+          "selected_experts": [
+            2,
+            3
+          ],
+          "router_soft_weights": [
+            0.14165928959846497,
+            0.1288003772497177,
+            0.39829906821250916,
+            0.3312412202358246
+          ]
+        },
+        {
+          "sample_id": "101_ObjectCategories/airplanes/image_0028.jpg",
+          "selected_experts": [
+            2,
+            3
+          ],
+          "router_soft_weights": [
+            0.14109528064727783,
+            0.12885724008083344,
+            0.3882491886615753,
+            0.341798335313797
+          ]
+        },
+        {
+          "sample_id": "101_ObjectCategories/airplanes/image_0055.jpg",
+          "selected_experts": [
+            2,
+            3
+          ],
+          "router_soft_weights": [
+            0.13942217826843262,
+            0.1306818723678589,
+            0.3986203074455261,
+            0.33127567172050476
+          ]
+        },
+        {
+          "sample_id": "101_ObjectCategories/airplanes/image_0058.jpg",
+          "selected_experts": [
+            2,
+            3
+          ],
+          "router_soft_weights": [
+            0.14049991965293884,
+            0.12977533042430878,
+            0.3987952172756195,
+            0.3309295177459717
+          ]
+        },
+        {
+          "sample_id": "101_ObjectCategories/airplanes/image_0073.jpg",
+          "selected_experts": [
+            2,
+            3
+          ],
+          "router_soft_weights": [
+            0.14036601781845093,
+            0.1295926868915558,
+            0.33800533413887024,
+            0.39203596115112305
+          ]
+        }
+      ]
+    },
+    {
+      "class_name": "bonsai",
+      "samples": 5,
+      "pair_counts": {
+        "(2, 3)": 5
+      },
+      "detail": [
+        {
+          "sample_id": "101_ObjectCategories/bonsai/image_0001.jpg",
+          "selected_experts": [
+            2,
+            3
+          ],
+          "router_soft_weights": [
+            0.14221014082431793,
+            0.12785498797893524,
+            0.3453649580478668,
+            0.3845699429512024
+          ]
+        },
+        {
+          "sample_id": "101_ObjectCategories/bonsai/image_0006.jpg",
+          "selected_experts": [
+            2,
+            3
+          ],
+          "router_soft_weights": [
+            0.1414850950241089,
+            0.12817741930484772,
+            0.36607253551483154,
+            0.36426490545272827
+          ]
+        },
+        {
+          "sample_id": "101_ObjectCategories/bonsai/image_0007.jpg",
+          "selected_experts": [
+            2,
+            3
+          ],
+          "router_soft_weights": [
+            0.1365896314382553,
+            0.13367505371570587,
+            0.406118243932724,
+            0.3236171007156372
+          ]
+        },
+        {
+          "sample_id": "101_ObjectCategories/bonsai/image_0008.jpg",
+          "selected_experts": [
+            2,
+            3
+          ],
+          "router_soft_weights": [
+            0.13878163695335388,
+            0.13050010800361633,
+            0.37444770336151123,
+            0.3562704920768738
+          ]
+        },
+        {
+          "sample_id": "101_ObjectCategories/bonsai/image_0013.jpg",
+          "selected_experts": [
+            2,
+            3
+          ],
+          "router_soft_weights": [
+            0.14006346464157104,
+            0.12970875203609467,
+            0.3881358504295349,
+            0.3420919179916382
+          ]
+        }
+      ]
+    },
+    {
+      "class_name": "crab",
+      "samples": 5,
+      "pair_counts": {
+        "(2, 3)": 5
+      },
+      "detail": [
+        {
+          "sample_id": "101_ObjectCategories/crab/image_0001.jpg",
+          "selected_experts": [
+            2,
+            3
+          ],
+          "router_soft_weights": [
+            0.13743245601654053,
+            0.1316661238670349,
+            0.3708699941635132,
+            0.36003145575523376
+          ]
+        },
+        {
+          "sample_id": "101_ObjectCategories/crab/image_0002.jpg",
+          "selected_experts": [
+            2,
+            3
+          ],
+          "router_soft_weights": [
+            0.13827435672283173,
+            0.13089099526405334,
+            0.3669760525226593,
+            0.3638586103916168
+          ]
+        },
+        {
+          "sample_id": "101_ObjectCategories/crab/image_0004.jpg",
+          "selected_experts": [
+            2,
+            3
+          ],
+          "router_soft_weights": [
+            0.14287233352661133,
+            0.12950298190116882,
+            0.422595739364624,
+            0.3050289750099182
+          ]
+        },
+        {
+          "sample_id": "101_ObjectCategories/crab/image_0005.jpg",
+          "selected_experts": [
+            2,
+            3
+          ],
+          "router_soft_weights": [
+            0.1408325880765915,
+            0.12870733439922333,
+            0.3656671941280365,
+            0.3647928833961487
+          ]
+        },
+        {
+          "sample_id": "101_ObjectCategories/crab/image_0006.jpg",
+          "selected_experts": [
+            2,
+            3
+          ],
+          "router_soft_weights": [
+            0.1389627903699875,
+            0.13042406737804413,
+            0.3794766962528229,
+            0.3511364161968231
+          ]
+        }
+      ]
+    },
+    {
+      "class_name": "crayfish",
+      "samples": 5,
+      "pair_counts": {
+        "(2, 3)": 5
+      },
+      "detail": [
+        {
+          "sample_id": "101_ObjectCategories/crayfish/image_0001.jpg",
+          "selected_experts": [
+            2,
+            3
+          ],
+          "router_soft_weights": [
+            0.13881254196166992,
+            0.13116009533405304,
+            0.39752912521362305,
+            0.3324981927871704
+          ]
+        },
+        {
+          "sample_id": "101_ObjectCategories/crayfish/image_0002.jpg",
+          "selected_experts": [
+            2,
+            3
+          ],
+          "router_soft_weights": [
+            0.1406673789024353,
+            0.1293434351682663,
+            0.3379170298576355,
+            0.3920721113681793
+          ]
+        },
+        {
+          "sample_id": "101_ObjectCategories/crayfish/image_0003.jpg",
+          "selected_experts": [
+            2,
+            3
+          ],
+          "router_soft_weights": [
+            0.1424049437046051,
+            0.12771882116794586,
+            0.34467869997024536,
+            0.38519755005836487
+          ]
+        },
+        {
+          "sample_id": "101_ObjectCategories/crayfish/image_0004.jpg",
+          "selected_experts": [
+            2,
+            3
+          ],
+          "router_soft_weights": [
+            0.14273355901241302,
+            0.12736856937408447,
+            0.38140061497688293,
+            0.34849730134010315
+          ]
+        },
+        {
+          "sample_id": "101_ObjectCategories/crayfish/image_0007.jpg",
+          "selected_experts": [
+            2,
+            3
+          ],
+          "router_soft_weights": [
+            0.13787169754505157,
+            0.1312818080186844,
+            0.3585221767425537,
+            0.3723243772983551
+          ]
+        }
+      ]
+    },
+    {
+      "class_name": "grand_piano",
+      "samples": 5,
+      "pair_counts": {
+        "(2, 3)": 5
+      },
+      "detail": [
+        {
+          "sample_id": "101_ObjectCategories/grand_piano/image_0001.jpg",
+          "selected_experts": [
+            2,
+            3
+          ],
+          "router_soft_weights": [
+            0.13846230506896973,
+            0.1315651684999466,
+            0.3994489908218384,
+            0.3305234909057617
+          ]
+        },
+        {
+          "sample_id": "101_ObjectCategories/grand_piano/image_0002.jpg",
+          "selected_experts": [
+            2,
+            3
+          ],
+          "router_soft_weights": [
+            0.14443247020244598,
+            0.1266361027956009,
+            0.33107203245162964,
+            0.3978594243526459
+          ]
+        },
+        {
+          "sample_id": "101_ObjectCategories/grand_piano/image_0004.jpg",
+          "selected_experts": [
+            2,
+            3
+          ],
+          "router_soft_weights": [
+            0.1326756775379181,
+            0.13635466992855072,
+            0.3722551763057709,
+            0.35871443152427673
+          ]
+        },
+        {
+          "sample_id": "101_ObjectCategories/grand_piano/image_0005.jpg",
+          "selected_experts": [
+            2,
+            3
+          ],
+          "router_soft_weights": [
+            0.143171027302742,
+            0.12703293561935425,
+            0.3814740478992462,
+            0.3483220338821411
+          ]
+        },
+        {
+          "sample_id": "101_ObjectCategories/grand_piano/image_0006.jpg",
+          "selected_experts": [
+            2,
+            3
+          ],
+          "router_soft_weights": [
+            0.13882140815258026,
+            0.1307746022939682,
+            0.38813328742980957,
+            0.3422708213329315
+          ]
+        }
+      ]
+    },
+    {
+      "class_name": "helicopter",
+      "samples": 5,
+      "pair_counts": {
+        "(2, 3)": 5
+      },
+      "detail": [
+        {
+          "sample_id": "101_ObjectCategories/helicopter/image_0001.jpg",
+          "selected_experts": [
+            2,
+            3
+          ],
+          "router_soft_weights": [
+            0.13974858820438385,
+            0.12964853644371033,
+            0.35791003704071045,
+            0.37269285321235657
+          ]
+        },
+        {
+          "sample_id": "101_ObjectCategories/helicopter/image_0002.jpg",
+          "selected_experts": [
+            2,
+            3
+          ],
+          "router_soft_weights": [
+            0.1404426246881485,
+            0.12984177470207214,
+            0.3991714119911194,
+            0.3305441737174988
+          ]
+        },
+        {
+          "sample_id": "101_ObjectCategories/helicopter/image_0003.jpg",
+          "selected_experts": [
+            2,
+            3
+          ],
+          "router_soft_weights": [
+            0.1399601399898529,
+            0.1295284479856491,
+            0.353389173746109,
+            0.3771222233772278
+          ]
+        },
+        {
+          "sample_id": "101_ObjectCategories/helicopter/image_0007.jpg",
+          "selected_experts": [
+            2,
+            3
+          ],
+          "router_soft_weights": [
+            0.1388711780309677,
+            0.1303682178258896,
+            0.3632173538208008,
+            0.36754322052001953
+          ]
+        },
+        {
+          "sample_id": "101_ObjectCategories/helicopter/image_0009.jpg",
+          "selected_experts": [
+            2,
+            3
+          ],
+          "router_soft_weights": [
+            0.14185385406017303,
+            0.12871624529361725,
+            0.32965072989463806,
+            0.3997792601585388
+          ]
+        }
+      ]
+    },
+    {
+      "class_name": "kangaroo",
+      "samples": 5,
+      "pair_counts": {
+        "(2, 3)": 5
+      },
+      "detail": [
+        {
+          "sample_id": "101_ObjectCategories/kangaroo/image_0001.jpg",
+          "selected_experts": [
+            2,
+            3
+          ],
+          "router_soft_weights": [
+            0.13861072063446045,
+            0.1308114379644394,
+            0.347553551197052,
+            0.38302427530288696
+          ]
+        },
+        {
+          "sample_id": "101_ObjectCategories/kangaroo/image_0002.jpg",
+          "selected_experts": [
+            2,
+            3
+          ],
+          "router_soft_weights": [
+            0.13979193568229675,
+            0.1295763999223709,
+            0.3669417202472687,
+            0.36368995904922485
+          ]
+        },
+        {
+          "sample_id": "101_ObjectCategories/kangaroo/image_0004.jpg",
+          "selected_experts": [
+            2,
+            3
+          ],
+          "router_soft_weights": [
+            0.13802552223205566,
+            0.13111308217048645,
+            0.36358699202537537,
+            0.36727434396743774
+          ]
+        },
+        {
+          "sample_id": "101_ObjectCategories/kangaroo/image_0005.jpg",
+          "selected_experts": [
+            2,
+            3
+          ],
+          "router_soft_weights": [
+            0.13872498273849487,
+            0.130853533744812,
+            0.3879645764827728,
+            0.3424569070339203
+          ]
+        },
+        {
+          "sample_id": "101_ObjectCategories/kangaroo/image_0006.jpg",
+          "selected_experts": [
+            2,
+            3
+          ],
+          "router_soft_weights": [
+            0.13757358491420746,
+            0.13152721524238586,
+            0.3692077398300171,
+            0.361691415309906
+          ]
+        }
+      ]
+    },
+    {
+      "class_name": "ketch",
+      "samples": 5,
+      "pair_counts": {
+        "(2, 3)": 5
+      },
+      "detail": [
+        {
+          "sample_id": "101_ObjectCategories/ketch/image_0001.jpg",
+          "selected_experts": [
+            2,
+            3
+          ],
+          "router_soft_weights": [
+            0.139669731259346,
+            0.12994518876075745,
+            0.3849088251590729,
+            0.34547629952430725
+          ]
+        },
+        {
+          "sample_id": "101_ObjectCategories/ketch/image_0003.jpg",
+          "selected_experts": [
+            2,
+            3
+          ],
+          "router_soft_weights": [
+            0.14035944640636444,
+            0.13075430691242218,
+            0.41284430027008057,
+            0.3160419762134552
+          ]
+        },
+        {
+          "sample_id": "101_ObjectCategories/ketch/image_0004.jpg",
+          "selected_experts": [
+            2,
+            3
+          ],
+          "router_soft_weights": [
+            0.1390203833580017,
+            0.13055948913097382,
+            0.386822372674942,
+            0.34359779953956604
+          ]
+        },
+        {
+          "sample_id": "101_ObjectCategories/ketch/image_0005.jpg",
+          "selected_experts": [
+            2,
+            3
+          ],
+          "router_soft_weights": [
+            0.1386953741312027,
+            0.13058005273342133,
+            0.3747997581958771,
+            0.35592472553253174
+          ]
+        },
+        {
+          "sample_id": "101_ObjectCategories/ketch/image_0007.jpg",
+          "selected_experts": [
+            2,
+            3
+          ],
+          "router_soft_weights": [
+            0.14006826281547546,
+            0.1293516606092453,
+            0.3614448606967926,
+            0.36913520097732544
+          ]
+        }
+      ]
+    },
+    {
+      "class_name": "laptop",
+      "samples": 5,
+      "pair_counts": {
+        "(2, 3)": 5
+      },
+      "detail": [
+        {
+          "sample_id": "101_ObjectCategories/laptop/image_0001.jpg",
+          "selected_experts": [
+            2,
+            3
+          ],
+          "router_soft_weights": [
+            0.15069672465324402,
+            0.12552593648433685,
+            0.4375729560852051,
+            0.28620445728302
+          ]
+        },
+        {
+          "sample_id": "101_ObjectCategories/laptop/image_0002.jpg",
+          "selected_experts": [
+            2,
+            3
+          ],
+          "router_soft_weights": [
+            0.13679508864879608,
+            0.13245819509029388,
+            0.34754496812820435,
+            0.3832017779350281
+          ]
+        },
+        {
+          "sample_id": "101_ObjectCategories/laptop/image_0003.jpg",
+          "selected_experts": [
+            2,
+            3
+          ],
+          "router_soft_weights": [
+            0.13889122009277344,
+            0.1304481476545334,
+            0.35326245427131653,
+            0.37739816308021545
+          ]
+        },
+        {
+          "sample_id": "101_ObjectCategories/laptop/image_0004.jpg",
+          "selected_experts": [
+            2,
+            3
+          ],
+          "router_soft_weights": [
+            0.1418735384941101,
+            0.12866602838039398,
+            0.3990821838378906,
+            0.3303782045841217
+          ]
+        },
+        {
+          "sample_id": "101_ObjectCategories/laptop/image_0005.jpg",
+          "selected_experts": [
+            2,
+            3
+          ],
+          "router_soft_weights": [
+            0.1391625553369522,
+            0.1306886076927185,
+            0.39381954073905945,
+            0.3363293409347534
+          ]
+        }
+      ]
+    },
+    {
+      "class_name": "lotus",
+      "samples": 5,
+      "pair_counts": {
+        "(2, 3)": 5
+      },
+      "detail": [
+        {
+          "sample_id": "101_ObjectCategories/lotus/image_0002.jpg",
+          "selected_experts": [
+            2,
+            3
+          ],
+          "router_soft_weights": [
+            0.13871003687381744,
+            0.13052354753017426,
+            0.37047746777534485,
+            0.36028894782066345
+          ]
+        },
+        {
+          "sample_id": "101_ObjectCategories/lotus/image_0004.jpg",
+          "selected_experts": [
+            2,
+            3
+          ],
+          "router_soft_weights": [
+            0.15556582808494568,
+            0.11879891157150269,
+            0.36157065629959106,
+            0.3640645742416382
+          ]
+        },
+        {
+          "sample_id": "101_ObjectCategories/lotus/image_0006.jpg",
+          "selected_experts": [
+            2,
+            3
+          ],
+          "router_soft_weights": [
+            0.13926425576210022,
+            0.13005183637142181,
+            0.37160927057266235,
+            0.3590746521949768
+          ]
+        },
+        {
+          "sample_id": "101_ObjectCategories/lotus/image_0007.jpg",
+          "selected_experts": [
+            2,
+            3
+          ],
+          "router_soft_weights": [
+            0.1389956772327423,
+            0.1306121051311493,
+            0.38781222701072693,
+            0.3425799608230591
+          ]
+        },
+        {
+          "sample_id": "101_ObjectCategories/lotus/image_0008.jpg",
+          "selected_experts": [
+            2,
+            3
+          ],
+          "router_soft_weights": [
+            0.13829612731933594,
+            0.13144586980342865,
+            0.39369997382164,
+            0.3365580439567566
+          ]
+        }
+      ]
+    },
+    {
+      "class_name": "minaret",
+      "samples": 5,
+      "pair_counts": {
+        "(2, 3)": 5
+      },
+      "detail": [
+        {
+          "sample_id": "101_ObjectCategories/minaret/image_0001.jpg",
+          "selected_experts": [
+            2,
+            3
+          ],
+          "router_soft_weights": [
+            0.1379595398902893,
+            0.13247060775756836,
+            0.4072103500366211,
+            0.3223595917224884
+          ]
+        },
+        {
+          "sample_id": "101_ObjectCategories/minaret/image_0002.jpg",
+          "selected_experts": [
+            2,
+            3
+          ],
+          "router_soft_weights": [
+            0.13998019695281982,
+            0.13113346695899963,
+            0.41357946395874023,
+            0.31530696153640747
+          ]
+        },
+        {
+          "sample_id": "101_ObjectCategories/minaret/image_0003.jpg",
+          "selected_experts": [
+            2,
+            3
+          ],
+          "router_soft_weights": [
+            0.1385997235774994,
+            0.13744743168354034,
+            0.2708336412906647,
+            0.45311927795410156
+          ]
+        },
+        {
+          "sample_id": "101_ObjectCategories/minaret/image_0005.jpg",
+          "selected_experts": [
+            2,
+            3
+          ],
+          "router_soft_weights": [
+            0.14027847349643707,
+            0.12941980361938477,
+            0.3844658434391022,
+            0.3458358645439148
+          ]
+        },
+        {
+          "sample_id": "101_ObjectCategories/minaret/image_0006.jpg",
+          "selected_experts": [
+            2,
+            3
+          ],
+          "router_soft_weights": [
+            0.1380295306444168,
+            0.13177700340747833,
+            0.3958140015602112,
+            0.3343794643878937
+          ]
+        }
+      ]
+    },
+    {
+      "class_name": "revolver",
+      "samples": 5,
+      "pair_counts": {
+        "(2, 3)": 5
+      },
+      "detail": [
+        {
+          "sample_id": "101_ObjectCategories/revolver/image_0001.jpg",
+          "selected_experts": [
+            2,
+            3
+          ],
+          "router_soft_weights": [
+            0.13589437305927277,
+            0.1331465095281601,
+            0.35582688450813293,
+            0.3751322627067566
+          ]
+        },
+        {
+          "sample_id": "101_ObjectCategories/revolver/image_0002.jpg",
+          "selected_experts": [
+            2,
+            3
+          ],
+          "router_soft_weights": [
+            0.13903579115867615,
+            0.13027673959732056,
+            0.35643407702445984,
+            0.37425345182418823
+          ]
+        },
+        {
+          "sample_id": "101_ObjectCategories/revolver/image_0004.jpg",
+          "selected_experts": [
+            2,
+            3
+          ],
+          "router_soft_weights": [
+            0.13859015703201294,
+            0.13065025210380554,
+            0.3578185439109802,
+            0.3729409873485565
+          ]
+        },
+        {
+          "sample_id": "101_ObjectCategories/revolver/image_0005.jpg",
+          "selected_experts": [
+            2,
+            3
+          ],
+          "router_soft_weights": [
+            0.14085540175437927,
+            0.12870196998119354,
+            0.3607410490512848,
+            0.3697015345096588
+          ]
+        },
+        {
+          "sample_id": "101_ObjectCategories/revolver/image_0006.jpg",
+          "selected_experts": [
+            2,
+            3
+          ],
+          "router_soft_weights": [
+            0.13909998536109924,
+            0.13130494952201843,
+            0.32471367716789246,
+            0.40488138794898987
+          ]
+        }
+      ]
+    },
+    {
+      "class_name": "schooner",
+      "samples": 5,
+      "pair_counts": {
+        "(2, 3)": 5
+      },
+      "detail": [
+        {
+          "sample_id": "101_ObjectCategories/schooner/image_0003.jpg",
+          "selected_experts": [
+            2,
+            3
+          ],
+          "router_soft_weights": [
+            0.14040765166282654,
+            0.129709392786026,
+            0.39572057127952576,
+            0.33416232466697693
+          ]
+        },
+        {
+          "sample_id": "101_ObjectCategories/schooner/image_0005.jpg",
+          "selected_experts": [
+            2,
+            3
+          ],
+          "router_soft_weights": [
+            0.13843415677547455,
+            0.13078078627586365,
+            0.37227046489715576,
+            0.35851457715034485
+          ]
+        },
+        {
+          "sample_id": "101_ObjectCategories/schooner/image_0007.jpg",
+          "selected_experts": [
+            2,
+            3
+          ],
+          "router_soft_weights": [
+            0.1401592493057251,
+            0.1293632686138153,
+            0.37724539637565613,
+            0.35323214530944824
+          ]
+        },
+        {
+          "sample_id": "101_ObjectCategories/schooner/image_0008.jpg",
+          "selected_experts": [
+            2,
+            3
+          ],
+          "router_soft_weights": [
+            0.14204682409763336,
+            0.12832947075366974,
+            0.394699364900589,
+            0.3349243700504303
+          ]
+        },
+        {
+          "sample_id": "101_ObjectCategories/schooner/image_0009.jpg",
+          "selected_experts": [
+            2,
+            3
+          ],
+          "router_soft_weights": [
+            0.1395128220319748,
+            0.12997494637966156,
+            0.3806717097759247,
+            0.3498404920101166
+          ]
+        }
+      ]
+    },
+    {
+      "class_name": "trilobite",
+      "samples": 5,
+      "pair_counts": {
+        "(2, 3)": 5
+      },
+      "detail": [
+        {
+          "sample_id": "101_ObjectCategories/trilobite/image_0001.jpg",
+          "selected_experts": [
+            2,
+            3
+          ],
+          "router_soft_weights": [
+            0.1388663500547409,
+            0.13037073612213135,
+            0.3668643832206726,
+            0.3638985753059387
+          ]
+        },
+        {
+          "sample_id": "101_ObjectCategories/trilobite/image_0003.jpg",
+          "selected_experts": [
+            2,
+            3
+          ],
+          "router_soft_weights": [
+            0.13970376551151276,
+            0.1298045814037323,
+            0.38030800223350525,
+            0.3501836359500885
+          ]
+        },
+        {
+          "sample_id": "101_ObjectCategories/trilobite/image_0006.jpg",
+          "selected_experts": [
+            2,
+            3
+          ],
+          "router_soft_weights": [
+            0.1378733366727829,
+            0.13125494122505188,
+            0.36207130551338196,
+            0.36880040168762207
+          ]
+        },
+        {
+          "sample_id": "101_ObjectCategories/trilobite/image_0007.jpg",
+          "selected_experts": [
+            2,
+            3
+          ],
+          "router_soft_weights": [
+            0.14026451110839844,
+            0.129347562789917,
+            0.3810197114944458,
+            0.349368155002594
+          ]
+        },
+        {
+          "sample_id": "101_ObjectCategories/trilobite/image_0008.jpg",
+          "selected_experts": [
+            2,
+            3
+          ],
+          "router_soft_weights": [
+            0.13694147765636444,
+            0.13211652636528015,
+            0.3600434362888336,
+            0.3708985447883606
+          ]
+        }
+      ]
+    },
+    {
+      "class_name": "umbrella",
+      "samples": 5,
+      "pair_counts": {
+        "(2, 3)": 5
+      },
+      "detail": [
+        {
+          "sample_id": "101_ObjectCategories/umbrella/image_0001.jpg",
+          "selected_experts": [
+            2,
+            3
+          ],
+          "router_soft_weights": [
+            0.13814061880111694,
+            0.1313924491405487,
+            0.34185758233070374,
+            0.3886094093322754
+          ]
+        },
+        {
+          "sample_id": "101_ObjectCategories/umbrella/image_0002.jpg",
+          "selected_experts": [
+            2,
+            3
+          ],
+          "router_soft_weights": [
+            0.13607613742351532,
+            0.1330665796995163,
+            0.38034680485725403,
+            0.35051047801971436
+          ]
+        },
+        {
+          "sample_id": "101_ObjectCategories/umbrella/image_0003.jpg",
+          "selected_experts": [
+            2,
+            3
+          ],
+          "router_soft_weights": [
+            0.13738204538822174,
+            0.13169166445732117,
+            0.36613574624061584,
+            0.36479052901268005
+          ]
+        },
+        {
+          "sample_id": "101_ObjectCategories/umbrella/image_0004.jpg",
+          "selected_experts": [
+            2,
+            3
+          ],
+          "router_soft_weights": [
+            0.13749270141124725,
+            0.13174118101596832,
+            0.3799898028373718,
+            0.3507762551307678
+          ]
+        },
+        {
+          "sample_id": "101_ObjectCategories/umbrella/image_0005.jpg",
+          "selected_experts": [
+            2,
+            3
+          ],
+          "router_soft_weights": [
+            0.1386866420507431,
+            0.13065069913864136,
+            0.3787393569946289,
+            0.35192328691482544
+          ]
+        }
+      ]
+    },
+    {
+      "class_name": "watch",
+      "samples": 5,
+      "pair_counts": {
+        "(2, 3)": 5
+      },
+      "detail": [
+        {
+          "sample_id": "101_ObjectCategories/watch/image_0002.jpg",
+          "selected_experts": [
+            2,
+            3
+          ],
+          "router_soft_weights": [
+            0.139728844165802,
+            0.12963804602622986,
+            0.36914509534835815,
+            0.36148801445961
+          ]
+        },
+        {
+          "sample_id": "101_ObjectCategories/watch/image_0006.jpg",
+          "selected_experts": [
+            2,
+            3
+          ],
+          "router_soft_weights": [
+            0.13915345072746277,
+            0.13075034320354462,
+            0.395083487033844,
+            0.3350127041339874
+          ]
+        },
+        {
+          "sample_id": "101_ObjectCategories/watch/image_0007.jpg",
+          "selected_experts": [
+            2,
+            3
+          ],
+          "router_soft_weights": [
+            0.1366780698299408,
+            0.13277597725391388,
+            0.3898906409740448,
+            0.34065526723861694
+          ]
+        },
+        {
+          "sample_id": "101_ObjectCategories/watch/image_0011.jpg",
+          "selected_experts": [
+            2,
+            3
+          ],
+          "router_soft_weights": [
+            0.13989368081092834,
+            0.12957750260829926,
+            0.35384100675582886,
+            0.37668779492378235
+          ]
+        },
+        {
+          "sample_id": "101_ObjectCategories/watch/image_0014.jpg",
+          "selected_experts": [
+            2,
+            3
+          ],
+          "router_soft_weights": [
+            0.13926029205322266,
+            0.13329878449440002,
+            0.29759129881858826,
+            0.42984962463378906
+          ]
+        }
+      ]
+    },
+    {
+      "class_name": "yin_yang",
+      "samples": 5,
+      "pair_counts": {
+        "(2, 3)": 5
+      },
+      "detail": [
+        {
+          "sample_id": "101_ObjectCategories/yin_yang/image_0003.jpg",
+          "selected_experts": [
+            2,
+            3
+          ],
+          "router_soft_weights": [
+            0.14284218847751617,
+            0.1464737057685852,
+            0.21850818395614624,
+            0.49217596650123596
+          ]
+        },
+        {
+          "sample_id": "101_ObjectCategories/yin_yang/image_0004.jpg",
+          "selected_experts": [
+            2,
+            3
+          ],
+          "router_soft_weights": [
+            0.15012112259864807,
+            0.14818865060806274,
+            0.1976964771747589,
+            0.5039937496185303
+          ]
+        },
+        {
+          "sample_id": "101_ObjectCategories/yin_yang/image_0005.jpg",
+          "selected_experts": [
+            2,
+            3
+          ],
+          "router_soft_weights": [
+            0.15084782242774963,
+            0.14740651845932007,
+            0.19786337018013,
+            0.5038822293281555
+          ]
+        },
+        {
+          "sample_id": "101_ObjectCategories/yin_yang/image_0007.jpg",
+          "selected_experts": [
+            2,
+            3
+          ],
+          "router_soft_weights": [
+            0.1402449756860733,
+            0.1350051313638687,
+            0.2764761745929718,
+            0.4482736587524414
+          ]
+        },
+        {
+          "sample_id": "101_ObjectCategories/yin_yang/image_0009.jpg",
+          "selected_experts": [
+            2,
+            3
+          ],
+          "router_soft_weights": [
+            0.1375667154788971,
+            0.1322510540485382,
+            0.333207905292511,
+            0.3969743549823761
+          ]
+        }
+      ]
+    }
+  ],
+  "component_propagations": 100,
+  "model_classification_forward_calls": 0,
+  "test_evaluations": 0,
+  "test_arrays_materialized": 0,
+  "devices_connected": 0,
+  "gpu_used": false,
+  "scope": "Descriptive small training subset; routing causality requires matched diagnostic fits."
+}

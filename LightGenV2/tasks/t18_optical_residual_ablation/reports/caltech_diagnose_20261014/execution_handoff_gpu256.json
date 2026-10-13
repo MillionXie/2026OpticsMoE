@@ -1,0 +1,57 @@
+{
+  "reason": "Human explicitly restricts GPU2/5/6; preserve full completed checkpoints before source-published execution-only continuation",
+  "time_unix": 1791913447.6450782,
+  "parent_pid": 3054100,
+  "parent_command": "/home/guest3/miniconda3/envs/xml/bin/python /DATA/DATA1/guest3/2026OpticsMoE/LightGenV2/tasks/t18_optical_residual_ablation/caltech_diagnose.py --phase queue --out /DATA/DATA1/guest3/2026OpticsMoE/LightGenV2/tasks/t18_optical_residual_ablation/runs/simulation/caltech_selected20_s17_L4rho03_regression_diagnose40_3gpu_20261014 --preflight /DATA/DATA1/guest3/2026OpticsMoE/LightGenV2/tasks/t18_optical_residual_ablation/runs/smoke/caltech_diagnose_referencefix_preflight_20261014 ",
+  "jobs": [
+    {
+      "variant": "base",
+      "pid": 3054519,
+      "gpu_uuid": "GPU-3f60d773-4dd8-d706-ef48-a4dfc5af6c55",
+      "epoch": 17,
+      "best_epoch": 17,
+      "history_sha256": "32c9aec8d849d157c56026732700b151d6bcac144de9334fdec8fbfd7124c5d7",
+      "last_sha256": "9802d48e716fe4f3230ed75e609407aa9d2dde035d5e891358f92e1015dcd9b0",
+      "best_sha256": "f4c8e540c62389b38d0f5b37483a9c38231d4765b985c2a20a544fbdbb02a462",
+      "gradients_sha256": "839432f0bac3253decf2b61e928edc2369979049cca0d217164a3eff487d4570",
+      "completed_steps": 1462
+    },
+    {
+      "variant": "unquantized",
+      "pid": 3054710,
+      "gpu_uuid": "GPU-6dcca91a-8e08-1a50-9aa6-81defeaed50b",
+      "epoch": 17,
+      "best_epoch": 17,
+      "history_sha256": "b1dbbc6c3cf616e58d52fbf4cbd7ff04c4cf0adfacba95207fc8916b9c8014b5",
+      "last_sha256": "ebd3283f2c7daf663b00ebbc914d6ebabff5c9c8edbf725024143736ce7803bd",
+      "best_sha256": "4ee9bee868bf39c13f74b27b79d6a3d0d24e37ade28adb51dd693e9dccae296e",
+      "gradients_sha256": "292cb84c8176773896fe0ab9d01e755f804299517048d4264bc47c756eb91073",
+      "completed_steps": 1462
+    },
+    {
+      "variant": "fullfield_ln",
+      "pid": 3054898,
+      "gpu_uuid": "GPU-e8837b85-d55b-8e81-aaa5-ec1ac326932d",
+      "epoch": 12,
+      "best_epoch": 12,
+      "history_sha256": "432e4680c629eb2cff9bbf3a9b5cbf99175bb81f4021cacc0372a2ff044d43b0",
+      "last_sha256": "9ac39e3c52004bab4811e26a7c50ae1c9c0d309254dcc673f03ba54d7bf55a7a",
+      "best_sha256": "074f66c14665e93b0a5ad4145905128e9afa8935f39ef34f81c24cbb7924d5de",
+      "gradients_sha256": "1abc3e0f888a337a41b07e5399209274b4ee21b76085f3ecfab02e2f624fdd27",
+      "completed_steps": 1032
+    }
+  ],
+  "pending": [
+    "rgb_tiles",
+    "dense_router",
+    "preserve_global",
+    "mixup02",
+    "mixup06",
+    "legacy_reference"
+  ],
+  "git_commit": "582c90a1c08b1e24a84df32b9d0f7ab04b66c210",
+  "model_forward_calls": 0,
+  "test_evaluations": 0,
+  "incomplete_in_memory_batch_discarded": true,
+  "all_original_processes_exited": true
+}
