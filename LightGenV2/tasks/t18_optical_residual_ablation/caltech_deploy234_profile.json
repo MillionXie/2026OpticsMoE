@@ -1,0 +1,12 @@
+{
+  "seed":17,"depths":[2,3,4],"rhos":[0,0.3],"maximum_epochs":150,"minimum_epochs":50,"maximum_seconds":14400,
+  "early_patience":25,"early_min_delta":0.002,"batch_size":16,"microbatch":4,"lr":0.002,"ema_decay":0.95,
+  "mixup_alpha":0.4,"label_smoothing":0.08,"capture_weight":0.05,"phase_smooth_weight":0.005,
+  "augmentation":{"degrees":20,"translation_pixels":5,"scale_delta":0.1},
+  "cache_sha256":"a81e78bbff06ea65e7ceba3771b688178276464e33fdcdedf3796fa2930fa6e1",
+  "manifest_sha256":"91f7aa36a97713e300699367904c8866551996de199b9630c0545bb24dc5f60e",
+  "maximum_gpu_children":3,"allowed_physical_gpu_indices":[0,1,2,4],"forbidden_A100":true,
+  "test_accuracy_target_L4_rho03":0.75,"test_previously_observed":true,
+  "selection":"first minimum EMA validation balanced NLL; all six CPU audited and locked before single test",
+  "automatic_retry":false,"automatic_regularization_search":false,"shared_spare_memory_gib":3,"spare_margin_mib":800
+}
