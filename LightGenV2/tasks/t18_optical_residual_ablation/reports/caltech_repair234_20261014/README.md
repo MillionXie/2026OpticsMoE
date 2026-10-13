@@ -53,3 +53,7 @@ The first checker invocation failed before creating an output because repository
 imports were not initialized. The import-only entrypoint fix46011b823 was Git
 published before successful checks; model, science configuration and gates did not
 change. Original private error log retained. No failed scientific training retried.
+
+Matched independent478-global/dense4 exporter now implemented and all six fresh
+static plus18dynamic CPU native checks passed; selected trained-weight verification
+still pending. [Contract and actual receipt](matched_export.md).
