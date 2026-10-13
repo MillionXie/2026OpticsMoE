@@ -1,0 +1,397 @@
+{
+  "time_unix": 1791859089.3616755,
+  "status": {
+    "state": "fit_running",
+    "completed": [],
+    "failures": [],
+    "pending": 4,
+    "active": 4,
+    "seconds": 3358.0311663150787,
+    "test_evaluations": 0
+  },
+  "current": {
+    "active": [
+      {
+        "depth": 16,
+        "rho": 0.0,
+        "name": "L16_rho0",
+        "pid": 2045571,
+        "gpu_uuid": "GPU-e8837b85-d55b-8e81-aaa5-ec1ac326932d",
+        "command": [
+          "/home/guest3/miniconda3/envs/xml/bin/python",
+          "/DATA/DATA1/guest3/2026OpticsMoE/LightGenV2/tasks/t18_optical_residual_ablation/caltech_selected_extend.py",
+          "--parent",
+          "/DATA/DATA1/guest3/2026OpticsMoE/LightGenV2/tasks/t18_optical_residual_ablation/runs/simulation/caltech_selected20_s17_L2L4L12L16_reg100_4gpu_20261012/L16_rho0",
+          "--out",
+          "/DATA/DATA1/guest3/2026OpticsMoE/LightGenV2/tasks/t18_optical_residual_ablation/runs/simulation/caltech_selected20_s17_L2L4L12L16_extend200_4gpu_20261013/L16_rho0",
+          "--data",
+          "/DATA/DATA1/guest3/t18_caltech_selected20_20261012/caltech20_selected_split.npz",
+          "--gpu",
+          "GPU-e8837b85-d55b-8e81-aaa5-ec1ac326932d"
+        ]
+      },
+      {
+        "depth": 16,
+        "rho": 0.3,
+        "name": "L16_rho03",
+        "pid": 2045712,
+        "gpu_uuid": "GPU-6dcca91a-8e08-1a50-9aa6-81defeaed50b",
+        "command": [
+          "/home/guest3/miniconda3/envs/xml/bin/python",
+          "/DATA/DATA1/guest3/2026OpticsMoE/LightGenV2/tasks/t18_optical_residual_ablation/caltech_selected_extend.py",
+          "--parent",
+          "/DATA/DATA1/guest3/2026OpticsMoE/LightGenV2/tasks/t18_optical_residual_ablation/runs/simulation/caltech_selected20_s17_L2L4L12L16_reg100_4gpu_20261012/L16_rho03",
+          "--out",
+          "/DATA/DATA1/guest3/2026OpticsMoE/LightGenV2/tasks/t18_optical_residual_ablation/runs/simulation/caltech_selected20_s17_L2L4L12L16_extend200_4gpu_20261013/L16_rho03",
+          "--data",
+          "/DATA/DATA1/guest3/t18_caltech_selected20_20261012/caltech20_selected_split.npz",
+          "--gpu",
+          "GPU-6dcca91a-8e08-1a50-9aa6-81defeaed50b"
+        ]
+      },
+      {
+        "depth": 12,
+        "rho": 0.0,
+        "name": "L12_rho0",
+        "pid": 2045853,
+        "gpu_uuid": "GPU-afc19890-6209-ee4d-622d-e619da5bd5b2",
+        "command": [
+          "/home/guest3/miniconda3/envs/xml/bin/python",
+          "/DATA/DATA1/guest3/2026OpticsMoE/LightGenV2/tasks/t18_optical_residual_ablation/caltech_selected_extend.py",
+          "--parent",
+          "/DATA/DATA1/guest3/2026OpticsMoE/LightGenV2/tasks/t18_optical_residual_ablation/runs/simulation/caltech_selected20_s17_L2L4L12L16_reg100_4gpu_20261012/L12_rho0",
+          "--out",
+          "/DATA/DATA1/guest3/2026OpticsMoE/LightGenV2/tasks/t18_optical_residual_ablation/runs/simulation/caltech_selected20_s17_L2L4L12L16_extend200_4gpu_20261013/L12_rho0",
+          "--data",
+          "/DATA/DATA1/guest3/t18_caltech_selected20_20261012/caltech20_selected_split.npz",
+          "--gpu",
+          "GPU-afc19890-6209-ee4d-622d-e619da5bd5b2"
+        ]
+      },
+      {
+        "depth": 12,
+        "rho": 0.3,
+        "name": "L12_rho03",
+        "pid": 2045994,
+        "gpu_uuid": "GPU-1b963983-7909-af6e-0528-f0f0661ab549",
+        "command": [
+          "/home/guest3/miniconda3/envs/xml/bin/python",
+          "/DATA/DATA1/guest3/2026OpticsMoE/LightGenV2/tasks/t18_optical_residual_ablation/caltech_selected_extend.py",
+          "--parent",
+          "/DATA/DATA1/guest3/2026OpticsMoE/LightGenV2/tasks/t18_optical_residual_ablation/runs/simulation/caltech_selected20_s17_L2L4L12L16_reg100_4gpu_20261012/L12_rho03",
+          "--out",
+          "/DATA/DATA1/guest3/2026OpticsMoE/LightGenV2/tasks/t18_optical_residual_ablation/runs/simulation/caltech_selected20_s17_L2L4L12L16_extend200_4gpu_20261013/L12_rho03",
+          "--data",
+          "/DATA/DATA1/guest3/t18_caltech_selected20_20261012/caltech20_selected_split.npz",
+          "--gpu",
+          "GPU-1b963983-7909-af6e-0528-f0f0661ab549"
+        ]
+      }
+    ],
+    "pending": [
+      {
+        "depth": 4,
+        "rho": 0.0,
+        "name": "L4_rho0"
+      },
+      {
+        "depth": 4,
+        "rho": 0.3,
+        "name": "L4_rho03"
+      },
+      {
+        "depth": 2,
+        "rho": 0.0,
+        "name": "L2_rho0"
+      },
+      {
+        "depth": 2,
+        "rho": 0.3,
+        "name": "L2_rho03"
+      }
+    ]
+  },
+  "active_details": [
+    {
+      "depth": 16,
+      "rho": 0.0,
+      "name": "L16_rho0",
+      "pid": 2045571,
+      "gpu_uuid": "GPU-e8837b85-d55b-8e81-aaa5-ec1ac326932d",
+      "command": [
+        "/home/guest3/miniconda3/envs/xml/bin/python",
+        "/DATA/DATA1/guest3/2026OpticsMoE/LightGenV2/tasks/t18_optical_residual_ablation/caltech_selected_extend.py",
+        "--parent",
+        "/DATA/DATA1/guest3/2026OpticsMoE/LightGenV2/tasks/t18_optical_residual_ablation/runs/simulation/caltech_selected20_s17_L2L4L12L16_reg100_4gpu_20261012/L16_rho0",
+        "--out",
+        "/DATA/DATA1/guest3/2026OpticsMoE/LightGenV2/tasks/t18_optical_residual_ablation/runs/simulation/caltech_selected20_s17_L2L4L12L16_extend200_4gpu_20261013/L16_rho0",
+        "--data",
+        "/DATA/DATA1/guest3/t18_caltech_selected20_20261012/caltech20_selected_split.npz",
+        "--gpu",
+        "GPU-e8837b85-d55b-8e81-aaa5-ec1ac326932d"
+      ],
+      "alive": true,
+      "status": {
+        "state": "training",
+        "epoch": 116,
+        "depth": 16,
+        "rho": 0.0,
+        "val_accuracy": 0.5335689045936396,
+        "val_macro_recall": 0.5102751093076171,
+        "val_balanced_nll": 1.7080505738621423,
+        "best_val_balanced_nll": 1.6690818268332943,
+        "epoch_seconds": 210.07851976156235,
+        "seconds": 3298.419596940279,
+        "test_evaluations": 0
+      },
+      "smoke": {
+        "passed": true,
+        "depth": 16,
+        "rho": 0.0,
+        "microbatch": 1,
+        "expert_batched": true,
+        "probability_max_error": 0.0,
+        "gradient_max_relative_l2": 0.0,
+        "gradient_min_cosine": 0.9999998211860657,
+        "gradients_finite_nonzero": true,
+        "restored_raw_parameter_sha256": "264e00da4f3099ec2f122b9e6bf1c0ce2ca2c007a7ef8070ebff0d5bd389f8eb",
+        "scope": "Restored E100 raw state, stratified8 train samples, E101 MixUp; no test or full parent re-evaluation"
+      },
+      "resume": {
+        "parent": "/DATA/DATA1/guest3/2026OpticsMoE/LightGenV2/tasks/t18_optical_residual_ablation/runs/simulation/caltech_selected20_s17_L2L4L12L16_reg100_4gpu_20261012/L16_rho0",
+        "parent_epoch": 100,
+        "first_new_epoch": 101,
+        "total_epochs": 200,
+        "parent_last_checkpoint_sha256": "2eb705c41d09737c4844149e0cf46703c2539543cee30799711d0d48ac5fd714",
+        "parent_best_checkpoint_sha256": "9bdb0b3dd34b49ffdc2584bfa00a2479d8c6db829687b56d1d5dd63aeeb43abd",
+        "restored_state_sha256": {
+          "model": "264e00da4f3099ec2f122b9e6bf1c0ce2ca2c007a7ef8070ebff0d5bd389f8eb",
+          "ema": "1ba8a0374d2d585acb7145187312f6be1d039728ea9f8a2d677e7f5d20c13a4d",
+          "optimizer": "338defe53f18be8acd9d8507e781a5ecc128e48fd6d1cf187830c2001728d70b",
+          "scheduler": "95a06c83dd0de460437c724050d06fc4bdf4e48fac9f375e5d079ca5dd4e6584"
+        },
+        "optimizer_reset": false,
+        "scheduler_reset": false,
+        "ema_reset": false,
+        "restored_lr": 0.002,
+        "restored_scheduler_last_epoch": 100
+      },
+      "log": " \"test_evaluations\": 0}\n{\"state\": \"training\", \"epoch\": 114, \"depth\": 16, \"rho\": 0.0, \"val_accuracy\": 0.5512367491166078, \"val_macro_recall\": 0.5232746871291764, \"val_balanced_nll\": 1.6697682995123295, \"best_val_balanced_nll\": 1.6697682995123295, \"epoch_seconds\": 199.76264911144972, \"seconds\": 2844.0232128202915, \"test_evaluations\": 0}\n{\"state\": \"training\", \"epoch\": 115, \"depth\": 16, \"rho\": 0.0, \"val_accuracy\": 0.5441696113074205, \"val_macro_recall\": 0.5197024801823564, \"val_balanced_nll\": 1.6690818268332943, \"best_val_balanced_nll\": 1.6690818268332943, \"epoch_seconds\": 243.5343266054988, \"seconds\": 3087.9484965503216, \"test_evaluations\": 0, \"train_val_gap_pp\": 18.83376773223171}\n{\"state\": \"training\", \"epoch\": 116, \"depth\": 16, \"rho\": 0.0, \"val_accuracy\": 0.5335689045936396, \"val_macro_recall\": 0.5102751093076171, \"val_balanced_nll\": 1.7080505738621423, \"best_val_balanced_nll\": 1.6690818268332943, \"epoch_seconds\": 210.07851976156235, \"seconds\": 3298.419596940279, \"test_evaluations\": 0}\n",
+      "cmdline": "/home/guest3/miniconda3/envs/xml/bin/python /DATA/DATA1/guest3/2026OpticsMoE/LightGenV2/tasks/t18_optical_residual_ablation/caltech_selected_extend.py --parent /DATA/DATA1/guest3/2026OpticsMoE/LightGenV2/tasks/t18_optical_residual_ablation/runs/simulation/caltech_selected20_s17_L2L4L12L16_reg100_4gpu_20261012/L16_rho0 --out /DATA/DATA1/guest3/2026OpticsMoE/LightGenV2/tasks/t18_optical_residual_ablation/runs/simulation/caltech_selected20_s17_L2L4L12L16_extend200_4gpu_20261013/L16_rho0 --data /DATA/DATA1/guest3/t18_caltech_selected20_20261012/caltech20_selected_split.npz --gpu GPU-e8837b85-d55b-8e81-aaa5-ec1ac326932d ",
+      "cuda_visible_devices": "GPU-e8837b85-d55b-8e81-aaa5-ec1ac326932d"
+    },
+    {
+      "depth": 16,
+      "rho": 0.3,
+      "name": "L16_rho03",
+      "pid": 2045712,
+      "gpu_uuid": "GPU-6dcca91a-8e08-1a50-9aa6-81defeaed50b",
+      "command": [
+        "/home/guest3/miniconda3/envs/xml/bin/python",
+        "/DATA/DATA1/guest3/2026OpticsMoE/LightGenV2/tasks/t18_optical_residual_ablation/caltech_selected_extend.py",
+        "--parent",
+        "/DATA/DATA1/guest3/2026OpticsMoE/LightGenV2/tasks/t18_optical_residual_ablation/runs/simulation/caltech_selected20_s17_L2L4L12L16_reg100_4gpu_20261012/L16_rho03",
+        "--out",
+        "/DATA/DATA1/guest3/2026OpticsMoE/LightGenV2/tasks/t18_optical_residual_ablation/runs/simulation/caltech_selected20_s17_L2L4L12L16_extend200_4gpu_20261013/L16_rho03",
+        "--data",
+        "/DATA/DATA1/guest3/t18_caltech_selected20_20261012/caltech20_selected_split.npz",
+        "--gpu",
+        "GPU-6dcca91a-8e08-1a50-9aa6-81defeaed50b"
+      ],
+      "alive": true,
+      "status": {
+        "state": "training",
+        "epoch": 115,
+        "depth": 16,
+        "rho": 0.3,
+        "val_accuracy": 0.6289752650176679,
+        "val_macro_recall": 0.6046921576875138,
+        "val_balanced_nll": 1.4574119370427658,
+        "best_val_balanced_nll": 1.4574119370427658,
+        "epoch_seconds": 250.8965839073062,
+        "seconds": 3162.7261720895767,
+        "test_evaluations": 0,
+        "train_val_gap_pp": 26.09664259444312
+      },
+      "smoke": {
+        "passed": true,
+        "depth": 16,
+        "rho": 0.3,
+        "microbatch": 1,
+        "expert_batched": true,
+        "probability_max_error": 0.0,
+        "gradient_max_relative_l2": 0.0,
+        "gradient_min_cosine": 0.9999998807907104,
+        "gradients_finite_nonzero": true,
+        "restored_raw_parameter_sha256": "a8d574bed6c6bec1d86a4796fd0f6eec012bc41d7e979d8d2b8c2d1085a8bd38",
+        "scope": "Restored E100 raw state, stratified8 train samples, E101 MixUp; no test or full parent re-evaluation"
+      },
+      "resume": {
+        "parent": "/DATA/DATA1/guest3/2026OpticsMoE/LightGenV2/tasks/t18_optical_residual_ablation/runs/simulation/caltech_selected20_s17_L2L4L12L16_reg100_4gpu_20261012/L16_rho03",
+        "parent_epoch": 100,
+        "first_new_epoch": 101,
+        "total_epochs": 200,
+        "parent_last_checkpoint_sha256": "dd03e5b1611dab77496fc61c17ae1a6fd64d13828728f4e51f6760a855a2eafd",
+        "parent_best_checkpoint_sha256": "62941669142320a3dfcd71ea29efc560b63c682767f93383faedb4e0c469cb95",
+        "restored_state_sha256": {
+          "model": "a8d574bed6c6bec1d86a4796fd0f6eec012bc41d7e979d8d2b8c2d1085a8bd38",
+          "ema": "117a367d863921d8c02b7051a5748ca55870849493799864b7cc4a9a86479be4",
+          "optimizer": "133333c488c5fa98ca54336baeff48a30f5005ab9804ff3548a8d58194d126f9",
+          "scheduler": "3f34a3ca75e08b643f46f3d44593e33bf0a9c5abec0ccf789b0b96ca46355d0e"
+        },
+        "optimizer_reset": false,
+        "scheduler_reset": false,
+        "ema_reset": false,
+        "restored_lr": 0.002,
+        "restored_scheduler_last_epoch": 100
+      },
+      "log": ", \"test_evaluations\": 0}\n{\"state\": \"training\", \"epoch\": 113, \"depth\": 16, \"rho\": 0.3, \"val_accuracy\": 0.6113074204946997, \"val_macro_recall\": 0.5836365363222948, \"val_balanced_nll\": 1.5211511164906093, \"best_val_balanced_nll\": 1.4641870929506866, \"epoch_seconds\": 207.0062291920185, \"seconds\": 2708.440257847309, \"test_evaluations\": 0}\n{\"state\": \"training\", \"epoch\": 114, \"depth\": 16, \"rho\": 0.3, \"val_accuracy\": 0.6042402826855123, \"val_macro_recall\": 0.5830254910208471, \"val_balanced_nll\": 1.5056172248389215, \"best_val_balanced_nll\": 1.4641870929506866, \"epoch_seconds\": 202.59881395846605, \"seconds\": 2911.4420792907476, \"test_evaluations\": 0}\n{\"state\": \"training\", \"epoch\": 115, \"depth\": 16, \"rho\": 0.3, \"val_accuracy\": 0.6289752650176679, \"val_macro_recall\": 0.6046921576875138, \"val_balanced_nll\": 1.4574119370427658, \"best_val_balanced_nll\": 1.4574119370427658, \"epoch_seconds\": 250.8965839073062, \"seconds\": 3162.7261720895767, \"test_evaluations\": 0, \"train_val_gap_pp\": 26.09664259444312}\n",
+      "cmdline": "/home/guest3/miniconda3/envs/xml/bin/python /DATA/DATA1/guest3/2026OpticsMoE/LightGenV2/tasks/t18_optical_residual_ablation/caltech_selected_extend.py --parent /DATA/DATA1/guest3/2026OpticsMoE/LightGenV2/tasks/t18_optical_residual_ablation/runs/simulation/caltech_selected20_s17_L2L4L12L16_reg100_4gpu_20261012/L16_rho03 --out /DATA/DATA1/guest3/2026OpticsMoE/LightGenV2/tasks/t18_optical_residual_ablation/runs/simulation/caltech_selected20_s17_L2L4L12L16_extend200_4gpu_20261013/L16_rho03 --data /DATA/DATA1/guest3/t18_caltech_selected20_20261012/caltech20_selected_split.npz --gpu GPU-6dcca91a-8e08-1a50-9aa6-81defeaed50b ",
+      "cuda_visible_devices": "GPU-6dcca91a-8e08-1a50-9aa6-81defeaed50b"
+    },
+    {
+      "depth": 12,
+      "rho": 0.0,
+      "name": "L12_rho0",
+      "pid": 2045853,
+      "gpu_uuid": "GPU-afc19890-6209-ee4d-622d-e619da5bd5b2",
+      "command": [
+        "/home/guest3/miniconda3/envs/xml/bin/python",
+        "/DATA/DATA1/guest3/2026OpticsMoE/LightGenV2/tasks/t18_optical_residual_ablation/caltech_selected_extend.py",
+        "--parent",
+        "/DATA/DATA1/guest3/2026OpticsMoE/LightGenV2/tasks/t18_optical_residual_ablation/runs/simulation/caltech_selected20_s17_L2L4L12L16_reg100_4gpu_20261012/L12_rho0",
+        "--out",
+        "/DATA/DATA1/guest3/2026OpticsMoE/LightGenV2/tasks/t18_optical_residual_ablation/runs/simulation/caltech_selected20_s17_L2L4L12L16_extend200_4gpu_20261013/L12_rho0",
+        "--data",
+        "/DATA/DATA1/guest3/t18_caltech_selected20_20261012/caltech20_selected_split.npz",
+        "--gpu",
+        "GPU-afc19890-6209-ee4d-622d-e619da5bd5b2"
+      ],
+      "alive": true,
+      "status": {
+        "state": "training",
+        "epoch": 119,
+        "depth": 12,
+        "rho": 0.0,
+        "val_accuracy": 0.568904593639576,
+        "val_macro_recall": 0.5414007432196287,
+        "val_balanced_nll": 1.6490484067733053,
+        "best_val_balanced_nll": 1.613043797957116,
+        "epoch_seconds": 164.47700103372335,
+        "seconds": 3204.4663165435195,
+        "test_evaluations": 0
+      },
+      "smoke": {
+        "passed": true,
+        "depth": 12,
+        "rho": 0.0,
+        "microbatch": 1,
+        "expert_batched": true,
+        "probability_max_error": 0.0,
+        "gradient_max_relative_l2": 0.0,
+        "gradient_min_cosine": 0.9999998211860657,
+        "gradients_finite_nonzero": true,
+        "restored_raw_parameter_sha256": "1dd115dbd37e237ea873973d517f6093a83d64712575ad66949cc7c2620dcf8b",
+        "scope": "Restored E100 raw state, stratified8 train samples, E101 MixUp; no test or full parent re-evaluation"
+      },
+      "resume": {
+        "parent": "/DATA/DATA1/guest3/2026OpticsMoE/LightGenV2/tasks/t18_optical_residual_ablation/runs/simulation/caltech_selected20_s17_L2L4L12L16_reg100_4gpu_20261012/L12_rho0",
+        "parent_epoch": 100,
+        "first_new_epoch": 101,
+        "total_epochs": 200,
+        "parent_last_checkpoint_sha256": "836cf213d63595ce3c051072b78b4bb8fb7bbf274d4b964491b343915987d530",
+        "parent_best_checkpoint_sha256": "9d91b078f543db4f21ca248c68ce3ba2aba63c95481b0417662987bbb7293603",
+        "restored_state_sha256": {
+          "model": "1dd115dbd37e237ea873973d517f6093a83d64712575ad66949cc7c2620dcf8b",
+          "ema": "dbfdd827b74345a19c7719c0697495284a1a198657162f1cfa73795decf6fcb0",
+          "optimizer": "78ab422d82acb9b6e93cafcde230aae8c25730f0fff76c36f00e75e2c0e2d052",
+          "scheduler": "b19b0dfe40e838f6760a7d25f14913a40ad43929faa895f9fce9b732bb2e44b0"
+        },
+        "optimizer_reset": false,
+        "scheduler_reset": false,
+        "ema_reset": false,
+        "restored_lr": 0.002,
+        "restored_scheduler_last_epoch": 100
+      },
+      "log": "28287572413683, \"seconds\": 2717.312280252576, \"test_evaluations\": 0}\n{\"state\": \"training\", \"epoch\": 117, \"depth\": 12, \"rho\": 0.0, \"val_accuracy\": 0.5724381625441696, \"val_macro_recall\": 0.5377368039597143, \"val_balanced_nll\": 1.6802000495086087, \"best_val_balanced_nll\": 1.613043797957116, \"epoch_seconds\": 159.5585619583726, \"seconds\": 2877.199895039201, \"test_evaluations\": 0}\n{\"state\": \"training\", \"epoch\": 118, \"depth\": 12, \"rho\": 0.0, \"val_accuracy\": 0.5759717314487632, \"val_macro_recall\": 0.5472913721984929, \"val_balanced_nll\": 1.6636359032421406, \"best_val_balanced_nll\": 1.613043797957116, \"epoch_seconds\": 162.2005896344781, \"seconds\": 3039.752934910357, \"test_evaluations\": 0}\n{\"state\": \"training\", \"epoch\": 119, \"depth\": 12, \"rho\": 0.0, \"val_accuracy\": 0.568904593639576, \"val_macro_recall\": 0.5414007432196287, \"val_balanced_nll\": 1.6490484067733053, \"best_val_balanced_nll\": 1.613043797957116, \"epoch_seconds\": 164.47700103372335, \"seconds\": 3204.4663165435195, \"test_evaluations\": 0}\n",
+      "cmdline": "/home/guest3/miniconda3/envs/xml/bin/python /DATA/DATA1/guest3/2026OpticsMoE/LightGenV2/tasks/t18_optical_residual_ablation/caltech_selected_extend.py --parent /DATA/DATA1/guest3/2026OpticsMoE/LightGenV2/tasks/t18_optical_residual_ablation/runs/simulation/caltech_selected20_s17_L2L4L12L16_reg100_4gpu_20261012/L12_rho0 --out /DATA/DATA1/guest3/2026OpticsMoE/LightGenV2/tasks/t18_optical_residual_ablation/runs/simulation/caltech_selected20_s17_L2L4L12L16_extend200_4gpu_20261013/L12_rho0 --data /DATA/DATA1/guest3/t18_caltech_selected20_20261012/caltech20_selected_split.npz --gpu GPU-afc19890-6209-ee4d-622d-e619da5bd5b2 ",
+      "cuda_visible_devices": "GPU-afc19890-6209-ee4d-622d-e619da5bd5b2"
+    },
+    {
+      "depth": 12,
+      "rho": 0.3,
+      "name": "L12_rho03",
+      "pid": 2045994,
+      "gpu_uuid": "GPU-1b963983-7909-af6e-0528-f0f0661ab549",
+      "command": [
+        "/home/guest3/miniconda3/envs/xml/bin/python",
+        "/DATA/DATA1/guest3/2026OpticsMoE/LightGenV2/tasks/t18_optical_residual_ablation/caltech_selected_extend.py",
+        "--parent",
+        "/DATA/DATA1/guest3/2026OpticsMoE/LightGenV2/tasks/t18_optical_residual_ablation/runs/simulation/caltech_selected20_s17_L2L4L12L16_reg100_4gpu_20261012/L12_rho03",
+        "--out",
+        "/DATA/DATA1/guest3/2026OpticsMoE/LightGenV2/tasks/t18_optical_residual_ablation/runs/simulation/caltech_selected20_s17_L2L4L12L16_extend200_4gpu_20261013/L12_rho03",
+        "--data",
+        "/DATA/DATA1/guest3/t18_caltech_selected20_20261012/caltech20_selected_split.npz",
+        "--gpu",
+        "GPU-1b963983-7909-af6e-0528-f0f0661ab549"
+      ],
+      "alive": true,
+      "status": {
+        "state": "training",
+        "epoch": 119,
+        "depth": 12,
+        "rho": 0.3,
+        "val_accuracy": 0.6360424028268551,
+        "val_macro_recall": 0.6070490113601569,
+        "val_balanced_nll": 1.4361305219756972,
+        "best_val_balanced_nll": 1.4151831955925291,
+        "epoch_seconds": 175.50414266437292,
+        "seconds": 3259.3133474737406,
+        "test_evaluations": 0
+      },
+      "smoke": {
+        "passed": true,
+        "depth": 12,
+        "rho": 0.3,
+        "microbatch": 1,
+        "expert_batched": true,
+        "probability_max_error": 0.0,
+        "gradient_max_relative_l2": 0.0,
+        "gradient_min_cosine": 0.9999998807907104,
+        "gradients_finite_nonzero": true,
+        "restored_raw_parameter_sha256": "6a1e6e9c26330e4a8b117826a89f4fcaf3123a97d97d0b36d937c76d4bc0ff61",
+        "scope": "Restored E100 raw state, stratified8 train samples, E101 MixUp; no test or full parent re-evaluation"
+      },
+      "resume": {
+        "parent": "/DATA/DATA1/guest3/2026OpticsMoE/LightGenV2/tasks/t18_optical_residual_ablation/runs/simulation/caltech_selected20_s17_L2L4L12L16_reg100_4gpu_20261012/L12_rho03",
+        "parent_epoch": 100,
+        "first_new_epoch": 101,
+        "total_epochs": 200,
+        "parent_last_checkpoint_sha256": "65354da6ceeeedf2ca7ae933fc6e49129406734efcca2998a23f4d672561c721",
+        "parent_best_checkpoint_sha256": "861ac188e1dbf49aef626032545c7bb137507bde64888d977025059aebae4f2e",
+        "restored_state_sha256": {
+          "model": "6a1e6e9c26330e4a8b117826a89f4fcaf3123a97d97d0b36d937c76d4bc0ff61",
+          "ema": "80f59e2fa64841869b6a8a52d920e9294000438d9d21cf9f7c93749b5a9234dd",
+          "optimizer": "170753c93e2f7f8ba9be919697d010747b7a2c98828b0127eb60006d32f16f91",
+          "scheduler": "03cabe753eb15b5deb9f24772e8a3705843348bcf11ffbeafd687576839a8e37"
+        },
+        "optimizer_reset": false,
+        "scheduler_reset": false,
+        "ema_reset": false,
+        "restored_lr": 0.001,
+        "restored_scheduler_last_epoch": 100
+      },
+      "log": "07646942, \"seconds\": 2758.928650788963, \"test_evaluations\": 0}\n{\"state\": \"training\", \"epoch\": 117, \"depth\": 12, \"rho\": 0.3, \"val_accuracy\": 0.6148409893992933, \"val_macro_recall\": 0.5819773673179245, \"val_balanced_nll\": 1.4581747125646571, \"best_val_balanced_nll\": 1.4151831955925291, \"epoch_seconds\": 162.20586840808392, \"seconds\": 2921.389814592898, \"test_evaluations\": 0}\n{\"state\": \"training\", \"epoch\": 118, \"depth\": 12, \"rho\": 0.3, \"val_accuracy\": 0.6466431095406361, \"val_macro_recall\": 0.616730158386505, \"val_balanced_nll\": 1.4206966645808008, \"best_val_balanced_nll\": 1.4151831955925291, \"epoch_seconds\": 161.76374650746584, \"seconds\": 3083.4680600836873, \"test_evaluations\": 0}\n{\"state\": \"training\", \"epoch\": 119, \"depth\": 12, \"rho\": 0.3, \"val_accuracy\": 0.6360424028268551, \"val_macro_recall\": 0.6070490113601569, \"val_balanced_nll\": 1.4361305219756972, \"best_val_balanced_nll\": 1.4151831955925291, \"epoch_seconds\": 175.50414266437292, \"seconds\": 3259.3133474737406, \"test_evaluations\": 0}\n",
+      "cmdline": "/home/guest3/miniconda3/envs/xml/bin/python /DATA/DATA1/guest3/2026OpticsMoE/LightGenV2/tasks/t18_optical_residual_ablation/caltech_selected_extend.py --parent /DATA/DATA1/guest3/2026OpticsMoE/LightGenV2/tasks/t18_optical_residual_ablation/runs/simulation/caltech_selected20_s17_L2L4L12L16_reg100_4gpu_20261012/L12_rho03 --out /DATA/DATA1/guest3/2026OpticsMoE/LightGenV2/tasks/t18_optical_residual_ablation/runs/simulation/caltech_selected20_s17_L2L4L12L16_extend200_4gpu_20261013/L12_rho03 --data /DATA/DATA1/guest3/t18_caltech_selected20_20261012/caltech20_selected_split.npz --gpu GPU-1b963983-7909-af6e-0528-f0f0661ab549 ",
+      "cuda_visible_devices": "GPU-1b963983-7909-af6e-0528-f0f0661ab549"
+    }
+  ],
+  "queue_alive": true,
+  "sources_match": true,
+  "source_count": 76,
+  "test_claims": [],
+  "queue_log": "",
+  "nvidia": "2045853, GPU-afc19890-6209-ee4d-622d-e619da5bd5b2, 1044 MiB\n2045571, GPU-e8837b85-d55b-8e81-aaa5-ec1ac326932d, 1170 MiB\n2045712, GPU-6dcca91a-8e08-1a50-9aa6-81defeaed50b, 1020 MiB\n2068891, GPU-4d8bfdb9-8777-05a6-3811-ab18ff4eadfd, 1476 MiB\n2045994, GPU-1b963983-7909-af6e-0528-f0f0661ab549, 1044 MiB\n2068892, GPU-3f60d773-4dd8-d706-ef48-a4dfc5af6c55, 1388 MiB\n",
+  "head": "9f0e6e3126a53c1f1cf195ecd2eeeb8b96597674",
+  "tracked": ""
+}
