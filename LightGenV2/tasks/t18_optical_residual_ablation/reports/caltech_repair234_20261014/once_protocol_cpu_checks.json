@@ -1,0 +1,20 @@
+{
+  "passed": true,
+  "checks": 12,
+  "failures": 0,
+  "errors": 0,
+  "sources": {
+    "caltech_repair_once.py": "401bd7d75162361eaabfd77c55e1e8e766ba99d573ed2efc8909677c52b04812",
+    "check_caltech_repair_once.py": "c73995fa502e16c7e5124600cbb6d5c279240dc98b62933f8071a41b068a0242"
+  },
+  "scope": "Synthetic temporary filesystem protocol fixtures only; no real final locks or scientific result",
+  "model_forward_calls": 0,
+  "test_arrays_materialized": 0,
+  "test_evaluations": 0,
+  "devices_opened": 0,
+  "gpu_used": false,
+  "git_commit": "ba1b39a052b4fbdc2a6d0b0b18026afcb1605720",
+  "training_source_count": 126,
+  "training_source_commit": "46011b823ff4cffc11c4f5943c62e31501c2a4c6",
+  "training_sources_unchanged": true
+}

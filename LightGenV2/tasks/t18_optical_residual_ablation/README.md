@@ -12,6 +12,8 @@
 [条件、预算和预先逐类门槛](CALTECH_REPAIR23_PROTOCOL_20261014.md)。
 Linux真实CPU检查提前queue/fit/native均在创建输出前被门槛拒绝，旧GPU进程未变、forward/test0；这不等于已完成深度训练。
 [入口准备与实际拒绝收据](reports/caltech_repair234_20261014/depth_validation_preparation.md)。
+最终once协议原语已准备，Linux12项合成检查通过，真实锁/test0；完整正式训练器和科学CPUfinalizer尚待条件满足后冻结，不能把该工具检查当正式结果。
+[协议边界和CPU收据](reports/caltech_repair234_20261014/once_protocol_preparation.md)。
 
 ## 全九组消融已完成并通过CPU审核（2026-10-14）
 
