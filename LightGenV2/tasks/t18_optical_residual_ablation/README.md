@@ -13,9 +13,10 @@ CCD log／LayerNorm／ReLU；残差由振幅＋相位联合BMP编码，8bit量�
 六模型BMP/实际micro1门槛及Linux4项协议检查通过，真实部分状态CPU核对通过。
 [新实际启动、布局图、数值与状态证明](reports/caltech_deploy234_20261013/README.md)。
 
-三卡mem2版本已实际启动，4层从E7完整接续，GPU1/2/4、A100排除；
-六模型BMP/实际micro1门槛及Linux4项协议检查通过，真实部分状态CPU核对通过。
-[新实际启动、布局图、数值与状态证明](reports/caltech_deploy234_20261013/README.md)。
+2/4层rho.3已完成150轮，独立CPU保存审核、全部150轮增强/MixUp/梯度/优化器核验通过，test0且无部分选模锁。
+均选E150：2层train36.22%/val36.04%，4层train57.22%/val46.64%、macro48.69%、差距10.57pp；
+4层验证NLL末段仍改善约1%，泛化差距扩大，不能称充分收敛。75%最终test目标尚未验收。
+[已完成两组残差曲线、PDF/CSV及CPU审核](reports/caltech_deploy234_20261013/residual_L2L4_stage/README.md)。
 
 ## 当前人工要求：全部八组延长至200轮（2026-10-13）
 

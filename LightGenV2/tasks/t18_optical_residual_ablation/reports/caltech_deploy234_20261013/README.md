@@ -34,3 +34,7 @@ ABO参考是封存rank72仿真R@1 .83375、实拍 .81125；不是本任务分类
 检查现有全锁及suite/test markers，不重复、不删除、不自动retry。全锁及耐久claim
 先于test数组，test不调方案。audit_caltech_deploy234.py仅核保存结果，导曲线、单test点、
 全CM/support/summary PNG/SVG/PDF/CSV，实际视检后发布最终结果和静态相位部署包。
+
+## 已完成2/4层残差阶段
+
+两组150轮保存结果CPU审计和真实曲线已完成，test0、无选模锁；[阶段数据、PDF/CSV和解释](residual_L2L4_stage/README.md)。六组拟合与最终测试仍在等待完整屏障。
