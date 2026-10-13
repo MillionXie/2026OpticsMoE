@@ -1,0 +1,1330 @@
+{
+  "passed": true,
+  "prior_checker_failure_preserved": "/DATA/DATA1/guest3/2026OpticsMoE/LightGenV2/tasks/t18_optical_residual_ablation/runs/smoke/caltech_diagnose_trained_native_bmp_20261014/failure.json",
+  "checker_repair": "Hash JSON configuration as JSON, not tensor state dictionary; scientific model/config/checks unchanged",
+  "time_unix": 1791918469.109852,
+  "checks": [
+    {
+      "variant": "rgb_tiles",
+      "passed": true,
+      "selected_epoch": 40,
+      "checkpoint_sha256": "c8db60283ec19e66bacaa34d64033bd07ac53d447c88f6e533cbddf96e32ad04",
+      "selected_parameter_sha256": "d142513a1ecf18a317aa6804d165c98f1cd2642bd9122e15c0610cbed35eb85f",
+      "config_sha256": "2fc8877416593a89f7a9164da289943d762a4cf9e15b215de808e2d20c566645",
+      "probes": [
+        {
+          "probe": "random_rgb",
+          "passed": true,
+          "native_bmp_roundtrip_exact": true,
+          "simulation_native_replay_probability_error": 0.0,
+          "captures": 5,
+          "brightness": [
+            {
+              "stage": "router",
+              "active_mean": 0.10104430876182689,
+              "illuminated_mean": 0.4601205325880352,
+              "p99": 0.5176470588235295,
+              "maximum": 0.596078431372549,
+              "zero_fraction": 0.7803960014705625,
+              "saturation_fraction": 0.0,
+              "extra_peak_stretch": false
+            },
+            {
+              "stage": "0",
+              "active_mean": 0.06138517100437976,
+              "illuminated_mean": 0.13976332720588236,
+              "p99": 0.1803921568627451,
+              "maximum": 0.29411764705882354,
+              "zero_fraction": 0.560792002941125,
+              "saturation_fraction": 0.0,
+              "extra_peak_stretch": false
+            },
+            {
+              "stage": "1",
+              "active_mean": 0.03755515896595153,
+              "illuminated_mean": 0.18683053782390852,
+              "p99": 0.29411764705882354,
+              "maximum": 0.7803921568627451,
+              "zero_fraction": 0.7989881129532046,
+              "saturation_fraction": 0.0,
+              "extra_peak_stretch": false
+            },
+            {
+              "stage": "2",
+              "active_mean": 0.023893018981721293,
+              "illuminated_mean": 0.20289042067192953,
+              "p99": 0.3333333333333333,
+              "maximum": 0.8431372549019608,
+              "zero_fraction": 0.8822368305876997,
+              "saturation_fraction": 0.0,
+              "extra_peak_stretch": false
+            },
+            {
+              "stage": "3",
+              "active_mean": 0.01707800537627211,
+              "illuminated_mean": 0.16459488675885423,
+              "p99": 0.3686274509803922,
+              "maximum": 0.8470588235294118,
+              "zero_fraction": 0.8962421876367711,
+              "saturation_fraction": 0.0,
+              "extra_peak_stretch": false
+            }
+          ],
+          "assets": [
+            {
+              "path": "rgb_tiles_random_rgb_router_amplitude.bmp",
+              "sha256": "cba551c3c3000265ff3f0dd224f564f4ae0a45bb369e64d2179ede3dc48aa832",
+              "size": [
+                1920,
+                1080
+              ]
+            },
+            {
+              "path": "rgb_tiles_random_rgb_router_phase.bmp",
+              "sha256": "65d2d00fd113153be986b9c85cba28d618083ab9be7aaee6647e9761101e1a65",
+              "size": [
+                1920,
+                1200
+              ]
+            },
+            {
+              "path": "rgb_tiles_random_rgb_0_amplitude.bmp",
+              "sha256": "7c2fa4fefcac2baf71d5059be328a305bd9c7fa4e62d841deae99bc62f6d31a7",
+              "size": [
+                1920,
+                1080
+              ]
+            },
+            {
+              "path": "rgb_tiles_random_rgb_0_phase.bmp",
+              "sha256": "a1b1d95b4febf987644dfb65d73c4ffbfa3b47a1f1953809b25c0beb10d275ea",
+              "size": [
+                1920,
+                1200
+              ]
+            },
+            {
+              "path": "rgb_tiles_random_rgb_1_amplitude.bmp",
+              "sha256": "25c3fa3ec94613f101c728995ab994864c9c98ba32711eedf4194b49b0777752",
+              "size": [
+                1920,
+                1080
+              ]
+            },
+            {
+              "path": "rgb_tiles_random_rgb_1_phase.bmp",
+              "sha256": "24b796c36ae8814978d2f37312368d288a34c4900c7d1c4e79910bdf4cf20e43",
+              "size": [
+                1920,
+                1200
+              ]
+            },
+            {
+              "path": "rgb_tiles_random_rgb_2_amplitude.bmp",
+              "sha256": "c99b6972ff7e2150dd5e3088ab2ed1599cec5e00e8dc3cca6013bad808b66985",
+              "size": [
+                1920,
+                1080
+              ]
+            },
+            {
+              "path": "rgb_tiles_random_rgb_2_phase.bmp",
+              "sha256": "f7705bbbd3471fa072d83810295febe4c593bed3a8aa632526d9d887d6415fad",
+              "size": [
+                1920,
+                1200
+              ]
+            },
+            {
+              "path": "rgb_tiles_random_rgb_3_amplitude.bmp",
+              "sha256": "226d4de6648b12d31f836674e19bb0e99d615d186a3f746afaf656483347a042",
+              "size": [
+                1920,
+                1080
+              ]
+            },
+            {
+              "path": "rgb_tiles_random_rgb_3_phase.bmp",
+              "sha256": "ee084d840e8295090f5cabd6d346bb3db35ce72d5306c0f3166e0d05c90611f4",
+              "size": [
+                1920,
+                1200
+              ]
+            }
+          ]
+        },
+        {
+          "probe": "dim_uniform",
+          "passed": true,
+          "native_bmp_roundtrip_exact": true,
+          "simulation_native_replay_probability_error": 0.0,
+          "captures": 5,
+          "brightness": [
+            {
+              "stage": "router",
+              "active_mean": 0.10162067382930834,
+              "illuminated_mean": 0.4627450980392157,
+              "p99": 0.4627450980392157,
+              "maximum": 0.4627450980392157,
+              "zero_fraction": 0.7803960014705625,
+              "saturation_fraction": 0.0,
+              "extra_peak_stretch": false
+            },
+            {
+              "stage": "0",
+              "active_mean": 0.06148880378117179,
+              "illuminated_mean": 0.13999928096238495,
+              "p99": 0.17647058823529413,
+              "maximum": 0.27058823529411763,
+              "zero_fraction": 0.560792002941125,
+              "saturation_fraction": 0.0,
+              "extra_peak_stretch": false
+            },
+            {
+              "stage": "1",
+              "active_mean": 0.03757058888750437,
+              "illuminated_mean": 0.18677309961429361,
+              "p99": 0.29411764705882354,
+              "maximum": 0.7686274509803922,
+              "zero_fraction": 0.798843682708636,
+              "saturation_fraction": 0.0,
+              "extra_peak_stretch": false
+            },
+            {
+              "stage": "2",
+              "active_mean": 0.023779088148275538,
+              "illuminated_mean": 0.20219348652713293,
+              "p99": 0.3333333333333333,
+              "maximum": 0.8431372549019608,
+              "zero_fraction": 0.8823943908545019,
+              "saturation_fraction": 0.0,
+              "extra_peak_stretch": false
+            },
+            {
+              "stage": "3",
+              "active_mean": 0.01697644937423859,
+              "illuminated_mean": 0.16465793856703018,
+              "p99": 0.3686274509803922,
+              "maximum": 0.8509803921568627,
+              "zero_fraction": 0.8968986887484462,
+              "saturation_fraction": 0.0,
+              "extra_peak_stretch": false
+            }
+          ],
+          "assets": [
+            {
+              "path": "rgb_tiles_dim_uniform_router_amplitude.bmp",
+              "sha256": "885e9e5ab0b76107af143ff1d78c3a71894c80212546eab8693befec7fe1b867",
+              "size": [
+                1920,
+                1080
+              ]
+            },
+            {
+              "path": "rgb_tiles_dim_uniform_router_phase.bmp",
+              "sha256": "65d2d00fd113153be986b9c85cba28d618083ab9be7aaee6647e9761101e1a65",
+              "size": [
+                1920,
+                1200
+              ]
+            },
+            {
+              "path": "rgb_tiles_dim_uniform_0_amplitude.bmp",
+              "sha256": "7b45a416b5c503fe1f4c6a9b027afc73f58b8036a8bfe47ebb66ddaeb9b53a3c",
+              "size": [
+                1920,
+                1080
+              ]
+            },
+            {
+              "path": "rgb_tiles_dim_uniform_0_phase.bmp",
+              "sha256": "a1b1d95b4febf987644dfb65d73c4ffbfa3b47a1f1953809b25c0beb10d275ea",
+              "size": [
+                1920,
+                1200
+              ]
+            },
+            {
+              "path": "rgb_tiles_dim_uniform_1_amplitude.bmp",
+              "sha256": "3af94a5d97b7f8cd5d46442b3c1394be203f3588e9e29f72242a0989b83626ed",
+              "size": [
+                1920,
+                1080
+              ]
+            },
+            {
+              "path": "rgb_tiles_dim_uniform_1_phase.bmp",
+              "sha256": "24b796c36ae8814978d2f37312368d288a34c4900c7d1c4e79910bdf4cf20e43",
+              "size": [
+                1920,
+                1200
+              ]
+            },
+            {
+              "path": "rgb_tiles_dim_uniform_2_amplitude.bmp",
+              "sha256": "1f7914da5adf344c9855fefdb63687e8c2e6469ef75d6f34ef7fb69d4b59d17f",
+              "size": [
+                1920,
+                1080
+              ]
+            },
+            {
+              "path": "rgb_tiles_dim_uniform_2_phase.bmp",
+              "sha256": "f7705bbbd3471fa072d83810295febe4c593bed3a8aa632526d9d887d6415fad",
+              "size": [
+                1920,
+                1200
+              ]
+            },
+            {
+              "path": "rgb_tiles_dim_uniform_3_amplitude.bmp",
+              "sha256": "92c4ef23b0d6be11a6dfc081b7cd9b161b313a7e153ed7fbc9f5f288aea4f2f3",
+              "size": [
+                1920,
+                1080
+              ]
+            },
+            {
+              "path": "rgb_tiles_dim_uniform_3_phase.bmp",
+              "sha256": "ee084d840e8295090f5cabd6d346bb3db35ce72d5306c0f3166e0d05c90611f4",
+              "size": [
+                1920,
+                1200
+              ]
+            }
+          ]
+        },
+        {
+          "probe": "black",
+          "passed": true,
+          "native_bmp_roundtrip_exact": true,
+          "simulation_native_replay_probability_error": 0.0,
+          "captures": 5,
+          "brightness": [
+            {
+              "stage": "router",
+              "active_mean": 0.0,
+              "illuminated_mean": 0,
+              "p99": 0.0,
+              "maximum": 0.0,
+              "zero_fraction": 1.0,
+              "saturation_fraction": 0.0,
+              "extra_peak_stretch": false
+            },
+            {
+              "stage": "0",
+              "active_mean": 0.0,
+              "illuminated_mean": 0,
+              "p99": 0.0,
+              "maximum": 0.0,
+              "zero_fraction": 1.0,
+              "saturation_fraction": 0.0,
+              "extra_peak_stretch": false
+            },
+            {
+              "stage": "1",
+              "active_mean": 0.0,
+              "illuminated_mean": 0,
+              "p99": 0.0,
+              "maximum": 0.0,
+              "zero_fraction": 1.0,
+              "saturation_fraction": 0.0,
+              "extra_peak_stretch": false
+            },
+            {
+              "stage": "2",
+              "active_mean": 0.0,
+              "illuminated_mean": 0,
+              "p99": 0.0,
+              "maximum": 0.0,
+              "zero_fraction": 1.0,
+              "saturation_fraction": 0.0,
+              "extra_peak_stretch": false
+            },
+            {
+              "stage": "3",
+              "active_mean": 0.0,
+              "illuminated_mean": 0,
+              "p99": 0.0,
+              "maximum": 0.0,
+              "zero_fraction": 1.0,
+              "saturation_fraction": 0.0,
+              "extra_peak_stretch": false
+            }
+          ],
+          "assets": [
+            {
+              "path": "rgb_tiles_black_router_amplitude.bmp",
+              "sha256": "54732604091e92e1f6877b9d982455a1982fbbb3323d9f4d7fb89f6a0157a507",
+              "size": [
+                1920,
+                1080
+              ]
+            },
+            {
+              "path": "rgb_tiles_black_router_phase.bmp",
+              "sha256": "65d2d00fd113153be986b9c85cba28d618083ab9be7aaee6647e9761101e1a65",
+              "size": [
+                1920,
+                1200
+              ]
+            },
+            {
+              "path": "rgb_tiles_black_0_amplitude.bmp",
+              "sha256": "54732604091e92e1f6877b9d982455a1982fbbb3323d9f4d7fb89f6a0157a507",
+              "size": [
+                1920,
+                1080
+              ]
+            },
+            {
+              "path": "rgb_tiles_black_0_phase.bmp",
+              "sha256": "a1b1d95b4febf987644dfb65d73c4ffbfa3b47a1f1953809b25c0beb10d275ea",
+              "size": [
+                1920,
+                1200
+              ]
+            },
+            {
+              "path": "rgb_tiles_black_1_amplitude.bmp",
+              "sha256": "54732604091e92e1f6877b9d982455a1982fbbb3323d9f4d7fb89f6a0157a507",
+              "size": [
+                1920,
+                1080
+              ]
+            },
+            {
+              "path": "rgb_tiles_black_1_phase.bmp",
+              "sha256": "24b796c36ae8814978d2f37312368d288a34c4900c7d1c4e79910bdf4cf20e43",
+              "size": [
+                1920,
+                1200
+              ]
+            },
+            {
+              "path": "rgb_tiles_black_2_amplitude.bmp",
+              "sha256": "54732604091e92e1f6877b9d982455a1982fbbb3323d9f4d7fb89f6a0157a507",
+              "size": [
+                1920,
+                1080
+              ]
+            },
+            {
+              "path": "rgb_tiles_black_2_phase.bmp",
+              "sha256": "f7705bbbd3471fa072d83810295febe4c593bed3a8aa632526d9d887d6415fad",
+              "size": [
+                1920,
+                1200
+              ]
+            },
+            {
+              "path": "rgb_tiles_black_3_amplitude.bmp",
+              "sha256": "54732604091e92e1f6877b9d982455a1982fbbb3323d9f4d7fb89f6a0157a507",
+              "size": [
+                1920,
+                1080
+              ]
+            },
+            {
+              "path": "rgb_tiles_black_3_phase.bmp",
+              "sha256": "ee084d840e8295090f5cabd6d346bb3db35ce72d5306c0f3166e0d05c90611f4",
+              "size": [
+                1920,
+                1200
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "variant": "dense_router",
+      "passed": true,
+      "selected_epoch": 40,
+      "checkpoint_sha256": "17359767a6859d66ad06571b86593223bc33a8fc0bbb2f3b0543a56421825996",
+      "selected_parameter_sha256": "0c1dc6565b8f536638159ddaf8834d9c4614411525dd8c6bab772e5607e2389d",
+      "config_sha256": "4f70a3c4d792dd0854bc0a0635ca1d111fef45cc2755c18534374ead1e442505",
+      "probes": [
+        {
+          "probe": "random_rgb",
+          "passed": true,
+          "native_bmp_roundtrip_exact": true,
+          "simulation_native_replay_probability_error": 0.0,
+          "captures": 5,
+          "brightness": [
+            {
+              "stage": "router",
+              "active_mean": 0.10036935696531374,
+              "illuminated_mean": 0.457047037565026,
+              "p99": 0.5372549019607843,
+              "maximum": 0.596078431372549,
+              "zero_fraction": 0.7803960014705625,
+              "saturation_fraction": 0.0,
+              "extra_peak_stretch": false
+            },
+            {
+              "stage": "0",
+              "active_mean": 0.08048202457047664,
+              "illuminated_mean": 0.09162176589385755,
+              "p99": 0.20392156862745098,
+              "maximum": 0.38823529411764707,
+              "zero_fraction": 0.12158400588224996,
+              "saturation_fraction": 0.0,
+              "extra_peak_stretch": false
+            },
+            {
+              "stage": "1",
+              "active_mean": 0.04133447710415901,
+              "illuminated_mean": 0.11135531135531135,
+              "p99": 0.3333333333333333,
+              "maximum": 0.7803921568627451,
+              "zero_fraction": 0.6288055181106773,
+              "saturation_fraction": 0.0,
+              "extra_peak_stretch": false
+            },
+            {
+              "stage": "2",
+              "active_mean": 0.03418807203559283,
+              "illuminated_mean": 0.10975267940062092,
+              "p99": 0.3653725490195439,
+              "maximum": 0.7686274509803922,
+              "zero_fraction": 0.6884989758582658,
+              "saturation_fraction": 0.0,
+              "extra_peak_stretch": false
+            },
+            {
+              "stage": "3",
+              "active_mean": 0.02815009829495076,
+              "illuminated_mean": 0.0926685645370572,
+              "p99": 0.37254901960784315,
+              "maximum": 0.8666666666666667,
+              "zero_fraction": 0.6962281822797219,
+              "saturation_fraction": 0.0,
+              "extra_peak_stretch": false
+            }
+          ],
+          "assets": [
+            {
+              "path": "dense_router_random_rgb_router_amplitude.bmp",
+              "sha256": "e1945ff23ca4a45ae51c534453bd3ae0c1851cbc71066c53d59f3e3f61c6d64b",
+              "size": [
+                1920,
+                1080
+              ]
+            },
+            {
+              "path": "dense_router_random_rgb_router_phase.bmp",
+              "sha256": "1018f22f302d361e72209a8bdf0ab958fabdee5cbdeca41ea59f380cd2179bf5",
+              "size": [
+                1920,
+                1200
+              ]
+            },
+            {
+              "path": "dense_router_random_rgb_0_amplitude.bmp",
+              "sha256": "d3f6a7d4a0b125d849330b34f9d4c69a70cf5506466c35f19faec1c0f7749000",
+              "size": [
+                1920,
+                1080
+              ]
+            },
+            {
+              "path": "dense_router_random_rgb_0_phase.bmp",
+              "sha256": "daa15f08af852b1e4272e5789dc6feb849b9850bfd330acf4bc2c25289f913e8",
+              "size": [
+                1920,
+                1200
+              ]
+            },
+            {
+              "path": "dense_router_random_rgb_1_amplitude.bmp",
+              "sha256": "b0182dba36e87e857acfeadcfcb6fca6ca76ac13fe7918d6d048a39010cc32ac",
+              "size": [
+                1920,
+                1080
+              ]
+            },
+            {
+              "path": "dense_router_random_rgb_1_phase.bmp",
+              "sha256": "fb63ecd22d586b805a82669ff489949ff8f0508aff1f7f7dbe7318b2caac31a8",
+              "size": [
+                1920,
+                1200
+              ]
+            },
+            {
+              "path": "dense_router_random_rgb_2_amplitude.bmp",
+              "sha256": "6c14c1b3577e269aafad49247e5fe1c1c1c8c6cce567f624ddbfac0e47ac64bb",
+              "size": [
+                1920,
+                1080
+              ]
+            },
+            {
+              "path": "dense_router_random_rgb_2_phase.bmp",
+              "sha256": "2783a6c2f0cceb9864ef70ce7921622c21296e4fa2baf294e41dd9a984547745",
+              "size": [
+                1920,
+                1200
+              ]
+            },
+            {
+              "path": "dense_router_random_rgb_3_amplitude.bmp",
+              "sha256": "920ed151cb03986163882e8b3b7aa8930c0e0815f548d505f802f0290c836fa5",
+              "size": [
+                1920,
+                1080
+              ]
+            },
+            {
+              "path": "dense_router_random_rgb_3_phase.bmp",
+              "sha256": "68179b3410d5998a2d0a36b97297e121e9134bb58705892e34fe789f268cd80f",
+              "size": [
+                1920,
+                1200
+              ]
+            }
+          ]
+        },
+        {
+          "probe": "dim_uniform",
+          "passed": true,
+          "native_bmp_roundtrip_exact": true,
+          "simulation_native_replay_probability_error": 0.0,
+          "captures": 5,
+          "brightness": [
+            {
+              "stage": "router",
+              "active_mean": 0.10162067382930834,
+              "illuminated_mean": 0.4627450980392157,
+              "p99": 0.4627450980392157,
+              "maximum": 0.4627450980392157,
+              "zero_fraction": 0.7803960014705625,
+              "saturation_fraction": 0.0,
+              "extra_peak_stretch": false
+            },
+            {
+              "stage": "0",
+              "active_mean": 0.08096339006532745,
+              "illuminated_mean": 0.09216975852841136,
+              "p99": 0.19607843137254902,
+              "maximum": 0.32941176470588235,
+              "zero_fraction": 0.12158400588224996,
+              "saturation_fraction": 0.0,
+              "extra_peak_stretch": false
+            },
+            {
+              "stage": "1",
+              "active_mean": 0.04118273523936631,
+              "illuminated_mean": 0.1110342330335875,
+              "p99": 0.3333333333333333,
+              "maximum": 0.7803921568627451,
+              "zero_fraction": 0.6290987552738923,
+              "saturation_fraction": 0.0,
+              "extra_peak_stretch": false
+            },
+            {
+              "stage": "2",
+              "active_mean": 0.03411928101714592,
+              "illuminated_mean": 0.10970756419203154,
+              "p99": 0.3686274509803922,
+              "maximum": 0.7686274509803922,
+              "zero_fraction": 0.6889979167031389,
+              "saturation_fraction": 0.0,
+              "extra_peak_stretch": false
+            },
+            {
+              "stage": "3",
+              "active_mean": 0.028035360780400462,
+              "illuminated_mean": 0.09217664185671967,
+              "p99": 0.3686274509803922,
+              "maximum": 0.8627450980392157,
+              "zero_fraction": 0.6958517883090282,
+              "saturation_fraction": 0.0,
+              "extra_peak_stretch": false
+            }
+          ],
+          "assets": [
+            {
+              "path": "dense_router_dim_uniform_router_amplitude.bmp",
+              "sha256": "885e9e5ab0b76107af143ff1d78c3a71894c80212546eab8693befec7fe1b867",
+              "size": [
+                1920,
+                1080
+              ]
+            },
+            {
+              "path": "dense_router_dim_uniform_router_phase.bmp",
+              "sha256": "1018f22f302d361e72209a8bdf0ab958fabdee5cbdeca41ea59f380cd2179bf5",
+              "size": [
+                1920,
+                1200
+              ]
+            },
+            {
+              "path": "dense_router_dim_uniform_0_amplitude.bmp",
+              "sha256": "4e854a5b1c280615de84d9d1cccab39ac86f1383219188587a5507ef907597f3",
+              "size": [
+                1920,
+                1080
+              ]
+            },
+            {
+              "path": "dense_router_dim_uniform_0_phase.bmp",
+              "sha256": "daa15f08af852b1e4272e5789dc6feb849b9850bfd330acf4bc2c25289f913e8",
+              "size": [
+                1920,
+                1200
+              ]
+            },
+            {
+              "path": "dense_router_dim_uniform_1_amplitude.bmp",
+              "sha256": "6cc4ee002fbe0118a262570bd6344210039533094399391a0458f35fbb05fb76",
+              "size": [
+                1920,
+                1080
+              ]
+            },
+            {
+              "path": "dense_router_dim_uniform_1_phase.bmp",
+              "sha256": "fb63ecd22d586b805a82669ff489949ff8f0508aff1f7f7dbe7318b2caac31a8",
+              "size": [
+                1920,
+                1200
+              ]
+            },
+            {
+              "path": "dense_router_dim_uniform_2_amplitude.bmp",
+              "sha256": "803f443e3e7fdb516c47ffb58847a024ff03cb7719e1d9f4fdaabbf6967eee29",
+              "size": [
+                1920,
+                1080
+              ]
+            },
+            {
+              "path": "dense_router_dim_uniform_2_phase.bmp",
+              "sha256": "2783a6c2f0cceb9864ef70ce7921622c21296e4fa2baf294e41dd9a984547745",
+              "size": [
+                1920,
+                1200
+              ]
+            },
+            {
+              "path": "dense_router_dim_uniform_3_amplitude.bmp",
+              "sha256": "130a3601ed9b8f1475a35e003285d53a248191384e31c0b0db01d2621225cd22",
+              "size": [
+                1920,
+                1080
+              ]
+            },
+            {
+              "path": "dense_router_dim_uniform_3_phase.bmp",
+              "sha256": "68179b3410d5998a2d0a36b97297e121e9134bb58705892e34fe789f268cd80f",
+              "size": [
+                1920,
+                1200
+              ]
+            }
+          ]
+        },
+        {
+          "probe": "black",
+          "passed": true,
+          "native_bmp_roundtrip_exact": true,
+          "simulation_native_replay_probability_error": 0.0,
+          "captures": 5,
+          "brightness": [
+            {
+              "stage": "router",
+              "active_mean": 0.0,
+              "illuminated_mean": 0,
+              "p99": 0.0,
+              "maximum": 0.0,
+              "zero_fraction": 1.0,
+              "saturation_fraction": 0.0,
+              "extra_peak_stretch": false
+            },
+            {
+              "stage": "0",
+              "active_mean": 0.0,
+              "illuminated_mean": 0,
+              "p99": 0.0,
+              "maximum": 0.0,
+              "zero_fraction": 1.0,
+              "saturation_fraction": 0.0,
+              "extra_peak_stretch": false
+            },
+            {
+              "stage": "1",
+              "active_mean": 0.0,
+              "illuminated_mean": 0,
+              "p99": 0.0,
+              "maximum": 0.0,
+              "zero_fraction": 1.0,
+              "saturation_fraction": 0.0,
+              "extra_peak_stretch": false
+            },
+            {
+              "stage": "2",
+              "active_mean": 0.0,
+              "illuminated_mean": 0,
+              "p99": 0.0,
+              "maximum": 0.0,
+              "zero_fraction": 1.0,
+              "saturation_fraction": 0.0,
+              "extra_peak_stretch": false
+            },
+            {
+              "stage": "3",
+              "active_mean": 0.0,
+              "illuminated_mean": 0,
+              "p99": 0.0,
+              "maximum": 0.0,
+              "zero_fraction": 1.0,
+              "saturation_fraction": 0.0,
+              "extra_peak_stretch": false
+            }
+          ],
+          "assets": [
+            {
+              "path": "dense_router_black_router_amplitude.bmp",
+              "sha256": "54732604091e92e1f6877b9d982455a1982fbbb3323d9f4d7fb89f6a0157a507",
+              "size": [
+                1920,
+                1080
+              ]
+            },
+            {
+              "path": "dense_router_black_router_phase.bmp",
+              "sha256": "1018f22f302d361e72209a8bdf0ab958fabdee5cbdeca41ea59f380cd2179bf5",
+              "size": [
+                1920,
+                1200
+              ]
+            },
+            {
+              "path": "dense_router_black_0_amplitude.bmp",
+              "sha256": "54732604091e92e1f6877b9d982455a1982fbbb3323d9f4d7fb89f6a0157a507",
+              "size": [
+                1920,
+                1080
+              ]
+            },
+            {
+              "path": "dense_router_black_0_phase.bmp",
+              "sha256": "daa15f08af852b1e4272e5789dc6feb849b9850bfd330acf4bc2c25289f913e8",
+              "size": [
+                1920,
+                1200
+              ]
+            },
+            {
+              "path": "dense_router_black_1_amplitude.bmp",
+              "sha256": "54732604091e92e1f6877b9d982455a1982fbbb3323d9f4d7fb89f6a0157a507",
+              "size": [
+                1920,
+                1080
+              ]
+            },
+            {
+              "path": "dense_router_black_1_phase.bmp",
+              "sha256": "fb63ecd22d586b805a82669ff489949ff8f0508aff1f7f7dbe7318b2caac31a8",
+              "size": [
+                1920,
+                1200
+              ]
+            },
+            {
+              "path": "dense_router_black_2_amplitude.bmp",
+              "sha256": "54732604091e92e1f6877b9d982455a1982fbbb3323d9f4d7fb89f6a0157a507",
+              "size": [
+                1920,
+                1080
+              ]
+            },
+            {
+              "path": "dense_router_black_2_phase.bmp",
+              "sha256": "2783a6c2f0cceb9864ef70ce7921622c21296e4fa2baf294e41dd9a984547745",
+              "size": [
+                1920,
+                1200
+              ]
+            },
+            {
+              "path": "dense_router_black_3_amplitude.bmp",
+              "sha256": "54732604091e92e1f6877b9d982455a1982fbbb3323d9f4d7fb89f6a0157a507",
+              "size": [
+                1920,
+                1080
+              ]
+            },
+            {
+              "path": "dense_router_black_3_phase.bmp",
+              "sha256": "68179b3410d5998a2d0a36b97297e121e9134bb58705892e34fe789f268cd80f",
+              "size": [
+                1920,
+                1200
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "variant": "preserve_global",
+      "passed": true,
+      "selected_epoch": 40,
+      "checkpoint_sha256": "58cee641c8ea5bc2d961c523381f3bec5cc02086c5f63a58f4732724d1049630",
+      "selected_parameter_sha256": "ff4b94d06679308e1fac87f9969a579dfa0b3bec2a139bb07343a4461fec88b7",
+      "config_sha256": "9aef2033a76bf14323ef0f17b2d6bfcf29cb61cbc0e5dc8767837f2229ebf2a5",
+      "probes": [
+        {
+          "probe": "random_rgb",
+          "passed": true,
+          "native_bmp_roundtrip_exact": true,
+          "simulation_native_replay_probability_error": 0.0,
+          "captures": 5,
+          "brightness": [
+            {
+              "stage": "router",
+              "active_mean": 0.10036935696531374,
+              "illuminated_mean": 0.457047037565026,
+              "p99": 0.5372549019607843,
+              "maximum": 0.596078431372549,
+              "zero_fraction": 0.7803960014705625,
+              "saturation_fraction": 0.0,
+              "extra_peak_stretch": false
+            },
+            {
+              "stage": "0",
+              "active_mean": 0.06032311525825295,
+              "illuminated_mean": 0.13734521152210885,
+              "p99": 0.1843137254901961,
+              "maximum": 0.27450980392156865,
+              "zero_fraction": 0.560792002941125,
+              "saturation_fraction": 0.0,
+              "extra_peak_stretch": false
+            },
+            {
+              "stage": "1",
+              "active_mean": 0.07342677446672373,
+              "illuminated_mean": 0.18163243514734592,
+              "p99": 0.403921568627451,
+              "maximum": 0.7529411764705882,
+              "zero_fraction": 0.5957397454526356,
+              "saturation_fraction": 0.0,
+              "extra_peak_stretch": false
+            },
+            {
+              "stage": "2",
+              "active_mean": 0.02474535480409492,
+              "illuminated_mean": 0.14903046146499085,
+              "p99": 0.33725490196078434,
+              "maximum": 0.7254901960784313,
+              "zero_fraction": 0.8339577388351044,
+              "saturation_fraction": 0.0,
+              "extra_peak_stretch": false
+            },
+            {
+              "stage": "3",
+              "active_mean": 0.05726512449835591,
+              "illuminated_mean": 0.17832883163487417,
+              "p99": 0.42745098039215684,
+              "maximum": 0.796078431372549,
+              "zero_fraction": 0.6788790462351849,
+              "saturation_fraction": 0.0,
+              "extra_peak_stretch": false
+            }
+          ],
+          "assets": [
+            {
+              "path": "preserve_global_random_rgb_router_amplitude.bmp",
+              "sha256": "e1945ff23ca4a45ae51c534453bd3ae0c1851cbc71066c53d59f3e3f61c6d64b",
+              "size": [
+                1920,
+                1080
+              ]
+            },
+            {
+              "path": "preserve_global_random_rgb_router_phase.bmp",
+              "sha256": "307a924b908771d3ca72af85bb70dc2f375b9f1d456da306474fd4f9df7f423f",
+              "size": [
+                1920,
+                1200
+              ]
+            },
+            {
+              "path": "preserve_global_random_rgb_0_amplitude.bmp",
+              "sha256": "906f8141a2a0e8d8010cc411c18faae4200f650ecb01e8f3ba39617c3d81199f",
+              "size": [
+                1920,
+                1080
+              ]
+            },
+            {
+              "path": "preserve_global_random_rgb_0_phase.bmp",
+              "sha256": "be2f660d627e85c0501a6a8da37aa8fdc427e7e185c638d88a08e89e3244a9ea",
+              "size": [
+                1920,
+                1200
+              ]
+            },
+            {
+              "path": "preserve_global_random_rgb_1_amplitude.bmp",
+              "sha256": "b6f311e800169f405c60ba7e199b32fce92a8243c7d7e18f83a070321a333a52",
+              "size": [
+                1920,
+                1080
+              ]
+            },
+            {
+              "path": "preserve_global_random_rgb_1_phase.bmp",
+              "sha256": "7aa2aee6927a6bfaf12c667bf406d35a425d2a21a888dd4b3d511122906c16ef",
+              "size": [
+                1920,
+                1200
+              ]
+            },
+            {
+              "path": "preserve_global_random_rgb_2_amplitude.bmp",
+              "sha256": "7f8c6caa42502ea380e0bd17d244afd0dc029dd74a17cb58ddd9233eb2e79945",
+              "size": [
+                1920,
+                1080
+              ]
+            },
+            {
+              "path": "preserve_global_random_rgb_2_phase.bmp",
+              "sha256": "5b56d7d9b9eece589487427d7ed9921b8298713eb65fb73d1a8a3fdceaf718cf",
+              "size": [
+                1920,
+                1200
+              ]
+            },
+            {
+              "path": "preserve_global_random_rgb_3_amplitude.bmp",
+              "sha256": "b7645095d9cba4f706a62d0606eacc62a22d5b6d332ca14a2ad75a446ae69900",
+              "size": [
+                1920,
+                1080
+              ]
+            },
+            {
+              "path": "preserve_global_random_rgb_3_phase.bmp",
+              "sha256": "9139915a5aea814ece3eaeeb4dbce6d3cfda17c88658bf36fd80fc064936d1ed",
+              "size": [
+                1920,
+                1200
+              ]
+            }
+          ]
+        },
+        {
+          "probe": "dim_uniform",
+          "passed": true,
+          "native_bmp_roundtrip_exact": true,
+          "simulation_native_replay_probability_error": 0.0,
+          "captures": 5,
+          "brightness": [
+            {
+              "stage": "router",
+              "active_mean": 0.10162067382930834,
+              "illuminated_mean": 0.4627450980392157,
+              "p99": 0.4627450980392157,
+              "maximum": 0.4627450980392157,
+              "zero_fraction": 0.7803960014705625,
+              "saturation_fraction": 0.0,
+              "extra_peak_stretch": false
+            },
+            {
+              "stage": "0",
+              "active_mean": 0.061021357826231276,
+              "illuminated_mean": 0.13893498805772309,
+              "p99": 0.16862745098039217,
+              "maximum": 0.24313725490196078,
+              "zero_fraction": 0.560792002941125,
+              "saturation_fraction": 0.0,
+              "extra_peak_stretch": false
+            },
+            {
+              "stage": "1",
+              "active_mean": 0.07324781140550966,
+              "illuminated_mean": 0.18097813399487936,
+              "p99": 0.403921568627451,
+              "maximum": 0.7529411764705882,
+              "zero_fraction": 0.5952670646522294,
+              "saturation_fraction": 0.0,
+              "extra_peak_stretch": false
+            },
+            {
+              "stage": "2",
+              "active_mean": 0.02472898089401549,
+              "illuminated_mean": 0.15017479456166904,
+              "p99": 0.33725490196078434,
+              "maximum": 0.7294117647058823,
+              "zero_fraction": 0.8353320144955445,
+              "saturation_fraction": 0.0,
+              "extra_peak_stretch": false
+            },
+            {
+              "stage": "3",
+              "active_mean": 0.05698151601811222,
+              "illuminated_mean": 0.18082702129032838,
+              "p99": 0.43137254901960786,
+              "maximum": 0.7843137254901961,
+              "zero_fraction": 0.6848838430699743,
+              "saturation_fraction": 0.0,
+              "extra_peak_stretch": false
+            }
+          ],
+          "assets": [
+            {
+              "path": "preserve_global_dim_uniform_router_amplitude.bmp",
+              "sha256": "885e9e5ab0b76107af143ff1d78c3a71894c80212546eab8693befec7fe1b867",
+              "size": [
+                1920,
+                1080
+              ]
+            },
+            {
+              "path": "preserve_global_dim_uniform_router_phase.bmp",
+              "sha256": "307a924b908771d3ca72af85bb70dc2f375b9f1d456da306474fd4f9df7f423f",
+              "size": [
+                1920,
+                1200
+              ]
+            },
+            {
+              "path": "preserve_global_dim_uniform_0_amplitude.bmp",
+              "sha256": "1f4ab016a2c5e29fe597a86a37646150d688810aa31509ffbb4c1c68c80d04a4",
+              "size": [
+                1920,
+                1080
+              ]
+            },
+            {
+              "path": "preserve_global_dim_uniform_0_phase.bmp",
+              "sha256": "be2f660d627e85c0501a6a8da37aa8fdc427e7e185c638d88a08e89e3244a9ea",
+              "size": [
+                1920,
+                1200
+              ]
+            },
+            {
+              "path": "preserve_global_dim_uniform_1_amplitude.bmp",
+              "sha256": "2dbdedf9d640e9762075e4e5c30688221d9919031248f0486ad88e988f5f804c",
+              "size": [
+                1920,
+                1080
+              ]
+            },
+            {
+              "path": "preserve_global_dim_uniform_1_phase.bmp",
+              "sha256": "7aa2aee6927a6bfaf12c667bf406d35a425d2a21a888dd4b3d511122906c16ef",
+              "size": [
+                1920,
+                1200
+              ]
+            },
+            {
+              "path": "preserve_global_dim_uniform_2_amplitude.bmp",
+              "sha256": "b2cd6ccd45b82fec5046efca99c49387cf65bef32ab14f369652483d2c5b72ba",
+              "size": [
+                1920,
+                1080
+              ]
+            },
+            {
+              "path": "preserve_global_dim_uniform_2_phase.bmp",
+              "sha256": "5b56d7d9b9eece589487427d7ed9921b8298713eb65fb73d1a8a3fdceaf718cf",
+              "size": [
+                1920,
+                1200
+              ]
+            },
+            {
+              "path": "preserve_global_dim_uniform_3_amplitude.bmp",
+              "sha256": "38294532913c0c3974cf8445dedea337f9b56feef63ec7aad0b71ec8449c5917",
+              "size": [
+                1920,
+                1080
+              ]
+            },
+            {
+              "path": "preserve_global_dim_uniform_3_phase.bmp",
+              "sha256": "9139915a5aea814ece3eaeeb4dbce6d3cfda17c88658bf36fd80fc064936d1ed",
+              "size": [
+                1920,
+                1200
+              ]
+            }
+          ]
+        },
+        {
+          "probe": "black",
+          "passed": true,
+          "native_bmp_roundtrip_exact": true,
+          "simulation_native_replay_probability_error": 0.0,
+          "captures": 5,
+          "brightness": [
+            {
+              "stage": "router",
+              "active_mean": 0.0,
+              "illuminated_mean": 0,
+              "p99": 0.0,
+              "maximum": 0.0,
+              "zero_fraction": 1.0,
+              "saturation_fraction": 0.0,
+              "extra_peak_stretch": false
+            },
+            {
+              "stage": "0",
+              "active_mean": 0.0,
+              "illuminated_mean": 0,
+              "p99": 0.0,
+              "maximum": 0.0,
+              "zero_fraction": 1.0,
+              "saturation_fraction": 0.0,
+              "extra_peak_stretch": false
+            },
+            {
+              "stage": "1",
+              "active_mean": 0.0,
+              "illuminated_mean": 0,
+              "p99": 0.0,
+              "maximum": 0.0,
+              "zero_fraction": 1.0,
+              "saturation_fraction": 0.0,
+              "extra_peak_stretch": false
+            },
+            {
+              "stage": "2",
+              "active_mean": 0.0,
+              "illuminated_mean": 0,
+              "p99": 0.0,
+              "maximum": 0.0,
+              "zero_fraction": 1.0,
+              "saturation_fraction": 0.0,
+              "extra_peak_stretch": false
+            },
+            {
+              "stage": "3",
+              "active_mean": 0.0,
+              "illuminated_mean": 0,
+              "p99": 0.0,
+              "maximum": 0.0,
+              "zero_fraction": 1.0,
+              "saturation_fraction": 0.0,
+              "extra_peak_stretch": false
+            }
+          ],
+          "assets": [
+            {
+              "path": "preserve_global_black_router_amplitude.bmp",
+              "sha256": "54732604091e92e1f6877b9d982455a1982fbbb3323d9f4d7fb89f6a0157a507",
+              "size": [
+                1920,
+                1080
+              ]
+            },
+            {
+              "path": "preserve_global_black_router_phase.bmp",
+              "sha256": "307a924b908771d3ca72af85bb70dc2f375b9f1d456da306474fd4f9df7f423f",
+              "size": [
+                1920,
+                1200
+              ]
+            },
+            {
+              "path": "preserve_global_black_0_amplitude.bmp",
+              "sha256": "54732604091e92e1f6877b9d982455a1982fbbb3323d9f4d7fb89f6a0157a507",
+              "size": [
+                1920,
+                1080
+              ]
+            },
+            {
+              "path": "preserve_global_black_0_phase.bmp",
+              "sha256": "be2f660d627e85c0501a6a8da37aa8fdc427e7e185c638d88a08e89e3244a9ea",
+              "size": [
+                1920,
+                1200
+              ]
+            },
+            {
+              "path": "preserve_global_black_1_amplitude.bmp",
+              "sha256": "54732604091e92e1f6877b9d982455a1982fbbb3323d9f4d7fb89f6a0157a507",
+              "size": [
+                1920,
+                1080
+              ]
+            },
+            {
+              "path": "preserve_global_black_1_phase.bmp",
+              "sha256": "7aa2aee6927a6bfaf12c667bf406d35a425d2a21a888dd4b3d511122906c16ef",
+              "size": [
+                1920,
+                1200
+              ]
+            },
+            {
+              "path": "preserve_global_black_2_amplitude.bmp",
+              "sha256": "54732604091e92e1f6877b9d982455a1982fbbb3323d9f4d7fb89f6a0157a507",
+              "size": [
+                1920,
+                1080
+              ]
+            },
+            {
+              "path": "preserve_global_black_2_phase.bmp",
+              "sha256": "5b56d7d9b9eece589487427d7ed9921b8298713eb65fb73d1a8a3fdceaf718cf",
+              "size": [
+                1920,
+                1200
+              ]
+            },
+            {
+              "path": "preserve_global_black_3_amplitude.bmp",
+              "sha256": "54732604091e92e1f6877b9d982455a1982fbbb3323d9f4d7fb89f6a0157a507",
+              "size": [
+                1920,
+                1080
+              ]
+            },
+            {
+              "path": "preserve_global_black_3_phase.bmp",
+              "sha256": "9139915a5aea814ece3eaeeb4dbce6d3cfda17c88658bf36fd80fc064936d1ed",
+              "size": [
+                1920,
+                1200
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "scope": "Three completed E40 selected EMA candidates; synthetic random, dim-uniform and black probes. Native BMP encode/read/reverse replay only; no train/val accuracy recomputation, test arrays or devices. Not a final candidate selection or hardware calibration.",
+  "model_forward_calls": 18,
+  "source_commit": "e4cb1400fdaed5d4a1867770474e91b0ddc19617",
+  "source_count": 121,
+  "all_sources_current_original_match": true,
+  "native_amplitude_shape": [
+    1080,
+    1920
+  ],
+  "native_phase_shape": [
+    1200,
+    1920
+  ],
+  "canonical_shape": [
+    478,
+    478
+  ],
+  "captures_per_probe": 5,
+  "devices_opened": 0,
+  "gpu_used": false,
+  "test_arrays_materialized": 0,
+  "test_evaluations": 0,
+  "existing_224_only_exporter_compatible_with_preserve_global": false
+}

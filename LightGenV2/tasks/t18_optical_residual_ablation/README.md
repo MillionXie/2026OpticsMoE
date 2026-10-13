@@ -7,6 +7,10 @@
 六个诊断已完成，最后MixUp.2/.6/legacy自动在物理2/5/6接续，test0，源121冻结不变。
 所有九完成后全审核，再验证修正/正则/逐类/BMP，通过后才正式六组。
 
+三个真实已训练E40候选的随机/低亮度/黑输入九项设备BMP回放概率误差均0，黑输入五层振幅均0；
+源和PT不变、CPU检查无GPU/设备/test，不冒称实拍验收，preserve_global仍需对应478输入独立出口。
+[训练后BMP合同和逐层亮度](reports/caltech_diagnose_20261014/trained_candidate_bmp_contract.md)。
+
 ## 消融部分阶段：前三组40轮CPU已审核（2026-10-14）
 
 基线/关闭量化/整面LN同40轮、同init/order增强，均valNLL选E40。
