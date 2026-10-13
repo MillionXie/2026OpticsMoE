@@ -8,5 +8,5 @@
   "maximum_gpu_children":3,"allowed_physical_gpu_indices":[0,1,2,4],"forbidden_A100":true,
   "test_accuracy_target_L4_rho03":0.75,"test_previously_observed":true,
   "selection":"first minimum EMA validation balanced NLL; all six CPU audited and locked before single test",
-  "automatic_retry":false,"automatic_regularization_search":false,"shared_spare_memory_gib":3,"spare_margin_mib":800
+  "automatic_retry":false,"automatic_regularization_search":false,"shared_spare_memory_gib":2,"spare_margin_mib":800
 }

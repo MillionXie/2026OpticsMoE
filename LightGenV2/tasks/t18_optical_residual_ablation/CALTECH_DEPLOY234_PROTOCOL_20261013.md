@@ -80,7 +80,7 @@ past this bounded plan. A smaller gap is not guaranteed merely by regularization
 ## Execution and acceptance
 
 Worker caltech_deploy234.py; three-card CPU queue caltech_deploy234_queue.py,
-CUDA invisible supervisor, each GPU Torch3GiB plus800MiB free margin. Existing
+CUDA invisible supervisor, each GPU Torch2GiB plus800MiB free margin. Existing
 spare-memory permission permits sharing with foreign jobs; never terminate them.
 Check card index, name and UUID at each dispatch and real /proc CUDA visibility.
 Prioritize4rho.3/3rho.3/2rho.3, then the corresponding rho0 baselines.
@@ -102,3 +102,4 @@ Final deployment pack: selected PT/config/data/source SHA, all canonical/native
 phase BMPs, deterministic per-stage amplitude export/replay code and receipts,
 fixed masks/class mapping, explicit physical calibration checklist/session identity.
 Offline export parity is not an on-bench hardware performance certificate.
+Human approved memory-only3GiB->2GiB transition after actual~.6GiB use. The first main4/rho.3 stopped at committed E7; raw/EMA/Adam/scheduler/history remain in the prior run. New mem2 run resumes E8 without resetting optimizer/EMA/scheduler or replaying completed epochs. Other five arms start fresh with identical seed17/data/training hyperparameters. Resume receipt binds both parent PT/source Git blobs and unchanged optical model source.

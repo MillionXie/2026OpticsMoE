@@ -8,7 +8,7 @@ def gpu_available(uuid):
     lines=subprocess.check_output(['nvidia-smi','--query-gpu=uuid,name,memory.free','--format=csv,noheader,nounits'],text=True).splitlines()
     line=next(x.split(',') for x in lines if x.startswith(uuid))
     assert 'A100' not in line[1] and uuid in t.ALLOWED.values()
-    return int(line[2])>=3*1024+800
+    return int(line[2])>=t.read(t.PROFILE)['shared_spare_memory_gib']*1024+800
 
 
 def suite(a):
@@ -35,6 +35,7 @@ def suite(a):
                 if gpu in active or not pending or len(active)>=3 or not gpu_available(gpu):continue
                 t.verify_sources(src,commit);job=pending.pop(0)
                 cmd=[sys.executable,str(t.HERE/'caltech_deploy234.py'),'--out',str(a.out/job['name']),'--data',str(a.data),'--depth',str(job['depth']),'--rho',str(job['rho']),'--gpu',gpu]
+                if a.resume_root and (a.resume_root/job['name']/'last_checkpoint.pt').exists():cmd.extend(['--resume-parent',str(a.resume_root/job['name'])])
                 with (a.out/(job['name']+'.log')).open('x') as log:
                     proc=subprocess.Popen(cmd,env=dict(os.environ,CUDA_VISIBLE_DEVICES=gpu),stdout=log,stderr=subprocess.STDOUT,start_new_session=True)
                 job.update(pid=proc.pid,gpu_index=index,gpu_uuid=gpu,command=cmd);active[gpu]=(proc,job)
@@ -46,4 +47,4 @@ def suite(a):
     assert not failures,failures
 
 if __name__=='__main__':
-    p=argparse.ArgumentParser();p.add_argument('--out',type=Path,required=True);p.add_argument('--data',type=Path,required=True);p.add_argument('--preflight',type=Path,required=True);suite(p.parse_args())
+    p=argparse.ArgumentParser();p.add_argument('--out',type=Path,required=True);p.add_argument('--data',type=Path,required=True);p.add_argument('--preflight',type=Path,required=True);p.add_argument('--resume-root',type=Path);suite(p.parse_args())

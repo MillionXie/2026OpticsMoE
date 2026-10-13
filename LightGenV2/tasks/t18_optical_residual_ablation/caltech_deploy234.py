@@ -107,8 +107,10 @@ def F_onehot(y,smoothing):return torch.nn.functional.one_hot(y,20).float()*(1-sm
 def objective(model,prob,capture,target,weights,cfg):
     return -(target*weights[None]*prob.clamp_min(1e-12).log()).sum(1).mean()-cfg['capture_weight']*capture.clamp_min(1e-12).log().mean()+cfg['phase_smooth_weight']*model.smoothness()
 
-def fresh_gate(depth,rho,data,cfg,device,micro):
-    seed(cfg['seed']);model=DeployMoE(depth,rho).to(device);initial=digest(model.state_dict())
+def fresh_gate(depth,rho,data,cfg,device,micro,state=None):
+    seed(cfg['seed']);model=DeployMoE(depth,rho).to(device)
+    if state is not None:model.load_state_dict(state,strict=True)
+    initial=digest(model.state_dict())
     counts=torch.bincount(data[1],minlength=20).float().to(device);weights=len(data[1])/(20*counts)
     idx=np.array([int((data[1]==k).nonzero()[0]) for k in range(8)])
     _,theta=epoch_plan(1,len(data[1]),cfg);x,y,_=mixed_batch(data,idx,theta,1,0,cfg,device)
@@ -128,23 +130,56 @@ def fresh_gate(depth,rho,data,cfg,device,micro):
 
 def fit(a):
     assert a.gpu in ALLOWED.values() and os.environ.get('CUDA_VISIBLE_DEVICES')==a.gpu
-    gpu_budget.ALLOWED.update(ALLOWED.values());policy=gpu_budget.configure(torch,a.gpu,shared=True,memory_gib=3)
-    torch.set_num_threads(4);cfg=read(PROFILE);m=manifest(a.data)
+    cfg=read(PROFILE)
+    gpu_budget.ALLOWED.update(ALLOWED.values());policy=gpu_budget.configure(torch,a.gpu,shared=True,memory_gib=cfg['shared_spare_memory_gib'])
+    torch.set_num_threads(4);m=manifest(a.data)
     cfg.update(depth=a.depth,residual_rho=a.rho,classes=m['classes'],contract=deployment_contract(a.depth,a.rho))
     src=sources();commit=subprocess.check_output(['git','rev-parse','HEAD'],cwd=ROOT,text=True).strip();verify_sources(src,commit)
     a.out.mkdir(parents=True,exist_ok=False)
     save(a.out/'config.json',cfg);save(a.out/'metadata.json',dict(pid=os.getpid(),gpu_uuid=a.gpu,gpu_policy=policy,git_commit=commit,sources=src,command=sys.argv,test_evaluations=0))
     data,val=[load_fit(a.data,s,m) for s in ('train','val')]
-    gate=fresh_gate(a.depth,a.rho,data,cfg,'cuda',cfg['microbatch']);save(a.out/'smoke.json',gate)
-    seed(cfg['seed']);model=DeployMoE(a.depth,a.rho).cuda();initial=digest(model.state_dict());assert initial==gate['initial_parameter_sha256']
+    resume=None
+    if a.resume_parent:
+        resume=torch.load(a.resume_parent/'last_checkpoint.pt',map_location='cpu',weights_only=False)
+        old_cfg=dict(resume['config']);new_cfg=dict(cfg)
+        for v in (old_cfg,new_cfg):v.pop('shared_spare_memory_gib')
+        assert old_cfg==new_cfg and resume['data_sha256']==m['cache_sha256']
+        parent_meta=read(a.resume_parent/'metadata.json')
+        for name,h in resume['sources'].items():
+            assert hashlib.sha256(subprocess.check_output(['git','show',parent_meta['git_commit']+':'+name],cwd=ROOT)).hexdigest()==h
+            if name.endswith(('caltech_deploy234_model.py','optics.py','gpu_budget.py')):assert sha(ROOT/name)==h
+        assert not Path('/proc',str(parent_meta['pid'])).exists() or not Path('/proc',str(parent_meta['pid']),'cmdline').read_bytes()
+    gate=fresh_gate(a.depth,a.rho,data,cfg,'cuda',cfg['microbatch'],None if resume is None else resume['model']);save(a.out/'smoke.json',gate)
+    seed(cfg['seed']);model=DeployMoE(a.depth,a.rho).cuda();initial=digest(model.state_dict())
+    assert initial==(gate['initial_parameter_sha256'] if resume is None else resume['initial_parameter_sha256'])
     ema=copy.deepcopy(model).eval()
     for p in ema.parameters():p.requires_grad_(False)
     opt=torch.optim.AdamW(model.parameters(),lr=cfg['lr'],weight_decay=0.)
     scheduler=torch.optim.lr_scheduler.ReduceLROnPlateau(opt,mode='min',factor=.5,patience=6,min_lr=2e-5)
     weights=(len(data[1])/(20*torch.bincount(data[1],minlength=20).float())).cuda()
-    history=[];gradients=[];orders=[];transforms=[];best=float('inf');significant=float('inf');stale=0;started=time.monotonic();reason='maximum_epochs'
-    for epoch in range(1,cfg['maximum_epochs']+1):
-        if time.monotonic()-started>=cfg['maximum_seconds']:reason='time_budget';break
+    history=[];gradients=[];orders=[];transforms=[];best=float('inf');significant=float('inf');stale=0;start_epoch=1;offset=0.
+    if resume is not None:
+        model.load_state_dict(resume['model']);ema.load_state_dict(resume['ema']);opt.load_state_dict(resume['optimizer']);scheduler.load_state_dict(resume['scheduler'])
+        for state in opt.state.values():
+            for key,value in state.items():
+                if torch.is_tensor(value) and key!='step':state[key]=value.cuda()
+        history=read(a.resume_parent/'history.json');gradients=read(a.resume_parent/'gradients.json');orders=resume['orders'];transforms=resume['transforms']
+        assert len(history)==len(gradients)==resume['epoch'] and scheduler.last_epoch==resume['epoch']
+        best_ck=torch.load(a.resume_parent/'best_checkpoint.pt',map_location='cpu',weights_only=False)
+        assert best_ck['epoch']==min(history,key=lambda h:h['val']['balanced_nll'])['epoch']
+        best_ck.update(config=cfg,sources=src);save_pt(a.out/'best_checkpoint.pt',best_ck)
+        import shutil
+        shutil.copyfile(a.resume_parent/'val_predictions.csv',a.out/'val_predictions.csv')
+        best=best_ck['validation']['balanced_nll'];start_epoch=resume['epoch']+1;offset=history[-1]['seconds']
+        for h in history:
+            if h['val']['balanced_nll']<significant-cfg['early_min_delta']:significant=h['val']['balanced_nll'];stale=0
+            else:stale+=1
+        receipt=dict(parent=str(a.resume_parent.resolve()),parent_epoch=resume['epoch'],first_new_epoch=start_epoch,last_checkpoint_sha256=sha(a.resume_parent/'last_checkpoint.pt'),best_checkpoint_sha256=sha(a.resume_parent/'best_checkpoint.pt'),restored_state_sha256={k:digest(resume[k]) for k in ('model','ema')},optimizer_reset=False,ema_reset=False,scheduler_reset=False,model_source_unchanged=True,old_memory_gib=3,new_memory_gib=2,prefix_history_sha256=sha(a.resume_parent/'history.json'))
+        save(a.out/'resume_receipt.json',receipt);save(a.out/'history.json',history);save(a.out/'gradients.json',gradients)
+        save_pt(a.out/'last_checkpoint.pt',dict(resume,config=cfg,sources=src))
+    started=time.monotonic();reason='maximum_epochs'
+    for epoch in range(start_epoch,cfg['maximum_epochs']+1):
+        if offset+time.monotonic()-started>=cfg['maximum_seconds']:reason='time_budget';break
         begin=time.monotonic();model.train();order,theta=epoch_plan(epoch,len(data[1]),cfg);orders.append(digest(order));mixhash=hashlib.sha256();total=0.
         for batch,start in enumerate(range(0,len(order),cfg['batch_size'])):
             idx=order[start:start+cfg['batch_size']];x,y,mix=mixed_batch(data,idx,theta,epoch,batch,cfg,'cuda');mixhash.update(mix.encode());opt.zero_grad(set_to_none=True)
@@ -163,7 +198,7 @@ def fit(a):
             best=vm['balanced_nll'];save_pt(a.out/'best_checkpoint.pt',dict(model=ema.state_dict(),epoch=epoch,config=cfg,sources=src,validation=vm,data_sha256=m['cache_sha256'],selection_split='val',selected_state_kind='ema'));csvwrite(a.out/'val_predictions.csv',rows)
         if vm['balanced_nll']<significant-cfg['early_min_delta']:significant=vm['balanced_nll'];stale=0
         else:stale+=1
-        scheduler.step(vm['balanced_nll']);entry.update(seconds=time.monotonic()-started,epoch_seconds=time.monotonic()-begin);history.append(entry)
+        scheduler.step(vm['balanced_nll']);entry.update(seconds=offset+time.monotonic()-started,epoch_seconds=time.monotonic()-begin);history.append(entry)
         save(a.out/'history.json',history);save(a.out/'gradients.json',gradients)
         save_pt(a.out/'last_checkpoint.pt',dict(model=model.state_dict(),ema=ema.state_dict(),optimizer=opt.state_dict(),scheduler=scheduler.state_dict(),epoch=epoch,config=cfg,sources=src,orders=orders,transforms=transforms,initial_parameter_sha256=initial,data_sha256=m['cache_sha256']))
         status=dict(state='training',depth=a.depth,rho=a.rho,epoch=epoch,val_accuracy=vm['accuracy'],val_macro_recall=vm['balanced_accuracy'],val_balanced_nll=vm['balanced_nll'],epoch_seconds=entry['epoch_seconds'],test_evaluations=0)
@@ -172,11 +207,11 @@ def fit(a):
         if epoch>=cfg['minimum_epochs'] and stale>=cfg['early_patience']:reason='validation_plateau';break
     assert history
     ck=torch.load(a.out/'best_checkpoint.pt',map_location='cpu',weights_only=False);ema.load_state_dict(ck['model']);tm,rows=evaluate(ema,data,cfg['microbatch']);csvwrite(a.out/'train_predictions.csv',rows)
-    result=dict(depth=a.depth,rho=a.rho,epochs_completed=len(history),selected_epoch=ck['epoch'],stop_reason=reason,metrics=dict(train=tm,val=ck['validation']),history_sha256=sha(a.out/'history.json'),checkpoint_sha256=sha(a.out/'best_checkpoint.pt'),config=cfg,sources=src,initial_parameter_sha256=initial,orders=orders,transforms=transforms,seconds=time.monotonic()-started,test_evaluations=0,test_used_for_selection=False,scope='Existing validation-screened classes and previously observed old test; exploratory development. Accuracy75 target not guaranteed. Early-stop budgets can differ, not a pure depth/residual causal estimate.')
+    result=dict(depth=a.depth,rho=a.rho,epochs_completed=len(history),selected_epoch=ck['epoch'],stop_reason=reason,metrics=dict(train=tm,val=ck['validation']),history_sha256=sha(a.out/'history.json'),checkpoint_sha256=sha(a.out/'best_checkpoint.pt'),config=cfg,sources=src,initial_parameter_sha256=initial,orders=orders,transforms=transforms,seconds=offset+time.monotonic()-started,test_evaluations=0,test_used_for_selection=False,scope='Existing validation-screened classes and previously observed old test; exploratory development. Accuracy75 target not guaranteed. Early-stop budgets can differ, not a pure depth/residual causal estimate.')
     save(a.out/'fit_result.json',result);save(a.out/'status.json',dict(state='fit_complete',epochs=len(history),selected_epoch=ck['epoch'],test_evaluations=0))
 
 if __name__=='__main__':
-    parser=argparse.ArgumentParser();parser.add_argument('--out',type=Path,required=True);parser.add_argument('--data',type=Path,required=True);parser.add_argument('--depth',type=int,choices=[2,3,4],required=True);parser.add_argument('--rho',type=float,choices=[0.,.3],required=True);parser.add_argument('--gpu',required=True)
+    parser=argparse.ArgumentParser();parser.add_argument('--out',type=Path,required=True);parser.add_argument('--data',type=Path,required=True);parser.add_argument('--depth',type=int,choices=[2,3,4],required=True);parser.add_argument('--rho',type=float,choices=[0.,.3],required=True);parser.add_argument('--gpu',required=True);parser.add_argument('--resume-parent',type=Path)
     a=parser.parse_args()
     try:fit(a)
     except BaseException as e:
