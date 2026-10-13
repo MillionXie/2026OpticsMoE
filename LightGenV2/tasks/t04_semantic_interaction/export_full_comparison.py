@@ -206,7 +206,7 @@ def run(args):
     provenance['source_file_sha256'] = {str(p.relative_to(runtime)): digest(p) for p in (
         task / 'modeling.py', task / 'embedding_model.py', task / 'shared_readout.py', task / 'qwen_shared.py')}
     (args.output / 'provenance.json').write_text(json.dumps(provenance, indent=2) + '\n')
-    print('Completed: 6000 examples x 2 fixed models; archived TEST metrics reproduced.', flush=True)
+    print('Completed: 6000 examples x 2 fixed models; TEST CCA/IoU reproduced; secondary drift recorded.', flush=True)
 
 
 if __name__ == '__main__':
