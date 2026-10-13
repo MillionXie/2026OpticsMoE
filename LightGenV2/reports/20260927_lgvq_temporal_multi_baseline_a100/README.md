@@ -1,5 +1,14 @@
 # LGVQ temporal-quality A100 multi-baseline demo
 
+## 2026-10-13 offline recalculation
+
+The original files below remain historical evidence. The updated calculation,
+figures, batch-metric audit and workbook are in
+[`recalculated_20261013/`](recalculated_20261013/README.md).
+This revision does not claim batch-specific accuracy from reused full-test
+scores and does not replace measured batch timing with a different benchmark
+run. No GPU inference, training or optical capture was performed.
+
 This directory is the paper-facing replacement for the earlier mixed-task comparison table. It compares LightGenV2 with Qwen3-VL-2B, DeepSeek-VL2-Tiny, CLIP ViT-B/32 and YOLO11s on LGVQ temporal quality.
 
 ## Formal comparison contract
