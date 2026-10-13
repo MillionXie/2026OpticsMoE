@@ -17,6 +17,23 @@
 `/DATA/DATA1/guest3/demo_reproduction_data/patch16_ccby4_v11`，数据/权重不进Git。
 下载与校验入口：`python -m LightGenV2.tasks.t17_router_classification.prepare_patch16 --out <data_dir>`。
 
+独立训练入口`train_patch16.py`复用`FourRouterClassification(num_classes=16)`，
+ZIP按batch读取395平方原图，直接沿用固定bicubic/antialias缩为RGB三格112平方，
+不抽样、不额外缩放一遍、不增加encoder。类别唯一由原CSV class_int决定，
+官方CSV set划分不变，检查16类覆盖与跨划分tile身份无重叠；患者独立性另行核验。
+读出一层无偏置Linear(784,16)，参数为光MoE491,908、电MoE492,232、D2NN469,512。
+从零初始化的新模型，不加载CRC权重；三组读出初值逐元素相同。
+首轮全部60轮、batch32、seed17。普通D2NN Adam，相位LR0.005、读出0.001，
+无增强、EMA、类别加权或负载均衡，验证宏平均选模。
+两种MoE AdamW，相位LR0.003、读出/电router0.0005，余弦末端LR为初始10%，
+读出decay0.01、电router decay0.0001、相位decay0，标签平滑0.03，EMA0.995，
+同步RGB旋转/翻转概率0.5、类别权重为训练类计数逆平方根并归一化。
+光router训练期dense KL均衡权重0.01、电router实际Top-2 load均衡权重0.1；
+两种MoE依据完整验证准确率和宏平均均值选择online/EMA。训练阶段不推理测试图。
+正式测试独立命令`train_patch16 --evaluate-test --data-root <dir> --out <run>`，
+已有result.json时禁止重复；保存best/last、完整逐轮验证、配置/Git/数据SHA及状态。
+本轮仍是架构及训练方法组合比较，不声称等优化预算的纯结构消融。
+
 2026-10-09 用户批准三组训练、最多三张GPU。本任务为9分类，不是终身学习。
 
 ## 当前批准版本：four_top2（2026-10-09）

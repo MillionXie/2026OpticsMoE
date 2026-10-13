@@ -16,9 +16,10 @@ def sparse_top2(weights):
     return q/q.sum(1,keepdim=True).clamp_min(1e-20)
 
 class FourRouterClassification(PhaseOnly):
-    def __init__(self,variant,readout='linear'):
+    def __init__(self,variant,readout='linear',num_classes=9):
         if variant not in ('optical','electronic','d2nn'):raise ValueError(variant)
         if readout not in ('linear','ccd_grid'):raise ValueError(readout)
+        if num_classes<2 or (readout=='ccd_grid' and num_classes!=9):raise ValueError(num_classes)
         super().__init__('full_d2nn' if variant=='d2nn' else 'dynamic_four',dict(CONTRACT))
         self.variant=variant
         self.readout=readout
@@ -27,7 +28,7 @@ class FourRouterClassification(PhaseOnly):
         self.max_experts=4
         with torch.random.fork_rng(devices=[]):
             torch.manual_seed(122)
-            head=nn.Linear(784,9,bias=False)
+            head=nn.Linear(784,num_classes,bias=False)
             if readout=='linear':self.shared_head=head
             if variant=='electronic':
                 self.electronic_router=nn.Sequential(nn.Linear(784,64),nn.GELU(),nn.Linear(64,4))
