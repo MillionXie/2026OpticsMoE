@@ -2,6 +2,7 @@
 import argparse,json,os,subprocess,sys,time
 from pathlib import Path
 from .prepare_patch16 import write
+from .gpu_policy import gpu_inventory,validate_gpu_uuids
 
 def idle_cards():
     usage=subprocess.check_output(['nvidia-smi','--query-gpu=uuid,memory.used','--format=csv,noheader,nounits'],text=True)
@@ -13,6 +14,7 @@ def main():
     p=argparse.ArgumentParser();p.add_argument('--data-root',type=Path,required=True);p.add_argument('--out',type=Path,required=True)
     p.add_argument('--gpus',nargs=2,required=True);a=p.parse_args()
     if len(set(a.gpus))!=2:raise ValueError('two distinct UUIDs required')
+    validate_gpu_uuids(a.gpus,gpu_inventory())
     if not set(a.gpus).issubset(idle_cards()):raise RuntimeError('requested cards are not idle')
     a.out.mkdir(parents=True,exist_ok=False)
     queue=['optical','electronic','d2nn'];running={};receipts=[];done=[]

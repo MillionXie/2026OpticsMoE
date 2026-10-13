@@ -16,6 +16,42 @@ from .model_four import CONTRACT, FourRouterClassification, encode_rgb
 from .prepare_patch16 import digest, write
 from .train_patch16 import evaluate, loader, score
 from .train_regularized import augment_d4, router_balance_loss, update_ema
+from .gpu_policy import require_non_a100_gpu
+
+
+def resume_progress(history, checkpoint_epoch, parent_score):
+    """Resume the completed prefix, including the original early-stop clock."""
+    if checkpoint_epoch < 1 or [row['epoch'] for row in history] != list(range(1, checkpoint_epoch + 1)):
+        raise ValueError('history must exactly match the last completed checkpoint')
+    best = max(score(row['validation']) for row in history)
+    significant_best = parent_score
+    last_significant = 0
+    for row in history:
+        current = score(row['validation'])
+        if current > significant_best + .002:
+            significant_best = current
+            last_significant = row['epoch']
+    return best, significant_best, last_significant
+
+
+def validate_resume_settings(args, config):
+    keys = ('init_run', 'epochs', 'min_epochs', 'patience', 'train_eval_every',
+            'phase_lr', 'head_lr', 'balance_weight', 'balance_mode',
+            'router_warmup_epochs', 'router_warmup_lr', 'batch', 'seed')
+    for key in keys:
+        value = str(getattr(args, key)) if key == 'init_run' else getattr(args, key)
+        if value != config[key]:
+            raise ValueError(f'resume must preserve {key}')
+
+
+def equal_state(left, right):
+    if isinstance(left, torch.Tensor):
+        return isinstance(right, torch.Tensor) and torch.equal(left.detach().cpu(), right.detach().cpu())
+    if isinstance(left, dict):
+        return isinstance(right, dict) and left.keys() == right.keys() and all(equal_state(left[k], right[k]) for k in left)
+    if isinstance(left, (list, tuple)):
+        return isinstance(right, (list, tuple)) and len(left) == len(right) and all(equal_state(x, y) for x, y in zip(left, right))
+    return left == right
 
 
 def main():
@@ -35,6 +71,8 @@ def main():
     p.add_argument('--batch', type=int, default=32)
     p.add_argument('--workers', type=int, default=4)
     p.add_argument('--seed', type=int, default=17)
+    p.add_argument('--resume', action='store_true',
+                   help='continue an interrupted run from last; no repeated warmup or completed epochs')
     a = p.parse_args()
     if not 1 <= a.min_epochs <= a.epochs or a.patience < 1 or a.train_eval_every < 1:
         raise ValueError('invalid epoch budget')
@@ -42,10 +80,24 @@ def main():
         raise ValueError('invalid optimization settings')
     if a.router_warmup_epochs < 0 or a.router_warmup_lr <= 0:
         raise ValueError('invalid router warmup settings')
+    gpu_uuid = require_non_a100_gpu()
     torch.set_num_threads(4)
     torch.manual_seed(a.seed)
     np.random.seed(a.seed)
-    a.out.mkdir(parents=True, exist_ok=False)
+    resume = None
+    if a.resume:
+        status = json.loads((a.out / 'status.json').read_text())
+        if not status['state'].startswith('interrupted'):
+            raise ValueError('resume requires an explicitly interrupted run')
+        stored_config = json.loads((a.out / 'config.json').read_text())
+        validate_resume_settings(a, stored_config)
+        resume = torch.load(a.out / 'last_checkpoint.pt', map_location='cpu', weights_only=False)
+        if not 1 <= resume['epoch'] < a.epochs:
+            raise ValueError('no remaining completed-prefix training budget')
+        if resume['config'] != stored_config or resume.get('ema_model') is None:
+            raise ValueError('resume checkpoint/config or EMA identity mismatch')
+    else:
+        a.out.mkdir(parents=True, exist_ok=False)
     write(a.out / 'status.json', dict(state='loading'))
     try:
         source = a.init_run / 'best_checkpoint.pt'
@@ -83,9 +135,11 @@ def main():
                    command=sys.argv, cuda_visible_devices=os.environ.get('CUDA_VISIBLE_DEVICES'),
                    git_commit=subprocess.check_output(['git', 'rev-parse', 'HEAD'], text=True).strip())
         model = FourRouterClassification('optical', num_classes=16).cuda()
-        model.load_state_dict(parent['model'])
+        model.load_state_dict(resume['model'] if resume is not None else parent['model'])
         ema = copy.deepcopy(model).eval()
         ema.requires_grad_(False)
+        if resume is not None:
+            ema.load_state_dict(resume['ema_model'])
         train = loader(data_root, 'train', manifest, a.batch, a.workers, True, a.seed)
         clean_train = loader(data_root, 'train', manifest, a.batch, a.workers)
         val = loader(data_root, 'val', manifest, a.batch, a.workers)
@@ -94,11 +148,21 @@ def main():
         weights /= weights.mean()
         cfg['loss_class_weights'] = weights.cpu().tolist()
         cfg['total_parameters'] = sum(p.numel() for p in model.parameters())
-        write(a.out / 'config.json', cfg)
-        baseline, _ = evaluate(model, val)
-        write(a.out / 'parent_validation.json', dict(metrics=baseline, score=score(baseline),
-                                                   checkpoint_sha256=cfg['init_checkpoint_sha256']))
-        if a.router_warmup_epochs:
+        runtime_commit = cfg['git_commit']
+        if resume is not None:
+            if cfg['init_checkpoint_sha256'] != stored_config['init_checkpoint_sha256']:
+                raise ValueError('parent checkpoint identity changed')
+            cfg = stored_config
+            parent_report = json.loads((a.out / 'parent_validation.json').read_text())
+            if parent_report['checkpoint_sha256'] != cfg['init_checkpoint_sha256']:
+                raise ValueError('parent validation identity changed')
+            baseline = parent_report['metrics']
+        else:
+            write(a.out / 'config.json', cfg)
+            baseline, _ = evaluate(model, val)
+            write(a.out / 'parent_validation.json', dict(metrics=baseline, score=score(baseline),
+                                                       checkpoint_sha256=cfg['init_checkpoint_sha256']))
+        if a.router_warmup_epochs and resume is None:
             router_optimizer = torch.optim.Adam([model.router_phase], lr=a.router_warmup_lr)
             for warmup_epoch in range(1, a.router_warmup_epochs + 1):
                 model.train()
@@ -142,8 +206,45 @@ def main():
         significant_best = score(baseline)
         last_significant = 0
         history = []
+        start_epoch = 1
+        if resume is not None:
+            history = json.loads((a.out / 'metrics.json').read_text())
+            best, significant_best, last_significant = resume_progress(history, resume['epoch'], score(baseline))
+            selected = json.loads((a.out / 'selected_validation.json').read_text())
+            if abs(selected['selection_score'] - best) > 1e-10 or selected['epoch'] > resume['epoch']:
+                raise ValueError('best selection does not match completed history')
+            optimizer.load_state_dict(resume['optimizer'])
+            if not (equal_state(model.state_dict(), resume['model']) and
+                    equal_state(ema.state_dict(), resume['ema_model']) and
+                    equal_state(optimizer.state_dict(), resume['optimizer'])):
+                raise ValueError('restored model/EMA/optimizer tensors changed')
+            start_epoch = resume['epoch'] + 1
+            rng_restored = all(key in resume for key in ('torch_rng', 'cuda_rng', 'loader_rng', 'numpy_rng'))
+            if rng_restored:
+                torch.set_rng_state(resume['torch_rng'])
+                torch.cuda.set_rng_state(resume['cuda_rng'])
+                train.generator.set_state(resume['loader_rng'])
+                np.random.set_state(resume['numpy_rng'])
+            else:
+                recovery_seed = a.seed + 100003 * resume['epoch']
+                torch.manual_seed(recovery_seed)
+                np.random.seed(recovery_seed)
+                train.generator.manual_seed(recovery_seed)
+            events_file = a.out / 'resume_events.json'
+            events = json.loads(events_file.read_text()) if events_file.exists() else []
+            events.append(dict(resumed_after_epoch=resume['epoch'],next_epoch=start_epoch,
+                               gpu_uuid=gpu_uuid,runtime_git_commit=runtime_commit,
+                               last_checkpoint_sha256=digest(a.out / 'last_checkpoint.pt'),
+                               optimizer_restored=True,ema_restored=True,
+                               raw_model_restored=True,restored_tensors_verified=True,
+                               warmup_repeated=False,completed_epochs_repeated=False,
+                               rng_restored=rng_restored,bit_exact_replay=False,
+                               stochastic_note='legacy last did not save RNG; restart seeded explicitly' if not rng_restored
+                               else 'RNG states restored; worker restart/device change is not bit-exact replay',
+                               timestamp=time.time(),command=sys.argv))
+            write(events_file,events)
         stop_reason = 'maximum candidate budget; no convergence claim'
-        for epoch in range(1, a.epochs + 1):
+        for epoch in range(start_epoch, a.epochs + 1):
             start = time.monotonic()
             model.train()
             factor = .1 + .9 * .5 * (1 + np.cos(np.pi * (epoch - 1) / max(1, a.epochs - 1)))
@@ -202,7 +303,10 @@ def main():
             history.append(row)
             write(a.out / 'metrics.json', history)
             torch.save(dict(model=model.state_dict(), ema_model=ema.state_dict(),
-                            optimizer=optimizer.state_dict(), epoch=epoch, config=cfg),
+                            optimizer=optimizer.state_dict(), epoch=epoch, config=cfg,
+                            runtime_git_commit=runtime_commit,torch_rng=torch.get_rng_state(),
+                            cuda_rng=torch.cuda.get_rng_state(),loader_rng=train.generator.get_state(),
+                            numpy_rng=np.random.get_state()),
                        a.out / 'last_checkpoint.pt')
             write(a.out / 'status.json', dict(state='training_validation_only', epoch=epoch,
                                             best_validation_score=best, seconds=row['seconds']))

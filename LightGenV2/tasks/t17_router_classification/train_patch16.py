@@ -9,6 +9,7 @@ from .model_four import FourRouterClassification,CONTRACT,encode_rgb
 from .patch16_data import Patch16Dataset
 from .prepare_patch16 import digest,write
 from .train_regularized import augment_d4,update_ema,router_balance_loss
+from .gpu_policy import require_non_a100_gpu
 
 def loader(root,split,manifest,batch,workers,shuffle=False,seed=17):
     return DataLoader(Patch16Dataset(root,split,manifest),batch_size=batch,shuffle=shuffle,
@@ -49,6 +50,7 @@ def main():
     p.add_argument('--patience',type=int,default=15);p.add_argument('--train-eval-every',type=int,default=5)
     p.add_argument('--batch',type=int,default=32);p.add_argument('--workers',type=int,default=4)
     p.add_argument('--seed',type=int,default=17);p.add_argument('--evaluate-test',action='store_true');a=p.parse_args()
+    require_non_a100_gpu()
     torch.set_num_threads(4);torch.manual_seed(a.seed);np.random.seed(a.seed)
     if a.evaluate_test:
         if (a.out/'result.json').exists():raise FileExistsError('test already evaluated')
