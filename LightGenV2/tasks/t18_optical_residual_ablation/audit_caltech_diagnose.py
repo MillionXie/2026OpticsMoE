@@ -32,7 +32,7 @@ def audit(a):
         assert best['data_sha256']==last['data_sha256']==m['cache_sha256']
         assert all(torch.isfinite(x).all() for x in best['model'].values())
         for x in gr:assert all(np.isfinite(v) and v>0 for v in x['norms'].values())
-        assert set(gr[0]['norms'])==set(last['optimizer']['param_groups'][0]['params']) or len(gr[0]['norms'])==len(last['optimizer']['state'])
+        assert len(gr[0]['norms'])==len(last['optimizer']['param_groups'][0]['params'])==len(last['optimizer']['state'])
         steps={int(x['step']) for x in last['optimizer']['state'].values()};assert steps=={40*86},steps
         orders=[];transforms=[]
         for epoch in range(1,41):

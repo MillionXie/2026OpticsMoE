@@ -86,6 +86,8 @@ def encode(images,theta,variant):
         # Retain the old fixed R/G/B/mean mosaic, then use current physical size/scale.
         import fast_optical as old
         a=old.optical.encode(images,theta,device=str(images.device))
+        assert a.ndim==4 and a.shape[1:]==(1,100,100)
+        a=a[:,0]
         return rms_encode(F.interpolate(a[:,None],(224,224),mode='bilinear',align_corners=False)[:,0])
     return input_amplitude(images,theta)
 
