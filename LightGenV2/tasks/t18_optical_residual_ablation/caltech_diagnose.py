@@ -159,7 +159,7 @@ def fit(a):
         class_health={s:class_health(v,m['classes']) for s,v in [('train',tm),('val',ck['validation'])]},
         config=cfg,sources=src,history_sha256=sha(a.out/'history.json'),checkpoint_sha256=sha(a.out/'best_checkpoint.pt'),initial_parameter_sha256=smoke['initial_parameter_sha256'],
         seconds=time.monotonic()-started,test_evaluations=0,test_arrays_materialized=0,stop_reason='maximum_epochs',
-        deployment_eligible=a.variant!='unquantized',scope='Diagnostic only, not formal training or an independently generalized result')
+        deployment_eligible=a.variant not in ('unquantized','legacy_reference'),scope='Diagnostic only, not formal training or an independently generalized result')
     save(a.out/'fit_result.json',result);save(a.out/'status.json',dict(state='diagnostic_fit_complete',epochs=len(history),test_evaluations=0))
 
 
