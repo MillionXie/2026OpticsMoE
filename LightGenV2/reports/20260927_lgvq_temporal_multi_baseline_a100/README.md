@@ -5,13 +5,16 @@
 The original files below remain historical evidence. The updated calculation,
 figures, batch-metric audit and workbook are in
 [`recalculated_20261013/`](recalculated_20261013/README.md).
-This revision does not claim batch-specific accuracy from reused full-test
-scores and does not replace measured batch timing with a different benchmark
-run. No GPU inference, training or optical capture was performed.
+The update includes original-head Qwen frozen reevaluation and authorized
+original-protocol CLIP/YOLO/DeepSeek Temporal-head reproduction followed by
+twelve frozen batch evaluations. Every electronic baseline now has actual
+558-video SRCC at each batch. Qwen B1 retains the nine-task-table cost anchor;
+the new B1 audit is separate. No optical capture was performed. Original
+timing-only profiles and the historical workbook below remain protected.
 
 This directory is the paper-facing replacement for the earlier mixed-task comparison table. It compares LightGenV2 with Qwen3-VL-2B, DeepSeek-VL2-Tiny, CLIP ViT-B/32 and YOLO11s on LGVQ temporal quality.
 
-## Formal comparison contract
+## Historical comparison contract (2026-09-27)
 
 - Device: one NVIDIA A100-PCIE-40GB, physical GPU index 6.
 - Timing sample: the first 200 test videos in the fixed LGVQ manifest order.

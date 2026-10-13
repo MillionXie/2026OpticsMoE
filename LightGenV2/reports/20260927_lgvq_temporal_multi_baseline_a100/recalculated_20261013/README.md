@@ -1,4 +1,57 @@
-# LGVQ batch comparison: offline recalculation, 2026-10-13
+# LGVQ batch comparison: frozen reevaluation and recalculation, 2026-10-13
+
+## Completed original-protocol reproduction, 20:27 +0800
+
+CLIP, YOLO and DeepSeek have completed the authorized original-protocol
+Temporal-head reproduction and all twelve fresh-process B1/B2/B4/B8 frozen
+evaluations. Each setting has 558 distinct TEST predictions; costs use the
+same first 200 videos. The original trained heads were not recovered. These
+are new `retrained_original_protocol` PTs, not renamed historical checkpoints.
+The updated workbook and figures now use actual batch-specific predictions
+and costs for all four electronic baselines, rather than copying reference
+SRCCs onto historical timing-only profiles.
+
+| Reproduced head | Historical SRCC reference | New B1 full558 SRCC | Difference | Best epoch |
+|---|---:|---:|---:|---:|
+| CLIP ViT-B/32 | .7251568 | .7252558079932262 | +.0000990079932262 | 48 |
+| YOLO11s | .7015822 | .7015970081958657 | +.0000148081958657 | 49 |
+| DeepSeek-VL2-Tiny | .5688169 | .5684669009566514 | -.0003499990433486 | 43 |
+
+The original 2250 TRAIN / 558 TEST manifest, four frames, 65% crop, original
+input resolutions, frozen backbones and five quality rows were retained.
+Only the Temporal rows were trained: 50 epochs, seed 42, batch 512, AdamW
+lr .001 / wd 0, cosine schedule and cross-entropy. Highest TEST SRCC selection
+is explicitly a development metric with no VAL, not an independent test.
+Best/last strict-CPU verification and all 50 history entries were checked.
+
+The canonical local/server run is
+`LightGenV2/tasks/t06_video_quality_assessment/runs/simulation/lgvq_temporal_reproduction_a100_20261013/`.
+Each model has best/last PT, consolidated feature cache, history, receipt,
+strict-CPU results, four batch reports and their predictions/timing/power CSVs.
+`batch_audit.json` binds all 60 batch files, 12 batch logs and final suite
+status to exact SHA-256. All 73 copies match the server. Consolidated caches
+are backed up locally; extraction shard parts remain protected on the server.
+The three training receipts also bind source/config/manifest and frozen-model
+identity. Training entry source is main `7e2b170d857a92a9dd7d902a6c63d9379a46565f`;
+later per-process Git metadata differ because unrelated main commits landed,
+but the evaluation entry SHA is unchanged for all twelve processes:
+`8f82e2ce61bddc89a1e45ccd8d2d975a4becb87de850dc9425937763452b3445`.
+All own suite/evaluation PIDs have exited; the specified A100 was idle with
+17 MiB and 0% utilization at 20:24. Other GPUs/tasks were untouched.
+
+Every SRCC was independently recomputed from its own predictions. CLIP and
+YOLO vary by less than .000017 SRCC across batch settings. DeepSeek ranges
+from .5680463058 to .5703507558. No monotonic quality trend is imposed.
+Historical reference scores remain separately labelled in workbook column C;
+column I is the actual full558 SRCC measured at the displayed batch size.
+
+Costs remain inference-only mean-power estimates under the confirmed formula.
+The A100 reported a 250 W power limit in every process. Raw DeepSeek telemetry
+peaks of 307.72–346.12 W are retained without clipping or an asserted cause.
+The 50 ms sampler has only 10–52 tagged active samples for CLIP settings and
+often reads close to idle power; these are not calibrated per-call energy
+integrals. This limitation is not repaired by changing the agreed formula.
+
 
 ## Current frozen reevaluation update
 
@@ -27,9 +80,9 @@ only in raw evidence and the separately labelled audit, not substituted into
 the final B1 table. No numerical scaling is used to force agreement. This is
 a historical B1 anchor with same-protocol later B2/4/8 measurements, not four
 simultaneous measurements. At B1 the ratios versus updated Ours are 115.9902
-in time and 392.3898 in energy. CLIP/YOLO/DeepSeek remain historical cost plus
-fixed performance references: exact original trained temporal heads have not
-been located, so no new batch-specific performance is claimed for them.
+in time and 392.3898 in energy. CLIP/YOLO/DeepSeek now use the explicitly
+retrained heads and new frozen costs documented above; their historical
+timing-only profiles and scores remain protected but do not supply final points.
 
 The following continuous-GPU sweep description and 81x/348x figures document
 the previous audit and are not the current Qwen output. Original raw records
@@ -38,11 +91,11 @@ are kept, rather than rewritten to match the final table.
 ## Results and files
 
 - `batch_cost_comparison.png/svg`: revised 16-video energy and processing time versus videos per call. No unmeasured accuracy trend is implied.
-- `srcc_cost_comparison_reference.png/svg`: original quality-versus-cost layout with corrected inputs. Filled Qwen symbols use real full558 scores at B; open/dashed CLIP/YOLO/DeepSeek symbols repeat formal reference scores explicitly, not purported batch measurements. The LightGen-II physical score is separate from its component-cost proxy.
+- `srcc_cost_comparison_reference.png/svg`: existing filename retained; all four electronic baselines now use real full558 scores at B. The LightGen-II physical score is separate from its component-cost proxy.
 - `qwen_batch_metric_audit.png/svg`: actual SRCC recomputed from saved Qwen predictions. Full TEST and first-200 subset are separate panels; neither substitutes for the other.
 - `LGVQ_temporal_multi_baseline_recalculated.xlsx`: original three-tab structure retained, with updated Ours inputs and explicit measured-at-batch SRCC columns. Original workbook is unchanged.
 - `timing_energy_recalculated.csv`: all 16 baseline settings, unrounded calculation values, per-video amortized quantities and precision/source fields.
-- `batch_metric_audit.csv`: separate full-test references, actual full558/subset200 batch results and missing-data status.
+- `batch_metric_audit.csv`: separate historical references, actual full558/subset200 results, checkpoint origin/SHA and reference differences.
 - `recalculation.json`: optical/electronic components, source SHA-256 records and calculation inputs.
 
 Original measurements remain in the parent `raw_remote/`. The old builder
@@ -65,8 +118,10 @@ For a baseline batch of B videos, T16 = (16/B) times the mean synchronized-wall
 batch time. E16 = (338.2 W + that batch's mean A100 board power) times T16 in
 seconds. B = 1/2/4/8 requires 16/8/4/2 calls. The 200-video timing sample and
 no-explicit-warm-up protocol are preserved; the first call remains included.
-The historical visual-model power pass is a separate sustained inference measurement,
-not a time integral of each timed call. These are mean-power duration estimates.
+Current board power is the mean of telemetry tagged during the first-200
+inference windows. Historical visual-model power used a separate sustained
+pass; those old costs are no longer final points. Neither is a calibrated
+per-call energy integral.
 
 Updated LightGen-II: six optical cycles total 6.2682 ms; serial electronic
 components total 3.9773695913702247 ms; sum 10.245569591370225 ms. Its energy is:
@@ -96,7 +151,7 @@ and 409.8658550628422 J/16 videos. The other nine-task-table run was
 measurements. With this sweep, Qwen ratios vs updated Ours are 81.605/51.449/
 45.929/43.283 in time and 348.025/237.739/213.256/201.368 in energy for B1/2/4/8.
 
-## Accuracy audit and theory
+## Historical accuracy audit and batch theory
 
 Original `build_analysis.py` repeats one formal full-TEST reference SRCC for
 every batch; these are not independent accuracy measurements at each batch.
@@ -153,7 +208,7 @@ for PT 5303b574b200e14bf943af21c60a246720be453b9cf8847cd93c0eaaa243a77c,
 as recorded by `tasks/t06_video_quality_assessment/CURRENT_VERSION_20261004.md`.
 It is not a performance result produced by the timing proxy.
 
-## What needs a new evaluation
+## Historical missing-asset assessment (superseded by the reproduction above)
 
 No rerun is required for the reported arithmetic update or recovered Qwen
 full-test metric sweep. A fully measured multi-model SRCC-versus-batch graph
@@ -162,7 +217,10 @@ checkpoints on the same 558 videos. Their existing trained prediction assets
 were not found in the bounded local/server inventory; this does not establish
 that they were deleted. Only missing settings need inference once the exact
 trained PT and dataset contract are available.
-No retraining or new optical capture is necessary for these electronic baselines.
+If the exact original PTs were available, no retraining or optical capture
+would have been necessary. They remained unlocated after the stronger bounded
+archive search, so the user authorized the new original-protocol reproduction
+documented at the top. No optical capture was performed.
 Cached B1 features can verify a reference head score but cannot establish that
 native B8 backbone inference yields identical features.
 
@@ -171,6 +229,7 @@ and process-audit evidence. DeepSeek B8 raw power has peaks above 300 W. This
 does not by itself prove invalid data; independent physical-device/power-limit
 identity should be recovered before a stronger calibrated-power claim.
 
-The offline calculation itself does not use GPU/SDK. Its updated Qwen source
-was actually reevaluated on A100 as stated above. Source code was Git-synced;
-raw predictions/weights were not externally uploaded.
+The offline calculation itself does not use GPU/SDK. Qwen was reevaluated
+with its original frozen head; CLIP/YOLO/DeepSeek heads were reproduced and
+then independently frozen-evaluated on the specified A100. Source code was
+Git-synced. Raw predictions/weights were not externally uploaded.
