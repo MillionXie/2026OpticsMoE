@@ -1,0 +1,338 @@
+{
+  "passed": true,
+  "checks": [
+    {
+      "variant": "base",
+      "passed": true,
+      "native_bmp_roundtrip_exact": true,
+      "simulation_native_replay_probability_error": 0.0,
+      "captures": 5,
+      "black_input_stays_zero": true,
+      "brightness": [
+        {
+          "stage": "router",
+          "active_mean": 0.10036966590701335,
+          "zero_fraction": 0.7803960014705625,
+          "maximum": 0.592156862745098,
+          "extra_peak_stretch": false
+        },
+        {
+          "stage": "0",
+          "active_mean": 0.057082900385868184,
+          "zero_fraction": 0.560792002941125,
+          "maximum": 0.21568627450980393,
+          "extra_peak_stretch": false
+        },
+        {
+          "stage": "1",
+          "active_mean": 0.035966546419691804,
+          "zero_fraction": 0.7969792195514784,
+          "maximum": 0.396078431372549,
+          "extra_peak_stretch": false
+        },
+        {
+          "stage": "2",
+          "active_mean": 0.023145757664071214,
+          "zero_fraction": 0.8926183015003238,
+          "maximum": 0.38823529411764707,
+          "extra_peak_stretch": false
+        },
+        {
+          "stage": "3",
+          "active_mean": 0.015698014294389172,
+          "zero_fraction": 0.9249487929132894,
+          "maximum": 0.396078431372549,
+          "extra_peak_stretch": false
+        }
+      ]
+    },
+    {
+      "variant": "fullfield_ln",
+      "passed": true,
+      "native_bmp_roundtrip_exact": true,
+      "simulation_native_replay_probability_error": 0.0,
+      "captures": 5,
+      "black_input_stays_zero": true,
+      "brightness": [
+        {
+          "stage": "router",
+          "active_mean": 0.10036966590701335,
+          "zero_fraction": 0.7803960014705625,
+          "maximum": 0.592156862745098,
+          "extra_peak_stretch": false
+        },
+        {
+          "stage": "0",
+          "active_mean": 0.057082900385868184,
+          "zero_fraction": 0.560792002941125,
+          "maximum": 0.21568627450980393,
+          "extra_peak_stretch": false
+        },
+        {
+          "stage": "1",
+          "active_mean": 0.029792363716376415,
+          "zero_fraction": 0.8124026190017681,
+          "maximum": 0.36470588235294116,
+          "extra_peak_stretch": false
+        },
+        {
+          "stage": "2",
+          "active_mean": 0.01678476821305718,
+          "zero_fraction": 0.9087944888920012,
+          "maximum": 0.3764705882352941,
+          "extra_peak_stretch": false
+        },
+        {
+          "stage": "3",
+          "active_mean": 0.011989117700265449,
+          "zero_fraction": 0.938253882109907,
+          "maximum": 0.38823529411764707,
+          "extra_peak_stretch": false
+        }
+      ]
+    },
+    {
+      "variant": "rgb_tiles",
+      "passed": true,
+      "native_bmp_roundtrip_exact": true,
+      "simulation_native_replay_probability_error": 0.0,
+      "captures": 5,
+      "black_input_stays_zero": true,
+      "brightness": [
+        {
+          "stage": "router",
+          "active_mean": 0.1010436393881444,
+          "zero_fraction": 0.7803960014705625,
+          "maximum": 0.6039215686274509,
+          "extra_peak_stretch": false
+        },
+        {
+          "stage": "0",
+          "active_mean": 0.058296423381943595,
+          "zero_fraction": 0.560792002941125,
+          "maximum": 0.21176470588235294,
+          "extra_peak_stretch": false
+        },
+        {
+          "stage": "1",
+          "active_mean": 0.03689893246912042,
+          "zero_fraction": 0.7965371754696171,
+          "maximum": 0.3843137254901961,
+          "extra_peak_stretch": false
+        },
+        {
+          "stage": "2",
+          "active_mean": 0.023296212271782194,
+          "zero_fraction": 0.8988419320390049,
+          "maximum": 0.3764705882352941,
+          "extra_peak_stretch": false
+        },
+        {
+          "stage": "3",
+          "active_mean": 0.014514287008898551,
+          "zero_fraction": 0.9433527074105845,
+          "maximum": 0.396078431372549,
+          "extra_peak_stretch": false
+        }
+      ]
+    },
+    {
+      "variant": "dense_router",
+      "passed": true,
+      "native_bmp_roundtrip_exact": true,
+      "simulation_native_replay_probability_error": 0.0,
+      "captures": 5,
+      "black_input_stays_zero": true,
+      "brightness": [
+        {
+          "stage": "router",
+          "active_mean": 0.10036966590701335,
+          "zero_fraction": 0.7803960014705625,
+          "maximum": 0.592156862745098,
+          "extra_peak_stretch": false
+        },
+        {
+          "stage": "0",
+          "active_mean": 0.07595079382569715,
+          "zero_fraction": 0.12158400588224996,
+          "maximum": 0.2,
+          "extra_peak_stretch": false
+        },
+        {
+          "stage": "1",
+          "active_mean": 0.04705580276612667,
+          "zero_fraction": 0.597823042313685,
+          "maximum": 0.39215686274509803,
+          "extra_peak_stretch": false
+        },
+        {
+          "stage": "2",
+          "active_mean": 0.03590911759041951,
+          "zero_fraction": 0.71058367325502,
+          "maximum": 0.396078431372549,
+          "extra_peak_stretch": false
+        },
+        {
+          "stage": "3",
+          "active_mean": 0.028800660860622326,
+          "zero_fraction": 0.7588758950298489,
+          "maximum": 0.396078431372549,
+          "extra_peak_stretch": false
+        }
+      ]
+    },
+    {
+      "variant": "preserve_global",
+      "passed": true,
+      "native_bmp_roundtrip_exact": true,
+      "simulation_native_replay_probability_error": 0.0,
+      "captures": 5,
+      "black_input_stays_zero": true,
+      "brightness": [
+        {
+          "stage": "router",
+          "active_mean": 0.10036966590701335,
+          "zero_fraction": 0.7803960014705625,
+          "maximum": 0.592156862745098,
+          "extra_peak_stretch": false
+        },
+        {
+          "stage": "0",
+          "active_mean": 0.057082900385868184,
+          "zero_fraction": 0.560792002941125,
+          "maximum": 0.21568627450980393,
+          "extra_peak_stretch": false
+        },
+        {
+          "stage": "1",
+          "active_mean": 0.10616561815286504,
+          "zero_fraction": 0.5425894154514102,
+          "maximum": 0.403921568627451,
+          "extra_peak_stretch": false
+        },
+        {
+          "stage": "2",
+          "active_mean": 0.03514271905082125,
+          "zero_fraction": 0.7990012429754381,
+          "maximum": 0.39215686274509803,
+          "extra_peak_stretch": false
+        },
+        {
+          "stage": "3",
+          "active_mean": 0.06630173786571403,
+          "zero_fraction": 0.7533175189509987,
+          "maximum": 0.403921568627451,
+          "extra_peak_stretch": false
+        }
+      ]
+    },
+    {
+      "variant": "mixup02",
+      "passed": true,
+      "native_bmp_roundtrip_exact": true,
+      "simulation_native_replay_probability_error": 0.0,
+      "captures": 5,
+      "black_input_stays_zero": true,
+      "brightness": [
+        {
+          "stage": "router",
+          "active_mean": 0.10036966590701335,
+          "zero_fraction": 0.7803960014705625,
+          "maximum": 0.592156862745098,
+          "extra_peak_stretch": false
+        },
+        {
+          "stage": "0",
+          "active_mean": 0.057082900385868184,
+          "zero_fraction": 0.560792002941125,
+          "maximum": 0.21568627450980393,
+          "extra_peak_stretch": false
+        },
+        {
+          "stage": "1",
+          "active_mean": 0.035966546419691804,
+          "zero_fraction": 0.7969792195514784,
+          "maximum": 0.396078431372549,
+          "extra_peak_stretch": false
+        },
+        {
+          "stage": "2",
+          "active_mean": 0.023145757664071214,
+          "zero_fraction": 0.8926183015003238,
+          "maximum": 0.38823529411764707,
+          "extra_peak_stretch": false
+        },
+        {
+          "stage": "3",
+          "active_mean": 0.015698014294389172,
+          "zero_fraction": 0.9249487929132894,
+          "maximum": 0.396078431372549,
+          "extra_peak_stretch": false
+        }
+      ]
+    },
+    {
+      "variant": "mixup06",
+      "passed": true,
+      "native_bmp_roundtrip_exact": true,
+      "simulation_native_replay_probability_error": 0.0,
+      "captures": 5,
+      "black_input_stays_zero": true,
+      "brightness": [
+        {
+          "stage": "router",
+          "active_mean": 0.10036966590701335,
+          "zero_fraction": 0.7803960014705625,
+          "maximum": 0.592156862745098,
+          "extra_peak_stretch": false
+        },
+        {
+          "stage": "0",
+          "active_mean": 0.057082900385868184,
+          "zero_fraction": 0.560792002941125,
+          "maximum": 0.21568627450980393,
+          "extra_peak_stretch": false
+        },
+        {
+          "stage": "1",
+          "active_mean": 0.035966546419691804,
+          "zero_fraction": 0.7969792195514784,
+          "maximum": 0.396078431372549,
+          "extra_peak_stretch": false
+        },
+        {
+          "stage": "2",
+          "active_mean": 0.023145757664071214,
+          "zero_fraction": 0.8926183015003238,
+          "maximum": 0.38823529411764707,
+          "extra_peak_stretch": false
+        },
+        {
+          "stage": "3",
+          "active_mean": 0.015698014294389172,
+          "zero_fraction": 0.9249487929132894,
+          "maximum": 0.396078431372549,
+          "extra_peak_stretch": false
+        }
+      ]
+    }
+  ],
+  "scope": "Synthetic fresh weights only; trained selected candidate must still pass and receive variant-specific exporter/contract. Existing exporter 224-only is not sufficient for preserve_global478 input.",
+  "native_amplitude_shape": [
+    1080,
+    1920
+  ],
+  "native_phase_shape": [
+    1200,
+    1920
+  ],
+  "canonical_shape": [
+    478,
+    478
+  ],
+  "devices_opened": 0,
+  "gpu_used": false,
+  "test_arrays_materialized": 0,
+  "test_evaluations": 0,
+  "source_commit": "e4cb1400fdaed5d4a1867770474e91b0ddc19617"
+}
