@@ -25,5 +25,12 @@ train/val accuracy recomputation, test, device or GPU. PT/audit/config/current a
 original Git identities are recorded. This is offline parity, not physical-device
 acceptance or formal training admission on its own.
 
-CPU import/early refusal and synthetic positive-path checks are pending publication
-of the tool to the server; no selected trained weight or BMP result is claimed here.
+Linux CPU checks actually passed after source publication eb033a879: premature
+selected-native execution refused before output creation; six fresh synthetic
+random/dim/black probes for main2/3 produced native disk inverse exact and probability
+error0, captures3/4, identical routing/CCD helpers and black amplitude zero.12CPU
+forwards, no dataset/test/device/GPU, actual running GPU process identities unchanged.
+[Actual CPU receipt](depth_native_cpu_checks.json). Smoke
+`caltech_repair_depth_native_preparation_20261014/checks.json` exists and must not be
+rerun/overwritten. These fresh states do not constitute actual selected trained EMA
+checks, successful depth admission or hardware acceptance.
