@@ -13,7 +13,7 @@
 保持四专家224平方、478平方有效口径/518平方画布、Top-2、10cm、两次OEO，
 无可训练前端，末端仍一层Linear，只将输出类数统一改为16。
 目标是光/电MoE尽量>80%且较正常D2NN高至少5百分点，不以削弱D2NN或测试选模制造差距。
-最多占三张空闲GPU，结束释放；新任务数据放服务器
+最新用户限制最多占两张空闲GPU，结束释放；新任务数据放服务器
 `/DATA/DATA1/guest3/demo_reproduction_data/patch16_ccby4_v11`，数据/权重不进Git。
 下载与校验入口：`python -m LightGenV2.tasks.t17_router_classification.prepare_patch16 --out <data_dir>`。
 
@@ -23,7 +23,13 @@ ZIP按batch读取395平方原图，直接沿用固定bicubic/antialias缩为RGB�
 官方CSV set划分不变，检查16类覆盖与跨划分tile身份无重叠；患者独立性另行核验。
 读出一层无偏置Linear(784,16)，参数为光MoE491,908、电MoE492,232、D2NN469,512。
 从零初始化的新模型，不加载CRC权重；三组读出初值逐元素相同。
-首轮全部60轮、batch32、seed17。普通D2NN Adam，相位LR0.005、读出0.001，
+2026-10-13追加要求检查收敛/过拟合：最低60轮、最高120轮、batch32、seed17。
+验证选模指标连续15轮无至少0.2百分点改善后（且达到最低60轮）结束；达到120轮上限
+另行报告未完全收敛可能性，不以固定轮数自动称收敛。
+每5轮用同一固定选中online/EMA模型评完整无增强训练集，记录训练/验证准确率、
+交叉熵与差距。训练loss在线均值不能代替此评估；最终checkpoint同时评完整训练/验证，
+只测试一次并记录训练/测试差距，测试分数不用于延长预算或选模。
+普通D2NN Adam，相位LR0.005、读出0.001，
 无增强、EMA、类别加权或负载均衡，验证宏平均选模。
 两种MoE AdamW，相位LR0.003、读出/电router0.0005，余弦末端LR为初始10%，
 读出decay0.01、电router decay0.0001、相位decay0，标签平滑0.03，EMA0.995，
@@ -33,6 +39,10 @@ ZIP按batch读取395平方原图，直接沿用固定bicubic/antialias缩为RGB�
 正式测试独立命令`train_patch16 --evaluate-test --data-root <dir> --out <run>`，
 已有result.json时禁止重复；保存best/last、完整逐轮验证、配置/Git/数据SHA及状态。
 本轮仍是架构及训练方法组合比较，不声称等优化预算的纯结构消融。
+下载完成且MD5/SHA通过：archive SHA
+`000a7c39aa2a331ab4b12489a9bc21e62c540648f732a32fcc0b47c3ab9e56a0`。
+核验实际原始全量129,364，官方Train/Validation/Test为88,971/12,354/28,039。
+类别不平衡；elastosis训练136、验证6、测试66，保留该原始类别，不暗中删除稀有类。
 
 2026-10-09 用户批准三组训练、最多三张GPU。本任务为9分类，不是终身学习。
 

@@ -45,7 +45,9 @@ def score(metrics):return .5*(metrics['accuracy']+metrics['balanced_accuracy'])
 def main():
     p=argparse.ArgumentParser();p.add_argument('--data-root',type=Path,required=True);p.add_argument('--out',type=Path,required=True)
     p.add_argument('--architecture',choices=['optical','electronic','d2nn']);p.add_argument('--recipe',choices=['standard','enhanced'],default='standard')
-    p.add_argument('--epochs',type=int,default=60);p.add_argument('--batch',type=int,default=32);p.add_argument('--workers',type=int,default=4)
+    p.add_argument('--epochs',type=int,default=120);p.add_argument('--min-epochs',type=int,default=60)
+    p.add_argument('--patience',type=int,default=15);p.add_argument('--train-eval-every',type=int,default=5)
+    p.add_argument('--batch',type=int,default=32);p.add_argument('--workers',type=int,default=4)
     p.add_argument('--seed',type=int,default=17);p.add_argument('--evaluate-test',action='store_true');a=p.parse_args()
     torch.set_num_threads(4);torch.manual_seed(a.seed);np.random.seed(a.seed)
     if a.evaluate_test:
@@ -55,13 +57,19 @@ def main():
         manifest=json.loads((a.data_root/'manifest.json').read_text())
         if digest(a.data_root/'data.zip')!=manifest['archive_sha256']:raise ValueError('archive changed')
         model=FourRouterClassification(cfg['architecture'],num_classes=16).cuda();model.load_state_dict(ck['model'])
+        clean_train,_=evaluate(model,loader(a.data_root,'train',manifest,cfg['batch'],a.workers))
+        validation,_=evaluate(model,loader(a.data_root,'val',manifest,cfg['batch'],a.workers))
         metrics,arrays=evaluate(model,loader(a.data_root,'test',manifest,cfg['batch'],a.workers))
         metrics.update(selected_epoch=ck['epoch'],weights_kind=ck['weights_kind'],test_evaluations=1,
             checkpoint_sha256=digest(a.out/'best_checkpoint.pt'),selection='validation only',dataset='PATCH16')
         np.savez_compressed(a.out/'test_predictions.npz',**arrays)
+        write(a.out/'selected_generalization.json',dict(training=clean_train,validation=validation,test=metrics,
+            train_test_accuracy_gap_pp=100*(clean_train['accuracy']-metrics['accuracy']),
+            train_validation_accuracy_gap_pp=100*(clean_train['accuracy']-validation['accuracy']),
+            checkpoint_sha256=digest(a.out/'best_checkpoint.pt')))
         write(a.out/'result.json',metrics);write(a.out/'status.json',dict(state='completed_test_once',result=metrics));print(json.dumps(metrics));return
     if a.architecture is None or (a.architecture=='d2nn' and a.recipe!='standard'):raise ValueError('D2NN is ordinary standard training')
-    if a.epochs<1 or a.batch<1 or a.workers<0:raise ValueError('invalid budget')
+    if a.epochs<1 or not 1<=a.min_epochs<=a.epochs or a.patience<1 or a.train_eval_every<1 or a.batch<1 or a.workers<0:raise ValueError('invalid budget')
     a.out.mkdir(parents=True,exist_ok=False);write(a.out/'status.json',dict(state='loading'))
     try:
         manifest=json.loads((a.data_root/'manifest.json').read_text())
@@ -90,10 +98,11 @@ def main():
         bases=[g['lr'] for g in opt.param_groups]
         train=loader(a.data_root,'train',manifest,a.batch,a.workers,True,a.seed)
         val=loader(a.data_root,'val',manifest,a.batch,a.workers)
+        clean_train=loader(a.data_root,'train',manifest,a.batch,a.workers)
         counts=torch.tensor(manifest['class_counts']['train'],device='cuda',dtype=torch.float)
         weights=(counts.mean()/counts).pow(cfg['class_weight_power']);weights/=weights.mean()
         cfg['loss_class_weights']=weights.cpu().tolist();write(a.out/'config.json',cfg)
-        best=-1.;history=[]
+        best=-1.;significant_best=-1.;last_significant=0;history=[];stop_reason='maximum budget'
         for epoch in range(1,a.epochs+1):
             begin=time.monotonic();model.train();loss_sum=0.;seen=0
             factor=.1+.9*.5*(1+np.cos(np.pi*(epoch-1)/max(1,a.epochs-1))) if enhanced else 1.
@@ -117,16 +126,32 @@ def main():
             metric_score=(lambda v:v['balanced_accuracy']) if a.architecture=='d2nn' else score
             kind,chosen,metrics=max(options,key=lambda o:(metric_score(o[2]),-o[2]['cross_entropy']))
             selected=metric_score(metrics)>best
+            if metric_score(metrics)>significant_best+.002:
+                significant_best=metric_score(metrics);last_significant=epoch
             if selected:
                 best=metric_score(metrics);torch.save(dict(model=chosen.state_dict(),epoch=epoch,weights_kind=kind,config=cfg),a.out/'best_checkpoint.pt')
                 write(a.out/'selected_validation.json',dict(epoch=epoch,weights_kind=kind,metrics=metrics,selection_score=best))
             row=dict(epoch=epoch,train_loss=loss_sum/seen,training_samples_seen=seen,validation=metrics,weights_kind=kind,selected=selected,seconds=time.monotonic()-begin)
+            if epoch%a.train_eval_every==0 or epoch==a.epochs:
+                row['clean_training'],_=evaluate(chosen,clean_train)
+                row['train_validation_accuracy_gap_pp']=100*(row['clean_training']['accuracy']-metrics['accuracy'])
+                row['seconds']=time.monotonic()-begin
             history.append(row);write(a.out/'metrics.json',history)
             torch.save(dict(model=model.state_dict(),ema_model=ema.state_dict() if ema is not None else None,optimizer=opt.state_dict(),
                 epoch=epoch,config=cfg,torch_rng=torch.get_rng_state(),cuda_rng=torch.cuda.get_rng_state(),loader_rng=train.generator.get_state()),a.out/'last_checkpoint.pt')
             write(a.out/'status.json',dict(state='training_validation_only',epoch=epoch,best_validation_score=best,seconds=row['seconds']))
             print(json.dumps(row),flush=True)
-        write(a.out/'status.json',dict(state='completed_validation_only',epochs=a.epochs,best_validation=json.loads((a.out/'selected_validation.json').read_text()),test_evaluations=0))
+            if epoch>=a.min_epochs and epoch-last_significant>=a.patience:
+                stop_reason='validation plateau: no >=0.2pp selection-score improvement for patience window';break
+        tail=history[-min(a.patience,len(history)):]
+        train_points=[r for r in history if 'clean_training' in r]
+        write(a.out/'convergence.json',dict(actual_epochs=epoch,maximum_epochs=a.epochs,minimum_epochs=a.min_epochs,
+            stop_reason=stop_reason,last_significant_improvement_epoch=last_significant,significant_improvement=.002,
+            tail_validation_scores=[metric_score(r['validation']) for r in tail],
+            tail_validation_losses=[r['validation']['cross_entropy'] for r in tail],
+            clean_training_points=[dict(epoch=r['epoch'],metrics=r['clean_training'],gap_pp=r['train_validation_accuracy_gap_pp']) for r in train_points],
+            interpretation='validation convergence/overfit evidence; no claim of mathematical convergence, no test-driven stopping'))
+        write(a.out/'status.json',dict(state='completed_validation_only',epochs=epoch,stop_reason=stop_reason,best_validation=json.loads((a.out/'selected_validation.json').read_text()),test_evaluations=0))
     except Exception as exc:write(a.out/'status.json',dict(state='failed',error=repr(exc)));raise
 
 if __name__=='__main__':main()

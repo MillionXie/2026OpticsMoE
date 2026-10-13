@@ -22,6 +22,7 @@ def build_manifest(root):
         if name in mapping and mapping[name]!=label:raise ValueError('inconsistent label')
         mapping[name]=label
     if sorted(mapping.values())!=list(range(16)):raise ValueError('original sixteen classes required')
+    if json.loads((root/'class_dict.json').read_text())!=mapping:raise ValueError('publisher class dictionary mismatch')
     if len(rows)!=129364:raise ValueError(f'publisher tile count mismatch: {len(rows)}')
     with zipfile.ZipFile(root/'data.zip') as z:
         names=set(z.namelist())
@@ -31,7 +32,7 @@ def build_manifest(root):
                 base=Path(name).name
                 if base in lookup:raise ValueError('ambiguous tile basename')
                 lookup[base]=name
-    ids=set();splits={key:[] for key in ('train','val','test')}
+    ids=set();splits={key:[] for key in ('train','val','test')};cases={s:set() for s in splits}
     for row in rows:
         if row['set'] not in SPLITS:raise ValueError(f'unknown official split: {row["set"]}')
         base=Path(row['file']).name
@@ -39,16 +40,21 @@ def build_manifest(root):
         member=lookup[base]
         if member in ids:raise ValueError('duplicate tile across original split')
         ids.add(member)
-        splits[SPLITS[row['set']]].append(dict(id=member,label=int(row['class_int'])))
+        split=SPLITS[row['set']]
+        if not row.get('case'):raise ValueError('original case identity missing')
+        cases[split].add(row['case'])
+        splits[split].append(dict(id=member,label=int(row['class_int']),case=row['case']))
     counts={s:[Counter(r['label'] for r in records)[i] for i in range(16)] for s,records in splits.items()}
     if any(min(values)<1 for values in counts.values()):raise ValueError('class missing from split')
-    # Preserve original metadata; do not infer patient independence from filenames.
+    overlaps={f'{a}/{b}':len(cases[a]&cases[b]) for a,b in (('train','val'),('train','test'),('val','test'))}
+    if any(overlaps.values()):raise ValueError('official case identity leakage across splits')
     manifest=dict(dataset='PATCH16',license='CC BY 4.0',source_identifier=receipt['identifier'],
         archive_sha256=receipt['sha256'],csv_sha256=digest(root/'tiles-v2.csv'),
         class_names=[next(name for name,label in mapping.items() if label==i) for i in range(16)],
         total=len(ids),split_counts={s:len(v) for s,v in splits.items()},class_counts=counts,
         split_policy='unchanged original CSV set column; no sampling',csv_columns=list(rows[0]),
-        patient_independence='not yet established from metadata',splits=splits)
+        case_counts={s:len(v) for s,v in cases.items()},case_overlap_counts=overlaps,
+        patient_independence='original case IDs disjoint; no additional patient mapping supplied',splits=splits)
     write(root/'manifest.json',manifest);return manifest
 
 class Patch16Dataset(Dataset):
