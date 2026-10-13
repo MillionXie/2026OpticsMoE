@@ -7,6 +7,8 @@
 [完整失败记录、CPU收据和已实际PDF渲染视检的图表](reports/caltech_repair234_20261014/L4_regularization_reviewed/README.md)。
 保存相位CPU诊断已完成（无模型构造/前向/data/test/GPU）：908552参数，平滑项约.0026；容量和频谱是描述性证据，不代表唯一原因。
 [诊断及待人工批准的三组相位容量对照方案](reports/caltech_repair234_20261014/saved_phase_diagnosis.md)。新方案尚未实现或启动，不追加当前已失败预算。
+保存预测额外检查：三组train混淆矩阵的20类对角线均为行内唯一最大计数，验证总体偏软；普通温度锐化不改变argmax，不能补硬分类精度。
+[分类窗口／置信度证据及口径](reports/caltech_repair234_20261014/saved_window_confidence.md)。新预算审批问题仍待人工回复，GPU保持释放。
 此前启动/准备说明均为历史，运行126源仍46011b823保持不变。
 
 ## 复合修正与独立四层正则验证（2026-10-14，已启动）

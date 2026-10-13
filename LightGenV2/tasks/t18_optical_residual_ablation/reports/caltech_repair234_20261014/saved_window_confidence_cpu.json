@@ -1,0 +1,1328 @@
+{
+  "passed": true,
+  "results": [
+    {
+      "case": "L4_rho03_mixup02",
+      "split": "train",
+      "predictions_sha256": "c4b1d76e3bea979161f7f06c2d7ba8a3a38fbcd32b2e4e8e0da63307227b5653",
+      "n": 1246,
+      "accuracy": 0.92776886035313,
+      "mean_confidence": 0.553066565474289,
+      "mean_correct_confidence": 0.5711453184098727,
+      "mean_incorrect_confidence": 0.320855027768347,
+      "ECE10": 0.37500525954781916,
+      "bins": [
+        {
+          "lower": 0.0,
+          "upper": 0.1,
+          "n": 2,
+          "accuracy": 0.0,
+          "mean_confidence": 0.09437349438667297
+        },
+        {
+          "lower": 0.1,
+          "upper": 0.2,
+          "n": 37,
+          "accuracy": 0.43243243243243246,
+          "mean_confidence": 0.1645215645029738
+        },
+        {
+          "lower": 0.2,
+          "upper": 0.3,
+          "n": 78,
+          "accuracy": 0.7692307692307693,
+          "mean_confidence": 0.26082403289201933
+        },
+        {
+          "lower": 0.3,
+          "upper": 0.4,
+          "n": 137,
+          "accuracy": 0.8905109489051095,
+          "mean_confidence": 0.3556341326584781
+        },
+        {
+          "lower": 0.4,
+          "upper": 0.5,
+          "n": 236,
+          "accuracy": 0.8728813559322034,
+          "mean_confidence": 0.4518946685780913
+        },
+        {
+          "lower": 0.5,
+          "upper": 0.6,
+          "n": 222,
+          "accuracy": 0.9819819819819819,
+          "mean_confidence": 0.5506624010232117
+        },
+        {
+          "lower": 0.6,
+          "upper": 0.7,
+          "n": 212,
+          "accuracy": 1.0,
+          "mean_confidence": 0.650655948609676
+        },
+        {
+          "lower": 0.7,
+          "upper": 0.8,
+          "n": 249,
+          "accuracy": 1.0,
+          "mean_confidence": 0.7499249788173231
+        },
+        {
+          "lower": 0.8,
+          "upper": 0.9,
+          "n": 73,
+          "accuracy": 1.0,
+          "mean_confidence": 0.824851634567731
+        }
+      ],
+      "per_class": [
+        {
+          "class_name": "Leopards",
+          "support": 100,
+          "recall": 0.92,
+          "mean_true_class_probability": 0.4762240217626095,
+          "mean_incorrect_confidence": 0.3750505205243826
+        },
+        {
+          "class_name": "bonsai",
+          "support": 89,
+          "recall": 0.9550561797752809,
+          "mean_true_class_probability": 0.5330699973561791,
+          "mean_incorrect_confidence": 0.25420592725276947
+        },
+        {
+          "class_name": "car_side",
+          "support": 86,
+          "recall": 1.0,
+          "mean_true_class_probability": 0.7273191643315692,
+          "mean_incorrect_confidence": null
+        },
+        {
+          "class_name": "crab",
+          "support": 51,
+          "recall": 0.8823529411764706,
+          "mean_true_class_probability": 0.36017310210302766,
+          "mean_incorrect_confidence": 0.3303560937444369
+        },
+        {
+          "class_name": "crayfish",
+          "support": 49,
+          "recall": 0.9591836734693877,
+          "mean_true_class_probability": 0.5001852919860762,
+          "mean_incorrect_confidence": 0.30381499230861664
+        },
+        {
+          "class_name": "grand_piano",
+          "support": 69,
+          "recall": 0.927536231884058,
+          "mean_true_class_probability": 0.5630064094844072,
+          "mean_incorrect_confidence": 0.15515058040618895
+        },
+        {
+          "class_name": "helicopter",
+          "support": 61,
+          "recall": 0.819672131147541,
+          "mean_true_class_probability": 0.3768097160414594,
+          "mean_incorrect_confidence": 0.27894348718903283
+        },
+        {
+          "class_name": "joshua_tree",
+          "support": 44,
+          "recall": 1.0,
+          "mean_true_class_probability": 0.6693683530796658,
+          "mean_incorrect_confidence": null
+        },
+        {
+          "class_name": "kangaroo",
+          "support": 60,
+          "recall": 0.8833333333333333,
+          "mean_true_class_probability": 0.3402094475924969,
+          "mean_incorrect_confidence": 0.3091311263186591
+        },
+        {
+          "class_name": "ketch",
+          "support": 79,
+          "recall": 0.7215189873417721,
+          "mean_true_class_probability": 0.3951467678328104,
+          "mean_incorrect_confidence": 0.3495542359623042
+        },
+        {
+          "class_name": "laptop",
+          "support": 60,
+          "recall": 0.95,
+          "mean_true_class_probability": 0.5777122447888057,
+          "mean_incorrect_confidence": 0.3662514289220174
+        },
+        {
+          "class_name": "lotus",
+          "support": 46,
+          "recall": 1.0,
+          "mean_true_class_probability": 0.4709701460340749,
+          "mean_incorrect_confidence": null
+        },
+        {
+          "class_name": "minaret",
+          "support": 53,
+          "recall": 0.9811320754716981,
+          "mean_true_class_probability": 0.7358758595754515,
+          "mean_incorrect_confidence": 0.43931660056114197
+        },
+        {
+          "class_name": "revolver",
+          "support": 57,
+          "recall": 0.9298245614035088,
+          "mean_true_class_probability": 0.571905960247182,
+          "mean_incorrect_confidence": 0.20097074285149574
+        },
+        {
+          "class_name": "schooner",
+          "support": 44,
+          "recall": 0.7954545454545454,
+          "mean_true_class_probability": 0.415172721513293,
+          "mean_incorrect_confidence": 0.41986164616213906
+        },
+        {
+          "class_name": "stop_sign",
+          "support": 44,
+          "recall": 0.9772727272727273,
+          "mean_true_class_probability": 0.652942510152405,
+          "mean_incorrect_confidence": 0.135442852973938
+        },
+        {
+          "class_name": "trilobite",
+          "support": 60,
+          "recall": 0.95,
+          "mean_true_class_probability": 0.6849065782502294,
+          "mean_incorrect_confidence": 0.4613909622033437
+        },
+        {
+          "class_name": "umbrella",
+          "support": 52,
+          "recall": 0.9807692307692307,
+          "mean_true_class_probability": 0.6653315124030297,
+          "mean_incorrect_confidence": 0.39272066950798035
+        },
+        {
+          "class_name": "watch",
+          "support": 100,
+          "recall": 0.98,
+          "mean_true_class_probability": 0.5639212930947543,
+          "mean_incorrect_confidence": 0.20276135206222534
+        },
+        {
+          "class_name": "yin_yang",
+          "support": 42,
+          "recall": 0.9761904761904762,
+          "mean_true_class_probability": 0.6851503824194273,
+          "mean_incorrect_confidence": 0.1331479549407959
+        }
+      ]
+    },
+    {
+      "case": "L4_rho03_mixup02",
+      "split": "val",
+      "predictions_sha256": "f21bed6126a4a9e1d0e3eef53ae7ed8e40fdb15278ed3d4bd1546efcaffe1fb9",
+      "n": 261,
+      "accuracy": 0.6398467432950191,
+      "mean_confidence": 0.46946410355211676,
+      "mean_correct_confidence": 0.5545713099801611,
+      "mean_incorrect_confidence": 0.3182630027703782,
+      "ECE10": 0.18881299138297528,
+      "bins": [
+        {
+          "lower": 0.0,
+          "upper": 0.1,
+          "n": 2,
+          "accuracy": 0.5,
+          "mean_confidence": 0.09152919054031372
+        },
+        {
+          "lower": 0.1,
+          "upper": 0.2,
+          "n": 26,
+          "accuracy": 0.07692307692307693,
+          "mean_confidence": 0.1694292649626732
+        },
+        {
+          "lower": 0.2,
+          "upper": 0.3,
+          "n": 32,
+          "accuracy": 0.4375,
+          "mean_confidence": 0.2491623628884554
+        },
+        {
+          "lower": 0.3,
+          "upper": 0.4,
+          "n": 51,
+          "accuracy": 0.47058823529411764,
+          "mean_confidence": 0.34989335373336194
+        },
+        {
+          "lower": 0.4,
+          "upper": 0.5,
+          "n": 43,
+          "accuracy": 0.6976744186046512,
+          "mean_confidence": 0.45681596079538034
+        },
+        {
+          "lower": 0.5,
+          "upper": 0.6,
+          "n": 34,
+          "accuracy": 0.7352941176470589,
+          "mean_confidence": 0.5531812169972588
+        },
+        {
+          "lower": 0.6,
+          "upper": 0.7,
+          "n": 22,
+          "accuracy": 0.9545454545454546,
+          "mean_confidence": 0.6489567865024913
+        },
+        {
+          "lower": 0.7,
+          "upper": 0.8,
+          "n": 38,
+          "accuracy": 0.9736842105263158,
+          "mean_confidence": 0.7549608287058378
+        },
+        {
+          "lower": 0.8,
+          "upper": 0.9,
+          "n": 13,
+          "accuracy": 1.0,
+          "mean_confidence": 0.823642047551962
+        }
+      ],
+      "per_class": [
+        {
+          "class_name": "Leopards",
+          "support": 20,
+          "recall": 0.65,
+          "mean_true_class_probability": 0.370917649846524,
+          "mean_incorrect_confidence": 0.2745616446648325
+        },
+        {
+          "class_name": "bonsai",
+          "support": 19,
+          "recall": 0.7894736842105263,
+          "mean_true_class_probability": 0.4044787056351963,
+          "mean_incorrect_confidence": 0.30618951097130775
+        },
+        {
+          "class_name": "car_side",
+          "support": 18,
+          "recall": 0.9444444444444444,
+          "mean_true_class_probability": 0.6461068006853262,
+          "mean_incorrect_confidence": 0.38364341855049133
+        },
+        {
+          "class_name": "crab",
+          "support": 10,
+          "recall": 0.1,
+          "mean_true_class_probability": 0.15523985512554644,
+          "mean_incorrect_confidence": 0.3880043708615833
+        },
+        {
+          "class_name": "crayfish",
+          "support": 10,
+          "recall": 0.5,
+          "mean_true_class_probability": 0.19667603448033333,
+          "mean_incorrect_confidence": 0.37503276467323304
+        },
+        {
+          "class_name": "grand_piano",
+          "support": 14,
+          "recall": 0.8571428571428571,
+          "mean_true_class_probability": 0.589376548571246,
+          "mean_incorrect_confidence": 0.24584274739027023
+        },
+        {
+          "class_name": "helicopter",
+          "support": 13,
+          "recall": 0.46153846153846156,
+          "mean_true_class_probability": 0.21656953385816172,
+          "mean_incorrect_confidence": 0.23098196940762655
+        },
+        {
+          "class_name": "joshua_tree",
+          "support": 10,
+          "recall": 0.6,
+          "mean_true_class_probability": 0.3412381995469332,
+          "mean_incorrect_confidence": 0.42548608034849167
+        },
+        {
+          "class_name": "kangaroo",
+          "support": 12,
+          "recall": 0.4166666666666667,
+          "mean_true_class_probability": 0.17127163087328276,
+          "mean_incorrect_confidence": 0.3291648966925485
+        },
+        {
+          "class_name": "ketch",
+          "support": 17,
+          "recall": 0.5882352941176471,
+          "mean_true_class_probability": 0.38789142843555,
+          "mean_incorrect_confidence": 0.3155342638492584
+        },
+        {
+          "class_name": "laptop",
+          "support": 12,
+          "recall": 0.5833333333333334,
+          "mean_true_class_probability": 0.34475591282049817,
+          "mean_incorrect_confidence": 0.30134052932262423
+        },
+        {
+          "class_name": "lotus",
+          "support": 10,
+          "recall": 0.7,
+          "mean_true_class_probability": 0.2828203751705587,
+          "mean_incorrect_confidence": 0.26072290043036145
+        },
+        {
+          "class_name": "minaret",
+          "support": 11,
+          "recall": 0.7272727272727273,
+          "mean_true_class_probability": 0.5382552211257544,
+          "mean_incorrect_confidence": 0.19496028125286102
+        },
+        {
+          "class_name": "revolver",
+          "support": 12,
+          "recall": 0.5833333333333334,
+          "mean_true_class_probability": 0.4183508288115263,
+          "mean_incorrect_confidence": 0.2606568783521652
+        },
+        {
+          "class_name": "schooner",
+          "support": 10,
+          "recall": 0.4,
+          "mean_true_class_probability": 0.3067872956395149,
+          "mean_incorrect_confidence": 0.3263818770647049
+        },
+        {
+          "class_name": "stop_sign",
+          "support": 10,
+          "recall": 0.7,
+          "mean_true_class_probability": 0.4304803853854537,
+          "mean_incorrect_confidence": 0.32896163562933606
+        },
+        {
+          "class_name": "trilobite",
+          "support": 12,
+          "recall": 0.8333333333333334,
+          "mean_true_class_probability": 0.5350593174807727,
+          "mean_incorrect_confidence": 0.36400318145751953
+        },
+        {
+          "class_name": "umbrella",
+          "support": 11,
+          "recall": 0.5454545454545454,
+          "mean_true_class_probability": 0.24343478645790706,
+          "mean_incorrect_confidence": 0.3466784954071045
+        },
+        {
+          "class_name": "watch",
+          "support": 20,
+          "recall": 0.55,
+          "mean_true_class_probability": 0.38120203381404283,
+          "mean_incorrect_confidence": 0.34579742285940385
+        },
+        {
+          "class_name": "yin_yang",
+          "support": 10,
+          "recall": 1.0,
+          "mean_true_class_probability": 0.7316212594509125,
+          "mean_incorrect_confidence": null
+        }
+      ]
+    },
+    {
+      "case": "L4_rho03_mixup04",
+      "split": "train",
+      "predictions_sha256": "67d7b2e8bfc2596777cef7ab91fb0fdaaf04b54e4db47d0024424f0548837e9b",
+      "n": 1246,
+      "accuracy": 0.9044943820224719,
+      "mean_confidence": 0.5096106099362454,
+      "mean_correct_confidence": 0.5303192763674439,
+      "mean_incorrect_confidence": 0.3134873572643064,
+      "ECE10": 0.3953449584926399,
+      "bins": [
+        {
+          "lower": 0.0,
+          "upper": 0.1,
+          "n": 3,
+          "accuracy": 0.0,
+          "mean_confidence": 0.0957730437318484
+        },
+        {
+          "lower": 0.1,
+          "upper": 0.2,
+          "n": 44,
+          "accuracy": 0.5,
+          "mean_confidence": 0.15880062058568
+        },
+        {
+          "lower": 0.2,
+          "upper": 0.3,
+          "n": 111,
+          "accuracy": 0.7387387387387387,
+          "mean_confidence": 0.25471941576347695
+        },
+        {
+          "lower": 0.3,
+          "upper": 0.4,
+          "n": 188,
+          "accuracy": 0.824468085106383,
+          "mean_confidence": 0.3485574650954693
+        },
+        {
+          "lower": 0.4,
+          "upper": 0.5,
+          "n": 244,
+          "accuracy": 0.889344262295082,
+          "mean_confidence": 0.4472033488945883
+        },
+        {
+          "lower": 0.5,
+          "upper": 0.6,
+          "n": 235,
+          "accuracy": 0.9914893617021276,
+          "mean_confidence": 0.5510668992996216
+        },
+        {
+          "lower": 0.6,
+          "upper": 0.7,
+          "n": 207,
+          "accuracy": 0.9855072463768116,
+          "mean_confidence": 0.6494158503513981
+        },
+        {
+          "lower": 0.7,
+          "upper": 0.8,
+          "n": 186,
+          "accuracy": 1.0,
+          "mean_confidence": 0.7406796652783629
+        },
+        {
+          "lower": 0.8,
+          "upper": 0.9,
+          "n": 28,
+          "accuracy": 1.0,
+          "mean_confidence": 0.8244206330605915
+        }
+      ],
+      "per_class": [
+        {
+          "class_name": "Leopards",
+          "support": 100,
+          "recall": 0.87,
+          "mean_true_class_probability": 0.42293694116175173,
+          "mean_incorrect_confidence": 0.380321014385957
+        },
+        {
+          "class_name": "bonsai",
+          "support": 89,
+          "recall": 0.9438202247191011,
+          "mean_true_class_probability": 0.4923886235677794,
+          "mean_incorrect_confidence": 0.2589459761977196
+        },
+        {
+          "class_name": "car_side",
+          "support": 86,
+          "recall": 1.0,
+          "mean_true_class_probability": 0.6481233779774156,
+          "mean_incorrect_confidence": null
+        },
+        {
+          "class_name": "crab",
+          "support": 51,
+          "recall": 0.9019607843137255,
+          "mean_true_class_probability": 0.41610462642183493,
+          "mean_incorrect_confidence": 0.2852949589490891
+        },
+        {
+          "class_name": "crayfish",
+          "support": 49,
+          "recall": 0.9591836734693877,
+          "mean_true_class_probability": 0.44998144099907,
+          "mean_incorrect_confidence": 0.2767150402069092
+        },
+        {
+          "class_name": "grand_piano",
+          "support": 69,
+          "recall": 0.9565217391304348,
+          "mean_true_class_probability": 0.55399707229673,
+          "mean_incorrect_confidence": 0.2572134534517924
+        },
+        {
+          "class_name": "helicopter",
+          "support": 61,
+          "recall": 0.8032786885245902,
+          "mean_true_class_probability": 0.29481186052082015,
+          "mean_incorrect_confidence": 0.28451717148224515
+        },
+        {
+          "class_name": "joshua_tree",
+          "support": 44,
+          "recall": 1.0,
+          "mean_true_class_probability": 0.6317265751686963,
+          "mean_incorrect_confidence": null
+        },
+        {
+          "class_name": "kangaroo",
+          "support": 60,
+          "recall": 0.8166666666666667,
+          "mean_true_class_probability": 0.25336287611474595,
+          "mean_incorrect_confidence": 0.3173873302611438
+        },
+        {
+          "class_name": "ketch",
+          "support": 79,
+          "recall": 0.569620253164557,
+          "mean_true_class_probability": 0.31522827788810187,
+          "mean_incorrect_confidence": 0.32443342226393085
+        },
+        {
+          "class_name": "laptop",
+          "support": 60,
+          "recall": 0.95,
+          "mean_true_class_probability": 0.49248165438572566,
+          "mean_incorrect_confidence": 0.3834901948769887
+        },
+        {
+          "class_name": "lotus",
+          "support": 46,
+          "recall": 0.9565217391304348,
+          "mean_true_class_probability": 0.4499779550925545,
+          "mean_incorrect_confidence": 0.24763550609350204
+        },
+        {
+          "class_name": "minaret",
+          "support": 53,
+          "recall": 0.9811320754716981,
+          "mean_true_class_probability": 0.6958531107542649,
+          "mean_incorrect_confidence": 0.33820608258247375
+        },
+        {
+          "class_name": "revolver",
+          "support": 57,
+          "recall": 0.8947368421052632,
+          "mean_true_class_probability": 0.5510164718878897,
+          "mean_incorrect_confidence": 0.2232508882880211
+        },
+        {
+          "class_name": "schooner",
+          "support": 44,
+          "recall": 0.8181818181818182,
+          "mean_true_class_probability": 0.38922581753947516,
+          "mean_incorrect_confidence": 0.37026188522577286
+        },
+        {
+          "class_name": "stop_sign",
+          "support": 44,
+          "recall": 0.9772727272727273,
+          "mean_true_class_probability": 0.5936188276179812,
+          "mean_incorrect_confidence": 0.15555407106876373
+        },
+        {
+          "class_name": "trilobite",
+          "support": 60,
+          "recall": 0.95,
+          "mean_true_class_probability": 0.6588555922110876,
+          "mean_incorrect_confidence": 0.5131612519423167
+        },
+        {
+          "class_name": "umbrella",
+          "support": 52,
+          "recall": 0.9807692307692307,
+          "mean_true_class_probability": 0.589600027180635,
+          "mean_incorrect_confidence": 0.28174418210983276
+        },
+        {
+          "class_name": "watch",
+          "support": 100,
+          "recall": 0.92,
+          "mean_true_class_probability": 0.5217309357225894,
+          "mean_incorrect_confidence": 0.2522796895354986
+        },
+        {
+          "class_name": "yin_yang",
+          "support": 42,
+          "recall": 0.9761904761904762,
+          "mean_true_class_probability": 0.6621199427616029,
+          "mean_incorrect_confidence": 0.09777654707431793
+        }
+      ]
+    },
+    {
+      "case": "L4_rho03_mixup04",
+      "split": "val",
+      "predictions_sha256": "9e83cf609f33a06e0408cbad441004f4342ea9d4c9ba96db55bc2fd3ecf822fa",
+      "n": 261,
+      "accuracy": 0.6206896551724138,
+      "mean_confidence": 0.4373495237637754,
+      "mean_correct_confidence": 0.5199321558538043,
+      "mean_incorrect_confidence": 0.3022143076164554,
+      "ECE10": 0.18334013140863845,
+      "bins": [
+        {
+          "lower": 0.1,
+          "upper": 0.2,
+          "n": 33,
+          "accuracy": 0.3333333333333333,
+          "mean_confidence": 0.15619093428055444
+        },
+        {
+          "lower": 0.2,
+          "upper": 0.3,
+          "n": 50,
+          "accuracy": 0.3,
+          "mean_confidence": 0.26014400869607923
+        },
+        {
+          "lower": 0.3,
+          "upper": 0.4,
+          "n": 41,
+          "accuracy": 0.4634146341463415,
+          "mean_confidence": 0.35335189394834565
+        },
+        {
+          "lower": 0.4,
+          "upper": 0.5,
+          "n": 45,
+          "accuracy": 0.7111111111111111,
+          "mean_confidence": 0.45429406695895724
+        },
+        {
+          "lower": 0.5,
+          "upper": 0.6,
+          "n": 29,
+          "accuracy": 0.8275862068965517,
+          "mean_confidence": 0.5559678077697754
+        },
+        {
+          "lower": 0.6,
+          "upper": 0.7,
+          "n": 27,
+          "accuracy": 0.9259259259259259,
+          "mean_confidence": 0.6503369786121227
+        },
+        {
+          "lower": 0.7,
+          "upper": 0.8,
+          "n": 30,
+          "accuracy": 1.0,
+          "mean_confidence": 0.7487489819526673
+        },
+        {
+          "lower": 0.8,
+          "upper": 0.9,
+          "n": 6,
+          "accuracy": 1.0,
+          "mean_confidence": 0.8185715774695078
+        }
+      ],
+      "per_class": [
+        {
+          "class_name": "Leopards",
+          "support": 20,
+          "recall": 0.7,
+          "mean_true_class_probability": 0.34879903281107544,
+          "mean_incorrect_confidence": 0.2378727396329244
+        },
+        {
+          "class_name": "bonsai",
+          "support": 19,
+          "recall": 0.7894736842105263,
+          "mean_true_class_probability": 0.3895856455752724,
+          "mean_incorrect_confidence": 0.3143322542309761
+        },
+        {
+          "class_name": "car_side",
+          "support": 18,
+          "recall": 0.9444444444444444,
+          "mean_true_class_probability": 0.5616520786037048,
+          "mean_incorrect_confidence": 0.3542872369289398
+        },
+        {
+          "class_name": "crab",
+          "support": 10,
+          "recall": 0.3,
+          "mean_true_class_probability": 0.2052833378314972,
+          "mean_incorrect_confidence": 0.2877169038568224
+        },
+        {
+          "class_name": "crayfish",
+          "support": 10,
+          "recall": 0.2,
+          "mean_true_class_probability": 0.14627961535006762,
+          "mean_incorrect_confidence": 0.3293747194111347
+        },
+        {
+          "class_name": "grand_piano",
+          "support": 14,
+          "recall": 0.8571428571428571,
+          "mean_true_class_probability": 0.5765318678958076,
+          "mean_incorrect_confidence": 0.30352840572595596
+        },
+        {
+          "class_name": "helicopter",
+          "support": 13,
+          "recall": 0.46153846153846156,
+          "mean_true_class_probability": 0.18385038897395134,
+          "mean_incorrect_confidence": 0.22838252569947923
+        },
+        {
+          "class_name": "joshua_tree",
+          "support": 10,
+          "recall": 0.6,
+          "mean_true_class_probability": 0.3732448978349566,
+          "mean_incorrect_confidence": 0.41335446760058403
+        },
+        {
+          "class_name": "kangaroo",
+          "support": 12,
+          "recall": 0.16666666666666666,
+          "mean_true_class_probability": 0.13928477326408029,
+          "mean_incorrect_confidence": 0.27698713093996047
+        },
+        {
+          "class_name": "ketch",
+          "support": 17,
+          "recall": 0.5294117647058824,
+          "mean_true_class_probability": 0.318057431236786,
+          "mean_incorrect_confidence": 0.3414784427732229
+        },
+        {
+          "class_name": "laptop",
+          "support": 12,
+          "recall": 0.5833333333333334,
+          "mean_true_class_probability": 0.31849670006583136,
+          "mean_incorrect_confidence": 0.27779778838157654
+        },
+        {
+          "class_name": "lotus",
+          "support": 10,
+          "recall": 0.6,
+          "mean_true_class_probability": 0.2427083443850279,
+          "mean_incorrect_confidence": 0.23552178964018822
+        },
+        {
+          "class_name": "minaret",
+          "support": 11,
+          "recall": 0.8181818181818182,
+          "mean_true_class_probability": 0.5039913021028042,
+          "mean_incorrect_confidence": 0.293555349111557
+        },
+        {
+          "class_name": "revolver",
+          "support": 12,
+          "recall": 0.6666666666666666,
+          "mean_true_class_probability": 0.4235237150763472,
+          "mean_incorrect_confidence": 0.23397155106067657
+        },
+        {
+          "class_name": "schooner",
+          "support": 10,
+          "recall": 0.4,
+          "mean_true_class_probability": 0.28179114386439325,
+          "mean_incorrect_confidence": 0.29943497975667316
+        },
+        {
+          "class_name": "stop_sign",
+          "support": 10,
+          "recall": 0.7,
+          "mean_true_class_probability": 0.4225975975394249,
+          "mean_incorrect_confidence": 0.32491637766361237
+        },
+        {
+          "class_name": "trilobite",
+          "support": 12,
+          "recall": 0.75,
+          "mean_true_class_probability": 0.5206256763388714,
+          "mean_incorrect_confidence": 0.38170429070790607
+        },
+        {
+          "class_name": "umbrella",
+          "support": 11,
+          "recall": 0.36363636363636365,
+          "mean_true_class_probability": 0.18916493840515614,
+          "mean_incorrect_confidence": 0.3403189033269882
+        },
+        {
+          "class_name": "watch",
+          "support": 20,
+          "recall": 0.6,
+          "mean_true_class_probability": 0.37959889471530917,
+          "mean_incorrect_confidence": 0.3397149071097374
+        },
+        {
+          "class_name": "yin_yang",
+          "support": 10,
+          "recall": 1.0,
+          "mean_true_class_probability": 0.6948677271604538,
+          "mean_incorrect_confidence": null
+        }
+      ]
+    },
+    {
+      "case": "L4_rho03_mixup06",
+      "split": "train",
+      "predictions_sha256": "42be5116007248129634b5a1b6d9aa28baff29c4cd5fa20aebf5b99f03eac329",
+      "n": 1246,
+      "accuracy": 0.9165329052969502,
+      "mean_confidence": 0.49404244103960776,
+      "mean_correct_confidence": 0.5116338418199698,
+      "mean_incorrect_confidence": 0.30087532862447774,
+      "ECE10": 0.42264069734592696,
+      "bins": [
+        {
+          "lower": 0.0,
+          "upper": 0.1,
+          "n": 1,
+          "accuracy": 0.0,
+          "mean_confidence": 0.09359521418809891
+        },
+        {
+          "lower": 0.1,
+          "upper": 0.2,
+          "n": 50,
+          "accuracy": 0.48,
+          "mean_confidence": 0.16469095081090926
+        },
+        {
+          "lower": 0.2,
+          "upper": 0.3,
+          "n": 105,
+          "accuracy": 0.7714285714285715,
+          "mean_confidence": 0.25599983944779353
+        },
+        {
+          "lower": 0.3,
+          "upper": 0.4,
+          "n": 212,
+          "accuracy": 0.8773584905660378,
+          "mean_confidence": 0.3533853801353922
+        },
+        {
+          "lower": 0.4,
+          "upper": 0.5,
+          "n": 285,
+          "accuracy": 0.9122807017543859,
+          "mean_confidence": 0.44992662124466476
+        },
+        {
+          "lower": 0.5,
+          "upper": 0.6,
+          "n": 231,
+          "accuracy": 0.9913419913419913,
+          "mean_confidence": 0.5505669447250696
+        },
+        {
+          "lower": 0.6,
+          "upper": 0.7,
+          "n": 212,
+          "accuracy": 1.0,
+          "mean_confidence": 0.6479860687593244
+        },
+        {
+          "lower": 0.7,
+          "upper": 0.8,
+          "n": 135,
+          "accuracy": 1.0,
+          "mean_confidence": 0.7442482926227428
+        },
+        {
+          "lower": 0.8,
+          "upper": 0.9,
+          "n": 15,
+          "accuracy": 1.0,
+          "mean_confidence": 0.8129625121752421
+        }
+      ],
+      "per_class": [
+        {
+          "class_name": "Leopards",
+          "support": 100,
+          "recall": 0.94,
+          "mean_true_class_probability": 0.4541551382094622,
+          "mean_incorrect_confidence": 0.33754970878362656
+        },
+        {
+          "class_name": "bonsai",
+          "support": 89,
+          "recall": 0.9662921348314607,
+          "mean_true_class_probability": 0.49162863412599883,
+          "mean_incorrect_confidence": 0.3124164044857025
+        },
+        {
+          "class_name": "car_side",
+          "support": 86,
+          "recall": 1.0,
+          "mean_true_class_probability": 0.5445890939512918,
+          "mean_incorrect_confidence": null
+        },
+        {
+          "class_name": "crab",
+          "support": 51,
+          "recall": 0.8431372549019608,
+          "mean_true_class_probability": 0.3019905673230396,
+          "mean_incorrect_confidence": 0.32631614059209824
+        },
+        {
+          "class_name": "crayfish",
+          "support": 49,
+          "recall": 1.0,
+          "mean_true_class_probability": 0.4501236853550892,
+          "mean_incorrect_confidence": null
+        },
+        {
+          "class_name": "grand_piano",
+          "support": 69,
+          "recall": 0.9130434782608695,
+          "mean_true_class_probability": 0.5180671191301899,
+          "mean_incorrect_confidence": 0.1443451369802157
+        },
+        {
+          "class_name": "helicopter",
+          "support": 61,
+          "recall": 0.7704918032786885,
+          "mean_true_class_probability": 0.3516849830258088,
+          "mean_incorrect_confidence": 0.2143379726580211
+        },
+        {
+          "class_name": "joshua_tree",
+          "support": 44,
+          "recall": 1.0,
+          "mean_true_class_probability": 0.527508639476516,
+          "mean_incorrect_confidence": null
+        },
+        {
+          "class_name": "kangaroo",
+          "support": 60,
+          "recall": 0.8166666666666667,
+          "mean_true_class_probability": 0.2812293174366156,
+          "mean_incorrect_confidence": 0.2860721701925451
+        },
+        {
+          "class_name": "ketch",
+          "support": 79,
+          "recall": 0.6582278481012658,
+          "mean_true_class_probability": 0.3573078045833714,
+          "mean_incorrect_confidence": 0.3544602835619891
+        },
+        {
+          "class_name": "laptop",
+          "support": 60,
+          "recall": 0.9666666666666667,
+          "mean_true_class_probability": 0.556322329863906,
+          "mean_incorrect_confidence": 0.35270896553993225
+        },
+        {
+          "class_name": "lotus",
+          "support": 46,
+          "recall": 0.9565217391304348,
+          "mean_true_class_probability": 0.4029027353162351,
+          "mean_incorrect_confidence": 0.30587631464004517
+        },
+        {
+          "class_name": "minaret",
+          "support": 53,
+          "recall": 0.9811320754716981,
+          "mean_true_class_probability": 0.6931796658713862,
+          "mean_incorrect_confidence": 0.4458739161491394
+        },
+        {
+          "class_name": "revolver",
+          "support": 57,
+          "recall": 0.9298245614035088,
+          "mean_true_class_probability": 0.5645453978264541,
+          "mean_incorrect_confidence": 0.1608760543167591
+        },
+        {
+          "class_name": "schooner",
+          "support": 44,
+          "recall": 0.8636363636363636,
+          "mean_true_class_probability": 0.4054955616593361,
+          "mean_incorrect_confidence": 0.38857733209927875
+        },
+        {
+          "class_name": "stop_sign",
+          "support": 44,
+          "recall": 1.0,
+          "mean_true_class_probability": 0.5917751291258768,
+          "mean_incorrect_confidence": null
+        },
+        {
+          "class_name": "trilobite",
+          "support": 60,
+          "recall": 0.9333333333333333,
+          "mean_true_class_probability": 0.6320238668471575,
+          "mean_incorrect_confidence": 0.3829553760588169
+        },
+        {
+          "class_name": "umbrella",
+          "support": 52,
+          "recall": 0.9230769230769231,
+          "mean_true_class_probability": 0.5061181229181014,
+          "mean_incorrect_confidence": 0.33910858258605003
+        },
+        {
+          "class_name": "watch",
+          "support": 100,
+          "recall": 0.94,
+          "mean_true_class_probability": 0.4870681282877922,
+          "mean_incorrect_confidence": 0.25127751628557843
+        },
+        {
+          "class_name": "yin_yang",
+          "support": 42,
+          "recall": 1.0,
+          "mean_true_class_probability": 0.6845764844190507,
+          "mean_incorrect_confidence": null
+        }
+      ]
+    },
+    {
+      "case": "L4_rho03_mixup06",
+      "split": "val",
+      "predictions_sha256": "e8730db7f7539a535dec3aa6d0ab8e0baff92fd9160bcf3618229aaec334e8c6",
+      "n": 261,
+      "accuracy": 0.6436781609195402,
+      "mean_confidence": 0.4279995711941372,
+      "mean_correct_confidence": 0.5026443039643622,
+      "mean_incorrect_confidence": 0.29315747328663383,
+      "ECE10": 0.23241397778421521,
+      "bins": [
+        {
+          "lower": 0.1,
+          "upper": 0.2,
+          "n": 26,
+          "accuracy": 0.07692307692307693,
+          "mean_confidence": 0.16092185160288444
+        },
+        {
+          "lower": 0.2,
+          "upper": 0.3,
+          "n": 45,
+          "accuracy": 0.4444444444444444,
+          "mean_confidence": 0.24763612416055467
+        },
+        {
+          "lower": 0.3,
+          "upper": 0.4,
+          "n": 58,
+          "accuracy": 0.5517241379310345,
+          "mean_confidence": 0.3470640043760168
+        },
+        {
+          "lower": 0.4,
+          "upper": 0.5,
+          "n": 41,
+          "accuracy": 0.6585365853658537,
+          "mean_confidence": 0.44973599329227354
+        },
+        {
+          "lower": 0.5,
+          "upper": 0.6,
+          "n": 41,
+          "accuracy": 0.9024390243902439,
+          "mean_confidence": 0.5451773986583803
+        },
+        {
+          "lower": 0.6,
+          "upper": 0.7,
+          "n": 20,
+          "accuracy": 1.0,
+          "mean_confidence": 0.649428728222847
+        },
+        {
+          "lower": 0.7,
+          "upper": 0.8,
+          "n": 27,
+          "accuracy": 1.0,
+          "mean_confidence": 0.7421327122935543
+        },
+        {
+          "lower": 0.8,
+          "upper": 0.9,
+          "n": 3,
+          "accuracy": 1.0,
+          "mean_confidence": 0.8109917442003886
+        }
+      ],
+      "per_class": [
+        {
+          "class_name": "Leopards",
+          "support": 20,
+          "recall": 0.7,
+          "mean_true_class_probability": 0.3410690580494702,
+          "mean_incorrect_confidence": 0.31010399262110394
+        },
+        {
+          "class_name": "bonsai",
+          "support": 19,
+          "recall": 0.6842105263157895,
+          "mean_true_class_probability": 0.3628792433362258,
+          "mean_incorrect_confidence": 0.2503812275826931
+        },
+        {
+          "class_name": "car_side",
+          "support": 18,
+          "recall": 0.9444444444444444,
+          "mean_true_class_probability": 0.4895227795673741,
+          "mean_incorrect_confidence": 0.30713579058647156
+        },
+        {
+          "class_name": "crab",
+          "support": 10,
+          "recall": 0.2,
+          "mean_true_class_probability": 0.16486866101622583,
+          "mean_incorrect_confidence": 0.33234043419361115
+        },
+        {
+          "class_name": "crayfish",
+          "support": 10,
+          "recall": 0.4,
+          "mean_true_class_probability": 0.19934153854846953,
+          "mean_incorrect_confidence": 0.332802377641201
+        },
+        {
+          "class_name": "grand_piano",
+          "support": 14,
+          "recall": 0.9285714285714286,
+          "mean_true_class_probability": 0.5455444274204118,
+          "mean_incorrect_confidence": 0.3784196376800537
+        },
+        {
+          "class_name": "helicopter",
+          "support": 13,
+          "recall": 0.5384615384615384,
+          "mean_true_class_probability": 0.21230748840249503,
+          "mean_incorrect_confidence": 0.23214226961135864
+        },
+        {
+          "class_name": "joshua_tree",
+          "support": 10,
+          "recall": 0.5,
+          "mean_true_class_probability": 0.3057651391252875,
+          "mean_incorrect_confidence": 0.36174179911613463
+        },
+        {
+          "class_name": "kangaroo",
+          "support": 12,
+          "recall": 0.4166666666666667,
+          "mean_true_class_probability": 0.1726946245568494,
+          "mean_incorrect_confidence": 0.2608232817479542
+        },
+        {
+          "class_name": "ketch",
+          "support": 17,
+          "recall": 0.5294117647058824,
+          "mean_true_class_probability": 0.3485967293381691,
+          "mean_incorrect_confidence": 0.3391919545829296
+        },
+        {
+          "class_name": "laptop",
+          "support": 12,
+          "recall": 0.6666666666666666,
+          "mean_true_class_probability": 0.3649781694014867,
+          "mean_incorrect_confidence": 0.2690328620374203
+        },
+        {
+          "class_name": "lotus",
+          "support": 10,
+          "recall": 0.7,
+          "mean_true_class_probability": 0.271865957044065,
+          "mean_incorrect_confidence": 0.22233175237973532
+        },
+        {
+          "class_name": "minaret",
+          "support": 11,
+          "recall": 0.9090909090909091,
+          "mean_true_class_probability": 0.4979725723916834,
+          "mean_incorrect_confidence": 0.2145606130361557
+        },
+        {
+          "class_name": "revolver",
+          "support": 12,
+          "recall": 0.5833333333333334,
+          "mean_true_class_probability": 0.4192059204603235,
+          "mean_incorrect_confidence": 0.18941884636878967
+        },
+        {
+          "class_name": "schooner",
+          "support": 10,
+          "recall": 0.7,
+          "mean_true_class_probability": 0.3137065224349499,
+          "mean_incorrect_confidence": 0.2899232655763626
+        },
+        {
+          "class_name": "stop_sign",
+          "support": 10,
+          "recall": 0.8,
+          "mean_true_class_probability": 0.4221421953290701,
+          "mean_incorrect_confidence": 0.37416625022888184
+        },
+        {
+          "class_name": "trilobite",
+          "support": 12,
+          "recall": 0.75,
+          "mean_true_class_probability": 0.48653408450384933,
+          "mean_incorrect_confidence": 0.33313175042470294
+        },
+        {
+          "class_name": "umbrella",
+          "support": 11,
+          "recall": 0.2727272727272727,
+          "mean_true_class_probability": 0.1669706359336322,
+          "mean_incorrect_confidence": 0.2640111241489649
+        },
+        {
+          "class_name": "watch",
+          "support": 20,
+          "recall": 0.5,
+          "mean_true_class_probability": 0.33618184011429547,
+          "mean_incorrect_confidence": 0.3184411212801933
+        },
+        {
+          "class_name": "yin_yang",
+          "support": 10,
+          "recall": 1.0,
+          "mean_true_class_probability": 0.7137288570404052,
+          "mean_incorrect_confidence": null
+        }
+      ]
+    }
+  ],
+  "cpu_audit_sha256": "745037042fce9463ed77cf7eb52f5110c1a165be36fde4eb4bf52e06b4cdc22d",
+  "saved_prediction_rows_read": 4521,
+  "model_forward_calls": 0,
+  "dataset_image_arrays_read": 0,
+  "test_arrays_read": 0,
+  "test_evaluations": 0,
+  "gpu_used": false,
+  "scope": "Descriptive fixed ECE10/true-probability stats from already saved selected EMA train/val predictions only; no calibration fit, remapping or selection change",
+  "fixed_window_mapping_checks": [
+    {
+      "case": "L4_rho03_mixup02",
+      "all20_train_diagonal_unique_row_maxima": true,
+      "minimum_train_recall": 0.7215189873417721,
+      "minimum_diagonal_count_advantage": 27
+    },
+    {
+      "case": "L4_rho03_mixup04",
+      "all20_train_diagonal_unique_row_maxima": true,
+      "minimum_train_recall": 0.569620253164557,
+      "minimum_diagonal_count_advantage": 19
+    },
+    {
+      "case": "L4_rho03_mixup06",
+      "all20_train_diagonal_unique_row_maxima": true,
+      "minimum_train_recall": 0.6582278481012658,
+      "minimum_diagonal_count_advantage": 29
+    }
+  ],
+  "published_saved_audit_sha256": "1ca908fac80195841a9edd1fde99bbf4f139caa39bffd942e02b257b70febc71"
+}
