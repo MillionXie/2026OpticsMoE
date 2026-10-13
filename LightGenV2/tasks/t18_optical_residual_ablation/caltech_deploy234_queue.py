@@ -14,10 +14,11 @@ def gpu_available(uuid):
 def suite(a):
     assert os.environ.get('CUDA_VISIBLE_DEVICES')==''
     profile=t.read(t.PROFILE);assert profile['maximum_gpu_children']==3
+    check=t.read(a.preflight);assert check['passed'] and check['all_six_parity'] and check['test_arrays_read']==0
     manifest=t.manifest(a.data);src=t.sources();commit=subprocess.check_output(['git','rev-parse','HEAD'],cwd=t.ROOT,text=True).strip();t.verify_sources(src,commit)
     a.out.mkdir(parents=True,exist_ok=False)
     t.save(a.out/'training_started.json',dict(pid=os.getpid(),time_unix=time.time(),sources=src,git_commit=commit,gpu_indices=[0,1,2,4],maximum_gpu_children=3,A100_allowed=False,data_sha256=manifest['cache_sha256']),exclusive=True)
-    t.save(a.out/'metadata.json',dict(pid=os.getpid(),command=sys.argv,sources=src,git_commit=commit,config=profile,test_evaluations=0))
+    t.save(a.out/'metadata.json',dict(pid=os.getpid(),command=sys.argv,sources=src,git_commit=commit,config=profile,preflight_sha256=t.sha(a.preflight),test_evaluations=0))
     jobs=[dict(depth=d,rho=r,name=f'L{d}_'+('rho03' if r else 'rho0')) for r in (.3,0.) for d in (4,3,2)]
     pending=jobs[:];active={};completed=[];failures=[];start=time.time()
     while active or (pending and not failures):
@@ -45,4 +46,4 @@ def suite(a):
     assert not failures,failures
 
 if __name__=='__main__':
-    p=argparse.ArgumentParser();p.add_argument('--out',type=Path,required=True);p.add_argument('--data',type=Path,required=True);suite(p.parse_args())
+    p=argparse.ArgumentParser();p.add_argument('--out',type=Path,required=True);p.add_argument('--data',type=Path,required=True);p.add_argument('--preflight',type=Path,required=True);suite(p.parse_args())
