@@ -10,6 +10,8 @@
 [出口合同和真实检查](reports/caltech_repair234_20261014/matched_export.md)。
 2/3层独立验证入口已准备，尚未启动：须四层合格候选完整CPU审核、选中训练权重原生BMP通过且父子实际退出；每深度仅一个rho.3配置，不新增正则搜索。
 [条件、预算和预先逐类门槛](CALTECH_REPAIR23_PROTOCOL_20261014.md)。
+Linux真实CPU检查提前queue/fit/native均在创建输出前被门槛拒绝，旧GPU进程未变、forward/test0；这不等于已完成深度训练。
+[入口准备与实际拒绝收据](reports/caltech_repair234_20261014/depth_validation_preparation.md)。
 
 ## 全九组消融已完成并通过CPU审核（2026-10-14）
 
