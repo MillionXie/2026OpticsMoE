@@ -1,0 +1,8 @@
+{
+  "dataset":"Caltech101_human_replaced3_development20_20261014",
+  "classes":20,"minimum_source_images":60,"maximum_train_groups":100,"maximum_validation_groups":20,"minimum_test_groups":8,"split_seed":20261013,
+  "archive_path":"/DATA/DATA1/guest3/t18_caltech101_20261011/caltech-101.zip",
+  "author_record_path":"/DATA/DATA1/guest3/t18_caltech101_20261011/author_record.json",
+  "parent_manifests":["/DATA/DATA1/guest3/t18_caltech101_20261011/data_manifest.json","/DATA/DATA1/guest3/t18_caltech20_20261012/data_manifest.json","/DATA/DATA1/guest3/t18_caltech_selected20_20261012/data_manifest.json"],
+  "selection_policy":"Human excludes Faces/Motorbikes/airplanes based on prior development failure; preserve other17 classes. Choose exactly3 replacements from >=60-photo pool using original fixed train-only RGB16/finite-difference centroids and validation elimination, never replacement test pixels or optical test scores. Existing train/val IDs pinned; no previous fitting/validation sample enters new test. New task remains development; do not retroactively rescore old tests."
+}
