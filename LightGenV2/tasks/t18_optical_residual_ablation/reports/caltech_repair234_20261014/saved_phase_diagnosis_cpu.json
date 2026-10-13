@@ -1,0 +1,2517 @@
+{
+  "passed": true,
+  "checks": [
+    {
+      "case": "L4_rho03_mixup02",
+      "selected_epoch": 137,
+      "checkpoint_sha256": "dbfa9dade51a1178baec67636ae1c693dcdf5f91cd24ec1d13b6850074be3f18",
+      "last_snapshot_sha256": "4b053b8641c683d49aa54109bfa0769db458c04fba95740f16d05e4ee9117d4d",
+      "initial_parameter_sha256": "f7de57b62eb33f6531128061deaa9ec2fb1bacbeea7ba02ecc50528189e60f37",
+      "phase_tensors": 11,
+      "main_stages": 4,
+      "captures_including_router": 5,
+      "parameters_per_training_image": 729.1749598715891,
+      "states": {
+        "initial": {
+          "tensors": {
+            "raw_router": {
+              "shape": [
+                224,
+                224
+              ],
+              "parameters": 50176,
+              "raw_min": -0.0999804139137268,
+              "raw_max": 0.09998784214258194,
+              "raw_std": 0.05779052525758743,
+              "phase_standard_deviation_rad": 0.09073185920715332,
+              "phase_tv_by_axis": [
+                0.01647067815065384,
+                0.016587108373641968
+              ],
+              "phase_tv_mean": 0.016528893262147903,
+              "modulation_amplitude_mean": 1.0,
+              "modulation_amplitude_min": 0.9999999403953552,
+              "modulation_amplitude_max": 1.0,
+              "quantized_phase_levels": 14,
+              "phase_floor_error_max_rad": 0.024542570114135742,
+              "phase_floor_error_mean_rad": 0.012278234586119652,
+              "modulation_high_frequency_fraction_above_1over8_cycle_per_pixel": 0.9507810547246092,
+              "modulation_variance": 0.00820524708137273
+            },
+            "phase_sets.0": {
+              "shape": [
+                224,
+                224
+              ],
+              "parameters": 50176,
+              "raw_min": -0.09999429434537888,
+              "raw_max": 0.09999968111515045,
+              "raw_std": 0.05781932547688484,
+              "phase_standard_deviation_rad": 0.09077704697847366,
+              "phase_tv_by_axis": [
+                0.01642230898141861,
+                0.01648744009435177
+              ],
+              "phase_tv_mean": 0.01645487453788519,
+              "modulation_amplitude_mean": 0.4021501839160919,
+              "modulation_amplitude_min": 0.3999999463558197,
+              "modulation_amplitude_max": 0.4064015746116638,
+              "quantized_phase_levels": 24,
+              "phase_floor_error_max_rad": 0.02454311028122902,
+              "phase_floor_error_mean_rad": 0.012276708148419857,
+              "modulation_high_frequency_fraction_above_1over8_cycle_per_pixel": 0.9497750200505412,
+              "modulation_variance": 0.004024565644482295
+            },
+            "phase_sets.1": {
+              "shape": [
+                224,
+                224
+              ],
+              "parameters": 50176,
+              "raw_min": -0.09999407827854156,
+              "raw_max": 0.09999722242355347,
+              "raw_std": 0.05764086917042732,
+              "phase_standard_deviation_rad": 0.09049692749977112,
+              "phase_tv_by_axis": [
+                0.01642574369907379,
+                0.016349125653505325
+              ],
+              "phase_tv_mean": 0.01638743467628956,
+              "modulation_amplitude_mean": 0.402136892080307,
+              "modulation_amplitude_min": 0.3999999463558197,
+              "modulation_amplitude_max": 0.40640124678611755,
+              "quantized_phase_levels": 24,
+              "phase_floor_error_max_rad": 0.024541204795241356,
+              "phase_floor_error_mean_rad": 0.012271357700228691,
+              "modulation_high_frequency_fraction_above_1over8_cycle_per_pixel": 0.9491343213573793,
+              "modulation_variance": 0.003999823098786208
+            },
+            "phase_sets.2": {
+              "shape": [
+                224,
+                224
+              ],
+              "parameters": 50176,
+              "raw_min": -0.09999994188547134,
+              "raw_max": 0.09999436140060425,
+              "raw_std": 0.05787571519613266,
+              "phase_standard_deviation_rad": 0.09086555987596512,
+              "phase_tv_by_axis": [
+                0.016366520896553993,
+                0.016379207372665405
+              ],
+              "phase_tv_mean": 0.0163728641346097,
+              "modulation_amplitude_mean": 0.4021542966365814,
+              "modulation_amplitude_min": 0.3999999463558197,
+              "modulation_amplitude_max": 0.4064016044139862,
+              "quantized_phase_levels": 24,
+              "phase_floor_error_max_rad": 0.02454311028122902,
+              "phase_floor_error_mean_rad": 0.012196210213005543,
+              "modulation_high_frequency_fraction_above_1over8_cycle_per_pixel": 0.9504532556755284,
+              "modulation_variance": 0.004032399974727061
+            },
+            "phase_sets.3": {
+              "shape": [
+                224,
+                224
+              ],
+              "parameters": 50176,
+              "raw_min": -0.09999878704547882,
+              "raw_max": 0.09999962151050568,
+              "raw_std": 0.05761680752038956,
+              "phase_standard_deviation_rad": 0.09045907855033875,
+              "phase_tv_by_axis": [
+                0.01623413898050785,
+                0.01642044633626938
+              ],
+              "phase_tv_mean": 0.016327292658388615,
+              "modulation_amplitude_mean": 0.4021351933479309,
+              "modulation_amplitude_min": 0.3999999463558197,
+              "modulation_amplitude_max": 0.4064015746116638,
+              "quantized_phase_levels": 24,
+              "phase_floor_error_max_rad": 0.02454311028122902,
+              "phase_floor_error_mean_rad": 0.012357423081994057,
+              "modulation_high_frequency_fraction_above_1over8_cycle_per_pixel": 0.9521548813324142,
+              "modulation_variance": 0.0039964776704429755
+            },
+            "phase_sets.4": {
+              "shape": [
+                478,
+                478
+              ],
+              "parameters": 228484,
+              "raw_min": -0.09999974071979523,
+              "raw_max": 0.09999974071979523,
+              "raw_std": 0.05780487880110741,
+              "phase_standard_deviation_rad": 0.09075433015823364,
+              "phase_tv_by_axis": [
+                0.016497233882546425,
+                0.01648985594511032
+              ],
+              "phase_tv_mean": 0.016493544913828373,
+              "modulation_amplitude_mean": 0.4021490514278412,
+              "modulation_amplitude_min": 0.3999999463558197,
+              "modulation_amplitude_max": 0.4064016044139862,
+              "quantized_phase_levels": 24,
+              "phase_floor_error_max_rad": 0.024543285369873047,
+              "phase_floor_error_mean_rad": 0.012290849350392818,
+              "modulation_high_frequency_fraction_above_1over8_cycle_per_pixel": 0.9507373904697763,
+              "modulation_variance": 0.004022552396550621
+            },
+            "phase_sets.5": {
+              "shape": [
+                224,
+                224
+              ],
+              "parameters": 50176,
+              "raw_min": -0.09999872744083405,
+              "raw_max": 0.09999878704547882,
+              "raw_std": 0.05788738280534744,
+              "phase_standard_deviation_rad": 0.09088382124900818,
+              "phase_tv_by_axis": [
+                0.01657196693122387,
+                0.016550760716199875
+              ],
+              "phase_tv_mean": 0.016561363823711872,
+              "modulation_amplitude_mean": 0.40215519070625305,
+              "modulation_amplitude_min": 0.3999999463558197,
+              "modulation_amplitude_max": 0.40640148520469666,
+              "quantized_phase_levels": 24,
+              "phase_floor_error_max_rad": 0.02454311028122902,
+              "phase_floor_error_mean_rad": 0.012338858097791672,
+              "modulation_high_frequency_fraction_above_1over8_cycle_per_pixel": 0.9506674777504606,
+              "modulation_variance": 0.004034010806434728
+            },
+            "phase_sets.6": {
+              "shape": [
+                224,
+                224
+              ],
+              "parameters": 50176,
+              "raw_min": -0.09999429434537888,
+              "raw_max": 0.09999401867389679,
+              "raw_std": 0.057710278779268265,
+              "phase_standard_deviation_rad": 0.09060578793287277,
+              "phase_tv_by_axis": [
+                0.016590628772974014,
+                0.016352931037545204
+              ],
+              "phase_tv_mean": 0.01647177990525961,
+              "modulation_amplitude_mean": 0.4021420478820801,
+              "modulation_amplitude_min": 0.3999999463558197,
+              "modulation_amplitude_max": 0.4064008891582489,
+              "quantized_phase_levels": 24,
+              "phase_floor_error_max_rad": 0.024543285369873047,
+              "phase_floor_error_mean_rad": 0.012241656892001629,
+              "modulation_high_frequency_fraction_above_1over8_cycle_per_pixel": 0.9512402444003555,
+              "modulation_variance": 0.004009419710965794
+            },
+            "phase_sets.7": {
+              "shape": [
+                224,
+                224
+              ],
+              "parameters": 50176,
+              "raw_min": -0.09999443590641022,
+              "raw_max": 0.09999968856573105,
+              "raw_std": 0.05773499608039856,
+              "phase_standard_deviation_rad": 0.09064473956823349,
+              "phase_tv_by_axis": [
+                0.016344411298632622,
+                0.016375938430428505
+              ],
+              "phase_tv_mean": 0.016360174864530563,
+              "modulation_amplitude_mean": 0.40214407444000244,
+              "modulation_amplitude_min": 0.3999999463558197,
+              "modulation_amplitude_max": 0.4064015746116638,
+              "quantized_phase_levels": 24,
+              "phase_floor_error_max_rad": 0.024542570114135742,
+              "phase_floor_error_mean_rad": 0.012230311520397663,
+              "modulation_high_frequency_fraction_above_1over8_cycle_per_pixel": 0.9523630091266988,
+              "modulation_variance": 0.004012877388198725
+            },
+            "phase_sets.8": {
+              "shape": [
+                224,
+                224
+              ],
+              "parameters": 50176,
+              "raw_min": -0.09999821335077286,
+              "raw_max": 0.09999474138021469,
+              "raw_std": 0.057946231216192245,
+              "phase_standard_deviation_rad": 0.09097611159086227,
+              "phase_tv_by_axis": [
+                0.016517363488674164,
+                0.01643480733036995
+              ],
+              "phase_tv_mean": 0.016476085409522057,
+              "modulation_amplitude_mean": 0.40215954184532166,
+              "modulation_amplitude_min": 0.3999999463558197,
+              "modulation_amplitude_max": 0.4064013957977295,
+              "quantized_phase_levels": 24,
+              "phase_floor_error_max_rad": 0.024542570114135742,
+              "phase_floor_error_mean_rad": 0.012298881076276302,
+              "modulation_high_frequency_fraction_above_1over8_cycle_per_pixel": 0.9516411294357435,
+              "modulation_variance": 0.0040421801441743775
+            },
+            "phase_sets.9": {
+              "shape": [
+                478,
+                478
+              ],
+              "parameters": 228484,
+              "raw_min": -0.09999910742044449,
+              "raw_max": 0.09999962896108627,
+              "raw_std": 0.05789145454764366,
+              "phase_standard_deviation_rad": 0.09089018404483795,
+              "phase_tv_by_axis": [
+                0.01656312681734562,
+                0.016539182513952255
+              ],
+              "phase_tv_mean": 0.016551154665648937,
+              "modulation_amplitude_mean": 0.40215542912483215,
+              "modulation_amplitude_min": 0.3999999463558197,
+              "modulation_amplitude_max": 0.4064016044139862,
+              "quantized_phase_levels": 24,
+              "phase_floor_error_max_rad": 0.02454352378845215,
+              "phase_floor_error_mean_rad": 0.012263295240700245,
+              "modulation_high_frequency_fraction_above_1over8_cycle_per_pixel": 0.9518788245761948,
+              "modulation_variance": 0.004034570858875535
+            }
+          },
+          "parameter_count": 908552,
+          "phase_smoothness_actual_formula": 0.016453223895620216,
+          "phase_regularizer_coefficient": 0.005,
+          "weighted_phase_regularizer": 8.226611947810108e-05
+        },
+        "selected_ema": {
+          "tensors": {
+            "raw_router": {
+              "shape": [
+                224,
+                224
+              ],
+              "parameters": 50176,
+              "raw_min": -1.8593240976333618,
+              "raw_max": 1.8676302433013916,
+              "raw_std": 0.3418181240558624,
+              "phase_standard_deviation_rad": 0.5191984176635742,
+              "phase_tv_by_axis": [
+                0.30496734380722046,
+                0.34184926748275757
+              ],
+              "phase_tv_mean": 0.323408305644989,
+              "modulation_amplitude_mean": 1.0,
+              "modulation_amplitude_min": 0.9999999403953552,
+              "modulation_amplitude_max": 1.0,
+              "quantized_phase_levels": 177,
+              "phase_floor_error_max_rad": 0.024542633444070816,
+              "phase_floor_error_mean_rad": 0.012283786199986935,
+              "modulation_high_frequency_fraction_above_1over8_cycle_per_pixel": 0.6119369872393526,
+              "modulation_variance": 0.23503990258248575
+            },
+            "phase_sets.0": {
+              "shape": [
+                224,
+                224
+              ],
+              "parameters": 50176,
+              "raw_min": -1.2500709295272827,
+              "raw_max": 1.3840372562408447,
+              "raw_std": 0.3035798966884613,
+              "phase_standard_deviation_rad": 0.46585360169410706,
+              "phase_tv_by_axis": [
+                0.4589168131351471,
+                0.4000627398490906
+              ],
+              "phase_tv_mean": 0.42948977649211884,
+              "modulation_amplitude_mean": 0.4471109211444855,
+              "modulation_amplitude_min": 0.3999999463558197,
+              "modulation_amplitude_max": 0.8419500589370728,
+              "quantized_phase_levels": 176,
+              "phase_floor_error_max_rad": 0.024542633444070816,
+              "phase_floor_error_mean_rad": 0.012277023866772652,
+              "modulation_high_frequency_fraction_above_1over8_cycle_per_pixel": 0.9111456625405481,
+              "modulation_variance": 0.0956148866560825
+            },
+            "phase_sets.1": {
+              "shape": [
+                224,
+                224
+              ],
+              "parameters": 50176,
+              "raw_min": -1.4489341974258423,
+              "raw_max": 1.2488813400268555,
+              "raw_std": 0.3021502196788788,
+              "phase_standard_deviation_rad": 0.46379461884498596,
+              "phase_tv_by_axis": [
+                0.416015625,
+                0.37960657477378845
+              ],
+              "phase_tv_mean": 0.3978110998868942,
+              "modulation_amplitude_mean": 0.4467765986919403,
+              "modulation_amplitude_min": 0.3999999463558197,
+              "modulation_amplitude_max": 0.8568581342697144,
+              "quantized_phase_levels": 173,
+              "phase_floor_error_max_rad": 0.024543046951293945,
+              "phase_floor_error_mean_rad": 0.012196513824164867,
+              "modulation_high_frequency_fraction_above_1over8_cycle_per_pixel": 0.8871867086292903,
+              "modulation_variance": 0.0948744522507719
+            },
+            "phase_sets.2": {
+              "shape": [
+                224,
+                224
+              ],
+              "parameters": 50176,
+              "raw_min": -1.7404305934906006,
+              "raw_max": 1.7433561086654663,
+              "raw_std": 0.3563169240951538,
+              "phase_standard_deviation_rad": 0.5426983833312988,
+              "phase_tv_by_axis": [
+                0.6537886261940002,
+                0.5607375502586365
+              ],
+              "phase_tv_mean": 0.6072630882263184,
+              "modulation_amplitude_mean": 0.46126291155815125,
+              "modulation_amplitude_min": 0.3999999463558197,
+              "modulation_amplitude_max": 0.9106259346008301,
+              "quantized_phase_levels": 192,
+              "phase_floor_error_max_rad": 0.02454352378845215,
+              "phase_floor_error_mean_rad": 0.012288869358599186,
+              "modulation_high_frequency_fraction_above_1over8_cycle_per_pixel": 0.9046370279943682,
+              "modulation_variance": 0.12542703911303477
+            },
+            "phase_sets.3": {
+              "shape": [
+                224,
+                224
+              ],
+              "parameters": 50176,
+              "raw_min": -1.6139329671859741,
+              "raw_max": 1.3773925304412842,
+              "raw_std": 0.3239087164402008,
+              "phase_standard_deviation_rad": 0.4948351979255676,
+              "phase_tv_by_axis": [
+                0.5002123713493347,
+                0.4593167006969452
+              ],
+              "phase_tv_mean": 0.47976453602313995,
+              "modulation_amplitude_mean": 0.45187440514564514,
+              "modulation_amplitude_min": 0.3999999463558197,
+              "modulation_amplitude_max": 0.8896195292472839,
+              "quantized_phase_levels": 183,
+              "phase_floor_error_max_rad": 0.024543046951293945,
+              "phase_floor_error_mean_rad": 0.012246605940163136,
+              "modulation_high_frequency_fraction_above_1over8_cycle_per_pixel": 0.9028223378398786,
+              "modulation_variance": 0.10620855664698574
+            },
+            "phase_sets.4": {
+              "shape": [
+                478,
+                478
+              ],
+              "parameters": 228484,
+              "raw_min": -2.7813329696655273,
+              "raw_max": 2.758514404296875,
+              "raw_std": 0.47596901655197144,
+              "phase_standard_deviation_rad": 0.7044809460639954,
+              "phase_tv_by_axis": [
+                0.9457471966743469,
+                0.9644120335578918
+              ],
+              "phase_tv_mean": 0.9550796151161194,
+              "modulation_amplitude_mean": 0.49170735478401184,
+              "modulation_amplitude_min": 0.3999999463558197,
+              "modulation_amplitude_max": 0.9859493970870972,
+              "quantized_phase_levels": 232,
+              "phase_floor_error_max_rad": 0.02454352378845215,
+              "phase_floor_error_mean_rad": 0.012285307049751282,
+              "modulation_high_frequency_fraction_above_1over8_cycle_per_pixel": 0.906839509831128,
+              "modulation_variance": 0.19165834844898916
+            },
+            "phase_sets.5": {
+              "shape": [
+                224,
+                224
+              ],
+              "parameters": 50176,
+              "raw_min": -2.5548057556152344,
+              "raw_max": 3.127943992614746,
+              "raw_std": 0.3840280771255493,
+              "phase_standard_deviation_rad": 0.5611894726753235,
+              "phase_tv_by_axis": [
+                0.43060845136642456,
+                0.406556099653244
+              ],
+              "phase_tv_mean": 0.4185822755098343,
+              "modulation_amplitude_mean": 0.46033525466918945,
+              "modulation_amplitude_min": 0.3999999463558197,
+              "modulation_amplitude_max": 0.9927142262458801,
+              "quantized_phase_levels": 236,
+              "phase_floor_error_max_rad": 0.024543404579162598,
+              "phase_floor_error_mean_rad": 0.012310266494750977,
+              "modulation_high_frequency_fraction_above_1over8_cycle_per_pixel": 0.6193868949981847,
+              "modulation_variance": 0.12664505278660873
+            },
+            "phase_sets.6": {
+              "shape": [
+                224,
+                224
+              ],
+              "parameters": 50176,
+              "raw_min": -2.443828821182251,
+              "raw_max": 2.931774377822876,
+              "raw_std": 0.3607307970523834,
+              "phase_standard_deviation_rad": 0.5373063683509827,
+              "phase_tv_by_axis": [
+                0.3558182716369629,
+                0.33537915349006653
+              ],
+              "phase_tv_mean": 0.3455987125635147,
+              "modulation_amplitude_mean": 0.45704546570777893,
+              "modulation_amplitude_min": 0.3999999463558197,
+              "modulation_amplitude_max": 0.9894177317619324,
+              "quantized_phase_levels": 224,
+              "phase_floor_error_max_rad": 0.024542808532714844,
+              "phase_floor_error_mean_rad": 0.01224610023200512,
+              "modulation_high_frequency_fraction_above_1over8_cycle_per_pixel": 0.6199513775960038,
+              "modulation_variance": 0.11921848129250588
+            },
+            "phase_sets.7": {
+              "shape": [
+                224,
+                224
+              ],
+              "parameters": 50176,
+              "raw_min": -2.8413867950439453,
+              "raw_max": 3.674999237060547,
+              "raw_std": 0.40585947036743164,
+              "phase_standard_deviation_rad": 0.5856030583381653,
+              "phase_tv_by_axis": [
+                0.47058969736099243,
+                0.4853822588920593
+              ],
+              "phase_tv_mean": 0.4779859781265259,
+              "modulation_amplitude_mean": 0.4643537700176239,
+              "modulation_amplitude_min": 0.3999999463558197,
+              "modulation_amplitude_max": 0.9974682927131653,
+              "quantized_phase_levels": 233,
+              "phase_floor_error_max_rad": 0.024542927742004395,
+              "phase_floor_error_mean_rad": 0.01228261273354292,
+              "modulation_high_frequency_fraction_above_1over8_cycle_per_pixel": 0.7169636907103023,
+              "modulation_variance": 0.13627021013351168
+            },
+            "phase_sets.8": {
+              "shape": [
+                224,
+                224
+              ],
+              "parameters": 50176,
+              "raw_min": -3.5113065242767334,
+              "raw_max": 2.5459465980529785,
+              "raw_std": 0.3907279968261719,
+              "phase_standard_deviation_rad": 0.5700361728668213,
+              "phase_tv_by_axis": [
+                0.3650709390640259,
+                0.37445464730262756
+              ],
+              "phase_tv_mean": 0.3697627931833267,
+              "modulation_amplitude_mean": 0.46060648560523987,
+              "modulation_amplitude_min": 0.3999999463558197,
+              "modulation_amplitude_max": 0.9965193271636963,
+              "quantized_phase_levels": 233,
+              "phase_floor_error_max_rad": 0.024542808532714844,
+              "phase_floor_error_mean_rad": 0.012296737171709538,
+              "modulation_high_frequency_fraction_above_1over8_cycle_per_pixel": 0.5663042380440034,
+              "modulation_variance": 0.12935783196210932
+            },
+            "phase_sets.9": {
+              "shape": [
+                478,
+                478
+              ],
+              "parameters": 228484,
+              "raw_min": -5.833355903625488,
+              "raw_max": 5.062410354614258,
+              "raw_std": 0.6972952485084534,
+              "phase_standard_deviation_rad": 0.8409777283668518,
+              "phase_tv_by_axis": [
+                1.0523160696029663,
+                1.0667895078659058
+              ],
+              "phase_tv_mean": 1.059552788734436,
+              "modulation_amplitude_mean": 0.4936697781085968,
+              "modulation_amplitude_min": 0.3999999463558197,
+              "modulation_amplitude_max": 0.9999646544456482,
+              "quantized_phase_levels": 255,
+              "phase_floor_error_max_rad": 0.02454352378845215,
+              "phase_floor_error_mean_rad": 0.012264163233339787,
+              "modulation_high_frequency_fraction_above_1over8_cycle_per_pixel": 0.6324901688681552,
+              "modulation_variance": 0.21647874818561708
+            }
+          },
+          "parameter_count": 908552,
+          "phase_smoothness_actual_formula": 0.5331180881370198,
+          "phase_regularizer_coefficient": 0.005,
+          "weighted_phase_regularizer": 0.002665590440685099
+        },
+        "last_ema": {
+          "tensors": {
+            "raw_router": {
+              "shape": [
+                224,
+                224
+              ],
+              "parameters": 50176,
+              "raw_min": -1.872055172920227,
+              "raw_max": 1.8516353368759155,
+              "raw_std": 0.3468206524848938,
+              "phase_standard_deviation_rad": 0.5264754891395569,
+              "phase_tv_by_axis": [
+                0.3099508285522461,
+                0.3505835235118866
+              ],
+              "phase_tv_mean": 0.33026717603206635,
+              "modulation_amplitude_mean": 1.0,
+              "modulation_amplitude_min": 0.9999999403953552,
+              "modulation_amplitude_max": 1.0,
+              "quantized_phase_levels": 183,
+              "phase_floor_error_max_rad": 0.024542808532714844,
+              "phase_floor_error_mean_rad": 0.01224251464009285,
+              "modulation_high_frequency_fraction_above_1over8_cycle_per_pixel": 0.6113510291382414,
+              "modulation_variance": 0.24090137988956614
+            },
+            "phase_sets.0": {
+              "shape": [
+                224,
+                224
+              ],
+              "parameters": 50176,
+              "raw_min": -1.2741948366165161,
+              "raw_max": 1.4303715229034424,
+              "raw_std": 0.308003306388855,
+              "phase_standard_deviation_rad": 0.47230201959609985,
+              "phase_tv_by_axis": [
+                0.47068825364112854,
+                0.4113297462463379
+              ],
+              "phase_tv_mean": 0.4410089999437332,
+              "modulation_amplitude_mean": 0.44822296500205994,
+              "modulation_amplitude_min": 0.3999999463558197,
+              "modulation_amplitude_max": 0.8527154326438904,
+              "quantized_phase_levels": 175,
+              "phase_floor_error_max_rad": 0.02454311028122902,
+              "phase_floor_error_mean_rad": 0.012255728244781494,
+              "modulation_high_frequency_fraction_above_1over8_cycle_per_pixel": 0.9109780169921566,
+              "modulation_variance": 0.09799124310990538
+            },
+            "phase_sets.1": {
+              "shape": [
+                224,
+                224
+              ],
+              "parameters": 50176,
+              "raw_min": -1.4292227029800415,
+              "raw_max": 1.2724026441574097,
+              "raw_std": 0.3067432940006256,
+              "phase_standard_deviation_rad": 0.47053688764572144,
+              "phase_tv_by_axis": [
+                0.42891204357147217,
+                0.3913041651248932
+              ],
+              "phase_tv_mean": 0.4101081043481827,
+              "modulation_amplitude_mean": 0.4479530453681946,
+              "modulation_amplitude_min": 0.3999999463558197,
+              "modulation_amplitude_max": 0.8524558544158936,
+              "quantized_phase_levels": 176,
+              "phase_floor_error_max_rad": 0.024543285369873047,
+              "phase_floor_error_mean_rad": 0.012334431521594524,
+              "modulation_high_frequency_fraction_above_1over8_cycle_per_pixel": 0.8879153680807765,
+              "modulation_variance": 0.09736897329606956
+            },
+            "phase_sets.2": {
+              "shape": [
+                224,
+                224
+              ],
+              "parameters": 50176,
+              "raw_min": -1.7594863176345825,
+              "raw_max": 1.775875449180603,
+              "raw_std": 0.36454203724861145,
+              "phase_standard_deviation_rad": 0.5544846653938293,
+              "phase_tv_by_axis": [
+                0.6827227473258972,
+                0.5848787426948547
+              ],
+              "phase_tv_mean": 0.633800745010376,
+              "modulation_amplitude_mean": 0.46349307894706726,
+              "modulation_amplitude_min": 0.3999999463558197,
+              "modulation_amplitude_max": 0.9153198003768921,
+              "quantized_phase_levels": 193,
+              "phase_floor_error_max_rad": 0.024542633444070816,
+              "phase_floor_error_mean_rad": 0.012270404025912285,
+              "modulation_high_frequency_fraction_above_1over8_cycle_per_pixel": 0.9047151601466374,
+              "modulation_variance": 0.1301790356739919
+            },
+            "phase_sets.3": {
+              "shape": [
+                224,
+                224
+              ],
+              "parameters": 50176,
+              "raw_min": -1.5858811140060425,
+              "raw_max": 1.41512930393219,
+              "raw_std": 0.32800430059432983,
+              "phase_standard_deviation_rad": 0.5007647275924683,
+              "phase_tv_by_axis": [
+                0.5125504732131958,
+                0.4712572991847992
+              ],
+              "phase_tv_mean": 0.4919038861989975,
+              "modulation_amplitude_mean": 0.45293325185775757,
+              "modulation_amplitude_min": 0.3999999463558197,
+              "modulation_amplitude_max": 0.8845447301864624,
+              "quantized_phase_levels": 183,
+              "phase_floor_error_max_rad": 0.024542154744267464,
+              "phase_floor_error_mean_rad": 0.012253032997250557,
+              "modulation_high_frequency_fraction_above_1over8_cycle_per_pixel": 0.9034284164020863,
+              "modulation_variance": 0.10847150141684214
+            },
+            "phase_sets.4": {
+              "shape": [
+                478,
+                478
+              ],
+              "parameters": 228484,
+              "raw_min": -2.8557839393615723,
+              "raw_max": 2.7909436225891113,
+              "raw_std": 0.487702876329422,
+              "phase_standard_deviation_rad": 0.7197048664093018,
+              "phase_tv_by_axis": [
+                0.9898906946182251,
+                1.0091100931167603
+              ],
+              "phase_tv_mean": 0.9995003938674927,
+              "modulation_amplitude_mean": 0.4947248101234436,
+              "modulation_amplitude_min": 0.3999999463558197,
+              "modulation_amplitude_max": 0.9877845644950867,
+              "quantized_phase_levels": 233,
+              "phase_floor_error_max_rad": 0.024543404579162598,
+              "phase_floor_error_mean_rad": 0.01226483378559351,
+              "modulation_high_frequency_fraction_above_1over8_cycle_per_pixel": 0.9079669475838762,
+              "modulation_variance": 0.19808159264447475
+            },
+            "phase_sets.5": {
+              "shape": [
+                224,
+                224
+              ],
+              "parameters": 50176,
+              "raw_min": -2.597607374191284,
+              "raw_max": 3.2661237716674805,
+              "raw_std": 0.3896607756614685,
+              "phase_standard_deviation_rad": 0.5669309496879578,
+              "phase_tv_by_axis": [
+                0.43926239013671875,
+                0.41237956285476685
+              ],
+              "phase_tv_mean": 0.4258209764957428,
+              "modulation_amplitude_mean": 0.46115338802337646,
+              "modulation_amplitude_min": 0.3999999463558197,
+              "modulation_amplitude_max": 0.9944102168083191,
+              "quantized_phase_levels": 237,
+              "phase_floor_error_max_rad": 0.024542808532714844,
+              "phase_floor_error_mean_rad": 0.012240537442266941,
+              "modulation_high_frequency_fraction_above_1over8_cycle_per_pixel": 0.6164348641686179,
+              "modulation_variance": 0.12851339625237948
+            },
+            "phase_sets.6": {
+              "shape": [
+                224,
+                224
+              ],
+              "parameters": 50176,
+              "raw_min": -2.503473997116089,
+              "raw_max": 2.8256781101226807,
+              "raw_std": 0.36624300479888916,
+              "phase_standard_deviation_rad": 0.5437790155410767,
+              "phase_tv_by_axis": [
+                0.3607083857059479,
+                0.33987873792648315
+              ],
+              "phase_tv_mean": 0.3502935618162155,
+              "modulation_amplitude_mean": 0.4579736292362213,
+              "modulation_amplitude_min": 0.3999999463558197,
+              "modulation_amplitude_max": 0.9870722889900208,
+              "quantized_phase_levels": 226,
+              "phase_floor_error_max_rad": 0.02454311028122902,
+              "phase_floor_error_mean_rad": 0.01227473746985197,
+              "modulation_high_frequency_fraction_above_1over8_cycle_per_pixel": 0.6152310448626267,
+              "modulation_variance": 0.12137849066354917
+            },
+            "phase_sets.7": {
+              "shape": [
+                224,
+                224
+              ],
+              "parameters": 50176,
+              "raw_min": -2.903794288635254,
+              "raw_max": 3.8608243465423584,
+              "raw_std": 0.4125255346298218,
+              "phase_standard_deviation_rad": 0.5914506912231445,
+              "phase_tv_by_axis": [
+                0.47683560848236084,
+                0.49383798241615295
+              ],
+              "phase_tv_mean": 0.4853367954492569,
+              "modulation_amplitude_mean": 0.46508917212486267,
+              "modulation_amplitude_min": 0.3999999463558197,
+              "modulation_amplitude_max": 0.9982389807701111,
+              "quantized_phase_levels": 236,
+              "phase_floor_error_max_rad": 0.024542808532714844,
+              "phase_floor_error_mean_rad": 0.012283996678888798,
+              "modulation_high_frequency_fraction_above_1over8_cycle_per_pixel": 0.715301474358149,
+              "modulation_variance": 0.13811742747272873
+            },
+            "phase_sets.8": {
+              "shape": [
+                224,
+                224
+              ],
+              "parameters": 50176,
+              "raw_min": -3.6082265377044678,
+              "raw_max": 2.724355459213257,
+              "raw_std": 0.3997090458869934,
+              "phase_standard_deviation_rad": 0.5796677470207214,
+              "phase_tv_by_axis": [
+                0.3736995458602905,
+                0.3832358419895172
+              ],
+              "phase_tv_mean": 0.37846769392490387,
+              "modulation_amplitude_mean": 0.46189117431640625,
+              "modulation_amplitude_min": 0.3999999463558197,
+              "modulation_amplitude_max": 0.99711674451828,
+              "quantized_phase_levels": 236,
+              "phase_floor_error_max_rad": 0.024543404579162598,
+              "phase_floor_error_mean_rad": 0.012249498628079891,
+              "modulation_high_frequency_fraction_above_1over8_cycle_per_pixel": 0.5606082590238541,
+              "modulation_variance": 0.1324688631676799
+            },
+            "phase_sets.9": {
+              "shape": [
+                478,
+                478
+              ],
+              "parameters": 228484,
+              "raw_min": -6.159970283508301,
+              "raw_max": 5.325230121612549,
+              "raw_std": 0.7167214751243591,
+              "phase_standard_deviation_rad": 0.8494990468025208,
+              "phase_tv_by_axis": [
+                1.0667177438735962,
+                1.0738041400909424
+              ],
+              "phase_tv_mean": 1.0702609419822693,
+              "modulation_amplitude_mean": 0.49412932991981506,
+              "modulation_amplitude_min": 0.3999999463558197,
+              "modulation_amplitude_max": 0.9999815821647644,
+              "quantized_phase_levels": 256,
+              "phase_floor_error_max_rad": 0.024543583393096924,
+              "phase_floor_error_mean_rad": 0.012261748313903809,
+              "modulation_high_frequency_fraction_above_1over8_cycle_per_pixel": 0.628456460011404,
+              "modulation_variance": 0.21812899915605538
+            }
+          },
+          "parameter_count": 908552,
+          "phase_smoothness_actual_formula": 0.5469790250062943,
+          "phase_regularizer_coefficient": 0.005,
+          "weighted_phase_regularizer": 0.0027348951250314715
+        }
+      },
+      "selected_train_balanced_nll": 0.6863348267627866,
+      "selected_val_balanced_nll": 1.413775098807844,
+      "saved_mixed_training_mean_objective_at_selected_epoch": 1.5876906025754123,
+      "selected_gap_pp": 28.792211705811088
+    },
+    {
+      "case": "L4_rho03_mixup04",
+      "selected_epoch": 146,
+      "checkpoint_sha256": "9708add40efd21898933413062f67bb70baa83e11b8878f70bb7400d08074cf8",
+      "last_snapshot_sha256": "043e67cacb7c3ee6e8a786deb6cd8973a3a89f9f9c97760dc5d8559e95760987",
+      "initial_parameter_sha256": "f7de57b62eb33f6531128061deaa9ec2fb1bacbeea7ba02ecc50528189e60f37",
+      "phase_tensors": 11,
+      "main_stages": 4,
+      "captures_including_router": 5,
+      "parameters_per_training_image": 729.1749598715891,
+      "states": {
+        "initial": {
+          "tensors": {
+            "raw_router": {
+              "shape": [
+                224,
+                224
+              ],
+              "parameters": 50176,
+              "raw_min": -0.0999804139137268,
+              "raw_max": 0.09998784214258194,
+              "raw_std": 0.05779052525758743,
+              "phase_standard_deviation_rad": 0.09073185920715332,
+              "phase_tv_by_axis": [
+                0.01647067815065384,
+                0.016587108373641968
+              ],
+              "phase_tv_mean": 0.016528893262147903,
+              "modulation_amplitude_mean": 1.0,
+              "modulation_amplitude_min": 0.9999999403953552,
+              "modulation_amplitude_max": 1.0,
+              "quantized_phase_levels": 14,
+              "phase_floor_error_max_rad": 0.024542570114135742,
+              "phase_floor_error_mean_rad": 0.012278234586119652,
+              "modulation_high_frequency_fraction_above_1over8_cycle_per_pixel": 0.9507810547246092,
+              "modulation_variance": 0.00820524708137273
+            },
+            "phase_sets.0": {
+              "shape": [
+                224,
+                224
+              ],
+              "parameters": 50176,
+              "raw_min": -0.09999429434537888,
+              "raw_max": 0.09999968111515045,
+              "raw_std": 0.05781932547688484,
+              "phase_standard_deviation_rad": 0.09077704697847366,
+              "phase_tv_by_axis": [
+                0.01642230898141861,
+                0.01648744009435177
+              ],
+              "phase_tv_mean": 0.01645487453788519,
+              "modulation_amplitude_mean": 0.4021501839160919,
+              "modulation_amplitude_min": 0.3999999463558197,
+              "modulation_amplitude_max": 0.4064015746116638,
+              "quantized_phase_levels": 24,
+              "phase_floor_error_max_rad": 0.02454311028122902,
+              "phase_floor_error_mean_rad": 0.012276708148419857,
+              "modulation_high_frequency_fraction_above_1over8_cycle_per_pixel": 0.9497750200505412,
+              "modulation_variance": 0.004024565644482295
+            },
+            "phase_sets.1": {
+              "shape": [
+                224,
+                224
+              ],
+              "parameters": 50176,
+              "raw_min": -0.09999407827854156,
+              "raw_max": 0.09999722242355347,
+              "raw_std": 0.05764086917042732,
+              "phase_standard_deviation_rad": 0.09049692749977112,
+              "phase_tv_by_axis": [
+                0.01642574369907379,
+                0.016349125653505325
+              ],
+              "phase_tv_mean": 0.01638743467628956,
+              "modulation_amplitude_mean": 0.402136892080307,
+              "modulation_amplitude_min": 0.3999999463558197,
+              "modulation_amplitude_max": 0.40640124678611755,
+              "quantized_phase_levels": 24,
+              "phase_floor_error_max_rad": 0.024541204795241356,
+              "phase_floor_error_mean_rad": 0.012271357700228691,
+              "modulation_high_frequency_fraction_above_1over8_cycle_per_pixel": 0.9491343213573793,
+              "modulation_variance": 0.003999823098786208
+            },
+            "phase_sets.2": {
+              "shape": [
+                224,
+                224
+              ],
+              "parameters": 50176,
+              "raw_min": -0.09999994188547134,
+              "raw_max": 0.09999436140060425,
+              "raw_std": 0.05787571519613266,
+              "phase_standard_deviation_rad": 0.09086555987596512,
+              "phase_tv_by_axis": [
+                0.016366520896553993,
+                0.016379207372665405
+              ],
+              "phase_tv_mean": 0.0163728641346097,
+              "modulation_amplitude_mean": 0.4021542966365814,
+              "modulation_amplitude_min": 0.3999999463558197,
+              "modulation_amplitude_max": 0.4064016044139862,
+              "quantized_phase_levels": 24,
+              "phase_floor_error_max_rad": 0.02454311028122902,
+              "phase_floor_error_mean_rad": 0.012196210213005543,
+              "modulation_high_frequency_fraction_above_1over8_cycle_per_pixel": 0.9504532556755284,
+              "modulation_variance": 0.004032399974727061
+            },
+            "phase_sets.3": {
+              "shape": [
+                224,
+                224
+              ],
+              "parameters": 50176,
+              "raw_min": -0.09999878704547882,
+              "raw_max": 0.09999962151050568,
+              "raw_std": 0.05761680752038956,
+              "phase_standard_deviation_rad": 0.09045907855033875,
+              "phase_tv_by_axis": [
+                0.01623413898050785,
+                0.01642044633626938
+              ],
+              "phase_tv_mean": 0.016327292658388615,
+              "modulation_amplitude_mean": 0.4021351933479309,
+              "modulation_amplitude_min": 0.3999999463558197,
+              "modulation_amplitude_max": 0.4064015746116638,
+              "quantized_phase_levels": 24,
+              "phase_floor_error_max_rad": 0.02454311028122902,
+              "phase_floor_error_mean_rad": 0.012357423081994057,
+              "modulation_high_frequency_fraction_above_1over8_cycle_per_pixel": 0.9521548813324142,
+              "modulation_variance": 0.0039964776704429755
+            },
+            "phase_sets.4": {
+              "shape": [
+                478,
+                478
+              ],
+              "parameters": 228484,
+              "raw_min": -0.09999974071979523,
+              "raw_max": 0.09999974071979523,
+              "raw_std": 0.05780487880110741,
+              "phase_standard_deviation_rad": 0.09075433015823364,
+              "phase_tv_by_axis": [
+                0.016497233882546425,
+                0.01648985594511032
+              ],
+              "phase_tv_mean": 0.016493544913828373,
+              "modulation_amplitude_mean": 0.4021490514278412,
+              "modulation_amplitude_min": 0.3999999463558197,
+              "modulation_amplitude_max": 0.4064016044139862,
+              "quantized_phase_levels": 24,
+              "phase_floor_error_max_rad": 0.024543285369873047,
+              "phase_floor_error_mean_rad": 0.012290849350392818,
+              "modulation_high_frequency_fraction_above_1over8_cycle_per_pixel": 0.9507373904697763,
+              "modulation_variance": 0.004022552396550621
+            },
+            "phase_sets.5": {
+              "shape": [
+                224,
+                224
+              ],
+              "parameters": 50176,
+              "raw_min": -0.09999872744083405,
+              "raw_max": 0.09999878704547882,
+              "raw_std": 0.05788738280534744,
+              "phase_standard_deviation_rad": 0.09088382124900818,
+              "phase_tv_by_axis": [
+                0.01657196693122387,
+                0.016550760716199875
+              ],
+              "phase_tv_mean": 0.016561363823711872,
+              "modulation_amplitude_mean": 0.40215519070625305,
+              "modulation_amplitude_min": 0.3999999463558197,
+              "modulation_amplitude_max": 0.40640148520469666,
+              "quantized_phase_levels": 24,
+              "phase_floor_error_max_rad": 0.02454311028122902,
+              "phase_floor_error_mean_rad": 0.012338858097791672,
+              "modulation_high_frequency_fraction_above_1over8_cycle_per_pixel": 0.9506674777504606,
+              "modulation_variance": 0.004034010806434728
+            },
+            "phase_sets.6": {
+              "shape": [
+                224,
+                224
+              ],
+              "parameters": 50176,
+              "raw_min": -0.09999429434537888,
+              "raw_max": 0.09999401867389679,
+              "raw_std": 0.057710278779268265,
+              "phase_standard_deviation_rad": 0.09060578793287277,
+              "phase_tv_by_axis": [
+                0.016590628772974014,
+                0.016352931037545204
+              ],
+              "phase_tv_mean": 0.01647177990525961,
+              "modulation_amplitude_mean": 0.4021420478820801,
+              "modulation_amplitude_min": 0.3999999463558197,
+              "modulation_amplitude_max": 0.4064008891582489,
+              "quantized_phase_levels": 24,
+              "phase_floor_error_max_rad": 0.024543285369873047,
+              "phase_floor_error_mean_rad": 0.012241656892001629,
+              "modulation_high_frequency_fraction_above_1over8_cycle_per_pixel": 0.9512402444003555,
+              "modulation_variance": 0.004009419710965794
+            },
+            "phase_sets.7": {
+              "shape": [
+                224,
+                224
+              ],
+              "parameters": 50176,
+              "raw_min": -0.09999443590641022,
+              "raw_max": 0.09999968856573105,
+              "raw_std": 0.05773499608039856,
+              "phase_standard_deviation_rad": 0.09064473956823349,
+              "phase_tv_by_axis": [
+                0.016344411298632622,
+                0.016375938430428505
+              ],
+              "phase_tv_mean": 0.016360174864530563,
+              "modulation_amplitude_mean": 0.40214407444000244,
+              "modulation_amplitude_min": 0.3999999463558197,
+              "modulation_amplitude_max": 0.4064015746116638,
+              "quantized_phase_levels": 24,
+              "phase_floor_error_max_rad": 0.024542570114135742,
+              "phase_floor_error_mean_rad": 0.012230311520397663,
+              "modulation_high_frequency_fraction_above_1over8_cycle_per_pixel": 0.9523630091266988,
+              "modulation_variance": 0.004012877388198725
+            },
+            "phase_sets.8": {
+              "shape": [
+                224,
+                224
+              ],
+              "parameters": 50176,
+              "raw_min": -0.09999821335077286,
+              "raw_max": 0.09999474138021469,
+              "raw_std": 0.057946231216192245,
+              "phase_standard_deviation_rad": 0.09097611159086227,
+              "phase_tv_by_axis": [
+                0.016517363488674164,
+                0.01643480733036995
+              ],
+              "phase_tv_mean": 0.016476085409522057,
+              "modulation_amplitude_mean": 0.40215954184532166,
+              "modulation_amplitude_min": 0.3999999463558197,
+              "modulation_amplitude_max": 0.4064013957977295,
+              "quantized_phase_levels": 24,
+              "phase_floor_error_max_rad": 0.024542570114135742,
+              "phase_floor_error_mean_rad": 0.012298881076276302,
+              "modulation_high_frequency_fraction_above_1over8_cycle_per_pixel": 0.9516411294357435,
+              "modulation_variance": 0.0040421801441743775
+            },
+            "phase_sets.9": {
+              "shape": [
+                478,
+                478
+              ],
+              "parameters": 228484,
+              "raw_min": -0.09999910742044449,
+              "raw_max": 0.09999962896108627,
+              "raw_std": 0.05789145454764366,
+              "phase_standard_deviation_rad": 0.09089018404483795,
+              "phase_tv_by_axis": [
+                0.01656312681734562,
+                0.016539182513952255
+              ],
+              "phase_tv_mean": 0.016551154665648937,
+              "modulation_amplitude_mean": 0.40215542912483215,
+              "modulation_amplitude_min": 0.3999999463558197,
+              "modulation_amplitude_max": 0.4064016044139862,
+              "quantized_phase_levels": 24,
+              "phase_floor_error_max_rad": 0.02454352378845215,
+              "phase_floor_error_mean_rad": 0.012263295240700245,
+              "modulation_high_frequency_fraction_above_1over8_cycle_per_pixel": 0.9518788245761948,
+              "modulation_variance": 0.004034570858875535
+            }
+          },
+          "parameter_count": 908552,
+          "phase_smoothness_actual_formula": 0.016453223895620216,
+          "phase_regularizer_coefficient": 0.005,
+          "weighted_phase_regularizer": 8.226611947810108e-05
+        },
+        "selected_ema": {
+          "tensors": {
+            "raw_router": {
+              "shape": [
+                224,
+                224
+              ],
+              "parameters": 50176,
+              "raw_min": -1.9028770923614502,
+              "raw_max": 1.9676989316940308,
+              "raw_std": 0.33252790570259094,
+              "phase_standard_deviation_rad": 0.5055527091026306,
+              "phase_tv_by_axis": [
+                0.31328102946281433,
+                0.3088496923446655
+              ],
+              "phase_tv_mean": 0.31106536090373993,
+              "modulation_amplitude_mean": 1.0,
+              "modulation_amplitude_min": 0.9999999403953552,
+              "modulation_amplitude_max": 1.0,
+              "quantized_phase_levels": 180,
+              "phase_floor_error_max_rad": 0.02454311028122902,
+              "phase_floor_error_mean_rad": 0.012237519957125187,
+              "modulation_high_frequency_fraction_above_1over8_cycle_per_pixel": 0.5992312151974403,
+              "modulation_variance": 0.22410309143955848
+            },
+            "phase_sets.0": {
+              "shape": [
+                224,
+                224
+              ],
+              "parameters": 50176,
+              "raw_min": -1.4266844987869263,
+              "raw_max": 1.3026643991470337,
+              "raw_std": 0.29708483815193176,
+              "phase_standard_deviation_rad": 0.45645615458488464,
+              "phase_tv_by_axis": [
+                0.43902966380119324,
+                0.38266250491142273
+              ],
+              "phase_tv_mean": 0.410846084356308,
+              "modulation_amplitude_mean": 0.44555044174194336,
+              "modulation_amplitude_min": 0.3999999463558197,
+              "modulation_amplitude_max": 0.8518810868263245,
+              "quantized_phase_levels": 172,
+              "phase_floor_error_max_rad": 0.024543285369873047,
+              "phase_floor_error_mean_rad": 0.012283191084861755,
+              "modulation_high_frequency_fraction_above_1over8_cycle_per_pixel": 0.9141135998903687,
+              "modulation_variance": 0.09222559536905883
+            },
+            "phase_sets.1": {
+              "shape": [
+                224,
+                224
+              ],
+              "parameters": 50176,
+              "raw_min": -1.559958815574646,
+              "raw_max": 1.4336222410202026,
+              "raw_std": 0.2899671494960785,
+              "phase_standard_deviation_rad": 0.44571301341056824,
+              "phase_tv_by_axis": [
+                0.38639435172080994,
+                0.35333117842674255
+              ],
+              "phase_tv_mean": 0.36986276507377625,
+              "modulation_amplitude_mean": 0.44360506534576416,
+              "modulation_amplitude_min": 0.3999999463558197,
+              "modulation_amplitude_max": 0.8796802759170532,
+              "quantized_phase_levels": 173,
+              "phase_floor_error_max_rad": 0.02454311028122902,
+              "phase_floor_error_mean_rad": 0.01225301157683134,
+              "modulation_high_frequency_fraction_above_1over8_cycle_per_pixel": 0.8912219206531584,
+              "modulation_variance": 0.08824292203971204
+            },
+            "phase_sets.2": {
+              "shape": [
+                224,
+                224
+              ],
+              "parameters": 50176,
+              "raw_min": -1.3658801317214966,
+              "raw_max": 1.6158857345581055,
+              "raw_std": 0.3541136085987091,
+              "phase_standard_deviation_rad": 0.5396074056625366,
+              "phase_tv_by_axis": [
+                0.6012237668037415,
+                0.5488505959510803
+              ],
+              "phase_tv_mean": 0.5750371813774109,
+              "modulation_amplitude_mean": 0.4607098698616028,
+              "modulation_amplitude_min": 0.3999999463558197,
+              "modulation_amplitude_max": 0.8899656534194946,
+              "quantized_phase_levels": 186,
+              "phase_floor_error_max_rad": 0.024542808532714844,
+              "phase_floor_error_mean_rad": 0.012281238101422787,
+              "modulation_high_frequency_fraction_above_1over8_cycle_per_pixel": 0.8995947072479998,
+              "modulation_variance": 0.12421240014941944
+            },
+            "phase_sets.3": {
+              "shape": [
+                224,
+                224
+              ],
+              "parameters": 50176,
+              "raw_min": -1.4717886447906494,
+              "raw_max": 1.549823522567749,
+              "raw_std": 0.32378941774368286,
+              "phase_standard_deviation_rad": 0.494877427816391,
+              "phase_tv_by_axis": [
+                0.47803977131843567,
+                0.45712709426879883
+              ],
+              "phase_tv_mean": 0.46758343279361725,
+              "modulation_amplitude_mean": 0.45198896527290344,
+              "modulation_amplitude_min": 0.3999999463558197,
+              "modulation_amplitude_max": 0.87773197889328,
+              "quantized_phase_levels": 181,
+              "phase_floor_error_max_rad": 0.02454352378845215,
+              "phase_floor_error_mean_rad": 0.012284882366657257,
+              "modulation_high_frequency_fraction_above_1over8_cycle_per_pixel": 0.899215410646362,
+              "modulation_variance": 0.10631252815937961
+            },
+            "phase_sets.4": {
+              "shape": [
+                478,
+                478
+              ],
+              "parameters": 228484,
+              "raw_min": -2.287137985229492,
+              "raw_max": 2.4406607151031494,
+              "raw_std": 0.45876502990722656,
+              "phase_standard_deviation_rad": 0.6822429895401001,
+              "phase_tv_by_axis": [
+                0.8793070316314697,
+                0.8884962201118469
+              ],
+              "phase_tv_mean": 0.8839016258716583,
+              "modulation_amplitude_mean": 0.4874175786972046,
+              "modulation_amplitude_min": 0.3999999463558197,
+              "modulation_amplitude_max": 0.9735968708992004,
+              "quantized_phase_levels": 225,
+              "phase_floor_error_max_rad": 0.024543285369873047,
+              "phase_floor_error_mean_rad": 0.012274672277271748,
+              "modulation_high_frequency_fraction_above_1over8_cycle_per_pixel": 0.9043569789725292,
+              "modulation_variance": 0.18240591445107274
+            },
+            "phase_sets.5": {
+              "shape": [
+                224,
+                224
+              ],
+              "parameters": 50176,
+              "raw_min": -2.6966865062713623,
+              "raw_max": 2.5589001178741455,
+              "raw_std": 0.37428560853004456,
+              "phase_standard_deviation_rad": 0.5513163208961487,
+              "phase_tv_by_axis": [
+                0.40564388036727905,
+                0.3803069591522217
+              ],
+              "phase_tv_mean": 0.39297541975975037,
+              "modulation_amplitude_mean": 0.45832905173301697,
+              "modulation_amplitude_min": 0.3999999463558197,
+              "modulation_amplitude_max": 0.9835395812988281,
+              "quantized_phase_levels": 226,
+              "phase_floor_error_max_rad": 0.02454311028122902,
+              "phase_floor_error_mean_rad": 0.0122075155377388,
+              "modulation_high_frequency_fraction_above_1over8_cycle_per_pixel": 0.6181294098467296,
+              "modulation_variance": 0.12307538006369827
+            },
+            "phase_sets.6": {
+              "shape": [
+                224,
+                224
+              ],
+              "parameters": 50176,
+              "raw_min": -2.2075273990631104,
+              "raw_max": 2.173474073410034,
+              "raw_std": 0.3489483892917633,
+              "phase_standard_deviation_rad": 0.5228134989738464,
+              "phase_tv_by_axis": [
+                0.35093894600868225,
+                0.3370491862297058
+              ],
+              "phase_tv_mean": 0.34399406611919403,
+              "modulation_amplitude_mean": 0.4547574520111084,
+              "modulation_amplitude_min": 0.3999999463558197,
+              "modulation_amplitude_max": 0.9597988724708557,
+              "quantized_phase_levels": 215,
+              "phase_floor_error_max_rad": 0.02454311028122902,
+              "phase_floor_error_mean_rad": 0.012274895794689655,
+              "modulation_high_frequency_fraction_above_1over8_cycle_per_pixel": 0.6432774029509952,
+              "modulation_variance": 0.114090888530231
+            },
+            "phase_sets.7": {
+              "shape": [
+                224,
+                224
+              ],
+              "parameters": 50176,
+              "raw_min": -2.172118663787842,
+              "raw_max": 3.749113082885742,
+              "raw_std": 0.3983035683631897,
+              "phase_standard_deviation_rad": 0.5811377167701721,
+              "phase_tv_by_axis": [
+                0.490591824054718,
+                0.4867868721485138
+              ],
+              "phase_tv_mean": 0.4886893481016159,
+              "modulation_amplitude_mean": 0.4644412696361542,
+              "modulation_amplitude_min": 0.3999999463558197,
+              "modulation_amplitude_max": 0.997809112071991,
+              "quantized_phase_levels": 232,
+              "phase_floor_error_max_rad": 0.024541614577174187,
+              "phase_floor_error_mean_rad": 0.01226774975657463,
+              "modulation_high_frequency_fraction_above_1over8_cycle_per_pixel": 0.7273228081642749,
+              "modulation_variance": 0.13571028995885834
+            },
+            "phase_sets.8": {
+              "shape": [
+                224,
+                224
+              ],
+              "parameters": 50176,
+              "raw_min": -3.5927574634552,
+              "raw_max": 2.314781665802002,
+              "raw_std": 0.3769643306732178,
+              "phase_standard_deviation_rad": 0.5580393671989441,
+              "phase_tv_by_axis": [
+                0.36745667457580566,
+                0.37125393748283386
+              ],
+              "phase_tv_mean": 0.36935530602931976,
+              "modulation_amplitude_mean": 0.4597620964050293,
+              "modulation_amplitude_min": 0.3999999761581421,
+              "modulation_amplitude_max": 0.997028648853302,
+              "quantized_phase_levels": 224,
+              "phase_floor_error_max_rad": 0.02454311028122902,
+              "phase_floor_error_mean_rad": 0.012204870581626892,
+              "modulation_high_frequency_fraction_above_1over8_cycle_per_pixel": 0.591112609940768,
+              "modulation_variance": 0.12655314628602393
+            },
+            "phase_sets.9": {
+              "shape": [
+                478,
+                478
+              ],
+              "parameters": 228484,
+              "raw_min": -4.889255523681641,
+              "raw_max": 4.4778828620910645,
+              "raw_std": 0.6630730032920837,
+              "phase_standard_deviation_rad": 0.8209125399589539,
+              "phase_tv_by_axis": [
+                1.0175732374191284,
+                1.0267807245254517
+              ],
+              "phase_tv_mean": 1.02217698097229,
+              "modulation_amplitude_mean": 0.4917261600494385,
+              "modulation_amplitude_min": 0.3999999463558197,
+              "modulation_amplitude_max": 0.9997686743736267,
+              "quantized_phase_levels": 253,
+              "phase_floor_error_max_rad": 0.024543285369873047,
+              "phase_floor_error_mean_rad": 0.012289623729884624,
+              "modulation_high_frequency_fraction_above_1over8_cycle_per_pixel": 0.6399406775302596,
+              "modulation_variance": 0.2112397940976044
+            }
+          },
+          "parameter_count": 908552,
+          "phase_smoothness_actual_formula": 0.5123170519416983,
+          "phase_regularizer_coefficient": 0.005,
+          "weighted_phase_regularizer": 0.0025615852597084916
+        },
+        "last_ema": {
+          "tensors": {
+            "raw_router": {
+              "shape": [
+                224,
+                224
+              ],
+              "parameters": 50176,
+              "raw_min": -1.9111287593841553,
+              "raw_max": 1.9754441976547241,
+              "raw_std": 0.33297592401504517,
+              "phase_standard_deviation_rad": 0.5061646699905396,
+              "phase_tv_by_axis": [
+                0.3140605688095093,
+                0.30968138575553894
+              ],
+              "phase_tv_mean": 0.3118709772825241,
+              "modulation_amplitude_mean": 1.0,
+              "modulation_amplitude_min": 0.9999999403953552,
+              "modulation_amplitude_max": 1.0,
+              "quantized_phase_levels": 180,
+              "phase_floor_error_max_rad": 0.02454352378845215,
+              "phase_floor_error_mean_rad": 0.012220059521496296,
+              "modulation_high_frequency_fraction_above_1over8_cycle_per_pixel": 0.599691697446874,
+              "modulation_variance": 0.22456056705690108
+            },
+            "phase_sets.0": {
+              "shape": [
+                224,
+                224
+              ],
+              "parameters": 50176,
+              "raw_min": -1.4287714958190918,
+              "raw_max": 1.3047646284103394,
+              "raw_std": 0.29737380146980286,
+              "phase_standard_deviation_rad": 0.4568791687488556,
+              "phase_tv_by_axis": [
+                0.4397512972354889,
+                0.3834943175315857
+              ],
+              "phase_tv_mean": 0.4116228073835373,
+              "modulation_amplitude_mean": 0.4456227719783783,
+              "modulation_amplitude_min": 0.3999999463558197,
+              "modulation_amplitude_max": 0.8523537516593933,
+              "quantized_phase_levels": 174,
+              "phase_floor_error_max_rad": 0.02454311028122902,
+              "phase_floor_error_mean_rad": 0.012264622375369072,
+              "modulation_high_frequency_fraction_above_1over8_cycle_per_pixel": 0.9141351736548881,
+              "modulation_variance": 0.0923791896584068
+            },
+            "phase_sets.1": {
+              "shape": [
+                224,
+                224
+              ],
+              "parameters": 50176,
+              "raw_min": -1.5490097999572754,
+              "raw_max": 1.4320470094680786,
+              "raw_std": 0.2902674376964569,
+              "phase_standard_deviation_rad": 0.44615909457206726,
+              "phase_tv_by_axis": [
+                0.3873310089111328,
+                0.35395002365112305
+              ],
+              "phase_tv_mean": 0.37064051628112793,
+              "modulation_amplitude_mean": 0.44368287920951843,
+              "modulation_amplitude_min": 0.3999999463558197,
+              "modulation_amplitude_max": 0.8775742650032043,
+              "quantized_phase_levels": 174,
+              "phase_floor_error_max_rad": 0.02454352378845215,
+              "phase_floor_error_mean_rad": 0.012303882278501987,
+              "modulation_high_frequency_fraction_above_1over8_cycle_per_pixel": 0.891264829600654,
+              "modulation_variance": 0.08840454172022202
+            },
+            "phase_sets.2": {
+              "shape": [
+                224,
+                224
+              ],
+              "parameters": 50176,
+              "raw_min": -1.3783762454986572,
+              "raw_max": 1.61997652053833,
+              "raw_std": 0.3546653091907501,
+              "phase_standard_deviation_rad": 0.5403998494148254,
+              "phase_tv_by_axis": [
+                0.6031065583229065,
+                0.5503992438316345
+              ],
+              "phase_tv_mean": 0.5767529010772705,
+              "modulation_amplitude_mean": 0.4608597159385681,
+              "modulation_amplitude_min": 0.3999999761581421,
+              "modulation_amplitude_max": 0.8906876444816589,
+              "quantized_phase_levels": 186,
+              "phase_floor_error_max_rad": 0.02454167976975441,
+              "phase_floor_error_mean_rad": 0.012255125679075718,
+              "modulation_high_frequency_fraction_above_1over8_cycle_per_pixel": 0.8997226448512745,
+              "modulation_variance": 0.12452985853878154
+            },
+            "phase_sets.3": {
+              "shape": [
+                224,
+                224
+              ],
+              "parameters": 50176,
+              "raw_min": -1.4605777263641357,
+              "raw_max": 1.5537809133529663,
+              "raw_std": 0.32412269711494446,
+              "phase_standard_deviation_rad": 0.49536147713661194,
+              "phase_tv_by_axis": [
+                0.4790169298648834,
+                0.45815014839172363
+              ],
+              "phase_tv_mean": 0.46858353912830353,
+              "modulation_amplitude_mean": 0.4520759880542755,
+              "modulation_amplitude_min": 0.3999999463558197,
+              "modulation_amplitude_max": 0.8784958124160767,
+              "quantized_phase_levels": 181,
+              "phase_floor_error_max_rad": 0.02454352378845215,
+              "phase_floor_error_mean_rad": 0.01231582835316658,
+              "modulation_high_frequency_fraction_above_1over8_cycle_per_pixel": 0.8992684800712897,
+              "modulation_variance": 0.10649729892491439
+            },
+            "phase_sets.4": {
+              "shape": [
+                478,
+                478
+              ],
+              "parameters": 228484,
+              "raw_min": -2.2920658588409424,
+              "raw_max": 2.4461536407470703,
+              "raw_std": 0.45983490347862244,
+              "phase_standard_deviation_rad": 0.6836516261100769,
+              "phase_tv_by_axis": [
+                0.8833310008049011,
+                0.8924672603607178
+              ],
+              "phase_tv_mean": 0.8878991305828094,
+              "modulation_amplitude_mean": 0.48769325017929077,
+              "modulation_amplitude_min": 0.3999999463558197,
+              "modulation_amplitude_max": 0.9738602638244629,
+              "quantized_phase_levels": 225,
+              "phase_floor_error_max_rad": 0.024543404579162598,
+              "phase_floor_error_mean_rad": 0.01226327009499073,
+              "modulation_high_frequency_fraction_above_1over8_cycle_per_pixel": 0.9045065078946842,
+              "modulation_variance": 0.18299743691112924
+            },
+            "phase_sets.5": {
+              "shape": [
+                224,
+                224
+              ],
+              "parameters": 50176,
+              "raw_min": -2.6834449768066406,
+              "raw_max": 2.5743885040283203,
+              "raw_std": 0.3748447895050049,
+              "phase_standard_deviation_rad": 0.5518479943275452,
+              "phase_tv_by_axis": [
+                0.40616485476493835,
+                0.38070711493492126
+              ],
+              "phase_tv_mean": 0.3934359848499298,
+              "modulation_amplitude_mean": 0.45838597416877747,
+              "modulation_amplitude_min": 0.3999999463558197,
+              "modulation_amplitude_max": 0.9831284284591675,
+              "quantized_phase_levels": 226,
+              "phase_floor_error_max_rad": 0.024541614577174187,
+              "phase_floor_error_mean_rad": 0.012255937792360783,
+              "modulation_high_frequency_fraction_above_1over8_cycle_per_pixel": 0.6176037091479897,
+              "modulation_variance": 0.12322164803534233
+            },
+            "phase_sets.6": {
+              "shape": [
+                224,
+                224
+              ],
+              "parameters": 50176,
+              "raw_min": -2.2192399501800537,
+              "raw_max": 2.181098222732544,
+              "raw_std": 0.3493365943431854,
+              "phase_standard_deviation_rad": 0.5232552289962769,
+              "phase_tv_by_axis": [
+                0.3509387671947479,
+                0.3370088040828705
+              ],
+              "phase_tv_mean": 0.3439737856388092,
+              "modulation_amplitude_mean": 0.45481622219085693,
+              "modulation_amplitude_min": 0.3999999463558197,
+              "modulation_amplitude_max": 0.9606287479400635,
+              "quantized_phase_levels": 215,
+              "phase_floor_error_max_rad": 0.0245436429977417,
+              "phase_floor_error_mean_rad": 0.01231613103300333,
+              "modulation_high_frequency_fraction_above_1over8_cycle_per_pixel": 0.6424850040593753,
+              "modulation_variance": 0.11422781481054106
+            },
+            "phase_sets.7": {
+              "shape": [
+                224,
+                224
+              ],
+              "parameters": 50176,
+              "raw_min": -2.2088589668273926,
+              "raw_max": 3.7695400714874268,
+              "raw_std": 0.3989146649837494,
+              "phase_standard_deviation_rad": 0.5817194581031799,
+              "phase_tv_by_axis": [
+                0.4915410876274109,
+                0.487676203250885
+              ],
+              "phase_tv_mean": 0.48960864543914795,
+              "modulation_amplitude_mean": 0.46451911330223083,
+              "modulation_amplitude_min": 0.3999999463558197,
+              "modulation_amplitude_max": 0.9978947639465332,
+              "quantized_phase_levels": 233,
+              "phase_floor_error_max_rad": 0.024542154744267464,
+              "phase_floor_error_mean_rad": 0.012314759194850922,
+              "modulation_high_frequency_fraction_above_1over8_cycle_per_pixel": 0.7274567577867381,
+              "modulation_variance": 0.1359027118900542
+            },
+            "phase_sets.8": {
+              "shape": [
+                224,
+                224
+              ],
+              "parameters": 50176,
+              "raw_min": -3.5974342823028564,
+              "raw_max": 2.326164722442627,
+              "raw_std": 0.37775692343711853,
+              "phase_standard_deviation_rad": 0.5589441657066345,
+              "phase_tv_by_axis": [
+                0.3679518401622772,
+                0.3717843294143677
+              ],
+              "phase_tv_mean": 0.36986808478832245,
+              "modulation_amplitude_mean": 0.45988085865974426,
+              "modulation_amplitude_min": 0.3999999463558197,
+              "modulation_amplitude_max": 0.9970555305480957,
+              "quantized_phase_levels": 223,
+              "phase_floor_error_max_rad": 0.02454311028122902,
+              "phase_floor_error_mean_rad": 0.01228131540119648,
+              "modulation_high_frequency_fraction_above_1over8_cycle_per_pixel": 0.590294394049998,
+              "modulation_variance": 0.1268483875644594
+            },
+            "phase_sets.9": {
+              "shape": [
+                478,
+                478
+              ],
+              "parameters": 228484,
+              "raw_min": -4.927396774291992,
+              "raw_max": 4.4966840744018555,
+              "raw_std": 0.6651344895362854,
+              "phase_standard_deviation_rad": 0.8219138383865356,
+              "phase_tv_by_axis": [
+                1.0188990831375122,
+                1.027279257774353
+              ],
+              "phase_tv_mean": 1.0230891704559326,
+              "modulation_amplitude_mean": 0.4917685389518738,
+              "modulation_amplitude_min": 0.3999999463558197,
+              "modulation_amplitude_max": 0.9997855424880981,
+              "quantized_phase_levels": 254,
+              "phase_floor_error_max_rad": 0.024543166160583496,
+              "phase_floor_error_mean_rad": 0.012269953265786171,
+              "modulation_high_frequency_fraction_above_1over8_cycle_per_pixel": 0.6392942860384222,
+              "modulation_variance": 0.21142613543893984
+            }
+          },
+          "parameter_count": 908552,
+          "phase_smoothness_actual_formula": 0.5133950493552468,
+          "phase_regularizer_coefficient": 0.005,
+          "weighted_phase_regularizer": 0.002566975246776234
+        }
+      },
+      "selected_train_balanced_nll": 0.783332443013817,
+      "selected_val_balanced_nll": 1.4374138425538563,
+      "saved_mixed_training_mean_objective_at_selected_epoch": 1.6416298695398945,
+      "selected_gap_pp": 28.38047268500581
+    },
+    {
+      "case": "L4_rho03_mixup06",
+      "selected_epoch": 149,
+      "checkpoint_sha256": "2ab71fe9a5c6d915e8ae7b15ec4d4ce843a6264956ea9c4a046f10cc5efeab8c",
+      "last_snapshot_sha256": "b96938e75f2ab0d79376a99a54a651c200ea5630a6cea2ae38601516979bf444",
+      "initial_parameter_sha256": "f7de57b62eb33f6531128061deaa9ec2fb1bacbeea7ba02ecc50528189e60f37",
+      "phase_tensors": 11,
+      "main_stages": 4,
+      "captures_including_router": 5,
+      "parameters_per_training_image": 729.1749598715891,
+      "states": {
+        "initial": {
+          "tensors": {
+            "raw_router": {
+              "shape": [
+                224,
+                224
+              ],
+              "parameters": 50176,
+              "raw_min": -0.0999804139137268,
+              "raw_max": 0.09998784214258194,
+              "raw_std": 0.05779052525758743,
+              "phase_standard_deviation_rad": 0.09073185920715332,
+              "phase_tv_by_axis": [
+                0.01647067815065384,
+                0.016587108373641968
+              ],
+              "phase_tv_mean": 0.016528893262147903,
+              "modulation_amplitude_mean": 1.0,
+              "modulation_amplitude_min": 0.9999999403953552,
+              "modulation_amplitude_max": 1.0,
+              "quantized_phase_levels": 14,
+              "phase_floor_error_max_rad": 0.024542570114135742,
+              "phase_floor_error_mean_rad": 0.012278234586119652,
+              "modulation_high_frequency_fraction_above_1over8_cycle_per_pixel": 0.9507810547246092,
+              "modulation_variance": 0.00820524708137273
+            },
+            "phase_sets.0": {
+              "shape": [
+                224,
+                224
+              ],
+              "parameters": 50176,
+              "raw_min": -0.09999429434537888,
+              "raw_max": 0.09999968111515045,
+              "raw_std": 0.05781932547688484,
+              "phase_standard_deviation_rad": 0.09077704697847366,
+              "phase_tv_by_axis": [
+                0.01642230898141861,
+                0.01648744009435177
+              ],
+              "phase_tv_mean": 0.01645487453788519,
+              "modulation_amplitude_mean": 0.4021501839160919,
+              "modulation_amplitude_min": 0.3999999463558197,
+              "modulation_amplitude_max": 0.4064015746116638,
+              "quantized_phase_levels": 24,
+              "phase_floor_error_max_rad": 0.02454311028122902,
+              "phase_floor_error_mean_rad": 0.012276708148419857,
+              "modulation_high_frequency_fraction_above_1over8_cycle_per_pixel": 0.9497750200505412,
+              "modulation_variance": 0.004024565644482295
+            },
+            "phase_sets.1": {
+              "shape": [
+                224,
+                224
+              ],
+              "parameters": 50176,
+              "raw_min": -0.09999407827854156,
+              "raw_max": 0.09999722242355347,
+              "raw_std": 0.05764086917042732,
+              "phase_standard_deviation_rad": 0.09049692749977112,
+              "phase_tv_by_axis": [
+                0.01642574369907379,
+                0.016349125653505325
+              ],
+              "phase_tv_mean": 0.01638743467628956,
+              "modulation_amplitude_mean": 0.402136892080307,
+              "modulation_amplitude_min": 0.3999999463558197,
+              "modulation_amplitude_max": 0.40640124678611755,
+              "quantized_phase_levels": 24,
+              "phase_floor_error_max_rad": 0.024541204795241356,
+              "phase_floor_error_mean_rad": 0.012271357700228691,
+              "modulation_high_frequency_fraction_above_1over8_cycle_per_pixel": 0.9491343213573793,
+              "modulation_variance": 0.003999823098786208
+            },
+            "phase_sets.2": {
+              "shape": [
+                224,
+                224
+              ],
+              "parameters": 50176,
+              "raw_min": -0.09999994188547134,
+              "raw_max": 0.09999436140060425,
+              "raw_std": 0.05787571519613266,
+              "phase_standard_deviation_rad": 0.09086555987596512,
+              "phase_tv_by_axis": [
+                0.016366520896553993,
+                0.016379207372665405
+              ],
+              "phase_tv_mean": 0.0163728641346097,
+              "modulation_amplitude_mean": 0.4021542966365814,
+              "modulation_amplitude_min": 0.3999999463558197,
+              "modulation_amplitude_max": 0.4064016044139862,
+              "quantized_phase_levels": 24,
+              "phase_floor_error_max_rad": 0.02454311028122902,
+              "phase_floor_error_mean_rad": 0.012196210213005543,
+              "modulation_high_frequency_fraction_above_1over8_cycle_per_pixel": 0.9504532556755284,
+              "modulation_variance": 0.004032399974727061
+            },
+            "phase_sets.3": {
+              "shape": [
+                224,
+                224
+              ],
+              "parameters": 50176,
+              "raw_min": -0.09999878704547882,
+              "raw_max": 0.09999962151050568,
+              "raw_std": 0.05761680752038956,
+              "phase_standard_deviation_rad": 0.09045907855033875,
+              "phase_tv_by_axis": [
+                0.01623413898050785,
+                0.01642044633626938
+              ],
+              "phase_tv_mean": 0.016327292658388615,
+              "modulation_amplitude_mean": 0.4021351933479309,
+              "modulation_amplitude_min": 0.3999999463558197,
+              "modulation_amplitude_max": 0.4064015746116638,
+              "quantized_phase_levels": 24,
+              "phase_floor_error_max_rad": 0.02454311028122902,
+              "phase_floor_error_mean_rad": 0.012357423081994057,
+              "modulation_high_frequency_fraction_above_1over8_cycle_per_pixel": 0.9521548813324142,
+              "modulation_variance": 0.0039964776704429755
+            },
+            "phase_sets.4": {
+              "shape": [
+                478,
+                478
+              ],
+              "parameters": 228484,
+              "raw_min": -0.09999974071979523,
+              "raw_max": 0.09999974071979523,
+              "raw_std": 0.05780487880110741,
+              "phase_standard_deviation_rad": 0.09075433015823364,
+              "phase_tv_by_axis": [
+                0.016497233882546425,
+                0.01648985594511032
+              ],
+              "phase_tv_mean": 0.016493544913828373,
+              "modulation_amplitude_mean": 0.4021490514278412,
+              "modulation_amplitude_min": 0.3999999463558197,
+              "modulation_amplitude_max": 0.4064016044139862,
+              "quantized_phase_levels": 24,
+              "phase_floor_error_max_rad": 0.024543285369873047,
+              "phase_floor_error_mean_rad": 0.012290849350392818,
+              "modulation_high_frequency_fraction_above_1over8_cycle_per_pixel": 0.9507373904697763,
+              "modulation_variance": 0.004022552396550621
+            },
+            "phase_sets.5": {
+              "shape": [
+                224,
+                224
+              ],
+              "parameters": 50176,
+              "raw_min": -0.09999872744083405,
+              "raw_max": 0.09999878704547882,
+              "raw_std": 0.05788738280534744,
+              "phase_standard_deviation_rad": 0.09088382124900818,
+              "phase_tv_by_axis": [
+                0.01657196693122387,
+                0.016550760716199875
+              ],
+              "phase_tv_mean": 0.016561363823711872,
+              "modulation_amplitude_mean": 0.40215519070625305,
+              "modulation_amplitude_min": 0.3999999463558197,
+              "modulation_amplitude_max": 0.40640148520469666,
+              "quantized_phase_levels": 24,
+              "phase_floor_error_max_rad": 0.02454311028122902,
+              "phase_floor_error_mean_rad": 0.012338858097791672,
+              "modulation_high_frequency_fraction_above_1over8_cycle_per_pixel": 0.9506674777504606,
+              "modulation_variance": 0.004034010806434728
+            },
+            "phase_sets.6": {
+              "shape": [
+                224,
+                224
+              ],
+              "parameters": 50176,
+              "raw_min": -0.09999429434537888,
+              "raw_max": 0.09999401867389679,
+              "raw_std": 0.057710278779268265,
+              "phase_standard_deviation_rad": 0.09060578793287277,
+              "phase_tv_by_axis": [
+                0.016590628772974014,
+                0.016352931037545204
+              ],
+              "phase_tv_mean": 0.01647177990525961,
+              "modulation_amplitude_mean": 0.4021420478820801,
+              "modulation_amplitude_min": 0.3999999463558197,
+              "modulation_amplitude_max": 0.4064008891582489,
+              "quantized_phase_levels": 24,
+              "phase_floor_error_max_rad": 0.024543285369873047,
+              "phase_floor_error_mean_rad": 0.012241656892001629,
+              "modulation_high_frequency_fraction_above_1over8_cycle_per_pixel": 0.9512402444003555,
+              "modulation_variance": 0.004009419710965794
+            },
+            "phase_sets.7": {
+              "shape": [
+                224,
+                224
+              ],
+              "parameters": 50176,
+              "raw_min": -0.09999443590641022,
+              "raw_max": 0.09999968856573105,
+              "raw_std": 0.05773499608039856,
+              "phase_standard_deviation_rad": 0.09064473956823349,
+              "phase_tv_by_axis": [
+                0.016344411298632622,
+                0.016375938430428505
+              ],
+              "phase_tv_mean": 0.016360174864530563,
+              "modulation_amplitude_mean": 0.40214407444000244,
+              "modulation_amplitude_min": 0.3999999463558197,
+              "modulation_amplitude_max": 0.4064015746116638,
+              "quantized_phase_levels": 24,
+              "phase_floor_error_max_rad": 0.024542570114135742,
+              "phase_floor_error_mean_rad": 0.012230311520397663,
+              "modulation_high_frequency_fraction_above_1over8_cycle_per_pixel": 0.9523630091266988,
+              "modulation_variance": 0.004012877388198725
+            },
+            "phase_sets.8": {
+              "shape": [
+                224,
+                224
+              ],
+              "parameters": 50176,
+              "raw_min": -0.09999821335077286,
+              "raw_max": 0.09999474138021469,
+              "raw_std": 0.057946231216192245,
+              "phase_standard_deviation_rad": 0.09097611159086227,
+              "phase_tv_by_axis": [
+                0.016517363488674164,
+                0.01643480733036995
+              ],
+              "phase_tv_mean": 0.016476085409522057,
+              "modulation_amplitude_mean": 0.40215954184532166,
+              "modulation_amplitude_min": 0.3999999463558197,
+              "modulation_amplitude_max": 0.4064013957977295,
+              "quantized_phase_levels": 24,
+              "phase_floor_error_max_rad": 0.024542570114135742,
+              "phase_floor_error_mean_rad": 0.012298881076276302,
+              "modulation_high_frequency_fraction_above_1over8_cycle_per_pixel": 0.9516411294357435,
+              "modulation_variance": 0.0040421801441743775
+            },
+            "phase_sets.9": {
+              "shape": [
+                478,
+                478
+              ],
+              "parameters": 228484,
+              "raw_min": -0.09999910742044449,
+              "raw_max": 0.09999962896108627,
+              "raw_std": 0.05789145454764366,
+              "phase_standard_deviation_rad": 0.09089018404483795,
+              "phase_tv_by_axis": [
+                0.01656312681734562,
+                0.016539182513952255
+              ],
+              "phase_tv_mean": 0.016551154665648937,
+              "modulation_amplitude_mean": 0.40215542912483215,
+              "modulation_amplitude_min": 0.3999999463558197,
+              "modulation_amplitude_max": 0.4064016044139862,
+              "quantized_phase_levels": 24,
+              "phase_floor_error_max_rad": 0.02454352378845215,
+              "phase_floor_error_mean_rad": 0.012263295240700245,
+              "modulation_high_frequency_fraction_above_1over8_cycle_per_pixel": 0.9518788245761948,
+              "modulation_variance": 0.004034570858875535
+            }
+          },
+          "parameter_count": 908552,
+          "phase_smoothness_actual_formula": 0.016453223895620216,
+          "phase_regularizer_coefficient": 0.005,
+          "weighted_phase_regularizer": 8.226611947810108e-05
+        },
+        "selected_ema": {
+          "tensors": {
+            "raw_router": {
+              "shape": [
+                224,
+                224
+              ],
+              "parameters": 50176,
+              "raw_min": -1.6241737604141235,
+              "raw_max": 1.889087200164795,
+              "raw_std": 0.35947170853614807,
+              "phase_standard_deviation_rad": 0.5462284684181213,
+              "phase_tv_by_axis": [
+                0.3189842998981476,
+                0.34500157833099365
+              ],
+              "phase_tv_mean": 0.3319929391145706,
+              "modulation_amplitude_mean": 1.0,
+              "modulation_amplitude_min": 0.9999999403953552,
+              "modulation_amplitude_max": 1.0,
+              "quantized_phase_levels": 175,
+              "phase_floor_error_max_rad": 0.024543046951293945,
+              "phase_floor_error_mean_rad": 0.012287819758057594,
+              "modulation_high_frequency_fraction_above_1over8_cycle_per_pixel": 0.5795790292305806,
+              "modulation_variance": 0.257987740472427
+            },
+            "phase_sets.0": {
+              "shape": [
+                224,
+                224
+              ],
+              "parameters": 50176,
+              "raw_min": -1.424896001815796,
+              "raw_max": 1.4830020666122437,
+              "raw_std": 0.31937190890312195,
+              "phase_standard_deviation_rad": 0.48913878202438354,
+              "phase_tv_by_axis": [
+                0.490254670381546,
+                0.4350169897079468
+              ],
+              "phase_tv_mean": 0.4626358300447464,
+              "modulation_amplitude_mean": 0.4513409733772278,
+              "modulation_amplitude_min": 0.3999999463558197,
+              "modulation_amplitude_max": 0.8642131090164185,
+              "quantized_phase_levels": 180,
+              "phase_floor_error_max_rad": 0.024543285369873047,
+              "phase_floor_error_mean_rad": 0.012239828705787659,
+              "modulation_high_frequency_fraction_above_1over8_cycle_per_pixel": 0.9003148855086203,
+              "modulation_variance": 0.10442553649670899
+            },
+            "phase_sets.1": {
+              "shape": [
+                224,
+                224
+              ],
+              "parameters": 50176,
+              "raw_min": -1.3546905517578125,
+              "raw_max": 1.3463798761367798,
+              "raw_std": 0.3079945147037506,
+              "phase_standard_deviation_rad": 0.4726000726222992,
+              "phase_tv_by_axis": [
+                0.4172661304473877,
+                0.39432668685913086
+              ],
+              "phase_tv_mean": 0.4057964086532593,
+              "modulation_amplitude_mean": 0.44842761754989624,
+              "modulation_amplitude_min": 0.3999999463558197,
+              "modulation_amplitude_max": 0.8348121047019958,
+              "quantized_phase_levels": 174,
+              "phase_floor_error_max_rad": 0.024542154744267464,
+              "phase_floor_error_mean_rad": 0.012232488952577114,
+              "modulation_high_frequency_fraction_above_1over8_cycle_per_pixel": 0.8785927017220584,
+              "modulation_variance": 0.09822921355482439
+            },
+            "phase_sets.2": {
+              "shape": [
+                224,
+                224
+              ],
+              "parameters": 50176,
+              "raw_min": -1.585280418395996,
+              "raw_max": 1.7706899642944336,
+              "raw_std": 0.37823960185050964,
+              "phase_standard_deviation_rad": 0.5739691257476807,
+              "phase_tv_by_axis": [
+                0.7523127794265747,
+                0.6096078753471375
+              ],
+              "phase_tv_mean": 0.6809603273868561,
+              "modulation_amplitude_mean": 0.46719157695770264,
+              "modulation_amplitude_min": 0.3999999761581421,
+              "modulation_amplitude_max": 0.9145862460136414,
+              "quantized_phase_levels": 193,
+              "phase_floor_error_max_rad": 0.024542154744267464,
+              "phase_floor_error_mean_rad": 0.012308161705732346,
+              "modulation_high_frequency_fraction_above_1over8_cycle_per_pixel": 0.8932540440042777,
+              "modulation_variance": 0.13809850660674328
+            },
+            "phase_sets.3": {
+              "shape": [
+                224,
+                224
+              ],
+              "parameters": 50176,
+              "raw_min": -1.4396134614944458,
+              "raw_max": 1.4207957983016968,
+              "raw_std": 0.309541255235672,
+              "phase_standard_deviation_rad": 0.47370728850364685,
+              "phase_tv_by_axis": [
+                0.45600268244743347,
+                0.4203106760978699
+              ],
+              "phase_tv_mean": 0.4381566792726517,
+              "modulation_amplitude_mean": 0.44804927706718445,
+              "modulation_amplitude_min": 0.3999999463558197,
+              "modulation_amplitude_max": 0.8547899723052979,
+              "quantized_phase_levels": 180,
+              "phase_floor_error_max_rad": 0.024542154744267464,
+              "phase_floor_error_mean_rad": 0.012278973124921322,
+              "modulation_high_frequency_fraction_above_1over8_cycle_per_pixel": 0.9057076894143642,
+              "modulation_variance": 0.09817596044974983
+            },
+            "phase_sets.4": {
+              "shape": [
+                478,
+                478
+              ],
+              "parameters": 228484,
+              "raw_min": -2.4981496334075928,
+              "raw_max": 3.5162713527679443,
+              "raw_std": 0.4866269528865814,
+              "phase_standard_deviation_rad": 0.7176104784011841,
+              "phase_tv_by_axis": [
+                0.9655506610870361,
+                0.9821435809135437
+              ],
+              "phase_tv_mean": 0.9738471210002899,
+              "modulation_amplitude_mean": 0.49400901794433594,
+              "modulation_amplitude_min": 0.3999999463558197,
+              "modulation_amplitude_max": 0.9965526461601257,
+              "quantized_phase_levels": 233,
+              "phase_floor_error_max_rad": 0.02454352378845215,
+              "phase_floor_error_mean_rad": 0.012252659536898136,
+              "modulation_high_frequency_fraction_above_1over8_cycle_per_pixel": 0.8952976595411228,
+              "modulation_variance": 0.19689654698632414
+            },
+            "phase_sets.5": {
+              "shape": [
+                224,
+                224
+              ],
+              "parameters": 50176,
+              "raw_min": -3.1295158863067627,
+              "raw_max": 2.5210697650909424,
+              "raw_std": 0.3697637617588043,
+              "phase_standard_deviation_rad": 0.5452879667282104,
+              "phase_tv_by_axis": [
+                0.4210291802883148,
+                0.39367714524269104
+              ],
+              "phase_tv_mean": 0.40735316276550293,
+              "modulation_amplitude_mean": 0.4571751058101654,
+              "modulation_amplitude_min": 0.3999999463558197,
+              "modulation_amplitude_max": 0.9927361011505127,
+              "quantized_phase_levels": 231,
+              "phase_floor_error_max_rad": 0.024542927742004395,
+              "phase_floor_error_mean_rad": 0.012243421748280525,
+              "modulation_high_frequency_fraction_above_1over8_cycle_per_pixel": 0.628225314646128,
+              "modulation_variance": 0.12102546712213222
+            },
+            "phase_sets.6": {
+              "shape": [
+                224,
+                224
+              ],
+              "parameters": 50176,
+              "raw_min": -2.9713149070739746,
+              "raw_max": 3.7304720878601074,
+              "raw_std": 0.3695000112056732,
+              "phase_standard_deviation_rad": 0.5480239987373352,
+              "phase_tv_by_axis": [
+                0.40986233949661255,
+                0.36965471506118774
+              ],
+              "phase_tv_mean": 0.38975852727890015,
+              "modulation_amplitude_mean": 0.45830100774765015,
+              "modulation_amplitude_min": 0.3999999761581421,
+              "modulation_amplitude_max": 0.9977279305458069,
+              "quantized_phase_levels": 224,
+              "phase_floor_error_max_rad": 0.024542633444070816,
+              "phase_floor_error_mean_rad": 0.01224514190107584,
+              "modulation_high_frequency_fraction_above_1over8_cycle_per_pixel": 0.6838205985598772,
+              "modulation_variance": 0.12313002381926678
+            },
+            "phase_sets.7": {
+              "shape": [
+                224,
+                224
+              ],
+              "parameters": 50176,
+              "raw_min": -2.5740232467651367,
+              "raw_max": 3.295182943344116,
+              "raw_std": 0.38572144508361816,
+              "phase_standard_deviation_rad": 0.5594251155853271,
+              "phase_tv_by_axis": [
+                0.411146879196167,
+                0.4390541613101959
+              ],
+              "phase_tv_mean": 0.42510052025318146,
+              "modulation_amplitude_mean": 0.4590180814266205,
+              "modulation_amplitude_min": 0.3999999463558197,
+              "modulation_amplitude_max": 0.9947142601013184,
+              "quantized_phase_levels": 234,
+              "phase_floor_error_max_rad": 0.02454311028122902,
+              "phase_floor_error_mean_rad": 0.012286389246582985,
+              "modulation_high_frequency_fraction_above_1over8_cycle_per_pixel": 0.7156350235857584,
+              "modulation_variance": 0.12560090087432613
+            },
+            "phase_sets.8": {
+              "shape": [
+                224,
+                224
+              ],
+              "parameters": 50176,
+              "raw_min": -3.2930595874786377,
+              "raw_max": 2.8133926391601562,
+              "raw_std": 0.3861391544342041,
+              "phase_standard_deviation_rad": 0.5582800507545471,
+              "phase_tv_by_axis": [
+                0.33328089118003845,
+                0.3335452079772949
+              ],
+              "phase_tv_mean": 0.3334130495786667,
+              "modulation_amplitude_mean": 0.45695868134498596,
+              "modulation_amplitude_min": 0.3999999463558197,
+              "modulation_amplitude_max": 0.9946926236152649,
+              "quantized_phase_levels": 238,
+              "phase_floor_error_max_rad": 0.024542633444070816,
+              "phase_floor_error_mean_rad": 0.01232721097767353,
+              "modulation_high_frequency_fraction_above_1over8_cycle_per_pixel": 0.5447808807814831,
+              "modulation_variance": 0.12322882609991948
+            },
+            "phase_sets.9": {
+              "shape": [
+                478,
+                478
+              ],
+              "parameters": 228484,
+              "raw_min": -4.942149639129639,
+              "raw_max": 5.150547027587891,
+              "raw_std": 0.6714372038841248,
+              "phase_standard_deviation_rad": 0.8171125054359436,
+              "phase_tv_by_axis": [
+                0.9957040548324585,
+                0.9852843880653381
+              ],
+              "phase_tv_mean": 0.9904942214488983,
+              "modulation_amplitude_mean": 0.48945122957229614,
+              "modulation_amplitude_min": 0.3999999463558197,
+              "modulation_amplitude_max": 0.9998623132705688,
+              "quantized_phase_levels": 254,
+              "phase_floor_error_max_rad": 0.02454352378845215,
+              "phase_floor_error_mean_rad": 0.012259837239980698,
+              "modulation_high_frequency_fraction_above_1over8_cycle_per_pixel": 0.6255319331315642,
+              "modulation_variance": 0.20744602430485407
+            }
+          },
+          "parameter_count": 908552,
+          "phase_smoothness_actual_formula": 0.5308644351634112,
+          "phase_regularizer_coefficient": 0.005,
+          "weighted_phase_regularizer": 0.002654322175817056
+        },
+        "last_ema": {
+          "tensors": {
+            "raw_router": {
+              "shape": [
+                224,
+                224
+              ],
+              "parameters": 50176,
+              "raw_min": -1.6230766773223877,
+              "raw_max": 1.886305809020996,
+              "raw_std": 0.3611546456813812,
+              "phase_standard_deviation_rad": 0.5487059950828552,
+              "phase_tv_by_axis": [
+                0.32086122035980225,
+                0.34910622239112854
+              ],
+              "phase_tv_mean": 0.3349837213754654,
+              "modulation_amplitude_mean": 1.0,
+              "modulation_amplitude_min": 0.9999999403953552,
+              "modulation_amplitude_max": 1.0,
+              "quantized_phase_levels": 175,
+              "phase_floor_error_max_rad": 0.02454352378845215,
+              "phase_floor_error_mean_rad": 0.01225290261209011,
+              "modulation_high_frequency_fraction_above_1over8_cycle_per_pixel": 0.5796733260492608,
+              "modulation_variance": 0.26007790469689046
+            },
+            "phase_sets.0": {
+              "shape": [
+                224,
+                224
+              ],
+              "parameters": 50176,
+              "raw_min": -1.4145697355270386,
+              "raw_max": 1.4873027801513672,
+              "raw_std": 0.3199176788330078,
+              "phase_standard_deviation_rad": 0.4899425506591797,
+              "phase_tv_by_axis": [
+                0.49184122681617737,
+                0.43626052141189575
+              ],
+              "phase_tv_mean": 0.46405087411403656,
+              "modulation_amplitude_mean": 0.4514871835708618,
+              "modulation_amplitude_min": 0.3999999463558197,
+              "modulation_amplitude_max": 0.8651189804077148,
+              "quantized_phase_levels": 179,
+              "phase_floor_error_max_rad": 0.024543285369873047,
+              "phase_floor_error_mean_rad": 0.012292526662349701,
+              "modulation_high_frequency_fraction_above_1over8_cycle_per_pixel": 0.9003918841849952,
+              "modulation_variance": 0.10473388923500655
+            },
+            "phase_sets.1": {
+              "shape": [
+                224,
+                224
+              ],
+              "parameters": 50176,
+              "raw_min": -1.347472071647644,
+              "raw_max": 1.3313976526260376,
+              "raw_std": 0.3086906373500824,
+              "phase_standard_deviation_rad": 0.4736146926879883,
+              "phase_tv_by_axis": [
+                0.419241726398468,
+                0.39612388610839844
+              ],
+              "phase_tv_mean": 0.4076828062534332,
+              "modulation_amplitude_mean": 0.4486030638217926,
+              "modulation_amplitude_min": 0.3999999463558197,
+              "modulation_amplitude_max": 0.8330178260803223,
+              "quantized_phase_levels": 174,
+              "phase_floor_error_max_rad": 0.024542808532714844,
+              "phase_floor_error_mean_rad": 0.012298129498958588,
+              "modulation_high_frequency_fraction_above_1over8_cycle_per_pixel": 0.8790281765011813,
+              "modulation_variance": 0.09860535353695499
+            },
+            "phase_sets.2": {
+              "shape": [
+                224,
+                224
+              ],
+              "parameters": 50176,
+              "raw_min": -1.5764985084533691,
+              "raw_max": 1.774673581123352,
+              "raw_std": 0.3791872262954712,
+              "phase_standard_deviation_rad": 0.5753016471862793,
+              "phase_tv_by_axis": [
+                0.7558943033218384,
+                0.6128278374671936
+              ],
+              "phase_tv_mean": 0.684361070394516,
+              "modulation_amplitude_mean": 0.46744421124458313,
+              "modulation_amplitude_min": 0.3999999463558197,
+              "modulation_amplitude_max": 0.9151503443717957,
+              "quantized_phase_levels": 193,
+              "phase_floor_error_max_rad": 0.024543166160583496,
+              "phase_floor_error_mean_rad": 0.012235519476234913,
+              "modulation_high_frequency_fraction_above_1over8_cycle_per_pixel": 0.8934210222322851,
+              "modulation_variance": 0.13864086356417551
+            },
+            "phase_sets.3": {
+              "shape": [
+                224,
+                224
+              ],
+              "parameters": 50176,
+              "raw_min": -1.4457499980926514,
+              "raw_max": 1.4030333757400513,
+              "raw_std": 0.3099624812602997,
+              "phase_standard_deviation_rad": 0.4743160605430603,
+              "phase_tv_by_axis": [
+                0.4573449492454529,
+                0.4215978682041168
+              ],
+              "phase_tv_mean": 0.43947140872478485,
+              "modulation_amplitude_mean": 0.44815266132354736,
+              "modulation_amplitude_min": 0.3999999463558197,
+              "modulation_amplitude_max": 0.8561543226242065,
+              "quantized_phase_levels": 179,
+              "phase_floor_error_max_rad": 0.024542154744267464,
+              "phase_floor_error_mean_rad": 0.012268662452697754,
+              "modulation_high_frequency_fraction_above_1over8_cycle_per_pixel": 0.9057517611872323,
+              "modulation_variance": 0.09839971680536155
+            },
+            "phase_sets.4": {
+              "shape": [
+                478,
+                478
+              ],
+              "parameters": 228484,
+              "raw_min": -2.5231144428253174,
+              "raw_max": 3.5411059856414795,
+              "raw_std": 0.4877985417842865,
+              "phase_standard_deviation_rad": 0.7191216945648193,
+              "phase_tv_by_axis": [
+                0.9698489308357239,
+                0.9862546920776367
+              ],
+              "phase_tv_mean": 0.9780518114566803,
+              "modulation_amplitude_mean": 0.49431076645851135,
+              "modulation_amplitude_min": 0.3999999463558197,
+              "modulation_amplitude_max": 0.9967148900032043,
+              "quantized_phase_levels": 233,
+              "phase_floor_error_max_rad": 0.02454311028122902,
+              "phase_floor_error_mean_rad": 0.012242446653544903,
+              "modulation_high_frequency_fraction_above_1over8_cycle_per_pixel": 0.8953248194929797,
+              "modulation_variance": 0.19753478196894164
+            },
+            "phase_sets.5": {
+              "shape": [
+                224,
+                224
+              ],
+              "parameters": 50176,
+              "raw_min": -3.1541402339935303,
+              "raw_max": 2.5234692096710205,
+              "raw_std": 0.37049031257629395,
+              "phase_standard_deviation_rad": 0.5461891293525696,
+              "phase_tv_by_axis": [
+                0.42209646105766296,
+                0.3946428894996643
+              ],
+              "phase_tv_mean": 0.40836967527866364,
+              "modulation_amplitude_mean": 0.4573078453540802,
+              "modulation_amplitude_min": 0.3999999463558197,
+              "modulation_amplitude_max": 0.9930703639984131,
+              "quantized_phase_levels": 233,
+              "phase_floor_error_max_rad": 0.02454311028122902,
+              "phase_floor_error_mean_rad": 0.012223910540342331,
+              "modulation_high_frequency_fraction_above_1over8_cycle_per_pixel": 0.6276800993374744,
+              "modulation_variance": 0.12134405276835966
+            },
+            "phase_sets.6": {
+              "shape": [
+                224,
+                224
+              ],
+              "parameters": 50176,
+              "raw_min": -2.9550747871398926,
+              "raw_max": 3.7361557483673096,
+              "raw_std": 0.37010839581489563,
+              "phase_standard_deviation_rad": 0.5487958788871765,
+              "phase_tv_by_axis": [
+                0.4104345738887787,
+                0.37007370591163635
+              ],
+              "phase_tv_mean": 0.3902541399002075,
+              "modulation_amplitude_mean": 0.4584317207336426,
+              "modulation_amplitude_min": 0.3999999463558197,
+              "modulation_amplitude_max": 0.9977530241012573,
+              "quantized_phase_levels": 225,
+              "phase_floor_error_max_rad": 0.024541614577174187,
+              "phase_floor_error_mean_rad": 0.012263125739991665,
+              "modulation_high_frequency_fraction_above_1over8_cycle_per_pixel": 0.6835723126310483,
+              "modulation_variance": 0.12341240533590757
+            },
+            "phase_sets.7": {
+              "shape": [
+                224,
+                224
+              ],
+              "parameters": 50176,
+              "raw_min": -2.582366943359375,
+              "raw_max": 3.3034682273864746,
+              "raw_std": 0.3862331807613373,
+              "phase_standard_deviation_rad": 0.5599474310874939,
+              "phase_tv_by_axis": [
+                0.4119555950164795,
+                0.44000881910324097
+              ],
+              "phase_tv_mean": 0.42598220705986023,
+              "modulation_amplitude_mean": 0.45909383893013,
+              "modulation_amplitude_min": 0.3999999463558197,
+              "modulation_amplitude_max": 0.994797945022583,
+              "quantized_phase_levels": 236,
+              "phase_floor_error_max_rad": 0.024542633444070816,
+              "phase_floor_error_mean_rad": 0.012278168462216854,
+              "modulation_high_frequency_fraction_above_1over8_cycle_per_pixel": 0.715626784144914,
+              "modulation_variance": 0.125773620326236
+            },
+            "phase_sets.8": {
+              "shape": [
+                224,
+                224
+              ],
+              "parameters": 50176,
+              "raw_min": -3.3110907077789307,
+              "raw_max": 2.8230514526367188,
+              "raw_std": 0.38690492510795593,
+              "phase_standard_deviation_rad": 0.5591722726821899,
+              "phase_tv_by_axis": [
+                0.3339700698852539,
+                0.33400845527648926
+              ],
+              "phase_tv_mean": 0.3339892625808716,
+              "modulation_amplitude_mean": 0.45709696412086487,
+              "modulation_amplitude_min": 0.3999999463558197,
+              "modulation_amplitude_max": 0.9948738217353821,
+              "quantized_phase_levels": 238,
+              "phase_floor_error_max_rad": 0.024542449042201042,
+              "phase_floor_error_mean_rad": 0.012294464744627476,
+              "modulation_high_frequency_fraction_above_1over8_cycle_per_pixel": 0.5444811951101024,
+              "modulation_variance": 0.12354096304113717
+            },
+            "phase_sets.9": {
+              "shape": [
+                478,
+                478
+              ],
+              "parameters": 228484,
+              "raw_min": -4.9651947021484375,
+              "raw_max": 5.185587406158447,
+              "raw_std": 0.6730127930641174,
+              "phase_standard_deviation_rad": 0.8178571462631226,
+              "phase_tv_by_axis": [
+                0.9967823028564453,
+                0.9860029220581055
+              ],
+              "phase_tv_mean": 0.9913926124572754,
+              "modulation_amplitude_mean": 0.48949289321899414,
+              "modulation_amplitude_min": 0.3999999463558197,
+              "modulation_amplitude_max": 0.9998716115951538,
+              "quantized_phase_levels": 255,
+              "phase_floor_error_max_rad": 0.02454352378845215,
+              "phase_floor_error_mean_rad": 0.012283537536859512,
+              "modulation_high_frequency_fraction_above_1over8_cycle_per_pixel": 0.6251531473980779,
+              "modulation_variance": 0.20759625344374286
+            }
+          },
+          "parameter_count": 908552,
+          "phase_smoothness_actual_formula": 0.5325990535996177,
+          "phase_regularizer_coefficient": 0.005,
+          "weighted_phase_regularizer": 0.0026629952679980886
+        }
+      },
+      "selected_train_balanced_nll": 0.8025547432108164,
+      "selected_val_balanced_nll": 1.4268960586325747,
+      "saved_mixed_training_mean_objective_at_selected_epoch": 1.8174819464572551,
+      "selected_gap_pp": 27.285474437740998
+    }
+  ],
+  "training_source_commit": "46011b823ff4cffc11c4f5943c62e31501c2a4c6",
+  "tool_git_commit": "3eb6f8f67d3d010af2bf8a7a72274df578fb4d04",
+  "tool_sources": {
+    "LightGenV2/tasks/t18_optical_residual_ablation/diagnose_caltech_repair_saved_phase.py": "d14ee5bce9b26433a6f829e4aa25baacd9394e59143a47c125abb1fe54da599e"
+  },
+  "CPU_audit_sha256": "745037042fce9463ed77cf7eb52f5110c1a165be36fde4eb4bf52e06b4cdc22d",
+  "sources_current_original_match": true,
+  "model_constructed": 0,
+  "model_forward_calls": 0,
+  "data_arrays_read": 0,
+  "test_evaluations": 0,
+  "gpu_used": false,
+  "scope": "Saved tensor properties only; capacity/regularizer magnitude and spectrum are descriptive, not causal or predictive of new configuration accuracy. Epoch mixed objective is not a component decomposition of selected EMA validation loss."
+}
