@@ -14,10 +14,28 @@
   "phase_smooth_weight": 0.005,
   "memory_gib": 2,
   "maximum_gpu_children": 3,
-  "allowed_physical_gpu_indices": [0,1,2,4,6],
-  "prefer_physical_gpu_indices": [6,2,1,4,0],
+  "allowed_physical_gpu_indices": [
+    2,
+    5,
+    6
+  ],
+  "prefer_physical_gpu_indices": [
+    6,
+    2,
+    5
+  ],
   "A100_human_authorized_20261014": true,
-  "variants": ["base","unquantized","fullfield_ln","rgb_tiles","dense_router","preserve_global","mixup02","mixup06","legacy_reference"],
+  "variants": [
+    "base",
+    "unquantized",
+    "fullfield_ln",
+    "rgb_tiles",
+    "dense_router",
+    "preserve_global",
+    "mixup02",
+    "mixup06",
+    "legacy_reference"
+  ],
   "data": "/DATA/DATA1/guest3/t18_caltech_selected20_20261012/caltech20_selected_split.npz",
   "cache_sha256": "a81e78bbff06ea65e7ceba3771b688178276464e33fdcdedf3796fa2930fa6e1",
   "manifest_sha256": "91f7aa36a97713e300699367904c8866551996de199b9630c0545bb24dc5f60e",

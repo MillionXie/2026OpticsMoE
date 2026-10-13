@@ -1,7 +1,7 @@
 # Caltech deployment regression diagnosis, 2026-10-14
 
 Human authorizes at most three project GPUs, now including physical6 A100; allowed
-physical0/1/2/4/6 only, memory2GiB per child plus800MiB free margin. CPU supervisor
+physical2/5/6 only (latest human instruction supersedes the initial list), memory2GiB per child plus800MiB free margin. CPU supervisor
 has no CUDA visibility; no foreign process termination or environment changes.
 Old sealed code/runs/checkpoints/predictions remain untouched. Independent T18
 diagnostic subclasses import existing graphs; no source clone/worktree/branch.
@@ -55,3 +55,22 @@ formal profile. Final overalltest75 goal remains a goal, never fabricated or
 achieved by test retries. Fresh physical calibration still required, laboratory
 not connected. Matched rho0/.3 formal pairs use identical settings; asymmetric
 residual-only tuning must be separately labeled, not a pure residual causal claim.
+
+## Execution handoff to physical2/5/6
+
+The human explicitly restricts all future project GPU children to physical2/5/6.
+The old CPU queue and its three own children have exited after checking coherent
+completed last/history/gradient/Adam prefixes; old run/checkpoints remain retained.
+Continue raw, EMA, Adam and previous best candidate in a separate run, without
+replaying completed epochs or changing model/loss/data/budget. Discard only an
+unfinished in-memory batch. Total epoch budget stays40, total recorded fit time
+includes the saved prefix. Fixed-LR diagnostics have no scheduler to reset.
+New execution sources record their own Git identity; original prefix sources are
+checked against their original blobs. Only runner/audit/GPU plan may change for
+this handoff, every optical/model/other runtime source must still match. Restored
+raw/EMA/Adam must be bit-exact before resuming and restored numerical gate must
+pass on its actual GPU. The final CPU audit verifies exact parent history and
+orders/transforms prefix, source provenance and all40 epochs again.
+Daily09:00 Asia/Shanghai reporting is human-requested, independent of the quiet
+15-minute continuation monitor. Report actual progress/failures, not a guarantee
+of meeting the75% target by the next morning.

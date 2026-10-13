@@ -29,8 +29,19 @@ def audit(a):
         best=torch.load(p/'best_checkpoint.pt',map_location='cpu',weights_only=False);last=torch.load(p/'last_checkpoint.pt',map_location='cpu',weights_only=False)
         chosen=min(hist,key=lambda h:h['val']['balanced_nll']);assert best['epoch']==chosen['epoch']==r['selected_epoch'] and chosen['val']==r['metrics']['val']==best['validation']
         assert best['config']==last['config']==cfg and best['sources']==last['sources']==r['sources']==meta['sources']
+        if (p/'resume_receipt.json').exists():
+            receipt=d.read(p/'resume_receipt.json');parent=Path(receipt['parent'])
+            pm,pl,pb,ph,pg,ps,pj=d.resume_state(parent,cfg)
+            n=receipt['prefix_epochs'];assert hist[:n]==ph and gr[:n]==pg
+            assert last['orders'][:n]==pl['orders'] and last['transforms'][:n]==pl['transforms']
+            assert receipt['raw_sha256']==d.digest(pl['model']) and receipt['ema_sha256']==d.digest(pl['ema'])
+            assert receipt['parent_last_sha256']==d.sha(parent/'last_checkpoint.pt') and receipt['parent_best_sha256']==d.sha(parent/'best_checkpoint.pt')
+            assert receipt['completed_epochs_replayed']==0 and receipt['first_continued_epoch']==n+1
+            assert receipt['optimizer_exact'] and receipt['raw_exact'] and receipt['ema_exact'] and receipt['restored_gate_passed']
+            assert ps['initial_parameter_sha256']==r['initial_parameter_sha256']==last['initial_parameter_sha256']
         assert best['data_sha256']==last['data_sha256']==m['cache_sha256']
         assert all(torch.isfinite(x).all() for x in best['model'].values())
+        assert all(torch.isfinite(x).all() for x in last['model'].values()) and all(torch.isfinite(x).all() for x in last['ema'].values())
         for x in gr:assert all(np.isfinite(v) and v>0 for v in x['norms'].values())
         assert len(gr[0]['norms'])==len(last['optimizer']['param_groups'][0]['params'])==len(last['optimizer']['state'])
         steps={int(x['step']) for x in last['optimizer']['state'].values()};assert steps=={40*86},steps
