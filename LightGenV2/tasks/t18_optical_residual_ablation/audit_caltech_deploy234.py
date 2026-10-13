@@ -10,6 +10,8 @@ import caltech_deploy234_finalize as f
 
 def savefig(fig,out,name):
     for ext in ('png','svg','pdf'):fig.savefig(out/(name+'.'+ext),dpi=180,bbox_inches='tight')
+    svg=out/(name+'.svg')
+    svg.write_text('\n'.join(line.rstrip() for line in svg.read_text(encoding='utf-8').splitlines())+'\n',encoding='utf-8')
     plt.close(fig)
 
 def audit(a):
