@@ -1,0 +1,94 @@
+{
+  "passed": true,
+  "results": [
+    {
+      "passed": true,
+      "depth": 2,
+      "rho": 0.0,
+      "micro": 1,
+      "probability_max_error": 0.0,
+      "gradient_max_relative_l2": 3.314461878289876e-07,
+      "gradient_min_cosine": 0.9999998807907104,
+      "all_phase_gradients_finite_nonzero": true,
+      "initial_parameter_sha256": "a114762e0e1088613bc5e891a8f47d229303ec485a580baa7e9e16b53251e147",
+      "parameters": 479364,
+      "test_evaluations": 0
+    },
+    {
+      "passed": true,
+      "depth": 2,
+      "rho": 0.3,
+      "micro": 1,
+      "probability_max_error": 0.0,
+      "gradient_max_relative_l2": 3.0999740374682005e-07,
+      "gradient_min_cosine": 0.9999998807907104,
+      "all_phase_gradients_finite_nonzero": true,
+      "initial_parameter_sha256": "a114762e0e1088613bc5e891a8f47d229303ec485a580baa7e9e16b53251e147",
+      "parameters": 479364,
+      "test_evaluations": 0
+    },
+    {
+      "passed": true,
+      "depth": 3,
+      "rho": 0.0,
+      "micro": 1,
+      "probability_max_error": 0.0,
+      "gradient_max_relative_l2": 5.209732876210182e-07,
+      "gradient_min_cosine": 0.9999998211860657,
+      "all_phase_gradients_finite_nonzero": true,
+      "initial_parameter_sha256": "7feec5a57cf29a2353b12c582bd0f52e407672959c57c16a157b2f31acbaff1c",
+      "parameters": 680068,
+      "test_evaluations": 0
+    },
+    {
+      "passed": true,
+      "depth": 3,
+      "rho": 0.3,
+      "micro": 1,
+      "probability_max_error": 0.0,
+      "gradient_max_relative_l2": 5.589500915448298e-07,
+      "gradient_min_cosine": 0.9999998807907104,
+      "all_phase_gradients_finite_nonzero": true,
+      "initial_parameter_sha256": "7feec5a57cf29a2353b12c582bd0f52e407672959c57c16a157b2f31acbaff1c",
+      "parameters": 680068,
+      "test_evaluations": 0
+    },
+    {
+      "passed": true,
+      "depth": 4,
+      "rho": 0.0,
+      "micro": 1,
+      "probability_max_error": 0.0,
+      "gradient_max_relative_l2": 1.2924876955366926e-06,
+      "gradient_min_cosine": 1.0,
+      "all_phase_gradients_finite_nonzero": true,
+      "initial_parameter_sha256": "f7de57b62eb33f6531128061deaa9ec2fb1bacbeea7ba02ecc50528189e60f37",
+      "parameters": 908552,
+      "test_evaluations": 0
+    },
+    {
+      "passed": true,
+      "depth": 4,
+      "rho": 0.3,
+      "micro": 1,
+      "probability_max_error": 0.0,
+      "gradient_max_relative_l2": 1.5786357607794343e-06,
+      "gradient_min_cosine": 0.9999998807907104,
+      "all_phase_gradients_finite_nonzero": true,
+      "initial_parameter_sha256": "f7de57b62eb33f6531128061deaa9ec2fb1bacbeea7ba02ecc50528189e60f37",
+      "parameters": 908552,
+      "test_evaluations": 0
+    }
+  ],
+  "gpu_policy": {
+    "gpu_uuid": "GPU-6dcca91a-8e08-1a50-9aa6-81defeaed50b",
+    "spare_memory_authorized": false,
+    "memory_limit_gib": 2,
+    "free_mib_at_start": 24240,
+    "total_mib": 24576,
+    "other_process_on_gpu": false,
+    "safety_margin_mib": 800,
+    "source_sha256": "6d9ae0cb8d49d06997905f84cbe30929e4d4552a5276afe356e6f5ee14e496a2"
+  },
+  "test_evaluations": 0
+}

@@ -1,0 +1,395 @@
+{
+  "passed": true,
+  "results": [
+    {
+      "depth": 2,
+      "rho": 0.0,
+      "simulation_export_replay_max_error": 0.0,
+      "captures": 3,
+      "parameters": 479364,
+      "passed": true,
+      "contract": {
+        "main_depth": 2,
+        "router_count": 1,
+        "total_captures": 3,
+        "stages": [
+          "expert",
+          "global"
+        ],
+        "geometry": {
+          "wavelength_m": 5.32e-07,
+          "distance_m": 0.1,
+          "logical_pitch_m": 1.7e-05,
+          "numerical_canvas": 518,
+          "active": 478,
+          "expert": 224,
+          "expert_array": "2x2",
+          "gap": 30,
+          "active_expert_origins": [
+            [
+              0,
+              0
+            ],
+            [
+              0,
+              254
+            ],
+            [
+              254,
+              0
+            ],
+            [
+              254,
+              254
+            ]
+          ],
+          "native_active": 1016,
+          "amplitude_native": [
+            1080,
+            1920
+          ],
+          "phase_native": [
+            1200,
+            1920
+          ]
+        },
+        "amplitude": "RMS .25 -> tanh(abs/.5), zeros remain zero, round255; NO extra peak normalization",
+        "phase": "floor256 modulo2pi; calibrated phase LUT required",
+        "rho": 0.0,
+        "residual": "((1-rho)*exp(i*phi)+rho); expert/global only, router rho0",
+        "residual_export": "joint amplitude*abs(modulation) and angle(modulation), not phase-only",
+        "nonlinearity": "raw CCD -> relative mean clamp12 -> log1p -> pool224 -> row LayerNorm eps1e-5 -> ReLU -> RMS.25",
+        "readout": "fixed20 equal64x64 intensity windows, normalized detector energy; no learned electronic classifier",
+        "quantization": "8-bit amplitude AND phase in training/validation/export, straight-through gradients",
+        "physical_status": "offline mathematical/export parity; fresh camera ROI/orientation/exposure/gain/LUT and physical rho calibration still require bench acceptance; no device connection"
+      }
+    },
+    {
+      "depth": 2,
+      "rho": 0.3,
+      "simulation_export_replay_max_error": 0.0,
+      "captures": 3,
+      "parameters": 479364,
+      "passed": true,
+      "contract": {
+        "main_depth": 2,
+        "router_count": 1,
+        "total_captures": 3,
+        "stages": [
+          "expert",
+          "global"
+        ],
+        "geometry": {
+          "wavelength_m": 5.32e-07,
+          "distance_m": 0.1,
+          "logical_pitch_m": 1.7e-05,
+          "numerical_canvas": 518,
+          "active": 478,
+          "expert": 224,
+          "expert_array": "2x2",
+          "gap": 30,
+          "active_expert_origins": [
+            [
+              0,
+              0
+            ],
+            [
+              0,
+              254
+            ],
+            [
+              254,
+              0
+            ],
+            [
+              254,
+              254
+            ]
+          ],
+          "native_active": 1016,
+          "amplitude_native": [
+            1080,
+            1920
+          ],
+          "phase_native": [
+            1200,
+            1920
+          ]
+        },
+        "amplitude": "RMS .25 -> tanh(abs/.5), zeros remain zero, round255; NO extra peak normalization",
+        "phase": "floor256 modulo2pi; calibrated phase LUT required",
+        "rho": 0.3,
+        "residual": "((1-rho)*exp(i*phi)+rho); expert/global only, router rho0",
+        "residual_export": "joint amplitude*abs(modulation) and angle(modulation), not phase-only",
+        "nonlinearity": "raw CCD -> relative mean clamp12 -> log1p -> pool224 -> row LayerNorm eps1e-5 -> ReLU -> RMS.25",
+        "readout": "fixed20 equal64x64 intensity windows, normalized detector energy; no learned electronic classifier",
+        "quantization": "8-bit amplitude AND phase in training/validation/export, straight-through gradients",
+        "physical_status": "offline mathematical/export parity; fresh camera ROI/orientation/exposure/gain/LUT and physical rho calibration still require bench acceptance; no device connection"
+      }
+    },
+    {
+      "depth": 3,
+      "rho": 0.0,
+      "simulation_export_replay_max_error": 0.0,
+      "captures": 4,
+      "parameters": 680068,
+      "passed": true,
+      "contract": {
+        "main_depth": 3,
+        "router_count": 1,
+        "total_captures": 4,
+        "stages": [
+          "expert",
+          "global",
+          "expert"
+        ],
+        "geometry": {
+          "wavelength_m": 5.32e-07,
+          "distance_m": 0.1,
+          "logical_pitch_m": 1.7e-05,
+          "numerical_canvas": 518,
+          "active": 478,
+          "expert": 224,
+          "expert_array": "2x2",
+          "gap": 30,
+          "active_expert_origins": [
+            [
+              0,
+              0
+            ],
+            [
+              0,
+              254
+            ],
+            [
+              254,
+              0
+            ],
+            [
+              254,
+              254
+            ]
+          ],
+          "native_active": 1016,
+          "amplitude_native": [
+            1080,
+            1920
+          ],
+          "phase_native": [
+            1200,
+            1920
+          ]
+        },
+        "amplitude": "RMS .25 -> tanh(abs/.5), zeros remain zero, round255; NO extra peak normalization",
+        "phase": "floor256 modulo2pi; calibrated phase LUT required",
+        "rho": 0.0,
+        "residual": "((1-rho)*exp(i*phi)+rho); expert/global only, router rho0",
+        "residual_export": "joint amplitude*abs(modulation) and angle(modulation), not phase-only",
+        "nonlinearity": "raw CCD -> relative mean clamp12 -> log1p -> pool224 -> row LayerNorm eps1e-5 -> ReLU -> RMS.25",
+        "readout": "fixed20 equal64x64 intensity windows, normalized detector energy; no learned electronic classifier",
+        "quantization": "8-bit amplitude AND phase in training/validation/export, straight-through gradients",
+        "physical_status": "offline mathematical/export parity; fresh camera ROI/orientation/exposure/gain/LUT and physical rho calibration still require bench acceptance; no device connection"
+      }
+    },
+    {
+      "depth": 3,
+      "rho": 0.3,
+      "simulation_export_replay_max_error": 0.0,
+      "captures": 4,
+      "parameters": 680068,
+      "passed": true,
+      "contract": {
+        "main_depth": 3,
+        "router_count": 1,
+        "total_captures": 4,
+        "stages": [
+          "expert",
+          "global",
+          "expert"
+        ],
+        "geometry": {
+          "wavelength_m": 5.32e-07,
+          "distance_m": 0.1,
+          "logical_pitch_m": 1.7e-05,
+          "numerical_canvas": 518,
+          "active": 478,
+          "expert": 224,
+          "expert_array": "2x2",
+          "gap": 30,
+          "active_expert_origins": [
+            [
+              0,
+              0
+            ],
+            [
+              0,
+              254
+            ],
+            [
+              254,
+              0
+            ],
+            [
+              254,
+              254
+            ]
+          ],
+          "native_active": 1016,
+          "amplitude_native": [
+            1080,
+            1920
+          ],
+          "phase_native": [
+            1200,
+            1920
+          ]
+        },
+        "amplitude": "RMS .25 -> tanh(abs/.5), zeros remain zero, round255; NO extra peak normalization",
+        "phase": "floor256 modulo2pi; calibrated phase LUT required",
+        "rho": 0.3,
+        "residual": "((1-rho)*exp(i*phi)+rho); expert/global only, router rho0",
+        "residual_export": "joint amplitude*abs(modulation) and angle(modulation), not phase-only",
+        "nonlinearity": "raw CCD -> relative mean clamp12 -> log1p -> pool224 -> row LayerNorm eps1e-5 -> ReLU -> RMS.25",
+        "readout": "fixed20 equal64x64 intensity windows, normalized detector energy; no learned electronic classifier",
+        "quantization": "8-bit amplitude AND phase in training/validation/export, straight-through gradients",
+        "physical_status": "offline mathematical/export parity; fresh camera ROI/orientation/exposure/gain/LUT and physical rho calibration still require bench acceptance; no device connection"
+      }
+    },
+    {
+      "depth": 4,
+      "rho": 0.0,
+      "simulation_export_replay_max_error": 0.0,
+      "captures": 5,
+      "parameters": 908552,
+      "passed": true,
+      "contract": {
+        "main_depth": 4,
+        "router_count": 1,
+        "total_captures": 5,
+        "stages": [
+          "expert",
+          "global",
+          "expert",
+          "global"
+        ],
+        "geometry": {
+          "wavelength_m": 5.32e-07,
+          "distance_m": 0.1,
+          "logical_pitch_m": 1.7e-05,
+          "numerical_canvas": 518,
+          "active": 478,
+          "expert": 224,
+          "expert_array": "2x2",
+          "gap": 30,
+          "active_expert_origins": [
+            [
+              0,
+              0
+            ],
+            [
+              0,
+              254
+            ],
+            [
+              254,
+              0
+            ],
+            [
+              254,
+              254
+            ]
+          ],
+          "native_active": 1016,
+          "amplitude_native": [
+            1080,
+            1920
+          ],
+          "phase_native": [
+            1200,
+            1920
+          ]
+        },
+        "amplitude": "RMS .25 -> tanh(abs/.5), zeros remain zero, round255; NO extra peak normalization",
+        "phase": "floor256 modulo2pi; calibrated phase LUT required",
+        "rho": 0.0,
+        "residual": "((1-rho)*exp(i*phi)+rho); expert/global only, router rho0",
+        "residual_export": "joint amplitude*abs(modulation) and angle(modulation), not phase-only",
+        "nonlinearity": "raw CCD -> relative mean clamp12 -> log1p -> pool224 -> row LayerNorm eps1e-5 -> ReLU -> RMS.25",
+        "readout": "fixed20 equal64x64 intensity windows, normalized detector energy; no learned electronic classifier",
+        "quantization": "8-bit amplitude AND phase in training/validation/export, straight-through gradients",
+        "physical_status": "offline mathematical/export parity; fresh camera ROI/orientation/exposure/gain/LUT and physical rho calibration still require bench acceptance; no device connection"
+      }
+    },
+    {
+      "depth": 4,
+      "rho": 0.3,
+      "simulation_export_replay_max_error": 0.0,
+      "captures": 5,
+      "parameters": 908552,
+      "passed": true,
+      "contract": {
+        "main_depth": 4,
+        "router_count": 1,
+        "total_captures": 5,
+        "stages": [
+          "expert",
+          "global",
+          "expert",
+          "global"
+        ],
+        "geometry": {
+          "wavelength_m": 5.32e-07,
+          "distance_m": 0.1,
+          "logical_pitch_m": 1.7e-05,
+          "numerical_canvas": 518,
+          "active": 478,
+          "expert": 224,
+          "expert_array": "2x2",
+          "gap": 30,
+          "active_expert_origins": [
+            [
+              0,
+              0
+            ],
+            [
+              0,
+              254
+            ],
+            [
+              254,
+              0
+            ],
+            [
+              254,
+              254
+            ]
+          ],
+          "native_active": 1016,
+          "amplitude_native": [
+            1080,
+            1920
+          ],
+          "phase_native": [
+            1200,
+            1920
+          ]
+        },
+        "amplitude": "RMS .25 -> tanh(abs/.5), zeros remain zero, round255; NO extra peak normalization",
+        "phase": "floor256 modulo2pi; calibrated phase LUT required",
+        "rho": 0.3,
+        "residual": "((1-rho)*exp(i*phi)+rho); expert/global only, router rho0",
+        "residual_export": "joint amplitude*abs(modulation) and angle(modulation), not phase-only",
+        "nonlinearity": "raw CCD -> relative mean clamp12 -> log1p -> pool224 -> row LayerNorm eps1e-5 -> ReLU -> RMS.25",
+        "readout": "fixed20 equal64x64 intensity windows, normalized detector energy; no learned electronic classifier",
+        "quantization": "8-bit amplitude AND phase in training/validation/export, straight-through gradients",
+        "physical_status": "offline mathematical/export parity; fresh camera ROI/orientation/exposure/gain/LUT and physical rho calibration still require bench acceptance; no device connection"
+      }
+    }
+  ],
+  "all_six_parity": true,
+  "zero_preservation": true,
+  "raw_ccd_contract": true,
+  "residual_requires_amplitude_and_phase": true,
+  "devices_opened": 0,
+  "test_arrays_read": 0
+}

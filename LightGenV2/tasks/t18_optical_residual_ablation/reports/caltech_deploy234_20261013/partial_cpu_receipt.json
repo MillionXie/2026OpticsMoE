@@ -1,0 +1,60 @@
+{
+  "passed": true,
+  "sources_match": true,
+  "rows": [
+    {
+      "name": "L2_rho03",
+      "epoch": 11,
+      "phase_tensors": 6,
+      "all_phase_gradients_finite_nonzero": true,
+      "adam_steps": 946,
+      "scheduler_epoch": 11,
+      "resume_verified": false,
+      "completed_prefix_not_replayed": null
+    },
+    {
+      "name": "L3_rho03",
+      "epoch": 8,
+      "phase_tensors": 10,
+      "all_phase_gradients_finite_nonzero": true,
+      "adam_steps": 688,
+      "scheduler_epoch": 8,
+      "resume_verified": false,
+      "completed_prefix_not_replayed": null
+    },
+    {
+      "name": "L4_rho03",
+      "epoch": 17,
+      "phase_tensors": 11,
+      "all_phase_gradients_finite_nonzero": true,
+      "adam_steps": 1462,
+      "scheduler_epoch": 17,
+      "resume_verified": true,
+      "completed_prefix_not_replayed": true
+    }
+  ],
+  "test_arrays_read": 0,
+  "test_evaluations": 0,
+  "memory_transition": {
+    "reason": "Human approves3GiB->2GiB per process; model and training unchanged; preserve raw/EMA/Adam/scheduler and resume next global epoch",
+    "time_unix": 1791884511.3080983,
+    "parent_pid": 2427393,
+    "worker_pid": 2427562,
+    "epoch": 7,
+    "selected_epoch": 7,
+    "last_checkpoint_sha256": "7e6fa946f5f4c3a422ac230d8a7078bc7fa44f56f21f53d3d1e67932735faa64",
+    "best_checkpoint_sha256": "4280ccdcaeba2678ca8b0b49df9301fed9546512149ef7f99491196f58f11fc3",
+    "history_sha256": "a5a2dbfeab8b7739d861a3a7039692af9dcebf41205a1a95e8108e16cfd86997",
+    "sources_match_at_stop": true,
+    "original_sources": {
+      "LightGenV2/tasks/t18_optical_residual_ablation/caltech_deploy234_model.py": "bec7cb121a3810de779adb24bbe0b774909ea1f7babc10af05c398237622d9a0",
+      "LightGenV2/tasks/t18_optical_residual_ablation/caltech_deploy234.py": "4faba35dd43d7b08e0981d818d02db9b1f136dc918b5152de6e39ac63f14ff24",
+      "LightGenV2/tasks/t18_optical_residual_ablation/caltech_deploy234_queue.py": "db156b219c6c665c60d4c591d5e97021e8f860ce96f37ff835a65f21e6429d43",
+      "LightGenV2/tasks/t18_optical_residual_ablation/caltech_deploy234_profile.json": "08d66354d23b06bd19e5134f794861a12c2777491719f87f5377c899ede429de",
+      "LightGenV2/tasks/t18_optical_residual_ablation/gpu_budget.py": "6d9ae0cb8d49d06997905f84cbe30929e4d4552a5276afe356e6f5ee14e496a2",
+      "LightGenV2/tasks/t07_abo_image_retrieval/standalone/optics.py": "ff07716e09337520a5f338be6097522226bb8f9d42b1e39feb3e2c15eab3d67f",
+      "LightGenV2/tasks/t07_abo_image_retrieval/standalone/__init__.py": "53db7bdf4277ec72c9af012c50dcded4a7d116f62425f073d3b6a9538a92da63"
+    },
+    "test_evaluations": 0
+  }
+}
