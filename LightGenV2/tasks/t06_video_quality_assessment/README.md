@@ -1,5 +1,30 @@
 # T06 视频质量评价
 
+## 2026-10-13：LGVQ frozen baseline 批量复核
+
+用户授权在服务器 A100 上补做冻结权重推理，不训练、不采光路。唯一入口
+`evaluate_temporal_baseline_batches`，每个模型/B=1,2,4,8使用独立进程，完整558条
+TEST计算SRCC，前200条按原顺序测成本，无warmup且首批计入。输出限定在本任务
+`runs/simulation/lgvq_temporal_frozen_batch_a100_20261013/<model>_batch<nn>`。
+
+沿用总表的交错执行顺序：每批解码/processor、H2D、冻结前向，再下一批。
+最终时延只取原生首个backbone block输入到MOS就绪的同步墙钟；解码、预处理、
+H2D及审计开销只留记录，不纳入最终时延或能耗。T16=(16/B)*mean_batch_ms；
+E16=(338.2W主机代理+推理活动期A100实测平均板卡W)*T16/1000，不加CPU间隔。
+CUDA-event为并列诊断，不替代墙钟。GPU固定UUID
+`GPU-3f60d773-4dd8-d706-ef48-a4dfc5af6c55`，校验型号/实际功率上限/其他compute PID；
+其他任务显卡不动。已有输出、非正式PT/manifest SHA在GPU初始化前拒绝。
+
+Qwen batch=1的最终展示锚保留总表原记录：SRCC .7663428036522781，
+16视频1188.3861464262009ms、462.1134010767563J。新B1复测另存审计，不强迫新测量
+等于历史值；其余批量须标明测量日期/执行协议，不能拼接旧连续GPU sweep冒称同轮测量。
+原始预测、总表与旧sweep均保护。CLIP/YOLO/DeepSeek须精确原训练读出头，
+随机timing head不用于性能结果，缓存B1不能冒充其他batch的原生前向。
+
+已核原Qwen PT、manifest、三组原生backbone身份及A100空闲；三组trained质量读出PT
+尚在有界查找，不能据此声称已启动它们或文件已删除。8项CPU成本/防覆盖/无训练合同
+检查通过，不等于真实GPU推理已经验收。新入口依Git发布，不传输源码补丁或建工程副本。
+
 **2026-10-04整理覆盖：**下文保留历史仿真、baseline和测速协议，不代表所有默认命令已适配。
 正式Spatial/Temporal实拍版本、各自权重及已发布核心代码见
 [当前版本与待收敛边界](CURRENT_VERSION_20261004.md)。主线核心通过57项CPU合同测试、
