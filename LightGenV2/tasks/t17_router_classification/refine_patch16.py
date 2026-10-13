@@ -37,10 +37,11 @@ def resume_progress(history, checkpoint_epoch, parent_score):
 def validate_resume_settings(args, config):
     keys = ('init_run', 'epochs', 'min_epochs', 'patience', 'train_eval_every',
             'phase_lr', 'head_lr', 'balance_weight', 'balance_mode',
-            'router_warmup_epochs', 'router_warmup_lr', 'batch', 'seed')
+            'router_warmup_epochs', 'router_warmup_lr', 'warmup_source',
+            'freeze_router_epochs', 'batch', 'seed')
     for key in keys:
-        value = str(getattr(args, key)) if key == 'init_run' else getattr(args, key)
-        if value != config[key]:
+        value = str(getattr(args, key)) if key in ('init_run', 'warmup_source') and getattr(args, key) is not None else getattr(args, key)
+        if value != config.get(key, None if key == 'warmup_source' else 0 if key == 'freeze_router_epochs' else None):
             raise ValueError(f'resume must preserve {key}')
 
 
@@ -68,6 +69,10 @@ def main():
     p.add_argument('--balance-mode', choices=['dense_kl', 'top2_load'], default='dense_kl')
     p.add_argument('--router-warmup-epochs', type=int, default=0)
     p.add_argument('--router-warmup-lr', type=float, default=.005)
+    p.add_argument('--warmup-source', type=Path,
+                   help='reuse an existing router-only warmup checkpoint from the same parent')
+    p.add_argument('--freeze-router-epochs', type=int, default=0,
+                   help='first classification epochs with router fixed before joint optimization')
     p.add_argument('--batch', type=int, default=32)
     p.add_argument('--workers', type=int, default=4)
     p.add_argument('--seed', type=int, default=17)
@@ -80,6 +85,10 @@ def main():
         raise ValueError('invalid optimization settings')
     if a.router_warmup_epochs < 0 or a.router_warmup_lr <= 0:
         raise ValueError('invalid router warmup settings')
+    if a.freeze_router_epochs < 0 or a.freeze_router_epochs >= a.epochs:
+        raise ValueError('invalid frozen-router budget')
+    if a.warmup_source is not None and a.router_warmup_epochs:
+        raise ValueError('cannot repeat router warmup when reusing a warmup checkpoint')
     gpu_uuid = require_non_a100_gpu()
     torch.set_num_threads(4)
     torch.manual_seed(a.seed)
@@ -117,6 +126,15 @@ def main():
             raise ValueError('wrong dataset or license')
         if manifest['split_counts']['train'] != 88971 or manifest['split_counts']['val'] != 12354:
             raise ValueError('split counts changed')
+        warmup_checkpoint = None
+        if a.warmup_source is not None:
+            warmup_checkpoint = torch.load(a.warmup_source, map_location='cpu', weights_only=False)
+            warmup_cfg = warmup_checkpoint['config']
+            if (warmup_cfg['init_checkpoint_sha256'] != digest(source) or
+                    warmup_cfg['optical_contract'] != CONTRACT or
+                    warmup_cfg['manifest_sha256'] != prior['manifest_sha256'] or
+                    warmup_checkpoint['warmup_epochs'] < 1):
+                raise ValueError('warmup checkpoint does not match parent and data')
         cfg = dict(dataset='PATCH16', architecture='optical', num_classes=16,
                    optical_contract=CONTRACT, top_k=2, init_run=str(a.init_run),
                    init_checkpoint_sha256=digest(source), init_epoch=parent['epoch'],
@@ -127,6 +145,9 @@ def main():
                    balance_weight=a.balance_weight, balance_mode=a.balance_mode,
                    router_warmup_epochs=a.router_warmup_epochs,
                    router_warmup_lr=a.router_warmup_lr,
+                   warmup_source=str(a.warmup_source) if a.warmup_source else None,
+                   warmup_source_sha256=digest(a.warmup_source) if a.warmup_source else None,
+                   freeze_router_epochs=a.freeze_router_epochs,
                    batch=a.batch, epochs=a.epochs, min_epochs=a.min_epochs,
                    patience=a.patience, train_eval_every=a.train_eval_every,
                    seed=a.seed, ema_decay=.995, label_smoothing=.03,
@@ -135,7 +156,8 @@ def main():
                    command=sys.argv, cuda_visible_devices=os.environ.get('CUDA_VISIBLE_DEVICES'),
                    git_commit=subprocess.check_output(['git', 'rev-parse', 'HEAD'], text=True).strip())
         model = FourRouterClassification('optical', num_classes=16).cuda()
-        model.load_state_dict(resume['model'] if resume is not None else parent['model'])
+        model.load_state_dict(resume['model'] if resume is not None else
+                              warmup_checkpoint['model'] if warmup_checkpoint is not None else parent['model'])
         ema = copy.deepcopy(model).eval()
         ema.requires_grad_(False)
         if resume is not None:
@@ -152,6 +174,8 @@ def main():
         if resume is not None:
             if cfg['init_checkpoint_sha256'] != stored_config['init_checkpoint_sha256']:
                 raise ValueError('parent checkpoint identity changed')
+            if cfg['warmup_source_sha256'] != stored_config.get('warmup_source_sha256'):
+                raise ValueError('warmup checkpoint identity changed')
             cfg = stored_config
             parent_report = json.loads((a.out / 'parent_validation.json').read_text())
             if parent_report['checkpoint_sha256'] != cfg['init_checkpoint_sha256']:
@@ -247,6 +271,7 @@ def main():
         for epoch in range(start_epoch, a.epochs + 1):
             start = time.monotonic()
             model.train()
+            model.router_phase.requires_grad_(epoch > a.freeze_router_epochs)
             factor = .1 + .9 * .5 * (1 + np.cos(np.pi * (epoch - 1) / max(1, a.epochs - 1)))
             for group, initial_lr in zip(optimizer.param_groups, base_lrs):
                 group['lr'] = initial_lr * factor
@@ -292,7 +317,8 @@ def main():
                                 weights_kind=kind, config=cfg), a.out / 'best_checkpoint.pt')
                 write(a.out / 'selected_validation.json', dict(epoch=epoch, weights_kind=kind,
                                                                metrics=metrics, selection_score=current))
-            row = dict(epoch=epoch, training_samples_seen=seen, task_loss=task_loss_sum / seen,
+            row = dict(epoch=epoch, router_frozen=epoch <= a.freeze_router_epochs,
+                       training_samples_seen=seen, task_loss=task_loss_sum / seen,
                        balance_loss=balance_loss_sum / seen, validation=metrics,
                        weights_kind=kind, seconds=time.monotonic() - start)
             if epoch % a.train_eval_every == 0 or epoch == a.epochs:
