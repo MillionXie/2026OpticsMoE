@@ -1,0 +1,19 @@
+{
+  "parent_run": "caltech_selected20_s17_L2L4L12L16_reg100_4gpu_20261012",
+  "depths": [2, 4, 12, 16],
+  "rhos": [0, 0.3],
+  "parent_epochs": 100,
+  "additional_epochs": 100,
+  "total_epochs": 200,
+  "regularization_change": null,
+  "resume": "Raw model, EMA, AdamW moments/steps and ReduceLROnPlateau state from last E100; epochs101-200",
+  "selection": "First minimum validation EMA balanced NLL across1-200 including old best; test never selects",
+  "max_continuation_seconds_per_arm": 36000,
+  "automatic_retry": false,
+  "early_stopping": false,
+  "gpu_indices": [0, 1, 2, 4],
+  "dispatch_depth_order": [16, 12, 4, 2],
+  "memory_gib": 3,
+  "memory_margin_mib": 800,
+  "test_policy": "After all eight CPU checks/locks: changed selected EMA once; unchanged parent EMA reuses saved previous test, never retests. Exclusive durable claim before test arrays. Previous tests observed: exploratory development."
+}
