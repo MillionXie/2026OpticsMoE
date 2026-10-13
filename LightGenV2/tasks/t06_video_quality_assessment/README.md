@@ -41,6 +41,11 @@ B2/4/8为本轮同协议复测。原文件/旧sweep不动。
 这三组未启动，不能据此断言原PT已删除或用随机head/新训练替代。新入口依Git发布，
 不传输源码补丁或建工程副本。
 
+**后续人工授权更新（2026-10-13 19:57 +0800）：**再次查找原任务头／缓存未定位后，
+用户授权按原协议在A100重训。CLIP、YOLO、DeepSeek三组head均已完成50轮及strict CPU
+558样本复核；它们是新PT，不是找回原PT。CLIP B1/B2原生冻结batch复测已完成，B4
+正在进行，其余自动串行接续。细节、SHA与备份范围见本页末尾“原协议重训”。
+
 **2026-10-04整理覆盖：**下文保留历史仿真、baseline和测速协议，不代表所有默认命令已适配。
 正式Spatial/Temporal实拍版本、各自权重及已发布核心代码见
 [当前版本与待收敛边界](CURRENT_VERSION_20261004.md)。主线核心通过57项CPU合同测试、
@@ -589,3 +594,37 @@ suite PID2529940、首组CLIP PID2529959对应上述唯一A100 UUID；实际提�
 `suite_status.json`、各组`status.json`、`*_training.log`保存实际阶段与错误，不能仅凭PID
 称任务完成。DeepSeek既有隔离环境2.6.0+cu124／4.38.2／0.0.29.post2、正式config与
 单shard权重SHA已预先复核，未加载GPU或升级依赖。该段是启动记录，不是新模型结果。
+
+### 第1次定时核查：三组head已完成（2026-10-13 19:57 +0800）
+
+| Frozen backbone | 新PT best epoch | 新CPU TEST SRCC | 历史参考SRCC | 差值 |
+| --- | ---: | ---: | ---: | ---: |
+| CLIP ViT-B/32 | 48 | 0.7252558079932262 | 0.7251568 | +0.0000990080 |
+| YOLO11s | 49 | 0.7015970081958657 | 0.7015822 | +0.0000148082 |
+| DeepSeek-VL2-Tiny | 43 | 0.5684669009566514 | 0.5688169 | −0.0003499990 |
+
+均为2250 TRAIN／558 TEST、50轮原协议的TEST选模开发指标，不称独立泛化。
+三组各自best/last及CPU558预测完整；CPU/GPU best预测最大绝对差分别为
+1.14441e−5、1.14441e−5、1.18256e−4，骨干文件前后SHA一致，只有原五行head被训练。
+全部服务器receipt产物SHA已核查（CLIP54、YOLO54、DeepSeek98项），50轮history及
+样本身份通过。三份实际启动Git为7e2b170d、bc34aa70、db48a68f；训练入口SHA一致
+`a46abaf907d460260b1d3b04b6d852f7c02a9236c146f5a1e1bbaab8ae919e54`，
+任务训练模块分别与各自Git对象及当前源逐字节匹配，不因其他任务／文档提交称算法变化。
+
+新best PT SHA（last完整SHA仍在各自receipt）为：
+
+- CLIP：`28729f41b09c59866ed54e0d520c48edca276ac0237d0b6bd885c8a0db4619d4`。
+- YOLO：`47606708c66b313174d3a04edef6ebac1b06d3310d2f1049d7a989dbc386b848`。
+- DeepSeek：`3748b08f9b4c7b61cd18425f49f899ea34598e3169846119ae75272bccdb7951`。
+
+本地同名canonical run已备份每组10项核心产物并逐SHA匹配：best/last、完整FP16缓存及
+报告、50轮history、558训练评估预测、558 CPU预测、CPU复核、训练报告和run identity；
+另保留各receipt/status和完整训练日志。提取分片仍完整留在服务器，未重复下载或删除，
+不能把本地核心备份称为服务器全部分片的第二份副本。
+
+12组batch复测当前完成2组（CLIP B1/B2），各full558 TEST、前200成本、相同new PT。
+B1 SRCC0.7252558079932262与缓存CPU结果一致，B2为0.7252452404480152；各五份原报告／
+预测／时延／功率／状态已本地SHA备份，源字段明确retrained_original_protocol。
+此时suite2529940仍运行，A100上B4 PID2741446对应唯一UUID，没有重启／新增训练。
+最终汇总表／图待12组实测完成后统一更新，不拿这两组覆盖其余历史点；Qwen B1锚保留。
+监督`lgvq-a100`每20分钟、最多24次，计数与增量仅记同run的monitor_state.json。
