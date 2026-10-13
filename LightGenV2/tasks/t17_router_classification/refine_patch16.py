@@ -40,8 +40,11 @@ def validate_resume_settings(args, config):
             'router_warmup_epochs', 'router_warmup_lr', 'warmup_source',
             'freeze_router_epochs', 'batch', 'seed')
     for key in keys:
-        value = str(getattr(args, key)) if key in ('init_run', 'warmup_source') and getattr(args, key) is not None else getattr(args, key)
-        if value != config.get(key, None if key == 'warmup_source' else 0 if key == 'freeze_router_epochs' else None):
+        default = 0 if key == 'freeze_router_epochs' else None
+        value = getattr(args, key, default)
+        if key in ('init_run', 'warmup_source') and value is not None:
+            value = str(value)
+        if value != config.get(key, default):
             raise ValueError(f'resume must preserve {key}')
 
 
