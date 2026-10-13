@@ -46,7 +46,7 @@ def plot(base,out):
             ax=axes[row,col];train=[h for h in hist if 'train' in h];ax.plot([h['epoch'] for h in train],[scale*h['train'][metric] for h in train],color='#242424',marker='.',markersize=3,label='Train: measured EMA');ax.plot([h['epoch'] for h in hist],[scale*h['val'][metric] for h in hist],color='#2475ba',label='Val: every epoch EMA');ax.scatter([selected],[scale*fit['metrics']['val'][metric]],s=100,marker='*',color='#cc4739',zorder=5,label='Val at first minimum NLL');ax.scatter([selected],[scale*fit['metrics']['train'][metric]],s=45,marker='D',facecolors='none',edgecolors='#242424',zorder=5,label='Train at same selected EMA')
             if gate is not None:ax.axhline(gate,color='#8a8a8a',ls=':',lw=.8,label=f'Val admission {gate}%');ax.set_ylim(0,100)
             else:ax.set_ylim(bottom=0)
-            ax.set_xlim(1,150);ax.grid(alpha=.18);ax.set_ylabel(label)
+            ax.set_xlim(.5,152);ax.grid(alpha=.18);ax.set_ylabel(label)
             if row==0:ax.set_title(f'MixUp {alpha}: {budget} epochs, selected E{selected}\nEligibility: {g["passed"]}')
             if row==2:ax.set_xlabel('Completed epoch (unmeasured future epochs blank)')
             if row==0 and col==0:ax.legend(fontsize=7,loc='lower right')
