@@ -63,3 +63,27 @@ Parent: runs/simulation/caltech_selected20_s17_L2L4L12L16_reg100_4gpu_20261012.
 Completion tooling is independent from the sealed historical100 finalizer.
 Only T18/main, serialized exact-path Git publication; source sync Git only.
 Keep all parent data/PT/predictions/tests, preserve other tasks, exclude laboratory.
+
+## Executable completion (only after all200 and actual fit child/supervisor exits)
+
+Inspect real status/current_processes and existing claims before each phase;
+never repeat an existing suite_started/test_started or repair it by deletion.
+From the server repository root, with its existing Python environment:
+
+```sh
+T=LightGenV2/tasks/t18_optical_residual_ablation
+RUN=$T/runs/simulation/caltech_selected20_s17_L2L4L12L16_extend200_4gpu_20261013
+DATA=/DATA/DATA1/guest3/t18_caltech_selected20_20261012/caltech20_selected_split.npz
+PY=/home/guest3/miniconda3/envs/xml/bin/python
+CUDA_VISIBLE_DEVICES='' $PY $T/caltech_selected_extend_finalize.py --phase lock --base $RUN --out $RUN/final --data $DATA
+CUDA_VISIBLE_DEVICES='' $PY $T/caltech_selected_extend_finalize.py --phase suite --out $RUN/final --data $DATA
+# Wait for all endpoint workers and the test supervisor to exit.
+CUDA_VISIBLE_DEVICES='' $PY $T/audit_caltech_selected_extend.py --base $RUN --data $DATA --out $RUN/cpu_report_final --final $RUN/final
+```
+
+The lock phase independently verifies every200-step saved artifact and resume
+receipt before any pair/local/global lock. The test worker decides reuse solely
+by exact selected parameter identity, never by a test score. Reused results are
+checked against the previous CPU receipt. The final CPU all-eight barrier
+precedes materialization of test labels. Exported hollow points mark previous100
+tests, stars mark the currently selected endpoint (explicitly reused if same).
