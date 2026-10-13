@@ -1,0 +1,11 @@
+{
+  "pdf_rendered_with_poppler": true,
+  "pages_inspected": 1,
+  "axes_legends_selection_points_layout_passed": true,
+  "time_utc": "2026-10-13T14:30:55.728333+00:00",
+  "files": {
+    "learning_curves.png": "dfb82e01f8a01150dcf09354598f5a71ace273d6d9013764fde2bf84b2d38908",
+    "learning_curves.svg": "8662aa9916b9aaff81bafeef3f8d694aef3dc2cbc673d6d963e752b35247032c",
+    "learning_curves.pdf": "9fc24176907dccfa0c391cec1a539e5a6146fb3898de55da8ea8ae0bb1054c2d"
+  }
+}

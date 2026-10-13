@@ -23,6 +23,12 @@ macro41.26%、gap12.12pp，末十验证NLL仍改善1.14%，泛化差距扩大。
 独立导出工具标准/设备BMP命名及尺寸已区分，十项Linux CPU检查与已训练4层静态导出核验通过，
 不改运行7源，不连接设备。[3层曲线、审核与部署证明](reports/caltech_deploy234_20261013/residual_L3_stage/README.md)。
 
+4层两rho共同150轮已完成，配对CPU保存审核通过，test0/无部分锁；rho0选E147：
+train52.84%/val48.76%、macro49.33%、bNLL2.01008、gap4.08pp；rho.3选E150：
+train57.22%/val46.64%、macro48.69%、bNLL1.86911、gap10.57pp。
+残差验证准确率低2.12pp但NLL更低、差距更大，不宣称精度收益。
+[4层完整配对曲线/PDF/CSV和CPU证据](reports/caltech_deploy234_20261013/L4_pair_stage/README.md)。
+
 ## 当前人工要求：全部八组延长至200轮（2026-10-13）
 
 用户明确要求2/4/12/16层两rho全部延至200轮、最多四卡，并选择保留现有正则，
