@@ -106,7 +106,8 @@ def preflight(a):
     save(a.out/'metadata.json',dict(pid=os.getpid(),gpu_uuid=a.gpu,policy=policy,sources=src,git_commit=commit))
     results=[]
     for v in cfg['variants']:
-        result=gate(settings(v),data,'cuda');results.append(result);save(a.out/'checks.json',dict(passed=False,results=results,test_evaluations=0))
+        variant_cfg=settings(v);variant_cfg['classes']=m['classes']
+        result=gate(variant_cfg,data,'cuda');results.append(result);save(a.out/'checks.json',dict(passed=False,results=results,test_evaluations=0))
     # The independent base subclass must preserve the sealed graph and state exactly.
     from caltech_deploy234_model import DeployMoE,input_amplitude
     common.seed(cfg['seed']);reference=DeployMoE(4,.3).cuda()
