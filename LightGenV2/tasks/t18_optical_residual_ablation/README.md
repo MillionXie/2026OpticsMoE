@@ -18,6 +18,11 @@ CCD log／LayerNorm／ReLU；残差由振幅＋相位联合BMP编码，8bit量�
 4层验证NLL末段仍改善约1%，泛化差距扩大，不能称充分收敛。75%最终test目标尚未验收。
 [已完成两组残差曲线、PDF/CSV及CPU审核](reports/caltech_deploy234_20261013/residual_L2L4_stage/README.md)。
 
+3层rho.3也已完成150轮并通过CPU全部保存核验，选E150：train47.81%/val35.69%、
+macro41.26%、gap12.12pp，末十验证NLL仍改善1.14%，泛化差距扩大。三个残差组均完成，test0；
+独立导出工具标准/设备BMP命名及尺寸已区分，十项Linux CPU检查与已训练4层静态导出核验通过，
+不改运行7源，不连接设备。[3层曲线、审核与部署证明](reports/caltech_deploy234_20261013/residual_L3_stage/README.md)。
+
 ## 当前人工要求：全部八组延长至200轮（2026-10-13）
 
 用户明确要求2/4/12/16层两rho全部延至200轮、最多四卡，并选择保留现有正则，

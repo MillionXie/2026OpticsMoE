@@ -1,0 +1,13 @@
+{
+  "passed": true,
+  "returncode": 0,
+  "stdout": "..........                                                               [100%]\n10 passed in 7.02s\n",
+  "stderr": "",
+  "seconds": 7.727828502655029,
+  "git_commit": "ef622c89c1b2343a970abb3f2ad656c5b72b263d",
+  "frozen_runtime_sources_match": true,
+  "test_arrays_read": 0,
+  "devices_opened": 0,
+  "gpu_processes_started": 0,
+  "checks": "four durable-claim checks + six CPU static/joint BMP contracts"
+}

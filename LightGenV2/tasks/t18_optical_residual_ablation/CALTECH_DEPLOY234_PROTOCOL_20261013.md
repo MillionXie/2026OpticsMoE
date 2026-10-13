@@ -103,3 +103,16 @@ phase BMPs, deterministic per-stage amplitude export/replay code and receipts,
 fixed masks/class mapping, explicit physical calibration checklist/session identity.
 Offline export parity is not an on-bench hardware performance certificate.
 Human approved memory-only3GiB->2GiB transition after actual~.6GiB use. The first main4/rho.3 stopped at committed E7; raw/EMA/Adam/scheduler/history remain in the prior run. New mem2 run resumes E8 without resetting optimizer/EMA/scheduler or replaying completed epochs. Other five arms start fresh with identical seed17/data/training hyperparameters. Resume receipt binds both parent PT/source Git blobs and unchanged optical model source.
+
+## Independent deployment export completion (2026-10-13)
+
+The completion-only export_caltech_deploy234.py saves actual478x478 canonical phase
+BMPs separately from1920x1200 native phase BMPs, amplitude multipliers, fixed router/
+detector masks, classes, frozen config and source/checkpoint SHA. Dynamic sample
+amplitude/native BMPs use the frozen model.physical_fields via save_sample_bmps,
+with active and illuminated-support mean/p99/max and zero/saturation statistics.
+No extra peak normalization, optical graph or training source change is introduced.
+Ten Linux CPU checks (four claim ordering/refusal and six joint encoding contracts)
+passed, plus a real completed L4rho.3 selected checkpoint static-export check.
+These checks perform no sample propagation/model forward, GPU or device acquisition.
+Offline equality still requires a fresh calibrated hardware session before bench use.
