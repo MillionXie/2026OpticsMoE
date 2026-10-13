@@ -1,3 +1,5 @@
 *
 !.gitignore
 !build_analysis.py
+!build_category_comparison.py
+!build_category_workbook.mjs

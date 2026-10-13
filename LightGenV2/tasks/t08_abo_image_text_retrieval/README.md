@@ -51,6 +51,14 @@ T07；**文搜图**曾在同名 T08 的另一个运行工作树实现，不能�
 商品bootstrap仅描述商品异质性，不解除历史TEST选模及同spin视角相关性。
 人工非尺寸三属性只是完整标题的展示摘要；类别去重图单独标原名次，不改原Top10或指标。
 
+按用户要求，简版类别对比在同一报告目录的 `simple_category_comparison/index.html`：
+100个SKU依据官方标题人工归为12个展示大类，提供柱状／散点／折线三图及Excel。
+这不是新的类别标签或“同类即正确”评估；每类准确率仍为检索正确SKU的命中数除以该类
+测试图数，全部100标题共同作为候选库。每类商品数、测试图数、完整归类映射及2400条
+配对结果可在Excel检查；主表公式随归类列编辑重算。输入仍是同PT回放1931/2400和
+冻结Qwen动态2048D的1769/2400，不混用历史1934/2400汇总。绘图及表格源码分别为
+`build_category_comparison.py`、`build_category_workbook.mjs`，生成资产不进Git。
+
 本轮逐文件核验了服务器两份图搜文 best/last、文搜图主体 best/last、easy100
 四份 CSV，以及本机文搜图主体与10轮读出 best/last。身份、SHA、来源和待办见
 [结构化核验记录](reports/reproduction/FINAL_IDENTITIES_20261003.json)。这是身份核验，
