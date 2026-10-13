@@ -1,3 +1,11 @@
+## 消融部分阶段：前三组40轮CPU已审核（2026-10-14）
+
+基线/关闭量化/整面LN同40轮、同init/order增强，均valNLL选E40。
+train/val33.75/28.98%、34.69/30.39%、33.82/32.16%；整面LN零召回减少但macro/NLL变差，
+关闭量化仅小幅改善，尚未解决拟合/泛化问题。完整保存CPU审查、PNG/SVG/CSV实际视检通过。
+[共同预算曲线和各类support/recall](reports/caltech_diagnose_20261014/first3_stage/README.md)。
+三子已退出，RGB/dense/global保留由GPU2/6/5接续，仍未全九完成，不提前正式/test，运行源e4cb冻结。
+
 ## 最新GPU指定与持续推进（2026-10-14）
 
 人工要求只用物理GPU2/5/6，最多三子，A100允许；每天北京时间09:00报告实际结果。

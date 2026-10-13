@@ -1,0 +1,671 @@
+{
+  "passed": true,
+  "time_unix": 1791915642.1202998,
+  "scope": "Partial completed-three saved CPU audit only; remaining six diagnostics and full-nine barrier not complete",
+  "variants": [
+    "base",
+    "unquantized",
+    "fullfield_ln"
+  ],
+  "summary": [
+    {
+      "variant": "base",
+      "selected_epoch": 40,
+      "train_accuracy": 0.33746355685131196,
+      "val_accuracy": 0.28975265017667845,
+      "val_macro": 0.3417252355487649,
+      "val_balanced_nll": 2.405106327516819,
+      "gap_pp": 4.771090667463351,
+      "class_health": {
+        "train": {
+          "zero_recall_classes": [
+            "Faces",
+            "Leopards",
+            "Motorbikes",
+            "airplanes",
+            "bonsai",
+            "kangaroo"
+          ],
+          "below20_classes": [
+            "Faces",
+            "Leopards",
+            "Motorbikes",
+            "airplanes",
+            "bonsai",
+            "crab",
+            "helicopter",
+            "kangaroo"
+          ],
+          "minimum_recall": 0.0,
+          "per_class": {
+            "Faces": {
+              "support": 100,
+              "recall": 0.0
+            },
+            "Leopards": {
+              "support": 100,
+              "recall": 0.0
+            },
+            "Motorbikes": {
+              "support": 100,
+              "recall": 0.0
+            },
+            "airplanes": {
+              "support": 100,
+              "recall": 0.0
+            },
+            "bonsai": {
+              "support": 89,
+              "recall": 0.0
+            },
+            "crab": {
+              "support": 51,
+              "recall": 0.058823529411764705
+            },
+            "crayfish": {
+              "support": 49,
+              "recall": 0.4897959183673469
+            },
+            "grand_piano": {
+              "support": 69,
+              "recall": 0.6811594202898551
+            },
+            "helicopter": {
+              "support": 61,
+              "recall": 0.11475409836065574
+            },
+            "kangaroo": {
+              "support": 60,
+              "recall": 0.0
+            },
+            "ketch": {
+              "support": 79,
+              "recall": 0.6455696202531646
+            },
+            "laptop": {
+              "support": 60,
+              "recall": 0.4666666666666667
+            },
+            "lotus": {
+              "support": 46,
+              "recall": 0.6739130434782609
+            },
+            "minaret": {
+              "support": 53,
+              "recall": 0.9433962264150944
+            },
+            "revolver": {
+              "support": 57,
+              "recall": 0.9298245614035088
+            },
+            "schooner": {
+              "support": 44,
+              "recall": 0.5
+            },
+            "trilobite": {
+              "support": 60,
+              "recall": 0.8666666666666667
+            },
+            "umbrella": {
+              "support": 52,
+              "recall": 0.5576923076923077
+            },
+            "watch": {
+              "support": 100,
+              "recall": 0.33
+            },
+            "yin_yang": {
+              "support": 42,
+              "recall": 0.7857142857142857
+            }
+          }
+        },
+        "val": {
+          "zero_recall_classes": [
+            "Faces",
+            "Leopards",
+            "Motorbikes",
+            "airplanes",
+            "bonsai",
+            "helicopter",
+            "kangaroo"
+          ],
+          "below20_classes": [
+            "Faces",
+            "Leopards",
+            "Motorbikes",
+            "airplanes",
+            "bonsai",
+            "crab",
+            "helicopter",
+            "kangaroo",
+            "watch"
+          ],
+          "minimum_recall": 0.0,
+          "per_class": {
+            "Faces": {
+              "support": 20,
+              "recall": 0.0
+            },
+            "Leopards": {
+              "support": 20,
+              "recall": 0.0
+            },
+            "Motorbikes": {
+              "support": 20,
+              "recall": 0.0
+            },
+            "airplanes": {
+              "support": 20,
+              "recall": 0.0
+            },
+            "bonsai": {
+              "support": 19,
+              "recall": 0.0
+            },
+            "crab": {
+              "support": 10,
+              "recall": 0.1
+            },
+            "crayfish": {
+              "support": 10,
+              "recall": 0.3
+            },
+            "grand_piano": {
+              "support": 14,
+              "recall": 0.8571428571428571
+            },
+            "helicopter": {
+              "support": 13,
+              "recall": 0.0
+            },
+            "kangaroo": {
+              "support": 12,
+              "recall": 0.0
+            },
+            "ketch": {
+              "support": 17,
+              "recall": 0.6470588235294118
+            },
+            "laptop": {
+              "support": 12,
+              "recall": 0.3333333333333333
+            },
+            "lotus": {
+              "support": 10,
+              "recall": 0.5
+            },
+            "minaret": {
+              "support": 11,
+              "recall": 0.8181818181818182
+            },
+            "revolver": {
+              "support": 12,
+              "recall": 0.6666666666666666
+            },
+            "schooner": {
+              "support": 10,
+              "recall": 0.5
+            },
+            "trilobite": {
+              "support": 12,
+              "recall": 0.6666666666666666
+            },
+            "umbrella": {
+              "support": 11,
+              "recall": 0.5454545454545454
+            },
+            "watch": {
+              "support": 20,
+              "recall": 0.1
+            },
+            "yin_yang": {
+              "support": 10,
+              "recall": 0.8
+            }
+          }
+        }
+      },
+      "seconds": 2292.5198097750545,
+      "deployment_eligible": true
+    },
+    {
+      "variant": "unquantized",
+      "selected_epoch": 40,
+      "train_accuracy": 0.3469387755102041,
+      "val_accuracy": 0.303886925795053,
+      "val_macro": 0.35083622260092845,
+      "val_balanced_nll": 2.3855140298350372,
+      "gap_pp": 4.305184971515108,
+      "class_health": {
+        "train": {
+          "zero_recall_classes": [
+            "Faces",
+            "Leopards",
+            "Motorbikes",
+            "airplanes",
+            "bonsai"
+          ],
+          "below20_classes": [
+            "Faces",
+            "Leopards",
+            "Motorbikes",
+            "airplanes",
+            "bonsai",
+            "crab",
+            "kangaroo"
+          ],
+          "minimum_recall": 0.0,
+          "per_class": {
+            "Faces": {
+              "support": 100,
+              "recall": 0.0
+            },
+            "Leopards": {
+              "support": 100,
+              "recall": 0.0
+            },
+            "Motorbikes": {
+              "support": 100,
+              "recall": 0.0
+            },
+            "airplanes": {
+              "support": 100,
+              "recall": 0.0
+            },
+            "bonsai": {
+              "support": 89,
+              "recall": 0.0
+            },
+            "crab": {
+              "support": 51,
+              "recall": 0.0196078431372549
+            },
+            "crayfish": {
+              "support": 49,
+              "recall": 0.46938775510204084
+            },
+            "grand_piano": {
+              "support": 69,
+              "recall": 0.6231884057971014
+            },
+            "helicopter": {
+              "support": 61,
+              "recall": 0.22950819672131148
+            },
+            "kangaroo": {
+              "support": 60,
+              "recall": 0.06666666666666667
+            },
+            "ketch": {
+              "support": 79,
+              "recall": 0.5063291139240507
+            },
+            "laptop": {
+              "support": 60,
+              "recall": 0.65
+            },
+            "lotus": {
+              "support": 46,
+              "recall": 0.717391304347826
+            },
+            "minaret": {
+              "support": 53,
+              "recall": 0.9433962264150944
+            },
+            "revolver": {
+              "support": 57,
+              "recall": 0.9122807017543859
+            },
+            "schooner": {
+              "support": 44,
+              "recall": 0.5681818181818182
+            },
+            "trilobite": {
+              "support": 60,
+              "recall": 0.95
+            },
+            "umbrella": {
+              "support": 52,
+              "recall": 0.4423076923076923
+            },
+            "watch": {
+              "support": 100,
+              "recall": 0.39
+            },
+            "yin_yang": {
+              "support": 42,
+              "recall": 0.7857142857142857
+            }
+          }
+        },
+        "val": {
+          "zero_recall_classes": [
+            "Faces",
+            "Leopards",
+            "Motorbikes",
+            "airplanes",
+            "bonsai",
+            "crab",
+            "kangaroo"
+          ],
+          "below20_classes": [
+            "Faces",
+            "Leopards",
+            "Motorbikes",
+            "airplanes",
+            "bonsai",
+            "crab",
+            "helicopter",
+            "kangaroo"
+          ],
+          "minimum_recall": 0.0,
+          "per_class": {
+            "Faces": {
+              "support": 20,
+              "recall": 0.0
+            },
+            "Leopards": {
+              "support": 20,
+              "recall": 0.0
+            },
+            "Motorbikes": {
+              "support": 20,
+              "recall": 0.0
+            },
+            "airplanes": {
+              "support": 20,
+              "recall": 0.0
+            },
+            "bonsai": {
+              "support": 19,
+              "recall": 0.0
+            },
+            "crab": {
+              "support": 10,
+              "recall": 0.0
+            },
+            "crayfish": {
+              "support": 10,
+              "recall": 0.2
+            },
+            "grand_piano": {
+              "support": 14,
+              "recall": 0.9285714285714286
+            },
+            "helicopter": {
+              "support": 13,
+              "recall": 0.07692307692307693
+            },
+            "kangaroo": {
+              "support": 12,
+              "recall": 0.0
+            },
+            "ketch": {
+              "support": 17,
+              "recall": 0.5294117647058824
+            },
+            "laptop": {
+              "support": 12,
+              "recall": 0.4166666666666667
+            },
+            "lotus": {
+              "support": 10,
+              "recall": 0.5
+            },
+            "minaret": {
+              "support": 11,
+              "recall": 0.8181818181818182
+            },
+            "revolver": {
+              "support": 12,
+              "recall": 0.6666666666666666
+            },
+            "schooner": {
+              "support": 10,
+              "recall": 0.5
+            },
+            "trilobite": {
+              "support": 12,
+              "recall": 0.9166666666666666
+            },
+            "umbrella": {
+              "support": 11,
+              "recall": 0.36363636363636365
+            },
+            "watch": {
+              "support": 20,
+              "recall": 0.3
+            },
+            "yin_yang": {
+              "support": 10,
+              "recall": 0.8
+            }
+          }
+        }
+      },
+      "seconds": 2269.0008062943816,
+      "deployment_eligible": false
+    },
+    {
+      "variant": "fullfield_ln",
+      "selected_epoch": 40,
+      "train_accuracy": 0.33819241982507287,
+      "val_accuracy": 0.3215547703180212,
+      "val_macro": 0.31998920068579506,
+      "val_balanced_nll": 2.482380215408836,
+      "gap_pp": 1.6637649507051655,
+      "class_health": {
+        "train": {
+          "zero_recall_classes": [],
+          "below20_classes": [
+            "Leopards",
+            "airplanes",
+            "bonsai",
+            "crab",
+            "crayfish",
+            "helicopter",
+            "kangaroo",
+            "laptop",
+            "umbrella",
+            "watch"
+          ],
+          "minimum_recall": 0.01,
+          "per_class": {
+            "Faces": {
+              "support": 100,
+              "recall": 0.71
+            },
+            "Leopards": {
+              "support": 100,
+              "recall": 0.13
+            },
+            "Motorbikes": {
+              "support": 100,
+              "recall": 0.87
+            },
+            "airplanes": {
+              "support": 100,
+              "recall": 0.01
+            },
+            "bonsai": {
+              "support": 89,
+              "recall": 0.14606741573033707
+            },
+            "crab": {
+              "support": 51,
+              "recall": 0.0196078431372549
+            },
+            "crayfish": {
+              "support": 49,
+              "recall": 0.10204081632653061
+            },
+            "grand_piano": {
+              "support": 69,
+              "recall": 0.5217391304347826
+            },
+            "helicopter": {
+              "support": 61,
+              "recall": 0.18032786885245902
+            },
+            "kangaroo": {
+              "support": 60,
+              "recall": 0.11666666666666667
+            },
+            "ketch": {
+              "support": 79,
+              "recall": 0.5569620253164557
+            },
+            "laptop": {
+              "support": 60,
+              "recall": 0.16666666666666666
+            },
+            "lotus": {
+              "support": 46,
+              "recall": 0.30434782608695654
+            },
+            "minaret": {
+              "support": 53,
+              "recall": 0.8490566037735849
+            },
+            "revolver": {
+              "support": 57,
+              "recall": 0.7192982456140351
+            },
+            "schooner": {
+              "support": 44,
+              "recall": 0.3181818181818182
+            },
+            "trilobite": {
+              "support": 60,
+              "recall": 0.21666666666666667
+            },
+            "umbrella": {
+              "support": 52,
+              "recall": 0.057692307692307696
+            },
+            "watch": {
+              "support": 100,
+              "recall": 0.15
+            },
+            "yin_yang": {
+              "support": 42,
+              "recall": 0.47619047619047616
+            }
+          }
+        },
+        "val": {
+          "zero_recall_classes": [
+            "airplanes"
+          ],
+          "below20_classes": [
+            "Leopards",
+            "airplanes",
+            "crab",
+            "kangaroo",
+            "laptop",
+            "trilobite",
+            "umbrella",
+            "watch"
+          ],
+          "minimum_recall": 0.0,
+          "per_class": {
+            "Faces": {
+              "support": 20,
+              "recall": 0.65
+            },
+            "Leopards": {
+              "support": 20,
+              "recall": 0.1
+            },
+            "Motorbikes": {
+              "support": 20,
+              "recall": 0.8
+            },
+            "airplanes": {
+              "support": 20,
+              "recall": 0.0
+            },
+            "bonsai": {
+              "support": 19,
+              "recall": 0.2631578947368421
+            },
+            "crab": {
+              "support": 10,
+              "recall": 0.1
+            },
+            "crayfish": {
+              "support": 10,
+              "recall": 0.2
+            },
+            "grand_piano": {
+              "support": 14,
+              "recall": 0.7857142857142857
+            },
+            "helicopter": {
+              "support": 13,
+              "recall": 0.23076923076923078
+            },
+            "kangaroo": {
+              "support": 12,
+              "recall": 0.08333333333333333
+            },
+            "ketch": {
+              "support": 17,
+              "recall": 0.23529411764705882
+            },
+            "laptop": {
+              "support": 12,
+              "recall": 0.08333333333333333
+            },
+            "lotus": {
+              "support": 10,
+              "recall": 0.4
+            },
+            "minaret": {
+              "support": 11,
+              "recall": 0.7272727272727273
+            },
+            "revolver": {
+              "support": 12,
+              "recall": 0.6666666666666666
+            },
+            "schooner": {
+              "support": 10,
+              "recall": 0.2
+            },
+            "trilobite": {
+              "support": 12,
+              "recall": 0.08333333333333333
+            },
+            "umbrella": {
+              "support": 11,
+              "recall": 0.09090909090909091
+            },
+            "watch": {
+              "support": 20,
+              "recall": 0.1
+            },
+            "yin_yang": {
+              "support": 10,
+              "recall": 0.6
+            }
+          }
+        }
+      },
+      "seconds": 2540.2861579060555,
+      "deployment_eligible": true
+    }
+  ],
+  "source_commit": "e4cb1400fdaed5d4a1867770474e91b0ddc19617",
+  "source_count": 121,
+  "per_arm_auditor_sha256": "8bf817eaea5dfcfabe8b5fd4b2c03ddfd163b684fdf8181ab61e3fed89dbfe23",
+  "all40_order_affine_mixup_tail12_regenerated": true,
+  "parent_prefix_exact": true,
+  "all_phase_gradients_finite_nonzero": true,
+  "Adam40x86_verified": true,
+  "model_forward_calls": 0,
+  "test_arrays_materialized": 0,
+  "test_evaluations": 0,
+  "completed_children_exited": true
+}
