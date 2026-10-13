@@ -3,7 +3,7 @@
 人工授权最多三张GPU，本轮允许A100；旧GPU6禁止只适用于已交付旧run，不适用于本新方案。
 先固定旧20类做九个4层残差共同40轮train/val消融，定位退步；旧布局整套参考不是单因素对照。
 四层残差后续单独验证正则，逐类零召回/低召回必须报告。新正式类别排除Faces/Motorbikes/airplanes，保留17类、train/val选3替补。
-现阶段正式训练未启动，先完成真实数值门槛和诊断；旧所有数据/best/last/test/来源冻结保留。
+九项真实数值门槛已过，CPU父3054100已启动三卡GPU6/2/1消融（含A100）；旧所有数据/best/last/test/来源冻结保留。正式训练仍未启动，先完成诊断。新类car_side/joshua_tree/stop_sign替补，train1246/val261/test430已冻结。
 [消融预算和类别门槛](CALTECH_DIAGNOSE_PROTOCOL_20261014.md)、[实际诊断证据](reports/caltech_diagnose_20261014/README.md)。
 下方75%失败和旧A100排除均为已完成旧实验事实。
 

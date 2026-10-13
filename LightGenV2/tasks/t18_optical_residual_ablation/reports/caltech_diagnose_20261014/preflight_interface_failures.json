@@ -1,0 +1,33 @@
+[
+  {
+    "failure": {
+      "error": "ValueError('Input and output must have the same number of spatial dimensions, but got input with spatial dimensions of [1, 100, 100] and output size of (224, 224). Please provide input tensor in (N, C, d1, d2, ...,dK) format and output size in (o1, o2, ...,oK) format.')",
+      "pid": 3046219,
+      "test_evaluations": 0
+    },
+    "log": "Traceback (most recent call last):\n  File \"/DATA/DATA1/guest3/2026OpticsMoE/LightGenV2/tasks/t18_optical_residual_ablation/caltech_diagnose.py\", line 205, in <module>\n    try:{'preflight':preflight,'fit':fit,'queue':queue}[a.phase](a)\n        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/DATA/DATA1/guest3/2026OpticsMoE/LightGenV2/tasks/t18_optical_residual_ablation/caltech_diagnose.py\", line 109, in preflight\n    result=gate(settings(v),data,'cuda');results.append(result);save(a.out/'checks.json',dict(passed=False,results=results,test_evaluations=0))\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/DATA/DATA1/guest3/2026OpticsMoE/LightGenV2/tasks/t18_optical_residual_ablation/caltech_diagnose.py\", line 77, in gate\n    _,theta=common.epoch_plan(1,len(data[1]),cfg);x,y,_=mixed(data,idx,theta,1,0,cfg,device)\n                                                        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/DATA/DATA1/guest3/2026OpticsMoE/LightGenV2/tasks/t18_optical_residual_ablation/caltech_diagnose.py\", line 49, in mixed\n    perm=rng.permutation(len(idx));x=encode(data[0][idx].to(device),torch.as_tensor(theta[idx],device=device),cfg['variant'])\n                                     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/DATA/DATA1/guest3/2026OpticsMoE/LightGenV2/tasks/t18_optical_residual_ablation/caltech_diagnose_model.py\", line 89, in encode\n    return rms_encode(F.interpolate(a[:,None],(224,224),mode='bilinear',align_corners=False)[:,0])\n                      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/home/guest3/miniconda3/envs/xml/lib/python3.11/site-packages/torch/nn/functional.py\", line 4566, in interpolate\n    raise ValueError(\nValueError: Input and output must have the same number of spatial dimensions, but got input with spatial dimensions of [1, 100, 100] and output size of (224, 224). Please provide input tensor in (N, C, d1, d2, ...,dK) format and output size in (o1, o2, ...,oK) format.\n",
+    "successful_variants_before_failure": [
+      "base",
+      "unquantized",
+      "fullfield_ln"
+    ]
+  },
+  {
+    "failure": {
+      "error": "KeyError('classes')",
+      "pid": 3048899,
+      "test_evaluations": 0
+    },
+    "log": "Traceback (most recent call last):\n  File \"/DATA/DATA1/guest3/2026OpticsMoE/LightGenV2/tasks/t18_optical_residual_ablation/caltech_diagnose.py\", line 205, in <module>\n    try:{'preflight':preflight,'fit':fit,'queue':queue}[a.phase](a)\n        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/DATA/DATA1/guest3/2026OpticsMoE/LightGenV2/tasks/t18_optical_residual_ablation/caltech_diagnose.py\", line 109, in preflight\n    result=gate(settings(v),data,'cuda');results.append(result);save(a.out/'checks.json',dict(passed=False,results=results,test_evaluations=0))\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/DATA/DATA1/guest3/2026OpticsMoE/LightGenV2/tasks/t18_optical_residual_ablation/caltech_diagnose.py\", line 74, in gate\n    common.seed(cfg['seed']);model=build(cfg['variant'],cfg).to(device)\n                                   ^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/DATA/DATA1/guest3/2026OpticsMoE/LightGenV2/tasks/t18_optical_residual_ablation/caltech_diagnose_model.py\", line 96, in build\n    return LegacyReference(cfg) if variant=='legacy_reference' else DiagnosticMoE(variant)\n           ^^^^^^^^^^^^^^^^^^^^\n  File \"/DATA/DATA1/guest3/2026OpticsMoE/LightGenV2/tasks/t18_optical_residual_ablation/caltech_diagnose_model.py\", line 71, in __init__\n    self.net=old.build(depth,profile,profile,batched=True,device='cpu')\n             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/DATA/DATA1/guest3/2026OpticsMoE/LightGenV2/tasks/t18_optical_residual_ablation/fast_optical.py\", line 51, in build\n    model = optical.MultiClassMoE(graph, len(cfg['classes']))\n                                             ~~~^^^^^^^^^^^\nKeyError: 'classes'\n",
+    "successful_variants_before_failure": [
+      "base",
+      "unquantized",
+      "fullfield_ln",
+      "rgb_tiles",
+      "dense_router",
+      "preserve_global",
+      "mixup02",
+      "mixup06"
+    ]
+  }
+]

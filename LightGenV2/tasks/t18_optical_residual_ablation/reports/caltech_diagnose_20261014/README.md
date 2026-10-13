@@ -4,7 +4,7 @@
 旧同数据100轮残差：2层train57.80%/val51.59%，4层train76.90%/val61.84%；当前部署版150轮2层36.22/36.04%、4层57.22/46.64%。不是同一架构或正则的受控比较。
 [旧真实保存指标](previous_fit_reference.json)。旧4层80%以上印象不套成这次已核实的76.90%。
 
-九项main4/rho.3共同40轮消融固定旧20类，分别检查量化、行归一化、RGB保留、Top2、global场重编码、MixUp.2/.6；另含当前基线和旧九专家整套参考。当前尚在发布/真实数值门槛准备，不能声称已经在训。
+九项main4/rho.3共同40轮消融固定旧20类，分别检查量化、行归一化、RGB保留、Top2、global场重编码、MixUp.2/.6；另含当前基线和旧九专家整套参考。已真实启动CPU父3054100，初GPU6 A100基线子3054519、GPU2不量化子3054710、GPU1整面LN子3054898；随后以current_processes与实际proc/UUID为准，不能重复启动。
 只train/val，逐类support/recall/CM；无test数组和推理，不自动正式训练、不无限候选。量化关闭仅定位，不可直接作为部署候选。
 [明确预算、差异与正式门槛](../../CALTECH_DIAGNOSE_PROTOCOL_20261014.md)。
 
@@ -12,3 +12,14 @@
 类别改变与消融分开；新结果仍为开发实验，不冒称独立泛化。不会因未来test失败继续删类别。
 A100本轮人工允许；最多三项目子、每子2GiB+800MiB，GPU6/2优先，第三卡从允许0/1/4的余量选择。其他项目原样保留；最终真实退出后核对显存释放。
 [只读资源盘点](resource_inventory.json)。不连接实验室，不改封存ABO/旧训练源/结果。
+
+## 实际启动与数值门槛
+
+九项门槛全部真实passed，20类样本均检查，重复micro1概率误差0，各相位梯度有限非零；八个当前图变体完全同initialSHA，旧九专家889696参数另有身份。基线与封存部署版908552参数前向/状态精确相同。
+[真实数值检查](numerical_preflight.json)、[早期消融接口失败留存](preflight_interface_failures.json)。RGB通道与旧模型class配置接口错误已修正并Git发布；旧失败目录不覆盖，不把适配错误当成旧低精度原因。
+[实际CPU父/三GPU子命令、来源和早期live证明](production_start.json)。121源码当前/原训练582c90a1c08b1e24a84df32b9d0f7ab04b66c210 Gitblob一致。实际初期base/unquantized E2、fullfieldLN E1，所有生产smoke通过，test0。
+实测初期普通轮base54.4s/unquantized53.3s，GPU1共享负载首轮含全train107.4s；预计九组共同40轮约2-3小时，估计受负载影响，不是结果或结束承诺。
+
+新类已冻结：car_side/joshua_tree/stop_sign替补，保留其他17；1937图/train1246/val261/test430。旧保留类1295个train/val像素及角色逐项相同；以前fit/val进入新test为0。
+[新数据身份、支持、固定筛选和独立CPU审核](revised_data_cpu_receipt.json)。固定缩略图proxy宏召回52.66%仅筛选指标，不是光学精度。缓存SHA21436ad0b269d5319176e3e4d40fd382b21e1d34d41345ec979176231fb0e3c0，manifestSHA017dff61d36bb5161ac9442cd22d8436b15cf68a963273f797229d624868f30b。
+正式训练仍未启动；先根据消融检查信息损失/优化，并独立评估4层残差正则与逐类失效，再冻结正式方案。旧test不复测，不拿test选候选。
