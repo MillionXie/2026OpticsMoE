@@ -1,5 +1,26 @@
 # Screened Caltech20: authorized continuation to200
 
+## Latest completed phase: L12 common200 (2026-10-13)
+
+Both L12 training children exited after200. Actual CPU saved-artifact audit passed:
+76 current/original Git sources, complete E100 state restore,100-prefix,61 phase
+gradients every epoch,200 independent MixUp/order/affine checks, train/val saved
+predictions and metrics, and pair configuration onlyrho. No model re-inference,
+test arrays, partial selection lock or test claim. All-eight completion is pending.
+
+First-minimum validation balanced NLL selects rho0E182/rho.3E150. Train accuracy
+92.49/95.92%, validation61.84/65.72%, validation macro58.79/63.12%, gap30.66/30.19pp.
+Validation improves relative to the original100 selected checkpoints, while the
+gap grows. Last10 valNLL improves only0.489/0.212% over prior10: near a late plateau,
+not proof of full convergence or70 success. Additional100 elapsed19864.45/20621.89s
+includes endpoint/selected-train evaluation. [Complete curves, PDF, CSV and CPU receipt](L12/README.md).
+
+The original ETA below is historical. Foreign GPU0/1/4 occupation now slows active
+children and blocks new dispatch on those cards. If it persists, full delivery may
+be after18:00 Asia/Shanghai; free allowed cards automatically resume dispatch.
+Physical GPU0/1/2/4 remain the only permitted cards. The human explicitly excludes
+the A100 physicalGPU6 from both training and endpoint tests; no policy expansion.
+
 Actual start: 2026-10-13 about09:42 Asia/Shanghai. All eight2/4/12/16 x rho0/.3
 are authorized to reach200 total epochs. Previous100 fits/tests/weights preserved.
 Human chose unchanged regularization and validation-NLL best selection.
