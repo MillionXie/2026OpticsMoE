@@ -1,0 +1,153 @@
+{
+  "time_unix": 1791921956.4703693,
+  "head": "46011b823ff4cffc11c4f5943c62e31501c2a4c6",
+  "source_commit": "46011b823ff4cffc11c4f5943c62e31501c2a4c6",
+  "source_count": 126,
+  "all_sources_current_original_match": true,
+  "start": {
+    "pid": 3210879,
+    "command": [
+      "/home/guest3/miniconda3/envs/xml/bin/python",
+      "/DATA/DATA1/guest3/2026OpticsMoE/LightGenV2/tasks/t18_optical_residual_ablation/caltech_repair234.py",
+      "--phase",
+      "queue",
+      "--out",
+      "/DATA/DATA1/guest3/2026OpticsMoE/LightGenV2/tasks/t18_optical_residual_ablation/runs/simulation/caltech_revised20_s17_mainL4rho03_RGB_dense_global_regstudy150_gpu256_20261014"
+    ],
+    "run": "/DATA/DATA1/guest3/2026OpticsMoE/LightGenV2/tasks/t18_optical_residual_ablation/runs/simulation/caltech_revised20_s17_mainL4rho03_RGB_dense_global_regstudy150_gpu256_20261014",
+    "source_commit": "46011b823ff4cffc11c4f5943c62e31501c2a4c6",
+    "source_count": 126,
+    "gpu_indices": [
+      2,
+      5,
+      6
+    ],
+    "started_unix": 1791921909.9678044,
+    "phase": "bounded_repair_regularization_validation_not_formal",
+    "test_evaluations": 0
+  },
+  "status": {
+    "state": "study_running",
+    "completed": [],
+    "failures": [],
+    "active": 3,
+    "pending": 0,
+    "test_evaluations": 0
+  },
+  "jobs": [
+    {
+      "case": "L4_rho03_mixup02",
+      "alpha": 0.2,
+      "pid": 3211094,
+      "gpu_uuid": "GPU-3f60d773-4dd8-d706-ef48-a4dfc5af6c55",
+      "physical_gpu": 6,
+      "status": {},
+      "smoke": {
+        "passed": true,
+        "depth": 4,
+        "rho": 0.3,
+        "micro": 1,
+        "classes_checked": 20,
+        "probability_max_error": 0.0,
+        "gradient_max_relative_l2": 4.569874931803497e-07,
+        "gradient_min_cosine": 0.9999999999998959,
+        "all_phase_gradients_finite_nonzero": true,
+        "phase_gradients": {
+          "raw_router": 0.06206963211297989,
+          "phase_sets.0": 0.1010836735367775,
+          "phase_sets.1": 0.12799136340618134,
+          "phase_sets.2": 0.04339616745710373,
+          "phase_sets.3": 0.06422551721334457,
+          "phase_sets.4": 0.04297617822885513,
+          "phase_sets.5": 0.08203278481960297,
+          "phase_sets.6": 0.06235359609127045,
+          "phase_sets.7": 0.07721667736768723,
+          "phase_sets.8": 0.06671569496393204,
+          "phase_sets.9": 0.08111836016178131
+        },
+        "initial_parameter_sha256": "f7de57b62eb33f6531128061deaa9ec2fb1bacbeea7ba02ecc50528189e60f37",
+        "parameters": 908552,
+        "test_evaluations": 0
+      },
+      "latest_history": null,
+      "log_tail": ""
+    },
+    {
+      "case": "L4_rho03_mixup04",
+      "alpha": 0.4,
+      "pid": 3211169,
+      "gpu_uuid": "GPU-6dcca91a-8e08-1a50-9aa6-81defeaed50b",
+      "physical_gpu": 2,
+      "status": {},
+      "smoke": {
+        "passed": true,
+        "depth": 4,
+        "rho": 0.3,
+        "micro": 1,
+        "classes_checked": 20,
+        "probability_max_error": 0.0,
+        "gradient_max_relative_l2": 3.9394996065311716e-07,
+        "gradient_min_cosine": 0.9999999999999225,
+        "all_phase_gradients_finite_nonzero": true,
+        "phase_gradients": {
+          "raw_router": 0.043930597603321075,
+          "phase_sets.0": 0.09597416967153549,
+          "phase_sets.1": 0.07815544307231903,
+          "phase_sets.2": 0.04575449228286743,
+          "phase_sets.3": 0.05389656499028206,
+          "phase_sets.4": 0.037112344056367874,
+          "phase_sets.5": 0.07249564677476883,
+          "phase_sets.6": 0.05103648826479912,
+          "phase_sets.7": 0.06423646211624146,
+          "phase_sets.8": 0.058035753667354584,
+          "phase_sets.9": 0.07159870117902756
+        },
+        "initial_parameter_sha256": "f7de57b62eb33f6531128061deaa9ec2fb1bacbeea7ba02ecc50528189e60f37",
+        "parameters": 908552,
+        "test_evaluations": 0
+      },
+      "latest_history": null,
+      "log_tail": ""
+    },
+    {
+      "case": "L4_rho03_mixup06",
+      "alpha": 0.6,
+      "pid": 3211235,
+      "gpu_uuid": "GPU-d53ce4c8-272d-c2fb-dc09-f182d586c4eb",
+      "physical_gpu": 5,
+      "status": {},
+      "smoke": {
+        "passed": true,
+        "depth": 4,
+        "rho": 0.3,
+        "micro": 1,
+        "classes_checked": 20,
+        "probability_max_error": 0.0,
+        "gradient_max_relative_l2": 3.805490678132628e-07,
+        "gradient_min_cosine": 0.9999999999999276,
+        "all_phase_gradients_finite_nonzero": true,
+        "phase_gradients": {
+          "raw_router": 0.11598030477762222,
+          "phase_sets.0": 0.0888214185833931,
+          "phase_sets.1": 0.057247839868068695,
+          "phase_sets.2": 0.05114871636033058,
+          "phase_sets.3": 0.058741092681884766,
+          "phase_sets.4": 0.03704293444752693,
+          "phase_sets.5": 0.07144087553024292,
+          "phase_sets.6": 0.05910656601190567,
+          "phase_sets.7": 0.059397127479314804,
+          "phase_sets.8": 0.05527465417981148,
+          "phase_sets.9": 0.07382426410913467
+        },
+        "initial_parameter_sha256": "f7de57b62eb33f6531128061deaa9ec2fb1bacbeea7ba02ecc50528189e60f37",
+        "parameters": 908552,
+        "test_evaluations": 0
+      },
+      "latest_history": null,
+      "log_tail": ""
+    }
+  ],
+  "compute_apps": "2172652, GPU-afc19890-6209-ee4d-622d-e619da5bd5b2, 20484 MiB\n2172653, GPU-e8837b85-d55b-8e81-aaa5-ec1ac326932d, 20484 MiB\n3211169, GPU-6dcca91a-8e08-1a50-9aa6-81defeaed50b, 656 MiB\n2172654, GPU-4d8bfdb9-8777-05a6-3811-ab18ff4eadfd, 20484 MiB\n2172655, GPU-1b963983-7909-af6e-0528-f0f0661ab549, 20484 MiB\n3211235, GPU-d53ce4c8-272d-c2fb-dc09-f182d586c4eb, 656 MiB\n3211094, GPU-3f60d773-4dd8-d706-ef48-a4dfc5af6c55, 850 MiB\n",
+  "gpu_inventory": "0, NVIDIA GeForce RTX 4090, GPU-afc19890-6209-ee4d-622d-e619da5bd5b2, 3705 MiB\n1, NVIDIA GeForce RTX 4090, GPU-e8837b85-d55b-8e81-aaa5-ec1ac326932d, 3692 MiB\n2, NVIDIA GeForce RTX 3090, GPU-6dcca91a-8e08-1a50-9aa6-81defeaed50b, 23581 MiB\n3, NVIDIA GeForce RTX 4090, GPU-4d8bfdb9-8777-05a6-3811-ab18ff4eadfd, 3705 MiB\n4, NVIDIA GeForce RTX 4090, GPU-1b963983-7909-af6e-0528-f0f0661ab549, 3705 MiB\n5, NVIDIA GeForce RTX 3090, GPU-d53ce4c8-272d-c2fb-dc09-f182d586c4eb, 23573 MiB\n6, NVIDIA A100-PCIE-40GB, GPU-3f60d773-4dd8-d706-ef48-a4dfc5af6c55, 39454 MiB\n",
+  "test_evaluations": 0
+}
