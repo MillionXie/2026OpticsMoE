@@ -63,7 +63,7 @@ electronic classifier, frozen backbone, external teacher or pretraining is added
 ## Fitting and overfitting control
 
 Fresh seed17, identical initial phases and order/affine/MixUp schedule across each
-rho pair. Macro16 with tail12, micro4 only after actual serial-micro1 numerical gate
+rho pair. Macro16 with tail12, production micro1 after micro4 failed the probability gate (1.82167e-5; threshold1e-6). No threshold relaxation. The serial-micro1 numerical gate
 passes prob<=1e-6, gradrelative<=.02, cosine>=.999 and every phase gradient finite
 nonzero. If a mode fails retain failure, no threshold relaxation or automatic retry.
 Train-only MixUp alpha.4 (old.2), LS.08, affine20deg/5pixels/10%, phase smoothness.005,

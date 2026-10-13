@@ -1,6 +1,6 @@
 {
   "seed":17,"depths":[2,3,4],"rhos":[0,0.3],"maximum_epochs":150,"minimum_epochs":50,"maximum_seconds":14400,
-  "early_patience":25,"early_min_delta":0.002,"batch_size":16,"microbatch":4,"lr":0.002,"ema_decay":0.95,
+  "early_patience":25,"early_min_delta":0.002,"batch_size":16,"microbatch":1,"lr":0.002,"ema_decay":0.95,
   "mixup_alpha":0.4,"label_smoothing":0.08,"capture_weight":0.05,"phase_smooth_weight":0.005,
   "augmentation":{"degrees":20,"translation_pixels":5,"scale_delta":0.1},
   "cache_sha256":"a81e78bbff06ea65e7ceba3771b688178276464e33fdcdedf3796fa2930fa6e1",
