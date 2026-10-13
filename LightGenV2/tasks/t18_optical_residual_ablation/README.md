@@ -11,6 +11,10 @@
 源和PT不变、CPU检查无GPU/设备/test，不冒称实拍验收，preserve_global仍需对应478输入独立出口。
 [训练后BMP合同和逐层亮度](reports/caltech_diagnose_20261014/trained_candidate_bmp_contract.md)。
 
+同一每类前5 TRAIN组件抽查，Base96/100固定(2,3)，RGB和preserve分别有slot1/2未启用；
+Dense四槽均非零且权重随图变化，但不均衡，不把小样本当完整训练统计或因果证明。
+[已训练4层路由槽位证据](reports/caltech_diagnose_20261014/trained_L4_router_component.md)。
+
 ## 消融部分阶段：前三组40轮CPU已审核（2026-10-14）
 
 基线/关闭量化/整面LN同40轮、同init/order增强，均valNLL选E40。

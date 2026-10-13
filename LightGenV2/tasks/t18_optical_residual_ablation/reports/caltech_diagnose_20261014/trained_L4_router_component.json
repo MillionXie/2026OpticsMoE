@@ -1,0 +1,5880 @@
+{
+  "passed": true,
+  "time_unix": 1791919305.8738549,
+  "scope": "Completed L4rho.3 E40 selected EMA router-component probe only, fixed first5 TRAIN samples per old class (100 per candidate), no full-classification accuracy recomputation. Descriptive subset; not validation gate, full-training statistics or causal proof. Dense rankedTop2 is a diagnostic preference, not actual hard gating.",
+  "results": [
+    {
+      "variant": "base",
+      "selected_epoch": 40,
+      "checkpoint_sha256": "7240efd377215032a58f560b07bdfbd05e7c1da7b4209e52b80cb4400e33b5e8",
+      "samples": 100,
+      "actual_routing": "hardTop2",
+      "ranked_top2_pair_counts": {
+        "(2, 3)": 96,
+        "(0, 2)": 1,
+        "(0, 3)": 1,
+        "(1, 3)": 2
+      },
+      "fraction_ranked_top2_different_from_modal": 0.040000000000000036,
+      "actual_slot_nonzero_fraction": [
+        0.02,
+        0.02,
+        0.97,
+        0.99
+      ],
+      "slot_weight_mean": [
+        0.013910796493291855,
+        0.006357852835208178,
+        0.7519893050193787,
+        0.616288423538208
+      ],
+      "slot_weight_std": [
+        0.0996275544166565,
+        0.044505033642053604,
+        0.16370956599712372,
+        0.1255372017621994
+      ],
+      "slot_weight_min": [
+        0.0,
+        0.0,
+        0.0,
+        0.0
+      ],
+      "slot_weight_max": [
+        0.844475507736206,
+        0.3184177577495575,
+        0.9063531160354614,
+        0.9483026266098022
+      ],
+      "rows": [
+        {
+          "class_name": "Faces",
+          "samples": 5,
+          "details": [
+            {
+              "sample_id": "101_ObjectCategories/Faces/image_0001.jpg",
+              "ranked_top2": [
+                2,
+                3
+              ],
+              "actual_expert_amplitude_weights": [
+                0.0,
+                0.0,
+                0.8118501305580139,
+                0.5838659405708313
+              ]
+            },
+            {
+              "sample_id": "101_ObjectCategories/Faces/image_0011.jpg",
+              "ranked_top2": [
+                2,
+                3
+              ],
+              "actual_expert_amplitude_weights": [
+                0.0,
+                0.0,
+                0.8409247398376465,
+                0.5411520004272461
+              ]
+            },
+            {
+              "sample_id": "101_ObjectCategories/Faces/image_0021.jpg",
+              "ranked_top2": [
+                2,
+                3
+              ],
+              "actual_expert_amplitude_weights": [
+                0.0,
+                0.0,
+                0.8129708170890808,
+                0.5823044776916504
+              ]
+            },
+            {
+              "sample_id": "101_ObjectCategories/Faces/image_0029.jpg",
+              "ranked_top2": [
+                2,
+                3
+              ],
+              "actual_expert_amplitude_weights": [
+                0.0,
+                0.0,
+                0.6967645883560181,
+                0.7172998785972595
+              ]
+            },
+            {
+              "sample_id": "101_ObjectCategories/Faces/image_0032.jpg",
+              "ranked_top2": [
+                2,
+                3
+              ],
+              "actual_expert_amplitude_weights": [
+                0.0,
+                0.0,
+                0.8498971462249756,
+                0.5269485712051392
+              ]
+            }
+          ]
+        },
+        {
+          "class_name": "Leopards",
+          "samples": 5,
+          "details": [
+            {
+              "sample_id": "101_ObjectCategories/Leopards/image_0001.jpg",
+              "ranked_top2": [
+                2,
+                3
+              ],
+              "actual_expert_amplitude_weights": [
+                0.0,
+                0.0,
+                0.8075792193412781,
+                0.5897591710090637
+              ]
+            },
+            {
+              "sample_id": "101_ObjectCategories/Leopards/image_0005.jpg",
+              "ranked_top2": [
+                2,
+                3
+              ],
+              "actual_expert_amplitude_weights": [
+                0.0,
+                0.0,
+                0.8360180854797363,
+                0.5487019419670105
+              ]
+            },
+            {
+              "sample_id": "101_ObjectCategories/Leopards/image_0007.jpg",
+              "ranked_top2": [
+                2,
+                3
+              ],
+              "actual_expert_amplitude_weights": [
+                0.0,
+                0.0,
+                0.775547206401825,
+                0.6312896013259888
+              ]
+            },
+            {
+              "sample_id": "101_ObjectCategories/Leopards/image_0009.jpg",
+              "ranked_top2": [
+                2,
+                3
+              ],
+              "actual_expert_amplitude_weights": [
+                0.0,
+                0.0,
+                0.7747226357460022,
+                0.6323011517524719
+              ]
+            },
+            {
+              "sample_id": "101_ObjectCategories/Leopards/image_0010.jpg",
+              "ranked_top2": [
+                2,
+                3
+              ],
+              "actual_expert_amplitude_weights": [
+                0.0,
+                0.0,
+                0.8163883686065674,
+                0.5775033235549927
+              ]
+            }
+          ]
+        },
+        {
+          "class_name": "Motorbikes",
+          "samples": 5,
+          "details": [
+            {
+              "sample_id": "101_ObjectCategories/Motorbikes/image_0018.jpg",
+              "ranked_top2": [
+                2,
+                3
+              ],
+              "actual_expert_amplitude_weights": [
+                0.0,
+                0.0,
+                0.6217082142829895,
+                0.7832489013671875
+              ]
+            },
+            {
+              "sample_id": "101_ObjectCategories/Motorbikes/image_0035.jpg",
+              "ranked_top2": [
+                2,
+                3
+              ],
+              "actual_expert_amplitude_weights": [
+                0.0,
+                0.0,
+                0.7776029109954834,
+                0.6287556290626526
+              ]
+            },
+            {
+              "sample_id": "101_ObjectCategories/Motorbikes/image_0041.jpg",
+              "ranked_top2": [
+                2,
+                3
+              ],
+              "actual_expert_amplitude_weights": [
+                0.0,
+                0.0,
+                0.7486035823822021,
+                0.6630178689956665
+              ]
+            },
+            {
+              "sample_id": "101_ObjectCategories/Motorbikes/image_0044.jpg",
+              "ranked_top2": [
+                2,
+                3
+              ],
+              "actual_expert_amplitude_weights": [
+                0.0,
+                0.0,
+                0.7978758215904236,
+                0.6028218269348145
+              ]
+            },
+            {
+              "sample_id": "101_ObjectCategories/Motorbikes/image_0045.jpg",
+              "ranked_top2": [
+                2,
+                3
+              ],
+              "actual_expert_amplitude_weights": [
+                0.0,
+                0.0,
+                0.8200106024742126,
+                0.5723482966423035
+              ]
+            }
+          ]
+        },
+        {
+          "class_name": "airplanes",
+          "samples": 5,
+          "details": [
+            {
+              "sample_id": "101_ObjectCategories/airplanes/image_0006.jpg",
+              "ranked_top2": [
+                2,
+                3
+              ],
+              "actual_expert_amplitude_weights": [
+                0.0,
+                0.0,
+                0.8692871928215027,
+                0.49430736899375916
+              ]
+            },
+            {
+              "sample_id": "101_ObjectCategories/airplanes/image_0028.jpg",
+              "ranked_top2": [
+                2,
+                3
+              ],
+              "actual_expert_amplitude_weights": [
+                0.0,
+                0.0,
+                0.830653727054596,
+                0.556789219379425
+              ]
+            },
+            {
+              "sample_id": "101_ObjectCategories/airplanes/image_0055.jpg",
+              "ranked_top2": [
+                2,
+                3
+              ],
+              "actual_expert_amplitude_weights": [
+                0.0,
+                0.0,
+                0.8999651074409485,
+                0.43596187233924866
+              ]
+            },
+            {
+              "sample_id": "101_ObjectCategories/airplanes/image_0058.jpg",
+              "ranked_top2": [
+                2,
+                3
+              ],
+              "actual_expert_amplitude_weights": [
+                0.0,
+                0.0,
+                0.8791705965995789,
+                0.4765070974826813
+              ]
+            },
+            {
+              "sample_id": "101_ObjectCategories/airplanes/image_0073.jpg",
+              "ranked_top2": [
+                2,
+                3
+              ],
+              "actual_expert_amplitude_weights": [
+                0.0,
+                0.0,
+                0.706145167350769,
+                0.7080671191215515
+              ]
+            }
+          ]
+        },
+        {
+          "class_name": "bonsai",
+          "samples": 5,
+          "details": [
+            {
+              "sample_id": "101_ObjectCategories/bonsai/image_0001.jpg",
+              "ranked_top2": [
+                2,
+                3
+              ],
+              "actual_expert_amplitude_weights": [
+                0.0,
+                0.0,
+                0.7526758909225464,
+                0.6583912968635559
+              ]
+            },
+            {
+              "sample_id": "101_ObjectCategories/bonsai/image_0006.jpg",
+              "ranked_top2": [
+                2,
+                3
+              ],
+              "actual_expert_amplitude_weights": [
+                0.0,
+                0.0,
+                0.7263072729110718,
+                0.6873700618743896
+              ]
+            },
+            {
+              "sample_id": "101_ObjectCategories/bonsai/image_0007.jpg",
+              "ranked_top2": [
+                2,
+                3
+              ],
+              "actual_expert_amplitude_weights": [
+                0.0,
+                0.0,
+                0.8945598006248474,
+                0.4469482898712158
+              ]
+            },
+            {
+              "sample_id": "101_ObjectCategories/bonsai/image_0008.jpg",
+              "ranked_top2": [
+                2,
+                3
+              ],
+              "actual_expert_amplitude_weights": [
+                0.0,
+                0.0,
+                0.8079440593719482,
+                0.589259147644043
+              ]
+            },
+            {
+              "sample_id": "101_ObjectCategories/bonsai/image_0013.jpg",
+              "ranked_top2": [
+                2,
+                3
+              ],
+              "actual_expert_amplitude_weights": [
+                0.0,
+                0.0,
+                0.8155249953269958,
+                0.5787217020988464
+              ]
+            }
+          ]
+        },
+        {
+          "class_name": "crab",
+          "samples": 5,
+          "details": [
+            {
+              "sample_id": "101_ObjectCategories/crab/image_0001.jpg",
+              "ranked_top2": [
+                2,
+                3
+              ],
+              "actual_expert_amplitude_weights": [
+                0.0,
+                0.0,
+                0.7713091969490051,
+                0.6364606022834778
+              ]
+            },
+            {
+              "sample_id": "101_ObjectCategories/crab/image_0002.jpg",
+              "ranked_top2": [
+                2,
+                3
+              ],
+              "actual_expert_amplitude_weights": [
+                0.0,
+                0.0,
+                0.7709517478942871,
+                0.6368935704231262
+              ]
+            },
+            {
+              "sample_id": "101_ObjectCategories/crab/image_0004.jpg",
+              "ranked_top2": [
+                2,
+                3
+              ],
+              "actual_expert_amplitude_weights": [
+                0.0,
+                0.0,
+                0.9063531160354614,
+                0.42252117395401
+              ]
+            },
+            {
+              "sample_id": "101_ObjectCategories/crab/image_0005.jpg",
+              "ranked_top2": [
+                2,
+                3
+              ],
+              "actual_expert_amplitude_weights": [
+                0.0,
+                0.0,
+                0.7824393510818481,
+                0.6227268576622009
+              ]
+            },
+            {
+              "sample_id": "101_ObjectCategories/crab/image_0006.jpg",
+              "ranked_top2": [
+                2,
+                3
+              ],
+              "actual_expert_amplitude_weights": [
+                0.0,
+                0.0,
+                0.8158999681472778,
+                0.5781930685043335
+              ]
+            }
+          ]
+        },
+        {
+          "class_name": "crayfish",
+          "samples": 5,
+          "details": [
+            {
+              "sample_id": "101_ObjectCategories/crayfish/image_0001.jpg",
+              "ranked_top2": [
+                2,
+                3
+              ],
+              "actual_expert_amplitude_weights": [
+                0.0,
+                0.0,
+                0.8283206224441528,
+                0.5602543950080872
+              ]
+            },
+            {
+              "sample_id": "101_ObjectCategories/crayfish/image_0002.jpg",
+              "ranked_top2": [
+                2,
+                3
+              ],
+              "actual_expert_amplitude_weights": [
+                0.0,
+                0.0,
+                0.7360882759094238,
+                0.6768855452537537
+              ]
+            },
+            {
+              "sample_id": "101_ObjectCategories/crayfish/image_0003.jpg",
+              "ranked_top2": [
+                2,
+                3
+              ],
+              "actual_expert_amplitude_weights": [
+                0.0,
+                0.0,
+                0.7323605418205261,
+                0.6809170842170715
+              ]
+            },
+            {
+              "sample_id": "101_ObjectCategories/crayfish/image_0004.jpg",
+              "ranked_top2": [
+                2,
+                3
+              ],
+              "actual_expert_amplitude_weights": [
+                0.0,
+                0.0,
+                0.8366567492485046,
+                0.5477275848388672
+              ]
+            },
+            {
+              "sample_id": "101_ObjectCategories/crayfish/image_0007.jpg",
+              "ranked_top2": [
+                2,
+                3
+              ],
+              "actual_expert_amplitude_weights": [
+                0.0,
+                0.0,
+                0.8173840045928955,
+                0.5760931372642517
+              ]
+            }
+          ]
+        },
+        {
+          "class_name": "grand_piano",
+          "samples": 5,
+          "details": [
+            {
+              "sample_id": "101_ObjectCategories/grand_piano/image_0001.jpg",
+              "ranked_top2": [
+                2,
+                3
+              ],
+              "actual_expert_amplitude_weights": [
+                0.0,
+                0.0,
+                0.8996701836585999,
+                0.43657007813453674
+              ]
+            },
+            {
+              "sample_id": "101_ObjectCategories/grand_piano/image_0002.jpg",
+              "ranked_top2": [
+                2,
+                3
+              ],
+              "actual_expert_amplitude_weights": [
+                0.0,
+                0.0,
+                0.5939936637878418,
+                0.8044697642326355
+              ]
+            },
+            {
+              "sample_id": "101_ObjectCategories/grand_piano/image_0004.jpg",
+              "ranked_top2": [
+                2,
+                3
+              ],
+              "actual_expert_amplitude_weights": [
+                0.0,
+                0.0,
+                0.80159991979599,
+                0.5978608727455139
+              ]
+            },
+            {
+              "sample_id": "101_ObjectCategories/grand_piano/image_0005.jpg",
+              "ranked_top2": [
+                2,
+                3
+              ],
+              "actual_expert_amplitude_weights": [
+                0.0,
+                0.0,
+                0.7752091884613037,
+                0.631704568862915
+              ]
+            },
+            {
+              "sample_id": "101_ObjectCategories/grand_piano/image_0006.jpg",
+              "ranked_top2": [
+                2,
+                3
+              ],
+              "actual_expert_amplitude_weights": [
+                0.0,
+                0.0,
+                0.8770974278450012,
+                0.48031261563301086
+              ]
+            }
+          ]
+        },
+        {
+          "class_name": "helicopter",
+          "samples": 5,
+          "details": [
+            {
+              "sample_id": "101_ObjectCategories/helicopter/image_0001.jpg",
+              "ranked_top2": [
+                2,
+                3
+              ],
+              "actual_expert_amplitude_weights": [
+                0.0,
+                0.0,
+                0.7882012128829956,
+                0.6154175996780396
+              ]
+            },
+            {
+              "sample_id": "101_ObjectCategories/helicopter/image_0002.jpg",
+              "ranked_top2": [
+                2,
+                3
+              ],
+              "actual_expert_amplitude_weights": [
+                0.0,
+                0.0,
+                0.8703717589378357,
+                0.4923950731754303
+              ]
+            },
+            {
+              "sample_id": "101_ObjectCategories/helicopter/image_0003.jpg",
+              "ranked_top2": [
+                2,
+                3
+              ],
+              "actual_expert_amplitude_weights": [
+                0.0,
+                0.0,
+                0.8128648996353149,
+                0.5824522972106934
+              ]
+            },
+            {
+              "sample_id": "101_ObjectCategories/helicopter/image_0007.jpg",
+              "ranked_top2": [
+                2,
+                3
+              ],
+              "actual_expert_amplitude_weights": [
+                0.0,
+                0.0,
+                0.7926749587059021,
+                0.6096444129943848
+              ]
+            },
+            {
+              "sample_id": "101_ObjectCategories/helicopter/image_0009.jpg",
+              "ranked_top2": [
+                2,
+                3
+              ],
+              "actual_expert_amplitude_weights": [
+                0.0,
+                0.0,
+                0.7063813209533691,
+                0.7078315019607544
+              ]
+            }
+          ]
+        },
+        {
+          "class_name": "kangaroo",
+          "samples": 5,
+          "details": [
+            {
+              "sample_id": "101_ObjectCategories/kangaroo/image_0001.jpg",
+              "ranked_top2": [
+                2,
+                3
+              ],
+              "actual_expert_amplitude_weights": [
+                0.0,
+                0.0,
+                0.7622051239013672,
+                0.6473356485366821
+              ]
+            },
+            {
+              "sample_id": "101_ObjectCategories/kangaroo/image_0002.jpg",
+              "ranked_top2": [
+                2,
+                3
+              ],
+              "actual_expert_amplitude_weights": [
+                0.0,
+                0.0,
+                0.777527928352356,
+                0.6288484930992126
+              ]
+            },
+            {
+              "sample_id": "101_ObjectCategories/kangaroo/image_0004.jpg",
+              "ranked_top2": [
+                2,
+                3
+              ],
+              "actual_expert_amplitude_weights": [
+                0.0,
+                0.0,
+                0.7674684524536133,
+                0.6410866975784302
+              ]
+            },
+            {
+              "sample_id": "101_ObjectCategories/kangaroo/image_0005.jpg",
+              "ranked_top2": [
+                2,
+                3
+              ],
+              "actual_expert_amplitude_weights": [
+                0.0,
+                0.0,
+                0.8395645618438721,
+                0.5432599782943726
+              ]
+            },
+            {
+              "sample_id": "101_ObjectCategories/kangaroo/image_0006.jpg",
+              "ranked_top2": [
+                2,
+                3
+              ],
+              "actual_expert_amplitude_weights": [
+                0.0,
+                0.0,
+                0.7616874575614929,
+                0.6479446887969971
+              ]
+            }
+          ]
+        },
+        {
+          "class_name": "ketch",
+          "samples": 5,
+          "details": [
+            {
+              "sample_id": "101_ObjectCategories/ketch/image_0001.jpg",
+              "ranked_top2": [
+                2,
+                3
+              ],
+              "actual_expert_amplitude_weights": [
+                0.0,
+                0.0,
+                0.822988748550415,
+                0.5680575966835022
+              ]
+            },
+            {
+              "sample_id": "101_ObjectCategories/ketch/image_0003.jpg",
+              "ranked_top2": [
+                2,
+                3
+              ],
+              "actual_expert_amplitude_weights": [
+                0.0,
+                0.0,
+                0.8555763363838196,
+                0.5176767110824585
+              ]
+            },
+            {
+              "sample_id": "101_ObjectCategories/ketch/image_0004.jpg",
+              "ranked_top2": [
+                2,
+                3
+              ],
+              "actual_expert_amplitude_weights": [
+                0.0,
+                0.0,
+                0.8393455743789673,
+                0.5435982346534729
+              ]
+            },
+            {
+              "sample_id": "101_ObjectCategories/ketch/image_0005.jpg",
+              "ranked_top2": [
+                2,
+                3
+              ],
+              "actual_expert_amplitude_weights": [
+                0.0,
+                0.0,
+                0.7716713547706604,
+                0.6360215544700623
+              ]
+            },
+            {
+              "sample_id": "101_ObjectCategories/ketch/image_0007.jpg",
+              "ranked_top2": [
+                2,
+                3
+              ],
+              "actual_expert_amplitude_weights": [
+                0.0,
+                0.0,
+                0.736635148525238,
+                0.6762903332710266
+              ]
+            }
+          ]
+        },
+        {
+          "class_name": "laptop",
+          "samples": 5,
+          "details": [
+            {
+              "sample_id": "101_ObjectCategories/laptop/image_0001.jpg",
+              "ranked_top2": [
+                0,
+                2
+              ],
+              "actual_expert_amplitude_weights": [
+                0.5466040968894958,
+                0.0,
+                0.8373911380767822,
+                0.0
+              ]
+            },
+            {
+              "sample_id": "101_ObjectCategories/laptop/image_0002.jpg",
+              "ranked_top2": [
+                2,
+                3
+              ],
+              "actual_expert_amplitude_weights": [
+                0.0,
+                0.0,
+                0.6824348568916321,
+                0.7309465408325195
+              ]
+            },
+            {
+              "sample_id": "101_ObjectCategories/laptop/image_0003.jpg",
+              "ranked_top2": [
+                2,
+                3
+              ],
+              "actual_expert_amplitude_weights": [
+                0.0,
+                0.0,
+                0.7308849692344666,
+                0.6825006604194641
+              ]
+            },
+            {
+              "sample_id": "101_ObjectCategories/laptop/image_0004.jpg",
+              "ranked_top2": [
+                2,
+                3
+              ],
+              "actual_expert_amplitude_weights": [
+                0.0,
+                0.0,
+                0.8568776845932007,
+                0.5155197381973267
+              ]
+            },
+            {
+              "sample_id": "101_ObjectCategories/laptop/image_0005.jpg",
+              "ranked_top2": [
+                2,
+                3
+              ],
+              "actual_expert_amplitude_weights": [
+                0.0,
+                0.0,
+                0.9012793302536011,
+                0.4332384467124939
+              ]
+            }
+          ]
+        },
+        {
+          "class_name": "lotus",
+          "samples": 5,
+          "details": [
+            {
+              "sample_id": "101_ObjectCategories/lotus/image_0002.jpg",
+              "ranked_top2": [
+                2,
+                3
+              ],
+              "actual_expert_amplitude_weights": [
+                0.0,
+                0.0,
+                0.7527700662612915,
+                0.6582834720611572
+              ]
+            },
+            {
+              "sample_id": "101_ObjectCategories/lotus/image_0004.jpg",
+              "ranked_top2": [
+                0,
+                3
+              ],
+              "actual_expert_amplitude_weights": [
+                0.844475507736206,
+                0.0,
+                0.0,
+                0.5355941653251648
+              ]
+            },
+            {
+              "sample_id": "101_ObjectCategories/lotus/image_0006.jpg",
+              "ranked_top2": [
+                2,
+                3
+              ],
+              "actual_expert_amplitude_weights": [
+                0.0,
+                0.0,
+                0.7968707084655762,
+                0.6041498184204102
+              ]
+            },
+            {
+              "sample_id": "101_ObjectCategories/lotus/image_0007.jpg",
+              "ranked_top2": [
+                2,
+                3
+              ],
+              "actual_expert_amplitude_weights": [
+                0.0,
+                0.0,
+                0.8249881267547607,
+                0.5651500821113586
+              ]
+            },
+            {
+              "sample_id": "101_ObjectCategories/lotus/image_0008.jpg",
+              "ranked_top2": [
+                2,
+                3
+              ],
+              "actual_expert_amplitude_weights": [
+                0.0,
+                0.0,
+                0.8122362494468689,
+                0.5833286643028259
+              ]
+            }
+          ]
+        },
+        {
+          "class_name": "minaret",
+          "samples": 5,
+          "details": [
+            {
+              "sample_id": "101_ObjectCategories/minaret/image_0001.jpg",
+              "ranked_top2": [
+                2,
+                3
+              ],
+              "actual_expert_amplitude_weights": [
+                0.0,
+                0.0,
+                0.8723936080932617,
+                0.4888041317462921
+              ]
+            },
+            {
+              "sample_id": "101_ObjectCategories/minaret/image_0002.jpg",
+              "ranked_top2": [
+                2,
+                3
+              ],
+              "actual_expert_amplitude_weights": [
+                0.0,
+                0.0,
+                0.8683158159255981,
+                0.49601176381111145
+              ]
+            },
+            {
+              "sample_id": "101_ObjectCategories/minaret/image_0003.jpg",
+              "ranked_top2": [
+                2,
+                3
+              ],
+              "actual_expert_amplitude_weights": [
+                0.0,
+                0.0,
+                0.4190336763858795,
+                0.907970666885376
+              ]
+            },
+            {
+              "sample_id": "101_ObjectCategories/minaret/image_0005.jpg",
+              "ranked_top2": [
+                2,
+                3
+              ],
+              "actual_expert_amplitude_weights": [
+                0.0,
+                0.0,
+                0.7605518102645874,
+                0.6492772102355957
+              ]
+            },
+            {
+              "sample_id": "101_ObjectCategories/minaret/image_0006.jpg",
+              "ranked_top2": [
+                2,
+                3
+              ],
+              "actual_expert_amplitude_weights": [
+                0.0,
+                0.0,
+                0.8209646940231323,
+                0.5709789991378784
+              ]
+            }
+          ]
+        },
+        {
+          "class_name": "revolver",
+          "samples": 5,
+          "details": [
+            {
+              "sample_id": "101_ObjectCategories/revolver/image_0001.jpg",
+              "ranked_top2": [
+                2,
+                3
+              ],
+              "actual_expert_amplitude_weights": [
+                0.0,
+                0.0,
+                0.7331731915473938,
+                0.680042028427124
+              ]
+            },
+            {
+              "sample_id": "101_ObjectCategories/revolver/image_0002.jpg",
+              "ranked_top2": [
+                2,
+                3
+              ],
+              "actual_expert_amplitude_weights": [
+                0.0,
+                0.0,
+                0.7084764838218689,
+                0.7057344317436218
+              ]
+            },
+            {
+              "sample_id": "101_ObjectCategories/revolver/image_0004.jpg",
+              "ranked_top2": [
+                2,
+                3
+              ],
+              "actual_expert_amplitude_weights": [
+                0.0,
+                0.0,
+                0.7394594550132751,
+                0.6732011437416077
+              ]
+            },
+            {
+              "sample_id": "101_ObjectCategories/revolver/image_0005.jpg",
+              "ranked_top2": [
+                2,
+                3
+              ],
+              "actual_expert_amplitude_weights": [
+                0.0,
+                0.0,
+                0.8471806645393372,
+                0.5313049554824829
+              ]
+            },
+            {
+              "sample_id": "101_ObjectCategories/revolver/image_0006.jpg",
+              "ranked_top2": [
+                2,
+                3
+              ],
+              "actual_expert_amplitude_weights": [
+                0.0,
+                0.0,
+                0.5465419292449951,
+                0.837431788444519
+              ]
+            }
+          ]
+        },
+        {
+          "class_name": "schooner",
+          "samples": 5,
+          "details": [
+            {
+              "sample_id": "101_ObjectCategories/schooner/image_0003.jpg",
+              "ranked_top2": [
+                2,
+                3
+              ],
+              "actual_expert_amplitude_weights": [
+                0.0,
+                0.0,
+                0.8308579325675964,
+                0.5564846396446228
+              ]
+            },
+            {
+              "sample_id": "101_ObjectCategories/schooner/image_0005.jpg",
+              "ranked_top2": [
+                2,
+                3
+              ],
+              "actual_expert_amplitude_weights": [
+                0.0,
+                0.0,
+                0.7958961129188538,
+                0.6054332256317139
+              ]
+            },
+            {
+              "sample_id": "101_ObjectCategories/schooner/image_0007.jpg",
+              "ranked_top2": [
+                2,
+                3
+              ],
+              "actual_expert_amplitude_weights": [
+                0.0,
+                0.0,
+                0.8095512390136719,
+                0.5870491862297058
+              ]
+            },
+            {
+              "sample_id": "101_ObjectCategories/schooner/image_0008.jpg",
+              "ranked_top2": [
+                2,
+                3
+              ],
+              "actual_expert_amplitude_weights": [
+                0.0,
+                0.0,
+                0.8613446354866028,
+                0.5080211162567139
+              ]
+            },
+            {
+              "sample_id": "101_ObjectCategories/schooner/image_0009.jpg",
+              "ranked_top2": [
+                2,
+                3
+              ],
+              "actual_expert_amplitude_weights": [
+                0.0,
+                0.0,
+                0.8155401945114136,
+                0.5787003636360168
+              ]
+            }
+          ]
+        },
+        {
+          "class_name": "trilobite",
+          "samples": 5,
+          "details": [
+            {
+              "sample_id": "101_ObjectCategories/trilobite/image_0001.jpg",
+              "ranked_top2": [
+                2,
+                3
+              ],
+              "actual_expert_amplitude_weights": [
+                0.0,
+                0.0,
+                0.7679705619812012,
+                0.6404849886894226
+              ]
+            },
+            {
+              "sample_id": "101_ObjectCategories/trilobite/image_0003.jpg",
+              "ranked_top2": [
+                2,
+                3
+              ],
+              "actual_expert_amplitude_weights": [
+                0.0,
+                0.0,
+                0.8257251381874084,
+                0.5640725493431091
+              ]
+            },
+            {
+              "sample_id": "101_ObjectCategories/trilobite/image_0006.jpg",
+              "ranked_top2": [
+                2,
+                3
+              ],
+              "actual_expert_amplitude_weights": [
+                0.0,
+                0.0,
+                0.7656669020652771,
+                0.643237292766571
+              ]
+            },
+            {
+              "sample_id": "101_ObjectCategories/trilobite/image_0007.jpg",
+              "ranked_top2": [
+                2,
+                3
+              ],
+              "actual_expert_amplitude_weights": [
+                0.0,
+                0.0,
+                0.8158301115036011,
+                0.5782915353775024
+              ]
+            },
+            {
+              "sample_id": "101_ObjectCategories/trilobite/image_0008.jpg",
+              "ranked_top2": [
+                2,
+                3
+              ],
+              "actual_expert_amplitude_weights": [
+                0.0,
+                0.0,
+                0.737396240234375,
+                0.6754605174064636
+              ]
+            }
+          ]
+        },
+        {
+          "class_name": "umbrella",
+          "samples": 5,
+          "details": [
+            {
+              "sample_id": "101_ObjectCategories/umbrella/image_0001.jpg",
+              "ranked_top2": [
+                2,
+                3
+              ],
+              "actual_expert_amplitude_weights": [
+                0.0,
+                0.0,
+                0.6905184388160706,
+                0.7233147621154785
+              ]
+            },
+            {
+              "sample_id": "101_ObjectCategories/umbrella/image_0002.jpg",
+              "ranked_top2": [
+                2,
+                3
+              ],
+              "actual_expert_amplitude_weights": [
+                0.0,
+                0.0,
+                0.777892529964447,
+                0.6283972263336182
+              ]
+            },
+            {
+              "sample_id": "101_ObjectCategories/umbrella/image_0003.jpg",
+              "ranked_top2": [
+                2,
+                3
+              ],
+              "actual_expert_amplitude_weights": [
+                0.0,
+                0.0,
+                0.7748399972915649,
+                0.6321573853492737
+              ]
+            },
+            {
+              "sample_id": "101_ObjectCategories/umbrella/image_0004.jpg",
+              "ranked_top2": [
+                2,
+                3
+              ],
+              "actual_expert_amplitude_weights": [
+                0.0,
+                0.0,
+                0.78840172290802,
+                0.6151607036590576
+              ]
+            },
+            {
+              "sample_id": "101_ObjectCategories/umbrella/image_0005.jpg",
+              "ranked_top2": [
+                2,
+                3
+              ],
+              "actual_expert_amplitude_weights": [
+                0.0,
+                0.0,
+                0.7962179780006409,
+                0.605009913444519
+              ]
+            }
+          ]
+        },
+        {
+          "class_name": "watch",
+          "samples": 5,
+          "details": [
+            {
+              "sample_id": "101_ObjectCategories/watch/image_0002.jpg",
+              "ranked_top2": [
+                2,
+                3
+              ],
+              "actual_expert_amplitude_weights": [
+                0.0,
+                0.0,
+                0.7653601765632629,
+                0.6436022520065308
+              ]
+            },
+            {
+              "sample_id": "101_ObjectCategories/watch/image_0006.jpg",
+              "ranked_top2": [
+                2,
+                3
+              ],
+              "actual_expert_amplitude_weights": [
+                0.0,
+                0.0,
+                0.8691072463989258,
+                0.49462375044822693
+              ]
+            },
+            {
+              "sample_id": "101_ObjectCategories/watch/image_0007.jpg",
+              "ranked_top2": [
+                2,
+                3
+              ],
+              "actual_expert_amplitude_weights": [
+                0.0,
+                0.0,
+                0.6353551745414734,
+                0.7722201347351074
+              ]
+            },
+            {
+              "sample_id": "101_ObjectCategories/watch/image_0011.jpg",
+              "ranked_top2": [
+                2,
+                3
+              ],
+              "actual_expert_amplitude_weights": [
+                0.0,
+                0.0,
+                0.7384459376335144,
+                0.6743126511573792
+              ]
+            },
+            {
+              "sample_id": "101_ObjectCategories/watch/image_0014.jpg",
+              "ranked_top2": [
+                2,
+                3
+              ],
+              "actual_expert_amplitude_weights": [
+                0.0,
+                0.0,
+                0.512158989906311,
+                0.8588907122612
+              ]
+            }
+          ]
+        },
+        {
+          "class_name": "yin_yang",
+          "samples": 5,
+          "details": [
+            {
+              "sample_id": "101_ObjectCategories/yin_yang/image_0003.jpg",
+              "ranked_top2": [
+                2,
+                3
+              ],
+              "actual_expert_amplitude_weights": [
+                0.0,
+                0.0,
+                0.3210598826408386,
+                0.947058916091919
+              ]
+            },
+            {
+              "sample_id": "101_ObjectCategories/yin_yang/image_0004.jpg",
+              "ranked_top2": [
+                1,
+                3
+              ],
+              "actual_expert_amplitude_weights": [
+                0.0,
+                0.3173675239086151,
+                0.0,
+                0.9483026266098022
+              ]
+            },
+            {
+              "sample_id": "101_ObjectCategories/yin_yang/image_0005.jpg",
+              "ranked_top2": [
+                1,
+                3
+              ],
+              "actual_expert_amplitude_weights": [
+                0.0,
+                0.3184177577495575,
+                0.0,
+                0.947950541973114
+              ]
+            },
+            {
+              "sample_id": "101_ObjectCategories/yin_yang/image_0007.jpg",
+              "ranked_top2": [
+                2,
+                3
+              ],
+              "actual_expert_amplitude_weights": [
+                0.0,
+                0.0,
+                0.4573889672756195,
+                0.8892666697502136
+              ]
+            },
+            {
+              "sample_id": "101_ObjectCategories/yin_yang/image_0009.jpg",
+              "ranked_top2": [
+                2,
+                3
+              ],
+              "actual_expert_amplitude_weights": [
+                0.0,
+                0.0,
+                0.7133887410163879,
+                0.7007685899734497
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "variant": "rgb_tiles",
+      "selected_epoch": 40,
+      "checkpoint_sha256": "c8db60283ec19e66bacaa34d64033bd07ac53d447c88f6e533cbddf96e32ad04",
+      "samples": 100,
+      "actual_routing": "hardTop2",
+      "ranked_top2_pair_counts": {
+        "(0, 3)": 22,
+        "(0, 2)": 65,
+        "(2, 3)": 13
+      },
+      "fraction_ranked_top2_different_from_modal": 0.35,
+      "actual_slot_nonzero_fraction": [
+        0.87,
+        0.0,
+        0.78,
+        0.35
+      ],
+      "slot_weight_mean": [
+        0.715725839138031,
+        0.0,
+        0.47378337383270264,
+        0.16531230509281158
+      ],
+      "slot_weight_std": [
+        0.30087509751319885,
+        0.0,
+        0.29718098044395447,
+        0.23894649744033813
+      ],
+      "slot_weight_min": [
+        0.0,
+        0.0,
+        0.0,
+        0.0
+      ],
+      "slot_weight_max": [
+        0.9506557583808899,
+        0.0,
+        0.9303873181343079,
+        0.9204972982406616
+      ],
+      "rows": [
+        {
+          "class_name": "Faces",
+          "samples": 5,
+          "details": [
+            {
+              "sample_id": "101_ObjectCategories/Faces/image_0001.jpg",
+              "ranked_top2": [
+                0,
+                3
+              ],
+              "actual_expert_amplitude_weights": [
+                0.8981269001960754,
+                0.0,
+                0.0,
+                0.43973636627197266
+              ]
+            },
+            {
+              "sample_id": "101_ObjectCategories/Faces/image_0011.jpg",
+              "ranked_top2": [
+                0,
+                3
+              ],
+              "actual_expert_amplitude_weights": [
+                0.8866449594497681,
+                0.0,
+                0.0,
+                0.46245065331459045
+              ]
+            },
+            {
+              "sample_id": "101_ObjectCategories/Faces/image_0021.jpg",
+              "ranked_top2": [
+                0,
+                2
+              ],
+              "actual_expert_amplitude_weights": [
+                0.8241264820098877,
+                0.0,
+                0.5664058327674866,
+                0.0
+              ]
+            },
+            {
+              "sample_id": "101_ObjectCategories/Faces/image_0029.jpg",
+              "ranked_top2": [
+                0,
+                2
+              ],
+              "actual_expert_amplitude_weights": [
+                0.9245812296867371,
+                0.0,
+                0.38098499178886414,
+                0.0
+              ]
+            },
+            {
+              "sample_id": "101_ObjectCategories/Faces/image_0032.jpg",
+              "ranked_top2": [
+                0,
+                2
+              ],
+              "actual_expert_amplitude_weights": [
+                0.8971767425537109,
+                0.0,
+                0.4416716992855072,
+                0.0
+              ]
+            }
+          ]
+        },
+        {
+          "class_name": "Leopards",
+          "samples": 5,
+          "details": [
+            {
+              "sample_id": "101_ObjectCategories/Leopards/image_0001.jpg",
+              "ranked_top2": [
+                0,
+                3
+              ],
+              "actual_expert_amplitude_weights": [
+                0.894598126411438,
+                0.0,
+                0.0,
+                0.4468715190887451
+              ]
+            },
+            {
+              "sample_id": "101_ObjectCategories/Leopards/image_0005.jpg",
+              "ranked_top2": [
+                0,
+                3
+              ],
+              "actual_expert_amplitude_weights": [
+                0.9164360165596008,
+                0.0,
+                0.0,
+                0.4001813530921936
+              ]
+            },
+            {
+              "sample_id": "101_ObjectCategories/Leopards/image_0007.jpg",
+              "ranked_top2": [
+                0,
+                3
+              ],
+              "actual_expert_amplitude_weights": [
+                0.9252568483352661,
+                0.0,
+                0.0,
+                0.3793413043022156
+              ]
+            },
+            {
+              "sample_id": "101_ObjectCategories/Leopards/image_0009.jpg",
+              "ranked_top2": [
+                0,
+                3
+              ],
+              "actual_expert_amplitude_weights": [
+                0.9152816534042358,
+                0.0,
+                0.0,
+                0.4028143584728241
+              ]
+            },
+            {
+              "sample_id": "101_ObjectCategories/Leopards/image_0010.jpg",
+              "ranked_top2": [
+                0,
+                3
+              ],
+              "actual_expert_amplitude_weights": [
+                0.8814223408699036,
+                0.0,
+                0.0,
+                0.47232910990715027
+              ]
+            }
+          ]
+        },
+        {
+          "class_name": "Motorbikes",
+          "samples": 5,
+          "details": [
+            {
+              "sample_id": "101_ObjectCategories/Motorbikes/image_0018.jpg",
+              "ranked_top2": [
+                0,
+                2
+              ],
+              "actual_expert_amplitude_weights": [
+                0.8549050688743591,
+                0.0,
+                0.5187845826148987,
+                0.0
+              ]
+            },
+            {
+              "sample_id": "101_ObjectCategories/Motorbikes/image_0035.jpg",
+              "ranked_top2": [
+                0,
+                3
+              ],
+              "actual_expert_amplitude_weights": [
+                0.9142401814460754,
+                0.0,
+                0.0,
+                0.4051726460456848
+              ]
+            },
+            {
+              "sample_id": "101_ObjectCategories/Motorbikes/image_0041.jpg",
+              "ranked_top2": [
+                0,
+                2
+              ],
+              "actual_expert_amplitude_weights": [
+                0.8538475632667542,
+                0.0,
+                0.5205233097076416,
+                0.0
+              ]
+            },
+            {
+              "sample_id": "101_ObjectCategories/Motorbikes/image_0044.jpg",
+              "ranked_top2": [
+                0,
+                2
+              ],
+              "actual_expert_amplitude_weights": [
+                0.8715453743934631,
+                0.0,
+                0.49031490087509155,
+                0.0
+              ]
+            },
+            {
+              "sample_id": "101_ObjectCategories/Motorbikes/image_0045.jpg",
+              "ranked_top2": [
+                0,
+                2
+              ],
+              "actual_expert_amplitude_weights": [
+                0.8641692996025085,
+                0.0,
+                0.5032012462615967,
+                0.0
+              ]
+            }
+          ]
+        },
+        {
+          "class_name": "airplanes",
+          "samples": 5,
+          "details": [
+            {
+              "sample_id": "101_ObjectCategories/airplanes/image_0006.jpg",
+              "ranked_top2": [
+                0,
+                2
+              ],
+              "actual_expert_amplitude_weights": [
+                0.8600254654884338,
+                0.0,
+                0.5102510452270508,
+                0.0
+              ]
+            },
+            {
+              "sample_id": "101_ObjectCategories/airplanes/image_0028.jpg",
+              "ranked_top2": [
+                0,
+                2
+              ],
+              "actual_expert_amplitude_weights": [
+                0.8082901239395142,
+                0.0,
+                0.5887843370437622,
+                0.0
+              ]
+            },
+            {
+              "sample_id": "101_ObjectCategories/airplanes/image_0055.jpg",
+              "ranked_top2": [
+                0,
+                3
+              ],
+              "actual_expert_amplitude_weights": [
+                0.9426562786102295,
+                0.0,
+                0.0,
+                0.33376502990722656
+              ]
+            },
+            {
+              "sample_id": "101_ObjectCategories/airplanes/image_0058.jpg",
+              "ranked_top2": [
+                0,
+                3
+              ],
+              "actual_expert_amplitude_weights": [
+                0.945099949836731,
+                0.0,
+                0.0,
+                0.32678118348121643
+              ]
+            },
+            {
+              "sample_id": "101_ObjectCategories/airplanes/image_0073.jpg",
+              "ranked_top2": [
+                0,
+                2
+              ],
+              "actual_expert_amplitude_weights": [
+                0.7791558504104614,
+                0.0,
+                0.6268302798271179,
+                0.0
+              ]
+            }
+          ]
+        },
+        {
+          "class_name": "bonsai",
+          "samples": 5,
+          "details": [
+            {
+              "sample_id": "101_ObjectCategories/bonsai/image_0001.jpg",
+              "ranked_top2": [
+                0,
+                2
+              ],
+              "actual_expert_amplitude_weights": [
+                0.7695699334144592,
+                0.0,
+                0.6385625004768372,
+                0.0
+              ]
+            },
+            {
+              "sample_id": "101_ObjectCategories/bonsai/image_0006.jpg",
+              "ranked_top2": [
+                0,
+                2
+              ],
+              "actual_expert_amplitude_weights": [
+                0.897293210029602,
+                0.0,
+                0.4414348602294922,
+                0.0
+              ]
+            },
+            {
+              "sample_id": "101_ObjectCategories/bonsai/image_0007.jpg",
+              "ranked_top2": [
+                0,
+                2
+              ],
+              "actual_expert_amplitude_weights": [
+                0.7699888944625854,
+                0.0,
+                0.638057291507721,
+                0.0
+              ]
+            },
+            {
+              "sample_id": "101_ObjectCategories/bonsai/image_0008.jpg",
+              "ranked_top2": [
+                0,
+                2
+              ],
+              "actual_expert_amplitude_weights": [
+                0.892331600189209,
+                0.0,
+                0.4513803720474243,
+                0.0
+              ]
+            },
+            {
+              "sample_id": "101_ObjectCategories/bonsai/image_0013.jpg",
+              "ranked_top2": [
+                0,
+                2
+              ],
+              "actual_expert_amplitude_weights": [
+                0.8936447501182556,
+                0.0,
+                0.44877514243125916,
+                0.0
+              ]
+            }
+          ]
+        },
+        {
+          "class_name": "crab",
+          "samples": 5,
+          "details": [
+            {
+              "sample_id": "101_ObjectCategories/crab/image_0001.jpg",
+              "ranked_top2": [
+                0,
+                3
+              ],
+              "actual_expert_amplitude_weights": [
+                0.8473799824714661,
+                0.0,
+                0.0,
+                0.5309871435165405
+              ]
+            },
+            {
+              "sample_id": "101_ObjectCategories/crab/image_0002.jpg",
+              "ranked_top2": [
+                0,
+                2
+              ],
+              "actual_expert_amplitude_weights": [
+                0.9239715337753296,
+                0.0,
+                0.38246142864227295,
+                0.0
+              ]
+            },
+            {
+              "sample_id": "101_ObjectCategories/crab/image_0004.jpg",
+              "ranked_top2": [
+                0,
+                3
+              ],
+              "actual_expert_amplitude_weights": [
+                0.9375289678573608,
+                0.0,
+                0.0,
+                0.3479071855545044
+              ]
+            },
+            {
+              "sample_id": "101_ObjectCategories/crab/image_0005.jpg",
+              "ranked_top2": [
+                0,
+                3
+              ],
+              "actual_expert_amplitude_weights": [
+                0.9312914609909058,
+                0.0,
+                0.0,
+                0.3642750382423401
+              ]
+            },
+            {
+              "sample_id": "101_ObjectCategories/crab/image_0006.jpg",
+              "ranked_top2": [
+                0,
+                3
+              ],
+              "actual_expert_amplitude_weights": [
+                0.9347829222679138,
+                0.0,
+                0.0,
+                0.3552195727825165
+              ]
+            }
+          ]
+        },
+        {
+          "class_name": "crayfish",
+          "samples": 5,
+          "details": [
+            {
+              "sample_id": "101_ObjectCategories/crayfish/image_0001.jpg",
+              "ranked_top2": [
+                0,
+                2
+              ],
+              "actual_expert_amplitude_weights": [
+                0.9420021772384644,
+                0.0,
+                0.3356069326400757,
+                0.0
+              ]
+            },
+            {
+              "sample_id": "101_ObjectCategories/crayfish/image_0002.jpg",
+              "ranked_top2": [
+                0,
+                2
+              ],
+              "actual_expert_amplitude_weights": [
+                0.9104447364807129,
+                0.0,
+                0.4136306643486023,
+                0.0
+              ]
+            },
+            {
+              "sample_id": "101_ObjectCategories/crayfish/image_0003.jpg",
+              "ranked_top2": [
+                0,
+                2
+              ],
+              "actual_expert_amplitude_weights": [
+                0.9052926898002625,
+                0.0,
+                0.4247884154319763,
+                0.0
+              ]
+            },
+            {
+              "sample_id": "101_ObjectCategories/crayfish/image_0004.jpg",
+              "ranked_top2": [
+                0,
+                2
+              ],
+              "actual_expert_amplitude_weights": [
+                0.7972729802131653,
+                0.0,
+                0.6036189794540405,
+                0.0
+              ]
+            },
+            {
+              "sample_id": "101_ObjectCategories/crayfish/image_0007.jpg",
+              "ranked_top2": [
+                0,
+                2
+              ],
+              "actual_expert_amplitude_weights": [
+                0.9011960029602051,
+                0.0,
+                0.4334118664264679,
+                0.0
+              ]
+            }
+          ]
+        },
+        {
+          "class_name": "grand_piano",
+          "samples": 5,
+          "details": [
+            {
+              "sample_id": "101_ObjectCategories/grand_piano/image_0001.jpg",
+              "ranked_top2": [
+                0,
+                3
+              ],
+              "actual_expert_amplitude_weights": [
+                0.8065527081489563,
+                0.0,
+                0.0,
+                0.5911622047424316
+              ]
+            },
+            {
+              "sample_id": "101_ObjectCategories/grand_piano/image_0002.jpg",
+              "ranked_top2": [
+                0,
+                2
+              ],
+              "actual_expert_amplitude_weights": [
+                0.9497690200805664,
+                0.0,
+                0.3129517734050751,
+                0.0
+              ]
+            },
+            {
+              "sample_id": "101_ObjectCategories/grand_piano/image_0004.jpg",
+              "ranked_top2": [
+                2,
+                3
+              ],
+              "actual_expert_amplitude_weights": [
+                0.0,
+                0.0,
+                0.7471619844436646,
+                0.6646419763565063
+              ]
+            },
+            {
+              "sample_id": "101_ObjectCategories/grand_piano/image_0005.jpg",
+              "ranked_top2": [
+                0,
+                2
+              ],
+              "actual_expert_amplitude_weights": [
+                0.948157548904419,
+                0.0,
+                0.3178008198738098,
+                0.0
+              ]
+            },
+            {
+              "sample_id": "101_ObjectCategories/grand_piano/image_0006.jpg",
+              "ranked_top2": [
+                2,
+                3
+              ],
+              "actual_expert_amplitude_weights": [
+                0.0,
+                0.0,
+                0.67385333776474,
+                0.7388651371002197
+              ]
+            }
+          ]
+        },
+        {
+          "class_name": "helicopter",
+          "samples": 5,
+          "details": [
+            {
+              "sample_id": "101_ObjectCategories/helicopter/image_0001.jpg",
+              "ranked_top2": [
+                0,
+                2
+              ],
+              "actual_expert_amplitude_weights": [
+                0.6041630506515503,
+                0.0,
+                0.7968606352806091,
+                0.0
+              ]
+            },
+            {
+              "sample_id": "101_ObjectCategories/helicopter/image_0002.jpg",
+              "ranked_top2": [
+                2,
+                3
+              ],
+              "actual_expert_amplitude_weights": [
+                0.0,
+                0.0,
+                0.9303873181343079,
+                0.3665779232978821
+              ]
+            },
+            {
+              "sample_id": "101_ObjectCategories/helicopter/image_0003.jpg",
+              "ranked_top2": [
+                0,
+                2
+              ],
+              "actual_expert_amplitude_weights": [
+                0.6082190275192261,
+                0.0,
+                0.7937692403793335,
+                0.0
+              ]
+            },
+            {
+              "sample_id": "101_ObjectCategories/helicopter/image_0007.jpg",
+              "ranked_top2": [
+                0,
+                2
+              ],
+              "actual_expert_amplitude_weights": [
+                0.8400790691375732,
+                0.0,
+                0.5424638986587524,
+                0.0
+              ]
+            },
+            {
+              "sample_id": "101_ObjectCategories/helicopter/image_0009.jpg",
+              "ranked_top2": [
+                0,
+                2
+              ],
+              "actual_expert_amplitude_weights": [
+                0.601621150970459,
+                0.0,
+                0.7987816333770752,
+                0.0
+              ]
+            }
+          ]
+        },
+        {
+          "class_name": "kangaroo",
+          "samples": 5,
+          "details": [
+            {
+              "sample_id": "101_ObjectCategories/kangaroo/image_0001.jpg",
+              "ranked_top2": [
+                0,
+                2
+              ],
+              "actual_expert_amplitude_weights": [
+                0.9027637839317322,
+                0.0,
+                0.43013662099838257,
+                0.0
+              ]
+            },
+            {
+              "sample_id": "101_ObjectCategories/kangaroo/image_0002.jpg",
+              "ranked_top2": [
+                0,
+                2
+              ],
+              "actual_expert_amplitude_weights": [
+                0.7858275771141052,
+                0.0,
+                0.6184457540512085,
+                0.0
+              ]
+            },
+            {
+              "sample_id": "101_ObjectCategories/kangaroo/image_0004.jpg",
+              "ranked_top2": [
+                0,
+                2
+              ],
+              "actual_expert_amplitude_weights": [
+                0.8948620557785034,
+                0.0,
+                0.446342796087265,
+                0.0
+              ]
+            },
+            {
+              "sample_id": "101_ObjectCategories/kangaroo/image_0005.jpg",
+              "ranked_top2": [
+                0,
+                2
+              ],
+              "actual_expert_amplitude_weights": [
+                0.8109790682792664,
+                0.0,
+                0.5850751399993896,
+                0.0
+              ]
+            },
+            {
+              "sample_id": "101_ObjectCategories/kangaroo/image_0006.jpg",
+              "ranked_top2": [
+                0,
+                2
+              ],
+              "actual_expert_amplitude_weights": [
+                0.9287550449371338,
+                0.0,
+                0.37069395184516907,
+                0.0
+              ]
+            }
+          ]
+        },
+        {
+          "class_name": "ketch",
+          "samples": 5,
+          "details": [
+            {
+              "sample_id": "101_ObjectCategories/ketch/image_0001.jpg",
+              "ranked_top2": [
+                0,
+                2
+              ],
+              "actual_expert_amplitude_weights": [
+                0.4816726744174957,
+                0.0,
+                0.8763511776924133,
+                0.0
+              ]
+            },
+            {
+              "sample_id": "101_ObjectCategories/ketch/image_0003.jpg",
+              "ranked_top2": [
+                0,
+                2
+              ],
+              "actual_expert_amplitude_weights": [
+                0.8734850287437439,
+                0.0,
+                0.4868510365486145,
+                0.0
+              ]
+            },
+            {
+              "sample_id": "101_ObjectCategories/ketch/image_0004.jpg",
+              "ranked_top2": [
+                0,
+                2
+              ],
+              "actual_expert_amplitude_weights": [
+                0.6794150471687317,
+                0.0,
+                0.7337541580200195,
+                0.0
+              ]
+            },
+            {
+              "sample_id": "101_ObjectCategories/ketch/image_0005.jpg",
+              "ranked_top2": [
+                0,
+                2
+              ],
+              "actual_expert_amplitude_weights": [
+                0.4899866282939911,
+                0.0,
+                0.8717299103736877,
+                0.0
+              ]
+            },
+            {
+              "sample_id": "101_ObjectCategories/ketch/image_0007.jpg",
+              "ranked_top2": [
+                0,
+                2
+              ],
+              "actual_expert_amplitude_weights": [
+                0.5237972736358643,
+                0.0,
+                0.8518429398536682,
+                0.0
+              ]
+            }
+          ]
+        },
+        {
+          "class_name": "laptop",
+          "samples": 5,
+          "details": [
+            {
+              "sample_id": "101_ObjectCategories/laptop/image_0001.jpg",
+              "ranked_top2": [
+                0,
+                3
+              ],
+              "actual_expert_amplitude_weights": [
+                0.9506557583808899,
+                0.0,
+                0.0,
+                0.31024783849716187
+              ]
+            },
+            {
+              "sample_id": "101_ObjectCategories/laptop/image_0002.jpg",
+              "ranked_top2": [
+                0,
+                2
+              ],
+              "actual_expert_amplitude_weights": [
+                0.849165141582489,
+                0.0,
+                0.5281273722648621,
+                0.0
+              ]
+            },
+            {
+              "sample_id": "101_ObjectCategories/laptop/image_0003.jpg",
+              "ranked_top2": [
+                0,
+                2
+              ],
+              "actual_expert_amplitude_weights": [
+                0.8937520384788513,
+                0.0,
+                0.44856131076812744,
+                0.0
+              ]
+            },
+            {
+              "sample_id": "101_ObjectCategories/laptop/image_0004.jpg",
+              "ranked_top2": [
+                0,
+                2
+              ],
+              "actual_expert_amplitude_weights": [
+                0.8040517568588257,
+                0.0,
+                0.594559371471405,
+                0.0
+              ]
+            },
+            {
+              "sample_id": "101_ObjectCategories/laptop/image_0005.jpg",
+              "ranked_top2": [
+                0,
+                2
+              ],
+              "actual_expert_amplitude_weights": [
+                0.790045976638794,
+                0.0,
+                0.6130475401878357,
+                0.0
+              ]
+            }
+          ]
+        },
+        {
+          "class_name": "lotus",
+          "samples": 5,
+          "details": [
+            {
+              "sample_id": "101_ObjectCategories/lotus/image_0002.jpg",
+              "ranked_top2": [
+                0,
+                3
+              ],
+              "actual_expert_amplitude_weights": [
+                0.9327930212020874,
+                0.0,
+                0.0,
+                0.3604123294353485
+              ]
+            },
+            {
+              "sample_id": "101_ObjectCategories/lotus/image_0004.jpg",
+              "ranked_top2": [
+                0,
+                3
+              ],
+              "actual_expert_amplitude_weights": [
+                0.3907490670681,
+                0.0,
+                0.0,
+                0.9204972982406616
+              ]
+            },
+            {
+              "sample_id": "101_ObjectCategories/lotus/image_0006.jpg",
+              "ranked_top2": [
+                2,
+                3
+              ],
+              "actual_expert_amplitude_weights": [
+                0.0,
+                0.0,
+                0.7150048017501831,
+                0.6991195678710938
+              ]
+            },
+            {
+              "sample_id": "101_ObjectCategories/lotus/image_0007.jpg",
+              "ranked_top2": [
+                0,
+                3
+              ],
+              "actual_expert_amplitude_weights": [
+                0.8132665753364563,
+                0.0,
+                0.0,
+                0.5818912982940674
+              ]
+            },
+            {
+              "sample_id": "101_ObjectCategories/lotus/image_0008.jpg",
+              "ranked_top2": [
+                0,
+                2
+              ],
+              "actual_expert_amplitude_weights": [
+                0.8459839224815369,
+                0.0,
+                0.533208429813385,
+                0.0
+              ]
+            }
+          ]
+        },
+        {
+          "class_name": "minaret",
+          "samples": 5,
+          "details": [
+            {
+              "sample_id": "101_ObjectCategories/minaret/image_0001.jpg",
+              "ranked_top2": [
+                2,
+                3
+              ],
+              "actual_expert_amplitude_weights": [
+                0.0,
+                0.0,
+                0.9104415774345398,
+                0.4136376678943634
+              ]
+            },
+            {
+              "sample_id": "101_ObjectCategories/minaret/image_0002.jpg",
+              "ranked_top2": [
+                2,
+                3
+              ],
+              "actual_expert_amplitude_weights": [
+                0.0,
+                0.0,
+                0.9117324948310852,
+                0.41078463196754456
+              ]
+            },
+            {
+              "sample_id": "101_ObjectCategories/minaret/image_0003.jpg",
+              "ranked_top2": [
+                2,
+                3
+              ],
+              "actual_expert_amplitude_weights": [
+                0.0,
+                0.0,
+                0.9128912091255188,
+                0.4082030653953552
+              ]
+            },
+            {
+              "sample_id": "101_ObjectCategories/minaret/image_0005.jpg",
+              "ranked_top2": [
+                2,
+                3
+              ],
+              "actual_expert_amplitude_weights": [
+                0.0,
+                0.0,
+                0.8652716279029846,
+                0.5013033151626587
+              ]
+            },
+            {
+              "sample_id": "101_ObjectCategories/minaret/image_0006.jpg",
+              "ranked_top2": [
+                2,
+                3
+              ],
+              "actual_expert_amplitude_weights": [
+                0.0,
+                0.0,
+                0.914413332939148,
+                0.404781699180603
+              ]
+            }
+          ]
+        },
+        {
+          "class_name": "revolver",
+          "samples": 5,
+          "details": [
+            {
+              "sample_id": "101_ObjectCategories/revolver/image_0001.jpg",
+              "ranked_top2": [
+                0,
+                2
+              ],
+              "actual_expert_amplitude_weights": [
+                0.9051661491394043,
+                0.0,
+                0.42505794763565063,
+                0.0
+              ]
+            },
+            {
+              "sample_id": "101_ObjectCategories/revolver/image_0002.jpg",
+              "ranked_top2": [
+                0,
+                2
+              ],
+              "actual_expert_amplitude_weights": [
+                0.944961667060852,
+                0.0,
+                0.3271809220314026,
+                0.0
+              ]
+            },
+            {
+              "sample_id": "101_ObjectCategories/revolver/image_0004.jpg",
+              "ranked_top2": [
+                0,
+                2
+              ],
+              "actual_expert_amplitude_weights": [
+                0.8809083104133606,
+                0.0,
+                0.4732869863510132,
+                0.0
+              ]
+            },
+            {
+              "sample_id": "101_ObjectCategories/revolver/image_0005.jpg",
+              "ranked_top2": [
+                0,
+                2
+              ],
+              "actual_expert_amplitude_weights": [
+                0.8240011930465698,
+                0.0,
+                0.5665881037712097,
+                0.0
+              ]
+            },
+            {
+              "sample_id": "101_ObjectCategories/revolver/image_0006.jpg",
+              "ranked_top2": [
+                0,
+                2
+              ],
+              "actual_expert_amplitude_weights": [
+                0.8709530234336853,
+                0.0,
+                0.4913662075996399,
+                0.0
+              ]
+            }
+          ]
+        },
+        {
+          "class_name": "schooner",
+          "samples": 5,
+          "details": [
+            {
+              "sample_id": "101_ObjectCategories/schooner/image_0003.jpg",
+              "ranked_top2": [
+                2,
+                3
+              ],
+              "actual_expert_amplitude_weights": [
+                0.0,
+                0.0,
+                0.8900407552719116,
+                0.4558809995651245
+              ]
+            },
+            {
+              "sample_id": "101_ObjectCategories/schooner/image_0005.jpg",
+              "ranked_top2": [
+                0,
+                2
+              ],
+              "actual_expert_amplitude_weights": [
+                0.6959222555160522,
+                0.0,
+                0.7181171774864197,
+                0.0
+              ]
+            },
+            {
+              "sample_id": "101_ObjectCategories/schooner/image_0007.jpg",
+              "ranked_top2": [
+                0,
+                2
+              ],
+              "actual_expert_amplitude_weights": [
+                0.5581879019737244,
+                0.0,
+                0.8297145366668701,
+                0.0
+              ]
+            },
+            {
+              "sample_id": "101_ObjectCategories/schooner/image_0008.jpg",
+              "ranked_top2": [
+                0,
+                2
+              ],
+              "actual_expert_amplitude_weights": [
+                0.5351870656013489,
+                0.0,
+                0.8447335958480835,
+                0.0
+              ]
+            },
+            {
+              "sample_id": "101_ObjectCategories/schooner/image_0009.jpg",
+              "ranked_top2": [
+                2,
+                3
+              ],
+              "actual_expert_amplitude_weights": [
+                0.0,
+                0.0,
+                0.8402383923530579,
+                0.5422171354293823
+              ]
+            }
+          ]
+        },
+        {
+          "class_name": "trilobite",
+          "samples": 5,
+          "details": [
+            {
+              "sample_id": "101_ObjectCategories/trilobite/image_0001.jpg",
+              "ranked_top2": [
+                0,
+                2
+              ],
+              "actual_expert_amplitude_weights": [
+                0.8202207684516907,
+                0.0,
+                0.5720471739768982,
+                0.0
+              ]
+            },
+            {
+              "sample_id": "101_ObjectCategories/trilobite/image_0003.jpg",
+              "ranked_top2": [
+                2,
+                3
+              ],
+              "actual_expert_amplitude_weights": [
+                0.0,
+                0.0,
+                0.7516117095947266,
+                0.6596058011054993
+              ]
+            },
+            {
+              "sample_id": "101_ObjectCategories/trilobite/image_0006.jpg",
+              "ranked_top2": [
+                0,
+                2
+              ],
+              "actual_expert_amplitude_weights": [
+                0.7033326029777527,
+                0.0,
+                0.7108609080314636,
+                0.0
+              ]
+            },
+            {
+              "sample_id": "101_ObjectCategories/trilobite/image_0007.jpg",
+              "ranked_top2": [
+                0,
+                2
+              ],
+              "actual_expert_amplitude_weights": [
+                0.6402918100357056,
+                0.0,
+                0.7681317329406738,
+                0.0
+              ]
+            },
+            {
+              "sample_id": "101_ObjectCategories/trilobite/image_0008.jpg",
+              "ranked_top2": [
+                0,
+                3
+              ],
+              "actual_expert_amplitude_weights": [
+                0.9005323052406311,
+                0.0,
+                0.0,
+                0.4347890317440033
+              ]
+            }
+          ]
+        },
+        {
+          "class_name": "umbrella",
+          "samples": 5,
+          "details": [
+            {
+              "sample_id": "101_ObjectCategories/umbrella/image_0001.jpg",
+              "ranked_top2": [
+                0,
+                2
+              ],
+              "actual_expert_amplitude_weights": [
+                0.8767781257629395,
+                0.0,
+                0.48089510202407837,
+                0.0
+              ]
+            },
+            {
+              "sample_id": "101_ObjectCategories/umbrella/image_0002.jpg",
+              "ranked_top2": [
+                0,
+                2
+              ],
+              "actual_expert_amplitude_weights": [
+                0.7692215442657471,
+                0.0,
+                0.6389821767807007,
+                0.0
+              ]
+            },
+            {
+              "sample_id": "101_ObjectCategories/umbrella/image_0003.jpg",
+              "ranked_top2": [
+                0,
+                2
+              ],
+              "actual_expert_amplitude_weights": [
+                0.6315687894821167,
+                0.0,
+                0.7753198146820068,
+                0.0
+              ]
+            },
+            {
+              "sample_id": "101_ObjectCategories/umbrella/image_0004.jpg",
+              "ranked_top2": [
+                0,
+                2
+              ],
+              "actual_expert_amplitude_weights": [
+                0.9295071959495544,
+                0.0,
+                0.3688039183616638,
+                0.0
+              ]
+            },
+            {
+              "sample_id": "101_ObjectCategories/umbrella/image_0005.jpg",
+              "ranked_top2": [
+                0,
+                3
+              ],
+              "actual_expert_amplitude_weights": [
+                0.9427453875541687,
+                0.0,
+                0.0,
+                0.33351317048072815
+              ]
+            }
+          ]
+        },
+        {
+          "class_name": "watch",
+          "samples": 5,
+          "details": [
+            {
+              "sample_id": "101_ObjectCategories/watch/image_0002.jpg",
+              "ranked_top2": [
+                0,
+                2
+              ],
+              "actual_expert_amplitude_weights": [
+                0.9047407507896423,
+                0.0,
+                0.4259626269340515,
+                0.0
+              ]
+            },
+            {
+              "sample_id": "101_ObjectCategories/watch/image_0006.jpg",
+              "ranked_top2": [
+                0,
+                2
+              ],
+              "actual_expert_amplitude_weights": [
+                0.8771097660064697,
+                0.0,
+                0.4802899956703186,
+                0.0
+              ]
+            },
+            {
+              "sample_id": "101_ObjectCategories/watch/image_0007.jpg",
+              "ranked_top2": [
+                2,
+                3
+              ],
+              "actual_expert_amplitude_weights": [
+                0.0,
+                0.0,
+                0.8704873919487,
+                0.49219071865081787
+              ]
+            },
+            {
+              "sample_id": "101_ObjectCategories/watch/image_0011.jpg",
+              "ranked_top2": [
+                0,
+                2
+              ],
+              "actual_expert_amplitude_weights": [
+                0.9250213503837585,
+                0.0,
+                0.3799150288105011,
+                0.0
+              ]
+            },
+            {
+              "sample_id": "101_ObjectCategories/watch/image_0014.jpg",
+              "ranked_top2": [
+                0,
+                3
+              ],
+              "actual_expert_amplitude_weights": [
+                0.8195018768310547,
+                0.0,
+                0.0,
+                0.5730764865875244
+              ]
+            }
+          ]
+        },
+        {
+          "class_name": "yin_yang",
+          "samples": 5,
+          "details": [
+            {
+              "sample_id": "101_ObjectCategories/yin_yang/image_0003.jpg",
+              "ranked_top2": [
+                0,
+                2
+              ],
+              "actual_expert_amplitude_weights": [
+                0.7955448031425476,
+                0.0,
+                0.6058948040008545,
+                0.0
+              ]
+            },
+            {
+              "sample_id": "101_ObjectCategories/yin_yang/image_0004.jpg",
+              "ranked_top2": [
+                0,
+                2
+              ],
+              "actual_expert_amplitude_weights": [
+                0.6615036129951477,
+                0.0,
+                0.7499420046806335,
+                0.0
+              ]
+            },
+            {
+              "sample_id": "101_ObjectCategories/yin_yang/image_0005.jpg",
+              "ranked_top2": [
+                0,
+                2
+              ],
+              "actual_expert_amplitude_weights": [
+                0.6306135654449463,
+                0.0,
+                0.7760970592498779,
+                0.0
+              ]
+            },
+            {
+              "sample_id": "101_ObjectCategories/yin_yang/image_0007.jpg",
+              "ranked_top2": [
+                0,
+                2
+              ],
+              "actual_expert_amplitude_weights": [
+                0.709338366985321,
+                0.0,
+                0.7048680782318115,
+                0.0
+              ]
+            },
+            {
+              "sample_id": "101_ObjectCategories/yin_yang/image_0009.jpg",
+              "ranked_top2": [
+                0,
+                2
+              ],
+              "actual_expert_amplitude_weights": [
+                0.907565176486969,
+                0.0,
+                0.41991114616394043,
+                0.0
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "variant": "dense_router",
+      "selected_epoch": 40,
+      "checkpoint_sha256": "17359767a6859d66ad06571b86593223bc33a8fc0bbb2f3b0543a56421825996",
+      "samples": 100,
+      "actual_routing": "continuous all4",
+      "ranked_top2_pair_counts": {
+        "(1, 2)": 72,
+        "(0, 1)": 16,
+        "(2, 3)": 2,
+        "(0, 3)": 1,
+        "(0, 2)": 2,
+        "(1, 3)": 7
+      },
+      "fraction_ranked_top2_different_from_modal": 0.28,
+      "actual_slot_nonzero_fraction": [
+        1.0,
+        1.0,
+        1.0,
+        1.0
+      ],
+      "slot_weight_mean": [
+        0.29461050033569336,
+        0.7582350969314575,
+        0.4612881541252136,
+        0.2619764804840088
+      ],
+      "slot_weight_std": [
+        0.08940941840410233,
+        0.14732849597930908,
+        0.14620718359947205,
+        0.07608646899461746
+      ],
+      "slot_weight_min": [
+        0.1805187165737152,
+        0.1826324164867401,
+        0.22036384046077728,
+        0.1881840080022812
+      ],
+      "slot_weight_max": [
+        0.7533069252967834,
+        0.8759239315986633,
+        0.8680984377861023,
+        0.707193911075592
+      ],
+      "rows": [
+        {
+          "class_name": "Faces",
+          "samples": 5,
+          "details": [
+            {
+              "sample_id": "101_ObjectCategories/Faces/image_0001.jpg",
+              "ranked_top2": [
+                1,
+                2
+              ],
+              "actual_expert_amplitude_weights": [
+                0.2628019154071808,
+                0.6754483580589294,
+                0.6499972939491272,
+                0.2284909188747406
+              ]
+            },
+            {
+              "sample_id": "101_ObjectCategories/Faces/image_0011.jpg",
+              "ranked_top2": [
+                1,
+                2
+              ],
+              "actual_expert_amplitude_weights": [
+                0.2435782253742218,
+                0.6622864603996277,
+                0.6649597883224487,
+                0.24469318985939026
+              ]
+            },
+            {
+              "sample_id": "101_ObjectCategories/Faces/image_0021.jpg",
+              "ranked_top2": [
+                1,
+                2
+              ],
+              "actual_expert_amplitude_weights": [
+                0.2794552445411682,
+                0.8087722659111023,
+                0.4680217206478119,
+                0.22078914940357208
+              ]
+            },
+            {
+              "sample_id": "101_ObjectCategories/Faces/image_0029.jpg",
+              "ranked_top2": [
+                1,
+                2
+              ],
+              "actual_expert_amplitude_weights": [
+                0.2381855845451355,
+                0.8633545637130737,
+                0.3486328125,
+                0.2762996256351471
+              ]
+            },
+            {
+              "sample_id": "101_ObjectCategories/Faces/image_0032.jpg",
+              "ranked_top2": [
+                1,
+                2
+              ],
+              "actual_expert_amplitude_weights": [
+                0.2795565724372864,
+                0.7656638026237488,
+                0.5364146828651428,
+                0.21878382563591003
+              ]
+            }
+          ]
+        },
+        {
+          "class_name": "Leopards",
+          "samples": 5,
+          "details": [
+            {
+              "sample_id": "101_ObjectCategories/Leopards/image_0001.jpg",
+              "ranked_top2": [
+                1,
+                2
+              ],
+              "actual_expert_amplitude_weights": [
+                0.2753157317638397,
+                0.8238556981086731,
+                0.4415786862373352,
+                0.22465857863426208
+              ]
+            },
+            {
+              "sample_id": "101_ObjectCategories/Leopards/image_0005.jpg",
+              "ranked_top2": [
+                1,
+                2
+              ],
+              "actual_expert_amplitude_weights": [
+                0.2774110436439514,
+                0.7755371928215027,
+                0.5226015448570251,
+                0.22016578912734985
+              ]
+            },
+            {
+              "sample_id": "101_ObjectCategories/Leopards/image_0007.jpg",
+              "ranked_top2": [
+                1,
+                2
+              ],
+              "actual_expert_amplitude_weights": [
+                0.2304166555404663,
+                0.8172513246536255,
+                0.4571734368801117,
+                0.2645770013332367
+              ]
+            },
+            {
+              "sample_id": "101_ObjectCategories/Leopards/image_0009.jpg",
+              "ranked_top2": [
+                1,
+                2
+              ],
+              "actual_expert_amplitude_weights": [
+                0.2551537752151489,
+                0.8359294533729553,
+                0.4222046136856079,
+                0.24054445326328278
+              ]
+            },
+            {
+              "sample_id": "101_ObjectCategories/Leopards/image_0010.jpg",
+              "ranked_top2": [
+                1,
+                2
+              ],
+              "actual_expert_amplitude_weights": [
+                0.2882576584815979,
+                0.8252911567687988,
+                0.43365710973739624,
+                0.2185026854276657
+              ]
+            }
+          ]
+        },
+        {
+          "class_name": "Motorbikes",
+          "samples": 5,
+          "details": [
+            {
+              "sample_id": "101_ObjectCategories/Motorbikes/image_0018.jpg",
+              "ranked_top2": [
+                0,
+                1
+              ],
+              "actual_expert_amplitude_weights": [
+                0.3866193890571594,
+                0.8503437638282776,
+                0.2350405901670456,
+                0.2686946988105774
+              ]
+            },
+            {
+              "sample_id": "101_ObjectCategories/Motorbikes/image_0035.jpg",
+              "ranked_top2": [
+                0,
+                1
+              ],
+              "actual_expert_amplitude_weights": [
+                0.3736364543437958,
+                0.8338516354560852,
+                0.35041263699531555,
+                0.2056652158498764
+              ]
+            },
+            {
+              "sample_id": "101_ObjectCategories/Motorbikes/image_0041.jpg",
+              "ranked_top2": [
+                1,
+                2
+              ],
+              "actual_expert_amplitude_weights": [
+                0.25606468319892883,
+                0.8609403371810913,
+                0.3610970973968506,
+                0.250642329454422
+              ]
+            },
+            {
+              "sample_id": "101_ObjectCategories/Motorbikes/image_0044.jpg",
+              "ranked_top2": [
+                0,
+                1
+              ],
+              "actual_expert_amplitude_weights": [
+                0.36262255907058716,
+                0.8545152544975281,
+                0.29706069827079773,
+                0.223748579621315
+              ]
+            },
+            {
+              "sample_id": "101_ObjectCategories/Motorbikes/image_0045.jpg",
+              "ranked_top2": [
+                0,
+                1
+              ],
+              "actual_expert_amplitude_weights": [
+                0.3571927547454834,
+                0.8518404960632324,
+                0.3151548504829407,
+                0.21784958243370056
+              ]
+            }
+          ]
+        },
+        {
+          "class_name": "airplanes",
+          "samples": 5,
+          "details": [
+            {
+              "sample_id": "101_ObjectCategories/airplanes/image_0006.jpg",
+              "ranked_top2": [
+                0,
+                1
+              ],
+              "actual_expert_amplitude_weights": [
+                0.3701605796813965,
+                0.8353243470191956,
+                0.35025426745414734,
+                0.20624352991580963
+              ]
+            },
+            {
+              "sample_id": "101_ObjectCategories/airplanes/image_0028.jpg",
+              "ranked_top2": [
+                0,
+                1
+              ],
+              "actual_expert_amplitude_weights": [
+                0.3644753396511078,
+                0.8388544321060181,
+                0.34676873683929443,
+                0.20792393386363983
+              ]
+            },
+            {
+              "sample_id": "101_ObjectCategories/airplanes/image_0055.jpg",
+              "ranked_top2": [
+                1,
+                2
+              ],
+              "actual_expert_amplitude_weights": [
+                0.30041730403900146,
+                0.6714157462120056,
+                0.6445037722587585,
+                0.2087230086326599
+              ]
+            },
+            {
+              "sample_id": "101_ObjectCategories/airplanes/image_0058.jpg",
+              "ranked_top2": [
+                1,
+                2
+              ],
+              "actual_expert_amplitude_weights": [
+                0.34809985756874084,
+                0.8036355376243591,
+                0.4396408498287201,
+                0.19927911460399628
+              ]
+            },
+            {
+              "sample_id": "101_ObjectCategories/airplanes/image_0073.jpg",
+              "ranked_top2": [
+                0,
+                1
+              ],
+              "actual_expert_amplitude_weights": [
+                0.3207288682460785,
+                0.8698595762252808,
+                0.2873776853084564,
+                0.24060620367527008
+              ]
+            }
+          ]
+        },
+        {
+          "class_name": "bonsai",
+          "samples": 5,
+          "details": [
+            {
+              "sample_id": "101_ObjectCategories/bonsai/image_0001.jpg",
+              "ranked_top2": [
+                0,
+                1
+              ],
+              "actual_expert_amplitude_weights": [
+                0.3928578197956085,
+                0.8437846899032593,
+                0.29090145230293274,
+                0.22150948643684387
+              ]
+            },
+            {
+              "sample_id": "101_ObjectCategories/bonsai/image_0006.jpg",
+              "ranked_top2": [
+                1,
+                2
+              ],
+              "actual_expert_amplitude_weights": [
+                0.3909028172492981,
+                0.7761702537536621,
+                0.4561876654624939,
+                0.19143511354923248
+              ]
+            },
+            {
+              "sample_id": "101_ObjectCategories/bonsai/image_0007.jpg",
+              "ranked_top2": [
+                1,
+                2
+              ],
+              "actual_expert_amplitude_weights": [
+                0.253219872713089,
+                0.7112434506416321,
+                0.6118733882904053,
+                0.2358461618423462
+              ]
+            },
+            {
+              "sample_id": "101_ObjectCategories/bonsai/image_0008.jpg",
+              "ranked_top2": [
+                1,
+                2
+              ],
+              "actual_expert_amplitude_weights": [
+                0.2634003162384033,
+                0.7927719354629517,
+                0.4995218515396118,
+                0.22937051951885223
+              ]
+            },
+            {
+              "sample_id": "101_ObjectCategories/bonsai/image_0013.jpg",
+              "ranked_top2": [
+                1,
+                2
+              ],
+              "actual_expert_amplitude_weights": [
+                0.2690751254558563,
+                0.6288294792175293,
+                0.6941537261009216,
+                0.22432689368724823
+              ]
+            }
+          ]
+        },
+        {
+          "class_name": "crab",
+          "samples": 5,
+          "details": [
+            {
+              "sample_id": "101_ObjectCategories/crab/image_0001.jpg",
+              "ranked_top2": [
+                1,
+                2
+              ],
+              "actual_expert_amplitude_weights": [
+                0.2643725275993347,
+                0.8585087060928345,
+                0.366662859916687,
+                0.24213290214538574
+              ]
+            },
+            {
+              "sample_id": "101_ObjectCategories/crab/image_0002.jpg",
+              "ranked_top2": [
+                1,
+                2
+              ],
+              "actual_expert_amplitude_weights": [
+                0.24460424482822418,
+                0.8512594103813171,
+                0.38708746433258057,
+                0.2562994062900543
+              ]
+            },
+            {
+              "sample_id": "101_ObjectCategories/crab/image_0004.jpg",
+              "ranked_top2": [
+                1,
+                2
+              ],
+              "actual_expert_amplitude_weights": [
+                0.3673054575920105,
+                0.5327398777008057,
+                0.7377983331680298,
+                0.19216802716255188
+              ]
+            },
+            {
+              "sample_id": "101_ObjectCategories/crab/image_0005.jpg",
+              "ranked_top2": [
+                1,
+                2
+              ],
+              "actual_expert_amplitude_weights": [
+                0.33370980620384216,
+                0.8436338901519775,
+                0.3637998700141907,
+                0.21111424267292023
+              ]
+            },
+            {
+              "sample_id": "101_ObjectCategories/crab/image_0006.jpg",
+              "ranked_top2": [
+                1,
+                2
+              ],
+              "actual_expert_amplitude_weights": [
+                0.26480960845947266,
+                0.818800151348114,
+                0.45424753427505493,
+                0.23043712973594666
+              ]
+            }
+          ]
+        },
+        {
+          "class_name": "crayfish",
+          "samples": 5,
+          "details": [
+            {
+              "sample_id": "101_ObjectCategories/crayfish/image_0001.jpg",
+              "ranked_top2": [
+                2,
+                3
+              ],
+              "actual_expert_amplitude_weights": [
+                0.23843517899513245,
+                0.2865631580352783,
+                0.8680984377861023,
+                0.32777324318885803
+              ]
+            },
+            {
+              "sample_id": "101_ObjectCategories/crayfish/image_0002.jpg",
+              "ranked_top2": [
+                1,
+                2
+              ],
+              "actual_expert_amplitude_weights": [
+                0.28797757625579834,
+                0.8350695371627808,
+                0.41369298100471497,
+                0.22042211890220642
+              ]
+            },
+            {
+              "sample_id": "101_ObjectCategories/crayfish/image_0003.jpg",
+              "ranked_top2": [
+                0,
+                1
+              ],
+              "actual_expert_amplitude_weights": [
+                0.4357232451438904,
+                0.8201030492782593,
+                0.30468568205833435,
+                0.21152526140213013
+              ]
+            },
+            {
+              "sample_id": "101_ObjectCategories/crayfish/image_0004.jpg",
+              "ranked_top2": [
+                0,
+                1
+              ],
+              "actual_expert_amplitude_weights": [
+                0.3820073902606964,
+                0.8209324479103088,
+                0.37418901920318604,
+                0.20030726492404938
+              ]
+            },
+            {
+              "sample_id": "101_ObjectCategories/crayfish/image_0007.jpg",
+              "ranked_top2": [
+                1,
+                2
+              ],
+              "actual_expert_amplitude_weights": [
+                0.2367219477891922,
+                0.5913271903991699,
+                0.728473961353302,
+                0.2522309422492981
+              ]
+            }
+          ]
+        },
+        {
+          "class_name": "grand_piano",
+          "samples": 5,
+          "details": [
+            {
+              "sample_id": "101_ObjectCategories/grand_piano/image_0001.jpg",
+              "ranked_top2": [
+                1,
+                2
+              ],
+              "actual_expert_amplitude_weights": [
+                0.29071804881095886,
+                0.8273941278457642,
+                0.42833182215690613,
+                0.2177932858467102
+              ]
+            },
+            {
+              "sample_id": "101_ObjectCategories/grand_piano/image_0002.jpg",
+              "ranked_top2": [
+                0,
+                3
+              ],
+              "actual_expert_amplitude_weights": [
+                0.5485894083976746,
+                0.18677064776420593,
+                0.40502238273620605,
+                0.707193911075592
+              ]
+            },
+            {
+              "sample_id": "101_ObjectCategories/grand_piano/image_0004.jpg",
+              "ranked_top2": [
+                1,
+                2
+              ],
+              "actual_expert_amplitude_weights": [
+                0.2587812840938568,
+                0.8659905791282654,
+                0.3451290726661682,
+                0.2529398202896118
+              ]
+            },
+            {
+              "sample_id": "101_ObjectCategories/grand_piano/image_0005.jpg",
+              "ranked_top2": [
+                0,
+                2
+              ],
+              "actual_expert_amplitude_weights": [
+                0.5571399927139282,
+                0.1826324164867401,
+                0.6722468137741089,
+                0.45202285051345825
+              ]
+            },
+            {
+              "sample_id": "101_ObjectCategories/grand_piano/image_0006.jpg",
+              "ranked_top2": [
+                1,
+                2
+              ],
+              "actual_expert_amplitude_weights": [
+                0.30171293020248413,
+                0.8221549987792969,
+                0.4332882761955261,
+                0.21281827986240387
+              ]
+            }
+          ]
+        },
+        {
+          "class_name": "helicopter",
+          "samples": 5,
+          "details": [
+            {
+              "sample_id": "101_ObjectCategories/helicopter/image_0001.jpg",
+              "ranked_top2": [
+                1,
+                2
+              ],
+              "actual_expert_amplitude_weights": [
+                0.2789085805416107,
+                0.8415611386299133,
+                0.4034673273563385,
+                0.2262720912694931
+              ]
+            },
+            {
+              "sample_id": "101_ObjectCategories/helicopter/image_0002.jpg",
+              "ranked_top2": [
+                1,
+                2
+              ],
+              "actual_expert_amplitude_weights": [
+                0.32294395565986633,
+                0.728340208530426,
+                0.5697817802429199,
+                0.20143632590770721
+              ]
+            },
+            {
+              "sample_id": "101_ObjectCategories/helicopter/image_0003.jpg",
+              "ranked_top2": [
+                0,
+                1
+              ],
+              "actual_expert_amplitude_weights": [
+                0.32931026816368103,
+                0.859876275062561,
+                0.31994232535362244,
+                0.22316902875900269
+              ]
+            },
+            {
+              "sample_id": "101_ObjectCategories/helicopter/image_0007.jpg",
+              "ranked_top2": [
+                1,
+                2
+              ],
+              "actual_expert_amplitude_weights": [
+                0.26267895102500916,
+                0.8267258405685425,
+                0.4395897388458252,
+                0.23299144208431244
+              ]
+            },
+            {
+              "sample_id": "101_ObjectCategories/helicopter/image_0009.jpg",
+              "ranked_top2": [
+                0,
+                1
+              ],
+              "actual_expert_amplitude_weights": [
+                0.38379809260368347,
+                0.8507009148597717,
+                0.2743748128414154,
+                0.23178730905056
+              ]
+            }
+          ]
+        },
+        {
+          "class_name": "kangaroo",
+          "samples": 5,
+          "details": [
+            {
+              "sample_id": "101_ObjectCategories/kangaroo/image_0001.jpg",
+              "ranked_top2": [
+                1,
+                2
+              ],
+              "actual_expert_amplitude_weights": [
+                0.2496575117111206,
+                0.8490880131721497,
+                0.3928433358669281,
+                0.24978908896446228
+              ]
+            },
+            {
+              "sample_id": "101_ObjectCategories/kangaroo/image_0002.jpg",
+              "ranked_top2": [
+                1,
+                2
+              ],
+              "actual_expert_amplitude_weights": [
+                0.28094014525413513,
+                0.8211709856987,
+                0.44470176100730896,
+                0.22133947908878326
+              ]
+            },
+            {
+              "sample_id": "101_ObjectCategories/kangaroo/image_0004.jpg",
+              "ranked_top2": [
+                1,
+                2
+              ],
+              "actual_expert_amplitude_weights": [
+                0.22360485792160034,
+                0.7758123874664307,
+                0.5238917469978333,
+                0.27139145135879517
+              ]
+            },
+            {
+              "sample_id": "101_ObjectCategories/kangaroo/image_0005.jpg",
+              "ranked_top2": [
+                1,
+                2
+              ],
+              "actual_expert_amplitude_weights": [
+                0.25853076577186584,
+                0.7454298734664917,
+                0.5690155029296875,
+                0.2317705601453781
+              ]
+            },
+            {
+              "sample_id": "101_ObjectCategories/kangaroo/image_0006.jpg",
+              "ranked_top2": [
+                1,
+                2
+              ],
+              "actual_expert_amplitude_weights": [
+                0.21209527552127838,
+                0.7743396162986755,
+                0.5184256434440613,
+                0.29436129331588745
+              ]
+            }
+          ]
+        },
+        {
+          "class_name": "ketch",
+          "samples": 5,
+          "details": [
+            {
+              "sample_id": "101_ObjectCategories/ketch/image_0001.jpg",
+              "ranked_top2": [
+                1,
+                2
+              ],
+              "actual_expert_amplitude_weights": [
+                0.28826892375946045,
+                0.7788664698600769,
+                0.5139010548591614,
+                0.2148807942867279
+              ]
+            },
+            {
+              "sample_id": "101_ObjectCategories/ketch/image_0003.jpg",
+              "ranked_top2": [
+                1,
+                2
+              ],
+              "actual_expert_amplitude_weights": [
+                0.24838724732398987,
+                0.3904741704463959,
+                0.8500419855117798,
+                0.25151997804641724
+              ]
+            },
+            {
+              "sample_id": "101_ObjectCategories/ketch/image_0004.jpg",
+              "ranked_top2": [
+                1,
+                2
+              ],
+              "actual_expert_amplitude_weights": [
+                0.2837880849838257,
+                0.803718626499176,
+                0.4752632975578308,
+                0.21823233366012573
+              ]
+            },
+            {
+              "sample_id": "101_ObjectCategories/ketch/image_0005.jpg",
+              "ranked_top2": [
+                1,
+                2
+              ],
+              "actual_expert_amplitude_weights": [
+                0.24861642718315125,
+                0.8194429874420166,
+                0.4554537534713745,
+                0.24344398081302643
+              ]
+            },
+            {
+              "sample_id": "101_ObjectCategories/ketch/image_0007.jpg",
+              "ranked_top2": [
+                1,
+                2
+              ],
+              "actual_expert_amplitude_weights": [
+                0.2943287193775177,
+                0.856029212474823,
+                0.3601958155632019,
+                0.2254854291677475
+              ]
+            }
+          ]
+        },
+        {
+          "class_name": "laptop",
+          "samples": 5,
+          "details": [
+            {
+              "sample_id": "101_ObjectCategories/laptop/image_0001.jpg",
+              "ranked_top2": [
+                0,
+                2
+              ],
+              "actual_expert_amplitude_weights": [
+                0.7533069252967834,
+                0.21389803290367126,
+                0.5506147146224976,
+                0.28913602232933044
+              ]
+            },
+            {
+              "sample_id": "101_ObjectCategories/laptop/image_0002.jpg",
+              "ranked_top2": [
+                1,
+                2
+              ],
+              "actual_expert_amplitude_weights": [
+                0.18897677958011627,
+                0.7493401169776917,
+                0.4949977993965149,
+                0.3971829414367676
+              ]
+            },
+            {
+              "sample_id": "101_ObjectCategories/laptop/image_0003.jpg",
+              "ranked_top2": [
+                1,
+                2
+              ],
+              "actual_expert_amplitude_weights": [
+                0.26388129591941833,
+                0.8677837252616882,
+                0.3383033573627472,
+                0.25073641538619995
+              ]
+            },
+            {
+              "sample_id": "101_ObjectCategories/laptop/image_0004.jpg",
+              "ranked_top2": [
+                1,
+                2
+              ],
+              "actual_expert_amplitude_weights": [
+                0.3900054395198822,
+                0.691851794719696,
+                0.5777746438980103,
+                0.1881840080022812
+              ]
+            },
+            {
+              "sample_id": "101_ObjectCategories/laptop/image_0005.jpg",
+              "ranked_top2": [
+                1,
+                2
+              ],
+              "actual_expert_amplitude_weights": [
+                0.34610816836357117,
+                0.822796106338501,
+                0.4025833010673523,
+                0.20283585786819458
+              ]
+            }
+          ]
+        },
+        {
+          "class_name": "lotus",
+          "samples": 5,
+          "details": [
+            {
+              "sample_id": "101_ObjectCategories/lotus/image_0002.jpg",
+              "ranked_top2": [
+                1,
+                2
+              ],
+              "actual_expert_amplitude_weights": [
+                0.2520902454853058,
+                0.844784140586853,
+                0.40297555923461914,
+                0.24576593935489655
+              ]
+            },
+            {
+              "sample_id": "101_ObjectCategories/lotus/image_0004.jpg",
+              "ranked_top2": [
+                0,
+                1
+              ],
+              "actual_expert_amplitude_weights": [
+                0.659596860408783,
+                0.6675693988800049,
+                0.24756558239459991,
+                0.24082016944885254
+              ]
+            },
+            {
+              "sample_id": "101_ObjectCategories/lotus/image_0006.jpg",
+              "ranked_top2": [
+                1,
+                2
+              ],
+              "actual_expert_amplitude_weights": [
+                0.2587158977985382,
+                0.7757139801979065,
+                0.5267389416694641,
+                0.23212085664272308
+              ]
+            },
+            {
+              "sample_id": "101_ObjectCategories/lotus/image_0007.jpg",
+              "ranked_top2": [
+                1,
+                2
+              ],
+              "actual_expert_amplitude_weights": [
+                0.272858202457428,
+                0.8325068354606628,
+                0.4251299798488617,
+                0.22747574746608734
+              ]
+            },
+            {
+              "sample_id": "101_ObjectCategories/lotus/image_0008.jpg",
+              "ranked_top2": [
+                1,
+                2
+              ],
+              "actual_expert_amplitude_weights": [
+                0.24116086959838867,
+                0.7406594157218933,
+                0.5762746930122375,
+                0.24733079969882965
+              ]
+            }
+          ]
+        },
+        {
+          "class_name": "minaret",
+          "samples": 5,
+          "details": [
+            {
+              "sample_id": "101_ObjectCategories/minaret/image_0001.jpg",
+              "ranked_top2": [
+                1,
+                2
+              ],
+              "actual_expert_amplitude_weights": [
+                0.24723300337791443,
+                0.6447109580039978,
+                0.6819670796394348,
+                0.24113169312477112
+              ]
+            },
+            {
+              "sample_id": "101_ObjectCategories/minaret/image_0002.jpg",
+              "ranked_top2": [
+                1,
+                2
+              ],
+              "actual_expert_amplitude_weights": [
+                0.2521381378173828,
+                0.611237645149231,
+                0.7118704915046692,
+                0.2367597371339798
+              ]
+            },
+            {
+              "sample_id": "101_ObjectCategories/minaret/image_0003.jpg",
+              "ranked_top2": [
+                1,
+                3
+              ],
+              "actual_expert_amplitude_weights": [
+                0.2478833645582199,
+                0.8586634993553162,
+                0.2572731673717499,
+                0.3675069510936737
+              ]
+            },
+            {
+              "sample_id": "101_ObjectCategories/minaret/image_0005.jpg",
+              "ranked_top2": [
+                1,
+                2
+              ],
+              "actual_expert_amplitude_weights": [
+                0.24611815810203552,
+                0.8133706450462341,
+                0.46665409207344055,
+                0.24512840807437897
+              ]
+            },
+            {
+              "sample_id": "101_ObjectCategories/minaret/image_0006.jpg",
+              "ranked_top2": [
+                1,
+                2
+              ],
+              "actual_expert_amplitude_weights": [
+                0.2188393473625183,
+                0.6464784145355225,
+                0.6757500171661377,
+                0.27845442295074463
+              ]
+            }
+          ]
+        },
+        {
+          "class_name": "revolver",
+          "samples": 5,
+          "details": [
+            {
+              "sample_id": "101_ObjectCategories/revolver/image_0001.jpg",
+              "ranked_top2": [
+                1,
+                2
+              ],
+              "actual_expert_amplitude_weights": [
+                0.19250456988811493,
+                0.6861762404441833,
+                0.6015594005584717,
+                0.36087438464164734
+              ]
+            },
+            {
+              "sample_id": "101_ObjectCategories/revolver/image_0002.jpg",
+              "ranked_top2": [
+                1,
+                2
+              ],
+              "actual_expert_amplitude_weights": [
+                0.19294868409633636,
+                0.6768413782119751,
+                0.6134845614433289,
+                0.35818058252334595
+              ]
+            },
+            {
+              "sample_id": "101_ObjectCategories/revolver/image_0004.jpg",
+              "ranked_top2": [
+                1,
+                2
+              ],
+              "actual_expert_amplitude_weights": [
+                0.2435835897922516,
+                0.8505479693412781,
+                0.38874050974845886,
+                0.2571304738521576
+              ]
+            },
+            {
+              "sample_id": "101_ObjectCategories/revolver/image_0005.jpg",
+              "ranked_top2": [
+                0,
+                1
+              ],
+              "actual_expert_amplitude_weights": [
+                0.3712395131587982,
+                0.8332789540290833,
+                0.3545607030391693,
+                0.2052171528339386
+              ]
+            },
+            {
+              "sample_id": "101_ObjectCategories/revolver/image_0006.jpg",
+              "ranked_top2": [
+                1,
+                3
+              ],
+              "actual_expert_amplitude_weights": [
+                0.27888378500938416,
+                0.8651343584060669,
+                0.23846188187599182,
+                0.3419096767902374
+              ]
+            }
+          ]
+        },
+        {
+          "class_name": "schooner",
+          "samples": 5,
+          "details": [
+            {
+              "sample_id": "101_ObjectCategories/schooner/image_0003.jpg",
+              "ranked_top2": [
+                1,
+                2
+              ],
+              "actual_expert_amplitude_weights": [
+                0.31108546257019043,
+                0.8046053647994995,
+                0.4611665904521942,
+                0.2077530175447464
+              ]
+            },
+            {
+              "sample_id": "101_ObjectCategories/schooner/image_0005.jpg",
+              "ranked_top2": [
+                1,
+                2
+              ],
+              "actual_expert_amplitude_weights": [
+                0.2480737417936325,
+                0.806481122970581,
+                0.47874879837036133,
+                0.2425844371318817
+              ]
+            },
+            {
+              "sample_id": "101_ObjectCategories/schooner/image_0007.jpg",
+              "ranked_top2": [
+                1,
+                2
+              ],
+              "actual_expert_amplitude_weights": [
+                0.3308718800544739,
+                0.8536322116851807,
+                0.3385674059391022,
+                0.2172738015651703
+              ]
+            },
+            {
+              "sample_id": "101_ObjectCategories/schooner/image_0008.jpg",
+              "ranked_top2": [
+                0,
+                1
+              ],
+              "actual_expert_amplitude_weights": [
+                0.387549489736557,
+                0.8219181299209595,
+                0.36593011021614075,
+                0.2008761614561081
+              ]
+            },
+            {
+              "sample_id": "101_ObjectCategories/schooner/image_0009.jpg",
+              "ranked_top2": [
+                1,
+                2
+              ],
+              "actual_expert_amplitude_weights": [
+                0.2765907049179077,
+                0.8154391646385193,
+                0.4570082724094391,
+                0.22293461859226227
+              ]
+            }
+          ]
+        },
+        {
+          "class_name": "trilobite",
+          "samples": 5,
+          "details": [
+            {
+              "sample_id": "101_ObjectCategories/trilobite/image_0001.jpg",
+              "ranked_top2": [
+                1,
+                2
+              ],
+              "actual_expert_amplitude_weights": [
+                0.21101157367229462,
+                0.718390166759491,
+                0.5935846567153931,
+                0.29503700137138367
+              ]
+            },
+            {
+              "sample_id": "101_ObjectCategories/trilobite/image_0003.jpg",
+              "ranked_top2": [
+                1,
+                2
+              ],
+              "actual_expert_amplitude_weights": [
+                0.26739996671676636,
+                0.8194977045059204,
+                0.45228829979896545,
+                0.22881454229354858
+              ]
+            },
+            {
+              "sample_id": "101_ObjectCategories/trilobite/image_0006.jpg",
+              "ranked_top2": [
+                1,
+                2
+              ],
+              "actual_expert_amplitude_weights": [
+                0.2238723635673523,
+                0.8166431784629822,
+                0.4552857279777527,
+                0.27511826157569885
+              ]
+            },
+            {
+              "sample_id": "101_ObjectCategories/trilobite/image_0007.jpg",
+              "ranked_top2": [
+                1,
+                2
+              ],
+              "actual_expert_amplitude_weights": [
+                0.28574931621551514,
+                0.8103645443916321,
+                0.46281546354293823,
+                0.2178495079278946
+              ]
+            },
+            {
+              "sample_id": "101_ObjectCategories/trilobite/image_0008.jpg",
+              "ranked_top2": [
+                1,
+                2
+              ],
+              "actual_expert_amplitude_weights": [
+                0.19840595126152039,
+                0.7466932535171509,
+                0.5387978553771973,
+                0.3358289897441864
+              ]
+            }
+          ]
+        },
+        {
+          "class_name": "umbrella",
+          "samples": 5,
+          "details": [
+            {
+              "sample_id": "101_ObjectCategories/umbrella/image_0001.jpg",
+              "ranked_top2": [
+                1,
+                2
+              ],
+              "actual_expert_amplitude_weights": [
+                0.1805187165737152,
+                0.563636839389801,
+                0.6387733817100525,
+                0.4916250705718994
+              ]
+            },
+            {
+              "sample_id": "101_ObjectCategories/umbrella/image_0002.jpg",
+              "ranked_top2": [
+                2,
+                3
+              ],
+              "actual_expert_amplitude_weights": [
+                0.19688671827316284,
+                0.36915236711502075,
+                0.8048667311668396,
+                0.4208940267562866
+              ]
+            },
+            {
+              "sample_id": "101_ObjectCategories/umbrella/image_0003.jpg",
+              "ranked_top2": [
+                1,
+                2
+              ],
+              "actual_expert_amplitude_weights": [
+                0.21378156542778015,
+                0.7722063660621643,
+                0.5231999754905701,
+                0.2902698218822479
+              ]
+            },
+            {
+              "sample_id": "101_ObjectCategories/umbrella/image_0004.jpg",
+              "ranked_top2": [
+                1,
+                2
+              ],
+              "actual_expert_amplitude_weights": [
+                0.20013383030891418,
+                0.5282098054885864,
+                0.7564692497253418,
+                0.329689621925354
+              ]
+            },
+            {
+              "sample_id": "101_ObjectCategories/umbrella/image_0005.jpg",
+              "ranked_top2": [
+                1,
+                2
+              ],
+              "actual_expert_amplitude_weights": [
+                0.23747675120830536,
+                0.750567615032196,
+                0.5630186200141907,
+                0.2515215575695038
+              ]
+            }
+          ]
+        },
+        {
+          "class_name": "watch",
+          "samples": 5,
+          "details": [
+            {
+              "sample_id": "101_ObjectCategories/watch/image_0002.jpg",
+              "ranked_top2": [
+                0,
+                1
+              ],
+              "actual_expert_amplitude_weights": [
+                0.3154975473880768,
+                0.8655503392219543,
+                0.31358665227890015,
+                0.2301030158996582
+              ]
+            },
+            {
+              "sample_id": "101_ObjectCategories/watch/image_0006.jpg",
+              "ranked_top2": [
+                1,
+                2
+              ],
+              "actual_expert_amplitude_weights": [
+                0.29461491107940674,
+                0.8191919922828674,
+                0.44259798526763916,
+                0.21501991152763367
+              ]
+            },
+            {
+              "sample_id": "101_ObjectCategories/watch/image_0007.jpg",
+              "ranked_top2": [
+                1,
+                2
+              ],
+              "actual_expert_amplitude_weights": [
+                0.1869703233242035,
+                0.7092882990837097,
+                0.546968400478363,
+                0.403457373380661
+              ]
+            },
+            {
+              "sample_id": "101_ObjectCategories/watch/image_0011.jpg",
+              "ranked_top2": [
+                1,
+                2
+              ],
+              "actual_expert_amplitude_weights": [
+                0.30809178948402405,
+                0.8664644360542297,
+                0.3172668218612671,
+                0.23164741694927216
+              ]
+            },
+            {
+              "sample_id": "101_ObjectCategories/watch/image_0014.jpg",
+              "ranked_top2": [
+                1,
+                3
+              ],
+              "actual_expert_amplitude_weights": [
+                0.2682078778743744,
+                0.8759239315986633,
+                0.26514342427253723,
+                0.30086660385131836
+              ]
+            }
+          ]
+        },
+        {
+          "class_name": "yin_yang",
+          "samples": 5,
+          "details": [
+            {
+              "sample_id": "101_ObjectCategories/yin_yang/image_0003.jpg",
+              "ranked_top2": [
+                1,
+                3
+              ],
+              "actual_expert_amplitude_weights": [
+                0.2510125935077667,
+                0.8180361390113831,
+                0.24106648564338684,
+                0.4579262137413025
+              ]
+            },
+            {
+              "sample_id": "101_ObjectCategories/yin_yang/image_0004.jpg",
+              "ranked_top2": [
+                1,
+                3
+              ],
+              "actual_expert_amplitude_weights": [
+                0.2969992458820343,
+                0.8535798788070679,
+                0.22327324748039246,
+                0.365160197019577
+              ]
+            },
+            {
+              "sample_id": "101_ObjectCategories/yin_yang/image_0005.jpg",
+              "ranked_top2": [
+                1,
+                3
+              ],
+              "actual_expert_amplitude_weights": [
+                0.3183780610561371,
+                0.8564603328704834,
+                0.22036384046077728,
+                0.3413955867290497
+              ]
+            },
+            {
+              "sample_id": "101_ObjectCategories/yin_yang/image_0007.jpg",
+              "ranked_top2": [
+                1,
+                3
+              ],
+              "actual_expert_amplitude_weights": [
+                0.28743502497673035,
+                0.8721082806587219,
+                0.24453486502170563,
+                0.3114658296108246
+              ]
+            },
+            {
+              "sample_id": "101_ObjectCategories/yin_yang/image_0009.jpg",
+              "ranked_top2": [
+                1,
+                2
+              ],
+              "actual_expert_amplitude_weights": [
+                0.22828751802444458,
+                0.853914737701416,
+                0.3713809847831726,
+                0.2842368483543396
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "variant": "preserve_global",
+      "selected_epoch": 40,
+      "checkpoint_sha256": "58cee641c8ea5bc2d961c523381f3bec5cc02086c5f63a58f4732724d1049630",
+      "samples": 100,
+      "actual_routing": "hardTop2",
+      "ranked_top2_pair_counts": {
+        "(0, 1)": 95,
+        "(0, 3)": 4,
+        "(1, 3)": 1
+      },
+      "fraction_ranked_top2_different_from_modal": 0.050000000000000044,
+      "actual_slot_nonzero_fraction": [
+        0.99,
+        0.96,
+        0.0,
+        0.05
+      ],
+      "slot_weight_mean": [
+        0.7616832852363586,
+        0.6118884086608887,
+        0.0,
+        0.018671326339244843
+      ],
+      "slot_weight_std": [
+        0.11649519950151443,
+        0.1575297862291336,
+        0.0,
+        0.08182752132415771
+      ],
+      "slot_weight_min": [
+        0.0,
+        0.0,
+        0.0,
+        0.0
+      ],
+      "slot_weight_max": [
+        0.9471704959869385,
+        0.9183048605918884,
+        0.0,
+        0.41397255659103394
+      ],
+      "rows": [
+        {
+          "class_name": "Faces",
+          "samples": 5,
+          "details": [
+            {
+              "sample_id": "101_ObjectCategories/Faces/image_0001.jpg",
+              "ranked_top2": [
+                0,
+                1
+              ],
+              "actual_expert_amplitude_weights": [
+                0.8662641048431396,
+                0.4995863735675812,
+                0.0,
+                0.0
+              ]
+            },
+            {
+              "sample_id": "101_ObjectCategories/Faces/image_0011.jpg",
+              "ranked_top2": [
+                0,
+                1
+              ],
+              "actual_expert_amplitude_weights": [
+                0.8115429282188416,
+                0.5842928886413574,
+                0.0,
+                0.0
+              ]
+            },
+            {
+              "sample_id": "101_ObjectCategories/Faces/image_0021.jpg",
+              "ranked_top2": [
+                0,
+                1
+              ],
+              "actual_expert_amplitude_weights": [
+                0.7657861113548279,
+                0.6430953741073608,
+                0.0,
+                0.0
+              ]
+            },
+            {
+              "sample_id": "101_ObjectCategories/Faces/image_0029.jpg",
+              "ranked_top2": [
+                0,
+                1
+              ],
+              "actual_expert_amplitude_weights": [
+                0.7721689939498901,
+                0.635417103767395,
+                0.0,
+                0.0
+              ]
+            },
+            {
+              "sample_id": "101_ObjectCategories/Faces/image_0032.jpg",
+              "ranked_top2": [
+                0,
+                1
+              ],
+              "actual_expert_amplitude_weights": [
+                0.8067758679389954,
+                0.5908576846122742,
+                0.0,
+                0.0
+              ]
+            }
+          ]
+        },
+        {
+          "class_name": "Leopards",
+          "samples": 5,
+          "details": [
+            {
+              "sample_id": "101_ObjectCategories/Leopards/image_0001.jpg",
+              "ranked_top2": [
+                0,
+                1
+              ],
+              "actual_expert_amplitude_weights": [
+                0.7692292332649231,
+                0.6389729380607605,
+                0.0,
+                0.0
+              ]
+            },
+            {
+              "sample_id": "101_ObjectCategories/Leopards/image_0005.jpg",
+              "ranked_top2": [
+                0,
+                1
+              ],
+              "actual_expert_amplitude_weights": [
+                0.7873249650001526,
+                0.6165381669998169,
+                0.0,
+                0.0
+              ]
+            },
+            {
+              "sample_id": "101_ObjectCategories/Leopards/image_0007.jpg",
+              "ranked_top2": [
+                0,
+                1
+              ],
+              "actual_expert_amplitude_weights": [
+                0.7312923073768616,
+                0.6820641756057739,
+                0.0,
+                0.0
+              ]
+            },
+            {
+              "sample_id": "101_ObjectCategories/Leopards/image_0009.jpg",
+              "ranked_top2": [
+                0,
+                1
+              ],
+              "actual_expert_amplitude_weights": [
+                0.7774724364280701,
+                0.6289169788360596,
+                0.0,
+                0.0
+              ]
+            },
+            {
+              "sample_id": "101_ObjectCategories/Leopards/image_0010.jpg",
+              "ranked_top2": [
+                0,
+                1
+              ],
+              "actual_expert_amplitude_weights": [
+                0.7806555032730103,
+                0.6249615550041199,
+                0.0,
+                0.0
+              ]
+            }
+          ]
+        },
+        {
+          "class_name": "Motorbikes",
+          "samples": 5,
+          "details": [
+            {
+              "sample_id": "101_ObjectCategories/Motorbikes/image_0018.jpg",
+              "ranked_top2": [
+                0,
+                1
+              ],
+              "actual_expert_amplitude_weights": [
+                0.7705864906311035,
+                0.6373353600502014,
+                0.0,
+                0.0
+              ]
+            },
+            {
+              "sample_id": "101_ObjectCategories/Motorbikes/image_0035.jpg",
+              "ranked_top2": [
+                0,
+                1
+              ],
+              "actual_expert_amplitude_weights": [
+                0.8447791337966919,
+                0.535115122795105,
+                0.0,
+                0.0
+              ]
+            },
+            {
+              "sample_id": "101_ObjectCategories/Motorbikes/image_0041.jpg",
+              "ranked_top2": [
+                0,
+                1
+              ],
+              "actual_expert_amplitude_weights": [
+                0.7569795846939087,
+                0.6534385085105896,
+                0.0,
+                0.0
+              ]
+            },
+            {
+              "sample_id": "101_ObjectCategories/Motorbikes/image_0044.jpg",
+              "ranked_top2": [
+                0,
+                1
+              ],
+              "actual_expert_amplitude_weights": [
+                0.7458019852638245,
+                0.666167676448822,
+                0.0,
+                0.0
+              ]
+            },
+            {
+              "sample_id": "101_ObjectCategories/Motorbikes/image_0045.jpg",
+              "ranked_top2": [
+                0,
+                1
+              ],
+              "actual_expert_amplitude_weights": [
+                0.7396255731582642,
+                0.6730185747146606,
+                0.0,
+                0.0
+              ]
+            }
+          ]
+        },
+        {
+          "class_name": "airplanes",
+          "samples": 5,
+          "details": [
+            {
+              "sample_id": "101_ObjectCategories/airplanes/image_0006.jpg",
+              "ranked_top2": [
+                0,
+                1
+              ],
+              "actual_expert_amplitude_weights": [
+                0.7594854235649109,
+                0.6505243182182312,
+                0.0,
+                0.0
+              ]
+            },
+            {
+              "sample_id": "101_ObjectCategories/airplanes/image_0028.jpg",
+              "ranked_top2": [
+                0,
+                1
+              ],
+              "actual_expert_amplitude_weights": [
+                0.7731570601463318,
+                0.6342145800590515,
+                0.0,
+                0.0
+              ]
+            },
+            {
+              "sample_id": "101_ObjectCategories/airplanes/image_0055.jpg",
+              "ranked_top2": [
+                0,
+                1
+              ],
+              "actual_expert_amplitude_weights": [
+                0.7821840643882751,
+                0.6230475306510925,
+                0.0,
+                0.0
+              ]
+            },
+            {
+              "sample_id": "101_ObjectCategories/airplanes/image_0058.jpg",
+              "ranked_top2": [
+                0,
+                1
+              ],
+              "actual_expert_amplitude_weights": [
+                0.8052076697349548,
+                0.5929930210113525,
+                0.0,
+                0.0
+              ]
+            },
+            {
+              "sample_id": "101_ObjectCategories/airplanes/image_0073.jpg",
+              "ranked_top2": [
+                0,
+                1
+              ],
+              "actual_expert_amplitude_weights": [
+                0.7214487195014954,
+                0.692467987537384,
+                0.0,
+                0.0
+              ]
+            }
+          ]
+        },
+        {
+          "class_name": "bonsai",
+          "samples": 5,
+          "details": [
+            {
+              "sample_id": "101_ObjectCategories/bonsai/image_0001.jpg",
+              "ranked_top2": [
+                0,
+                1
+              ],
+              "actual_expert_amplitude_weights": [
+                0.7217724919319153,
+                0.6921305060386658,
+                0.0,
+                0.0
+              ]
+            },
+            {
+              "sample_id": "101_ObjectCategories/bonsai/image_0006.jpg",
+              "ranked_top2": [
+                0,
+                1
+              ],
+              "actual_expert_amplitude_weights": [
+                0.8908330798149109,
+                0.45433080196380615,
+                0.0,
+                0.0
+              ]
+            },
+            {
+              "sample_id": "101_ObjectCategories/bonsai/image_0007.jpg",
+              "ranked_top2": [
+                0,
+                1
+              ],
+              "actual_expert_amplitude_weights": [
+                0.6181336641311646,
+                0.7860730886459351,
+                0.0,
+                0.0
+              ]
+            },
+            {
+              "sample_id": "101_ObjectCategories/bonsai/image_0008.jpg",
+              "ranked_top2": [
+                0,
+                1
+              ],
+              "actual_expert_amplitude_weights": [
+                0.7439025044441223,
+                0.6682881712913513,
+                0.0,
+                0.0
+              ]
+            },
+            {
+              "sample_id": "101_ObjectCategories/bonsai/image_0013.jpg",
+              "ranked_top2": [
+                0,
+                1
+              ],
+              "actual_expert_amplitude_weights": [
+                0.8465657234191895,
+                0.532284140586853,
+                0.0,
+                0.0
+              ]
+            }
+          ]
+        },
+        {
+          "class_name": "crab",
+          "samples": 5,
+          "details": [
+            {
+              "sample_id": "101_ObjectCategories/crab/image_0001.jpg",
+              "ranked_top2": [
+                0,
+                1
+              ],
+              "actual_expert_amplitude_weights": [
+                0.6846206784248352,
+                0.7288995981216431,
+                0.0,
+                0.0
+              ]
+            },
+            {
+              "sample_id": "101_ObjectCategories/crab/image_0002.jpg",
+              "ranked_top2": [
+                0,
+                1
+              ],
+              "actual_expert_amplitude_weights": [
+                0.7129107713699341,
+                0.701254665851593,
+                0.0,
+                0.0
+              ]
+            },
+            {
+              "sample_id": "101_ObjectCategories/crab/image_0004.jpg",
+              "ranked_top2": [
+                0,
+                1
+              ],
+              "actual_expert_amplitude_weights": [
+                0.8785791993141174,
+                0.4775967001914978,
+                0.0,
+                0.0
+              ]
+            },
+            {
+              "sample_id": "101_ObjectCategories/crab/image_0005.jpg",
+              "ranked_top2": [
+                0,
+                1
+              ],
+              "actual_expert_amplitude_weights": [
+                0.7925424575805664,
+                0.6098167896270752,
+                0.0,
+                0.0
+              ]
+            },
+            {
+              "sample_id": "101_ObjectCategories/crab/image_0006.jpg",
+              "ranked_top2": [
+                0,
+                1
+              ],
+              "actual_expert_amplitude_weights": [
+                0.7792375087738037,
+                0.6267287135124207,
+                0.0,
+                0.0
+              ]
+            }
+          ]
+        },
+        {
+          "class_name": "crayfish",
+          "samples": 5,
+          "details": [
+            {
+              "sample_id": "101_ObjectCategories/crayfish/image_0001.jpg",
+              "ranked_top2": [
+                0,
+                3
+              ],
+              "actual_expert_amplitude_weights": [
+                0.9455598592758179,
+                0.0,
+                0.0,
+                0.32544830441474915
+              ]
+            },
+            {
+              "sample_id": "101_ObjectCategories/crayfish/image_0002.jpg",
+              "ranked_top2": [
+                0,
+                1
+              ],
+              "actual_expert_amplitude_weights": [
+                0.8179175853729248,
+                0.5753354430198669,
+                0.0,
+                0.0
+              ]
+            },
+            {
+              "sample_id": "101_ObjectCategories/crayfish/image_0003.jpg",
+              "ranked_top2": [
+                0,
+                1
+              ],
+              "actual_expert_amplitude_weights": [
+                0.8341168761253357,
+                0.5515878200531006,
+                0.0,
+                0.0
+              ]
+            },
+            {
+              "sample_id": "101_ObjectCategories/crayfish/image_0004.jpg",
+              "ranked_top2": [
+                0,
+                1
+              ],
+              "actual_expert_amplitude_weights": [
+                0.8293597102165222,
+                0.5587149858474731,
+                0.0,
+                0.0
+              ]
+            },
+            {
+              "sample_id": "101_ObjectCategories/crayfish/image_0007.jpg",
+              "ranked_top2": [
+                0,
+                1
+              ],
+              "actual_expert_amplitude_weights": [
+                0.781731367111206,
+                0.6236152052879333,
+                0.0,
+                0.0
+              ]
+            }
+          ]
+        },
+        {
+          "class_name": "grand_piano",
+          "samples": 5,
+          "details": [
+            {
+              "sample_id": "101_ObjectCategories/grand_piano/image_0001.jpg",
+              "ranked_top2": [
+                0,
+                1
+              ],
+              "actual_expert_amplitude_weights": [
+                0.6660385727882385,
+                0.7459172606468201,
+                0.0,
+                0.0
+              ]
+            },
+            {
+              "sample_id": "101_ObjectCategories/grand_piano/image_0002.jpg",
+              "ranked_top2": [
+                0,
+                3
+              ],
+              "actual_expert_amplitude_weights": [
+                0.9155407547950745,
+                0.0,
+                0.0,
+                0.4022253751754761
+              ]
+            },
+            {
+              "sample_id": "101_ObjectCategories/grand_piano/image_0004.jpg",
+              "ranked_top2": [
+                0,
+                1
+              ],
+              "actual_expert_amplitude_weights": [
+                0.5220419764518738,
+                0.8529197573661804,
+                0.0,
+                0.0
+              ]
+            },
+            {
+              "sample_id": "101_ObjectCategories/grand_piano/image_0005.jpg",
+              "ranked_top2": [
+                0,
+                3
+              ],
+              "actual_expert_amplitude_weights": [
+                0.9441162943840027,
+                0.0,
+                0.0,
+                0.3296126127243042
+              ]
+            },
+            {
+              "sample_id": "101_ObjectCategories/grand_piano/image_0006.jpg",
+              "ranked_top2": [
+                0,
+                1
+              ],
+              "actual_expert_amplitude_weights": [
+                0.7114992141723633,
+                0.7026870250701904,
+                0.0,
+                0.0
+              ]
+            }
+          ]
+        },
+        {
+          "class_name": "helicopter",
+          "samples": 5,
+          "details": [
+            {
+              "sample_id": "101_ObjectCategories/helicopter/image_0001.jpg",
+              "ranked_top2": [
+                0,
+                1
+              ],
+              "actual_expert_amplitude_weights": [
+                0.7634701132774353,
+                0.6458432674407959,
+                0.0,
+                0.0
+              ]
+            },
+            {
+              "sample_id": "101_ObjectCategories/helicopter/image_0002.jpg",
+              "ranked_top2": [
+                0,
+                1
+              ],
+              "actual_expert_amplitude_weights": [
+                0.8247184157371521,
+                0.5655434727668762,
+                0.0,
+                0.0
+              ]
+            },
+            {
+              "sample_id": "101_ObjectCategories/helicopter/image_0003.jpg",
+              "ranked_top2": [
+                0,
+                1
+              ],
+              "actual_expert_amplitude_weights": [
+                0.6823663711547852,
+                0.7310103178024292,
+                0.0,
+                0.0
+              ]
+            },
+            {
+              "sample_id": "101_ObjectCategories/helicopter/image_0007.jpg",
+              "ranked_top2": [
+                0,
+                1
+              ],
+              "actual_expert_amplitude_weights": [
+                0.7561774253845215,
+                0.6543667316436768,
+                0.0,
+                0.0
+              ]
+            },
+            {
+              "sample_id": "101_ObjectCategories/helicopter/image_0009.jpg",
+              "ranked_top2": [
+                0,
+                1
+              ],
+              "actual_expert_amplitude_weights": [
+                0.6815732717514038,
+                0.7317498326301575,
+                0.0,
+                0.0
+              ]
+            }
+          ]
+        },
+        {
+          "class_name": "kangaroo",
+          "samples": 5,
+          "details": [
+            {
+              "sample_id": "101_ObjectCategories/kangaroo/image_0001.jpg",
+              "ranked_top2": [
+                0,
+                1
+              ],
+              "actual_expert_amplitude_weights": [
+                0.6969863176345825,
+                0.7170844078063965,
+                0.0,
+                0.0
+              ]
+            },
+            {
+              "sample_id": "101_ObjectCategories/kangaroo/image_0002.jpg",
+              "ranked_top2": [
+                0,
+                1
+              ],
+              "actual_expert_amplitude_weights": [
+                0.8111846446990967,
+                0.584790050983429,
+                0.0,
+                0.0
+              ]
+            },
+            {
+              "sample_id": "101_ObjectCategories/kangaroo/image_0004.jpg",
+              "ranked_top2": [
+                0,
+                1
+              ],
+              "actual_expert_amplitude_weights": [
+                0.7882355451583862,
+                0.6153735518455505,
+                0.0,
+                0.0
+              ]
+            },
+            {
+              "sample_id": "101_ObjectCategories/kangaroo/image_0005.jpg",
+              "ranked_top2": [
+                0,
+                1
+              ],
+              "actual_expert_amplitude_weights": [
+                0.7817724347114563,
+                0.6235638856887817,
+                0.0,
+                0.0
+              ]
+            },
+            {
+              "sample_id": "101_ObjectCategories/kangaroo/image_0006.jpg",
+              "ranked_top2": [
+                0,
+                1
+              ],
+              "actual_expert_amplitude_weights": [
+                0.7856302857398987,
+                0.6186962723731995,
+                0.0,
+                0.0
+              ]
+            }
+          ]
+        },
+        {
+          "class_name": "ketch",
+          "samples": 5,
+          "details": [
+            {
+              "sample_id": "101_ObjectCategories/ketch/image_0001.jpg",
+              "ranked_top2": [
+                0,
+                1
+              ],
+              "actual_expert_amplitude_weights": [
+                0.8175549507141113,
+                0.5758506059646606,
+                0.0,
+                0.0
+              ]
+            },
+            {
+              "sample_id": "101_ObjectCategories/ketch/image_0003.jpg",
+              "ranked_top2": [
+                0,
+                1
+              ],
+              "actual_expert_amplitude_weights": [
+                0.9137254953384399,
+                0.4063321352005005,
+                0.0,
+                0.0
+              ]
+            },
+            {
+              "sample_id": "101_ObjectCategories/ketch/image_0004.jpg",
+              "ranked_top2": [
+                0,
+                1
+              ],
+              "actual_expert_amplitude_weights": [
+                0.7779537439346313,
+                0.6283215880393982,
+                0.0,
+                0.0
+              ]
+            },
+            {
+              "sample_id": "101_ObjectCategories/ketch/image_0005.jpg",
+              "ranked_top2": [
+                0,
+                1
+              ],
+              "actual_expert_amplitude_weights": [
+                0.778912365436554,
+                0.627132773399353,
+                0.0,
+                0.0
+              ]
+            },
+            {
+              "sample_id": "101_ObjectCategories/ketch/image_0007.jpg",
+              "ranked_top2": [
+                0,
+                1
+              ],
+              "actual_expert_amplitude_weights": [
+                0.7438665628433228,
+                0.6683282256126404,
+                0.0,
+                0.0
+              ]
+            }
+          ]
+        },
+        {
+          "class_name": "laptop",
+          "samples": 5,
+          "details": [
+            {
+              "sample_id": "101_ObjectCategories/laptop/image_0001.jpg",
+              "ranked_top2": [
+                0,
+                1
+              ],
+              "actual_expert_amplitude_weights": [
+                0.9471704959869385,
+                0.32073041796684265,
+                0.0,
+                0.0
+              ]
+            },
+            {
+              "sample_id": "101_ObjectCategories/laptop/image_0002.jpg",
+              "ranked_top2": [
+                0,
+                1
+              ],
+              "actual_expert_amplitude_weights": [
+                0.6703351736068726,
+                0.7420583963394165,
+                0.0,
+                0.0
+              ]
+            },
+            {
+              "sample_id": "101_ObjectCategories/laptop/image_0003.jpg",
+              "ranked_top2": [
+                0,
+                1
+              ],
+              "actual_expert_amplitude_weights": [
+                0.7377381324768066,
+                0.6750869750976562,
+                0.0,
+                0.0
+              ]
+            },
+            {
+              "sample_id": "101_ObjectCategories/laptop/image_0004.jpg",
+              "ranked_top2": [
+                0,
+                1
+              ],
+              "actual_expert_amplitude_weights": [
+                0.8638045787811279,
+                0.5038268566131592,
+                0.0,
+                0.0
+              ]
+            },
+            {
+              "sample_id": "101_ObjectCategories/laptop/image_0005.jpg",
+              "ranked_top2": [
+                0,
+                1
+              ],
+              "actual_expert_amplitude_weights": [
+                0.723922073841095,
+                0.6898819208145142,
+                0.0,
+                0.0
+              ]
+            }
+          ]
+        },
+        {
+          "class_name": "lotus",
+          "samples": 5,
+          "details": [
+            {
+              "sample_id": "101_ObjectCategories/lotus/image_0002.jpg",
+              "ranked_top2": [
+                0,
+                1
+              ],
+              "actual_expert_amplitude_weights": [
+                0.7611215114593506,
+                0.6486093401908875,
+                0.0,
+                0.0
+              ]
+            },
+            {
+              "sample_id": "101_ObjectCategories/lotus/image_0004.jpg",
+              "ranked_top2": [
+                0,
+                1
+              ],
+              "actual_expert_amplitude_weights": [
+                0.8755514621734619,
+                0.4831247925758362,
+                0.0,
+                0.0
+              ]
+            },
+            {
+              "sample_id": "101_ObjectCategories/lotus/image_0006.jpg",
+              "ranked_top2": [
+                0,
+                1
+              ],
+              "actual_expert_amplitude_weights": [
+                0.8182684183120728,
+                0.574836254119873,
+                0.0,
+                0.0
+              ]
+            },
+            {
+              "sample_id": "101_ObjectCategories/lotus/image_0007.jpg",
+              "ranked_top2": [
+                0,
+                1
+              ],
+              "actual_expert_amplitude_weights": [
+                0.7627770304679871,
+                0.6466615796089172,
+                0.0,
+                0.0
+              ]
+            },
+            {
+              "sample_id": "101_ObjectCategories/lotus/image_0008.jpg",
+              "ranked_top2": [
+                0,
+                1
+              ],
+              "actual_expert_amplitude_weights": [
+                0.8557992577552795,
+                0.5173080563545227,
+                0.0,
+                0.0
+              ]
+            }
+          ]
+        },
+        {
+          "class_name": "minaret",
+          "samples": 5,
+          "details": [
+            {
+              "sample_id": "101_ObjectCategories/minaret/image_0001.jpg",
+              "ranked_top2": [
+                0,
+                1
+              ],
+              "actual_expert_amplitude_weights": [
+                0.7722947001457214,
+                0.6352643966674805,
+                0.0,
+                0.0
+              ]
+            },
+            {
+              "sample_id": "101_ObjectCategories/minaret/image_0002.jpg",
+              "ranked_top2": [
+                0,
+                1
+              ],
+              "actual_expert_amplitude_weights": [
+                0.8385314345359802,
+                0.5448532104492188,
+                0.0,
+                0.0
+              ]
+            },
+            {
+              "sample_id": "101_ObjectCategories/minaret/image_0003.jpg",
+              "ranked_top2": [
+                0,
+                1
+              ],
+              "actual_expert_amplitude_weights": [
+                0.5653064846992493,
+                0.8248808979988098,
+                0.0,
+                0.0
+              ]
+            },
+            {
+              "sample_id": "101_ObjectCategories/minaret/image_0005.jpg",
+              "ranked_top2": [
+                0,
+                1
+              ],
+              "actual_expert_amplitude_weights": [
+                0.8431944847106934,
+                0.5376087427139282,
+                0.0,
+                0.0
+              ]
+            },
+            {
+              "sample_id": "101_ObjectCategories/minaret/image_0006.jpg",
+              "ranked_top2": [
+                0,
+                1
+              ],
+              "actual_expert_amplitude_weights": [
+                0.804689884185791,
+                0.5936952829360962,
+                0.0,
+                0.0
+              ]
+            }
+          ]
+        },
+        {
+          "class_name": "revolver",
+          "samples": 5,
+          "details": [
+            {
+              "sample_id": "101_ObjectCategories/revolver/image_0001.jpg",
+              "ranked_top2": [
+                0,
+                1
+              ],
+              "actual_expert_amplitude_weights": [
+                0.7513212561607361,
+                0.6599366664886475,
+                0.0,
+                0.0
+              ]
+            },
+            {
+              "sample_id": "101_ObjectCategories/revolver/image_0002.jpg",
+              "ranked_top2": [
+                0,
+                1
+              ],
+              "actual_expert_amplitude_weights": [
+                0.8747450709342957,
+                0.4845833480358124,
+                0.0,
+                0.0
+              ]
+            },
+            {
+              "sample_id": "101_ObjectCategories/revolver/image_0004.jpg",
+              "ranked_top2": [
+                0,
+                1
+              ],
+              "actual_expert_amplitude_weights": [
+                0.7598593235015869,
+                0.6500875949859619,
+                0.0,
+                0.0
+              ]
+            },
+            {
+              "sample_id": "101_ObjectCategories/revolver/image_0005.jpg",
+              "ranked_top2": [
+                0,
+                1
+              ],
+              "actual_expert_amplitude_weights": [
+                0.7639009356498718,
+                0.6453335285186768,
+                0.0,
+                0.0
+              ]
+            },
+            {
+              "sample_id": "101_ObjectCategories/revolver/image_0006.jpg",
+              "ranked_top2": [
+                0,
+                1
+              ],
+              "actual_expert_amplitude_weights": [
+                0.6747189164161682,
+                0.7380748391151428,
+                0.0,
+                0.0
+              ]
+            }
+          ]
+        },
+        {
+          "class_name": "schooner",
+          "samples": 5,
+          "details": [
+            {
+              "sample_id": "101_ObjectCategories/schooner/image_0003.jpg",
+              "ranked_top2": [
+                0,
+                1
+              ],
+              "actual_expert_amplitude_weights": [
+                0.8328202962875366,
+                0.5535435676574707,
+                0.0,
+                0.0
+              ]
+            },
+            {
+              "sample_id": "101_ObjectCategories/schooner/image_0005.jpg",
+              "ranked_top2": [
+                0,
+                1
+              ],
+              "actual_expert_amplitude_weights": [
+                0.7562089562416077,
+                0.6543302536010742,
+                0.0,
+                0.0
+              ]
+            },
+            {
+              "sample_id": "101_ObjectCategories/schooner/image_0007.jpg",
+              "ranked_top2": [
+                0,
+                1
+              ],
+              "actual_expert_amplitude_weights": [
+                0.7305663228034973,
+                0.6828417778015137,
+                0.0,
+                0.0
+              ]
+            },
+            {
+              "sample_id": "101_ObjectCategories/schooner/image_0008.jpg",
+              "ranked_top2": [
+                0,
+                1
+              ],
+              "actual_expert_amplitude_weights": [
+                0.8018607497215271,
+                0.5975110530853271,
+                0.0,
+                0.0
+              ]
+            },
+            {
+              "sample_id": "101_ObjectCategories/schooner/image_0009.jpg",
+              "ranked_top2": [
+                0,
+                1
+              ],
+              "actual_expert_amplitude_weights": [
+                0.7817084193229675,
+                0.6236440539360046,
+                0.0,
+                0.0
+              ]
+            }
+          ]
+        },
+        {
+          "class_name": "trilobite",
+          "samples": 5,
+          "details": [
+            {
+              "sample_id": "101_ObjectCategories/trilobite/image_0001.jpg",
+              "ranked_top2": [
+                0,
+                1
+              ],
+              "actual_expert_amplitude_weights": [
+                0.8334721326828003,
+                0.5525614023208618,
+                0.0,
+                0.0
+              ]
+            },
+            {
+              "sample_id": "101_ObjectCategories/trilobite/image_0003.jpg",
+              "ranked_top2": [
+                0,
+                1
+              ],
+              "actual_expert_amplitude_weights": [
+                0.7570174336433411,
+                0.6533946990966797,
+                0.0,
+                0.0
+              ]
+            },
+            {
+              "sample_id": "101_ObjectCategories/trilobite/image_0006.jpg",
+              "ranked_top2": [
+                0,
+                1
+              ],
+              "actual_expert_amplitude_weights": [
+                0.7197225093841553,
+                0.6942617297172546,
+                0.0,
+                0.0
+              ]
+            },
+            {
+              "sample_id": "101_ObjectCategories/trilobite/image_0007.jpg",
+              "ranked_top2": [
+                0,
+                1
+              ],
+              "actual_expert_amplitude_weights": [
+                0.7841524481773376,
+                0.6205680966377258,
+                0.0,
+                0.0
+              ]
+            },
+            {
+              "sample_id": "101_ObjectCategories/trilobite/image_0008.jpg",
+              "ranked_top2": [
+                0,
+                1
+              ],
+              "actual_expert_amplitude_weights": [
+                0.7183973789215088,
+                0.6956329941749573,
+                0.0,
+                0.0
+              ]
+            }
+          ]
+        },
+        {
+          "class_name": "umbrella",
+          "samples": 5,
+          "details": [
+            {
+              "sample_id": "101_ObjectCategories/umbrella/image_0001.jpg",
+              "ranked_top2": [
+                0,
+                1
+              ],
+              "actual_expert_amplitude_weights": [
+                0.7789995670318604,
+                0.6270244121551514,
+                0.0,
+                0.0
+              ]
+            },
+            {
+              "sample_id": "101_ObjectCategories/umbrella/image_0002.jpg",
+              "ranked_top2": [
+                0,
+                1
+              ],
+              "actual_expert_amplitude_weights": [
+                0.887913703918457,
+                0.460009902715683,
+                0.0,
+                0.0
+              ]
+            },
+            {
+              "sample_id": "101_ObjectCategories/umbrella/image_0003.jpg",
+              "ranked_top2": [
+                0,
+                1
+              ],
+              "actual_expert_amplitude_weights": [
+                0.7139483690261841,
+                0.7001984119415283,
+                0.0,
+                0.0
+              ]
+            },
+            {
+              "sample_id": "101_ObjectCategories/umbrella/image_0004.jpg",
+              "ranked_top2": [
+                0,
+                1
+              ],
+              "actual_expert_amplitude_weights": [
+                0.8299853205680847,
+                0.5577852725982666,
+                0.0,
+                0.0
+              ]
+            },
+            {
+              "sample_id": "101_ObjectCategories/umbrella/image_0005.jpg",
+              "ranked_top2": [
+                0,
+                1
+              ],
+              "actual_expert_amplitude_weights": [
+                0.7973288297653198,
+                0.6035451292991638,
+                0.0,
+                0.0
+              ]
+            }
+          ]
+        },
+        {
+          "class_name": "watch",
+          "samples": 5,
+          "details": [
+            {
+              "sample_id": "101_ObjectCategories/watch/image_0002.jpg",
+              "ranked_top2": [
+                0,
+                1
+              ],
+              "actual_expert_amplitude_weights": [
+                0.7358211874961853,
+                0.6771759986877441,
+                0.0,
+                0.0
+              ]
+            },
+            {
+              "sample_id": "101_ObjectCategories/watch/image_0006.jpg",
+              "ranked_top2": [
+                0,
+                1
+              ],
+              "actual_expert_amplitude_weights": [
+                0.738977313041687,
+                0.6737302541732788,
+                0.0,
+                0.0
+              ]
+            },
+            {
+              "sample_id": "101_ObjectCategories/watch/image_0007.jpg",
+              "ranked_top2": [
+                0,
+                3
+              ],
+              "actual_expert_amplitude_weights": [
+                0.9102893471717834,
+                0.0,
+                0.0,
+                0.41397255659103394
+              ]
+            },
+            {
+              "sample_id": "101_ObjectCategories/watch/image_0011.jpg",
+              "ranked_top2": [
+                0,
+                1
+              ],
+              "actual_expert_amplitude_weights": [
+                0.742815375328064,
+                0.6694962978363037,
+                0.0,
+                0.0
+              ]
+            },
+            {
+              "sample_id": "101_ObjectCategories/watch/image_0014.jpg",
+              "ranked_top2": [
+                0,
+                1
+              ],
+              "actual_expert_amplitude_weights": [
+                0.6907111406326294,
+                0.7231307625770569,
+                0.0,
+                0.0
+              ]
+            }
+          ]
+        },
+        {
+          "class_name": "yin_yang",
+          "samples": 5,
+          "details": [
+            {
+              "sample_id": "101_ObjectCategories/yin_yang/image_0003.jpg",
+              "ranked_top2": [
+                1,
+                3
+              ],
+              "actual_expert_amplitude_weights": [
+                0.0,
+                0.9183048605918884,
+                0.0,
+                0.3958738446235657
+              ]
+            },
+            {
+              "sample_id": "101_ObjectCategories/yin_yang/image_0004.jpg",
+              "ranked_top2": [
+                0,
+                1
+              ],
+              "actual_expert_amplitude_weights": [
+                0.4451964795589447,
+                0.8954328894615173,
+                0.0,
+                0.0
+              ]
+            },
+            {
+              "sample_id": "101_ObjectCategories/yin_yang/image_0005.jpg",
+              "ranked_top2": [
+                0,
+                1
+              ],
+              "actual_expert_amplitude_weights": [
+                0.4684283435344696,
+                0.8835015296936035,
+                0.0,
+                0.0
+              ]
+            },
+            {
+              "sample_id": "101_ObjectCategories/yin_yang/image_0007.jpg",
+              "ranked_top2": [
+                0,
+                1
+              ],
+              "actual_expert_amplitude_weights": [
+                0.5950409770011902,
+                0.8036953210830688,
+                0.0,
+                0.0
+              ]
+            },
+            {
+              "sample_id": "101_ObjectCategories/yin_yang/image_0009.jpg",
+              "ranked_top2": [
+                0,
+                1
+              ],
+              "actual_expert_amplitude_weights": [
+                0.6429827809333801,
+                0.7658807039260864,
+                0.0,
+                0.0
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "component_propagations": 400,
+  "model_classification_forward_calls": 0,
+  "test_arrays_materialized": 0,
+  "test_evaluations": 0,
+  "devices_connected": 0,
+  "gpu_used": false,
+  "source_commit": "e4cb1400fdaed5d4a1867770474e91b0ddc19617",
+  "source_count": 121,
+  "all_sources_current_original_match": true
+}
