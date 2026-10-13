@@ -30,6 +30,8 @@ def main():
     p.add_argument('--head-lr', type=float, default=.0002)
     p.add_argument('--balance-weight', type=float, default=.1)
     p.add_argument('--balance-mode', choices=['dense_kl', 'top2_load'], default='dense_kl')
+    p.add_argument('--router-warmup-epochs', type=int, default=0)
+    p.add_argument('--router-warmup-lr', type=float, default=.005)
     p.add_argument('--batch', type=int, default=32)
     p.add_argument('--workers', type=int, default=4)
     p.add_argument('--seed', type=int, default=17)
@@ -38,6 +40,8 @@ def main():
         raise ValueError('invalid epoch budget')
     if a.phase_lr <= 0 or a.head_lr <= 0 or a.balance_weight < 0 or a.batch < 1 or a.workers < 0:
         raise ValueError('invalid optimization settings')
+    if a.router_warmup_epochs < 0 or a.router_warmup_lr <= 0:
+        raise ValueError('invalid router warmup settings')
     torch.set_num_threads(4)
     torch.manual_seed(a.seed)
     np.random.seed(a.seed)
@@ -69,6 +73,8 @@ def main():
                    archive_sha256=manifest['archive_sha256'], skip_test=True,
                    phase_lr=a.phase_lr, head_lr=a.head_lr,
                    balance_weight=a.balance_weight, balance_mode=a.balance_mode,
+                   router_warmup_epochs=a.router_warmup_epochs,
+                   router_warmup_lr=a.router_warmup_lr,
                    batch=a.batch, epochs=a.epochs, min_epochs=a.min_epochs,
                    patience=a.patience, train_eval_every=a.train_eval_every,
                    seed=a.seed, ema_decay=.995, label_smoothing=.03,
@@ -92,6 +98,39 @@ def main():
         baseline, _ = evaluate(model, val)
         write(a.out / 'parent_validation.json', dict(metrics=baseline, score=score(baseline),
                                                    checkpoint_sha256=cfg['init_checkpoint_sha256']))
+        if a.router_warmup_epochs:
+            router_optimizer = torch.optim.Adam([model.router_phase], lr=a.router_warmup_lr)
+            for warmup_epoch in range(1, a.router_warmup_epochs + 1):
+                model.train()
+                seen = 0
+                loss_sum = 0.
+                for images, labels, _ in train:
+                    amplitude = encode_rgb(images.cuda(non_blocking=True))
+                    codes = torch.randint(0, 8, (len(labels),), device='cuda')
+                    codes = torch.where(torch.rand(len(labels), device='cuda') < .5,
+                                        codes, torch.zeros_like(codes))
+                    amplitude = augment_d4(amplitude, codes)
+                    router_optimizer.zero_grad(set_to_none=True)
+                    dense, _ = model.dense_route(amplitude)
+                    loss = router_balance_loss(dense, 'dense_kl')
+                    if not torch.isfinite(loss):
+                        raise RuntimeError('nonfinite router warmup loss')
+                    loss.backward()
+                    torch.nn.utils.clip_grad_norm_([model.router_phase], 5.)
+                    router_optimizer.step()
+                    n = len(labels)
+                    seen += n
+                    loss_sum += float(loss.detach()) * n
+                if seen != manifest['split_counts']['train']:
+                    raise ValueError('router warmup did not traverse full training split')
+                warmup_metrics, _ = evaluate(model, val)
+                write(a.out / 'warmup_validation.json', dict(epoch=warmup_epoch,
+                    training_samples_seen=seen, router_loss=loss_sum / seen,
+                    metrics=warmup_metrics, selection_score=score(warmup_metrics)))
+            torch.save(dict(model=model.state_dict(), config=cfg,
+                            warmup_epochs=a.router_warmup_epochs),
+                       a.out / 'router_warmup_checkpoint.pt')
+            ema.load_state_dict(model.state_dict())
         groups = []
         for name, parameter in model.named_parameters():
             electronic = 'shared_head' in name
