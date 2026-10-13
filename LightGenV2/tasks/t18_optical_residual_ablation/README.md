@@ -14,6 +14,8 @@ Linux真实CPU检查提前queue/fit/native均在创建输出前被门槛拒绝�
 [入口准备与实际拒绝收据](reports/caltech_repair234_20261014/depth_validation_preparation.md)。
 最终once协议原语已准备，Linux12项合成检查通过，真实锁/test0；完整正式训练器和科学CPUfinalizer尚待条件满足后冻结，不能把该工具检查当正式结果。
 [协议边界和CPU收据](reports/caltech_repair234_20261014/once_protocol_preparation.md)。
+三候选保存结果绘图已准备，Linux入口缺完整CPU审核时拒绝创建图/PDF；完整审核后才生成并实际PDF渲染视检。
+[口径与实际入口检查](reports/caltech_repair234_20261014/plot_preparation.md)。
 
 ## 全九组消融已完成并通过CPU审核（2026-10-14）
 

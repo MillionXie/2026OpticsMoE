@@ -1,0 +1,17 @@
+{
+  "passed": true,
+  "missing_completed_cpu_audit_refused": true,
+  "no_figures_created": true,
+  "matplotlib_version": "3.8.4",
+  "source_commit": "f91870ceba3e171301f0b856e1cd3711decfa9f7",
+  "source_sha256": {
+    "LightGenV2/tasks/t18_optical_residual_ablation/plot_caltech_repair_study.py": "a56d6c57df0c710b1d27a86c6d5262cd9d80946d95757526b33b17cddf09f487"
+  },
+  "training_sources_unchanged": true,
+  "model_forward_calls": 0,
+  "test_arrays_read": 0,
+  "test_evaluations": 0,
+  "devices_opened": 0,
+  "pdf_created": 0,
+  "scope": "Import and early audit refusal only; actual plot render/visual check pending complete study"
+}
