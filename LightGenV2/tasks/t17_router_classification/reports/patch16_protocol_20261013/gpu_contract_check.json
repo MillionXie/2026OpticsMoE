@@ -1,0 +1,44 @@
+[
+  {
+    "architecture": "optical",
+    "finite_gradients": true,
+    "head_shape": [
+      16,
+      784
+    ],
+    "input_shape": [
+      4,
+      224,
+      224
+    ],
+    "total_parameters": 491908
+  },
+  {
+    "architecture": "electronic",
+    "finite_gradients": true,
+    "head_shape": [
+      16,
+      784
+    ],
+    "input_shape": [
+      4,
+      224,
+      224
+    ],
+    "total_parameters": 492232
+  },
+  {
+    "architecture": "d2nn",
+    "finite_gradients": true,
+    "head_shape": [
+      16,
+      784
+    ],
+    "input_shape": [
+      4,
+      224,
+      224
+    ],
+    "total_parameters": 469512
+  }
+]

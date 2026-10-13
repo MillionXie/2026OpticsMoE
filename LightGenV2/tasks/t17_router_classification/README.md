@@ -42,7 +42,21 @@ ZIP按batch读取395平方原图，直接沿用固定bicubic/antialias缩为RGB�
 下载完成且MD5/SHA通过：archive SHA
 `000a7c39aa2a331ab4b12489a9bc21e62c540648f732a32fcc0b47c3ab9e56a0`。
 核验实际原始全量129,364，官方Train/Validation/Test为88,971/12,354/28,039。
+原CSV case字段分别269/39/78个病例，三个划分病例ID交集均为0；不进一步臆测病例与患者映射。
 类别不平衡；elastosis训练136、验证6、测试66，保留该原始类别，不暗中删除稀有类。
+
+### 正在运行：PATCH16三组首轮
+
+run根目录`runs/simulation/patch16_four_top2_s17_20261013`，下设optical/electronic/d2nn。
+已发布训练代码`9f0e6e312`，36项CPU合同检查通过；三组在真实395平方训练图片上的
+GPU前向/反向检查通过，光学梯度有限非零、MoE严格Top-2，头为16×784。
+监督进程2068883，光MoE PID2068891（物理UUID 4d8bfdb9），电MoE PID2068892
+（物理UUID 3f60d773）；最多两卡，D2NN在一条MoE进程退出且卡空闲后自动接续。
+监督进程只调度这一轮三组训练，不自动测试或按测试调参。每个模型退出即释放GPU，
+逐轮结果与收敛/泛化诊断保存在各自run。电MoE首轮实测89.49秒，完整训练88971张；
+按后续实际吞吐和清洁训练诊断耗时更新预计时间，不能依据首轮就称已达标或已收敛。
+[数据与病例划分核验](reports/patch16_protocol_20261013/dataset_identity.json)，
+[三组GPU合同检查](reports/patch16_protocol_20261013/gpu_contract_check.json)。
 
 2026-10-09 用户批准三组训练、最多三张GPU。本任务为9分类，不是终身学习。
 
