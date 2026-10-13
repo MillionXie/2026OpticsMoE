@@ -67,3 +67,14 @@ A100本轮人工允许；最多三项目子、每子2GiB+800MiB，GPU6/2优先�
 [七种真实设备尺寸BMP合同检查](variant_native_bmp_checks.json)。这不是已训练候选的最终部署验收或实拍。
 若preserve_global被选中，其global输入478，需要独立符合此合同的导出入口，
 旧224-only exporter及旧rowLN/Top2合同不能直接套用其他变体。
+
+## 固定旧权重的路由干预：不能直接切推理开关
+
+对旧3层rho.3获选E150相同参数，只在每类首5个TRAIN样本（100个、每类等支持）
+对照原hardTop2与dense4，参数SHA严格相同，没有重训、选模或test数据。
+原路径subset accuracy/macro60%/60%、bNLL1.76751；直接切dense4为9%/9%、bNLL3.06231，
+原Faces/Leopards/Motorbikes/airplanes/bonsai五类仍为0，不能称直接推理切换已修复。
+[同权重组件路径干预完整收据](sameweight_L3_routing_intervention.json)。
+这说明旧权重依赖其已训练的传播路径；不能据此否定fresh dense训练，也不能将路由固定化
+单独认定为完整精度退步的唯一原因。当前匹配fresh40轮dense消融仍必需，
+最终选择需要完整train/val、逐类健康及物理一致性，不能拿此100训练样本结果替代。
