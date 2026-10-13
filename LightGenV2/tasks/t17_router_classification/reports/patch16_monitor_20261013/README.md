@@ -255,3 +255,11 @@ run内保存`interruption_no_a100_20261013.json`，最后已提交checkpoint为�
 保留原cosine进度和停止钟，联合总预算仍20轮。旧checkpoint缺少RNG状态，
 首次迁移显式记录重设随机种子、不能声称逐bit延续；新last开始保存RNG。
 与模型图、任务定义、训练损失及测试选择均无关系的硬件政策不改变架构比较。
+
+15:18实际迁移启动PID2259897，物理GPU5 RTX3090/UUID `d53ce4c8`，运行源码
+`560605523`。15:19读取run内resume事件，raw/EMA/AdamW逐张量比较通过，
+明确接续E5，未重复预热或完成轮次；旧last SHA为
+`6a8d88bdc2d6774ada791a8f4a9cbd50af9424fd563ca22e71b0c8ddd9be6999`。
+A100实际显存17MiB、GPU进程列表无T17；唯一T17 GPU进程在3090约1322MiB。
+config的A100 UUID仅是初始段身份，后续实际卡必须看resume事件、/proc及nvidia-smi。
+服务器40项测试通过；恢复时尚未完成E5，不把“恢复成功”误当作新验证成绩。
