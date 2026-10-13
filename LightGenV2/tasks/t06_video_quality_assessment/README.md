@@ -547,3 +547,36 @@ Ours点沿用当时已审计的16视频记录，不是新PT或当前硬件的重
 脚本是原始产物重建器，导入即读取 `raw_remote` 并写汇总/图/校验表，不是可安全导入的库；
 本次只做源码身份/语法检查，未执行重建、未改旧报告或测量、未启动GPU。
 如需重建，应先保存原目录并在独立输出副本操作，不能覆盖原测量证据。
+
+## 缺失 Temporal baseline 资产的原协议重训（2026-10-13）
+
+用户授权再次寻找 CLIP／YOLO／DeepSeek 原任务头与缓存，确实找不到时在 A100 上按原规则
+重训。已只读核查当前注册 worktree 的 T06 run、main/A100 formal/demo/baseline 目录、
+三份相关完整 tar 成员及存量移动收据，仍未定位三份原 head PT 或对应特征缓存；这不是
+永久丢失证明。原 manifest 和三个预训练骨干仍存在且 SHA 匹配，历史成绩与证据不删。
+
+`reproduce_temporal_baseline` 仅重提取冻结特征并训练 Temporal 五行质量头，不训练整个
+骨干或 Spatial，不改划分、架构或搜索种子。三者沿用 seed42、50 epoch、batch512、
+AdamW lr0.001/wd0、cosine、交叉熵；2250 TRAIN/558 TEST，四帧与原中心裁剪不变。
+CLIP/YOLO 为10240参数，DeepSeek为6400参数；FP16缓存再转FP32训练保持原合同。
+最高TEST SRCC选模仍是开发指标，不称独立泛化。DeepSeek源码／配置从保留的
+`refs/archive/local-inactive-20261004/codex/deepseek-lgvq-baseline` 恢复，不创建新工程。
+
+入口先拒绝已有输出，再验证原资产/配置/版本及唯一A100 UUID和foreign PID；串行suite有
+任务锁，提取中定期核查占用。新产物进入现有 `runs/simulation`，保存best/last、50轮
+history、558预测、strict CPU复核、协议与全部SHA。新PT明确标为`retrained_original_protocol`，
+不能冒充原始 PT；旧 SRCC 0.7251568/0.7015822/0.5688169 仅作比较参考，不强凑相同数字。
+
+```bash
+CUDA_VISIBLE_DEVICES=GPU-3f60d773-4dd8-d706-ef48-a4dfc5af6c55 \
+  /DATA/DATA1/guest3/.venvs/lgvq-visual-baselines/bin/python -u \
+  -m LightGenV2.tasks.t06_video_quality_assessment.reproduce_temporal_baseline --suite \
+  --manifest /DATA/DATA1/guest3/2026OpticsMoE/experiments/lgvq_four_stage_optical_electronic_109_no_attention_vqa/artifacts/lgvq_train2250_test558.csv \
+  --output LightGenV2/tasks/t06_video_quality_assessment/runs/simulation/lgvq_temporal_reproduction_a100_20261013
+```
+
+suite先串行训练三组，再逐模型逐B1/2/4/8启动fresh-process冻结推理。新头由完整
+`reproduction_receipt.json`绑定checkpoint/训练报告/history/CPU验证SHA；原历史SHA常量不改。
+每批精度对应完整558个TEST，成本仍用首200视频；最终时延仅推理边界同步墙钟，能耗为
+`(338.2W主机代理+实测active A100 W)×推理秒`。解码/预处理/H2D记录但不计最终成本，
+不混入旧Qwen B1总表锚点，也不以旧12行固定精度冒充新batch实测。

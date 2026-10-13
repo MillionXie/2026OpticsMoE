@@ -64,19 +64,69 @@ def system_cost(mean_batch_wall_ms: float, active_w: float, batch: int) -> dict[
     }
 
 
+def backbone_file(baseline: str, model: Path) -> Path:
+    if baseline != "deepseek":
+        return model
+    direct = model / "model.safetensors"
+    if direct.is_file():
+        return direct
+    index = json.loads((model / "model.safetensors.index.json").read_text(encoding="utf-8"))
+    filenames = set(index["weight_map"].values())
+    if len(filenames) != 1:
+        raise ValueError("Expected the original single-shard DeepSeek backbone")
+    filename = filenames.pop()
+    if Path(filename).name != filename:
+        raise ValueError("Invalid DeepSeek weight index path")
+    return model / filename
+
+
 def preflight_files(args: argparse.Namespace) -> None:
     if args.output.exists():
         raise FileExistsError(f"Refusing existing output: {args.output}")
     owner = Path(__file__).resolve().parent / "runs" / "simulation"
     if not args.output.is_relative_to(owner.resolve()):
         raise ValueError(f"Output must stay in canonical task runs: {owner}")
-    for path, expected in ((args.manifest, MANIFEST_SHA), (args.checkpoint, CHECKPOINT_SHA[args.baseline])):
+    expected_checkpoint = CHECKPOINT_SHA[args.baseline]
+    receipt_path = getattr(args, "reproduction_receipt", None)
+    if receipt_path is not None:
+        receipt = validate_reproduction_receipt(receipt_path, args.baseline, args.checkpoint)
+        expected_checkpoint = receipt["artifacts"]["checkpoints/temporal/best_checkpoint.pt"]
+    for path, expected in ((args.manifest, MANIFEST_SHA), (args.checkpoint, expected_checkpoint)):
         if not path.is_file() or sha256(path) != expected:
             raise ValueError(f"Missing or non-formal asset: {path}")
     if args.baseline in BACKBONE_SHA:
-        weight = args.model / "model.safetensors" if args.baseline == "deepseek" else args.model
+        weight = backbone_file(args.baseline, args.model)
         if not weight.is_file() or sha256(weight) != BACKBONE_SHA[args.baseline]:
             raise ValueError(f"Backbone SHA mismatch: {weight}")
+
+
+def validate_reproduction_receipt(path: Path, baseline: str, checkpoint: Path) -> dict[str, Any]:
+    """Explicit provenance for NEW heads; historical SHA constants stay unchanged."""
+    receipt = json.loads(path.read_text(encoding="utf-8"))
+    if (baseline not in BACKBONE_SHA or receipt.get("baseline") != baseline
+            or receipt.get("status") != "complete"
+            or receipt.get("origin") != "retrained_original_protocol"
+            or receipt.get("manifest_sha256") != MANIFEST_SHA
+            or receipt.get("backbone_sha256") != BACKBONE_SHA[baseline]
+            or receipt.get("backbone_sha256_after") != BACKBONE_SHA[baseline]
+            or receipt.get("training_contract") != {
+                "target": "temporal", "epochs": 50, "batch_size": 512,
+                "seed": 42, "learning_rate": 0.001, "weight_decay": 0.0,
+                "loss": "cross_entropy_only", "scheduler": "cosine",
+                "train_samples": 2250, "test_samples": 558,
+                "selection": "highest_TEST_SRCC_development_no_VAL",
+            }):
+        raise ValueError("Invalid original-protocol reproduction receipt")
+    artifacts = receipt.get("artifacts", {})
+    relative = "checkpoints/temporal/best_checkpoint.pt"
+    if checkpoint.resolve() != (path.parent / relative).resolve():
+        raise ValueError("Reproduction checkpoint is not bound to its receipt")
+    for name in (relative, "checkpoints/temporal/training_report.json",
+                 "checkpoints/temporal/train_history.json", "cpu_verification.json"):
+        asset = path.parent / name
+        if not asset.is_file() or sha256(asset) != artifacts.get(name):
+            raise ValueError(f"Reproduction artifact SHA mismatch: {name}")
+    return receipt
 
 
 def process_audit() -> list[dict[str, str]]:
@@ -251,6 +301,10 @@ def run(args: argparse.Namespace) -> None:
         "model": str(args.model), "baseline": args.baseline, "batch_size_videos": args.batch,
         "python": platform.python_version(), "torch": torch.__version__, "cuda": torch.version.cuda,
         "process_audit_before_load": before,
+        "checkpoint_origin": ("retrained_original_protocol" if getattr(args, "reproduction_receipt", None)
+                              else "historical_exact_SHA"),
+        "reproduction_receipt_sha256": (sha256(args.reproduction_receipt)
+            if getattr(args, "reproduction_receipt", None) else None),
         "model_file_sha256": (
             {path.name: sha256(path) for path in sorted(args.model.iterdir())
              if path.is_file() and (path.suffix in (".safetensors", ".bin")
@@ -333,7 +387,7 @@ def run(args: argparse.Namespace) -> None:
                 "preprocessing_audit_ms_not_in_cost": measurement.summarize([row[5] for row in timings]),
                 "h2d_audit_ms_not_in_cost": measurement.summarize([row[6] for row in timings]),
                 "power": power, "process_audits": audits, "process_audit_at_end": final_audit,
-                "checkpoint_selection": "previously selected trained quality rows; no training or selection in this evaluation",
+                "checkpoint_selection": "previously TEST-selected quality rows (development metric); no training or selection in this evaluation",
             }
             write_json(args.output / "report.json", report)
             write_json(args.output / "status.json", {"status": "complete", "completed_test_videos": 558, **identity})
@@ -357,9 +411,13 @@ def main() -> None:
     parser.add_argument("--batch", type=int, choices=(1, 2, 4, 8), required=True)
     for name in ("manifest", "checkpoint", "model", "output"):
         parser.add_argument(f"--{name}", type=Path, required=True)
+    parser.add_argument("--reproduction-receipt", type=Path,
+                        help="Explicit SHA-bound receipt for a newly retrained original-protocol head")
     args = parser.parse_args()
     for name in ("manifest", "checkpoint", "model", "output"):
         setattr(args, name, getattr(args, name).expanduser().resolve())
+    if args.reproduction_receipt is not None:
+        args.reproduction_receipt = args.reproduction_receipt.expanduser().resolve()
     preflight_files(args)
     run(args)
 
