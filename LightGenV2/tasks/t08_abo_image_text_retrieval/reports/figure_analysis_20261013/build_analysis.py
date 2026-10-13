@@ -262,7 +262,7 @@ def main():
         ax.set(yticks=yy,yticklabels=names,xlim=(-2,104),xlabel='Per-product Hit@1 (%)',ylim=(-1,50))
         ax.invert_yaxis();ax.tick_params(axis='y',labelsize=7,length=0)
         ax.xaxis.grid(True,color='#eeeeee',lw=.5)
-        ax.legend(loc='lower right',fontsize=8)
+        ax.legend(loc='upper center',bbox_to_anchor=(.5,-.065),ncol=2,fontsize=8)
         ax.set_title(f'All 100 product classes: products {page*50+1}–{(page+1)*50}\n24 test views per product; sorted by LightGen-II accuracy',loc='left')
         clean_axes(ax);save(fig,f'02_all_products_page{page+1}')
     fig,axes=plt.subplots(1,2,figsize=(7.2,3.7),layout='constrained')
@@ -301,9 +301,9 @@ def main():
             image_path=RAW/item['image_path']
             ia.imshow(ImageOps.exif_transpose(Image.open(image_path)))
             ia.axis('off')
-            ia.set_title(f'{item.get("azimuth","")}° | Ours rank {ranks[0,i]} | Qwen {ranks[1,i]}',fontsize=7)
+            ia.set_title(f'View {item.get("azimuth","")} | Ours rank {ranks[0,i]} | Qwen {ranks[1,i]}',fontsize=7)
             rel='../../raw/'+item['image_path']
-            gallery.append(f'<div><a href="{html.escape(rel)}"><img src="{html.escape(rel)}"></a><p>{item["sample_id"]}<br>azimuth {item.get("azimuth","")}°; Ours rank {ranks[0,i]}; Qwen rank {ranks[1,i]}</p></div>')
+            gallery.append(f'<div><a href="{html.escape(rel)}"><img src="{html.escape(rel)}"></a><p>{item["sample_id"]}<br>view field {item.get("azimuth","")}; Ours rank {ranks[0,i]}; Qwen rank {ranks[1,i]}</p></div>')
         contact.suptitle(f'All 24 original TEST views: product {label:02d} / {sample["product_id"]}',fontsize=11)
         save(contact,f'08_all24_views_{label:02d}_{name}')
         (case_dir/'all24_views.html').write_text('<!doctype html><meta charset="utf-8"><style>body{font:14px Arial}.gallery{display:grid;grid-template-columns:repeat(4,1fr);gap:20px}img{width:100%;height:210px;object-fit:contain}p{font-size:12px}</style><h1>'+html.escape(titles[label]['title'])+'</h1><p>All 24 TEST views, in original order. Click to view original pixels. Rankings are from the same-weight replay and frozen Qwen.</p><div class="gallery">'+''.join(gallery)+'</div>',encoding='utf-8')
