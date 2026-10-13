@@ -1,5 +1,22 @@
 # T17 单数据集路由分类对照
 
+## 当前新数据集：PATCH16皮肤病理（2026-10-13，准备中）
+
+用户排除所有Kather/结直肠及BloodMNIST/血液类别，要求换病理类别并继续三组训练。
+本轮只修改T17，保留下方旧CRC结果和原run，不作为新数据集结果。
+选用PATCH16原始16类皮肤组织病理，原仓库DOI `10.11588/data/7QCR8S`，
+原论文DOI `10.3389/fonc.2022.1022967`。Dataverse API v1.1的termsOfUse明确
+数据为CC BY 4.0（code.zip另为Apache2.0），data.zip不受限，原始大小3,879,943,680字节，
+官方MD5 `339c76ab97255c4d0036120e5663fd5b`，含原始class_dict.json与tiles-v2.csv。
+原仓库描述129,364张395×395 RGB、16类、386例；最终数量/划分以下载后的CSV核验为准。
+不把类数、倍率或切片ID人为组合成新类别，不采样缩小正式数据量；优先沿用官方划分。
+保持四专家224平方、478平方有效口径/518平方画布、Top-2、10cm、两次OEO，
+无可训练前端，末端仍一层Linear，只将输出类数统一改为16。
+目标是光/电MoE尽量>80%且较正常D2NN高至少5百分点，不以削弱D2NN或测试选模制造差距。
+最多占三张空闲GPU，结束释放；新任务数据放服务器
+`/DATA/DATA1/guest3/demo_reproduction_data/patch16_ccby4_v11`，数据/权重不进Git。
+下载与校验入口：`python -m LightGenV2.tasks.t17_router_classification.prepare_patch16 --out <data_dir>`。
+
 2026-10-09 用户批准三组训练、最多三张GPU。本任务为9分类，不是终身学习。
 
 ## 当前批准版本：four_top2（2026-10-09）
