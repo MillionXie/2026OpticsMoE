@@ -32,7 +32,24 @@ T07；**文搜图**曾在同名 T08 的另一个运行工作树实现，不能�
 | --- | ---: | ---: | ---: |
 | 图搜文，性能优先 | R@1 .79875 | 本次未核验，不填 | 本次未核验，不填 |
 | 图搜文，强均衡对照 | R@1 .7983333333 | 本次未核验，不填 | 本次未核验，不填 |
+| 图搜文，强均衡续训 epoch25 EMA | 历史 R@1 .8058333333；同PT A100回放 .8045833333 | 本次未核验，不填 | 本次未核验，不填 |
 | 文搜图，10cm / alpha约.40 | Hit@1 .86；去光 .73 | Hit@1 .79 | Hit@1 .85，10epoch、VAL选第9轮 |
+
+2026-10-13补核图搜文续训版本：本机已有交接审阅资料
+`.codex_tmp/abo_import/review/inference/reference/final_report.json` 与
+`FINAL_VERIFICATION.json`，记录 `optical_router_moe_dc20_kd1_balance1_optimized_20260907`
+的epoch25 EMA，PT SHA `a2aa9a93028410dfb780df7d320a9be65d07b6e7ec87ede08b53c4bddcbaf7af`，
+历史1934/2400命中=.8058333333，延续原TEST选模。它是原强均衡版的后续训练，
+不能把.8058仅当作没有对应完整报告的旧汇总引用。guest3另有同PT全量A100回放
+`archive/legacy_lab_projects/ABO_Lab_8um/results/reference_full`，torch2.6.0+cu124，
+1931/2400=.8045833333。两份报告净差3张；历史1934的逐样本预测本轮未取得，
+不能将回放逐商品指标冒称历史原始指标，也未证明差值只由显卡造成。
+本轮只读获取该回放及原CSV、五个商品的120张TEST原图，未训练或调用设备。
+科研绘图入口为 `reports/figure_analysis_20261013/build_analysis.py`；本地该目录
+`index.html`、`raw/`、`processed/`、`cases/`、`figures/` 和ZIP为不进Git的分析资产。
+100商品逐SKU准确率以该回放为准，冻结Qwen动态2048参照为1769/2400=.7370833333；
+商品bootstrap仅描述商品异质性，不解除历史TEST选模及同spin视角相关性。
+人工非尺寸三属性只是完整标题的展示摘要；类别去重图单独标原名次，不改原Top10或指标。
 
 本轮逐文件核验了服务器两份图搜文 best/last、文搜图主体 best/last、easy100
 四份 CSV，以及本机文搜图主体与10轮读出 best/last。身份、SHA、来源和待办见
