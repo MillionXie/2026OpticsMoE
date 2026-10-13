@@ -1,6 +1,7 @@
 """CPU native BMP roundtrip for every repaired depth/rho; synthetic inputs only."""
-import argparse,math,os
+import argparse,math,os,sys
 from pathlib import Path
+sys.path.insert(0,str(Path(__file__).resolve().parents[3]))
 import numpy as np
 import torch
 from PIL import Image
