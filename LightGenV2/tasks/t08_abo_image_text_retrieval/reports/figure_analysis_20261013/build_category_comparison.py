@@ -15,7 +15,6 @@ from pathlib import Path
 import matplotlib
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt
-from matplotlib.font_manager import FontProperties
 import numpy as np
 
 HERE = Path(__file__).resolve().parent
@@ -111,55 +110,32 @@ def assemble():
 
 
 def plot(data):
-    font = Path("C:/Windows/Fonts/msyh.ttc")
-    if font.is_file():
-        from matplotlib.font_manager import fontManager
-        fontManager.addfont(str(font))
-        plt.rcParams["font.family"] = FontProperties(fname=str(font)).get_name()
-    else:
-        plt.rcParams["font.family"] = "DejaVu Sans"
-    plt.rcParams.update({"font.size": 11, "axes.spines.top": False,
+    plt.rcParams.update({"font.family": "DejaVu Sans", "font.size": 11, "axes.spines.top": False,
                          "axes.spines.right": False, "svg.fonttype": "none",
                          "pdf.fonttype": 42, "axes.unicode_minus": False})
     cats = data["categories"]
-    labels = [f'{r["category"]}\n(n={r["test_n"]})' if font.is_file()
-              else f'{r["category_en"]}\n(n={r["test_n"]})' for r in cats]
+    labels = [f'{r["category_en"]}\n(n={r["test_n"]})' for r in cats]
     o, q = [np.array([r[k] * 100 for r in cats]) for k in ("ours_accuracy", "qwen_accuracy")]
     green, blue = "#16835F", "#3976B5"
     y = np.arange(len(cats))
-    for kind in ("bar", "scatter", "line"):
-        if kind != "line":
-            fig, ax = plt.subplots(figsize=(10, 8))
-            if kind == "bar":
-                ax.barh(y - .18, o, height=.34, color=green, label="Ours")
-                ax.barh(y + .18, q, height=.34, color=blue, label="Qwen (2048D)")
-                for yy, a, b in zip(y, o, q):
-                    ax.text(a + .8, yy - .18, f"{a:.1f}", va="center", fontsize=9)
-                    ax.text(b + .8, yy + .18, f"{b:.1f}", va="center", fontsize=9)
-            else:
-                ax.scatter(o, y - .12, s=65, color=green, label="Ours", zorder=3)
-                ax.scatter(q, y + .12, s=65, marker="s", color=blue, label="Qwen (2048D)", zorder=3)
-            ax.set_yticks(y, labels)
-            ax.invert_yaxis()
-            ax.set_xlim((0, 108) if kind == "bar" else (-2, 102))
-            ax.set_xticks(range(0, 101, 20))
-            ax.set_xlabel("Top-1 准确率 (%)" if font.is_file() else "Top-1 accuracy (%)")
-            ax.grid(axis="x", alpha=.2)
-        else:
-            fig, ax = plt.subplots(figsize=(13, 5.4))
-            ax.plot(y, o, "o-", color=green, lw=1.8, label="Ours")
-            ax.plot(y, q, "s-", color=blue, lw=1.8, label="Qwen (2048D)")
-            ax.set_xticks(y, labels, fontsize=10)
-            ax.set_ylim(0, 108)
-            ax.set_yticks(range(0, 101, 20))
-            ax.set_ylabel("Top-1 准确率 (%)" if font.is_file() else "Top-1 accuracy (%)")
-            ax.grid(axis="y", alpha=.2)
-        ax.set_axisbelow(True)
-        ax.legend(loc="upper center", bbox_to_anchor=(.5, 1.12), ncol=2, frameon=False)
-        fig.tight_layout()
-        for ext in ("png", "svg", "pdf"):
-            fig.savefig(OUT / f"category_{kind}.{ext}", dpi=240, bbox_inches="tight", facecolor="white")
-        plt.close(fig)
+    fig, ax = plt.subplots(figsize=(10, 8))
+    ax.barh(y - .18, o, height=.34, color=green, label="Ours")
+    ax.barh(y + .18, q, height=.34, color=blue, label="Qwen (2048D)")
+    for yy, a, b in zip(y, o, q):
+        ax.text(a + .8, yy - .18, f"{a:.1f}", va="center", fontsize=9)
+        ax.text(b + .8, yy + .18, f"{b:.1f}", va="center", fontsize=9)
+    ax.set_yticks(y, labels)
+    ax.invert_yaxis()
+    ax.set_xlim(0, 108)
+    ax.set_xticks(range(0, 101, 20))
+    ax.set_xlabel("Top-1 accuracy (%)")
+    ax.grid(axis="x", alpha=.2)
+    ax.set_axisbelow(True)
+    ax.legend(loc="upper center", bbox_to_anchor=(.5, 1.09), ncol=2, frameon=False)
+    fig.tight_layout()
+    for ext in ("png", "svg", "pdf"):
+        fig.savefig(OUT / f"category_bar_english.{ext}", dpi=400, bbox_inches="tight", facecolor="white")
+    plt.close(fig)
 
 
 def main():
@@ -176,9 +152,7 @@ def main():
     write_csv("product_category_mapping.csv", data["products"])
     write_csv("paired_queries.csv", data["queries"])
     plot(data)
-    import html
-    links = "".join(f'<h2>{title}</h2><a href="category_{kind}.svg">SVG</a> · <a href="category_{kind}.pdf">PDF</a><br><img src="category_{kind}.png">'
-                    for kind, title in [("bar", "柱状图"), ("scatter", "散点图"), ("line", "折线图")])
+    links = '<h2>英文柱状图</h2><a href="category_bar_english.png">PNG</a> · <a href="category_bar_english.svg">SVG</a> · <a href="category_bar_english.pdf">PDF</a><br><img src="category_bar_english.png">'
     (OUT/"index.html").write_text('<!doctype html><meta charset="utf-8"><title>ABO 类别对比</title><style>body{font-family:Microsoft YaHei,Arial;max-width:1100px;margin:30px auto}img{max-width:100%}h2{margin-top:45px}</style><h1>ABO 图搜文：按类别比较</h1><p>100 商品归入 12 个展示类别；每类统计检索到正确商品的比例，不是把同类商品算作命中。</p><p>逐样本回放：Ours 80.4583%，冻结 Qwen 动态2048D 73.7083%。历史 Ours 80.5833% 无完整逐样本排名，本图不混用。</p><p><a href="ABO_category_comparison.xlsx">Excel</a> · <a href="category_accuracy.csv">类别绘图数据</a> · <a href="product_category_mapping.csv">商品归类表</a> · <a href="paired_queries.csv">逐样本数据</a></p>'+links, encoding="utf-8")
     print(json.dumps({"categories": data["categories"], "total": data["total"]}, ensure_ascii=False, indent=2))
 
