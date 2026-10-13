@@ -75,6 +75,11 @@ def run(args):
             if config.get(key):
                 setattr(settings, key, Path(config[key]))
         settings.num_workers = 0
+        # The sealed Qwen prediction file reproduces in FP32, while the
+        # selected optical audit reproduces in BF16. Require every TEST metric
+        # to agree; this is not a claim that all training used the same precision.
+        if name == 'qwen':
+            settings.amp_enabled = False
         if original_root is None:
             original_root = settings.data_dir
         assert settings.data_dir == original_root
@@ -97,6 +102,36 @@ def run(args):
             dataset = (CachedDataset(settings, split) if name == 'qwen' else
                        OpenMojiEditingDataset(manifest, settings, prompt_cache))
             assert len(dataset) == (1000 if split == 'test' else 5000)
+            if name == 'ours' and args.reuse_ours_from:
+                previous = args.reuse_ours_from / f'ours_{split}.jsonl'
+                reused = [json.loads(line) for line in previous.read_text().splitlines()]
+                assert [r['sample_id'] for r in reused] == [r['sample_id'] for r in dataset.records]
+                summary_acc = MetricAccumulator()
+                for record, original in zip(reused, dataset.records):
+                    assert all(record[k] == original[k] for k in ('instruction', 'source_grid', 'target_grid'))
+                    if split == 'test':
+                        assert record['archived_metric_max_error'] < 1e-6
+                        assert all(abs(v-archived[record['sample_id']][k]) < 1e-6
+                                   for k, v in record['metrics'].items() if isinstance(v, (float, int)))
+                    for group in ('overall', record['task']):
+                        summary_acc.groups[group]['count'] += 1
+                        for key, value in record['metrics'].items():
+                            if isinstance(value, (float, int)):
+                                summary_acc.groups[group][key] += value
+                    image_entries.extend(str(Path(record['relative_dir']) / file)
+                                         for file in ('source.png', 'target.png'))
+                destination = args.output / f'ours_{split}.jsonl'
+                destination.write_bytes(previous.read_bytes())
+                metrics = summary_acc.compute()
+                if split == 'test':
+                    assert abs(metrics['overall']['changed_cell_accuracy'] - expected_cca) < 1e-8
+                info['splits'][split] = {'manifest_sha256': MANIFESTS[split],
+                    'records_sha256': digest(destination), 'metrics': metrics,
+                    'archived_metric_max_error': 0., 'bf16_autocast': True,
+                    'reused_verified_export': str(previous)}
+                print(f'Reused all verified ours {split}: {len(reused)}', flush=True)
+                del dataset
+                continue
             loader = DataLoader(dataset, batch_size=args.batch_size, shuffle=False,
                                 num_workers=0, collate_fn=collate_samples)
             acc = MetricAccumulator()
@@ -174,4 +209,6 @@ if __name__ == '__main__':
     parser.add_argument('--output', type=Path, required=True)
     parser.add_argument('--device', default='cuda:6')
     parser.add_argument('--batch-size', type=int, default=32)
+    parser.add_argument('--reuse-ours-from', type=Path,
+                        help='Reuse complete optical split exports after strict manifest/metric checks')
     run(parser.parse_args())
