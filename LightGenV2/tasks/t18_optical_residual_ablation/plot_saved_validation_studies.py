@@ -13,6 +13,8 @@ STUDIES['resisc_fast']=dict(STUDIES['resisc'],run='resisc20_s17_mainL4_rho0rho03
 
 STUDIES['resisc_120']=dict(STUDIES['resisc_fast'],run='resisc20_s17_mainL4_rho0rho03_fullres_continue120_micro8_gpu256_20261014',commit='bbdaf0a852aaf9001b0c82d74dcdd592ea9865ad',source_count=144,budget=120,title='RESISC fixed20: original L4 pair, E31 onward with approved extra fitting budget')
 
+STUDIES['resisc_input']=dict(STUDIES['resisc_120'],run='resisc20_s17_mainL4_input50input100_rho_controls120_micro8_gpu256_20261014',commit='d5158a53e4fc1a5a42fff54b25b8c06353f2c1e5',source_count=151,keys=('L4_tile50_rho03','L4_tile100_rho03','L4_tile100_rho0'),labels=('Input50 rho0.3 control','Input100 rho0.3','Input100 rho0'),parameters=(908552,908552,908552),title='RESISC fixed20: fresh input-detail controls, physical network unchanged')
+
 def read(path):return json.loads(Path(path).read_text(encoding='utf-8'))
 def sha(path):return hashlib.sha256(Path(path).read_bytes()).hexdigest()
 def exited(pid):
@@ -51,12 +53,23 @@ def guarded(kind,base):
    assert fit['config']['maximum_epochs']==120 and fit['config']['maximum_seconds']==7200 and fit['config']['microbatch']==8
    assert fit['budget_continuation']['prefix_epochs']==30 and fit['budget_continuation']['additional_fit_seconds_limit']==7200
    assert fit['budget_continuation']['maximum_total_epochs']==120 and not fit['budget_continuation']['optimizer_ema_scheduler_reset']
-  if kind=='capacity':assert fit['rho']==.3 and fit['config']['phase_grid']==('full','128','64')[index]
+  if kind=='resisc_input':
+   assert proof['sources']==meta['sources'] and proof['training_source_commit']==spec['commit']
+   assert fit['rho']==(.3,.3,0.)[index] and fit['config']['input_tile']==(50,100,100)[index] and fit['config']['study_case']==key
+   assert fit['config']['maximum_epochs']==120 and fit['config']['maximum_seconds']==7200 and fit['config']['microbatch']==8
+   assert [h['epoch'] for h in hist]==list(range(1,len(hist)+1))
+  elif kind=='capacity':assert fit['rho']==.3 and fit['config']['phase_grid']==('full','128','64')[index]
   else:assert fit['rho']==(0.,.3)[index]
   assert proof['gates'][key]==read(base/key/'validation_gate.json');data[key]=(fit,hist)
  for name,identity in meta['sources'].items():
   assert sha(ROOT/name)==identity and hashlib.sha256(subprocess.check_output(['git','show',spec['commit']+':'+name],cwd=ROOT)).hexdigest()==identity
  assert len({tuple(f['config']['classes']) for f,_ in data.values()})==1
+ if kind=='resisc_input':
+  assert len({f['initial_parameter_sha256'] for f,_ in data.values()})==1
+  common=min(f['epochs_completed'] for f,_ in data.values());assert proof['shared_prefix_epochs']==common
+  assert len({tuple(f['orders'][:common]) for f,_ in data.values()})==len({tuple(f['transforms'][:common]) for f,_ in data.values()})==1
+  assert proof['input100_pair_eligible']==all(proof['gates'][k]['passed'] for k in spec['keys'][1:])
+  assert proof['eligible_residual_cases']==[k for k in spec['keys'][:2] if proof['gates'][k]['passed']]
  return spec,proof,data
 
 def plot(kind,base,out):
@@ -71,7 +84,7 @@ def plot(kind,base,out):
  fig,axes=plt.subplots(3,len(data),figsize=(5*len(data),12),sharex=True,squeeze=False)
  for col,key in enumerate(spec['keys']):
   fit,hist=data[key];selected=fit['selected_epoch'];g=proof['gates'][key];tm,vm=(fit['metrics'][s] for s in ('train','val'))
-  summaries.append(dict(case=key,label=spec['labels'][col],rho=fit['rho'],execution_microbatch=fit['config']['microbatch'],prefix_epochs=fit.get('budget_continuation',fit.get('execution_migration',{})).get('prefix_epochs',0),additional_fit_seconds=fit.get('budget_continuation',{}).get('additional_fit_seconds',0),free_phase_parameters=spec['parameters'][col],epochs=fit['epochs_completed'],selected_epoch=selected,train_accuracy=tm['accuracy'],val_accuracy=vm['accuracy'],train_macro=tm['balanced_accuracy'],val_macro=vm['balanced_accuracy'],train_balanced_nll=tm['balanced_nll'],val_balanced_nll=vm['balanced_nll'],selected_gap_pp=100*(tm['accuracy']-vm['accuracy']),eligible=g['passed'],chosen_profile=(proof.get('chosen_profile_case')==key),seconds=fit['seconds'],test_evaluations=0))
+  summaries.append(dict(case=key,label=spec['labels'][col],rho=fit['rho'],execution_microbatch=fit['config']['microbatch'],prefix_epochs=fit.get('budget_continuation',fit.get('execution_migration',{})).get('prefix_epochs',0),additional_fit_seconds=fit.get('budget_continuation',{}).get('additional_fit_seconds',0),free_phase_parameters=spec['parameters'][col],epochs=fit['epochs_completed'],selected_epoch=selected,train_accuracy=tm['accuracy'],val_accuracy=vm['accuracy'],train_macro=tm['balanced_accuracy'],val_macro=vm['balanced_accuracy'],train_balanced_nll=tm['balanced_nll'],val_balanced_nll=vm['balanced_nll'],selected_gap_pp=100*(tm['accuracy']-vm['accuracy']),eligible=g['passed'],chosen_profile=(proof.get('chosen_residual_case',proof.get('chosen_profile_case'))==key),input_tile=fit['config'].get('input_tile',50),seconds=fit['seconds'],test_evaluations=0))
   for name,passed in g['checks'].items():gate_rows.append(dict(case=key,check=name,passed=passed))
   for h in hist:
    for role in ('train','val'):
@@ -107,7 +120,7 @@ def plot(kind,base,out):
   fig,ax=plt.subplots(figsize=(9,8));im=ax.imshow(cm/support[:,None],vmin=0,vmax=1,cmap='Blues');ax.set_xticks(range(20),classes,rotation=55,ha='right',fontsize=7);ax.set_yticks(range(20),classes,fontsize=8);ax.set_xlabel('Predicted class');ax.set_ylabel('True class');ax.set_title(f'{key}: selected E{fit["selected_epoch"]} validation CM\nRow-normalized by true-class support; no test');fig.colorbar(im,ax=ax,label='Fraction of true-class support',fraction=.04,pad=.03);fig.tight_layout();export(fig,key+'_validation_cm')
   csvwrite(out/(key+'_validation_cm.csv'),[dict(class_true=classes[y],support=int(support[y]),**{name:int(cm[y,x]) for x,name in enumerate(classes)}) for y in range(20)])
  for name,rows in (('curve_points',curves),('selected_summary',summaries),('class_support_recall',classrows),('routing_slots',routing),('eligibility_checks',gate_rows)):csvwrite(out/(name+'.csv'),rows)
- receipt=dict(study_kind=kind,run_id=base.name,source_sha256=sha(__file__),cpu_audit_sha256=sha(base/'cpu_report/audit.json'),training_source_commit=spec['commit'],files={p.name:sha(p) for p in out.iterdir() if p.is_file()},scope='Audited saved EMA metrics only; sparse train/every-epoch val and same selected EMA. Single seed, no error bars, no test points or architecture adoption.',pdf_count=2+len(data),model_constructed=0,model_forward_calls=0,image_arrays_read=0,test_arrays_read=0,test_evaluations=0,pdf_visual_inspection_pending=True,chosen_profile_case=proof.get('chosen_profile_case'),all_pair_eligible=proof.get('all_pair_eligible'))
+ receipt=dict(study_kind=kind,run_id=base.name,source_sha256=sha(__file__),cpu_audit_sha256=sha(base/'cpu_report/audit.json'),training_source_commit=spec['commit'],files={p.name:sha(p) for p in out.iterdir() if p.is_file()},scope='Audited saved EMA metrics only; sparse train/every-epoch val and same selected EMA. Single seed, no error bars, no test points or architecture adoption.',pdf_count=2+len(data),model_constructed=0,model_forward_calls=0,image_arrays_read=0,test_arrays_read=0,test_evaluations=0,pdf_visual_inspection_pending=True,chosen_profile_case=proof.get('chosen_profile_case'),all_pair_eligible=proof.get('all_pair_eligible'),eligible_residual_cases=proof.get('eligible_residual_cases'),chosen_residual_case=proof.get('chosen_residual_case'),input100_pair_eligible=proof.get('input100_pair_eligible'))
  (out/'artifact_manifest.json').write_text(json.dumps(receipt,indent=2)+'\n',encoding='utf-8');return receipt
 if __name__=='__main__':
  p=argparse.ArgumentParser();p.add_argument('--kind',choices=STUDIES,required=True);p.add_argument('--base',type=Path,required=True);p.add_argument('--out',type=Path,required=True);a=p.parse_args()
