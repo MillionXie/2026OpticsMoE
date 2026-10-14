@@ -1,0 +1,11 @@
+# Historical per-run report copies are data, not source synchronization payloads.
+# Keep originals in place; task README and published training source stay tracked.
+# Exact names only: future reports, configuration and source remain visible.
+# SHA256 ed331a05e3d248421116cde5972614011c541e97b3275080f333b9d690eba116
+/decoder_editfocus120_20261008_report.json
+# SHA256 59824b535a3d033f4ff7d78c5103cc1326c2e59f4c0c714f64904df5742f4282
+/decoder_editfocus15_120_20261008_report.json
+# SHA256 48240c09fe587c8aa4495eb2e21d26e9f04d0e080c2c4457ac7b0c4528bbc0f1
+/decoder_editfocus1_120_20261008_report.json
+# SHA256 d90d48c1ce529f823e549fae421751ad73af146aba7f029d773220ab68974354
+/decoder_hardtrain120_20261008_report.json
