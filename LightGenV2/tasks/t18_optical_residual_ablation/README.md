@@ -1,3 +1,12 @@
+## RESISC120轮全部完成：CPU审核通过，精度准入失败（2026-10-14）
+
+两rho各120完整结束，父/全部GPU子实际退出，项目2/5/6释放；完整保存科学CPU与预算接续审核passed，test0。
+firstminvalEMA NLL选E120：rho0train53.36/val46.89/macro46.86/gap6.47pp；rho.3train56.96/val46.60/macro46.58/gap10.35pp。
+比原30val37.96/40.89提高，但两组仍failval65/macro60/各类20；机场/篮球场等train与val都弱，不认为75/充分收敛或唯一原因已解决。
+144当前/originalbbdaf源保持，原所有data/PT/history/proof/run保留。4PDF/PNGSVGCSV已真实Poppler渲染逐view_image视检通过。
+[全部实际结果、曲线、逐类CM与审核](reports/resisc20_20261014/L4_pair_continue120_final/README.md)。
+没有eligible，不启动正式6/条件2或3/native/test，不自动扩预算或换epoch选模；下一步仅有界CPU机制诊断与具体修正方案准备。
+
 ## 人工批准RESISC继续至120轮，完整网络已实际接续（2026-10-14）
 
 原30轮已审核完成后，用户明确批准两组继续至总计最多120轮，每组新增最多2小时，先预算/既有early-stop到即停。

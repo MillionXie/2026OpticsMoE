@@ -1,0 +1,52 @@
+{
+  "passed": true,
+  "pages": [
+    {
+      "pdf": "C:\\Users\\Xml12\\OneDrive\\2026OpticsMoE\\LightGenV2\\tasks\\t18_optical_residual_ablation\\reports\\resisc20_20261014\\L4_pair_continue120_final\\accuracy_macro_nll_curves.pdf",
+      "pdf_sha256": "7ebdb4c704289e2726da9aedc8f284d3f09a98639daa3e6ec5c1d425dc4c27cb",
+      "rendered_image": "C:\\Users\\Xml12\\OneDrive\\2026OpticsMoE\\.codex_tmp\\t18_resisc_120_pdf_visual_20261014\\accuracy_macro_nll_curves.png",
+      "visual_inspection_pending": false,
+      "actual_view_image_inspected": true,
+      "passed": true,
+      "pages": 1,
+      "render_dpi": 120,
+      "rendered_image_sha256": "290573aee3c68725b78728d7719e935f6d9693da93c0a7f5b284af83c5fc8f11"
+    },
+    {
+      "pdf": "C:\\Users\\Xml12\\OneDrive\\2026OpticsMoE\\LightGenV2\\tasks\\t18_optical_residual_ablation\\reports\\resisc20_20261014\\L4_pair_continue120_final\\L4_rho03_validation_cm.pdf",
+      "pdf_sha256": "a67709b7797ec19eb571cb414876bdc7dd1f9bf50d85ef31e1f05a8e465388f4",
+      "rendered_image": "C:\\Users\\Xml12\\OneDrive\\2026OpticsMoE\\.codex_tmp\\t18_resisc_120_pdf_visual_20261014\\L4_rho03_validation_cm.png",
+      "visual_inspection_pending": false,
+      "actual_view_image_inspected": true,
+      "passed": true,
+      "pages": 1,
+      "render_dpi": 120,
+      "rendered_image_sha256": "1b070df26e939f63b5f537b4d4dfd6577d2cf3711cd75a2e40cbfdebbc65df93"
+    },
+    {
+      "pdf": "C:\\Users\\Xml12\\OneDrive\\2026OpticsMoE\\LightGenV2\\tasks\\t18_optical_residual_ablation\\reports\\resisc20_20261014\\L4_pair_continue120_final\\L4_rho0_validation_cm.pdf",
+      "pdf_sha256": "8299752173cae6c0e4a0c595f9a9b0503f39b9d8a9190fb333870bb8c94d312d",
+      "rendered_image": "C:\\Users\\Xml12\\OneDrive\\2026OpticsMoE\\.codex_tmp\\t18_resisc_120_pdf_visual_20261014\\L4_rho0_validation_cm.png",
+      "visual_inspection_pending": false,
+      "actual_view_image_inspected": true,
+      "passed": true,
+      "pages": 1,
+      "render_dpi": 120,
+      "rendered_image_sha256": "c5863fb30a4bf67e3e85e8b2788df4335d9b332e5b65cdbd472aede59d96828b"
+    },
+    {
+      "pdf": "C:\\Users\\Xml12\\OneDrive\\2026OpticsMoE\\LightGenV2\\tasks\\t18_optical_residual_ablation\\reports\\resisc20_20261014\\L4_pair_continue120_final\\selected_class_recall.pdf",
+      "pdf_sha256": "efdadb261168b926a46a2a4a528ef47bfa1ed7bfc4db8e29a5b6a6e9990901c9",
+      "rendered_image": "C:\\Users\\Xml12\\OneDrive\\2026OpticsMoE\\.codex_tmp\\t18_resisc_120_pdf_visual_20261014\\selected_class_recall.png",
+      "visual_inspection_pending": false,
+      "actual_view_image_inspected": true,
+      "passed": true,
+      "pages": 1,
+      "render_dpi": 120,
+      "rendered_image_sha256": "339adf85f17c35aa28d4e655166f6b8ce0d6130c8675e62550ef8e8d2120f3bf"
+    }
+  ],
+  "reviewed_unix": 1791965529.5501928,
+  "method": "Actual Poppler120dpi one-page rendering and view_image of all four final PDFs; full axes, E120 stars/diamonds, legends, class labels and colorbars checked",
+  "no_layout_repair_required": true
+}

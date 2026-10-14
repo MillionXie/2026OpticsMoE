@@ -1,0 +1,12 @@
+{
+  "L4_rho0": {
+    "previous10_mean_val_balanced_nll": 1.8927940640166807,
+    "last10_mean_val_balanced_nll": 1.8702241007659328,
+    "improvement_percent": 1.192415153862665
+  },
+  "L4_rho03": {
+    "previous10_mean_val_balanced_nll": 1.8146682063939628,
+    "last10_mean_val_balanced_nll": 1.8037812229670673,
+    "improvement_percent": 0.5999434711279595
+  }
+}

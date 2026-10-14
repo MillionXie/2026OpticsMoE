@@ -1,0 +1,10 @@
+{
+  "zip_sha256": "67ebb531f58f8b9bfff175ac924b86474ee60d620ca6c2087a4f5624b5056244",
+  "all_artifact_sha256_verified": true,
+  "evidence_files": {
+    "cpu_saved_audit.json": "30f8665a650bb13ee837be71c518a354bd2574896fd3658b7772b4122c3816db",
+    "exit_receipt.json": "a23a24b546ac09b8cafe4725554aac1a035b6b2a26b5ef9613022411fac8c617",
+    "budget_continuation_cpu_checks.json": "8179e23cbb739ae3e693d65744c6adcba25cc3297b887dd06e5f1700f3bd73b2"
+  },
+  "source_transferred": false
+}

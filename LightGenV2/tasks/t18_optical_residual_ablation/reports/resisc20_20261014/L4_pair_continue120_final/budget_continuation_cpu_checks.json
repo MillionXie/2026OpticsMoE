@@ -1,0 +1,30 @@
+{
+  "passed": true,
+  "checks": [
+    {
+      "case": "L4_rho0",
+      "prefix_epochs": 30,
+      "first_new_epoch": 31,
+      "preserved_prefix_history_gradients_order_affine_mixup": true,
+      "raw_ema_restored_exact": true,
+      "optimizer_ema_scheduler_reset": false,
+      "parent_last_sha256": "1524bc0d15fe4473c459d5ba1b259ca9820d6f368796beef33a313a6bf2f26dc"
+    },
+    {
+      "case": "L4_rho03",
+      "prefix_epochs": 30,
+      "first_new_epoch": 31,
+      "preserved_prefix_history_gradients_order_affine_mixup": true,
+      "raw_ema_restored_exact": true,
+      "optimizer_ema_scheduler_reset": false,
+      "parent_last_sha256": "27c90d0194e24f02e47b9e84a87d4abc235426c059b158d3b8c90211e4b10a05"
+    }
+  ],
+  "parent_audit_sha256": "e66aa40f2868de4fdf6b13a2c8ffa5df40c693920c7af7e1b2f77ed3e0ab5a83",
+  "audit_sha256": "30f8665a650bb13ee837be71c518a354bd2574896fd3658b7772b4122c3816db",
+  "maximum_total_epochs": 120,
+  "additional_fit_seconds_per_arm": 7200,
+  "model_forward_calls": 0,
+  "test_arrays_read": 0,
+  "test_evaluations": 0
+}
