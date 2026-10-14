@@ -1,0 +1,11 @@
+{
+  "authorization": "Human 2026-10-14 approves trying the full/128/64 diagnostic promptly, keeps final network size fixed, asks to investigate data insufficiency and switch suitable data if needed",
+  "arms": ["full", "128", "64"],
+  "maximum_total_fit_gpu_hours": 12,
+  "automatic_retry": false,
+  "profile_overrides": {"mixup_alpha": 0.6},
+  "gates": {
+    "cpu_native": "LightGenV2/tasks/t18_optical_residual_ablation/runs/smoke/caltech_capacity_initial_native_20261014/checks.json",
+    "gpu_numeric": "LightGenV2/tasks/t18_optical_residual_ablation/runs/smoke/caltech_capacity_gpu6_numeric_20261014/checks.json"
+  }
+}
