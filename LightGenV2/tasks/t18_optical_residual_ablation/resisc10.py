@@ -13,8 +13,8 @@ HERE,ROOT=s.HERE,s.ROOT
 PLAN=HERE/'resisc10_plan.json'
 FILES=('resisc10_plan.json','resisc10.py','resisc10_model.py','check_resisc10.py','audit_resisc10.py','export_resisc10.py','RESISC10_PROTOCOL_20261015.md')
 CASES={'L4_10_rho03':.3,'L4_10_rho0':0.}
-CPU=HERE/'runs/smoke/resisc10_cpu_native_20261015'
-NUMERIC=HERE/'runs/smoke/resisc10_gpu2_numeric_20261015'
+CPU=HERE/'runs/smoke/resisc10_cpu_native_normalization_checked_20261015'
+NUMERIC=HERE/'runs/smoke/resisc10_gpu2_numeric_normalization_checked_20261015'
 RUN='resisc10_s17_mainL4_input100_rho_pair120_micro8_gpu25_20261015'
 GPU={k:s.ALLOWED[k] for k in (2,5)}
 def plan():

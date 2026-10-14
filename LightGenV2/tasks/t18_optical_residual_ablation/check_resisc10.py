@@ -18,6 +18,10 @@ def check(out):
     for rho in (.3,0.):
         torch.manual_seed(17);model=study.SubsetMoE(4,rho);assert sum(p.numel() for p in model.parameters())==908552 and len(model.detectors)==10
         assert torch.equal(model.detectors,study.s.r.CorrectedMoE(4,rho).detectors[list(study.INDICES)])
+        with torch.no_grad():
+            black,_=model(study.encode(torch.zeros(1,3,150,150,dtype=torch.uint8),None,100))
+            assert black.shape==(1,10) and torch.allclose(black,torch.full_like(black,.1),atol=1e-8)
+            assert torch.allclose(black.sum(1),torch.ones(1),atol=1e-7)
     import audit_resisc10 as audit; import types as _types
     try:audit.audit(_types.SimpleNamespace(base=study.HERE/'runs/smoke/wrong10run_never_created',out=out.with_name(out.name+'_badout'),data=Path(cfg['data'])))
     except AssertionError:pass
@@ -30,7 +34,7 @@ def check(out):
     for old,new in changes.items():assert src.count(old)==1;src=src.replace(old,new)
     view=types.SimpleNamespace(CASES={k:(100,v) for k,v in study.CASES.items()},config=lambda case:study.config(),sources=study.sources,encode=study.encode,SubsetMoE=study.SubsetMoE)
     ns=dict(sealed.__dict__);ns.update(study=view,export=export);exec(compile(src,__file__+':sealed10CPU_native','exec'),ns);ns['check'](out)
-    value=study.s.read(out/'checks.json');value.update(class_count=10,train_samples=5600,val_samples=700,optimizer_steps_per_epoch=350,tail_batch=16,class_selection_fixed_validation_top10=True,role_and_ID_preserved=True,plan_sha256=study.s.sha(study.PLAN),subset_manifest_sha256=study.s.sha(study.private_manifest()),source_count=len(study.sources()),model_forward_calls=12,test_arrays_read=0,test_evaluations=0)
+    value=study.s.read(out/'checks.json');value.update(class_count=10,train_samples=5600,val_samples=700,optimizer_steps_per_epoch=350,tail_batch=16,class_selection_fixed_validation_top10=True,role_and_ID_preserved=True,plan_sha256=study.s.sha(study.PLAN),subset_manifest_sha256=study.s.sha(study.private_manifest()),source_count=len(study.sources()),model_forward_calls=14,black_probability_normalized=True,test_arrays_read=0,test_evaluations=0)
     study.s.save(out/'checks.json',value)
 if __name__=='__main__':
     p=argparse.ArgumentParser();p.add_argument('--out',type=Path,required=True);a=p.parse_args()
