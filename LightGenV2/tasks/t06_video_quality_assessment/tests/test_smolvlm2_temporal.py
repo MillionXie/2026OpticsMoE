@@ -59,3 +59,25 @@ def test_prompt_matches_qwen_source():
     tree = ast.parse((smol.TASK / "quality_token_common.py").read_text())
     node = next(n for n in tree.body if isinstance(n, ast.Assign) and any(isinstance(t, ast.Name) and t.id == "PROMPTS" for t in n.targets))
     assert smol.PROMPT == ast.literal_eval(node.value)["temporal"]
+
+
+def test_only_five_rows_can_update():
+    try:
+        import torch
+    except (ImportError, OSError):
+        pytest.skip("Torch unavailable locally; required to pass on server")
+    from LightGenV2.tasks.t06_video_quality_assessment.quality_token_train import FiveNativeTokenRows
+    native = torch.nn.Linear(2048, 20, bias=False).eval().requires_grad_(False)
+    before = native.weight.detach().clone()
+    initial = native.weight.detach()[:5].clone()
+    head = FiveNativeTokenRows(initial)
+    assert head.weight.data_ptr() != initial.data_ptr()
+    assert sum(p.numel() for p in head.parameters() if p.requires_grad) == 10240
+    optimizer = torch.optim.AdamW(head.parameters(), lr=.001, weight_decay=0.)
+    loss = torch.nn.functional.cross_entropy(head(torch.ones(3, 2048)), torch.tensor([0, 1, 2]))
+    loss.backward()
+    optimizer.step()
+    assert native.weight.grad is None
+    assert torch.equal(native.weight, before)
+    assert torch.equal(initial, before[:5])
+    assert not torch.equal(head.weight, initial)

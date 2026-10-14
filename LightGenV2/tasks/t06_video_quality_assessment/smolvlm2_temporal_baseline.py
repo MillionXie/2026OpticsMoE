@@ -100,13 +100,28 @@ def model_files(model, config):
 
 def prepare_assets(args, config):
     import requests
-    from transformers import AutoTokenizer
+    from transformers import AutoProcessor
     args.model.mkdir(parents=True, exist_ok=True)
     # Metadata first: token contract is verified before downloading large weights.
     names = sorted(config["official_assets"], key=lambda s: s.endswith(".safetensors"))
+    processor_checked = False
     for name in names:
         if name.endswith(".safetensors"):
             verify_tokenizer(args.model, config)
+            if not processor_checked:
+                from . import quality_token_common as core
+                processor = AutoProcessor.from_pretrained(str(args.model), local_files_only=True)
+                processor.tokenizer.padding_side = "left"
+                prompt = core.render_prompt(processor, "temporal")
+                rows = core.read_manifest(args.manifest)[:2]
+                inputs, positions = prepare_batch(rows, processor, prompt)
+                frozen.write_json(args.output / "cpu_processor_preflight.json", {
+                    "status": "passed", "gpu_initialized": False,
+                    "two_real_train_video_ids": [row["sample_id"] for row in rows],
+                    "frame_positions": positions,
+                    "native_tensor_shapes": {key: list(value.shape) for key, value in inputs.items()},
+                    "quality_token_ids": verify_tokenizer(args.model, config)})
+                processor_checked = True
         path = args.model / name
         spec = config["official_assets"][name]
         if path.exists():
